@@ -8,8 +8,10 @@ bin/freeside-daily
 bin/freeside-email
 bin/freeside-queued
 bin/freeside-addoutsource
+bin/freeside-addoutsourceuser
 bin/freeside-apply-credits
 bin/freeside-adduser
+bin/freeside-setup
 bin/freeside-setinvoice
 bin/freeside-overdue
 bin/freeside-receivables-report

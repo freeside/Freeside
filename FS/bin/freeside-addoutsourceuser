@@ -1,0 +1,14 @@
+#!/bin/sh
+
+username=$1
+domain=$2
+
+freeside-adduser -h /usr/local/etc/freeside/htpasswd \
+ -s /usr/local/etc/freeside/conf.DBI:Pg:host=localhost\;dbname=$domain/secrets \
+ -b \
+ $username $password
+
+[ -e /usr/local/etc/freeside/dbdef.DBI:Pg:host=localhost\;dbname=$domain ] \
+ || ( freeside-setup $username; \
+      /home/ivan/freeside/bin/populate-msgcat $username )
+
