@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# process/cust_main.cgi: Edit a customer (process form)
+# $Id: cust_main.cgi,v 1.2 1998-11-18 08:57:36 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/cust_main.cgi
@@ -20,83 +20,67 @@
 # Changes to allow page to work at a relative position in server
 # Changed 'day' to 'daytime' because Pg6.3 reserves the day word
 #       bmccane@maxbaud.net     98-apr-3
+#
+# $Log: cust_main.cgi,v $
+# Revision 1.2  1998-11-18 08:57:36  ivan
+# i18n, s/CGI-modules/CGI.pm/, FS::CGI::idiot instead of inline, FS::CGI::popurl
+#
 
 use strict;
-use CGI::Request;
+use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
+use FS::CGI qw(eidiot popurl);
 use FS::Record qw(qsearchs);
 use FS::cust_main;
 
-my($req)=new CGI::Request; # create form object
+my($req)=new CGI;
 
-&cgisuidsetup($req->cgi);
+&cgisuidsetup($cgi);
 
 #create new record object
 
 #unmunge agentnum
-$req->param('agentnum', 
-  (split(/:/, ($req->param('agentnum'))[0] ))[0]
+$cgi->param('agentnum', 
+  (split(/:/, ($cgi->param('agentnum'))[0] ))[0]
 );
 
 #unmunge tax
-$req->param('tax','') unless defined($req->param('tax'));
+$cgi->param('tax','') unless defined($cgi->param('tax'));
 
 #unmunge refnum
-$req->param('refnum',
-  (split(/:/, ($req->param('refnum'))[0] ))[0]
+$cgi->param('refnum',
+  (split(/:/, ($cgi->param('refnum'))[0] ))[0]
 );
 
-#unmunge state/county
-$req->param('state') =~ /^(\w+)( \((\w+)\))?$/;
-$req->param('state', $1);
-$req->param('county', $3 || '');
+#unmunge state/county/country
+$cgi->param('state') =~ /^(\w+)( \((\w+)\))? \/ (\w+)$/;
+$cgi->param('state', $1);
+$cgi->param('county', $3 || '');
+$cgi->param('country', $4);
 
 my($new) = create FS::cust_main ( {
   map {
-    $_, $req->param("$_") || ''
+    $_, $cgi->param("$_") || ''
   } qw(custnum agentnum last first ss company address1 address2 city county
-       state zip country daytime night fax payby payinfo paydate payname tax
+       state zip daytime night fax payby payinfo paydate payname tax
        otaker refnum)
 } );
 
 if ( $new->custnum eq '' ) {
 
   my($error)=$new->insert;
-  &idiot($error) if $error;
+  &eidiot($error) if $error;
 
 } else { #create old record object
 
   my($old) = qsearchs( 'cust_main', { 'custnum', $new->custnum } ); 
-  &idiot("Old record not found!") unless $old;
+  &eidiot("Old record not found!") unless $old;
   my($error)=$new->replace($old);
-  &idiot($error) if $error;
+  &eidiot($error) if $error;
 
 }
 
 my($custnum)=$new->custnum;
-$req->cgi->redirect("../../view/cust_main.cgi?$custnum#cust_main");
-
-sub idiot {
-  my($error)=@_;
-  CGI::Base::SendHeaders(); # one guess
-  print <<END;
-<HTML>
-  <HEAD>
-    <TITLE>Error updating customer information</TITLE>
-  </HEAD>
-  <BODY>
-    <CENTER>
-    <H4>Error updating customer information</H4>
-    </CENTER>
-    Your update did not occur because of the following error:
-    <P><B>$error</B>
-    <P>Hit the <I>Back</I> button in your web browser, correct this mistake, and submit the form again.
-  </BODY>
-</HTML>
-END
-
-  exit;
-
-}
+print $cgi->redirect(popurl(3). "/view/cust_main.cgi?$custnum#cust_main");
 
