@@ -115,16 +115,18 @@ sub sqlmail_replace {
   my %attrs = @_;
   map { $attrs{$_} = $attrs{$_} ? qq!'$attrs{$_}'! : 'NULL'; } keys(%attrs);
 
-  my $query = sprintf('UPDATE %s SET %s WHERE svcnum = %s',
-                      $table, join(', ', map {"$_ = $attrs{$_}"} keys(%attrs)),
-                      $oldsvcnum);
-
-  my $rv = $dbh->do($query) or die $dbh->errstr;
-
-  if ($rv == 0) {
+  my $query = "SELECT COUNT(*) FROM $table WHERE svcnum = $oldsvcnum";
+  my $result = $dbh->selectrow_arrayref($query) or die $dbh->errstr;
+  
+  if (@$result[0] == 0) {
     $query = sprintf("INSERT INTO %s (%s) values (%s)",
                      $table, join(",", keys(%attrs)),
                      join(',', values(%attrs)));
+    $dbh->do($query) or die $dbh->errstr;
+  } else {
+    $query = sprintf('UPDATE %s SET %s WHERE svcnum = %s',
+                     $table, join(', ', map {"$_ = $attrs{$_}"} keys(%attrs)),
+                     $oldsvcnum);
     $dbh->do($query) or die $dbh->errstr;
   }
 
