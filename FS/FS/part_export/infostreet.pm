@@ -1,6 +1,7 @@
 package FS::part_export::infostreet;
 
 use vars qw(@ISA %infostreet2cust_main);
+use FS::UID qw(dbh);
 use FS::part_export;
 
 @ISA = qw(FS::part_export);
@@ -15,7 +16,7 @@ use FS::part_export;
   'zipCode'     => 'zip',
   'country'     => 'country',
   'phoneNumber' => 'daytime',
-  'faxNumber'   => 'night',
+  'faxNumber'   => 'night', #noment-request...
 );
 
 sub rebless { shift; }
@@ -23,25 +24,41 @@ sub rebless { shift; }
 sub _export_insert {
   my( $self, $svc_acct ) = (shift, shift);
   my $cust_main = $svc_acct->cust_svc->cust_pkg->cust_main;
-  my $accountID = $self->infostreet_queue( $svc_acct->svcnum,
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $err_or_queue = $self->infostreet_err_or_queue( $svc_acct->svcnum,
     'createUser', $svc_acct->username, $svc_acct->_password );
-  foreach my $infostreet_field ( keys %infostreet2cust_main ) {
-    my $error = $self->infostreet_queue( $svc_acct->svcnum,
-      'setContactField', $accountID, $infostreet_field,
-        $cust_main->getfield( $infostreet2cust_main{$infostreet_field} ) );
-    return $error if $error;
-  }
+  return $err_or_queue unless ref($err_or_queue);
+  my $jobnum = $err_or_queue->jobnum;
+
+  my %contact_info = ( map {
+    $_ => $cust_main->getfield( $infostreet2cust_main{$_} );
+  } keys %infostreet2cust_main );
 
   my @emails = grep { $_ ne 'POST' } $cust_main->invoicing_list;
-  if ( @emails ) {
-    my $error = $self->infostreet_queue( $svc_acct->svcnum,
-      'setContactField', $accountID, 'email', $emails[0] );
-    return $error if $error;
-  }
+  $contact_info{'email'} = $emails[0] if @emails;
 
   #this one is kinda noment-specific
-  $self->infostreet_queue( $svc_acct->svcnum,
-    'setContactField', $accountID, 'title', $cust_main->agent->agent );
+  $contact_info{'title'} = $cust_main->agent->agent;
+
+  $err_or_queue = $self->infostreet_queueContact( $svc_acct->svcnum,
+    $svc_acct->username, %contact_info );
+  return $err_or_queue unless ref($err_or_queue);
+  my $error = $err_or_queue->depend_insert( $jobnum );
+  return $error if $error;
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+  '';
 
 }
 
@@ -86,6 +103,49 @@ sub infostreet_queue {
     $method,
     @_,
   );
+}
+
+#ick false laziness
+sub infostreet_err_or_queue {
+  my( $self, $svcnum, $method ) = (shift, shift, shift);
+  my $queue = new FS::queue {
+    'svcnum' => $svcnum,
+    'job'    => 'FS::part_export::infostreet::infostreet_command',
+  };
+  $queue->insert(
+    $self->option('url'),
+    $self->option('login'),
+    $self->option('password'),
+    $self->option('groupID'),
+    $method,
+    @_,
+  ) or $queue;
+}
+
+sub infostreet_queueContact {
+  my( $self, $svcnum ) = (shift, shift);
+  my $queue = new FS::queue {
+    'svcnum' => $svcnum,
+    'job'    => 'FS::part_export::infostreet::infostreet_setContact',
+  };
+  $queue->insert(
+    $self->option('url'),
+    $self->option('login'),
+    $self->option('password'),
+    $self->option('groupID'),
+    @_,
+  ) or $queue;
+}
+
+sub infostreet_setContact {
+  my($url, $is_username, $is_password, $groupID, $username, %contact_info) = @_;
+  my $accountID = infostreet_command($url, $is_username, $is_password, $groupID,
+    'getAccountID', $username);
+  foreach my $field ( %contact_info ) {
+    infostreet_command($url, $is_username, $is_password, $groupID,
+      'setContactField', $field, $contact_info{$field} );
+  }
+
 }
 
 sub infostreet_command { #subroutine, not method
