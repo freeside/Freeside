@@ -117,7 +117,7 @@ The author forgot to customize this manpage.
 
 =head1 SEE ALSO
 
-L<FS::clientapi_session>, L<FS::ClientAPI, L<FS::Record>, schema.html from the
+L<FS::clientapi_session>, L<FS::ClientAPI>, L<FS::Record>, schema.html from the
 base documentation.
 
 =cut
