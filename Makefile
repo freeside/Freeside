@@ -12,6 +12,9 @@ TEMPLATE = asp
 
 FREESIDE_DOCUMENT_ROOT = /var/www/freeside
 
+HTTPD_RESTART = /etc/init.d/apache restart
+QUEUED_RESTART = /etc/init.d/freeside restart
+
 #---
 
 #not changable yet
@@ -58,7 +61,8 @@ install-perl-modules: perl-modules
 install: install-perl-modules install-docs
 
 deploy: install
-	/etc/init.d/apache restart
+	${HTTPD_RESTART}
+	${QUEUED_RESTART}
 
 create-database:
 	perl -e 'use DBIx::DataSource qw( create_database ); create_database( \'${DATASOURCE}\', \'${DB_USER}\', \'${DB_PASSWORD}\' ) or die $DBIx::DataSource::errstr;'
