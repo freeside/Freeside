@@ -129,7 +129,6 @@ sub popselector {
     push @{$svc_acct_pop{$_->state}}, $_ foreach @svc_acct_pop;
   }
 
-  my $size = 0;
   my $text = <<END;
     <SCRIPT>
     function opt(what,href,text) {
@@ -151,7 +150,6 @@ END
     foreach my $pop ( @{$svc_acct_pop{$popstate}}) {
       my $o_popnum = $pop->popnum;
       my $poptext = $pop->text;
-      $size = length($poptext) if length($poptext) > $size;
       $text .= "opt(what.form.popnum, \"$o_popnum\", \"$poptext\");\n"
     }
     $text .= "}\n";
@@ -173,13 +171,15 @@ END
   }
   $text .= '</SELECT>';
 
+  $text;
+
 }
 
 =back
 
 =head1 VERSION
 
-$Id: svc_acct_pop.pm,v 1.4 2001-09-27 20:41:37 ivan Exp $
+$Id: svc_acct_pop.pm,v 1.5 2001-09-27 21:49:31 ivan Exp $
 
 =head1 BUGS
 
