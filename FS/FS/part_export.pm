@@ -692,7 +692,6 @@ tie my %cyrus_options, 'Tie::IxHash',
 ;
 
 tie my %cp_options, 'Tie::IxHash',
-  'host'      => { label=>'Hostname' },
   'port'      => { label=>'Port number' },
   'username'  => { label=>'Username' },
   'password'  => { label=>'Password' },

@@ -42,7 +42,7 @@ sub cp_queue {
     'job'    => 'FS::part_export::cp::cp_command',
   };
   $queue->insert(
-    $self->option('host'),
+    $self->machine,
     $self->option('port'),
     $self->option('username'),
     $self->option('password'),
