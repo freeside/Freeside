@@ -623,7 +623,7 @@ sub realtime_card {
   my @invoicing_list = grep { $_ ne 'POST' } $cust_main->invoicing_list;
   if ( $conf->exists('emailinvoiceauto')
        || ( $conf->exists('emailinvoiceonly') && ! @invoicing_list ) ) {
-    push @invoicing_list, $cust_main->default_invoicing_list;
+    push @invoicing_list, $cust_main->all_emails;
   }
   my $email = $invoicing_list[0];
 
@@ -1114,7 +1114,7 @@ sub print_text {
 
 =head1 VERSION
 
-$Id: cust_bill.pm,v 1.42 2002-09-10 03:31:00 ivan Exp $
+$Id: cust_bill.pm,v 1.43 2002-09-17 00:33:17 ivan Exp $
 
 =head1 BUGS
 

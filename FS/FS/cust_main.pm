@@ -1584,7 +1584,6 @@ sub invoicing_list {
     }
     my %seen = map { $_->address => 1 } @cust_main_invoice;
     foreach my $address ( @{$arrayref} ) {
-      #unless ( grep { $address eq $_->address } @cust_main_invoice ) {
       next if exists $seen{$address} && $seen{$address};
       $seen{$address} = 1;
       my $cust_main_invoice = new FS::cust_main_invoice ( {
@@ -1626,24 +1625,36 @@ sub check_invoicing_list {
   '';
 }
 
-=item default_invoicing_list
+=item set_default_invoicing_list
 
-Sets the invoicing list to all accounts associated with this customer.
+Sets the invoicing list to all accounts associated with this customer,
+overwriting any previous invoicing list.
 
 =cut
 
-sub default_invoicing_list {
+sub set_default_invoicing_list {
   my $self = shift;
-  my @list = ();
+  $self->invoicing_list($self->all_emails);
+}
+
+=item all_emails
+
+Returns the email addresses of all accounts provisioned for this customer.
+
+=cut
+
+sub all_emails {
+  my $self = shift;
+  my %list;
   foreach my $cust_pkg ( $self->all_pkgs ) {
     my @cust_svc = qsearch('cust_svc', { 'pkgnum' => $cust_pkg->pkgnum } );
     my @svc_acct =
       map { qsearchs('svc_acct', { 'svcnum' => $_->svcnum } ) }
         grep { qsearchs('svc_acct', { 'svcnum' => $_->svcnum } ) }
           @cust_svc;
-    push @list, map { $_->email } @svc_acct;
+    $list{$_}=1 foreach map { $_->email } @svc_acct;
   }
-  $self->invoicing_list(\@list);
+  keys %list;
 }
 
 =item invoicing_list_addpost

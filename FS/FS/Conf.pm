@@ -369,7 +369,7 @@ httemplate/docs/config.html
   {
     'key'         => 'emailinvoiceauto',
     'section'     => 'billing',
-    'description' => 'Automatically adds new accounts to the email invoice list upon customer creation',
+    'description' => 'Automatically adds new accounts to the email invoice list',
     'type'       => 'checkbox',
   },
 

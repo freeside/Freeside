@@ -341,11 +341,20 @@ sub insert {
     return "queueing job (transaction rolled back): $error";
   }
 
-  #welcome email
   my $cust_pkg = $self->cust_svc->cust_pkg;
-  my( $cust_main, $to ) = ( '', '' );
+  my $cust_main = $cust_pkg->cust_main;
+
+  my $cust_pkg = $self->cust_svc->cust_pkg;
+
+  if ( $conf->exists('emailinvoiceauto') ) {
+    my @invoicing_list = $cust_main->invoicing_list;
+    push @invoicing_list, $self->email;
+    $cust_main->invoicing_list(@invoicing_list);
+  }
+
+  #welcome email
+  my $to = '';
   if ( $welcome_template && $cust_pkg ) {
-    my $cust_main = $cust_pkg->cust_main;
     my $to = join(', ', grep { $_ ne 'POST' } $cust_main->invoicing_list );
     if ( $to ) {
       my $wqueue = new FS::queue {
