@@ -13,64 +13,93 @@ $limit .= " OFFSET $offset" if $offset;
 
 my $total;
 
-my $unconf = '';
 my($query) = $cgi->keywords;
 my $sortby;
-if ( $query eq 'pkgnum' ) {
-  $sortby=\*pkgnum_sort;
+my @cust_pkg;
 
-} elsif ( $query eq 'APKG_pkgnum' ) {
+if ( $cgi->param('magic') && $cgi->param('magic') eq 'bill' ) {
+  $sortby=\*bill_sort;
+  my($beginning, $ending) = (0, 0);
+  my $range = '';
+  if ( $cgi->param('beginning')
+       && $cgi->param('beginning') =~ /^([ 0-9\-\/]{0,10})$/ ) {
+    my $beginning = str2time($1);
+    $range = " WHERE bill >= $beginning ";
+  } elsif ( $cgi->param('ending')
+            && $cgi->param('ending') =~ /^([ 0-9\-\/]{0,10})$/ ) {
+    $ending = str2time($1) + 86400;
+    $range = ( $range ? ' AND ' : ' WHERE ' ). " bill <= $ending ";
+  }
 
-  $sortby=\*pkgnum_sort;
-
-  $unconf = "
-    WHERE 0 <
-      ( SELECT count(*) FROM pkg_svc
-          WHERE pkg_svc.pkgpart = cust_pkg.pkgpart
-            AND pkg_svc.quantity > ( SELECT count(*) FROM cust_svc
-                                       WHERE cust_svc.pkgnum = cust_pkg.pkgnum
-                                         AND cust_svc.svcpart = pkg_svc.svcpart
-                                   )
-      )
-  ";
-
-  #@cust_pkg=();
-  ##perhaps this should go in cust_pkg as a qsearch-like constructor?
-  #my($cust_pkg);
-  #foreach $cust_pkg (
-  #  qsearch('cust_pkg',{}, '', "ORDER BY pkgnum $limit" )
-  #) {
-  #  my($flag)=0;
-  #  my($pkg_svc);
-  #  PKG_SVC: 
-  #  foreach $pkg_svc (qsearch('pkg_svc',{ 'pkgpart' => $cust_pkg->pkgpart })) {
-  #    if ( $pkg_svc->quantity 
-  #         > scalar(qsearch('cust_svc',{
-  #             'pkgnum' => $cust_pkg->pkgnum,
-  #             'svcpart' => $pkg_svc->svcpart,
-  #           }))
-  #       )
-  #    {
-  #      $flag=1;
-  #      last PKG_SVC;
-  #    }
-  #  }
-  #  push @cust_pkg, $cust_pkg if $flag;
-  #}
+  #false laziness with below
+  my $statement = "SELECT COUNT(*) FROM cust_pkg $range";
+  my $sth = dbh->prepare($statement)
+    or die dbh->errstr. " doing $statement";
+  $sth->execute or die "Error executing \"$statement\": ". $sth->errstr;
   
+  $total = $sth->fetchrow_arrayref->[0];
+  
+  @cust_pkg = qsearch('cust_pkg',{}, '', " $range ORDER BY bill $limit" );
+
 } else {
-  die "Empty QUERY_STRING!";
+
+  my $unconf = '';
+  if ( $query eq 'pkgnum' ) {
+    $sortby=\*pkgnum_sort;
+
+  } elsif ( $query eq 'APKG_pkgnum' ) {
+  
+    $sortby=\*pkgnum_sort;
+  
+    $unconf = "
+      WHERE 0 <
+        ( SELECT count(*) FROM pkg_svc
+            WHERE pkg_svc.pkgpart = cust_pkg.pkgpart
+              AND pkg_svc.quantity > ( SELECT count(*) FROM cust_svc
+                                         WHERE cust_svc.pkgnum = cust_pkg.pkgnum
+                                           AND cust_svc.svcpart = pkg_svc.svcpart
+                                     )
+        )
+    ";
+  
+    #@cust_pkg=();
+    ##perhaps this should go in cust_pkg as a qsearch-like constructor?
+    #my($cust_pkg);
+    #foreach $cust_pkg (
+    #  qsearch('cust_pkg',{}, '', "ORDER BY pkgnum $limit" )
+    #) {
+    #  my($flag)=0;
+    #  my($pkg_svc);
+    #  PKG_SVC: 
+    #  foreach $pkg_svc (qsearch('pkg_svc',{ 'pkgpart' => $cust_pkg->pkgpart })) {
+    #    if ( $pkg_svc->quantity 
+    #         > scalar(qsearch('cust_svc',{
+    #             'pkgnum' => $cust_pkg->pkgnum,
+    #             'svcpart' => $pkg_svc->svcpart,
+    #           }))
+    #       )
+    #    {
+    #      $flag=1;
+    #      last PKG_SVC;
+    #    }
+    #  }
+    #  push @cust_pkg, $cust_pkg if $flag;
+    #}
+    
+  } else {
+    die "Empty QUERY_STRING!";
+  }
+  
+  my $statement = "SELECT COUNT(*) FROM cust_pkg $unconf";
+  my $sth = dbh->prepare($statement)
+    or die dbh->errstr. " doing $statement";
+  $sth->execute or die "Error executing \"$statement\": ". $sth->errstr;
+  
+  $total = $sth->fetchrow_arrayref->[0];
+  
+  @cust_pkg = qsearch('cust_pkg',{}, '', "$unconf ORDER BY pkgnum $limit" );
+
 }
-
-my $statement = "SELECT COUNT(*) FROM cust_pkg $unconf";
-my $sth = dbh->prepare($statement)
-  or die dbh->errstr. " doing $statement";
-$sth->execute or die "Error executing \"$statement\": ". $sth->errstr;
-
-$total = $sth->fetchrow_arrayref->[0];
-
-my @cust_pkg = qsearch('cust_pkg',{}, '', "$unconf ORDER BY pkgnum $limit" );
-
 
 if ( scalar(@cust_pkg) == 1 ) {
   my($pkgnum)=$cust_pkg[0]->pkgnum;
@@ -241,6 +270,10 @@ END
 
 sub pkgnum_sort {
   $a->getfield('pkgnum') <=> $b->getfield('pkgnum');
+}
+
+sub bill_sort {
+  $a->getfield('bill') <=> $b->getfield('bill');
 }
 
 %>
