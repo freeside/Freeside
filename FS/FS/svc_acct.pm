@@ -1024,36 +1024,28 @@ sub radius_groups {
 
 =item send_email
 
+This is the FS::svc_acct job-queue-able version.  It still uses
+FS::Misc::send_email under-the-hood.
+
 =cut
 
 sub send_email {
   my %opt = @_;
 
-  use Date::Format;
-  use Mail::Internet 1.44;
-  use Mail::Header;
+  eval "use FS::Misc qw(send_email)";
+  die $@ if $@;
 
   $opt{mimetype} ||= 'text/plain';
   $opt{mimetype} .= '; charset="iso-8859-1"' unless $opt{mimetype} =~ /charset/;
 
-  $ENV{MAILADDRESS} = $opt{from};
-  my $header = new Mail::Header ( [
-    "From: $opt{from}",
-    "To: $opt{to}",
-    "Sender: $opt{from}",
-    "Reply-To: $opt{from}",
-    "Date: ". time2str("%a, %d %b %Y %X %z", time),
-    "Subject: $opt{subject}",
-    "Content-Type: $opt{mimetype}",
-  ] );
-  my $message = new Mail::Internet (
-    'Header' => $header,
-    'Body' => [ map "$_\n", split("\n", $opt{body}) ],
+  my $error = send_email(
+    'from'         => $opt{from},
+    'to'           => $opt{to},
+    'subject'      => $opt{subject},
+    'content-type' => $opt{mimetype},
+    'body'         => [ map "$_\n", split("\n", $opt{body}) ],
   );
-  $!=0;
-  $message->smtpsend( Host => $smtpmachine )
-    or $message->smtpsend( Host => $smtpmachine, Debug => 1 )
-      or die "can't send email to $opt{to} via $smtpmachine with SMTP: $!";
+  die $error if $error;
 }
 
 =item check_and_rebuild_fuzzyfiles

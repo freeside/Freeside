@@ -1,13 +1,12 @@
 package FS::cust_pay;
 
 use strict;
-use vars qw( @ISA $conf $unsuspendauto $smtpmachine $invoice_from );
+use vars qw( @ISA $conf $unsuspendauto );
 use Date::Format;
-use Mail::Header;
-use Mail::Internet 1.44;
 use Business::CreditCard;
 use FS::UID qw( dbh );
 use FS::Record qw( dbh qsearch qsearchs dbh );
+use FS::Misc qw(send_email);
 use FS::cust_bill;
 use FS::cust_bill_pay;
 use FS::cust_main;
@@ -15,14 +14,10 @@ use FS::cust_main;
 @ISA = qw( FS::Record );
 
 #ask FS::UID to run this stuff for us later
-$FS::UID::callback{'FS::cust_pay'} = sub { 
-
+FS::UID->install_callback( sub { 
   $conf = new FS::Conf;
   $unsuspendauto = $conf->exists('unsuspendauto');
-  $smtpmachine = $conf->config('smtpmachine');
-  $invoice_from = $conf->config('invoice_from');
-
-};
+} );
 
 =head1 NAME
 
@@ -265,19 +260,12 @@ sub delete {
   if ( $conf->config('deletepayments') ne '' ) {
 
     my $cust_main = qsearchs('cust_main',{ 'custnum' => $self->custnum });
-    #false laziness w/FS::cust_bill::send & fs_signup_server
-    $ENV{MAILADDRESS} = $invoice_from; #??? well as good as any
-    my $header = new Mail::Header ( [
-      "From: $invoice_from",
-      "To: ". $conf->config('deletepayments'),
-      "Sender: $invoice_from",
-      "Reply-To: $invoice_from",
-      "Date: ". time2str("%a, %d %b %Y %X %z", time),
-      "Subject: FREESIDE NOTIFICATION: Payment deleted",
-    ] );
-    my $message = new Mail::Internet (
-      'Header' => $header,
-      'Body' => [ 
+
+    my $error = send_email(
+      'from'    => $conf->config('invoice_from'), #??? well as good as any
+      'to'      => $conf->config('deletepayments'),
+      'subject' => 'FREESIDE NOTIFICATION: Payment deleted',
+      'body'    => [
         "This is an automatic message from your Freeside installation\n",
         "informing you that the following payment has been deleted:\n",
         "\n",
@@ -291,16 +279,12 @@ sub delete {
         'paybatch: '. $self->paybatch. "\n",
       ],
     );
-    $!=0;
-    $message->smtpsend( Host => $smtpmachine )
-      or $message->smtpsend( Host => $smtpmachine, Debug => 1 )
-        or do {
-          $dbh->rollback if $oldAutoCommit;
-          return "(customer # ". $self->custnum.
-                 ") can't send payment deletion email to ".
-                 $conf->config('deletepayments').
-                 " via server $smtpmachine with SMTP: $!";
-        };
+
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "can't send payment deletion notification: $error";
+    }
+
   }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
@@ -406,7 +390,7 @@ sub unapplied {
 
 =head1 VERSION
 
-$Id: cust_pay.pm,v 1.23 2002-11-19 09:51:58 ivan Exp $
+$Id: cust_pay.pm,v 1.24 2003-05-19 12:00:44 ivan Exp $
 
 =head1 BUGS
 

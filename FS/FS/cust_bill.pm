@@ -2,18 +2,12 @@ package FS::cust_bill;
 
 use strict;
 use vars qw( @ISA $conf $money_char );
-use vars qw( $lpr $invoice_from $smtpmachine );
-use vars qw( $xaction $E_NoErr );
-use vars qw( $bop_processor $bop_login $bop_password $bop_action @bop_options );
-use vars qw( $ach_processor $ach_login $ach_password $ach_action @ach_options );
 use vars qw( $invoice_lines @buf ); #yuck
-use vars qw( $quiet );
 use Date::Format;
-use Mail::Internet 1.44;
-use Mail::Header;
 use Text::Template;
 use FS::UID qw( datasrc );
 use FS::Record qw( qsearch qsearchs );
+use FS::Misc qw( send_email );
 use FS::cust_main;
 use FS::cust_bill_pkg;
 use FS::cust_credit;
@@ -26,46 +20,10 @@ use FS::cust_bill_event;
 @ISA = qw( FS::Record );
 
 #ask FS::UID to run this stuff for us later
-$FS::UID::callback{'FS::cust_bill'} = sub { 
-
+FS::UID->install_callback( sub { 
   $conf = new FS::Conf;
-
   $money_char = $conf->config('money_char') || '$';  
-
-  $lpr = $conf->config('lpr');
-  $invoice_from = $conf->config('invoice_from');
-  $smtpmachine = $conf->config('smtpmachine');
-
-  ( $bop_processor,$bop_login, $bop_password, $bop_action ) = ( '', '', '', '');
-  @bop_options = ();
-  ( $ach_processor,$ach_login, $ach_password, $ach_action ) = ( '', '', '', '');
-  @ach_options = ();
-
-  if ( $conf->exists('business-onlinepayment') ) {
-    ( $bop_processor,
-      $bop_login,
-      $bop_password,
-      $bop_action,
-      @bop_options
-    ) = $conf->config('business-onlinepayment');
-    $bop_action ||= 'normal authorization';
-    ( $ach_processor, $ach_login, $ach_password, $ach_action, @ach_options ) =
-      ( $bop_processor, $bop_login, $bop_password, $bop_action, @bop_options );
-    eval "use Business::OnlinePayment";  
-  }
-
-  if ( $conf->exists('business-onlinepayment-ach') ) {
-    ( $ach_processor,
-      $ach_login,
-      $ach_password,
-      $ach_action,
-      @ach_options
-    ) = $conf->config('business-onlinepayment-ach');
-    $ach_action ||= 'normal authorization';
-    eval "use Business::OnlinePayment";  
-  }
-
-};
+} );
 
 =head1 NAME
 
@@ -373,33 +331,20 @@ sub send {
   if ( grep { $_ ne 'POST' } @invoicing_list or !@invoicing_list  ) { #email
 
     #better to notify this person than silence
-    @invoicing_list = ($invoice_from) unless @invoicing_list;
+    @invoicing_list = ($conf->config('invoice_from')) unless @invoicing_list;
 
-    #false laziness w/FS::cust_pay::delete & fs_signup_server && ::realtime_card
-    #$ENV{SMTPHOSTS} = $smtpmachine;
-    $ENV{MAILADDRESS} = $invoice_from;
-    my $header = new Mail::Header ( [
-      "From: $invoice_from",
-      "To: ". join(', ', grep { $_ ne 'POST' } @invoicing_list ),
-      "Sender: $invoice_from",
-      "Reply-To: $invoice_from",
-      "Date: ". time2str("%a, %d %b %Y %X %z", time),
-      "Subject: Invoice",
-    ] );
-    my $message = new Mail::Internet (
-      'Header' => $header,
-      'Body' => [ @print_text ], #( date)
+    my $error = send_email(
+      'from'    => $conf->config('invoice_from'),
+      'to'      => [ grep { $_ ne 'POST' } @invoicing_list ],
+      'subject' => 'Invoice',
+      'body'    => \@print_text,
     );
-    $!=0;
-    $message->smtpsend( Host => $smtpmachine )
-      or $message->smtpsend( Host => $smtpmachine, Debug => 1 )
-        or return "(customer # ". $self->custnum. ") can't send invoice email".
-                  " to ". join(', ', grep { $_ ne 'POST' } @invoicing_list ).
-                  " via server $smtpmachine with SMTP: $!";
+    return "can't send invoice: $error" if $error;
 
   }
 
   if ( grep { $_ eq 'POST' } @invoicing_list ) { #postal
+    my $lpr = $conf->config('lpr');
     open(LPR, "|$lpr")
       or return "Can't open pipe to $lpr: $!";
     print LPR @print_text;
@@ -610,15 +555,7 @@ for supported processors.
 
 sub realtime_card {
   my $self = shift;
-  $self->realtime_bop(
-    'CC',
-    $bop_processor,
-    $bop_login,
-    $bop_password,
-    $bop_action,
-    \@bop_options,
-    @_
-  );
+  $self->realtime_bop( 'CC', @_ );
 }
 
 =item realtime_ach
@@ -632,15 +569,7 @@ for supported processors.
 
 sub realtime_ach {
   my $self = shift;
-  $self->realtime_bop(
-    'ECHECK',
-    $ach_processor,
-    $ach_login,
-    $ach_password,
-    $ach_action,
-    \@ach_options,
-    @_
-  );
+  $self->realtime_bop( 'ECHECK', @_ );
 }
 
 =item realtime_lec
@@ -654,52 +583,14 @@ for supported processors.
 
 sub realtime_lec {
   my $self = shift;
-  $self->realtime_bop(
-    'LEC',
-    $bop_processor,
-    $bop_login,
-    $bop_password,
-    $bop_action,
-    \@bop_options,
-    @_
-  );
+  $self->realtime_bop( 'LEC', @_ );
 }
 
 sub realtime_bop {
-  my( $self, $method, $processor, $login, $password, $action, $options ) = @_;
-
-  #trim an extraneous blank line
-  pop @$options if scalar(@$options) % 2 && $options->[-1] =~ /^\s*$/;
+  my( $self, $method ) = @_;
 
   my $cust_main = $self->cust_main;
   my $amount = $self->owed;
-
-  my $address = $cust_main->address1;
-  $address .= ", ". $cust_main->address2 if $cust_main->address2;
-
-  my($payname, $payfirst, $paylast);
-  if ( $cust_main->payname && $method ne 'ECHECK' ) {
-    $payname = $cust_main->payname;
-    $payname =~ /^\s*([\w \,\.\-\']*)?\s+([\w\,\.\-\']+)\s*$/
-      or do {
-              #$dbh->rollback if $oldAutoCommit;
-              return "Illegal payname $payname";
-            };
-    ($payfirst, $paylast) = ($1, $2);
-  } else {
-    $payfirst = $cust_main->getfield('first');
-    $paylast = $cust_main->getfield('last');
-    $payname =  "$payfirst $paylast";
-  }
-
-  my @invoicing_list = grep { $_ ne 'POST' } $cust_main->invoicing_list;
-  if ( $conf->exists('emailinvoiceauto')
-       || ( $conf->exists('emailinvoiceonly') && ! @invoicing_list ) ) {
-    push @invoicing_list, $cust_main->all_emails;
-  }
-  my $email = $invoicing_list[0];
-
-  my( $action1, $action2 ) = split(/\s*\,\s*/, $action );
 
   my $description = 'Internet Services';
   if ( $conf->exists('business-onlinepayment-description') ) {
@@ -714,163 +605,12 @@ sub realtime_bop {
         grep { $_->pkgnum } $self->cust_bill_pkg
     );
     $description = eval qq("$dtempl");
-
   }
 
-  my %content;
-  if ( $method eq 'CC' ) { 
-    $content{card_number} = $cust_main->payinfo;
-    $cust_main->paydate =~ /^\d{2}(\d{2})[\/\-](\d+)[\/\-]\d+$/;
-    $content{expiration} = "$2/$1";
-  } elsif ( $method eq 'ECHECK' ) {
-    my($account_number,$routing_code) = $cust_main->payinfo;
-    ( $content{account_number}, $content{routing_code} ) =
-      split('@', $cust_main->payinfo);
-    $content{bank_name} = $cust_main->payname;
-  } elsif ( $method eq 'LEC' ) {
-    $content{phone} = $cust_main->payinfo;
-  }
-  
-  my $transaction =
-    new Business::OnlinePayment( $processor, @$options );
-  $transaction->content(
-    'type'           => $method,
-    'login'          => $login,
-    'password'       => $password,
-    'action'         => $action1,
-    'description'    => $description,
-    'amount'         => $amount,
-    'invoice_number' => $self->invnum,
-    'customer_id'    => $self->custnum,
-    'last_name'      => $paylast,
-    'first_name'     => $payfirst,
-    'name'           => $payname,
-    'address'        => $address,
-    'city'           => $cust_main->city,
-    'state'          => $cust_main->state,
-    'zip'            => $cust_main->zip,
-    'country'        => $cust_main->country,
-    'referer'        => 'http://cleanwhisker.420.am/',
-    'email'          => $email,
-    'phone'          => $cust_main->daytime || $cust_main->night,
-    %content, #after
+  $cust_main->realtime_bop($method, $amount,
+    'description' => $description,
+    'invnum'      => $self->invnum,
   );
-  $transaction->submit();
-
-  if ( $transaction->is_success() && $action2 ) {
-    my $auth = $transaction->authorization;
-    my $ordernum = $transaction->can('order_number')
-                   ? $transaction->order_number
-                   : '';
-
-    #warn "********* $auth ***********\n";
-    #warn "********* $ordernum ***********\n";
-    my $capture =
-      new Business::OnlinePayment( $processor, @$options );
-
-    my %capture = (
-      %content,
-      type           => $method,
-      action         => $action2,
-      login          => $login,
-      password       => $password,
-      order_number   => $ordernum,
-      amount         => $amount,
-      authorization  => $auth,
-      description    => $description,
-    );
-
-    foreach my $field (qw( authorization_source_code returned_ACI                                          transaction_identifier validation_code           
-                           transaction_sequence_num local_transaction_date    
-                           local_transaction_time AVS_result_code          )) {
-      $capture{$field} = $transaction->$field() if $transaction->can($field);
-    }
-
-    $capture->content( %capture );
-
-    $capture->submit();
-
-    unless ( $capture->is_success ) {
-      my $e = "Authorization sucessful but capture failed, invnum #".
-              $self->invnum. ': '.  $capture->result_code.
-              ": ". $capture->error_message;
-      warn $e;
-      return $e;
-    }
-
-  }
-
-  if ( $transaction->is_success() ) {
-
-    my %method2payby = (
-      'CC'     => 'CARD',
-      'ECHECK' => 'CHEK',
-      'LEC'    => 'LECB',
-    );
-
-    my $cust_pay = new FS::cust_pay ( {
-       'invnum'   => $self->invnum,
-       'paid'     => $amount,
-       '_date'     => '',
-       'payby'    => $method2payby{$method},
-       'payinfo'  => $cust_main->payinfo,
-       'paybatch' => "$processor:". $transaction->authorization,
-    } );
-    my $error = $cust_pay->insert;
-    if ( $error ) {
-      # gah, even with transactions.
-      my $e = 'WARNING: Card/ACH debited but database not updated - '.
-              'error applying payment, invnum #' . $self->invnum.
-              " ($processor): $error";
-      warn $e;
-      return $e;
-    } else {
-      return '';
-    }
-  #} elsif ( $options{'report_badcard'} ) {
-  } else {
-
-    my $perror = "$processor error, invnum #". $self->invnum. ': '.
-                 $transaction->result_code. ": ". $transaction->error_message;
-
-    if ( !$quiet && $conf->exists('emaildecline')
-         && grep { $_ ne 'POST' } $cust_main->invoicing_list
-    ) {
-      my @templ = $conf->config('declinetemplate');
-      my $template = new Text::Template (
-        TYPE   => 'ARRAY',
-        SOURCE => [ map "$_\n", @templ ],
-      ) or return "($perror) can't create template: $Text::Template::ERROR";
-      $template->compile()
-        or return "($perror) can't compile template: $Text::Template::ERROR";
-
-      my $templ_hash = { error => $transaction->error_message };
-
-      #false laziness w/FS::cust_pay::delete & fs_signup_server && ::send
-      $ENV{MAILADDRESS} = $invoice_from;
-      my $header = new Mail::Header ( [
-        "From: $invoice_from",
-        "To: ". join(', ', grep { $_ ne 'POST' } $cust_main->invoicing_list ),
-        "Sender: $invoice_from",
-        "Reply-To: $invoice_from",
-        "Date: ". time2str("%a, %d %b %Y %X %z", time),
-        "Subject: Your payment could not be processed",
-      ] );
-      my $message = new Mail::Internet (
-        'Header' => $header,
-        'Body' => [ $template->fill_in(HASH => $templ_hash) ],
-      );
-      $!=0;
-      $message->smtpsend( Host => $smtpmachine )
-        or $message->smtpsend( Host => $smtpmachine, Debug => 1 )
-          or return "($perror) (customer # ". $self->custnum.
-            ") can't send card decline email to ".
-            join(', ', grep { $_ ne 'POST' } $cust_main->invoicing_list ).
-            " via server $smtpmachine with SMTP: $!";
-    }
-  
-    return $perror;
-  }
 
 }
 

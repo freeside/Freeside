@@ -167,13 +167,27 @@ sub payment_info {
   };
 
   my $_date = time;
-  $return{paybatch} = 'webui-MyAccount-$_date-$$-". rand() * 2**32
+  $return{paybatch} = "webui-MyAccount-$_date-$$-". rand() * 2**32;
 
   return { 'error' => '',
            %return,
          };
 
 };
+
+sub make_payment{
+  my $p = shift;
+
+  my $session = $cache->get($p->{'session_id'})
+    or return { 'error' => "Can't resume session" }; #better error message
+
+  my %return;
+
+  my $custnum = $session->{'custnum'};
+
+
+
+}
 
 sub invoice {
   my $p = shift;

@@ -10,6 +10,7 @@ use Date::Format;
 use Business::CreditCard;
 use FS::UID qw( getotaker dbh );
 use FS::Record qw( qsearchs qsearch dbdef );
+use FS::Misc qw( send_email );
 use FS::cust_pkg;
 use FS::cust_bill;
 use FS::cust_bill_pkg;
@@ -1405,6 +1406,221 @@ sub collect {
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
+
+}
+
+=item realtime_bop METHOD AMOUNT [ OPTION => VALUE ... ]
+
+
+Runs a realtime credit card, ACH (electronic check) or phone bill transaction
+via a Business::OnlinePayment realtime gateway.  See
+L<http://420.am/business-onlinepayment> for supported gateways.
+
+Available methods are: I<CC>, I<ECHECK> and I<LEC>
+
+Available options are: I<description>, I<invnum>, I<quiet>
+
+I<description> is a free-text field passed to the gateway.  It defaults to
+"Internet services".
+
+If an I<invnum> is specified, this payment (if sucessful) is applied to the
+specified invoice.  If you don't specify an I<invnum> you might want to
+call the B<apply_payments> method.
+
+I<quiet> can be set true to surpress email decline notices.
+
+(moved from cust_bill) (probably should get realtime_{card,ach,lec} here too)
+
+=cut
+
+sub realtime_bop {
+  my( $self, $method, $amount, %options ) = @_;
+  $options{'description'} ||= 'Internet services';
+
+  #pre-requisites
+  die "Real-time processing not enabled\n"
+    unless $conf->exists('business-onlinepayment');
+  eval "use Business::OnlinePayment";  
+  die $@ if $@;
+
+  #load up config
+  my $bop_config = 'business-onlinepayment';
+  $bop_config .= '-ach'
+    if $method eq 'ECHECK' && $conf->exists($bop_config. '-ach');
+  my ( $processor, $login, $password, $action, @bop_options ) =
+    $conf->config($bop_config);
+  $action ||= 'normal authorization';
+  pop @bop_options if scalar(@bop_options) % 2 && $bop_options[-1] =~ /^\s*$/;
+
+  #massage data
+
+  my $address = $self->address1;
+  $address .= ", ". $self->address2 if $self->address2;
+
+  my($payname, $payfirst, $paylast);
+  if ( $self->payname && $method ne 'ECHECK' ) {
+    $payname = $self->payname;
+    $payname =~ /^\s*([\w \,\.\-\']*)?\s+([\w\,\.\-\']+)\s*$/
+      or return "Illegal payname $payname";
+    ($payfirst, $paylast) = ($1, $2);
+  } else {
+    $payfirst = $self->getfield('first');
+    $paylast = $self->getfield('last');
+    $payname =  "$payfirst $paylast";
+  }
+
+  my @invoicing_list = grep { $_ ne 'POST' } $self->invoicing_list;
+  if ( $conf->exists('emailinvoiceauto')
+       || ( $conf->exists('emailinvoiceonly') && ! @invoicing_list ) ) {
+    push @invoicing_list, $self->all_emails;
+  }
+  my $email = $invoicing_list[0];
+
+  my %content;
+  if ( $method eq 'CC' ) { 
+    $content{card_number} = $self->payinfo;
+    $self->paydate =~ /^\d{2}(\d{2})[\/\-](\d+)[\/\-]\d+$/;
+    $content{expiration} = "$2/$1";
+  } elsif ( $method eq 'ECHECK' ) {
+    my($account_number,$routing_code) = $self->payinfo;
+    ( $content{account_number}, $content{routing_code} ) =
+      split('@', $self->payinfo);
+    $content{bank_name} = $self->payname;
+  } elsif ( $method eq 'LEC' ) {
+    $content{phone} = $self->payinfo;
+  }
+
+  #transaction(s)
+
+  my( $action1, $action2 ) = split(/\s*\,\s*/, $action );
+
+  my $transaction =
+    new Business::OnlinePayment( $processor, @bop_options );
+  $transaction->content(
+    'type'           => $method,
+    'login'          => $login,
+    'password'       => $password,
+    'action'         => $action1,
+    'description'    => $options{'description'},
+    'amount'         => $amount,
+    'invoice_number' => $options{'invnum'},
+    'customer_id'    => $self->custnum,
+    'last_name'      => $paylast,
+    'first_name'     => $payfirst,
+    'name'           => $payname,
+    'address'        => $address,
+    'city'           => $self->city,
+    'state'          => $self->state,
+    'zip'            => $self->zip,
+    'country'        => $self->country,
+    'referer'        => 'http://cleanwhisker.420.am/',
+    'email'          => $email,
+    'phone'          => $self->daytime || $self->night,
+    %content, #after
+  );
+  $transaction->submit();
+
+  if ( $transaction->is_success() && $action2 ) {
+    my $auth = $transaction->authorization;
+    my $ordernum = $transaction->can('order_number')
+                   ? $transaction->order_number
+                   : '';
+
+    my $capture =
+      new Business::OnlinePayment( $processor, @bop_options );
+
+    my %capture = (
+      %content,
+      type           => $method,
+      action         => $action2,
+      login          => $login,
+      password       => $password,
+      order_number   => $ordernum,
+      amount         => $amount,
+      authorization  => $auth,
+      description    => $options{'description'},
+    );
+
+    foreach my $field (qw( authorization_source_code returned_ACI                                          transaction_identifier validation_code           
+                           transaction_sequence_num local_transaction_date    
+                           local_transaction_time AVS_result_code          )) {
+      $capture{$field} = $transaction->$field() if $transaction->can($field);
+    }
+
+    $capture->content( %capture );
+
+    $capture->submit();
+
+    unless ( $capture->is_success ) {
+      my $e = "Authorization sucessful but capture failed, custnum #".
+              $self->custnum. ': '.  $capture->result_code.
+              ": ". $capture->error_message;
+      warn $e;
+      return $e;
+    }
+
+  }
+
+  #result handling
+  if ( $transaction->is_success() ) {
+
+    my %method2payby = (
+      'CC'     => 'CARD',
+      'ECHECK' => 'CHEK',
+      'LEC'    => 'LECB',
+    );
+
+    my $cust_pay = new FS::cust_pay ( {
+       'invnum'   => $self->invnum, #!!!!!!!!
+       'paid'     => $amount,
+       '_date'     => '',
+       'payby'    => $method2payby{$method},
+       'payinfo'  => $self->payinfo,
+       'paybatch' => "$processor:". $transaction->authorization,
+    } );
+    my $error = $cust_pay->insert;
+    if ( $error ) {
+      # gah, even with transactions.
+      my $e = 'WARNING: Card/ACH debited but database not updated - '.
+              'error applying payment, invnum #' . $self->invnum.
+              " ($processor): $error";
+      warn $e;
+      return $e;
+    } else {
+      return '';
+    }
+
+  } else {
+
+    my $perror = "$processor error: ". $transaction->error_message;
+
+    if ( !$options{'quiet'} && $conf->exists('emaildecline')
+         && grep { $_ ne 'POST' } $self->invoicing_list
+    ) {
+      my @templ = $conf->config('declinetemplate');
+      my $template = new Text::Template (
+        TYPE   => 'ARRAY',
+        SOURCE => [ map "$_\n", @templ ],
+      ) or return "($perror) can't create template: $Text::Template::ERROR";
+      $template->compile()
+        or return "($perror) can't compile template: $Text::Template::ERROR";
+
+      my $templ_hash = { error => $transaction->error_message };
+
+      my $error = send_email(
+        'from'    => $conf->config('invoice_from'),
+        'to'      => [ grep { $_ ne 'POST' } $self->invoicing_list ],
+        'subject' => 'Your payment could not be processed',
+        'body'    => [ $template->fill_in(HASH => $templ_hash) ],
+      );
+
+      $perror .= " (also received error sending decline notification: $error)"
+        if $error;
+
+    }
+  
+    return $perror;
+  }
 
 }
 

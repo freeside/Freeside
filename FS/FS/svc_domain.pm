@@ -1,13 +1,11 @@
 package FS::svc_domain;
 
 use strict;
-use vars qw( @ISA $whois_hack $conf $smtpmachine
+use vars qw( @ISA $whois_hack $conf
   @defaultrecords $soadefaultttl $soaemail $soaexpire $soamachine
   $soarefresh $soaretry
 );
 use Carp;
-use Mail::Internet 1.44;
-use Mail::Header;
 use Date::Format;
 use Net::Whois 1.0;
 use FS::Record qw(fields qsearch qsearchs dbh);
@@ -25,8 +23,6 @@ use FS::queue;
 #ask FS::UID to run this stuff for us later
 $FS::UID::callback{'FS::domain'} = sub { 
   $conf = new FS::Conf;
-
-  $smtpmachine = $conf->config('smtpmachine');
 
   @defaultrecords = $conf->config('defaultrecords');
   $soadefaultttl = $conf->config('soadefaultttl');
