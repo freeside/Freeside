@@ -426,11 +426,11 @@ sub AUTOLOAD {
   $field =~ s/.*://;
   if ( defined($value) ) {
     confess "errant AUTOLOAD $field for $self (arg $value)"
-      unless $self->can('setfield');
+      unless $ref($self) && $self->can('setfield');
     $self->setfield($field,$value);
   } else {
     confess "errant AUTOLOAD $field for $self (no args)"
-      unless $self->can('getfield');
+      unless ref($self) && $self->can('getfield');
     $self->getfield($field);
   }    
 }
