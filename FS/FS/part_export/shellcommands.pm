@@ -176,13 +176,24 @@ sub _export_delete {
 
 sub _export_suspend {
   my($self) = shift;
-  $self->_export_command('suspend', @_);
+  $self->_export_command_or_super('suspend', @_);
 }
 
 sub _export_unsuspend {
   my($self) = shift;
-  $self->_export_command('unsuspend', @_);
+  $self->_export_command_or_super('unsuspend', @_);
 }
+
+sub _export_command_or_super {
+  my($self, $action) = (shift, shift);
+  if ( $self->option($action) =~ /^\s*$/ ) {
+    my $method = "SUPER::_export_$action";
+    $self->$method(@_);
+  } else {
+    $self->_export_command($action, @_);
+  }
+};
+
 
 sub _export_command {
   my ( $self, $action, $svc_acct) = (shift, shift, shift);
