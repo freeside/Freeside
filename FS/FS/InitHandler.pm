@@ -17,7 +17,7 @@ sub handler {
   use HTML::Entities;
   use IO::Handle;
   use IO::File;
-  use String::Approx:
+  use String::Approx;
   use HTML::Widgets::SelectLayers 0.02;
   #use FS::UID;
   #use FS::Record;
