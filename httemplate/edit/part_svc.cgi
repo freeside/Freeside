@@ -1,4 +1,4 @@
-<!-- $Id: part_svc.cgi,v 1.7 2001-09-06 20:42:00 ivan Exp $ -->
+<!-- $Id: part_svc.cgi,v 1.8 2001-09-11 00:08:18 ivan Exp $ -->
 <% 
    my $part_svc;
    if ( $cgi->param('error') ) { #error
@@ -147,7 +147,7 @@ foreach my $svcdb ( qw(
 
   my(@fields) = $svcdb eq 'konq_kludge'
                   ? ()
-                  : grep { $_ ne 'svcnum' } fields($svcdb) );
+                  : grep { $_ ne 'svcnum' } fields($svcdb);
   #my($rowspan)=scalar(@rows);
 
   #my($ptmp)="<TD ROWSPAN=$rowspan>$svcdb</TD>";
@@ -180,7 +180,7 @@ function fixup(what) {
     my $part_svc_column = $part_svc->part_svc_column($field);
     my $value = $cgi->param('error')
                   ? $cgi->param("${svcdb}__${field}")
-                  : $$part_svc_column->columnvalue;
+                  : $part_svc_column->columnvalue;
     my $flag = $cgi->param('error')
                  ? $cgi->param("${svcdb}__${field}_flag")
                  : $part_svc_column->columnflag;

@@ -17,7 +17,7 @@ my $new = new FS::part_svc ( {
 
 my $error;
 if ( $svcpart ) {
-  $error = $new->replace($old);
+  $error = $new->replace($old, '1.3-COMPAT');
 } else {
   $error = $new->insert;
   $svcpart=$new->getfield('svcpart');

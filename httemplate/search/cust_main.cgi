@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: cust_main.cgi,v 1.4 2001-08-28 16:58:08 ivan Exp $ -->
+#<!-- $Id: cust_main.cgi,v 1.5 2001-09-11 00:08:18 ivan Exp $ -->
 
 use strict;
 #use vars qw( $conf %ncancelled_pkgs %all_pkgs $cgi @cust_main $sortby );
@@ -253,13 +253,12 @@ sub lastsearch {
 
   } else {
 
-    my(%last);
+    &FS::cust_main::check_and_rebuild_fuzzyfiles;
+    my $all_last = &FS::cust_main::all_last;
 
-    my(@all_last)=map $_->getfield('last'), qsearch('cust_main',{});
-    push @all_last, grep $_, map $_->getfield('ship_last'), qsearch('cust_main',{})
-      if defined dbdef->table('cust_main')->column('ship_last');
+    my %last;
     if ($last_type{'Fuzzy'}) { 
-      foreach ( amatch($last, [ qw(i) ], @all_last) ) {
+      foreach ( amatch($last, [ qw(i) ], @$all_last) ) {
         $last{$_}++; 
       }
     }
@@ -300,13 +299,12 @@ sub companysearch {
 
   } else {
 
-    my(%company);
-    my(@all_company)=map $_->company, qsearch('cust_main',{});
-    push @all_company, grep $_, map $_->getfield('ship_company'), qsearch('cust_main',{})
-      if defined dbdef->table('cust_main')->column('ship_last');
+    &FS::cust_main::check_and_rebuild_fuzzyfiles;
+    my $all_company = &FS::cust_main::all_company;
 
+    my %company;
     if ($company_type{'Fuzzy'}) { 
-      foreach ( amatch($company, [ qw(i) ], @all_company ) ) {
+      foreach ( amatch($company, [ qw(i) ], @$all_company ) ) {
         $company{$_}++;
       }
     }

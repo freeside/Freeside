@@ -109,9 +109,11 @@ require "/usr/local/apache/conf/handler.pl";
 <ul>
 <li>Restrict access to this web interface.  (with <a href="http://httpd.apache.org/docs/misc/FAQ.html#user-authentication">Apache</a>)
 <li>Create the necessary <a href="config.html">configuration files</a>.
-<li>Create the `/usr/local/etc/freeside/counters.<i>datasrc</i>', and 
+<li>Create the `/usr/local/etc/freeside/counters.<i>datasrc</i>', 
+  `/usr/local/etc/freeside/cache.<i>datasrc</i>', and 
   `/usr/local/etc/freeside/export.<i>datasrc</i>' directories for each <i>datasrc</i> (owned by the freeside user).
   <li>As the freeside user, run bin/fs-setup to create the database tables.
+  <li>freeside-queued was installed with the Perl modules.  Start it now and ensure that is run upon system startup.
   <li>Now proceed to the initial <a href="admin.html">administration</a> of your installation.
 </ul>
 </body>

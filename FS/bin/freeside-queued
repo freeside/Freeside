@@ -1,0 +1,145 @@
+#!/usr/bin/perl -w
+
+use strict;
+use Fcntl qw(:flock);
+use POSIX qw(setsid);
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw(qsearchs);
+use FS::queue;
+
+# no autoloading just yet
+use FS::cust_main;
+
+my $pid_file = '/var/run/freeside-queued.pid';
+
+$SIG{CHLD} = sub { wait }; #zombie prevention
+
+my $sigterm = 0;
+my $sigint = 0;
+$SIG{INT} = sub { warn "SIGINT received; shutting down\n"; $sigint++; };
+$SIG{TERM} = sub { warn "SIGTERM received; shutting down\n"; $sigterm++; };
+
+my $user = shift or die &usage;
+
+&daemonize;
+
+my $log_file = "/usr/local/etc/freeside/queuelog.";
+
+$> = $FS::UID::freeside_uid unless $>;
+adminsuidsetup $user;
+
+$log_file = "/usr/local/etc/freeside/queuelog.". $FS::UID::datasrc;
+
+$SIG{__DIE__} = \&_die;
+$SIG{__WARN__} = \&_logmsg;
+
+
+while (1) {
+
+  my $job = qsearchs(
+    'queue',
+    { 'status' => 'new' },
+    '',
+    'ORDER BY jobnum FOR UPDATE LIMIT 1'
+  ) or do {
+    sleep 5;
+    next;
+  };
+
+  my %hash = $job->hash;
+  $hash{'status'} = 'locked';
+  my $ljob = new FS::queue ( \%hash );
+  my $error = $ljob->replace($job);
+  die $error if $error;
+
+  my @args = $ljob->args;
+
+  #fork a child for each job (up to some maximum perhaps?)
+  #single-threaded for now.
+
+  my $eval = "&". $ljob->job. '(@args);';
+  warn "running $eval";
+  eval $eval;
+  if ( $@ ) {
+    warn "job $eval failed";
+    my $hash = $ljob->hash;
+    $hash{'status'} = 'failed';
+    my $fjob = new FS::queue( \%hash );
+    my $error = $fjob->replace($ljob);
+    die $error if $error;
+  } else {
+    $ljob->delete;
+  }
+
+} continue {
+  if ( $sigterm ) {
+    warn "received TERM signal; exiting\n";
+    exit;
+  }
+  if ( $sigint ) {
+    warn "received INT signal; exiting\n";
+    exit;
+  }
+}
+
+
+sub datestamp {
+  time2str("%m%d%Y", time);
+}
+
+sub _die {
+  my $msg = shift;
+  unlink $pid_file if -e $pid_file;
+  _logmsg($msg);
+}
+
+sub _logmsg {
+  chomp( my $msg = shift );
+  my $log = new IO::File ">>$log_file";
+  flock($log, LOCK_EX);
+  seek($log, 0, 2);
+  print $log "[". time2str("%a %b %e %T %Y",time). "] [$$] $msg\n";
+  flock($log, LOCK_UN);
+}
+
+sub daemonize {
+
+  chdir "/" or die "Can't chdir to /: $!";
+  open STDIN, '/dev/null'   or die "Can't read /dev/null: $!";
+  defined(my $pid = fork) or die "Can't fork: $!";
+  if ( $pid ) {
+    print "freeside-queued started with pid $pid\n"; #logging to $log_file\n";
+    exit unless $pid_file;
+    my $pidfh = new IO::File ">$pid_file" or exit;
+    print $pidfh "$pid\n";
+    exit;
+  }
+  open STDOUT, '>/dev/null'
+                            or die "Can't write to /dev/null: $!";
+  setsid                  or die "Can't start a new session: $!";
+  open STDERR, '>&STDOUT' or die "Can't dup stdout: $!";
+
+}
+
+=head1 NAME
+
+freeside-queued - Job queue daemon
+
+=head1 SYNOPSIS
+
+  freeside-queued user
+
+=head1 DESCRIPTION
+
+Job queue daemon.  Should be running at all times.
+
+user: from the mapsecrets file - see config.html from the base documentation
+
+=head1 VERSION
+
+=head1 BUGS
+
+=head1 SEE ALSO
+
+=cut
+

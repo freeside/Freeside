@@ -855,11 +855,28 @@ Untaints arbitrary data.  Be careful.
 =cut
 
 sub ut_anything {
-  my($self,$field)=@_;
+  my( $self, $field ) = @_;
   $self->getfield($field) =~ /^(.*)$/s
     or return "Illegal $field: ". $self->getfield($field);
   $self->setfield($field,$1);
   '';
+}
+
+=item ut_enum COLUMN CHOICES_ARRAYREF
+
+Check/untaint a column, supplying all possible choices, like the "enum" type.
+
+=cut
+
+sub ut_enum {
+  my( $self, $field, $choices ) = @_;
+  foreach my $choice ( @$choices ) {
+    if ( $self->getfield($field) eq $choice ) {
+      $self->setfield($choice);
+      return '';
+    }
+  }
+  return "Illegal (enum) field $field: ". $self->getfield($field);
 }
 
 =item fields [ TABLE ]
@@ -976,7 +993,7 @@ sub DESTROY { return; }
 
 =head1 VERSION
 
-$Id: Record.pm,v 1.26 2001-08-31 09:20:35 ivan Exp $
+$Id: Record.pm,v 1.27 2001-09-11 00:08:18 ivan Exp $
 
 =head1 BUGS
 

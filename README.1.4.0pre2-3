@@ -10,7 +10,28 @@ CREATE TABLE part_svc_column (
 
 CREATE UNIQUE INDEX part_svc_column1 ON part_svc_column ( svcpart, columnname );
 
+CREATE TABLE queue (
+  jobnum int primary key,
+  job varchar not null,
+  _date int not null,
+  status varchar(80) not null
+);
+
+CREATE TABLE queue_arg (
+  argnum int primary key,
+  jobnum int not null,
+  arg varchar null
+);
+
+CREATE INDEX queue_arg1 ON queue_arg ( jobnum );
+
 Run bin/fs-migrate-part_svc
 
 Run bin/dbdef-create
+
+Create the `/usr/local/etc/freeside/cache.<i>datasrc</i>' directory
+  (ownded by the freeside user).
+
+freeside-queued was installed with the Perl modules.  Start it now and ensure
+that it is run upon system startup.
 

@@ -31,6 +31,7 @@ use FS::cust_main_invoice;
 use FS::cust_credit_bill;
 use FS::cust_bill_pay;
 use FS::prepay_credit;
+use FS::queue;
 
 @ISA = qw( FS::Record );
 
@@ -340,6 +341,22 @@ sub insert {
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return "inserting credit (transaction rolled back): $error";
+    }
+  }
+
+  my $queue = new FS::queue { 'job' => 'FS::cust_main::append_fuzzyfiles' };
+  $error = $queue->insert($self->getfield('last'), $self->company);
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return "queueing job (transaction rolled back): $error";
+  }
+
+  if ( defined $self->dbdef_table->column('ship_last') && $self->ship_last ) {
+    $queue = new FS::queue { 'job' => 'FS::cust_main::append_fuzzyfiles' };
+    $error = $queue->insert($self->getfield('last'), $self->company);
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "queueing job (transaction rolled back): $error";
     }
   }
 
@@ -1533,24 +1550,140 @@ sub referral_cust_main {
 
 =over 4
 
-=item rebuild_fuzzyfile
+=item check_and_rebuild_fuzzyfiles
+
+=cut
+
+sub check_and_rebuild_fuzzyfiles {
+  my $dir = $FS::UID::conf_dir. "cache.". $FS::UID::datasrc;
+  -e "$dir/cust_main.last" && -e "$dir/cust_main.company"
+    or &rebuild_fuzzyfiles;
+}
+
+=item rebuild_fuzzyfiles
 
 =cut
 
 sub rebuild_fuzzyfiles {
+
+  use Fcntl qw(:flock);
+
+  my $dir = $FS::UID::conf_dir. "cache.". $FS::UID::datasrc;
+
+  #last
+
+  open(LASTLOCK,">>$dir/cust_main.last")
+    or die "can't open $dir/cust_main.last: $!";
+  flock(LASTLOCK,LOCK_EX)
+    or die "can't lock $dir/cust_main.last: $!";
+
   my @all_last = map $_->getfield('last'), qsearch('cust_main', {});
   push @all_last,
                  grep $_, map $_->getfield('ship_last'), qsearch('cust_main',{})
-      if defined dbdef->table('cust_main')->column('ship_last');
-#  open(
+    if defined dbdef->table('cust_main')->column('ship_last');
+
+  open (LASTCACHE,">$dir/cust_main.last.tmp")
+    or die "can't open $dir/cust_main.last.tmp: $!";
+  print LASTCACHE join("\n", @all_last), "\n";
+  close LASTCACHE or die "can't close $dir/cust_main.last.tmp: $!";
+
+  rename "$dir/cust_main.last.tmp", "$dir/cust_main.last";
+  close LASTLOCK;
+
+  #company
+
+  open(COMPANYLOCK,">>$dir/cust_main.company")
+    or die "can't open $dir/cust_main.company: $!";
+  flock(COMPANYLOCK,LOCK_EX)
+    or die "can't lock $dir/cust_main.company: $!";
+
+  my @all_company = grep $_ ne '', map $_->company, qsearch('cust_main',{});
+  push @all_company,
+       grep $_ ne '', map $_->ship_company, qsearch('cust_main', {})
+    if defined dbdef->table('cust_main')->column('ship_last');
+
+  open (COMPANYCACHE,">$dir/cust_main.company.tmp")
+    or die "can't open $dir/cust_main.company.tmp: $!";
+  print COMPANYCACHE join("\n", @all_company), "\n";
+  close COMPANYCACHE or die "can't close $dir/cust_main.company.tmp: $!";
+
+  rename "$dir/cust_main.company.tmp", "$dir/cust_main.company";
+  close COMPANYLOCK;
 
 }
 
-=back
+=item all_last
+
+=cut
+
+sub all_last {
+  my $dir = $FS::UID::conf_dir. "cache.". $FS::UID::datasrc;
+  open(LASTCACHE,"<$dir/cust_main.last")
+    or die "can't open $dir/cust_main.last: $!";
+  my @array = split(/\n/, <LASTCACHE> );
+  close LASTCACHE;
+  \@array;
+}
+
+=item all_company
+
+=cut
+
+sub all_company {
+  my $dir = $FS::UID::conf_dir. "cache.". $FS::UID::datasrc;
+  open(COMPANYCACHE,"<$dir/cust_main.company")
+    or die "can't open $dir/cust_main.last: $!";
+  my @array = split(/\n/, <COMPANYCACHE> );
+  close COMPANYCACHE;
+  \@array;
+}
+
+=item append_fuzzyfiles LASTNAME COMPANY
+
+=cut
+
+sub append_fuzzyfiles {
+  my( $last, $company ) = @_;
+
+  use Fcntl qw(:flock);
+
+  my $dir = $FS::UID::conf_dir. "cache.". $FS::UID::datasrc;
+
+  if ( $last ) {
+
+    open(LAST,">>$dir/cust_main.last")
+      or die "can't open $dir/cust_main.last: $!";
+    flock(LAST,LOCK_EX)
+      or die "can't lock $dir/cust_main.last: $!";
+
+    print LAST "$last\n";
+
+    flock(LAST,LOCK_UN)
+      or die "can't unlock $dir/cust_main.last: $!";
+    close LAST;
+  }
+
+  if ( $company ) {
+
+    open(COMPANY,">>$dir/cust_main.company")
+      or die "can't open $dir/cust_main.company: $!";
+    flock(COMPANY,LOCK_EX)
+      or die "can't lock $dir/cust_main.company: $!";
+
+    print COMPANY "$company\n";
+
+    flock(COMPANY,LOCK_UN)
+      or die "can't unlock $dir/cust_main.company: $!";
+
+    close COMPANY;
+  }
+
+  1;
+}
 
 =head1 VERSION
 
-$Id: cust_main.pm,v 1.29 2001-09-03 22:07:38 ivan Exp $
+$Id: cust_main.pm,v 1.30 2001-09-11 00:08:18 ivan Exp $
 
 =head1 BUGS
 

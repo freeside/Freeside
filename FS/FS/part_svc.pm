@@ -117,7 +117,7 @@ sub insert {
         $error = $part_svc_column->insert;
       }
     } else {
-      $error = $part_svc_column->delete;
+      $error = $previous ? $previous->delete : '';
     }
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
@@ -155,7 +155,64 @@ sub replace {
   return "Can't change svcdb for an existing service definition!"
     unless $old->svcdb eq $new->svcdb;
 
-  $new->SUPER::replace( $old );
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $error = $new->SUPER::replace( $old );
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  if ( @_ && $_[0] eq '1.3-COMPAT' ) {
+    my $svcdb = $new->svcdb;
+    foreach my $field (
+      grep { $_ ne 'svcnum'
+             && defined( $new->getfield($svcdb.'__'.$_.'_flag') )
+           } fields($svcdb)
+    ) {
+      my $part_svc_column = $new->part_svc_column($field);
+      my $previous = qsearchs('part_svc_column', {
+        'svcpart'    => $new->svcpart,
+        'columnname' => $field,
+      } );
+
+      my $flag = $new->getfield($svcdb.'__'.$field.'_flag');
+      if ( uc($flag) =~ /^([DF])$/ ) {
+        $part_svc_column->setfield('columnflag', $1);
+        $part_svc_column->setfield('columnvalue',
+          $new->getfield($svcdb.'__'.$field)
+        );
+        if ( $previous ) {
+          $error = $part_svc_column->replace($previous);
+        } else {
+          $error = $part_svc_column->insert;
+        }
+      } else {
+        $error = $previous ? $previous->delete : '';
+      }
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
+      }
+    }
+  } else {
+    $dbh->rollback if $oldAutoCommit;
+    return 'non-1.3-COMPAT interface not yet written';
+    #not yet implemented
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+  '';
 }
 
 =item check
@@ -232,7 +289,7 @@ sub part_svc_column {
 
 =head1 VERSION
 
-$Id: part_svc.pm,v 1.3 2001-09-06 20:41:59 ivan Exp $
+$Id: part_svc.pm,v 1.4 2001-09-11 00:08:18 ivan Exp $
 
 =head1 BUGS
 

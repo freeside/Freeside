@@ -43,6 +43,14 @@
         <li>otaker - order taker
         <li>reason
       </ul>
+    <li><a name="cust_credit_bill" href="man/FS/cust_credit_bill.html">cust_credit_bill</a> - Credit invoice application.  Links a credit to an invoice.
+      <ul>
+        <li>creditbillnum - primary key
+        <li>crednum - <a href="#cust_credit">credit</a> being applied
+        <li>invnum - <a href="#cust_bill">invoice</a> to which credit is applied
+        <li>amount - amount applied
+        <li>_date
+      </ul>
     <li><a name="cust_main" href="man/FS/cust_main.html">cust_main</a> - Customers
       <ul>
         <li>custnum - primary key
@@ -81,6 +89,8 @@
         <li>payname - billing name (name on card)
         <li>tax - tax exempt, Y or null
         <li>otaker - order taker
+        <li>referral_custnum
+        <li>comments
       </ul>
       (columns in <i>italics</i> are optional)
     <li><a name="cust_main_invoice" href="man/FS/cust_main_invoice.html">cust_main_invoice</a> - Invoice destinations for email invoices.  Note that a customer can have many email destinations for their invoice (either literal or via svcnum), but only one postal destination.
@@ -301,6 +311,19 @@
       <ul>
         <li>typenum - <a href="#agent_type">agent type</a>
         <li>pkgpart - <a href="#part_pkg">Package definition</a>
+      </ul>
+    <li><a name="queue" href="man/FS/queue.html">queue</a> - job queue
+      <ul>
+        <li>jobnum - primary key
+        <li>job
+        <li>_date
+        <li>status
+      </ul>
+    <li><a name="queue_arg" href="man/FS/queue_arg.html">queue_arg</a> - job arguments
+      <ul>
+        <li>argnum - primary key
+        <li>jobnum - <a href="#queue">job</a>
+        <li>arg - argument
       </ul>
   </ul>
 </body>

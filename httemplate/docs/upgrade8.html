@@ -103,6 +103,19 @@ CREATE TABLE part_svc_column (
   columnflag char(1) null
 );
 
+CREATE TABLE queue (
+  jobnum int primary key,
+  job varchar not null,
+  _date int not null,
+  status varchar(80) not null
+);
+
+CREATE TABLE queue_arg (
+  argnum int primary key,
+  jobnum int not null,
+  arg varchar null
+);
+CREATE INDEX queue_arg1 ON queue_arg ( jobnum );
 
 ALTER TABLE svc_acct ADD domsvc integer NOT NULL;
 ALTER TABLE svc_domain ADD catchall integer NULL;
@@ -217,5 +230,9 @@ ALTER TABLE cust_refund DROP COLUMN crednum;
 </pre></font>
 </td></tr></table>
   <li><b>IMPORTANT: After applying the second set of database changes</b>, run bin/dbdef-create again.
-  <li>create the conf.dbsrc/user_policy as appropriate for your site
+  <li>create the <a href="config.html#username_policy">user_policy configuration file</a> as appropriate for your site.
+  <li>Create the `/usr/local/etc/freeside/cache.<i>datasrc</i>' directory
+      (ownded by the freeside user).
+  <li>freeside-queued was installed with the Perl modules.  Start it now and ensure that is run upon system startup.
+</ul>
 </body>

@@ -63,8 +63,8 @@ sub handler
       use FS::CGI qw(header menubar popurl table);
 
       $cgi = new CGI;
-      #&cgisuidsetup($cgi);
-      &cgisuidsetup($r);
+      &cgisuidsetup($cgi);
+      #&cgisuidsetup($r);
       $p = popurl(2);
     }
     $r->content_type('text/html');

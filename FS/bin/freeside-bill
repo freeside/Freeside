@@ -1,3 +1,5 @@
+#!/usr/bin/perl -w
+# don't take any world-facing input
 #!/usr/bin/perl -Tw
 
 use strict;
@@ -121,7 +123,7 @@ customers.  Otherwise, bills all customers.
 
 =head1 VERSION
 
-$Id: freeside-bill,v 1.8 2001-09-03 22:07:39 ivan Exp $
+$Id: freeside-bill,v 1.9 2001-09-11 00:08:18 ivan Exp $
 
 =head1 BUGS
 

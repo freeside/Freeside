@@ -93,7 +93,7 @@ L<FS::cust_refund> - Refund class
 
 L<FS::cust_credit_refund> - Refund application class
 
-L<FS::cust_credit_bill> - Refund invoice application class
+L<FS::cust_credit_bill> - Credit invoice application class
 
 L<FS::cust_pay_batch> - Credit card transaction queue class
 
@@ -104,6 +104,10 @@ L<FS::nas> - Network Access Server class
 L<FS::port> - NAS port class
 
 L<FS::session> - User login session class
+
+L<FS::queue> - Job queue
+
+L<FS::queue_arg> - Job arguments
 
 =head2 User Interface classes (under development; not yet usable)
 
@@ -135,7 +139,7 @@ The main documentation is in htdocs/docs.
 
 =head1 VERSION
 
-$Id: FS.pm,v 1.7 2001-09-06 20:41:59 ivan Exp $
+$Id: FS.pm,v 1.8 2001-09-11 00:08:18 ivan Exp $
 
 =head1 SUPPORT
 

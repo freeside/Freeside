@@ -1,4 +1,4 @@
-<!-- $Id: part_svc.cgi,v 1.4 2001-09-06 20:41:59 ivan Exp $ -->
+<!-- $Id: part_svc.cgi,v 1.5 2001-09-11 00:08:18 ivan Exp $ -->
 <%= header('Service Definition Listing', menubar( 'Main Menu' => $p) ) %>
 
     Services are items you offer to your customers.<BR><BR>
@@ -35,7 +35,7 @@
      foreach my $field ( @fields ) {
        my $flag = $part_svc->part_svc_column($field)->columnflag;
 %>
-     <%= $n1 %><TD><%= $row %></TD><TD>
+     <%= $n1 %><TD><%= $field %></TD><TD>
 
 <%     if ( $flag eq "D" ) { print "Default"; }
          elsif ( $flag eq "F" ) { print "Fixed"; }

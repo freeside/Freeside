@@ -6,6 +6,7 @@ README
 bin/freeside-bill
 bin/freeside-email
 bin/freeside-print-batch
+bin/freeside-queued
 FS.pm
 FS/CGI.pm
 FS/Conf.pm
@@ -51,6 +52,8 @@ FS/svc_www.pm
 FS/CGIwrapper.pm
 FS/svc_forward.pm
 FS/raddb.pm
+FS/queue.pm
+FS/queue_arg.pm
 t/agent.t
 t/agent_type.t
 t/CGI.t
@@ -89,5 +92,7 @@ t/svc_domain.t
 t/svc_forward.t
 t/svc_www.t
 t/type_pkgs.t
+t/queue.t
+t/queue_arg.t
 t/UID.t
 t/raddb.t

@@ -33,12 +33,14 @@ FS::cust_credit_bill - Object methods for cust_credit_bill records
 =head1 DESCRIPTION
 
 An FS::cust_credit_bill object represents application of a credit (see
-L<FS::cust_credit>) to a customer bill (see L<FS::cust_bill>).  FS::cust_credit
+L<FS::cust_credit>) to an invoice (see L<FS::cust_bill>).  FS::cust_credit
 inherits from FS::Record.  The following fields are currently supported:
 
 =over 4
 
-=item crednum - primary key; credit being applied 
+=item creditbillnum - primary key
+
+=item crednum - credit being applied 
 
 =item invnum - invoice to which credit is applied (see L<FS::cust_bill>)
 
@@ -119,7 +121,7 @@ sub check {
 
   $self->_date(time) unless $self->_date;
 
-  return "Cannot apply more than remaining value of credit memo"
+  return "Cannot apply more than remaining value of credit"
     unless $self->amount <= $cust_credit->credited;
 
   return "Cannot apply more than remaining value of invoice"
@@ -143,7 +145,7 @@ sub cust_credit {
 
 =head1 VERSION
 
-$Id: cust_credit_bill.pm,v 1.4 2001-09-02 07:49:52 ivan Exp $
+$Id: cust_credit_bill.pm,v 1.5 2001-09-11 00:08:18 ivan Exp $
 
 =head1 BUGS
 
