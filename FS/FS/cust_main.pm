@@ -1735,11 +1735,6 @@ sub realtime_bop {
   eval "use Business::OnlinePayment";  
   die $@ if $@;
 
-  #overrides
-  $self->set( $_ => $options{$_} )
-    foreach grep { exists($options{$_}) }
-            qw( payname address1 address2 city state zip payinfo paydate paycvv);
-
   #load up config
   my $bop_config = 'business-onlinepayment';
   $bop_config .= '-ach'
@@ -1754,13 +1749,20 @@ sub realtime_bop {
 
   #massage data
 
-  my $address = $self->address1;
-  $address .= ", ". $self->address2 if $self->address2;
+  my $address = exists($options{'address1'})
+                    ? $options{'address1'}
+                    : $self->address1;
+  my $address2 = exists($options{'address2'})
+                    ? $options{'address2'}
+                    : $self->address2;
+  $address .= ", ". $address2 if length($address2);
 
+  my $o_payname = exists($options{'payname'})
+                    ? $options{'payname'}
+                    : $self->payname;
   my($payname, $payfirst, $paylast);
-  if ( $self->payname && $method ne 'ECHECK' ) {
-    $payname = $self->payname;
-    $payname =~ /^\s*([\w \,\.\-\']*)?\s+([\w\,\.\-\']+)\s*$/
+  if ( $o_payname && $method ne 'ECHECK' ) {
+    ($payname = $o_payname) =~ /^\s*([\w \,\.\-\']*)?\s+([\w\,\.\-\']+)\s*$/
       or return "Illegal payname $payname";
     ($payfirst, $paylast) = ($1, $2);
   } else {
@@ -1776,33 +1778,46 @@ sub realtime_bop {
   }
   my $email = $invoicing_list[0];
 
+  my $payinfo = exists($options{'payinfo'})
+                  ? $options{'payinfo'}
+                  : $self->payinfo;
+
   my %content = ();
   if ( $method eq 'CC' ) { 
 
-    $content{card_number} = $self->payinfo;
-    $self->paydate =~ /^\d{2}(\d{2})[\/\-](\d+)[\/\-]\d+$/;
+    $content{card_number} = $payinfo;
+    my $paydate = exists($options{'paydate'})
+                    ? $options{'paydate'}
+                    : $self->paydate;
+    $paydate =~ /^\d{2}(\d{2})[\/\-](\d+)[\/\-]\d+$/;
     $content{expiration} = "$2/$1";
 
-    $content{cvv2} = $self->paycvv
-      if defined $self->dbdef_table->column('paycvv')
-         && length($self->paycvv);
+    if ( defined $self->dbdef_table->column('paycvv') ) {
+      my $paycvv = exists($options{'paycvv'})
+                     ? $options{'paycvv'}
+                     : $self->paycvv;
+      $content{cvv2} = $self->paycvv
+        if length($paycvv);
+    }
 
     $content{recurring_billing} = 'YES'
       if qsearch('cust_pay', { 'custnum' => $self->custnum,
                                'payby'   => 'CARD',
-                               'payinfo' => $self->payinfo, } );
+                               'payinfo' => $payinfo,
+                             } );
 
   } elsif ( $method eq 'ECHECK' ) {
-    my($account_number,$routing_code) = $self->payinfo;
     ( $content{account_number}, $content{routing_code} ) =
-      split('@', $self->payinfo);
-    $content{bank_name} = $self->payname;
+      split('@', $payinfo);
+    $content{bank_name} = $o_payname;
     $content{account_type} = 'CHECKING';
     $content{account_name} = $payname;
     $content{customer_org} = $self->company ? 'B' : 'I';
-    $content{customer_ssn} = $self->ss;
+    $content{customer_ssn} = exists($options{'ss'})
+                               ? $options{'ss'}
+                               : $self->ss;
   } elsif ( $method eq 'LEC' ) {
-    $content{phone} = $self->payinfo;
+    $content{phone} = $payinfo;
   }
 
   #transaction(s)
@@ -1823,10 +1838,18 @@ sub realtime_bop {
     'first_name'     => $payfirst,
     'name'           => $payname,
     'address'        => $address,
-    'city'           => $self->city,
-    'state'          => $self->state,
-    'zip'            => $self->zip,
-    'country'        => $self->country,
+    'city'           => ( exists($options{'city'})
+                            ? $options{'city'}
+                            : $self->city          ),
+    'state'          => ( exists($options{'state'})
+                            ? $options{'state'}
+                            : $self->state          ),
+    'zip'            => ( exists($options{'zip'})
+                            ? $options{'zip'}
+                            : $self->zip          ),
+    'country'        => ( exists($options{'country'})
+                            ? $options{'country'}
+                            : $self->country          ),
     'referer'        => 'http://cleanwhisker.420.am/',
     'email'          => $email,
     'phone'          => $self->daytime || $self->night,
@@ -1880,12 +1903,9 @@ sub realtime_bop {
   # correctly
   if ( defined $self->dbdef_table->column('paycvv')
        && length($self->paycvv)
-       && ! grep { $_ eq cardtype($self->payinfo) } $conf->config('cvv-save')
-       && ! length($options{'paycvv'})
+       && ! grep { $_ eq cardtype($payinfo) } $conf->config('cvv-save')
   ) {
-    my $new = new FS::cust_main { $self->hash };
-    $new->paycvv('');
-    my $error = $new->replace($self);
+    my $error = $self->remove_cvv;
     if ( $error ) {
       warn "error removing cvv: $error\n";
     }
@@ -1911,7 +1931,7 @@ sub realtime_bop {
        'paid'     => $amount,
        '_date'     => '',
        'payby'    => $method2payby{$method},
-       'payinfo'  => $self->payinfo,
+       'payinfo'  => $payinfo,
        'paybatch' => $paybatch,
     } );
     my $error = $cust_pay->insert;
@@ -1967,6 +1987,24 @@ sub realtime_bop {
 
 }
 
+=item remove_cvv
+
+Removes the I<paycvv> field from the database directly.
+
+If there is an error, returns the error, otherwise returns false.
+
+=cut
+
+sub remove_cvv {
+  my $self = shift;
+  my $sth = dbh->prepare("UPDATE cust_main SET paycvv = '' WHERE custnum = ?")
+    or return dbh->errstr;
+  $sth->execute($self->custnum)
+    or return $sth->errstr;
+  $self->paycvv('');
+  '';
+}
+
 =item realtime_refund_bop METHOD [ OPTION => VALUE ... ]
 
 Refunds a realtime credit card, ACH (electronic check) or phone bill transaction
@@ -2014,11 +2052,6 @@ sub realtime_refund_bop {
     unless $conf->exists('business-onlinepayment');
   eval "use Business::OnlinePayment";  
   die $@ if $@;
-
-  ##overrides
-  #$self->set( $_ => $options{$_} )
-  #  foreach grep { exists($options{$_}) }
-  #          qw( payname address1 address2 city state zip payinfo paydate paycvv);
 
   #load up config
   my $bop_config = 'business-onlinepayment';
@@ -2110,7 +2143,6 @@ sub realtime_refund_bop {
     #                           'payinfo' => $self->payinfo, } );
 
   } elsif ( $method eq 'ECHECK' ) {
-    my($account_number,$routing_code) = $self->payinfo;
     ( $content{account_number}, $content{routing_code} ) =
       split('@', $self->payinfo);
     $content{bank_name} = $self->payname;
