@@ -129,7 +129,7 @@ sub checkdest {
   } elsif ( $self->dest =~ /^(\d+)$/ ) {
     return "Unknown local account (specified by svcnum: ". $self->dest. ")"
       unless qsearchs( 'svc_acct', { 'svcnum' => $self->dest } );
-  } elsif ( $self->dest =~ /^([\w\.\-\&]+)\@(([\w\.\-]+\.)+\w+)$/ ) {
+  } elsif ( $self->dest =~ /^([\w\.\-\&\+]+)\@(([\w\.\-]+\.)+\w+)$/ ) {
     my($user, $domain) = ($1, $2);
 #    if ( $domain eq $mydomain ) {
 #      my $svc_acct = qsearchs( 'svc_acct', { 'username' => $user } );
@@ -167,7 +167,7 @@ sub address {
 
 =head1 VERSION
 
-$Id: cust_main_invoice.pm,v 1.9 2002-02-10 16:49:50 ivan Exp $
+$Id: cust_main_invoice.pm,v 1.10 2002-02-10 17:02:37 ivan Exp $
 
 =head1 BUGS
 
