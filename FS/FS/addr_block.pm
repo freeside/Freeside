@@ -176,11 +176,12 @@ sub next_free_addr {
   my $conf = new FS::Conf;
   my @excludeaddr = $conf->config('exclude_ip_addr');
   
-  my @used = (
-    map { $_->NetAddr->addr } 
-      ($self, 
-       qsearch('svc_broadband', { blocknum => $self->blocknum }) ),
-     @excludeaddr );
+my @used =
+( (map { $_->NetAddr->addr }
+    ($self,
+     qsearch('svc_broadband', { blocknum => $self->blocknum }))
+  ), @excludeaddr
+);
 
   my @free = $self->NetAddr->hostenum;
   while (my $ip = shift @free) {
