@@ -30,8 +30,7 @@ FS::UID - Subroutines for database login and assorted other stuff
 
   adminsuidsetup;
 
-  $cgi = new CGI::Base;
-  $cgi->get;
+  $cgi = new CGI;
   $dbh = cgisuidsetup($cgi);
 
   $dbh = dbh;
@@ -78,15 +77,21 @@ sub adminsuidsetup {
 
   $dbh;
 }
-=item cgisuidsetup CGI::Base_OBJECT
 
-Stores the CGI::Base_OBJECT for later use.
+=item cgisuidsetup CGI_object
+
+Stores the CGI (see L<CGI>) object for later use. (CGI::Base is depriciated)
 Runs adminsuidsetup.
 
 =cut
 
 sub cgisuidsetup {
   $cgi=$_[0];
+  if ( $cgi->isa('CGI::Base') ) {
+    carp "Use of CGI::Base is depriciated";
+  } elsif ( ! $cgi->isa('CGI') ) {
+    croak "Pass a CGI object to cgisuidsetup!";
+  }
   adminsuidsetup;
 }
 
@@ -127,10 +132,13 @@ or 'freeside'.
 =cut
 
 sub getotaker {
-  if ($cgi && defined $cgi->var('REMOTE_USER')) {
+  if ( $cgi && $cgi->can('var') && defined $cgi->var('REMOTE_USER')) {
+    carp "Use of CGI::Base is depriciated";
     return $cgi->var('REMOTE_USER'); #for now
+  } elsif ( $cgi && $cgi->can('remote_user') && defined $cgi->remote_user ) {
+    return $cgi->remote_user;
   } else {
-    'freeside';
+    return 'freeside';
   }
 }
 
@@ -175,7 +183,7 @@ cgisuidsetup will go away as well.
 
 =head1 SEE ALSO
 
-L<FS::Record>,  L<CGI::Base>, L<DBI>
+L<FS::Record>, L<CGI>, L<DBI>
 
 =head1 HISTORY
 
@@ -202,6 +210,12 @@ added ChopBlanks to DBI call (see man DBI) ivan@sisd.com 98-aug-16
 pod, use FS::Conf, implemented cgisuidsetup as adminsuidsetup,
 inlined suidsetup
 ivan@sisd.com 98-sep-12
+
+$Log: UID.pm,v $
+Revision 1.2  1998-11-08 09:38:43  ivan
+cgisuidsetup complains if you pass it a isa CGI::Base instead of an isa CGI
+(first step in migrating from CGI-modules to CGI.pm)
+
 
 =cut
 
