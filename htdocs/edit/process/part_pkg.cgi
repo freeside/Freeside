@@ -1,5 +1,7 @@
 #!/usr/bin/perl -Tw
 #
+# $Id: part_pkg.cgi,v 1.2 1998-11-15 13:16:15 ivan Exp $
+#
 # process/part_pkg.cgi: Edit package definitions (process form)
 #
 # ivan@sisd.com 97-dec-10
@@ -13,29 +15,40 @@
 # Added `|| 0 ' when getting quantity off web page ivan@sisd.com 98-jun-4
 #
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
+#
+# $Log: part_pkg.cgi,v $
+# Revision 1.2  1998-11-15 13:16:15  ivan
+# first pass as per-user custom pricing
+#
 
 use strict;
-use CGI::Request;
+use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
+use FS::CGI qw(eidiot popurl);
 use FS::Record qw(qsearch qsearchs);
 use FS::part_pkg qw(fields);
 use FS::pkg_svc;
-use FS::CGI qw(eidiot);
+use FS::cust_pkg;
 
-my($req)=new CGI::Request; # create form object
+my($cgi)=new CGI;
+&cgisuidsetup($cgi);
 
-&cgisuidsetup($req->cgi);
-
-my($pkgpart)=$req->param('pkgpart');
+my($pkgpart)=$cgi->param('pkgpart');
 
 my($old)=qsearchs('part_pkg',{'pkgpart'=>$pkgpart}) if $pkgpart;
 
 my($new)=create FS::part_pkg ( {
   map {
-    $_, $req->param($_);
+    $_, $cgi->param($_);
   } fields('part_pkg')
 } );
+
+local $SIG{HUP} = 'IGNORE';
+local $SIG{INT} = 'IGNORE';
+local $SIG{QUIT} = 'IGNORE';
+local $SIG{TERM} = 'IGNORE';
+local $SIG{TSTP} = 'IGNORE';
 
 if ( $pkgpart ) {
   my($error)=$new->replace($old);
@@ -50,8 +63,8 @@ my($part_svc);
 foreach $part_svc (qsearch('part_svc',{})) {
 # don't update non-changing records in part_svc (causing harmless but annoying
 # "Records identical" errors). ivan@sisd.com 98-jan-19
-  #my($quantity)=$req->param('pkg_svc'. $part_svc->getfield('svcpart')),
-  my($quantity)=$req->param('pkg_svc'. $part_svc->svcpart) || 0,
+  #my($quantity)=$cgi->param('pkg_svc'. $part_svc->getfield('svcpart')),
+  my($quantity)=$cgi->param('pkg_svc'. $part_svc->svcpart) || 0,
   my($old_pkg_svc)=qsearchs('pkg_svc',{
     'pkgpart'  => $pkgpart,
     'svcpart'  => $part_svc->getfield('svcpart'),
@@ -61,7 +74,7 @@ foreach $part_svc (qsearch('part_svc',{})) {
   my($new_pkg_svc)=create FS::pkg_svc({
     'pkgpart'  => $pkgpart,
     'svcpart'  => $part_svc->getfield('svcpart'),
-    #'quantity' => $req->param('pkg_svc'. $part_svc->getfield('svcpart')),
+    #'quantity' => $cgi->param('pkg_svc'. $part_svc->getfield('svcpart')),
     'quantity' => $quantity, 
   });
   if ($old_pkg_svc) {
@@ -73,7 +86,18 @@ foreach $part_svc (qsearch('part_svc',{})) {
   }
 }
 
-#$req->cgi->redirect("../../view/part_pkg.cgi?$pkgpart");
-#$req->cgi->redirect("../../edit/part_pkg.cgi?$pkgpart");
-$req->cgi->redirect("../../browse/part_pkg.cgi");
+unless ( $cgi->param('pkgnum') =~ /^(\d+)$/ ) {
+  #$req->cgi->redirect("../../view/part_pkg.cgi?$pkgpart");
+  #$req->cgi->redirect("../../edit/part_pkg.cgi?$pkgpart");
+  $cgi->redirect("../../browse/part_pkg.cgi");
+} else {
+  my($old_cust_pkg) = qsearchs( 'cust_pkg', { 'pkgnum' => $1 } );
+  my %hash = $old_cust_pkg->hash;
+  $hash{'pkgpart'} = $pkgpart;
+  my($new_cust_pkg) = create FS::cust_pkg \%hash;
+  my $error = $new_cust_pkg->replace($old_cust_pkg);
+  eidiot "Error modifying cust_pkg record: $error\n" if $error;
+  print $cgi->redirect(popurl(3). "/view/cust_main.cgi?". $new_cust_pkg->custnum);
+}
+
 

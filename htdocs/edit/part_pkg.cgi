@@ -1,5 +1,7 @@
 #!/usr/bin/perl -Tw
 #
+# $Id: part_pkg.cgi,v 1.2 1998-11-15 13:14:55 ivan Exp $
+#
 # part_pkg.cgi: Add/Edit package (output form)
 #
 # ivan@sisd.com 97-dec-10
@@ -9,37 +11,63 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # use FS::CGI, added inline documentation ivan@sisd.com 98-jul-12
+#
+# $Log: part_pkg.cgi,v $
+# Revision 1.2  1998-11-15 13:14:55  ivan
+# first pass as per-user custom pricing
+#
 
 use strict;
-use CGI::Base;
+use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
 use FS::Record qw(qsearch qsearchs);
 use FS::part_pkg;
+use FS::part_svc;
 use FS::pkg_svc;
 use FS::CGI qw(header menubar);
 
-my($cgi) = new CGI::Base;
-$cgi->get;
+my($cgi) = new CGI;
 
 &cgisuidsetup($cgi);
 
-SendHeaders(); # one guess.
+if ( $cgi->param('clone') =~ /^(\d+)$/ ) {
+  $cgi->param('clone', $1);
+} else {
+  $cgi->param('clone', '');
+}
+if ( $cgi->param('pkgnum') =~ /^(\d+)$/ ) {
+  $cgi->param('pkgnum', $1);
+} else {
+  $cgi->param('pkgnum', '');
+}
 
 my($part_pkg,$action);
-if ( $cgi->var('QUERY_STRING') =~ /^(\d+)$/ ) { #editing
-  $part_pkg=qsearchs('part_pkg',{'pkgpart'=>$1});
+if ( $cgi->param('clone') ) {
+  $action='Custom Pricing';
+  my $old_part_pkg =
+    qsearchs('part_pkg', { 'pkgpart' => $cgi->param('clone') } );
+  $part_pkg = $old_part_pkg->clone;
+} elsif ( $cgi->keywords =~ /^(\d+)$/ ) {
   $action='Edit';
-} else { #adding
-  $part_pkg=create FS::part_pkg {};
+  $part_pkg=qsearchs('part_pkg',{'pkgpart'=>$1});
+} else {
   $action='Add';
+  $part_pkg=create FS::part_pkg {};
 }
 my($hashref)=$part_pkg->hashref;
 
-print header("$action Package Definition", menubar(
+print $cgi->header, header("$action Package Definition", menubar(
   'Main Menu' => '../',
   'View all packages' => '../browse/part_pkg.cgi',
 )), '<FORM ACTION="process/part_pkg.cgi" METHOD=POST>';
+
+if ( $cgi->param('clone') ) {
+  print qq!<INPUT TYPE="hidden" NAME="clone" VALUE="!, $cgi->param('clone'), qq!">!;
+}
+if ( $cgi->param('pkgnum') ) {
+  print qq!<INPUT TYPE="hidden" NAME="pkgnum" VALUE="!, $cgi->param('pkgnum'), qq!">!;
+}
 
 print qq!<INPUT TYPE="hidden" NAME="pkgpart" VALUE="$hashref->{pkgpart}">!,
       "Package Part #", $hashref->{pkgpart} ? $hashref->{pkgpart} : "(NEW)";
@@ -54,10 +82,15 @@ Frequency (months) of recurring fee <INPUT TYPE="text" NAME="freq" VALUE="$hashr
 
 </PRE>
 
+END
+
+unless ( $cgi->param('clone') ) {
+  print <<END;
 Enter the quantity of each service this package includes.<BR><BR>
 <TABLE BORDER><TR><TH><FONT SIZE=-1>Quan.</FONT></TH><TH>Service</TH>
 		  <TH><FONT SIZE=-1>Quan.</FONT></TH><TH>Service</TH></TR>
 END
+}
 
 my($part_svc);
 my($count) = 0 ;
@@ -65,7 +98,7 @@ foreach $part_svc ( qsearch('part_svc',{}) ) {
 
   my($svcpart)=$part_svc->getfield('svcpart');
   my($pkg_svc)=qsearchs('pkg_svc',{
-    'pkgpart'  => $part_pkg->getfield('pkgpart'),
+    'pkgpart'  => $cgi->param('clone') || $part_pkg->getfield('pkgpart'),
     'svcpart'  => $svcpart,
   })  || create FS::pkg_svc({
     'pkgpart'  => $part_pkg->getfield('pkgpart'),
@@ -74,21 +107,28 @@ foreach $part_svc ( qsearch('part_svc',{}) ) {
   });
   next unless $pkg_svc;
 
-  print qq!<TR>! if $count == 0 ;
-  print qq!<TD><INPUT TYPE="text" NAME="pkg_svc$svcpart" SIZE=3 VALUE="!,
-        $pkg_svc->getfield('quantity') || 0,qq!"></TD>!,
-        qq!<TD><A HREF="part_svc.cgi?!,$part_svc->getfield('svcpart'),
-        qq!">!, $part_svc->getfield('svc'), "</A></TD>";
-  $count ++ ;
-  if ($count == 2)
-  {
-    print qq!</TR>! ;
-    $count = 0 ;
+  unless ( $cgi->param('clone') ) {
+    print qq!<TR>! if $count == 0 ;
+    print qq!<TD><INPUT TYPE="text" NAME="pkg_svc$svcpart" SIZE=3 VALUE="!,
+          $pkg_svc->getfield('quantity') || 0,qq!"></TD>!,
+          qq!<TD><A HREF="part_svc.cgi?!,$part_svc->getfield('svcpart'),
+          qq!">!, $part_svc->getfield('svc'), "</A></TD>";
+    $count ++ ;
+    if ($count == 2)
+    {
+      print qq!</TR>! ;
+      $count = 0 ;
+    }
+  } else {
+    print qq!<INPUT TYPE="hidden" NAME="pkg_svc$svcpart" VALUE="!,
+          $pkg_svc->getfield('quantity') || 0, qq!">\n!;
   }
 }
-print qq!</TR>! if ($count != 0) ;
 
-print "</TABLE>";
+unless ( $cgi->param('clone') ) {
+  print qq!</TR>! if ($count != 0) ;
+  print "</TABLE>";
+}
 
 print qq!<BR><INPUT TYPE="submit" VALUE="!,
       $hashref->{pkgpart} ? "Apply changes" : "Add package",
