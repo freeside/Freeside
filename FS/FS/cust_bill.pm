@@ -1048,11 +1048,12 @@ sub print_text {
 
   #setup template variables
   package FS::cust_bill::_template; #!
-  use vars qw( $invnum $date $page $total_pages @address $overdue @buf );
+  use vars qw( $invnum $date $page $total_pages @address $overdue @buf $agent );
 
   $invnum = $self->invnum;
   $date = $self->_date;
   $page = 1;
+  $agent = $self->cust_main->agent->agent;
 
   if ( $FS::cust_bill::invoice_lines ) {
     $total_pages =
@@ -1120,7 +1121,7 @@ sub print_text {
 
 =head1 VERSION
 
-$Id: cust_bill.pm,v 1.58 2002-12-23 14:22:48 steve Exp $
+$Id: cust_bill.pm,v 1.59 2002-12-23 15:21:55 ivan Exp $
 
 =head1 BUGS
 
