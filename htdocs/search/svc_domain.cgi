@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_domain.cgi,v 1.8 1999-02-28 00:03:57 ivan Exp $
+# $Id: svc_domain.cgi,v 1.9 1999-04-15 13:39:16 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/svc_domain.cgi
@@ -15,7 +15,10 @@
 # display total, use FS::CGI now does browsing too ivan@sisd.com 98-jul-17
 #
 # $Log: svc_domain.cgi,v $
-# Revision 1.8  1999-02-28 00:03:57  ivan
+# Revision 1.9  1999-04-15 13:39:16  ivan
+# $cgi->header( '-expires' => 'now' )
+#
+# Revision 1.8  1999/02/28 00:03:57  ivan
 # removed misleading comments
 #
 # Revision 1.7  1999/02/23 08:09:24  ivan
@@ -89,7 +92,8 @@ if ( scalar(@svc_domain) == 1 ) {
 } else {
 
   my($total)=scalar(@svc_domain);
-  print $cgi->header, header("Domain Search Results",''), <<END;
+  print $cgi->header( '-expires' => 'now' ),
+        header("Domain Search Results",''), <<END;
 
     $total matching domains found
     <TABLE BORDER=4 CELLSPACING=0 CELLPADDING=0>
