@@ -643,8 +643,9 @@ sub collect {
         if ( $processor =~ /^cybercash/ ) {
 
           #fix exp. date for cybercash
-          $self->paydate =~ /^(\d+)\/\d*(\d{2})$/;
-          my $exp = "$1/$2";
+          #$self->paydate =~ /^(\d+)\/\d*(\d{2})$/;
+          $self->paydate =~ /^\d{2}(\d{2})[\/\-](\d+)[\/\-]\d+$/;
+          my $exp = "$2/$1";
 
           my $paybatch = $cust_bill->invnum. 
                          '-' . time2str("%y%m%d%H%M%S", time);
@@ -862,7 +863,7 @@ sub check_invoicing_list {
 
 =head1 VERSION
 
-$Id: cust_main.pm,v 1.11 1999-02-23 08:09:27 ivan Exp $
+$Id: cust_main.pm,v 1.12 1999-02-27 21:24:22 ivan Exp $
 
 =head1 BUGS
 
@@ -918,7 +919,10 @@ enable cybercash, cybercash v3 support, don't need to import
 FS::UID::{datasrc,checkruid} ivan@sisd.com 98-sep-19-21
 
 $Log: cust_main.pm,v $
-Revision 1.11  1999-02-23 08:09:27  ivan
+Revision 1.12  1999-02-27 21:24:22  ivan
+parse paydate correctly for cybercash
+
+Revision 1.11  1999/02/23 08:09:27  ivan
 beginnings of one-screen new customer entry and some other miscellania
 
 Revision 1.10  1999/01/25 12:26:09  ivan
