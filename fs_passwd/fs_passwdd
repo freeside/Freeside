@@ -34,7 +34,7 @@ if ( -e $pid_file ) {
   #chomp( my $old_pid = <PIDFILE> );
   my $old_pid = <PIDFILE>;
   close PIDFILE;
-  $old_pid =~ /^(\d+)$/
+  $old_pid =~ /^(\d+)$/;
   kill 'TERM', $1;
 }
 open(PIDFILE,">$pid_file");
