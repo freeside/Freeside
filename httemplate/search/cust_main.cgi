@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: cust_main.cgi,v 1.9 2001-10-10 05:59:36 thalakan Exp $ -->
+#<!-- $Id: cust_main.cgi,v 1.10 2001-10-10 06:22:22 thalakan Exp $ -->
 
 use strict;
 #use vars qw( $conf %ncancelled_pkgs %all_pkgs $cgi @cust_main $sortby );
@@ -250,11 +250,9 @@ sub lastsearch {
     $last_type{$_}++;
   }
 
-  my $cust_obj = new FS::cust_main;
-  $cust_obj->setfield('last', $cgi->param('last_text'));
-  my $error = $cust_obj->ut_name('last');
-  eidiot "Illegal last name" if $error;
-  my($last) = $cust_obj->getfield('last');
+  $cgi->param('last_text') =~ /^([\w \,\.\-\']*)$/
+    or eidiot "Illegal last name";
+  my($last)=$1;
 
   if ( $last_type{'Exact'}
        && ! $last_type{'Fuzzy'} 
