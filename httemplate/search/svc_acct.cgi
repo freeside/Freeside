@@ -69,6 +69,7 @@ if (    $query eq 'svcnum'
      || $query eq 'username'
      || $query eq 'uid'
      || $cgi->param('popnum') =~ /^(\d+)$/
+     || $cgi->param('svcpart') =~ /^(\d+)$/
    ) {
 
   my $statement = "SELECT COUNT(*) FROM svc_acct $unlinked";
