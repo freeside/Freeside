@@ -117,7 +117,9 @@ L<FS::part_pkg>.
 sub pkgpart_hashref {
   my $self = shift;
   my %pkgpart;
-  $pkgpart{$_}++ foreach $self->pkgpart;
+  #$pkgpart{$_}++ foreach $self->pkgpart;
+  # not compatible w/5.004_04 (fixed in 5.004_05)
+  foreach ( $self->pkgpart ) { $pkgpart{$_}++; }
   \%pkgpart;
 }
 
@@ -148,7 +150,7 @@ sub pkgpart {
 
 =head1 VERSION
 
-$Id: agent_type.pm,v 1.3 1999-07-20 10:37:05 ivan Exp $
+$Id: agent_type.pm,v 1.4 1999-07-21 06:32:08 ivan Exp $
 
 =head1 BUGS
 
@@ -173,7 +175,10 @@ Changed 'type' to 'atype' because Pg6.3 reserves the type word
 pod, added check in delete ivan@sisd.com 98-sep-21
 
 $Log: agent_type.pm,v $
-Revision 1.3  1999-07-20 10:37:05  ivan
+Revision 1.4  1999-07-21 06:32:08  ivan
+workaround for syntax not compatible w/5.004_04 (ok in 5.004_05)
+
+Revision 1.3  1999/07/20 10:37:05  ivan
 cleaned up the new one-screen signup bits in htdocs/edit/cust_main.cgi to
 prepare for a signup server
 
