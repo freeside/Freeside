@@ -6,12 +6,14 @@
 my $site_perl = "./FS";
 #my $catman = "./catman";
 #my $catman = "./htdocs/docs/man";
-my $html = "./htdocs/docs/man";
+#my $html = "./htdocs/docs/man";
+my $html = "./httemplate/docs/man";
 
 $|=1;
 
-die "Can't find $site_perl and $catman"
-  unless [ -d $site_perl ] && [ -d $catman ] && [ -d $html ];
+die "Can't find $site_perl" unless -d $site_perl;
+#die "Can't find $catman" unless -d $catman;
+die "Can't find $html" unless -d $html;
 
 foreach my $file (
   glob("$site_perl/*.pm"),

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: fs-setup,v 1.37 2001-06-03 14:16:11 ivan Exp $
+# $Id: fs-setup,v 1.38 2001-07-30 07:36:04 ivan Exp $
 #
 # ivan@sisd.com 97-nov-8,9
 #
@@ -32,7 +32,10 @@
 # fix radius attributes ivan@sisd.com 98-sep-27
 #
 # $Log: fs-setup,v $
-# Revision 1.37  2001-06-03 14:16:11  ivan
+# Revision 1.38  2001-07-30 07:36:04  ivan
+# templates!!!
+#
+# Revision 1.37  2001/06/03 14:16:11  ivan
 # allow empty refund reasons
 #
 # Revision 1.36  2001/04/15 12:56:31  ivan
@@ -177,10 +180,22 @@ separated by whitespace.
 END
 my @attributes = map { s/\-/_/g; $_; } split(" ",&getvalue);
 
+print "\n\n", <<END, ":";
+Do you wish to enable the tracking of a second, separate shipping/service
+address?
+END
+my $ship = &_yesno;
+
 sub getvalue {
   my($x)=scalar(<STDIN>);
   chop $x;
   $x;
+}
+
+sub _yesno {
+  print " [y/N]:";
+  my $x = scalar(<STDIN>);
+  $x =~ /^y/i;
 }
 
 ###
@@ -213,6 +228,12 @@ my($dbdef) = new DBIx::DBSchema ( map {
     @columns,
   );
 } (keys %tables) );
+
+#remove ship_ from cust_main
+unless ($ship) {
+  my $cust_main = $dbdef->table('cust_main');
+  $cust_main->delcolumn($_) foreach ( grep /^ship_/, $cust_main->columns );
+}
 
 #add radius attributes to svc_acct
 
@@ -452,6 +473,20 @@ sub tables_hash_hack {
         'daytime',  'varchar', 'NULL', 20,
         'night',    'varchar', 'NULL', 20,
         'fax',      'varchar', 'NULL', 12,
+        'ship_last',     'varchar', 'NULL', $char_d,
+#        'ship_middle',   'varchar', 'NULL', $char_d,
+        'ship_first',    'varchar', 'NULL', $char_d,
+        'ship_company',  'varchar', 'NULL', $char_d,
+        'ship_address1', 'varchar', 'NULL', $char_d,
+        'ship_address2', 'varchar', 'NULL', $char_d,
+        'ship_city',     'varchar', 'NULL', $char_d,
+        'ship_county',   'varchar', 'NULL', $char_d,
+        'ship_state',    'varchar', 'NULL', $char_d,
+        'ship_zip',      'varchar', 'NULL', 10,
+        'ship_country',  'char', 'NULL', 2,
+        'ship_daytime',  'varchar', 'NULL', 20,
+        'ship_night',    'varchar', 'NULL', 20,
+        'ship_fax',      'varchar', 'NULL', 12,
         'payby',    'char', '',     4,
         'payinfo',  'varchar', 'NULL', 16,
         #'paydate',  @date_type,
