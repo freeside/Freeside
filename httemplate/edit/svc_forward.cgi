@@ -121,9 +121,9 @@ Service #<%= $svcnum ? "<B>$svcnum</B>" : " (NEW)" %><BR>
 Service: <B><%= $part_svc->svc %></B><BR><BR>
 
 <FORM ACTION="process/svc_forward.cgi" METHOD="POST">
-<INPUT TYPE="hidden" NAME="svcnum" VALUE="$svcnum">
-<INPUT TYPE="hidden" NAME="pkgnum" VALUE="$pkgnum">
-<INPUT TYPE="hidden" NAME="svcpart" VALUE="$svcpart">
+<INPUT TYPE="hidden" NAME="svcnum" VALUE="<%= $svcnum %>">
+<INPUT TYPE="hidden" NAME="pkgnum" VALUE="<%= $pkgnum %>">
+<INPUT TYPE="hidden" NAME="svcpart" VALUE="<%= $svcpart %>">
 
 <SCRIPT TYPE="text/javascript">
 function srcchanged(what) {
