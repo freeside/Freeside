@@ -1,0 +1,122 @@
+#!/usr/bin/perl -Tw
+#
+# cust_pkg.cgi: search/browse for packages
+#
+# based on search/svc_acct.cgi ivan@sisd.com 98-jul-17
+
+use strict;
+use CGI::Request;
+use CGI::Carp qw(fatalsToBrowser);
+use FS::UID qw(cgisuidsetup);
+use FS::Record qw(qsearch qsearchs);
+use FS::CGI qw(header idiot);
+
+my($req)=new CGI::Request;
+&cgisuidsetup($req->cgi);
+
+my(@cust_pkg,$sortby);
+
+my($query)=$req->cgi->var('QUERY_STRING');
+#this tree is a little bit redundant
+if ( $query eq 'pkgnum' ) {
+  $sortby=\*pkgnum_sort;
+  @cust_pkg=qsearch('cust_pkg',{});
+} elsif ( $query eq 'APKG_pkgnum' ) {
+  $sortby=\*pkgnum_sort;
+
+  #perhaps this should go in cust_pkg as a qsearch-like constructor?
+  my($cust_pkg);
+  foreach $cust_pkg (qsearch('cust_pkg',{})) {
+    my($flag)=0;
+    my($pkg_svc);
+    PKG_SVC: 
+    foreach $pkg_svc (qsearch('pkg_svc',{ 'pkgpart' => $cust_pkg->pkgpart })) {
+      if ( $pkg_svc->quantity 
+           > scalar(qsearch('cust_svc',{
+               'pkgnum' => $cust_pkg->pkgnum,
+               'svcpart' => $pkg_svc->svcpart,
+             }))
+         )
+      {
+        $flag=1;
+        last PKG_SVC;
+      }
+    }
+    push @cust_pkg, $cust_pkg if $flag;
+  }
+} else {
+  die "Empty QUERY_STRING!";
+}
+
+if ( scalar(@cust_pkg) == 1 ) {
+  my($pkgnum)=$cust_pkg[0]->pkgnum;
+  $req->cgi->redirect("../view/cust_pkg.cgi?$pkgnum");
+  exit;
+} elsif ( scalar(@cust_pkg) == 0 ) { #error
+  &idiot("No packages found");
+  exit;
+} else {
+  my($total)=scalar(@cust_pkg);
+  CGI::Base::SendHeaders(); # one guess
+  print header('Package Search Results',''), <<END;
+    $total matching packages found
+    <TABLE BORDER=4 CELLSPACING=0 CELLPADDING=0>
+      <TR>
+        <TH>Package #</TH>
+        <TH>Customer #</TH>
+        <TH>Name</TH>
+        <TH>Company</TH>
+      </TR>
+END
+
+  my($lines)=16;
+  my($lcount)=$lines;
+  my(%saw,$cust_pkg);
+  foreach $cust_pkg (
+    sort $sortby grep(!$saw{$_->pkgnum}++, @cust_pkg)
+  ) {
+    my($cust_main)=qsearchs('cust_main',{'custnum'=>$cust_pkg->custnum});
+    my($pkgnum,$custnum,$name,$company)=(
+      $cust_pkg->pkgnum,
+      $cust_main->custnum,
+      $cust_main->last. ', '. $cust_main->first,
+      $cust_main->company,
+    );
+    print <<END;
+    <TR>
+      <TD><A HREF="../view/cust_pkg.cgi?$pkgnum"><FONT SIZE=-1>$pkgnum</FONT></A></TD>
+      <TD><FONT SIZE=-1>$custnum</FONT></TD>
+      <TD><FONT SIZE=-1>$name</FONT></TD>
+      <TD><FONT SIZE=-1>$company</FONT></TD>
+    </TR>
+END
+    if ($lcount-- == 0) { # lots of little tables instead of one big one
+      $lcount=$lines;
+      print <<END;   
+  </TABLE>
+  <TABLE BORDER=4 CELLSPACING=0 CELLPADDING=0>
+    <TR>
+        <TH>Package #</TH>
+        <TH>Customer #</TH>
+        <TH>Name</TH>
+        <TH>Company</TH>
+      <TH>
+    </TR>
+END
+    }
+  }
+ 
+  print <<END;
+    </TABLE>
+    </CENTER>
+  </BODY>
+</HTML>
+END
+  exit;
+
+}
+
+sub pkgnum_sort {
+  $a->getfield('pkgnum') <=> $b->getfield('pkgnum');
+}
+
