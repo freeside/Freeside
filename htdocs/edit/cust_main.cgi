@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main.cgi,v 1.25 2000-03-02 08:09:38 ivan Exp $
+# $Id: cust_main.cgi,v 1.26 2000-06-27 12:15:50 ivan Exp $
 #
 # Usage: cust_main.cgi custnum
 #        http://server.name/path/cust_main.cgi?custnum
@@ -38,7 +38,10 @@
 # fixed one missed day->daytime ivan@sisd.com 98-jul-13
 #
 # $Log: cust_main.cgi,v $
-# Revision 1.25  2000-03-02 08:09:38  ivan
+# Revision 1.26  2000-06-27 12:15:50  ivan
+# i18n
+#
+# Revision 1.25  2000/03/02 08:09:38  ivan
 # still need to allow blank expiration dates
 #
 # Revision 1.24  2000/01/30 06:54:50  ivan
@@ -260,7 +263,8 @@ print "<BR><BR>Contact information", &itable("#c0c0c0"), <<END;
 <TR><TH ALIGN="right">${r}City</TH><TD><INPUT TYPE="text" NAME="city" VALUE="$city"></TD><TH ALIGN="right">${r}State/Country</TH><TD><SELECT NAME="state" SIZE="1">
 END
 
-$cust_main->country('US') unless $cust_main->country; #eww
+$cust_main->country( $conf->config('countrydefault') || 'US' )
+  unless $cust_main->country;
 foreach ( qsearch('cust_main_county',{}) ) {
   print "<OPTION";
   print " SELECTED" if ( $cust_main->state eq $_->state

@@ -28,6 +28,7 @@ All further configuration files and directories are located in
   <li>bindprimary - Your BIND primary nameserver.  This enables export of /var/named/named.conf and zone files into /var/named
   <li>bindsecondaries - Your BIND secondary nameservers, one per line.  This enables export of /var/named/named.conf
   <li>bsdshellmachines - Your BSD flavored shell (and mail) machines, one per line.  This enables export of `/etc/passwd' and `/etc/master.passwd'.
+  <li>countrydefault - Default two-letter country code (if not supplied, the default is `US')
   <li>cybercash2 - <a href="http://www.cybercash.com/cybercash/services/cashreg214.html">CyberCash v2</a> support, four lines: paymentserverhost, paymentserverport, paymentserversecret, and transaction type (`mauthonly' or `mauthcapture').  CCLib.pm is required.
   <li>cybercash3.2 - <a href="http://www.cybercash.com/cybercash/services/technology.html">CyberCash v3.2</a> support.  Two lines: the full path and name of your merchant_conf file, and the transaction type (`mauthonly' or `mauthcapture').  CCMckLib3_2.pm, CCMckDirectLib3_2.pm and CCMckErrno3_2 are required.
   <li>deletecustomers - The existance of this file will enable customer deletions.  Be very careful!  Deleting a customer will remove all traces that this customer ever existed!  It should probably only be used when auditing a legacy database.  Normally, you cancel all of a customers' packages if they cancel service.

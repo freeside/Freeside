@@ -1,10 +1,15 @@
-$Id: TODO,v 1.45 2000-06-23 12:25:59 ivan Exp $
+$Id: TODO,v 1.46 2000-06-27 12:15:50 ivan Exp $
 
 If you are interested in helping with any of these, please join the mailing
 list (send a blank message to ivan-freeside-subscribe@sisd.com) to avoid 
 duplication of effort.
 
 ---
+
+zip code i18n is not very good :( but at least US, CA, HU, ?
+
+ut_phonen doesn't check data length.  several
+orthogonal cleanup projects here.  *sigh*
 
 update the cybercash links in config.html and in the homepage.  add more explicit support for other payment types.  etc.
 
