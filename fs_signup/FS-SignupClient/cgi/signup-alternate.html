@@ -33,14 +33,16 @@ Contact Information
 
   <%=
     foreach ( @{$locales} ) {
-      $OUT .= '<OPTION';
+      my $value = $_->{'state'};
+      $value .= ' ('. $_->{'county'}. ')' if $_->{'county'};
+      $value .= ' / '. $_->{'country'};
+
+      $OUT .= qq(<OPTION VALUE="$value");
       $OUT .= ' SELECTED' if ( $state eq $_->{'state'}
                                && $county eq $_->{'county'}
                                && $country eq $_->{'country'}
                              );
-      $OUT .= '>'. $_->{'state'};
-      $OUT .= ' ('. $_->{'county'}. ')' if $_->{'county'};
-      $OUT .= ' / '. $_->{'country'};
+      $OUT .= ">$value</OPTION>";
     }
   %>
 
