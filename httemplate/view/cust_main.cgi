@@ -299,6 +299,10 @@ function cust_pkg_areyousure(href) {
     if (confirm("Permanently delete included services and cancel this package?") == true)
         window.location.href = href;
 }
+function svc_areyousure(href) {
+    if (confirm("Permanently unprovision and delete this service?") == true)
+        window.location.href = href;
+}
 </SCRIPT>
 END
 
@@ -412,7 +416,7 @@ foreach my $package (@packages) {
         my($svcnum) = $cust_svc->svcnum;
         my($sview) = popurl(2). "view";
         print $n2,qq!<TD><A HREF="$sview/$svcdb.cgi?$svcnum"><FONT SIZE=-1>$label</FONT></A></TD>!,
-              qq!<TD><A HREF="$sview/$svcdb.cgi?$svcnum"><FONT SIZE=-1>$value</FONT></A></TD>!;
+              qq!<TD><FONT SIZE=-1><A HREF="$sview/$svcdb.cgi?$svcnum">$value</A><BR>(&nbsp;<A HREF="javascript:svc_areyousure('${p}misc/unprovision.cgi?$svcnum')">Unprovision</A>&nbsp;)</FONT></TD>!;
       } else {
         print $n2, qq!<TD COLSPAN=2><A HREF="$uiadd{$svcpart}?pkgnum$pkgnum-svcpart$svcpart"><b><font size="+1" color="#ff0000">!.
               qq!Provision&nbsp;$svc</A></b></font>!;
