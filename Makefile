@@ -56,10 +56,18 @@ SELFSERVICE_USER = fs_selfservice
 SELFSERVICE_MACHINES = localhost
 # SELFSERVICE_MACHINES = web1.example.com web2.example.com
 
+#RT_ENABLED = 0
+RT_ENABLED = 1
+RT_DOMAIN = example.com
+RT_TIMEZONE = 'US/Pacific';
+#RT_TIMEZONE = 'US/Eastern';
+
 #---
 
 #not changable yet
 FREESIDE_CONF = /usr/local/etc/freeside
+#rt/config.layout.in
+RT_PATH = /opt/rt3
 
 VERSION=1.5.0pre4
 TAG=freeside_1_5_0pre4
@@ -125,6 +133,7 @@ install-docs: docs
 	[ "${TEMPLATE}" = "mason" ] && \
 	  perl -p -i -e "\
 	    s'%%%FREESIDE_DOCUMENT_ROOT%%%'${FREESIDE_DOCUMENT_ROOT}'g; \
+	    s'%%%RT_ENABLED%%%'${RT_ENABLED}'g; \
 	  " ${MASON_HANDLER} || true
 	[ "${TEMPLATE}" = "mason" -a ! -e ${MASONDATA} ] && mkdir ${MASONDATA} || true
 	[ "${TEMPLATE}" = "mason" ] && chown -R freeside ${MASONDATA} || true
@@ -148,7 +157,7 @@ install-init:
 	  s/%%%SELFSERVICE_MACHINES%%%/${SELFSERVICE_MACHINES}/g;\
 	" ${INIT_FILE}
 
-install: install-perl-modules install-docs install-init
+install: install-perl-modules install-docs install-init install-rt
 
 deploy: install
 	${HTTPD_RESTART}
@@ -191,20 +200,35 @@ configure-rt:
 	  s'%%%FREESIDE_DOCUMENT_ROOT%%%'${FREESIDE_DOCUMENT_ROOT}'g;\
 	  s'%%%MASONDATA%%%'${MASONDATA}'g;\
 	" config.layout; \
-	./configure --with-layout=Freeside\
+	./configure --enable-layout=Freeside\
 	            --with-db-type=Pg \
+	            --with-db-dba=${DB_USER} \
 	            --with-db-database=freeside \
 	            --with-db-rt-user=${DB_USER} \
 	            --with-db-rt-pass=${DB_PASSWORD} \
 	            --with-web-user=freeside \
-	            --with-web-group=www
+	            --with-web-group=freeside \
+	            --with-rt-group=freeside
 
 create-rt: configure-rt
 	cd rt; make install
-	rt/sbin/rt-setup-database --action schema
-	rt/sbin/rt-setup-database --action insert_initial
-	rt/sbin/rt-setup-database --action insert --datafile rt/etc/initialdata
+	echo -e "${DB_PASSWORD}\n\\d sessions"\
+	 | psql -UW ${DB_USER} freeside 2>&1\
+	 | grep '^Did not find'\
+	 && rt/sbin/rt-setup-database --dba '${DB_USER}' \
+	                             --dba-password '${DB_PASSWORD}' \
+	                             --action schema \
+	 || true
+	rt/sbin/rt-setup-database --action insert_initial \
+	&& rt/sbin/rt-setup-database --action insert --datafile ${RT_PATH}/etc/initialdata \
+	|| true
+	perl -p -i -e "\
+	  s'%%%RT_DOMAIN%%%'${RT_DOMAIN}'g;\
+	  s'%%%RT_TIMEZONE%%%'${RT_TIMEZONE}'g;\
+	" ${RT_PATH}/etc/RT_SiteConfig.pm
 
+install-rt:
+	[ ${RT_ENABLED} ] && cd rt; make install
 
 clean:
 	rm -rf aspdocs masondocs

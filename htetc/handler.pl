@@ -35,12 +35,37 @@ use strict;
 #                                      data_dir=>'/usr/local/etc/freeside/masondata',
 #                                      out_mode=>'stream',
 #                                     );
+
+use vars qw($r);
+
+if ( %%%RT_ENABLED%%% ) {
+ eval '
+   use lib ("/opt/rt3/local/lib", "/opt/rt3/lib");
+   use RT;
+   use vars qw($Nobody $SystemUser);
+   RT::LoadConfig();
+ ';
+ die $@ if $@;
+
+
+}
+
+
 my $ah = new HTML::Mason::ApacheHandler (
   #interp => $interp,
   #auto_send_headers => 0,
-  comp_root=>'%%%FREESIDE_DOCUMENT_ROOT%%%',
+  comp_root=> [
+                [ 'freeside' => '%%%FREESIDE_DOCUMENT_ROOT%%%'    ],
+                [ 'rt'       => '%%%FREESIDE_DOCUMENT_ROOT%%%/rt' ],
+              ],
   data_dir=>'/usr/local/etc/freeside/masondata',
   #out_mode=>'stream',
+
+  #RT
+  args_method => 'CGI',
+  default_escape_flags => 'h',
+  allow_globals => [qw(%session)],
+  #autoflush => 1,
 );
 
 # Activate the following if running httpd as root (the normal case).
@@ -50,7 +75,7 @@ my $ah = new HTML::Mason::ApacheHandler (
 
 sub handler
 {
-    my ($r) = @_;
+    ($r) = @_;
 
     # If you plan to intermix images in the same directory as
     # components, activate the following to prevent Mason from
@@ -62,7 +87,8 @@ sub handler
     { package HTML::Mason::Commands;
       use strict;
       use vars qw( $cgi $p );
-      use CGI 2.47;
+      use vars qw( %session );
+      use CGI 2.47 qw(-private_tempfiles);
       #use CGI::Carp qw(fatalsToBrowser);
       use Date::Format;
       use Date::Parse;
@@ -124,6 +150,32 @@ sub handler
       use FS::part_export_option;
       use FS::export_svc;
       use FS::msgcat;
+
+      if ( %%%RT_ENABLED%%% ) {
+        eval '
+          use RT::Tickets;
+          use RT::Transactions;
+          use RT::Users;
+          use RT::CurrentUser;
+          use RT::Templates;
+          use RT::Queues;
+          use RT::ScripActions;
+          use RT::ScripConditions;
+          use RT::Scrips;
+          use RT::Groups;
+          use RT::GroupMembers;
+          use RT::CustomFields;
+          use RT::CustomFieldValues;
+          use RT::TicketCustomFieldValues;
+      
+          use RT::Interface::Web;
+          use MIME::Entity;
+          use Text::Wrapper;
+          use CGI::Cookie;
+          use Time::ParseDate;
+        ';
+        die $@ if $@;
+      }
 
       *CGI::redirect = sub {
         my( $self, $location ) = @_;
@@ -205,7 +257,43 @@ sub handler
 
 #    $r->send_http_header;
 
-    my $status = $ah->handle_request($r);
+    #$ah->interp->remove_escape('h');
+
+    if ( $r->filename =~ /\/rt\// ) { #RT
+      #warn "processing RT file". $r->filename. "; escaping for RT\n";
+
+      # MasonX::Request::ExtendedCompRoot
+      #$ah->interp->comp_root( '/rt'. $ah->interp->comp_root() );
+
+      $ah->interp->set_escape( h => \&RT::Interface::Web::EscapeUTF8 );
+
+      local $SIG{__WARN__};
+      local $SIG{__DIE__};
+
+      RT::Init();
+
+      # We don't need to handle non-text items
+      return -1 if defined( $r->content_type ) && $r->content_type !~ m|^text/|io;
+
+    } else {
+      $ah->interp->set_escape( 'h' => sub { ${$_[0]}; } );
+    }
+
+    my %session;
+    my $status;
+    eval { $status = $ah->handle_request($r); };
+#!!
+#    if ( $@ ) {
+#	$RT::Logger->crit($@);
+#    }
+
+    undef %session;
+
+#!!
+#    if ($RT::Handle->TransactionDepth) {
+#	$RT::Handle->ForceRollback;
+#    	$RT::Logger->crit("Transaction not committed. Usually indicates a software fault. Data loss may have occurred") ;
+#    }
 
     $status;
 }

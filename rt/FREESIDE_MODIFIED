@@ -1,3 +1,5 @@
 sbin/rt-setup-database
+sbin/rt-setup-database.in
 config.layout
 config.layout.in
+etc/RT_SiteConfig.pm

@@ -592,6 +592,10 @@ $0: Set up RT's database
 --action        init    Initialize the database
                 drop    Drop the database. 
                         This will ERASE ALL YOUR DATA
+                insert_initial 
+                        Insert RT's core system objects
+                insert_initial 
+                        Insert RT's core system objects
                 insert  Insert data into RT's database. 
                         By default, will use RT's installation data.
                         To use a local or supplementary datafile, specify it
