@@ -43,7 +43,7 @@ docs:
 	make ${TEMPLATE}docs
 
 install-docs: docs
-	mv ${FREESIDE_DOCUMENT_ROOT} ${FREESIDE_DOCUMENT_ROOT}.`date +%Y%m%d%H%M%S`
+	[ -e ${FREESIDE_DOCUMENT_ROOT} ] && mv ${FREESIDE_DOCUMENT_ROOT} ${FREESIDE_DOCUMENT_ROOT}.`date +%Y%m%d%H%M%S`
 	cp -r ${TEMPLATE}docs ${FREESIDE_DOCUMENT_ROOT}
 
 perl-modules:
@@ -64,7 +64,8 @@ create-database:
 	perl -e 'use DBIx::DataSource qw( create_database ); create_database( \'${DATASOURCE}\', \'${DB_USER}\', \'${DB_PASSWORD}\' ) or die $DBIx::DataSource::errstr;'
 
 create-config: install-perl-modules
-	[ -d ${FREESIDE_CONF} ] || mkdir ${FREESIDE_CONF}
+	[ -e ${FREESIDE_CONF} ] || mv ${FREESIDE_CONF} ${FREESIDE_CONF}.`date +%Y%m%d%H%M%S`
+	mkdir ${FREESIDE_CONF}
 	chown freeside ${FREESIDE_CONF}
 
 	touch ${FREESIDE_CONF}/secrets
@@ -75,20 +76,17 @@ create-config: install-perl-modules
 	chmod 600 ${FREESIDE_CONF}/secrets
 	chown freeside ${FREESIDE_CONF}/secrets
 
-	[ -d "${FREESIDE_CONF}/conf.${DATASOURCE}" ] \
-	  || mkdir "${FREESIDE_CONF}/conf.${DATASOURCE}"
-	chown freeside "${FREESIDE_CONF}/conf.${DATASOURCE}"
+	mkdir "${FREESIDE_CONF}/conf.${DATASOURCE}"
+	cp conf/* "${FREESIDE_CONF}/conf.${DATASOURCE}"
+	chown -R freeside "${FREESIDE_CONF}/conf.${DATASOURCE}"
 
-	[ -d "${FREESIDE_CONF}/counters.${DATASOURCE}" ] \
-	  || mkdir "${FREESIDE_CONF}/counters.${DATASOURCE}"
+	mkdir "${FREESIDE_CONF}/counters.${DATASOURCE}"
 	chown freeside "${FREESIDE_CONF}/counters.${DATASOURCE}"
 
-	[ -d "${FREESIDE_CONF}/cache.${DATASOURCE}" ] \
-	  || mkdir "${FREESIDE_CONF}/cache.${DATASOURCE}"
+	mkdir "${FREESIDE_CONF}/cache.${DATASOURCE}"
 	chown freeside "${FREESIDE_CONF}/cache.${DATASOURCE}"
 
-	[ -d "${FREESIDE_CONF}/export.${DATASOURCE}" ] \
-	  || mkdir "${FREESIDE_CONF}/export.${DATASOURCE}"
+	mkdir "${FREESIDE_CONF}/export.${DATASOURCE}"
 	chown freeside "${FREESIDE_CONF}/export.${DATASOURCE}"
 
 clean:

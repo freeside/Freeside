@@ -1,16 +1,15 @@
 #!/usr/bin/perl -w
 #
-# $Id: freeside-adduser,v 1.2 2001-10-30 11:47:54 ivan Exp $
+# $Id: freeside-adduser,v 1.3 2001-10-30 13:47:07 ivan Exp $
 
 use strict;
-use vars qw($opt_h $opt_c);
+use vars qw($opt_h $opt_c $opt_s);
 use Getopt::Std;
 
 my $FREESIDE_CONF = "/usr/local/etc/freeside";
 
-getopts("ch:");
+getopts("ch:s:");
 die &usage if $opt_c && ! $opt_h;
-my $secretfile = shift or die &usage;
 my $user = shift or die &usage;
 
 my @args = ( 'htpasswd' );
@@ -18,13 +17,15 @@ push @args, '-c' if $opt_c;
 push @args, $opt_h, $user;
 system(@args) == 0 or die "htpasswd failed: $?";
 
+my $secretfile = $opt_s || 'secrets';
+
 open(MAPSECRETS,">>$FREESIDE_CONF/mapsecrets")
   or die "can't open $FREESIDE_CONF/mapsecrets: $!";
 print MAPSECRETS "$user $secretfile\n";
 close MAPSECRETS or die "can't close $FREESIDE_CONF/mapsecrets: $!";
 
 sub usage {
-  die "Usage:\n\n  freeside-adduser [ -h htpasswd_file [ -c ] ] secretfile username"
+  die "Usage:\n\n  freeside-adduser [ -h htpasswd_file [ -c ] ] [ -s secretfile ] username"
 }
 
 =head1 NAME
@@ -33,7 +34,7 @@ freeside-adduser - Command line interface to add (freeside) users.
 
 =head1 SYNOPSIS
 
-  freeside-adduser [ -h htpasswd_file [ -c ] ] secretfile username
+  freeside-adduser [ -h htpasswd_file [ -c ] ] [ -s secretfile ] username
 
 =head1 DESCRIPTION
 
@@ -43,6 +44,8 @@ sales/tech folks) to the web interface, not for adding customer accounts.
   -h: Also call htpasswd for this user with the given filename
 
   -c: Passed to htpasswd
+
+  -s: Specify an alternate secret file
 
 =head1 SEE ALSO
 

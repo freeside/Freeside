@@ -1,2 +1,5 @@
-/bin/csh
+
 /bin/sh
+/bin/csh
+/bin/bash
+/bin/false
