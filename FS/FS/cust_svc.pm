@@ -468,10 +468,13 @@ for records where B<svcdb> is not "svc_acct".
 sub attribute_since_sqlradacct {
   my($self, $start, $end, $attrib) = @_;
 
-  my $username = $self->svc_x->username;
+  my $svc_x = $self->svc_x;
 
-  my @part_export = $self->part_svc->part_export('sqlradius')
-    or die "no sqlradius export configured for this service type";
+  my @part_export = $self->part_svc->part_export('sqlradius');
+  push @part_export, $self->part_svc->part_export('sqlradius_withdomain');
+  die "no sqlradius or sqlradius_withdomain export configured for this".
+      "service type"
+    unless @part_export;
     #or return undef;
 
   my $sum = 0;
@@ -492,6 +495,15 @@ sub attribute_since_sqlradacct {
       warn "warning: unknown database type ". $dbh->{Driver}->{Name}.
            "; guessing how to convert to UNIX timestamps";
       $str2time = 'extract(epoch from ';
+    }
+
+    my $username;
+    if ( $part_export->exporttype eq 'sqlradius' ) {
+      $username = $svc_x->username;
+    } elsif ( $part_export->exporttype eq 'sqlradius_withdomain' ) {
+      $username = $svc_x->email;
+    } else {
+      die 'unknown exporttype '. $part_export->exporttype;
     }
 
     my $sth = $dbh->prepare("SELECT SUM($attrib)
