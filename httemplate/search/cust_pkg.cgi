@@ -43,9 +43,15 @@ if ( $cgi->param('magic') && $cgi->param('magic') eq 'bill' ) {
 
 } else {
 
-  my $unconf = '';
+  my $qual = '';
   if ( $query eq 'pkgnum' ) {
     $sortby=\*pkgnum_sort;
+
+  } elsif ( $query eq 'SUSP_pkgnum' ) {
+
+    $sortby=\*pkgnum_sort;
+
+    $qual = 'WHERE susp IS NOT NULL AND susp != 0';
 
   } elsif ( $query eq 'APKG_pkgnum' ) {
   
@@ -101,12 +107,12 @@ if ( $cgi->param('magic') && $cgi->param('magic') eq 'bill' ) {
                           AND pkg_svc.quantity != 0;";
       $sth = dbh->prepare($query) or die dbh->errstr. " preparing $query";   
       $sth->execute or die "Error executing \"$query\": ". $sth->errstr;
-      $unconf = " LEFT JOIN temp2_$$ ON cust_pkg.pkgnum = temp2_$$.pkgnum
-                    WHERE temp2_$$.pkgnum IS NOT NULL";
+      $qual = " LEFT JOIN temp2_$$ ON cust_pkg.pkgnum = temp2_$$.pkgnum
+                  WHERE temp2_$$.pkgnum IS NOT NULL";
 
     } else {
 
-     $unconf = "
+     $qual = "
        WHERE 0 <
          ( SELECT count(*) FROM pkg_svc
              WHERE pkg_svc.pkgpart = cust_pkg.pkgpart
@@ -120,10 +126,10 @@ if ( $cgi->param('magic') && $cgi->param('magic') eq 'bill' ) {
     }
     
   } else {
-    die "Empty QUERY_STRING!";
+    die "Empty or unknown QUERY_STRING!";
   }
   
-  my $statement = "SELECT COUNT(*) FROM cust_pkg $unconf";
+  my $statement = "SELECT COUNT(*) FROM cust_pkg $qual";
   my $sth = dbh->prepare($statement) or die dbh->errstr." preparing $statement";
   $sth->execute or die "Error executing \"$statement\": ". $sth->errstr;
   
@@ -131,7 +137,7 @@ if ( $cgi->param('magic') && $cgi->param('magic') eq 'bill' ) {
 
   my $tblname = driver_name eq 'mysql' ? 'cust_pkg.' : '';
   @cust_pkg =
-    qsearch('cust_pkg',{}, '', "$unconf ORDER BY ${tblname}pkgnum $limit" );
+    qsearch('cust_pkg',{}, '', "$qual ORDER BY ${tblname}pkgnum $limit" );
 
   if ( driver_name eq 'mysql' ) {
     $query = "DROP TABLE temp1_$$,temp2_$$;";
