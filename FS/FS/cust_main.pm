@@ -1024,7 +1024,7 @@ sub check {
   ) {
     $self->payname( $self->first. " ". $self->getfield('last') );
   } else {
-    $self->payname =~ /^([\w \,\.\-\']+)$/
+    $self->payname =~ /^([\w \,\.\-\'\&]+)$/
       or return gettext('illegal_name'). " payname: ". $self->payname;
     $self->payname($1);
   }
