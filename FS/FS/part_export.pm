@@ -675,7 +675,7 @@ tie my %sqlmail_options, 'Tie::IxHash',
       'desc' => 'Real-time export via remote SSH (i.e. useradd, userdel, etc.)',
       'options' => \%shellcommands_options,
       'nodomain' => 'Y',
-      'notes' => 'Run remote commands via SSH.  Usernames are considered unique (also see shellcommands_withdomain).  You probably want this if the commands you are running will not accept a domain as a parameter.  You will need to <a href="../docs/ssh.html">setup SSH for unattended operation</a>.',
+      'notes' => 'Run remote commands via SSH.  Usernames are considered unique (also see shellcommands_withdomain).  You probably want this if the commands you are running will not accept a domain as a parameter.  You will need to <a href="../docs/ssh.html">setup SSH for unattended operation</a>.<BR><BR>Use these buttons for some useful presets:<UL><LI><INPUT TYPE="button" VALUE="Linux/NetBSD" onClick=\'this.form.useradd.value = "useradd -d $dir -m -s $shell -u $uid $username; passwd $username"; this.form.useradd_stdin.value = "$_password\n$_password\n"; this.form.userdel.value = "userdel $username"; this.form.userdel_stdin.value=""; this.form.usermod.value = "usermod -d $new_dir -l $new_username -s $new_shell -u $new_uid $old_username; passwd $new_username"; this.form.usermod_stdin.value = "$_password\n$_password\n";\'><LI><INPUT TYPE="button" VALUE="FreeBSD" onClick=\'this.form.useradd.value = "pw useradd $username -d $dir -m -s $shell -u $uid; passwd $username"; this.form.useradd_stdin.value = "$_password\n$_password\n"; this.form.userdel.value = "userdel $username"; this.form.userdel_stdin.value=""; this.form.usermod.value = "pw usermod $old_username -d $new_dir -l $new_username -s $new_shell -u $new_uid; passwd $new_username"; this.form.usermod_stdin.value = "$_password\n$_password\n";\'><LI><INPUT TYPE="button" VALUE="Just maintain directories (use with sysvshell or bsdshell)" onClick=\'this.form.useradd.value = "cp -pr /etc/skel $dir; chown -R $uid.$gid $dir"; this.form.useradd_stdin.value = ""; this.form.usermod.value = "[ -d $old_dir ] && mv $old_dir $new_dir || ( chmod u+t $old_dir; mkdir $new_dir; cd $old_dir; find . -depth -print | cpio -pdm $new_dir; chmod u-t $new_dir; chown -R $uid.$gid $new_dir; rm -rf $old_dir )"; this.form.usermod_stdin.value = ""; this.form.userdel.value = "rm -rf $dir"; this.form.userdel_stdin.value="";\'></UL>',
     },
 
     'shellcommands_withdomain' => {
@@ -765,7 +765,7 @@ tie my %sqlmail_options, 'Tie::IxHash',
     'www_shellcommands' => {
       'desc'    => 'www_shellcommands',
       'options' => {}, # \%www_shellcommands_options,
-      'notes'   => 'svc_www commands',
+      'notes'   => 'unfinished...',
     },
 
   },
