@@ -42,6 +42,16 @@ Optional:
     <li>$email_name - first and last name
   </ul>
   (an example file is included as <b>fs_signup/ieak.template</b>)
+  <li>If you create a <b>/usr/local/freeside/cck.template</b> file on the external machine, the variables defined will be sent to Netscape users with MIME type <i>application/x-netscape-autoconfigure-dialer-v2</i>.  This file will be processed with <a href="http://search.cpan.org/doc/MJD/Text-Template-1.23/Template.pm">Text::Template</a> with the following variables available:
+  <ul>
+    <li>$ac - area code of selected POP
+    <li>$exch - exchange of selected POP
+    <li>$loc - local part of selected POP
+    <li>$username
+    <li>$password
+    <li>$email_name - first and last name
+  </ul>
+  (an example file is included as <b>fs_signup/cck.template</b>).  See the <a href="http://help.netscape.com/products/client/mc/acctproc4.html">Netscape documentation</a> for more information.
   <li>If there are any entries in the <i>prepay_credit</i> table, a user can enter a string matching the <b>identifier</i> column to receive the credit specified in the <b>amount</b> column, after which that <b>identifier</b> is no longer valid.  This can be used to implement pre-paid "calling card" type signups.  The <i>bin/generate-prepay</i> script can be used to populate the <i>prepay_credit</i> table.
 </ul>
 </body>
