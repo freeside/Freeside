@@ -191,20 +191,20 @@ my %defs = (
         $html .= "<TR><TD>$field";
         $html .= "- <FONT SIZE=-1>$desc</FONT>" if $desc;
         $html .=  "</TD>";
+        $flag = '' if ref($def) && $def->{type} eq 'disabled';
+        $html .=
+          qq!<TD><INPUT TYPE="radio" NAME="${layer}__${field}_flag" VALUE=""!.
+          ' CHECKED'x($flag eq ''). ">Off</TD>".
+          '<TD>';
+        unless ( ref($def) && $def->{type} eq 'disabled' ) {
+          $html .= 
+            qq!<INPUT TYPE="radio" NAME="${layer}__${field}_flag" VALUE="D"!.
+            ' CHECKED'x($flag eq 'D'). ">Default ".
+            qq!<INPUT TYPE="radio" NAME="${layer}__${field}_flag" VALUE="F"!.
+            ' CHECKED'x($flag eq 'F'). ">Fixed ".
+            '<BR>';
+        }
         if ( ref($def) ) {
-          $flag = '' if $def->{type} eq 'disabled';
-          $html .=
-            qq!<TD><INPUT TYPE="radio" NAME="${layer}__${field}_flag" VALUE=""!.
-            ' CHECKED'x($flag eq ''). ">Off</TD>".
-            '<TD>';
-          unless ( $def->{type} eq 'disabled' ) {
-            $html .= 
-              qq!<INPUT TYPE="radio" NAME="${layer}__${field}_flag" VALUE="D"!.
-              ' CHECKED'x($flag eq 'D'). ">Default ".
-              qq!<INPUT TYPE="radio" NAME="${layer}__${field}_flag" VALUE="F"!.
-              ' CHECKED'x($flag eq 'F'). ">Fixed ".
-              '<BR>';
-          }
           if ( $def->{type} eq 'select' ) {
             $html .= qq!<SELECT NAME="${layer}__${field}">!;
             $html .= '<OPTION> </OPTION>' unless $value;
