@@ -22,17 +22,21 @@ $socket .= '.'.$tag if defined $tag && length($tag);
   'chfn'                 => 'passwd/passwd',
   'chsh'                 => 'passwd/passwd',
   'login'                => 'MyAccount/login',
+  'logout'               => 'MyAccount/logout',
   'customer_info'        => 'MyAccount/customer_info',
-  'edit_info'            => 'MyAccount/edit_info',
+  'edit_info'            => 'MyAccount/edit_info',     #add to ss cgi!
   'invoice'              => 'MyAccount/invoice',
-  'list_invoices'        => 'MyAccount/list_invoices',
-  'cancel'               => 'MyAccount/cancel',
+  'list_invoices'        => 'MyAccount/list_invoices', #?
+  'cancel'               => 'MyAccount/cancel',        #add to ss cgi!
   'payment_info'         => 'MyAccount/payment_info',
   'process_payment'      => 'MyAccount/process_payment',
-  'list_pkgs'            => 'MyAccount/list_pkgs',
-  'order_pkg'            => 'MyAccount/order_pkg',
-  'cancel_pkg'           => 'MyAccount/cancel_pkg',
-  'charge'               => 'MyAccount/charge',
+  'list_pkgs'            => 'MyAccount/list_pkgs',     #add to ss cgi!
+  'order_pkg'            => 'MyAccount/order_pkg',     #add to ss cgi!
+  'cancel_pkg'           => 'MyAccount/cancel_pkg',    #add to ss cgi!
+  'charge'               => 'MyAccount/charge',        #?
+  'part_svc_info'        => 'MyAccount/part_svc_info',
+  'provision_acct'       => 'MyAccount/provision_acct',
+  'unprovision_svc'      => 'MyAccount/unprovision_svc',
   'signup_info'          => 'Signup/signup_info',
   'new_customer'         => 'Signup/new_customer',
   'agent_login'          => 'Agent/agent_login',
@@ -466,9 +470,28 @@ Returns a hash reference containing customer package information.  The hash refe
 
 =over 4
 
+
 =item cust_pkg HASHREF
 
-Array reference of hash references, each of which has the fields of a cust_pkg record (see L<FS::cust_pkg>).  Note these are not FS::cust_pkg objects, but hash references of columns and values.
+Array reference of hash references, each of which has the fields of a cust_pkg
+record (see L<FS::cust_pkg>) as well as the fields below.  Note these are not
+the internal FS:: objects, but hash references of columns and values.
+
+=item all fields of part_pkg (XXXpare this down to a secure subset)
+
+=item part_svc - An array of hash references, each of which has the following keys:
+
+=over 4
+
+=item all fields of part_svc (XXXpare this down to a secure subset)
+
+=item avail
+
+=back
+
+=item error
+
+Empty on success, or an error message on errors.
 
 =back
 
@@ -1033,7 +1056,8 @@ END
 =head1 RESELLER FUNCTIONS
 
 Note: Resellers can also use the B<signup_info> and B<new_customer> functions
-with their active session.
+with their active session, and the B<customer_info> and B<order_pkg> functions
+with their active session and an additonal I<custnum> parameter.
 
 =over 4
 

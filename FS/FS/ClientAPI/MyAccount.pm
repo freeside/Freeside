@@ -22,6 +22,7 @@ use FS::cust_pkg;
 use FS::ClientAPI; #hmm
 FS::ClientAPI->register_handlers(
   'MyAccount/login'            => \&login,
+  'MyAccount/logout'           => \&logout,
   'MyAccount/customer_info'    => \&customer_info,
   'MyAccount/edit_info'        => \&edit_info,
   'MyAccount/invoice'          => \&invoice,
@@ -33,6 +34,9 @@ FS::ClientAPI->register_handlers(
   'MyAccount/order_pkg'        => \&order_pkg,
   'MyAccount/cancel_pkg'       => \&cancel_pkg,
   'MyAccount/charge'           => \&charge,
+  'MyAccount/part_svc_info'    => \&part_svc_info,
+  'MyAccount/provision_acct'   => \&provision_acct,
+  'MyAccount/unprovision_svc'  => \&unprovision_svc,
 );
 
 use vars qw( @cust_main_editable_fields );
@@ -90,6 +94,16 @@ sub login {
   return { 'error'      => '',
            'session_id' => $session_id,
          };
+}
+
+sub logout {
+  my $p = shift;
+  if ( $p->{'session_id'} ) {
+    $cache->remove($p->{'session_id'});
+    return { 'error' => '' };
+  } else {
+    return { 'error' => "Can't resume session" }; #better error message
+  }
 }
 
 sub customer_info {
@@ -445,7 +459,24 @@ sub list_pkgs {
   my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
     or return { 'error' => "unknown custnum $custnum" };
 
-  return { 'cust_pkg' => [ map { $_->hashref } $cust_main->ncancelled_pkgs ] };
+  #return { 'cust_pkg' => [ map { $_->hashref } $cust_main->ncancelled_pkgs ] };
+
+  { 'svcnum'   => $session->{'svcnum'},
+    'cust_pkg' => [ map {
+                          { $_->hash,
+                            $_->part_pkg->hash,
+                            part_svc =>
+                              [ map $_->hashref, $_->available_part_svc ],
+                            cust_svc => 
+                              [ map { { $_->hash,
+                                        label => [ $_->label ],
+                                      }
+                                    } $_->cust_svc
+                              ],
+                          };
+                        } $cust_main->ncancelled_pkgs
+                  ],
+  };
 
 }
 
@@ -595,6 +626,111 @@ sub cancel_pkg {
 
   my $error = $cust_pkg->cancel( 'quiet'=>1 );
   return { 'error' => $error };
+
+}
+
+sub provision_acct {
+  my $p = shift;
+
+  my $session = $cache->get($p->{'session_id'})
+    or return { 'error' => "Can't resume session" }; #better error message
+
+  my $custnum = $session->{'custnum'};
+
+  my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
+    or return { 'error' => "unknown custnum $custnum" };
+
+  my $pkgnum = $p->{'pkgnum'};
+
+  my $cust_pkg = qsearchs('cust_pkg', { 'custnum' => $custnum,
+                                        'pkgnum'  => $pkgnum,
+                                                               } )
+    or return { 'error' => "unknown pkgnum $pkgnum" };
+
+  my $part_svc = qsearchs('part_svc', { 'svcpart' => $p->{'svcpart'} } )
+    or return { 'error' => "unknown svcpart $p->{'svcpart'}" };
+
+  return { 'error' => gettext('passwords_dont_match') }
+    if $p->{'_password'} ne $p->{'_password2'};
+  return { 'error' => gettext('empty_password') }
+    unless length($p->{'_password'});
+
+  my $svc_acct = new FS::svc_acct( {
+    'pkgnum'    => $p->{'pkgnum'},
+    'svcpart'   => $p->{'svcpart'},
+    'username'  => $p->{'username'},
+    '_password' => $p->{'_password'},
+  } );
+
+  return { 'svc'   => $part_svc->svc,
+           'error' => $svc_acct->insert
+         };
+
+}
+
+sub part_svc_info {
+  my $p = shift;
+
+  my $session = $cache->get($p->{'session_id'})
+    or return { 'error' => "Can't resume session" }; #better error message
+
+  my $custnum = $session->{'custnum'};
+
+  my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
+    or return { 'error' => "unknown custnum $custnum" };
+
+  my $pkgnum = $p->{'pkgnum'};
+
+  my $cust_pkg = qsearchs('cust_pkg', { 'custnum' => $custnum,
+                                        'pkgnum'  => $pkgnum,
+                                                               } )
+    or return { 'error' => "unknown pkgnum $pkgnum" };
+
+  my $svcpart = $p->{'svcpart'};
+
+  my $pkg_svc = qsearchs('pkg_svc', { 'pkgpart' => $cust_pkg->pkgpart,
+                                      'svcpart' => $svcpart,           } )
+    or return { 'error' => "unknown svcpart $svcpart for pkgnum $pkgnum" };
+  my $part_svc = $pkg_svc->part_svc;
+
+  return {
+    'svc'     => $part_svc->svc,
+    'svcdb'   => $part_svc->svcdb,
+    'pkgnum'  => $pkgnum,
+    'svcpart' => $svcpart,
+
+    'security_phrase' => 0, #XXX !
+    'svc_acct_pop'    => [], #XXX !
+    'popnum'          => '',
+    'init_popstate'   => '',
+    'popac'           => '',
+    'acstate'         => '',
+  };
+
+}
+
+sub unprovision_svc {
+  my $p = shift;
+
+  my $session = $cache->get($p->{'session_id'})
+    or return { 'error' => "Can't resume session" }; #better error message
+
+  my $custnum = $session->{'custnum'};
+
+  my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
+    or return { 'error' => "unknown custnum $custnum" };
+
+  my $svcnum = $p->{'svcnum'};
+
+  my $cust_svc = qsearchs('cust_svc', { 'svcnum'  => $svcnum, } )
+    or return { 'error' => "unknown svcnum $svcnum" };
+
+  return { 'error' => "Service $svcnum does not belong to customer $custnum" }
+    unless $cust_svc->cust_pkg->custnum == $custnum;
+
+  return { 'svc'   => $cust_svc->part_svc->svc,
+           'error' => $cust_svc->cancel
+         };
 
 }
 

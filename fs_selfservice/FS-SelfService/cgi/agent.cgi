@@ -221,6 +221,10 @@ sub process_order_pkg {
 
   my $results = '';
 
+  unless ( length($cgi->param('_password')) ) {
+    my $init_data = signup_info( 'session_id' => $session_id );
+    $results = { 'error' => $init_data->{msgcat}{empty_password} }
+  }
   if ( $cgi->param('_password') ne $cgi->param('_password2') ) {
     my $init_data = signup_info( 'session_id' => $session_id );
     $results = { error => $init_data->{msgcat}{passwords_dont_match} };

@@ -128,7 +128,7 @@ sub new_customer {
     #return "Passwords don't match"
     #  if $hashref->{'_password'} ne $hashref->{'_password2'}
   return { 'error' => gettext('empty_password') }
-    unless $packet->{'_password'};
+    unless length($packet->{'_password'});
   # a bit inefficient for large numbers of pops
   return { 'error' => gettext('no_access_number_selected') }
     unless $packet->{'popnum'} || !scalar(qsearch('svc_acct_pop',{} ));

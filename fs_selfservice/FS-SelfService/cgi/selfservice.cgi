@@ -6,8 +6,11 @@ use subs qw(do_template);
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use Text::Template;
-use FS::SelfService qw( login customer_info invoice payment_info
-                        process_payment );
+use FS::SelfService qw( login customer_info invoice
+                        payment_info process_payment 
+                        list_pkgs
+                        part_svc_info provision_acct unprovision_svc
+                      );
 
 $template_dir = '.';
 
@@ -54,8 +57,9 @@ if ( $cgi->param('session') eq 'login' ) {
 
 $session_id = $cgi->param('session');
 
+#order|pw_list XXX ???
 $cgi->param('action') =~
-    /^(myaccount|view_invoice|make_payment|payment_results)$/
+    /^(myaccount|view_invoice|make_payment|payment_results|logout|change_bill|change_ship|provision|provision_svc|process_svc_acct|delete_svc)$/
   or die "unknown action ". $cgi->param('action');
 my $action = $1;
 
@@ -167,6 +171,63 @@ sub payment_results {
 
 }
 
+sub logout {
+  FS::SelfService::logout( 'session_id' => $session_id );
+}
+
+sub provision {
+  list_pkgs( 'session_id' => $session_id );
+}
+
+sub provision_svc {
+
+  my $result = part_svc_info(
+    'session_id' => $session_id,
+    map { $_ => $cgi->param($_) } qw( pkgnum svcpart ),
+  );
+  die $result->{'error'} if exists $result->{'error'} && $result->{'error'};
+
+  $result->{'svcdb'} =~ /^svc_(.*)$/
+    #or return { 'error' => 'Unknown svcdb '. $result->{'svcdb'} };
+    or die 'Unknown svcdb '. $result->{'svcdb'};
+  $action .= "_$1";
+
+  $result;
+}
+
+sub process_svc_acct {
+
+  my $result = provision_acct (
+    'session_id' => $session_id,
+    map { $_ => $cgi->param($_) } qw(
+      pkgnum svcpart username _password _password2 sec_phrase popnum )
+  );
+
+  if ( exists $result->{'error'} && $result->{'error'} ) { 
+    warn "$result $result->{'error'}"; 
+    $action = 'provision_svc_acct';
+    return {
+      $cgi->Vars,
+      %{ part_svc_info( 'session_id' => $session_id,
+                        map { $_ => $cgi->param($_) } qw( pkgnum svcpart )
+                      )
+      },
+      'error' => $result->{'error'},
+    };
+  } else {
+    warn "$result $result->{'error'}"; 
+    return $result;
+  }
+
+}
+
+sub delete_svc {
+  unprovision_svc(
+    'session_id' => $session_id,
+    'svcnum'     => $cgi->param('svcnum'),
+  );
+}
+
 #--
 
 sub do_template {
@@ -175,6 +236,7 @@ sub do_template {
 
   $cgi->delete_all();
   $fill_in->{'selfurl'} = $cgi->self_url;
+  $fill_in->{'cgi'} = \$cgi;
 
   my $template = new Text::Template( TYPE    => 'FILE',
                                      SOURCE  => "$template_dir/$name.html",
@@ -183,6 +245,28 @@ sub do_template {
     or die $Text::Template::ERROR;
 
   print $cgi->header( '-expires' => 'now' ),
-        $template->fill_in( HASH => $fill_in );
+        $template->fill_in( PACKAGE => 'FS::SelfService::_selfservicecgi',
+                            HASH    => $fill_in
+                          );
+}
+
+#*FS::SelfService::_selfservicecgi::include = \&Text::Template::fill_in_file;
+
+package FS::SelfService::_selfservicecgi;
+
+#use FS::SelfService qw(regionselector expselect popselector);
+use FS::SelfService qw(popselector);
+
+sub include {
+  my $name = shift;
+  my $template = new Text::Template( TYPE   => 'FILE',
+                                     SOURCE => "$main::template_dir/$name.html",
+                                     DELIMITERS => [ '<%=', '%>' ],
+                                     UNTAINT => 1,                   
+                                   )
+    or die $Text::Template::ERROR;
+
+  $template->fill_in();
+
 }
 

@@ -4,12 +4,9 @@
 <TABLE BORDER=0 CELLPADDING=4><TR>
 <%= include('myaccount_menu') %>
 <TD VALIGN="top">
-<FONT SIZE=4>Payment results</FONT><BR><BR>
-<%= if ( $error ) {
-  $OUT .= qq!<FONT SIZE="+1" COLOR="#ff0000">Error processing your payment: $error</FONT>!;
-} else {
-  $OUT .= 'Your payment was processed sucessfully.  Thank you.';
-} %>
+
+<FONT SIZE=4><%= $svc %> setup sucessfully.</FONT>
+
 </TD></TR></TABLE>
 <HR>
 <FONT SIZE="-2">powered by <a href="http://www.sisd.com/freeside">freeside</a></FONT>

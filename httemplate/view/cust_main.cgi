@@ -897,28 +897,14 @@ sub get_packages {
     $pkg{expire} = $cust_pkg->getfield('expire');
     $pkg{cancel} = $cust_pkg->getfield('cancel');
   
-    my %svcparts = ();
-
-    foreach my $pkg_svc (
-      qsearch('pkg_svc', { 'pkgpart' => $part_pkg->pkgpart })
-    ) {
-  
-      next if ($pkg_svc->quantity == 0);
-  
-      my $part_svc = qsearchs('part_svc', { 'svcpart' => $pkg_svc->svcpart });
-  
-      my $svcpart = {};
-      $svcpart->{svcpart} = $part_svc->svcpart;
-      $svcpart->{svc} = $part_svc->svc;
-      $svcpart->{svcdb} = $part_svc->svcdb;
-      $svcpart->{quantity} = $pkg_svc->quantity;
-      $svcpart->{count} = 0;
-  
-      $svcpart->{services} = [];
-
-      $svcparts{$svcpart->{svcpart}} = $svcpart;
-
-    }
+    my %svcparts = map {
+      $_->svcpart => {
+                       $_->part_svc->hash,
+                       'quantity' => $_->quantity,
+                       'count'    => $cust_pkg->num_cust_svc($_->svcpart),
+                       #'services' => [],
+                     };
+    } $part_pkg->pkg_svc;
 
     foreach my $cust_svc ( $cust_pkg->cust_svc ) {
       #warn "svcnum ". $cust_svc->svcnum. " / svcpart ". $cust_svc->svcpart. "\n";
@@ -930,17 +916,13 @@ sub get_packages {
       #false laziness with above, to catch extraneous services.  whole
       #damn thing should be OO...
       my $svcpart = ( $svcparts{$cust_svc->svcpart} ||= {
-        'svcpart'  => $cust_svc->svcpart,
-        'svc'      => $cust_svc->part_svc->svc,
-        'svcdb'    => $cust_svc->part_svc->svcdb,
+        $cust_svc->part_svc->hash,
         'quantity' => 0,
-        'count'    => 0,
-        'services' => [],
+        'count'    => $cust_pkg->num_cust_svc($cust_svc->svcpart),
+        #'services' => [],
       } );
 
       push @{$svcpart->{services}}, $svc;
-
-      $svcpart->{count}++;
 
     }
 

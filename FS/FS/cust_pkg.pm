@@ -502,15 +502,22 @@ sub part_pkg {
     : qsearchs( 'part_pkg', { 'pkgpart' => $self->pkgpart } );
 }
 
-=item cust_svc
+=item cust_svc [ SVCPART ]
 
 Returns the services for this package, as FS::cust_svc objects (see
-L<FS::cust_svc>)
+L<FS::cust_svc>).  If a svcpart is specified, return only the matching
+services.
 
 =cut
 
 sub cust_svc {
   my $self = shift;
+
+  if ( @_ ) {
+    return qsearch( 'cust_svc', { 'pkgnum'  => $self->pkgnum,
+                                  'svcpart' => shift,          } );
+  }
+
   #if ( $self->{'_svcnum'} ) {
   #  values %{ $self->{'_svcnum'}->cache };
   #} else {
@@ -524,8 +531,45 @@ sub cust_svc {
             $pkg_svc ? $pkg_svc->quantity : 0,
           ];
         }
-    qsearch ( 'cust_svc', { 'pkgnum' => $self->pkgnum } );
+    qsearch( 'cust_svc', { 'pkgnum' => $self->pkgnum } );
   #}
+
+}
+
+=item num_cust_svc [ SVCPART ]
+
+Returns the number of provisioned services for this package.  If a svcpart is
+specified, counts only the matching services.
+
+=cut
+
+sub num_cust_svc {
+  my $self = shift;
+  my $sql = 'SELECT COUNT(*) FROM cust_svc WHERE pkgnum = ?';
+  $sql .= ' AND svcpart = ?' if @_;
+  my $sth = dbh->prepare($sql) or die dbh->errstr;
+  $sth->execute($self->pkgnum, @_) or die $sth->errstr;
+  $sth->fetchrow_arrayref->[0];
+}
+
+=item available_part_svc 
+
+Returns a list FS::part_svc objects representing services included in this
+package but not yet provisioned.  Each FS::part_svc object also has an extra
+field, I<num_avail>, which specifies the number of available services.
+
+=cut
+
+sub available_part_svc {
+  my $self = shift;
+  grep { $_->num_avail > 0 }
+    map {
+          my $part_svc = $_->part_svc;
+          $part_svc->{'Hash'}{'num_avail'} = #evil encapsulation-breaking
+            $_->quantity - $self->num_cust_svc($_->svcpart);
+          $part_svc;
+        }
+      $self->part_pkg->pkg_svc;
 }
 
 =item labels

@@ -1,10 +1,9 @@
 <HTML><HEAD><TITLE>MyAccount</TITLE></HEAD>
 <BODY BGCOLOR="#eeeeee"><FONT SIZE=5>MyAccount</FONT><BR><BR>
 <%= $url = "$selfurl?session=$session_id;action="; ''; %>
-<TABLE BORDER=0 CELLPADDING=4><TR><TD VALIGN="top" HEIGHT=384 BGCOLOR="#dddddd">
-<A HREF="<%= $url %>myaccount">MyAccount</A><BR>
-<!-- <A HREF="<%= $url %>other">SomethingElse</A><BR> -->
-</TD><TD VALIGN="top">
+<TABLE BORDER=0 CELLPADDING=4><TR>
+<%= include('myaccount_menu') %>
+<TD VALIGN="top">
 
 Hello <%= $name %>!<BR><BR>
 <%= $small_custview %>
@@ -15,7 +14,7 @@ Hello <%= $name %>!<BR><BR>
 <%=
   if ( @open_invoices ) {
     $OUT .= '<TABLE BORDER=0 CELLSPACING=0 CELLPADDING=2 BGCOLOR="#eeeeee">'.
-            '<TR><TH BGCOLOR="#ff3333" COLSPAN=5>Open Invoices</TH><TD>';
+            '<TR><TH BGCOLOR="#ff6666" COLSPAN=5>Open Invoices</TH></TR>';
     my $link = qq!<A HREF="<%= $url %>myaccount!;
     my $col1 = "ffffff";
     my $col2 = "dddddd";
