@@ -1,9 +1,12 @@
 Thanks to Matt Simerson <matt@michweb.net> of MichWeb Inc. for documentation
 and pre-release testing.  Without his help the documentation in 1.0.0
 release would have consisted of a single screenfull of text.
+(To clear up some misunderstanding, Matt did not write the current
+documentation.)
 
 Steve Cleff <cleff@yahoo.com> did the default background image in 1.0.x and
-is also the creator of Freeside's elusive mascot, Snakeman.
+is also the creator of Freeside's elusive mascot, Snakeman, who we hope will
+make an appearance in a later 1.2.x version.
 
 Jerry St. Pierre <jstpi@city.timmins.on.ca> did the "SISD" graphic used in
 1.0.x and most of 1.1.x.
@@ -14,7 +17,8 @@ logo for later 1.1.x versions and 1.2.x
 Brian McCane? <bmccane@maxbaud.net> contributed PostgreSQL support, HTML
 style enhancements and many, many bugfixes.
 
-Cerkit <cerkit@alfheim.net> contributed 
+Cerkit <cerkit@alfheim.net> contributed rsync support and desynced hosts.
+His changes will hopefully be included in a later 1.2.x version.
 
 CompleteHOST, Inc. (http://www.completehost.com) funded the development of the
 following Freeside features by contracting me for a custom billing system
