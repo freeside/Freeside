@@ -2,6 +2,7 @@ package FS::dbdef_colgroup;
 
 use strict;
 use vars qw(@ISA);
+use Exporter;
 
 @ISA = qw(Exporter);
 
