@@ -373,7 +373,7 @@ sub tables_hash_hack {
       ],
       'primary_key' => 'invnum',
       'unique' => [],
-      'index' => [ ['custnum'] ],
+      'index' => [ ['custnum'], ['_date'] ],
     },
 
     'cust_bill_event' => {
