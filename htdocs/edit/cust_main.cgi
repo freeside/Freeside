@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main.cgi,v 1.24 2000-01-30 06:54:50 ivan Exp $
+# $Id: cust_main.cgi,v 1.25 2000-03-02 08:09:38 ivan Exp $
 #
 # Usage: cust_main.cgi custnum
 #        http://server.name/path/cust_main.cgi?custnum
@@ -38,7 +38,10 @@
 # fixed one missed day->daytime ivan@sisd.com 98-jul-13
 #
 # $Log: cust_main.cgi,v $
-# Revision 1.24  2000-01-30 06:54:50  ivan
+# Revision 1.25  2000-03-02 08:09:38  ivan
+# still need to allow blank expiration dates
+#
+# Revision 1.24  2000/01/30 06:54:50  ivan
 # credit card expiration dates not sticky bug fixed?
 #
 # Revision 1.23  2000/01/27 00:53:14  ivan
@@ -290,7 +293,7 @@ sub expselect {
   my $prefix = shift;
   my( $m, $y ) = (0, 0);
   if ( scalar(@_) ) {
-    my $date = shift;
+    my $date = shift || '01-2000';
     if ( $date  =~ /^(\d{4})-(\d{1,2})-\d{1,2}$/ ) { #PostgreSQL date format
       ( $m, $y ) = ( $2, $1 );
     } elsif ( $date =~ /^(\d{1,2})-(\d{1,2}-)?(\d{4}$)/ ) {
