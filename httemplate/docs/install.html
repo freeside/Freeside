@@ -129,6 +129,7 @@ cp&nbsp;htetc/global.asa&nbsp;/usr/local/etc/freeside/asp-global/global.asa
 </pre></font>
       <li>Configure Apache for the Global directory and to execute .cgi files using Apache::ASP.  For example:
 <font size="-1"><pre>
+PerlModule Apache::ASP
 &lt;Directory&nbsp;/usr/local/apache/htdocs/freeside-asp&gt;
 &lt;Files ~ (\.cgi)&gt;
 AddHandler perl-script .cgi
@@ -150,6 +151,7 @@ PerlSetVar Debug 2
       <li>Edit <tt>handler.pl</tt> and set an appropriate <tt>data_dir</tt>, such as <tt>/usr/local/etc/freeside/mason-data</tt>
       <li>Configure Apache to use the <tt>handler.pl</tt> file and to execute .cgi files using HTML::Mason.  For example:
 <font size="-1"><pre>
+PerlModule HTML::Mason
 &lt;Directory&nbsp;/usr/local/apache/htdocs/freeside-mason&gt;
 &lt;Files ~ (\.cgi)&gt;
 AddHandler perl-script .cgi
