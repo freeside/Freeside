@@ -335,7 +335,10 @@ sub send {
   my $self = shift;
   my $template = scalar(@_) ? shift : '';
   return 'N/A' if scalar(@_) && $_[0] && $self->cust_main->agentnum != shift;
-  my $invoice_from = scalar(@_) ? shift : $conf->config('invoice_from');
+  my $invoice_from =
+    scalar(@_)
+      ? shift
+      : ( $self->_agent_invoice_from || $conf->config('invoice_from') );
 
   my @print_text = $self->print_text('', $template);
   my @invoicing_list = $self->cust_main->invoicing_list;
@@ -668,13 +671,26 @@ sub batch_card {
 
 sub _agent_template {
   my $self = shift;
+  $self->_agent_plandata('agent_templatename');
+}
+
+sub _agent_invoice_from {
+  my $self = shift;
+  $self->_agent_plandata('agent_invoice_from');
+}
+
+sub _agent_plandata {
+  my( $self, $option ) = @_;
 
   my $cust_bill_event = qsearchs( 'part_bill_event',
     {
       'payby'     => $self->cust_main->payby,
       'plan'      => 'send_agent',
-      'eventcode' => { 'op'    => 'LIKE',
-                       'value' => '_%, '. $self->cust_main->agentnum. ');' },
+      'plandata'  => { 'op'    => '~',
+                       'value' => "(^|\n)agentnum ".
+                                  $self->cust_main->agentnum.
+                                  "(\n|\$)",
+                     },
     },
     '',
     'ORDER BY seconds LIMIT 1'
@@ -682,10 +698,10 @@ sub _agent_template {
 
   return '' unless $cust_bill_event;
 
-  if ( $cust_bill_event->eventcode =~ /\(\s*'(.*)'\s*,\s*(\d+)\s*\)\;$/ ) {
+  if ( $cust_bill_event->plandata =~ /^$option (.*)$/m ) {
     return $1;
   } else {
-    warn "can't parse eventcode for agent-specific invoice template";
+    warn "can't parse plandata for $1";
     return '';
   }
 
