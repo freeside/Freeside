@@ -1,15 +1,18 @@
 package FS::cust_main_invoice;
 
 use strict;
-use vars qw(@ISA $conf);
+use vars qw(@ISA $conf $mydomain);
 use Exporter;
 use FS::Record; # qw(qsearch qsearchs);
 use FS::Conf;
 
 @ISA = qw(FS::Record);
 
-$conf = new FS::Conf;
-my $mydomain = $conf->config('domain');
+#ask FS::UID to run this stuff for us later
+$FS::UID::callback{'FS::cust_main_invoice'} = sub { 
+  $conf = new FS::Conf;
+  $mydomain = $conf->config('domain');
+};
 
 =head1 NAME
 
@@ -29,6 +32,8 @@ FS::cust_main_invoice - Object methods for cust_main_invoice records
   $error = $record->delete;
 
   $error = $record->check;
+
+  $email_address = $record->address;
 
 =head1 DESCRIPTION
 
@@ -159,11 +164,27 @@ sub check {
   ''; #no error
 }
 
+=item address
+
+Returns the literal email address for this record (or `POST').
+
+=cut
+
+sub address {
+  my $self = shift;
+  if ( $self->dest =~ /(\d+)$/ ) {
+    my $svc_acct = qsearchs('svc_acct', { 'svcnum' => $1 } );
+    $svc_acct->username . '@' . $mydomain;
+  } else {
+    $self->dest;
+  }
+}
+
 =back
 
 =head1 VERSION
 
-$Id: cust_main_invoice.pm,v 1.1 1998-12-16 07:40:02 ivan Exp $
+$Id: cust_main_invoice.pm,v 1.2 1998-12-16 09:58:53 ivan Exp $
 
 =head1 BUGS
 
@@ -179,7 +200,10 @@ added hfields
 ivan@sisd.com 97-nov-13
 
 $Log: cust_main_invoice.pm,v $
-Revision 1.1  1998-12-16 07:40:02  ivan
+Revision 1.2  1998-12-16 09:58:53  ivan
+library support for editing email invoice destinations (not in sub collect yet)
+
+Revision 1.1  1998/12/16 07:40:02  ivan
 new table
 
 Revision 1.3  1998/11/15 04:33:00  ivan

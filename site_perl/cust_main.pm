@@ -24,6 +24,7 @@ use FS::cust_pay_batch;
 use FS::part_referral;
 use FS::cust_main_county;
 use FS::agent;
+use FS::cust_main_invoice;
 
 @ISA = qw(FS::Record Exporter);
 @EXPORT_OK = qw(hfields);
@@ -824,6 +825,63 @@ sub balance {
   sprintf("%.2f",$self->total_owed - $self->total_credited);
 }
 
+=item invoicing_list [ ITEM, ITEM, ... ]
+
+If arguements are given, sets these email addresses as invoice recipients
+(see L<FS::cust_main_invoice>).  Errors are not fatal and are not reported
+(except as warnings), so use check_invoicing_list first.
+
+Returns a list of email addresses (with svcnum entries expanded).
+
+=cut
+
+sub invoicing_list {
+  my($self, @addresses) = @_;
+  if ( @addresses ) {
+    my @cust_main_invoice = 
+      qsearch('cust_main_invoice', { 'custnum' => $self->custnum } );
+    foreach my $cust_main_invoice ( @cust_main_invoice ) {
+      unless ( grep { $cust_main_invoice->address eq $_ } @addresses ) {
+        $cust_main_invoice->delete;
+      }
+    }
+    @cust_main_invoice =
+      qsearch('cust_main_invoice', { 'custnum' => $self->custnum } );
+    foreach my $address ( @addresses ) {
+      unless ( grep { $address eq $_->address } @cust_main_invoice ) {
+        my $cust_main_invoice = create FS::cust_main_invoice (
+          'custnum' => $self->custnum,
+          'dest'    => $address,
+        );
+        my $error = $cust_main_invoice->insert;
+        warn $error if $error;
+      } 
+    }
+  }
+  map { $_->address }
+    qsearch('cust_main_invoice', { 'custnum' => $self->custnum } );
+}
+
+=item check_invoicing_list ITEM, ITEM
+
+Checks these arguements as valid input for the invoicing_list method.  If there
+is an error, returns the error, otherwise returns false.
+
+=cut
+
+sub check_invoicing_list {
+  my($self, @addresses) = @_;
+  foreach my $address ( @addresses ) {
+    my $cust_main_invoice = create FS::cust_main_invoice (
+      'custnum' => $self->custnum,
+      'dest'    => $address,
+    );
+    my $error = $cust_main_invoice->check;
+    return $error if $error;
+  }
+  '';
+}
+
 =back
 
 =head1 BUGS
@@ -843,7 +901,8 @@ CyberCash v2 forces us to define some variables in package main.
 
 L<FS::Record>, L<FS::cust_pkg>, L<FS::cust_bill>, L<FS::cust_credit>
 L<FS::cust_pay_batch>, L<FS::agent>, L<FS::part_referral>,
-L<FS::cust_main_county>, L<FS::UID>, schema.html from the base documentation.
+L<FS::cust_main_county>, L<FS::cust_main_invoice>,
+L<FS::UID>, schema.html from the base documentation.
 
 =head1 HISTORY
 
@@ -876,7 +935,10 @@ enable cybercash, cybercash v3 support, don't need to import
 FS::UID::{datasrc,checkruid} ivan@sisd.com 98-sep-19-21
 
 $Log: cust_main.pm,v $
-Revision 1.6  1998-11-18 09:01:42  ivan
+Revision 1.7  1998-12-16 09:58:52  ivan
+library support for editing email invoice destinations (not in sub collect yet)
+
+Revision 1.6  1998/11/18 09:01:42  ivan
 i18n! i18n!
 
 Revision 1.5  1998/11/15 11:23:14  ivan
