@@ -1,0 +1,46 @@
+#!/usr/bin/perl -Tw
+
+use strict;
+use FS::UID qw(adminsuidsetup);
+use FS::part_export;
+
+my $user = shift or die &usage;
+adminsuidsetup $user;
+
+#my $machine = shift or die &usage;
+
+my @exports = qsearch('part_export', { 'exporttype' => 'sqlradius' } );
+
+foreach my $export ( @exports ) {
+  my $icradius_dbh = DBI->connect(
+    map { $export->option($_) } qw( datasrc username password )
+  ) or die $DBI::errstr;
+  for my $table (qw( radcheck radreply usergroup )) {
+    my $sth = $icradius_dbh->prepare("DELETE FROM $table");
+    $sth->execute or die "Can't reset $table table: ". $sth->errstr;
+  }
+}
+
+foreach my $export ( @exports ) {
+  my @svc_acct =
+    map { qsearchs{'svc_acct', { 'svcnum' => $_->svcnum } ) }
+      qsearch('cust_svc', { 'svcpart' => $export->part_svc->svcpart } );
+  foreach my $svc_acct ( @svc_acct ) {
+
+    #flase laziness with FS::svc_acct::insert (like it matters)
+    my $error = $part_export->export_insert($self);
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "exporting to ". $part_export->exporttype.
+             " (transaction rolled back): $error";
+    }
+
+  }
+}
+
+sub usage {
+  #die "Usage:\n\n  icradius_reset user machine\n";
+  die "Usage:\n\n  icradius_reset user\n";
+}
+
+

@@ -1,7 +1,0 @@
-
-  my $sth = $icradius_dbh->prepare("DELETE FROM radcheck");
-  $sth->execute or die "Can't reset radcheck table: ". $sth->errstr;
-  my $sth2 = $icradius_dbh->prepare("DELETE FROM radreply");
-  $sth2->execute or die "Can't reset radreply table: ". $sth2->errstr;
-
-
