@@ -308,16 +308,18 @@ sub srcsvc_acct {
 Returns the FS::svc_acct object referenced by the srcsvc column, or false for
 forwards not local to freeside.
 
-=back
+=cut
 
 sub dstsvc_acct {
   my $self = shift;
   qsearchs('svc_acct', { 'svcnum' => $self->dstsvc } );
 }
 
+=back
+
 =head1 VERSION
 
-$Id: svc_forward.pm,v 1.8 2001-10-29 20:53:38 ivan Exp $
+$Id: svc_forward.pm,v 1.9 2002-02-11 23:01:01 ivan Exp $
 
 =head1 BUGS
 
