@@ -804,7 +804,7 @@ sub ut_phonen {
     $phonen .= " x$4" if $4;
     $self->setfield($field,$phonen);
   } else {
-    warn "don't know how to check phone numbers for country $country";
+    warn "warning: don't know how to check phone numbers for country $country";
     return $self->ut_textn($field);
   }
   '';
