@@ -191,6 +191,8 @@ tie my %events, 'Tie::IxHash',
             <TD>
               <INPUT TYPE="text" NAME="agent_templatename" VALUE="%%%agent_templatename%%%">
             </TD>
+          </TR>
+          <TR>
             <TD ALIGN="right">email From: </TD>
             <TD>
               <INPUT TYPE="text" NAME="agent_invoice_from" VALUE="%%%agent_invoice_from%%%">
