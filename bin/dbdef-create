@@ -1,10 +1,10 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: dbdef-create,v 1.5 2001-08-21 02:43:18 ivan Exp $
+# $Id: dbdef-create,v 1.6 2002-09-19 13:34:52 ivan Exp $
 
 use strict;
 use DBI;
-use DBIx::DBSchema;
+use DBIx::DBSchema 0.21;
 use FS::UID qw(adminsuidsetup datasrc driver_name);
 
 my $user = shift or die &usage;

@@ -9,8 +9,8 @@ use Carp qw(carp cluck croak confess);
 use File::CounterFile;
 use Locale::Country;
 use DBI qw(:sql_types);
-use DBIx::DBSchema 0.19;
-use FS::UID qw(dbh checkruid getotaker datasrc driver_name);
+use DBIx::DBSchema 0.21;
+use FS::UID qw(dbh getotaker datasrc driver_name);
 use FS::SearchCache;
 use FS::Msgcat qw(gettext);
 
@@ -60,14 +60,12 @@ FS::Record - Database record objects
     $hashref = $record->hashref;
 
     $error = $record->insert;
-    #$error = $record->add; #deprecated
 
     $error = $record->delete;
-    #$error = $record->del; #deprecated
 
     $error = $new_record->replace($old_record);
-    #$error = $new_record->rep($old_record); #deprecated
 
+    # external use deprecated - handled by the database (at least for Pg, mysql)
     $value = $record->unique('column');
 
     $error = $record->ut_float('column');
@@ -88,7 +86,7 @@ FS::Record - Database record objects
 
     $quoted_value = _quote($value,'table','field');
 
-    #depriciated
+    #deprecated
     $fields = hfields('table');
     if ( $fields->{Field} ) { # etc.
 
@@ -167,7 +165,7 @@ sub create {
   my $self = {};
   bless ($self, $class);
   if ( defined $self->table ) {
-    cluck "create constructor is depriciated, use new!";
+    cluck "create constructor is deprecated, use new!";
     $self->new(@_);
   } else {
     croak "FS::Record::create called (not from a subclass)!";
@@ -212,25 +210,25 @@ sub qsearch {
       my $op = '=';
       if ( ref($record->{$_}) ) {
         $op = $record->{$_}{'op'} if $record->{$_}{'op'};
-        $op = 'LIKE' if $op =~ /^ILIKE$/i && driver_name !~ /^Pg$/i;
+        $op = 'LIKE' if $op =~ /^ILIKE$/i && driver_name ne 'Pg';
         $record->{$_} = $record->{$_}{'value'}
       }
 
       if ( ! defined( $record->{$_} ) || $record->{$_} eq '' ) {
         if ( $op eq '=' ) {
-          if ( driver_name =~ /^Pg$/i ) {
+          if ( driver_name eq 'Pg' ) {
             qq-( $_ IS NULL OR $_ = '' )-;
           } else {
             qq-( $_ IS NULL OR $_ = "" )-;
           }
         } elsif ( $op eq '!=' ) {
-          if ( driver_name =~ /^Pg$/i ) {
+          if ( driver_name eq 'Pg' ) {
             qq-( $_ IS NOT NULL AND $_ != '' )-;
           } else {
             qq-( $_ IS NOT NULL AND $_ != "" )-;
           }
         } else {
-          if ( driver_name =~ /^Pg$/i ) {
+          if ( driver_name eq 'Pg' ) {
             qq-( $_ $op '' )-;
           } else {
             qq-( $_ $op "" )-;
@@ -345,7 +343,7 @@ Returns the table name.
 =cut
 
 sub table {
-#  cluck "warning: FS::Record::table depriciated; supply one in subclass!";
+#  cluck "warning: FS::Record::table deprecated; supply one in subclass!";
   my $self = shift;
   $self -> {'Table'};
 }
@@ -472,24 +470,33 @@ sub insert {
   return $error if $error;
 
   #single-field unique keys are given a value if false
-  #(like MySQL's AUTO_INCREMENT)
+  #(like MySQL's AUTO_INCREMENT or Pg SERIAL)
   foreach ( $self->dbdef_table->unique->singles ) {
     $self->unique($_) unless $self->getfield($_);
   }
-  #and also the primary key
-  my $primary_key = $self->dbdef_table->primary_key;
-  $self->unique($primary_key) 
-    if $primary_key && ! $self->getfield($primary_key);
 
+  #and also the primary key, if the database isn't going to
+  my $primary_key = $self->dbdef_table->primary_key;
+  my $db_seq = 0;
+  if ( $primary_key ) {
+    my $col = $self->dbdef_table->column($primary_key);
+    my $db_seq =
+      uc($col->type) eq 'SERIAL'
+      || ( driver_name eq 'Pg'    && $col->default =~ /^nextval\(/i     )
+      || ( driver_name eq 'mysql' && $col->local   =~ /AUTO_INCREMENT/i );
+    $self->unique($primary_key) unless $self->getfield($primary_key) || $db_seq;
+  }
+
+  my $table = $self->table;
   #false laziness w/delete
   my @fields =
     grep defined($self->getfield($_)) && $self->getfield($_) ne "",
     $self->fields
   ;
-  my @values = map { _quote( $self->getfield($_), $self->table, $_) } @fields;
+  my @values = map { _quote( $self->getfield($_), $table, $_) } @fields;
   #eslaf
 
-  my $statement = "INSERT INTO ". $self->table. " ( ".
+  my $statement = "INSERT INTO $table ( ".
       join( ', ', @fields ).
     ") VALUES (".
       join( ', ', @values ).
@@ -497,15 +504,6 @@ sub insert {
   ;
   warn "[debug]$me $statement\n" if $DEBUG > 1;
   my $sth = dbh->prepare($statement) or return dbh->errstr;
-
-  my $h_sth;
-  if ( defined $dbdef->table('h_'. $self->table) ) {
-    my $h_statement = $self->_h_statement('insert');
-    warn "[debug]$me $h_statement\n" if $DEBUG > 2;
-    $h_sth = dbh->prepare($h_statement) or return dbh->errstr;
-  } else {
-    $h_sth = '';
-  }
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -515,7 +513,63 @@ sub insert {
   local $SIG{PIPE} = 'IGNORE';
 
   $sth->execute or return $sth->errstr;
+
+  if ( $db_seq ) { # get inserted id from the database, if applicable
+    my $insertid = '';
+    if ( driver_name eq 'Pg' ) {
+
+      my $oid = $sth->{'pg_oid_status'};
+      my $i_sql = "SELECT id FROM $table WHERE oid = ?";
+      my $i_sth = dbh->prepare($i_sql) or do {
+        dbh->rollback if $FS::UID::AutoCommit;
+        return dbh->errstr;
+      };
+      $i_sth->execute($oid) or do {
+        dbh->rollback if $FS::UID::AutoCommit;
+        return $i_sth->errstr;
+      };
+      $insertid = $i_sth->fetchrow_arrayref->[0];
+
+    } elsif ( driver_name eq 'mysql' ) {
+
+      $insertid = dbh->{'mysql_insertid'};
+      # work around mysql_insertid being null some of the time, ala RT :/
+      unless ( $insertid ) {
+        warn "WARNING: DBD::mysql didn't return mysql_insertid; ".
+             "using SELECT LAST_INSERT_ID();";
+        my $i_sql = "SELECT LAST_INSERT_ID()";
+        my $i_sth = dbh->prepare($i_sql) or do {
+          dbh->rollback if $FS::UID::AutoCommit;
+          return dbh->errstr;
+        };
+        $i_sth->execute or do {
+          dbh->rollback if $FS::UID::AutoCommit;
+          return $i_sth->errstr;
+        };
+        $insertid = $i_sth->fetchrow_arrayref->[0];
+      }
+
+    } else {
+      dbh->rollback if $FS::UID::AutoCommit;
+      return "don't know how to retreive inserted ids from ". driver_name. 
+             ", try using counterfiles (maybe run dbdef-create?)";
+    }
+    $self->setfield($primary_key, $insertid);
+  }
+
+  my $h_sth;
+  if ( defined $dbdef->table('h_'. $table) ) {
+    my $h_statement = $self->_h_statement('insert');
+    warn "[debug]$me $h_statement\n" if $DEBUG > 2;
+    $h_sth = dbh->prepare($h_statement) or do {
+      dbh->rollback if $FS::UID::AutoCommit;
+      return dbh->errstr;
+    };
+  } else {
+    $h_sth = '';
+  }
   $h_sth->execute or return $h_sth->errstr if $h_sth;
+
   dbh->commit or croak dbh->errstr if $FS::UID::AutoCommit;
 
   '';
@@ -528,7 +582,7 @@ Depriciated (use insert instead).
 =cut
 
 sub add {
-  cluck "warning: FS::Record::add depriciated!";
+  cluck "warning: FS::Record::add deprecated!";
   insert @_; #call method in this scope
 }
 
@@ -546,7 +600,7 @@ sub delete {
     map {
       $self->getfield($_) eq ''
         #? "( $_ IS NULL OR $_ = \"\" )"
-        ? ( driver_name =~ /^Pg$/i
+        ? ( driver_name eq 'Pg'
               ? "$_ IS NULL"
               : "( $_ IS NULL OR $_ = \"\" )"
           )
@@ -592,7 +646,7 @@ Depriciated (use delete instead).
 =cut
 
 sub del {
-  cluck "warning: FS::Record::del depriciated!";
+  cluck "warning: FS::Record::del deprecated!";
   &delete(@_); #call method in this scope
 }
 
@@ -632,7 +686,7 @@ sub replace {
       map {
         $old->getfield($_) eq ''
           #? "( $_ IS NULL OR $_ = \"\" )"
-          ? ( driver_name =~ /^Pg$/i
+          ? ( driver_name eq 'Pg'
                 ? "$_ IS NULL"
                 : "( $_ IS NULL OR $_ = \"\" )"
             )
@@ -685,7 +739,7 @@ Depriciated (use replace instead).
 =cut
 
 sub rep {
-  cluck "warning: FS::Record::rep depriciated!";
+  cluck "warning: FS::Record::rep deprecated!";
   replace @_; #call method in this scope
 }
 
@@ -718,8 +772,13 @@ sub _h_statement {
 
 =item unique COLUMN
 
-Replaces COLUMN in record with a unique number.  Called by the B<add> method
-on primary keys and single-field unique columns (see L<DBIx::DBSchema::Table>).
+B<Warning>: External use is B<deprecated>.  
+
+Replaces COLUMN in record with a unique number, using counters in the
+filesystem.  Used by the B<insert> method on single-field unique columns
+(see L<DBIx::DBSchema::Table>) and also as a fallback for primary keys
+that aren't SERIAL (Pg) or AUTO_INCREMENT (mysql).
+
 Returns the new value.
 
 =cut
@@ -727,8 +786,6 @@ Returns the new value.
 sub unique {
   my($self,$field) = @_;
   my($table)=$self->table;
-
-  #croak("&FS::UID::checkruid failed") unless &checkruid;
 
   croak "Unique called on field $field, but it is ",
         $self->getfield($field),
@@ -745,9 +802,8 @@ sub unique {
 #  my($counter) = new File::CounterFile "$user/$table.$field",0;
 # endhack
 
-  my($index)=$counter->inc;
-  $index=$counter->inc
-    while qsearchs($table,{$field=>$index}); #just in case
+  my $index = $counter->inc;
+  $index = $counter->inc while qsearchs($table, { $field=>$index } );
 
   $index =~ /^(\d*)$/;
   $index=$1;
@@ -1165,14 +1221,14 @@ sub _quote {
 
 =item hfields TABLE
 
-This is depriciated.  Don't use it.
+This is deprecated.  Don't use it.
 
 It returns a hash-type list with the fields of this record's table set true.
 
 =cut
 
 sub hfields {
-  carp "warning: hfields is depriciated";
+  carp "warning: hfields is deprecated";
   my($table)=@_;
   my(%hash);
   foreach (fields($table)) {
@@ -1208,7 +1264,7 @@ sub DESTROY { return; }
 This module should probably be renamed, since much of the functionality is
 of general use.  It is not completely unlike Adapter::DBI (see below).
 
-Exported qsearch and qsearchs should be depriciated in favor of method calls
+Exported qsearch and qsearchs should be deprecated in favor of method calls
 (against an FS::Record object like the old search and searchs that qsearch
 and qsearchs were on top of.)
 
@@ -1216,7 +1272,7 @@ The whole fields / hfields mess should be removed.
 
 The various WHERE clauses should be subroutined.
 
-table string should be depriciated in favor of DBIx::DBSchema::Table.
+table string should be deprecated in favor of DBIx::DBSchema::Table.
 
 No doubt we could benefit from a Tied hash.  Documenting how exists / defined
 true maps to the database (and WHERE clauses) would also help.
