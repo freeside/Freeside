@@ -15,7 +15,7 @@ Before installing, you need:
   <li>A <b>transactional</b> database engine <a href="http://search.cpan.org/search?mode=module&query=DBD%3A%3A">supported</a> by Perl's <a href="http://dbi.perl.org">DBI</a>.
     <ul>
       <li><a href="http://www.postgresql.org/">PostgreSQL</a> is recommended (v7.2 or later).
-      <li> <a href="http://www.mysql.com/">MySQL</a> is <b>not currently supported</b>.  Developers intersted in maintaining the MySQL port are welcome to ask on the -devel mailing list.
+      <li> <a href="http://www.mysql.com/">MySQL</a> is <b>not currently supported</b>.  <FONT SIZE="-1"><i>Developers intersted in maintaining MySQL support are welcome to ask on the -devel mailing list; many things work, but MySQL support needs a maintainer to update it for recent (and future) changes.</i></FONT>
       <!-- <li><a href="http://www.mysql.com/">MySQL</a> <b>MINIMUM VERSION 4.1</b> is untested but may work.   Versions before 4.1 do not support standard SQL subqueries and are <b>NOT SUPPORTED</b>.
 <!--       <li>MySQL has been reported to work.
          MySQL's default <a href="http://www.mysql.com/doc/M/y/MyISAM.html">MyISAM</a> and <a href="http://www.mysql.com/doc/I/S/ISAM.html">ISAM</a> table types are not supported.  You <b>must</b> use one of the new <a href="http://www.mysql.com/doc/T/a/Table_types.html">transaction-safe table types</a> such as <a href="http://www.mysql.com/doc/I/n/InnoDB.html">InnoDB</a>.  Set it as the default table type using the <code>--default-table-type=InnoDB</code> <a href="http://www.mysql.com/documentation/mysql/bychapter/manual_MySQL_Database_Administration.html#Command-line_options">mysqld command-line option</a> or by setting <code>default-table-type=InnoDB</code> in the <a href="http://www.mysql.com/documentation/mysql/bychapter/manual_MySQL_Database_Administration.html#Option_files">my.cnf option file</a>.
@@ -23,49 +23,50 @@ Before installing, you need:
     </ul>
   <li>Perl modules (<a href="http://search.cpan.org/~andk/CPAN/lib/CPAN.pm">CPAN</a> will query, download and build perl modules automatically)
     <ul>
-<!--      <li><a href="http://search.cpan.org/search?dist=Array-PrintCols">Array-PrintCols</a>
-      <li><a href="http://search.cpan.org/search?dist=Term-Query">Term-Query</a> (make test broken; install manually) -->
-      <li><a href="http://search.cpan.org/search?dist=MIME-Base64">MIME-Base64</a>
-      <li><a href="http://search.cpan.org/search?dist=Digest-MD5">Digest-MD5</a>
-<!--      <li><a href="http://search.cpan.org/search?dist=MD5">MD5</a> -->
-      <li><a href="http://search.cpan.org/search?dist=URI">URI</a>
-      <li><a href="http://search.cpan.org/search?dist=HTML-Tagset">HTML-Tagset</a>
-      <li><a href="http://search.cpan.org/search?dist=HTML-Parser">HTML-Parser</a>
-      <li><a href="http://search.cpan.org/search?dist=libnet">libnet</a>
-      <li><a href="http://search.cpan.org/search?dist=Locale-Codes">Locale-Codes</a>
-      <li><a href="http://search.cpan.org/search?dist=Net-Whois-Raw">Net-Whois-Raw</a>
-      <li><a href="http://search.cpan.org/search?dist=libwww-perl">libwww-perl</a>
-      <li><a href="http://search.cpan.org/search?dist=Business-CreditCard">Business-CreditCard</a>
-<!--      <li><a href="http://search.cpan.org/search?dist=Data-ShowTable">Data-ShowTable</a> -->
-      <li><a href="http://search.cpan.org/search?dist=MailTools">MailTools</a>
-      <li><a href="http://search.cpan.org/search?dist=TimeDate">TimeDate</a>
-      <li><a href="http://search.cpan.org/search?dist=DateManip">DateManip</a>
-      <li><a href="http://search.cpan.org/search?dist=File-CounterFile">File-CounterFile</a>
-      <li><a href="http://search.cpan.org/search?dist=FreezeThaw">FreezeThaw</a>
-      <li><a href="http://search.cpan.org/search?dist=String-Approx">String-Approx</a>
-      <li><a href="http://search.cpan.org/search?dist=Text-Template">Text-Template</a>
-      <li><a href="http://search.cpan.org/search?dist=DBI">DBI</a>
-      <li><a href="http://search.cpan.org/search?mode=module&query=DBD">DBD for your database engine</a> (<a href="http://search.cpan.org/search?dist=DBD-Pg">DBD::Pg</a> for PostgreSQL, <a href="http://search.cpan.org/search?dist=DBD-mysql">DBD::mysql</a> for MySQL)
-<!--      <li><a href="http://search.cpan.org/search?dist=DBIx-DataSource">DBIx-DataSource</a> -->
-      <li><a href="http://search.cpan.org/search?dist=DBIx-DBSchema">DBIx-DBSchema</a>
-      <li><a href="http://search.cpan.org/search?dist=Net-SSH">Net-SSH</a>
-      <li><a href="http://search.cpan.org/search?dist=String-ShellQuote">String-ShellQuote</a>
-      <li><a href="http://search.cpan.org/search?dist=Net-SCP">Net-SCP</a>
+<!--      <li><a href="http://search.cpan.org/dist/Array-PrintCols">Array-PrintCols</a>
+      <li><a href="http://search.cpan.org/dist/Term-Query">Term-Query</a> (make test broken; install manually) -->
+      <li><a href="http://search.cpan.org/dist/MIME-Base64">MIME-Base64</a>
+      <li><a href="http://search.cpan.org/dist/Digest-MD5">Digest-MD5</a>
+<!--      <li><a href="http://search.cpan.org/dist/MD5">MD5</a> -->
+      <li><a href="http://search.cpan.org/dist/URI">URI</a>
+      <li><a href="http://search.cpan.org/dist/HTML-Tagset">HTML-Tagset</a>
+      <li><a href="http://search.cpan.org/dist/HTML-Parser">HTML-Parser</a>
+      <li><a href="http://search.cpan.org/dist/libnet">libnet</a>
+      <li><a href="http://search.cpan.org/dist/Locale-Codes">Locale-Codes</a>
+      <li><a href="http://search.cpan.org/dist/Net-Whois-Raw">Net-Whois-Raw</a>
+      <li><a href="http://search.cpan.org/dist/libwww-perl">libwww-perl</a>
+      <li><a href="http://search.cpan.org/dist/Business-CreditCard">Business-CreditCard</a>
+<!--      <li><a href="http://search.cpan.org/dist/Data-ShowTable">Data-ShowTable</a> -->
+      <li><a href="http://search.cpan.org/dist/MailTools">MailTools</a>
+      <li><a href="http://search.cpan.org/dist/TimeDate">TimeDate</a>
+      <li><a href="http://search.cpan.org/dist/DateManip">DateManip</a>
+      <li><a href="http://search.cpan.org/dist/File-CounterFile">File-CounterFile</a>
+      <li><a href="http://search.cpan.org/dist/FreezeThaw">FreezeThaw</a>
+      <li><a href="http://search.cpan.org/dist/String-Approx">String-Approx</a>
+      <li><a href="http://search.cpan.org/dist/Text-Template">Text-Template</a>
+      <li><a href="http://search.cpan.org/dist/DBI">DBI</a>
+      <li><a href="http://search.cpan.org/search?mode=module&query=DBD">DBD for your database engine</a> (<a href="http://search.cpan.org/dist/DBD-Pg">DBD::Pg</a> for PostgreSQL<!--, <a href="http://search.cpan.org/search?dist=DBD-mysql">DBD::mysql</a> for MySQL-->)
+<!--      <li><a href="http://search.cpan.org/dist/DBIx-DataSource">DBIx-DataSource</a> -->
+      <li><a href="http://search.cpan.org/dist/DBIx-DBSchema">DBIx-DBSchema</a>
+      <li><a href="http://search.cpan.org/dist/Net-SSH">Net-SSH</a>
+      <li><a href="http://search.cpan.org/dist/String-ShellQuote">String-ShellQuote</a>
+      <li><a href="http://search.cpan.org/dist/Net-SCP">Net-SCP</a>
       <li><a href="http://www.masonhq.com/">HTML::Mason</a> (recommended, enables full functionality) or <a href="http://www.apache-asp.org/">Apache::ASP</a> (deprecated, integrated RT ticketing will not be available)
-      <li><a href="http://search.cpan.org/search?dist=Tie-IxHash">Tie-IxHash</a>
-      <li><a href="http://search.cpan.org/search?dist=Time-Duration">Time-Duration</a>
-      <li><a href="http://search.cpan.org/search?dist=HTML-Widgets-SelectLayers">HTML-Widgets-SelectLayers</a>
-      <li><a href="http://search.cpan.org/search?dist=Storable">Storable</a>
-      <li><a href="http://search.cpan.org/search?dist=Cache-Cache">Cache::Cache</a>
-      <li><a href="http://search.cpan.org/search?dist=NetAddr-IP">NetAddr-IP</a>
-      <li><a href="http://search.cpan.org/search?dist=Chart">Chart</a>
-      <li><a href="http://search.cpan.org/search?dist=Crypt-PasswdMD5">Crypt::PasswdMD5</a>
-      <li><a href="http://search.cpan.org/search?dist=JavaScript-RPC">JavaScript::RPC (JavaScript::RPC::Server::CGI)</a>
-      <li><a href="http://search.cpan.org/search?dist=Frontier-RPC">Frontier::RPC</a>
-      <li><a href="http://search.cpan.org/search?dist=Text-CSV_XS">Text::CSV_XS</a>
-      <li><a href="http://search.cpan.org/search?dist=Spreadsheet-WriteExcel">Spreadsheet::WriteExcel</a>
-<!--      <li><a href="http://search.cpan.org/search?dist=Crypt-YAPassGen">Crypt::YAPassGen</a> -->
-      <li><a href="http://search.cpan.org/search?dist=ApacheDBI">Apache::DBI</a> <i>(optional but recommended for better webinterface performance)</i>
+      <li><a href="http://search.cpan.org/dist/Tie-IxHash">Tie-IxHash</a>
+      <li><a href="http://search.cpan.org/dist/Time-Duration">Time-Duration</a>
+      <li><a href="http://search.cpan.org/dist/HTML-Widgets-SelectLayers">HTML-Widgets-SelectLayers</a>
+      <li><a href="http://search.cpan.org/dist/Storable">Storable</a>
+      <li><a href="http://search.cpan.org/dist/Cache-Cache">Cache::Cache</a>
+      <li><a href="http://search.cpan.org/dist/NetAddr-IP">NetAddr-IP</a>
+      <li><a href="http://search.cpan.org/dist/Chart">Chart</a>
+      <li><a href="http://search.cpan.org/dist/Crypt-PasswdMD5">Crypt::PasswdMD5</a>
+      <li><a href="http://search.cpan.org/dist/JavaScript-RPC">JavaScript::RPC (JavaScript::RPC::Server::CGI)</a>
+      <li><a href="http://search.cpan.org/dist/Frontier-RPC">Frontier::RPC</a>
+      <li><a href="http://search.cpan.org/dist/Text-CSV_XS">Text::CSV_XS</a>
+      <li><a href="http://search.cpan.org/dist/Spreadsheet-WriteExcel">Spreadsheet::WriteExcel</a>
+      <li><a href="http://search.cpan.org/dist/IO-stringy">IO-stringy (IO::Scalar)</a>
+<!--      <li><a href="http://search.cpan.org/dist/Crypt-YAPassGen">Crypt::YAPassGen</a> -->
+      <li><a href="http://search.cpan.org/dist/ApacheDBI">Apache::DBI</a> <i>(optional but recommended for better webinterface performance)</i>
     </ul>
 </ul>
 Install the Freeside distribution:
