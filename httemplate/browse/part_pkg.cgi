@@ -32,12 +32,12 @@ if ( $cgi->param('active') ) {
   $suspended_sth = dbh->prepare(
     'SELECT COUNT(*) FROM cust_pkg WHERE pkgpart = ?'.
     ' AND ( cancel IS NULL OR cancel = 0 )'.
-    ' AND susp IS NOT NULL AND susp > 0'
+    ' AND susp IS NOT NULL AND susp != 0'
   ) or die dbh->errstr;
 
   $canceled_sth = dbh->prepare(
     'SELECT COUNT(*) FROM cust_pkg WHERE pkgpart = ?'.
-    ' AND cancel IS NOT NULL AND cancel > 0'
+    ' AND cancel IS NOT NULL AND cancel != 0'
   ) or die dbh->errstr;
 
 } else {

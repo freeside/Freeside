@@ -56,10 +56,10 @@ if ( $cgi->param('magic') && $cgi->param('magic') eq 'bill' ) {
       $qual = 'WHERE ( susp IS NULL OR susp = 0 )'.
               ' AND ( cancel IS NULL OR cancel = 0)';
     } elsif ( $cgi->param('magic') eq 'suspended' ) {
-      $qual = 'WHERE susp IS NOT NULL AND susp > 0'.
+      $qual = 'WHERE susp IS NOT NULL AND susp != 0'.
               ' AND ( cancel IS NULL OR cancel = 0)';
     } elsif ( $cgi->param('magic') eq 'canceled' ) {
-      $qual = 'WHERE cancel IS NOT NULL AND cancel > 0';
+      $qual = 'WHERE cancel IS NOT NULL AND cancel != 0';
     } else {
       die "guru meditation #420";
     }
@@ -73,12 +73,6 @@ if ( $cgi->param('magic') && $cgi->param('magic') eq 'bill' ) {
   } elsif ( $query eq 'pkgnum' ) {
 
     $sortby=\*pkgnum_sort;
-
-  } elsif ( $query eq 'SUSP_pkgnum' ) {
-
-    $sortby=\*pkgnum_sort;
-
-    $qual = 'WHERE susp IS NOT NULL AND susp != 0';
 
   } elsif ( $query eq 'APKG_pkgnum' ) {
   
