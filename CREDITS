@@ -1,14 +1,21 @@
 Thanks to Matt Simerson <matt@michweb.net> of MichWeb Inc. for documentation
-and pre-release testing.  Without his help the documentation in the first
+and pre-release testing.  Without his help the documentation in 1.0.0
 release would have consisted of a single screenfull of text.
 
-# Steve Cleff <cleff@yahoo.com> did the default background image and is also
-# the creator of Freeside's mascot, Snakeman.
+Steve Cleff <cleff@yahoo.com> did the default background image in 1.0.x and
+is also the creator of Freeside's elusive mascot, Snakeman.
 
-Jerry St. Pierre <jstpi@city.timmins.on.ca> did the "SISD" graphic.
+Jerry St. Pierre <jstpi@city.timmins.on.ca> did the "SISD" graphic used in
+1.0.x and most of 1.1.x.
 
 Brian McCane? <bmccane@maxbaud.net> contributed PostgreSQL support, HTML
 style enhancements and many, many bugfixes.
 
+CompleteHOST, Inc. (http://www.completehost.com) funded the development of the
+following Freeside features:
+  - Multiple, separate databases and configurations on one box.
+  - Per-customer pricing (packages)
+  - Integration with Radiator, http://www.open.com.au/radiator
+  - Integration with NetSurfer NetKit ISP, http://www.netsurfer.com/
 Everything else is my (Ivan Kohler <ivan@sisd.com>) fault.
 

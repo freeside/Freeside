@@ -283,20 +283,23 @@ sub check {
     $self->ss("$1-$2-$3");
   }
 
-  return "Unknown state/county/country, state ".
-      "\"". $self->state. "\" county \"". $self->county. "\""
-    unless qsearchs('cust_main_county',{
-      'state'  => $self->state,
-      'county' => $self->county,
-    } );
-
-  #int'l zips?
-  $self->zip =~ /^(\d{5}(-\d{4})?)$/ or return "Illegal zip";
-  $self->zip($1);
-
-  #int'l countries!
-  $self->country =~ /^(US)$/ or return "Illegal country";
+  $self->country =~ /^(\w\w)$/ or return "Illegal country";
   $self->country($1);
+  unless ( qsearchs('cust_main_county', {
+    'country' => $self->country,
+    'state'   => '',
+   } ) ) {
+    return "Unknown state/county/country"
+      #" state ". $self->state. " county ". $self->county. " country ". $self->country
+      unless qsearchs('cust_main_county',{
+        'state'   => $self->state,
+        'county'  => $self->county,
+        'country' => $self->country,
+      } );
+  }
+
+  $self->zip =~ /^([\w\-]{10})$/ or return "Illegal zip";
+  $self->zip($1);
 
   $self->payby =~ /^(CARD|BILL|COMP)$/ or return "Illegal payby";
   $self->payby($1);
@@ -873,7 +876,10 @@ enable cybercash, cybercash v3 support, don't need to import
 FS::UID::{datasrc,checkruid} ivan@sisd.com 98-sep-19-21
 
 $Log: cust_main.pm,v $
-Revision 1.5  1998-11-15 11:23:14  ivan
+Revision 1.6  1998-11-18 09:01:42  ivan
+i18n! i18n!
+
+Revision 1.5  1998/11/15 11:23:14  ivan
 use FS::table_name for all searches to eliminate warnings,
 emit state/county when they don't match
 

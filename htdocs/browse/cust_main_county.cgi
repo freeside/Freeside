@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# cust_main_county.cgi: browse cust_main_county
+# $Id: cust_main_county.cgi,v 1.2 1998-11-18 09:01:34 ivan Exp $
 #
 # ivan@sisd.com 97-dec-13
 #
@@ -8,26 +8,35 @@
 #	bmccane@maxbaud.net	98-apr-3
 #
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
+#
+# $Log: cust_main_county.cgi,v $
+# Revision 1.2  1998-11-18 09:01:34  ivan
+# i18n! i18n!
+#
 
 use strict;
-use CGI::Base;
+use CGI;
+use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup swapuid);
 use FS::Record qw(qsearch qsearchs);
-use FS::CGI qw(header menubar);
+use FS::CGI qw(header menubar popurl table);
+use FS::cust_main_county;
 
-my($cgi) = new CGI::Base;
-$cgi->get;
+my($cgi) = new CGI;
 
 &cgisuidsetup($cgi);
 
-SendHeaders(); # one guess.
-print header("Tax Rate Listing", menubar(
-  'Main Menu' => '../',
-  'Edit tax rates' => "../edit/cust_main_county.cgi",
+print $cgi->header, header("Tax Rate Listing", menubar(
+  'Main Menu' => popurl(2),
+  'Edit tax rates' => popurl(2). "/edit/cust_main_county.cgi",
 )),<<END;
-    <BR>Click on <u>expand</u> to specify tax rates by county.
-    <P><TABLE BORDER>
+    Click on <u>expand country</u> to specify a country's tax rates by state.
+    <BR>Click on <u>expand state</u> to specify a state's tax rates by county.
+    <BR><BR>
+END
+print table, <<END;
       <TR>
+        <TH><FONT SIZE=-1>Country</FONT></TH>
         <TH><FONT SIZE=-1>State</FONT></TH>
         <TH>County</TH>
         <TH><FONT SIZE=-1>Tax</FONT></TH>
@@ -39,15 +48,26 @@ foreach $cust_main_county ( qsearch('cust_main_county',{}) ) {
   my($hashref)=$cust_main_county->hashref;
   print <<END;
       <TR>
-        <TD>$hashref->{state}</TD>
+        <TD>$hashref->{country}</TD>
 END
-
-  print "<TD>", $hashref->{county}
-      ? $hashref->{county}
+  print "<TD>", $hashref->{state}
+      ? $hashref->{state}
       : qq!(ALL) <FONT SIZE=-1>!.
-        qq!<A HREF="../edit/cust_main_county-expand.cgi?!. $hashref->{taxnum}.
-        qq!">expand</A></FONT>!
+        qq!<A HREF="!. popurl(2). qq!/edit/cust_main_county-expand.cgi?!. $hashref->{taxnum}.
+        qq!">expand country</A></FONT>!
     , "</TD>";
+  print "<TD>";
+  if ( $hashref->{county} ) {
+    print $hashref->{county};
+  } else {
+    print "(ALL)";
+    if ( $hashref->{state} ) {
+      print qq!<FONT SIZE=-1>!.
+          qq!<A HREF="!. popurl(2). qq!/edit/cust_main_county-expand.cgi?!. $hashref->{taxnum}.
+          qq!">expand state</A></FONT>!;
+    }
+  }
+  print "</TD>";
 
   print <<END;
         <TD>$hashref->{tax}%</TD>

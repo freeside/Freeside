@@ -1,10 +1,12 @@
-$Id: TODO,v 1.13 1998-11-13 09:56:33 ivan Exp $
+$Id: TODO,v 1.14 1998-11-18 09:01:30 ivan Exp $
 
 If you are interested in helping with any of these, please join the mailing
 list (send a blank message to ivan-freeside-subscribe@sisd.com) to avoid 
 duplication of effort.
 
 -- 1.1.x --
+
+test and document libapache-dbi-logger (woo!)
 
 remove whois_hack set to 1 for svc_domain.pm?  add all known registries and
 whois accordingly.
@@ -254,22 +256,14 @@ write batch senders and batch parsers for the different credit card processors
 people use/
 More CC processors/methods.
 
-In FS::Record, the counter dir should have .datasrc appended to it like the 
-dbdef does, which should place all the (most of) the DB metadata in unique 
-files and let me run concurrent .datasrc's.  Maybe do something similar for 
-user, password and datasrc itself? (or something to get the out of the source
-files) and then we're set. (secrets file also needs .datasrc appended, or maybe
-"/var/spool/freeside".datasrc
-
 you should be able to fiddle the setup date in cust_pkg. (at least initially)
-
-cych v3 and v2 support
 
 delete options in administration section
 
 write a generic batch senders and batch parsers.
 
-need a way to override svc_acct export on a per-machine basis; just use config files based on machine name i suppose; document that.
+need a way to override svc_acct export on a per-machine basis; just use config files based on machine name i suppose; document that. (no, import desync_hosts
+type stuff from cerkit)
 
 you should be able to get column types as a method against an FS::Record object
 as well as dbdef->table($table)->column($column)->type

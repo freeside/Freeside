@@ -63,7 +63,6 @@ if ( $cgi->var('QUERY_STRING') =~ /^(\d+)$/ ) { #editing
   $custnum='';
   $cust_main = create FS::cust_main ( {} );
   $cust_main->setfield('otaker',&getotaker);
-  $cust_main->setfield('country','US');
   $action='Add';
 }
 
@@ -130,21 +129,23 @@ Name (last)<INPUT TYPE="text" NAME="last" VALUE="$last"> (first)<INPUT TYPE="tex
 Company <INPUT TYPE="text" NAME="company" VALUE="$company">
 Address <INPUT TYPE="text" NAME="address1" VALUE="$address1" SIZE=40 MAXLENGTH=40>
         <INPUT TYPE="text" NAME="address2" VALUE="$address2" SIZE=40 MAXLENGTH=40>
-City <INPUT TYPE="text" NAME="city" VALUE="$city">  State (county) <SELECT NAME="state" SIZE="1">
+City <INPUT TYPE="text" NAME="city" VALUE="$city">  State (county) / Country<SELECT NAME="state" SIZE="1">
 END
 
 foreach ( qsearch('cust_main_county',{}) ) {
   print "<OPTION";
   print " SELECTED" if ( $cust_main->state eq $_->state
-                      && $cust_main->county eq $_->county );
+                         && $cust_main->county eq $_->county 
+                         && $cust_main->country eq $_->country
+                       );
   print ">",$_->state;
   print " (",$_->county,")" if $_->county;
+  print " / ", $_->country;
 }
 print "</SELECT>";
 
-my($zip,$country,$daytime,$night,$fax)=(
+my($zip,$daytime,$night,$fax)=(
   $cust_main->zip,
-  $cust_main->country,
   $cust_main->daytime,
   $cust_main->night,
   $cust_main->fax,
@@ -152,7 +153,6 @@ my($zip,$country,$daytime,$night,$fax)=(
 
 print <<END;
   Zip <INPUT TYPE="text" NAME="zip" VALUE="$zip" SIZE=10 MAXLENGTH=10>
-Country: <FONT SIZE="+1"><B>$country</B></FONT><INPUT TYPE="hidden" NAME="country" VALUE="$country">
 
 Phone (daytime)<INPUT TYPE="text" NAME="daytime" VALUE="$daytime" SIZE=18 MAXLENGTH=20>  (night)<INPUT TYPE="text" NAME="night" VALUE="$night" SIZE=18 MAXLENGTH=20>  (fax)<INPUT TYPE="text" NAME="fax" VALUE="$fax" SIZE=12 MAXLENGTH=12>
 

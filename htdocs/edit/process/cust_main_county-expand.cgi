@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# process/cust_main_county-expand.cgi: Expand counties (process form)
+# $Id: cust_main_county-expand.cgi,v 1.2 1998-11-18 09:01:40 ivan Exp $
 #
 # ivan@sisd.com 97-dec-16
 #
@@ -12,45 +12,55 @@
 # lose background, FS::CGI
 # undo default tax to 0.0 if using Pg6.3: comes from pre-expanded record
 # for that state
-#ivan@sisd.com 98-sep-2
+# ivan@sisd.com 98-sep-2
+#
+# $Log: cust_main_county-expand.cgi,v $
+# Revision 1.2  1998-11-18 09:01:40  ivan
+# i18n! i18n!
+#
 
 use strict;
-use CGI::Request;
+use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup datasrc);
 use FS::Record qw(qsearch qsearchs);
+use FS::CGI qw(eidiot popurl);
 use FS::cust_main_county;
-use FS::CGI qw(eidiot);
+use FS::cust_main;
 
-my($req)=new CGI::Request; # create form object
+my($cgi)=new CGI;
 
-&cgisuidsetup($req->cgi);
+&cgisuidsetup($cgi);
 
-$req->param('taxnum') =~ /^(\d+)$/ or die "Illegal taxnum!";
+$cgi->param('taxnum') =~ /^(\d+)$/ or die "Illegal taxnum!";
 my($taxnum)=$1;
 my($cust_main_county)=qsearchs('cust_main_county',{'taxnum'=>$taxnum})
   or die ("Unknown taxnum!");
 
-my(@counties);
-if ( $req->param('delim') eq 'n' ) {
-  @counties=split(/\n/,$req->param('counties'));
-} elsif ( $req->param('delim') eq 's' ) {
-  @counties=split(/\s+/,$req->param('counties'));
+my(@expansion);
+if ( $cgi->param('delim') eq 'n' ) {
+  @expansion=split(/\n/,$cgi->param('expansion'));
+} elsif ( $cgi->param('delim') eq 's' ) {
+  @expansion=split(/\s+/,$cgi->param('expansion'));
 } else {
   die "Illegal delim!";
 }
 
-@counties=map {
-  /^\s*([\w\- ]+)\s*$/ or eidiot("Illegal county");
+@expansion=map {
+  /^\s*([\w\- ]+)\s*$/ or eidiot("Illegal expansion");
   $1;
-} @counties;
+} @expansion;
 
-my($county);
-foreach ( @counties) {
+my($expansion);
+foreach ( @expansion) {
   my(%hash)=$cust_main_county->hash;
   my($new)=create FS::cust_main_county \%hash;
   $new->setfield('taxnum','');
-  $new->setfield('county',$_);
+  if ( ! $cust_main_county->state ) {
+    $new->setfield('state',$_);
+  } else {
+    $new->setfield('county',$_);
+  }
   #if (datasrc =~ m/Pg/)
   #{
   #    $new->setfield('tax',0.0);
@@ -62,10 +72,11 @@ foreach ( @counties) {
 unless ( qsearch('cust_main',{
   'state'  => $cust_main_county->getfield('state'),
   'county' => $cust_main_county->getfield('county'),
+  'country' =>  $cust_main_county->getfield('country'),
 } ) ) {
   my($error)=($cust_main_county->delete);
   die $error if $error;
 }
 
-$req->cgi->redirect("../../edit/cust_main_county.cgi");
+print $cgi->redirect(popurl(3). "/edit/cust_main_county.cgi");
 

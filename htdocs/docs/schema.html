@@ -50,7 +50,9 @@
         <li>custnum - primary key
         <li>agentnum - <a href="#agent">agent</a>
         <li>refnum - <a href="#part_referral">referral</a>
+        <li>titlenum - <a href="#part_title">title</a>
         <li>first - name
+        <li>middle - name
         <li>last - name
         <li>ss - social security number
         <li>company
@@ -75,6 +77,7 @@
         <li>taxnum - primary key
         <li>state
         <li>county
+        <li>country
         <li>tax - % rate
       </ul>
     <li><a name="cust_pay">cust_pay</a> - Payments
@@ -154,6 +157,11 @@
         <li>svcdb - table used for this service: svc_acct, svc_acct_sm, svc_domain, svc_charge or svc_wo
         <li><i>table</i>__<i>field</i> - Default or fixed value for <i>field</i> in <i>table</i>
         <li><i>table</i>__<i>field</i>_flag - null, D or F
+      </ul>
+    <li><a name="part_title">part_title</a> - Personal titles
+      <ul>
+        <li>titlenum - primary key
+        <li>title - personal title (`Dr.' or `Mr.')
       </ul>
     <li><a name="pkg_svc">pkg_svc</a>
       <ul>

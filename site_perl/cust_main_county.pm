@@ -41,6 +41,8 @@ currently supported:
 
 =item county
 
+=item country
+
 =item tax - percentage
 
 =back
@@ -126,7 +128,7 @@ sub check {
   my($recref) = $self->hashref;
 
   $self->ut_numbern('taxnum')
-    or $self->ut_text('state')
+    or $self->ut_textn('state')
     or $self->ut_textn('county')
     or $self->ut_float('tax')
   ;
@@ -135,11 +137,13 @@ sub check {
 
 =back
 
+=head1 VERSION
+
+$Id: cust_main_county.pm,v 1.2 1998-11-18 09:01:43 ivan Exp $
+
 =head1 BUGS
 
 It doesn't properly override FS::Record yet.
-
-A country field (and possibly a currency field) should be added.
 
 =head1 SEE ALSO
 
@@ -154,6 +158,11 @@ Changed check for 'tax' to use the new ut_float subroutine
 	bmccane@maxbaud.net	98-apr-3
 
 pod ivan@sisd.com 98-sep-21
+
+$Log: cust_main_county.pm,v $
+Revision 1.2  1998-11-18 09:01:43  ivan
+i18n! i18n!
+
 
 =cut
 

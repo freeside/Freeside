@@ -216,12 +216,10 @@ sub check {
     $self->payname($1);
   }
 
-  #int'l zips?
-  $self->zip =~ /^(\d{5}(-\d{4})?)$/ or return "Illegal zip";
+  $self->zip =~ /^([\w\-]{10})$/ or return "Illegal zip";
   $self->zip($1);
 
-  #int'l countries!
-  $self->country =~ /^(US)$/ or return "Illegal country";
+  $self->country =~ /^(\w\w)$/ or return "Illegal \w\wy";
   $self->country($1);
 
   #check invnum, custnum, ?
@@ -233,11 +231,9 @@ sub check {
 
 =head1 VERSION
 
-$Id: cust_pay_batch.pm,v 1.1 1998-11-15 05:19:58 ivan Exp $
+$Id: cust_pay_batch.pm,v 1.2 1998-11-18 09:01:44 ivan Exp $
 
 =head1 BUGS
-
-The author forgot to customize this manpage.
 
 =head1 SEE ALSO
 
@@ -251,7 +247,10 @@ added hfields
 ivan@sisd.com 97-nov-13
 
 $Log: cust_pay_batch.pm,v $
-Revision 1.1  1998-11-15 05:19:58  ivan
+Revision 1.2  1998-11-18 09:01:44  ivan
+i18n! i18n!
+
+Revision 1.1  1998/11/15 05:19:58  ivan
 long overdue
 
 Revision 1.3  1998/11/15 04:33:00  ivan

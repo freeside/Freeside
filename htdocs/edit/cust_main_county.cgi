@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# cust_main_county.cgi: Edit tax rates (output form)
+# $Id: cust_main_county.cgi,v 1.2 1998-11-18 09:01:39 ivan Exp $
 #
 # ivan@sisd.com 97-dec-13-16
 #
@@ -9,27 +9,30 @@
 #	bmccane@maxbaud.net	98-apr-3
 #
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
+# 
+# $Log: cust_main_county.cgi,v $
+# Revision 1.2  1998-11-18 09:01:39  ivan
+# i18n! i18n!
+#
 
 use strict;
-use CGI::Base;
+use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
 use FS::Record qw(qsearch qsearchs);
-use FS::CGI qw(header menubar);
+use FS::CGI qw(header menubar popurl table);
+use FS::cust_main_county;
 
-my($cgi) = new CGI::Base;
-$cgi->get;
+my($cgi) = new CGI;
 
 &cgisuidsetup($cgi);
 
-SendHeaders(); # one guess.
-
-print header("Edit tax rates", menubar(
-  'Main Menu' => '../',
-)),<<END;
-    <FORM ACTION="process/cust_main_county.cgi" METHOD=POST>
-    <TABLE BORDER>
+print $cgi->header, header("Edit tax rates", menubar(
+  'Main Menu' => popurl(2),
+)), qq!<FORM ACTION="!, popurl(1),
+    qq!/process/cust_main_county.cgi" METHOD=POST>!, table, <<END;
       <TR>
+        <TH><FONT SIZE=-1>Country</FONT></TH>
         <TH><FONT SIZE=-1>State</FONT></TH>
         <TH>County</TH>
         <TH><FONT SIZE=-1>Tax</FONT></TH>
@@ -41,8 +44,13 @@ foreach $cust_main_county ( qsearch('cust_main_county',{}) ) {
   my($hashref)=$cust_main_county->hashref;
   print <<END;
       <TR>
-        <TD>$hashref->{state}</TD>
+        <TD>$hashref->{country}</TD>
 END
+
+  print "<TD>", $hashref->{state}
+      ? $hashref->{state}
+      : '(ALL)'
+    , "</TD>";
 
   print "<TD>", $hashref->{county}
       ? $hashref->{county}
