@@ -1,5 +1,7 @@
 #!/usr/bin/perl -Tw
 #
+# $Id: agent_type.cgi,v 1.3 1998-11-15 11:20:12 ivan Exp $
+#
 # agent_type.cgi: Add/Edit agent type (output form)
 #
 # ivan@sisd.com 97-dec-10
@@ -11,7 +13,10 @@
 # use FS::CGI, added inline documentation ivan@sisd.com 98-jul-12
 #
 # $Log: agent_type.cgi,v $
-# Revision 1.2  1998-11-13 09:56:46  ivan
+# Revision 1.3  1998-11-15 11:20:12  ivan
+# s/CGI-Base/CGI.pm/ causes s/QUERY_STRING/keywords/;
+#
+# Revision 1.2  1998/11/13 09:56:46  ivan
 # change configuration file layout to support multiple distinct databases (with
 # own set of config files, export, etc.)
 #
@@ -29,7 +34,7 @@ my($cgi) = new CGI;
 &cgisuidsetup($cgi);
 
 my($agent_type,$action);
-if ( $cgi->var('QUERY_STRING') =~ /^(\d+)$/ ) { #editing
+if ( $cgi->keywords =~ /^(\d+)$/ ) { #editing
   $agent_type=qsearchs('agent_type',{'typenum'=>$1});
   $action='Edit';
 } else { #adding
