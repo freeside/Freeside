@@ -72,6 +72,13 @@ mysql> GRANT SELECT,INSERT,UPDATE,DELETE,INDEX,ALTER,CREATE,DROP on freeside.* T
     <pre>
 $ su
 # make create-database</pre>
+    (or manually, with Postgres:)
+    <pre>
+$ su freeside
+$ createdb freeside</pre>
+    (with MySQL:)
+    <pre>
+$ mysqladmin -u freeside -p create freeside </pre>
   <li>Build and install the Perl modules:
     <pre>
 $ make perl-modules
