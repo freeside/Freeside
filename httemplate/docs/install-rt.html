@@ -37,6 +37,7 @@ make install-rt
 
 <p>Add the following to your httpd.conf:
 <pre>
+# replace /var/www/freeside with your freeside document root
 &lt;DirectoryMatch "^/var/www/freeside/rt/.*NoAuth"&gt;
 &lt;Limit GET POST&gt;
 allow from all
@@ -45,9 +46,15 @@ SetHandler perl-script
 PerlHandler HTML::Mason
 &lt;/Limit&gt;
 &lt;/DirectoryMatch&gt;
+# replace /var/www/freeside with your freeside document root
 &lt;DirectoryMatch "^/var/www/freeside/rt/.*NoAuth/images"&gt;
 SetHandler None
 &lt;/DirectoryMatch&gt;
+# replace /var/www/freeside with your freeside document root
+&lt;Directory /var/www/freeside/rt/Ticket/Attachment&gt; 
+SetHandler perl-script 
+PerlHandler HTML::Mason 
+&lt;/Directory&gt;
 </pre>
 
 <p>Set the <b>ticket_system</b> configuration value to <b>RT_Internal</b>.  You may also wish to set <b>ticket_system-default_queueid</b> once you have RT configured.
