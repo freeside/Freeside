@@ -1,28 +1,10 @@
-$Id: TODO,v 1.61 2001-04-15 12:56:30 ivan Exp $
+$Id: TODO,v 1.62 2001-04-15 13:56:54 ivan Exp $
 
 If you are interested in helping with any of these, please join the
 *development* mailing list (send a blank message to
 ivan-freeside-devel-subscribe@sisd.com) to avoid duplication of effort.
 
 ---
-
-********
-for 1.3.0: 
-********
-
-finish transactions (svc_*.pm, fs_register/)
-
-Pg-style or universal-style locking in fs_sessmon FS/FS/nas.pm, or rewrite it
-to use a database expression that won't need it, or just dump the locking
-entirely as nas_heartbeat stuff doesn't need to be accurate; it's just informational.
-
-radius 
-
-test with MySQL+Sleepycat?
-
-********
-unclassified, probably either done already or post-1.3.0
-********
 
 anything doing transactions in the web interface should likely move into *.pm.
 (transactions are here woo!)

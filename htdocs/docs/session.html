@@ -25,7 +25,6 @@ Then:
 </ul>
 <h2>Usage</h2>
 <ul>
-  <li>RADIUS
   <li>Web
     <ul>
       <li>Copy FS-SessionClient/cgi/login.cgi and logout.cgi to your web
@@ -33,10 +32,15 @@ Then:
       <li>Use <a href="http://www.apache.org/docs/suexec.html">suEXEC</a> or <a href="http://www.perl.com/CPAN-local/doc/manual/html/pod/perlsec.html#Security_Bugs">setuid</a> (see <a href="install.html">install.html</a> for details) to run login.cgi and logout.cgi as the freeside user.
     </ul>
   <li>Command-line
-    <br><pre>freeside-login username ( portnum | ip | nasnum nasport )</pre>
+    <br><pre>freeside-login username ( portnum | ip | nasnum nasport )
+freeside-logout username ( portnum | ip | nasnum nasport )</pre>
     <ul>
       <li><i>username</i> is a customer username from the svc_acct table
       <li><i>portnum</i>, <i>ip</i> or <i>nasport</i> and <i>nasnum</i> uniquely identify a port in the <a href="schema.html#port">port</a> database table.
+    </ul>
+  <li>RADIUS
+    <ul>
+      <li>Configure your RADIUS server's login and logout callbacks to use the command-line freeside-login and freeside-logout utilites.
     </ul>
 </ul>
 <h2>Callbacks</h2>
