@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# part_svc.cgi: browse part_svc
+# $Id: part_svc.cgi,v 1.2 1998-11-20 08:50:37 ivan Exp $
 #
 # ivan@sisd.com 97-nov-14, 97-dec-9
 #
@@ -8,29 +8,32 @@
 #	bmccane@maxbaud.net	98-apr-3
 #
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
+#
+# $Log: part_svc.cgi,v $
+# Revision 1.2  1998-11-20 08:50:37  ivan
+# s/CGI::Base/CGI.pm, visual fixes
+#
 
 use strict;
-use CGI::Base;
-use FS::UID qw(cgisuidsetup swapuid);
+use CGI;
+use CGI::Carp qw(fatalsToBrowser);
+use FS::UID qw(cgisuidsetup);
 use FS::Record qw(qsearch);
 use FS::part_svc qw(fields);
-use FS::CGI qw(header menubar);
+use FS::CGI qw(header menubar popurl table);
 
-my($cgi) = new CGI::Base;
-$cgi->get;
+my($cgi) = new CGI;
 
 &cgisuidsetup($cgi);
 
-SendHeaders(); # one guess.
-print header('Service Part Listing', menubar(
-  'Main Menu' => '../',
-  'Add new service' => "../edit/part_svc.cgi",
+print $cgi->header, header('Service Part Listing', menubar(
+  'Main Menu' => popurl(2),
 )),<<END;
-    <BR>Click on service part number to edit.
-    <TABLE BORDER>
+    Services are items you offer to your customers.<BR><BR>
+END
+print table, <<END;
       <TR>
-        <TH>Part #</TH>
-        <TH>Service</TH>
+        <TH COLSPAN=2>Service</TH>
         <TH>Table</TH>
         <TH>Field</TH>
         <TH>Action</TH>
@@ -39,6 +42,7 @@ print header('Service Part Listing', menubar(
 END
 
 my($part_svc);
+my($p)=popurl(2);
 foreach $part_svc ( sort {
   $a->getfield('svcpart') <=> $b->getfield('svcpart')
 } qsearch('part_svc',{}) ) {
@@ -54,10 +58,9 @@ foreach $part_svc ( sort {
   my($rowspan)=scalar(@rows);
   print <<END;
       <TR>
-        <TD ROWSPAN=$rowspan><A HREF="../edit/part_svc.cgi?$hashref->{svcpart}">
-          $hashref->{svcpart}
-        </A></TD>
-        <TD ROWSPAN=$rowspan>$hashref->{svc}</TD>
+        <TD ROWSPAN=$rowspan><A HREF="$p/edit/part_svc.cgi?$hashref->{svcpart}">
+          $hashref->{svcpart}</A></TD>
+        <TD ROWSPAN=$rowspan><A HREF="$p/edit/part_svc.cgi?$hashref->{svcpart}">          $hashref->{svc}</A></TD>
         <TD ROWSPAN=$rowspan>$hashref->{svcdb}</TD>
 END
   my($row);
@@ -73,6 +76,9 @@ print "</TR>";
 }
 
 print <<END;
+      <TR>
+        <TD COLSPAN=2><A HREF="$p/edit/part_svc.cgi"><I>Add new service</I></A></TD>
+      </TR>
     </TABLE>
     </CENTER>
   </BODY>

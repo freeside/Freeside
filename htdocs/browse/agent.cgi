@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# agent.cgi: browse agent
+# $Id: agent.cgi,v 1.4 1998-11-20 08:50:36 ivan Exp $
 #
 # ivan@sisd.com 97-dec-12
 #
@@ -15,7 +15,10 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: agent.cgi,v $
-# Revision 1.3  1998-11-08 10:11:02  ivan
+# Revision 1.4  1998-11-20 08:50:36  ivan
+# s/CGI::Base/CGI.pm, visual fixes
+#
+# Revision 1.3  1998/11/08 10:11:02  ivan
 # CGI.pm
 #
 # Revision 1.2  1998/11/07 10:24:22  ivan
@@ -26,20 +29,22 @@ use strict;
 use CGI;
 use FS::UID qw(cgisuidsetup swapuid);
 use FS::Record qw(qsearch qsearchs);
-use FS::CGI qw(header menubar);
+use FS::CGI qw(header menubar table popurl);
+use FS::agent;
 
 my($cgi) = new CGI;
 
 &cgisuidsetup($cgi);
 
 print $cgi->header, header('Agent Listing', menubar(
-  'Main Menu'   => '../',
+  'Main Menu'   => popurl(2),
   'Agent Types' => 'agent_type.cgi',
 #  'Add new agent' => '../edit/agent.cgi'
 )), <<END;
 Agents are resellers of your service. Agents may be limited to a subset of your
 full offerings (via their type).<BR><BR>
-    <TABLE BORDER>
+END
+print table, <<END;
       <TR>
         <TH COLSPAN=2>Agent</TH>
         <TH>Type</TH>
@@ -51,6 +56,7 @@ END
 #        <TH>Agent</TH>
 
 my($agent);
+my($p)=popurl(2);
 foreach $agent ( sort { 
   $a->getfield('agentnum') <=> $b->getfield('agentnum')
 } qsearch('agent',{}) ) {
@@ -60,11 +66,11 @@ foreach $agent ( sort {
   my($atype)=$agent_type->getfield('atype');
   print <<END;
       <TR>
-        <TD><A HREF="../edit/agent.cgi?$hashref->{agentnum}">
+        <TD><A HREF="$p/edit/agent.cgi?$hashref->{agentnum}">
           $hashref->{agentnum}</A></TD>
-        <TD><A HREF="../edit/agent.cgi?$hashref->{agentnum}">
+        <TD><A HREF="$p/edit/agent.cgi?$hashref->{agentnum}">
           $hashref->{agent}</A></TD>
-        <TD><A HREF="../edit/agent_type.cgi?$typenum">$atype</A></TD>
+        <TD><A HREF="$p/edit/agent_type.cgi?$typenum">$atype</A></TD>
         <TD>$hashref->{freq}</TD>
         <TD>$hashref->{prog}</TD>
       </TR>
@@ -74,8 +80,8 @@ END
 
 print <<END;
       <TR>
-        <TD COLSPAN=2><A HREF="../edit/agent.cgi"><I>Add new agent</I></A></TD>
-        <TD><A HREF="../edit/agent_type.cgi"><I>Add new agent type</I></A></TD>
+        <TD COLSPAN=2><A HREF="$p/edit/agent.cgi"><I>Add new agent</I></A></TD>
+        <TD><A HREF="$p/edit/agent_type.cgi"><I>Add new agent type</I></A></TD>
       </TR>
     </TABLE>
 
