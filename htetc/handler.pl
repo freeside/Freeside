@@ -112,6 +112,7 @@ sub handler
       use FS::Conf;
       use FS::CGI qw(header menubar popurl table itable ntable idiot eidiot
                      small_custview myexit http_header);
+      use FS::UI::Web;
       use FS::Msgcat qw(gettext geterror);
       use FS::Misc qw( send_email );
       use FS::Report::Table::Monthly;

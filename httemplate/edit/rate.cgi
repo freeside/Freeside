@@ -55,7 +55,8 @@ function process () {
   }
 
   jsrsPOST = true;
-  jsrsExecute( 'process/rate.cgi', myCallback, 'process_rate', Hash );
+  //jsrsExecute( 'process/rate.cgi', myCallback, 'process_rate', Hash );
+  jsrsExecute( 'process/rate.cgi', myCallback, 'start_job', Hash );
 
   function myCallback( jobnum ) {
     var progressWindow = window.open('../../misc/progress.html?jobnum=' + jobnum + ';url=<%=$p%>browse/rate.cgi', 'progressWindow', 'toolbar=no,location=no,directories=no,scrollbars=no,menubar=no,status=no,width=420,height=128');

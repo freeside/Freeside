@@ -2,6 +2,8 @@ package FS::rate;
 
 use strict;
 use vars qw( @ISA $DEBUG );
+use Storable qw(thaw);
+use Data::Dumper;
 use FS::Record qw( qsearch qsearchs dbh fields );
 use FS::rate_detail;
 
@@ -307,25 +309,29 @@ Experimental job-queue processor for web interface adds/edits
 
 =cut
 
+use MIME::Base64;
 sub process {
   my $job = shift;
 
   #my %param = @_;
 
-  my $param = shift;
-  my %param = split(/[;=]/, $param);
+  #my $param = shift;
+  #my %param = split(/[;=]/, $param);
 
-  my $old = qsearchs('rate', { 'ratenum' => $param{'ratenum'} } )
-    if $param{'ratenum'};
+  my $param = thaw(decode_base64(shift));
+  warn Dumper($param) if $DEBUG;
+
+  my $old = qsearchs('rate', { 'ratenum' => $param->{'ratenum'} } )
+    if $param->{'ratenum'};
 
   my @rate_detail = map {
 
     my $regionnum = $_->regionnum;
-    if ( $param{"sec_granularity$regionnum"} ) {
+    if ( $param->{"sec_granularity$regionnum"} ) {
 
       new FS::rate_detail {
         'dest_regionnum'  => $regionnum,
-        map { $_ => $param{"$_$regionnum"} }
+        map { $_ => $param->{"$_$regionnum"} }
             qw( min_included min_charge sec_granularity )
       };
 
@@ -343,13 +349,13 @@ sub process {
   } qsearch('rate_region', {} );
   
   my $rate = new FS::rate {
-    map { $_ => $param{$_} }
+    map { $_ => $param->{$_} }
         fields('rate')
   };
 
   my $error = '';
-  if ( $param{'ratenum'} ) {
-    warn "$rate replacing $old ($param{'ratenum'})\n" if $DEBUG;
+  if ( $param->{'ratenum'} ) {
+    warn "$rate replacing $old (". $param->{'ratenum'}. ")\n" if $DEBUG;
     $error = $rate->replace( $old,
                              'rate_detail' => \@rate_detail,
                              'job'         => $job,
