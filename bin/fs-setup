@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: fs-setup,v 1.29 2000-11-07 15:00:37 ivan Exp $
+# $Id: fs-setup,v 1.30 2000-12-01 18:33:32 ivan Exp $
 #
 # ivan@sisd.com 97-nov-8,9
 #
@@ -32,7 +32,10 @@
 # fix radius attributes ivan@sisd.com 98-sep-27
 #
 # $Log: fs-setup,v $
-# Revision 1.29  2000-11-07 15:00:37  ivan
+# Revision 1.30  2000-12-01 18:33:32  ivan
+# tyop
+#
+# Revision 1.29  2000/11/07 15:00:37  ivan
 # session monitor
 #
 # Revision 1.28  2000/10/30 10:47:26  ivan
@@ -740,7 +743,7 @@ sub tables_hash_hack {
       'columns' => [
         'portnum',  'int',     '',   '',
         'ip',       'varchar', NULL, 15,
-        'nasport'   'int',     NULL, '',
+        'nasport',  'int',     NULL, '',
         'nasnum',   'int',     '',   '',
       ],
       'primary_key' => 'portnum',
