@@ -170,6 +170,7 @@ print <<END;
 <TR><TH ALIGN="right">${r}City</TH><TD><INPUT TYPE="text" NAME="city" VALUE="$city"></TD><TH ALIGN="right">${r}State/Country</TH><TD><SELECT NAME="state" SIZE="1">
 END
 
+#false laziness with ship_state
 my $countrydefault = $conf->config('countrydefault') || 'US';
 $cust_main->country( $countrydefault ) unless $cust_main->country;
 $cust_main->state( $conf->config('statedefault') || 'CA' )
@@ -265,11 +266,17 @@ END
   <TR><TH ALIGN="right">${r}City</TH><TD><INPUT TYPE="text" NAME="ship_city" VALUE="$ship_city" onChange="changed(this)"></TD><TH ALIGN="right">${r}State/Country</TH><TD><SELECT NAME="ship_state" SIZE="1" onChange="changed(this)">
 END
 
+  #false laziness with regular state
   $cust_main->ship_country( $conf->config('countrydefault') || 'US' )
     unless $cust_main->ship_country;
   $cust_main->ship_state( $conf->config('statedefault') || 'CA' )
     unless $cust_main->ship_state || $cust_main->ship_country ne 'US';
-  foreach ( qsearch('cust_main_county',{}) ) {
+  foreach ( sort {
+       ( $b->country eq $countrydefault ) <=> ( $a->country eq $countrydefault )
+    or $a->country                        cmp $b->country
+    or $a->state                          cmp $b->state
+    or $a->county                         cmp $b->county
+  } qsearch('cust_main_county',{}) ) {
     print "<OPTION";
     print " SELECTED" if ( $cust_main->ship_state eq $_->state
                            && $cust_main->ship_county eq $_->county 
