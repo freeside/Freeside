@@ -983,13 +983,20 @@ sub print_text {
 
       push @buf, map { [ "  $_", '' ] } $cust_bill_pkg->details;
 
-    } else { #pkgnum tax
+    } else { #pkgnum tax or one-shot line item
       my $itemdesc = defined $cust_bill_pkg->dbdef_table->column('itemdesc')
                      ? ( $cust_bill_pkg->itemdesc || 'Tax' )
                      : 'Tax';
-      push @buf, [ $itemdesc,
-                   $money_char. sprintf("%10.2f", $cust_bill_pkg->setup) ] 
-        if $cust_bill_pkg->setup != 0;
+      if ( $cust_bill_pkg->setup != 0 ) {
+        push @buf, [ $itemdesc,
+                     $money_char. sprintf("%10.2f", $cust_bill_pkg->setup) ];
+      }
+      if ( $cust_bill_pkg->recur != 0 ) {
+        push @buf, [ "$itemdesc (". time2str("%x", $cust_bill_pkg->sdate). " - "
+                                  . time2str("%x", $cust_bill_pkg->edate). ")",
+                     $money_char. sprintf("%10.2f", $cust_bill_pkg->recur)
+                   ];
+      }
     }
   }
 
