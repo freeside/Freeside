@@ -18,6 +18,7 @@ FS::ClientAPI->register_handlers(
   'MyAccount/login'         => \&login,
   'MyAccount/customer_info' => \&customer_info,
   'MyAccount/invoice'       => \&invoice,
+  'MyAccount/cancel'        => \&cancel,
 );
 
 #store in db?
@@ -133,4 +134,23 @@ sub invoice {
 
 }
 
+sub cancel {
+  my $p = shift;
+  my $session = $cache->get($p->{'session_id'})
+    or return { 'error' => "Can't resume session" }; #better error message
+
+  my $custnum = $session->{'custnum'};
+
+  my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
+    or return { 'error' => "unknown custnum $custnum" };
+
+  my @errors = $cust_main->cancel;
+
+  my $error = scalar(@errors) ? join(' / ', @errors) : '';
+
+  return { 'error' => $error };
+
+}
+
+1;
 
