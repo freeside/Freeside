@@ -71,7 +71,7 @@ print &ntable("#cccccc"), '<TR><TD>', &ntable("#cccccc",2),
       ( $setup ? time2str("%D",$setup) : "(Not setup)" ), '</TD></TR>';
 
 print '<TR><TD ALIGN="right">Last bill date</TD><TD BGCOLOR="#ffffff">',
-      ( $cust_pkg->last_bill ? time2str("%D",$cust_pkg->last_bill) : "&nbsp;" ),
+      ( $cust_pkg->get('last_bill') ? time2str("%D",$cust_pkg->get('last_bill')) : "&nbsp;" ),
       '</TD></TR>'
   if $cust_pkg->dbdef_table->column('last_bill');
 

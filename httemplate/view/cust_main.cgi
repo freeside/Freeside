@@ -19,7 +19,6 @@ print <<END;
 <STYLE TYPE="text/css">
 .package TH { font-size: medium }
 .package TR { font-size: smaller }
-.package .datehdr TH { font-size: smaller }
 .package .pkgnum { font-size: medium }
 .package .provision { font-size: larger; color: red; font-weight: bold }
 </STYLE>
@@ -377,17 +376,9 @@ if ( @$packages ) {
 %>
 <TABLE CLASS="package" BORDER=1 CELLSPACING=0 CELLPADDING=2 BORDERCOLOR="#999999">
 <TR>
-  <TH COLSPAN=2 ROWSPAN=2>Package</TH>
-  <TH COLSPAN=6>Dates</TH>
-  <TH COLSPAN=2 ROWSPAN=2>Services</TH>
-</TR>
-<TR CLASS="datehdr">
-  <TH>Setup</TH>
-  <TH>Last bill</TH>
-  <TH>Next bill</TH>
-  <TH>Susp.</TH>
-  <TH>Expire</TH>
-  <TH>Cancel</TH>
+  <TH COLSPAN=2>Package</TH>
+  <TH>Status</TH>
+  <TH COLSPAN=2>Services</TH>
 </TR>
 <%
 foreach my $pkg (sort pkgsort_pkgnum_cancel @$packages) {
@@ -410,14 +401,118 @@ foreach my $pkg (sort pkgsort_pkgnum_cancel @$packages) {
     <%=$pkg->{pkg}%> - <%=$pkg->{comment}%> (&nbsp;<%=pkg_details_link($pkg)%>&nbsp;)<BR>
 <% unless ($pkg->{cancel}) { %>
     (&nbsp;<%=pkg_change_link($pkg)%>&nbsp;)
-    (&nbsp;<%=($pkg->{susp}) ? pkg_unsuspend_link($pkg) : pkg_suspend_link($pkg)%>&nbsp;|&nbsp;<%=pkg_cancel_link($pkg)%>&nbsp;)
     (&nbsp;<%=pkg_dates_link($pkg)%>&nbsp;|&nbsp;<%=pkg_customize_link($pkg)%>&nbsp;)
 <% } %>
   </TD>
 <%
-  foreach (qw(setup last_bill next_bill susp expire cancel)) {
-    print qq!  <TD ROWSPAN=$rowspan>! . pkg_datestr($pkg,$_) . qq!</TD>\n!;
+  #foreach (qw(setup last_bill next_bill susp expire cancel)) {
+  #  print qq!  <TD ROWSPAN=$rowspan>! . pkg_datestr($pkg,$_) . qq!</TD>\n!;
+  #}
+  print "<TD ROWSPAN=$rowspan>". &itable('');
+
+  #move
+  my %freq = (
+    1 => 'monthly',
+    2 => 'bi-monthly',
+    3 => 'quarterly',
+    6 => 'semi-annually',
+    12 => 'annually',
+    24 => 'bi-annually',
+    36 => 'tri-annually',
+  );
+
+  sub freq {
+    my $freq = shift;
+    exists $freq{$freq} ? $freq{$freq} : "every&nbsp;$freq&nbsp;months";
   }
+
+  #eomove
+
+  if ( $pkg->{cancel} ) { #status: cancelled
+
+    print '<TR><TD><FONT COLOR="#ff0000">Cancelled&nbsp;</FONT></TD><TD>'.
+          pkg_datestr($pkg,'cancel'). '</TD></TR>';
+    unless ( $pkg->{setup} ) {
+      print '<TR><TD COLSPAN=2>Never billed</TD></TR>';
+    } else {
+      print "<TR><TD>Setup&nbsp;</TD><TD>".
+            pkg_datestr($pkg, 'setup'). '</TD></TR>';
+      print "<TR><TD>Last&nbsp;bill&nbsp;</TD><TD>".
+            pkg_datestr($pkg, 'last_bill'). '</TD></TR>'
+        if $pkg->{'last_bill'};
+      print "<TR><TD>Suspended&nbsp;</TD><TD>".
+            pkg_datestr($pkg, 'susp'). '</TD></TR>'
+        if $pkg->{'susp'};
+    }
+
+  } else {
+
+    if ( $pkg->{susp} ) { #status: suspended
+      print '<TR><TD><FONT COLOR="#FF9900">Suspended&nbsp;</FONT></TD><TD>'.
+            pkg_datestr($pkg,'susp'). '</TD></TR>';
+      unless ( $pkg->{setup} ) {
+        print '<TR><TD COLSPAN=2>Never billed</TD></TR>';
+      } else {
+        print "<TR><TD>Setup&nbsp;</TD><TD>". 
+              pkg_datestr($pkg, 'setup'). '</TD></TR>';
+      }
+      print "<TR><TD>Last&nbsp;bill&nbsp;</TD><TD>".
+            pkg_datestr($pkg, 'last_bill'). '</TD></TR>'
+        if $pkg->{'last_bill'};
+      # next bill ??
+      print "<TR><TD>Expires&nbsp;</TD><TD>".
+            pkg_datestr($pkg, 'expire'). '</TD></TR>'
+        if $pkg->{'expire'};
+      print '<TR><TD COLSPAN=2>(&nbsp;'. pkg_unsuspend_link($pkg).
+            '&nbsp;|&nbsp;'. pkg_cancel_link($pkg). '&nbsp;)</TD></TR>';
+
+    } else { #status: active
+
+      unless ( $pkg->{setup} ) { #not setup
+
+        print '<TR><TD COLSPAN=2>Not&nbsp;yet&nbsp;billed&nbsp;(';
+        unless ( $pkg->{freq} ) {
+          print 'one-time&nbsp;charge)</TD></TR>';
+          print '<TR><TD COLSPAN=2>(&nbsp;'. pkg_cancel_link($pkg).
+                '&nbsp;)</TD</TR>';
+        } else {
+          print 'billed&nbsp;'. freq($pkg->{freq}). ')</TD></TR>';
+        }
+
+      } else { #setup
+
+        unless ( $pkg->{freq} ) {
+          print "<TR><TD COLSPAN=2>One-time&nbsp;charge</TD></TR>".
+                '<TR><TD>Billed&nbsp;</TD><TD>'.
+                pkg_datestr($pkg,'setup'). '</TD></TR>';
+        } else {
+          print '<TR><TD COLSPAN=2><FONT COLOR="#00CC00">Active</FONT>,&nbsp;'.
+                'billed&nbsp;'. freq($pkg->{freq}). '</TD></TR>'.
+                '<TR><TD>Setup&nbsp;</TD><TD>'.
+                pkg_datestr($pkg, 'setup'). '</TD></TR>';
+        }
+
+      }
+
+      print "<TR><TD>Last&nbsp;bill&nbsp;</TD><TD>".
+            pkg_datestr($pkg, 'last_bill'). '</TD></TR>'
+        if $pkg->{'last_bill'};
+      print "<TR><TD>Next&nbsp;bill&nbsp;</TD><TD>".
+            pkg_datestr($pkg, 'next_bill'). '</TD></TR>'
+        if $pkg->{'next_bill'};
+      print "<TR><TD>Expires&nbsp;</TD><TD>".
+            pkg_datestr($pkg, 'expire'). '</TD></TR>'
+        if $pkg->{'expire'};
+      if ( $pkg->{freq} ) {
+        print '<TR><TD COLSPAN=2>(&nbsp;'. pkg_suspend_link($pkg).
+              '&nbsp;|&nbsp;'. pkg_cancel_link($pkg). '&nbsp;)</TD></TR>';
+      }
+
+    }
+
+  }
+
+  print "</TABLE></TD>\n";
 
   if ($rowspan == 0) { print qq!</TR>\n!; next; }
 
@@ -687,6 +782,7 @@ foreach my $cust_pkg (($conf->exists('hidecancelledpackages') ? ($cust_main->nca
   $pkg{pkg} = $part_pkg->pkg;
   $pkg{pkgpart} = $part_pkg->pkgpart;
   $pkg{comment} = $part_pkg->getfield('comment');
+  $pkg{freq} = $part_pkg->freq;
   $pkg{setup} = $cust_pkg->getfield('setup');
   $pkg{last_bill} = $cust_pkg->getfield('last_bill');
   $pkg{next_bill} = $cust_pkg->getfield('bill');
@@ -776,10 +872,13 @@ sub pkgsort_pkgnum_cancel {
 }
 
 sub pkg_datestr {
-  my ($pkg,$field) = (shift,shift) or return '';
-  return $pkg->{$field} ? time2str('%D<BR><FONT SIZE=-3>%l:%M:%S%P&nbsp;%z</FONT>',
-                                   $pkg->{$field})
-                        : '&nbsp';
+  my($pkg, $field) = @_ or return '';
+  return '&nbsp;' unless $pkg->{$field};
+  my $format = $conf->exists('pkg_showtimes')
+               ? '<B>%D</B>&nbsp;<FONT SIZE=-3>%l:%M:%S%P&nbsp;%z</FONT>'
+               : '<B>%b&nbsp;%o,&nbsp;%Y</B>';
+  ( my $strip = time2str($format, $pkg->{$field}) ) =~ s/ (\d)/$1/g;
+  $strip;
 }
 
 sub pkg_details_link {
