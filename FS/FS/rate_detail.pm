@@ -3,6 +3,8 @@ package FS::rate_detail;
 use strict;
 use vars qw( @ISA );
 use FS::Record qw( qsearch qsearchs );
+use FS::rate;
+use FS::rate_region;
 
 @ISA = qw(FS::Record);
 
