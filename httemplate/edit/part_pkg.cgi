@@ -176,7 +176,16 @@ END
 my @fixups = ();
 my $count = 0;
 my $columns = 3;
-my @part_svc = qsearch( 'part_svc', { 'disabled' => '' } );
+my @part_svc = qsearch(
+  'part_svc',
+  {},
+  '',
+  "WHERE disabled IS NULL OR disabled = ''
+      OR 0 < ( SELECT quantity FROM pkg_svc
+                WHERE pkg_svc.svcpart = part_svc.svcpart
+                  AND pkgpart = 72
+             )"
+);
 foreach my $part_svc ( @part_svc ) {
   my $svcpart = $part_svc->svcpart;
   my $pkgpart = $cgi->param('clone') || $part_pkg->pkgpart;
@@ -206,7 +215,9 @@ foreach my $part_svc ( @part_svc ) {
       print '></TD>';
     }
     print qq!<TD><A HREF="part_svc.cgi?!,$part_svc->svcpart,
-          qq!">!, $part_svc->getfield('svc'), "</A></TD></TR>";
+          qq!">!, $part_svc->getfield('svc'), '</A>';
+    print ' (DISABLED)' if $part_svc->disabled =~ /^Y/i;
+    print '</TD></TR>';
 #    print "</TABLE></TD><TD>$thead" if ++$count == int(scalar(@part_svc) / 2);
     $count+=1;
     foreach ( 1 .. $columns-1 ) {

@@ -19,11 +19,11 @@ foreach (qw( setuptax recurtax disabled )) {
 
 my $new = new FS::part_pkg ( {
   map {
-    $_, scalar($cgi->param($_));
+    $_ => scalar($cgi->param($_));
   } fields('part_pkg')
 } );
 
-my %pkg_svc = map { $_ => $cgi->param("pkg_svc$_") }
+my %pkg_svc = map { $_ => scalar($cgi->param("pkg_svc$_")) }
               map { $_->svcpart }
               qsearch('part_svc', {} );
 
