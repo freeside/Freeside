@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: signup.cgi,v 1.29 2002-05-30 22:45:20 ivan Exp $
+# $Id: signup.cgi,v 1.30 2002-08-26 19:07:10 khoff Exp $
 
 use strict;
 use vars qw( @payby $cgi $locales $packages $pops $init_data $error
@@ -359,7 +359,8 @@ sub pop_info {
 
 #horrible false laziness with FS/FS/svc_acct_pop.pm::popselector
 sub popselector {
-  my( $popnum, $state ) = @_;
+
+  my( $popnum ) = @_;
 
   return '<INPUT TYPE="hidden" NAME="popnum" VALUE="">' unless @$pops;
   return $pops->[0]{city}. ', '. $pops->[0]{state}.
@@ -368,7 +369,9 @@ sub popselector {
     if scalar(@$pops) == 1;
 
   my %pop = ();
-  push @{ $pop{$_->{state}} }, $_ foreach @$pops;
+  foreach (@$pops) {
+    push @{ $pop{ $_->{state} }->{ $_->{ac} } }, $_;
+  }
 
   my $text = <<END;
     <SCRIPT>
@@ -377,45 +380,82 @@ sub popselector {
       var length = what.length;
       what.options[length] = optionName;
     }
-    
-    function popstate_changed(what) {
+
+    function acstate_changed(what) {
       state = what.options[what.selectedIndex].text;
-      for (var i = what.form.popnum.length;i > 0;i--)
-                what.form.popnum.options[i] = null;
-      what.form.popnum.options[0] = new Option("", "", false, true);
+      for (var i = what.form.popac.length;i > 0;i--)
+                what.form.popac.options[i] = null;
+      what.form.popac.options[0] = new Option("Area code", "-1", false, true);
 END
 
-  foreach my $popstate ( sort { $a cmp $b } keys %pop ) {
-    $text .= "\nif ( state == \"$popstate\" ) {\n";
+  foreach my $state ( sort { $a cmp $b } keys %pop ) {
+    $text .= "\nif ( state == \"$state\" ) {\n";
 
-    foreach my $pop ( @{$pop{$popstate}}) {
-      my $o_popnum = $pop->{popnum};
-      my $poptext =  $pop->{city}. ', '. $pop->{state}.
-                     ' ('. $pop->{ac}. ')/'. $pop->{exch};
-
-      $text .= "opt(what.form.popnum, \"$o_popnum\", \"$poptext\");\n"
+    foreach my $ac ( sort { $a cmp $b } keys %{ $pop{$state} }) {
+      $text .= "opt(what.form.popac, \"$ac\", \"$ac\");\n";
+      if ($ac eq $cgi->param('popac')) {
+        $text .= "what.form.popac.options[what.form.popac.length-1].selected = true;\n";
+      }
     }
     $text .= "}\n";
   }
+  $text .= "popac_changed(what.form.popac)}\n";
+
+  $text .= <<END;
+  function popac_changed(what) {
+    ac = what.options[what.selectedIndex].text;
+    for (var i = what.form.popnum.length;i > 0;i--)
+        what.form.popnum.options[i] = null;
+    what.form.popnum.options[0] = new Option("City", "-1", false, true);
+
+END
+
+  foreach my $state ( keys %pop ) {
+    foreach my $popac ( keys %{ $pop{$state} } ) {
+      $text .= "\nif ( ac == \"$popac\" ) {\n";
+
+      foreach my $pop ( @{$pop{$state}->{$popac}}) {
+        my $o_popnum = $pop->{popnum};
+        my $poptext =  $pop->{city}. ', '. $pop->{state}.
+                       ' ('. $pop->{ac}. ')/'. $pop->{exch};
+
+        $text .= "opt(what.form.popnum, \"$o_popnum\", \"$poptext\");\n";
+        if ($popnum == $o_popnum) {
+          $text .= "what.form.popnum.options[what.form.popnum.length-1].selected = true;\n";
+        }
+      }
+      $text .= "}\n";
+    }
+  }
+
 
   $text .= "}\n</SCRIPT>\n";
 
   $text .=
-    qq!<SELECT NAME="popstate" SIZE=1 onChange="popstate_changed(this)">!.
-    qq!<OPTION> !;
-  $text .= "<OPTION>$_" foreach sort { $a cmp $b } keys %pop;
-  $text .= '</SELECT>'; #callback? return 3 html pieces?  #'</TD><TD>';
+    qq!<TABLE CELLPADDING="0"><TR><TD><SELECT NAME="acstate"! .
+    qq!SIZE=1 onChange="acstate_changed(this)"><OPTION VALUE=-1>State!;
+  $text .= "<OPTION" . ($_ eq $cgi->param('acstate') ? " SELECTED" : "") .
+           ">$_" foreach sort { $a cmp $b } keys %pop;
+  $text .= '</SELECT>'; #callback? return 3 html pieces?  #'</TD>';
 
-  $text .= qq!<SELECT NAME="popnum" SIZE=1><OPTION> !;
-  foreach my $pop ( @$pops ) {
+  $text .=
+    qq!<SELECT NAME="popac" SIZE=1 onChange="popac_changed(this)">!.
+    qq!<OPTION>Area code</SELECT></TR><TR VALIGN="top">!;
+
+  $text .= qq!<TR><TD><SELECT NAME="popnum" SIZE=1 STYLE="width: 20em"><OPTION>City!;
+
+  #comment this block to disable initial list polulation
+  foreach my $pop ( sort { $a->{state} cmp $b->{state} } @$pops ) {
     $text .= qq!<OPTION VALUE="!. $pop->{popnum}. '"'.
              ( ( $popnum && $pop->{popnum} == $popnum ) ? ' SELECTED' : '' ). ">".
              $pop->{city}. ', '. $pop->{state}.
                ' ('. $pop->{ac}. ')/'. $pop->{exch};
   }
-  $text .= '</SELECT>';
+
+  $text .= qq!</SELECT></TD></TR></TABLE>!;
 
   $text;
+
 }
 
 sub expselect {
