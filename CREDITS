@@ -56,7 +56,8 @@ export, cancel-unaudited.cgi), patches to support billing date modification,
 and probably other things too (sorry if I forgot them).
 
 Kenny Elliott <kenny@neoserve.com> contributed ICRADIUS radreply table support,
-allowing attributes with ICRADIUS.
+allowing attributes with ICRADIUS, helped fix many bugs, and some
+other stuff I can't recall (sorry).
 
 Stephen Amadei <amadei@dandy.net> contribued portability cleanups for the
 low-level DBI stuff.
