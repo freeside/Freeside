@@ -1,0 +1,65 @@
+#!/usr/bin/perl -w
+
+use strict;
+#use File::Path;
+use File::Rsync;
+use Net::SSH qw(ssh);
+use FS::UID qw(adminsuidsetup datasrc);
+use FS::Record qw(qsearch qsearchs);
+use FS::part_export;
+use FS::cust_svc;
+use FS::svc_www;
+
+my $user = shift or die &usage;
+adminsuidsetup $user;
+
+#needs the export number in there somewhere too...?
+my $spooldir = "/usr/local/etc/freeside/export.". datasrc. "/apache";
+mkdir $spooldir, 0700 unless -d $spooldir;
+
+my @exports = qsearch('part_export', { 'exporttype' => 'apache' } );
+
+my $rsync = File::Rsync->new({
+  rsh     => 'ssh',
+#  dry_run => 1,
+});
+
+foreach my $export ( @exports ) {
+
+  my $machine = $export->machine;
+  my $file = "$spooldir/$machine.conf";
+
+  open(HTTPD_CONF,">$file") or die "can't open $file: $!";
+
+  my $template = $export->option('template');
+
+  my @svc_www = $export->svc_x;
+
+  foreach my $svc_www ( @svc_www ) {
+    use vars qw($zone $username);
+    $zone = $svc_www->domain_record->zone;
+    $username = $svc_www->svc_acct->username;
+    print HTTPD_CONF eval(qq("$template"));
+  }
+
+  my $user = $export->option('user');
+  my $httpd_conf = $export->option('httpd_conf')
+
+  $rsync->exec( {
+    src       => $file,
+    dest      => "$user\@$machine:$httpd_conf",
+  } ) or die "rsync to $machine failed: ". join(" / ", $rsync->err);
+ # warn $rsync->out;
+
+  ssh("root\@$machine", 'ndc reload');
+
+}
+
+close NAMED_CONF;
+
+# -----
+
+sub usage {
+  die "Usage:\n  export.export user\n"; 
+}
+

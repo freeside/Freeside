@@ -43,12 +43,7 @@ foreach my $export ( @bsd_exports ) {
   chmod 0644, "$prefix/passwd";
   chmod 0600, "$prefix/master.passwd";
 
-  #false laziness with  freeside-sqlradius-reset and bind.export
-  my @svc_acct = 
-    map { qsearchs('svc_acct', { 'svcnum' => $_->svcnum } ) }
-      map { qsearch('cust_svc', { 'svcpart' => $_->svcpart } ) }
-        grep { qsearch('cust_svc', { 'svcpart' => $_->svcpart } ) }
-          $export->export_svc;
+  my @svc_acct = $export->svc_x;
 
   next unless @svc_acct;
 

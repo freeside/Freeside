@@ -604,7 +604,7 @@ tie my %shellcommands_withdomain_options, 'Tie::IxHash',
 ;
 
 tie my %www_shellcommands_options, 'Tie::IxHash',
-  'user' => { lable=>'Remote username', default=>'root' },
+  'user' => { label=>'Remote username', default=>'root' },
   'useradd' => { label=>'Insert command',
                  default=>'mkdir /var/www/$zone; chown $username /var/www/$zone; ln -s /var/www/$zone $homedir/$zone',
                },
@@ -614,6 +614,27 @@ tie my %www_shellcommands_options, 'Tie::IxHash',
   'usermod'  => { label=>'Modify command',
                   default=>'[ -n &quot;$old_zone&quot; ] && rm $old_homedir/$old_zone; [ &quot;$old_zone&quot; != &quot;$new_zone&quot; -a -n &quot;$new_zone&quot; ] && mv /var/www/$old_zone /var/www/$new_zone; [ &quot;$old_username&quot; != &quot;$new_username&quot; ] && chown -R $new_username /var/www/$new_zone; ln -s /var/www/$new_zone $new_homedir/$new_zone',
                 },
+;
+
+tie my %apache_options, 'Tie::IxHash',
+  'user'       => { label=>'Remote username', default=>'root' },
+  'httpd_conf' => { label=>'httpd.conf snippet location',
+                    default=>'/etc/apache/httpd-freeside.conf', },
+  'template'   => {
+    label   => 'Template',
+    type    => 'textarea',
+    default => <<'END',
+<VirtualHost $domain> #generic
+#<VirtualHost ip.addr> #preferred, http://httpd.apache.org/docs/dns-caveats.html
+DocumentRoot /var/www/$zone
+ServerName $zone
+ServerAlias *.$zone
+#BandWidthModule On
+#LargeFileLimit 4096 12288
+</VirtualHost>
+
+END
+  },
 ;
 
 tie my %domain_shellcommands_options, 'Tie::IxHash',
@@ -894,6 +915,11 @@ tie my %ldap_options, 'Tie::IxHash',
       'notes'    => 'Run remote commands via SSH, for virtual web sites.  You will need to <a href="../docs/ssh.html">setup SSH for unattended operation</a>.',
     },
 
+    'apache' => {
+      'desc' => 'Export an Apache httpd.conf file snippet.',
+      'options' => \%apache_options,
+      'notes' => 'Batch export of an httpd.conf snippet from a template.  Typically used with something like <code>Include /etc/apache/httpd-freeside.conf</code> in httpd.conf.  <a href="http://search.cpan.org/search?dist=File-Rsync">File::Rsync</a> must be installed.  Run bin/apache.export to export the files.',
+    },
   },
 
   'svc_broadband' => {

@@ -261,7 +261,7 @@ sub check {
       or return "Illegal data for PTR record: ". $self->recdata;
     $self->recdata($1);
   } elsif ( $self->rectype eq 'CNAME' ) {
-    $self->recdata =~ /^([a-z0-9\.\-]+)$/i
+    $self->recdata =~ /^([a-z0-9\.\-]+|\@)$/i
       or return "Illegal data for CNAME record: ". $self->recdata;
     $self->recdata($1);
   } elsif ( $self->rectype eq '_mstr' ) {
@@ -313,7 +313,7 @@ sub svc_domain {
 
 =head1 VERSION
 
-$Id: domain_record.pm,v 1.11 2002-06-23 19:16:45 ivan Exp $
+$Id: domain_record.pm,v 1.12 2003-03-20 03:41:03 ivan Exp $
 
 =head1 BUGS
 

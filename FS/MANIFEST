@@ -66,6 +66,7 @@ FS/part_bill_event.pm
 FS/export_svc.pm
 FS/part_export.pm
 FS/part_export_option.pm
+FS/part_export/apache.pm
 FS/part_export/bind.pm
 FS/part_export/bind_slave.pm
 FS/part_export/bsdshell.pm

@@ -46,12 +46,7 @@ foreach my $export ( @exports ) {
   my $zonepath = $export->option('zonepath');
   $zonepath =~ s/\/$//;
 
-  #false laziness with  freeside-sqlradius-reset and shell.export
-  my @svc_domain =
-    map { qsearchs('svc_domain', { 'svcnum' => $_->svcnum } ) }
-      map { qsearch('cust_svc', { 'svcpart' => $_->svcpart } ) }
-        grep { qsearch('cust_svc', { 'svcpart' => $_->svcpart } ) }
-          $export->export_svc;
+  my @svc_domain = $export->svc_x;
 
   foreach my $svc_domain ( @svc_domain ) {
     my $domain = $svc_domain->domain;
