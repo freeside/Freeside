@@ -1,7 +1,7 @@
 package FS::cust_credit_bill;
 
 use strict;
-use vars qw( @ISA );
+use vars qw( @ISA $conf );
 use FS::UID qw( getotaker );
 use FS::Record qw( qsearch qsearchs );
 use FS::cust_main;
@@ -10,6 +10,11 @@ use FS::cust_credit;
 use FS::cust_bill;
 
 @ISA = qw( FS::Record );
+
+#ask FS::UID to run this stuff for us later
+FS::UID->install_callback( sub { 
+  $conf = new FS::Conf;
+} );
 
 =head1 NAME
 
@@ -68,6 +73,19 @@ sub table { 'cust_credit_bill'; }
 
 Adds this cust_credit_bill to the database ("Posts" all or part of a credit).
 If there is an error, returns the error, otherwise returns false.
+
+sub insert {
+  my $self = shift;
+  my $error = $self->SUPER::insert(@_);
+  return $error if $error;
+
+  if ( $conf->exists('invoice_send_receipts') ) {
+    my $send_error = $self->cust_bill->send;
+    warn "Error sending receipt: $send_error\n" if $send_error;
+  }
+
+  '';
+}
 
 =item delete
 
@@ -141,11 +159,18 @@ sub cust_credit {
   qsearchs( 'cust_credit', { 'crednum' => $self->crednum } );
 }
 
+=item cust_bill 
+
+Returns the invoice (see L<FS::cust_bill>)
+
+=cut
+
+sub cust_bill {
+  my $self = shift;
+  qsearchs( 'cust_bill', { 'invnum' => $self->invnum } );
+}
+
 =back
-
-=head1 VERSION
-
-$Id: cust_credit_bill.pm,v 1.8 2003-08-05 00:20:41 khoff Exp $
 
 =head1 BUGS
 

@@ -1,12 +1,17 @@
 package FS::cust_bill_pay;
 
 use strict;
-use vars qw( @ISA );
+use vars qw( @ISA $conf );
 use FS::Record qw( qsearch qsearchs dbh );
 use FS::cust_bill;
 use FS::cust_pay;
 
 @ISA = qw( FS::Record );
+
+#ask FS::UID to run this stuff for us later
+FS::UID->install_callback( sub { 
+  $conf = new FS::Conf;
+} );
 
 =head1 NAME
 
@@ -101,7 +106,8 @@ sub insert {
            " greater than cust_pay.paid ". $cust_pay->paid;
   }
 
-  my $cust_bill = qsearchs('cust_bill', { 'invnum' => $self->invnum } ) or do {
+  my $cust_bill = $self->cust_bill;
+  unless ( $cust_bill ) {
     $dbh->rollback if $oldAutoCommit;
     return "unknown cust_bill.invnum: ". $self->invnum;
   };
@@ -119,6 +125,11 @@ sub insert {
   }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+  if ( $conf->exists('invoice_send_receipts') ) {
+    my $send_error = $cust_bill->send;
+    warn "Error sending receipt: $send_error\n" if $send_error;
+  }
 
   '';
 }
@@ -196,10 +207,6 @@ sub cust_bill {
 }
 
 =back
-
-=head1 VERSION
-
-$Id: cust_bill_pay.pm,v 1.13 2003-08-05 00:20:41 khoff Exp $
 
 =head1 BUGS
 
