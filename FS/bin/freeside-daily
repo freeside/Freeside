@@ -81,9 +81,11 @@ if ( $dest ) {
                    output    => "/var/tmp/$database.gpg",
                    recipient => $conf->config('dump-pgpid'),
                  );
+    chmod 0600, '/var/tmp/$database.gpg';
     scp("/var/tmp/$database.gpg", $dest);
     unlink "/var/tmp/$database.gpg" or die $!;
   } else {
+    chmod 0600, '/var/tmp/$database.sql';
     scp("/var/tmp/$database.sql", $dest);
   }
   unlink "/var/tmp/$database.sql" or die $!;
