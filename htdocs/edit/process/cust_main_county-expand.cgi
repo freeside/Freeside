@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main_county-expand.cgi,v 1.6 1999-01-25 12:19:07 ivan Exp $
+# $Id: cust_main_county-expand.cgi,v 1.7 2000-12-21 05:22:30 ivan Exp $
 #
 # ivan@sisd.com 97-dec-16
 #
@@ -15,7 +15,10 @@
 # ivan@sisd.com 98-sep-2
 #
 # $Log: cust_main_county-expand.cgi,v $
-# Revision 1.6  1999-01-25 12:19:07  ivan
+# Revision 1.7  2000-12-21 05:22:30  ivan
+# perldoc -f split
+#
+# Revision 1.6  1999/01/25 12:19:07  ivan
 # yet more mod_perl stuff
 #
 # Revision 1.5  1999/01/19 05:13:51  ivan
@@ -53,7 +56,7 @@ $cust_main_county = qsearchs('cust_main_county',{'taxnum'=>$taxnum})
 if ( $cgi->param('delim') eq 'n' ) {
   @expansion=split(/\n/,$cgi->param('expansion'));
 } elsif ( $cgi->param('delim') eq 's' ) {
-  @expansion=split(/\s+/,$cgi->param('expansion'));
+  @expansion=split(' ',$cgi->param('expansion'));
 } else {
   die "Illegal delim!";
 }
