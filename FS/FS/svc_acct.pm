@@ -380,7 +380,6 @@ sub check {
     ;
 
     unless ( $recref->{username} eq 'sync' ) {
-      my($shell);
       if ( grep $_ eq $recref->{shell}, @shells ) {
         $recref->{shell} = (grep $_ eq $recref->{shell}, @shells)[0];
       } else {
@@ -473,7 +472,7 @@ sub radius {
 
 =head1 VERSION
 
-$Id: svc_acct.pm,v 1.5 2000-06-28 12:52:22 ivan Exp $
+$Id: svc_acct.pm,v 1.6 2000-06-28 12:54:33 ivan Exp $
 
 =head1 BUGS
 
