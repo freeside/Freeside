@@ -876,7 +876,7 @@ sub domain {
 =item svc_domain
 
 Returns the FS::svc_domain record for this account's domain (see
-L<FS::svc_domain>.
+L<FS::svc_domain>).
 
 =cut
 
