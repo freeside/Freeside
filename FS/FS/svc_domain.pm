@@ -186,7 +186,7 @@ sub insert {
       'reczone' => '@',
       'recaf'   => 'IN',
       'rectype' => 'SOA',
-      'recdata' => "$soamachine $soaemail ( ". time2str("%Y%m%e", time). "00 ".
+      'recdata' => "$soamachine $soaemail ( ". time2str("%Y%m%d", time). "00 ".
                    "$soarefresh $soaretry $soaexpire $soadefaultttl )"
     };
     $error = $soa->insert;
@@ -478,7 +478,7 @@ sub submit_internic {
 
 =head1 VERSION
 
-$Id: svc_domain.pm,v 1.11 2001-05-22 16:43:28 ivan Exp $
+$Id: svc_domain.pm,v 1.12 2001-06-03 17:22:52 ivan Exp $
 
 =head1 BUGS
 
