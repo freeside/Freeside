@@ -538,6 +538,10 @@ tie %freq, 'Tie::IxHash',
   '6'  => 'semiannually (every 6 months)',
   '12' => 'annually',
   '24' => 'biannually (every 2 years)',
+  '36' => 'triannually (every 3 years)',
+  '48' => '(every 4 years)',
+  '60' => '(every 5 years)',
+  '120' => '(every 10 years)',
 ;
 
 sub freq_pretty {
