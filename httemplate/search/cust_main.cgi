@@ -50,6 +50,7 @@ my $total = 0;
 my(@cust_main, $sortby, $orderby);
 if ( $cgi->param('browse')
      || $cgi->param('otaker_on')
+     || $cgi->param('agentnum_on')
 ) {
 
   my %search = ();
@@ -73,6 +74,9 @@ if ( $cgi->param('browse')
     if ( $cgi->param('otaker_on') ) {
       $cgi->param('otaker') =~ /^(\w{1,32})$/ or eidiot "Illegal otaker\n";
       $search{otaker} = $1;
+    } elsif ( $cgi->param('agentnum_on') ) {
+      $cgi->param('agentnum') =~ /^(\d+)$/ or eidiot "Illegal agentnum\n";
+      $search{agentnum} = $1;
     } else {
       die "unknown query...";
     }
@@ -112,6 +116,7 @@ if ( $cgi->param('browse')
                AND (temp1_$$.count > 0
                        OR temp2_$$.count = 0 )
        ";
+
     } else {
        $ncancelled = "
           0 < ( SELECT COUNT(*) FROM cust_pkg
@@ -124,15 +129,32 @@ if ( $cgi->param('browse')
                        WHERE cust_pkg.custnum = cust_main.custnum
                    )
        ";
-    }
+     }
+   }
 
+  my $cancelled = '';
+  if ( $cgi->param('cancelled') ) {
+    $cancelled = "
+      0 = ( SELECT COUNT(*) FROM cust_pkg
+                   WHERE cust_pkg.custnum = cust_main.custnum
+                      AND ( cust_pkg.cancel IS NULL
+                            OR cust_pkg.cancel = 0
+                          )
+          )
+        AND 0 < ( SELECT COUNT(*) FROM cust_pkg
+                    WHERE cust_pkg.custnum = cust_main.custnum
+                )
+    ";
   }
 
   #EWWWWWW
   my $qual = join(' AND ',
             map { "$_ = ". dbh->quote($search{$_}) } keys %search );
 
-  if ( $ncancelled ) {
+  if ( $cancelled ) {
+    $qual .= ' AND ' if $qual;
+    $qual .= $cancelled;
+  } elsif ( $ncancelled ) {
     $qual .= ' AND ' if $qual;
     $qual .= $ncancelled;
   }
@@ -150,21 +172,22 @@ if ( $cgi->param('browse')
 
   $total = $sth->fetchrow_arrayref->[0];
 
-  if ( $ncancelled ) {
+  my $rqual = $cancelled || $ncancelled;
+  if ( $rqual ) {
     if ( %search ) {
-      $ncancelled = " AND $ncancelled";
+      $rqual = " AND $rqual";
     } else {
-      $ncancelled = " WHERE $ncancelled";
+      $rqual = " WHERE $rqual";
     }
   }
 
   my @just_cust_main;
   if ( driver_name eq 'mysql' ) {
     @just_cust_main = qsearch('cust_main', \%search, 'cust_main.*',
-                              ",temp1_$$,temp2_$$ $ncancelled $orderby $limit");
+                              ",temp1_$$,temp2_$$ $rqual $orderby $limit");
   } else {
     @just_cust_main = qsearch('cust_main', \%search, '',   
-                              "$ncancelled $orderby $limit" );
+                              "$rqual $orderby $limit" );
   }
   if ( driver_name eq 'mysql' ) {
     my $sql = "DROP TABLE temp1_$$,temp2_$$;";
@@ -213,9 +236,12 @@ if ( $cgi->param('browse')
   }
 
   @cust_main = grep { $_->ncancelled_pkgs || ! $_->all_pkgs } @cust_main
-    if $cgi->param('showcancelledcustomers') eq '0' #see if it was set by me
-       || ( $conf->exists('hidecancelledcustomers')
-             && ! $cgi->param('showcancelledcustomers') );
+    if ! $cgi->param('cancelled')
+       && (
+         $cgi->param('showcancelledcustomers') eq '0' #see if it was set by me
+         || ( $conf->exists('hidecancelledcustomers')
+               && ! $cgi->param('showcancelledcustomers') )
+       );
 
   my %saw = ();
   @cust_main = grep { !$saw{$_->custnum}++ } @cust_main;
@@ -277,19 +303,22 @@ if ( scalar(@cust_main) == 1 && ! $cgi->param('referral_custnum') ) {
     }
   }
   #end pager
-  
-  if ( $cgi->param('showcancelledcustomers') eq '0' #see if it was set by me
-       || ( $conf->exists('hidecancelledcustomers')
-            && ! $cgi->param('showcancelledcustomers')
-          )
-     ) {
-    $cgi->param('showcancelledcustomers', 1);
-    $cgi->param('offset', 0);
-    print qq!( <a href="!. $cgi->self_url. qq!">show cancelled customers</a> )!;
-  } else {
-    $cgi->param('showcancelledcustomers', 0);
-    $cgi->param('offset', 0);
-    print qq!( <a href="!. $cgi->self_url. qq!">hide cancelled customers</a> )!;
+
+  unless ( $cgi->param('cancelled') ) {
+    if ( $cgi->param('showcancelledcustomers') eq '0' #see if it was set by me
+         || ( $conf->exists('hidecancelledcustomers')
+              && ! $cgi->param('showcancelledcustomers')
+            )
+       ) {
+      $cgi->param('showcancelledcustomers', 1);
+      $cgi->param('offset', 0);
+      print qq!( <a href="!. $cgi->self_url. qq!">show!;
+    } else {
+      $cgi->param('showcancelledcustomers', 0);
+      $cgi->param('offset', 0);
+      print qq!( <a href="!. $cgi->self_url. qq!">hide!;
+    }
+    print ' cancelled customers</a> )';
   }
   if ( $cgi->param('referral_custnum') ) {
     $cgi->param('referral_custnum') =~ /^(\d+)$/

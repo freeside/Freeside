@@ -78,6 +78,9 @@ foreach my $agent ( sort {
 
   my $num_cancelled = $num_total - $num_ncancelled;
 
+  my $cust_main_link = $p. 'search/cust_main.cgi?agentnum_on=1&'.
+                       'agentnum='. $agent->agentnum;
+
 %>
 
       <TR>
@@ -93,9 +96,9 @@ foreach my $agent ( sort {
         <TD><A HREF="<%=$p%>edit/agent_type.cgi?<%= $agent->typenum %>"><%= $agent->agent_type->atype %></A></TD>
         <TD>
           <FONT COLOR="#00CC00"><B><%= $num_ncancelled %></B></FONT>
-            active
+            <A HREF="<%= $cust_main_link %>&showcancelledcustomers=0">active</A>
           <BR><FONT COLOR="#FF0000"><B><%= $num_cancelled %></B></FONT>
-            cancelled
+            <A HREF="<%= $cust_main_link %>&showcancelledcustomers=1&cancelled=1">cancelled</A>
         </TD>
         <TD><%= $agent->freq %></TD>
         <TD><%= $agent->prog %></TD>
