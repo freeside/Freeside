@@ -719,7 +719,7 @@ sub ut_anything {
 
 This can be used as both a subroutine and a method call.  It returns a list
 of the columns in this record's table, or an explicitly specified table.
-(See L<dbdef_table>).
+(See L<FS::dbdef_table>).
 
 =cut
 
@@ -768,7 +768,7 @@ sub dbdef { $dbdef; }
 
 This is an internal function used to construct SQL statements.  It returns
 VALUE DBI-quoted (see L<DBI/"quote">) unless VALUE is a number and the column
-type (see L<dbdef_column>) does not end in `char' or `binary'.
+type (see L<FS::dbdef_column>) does not end in `char' or `binary'.
 
 =cut
 
@@ -825,7 +825,7 @@ sub hfields {
 
 =head1 VERSION
 
-$Id: Record.pm,v 1.1 1999-08-04 09:03:53 ivan Exp $
+$Id: Record.pm,v 1.2 1999-08-04 10:41:22 ivan Exp $
 
 =head1 BUGS
 
