@@ -9,9 +9,8 @@ httemplate/docs/upgrade8.html instead
 
 install the FS perl modules and httemplate as per install.html or upgrade8.html
 
-CREATE INDEX cust_pay2 ON cust_pay ( paynum );
-CREATE INDEX cust_pay3 ON cust_pay ( custnum );
-CREATE INDEX cust_pay4 ON cust_pay ( paybatch );
+CREATE INDEX cust_pay2 ON cust_pay ( custnum );
+CREATE INDEX cust_pay3 ON cust_pay ( paybatch );
 
 Run bin/dbdef-create
 
