@@ -87,7 +87,7 @@ print ' CHECKED' if $kludge_action eq 'M';
 print qq!>Transfer!;
 
 print <<END;
-<P>Domain <INPUT TYPE="text" NAME="domain" VALUE="$domain" SIZE=28 MAXLENGTH=26>
+<P>Domain <INPUT TYPE="text" NAME="domain" VALUE="$domain" SIZE=28 MAXLENGTH=63>
 <BR>Purpose/Description: <INPUT TYPE="text" NAME="purpose" VALUE="$purpose" SIZE=64>
 <P><INPUT TYPE="submit" VALUE="Submit">
     </FORM>
