@@ -8,11 +8,14 @@ $cgi->param('link') =~ /^(custnum|invnum)$/
   or die "Illegal link: ". $cgi->param('link');
 my $link = $1;
 
+my $_date = str2time($cgi->param('_date'));
+
 my $new = new FS::cust_pay ( {
   $link => $linknum,
+  _date => $_date,
   map {
     $_, scalar($cgi->param($_));
-  } qw(paid _date payby payinfo paybatch)
+  } qw(paid payby payinfo paybatch)
   #} fields('cust_pay')
 } );
 
