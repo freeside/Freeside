@@ -169,9 +169,12 @@ sub qsearch {
   my($sth);
   my($statement) = "SELECT * FROM $table". ( @fields
     ? " WHERE ". join(' AND ',
-        map("$_ = ". _quote($record->{$_},$table,$_), @fields)
-      )
-    : ''
+      map {
+        $self->getfield($_) eq ''
+          ? "$_ IS NULL"
+          : "$_ = ". _quote($self->getfield($_),$table,$_)
+      } @fields)
+    ) : ''
   );
   $sth=$dbh->prepare($statement)
     or croak $dbh->errstr; #is that a little too harsh?  hmm.
@@ -754,6 +757,10 @@ sub fields {
 
 =back
 
+=head1 VERSION
+
+$Id: Record.pm,v 1.7 1998-11-15 10:56:31 ivan Exp $
+
 =head1 BUGS
 
 This module should probably be renamed, since much of the functionality is
@@ -871,7 +878,10 @@ added pod documentation ivan@sisd.com 98-sep-6
 ut_phonen got ''; at the end ivan@sisd.com 98-sep-27
 
 $Log: Record.pm,v $
-Revision 1.6  1998-11-15 05:31:03  ivan
+Revision 1.7  1998-11-15 10:56:31  ivan
+qsearch gets sames "IS NULL" semantics as other WHERE clauses
+
+Revision 1.6  1998/11/15 05:31:03  ivan
 bugfix for new config layout
 
 Revision 1.5  1998/11/13 09:56:51  ivan
