@@ -134,7 +134,9 @@ sub popurl {
   my(@path)=$url->path_components;
   splice @path, 0-$up;
   $url->path_components(@path);
-  $url->as_string;
+  my $x = $url->as_string;
+  $x .= '/' unless $x =~ /\/$/;
+  $x;
 }
 
 =item table
@@ -171,7 +173,10 @@ lose the background, eidiot ivan@sisd.com 98-sep-2
 pod ivan@sisd.com 98-sep-12
 
 $Log: CGI.pm,v $
-Revision 1.11  1998-11-12 07:43:54  ivan
+Revision 1.12  1998-12-23 02:23:16  ivan
+popurl always has trailing slash
+
+Revision 1.11  1998/11/12 07:43:54  ivan
 *** empty log message ***
 
 Revision 1.10  1998/11/12 01:53:47  ivan
