@@ -195,10 +195,13 @@ my($daytime,$night,$fax)=(
   $cust_main->fax,
 );
 
+my $daytime_label = gettext('daytime') || 'Day Phone';
+my $night_label = gettext('night') || 'Night Phone';
+
 print <<END;
 <TR><TH ALIGN="right">${r}Country</TH><TD>$country_html</TD></TR>
-<TR><TD ALIGN="right">Day Phone</TD><TD COLSPAN=5><INPUT TYPE="text" NAME="daytime" VALUE="$daytime" SIZE=18></TD></TR>
-<TR><TD ALIGN="right">Night Phone</TD><TD COLSPAN=5><INPUT TYPE="text" NAME="night" VALUE="$night" SIZE=18></TD></TR>
+<TR><TD ALIGN="right">$daytime_label</TD><TD COLSPAN=5><INPUT TYPE="text" NAME="daytime" VALUE="$daytime" SIZE=18></TD></TR>
+<TR><TD ALIGN="right">$night_label</TD><TD COLSPAN=5><INPUT TYPE="text" NAME="night" VALUE="$night" SIZE=18></TD></TR>
 <TR><TD ALIGN="right">Fax</TD><TD COLSPAN=5><INPUT TYPE="text" NAME="fax" VALUE="$fax" SIZE=12></TD></TR>
 END
 
@@ -294,8 +297,8 @@ END
 
   print <<END;
   <TR><TH ALIGN="right">${r}Country</TH><TD>$ship_country_html</TD></TR>
-  <TR><TD ALIGN="right">Day Phone</TD><TD COLSPAN=5><INPUT TYPE="text" NAME="ship_daytime" VALUE="$ship_daytime" SIZE=18 onChange="changed(this)"></TD></TR>
-  <TR><TD ALIGN="right">Night Phone</TD><TD COLSPAN=5><INPUT TYPE="text" NAME="ship_night" VALUE="$ship_night" SIZE=18 onChange="changed(this)"></TD></TR>
+  <TR><TD ALIGN="right">$daytime_label</TD><TD COLSPAN=5><INPUT TYPE="text" NAME="ship_daytime" VALUE="$ship_daytime" SIZE=18 onChange="changed(this)"></TD></TR>
+  <TR><TD ALIGN="right">$night_label</TD><TD COLSPAN=5><INPUT TYPE="text" NAME="ship_night" VALUE="$ship_night" SIZE=18 onChange="changed(this)"></TD></TR>
   <TR><TD ALIGN="right">Fax</TD><TD COLSPAN=5><INPUT TYPE="text" NAME="ship_fax" VALUE="$ship_fax" SIZE=12 onChange="changed(this)"></TD></TR>
 END
 

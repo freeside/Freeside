@@ -110,6 +110,14 @@ sub messages {
       'en_US' => 'Expired card',
     },
 
+    'daytime' => {
+      'en_US' => 'Day Phone',
+    },
+
+    'night' => {
+      'en_US' => 'Night Phone',
+    },
+
   );
 }
 
