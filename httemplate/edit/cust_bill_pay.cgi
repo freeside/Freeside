@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: cust_bill_pay.cgi,v 1.3 2001-12-18 19:34:08 ivan Exp $ -->
+#<!-- $Id: cust_bill_pay.cgi,v 1.4 2001-12-18 19:36:21 ivan Exp $ -->
 
 use strict;
 use vars qw( $cgi $query $custnum $paynum $amount $invnum $p1 $otaker $cust_pay );
@@ -48,7 +48,7 @@ print "Payment # <B>$paynum</B>".
       qq!<INPUT TYPE="hidden" NAME="paynum" VALUE="$paynum">!.
       '<BR>Date: <B>'. time2str("%D", $cust_pay->_date). '</B>'.
       '<BR>Amount: $<B>'. $cust_pay->paid. '</B>'.
-      "<BR>Unapplied amount: \$<B>$unapplied</B>".
+      "<BR>Unapplied amount: \$<B>$unapplied</B>"
       ;
 
 my @cust_bill = grep $_->owed != 0,
