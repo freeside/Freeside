@@ -110,7 +110,7 @@ sub check {
   $self->exempt_amount(0) unless $self->exempt_amount;
 
   $self->ut_numbern('taxnum')
-    || $self->ut_textn('state')
+    || $self->ut_anything('state')
     || $self->ut_textn('county')
     || $self->ut_text('country')
     || $self->ut_float('tax')
