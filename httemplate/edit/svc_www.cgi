@@ -167,7 +167,7 @@ foreach $_ (keys %username) {
 }
 print "</SELECT></TD></TR>";
 
-foreach $field ($svc_www->virtual_fields) {
+foreach my $field ($svc_www->virtual_fields) {
   if ( $part_svc->part_svc_column($field)->columnflag ne 'F' ) {
     # If the flag is X, it won't even show up in $svc_acct->virtual_fields.
     print $svc_www->pvf($field)->widget('HTML', 'edit', 
