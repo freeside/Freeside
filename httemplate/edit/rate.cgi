@@ -22,6 +22,13 @@ my %granularity = (
   '60' => 'minute',
 );
 
+my $nous = <<END;
+  WHERE 0 < ( SELECT COUNT(*) FROM rate_prefix
+               WHERE rate_region.regionnum = rate_prefix.regionnum
+                 AND countrycode != '1'
+            )
+END
+
 %>
 
 <%= header("$action Rate plan", menubar(
@@ -52,7 +59,11 @@ Rate plan
 </TR>
 
 <% foreach my $rate_region (
-     qsearch('rate_region', {}, '', 'ORDER BY regionname' )
+     qsearch( 'rate_region',
+              {},
+              '',
+              "$nous ORDER BY regionname",
+            )
    ) {
      my $n = $rate_region->regionnum;
      my $rate_detail =
