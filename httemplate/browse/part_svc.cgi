@@ -66,8 +66,12 @@ function part_export_areyousure(href) {
       <%= $hashref->{svcdb} %></TD>
     <TD ROWSPAN=<%= $rowspan %>><%= itable() %>
 <%
-  my @part_export = qsearch('part_export', { svcpart => $part_svc->svcpart } );
-  foreach my $part_export ( @part_export ) {
+#  my @part_export =
+map { qsearchs('part_export', { exportnum => $_->exportnum } ) } qsearch('export_svc', { svcpart => $part_svc->svcpart } ) ;
+  foreach my $part_export (
+    map { qsearchs('part_export', { exportnum => $_->exportnum } ) } 
+      qsearch('export_svc', { svcpart => $part_svc->svcpart } )
+  ) {
 %>
       <TR>
         <TD><A HREF="<%= $p %>edit/part_export.cgi?<%= $part_export->exportnum %>"><%= $part_export->exporttype %> to <%= $part_export->machine %></A></TD></TR>

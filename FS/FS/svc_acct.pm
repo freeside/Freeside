@@ -28,7 +28,7 @@ use FS::svc_domain;
 use FS::raddb;
 use FS::queue;
 use FS::radius_usergroup;
-use FS::msgcat qw(gettext);
+use FS::Msgcat qw(gettext);
 
 @ISA = qw( FS::svc_Common );
 

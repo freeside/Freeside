@@ -72,6 +72,7 @@ sub handler
       use FS::Conf;
       use FS::CGI qw(header menubar popurl table itable ntable idiot eidiot
                      small_custview myexit);
+      use FS::Msgcat qw(gettext geterror);
 
       use FS::agent;
       use FS::agent_type;
@@ -105,7 +106,8 @@ sub handler
       use FS::type_pkgs;
       use FS::part_export;
       use FS::part_export_option;
-      use FS::msgcat qw(gettext geterror);
+      use FS::export_svc;
+      use FS::msgcat;
 
       *CGI::redirect = sub {
         my( $self, $location ) = @_;

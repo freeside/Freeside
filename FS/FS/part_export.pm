@@ -1,13 +1,15 @@
 package FS::part_export;
 
 use strict;
-use vars qw( @ISA );
+use vars qw( @ISA @EXPORT_OK %exports );
+use Exporter;
 use FS::Record qw( qsearch qsearchs dbh );
 use FS::part_svc;
 use FS::part_export_option;
 use FS::export_svc;
 
 @ISA = qw(FS::Record);
+@EXPORT_OK = qw(export_info);
 
 =head1 NAME
 
@@ -428,10 +430,118 @@ sub _export_delete {
 
 =back
 
+=head1 SUBROUTINES
+
+=over 4
+
+=item export_info [ SVCDB ]
+
+Returns a hash reference of the exports for the given I<svcdb>, or if no
+I<svcdb> is specified, for all exports.  The keys of the hash are
+I<exporttype>s and the values are again hash references containing information
+on the export:
+
+  'desc'     => 'Description',
+  'options'  => {
+                  'option'  => { label=>'Option Label' },
+                  'option2' => { label=>'Another label' },
+                },
+  'nodomain' => 'Y', #or ''
+  'notes'    => 'Additional notes',
+
+=cut
+
+sub export_info {
+  #warn $_[0];
+  return $exports{$_[0]} if @_;
+  #{ map { %{$exports{$_}} } keys %exports };
+  my $r = { map { %{$exports{$_}} } keys %exports };
+}
+
+=item exporttype2svcdb EXPORTTYPE
+
+Returns the applicable I<svcdb> for an I<exporttype>.
+
+=cut
+
+sub exporttype2svcdb {
+  my $exporttype = $_[0];
+  foreach my $svcdb ( keys %exports ) {
+    return $svcdb if grep { $exporttype eq $_ } keys %{$exports{$svcdb}};
+  }
+  '';
+}
+
+%exports = (
+  'svc_acct' => {
+    'sysvshell' => {
+      'desc' =>
+        'Batch export of /etc/passwd and /etc/shadow files (Linux/SysV)',
+      'options' => {},
+    },
+    'bsdshell' => {
+      'desc' =>
+        'Batch export of /etc/passwd and /etc/master.passwd files (BSD)',
+      'options' => {},
+    },
+#    'nis' => {
+#      'desc' =>
+#        'Batch export of /etc/global/passwd and /etc/global/shadow for NIS ',
+#      'options' => {},
+#    },
+    'bsdshell' => {
+      'desc' =>
+        'Batch export of /etc/passwd and /etc/master.passwd files (BSD)',
+      'options' => {},
+    },
+    'textradius' => {
+      'desc' => 'Batch export of a text /etc/raddb/users file (Livingston, Cistron)',
+    },
+    'sqlradius' => {
+      'desc' => 'Real-time export to SQL-backed RADIUS (ICRADIUS, FreeRADIUS)',
+      'options' => {
+        'datasrc'  => { label=>'DBI data source' },
+        'username' => { label=>'Database username' },
+        'password' => { label=>'Database password' },
+      },
+      'nodomain' => 'Y',
+      'notes' => 'Not specifying datasrc will export to the freeside database? (no...  notes on MySQL replication, DBI::Proxy, etc., from Conf.pm && export.html etc., reset with bin/sqlradius_reset',
+    },
+    'cyrus' => {
+      'desc' => 'Real-time export to Cyrus IMAP server',
+    },
+    'cp' => {
+      'desc' => 'Real-time export to Critical Path Account Provisioning Protocol',
+    },
+    'infostreet' => {
+      'desc' => 'Real-time export to InfoStreet streetSmartAPI',
+      'options' => {
+        'url'      => { label=>'XML-RPC Access URL', },
+        'login'    => { label=>'InfoStreet login', },
+        'password' => { label=>'InfoStreet password', },
+        'groupID'  => { label=>'InfoStreet groupID', },
+      },
+      'nodomain' => 'Y',
+      'notes' => 'Real-time export to <a href="http://www.infostreet.com/">InfoStreet</a> streetSmartAPI.  Requires installation of <a href="http://search.cpan.org/search?dist=Frontier-Client">Frontier::Client</a> from CPAN.',
+    }
+  },
+
+  'svc_domain' => {},
+
+  'svc_acct_sm' => {},
+
+  'svc_forward' => {},
+
+  'svc_www' => {},
+
+);
+
+=back
+
 =head1 NEW EXPORT CLASSES
 
-Should be added to httemplate/edit/part_export.cgi and a module should
-be FS/FS/part_export/ (an example may be found in eg/export_template.pm)
+Should be added to the %export hash here, and a module should be added in
+FS/FS/part_export/ (an example may be found in eg/export_template.pm)
 
 =head1 BUGS
 

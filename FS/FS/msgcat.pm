@@ -1,20 +1,12 @@
 package FS::msgcat;
 
 use strict;
-use vars qw( @ISA @EXPORT_OK $conf $locale $debug );
+use vars qw( @ISA );
 use Exporter;
 use FS::UID;
 use FS::Record qw( qsearchs );
-use FS::Conf;
 
 @ISA = qw(FS::Record);
-@EXPORT_OK = qw( gettext geterror );
-
-$FS::UID::callback{'msgcat'} = sub {
-  $conf = new FS::Conf;
-  $locale = $conf->config('locale') || 'en_US';
-  $debug = $conf->exists('show-msgcat-codes')
-};
 
 =head1 NAME
 
@@ -22,14 +14,8 @@ FS::msgcat - Object methods for message catalog entries
 
 =head1 SYNOPSIS
 
-  use FS::msgcat qw(gettext);
+  use FS::msgcat;
 
-  #simple interface for retreiving messages...
-  $message = gettext('msgcode');
-  #or errors (includes the error code)
-  $message = geterror('msgcode');
-
-  #maintenance stuff
   $record = new FS::msgcat \%hash;
   $record = new FS::msgcat { 'column' => 'value' };
 
@@ -57,6 +43,8 @@ from FS::Record.  The following fields are currently supported:
 =item msg - Message
 
 =back
+
+If you just want to B<use> message catalogs, see L<FS::Msgcat>.
 
 =head1 METHODS
 
@@ -130,61 +118,13 @@ sub check {
 
 =back
 
-=head1 SUBROUTINES
-
-=over 4
-
-=item gettext MSGCODE
-
-Returns the full message for the supplied message code.
-
-=cut
-
-sub gettext {
-  $debug ? geterror(@_) : _gettext(@_);
-}
-
-sub _gettext {
-  my $msgcode = shift;
-  my $msgcat = qsearchs('msgcat', {
-    'msgcode' => $msgcode,
-    'locale' => $locale
-  } );
-  if ( $msgcat ) {
-    $msgcat->msg;
-  } else {
-    warn "WARNING: message for msgcode $msgcode in locale $locale not found";
-    $msgcode;
-  }
-
-}
-
-=item geterror MSGCODE
-
-Returns the full message for the supplied message code, including the message
-code.
-
-=cut
-
-sub geterror {
-  my $msgcode = shift;
-  my $msg = _gettext($msgcode);
-  if ( $msg eq $msgcode ) {
-    "Error code $msgcode (message for locale $locale not found)";
-  } else {
-    "$msg (error code $msgcode)";
-  }
-}
-
-=back
-
 =head1 BUGS
 
 i18n/l10n, eek
 
 =head1 SEE ALSO
 
-L<FS::Record>, schema.html from the base documentation.
+L<FS::Msgcat>, L<FS::Record>, schema.html from the base documentation.
 
 =cut
 

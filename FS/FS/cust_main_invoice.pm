@@ -7,7 +7,7 @@ use FS::Record qw( qsearchs );
 use FS::Conf;
 use FS::cust_main;
 use FS::svc_acct;
-use FS::msgcat qw(gettext);
+use FS::Msgcat qw(gettext);
 
 @ISA = qw( FS::Record );
 
@@ -170,7 +170,7 @@ sub address {
 
 =head1 VERSION
 
-$Id: cust_main_invoice.pm,v 1.11 2002-04-10 13:42:48 ivan Exp $
+$Id: cust_main_invoice.pm,v 1.12 2002-04-12 13:22:02 ivan Exp $
 
 =head1 BUGS
 

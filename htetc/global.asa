@@ -15,6 +15,7 @@ use FS::Record qw(qsearch qsearchs fields dbdef);
 use FS::Conf;
 use FS::CGI qw(header menubar popurl table itable ntable idiot eidiot
                small_custview myexit);
+use FS::Msgcat qw(gettext geterror);
 
 use FS::agent;
 use FS::agent_type;
@@ -48,7 +49,8 @@ use FS::svc_www;
 use FS::type_pkgs;
 use FS::part_export;
 use FS::part_export_option;
-use FS::msgcat qw(gettext geterror);
+use FS::export_svc;
+use FS::msgcat;
 
 sub Script_OnStart {
   $Response->AddHeader('Pragma' => 'no-cache');

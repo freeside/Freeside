@@ -43,4 +43,18 @@ canceled service with you.  For that, cancel all of the customer's packages.
 </form></body></html>
 END
 
+#Deleting a customer you have financial records on (i.e. credits) is
+#typically considered fraudulant bookkeeping.  Remember, deleting   
+#customers should ONLY be used for completely bogus records.  You should
+#NOT delete real customers who simply discontinue service.
+#
+#For real customers who simply discontinue service, cancel all of the
+#customer's packages.  Customers with all cancelled packages are not  
+#billed.  There is no need to take further action to prevent billing on
+#customers with all cancelled packages.
+#
+#Also see the "hidecancelledcustomers" and "hidecancelledpackages"
+#configuration options, which will allow you to surpress the display of
+#cancelled customers and packages, respectively.
+
 %>

@@ -26,7 +26,7 @@ use FS::queue;
 use FS::part_pkg;
 use FS::part_bill_event;
 use FS::cust_bill_event;
-use FS::msgcat qw(gettext);
+use FS::Msgcat qw(gettext);
 
 @ISA = qw( FS::Record );
 

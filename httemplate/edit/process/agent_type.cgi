@@ -22,6 +22,7 @@ if ( $error ) {
   print $cgi->redirect(popurl(2). "agent_type.cgi?". $cgi->query_string );
 } else {
 
+  #false laziness w/ edit/process/part_svc.cgi
   foreach my $part_pkg (qsearch('part_pkg',{})) {
     my($pkgpart)=$part_pkg->getfield('pkgpart');
 

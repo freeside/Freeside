@@ -27,6 +27,7 @@ FS/UI/CGI.pm
 FS/UI/Gtk.pm
 FS/UI/agent.pm
 FS/UID.pm
+FS/Msgcat.pm
 FS/agent.pm
 FS/agent_type.pm
 FS/cust_bill.pm
@@ -80,6 +81,8 @@ t/CGI.t
 t/Conf.t
 t/ConfItem.t
 t/Record.t
+t/UID.t
+t/Msgcat.t
 t/cust_bill.t
 t/cust_bill_event.t
 t/cust_bill_pay.t
@@ -124,5 +127,4 @@ t/type_pkgs.t
 t/queue.t
 t/queue_arg.t
 t/msgcat.t
-t/UID.t
 t/raddb.t

@@ -13,7 +13,7 @@ use FS::Conf;
 use FS::Record qw( qsearch qsearchs );
 use FS::cust_main_county;
 use FS::cust_main;
-use FS::msgcat qw(gettext);
+use FS::Msgcat qw(gettext);
 
 use vars qw( $opt $Debug );
 

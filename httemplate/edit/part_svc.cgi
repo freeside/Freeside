@@ -132,8 +132,30 @@ my %defs = (
     'form_checkbox'  => [ 'disabled' ],
     'layer_callback' => sub {
       my $layer = shift;
-      my $html = qq!<INPUT TYPE="hidden" NAME="svcdb" VALUE="$layer">!.
-                 table(). "<TH>Field</TH><TH COLSPAN=2>Modifier</TH>";
+      my $html = qq!<INPUT TYPE="hidden" NAME="svcdb" VALUE="$layer">!;
+
+      my $columns = 3;
+      my $count = 0;
+      my @part_export =
+        grep { $layer eq FS::part_export::exporttype2svcdb($_->exporttype) }
+          qsearch( 'part_export', {} );
+      $html .= '<BR><BR>'. table().
+               table(). "<TR><TH COLSPAN=$columns>Exports</TH></TR><TR>";
+      foreach my $part_export ( @part_export ) {
+        $html .= '<TD><INPUT TYPE="checkbox"'.
+                 ' NAME="exportnum'. $part_export->exportnum. '"  VALUE="1" ';
+        $html .= 'CHECKED'
+          if qsearchs( 'export_svc', {
+                                       exportnum => $part_export->exportnum,
+                                       svcpart   => $part_svc->svcpart       });
+        $html .= '> '. $part_export->exporttype. ' to '. $part_export->machine.
+                 '</TD>';
+        $count++;
+        $html .= '</TR><TR>' unless $count % $columns;
+      }
+      $html .= '</TR></TABLE><BR><BR>';
+
+      $html .=  table(). "<TH>Field</TH><TH COLSPAN=2>Modifier</TH>";
       #yucky kludge
       my @fields = defined( $FS::Record::dbdef->table($layer) )
                       ? grep { $_ ne 'svcnum' } fields($layer)

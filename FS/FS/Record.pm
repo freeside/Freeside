@@ -12,7 +12,7 @@ use DBI qw(:sql_types);
 use DBIx::DBSchema 0.19;
 use FS::UID qw(dbh checkruid getotaker datasrc driver_name);
 use FS::SearchCache;
-use FS::msgcat qw(gettext);
+use FS::Msgcat qw(gettext);
 
 @ISA = qw(Exporter);
 @EXPORT_OK = qw(dbh fields hfields qsearch qsearchs dbdef jsearch);
@@ -572,7 +572,7 @@ sub delete {
   $h_sth->execute or return $h_sth->errstr if $h_sth;
   dbh->commit or croak dbh->errstr if $FS::UID::AutoCommit;
 
-  #no need to needlessly destoy the data either
+  #no need to needlessly destoy the data either (causes problems actually)
   #undef $self; #no need to keep object!
 
   '';
@@ -825,9 +825,12 @@ false.
 
 sub ut_text {
   my($self,$field)=@_;
+  warn "msgcat ". \&msgcat. "\n";
+  warn "notexist ". \&notexist. "\n";
+  warn "AUTOLOAD ". \&AUTOLOAD. "\n";
   $self->getfield($field) =~ /^([\w \!\@\#\$\%\&\(\)\-\+\;\:\'\"\,\.\?\/]+)$/
     or return gettext('illegal_or_empty_text'). " $field: ".
-              $self->getfield($field);
+               $self->getfield($field);
   $self->setfield($field,$1);
   '';
 }
