@@ -489,14 +489,37 @@ sub exporttype2svcdb {
 #        'Batch export of /etc/global/passwd and /etc/global/shadow for NIS ',
 #      'options' => {},
 #    },
-    'bsdshell' => {
-      'desc' =>
-        'Batch export of /etc/passwd and /etc/master.passwd files (BSD)',
-      'options' => {},
-    },
     'textradius' => {
       'desc' => 'Batch export of a text /etc/raddb/users file (Livingston, Cistron)',
     },
+
+    'shellcommands' => {
+      'desc' => 'Real-time export via arbitrary commands on a remote machine (i.e. useradd, userdel, etc.)',
+      'options' => {
+        'machine' => { label=>'Remote machine' },
+        'user' => { label=>'Remote username', default=>'root' },
+        'useradd' => { label=>'Insert command',
+                       default=>'useradd -d $dir -m -s $shell -u $uid $username'
+                      #default=>'cp -pr /etc/skel $dir; chown -R $uid.$gid $dir'
+                     },
+        'userdel' => { label=>'Delete command',
+                       default=>'userdel $username',
+                       #default=>'rm -rf $dir',
+                     },
+        'usermod' => { label=>'Modify command',
+                       default=>'usermod -d $new_dir -l $new_username -s $new_shell -u $new_uid $old_username',
+                      #default=>'[ -d $old_dir ] && mv $old_dir $new_dir || ( '.
+                       #  'chmod u+t $old_dir; mkdir $new_dir; cd $old_dir; '.
+                       #  'find . -depth -print | cpio -pdm $new_dir; '.
+                       #  'chmod u-t $new_dir; chown -R $uid.$gid $new_dir; '.
+                       #  'rm -rf $old_dir'.
+                       #')'
+                     },
+      },
+      'nodomain' => 'Y',
+      'notes' => 'shellcommandsnotes... (this one is the nodomain one)',
+    },
+
     'sqlradius' => {
       'desc' => 'Real-time export to SQL-backed RADIUS (ICRADIUS, FreeRADIUS)',
       'options' => {
@@ -507,9 +530,18 @@ sub exporttype2svcdb {
       'nodomain' => 'Y',
       'notes' => 'Real-time export of radcheck, radreply and usergroup tables to any SQL database for <a href="http://www.freeradius.org/">FreeRADIUS</a> or <a href="http://radius.innercite.com/">ICRADIUS</a>.  Use <a href="../docs/man/bin/freeside-sqlradius-reset">freeside-sqlradius-reset</a> to delete and repopulate the tables from the Freeside database.',
     },
+
     'cyrus' => {
       'desc' => 'Real-time export to Cyrus IMAP server',
+      'options' => {
+        'server' => { label=>'IMAP server' },
+        'username' => { label=>'Admin username' },
+        'password' => { label=>'Admin password' },
+      },
+      'nodomain' => 'Y',
+      'notes' => 'Integration with <a href="http://asg.web.cmu.edu/cyrus/imapd/">Cyrus IMAP Server</a>.  Cyrus::IMAP::Admin should be installed locally and the connection to the server secured.  <B>svc_acct.quota</B> is used to set the Cyrus quota if available. '
     },
+
     'cp' => {
       'desc' => 'Real-time export to Critical Path Account Provisioning Protocol',
       'options' => {
@@ -522,6 +554,7 @@ sub exporttype2svcdb {
       },
       'notes' => 'Real-time export to <a href="http://www.cp.net/">Critial Path Account Provisioning Protocol</a>.  Requires installation of <a href="http://search.cpan.org/search?dist=Net-APP">Net::APP</a> from CPAN.',
     },
+    
     'infostreet' => {
       'desc' => 'Real-time export to InfoStreet streetSmartAPI',
       'options' => {
@@ -532,7 +565,8 @@ sub exporttype2svcdb {
       },
       'nodomain' => 'Y',
       'notes' => 'Real-time export to <a href="http://www.infostreet.com/">InfoStreet</a> streetSmartAPI.  Requires installation of <a href="http://search.cpan.org/search?dist=Frontier-Client">Frontier::Client</a> from CPAN.',
-    }
+    },
+
   },
 
   'svc_domain' => {},

@@ -8,9 +8,9 @@ use FS::part_export;
 sub rebless { shift; }
 
 sub _export_insert {
-  my($self, $svc_something) = (shift, shift);
+  my($self, $svc_acct) = (shift, shift);
   $self->myexport_queue( $svc_acct->svcnum, 'insert',
-    $svc_something->username, $svc_something->_password );
+    $svc_acct->username, $svc_acct->_password );
 }
 
 sub _export_replace {
@@ -23,9 +23,9 @@ sub _export_replace {
 }
 
 sub _export_delete {
-  my( $self, $svc_something ) = (shift, shift);
+  my( $self, $svc_acct ) = (shift, shift);
   $self->myexport_queue( $svc_acct->svcnum,
-    'delete', $svc_something->username );
+    'delete', $svc_acct->username );
 }
 
 #a good idea to queue anything that could fail or take any time

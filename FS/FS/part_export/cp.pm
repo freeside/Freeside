@@ -69,22 +69,17 @@ sub cp_command { #subroutine, not method
       );
     }
 
+    my $other = 'F';
     if ( $new_password =~ /^\*SUSPENDED\* (.*)$/ ) {
       $new_password = $1;
-      cp_command($host, $port, $username, $password, 'set_mailbox_status',
-        Domain       => $domain,
-        Mailbox      => $new_username,
-        Other        => 'T',
-        Other_Bounce => 'T',
-      );
-    } else {
-      cp_command($host, $port, $username, $password, 'set_mailbox_status',
-        Domain       => $domain,
-        Mailbox      => $new_username,
-        Other        => 'F',
-        Other_Bounce => 'F',
-      );
+      $other = 'T';
     }
+    cp_command($host, $port, $username, $password, 'set_mailbox_status',
+      Domain       => $domain,
+      Mailbox      => $new_username,
+      Other        => $other,
+      Other_Bounce => $other,
+    );
 
     if ( $old_password ne $new_password ) {
       cp_command($host, $port, $username, $password, 'change_mailbox',

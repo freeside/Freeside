@@ -298,8 +298,8 @@ httemplate/docs/config.html
 
   {
     'key'         => 'cyrus',
-    'section'     => 'mail',
-    'description' => 'Integration with <a href="http://asg.web.cmu.edu/cyrus/imapd/">Cyrus IMAP Server</a>, three lines: IMAP server, admin username, and admin password.  Cyrus::IMAP::Admin should be installed locally and the connection to the server secured.',
+    'section'     => 'deprecated',
+    'description' => '<b>DEPRECATED</b>, add a <i>cyrus</i> <a href="../browse/part_export.cgi">export</a> instead.  This option used to integrate with <a href="http://asg.web.cmu.edu/cyrus/imapd/">Cyrus IMAP Server</a>, three lines: IMAP server, admin username, and admin password.  Cyrus::IMAP::Admin should be installed locally and the connection to the server secured.',
     'type'        => 'textarea',
   },
 
@@ -604,29 +604,29 @@ httemplate/docs/config.html
 
   {
     'key'         => 'shellmachine',
-    'section'     => 'shell',
-    'description' => 'A single machine with user home directories mounted.  This enables home directory creation, renaming and archiving/deletion.  In conjunction with `qmailmachines\', it also enables `.qmail-extension\' file maintenance.',
+    'section'     => 'deprecated',
+    'description' => '<b>DEPRECATED</b>, add a <i>cp</i> <a href="../browse/part_export.cgi">export</a> instead.  This option used to contain a single machine with user home directories mounted.  This enables home directory creation, renaming and archiving/deletion.  In conjunction with `qmailmachines\', it also enables `.qmail-extension\' file maintenance.',
     'type'        => 'text',
   },
 
   {
     'key'         => 'shellmachine-useradd',
-    'section'     => 'shell',
-    'description' => 'The command(s) to run on shellmachine when an account is created.  If the <b>shellmachine</b> option is set but this option is not, <code>useradd -d $dir -m -s $shell -u $uid $username</code> is the default.  If this option is set but empty, <code>cp -pr /etc/skel $dir; chown -R $uid.$gid $dir</code> is the default instead.  Otherwise the value is evaluated as a double-quoted perl string, with the following variables available: <code>$username</code>, <code>$uid</code>, <code>$gid</code>, <code>$dir</code>, and <code>$shell</code>.',
+    'section'     => 'deprecated',
+    'description' => '<b>DEPRECATED</b>, add a <i>cp</i> <a href="../browse/part_export.cgi">export</a> instead.  This option used to contain command(s) to run on shellmachine when an account is created.  If the <b>shellmachine</b> option is set but this option is not, <code>useradd -d $dir -m -s $shell -u $uid $username</code> is the default.  If this option is set but empty, <code>cp -pr /etc/skel $dir; chown -R $uid.$gid $dir</code> is the default instead.  Otherwise the value is evaluated as a double-quoted perl string, with the following variables available: <code>$username</code>, <code>$uid</code>, <code>$gid</code>, <code>$dir</code>, and <code>$shell</code>.',
     'type'        => [qw( checkbox text )],
   },
 
   {
     'key'         => 'shellmachine-userdel',
-    'section'     => 'shell',
-    'description' => 'The command(s) to run on shellmachine when an account is deleted.  If the <b>shellmachine</b> option is set but this option is not, <code>userdel $username</code> is the default.  If this option is set but empty, <code>rm -rf $dir</code> is the default instead.  Otherwise the value is evaluated as a double-quoted perl string, with the following variables available: <code>$username</code> and <code>$dir</code>.',
+    'section'     => 'deprecated',
+    'description' => '<b>DEPRECATED</b>, add a <i>cp</i> <a href="../browse/part_export.cgi">export</a> instead.  This option used to contain command(s) to run on shellmachine when an account is deleted.  If the <b>shellmachine</b> option is set but this option is not, <code>userdel $username</code> is the default.  If this option is set but empty, <code>rm -rf $dir</code> is the default instead.  Otherwise the value is evaluated as a double-quoted perl string, with the following variables available: <code>$username</code> and <code>$dir</code>.',
     'type'        => [qw( checkbox text )],
   },
 
   {
     'key'         => 'shellmachine-usermod',
-    'section'     => 'shell',
-    'description' => 'The command(s) to run on shellmachine when an account is modified.  If the <b>shellmachine</b> option is set but this option is empty, <code>[ -d $old_dir ] &amp;&amp; mv $old_dir $new_dir || ( chmod u+t $old_dir; mkdir $new_dir; cd $old_dir; find . -depth -print | cpio -pdm $new_dir; chmod u-t $new_dir; chown -R $uid.$gid $new_dir; rm -rf $old_dir )</code> is the default.  Otherwise the contents of the file are treated as a double-quoted perl string, with the following variables available: <code>$old_dir</code>, <code>$new_dir</code>, <code>$uid</code> and <code>$gid</code>.',
+    'section'     => 'deprecated',
+    'description' => '<b>DEPRECATED</b>, add a <i>cp</i> <a href="../browse/part_export.cgi">export</a> instead.  This option used to contain command(s) to run on shellmachine when an account is modified.  If the <b>shellmachine</b> option is set but this option is empty, <code>[ -d $old_dir ] &amp;&amp; mv $old_dir $new_dir || ( chmod u+t $old_dir; mkdir $new_dir; cd $old_dir; find . -depth -print | cpio -pdm $new_dir; chmod u-t $new_dir; chown -R $uid.$gid $new_dir; rm -rf $old_dir )</code> is the default.  Otherwise the contents of the file are treated as a double-quoted perl string, with the following variables available: <code>$old_dir</code>, <code>$new_dir</code>, <code>$uid</code> and <code>$gid</code>.',
     #'type'        => [qw( checkbox text )],
     'type'        => 'text',
   },

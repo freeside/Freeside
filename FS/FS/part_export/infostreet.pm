@@ -10,7 +10,7 @@ sub rebless { shift; }
 sub _export_insert {
   my( $self, $svc_acct ) = (shift, shift);
   $self->infostreet_queue( $svc_acct->svcnum,
-    'createUser', $svc_acct->username, $svc_acct->password );
+    'createUser', $svc_acct->username, $svc_acct->_password );
 }
 
 sub _export_replace {
@@ -19,7 +19,7 @@ sub _export_replace {
     if $old->username ne $new->username;
   return '' unless $old->_password ne $new->_password;
   $self->infostreet_queue( $new->svcnum,
-    'passwd', $new->username, $new->password );
+    'passwd', $new->username, $new->_password );
 }
 
 sub _export_delete {

@@ -6,8 +6,7 @@ use vars qw( @ISA $nossh_hack $noexport_hack $conf
              $usernamemax $passwordmin $passwordmax
              $username_ampersand $username_letter $username_letterfirst
              $username_noperiod $username_uppercase
-             $shellmachine $useradd $usermod $userdel $mydomain
-             $cyrus_server $cyrus_admin_user $cyrus_admin_pass
+             $mydomain
              $dirhash
              @saltset @pw_set
              $rsync $ssh $exportdir $vpopdir);
@@ -38,47 +37,16 @@ $FS::UID::callback{'FS::svc_acct'} = sub {
   $conf = new FS::Conf;
   $dir_prefix = $conf->config('home');
   @shells = $conf->config('shells');
-  $shellmachine = $conf->config('shellmachine');
   $usernamemin = $conf->config('usernamemin') || 2;
   $usernamemax = $conf->config('usernamemax');
   $passwordmin = $conf->config('passwordmin') || 6;
   $passwordmax = $conf->config('passwordmax') || 8;
-  if ( $shellmachine ) {
-    if ( $conf->exists('shellmachine-useradd') ) {
-      $useradd = join("\n", $conf->config('shellmachine-useradd') )
-                 || 'cp -pr /etc/skel $dir; chown -R $uid.$gid $dir';
-    } else {
-      $useradd = 'useradd -d $dir -m -s $shell -u $uid $username';
-    }
-    if ( $conf->exists('shellmachine-userdel') ) {
-      $userdel = join("\n", $conf->config('shellmachine-userdel') )
-                 || 'rm -rf $dir';
-    } else {
-      $userdel = 'userdel $username';
-    }
-    $usermod = join("\n", $conf->config('shellmachine-usermod') )
-               || '[ -d $old_dir ] && mv $old_dir $new_dir || ( '.
-                    'chmod u+t $old_dir; mkdir $new_dir; cd $old_dir; '.
-                    'find . -depth -print | cpio -pdm $new_dir; '.
-                    'chmod u-t $new_dir; chown -R $uid.$gid $new_dir; '.
-                    'rm -rf $old_dir'.
-                  ')';
-  }
   $username_letter = $conf->exists('username-letter');
   $username_letterfirst = $conf->exists('username-letterfirst');
   $username_noperiod = $conf->exists('username-noperiod');
   $username_uppercase = $conf->exists('username-uppercase');
   $username_ampersand = $conf->exists('username-ampersand');
   $mydomain = $conf->config('domain');
-  if ( $conf->exists('cyrus') ) {
-    ($cyrus_server, $cyrus_admin_user, $cyrus_admin_pass) =
-      $conf->config('cyrus');
-    eval "use Cyrus::IMAP::Admin;"
-  } else {
-    $cyrus_server = '';
-    $cyrus_admin_user = '';
-    $cyrus_admin_pass = '';
-  }
 
   $dirhash = $conf->config('dirhash') || 0;
   $exportdir = "/usr/local/etc/freeside/export." . datasrc;
@@ -93,8 +61,6 @@ $FS::UID::callback{'FS::svc_acct'} = sub {
 
 @saltset = ( 'a'..'z' , 'A'..'Z' , '0'..'9' , '.' , '/' );
 @pw_set = ( 'a'..'z', 'A'..'Z', '0'..'9', '(', ')', '#', '!', '.', ',' );
-
-#not needed in 5.004 #srand($$|time);
 
 sub _cache {
   my $self = shift;
@@ -228,7 +194,7 @@ is the default instead.  Otherwise the contents of the file are treated as
 a double-quoted perl string, with the following variables available:
 $username, $uid, $gid, $dir, and $shell.
 
-(TODOC: cyrus config file, L<FS::queue> and L<freeside-queued>)
+(TODOC: L<FS::queue> and L<freeside-queued>)
 
 (TODOC: new exports! $noexport_hack)
 
@@ -309,37 +275,6 @@ sub insert {
 
   #old-style exports
 
-  my( $username, $uid, $gid, $dir, $shell ) = (
-    $self->username,
-    $self->uid,
-    $self->gid,
-    $self->dir,
-    $self->shell,
-  );
-  if ( $username && $uid && $dir && $shellmachine && ! $nossh_hack ) {
-    my $queue = new FS::queue {
-      'svcnum' => $self->svcnum,
-      'job' => 'Net::SSH::ssh_cmd',
-    };
-    $error = $queue->insert("root\@$shellmachine", eval qq("$useradd") );
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return "queueing job (transaction rolled back): $error";
-    }
-  }
-
-  if ( $cyrus_server ) {
-    my $queue = new FS::queue {
-      'svcnum' => $self->svcnum,
-      'job'    => 'FS::svc_acct::cyrus_insert',
-    };
-    $error = $queue->insert($self->username, $self->quota);
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return "queueing job (transaction rolled back): $error";
-    }
-  }
-
   if ( $vpopdir ) {
 
     my $vpopmail_queue =
@@ -363,41 +298,6 @@ sub insert {
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   ''; #no error
-}
-
-sub cyrus_insert {
-  my( $username, $quota ) = @_;
-
-  warn "cyrus_insert: starting for user $username, quota $quota\n";
-
-  warn "cyrus_insert: connecting to $cyrus_server\n";
-  my $client = Cyrus::IMAP::Admin->new($cyrus_server);
-
-  warn "cyrus_insert: authentication as $cyrus_admin_user\n";
-  $client->authenticate(
-    -user      => $cyrus_admin_user,
-    -mechanism => "login",       
-    -password  => $cyrus_admin_pass
-  );
-
-  warn "cyrus_insert: creating user.$username\n";
-  my $rc = $client->create("user.$username");
-  my $error = $client->error;
-  die "cyrus_insert: error creating user.$username: $error" if $error;
-
-  warn "cyrus_insert: setacl user.$username, $username => all\n";
-  $rc = $client->setacl("user.$username", $username => 'all' );
-  $error = $client->error;
-  die "cyrus_insert: error setacl user.$username: $error" if $error;
-
-  if ( $quota ) {
-    warn "cyrus_insert: setquota user.$username, STORAGE => $quota\n";
-    $rc = $client->setquota("user.$username", 'STORAGE' => $quota );
-    $error = $client->error;
-    die "cyrus_insert: error setquota user.$username: $error" if $error;
-  }
-
-  1;
 }
 
 sub vpopmail_insert {
@@ -467,8 +367,6 @@ is empty,
 is the default instead.  Otherwise the contents of the file are treated as a
 double-quoted perl string, with the following variables available:
 $username and $dir.
-
-(TODOC: cyrus config file)
 
 (TODOC: new exports! $noexport_hack)
 
@@ -566,29 +464,6 @@ sub delete {
 
   #old-style exports
 
-  my( $username, $dir ) = (
-    $self->username,
-    $self->dir,
-  );
-  if ( $username && $shellmachine && ! $nossh_hack ) {
-    my $queue = new FS::queue { 'job' => 'Net::SSH::ssh_cmd' };
-    $error = $queue->insert("root\@$shellmachine", eval qq("$userdel") );
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return "queueing job (transaction rolled back): $error";
-    }
-
-  }
-
-  if ( $cyrus_server ) {
-    my $queue = new FS::queue { 'job' => 'FS::svc_acct::cyrus_delete' };
-    $error = $queue->insert($self->username);
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return "queueing job (transaction rolled back): $error";
-    }
-  }
-  
   if ( $vpopdir ) {
     my $queue = new FS::queue { 'job' => 'FS::svc_acct::vpopmail_delete' };
     $error = $queue->insert( $self->username, $self->domain );
@@ -603,27 +478,6 @@ sub delete {
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
-}
-
-sub cyrus_delete {
-  my $username = shift; 
-
-  my $client = Cyrus::IMAP::Admin->new($cyrus_server);
-  $client->authenticate(
-    -user      => $cyrus_admin_user,
-    -mechanism => "login",       
-    -password  => $cyrus_admin_pass
-  );
-
-  my $rc = $client->setacl("user.$username", $cyrus_admin_user => 'all' );
-  my $error = $client->error;
-  die $error if $error;
-
-  $rc = $client->delete("user.$username");
-  $error = $client->error;
-  die $error if $error;
-
-  1;
 }
 
 sub vpopmail_delete {
@@ -649,7 +503,7 @@ sub vpopmail_delete {
   flock(VPASSWD,LOCK_UN);
   close(VPASSWD);
 
-  rmtree "$exportdir/domains/$domain/$username" or die "can't destroy Maildir";+ 
+  rmtree "$exportdir/domains/$domain/$username" or die "can't destroy Maildir"; 
   1;
 }
 
@@ -698,9 +552,6 @@ sub replace {
     local($^W) = 0;
     return "Can't change uid!" if $old->uid != $new->uid;
   }
-
-  return "can't change username using Cyrus"
-    if $cyrus_server && $old->username ne $new->username;
 
   #change homdir when we change username
   $new->setfield('dir', '') if $old->username ne $new->username;
@@ -769,36 +620,6 @@ sub replace {
   }
 
   #old-style exports
-
-  my ( $old_dir, $new_dir, $uid, $gid ) = (
-    $old->getfield('dir'),
-    $new->getfield('dir'),
-    $new->getfield('uid'),
-    $new->getfield('gid'),
-  );
-  if ( $old_dir && $new_dir && $old_dir ne $new_dir && ! $nossh_hack ) {
-    my $queue = new FS::queue { 
-      'svcnum' => $new->svcnum,
-      'job' => 'Net::SSH::ssh_cmd'
-    };
-    $error = $queue->insert("root\@$shellmachine", eval qq("$usermod") );
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return "queueing job (transaction rolled back): $error";
-    }
-  }
-
-  if ( $cp_server && $old->username ne $new->username ) {
-    my $queue = new FS::queue { 
-      'svcnum' => $new->svcnum,
-      'job' => 'FS::svc_acct::cp_rename'
-    };
-    $error = $queue->insert( $old->username, $new->username );
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return "queueing job (transaction rolled back): $error";
-    }
-  }
 
   if ( $vpopdir ) {
     my $cpassword = crypt(
