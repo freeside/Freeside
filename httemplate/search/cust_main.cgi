@@ -279,6 +279,7 @@ if ( scalar(@cust_main) == 1 && ! $cgi->param('referral_custnum') ) {
     }
     print ' cancelled customers</a> )';
   }
+
   if ( $cgi->param('referral_custnum') ) {
     $cgi->param('referral_custnum') =~ /^(\d+)$/
       or eidiot "Illegal referral_custnum\n";
@@ -312,6 +313,13 @@ END
     print "</SELECT> levels deep".
           '<NOSCRIPT> <INPUT TYPE="submit" VALUE="change"></NOSCRIPT>'.
           '</FORM>';
+  }
+
+  my @custom_priorities = ();
+  if ( $conf->config('ticket_system-custom_priority_field')
+       && @{ $conf->config('ticket_system-custom_priority_field-values') } ) {
+    @custom_priorities =
+      $conf->config('ticket_system-custom_priority_field-values');
   }
 
   print "<BR><BR>". $pager. &table(). <<END;
@@ -390,12 +398,28 @@ END
     }
 
     foreach my $addl_col ( @addl_cols ) {
-      print "<TD ROWSPAN=$rowspan>". 
-            qq!<A HREF="${p}rt/Search/Results.html?Order=ASC&Query=%20MemberOf%20%3D%20%27freeside%3A%2F%2Ffreeside%2Fcust_main%2F!.
-            $cust_main->custnum. 
-            qq!%27%20%20AND%20%28%20Status%20%3D%20%27open%27%20%20OR%20Status%20%3D%20%27new%27%20%20OR%20Status%20%3D%20%27stalled%27%20%29%20&Rows=50&OrderBy=id&Page=1&Format=%27%20%20%20%3Cb%3E%3Ca%20href%3D%22%2Ffreeside%2Frt%2FTicket%2FDisplay.html%3Fid%3D__id__%22%3E__id__%3C%2Fa%3E%3C%2Fb%3E%2FTITLE%3A%23%27%2C%20%0A%27%3Cb%3E%3Ca%20href%3D%22%2Ffreeside%2Frt%2FTicket%2FDisplay.html%3Fid%3D__id__%22%3E__Subject__%3C%2Fa%3E%3C%2Fb%3E%2FTITLE%3ASubject%27%2C%20%0A%27__Status__%27%2C%20%0A%27__QueueName__%27%2C%20%0A%27__OwnerName__%27%2C%20%0A%27__Priority__%27%2C%20%0A%27__NEWLINE__%27%2C%20%0A%27%27%2C%20%0A%27%3Csmall%3E__Requestors__%3C%2Fsmall%3E%27%2C%20%0A%27%3Csmall%3E__CreatedRelative__%3C%2Fsmall%3E%27%2C%20%0A%27%3Csmall%3E__ToldRelative__%3C%2Fsmall%3E%27%2C%20%0A%27%3Csmall%3E__LastUpdatedRelative__%3C%2Fsmall%3E%27%2C%20%0A%27%3Csmall%3E__TimeLeft__%3C%2Fsmall%3E%27">!.
-              $cust_main->get($addl_col).
-            "</A></TD>";
+      print "<TD ROWSPAN=$rowspan ALIGN=right>";
+      if ( $addl_col eq 'tickets' ) {
+        if ( @custom_priorities ) {
+          foreach my $priority ( @custom_priorities ) {
+            print '<A HREF="'.
+                    FS::TicketSystem->href_customer_tickets($custnum,$priority).
+                  '">'.
+                  FS::TicketSystem->num_customer_tickets($custnum,$priority).
+                  "&nbsp;$priority</A><BR>";
+          }
+        }
+        print '<A HREF="'.
+              FS::TicketSystem->href_customer_tickets($cust_main->custnum, $p).
+              '">'.
+              $cust_main->get($addl_col);
+        print '&nbsp;total'
+          if @custom_priorities;
+        print "</A>";
+      } else {
+        print $cust_main->get($addl_col);
+      }
+      print "</TD>";
     }
 
     my($n1)='';

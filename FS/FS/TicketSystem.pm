@@ -1,12 +1,12 @@
 package FS::TicketSystem;
 
 use strict;
-use vars qw( $system $AUTOLOAD );
+use vars qw( $conf $system $AUTOLOAD );
 use FS::Conf;
 use FS::UID;
 
 install_callback FS::UID sub { 
-  my $conf = new FS::Conf;
+  $conf = new FS::Conf;
   $system = $conf->config('ticket_system');
 };
 

@@ -1336,6 +1336,20 @@ httemplate/docs/config.html
   },
 
   {
+    'key'         => 'ticket_system-custom_priority_field-values',
+    'section'     => '',
+    'description' => 'Values for the custom field from the ticketing system tobreak down and sort customer ticket lists.',
+    'type'        => 'textarea',
+  },
+
+  {
+    'key'         => 'ticket_system-custom_priority_field_queue',
+    'section'     => '',
+    'description' => 'Ticketing system queue in which the custom field specified in ticket_system-custom_priority_field is located.',
+    'type'        => 'text',
+  },
+
+  {
     'key'         => 'company_name',
     'section'     => 'required',
     'description' => 'Your company name',
