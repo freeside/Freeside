@@ -290,7 +290,7 @@ sub label {
     $tag = $svc_x->getfield('domain');
   } elsif ( $svcdb eq 'svc_www' ) {
     my $domain = qsearchs( 'domain_record', { 'recnum' => $svc_x->recnum } );
-    $tag = $domain->reczone;
+    $tag = $domain->zone;
   } elsif ( $svcdb eq 'svc_broadband' ) {
     $tag = $svc_x->ip_addr;
   } else {

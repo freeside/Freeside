@@ -28,11 +28,7 @@ my $email = $svc_acct->email;
 my $domain_record = qsearchs('domain_record', { 'recnum' => $svc_www->recnum } )
   or die "svc_www: Unknown recnum ". $svc_www->recnum;
 
-my $www = $domain_record->reczone;
-unless ( $www =~ /\.$/ ) {
-  my $svc_domain = qsearchs('svc_domain', { svcnum=>$domain_record->svcnum } );
-  $www .= '.'. $svc_domain->domain;
-}
+my $www = $domain_record->zone;
 
 print header('Website View', menubar(
   ( ( $custnum )

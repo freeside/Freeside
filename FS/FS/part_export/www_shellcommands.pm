@@ -29,15 +29,7 @@ sub _export_command {
     ${$_} = $svc_www->getfield($_) foreach $svc_www->fields;
   }
   my $domain_record = $svc_www->domain_record; # or die ?
-  my $zone = $domain_record->reczone; # or die ?
-  if ( $zone =~ /\.$/ ) {
-    $zone =~ s/\.$//;
-  } else {
-    my $svc_domain = $domain_record->svc_domain; # or die ?
-    $zone .= '.'. $svc_domain->domain;
-    $zone =~ s/^\@\.//;
-  }
-
+  my $zone = $domain_record->zone; # or die ?
   my $svc_acct = $svc_www->svc_acct; # or die ?
   my $username = $svc_acct->username;
   my $homedir = $svc_acct->dir; # or die ?
