@@ -5,9 +5,9 @@ domain=$2
 password=$3
 
 freeside-adduser -h /usr/local/etc/freeside/htpasswd \
- -s /usr/local/etc/freeside/conf.DBI:Pg:host=localhost\;dbname=$domain/secrets \
- -b \
- $username $password
+                 -s conf.DBI:Pg:host=localhost\;dbname=$domain/secrets \
+                 -b \
+                 $username $password
 
 [ -e /usr/local/etc/freeside/dbdef.DBI:Pg:host=localhost\;dbname=$domain ] \
  || ( freeside-setup $username; \
