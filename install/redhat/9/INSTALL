@@ -1,10 +1,11 @@
 #!/bin/sh
 
-wget ftp://apt-rpm.tuxfamily.org/apt/redhat/7.3/en/i386/RPMS.extra/apt-*i386.rpm
+wget ftp://apt-rpm.tuxfamily.org/apt/redhat/9/en/i386/RPMS.extra/apt-*i386.rpm
 rpm -i apt*i386.rpm
 cp sources.list /etc/apt/
 apt-get update; apt-get update
-apt-get install apache mod_ssl mod_perl perl-CGI perl-CPAN perl-DBD-MySQL perl-DBD-Pg perl-DBI perl-DateManip perl-Digest-MD5 perl-HTML-Parser perl-HTML-Tagset perl-MIME-Base64 perl-Storable perl-TimeDate perl-URI perl-libnet perl-libwww-perl perl-suidperl rsync postgresql postgresql-docs postgresql-libs postgresql-server screen zsh lftp cvs #openssh
+#apt-get install apache mod_ssl mod_perl perl-CGI perl-CPAN perl-DBD-MySQL perl-DBD-Pg perl-DBI perl-DateManip perl-Digest-MD5 perl-HTML-Parser perl-HTML-Tagset perl-MIME-Base64 perl-Storable perl-TimeDate perl-URI perl-libnet perl-libwww-perl perl-suidperl rsync postgresql postgresql-docs postgresql-libs postgresql-server screen zsh lftp cvs #openssh
+apt-get install perl-CGI perl-CPAN perl-DBD-MySQL perl-DBD-Pg perl-DBI perl-DateManip perl-Digest-MD5 perl-HTML-Parser perl-HTML-Tagset perl-MIME-Base64 perl-Storable perl-TimeDate perl-URI perl-libnet perl-libwww-perl perl-suidperl rsync postgresql postgresql-docs postgresql-libs postgresql-server screen zsh lftp cvs #openssh
 
 perl -MCPAN -e"install Locale::Country, Net::Whois, Business::CreditCard, \
                        Mail::Internet, File::CounterFile, FreezeThaw, \
