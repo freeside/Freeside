@@ -176,14 +176,16 @@ $ <a href="man/bin/freeside-adduser.html">freeside-adduser</a> -c -h /usr/local/
 $ <a href="man/bin/freeside-adduser.html">freeside-adduser</a> -h /usr/local/etc/freeside/htpasswd <i>username</i></pre></font>
     </ul>
   <i>(using other auth types, add each user to your <a href="http://httpd.apache.org/docs/misc/FAQ.html#user-authentication">Apache authentication</a> and then run: <tt>freeside-adduser <b>username</b></tt></i>
-  <li>As the freeside UNIX user, run <tt>bin/fs-setup <b>username</b></tt> to create the database tables, passing the username of a Freeside user you created above:
+  <li>As the freeside UNIX user, run <tt>bin/fs-setup <b>username</b></tt> (in the untar'ed freeside directory) to create the database tables, passing the username of a Freeside user you created above:
 <pre>
 $ su freeside
+$ cd <b>/path/to/freeside-1.4.0/</b>
 $ bin/fs-setup <b>username</b>
 </pre>
-  <li>As the freeside UNIX user, run <tt>bin/populate-msgcat <b>username</b></tt> to populate the message catalog, passing the username of a Freeside user you created above:
+  <li>As the freeside UNIX user, run <tt>bin/populate-msgcat <b>username</b></tt> (in the untar'ed freeside directory) to populate the message catalog, passing the username of a Freeside user you created above:
 <pre>
 $ su freeside
+$ cd <b>/path/to/freeside-1.4.0/</b>
 $ bin/populate-msgcat <b>username</b>
 </pre>
   <li><tt>freeside-queued</tt> was installed with the Perl modules.  Start it now and ensure that is run upon system startup (Do this manually, or, edit the top-level Makefile, replacing INIT_FILE with the appropriate location on your system, and run <tt>make install-init</tt>.
