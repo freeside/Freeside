@@ -21,22 +21,23 @@ use FS::cust_pkg;
 
 use FS::ClientAPI; #hmm
 FS::ClientAPI->register_handlers(
-  'MyAccount/login'            => \&login,
-  'MyAccount/logout'           => \&logout,
-  'MyAccount/customer_info'    => \&customer_info,
-  'MyAccount/edit_info'        => \&edit_info,
-  'MyAccount/invoice'          => \&invoice,
-  'MyAccount/list_invoices'    => \&list_invoices,
-  'MyAccount/cancel'           => \&cancel,
-  'MyAccount/payment_info'     => \&payment_info,
-  'MyAccount/process_payment'  => \&process_payment,
-  'MyAccount/list_pkgs'        => \&list_pkgs,
-  'MyAccount/order_pkg'        => \&order_pkg,
-  'MyAccount/cancel_pkg'       => \&cancel_pkg,
-  'MyAccount/charge'           => \&charge,
-  'MyAccount/part_svc_info'    => \&part_svc_info,
-  'MyAccount/provision_acct'   => \&provision_acct,
-  'MyAccount/unprovision_svc'  => \&unprovision_svc,
+  'MyAccount/login'              => \&login,
+  'MyAccount/logout'             => \&logout,
+  'MyAccount/customer_info'      => \&customer_info,
+  'MyAccount/edit_info'          => \&edit_info,
+  'MyAccount/invoice'            => \&invoice,
+  'MyAccount/list_invoices'      => \&list_invoices,
+  'MyAccount/cancel'             => \&cancel,
+  'MyAccount/payment_info'       => \&payment_info,
+  'MyAccount/process_payment'    => \&process_payment,
+  'MyAccount/list_pkgs'          => \&list_pkgs,
+  'MyAccount/order_pkg'          => \&order_pkg,
+  'MyAccount/cancel_pkg'         => \&cancel_pkg,
+  'MyAccount/charge'             => \&charge,
+  'MyAccount/part_svc_info'      => \&part_svc_info,
+  'MyAccount/provision_acct'     => \&provision_acct,
+  'MyAccount/provision_external' => \&provision_external,
+  'MyAccount/unprovision_svc'    => \&unprovision_svc,
 );
 
 use vars qw( @cust_main_editable_fields );
@@ -47,6 +48,8 @@ use vars qw( @cust_main_editable_fields );
     ship_state ship_zip ship_country ship_daytime ship_night ship_fax
   payby payinfo payname
 );
+
+use subs qw(_provision);
 
 #store in db?
 my $cache = new Cache::SharedMemoryCache( {
@@ -611,6 +614,33 @@ sub cancel_pkg {
 sub provision_acct {
   my $p = shift;
 
+  return { 'error' => gettext('passwords_dont_match') }
+    if $p->{'_password'} ne $p->{'_password2'};
+  return { 'error' => gettext('empty_password') }
+    unless length($p->{'_password'});
+
+  _provision( 'FS::svc_acct',
+              [qw(username _password)],
+              [qw(username _password)],
+              $p,
+              @_
+            );
+}
+
+sub provision_external {
+  my $p = shift;
+  #_provision( 'FS::svc_external', [qw(id title)], [qw(id title)], $p, @_ );
+  _provision( 'FS::svc_external',
+              [],
+              [qw(id title)],
+              $p,
+              @_
+            );
+}
+
+sub _provision {
+  my( $class, $fields, $return_fields, $p ) = splice(@_, 0, 4);
+
   my($context, $session, $custnum) = _custoragent_session_custnum($p);
   return { 'error' => $session } if $context eq 'error';
 
@@ -629,20 +659,18 @@ sub provision_acct {
   my $part_svc = qsearchs('part_svc', { 'svcpart' => $p->{'svcpart'} } )
     or return { 'error' => "unknown svcpart $p->{'svcpart'}" };
 
-  return { 'error' => gettext('passwords_dont_match') }
-    if $p->{'_password'} ne $p->{'_password2'};
-  return { 'error' => gettext('empty_password') }
-    unless length($p->{'_password'});
-
-  my $svc_acct = new FS::svc_acct( {
-    'pkgnum'    => $p->{'pkgnum'},
-    'svcpart'   => $p->{'svcpart'},
-    'username'  => $p->{'username'},
-    '_password' => $p->{'_password'},
+  my $svc_x = $class->new( {
+    'pkgnum'  => $p->{'pkgnum'},
+    'svcpart' => $p->{'svcpart'},
+    map { $_ => $p->{$_} } @$fields
   } );
+  my $error = $svc_x->insert;
+  $svc_x = qsearchs($svc_x->table, { 'svcnum' => $svc_x->svcnum })
+    unless $error;
 
   return { 'svc'   => $part_svc->svc,
-           'error' => $svc_acct->insert
+           'error' => $error,
+           map { $_ => $svc_x->get($_) } @$return_fields
          };
 
 }

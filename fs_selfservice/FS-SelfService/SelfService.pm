@@ -36,6 +36,7 @@ $socket .= '.'.$tag if defined $tag && length($tag);
   'charge'               => 'MyAccount/charge',        #?
   'part_svc_info'        => 'MyAccount/part_svc_info',
   'provision_acct'       => 'MyAccount/provision_acct',
+  'provision_external'   => 'MyAccount/provision_external',
   'unprovision_svc'      => 'MyAccount/unprovision_svc',
   'signup_info'          => 'Signup/signup_info',
   'new_customer'         => 'Signup/new_customer',

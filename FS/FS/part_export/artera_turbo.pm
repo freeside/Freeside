@@ -61,7 +61,6 @@ sub _export_insert {
 
   eval "use Net::Artera;";
   return $@ if $@;
-
   my $artera = $self->_new_Artera;
 
   my $cust_pkg = $svc_external->cust_svc->cust_pkg;
@@ -113,25 +112,27 @@ sub _export_replace {
 
 sub _export_delete {
   my( $self, $svc_external ) = (shift, shift);
-  $self->StatusChange(17, $svc_external);
+  $self->statusChange(17, $svc_external);
 }
 
 sub _export_suspend {
   my( $self, $svc_external ) = (shift, shift);
-  $self->StatusChange(16, $svc_external);
+  $self->statusChange(16, $svc_external);
 }
 
 sub _export_unsuspend {
   my( $self, $svc_external ) = (shift, shift);
-  $self->StatusChange(15, $svc_external);
+  $self->statusChange(15, $svc_external);
 }
 
-sub StatusChange {
+sub statusChange {
   my( $self, $status, $svc_external ) = @_;
 
+  eval "use Net::Artera;";
+  return $@ if $@;
   my $artera = $self->_new_Artera;
 
-  my $result = $artera->StatusChange(
+  my $result = $artera->statusChange(
     'asn'      => sprintf('%010d', $svc_external->id),
     'akc'      => $svc_external->title,
     'statusid' => $status,

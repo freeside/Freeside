@@ -14,7 +14,8 @@ use FS::SelfService qw( agent_login agent_logout agent_info
                         agent_list_customers
                         signup_info new_customer
                         customer_info list_pkgs order_pkg
-                        part_svc_info provision_acct unprovision_svc
+                        part_svc_info provision_acct provision_external
+                        unprovision_svc
                       );
 
 $DEBUG = 0;
@@ -67,7 +68,7 @@ $session_id = $cgi->param('session');
 
 warn "$me checking action\n" if $DEBUG;
 $cgi->param('action') =~
-   /^(agent_main|signup|process_signup|list_customers|view_customer|agent_provision|provision_svc|process_svc_acct|delete_svc|agent_order_pkg|process_order_pkg|logout)$/
+   /^(agent_main|signup|process_signup|list_customers|view_customer|agent_provision|provision_svc|process_svc_acct|process_svc_external|delete_svc|agent_order_pkg|process_order_pkg|logout)$/
   or die "unknown action ". $cgi->param('action');
 my $action = $1;
 
@@ -318,6 +319,26 @@ sub process_svc_acct {
       'message' => $result->{'svc'}. ' setup sucessfully.',
     };
   }
+
+}
+
+sub process_svc_external {
+
+  my $result = provision_external (
+    'agent_session_id' => $session_id,
+    map { $_ => $cgi->param($_) } qw( custnum pkgnum svcpart )
+  );
+
+  #warn "$result $result->{'error'}"; 
+  $action = 'agent_provision';
+  return {
+    %{agent_provision()},
+    'message' => $result->{'error'}
+                   ? '<FONT COLOR="#FF0000">'. $result->{'error'}. '</FONT>'
+                   : $result->{'svc'}. ' setup sucessfully'.
+                     ': serial number '.
+                     sprintf('%010d', $result->{'id'}). '-'. $result->{'title'}
+  };
 
 }
 

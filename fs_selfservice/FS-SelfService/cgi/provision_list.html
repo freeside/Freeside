@@ -58,9 +58,22 @@ function areyousure(href, message) {
 
     my $td = qq!<TD BGCOLOR="#$col"!;
 
+    my $link;
+
+    if ( $part_svc->{'svcdb'} eq 'svc_external'
+         #&& $conf->exists('svc_external-skip_manual')
+    ) {
+      $link = "${url}process_svc_external;".
+              "pkgnum=$pkg->{'pkgnum'};".
+              "svcpart=$part_svc->{'svcpart'}";
+    } else {
+      $link = "${url}provision_svc;".
+              "pkgnum=$pkg->{'pkgnum'};".
+              "svcpart=$part_svc->{'svcpart'}";
+    }
+
     $OUT .= "<TR>$td COLSPAN=3 ALIGN=center>".
-            qq!<A HREF="${url}provision_svc;pkgnum=$pkg->{'pkgnum'};svcpart=$part_svc->{'svcpart'}">!.
-            'Setup '. $part_svc->{'svc'}. '</A> '.
+            qq!<A HREF="$link">!. 'Setup '. $part_svc->{'svc'}. '</A> '.
             '('. $part_svc->{'num_avail'}. ' available)'.
             '</TD></TR>';
     $col = $col eq $col1 ? $col2 : $col1;
