@@ -730,7 +730,7 @@ sub ut_phonen {
   my $phonen = $self->getfield($field);
   if ( $phonen eq '' ) {
     $self->setfield($field,'');
-  } elsif ( $country eq 'US' ) {
+  } elsif ( $country eq 'US' || $country eq 'CA' ) {
     $phonen =~ s/\D//g;
     $phonen =~ /^(\d{3})(\d{3})(\d{4})(\d*)$/
       or return "Illegal (phone) $field: ". $self->getfield($field);
@@ -949,7 +949,7 @@ sub DESTROY { return; }
 
 =head1 VERSION
 
-$Id: Record.pm,v 1.21 2001-08-11 05:50:52 ivan Exp $
+$Id: Record.pm,v 1.22 2001-08-17 11:28:03 ivan Exp $
 
 =head1 BUGS
 
