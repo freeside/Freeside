@@ -274,8 +274,6 @@ sub check {
   ;
   return $error if $error;
 
-  warn $self->machine. "!!!\n";
-
   $self->machine =~ /^([\w\-\.]*)$/
     or return "Illegal machine: ". $self->machine;
   $self->machine($1);
