@@ -3,6 +3,8 @@
 # -d: dry-run: make no changes
 # -r: replace: overwrite existing passwords (otherwise only "*" passwords will
 #              be changed)
+# -b: blowfish replace: overwrite existing passwords only if they are
+#                       blowfish-encrypted
 
 use strict;
 use vars qw(%part_svc);
@@ -14,8 +16,8 @@ use FS::Record qw(qsearch qsearchs);
 use FS::svc_acct;
 use FS::part_svc;
 
-use vars qw($opt_d $opt_r);
-getopts("dr");
+use vars qw($opt_d $opt_r $opt_b);
+getopts("drb");
 
 my $user = shift or die &usage;
 adminsuidsetup $user;
@@ -91,7 +93,9 @@ while (<SHADOW>) {
 
   my $svc_acct = shift @svc_acct;
 
-  next unless $svc_acct->_password eq '*' || $opt_r;
+  next unless    $svc_acct->_password eq '*'
+              || $opt_r
+              || ( $opt_b && $svc_acct->_password =~ /^\$2a?\$/ );
 
   next if $svc_acct->username eq 'root';
 
