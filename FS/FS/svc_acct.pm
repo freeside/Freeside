@@ -863,12 +863,12 @@ sub _check_duplicate {
 
   my $global_unique = $conf->config('global_unique-username');
 
-  my @dup_user = grep { !$_->svcnum || $_->svcnum != $self->svcnum }
+  my @dup_user = grep { !$self->svcnum || $_->svcnum != $self->svcnum }
                  qsearch( 'svc_acct', { 'username' => $self->username } );
   return gettext('username_in_use')
     if $global_unique eq 'username' && @dup_user;
 
-  my @dup_userdomain = grep { !$_->svcnum || $_->svcnum != $self->svcnum }
+  my @dup_userdomain = grep { !$self->svcnum || $_->svcnum != $self->svcnum }
                        qsearch( 'svc_acct', { 'username' => $self->username,
                                               'domsvc'   => $self->domsvc } );
   return gettext('username_in_use')
