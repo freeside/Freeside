@@ -799,7 +799,7 @@ print '</TABLE>';
                     : $cust_refund->payinfo;
 
     $payby =~ s/^BILL$/Check #/ if $payinfo;
-    $payby =~ s/^CHEK$/Electronic check/;
+    $payby =~ s/^CHEK$/Electronic check /;
     $payby =~ s/^(CARD|COMP)$/$1 /;
 
     push @history, {
