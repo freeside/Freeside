@@ -16,11 +16,11 @@ my $total;
 my(@cust_bill, $sortby);
 if ( $cgi->keywords ) {
   my($query) = $cgi->keywords;
-  my $open_sql =
-    "having 0 != charged - coalesce(sum(cust_bill_pay.amount),0)
-                         - coalesce(sum(cust_credit_bill.amount),0)";
-  my $having = '';
-  my $where = '';
+  my $owed = "charged - ( select coalesce(sum(amount),0) from cust_bill_pay
+                          where cust_bill_pay.invnum = cust_bill.invnum )
+                      - ( select coalesce(sum(amount),0) from cust_credit_bill
+                          where cust_credit_bill.invnum = cust_bill.invnum )";
+  my @where;
   if ( $query eq 'invnum' ) {
     $sortby = \*invnum_sort;
     #@cust_bill = qsearch('cust_bill', {} );
@@ -33,46 +33,42 @@ if ( $cgi->keywords ) {
   } elsif ( $query eq 'OPEN_invnum' ) {
     $sortby = \*invnum_sort;
     #@cust_bill = grep $_->owed != 0, qsearch('cust_bill', {} );
-    $having = $open_sql;
+    push @where, "0 != $owed";
   } elsif ( $query eq 'OPEN_date' ) {
     $sortby = \*date_sort;
     #@cust_bill = grep $_->owed != 0, qsearch('cust_bill', {} );
-    $having = $open_sql;
+    push @where, "0 != $owed";
   } elsif ( $query eq 'OPEN_custnum' ) {
     $sortby = \*custnum_sort;
     #@cust_bill = grep $_->owed != 0, qsearch('cust_bill', {} );
-    $having = $open_sql;
+    push @where, "0 != $owed";
   } elsif ( $query =~ /^OPEN(\d+)_invnum$/ ) {
     my $open = $1 * 86400;
     $sortby = \*invnum_sort;
     #@cust_bill =
     #  grep $_->owed != 0 && $_->_date < time - $open, qsearch('cust_bill', {} );
-    $having = $open_sql;
-    $where = "where cust_bill._date < ". (time-$open);
+    push @where, "0 != $owed".
+                 "cust_bill._date < ". (time-$open);
   } elsif ( $query =~ /^OPEN(\d+)_date$/ ) {
     my $open = $1 * 86400;
     $sortby = \*date_sort;
     #@cust_bill =
     #  grep $_->owed != 0 && $_->_date < time - $open, qsearch('cust_bill', {} );
-    $having = $open_sql;
-    $where = "where cust_bill._date < ". (time-$open);
+    push @where, "0 != $owed".
+                 "cust_bill._date < ". (time-$open);
+
   } elsif ( $query =~ /^OPEN(\d+)_custnum$/ ) {
     my $open = $1 * 86400;
     $sortby = \*custnum_sort;
     #@cust_bill =
     #  grep $_->owed != 0 && $_->_date < time - $open, qsearch('cust_bill', {} );
-    $having = $open_sql;
-    $where = "where cust_bill._date < ". (time-$open);
+    push @where, "0 != $owed".
+                 "cust_bill._date < ". (time-$open);
   } else {
     die "unknown query string $query";
   }
 
-  my $extra_sql = "
-    left outer join cust_bill_pay using ( invnum )
-    left outer join cust_credit_bill using ( invnum )
-    $where
-    group by ". join(', ', map "cust_bill.$_", fields('cust_bill') ). ' '.
-    $having;
+  my $extra_sql = scalar(@where) ? join(' AND ', @where) : '';
 
   my $statement = "SELECT COUNT(*) FROM cust_bill $extra_sql";
   my $sth = dbh->prepare($statement) or die dbh->errstr. " doing $statement";
