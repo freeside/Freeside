@@ -1,0 +1,61 @@
+NAME
+    FS::pkg_svc - Object methods for pkg_svc records
+
+SYNOPSIS
+      use FS::pkg_svc;
+
+      $record = create FS::pkg_svc \%hash;
+      $record = create FS::pkg_svc { 'column' => 'value' };
+
+      $error = $record->insert;
+
+      $error = $new_record->replace($old_record);
+
+      $error = $record->delete;
+
+      $error = $record->check;
+
+DESCRIPTION
+    An FS::pkg_svc record links a billing item definition (see the
+    FS::part_pkg manpage) to a service definition (see the
+    FS::part_svc manpage). FS::pkg_svc inherits from FS::Record. The
+    following fields are currently supported:
+
+    pkgpart - Billing item definition (see the FS::part_pkg manpage)
+    svcpart - Service definition (see the FS::part_svc manpage)
+    quantity - Quantity of this service definition that this billing item
+    definition includes
+METHODS
+    create HASHREF
+        Create a new record. To add the record to the database, see
+        the section on "insert".
+
+    insert
+        Adds this record to the database. If there is an error,
+        returns the error, otherwise returns false.
+
+    delete
+        Deletes this record from the database. If there is an error,
+        returns the error, otherwise returns false.
+
+    replace OLD_RECORD
+        Replaces OLD_RECORD with this one in the database. If there
+        is an error, returns the error, otherwise returns false.
+
+    check
+        Checks all fields to make sure this is a valid record. If
+        there is an error, returns the error, otherwise returns
+        false. Called by the insert and replace methods.
+
+BUGS
+    It doesn't properly override FS::Record yet.
+
+SEE ALSO
+    the FS::Record manpage, the FS::part_pkg manpage, the
+    FS::part_svc manpage, schema.html from the base documentation.
+
+HISTORY
+    ivan@voicenet.com 97-jul-1 added hfields ivan@sisd.com 97-nov-13
+
+    pod ivan@sisd.com 98-sep-22
+

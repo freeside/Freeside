@@ -1,0 +1,27 @@
+NAME
+    FS::dbdef_unique.pm - Index object
+
+SYNOPSIS
+      use FS::dbdef_index;
+
+        # see FS::dbdef_colgroup methods
+
+DESCRIPTION
+    FS::dbdef_unique objects represent the (non-unique) indices of a
+    table (the FS::dbdef_table manpage). FS::dbdef_unique inherits
+    from FS::dbdef_colgroup.
+
+BUGS
+    Is this empty subclass needed?
+
+SEE ALSO
+    the FS::dbdef_colgroup manpage, the FS::dbdef_record manpage,
+    the FS::Record manpage
+
+HISTORY
+    class for dealing with index definitions
+
+    ivan@sisd.com 98-apr-19
+
+    pod ivan@sisd.com 98-sep-24
+

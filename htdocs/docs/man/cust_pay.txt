@@ -1,0 +1,66 @@
+NAME
+    FS::cust_pay - Object methods for cust_pay objects
+
+SYNOPSIS
+      use FS::cust_pay;
+
+      $record = create FS::cust_pay \%hash;
+      $record = create FS::cust_pay { 'column' => 'value' };
+
+      $error = $record->insert;
+
+      $error = $new_record->replace($old_record);
+
+      $error = $record->delete;
+
+      $error = $record->check;
+
+DESCRIPTION
+    An FS::cust_pay object represents a payment. FS::cust_pay
+    inherits from FS::Record. The following fields are currently
+    supported:
+
+    paynum - primary key (assigned automatically for new payments)
+    invnum - Invoice (see the FS::cust_bill manpage)
+    paid - Amount of this payment
+    _date - specified as a UNIX timestamp; see the section on "time" in the perlfunc manpage.  Also see
+    the Time::Local manpage and the Date::Parse manpage for conversion functions.
+    payby - `CARD' (credit cards), `BILL' (billing), or `COMP' (free)
+    payinfo - card number, P.O.#, or comp issuer (4-8 lowercase alphanumerics; think username)
+    paybatch - text field for tracking card processing
+METHODS
+    create HASHREF
+        Creates a new payment. To add the payment to the databse,
+        see the section on "insert".
+
+    insert
+        Adds this payment to the databse, and updates the invoice
+        (see the FS::cust_bill manpage).
+
+    delete
+        Currently unimplemented (accounting reasons).
+
+    replace OLD_RECORD
+        Currently unimplemented (accounting reasons).
+
+    check
+        Checks all fields to make sure this is a valid payment. If
+        there is an error, returns the error, otherwise returns
+        false. Called by the insert method.
+
+BUGS
+    It doesn't properly override FS::Record yet.
+
+    Delete and replace methods.
+
+SEE ALSO
+    the FS::Record manpage, the FS::cust_bill manpage, schema.html
+    from the base documentation.
+
+HISTORY
+    ivan@voicenet.com 97-jul-1 - 25 - 29
+
+    new api ivan@sisd.com 98-mar-13
+
+    pod ivan@sisd.com 98-sep-21
+

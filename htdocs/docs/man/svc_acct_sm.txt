@@ -1,0 +1,121 @@
+NAME
+    FS::svc_acct_sm - Object methods for svc_acct_sm records
+
+SYNOPSIS
+      use FS::svc_acct_sm;
+
+      $record = create FS::svc_acct_sm \%hash;
+      $record = create FS::svc_acct_sm { 'column' => 'value' };
+
+      $error = $record->insert;
+
+      $error = $new_record->replace($old_record);
+
+      $error = $record->delete;
+
+      $error = $record->check;
+
+      $error = $record->suspend;
+
+      $error = $record->unsuspend;
+
+      $error = $record->cancel;
+
+DESCRIPTION
+    An FS::svc_acct object represents a virtual mail alias.
+    FS::svc_acct inherits from FS::Record. The following fields are
+    currently supported:
+
+    svcnum - primary key (assigned automatcially for new accounts)
+    domsvc - svcnum of the virtual domain (see the FS::svc_domain manpage)
+    domuid - uid of the target account (see the FS::svc_acct manpage)
+    domuser - virtual username
+METHODS
+    create HASHREF
+        Creates a new virtual mail alias. To add the virtual mail
+        alias to the database, see the section on "insert".
+
+    insert
+        Adds this virtual mail alias to the database. If there is an
+        error, returns the error, otherwise returns false.
+
+        The additional fields pkgnum and svcpart (see the
+        FS::cust_svc manpage) should be defined. An FS::cust_svc
+        record will be created and inserted.
+
+        If the configuration values (see the FS::Conf manpage)
+        shellmachine and qmailmachines exist, and domuser is `*'
+        (meaning a catch-all mailbox), the command:
+
+          [ -e $dir/.qmail-$qdomain-default ] || {
+            touch $dir/.qmail-$qdomain-default;
+            chown $uid:$gid $dir/.qmail-$qdomain-default;
+          }
+
+        is executed on shellmachine via ssh (see the section on
+        "EXTENSION ADDRESSES" in the dot-qmail manpage). This
+        behaviour can be surpressed by setting
+        $FS::svc_acct_sm::nossh_hack true.
+
+    delete
+        Deletes this virtual mail alias from the database. If there
+        is an error, returns the error, otherwise returns false.
+
+        The corresponding FS::cust_svc record will be deleted as
+        well.
+
+    replace OLD_RECORD
+        Replaces OLD_RECORD with this one in the database. If there
+        is an error, returns the error, otherwise returns false.
+
+    suspend
+        Just returns false (no error) for now.
+
+        Called by the suspend method of FS::cust_pkg (see the
+        FS::cust_pkg manpage).
+
+    unsuspend
+        Just returns false (no error) for now.
+
+        Called by the unsuspend method of FS::cust_pkg (see the
+        FS::cust_pkg manpage).
+
+    cancel
+        Just returns false (no error) for now.
+
+        Called by the cancel method of FS::cust_pkg (see the
+        FS::cust_pkg manpage).
+
+    check
+        Checks all fields to make sure this is a valid virtual mail
+        alias. If there is an error, returns the error, otherwise
+        returns false. Called by the insert and replace methods.
+
+        Sets any fixed values; see the FS::part_svc manpage.
+
+BUGS
+    It doesn't properly override FS::Record yet.
+
+    The remote commands should be configurable.
+
+SEE ALSO
+    the FS::Record manpage, the FS::Conf manpage, the FS::cust_svc
+    manpage, the FS::part_svc manpage, the FS::cust_pkg manpage, the
+    FS::svc_acct manpage, the FS::svc_domain manpage, the FS::SSH
+    manpage, the ssh manpage, the dot-qmail manpage, schema.html
+    from the base documentation.
+
+HISTORY
+    ivan@voicenet.com 97-jul-16 - 21
+
+    rewrite ivan@sisd.com 98-mar-10
+
+    s/qsearchs/qsearch/ to eliminate warning ivan@sisd.com 98-apr-19
+
+    uses conf/shellmachine and has an nossh_hack ivan@sisd.com 98-
+    jul-14
+
+    s/\./:/g in .qmail-domain:com ivan@sisd.com 98-aug-13
+
+    pod, FS::Conf, moved .qmail file from check to insert 98-sep-23
+

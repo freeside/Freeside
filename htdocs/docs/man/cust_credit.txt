@@ -1,0 +1,75 @@
+NAME
+    FS::cust_credit - Object methods for cust_credit records
+
+SYNOPSIS
+      use FS::cust_credit;
+
+      $record = create FS::cust_credit \%hash;
+      $record = create FS::cust_credit { 'column' => 'value' };
+
+      $error = $record->insert;
+
+      $error = $new_record->replace($old_record);
+
+      $error = $record->delete;
+
+      $error = $record->check;
+
+DESCRIPTION
+    An FS::cust_credit object represents a credit. FS::cust_credit
+    inherits from FS::Record. The following fields are currently
+    supported:
+
+    crednum - primary key (assigned automatically for new credits)
+    custnum - customer (see the FS::cust_main manpage)
+    amount - amount of the credit
+    credited - how much of this credit that is still outstanding, which is
+    amount minus all refunds (see the FS::cust_refund manpage).
+    _date - specified as a UNIX timestamp; see the section on "time" in the perlfunc manpage.  Also see
+    the Time::Local manpage and the Date::Parse manpage for conversion functions.
+    otaker - order taker (assigned automatically, see the FS::UID manpage)
+    reason - text
+METHODS
+    create HASHREF
+        Creates a new credit. To add the credit to the database, see
+        the section on "insert".
+
+    insert
+        Adds this credit to the database ("Posts" the credit). If
+        there is an error, returns the error, otherwise returns
+        false.
+
+        When adding new invoices, credited must be amount (or null,
+        in which case it is automatically set to amount).
+
+    delete
+        Currently unimplemented.
+
+    replace OLD_RECORD
+        Replaces the OLD_RECORD with this one in the database. If
+        there is an error, returns the error, otherwise returns
+        false.
+
+        Only credited may be changed. Credited is normally updated
+        by creating and inserting a refund (see the FS::cust_refund
+        manpage).
+
+    check
+        Checks all fields to make sure this is a valid credit. If
+        there is an error, returns the error, otherwise returns
+        false. Called by the insert and replace methods.
+
+BUGS
+    The delete method.
+
+    It doesn't properly override FS::Record yet.
+
+SEE ALSO
+    the FS::Record manpage, the FS::cust_refund manpage, the
+    FS::cust_bill manpage, schema.html from the base documentation.
+
+HISTORY
+    ivan@sisd.com 98-mar-17
+
+    pod, otaker from FS::UID ivan@sisd.com 98-sep-21
+

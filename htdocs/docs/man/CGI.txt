@@ -1,0 +1,47 @@
+NAME
+    FS::CGI - Subroutines for the web interface
+
+SYNOPSIS
+      use FS::CGI qw(header menubar idiot eidiot);
+
+      print header( 'Title', '' );
+      print header( 'Title', menubar('item', 'URL', ... ) );
+
+      idiot "error message"; 
+      eidiot "error message";
+
+DESCRIPTION
+    Provides a few common subroutines for the web interface.
+
+SUBROUTINES
+    header TITLE, MENUBAR
+        Returns an HTML header.
+
+    menubar ITEM, URL, ...
+        Returns an HTML menubar.
+
+    idiot ERROR
+        Sends headers and an HTML error message.
+
+    eidiot ERROR
+        Sends headers and an HTML error message, then exits.
+
+BUGS
+    Not OO.
+
+    Not complete.
+
+    Uses CGI-modules instead of CGI.pm
+
+SEE ALSO
+    the CGI::Base manpage
+
+HISTORY
+    subroutines for the HTML/CGI GUI, not properly OO. :(
+
+    ivan@sisd.com 98-apr-16 ivan@sisd.com 98-jun-22
+
+    lose the background, eidiot ivan@sisd.com 98-sep-2
+
+    pod ivan@sisd.com 98-sep-12
+

@@ -1,0 +1,80 @@
+NAME
+    FS::dbdef - Database objects
+
+SYNOPSIS
+      use FS::dbdef;
+
+      $dbdef = new FS::dbdef (@dbdef_table_objects);
+      $dbdef = load FS::dbdef "filename";
+
+      $dbdef->save("filename");
+
+      $dbdef->addtable($dbdef_table_object);
+
+      @table_names = $dbdef->tables;
+
+      $FS_dbdef_table_object = $dbdef->table;
+
+DESCRIPTION
+    FS::dbdef objects are collections of FS::dbdef_table objects and
+    represnt a database (a collection of tables).
+
+METHODS
+    new TABLE, TABLE, ...
+        Creates a new FS::dbdef object
+
+    load FILENAME
+        Loads an FS::dbdef object from a file.
+
+    save FILENAME
+        Saves an FS::dbdef object to a file.
+
+    addtable TABLE
+        Adds this FS::dbdef_table object.
+
+    tables
+        Returns the names of all tables.
+
+    table TABLENAME
+        Returns the named FS::dbdef_table object.
+
+BUGS
+        Each FS::dbdef object should have a name which corresponds
+        to its name within the SQL database engine.
+
+SEE ALSO
+        the FS::dbdef_table manpage, the FS::Record manpage,
+
+HISTORY
+        beginning of abstraction into a class (not really)
+
+        ivan@sisd.com 97-dec-4
+
+        added primary_key ivan@sisd.com 98-jan-20
+
+        added datatype (very kludgy and needs to be cleaned)
+        ivan@sisd.com 98-feb-21
+
+        perltrap (sigh) masked by mysql 3.20->3,21 ivan@sisd.com 98-
+        mar-2
+
+        Change 'type' to 'atype' in agent_type Changed attributes to
+        special words which are changed in fs-setup ie. double(10,2)
+        <=> MONEYTYPE Changed order of some of the field definitions
+        because Pg6.3 is picky Changed 'day' to 'daytime' in
+        cust_main Changed type of tax from tinyint to real Change
+        'password' to '_password' in svc_acct Pg6.3 does not allow
+        'field char(x) NULL' bmccane@maxbaud.net 98-apr-3
+
+        rewrite: now properly OO. See also
+        FS::dbdef_{table,column,unique,index}
+
+        ivan@sisd.com 98-apr-17
+
+        gained some extra functions ivan@sisd.com 98-may-11
+
+        now knows how to Freeze and Thaw itself ivan@sisd.com 98-
+        jun-2
+
+        pod ivan@sisd.com 98-sep-23
+

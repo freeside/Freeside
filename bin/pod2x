@@ -1,0 +1,23 @@
+#!/usr/bin/perl
+
+#use Pod::Text;
+#$Pod::Text::termcap=1;
+
+my $site_perl = "./site_perl";
+#my $catman = "./catman";
+my $catman = "./htdocs/docs/man";
+#my $html = "./htdocs/docs/man";
+
+$|=1;
+
+die "Can't find $site_perl and $catman"
+  unless [ -d $site_perl ] && [ -d $catman ] && [ -d $html ];
+
+foreach my $file (glob("$site_perl/*.pm")) {
+  $file =~ /\/([\w\-]+)\.pm$/ or die "oops file $file";
+  my $name = $1;
+  print "$name\n"; 
+  system "pod2text $file >$catman/$name.txt"; 
+#  system "pod2html --podpath=$site_perl $file >$html/$name.html";
+#  system "pod2html $file >$html/$name.html";
+}

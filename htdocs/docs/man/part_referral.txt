@@ -1,0 +1,63 @@
+NAME
+    FS::part_referral - Object methods for part_referral objects
+
+SYNOPSIS
+      use FS::part_referral;
+
+      $record = create FS::part_referral \%hash
+      $record = create FS::part_referral { 'column' => 'value' };
+
+      $error = $record->insert;
+
+      $error = $new_record->replace($old_record);
+
+      $error = $record->delete;
+
+      $error = $record->check;
+
+DESCRIPTION
+    An FS::part_referral represents a referral - where a customer
+    heard of your services. This can be used to track the
+    effectiveness of a particular piece of advertising, for example.
+    FS::part_referral inherits from FS::Record. The following fields
+    are currently supported:
+
+    refnum - primary key (assigned automatically for new referrals)
+    referral - Text name of this referral
+METHODS
+    create HASHREF
+        Creates a new referral. To add the referral to the database,
+        see the section on "insert".
+
+    insert
+        Adds this referral to the database. If there is an error,
+        returns the error, otherwise returns false.
+
+    delete
+        Currently unimplemented.
+
+    replace OLD_RECORD
+        Replaces OLD_RECORD with this one in the database. If there
+        is an error, returns the error, otherwise returns false.
+
+    check
+        Checks all fields to make sure this is a valid referral. If
+        there is an error, returns the error, otherwise returns
+        false. Called by the insert and replace methods.
+
+BUGS
+    It doesn't properly override FS::Record yet.
+
+    The delete method is unimplemented.
+
+SEE ALSO
+    the FS::Record manpage, the FS::cust_main manpage, schema.html
+    from the base documentation.
+
+HISTORY
+    Class dealing with referrals
+
+    ivan@sisd.com 98-feb-23
+
+    pod ivan@sisd.com 98-sep-21
+

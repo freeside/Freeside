@@ -1,0 +1,65 @@
+NAME
+    FS::svc_acct_pop - Object methods for svc_acct_pop records
+
+SYNOPSIS
+      use FS::svc_acct_pop;
+
+      $record = create FS::svc_acct_pop \%hash;
+      $record = create FS::svc_acct_pop { 'column' => 'value' };
+
+      $error = $record->insert;
+
+      $error = $new_record->replace($old_record);
+
+      $error = $record->delete;
+
+      $error = $record->check;
+
+DESCRIPTION
+    An FS::svc_acct object represents an point of presence.
+    FS::svc_acct_pop inherits from FS::Record. The following fields
+    are currently supported:
+
+    popnum - primary key (assigned automatically for new accounts)
+    city
+    state
+    ac - area code
+    exch - exchange
+METHODS
+    create HASHREF
+        Creates a new point of presence (if only it were that
+        easy!). To add the point of presence to the database, see
+        the section on "insert".
+
+    insert
+        Adds this point of presence to the databaes. If there is an
+        error, returns the error, otherwise returns false.
+
+    delete
+        Currently unimplemented.
+
+    replace OLD_RECORD
+        Replaces OLD_RECORD with this one in the database. If there
+        is an error, returns the error, otherwise returns false.
+
+    check
+        Checks all fields to make sure this is a valid point of
+        presence. If there is an error, returns the error, otherwise
+        returns false. Called by the insert and replace methods.
+
+BUGS
+    It doesn't properly override FS::Record yet.
+
+    It should be renamed to part_pop.
+
+SEE ALSO
+    the FS::Record manpage, the svc_acct manpage, schema.html from
+    the base documentation.
+
+HISTORY
+    Class dealing with pops
+
+    ivan@sisd.com 98-mar-8
+
+    pod ivan@sisd.com 98-sep-23
+
