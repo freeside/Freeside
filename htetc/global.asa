@@ -73,7 +73,7 @@ sub Script_OnStart {
   $p = popurl(2);
   #print $cgi->header( '-expires' => 'now' );
   #dbh->{'private_profile'} = {} if dbh->can('sprintProfile');
-  dbh->{'private_profile'} = {} if UNIVERSAL::can(dbh, 'sprintProfile') );
+  dbh->{'private_profile'} = {} if UNIVERSAL::can(dbh, 'sprintProfile');
 
   #really should check for FS::Profiler or something
     # Devel::AutoProfiler _our_ VERSION?  thanks a fucking lot
@@ -189,6 +189,10 @@ sub sprintAutoProfile {
   use Data::Dumper;
   return encode_entities(Dumper(\@readable_info));
 
+}
+
+sub include {
+  $Response->Include(@_);
 }
 
 1;

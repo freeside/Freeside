@@ -62,14 +62,14 @@ while ( $syear < $eyear || ( $syear == $eyear && $smonth < $emonth ) ) {
   my $refunded = $refunded_sth->fetchrow_arrayref->[0] || 0;
 
     #horrible local kludge that doesn't even really work right
-    my $expenses_sql = "SELECT SUM(cust_bill_pay.amount) FROM cust_bill_pay, cust_bill WHERE cust_bill_pay.invnum = cust_bill.invnum AND cust_bill_pay._date >= $speriod AND cust_bill_pay._date < $eperiod AND 0 < ( select count(*) from cust_bill_pkg, cust_pkg, part_pkg WHERE cust_bill.invnum = cust_bill_pkg.invnum AND cust_pkg.pkgnum = cust_bill_pkg.pkgnum AND cust_pkg.pkgpart = part_pkg.pkgpart AND LOWER(part_pkg.pkg) LIKE 'expense _%' )";
+    my $expenses_sql2 = "SELECT SUM(cust_bill_pay.amount) FROM cust_bill_pay, cust_bill WHERE cust_bill_pay.invnum = cust_bill.invnum AND cust_bill_pay._date >= $speriod AND cust_bill_pay._date < $eperiod AND 0 < ( select count(*) from cust_bill_pkg, cust_pkg, part_pkg WHERE cust_bill.invnum = cust_bill_pkg.invnum AND cust_pkg.pkgnum = cust_bill_pkg.pkgnum AND cust_pkg.pkgpart = part_pkg.pkgpart AND LOWER(part_pkg.pkg) LIKE 'expense _%' )";
 
-#    my $expenses_sql = "SELECT SUM(cust_bill_pay.amount) FROM cust_bill_pay, cust_bill_pkg, cust_bill, cust_pkg, part_pkg WHERE cust_bill_pay.invnum = cust_bill.invnum AND cust_bill.invnum = cust_bill_pkg.invnum AND cust_bill_pay._date >= $speriod AND cust_bill_pay._date < $eperiod AND cust_pkg.pkgnum = cust_bill_pkg.pkgnum AND cust_pkg.pkgpart = part_pkg.pkgpart AND LOWER(part_pkg.pkg) LIKE 'expense _%'";
-    my $expenses_sth = dbh->prepare($expenses_sql) or die dbh->errstr;
-    $expenses_sth->execute or die $expenses_sth->errstr;
-    my $expenses = $expenses_sth->fetchrow_arrayref->[0] || 0;
+#    my $expenses_sql2 = "SELECT SUM(cust_bill_pay.amount) FROM cust_bill_pay, cust_bill_pkg, cust_bill, cust_pkg, part_pkg WHERE cust_bill_pay.invnum = cust_bill.invnum AND cust_bill.invnum = cust_bill_pkg.invnum AND cust_bill_pay._date >= $speriod AND cust_bill_pay._date < $eperiod AND cust_pkg.pkgnum = cust_bill_pkg.pkgnum AND cust_pkg.pkgpart = part_pkg.pkgpart AND LOWER(part_pkg.pkg) LIKE 'expense _%'";
+    my $expenses_sth2 = dbh->prepare($expenses_sql2) or die dbh->errstr;
+    $expenses_sth2->execute or die $expenses_sth2->errstr;
+    my $expenses2 = $expenses_sth2->fetchrow_arrayref->[0] || 0;
 
-  push @{$data{cash}}, $paid-$refunded-$expenses;
+  push @{$data{cash}}, $paid-$refunded-$expenses2;
 
 }
 
@@ -101,7 +101,7 @@ my @data = ( \@labels,
 #$chart->cgi_png(\@data);
 
 http_header('Content-Type' => 'image/png' );
-$Response->{ContentType} = 'image/png';
+#$Response->{ContentType} = 'image/png';
 
 $chart->_set_colors();
 

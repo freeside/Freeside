@@ -1,4 +1,4 @@
-<!-- mason kludge %>
+<!-- mason kludge -->
 <%
 
 #my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
@@ -32,9 +32,9 @@ my $emonth = $cgi->param('emonth') || $curmon+1;
   Cashflow (payments - refunds)<BR>
 <BR>
 From <SELECT NAME="smonth">
-<% my @m = qw(Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec);
-   foreach my $m ( 1..12 ) { %>
-<OPTION VALUE="<%= $m %>"<%= $m == $smonth ? ' SELECTED' : '' %>><%= $m[$m-1] %>
+<% my @mon = qw(Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec); %>
+<% foreach my $mon ( 1..12 ) { %>
+<OPTION VALUE="<%= $mon %>"<%= $mon == $smonth ? ' SELECTED' : '' %>><%= $mon[$mon-1] %>
 <% } %>
 </SELECT>
 <SELECT NAME="syear">
@@ -43,8 +43,8 @@ From <SELECT NAME="smonth">
 <% } %>
 </SELECT>
  to <SELECT NAME="emonth">
-<% foreach my $m ( 1..12 ) { %>
-<OPTION VALUE="<%= $m %>"<%= $m == $emonth ? ' SELECTED' : '' %>><%= $m[$m-1] %>
+<% foreach my $mon ( 1..12 ) { %>
+<OPTION VALUE="<%= $mon %>"<%= $mon == $emonth ? ' SELECTED' : '' %>><%= $mon[$mon-1] %>
 <% } %>
 </SELECT>
 <SELECT NAME="eyear">

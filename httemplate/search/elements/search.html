@@ -1,0 +1,8 @@
+<%
+
+my $conf = new FS::Conf;
+my $maxrecords = $conf->config('maxsearchrecordsperpage');
+
+my $limit = $maxrecords ? "LIMIT $maxrecords" : '';
+
+%>

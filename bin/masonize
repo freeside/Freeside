@@ -8,6 +8,7 @@ foreach $file ( split(/\n/, `find . -depth -print | grep cgi\$`) ) {
   system("chmod u+w $file");
   open(W,">$file") or die "can't open $file for writing: $!";
   select W; $| = 1; select STDOUT;
+  $newline = ''; #avoid prepending extraneous newlines
   $all = join('',@file);
 
   $mode = 'html';
@@ -26,7 +27,7 @@ foreach $file ( split(/\n/, `find . -depth -print | grep cgi\$`) ) {
         #die;
         next;
       } elsif ( $all =~ /^<%(.*)$/s ) {
-        print W "\n";
+        print W $newline; $newline = "\n";
         $all = $1;
         $mode = 'perlc';
         next;
