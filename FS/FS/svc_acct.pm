@@ -188,7 +188,7 @@ sub insert {
     $self->shell,
   );
   if ( $username && $uid && $dir && $shellmachine && ! $nossh_hack ) {
-    ssh("root\@$shellmachine", eval "$useradd");
+    ssh("root\@$shellmachine", eval qq("$useradd") );
   }
 
   ''; #no error
@@ -242,7 +242,7 @@ sub delete {
     $self->dir,
   );
   if ( $username && $shellmachine && ! $nossh_hack ) {
-    ssh("root\@$shellmachine", eval "$userdel");
+    ssh("root\@$shellmachine", eval qq("$userdel") );
   }
 
   '';
@@ -304,7 +304,7 @@ sub replace {
     $new->getfield('gid'),
   );
   if ( $old_dir && $new_dir && $old_dir ne $new_dir && ! $nossh_hack ) {
-    ssh("root\@$shellmachine", eval "$usermod" );
+    ssh("root\@$shellmachine", eval qq("$usermod") );
   }
 
   ''; #no error
@@ -536,7 +536,7 @@ sub radius_check {
 
 =head1 VERSION
 
-$Id: svc_acct.pm,v 1.12 2000-07-17 10:53:42 ivan Exp $
+$Id: svc_acct.pm,v 1.13 2000-07-17 13:51:07 ivan Exp $
 
 =head1 BUGS
 
