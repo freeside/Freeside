@@ -2159,20 +2159,17 @@ sub realtime_refund_bop {
     $payname =  "$payfirst $paylast";
   }
 
-  if ( $method eq 'CC' ) { 
+  if ( $method eq 'CC' ) {
 
-    $content{card_number} = $self->payinfo;
-    $self->paydate =~ /^\d{2}(\d{2})[\/\-](\d+)[\/\-]\d+$/;
-    $content{expiration} = "$2/$1";
-
-    #$content{cvv2} = $self->paycvv
-    #  if defined $self->dbdef_table->column('paycvv')
-    #     && length($self->paycvv);
-
-    #$content{recurring_billing} = 'YES'
-    #  if qsearch('cust_pay', { 'custnum' => $self->custnum,
-    #                           'payby'   => 'CARD',
-    #                           'payinfo' => $self->payinfo, } );
+    if ( $cust_pay ) {
+      $content{card_number} = $cust_pay->payinfo;
+      #$self->paydate =~ /^\d{2}(\d{2})[\/\-](\d+)[\/\-]\d+$/;
+      #$content{expiration} = "$2/$1";
+    } else {
+      $content{card_number} = $self->payinfo;
+      $self->paydate =~ /^\d{2}(\d{2})[\/\-](\d+)[\/\-]\d+$/;
+      $content{expiration} = "$2/$1";
+    }
 
   } elsif ( $method eq 'ECHECK' ) {
     ( $content{account_number}, $content{routing_code} ) =
