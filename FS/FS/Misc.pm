@@ -54,7 +54,7 @@ FS::UID->install_callback( sub {
 } );
 
 sub send_email {
-  my(%options) = shift;
+  my(%options) = @_;
 
   $ENV{MAILADDRESS} = $options{'from'};
   my $to = ref($options{to}) ? join(', ', @{ $options{to} } ) : $options{to};
