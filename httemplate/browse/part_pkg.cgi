@@ -119,12 +119,12 @@ END
 
     $suspended_sth->execute( $part_pkg->pkgpart ) or die $suspended_sth->errstr;
     my $num_suspended = $suspended_sth->fetchrow_arrayref->[0];
-    print '<FONT COLOR="#FF9900"<B>'. $num_suspended.
+    print '<FONT COLOR="#FF9900"><B>'. $num_suspended.
           qq!</B></FONT>&nbsp;<A HREF="${p}search/cust_pkg.cgi?magic=suspended;pkgpart=$hashref->{pkgpart}">suspended</A><BR>!;
 
     $canceled_sth->execute( $part_pkg->pkgpart ) or die $canceled_sth->errstr;
     my $num_canceled = $canceled_sth->fetchrow_arrayref->[0];
-    print '<FONT COLOR="#FF0000"<B>'. $num_canceled.
+    print '<FONT COLOR="#FF0000"><B>'. $num_canceled.
           qq!</B></FONT>&nbsp;<A HREF="${p}search/cust_pkg.cgi?magic=canceled;pkgpart=$hashref->{pkgpart}">canceled</A>!;
 
 
