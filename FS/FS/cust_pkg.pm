@@ -16,6 +16,7 @@ use FS::pkg_svc;
 use FS::svc_acct;
 use FS::svc_acct_sm;
 use FS::svc_domain;
+use FS::svc_www;
 
 @ISA = qw( FS::Record );
 
@@ -490,7 +491,7 @@ sub order {
 
 =head1 VERSION
 
-$Id: cust_pkg.pm,v 1.3 1999-11-08 21:38:38 ivan Exp $
+$Id: cust_pkg.pm,v 1.4 2000-02-03 05:16:52 ivan Exp $
 
 =head1 BUGS
 

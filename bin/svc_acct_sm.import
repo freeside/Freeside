@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct_sm.import,v 1.4 1999-03-25 08:42:20 ivan Exp $
+# $Id: svc_acct_sm.import,v 1.5 2000-02-03 05:16:52 ivan Exp $
 #
 # ivan@sisd.com 98-mar-9
 #
@@ -16,7 +16,10 @@
 # ivan@sisd.com 98-jul-13
 #
 # $Log: svc_acct_sm.import,v $
-# Revision 1.4  1999-03-25 08:42:20  ivan
+# Revision 1.5  2000-02-03 05:16:52  ivan
+# beginning of DNS and Apache support
+#
+# Revision 1.4  1999/03/25 08:42:20  ivan
 # import stuff uses Term::Query and spits out (some kinds of) nonsensical input
 #
 # Revision 1.3  1999/03/24 00:51:55  ivan
@@ -278,6 +281,6 @@ END
 #
 
 sub usage {
-  die "Usage:\n\n  svc_acct_sm.export user\n";
+  die "Usage:\n\n  svc_acct_sm.import user\n";
 }
 

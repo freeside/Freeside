@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: fs-setup,v 1.22 2000-01-31 05:22:23 ivan Exp $
+# $Id: fs-setup,v 1.23 2000-02-03 05:16:52 ivan Exp $
 #
 # ivan@sisd.com 97-nov-8,9
 #
@@ -32,7 +32,10 @@
 # fix radius attributes ivan@sisd.com 98-sep-27
 #
 # $Log: fs-setup,v $
-# Revision 1.22  2000-01-31 05:22:23  ivan
+# Revision 1.23  2000-02-03 05:16:52  ivan
+# beginning of DNS and Apache support
+#
+# Revision 1.22  2000/01/31 05:22:23  ivan
 # prepaid "internet cards"
 #
 # Revision 1.21  2000/01/30 06:03:26  ivan
@@ -184,7 +187,7 @@ my($part_svc)=$dbdef->table('part_svc');
 #because of svc_acct_pop
 #foreach (grep /^svc_/, $dbdef->tables) { 
 #foreach (qw(svc_acct svc_acct_sm svc_charge svc_domain svc_wo)) {
-foreach (qw(svc_acct svc_acct_sm svc_domain)) {
+foreach (qw(svc_acct svc_acct_sm svc_domain svc_www)) {
   my($table)=$dbdef->table($_);
   my($col);
   foreach $col ( $table->columns ) {
@@ -651,6 +654,31 @@ sub tables_hash_hack {
       'primary_key' => 'svcnum',
       'unique' => [ ['domain'] ],
       'index' => [ [] ],
+    },
+
+    'domain_record' => {
+      'columns' => [
+        'recnum',    'int',     '',  '',
+        'svcnum',    'int',     '',  '',
+        'reczone',   'varchar', '',  $char_d,
+        'recaf',     'char',    '',  2,
+        'rectype',   'char',    '',  5,
+        'recdata',   'varchar', '',  $char_d,
+      ],
+      'primary_key' => 'recnum',
+      'unique'      => [ [] ],
+      'index'       => [ ['svcnum'] ],
+    },
+
+    'svc_www' => {
+      'columns' => [
+        'svcnum',   'int',    '',  '',
+        'recnum',   'int',    '',  '',
+        'usersvc',  'int',    '',  '',
+      ],
+      'primary_key' => 'svcnum',
+      'unique'      => [ [] ],
+      'index'       => [ [] ],
     },
 
     #'svc_wo' => {

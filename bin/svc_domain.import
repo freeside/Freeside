@@ -1,0 +1,92 @@
+#!/usr/bin/perl -w
+#
+# $Id: svc_domain.import,v 1.1 2000-02-03 05:17:39 ivan Exp $
+
+use strict;
+use vars qw( %d_part_svc );
+use Term::Query qw(query);
+use FS::SSH qw(iscp);
+use FS::UID qw(adminsuidsetup datasrc);
+#use FS::Record qw(qsearch qsearchs);
+#use FS::svc_acct_sm;
+use FS::svc_domain;
+use FS::domain_record;
+#use FS::svc_acct;
+#use FS::part_svc;
+
+my $user = shift or die &usage;
+adminsuidsetup $user;
+
+my($spooldir)="/usr/local/etc/freeside/export.". datasrc;
+
+%d_part_svc =
+  map { $_->svcpart, $_ } qsearch('part_svc',{'svcdb'=>'svc_domain'});
+
+print "\n\n",
+      ( join "\n", map "$_: ".$d_part_svc{$_}->svc, sort keys %d_part_svc ),
+      "\n\n";
+$^W=0; #Term::Query isn't -w-safe
+my $domain_svcpart =
+  query "Enter part number for domains: ", 'irk', [ keys %d_part_svc ];
+$^W=1;
+
+  print "\n\n", <<END;
+Enter the location and name of your primary named.conf file, for example
+"ns.isp.com:/var/named/named.conf"
+END
+  my($named_conf)=&getvalue(":");
+  iscp("root\@$named_conf","$spooldir/named.conf.import");
+
+my $named_machine = (split(/:/, $named_conf))[0];
+
+print "\n\n";
+
+##
+
+$FS::svc_domain::whois_hack=1;
+
+open(NAMED_CONF,"<$spooldir/named.conf.import")
+  or die "Can't open $spooldir/named.conf.import: $!";
+
+while (<NAMED_CONF>) {
+  next unless /^\s*options/;
+}
+my $directory;
+while (<NAMED_CONF>) {
+  last if /^\s*directory\s+\"([\/\w+]+)\";/;
+} 
+$directory = $1 or die "can't locate directory in named.conf!";
+whlie (<NAMED_CONF>) {
+  next unless /^\s*zone\s+\"([\w\.\-]+)\"\s+\{/;
+  my $zone = $1;
+  while (<NAMED_CONF>) {
+    my $type;
+    if ( /^\s*type\s+(master|slave)\s*\;/ ) {
+      $type = $1;
+    }
+    if ( /^\s*file\s+\"([\w\.\-]+)\"\s*\;/ && $type eq 'master' ) {
+
+      #
+      # (add svc_domain)
+      my $file = $1;
+      iscp("root\@$named_machine:$directory/$file","$spooldir/$file.import");
+      open(ZONE,"<$spooldir/$file.import")
+        or die "Can't open $spooldir/$file.import: $!";
+      while (<ZONE>) {
+        # (add domain_record)
+      }
+
+      #
+
+    }
+    
+    last if /^\s*\}\s*\;/;
+  }
+}
+
+##
+
+sub usage {
+  die "Usage:\n\n  svc_domain.import user\n";
+}
+

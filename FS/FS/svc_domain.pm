@@ -3,6 +3,8 @@ package FS::svc_domain;
 use strict;
 use vars qw( @ISA $whois_hack $conf $mydomain $smtpmachine
   $tech_contact $from $to @nameservers @nameserver_ips @template
+  @mxmachines @nsmachines $soadefaultttl $soaemail $soaexpire $soamachine
+  $soarefresh $soaretry
 );
 use Carp;
 use Mail::Internet;
@@ -16,6 +18,7 @@ use FS::cust_svc;
 use FS::svc_acct;
 use FS::cust_pkg;
 use FS::cust_main;
+use FS::domain_record;
 
 @ISA = qw( FS::svc_Common );
 
@@ -42,6 +45,15 @@ $FS::UID::callback{'FS::domain'} = sub {
     $1;
   } @ns;
   @template = map { $_. "\n" } $conf->config("$internic/template");
+
+  @mxmachines    = $conf->config('mxmachines');
+  @nsmachines    = $conf->config('nsmachines');
+  $soadefaultttl = $conf->config('soadefaultttl');
+  $soaemail      = $conf->config('soaemail');
+  $soaexpire     = $conf->config('soaexpire');
+  $soamachine    = $conf->config('soamachine');
+  $soarefresh    = $conf->config('soarefresh');
+  $soaretry      = $conf->config('soaretry');
 
 };
 
@@ -114,6 +126,19 @@ email address on this email.  Otherwise, the svc_acct records for this package
 (see L<FS::cust_pkg>) are searched.  If there is exactly one svc_acct record
 in the same package, it is automatically used.  Otherwise an error is returned.
 
+If any I<soamachine> configuration file exists, an SOA record is added to
+the domain_record table (see <FS::domain_record>).
+
+If any machines are defined in the I<nsmachines> configuration file, NS
+records are added to the domain_record table (see L<FS::domain_record>).
+
+If any machines are defined in the I<mxmachines> configuration file, MX
+records are added to the domain_record table (see L<FS::domain_record>).
+
+Any problems adding FS::domain_record records will emit warnings, but will
+not return errors from this method.  If your configuration files are correct
+you shouln't have any problems.
+
 =cut
 
 sub insert {
@@ -143,6 +168,47 @@ sub insert {
   return $error if $error;
 
   $self->submit_internic unless $whois_hack;
+
+  if ( $soamachine ) {
+    my $soa = new FS::domain_record {
+      'svcnum'  => $self->svcnum,
+      'reczone' => '@',
+      'recaf'   => 'IN',
+      'rectype' => 'SOA',
+      'recdata' => "$soamachine $soaemail ( ". time2str("%Y%m%e", time). "00 ".
+                   "$soarefresh $soarety $soaexpire $soadefaultttl )"
+    };
+    $error = $soa->insert;
+    warn "WARNING: couldn't insert SOA record for new domain: $error" if $error;
+
+    foreach $nsmachine ( @nsmachines ) {
+      my $ns = new FS::domain_record {
+        'svcnum'  => $self->svcnum,
+        'reczone' => '@',
+        'recaf'   => 'IN',
+        'rectype' => 'NS',
+        'recdata' => $nsmachine,
+      };
+      my $error = $ns->insert;
+      warn "WARNING: couldn't insert NS record for new domain: $error"
+        if $error;
+    }
+
+    foreach $mxmachine ( @mxmachines ) {
+      my $mx = new FS::domain_record {
+        'svcnum'  => $self->svcnum,
+        'reczone' => '@',
+        'recaf'   => 'IN',
+        'rectype' => 'mx',
+        'recdata' => $mxmachine,
+      };
+      my $error = $mx->insert;
+      warn "WARNING: couldn't insert MX record for new domain: $error"
+        if $error;
+    }
+
+  }
+
 
   ''; #no error
 }
@@ -393,7 +459,7 @@ sub submit_internic {
 
 =head1 VERSION
 
-$Id: svc_domain.pm,v 1.4 2000-01-29 21:10:13 ivan Exp $
+$Id: svc_domain.pm,v 1.5 2000-02-03 05:16:52 ivan Exp $
 
 =head1 BUGS
 

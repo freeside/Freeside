@@ -22,6 +22,11 @@ All further configuration files and directories are located in
 `/usr/local/etc/freeside/conf.DBI:Pg:dbname=freeside'
 <ul>
   <li>address - Your company name and address, four lines.
+  <li>apacheroot - The directory containing Apache virtual hosts
+  <li>apachemachine - A machine with the apacheroot directory and user home directories.  The existance of this file enables setup of virtual host directories, and, in conjunction with the `home' configuration file, symlinks into user home directories.
+  <li>apachemachines - Your Apache machines, one per line.  This enables export of `/etc/apache/vhosts.conf', which can be included in your Apache configuration via the <a href="http://www.apache.org/docs/mod/core.html#include">Include</a> directive.
+  <li>bindprimary - Your BIND primary nameserver.  This enables export of /var/named/named.conf and zone files into /var/named
+  <li>bindsecondaries - Your BIND secondary nameservers, one per line.  This enables export of /var/named/named.conf
   <li>bsdshellmachines - Your BSD flavored shell (and mail) machines, one per line.  This enables export of `/etc/passwd' and `/etc/master.passwd'.
   <li>cybercash2 - <a href="http://www.cybercash.com/cybercash/services/cashreg214.html">CyberCash v2</a> support, four lines: paymentserverhost, paymentserverport, paymentserversecret, and transaction type (`mauthonly' or `mauthcapture').  CCLib.pm is required.
   <li>cybercash3.2 - <a href="http://www.cybercash.com/cybercash/services/technology.html">CyberCash v3.2</a> support.  Two lines: the full path and name of your merchant_conf file, and the transaction type (`mauthonly' or `mauthcapture').  CCMckLib3_2.pm, CCMckDirectLib3_2.pm and CCMckErrno3_2 are required.
@@ -34,6 +39,8 @@ All further configuration files and directories are located in
   <li>home - For new users, prefixed to usrename to create a directory name.  Should have a leading but not a trailing slash.
   <li>invoice_from - Return address on email invoices.
   <li>lpr - Print command for paper invoices, for example `lpr -h'.
+  <li>mxmachines - MX entries for new domains, weight and machine, one per line, with trailing `.'
+  <li>nsmachines - NS nameservers for new domains, one per line, with trailing `.'
   <li>nismachines - Your NIS master (not slave master) machines, one per line.  This enables export of `/etc/global/passwd' and `/etc/global/shadow'.
   <li>passwordmin - Minimum password length (default 6);
   <li>qmailmachines - Your qmail machines, one per line.  This enables export of `/var/qmail/control/virtualdomains', `/var/qmail/control/recipientmap', and `/var/qmail/control/rcpthosts'.  The existance of this file (even if empty) also turns on user `.qmail-extension' file maintenance in conjunction with `shellmachine'.
@@ -55,6 +62,12 @@ All further configuration files and directories are located in
   <li>shells - Legal shells (think /etc/shells).  You probably want to `cut -d: -f7 /etc/passwd | sort | uniq' initially so that importing doesn't fail with `Illegal shell' errors, then remove any special entries afterwords.  A blank line specifies that an empty shell is permitted.
   <li>showpasswords - The existance of this file will allow unencrypted user passwords to be displayed.
   <li>smtpmachine - SMTP relay for Freeside's outgoing mail.
+  <li>soadefaultttl - SOA default TTL for new domains.
+  <li>soaemail - SOA email for new domains, in BIND form (`.' instead of `@'), with trailing `.'
+  <li>soaexpire - SOA expire for new domains
+  <li>soamachine - SOA machine for new domains, with trailing `.'
+  <li>soarefresh - SOA refresh for new domains
+  <li>soaretry - SOA retry for new domains
   <li>usernamemin - Minimum username length (default 2);
   <li>usernamemax - Maximum username length (default is the size of the SQL column, probably specified when fs-setup was run)
 </ul>
