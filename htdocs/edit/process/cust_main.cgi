@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main.cgi,v 1.10 1999-04-14 07:47:53 ivan Exp $
+# $Id: cust_main.cgi,v 1.11 1999-08-10 12:54:06 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/cust_main.cgi
@@ -20,7 +20,10 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # $Log: cust_main.cgi,v $
-# Revision 1.10  1999-04-14 07:47:53  ivan
+# Revision 1.11  1999-08-10 12:54:06  ivan
+# use FS::cust_pkg::pkgpart_href
+#
+# Revision 1.10  1999/04/14 07:47:53  ivan
 # i18n fixes
 #
 # Revision 1.9  1999/04/07 15:22:19  ivan
@@ -118,21 +121,25 @@ if ( $new->custnum eq '' ) {
     # generate %part_pkg
     # $part_pkg{$pkgpart} is true iff $custnum may purchase $pkgpart
     my $agent = qsearchs('agent',{'agentnum'=> $new->agentnum });
-    my($type_pkgs);
-    foreach $type_pkgs ( qsearch('type_pkgs',{'typenum'=> $agent->typenum }) ) {
-      my($pkgpart)=$type_pkgs->pkgpart;
-      $part_pkg{$pkgpart}++;
-    }
+    	#my($type_pkgs);
+    	#foreach $type_pkgs ( qsearch('type_pkgs',{'typenum'=> $agent->typenum }) ) {
+    	#  my($pkgpart)=$type_pkgs->pkgpart;
+    	#  $part_pkg{$pkgpart}++;
+    	#}
+    # $pkgpart_href->{PKGPART} is true iff $custnum may purchase $pkgpart
+    my $pkgpart_href = $agent->pkgpart_hashref;
     #eslaf
 
+    # this should wind up in FS::cust_pkg!
     $error ||= "Agent ". $new->agentnum. " (type ". $agent->typenum. ") can't".
                "purchase pkgpart ". $pkgpart
-      unless $part_pkg{ $pkgpart };
+      #unless $part_pkg{ $pkgpart };
+      unless $pkgpart_href->{ $pkgpart };
 
     $cust_pkg = new FS::cust_pkg ( {
-                            #later         'custnum' => $custnum,
-                                     'pkgpart' => $pkgpart,
-                                   } );
+      #later         'custnum' => $custnum,
+      'pkgpart' => $pkgpart,
+    } );
     $error ||= $cust_pkg->check;
 
     #$cust_svc = new FS::cust_svc ( { 'svcpart' => $svcpart } );
