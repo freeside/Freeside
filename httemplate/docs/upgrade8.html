@@ -313,5 +313,10 @@ ALTER TABLE cust_refund DROP COLUMN crednum;
   <li>freeside-queued was installed with the Perl modules.  Start it now and ensure that is run upon system startup.
   <li>Set appropriate <a href="../browse/part_bill_event.cgi">invoice events</a> for your site.  At the very least, you'll want to set some invoice events "<i>After 0 days</i>": a <i>BILL</i> invoice event to print invoices, a <i>CARD</i> invoice event to batch or run cards real-time, and a <i>COMP</i> invoice event to "pay" complimentary customers.  If you were using the <i>-i</i> option to <a href="man/bin/freeside-bill.html">freeside-bill</a> it should be removed.
   <li>Use <a href="man/bin/freeside-daily.html">freeside-daily</a> instead of <a href="man/bin/freeside-bill.html">freeside-bill</a>.
+  <li>If you would like Freeside to notify your customers when their credit
+  cards and other billing arrangements are about to expire, arrange for
+  <b>freeside-expiration-alerter</b> to be run daily by cron or similar
+  facility.  The message it sends can be configured from the
+  <u>Configuration</u> choice of the main menu as <u>alerter_template</u>.
 </ul>
 </body>
