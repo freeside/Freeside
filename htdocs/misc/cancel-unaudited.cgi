@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cancel-unaudited.cgi,v 1.6 1999-02-28 00:03:48 ivan Exp $
+# $Id: cancel-unaudited.cgi,v 1.7 2000-06-15 12:30:37 ivan Exp $
 #
 # Usage: cancel-unaudited.cgi svcnum
 #        http://server.name/path/cancel-unaudited.cgi pkgnum
@@ -16,7 +16,10 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # $Log: cancel-unaudited.cgi,v $
-# Revision 1.6  1999-02-28 00:03:48  ivan
+# Revision 1.7  2000-06-15 12:30:37  ivan
+# bugfix from Jeff Finucane, thanks!
+#
+# Revision 1.6  1999/02/28 00:03:48  ivan
 # removed misleading comments
 #
 # Revision 1.5  1999/02/07 09:59:34  ivan
@@ -58,7 +61,7 @@ $cust_svc = qsearchs('cust_svc',{'svcnum'=>$svcnum});
 &eidiot(qq!This account has already been audited.  Cancel the 
     <A HREF="!. popurl(2). qq!view/cust_pkg.cgi?! . $cust_svc->getfield('pkgnum') .
     qq!pkgnum"> package</A> instead.!) 
-  if $cust_svc->getfield('pkgnum') ne '';
+  if $cust_svc->pkgnum ne '' && $cust_svc->pkgnum ne '0';
 
 local $SIG{HUP} = 'IGNORE';
 local $SIG{INT} = 'IGNORE';
