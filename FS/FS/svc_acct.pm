@@ -505,12 +505,6 @@ sub replace {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  $error = $new->SUPER::replace($old);
-  if ( $error ) {
-    $dbh->rollback if $oldAutoCommit;
-    return $error if $error;
-  }
-
   $old->usergroup( [ $old->radius_groups ] );
   if ( $new->usergroup ) {
     #(sorta) false laziness with FS::part_export::sqlradius::_export_replace
@@ -543,6 +537,12 @@ sub replace {
       }
     }
 
+  }
+
+  $error = $new->SUPER::replace($old);
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error if $error;
   }
 
   #false laziness with sub insert (and cust_main)
