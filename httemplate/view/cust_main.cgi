@@ -223,7 +223,7 @@ if ( $conf->config('payby-default') ne 'HIDE' ) {
         '<TR><TD ALIGN="right">Billing type</TD><TD BGCOLOR="#ffffff">',
   ;
 
-  if ( $cust_main->payby eq 'CARD' && $cust_main->payby eq 'DCRD' ) {
+  if ( $cust_main->payby eq 'CARD' || $cust_main->payby eq 'DCRD' ) {
     my $payinfo = $cust_main->payinfo;
     $payinfo = 'x'x(length($payinfo)-4). substr($payinfo,(length($payinfo)-4));
     print 'Credit card ',
@@ -236,7 +236,7 @@ if ( $conf->config('payby-default') ne 'HIDE' ) {
           '<TR><TD ALIGN="right">Name on card</TD><TD BGCOLOR="#ffffff">',
           $cust_main->payname, '</TD></TR>'
     ;
-  } elsif ( $cust_main->payby eq 'CHEK'  && $cust_main->payby eq 'DCHK') {
+  } elsif ( $cust_main->payby eq 'CHEK' || $cust_main->payby eq 'DCHK') {
     my( $account, $aba ) = split('@', $cust_main->payinfo );
     print 'Electronic check',
           ( $cust_main->payby eq 'CHEK' ? '(automatic)' : '(on-demand)' ),
