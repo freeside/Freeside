@@ -1,4 +1,4 @@
-package cust_bill_pay;
+package FS::cust_bill_pay;
 
 use strict;
 use vars qw( @ISA );
@@ -156,7 +156,7 @@ sub check {
   my $error = 
     $self->ut_numbern('billpaynum')
     || $self->ut_number('invnum')
-    || $self->ut_numner('paynum')
+    || $self->ut_number('paynum')
     || $self->ut_money('amount')
     || $self->ut_numbern('_date')
   ;
@@ -194,7 +194,7 @@ sub cust_bill {
 
 =head1 VERSION
 
-$Id: cust_bill_pay.pm,v 1.5 2001-09-02 04:25:55 ivan Exp $
+$Id: cust_bill_pay.pm,v 1.6 2001-09-02 05:38:13 ivan Exp $
 
 =head1 BUGS
 

@@ -105,6 +105,9 @@ sub insert {
       $dbh->rollback if $oldAutoCommit;
       return $error;
     }
+    warn $cust_bill_pay;
+    warn $cust_bill_pay->cust_bill;
+    warn $cust_bill_pay->cust_bill->custnum;
     $self->custnum($cust_bill_pay->cust_bill->custnum);
   }
 
@@ -117,6 +120,56 @@ sub insert {
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
   '';
+
+}
+
+sub upgrade_replace { #1.3.x->1.4.x
+  my $self = shift;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $error = $self->check;
+  return $error if $error;
+
+  my %new = $self->hash;
+  my $new = FS::cust_pay->new(\%new);
+
+  if ( $self->invnum ) {
+    my $cust_bill_pay = new FS::cust_bill_pay {
+      'invnum' => $self->invnum,
+      'paynum' => $self->paynum,
+      'amount' => $self->paid,
+      '_date'  => $self->_date,
+    };
+    $error = $cust_bill_pay->insert;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+    $new->custnum($cust_bill_pay->cust_bill->custnum);
+  } else {
+    die;
+  }
+
+  $error = $new->SUPER::replace($self);
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+  '';
+
 
 }
 
@@ -152,7 +205,7 @@ sub check {
 
   my $error =
     $self->ut_numbern('paynum')
-    || $self->ut_number('custnum')
+    || $self->ut_numbern('custnum')
     || $self->ut_money('paid')
     || $self->ut_numbern('_date')
     || $self->ut_textn('paybatch')
@@ -223,7 +276,7 @@ sub unapplied {
 
 =head1 VERSION
 
-$Id: cust_pay.pm,v 1.5 2001-09-02 02:46:55 ivan Exp $
+$Id: cust_pay.pm,v 1.6 2001-09-02 05:38:13 ivan Exp $
 
 =head1 BUGS
 

@@ -1,4 +1,4 @@
-package cust_credit_refund;
+package FS::cust_credit_refund;
 
 use strict;
 use vars qw( @ISA );
@@ -141,7 +141,7 @@ sub check {
   my $error = 
     $self->ut_numbern('creditrefundnum')
     || $self->ut_number('crednum')
-    || $self->ut_numner('refundnum')
+    || $self->ut_number('refundnum')
     || $self->ut_money('amount')
     || $self->ut_numbern('_date')
   ;
@@ -170,7 +170,7 @@ sub cust_refund {
 
 =head1 VERSION
 
-$Id: cust_credit_refund.pm,v 1.2 2001-09-02 01:27:11 ivan Exp $
+$Id: cust_credit_refund.pm,v 1.3 2001-09-02 05:38:13 ivan Exp $
 
 =head1 BUGS
 

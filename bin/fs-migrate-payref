@@ -1,0 +1,30 @@
+#!/usr/bin/perl
+
+use strict;
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw(qsearch);
+use FS::cust_pay;
+use FS::cust_refund;
+
+my $user = shift or die &usage;
+my $dbh = adminsuidsetup $user;
+
+#local $FS::UID::AutoCommit = 0; #quelle hack, in this case
+# $FS::UID::AutoCommit = 0; #quelle hack, in this case
+
+# apply payments to invoices
+
+foreach my $cust_pay ( qsearch('cust_pay', {} ) ) {
+  my $error = $cust_pay->upgrade_replace;
+  warn $error if $error;
+}
+
+# apply refunds to credits
+
+foreach my $cust_refund ( qsearch('cust_refund') ) {
+  my $error = $cust_refund->upgrade_replace;
+  warn $error if $error;
+}
+
+# ? apply credits to invoices
+

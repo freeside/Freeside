@@ -96,9 +96,11 @@ sub insert {
   my $error = $self->check;
   return $error if $error;
 
+  die;
+
   if ( $self->crednum ) {
     my $cust_credit_refund = new FS::cust_credit_refund {
-      'cred'      => $self->cred,
+      'crednum'   => $self->crednum,
       'refundnum' => $self->refundnum,
       'amount'    => $self->refund,
       '_date'     => $self->_date,
@@ -112,6 +114,55 @@ sub insert {
   }
 
   $error = $self->SUPER::insert;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+  '';
+
+}
+
+sub upgrade_replace {
+  my $self = shift;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $error = $self->check;
+  return $error if $error;
+
+  my %new = $self->hash;
+  my $new = FS::cust_refund->new(\%new);
+
+  if ( $self->crednum ) {
+    my $cust_credit_refund = new FS::cust_credit_refund {
+      'crednum'   => $self->crednum,
+      'refundnum' => $self->refundnum,
+      'amount'    => $self->refund,
+      '_date'     => $self->_date,
+    };
+    $error = $cust_credit_refund->insert;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+    $new->custnum($cust_credit_refund->cust_credit->custnum);
+  } else {
+    die;
+  }
+
+  $error = $new->SUPER::insert($self);
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
@@ -198,7 +249,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: cust_refund.pm,v 1.7 2001-09-02 04:25:55 ivan Exp $
+$Id: cust_refund.pm,v 1.8 2001-09-02 05:38:13 ivan Exp $
 
 =head1 BUGS
 
