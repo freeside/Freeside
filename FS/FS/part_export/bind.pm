@@ -17,7 +17,8 @@ tie %options, 'Tie::IxHash',
                       default => 'BIND8' },
   'bind9_minttl' => { label => 'The minttl required by bind9 and RFC1035.',
                       default => '1D' },
-;
+  'reload'       => { label => 'Optional reload command.  If not specified, defaults to "ndc" under BIND8 and "rndc" under BIND9.', },
+;                    
 
 %info = (
   'svc'     => 'svc_domain',

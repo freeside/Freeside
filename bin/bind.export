@@ -31,7 +31,8 @@ foreach my $export ( @exports ) {
   my $prefix = "$spooldir/$machine";
 
   my $bind_rel = $export->option('bind_release');
-  my $ndc_cmd = ($bind_rel eq 'BIND9') ? 'rndc' : 'ndc';
+  my $ndc_cmd = $export->option('reload')
+                || ( ($bind_rel eq 'BIND9') ? 'rndc' : 'ndc' );
   my $minttl = $export->option('bind9_minttl');
 
   #prevent old domain files from piling up
