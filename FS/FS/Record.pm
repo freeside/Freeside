@@ -829,6 +829,8 @@ sub fields {
   $table_obj->columns;
 }
 
+=back
+
 =head1 SUBROUTINES
 
 =over 4
@@ -917,7 +919,7 @@ sub DESTROY { return; }
 
 =head1 VERSION
 
-$Id: Record.pm,v 1.17 2001-06-03 11:27:00 ivan Exp $
+$Id: Record.pm,v 1.18 2001-07-30 07:33:08 ivan Exp $
 
 =head1 BUGS
 

@@ -540,11 +540,11 @@ sub radius_check {
   } grep { /^rc_/ && $self->getfield($_) } fields( $self->table );
 }
 
-=cut
+=back
 
 =head1 VERSION
 
-$Id: svc_acct.pm,v 1.18 2001-07-30 06:28:45 ivan Exp $
+$Id: svc_acct.pm,v 1.19 2001-07-30 07:34:41 ivan Exp $
 
 =head1 BUGS
 
