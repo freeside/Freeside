@@ -36,9 +36,27 @@ sub new {
 sub start_job {
   my $self = shift;
 
-  my %param = @_;
+  warn "FS::UI::Web::start_job: ". join(', ', @_) if $DEBUG;
+#  my %param = @_;
+  my %param = ();
+  while ( @_ ) {
+    my( $field, $value ) = splice(@_, 0, 2);
+    unless ( exists( $param{$field} ) ) {
+      $param{$field} = $value;
+    } elsif ( ! ref($param{$field}) ) {
+      $param{$field} = [ $param{$field}, $value ];
+    } else {
+      push @{$param{$field}}, $value;
+    }
+  }
   warn "FS::UI::Web::start_job\n".
-       join('', map "  $_ => $param{$_}\n", keys %param )
+       join('', map {
+                      if ( ref($param{$_}) ) {
+                        "  $_ => [ ". join(', ', @{$param{$_}}). " ]\n";
+                      } else {
+                        "  $_ => $param{$_}\n";
+                      }
+                    } keys %param )
     if $DEBUG;
 
   #first get the CGI params shipped off to a job ASAP so an id can be returned

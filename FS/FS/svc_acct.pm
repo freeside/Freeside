@@ -1414,7 +1414,7 @@ sub radius_usergroup_selector {
 END
 
   foreach my $group ( @all_groups ) {
-    $html .= '<OPTION';
+    $html .= qq(<OPTION VALUE="$group");
     if ( $sel_groups{$group} ) {
       $html .= ' SELECTED';
       $sel_groups{$group} = 0;
@@ -1422,7 +1422,7 @@ END
     $html .= ">$group</OPTION>\n";
   }
   foreach my $group ( grep { $sel_groups{$_} } keys %sel_groups ) {
-    $html .= "<OPTION SELECTED>$group</OPTION>\n";
+    $html .= qq(<OPTION VALUE="$group" SELECTED>$group</OPTION>\n);
   };
   $html .= '</SELECT>';
 

@@ -60,16 +60,21 @@ points to.  You can ask the object for a copy with the I<hash> method.
 
 sub table { 'export_svc'; }
 
-=item insert
+=item insert [ JOB, OFFSET, MULTIPLIER ]
 
 Adds this record to the database.  If there is an error, returns the error,
 otherwise returns false.
+
+TODOC: JOB, OFFSET, MULTIPLIER
 
 =cut
 
 sub insert {
   my $self = shift;
-  my $error;
+  my( $job, $offset, $mult ) = ( '', 0, 100);
+  $job = shift if @_;
+  $offset = shift if @_;
+  $mult = shift if @_;
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -82,7 +87,7 @@ sub insert {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  $error = $self->check;
+  my $error = $self->check;
   return $error if $error;
 
   #check for duplicates!
@@ -126,11 +131,40 @@ sub insert {
     warn "WARNING: No duplicate checking done on merge of $svcdb exports";
   }
 
+  my $done = 0;
+  my $percheck = $mult / scalar(@checks);
   foreach my $check ( @checks ) {
+
+    if ( $job ) {
+      $error = $job->update_statustext(int( $offset + ($done+.33) *$percheck ));
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
+      }
+    }
+
     my @current_svc = $self->part_export->svc_x;
     #warn "current: ". scalar(@current_svc). " $current_svc[0]\n";
+
+    if ( $job ) {
+      $error = $job->update_statustext(int( $offset + ($done+.67) *$percheck ));
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
+      }
+    }
+
     my @new_svc = $self->part_svc->svc_x;
     #warn "new: ". scalar(@new_svc). " $new_svc[0]\n";
+
+    if ( $job ) {
+      $error = $job->update_statustext(int( $offset + ($done+1) *$percheck ));
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
+      }
+    }
+
     my $method = $check->{'method'};
     my %cur_svc = map { $_->$method() => $_ } @current_svc;
     my @dup_svc = grep { $cur_svc{$_->$method()} } @new_svc;
@@ -165,6 +199,8 @@ sub insert {
              ": ". join(', ', sort $sortby map { $_->$method() } @diff_customer_svc )
              ;
     }
+
+    $done++;
   }
 
   #end of duplicate check, whew

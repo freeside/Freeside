@@ -2,8 +2,6 @@ package FS::rate;
 
 use strict;
 use vars qw( @ISA $DEBUG );
-use Storable qw(thaw);
-use Data::Dumper;
 use FS::Record qw( qsearch qsearchs dbh fields );
 use FS::rate_detail;
 
@@ -309,6 +307,8 @@ Experimental job-queue processor for web interface adds/edits
 
 =cut
 
+use Storable qw(thaw);
+use Data::Dumper;
 use MIME::Base64;
 sub process {
   my $job = shift;

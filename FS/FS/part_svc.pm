@@ -1,7 +1,7 @@
 package FS::part_svc;
 
 use strict;
-use vars qw( @ISA );
+use vars qw( @ISA $DEBUG );
 use FS::Record qw( qsearch qsearchs fields dbh );
 use FS::part_svc_column;
 use FS::part_export;
@@ -9,6 +9,8 @@ use FS::export_svc;
 use FS::cust_svc;
 
 @ISA = qw(FS::Record);
+
+$DEBUG = 1;
 
 =head1 NAME
 
@@ -64,7 +66,7 @@ database, see L<"insert">.
 
 sub table { 'part_svc'; }
 
-=item insert [ EXTRA_FIELDS_ARRAYREF [ , EXPORTNUMS_HASHREF ] ] 
+=item insert [ EXTRA_FIELDS_ARRAYREF [ , EXPORTNUMS_HASHREF [ , JOB ] ] ] 
 
 Adds this service definition to the database.  If there is an error, returns
 the error, otherwise returns false.
@@ -87,6 +89,8 @@ EXTRA_FIELDS_ARRAYREF also.
 If EXPORTNUMS_HASHREF is specified (keys are exportnums and values are
 boolean), the appopriate export_svc records will be inserted.
 
+TODOC: JOB
+
 =cut
 
 sub insert {
@@ -98,6 +102,8 @@ sub insert {
     my $exportnums = shift;
     @exportnums = grep $exportnums->{$_}, keys %$exportnums;
   }
+  my $job = '';
+  $job = shift if @_;
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -156,13 +162,14 @@ sub insert {
   }
 
   # add export_svc records
-
+  my $slice = 100/scalar(@exportnums) if @exportnums;
+  my $done = 0;
   foreach my $exportnum ( @exportnums ) {
     my $export_svc = new FS::export_svc ( {
       'exportnum' => $exportnum,
       'svcpart'   => $self->svcpart,
     } );
-    $error = $export_svc->insert;
+    $error = $export_svc->insert($job, $slice*$done++, $slice);
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return $error;
@@ -185,7 +192,7 @@ sub delete {
 # check & make sure the svcpart isn't in cust_svc or pkg_svc (in any packages)?
 }
 
-=item replace OLD_RECORD [ '1.3-COMPAT' [ , EXTRA_FIELDS_ARRAYREF [ , EXPORTNUMS_HASHREF ] ] ]
+=item replace OLD_RECORD [ '1.3-COMPAT' [ , EXTRA_FIELDS_ARRAYREF [ , EXPORTNUMS_HASHREF [ , JOB ] ] ] ]
 
 Replaces OLD_RECORD with this one in the database.  If there is an error,
 returns the error, otherwise returns false.
@@ -194,10 +201,26 @@ TODOC: 1.3-COMPAT
 
 TODOC: EXTRA_FIELDS_ARRAYREF (same as insert method)
 
+TODOC: JOB
+
 =cut
 
 sub replace {
   my ( $new, $old ) = ( shift, shift );
+  my $compat = '';
+  my @fields = ();
+  my $exportnums;
+  my $job = '';
+  if ( @_ && $_[0] eq '1.3-COMPAT' ) {
+    shift;
+    $compat = '1.3';
+    @fields = @{shift(@_)} if @_;
+    $exportnums = @_ ? shift : '';
+    $job = shift if @_;
+  } else {
+    return 'non-1.3-COMPAT interface not yet written';
+    #not yet implemented
+  }
 
   return "Can't change svcdb for an existing service definition!"
     unless $old->svcdb eq $new->svcdb;
@@ -219,11 +242,7 @@ sub replace {
     return $error;
   }
 
-  if ( @_ && $_[0] eq '1.3-COMPAT' ) {
-    shift;
-    my @fields = ();
-    @fields = @{shift(@_)} if @_;
-    my $exportnums = @_ ? shift : '';
+  if ( $compat eq '1.3' ) {
 
    # maintain part_svc_column records
 
@@ -264,6 +283,7 @@ sub replace {
     if ( $exportnums ) {
 
       #false laziness w/ edit/process/agent_type.cgi
+      my @new_export_svc = ();
       foreach my $part_export ( qsearch('part_export', {}) ) {
         my $exportnum = $part_export->exportnum;
         my $hashref = {
@@ -279,14 +299,26 @@ sub replace {
             return $error;
           }
         } elsif ( ! $export_svc && $exportnums->{$exportnum} ) {
-          $export_svc = new FS::export_svc ( $hashref );
-          $error = $export_svc->insert;
+          push @new_export_svc, new FS::export_svc ( $hashref );
+        }
+
+      }
+
+      my $slice = 100/scalar(@new_export_svc) if @new_export_svc;
+      my $done = 0;
+      foreach my $export_svc (@new_export_svc) {
+        $error = $export_svc->insert($job, $slice*$done++, $slice);
+        if ( $error ) {
+          $dbh->rollback if $oldAutoCommit;
+          return $error;
+        }
+        if ( $job ) {
+          $error = $job->update_statustext( int( $slice * $done ) );
           if ( $error ) {
             $dbh->rollback if $oldAutoCommit;
             return $error;
           }
         }
-        
       }
 
     }
@@ -396,6 +428,70 @@ sub svc_x {
 }
 
 =back
+
+=head1 SUBROUTINES
+
+=over 4
+
+=item process
+
+Experimental job-queue processor for web interface adds/edits
+
+=cut
+
+use Storable qw(thaw);
+use Data::Dumper;
+use MIME::Base64;
+sub process {
+  my $job = shift;
+
+  my $param = thaw(decode_base64(shift));
+  warn Dumper($param) if $DEBUG;
+
+  my $old = qsearchs('part_svc', { 'svcpart' => $param->{'svcpart'} }) 
+    if $param->{'svcpart'};
+
+  $param->{'svc_acct__usergroup'} =
+    ref($param->{'svc_acct__usergroup'})
+      ? join(',', @{$param->{'svc_acct__usergroup'}} )
+      : '';
+  
+  my $new = new FS::part_svc ( {
+    map {
+      $_ => $param->{$_};
+  #  } qw(svcpart svc svcdb)
+    } ( fields('part_svc'),
+        map { my $svcdb = $_;
+              my @fields = fields($svcdb);
+              push @fields, 'usergroup' if $svcdb eq 'svc_acct'; #kludge
+              map { ( $svcdb.'__'.$_, $svcdb.'__'.$_.'_flag' )  } @fields;
+            } grep defined( $FS::Record::dbdef->table($_) ),
+                   qw( svc_acct svc_domain svc_forward svc_www svc_broadband )
+      )
+  } );
+  
+  my %exportnums =
+    map { $_->exportnum => ( $param->{'exportnum'.$_->exportnum} || '') }
+        qsearch('part_export', {} );
+
+  my $error;
+  if ( $param->{'svcpart'} ) {
+    $error = $new->replace( $old,
+                            '1.3-COMPAT',
+                            [ 'usergroup' ],
+                            \%exportnums,
+                            $job
+                          );
+  } else {
+    $error = $new->insert( [ 'usergroup' ],
+                           \%exportnums,
+                           $job,
+                         );
+    $param->{'svcpart'} = $new->getfield('svcpart');
+  }
+
+  die $error if $error;
+}
 
 =head1 BUGS
 
