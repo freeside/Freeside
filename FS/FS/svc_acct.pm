@@ -227,14 +227,6 @@ sub insert {
   $error = $self->check;
   return $error if $error;
 
-  #no, duplicate checking just got a whole lot more complicated
-  #(perhaps keep this check with a config option to turn on?)
-
-  #return gettext('username_in_use'). ": ". $self->username
-  #  if qsearchs( 'svc_acct', { 'username' => $self->username,
-  #                             'domsvc'   => $self->domsvc,
-  #                           } );
-
   if ( $self->svcnum && qsearchs('cust_svc',{'svcnum'=>$self->svcnum}) ) {
     my $cust_svc = qsearchs('cust_svc',{'svcnum'=>$self->svcnum});
     unless ( $cust_svc ) {
@@ -245,99 +237,11 @@ sub insert {
     $self->svcpart($cust_svc->svcpart);
   }
 
-  #new duplicate username/username@domain/uid checking
-
-  #this is Pg-specific.  what to do for mysql etc?
-  # ( mysql LOCK TABLES certainly isn't equivalent or useful here :/ )
-  warn "$me locking svc_acct table for duplicate search" if $DEBUG;
-  dbh->do("LOCK TABLE svc_acct IN SHARE ROW EXCLUSIVE MODE")
-    or die dbh->errstr;
-  warn "$me acquired svc_acct table lock for duplicate search" if $DEBUG;
-
-  my $part_svc = qsearchs('part_svc', { 'svcpart' => $self->svcpart } );
-  unless ( $part_svc ) {
+  my $error = $self->_check_duplicate;
+  if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
-    return 'unknown svcpart '. $self->svcpart;
+    return $error;
   }
-
-  my @dup_user = qsearch( 'svc_acct', { 'username' => $self->username } );
-  my @dup_userdomain = qsearch( 'svc_acct', { 'username' => $self->username,
-                                              'domsvc'   => $self->domsvc } );
-  my @dup_uid;
-  if ( $part_svc->part_svc_column('uid')->columnflag ne 'F'
-       && $self->username !~ /^(toor|(hyla)?fax)$/          ) {
-    @dup_uid = qsearch( 'svc_acct', { 'uid' => $self->uid } );
-  } else {
-    @dup_uid = ();
-  }
-
-  if ( @dup_user || @dup_userdomain || @dup_uid ) {
-    my $exports = FS::part_export::export_info('svc_acct');
-    my %conflict_user_svcpart;
-    my %conflict_userdomain_svcpart = ( $self->svcpart => 'SELF', );
-
-    foreach my $part_export ( $part_svc->part_export ) {
-
-      #this will catch to the same exact export
-      my @svcparts = map { $_->svcpart } $part_export->export_svc;
-
-      #this will catch to exports w/same exporthost+type ???
-      #my @other_part_export = qsearch('part_export', {
-      #  'machine'    => $part_export->machine,
-      #  'exporttype' => $part_export->exporttype,
-      #} );
-      #foreach my $other_part_export ( @other_part_export ) {
-      #  push @svcparts, map { $_->svcpart }
-      #    qsearch('export_svc', { 'exportnum' => $part_export->exportnum });
-      #}
-
-      #my $nodomain = $exports->{$part_export->exporttype}{'nodomain'};
-      #silly kludge to avoid uninitialized value errors
-      my $nodomain = exists( $exports->{$part_export->exporttype}{'nodomain'} )
-                     ? $exports->{$part_export->exporttype}{'nodomain'}
-                     : '';
-      if ( $nodomain =~ /^Y/i ) {
-        $conflict_user_svcpart{$_} = $part_export->exportnum
-          foreach @svcparts;
-      } else {
-        $conflict_userdomain_svcpart{$_} = $part_export->exportnum
-          foreach @svcparts;
-      }
-    }
-
-    foreach my $dup_user ( @dup_user ) {
-      my $dup_svcpart = $dup_user->cust_svc->svcpart;
-      if ( exists($conflict_user_svcpart{$dup_svcpart}) ) {
-        $dbh->rollback if $oldAutoCommit;
-        return "duplicate username: conflicts with svcnum ". $dup_user->svcnum.
-               " via exportnum ". $conflict_user_svcpart{$dup_svcpart};
-      }
-    }
-
-    foreach my $dup_userdomain ( @dup_userdomain ) {
-      my $dup_svcpart = $dup_userdomain->cust_svc->svcpart;
-      if ( exists($conflict_userdomain_svcpart{$dup_svcpart}) ) {
-        $dbh->rollback if $oldAutoCommit;
-        return "duplicate username\@domain: conflicts with svcnum ".
-               $dup_userdomain->svcnum. " via exportnum ".
-               $conflict_userdomain_svcpart{$dup_svcpart};
-      }
-    }
-
-    foreach my $dup_uid ( @dup_uid ) {
-      my $dup_svcpart = $dup_uid->cust_svc->svcpart;
-      if ( exists($conflict_user_svcpart{$dup_svcpart})
-           || exists($conflict_userdomain_svcpart{$dup_svcpart}) ) {
-        $dbh->rollback if $oldAutoCommit;
-        return "duplicate uid: conflicts with svcnum". $dup_uid->svcnum.
-               "via exportnum ". $conflict_user_svcpart{$dup_svcpart}
-                                 || $conflict_userdomain_svcpart{$dup_svcpart};
-      }
-    }
-
-  }
-
-  #see?  i told you it was more complicated
 
   my @jobnums;
   $error = $self->SUPER::insert(
@@ -617,6 +521,15 @@ sub replace {
       }
     }
 
+  }
+
+  if ( $old->username ne $new->username || $old->domsvc != $new->domsvc ) {
+    $new->svcpart( $new->cust_svc->svcpart ) unless $new->svcpart;
+    $error = $new->_check_duplicate;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
   }
 
   $error = $new->SUPER::replace($old);
@@ -906,6 +819,10 @@ sub check {
 
 =item _check_system
 
+Internal function to check the username against the list of system usernames
+from the I<system_usernames> configuration value.  Returns true if the username
+is listed on the system username list.
+
 =cut
 
 sub _check_system {
@@ -913,6 +830,124 @@ sub _check_system {
   scalar( grep { $self->username eq $_ || $self->email eq $_ }
                $conf->config('system_usernames')
         );
+}
+
+=item _check_duplicate
+
+Internal function to check for duplicates usernames, username@domain pairs and
+uids.
+
+If the I<global_unique-username> configuration value is set to B<username> or
+B<username@domain>, enforces global username or username@domain uniqueness.
+
+In all cases, check for duplicate uids and usernames or username@domain pairs
+per export and with identical I<svcpart> values.
+
+=cut
+
+sub _check_duplicate {
+  my $self = shift;
+
+  #this is Pg-specific.  what to do for mysql etc?
+  # ( mysql LOCK TABLES certainly isn't equivalent or useful here :/ )
+  warn "$me locking svc_acct table for duplicate search" if $DEBUG;
+  dbh->do("LOCK TABLE svc_acct IN SHARE ROW EXCLUSIVE MODE")
+    or die dbh->errstr;
+  warn "$me acquired svc_acct table lock for duplicate search" if $DEBUG;
+
+  my $svcpart = $self->svcpart;
+  my $part_svc = qsearchs('part_svc', { 'svcpart' => $svcpart } );
+  unless ( $part_svc ) {
+    return 'unknown svcpart '. $self->svcpart;
+  }
+
+  my $global_unique = $conf->config('global_unique-username');
+
+  my @dup_user = grep { $svcpart != $_->svcpart }
+                 qsearch( 'svc_acct', { 'username' => $self->username } );
+  return gettext('username_in_use')
+    if $global_unique eq 'username' && @dup_user;
+
+  my @dup_userdomain = grep { $svcpart != $_->svcpart }
+                       qsearch( 'svc_acct', { 'username' => $self->username,
+                                              'domsvc'   => $self->domsvc } );
+  return gettext('username_in_use')
+    if $global_unique eq 'username@domain' && @dup_userdomain;
+
+  my @dup_uid;
+  if ( $part_svc->part_svc_column('uid')->columnflag ne 'F'
+       && $self->username !~ /^(toor|(hyla)?fax)$/          ) {
+    @dup_uid = grep { $svcpart != $_->svcpart }
+               qsearch( 'svc_acct', { 'uid' => $self->uid } );
+  } else {
+    @dup_uid = ();
+  }
+
+  if ( @dup_user || @dup_userdomain || @dup_uid ) {
+    my $exports = FS::part_export::export_info('svc_acct');
+    my %conflict_user_svcpart;
+    my %conflict_userdomain_svcpart = ( $self->svcpart => 'SELF', );
+
+    foreach my $part_export ( $part_svc->part_export ) {
+
+      #this will catch to the same exact export
+      my @svcparts = map { $_->svcpart } $part_export->export_svc;
+
+      #this will catch to exports w/same exporthost+type ???
+      #my @other_part_export = qsearch('part_export', {
+      #  'machine'    => $part_export->machine,
+      #  'exporttype' => $part_export->exporttype,
+      #} );
+      #foreach my $other_part_export ( @other_part_export ) {
+      #  push @svcparts, map { $_->svcpart }
+      #    qsearch('export_svc', { 'exportnum' => $part_export->exportnum });
+      #}
+
+      #my $nodomain = $exports->{$part_export->exporttype}{'nodomain'};
+      #silly kludge to avoid uninitialized value errors
+      my $nodomain = exists( $exports->{$part_export->exporttype}{'nodomain'} )
+                     ? $exports->{$part_export->exporttype}{'nodomain'}
+                     : '';
+      if ( $nodomain =~ /^Y/i ) {
+        $conflict_user_svcpart{$_} = $part_export->exportnum
+          foreach @svcparts;
+      } else {
+        $conflict_userdomain_svcpart{$_} = $part_export->exportnum
+          foreach @svcparts;
+      }
+    }
+
+    foreach my $dup_user ( @dup_user ) {
+      my $dup_svcpart = $dup_user->cust_svc->svcpart;
+      if ( exists($conflict_user_svcpart{$dup_svcpart}) ) {
+        return "duplicate username: conflicts with svcnum ". $dup_user->svcnum.
+               " via exportnum ". $conflict_user_svcpart{$dup_svcpart};
+      }
+    }
+
+    foreach my $dup_userdomain ( @dup_userdomain ) {
+      my $dup_svcpart = $dup_userdomain->cust_svc->svcpart;
+      if ( exists($conflict_userdomain_svcpart{$dup_svcpart}) ) {
+        return "duplicate username\@domain: conflicts with svcnum ".
+               $dup_userdomain->svcnum. " via exportnum ".
+               $conflict_userdomain_svcpart{$dup_svcpart};
+      }
+    }
+
+    foreach my $dup_uid ( @dup_uid ) {
+      my $dup_svcpart = $dup_uid->cust_svc->svcpart;
+      if ( exists($conflict_user_svcpart{$dup_svcpart})
+           || exists($conflict_userdomain_svcpart{$dup_svcpart}) ) {
+        return "duplicate uid: conflicts with svcnum". $dup_uid->svcnum.
+               "via exportnum ". $conflict_user_svcpart{$dup_svcpart}
+                                 || $conflict_userdomain_svcpart{$dup_svcpart};
+      }
+    }
+
+  }
+
+  return '';
+
 }
 
 =item radius
