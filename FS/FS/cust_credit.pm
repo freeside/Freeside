@@ -122,14 +122,32 @@ sub check {
 
 =item cust_refund
 
-Returns all refunds (see L<FS::cust_refund>) for this credit.
+Depreciated.  See the cust_credit_refund method.
+
+#Returns all refunds (see L<FS::cust_refund>) for this credit.
 
 =cut
 
 sub cust_refund {
+  use Carp;
+  croak "FS::cust_credit->cust_pay depreciated; see ".
+        "FS::cust_credit->cust_credit_refund";
+  #my $self = shift;
+  #sort { $a->_date <=> $b->_date }
+  #  qsearch( 'cust_refund', { 'crednum' => $self->crednum } )
+  #;
+}
+
+=item cust_credit_refund
+
+Returns all refund applications (see L<FS::cust_credit_refund>) for this credit.
+
+=cut
+
+sub cust_credit_refund {
   my $self = shift;
   sort { $a->_date <=> $b->_date }
-    qsearch( 'cust_refund', { 'crednum' => $self->crednum } )
+    qsearch( 'cust_credit_refund', { 'crednum' => $self->crednum } )
   ;
 }
 
@@ -150,15 +168,15 @@ sub cust_credit_bill {
 =item credited
 
 Returns the amount of this credit that is still outstanding; which is
-amount minus all refunds (see L<FS::cust_refund>) and applications to
-invoices (see L<FS::cust_credit_bill>).
+amount minus all refund applications (see L<FS::cust_credit_refund>) and
+applications to invoices (see L<FS::cust_credit_bill>).
 
 =cut
 
 sub credited {
   my $self = shift;
   my $amount = $self->amount;
-  $amount -= $_->refund foreach ( $self->cust_refund );
+  $amount -= $_->amount foreach ( $self->cust_credit_refund );
   $amount -= $_->amount foreach ( $self->cust_credit_bill );
   sprintf( "%.2f", $amount );
 }
@@ -167,7 +185,7 @@ sub credited {
 
 =head1 VERSION
 
-$Id: cust_credit.pm,v 1.9 2001-09-01 21:52:19 jeff Exp $
+$Id: cust_credit.pm,v 1.11 2001-09-02 07:49:52 ivan Exp $
 
 =head1 BUGS
 
@@ -175,7 +193,8 @@ The delete method.
 
 =head1 SEE ALSO
 
-L<FS::Record>, L<FS::cust_refund>, L<FS::cust_bill>, schema.html from the base
+L<FS::Record>, L<FS::cust_credit_refund>, L<FS::cust_refund>,
+L<FS::cust_credit_bill> L<FS::cust_bill>, schema.html from the base
 documentation.
 
 =cut

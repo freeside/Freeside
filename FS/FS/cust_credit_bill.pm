@@ -5,7 +5,7 @@ use vars qw( @ISA );
 use FS::UID qw( getotaker );
 use FS::Record qw( qsearch qsearchs );
 use FS::cust_main;
-use FS::cust_refund;
+#use FS::cust_refund;
 use FS::cust_credit;
 use FS::cust_bill;
 
@@ -126,11 +126,22 @@ sub check {
   ''; #no error
 }
 
+=item sub cust_credit
+
+Returns the credit (see L<FS::cust_credit>)
+
+=cut
+
+sub cust_credit {
+  my $self = shift;
+  qsearchs( 'cust_credit', { 'crednum' => $self->crednum } );
+}
+
 =back
 
 =head1 VERSION
 
-$Id: cust_credit_bill.pm,v 1.2 2001-09-01 22:18:38 ivan Exp $
+$Id: cust_credit_bill.pm,v 1.3 2001-09-02 01:27:11 ivan Exp $
 
 =head1 BUGS
 

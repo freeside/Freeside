@@ -28,7 +28,7 @@ use FS::part_referral;
 use FS::cust_main_county;
 use FS::agent;
 use FS::cust_main_invoice;
-use FS::cust_credit_bill;
+#use FS::cust_credit_bill;
 use FS::prepay_credit;
 
 @ISA = qw( FS::Record );
@@ -956,6 +956,7 @@ sub collect {
 
     next unless $cust_bill->owed > 0;
 
+    # ??????????
     next if qsearchs( 'cust_pay_batch', { 'invnum' => $cust_bill->invnum } );
 
     warn "invnum ". $cust_bill->invnum. " (owed ". $cust_bill->owed. ", amount $amount, total_owed $total_owed)" if $Debug;
@@ -1450,7 +1451,7 @@ sub rebuild_fuzzyfiles {
 
 =head1 VERSION
 
-$Id: cust_main.pm,v 1.25 2001-09-01 22:28:51 jeff Exp $
+$Id: cust_main.pm,v 1.26 2001-09-02 01:27:11 ivan Exp $
 
 =head1 BUGS
 

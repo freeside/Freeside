@@ -3,7 +3,7 @@ package FS::cust_refund;
 use strict;
 use vars qw( @ISA );
 use Business::CreditCard;
-use FS::Record qw( qsearchs dbh );
+use FS::Record qw( dbh );
 use FS::UID qw(getotaker);
 use FS::cust_credit;
 use FS::cust_credit_refund;
@@ -189,7 +189,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: cust_refund.pm,v 1.4 2001-09-01 20:11:07 ivan Exp $
+$Id: cust_refund.pm,v 1.5 2001-09-02 01:27:11 ivan Exp $
 
 =head1 BUGS
 

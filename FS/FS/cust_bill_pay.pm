@@ -3,7 +3,8 @@ package cust_bill_pay;
 use strict;
 use vars qw( @ISA );
 use FS::Record qw( qsearch qsearchs dbh );
-#use FS::cust_bill
+use FS::cust_bill;
+use FS::cust_pay;
 
 @ISA = qw( FS::Record );
 
@@ -167,17 +168,29 @@ sub check {
   ''; #no error
 }
 
+=item cust_pay 
+
+Returns the payment (see L<FS::cust_pay>)
+
+=cut
+
+sub cust_pay {
+  my $self = shift;
+  qsearchs( 'cust_pay', { 'invnum' => $self->invnum } );
+}
+
 =back
 
 =head1 VERSION
 
-$Id: cust_bill_pay.pm,v 1.2 2001-09-01 21:55:06 jeff Exp $
+$Id: cust_bill_pay.pm,v 1.3 2001-09-02 01:27:11 ivan Exp $
 
 =head1 BUGS
 
 Delete and replace methods.
 
-cust_credit_bill isn't checked yet (uncomment around line 111)
+the checks for over-applied payments could be better done like the ones in
+cust_bill_credit
 
 =head1 SEE ALSO
 

@@ -204,34 +204,55 @@ sub cust_bill_pkg {
 
 =item cust_credit
 
-Returns a list consisting of the total previous credited (see
-L<FS::cust_credit>) and unapplied for this customer, followed by the previous
-outstanding credits (FS::cust_credit objects).
+Depreciated.  See the cust_credited method.
+
+ #Returns a list consisting of the total previous credited (see
+ #L<FS::cust_credit>) and unapplied for this customer, followed by the previous
+ #outstanding credits (FS::cust_credit objects).
 
 =cut
 
 sub cust_credit {
-  my $self = shift;
-  my $total = 0;
-  my @cust_credit = sort { $a->_date <=> $b->_date }
-    grep { $_->credited != 0 && $_->_date < $self->_date }
-      qsearch('cust_credit', { 'custnum' => $self->custnum } )
-  ;
-  foreach (@cust_credit) { $total += $_->credited; }
-  $total, @cust_credit;
+  use Carp;
+  croak "FS::cust_bill->cust_credit depreciated; see ".
+        "FS::cust_bill->cust_credit_bill";
+  #my $self = shift;
+  #my $total = 0;
+  #my @cust_credit = sort { $a->_date <=> $b->_date }
+  #  grep { $_->credited != 0 && $_->_date < $self->_date }
+  #    qsearch('cust_credit', { 'custnum' => $self->custnum } )
+  #;
+  #foreach (@cust_credit) { $total += $_->credited; }
+  #$total, @cust_credit;
 }
 
 =item cust_pay
 
-Returns all payments (see L<FS::cust_pay>) for this invoice.
+Depreciated.  See the cust_bill_pay method.
+
+#Returns all payments (see L<FS::cust_pay>) for this invoice.
 
 =cut
 
 sub cust_pay {
+  use Carp;
+  croak "FS::cust_bill->cust_pay depreciated; see FS::cust_bill->cust_bill_pay";
+  #my $self = shift;
+  #sort { $a->_date <=> $b->_date }
+  #  qsearch( 'cust_pay', { 'invnum' => $self->invnum } )
+  #;
+}
+
+=item cust_bill_pay
+
+Returns all payment applications (see L<FS::cust_bill_pay>) for this invoice.
+
+=cut
+
+sub cust_bill_pay {
   my $self = shift;
-  sort { $a->_date <=> $b->_date }
-    qsearch( 'cust_pay', { 'invnum' => $self->invnum } )
-  ;
+  sort { $a->_date <=> $b->date }
+    qsearch( 'cust_bill_pay', { 'invnum' => $self->invnum } );
 }
 
 =item cust_credited
@@ -265,15 +286,15 @@ sub tax {
 =item owed
 
 Returns the amount owed (still outstanding) on this invoice, which is charged
-minus all payments (see L<FS::cust_pay>) and applied credits
-(see L<FS::cust_credit_bill>).
+minus all payment applications (see L<FS::cust_bill_pay>) and credit
+applications (see L<FS::cust_credit_bill>).
 
 =cut
 
 sub owed {
   my $self = shift;
   my $balance = $self->charged;
-  $balance -= $_->paid foreach ( $self->cust_pay );
+  $balance -= $_->amount foreach ( $self->cust_bill_pay );
   $balance -= $_->amount foreach ( $self->cust_credited );
   $balance = sprintf( "%.2f", $balance);
 }
@@ -299,10 +320,9 @@ sub print_text {
     unless $cust_main->payname;
 
   my( $pr_total, @pr_cust_bill ) = $self->previous; #previous balance
-  my( $cr_total, @cr_cust_credit ) = $self->cust_credit; #credits
-  my $balance_due = $self->owed + $pr_total - $cr_total;
-
-  #
+#  my( $cr_total, @cr_cust_credit ) = $self->cust_credit; #credits
+  #my $balance_due = $self->owed + $pr_total - $cr_total;
+  my $balance_due = $self->owed + $pr_total;
 
   #my @collect = ();
   #my($description,$amount);
@@ -366,22 +386,28 @@ sub print_text {
 
   #credits
   foreach ( $self->cust_credited ) {
+
+    #something more elaborate if $_->amount ne $_->cust_credit->credited ?
+
     push @buf,[
-      "Credit #". $_->crednum. " (" . time2str("%x",$_->_date) .")",
+      "Credit #". $_->crednum. " (". time2str("%x",$_->cust_credit->_date) .")",
       $money_char. sprintf("%10.2f",$_->amount)
     ];
   }
-  foreach ( @cr_cust_credit ) {
-    push @buf,[
-      "Credit #". $_->crednum. " (" . time2str("%x",$_->_date) .")",
-      $money_char. sprintf("%10.2f",$_->credited)
-    ];
-  }
+  #foreach ( @cr_cust_credit ) {
+  #  push @buf,[
+  #    "Credit #". $_->crednum. " (" . time2str("%x",$_->_date) .")",
+  #    $money_char. sprintf("%10.2f",$_->credited)
+  #  ];
+  #}
 
   #get & print payments
-  foreach ( $self->cust_pay ) {
+  foreach ( $self->cust_bill_pay ) {
+
+    #something more elaborate if $_->amount ne ->cust_pay->paid ?
+
     push @buf,[
-      "Payment received ". time2str("%x",$_->_date ),
+      "Payment received ". time2str("%x",$_->cust_pay->_date ),
       $money_char. sprintf("%10.2f",$_->paid )
     ];
   }
@@ -389,7 +415,7 @@ sub print_text {
   #balance due
   push @buf,['','-----------'];
   push @buf,['Balance Due', $money_char. 
-    sprintf("%10.2f",$self->owed + $pr_total - $cr_total ) ];
+    sprintf("%10.2f", $balance_due ) ];
 
   #setup template variables
   
@@ -463,7 +489,7 @@ sub print_text {
 
 =head1 VERSION
 
-$Id: cust_bill.pm,v 1.9 2001-09-01 21:52:19 jeff Exp $
+$Id: cust_bill.pm,v 1.10 2001-09-02 01:27:10 ivan Exp $
 
 =head1 BUGS
 
@@ -477,8 +503,9 @@ or something similar so the look can be completely customized?)
 
 =head1 SEE ALSO
 
-L<FS::Record>, L<FS::cust_main>, L<FS::cust_pay>, L<FS::cust_bill_pkg>,
-L<FS::cust_credit>, schema.html from the base documentation.
+L<FS::Record>, L<FS::cust_main>, L<FS::cust_bill_pay>, L<FS:;cust_pay>,
+L<FS::cust_bill_pkg>, L<FS::cust_bill_credit>, schema.html from the base
+documentation.
 
 =cut
 

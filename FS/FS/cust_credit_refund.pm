@@ -4,7 +4,8 @@ use strict;
 use vars qw( @ISA );
 use FS::Record qw( qsearch qsearchs dbh );
 #use FS::UID qw(getotaker);
-#use FS::cust_credit
+use FS::cust_credit;
+use FS::cust_refund;
 
 @ISA = qw( FS::Record );
 
@@ -154,15 +155,29 @@ sub check {
   ''; #no error
 }
 
+=item cust_refund
+
+Returns the refund (see L<FS::cust_refund>)
+
+=cut
+
+sub cust_refund {
+  my $self = shift;
+  qsearchs( 'cust_refund', { 'refundnum' => $self->refundnum } );
+}
+
 =back
 
 =head1 VERSION
 
-$Id: cust_credit_refund.pm,v 1.1 2001-09-01 20:11:07 ivan Exp $
+$Id: cust_credit_refund.pm,v 1.2 2001-09-02 01:27:11 ivan Exp $
 
 =head1 BUGS
 
 Delete and replace methods.
+
+the checks for over-applied refunds could be better done like the ones in
+cust_bill_credit
 
 =head1 SEE ALSO
 
