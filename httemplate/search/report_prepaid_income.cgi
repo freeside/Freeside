@@ -35,6 +35,8 @@
 
   }
 
+  my @mon = qw(Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec);
+
 %>
 
 <%= header('Prepaid Income Report', menubar( 'Main Menu'=>$p, ) ) %>
@@ -52,8 +54,10 @@
     for my $mon ( ( $subseq++ ? 1 : $now_mon ) .. 12 ) {
       if ( $prepaid{"$year-$mon"} ) {
         $total += $prepaid{"$year-$mon"};
-        %> <TR><TD><%= "$year-$mon" %></TD>
-               <TD><%= sprintf("%.2f", $prepaid{"$year-$mon"} ) %></TD>
+        %> <TR><TD><%= $mon[$mon-1]. ' '. $year %></TD>
+               <TD ALIGN="right">
+                 <%= sprintf("%.2f", $prepaid{"$year-$mon"} ) %>
+               </TD>
            </TR>
         <%
       }
@@ -62,7 +66,7 @@
   }
 
 %>
-<TR><TH>Total</TH><TD><%= sprintf("%.2f", $total) %></TD></TR>
+<TR><TH>Total</TH><TD ALIGN="right"><%= sprintf("%.2f", $total) %></TD></TR>
 </TABLE>
 </BODY>
 </HTML>
