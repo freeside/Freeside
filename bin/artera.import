@@ -47,7 +47,7 @@ while (<>) {
   #  warn "can't find domain $domain\n";
   }
 
-  my $exist = qsearchs('svc_external', { 'id' => $serial } );
+  my $exist = qsearchs('svc_external', { 'title' => $keycode } );
   next if $exist;
 
   my $svc_external = new FS::svc_external { 
@@ -59,10 +59,11 @@ while (<>) {
   #my $error = $svc_external->check;
   my $error = $svc_external->insert;
   if ( $cust_svc && $error =~ /^Already/ ) {
+    warn $error;
     $svc_external->pkgnum('');
     $error = $svc_external->insert;
   }
-  die $error if $error;
+  warn $error if $error;
 
   $num++;
   $linked++ if $cust_svc;
