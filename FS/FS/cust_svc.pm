@@ -14,6 +14,17 @@ use FS::svc_forward;
 
 @ISA = qw( FS::Record );
 
+sub _cache {
+  my $self = shift;
+  my ( $hashref, $cache ) = @_;
+  if ( $hashref->{'username'} ) {
+    $self->{'_svc_acct'} = FS::svc_acct->new($hashref, '');
+  }
+  if ( $hashref->{'svc'} ) {
+    $self->{'_svcpart'} = FS::part_svc->new($hashref);
+  }
+}
+
 =head1 NAME
 
 FS::cust_svc - Object method for cust_svc objects
@@ -109,6 +120,20 @@ sub check {
   ''; #no error
 }
 
+=item part_svc
+
+Returns the definition for this service, as a FS::part_svc object (see
+L<FS::part_svc>).
+
+=cut
+
+sub part_svc {
+  my $self = shift;
+  $self->{'_svcpart'}
+    ? $self->{'_svcpart'}
+    : qsearchs( 'part_svc', { 'svcpart' => $self->svcpart } );
+}
+
 =item label
 
 Returns a list consisting of:
@@ -120,11 +145,14 @@ Returns a list consisting of:
 
 sub label {
   my $self = shift;
-  my $part_svc = qsearchs( 'part_svc', { 'svcpart' => $self->svcpart } );
-  my $svcdb = $part_svc->svcdb;
-  my $svc_x = qsearchs( $svcdb, { 'svcnum' => $self->svcnum } )
-    or die "can't find $svcdb.svcnum ". $self->svcnum;
-  my $svc = $part_svc->svc;
+  my $svcdb = $self->part_svc->svcdb;
+  my $svc_x;
+  if ( $svcdb eq 'svc_acct' && $self->{'_svc_acct'} ) {
+    $svc_x = $self->{'_svc_acct'};
+  } else {
+    $svc_x = qsearchs( $svcdb, { 'svcnum' => $self->svcnum } )
+      or die "can't find $svcdb.svcnum ". $self->svcnum;
+  }
   my $tag;
   if ( $svcdb eq 'svc_acct' ) {
     $tag = $svc_x->email;
@@ -148,14 +176,14 @@ sub label {
     cluck "warning: asked for label of unsupported svcdb; using svcnum";
     $tag = $svc_x->getfield('svcnum');
   }
-  $svc, $tag, $svcdb;
+  $self->part_svc->svc, $tag, $svcdb;
 }
 
 =back
 
 =head1 VERSION
 
-$Id: cust_svc.pm,v 1.5 2001-09-03 22:07:38 ivan Exp $
+$Id: cust_svc.pm,v 1.6 2001-11-03 17:49:52 ivan Exp $
 
 =head1 BUGS
 

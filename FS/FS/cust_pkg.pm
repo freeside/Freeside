@@ -20,6 +20,27 @@ use FS::svc_www;
 
 @ISA = qw( FS::Record );
 
+sub _cache {
+  my $self = shift;
+  my ( $hashref, $cache ) = @_;
+  #if ( $hashref->{'pkgpart'} ) {
+  if ( $hashref->{'pkg'} ) {
+    # #@{ $self->{'_pkgnum'} } = ();
+    # my $subcache = $cache->subcache('pkgpart', 'part_pkg');
+    # $self->{'_pkgpart'} = $subcache;
+    # #push @{ $self->{'_pkgnum'} },
+    #   FS::part_pkg->new_or_cached($hashref, $subcache);
+    $self->{'_pkgpart'} = FS::part_pkg->new($hashref);
+  }
+  if ( exists $hashref->{'svcnum'} ) {
+    #@{ $self->{'_pkgnum'} } = ();
+    my $subcache = $cache->subcache('svcnum', 'cust_svc', $hashref->{pkgnum});
+    $self->{'_svcnum'} = $subcache;
+    #push @{ $self->{'_pkgnum'} },
+    FS::cust_svc->new_or_cached($hashref, $subcache) if $hashref->{svcnum};
+  }
+}
+
 =head1 NAME
 
 FS::cust_pkg - Object methods for cust_pkg objects
@@ -420,7 +441,26 @@ L<FS::part_pkg>).
 
 sub part_pkg {
   my $self = shift;
-  qsearchs( 'part_pkg', { 'pkgpart' => $self->pkgpart } );
+  #exists( $self->{'_pkgpart'} )
+  $self->{'_pkgpart'}
+    ? $self->{'_pkgpart'}
+    : qsearchs( 'part_pkg', { 'pkgpart' => $self->pkgpart } );
+}
+
+=item cust_svc
+
+Returns the services for this package, as FS::cust_svc objects (see
+L<FS::cust_svc>)
+
+=cut
+
+sub cust_svc {
+  my $self = shift;
+  if ( $self->{'_svcnum'} ) {
+    values %{ $self->{'_svcnum'}->cache };
+  } else {
+    qsearch ( 'cust_svc', { 'pkgnum' => $self->pkgnum } );
+  }
 }
 
 =item labels
@@ -432,7 +472,7 @@ Returns a list of lists, calling the label method for all services
 
 sub labels {
   my $self = shift;
-  map { [ $_->label ] } qsearch ( 'cust_svc', { 'pkgnum' => $self->pkgnum } );
+  map { [ $_->label ] } $self->cust_svc;
 }
 
 =item cust_main
@@ -589,7 +629,7 @@ sub order {
 
 =head1 VERSION
 
-$Id: cust_pkg.pm,v 1.12 2001-10-22 08:29:42 ivan Exp $
+$Id: cust_pkg.pm,v 1.13 2001-11-03 17:49:52 ivan Exp $
 
 =head1 BUGS
 

@@ -9,9 +9,10 @@ use File::CounterFile;
 use Locale::Country;
 use DBIx::DBSchema 0.19;
 use FS::UID qw(dbh checkruid getotaker datasrc driver_name);
+use FS::SearchCache;
 
 @ISA = qw(Exporter);
-@EXPORT_OK = qw(dbh fields hfields qsearch qsearchs dbdef);
+@EXPORT_OK = qw(dbh fields hfields qsearch qsearchs dbdef jsearch);
 
 $DEBUG = 0;
 
@@ -135,7 +136,29 @@ sub new {
     }
   }
 
+  $self->_cache($hashref, shift) if $self->can('_cache') && @_;
+
   $self;
+}
+
+sub new_or_cached {
+  my $proto = shift;
+  my $class = ref($proto) || $proto;
+  my $self = {};
+  bless ($self, $class);
+
+  $self->{'Table'} = shift unless defined ( $self->table );
+
+  my $hashref = $self->{'Hash'} = shift;
+  my $cache = shift;
+  if ( defined( $cache->cache->{$hashref->{$cache->key}} ) ) {
+    my $obj = $cache->cache->{$hashref->{$cache->key}};
+    $obj->_cache($hashref, $cache) if $obj->can('_cache');
+    $obj;
+  } else {
+    $cache->cache->{$hashref->{$cache->key}} = $self->new($hashref, $cache);
+  }
+
 }
 
 sub create {
@@ -170,15 +193,19 @@ objects.
 =cut
 
 sub qsearch {
-  my($table, $record, $select, $extra_sql ) = @_;
-  $table =~ /^([\w\_]+)$/ or die "Illegal table: $table";
-  $table = $1;
+  my($stable, $record, $select, $extra_sql, $cache ) = @_;
+  #$stable =~ /^([\w\_]+)$/ or die "Illegal table: $table";
+  #for jsearch
+  $stable =~ /^([\w\s\(\)\.\,\=]+)$/ or die "Illegal table: $stable";
+  $stable = $1;
   $select ||= '*';
   my $dbh = dbh;
 
+  my $table = $cache ? $cache->table : $stable;
+
   my @fields = grep exists($record->{$_}), fields($table);
 
-  my $statement = "SELECT $select FROM $table";
+  my $statement = "SELECT $select FROM $stable";
   if ( @fields ) {
     $statement .= ' WHERE '. join(' AND ', map {
       if ( ! defined( $record->{$_} ) || $record->{$_} eq '' ) {
@@ -206,9 +233,15 @@ sub qsearch {
   if ( eval 'scalar(@FS::'. $table. '::ISA);' ) {
     if ( eval 'FS::'. $table. '->can(\'new\')' eq \&new ) {
       #derivied class didn't override new method, so this optimization is safe
-      map {
-        new( "FS::$table", { %{$_} } )
-      } @{$sth->fetchall_arrayref( {} )};
+      if ( $cache ) {
+        map {
+          new_or_cached( "FS::$table", { %{$_} }, $cache )
+        } @{$sth->fetchall_arrayref( {} )};
+      } else {
+        map {
+          new( "FS::$table", { %{$_} } )
+        } @{$sth->fetchall_arrayref( {} )};
+      }
     } else {
       warn "untested code (class FS::$table uses custom new method)";
       map {
@@ -222,6 +255,25 @@ sub qsearch {
     } @{$sth->fetchall_arrayref( {} )};
   }
 
+}
+
+=item jsearch
+
+Experimental JOINed search method.  Using this method, you can execute a
+single SELECT spanning multiple tables, and cache the results for subsequent
+method calls.  Interface will almost definately change in an incompatible
+fashion.
+
+=cut
+
+sub jsearch {
+  my($table, $record, $select, $extra_sql, $ptable, $pkey ) = @_;
+  my $cache = FS::SearchCache->new( $ptable, $pkey );
+  my %saw;
+  ( $cache,
+    grep { !$saw{$_->getfield($pkey)}++ }
+      qsearch($table, $record, $select, $extra_sql, $cache )
+  );
 }
 
 =item qsearchs TABLE, HASHREF
@@ -312,16 +364,30 @@ $record->column('value') is a synonym for $record->set('column','value');
 
 =cut
 
+# readable/safe
+#sub AUTOLOAD {
+#  my($self,$value)=@_;
+#  my($field)=$AUTOLOAD;
+#  $field =~ s/.*://;
+#  if ( defined($value) ) {
+#    confess "errant AUTOLOAD $field for $self (arg $value)"
+#      unless $self->can('setfield');
+#    $self->setfield($field,$value);
+#  } else {
+#    confess "errant AUTOLOAD $field for $self (no args)"
+#      unless $self->can('getfield');
+#    $self->getfield($field);
+#  }    
+#}
+
+# efficient
 sub AUTOLOAD {
-  my($self,$value)=@_;
-  my($field)=$AUTOLOAD;
+  my $field = $AUTOLOAD;
   $field =~ s/.*://;
-  if ( defined($value) ) {
-    confess "errant AUTOLOAD $field for $self (arg $value)"
-      unless $self->can('setfield');
-    $self->setfield($field,$value);
+  if ( scalar(@_) == 2 ) {
+    $_[0]->setfield($field, $_[1]);
   } else {
-    $self->getfield($field);
+    $_[0]->getfield($field);
   }    
 }
 
@@ -991,10 +1057,6 @@ sub DESTROY { return; }
 #         }
 
 =back
-
-=head1 VERSION
-
-$Id: Record.pm,v 1.31 2001-11-02 05:11:52 ivan Exp $
 
 =head1 BUGS
 

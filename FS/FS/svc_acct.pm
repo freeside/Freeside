@@ -85,6 +85,18 @@ $FS::UID::callback{'FS::svc_acct'} = sub {
 
 #not needed in 5.004 #srand($$|time);
 
+sub _cache {
+  my $self = shift;
+  my ( $hashref, $cache ) = @_;
+  if ( $hashref->{'svc_acct_svcnum'} ) {
+    $self->{'_domsvc'} = FS::svc_domain->new( {
+      'svcnum'   => $hashref->{'domsvc'},
+      'domain'   => $hashref->{'svc_acct_domain'},
+      'catchall' => $hashref->{'svc_acct_catchall'},
+    } );
+  }
+}
+
 =head1 NAME
 
 FS::svc_acct - Object methods for svc_acct records
@@ -880,12 +892,27 @@ Returns the domain associated with this account.
 sub domain {
   my $self = shift;
   if ( $self->domsvc ) {
-    my $svc_domain = qsearchs( 'svc_domain', { 'svcnum' => $self->domsvc } )
+    #$self->svc_domain->domain;
+    my $svc_domain = $self->svc_domain
       or die "no svc_domain.svcnum for svc_acct.domsvc ". $self->domsvc;
     $svc_domain->domain;
   } else {
     $mydomain or die "svc_acct.domsvc is null and no legacy domain config file";
   }
+}
+
+=item svc_domain
+
+Returns the FS::svc_domain record for this account's domain (see
+L<FS::svc_domain).
+
+=cut
+
+sub svc_domain {
+  my $self = shift;
+  $self->{'_domsvc'}
+    ? $self->{'_domsvc'}
+    : qsearchs( 'svc_domain', { 'svcnum' => $self->domsvc } );
 }
 
 =item email
@@ -931,7 +958,7 @@ sub ssh {
 
 =head1 VERSION
 
-$Id: svc_acct.pm,v 1.52 2001-10-24 15:29:30 ivan Exp $
+$Id: svc_acct.pm,v 1.53 2001-11-03 17:49:52 ivan Exp $
 
 =head1 BUGS
 

@@ -75,6 +75,18 @@ $FS::UID::callback{'FS::cust_main'} = sub {
   }
 };
 
+sub _cache {
+  my $self = shift;
+  my ( $hashref, $cache ) = @_;
+  if ( exists $hashref->{'pkgnum'} ) {
+#    #@{ $self->{'_pkgnum'} } = ();
+    my $subcache = $cache->subcache( 'pkgnum', 'cust_pkg', $hashref->{custnum});
+    $self->{'_pkgnum'} = $subcache;
+    #push @{ $self->{'_pkgnum'} },
+    FS::cust_pkg->new_or_cached($hashref, $subcache) if $hashref->{pkgnum};
+  }
+}
+
 =head1 NAME
 
 FS::cust_main - Object methods for cust_main records
@@ -701,7 +713,11 @@ Returns all packages (see L<FS::cust_pkg>) for this customer.
 
 sub all_pkgs {
   my $self = shift;
-  qsearch( 'cust_pkg', { 'custnum' => $self->custnum });
+  if ( $self->{'_pkgnum'} ) {
+    values %{ $self->{'_pkgnum'}->cache };
+  } else {
+    qsearch( 'cust_pkg', { 'custnum' => $self->custnum });
+  }
 }
 
 =item ncancelled_pkgs
@@ -712,16 +728,20 @@ Returns all non-cancelled packages (see L<FS::cust_pkg>) for this customer.
 
 sub ncancelled_pkgs {
   my $self = shift;
-  @{ [ # force list context
-    qsearch( 'cust_pkg', {
-      'custnum' => $self->custnum,
-      'cancel'  => '',
-    }),
-    qsearch( 'cust_pkg', {
-      'custnum' => $self->custnum,
-      'cancel'  => 0,
-    }),
-  ] };
+  if ( $self->{'_pkgnum'} ) {
+    grep { ! $_->getfield('cancel') } values %{ $self->{'_pkgnum'}->cache };
+  } else {
+    @{ [ # force list context
+      qsearch( 'cust_pkg', {
+        'custnum' => $self->custnum,
+        'cancel'  => '',
+      }),
+      qsearch( 'cust_pkg', {
+        'custnum' => $self->custnum,
+        'cancel'  => 0,
+      }),
+    ] };
+  }
 }
 
 =item suspended_pkgs
@@ -1855,7 +1875,7 @@ sub append_fuzzyfiles {
 
 =head1 VERSION
 
-$Id: cust_main.pm,v 1.44 2001-10-22 08:31:25 ivan Exp $
+$Id: cust_main.pm,v 1.45 2001-11-03 17:49:52 ivan Exp $
 
 =head1 BUGS
 

@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: cust_main.cgi,v 1.13 2001-11-01 00:16:24 ivan Exp $ -->
+#<!-- $Id: cust_main.cgi,v 1.14 2001-11-03 17:49:52 ivan Exp $ -->
 
 use strict;
 #use vars qw( $conf %ncancelled_pkgs %all_pkgs $cgi @cust_main $sortby );
@@ -9,7 +9,7 @@ use CGI::Carp qw(fatalsToBrowser);
 use IO::Handle;
 use String::Approx qw(amatch);
 use FS::UID qw(cgisuidsetup);
-use FS::Record qw(qsearch qsearchs dbdef);
+use FS::Record qw(qsearch qsearchs dbdef jsearch);
 use FS::CGI qw(header menubar eidiot popurl table);
 use FS::cust_main;
 use FS::cust_svc;
@@ -19,17 +19,59 @@ cgisuidsetup($cgi);
 
 $conf = new FS::Conf;
 
+my $cache;
+
+#my $monsterjoin = <<END;
+#cust_main left outer join (
+#  ( cust_pkg left outer join part_pkg using(pkgpart)
+#  ) left outer join (
+#    (
+#      (
+#        ( cust_svc left outer join part_svc using (svcpart)
+#        ) left outer join svc_acct using (svcnum)
+#      ) left outer join svc_domain using(svcnum)
+#    ) left outer join svc_forward using(svcnum)
+#  ) using (pkgnum)
+#) using (custnum)
+#END
+
+my $monsterjoin = <<END;
+cust_main left outer join (
+  ( cust_pkg left outer join part_pkg using(pkgpart)
+  ) left outer join (
+    (
+      (
+        ( cust_svc left outer join part_svc using (svcpart)
+        ) left outer join (
+          svc_acct left outer join (
+            select svcnum, domain, catchall from svc_domain
+            ) as svc_acct_domsvc (
+              svc_acct_svcnum, svc_acct_domain, svc_acct_catchall
+          ) on svc_acct.domsvc = svc_acct_domsvc.svc_acct_svcnum
+        ) using (svcnum)
+      ) left outer join svc_domain using(svcnum)
+    ) left outer join svc_forward using(svcnum)
+  ) using (pkgnum)
+) using (custnum)
+END
+
 if ( $cgi->param('browse') ) {
   my $query = $cgi->param('browse');
   if ( $query eq 'custnum' ) {
     $sortby=\*custnum_sort;
-    @cust_main=qsearch('cust_main',{});  
+#    @cust_main=qsearch('cust_main',{});  
+    ( $cache, @cust_main ) =
+      jsearch($monsterjoin, {}, '', '', 'cust_main', 'custnum' );  
   } elsif ( $query eq 'last' ) {
     $sortby=\*last_sort;
-    @cust_main=qsearch('cust_main',{});  
+#    @cust_main=qsearch('cust_main',{});  
+    ( $cache, @cust_main ) =
+      jsearch($monsterjoin, {}, '', '', 'cust_main', 'custnum' );  
   } elsif ( $query eq 'company' ) {
     $sortby=\*company_sort;
-    @cust_main=qsearch('cust_main',{});
+#    @cust_main=qsearch('cust_main',{});
+    ( $cache, @cust_main ) =
+      jsearch($monsterjoin, {}, '', '', 'cust_main', 'custnum' );  
   } else {
     die "unknown browse field $query";
   }
@@ -50,6 +92,7 @@ if ( $conf->exists('hidecancelledpackages' ) ) {
 } else {
   %all_pkgs = map { $_->custnum => [ $_->all_pkgs ] } @cust_main;
 }
+#%all_pkgs = ();
 
 if ( scalar(@cust_main) == 1 && ! $cgi->param('referral_custnum') ) {
   print $cgi->redirect(popurl(2). "view/cust_main.cgi?". $cust_main[0]->custnum);
@@ -58,7 +101,7 @@ if ( scalar(@cust_main) == 1 && ! $cgi->param('referral_custnum') ) {
   eidiot "No matching customers found!\n";
 } else { 
 
-  my($total)=scalar(@cust_main);
+  my $total = scalar(@cust_main);
   print header("Customer Search Results",menubar(
     'Main Menu', popurl(2)
   )), "$total matching customers found ";
@@ -128,6 +171,7 @@ print <<END;
 END
 
   my(%saw,$cust_main);
+  my $p = popurl(2);
   foreach $cust_main (
     sort $sortby grep(!$saw{$_->custnum}++, @cust_main)
   ) {
@@ -141,13 +185,14 @@ END
     my(@lol_cust_svc);
     my($rowspan)=0;#scalar( @{$all_pkgs{$custnum}} );
     foreach ( @{$all_pkgs{$custnum}} ) {
-      my(@cust_svc) = qsearch( 'cust_svc', { 'pkgnum' => $_->pkgnum } );
+      #my(@cust_svc) = qsearch( 'cust_svc', { 'pkgnum' => $_->pkgnum } );
+      my @cust_svc = $_->cust_svc;
       push @lol_cust_svc, \@cust_svc;
       $rowspan += scalar(@cust_svc) || 1;
     }
 
     #my($rowspan) = scalar(@{$all_pkgs{$custnum}});
-    my($view) = popurl(2). "view/cust_main.cgi?$custnum";
+    my $view = $p. 'view/cust_main.cgi?'. $custnum;
     print <<END;
     <TR>
       <TD ROWSPAN=$rowspan><A HREF="$view"><FONT SIZE=-1>$custnum</FONT></A></TD>
@@ -168,10 +213,13 @@ END
 
     my($n1)='';
     foreach ( @{$all_pkgs{$custnum}} ) {
-      my($pkgnum) = ($_->pkgnum);
-      my($pkg) = $_->part_pkg->pkg;
-      my $comment = $_->part_pkg->comment;
-      my($pkgview) = popurl(2). "/view/cust_pkg.cgi?$pkgnum";
+      my $pkgnum = $_->pkgnum;
+#      my $part_pkg = qsearchs( 'part_pkg', { pkgpart => $_->pkgpart } );
+      my $part_pkg = $_->part_pkg;
+
+      my $pkg = $part_pkg->pkg;
+      my $comment = $part_pkg->comment;
+      my $pkgview = $p. 'view/cust_pkg.cgi?'. $pkgnum;
       my @cust_svc = @{shift @lol_cust_svc};
       #my(@cust_svc) = qsearch( 'cust_svc', { 'pkgnum' => $_->pkgnum } );
       my $rowspan = scalar(@cust_svc) || 1;
@@ -181,7 +229,7 @@ END
       foreach my $cust_svc ( @cust_svc ) {
          my($label, $value, $svcdb) = $cust_svc->label;
          my($svcnum) = $cust_svc->svcnum;
-         my($sview) = popurl(2). "/view";
+         my($sview) = $p.'view';
          print $n2,qq!<TD><A HREF="$sview/$svcdb.cgi?$svcnum"><FONT SIZE=-1>$label</FONT></A></TD>!,
                qq!<TD><A HREF="$sview/$svcdb.cgi?$svcnum"><FONT SIZE=-1>$value</FONT></A></TD>!;
          $n2="</TR><TR>";

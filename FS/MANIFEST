@@ -14,6 +14,7 @@ FS/CGI.pm
 FS/Conf.pm
 FS/ConfItem.pm
 FS/Record.pm
+FS/SearchCache.pm
 FS/UI/Base.pm
 FS/UI/CGI.pm
 FS/UI/Gtk.pm
