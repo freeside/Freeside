@@ -141,7 +141,7 @@ sub check {
   my $part_svc = $x;
 
 
-  ''; #no error
+  $self->SUPER::check;
 }
 
 =back
