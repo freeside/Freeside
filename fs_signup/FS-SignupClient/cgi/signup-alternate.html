@@ -112,16 +112,23 @@ ENDOUT
       ;
 
       use HTML::Widgets::SelectLayers 0.02;
+      my @form_text = qw( magic ref ss agentnum
+                          last first company address1 address2
+                          city zip daytime night fax
+                          username _password _password2 sec_phrase );
+      my @form_select = qw( state ); #county country
+      if ( scalar(@$pops) == 0 or scalar(@$pops) == 1 ) {
+        push @form_text, 'popnum',
+      } else {
+        push @form_select, 'popnum',
+      }
       my $widget = new HTML::Widgets::SelectLayers(
         options => \%options,
         selected_layer => $pkgpart,
         form_name => 'dummy',
         form_action => $self_url,
-        form_text => [qw( magic ref ss agentnum
-                          last first company address1 address2
-                          city zip daytime night fax
-                          username _password _password2 sec_phrase )],
-        form_select => [qw( state popnum )], #county country
+        form_text => \@form_text,
+        form_select => \@form_select,
         layer_callback => sub {
           my $layer = shift;
           my $html = qq( <INPUT TYPE="hidden" NAME="pkgpart" VALUE="$layer">);
