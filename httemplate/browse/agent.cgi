@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: agent.cgi,v 1.3 2001-08-21 09:34:13 ivan Exp $ -->
+#<!-- $Id: agent.cgi,v 1.4 2001-09-04 14:44:06 ivan Exp $ -->
 
 use strict;
 use vars qw( $ui $cgi $p $agent );
@@ -70,8 +70,8 @@ END
 
 print <<END;
       <TR>
-        <TD COLSPAN=2><A HREF="${p}edit/agent.cgi"><I>Add new agent</I></A></TD>
-        <TD><A HREF="${p}edit/agent_type.cgi"><I>Add new agent type</I></A></TD>
+        <TD COLSPAN=2><A HREF="${p}edit/agent.cgi"><I>Add a new agent</I></A></TD>
+        <TD><A HREF="${p}edit/agent_type.cgi"><I>Add a new agent type</I></A></TD>
       </TR>
     </TABLE>
 

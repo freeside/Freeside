@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: cust_main.cgi,v 1.8 2001-09-03 22:07:39 ivan Exp $ -->
+#<!-- $Id: cust_main.cgi,v 1.9 2001-09-04 14:44:07 ivan Exp $ -->
 
 use strict;
 use vars qw ( $cgi $query $custnum $cust_main $hashref $agent $referral 
@@ -153,11 +153,11 @@ print '<TD VALIGN="top">';
 
   @agents = qsearch( 'agent', {} );
   unless ( scalar(@agents) == 1 ) {
-    $agent = qsearchs('agent',{
-      'agentnum' => $cust_main->agentnum
-    } );
+    $agent = qsearchs('agent',{ 'agentnum' => $cust_main->agentnum } );
     print '<TR><TD ALIGN="right">Agent</TD><TD BGCOLOR="#ffffff">',
         $agent->agentnum, ": ", $agent->agent, '</TD></TR>';
+  } else {
+    $agent = $agents[0];
   }
   @referrals = qsearch( 'part_referral', {} );
   unless ( scalar(@referrals) == 1 ) {
@@ -248,6 +248,21 @@ if ( defined $cust_main->dbdef_table->column('comments')
 }
 
 print '</TD></TR></TABLE>';
+
+print '<BR>'.
+  '<FORM ACTION="'.popurl(2).'edit/process/quick-cust_pkg.cgi" METHOD="POST">'.
+  qq!<INPUT TYPE="hidden" NAME="custnum" VALUE="$custnum">!.
+  '<SELECT NAME="pkgpart"><OPTION>';
+
+foreach my $type_pkgs ( qsearch('type_pkgs',{'typenum'=> $agent->typenum }) ) {
+  my $pkgpart = $type_pkgs->pkgpart;
+  my $part_pkg = qsearchs('part_pkg', { 'pkgpart' => $pkgpart } )
+    or do { warn "unknown type_pkgs.pkgpart $pkgpart"; next; };
+  print qq!<OPTION VALUE="$pkgpart">!. $part_pkg->pkg. ' - '.
+        $part_pkg->comment;
+}
+
+print '</SELECT><INPUT TYPE="submit" VALUE="Order Package"><BR>';
 
 print qq!<BR><A NAME="cust_pkg">Packages</A> !,
 #      qq!<BR>Click on package number to view/edit package.!,

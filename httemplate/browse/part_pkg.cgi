@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: part_pkg.cgi,v 1.3 2001-08-21 09:34:13 ivan Exp $ -->
+#<!-- $Id: part_pkg.cgi,v 1.4 2001-09-04 14:44:06 ivan Exp $ -->
 
 use strict;
 use vars qw( $cgi $p $part_pkg );
@@ -18,7 +18,7 @@ $cgi = new CGI;
 
 $p = popurl(2);
 
-print $cgi->header( '-expires' => 'now' ), header("Package Part Listing",menubar(
+print $cgi->header( '-expires' => 'now' ), header("Package Definition Listing",menubar(
   'Main Menu' => $p,
 )), "One or more services are grouped together into a package and given",
   " pricing information. Customers purchase packages, not services.<BR><BR>", 
@@ -69,7 +69,7 @@ END
 }
 
 print <<END;
-   <TR><TD COLSPAN=2><I><A HREF="${p}edit/part_pkg.cgi">Add new package</A></I></TD></TR>
+   <TR><TD COLSPAN=8><I><A HREF="${p}edit/part_pkg.cgi">Add a new package definition</A></I></TD></TR>
     </TABLE>
   </BODY>
 </HTML>

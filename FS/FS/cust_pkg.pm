@@ -428,7 +428,7 @@ sub labels {
 
 =over 4
 
-=item order CUSTNUM, PKGPARTS_ARYREF, [ REMOVE_PKGNUMS_ARYREF ]
+=item order CUSTNUM, PKGPARTS_ARYREF, [ REMOVE_PKGNUMS_ARYREF [ RETURN_CUST_PKG_ARRAYREF ] ]
 
 CUSTNUM is a customer (see L<FS::cust_main>)
 
@@ -439,12 +439,17 @@ permitted.
 REMOVE_PKGNUMS is an optional list of pkgnums specifying the billing items to
 remove for this customer.  The services (see L<FS::cust_svc>) are moved to the
 new billing items.  An error is returned if this is not possible (see
-L<FS::pkg_svc>).
+L<FS::pkg_svc>).  An empty arrayref is equivalent to not specifying this
+parameter.
+
+RETURN_CUST_PKG_ARRAYREF, if specified, will be filled in with the
+newly-created cust_pkg objects.
 
 =cut
 
 sub order {
-  my($custnum,$pkgparts,$remove_pkgnums)=@_;
+  my($custnum, $pkgparts, $remove_pkgnums, $return_cust_pkg) = @_;
+  $remove_pkgnums = [] unless defined($remove_pkgnums);
 
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
@@ -511,7 +516,7 @@ sub order {
     my($old) = qsearchs('cust_pkg',{'pkgnum'=>$pkgnum});
     unless ( $old ) {
       $dbh->rollback if $oldAutoCommit;
-      die "Package $pkgnum not found to remove!";
+      return "Package $pkgnum not found to remove!";
     }
     my(%hash) = $old->hash;
     $hash{'cancel'}=time;   
@@ -519,7 +524,7 @@ sub order {
     my($error)=$new->replace($old);
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
-      die "Couldn't update package $pkgnum: $error";
+      return "Couldn't update package $pkgnum: $error";
     }
   }
 
@@ -527,26 +532,26 @@ sub order {
 #  my($pkgpart);
   while ($pkgpart=shift @{$pkgparts} ) {
  
-    my($new) = new FS::cust_pkg ( {
-                                       'custnum' => $custnum,
-                                       'pkgpart' => $pkgpart,
-                                    } );
-    my($error) = $new->insert;
-   if ( $error ) {
+    my $new = new FS::cust_pkg {
+                                 'custnum' => $custnum,
+                                 'pkgpart' => $pkgpart,
+                               };
+    my $error = $new->insert;
+    if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
-      die "Couldn't insert new cust_pkg record: $error";
+      return "Couldn't insert new cust_pkg record: $error";
     }
-    my($pkgnum)=$new->getfield('pkgnum');
+    push @{$return_cust_pkg}, $new if $return_cust_pkg;
+    my $pkgnum = $new->pkgnum;
  
-    my($cust_svc);
-    foreach $cust_svc ( @{ shift @cust_svc } ) {
+    foreach my $cust_svc ( @{ shift @cust_svc } ) {
       my(%hash) = $cust_svc->hash;
       $hash{'pkgnum'}=$pkgnum;
       my($new) = new FS::cust_svc ( \%hash );
       my($error)=$new->replace($cust_svc);
-     if ( $error ) {
+      if ( $error ) {
         $dbh->rollback if $oldAutoCommit;
-        die "Couldn't link old service to new package: $error";
+        return "Couldn't link old service to new package: $error";
       }
     }
   }  
@@ -560,7 +565,7 @@ sub order {
 
 =head1 VERSION
 
-$Id: cust_pkg.pm,v 1.5 2001-04-09 23:05:15 ivan Exp $
+$Id: cust_pkg.pm,v 1.6 2001-09-04 14:44:06 ivan Exp $
 
 =head1 BUGS
 

@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: part_referral.cgi,v 1.3 2001-08-21 09:34:13 ivan Exp $ -->
+#<!-- $Id: part_referral.cgi,v 1.4 2001-09-04 14:44:06 ivan Exp $ -->
 
 use strict;
 use vars qw( $cgi $p $part_referral );
@@ -42,7 +42,7 @@ END
 
 print <<END;
       <TR>
-        <TD COLSPAN=2><A HREF="${p}edit/part_referral.cgi"><I>Add new referral</I></A></TD>
+        <TD COLSPAN=2><A HREF="${p}edit/part_referral.cgi"><I>Add a new referral</I></A></TD>
       </TR>
     </TABLE>
     </CENTER>

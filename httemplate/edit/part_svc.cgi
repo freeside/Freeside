@@ -1,4 +1,4 @@
-<!-- $Id: part_svc.cgi,v 1.5 2001-08-30 15:30:26 ivan Exp $ -->
+<!-- $Id: part_svc.cgi,v 1.6 2001-09-04 14:44:06 ivan Exp $ -->
 <% 
    my $part_svc;
    if ( $cgi->param('error') ) { #error
@@ -31,7 +31,7 @@ function visualize(what) {
 
 <%= header("$action Service Definition",
            menubar( 'Main Menu'         => $p,
-                    'View all services' => "${p}browse/part_svc.cgi"
+                    'View all service definitions' => "${p}browse/part_svc.cgi"
                   ),
            " onLoad=\"visualize()\""
            )
@@ -50,8 +50,8 @@ Service  <INPUT TYPE="text" NAME="svc" VALUE="<%= $hashref->{svc} %>">
 </PRE>
 Services are items you offer to your customers.
 <UL><LI>svc_acct - Shell accounts, POP mailboxes, SLIP/PPP and ISDN accounts
-    <LI>svc_domain - Virtual domains
-    <LI>svc_acct_sm - Virtual domain mail aliasing (*depreciated*)
+    <LI>svc_domain - Domains
+    <LI>svc_acct_sm - <B>depreciated</B> (use svc_forward for new installations) Virtual domain mail aliasing.
     <LI>svc_forward - mail forwarding
     <LI>svc_www - Virtual domain website
 <!--   <LI>svc_charge - One-time charges (Partially unimplemented)

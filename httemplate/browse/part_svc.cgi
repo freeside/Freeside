@@ -1,5 +1,5 @@
-<!-- $Id: part_svc.cgi,v 1.2 2001-08-11 23:18:30 ivan Exp $ -->
-<%= header('Service Part Listing', menubar( 'Main Menu' => $p) ) %>
+<!-- $Id: part_svc.cgi,v 1.3 2001-09-04 14:44:06 ivan Exp $ -->
+<%= header('Service Definition Listing', menubar( 'Main Menu' => $p) ) %>
 
     Services are items you offer to your customers.<BR><BR>
 <TABLE BORDER=1>
@@ -53,7 +53,7 @@
 <% } %>
 
   <TR>
-    <TD COLSPAN=2><A HREF="<%= $p %>edit/part_svc.cgi"><I>Add new service</I></A></TD>
+    <TD COLSPAN=6><A HREF="<%= $p %>edit/part_svc.cgi"><I>Add a new service definition</I></A></TD>
   </TR>
 </TABLE>
 </BODY>

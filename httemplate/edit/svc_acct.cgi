@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: svc_acct.cgi,v 1.5 2001-08-21 10:27:11 ivan Exp $ -->
+#<!-- $Id: svc_acct.cgi,v 1.6 2001-09-04 14:44:06 ivan Exp $ -->
 
 use strict;
 use vars qw( $conf $cgi @shells $action $svcnum $svc_acct $pkgnum $svcpart
@@ -118,10 +118,20 @@ END
 
 #domain
 $domsvc = $svc_acct->domsvc || 0;
-if ( $part_svc->svc_acct__domsvc_flag eq "F" ) {
+if ( $part_svc->svc_acct__domsvc_flag eq 'F' ) {
   print qq!<INPUT TYPE="hidden" NAME="domsvc" VALUE="$domsvc">!;
 } else { 
   my @svc_domain = ();
+  if ( $part_svc->svc_acct__domsvc_flag eq 'D' ) {
+    my $svc_domain =
+      qsearchs('svc_domain', { 'svcnum' => $part_svc->svc_acct__domsvc } );
+    if ( $svc_domain ) {
+      push @svc_domain, $svc_domain;
+    } else {
+      warn "unknown svc_domain.svcnum for part_svc.svc_acct__domsvc: ".
+           $part_svc->svc_acct__domsvc;
+    }
+  }
   my $cust_pkg = qsearchs('cust_pkg', { 'pkgnum' => $pkgnum } );
   if ($cust_pkg) {
     my @cust_svc =
