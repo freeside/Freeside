@@ -206,8 +206,7 @@ print '<BR>';
 
   if ( $cust_main->payby eq 'CARD' ) {
     my $payinfo = $cust_main->payinfo;
-    $payinfo = substr($payinfo,0,4). 'x'x(length($payinfo)-4);
-
+    $payinfo = 'x'x(length($payinfo)-4). substr($payinfo,(length($payinfo)-4));
     print 'Credit card</TD></TR>',
           '<TR><TD ALIGN="right">Card number</TD><TD BGCOLOR="#ffffff">',
           $payinfo, '</TD></TR>',
@@ -467,7 +466,7 @@ foreach my $bill (@bills) {
                                              $payment->payinfo,
                                              $cust_bill_pay->amount,
                       );
-    $payinfo = substr($payinfo,0,4). 'x'x(length($payinfo)-4)
+    $payinfo = 'x'x(length($payinfo)-4). substr($payinfo,(length($payinfo)-4));
       if $payby eq 'CARD';
     my $target = "$payby$payinfo";
     $payby =~ s/^BILL$/Check #/ if $payinfo;
