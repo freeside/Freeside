@@ -50,9 +50,9 @@ docs:
 install-docs: docs
 	[ -e ${FREESIDE_DOCUMENT_ROOT} ] && mv ${FREESIDE_DOCUMENT_ROOT} ${FREESIDE_DOCUMENT_ROOT}.`date +%Y%m%d%H%M%S` || true
 	cp -r ${TEMPLATE}docs ${FREESIDE_DOCUMENT_ROOT}
-	[ ${TEMPLATE} eq asp -a ! -e ${ASP_GLOBAL} ] && mkdir ${ASP_GLOBAL}
-	[ ${TEMPLATE} eq asp ] && chown -R freeside ${ASP_GLOBAL}
-	[ ${TEMPLATE} eq asp ] && cp htetc/global.asa ${ASP_GLOBAL}
+	[ "${TEMPLATE}" = "asp" -a ! -e ${ASP_GLOBAL} ] && mkdir ${ASP_GLOBAL}
+	[ "${TEMPLATE}" = "asp" ] && chown -R freeside ${ASP_GLOBAL}
+	[ "${TEMPLATE}" = "asp" ] && cp htetc/global.asa ${ASP_GLOBAL}
 
 perl-modules:
 	cd FS; \
