@@ -976,10 +976,10 @@ sub bill {
         $total_recur += $recur;
         $taxable_setup += $setup
           unless $part_pkg->dbdef_table->column('setuptax')
-                 || $part_pkg->setuptax =~ /^Y$/i;
+                 && $part_pkg->setuptax =~ /^Y$/i;
         $taxable_recur += $recur
           unless $part_pkg->dbdef_table->column('recurtax')
-                 || $part_pkg->recurtax =~ /^Y$/i;
+                 && $part_pkg->recurtax =~ /^Y$/i;
       }
     }
 
