@@ -100,8 +100,11 @@ If I<jobnum> is set to an array reference, the jobnums of any export jobs will
 be added to the referenced array.
 
 If I<child_objects> is set to an array reference of FS::tablename objects (for
-example, FS::acct_snarf objects), they will have their svcnum fieldsset and
-will be inserted after this record, but before any exports are run.
+example, FS::acct_snarf objects), they will have their svcnum field set and
+will be inserted after this record, but before any exports are run.  Each
+element of the array can also optionally be a two-element array reference
+containing the child object and the name of an alternate field to be filled in
+with the newly-inserted svcnum, for example C<[ $svc_forward, 'srcsvc' ]>
 
 If I<depend_jobnum> is set (to a scalar jobnum or an array reference of
 jobnums), all provisioning jobs will have a dependancy on the supplied
@@ -172,8 +175,15 @@ sub insert {
   }
 
   foreach my $object ( @$objects ) {
-    $object->svcnum($self->svcnum);
-    $error = $object->insert;
+    my($field, $obj);
+    if ( ref($object) eq 'ARRAY' ) {
+      ($obj, $field) = @$object;
+    } else {
+      $obj = $object;
+      $field = 'svcnum';
+    }
+    $obj->$field($self->svcnum);
+    $error = $obj->insert;
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return $error;

@@ -197,7 +197,10 @@ contain an arrayref of group names.  See L<FS::radius_usergroup>.
 The additional field I<child_objects> can optionally be defined; if so it
 should contain an arrayref of FS::tablename objects.  They will have their
 svcnum fields set and will be inserted after this record, but before any
-exports are run.
+exports are run.  Each element of the array can also optionally be a
+two-element array reference containing the child object and the name of an
+alternate field to be filled in with the newly-inserted svcnum, for example
+C<[ $svc_forward, 'srcsvc' ]>
 
 Currently available options are: I<depend_jobnum>
 
