@@ -10,7 +10,7 @@ Before installing, you need:
   <li><a href="http://perl.apache.org/">mod_perl</a> (if compiling your own mod_perl, make sure you set the <a href="http://perl.apache.org/guide/install.html#EVERYTHING">EVERYTHING</a>=1 compile-time option)
   <li><a href="http://www.openssh.com/">SSH</a> (<a href="http://www.openssh.com//">OpenSSH</a> is recommended.  SSH Communications Security <a href="http://www.ssh.com/products/ssh/download.cfm">commercial SSH version 3</a> has been reported incompatible with Freeside.)
   <li><a href="http://rsync.samba.org/">rsync</a>
-  <li>A <b>transactional</b> database engine supported by Perl's <a href="http://www.hermetica.com/technologia/DBI/">DBI</a>.
+  <li>A <b>transactional</b> database engine <a href="http://search.cpan.org/search?mode=module&query=DBD%3A%3A">supported</a> by Perl's <a href="http://dbi.perl.org">DBI</a>.
     <ul>
       <li><a href="http://www.postgresql.org/">PostgreSQL</a> (v7 or higher) is recommended.
        <li>MySQL has been reported to work.
@@ -77,7 +77,7 @@ mysql> GRANT SELECT,INSERT,UPDATE,DELETE,INDEX,ALTER,CREATE,DROP on freeside.* T
 <!--  <li>Unpack the tarball: <pre>gunzip -c fs-x.y.z.tar.gz | tar xvf -</pre>-->
   <li>Edit the top-level Makefile:
     <ul>
-      <li>Set <tt>DATASOURCE</tt> to your <a href="http://search.cpan.org/doc/TIMB/DBI-1.20/DBI.pm">DBI data source</a>, for example, <tt>DBI:Pg:host=localhost;dbname=freeside</tt> for PostgresSQL or <tt>DBI:mysql:freeside</tt> for MySQL.  See the <a href="http://search.cpan.org/doc/TIMB/DBI-1.20/DBI.pm">DBI manpage</a> and the <a href="http://search.cpan.org/search?mode=module&query=DBD">manpage for your DBD</a> for the exact syntax of a DBI data source.
+      <li>Set <tt>DATASOURCE</tt> to your <a href="http://search.cpan.org/doc/TIMB/DBI-1.28/DBI.pm">DBI data source</a>, for example, <tt>DBI:Pg:host=localhost;dbname=freeside</tt> for PostgresSQL or <tt>DBI:mysql:freeside</tt> for MySQL.  See the <a href="http://search.cpan.org/doc/TIMB/DBI-1.28/DBI.pm">DBI manpage</a> and the <a href="http://search.cpan.org/search?mode=module&query=DBD%3A%3A">manpage for your DBD</a> for the exact syntax of your DBI data source.
       <li>Set <tt>DB_PASSWORD</tt> to the freeside database user's password.
     </ul>
   <li>Add the freeside database to your database engine:
