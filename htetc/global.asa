@@ -47,6 +47,10 @@ use FS::svc_www;
 use FS::type_pkgs;
 
 sub Script_OnStart {
+  $Response->AddHeader('Pragma' => 'no-cache');
+  $Response->AddHeader('Cache-control' => 'no-cache');
+  $Response->AddHeader('Expires' => 0);
+
   $cgi = new CGI;
   &cgisuidsetup($cgi);
   $p = popurl(2);

@@ -109,7 +109,10 @@ sub handler
     $r->content_type('text/html');
     #eorar
 
-    # @FS::CGI::headers or some other way to set no-cache headers!!!
+    my $headers = $r->headers_out;
+    $headers->{'Pragma'} = $headers->{'Cache-control'} = 'no-cache';
+    #$r->no_cache(1);
+    $headers->{'Expires'} = '0';
     
     my $status = $ah->handle_request($r);
     

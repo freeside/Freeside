@@ -12,10 +12,6 @@ use FS::UID;
 @EXPORT_OK = qw(header menubar idiot eidiot popurl table itable ntable
                 small_custview);
 
-@header = ( '-Expires' => '-1',
-            '-Pragma' => 'no-cache',
-            '-Cache-Control' => 'no-cache' );
-
 =head1 NAME
 
 FS::CGI - Subroutines for the web interface
@@ -58,6 +54,9 @@ sub header {
         <TITLE>
           $title
         </TITLE>
+        <META HTTP-Equiv="Cache-Control" Content="no-cache">
+        <META HTTP-Equiv="Pragma" Content="no-cache">
+        <META HTTP-Equiv="Expires" Content="0"> 
       </HEAD>
       <BODY BGCOLOR="#e8e8e8"$etc>
           <FONT SIZE=7>
@@ -88,24 +87,27 @@ sub menubar { #$menubar=menubar('Main Menu', '../', 'Item', 'url', ... );
 
 This is depriciated.  Don't use it.
 
-Sends headers and an HTML error message.
+Sends an HTML error message.
 
 =cut
 
 sub idiot {
   #warn "idiot depriciated";
   my($error)=@_;
-  my $cgi = &FS::UID::cgi();
+#  my $cgi = &FS::UID::cgi();
 #  if ( $cgi->isa('CGI::Base') ) {
 #    no strict 'subs';
 #    &CGI::Base::SendHeaders;
 #  } else {
-    print $cgi->header( @FS::CGI::header );
+#    print $cgi->header( @FS::CGI::header );
 #  }
   print <<END;
 <HTML>
   <HEAD>
     <TITLE>Error processing your request</TITLE>
+    <META HTTP-Equiv="Cache-Control" Content="no-cache">
+    <META HTTP-Equiv="Pragma" Content="no-cache">
+    <META HTTP-Equiv="Expires" Content="0"> 
   </HEAD>
   <BODY>
     <CENTER>
@@ -123,7 +125,7 @@ END
 
 This is depriciated.  Don't use it.
 
-Sends headers and an HTML error message, then exits.
+Sends an HTML error message, then exits.
 
 =cut
 
