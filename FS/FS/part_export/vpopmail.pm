@@ -1,6 +1,6 @@
 package FS::part_export::vpopmail;
 
-use vars qw(@ISA @saltset $exportdir $rsync $ssh);
+use vars qw(@ISA @saltset $exportdir);
 use File::Path;
 use FS::UID qw( datasrc );
 use FS::part_export;
@@ -8,9 +8,6 @@ use FS::part_export;
 @ISA = qw(FS::part_export);
 
 @saltset = ( 'a'..'z' , 'A'..'Z' , '0'..'9' , '.' , '/' );
-
-$rsync = "rsync";
-$ssh = "ssh";
 
 sub rebless { shift; }
 
@@ -60,7 +57,15 @@ sub _export_delete {
 #a good idea to queue anything that could fail or take any time
 sub vpopmail_queue {
   my( $self, $svcnum, $method ) = (shift, shift, shift);
+
   my $exportdir = "/usr/local/etc/freeside/export." . datasrc;
+  mkdir $exportdir, 0700 or die $! unless -d $exportdir;
+  $exportdir .= "/vpopmail";
+  mkdir $exportdir, 0700 or die $! unless -d $exportdir;
+  $exportdir .= '/'. $self->machine;
+  mkdir $exportdir, 0700 or die $! unless -d $exportdir;
+  mkdir "$exportdir/domains", 0700 or die $! unless -d "$exportdir/domains";
+
   my $queue = new FS::queue {
     'svcnum' => $svcnum,
     'job'    => "FS::part_export::vpopmail::vpopmail_$method",
@@ -78,7 +83,10 @@ sub vpopmail_queue {
 sub vpopmail_insert { #subroutine, not method
   my( $exportdir, $machine, $dir, $uid, $gid ) = splice @_,0,5;
   my( $username, $password, $domain, $quota ) = @_;
-  
+
+  mkdir "$exportdir/domains/$domain", 0700 or die $!
+    unless -d "$exportdir/domains/$domain";
+
   (open(VPASSWD, ">>$exportdir/domains/$domain/vpasswd")
     and flock(VPASSWD,LOCK_EX)
   ) or die "can't open vpasswd file for $username\@$domain: ".
