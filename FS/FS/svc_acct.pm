@@ -673,7 +673,8 @@ sub check {
   }
 
   my $error = $self->ut_numbern('svcnum')
-              || $self->ut_number('domsvc')
+              #|| $self->ut_number('domsvc')
+              || $self->ut_foreign_key('domsvc', 'svc_domain', 'svcnum' )
               || $self->ut_textn('sec_phrase')
   ;
   return $error if $error;

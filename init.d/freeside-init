@@ -15,6 +15,9 @@ SIGNUP_MACHINE=%%%SIGNUP_MACHINE%%%
 SIGNUP_AGENTNUM=%%%SIGNUP_AGENTNUM%%%
 SIGNUP_REFNUM=%%%SIGNUP_REFNUM%%%
 
+SELFSERVICE_USER=%%%SELFSERVICE_USER%%%
+SELFSERVICE_MACHINE=%%%SELFSERVICE_MACHINE%%%
+
 case "$1" in
   start)
         # Start daemons.
@@ -29,6 +32,11 @@ case "$1" in
         echo -n "Starting fs_signup_server: "
         su freeside -c "$FREESIDE_PATH/fs_signup/fs_signup_server $SIGNUP_USER $SIGNUP_MACHINE $SIGNUP_AGENTNUM $SIGNUP_REFNUM" &
         echo "done."
+
+        echo -n "Starting freeside-selfservice-server: "
+        $FREESIDE_PATH/fs_selfservice/freeside-selfservice-server $SELFSERVICE_USER $SELFSERVICE_MACHINE
+        echo "done."
+
         ;;
   stop)
         # Stop daemons.
@@ -42,6 +50,10 @@ case "$1" in
 
         echo -n "Stopping fs_signup_server: "
         killall fs_signup_server
+        echo "done."
+
+        echo -n "Stopping freeside-selfservice-server: "
+        kill `cat /var/run/freeside-selfservice-server.pid`
         echo "done."
         ;;
 
