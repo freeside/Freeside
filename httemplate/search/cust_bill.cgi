@@ -97,7 +97,8 @@ if ( $cgi->keywords ) {
 }
 
 #if ( scalar(@cust_bill) == 1 ) {
-if ( $total == 1 ) {
+if ( scalar(@cust_bill) == 1 && $total == 1) {
+#if ( $total == 1 ) {
   my $invnum = $cust_bill[0]->invnum;
   print $cgi->redirect(popurl(2). "view/cust_bill.cgi?$invnum");  #redirect
 } elsif ( scalar(@cust_bill) == 0 ) {
