@@ -548,7 +548,9 @@ sub replace {
 
   return "Username in use"
     if $old->username ne $new->username &&
-      qsearchs( 'svc_acct', { 'username' => $new->username } );
+      qsearchs( 'svc_acct', { 'username' => $new->username,
+                               'domsvc'   => $new->domsvc,
+                             } );
 
   return "Can't change uid!" if $old->uid != $new->uid;
 
@@ -958,7 +960,7 @@ sub ssh {
 
 =head1 VERSION
 
-$Id: svc_acct.pm,v 1.54 2001-11-05 13:57:31 ivan Exp $
+$Id: svc_acct.pm,v 1.55 2001-11-05 17:00:41 jeff Exp $
 
 =head1 BUGS
 
