@@ -108,6 +108,22 @@ sub exists {
   -e "$dir/$file";
 }
 
+=item config_orbase KEY SUFFIX
+
+Returns the configuration value or values (depending on context) for 
+KEY_SUFFIX, if it exists, otherwise for KEY
+
+=cut
+
+sub config_orbase {
+  my( $self, $file, $suffix ) = @_;
+  if ( $self->exists("${file}_$suffix") ) {
+    $self->config("${file}_$suffix");
+  } else {
+    $self->config($file);
+  }
+}
+
 =item touch KEY
 
 Creates the specified configuration key if it does not exist.
@@ -197,6 +213,18 @@ sub config_items {
                            'type'        => 'textarea',
                          }
       } glob($self->dir. '/invoice_latex_*')
+  ),
+  ( map { 
+        my $basename = basename($_);
+        $basename =~ /^(.*)$/;
+        $basename = $1;
+        new FS::ConfItem {
+                           'key'         => $basename,
+                           'section'     => 'billing',
+                           'description' => 'Alternate Notes section for LaTeX typeset PostScript invoices.  See the <a href="../docs/billing.html">billing documentation</a> for details.',
+                           'type'        => 'textarea',
+                         }
+      } glob($self->dir. '/invoice_latexnotes_*')
   );
 }
 

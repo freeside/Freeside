@@ -68,6 +68,31 @@ print '<TR><TD ALIGN="right">Action</TD><TD>';
 
 #print ntable();
 
+sub select_pkgpart {
+  my $label = shift;
+  my $plandata = shift;
+  my %selected = map { $_=>1 } split(/,\s*/, $plandata->{$label});
+  qq(<SELECT NAME="$label" MULTIPLE>).
+  join("\n", map {
+    '<OPTION VALUE="'. $_->pkgpart. '"'.
+    ( $selected{$_->pkgpart} ? ' SELECTED' : '' ).
+    '>'. $_->pkg. ' - '. $_->comment
+  } qsearch('part_pkg', { 'disabled' => '' } ) ).
+  '</SELECT>';
+}
+
+sub select_agentnum {
+  my $plandata = shift;
+  my $agentnum = $plandata->{'agentnum'};
+  '<SELECT NAME="agentnum">'.
+  join("\n", map {
+    '<OPTION VALUE="'. $_->agentnum. '"'.
+    ( $_->agentnum == $agentnum ? ' SELECTED' : '' ).
+    '>'. $_->agent
+  } qsearch('agent', { 'disabled' => '' } ) ).
+  '</SELECT>';
+}
+
 #this is pretty kludgy right here.
 tie my %events, 'Tie::IxHash',
 
@@ -82,6 +107,18 @@ tie my %events, 'Tie::IxHash',
   'suspend' => {
     'name'   => 'Suspend',
     'code'   => '$cust_main->suspend();',
+    'weight' => 10,
+  },
+  'suspend-if-pkgpart' => {
+    'name'   => 'Suspend packages',
+    'code'   => '$cust_main->suspend_if_pkgpart(%%%if_pkgpart%%%);',
+    'html'   => sub { &select_pkgpart('if_pkgpart', @_) },
+    'weight' => 10,
+  },
+  'suspend-unless-pkgpart' => {
+    'name'   => 'Suspend packages except',
+    'code'   => '$cust_main->suspend_unless_pkgpart(%%%unless_pkgpart%%%);',
+    'html'   => sub { &select_pkgpart('unless_pkgpart', @_) },
     'weight' => 10,
   },
   'cancel' => {
@@ -140,6 +177,26 @@ tie my %events, 'Tie::IxHash',
     'weight' => 50,
   },
 
+  'send_agent' => {
+    'name' => 'Send invoice (email/print) ',
+    'code' => '$cust_bill->send(\'%%%agent_templatename%%%\', %%%agentnum%%%);',
+    'html' => sub {
+        '<TABLE BORDER=0>
+          <TR>
+            <TD ALIGN="right">only for agent </TD>
+            <TD>'. &select_agentnum(@_). '</TD>
+          </TR>
+          <TR>
+            <TD ALIGN="right">with template </TD>
+            <TD>
+              <INPUT TYPE="text" NAME="agent_templatename" VALUE="%%%agent_templatename%%%">
+            </TD>
+          </TR>
+        </TABLE>';
+    },
+    'weight' => 50,
+  },
+
   'send_csv_ftp' => {
     'name' => 'Upload CSV invoice data to an FTP server',
     'code' => '$cust_bill->send_csv( protocol => \'ftp\',
@@ -188,6 +245,9 @@ foreach my $event ( keys %events ) {
   my %plandata = map { /^(\w+) (.*)$/; ($1, $2); }
                    split(/\n/, $part_bill_event->plandata);
   my $html = $events{$event}{html};
+  if ( ref($html) eq 'CODE' ) {
+    $html = &{$html}(\%plandata);
+  }
   while ( $html =~ /%%%(\w+)%%%/ ) {
     my $field = $1;
     $html =~ s/%%%$field%%%/$plandata{$field}/;

@@ -316,15 +316,23 @@ sub owed {
   $balance;
 }
 
-=item send
+=item send [ TEMPLATENAME [ , AGENTNUM ] ]
 
 Sends this invoice to the destinations configured for this customer: send
 emails or print.  See L<FS::cust_main_invoice>.
 
+TEMPLATENAME, if specified, is the name of a suffix for alternate invoices.
+
+AGENTNUM, if specified, means that this invoice will only be sent for customers
+of the specified agent.
+
 =cut
 
 sub send {
-  my($self,$template) = @_;
+  my $self = shift;
+  my $template = scalar(@_) ? shift : '';
+  return '' if scalar(@_) && $_[0] && $self->cust_main->agentnum ne shift;
+
   my @print_text = $self->print_text('', $template);
   my @invoicing_list = $self->cust_main->invoicing_list;
 
@@ -654,6 +662,31 @@ sub batch_card {
   '';
 }
 
+sub _agent_template {
+  my $self = shift;
+
+  my $cust_bill_event = qsearchs( 'part_bill_event',
+    {
+      'payby'     => $self->cust_main->payby,
+      'plan'      => 'send_agent',
+      'eventcode' => { 'op'    => 'LIKE',
+                       'value' => '_%, '. $self->cust_main->agentnum. ');' },
+    },
+    '',
+    'ORDER BY seconds LIMIT 1'
+  );
+
+  return '' unless $cust_bill_event;
+
+  if ( $cust_bill_event->eventcode =~ /\(\s*'(.*)'\s*,\s*(\d+)\s*\)\;$/ ) {
+    return $1;
+  } else {
+    warn "can't parse eventcode for agent-specific invoice template";
+    return '';
+  }
+
+}
+
 =item print_text [ TIME [ , TEMPLATE ] ]
 
 Returns an text invoice, as a list of lines.
@@ -798,10 +831,11 @@ sub print_text {
     sprintf("%10.2f", $balance_due ) ];
 
   #create the template
+  $template ||= $self->_agent_template;
   my $templatefile = 'invoice_template';
-  $templatefile .= "_$template" if $template;
+  $templatefile .= "_$template" if length($template);
   my @invoice_template = $conf->config($templatefile)
-  or die "cannot load config file $templatefile";
+    or die "cannot load config file $templatefile";
   $invoice_lines = 0;
   my $wasfunc = 0;
   foreach ( grep /invoice_lines\(\d*\)/, @invoice_template ) { #kludgy
@@ -923,8 +957,10 @@ sub print_latex {
   @buf = ();
 
   #create the template
+  $template ||= $self->_agent_template;
   my $templatefile = 'invoice_latex';
-  $templatefile .= "_$template" if $template;
+  my $suffix = length($template) ? "_$template" : '';
+  $templatefile .= $suffix;
   my @invoice_template = $conf->config($templatefile)
     or die "cannot load config file $templatefile";
 
@@ -954,7 +990,7 @@ sub print_latex {
   $invoice_data{'notes'} =
     join("\n",
       map { my $b=$_; $b =~ s/\$(\w+)/$invoice_data{$1}/eg; $b }
-        $conf->config('invoice_latexnotes')
+        $conf->config_orbase('invoice_latexnotes', $suffix)
     );
 
   $invoice_data{'footer'} =~ s/\n+$//;
@@ -1395,9 +1431,6 @@ The delete method.
 
 print_text formatting (and some logic :/) is in source, but needs to be
 slurped in from a file.  Also number of lines ($=).
-
-missing print_ps for a nice postscript copy (maybe HylaFAX-cover-page-style
-or something similar so the look can be completely customized?)
 
 =head1 SEE ALSO
 

@@ -149,22 +149,20 @@ sub check {
     || $self->ut_textn('plan')
     || $self->ut_anything('plandata')
   ;
+    #|| $self->ut_snumber('seconds')
   return $error if $error;
 
   #quelle kludge
-  if ( $self->plandata =~ /^templatename\s+(.*)$/ ) {
-    my $name= $1;
-    unless ( $conf->exists("invoice_template_$name") ) {
-      $conf->set(
-        "invoice_template_$name" =>
-          join("\n", $conf->config('invoice_template') )
-      );
-    }
-    unless ( $conf->exists("invoice_latex_$name") ) {
-      $conf->set(
-        "invoice_latex_$name" =>
-          join("\n", $conf->config('invoice_latex') )
-      );
+  if ( $self->plandata =~ /^(agent_)?templatename\s+(.*)$/m ) {
+    my $name= $2;
+
+    foreach my $file (qw( template latex latexnotes )) {
+      unless ( $conf->exists("invoice_${file}_$name") ) {
+        $conf->set(
+          "invoice_${file}_$name" =>
+            join("\n", $conf->config("invoice_$file") )
+        );
+      }
     }
   }
 

@@ -5,7 +5,7 @@ my $eventpart = $cgi->param('eventpart');
 my $old = qsearchs('part_bill_event',{'eventpart'=>$eventpart}) if $eventpart;
 
 #s/days/seconds/
-$cgi->param('seconds', $cgi->param('days') * 86400 );
+$cgi->param('seconds', int( $cgi->param('days') * 86400 ) );
 
 my $error;
 if ( ! $cgi->param('plan_weight_eventcode') ) {
@@ -21,7 +21,8 @@ if ( ! $cgi->param('plan_weight_eventcode') ) {
   my $plandata = '';
   while ( $eventcode =~ /%%%(\w+)%%%/ ) {
     my $field = $1;
-    my $value = $cgi->param($field);
+    my $value = join(', ', $cgi->param($field) );
+    $cgi->param($field, $value); #in case it errors out
     $eventcode =~ s/%%%$field%%%/$value/;
     $plandata .= "$field $value\n";
   }

@@ -1028,6 +1028,38 @@ sub suspend {
   grep { $_->suspend } $self->unsuspended_pkgs;
 }
 
+=item suspend_if_pkgpart PKGPART [ , PKGPART ... ]
+
+Suspends all unsuspended packages (see L<FS::cust_pkg>) matching the listed
+PKGPARTs (see L<FS::part_pkg>).  Always returns a list: an empty list on
+success or a list of errors.
+
+=cut
+
+sub suspend_if_pkgpart {
+  my $self = shift;
+  my @pkgparts = @_;
+  grep { $_->suspend }
+    grep { my $pkgpart = $_->pkgpart; grep { $pkgpart eq $_ } @pkgparts }
+      $self->unsuspended_pkgs;
+}
+
+=item suspend_unless_pkgpart PKGPART [ , PKGPART ... ]
+
+Suspends all unsuspended packages (see L<FS::cust_pkg>) unless they match the
+listed PKGPARTs (see L<FS::part_pkg>).  Always returns a list: an empty list
+on success or a list of errors.
+
+=cut
+
+sub suspend_unless_pkgpart {
+  my $self = shift;
+  my @pkgparts = @_;
+  grep { $_->suspend }
+    grep { my $pkgpart = $_->pkgpart; ! grep { $pkgpart eq $_ } @pkgparts }
+      $self->unsuspended_pkgs;
+}
+
 =item cancel [ OPTION => VALUE ... ]
 
 Cancels all uncancelled packages (see L<FS::cust_pkg>) for this customer.
