@@ -1369,11 +1369,13 @@ be exported, and should only be called as an instance or class method.
 =cut
 
 sub virtual_fields {
-  my $something = shift;
+  my $self = shift;
   my $table;
-  $table = $something->table or confess "virtual_fields called on non-table";
+  $table = $self->table or confess "virtual_fields called on non-table";
 
   confess "Unknown table $table" unless $dbdef->table($table);
+
+  return () unless $self->dbdef->table('part_virtual_field');
 
   # This should be smart enough to cache results.
 
