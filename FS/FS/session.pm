@@ -165,7 +165,7 @@ sub replace {
   my $nas = qsearchs('nas',{'nasnum'=>$port->nasnum});
     #kcuy
   my( $ip, $nasip, $nasfqdn ) = ( $port->ip, $nas->nasip, $nas->nasfqdn );
-  session( eval qq("$stop") ) if $stop;
+  system( eval qq("$stop") ) if $stop;
 
   '';
 }
@@ -224,7 +224,7 @@ sub svc_acct {
 
 =head1 VERSION
 
-$Id: session.pm,v 1.4 2000-12-08 22:22:31 ivan Exp $
+$Id: session.pm,v 1.5 2001-02-27 00:59:36 ivan Exp $
 
 =head1 BUGS
 
