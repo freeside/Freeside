@@ -71,6 +71,7 @@ FS/part_export/apache.pm
 FS/part_export/bind.pm
 FS/part_export/bind_slave.pm
 FS/part_export/bsdshell.pm
+FS/part_export/communigate_pro.pm
 FS/part_export/cp.pm
 FS/part_export/cyrus.pm
 FS/part_export/domain_shellcommands.pm
