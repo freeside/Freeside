@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_credit.cgi,v 1.6 1999-02-28 00:03:41 ivan Exp $
+# $Id: cust_credit.cgi,v 1.7 1999-04-07 15:23:05 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/cust_credit.cgi
@@ -20,7 +20,10 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # $Log: cust_credit.cgi,v $
-# Revision 1.6  1999-02-28 00:03:41  ivan
+# Revision 1.7  1999-04-07 15:23:05  ivan
+# don't use anchor in redirect
+#
+# Revision 1.6  1999/02/28 00:03:41  ivan
 # removed misleading comments
 #
 # Revision 1.5  1999/01/25 12:09:59  ivan
@@ -67,7 +70,7 @@ if ( $error ) {
   $cgi->param('error', $error);
   print $cgi->redirect(popurl(2). "cust_credit.cgi?". $cgi->query_string );
 } else {
-  print $cgi->redirect(popurl(3). "view/cust_main.cgi?$custnum#history");
+  print $cgi->redirect(popurl(3). "view/cust_main.cgi?$custnum");
 }
 
 

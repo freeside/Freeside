@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main.cgi,v 1.8 1999-03-25 13:55:10 ivan Exp $
+# $Id: cust_main.cgi,v 1.9 1999-04-07 15:22:19 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/cust_main.cgi
@@ -20,7 +20,10 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # $Log: cust_main.cgi,v $
-# Revision 1.8  1999-03-25 13:55:10  ivan
+# Revision 1.9  1999-04-07 15:22:19  ivan
+# don't use anchor in redirect
+#
+# Revision 1.8  1999/03/25 13:55:10  ivan
 # one-screen new customer entry (including package and service) for simple
 # packages with one svc_acct service
 #
@@ -174,5 +177,5 @@ if ( $error ) {
 } else { 
   $new->invoicing_list( \@invoicing_list );
   $custnum = $new->custnum;
-  print $cgi->redirect(popurl(3). "view/cust_main.cgi?$custnum#cust_main");
+  print $cgi->redirect(popurl(3). "view/cust_main.cgi?$custnum");
 } 

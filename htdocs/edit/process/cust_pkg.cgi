@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_pkg.cgi,v 1.6 1999-02-28 00:03:44 ivan Exp $
+# $Id: cust_pkg.cgi,v 1.7 1999-04-07 15:24:06 ivan Exp $
 #
 # this is for changing packages around, not for editing things within the
 # package
@@ -19,7 +19,10 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # $Log: cust_pkg.cgi,v $
-# Revision 1.6  1999-02-28 00:03:44  ivan
+# Revision 1.7  1999-04-07 15:24:06  ivan
+# don't use anchor in redirect
+#
+# Revision 1.6  1999/02/28 00:03:44  ivan
 # removed misleading comments
 #
 # Revision 1.5  1999/02/07 09:59:26  ivan
@@ -72,6 +75,6 @@ if ($error) {
   $cgi->param('error', $error);
   print $cgi->redirect(popurl(2). "cust_pkg.cgi?". $cgi->query_string );
 } else {
-  print $cgi->redirect(popurl(3). "view/cust_main.cgi?$custnum#cust_pkg");
+  print $cgi->redirect(popurl(3). "view/cust_main.cgi?$custnum");
 }
 
