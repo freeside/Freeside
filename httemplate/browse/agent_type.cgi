@@ -19,7 +19,7 @@ foreach my $agent_type ( sort {
 } qsearch('agent_type',{}) ) {
   my $hashref = $agent_type->hashref;
   #more efficient to do this with SQL...
-  my @type_pkgs = grep { ! $_->part_pkg->disabled }
+  my @type_pkgs = grep { $_->part_pkg and ! $_->part_pkg->disabled }
                        qsearch('type_pkgs',{'typenum'=> $hashref->{typenum} });
   my $rowspan = scalar(@type_pkgs);
   $rowspan = int($rowspan/2+0.5) ;
