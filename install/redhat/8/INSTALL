@@ -1,0 +1,44 @@
+#!/bin/sh
+
+rpm -Fvh http://redhat.usu.edu/mirrors/apt4rpm/apt-0.5.4cnc8-fr1.i386.rpm
+
+cp sources.list /etc/apt/
+apt-get update; apt-get update
+#apt-get install apache mod_ssl mod_perl perl-CGI perl-CPAN perl-DBD-MySQL perl-DBD-Pg perl-DBI perl-DateManip perl-Digest-MD5 perl-HTML-Parser perl-HTML-Tagset perl-MIME-Base64 perl-Storable perl-TimeDate perl-URI perl-libnet perl-libwww-perl perl-suidperl rsync postgresql postgresql-docs postgresql-libs postgresql-server screen zsh lftp cvs #openssh
+
+#ftp://ftp.pbone.net/mirror/www.aucs.org/rpmcenter/packages/apache13-php43-mods-rh8
+
+apt-get install perl-CGI perl-CPAN perl-DBD-MySQL perl-DBD-Pg perl-DBI perl-DateManip perl-HTML-Parser perl-HTML-Tagset perl-TimeDate perl-URI perl-libwww-perl perl-suidperl rsync postgresql postgresql-docs postgresql-libs postgresql-server screen zsh lftp cvs gcc gd #openssh
+# tetex-fonts tetex-latex tetex tetex-dvips ghostscript ghostscript-fonts
+
+perl -MCPAN -e"install Locale::Country, Net::Whois, Business::CreditCard, \
+                       Mail::Internet, File::CounterFile, FreezeThaw, \
+                       String::Approx, Text::Template, DBIx::DataSource, \
+                       DBIx::DBSchema, Net::SSH, String::ShellQuote, \
+                       Net::SCP, Apache::ASP, Tie::IxHash, Time::Duration, \
+                       HTML::Widgets::SelectLayers, Apache::DBI, Cache::Cache \
+                       Test::Pod NetAddr::IP IPC::ShareLite Chart::LinesPoints"
+
+echo 'OPTIONS="-DHAVE_PERL -DHAVE_SSL"' >>/etc/sysconfig/apache
+
+#remove perl & ssl LoadModule lines from /etc/httpd/conf/httpd.conf
+#as they're statically linked
+
+/usr/sbin/useradd freeside
+
+/sbin/chkconfig postgresql on
+/etc/init.d/postgresql start
+
+su postgres -c "createuser -P freeside"
+
+su freeside -c "createdb freeside"
+
+#?
+cd ../../..
+make install-perl-modules
+make create-config
+freeside-adduser -c -h /usr/local/etc/freeside/htpasswd ivan
+su freeside -c 'freeside-setup ivan'
+su freeside -c '/home/ivan/freeside/bin/populate-msgcat ivan'
+make deploy
+

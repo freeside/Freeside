@@ -1,0 +1,6 @@
+Red Hat has ceased support for all pre-enterprise releases.
+
+Fedora Legacy (http://www.fedoralegacy.org) is only supporting 7.3 and 9.
+
+Red Hat 8.0 is NOT RECOMMENDED.  Please consider using a supported
+distribution, such as 7.3, 9, or Fedora core.
