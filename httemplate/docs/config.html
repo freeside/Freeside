@@ -101,6 +101,9 @@ All further configuration files and directories are located in
   <li><a name="usernamemax">usernamemax</a> - Maximum username length (default is the size of the SQL column, probably specified when fs-setup was run)
   <li><a name="usernamemax">username-letter</a> - The existance of this file will turn on the requirement that usernames contain at least one letter.
   <li><a name="usernamemax">username-letterfirst</a> - The existance of this file will turn on the requirement that usernames start with a letter.
+   <li><a name="username_policy">username_policy</a> - This file controls the mechanism for preventing duplicate usernames in passwd/radius files exported from svc_accts.  This should be one of 'prepend domsvc' 'append domsvc' or 'append domain'
+   <li><a name="vpopmailmachines">vpopmailmachines</a> - Your vpopmail pop toasters, one per line.  Each line is of the form "machinename vpopdir vpopuid vpopgid".  Eg: poptoaster.domain.tld /home/vpopmail 508 508 Note: vpopuid and vpopgid are values taken from the vpopmail machine's /etc/passwd
+
 </ul>
 </body>
 

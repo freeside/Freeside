@@ -336,6 +336,9 @@ sub check {
   $recref->{action} =~ /^(M|N)$/ or return "Illegal action";
   $recref->{action} = $1;
 
+  my $svc_acct = qsearchs( 'svc_acct', { 'svcnum' => $recref->{catchall} } );
+  return "Unknown catchall" unless $svc_acct || ! $recref->{catchall};
+
   $self->ut_textn('purpose');
 
 }
@@ -478,7 +481,7 @@ sub submit_internic {
 
 =head1 VERSION
 
-$Id: svc_domain.pm,v 1.12 2001-06-03 17:22:52 ivan Exp $
+$Id: svc_domain.pm,v 1.13 2001-08-12 19:41:24 jeff Exp $
 
 =head1 BUGS
 

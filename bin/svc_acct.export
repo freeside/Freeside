@@ -1,98 +1,41 @@
 #!/usr/bin/perl -w
 #
-# $Id: svc_acct.export,v 1.21 2001-07-30 06:07:46 ivan Exp $
+# $Id: svc_acct.export,v 1.22 2001-08-12 19:41:25 jeff Exp $
 #
-# Create and export password files: passwd, passwd.adjunct, shadow,
-# acp_passwd, acp_userinfo, acp_dialup, users
+# Create and export password, radius and vpopmail password files:
+# passwd, passwd.adjunct, shadow, acp_passwd, acp_userinfo, acp_dialup
+# users/assign, domains/vdomain/vpasswd
+# Also export sendmail and qmail config files.
 #
-# ivan@voicenet.com late august/september 96
-# (the password encryption bits were from melody)
 #
-# use a temporary copy of svc_acct to minimize lock time on the real file,
-# and skip blank entries.
-#
-# ivan@voicenet.com 96-Oct-6
-#
-# change users / acp_dialup file formats
-# ivan@voicenet.com 97-jan-28-31
-#
-# change priority (after copies) to 19, not 10
-# ivan@voicenet.com 97-feb-5
-#
-# added exit if stuff is already locked 97-apr-15
-#
-# rewrite ivan@sisd.com 98-mar-9
-#
-# Changed 'password' to '_password' because Pg6.3 reserves this word
-# Added code to create a FreeBSD style master.passwd file
-#   bmccane@maxbaud.net 98-Apr-3
-#
-# don't export non-root 0 UID's, even if they get put in the database
-# ivan@sisd.com 98-jul-14
-#
-# Uses Idle_Timeout, Port_Limit, Framed_Netmask and Framed_Route if they
-# exist; need some way to support arbitrary radius fields.  also 
-# /var/spool/freeside/conf/ ivan@sisd.com 98-jul-26, aug-9
-#
-# OOPS!  added arbitrary radius fields (pry 98-aug-16) but forgot to say so.
-# ivan@sisd.com 98-sep-18
-# 
 # $Log: svc_acct.export,v $
-# Revision 1.21  2001-07-30 06:07:46  ivan
-# allow !! for locked accounts instead of changing to *SUSPENDED*
+# Revision 1.22  2001-08-12 19:41:25  jeff
+# merging vpopmail support branch
 #
-# Revision 1.20  2001/06/20 08:33:42  ivan
-# >     Use of uninitialized value in concatenation (.) at svc_acct.export line
-# > 276.
-#
-# Revision 1.19  2001/05/08 10:44:17  ivan
-# fix for OO Net::SCP
-#
-# Revision 1.18  2001/04/22 01:56:15  ivan
-# get rid of FS::SSH.pm (became Net::SSH and Net::SCP on CPAN)
-#
-# Revision 1.17  2001/02/21 23:48:19  ivan
-# add icradius_secrets config file to export to a non-Freeside MySQL database for
-# ICRADIUS
-#
-# Revision 1.16  2000/07/06 13:23:29  ivan
-# tyop
-#
-# Revision 1.15  2000/07/06 08:57:28  ivan
-# support for radius check attributes (except importing).  poorly documented.
-#
-# Revision 1.14  2000/06/29 15:01:25  ivan
-# another silly typo in svc_acct.export
-#
-# Revision 1.13  2000/06/28 12:37:28  ivan
-# add support for config option textradiusprepend
-#
-# Revision 1.12  2000/06/15 14:07:02  ivan
-# added ICRADIUS radreply table support, courtesy of Kenny Elliott
-#
-# Revision 1.11  2000/03/06 16:00:39  ivan
-# sync up with working versoin
-#
-# Revision 1.2  1998/12/10 07:23:15  ivan
-# use FS::Conf, need user (for datasrc)
 #
 
 use strict;
 use vars qw($conf);
+use Archive::Tar;
 use Fcntl qw(:flock);
+use File::Path;
 use IO::Handle;
-use DBI;
 use FS::Conf;
 use Net::SSH qw(ssh);
 use Net::SCP qw(scp);
 use FS::UID qw(adminsuidsetup datasrc dbh);
-use FS::Record qw(qsearch fields);
+use FS::Record qw(qsearch qsearchs fields);
 use FS::svc_acct;
+use FS::svc_domain;
+use FS::svc_forward;
 
 my $user = shift or die &usage;
 adminsuidsetup $user;
 
 $conf = new FS::Conf;
+
+my $userpolicy = $conf->config('username_policy')
+  if $conf->exists('username_policy');
 
 my @shellmachines = $conf->config('shellmachines')
   if $conf->exists('shellmachines');
@@ -130,6 +73,29 @@ my $textradiusprepend =
     ? $conf->config('textradiusprepend')
     : '';
 
+my @vpopmailmachines = $conf->config('vpopmailmachines')
+  if $conf->exists('vpopmailmachines');
+
+my ($machine, $vpopdir, $vpopuid, $vpopgid) = split (/\s+/, $vpopmailmachines[0]);
+
+my($shellmachine, @qmailmachines);
+if ( $conf->exists('qmailmachines') ) {
+  $shellmachine = $conf->config('shellmachine');
+  @qmailmachines = $conf->config('qmailmachines');
+}
+
+my(@sendmailmachines, $sendmailconfigpath, $sendmailrestart);
+if ( $conf->exists('sendmailmachines') ) {
+  @sendmailmachines = $conf->config('sendmailmachines');
+  $sendmailconfigpath = $conf->config('sendmailconfigpath') || '/etc';
+  $sendmailrestart = $conf->config('sendmailrestart');
+}
+
+my $mydomain = $conf->config('domain') if $conf->exists('domain');
+
+
+
+
 my(@saltset)= ( 'a'..'z' , 'A'..'Z' , '0'..'9' , '.' , '/' );
 require 5.004; #srand(time|$$);
 
@@ -142,41 +108,80 @@ unless ( flock(EXPORT,LOCK_EX|LOCK_NB) ) {
   seek(EXPORT,0,0);
   my($pid)=<EXPORT>;
   chop($pid);
-  #no reason to start loct of blocking processes
+  #no reason to start lots of blocking processes
   die "Is another export process running under pid $pid?\n";
 }
 seek(EXPORT,0,0);
 print EXPORT $$,"\n";
 
-my(@svc_acct)=qsearch('svc_acct',{});
+my(@svc_domain)=qsearch('svc_domain',{});
 
 ( open(MASTER,">$spooldir/master.passwd")
-  and flock(MASTER,LOCK_EX|LOCK_NB)
-) or die "Can't open $spooldir/master.passwd: $!";
+  and flock(MASTER,LOCK_EX|LOCK_NB)  
+) or die "Can't open $spooldir/.master.passwd: $!";
 ( open(PASSWD,">$spooldir/passwd")
   and flock(PASSWD,LOCK_EX|LOCK_NB)  
 ) or die "Can't open $spooldir/passwd: $!";
 ( open(SHADOW,">$spooldir/shadow")
-  and flock(SHADOW,LOCK_EX|LOCK_NB) 
+  and flock(SHADOW,LOCK_EX|LOCK_NB)  
 ) or die "Can't open $spooldir/shadow: $!";
-( open(ACP_PASSWD,">$spooldir/acp_passwd") 
-  and flock (ACP_PASSWD,LOCK_EX|LOCK_NB)
+( open(ACP_PASSWD,">$spooldir/acp_passwd")
+  and flock(ACP_PASSWD,LOCK_EX|LOCK_NB)  
 ) or die "Can't open $spooldir/acp_passwd: $!";
-( open (ACP_DIALUP,">$spooldir/acp_dialup")
-  and flock(ACP_DIALUP,LOCK_EX|LOCK_NB)
+( open(ACP_DIALUP,">$spooldir/acp_dialup")
+  and flock(ACP_DIALUP,LOCK_EX|LOCK_NB)  
 ) or die "Can't open $spooldir/acp_dialup: $!";
-( open (USERS,">$spooldir/users")
-  and flock(USERS,LOCK_EX|LOCK_NB)
+( open(USERS,">$spooldir/users")
+  and flock(USERS,LOCK_EX|LOCK_NB)  
 ) or die "Can't open $spooldir/users: $!";
+
+( open(ASSIGN,">$spooldir/assign")
+  and flock(ASSIGN,LOCK_EX|LOCK_NB)  
+) or die "Can't open $spooldir/assign: $!";
+( open(RCPTHOSTS,">$spooldir/rcpthosts")
+  and flock(RCPTHOSTS,LOCK_EX|LOCK_NB) 
+) or die "Can't open $spooldir/rcpthosts: $!";
+( open(VPOPRCPTHOSTS,">$spooldir/vpoprcpthosts")
+  and flock(VPOPRCPTHOSTS,LOCK_EX|LOCK_NB) 
+) or die "Can't open $spooldir/rcpthosts: $!";
+( open(RECIPIENTMAP,">$spooldir/recipientmap") 
+  and flock(RECIPIENTMAP,LOCK_EX|LOCK_NB) 
+) or die "Can't open $spooldir/recipientmap: $!";
+( open(VIRTUALDOMAINS,">$spooldir/virtualdomains") 
+  and flock(VIRTUALDOMAINS,LOCK_EX|LOCK_NB)
+) or die "Can't open $spooldir/virtualdomains: $!";
+( open(VPOPVIRTUALDOMAINS,">$spooldir/vpopvirtualdomains") 
+  and flock(VPOPVIRTUALDOMAINS,LOCK_EX|LOCK_NB)
+) or die "Can't open $spooldir/virtualdomains: $!";
+( open(VIRTUSERTABLE,">$spooldir/virtusertable")
+  and flock(VIRTUSERTABLE,LOCK_EX|LOCK_NB)
+) or die "Can't open $spooldir/virtusertable: $!";
+( open(SENDMAIL_CW,">$spooldir/sendmail.cw")
+  and flock(SENDMAIL_CW,LOCK_EX|LOCK_NB)
+) or die "Can't open $spooldir/sendmail.cw: $!";
+
+
 
 chmod 0644, "$spooldir/passwd",
             "$spooldir/acp_dialup",
+            "$spooldir/assign",
+            "$spooldir/sendmail.cw",
+            "$spooldir/virtusertable",
+            "$spooldir/rcpthosts",
+            "$spooldir/vpoprcpthosts",
+            "$spooldir/recipientmap",
+            "$spooldir/virtualdomains",
+            "$spooldir/vpopvirtualdomains",
+
 ;
 chmod 0600, "$spooldir/master.passwd",
-	    "$spooldir/acp_passwd",
+            "$spooldir/acp_passwd",
             "$spooldir/shadow",
             "$spooldir/users",
 ;
+
+rmtree"$spooldir/domains", 0, 1;
+mkdir "$spooldir/domains", 0700;
 
 if ( $icradiusmachines ) {
   my $sth = $icradius_dbh->prepare("DELETE FROM radcheck");
@@ -187,161 +192,307 @@ if ( $icradiusmachines ) {
 
 setpriority(0,0,10);
 
-my($svc_acct);
-foreach $svc_acct (@svc_acct) {
+my %usernames;  ## this hack helps keep the passwd files sane
+my @sendmail;
 
-  my($password)=$svc_acct->getfield('_password');
-  my($cpassword,$rpassword);
-  if ( ( length($password) <= 8 )
-       && ( $password ne '*' )
-       && ( $password ne '!!' )
-       && ( $password ne '' )
-     ) {
-    $cpassword=crypt($password,
-                     $saltset[int(rand(64))].$saltset[int(rand(64))]
-    );
-    $rpassword=$password;
-  } else {
-    $cpassword=$password;
-    $rpassword='UNIX';
+my $svc_domain;
+foreach $svc_domain (sort {$a->domain cmp $b->domain} @svc_domain) {
+
+  my($domain)=$svc_domain->domain;
+  print RCPTHOSTS "$domain\n.$domain\n";
+  print VPOPRCPTHOSTS "$domain\n";
+  print SENDMAIL_CW "$domain\n";
+
+  ###
+  # FORMAT OF THE ASSIGN/USERS FILE HERE
+  print ASSIGN join(":",
+    "+" . $domain . "-",
+    $domain,
+    $vpopuid,
+    $vpopgid,
+    $vpopdir . "/domains/" . $domain,
+    "-",
+    "",
+    "",
+  ), "\n";
+
+  (mkdir "$spooldir/domains/" . $domain, 0700)
+    or die "Can't create $spooldir/domains/" . $domain .": $!";
+
+  ( open(QMAILDEFAULT,">$spooldir/domains/" . $domain . "/.qmail-default")
+    and flock(QMAILDEFAULT,LOCK_EX|LOCK_NB)  
+  ) or die "Can't open $spooldir/domains/" . $domain . "/.qmail-default: $!";
+
+  ( open(VPASSWD,">$spooldir/domains/" . $domain . "/vpasswd")
+    and flock(VPASSWD,LOCK_EX|LOCK_NB)  
+  ) or die "Can't open $spooldir/domains/" . $domain . "/vpasswd: $!";
+
+  my ($svc_acct);
+
+  if ($svc_domain->catchall) {
+    $svc_acct = qsearchs('svc_acct', {'svcnum' => $svc_domain->catchall});
+    die "Cannot find catchall account for domain $domain\n" unless $svc_acct;
+
+    my $username = $svc_acct->username;
+    push @sendmail, "\@$domain\t$username\n";
+    print VIRTUALDOMAINS "$domain:$username-$domain\n",
+                         ".$domain:$username-$domain\n",
+    ;
+
+    ###
+    # FORMAT OF THE .QMAIL-DEFAULT FILE HERE
+    print QMAILDEFAULT "| $vpopdir/bin/vdelivermail \"\" $username\@$domain\n";
+
+  }else{
+    ###
+    # FORMAT OF THE .QMAIL-DEFAULT FILE HERE
+    print QMAILDEFAULT "| $vpopdir/bin/vdelivermail \"\" bounce-no-mailbox\n";
   }
 
-  if ( $svc_acct->uid  =~ /^(\d+)$/ ) {
+  print VPOPVIRTUALDOMAINS "$domain:$domain\n";
 
-    die "Non-root user ". $svc_acct->username. " has 0 UID!"
-      if $svc_acct->uid == 0 && $svc_acct->username ne 'root';
-
-    ###
-    # FORMAT OF FreeBSD MASTER PASSWD FILE HERE
-    print MASTER join(":",
-      $svc_acct->username,		# User name
-      $cpassword,			# Encrypted password
-      $svc_acct->uid,			# User ID
-      $svc_acct->gid,			# Group ID
-      "",				# Login Class
-      "0",				# Password Change Time
-      "0",				# Password Expiration Time
-      $svc_acct->finger,		# Users name
-      $svc_acct->dir,			# Users home directory
-      $svc_acct->shell,			# shell
-    ), "\n" ;
-
-    ###
-    # FORMAT OF THE PASSWD FILE HERE
-    print PASSWD join(":",
-      $svc_acct->username,
-      'x', # "##". $svc_acct->$username,
-      $svc_acct->uid,
-      $svc_acct->gid,
-      $svc_acct->finger,
-      $svc_acct->dir,
-      $svc_acct->shell,
-    ), "\n";
-
-    ###
-    # FORMAT OF THE SHADOW FILE HERE
-    print SHADOW join(":",
-      $svc_acct->username,
-      $cpassword,
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-    ), "\n";
-
-  }
-
-  if ( $svc_acct->slipip ne '' ) {
-
-    ###
-    # FORMAT OF THE ACP_* FILES HERE
-    print ACP_PASSWD join(":",
-      $svc_acct->username,
-      $cpassword,
-      "0",
-      "0",
-      "",
-      "",
-      "",
-    ), "\n";
-
-    my($ip)=$svc_acct->slipip;
-
-    unless ( $ip eq '0.0.0.0' || $svc_acct->slipip eq '0e0' ) {
-      print ACP_DIALUP $svc_acct->username, "\t*\t", $svc_acct->slipip, "\n";
-    }
-
-    my %radreply = $svc_acct->radius_reply;
-    my %radcheck = $svc_acct->radius_check;
-
-    my $radcheck = join ", ", map { qq($_ = "$radcheck{$_}") } keys %radcheck;
-    $radcheck .= ", " if $radcheck;
-
-    ###
-    # FORMAT OF THE USERS FILE HERE
-    print USERS
-      $svc_acct->username,
-      qq(\t${textradiusprepend}),
-      $radcheck,
-      qq(Password = "$rpassword"\n\t),
-      join ",\n\t", map { qq($_ = "$radreply{$_}") } keys %radreply;
-    
-    if ( $ip && $ip ne '0e0' ) {
-      #print USERS qq(,\n\tFramed-Address = "$ip"\n\n);
-      print USERS qq(,\n\tFramed-IP-Address = "$ip"\n\n);
-    } else {
-      print USERS qq(\n\n);
-    }
-
-    ###
-    # ICRADIUS export
-    if ( $icradiusmachines ) {
-
-      my $sth = $icradius_dbh->prepare(
-        "INSERT INTO radcheck ( id, UserName, Attribute, Value ) VALUES ( ".
-        join(", ", map { $icradius_dbh->quote( $_ ) } (
-          '',
-          $svc_acct->username,
-          "Password",
-          $svc_acct->_password,
-        ) ). " )"
+  foreach $svc_acct (qsearch('svc_acct', {'domsvc' => $svc_domain->svcnum})) {
+    my($password)=$svc_acct->getfield('_password');
+    my($cpassword,$rpassword);
+    if ( ( length($password) <= 8 )
+         && ( $password ne '*' )
+         && ( $password ne '!!' )
+         && ( $password ne '' )
+       ) {
+      $cpassword=crypt($password,
+                       $saltset[int(rand(64))].$saltset[int(rand(64))]
       );
-      $sth->execute or die "Can't insert into radcheck table: ". $sth->errstr;
+      $rpassword=$password;
+    } else {
+      $cpassword=$password;
+      $rpassword='UNIX';
+    }
 
-      foreach my $attribute ( keys %radcheck ) {
+    my $username;
+
+    if ($mydomain && ($mydomain eq $svc_domain->domain)) {
+      $username=$svc_acct->username;
+    } elsif ($userpolicy =~ /^prepend domsvc$/) {
+      $username=$svc_acct->domsvc . $svc_acct->username;
+    } elsif ($userpolicy =~ /^append domsvc$/) {
+      $username=$svc_acct->username . $svc_acct->domsvc;
+    } elsif ($userpolicy =~ /^append domain$/) {
+      $username=$svc_acct->username . $svc_domain->domain;
+    } else {
+      die "Unknown policy in username_policy\n";
+    }
+
+    if ($svc_acct->dir ne '/dev/null' || $svc_acct->slipip ne '') {
+      if ($usernames{$username}++) {
+        die "Duplicate username detected: $username\n";
+      }
+    }
+            
+    if ( $svc_acct->uid  =~ /^(\d+)$/ ) {
+
+      die "Non-root user ". $svc_acct->username. " has 0 UID!"
+        if $svc_acct->uid == 0 && $svc_acct->username ne 'root';
+
+      if ( $svc_acct->dir ne "/dev/null") {
+
+        ###
+        # FORMAT OF FreeBSD MASTER PASSWD FILE HERE
+        print MASTER join(":",
+          $username,                        # User name
+          $cpassword,                       # Encrypted password
+          $svc_acct->uid,                   # User ID
+          $svc_acct->gid,                   # Group ID
+          "",                               # Login Class
+          "0",                              # Password Change Time
+          "0",                              # Password Expiration Time
+          $svc_acct->finger,                # Users name
+          $svc_acct->dir,                   # Users home directory
+          $svc_acct->shell,                 # shell
+        ), "\n" ;
+
+
+        ###
+        # FORMAT OF THE PASSWD FILE HERE
+        print PASSWD join(":",
+          $username,
+          'x', # "##". $username,
+          $svc_acct->uid,
+          $svc_acct->gid,
+          $svc_acct->finger,
+          $svc_acct->dir,
+          $svc_acct->shell,
+        ), "\n";
+
+        ###
+        # FORMAT OF THE SHADOW FILE HERE
+        print SHADOW join(":",
+          $username,
+          $cpassword,
+          '',
+          '',
+          '',
+          '',
+          '',
+          '',
+          '',
+        ), "\n";
+      }
+
+      ###
+      # FORMAT OF THE VPASSWD FILE HERE
+      print VPASSWD join(":",
+        $svc_acct->username,
+        $cpassword,
+        '1',
+        '0',
+        $svc_acct->username,
+        "$vpopdir/domains/" . $svc_domain->domain ."/" . $svc_acct->username,
+        'NOQUOTA',
+      ), "\n";
+
+    }
+
+    if ( $svc_acct->slipip ne '' ) {
+
+      ###
+      # FORMAT OF THE ACP_* FILES HERE
+      print ACP_PASSWD join(":",
+        $username,
+        $cpassword,
+        "0",
+        "0",
+        "",
+        "",
+        "",
+      ), "\n";
+
+      my($ip)=$svc_acct->slipip;
+
+      unless ( $ip eq '0.0.0.0' || $svc_acct->slipip eq '0e0' ) {
+        print ACP_DIALUP $username, "\t*\t", $svc_acct->slipip, "\n";
+      }
+
+      my %radreply = $svc_acct->radius_reply;
+      my %radcheck = $svc_acct->radius_check;
+
+      my $radcheck = join ", ", map { qq($_ = "$radcheck{$_}") } keys %radcheck;
+      $radcheck .= ", " if $radcheck;
+
+      ###
+      # FORMAT OF THE USERS FILE HERE
+      print USERS
+        $username,
+        qq(\t${textradiusprepend}),
+        $radcheck,
+        qq(Password = "$rpassword"\n\t),
+        join ",\n\t", map { qq($_ = "$radreply{$_}") } keys %radreply;
+
+      if ( $ip && $ip ne '0e0' ) {
+        #print USERS qq(,\n\tFramed-Address = "$ip"\n\n);
+        print USERS qq(,\n\tFramed-IP-Address = "$ip"\n\n);
+      } else {
+        print USERS qq(\n\n);
+      }
+
+      ###
+      # ICRADIUS export
+      if ( $icradiusmachines ) {
+  
         my $sth = $icradius_dbh->prepare(
           "INSERT INTO radcheck ( id, UserName, Attribute, Value ) VALUES ( ".
           join(", ", map { $icradius_dbh->quote( $_ ) } (
             '',
-            $svc_acct->username,
-            $attribute,
-            $radcheck{$attribute},
+            $username,
+            "Password",
+            $svc_acct->_password,
           ) ). " )"
         );
         $sth->execute or die "Can't insert into radcheck table: ". $sth->errstr;
+  
+        foreach my $attribute ( keys %radcheck ) {
+          my $sth = $icradius_dbh->prepare(
+            "INSERT INTO radcheck ( id, UserName, Attribute, Value ) VALUES ( ".
+            join(", ", map { $icradius_dbh->quote( $_ ) } (
+              '',
+              $username,
+              $attribute,
+              $radcheck{$attribute},
+            ) ). " )"
+          );
+          $sth->execute or die "Can't insert into radcheck table: ". $sth->errstr;      }
+  
+        foreach my $attribute ( keys %radreply ) {
+          my $sth = $icradius_dbh->prepare(
+            "INSERT INTO radreply (id, UserName, Attribute, Value) VALUES ( ".
+            join(", ", map { $icradius_dbh->quote( $_ ) } (
+              '',
+              $username,
+              $attribute,
+              $radreply{$attribute},
+            ) ). " )"
+          );
+          $sth->execute or die "Can't insert into radreply table: ". $sth->errstr;      }
       }
-
-      foreach my $attribute ( keys %radreply ) {
-        my $sth = $icradius_dbh->prepare(
-          "INSERT INTO radreply (id, UserName, Attribute, Value) VALUES ( ".
-          join(", ", map { $icradius_dbh->quote( $_ ) } (
-            '',
-            $svc_acct->username,
-            $attribute,
-            $radreply{$attribute},
-          ) ). " )"
-        );
-        $sth->execute or die "Can't insert into radreply table: ". $sth->errstr;
-      }
-
     }
+  
+    ###
+    # vpopmail directory structure creation
+
+    (mkdir "$spooldir/domains/" . $svc_domain->domain . "/" . $svc_acct->username, 0700)
+      or die "Can't create $spooldir/domains/" . $svc_domain->domain . "/" . $svc_acct->username . ": $!";
+    (mkdir "$spooldir/domains/" . $svc_domain->domain . "/" . $svc_acct->username . "/Maildir", 0700)
+      or die "Can't create $spooldir/domains/" . $svc_domain->domain . "/" . $svc_acct->username . " /Maildir: $!";
+    (mkdir "$spooldir/domains/" . $svc_domain->domain . "/" . $svc_acct->username . "/Maildir/cur", 0700)
+      or die "Can't create $spooldir/domains/" . $svc_domain->domain . "/" . $svc_acct->username . " /Maildir/cur: $!";
+    (mkdir "$spooldir/domains/" . $svc_domain->domain . "/" . $svc_acct->username . "/Maildir/new", 0700)
+      or die "Can't create $spooldir/domains/" . $svc_domain->domain . "/" . $svc_acct->username . " /Maildir/new: $!";
+    (mkdir "$spooldir/domains/" . $svc_domain->domain . "/" . $svc_acct->username . "/Maildir/tmp", 0700)
+      or die "Can't create $spooldir/domains/" . $svc_domain->domain . "/" . $svc_acct->username . " /Maildir/tmp: $!";
+
+    ( open(DOTQMAIL,">$spooldir/domains/" . $svc_domain->domain . "/" . $svc_acct->username . "/.qmail")
+      and flock(DOTQMAIL,LOCK_EX|LOCK_NB)  
+    ) or die "Can't open $spooldir/domains/" . $svc_domain->domain . "/" . $svc_acct->username . "/.qmail: $!";
+
+    my($svc_forward);
+    foreach $svc_forward (qsearch('svc_forward', {'srcsvc' => $svc_acct->svcnum})) {
+      my($destination);
+      if ($svc_forward->dstsvc) {
+        my $dst_acct = qsearchs('svc_acct', {'svcnum' => $svc_forward->dstsvc});
+        my $dst_domain = qsearchs('svc_domain', {'svcnum' => $dst_acct->domsvc});
+        $destination = $dst_acct->username . '@' . $dst_domain->domain;
+
+        if ($dst_domain->domain eq $mydomain) {
+          print VIRTUSERTABLE $svc_acct->username . "@" . $svc_domain->domain .
+            "\t" . $dst_acct->username . "\n";
+          print RECIPIENTMAP $svc_acct->username . "@" . $svc_domain->domain .
+            ":$destination\n";
+        }
+      } else {
+        $destination = $svc_forward->dst;
+      }
+    
+      ###
+      # FORMAT OF .QMAIL FILES HERE
+      print DOTQMAIL "$destination\n";
+    }
+
+    flock(DOTQMAIL,LOCK_UN);
+    close DOTQMAIL;
 
   }
 
+  flock(VPASSWD,LOCK_UN);
+  flock(QMAILDEFAULT,LOCK_UN);
+  close VPASSWD;
+  close QMAILDEFAULT;
+
 }
+
+###
+# FORMAT OF THE ASSIGN/USERS FILE FINAL LINE HERE
+print ASSIGN ".\n";
+
+print VIRTUSERTABLE @sendmail;
 
 flock(MASTER,LOCK_UN);
 flock(PASSWD,LOCK_UN);
@@ -349,6 +500,13 @@ flock(SHADOW,LOCK_UN);
 flock(ACP_DIALUP,LOCK_UN);
 flock(ACP_PASSWD,LOCK_UN);
 flock(USERS,LOCK_UN);
+flock(ASSIGN,LOCK_UN);
+flock(SENDMAIL_CW,LOCK_UN);
+flock(VIRTUSERTABLE,LOCK_UN);
+flock(RCPTHOSTS,LOCK_UN);
+flock(VPOPRCPTHOSTS,LOCK_UN);
+flock(RECIPIENTMAP,LOCK_UN);
+flock(VPOPVIRTUALDOMAINS,LOCK_UN);
 
 close MASTER;
 close PASSWD;
@@ -356,19 +514,26 @@ close SHADOW;
 close ACP_DIALUP;
 close ACP_PASSWD;
 close USERS;
+close ASSIGN;
+close SENDMAIL_CW;
+close VIRTUSERTABLE;
+close RCPTHOSTS;
+close VPOPRCPTHOSTS;
+close RECIPIENTMAP;
+close VPOPVIRTUALDOMAINS;
 
 ###
 # export stuff
 #
 
-my($shellmachine);
-foreach $shellmachine (@shellmachines) {
+my($ashellmachine);
+foreach $ashellmachine (@shellmachines) {
   my $scp = new Net::SCP;
-  $scp->scp("$spooldir/passwd","root\@$shellmachine:/etc/passwd.new")
+  $scp->scp("$spooldir/passwd","root\@$ashellmachine:/etc/passwd.new")
     or die "scp error: ". $scp->{errstr};
-  $scp->scp("$spooldir/shadow","root\@$shellmachine:/etc/shadow.new")
+  $scp->scp("$spooldir/shadow","root\@$ashellmachine:/etc/shadow.new")
     or die "scp error: ". $scp->{errstr};
-  ssh("root\@$shellmachine",
+  ssh("root\@$ashellmachine",
     "( ".
       "mv /etc/passwd.new /etc/passwd; ".
       "mv /etc/shadow.new /etc/shadow; ".
@@ -455,6 +620,65 @@ foreach my $icradiusmachine ( @icradiusmachines ) {
       or die "scp error: ". $scp->{errstr};
   }
   close WRITER;
+}
+
+my @args = ("/bin/tar", "c", "--force-local", "-C", "$spooldir", "-f", "$spooldir/vpoptarball", "domains");
+
+system {$args[0]} @args;
+
+my($vpopmailmachine);
+foreach $vpopmailmachine (@vpopmailmachines) {
+  my ($machine, $vpopdir, $vpopuid, $vpopgid) = split (/\s+/, $vpopmailmachine);
+  my $scp = new Net::SCP;
+  $scp->scp("$spooldir/vpoptarball","root\@$machine:vpoptarball")
+    or die "scp error: ". $scp->{errstr};
+  ssh("root\@$machine",
+    "( ".
+      "tar xf vpoptarball; ".
+      "chown -R $vpopuid:$vpopgid domains; ".
+      "tar cf vpoptarball domains; ".
+      "cd $vpopdir; ".
+      "tar xf ~/vpoptarball; ".
+    " )"
+  )
+    == 0 or die "ssh error: $!";
+
+  $scp->scp("$spooldir/assign","root\@$machine:/var/qmail/users/assign")
+    or die "scp error: ". $scp->{errstr};
+  $scp->scp("$spooldir/vpopvirtualdomains","root\@$machine:/var/qmail/control/virtualdomains")
+    or die "scp error: ". $scp->{errstr};
+  $scp->scp("$spooldir/vpoprcpthosts","root\@$machine:/var/qmail/control/rcpthosts")
+    or die "scp error: ". $scp->{errstr};
+}
+
+my($sendmailmachine);
+foreach $sendmailmachine (@sendmailmachines) {
+  my $scp = new Net::SCP;
+  $scp->scp("$spooldir/sendmail.cw","root\@$sendmailmachine:$sendmailconfigpath/sendmail.cw.new")
+    or die "scp error: ". $scp->{errstr};
+  $scp->scp("$spooldir/virtusertable","root\@$sendmailmachine:$sendmailconfigpath/virtusertable.new")
+    or die "scp error: ". $scp->{errstr};
+  ssh("root\@$sendmailmachine",
+    "( ".
+      "mv $sendmailconfigpath/sendmail.cw.new $sendmailconfigpath/sendmail.cw; ".
+      "mv $sendmailconfigpath/virtusertable.new $sendmailconfigpath/virtusertable; ".
+      $sendmailrestart.
+    " )"
+  )
+    == 0 or die "ssh error: $!";
+}
+
+my($qmailmachine);
+foreach $qmailmachine (@qmailmachines) {
+  my $scp = new Net::SCP;
+  $scp->scp("$spooldir/recipientmap","root\@$qmailmachine:/var/qmail/control/recipientmap")
+    or die "scp error: ". $scp->{errstr};
+  $scp->scp("$spooldir/virtualdomains","root\@$qmailmachine:/var/qmail/control/virtualdomains")
+    or die "scp error: ". $scp->{errstr};
+  $scp->scp("$spooldir/rcpthosts","root\@$qmailmachine:/var/qmail/control/rcpthosts")
+    or die "scp error: ". $scp->{errstr};
+  #ssh("root\@$qmailmachine","/etc/init.d/qmail restart")
+  #  == 0 or die "ssh error: $!";
 }
 
 unlink $spoollock;

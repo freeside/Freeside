@@ -61,6 +61,30 @@ $ perl Makefile.PL
 $ make
 $ su
 # make install UNINST=1</pre>
+   <li>Apply the following changes to your database:
+<pre>
+CREATE TABLE svc_forward (
+  svcnum int NOT NULL,
+  srcsvc int NOT NULL,
+  dstsvc int NOT NULL,
+  dst varchar(80),
+  PRIMARY KEY (svcnum)
+);
+ALTER TABLE svc_acct ADD domsvc integer NOT NULL;
+ALTER TABLE svc_domain ADD catchall integer;
+ALTER TABLE part_svc ADD svc_acct__domsvc integer NULL;
+ALTER TABLE part_svc ADD svc_acct__domsvc_flag char(1) NULL;
+ALTER TABLE part_svc ADD svc_domain__catchall integer NULL;
+ALTER TABLE part_svc ADD svc_domain__catchall_flag char(1) NULL;
+ALTER TABLE part_svc ADD svc_forward__srcsvc integer NULL;
+ALTER TABLE part_svc ADD svc_forward__srcsvc_flag char(1) NULL;
+ALTER TABLE part_svc ADD svc_forward__dstsvc integer NULL;
+ALTER TABLE part_svc ADD svc_forward__dstsvc_flag char(1) NULL;
+ALTER TABLE part_svc ADD svc_forward__dst integer NULL;
+ALTER TABLE part_svc ADD svc_forward__dst_flag char(1) NULL;
+
+</pre>
+
   <li>If you are using PostgreSQL, apply the following changes to your database:
 <pre>
 CREATE UNIQUE INDEX agent_pkey ON agent ( agentnum );
@@ -112,4 +136,7 @@ ALTER TABLE cust_main ADD COLUMN ship_fax varchar(12) NULL;
 ALTER TABLE cust_main ADD COLUMN comments varchar NULL;
 </pre>
   <li>Run bin/dbdef-create.
+  <li>create a service based on svc_forward
+  <li>Run bin/fs-migrate-svc_acct_sm
+  <li>create the conf.dbsrc/user_policy as appropriate for your site
 </body>

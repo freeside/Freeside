@@ -1,0 +1,52 @@
+<head>
+  <title>Upgrading to 1.3.2</title>
+</head>
+<body>
+<h1>Upgrading to 1.3.2 from 1.3.1</h1>
+<ul>
+  <li>If migrating from 1.0.0, see these <a href="upgrade.html">instructions</a> first.
+  <li>If migrating from less than 1.1.4, see these <a href="upgrade2.html">instructions</a> first.
+  <li>If migrating from less than 1.2.0, see these <a href="upgrade3.html">instructions</a> first.
+  <li>If migrating from less than 1.2.2, see these <a href="upgrade4.html">instructions</a> first.
+  <li>If migrating from less than 1.2.3, see these <a href="upgrade5.html">instructions</a> first.
+  <li>If migrating from less than 1.3.0, see these <a href="upgrade6.html">instructions</a> first.
+  <li>If migrating from less than 1.3.1, see these <a href="upgrade7.html">instructions</a> first.
+  <li>Back up your data and current Freeside installation.
+  <li>Apply the following changes to your database:
+<pre>
+CREATE TABLE svc_forward (
+  svcnum int NOT NULL,
+  srcsvc int NOT NULL,
+  dstsvc int NOT NULL,
+  dst varchar(80),
+  PRIMARY KEY (svcnum)
+);
+ALTER TABLE svc_acct ADD domsvc integer NOT NULL;
+ALTER TABLE svc_domain ADD catchall integer;
+ALTER TABLE part_svc ADD svc_acct__domsvc integer NULL;
+ALTER TABLE part_svc ADD svc_acct__domsvc_flag char(1) NULL;
+ALTER TABLE part_svc ADD svc_domain__catchall integer NULL;
+ALTER TABLE part_svc ADD svc_domain__catchall_flag char(1) NULL;
+ALTER TABLE part_svc ADD svc_forward__srcsvc integer NULL;
+ALTER TABLE part_svc ADD svc_forward__srcsvc_flag char(1) NULL;
+ALTER TABLE part_svc ADD svc_forward__dstsvc integer NULL;
+ALTER TABLE part_svc ADD svc_forward__dstsvc_flag char(1) NULL;
+ALTER TABLE part_svc ADD svc_forward__dst integer NULL;
+ALTER TABLE part_svc ADD svc_forward__dst_flag char(1) NULL;
+
+</pre>
+  <li>Copy or symlink htdocs to the new copy.
+  <li>Remove the symlink or directory <i>(your_site_perl_directory)</i>/FS.
+  <li>Change to the FS directory in the new tarball, and build and install the
+      Perl modules:
+    <pre>
+$ cd FS/
+$ perl Makefile.PL
+$ make
+$ su
+# make install</pre>
+  <li>Run bin/dbdef-create.
+  <li>create a service based on svc_forward
+  <li>Run bin/fs-migrate-svc_acct_sm
+  <li>create the conf.dbsrc/user_policy as appropriate for your site
+</body>
