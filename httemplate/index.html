@@ -69,14 +69,13 @@
               <LI>all invoices (<A HREF="search/cust_bill.html?invnum">by invoice number</A>) (<A HREF="search/cust_bill.html?date">by date</A>) (<A HREF="search/cust_bill.html?custnum">by customer number</A>)
             </UL>
       <A HREF="search/report_cust_pay.html">Payment report (by type and/or date range)</A>
+      <BR><BR><A HREF="search/report_cust_credit.html">Credit report (by employee and/or date range)</A>
       <BR><BR><A HREF="graph/money_time.cgi">Sales, Credits and Receipts Summary</A>
       <BR><BR><A HREF="search/report_receivables.cgi">Accounts Receivable Aging Summary</A>
       <BR><BR><A HREF="search/report_prepaid_income.html">Prepaid Income (Unearned Revenue) Report</A>
       <BR><BR>(old) Financial reports (being rewritten)
             <UL>
               <LI> <A HREF="search/report_tax.html">tax reports</A>
-              <LI> <A HREF="search/report_cc.html">credit card receipts</A>
-              <LI> <A HREF="search/report_credit.html">credit memos</A>
             </UL>
       <CENTER><HR WIDTH="94%" NOSHADE></CENTER><BR>
       <A NAME="admin">Administration</a>
@@ -132,7 +131,7 @@
       <A HREF="browse/part_svc.cgi?active=1">Service definitions (by number of active services)</A><BR><BR>
     Customers
       <UL>
-        <LI><A HREF="search/cust_main-otaker.cgi">Search customers by order-taker</A>
+        <LI><A HREF="search/cust_main-otaker.cgi">Search customers by ordering employee</A>
       </UL>
     <FORM ACTION="search/sql.html" METHOD="POST">SQL query: <TT>SELECT </TT><INPUT TYPE="text" NAME="sql" SIZE=32><INPUT TYPE="submit" VALUE="Query"></FORM>
 

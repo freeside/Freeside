@@ -8,9 +8,7 @@ bin/freeside-addoutsourceuser
 bin/freeside-adduser
 bin/freeside-apply-credits
 bin/freeside-bill
-bin/freeside-cc-receipts-report
 bin/freeside-count-active-customers
-bin/freeside-credit-report
 bin/freeside-daily
 bin/freeside-deloutsource
 bin/freeside-deloutsourceuser
