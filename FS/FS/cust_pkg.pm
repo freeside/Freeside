@@ -477,8 +477,8 @@ Useful for billing metered services.
 
 sub last_bill {
   my $self = shift;
-  if ( $self->dbdef_table->column('manual_flag') ) {
-    return $self->setfield('last_bill', $_[1]) if @_;
+  if ( $self->dbdef_table->column('last_bill') ) {
+    return $self->setfield('last_bill', $_[0]) if @_;
     return $self->getfield('last_bill') if $self->getfield('last_bill');
   }    
   my $cust_bill_pkg = qsearchs('cust_bill_pkg', { 'pkgnum' => $self->pkgnum,
