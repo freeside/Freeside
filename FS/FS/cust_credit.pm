@@ -105,7 +105,7 @@ sub check {
     || $self->ut_number('custnum')
     || $self->ut_numbern('_date')
     || $self->ut_money('amount')
-    || $self->ut_textn('reason');
+    || $self->ut_text('reason');
   ;
   return $error if $error;
 
@@ -150,7 +150,7 @@ sub credited {
 
 =head1 VERSION
 
-$Id: cust_credit.pm,v 1.6 2001-04-23 19:50:07 ivan Exp $
+$Id: cust_credit.pm,v 1.7 2001-08-26 05:05:25 ivan Exp $
 
 =head1 BUGS
 
