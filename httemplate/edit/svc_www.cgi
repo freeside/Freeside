@@ -74,7 +74,7 @@ if ($pkgnum) {
       foreach $i_cust_svc ( qsearch('cust_svc',{'pkgnum'=>$cust_pkgnum,'svcpart'=>$acct_svcpart}) ) {
         my($svc_acct)=qsearchs('svc_acct',{'svcnum'=>$i_cust_svc->getfield('svcnum')});
         $svc_acct{$svc_acct->getfield('svcnum')}=
-          $svc_acct->part_svc->svc. ': '. $svc_acct->email;
+          $svc_acct->cust_svc->part_svc->svc. ': '. $svc_acct->email;
       }  
     }
   }
