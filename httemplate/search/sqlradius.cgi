@@ -259,10 +259,10 @@
 <%= $part_export->exporttype %> to <%= $part_export->machine %><BR>
 <%= include( '/elements/table.html' ) %>
 <TR>
-  <% foreach my $field ( keys %fields ) { %>
+  <% foreach my $field ( keys %efields ) { %>
     <TH>
-      <%= $fields{$field}->{name} %><BR>
-      <FONT SIZE=-2><%= $fields{$field}->{attrib} %></FONT>
+      <%= $efields{$field}->{name} %><BR>
+      <FONT SIZE=-2><%= $efields{$field}->{attrib} %></FONT>
     </TH>
   <% } %>
 </TR>
@@ -272,9 +272,9 @@
    ) {
 %>
   <TR>
-    <% foreach my $field ( keys %fields ) { %>
-      <TD ALIGN="<%= $fields{$field}->{align} %>">
-        <%= &{ $fields{$field}->{fmt} }( $session->{$field},
+    <% foreach my $field ( keys %efields ) { %>
+      <TD ALIGN="<%= $efields{$field}->{align} %>">
+        <%= &{ $efields{$field}->{fmt} }( $session->{$field},
                                          $session,
                                          $part_export,
                                        )
