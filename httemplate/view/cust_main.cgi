@@ -412,14 +412,17 @@ foreach my $pkg (sort pkgsort_pkgnum_cancel @$packages) {
 
   sub freq {
 
+    #false laziness w/edit/part_pkg.cgi
     my %freq = ( #move this
-      1 => 'monthly',
-      2 => 'bi-monthly',
-      3 => 'quarterly',
-      6 => 'semi-annually',
-      12 => 'annually',
-      24 => 'bi-annually',
-      36 => 'tri-annually',
+      '1d' => 'daily',
+      '1w' => 'weekly',
+      '2w' => 'biweekly (every 2 weeks)',
+      '1'  => 'monthly',
+      '2'  => 'bimonthly (every 2 months)',
+      '3'  => 'quarterly (every 3 months)',
+      '6'  => 'semiannually (every 6 months)',
+      '12' => 'annually',
+      '24' => 'biannually (every 2 years)',
     );
 
     my $freq = shift;

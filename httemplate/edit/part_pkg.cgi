@@ -66,6 +66,7 @@ print '<FORM NAME="dummy">';
 #print qq!<INPUT TYPE="hidden" NAME="pkgpart" VALUE="$hashref->{pkgpart}">!,
 print "Package Part #", $hashref->{pkgpart} ? $hashref->{pkgpart} : "(NEW)";
 
+#false laziness w/view/cust_main.cgi
 my %freq;
 tie %freq, 'Tie::IxHash', 
   '0'  => '(no recurring fee)',
