@@ -201,21 +201,23 @@ sub ldap_queue {
     $self->machine,
     $self->option('dn'),
     $self->option('password'),
+    $self->option('userdn'),
     @_,
   ) or $queue;
 }
 
 sub ldap_insert { #subroutine, not method
-  my $ldap = ldap_connect(shift, (my $dn = shift), shift);
-  my( $username_attrib, %attrib ) = @_;
+  my $ldap = ldap_connect(shift, shift, shift);
+  my( $userdn, $username_attrib, %attrib ) = @_;
 
-  $dn = "$username_attrib=$attrib{$username_attrib}, $dn" if $username_attrib;
+  $userdn = "$username_attrib=$attrib{$username_attrib}, $userdn"
+    if $username_attrib;
   #icky hack, but should be unsurprising to the LDAPers
   foreach my $key ( grep { $attrib{$_} =~ /,/ } keys %attrib ) {
     $attrib{$key} = [ split(/,/, $attrib{$key}) ]; 
   }
 
-  my $status = $ldap->add( $dn, attrs => [ %attrib ] );
+  my $status = $ldap->add( $userdn, attrs => [ %attrib ] );
   die $status->error if $status->is_error;
 
   $ldap->unbind;
