@@ -357,16 +357,14 @@ if ( $payby_default eq 'HIDE' ) {
     }
 
     #false laziness w/expselect
-    my( $m, $y ) = (0, 0);
-    if ( scalar(@_) ) {
-      my $date = shift || '01-2000';
-      if ( $date  =~ /^(\d{4})-(\d{1,2})-\d{1,2}$/ ) { #PostgreSQL date format
-        ( $m, $y ) = ( $2, $1 );
-      } elsif ( $date =~ /^(\d{1,2})-(\d{1,2}-)?(\d{4}$)/ ) {
-        ( $m, $y ) = ( $1, $3 );
-      } else {
-        die "unrecognized expiration date format: $date";
-      }
+    my( $m, $y );
+    my $date = $cust_main->paydate || '12-2037';
+    if ( $date  =~ /^(\d{4})-(\d{1,2})-\d{1,2}$/ ) { #PostgreSQL date format
+      ( $m, $y ) = ( $2, $1 );
+    } elsif ( $date =~ /^(\d{1,2})-(\d{1,2}-)?(\d{4}$)/ ) {
+      ( $m, $y ) = ( $1, $3 );
+    } else {
+      die "unrecognized expiration date format: $date";
     }
 
     print qq!<INPUT TYPE="hidden" NAME="${payby}_month" VALUE="$m"!.
