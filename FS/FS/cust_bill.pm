@@ -518,6 +518,7 @@ sub realtime_card {
     'expiration'     => $exp,
     'referer'        => 'http://cleanwhisker.420.am/',
     'email'          => $email,
+    'phone'          => $cust_main->daytime || $cust_main->night,
   );
   $transaction->submit();
 
@@ -947,7 +948,7 @@ sub print_text {
 
 =head1 VERSION
 
-$Id: cust_bill.pm,v 1.32 2002-04-16 22:56:58 ivan Exp $
+$Id: cust_bill.pm,v 1.33 2002-04-19 14:27:34 ivan Exp $
 
 =head1 BUGS
 
