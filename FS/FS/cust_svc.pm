@@ -231,7 +231,7 @@ sub check {
     });
     return "Already ". scalar(@cust_svc). " ". $part_svc->svc.
            " services for pkgnum ". $self->pkgnum
-      if scalar(@cust_svc) >= $quantity && (!$ignore_quantity || !$quantity);
+      if scalar(@cust_svc) >= $quantity && !$ignore_quantity;
   }
 
   $self->SUPER::check;
@@ -496,6 +496,62 @@ sub attribute_since_sqlradacct {
   }
 
   $sum;
+
+}
+
+=item get_session_history_sqlradacct TIMESTAMP_START TIMESTAMP_END
+
+See L<FS::svc_acct/get_session_history_sqlradacct>.  Equivalent to
+$cust_svc->svc_x->get_session_history_sqlradacct, but more efficient.
+Meaningless for records where B<svcdb> is not "svc_acct".
+
+=cut
+
+sub get_session_history {
+  my($self, $start, $end, $attrib) = @_;
+
+  my $username = $self->svc_x->username;
+
+  my @part_export = $self->part_svc->part_export('sqlradius')
+    or die "no sqlradius export configured for this service type";
+    #or return undef;
+                     
+  my @sessions = ();
+
+  foreach my $part_export ( @part_export ) {
+                                            
+    my $dbh = DBI->connect( map { $part_export->option($_) }
+                            qw(datasrc username password)    )
+      or die "can't connect to sqlradius database: ". $DBI::errstr;
+
+    #select a unix time conversion function based on database type
+    my $str2time;                                                 
+    if ( $dbh->{Driver}->{Name} eq 'mysql' ) {
+      $str2time = 'UNIX_TIMESTAMP(';          
+    } elsif ( $dbh->{Driver}->{Name} eq 'Pg' ) {
+      $str2time = 'EXTRACT( EPOCH FROM ';       
+    } else {
+      warn "warning: unknown database type ". $dbh->{Driver}->{Name}.
+           "; guessing how to convert to UNIX timestamps";
+      $str2time = 'extract(epoch from ';                  
+    }
+
+    my @fields = qw( acctstarttime acctstoptime acctsessiontime
+                     acctinputoctets acctoutputoctets framedipaddress );
+     
+    my $sth = $dbh->prepare('SELECT '. join(', ', @fields).
+                            "  FROM radacct
+                               WHERE UserName = ?
+                                 AND $str2time AcctStopTime ) >= ?
+                                 AND $str2time AcctStopTime ) <=  ?
+                                 ORDER BY AcctStartTime DESC
+    ") or die $dbh->errstr;                                 
+    $sth->execute($username, $start, $end) or die $sth->errstr;
+
+    push @sessions, map { { %$_ } } @{ $sth->fetchall_arrayref({}) };
+
+  }
+  \@sessions
 
 }
 
