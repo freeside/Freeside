@@ -1106,12 +1106,23 @@ sub order {
   my $cust_main = qsearchs('cust_main', { custnum => $custnum });
   return "Customer not found: $custnum" unless $cust_main;
 
-  my $change = scalar(@$remove_pkgnum) != 0;
+  my @old_cust_pkg = map { qsearchs('cust_pkg', { pkgnum => $_ }) }
+                         @$remove_pkgnum;
+
+  my $change = scalar(@old_cust_pkg) != 0;
+
+  my %hash = (); 
+  if ( scalar(@old_cust_pkg) == 1 ) {
+    #$hash{$_} = $old_cust_pkg[0]->$_() foreach qw( last_bill bill );
+    $hash{'setup'} = time;
+  }
 
   # Create the new packages.
   foreach my $pkgpart (@$pkgparts) {
     my $cust_pkg = new FS::cust_pkg { custnum => $custnum,
-                                      pkgpart => $pkgpart };
+                                      pkgpart => $pkgpart,
+                                      %hash,
+                                    };
     $error = $cust_pkg->insert( 'change' => $change );
     if ($error) {
       $dbh->rollback if $oldAutoCommit;
@@ -1123,8 +1134,7 @@ sub order {
   # created packages.
 
   # Transfer services and cancel old packages.
-  foreach my $old_pkgnum (@$remove_pkgnum) {
-    my $old_pkg = qsearchs ('cust_pkg', { pkgnum => $old_pkgnum });
+  foreach my $old_pkg (@old_cust_pkg) {
 
     foreach my $new_pkg (@$return_cust_pkg) {
       $error = $old_pkg->transfer($new_pkg);
