@@ -71,7 +71,7 @@ print header("Customer $action", '', ' onUnload="myclose()"');
 print qq!<FONT SIZE="+1" COLOR="#ff0000">Error: !, $error, "</FONT>"
   if $error;
 
-print qq!<FORM ACTION="${p1}process/cust_main.cgi" METHOD=POST NAME="form1">!,
+print qq!<FORM ACTION="${p1}process/cust_main.cgi" METHOD=POST NAME="form1" onSubmit="document.form1.submit.disabled=true">!,
       qq!<INPUT TYPE="hidden" NAME="custnum" VALUE="$custnum">!,
       qq!Customer # !, ( $custnum ? "<B>$custnum</B>" : " (NEW)" ),
       
@@ -564,7 +564,7 @@ END
 
 my $otaker = $cust_main->otaker;
 print qq!<INPUT TYPE="hidden" NAME="otaker" VALUE="$otaker">!,
-      qq!<BR><INPUT TYPE="submit" VALUE="!,
+      qq!<BR><INPUT NAME="submit" TYPE="submit" VALUE="!,
       $custnum ?  "Apply Changes" : "Add Customer", qq!">!,
       "</FORM></BODY></HTML>",
 ;
