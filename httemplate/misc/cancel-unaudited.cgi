@@ -33,7 +33,7 @@ if ( $error ) {
   %>
 <!-- mason kludge -->
 <%
-  &eidiot(@_);
+  &eidiot($error);
 } else {
 
   $dbh->commit or die $dbh->errstr;
