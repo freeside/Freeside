@@ -57,8 +57,12 @@ QUEUED_USER=fs_queue
 FREESIDE_PATH = `pwd`
 
 SELFSERVICE_USER = fs_selfservice
-SELFSERVICE_MACHINES = localhost
+# SELFSERVICE_MACHINES = www.example.com
 # SELFSERVICE_MACHINES = web1.example.com web2.example.com
+
+#user with sudo access on SELFSERVICE_MACHINES for automated self-service
+#installation.
+SELFSERVICE_INSTALL_USER = ivan
 
 RT_ENABLED = 0
 #RT_ENABLED = 1
@@ -164,6 +168,12 @@ install-init:
 	  s/%%%SELFSERVICE_USER%%%/${SELFSERVICE_USER}/g;\
 	  s/%%%SELFSERVICE_MACHINES%%%/${SELFSERVICE_MACHINES}/g;\
 	" ${INIT_FILE}
+
+install-selfservice:
+	for MACHINE in ${SELFSERVICE_MACHINES}; do \
+	  scp -r fs_selfservice/FS-SelfService ${SELFSERVICE_INSTALL_USER}@\$MACHINE:.
+	  ssh ${SELFSERVICE_INSTALL_USER}@\$MACHINE "cd FS-SelfService; perl Makefile.PL && make"
+	  ssh ${SELFSERVICE_INSTALL_USER}@\$MACHINE "cd FS-SelfService; sudo make install"
 
 install: install-perl-modules install-docs install-init install-rt
 
