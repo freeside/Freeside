@@ -37,7 +37,7 @@ Then:
   <li>Enable CGI execution for files with the `.cgi' extension.  (with <a href="http://www.apache.org/docs/mod/mod_mime.html#addhandler">Apache</a>)
   <li>Create the /usr/local/freeside directory on the external machine (owned by the freeside user).
   <li>touch /usr/local/freeside/selfservice_socket; chown freeside /usr/local/freeside/selfservice_socket; chmod 600 /usr/local/freeside/selfservice_socket
-  <li>Use <a href="http://www.apache.org/docs/suexec.html">suEXEC</a> or <a href="http://www.perl.com/CPAN-local/doc/manual/html/pod/perlsec.html#Security_Bugs">setuid</a> (see <a href="install.html">install.html</a> for details) to run signup.cgi, selfservice.cgi, agent.cgi and passwd.cgi as the freeside user.
+  <li>Use <a href="http://www.apache.org/docs/suexec.html">suEXEC</a> or <a href="http://www.perl.com/CPAN-local/doc/manual/html/pod/perlsec.html#Security_Bugs">setuid</a> to run signup.cgi, selfservice.cgi, agent.cgi and passwd.cgi as the freeside user.  <b>Do not run your public web server as the freeside user!</b>
   <li>Append the identity.pub from the freeside user on your freeside machine to the authorized_keys file of the newly created freeside user on the external machine(s).
   <li>Run an instance of <pre>freeside-selfservice-server <i>user</i> <i>machine</i> <i>agentnum</i> <i>refnum</i></pre> on the Freeside machine for each external machine.
   <ul>

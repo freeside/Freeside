@@ -1,7 +1,7 @@
 package FS::SelfService;
 
 use strict;
-use vars qw($VERSION @ISA @EXPORT_OK $socket %autoload $tag);
+use vars qw($VERSION @ISA @EXPORT_OK $dir $socket %autoload $tag);
 use Exporter;
 use Socket;
 use FileHandle;
@@ -13,7 +13,8 @@ $VERSION = '0.03';
 
 @ISA = qw( Exporter );
 
-$socket =  "/usr/local/freeside/selfservice_socket";
+$dir = "/usr/local/freeside";
+$socket =  "$dir/selfservice_socket";
 $socket .= '.'.$tag if defined $tag && length($tag);
 
 #maybe should ask ClientAPI for this list
@@ -57,6 +58,11 @@ $ENV{'BASH_ENV'} = '';
 my $freeside_uid = scalar(getpwnam('freeside'));
 die "not running as the freeside user\n" if $> != $freeside_uid;
 
+-e $dir or die "FATAL: $dir doesn't exist!";
+-d $dir or die "FATAL: $dir isn't a directory!";
+-r $dir or die "FATAL: Can't read $dir as freeside user!";
+-x $dir or die "FATAL: $dir not searchable (executable) as freeside user!";
+
 foreach my $autoload ( keys %autoload ) {
 
   my $eval =
@@ -81,7 +87,7 @@ foreach my $autoload ( keys %autoload ) {
 sub simple_packet {
   my $packet = shift;
   socket(SOCK, PF_UNIX, SOCK_STREAM, 0) or die "socket: $!";
-  connect(SOCK, sockaddr_un($socket)) or die "connect: $!";
+  connect(SOCK, sockaddr_un($socket)) or die "connect to $socket: $!";
   nstore_fd($packet, \*SOCK) or die "can't send packet: $!";
   SOCK->flush;
 
