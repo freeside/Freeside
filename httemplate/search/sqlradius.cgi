@@ -126,6 +126,7 @@
     return '&nbsp;' if $time == 0;
     my $pretty = time2str('%T%P %a&nbsp;%b&nbsp;%o&nbsp;%Y', $time );
     $pretty =~ s/ (\d)(st|dn|rd|th)/&nbsp;$1$2/;
+    $pretty;
   };
 
   my $duration_format = sub {
@@ -171,19 +172,19 @@
                              fmt     => $customer_format,
                            },
     'framedipaddress'   => {
-                             name    => 'IP Address',
+                             name    => 'IP&nbsp;Address',
                              attrib  => 'Framed-IP-Address',
                              fmt     => sub { my $ip = shift;
                                               length($ip) ? $ip : '&nbsp';
                                             },
                            },
     'acctstarttime'     => {
-                             name    => 'Start time',
+                             name    => 'Start&nbsp;time',
                              attrib  => 'Acct-Start-Time',
                              fmt     => $time_format,
                            },
     'acctstoptime'      => {
-                             name    => 'End time',
+                             name    => 'End&nbsp;time',
                              attrib  => 'Acct-Stop-Time',
                              fmt     => $time_format,
                            },
