@@ -3,7 +3,7 @@ package FS::ClientAPI::Signup;
 use strict;
 use Tie::RefHash;
 use FS::Conf;
-use FS::Record qw(qsearch qsearchs);
+use FS::Record qw(qsearch qsearchs dbdef);
 use FS::agent;
 use FS::cust_main_county;
 use FS::part_pkg;
@@ -29,6 +29,15 @@ sub signup_info {
     'cust_main_county' =>
       [ map { $_->hashref } qsearch('cust_main_county', {}) ],
 
+    'agent' =>
+      [
+        map { $_->hashref }
+          qsearch('agent', dbdef->table('agent')->column('disabled')
+                             ? { 'disabled' => '' }
+                             : {}
+                 )
+      ],
+
     'agentnum2part_pkg' =>
       {
         map {
@@ -39,7 +48,10 @@ sub signup_info {
                 grep { $_->svcpart('svc_acct') && $href->{ $_->pkgpart } }
                   qsearch( 'part_pkg', { 'disabled' => '' } )
             ];
-        } qsearch('agent', {} )
+        } qsearch('agent', dbdef->table('agent')->column('disabled')
+                             ? { 'disabled' => '' }
+                             : {}
+                 )
       },
 
     'svc_acct_pop' => [ map { $_->hashref } qsearch('svc_acct_pop',{} ) ],

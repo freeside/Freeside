@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: signup.cgi,v 1.44 2003-09-29 06:22:18 ivan Exp $
+# $Id: signup.cgi,v 1.45 2003-09-29 06:51:24 ivan Exp $
 
 use strict;
 use vars qw( @payby $cgi $locales $packages
@@ -213,6 +213,7 @@ if ( defined $cgi->param('magic') ) {
     $password         = $cgi->param('_password');
     $popnum           = $cgi->param('popnum');
     #$agentnum, #         = $cgi->param('agentnum'),
+    $agentnum         ||= $cgi->param('agentnum');
     $init_popstate    = $cgi->param('init_popstate');
 
     if ( $cgi->param('_password') ne $cgi->param('_password2') ) {
