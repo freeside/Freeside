@@ -402,7 +402,7 @@ sub check {
 
   return "Unknown srcsvc" unless $self->srcsvc_acct;
 
-  return "Both dstsvc and dst were defined; one one can be specified"
+  return "Both dstsvc and dst were defined; only one can be specified"
     if $self->dstsvc && $self->dst;
 
   return "one of dstsvc or dst is required"
@@ -452,7 +452,7 @@ sub dstsvc_acct {
 
 =head1 VERSION
 
-$Id: svc_forward.pm,v 1.11 2002-02-20 01:03:09 ivan Exp $
+$Id: svc_forward.pm,v 1.12 2002-05-31 17:50:37 ivan Exp $
 
 =head1 BUGS
 
