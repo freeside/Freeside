@@ -10,7 +10,7 @@ use Mail::Internet;
 use Mail::Header;
 use Date::Format;
 use Net::Whois 1.0;
-use Net::SSH qw(ssh);
+use Net::SSH;
 use FS::Record qw(fields qsearch qsearchs dbh);
 use FS::Conf;
 use FS::svc_Common;
@@ -19,6 +19,7 @@ use FS::svc_acct;
 use FS::cust_pkg;
 use FS::cust_main;
 use FS::domain_record;
+use FS::queue;
 
 @ISA = qw( FS::svc_Common );
 
@@ -228,6 +229,7 @@ sub insert {
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
   if ( $qshellmachine && $self->catchall && ! $nossh_hack ) {
+
     my $svc_acct = qsearchs( 'svc_acct', { 'svcnum' => $self->catchall } )
       or warn "WARNING: inserted unknown catchall: ". $self->catchall;
     if ( $svc_acct && $svc_acct->dir ) {
@@ -238,12 +240,45 @@ sub insert {
         $svc_acct->gid,
         $svc_acct->dir,
       );
-      ssh("root\@$qshellmachine", "[ -e $dir/.qmail-$qdomain-default ] || { touch $dir/.qmail-$qdomain-default; chown $uid:$gid $dir/.qmail-$qdomain-default; }");
+  
+    my $queue = new FS::queue { 'job' => 'FS::svc_domain::ssh' };
+    $error = $queue->insert("root\@$qshellmachine", "[ -e $dir/.qmail-$qdomain-default ] || { touch $dir/.qmail-$qdomain-default; chown $uid:$gid $dir/.qmail-$qdomain-default; }" );
+
     }
   }
 
   ''; #no error
 }
+
+=item ssh
+
+=cut
+
+#false laziness with FS::svc_acct::ssh
+sub ssh {
+  my ( $host, @cmd_and_args ) = @_;
+
+  use IO::File;
+  my $reader = IO::File->new();
+  my $writer = IO::File->new();
+  my $error = IO::File->new();
+
+  &Net::SSH::sshopen3( $host, $reader, $writer, $error, @cmd_and_args) or die $!;
+
+  local $/ = undef;
+  my $output_stream = <$writer>;
+  my $error_stream = <$error>;
+  if ( length $error_stream ) {
+    #warn "[FS::svc_acct::ssh] STDERR $error_stream";
+    die "[FS::svc_domain::ssh] STDERR $error_stream";
+  }
+  if ( length $output_stream ) {
+    warn "[FS::svc_domain::ssh] STDOUT $output_stream";
+  }
+
+#  &Net::SSH::ssh(@args,">>/usr/local/etc/freeside/sshoutput 2>&1");
+}
+
 
 =item delete
 
@@ -416,7 +451,7 @@ sub submit_internic {
 
 =head1 VERSION
 
-$Id: svc_domain.pm,v 1.22 2001-10-24 15:29:30 ivan Exp $
+$Id: svc_domain.pm,v 1.23 2002-02-09 18:09:30 ivan Exp $
 
 =head1 BUGS
 
