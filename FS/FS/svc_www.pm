@@ -53,7 +53,7 @@ from FS::svc_Common.  The following fields are currently supported:
 
 =item svcnum - primary key
 
-=item recnum - DNS `A' record corresponding to this web virtual host. (see L<FS::domain_record))
+=item recnum - DNS `A' record corresponding to this web virtual host. (see L<FS::domain_record>)
 
 =item usersvc - account (see L<FS::svc_acct>) corresponding to this web virtual host.
 
@@ -220,7 +220,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: svc_www.pm,v 1.2 2000-03-01 08:13:59 ivan Exp $
+$Id: svc_www.pm,v 1.3 2000-11-22 23:30:51 ivan Exp $
 
 =head1 BUGS
 
@@ -232,7 +232,10 @@ L<FS::part_svc>, L<FS::cust_pkg>, schema.html from the base documentation.
 =head1 HISTORY
 
 $Log: svc_www.pm,v $
-Revision 1.2  2000-03-01 08:13:59  ivan
+Revision 1.3  2000-11-22 23:30:51  ivan
+tyop
+
+Revision 1.2  2000/03/01 08:13:59  ivan
 compilation bugfixes
 
 Revision 1.1  2000/02/03 05:16:52  ivan
