@@ -29,8 +29,10 @@ if ( $cgi->param('clone') ) {
 } elsif ( $query && $query =~ /^(\d+)$/ ) {
   $part_pkg ||= qsearchs('part_pkg',{'pkgpart'=>$1});
 } else {
-  $part_pkg ||= new FS::part_pkg {};
-  $part_pkg->plan('flat');
+  unless ( $part_pkg ) {
+    $part_pkg = new FS::part_pkg {};
+    $part_pkg->plan('flat');
+  }
 }
 unless ( $part_pkg->plan ) { #backwards-compat
   $part_pkg->plan('flat');
@@ -279,7 +281,7 @@ tie my %plans, 'Tie::IxHash',
     },
     'fieldorder' => [ 'setup_fee', 'recur_flat', 'recur_included_hours', 'recur_hourly_charge' ],
     'setup' => 'what.setup_fee.value',
-    'recur' => '\'my $hours = $cust_pkg->seconds_since($cust_bkg->bill || 0) / 3600 - \' + what.recur_included_hours.value + \'; $hours = 0 if $hours < 0; \' + what.recur_flat.value + \' + \' + what.recur_hourly_charge.value + \' * $hours;\'',
+    'recur' => '\'my $hours = $cust_pkg->seconds_since($cust_pkg->bill || 0) / 3600 - \' + what.recur_included_hours.value + \'; $hours = 0 if $hours < 0; \' + what.recur_flat.value + \' + \' + what.recur_hourly_charge.value + \' * $hours;\'',
   },
 
   'sesmon_minute' => {
@@ -300,7 +302,7 @@ tie my %plans, 'Tie::IxHash',
     },
     'fieldorder' => [ 'setup_fee', 'recur_flat', 'recur_included_min', 'recur_minly_charge' ],
     'setup' => 'what.setup_fee.value',
-    'recur' => '\'my $min = $cust_pkg->seconds_since($cust_bkg->bill || 0) / 60 - \' + what.recur_included_min.value + \'; $min = 0 if $min < 0; \' + what.recur_flat.value + \' + \' + what.recur_minly_charge.value + \' * $min;\'',
+    'recur' => '\'my $min = $cust_pkg->seconds_since($cust_pkg->bill || 0) / 60 - \' + what.recur_included_min.value + \'; $min = 0 if $min < 0; \' + what.recur_flat.value + \' + \' + what.recur_minly_charge.value + \' * $min;\'',
 
   },
 

@@ -734,14 +734,21 @@ httemplate/docs/config.html
   {
     'key'         => 'vpopmailrestart',
     'section'     => 'mail',
-    'description' => 'If defined, the command which is run on vpopmail machines after files are copied.  An example can be found in eg/vpopmailrestart of the source distribution.',
-    'type'        => 'text',
+    'description' => 'If defined, the shell commands to run on vpopmail machines after files are copied.  An example can be found in eg/vpopmailrestart of the source distribution.',
+    'type'        => 'textarea',
   },
 
   {
     'key'         => 'safe-part_pkg',
     'section'     => 'UI',
     'description' => 'Validates package definition setup and recur expressions against a preset list.  Useful for webdemos, annoying to powerusers.',
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'safe-part_bill_event',
+    'section'     => 'UI',
+    'description' => 'Validates invoice event expressions against a preset list.  Useful for webdemos, annoying to powerusers.',
     'type'        => 'checkbox',
   },
 

@@ -3,6 +3,7 @@ package FS::part_bill_event;
 use strict;
 use vars qw( @ISA );
 use FS::Record qw( qsearch qsearchs );
+use FS::Conf;
 
 @ISA = qw(FS::Record);
 
@@ -113,6 +114,28 @@ sub check {
   my $self = shift;
 
   $self->weight(0) unless $self->weight;
+
+  my $conf = new FS::Conf;
+  if ( $conf->exists('safe-part_bill_event') ) {
+    my $error = $self->ut_anything('eventcode');
+    return $error if $error;
+
+    my $c = $self->eventcode;
+
+    $c =~ /^\s*\$cust_main\->(suspend|cancel|invoicing_list_addpost|bill|collect)\(\);\s*("";)?\s*$/
+
+      or $c =~ /^\s*\$cust_bill\->(comp|realtime_card|realtime_card_cybercash|batch_card|send)\(\);\s*$/
+
+      or $c =~ /^\s*\$cust_main\->apply_payments; \$cust_main->apply_credits; "";\s*$/
+
+      or $c =~ /^\s*\$cust_main\->charge\( \s*\d*\.?\d*\s*,\s*\'[\w \!\@\#\$\%\&\(\)\-\+\;\:\"\,\.\?\/]*\'\s*\);\s*$/
+
+      or do {
+        #log
+        return "illegal eventcode: $c";
+      };
+
+  }
 
   $self->ut_numbern('eventpart')
     || $self->ut_enum('payby', [qw( CARD BILL COMP )] )

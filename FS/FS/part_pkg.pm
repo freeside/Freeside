@@ -178,19 +178,55 @@ insert and replace methods.
 sub check {
   my $self = shift;
 
-  $self->ut_numbern('pkgpart')
-    || $self->ut_text('pkg')
-    || $self->ut_text('comment')
-    || $self->ut_anything('setup')
-    || $self->ut_number('freq')
-    || $self->ut_anything('recur')
-    || $self->ut_alphan('plan')
-    || $self->ut_anything('plandata')
-    || $self->ut_enum('setuptax', [ '', 'Y' ] )
-    || $self->ut_enum('recurtax', [ '', 'Y' ] )
-    || $self->ut_enum('disabled', [ '', 'Y' ] )
-  ;
+  my $conf = new FS::Conf;
+  if ( $conf->exists('safe-part_pkg') ) {
 
+    my $error = $self->ut_anything('setup')
+                || $self->ut_anything('recur');
+    return $error if $error;
+
+    my $s = $self->setup;
+
+    $s =~ /^\s*\d*\.?\d*\s*$/ or do {
+      #log!
+      return "illegal setup: $s";
+    };
+
+    my $r = $self->recur;
+
+    $r =~ /^\s*\d*\.?\d*\s*$/
+
+      or $r =~ /^my \$mnow = \$sdate; my \(\$sec,\$min,\$hour,\$mday,\$mon,\$year\) = \(localtime\(\$sdate\) \)\[0,1,2,3,4,5\]; my \$mstart = timelocal\(0,0,0,1,\$mon,\$year\); my \$mend = timelocal\(0,0,0,1, \$mon == 11 \? 0 : \$mon\+1, \$year\+\(\$mon==11\)\); \$sdate = \$mstart; \( \$part_pkg->freq \- 1 \) \* \d*\.?\d* \/ \$part_pkg\-\>freq \+ \d*\.?\d* \/ \$part_pkg\-\>freq \* \(\$mend\-\$mnow\) \/ \(\$mend\-\$mstart\) ;\s*$/
+
+      or $r =~ /^my \$error = \$cust_pkg\->cust_main\->credit\( \s*\d*\.?\d*\s* \* scalar\(\$cust_pkg\->cust_main\->referral_cust_main_ncancelled\(\s*\d+\s*\)\), "commission" \); die \$error if \$error; \s*\d*\.?\d*\s*;\s*$/
+
+      or $r =~ /^my \$error = \$cust_pkg\->cust_main\->credit\( \s*\d*\.?\d*\s* \* scalar\(\$cust_pkg\->cust_main->referral_cust_pkg\(\s*\d+\s*\)\), "commission" \); die \$error if \$error; \s*\d*\.?\d*\s*;\s*$/
+
+      or $r =~ /^my \$error = \$cust_pkg\->cust_main\->credit\( \s*\d*\.?\d*\s* \* scalar\( grep \{ my \$pkgpart = \$_\->pkgpart; grep \{ \$_ == \$pkgpart \} \(\s*(\s*\d+,\s*)*\s*\) \} \$cust_pkg\->cust_main->referral_cust_pkg\(\s*\d+\s*\)\), "commission" \); die \$error if \$error; \s*\d*\.?\d*\s*;\s*$/
+
+      or $r =~ /^my \$hours = \$cust_pkg\->seconds_since\(\$cust_pkg\->bill \|\| 0\) \/ 3600 \- \s*\d*\.?\d*\s*; \$hours = 0 if \$hours < 0; \s*\d*\.?\d*\s* \+ \s*\d*\.?\d*\s* \* \$hours;\s*$/
+
+      or $r =~ /^my \$min = \$cust_pkg\->seconds_since\(\$cust_pkg\->bill \|\| 0\) \/ 60 \- \s*\d*\.?\d*\s*; \$min = 0 if \$min < 0; \s*\d*\.?\d*\s* \+ \s*\d*\.?\d*\s* \* \$min;\s*$/
+
+      or do {
+        #log!
+        return "illegal recur: $r";
+      };
+
+  }
+
+    $self->ut_numbern('pkgpart')
+      || $self->ut_text('pkg')
+      || $self->ut_text('comment')
+      || $self->ut_anything('setup')
+      || $self->ut_number('freq')
+      || $self->ut_anything('recur')
+      || $self->ut_alphan('plan')
+      || $self->ut_anything('plandata')
+      || $self->ut_enum('setuptax', [ '', 'Y' ] )
+      || $self->ut_enum('recurtax', [ '', 'Y' ] )
+      || $self->ut_enum('disabled', [ '', 'Y' ] )
+    ;
 }
 
 =item pkg_svc
@@ -228,7 +264,7 @@ sub svcpart {
 
 =head1 VERSION
 
-$Id: part_pkg.pm,v 1.7 2002-02-10 21:30:05 ivan Exp $
+$Id: part_pkg.pm,v 1.8 2002-02-18 08:39:21 ivan Exp $
 
 =head1 BUGS
 
