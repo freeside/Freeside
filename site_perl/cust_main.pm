@@ -253,8 +253,8 @@ sub check {
     'country' => $self->country,
     'state'   => '',
    } ) ) {
-    return "Unknown state/county/country"
-      #" state ". $self->state. " county ". $self->county. " country ". $self->country
+    return "Unknown state/county/country: ".
+      $self->state. "/". $self->county. "/". $self->country
       unless qsearchs('cust_main_county',{
         'state'   => $self->state,
         'county'  => $self->county,
@@ -885,7 +885,7 @@ sub check_invoicing_list {
 
 =head1 VERSION
 
-$Id: cust_main.pm,v 1.19 1999-04-10 07:38:06 ivan Exp $
+$Id: cust_main.pm,v 1.20 1999-04-10 08:35:14 ivan Exp $
 
 =head1 BUGS
 
@@ -941,7 +941,10 @@ enable cybercash, cybercash v3 support, don't need to import
 FS::UID::{datasrc,checkruid} ivan@sisd.com 98-sep-19-21
 
 $Log: cust_main.pm,v $
-Revision 1.19  1999-04-10 07:38:06  ivan
+Revision 1.20  1999-04-10 08:35:14  ivan
+say what the unknown state/county/country are!
+
+Revision 1.19  1999/04/10 07:38:06  ivan
 _all_ check stuff with illegal data return the bad data too, to help debugging
 
 Revision 1.18  1999/04/10 06:54:11  ivan
