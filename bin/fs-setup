@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: fs-setup,v 1.88 2002-04-16 22:52:14 ivan Exp $
+# $Id: fs-setup,v 1.89 2002-04-20 06:33:03 ivan Exp $
 
 #to delay loading dbdef until we're ready
 BEGIN { $FS::Record::setup_hack = 1; }
@@ -162,7 +162,9 @@ foreach $attribute (@check_attributes) {
 
 #create history tables (false laziness w/create-history-tables)
 foreach my $table ( grep { ! /^h_/ } $dbdef->tables ) {
-  my $tableobj = $dbdef->table($table);
+  my $tableobj = $dbdef->table($table)
+    or die "unknown table $table";
+
   my $h_tableobj = DBIx::DBSchema::Table->new( {
     name        => "h_$table",
     primary_key => 'historynum',
@@ -383,6 +385,7 @@ sub tables_hash_hack {
       ],
       'primary_key' => 'eventnum',
       #no... there are retries now #'unique' => [ [ 'eventpart', 'invnum' ] ],
+      'unique' => [],
       'index' => [ ['invnum'], ['status'] ],
     },
 
@@ -932,7 +935,7 @@ sub tables_hash_hack {
         'exportsvcnum' => 'int', '', '',
         'exportnum'    => 'int', '', '',
         'svcpart'      => 'int', '', '',
-      ]
+      ],
       'primary_key' => 'exportsvcnum',
       'unique'      => [ [ 'exportnum', 'svcpart' ] ],
       'index'       => [ [ 'exportnum' ], [ 'svcpart' ] ],
