@@ -42,7 +42,7 @@ my $gotcust = "
             )
 ";
 
-my($total, $exempt, $taxable, $tax) = ( 0, 0, 0, 0 );
+my($total, $exempt, $taxable, $owed, $tax) = ( 0, 0, 0, 0, 0 );
 my $out = 'Out of taxable region(s)';
 my %regions;
 foreach my $r (qsearch('cust_main_county', {}, '', $gotcust) ) {
@@ -153,7 +153,11 @@ push @regions, {
 
 sub getlabel {
   my $r = shift;
+
+  my $label;
   if ( $r->tax == 0 ) {
+    #kludge to avoid "will not stay shared" warning
+    my $out = 'Out of taxable region(s)';
     $label = $out;
   } elsif ( $r->taxname ) {
     $label = $r->taxname;
