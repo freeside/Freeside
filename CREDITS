@@ -74,10 +74,16 @@ remember.
 Brad Dameron <bdameron@tscnet.com> contributed code to do configurable state
 and referral defaults.
 
-Surf and Sip, Inc., <http://www.surfandsip.com> generously sponsored a
-long-requested feature - the session monitor and time-based prepaid cards.
+Surf and Sip, Inc., <http://www.surfandsip.com> sponsored a long-requested
+feature - the session monitor and time-based prepaid cards.
 Matt Peterson <matt@peterson.org> and Mack ? <mackn@mackn.net> tested
 the new features and contributed many bugfixes.
+
+Landel Telecom <http://www.landel.com/> sponsored shipping addresses and
+customer notes.
+
+nikotel, Inc. <http://www.nikojet.com> sponsored the inclusion of
+customer-to-customer referrals in the web interface and signup server.
 
 Everything else is my (Ivan Kohler <ivan@420.am>) fault.
 
