@@ -215,13 +215,13 @@ sub check {
   my $error =
     $self->ut_number('refundnum')
     || $self->ut_numbern('custnum')
-    || $self->ut_money('amount')
+    || $self->ut_money('refund')
     || $self->ut_numbern('_date')
     || $self->ut_textn('paybatch')
   ;
   return $error if $error;
 
-  return "amount must be > 0 " if $self->amount == 0;
+  return "refund must be > 0 " if $self->refund == 0;
 
   $self->_date(time) unless $self->_date;
 
@@ -259,7 +259,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: cust_refund.pm,v 1.11 2002-01-24 06:46:29 ivan Exp $
+$Id: cust_refund.pm,v 1.12 2002-01-24 06:52:44 ivan Exp $
 
 =head1 BUGS
 
