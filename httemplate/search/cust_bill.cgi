@@ -79,7 +79,7 @@ if ( $cgi->keywords ) {
   @cust_bill = qsearch(
     'cust_bill',
     {},
-    "cust_bill.*, $owed as owed"
+    "cust_bill.*, $owed as owed",
     "$extra_sql $orderby $limit"
   );
 } else {
