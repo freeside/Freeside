@@ -66,7 +66,7 @@ B<username> is a username added by freeside-adduser.
 
 =head1 SEE ALSO
 
-<FS::part_export>, L<FS::part_export::sqlradius>
+L<freeside-reexport>, L<FS::part_export>, L<FS::part_export::sqlradius>
 
 =cut
 
