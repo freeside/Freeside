@@ -1,15 +1,22 @@
 #!/bin/sh
 
+
 wget --passive-ftp ftp://apt-rpm.tuxfamily.org/apt/redhat/9/en/i386/RPMS.extra/apt-*i386.rpm
 rpm -i apt*i386.rpm
 cp sources.list /etc/apt/
 apt-get update; apt-get update
 #apt-get install apache mod_ssl mod_perl perl-CGI perl-CPAN perl-DBD-MySQL perl-DBD-Pg perl-DBI perl-DateManip perl-Digest-MD5 perl-HTML-Parser perl-HTML-Tagset perl-MIME-Base64 perl-Storable perl-TimeDate perl-URI perl-libnet perl-libwww-perl perl-suidperl rsync postgresql postgresql-docs postgresql-libs postgresql-server screen zsh lftp cvs #openssh
-apt-get install perl-CGI perl-CPAN perl-DBD-MySQL perl-DBD-Pg perl-DBI perl-DateManip perl-Digest-MD5 perl-HTML-Parser perl-HTML-Tagset perl-MIME-Base64 perl-Storable perl-TimeDate perl-URI perl-libnet perl-libwww-perl perl-suidperl rsync postgresql postgresql-docs postgresql-libs postgresql-server screen zsh lftp cvs #openssh
+
+apt-get install perl-Devel-Symdump perl-BSD-Resource
+
+wget --passive-ftp http://reb00t.com/linux/RPMS/redhat-9/apache/apache-1.3.28-0.n0i.i686.rpm http://reb00t.com/linux/RPMS/redhat-9/mm/mm-1.2.1-0.n0i.i686.rpm ftp://at.rpmfind.net/linux/redhat.com/dist/linux/beta/severn/en/os/i386/RedHat/RPMS/db4-4.1.25-10.i386.rpm
+rpm -i db4-4.1.25-10.i386.rpm mm-1.2.1-0.n0i.i686.rpm apache-1.3.28-0.n0i.i686.rpm
+
+apt-get install perl-CGI perl-CPAN perl-DBD-MySQL perl-DBD-Pg perl-DBI perl-DateManip perl-HTML-Parser perl-HTML-Tagset perl-TimeDate perl-URI perl-libwww-perl perl-suidperl rsync postgresql postgresql-docs postgresql-libs postgresql-server screen zsh lftp cvs #openssh
 
 perl -MCPAN -e"install Locale::Country, Net::Whois, Business::CreditCard, \
                        Mail::Internet, File::CounterFile, FreezeThaw, \
                        String::Approx, Text::Template, DBIx::DataSource, \
                        DBIx::DBSchema, Net::SSH, String::ShellQuote, \
                        Net::SCP, Apache::ASP, Tie::IxHash, Time::Duration, \
-                       HTML::Widgets::SelectLayers,  Apache::DBI"
+                       HTML::Widgets::SelectLayers, Apache::DBI, Cache::Cache"
