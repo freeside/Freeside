@@ -3,7 +3,16 @@
 
 my %pkg = ();
 my %comment = ();
-foreach (qsearch('part_pkg', { 'disabled' => '' })) {
+my %all_pkg = ();
+my %all_comment = ();
+#foreach (qsearch('part_pkg', { 'disabled' => '' })) {
+#  $pkg{ $_ -> getfield('pkgpart') } = $_->getfield('pkg');
+#  $comment{ $_ -> getfield('pkgpart') } = $_->getfield('comment');
+#}
+foreach (qsearch('part_pkg', {} )) {
+  $all_pkg{ $_ -> getfield('pkgpart') } = $_->getfield('pkg');
+  $all_comment{ $_ -> getfield('pkgpart') } = $_->getfield('comment');
+  next if $_->disabled;
   $pkg{ $_ -> getfield('pkgpart') } = $_->getfield('pkg');
   $comment{ $_ -> getfield('pkgpart') } = $_->getfield('comment');
 }
@@ -46,7 +55,7 @@ END
     my($pkgnum,$pkgpart)=( $_->getfield('pkgnum'), $_->getfield('pkgpart') );
     print qq!<TD><INPUT TYPE="checkbox" NAME="remove_pkg" VALUE="$pkgnum"!;
     print " CHECKED" if $remove_pkg{$pkgnum};
-    print qq!>$pkgnum: $pkg{$pkgpart} - $comment{$pkgpart}</TD>\n!;
+    print qq!>$pkgnum: $all_pkg{$pkgpart} - $all_comment{$pkgpart}</TD>\n!;
     $count ++ ;
     if ($count == 2)
     {

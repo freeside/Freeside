@@ -556,23 +556,20 @@ sub order {
   my(%svcnum);
   # generate %svcnum
   # for those packages being removed:
-  #@{ $svcnum{$svcpart} } goes from a svcpart to a list of FS::Record
-  # objects (table eq 'cust_svc')
+  #@{ $svcnum{$svcpart} } goes from a svcpart to a list of FS::cust_svc objects
   my($pkgnum);
   foreach $pkgnum ( @{$remove_pkgnums} ) {
-    my($cust_svc);
-    foreach $cust_svc (qsearch('cust_svc',{'pkgnum'=>$pkgnum})) {
+    foreach my $cust_svc (qsearch('cust_svc',{'pkgnum'=>$pkgnum})) {
       push @{ $svcnum{$cust_svc->getfield('svcpart')} }, $cust_svc;
     }
   }
   
-  my(@cust_svc);
+  my @cust_svc;
   #generate @cust_svc
   # for those packages the customer is purchasing:
   # @{$pkgparts} is a list of said packages, by pkgpart
   # @cust_svc is a corresponding list of lists of FS::Record objects
-  my($pkgpart);
-  foreach $pkgpart ( @{$pkgparts} ) {
+  foreach my $pkgpart ( @{$pkgparts} ) {
     unless ( $part_pkg{$pkgpart} ) {
       $dbh->rollback if $oldAutoCommit;
       return "Customer not permitted to purchase pkgpart $pkgpart!";
@@ -584,6 +581,39 @@ sub order {
     ];
   }
 
+  #special-case until this can be handled better
+  # move services to new svcparts - even if the svcparts don't match (svcdb
+  # needs to...)
+  # looks like they're moved in no particular order, ewwwwwwww
+  # and looks like just one of each svcpart can be moved... o well
+
+  #start with still-leftover services
+  #foreach my $svcpart ( grep { scalar(@{ $svcnum{$_} }) } keys %svcnum ) {
+  foreach my $svcpart ( keys %svcnum ) {
+    next unless @{ $svcnum{$svcpart} };
+
+    my $svcdb = $svcnum{$svcpart}->[0]->part_svc->svcdb;
+
+    #find an empty place to put one
+    my $i = 0;
+    foreach my $pkgpart ( @{$pkgparts} ) {
+      my @pkg_svc = qsearch('pkg_svc', { pkgpart=>$pkgpart } );
+      if ( ! @{$cust_svc[$i]} #find an empty place to put them with 
+           && grep { $svcdb eq $_->part_svc->svcdb } #with appropriate svcdb
+                @pkg_svc
+      ) {
+        my $new_svcpart =
+          ( grep { $svcdb eq $_->part_svc->svcdb } @pkg_svc )[0]->svcpart; 
+        my $cust_svc = shift @{$svcnum{$svcpart}};
+        $cust_svc->svcpart($new_svcpart);
+        #warn "changing from $svcpart to $new_svcpart!!!\n";
+        $cust_svc[$i] = [ $cust_svc ];
+      }
+      $i++;
+    }
+
+  }
+  
   #check for leftover services
   foreach (keys %svcnum) {
     next unless @{ $svcnum{$_} };
@@ -602,8 +632,7 @@ sub order {
   local $SIG{PIPE} = 'IGNORE'; 
 
   #first cancel old packages
-#  my($pkgnum);
-  foreach $pkgnum ( @{$remove_pkgnums} ) {
+  foreach my $pkgnum ( @{$remove_pkgnums} ) {
     my($old) = qsearchs('cust_pkg',{'pkgnum'=>$pkgnum});
     unless ( $old ) {
       $dbh->rollback if $oldAutoCommit;
@@ -620,7 +649,7 @@ sub order {
   }
 
   #now add new packages, changing cust_svc records if necessary
-#  my($pkgpart);
+  my $pkgpart;
   while ($pkgpart=shift @{$pkgparts} ) {
  
     my $new = new FS::cust_pkg {
@@ -638,8 +667,12 @@ sub order {
     foreach my $cust_svc ( @{ shift @cust_svc } ) {
       my(%hash) = $cust_svc->hash;
       $hash{'pkgnum'}=$pkgnum;
-      my($new) = new FS::cust_svc ( \%hash );
-      my($error)=$new->replace($cust_svc);
+      my $new = new FS::cust_svc ( \%hash );
+
+      #avoid Record diffing missing changed svcpart field from above.
+      my $old = qsearchs('cust_svc', { 'svcnum' => $cust_svc->svcnum } );
+
+      my $error = $new->replace($old);
       if ( $error ) {
         $dbh->rollback if $oldAutoCommit;
         return "Couldn't link old service to new package: $error";
@@ -656,7 +689,7 @@ sub order {
 
 =head1 VERSION
 
-$Id: cust_pkg.pm,v 1.16 2002-01-29 16:33:15 ivan Exp $
+$Id: cust_pkg.pm,v 1.17 2002-04-12 15:14:58 ivan Exp $
 
 =head1 BUGS
 

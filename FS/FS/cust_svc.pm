@@ -94,6 +94,43 @@ Called by the cancel method of the package (see L<FS::cust_pkg>).
 Replaces the OLD_RECORD with this one in the database.  If there is an error,
 returns the error, otherwise returns false.
 
+=cut
+
+sub replace {
+  my ( $new, $old ) = ( shift, shift );
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $error = $new->SUPER::replace($old);
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error if $error;
+  }
+
+  if ( $new->svcpart != $old->svcpart ) {
+    my $svc_x = $new->svc_x;
+    my $new_svc_x = ref($svc_x)->new({$svc_x->hash});
+    my $error = $new_svc_x->replace($svc_x);
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error if $error;
+    }
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  ''; #no error
+
+}
+
 =item check
 
 Checks all fields to make sure this is a valid service.  If there is an error,
@@ -245,7 +282,7 @@ sub seconds_since {
 
 =head1 VERSION
 
-$Id: cust_svc.pm,v 1.12 2002-02-10 22:06:28 ivan Exp $
+$Id: cust_svc.pm,v 1.13 2002-04-12 15:14:58 ivan Exp $
 
 =head1 BUGS
 
