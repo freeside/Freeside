@@ -872,7 +872,7 @@ sub check {
   $self->tax =~ /^(Y?)$/ or return "Illegal tax: ". $self->tax;
   $self->tax($1);
 
-  $self->otaker(getotaker);
+  $self->otaker(getotaker) unless $self->otaker;
 
   #warn "AFTER: \n". $self->_dump;
 
