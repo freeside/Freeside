@@ -147,20 +147,36 @@ print '<TR><TD ALIGN="right">RADIUS groups</TD><TD BGCOLOR="#ffffff">'.
 print '</TABLE></TD></TR></TABLE><BR><BR>';
 
 #if ( $cust_pkg && $cust_pkg->part_pkg->plan eq 'sqlradacct_hour' ) {
-if ( $cust_pkg && $part_svc->part_export('sqlradius') ) {
+if ( $part_svc->part_export('sqlradius') ) {
 
-  my $last_bill = $cust_pkg->last_bill;
+  my $last_bill;
+  if ( $cust_pkg ) {
+    #false laziness w/httemplate/edit/part_pkg... this stuff doesn't really
+    #belong in plan data
+     my %plandata = map { /^(\w+)=(.*)$/; ( $1 => $2 ); }
+                      split("\n", $cust_pkg->part_pkg->plandata );
+
+    $last_bill = $cust_pkg->last_bill;
+  } else {
+    $last_bill = 0;
+  }
+
   my $seconds = $svc_acct->seconds_since_sqlradacct( $last_bill, time );
   my $h = int($seconds/3600);
   my $m = int( ($seconds%3600) / 60 );
   my $s = $seconds%60;
+
   if ( $seconds ) {
-    print 'Online $h h $m m $s s this billing cycle (since '.
-          time2str(%C, $last_bill). ') - '. 
+    print "Online ${h}h ${m}m ${s}s";
+  } else {
+    print 'Has not logged on';
+  }
+
+  if ( $cust_pkg ) {
+    print ' this billing cycle (since '. time2str(%C, $last_bill). ') - '. 
           $plandata{recur_included_hours}. ' total hours in plan<BR><BR>';
   } else {
-    print 'Has not logged on this billing cycle (since '.
-          time2str(%C, $last_bill). ')<BR><BR>';
+    print ' (no billing cycle available for unaudited package)<BR><BR>';
   }
 
 }
