@@ -192,6 +192,9 @@ CREATE INDEX cust_credit_refund1 ON cust_credit_refund ( crednum );
 CREATE INDEX cust_credit_refund2 ON cust_credit_refund ( refundnum );
 CREATE UNIQUE INDEX cust_pay_batch_pkey ON cust_pay_batch ( paybatchnum );
 CREATE UNIQUE INDEX part_svc_column1 ON part_svc_column ( svcpart, columnname );
+CREATE INDEX cust_pay2 ON cust_pay ( paynum );
+CREATE INDEX cust_pay3 ON cust_pay ( custnum );
+CREATE INDEX cust_pay4 ON cust_pay ( paybatch );
 </pre>
 
   <li>If you are using PostgreSQL, apply the following changes to your database:

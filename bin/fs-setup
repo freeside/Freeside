@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: fs-setup,v 1.75 2002-02-06 15:07:49 ivan Exp $
+# $Id: fs-setup,v 1.76 2002-02-10 18:56:49 ivan Exp $
 
 #to delay loading dbdef until we're ready
 BEGIN { $FS::Record::setup_hack = 1; }
@@ -500,7 +500,7 @@ sub tables_hash_hack {
       ],
       'primary_key' => 'billpaynum',
       'unique' => [ [] ],
-      'index' => [ [ 'paynum', 'invnum' ] ],
+      'index' => [ [ 'paynum' ], [ 'custnum' ], [ 'paybatch' ] ],
     },
 
     'cust_pay_batch' => { #what's this used for again?  list of customers

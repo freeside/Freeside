@@ -136,6 +136,17 @@ sub insert {
     }
   }
 
+  if ( $self->paybatch =~ /^webui-/ ) {
+    my @cust_pay = qsearch('cust_pay', {
+      'custnum' => $self->custnum,
+      'paybatch' => $self->paybatch,
+    } );
+    if ( scalar(@cust_pay) > 1 ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "a payment with webui token ". $self->paybatch. " already exists";
+    }
+  }
+
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
   #false laziness w/ cust_credit::insert
@@ -348,7 +359,7 @@ sub unapplied {
 
 =head1 VERSION
 
-$Id: cust_pay.pm,v 1.16 2002-02-07 22:29:34 ivan Exp $
+$Id: cust_pay.pm,v 1.17 2002-02-10 18:56:49 ivan Exp $
 
 =head1 BUGS
 

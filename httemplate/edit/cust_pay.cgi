@@ -32,6 +32,8 @@ if ( $cgi->param('error') ) {
 }
 my $_date = time;
 
+my $paybatch = "webui-$_date-$$-". rand() * 2**32;
+
 my $p1 = popurl(1);
 print header("Post payment", '');
 
@@ -111,11 +113,12 @@ print qq!<TR><TD ALIGN="right">Check #</TD><TD BGCOLOR="#ffffff"><INPUT TYPE="te
 
 print qq!<TR><TD ALIGN="right">Auto-apply<BR>to invoices</TD><TD><SELECT NAME="apply"><OPTION VALUE="yes" SELECTED>yes<OPTION>no</SELECT></TD>!;
 
+print "</TABLE>";
+
 #paybatch
-print qq!<INPUT TYPE="hidden" NAME="paybatch" VALUE="">!;
+print qq!<INPUT TYPE="hidden" NAME="paybatch" VALUE="$paybatch">!;
 
 print <<END;
-</TABLE>
 <BR>
 <INPUT TYPE="submit" VALUE="Post payment">
     </FORM>
