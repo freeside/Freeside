@@ -1,0 +1,9 @@
+#!/bin/sh
+
+for port in `grep -v '^ *#' ports`; do
+  cd /usr/ports/$port
+  make install || exit
+done
+
+perl -MCPAN -e"install DBIx::DBSchema HTML::Widgets::SelectLayers Time::Duration"
+
