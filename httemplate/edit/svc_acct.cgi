@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: svc_acct.cgi,v 1.7 2001-09-11 23:44:01 ivan Exp $ -->
+#<!-- $Id: svc_acct.cgi,v 1.8 2001-09-27 20:41:36 ivan Exp $ -->
 
 use strict;
 use vars qw( $conf $cgi @shells $action $svcnum $svc_acct $pkgnum $svcpart
@@ -9,9 +9,10 @@ use vars qw( $conf $cgi @shells $action $svcnum $svc_acct $pkgnum $svcpart
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup getotaker);
-use FS::CGI qw(header popurl);
+use FS::CGI qw(header popurl itable);
 use FS::Record qw(qsearch qsearchs fields);
 use FS::svc_acct;
+use FS::svc_acct_pop qw(popselector);
 use FS::Conf;
 use FS::raddb;
 
@@ -103,19 +104,26 @@ $p1 = popurl(1);
 print $cgi->header( '-expires' => 'now' ), header("$action $svc account");
 
 print qq!<FONT SIZE="+1" COLOR="#ff0000">Error: !, $cgi->param('error'),
-      "</FONT>"
+      "</FONT><BR><BR>"
   if $cgi->param('error');
 
-print <<END;
+print 'Service # '. ( $svcnum ? "<B>$svcnum</B>" : " (NEW)" ). '<BR>'.
+      'Service: <B>'. $part_svc->svc. '</B><BR><BR>'.
+      <<END;
     <FORM ACTION="${p1}process/svc_acct.cgi" METHOD=POST>
       <INPUT TYPE="hidden" NAME="svcnum" VALUE="$svcnum">
       <INPUT TYPE="hidden" NAME="pkgnum" VALUE="$pkgnum">
       <INPUT TYPE="hidden" NAME="svcpart" VALUE="$svcpart">
-Username: 
-<INPUT TYPE="text" NAME="username" VALUE="$username" SIZE=$ulen2 MAXLENGTH=$ulen>
-<BR>Password: 
-<INPUT TYPE="text" NAME="_password" VALUE="$password" SIZE=10 MAXLENGTH=8> 
-(blank to generate)
+END
+
+print &itable("#cccccc"), <<END;
+<TR><TD>
+<TR><TD ALIGN="right">Username</TD>
+<TD><INPUT TYPE="text" NAME="username" VALUE="$username" SIZE=$ulen2 MAXLENGTH=$ulen></TD></TR>
+<TR><TD ALIGN="right">Password</TD>
+<TD><INPUT TYPE="text" NAME="_password" VALUE="$password" SIZE=10 MAXLENGTH=8>
+(blank to generate)</TD>
+</TR>
 END
 
 #domain
@@ -148,14 +156,15 @@ if ( $part_svc->part_svc_column('domsvc')->columnflag eq 'F' ) {
   } else {
     @svc_domain = qsearch('svc_domain', {} );
   }
-  print qq!<BR>Domain: <SELECT NAME="domsvc" SIZE=1>\n!;
+  print qq!<TR><TD ALIGN="right">Domain</TD>!.
+        qq!<TD><SELECT NAME="domsvc" SIZE=1>\n!;
   foreach my $svc_domain ( sort { $a->domain cmp $b->domain } @svc_domain ) {
     print qq!<OPTION VALUE="!, $svc_domain->svcnum, qq!"!,
           $svc_domain->svcnum == $domsvc ? ' SELECTED' : '',
           ">", $svc_domain->domain, "\n"
       ;
   }
-  print "</SELECT>";
+  print "</SELECT></TD><TR>";
 }
 
 #pop
@@ -163,18 +172,8 @@ $popnum = $svc_acct->popnum || 0;
 if ( $part_svc->part_svc_column('popnum')->columnflag eq "F" ) {
   print qq!<INPUT TYPE="hidden" NAME="popnum" VALUE="$popnum">!;
 } else { 
-  print qq!<BR>POP: <SELECT NAME="popnum" SIZE=1><OPTION>\n!;
-  my($svc_acct_pop);
-  foreach $svc_acct_pop ( qsearch ('svc_acct_pop',{} ) ) {
-  print "<OPTION", $svc_acct_pop->popnum == $popnum ? ' SELECTED' : '', ">", 
-        $svc_acct_pop->popnum, ": ", 
-        $svc_acct_pop->city, ", ",
-        $svc_acct_pop->state,
-        " (", $svc_acct_pop->ac, ")/",
-        $svc_acct_pop->exch, "\n"
-      ;
-  }
-  print "</SELECT>";
+  print qq!<TR><TD ALIGN="right">Access number</TD>!.
+        qq!<TD>!. FS::svc_acct_pop::popselector($popnum). '</TD></TR>';
 }
 
 ($uid,$gid,$finger,$dir)=(
@@ -187,7 +186,7 @@ if ( $part_svc->part_svc_column('popnum')->columnflag eq "F" ) {
 print <<END;
 <INPUT TYPE="hidden" NAME="uid" VALUE="$uid">
 <INPUT TYPE="hidden" NAME="gid" VALUE="$gid">
-<BR>GECOS: <INPUT TYPE="text" NAME="finger" VALUE="$finger">
+<TR><TD ALIGN="right">GECOS</TD><TD><INPUT TYPE="text" NAME="finger" VALUE="$finger"></TD></TR>
 <INPUT TYPE="hidden" NAME="dir" VALUE="$dir">
 END
 
@@ -195,13 +194,13 @@ $shell = $svc_acct->shell;
 if ( $part_svc->part_svc_column('shell')->columnflag eq "F" ) {
   print qq!<INPUT TYPE="hidden" NAME="shell" VALUE="$shell">!;
 } else {
-  print qq!<BR>Shell: <SELECT NAME="shell" SIZE=1>!;
+  print qq!<TR><TD ALIGN="right">Shell</TD><TD><SELECT NAME="shell" SIZE=1>!;
   my($etc_shell);
   foreach $etc_shell (@shells) {
     print "<OPTION", $etc_shell eq $shell ? ' SELECTED' : '', ">",
           $etc_shell, "\n";
   }
-  print "</SELECT>";
+  print "</SELECT></TD></TR>";
 }
 
 ($quota,$slipip)=(
@@ -214,7 +213,7 @@ print qq!<INPUT TYPE="hidden" NAME="quota" VALUE="$quota">!;
 if ( $part_svc->part_svc_column('slipip')->columnflag eq "F" ) {
   print qq!<INPUT TYPE="hidden" NAME="slipip" VALUE="$slipip">!;
 } else {
-  print qq!<BR>IP: <INPUT TYPE="text" NAME="slipip" VALUE="$slipip">!;
+  print qq!<TR><TD ALIGN="right">IP</TD><TD><INPUT TYPE="text" NAME="slipip" VALUE="$slipip"></TD></TR>!;
 }
 
 foreach my $r ( grep { /^r(adius|[cr])_/ } fields('svc_acct') ) {
@@ -224,13 +223,13 @@ foreach my $r ( grep { /^r(adius|[cr])_/ } fields('svc_acct') ) {
     print qq!<INPUT TYPE="hidden" NAME="$r" VALUE="!.
           $svc_acct->getfield($r). '">';
   } else {
-    print qq!<BR>$FS::raddb::attrib{$a}: <INPUT TYPE="text" NAME="$r" VALUE="!.
-          $svc_acct->getfield($r). '">';
+    print qq!<TR><TD ALIGN="right">$FS::raddb::attrib{$a}</TD><TD><INPUT TYPE="text" NAME="$r" VALUE="!.
+          $svc_acct->getfield($r). '"></TD></TR>';
   }
 }
 
 #submit
-print qq!<P><INPUT TYPE="submit" VALUE="Submit">!; 
+print qq!</TABLE><BR><INPUT TYPE="submit" VALUE="Submit">!; 
 
 print <<END;
     </FORM>

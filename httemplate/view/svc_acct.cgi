@@ -1,14 +1,14 @@
 <%
-# <!-- $Id: svc_acct.cgi,v 1.5 2001-09-27 18:33:18 ivan Exp $ -->
+# <!-- $Id: svc_acct.cgi,v 1.6 2001-09-27 20:41:37 ivan Exp $ -->
 
 use strict;
 use vars qw( $conf $cgi $domain $query $svcnum $svc_acct $cust_svc $pkgnum
              $cust_pkg $custnum $part_svc $p $svc_acct_pop $password
-             $mydomain );
+             $mydomain $svc_domain );
 use CGI;
 use CGI::Carp qw( fatalsToBrowser );
 use FS::UID qw( cgisuidsetup );
-use FS::CGI qw( header popurl menubar);
+use FS::CGI qw( header popurl menubar ntable);
 use FS::Record qw( qsearchs fields );
 use FS::Conf;
 use FS::svc_acct;
@@ -68,63 +68,83 @@ print $cgi->header( '-expires' => 'now' ), header('Account View', menubar(
 
 #print qq!<BR><A HREF="../misc/sendconfig.cgi?$svcnum">Send account information</A>!;
 
-print qq!<A HREF="${p}edit/svc_acct.cgi?$svcnum">Edit this information</A>!,
-      "<BR>Service #$svcnum",
-      "<BR>Service: <B>", $part_svc->svc, "</B>",
-      "<BR><BR>Username: <B>", $svc_acct->username, "</B>"
+print qq!<A HREF="${p}edit/svc_acct.cgi?$svcnum">Edit this information</A><BR>!.
+      &ntable("#cccccc"). '<TR><TD>'. &ntable("#cccccc",2).
+      "<TR><TD ALIGN=\"right\">Service number</TD>".
+        "<TD BGCOLOR=\"#ffffff\">$svcnum</TD></TR>".
+      "<TR><TD ALIGN=\"right\">Service</TD>".
+        "<TD BGCOLOR=\"#ffffff\">". $part_svc->svc. "</TD></TR>".
+      "<TR><TD ALIGN=\"right\">Username</TD>".
+        "<TD BGCOLOR=\"#ffffff\">". $svc_acct->username. "</TD></TR>"
 ;
 
-print "<BR>Domain: <B>", $domain, "</B>";
+print "<TR><TD ALIGN=\"right\">Domain</TD>".
+        "<TD BGCOLOR=\"#ffffff\">". $domain, "</TD></TR>";
 
-print "<BR>Password: ";
+print "<TR><TD ALIGN=\"right\">Password</TD><TD BGCOLOR=\"#ffffff\">";
 $password = $svc_acct->_password;
 if ( $password =~ /^\*\w+\* (.*)$/ ) {
   $password = $1;
   print "<I>(login disabled)</I> ";
 }
 if ( $conf->exists('showpasswords') ) {
-  print "<B>$password</B>";
+  print "$password";
 } else {
   print "<I>(hidden)</I>";
 }
+print "</TR></TD>";
 $password = '';
 
 $svc_acct_pop = qsearchs('svc_acct_pop',{'popnum'=>$svc_acct->popnum});
-print "<BR>POP: <B>", $svc_acct_pop->city, ", ", $svc_acct_pop->state,
-      " (", $svc_acct_pop->ac, ")/", $svc_acct_pop->exch, "</B>"
+print "<TR><TD ALIGN=\"right\">Access number</TD>".
+      "<TD BGCOLOR=\"#ffffff\">". $svc_acct_pop->text. '</TD></TR>'
   if $svc_acct_pop;
 
 if ($svc_acct->uid ne '') {
-  print "<BR><BR>Uid: <B>", $svc_acct->uid, "</B>",
-        "<BR>Gid: <B>", $svc_acct->gid, "</B>",
-        "<BR>Finger name: <B>", $svc_acct->finger, "</B>",
-        "<BR>Home directory: <B>", $svc_acct->dir, "</B>",
-        "<BR>Shell: <B>", $svc_acct->shell, "</B>",
-        "<BR>Quota: <B>", $svc_acct->quota, "</B> <I>(unimplemented)</I>"
+  print "<TR><TD ALIGN=\"right\">Uid</TD>".
+          "<TD BGCOLOR=\"#ffffff\">". $svc_acct->uid. "</TD></TR>",
+        "<TR><TD ALIGN=\"right\">Gid</TD>".
+          "<TD BGCOLOR=\"#ffffff\">". $svc_acct->gid. "</TD></TR>",
+        "<TR><TD ALIGN=\"right\">GECOS</TD>".
+          "<TD BGCOLOR=\"#ffffff\">". $svc_acct->finger. "</TD></TR>",
+        "<TR><TD ALIGN=\"right\">Home directory</TD>".
+          "<TD BGCOLOR=\"#ffffff\">". $svc_acct->dir. "</TD></TR>",
+        "<TR><TD ALIGN=\"right\">Shell</TD>".
+          "<TD BGCOLOR=\"#ffffff\">". $svc_acct->shell. "</TD></TR>",
+        "<TR><TD ALIGN=\"right\">Quota</TD>".
+          "<TD BGCOLOR=\"#ffffff\">". $svc_acct->quota. "</TD></TR>"
   ;
 } else {
-  print "<BR><BR>(No shell account)";
+  print "<TR><TH COLSPAN=2>(No shell account)</TH></TR>";
 }
 
 if ($svc_acct->slipip) {
-  print "<BR><BR>IP address: <B>", ( $svc_acct->slipip eq "0.0.0.0" || $svc_acct->slipip eq '0e0' ) ? "<I>(Dynamic)</I>" : $svc_acct->slipip ,"</B>";
+  print "<TR><TD ALIGN=\"right\">IP address</TD><TD BGCOLOR=\"#ffffff\">".
+        ( ( $svc_acct->slipip eq "0.0.0.0" || $svc_acct->slipip eq '0e0' )
+          ? "<I>(Dynamic)</I>"
+          : $svc_acct->slipip
+        ). "</TD>";
   my($attribute);
   foreach $attribute ( grep /^radius_/, fields('svc_acct') ) {
     #warn $attribute;
     $attribute =~ /^radius_(.*)$/;
     my $pattribute = $FS::raddb::attrib{$1};
-    print "<BR>Radius (reply) $pattribute: <B>". $svc_acct->getfield($attribute), "</B>";
+    print "<TR><TD ALIGN=\"right\">Radius (reply) $pattribute</TD>".
+          "<TD BGCOLOR=\"#ffffff\">". $svc_acct->getfield($attribute).
+          "</TD></TR>";
   }
   foreach $attribute ( grep /^rc_/, fields('svc_acct') ) {
     #warn $attribute;
     $attribute =~ /^rc_(.*)$/;
     my $pattribute = $FS::raddb::attrib{$1};
-    print "<BR>Radius (check) $pattribute: <B>". $svc_acct->getfield($attribute), "</B>";
+    print "<TR><TD ALIGN=\"right\">Radius (check) $pattribute: </TD>".
+          "<TD BGCOLOR=\"#ffffff\">". $svc_acct->getfield($attribute).
+          "</TD></TR>";
   }
 } else {
-  print "<BR><BR>(No SLIP/PPP account)";
+  print "<TR><TH COLSPAN=2>(No SLIP/PPP account)</TH></TR>";
 }
 
-print "</BODY></HTML>";
+print "</TABLE></TD></TR></TABLE></BODY></HTML>";
 
 %>

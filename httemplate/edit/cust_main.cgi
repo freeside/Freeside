@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: cust_main.cgi,v 1.4 2001-08-28 14:34:14 ivan Exp $ -->
+#<!-- $Id: cust_main.cgi,v 1.5 2001-09-27 20:41:36 ivan Exp $ -->
 
 use vars qw( $cgi $custnum $action $cust_main $p1 @agents $agentnum 
              $last $first $ss $company $address1 $address2 $city $zip 
@@ -22,7 +22,7 @@ use FS::cust_main_county;
   #for misplaced logic below
   use FS::part_pkg;
 
-  #for false laziness below
+  #for false laziness below (now more properly lazy)
   use FS::svc_acct_pop;
 
   #for (other) false laziness below
@@ -80,7 +80,7 @@ print qq!<FONT SIZE="+1" COLOR="#ff0000">Error: !, $error, "</FONT>"
 
 print qq!<FORM ACTION="${p1}process/cust_main.cgi" METHOD=POST NAME="form1">!,
       qq!<INPUT TYPE="hidden" NAME="custnum" VALUE="$custnum">!,
-      qq!Customer # !, ( $custnum ? $custnum : " (NEW)" ),
+      qq!Customer # !, ( $custnum ? "<B>$custnum</B>" : " (NEW)" ),
       
 ;
 
@@ -408,7 +408,7 @@ unless ( $custnum ) {
 
   if ( @part_pkg ) {
 
-    print "<BR><BR>First package", &itable("#cccccc"),
+    print "<BR><BR>First package", &itable("#cccccc", "0 ALIGN=LEFT"), #apiabuse
           qq!<TR><TD COLSPAN=2><SELECT NAME="pkgpart_svcpart">!;
 
     print qq!<OPTION VALUE="">(none)!;
@@ -433,19 +433,12 @@ unless ( $custnum ) {
 <TD><INPUT TYPE="text" NAME="_password" VALUE="$password" SIZE=10 MAXLENGTH=8>
 (blank to generate)</TD></TR>
 END
-    print qq!<TR><TD ALIGN="right">POP</TD><TD><SELECT NAME="popnum" SIZE=1><OPTION> !;
-    my($svc_acct_pop);
-    foreach $svc_acct_pop ( qsearch ('svc_acct_pop',{} ) ) {
-    print qq!<OPTION VALUE="!, $svc_acct_pop->popnum, '"',
-          ( $popnum && $svc_acct_pop->popnum == $popnum ) ? ' SELECTED' : '', ">", 
-          $svc_acct_pop->popnum, ": ", 
-          $svc_acct_pop->city, ", ",
-          $svc_acct_pop->state,
-          " (", $svc_acct_pop->ac, ")/",
-          $svc_acct_pop->exch, "\n"
-        ;
-    }
-    print "</SELECT></TD></TR></TABLE>";
+
+    print '<TR><TD ALIGN="right">POP</TD><TD WIDTH="100%">'
+          .
+          &FS::svc_acct_pop::popselector($popnum).
+          '</TD></TR></TABLE>'
+          ;
   }
 }
 

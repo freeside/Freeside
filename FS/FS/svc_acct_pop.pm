@@ -1,10 +1,11 @@
 package FS::svc_acct_pop;
 
 use strict;
-use vars qw( @ISA );
-use FS::Record qw( qsearchs );
+use vars qw( @ISA @EXPORT_OK @svc_acct_pop %svc_acct_pop );
+use FS::Record qw( qsearch qsearchs );
 
-@ISA = qw( FS::Record );
+@ISA = qw( FS::Record Exporter );
+@EXPORT_OK = qw( popselector );
 
 =head1 NAME
 
@@ -24,6 +25,8 @@ FS::svc_acct_pop - Object methods for svc_acct_pop records
   $error = $record->delete;
 
   $error = $record->check;
+
+  $html = FS::svc_acct_pop::popselector( $popnum, $state );
 
 =head1 DESCRIPTION
 
@@ -94,15 +97,96 @@ sub check {
 
 }
 
+=item text
+
+Returns:
+
+"$city, $state ($ac)/$exch"
+
+=cut
+
+sub text {
+  my $self = shift;
+  $self->city. ', '. $self->state. ' ('. $self->ac. ')/'. $self->exch;
+}
+
+=back
+
+=head1 SUBROUTINES
+
+=over 4
+
+=item popselector [ POPNUM [ STATE ] ]
+
+=cut
+
+sub popselector {
+  my( $popnum, $state ) = @_;
+
+  unless ( @svc_acct_pop ) { #cache pop list
+    @svc_acct_pop = qsearch('svc_acct_pop', {} );
+    %svc_acct_pop = ();
+    push @{$svc_acct_pop{$_->state}}, $_ foreach @svc_acct_pop;
+  }
+
+  my $size = 0;
+  my $text = <<END;
+    <SCRIPT>
+    function opt(what,href,text) {
+      var optionName = new Option(text, href, false, false)
+      var length = what.length;
+      what.options[length] = optionName;
+    }
+    
+    function popstate_changed(what) {
+      state = what.options[what.selectedIndex].text;
+      for (var i = what.form.popnum.length;i > 0;i--)
+                what.form.popnum.options[i] = null;
+      what.form.popnum.options[0] = new Option("", "", false, true);
+END
+
+  foreach my $popstate ( sort { $a cmp $b } keys %svc_acct_pop ) {
+    $text .= "\nif ( state == \"$popstate\" ) {\n";
+
+    foreach my $pop ( @{$svc_acct_pop{$popstate}}) {
+      my $o_popnum = $pop->popnum;
+      my $poptext = $pop->text;
+      $size = length($poptext) if length($poptext) > $size;
+      $text .= "opt(what.form.popnum, \"$o_popnum\", \"$poptext\");\n"
+    }
+    $text .= "}\n";
+  }
+
+  $text .= "}\n</SCRIPT>\n";
+
+  $text .=
+    qq!<SELECT NAME="popstate" SIZE=1 onChange="popstate_changed(this)">!.
+    qq!<OPTION> !;
+  $text .= "<OPTION>$_" foreach sort { $a cmp $b } keys %svc_acct_pop;
+  $text .= '</SELECT>'; #callback? return 3 html pieces?  #'</TD><TD>';
+
+  $text .= qq!<SELECT NAME="popnum" SIZE=1><OPTION> !;
+  foreach my $pop ( @svc_acct_pop ) {
+    $text .= qq!<OPTION VALUE="!. $pop->popnum. '"'.
+             ( ( $popnum && $pop->popnum == $popnum ) ? ' SELECTED' : '' ). ">".
+             $pop->text;
+  }
+  $text .= '</SELECT>';
+
+}
+
 =back
 
 =head1 VERSION
 
-$Id: svc_acct_pop.pm,v 1.3 2001-09-26 09:17:06 ivan Exp $
+$Id: svc_acct_pop.pm,v 1.4 2001-09-27 20:41:37 ivan Exp $
 
 =head1 BUGS
 
 It should be renamed to part_pop.
+
+popselector?  putting web ui components in here?  they should probably live
+somewhere else...
 
 =head1 SEE ALSO
 
