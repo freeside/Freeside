@@ -6,7 +6,7 @@ use subs qw(do_template);
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use Text::Template;
-use FS::SelfService qw(login customer_info invoice);
+use FS::SelfService qw(login customer_info invoice payment_info);
 
 $template_dir = '.';
 
@@ -68,6 +68,7 @@ if ( $result->{error} eq "Can't resume session" ) { #ick
 #warn $result->{'open_invoices'};
 #warn scalar(@{$result->{'open_invoices'}});
 
+warn "processing template $action\n";
 do_template($action, {
   'session_id' => $session_id,
   %{$result}
@@ -89,7 +90,7 @@ sub view_invoice {
 }
 
 sub make_payment {
-
+  payment_info( 'session_id' => $session_id );
 }
 
 #--

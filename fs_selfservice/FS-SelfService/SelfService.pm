@@ -23,6 +23,7 @@ $socket =  "/usr/local/freeside/selfservice_socket";
   'customer_info' => 'MyAccount/customer_info',
   'invoice'       => 'MyAccount/invoice',
   'cancel'        => 'MyAccount/cancel',
+  'payment_info'  => 'MyAccount/payment_info',
 );
 @EXPORT_OK = keys %autoload;
 

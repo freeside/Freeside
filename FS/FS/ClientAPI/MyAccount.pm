@@ -19,6 +19,7 @@ FS::ClientAPI->register_handlers(
   'MyAccount/customer_info' => \&customer_info,
   'MyAccount/invoice'       => \&invoice,
   'MyAccount/cancel'        => \&cancel,
+  'MyAccount/payment_info'  => \&payment_info,
 );
 
 #store in db?
@@ -111,6 +112,42 @@ sub customer_info {
          };
 
 }
+
+sub payment_info {
+  my $p = shift;
+  my $session = $cache->get($p->{'session_id'})
+    or return { 'error' => "Can't resume session" }; #better error message
+
+  my %return;
+
+  my $custnum = $session->{'custnum'};
+
+  my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
+    or return { 'error' => "unknown custnum $custnum" };
+
+  $return{balance} = $cust_main->balance;
+
+  $return{payname} = $cust_main->payname
+                     || $cust_main->first. ' '. $cust_main->get('last');
+
+  $return{$_} = $cust_main->get($_) for qw(address1 address2 city state zip);
+
+  if ( $cust_main->payby =~ /^(CARD|DCRD)$/ ) {
+    #$return{card_type} = 
+    $return{payinfo} = $cust_main->payinfo;
+    #exp date (month, year)
+
+    #CARD vd DCRD remembering
+  }
+
+  #list all states & counties
+
+  return { 'error' => '',
+           %return,
+         };
+
+};
+
 
 sub invoice {
   my $p = shift;

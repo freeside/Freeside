@@ -9,12 +9,9 @@
 Hello <%= $name %>!<BR><BR>
 Your contact information<BR><%= $small_custview %>
 <BR>
-<%= if ( $balance ) {
-  $OUT .= qq! <B><A HREF="${url}make_payment">Make a $balance payment</A></B>!;
+<%= if ( $balance > 0 ) {
+  $OUT .= qq! <B><A HREF="${url}make_payment">Make a payment</A></B><BR><BR>!;
 } %>
-<BR><BR>
-<!--<TABLE BORDER=1 CELLSPACING=0 CELLPADDING=2 BORDERCOLOR="#999999">
-<TR><TH>Invoice</TH><TH>Date</TH><TH>Owed</TH></TR>-->
 <%=
   if ( @open_invoices ) {
     $OUT .= '<TABLE BORDER=0 CELLSPACING=0 CELLPADDING=2 BGCOLOR="#eeeeee">'.
