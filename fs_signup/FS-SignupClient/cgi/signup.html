@@ -130,19 +130,8 @@ Contact Information
   (blank to generate)</TD>
 </TR>
 <TR>
-  <TD ALIGN="right">POP</TD>
-  <TD><SELECT NAME="popnum" SIZE=1><OPTION> 
-
-  <%=
-    foreach my $pop ( @{$pops} ) {
-      $OUT .= '<OPTION VALUE="'. $pop->{'popnum'}. '"';
-      $OUT .= ' SELECTED' if $popnum && $pop->{'popnum'} == $popnum;
-      $OUT .= '>'. $pop->{'popnum'}. ': '. $pop->{'city'}. ', '.
-              $pop->{'state'}. ' ('. $pop->{'ac'}. ')/'. $pop->{'exch'}. "\n";
-    }
-  %>
-
-  </SELECT></TD>
+  <TD ALIGN="right">Access number</TD>
+  <TD><%= popselector($popnum) %></TD>
 </TR>
 </TABLE>
 <BR><BR><INPUT TYPE="submit" VALUE="Signup">
