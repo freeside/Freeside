@@ -1,46 +1,5 @@
 <%
-#
-# $Id: cust_pkg.cgi,v 1.1 2001-07-30 07:36:04 ivan Exp $
-#
-# based on search/svc_acct.cgi ivan@sisd.com 98-jul-17
-#
-# $Log: cust_pkg.cgi,v $
-# Revision 1.1  2001-07-30 07:36:04  ivan
-# templates!!!
-#
-# Revision 1.11  2000/07/17 16:45:41  ivan
-# first shot at invoice browsing and some other cleanups
-#
-# Revision 1.10  2000/07/17 12:49:29  ivan
-# better error message if a package isn't linked to a customer (that shouldn't happen)
-#
-# Revision 1.9  1999/07/17 10:38:52  ivan
-# scott nelson <scott@ultimanet.com> noticed this mod_perl-triggered bug and
-# gave me a great bugreport at the last rhythmethod
-#
-# Revision 1.8  1999/02/09 09:22:57  ivan
-# visual and bugfixes
-#
-# Revision 1.7  1999/02/07 09:59:37  ivan
-# more mod_perl fixes, and bugfixes Peter Wemm sent via email
-#
-# Revision 1.6  1999/01/19 05:14:13  ivan
-# for mod_perl: no more top-level my() variables; use vars instead
-# also the last s/create/new/;
-#
-# Revision 1.5  1999/01/18 09:41:38  ivan
-# all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
-# (good idea anyway)
-#
-# Revision 1.4  1999/01/18 09:22:33  ivan
-# changes to track email addresses for email invoicing
-#
-# Revision 1.3  1998/12/23 03:05:59  ivan
-# $cgi->keywords instead of $cgi->query_string
-#
-# Revision 1.2  1998/12/17 09:41:09  ivan
-# s/CGI::(Base|Request)/CGI.pm/;
-#
+# <!-- $Id: cust_pkg.cgi,v 1.2 2001-08-15 10:04:53 ivan Exp $ -->
 
 use strict;
 use vars qw ( $cgi @cust_pkg $sortby $query );
@@ -144,7 +103,6 @@ END
   </BODY>
 </HTML>
 END
-  exit;
 
 }
 

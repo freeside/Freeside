@@ -1,63 +1,5 @@
 <%
-#
-# $Id: svc_acct.cgi,v 1.1 2001-07-30 07:36:04 ivan Exp $
-#
-# Usage: post form to:
-#        http://server.name/path/svc_acct.cgi
-#
-# Note: Should be run setuid freeside as user nobody.
-#
-# loosely (sp?) based on search/cust_main.cgi
-#
-# ivan@voicenet.com 96-jan-3 -> 96-jan-4
-#
-# rewrite (now does browsing too) ivan@sisd.com 98-mar-9
-#
-# Changes to allow page to work at a relative position in server
-#       bmccane@maxbaud.net     98-apr-3
-#
-# show unlinked accounts ivan@sisd.com 98-jun-22
-#
-# use FS::CGI, show total ivan@sisd.com 98-jul-17
-#
-# give service and customer info too ivan@sisd.com 98-aug-16
-#
-# $Log: svc_acct.cgi,v $
-# Revision 1.1  2001-07-30 07:36:04  ivan
-# templates!!!
-#
-# Revision 1.11  1999/04/14 11:25:33  ivan
-# *** empty log message ***
-#
-# Revision 1.10  1999/04/14 11:20:21  ivan
-# visual fix
-#
-# Revision 1.9  1999/04/10 01:53:18  ivan
-# oops, search usernames limited to 8 chars
-#
-# Revision 1.8  1999/04/09 23:43:29  ivan
-# just in case
-#
-# Revision 1.7  1999/02/07 09:59:38  ivan
-# more mod_perl fixes, and bugfixes Peter Wemm sent via email
-#
-# Revision 1.6  1999/01/19 05:14:14  ivan
-# for mod_perl: no more top-level my() variables; use vars instead
-# also the last s/create/new/;
-#
-# Revision 1.5  1999/01/18 09:41:39  ivan
-# all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
-# (good idea anyway)
-#
-# Revision 1.4  1999/01/18 09:22:34  ivan
-# changes to track email addresses for email invoicing
-#
-# Revision 1.3  1998/12/23 03:06:28  ivan
-# $cgi->keywords instead of $cgi->query_string
-#
-# Revision 1.2  1998/12/17 09:41:10  ivan
-# s/CGI::(Base|Request)/CGI.pm/;
-#
+# <!-- $Id: svc_acct.cgi,v 1.2 2001-08-15 10:04:53 ivan Exp $ -->
 
 use strict;
 use vars qw( $cgi @svc_acct $sortby $query );
@@ -182,7 +124,6 @@ END
   </BODY>
 </HTML>
 END
-  exit;
 
 }
 
