@@ -1,4 +1,4 @@
-<!-- $Id: part_svc.cgi,v 1.2 2001-08-11 04:55:03 ivan Exp $ -->
+<!-- $Id: part_svc.cgi,v 1.3 2001-08-11 23:19:09 ivan Exp $ -->
 <% 
    my $part_svc;
    if ( $cgi->param('error') ) { #error
@@ -6,9 +6,10 @@
        map { $_, scalar($cgi->param($_)) } fields('part_svc')
      } );
    } elsif ( $cgi->keywords ) { #edit
-     my $query = $cgi->keywords;
-     $query =~ /^(\d+)$/;
-     $part_svc=qsearchs('part_svc',{'svcpart'=>$1});
+     my($query) = $cgi->keywords;
+     $query =~ /^(\d+)$/ or die "malformed query: $query";
+     $part_svc=qsearchs('part_svc', { 'svcpart'=>$1 } )
+       or die "unknown svcpart: $1";
    } else { #adding
      $part_svc = new FS::part_svc {};
    }
