@@ -407,12 +407,12 @@ END
               '<A HREF="'.
                 FS::TicketSystem->href_customer_tickets($custnum,$priority).
               '">';
-            print "<TR><TD ALIGN=right>$ahref".
+            print "<TR><TD ALIGN=right><FONT SIZE=-1>$ahref".
                     FS::TicketSystem->num_customer_tickets($custnum,$priority).
-                  "</A></TD>".
-                  "<TD ALIGN=left>$ahref".
+                  "</A></FONT></TD>".
+                  "<TD ALIGN=left><FONT SIZE=-1>$ahref".
                   ( $priority || '<i>(none)</i>' ).
-                  "</A></TD></TR>";
+                  "</A></FONT></TD></TR>";
           }
           print '<TR><TD BGCOLOR="#000000" COLSPAN=2></TD></TR>'.
                 '<TR><TD ALIGN=right>';
@@ -425,7 +425,7 @@ END
         print "</TD><TD ALIGN=left>${ahref}Total</A></TD></TR></TABLE>"
           if @custom_priorities;
       } else {
-        print $cust_main->get($addl_col);
+        print '<FONT SIZE=-1>'. $cust_main->get($addl_col). '</FONT>';
       }
       print "</TD>";
     }
