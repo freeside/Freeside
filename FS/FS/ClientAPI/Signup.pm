@@ -60,7 +60,7 @@ sub signup_info {
 
   if (
     $conf->config('signup_server-default_agentnum')
-    || !exists $signup_info->{'part_pkg'} #cache for performance
+    && !exists $signup_info->{'part_pkg'} #cache for performance
   ) {
     my $agentnum = $conf->config('signup_server-default_agentnum');
     my $agent = qsearchs( 'agent', { 'agentnum' => $agentnum } )
