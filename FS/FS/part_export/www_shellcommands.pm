@@ -96,7 +96,7 @@ sub shellcommands_queue {
 }
 
 sub ssh_cmd { #subroutine, not method
-  use Net::SSH '0.07';
+  use Net::SSH '0.08';
   &Net::SSH::ssh_cmd( { @_ } );
 }
 
