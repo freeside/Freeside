@@ -12,6 +12,8 @@ use FS::Record qw(qsearch qsearchs);
 use FS::Msgcat qw(gettext);
 use FS::svc_acct;
 use FS::svc_domain;
+use FS::svc_external;
+use FS::part_svc;
 use FS::cust_main;
 use FS::cust_bill;
 use FS::cust_main_county;
@@ -406,35 +408,61 @@ sub order_pkg {
   my $error = $cust_pkg->check;
   return { 'error' => $error } if $error;
 
-  my $svc_acct = new FS::svc_acct ( {
-    'svcpart'   => $p->{'svcpart'} || $cust_pkg->part_pkg->svcpart('svc_acct'),
-    map { $_ => $p->{$_} }
-      qw( username _password sec_phrase popnum ),
-  } );
+  my @svc = ();
+  unless ( $p->{'svcpart'} eq 'none' ) {
 
-  my @acct_snarf;
-  my $snarfnum = 1;
-  while ( length($p->{"snarf_machine$snarfnum"}) ) {
-    my $acct_snarf = new FS::acct_snarf ( {
-      'machine'   => $p->{"snarf_machine$snarfnum"},
-      'protocol'  => $p->{"snarf_protocol$snarfnum"},
-      'username'  => $p->{"snarf_username$snarfnum"},
-      '_password' => $p->{"snarf_password$snarfnum"},
+    my $svcdb;
+    my $svcpart = '';
+    if ( $p->{'svcpart'} =~ /^(\d+)$/ ) {
+      $svcpart = $1;
+      my $part_svc = qsearchs('part_svc', { 'svcpart' => $svcpart } );
+      return { 'error' => "Unknown svcpart $svcpart" } unless $part_svc;
+      $svcdb = $part_svc->svcdb;
+    } else {
+      $svcdb = 'svc_acct';
+    }
+    $svcpart ||= $cust_pkg->part_pkg->svcpart($svcdb);
+
+    my %fields = (
+      'svc_acct'     => [ qw( username _password sec_phrase popnum ) ],
+      'svc_domain'   => [ qw( domain ) ],
+      'svc_external' => [ qw( id title ) ],
+    );
+  
+    my $svc_x = "FS::$svcdb"->new( {
+      'svcpart'   => $svcpart,
+      map { $_ => $p->{$_} } @{$fields{$svcdb}}
     } );
-    $snarfnum++;
-    push @acct_snarf, $acct_snarf;
+    
+    if ( $svcdb eq 'svc_acct' ) {
+      my @acct_snarf;
+      my $snarfnum = 1;
+      while ( length($p->{"snarf_machine$snarfnum"}) ) {
+        my $acct_snarf = new FS::acct_snarf ( {
+          'machine'   => $p->{"snarf_machine$snarfnum"},
+          'protocol'  => $p->{"snarf_protocol$snarfnum"},
+          'username'  => $p->{"snarf_username$snarfnum"},
+          '_password' => $p->{"snarf_password$snarfnum"},
+        } );
+        $snarfnum++;
+        push @acct_snarf, $acct_snarf;
+      }
+      $svc_x->child_objects( \@acct_snarf );
+    }
+    
+    my $y = $svc_x->setdefault; # arguably should be in new method
+    return { 'error' => $y } if $y && !ref($y);
+  
+    $error = $svc_x->check;
+    return { 'error' => $error } if $error;
+
+    push @svc, $svc_x;
+
   }
-  $svc_acct->child_objects( \@acct_snarf );
-
-  my $y = $svc_acct->setdefault; # arguably should be in new method
-  return { 'error' => $y } if $y && !ref($y);
-
-  $error = $svc_acct->check;
-  return { 'error' => $error } if $error;
 
   use Tie::RefHash;
   tie my %hash, 'Tie::RefHash';
-  %hash = ( $cust_pkg => [ $svc_acct ] );
+  %hash = ( $cust_pkg => \@svc );
   #msgcat
   $error = $cust_main->order_pkgs( \%hash, '', 'noexport' => 1 );
   return { 'error' => $error } if $error;
@@ -449,7 +477,8 @@ sub order_pkg {
     $cust_main->apply_credits;
     $bill_error = $cust_main->collect;
 
-    if ( $cust_main->balance > $old_balance ) {
+    if ( $cust_main->balance > $old_balance
+         && $cust_main->payby !~ /^(BILL|DCRD|DCHK)$/ ) {
       $cust_pkg->cancel('quiet'=>1);
       return { 'error' => '_decline' };
     } else {
