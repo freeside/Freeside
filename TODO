@@ -1,10 +1,14 @@
-$Id: TODO,v 1.34 1999-07-15 23:50:42 ivan Exp $
+$Id: TODO,v 1.35 1999-07-16 00:20:53 ivan Exp $
 
 If you are interested in helping with any of these, please join the mailing
 list (send a blank message to ivan-freeside-subscribe@sisd.com) to avoid 
 duplication of effort.
 
 ---
+Put this in the doc (quoting Mark Wells <mark@pc-intouch.com>):
+>Of course, thanks to the sheer coolness of SQL and MyODBC, you can do
+>whatever reports you want in basically whatever application you want.
+>There's no need for Freeside itself to do any reports at all.
 
 middle names and titles
 
