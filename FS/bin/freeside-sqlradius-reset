@@ -13,8 +13,8 @@ adminsuidsetup $user;
 #my $machine = shift or die &usage;
 
 my @exports = ();
-if ( @_ ) {
-  foreach my $exportnum ( @_ ) {
+if ( @ARGV ) {
+  foreach my $exportnum ( @ARGV ) {
     foreach my $exporttype (qw( sqlradius sqlradius_withdomain )) {
     push @exports, qsearch('part_export', { exportnum  => $exportnum,
                                             exporttype => $exporttype, } );
