@@ -70,6 +70,7 @@ help:
 	@echo "                   perl-modules install-perl-modules"
 	@echo "                   install deploy"
 	@echo "                   create-database"
+	@echo "                   configure-rt create-rt"
 	@echo "                   clean"
 
 aspdocs: htmlman httemplate/* httemplate/*/* httemplate/*/*/* httemplate/*/*/*/* httemplate/*/*/*/*/*
@@ -182,6 +183,24 @@ create-config: install-perl-modules
 
 	mkdir "${FREESIDE_CONF}/export.${DATASOURCE}"
 	chown freeside "${FREESIDE_CONF}/export.${DATASOURCE}"
+
+configure-rt:
+	cd rt; \
+	./configure --htmldir=${FREESIDE_DOCUMENT_ROOT}/rt \
+	            --masonstatedir=${MASONDATA} \
+	            --with-db-type=Pg \
+	            --with-db-database=freeside \
+	            --with-db-rt-user=${DB_USER} \
+	            --with-db-rt-pass=${DB_PASSWORD} \
+	            --with-web-user=freeside \
+	            --with-web-group=www
+
+create-rt: configure-rt
+	cd rt; make install
+	rt/sbin/rt-initialize-database --action schema
+	rt/sbin/rt-initialize-database --action insert_initial
+	rt/sbin/rt-initialize-database --action insert --datafile rt/etc/initialdata
+
 
 clean:
 	rm -rf aspdocs masondocs
