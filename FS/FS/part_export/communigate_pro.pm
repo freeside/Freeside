@@ -90,9 +90,10 @@ sub CreateAccount {
   $args{'AccessModes'} = [ split(' ', $args{'AccessModes'}) ];
   @args = ( accountName => $accountName,
             accountType  => $accountType,
-            externalFlag => $externalFlag,
             settings     => \%args,
           );
+            #externalFlag => $externalFlag,
+  push @args, externalFlag => $externalFlag if $externalFlag;
 
   communigate_pro_command( $machine, $port, $login, $password, $method, @args );
 
