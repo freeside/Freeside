@@ -1,3 +1,0 @@
-AuthName        Freeside
-AuthType        Basic
-require valid-user
