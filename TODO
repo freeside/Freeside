@@ -1,10 +1,84 @@
-$Id: TODO,v 1.30 1999-04-14 13:14:54 ivan Exp $
+$Id: TODO,v 1.31 1999-04-29 09:37:45 ivan Exp $
 
 If you are interested in helping with any of these, please join the mailing
 list (send a blank message to ivan-freeside-subscribe@sisd.com) to avoid 
 duplication of effort.
 
 ---
+
+> Second, when trying to add a new user I get two types of errors; first one
+> is when I place an e-mail address and select the "submit," Freeside
+> complains with "Error: Unknown local account (specified literally)"
+.  
+You probably put a (local) email address in for email invoices.  Freeside
+stores these as references to the database records, so (for example) they
+follow username changes.
+.
+I'm guessing you put in the email address that you were creating, and got
+that error because it didn't exist yet.  Sounds like a buglet to me.  I'll
+try to fix that soon; in the meantime you can add the invoicing email 
+address afterwords.
+
+Postgres `money' time sucks rocks anyway.  I'll probably just require 6.5
+and use the numeric types, which *finally* work right.
+On Sat, Apr 24, 1999 at 12:52:00PM -0700, Mr. Poet wrote:
+> Software error:
+> Error creating cust_bill record: ERROR: parser:
+> attribute 'charged' is of type 'money' but expression
+> is of type 'float8' You will need to rewrite or cast 
+> the expression ! Check updated but unbilled packages 
+> for customer1
+.
+Postgres `money' time sucks rocks anyway.  I'll probably just require 6.5
+and use the numeric types, which *finally* work right (well, according to 
+the web site, anyway).
+.
+In the mean-time, this could probably be fixed with the reverse of        
+the kludge in FS::Record::new.  This removes `$' and `,' from money fields
+coming out of the database.  Something which fixed up the data so Postgres
+was happy with it could go in FS::Record::_quote, for data going into the
+database.
+
+our data display problem might be a Freeside problem wrt not using 
+Oracle-compatible DBI syntax (uses the return value from $sth->execute as
+a number of rows).  Fixing this is on the TODO.
+
+hooks for arbitrary commands out of configuration files
+svc_acct.pm svc_acct_sm.pm etc.
+
+Add this to a FAQ, along with doing it for middle names:
+
+
+>  What I'm finding difficult is how to easily 
+> customize fields.  For example, I am trying to add a "middle name" field
+> to the Customer Edit, view, etc.  If I'm going about it right, it appears
+> I have to edit the cust_main.cgi under edit and edit/process and the
+> site_perl/cust_main.pm, as well as other things.  Perhaps you could shed
+> some light on the best way of doing this.
+
+You have the basic idea.  To implement that completely, I would:
+- Add the new field to bin/fs-setup for new users
+- Document the field in htdocs/docs/schema.html
+- Document the change in a new file, htdocs/docs/upgrade4.html
+* Run bin/dbdef-create
+* Add the new field to edit/cust_main.cgi and edit/process/cust_main.cgi
+
+For bonus points, I'd grep around for the various bits which use "$first 
+$last" or "$last, $first" and replace them with a method call in cust_main.pm,
+ , like search/cust_main.cgi
+
+document security model:
+Don't forget about Apache usernames - since, via the mapsecrets file, each
+user can login to the SQL database with a different username and
+password, you can utitilize the security model of the SQL database as
+well.  Also, each username here can point to a different configuration
+directory where you could store user-specific configuration info.  Then   
+you could link each username to one-to-many agents. 
+(The web demo works using a trivial version of this.)
+
+Yes, queue processing or the equivalent via checkpoint fields on various  
+talbes (which you pick up via a pretty simple SELECT) would be really 
+nice too.
 
 default (and ordering) state/county/country config file
 expand the
