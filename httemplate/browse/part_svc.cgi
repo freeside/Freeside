@@ -1,4 +1,4 @@
-<!-- $Id: part_svc.cgi,v 1.1 2001-07-30 07:36:03 ivan Exp $ -->
+<!-- $Id: part_svc.cgi,v 1.2 2001-08-11 23:18:30 ivan Exp $ -->
 <%= header('Service Part Listing', menubar( 'Main Menu' => $p) ) %>
 
     Services are items you offer to your customers.<BR><BR>
@@ -39,7 +39,7 @@
      foreach $row ( @rows ) {
        my($flag)=$part_svc->getfield($svcdb.'__'.$row.'_flag');
 %>
-     <%= $n1 %><TD>$row</TD><TD>
+     <%= $n1 %><TD><%= $row %></TD><TD>
 
 <%     if ( $flag eq "D" ) { print "Default"; }
          elsif ( $flag eq "F" ) { print "Fixed"; }
