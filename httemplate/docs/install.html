@@ -18,7 +18,7 @@ Before installing, you need:
 <!--       <li>MySQL has been reported to work. -->
          <b>MySQL's default <a href="http://www.mysql.com/doc/M/y/MyISAM.html">MyISAM</a> and <a href="http://www.mysql.com/doc/I/S/ISAM.html">ISAM</a> table types are not supported</b>.  If you want to use MySQL, you <b>must</b> use one of the new <a href="http://www.mysql.com/doc/T/a/Table_types.html">transaction-safe table types</a> such as <a href="http://www.mysql.com/doc/B/D/BDB.html">BDB</a> or <a href="http://www.mysql.com/doc/I/n/InnoDB.html">InnoDB</a>, and set it as the default table type using the <code>--default-table-type=BDB</code> or <code>--default-table-type=InnoDB</code> <a href="http://www.mysql.com/documentation/mysql/bychapter/manual_MySQL_Database_Administration.html#Command-line_options">mysqld command-line option</a> or by setting <code>default-table-type=BDB</code> or <code>default-table-type=InnoDB</code> in the <a href="http://www.mysql.com/documentation/mysql/bychapter/manual_MySQL_Database_Administration.html#Option_files">my.cnf option file</a>.
     </ul>
-  <li>Perl modules (<a href="http://theoryx5.uwinnipeg.ca/CPAN/perl/CPAN.html">CPAN</a> will query, download and build perl modules automatically)
+  <li>Perl modules (<a href="http://search.cpan.org/~andk/CPAN/lib/CPAN.pm">CPAN</a> will query, download and build perl modules automatically)
     <ul>
 <!--      <li><a href="http://search.cpan.org/search?dist=Array-PrintCols">Array-PrintCols</a>
       <li><a href="http://search.cpan.org/search?dist=Term-Query">Term-Query</a> (make test broken; install manually) -->
