@@ -118,8 +118,9 @@ sub check {
 =item checkdest
 
 Checks the dest field only.  If it finds that the account ends in the
-same domain configured in the configuration files, it will change the
-invoice destination from an email address to a service number instead.
+same domain configured as the B<domain> configuration file, it will change the
+invoice destination from an email address to a service number (see
+L<FS::svc_acct>).
 
 =cut
 
@@ -169,7 +170,7 @@ sub address {
 
 =head1 VERSION
 
-$Id: cust_main_invoice.pm,v 1.3 2001-07-27 06:17:46 thalakan Exp $
+$Id: cust_main_invoice.pm,v 1.4 2001-07-27 17:16:25 ivan Exp $
 
 =head1 BUGS
 
