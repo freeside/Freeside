@@ -414,6 +414,26 @@ sub export_delete {
   $self->_export_delete(@_);
 }
 
+=item export_suspend
+
+=cut
+
+sub export_suspend {
+  my $self = shift;
+  $self->rebless;
+  $self->_export_suspend(@_);
+}
+
+=item export_unsuspend
+
+=cut
+
+sub export_unsuspend {
+  my $self = shift;
+  $self->rebless;
+  $self->_export_unsuspend(@_);
+}
+
 #fallbacks providing useful error messages intead of infinite loops
 sub _export_insert {
   my $self = shift;
@@ -428,6 +448,20 @@ sub _export_replace {
 sub _export_delete {
   my $self = shift;
   return "_export_delete: unknown export type ". $self->exporttype;
+}
+
+#fallbacks providing null operations
+
+sub _export_suspend {
+  my $self = shift;
+  #warn "warning: _export_suspened unimplemented for". ref($self);
+  '';
+}
+
+sub _export_unsuspend {
+  my $self = shift;
+  #warn "warning: _export_unsuspend unimplemented for ". ref($self);
+  '';
 }
 
 =back

@@ -433,10 +433,11 @@ sub suspend {
          ) {
     $hash{_password} = '*SUSPENDED* '.$hash{_password};
     my $new = new FS::svc_acct ( \%hash );
-    $new->replace($self);
-  } else {
-    ''; #no error (already suspended)
+    my $error = $new->replace($self);
+    return $error if $error;
   }
+
+  $self->SUPER::suspend;
 }
 
 =item unsuspend
@@ -454,10 +455,11 @@ sub unsuspend {
   if ( $hash{_password} =~ /^\*SUSPENDED\* (.*)$/ ) {
     $hash{_password} = $1;
     my $new = new FS::svc_acct ( \%hash );
-    $new->replace($self);
-  } else {
-    ''; #no error (already unsuspended)
+    my $error = $new->replace($self);
+    return $error if $error;
   }
+
+  $self->SUPER::unsuspend;
 }
 
 =item cancel

@@ -274,24 +274,92 @@ sub cust_svc {
 
 =item suspend
 
+Runs export_suspend callbacks.
+
+=cut
+
+sub suspend {
+  my $self = shift;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  #new-style exports!
+  unless ( $noexport_hack ) {
+    foreach my $part_export ( $self->cust_svc->part_svc->part_export ) {
+      my $error = $part_export->export_suspend($self);
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "error exporting to ". $part_export->exporttype.
+               " (transaction rolled back): $error";
+      }
+    }
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  '';
+
+}
+
 =item unsuspend
+
+Runs export_unsuspend callbacks.
+
+=cut
+
+sub unsuspend {
+  my $self = shift;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  #new-style exports!
+  unless ( $noexport_hack ) {
+    foreach my $part_export ( $self->cust_svc->part_svc->part_export ) {
+      my $error = $part_export->export_unsuspend($self);
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "error exporting to ". $part_export->exporttype.
+               " (transaction rolled back): $error";
+      }
+    }
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  '';
+
+}
 
 =item cancel
 
-Stubs - return false (no error) so derived classes don't need to define these
+Stub - returns false (no error) so derived classes don't need to define these
 methods.  Called by the cancel method of FS::cust_pkg (see L<FS::cust_pkg>).
 
 =cut
 
-sub suspend { ''; }
-sub unsuspend { ''; }
 sub cancel { ''; }
 
 =back
 
 =head1 VERSION
 
-$Id: svc_Common.pm,v 1.10 2002-06-10 02:52:37 ivan Exp $
+$Id: svc_Common.pm,v 1.11 2002-06-11 03:25:03 ivan Exp $
 
 =head1 BUGS
 
