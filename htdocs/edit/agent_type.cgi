@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: agent_type.cgi,v 1.3 1998-11-15 11:20:12 ivan Exp $
+# $Id: agent_type.cgi,v 1.4 1998-11-21 07:45:19 ivan Exp $
 #
 # agent_type.cgi: Add/Edit agent type (output form)
 #
@@ -13,7 +13,10 @@
 # use FS::CGI, added inline documentation ivan@sisd.com 98-jul-12
 #
 # $Log: agent_type.cgi,v $
-# Revision 1.3  1998-11-15 11:20:12  ivan
+# Revision 1.4  1998-11-21 07:45:19  ivan
+# visual, use FS::table_name when doing qsearch('table_name')
+#
+# Revision 1.3  1998/11/15 11:20:12  ivan
 # s/CGI-Base/CGI.pm/ causes s/QUERY_STRING/keywords/;
 #
 # Revision 1.2  1998/11/13 09:56:46  ivan
@@ -27,7 +30,10 @@ use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
 use FS::Record qw(qsearch qsearchs);
 use FS::agent_type;
-use FS::CGI qw(header menubar);
+use FS::CGI qw(header menubar popurl);
+use FS::agent_type;
+use FS::part_pkg;
+use FS::type_pkgs;
 
 my($cgi) = new CGI;
 
@@ -43,17 +49,18 @@ if ( $cgi->keywords =~ /^(\d+)$/ ) { #editing
 }
 my($hashref)=$agent_type->hashref;
 
+my($p)=popurl(2);
 print $cgi->header, header("$action Agent Type", menubar(
-  'Main Menu' => '../',
-  'View all agent types' => '../browse/agent_type.cgi',
-)), '<FORM ACTION="process/agent_type.cgi" METHOD=POST>';
+  'Main Menu' => "$p/",
+  'View all agent types' => "$p/browse/agent_type.cgi",
+)), '<FORM ACTION="', popurl(1), '/process/agent_type.cgi" METHOD=POST>';
 
 print qq!<INPUT TYPE="hidden" NAME="typenum" VALUE="$hashref->{typenum}">!,
       "Agent Type #", $hashref->{typenum} ? $hashref->{typenum} : "(NEW)";
 
 print <<END;
-<BR>Type <INPUT TYPE="text" NAME="atype" SIZE=32 VALUE="$hashref->{atype}">
-<P>Select which packages agents of this type may sell to customers</P>
+<BR><BR>Agent Type <INPUT TYPE="text" NAME="atype" SIZE=32 VALUE="$hashref->{atype}">
+<BR><BR>Select which packages agents of this type may sell to customers<BR>
 END
 
 my($part_pkg);
