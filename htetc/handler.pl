@@ -198,7 +198,7 @@ sub handler
     #eorar
 
     my $headers = $r->headers_out;
-    $headers->{'Pragma'} = $headers->{'Cache-control'} = 'no-cache';
+    $headers->{'Cache-control'} = 'no-cache';
     #$r->no_cache(1);
     $headers->{'Expires'} = '0';
 

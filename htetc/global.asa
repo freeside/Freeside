@@ -68,7 +68,6 @@ use FS::export_svc;
 use FS::msgcat;
 
 sub Script_OnStart {
-  $Response->AddHeader('Pragma' => 'no-cache');
   $Response->AddHeader('Cache-control' => 'no-cache');
 #  $Response->AddHeader('Expires' => 0);
   $Response->{Expires} = -36288000;
