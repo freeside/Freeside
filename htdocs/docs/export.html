@@ -4,29 +4,29 @@
 <body>
   <h1>File exporting</h1>
   <ul>
-    <li>bin/svc_acct.export will create UNIX `passwd', `shadow' and `master.passwd' files, ERPCD `acp_passwd' and `acp_dialup' files and a RADIUS `users' file in the `/var/spool/freeside/export' directory.  Using the appropriate <a href="config.html">configuration files</a>, you can export these files to your remote machines unattended; see below.
+    <li>bin/svc_acct.export will create UNIX <b>passwd</b>, <b>shadow</b> and <b>master.passwd</b> files, ERPCD <b>acp_passwd</b> and <b>acp_dialup</b> files and a RADIUS <b>users</b> file in the <b>/usr/local/etc/freeside/export.<i>datasrc</i></b> directory.  Using the appropriate <a href="config.html">configuration files</a>, you can export these files to your remote machines unattended; see below.
       <ul>
-        <li>shellmachines - passwd and shadow are copied to the remote machine as /etc/passwd.new and /etc/shadow.net and then moved to /etc/passwd and /etc/shadow if no errors occur.
-        <li>bsdshellmachines - passwd and master.passwd are copied to the remote machine as /etc/passwd.new and /etc/master.passwd.new and moved to /etc/passwd and /etc/master.passwd if no errors occur.
-        <li>nismachines - passwd and shadow are copied to the `/etc/global' directory on the remote machine.  If no errors occur, the command `( cd /var/yp; make; )' is executed on the remote machine.
-        <li>erpcdmachines - acp_passwd and acp_dialup are copied to the `/usr/annex' directory on the remote machine.  If no errors occur, the command `( kill -USR1 `cat /usr/annex/erpcd.pid` )' is executed on the remote machine. 
-        <li>radiusmachines - users is copied to the `/etc/raddb' directory on the remote machine.  If no errors occur, the command `( builddbm )' is executed on the remote machine.
+        <li>shellmachines - <b>passwd</b> and <b>shadow</b> are copied to the remote machine as <b>/etc/passwd.new</b> and <b>/etc/shadow.new</b> and then moved to <b>/etc/passwd</b> and <b>/etc/shadow</b> if no errors occur.
+        <li>bsdshellmachines - <b>passwd</b> and <b>master.passwd</b> are copied to the remote machine as <b>/etc/passwd.new</b> and <b>/etc/master.passwd.new</b> and moved to <b>/etc/passwd</b> and <b>/etc/master.passwd</b> if no errors occur.
+        <li>nismachines - <b>passwd</b> and <b>shadow</b> are copied to the <b>/etc/global</b> directory on the remote machine.  If no errors occur, the command <b>( cd /var/yp; make; )</b> is executed on the remote machine.
+        <li>erpcdmachines - <b>acp_passwd</b> and <b>acp_dialup</b> are copied to the <b>/usr/annex</b> directory on the remote machine.  If no errors occur, the command <b>( kill -USR1 `cat /usr/annex/erpcd.pid` )</b> is executed on the remote machine. 
+        <li>radiusmachines - <b>users</b> is copied to the <b>/etc/raddb</b> directory on the remote machine.  If no errors occur, the command <b>( builddbm )</b> is executed on the remote machine.
       </ul>
     <li>site_perl/svc_acct.pm - If a shellmachine is defined, users can be created, modified and deleted remotely; see below.
       <ul>
-        <li>The command `useradd -d <i>homedir</i> -s <i>shell</i> -u <i>uid</i> <i>username</i>' is executed when a user is added.
-        <li>The command `userdel <i>username</i>' is executed with a user is deleted.
-        <li>If a user's home directory changes, the command `[ -d <i>old_homedir</i> &amp;&amp; ( chmod u+t <i>old_homedir</i>; umask 022; mkdir <i>new_homedir</i>; cd <i>old_homedir</i>; find . -depth -print | cpio -pdm <i>new_homedir</i>; chmod u-t <i>new_homedir</i>; chown -R <i>uid</i>.<i>gid</i> <i>new_homedir</i>; rm -rf <i>old_homedir</i> )' is executed.
+        <li>The command <b>useradd -d <i>homedir</i> -s <i>shell</i> -u <i>uid</i> <i>username</i></b> is executed when a user is added.
+        <li>The command <b>userdel <i>username</i></b> is executed with a user is deleted.
+        <li>If a user's home directory changes, the command <b>[ -d <i>old_homedir</i> &amp;&amp; ( chmod u+t <i>old_homedir</i>; umask 022; mkdir <i>new_homedir</i>; cd <i>old_homedir</i>; find . -depth -print | cpio -pdm <i>new_homedir</i>; chmod u-t <i>new_homedir</i>; chown -R <i>uid</i>.<i>gid</i> <i>new_homedir</i>; rm -rf <i>old_homedir</i> )</b> is executed.
       </ul>
-    <li>bin/svc_acct_sm.export will create <a href="http://www.qmail.org">Qmail</a> `rcpthosts', `recipientmap' and `virtualdomains' files and <a href="http://www.sendmail.org">Sendmail</a> `virtusertable' and `sendmail.cw' files in the `/var/spool/freeside/export' directory.  Using the appropriate <a href="config.html">configuration files</a>, you can export these files to your remote machines unattemded; see below.
+    <li>bin/svc_acct_sm.export will create <a href="http://www.qmail.org">Qmail</a> <b>rcpthosts</b>, <b>recipientmap</b> and <b>virtualdomains</b> files and <a href="http://www.sendmail.org">Sendmail</a> <b>virtusertable</b> and <b>sendmail.cw</b> files in the <b>/usr/local/etc/freeside/export.<i>datasrc</i></b> directory.  Using the appropriate <a href="config.html">configuration files</a>, you can export these files to your remote machines unattemded; see below.
       <ul>
-        <li>qmailmachines - recipientmap, virtualdomains and rcpthosts are copied to the `/var/qmail/control' directory on the remote machine.  Note: If you <a href="legacy.html#svc_acct_sm">imported</a> qmail configuration files, run the generated `/var/spool/freeside/export/virtualdomains.FIX' on a machine with your user home directories before exporting qmail configuration files.
-        <li>shellmachine - The command `[ -e <i>homedir</i>/.qmail-default ] || { touch <i>homedir</i>/.qmail-default; chown <i>uid</i>.<i>gid</i> <i>homedir</i>/.qmail-default; }' will be run on this machine for users in the virtualdomains file.
-        <li>sendmailmachines - sendmail.cw and virtusertable are copied to the remote machine as /etc/sendmail.cw.new and /etc/virtusertable.new and moved to /etc/sendmail.cw and /etc/virtusertable if no errors occur.
+        <li>qmailmachines - <b>recipientmap</b>, <b>virtualdomains</b> and <b>rcpthosts</b> are copied to the <b>/var/qmail/control</b> directory on the remote machine.  Note: If you <a href="legacy.html#svc_acct_sm">imported</a> qmail configuration files, run the generated <b>/usr/local/etc/freeside/export.<i>datasrc</i>/virtualdomains.FIX</b> on a machine with your user home directories before exporting qmail configuration files.
+        <li>shellmachine - The command <b>[ -e <i>homedir</i>/.qmail-default ] || { touch <i>homedir</i>/.qmail-default; chown <i>uid</i>.<i>gid</i> <i>homedir</i>/.qmail-default; }</b> will be run on this machine for users in the virtualdomains file.
+        <li>sendmailmachines - <b>sendmail.cw</b> and <b>virtusertable</b> are copied to the remote machine as <b>/etc/sendmail.cw.new</b> and <b>/etc/virtusertable.new</b> and moved to <b>/etc/sendmail.cw</b> and <b>/etc/virtusertable</b> if no errors occur.
       </ul>
-    <li>site_perl/svc_acct_sm.pm - If the qmailmachines configuration file exists and a shellmachine is defined, user `.qmail-' files can be updated.
+    <li>site_perl/svc_acct_sm.pm - If the qmailmachines configuration file exists and a shellmachine is defined, user <b>.qmail-</b> files can be updated.
       <ul>
-        <li>The command `[ -e <i>homedir</i>/.qmail-<i>domain</i>-default ] || { touch <i>homedir</i>/.qmail-<i>domain</i>-default; chown <i>uid</i>.<i>gid</i> <i>homedir</i>/.qmail-<i>domain</i>-default; }' is run.
+        <li>The command <b>[ -e <i>homedir</i>/.qmail-<i>domain</i>-default ] || { touch <i>homedir</i>/.qmail-<i>domain</i>-default; chown <i>uid</i>.<i>gid</i> <i>homedir</i>/.qmail-<i>domain</i>-default; }</b> is run.
       </ul>
   </ul>
   <br><a name=ssh>Unattended remote login</a> - Freeside can login to remote machines unattended using SSH.  This can pose a security risk if not configured correctly, and will allow an intruder who breaks into your freeside machine full access to your remote machines.  <b>Do not use this feature unless you understand what you are doing!</b>
