@@ -107,11 +107,12 @@ sub insert {
 
   # custnum might not have have been defined in sub check (for one-shot new
   # customers), so check it here instead
+  # (is this still necessary with transactions?)
 
   my $error = $self->ut_number('custnum');
-  return $error if $error
+  return $error if $error;
 
-  return "Unknown customer"
+  return "Unknown customer ". $self->custnum
     unless qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
 
   $self->SUPER::insert;
@@ -567,7 +568,7 @@ sub order {
 
 =head1 VERSION
 
-$Id: cust_pkg.pm,v 1.7 2001-10-01 10:31:08 ivan Exp $
+$Id: cust_pkg.pm,v 1.8 2001-10-09 03:11:50 ivan Exp $
 
 =head1 BUGS
 
@@ -583,6 +584,9 @@ compile time, rather than via 'require' in sub { setup, suspend, unsuspend,
 cancel } because they use %FS::UID::callback to load configuration values.
 Probably need a subroutine which decides what to do based on whether or not
 we've fetched the user yet, rather than a hash.  See FS::UID and the TODO.
+
+Now that things are transactional should the check in the insert method be
+moved to check ?
 
 =head1 SEE ALSO
 
