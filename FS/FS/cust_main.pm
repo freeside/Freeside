@@ -1809,7 +1809,8 @@ Returns all the invoices (see L<FS::cust_bill>) for this customer.
 
 sub cust_bill {
   my $self = shift;
-  qsearch('cust_bill', { 'custnum' => $self->custnum, } )
+  sort { $a->_date <=> $b->_date }
+    qsearch('cust_bill', { 'custnum' => $self->custnum, } )
 }
 
 =item open_cust_bill
