@@ -2,15 +2,20 @@
 -- Paulo Rodrigues: added functions and triggers, Oct. 31, 2001
 -- 
 -- Modified for use with SL 2.0 and Oracle 9i2, Dec 13, 2002
+-- Updated to 2.3.0, Dec 18, 2003
 --
 ALTER SESSION SET NLS_DATE_FORMAT = 'YYYY-MM-DD';
 --
 CREATE SEQUENCE id START WITH 10000 INCREMENT BY 1 MAXVALUE 2147483647 MINVALUE 1  CACHE 2;
 SELECT ID.NEXTVAL FROM DUAL;
 --
+CREATE SEQUENCE invoiceid START WITH 1 INCREMENT BY 1 MAXVALUE 2147483647 MINVALUE 1  CACHE 2;
+SELECT INVOICEID.NEXTVAL FROM DUAL;
+--
 CREATE TABLE makemodel (
   parts_id INTEGER,
-  name VARCHAR2(100)
+  make VARCHAR2(64),
+  model VARCHAR2(64)
 );
 --
 CREATE TABLE gl (
@@ -19,7 +24,8 @@ CREATE TABLE gl (
   description VARCHAR2(100),
   transdate DATE DEFAULT SYSDATE,
   employee_id INTEGER,
-  notes VARCHAR2(4000) 
+  notes VARCHAR2(4000),
+  department_id INTEGER DEFAULT 0
 );
 --
 CREATE TABLE chart (
@@ -52,9 +58,11 @@ CREATE TABLE defaults (
   curr VARCHAR2(500),
   closedto DATE,
   revtrans CHAR(1) DEFAULT '0',
-  ponumber VARCHAR2(30)
+  ponumber VARCHAR2(30),
+  sqnumber VARCHAR2(30),
+  rfqnumber VARCHAR2(30)
 );
-INSERT INTO defaults (version) VALUES ('2.0.8');
+INSERT INTO defaults (version) VALUES ('2.3.0');
 --
 CREATE TABLE acc_trans (
   trans_id INTEGER,
@@ -80,7 +88,8 @@ CREATE TABLE invoice (
   assemblyitem CHAR(1) DEFAULT '0',
   unit VARCHAR2(5),
   project_id INTEGER,
-  deliverydate DATE
+  deliverydate DATE,
+  serialnumber VARCHAR2(200)
 );
 --
 CREATE TABLE vendor (
@@ -155,7 +164,7 @@ CREATE TABLE assembly (
   id INTEGER,
   parts_id INTEGER,
   qty FLOAT,
-  bom CHAR(1)
+  bom char(1)
 );
 --
 CREATE TABLE ar (
@@ -175,7 +184,11 @@ CREATE TABLE ar (
   notes VARCHAR2(4000),
   curr CHAR(3),
   ordnumber VARCHAR2(30),
-  employee_id INTEGER
+  employee_id INTEGER,
+  till VARCHAR2(20),
+  quonumber VARCHAR2(30),
+  intnotes VARCHAR2(4000),
+  department_id INTEGER DEFAULT 0
 );
 --
 CREATE TABLE ap (
@@ -193,7 +206,11 @@ CREATE TABLE ap (
   ordnumber VARCHAR2(30),
   curr CHAR(3),
   notes VARCHAR2(4000),
-  employee_id INTEGER
+  employee_id INTEGER,
+  till VARCHAR2(20),
+  quonumber VARCHAR2(30),
+  intnotes VARCHAR2(4000),
+  department_id INTEGER DEFAULT 0
 );
 --
 CREATE TABLE partstax (
@@ -231,7 +248,11 @@ CREATE TABLE oe (
   notes VARCHAR2(4000),
   curr CHAR(3),
   employee_id INTEGER,
-  closed CHAR(1) DEFAULT '0'
+  closed CHAR(1) DEFAULT '0',
+  quotation CHAR(1) DEFAULT '0',
+  quonumber VARCHAR2(30),
+  intnotes VARCHAR2(4000),
+  department_id INTEGER DEFAULT 0
 );
 --
 CREATE TABLE orderitems (
@@ -265,7 +286,8 @@ CREATE TABLE employee (
   homephone VARCHAR2(20),
   startdate DATE DEFAULT SYSDATE,
   enddate DATE,
-  notes VARCHAR2(4000)
+  notes VARCHAR2(4000),
+  role VARCHAR2(30)
 );
 --
 CREATE TABLE shipto (
@@ -290,6 +312,21 @@ CREATE TABLE project (
 CREATE TABLE partsgroup (
   id INTEGER,
   partsgroup VARCHAR2(100)
+);
+--
+CREATE TABLE status (
+  trans_id INTEGER,
+  formname VARCHAR2(30),
+  printed CHAR(1) DEFAULT 0,
+  emailed CHAR(1) DEFAULT 0,
+  spoolfile VARCHAR2(20),
+  chart_id INTEGER
+);
+--
+CREATE TABLE department (
+  id INTEGER,
+  description VARCHAR2(100),
+  role CHAR(1) DEFAULT 'P'
 );
 --
 -- functions
@@ -317,7 +354,7 @@ END;;
 --
 CREATE OR REPLACE TRIGGER invoiceid BEFORE INSERT ON invoice FOR EACH ROW
 BEGIN
-  SELECT id.nextval
+  SELECT invoiceid.nextval
   INTO :new.id
   FROM DUAL;--
 END;;
@@ -382,7 +419,6 @@ CREATE OR REPLACE TRIGGER partsgroupid BEFORE INSERT ON partsgroup FOR EACH ROW
 BEGIN
   SELECT id.nextval
   INTO :new.id
-  FROM DUAL;--
+FROM DUAL;--
 END;;
 --
-

@@ -15,10 +15,13 @@
       </h4>
     </td>
 
+    <td><img src=http://www.sql-ledger.org/images/sql-ledger.png border=0 width=64 height=58>
+    </td>
+
     <td align=right>
       <h4>
-      Telephone: <%tel%>
-      <br>Facsimile: <%fax%>
+      Tel: <%tel%>
+      <br>Fax: <%fax%>
       </h4>
     </td>
   </tr>
@@ -35,28 +38,6 @@
   <table width=100% callspacing=0 cellpadding=0>
     
   <tr>
-    <td align=right>
-    <table>
-    <tr>
-      <th align=right>Order Date</th><td width=10>&nbsp;</td><td><%orddate%></td>
-    </tr>
-  
-    <tr>
-      <th align=right>Required by</th><td width=10>&nbsp;</td><td><%reqdate%></td>
-    </tr>
-
-    <tr>
-      <th align=right>Number</th><td>&nbsp;</td><td><%ordnumber%></td></tr>
-    </tr>
-  
-    <tr>
-      <td>&nbsp;</td>
-    </tr>
-    </td>
-    </table>
-  </tr>
-
-  <tr>
     <td>
     <table width=100%>
     <tr bgcolor=000000>
@@ -66,11 +47,14 @@
 
     <tr valign=top>
       <td><%name%>
-      <br><%addr1%>
-      <br><%addr2%>
-      <br><%addr3%>
-      <br><%addr4%>
-
+      <br><%address1%>
+      <%if address2%>
+      <br><%address2%>
+      <%end address2%>
+      <br><%city%> <%state%> <%zipcode%>
+      <%if country%>
+      <br><%country%>
+      <%end country%>
 <br>
 <%if contact%>
 <br>Attn: <%contact%>
@@ -84,11 +68,14 @@
       </td>
 
       <td><%shiptoname%>
-      <br><%shiptoaddr1%>
-      <br><%shiptoaddr2%>
-      <br><%shiptoaddr3%>
-      <br><%shiptoaddr4%>
-
+      <br><%shiptoaddress1%>
+      <%if shiptoaddress2%>
+      <br><%shiptoaddress2%>
+      <%end shiptoaddress2%>
+      <br><%shiptocity%> <%shiptostate%> <%shiptozipcode%>
+      <%if shiptocountry%>
+      <br><%shiptocountry%>
+      <%end shiptocountry%>
 <br>
 <%if shiptocontact%>
 <br>Attn: <%shiptocontact%>
@@ -99,16 +86,38 @@
 <%if shiptofax%>
 <br>Fax: <%shiptofax%>
 <%end shiptofax%>
-
     </tr>
     </table>
     </td>
   </tr>
 
-  <tr>
-    <td>&nbsp;</td>
-  </tr>
+  <tr><td>&nbsp;</td></tr>
   
+  <tr>
+    <td colspan=2>
+    <table width=100% border=1>
+    <tr>
+      <th width=17% align=left>Order #</th>
+      <th width=17% align=left>Order Date</th>
+      <th width=17% align=left>Required by</th>
+      <th width=17% align=left>Contact</th>
+      <th width=17% align=left>Shipping Point</th>
+      <th width=15% align=left>Ship Via</th>
+    </tr>
+
+    <tr>
+      <td><%ordnumber%></td>
+      <td><%orddate%></td>
+      <td><%reqdate%></td>
+      <td><%employee%></td>
+      <td><%shippingpoint%>&nbsp;</td>
+      <td><%shipvia%>&nbsp;</td>
+    </tr>
+    </table>
+    </td>
+  </tr>
+
+ 
   <tr>
     <td>
     <table width=100%>
@@ -119,12 +128,14 @@
       <th><font color=ffffff>Qt'y</th>
       <th>&nbsp;</th>
       <th><font color=ffffff>Price</th>
+      <th><font color=ffffff>%</th>
       <th><font color=ffffff>Amount</th>
     </tr>
 
 <%foreach number%>
     <tr valign=top>
 <!--      <td align=right><%runningnumber%>.</td>
+other per line item variables available <%reqdate%>
 adjust the colspan if you include this to shift subtotal one to the right
 -->
       <td><%number%></td>
@@ -132,40 +143,69 @@ adjust the colspan if you include this to shift subtotal one to the right
       <td align=right><%qty%></td>
       <td><%unit%></td>
       <td align=right><%sellprice%></td>
+      <td align=right><%discountrate%></th>
       <td align=right><%linetotal%></td>
     </tr>
 <%end number%>
 
     <tr>
-      <td colspan=6><hr noshade></td>
+      <td colspan=7><hr noshade></td>
     </tr>
     
     <tr>
-      <th colspan=4 align=right>Subtotal</th>
-      <td colspan=2 align=right><%subtotal%></td>
+<%if taxincluded%>
+      <th colspan=6 align=right>Total</th>
+      <th colspan=1 align=right><%ordtotal%></th>
+<%end taxincluded%>
+     
+<%if not taxincluded%>
+      <th colspan=6 align=right>Subtotal</th>
+      <td colspan=1 align=right><%subtotal%></td>
+<%end taxincluded%>
     </tr>
 
 <%foreach tax%>
     <tr>
-      <th colspan=4 align=right><%taxdescription%> @ <%taxrate%> %</th>
-      <td colspan=2 align=right><%tax%></td>
+      <th colspan=6 align=right><%taxdescription%> on <%taxbase%> @ <%taxrate%> %</th>
+      <td colspan=1 align=right><%tax%></td>
     </tr>
 <%end tax%>
 
     <tr>
-      <td colspan=2>&nbsp;</td>
+      <td colspan=3>&nbsp;</td>
       <td colspan=4><hr noshade></td>
     </tr>
+    
+<%if not taxincluded%>
+      <th colspan=6 align=right>Total</th>
+      <td colspan=1 align=right><%ordtotal%></td>
+<%end taxincluded%>
 
+<%if terms%>
     <tr>
-      <td colspan=2>Terms Net <b><%terms%></b> days</td>
-      <th colspan=2 align=right>Total</th>
-      <th colspan=2 align=right><%ordtotal%></th>
+      <td colspan=3>Terms Net <b><%terms%></b> days</td>
+      <th colspan=3 align=right>Total</th>
+      <th colspan=1 align=right><%ordtotal%></th>
     </tr>
+<%end terms%>
+
+<%if taxincluded%>
+    <tr>
+      <td colspan=2>Tax included</td>
+    </tr>
+<%end taxincluded%>
 
     <tr>
       <td>&nbsp;</td>
     </tr>
+    
+<%if ordtotal%>
+    <tr>
+      <td colspan=7 align=right>
+      All prices in <b><%currency%></b> Funds
+      </td>
+    </tr>
+<%end ordtotal%>
 
     </table>
     </td>
@@ -174,16 +214,12 @@ adjust the colspan if you include this to shift subtotal one to the right
 <tr>
   <td>
   <table width=100%>
-    <tr valign=top>
 <%if notes%>
+    <tr valign=top>
       <td>Notes</td>
-      <td><pre><%notes%></pre></td>
-<%end notes%>
-      <td align=right>
-      All prices in <b><%currency%></b> Funds
-      <br><%shippingpoint%>
-      </td>
+      <td><%notes%></td>
     </tr>
+<%end notes%>
 
   </table>
   </td>
@@ -195,17 +231,9 @@ adjust the colspan if you include this to shift subtotal one to the right
   <td>
   <table width=100%>
   <tr valign=top>
-    <td><font size=-3>
-    Payment due NET <%terms%> Days from date of Invoice.
-    Interest on overdue amounts will acrue at the rate of 1.5% per month
-    from due date until paid in full. Items returned are subject to
-    a 10% restocking charge. A return authorization must be obtained
-    from <%company%> before goods are returned. Returns must be shipped
-    prepaid and properly insured. <%company%> will not be responsible
-    for damages during transit.
-    </font>
-    </td>
-    <td width=150>
+    <td width=70%>&nbsp;</td>
+
+    <td width=30%>
     X <hr noshade>
     </td>
   </tr>

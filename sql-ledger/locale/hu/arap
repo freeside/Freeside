@@ -4,9 +4,7 @@ $self{texts} = {
   'Customer not on file!'       => 'A vevõ hiányzik az adatbázisból!',
   'Description'                 => 'Szöveges leírás',
   'Number'                      => 'Szám',
-  'Project not on file!'        => 'Munkaszám hiányzik az adatbázisból!',
   'Select from one of the names below' => 'Válasszon ki egyet az alábbi nevek közül',
-  'Select from one of the projects below' => 'Válasszon ki egyet az alábbi munkaszámok közül',
   'Vendor not on file!'         => 'Szállító nincs az adatbázisban!',
 };
 
@@ -20,10 +18,10 @@ $self{subs} = {
   'gl_transaction'              => 'gl_transaction',
   'name_selected'               => 'name_selected',
   'project_selected'            => 'project_selected',
-  'sales_invoice'               => 'sales_invoice',
+  'sales_invoice_'              => 'sales_invoice_',
   'select_name'                 => 'select_name',
   'select_project'              => 'select_project',
-  'vendor_invoice'              => 'vendor_invoice',
+  'vendor_invoice_'             => 'vendor_invoice_',
   'folytatás'                   => 'continue',
 };
 

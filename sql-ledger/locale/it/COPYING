@@ -1,12 +1,13 @@
 ######################################################################
 # SQL-Ledger Accounting
-# Copyright (c) 2001
+# Copyright (c) 2001-2003
 #
-# Italien texts:
+# Italian texts:
 #
 #  Author: Paolo Bizzarri <p.bizzarri@icube.it>
 #          Luca Venturini <luca@yepa.com>
 #          Alessandro Pasotti <apasotti@isoleborromee.it>
+#          Daniele Giacomini <daniele@swlibero.org> 2003.09.28-2003.11.05
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

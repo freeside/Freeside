@@ -1,6 +1,4 @@
 -- General COA
--- provided by Yvonne
--- June 13, 2002
 --
 INSERT INTO chart (accno,description,charttype,category,link,gifi_accno) VALUES ('420','Büroeinrichtung','A','A','','420');
 INSERT INTO chart (accno,description,charttype,category,link,gifi_accno) VALUES ('430','Ladeneinrichtung','A','A','','430');
@@ -252,7 +250,7 @@ INSERT INTO chart (accno,description,charttype,category,link,gifi_accno) VALUES 
 INSERT INTO chart (accno,description,charttype,category,link,gifi_accno) VALUES ('1600','Verb. aus Lief. und Leist. Lieferantengruppe 0','A','L','AP:CT_tax','1600');
 INSERT INTO chart (accno,description,charttype,category,link,gifi_accno) VALUES ('3400','Wareneingang, 16% Vorsteuer','A','E','AP_amount:CT_tax','3400');
 INSERT INTO chart (accno,description,charttype,category,link,gifi_accno) VALUES ('8400','Umsatzerlöse 16%','A','I','AR_amount:IC_sale:CT_tax','8400');
-INSERT INTO chart (accno,description,charttype,category,link,gifi_accno) VALUES ('8840','Ertrge aus Kursdifferenzen','A','I','AR_amount:IC_sale:IC_income','8840');
+INSERT INTO chart (accno,description,charttype,category,link,gifi_accno) VALUES ('8840','Erträge aus Kursdifferenzen','A','I','AR_amount:IC_sale:IC_income','8840');
 --
 insert into tax (chart_id,rate) values ((select id from chart where accno = '1571'),0.07);
 insert into tax (chart_id,rate) values ((select id from chart where accno = '1575'),0.16);
@@ -262,6 +260,5 @@ insert into tax (chart_id,rate) values ((select id from chart where accno = '177
 insert into tax (chart_id,rate) values ((select id from chart where accno = '3400'),0.16);
 insert into tax (chart_id,rate) values ((select id from chart where accno = '8400'),0.16);
 --
-update defaults set inventory_accno_id = (select id from chart where accno = '7140'), income_accno_id = (select id from chart where accno = '8400'), expense_accno_id = (select id from chart where accno = '4700'), fxgain_accno_id = (select id from chart where accno = '8840'), fxloss_accno_id = (select id from chart where accno = '8840'), invnumber = '1000', sonumber = '1000', ponumber = '1000', curr = 'EUR:USD', weightunit = 'kg';
+update defaults set inventory_accno_id = (select id from chart where accno = '7140'), income_accno_id = (select id from chart where accno = '8400'), expense_accno_id = (select id from chart where accno = '4700'), fxgain_accno_id = (select id from chart where accno = '8840'), fxloss_accno_id = (select id from chart where accno = '8840'), curr = 'EUR:USD', weightunit = 'kg';
 --
-

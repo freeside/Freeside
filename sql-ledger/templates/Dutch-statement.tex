@@ -44,29 +44,6 @@
 \pagestyle{myheadings}
 %\thispagestyle{empty}     use this with letterhead paper
 
-<%pagebreak 90 27 48%>
-\end{tabular*}
-
-  \rule{\textwidth}{2pt}
-
-  \hfill
-  \begin{tabularx}{7cm}{Xr@{}}
-  \textbf{Subtotal} & \textbf{<%sumcarriedforward%>} \\
-  \end{tabularx}
-
-\newpage
-
-\markright{<%company%>\hfill <%statementdate%>}
-
-\vspace*{-12pt}
-
-\begin{tabular*}{\textwidth}{@{}l@{\extracolsep\fill}ccrrrr@{}}
-  \textbf{Factuur \#} & \textbf{Datum} & \textbf{Vervaldatum} &
-  \textbf{Huidig} & \textbf{30} & \textbf{60} & \textbf{90+} \\
-  carried forward from <%lastpage%> & & & & & & <%sumcarriedforward%> \\
-<%end pagebreak%>
-
-
 \fontfamily{cmss}\fontsize{10pt}{12pt}\selectfont
 
 \vspace*{1.5cm}
@@ -76,13 +53,17 @@
   
 <%name%>
 
-<%addr1%>
+<%address1%>
 
-<%addr2%>
+<%if address2%>
+<%address2%>
+<%end address2%>
 
-<%addr3%>
+<%city%> <%state%> <%zipcode%>
 
-<%addr4%>
+<%if country%>
+<%country%>
+<%end country%>
 
 }
 \parbox[t]{7.5cm}{
@@ -100,9 +81,7 @@ Fax: <%customerfax%>
 
 \vspace{1cm}
 
-\textbf{O P E N S T A A N D E   F A C T U R E N} \hfill
-
-\hfill <%statementdate%>
+\textbf{O P E N S T A A N D E   F A C T U R E N} \hfill \textbf{<%statementdate%>}
 
 \vspace{2cm}
 
@@ -117,7 +96,7 @@ Fax: <%customerfax%>
 \end{tabular*}
 \rule{\textwidth}{1pt}
 
-\vspace{1cm}
+\vspace{0.5cm}
 
 \hfill
 \begin{tabularx}{7cm}{Xr@{}}
@@ -127,11 +106,6 @@ Fax: <%customerfax%>
 \vfill
 
 Maak U betalingen over aan <%company%>
-
-\renewcommand{\thefootnote}{\fnsymbol{footnote}}
-
-\footnotetext[1]{\tiny
-}
 
 \end{document}
 

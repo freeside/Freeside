@@ -3,7 +3,7 @@ $self{texts} = {
   'Continue'                    => 'Continua',
   'Customer not on file!'       => 'Cliente non sul file!',
   'Description'                 => 'Descrizione',
-  'Number'                      => 'Numero',
+  'Number'                      => 'Codice',
   'Project not on file!'        => 'Progetto non archiviato!',
   'Select from one of the names below' => 'Seleziona uno dei seguenti nomi',
   'Select from one of the projects below' => 'Seleziona uno dei seguenti progetti',
@@ -20,10 +20,10 @@ $self{subs} = {
   'gl_transaction'              => 'gl_transaction',
   'name_selected'               => 'name_selected',
   'project_selected'            => 'project_selected',
-  'purchase_invoice'            => 'purchase_invoice',
-  'sales_invoice'               => 'sales_invoice',
+  'sales_invoice_'              => 'sales_invoice_',
   'select_name'                 => 'select_name',
   'select_project'              => 'select_project',
+  'vendor_invoice_'             => 'vendor_invoice_',
   'continua'                    => 'continue',
 };
 

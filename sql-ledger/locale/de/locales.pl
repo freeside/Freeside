@@ -1,6 +1,7 @@
 #!/usr/bin/perl
 
 # -n do not include custom_ scripts
+# -a build all file
 
 use FileHandle;
 
@@ -33,23 +34,34 @@ if ($arg{n}) {
 }
 
 
-# slurp the translations in
-if (-f 'all') {
+if (-f 'all') {    # use the old all file
   require "all";
+  %oldall = %{ $self{texts} };
 }
-
-
+ 
+# remove the old missing file
+if (-f 'missing') {
+  unlink "missing";
+}
+  
 foreach $file (@progfiles) {
   
   %locale = ();
   %submit = ();
   %subrt = ();
+  @missing = ();
+  %missing = ();
   
-  &scanfile("$bindir/$file");
+  $file =~ s/\.pl//;
+
+  # read $file if it exists
+  eval { require "$file"; };
+  
+  &scanfile("$bindir/${file}.pl");
 
   # scan custom_{module}.pl or {login}_{module}.pl files
   foreach $customfile (@customfiles) {
-    if ($customfile =~ /_$file/) {
+    if ($customfile =~ /_${file}\.pl/) {
       if (-f "$bindir/$customfile") {
 	&scanfile("$bindir/$customfile");
       }
@@ -57,26 +69,20 @@ foreach $file (@progfiles) {
   }
   
   # if this is the menu.pl file
-  if ($file eq 'menu.pl') {
+  if ($file eq 'menu') {
     foreach $item (@menufiles) {
       &scanmenu("$basedir/$item");
     }
   }
   
-  $file =~ s/\.pl//;
+  eval { require "$file.missing"; };
+  unlink "$file.missing";
 
-
-  eval { require 'missing'; };
-  unlink 'missing';
-
-  foreach $text (keys %$missing) {
-    if ($locale{$text}) {
-      unless ($self{texts}{$text}) {
-	$self{texts}{$text} = $missing->{$text};
-      }
-    }
+  if (%oldall) {    # use the old all file
+    %{ $self{texts} } = %oldall;
   }
-
+    
+  map { $self{texts}{$_} = $missing->{$_} if $missing->{$_} } keys %$missing;
 
   open FH, ">$file" or die "$! : $file";
 
@@ -84,17 +90,23 @@ foreach $file (@progfiles) {
 |;
 
   foreach $key (sort keys %locale) {
-    if ($self{texts}{$key}) {
-      $text = $self{texts}{$key};
-    } else {
-      $text = $key;
-    }
+    $text = $self{texts}{$key};
+    $count++;
+    
     $text =~ s/'/\\'/g;
     $text =~ s/\\$/\\\\/;
 
     $keytext = $key;
     $keytext =~ s/'/\\'/g;
     $keytext =~ s/\\$/\\\\/;
+    
+    $all{$keytext} = $text;
+    
+    if (!$text) {
+      $notext++;
+      push @missing, $keytext;
+      next;
+    }
     
     print FH qq|  '$keytext'|.(' ' x (27-length($keytext))).qq| => '$text',\n|;
   }
@@ -133,68 +145,55 @@ $self{subs} = {
 |;
 
   close FH;
-}
 
+  
+  if (@missing) {
+    open FH, ">$file.missing" or die "$! : missing";
 
-# now print out all
+    print FH qq|# module $file
+# add the missing texts and run locales.pl to rebuild
 
-open FH, ">all" or die "$! : all";
-
-print FH q|# These are all the texts to build the translations files.
-# The file has the form of 'english text'  => 'foreign text',
-# you can add the translation in this file or in the 'missing' file
-# run locales.pl from this directory to rebuild the translation files
-
-$self{texts} = {
+\$missing = {
 |;
 
+    foreach $text (@missing) {
+      print FH qq|  '$text'|.(' ' x (27-length($text))).qq| => '',\n|;
+    }
 
-foreach $key (sort keys %alllocales) {
-  $text = $self{texts}{$key};
-
-  $count++;
-  
-  $text =~ s/'/\\'/g;
-  $text =~ s/\\$/\\\\/;
-  $key =~ s/'/\\'/g;
-  $key =~ s/\\$/\\\\/;
-
-  unless ($text) {
-    $notext++;
-    push @missing, $key;
-  }
-
-  print FH qq|  '$key'|.(' ' x (27-length($key))).qq| => '$text',\n|;
-
-}
-
-print FH q|};
+    print FH q|};
 
 1;
 |;
 
-close FH;
-
-
-if (@missing) {
-  open FH, ">missing" or die "$! : missing";
-
-  print FH q|# add the missing texts and run locales.pl to rebuild
-
-$missing = {
-|;
-
-  foreach $text (@missing) {
-    print FH qq|  '$text'|.(' ' x (27-length($text))).qq| => '',\n|;
+    close FH;
+    
   }
 
-  print FH q|};
+  
+  # redo the old all file
+  if ($arg{a}) {
+    open FH, ">all" or die "$! : all";
+
+    print FH qq|# These are all the texts to build the translations files.
+# to build unique strings edit the module files instead
+# this file is just a shortcut to build strings which are the same
+
+\$self{texts} = {
+|;
+
+    foreach $text (sort keys %all) {
+      print FH qq|  '$text'|.(' ' x (27-length($text))).qq| => '$all{$text}',\n|;
+    }
+
+    print FH q|};
 
 1;
 |;
 
-  close FH;
-  
+    close FH;
+    
+  }
+
 }
 
 open(FH, "LANGUAGE");
@@ -238,7 +237,7 @@ sub scanfile {
     
     while ($rc) {
       if (/Locale/) {
-	unless (/^use /) {
+	if (!/^use /) {
 	  my ($null, $country) = split /,/;
 	  $country =~ s/^ +["']//;
 	  $country =~ s/["'].*//;
@@ -255,11 +254,8 @@ sub scanfile {
 	  # this guarantees one instance of string
 	  $locale{$string} = 1;
 
-          # this one is for all the locales
-	  $alllocales{$string} = 1;
-
           # is it a submit button before $locale->
-          if (/type=submit/) {
+          if (/type=submit/i) {
 	    $submit{$string} = 1;
           }
 	}
@@ -290,11 +286,11 @@ sub scanmenu {
   grep { s/(\[|\])//g } @a;
   
   foreach my $item (@a) {
+    $item =~ s/ *$//;
     @b = split /--/, $item;
     foreach $string (@b) {
       chomp $string;
-      $locale{$string} = 1;
-      $alllocales{$string} = 1;
+      $locale{$string} = 1 if $string !~ /^\s*$/;
     }
   }
   

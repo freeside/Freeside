@@ -1,0 +1,11 @@
+$self{texts} = {
+  'Continue'                    => 'Edasi',
+  'Password'                    => 'Parool',
+};
+
+$self{subs} = {
+  'getpassword'                 => 'getpassword',
+  'edasi'                       => 'continue',
+};
+
+1;

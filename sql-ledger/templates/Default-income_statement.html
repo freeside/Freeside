@@ -1,5 +1,5 @@
 
-<body bgcolor=ffffff>
+<body>
 
 <h2 align=center>
 <%company%>
@@ -9,6 +9,13 @@
 <br><%period%>
 </h2>
 
+<%if department%>
+<h4>Department: <%department%></h4>
+<%end department%>
+
+<%if projectnumber%>
+<h4>Project Number: <%projectnumber%></h4>
+<%end projectnumber%>
 
 <table width=100% border=0>
 <tr>
@@ -34,7 +41,7 @@
 
 <tr valign=top>
   <td> </td>
-  <th align=left>Total Income</th>
+  <th align=left>TOTAL INCOME</th>
   <td align=right><%total_income_this_period%><hr noshade size=2></td>
   <td align=right><%total_income_last_period%><hr noshade size=2></td>
 </tr>
@@ -60,7 +67,7 @@
 
 <tr valign=top>
   <td> </td>
-  <th align=left>Total Expenses</th>
+  <th align=left>TOTAL EXPENSES</th>
   <td align=right><%total_expenses_this_period%><br><hr noshade size=2</td>
   <td align=right><%total_expenses_last_period%><br><hr noshade size=2</td>
 </tr>
@@ -72,11 +79,3 @@
 </tr>
 
 </table>
-
-
-
-
-
-
-
-

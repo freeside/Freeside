@@ -20,10 +20,10 @@ $self{subs} = {
   'gl_transaction'              => 'gl_transaction',
   'name_selected'               => 'name_selected',
   'project_selected'            => 'project_selected',
-  'purchase_invoice'            => 'purchase_invoice',
-  'sales_invoice'               => 'sales_invoice',
+  'sales_invoice_'              => 'sales_invoice_',
   'select_name'                 => 'select_name',
   'select_project'              => 'select_project',
+  'vendor_invoice_'             => 'vendor_invoice_',
   'fortsæt'                     => 'continue',
 };
 

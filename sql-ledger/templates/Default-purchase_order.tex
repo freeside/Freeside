@@ -1,9 +1,9 @@
 \documentclass[twoside]{scrartcl}
 \usepackage[frame]{xy}
 \usepackage{tabularx}
-\usepackage[latin1]{inputenc}
+\usepackage{graphicx}
 \setlength{\voffset}{0.5cm}
-\setlength{\hoffset}{-2.0cm}
+\setlength{\hoffset}{-1.9cm}
 \setlength{\topmargin}{0cm}
 \setlength{\headheight}{0.5cm}
 \setlength{\headsep}{1cm}
@@ -11,47 +11,46 @@
 \setlength{\oddsidemargin}{1.0cm}
 \setlength{\evensidemargin}{1.0cm}
 \setlength{\textwidth}{19.2cm}
-\setlength{\textheight}{24.5cm}
+\setlength{\textheight}{24.7cm}
 \setlength{\footskip}{1cm}
 \setlength{\parindent}{0pt}
 \renewcommand{\baselinestretch}{1}
 \begin{document}
 
 \newlength{\descrwidth}\setlength{\descrwidth}{10cm}
-
-\newsavebox{\hdr}
-\sbox{\hdr}{
-  \fontfamily{cmss}\fontsize{10pt}{12pt}\selectfont
-
-  \parbox{\textwidth}{
-    \parbox[b]{12cm}{
-      <%company%>
-      
-      <%address%>}\hfill
-    \begin{tabular}[b]{rr@{}}
-    Telephone & <%tel%>\\
-    Facsimile & <%fax%>
-    \end{tabular}
-
-    \rule[1.5ex]{\textwidth}{0.5pt}
-  }
-}
-    
-\fontfamily{cmss}\fontshape{n}\selectfont
-
-\markboth{<%company%>\hfill <%ordnumber%>}{\usebox{\hdr}}
+\fontfamily{cmss}\fontsize{10pt}{12pt}\selectfont
 
 \pagestyle{myheadings}
-%\thispagestyle{empty}     use this with letterhead paper
+\thispagestyle{empty}
+
+\vspace*{-1.3cm}
+
+\parbox{\textwidth}{
+  \parbox[b]{.42\textwidth}{
+    <%company%>
+    
+    <%address%>
+  }
+  \parbox[b]{.2\textwidth}{
+    \includegraphics[scale=0.3]{sql-ledger}
+  }\hfill
+  \begin{tabular}[b]{rr@{}}
+  Telephone & <%tel%>\\
+  Facsimile & <%fax%>
+  \end{tabular}
+
+  \rule[1.5ex]{\textwidth}{0.5pt}
+}
+  
 
 <%pagebreak 90 27 48%>
-\end{tabular*}
+\end{tabularx}
 
   \rule{\textwidth}{2pt}
   
   \hfill
   \begin{tabularx}{7cm}{Xr@{}}
-  \textbf{Subtotal} & \textbf{<%sumcarriedforward%>} \\
+  Subtotal & <%sumcarriedforward%> \\
   \end{tabularx}
 
 \newpage
@@ -60,31 +59,29 @@
 
 \vspace*{-12pt}
 
-\begin{tabular*}{\textwidth}{@{}lp{\descrwidth}@{\extracolsep\fill}rlrr@{}}
+\begin{tabularx}{\textwidth}{@{}lXrlrr@{}}
   \textbf{Number} & \textbf{Description} & \textbf{Qt'y} &
     \textbf{Unit} & \textbf{Price} & \textbf{Amount} \\
   & carried forward from <%lastpage%> & & & & <%sumcarriedforward%> \\
 <%end pagebreak%>
 
 
-\fontfamily{cmss}\fontsize{10pt}{12pt}\selectfont
-
 \vspace*{0.5cm}
 
 \parbox[t]{1cm}{\hfill}
-\parbox[t]{10.5cm}{
+\parbox[t]{.45\textwidth}{
 \textbf{To}
 \vspace{0.5cm}
-
+  
 <%name%>
 
-<%addr1%>
+<%address1%>
 
-<%addr2%>
+<%address2%>
 
-<%addr3%>
+<%city%> <%state%> <%zipcode%>
 
-<%addr4%>
+<%country%>
 
 \vspace{0.3cm}
 
@@ -103,19 +100,19 @@ Fax: <%vendorfax%>
 
 <%email%>
 }
-\parbox[t]{7.5cm}{
+\parbox[t]{.45\textwidth}{
 \textbf{Ship To}
-\vspace{0.3cm}
+\vspace{0.5cm}
 
 <%shiptoname%>
 
-<%shiptoaddr1%>
+<%shiptoaddress1%>
 
-<%shiptoaddr2%>
+<%shiptoaddress2%>
 
-<%shiptoaddr3%>
+<%shiptocity%> <%shiptostate%> <%shiptozipcode%>
 
-<%shiptoaddr4%>
+<%shiptocountry%>
 
 \vspace{0.3cm}
 
@@ -140,24 +137,25 @@ Fax: <%shiptofax%>
 
 \textbf{P U R C H A S E} \parbox{0.3cm}{\hfill} \textbf{O R D E R}
 \hfill
-\begin{tabular}[t]{l@{\hspace{0.3cm}}l}
-  \textbf{Date} & <%orddate%> \\
-<%if reqdate%>
-  \textbf{Required by} & <%reqdate%> \\
-<%end reqdate%>
-  \textbf{Number} & <%ordnumber%>
-\end{tabular}
+
+\vspace{1cm}
+\begin{tabularx}{\textwidth}{*{6}{|X}|} \hline
+  \textbf{Order \#} & \textbf{Date} & \textbf{Required by} & \textbf{Contact} & \textbf{Shipping Point} & \textbf{Ship via} \\ [0.5ex]
+  \hline
+  <%ordnumber%> & <%orddate%> & <%reqdate%> & <%employee%> & <%shippingpoint%> & <%shipvia%> \\
+  \hline
+\end{tabularx}
 
 \vspace{1cm}
 
-\begin{tabular*}{\textwidth}{@{}lp{\descrwidth}@{\extracolsep\fill}rlrr@{}}
+\begin{tabularx}{\textwidth}{@{}lXrlrr@{}}
   \textbf{Number} & \textbf{Description} & \textbf{Qt'y} &
     \textbf{Unit} & \textbf{Price} & \textbf{Amount} \\
 <%foreach number%>
   <%number%> & <%description%> & <%qty%> &
     <%unit%> & <%sellprice%> & <%linetotal%> \\
 <%end number%>
-\end{tabular*}
+\end{tabularx}
 
 
 \parbox{\textwidth}{
@@ -167,18 +165,18 @@ Fax: <%shiptofax%>
 
 \hfill
 \begin{tabularx}{7cm}{Xr@{}}
-  \textbf{Subtotal} & \textbf{<%subtotal%>} \\
+  Subtotal & <%subtotal%> \\
 <%foreach tax%>
   <%taxdescription%> on <%taxbase%> & <%tax%>\\
 <%end tax%>
   \hline
-  \textbf{Total} & \textbf{<%ordtotal%>}\\
+  Total & <%ordtotal%>\\
 \end{tabularx}
 
 \vspace{0.3cm}
 
 \hfill
-  All prices in \textbf{<%currency%>} funds.
+  All prices in \textbf{<%currency%>}.
 
 \vspace{12pt}
 
@@ -194,5 +192,4 @@ Fax: <%shiptofax%>
 %\footnotetext[1]{\tiny }
 
 \end{document}
-
 

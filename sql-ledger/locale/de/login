@@ -1,26 +1,24 @@
 $self{texts} = {
-  'About'                       => 'Über',
-  'Database Host'               => 'Datenbank-Rechner',
-  'Dataset'                     => 'Datenbank',
-  'Incorrect Dataset version!'  => 'Datenbankversion stimmt nicht überein!',
+  'Company'                     => 'Firma',
+  'Continue'                    => 'Weiter',
+  'Dataset is newer than version!' => 'Datensatz ist jünger als installierte Version',
+  'Incorrect Dataset version!'  => 'Ungültigige Datensatzversion',
   'Incorrect Password!'         => 'Ungültiges Passwort!',
-  'Licensed to'                 => 'Lizensiert für',
   'Login'                       => 'Anmelden',
   'Name'                        => 'Name',
   'Password'                    => 'Passwort',
-  'User'                        => 'Benutzer',
+  'Upgrading to Version'        => 'Datensatz wird erneuert auf Version',
   'Version'                     => 'Version',
-  'You are logged out!'         => 'Auf wiedersehen!',
   'You did not enter a name!'   => 'Sie haben keinen Namen eingegeben!',
+  'done'                        => 'fertig',
   'is not a member!'            => 'ist kein Mitglied!',
-  'localhost'                   => 'lokaler Rechner',
 };
 
 $self{subs} = {
-  'company_logo'                => 'company_logo',
   'login'                       => 'login',
   'login_screen'                => 'login_screen',
   'logout'                      => 'logout',
+  'selectdataset'               => 'selectdataset',
   'anmelden'                    => 'login',
 };
 

@@ -68,10 +68,14 @@
 
     <tr>
       <td><%name%>
-      <br><%addr1%>
-      <br><%addr2%>
-      <br><%addr3%>
-      <br><%addr4%>
+      <br><%address1%>
+      <%if address2%>
+<br><%address2%>
+<%end address2%>
+      <br><%city%> <%state%> <%zipcode%>
+      <%if country%>
+<%country%>
+<%end country%>
       </td>
     </tr>
     </table>

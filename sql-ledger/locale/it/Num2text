@@ -77,7 +77,7 @@ sub num2text {
   my @textnumber = ();
 
   # split amount into chunks of 3
-  my @num = reverse split //, $amount;
+  my @num = reverse split //, abs($amount);
   my @numblock = ();
   my ($i, $appendn);
   my @a = ();
@@ -146,9 +146,8 @@ sub format_ten {
     if ($num[1] == 0) { 
       $textnumber = $self->{numbername}{$amount}; 
     } else {
-	$amount = $num[0] * 10;
-	$textnumber = $self->{numbername}{$amount}.$self->{numbername}{$num[1]};
-      }
+      $amount = $num[0] * 10;
+      $textnumber = $self->{numbername}{$amount}.$self->{numbername}{$num[1]};
     }
   } else {
     $textnumber = $self->{numbername}{$amount};

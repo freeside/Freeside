@@ -2,8 +2,9 @@
 \usepackage[frame]{xy}
 \usepackage{tabularx}
 \usepackage[latin1]{inputenc}
+\usepackage{graphicx}
 \setlength{\voffset}{0.5cm}
-\setlength{\hoffset}{-2.0cm}
+\setlength{\hoffset}{-1.9cm}
 \setlength{\topmargin}{0cm}
 \setlength{\headheight}{0.5cm}
 \setlength{\headsep}{1cm}
@@ -11,89 +12,129 @@
 \setlength{\oddsidemargin}{1.0cm}
 \setlength{\evensidemargin}{1.0cm}
 \setlength{\textwidth}{19.2cm}
-\setlength{\textheight}{24.5cm}
+\setlength{\textheight}{24.7cm}
 \setlength{\footskip}{1cm}
 \setlength{\parindent}{0pt}
 \renewcommand{\baselinestretch}{1}
+
 \begin{document}
 
-\newlength{\descrwidth}\setlength{\descrwidth}{10cm}
-
-\newsavebox{\hdr}
-\sbox{\hdr}{
-  \fontfamily{cmss}\fontsize{10pt}{12pt}\selectfont
-
-  \parbox{\textwidth}{
-    \parbox[b]{12cm}{
-      <%company%>
-      
-      <%address%>}\hfill
-    \begin{tabular}[b]{rr@{}}
-    Telephone & <%tel%>\\
-    Facsimile & <%fax%>
-    \end{tabular}
-
-    \rule[1.5ex]{\textwidth}{0.5pt}
-  }
-}
-    
-\fontfamily{cmss}\fontshape{n}\selectfont
-
-\markboth{<%company%>\hfill <%invnumber%>}{\usebox{\hdr}}
-
 \pagestyle{myheadings}
-%\thispagestyle{empty}     use this with letterhead paper
+\thispagestyle{empty}
 
-<%pagebreak 90 27 48%>
-\end{tabular*}
+\newlength{\descrwidth}\setlength{\descrwidth}{10cm}
+\fontfamily{cmss}\fontsize{10pt}{12pt}\selectfont
+
+\vspace*{-1.3cm}
+
+\parbox{\textwidth}{
+  \parbox[b]{.42\textwidth}{%
+    <%company%>
+    
+    <%address%>
+  }
+  \parbox[b]{.2\textwidth}{
+    \includegraphics[scale=0.3]{sql-ledger}
+  }\hfill
+  \begin{tabular}[b]{rr@{}}
+  Telephone & <%tel%>\\
+  Facsimile & <%fax%>
+  \end{tabular}
+
+  \rule[1.5ex]{\textwidth}{0.5pt}
+}
+
+ 
+<%pagebreak 90 27 37%>
+\end{tabularx}
 
 \newpage
 
-\markright{<%company%>\hfill <%invnumber%>}
+\markboth{<%company%>\hfill <%ordnumber%>}{<%company%>\hfill <%ordnumber%>}
 
 \vspace*{-12pt}
 
-\begin{tabular*}{\textwidth}{@{}lp{\descrwidth}@{\extracolsep\fill}rll@{}}
-  \textbf{Number} & \textbf{Description} & \textbf{Qt'y} &
-    \textbf{Unit} & \textbf{Bin} \\
+\begin{tabularx}{\textwidth}{@{}rlXllrrl@{}}
+  \textbf{Pos} & \textbf{Number} & \textbf{Description} & \textbf{Serial Number} & & \textbf{Qty} & \textbf{Ship} & \\
 <%end pagebreak%>
 
 
-\fontfamily{cmss}\fontsize{10pt}{12pt}\selectfont
+\vspace*{0.5cm}
 
-\vspace*{2cm}
+\parbox[t]{1cm}{\hfill}
+\parbox[t]{.5\textwidth}{
+\textbf{Ship To}} \hfill
 
+\vspace{0.7cm}
+
+\parbox[t]{1cm}{\hfill}
+\parbox[t]{.5\textwidth}{
+  
 <%shiptoname%>
 
-<%shiptoaddr1%>
+<%shiptoaddress1%>
 
-<%shiptoaddr2%>
+<%shiptoaddress2%>
 
-<%shiptoaddr3%>
+<%shiptocity%> <%shiptostate%> <%shiptozipcode%>
 
-<%shiptoaddr4%>
-
-\vspace{3.5cm}
-
-\textbf{P A C K I N G} \parbox{0.3cm}{\hfill} \textbf{L I S T}
-
+<%shiptocountry%>
+}
+\parbox[t]{.4\textwidth}{
+  <%shiptocontact%>
+  
+  <%if shiptophone%>
+  Tel: <%shiptophone%>
+  <%end shiptophone%>
+  
+  <%if shiptofax%>
+  Fax: <%shiptofax%>
+  <%end shiptofax%>
+  
+  <%shiptoemail%>
+}
 \hfill
-\begin{tabular}[t]{l@{\hspace{0.3cm}}l}
-  \textbf{Date} & <%invdate%> \\
-  \textbf{Number} & <%invnumber%> \\
-  \textbf{Customer} & <%customer_id%>
-\end{tabular}
 
 \vspace{1cm}
 
-\begin{tabular*}{\textwidth}{@{}lp{\descrwidth}@{\extracolsep\fill}rll@{}}
-  \textbf{Number} & \textbf{Description} & \textbf{Qt'y} &
-    \textbf{Unit} & \textbf{Bin} \\
+\textbf{P A C K I N G} \parbox{0.3cm}{\hfill} \textbf{L I S T}
+\hfill
+
+\vspace{1cm}
+
+\begin{tabularx}{\textwidth}{*{7}{|X}|} \hline
+  \textbf{Invoice \#} & \textbf{Order \#} & \textbf{Date} & \textbf{Contact}
+  <%if warehouse%>
+  & \textbf{Warehouse}
+  <%end warehouse%>
+  & \textbf{Shipping Point} & \textbf{Ship via} \\ [0.5em]
+  \hline
+  
+  <%invnumber%> & <%ordnumber%>
+  <%if shippingdate%>
+  & <%shippingdate%>
+  <%end shippingdate%>
+  <%if not shippingdate%>
+  & <%transdate%>
+  <%end shippingdate%>
+  & <%employee%>
+  <%if warehouse%>
+  & <%warehouse%>
+  <%end warehouse%>
+  & <%shippingpoint%> & <%shipvia%> \\
+  \hline
+\end{tabularx}
+  
+\vspace{1cm}
+  
+\begin{tabularx}{\textwidth}{@{}rlXllrrl@{}}
+  \textbf{Pos} & \textbf{Number} & \textbf{Description} & \textbf{Serial Number} & & \textbf{Qty} & \textbf{Ship} & \\
+
 <%foreach number%>
-  <%number%> & <%description%> & <%qty%> &
-    <%unit%> & <%bin%> \\
+  <%runningnumber%> & <%number%> & <%description%> & <%serialnumber%> &
+  <%deliverydate%> & <%qty%> & <%ship%> & <%unit%> \\
 <%end number%>
-\end{tabular*}
+\end{tabularx}
 
 
 \parbox{\textwidth}{
@@ -101,9 +142,7 @@
 
 \vspace{12pt}
 
-<%if notes%>
-  <%notes%>
-<%end if%>
+<%notes%>
 
 }
 

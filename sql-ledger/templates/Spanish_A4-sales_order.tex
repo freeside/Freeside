@@ -40,13 +40,13 @@
 
 <%name%>
 
-<%addr1%>
+<%address1%>
 
-<%addr2%>
+<%address2%>
 
-<%addr3%>
+<%city%> <%state%> <%zipcode%>
 
-<%addr4%>
+<%country%>
 \end{minipage}
 
 }
@@ -58,7 +58,7 @@
 %\markboth{\usebox{\hdr}}{\usebox{\hdr}}
 %\thispagestyle{empty}     %use this with letterhead paper
 
-<%pagebreak 90 27 48%>
+<%pagebreak 90 27 37%>
 \end{tabular*}
 \newpage
 \usebox{\hdr}
@@ -92,12 +92,12 @@
 
 \begin{flushright}
 \begin{tabularx}{10cm}{Xr@{}}
-  \textbf{Base imponible} & \textbf{<%subtotal%>} \EUR \\
+  \textbf{Base imponible} & \textbf{<%subtotal%>} \\
 <%foreach tax%>
-  IVA (<%taxrate%>\%) sobre <%taxbase%> & <%tax%> \EUR\\
+  IVA (<%taxrate%>\%) sobre <%taxbase%> & <%tax%> \\
 <%end tax%>
   \hline
-  \textbf{Total} & \textbf{<%ordtotal%>} \EUR\\
+  \textbf{Total} & \textbf{<%ordtotal%>} \\
 \end{tabularx}
 \end{flushright}
 

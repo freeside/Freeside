@@ -7,6 +7,7 @@ $self{texts} = {
   'Balance'                     => 'Balans',
   'Chart of Accounts'           => 'Kontoplan',
   'Credit'                      => 'Kredit',
+  'Current'                     => 'Nuvarande',
   'Date'                        => 'Datum',
   'Debit'                       => 'Debet',
   'Dec'                         => 'dec',

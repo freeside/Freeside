@@ -87,17 +87,25 @@
 
     <tr valign=top>
       <td><%name%>
-      <br><%addr1%>
-      <br><%addr2%>
-      <br><%addr3%>
-      <br><%addr4%>
+      <br><%address1%>
+      <%if address2%>
+<br><%address2%>
+<%end address2%>
+      <br><%city%> <%state%> <%zipcode%>
+      <%if country%>
+<%country%>
+<%end country%>
       </td>
       
       <td><%shiptoname%>
-      <br><%shiptoaddr1%>
-      <br><%shiptoaddr2%>
-      <br><%shiptoaddr3%>
-      <br><%shiptoaddr4%>
+      <br><%shiptoaddress1%>
+      <%if shiptoaddress2%>
+<br><%shiptoaddress2%>
+<%end shiptoaddress2%>
+      <br><%shiptocity%> <%shiptostate%> <%shiptozipcode%>
+      <%if shiptocountry%>
+<%shiptocountry%>
+<%end shiptocountry%>
       </td>
     </tr>
     </table>
@@ -142,6 +150,7 @@ ceci permettra de décaler le poste sous-total vers la gauche.
 vous pouvez également utiliser netprice à la place de sellprice
 si vous ne voulez pas afficher la remise
 netprice = sellprice - discount
+to show the percentage for a discount use <%discountrate%>
 -->
 
     <tr>

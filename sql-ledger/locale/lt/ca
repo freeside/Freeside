@@ -7,6 +7,7 @@ $self{texts} = {
   'Balance'                     => 'Balansas',
   'Chart of Accounts'           => 'Sàskaitø planas',
   'Credit'                      => 'Kreditas',
+  'Current'                     => 'Dabartinis',
   'Date'                        => 'Data',
   'Debit'                       => 'Debetas',
   'Dec'                         => 'Grd',
@@ -36,7 +37,7 @@ $self{texts} = {
   'Sep'                         => 'Rgs',
   'September'                   => 'Rûgsëjis',
   'Subtotal'                    => 'Viso',
-  'to'                          => 'iki',
+  'To'                          => 'iki',
 };
 
 $self{subs} = {

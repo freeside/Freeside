@@ -139,5 +139,5 @@ insert into tax (chart_id,rate) values ((select id from chart where accno = '353
 insert into tax (chart_id,rate) values ((select id from chart where accno = '3531'),0.10);
 insert into tax (chart_id,rate) values ((select id from chart where accno = '3532'),0.20);
 --
-update defaults set inventory_accno_id = (select id from chart where accno = '1520'), income_accno_id = (select id from chart where accno = '4020'), expense_accno_id = (select id from chart where accno = '7610'), fxgain_accno_id = (select id from chart where accno = '4640'), fxloss_accno_id = (select id from chart where accno = '8050'), invnumber = '1000', sonumber = '1000', ponumber = '1000', curr = 'EUR:USD', weightunit = 'kg';
+update defaults set inventory_accno_id = (select id from chart where accno = '1520'), income_accno_id = (select id from chart where accno = '4020'), expense_accno_id = (select id from chart where accno = '7610'), fxgain_accno_id = (select id from chart where accno = '4640'), fxloss_accno_id = (select id from chart where accno = '8050'), curr = 'EUR:USD', weightunit = 'kg';
 --

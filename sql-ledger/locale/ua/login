@@ -1,26 +1,21 @@
 $self{texts} = {
-  'About'                       => 'Про програму',
-  'Database Host'               => 'Машина Бази Даних',
-  'Dataset'                     => 'База Даних',
+  'Company'                     => 'П╕дпри╓мство',
+  'Continue'                    => 'Продовжити',
   'Incorrect Dataset version!'  => 'Нев╕рна верс╕я Бази Даних!',
   'Incorrect Password!'         => 'Нев╕рний Пароль!',
-  'Licensed to'                 => 'Л╕ценз╕╓ю волод╕╓:',
   'Login'                       => 'Початок Сеансу',
-  'Name'                        => '╤м\'я / Назва',
+  'Name'                        => 'Назва',
   'Password'                    => 'Пароль',
-  'User'                        => 'Користувач',
   'Version'                     => 'Верс╕я',
-  'You are logged out!'         => 'Ваш сеанс зак╕нчився!',
-  'You did not enter a name!'   => 'Не введено ╕м\'я/назву',
-  'is not a member!'            => 'не ╓ членом!',
-  'localhost'                   => 'localhost',
+  'You did not enter a name!'   => 'Не введено назву',
+  'is not a member!'            => 'не ╓ членом',
 };
 
 $self{subs} = {
-  'company_logo'                => 'company_logo',
   'login'                       => 'login',
   'login_screen'                => 'login_screen',
   'logout'                      => 'logout',
+  'selectdataset'               => 'selectdataset',
   'Початок_Сеансу'              => 'login',
 };
 

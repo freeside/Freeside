@@ -1,7 +1,7 @@
 $self{texts} = {
   'Address'                     => 'Adres',
   'Continue'                    => 'Kontynuj',
-  'Customer not on file!'       => 'Brak Klienta w bazie danych',
+  'Customer not on file!'       => 'Brak Odbiorcy w bazie danych',
   'Description'                 => 'Opis',
   'Number'                      => 'Numer Katalogu',
   'Project not on file!'        => 'Brak Projektu w zbiorze danych!',
@@ -20,10 +20,10 @@ $self{subs} = {
   'gl_transaction'              => 'gl_transaction',
   'name_selected'               => 'name_selected',
   'project_selected'            => 'project_selected',
-  'purchase_invoice'            => 'purchase_invoice',
-  'sales_invoice'               => 'sales_invoice',
+  'sales_invoice_'              => 'sales_invoice_',
   'select_name'                 => 'select_name',
   'select_project'              => 'select_project',
+  'vendor_invoice_'             => 'vendor_invoice_',
   'kontynuj'                    => 'continue',
 };
 

@@ -1,33 +1,48 @@
-use vars qw($userspath $memberfile $templates $sendmail $language $sid);
+use vars qw($userspath $spool $memberfile $templates $sendmail $language $sid $latex %printer $gzip);
 
 # path to user configuration files
-# you may use an absolute path i.e. /var/tmp
 $userspath = "users";
 
-# templates base directory; this one needs to be here for now
+# spool directory for batch printing
+$spool = "spool";
+
+# templates base directory
 $templates = "templates";
 
-# member file, could also be in "/usr/local/etc/slusers"
+# member file
 $memberfile = "users/members";
 
 # location of sendmail
 $sendmail = "| /usr/sbin/sendmail -t";
 
-# set language for login and admin; two letter code
+# set language for login and admin
 $language = "";
 
 # Oracle
-$sid = "T80509";
-$ENV{"ORACLE_HOME"} = "/usr/local/oracle";
+#$sid = "T80509";
+#$ENV{"ORACLE_HOME"} = "/usr/local/oracle";
 
 # if you have latex installed set to 1
 $latex = 1;
 
-# if the server can't find latex, dvips or pdflatex, add the path
+# available printers
+%printer = ( Laserjet	=> 'lpr -Plaserjet',
+             Laser	=> 'lpr -Plaser'
+	     );
+
+# program to use for file compression
+$gzip = "gzip -S .gz";
+
+# if the server can't find gzip, latex, dvips or pdflatex, add the path
 $ENV{PATH} .= ":/usr/local/bin";
 
 # on mac os X using Fink's Perl libs, add the path
-$ENV{PERL5LIB} .= ":/sw/lib/perl5";
+#$ENV{PERL5LIB} .= ":/sw/lib/perl5";
+
+# DB2, Default dataset is expected to be LEDGER
+#$ENV{DB2INSTANCE} = "db2inst1";
+#$ENV{DB2_HOME} = "/opt/IBM/db2/V8.1/";
 
 
 1;
+
