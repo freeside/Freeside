@@ -1,16 +1,19 @@
 package FS::Record;
 
 use strict;
-use vars qw($dbdef_file $dbdef $setup_hack $AUTOLOAD @ISA @EXPORT_OK);
+use vars qw($dbdef_file $dbdef $setup_hack $AUTOLOAD @ISA @EXPORT_OK $DEBUG);
 use subs qw(reload_dbdef);
 use Exporter;
 use Carp qw(carp cluck croak confess);
 use File::CounterFile;
-use FS::UID qw(dbh checkruid swapuid getotaker datasrc);
+use FS::UID qw(dbh checkruid swapuid getotaker datasrc driver_name);
 use FS::dbdef;
+use diagnostics;
 
 @ISA = qw(Exporter);
 @EXPORT_OK = qw(dbh fields hfields qsearch qsearchs dbdef);
+
+$DEBUG = 0;
 
 #ask FS::UID to run this stuff for us later
 $FS::UID::callback{'FS::Record'} = sub { 
@@ -124,7 +127,7 @@ sub new {
     $hashref->{$field}='' unless defined $hashref->{$field};
     #trim the '$' and ',' from money fields for Pg (belong HERE?)
     #(what about Pg i18n?)
-    if ( datasrc =~ m/Pg/ 
+    if ( driver_name eq 'Pg' 
          && $self->dbdef_table->column($field)->type eq 'money' ) {
       ${$hashref}{$field} =~ s/^\$//;
       ${$hashref}{$field} =~ s/\,//;
@@ -157,37 +160,50 @@ objects.
 =cut
 
 sub qsearch {
-  my($table,$record) = @_;
-  my($dbh) = dbh;
+  my($table, $record) = @_;
+  my $dbh = dbh;
 
-  my(@fields)=grep exists($record->{$_}), fields($table);
+  my @fields = grep exists($record->{$_}), fields($table);
 
-  my($sth);
-  my($statement) = "SELECT * FROM $table". ( @fields
-    ? " WHERE ". join(' AND ',
+  my $statement = "SELECT * FROM $table";
+  if ( @fields ) {
+    $statement .= " WHERE ". join(' AND ', map {
+      if ( $record->{$_} eq '' || $record->{$_} eq undef ) {
+        if ( driver_name eq 'Pg' ) {
+          "$_ IS NULL";
+        } else {
+          qq-( $_ IS NULL OR $_ = "" )-;
+        }
+      } else {
+        "$_ = ?";
+      }
+    } @fields );
+  }
+
+  warn $statement if $DEBUG;
+  my $sth = $dbh->prepare_cached($statement) or croak $dbh->errstr;
+
+  $sth->execute( map $record->{$_},
+    grep $record->{$_} ne '' && $record->{$_} ne undef, @fields
+  ) or croak $dbh->errstr;
+
+  if ( eval 'scalar(@FS::'. $table. '::ISA);' ) {
+    if ( eval 'FS::'. $table. '->can(\'new\')' eq \&new ) {
+      #derivied class didn't override new method, so this optimization is safe
       map {
-        $record->{$_} eq ''
-          ? ( datasrc =~ m/Pg/
-                ? "$_ IS NULL"
-                : "( $_ IS NULL OR $_ = \"\" )"
-            )
-          : "$_ = ". _quote($record->{$_},$table,$_)
-      } @fields
-    ) : ''
-  );
-  $sth=$dbh->prepare($statement)
-    or croak $dbh->errstr; #is that a little too harsh?  hmm.
-  #warn $statement #if $debug # or some such;
-
-  if ( eval ' scalar(@FS::'. $table. '::ISA);' ) {
-    map {
-      eval 'new FS::'. $table. ' ( $sth->fetchrow_hashref );';
-    } ( 1 .. $sth->execute );
+        new( "FS::$table", { %{$_} } )
+      } @{$sth->fetchall_arrayref( {} )};
+    } else {
+      warn "untested code (class FS::$table uses custom new method)";
+      map {
+        eval 'FS::'. $table. '->new( { %{$_} } )';
+      } @{$sth->fetchall_arrayref( {} )};
+    }
   } else {
-    cluck "qsearch: warning: FS::$table not loaded; returning generic FS::Record objects";
+    cluck "warning: FS::$table not loaded; returning FS::Record objects";
     map {
-      new FS::Record ($table,$sth->fetchrow_hashref);
-    } ( 1 .. $sth->execute );
+      FS::Record->new( $table, { %{$_} } );
+    } @{$sth->fetchall_arrayref( {} )};
   }
 
 }
@@ -390,7 +406,7 @@ sub delete {
     map {
       $self->getfield($_) eq ''
         #? "( $_ IS NULL OR $_ = \"\" )"
-        ? ( datasrc =~ m/Pg/
+        ? ( driver_name eq 'Pg' 
               ? "$_ IS NULL"
               : "( $_ IS NULL OR $_ = \"\" )"
           )
@@ -462,7 +478,7 @@ sub replace {
       map {
         $old->getfield($_) eq ''
           #? "( $_ IS NULL OR $_ = \"\" )"
-          ? ( datasrc =~ m/Pg/
+          ? ( driver_name eq 'Pg' 
                 ? "$_ IS NULL"
                 : "( $_ IS NULL OR $_ = \"\" )"
             )
@@ -825,7 +841,7 @@ sub hfields {
 
 =head1 VERSION
 
-$Id: Record.pm,v 1.3 2000-03-03 18:21:38 ivan Exp $
+$Id: Record.pm,v 1.4 2000-06-23 12:25:59 ivan Exp $
 
 =head1 BUGS
 
@@ -849,7 +865,7 @@ The ut_ methods should ask the dbdef for a default length.
 
 ut_sqltype (like ut_varchar) should all be defined
 
-A fallback check method should be provided whith uses the dbdef.
+A fallback check method should be provided which uses the dbdef.
 
 The ut_money method assumes money has two decimal digits.
 
@@ -863,6 +879,10 @@ All the subroutines probably should be methods, here or elsewhere.
 
 Probably should borrow/use some dbdef methods where appropriate (like sub
 fields)
+
+As of 1.14, DBI fetchall_hashref( {} ) doesn't set fetchrow_hashref NAME_lc,
+or allow it to be set.  Working around it is ugly any way around - DBI should
+be fixed.  (only affects RDBMS which return uppercase column names)
 
 =head1 SEE ALSO
 

@@ -3,19 +3,19 @@ package FS::UID;
 use strict;
 use vars qw(
   @ISA @EXPORT_OK $cgi $dbh $freeside_uid $user 
-  $conf_dir $secrets $datasrc $db_user $db_pass %callback
+  $conf_dir $secrets $datasrc $db_user $db_pass %callback $driver_name
 );
 use subs qw(
   getsecrets cgisetotaker
 );
 use Exporter;
-use Carp;
+use Carp qw(carp croak cluck);
 use DBI;
 use FS::Conf;
 
 @ISA = qw(Exporter);
 @EXPORT_OK = qw(checkeuid checkruid swapuid cgisuidsetup
-                adminsuidsetup getotaker dbh datasrc getsecrets );
+                adminsuidsetup getotaker dbh datasrc getsecrets driver_name );
 
 $freeside_uid = scalar(getpwnam('freeside'));
 
@@ -38,6 +38,8 @@ FS::UID - Subroutines for database login and assorted other stuff
   $dbh = dbh;
 
   $datasrc = datasrc;
+
+  $driver_name = driver_name;
 
 =head1 DESCRIPTION
 
@@ -89,8 +91,8 @@ sub adminsuidsetup {
 
 =item cgisuidsetup CGI_object
 
-Stores the CGI (see L<CGI>) object for later use. (CGI::Base is depriciated)
-Runs adminsuidsetup.
+Takes a single argument, which is a CGI (see L<CGI>) or Apache (see L<Apache>)
+object (CGI::Base is depriciated).  Runs cgisetotaker and then adminsuidsetup.
 
 =cut
 
@@ -138,10 +140,16 @@ sub datasrc {
   $datasrc;
 }
 
-#hack for web demo
-#sub setdbh {
-#  $dbh=$_[0];
-#}
+=item driver_name
+
+Returns just the driver name portion of the DBI data source.
+
+=cut
+
+sub driver_name {
+  return $driver_name if defined $driver_name;
+  $driver_name = ( split(':', $datasrc) )[1];
+}
 
 sub suidsetup {
   croak "suidsetup depriciated";
@@ -160,7 +168,8 @@ sub getotaker {
 =item cgisetotaker
 
 Sets and returns the CGI REMOTE_USER.  $cgi should be defined as a CGI.pm
-object.  Support for CGI::Base and derived classes is depriciated.
+object (see L<CGI>) or an Apache object (see L<Apache>).  Support for CGI::Base
+and derived classes is depriciated.
 
 =cut
 
@@ -229,6 +238,7 @@ sub getsecrets {
   ($datasrc, $db_user, $db_pass) = $conf->config($secrets)
     or die "Can't get secrets: $!";
   $FS::Conf::default_dir = $conf_dir. "/conf.$datasrc";
+  undef $driver_name;
   ($datasrc, $db_user, $db_pass);
 }
 
@@ -246,7 +256,7 @@ coderef into the hash %FS::UID::callback :
 
 =head1 VERSION
 
-$Id: UID.pm,v 1.2 2000-05-13 21:50:12 ivan Exp $
+$Id: UID.pm,v 1.3 2000-06-23 12:25:59 ivan Exp $
 
 =head1 BUGS
 

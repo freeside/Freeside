@@ -1,4 +1,4 @@
-$Id: TODO,v 1.44 2000-06-15 14:45:38 ivan Exp $
+$Id: TODO,v 1.45 2000-06-23 12:25:59 ivan Exp $
 
 If you are interested in helping with any of these, please join the mailing
 list (send a blank message to ivan-freeside-subscribe@sisd.com) to avoid 
@@ -445,8 +445,8 @@ was happy with it could go in FS::Record::_quote, for data going into the
 database.
 
 our data display problem might be a Freeside problem wrt not using 
-Oracle-compatible DBI syntax (uses the return value from $sth->execute as
-a number of rows).  Fixing this is on the TODO.
+Oracle-compatible DBI syntax (fixed using the return value from $sth->execute
+as a number of rows - something else?).
 
 hooks for arbitrary commands out of configuration files
 svc_acct.pm svc_acct_sm.pm etc.
@@ -574,8 +574,6 @@ false laziness: edit/cust_main.cgi got some parts copied from edit/svc_acct.cgi
 the web interface in general needs to be redone in a more abstract way.
 
 false laziness: some of search/svc_acct_sm.cgi was copied to search/svc_domain.cgi.  but web interface in general needs to be rewritten in a mucho cleaner way.
-
-Portability: in FS::Record, $sth->execute does not return a number of rows for all DBD's.  see man DBI
 
 subroutine the where clause (eventually all SQL) as OO perhaps (has anyone done this?)
 
