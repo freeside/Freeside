@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 #
-# $Id: svc_acct.export,v 1.10 2000-03-06 15:59:19 ivan Exp $
+# $Id: svc_acct.export,v 1.11 2000-03-06 16:00:39 ivan Exp $
 #
 # Create and export password files: passwd, passwd.adjunct, shadow,
 # acp_passwd, acp_userinfo, acp_dialup, users
@@ -38,8 +38,8 @@
 # ivan@sisd.com 98-sep-18
 # 
 # $Log: svc_acct.export,v $
-# Revision 1.10  2000-03-06 15:59:19  ivan
-# finally get MySQL locking working for ICRADIUS export
+# Revision 1.11  2000-03-06 16:00:39  ivan
+# sync up with working versoin
 #
 # Revision 1.2  1998/12/10 07:23:15  ivan
 # use FS::Conf, need user (for datasrc)
@@ -50,7 +50,7 @@ use vars qw($conf);
 use Fcntl qw(:flock);
 use IO::Handle;
 use FS::Conf;
-use FS::SSH qw(scp ssh sshopen3);
+use FS::SSH qw(scp ssh);
 use FS::UID qw(adminsuidsetup datasrc dbh);
 use FS::Record qw(qsearch fields);
 use FS::svc_acct;
@@ -356,7 +356,6 @@ foreach $radiusmachine (@radiusmachines) {
 foreach my $icradiusmachine ( @icradiusmachines ) {
   my( $machine, $db, $user, $pass ) = split(/\s+/, $icradiusmachine);
   chdir $icradius_mysqlsource or die "Can't cd $icradius_mysqlsource: $!";
-  my($reader,$writer,$error)=(new IO::Handle, new IO::Handle, new IO::Handle);
   open(WRITER,"|ssh root\@$machine mysql -v --user=$user -p $db");
   my $oldfh = select WRITER; $|=1; select $oldfh;
   print WRITER "$pass\n"; sleep 2; print WRITER "LOCK TABLES radcheck WRITE;\n";
