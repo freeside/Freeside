@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: signup.cgi,v 1.25 2002-04-19 23:50:37 ivan Exp $
+# $Id: signup.cgi,v 1.26 2002-04-20 00:48:17 ivan Exp $
 
 use strict;
 use vars qw( @payby $cgi $locales $packages $pops $init_data $error
@@ -133,6 +133,33 @@ if ( defined $cgi->param('magic') ) {
 
     $error = '';
 
+    $last             = $cgi->param('last');
+    $first            = $cgi->param('first');
+    $ss               = $cgi->param('ss');
+    $company          = $cgi->param('company');
+    $address1         = $cgi->param('address1');
+    $address2         = $cgi->param('address2');
+    $city             = $cgi->param('city');
+    #$county,
+    #$state,
+    $zip              = $cgi->param('zip');
+    #$country,
+    $daytime          = $cgi->param('daytime');
+    $night            = $cgi->param('night');
+    $fax              = $cgi->param('fax');
+    #$payby,
+    #$payinfo,
+    #$paydate,
+    #$payname,
+    #$invoicing_list,
+    $referral_custnum = $cgi->param('ref');
+    $pkgpart          = $cgi->param('pkgpart');
+    $username         = $cgi->param('username');
+    $sec_phrase       = $cgi->param('sec_phrase');
+    $password         = $cgi->param('_password');
+    $popnum           = $cgi->param('popnum');
+    #$agentnum, #         = $cgi->param('agentnum'),
+
     if ( $cgi->param('_password') ne $cgi->param('_password2') ) {
       $error = $init_data->{msgcat}{passwords_dont_match}; #msgcat
       $password  = '';
@@ -153,32 +180,32 @@ if ( defined $cgi->param('magic') ) {
       }
 
       $error ||= new_customer ( {
-        'last'             => $last             = $cgi->param('last'),
-        'first'            => $first            = $cgi->param('first'),
-        'ss'               => $ss               = $cgi->param('ss'),
-        'company'          => $company          = $cgi->param('company'),
-        'address1'         => $address1         = $cgi->param('address1'),
-        'address2'         => $address2         = $cgi->param('address2'),
-        'city'             => $city             = $cgi->param('city'),
+        'last'             => $last,
+        'first'            => $first,
+        'ss'               => $ss,
+        'company'          => $company,
+        'address1'         => $address1,
+        'address2'         => $address2,
+        'city'             => $city,
         'county'           => $county,
         'state'            => $state,
-        'zip'              => $zip              = $cgi->param('zip'),
+        'zip'              => $zip,
         'country'          => $country,
-        'daytime'          => $daytime          = $cgi->param('daytime'),
-        'night'            => $night            = $cgi->param('night'),
-        'fax'              => $fax              = $cgi->param('fax'),
+        'daytime'          => $daytime,
+        'night'            => $night,
+        'fax'              => $fax,
         'payby'            => $payby,
         'payinfo'          => $payinfo,
         'paydate'          => $paydate,
         'payname'          => $payname,
         'invoicing_list'   => $invoicing_list,
-        'referral_custnum' => $referral_custnum = $cgi->param('ref'),
-        'pkgpart'          => $pkgpart          = $cgi->param('pkgpart'),
-        'username'         => $username         = $cgi->param('username'),
-        'sec_phrase'       => $sec_phrase       = $cgi->param('sec_phrase'),
-        '_password'        => $password         = $cgi->param('_password'),
-        'popnum'           => $popnum           = $cgi->param('popnum'),
-        'agentnum'         => $agentnum, #         = $cgi->param('agentnum'),
+        'referral_custnum' => $referral_custnum,
+        'pkgpart'          => $pkgpart,
+        'username'         => $username,
+        'sec_phrase'       => $sec_phrase,
+        '_password'        => $password,
+        'popnum'           => $popnum,
+        'agentnum'         => $agentnum,
       } );
 
     }
