@@ -17,9 +17,9 @@ my $action = $svc_acct_pop->popnum ? 'Edit' : 'Add';
 my $hashref = $svc_acct_pop->hashref;
 
 my $p1 = popurl(1);
-print header("$action POP", menubar(
+print header("$action Access Number", menubar(
   'Main Menu' => popurl(2),
-  'View all POPs' => popurl(2). "browse/svc_acct_pop.cgi",
+  'View all Access Numbers' => popurl(2). "browse/svc_acct_pop.cgi",
 ));
 
 print qq!<FONT SIZE="+1" COLOR="#ff0000">Error: !, $cgi->param('error'),
@@ -44,7 +44,7 @@ Local     <INPUT TYPE="text" NAME="loc" SIZE=5 MAXLENGTH=4 VALUE="$hashref->{loc
 END
 
 print qq!<BR><INPUT TYPE="submit" VALUE="!,
-      $hashref->{popnum} ? "Apply changes" : "Add POP",
+      $hashref->{popnum} ? "Apply changes" : "Add Access Number",
       qq!">!;
 
 print <<END;

@@ -1,7 +1,7 @@
 <!-- mason kludge -->
 <%
 
-print header('POP Listing', menubar(
+print header('Access Number Listing', menubar(
   'Main Menu' => $p,
 )), "Points of Presence<BR><BR>", &table(), <<END;
       <TR>
@@ -41,7 +41,7 @@ END
 
 print <<END;
       <TR>
-        <TD COLSPAN=5><A HREF="${p}edit/svc_acct_pop.cgi"><I>Add new POP</I></A></TD>
+        <TD COLSPAN=5><A HREF="${p}edit/svc_acct_pop.cgi"><I>Add new Access Number</I></A></TD>
       </TR>
     </TABLE>
     </CENTER>
