@@ -7,9 +7,9 @@ password=$3
 freeside-adduser -h /usr/local/etc/freeside/htpasswd \
                  -s conf.DBI:Pg:host=localhost\;dbname=$domain/secrets \
                  -b \
-                 $username $password
+                 $username $password 2>/dev/null
 
 [ -e /usr/local/etc/freeside/dbdef.DBI:Pg:host=localhost\;dbname=$domain ] \
- || ( freeside-setup $username; \
-      /home/ivan/freeside/bin/populate-msgcat $username )
+ || ( freeside-setup $username 2>/dev/null; \
+      /home/ivan/freeside/bin/populate-msgcat $username; 2>/dev/null )
 
