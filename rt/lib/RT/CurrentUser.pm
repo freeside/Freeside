@@ -241,9 +241,9 @@ sub Load  {
     $self->SUPER::LoadById($identifier);
   }
 
-  elsif (UNIVERSAL::isa($identifier,"RT::User")) { 
-         # DWIM if they pass a user in 
-         $self->SUPER::LoadById($identifier->Id); 
+  elsif (UNIVERSAL::isa($identifier,"RT::User")) {
+         # DWIM if they pass a user in
+         $self->SUPER::LoadById($identifier->Id);
   } 
   else {
       # This is a bit dangerous, we might get false authen if somebody
@@ -330,19 +330,24 @@ ok ($cu->loc('Before') eq "Avant", "Localized TEST_STRING into Frenc");
 
 sub LanguageHandle {
     my $self = shift;
-    if  ((!defined $self->{'LangHandle'}) || 
-         (!UNIVERSAL::can($self->{'LangHandle'}, 'maketext')) || 
-         (@_))  {
-	if ( $self->Lang) {
-	    push @_, $self->Lang;
-	}
+    if (   ( !defined $self->{'LangHandle'} )
+        || ( !UNIVERSAL::can( $self->{'LangHandle'}, 'maketext' ) )
+        || (@_) ) {
+        if ( (!$RT::SystemUser || $self->id == $RT::SystemUser->id() )) {
+            @_ = qw(en-US);
+        }
+
+        elsif ( $self->Lang ) {
+            push @_, $self->Lang;
+        }
         $self->{'LangHandle'} = RT::I18N->get_handle(@_);
     }
+
     # Fall back to english.
-    unless ($self->{'LangHandle'}) {
+    unless ( $self->{'LangHandle'} ) {
         die "We couldn't get a dictionary. Nye mogu naidti slovar. No puedo encontrar dictionario.";
     }
-    return ($self->{'LangHandle'});
+    return ( $self->{'LangHandle'} );
 }
 
 sub loc {

@@ -117,6 +117,7 @@ elsif ( $RT::WebExternalAuth ) {
 				       'HomePhone', 'WorkPhone', 'MobilePhone',
 				       'PagerPhone', 'Address1', 'Address2', 'City',
 				       'State', 'Zip', 'Country') {
+               $m->comp('/Elements/Callback', %ARGS, _CallbackName => 'NewUser');
 		    
 		    my $method = "Set$attribute";
 		    $UserObj->$method($new_user_info->{$attribute}) 
@@ -171,10 +172,14 @@ if (!$session{'CurrentUser'} && defined ($user) && defined ($pass) ){
     if (!$session{'CurrentUser'}->id() ||
         !$session{'CurrentUser'}->IsPassword($pass))
     {
+	$RT::Logger->error("FAILED LOGIN for $user from $ENV{'REMOTE_ADDR'}");
         delete $session{'CurrentUser'};
         $m->comp('/Elements/Login', %ARGS,
                  Error => loc('Your username or password is incorrect'));
         $m->abort();
+    }
+    else {
+	$RT::Logger->info("Successful login for $user from $ENV{'REMOTE_ADDR'}");
     }
 }
   

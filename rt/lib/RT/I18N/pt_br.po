@@ -1,4 +1,4 @@
-# $Id: pt_br.po,v 1.1 2003-07-15 13:16:28 ivan Exp $
+# $Id: pt_br.po,v 1.1.1.2 2004-11-11 12:12:05 ivan Exp $
 msgid ""
 msgstr ""
 "Project-Id-Version: RT 2.1.x\n"
@@ -279,7 +279,7 @@ msgid "(Check boxes to delete)"
 msgstr "(Assinale para remover)"
 
 #: html/Ticket/Create.html:178
-msgid "(Enter ticket ids or URLs, seperated with spaces)"
+msgid "(Enter ticket ids or URLs, separated with spaces)"
 msgstr "(Entre com identificadores de tíquetes ou URLs, separados por espaços)"
 
 #: html/Admin/Queues/Modify.html:54 html/Admin/Queues/Modify.html:60

@@ -157,6 +157,8 @@ use vars '%LINKTYPEMAP';
                    Mode => 'Target', },
     DependedOnBy => { Type => 'DependsOn',
                       Mode => 'Base', },
+    MergedInto => { Type => 'MergedInto',
+                   Mode => 'Target', },
 
 );
 
@@ -175,6 +177,8 @@ use vars '%LINKDIRMAP';
                 Target => 'ReferredToBy', },
     DependsOn => { Base => 'DependsOn',
                    Target => 'DependedOnBy', },
+    MergedInto => { Base => 'MergedInto',
+                   Target => 'MergedInto', },
 
 );
 
@@ -315,11 +319,11 @@ sub Create {
                  Subject         => '',
                  InitialPriority => undef,
                  FinalPriority   => undef,
-                 Priority   => undef,
+                 Priority        => undef,
                  Status          => 'new',
-                 TimeWorked      => "0",
+                 TimeWorked      => 0,
                  TimeLeft        => 0,
-                 TimeEstimated        => 0,
+                 TimeEstimated   => 0,
                  Due             => undef,
                  Starts          => undef,
                  Started         => undef,
@@ -513,10 +517,12 @@ sub Create {
         delete $params{$attr}  unless (exists $params{$attr} && $params{$attr});
     }
 
-
-    my $id = $self->SUPER::Create( %params);
+    # Delete the time worked if we're counting it in the transaction
+    delete $params{TimeWorked} if $args{'_RecordTransaction'};
+    
+    my ($id,$ticket_message) = $self->SUPER::Create( %params);
     unless ($id) {
-        $RT::Logger->crit( "Couldn't create a ticket");
+        $RT::Logger->crit( "Couldn't create a ticket: " . $ticket_message);
         $RT::Handle->Rollback();
         return ( 0, 0, $self->loc( "Ticket could not be created due to an internal error") );
     }
@@ -624,7 +630,7 @@ sub Create {
         # {{{ Add a transaction for the create
         my ( $Trans, $Msg, $TransObj ) = $self->_NewTransaction(
                                                      Type      => "Create",
-                                                     TimeTaken => 0,
+                                                     TimeTaken => $args{'TimeWorked'},
                                                      MIMEObj => $args{'MIMEObj'}
         );
 
@@ -1746,6 +1752,8 @@ PrincipalId is an RT::Principal id, and Email is an email address.
 Returns true if the specified principal (or the one corresponding to the
 specified address) is a member of the group Type for this ticket.
 
+XX TODO: This should be Memoized. 
+
 =cut
 
 sub IsWatcher {
@@ -2860,7 +2868,7 @@ sub MergeInto {
 
     # We use EffectiveId here even though it duplicates information from
     # the links table becasue of the massive performance hit we'd take
-    # by trying to do a seperate database query for merge info everytime 
+    # by trying to do a separate database query for merge info everytime 
     # loaded a ticket. 
 
     #update this ticket's effective id to the new ticket's id.
@@ -3456,6 +3464,9 @@ sub CustomFieldValues {
         $cf->LoadById($field);
     } else {
         $cf->LoadByNameAndQueue(Name => $field, Queue => $self->QueueObj->Id);
+        unless( $cf->id ) {
+            $cf->LoadByNameAndQueue(Name => $field, Queue => '0');
+        }
     }
     my $cf_values = RT::TicketCustomFieldValues->new( $self->CurrentUser );
     $cf_values->LimitToCustomField($cf->id);

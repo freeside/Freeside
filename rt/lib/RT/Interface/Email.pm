@@ -34,7 +34,7 @@ BEGIN {
     use vars qw ($VERSION  @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
     
     # set the version for version checking
-    $VERSION = do { my @r = (q$Revision: 1.1.1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r }; # must be all one line, for MakeMaker
+    $VERSION = do { my @r = (q$Revision: 1.1.1.3 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r }; # must be all one line, for MakeMaker
     
     @ISA         = qw(Exporter);
     
@@ -57,7 +57,7 @@ BEGIN {
 
 =head1 NAME
 
-  RT::Interface::CLI - helper functions for creating a commandline RT interface
+  RT::Interface::Email - helper functions for parsing email sent to RT
 
 =head1 SYNOPSIS
 
@@ -182,14 +182,13 @@ sub MailError {
 
     }
 
- 
     if ($RT::MailCommand eq 'sendmailpipe') {
         open (MAIL, "|$RT::SendmailPath $RT::SendmailArguments") || return(0);
         print MAIL $entity->as_string;
         close(MAIL);
     }
     else {
-	$entity->send($RT::MailCommand, $RT::MailParams);
+    	$entity->send($RT::MailCommand, $RT::MailParams);
     }
 }
 
@@ -376,6 +375,9 @@ This performs all the "guts" of the mail rt-mailgate program, and is
 designed to be called from the web interface with a message, user
 object, and so on.
 
+Can also take an optional 'ticket' parameter; this ticket id overrides
+any ticket id found in the subject.
+
 Returns:
 
     An array of:
@@ -430,7 +432,7 @@ sub Gateway {
 
         if ( -f $temp_file ) {
             $parser->ParseMIMEEntityFromFile($temp_file);
-            File::Temp::unlink0( $fh, $temp_file );
+            unlink( $temp_file );
             if ($parser->Entity) {
                 delete $args{'message'};
             }

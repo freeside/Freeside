@@ -28,7 +28,13 @@
 
 <BR>
       
-<& /Ticket/Elements/ShowHistory , Ticket => $Ticket, ShowHeaders => $ARGS{'ShowHeaders'}, URIFile => 'History.html' &> 
+<& /Ticket/Elements/ShowHistory , 
+    Ticket => $Ticket, 
+    ShowHeaders => $ARGS{'ShowHeaders'}, 
+    URIFile => 'History.html', 
+    Attachments => $attachments,
+    AttachmentContent => $attachment_content
+    &> 
 
 
 <%ARGS>
@@ -44,6 +50,11 @@ my $Ticket = LoadTicket ($id);
 unless ($Ticket->CurrentUserHasRight('ShowTicket')) {
 	Abort("No permission to view ticket");
 }
+
+my $attachments = $m->comp('Elements/FindAttachments', Ticket => $Ticket);
+my $attachment_content = $m->comp('Elements/LoadTextAttachments', Ticket =>
+$Ticket);
+
 
 </%INIT>
 

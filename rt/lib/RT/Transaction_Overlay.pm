@@ -203,7 +203,7 @@ sub Content {
     if ( $args{'Quote'} ) {
 
         # Remove quoted signature.
-        $content =~ s/\n-- \n(.*)$//s;
+        $content =~ s/\n-- \n(.*?)$//s;
 
         # What's the longest line like?
         my $max = 0;
@@ -221,10 +221,10 @@ sub Content {
             $content = $wrapper->wrap($content);
         }
 
+        $content =~ s/^/> /gm;
         $content = '['
           . $self->CreatorObj->Name() . ' - '
-          . $self->CreatedAsString() . "]:\n\n" . $content . "\n\n";
-        $content =~ s/^/> /gm;
+          . $self->CreatedAsString() . "]:\n" . $content . "\n\n";
 
     }
 
@@ -597,6 +597,9 @@ sub BriefDescription {
             elsif ( $self->Field eq 'HasMember' ) {
                 return $self->loc( "Member [_1] added", $value );
             }
+            elsif ( $self->Field eq 'MergedInto' ) {
+                return $self->loc( "Merged into [_1]", $value );
+            }
         }
         else {
             return ( $self->Data );
@@ -790,7 +793,7 @@ sub _CacheConfig {
   {
      'cache_p'        => 1,
      'fast_update_p'  => 1,
-     'cache_for_sec'  => 180,
+     'cache_for_sec'  => 6000,
   }
 }
 1;

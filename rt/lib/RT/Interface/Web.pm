@@ -101,6 +101,7 @@ sub NewCGIHandler {
         default_escape_flags => 'h',
         allow_globals        => [qw(%session)],
         autoflush => 1,
+        @_
     );
   
 
@@ -424,7 +425,8 @@ sub ProcessUpdateMessage {
     );
 
     #Make the update content have no 'weird' newlines in it
-    if ( $args{ARGSRef}->{'UpdateContent'} ||
+    if ( $args{ARGSRef}->{'UpdateTimeWorked'} ||
+	 $args{ARGSRef}->{'UpdateContent'} ||
 	 $args{ARGSRef}->{'UpdateAttachments'}) {
 
         if (
@@ -530,7 +532,7 @@ sub MakeMIMEEntity {
         # on NFS and NTFS, it is possible that tempfile() conflicts
         # with other processes, causing a race condition. we try to
         # accommodate this by pausing and retrying.
-        last if ($fh, $temp_file) = eval { tempfile() };
+        last if ($fh, $temp_file) = eval { tempfile( UNLINK => 1) };
         sleep 1;
     }
 
