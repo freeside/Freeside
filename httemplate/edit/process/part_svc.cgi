@@ -17,7 +17,7 @@ my $new = new FS::part_svc ( {
             push @fields, 'usergroup' if $svcdb eq 'svc_acct'; #kludge
             map { ( $svcdb.'__'.$_, $svcdb.'__'.$_.'_flag' )  } @fields;
           } grep defined( $FS::Record::dbdef->table($_) ),
-                 qw( svc_acct svc_domain svc_acct_sm svc_forward svc_www )
+                 qw( svc_acct svc_domain svc_acct_sm svc_forward svc_www svc_broadband )
     )
 } );
 

@@ -53,6 +53,7 @@ Services are items you offer to your customers.
     <LI>svc_acct_sm - <B>deprecated</B> (use svc_forward for new installations) Virtual domain mail aliasing.
     <LI>svc_forward - mail forwarding
     <LI>svc_www - Virtual domain website
+    <LI>svc_broadband - Broadband/High-speed Internet service
 <!--   <LI>svc_charge - One-time charges (Partially unimplemented)
        <LI>svc_wo - Work orders (Partially unimplemented)
 -->
@@ -122,11 +123,21 @@ my %defs = (
     #'recnum' => '',
     #'usersvc' => '',
   },
+  'svc_broadband' => {
+    'actypenum' => 'This is the actypenum that refers to the type of AC that can be provisioned for this service.  This field must be set fixed.',
+    'speed_down' => 'Maximum download speed for this service in Kbps.  0 denotes unlimited.',
+    'speed_up' => 'Maximum upload speed for this service in Kbps.  0 denotes unlimited.',
+    'acnum' => 'acnum of a specific AC that this service is restricted to.  Not required',
+    'ip_addr' => 'IP address.  Leave blank for automatic assignment.',
+    'ip_netmask' => 'Mask length, aka. netmask bits.  (Eg. 255.255.255.0 == 24)',
+    'mac_addr' => 'MAC address which is used by some ACs for access control.  Specified by 6 colon seperated hex octets. (Eg. 00:00:0a:bc:1a:2b)',
+    'location' => 'Defines the physically location at which this service was installed.  This is not necessarily the billing address',
+  },
 );
 
   my @dbs = $hashref->{svcdb}
              ? ( $hashref->{svcdb} )
-             : qw( svc_acct svc_domain svc_acct_sm svc_forward svc_www );
+             : qw( svc_acct svc_domain svc_acct_sm svc_forward svc_www svc_broadband );
 
   tie my %svcdb, 'Tie::IxHash', map { $_=>$_ } @dbs;
   my $widget = new HTML::Widgets::SelectLayers(

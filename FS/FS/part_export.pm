@@ -839,6 +839,9 @@ tie my %sqlmail_options, 'Tie::IxHash',
 
   },
 
+  'svc_broadband' => {
+  },
+
 );
 
 =back

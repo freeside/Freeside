@@ -295,6 +295,8 @@ sub label {
   } elsif ( $svcdb eq 'svc_www' ) {
     my $domain = qsearchs( 'domain_record', { 'recnum' => $svc_x->recnum } );
     $tag = $domain->reczone;
+  } elsif ( $svcdb eq 'svc_broadband' ) {
+    $tag = $svc_x->ip_addr . '/' . $svc_x->ip_netmask;
   } else {
     cluck "warning: asked for label of unsupported svcdb; using svcnum";
     $tag = $svc_x->getfield('svcnum');
@@ -344,7 +346,7 @@ sub seconds_since {
 
 =head1 VERSION
 
-$Id: cust_svc.pm,v 1.15 2002-05-22 12:17:06 ivan Exp $
+$Id: cust_svc.pm,v 1.16 2002-09-09 23:01:35 khoff Exp $
 
 =head1 BUGS
 

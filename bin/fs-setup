@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: fs-setup,v 1.96 2002-07-06 12:13:49 ivan Exp $
+# $Id: fs-setup,v 1.97 2002-09-09 23:01:36 khoff Exp $
 
 #to delay loading dbdef until we're ready
 BEGIN { $FS::Record::setup_hack = 1; }
@@ -1023,7 +1023,77 @@ sub tables_hash_hack {
       'index'       => [],
     },
 
+    'ac_type' => {
+      'columns' => [
+        'actypenum', 'int', '', '',
+        'actypename', 'varchar', '', 15,
+      ],
+      'primary_key' => 'actypenum',
+      'unique'      => [],
+      'index'       => [],
+    },
 
+    'ac' => {
+      'columns' => [
+        'acnum', 'int', '', '',
+        'actypenum', 'int', '', '',
+        'acname', 'varchar', '', 15,
+      ],
+      'primary_key' => 'acnum',
+      'unique'      => [],
+      'index'       => [],
+    },
+
+    'part_ac_field' => {
+      'columns' => [
+        'acfieldpart', 'int', '', '',
+        'actypenum', 'int', '', '',
+        'name', 'varchar', '', 15,
+        'ut_type', 'varchar', '', 15,
+      ],
+      'primary_key' => 'acfieldpart',
+      'unique'      => [],
+      'index'       => [],
+    },
+
+    'ac_field' => {
+      'columns' => [
+        'acfieldpart', 'int', '', '',
+        'acnum', 'int', '', '',
+        'value', 'varchar', '', 127,
+      ],
+      'primary_key' => '',
+      'unique'      => [ [ 'acfieldpart', 'acnum' ] ],
+      'index'       => [],
+    },
+
+    'ac_block' => {
+      'columns' => [
+        'acnum', 'int', '', '',
+        'ip_gateway', 'char', '', 15,
+        'ip_netmask', 'int', '', '',
+      ],
+      'primary_key' => '',
+      'unique'      => [],
+      'index'       => [],
+    },
+
+    'svc_broadband' => {
+      'columns' => [
+        'svcnum', 'int', '', '',
+        'actypenum', 'int', '', '',
+        'speed_up', 'int', '', '',
+        'speed_down', 'int', '', '',
+        'acnum', 'int', '', '',
+        'ip_addr', 'char', '', 15,
+        'ip_netmask', 'int', '', '',
+        'mac_addr', 'char', '', 17,
+        'location', 'varchar', '', 127,
+      ],
+      'primary_key' => 'svcnum',
+      'unique'      => [],
+      'index'       => [],
+    },
 
   );
 
