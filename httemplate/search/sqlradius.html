@@ -15,14 +15,35 @@
   <TD></TD>
   <TD><FONT SIZE="-1"><I>(leave blank to show all users)</I></FONT></TD>
 </TR>
-<TR>
-  <TD ALIGN="right">IP address: </TD>
-  <TD><INPUT TYPE="text" NAME="ip"></TD>
-</TR>
-<TR>
-  <TD></TD>
-  <TD><FONT SIZE="-1"><I>(leave blank to show all IPs)</I></FONT></TD>
-</TR>
+
+<% my @part_export = qsearch( 'part_export', { 'exporttype' => 'sqlradius' } );
+   push @part_export,
+     qsearch( 'part_export', { 'exporttype' => 'sqlradius_withdomain' } );
+%>
+
+<% if ( grep { ! $_->option('hide_ip') } @part_export ) { %>
+  <TR>
+    <TD ALIGN="right">IP address: </TD>
+    <TD><INPUT TYPE="text" NAME="ip"></TD>
+  </TR>
+  <TR>
+    <TD></TD>
+    <TD><FONT SIZE="-1"><I>(leave blank to show all IPs)</I></FONT></TD>
+  </TR>
+<% } %>
+
+<% if ( grep { $_->option('show_called_station') } @part_export ) { %>
+  <TR>
+    <TD ALIGN="right">Destination prefix:</TD>
+    <TD><INPUT TYPE="text" NAME="prefix"></TD>
+  </TR>
+  <TR>
+    <TD></TD>
+    <TD><FONT SIZE="-1"><I>(country code or country code and prefix)</I></FONT></TD>
+    <TD><FONT SIZE="-1"><I>(leave blank to show all destinations)</I></FONT></TD>
+  </TR>
+<% } %>
+
 <TR>
   <TD ALIGN="right">From: </TD>
   <TD>

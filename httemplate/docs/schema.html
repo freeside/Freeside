@@ -1,4 +1,4 @@
-<head>
+
   <title>Schema reference</title>
 </head>
 <body>
@@ -452,6 +452,33 @@
         <li>usergroupnum - primary key
         <li>svcnum - <a href="#svc_acct">account</a>
         <li>groupname
+      </ul>
+    <li><a name="rate" href="man/FS/rate.html">rate</a> - Call rate plans
+      <ul>
+        <li>ratenum - primary key
+        <li>ratename
+      </ul>
+    <li><a name="rate_detail" href="man/FS/rate_detail.html">rate_detail</a> - Call rate detail
+      <ul>
+        <li>ratenum - <a href="#rate">rate plan</a>
+        <li>orig_regionnum - call origination <a href="#rate_region">region</a>
+        <li>dest_regionnum - call destination <a href="#rate_region">region</a>
+        <li>min_included - included minutes
+        <li>min_charge - charge per minute
+        <li>sec_granularity - granularity in seconds, i.e. 6 or 60
+      </ul>
+    <li><a name="rate_region" href="man/FS/rate_region.html">rate_region</a> - Call rate region
+      <ul>
+        <li>regionnum - primary key
+        <li>regionname
+      </ul>
+    <li><a name="rate_prefix" href="man/FS/rate_prefix.html">rate_prefix</a> - Call rate prefix
+      <ul>
+        <li>prefixnum - primary key
+        <li>regionnum <a href="#rate_region">rate region</a>
+        <li>countrycode
+        <li>npa
+        <li>nxx
       </ul>
     <li><a name="msgcat" href="man/FS/msgcat.html">msgcat</a> - i18n message catalog
       <ul>

@@ -1,4 +1,4 @@
-package FS::table_name;
+package FS::rate_detail;
 
 use strict;
 use vars qw( @ISA );
@@ -8,14 +8,14 @@ use FS::Record qw( qsearch qsearchs );
 
 =head1 NAME
 
-FS::table_name - Object methods for table_name records
+FS::rate_detail - Object methods for rate_detail records
 
 =head1 SYNOPSIS
 
-  use FS::table_name;
+  use FS::rate_detail;
 
-  $record = new FS::table_name \%hash;
-  $record = new FS::table_name { 'column' => 'value' };
+  $record = new FS::rate_detail \%hash;
+  $record = new FS::rate_detail { 'column' => 'value' };
 
   $error = $record->insert;
 
@@ -27,12 +27,22 @@ FS::table_name - Object methods for table_name records
 
 =head1 DESCRIPTION
 
-An FS::table_name object represents an example.  FS::table_name inherits from
-FS::Record.  The following fields are currently supported:
+An FS::rate_detail object represents an call plan rate.  FS::rate_detail
+inherits from FS::Record.  The following fields are currently supported:
 
 =over 4
 
-=item field - description
+=item ratenum - rate plan (see L<FS::rate>)
+
+=item orig_regionnum - call origination region
+
+=item dest_regionnum - call destination region
+
+=item min_included - included minutes
+
+=item min_charge - charge per minute
+
+=item sec_granularity - granularity in seconds, i.e. 6 or 60
 
 =back
 
@@ -51,7 +61,7 @@ points to.  You can ask the object for a copy with the I<hash> method.
 
 # the new method can be inherited from FS::Record, if a table method is defined
 
-sub table { 'table_name'; }
+sub table { 'rate_detail'; }
 
 =item insert
 
@@ -94,8 +104,12 @@ sub check {
   my $self = shift;
 
   my $error = 
-    $self->ut_numbern('primary_key')
-    || $self->ut_number('validate_other_fields')
+       $self->ut_foreign_key('ratenum', 'rate', 'ratenum')
+    || $self->ut_foreign_keyn('orig_regionnum', 'rate_region', 'regionnum' )
+    || $self->ut_foreign_key('dest_regionnum', 'rate_region', 'regionnum' )
+    || $self->ut_number('min_included')
+    || $self->ut_money('min_charge')
+    || $self->ut_number('sec_granularity')
   ;
   return $error if $error;
 
@@ -106,11 +120,10 @@ sub check {
 
 =head1 BUGS
 
-The author forgot to customize this manpage.
-
 =head1 SEE ALSO
 
-L<FS::Record>, schema.html from the base documentation.
+L<FS::rate>, L<FS::rate_region>, L<FS::Record>,
+schema.html from the base documentation.
 
 =cut
 

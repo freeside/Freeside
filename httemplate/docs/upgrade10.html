@@ -190,6 +190,39 @@ CREATE TABLE part_pkg_option (
 CREATE INDEX part_pkg_option1 ON part_export_option ( pkgpart );
 CREATE INDEX part_pkg_option2 ON part_export_option ( optionname );
 
+CREATE TABLE rate (
+    ratenum serial NOT NULL,
+    reatename varchar(80) NOT NULL,
+    PRIMARY KEY (ratenum)
+);
+
+CREATE TABLE rate_detail (
+    ratenum int NOT NULL,
+    orig_regionnum int NULL,
+    dest_regionnum int NOT NULL,
+    min_included int NOT NULL,
+    min_charge decimal(10,2) NOT NULL,
+    sec_granularity int NOT NULL
+);
+CREATE UNIQUE INDEX rate_detail1 ON rate_detail ( ratenum, orig_regionnum, dest_regionnum );
+
+CREATE TABLE rate_region (
+    regionnum serial NOT NULL,
+    regionname varchar(80) NOT NULL,
+    PRIMARY KEY (regionnum)
+);
+
+CREATE TABLE rate_prefix (
+    prefixnum serial NOT NULL,
+    regionnum int NOT NULL, 
+    countrycode varchar(3) NOT NULL,
+    npa varchar(4) NULL,
+    nxx varchar(3) NULL,
+    PRIMARY KEY (prefixnum)
+);
+CREATE INDEX rate_prefix1 ON rate_prefix ( countrycode );
+CREATE INDEX rate_prefix2 ON rate_prefix ( regionnum );
+
 DROP INDEX cust_bill_pkg1;
 
 ALTER TABLE cust_bill_pkg ADD itemdesc varchar(80) NULL;
@@ -256,7 +289,7 @@ optionally:
 mandatory again:
 
 dbdef-create username
-create-history-tables username cust_bill_pkg_detail router part_svc_router addr_block svc_broadband acct_snarf svc_external cust_pay_refund cust_pay_void
+create-history-tables username cust_bill_pkg_detail router part_svc_router addr_block svc_broadband acct_snarf svc_external cust_pay_refund cust_pay_void part_pkg_option rate rate_detail rate_region rate_prefix
 dbdef-create username
 
 apache - fix <Files> sections to include .html also

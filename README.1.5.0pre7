@@ -1,0 +1,37 @@
+CREATE TABLE rate (
+    ratenum serial NOT NULL,
+    ratename varchar(80) NOT NULL,
+    PRIMARY KEY (ratenum)
+);
+
+CREATE TABLE rate_detail (
+    ratenum int NOT NULL,
+    orig_regionnum int NULL,
+    dest_regionnum int NOT NULL,
+    min_included int NOT NULL,
+    min_charge decimal(10,2) NOT NULL,
+    sec_granularity int NOT NULL
+);
+CREATE UNIQUE INDEX rate_detail1 ON rate_detail ( ratenum, orig_regionnum, dest_regionnum );
+
+CREATE TABLE rate_region (
+    regionnum serial NOT NULL,
+    regionname varchar(80) NOT NULL,
+    PRIMARY KEY (regionnum)
+);
+
+CREATE TABLE rate_prefix (
+    prefixnum serial NOT NULL,
+    regionnum int NOT NULL, 
+    countrycode varchar(3) NOT NULL,
+    npa varchar(4) NULL,
+    nxx varchar(3) NULL,
+    PRIMARY KEY (prefixnum)
+);
+CREATE INDEX rate_prefix1 ON rate_prefix ( countrycode );
+CREATE INDEX rate_prefix2 ON rate_prefix ( regionnum );
+
+dbdef-create username
+create-history-tables username rate rate_detail rate_region rate_prefix
+dbdef-create username
+

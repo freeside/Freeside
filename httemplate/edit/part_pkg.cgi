@@ -295,8 +295,11 @@ my $widget = new HTML::Widgets::SelectLayers(
                      ? $plandata{$field}
                      : $href->{$field}{'default'} ).
                  qq!" onChange="fchanged(this)">!;
-      } elsif ( $href->{$field}{'type'} eq 'select_multiple' ) {
-        $html .= qq!<SELECT MULTIPLE NAME="$field" onChange="fchanged(this)">!;
+      } elsif ( $href->{$field}{'type'} =~ /^select/ ) {
+        $html .= '<SELECT';
+        $html .= ' MULTIPLE'
+          if $href->{$field}{'type'} eq 'select_multiple';
+        $html .= qq! NAME="$field" onChange="fchanged(this)">!;
         foreach my $record (
           qsearch( $href->{$field}{'select_table'},
                    $href->{$field}{'select_hash'}   )

@@ -12,8 +12,20 @@ tie %options, 'Tie::IxHash',
   'username' => { label=>'Database username' },
   'password' => { label=>'Database password' },
   'ignore_accounting' => {
-     type => 'checkbox',
-     label=>'Ignore accounting records from this database'
+    type  => 'checkbox',
+    label => 'Ignore accounting records from this database'
+  },
+  'hide_ip' => {
+    type  => 'checkbox',
+    label => 'Hide IP address information on session reports',
+  },
+  'hide_data' => {
+    type  => 'checkbox',
+    label => 'Hide download/upload information on session reports',
+  },
+  'show_called_station' => {
+    type  => 'checkbox',
+    label => 'Show the Called-Station-ID on session reports',
   },
 ;
 
@@ -335,7 +347,7 @@ sub sqlradius_connect {
 
 #--
 
-=item usage_sessions TIMESTAMP_START TIMESTAMP_END [ SVC_ACCT [ IP [ SQL_SELECT ] ] ]
+=item usage_sessions TIMESTAMP_START TIMESTAMP_END [ SVC_ACCT [ IP [ PREFIX [ SQL_SELECT ] ] ] ]
 
 TIMESTAMP_START and TIMESTAMP_END are specified as UNIX timestamps; see
 L<perlfunc/"time">.  Also see L<Time::Local> and L<Date::Parse> for conversion
@@ -344,6 +356,9 @@ functions.
 SVC_ACCT, if specified, limits the results to the specified account.
 
 IP, if specified, limits the results to the specified IP address.
+
+PREFIX, if specified, limits the results to records with a matching
+Called-Station-ID.
 
 #SQL_SELECT defaults to * if unspecified.  It can be useful to set it to 
 #SUM(acctsessiontime) or SUM(AcctInputOctets), etc.
@@ -367,6 +382,8 @@ Returns an arrayref of hashrefs with the following fields:
 
 =item acctoutputoctets
 
+=item calledstationid
+
 =back
 
 =cut
@@ -377,6 +394,7 @@ sub usage_sessions {
   my( $self, $start, $end ) = splice(@_, 0, 3);
   my $svc_acct = @_ ? shift : '';
   my $ip = @_ ? shift : '';
+  my $prefix = @_ ? shift : '';
   #my $select = @_ ? shift : '*';
 
   $end ||= 2147483647;
@@ -401,6 +419,7 @@ sub usage_sessions {
   my @fields = (
                  qw( username realm framedipaddress
                      acctsessiontime acctinputoctets acctoutputoctets
+                     calledstationid
                    ),
                  "$str2time acctstarttime ) as acctstarttime",
                  "$str2time acctstoptime ) as acctstoptime",
@@ -423,6 +442,11 @@ sub usage_sessions {
   if ( length($ip) ) {
     $where .= ' FramedIPAddress = ? AND';
     push @param, $ip;
+  }
+
+  if ( length($prefix) ) {
+    #assume sip: for now, else things get ugly trying to match /^\w+:$prefix/
+    $where .= " CalledStationID LIKE 'sip:$prefix\%' AND";
   }
 
   push @param, $start, $end;

@@ -1,21 +1,22 @@
-package FS::table_name;
+package FS::rate_prefix;
 
 use strict;
 use vars qw( @ISA );
 use FS::Record qw( qsearch qsearchs );
+use FS::rate_region;
 
 @ISA = qw(FS::Record);
 
 =head1 NAME
 
-FS::table_name - Object methods for table_name records
+FS::rate_prefix - Object methods for rate_prefix records
 
 =head1 SYNOPSIS
 
-  use FS::table_name;
+  use FS::rate_prefix;
 
-  $record = new FS::table_name \%hash;
-  $record = new FS::table_name { 'column' => 'value' };
+  $record = new FS::rate_prefix \%hash;
+  $record = new FS::rate_prefix { 'column' => 'value' };
 
   $error = $record->insert;
 
@@ -27,12 +28,20 @@ FS::table_name - Object methods for table_name records
 
 =head1 DESCRIPTION
 
-An FS::table_name object represents an example.  FS::table_name inherits from
-FS::Record.  The following fields are currently supported:
+An FS::rate_prefix object represents an call rating prefix.  FS::rate_prefix
+inherits from FS::Record.  The following fields are currently supported:
 
 =over 4
 
-=item field - description
+=item prefixnum - primary key
+
+=item regionnum - call ration region (see L<FS::rate_region>)
+
+=item countrycode
+
+=item npa
+
+=item nxx
 
 =back
 
@@ -42,7 +51,7 @@ FS::Record.  The following fields are currently supported:
 
 =item new HASHREF
 
-Creates a new example.  To add the example to the database, see L<"insert">.
+Creates a new prefix.  To add the prefix to the database, see L<"insert">.
 
 Note that this stores the hash reference, not a distinct copy of the hash it
 points to.  You can ask the object for a copy with the I<hash> method.
@@ -51,7 +60,7 @@ points to.  You can ask the object for a copy with the I<hash> method.
 
 # the new method can be inherited from FS::Record, if a table method is defined
 
-sub table { 'table_name'; }
+sub table { 'rate_prefix'; }
 
 =item insert
 
@@ -81,7 +90,7 @@ returns the error, otherwise returns false.
 
 =item check
 
-Checks all fields to make sure this is a valid example.  If there is
+Checks all fields to make sure this is a valid prefix.  If there is
 an error, returns the error, otherwise returns false.  Called by the insert
 and replace methods.
 
@@ -93,24 +102,36 @@ and replace methods.
 sub check {
   my $self = shift;
 
-  my $error = 
-    $self->ut_numbern('primary_key')
-    || $self->ut_number('validate_other_fields')
+  my $error =
+       $self->ut_numbern('prefixnum')
+    || $self->ut_foreign_key('regionnum', 'rate_region', 'regionnum' )
+    || $self->ut_number('countrycode')
+    || $self->ut_numbern('npa')
+    || $self->ut_numbern('nxx')
   ;
   return $error if $error;
 
   $self->SUPER::check;
 }
 
+=item rate_region
+
+Returns the rate region (see L<FS::rate_region>) for this prefix.
+
+=cut
+
+sub rate_region {
+  my $self = shift;
+  qsearch('rate_region', { 'regionnum' => $self->regionnum } );
+}
+
 =back
 
 =head1 BUGS
 
-The author forgot to customize this manpage.
-
 =head1 SEE ALSO
 
-L<FS::Record>, schema.html from the base documentation.
+L<FS::rate_region>, L<FS::Record>, schema.html from the base documentation.
 
 =cut
 

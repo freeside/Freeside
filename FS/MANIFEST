@@ -105,6 +105,7 @@ FS/part_pkg/sql_external.pm
 FS/part_pkg/sql_generic.pm
 FS/part_pkg/sqlradacct_hour.pm
 FS/part_pkg/subscription.pm
+FS/part_pkg/voip_sqlradacct.pm
 FS/part_pop_local.pm
 FS/part_referral.pm
 FS/part_svc.pm
@@ -112,6 +113,10 @@ FS/part_svc_column.pm
 FS/part_svc_router.pm
 FS/part_virtual_field.pm
 FS/pkg_svc.pm
+FS/rate.pm
+FS/rate_detail.pm
+FS/rate_region.pm
+FS/rate_prefix.pm
 FS/svc_Common.pm
 FS/svc_acct.pm
 FS/svc_acct_pop.pm
@@ -213,6 +218,7 @@ t/part_pkg-sql_external.t
 t/part_pkg-sql_generic.t
 t/part_pkg-sqlradacct_hour.t
 t/part_pkg-subscription.t
+t/part_pkg-voip_sqlradacct.t
 t/part_pop_local.t
 t/part_referral.t
 t/part_svc.t
@@ -220,6 +226,10 @@ t/part_svc_column.t
 t/pkg_svc.t
 t/port.t
 t/prepay_credit.t
+t/rate.t
+t/rate_detail.t
+t/rate_region.t
+t/rate_prefix.t
 t/radius_usergroup.t
 t/session.t
 t/svc_acct.t

@@ -51,6 +51,15 @@
     $ip = $1;
   }
 
+  my $prefix = $cgi->param('prefix');
+  $prefix =~ s/\D//g;
+  if ( $prefix =~ /^(\d+)$/ ) {
+    $prefix = $1;
+    $prefix = "011$prefix" unless $prefix =~ /^1/;
+  } else {
+    $prefix = '';
+  }
+
   ###
   # field formatting subroutines
   ###
@@ -221,11 +230,30 @@
   # and finally, display the thing
   ### 
 
-  foreach my $part_export ( map $_->rebless, 
+  foreach my $part_export (
+    #grep $_->can('usage_sessions'), qsearch( 'part_export' )
     qsearch( 'part_export', { 'exporttype' => 'sqlradius' } ),
     qsearch( 'part_export', { 'exporttype' => 'sqlradius_withdomain' } )
   ) {
     %user2svc_acct = ();
+
+    my $efields = tie my %efields, 'Tie::IxHash', %fields;
+    delete $efields{'framedipaddress'} if $part_export->option('hide_ip');
+    if ( $part_export->option('hide_data') ) {
+      delete $efields{$_} foreach qw(acctinputoctets acctoutputoctets);
+    }
+    if ( $part_export->option('show_called_station') ) {
+      $efields->Splice(1, 0,
+        'calledstationid' => {
+                               'name'   => 
+                               'attrib' => 'Called-Station-ID',
+                               'fmt'    =>
+                                 sub { length($_[0]) ? shift : '&nbsp'; },
+                               'align'  => 'left',
+                             },
+      );
+    }
+
 %>
 
 <%= $part_export->exporttype %> to <%= $part_export->machine %><BR>
@@ -239,8 +267,10 @@
   <% } %>
 </TR>
 <% foreach my $session (
-  @{ $part_export->usage_sessions( $beginning, $ending, $cgi_svc_acct, $ip ) }
-) { %>
+     @{ $part_export->usage_sessions(
+          $beginning, $ending, $cgi_svc_acct, $ip, $prefix, ) }
+   ) {
+%>
   <TR>
     <% foreach my $field ( keys %fields ) { %>
       <TD ALIGN="<%= $fields{$field}->{align} %>">

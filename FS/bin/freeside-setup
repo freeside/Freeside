@@ -270,7 +270,7 @@ foreach my $country ( sort map uc($_), all_country_codes ) {
 
 #billing events
 foreach my $aref ( 
-  [ 'COMP', 'Comp invoice', '$cust_bill->comp();', 30, 'comp' ],
+  #[ 'COMP', 'Comp invoice', '$cust_bill->comp();', 30, 'comp' ],
   [ 'CARD', 'Batch card', '$cust_bill->batch_card();', 40, 'batch-card' ],
   [ 'BILL', 'Send invoice', '$cust_bill->send();', 50, 'send' ],
   [ 'DCRD', 'Send invoice', '$cust_bill->send();', 50, 'send' ],
@@ -1159,6 +1159,53 @@ sub tables_hash_hack {
       'unique'      => [],
       'index'       => [ [ 'pkgpart' ], [ 'optionname' ] ],
     },
+
+    'rate' => {
+      'columns' => [
+        'ratenum',  'serial', '', '',
+        'ratename', 'varchar', '', $char_d,
+      ],
+      'primary_key' => 'ratenum',
+      'unique'      => [],
+      'index'       => [],
+    },
+
+    'rate_detail' => {
+      'columns' => [
+        'ratenum',         'int',     '', '',
+        'orig_regionnum',  'int', 'NULL', '',
+        'dest_regionnum',  'int',     '', '',
+        'min_included',    'int',     '', '',
+        'min_charge',      @money_type,
+        'sec_granularity', 'int',     '', '',
+        #time period (link to table of periods)?
+      ],
+      'primary_key' => '',
+      'unique'      => [ [ 'ratenum', 'orig_regionnum', 'dest_regionnum' ] ],
+      'index'       => [],
+    },
+
+    'rate_region' => {
+      'columns' => [
+        'regionnum',   'serial',      '', '',
+        'regionname',  'varchar',     '', $char_d,
+      'primary_key' => 'regionnum',
+      'unique'      => [].
+      'index'       => [],
+    },
+
+    'rate_prefix' => {
+      'columns' => [
+        'prefixnum',   'serial',    '', '',
+        'regionnum',   'int',       '', '',,
+        'countrycode', 'varchar',     '', 3,
+        'npa',         'varchar', 'NULL', 4, #not 3?
+        'nxx',         'varchar', 'NULL', 3,
+      ],
+      'primary_key' => 'prefixnum',
+      'unique'      => [].
+      'index'       => [ [ 'countrycode' ], [ 'regionnum' ] ],
+
 
   );
 

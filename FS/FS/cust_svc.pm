@@ -555,6 +555,7 @@ sub get_session_history {
 
   #$attrib ???
 
+  #my @part_export = $cust_svc->part_svc->part_export->can('usage_sessions');
   my @part_export = $self->part_svc->part_export('sqlradius');
   push @part_export, $self->part_svc->part_export('sqlradius_withdomain');
   die "no sqlradius or sqlradius_withdomain export configured for this".

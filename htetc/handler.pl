@@ -154,6 +154,9 @@ sub handler
       use FS::part_export_option;
       use FS::export_svc;
       use FS::msgcat;
+      use FS::rate;
+      use FS::rate_region;
+      use FS::rate_prefix;
 
       if ( %%%RT_ENABLED%%% ) {
         eval '

@@ -71,6 +71,9 @@ use FS::part_export;
 use FS::part_export_option;
 use FS::export_svc;
 use FS::msgcat;
+use FS::rate;
+use FS::rate_region;
+use FS::rate_prefix;
 
 sub Script_OnStart {
   $Response->AddHeader('Cache-control' => 'no-cache');
