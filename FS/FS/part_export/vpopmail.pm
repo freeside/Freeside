@@ -217,7 +217,7 @@ sub vpopmail_sync {
         'STDOUT: '. join(" / ", $rsync->out);
   }
 
-  eval "use Net::SSH;";
+  eval "use Net::SSH qw(ssh);";
   die $@ if $@;
 
   ssh("vpopmail\@$machine", $restart) if $restart;
