@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: cust_main.cgi,v 1.14 2001-10-30 14:54:07 ivan Exp $ -->
+#<!-- $Id: cust_main.cgi,v 1.15 2001-12-21 21:40:24 ivan Exp $ -->
 
 use strict;
 use vars qw ( $cgi $query $custnum $cust_main $hashref $agent $referral 
@@ -470,6 +470,8 @@ foreach $item (sort keyfield_numerically @history) {
   $refund ||= 0;
   $balance += $charge - $payment;
   $balance -= $credit - $refund;
+  $balance = sprintf("%.2f", $balance);
+  $balance =~ s/^\-0\.00$/0.00/; #yay ieee fp
 
   print "<TR><TD><FONT SIZE=-1>",time2str("%D",$date),"</FONT></TD>",
 	"<TD><FONT SIZE=-1>$desc</FONT></TD>",
@@ -485,7 +487,7 @@ foreach $item (sort keyfield_numerically @history) {
 	"<TD><FONT SIZE=-1>",
         ( $refund ? "\$".sprintf("%.2f",$refund) : '' ),
         "</FONT></TD>",
-	"<TD><FONT SIZE=-1>\$" . sprintf("%.2f",$balance),
+	"<TD><FONT SIZE=-1>\$" . $balance,
         "</FONT></TD>",
         "\n";
 }

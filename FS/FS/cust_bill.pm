@@ -297,6 +297,8 @@ sub owed {
   $balance -= $_->amount foreach ( $self->cust_bill_pay );
   $balance -= $_->amount foreach ( $self->cust_credited );
   $balance = sprintf( "%.2f", $balance);
+  $balance =~ s/^\-0\.00$/0.00/; #yay ieee fp
+  $balance;
 }
 
 =item print_text [TIME];
@@ -493,7 +495,7 @@ sub print_text {
 
 =head1 VERSION
 
-$Id: cust_bill.pm,v 1.13 2001-12-17 23:59:56 ivan Exp $
+$Id: cust_bill.pm,v 1.14 2001-12-21 21:40:24 ivan Exp $
 
 =head1 BUGS
 
