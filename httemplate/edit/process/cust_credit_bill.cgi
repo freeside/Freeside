@@ -17,7 +17,7 @@ if ($cgi->param('invnum') =~ /^Refund$/) {
     'reason'  => $cust_credit->reason,
     'refund'  => $cgi->param('amount'),
     'payby'   => 'BILL',
-    '_date'   => $cgi->param('_date'),
+    #'_date'   => $cgi->param('_date'),
     'payinfo' => 'Cash',
     'crednum' => $crednum,
   } );
