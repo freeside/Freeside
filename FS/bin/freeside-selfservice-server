@@ -8,7 +8,8 @@
 # Proc::Daemon or somesuch
 
 use strict;
-use vars qw( $Debug %kids $kids $max_kids $shutdown $log_file $ssh_pid );
+use vars qw( $Debug %kids $kids $max_kids $shutdown $log_file $ssh_pid
+             $keepalives );
 use subs qw( lock_write unlock_write );
 use Fcntl qw(:flock);
 use POSIX qw(:sys_wait_h setsid);
@@ -29,6 +30,7 @@ $Debug = 1; # >= 2 will log packet contents, including potentially compromising
 
 $shutdown = 0;
 $max_kids = '10'; #?
+$keepalives = 0; #let clientd turn it on, so we don't barf on old ones
 $kids = 0;
 
 my $user = shift or die &usage;
@@ -58,6 +60,7 @@ while (1) {
 
   warn "entering main loop\n" if $Debug;
   my $undisp = 0;
+  my $keepalive_count = 0;
   my $s = IO::Select->new( $reader );
   while (1) {
 
@@ -68,6 +71,10 @@ while (1) {
     my @handles = $s->can_read(5);
     unless ( @handles ) {
       &shutdown if $shutdown;
+      if ( $keepalives && $keepalive_count++ > 10 ) {
+        $keepalive_count = 0;
+        nstore_fd( { _token => '_keepalive' }, $writer );
+      }
       next;
     }
 
@@ -90,6 +97,12 @@ while (1) {
     warn "packet received\n".
          join('', map { " $_=>$packet->{$_}\n" } keys %$packet )
       if $Debug > 1;
+
+    if ( $packet->{_packet} eq '_enable_keepalive' ) {
+      warn "enabling keep alives\n" if $Debug;
+      $keepalives=1;
+      next;
+    }
 
     #prevent runaway forking
     my $warnkids = 0;

@@ -20,7 +20,8 @@ my $tag = scalar(@ARGV) ? '.'.shift : '';
 
 use vars qw( $Debug );
 $Debug = 2; #2 will turn on child logging, 3 will log packet contents,
-            #including potentially compromising information
+            #including potentially compromising information, 4 will log
+            #receipts of all packets from server including keepalives (big!)
 
 my $socket = "/usr/local/freeside/selfservice_socket$tag";
 my $pid_file = "$socket.pid";
@@ -65,6 +66,9 @@ close PIDFILE;
 #sub REAPER { $waitedpid = wait; $SIG{CHLD} = \&REAPER; }
 #$SIG{CHLD} =  \&REAPER;
 
+warn "enabling keep alives\n" if $Debug;
+nstore_fd( { _packet => '_enable_keepalive' } , \*STDOUT );
+
 warn "entering main loop\n" if $Debug;
 
 my %kids;
@@ -101,10 +105,16 @@ while (1) {
 
     if ( $handle == \*STDIN ) {
 
-      warn "receiving packet from server\n" if $Debug;
+      warn "receiving packet from server\n" if $Debug > 3;
 
       my $packet = fd_retrieve(\*STDIN);
       my $token = $packet->{'_token'};
+
+      if ( $token eq '_keepalive' ) {
+        $undisp = 1;
+        next;
+      }
+
       warn "received packet from server with token $token\n".
            ( $Debug > 2
              ? join('', map { " $_=>$packet->{$_}\n" } keys %$packet )
