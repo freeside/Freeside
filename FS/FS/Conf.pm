@@ -174,7 +174,7 @@ sub config_items {
   my $self = shift; 
   #quelle kludge
   @config_items,
-  map { 
+  ( map { 
         my $basename = basename($_);
         $basename =~ /^(.*)$/;
         $basename = $1;
@@ -185,7 +185,19 @@ sub config_items {
                            'type'        => 'textarea',
                          }
       } glob($self->dir. '/invoice_template_*')
-  ;
+  ),
+  ( map { 
+        my $basename = basename($_);
+        $basename =~ /^(.*)$/;
+        $basename = $1;
+        new FS::ConfItem {
+                           'key'         => $basename,
+                           'section'     => 'billing',
+                           'description' => 'Alternate LaTeX template for invoices.  See the <a href="../docs/billing.html">billing documentation</a> for details.',
+                           'type'        => 'textarea',
+                         }
+      } glob($self->dir. '/invoice_latex_*')
+  );
 }
 
 =back
@@ -447,6 +459,27 @@ httemplate/docs/config.html
     'key'         => 'invoice_template',
     'section'     => 'required',
     'description' => 'Required template file for invoices.  See the <a href="../docs/billing.html">billing documentation</a> for details.',
+    'type'        => 'textarea',
+  },
+
+  {
+    'key'         => 'invoice_latex',
+    'section'     => 'billing',
+    'description' => 'Optional LaTeX template for typeset PostScript invoices.',
+    'type'        => 'textarea',
+  },
+
+  {
+    'key'         => 'invoice_latexnotes',
+    'section'     => 'billing',
+    'description' => 'Notes section for LaTeX typeset PostScript invoices.',
+    'type'        => 'textarea',
+  },
+
+  {
+    'key'         => 'invoice_latexfooter',
+    'section'     => 'billing',
+    'description' => 'Footer for LaTeX typeset PostScript invoices.',
     'type'        => 'textarea',
   },
 

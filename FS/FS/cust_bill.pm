@@ -784,14 +784,7 @@ sub print_text {
   }
 
   #balance due
-  my $balance_due_msg = 'Balance Due';
-
-  if ( $conf->config('invoice_default_terms') =~ /^\s*Net\s*(\d+)\s*$/ ) {
-    $balance_due_msg .=
-      ' - Please pay by '. time2str("%x", $self->_date + ($1*86400) );
-  } elsif ( $conf->config('invoice_default_terms') ) {
-    $balance_due_msg .= ' - '. $conf->config('invoice_default_terms');
-  }
+  my $balance_due_msg = $self->balance_due_msg;
 
   push @buf,['','-----------'];
   push @buf,[$balance_due_msg, $money_char. 
@@ -920,36 +913,31 @@ sub print_ps {
   @buf = ();
 
   #create the template
-  my $templatefile = 'invoice_template_latex';
+  my $templatefile = 'invoice_latex';
   $templatefile .= "_$template" if $template;
   my @invoice_template = $conf->config($templatefile)
     or die "cannot load config file $templatefile";
 
   my %invoice_data = (
-    'invnum'   => $self->invnum,
-    'date'     => time2str('%b %o, %Y', $self->_date),
-    'agent'    => $cust_main->agent->agent,
-    'payname'  => $cust_main->payname,
-    'company'  => $cust_main->company,
-    'address1' => $cust_main->address1,
-    'address2' => $cust_main->address2,
-    'city'     => $cust_main->city,
-    'state'    => $cust_main->state,
-    'zip'      => $cust_main->zip,
-    'country'  => $cust_main->country,
-    'footer'   => <<'END', #should come from config value
-Ivan Kohler\\
-1339 Hayes St.\\
-San Francisco, CA~~94117\\
-ivan@sisd.com~~~~+1 415 462 1624\\
-Freeside - open-source billing - http://www.sisd.com/freeside\\
-END
-
+    'invnum'       => $self->invnum,
+    'date'         => time2str('%b %o, %Y', $self->_date),
+    'agent'        => $cust_main->agent->agent,
+    'payname'      => $cust_main->payname,
+    'company'      => $cust_main->company,
+    'address1'     => $cust_main->address1,
+    'address2'     => $cust_main->address2,
+    'city'         => $cust_main->city,
+    'state'        => $cust_main->state,
+    'zip'          => $cust_main->zip,
+    'country'      => $cust_main->country,
+    'footer'       => join("\n", $conf->config('invoice_latexfooter') ),
     'quantity'     => 1,
-
+    'terms'        => $conf->config('invoice_default_terms') || 'Payable upon receipt',
+    'notes'        => join("\n", $conf->config('invoice_latexnotes') ),
   );
 
-  #$invoice_data{'footer'} =~ s/\n+$//;
+  $invoice_data{'footer'} =~ s/\n+$//;
+  $invoice_data{'notes'} =~ s/\n+$//;
 
   my $countrydefault = $conf->config('countrydefault') || 'US';
   $invoice_data{'country'} = '' if $invoice_data{'country'} eq $countrydefault;
@@ -971,8 +959,8 @@ END
               !~ /^%%EndDetail\s*$/                            ) {
         push @line_item, $line_item_line;
       }
-      #foreach my $line_item ( $self->_items ) {
-      foreach my $line_item ( $self->_items_pkg ) {
+      foreach my $line_item ( $self->_items ) {
+      #foreach my $line_item ( $self->_items_pkg ) {
         $invoice_data{'ref'} = $line_item->{'pkgnum'};
         $invoice_data{'description'} = $line_item->{'description'};
         if ( exists $line_item->{'ext_description'} ) {
@@ -1004,21 +992,50 @@ END
               @total_item;
       }
 
-      $invoice_data{'total_item'} = '\textbf{Total}';
-      $invoice_data{'total_amount'} =
-        '\textbf{\dollar '. sprintf('%.2f', $self->owed ). '}';
-      push @total_fill,
-        map { my $b=$_; $b =~ s/\$(\w+)/$invoice_data{$1}/eg; $b }
-            @total_item;
-
       if ( $taxtotal ) {
         $invoice_data{'total_item'} = 'Sub-total';
         $invoice_data{'total_amount'} =
-          '\dollar '. sprintf('%.2f', $self->owed - $taxtotal );
+          '\dollar '. sprintf('%.2f', $self->charged - $taxtotal );
         unshift @total_fill,
           map { my $b=$_; $b =~ s/\$(\w+)/$invoice_data{$1}/eg; $b }
               @total_item;
       }
+
+      $invoice_data{'total_item'} = '\textbf{Total}';
+      $invoice_data{'total_amount'} =
+        '\textbf{\dollar '. sprintf('%.2f', $self->charged + $pr_total ). '}';
+      push @total_fill,
+        map { my $b=$_; $b =~ s/\$(\w+)/$invoice_data{$1}/eg; $b }
+            @total_item;
+
+      #foreach my $thing ( sort { $a->_date <=> $b->_date } $self->_items_credits, $self->_items_payments
+
+      # credits
+      foreach my $credit ( $self->_items_credits ) {
+        $invoice_data{'total_item'} = $credit->{'description'};
+        #$credittotal
+        $invoice_data{'total_amount'} = '-\dollar '. $credit->{'amount'};
+        push @total_fill, 
+          map { my $b=$_; $b =~ s/\$(\w+)/$invoice_data{$1}/eg; $b }
+              @total_item;
+      }
+
+      # payments
+      foreach my $payment ( $self->_items_payments ) {
+        $invoice_data{'total_item'} = $payment->{'description'};
+        #$paymenttotal
+        $invoice_data{'total_amount'} = '-\dollar '. $payment->{'amount'};
+        push @total_fill, 
+          map { my $b=$_; $b =~ s/\$(\w+)/$invoice_data{$1}/eg; $b }
+              @total_item;
+      }
+
+      $invoice_data{'total_item'} = '\textbf{'. $self->balance_due_msg. '}';
+      $invoice_data{'total_amount'} =
+        '\textbf{\dollar '. sprintf('%.2f', $self->owed + $pr_total ). '}';
+      push @total_fill,
+        map { my $b=$_; $b =~ s/\$(\w+)/$invoice_data{$1}/eg; $b }
+            @total_item;
 
       push @filled_in, @total_fill;
 
@@ -1052,7 +1069,7 @@ END
   #system('dvips', '-t', 'letter', "$file.dvi", "$file.ps");
   system('dvips', '-t', 'letter', "$file.dvi" );
 
-  open(POSTSCRIPT, "<$file.ps") or die "can't open $file.ps: $!\n";
+  open(POSTSCRIPT, "<$file.ps") or die "can't open $file.ps (probable error in LaTeX template): $!\n";
 
   #rm $file.dvi $file.log $file.aux
   #unlink("$file.dvi", "$file.log", "$file.aux", "$file.ps");
@@ -1071,11 +1088,23 @@ END
 
 #utility methods for print_*
 
+sub balance_due_msg {
+  my $self = shift;
+  my $msg = 'Balance Due';
+  if ( $conf->config('invoice_default_terms') =~ /^\s*Net\s*(\d+)\s*$/ ) {
+    $msg .= ' - Please pay by '. time2str("%x", $self->_date + ($1*86400) );
+  } elsif ( $conf->config('invoice_default_terms') ) {
+    $msg .= ' - '. $conf->config('invoice_default_terms');
+  }
+  $msg;
+}
+
 sub _items {
   my $self = shift;
   my @display = scalar(@_)
                 ? @_
-                : qw( _items_pkg );
+                : qw( _items_previous _items_pkg );
+                #: qw( _items_pkg );
                 #: qw( _items_previous _items_pkg _items_tax _items_credits _items_payments );
   my @b = ();
   foreach my $display ( @display ) {
@@ -1090,13 +1119,28 @@ sub _items_previous {
   my( $pr_total, @pr_cust_bill ) = $self->previous; #previous balance
   my @b = ();
   foreach ( @pr_cust_bill ) {
-    push @b, [
-      "Previous Balance, Invoice #". $_->invnum. 
-                 " (". time2str("%x",$_->_date). ")",
-      $money_char. sprintf("%10.2f",$_->owed)
-    ];
+    push @b, {
+      'description' => 'Previous Balance, Invoice \#'. $_->invnum. 
+                       ' ('. time2str('%x',$_->_date). ')',
+      #'pkgpart'     => 'N/A',
+      'pkgnum'      => 'N/A',
+      'amount'      => sprintf("%10.2f", $_->owed),
+    };
   }
   @b;
+
+  #{
+  #    'description'     => 'Previous Balance',
+  #    #'pkgpart'         => 'N/A',
+  #    'pkgnum'          => 'N/A',
+  #    'amount'          => sprintf("%10.2f", $pr_total ),
+  #    'ext_description' => [ map {
+  #                                 "Invoice ". $_->invnum.
+  #                                 " (". time2str("%x",$_->_date). ") ".
+  #                                 sprintf("%10.2f", $_->owed)
+  #                         } @pr_cust_bill ],
+
+  #};
 }
 
 sub _items_pkg {
@@ -1131,7 +1175,7 @@ sub _items_cust_bill_pkg {
         @d = $cust_bill_pkg->details if $cust_bill_pkg->recur == 0;
         push @b, {
           'description'     => $description,
-          'pkgpart'         => $part_pkg->pkgpart,
+          #'pkgpart'         => $part_pkg->pkgpart,
           'pkgnum'          => $cust_pkg->pkgnum,
           'amount'          => sprintf("%10.2f", $cust_bill_pkg->setup),
           'ext_description' => [ ( map { $_->[0]. ": ". $_->[1] }
@@ -1146,7 +1190,7 @@ sub _items_cust_bill_pkg {
           'description'     => "$pkg (" .
                                time2str('%x', $cust_bill_pkg->sdate). ' - '.
                                time2str('%x', $cust_bill_pkg->edate). ')',
-          'pkgpart'         => $part_pkg->pkgpart,
+          #'pkgpart'         => $part_pkg->pkgpart,
           'pkgnum'          => $cust_pkg->pkgnum,
           'amount'          => sprintf("%10.2f", $cust_bill_pkg->recur),
           'ext_description' => [ ( map { $_->[0]. ": ". $_->[1] }
@@ -1193,14 +1237,18 @@ sub _items_credits {
 
     #something more elaborate if $_->amount ne $_->cust_credit->credited ?
 
-    my $reason = substr($_->cust_credit->reason,0,32);
-    $reason .= '...' if length($reason) < length($_->cust_credit->reason);
+    my $reason = $_->cust_credit->reason;
+    #my $reason = substr($_->cust_credit->reason,0,32);
+    #$reason .= '...' if length($reason) < length($_->cust_credit->reason);
     $reason = " ($reason) " if $reason;
-    push @b,[
-      "Credit #". $_->crednum. " (". time2str("%x",$_->cust_credit->_date) .")".
-        $reason,
-      $money_char. sprintf("%10.2f",$_->amount)
-    ];
+    push @b, {
+      #'description' => 'Credit ref\#'. $_->crednum.
+      #                 " (". time2str("%x",$_->cust_credit->_date) .")".
+      #                 $reason,
+      'description' => 'Credit applied'.
+                       time2str("%x",$_->cust_credit->_date). $reason,
+      'amount'      => sprintf("%10.2f",$_->amount),
+    };
   }
   #foreach ( @cr_cust_credit ) {
   #  push @buf,[
@@ -1222,10 +1270,11 @@ sub _items_payments {
 
     #something more elaborate if $_->amount ne ->cust_pay->paid ?
 
-    push @b,[
-      "Payment received ". time2str("%x",$_->cust_pay->_date ),
-      $money_char. sprintf("%10.2f",$_->amount )
-    ];
+    push @b, {
+      'description' => "Payment received ".
+                       time2str("%x",$_->cust_pay->_date ),
+      'amount'      => sprintf("%10.2f", $_->amount )
+    };
   }
 
   @b;

@@ -11,7 +11,14 @@ my $cust_bill = qsearchs('cust_bill',{'invnum'=>$invnum});
 die "Can't find invoice!\n" unless $cust_bill;
 
         open(LPR,"|$lpr") or die "Can't open $lpr: $!";
-        print LPR $cust_bill->print_text; #( date )
+
+        if ( $conf->exists('invoice_latex') ) {
+          $cust_bill->print_ps;
+          #print LPR $cust_bill->print_ps; #( date )
+        } else {
+          print LPR $cust_bill->print_text; #( date )
+        }
+
         close LPR
           or die $! ? "Error closing $lpr: $!"
                        : "Exit status $? from $lpr";
