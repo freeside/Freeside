@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: cust_credit_bill.cgi,v 1.1 2001-09-01 21:52:20 jeff Exp $ -->
+#<!-- $Id: cust_credit_bill.cgi,v 1.2 2001-09-02 07:49:52 ivan Exp $ -->
 
 use strict;
 use vars qw( $cgi $query $custnum $invnum $otaker $p1 $crednum $_date $amount $reason $cust_credit );
@@ -40,7 +40,7 @@ $p1 = popurl(1);
 
 print $cgi->header( '-expires' => 'now' ), header("Apply Credit", '');
 print qq!<FONT SIZE="+1" COLOR="#ff0000">Error: !, $cgi->param('error'),
-      "</FONT>"
+      "</FONT><BR><BR>"
   if $cgi->param('error');
 print <<END;
     <FORM ACTION="${p1}process/cust_credit_bill.cgi" METHOD=POST>
@@ -52,7 +52,7 @@ die unless $cust_credit = qsearchs('cust_credit', { 'crednum' => $crednum } );
 print qq!Credit #<B>!, $crednum, qq!</B><INPUT TYPE="hidden" NAME="crednum" VALUE="$crednum">!;
 
 print qq!\nInvoice # <SELECT NAME="invnum" SIZE=1>!;
-foreach $_ (grep $_->owed, qsearch('cust_bill', { 'custnum' => $cust_credit->custnum } ) ) {
+foreach $_ (grep $_->owed != 0, qsearch('cust_bill', { 'custnum' => $cust_credit->custnum } ) ) {
   print "<OPTION", (($_->invnum eq $invnum) ? " SELECTED" : ""),
     qq! VALUE="! .$_->invnum. qq!">!. $_->invnum. qq! (! . $_->owed . qq!)!;
 }

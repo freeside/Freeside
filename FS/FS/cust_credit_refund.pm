@@ -147,6 +147,8 @@ sub check {
   ;
   return $error if $error;
 
+  return "amount must be > 0" if $self->amount == 0;
+
   $self->_date(time) unless $self->_date;
 
   return "unknown cust_credit.crednum: ". $self->crednum
@@ -170,7 +172,7 @@ sub cust_refund {
 
 =head1 VERSION
 
-$Id: cust_credit_refund.pm,v 1.3 2001-09-02 05:38:13 ivan Exp $
+$Id: cust_credit_refund.pm,v 1.4 2001-09-02 07:49:52 ivan Exp $
 
 =head1 BUGS
 

@@ -162,8 +162,9 @@ sub check {
   ;
   return $error if $error;
 
-  $self->_date(time) unless $self->_date;
+  return "amount must be > 0" if $self->amount == 0;
 
+  $self->_date(time) unless $self->_date;
 
   ''; #no error
 }
@@ -194,7 +195,7 @@ sub cust_bill {
 
 =head1 VERSION
 
-$Id: cust_bill_pay.pm,v 1.6 2001-09-02 05:38:13 ivan Exp $
+$Id: cust_bill_pay.pm,v 1.7 2001-09-02 07:49:52 ivan Exp $
 
 =head1 BUGS
 

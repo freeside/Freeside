@@ -107,6 +107,8 @@ sub check {
   ;
   return $error if $error;
 
+  return "amount must be > 0" if $self->amount == 0;
+
   return "Unknown credit"
     unless my $cust_credit = 
       qsearchs( 'cust_credit', { 'crednum' => $self->crednum } );
@@ -141,7 +143,7 @@ sub cust_credit {
 
 =head1 VERSION
 
-$Id: cust_credit_bill.pm,v 1.3 2001-09-02 01:27:11 ivan Exp $
+$Id: cust_credit_bill.pm,v 1.4 2001-09-02 07:49:52 ivan Exp $
 
 =head1 BUGS
 

@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: cust_main.cgi,v 1.6 2001-09-01 21:52:20 jeff Exp $ -->
+#<!-- $Id: cust_main.cgi,v 1.7 2001-09-02 07:49:52 ivan Exp $ -->
 
 use strict;
 use vars qw ( $cgi $query $custnum $cust_main $hashref $agent $referral 
@@ -20,6 +20,8 @@ use FS::part_referral;
 use FS::agent;
 use FS::cust_main;
 use FS::cust_refund;
+use FS::cust_bill_pay;
+use FS::cust_credit_bill;
 
 $cgi = new CGI;
 &cgisuidsetup($cgi);
@@ -329,6 +331,8 @@ print qq!<BR><BR><A NAME="history">Payment History!,
 # major problem: this whole thing is way too sloppy.
 # minor problem: the description lines need better formatting.
 
+# SHOULD SHOW UNAPPLIED PAYMENTS (now show unapplied credits)
+
 @history = (); #needed for mod_perl :)
 
 @bills = qsearch('cust_bill',{'custnum'=>$custnum});
@@ -340,45 +344,65 @@ foreach $bill (@bills) {
     qq! (Balance \$! . $bill->owed . qq!)</A>\t! .
     $bref->{charged} . qq!\t\t\t!;
 
-  my(@payments)=qsearch('cust_pay',{'invnum'=> $bref->{invnum} } );
-  my($payment);
-  foreach $payment (@payments) {
-    my($date,$invnum,$payby,$payinfo,$paid)=($payment->getfield('_date'),
-                                             $payment->getfield('invnum'),
-                                             $payment->getfield('payby'),
-                                             $payment->getfield('payinfo'),
-                                             $payment->getfield('paid'),
+  my(@cust_bill_pay)=qsearch('cust_bill_pay',{'invnum'=> $bref->{invnum} } );
+#  my(@payments)=qsearch('cust_pay',{'invnum'=> $bref->{invnum} } );
+#  my($payment);
+#  foreach $payment (@payments) {
+  foreach my $cust_bill_pay (@cust_bill_pay) {
+    my $payment = $cust_bill_pay->cust_pay;
+    my($date,$invnum,$payby,$payinfo,$paid)=($payment->_date,
+                                             $cust_bill_pay->invnum,
+                                             $payment->payby,
+                                             $payment->payinfo,
+                                             $cust_bill_pay->amount,
                       );
     push @history,
       "$date\tPayment, Invoice #$invnum ($payby $payinfo)\t\t$paid\t\t";
   }
-}
 
-@credits = qsearch('cust_credit',{'custnum'=>$custnum});
-foreach $credit (@credits) {
-  my($cref)=$credit->hashref;
-  my($credited)=$credit->credited;
-  push @history,
-    $cref->{_date} . "\t" .
-    ($credited ?
-       (qq!<A HREF="! . popurl(2). qq!edit/cust_credit_bill.cgi?!. $cref->{crednum} . qq!">!) :
-       "") .
-    "Credit #" .
-    $cref->{crednum} . ", (Balance \$" .
-    $credited . ")" . ($credited ? "</A>" : "") .
-    $cref->{reason} . "\t\t\t" . $cref->{amount} . "\t";
-
-  my(@refunds)=qsearch('cust_refund',{'crednum'=> $cref->{crednum} } );
-  my($refund);
-  foreach $refund (@refunds) {
-    my($rref)=$refund->hashref;
+  my(@cust_credit_bill)=
+    qsearch('cust_credit_bill', { 'invnum'=> $bref->{invnum} } );
+  foreach my $cust_credit_bill (@cust_credit_bill) {
+    my $cust_credit = $cust_credit_bill->cust_credit;
+    my($date, $invnum, $crednum, $amount, $reason ) = (
+      $cust_credit->_date,
+      $cust_credit_bill->invnum,
+      $cust_credit_bill->crednum,
+      $cust_credit_bill->amount,
+      $cust_credit->reason,
+    );
     push @history,
-      $rref->{_date} . "\tRefund, Credit #" . $rref->{crednum} . " (" .
-      $rref->{payby} . " " . $rref->{payinfo} . ") by " .
-      $rref->{otaker} . " - ". $rref->{reason} . "\t\t\t\t" .
-      $rref->{refund};
+      "$date\tCredit #$crednum, Invoice #$invnum $reason\t\t\t$amount\t";
   }
 }
+
+@credits = grep $_->credited, qsearch('cust_credit',{'custnum'=>$custnum});
+foreach $credit (@credits) {
+  my($cref)=$credit->hashref;
+  push @history,
+    $cref->{_date} . "\t" .
+    qq!<A HREF="! . popurl(2). qq!edit/cust_credit_bill.cgi?!. $cref->{crednum} . qq!">!.
+    '<font color="#ff0000">Unapplied credit #' .
+    $cref->{crednum} . ", (Balance \$" .
+    $credit->credited . ")</font></A> ".
+    $cref->{reason} . "\t\t\t" . $cref->{amount} . "\t";
+}
+
+my(@refunds)=qsearch('cust_refund',{'custnum'=> $custnum } );
+my($refund);
+foreach $refund (@refunds) {
+  my($rref)=$refund->hashref;
+  my($refundnum) = (
+    $refund->refundnum,
+  );
+
+  push @history,
+    $rref->{_date} . "\tRefund #$refundnum, (" .
+    $rref->{payby} . " " . $rref->{payinfo} . ") by " .
+    $rref->{otaker} . " - ". $rref->{reason} . "\t\t\t\t" .
+    $rref->{refund};
+}
+
 
         #formatting
         print &table(), <<END;
