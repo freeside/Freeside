@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 #
-# $Id: svc_acct.export,v 1.27 2001-12-11 10:38:56 ivan Exp $
+# $Id: svc_acct.export,v 1.28 2001-12-12 07:59:33 ivan Exp $
 #
 # Create and export password, radius and vpopmail password files:
 # passwd, passwd.adjunct, shadow, acp_passwd, acp_userinfo, acp_dialup
@@ -573,7 +573,8 @@ foreach $bsdshellmachine (@bsdshellmachines) {
   ssh("root\@$bsdshellmachine",
     "( ".
       "mv /etc/passwd.new /etc/passwd; ".
-      "mv /etc/master.passwd.new /etc/master.passwd; ".
+      #"mv /etc/master.passwd.new /etc/master.passwd; ".
+      "pwd_mkdb /etc/master.passwd.new; ".
     " )"
   )
     == 0 or die "ssh error: $!";
