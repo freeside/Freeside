@@ -886,8 +886,8 @@ sub bill {
       $setup = eval $setup_prog;
       unless ( defined($setup) ) {
         $dbh->rollback if $oldAutoCommit;
-        return "Error reval-ing part_pkg->setup pkgpart ". $part_pkg->pkgpart.
-               ": $@";
+        return "Error eval-ing part_pkg->setup pkgpart ". $part_pkg->pkgpart.
+               "(expression $setup_prog): $@";
       }
       $cust_pkg->setfield('setup',$time);
       $cust_pkg_mod_flag=1; 
@@ -915,8 +915,8 @@ sub bill {
       $recur = eval $recur_prog;
       unless ( defined($recur) ) {
         $dbh->rollback if $oldAutoCommit;
-        return "Error reval-ing part_pkg->recur pkgpart ".
-               $part_pkg->pkgpart. ": $@";
+        return "Error eval-ing part_pkg->recur pkgpart ".  $part_pkg->pkgpart.
+               "(expression $recur_prog): $@";
       }
       #change this bit to use Date::Manip? CAREFUL with timezones (see
       # mailing list archive)
@@ -1022,7 +1022,7 @@ sub bill {
   my $invnum = $cust_bill->invnum;
   my $cust_bill_pkg;
   foreach $cust_bill_pkg ( @cust_bill_pkg ) {
-    warn $cust_bill_pkg->invnum($invnum);
+    #warn $cust_bill_pkg->invnum($invnum);
     $error = $cust_bill_pkg->insert;
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
@@ -1875,7 +1875,7 @@ sub append_fuzzyfiles {
 
 =head1 VERSION
 
-$Id: cust_main.pm,v 1.45 2001-11-03 17:49:52 ivan Exp $
+$Id: cust_main.pm,v 1.46 2001-11-05 11:55:04 ivan Exp $
 
 =head1 BUGS
 
