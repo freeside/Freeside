@@ -226,7 +226,7 @@ sub insert {
   #                             'domsvc'   => $self->domsvc,
   #                           } );
 
-  if ( $self->svcnum ) {
+  if ( $self->svcnum && qsearchs('cust_svc',{'svcnum'=>$self->svcnum}) ) {
     my $cust_svc = qsearchs('cust_svc',{'svcnum'=>$self->svcnum});
     unless ( $cust_svc ) {
       $dbh->rollback if $oldAutoCommit;

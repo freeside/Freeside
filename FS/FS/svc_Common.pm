@@ -120,9 +120,9 @@ sub insert {
   return $error if $error;
 
   my $svcnum = $self->svcnum;
-  my $cust_svc;
+  my $cust_svc = $svcnum ? qsearchs('cust_svc',{'svcnum'=>$self->svcnum}) : '';
   #unless ( $svcnum ) {
-  if ( ! $svcnum || ! qsearchs('cust_svc',{'svcnum'=>$self->svcnum} ) ) {
+  if ( !$svcnum or !$cust_svc ) {
     $cust_svc = new FS::cust_svc ( {
       #hua?# 'svcnum'  => $svcnum,
       'svcnum'  => $self->svcnum,
@@ -136,7 +136,7 @@ sub insert {
     }
     $svcnum = $self->svcnum($cust_svc->svcnum);
   } else {
-    $cust_svc = qsearchs('cust_svc',{'svcnum'=>$self->svcnum});
+    #$cust_svc = qsearchs('cust_svc',{'svcnum'=>$self->svcnum});
     unless ( $cust_svc ) {
       $dbh->rollback if $oldAutoCommit;
       return "no cust_svc record found for svcnum ". $self->svcnum;
