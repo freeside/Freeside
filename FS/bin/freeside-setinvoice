@@ -3,7 +3,7 @@
 use strict;
 use FS::UID qw(adminsuidsetup);
 use FS::Conf;
-use FS::Record qw(qsearch);
+use FS::Record qw(qsearch qsearchs);
 use FS::cust_main;
 use FS::svc_acct;
 
@@ -20,7 +20,7 @@ foreach my $cust_main (
   my @cust_pkg = $cust_main->ncancelled_pkgs;
   foreach my $cust_pkg ( @cust_pkg ) {
     foreach my $cust_svc ( $cust_pkg->cust_svc ) {
-      my $svc_acct = qsearchs( 'svc_acct', {} );
+      my $svc_acct = qsearchs( 'svc_acct', { 'svcnum' => $cust_svc->svcnum } );
       push @dest, $svc_acct->svcnum if $svc_acct;
     }
   }
