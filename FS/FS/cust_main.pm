@@ -1743,16 +1743,45 @@ the error, otherwise returns false.
 sub charge {
   my ( $self, $amount, $pkg, $comment ) = @_;
 
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
   my $part_pkg = new FS::part_pkg ( {
     'pkg'      => $pkg || 'One-time charge',
-    'comment'  => $comment || '$'. sprintf("%.2f".$amount),
+    'comment'  => $comment || '$'. sprintf("%.2f",$amount),
     'setup'    => $amount,
     'freq'     => 0,
     'recur'    => '0',
     'disabled' => 'Y',
   } );
 
-  $part_pkg->insert;
+  my $error = $part_pkg->insert;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  my $cust_pkg = new FS::cust_pkg ( {
+    'custnum' => $self->custnum,
+    'pkgpart' => $part_pkg->pkgpart,
+  } );
+
+  $error = $cust_pkg->insert;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  '';
 
 }
 

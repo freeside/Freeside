@@ -2,10 +2,10 @@
 
 #untaint custnum
 $cgi->param('custnum') =~ /^(\d+)$/
-  or eidiot 'illegal custnum '. $cgi->param('custnum');
+  or die 'illegal custnum '. $cgi->param('custnum');
 my $custnum = $1;
 $cgi->param('pkgpart') =~ /^(\d+)$/
-  or eidiot 'illegal pkgpart '. $cgi->param('pkgpart');
+  or die 'illegal pkgpart '. $cgi->param('pkgpart');
 my $pkgpart = $1;
 
 my @cust_pkg = ();
