@@ -22,6 +22,7 @@ foreach my $export ( @exports ) {
     my $sth = $icradius_dbh->prepare("DELETE FROM $table");
     $sth->execute or die "Can't reset $table table: ". $sth->errstr;
   }
+  $icradius_dbh->disconnect;
 }
 
 foreach my $export ( @exports ) {
