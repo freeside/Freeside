@@ -83,7 +83,7 @@ running will not accept a domain as a parameter.  You will need to
       this.form.unsuspend_stdin.value="";
     '>
   <LI>
-    <INPUT TYPE="button" VALUE="FreeBSD before 5.2.1" onClick='
+    <INPUT TYPE="button" VALUE="FreeBSD before 5.3" onClick='
       this.form.useradd.value = "lockf /etc/passwd.lock pw useradd $username -d $dir -m -s $shell -u $uid -g $gid -c $finger -h 0";
       this.form.useradd_stdin.value = "$_password\n";
       this.form.userdel.value = "lockf /etc/passwd.lock pw userdel $username -r"; this.form.userdel_stdin.value="";
@@ -92,14 +92,14 @@ running will not accept a domain as a parameter.  You will need to
       this.form.suspend_stdin.value="";
       this.form.unsuspend.value = "lockf /etc/passwd.lock pw unlock $username"; this.form.unsuspend_stdin.value="";
     '>
-    Note: On FreeBSD versions before 5.2.1, due to deficient locking in pw(1),
+    Note: On FreeBSD versions before 5.3, due to deficient locking in pw(1),
     you must disable the chpass(1), chsh(1), chfn(1), passwd(1), and vipw(1)
     commands, or replace them with wrappers that prepend
     "lockf /etc/passwd.lock".  Alternatively, apply the patch in
     <A HREF="http://www.freebsd.org/cgi/query-pr.cgi?pr=23501">FreeBSD PR#23501</A>
-    and use the "FreeBSD 5.2.1 or later" button below.
+    and use the "FreeBSD 5.3 or later" button below.
   <LI>
-    <INPUT TYPE="button" VALUE="FreeBSD 5.2.1 or later" onClick='
+    <INPUT TYPE="button" VALUE="FreeBSD 5.3 or later" onClick='
       this.form.useradd.value = "pw useradd $username -d $dir -m -s $shell -u $uid -g $gid -c $finger -h 0";
       this.form.useradd_stdin.value = "$_password\n";
       this.form.userdel.value = "pw userdel $username -r";
