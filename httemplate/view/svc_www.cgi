@@ -39,8 +39,13 @@ print header('Website View', menubar(
   ),
   "Main menu" => $p,
 )).
-      "Service #$svcnum".
-      qq!<BR>Website name: <B><A HREF="http://$www">$www</A></B>!.
+      qq!<A HREF="${p}edit/svc_www.cgi?$svcnum">Edit this information</A><BR>!.
+      ntable("#cccccc"). '<TR><TD>'. ntable("#cccccc",2).
+      qq!<TR><TD ALIGN="right">Service number</TD>!.
+        qq!<TD BGCOLOR="#ffffff">$svcnum</TD></TR>!.
+      qq!<TR><TD ALIGN="right">Website name</TD>!.
+        qq!<TD BGCOLOR="#ffffff"><A HREF="http://$www">$www<A></TD></TR>!.
+      '</TABLE></TD></TR></TABLE>'.
       '<BR>'. joblisting({'svcnum'=>$svcnum}, 1).
       '</BODY></HTML>'
 ;
