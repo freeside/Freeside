@@ -7,13 +7,14 @@ cp sources.list /etc/apt/
 apt-get update; apt-get update
 #apt-get install apache mod_ssl mod_perl perl-CGI perl-CPAN perl-DBD-MySQL perl-DBD-Pg perl-DBI perl-DateManip perl-Digest-MD5 perl-HTML-Parser perl-HTML-Tagset perl-MIME-Base64 perl-Storable perl-TimeDate perl-URI perl-libnet perl-libwww-perl perl-suidperl rsync postgresql postgresql-docs postgresql-libs postgresql-server screen zsh lftp cvs #openssh
 
-apt-get install perl-Devel-Symdump perl-BSD-Resource
+apt-get install perl-Devel-Symdump perl-BSD-Resource rpm-build
 
 wget --passive-ftp --continue http://reb00t.com/linux/RPMS/redhat-9/apache/apache-1.3.28-0.n0i.src.rpm http://reb00t.com/linux/RPMS/redhat-9/mm/mm-1.2.1-0.n0i.i686.rpm http://reb00t.com/linux/RPMS/redhat-9/mm/mm-devel-1.2.1-0.n0i.i686.rpm
 rpm -i mm-1.2.1-0.n0i.i686.rpm mm-devel-1.2.1-0.n0i.i686.rpm apache-1.3.28-0.n0i.src.rpm
 
 install -d /usr/src/redhat
 for a in BUILD RPMS SOURCES SPECS SRPMS; do mkdir /usr/src/redhat/$a; done
+for a in athlon i386 i486 i586 i686 noarch; do mkdir /usr/src/redhat/RPMS/$a; done
 
 cd /usr/src/redhat/SPECS  
 rpmbuild -ba apache.spec
