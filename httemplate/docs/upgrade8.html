@@ -72,11 +72,29 @@ CREATE TABLE svc_forward (
 );
 
 CREATE TABLE cust_credit_bill (
+  creditbillnum int primary key,
   crednum int not null,
   invnum int not null,
-  _date timestamp not null,
+  _date int not null,
   amount decimal(10,2) not null
 );
+
+CREATE TABLE cust_bill_pay (
+  billpaynum int primary key,
+  invnum int not null,
+  paynum int not null,
+  _date int not null,
+  amount decimal(10,2) not null
+);
+
+CREATE TABLE cust_credit_refund (
+  creditrefundnum int primary key,
+  crednum int not null,
+  refundnum int not null,
+  _date int not null,
+  amount decimal(10,2) not null
+);
+
 
 ALTER TABLE svc_acct ADD domsvc integer NOT NULL;
 ALTER TABLE svc_domain ADD catchall integer NULL;
@@ -94,6 +112,10 @@ ALTER TABLE cust_main ADD referral_custnum integer NULL;
 CREATE INDEX cust_main3 ON cust_main ( referral_custnum );
 CREATE INDEX cust_credit_bill1 ON cust_credit_bill ( crednum );
 CREATE INDEX cust_credit_bill2 ON cust_credit_bill ( invnum );
+CREATE INDEX cust_bill_pay1 ON cust_bill_pay ( invnum );
+CREATE INDEX cust_bill_pay2 ON cust_bill_pay ( paynum );
+CREATE INDEX cust_credit_refund1 ON cust_credit_refund ( crednum );
+CREATE INDEX cust_credit_refund2 ON cust_credit_refund ( refundnum );
 </pre>
 
   <li>If you are using PostgreSQL, apply the following changes to your database:
@@ -152,5 +174,6 @@ ALTER TABLE cust_main ADD COLUMN comments varchar NULL;
   <li>Run bin/dbdef-create.
   <li>create a service based on svc_forward
   <li>Run bin/fs-migrate-svc_acct_sm
+  <li>Run bin/fs-migrate-payref
   <li>create the conf.dbsrc/user_policy as appropriate for your site
 </body>
