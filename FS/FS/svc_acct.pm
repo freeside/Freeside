@@ -369,6 +369,7 @@ sub insert {
           'subject'  => $welcome_subject,
           'mimetype' => $welcome_mimetype,
           'body'     => $welcome_template->fill_in( HASH => {
+                          'custnum'  => $self->custnum,
                           'username' => $self->username,
                           'password' => $self->_password,
                           'first'    => $cust_main->first,
