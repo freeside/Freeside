@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: fs-setup,v 1.8 1998-12-15 04:33:27 ivan Exp $
+# $Id: fs-setup,v 1.9 1998-12-15 04:36:29 ivan Exp $
 #
 # ivan@sisd.com 97-nov-8,9
 #
@@ -32,7 +32,10 @@
 # fix radius attributes ivan@sisd.com 98-sep-27
 #
 # $Log: fs-setup,v $
-# Revision 1.8  1998-12-15 04:33:27  ivan
+# Revision 1.9  1998-12-15 04:36:29  ivan
+# s/croak/die/; #oops
+#
+# Revision 1.8  1998/12/15 04:33:27  ivan
 # dies if it isn't running as the freeside user
 #
 # Revision 1.7  1998/11/18 09:01:31  ivan
@@ -61,7 +64,7 @@ use FS::UID qw(adminsuidsetup datasrc checkeuid);
 use FS::Record;
 use FS::cust_main_county;
 
-croak "Not running uid freeside!" unless checkeuid();
+die "Not running uid freeside!" unless checkeuid();
 
 my $user = shift or die &usage;
 FS::UID::getsecrets $user;
