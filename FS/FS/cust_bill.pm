@@ -483,7 +483,9 @@ sub realtime_card {
   if ( $conf->exists('business-onlinepayment-description') ) {
     my $dtempl = $conf->config('business-onlinepayment-description');
 
-    my $agent_obj = $cust_main->agent;
+    my $agent_obj = $cust_main->agent
+      or die "can't retreive agent for $cust_main (agentnum ".
+             $cust_main->agentnum. ")";
     my $agent = $agent_obj->agent;
     my $pkgs = join(', ',
       map { $_->cust_pkg->part_pkg->pkg }
@@ -945,7 +947,7 @@ sub print_text {
 
 =head1 VERSION
 
-$Id: cust_bill.pm,v 1.31 2002-04-16 22:52:14 ivan Exp $
+$Id: cust_bill.pm,v 1.32 2002-04-16 22:56:58 ivan Exp $
 
 =head1 BUGS
 
