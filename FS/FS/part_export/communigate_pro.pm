@@ -78,9 +78,8 @@ sub _export_unsuspend {
 sub communigate_pro_queue {
   my( $self, $svcnum, $method ) = (shift, shift, shift);
   my @kludge_methods = qw(CreateAccount UpdateAccountSettings);
-  my $sub = grep { $method eq $_ } @kludge_methods
-              ? $method
-              : 'communigate_pro_command';
+  my $sub = 'communigate_pro_command';
+  $sub = $method if grep { $method eq $_ } @kludge_methods;
   my $queue = new FS::queue {
     'svcnum' => $svcnum,
     'job'    => "FS::part_export::communigate_pro::$sub",
@@ -109,7 +108,7 @@ sub CreateAccount {
                #externalFlag => $externalFlag,
   push @args, externalFlag => $externalFlag if $externalFlag;
 
-  &communigate_pro_command( $machine, $port, $login, $password, $method, @args);
+  communigate_pro_command( $machine, $port, $login, $password, $method, @args );
 
 }
 
@@ -118,7 +117,7 @@ sub UpdateAccountSettings {
   my $accountName  = delete $args{'accountName'};
   $args{'AccessModes'} = [ split(' ', $args{'AccessModes'}) ];
   @args = ( $accountName, \%args );
-  &communigate_pro_command( $machine, $port, $login, $password, $method, @args);
+  communigate_pro_command( $machine, $port, $login, $password, $method, @args );
 }
 
 sub communigate_pro_command { #subroutine, not method
