@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: signup.cgi,v 1.8 2000-08-24 07:26:50 ivan Exp $
+# $Id: signup.cgi,v 1.9 2000-12-03 14:29:15 ivan Exp $
 
 use strict;
 use vars qw( @payby $cgi $locales $packages $pops $r $error
@@ -313,7 +313,7 @@ sub print_okay {
 
   my $pop = pop_info($cgi->param('popnum'))
     or die "fatal: invalid popnum got past FS::SignupClient::new_customer";
-  my ( $ac, $exch, $loc ) = ( $pop->{'ac'}, $pop->{'exch'}, $pop->{'loc'} );
+  ( $ac, $exch, $loc ) = ( $pop->{'ac'}, $pop->{'exch'}, $pop->{'loc'} );
 
   if ( $ieak_template
        && $user_agent->platform eq 'ia32'
