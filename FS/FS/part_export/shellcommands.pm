@@ -75,7 +75,8 @@ sub _export_replace {
     ${"new_$_"} = $new->getfield($_) foreach $new->fields;
   }
   $new_finger = shell_quote $new_finger;
-  $quoted_new__password = shell_quote $new__password;
+  $quoted_new__password = shell_quote $new__password; #old, wrong?
+  $new_quoted_password = shell_quote $new__password; #new, better?
   $old_domain = $old->domain;
   $new_domain = $new->domain;
   $new_crypt_password = ''; #surpress "used only once" warnings
