@@ -1,7 +1,7 @@
 <HTML><HEAD><TITLE>ISP Signup form</TITLE></HEAD>
 <BODY BGCOLOR="#e8e8e8"><FONT SIZE=7>ISP Signup form</FONT><BR><BR>
 <FONT SIZE="+1" COLOR="#ff0000"><%= $error %></FONT>
-<FORM ACTION="<%= $self_url %>" METHOD=POST>
+<FORM NAME="OneTrueForm" ACTION="<%= $self_url %>" METHOD=POST onSubmit="document.OneTrueForm.signup.disabled=true">
 <INPUT TYPE="hidden" NAME="magic" VALUE="process">
 <INPUT TYPE="hidden" NAME="ref" VALUE="<%= $referral_custnum %>">
 <INPUT TYPE="hidden" NAME="ss" VALUE="">
@@ -191,5 +191,5 @@ ENDOUT
   }
 %>
 </TABLE>
-<BR><BR><INPUT TYPE="submit" VALUE="Signup">
+<BR><BR><INPUT TYPE="submit" NAME="signup" VALUE="Signup" >
 </FORM></BODY></HTML>

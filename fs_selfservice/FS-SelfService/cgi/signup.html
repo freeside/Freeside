@@ -14,7 +14,7 @@
 //--></script>
 <FONT SIZE=7><%= $agent || 'ISP' %> Signup form</FONT><BR><BR>
 <FONT SIZE="+1" COLOR="#ff0000"><%= $error %></FONT>
-<FORM ACTION="<%= $selfurl %>" METHOD=POST>
+<FORM NAME="OneTrueForm" ACTION="<%= $selfurl %>" METHOD=POST onSubmit="document.OneTrueForm.signup.disabled=true">
 <INPUT TYPE="hidden" NAME="session" VALUE="<%= $session_id %>">
 <INPUT TYPE="hidden" NAME="action" VALUE="process_signup">
 <INPUT TYPE="hidden" NAME="ref" VALUE="<%= $referral_custnum %>">
@@ -229,5 +229,5 @@ ENDOUT
   }
 %>
 </TABLE>
-<BR><BR><INPUT TYPE="submit" VALUE="Signup">
+<BR><BR><INPUT TYPE="submit" NAME="signup" VALUE="Signup">
 </FORM></BODY></HTML>
