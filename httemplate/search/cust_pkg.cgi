@@ -93,7 +93,7 @@ if ( $cgi->param('magic') && $cgi->param('magic') eq 'bill' ) {
                       AND cust_svc.svcpart = pkg_svc.svcpart
                       AND cust_pkg.pkgpart = pkg_svc.pkgpart
                       GROUP BY cust_svc.pkgnum,cust_svc.svcpart";
-      $sth = dbh->prepare($query) or die dbh->errstr. " preparing $query";
+      my $sth = dbh->prepare($query) or die dbh->errstr. " preparing $query";
          
       $sth->execute or die "Error executing \"$query\": ". $sth->errstr;
   
