@@ -98,6 +98,10 @@ sub handler
       use IO::Handle;
       use IO::File;
       use Net::Whois::Raw qw(whois);
+      if ( $] < 5.006 ) {
+        eval "use Net::Whois::Raw 0.32 qw(whois)";
+        die $@ if $@;
+      }
       use Business::CreditCard;
       use String::Approx qw(amatch);
       use Chart::LinesPoints;
