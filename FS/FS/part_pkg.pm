@@ -274,7 +274,6 @@ sub svcpart {
   } $self->pkg_svc;
   return '' if scalar(@pkg_svc) != 1;
   $pkg_svc[0]->svcpart;
-
 }
 
 =item payby
