@@ -162,7 +162,7 @@ CREATE TABLE part_export (
 CREATE INDEX part_export1 ON part_export ( machine );
 CREATE INDEX part_export2 ON part_export ( exporttype );
 
-CREATE INDEX part_export_option (
+CREATE TABLE part_export_option (
   optionnum int primary key,
   exportnum int not null,
   optionname varchar(80) not null,
