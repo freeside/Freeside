@@ -28,15 +28,23 @@ my($time)= $opt_d ? str2time($opt_d) : $^T;
 my($cust_main,%saw);
 foreach $cust_main ( @cust_main ) {
 
-  my $error;
+  # $^T not $time because -d is for pre-printing invoices
+  foreach my $cust_pkg (
+    grep { $_->expire && $_->expire >= $^T } $cust_main->ncancelled_pkgs
+  ) {
+    my $error = $cust_pkg->cancel;
+    warn "Error cancelling expired pkg ". $cust_pkg->pkgnum. " for custnum ".
+         $cust_main->custnum. ": $error"
+      if $error;
+  }
 
-  $error = $cust_main->bill( 'time' => $time );
+  my $error = $cust_main->bill( 'time' => $time );
   warn "Error billing, custnum ". $cust_main->custnum. ": $error" if $error;
 
   $cust_main->apply_payments;
   $cust_main->apply_credits;
 
-  $error=$cust_main->collect( 'invoice_time' => $time );
+  $error = $cust_main->collect( 'invoice_time' => $time );
   warn "Error collecting, custnum". $cust_main->custnum. ": $error" if $error;
 
 }
