@@ -1,0 +1,38 @@
+#!/usr/bin/perl
+
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw(qsearch qsearchs fields);
+
+use FS::svc_acct;
+
+#cust_pkg pkgnum 240133 241206 replace_old
+#cust_svc svcnum 31102 32083 delete
+#svc_acct svcnum 37162 37652 delete
+my($user, $table, $pkey, $start, $end, $action) = @ARGV;
+
+adminsuidsetup $user or die;
+
+#eval "use FS::h_$table;";
+#die $@ if $@;
+eval "use FS::$table;";
+die $@ if $@;
+
+my @history = grep { $_->historynum <= $end } qsearch("h_$table", { 'historynum' => { op=>'>=', value=>$start }, history_action => $action } );
+
+my %seen;
+foreach my $h (@history) {
+  my $error;
+  if ( $action eq 'replace_old' ) {
+    my $old = qsearchs($table, { $pkey => $h->get($pkey) } );
+    unless ( $old ) { die "can't find $table $pkey ". $h->get($pkey). "\n"; }
+    my $new = "FS::$table"->new( { map { $_ => $h->get($_) } fields($table) } );
+    $error = $new->replace($old);
+  } elsif ( $action eq 'delete' ) {
+    next if $seen{$h->get($pkey)}++;
+    my $new = "FS::$table"->new( { map { $_ => $h->get($_) } fields($table) } );
+    $error = $new->insert;
+  } else {
+    die "unknown action $action\n";
+  }
+  die $error if $error;
+}
