@@ -63,7 +63,8 @@ sub infostreet_command { #subroutine, not method
   die $key_result{error} unless $key_result{success};
   my $key = $key_result{data};
 
-  my $result = $conn->call($method, $key, @args);
+  #my $result = $conn->call($method, $key, @args);
+  my $result = $conn->call($method, $key, map { $conn->string($_) } @args);
   my %result = _infostreet_parse($result);
   die $result{error} unless $result{success};
 
