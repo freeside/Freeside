@@ -31,28 +31,40 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
+#
+# $Log: cust_main.cgi,v $
+# Revision 1.2  1998-11-13 11:28:08  ivan
+# s/CGI-modules/CGI.pm/;, relative URL's with popurl
+#
 
 use strict;
-use CGI::Base qw(:DEFAULT :CGI); # CGI module
+use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use Date::Format;
 use FS::UID qw(cgisuidsetup);
 use FS::Record qw(qsearchs qsearch);
-use FS::CGI qw(header menubar);
+use FS::CGI qw(header menubar popurl table);
+use FS::cust_credit;
+use FS::cust_pay;
+use FS::cust_bill;
+use FS::part_pkg;
+use FS::cust_pkg;
+use FS::part_referral;
+use FS::agent;
+use FS::cust_main;
 
-my($cgi) = new CGI::Base;
-$cgi->get;
+my($cgi) = new CGI;
 &cgisuidsetup($cgi);
 
-SendHeaders(); # one guess.
-print header("Customer View", menubar(
-  'Main Menu' => '../',
+print $cgi->header, header("Customer View", menubar(
+  'Main Menu' => popurl(2)
 )),<<END;
     <BASEFONT SIZE=3>
 END
 
-#untaint custnum & get customer record
-$QUERY_STRING =~ /^(\d+)$/;
+die "No customer specified (bad URL)!" unless $cgi->keywords;
+my($query) = $cgi->keywords; # needs parens with my, ->keywords returns array
+$query =~ /^(\d+)$/;
 my($custnum)=$1;
 my($cust_main)=qsearchs('cust_main',{'custnum'=>$custnum});
 die "Customer not found!" unless $cust_main;
@@ -66,13 +78,13 @@ print "<FONT SIZE=+1><CENTER>Customer #<B>$custnum</B></CENTER></FONT>",
       qq!<A HREF="#history">Payment History</A> </CENTER>!;
 
 #bill now linke
-print qq!<HR><CENTER><A HREF="../misc/bill.cgi?$custnum">!,
+print qq!<HR><CENTER><A HREF="!, popurl(2), qq!/misc/bill.cgi?$custnum">!,
       qq!Bill this customer now</A></CENTER>!;
 
 #formatting
 print qq!<HR><A NAME="cust_main"><CENTER><FONT SIZE=+1>Customer Information!,
       qq!</FONT>!,
-      qq!<BR><A HREF="../edit/cust_main.cgi?$custnum!,
+      qq!<BR><A HREF="!, popurl(2), qq!/edit/cust_main.cgi?$custnum!,
       qq!">Edit this information</A></CENTER><FONT SIZE=-1>!;
 
 #agentnum
@@ -163,13 +175,13 @@ print "<P>Order taken by <B>", $hashref->{otaker}, "</B>";
 #formatting	
 print qq!<HR><FONT SIZE=+1><A NAME="cust_pkg"><CENTER>Packages</A></FONT>!,
       qq!<BR>Click on package number to view/edit package.!,
-      qq!<BR><A HREF="../edit/cust_pkg.cgi?$custnum">Add/Edit packages</A>!,
+      qq!<BR><A HREF="!, popurl(2), qq!/edit/cust_pkg.cgi?$custnum">Add/Edit packages</A>!,
       qq!</CENTER><BR>!;
 
 #display packages
 
 #formatting
-print qq!<CENTER><TABLE BORDER=4>\n!,
+print qq!<CENTER>!, table, "\n",
       qq!<TR><TH ROWSPAN=2>#</TH><TH ROWSPAN=2>Package</TH><TH COLSPAN=5>!,
       qq!Dates</TH></TR>\n!,
       qq!<TR><TH><FONT SIZE=-1>Setup</FONT></TH><TH>!,
@@ -187,7 +199,7 @@ foreach $package (@packages) {
   my($part_pkg)=qsearchs('part_pkg',{
     'pkgpart' => $pref->{pkgpart}
   } );
-  print qq!<TR><TD><FONT SIZE=-1><A HREF="../view/cust_pkg.cgi?!,
+  print qq!<TR><TD><FONT SIZE=-1><A HREF="!, popurl(2), qq!/view/cust_pkg.cgi?!,
         $pref->{pkgnum}, qq!">!, 
         $pref->{pkgnum}, qq!</A></FONT></TD>!,
         "<TD><FONT SIZE=-1>", $part_pkg->getfield('pkg'), " - ",
@@ -217,7 +229,7 @@ print "</TABLE></CENTER>";
 print qq!<CENTER><HR><A NAME="history"><FONT SIZE=+1>Payment History!,
       qq!</FONT></A><BR>!,
       qq!Click on invoice to view invoice/enter payment.<BR>!,
-      qq!<A HREF="../edit/cust_credit.cgi?$custnum">!,
+      qq!<A HREF="!, popurl(2), qq!/edit/cust_credit.cgi?$custnum">!,
       qq!Post Credit / Refund</A></CENTER><BR>!;
 
 #get payment history
@@ -232,7 +244,7 @@ my($bill);
 foreach $bill (@bills) {
   my($bref)=$bill->hashref;
   push @history,
-    $bref->{_date} . qq!\t<A HREF="../view/cust_bill.cgi?! .
+    $bref->{_date} . qq!\t<A HREF="!. popurl(2). qq!/view/cust_bill.cgi?! .
     $bref->{invnum} . qq!">Invoice #! . $bref->{invnum} .
     qq! (Balance \$! . $bref->{owed} . qq!)</A>\t! .
     $bref->{charged} . qq!\t\t\t!;
@@ -274,8 +286,7 @@ foreach $credit (@credits) {
 }
 
         #formatting
-        print <<END;
-<CENTER><TABLE BORDER=4>
+        print "<CENTER>", table, <<END;
 <TR>
   <TH>Date</TH>
   <TH>Description</TH>
