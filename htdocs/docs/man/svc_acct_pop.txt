@@ -4,8 +4,8 @@ NAME
 SYNOPSIS
       use FS::svc_acct_pop;
 
-      $record = create FS::svc_acct_pop \%hash;
-      $record = create FS::svc_acct_pop { 'column' => 'value' };
+      $record = new FS::svc_acct_pop \%hash;
+      $record = new FS::svc_acct_pop { 'column' => 'value' };
 
       $error = $record->insert;
 
@@ -26,17 +26,17 @@ DESCRIPTION
     ac - area code
     exch - exchange
 METHODS
-    create HASHREF
+    new HASHREF
         Creates a new point of presence (if only it were that
         easy!). To add the point of presence to the database, see
         the section on "insert".
 
     insert
-        Adds this point of presence to the databaes. If there is an
+        Adds this point of presence to the database. If there is an
         error, returns the error, otherwise returns false.
 
     delete
-        Currently unimplemented.
+        Removes this point of presence from the database.
 
     replace OLD_RECORD
         Replaces OLD_RECORD with this one in the database. If there
@@ -47,9 +47,10 @@ METHODS
         presence. If there is an error, returns the error, otherwise
         returns false. Called by the insert and replace methods.
 
-BUGS
-    It doesn't properly override FS::Record yet.
+VERSION
+    $Id: svc_acct_pop.txt,v 1.3 1999-04-08 13:39:32 ivan Exp $
 
+BUGS
     It should be renamed to part_pop.
 
 SEE ALSO
@@ -62,4 +63,10 @@ HISTORY
     ivan@sisd.com 98-mar-8
 
     pod ivan@sisd.com 98-sep-23
+
+    $Log: svc_acct_pop.txt,v $
+    Revision 1.3  1999-04-08 13:39:32  ivan
+    convert from pod for 1.2.0 release
+ Revision 1.2 1998/12/29 11:59:53 ivan
+    mostly properly OO, some work still to be done with svc_ stuff
 

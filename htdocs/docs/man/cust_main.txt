@@ -4,8 +4,8 @@ NAME
 SYNOPSIS
       use FS::cust_main;
 
-      $record = create FS::cust_main \%hash;
-      $record = create FS::cust_main { 'column' => 'value' };
+      $record = new FS::cust_main \%hash;
+      $record = new FS::cust_main { 'column' => 'value' };
 
       $error = $record->insert;
 
@@ -58,7 +58,7 @@ DESCRIPTION
     tax - tax exempt, empty or `Y'
     otaker - order taker (assigned automatically, see the FS::UID manpage)
 METHODS
-    create HASHREF
+    new HASHREF
         Creates a new customer. To add the customer to the database,
         see the section on "insert".
 
@@ -151,24 +151,52 @@ METHODS
         Returns the balance for this customer (total owed minus
         total credited).
 
+    invoicing_list [ ARRAYREF ]
+        If an arguement is given, sets these email addresses as
+        invoice recipients (see the FS::cust_main_invoice manpage).
+        Errors are not fatal and are not reported (except as
+        warnings), so use check_invoicing_list first.
+
+        Returns a list of email addresses (with svcnum entries
+        expanded).
+
+        Note: You can clear the invoicing list by passing an empty
+        ARRAYREF. You can check it without disturbing anything by
+        passing nothing.
+
+        This interface may change in the future.
+
+    check_invoicing_list ARRAYREF
+        Checks these arguements as valid input for the
+        invoicing_list method. If there is an error, returns the
+        error, otherwise returns false.
+
+VERSION
+    $Id: cust_main.txt,v 1.3 1999-02-09 09:37:58 ivan Exp $
+
 BUGS
     The delete method.
-
-    It doesn't properly override FS::Record yet.
-
-    hfields should be removed.
 
     Bill and collect options should probably be passed as references
     instead of a list.
 
     CyberCash v2 forces us to define some variables in package main.
 
+    There should probably be a configuration file with a list of
+    allowed credit card types.
+
+    CyberCash is the only processor.
+
+    No multiple currency support (probably a larger project than
+    just this module).
+
 SEE ALSO
     the FS::Record manpage, the FS::cust_pkg manpage, the
     FS::cust_bill manpage, the FS::cust_credit manpage the
     FS::cust_pay_batch manpage, the FS::agent manpage, the
     FS::part_referral manpage, the FS::cust_main_county manpage, the
-    FS::UID manpage, schema.html from the base documentation.
+    FS::cust_main_invoice manpage, the FS::UID manpage, schema.html
+    from the base documentation.
 
 HISTORY
     ivan@voicenet.com 97-jul-28
@@ -199,10 +227,33 @@ HISTORY
     FS::UID::{datasrc,checkruid} ivan@sisd.com 98-sep-19-21
 
     $Log: cust_main.txt,v $
-    Revision 1.2  1998-11-13 09:56:39  ivan
-    change configuration file layout to support multiple distinct databases (with
-    own set of config files, export, etc.)
- Revision 1.2 1998/11/07 10:24:25 ivan
-    don't use depriciated FS::Bill and FS::Invoice, other
-    miscellania
+    Revision 1.3  1999-02-09 09:37:58  ivan
+    regenerated perl api docs from embedded pod
+ Revision 1.10 1999/01/25 12:26:09 ivan
+    yet more mod_perl stuff
+
+    Revision 1.9 1999/01/18 09:22:41 ivan changes to track email
+    addresses for email invoicing
+
+    Revision 1.8 1998/12/29 11:59:39 ivan mostly properly OO, some
+    work still to be done with svc_ stuff
+
+    Revision 1.7 1998/12/16 09:58:52 ivan library support for
+    editing email invoice destinations (not in sub collect yet)
+
+    Revision 1.6 1998/11/18 09:01:42 ivan i18n! i18n!
+
+    Revision 1.5 1998/11/15 11:23:14 ivan use FS::table_name for all
+    searches to eliminate warnings, emit state/county when they
+    don't match
+
+    Revision 1.4 1998/11/15 05:30:48 ivan bugfix for new config
+    layout
+
+    Revision 1.3 1998/11/13 09:56:54 ivan change configuration file
+    layout to support multiple distinct databases (with own set of
+    config files, export, etc.)
+
+    Revision 1.2 1998/11/07 10:24:25 ivan don't use depriciated
+    FS::Bill and FS::Invoice, other miscellania
 

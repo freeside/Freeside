@@ -2,7 +2,7 @@ NAME
     FS::Invoice - Legacy stub
 
 SYNOPSIS
-    The functioanlity of FS::invoice has been integrated in
+    The functionality of FS::Invoice has been integrated in
     FS::cust_bill.
 
 HISTORY

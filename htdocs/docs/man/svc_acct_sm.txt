@@ -4,8 +4,8 @@ NAME
 SYNOPSIS
       use FS::svc_acct_sm;
 
-      $record = create FS::svc_acct_sm \%hash;
-      $record = create FS::svc_acct_sm { 'column' => 'value' };
+      $record = new FS::svc_acct_sm \%hash;
+      $record = new FS::svc_acct_sm { 'column' => 'value' };
 
       $error = $record->insert;
 
@@ -31,7 +31,7 @@ DESCRIPTION
     domuid - uid of the target account (see the FS::svc_acct manpage)
     domuser - virtual username
 METHODS
-    create HASHREF
+    new HASHREF
         Creates a new virtual mail alias. To add the virtual mail
         alias to the database, see the section on "insert".
 
@@ -93,10 +93,13 @@ METHODS
 
         Sets any fixed values; see the FS::part_svc manpage.
 
-BUGS
-    It doesn't properly override FS::Record yet.
+VERSION
+    $Id: svc_acct_sm.txt,v 1.2 1999-02-09 09:38:13 ivan Exp $
 
+BUGS
     The remote commands should be configurable.
+
+    The $recref stuff in sub check should be cleaned up.
 
 SEE ALSO
     the FS::Record manpage, the FS::Conf manpage, the FS::cust_svc

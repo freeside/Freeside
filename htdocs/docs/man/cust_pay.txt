@@ -4,8 +4,8 @@ NAME
 SYNOPSIS
       use FS::cust_pay;
 
-      $record = create FS::cust_pay \%hash;
-      $record = create FS::cust_pay { 'column' => 'value' };
+      $record = new FS::cust_pay \%hash;
+      $record = new FS::cust_pay { 'column' => 'value' };
 
       $error = $record->insert;
 
@@ -29,7 +29,7 @@ DESCRIPTION
     payinfo - card number, P.O.#, or comp issuer (4-8 lowercase alphanumerics; think username)
     paybatch - text field for tracking card processing
 METHODS
-    create HASHREF
+    new HASHREF
         Creates a new payment. To add the payment to the databse,
         see the section on "insert".
 
@@ -48,9 +48,10 @@ METHODS
         there is an error, returns the error, otherwise returns
         false. Called by the insert method.
 
-BUGS
-    It doesn't properly override FS::Record yet.
+VERSION
+    $Id: cust_pay.txt,v 1.3 1999-04-08 13:39:32 ivan Exp $
 
+BUGS
     Delete and replace methods.
 
 SEE ALSO
@@ -63,4 +64,13 @@ HISTORY
     new api ivan@sisd.com 98-mar-13
 
     pod ivan@sisd.com 98-sep-21
+
+    $Log: cust_pay.txt,v $
+    Revision 1.3  1999-04-08 13:39:32  ivan
+    convert from pod for 1.2.0 release
+ Revision 1.3 1999/01/25 12:26:11 ivan yet
+    more mod_perl stuff
+
+    Revision 1.2 1998/12/29 11:59:43 ivan mostly properly OO, some
+    work still to be done with svc_ stuff
 

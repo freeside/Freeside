@@ -4,8 +4,8 @@ NAME
 SYNOPSIS
       use FS::cust_bill;
 
-      $record = create FS::cust_bill \%hash;
-      $record = create FS::cust_bill { 'column' => 'value' };
+      $record = new FS::cust_bill \%hash;
+      $record = new FS::cust_bill { 'column' => 'value' };
 
       $error = $record->insert;
 
@@ -41,7 +41,7 @@ DESCRIPTION
     printed - how many times this invoice has been printed automatically
     (see the section on "collect" in the FS::cust_main manpage).
 METHODS
-    create HASHREF
+    new HASHREF
         Creates a new invoice. To add the invoice to the database,
         see the section on "insert". Invoices are normally created
         by calling the bill method of a customer object (see the
@@ -105,23 +105,18 @@ METHODS
         manpage. Also see the Time::Local manpage and the
         Date::Parse manpage for conversion functions.
 
+VERSION
+    $Id: cust_bill.txt,v 1.3 1999-02-09 09:37:55 ivan Exp $
+
 BUGS
     The delete method.
 
-    It doesn't properly override FS::Record yet.
-
-    print_text formatting (and some logic :/) is in source as a
-    format declaration, which needs to be slurped in from a file.
-    the fork is rather kludgy as well. It could be cleaned with
-    swrite from man perlform, and the picture could be put in a
-    /var/spool/freeside/conf file. Also number of lines ($=).
+    print_text formatting (and some logic :/) is in source, but
+    needs to be slurped in from a file. Also number of lines ($=).
 
     missing print_ps for a nice postscript copy (maybe HylaFAX-
     cover-page-style or something similar so the look can be
     completely customized?)
-
-    There is an off-by-one error in print_text which causes a visual
-    error: "Page 1 of 2" printed on some single-page invoices?
 
 SEE ALSO
     the FS::Record manpage, the FS::cust_main manpage, the
@@ -139,10 +134,21 @@ HISTORY
     pod, ingegrate with FS::Invoice ivan@sisd.com 98-sep-20
 
     $Log: cust_bill.txt,v $
-    Revision 1.2  1998-11-13 09:56:38  ivan
-    change configuration file layout to support multiple distinct databases (with
-    own set of config files, export, etc.)
- Revision 1.2 1998/11/07 10:24:24 ivan
-    don't use depriciated FS::Bill and FS::Invoice, other
-    miscellania
+    Revision 1.3  1999-02-09 09:37:55  ivan
+    regenerated perl api docs from embedded pod
+ Revision 1.6 1999/01/25 12:26:07 ivan yet
+    more mod_perl stuff
+
+    Revision 1.5 1999/01/18 21:58:03 ivan esthetic: eq and ne were
+    used in a few places instead of == and !=
+
+    Revision 1.4 1998/12/29 11:59:36 ivan mostly properly OO, some
+    work still to be done with svc_ stuff
+
+    Revision 1.3 1998/11/13 09:56:53 ivan change configuration file
+    layout to support multiple distinct databases (with own set of
+    config files, export, etc.)
+
+    Revision 1.2 1998/11/07 10:24:24 ivan don't use depriciated
+    FS::Bill and FS::Invoice, other miscellania
 

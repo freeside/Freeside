@@ -4,8 +4,8 @@ NAME
 SYNOPSIS
       use FS::agent;
 
-      $record = create FS::agent \%hash;
-      $record = create FS::agent { 'column' => 'value' };
+      $record = new FS::agent \%hash;
+      $record = new FS::agent { 'column' => 'value' };
 
       $error = $record->insert;
 
@@ -27,7 +27,7 @@ DESCRIPTION
     prog - For future use.
     freq - For future use.
 METHODS
-    create HASHREF
+    new HASHREF
         Creates a new agent. To add the agent to the database, see
         the section on "insert".
 
@@ -49,9 +49,10 @@ METHODS
         there is an error, returns the error, otherwise returns
         false. Called by the insert and replace methods.
 
-BUGS
-    It doesn't properly override FS::Record yet.
+VERSION
+    $Id: agent.txt,v 1.3 1999-04-08 13:39:31 ivan Exp $
 
+BUGS
 SEE ALSO
     the FS::Record manpage, the FS::agent_type manpage, the
     FS::cust_main manpage, schema.html from the base documentation.

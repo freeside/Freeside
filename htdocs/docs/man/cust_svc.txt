@@ -4,8 +4,8 @@ NAME
 SYNOPSIS
       use FS::cust_svc;
 
-      $record = create FS::cust_svc \%hash
-      $record = create FS::cust_svc { 'column' => 'value' };
+      $record = new FS::cust_svc \%hash
+      $record = new FS::cust_svc { 'column' => 'value' };
 
       $error = $record->insert;
 
@@ -25,7 +25,7 @@ DESCRIPTION
     pkgnum - Package (see the FS::cust_pkg manpage)
     svcpart - Service definition (see the FS::part_svc manpage)
 METHODS
-    create HASHREF
+    new HASHREF
         Creates a new service. To add the refund to the database,
         see the section on "insert". Services are normally created
         by creating FS::svc_ objects (see the FS::svc_acct manpage,
@@ -59,12 +59,18 @@ METHODS
         or mail alias) - The table name (i.e. svc_domain) for this
         service
 
+VERSION
+    $Id: cust_svc.txt,v 1.4 1999-04-08 13:39:32 ivan Exp $
+
 BUGS
     Behaviour of changing the svcpart of cust_svc records is
     undefined and should possibly be prohibited, and pkg_svc records
     are not checked.
 
     pkg_svc records are not checked in general (here).
+
+    Deleting this record doesn't check or delete the svc_* record
+    associated with this record.
 
 SEE ALSO
     the FS::Record manpage, the FS::cust_pkg manpage, the
@@ -79,11 +85,12 @@ HISTORY
     pod ivan@sisd.com 98-sep-21
 
     $Log: cust_svc.txt,v $
-    Revision 1.2  1998-11-13 09:56:41  ivan
-    change configuration file layout to support multiple distinct databases (with
-    own set of config files, export, etc.)
- Revision 1.4 1998/11/12 07:58:15 ivan
-    added svcdb to label
+    Revision 1.4  1999-04-08 13:39:32  ivan
+    convert from pod for 1.2.0 release
+ Revision 1.5 1998/12/29 11:59:47 ivan
+    mostly properly OO, some work still to be done with svc_ stuff
+
+    Revision 1.4 1998/11/12 07:58:15 ivan added svcdb to label
 
     Revision 1.3 1998/11/12 03:45:38 ivan use FS::table_name for all
     tables qsearch()'ed

@@ -4,8 +4,8 @@ NAME
 SYNOPSIS
       use FS::svc_domain;
 
-      $record = create FS::svc_domain \%hash;
-      $record = create FS::svc_domain { 'column' => 'value' };
+      $record = new FS::svc_domain \%hash;
+      $record = new FS::svc_domain { 'column' => 'value' };
 
       $error = $record->insert;
 
@@ -23,13 +23,13 @@ SYNOPSIS
 
 DESCRIPTION
     An FS::svc_domain object represents a domain. FS::svc_domain
-    inherits from FS::Record. The following fields are currently
+    inherits from FS::svc_Common. The following fields are currently
     supported:
 
     svcnum - primary key (assigned automatically for new accounts)
     domain
 METHODS
-    create HASHREF
+    new HASHREF
         Creates a new domain. To add the domain to the database, see
         the section on "insert".
 
@@ -103,26 +103,26 @@ METHODS
     submit_internic
         Submits a registration email for this domain.
 
-BUGS
-    It doesn't properly override FS::Record yet.
+VERSION
+    $Id: svc_domain.txt,v 1.3 1999-02-09 09:38:14 ivan Exp $
 
+BUGS
     All BIND/DNS fields should be included (and exported).
+
+    Delete doesn't send a registration template.
 
     All registries should be supported.
 
-    Not all configuration access is through FS::Conf!
-
     Should change action to a real field.
 
-SEE ALSO
-    the FS::Record manpage, the FS::Conf manpage, the FS::cust_svc
-    manpage, the FS::part_svc manpage, the FS::cust_pkg manpage, the
-    FS::SSH manpage, the ssh manpage, the dot-qmail manpage,
-    schema.html from the base documentation, config.html from the
-    base documentation.
+    The $recref stuff in sub check should be cleaned up.
 
-VERSION
-    $Id: svc_domain.txt,v 1.2 1998-11-13 09:56:45 ivan Exp $
+SEE ALSO
+    the FS::svc_Common manpage, the FS::Record manpage, the FS::Conf
+    manpage, the FS::cust_svc manpage, the FS::part_svc manpage, the
+    FS::cust_pkg manpage, the FS::SSH manpage, the ssh manpage, the
+    dot-qmail manpage, schema.html from the base documentation,
+    config.html from the base documentation.
 
 HISTORY
     ivan@voicenet.com 97-jul-21
@@ -140,10 +140,18 @@ HISTORY
     pod, some FS::Conf (not complete) ivan@sisd.com 98-sep-23
 
     $Log: svc_domain.txt,v $
-    Revision 1.2  1998-11-13 09:56:45  ivan
-    change configuration file layout to support multiple distinct databases (with
-    own set of config files, export, etc.)
- Revision 1.2 1998/10/14 08:18:21 ivan
-    More informative error messages and better doc for admin contact
-    email stuff
+    Revision 1.3  1999-02-09 09:38:14  ivan
+    regenerated perl api docs from embedded pod
+ Revision 1.6 1999/01/25 12:26:17 ivan
+    yet more mod_perl stuff
+
+    Revision 1.5 1998/12/30 00:30:47 ivan svc_ stuff is more
+    properly OO - has a common superclass FS::svc_Common
+
+    Revision 1.3 1998/11/13 09:56:57 ivan change configuration file
+    layout to support multiple distinct databases (with own set of
+    config files, export, etc.)
+
+    Revision 1.2 1998/10/14 08:18:21 ivan More informative error
+    messages and better doc for admin contact email stuff
 

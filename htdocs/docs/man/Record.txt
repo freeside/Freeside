@@ -3,7 +3,7 @@ NAME
 
 SYNOPSIS
         use FS::Record;
-        use FS::Record qw(dbh fields hfields qsearch qsearchs dbdef);
+        use FS::Record qw(dbh fields qsearch qsearchs dbdef);
 
         $record = new FS::Record 'table', \%hash;
         $record = new FS::Record 'table', { 'column' => 'value', ... };
@@ -28,11 +28,14 @@ SYNOPSIS
 
         $hashref = $record->hashref;
 
-        $error = $record->add;
+        $error = $record->insert;
+        #$error = $record->add; #depriciated
 
-        $error = $record->del;
+        $error = $record->delete;
+        #$error = $record->del; #depriciated
 
-        $error = $new_record->rep($old_record);
+        $error = $new_record->replace($old_record);
+        #$error = $new_record->rep($old_record); #depriciated
 
         $value = $record->unique('column');
 
@@ -57,7 +60,8 @@ SYNOPSIS
         $fields = hfields('table');
         if ( $fields->{Field} ) { # etc.
 
-        @fields = fields 'table';
+        @fields = fields 'table'; #as a subroutine
+        @fields = $record->fields; #as a method call
 
 DESCRIPTION
     (Mostly) object-oriented interface to database records. Records
@@ -65,14 +69,17 @@ DESCRIPTION
     as a base class for table-specific classes to inherit from, i.e.
     FS::cust_main.
 
-METHODS
-    new TABLE, HASHREF
+CONSTRUCTORS
+    new [ TABLE, ] HASHREF
         Creates a new record. It doesn't store it in the database,
-        though. See the section on "add" for that.
+        though. See the section on "insert" for that.
 
         Note that the object stores this hash reference, not a
         distinct copy of the hash it points to. You can ask the
         object for a copy with the *hash* method.
+
+        TABLE can only be omitted when a dervived class overrides
+        the table method.
 
     qsearch TABLE, HASHREF
         Searches the database for all records matching (at least)
@@ -87,6 +94,7 @@ METHODS
         you either made a logic error in asking for a single item,
         or your data is corrupted.
 
+METHODS
     table
         Returns the table name.
 
@@ -118,16 +126,28 @@ METHODS
     hashref
         Returns a reference to the column/value hash.
 
-    add Adds this record to the database. If there is an error, returns
-        the error, otherwise returns false.
-
-    del Delete this record from the database. If there is an error,
+    insert
+        Inserts this record to the database. If there is an error,
         returns the error, otherwise returns false.
 
-    rep OLD_RECORD
+    add Depriciated (use insert instead).
+
+    delete
+        Delete this record from the database. If there is an error,
+        returns the error, otherwise returns false.
+
+    del Depriciated (use delete instead).
+
+    replace OLD_RECORD
         Replace the OLD_RECORD with this one in the database. If
         there is an error, returns the error, otherwise returns
         false.
+
+    rep Depriciated (use replace instead).
+
+    check
+        Not yet implemented, croaks. Derived classes should provide
+        a check method.
 
     unique COLUMN
         Replaces COLUMN in record with a unique number. Called by
@@ -184,6 +204,11 @@ METHODS
     ut_anything COLUMN
         Untaints arbitrary data. Be careful.
 
+    fields [ TABLE ]
+        This can be used as both a subroutine and a method call. It
+        returns a list of the columns in this record's table, or an
+        explicitly specified table. (See the dbdef_table manpage).
+
 SUBROUTINES
     reload_dbdef([FILENAME])
             Load a database definition (see the FS::dbdef manpage),
@@ -207,9 +232,8 @@ SUBROUTINES
             It returns a hash-type list with the fields of this
             record's table set true.
 
-    fields TABLE
-            This returns a list of the columns in this record's
-            table (See the dbdef_table manpage).
+VERSION
+        $Id: Record.txt,v 1.4 1999-02-09 09:37:51 ivan Exp $
 
 BUGS
         This module should probably be renamed, since much of the
@@ -250,6 +274,9 @@ BUGS
 
         All the subroutines probably should be methods, here or
         elsewhere.
+
+        Probably should borrow/use some dbdef methods where
+        appropriate (like sub fields)
 
 SEE ALSO
         the FS::dbdef manpage, the FS::UID manpage, the DBI manpage
@@ -333,11 +360,33 @@ HISTORY
         ut_phonen got ''; at the end ivan@sisd.com 98-sep-27
 
         $Log: Record.txt,v $
-        Revision 1.3  1998-11-13 09:56:36  ivan
-        change configuration file layout to support multiple distinct databases (with
-        own set of config files, export, etc.)
- Revision 1.4 1998/11/10 07:45:25 ivan
-        doc clarification
+        Revision 1.4  1999-02-09 09:37:51  ivan
+        regenerated perl api docs from embedded pod
+ Revision 1.12 1999/01/25 12:26:06 ivan
+        yet more mod_perl stuff
+
+        Revision 1.11 1999/01/18 09:22:38 ivan changes to track
+        email addresses for email invoicing
+
+        Revision 1.10 1998/12/29 11:59:33 ivan mostly properly OO,
+        some work still to be done with svc_ stuff
+
+        Revision 1.9 1998/11/21 07:26:45 ivan "Records identical"
+        carp tells us it is just a warning.
+
+        Revision 1.8 1998/11/15 11:02:04 ivan bugsquash
+
+        Revision 1.7 1998/11/15 10:56:31 ivan qsearch gets sames "IS
+        NULL" semantics as other WHERE clauses
+
+        Revision 1.6 1998/11/15 05:31:03 ivan bugfix for new config
+        layout
+
+        Revision 1.5 1998/11/13 09:56:51 ivan change configuration
+        file layout to support multiple distinct databases (with own
+        set of config files, export, etc.)
+
+        Revision 1.4 1998/11/10 07:45:25 ivan doc clarification
 
         Revision 1.2 1998/11/07 05:17:18 ivan In sub new, Pg wrapper
         for money fields from dbdef (FS::Record::fields $table), not

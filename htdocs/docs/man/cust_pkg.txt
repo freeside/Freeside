@@ -4,8 +4,8 @@ NAME
 SYNOPSIS
       use FS::cust_pkg;
 
-      $record = create FS::cust_pkg \%hash;
-      $record = create FS::cust_pkg { 'column' => 'value' };
+      $record = new FS::cust_pkg \%hash;
+      $record = new FS::cust_pkg { 'column' => 'value' };
 
       $error = $record->insert;
 
@@ -22,6 +22,8 @@ SYNOPSIS
       $error = $record->unsuspend;
 
       $part_pkg = $record->part_pkg;
+
+      @labels = $record->labels;
 
       $error = FS::cust_pkg::order( $custnum, \@pkgparts );
       $error = FS::cust_pkg::order( $custnum, \@pkgparts, \@remove_pkgnums ] );
@@ -46,7 +48,7 @@ DESCRIPTION
     conversion functions.
 
 METHODS
-    create HASHREF
+    new HASHREF
         Create a new billing item. To add the item to the database,
         see the section on "insert".
 
@@ -60,8 +62,6 @@ METHODS
         items, because there would then be no record the customer
         ever purchased the item. Instead, see the cancel method.
 
-        sub delete { return "Can't delete cust_pkg records!"; }
-
     replace OLD_RECORD
         Replaces the OLD_RECORD with this one in the database. If
         there is an error, returns the error, otherwise returns
@@ -70,7 +70,8 @@ METHODS
         Currently, custnum, setup, bill, susp, expire, and cancel
         may be changed.
 
-        pkgpart may not be changed, but see the order subroutine.
+        Changing pkgpart may have disasterous effects. See the order
+        subroutine.
 
         setup and bill are normally updated by calling the bill
         method of a customer object (see the FS::cust_main manpage).
@@ -114,6 +115,11 @@ METHODS
         Returns the definition for this billing item, as an
         FS::part_pkg object (see L<FS::part_pkg).
 
+    labels
+        Returns a list of lists, calling the label method for all
+        services (see the FS::cust_svc manpage) of this billing
+        item.
+
 SUBROUTINES
     order CUSTNUM, PKGPARTS_ARYREF, [ REMOVE_PKGNUMS_ARYREF ]
         CUSTNUM is a customer (see the FS::cust_main manpage)
@@ -128,9 +134,10 @@ SUBROUTINES
         items. An error is returned if this is not possible (see the
         FS::pkg_svc manpage).
 
-BUGS
-    It doesn't properly override FS::Record yet.
+VERSION
+    $Id: cust_pkg.txt,v 1.3 1999-02-09 09:38:01 ivan Exp $
 
+BUGS
     sub order is not OO. Perhaps it should be moved to FS::cust_main
     and made so?
 
@@ -140,6 +147,13 @@ BUGS
     Also in sub order, no money is adjusted. Once FS::part_pkg
     defines a standard method to pass dates to the recur_prog
     expression, it should do so.
+
+    FS::svc_acct, FS::svc_acct_sm, and FS::svc_domain are loaded via
+    'use' at compile time, rather than via 'require' in sub { setup,
+    suspend, unsuspend, cancel } because they use %FS::UID::callback
+    to load configuration values. Probably need a subroutine which
+    decides what to do based on whether or not we've fetched the
+    user yet, rather than a hash. See FS::UID and the TODO.
 
 SEE ALSO
     the FS::Record manpage, the FS::cust_main manpage, the
@@ -155,9 +169,19 @@ HISTORY
     pod ivan@sisd.com 98-sep-21
 
     $Log: cust_pkg.txt,v $
-    Revision 1.2  1998-11-13 09:56:40  ivan
-    change configuration file layout to support multiple distinct databases (with
-    own set of config files, export, etc.)
- Revision 1.2 1998/11/12 03:42:45 ivan
-    added label method
+    Revision 1.3  1999-02-09 09:38:01  ivan
+    regenerated perl api docs from embedded pod
+ Revision 1.6 1999/01/25 12:26:12 ivan yet
+    more mod_perl stuff
+
+    Revision 1.5 1999/01/18 21:58:07 ivan esthetic: eq and ne were
+    used in a few places instead of == and !=
+
+    Revision 1.4 1998/12/29 11:59:45 ivan mostly properly OO, some
+    work still to be done with svc_ stuff
+
+    Revision 1.3 1998/11/15 13:01:35 ivan allow pkgpart changing
+    (for per-customer custom pricing). warn about it in doc
+
+    Revision 1.2 1998/11/12 03:42:45 ivan added label method
 

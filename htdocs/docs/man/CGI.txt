@@ -24,9 +24,13 @@ SUBROUTINES
         Returns an HTML menubar.
 
     idiot ERROR
+        This is depriciated. Don't use it.
+
         Sends headers and an HTML error message.
 
     eidiot ERROR
+        This is depriciated. Don't use it.
+
         Sends headers and an HTML error message, then exits.
 
     popurl LEVEL
@@ -35,6 +39,12 @@ SUBROUTINES
 
     table
         Returns HTML tag for beginning a table.
+
+    itable
+        Returns HTML tag for beginning an (invisible) table.
+
+    ntable
+        This is getting silly.
 
 BUGS
     Not OO.
@@ -54,11 +64,24 @@ HISTORY
     pod ivan@sisd.com 98-sep-12
 
     $Log: CGI.txt,v $
-    Revision 1.2  1998-11-13 09:56:34  ivan
-    change configuration file layout to support multiple distinct databases (with
-    own set of config files, export, etc.)
- Revision 1.11 1998/11/12 07:43:54 ivan ***
-    empty log message ***
+    Revision 1.4  1999-04-08 13:39:31  ivan
+    convert from pod for 1.2.0 release
+ Revision 1.17 1999/02/07 09:59:43 ivan more
+    mod_perl fixes, and bugfixes Peter Wemm sent via email
+
+    Revision 1.16 1999/01/25 12:26:05 ivan yet more mod_perl stuff
+
+    Revision 1.15 1999/01/18 09:41:48 ivan all $cgi->header calls
+    now include ( '-expires' => 'now' ) for mod_perl (good idea
+    anyway)
+
+    Revision 1.14 1999/01/18 09:22:37 ivan changes to track email
+    addresses for email invoicing
+
+    Revision 1.12 1998/12/23 02:23:16 ivan popurl always has
+    trailing slash
+
+    Revision 1.11 1998/11/12 07:43:54 ivan *** empty log message ***
 
     Revision 1.10 1998/11/12 01:53:47 ivan added table command
 
