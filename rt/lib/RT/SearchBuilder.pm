@@ -1,8 +1,14 @@
-# BEGIN LICENSE BLOCK
+# {{{ BEGIN BPS TAGGED BLOCK
 # 
-# Copyright (c) 1996-2003 Jesse Vincent <jesse@bestpractical.com>
+# COPYRIGHT:
+#  
+# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+#                                          <jesse@bestpractical.com>
 # 
-# (Except where explictly superceded by other copyright notices)
+# (Except where explicitly superseded by other copyright notices)
+# 
+# 
+# LICENSE:
 # 
 # This work is made available to you under the terms of Version 2 of
 # the GNU General Public License. A copy of that license should have
@@ -14,13 +20,29 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 # General Public License for more details.
 # 
-# Unless otherwise specified, all modifications, corrections or
-# extensions to this work which alter its source code become the
-# property of Best Practical Solutions, LLC when submitted for
-# inclusion in the work.
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 # 
 # 
-# END LICENSE BLOCK
+# CONTRIBUTION SUBMISSION POLICY:
+# 
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+# 
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+# 
+# }}} END BPS TAGGED BLOCK
 =head1 NAME
 
   RT::SearchBuilder - a baseclass for RT collection objects
@@ -102,6 +124,67 @@ sub LimitToDeleted {
 }
 # }}}
 
+# {{{ sub LimitAttribute
+
+=head2 LimitAttribute PARAMHASH
+
+Takes NAME, OPERATOR and VALUE to find records that has the
+matching Attribute.
+
+=cut
+
+sub LimitAttribute {
+    my ($self, %args) = @_;
+    
+    my $alias = $self->Join(
+	TYPE   => 'left',
+	ALIAS1 => 'main',
+	FIELD1 => 'id',
+	TABLE2 => 'Attributes',
+	FIELD2 => 'ObjectId'
+    );
+
+    my $type = ref($self);
+    $type =~ s/(?:s|Collection)$//; # XXX - Hack!
+
+    $self->Limit(
+	ALIAS	   => $alias,
+	FIELD      => 'ObjectType',
+	OPERATOR   => '=',
+	VALUE      => $type,
+    );
+    $self->Limit(
+	ALIAS	   => $alias,
+	FIELD      => 'Name',
+	OPERATOR   => '=',
+	VALUE      => $args{NAME},
+    ) if exists $args{NAME};
+
+    return unless exists $args{VALUE};
+
+    $self->Limit(
+	ALIAS	   => $alias,
+	FIELD      => 'Content',
+	OPERATOR   => ($args{OPERATOR} || '='),
+	VALUE      => $args{VALUE},
+	ENTRYAGGREGATOR => 'OR',
+    );
+
+    if ($args{EMPTY}) {
+	# Capture rows without the attribute defined by testing IS NULL.
+	$self->Limit(
+	    ALIAS      => $alias,
+	    FIELD      => $_,
+	    OPERATOR   => 'IS',
+	    VALUE      => 'NULL',
+	    ENTRYAGGREGATOR => 'OR',
+	) for qw( ObjectType Name Content );
+    }
+}
+# }}}
+
+1;
+
 # {{{ sub FindAllRows
 
 =head2 FindAllRows
@@ -111,7 +194,7 @@ Find all matching rows, regardless of whether they are disabled or not
 =cut
 
 sub FindAllRows {
-  shift->{'find_disabled_rows'} = 1;
+    shift->{'find_disabled_rows'} = 1;
 }
 
 # {{{ sub Limit 
@@ -125,11 +208,38 @@ match lower(colname) agaist lc($val);
 =cut
 
 sub Limit {
-	my $self = shift;
-	my %args = ( CASESENSITIVE => 1,
-		     @_ );
+    my $self = shift;
+    my %args = ( CASESENSITIVE => 1,
+                 @_ );
 
-   return $self->SUPER::Limit(%args);
+    return $self->SUPER::Limit(%args);
+}
+
+# }}}
+
+# {{{ sub ItemsOrderBy
+
+=item ItemsOrderBy
+
+If it has a SortOrder attribute, sort the array by SortOrder.
+Otherwise, if it has a "Name" attribute, sort alphabetically by Name
+Otherwise, just give up and return it in the order it came from the
+db.
+
+=cut
+
+sub ItemsOrderBy {
+    my $self = shift;
+    my $items = shift;
+  
+    if ($self->NewItem()->_Accessible('SortOrder','read')) {
+        $items = [ sort { $a->SortOrder <=> $b->SortOrder } @{$items} ];
+    }
+    elsif ($self->NewItem()->_Accessible('Name','read')) {
+        $items = [ sort { lc($a->Name) cmp lc($b->Name) } @{$items} ];
+    }
+
+    return $items;
 }
 
 # }}}
@@ -138,11 +248,8 @@ sub Limit {
 
 =item ItemsArrayRef
 
-Return this object's ItemsArray.
-If it has a SortOrder attribute, sort the array by SortOrder.
-Otherwise, if it has a "Name" attribute, sort alphabetically by Name
-Otherwise, just give up and return it in the order it came from the db.
-
+Return this object's ItemsArray, in the order that ItemsOrderBy sorts
+it.
 
 =begin testing
 
@@ -174,18 +281,7 @@ sub ItemsArrayRef {
     my $self = shift;
     my @items;
     
-    if ($self->NewItem()->_Accessible('SortOrder','read')) {
-        @items = sort { $a->SortOrder <=> $b->SortOrder } @{$self->SUPER::ItemsArrayRef()};
-    }
-    elsif ($self->NewItem()->_Accessible('Name','read')) {
-        @items = sort { lc($a->Name) cmp lc($b->Name) } @{$self->SUPER::ItemsArrayRef()};
-    }
-    else {
-        @items = @{$self->SUPER::ItemsArrayRef()};
-    }
-
-    return(\@items);
-
+    return $self->ItemsOrderBy($self->SUPER::ItemsArrayRef());
 }
 
 # }}}

@@ -1,8 +1,14 @@
-# BEGIN LICENSE BLOCK
+# {{{ BEGIN BPS TAGGED BLOCK
 # 
-# Copyright (c) 1996-2003 Jesse Vincent <jesse@bestpractical.com>
+# COPYRIGHT:
+#  
+# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+#                                          <jesse@bestpractical.com>
 # 
-# (Except where explictly superceded by other copyright notices)
+# (Except where explicitly superseded by other copyright notices)
+# 
+# 
+# LICENSE:
 # 
 # This work is made available to you under the terms of Version 2 of
 # the GNU General Public License. A copy of that license should have
@@ -14,13 +20,29 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 # General Public License for more details.
 # 
-# Unless otherwise specified, all modifications, corrections or
-# extensions to this work which alter its source code become the
-# property of Best Practical Solutions, LLC when submitted for
-# inclusion in the work.
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 # 
 # 
-# END LICENSE BLOCK
+# CONTRIBUTION SUBMISSION POLICY:
+# 
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+# 
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+# 
+# }}} END BPS TAGGED BLOCK
 package RT::Interface::Email;
 
 use strict;
@@ -34,7 +56,7 @@ BEGIN {
     use vars qw ($VERSION  @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
     
     # set the version for version checking
-    $VERSION = do { my @r = (q$Revision: 1.1.1.3 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r }; # must be all one line, for MakeMaker
+    $VERSION = do { my @r = (q$Revision: 1.1.1.4 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r }; # must be all one line, for MakeMaker
     
     @ISA         = qw(Exporter);
     
@@ -166,6 +188,7 @@ sub MailError {
 				      Bcc => $args{'Bcc'},
 				      To => $args{'To'},
 				      Subject => $args{'Subject'},
+				      Precedence => 'bulk',
 				      'X-RT-Loop-Prevention' => $RT::rtname,
 				    );
 
@@ -415,37 +438,8 @@ sub Gateway {
     }
 
     my $parser = RT::EmailParser->new();
-    my ( $fh, $temp_file );
-    for ( 1 .. 10 ) {
 
-        # on NFS and NTFS, it is possible that tempfile() conflicts
-        # with other processes, causing a race condition. we try to
-        # accommodate this by pausing and retrying.
-        last if ( $fh, $temp_file ) = eval { File::Temp::tempfile(undef, UNLINK => 0) };
-        sleep 1;
-    }
-    if ($fh) {
-        binmode $fh;    #thank you, windows
-        $fh->autoflush(1);
-        print $fh $args{'message'};
-        close($fh);
-
-        if ( -f $temp_file ) {
-            $parser->ParseMIMEEntityFromFile($temp_file);
-            unlink( $temp_file );
-            if ($parser->Entity) {
-                delete $args{'message'};
-            }
-        }
-
-    }
-
-    #If for some reason we weren't able to parse the message using a temp file 
-    # try it with a scalar
-    if ($args{'message'}) {
-        $parser->ParseMIMEEntityFromScalar($args{'message'});
-
-    } 
+    $parser->SmartParseMIMEEntityFromScalar( Message => $args{'message'});
 
     if (!$parser->Entity()) {
         MailError(
@@ -478,9 +472,12 @@ sub Gateway {
     $args{'ticket'} ||= $parser->ParseTicketId($Subject);
 
     my $SystemTicket;
+    my $Right = 'CreateTicket';
     if ( $args{'ticket'} ) {
         $SystemTicket = RT::Ticket->new($RT::SystemUser);
         $SystemTicket->Load( $args{'ticket'} );
+	# if there's an existing ticket, this must be a reply
+	$Right = 'ReplyToTicket';
     }
 
     #Set up a queue object
@@ -502,34 +499,36 @@ sub Gateway {
 
     # Since this needs loading, no matter what
 
-    for (@RT::MailPlugins) {
+    foreach (@RT::MailPlugins) {
         my $Code;
         my $NewAuthStat;
         if ( ref($_) eq "CODE" ) {
             $Code = $_;
         }
         else {
-            $_ = "RT::Interface::Email::$_" unless /^RT::Interface::Email::/;
+            $_ = "RT::Interface::Email::".$_ unless $_ =~ /^RT::Interface::Email::/;
             eval "require $_;";
             if ($@) {
-                die ("Couldn't load module $_: $@");
+                $RT::Logger->crit("Couldn't load module '$_': $@");
                 next;
             }
             no strict 'refs';
             if ( !defined( $Code = *{ $_ . "::GetCurrentUser" }{CODE} ) ) {
-                die ("No GetCurrentUser code found in $_ module");
+                $RT::Logger->crit("No GetCurrentUser code found in $_ module");
                 next;
             }
         }
 
         ( $CurrentUser, $NewAuthStat ) = $Code->(
             Message     => $Message,
+            RawMessageRef => \$args{'message'},
             CurrentUser => $CurrentUser,
             AuthLevel   => $AuthStat,
             Action      => $args{'action'},
             Ticket      => $SystemTicket,
             Queue       => $SystemQueueObj
         );
+
 
         # If a module returns a "-1" then we discard the ticket, so.
         $AuthStat = -1 if $NewAuthStat == -1;
@@ -554,7 +553,7 @@ sub Gateway {
 RT could not load a valid user, and RT's configuration does not allow
 for the creation of a new user for this email ($ErrorsTo).
 
-You might need to grant 'Everyone' the right 'CreateTicket' for the
+You might need to grant 'Everyone' the right '$Right' for the
 queue @{[$args{'queue'}]}.
 
 EOT
@@ -623,10 +622,10 @@ EOT
                 Explanation => "RT thinks this message may be a bounce",
                 MIMEObj     => $Message
             );
-
-            #Do we actually want to store it?
-            return ( 0, "Message Bounced", undef ) unless ($RT::StoreLoops);
         }
+
+        #Do we actually want to store it?
+        return ( 0, "Message Bounced", undef ) unless ($RT::StoreLoops);
     }
 
     # }}}
@@ -753,6 +752,7 @@ EOT
 
     return ( 1, "Success", $Ticket );
 }
+
 
 eval "require RT::Interface::Email_Vendor";
 die $@ if ($@ && $@ !~ qr{^Can't locate RT/Interface/Email_Vendor.pm});

@@ -1,8 +1,14 @@
-# BEGIN LICENSE BLOCK
+# {{{ BEGIN BPS TAGGED BLOCK
 # 
-# Copyright (c) 1996-2003 Jesse Vincent <jesse@bestpractical.com>
+# COPYRIGHT:
+#  
+# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+#                                          <jesse@bestpractical.com>
 # 
-# (Except where explictly superceded by other copyright notices)
+# (Except where explicitly superseded by other copyright notices)
+# 
+# 
+# LICENSE:
 # 
 # This work is made available to you under the terms of Version 2 of
 # the GNU General Public License. A copy of that license should have
@@ -14,13 +20,29 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 # General Public License for more details.
 # 
-# Unless otherwise specified, all modifications, corrections or
-# extensions to this work which alter its source code become the
-# property of Best Practical Solutions, LLC when submitted for
-# inclusion in the work.
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 # 
 # 
-# END LICENSE BLOCK
+# CONTRIBUTION SUBMISSION POLICY:
+# 
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+# 
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+# 
+# }}} END BPS TAGGED BLOCK
 =head1 NAME
 
   RT::Scrip - an RT Scrip object
@@ -79,8 +101,7 @@ ok ($ticket2->Priority != '87', "Ticket priority is set right");
 use strict;
 no warnings qw(redefine);
 
-
-# {{{ sub Create 
+# {{{ sub Create
 
 =head2 Create
 
@@ -107,24 +128,24 @@ sub Create {
     my $self = shift;
     my %args = (
         Queue                  => 0,
-        Template               => 0, # name or id
-        ScripAction            => 0, # name or id
-        ScripCondition         => 0, # name or id
+        Template               => 0,                     # name or id
+        ScripAction            => 0,                     # name or id
+        ScripCondition         => 0,                     # name or id
         Stage                  => 'TransactionCreate',
         Description            => undef,
         CustomPrepareCode      => undef,
         CustomCommitCode       => undef,
         CustomIsApplicableCode => undef,
 
-        @_
-    );
+        @_ );
 
-
-    if (! $args{'Queue'} ) {
-        unless ( $self->CurrentUser->HasRight( Object => $RT::System, Right => 'ModifyScrips') ) {
+    if ( !$args{'Queue'} ) {
+        unless ( $self->CurrentUser->HasRight( Object => $RT::System,
+                                               Right  => 'ModifyScrips' )
+          ) {
             return ( 0, $self->loc('Permission Denied') );
         }
-        $args{'Queue'} = 0;		# avoid undef sneaking in
+        $args{'Queue'} = 0;    # avoid undef sneaking in
     }
     else {
         my $QueueObj = new RT::Queue( $self->CurrentUser );
@@ -138,33 +159,33 @@ sub Create {
         $args{'Queue'} = $QueueObj->id();
     }
 
-    #TODO +++ validate input 
+    #TODO +++ validate input
 
     require RT::ScripAction;
     my $action = new RT::ScripAction( $self->CurrentUser );
-    if ($args{'ScripAction'}) {
-        $action->Load( $args{'ScripAction'});
+    if ( $args{'ScripAction'} ) {
+        $action->Load( $args{'ScripAction'} );
     }
     return ( 0, $self->loc( "Action [_1] not found", $args{'ScripAction'} ) )
       unless $action->Id;
 
     require RT::Template;
     my $template = new RT::Template( $self->CurrentUser );
-    if ($args{'Template'} ) {
-        $template->Load( $args{'Template'});
+    if ( $args{'Template'} ) {
+        $template->Load( $args{'Template'} );
     }
     return ( 0, $self->loc('Template not found') ) unless $template->Id;
 
     require RT::ScripCondition;
     my $condition = new RT::ScripCondition( $self->CurrentUser );
-    if ($args{'ScripCondition'} ) {
+    if ( $args{'ScripCondition'} ) {
         $condition->Load( $args{'ScripCondition'} );
     }
     unless ( $condition->Id ) {
         return ( 0, $self->loc('Condition not found') );
     }
 
-    my ($id,$msg) = $self->SUPER::Create(
+    my ( $id, $msg ) = $self->SUPER::Create(
         Queue                  => $args{'Queue'},
         Template               => $template->Id,
         ScripCondition         => $condition->id,
@@ -180,7 +201,7 @@ sub Create {
         return ( $id, $self->loc('Scrip Created') );
     }
     else {
-        return($id,$msg);
+        return ( $id, $msg );
     }
 }
 
@@ -196,13 +217,14 @@ Delete this object
 
 sub Delete {
     my $self = shift;
-    
-    unless ($self->CurrentUserHasRight('ModifyScrips')) {
-	return (0, $self->loc('Permission Denied'));
+
+    unless ( $self->CurrentUserHasRight('ModifyScrips') ) {
+        return ( 0, $self->loc('Permission Denied') );
     }
-    
-    return ($self->SUPER::Delete(@_));
+
+    return ( $self->SUPER::Delete(@_) );
 }
+
 # }}}
 
 # {{{ sub QueueObj
@@ -215,19 +237,18 @@ Retuns an RT::Queue object with this Scrip\'s queue
 
 sub QueueObj {
     my $self = shift;
-    
-    if (!$self->{'QueueObj'})  {
-	require RT::Queue;
-	$self->{'QueueObj'} = RT::Queue->new($self->CurrentUser);
-	$self->{'QueueObj'}->Load($self->__Value('Queue'));
+
+    if ( !$self->{'QueueObj'} ) {
+        require RT::Queue;
+        $self->{'QueueObj'} = RT::Queue->new( $self->CurrentUser );
+        $self->{'QueueObj'}->Load( $self->__Value('Queue') );
     }
-    return ($self->{'QueueObj'});
+    return ( $self->{'QueueObj'} );
 }
 
 # }}}
 
 # {{{ sub ActionObj
-
 
 =head2 ActionObj
 
@@ -237,16 +258,17 @@ Retuns an RT::Action object with this Scrip\'s Action
 
 sub ActionObj {
     my $self = shift;
-    
-    unless (defined $self->{'ScripActionObj'})  {
-	require RT::ScripAction;
-	
-	$self->{'ScripActionObj'} = RT::ScripAction->new($self->CurrentUser);
-	#TODO: why are we loading Actions with templates like this. 
-	# two separate methods might make more sense
-	$self->{'ScripActionObj'}->Load($self->ScripAction, $self->Template);
+
+    unless ( defined $self->{'ScripActionObj'} ) {
+        require RT::ScripAction;
+
+        $self->{'ScripActionObj'} = RT::ScripAction->new( $self->CurrentUser );
+
+        #TODO: why are we loading Actions with templates like this.
+        # two seperate methods might make more sense
+        $self->{'ScripActionObj'}->Load( $self->ScripAction, $self->Template );
     }
-    return ($self->{'ScripActionObj'});
+    return ( $self->{'ScripActionObj'} );
 }
 
 # }}}
@@ -276,6 +298,7 @@ sub ConditionObj {
 # }}}
 
 # {{{ sub TemplateObj
+
 =head2 TemplateObj
 
 Retuns an RT::Template object with this Scrip\'s Template
@@ -284,19 +307,20 @@ Retuns an RT::Template object with this Scrip\'s Template
 
 sub TemplateObj {
     my $self = shift;
-    
-    unless (defined $self->{'TemplateObj'})  {
-	require RT::Template;
-	    $self->{'TemplateObj'} = RT::Template->new($self->CurrentUser);
-	    $self->{'TemplateObj'}->Load($self->Template);
+
+    unless ( defined $self->{'TemplateObj'} ) {
+        require RT::Template;
+        $self->{'TemplateObj'} = RT::Template->new( $self->CurrentUser );
+        $self->{'TemplateObj'}->Load( $self->Template );
     }
-    return ($self->{'TemplateObj'});
+    return ( $self->{'TemplateObj'} );
 }
 
 # }}}
 
-
 # {{{ Dealing with this instance of a scrip
+
+# {{{ sub Apply
 
 =head2 Apply { TicketObj => undef, TransactionObj => undef}
 
@@ -312,66 +336,44 @@ should be loaded by the SuperUser role
 =cut
 
 
-# {{{ sub Apply
-
 sub Apply {
     my $self = shift;
     my %args = ( TicketObj      => undef,
                  TransactionObj => undef,
                  @_ );
 
-    # We want to make sure that if a scrip dies, we don't get
-    # hurt
-    eval {
+    $RT::Logger->debug("Now applying scrip ".$self->Id . " for transaction ".$args{'TransactionObj'}->id);
 
-        #Load the scrip's Condition object
-        $self->ConditionObj->LoadCondition(
-                                      ScripObj       => $self,
-                                      TicketObj      => $args{'TicketObj'},
-                                      TransactionObj => $args{'TransactionObj'},
-        );
-
-        unless ( $self->IsApplicable() ) {
-            $self->ConditionObj->DESTROY;
-            return (undef);
-        }
-
-        #If it's applicable, prepare and commit it
-        $self->ActionObj->LoadAction( ScripObj       => $self,
-                                      TicketObj      => $args{'TicketObj'},
-                                      TransactionObj => $args{'TransactionObj'},
-        );
-
-        unless ( $self->Prepare() ) {
-            $RT::Logger->info(
-                          "$self: Couldn't prepare " . $self->ActionObj->Name );
-            $self->ActionObj->DESTROY();
-            $self->ConditionObj->DESTROY();
-            return (undef);
-        }
-        unless ( $self->Commit() ) {
-            $RT::Logger->info(
-                           "$self: Couldn't commit " . $self->ActionObj->Name );
-            $self->ActionObj->DESTROY();
-            $self->ConditionObj->DESTROY();
-            return (undef);
-        }
-
-        #Searchbuilder caching isn't perfectly coherent. got to reload the ticket object, since it
-        # may have changed
-        $args{'TicketObj'}->Load($args{'TicketObj'}->Id);
-
-        #We're done with it. lets clean up.
-        #TODO: something else isn't letting these get garbage collected. check em out.
-        $self->ActionObj->DESTROY();
-        $self->ConditionObj->DESTROY();
-        return (1);
-    };
-    if ($@) {
-        $RT::Logger->error( "Scrip " . $self->Id . " died. - " . $@ );
+    my $ApplicableTransactionObj = $self->IsApplicable( TicketObj      => $args{'TicketObj'},
+                                                        TransactionObj => $args{'TransactionObj'} );
+    unless ( $ApplicableTransactionObj ) {
+        return undef;
     }
 
+    if ( $ApplicableTransactionObj->id != $args{'TransactionObj'}->id ) {
+        $RT::Logger->debug("Found an applicable transaction ".$ApplicableTransactionObj->Id . " in the same batch with transaction ".$args{'TransactionObj'}->id);
+    }
+
+    #If it's applicable, prepare and commit it
+    $RT::Logger->debug("Now preparing scrip ".$self->Id . " for transaction ".$ApplicableTransactionObj->id);
+    unless ( $self->Prepare( TicketObj      => $args{'TicketObj'},
+                             TransactionObj => $ApplicableTransactionObj )
+      ) {
+        return undef;
+    }
+
+    $RT::Logger->debug("Now commiting scrip ".$self->Id . " for transaction ".$ApplicableTransactionObj->id);
+    unless ( $self->Commit( TicketObj => $args{'TicketObj'},
+                            TransactionObj => $ApplicableTransactionObj)
+      ) {
+        return undef;
+    }
+
+    $RT::Logger->debug("We actually finished scrip ".$self->Id . " for transaction ".$ApplicableTransactionObj->id);
+    return (1);
+
 }
+
 # }}}
 
 # {{{ sub IsApplicable
@@ -380,16 +382,69 @@ sub Apply {
 
 Calls the  Condition object\'s IsApplicable method
 
+Upon success, returns the applicable Transaction object.
+Otherwise, undef is returned.
+
+If the Scrip is in the TransactionCreate Stage (the usual case), only test
+the associated Transaction object to see if it is applicable.
+
+For Scrips in the TransactionBatch Stage, test all Transaction objects
+created during the Ticket object's lifetime, and returns the first one
+that is applicable.
+
 =cut
 
 sub IsApplicable {
     my $self = shift;
-    return ($self->ConditionObj->IsApplicable(@_));
+    my %args = ( TicketObj      => undef,
+                 TransactionObj => undef,
+                 @_ );
+
+    my $return;
+    eval {
+
+	my @Transactions;
+
+        if ( $self->Stage eq 'TransactionCreate') {
+	    # Only look at our current Transaction
+	    @Transactions = ( $args{'TransactionObj'} );
+        }
+        elsif ( $self->Stage eq 'TransactionBatch') {
+	    # Look at all Transactions in this Batch
+            @Transactions = @{ $args{'TicketObj'}->TransactionBatch || [] };
+        }
+	else {
+	    $RT::Logger->error( "Unknown Scrip stage:" . $self->Stage );
+	    return (undef);
+	}
+
+	foreach my $TransactionObj ( @Transactions ) {
+	    # Load the scrip's Condition object
+	    $self->ConditionObj->LoadCondition(
+		ScripObj       => $self,
+		TicketObj      => $args{'TicketObj'},
+		TransactionObj => $TransactionObj,
+	    );
+
+            if ( $self->ConditionObj->IsApplicable() ) {
+	        # We found an application Transaction -- return it
+                $return = $TransactionObj;
+                last;
+            }
+	}
+    };
+    if ($@) {
+        $RT::Logger->error( "Scrip IsApplicable " . $self->Id . " died. - " . $@ );
+        return (undef);
+    }
+
+            return ($return);
+
 }
 
 # }}}
 
-# {{{ sub Prepare
+# {{{ SUb Prepare
 
 =head2 Prepare
 
@@ -399,7 +454,26 @@ Calls the action object's prepare method
 
 sub Prepare {
     my $self = shift;
-    $self->ActionObj->Prepare(@_);
+    my %args = ( TicketObj      => undef,
+                 TransactionObj => undef,
+                 @_ );
+
+    my $return;
+    eval {
+        $self->ActionObj->LoadAction( ScripObj       => $self,
+                                      TicketObj      => $args{'TicketObj'},
+                                      TransactionObj => $args{'TransactionObj'},
+        );
+
+        $return = $self->ActionObj->Prepare();
+    };
+    if ($@) {
+        $RT::Logger->error( "Scrip Prepare " . $self->Id . " died. - " . $@ );
+        return (undef);
+    }
+        unless ($return) {
+        }
+        return ($return);
 }
 
 # }}}
@@ -414,18 +488,32 @@ Calls the action object's commit method
 
 sub Commit {
     my $self = shift;
-    $self->ActionObj->Commit(@_);
+    my %args = ( TicketObj      => undef,
+                 TransactionObj => undef,
+                 @_ );
+
+    my $return;
+    eval {
+        $return = $self->ActionObj->Commit();
+    };
+
+#Searchbuilder caching isn't perfectly coherent. got to reload the ticket object, since it
+# may have changed
+    $args{'TicketObj'}->Load( $args{'TicketObj'}->Id );
+
+    if ($@) {
+        $RT::Logger->error( "Scrip IsApplicable " . $self->Id . " died. - " . $@ );
+        return (undef);
+    }
+
+    # Not destroying or weakening hte Action and Condition here could cause a
+    # leak
+
+    return ($return);
 }
 
 # }}}
 
-# }}}
-
-# {{{ sub DESTROY
-sub DESTROY {
-    my $self = shift;
-    $self->{'ActionObj'} = undef;
-}
 # }}}
 
 # {{{ ACL related methods
@@ -435,10 +523,11 @@ sub DESTROY {
 # does an acl check and then passes off the call
 sub _Set {
     my $self = shift;
-    
-    unless ($self->CurrentUserHasRight('ModifyScrips')) {
-        $RT::Logger->debug("CurrentUser can't modify Scrips for ".$self->Queue."\n");
-	return (0, $self->loc('Permission Denied'));
+
+    unless ( $self->CurrentUserHasRight('ModifyScrips') ) {
+        $RT::Logger->debug(
+                 "CurrentUser can't modify Scrips for " . $self->Queue . "\n" );
+        return ( 0, $self->loc('Permission Denied') );
     }
     return $self->__Set(@_);
 }
@@ -449,14 +538,17 @@ sub _Set {
 # does an acl check and then passes off the call
 sub _Value {
     my $self = shift;
-    
-    unless ($self->CurrentUserHasRight('ShowScrips')) {
-        $RT::Logger->debug("CurrentUser can't modify Scrips for ".$self->__Value('Queue')."\n");
-	return (undef);
+
+    unless ( $self->CurrentUserHasRight('ShowScrips') ) {
+        $RT::Logger->debug( "CurrentUser can't modify Scrips for "
+                            . $self->__Value('Queue')
+                            . "\n" );
+        return (undef);
     }
-    
+
     return $self->__Value(@_);
 }
+
 # }}}
 
 # {{{ sub CurrentUserHasRight
@@ -469,11 +561,11 @@ calls HasRight.
 =cut
 
 sub CurrentUserHasRight {
-    my $self = shift;
+    my $self  = shift;
     my $right = shift;
-    return ($self->HasRight( Principal => $self->CurrentUser->UserObj,
-                             Right => $right ));
-    
+    return ( $self->HasRight( Principal => $self->CurrentUser->UserObj,
+                              Right     => $right ) );
+
 }
 
 # }}}
@@ -490,26 +582,25 @@ Right string that applies to Scrips.
 
 sub HasRight {
     my $self = shift;
-    my %args = ( Right => undef,
+    my %args = ( Right     => undef,
                  Principal => undef,
                  @_ );
-    
-    if ((defined $self->SUPER::_Value('Queue')) and ($self->SUPER::_Value('Queue') != 0)) {
-        return ( $args{'Principal'}->HasRight(
-						   Right => $args{'Right'},
-						   Object => $self->QueueObj
-						  ) 
-	       );
-	
+
+    if (     ( defined $self->SUPER::_Value('Queue') )
+         and ( $self->SUPER::_Value('Queue') != 0 ) ) {
+        return ( $args{'Principal'}->HasRight( Right  => $args{'Right'},
+                                               Object => $self->QueueObj ) );
+
     }
     else {
-        return( $args{'Principal'}->HasRight( Object => $RT::System, Right =>  $args{'Right'}) );
+        return ( $args{'Principal'}
+                 ->HasRight( Object => $RT::System, Right => $args{'Right'} ) );
     }
 }
+
 # }}}
 
 # }}}
 
 1;
-
 

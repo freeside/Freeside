@@ -1,8 +1,14 @@
-# BEGIN LICENSE BLOCK
+# {{{ BEGIN BPS TAGGED BLOCK
 # 
-# Copyright (c) 1996-2003 Jesse Vincent <jesse@bestpractical.com>
+# COPYRIGHT:
+#  
+# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+#                                          <jesse@bestpractical.com>
 # 
-# (Except where explictly superceded by other copyright notices)
+# (Except where explicitly superseded by other copyright notices)
+# 
+# 
+# LICENSE:
 # 
 # This work is made available to you under the terms of Version 2 of
 # the GNU General Public License. A copy of that license should have
@@ -14,13 +20,29 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 # General Public License for more details.
 # 
-# Unless otherwise specified, all modifications, corrections or
-# extensions to this work which alter its source code become the
-# property of Best Practical Solutions, LLC when submitted for
-# inclusion in the work.
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 # 
 # 
-# END LICENSE BLOCK
+# CONTRIBUTION SUBMISSION POLICY:
+# 
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+# 
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+# 
+# }}} END BPS TAGGED BLOCK
 =head1 NAME
 
   RT::CurrentUser - an RT object representing the current user
@@ -51,8 +73,7 @@ use RT::Record;
 use RT::I18N;
 
 use strict;
-use vars qw/@ISA/;
-@ISA= qw(RT::Record);
+use base qw/RT::Record/;
 
 # {{{ sub _Init 
 
@@ -60,17 +81,30 @@ use vars qw/@ISA/;
 # to be a CurrentUser object. but that's hard to do when we're trying to load
 # the CurrentUser object
 
-sub _Init  {
-  my $self = shift;
-  my $Name = shift;
+sub _Init {
+    my $self = shift;
+    my $User = shift;
 
-  $self->{'table'} = "Users";
+    $self->{'table'} = "Users";
 
-  if (defined($Name)) {
-    $self->Load($Name);
-  }
-  
- # $self->CurrentUser($self);
+    if ( defined($User) ) {
+
+        if (   UNIVERSAL::isa( $User, 'RT::User' )
+            || UNIVERSAL::isa( $User, 'RT::CurrentUser' ) )
+        {
+            $self->Load( $User->id );
+
+        }
+        elsif ( ref($User) ) {
+            $RT::Logger->crit(
+                "RT::CurrentUser->new() called with a bogus argument: $User");
+        }
+        else {
+            $self->Load($User);
+        }
+    }
+
+    $self->_BuildTableAttributes();
 
 }
 # }}}
@@ -151,19 +185,18 @@ sub PrincipalId {
 
 
 # {{{ sub _Accessible 
-sub _Accessible  {
-  my $self = shift;
-  my %Cols = (
-	      Name => 'read',
-	      Gecos => 'read',
-	      RealName => 'read',
-	      Password => 'neither',
-          Lang => 'read',
-	      EmailAddress => 'read',
-	      Privileged => 'read',
-	      IsAdministrator => 'read'
-	     );
-  return($self->SUPER::_Accessible(@_, %Cols));
+
+
+ sub _CoreAccessible  {
+     {
+         Name           => { 'read' => 1 },
+           Gecos        => { 'read' => 1 },
+           RealName     => { 'read' => 1 },
+           Lang     => { 'read' => 1 },
+           Password     => { 'read' => 0, 'write' => 0 },
+          EmailAddress => { 'read' => 1, 'write' => 0 }
+     };
+  
 }
 # }}}
 
@@ -384,11 +417,12 @@ Return  the current currentuser object
 
 =cut
 
-sub CurrentUser  {
+sub CurrentUser {
     my $self = shift;
     return($self);
 
 }
+
 
 eval "require RT::CurrentUser_Vendor";
 die $@ if ($@ && $@ !~ qr{^Can't locate RT/CurrentUser_Vendor.pm});

@@ -136,6 +136,10 @@ Set($RTAddressRegexp , '^rt\@example.com$');
 Set($CanonicalizeEmailAddressMatch   , 'subdomain.example.com$');
 Set($CanonicalizeEmailAddressReplace , 'example.com');
 
+# set this to true and the create new user page will use the values that you
+# enter in the form but use the function CanonicalizeUserInfo in User_Local.pm
+Set($CanonicalizeOnCreate , 0);
+
 # If $SenderMustExistInExternalDatabase is true, RT will refuse to
 # create non-privileged accounts for unknown users if you are using
 # the "LookupSenderInExternalDatabase" option.
@@ -214,12 +218,15 @@ Set($UseFriendlyToLine , 0);
 # are WatcherType and TicketId.
 Set($FriendlyToLineFormat, "\"%s of $RT::rtname Ticket #%s\":;");
 
-# By default RT doesn't notify the person who performs an update, as they
+# By default, RT doesn't notify the person who performs an update, as they
 # already know what they've done. If you'd like to change this behaviour,
 # Set $NotifyActor to 1
 
 Set($NotifyActor, 0);
 
+# By default, RT records each message it sends out to its own internal database.# To change this behaviour, set $RecordOutgoingEmail to 0 
+
+Set($RecordOutgoingEmail, 1);
 
 # }}}
 
@@ -275,11 +282,16 @@ Set($WebURL , $WebBaseURL . $WebPath . "/");
 
 # $WebImagesURL points to the base URL where RT can find its images.
 
-Set($WebImagesURL , $WebURL . "NoAuth/images/");
+Set($WebImagesURL , $WebPath . "/NoAuth/images/");
 
 # $RTLogoURL points to the URL of the RT logo displayed in the web UI
 
 Set($LogoURL , $WebImagesURL . "rt.jpg");
+
+# WebNoAuthRegex - What portion of RT's URLspace should not require
+# authentication.
+Set($WebNoAuthRegex, qr!^(?:/+NoAuth/|
+                            /+REST/\d+\.\d+/NoAuth/)!x );
 
 # For message boxes, set the entry box width and what type of wrapping
 # to use.
@@ -294,6 +306,14 @@ Set($MessageBoxWrap, "HARD");
 # as text. This prevents malicious HTML and javascript from being
 # sent in a request (although there is probably more to it than that)
 Set($TrustHTMLAttachments , undef);
+
+
+# If PreferRichText is set to a true value, RT will show HTML/Rich text
+# messages in preference to their plaintext alternatives. RT "scrubs" the 
+# html to show only a minimal subset of HTML to avoid possible contamination
+# by cross-site-scripting attacks.
+
+Set($PreferRichText, undef);
 
 # If $WebExternalAuth is defined, RT will defer to the environment's
 # REMOTE_USER variable.
@@ -346,6 +366,23 @@ Set($MyRequestsLength, 10);
 #     (preamble => 'my $p = MasonX::Profiler->new($m, $r);');
 
 @MasonParameters = () unless (@MasonParameters);
+
+# $DefaultSearchResultFormat is the default format for RT search results
+Set ($DefaultSearchResultFormat, qq{
+   '<B><A HREF="$RT::WebPath/Ticket/Display.html?id=__id__">__id__</a></B>/TITLE:#',
+   '<B><A HREF="$RT::WebPath/Ticket/Display.html?id=__id__">__Subject__</a></B>/TITLE:Subject',
+   Status,
+   QueueName, 
+   OwnerName, 
+   Priority, 
+   '__NEWLINE__',
+   '', 
+   '<small>__Requestors__</small>',
+   '<small>__CreatedRelative__</small>',
+   '<small>__ToldRelative__</small>',
+   '<small>__LastUpdatedRelative__</small>',
+   '<small>__TimeLeft__</small>'});
+
 
 # }}}
 

@@ -1,8 +1,14 @@
-# BEGIN LICENSE BLOCK
+# {{{ BEGIN BPS TAGGED BLOCK
 # 
-# Copyright (c) 1996-2003 Jesse Vincent <jesse@bestpractical.com>
+# COPYRIGHT:
+#  
+# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+#                                          <jesse@bestpractical.com>
 # 
-# (Except where explictly superceded by other copyright notices)
+# (Except where explicitly superseded by other copyright notices)
+# 
+# 
+# LICENSE:
 # 
 # This work is made available to you under the terms of Version 2 of
 # the GNU General Public License. A copy of that license should have
@@ -14,13 +20,29 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 # General Public License for more details.
 # 
-# Unless otherwise specified, all modifications, corrections or
-# extensions to this work which alter its source code become the
-# property of Best Practical Solutions, LLC when submitted for
-# inclusion in the work.
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 # 
 # 
-# END LICENSE BLOCK
+# CONTRIBUTION SUBMISSION POLICY:
+# 
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+# 
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+# 
+# }}} END BPS TAGGED BLOCK
 =head1 NAME
 
   RT::User - RT User object
@@ -59,80 +81,28 @@ use RT::EmailParser;
 # {{{ sub _Accessible 
 
 
-sub _ClassAccessible {
+sub _OverlayAccessible {
     {
-     
-        id =>
-                {read => 1, type => 'int(11)', default => ''},
-        Name => 
-                {read => 1, write => 1, public => 1, admin => 1, type => 'varchar(120)', default => ''},
-        Password => 
-                { write => 1, type => 'varchar(40)', default => ''},
-        Comments => 
-                {read => 1, write => 1, admin => 1, type => 'blob', default => ''},
-        Signature => 
-                {read => 1, write => 1, type => 'blob', default => ''},
-        EmailAddress => 
-                {read => 1, write => 1, public => 1,  type => 'varchar(120)', default => ''},
-        FreeformContactInfo => 
-                {read => 1, write => 1, type => 'blob', default => ''},
-        Organization => 
-                {read => 1, write => 1, public => 1, admin => 1, type => 'varchar(200)', default => ''},
-        RealName => 
-                {read => 1, write => 1, public => 1, type => 'varchar(120)', default => ''},
-        NickName => 
-                {read => 1, write => 1, public => 1, type => 'varchar(16)', default => ''},
-        Lang => 
-                {read => 1, write => 1, public => 1, type => 'varchar(16)', default => ''},
-        EmailEncoding => 
-                {read => 1, write => 1, public => 1, type => 'varchar(16)', default => ''},
-        WebEncoding => 
-                {read => 1, write => 1, public => 1, type => 'varchar(16)', default => ''},
-        ExternalContactInfoId => 
-                {read => 1, write => 1, public => 1, admin => 1, type => 'varchar(100)', default => ''},
-        ContactInfoSystem => 
-                {read => 1, write => 1, public => 1, admin => 1, type => 'varchar(30)', default => ''},
-        ExternalAuthId => 
-                {read => 1, write => 1, public => 1, admin => 1, type => 'varchar(100)', default => ''},
-        AuthSystem => 
-                {read => 1, write => 1, public => 1, admin => 1,type => 'varchar(30)', default => ''},
-        Gecos => 
-                {read => 1, write => 1, public => 1, admin => 1, type => 'varchar(16)', default => ''},
 
-        PGPKey => {
-                {read => 1, write => 1, public => 1, admin => 1, type => 'text', default => ''},
-        },
-        HomePhone => 
-                {read => 1, write => 1, type => 'varchar(30)', default => ''},
-        WorkPhone => 
-                {read => 1, write => 1, type => 'varchar(30)', default => ''},
-        MobilePhone => 
-                {read => 1, write => 1, type => 'varchar(30)', default => ''},
-        PagerPhone => 
-                {read => 1, write => 1, type => 'varchar(30)', default => ''},
-        Address1 => 
-                {read => 1, write => 1, type => 'varchar(200)', default => ''},
-        Address2 => 
-                {read => 1, write => 1, type => 'varchar(200)', default => ''},
-        City => 
-                {read => 1, write => 1, type => 'varchar(100)', default => ''},
-        State => 
-                {read => 1, write => 1, type => 'varchar(100)', default => ''},
-        Zip => 
-                {read => 1, write => 1, type => 'varchar(16)', default => ''},
-        Country => 
-                {read => 1, write => 1, type => 'varchar(50)', default => ''},
-        Creator => 
-                {read => 1, auto => 1, type => 'int(11)', default => ''},
-        Created => 
-                {read => 1, auto => 1, type => 'datetime', default => ''},
-        LastUpdatedBy => 
-                {read => 1, auto => 1, type => 'int(11)', default => ''},
-        LastUpdated => 
-                {read => 1, auto => 1, type => 'datetime', default => ''},
+        Name                    => { public => 1,  admin => 1 },
+          Password              => { read   => 0 },
+          EmailAddress          => { public => 1 },
+          Organization          => { public => 1,  admin => 1 },
+          RealName              => { public => 1 },
+          NickName              => { public => 1 },
+          Lang                  => { public => 1 },
+          EmailEncoding         => { public => 1 },
+          WebEncoding           => { public => 1 },
+          ExternalContactInfoId => { public => 1,  admin => 1 },
+          ContactInfoSystem     => { public => 1,  admin => 1 },
+          ExternalAuthId        => { public => 1,  admin => 1 },
+          AuthSystem            => { public => 1,  admin => 1 },
+          Gecos                 => { public => 1,  admin => 1 },
+          PGPKey                => { public => 1,  admin => 1 },
 
- }
-};
+    }
+}
+
 
 
 # }}}
@@ -209,7 +179,13 @@ sub Create {
         return ( 0, $self->loc('No permission to create users') );
     }
 
+
+    unless ($self->CanonicalizeUserInfo(\%args)) {
+        return ( 0, $self->loc("Could not set user info") );
+    }
+
     $args{'EmailAddress'} = $self->CanonicalizeEmailAddress($args{'EmailAddress'});
+
     # if the user doesn't have a name defined, set it to the email address
     $args{'Name'} = $args{'EmailAddress'} unless ($args{'Name'});
 
@@ -696,6 +672,32 @@ sub CanonicalizeEmailAddress {
 
 # }}}
 
+# {{{ sub CanonicalizeUserInfo
+
+
+
+=item CanonicalizeUserInfo HASH of ARGS
+
+# CanonicalizeUserInfo can convert all User->Create options.
+# it takes a hashref of all the params sent to User->Create and
+# returns that same hash, by default nothing is done.
+
+# This function is intended to allow users to have their info looked up via
+# an outside source and modified upon creation.
+
+=cut
+
+sub CanonicalizeUserInfo {
+    my $self = shift;
+    my $args = shift;
+    my $success = 1;
+
+    return ($success);
+}
+
+
+# }}}
+
 
 # {{{ Password related functions
 
@@ -781,7 +783,7 @@ sub ResetPassword {
         Argument    => $pass
     );
 
-    $notification->SetTo( $self->EmailAddress );
+    $notification->SetHeader( 'To', $self->EmailAddress );
 
     my ($ret);
     $ret = $notification->Prepare();

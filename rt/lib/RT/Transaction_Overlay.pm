@@ -1,8 +1,14 @@
-# BEGIN LICENSE BLOCK
+# {{{ BEGIN BPS TAGGED BLOCK
 # 
-# Copyright (c) 1996-2003 Jesse Vincent <jesse@bestpractical.com>
+# COPYRIGHT:
+#  
+# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+#                                          <jesse@bestpractical.com>
 # 
-# (Except where explictly superceded by other copyright notices)
+# (Except where explicitly superseded by other copyright notices)
+# 
+# 
+# LICENSE:
 # 
 # This work is made available to you under the terms of Version 2 of
 # the GNU General Public License. A copy of that license should have
@@ -14,13 +20,29 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 # General Public License for more details.
 # 
-# Unless otherwise specified, all modifications, corrections or
-# extensions to this work which alter its source code become the
-# property of Best Practical Solutions, LLC when submitted for
-# inclusion in the work.
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 # 
 # 
-# END LICENSE BLOCK
+# CONTRIBUTION SUBMISSION POLICY:
+# 
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+# 
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+# 
+# }}} END BPS TAGGED BLOCK
 =head1 NAME
 
   RT::Transaction - RT\'s transaction object
@@ -54,6 +76,7 @@ no warnings qw(redefine);
 use vars qw( %_BriefDescriptions );
 
 use RT::Attachments;
+use RT::Scrips;
 
 # {{{ sub Create 
 
@@ -82,6 +105,7 @@ sub Create {
         NewValue       => undef,
         MIMEObj        => undef,
         ActivateScrips => 1,
+        CommitScrips => 1,
         @_
     );
 
@@ -109,24 +133,48 @@ sub Create {
  
     my $id = $self->SUPER::Create(%params);
     $self->Load($id);
-    $self->_Attach( $args{'MIMEObj'} )
-      if defined $args{'MIMEObj'};
+    $self->_Attach( $args{'MIMEObj'} ) if defined $args{'MIMEObj'};
+
 
     #Provide a way to turn off scrips if we need to
+        $RT::Logger->debug('About to think about scrips for transaction' .$self->Id);            
     if ( $args{'ActivateScrips'} ) {
-        require RT::Scrips;
-        RT::Scrips->new($RT::SystemUser)->Apply(
+       $self->{'scrips'} = RT::Scrips->new($RT::SystemUser);
+
+        $RT::Logger->debug('About to prepare scrips for transaction' .$self->Id);            
+
+        $self->{'scrips'}->Prepare(
             Stage       => 'TransactionCreate',
             Type        => $args{'Type'},
             Ticket      => $args{'Ticket'},
             Transaction => $self->id,
         );
+        if ($args{'CommitScrips'} ) {
+            $RT::Logger->debug('About to commit scrips for transaction' .$self->Id);
+            $self->{'scrips'}->Commit();
+        }
     }
 
     return ( $id, $self->loc("Transaction Created") );
 }
 
 # }}}
+
+=head2 Scrips
+
+Returns the Scrips object for this transaction.
+This routine is only useful on a freshly created transaction object.
+Scrips do not get persisted to the database with transactions.
+
+
+=cut
+
+
+sub Scrips {
+    my $self = shift;
+    return($self->{'scrips'});
+}
+
 
 # {{{ sub Delete
 
@@ -221,10 +269,10 @@ sub Content {
             $content = $wrapper->wrap($content);
         }
 
-        $content =~ s/^/> /gm;
         $content = '['
           . $self->CreatorObj->Name() . ' - '
-          . $self->CreatedAsString() . "]:\n" . $content . "\n\n";
+          . $self->CreatedAsString() . "]:\n\n" . $content . "\n\n";
+        $content =~ s/^/> /gm;
 
     }
 
@@ -409,8 +457,10 @@ sub Description {
     my $self = shift;
 
     #Check those ACLs
-    #If it's a comment, we need to be extra special careful
-    if ( $self->__Value('Type') eq 'Comment' ) {
+    #If it's a comment or a comment email record,
+    #  we need to be extra special careful
+
+    if ( $self->__Value('Type') =~ /^Comment/ ) {
         unless ( $self->CurrentUserHasRight('ShowTicketComments') ) {
             return ( $self->loc("Permission Denied") );
         }
@@ -444,9 +494,9 @@ sub BriefDescription {
     my $self = shift;
 
 
-    #Check those ACLs
-    #If it's a comment, we need to be extra special careful
-    if ( $self->__Value('Type') eq 'Comment' ) {
+    #If it's a comment or a comment email record,
+    #  we need to be extra special careful
+    if ( $self->__Value('Type') =~ /^Comment/ ) {
         unless ( $self->CurrentUserHasRight('ShowTicketComments') ) {
             return ( $self->loc("Permission Denied") );
         }
@@ -492,6 +542,14 @@ sub BriefDescription {
 }
 
 %_BriefDescriptions = (
+    CommentEmailRecord => sub {
+        my $self = shift;
+        return $self->loc("Outgoing email about a comment recorded");
+    },
+    EmailRecord => sub {
+        my $self = shift;
+        return $self->loc("Outgoing email recorded");
+    },
     Correspond => sub {
         my $self = shift;
         return $self->loc("Correspondence added");
@@ -751,6 +809,19 @@ sub _Value {
         unless ( $self->CurrentUserHasRight('ShowTicketComments') ) {
             return (undef);
         }
+    }
+    elsif ( $self->__Value('Type') eq 'CommentEmailRecord' ) {
+        unless ( $self->CurrentUserHasRight('ShowTicketComments')
+            && $self->CurrentUserHasRight('ShowOutgoingEmail') ) {
+            return (undef);
+        }
+
+    }
+    elsif ( $self->__Value('Type') eq 'EmailRecord' ) {
+        unless ( $self->CurrentUserHasRight('ShowOutgoingEmail')) {
+            return (undef);
+        }
+
     }
 
     #if they ain't got rights to see, don't let em

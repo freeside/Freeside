@@ -1,8 +1,14 @@
-# BEGIN LICENSE BLOCK
+# {{{ BEGIN BPS TAGGED BLOCK
 # 
-# Copyright (c) 1996-2003 Jesse Vincent <jesse@bestpractical.com>
+# COPYRIGHT:
+#  
+# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+#                                          <jesse@bestpractical.com>
 # 
-# (Except where explictly superceded by other copyright notices)
+# (Except where explicitly superseded by other copyright notices)
+# 
+# 
+# LICENSE:
 # 
 # This work is made available to you under the terms of Version 2 of
 # the GNU General Public License. A copy of that license should have
@@ -14,13 +20,29 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 # General Public License for more details.
 # 
-# Unless otherwise specified, all modifications, corrections or
-# extensions to this work which alter its source code become the
-# property of Best Practical Solutions, LLC when submitted for
-# inclusion in the work.
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 # 
 # 
-# END LICENSE BLOCK
+# CONTRIBUTION SUBMISSION POLICY:
+# 
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+# 
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+# 
+# }}} END BPS TAGGED BLOCK
 ## Portions Copyright 2000 Tobias Brox <tobix@fsck.com>
 
 ## This is a library of static subs to be used by the Mason web
@@ -45,75 +67,6 @@ use strict;
 
 
 
-
-
-# {{{ sub NewApacheHandler 
-
-=head2 NewApacheHandler
-
-  Takes extra options to pass to HTML::Mason::ApacheHandler->new
-  Returns a new Mason::ApacheHandler object
-
-=cut
-
-sub NewApacheHandler {
-    require HTML::Mason::ApacheHandler;
-    my $ah = new HTML::Mason::ApacheHandler( 
-    
-        comp_root                    => [
-            [ local    => $RT::MasonLocalComponentRoot ],
-            [ standard => $RT::MasonComponentRoot ]
-        ],
-        args_method => "CGI",
-        default_escape_flags => 'h',
-        allow_globals        => [qw(%session)],
-        data_dir => "$RT::MasonDataDir",
-        autoflush => 1,
-        @_
-    );
-
-    $ah->interp->set_escape( h => \&RT::Interface::Web::EscapeUTF8 );
-    
-    return ($ah);
-}
-
-# }}}
-
-# {{{ sub NewCGIHandler 
-
-=head2 NewCGIHandler
-
-  Returns a new Mason::CGIHandler object
-
-=cut
-
-sub NewCGIHandler {
-    my %args = (
-        @_
-    );
-
-    my $handler = HTML::Mason::CGIHandler->new(
-        comp_root                    => [
-            [ local    => $RT::MasonLocalComponentRoot ],
-            [ standard => $RT::MasonComponentRoot ]
-        ],
-        data_dir => "$RT::MasonDataDir",
-        default_escape_flags => 'h',
-        allow_globals        => [qw(%session)],
-        autoflush => 1,
-        @_
-    );
-  
-
-    $handler->interp->set_escape( h => \&RT::Interface::Web::EscapeUTF8 );
-
-
-    return ($handler);
-
-}
-# }}}
-
-
 # {{{ EscapeUTF8
 
 =head2 EscapeUTF8 SCALARREF
@@ -135,6 +88,7 @@ sub EscapeUTF8  {
         $val =~ s/'/&#39;/g;
         $$ref = $val;
         Encode::_utf8_on($$ref);
+
 
 }
 
@@ -321,6 +275,7 @@ sub CreateTicket {
     }
 
     my %create_args = (
+        Type            => $ARGS{'Type'} || 'ticket',
         Queue           => $ARGS{'Queue'},
         Owner           => $ARGS{'Owner'},
         InitialPriority => $ARGS{'InitialPriority'},
@@ -337,36 +292,54 @@ sub CreateTicket {
         Starts          => $starts->ISO,
         MIMEObj         => $MIMEObj
     );
-  foreach my $arg (%ARGS) {
+    foreach my $arg (%ARGS) {
         if ($arg =~ /^CustomField-(\d+)(.*?)$/) {
             next if ($arg =~ /-Magic$/);
             $create_args{"CustomField-".$1} = $ARGS{"$arg"};
         }
     }
+
+    # turn new link lists into arrays, and pass in the proper arguments
+    my (@dependson, @dependedonby, 
+	@parents, @children, 
+	@refersto, @referredtoby);
+
+    foreach my $luri ( split ( / /, $ARGS{"new-DependsOn"} ) ) {
+	$luri =~ s/\s*$//;    # Strip trailing whitespace
+	push @dependson, $luri;
+    }
+    $create_args{'DependsOn'} = \@dependson;
+
+    foreach my $luri ( split ( / /, $ARGS{"DependsOn-new"} ) ) {
+	push @dependedonby, $luri;
+    }
+    $create_args{'DependedOnBy'} = \@dependedonby;
+
+    foreach my $luri ( split ( / /, $ARGS{"new-MemberOf"} ) ) {
+	$luri =~ s/\s*$//;    # Strip trailing whitespace
+	push @parents, $luri;
+    }
+    $create_args{'Parents'} = \@parents;
+
+    foreach my $luri ( split ( / /, $ARGS{"MemberOf-new"} ) ) {
+	push @children, $luri;
+    }
+    $create_args{'Children'} = \@children;
+
+    foreach my $luri ( split ( / /, $ARGS{"new-RefersTo"} ) ) {
+	$luri =~ s/\s*$//;    # Strip trailing whitespace
+	push @refersto, $luri;
+    }
+    $create_args{'RefersTo'} = \@refersto;
+
+    foreach my $luri ( split ( / /, $ARGS{"RefersTo-new"} ) ) {
+	push @referredtoby, $luri;
+    }
+    $create_args{'ReferredToBy'} = \@referredtoby;
+
     my ( $id, $Trans, $ErrMsg ) = $Ticket->Create(%create_args);
     unless ( $id && $Trans ) {
         Abort($ErrMsg);
-    }
-    my @linktypes = qw( DependsOn MemberOf RefersTo );
-
-    foreach my $linktype (@linktypes) {
-        foreach my $luri ( split ( / /, $ARGS{"new-$linktype"} ) ) {
-            $luri =~ s/\s*$//;    # Strip trailing whitespace
-            my ( $val, $msg ) = $Ticket->AddLink(
-                Target => $luri,
-                Type   => $linktype
-            );
-            push ( @Actions, $msg ) unless ($val);
-        }
-
-        foreach my $luri ( split ( / /, $ARGS{"$linktype-new"} ) ) {
-            my ( $val, $msg ) = $Ticket->AddLink(
-                Base => $luri,
-                Type => $linktype
-            );
-
-            push ( @Actions, $msg ) unless ($val);
-        }
     }
 
     push ( @Actions, split("\n", $ErrMsg) );
@@ -447,7 +420,7 @@ sub ProcessUpdateMessage {
 
         ## TODO: Implement public comments
         if ( $args{ARGSRef}->{'UpdateType'} =~ /^(private|public)$/ ) {
-            my ( $Transaction, $Description ) = $args{TicketObj}->Comment(
+            my ( $Transaction, $Description, $Object ) = $args{TicketObj}->Comment(
                 CcMessageTo  => $args{ARGSRef}->{'UpdateCc'},
                 BccMessageTo => $args{ARGSRef}->{'UpdateBcc'},
                 MIMEObj      => $Message,
@@ -456,7 +429,7 @@ sub ProcessUpdateMessage {
             push ( @{ $args{Actions} }, $Description );
         }
         elsif ( $args{ARGSRef}->{'UpdateType'} eq 'response' ) {
-            my ( $Transaction, $Description ) = $args{TicketObj}->Correspond(
+            my ( $Transaction, $Description, $Object ) = $args{TicketObj}->Correspond(
                 CcMessageTo  => $args{ARGSRef}->{'UpdateCc'},
                 BccMessageTo => $args{ARGSRef}->{'UpdateBcc'},
                 MIMEObj      => $Message,
@@ -923,52 +896,12 @@ sub UpdateRecordObject {
         @_
     );
 
-    my (@results);
+    my $Object = $args{'Object'};
+    my @results = $Object->Update(AttributesRef => $args{'AttributesRef'},
+				  ARGSRef       => $args{'ARGSRef'},
+                  AttributePrefix => $args{'AttributePrefix'}
+				  );
 
-    my $object     = $args{'Object'};
-    my $attributes = $args{'AttributesRef'};
-    my $ARGSRef    = $args{'ARGSRef'};
-    foreach my $attribute (@$attributes) {
-        my $value;
-        if ( defined $ARGSRef->{$attribute} ) {
-            $value = $ARGSRef->{$attribute};
-        }
-        elsif (
-              defined( $args{'AttributePrefix'} )
-              && defined(
-                  $ARGSRef->{ $args{'AttributePrefix'} . "-" . $attribute }
-              )
-          ) {
-            $value = $ARGSRef->{ $args{'AttributePrefix'} . "-" . $attribute };
-
-        } else {
-                next;
-        }
-
-            $value =~ s/\r\n/\n/gs;
-
-        if ($value ne $object->$attribute()){
-
-              my $method = "Set$attribute";
-              my ( $code, $msg ) = $object->$method($value);
-
-              push @results, loc($attribute) . ': ' . loc_fuzzy($msg);
-=for loc
-                                   "[_1] could not be set to [_2].",       # loc
-                                   "That is already the current value",    # loc
-                                   "No value sent to _Set!\n",             # loc
-                                   "Illegal value for [_1]",               # loc
-                                   "The new value has been set.",          # loc
-                                   "No column specified",                  # loc
-                                   "Immutable field",                      # loc
-                                   "Nonexistant field?",                   # loc
-                                   "Invalid data",                         # loc
-                                   "Couldn't find row",                    # loc
-                                   "Missing a primary key?: [_1]",         # loc
-                                   "Found Object",                         # loc
-=cut
-          };
-    }
     return (@results);
 }
 
@@ -1060,6 +993,7 @@ sub ProcessTicketBasics {
       TimeEstimated
       TimeWorked
       TimeLeft
+      Type
       Status
       Queue
     );
@@ -1072,6 +1006,8 @@ sub ProcessTicketBasics {
         }
     }
 
+    $ARGSRef->{'Status'} ||= $TicketObj->Status;
+    
     my @results = UpdateRecordObject(
         AttributesRef => \@attribs,
         Object        => $TicketObj,
@@ -1153,6 +1089,11 @@ sub ProcessTicketCustomFieldUpdates {
                   ( ref( $ARGSRef->{$arg} ) eq 'ARRAY' ) 
                   ? @{ $ARGSRef->{$arg} }
                   : split /\n/, $ARGSRef->{$arg} ;
+
+		#for poor windows boxen that pass in "\r\n"
+		local $/ = "\r";
+		chomp @values;
+
                 if ( ( $arg =~ /-AddValue$/ ) || ( $arg =~ /-Value$/ ) ) {
                     foreach my $value (@values) {
                         next unless length($value);
@@ -1263,7 +1204,7 @@ sub ProcessTicketWatchers {
     foreach my $key ( keys %$ARGSRef ) {
 
         # {{{ Delete deletable watchers
-        if ( ( $key =~ /^Ticket-DelWatcher-Type-(.*)-Principal-(\d+)$/ )  ) {
+        if ( ( $key =~ /^Ticket-DeleteWatcher-Type-(.*)-Principal-(\d+)$/ )  ) {
             my ( $code, $msg ) = 
                 $Ticket->DeleteWatcher(PrincipalId => $2,
                                        Type => $1);
@@ -1271,8 +1212,8 @@ sub ProcessTicketWatchers {
         }
 
         # Delete watchers in the simple style demanded by the bulk manipulator
-        elsif ( $key =~ /^Delete(Requestor|Cc|AdminCc)$/ ) {
-            my ( $code, $msg ) = $Ticket->DeleteWatcher( Type => $ARGSRef->{$key}, PrincipalId => $1 );
+        elsif ( $key =~ /^Delete(Requestor|Cc|AdminCc)$/ ) {	    
+            my ( $code, $msg ) = $Ticket->DeleteWatcher( Email => $ARGSRef->{$key}, Type => $1 );
             push @results, $msg;
         }
 
@@ -1392,48 +1333,8 @@ sub ProcessTicketLinks {
     my $Ticket  = $args{'TicketObj'};
     my $ARGSRef = $args{'ARGSRef'};
 
-    my (@results);
-
-    # Delete links that are gone gone gone.
-    foreach my $arg ( keys %$ARGSRef ) {
-        if ( $arg =~ /DeleteLink-(.*?)-(DependsOn|MemberOf|RefersTo)-(.*)$/ ) {
-            my $base   = $1;
-            my $type   = $2;
-            my $target = $3;
-
-            push @results,
-              "Trying to delete: Base: $base Target: $target  Type $type";
-            my ( $val, $msg ) = $Ticket->DeleteLink( Base   => $base,
-                                                     Type   => $type,
-                                                     Target => $target );
-
-            push @results, $msg;
-
-        }
-
-    }
-
-    my @linktypes = qw( DependsOn MemberOf RefersTo );
-
-    foreach my $linktype (@linktypes) {
-        if ( $ARGSRef->{ $Ticket->Id . "-$linktype" } ) {
-            for my $luri ( split ( / /, $ARGSRef->{ $Ticket->Id . "-$linktype" } ) ) {
-                $luri =~ s/\s*$//;    # Strip trailing whitespace
-                my ( $val, $msg ) = $Ticket->AddLink( Target => $luri,
-                                                      Type   => $linktype );
-                push @results, $msg;
-            }
-        }
-        if ( $ARGSRef->{ "$linktype-" . $Ticket->Id } ) {
-
-            for my $luri ( split ( / /, $ARGSRef->{ "$linktype-" . $Ticket->Id } ) ) {
-                my ( $val, $msg ) = $Ticket->AddLink( Base => $luri,
-                                                      Type => $linktype );
-
-                push @results, $msg;
-            }
-        } 
-    }
+    my (@results) = ProcessRecordLinks(RecordObj => $Ticket,
+				       ARGSRef => $ARGSRef);
 
     #Merge if we need to
     if ( $ARGSRef->{ $Ticket->Id . "-MergeInto" } ) {
@@ -1446,6 +1347,60 @@ sub ProcessTicketLinks {
 }
 
 # }}}
+
+sub ProcessRecordLinks {
+    my %args = ( RecordObj => undef,
+                 ARGSRef   => undef,
+                 @_ );
+
+    my $Record  = $args{'RecordObj'};
+    my $ARGSRef = $args{'ARGSRef'};
+
+    my (@results);
+
+    # Delete links that are gone gone gone.
+    foreach my $arg ( keys %$ARGSRef ) {
+        if ( $arg =~ /DeleteLink-(.*?)-(DependsOn|MemberOf|RefersTo)-(.*)$/ ) {
+            my $base   = $1;
+            my $type   = $2;
+            my $target = $3;
+
+            push @results,
+              "Trying to delete: Base: $base Target: $target  Type $type";
+            my ( $val, $msg ) = $Record->DeleteLink( Base   => $base,
+                                                     Type   => $type,
+                                                     Target => $target );
+
+            push @results, $msg;
+
+        }
+
+    }
+
+    my @linktypes = qw( DependsOn MemberOf RefersTo );
+
+    foreach my $linktype (@linktypes) {
+        if ( $ARGSRef->{ $Record->Id . "-$linktype" } ) {
+            for my $luri ( split ( / /, $ARGSRef->{ $Record->Id . "-$linktype" } ) ) {
+                $luri =~ s/\s*$//;    # Strip trailing whitespace
+                my ( $val, $msg ) = $Record->AddLink( Target => $luri,
+                                                      Type   => $linktype );
+                push @results, $msg;
+            }
+        }
+        if ( $ARGSRef->{ "$linktype-" . $Record->Id } ) {
+
+            for my $luri ( split ( / /, $ARGSRef->{ "$linktype-" . $Record->Id } ) ) {
+                my ( $val, $msg ) = $Record->AddLink( Base => $luri,
+                                                      Type => $linktype );
+
+                push @results, $msg;
+            }
+        } 
+    }
+
+    return (@results);
+}
 
 eval "require RT::Interface::Web_Vendor";
 die $@ if ($@ && $@ !~ qr{^Can't locate RT/Interface/Web_Vendor.pm});

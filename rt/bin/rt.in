@@ -1,9 +1,15 @@
 #!@PERL@ -w
-# BEGIN LICENSE BLOCK
+# {{{ BEGIN BPS TAGGED BLOCK
 # 
-# Copyright (c) 1996-2003 Jesse Vincent <jesse@bestpractical.com>
+# COPYRIGHT:
+#  
+# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+#                                          <jesse@bestpractical.com>
 # 
-# (Except where explictly superceded by other copyright notices)
+# (Except where explicitly superseded by other copyright notices)
+# 
+# 
+# LICENSE:
 # 
 # This work is made available to you under the terms of Version 2 of
 # the GNU General Public License. A copy of that license should have
@@ -15,14 +21,29 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 # General Public License for more details.
 # 
-# Unless otherwise specified, all modifications, corrections or
-# extensions to this work which alter its source code become the
-# property of Best Practical Solutions, LLC when submitted for
-# inclusion in the work.
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 # 
 # 
-# END LICENSE BLOCK
-
+# CONTRIBUTION SUBMISSION POLICY:
+# 
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+# 
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+# 
+# }}} END BPS TAGGED BLOCK
 use strict;
 
 # This program is intentionally written to have as few non-core module
@@ -30,6 +51,7 @@ use strict;
 
 use Cwd;
 use LWP;
+use Text::ParseWords;
 use HTTP::Request::Common;
 
 # We derive configuration information from hardwired defaults, dotfiles,
@@ -77,6 +99,7 @@ my $idlist = '(?:(?:\d+-)?\d+,)*(?:\d+-)?\d+';
 my %handlers = (
 #   handler     => [ ...aliases... ],
     version     => ["version", "ver"],
+    shell       => ["shell"],
     logout      => ["logout"],
     help        => ["help", "man"],
     show        => ["show", "cat"],
@@ -88,24 +111,45 @@ my %handlers = (
     grant       => ["grant", "revoke"],
 );
 
-# Once we find and call an appropriate handler, we're done.
-
-my (%actions, $action);
+my %actions;
 foreach my $fn (keys %handlers) {
     foreach my $alias (@{ $handlers{$fn} }) {
         $actions{$alias} = \&{"$fn"};
     }
 }
-if (@ARGV && exists $actions{$ARGV[0]}) {
-    $action = shift @ARGV;
+
+# Once we find and call an appropriate handler, we're done.
+
+sub handler {
+    my $action;
+
+    if (@ARGV && exists $actions{$ARGV[0]}) {
+        $action = shift @ARGV;
+    }
+    $actions{$action || "help"}->($action || ());
 }
-$actions{$action || "help"}->($action || ());
+
+handler();
 exit;
 
 # Handler functions.
 # ------------------
 #
 # The following subs are handlers for each entry in %actions.
+
+sub shell {
+    $|=1;
+    print "rt> ";
+    while (<>) {
+        chomp;
+        next if /^#/ || /^\s*$/;
+
+        @ARGV = shellwords($_);
+        handler();
+        print "rt> ";
+    }
+    print "\n";
+}
 
 sub version {
     print "rt $VERSION\n";
@@ -115,19 +159,22 @@ sub logout {
     submit("$REST/logout") if defined $session->cookie;
 }
 
+my %help;
 sub help {
     my ($action, $type) = @_;
-    my (%help, $key);
+    my $key;
 
     # What help topics do we know about?
-    local $/ = undef;
-    foreach my $item (@{ Form::parse(<DATA>) }) {
-        my $title = $item->[2]{Title};
-        my @titles = ref $title eq 'ARRAY' ? @$title : $title;
+    if (!%help) {
+        local $/ = undef;
+        foreach my $item (@{ Form::parse(<DATA>) }) {
+            my $title = $item->[2]{Title};
+            my @titles = ref $title eq 'ARRAY' ? @$title : $title;
 
             foreach $title (grep $_, @titles) {
                 $help{$title} = $item->[2]{Text};
             }
+        }
     }
 
     # What does the user want help with?
@@ -168,7 +215,9 @@ sub help {
 # Displays a list of objects that match some specified condition.
 
 sub list {
-    my ($q, $type, %data, $orderby);
+    my ($q, $type, %data);
+    my $orderby = $config{orderby};
+    
     if ($config{orderby}) {
          $data{orderby} = $config{orderby};
     } 
@@ -205,7 +254,6 @@ sub list {
             $bad = 1; last;
         }
     }
-    
     if (!defined $q) {
         $q = $config{query}; 
     }
@@ -460,7 +508,7 @@ sub edit {
 
     if ($output) {
         print $text;
-        exit;
+        return;
     }
 
     my $synerr = 0;
@@ -486,7 +534,7 @@ EDIT:
             }
             else {
                 print $r->content;
-                exit -1;
+                return;
             }
         }
         print $r->content;
@@ -515,7 +563,7 @@ sub comment {
             if (/-a/) {
                 unless (-f $ARGV[0] && -r $ARGV[0]) {
                     whine "Cannot read attachment: '$ARGV[0]'.";
-                    exit -1;
+                    return;
                 }
                 push @files, shift @ARGV;
             }
@@ -560,6 +608,7 @@ sub comment {
             Attachment => [ @files ],
             TimeWorked => $wtime || '',
             Text       => $msg || '',
+            Status => ''
         }
     ];
 
@@ -571,7 +620,7 @@ sub comment {
 
         do {
             my $ntext = vi($text);
-            exit if ($error && $ntext eq $text);
+            return if ($error && $ntext eq $text);
             $text = $ntext;
             $form = Form::parse($text);
             $error = 0;
@@ -583,7 +632,7 @@ sub comment {
                 goto NEXT;
             }
             elsif (!@$o) {
-                exit;
+                return;
             }
             @files = @{ vsplit($k->{Attachment}) };
 
@@ -659,7 +708,7 @@ sub link {
             $bad = 1;
         }
         unless (exists $ltypes{lc $rel}) {
-            whine "Invalid relationship '$rel' specified.";
+            whine "Invalid link '$rel' specified.";
             $bad = 1;
         }
         %data = (id => $from, rel => $rel, to => $to, del => $del);
@@ -1122,6 +1171,7 @@ sub config_from_file {
 sub parse_config_file {
     my %cfg;
     my ($file) = @_;
+    local $_; # $_ may be aliased to a constant, from line 1163
 
     open(CFG, $file) && do {
         while (<CFG>) {
@@ -1741,16 +1791,16 @@ Text:
 
     Syntax:
 
-        rt link [-d] <id-A> <relationship> <id-B>
+        rt link [-d] <id-A> <link> <id-B>
 
     Creates (or, with -d, deletes) a link between the specified tickets.
-    The relationship can (irrespective of case) be any of:
+    The link can (irrespective of case) be any of:
 
         DependsOn/DependedOnBy:     A depends upon B (or vice versa).
         RefersTo/ReferredToBy:      A refers to B (or vice versa).
         MemberOf/HasMember:         A is a member of B (or vice versa).
 
-    To view a ticket's relationships, use "rt show ticket/3/links". (See
+    To view a ticket's links, use "rt show ticket/3/links". (See
     "rt help ticket" and "rt help show".)
 
     Options:
