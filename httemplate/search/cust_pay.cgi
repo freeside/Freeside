@@ -19,20 +19,23 @@
        if ( $3 ) {
          if ( $3 eq 'VisaMC' ) {
            #avoid posix regexes for portability
-           push @search, " (    substring(payinfo from 1 for 1) = '4'  ".
-                         "   OR substring(payinfo from 1 for 2) = '51' ".
-                         "   OR substring(payinfo from 1 for 2) = '52' ".
-                         "   OR substring(payinfo from 1 for 2) = '53' ".
-                         "   OR substring(payinfo from 1 for 2) = '54' ".
-                         "   OR substring(payinfo from 1 for 2) = '54' ".
-                         "   OR substring(payinfo from 1 for 2) = '55' ".
-                         " ) ";
+           push @search,
+             " (    substring(cust_pay.payinfo from 1 for 1) = '4'  ".
+             "   OR substring(cust_pay.payinfo from 1 for 2) = '51' ".
+             "   OR substring(cust_pay.payinfo from 1 for 2) = '52' ".
+             "   OR substring(cust_pay.payinfo from 1 for 2) = '53' ".
+             "   OR substring(cust_pay.payinfo from 1 for 2) = '54' ".
+             "   OR substring(cust_pay.payinfo from 1 for 2) = '54' ".
+             "   OR substring(cust_pay.payinfo from 1 for 2) = '55' ".
+             " ) ";
          } elsif ( $3 eq 'Amex' ) {
-           push @search, " (    substring(payinfo from 1 for 2 ) = '34' ".
-                         "   OR substring(payinfo from 1 for 2 ) = '37' ".
-                         " ) ";
+           push @search,
+             " (    substring(cust_pay.payinfo from 1 for 2 ) = '34' ".
+             "   OR substring(cust_pay.payinfo from 1 for 2 ) = '37' ".
+             " ) ";
          } elsif ( $3 eq 'Discover' ) {
-           push @search, " substring(payinfo from 1 for 4 ) = '6011' ";
+           push @search,
+             " substring(cust_pay.payinfo from 1 for 4 ) = '6011' ";
          } else {
            die "unknown card type $3";
          }
