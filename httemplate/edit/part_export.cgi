@@ -49,11 +49,11 @@ my $widget = new HTML::Widgets::SelectLayers(
       my $label = $optinfo->{label};
       my $type = defined($optinfo->{type}) ? $optinfo->{type} : 'text';
       my $value = $cgi->param($option)
-                  || $part_export->option($option)
-                  || ( (exists $optinfo->{default} && !$part_export->exportnum)
-                       ? $optinfo->{default}
-                       : ''
-                     );
+                 || ( $part_export->exportnum && $part_export->option($option) )
+                 || ( (exists $optinfo->{default} && !$part_export->exportnum)
+                      ? $optinfo->{default}
+                      : ''
+                    );
       $html .= qq!<TR><TD ALIGN="right">$label</TD><TD>!;
       if ( $type eq 'select' ) {
         $html .= qq!<SELECT NAME="$option">!;
