@@ -105,8 +105,6 @@ be able to get everything else working...
 Critical Path provisioning has been updated and can now username changes
 and suspension/unsuspension.
 
--- 
-
 - New export code!
 - Name and company searches:
   - now case-insensative
@@ -127,4 +125,6 @@ and suspension/unsuspension.
 schema diagram
 
 --
+
+complete bind import and export and edit of dns zone files
 

@@ -1,7 +1,7 @@
 package FS::domain_record;
 
 use strict;
-use vars qw( @ISA );
+use vars qw( @ISA $noserial_hack );
 #use FS::Record qw( qsearch qsearchs );
 use FS::Record qw( qsearchs dbh );
 use FS::svc_domain;
@@ -84,6 +84,16 @@ sub insert {
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
+
+  if ( $self->rectype eq '_mstr' ) { #delete all other records
+    foreach my $domain_record ( reverse $self->svc_domain->domain_record ) {
+      my $error = $domain_record->delete;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
+      }
+    }
+  }
 
   my $error = $self->SUPER::insert;
   if ( $error ) {
@@ -265,6 +275,7 @@ sub check {
 =cut
 
 sub increment_serial {
+  return '' if $noserial_hack;
   my $self = shift;
 
   my $soa = qsearchs('domain_record', {
@@ -283,11 +294,22 @@ sub increment_serial {
   $new->replace($soa);
 }
 
+=item svc_domain
+
+Returns the domain (see L<FS::svc_domain) for this record.
+
+=cut
+
+sub svc_domain {
+  my $self = shift;
+  qsearchs('svc_domain', { svcnum => $self->svcnum } );
+}
+
 =back
 
 =head1 VERSION
 
-$Id: domain_record.pm,v 1.8 2002-05-22 18:44:01 ivan Exp $
+$Id: domain_record.pm,v 1.9 2002-05-23 13:00:08 ivan Exp $
 
 =head1 BUGS
 

@@ -22,6 +22,9 @@ if ( $error ) {
 #  $cgi->param('error', $error);
 #  print $cgi->redirect(popurl(2). "agent.cgi?". $cgi->query_string );
   #no edit screen to send them back to
+%>
+<!-- mason kludge -->
+<%
   eidiot($error);
 } else { 
   my $svcnum = $new->svcnum;
