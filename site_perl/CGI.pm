@@ -84,7 +84,7 @@ sub idiot {
   my($cgi)=FS::UID::cgi;
   if ( $cgi->isa('CGI::Base') ) {
     no strict 'subs';
-    CGI::Base::SendHeaders;
+    &CGI::Base::SendHeaders;
   } else {
     print $cgi->header;
   }
@@ -141,7 +141,7 @@ lose the background, eidiot ivan@sisd.com 98-sep-2
 pod ivan@sisd.com 98-sep-12
 
 $Log: CGI.pm,v $
-Revision 1.5  1998-11-09 05:23:55  ivan
+Revision 1.6  1998-11-09 05:44:20  ivan
 *** empty log message ***
 
 Revision 1.4  1998/11/09 04:55:42  ivan
