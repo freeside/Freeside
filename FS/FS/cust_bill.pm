@@ -1,7 +1,7 @@
 package FS::cust_bill;
 
 use strict;
-use vars qw( @ISA $conf $invoice_template $money_char );
+use vars qw( @ISA $conf $money_char );
 use vars qw( $lpr $invoice_from $smtpmachine );
 use vars qw( $processor );
 use vars qw( $xaction $E_NoErr );
@@ -29,21 +29,6 @@ $FS::UID::callback{'FS::cust_bill'} = sub {
   $conf = new FS::Conf;
 
   $money_char = $conf->config('money_char') || '$';  
-
-  my @invoice_template = $conf->config('invoice_template')
-    or die "cannot load config file invoice_template";
-  $invoice_lines = 0;
-  foreach ( grep /invoice_lines\(\d+\)/, @invoice_template ) { #kludgy
-    /invoice_lines\((\d+)\)/;
-    $invoice_lines += $1;
-  }
-  die "no invoice_lines() functions in template?" unless $invoice_lines;
-  $invoice_template = new Text::Template (
-    TYPE   => 'ARRAY',
-    SOURCE => [ map "$_\n", @invoice_template ],
-  ) or die "can't create new Text::Template object: $Text::Template::ERROR";
-  $invoice_template->compile()
-    or die "can't compile template: $Text::Template::ERROR";
 
   $lpr = $conf->config('lpr');
   $invoice_from = $conf->config('invoice_from');
@@ -383,7 +368,7 @@ emails or print.  See L<FS::cust_main_invoice>.
 =cut
 
 sub send {
-  my $self = shift;
+  my($self,$template) = @_;
 
   #my @print_text = $cust_bill->print_text; #( date )
   my @invoicing_list = $self->cust_main->invoicing_list;
@@ -401,7 +386,7 @@ sub send {
     ] );
     my $message = new Mail::Internet (
       'Header' => $header,
-      'Body' => [ $self->print_text ], #( date)
+      'Body' => [ $self->print_text('', $template) ], #( date)
     );
     $!=0;
     $message->smtpsend( Host => $smtpmachine )
@@ -702,7 +687,7 @@ L<Time::Local> and L<Date::Parse> for conversion functions.
 
 sub print_text {
 
-  my( $self, $today ) = ( shift, shift );
+  my( $self, $today, $template ) = @_;
   $today ||= time;
 #  my $invnum = $self->invnum;
   my $cust_main = qsearchs('cust_main', { 'custnum', $self->custnum } );
@@ -811,8 +796,25 @@ sub print_text {
   push @buf,['Balance Due', $money_char. 
     sprintf("%10.2f", $balance_due ) ];
 
+  #create the template
+  my $templatefile = 'invoice_template';
+  $templatefile .= "_$template" if $template;
+  my @invoice_template = $conf->config($templatefile)
+  or die "cannot load config file $templatefile";
+  $invoice_lines = 0;
+  foreach ( grep /invoice_lines\(\d+\)/, @invoice_template ) { #kludgy
+    /invoice_lines\((\d+)\)/;
+    $invoice_lines += $1;
+  }
+  die "no invoice_lines() functions in template?" unless $invoice_lines;
+  my $invoice_template = new Text::Template (
+    TYPE   => 'ARRAY',
+    SOURCE => [ map "$_\n", @invoice_template ],
+  ) or die "can't create new Text::Template object: $Text::Template::ERROR";
+  $invoice_template->compile()
+    or die "can't compile template: $Text::Template::ERROR";
+
   #setup template variables
-  
   package FS::cust_bill::_template; #!
   use vars qw( $invnum $date $page $total_pages @address $overdue @buf );
 
@@ -847,13 +849,13 @@ sub print_text {
   $FS::cust_bill::_template::address[$l++] = $cust_main->country
     unless $cust_main->country eq 'US';
 
-  #overdue? (variable for the template)
-  $FS::cust_bill::_template::overdue = ( 
-    $balance_due > 0
-    && $today > $self->_date 
-#    && $self->printed > 1
-    && $self->printed > 0
-  );
+	#  #overdue? (variable for the template)
+	#  $FS::cust_bill::_template::overdue = ( 
+	#    $balance_due > 0
+	#    && $today > $self->_date 
+	##    && $self->printed > 1
+	#    && $self->printed > 0
+	#  );
 
   #and subroutine for the template
 
@@ -864,7 +866,9 @@ sub print_text {
     }
     ( 1 .. $lines );
   }
-    
+
+
+  #and fill it in
   $FS::cust_bill::_template::page = 1;
   my $lines;
   my @collect;
@@ -883,7 +887,7 @@ sub print_text {
 
 =head1 VERSION
 
-$Id: cust_bill.pm,v 1.23 2002-03-18 19:49:10 ivan Exp $
+$Id: cust_bill.pm,v 1.24 2002-03-18 21:40:17 ivan Exp $
 
 =head1 BUGS
 

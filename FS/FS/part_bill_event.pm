@@ -154,7 +154,7 @@ sub check {
   #quelle kludge
   if ( $self->plandata =~ /^templatename\s+(.*)$/ ) {
     my $name= $1;
-    unless ( $conf->config("invoice_template_$name") ) {
+    unless ( $conf->exists("invoice_template_$name") ) {
       $conf->set(
         "invoice_template_$name" =>
           join("\n", $conf->config('invoice_template') )

@@ -174,8 +174,12 @@ sub config_items {
   my $self = shift; 
   #quelle kludge
   @config_items,
-  map { new FS::ConfItem {
-                           'key'         => basename($_),
+  map { 
+        my $basename = basename($_);
+        $basename =~ /^(.*)$/;
+        $basename = $1;
+        new FS::ConfItem {
+                           'key'         => $basename,
                            'section'     => 'billing',
                            'description' => 'Alternate template file for invoices.  See the <a href="../docs/billing.html">billing documentation</a> for details.',
                            'type'        => 'textarea',
