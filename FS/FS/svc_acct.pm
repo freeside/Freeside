@@ -552,10 +552,10 @@ sub replace {
       qsearchs( 'svc_acct', { 'username' => $new->username,
                                'domsvc'   => $new->domsvc,
                              } );
-  {
-    no warnings 'numeric';
+#  {
+#    no warnings 'numeric';  #alas, a 5.006-ism
     return "Can't change uid!" if $old->uid != $new->uid;
-  }
+#  }
 
   return "can't change username using Cyrus"
     if $cyrus_server && $old->username ne $new->username;
@@ -963,7 +963,7 @@ sub ssh {
 
 =head1 VERSION
 
-$Id: svc_acct.pm,v 1.57 2001-12-19 14:30:12 ivan Exp $
+$Id: svc_acct.pm,v 1.58 2001-12-19 14:33:48 ivan Exp $
 
 =head1 BUGS
 
