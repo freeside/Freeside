@@ -72,7 +72,7 @@ my $widget = new HTML::Widgets::SelectLayers(
       } elsif ( $type eq 'text' ) {
         $html .= qq!<INPUT TYPE="text" NAME="$option" VALUE="$value" SIZE=64>!;
       } elsif ( $type eq 'checkbox' ) {
-        $html .= qq!<INPUT TYPE="checkbox" NAME="$option" VALUE="1"!
+        $html .= qq!<INPUT TYPE="checkbox" NAME="$option" VALUE="1"!;
         $html .= ' CHECKED' if $value;
         $html .= '>';
       } else {
