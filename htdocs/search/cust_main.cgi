@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main.cgi,v 1.3 1998-12-17 09:41:08 ivan Exp $
+# $Id: cust_main.cgi,v 1.4 1998-12-30 00:57:50 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/cust_main.cgi
@@ -19,7 +19,10 @@
 # display total, use FS::CGI ivan@sisd.com 98-jul-17
 #
 # $Log: cust_main.cgi,v $
-# Revision 1.3  1998-12-17 09:41:08  ivan
+# Revision 1.4  1998-12-30 00:57:50  ivan
+# bug
+#
+# Revision 1.3  1998/12/17 09:41:08  ivan
 # s/CGI::(Base|Request)/CGI.pm/;
 #
 # Revision 1.2  1998/11/12 08:10:22  ivan
@@ -111,7 +114,7 @@ END
     }
 
     #my($rowspan) = scalar(@{$all_pkgs{$custnum}});
-    my($view) = popurl(2). "/view/cust_main.cgi?$custnum";
+    my($view) = popurl(2). "view/cust_main.cgi?$custnum";
     print <<END;
     <TR>
       <TD ROWSPAN=$rowspan><A HREF="$view"><FONT SIZE=-1>$custnum</FONT></A></TD>
