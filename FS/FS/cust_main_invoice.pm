@@ -136,7 +136,7 @@ sub checkdest {
     my($user, $domain) = ($1, $2);
     $self->dest("$1\@$2");
   } else {
-    return gettext("illegal_email_invoice_address");
+    return gettext("illegal_email_invoice_address"). ': '. $self->dest;
   }
 
   ''; #no error
