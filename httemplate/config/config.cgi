@@ -25,13 +25,13 @@ function SafeOnsubmit() {
 <form name="OneTrueForm" action="config-process.cgi" METHOD="POST" onSubmit="SafeOnsubmit()">
 
 <% foreach my $section ( qw(required billing username password UI session
-                            shell mail apache BIND
+                            shell BIND
                            ),
                          '', 'deprecated') { %>
   <A NAME="<%= $section || 'unclassified' %>"></A>
   <FONT SIZE="-2">
   <% foreach my $nav_section ( qw(required billing username password UI session
-                                  shell mail apache BIND
+                                  shell BIND
                                  ),
                                '', 'deprecated') { %>
     <% if ( $section eq $nav_section ) { %>

@@ -228,8 +228,8 @@ httemplate/docs/config.html
 
   {
     'key'         => 'apacheip',
-    'section'     => 'apache',
-    'description' => 'The current IP address to assign to new virtual hosts',
+    'section'     => 'deprecated',
+    'description' => '<b>DEPRECATED</b>, add an <i>apache</i> <a href="../browse/part_export.cgi">export</a> instead.  Used to be the current IP address to assign to new virtual hosts',
     'type'        => 'text',
   },
 
@@ -242,8 +242,8 @@ httemplate/docs/config.html
 
   {
     'key'         => 'apachemachines',
-    'section'     => 'apache',
-    'description' => 'Your Apache machines, one per line.  This enables export of `/etc/apache/vhosts.conf\', which can be included in your Apache configuration via the <a href="http://www.apache.org/docs/mod/core.html#include">Include</a> directive.',
+    'section'     => 'deprecated',
+    'description' => '<b>DEPRECATED</b>, add an <i>apache</i> <a href="../browse/part_export.cgi">export</a> instead.  Used to be Apache machines, one per line.  This enables export of `/etc/apache/vhosts.conf\', which can be included in your Apache configuration via the <a href="http://www.apache.org/docs/mod/core.html#include">Include</a> directive.',
     'type'        => 'textarea',
   },
 
@@ -382,8 +382,8 @@ httemplate/docs/config.html
   
   {
     'key'         => 'erpcdmachines',
-    'section'     => '',
-    'description' => 'Your ERPCD authenticaion machines, one per line.  This enables export of `/usr/annex/acp_passwd\' and `/usr/annex/acp_dialup\'',
+    'section'     => 'deprecated',
+    'description' => '<b>DEPRECATED</b>, ERPCD is no longer supported.  Used to be ERPCD authenticaion machines, one per line.  This enables export of `/usr/annex/acp_passwd\' and `/usr/annex/acp_dialup\'',
     'type'        => 'textarea',
   },
 
@@ -418,21 +418,21 @@ httemplate/docs/config.html
   {
     'key'         => 'icradius_mysqldest',
     'section'     => 'deprecated',
-    'description' => '<b>DEPRECATED</b>, add an <i>sqlradius</i> https://billing.crosswind.net/freeside/browse/part_export.cgi">export</a> instead.  Used to be the destination directory for the MySQL databases, on the ICRADIUS/FreeRADIUS machines.  Defaults to "/usr/local/var/".',
+    'description' => '<b>DEPRECATED</b>, add an <i>sqlradius</i> <a href="../browse/part_export.cgi">export</a> instead.  Used to be the destination directory for the MySQL databases, on the ICRADIUS/FreeRADIUS machines.  Defaults to "/usr/local/var/".',
     'type'        => 'text',
   },
 
   {
     'key'         => 'icradius_mysqlsource',
     'section'     => 'deprecated',
-    'description' => '<b>DEPRECATED</b>, add an <i>sqlradius</i> https://billing.crosswind.net/freeside/browse/part_export.cgi">export</a> instead.  Used to be the source directory for for the MySQL radcheck table files, on the Freeside machine.  Defaults to "/usr/local/var/freeside".',
+    'description' => '<b>DEPRECATED</b>, add an <i>sqlradius</i> <a href="../browse/part_export.cgi">export</a> instead.  Used to be the source directory for for the MySQL radcheck table files, on the Freeside machine.  Defaults to "/usr/local/var/freeside".',
     'type'        => 'text',
   },
 
   {
     'key'         => 'icradius_secrets',
     'section'     => 'deprecated',
-    'description' => '<b>DEPRECATED</b>, add an <i>sqlradius</i> https://billing.crosswind.net/freeside/browse/part_export.cgi">export</a> instead.  This option used to specify a database for ICRADIUS/FreeRADIUS export.  Three lines: DBI data source, username and password.',
+    'description' => '<b>DEPRECATED</b>, add an <i>sqlradius</i> <a href="../browse/part_export.cgi">export</a> instead.  This option used to specify a database for ICRADIUS/FreeRADIUS export.  Three lines: DBI data source, username and password.',
     'type'        => 'textarea',
   },
 
@@ -576,22 +576,22 @@ httemplate/docs/config.html
 
   {
     'key'         => 'sendmailconfigpath',
-    'section'     => 'mail',
-    'description' => 'Sendmail configuration file path.  Defaults to `/etc\'.  Many newer distributions use `/etc/mail\'.',
+    'section'     => 'deprecated',
+    'description' => '<b>DEPRECATED</b>, add a <i>sendmail</i> <a href="../browse/part_export.cgi">export</a> instead.  Used to be sendmail configuration file path.  Defaults to `/etc\'.  Many newer distributions use `/etc/mail\'.',
     'type'        => 'text',
   },
 
   {
     'key'         => 'sendmailmachines',
-    'section'     => 'mail',
-    'description' => 'Your sendmail machines, one per line.  This enables export of `/etc/virtusertable\' and `/etc/sendmail.cw\'.',
+    'section'     => 'deprecated',
+    'description' => '<b>DEPRECATED</b>, add a <i>sendmail</i> <a href="../browse/part_export.cgi">export</a> instead.  Used to be sendmail machines, one per line.  This enables export of `/etc/virtusertable\' and `/etc/sendmail.cw\'.',
     'type'        => 'textarea',
   },
 
   {
     'key'         => 'sendmailrestart',
-    'section'     => 'mail',
-    'description' => 'If defined, the command which is run on sendmail machines after files are copied.',
+    'section'     => 'deprecated',
+    'description' => '<b>DEPRECATED</b>, add a <i>sendmail</i> <a href="../browse/part_export.cgi">export</a> instead.  Used to define the command which is run on sendmail machines after files are copied.',
     'type'        => 'text',
   },
 
