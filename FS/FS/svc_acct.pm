@@ -289,7 +289,7 @@ sub insert {
 
   my $part_svc = qsearchs( 'part_svc', { 'svcpart' => $self->svcpart } );
   return "Unknown svcpart" unless $part_svc;
-  return "uid in use"
+  return "uid ". $self->uid. " in use"
     if $part_svc->part_svc_column('uid')->columnflag ne 'F'
       && qsearchs( 'svc_acct', { 'uid' => $self->uid } )
       && $self->username !~ /^(hyla)?fax$/
