@@ -1,0 +1,46 @@
+#!/usr/bin/perl -w
+# this quick hack helps you generate/maintain .fetchmailrc files from
+# FS::acct_snarf data.  it is run from a shellcommands export as:
+# create-fetchmailrc $username $dir $snarf_machine1 $snarf_username1 $snarf__password1 $snarf_machine2 $snarf_username2 $snarf__password2 $snarf_machine3 $snarf_username3 $snarf__password3 $snarf_machine4 $snarf_username4 $snarf__password4 $snarf_machine5 $snarf_username5 $snarf__password5 $snarf_machine6 $snarf_username6 $snarf__password6 $snarf_machine7 $snarf_username7 $snarf__password7 $snarf_machine8 $snarf_username8 $snarf__password8 $snarf_machine9 $snarf_username9 $snarf__password9 $snarf_machine10 $snarf_username10 $snarf__password10
+
+use strict;
+use POSIX qw( setuid setsid );
+
+my $header = <<END;
+# Configuration created by create-fetchmailrc
+set postmaster "postmaster"
+set bouncemail
+set no spambounce
+set properties ""
+set daemon 240
+END
+
+my $username = shift @ARGV or die "no username specified\n";
+my $homedir  = shift @ARGV or die "no homedir specified\n";
+my $filename = "$homedir/.fetchmailrc";
+
+open(FETCHMAILRC, ">$filename") or die "can't open $filename: $!\n";
+chown 0600, $filename           or die "can't chown 600 $filename: $!\n";
+print FETCHMAILRC $header;
+
+while ($ARGV[0]) {
+  my( $s_machine, $s_username, $s_password ) = splice( @ARGV, 0, 3 );
+  print FETCHMAILRC <<END;
+poll $s_machine
+	user '$s_username' there with password '$s_password' is '$username' here
+END
+}
+
+close FETCHMAILRC;
+
+my $gid = scalar(getgrnam($username)) or die "can't find $username's gid\n";
+my $uid = scalar(getpwnam($username)) or die "can't find $username's uid\n";
+
+setgid($gid) or die "can't setgid $gid\n";
+setuid($uid) or die "can't setuid $uid\n";
+
+exec(qw( fetchmail -a -K --antispam "550,451" -d 180 -f ), $filename);
+die "can't execute fetchmail: $!";
+
+
+
