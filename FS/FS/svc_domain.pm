@@ -342,7 +342,8 @@ sub check {
            " (or unknown registry - try \$whois_hack)";
   }
 
-  $recref->{action} =~ /^(M|N)$/ or return "Illegal action";
+  $recref->{action} =~ /^(M|N)$/
+    or return "Illegal action: ". $recref->{action};
   $recref->{action} = $1;
 
   if ( $recref->{catchall} ne '' ) {
