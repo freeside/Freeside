@@ -15,23 +15,24 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: agent.cgi,v $
-# Revision 1.2  1998-11-07 10:24:22  ivan
+# Revision 1.3  1998-11-08 10:11:02  ivan
+# CGI.pm
+#
+# Revision 1.2  1998/11/07 10:24:22  ivan
 # don't use depriciated FS::Bill and FS::Invoice, other miscellania
 #
 
 use strict;
-use CGI::Base;
+use CGI;
 use FS::UID qw(cgisuidsetup swapuid);
 use FS::Record qw(qsearch qsearchs);
 use FS::CGI qw(header menubar);
 
-my($cgi) = new CGI::Base;
-$cgi->get;
+my($cgi) = new CGI;
 
 &cgisuidsetup($cgi);
 
-SendHeaders(); # one guess.
-print header('Agent Listing', menubar(
+print $cgi->header, header('Agent Listing', menubar(
   'Main Menu'   => '../',
   'Agent Types' => 'agent_type.cgi',
 #  'Add new agent' => '../edit/agent.cgi'
