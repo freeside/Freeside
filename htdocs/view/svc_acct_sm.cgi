@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# View svc_acct_sm records
+# $Id: svc_acct_sm.cgi,v 1.2 1998-12-16 05:24:30 ivan Exp $
 #
 # Usage: svc_acct_sm.cgi svcnum
 #        http://server.name/path/svc_acct_sm.cgi?svcnum
@@ -20,19 +20,21 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # /var/spool/freeside/conf/domain ivan@sisd.com 98-jul-17
+#
+# $Log: svc_acct_sm.cgi,v $
+# Revision 1.2  1998-12-16 05:24:30  ivan
+# use FS::Conf;
+#
 
 use strict;
+use vars qw($conf);
 use CGI::Base qw(:DEFAULT :CGI);
 use FS::UID qw(cgisuidsetup);
 use FS::Record qw(qsearchs);
+use FS::Conf;
 
-my($conf_domain)="/var/spool/freeside/conf/domain";
-open(DOMAIN,$conf_domain) or die "Can't open $conf_domain: $!";
-my($mydomain)=map {
-  /^(.*)$/ or die "Illegal line in $conf_domain!"; #yes, we trust the file
-  $1
-} grep $_ !~ /^(#|$)/, <DOMAIN>;
-close DOMAIN;
+$conf = new FS::Conf;
+my $mydomain = $conf->config('domain');
 
 my($cgi) = new CGI::Base;
 $cgi->get;

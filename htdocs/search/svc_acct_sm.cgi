@@ -19,18 +19,15 @@
 #       bmccane@maxbaud.net     98-apr-3
 
 use strict;
+use vars qw($conf);
 use CGI::Request;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
 use FS::Record qw(qsearch qsearchs);
+use FS::Conf;
 
-my($conf_domain)="/var/spool/freeside/conf/domain";
-open(DOMAIN,$conf_domain) or die "Can't open $conf_domain: $!";
-my($mydomain)=map {
-  /^(.*)$/ or die "Illegal line in $conf_domain!"; #yes, we trust the file
-  $1
-} grep $_ !~ /^(#|$)/, <DOMAIN>;
-close DOMAIN;
+$conf = new FS::Conf;
+my $mydomain = $conf->config('domain');
 
 my($req)=new CGI::Request; # create form object
 &cgisuidsetup($req->cgi);

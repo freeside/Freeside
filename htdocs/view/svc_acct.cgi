@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# View svc_acct records
+# $Id: svc_acct.cgi,v 1.2 1998-12-16 05:24:29 ivan Exp $
 #
 # Usage: svc_acct.cgi svcnum
 #        http://server.name/path/svc_acct.cgi?svcnum
@@ -33,19 +33,22 @@
 # /var/spool/freeside/conf/domain ivan@sisd.com 98-jul-17
 #
 # displays arbitrary radius attributes ivan@sisd.com 98-aug-16
+#
+# $Log: svc_acct.cgi,v $
+# Revision 1.2  1998-12-16 05:24:29  ivan
+# use FS::Conf;
+#
 
 use strict;
+use vars qw($conf);
 use CGI::Base qw(:DEFAULT :CGI);
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
 use FS::Record qw(qsearchs fields);
+use FS::Conf;
 
-my($conf_domain)="/var/spool/freeside/conf/domain";
-open(DOMAIN,$conf_domain) or die "Can't open $conf_domain: $!";
-my($mydomain)=map {
-  /^(.*)$/ or die "Illegal line in $conf_domain!"; #yes, we trust the file
-  $1;
-} grep $_ !~ /^(#|$)/, <DOMAIN>;
+$conf = new FS::Conf;
+my $mydomain = $conf->config('domain');
 
 my($cgi) = new CGI::Base;
 $cgi->get;
