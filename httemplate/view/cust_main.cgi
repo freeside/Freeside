@@ -20,7 +20,7 @@ print <<END;
 .package TH { font-size: medium }
 .package TR { font-size: smaller }
 .package .pkgnum { font-size: medium }
-.package .provision { font-size: larger; color: red; font-weight: bold }
+.package .provision { font-size: larger; font-weight: bold }
 </STYLE>
 END
 
