@@ -21,7 +21,7 @@ use Tie::IxHash;
 @ISA = qw(Exporter);
 @EXPORT_OK = qw(dbh fields hfields qsearch qsearchs dbdef jsearch);
 
-$DEBUG = 2;
+$DEBUG = 0;
 $me = '[FS::Record]';
 
 #ask FS::UID to run this stuff for us later
