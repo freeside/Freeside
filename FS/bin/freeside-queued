@@ -7,7 +7,7 @@ use Fcntl qw(:flock);
 use POSIX qw(setsid);
 use Date::Format;
 use IO::File;
-use FS::UID qw(adminsuidsetup forksuidsetup);
+use FS::UID qw(adminsuidsetup forksuidsetup driver_name);
 use FS::Record qw(qsearchs);
 use FS::queue;
 
@@ -48,7 +48,9 @@ while (1) {
     'queue',
     { 'status' => 'new' },
     '',
-    'ORDER BY jobnum FOR UPDATE LIMIT 1'
+    driver_name =~ /^mysql$/i
+      ? 'ORDER BY jobnum LIMIT 1 FOR UPDATE'
+      : 'ORDER BY jobnum FOR UPDATE LIMIT 1'
   ) or do {
     sleep 5;
     next;
@@ -76,7 +78,7 @@ while (1) {
 
     #get new db handles
     $FS::UID::dbh->{InactiveDestroy} = 1;
-    $FS::svc_acct::icradius_dbh->{InactiveDestroy}
+    $FS::svc_acct::icradius_dbh->{InactiveDestroy} = 1
       if $FS::svc_acct::icradius_dbh;
     forksuidsetup($user);
 
