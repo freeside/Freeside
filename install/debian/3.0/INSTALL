@@ -1,5 +1,7 @@
 #!/bin/sh
 
+echo "deb http://cleanwhisker.420.am/~ivan/freeside-woody/ ./" >>/etc/apt/sources.list
+
 apt-get update
 apt-get install screen zsh libapache-mod-ssl libapache-mod-perl rsync \
         postgresql cvs fsh \
