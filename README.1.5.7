@@ -104,7 +104,8 @@ dbdef-create username
 create-history-tables username rate rate_detail rate_region rate_prefix reg_code reg_code_pkg
 dbdef-create username
 
-install Javascript::RPC (JavaScript::RPC::Server::CGI)
+install Javascript::RPC (JavaScript::RPC::Server::CGI), Text::CSV_XS and
+Spreadsheet::WriteExcel
 
 afterwords (for installs w/integrated RT):
 make configure-rt

@@ -23,20 +23,19 @@ my $link  = [ "${p}view/svc_www.cgi?", 'svcnum', ];
 my $ulink = [ "${p}view/svc_acct.cgi?", 'usersvc', ];
 
 
-%>
-<%= include( 'elements/search.html',
-               'title'       => 'Virtual Host Search Results',
-               'name'        => 'virtual hosts',
-               'query'       => $sql_query,
-               'count_query' => $count_query,
-               'header'      => [ '#', 'Zone', 'User', ],
-               'fields'      => [ 'svcnum',
-                                  sub { $_[0]->domain_record->zone },
-                                  sub { $_[0]->svc_acct->email },
-                                ],
-               'links'       => [ $link,
-                                  '',
-                                  $ulink,
-                                ],
-           )
+%><%= include( 'elements/search.html',
+                 'title'       => 'Virtual Host Search Results',
+                 'name'        => 'virtual hosts',
+                 'query'       => $sql_query,
+                 'count_query' => $count_query,
+                 'header'      => [ '#', 'Zone', 'User', ],
+                 'fields'      => [ 'svcnum',
+                                    sub { $_[0]->domain_record->zone },
+                                    sub { $_[0]->svc_acct->email },
+                                  ],
+                 'links'       => [ $link,
+                                    '',
+                                    $ulink,
+                                  ],
+             )
 %>

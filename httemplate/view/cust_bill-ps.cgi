@@ -10,5 +10,4 @@ my $cust_bill = qsearchs('cust_bill',{'invnum'=>$invnum});
 die "Invoice #$invnum not found!" unless $cust_bill;
 
 http_header('Content-Type' => 'application/postscript' );
-%>
-<%= $cust_bill->print_ps( '', $templatename) %>
+%><%= $cust_bill->print_ps( '', $templatename) %>

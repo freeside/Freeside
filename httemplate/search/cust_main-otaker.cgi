@@ -7,7 +7,7 @@
       Customer Search
     </FONT>
     <BR>
-    <FORM ACTION="cust_main.cgi" METHOD="post">
+    <FORM ACTION="cust_main.cgi" METHOD="GET">
       Search for <B>Order taker</B>: 
       <INPUT TYPE="hidden" NAME="otaker_on" VALUE="TRUE">
       <% my $sth = dbh->prepare("SELECT DISTINCT otaker FROM cust_main")

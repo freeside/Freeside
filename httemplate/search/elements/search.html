@@ -1,6 +1,7 @@
 <%
 
   my(%opt) = @_;
+  #warn join(' / ', map { "$_ => $opt{$_}" } keys %opt ). "\n";
 
   my %align = (
     'l' => 'left',
@@ -12,31 +13,39 @@
   $opt{align} = [ map $align{$_}, split(//, $opt{align}) ],
     unless !$opt{align} || ref($opt{align});
 
-  #if ( ref($opt{'query'}) ) {
-  #
-  #}
+  my $type = '';
+  my $limit = '';
+  my($maxrecords, $total, $offset, $count_arrayref);
 
-  unless (exists($opt{'count_query'}) && length($opt{'count_query'})) {
-    ( $opt{'count_query'} = $opt{'query'} ) =~
-      s/^\s*SELECT\s*(.*?)\s+FROM\s/SELECT COUNT(*) FROM /i;
+  if ( $cgi->param('_type') =~ /^(csv|\w*\.xls)$/ ) {
+  
+    $type = $1;
+
+  } else { #setup some pagination things if we're in html mode
+
+    unless (exists($opt{'count_query'}) && length($opt{'count_query'})) {
+      ( $opt{'count_query'} = $opt{'query'} ) =~
+        s/^\s*SELECT\s*(.*?)\s+FROM\s/SELECT COUNT(*) FROM /i;
+    }
+
+    my $conf = new FS::Conf;
+    $maxrecords = $conf->config('maxsearchrecordsperpage');
+
+    $limit = $maxrecords ? "LIMIT $maxrecords" : '';
+
+    $offset = $cgi->param('offset') || 0;
+    $limit .= " OFFSET $offset" if $offset;
+
+    my $count_sth = dbh->prepare($opt{'count_query'})
+      or die "Error preparing $opt{'count_query'}: ". dbh->errstr;
+    $count_sth->execute
+      or die "Error executing $opt{'count_query'}: ". $count_sth->errstr;
+    $count_arrayref = $count_sth->fetchrow_arrayref;
+    $total = $count_arrayref->[0];
+
   }
 
-  my $conf = new FS::Conf;
-  my $maxrecords = $conf->config('maxsearchrecordsperpage');
-
-  my $limit = $maxrecords ? "LIMIT $maxrecords" : '';
-
-  my $offset = $cgi->param('offset') || 0;
-  $limit .= " OFFSET $offset" if $offset;
-
-  my $count_sth = dbh->prepare($opt{'count_query'})
-    or die "Error preparing $opt{'count_query'}: ". dbh->errstr;
-  $count_sth->execute
-    or die "Error executing $opt{'count_query'}: ". $count_sth->errstr;
-  my $count_arrayref = $count_sth->fetchrow_arrayref;
-  my $total = $count_arrayref->[0];
-
-  #warn join(' / ', map { "$_ => $opt{$_}" } keys %opt ). "\n";
+  # run the query
 
   my $header = $opt{'header'};
   my $rows;
@@ -62,80 +71,217 @@
     $header ||= $sth->{NAME};
   }
 
-  if ( exists($opt{'redirect'}) && scalar(@$rows) == 1 && $total == 1 ) {
-    my( $url, $method ) = @{$opt{'redirect'}};
-    redirect( $url. $rows->[0]->$method() );
-  } else {
-    $opt{'name'} =~ s/s$// if $total == 1;
-%>
-<%= include( '/elements/header.html', $opt{'title'},
-               include( '/elements/menubar.html', 'Main menu' => $p )
-           )
-%>
-<% my $pager = include ( '/elements/pager.html',
-                           'offset'     => $offset,
-                           'num_rows'   => scalar(@$rows),
-                           'total'      => $total,
-                           'maxrecords' => $maxrecords,
-                       );
-%>
-<% unless ( $total ) { %>
-  No matching <%= $opt{'name'} %> found.<BR>
-<% } else { %>
-  <%= $total %> total <%= $opt{'name'} %><BR>
-  <% if ( $opt{'count_addl'} ) { %>
-    <% my $n=0; foreach my $count ( @{$opt{'count_addl'}} ) { %>
-      <%= sprintf( $count, $count_arrayref->[++$n] ) %><BR>
-    <% } %>
-  <% } %>
-  <BR><%= $pager %>
-  <%= include( '/elements/table.html' ) %>
-    <TR>
-    <% foreach my $header ( @$header ) { %>
-         <TH><%= $header %></TH>
-    <% } %>
-    </TR>
-    <% foreach my $row ( @$rows ) { %>
-         <TR>
-         <% if ( $opt{'fields'} ) {
-              my $links = $opt{'links'} ? [ @{$opt{'links'}} ] : '';
-              my $aligns = $opt{'align'} ? [ @{$opt{'align'}} ] : '';
-              foreach my $field ( @{$opt{'fields'}} ) {
-                my $align = $aligns ? shift @$aligns : '';
-                $align = " ALIGN=$align" if $align;
-                my $a = '';
-                if ( $links ) {
-                  my $link = shift @$links;
-                  $link = &{$link}($row) if ref($link) eq 'CODE';
-                  if ( $link ) {
-                    my( $url, $method ) = @{$link};
-                    if ( ref($method) eq 'CODE' ) {
-                      $a = $url. &{$method}($row);
-                    } else {
-                      $a = $url. $row->$method();
-                    }
-                    $a = qq(<A HREF="$a">);
-                  }
-                }
-             %>
-             <% if ( ref($field) eq 'CODE' ) { %>
-               <TD<%= $align %>><%= $a %><%= &{$field}($row) %><%= $a ? '</A>' : '' %></TD>
-             <% } else { %>
-               <TD<%= $align %>><%= $a %><%= $row->$field() %><%= $a ? '</A>' : '' %></TD>
-             <% } %>
-           <% } %>
-         <% } else { %>
-           <% foreach ( @$row ) { %>
-                <TD><%= $_ %></TD>
-           <% } %>
-         <% } %>
-         </TR>
-    <% } %>
-  
-  </TABLE>
-  <%= $pager %>
-<% } %>
-</BODY>
-</HTML>
-<% } %>
+  if ( $type eq 'csv' ) {
 
+    #http_header('Content-Type' => 'text/comma-separated-values' ); #IE chokes
+    http_header('Content-Type' => 'text/plain' );
+
+    my $csv = new Text::CSV_XS { 'always_quote' => 1,
+                                 #'eol'          => "\015\012", #"\012"
+                               };
+
+    $csv->combine(@$header); #or die $csv->status;
+    %><%= $csv->string %><%
+
+    foreach my $row ( @$rows ) {
+
+      if ( $opt{'fields'} ) {
+
+        my @line = ();
+
+        foreach my $field ( @{$opt{'fields'}} ) {
+          if ( ref($field) eq 'CODE' ) {
+            push @line, &{$field}($row);
+          } else {
+            push @line, $row->$field();
+          }
+        }
+
+        $csv->combine(@line); #or die $csv->status;
+
+      } else {
+        $csv->combine(@$row); #or die $csv->status;
+      }
+
+      %><%= $csv->string %><%
+
+    }
+
+  #} elsif ( $type eq 'excel' ) {
+  } elsif ( $type =~ /\.xls$/ ) {
+
+    #http_header('Content-Type' => 'application/excel' ); #eww
+    http_header('Content-Type' => 'application/vnd.ms-excel' ); #alas
+    #http_header('Content-Type' => 'application/msexcel' ); #alas
+
+    my $data = '';
+    my $XLS = new IO::Scalar \$data;
+    my $workbook = Spreadsheet::WriteExcel->new($XLS)
+      or die "Error opening .xls file: $!";
+
+    my $worksheet = $workbook->add_worksheet(substr($opt{'title'},0,31));
+
+    my($r,$c) = (0,0);
+
+    $worksheet->write($r, $c++, $_) foreach @$header;
+
+    foreach my $row ( @$rows ) {
+      $r++;
+      $c = 0;
+
+      if ( $opt{'fields'} ) {
+
+        #my $links = $opt{'links'} ? [ @{$opt{'links'}} ] : '';
+        #my $aligns = $opt{'align'} ? [ @{$opt{'align'}} ] : '';
+
+        foreach my $field ( @{$opt{'fields'}} ) {
+          #my $align = $aligns ? shift @$aligns : '';
+          #$align = " ALIGN=$align" if $align;
+          #my $a = '';
+          #if ( $links ) {
+          #  my $link = shift @$links;
+          #  $link = &{$link}($row) if ref($link) eq 'CODE';
+          #  if ( $link ) {
+          #    my( $url, $method ) = @{$link};
+          #    if ( ref($method) eq 'CODE' ) {
+          #      $a = $url. &{$method}($row);
+          #    } else {
+          #      $a = $url. $row->$method();
+          #    }
+          #    $a = qq(<A HREF="$a">);
+          #  }
+          #}
+          if ( ref($field) eq 'CODE' ) {
+            $worksheet->write($r, $c++, &{$field}($row) );
+          } else {
+            $worksheet->write($r, $c++, $row->$field() );
+          }
+        }
+
+      } else {
+        $worksheet->write($r, $c++, $_) foreach @$row;
+      }
+
+    }
+
+    $workbook->close();# or die "Error creating .xls file: $!";
+
+    http_header('Content-Length' => length($data) );
+    %><%= $data %><%
+
+  } else { # regular HTML
+
+    if ( exists($opt{'redirect'}) && scalar(@$rows) == 1 && $total == 1 ) {
+      my( $url, $method ) = @{$opt{'redirect'}};
+      redirect( $url. $rows->[0]->$method() );
+    } else {
+      ( my $xlsname = $opt{'name'} ) =~ s/\W//g;
+      $opt{'name'} =~ s/s$// if $total == 1;
+  %>
+  <%= include( '/elements/header.html', $opt{'title'},
+                 include( '/elements/menubar.html', 'Main menu' => $p )
+             )
+  %>
+  <% my $pager = include ( '/elements/pager.html',
+                             'offset'     => $offset,
+                             'num_rows'   => scalar(@$rows),
+                             'total'      => $total,
+                             'maxrecords' => $maxrecords,
+                         );
+  %>
+  <% unless ( $total ) { %>
+    No matching <%= $opt{'name'} %> found.<BR>
+  <% } else { %>
+  
+    <TABLE>
+      <TR>
+        <TD>
+          <%= $total %> total <%= $opt{'name'} %><BR>
+          <% if ( $opt{'count_addl'} ) { %>
+            <% my $n=0; foreach my $count ( @{$opt{'count_addl'}} ) { %>
+              <%= sprintf( $count, $count_arrayref->[++$n] ) %><BR>
+            <% } %>
+          <% } %>
+        </TD>
+        <TD ALIGN="right">
+          <% $cgi->param('_type', "$xlsname.xls" ); %>
+          Download full results<BR>
+          as <A HREF="<%= $cgi->self_url %>">Excel spreadsheet</A>
+          <BR>
+          <% $cgi->param('_type', 'csv'); %>
+          as <A HREF="<%= $cgi->self_url %>">CSV file</A>
+        </TD>
+      </TR>
+      <TR>
+        <TD COLSPAN=2>
+  
+            <%= $pager %>
+            <STYLE TYPE="text/css">
+            .grid table { border: solid; empty-cells: show }
+            .grid TH { padding-left: 1px; padding-right: 1px; border: 1px solid #dddddd; border-bottom: dashed 1px black; border-right: none }
+            .grid TD { padding-left: 1px; padding-right: 1px; empty-cells: show; border: 1px solid #cccccc; border-bottom: none; border-right: none }
+            </STYLE>
+            <TABLE CLASS="grid" CELLSPACING=0 CELLPADDING=0 BORDER=1 BORDERCOLOR="#000000" STYLE="border: solid 1px black; empty-cells: show">
+              <TR>
+              <% foreach my $header ( @$header ) { %>
+                   <TH CLASS="grid" BGCOLOR="#cccccc"><%= $header %></TH>
+              <% } %>
+              </TR>
+              <% my $bgcolor1 = '#eeeeee';
+                 my $bgcolor2 = '#ffffff';
+                 my $bgcolor;
+                 foreach my $row ( @$rows ) {
+                   if ( $bgcolor eq $bgcolor1 ) {
+                     $bgcolor = $bgcolor2;
+                   } else {
+                     $bgcolor = $bgcolor1;
+                   }
+              %>
+                   <TR>
+                   <% if ( $opt{'fields'} ) {
+                        my $links = $opt{'links'} ? [ @{$opt{'links'}} ] : '';
+                        my $aligns = $opt{'align'} ? [ @{$opt{'align'}} ] : '';
+                        foreach my $field ( @{$opt{'fields'}} ) {
+                          my $align = $aligns ? shift @$aligns : '';
+                          $align = " ALIGN=$align" if $align;
+                          my $a = '';
+                          if ( $links ) {
+                            my $link = shift @$links;
+                            $link = &{$link}($row) if ref($link) eq 'CODE';
+                            if ( $link ) {
+                              my( $url, $method ) = @{$link};
+                              if ( ref($method) eq 'CODE' ) {
+                                $a = $url. &{$method}($row);
+                              } else {
+                                $a = $url. $row->$method();
+                              }
+                              $a = qq(<A HREF="$a">);
+                            }
+                          }
+                       %>
+                       <% if ( ref($field) eq 'CODE' ) { %>
+                         <TD CLASS="grid" BGCOLOR="<%= $bgcolor %>"<%= $align %>><%= $a %><%= &{$field}($row) %><%= $a ? '</A>' : '' %></TD>
+                       <% } else { %>
+                         <TD CLASS="grid" BGCOLOR="<%= $bgcolor %>"<%= $align %>><%= $a %><%= $row->$field() %><%= $a ? '</A>' : '' %></TD>
+                       <% } %>
+                     <% } %>
+                   <% } else { %>
+                     <% foreach ( @$row ) { %>
+                          <TD CLASS="grid" BGCOLOR="$bgcolor"><%= $_ %></TD>
+                     <% } %>
+                   <% } %>
+                   </TR>
+              <% } %>
+            
+            </TABLE>
+            <%= $pager %>
+  
+          </TD>
+        </TR>
+      </TABLE>
+  
+  <% } %>
+  </BODY>
+  </HTML>
+  <% } %>
+<% } %>

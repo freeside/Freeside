@@ -285,7 +285,7 @@ if ( scalar(@cust_main) == 1 && ! $cgi->param('referral_custnum') ) {
       or eidiot "Illegal referral_custnum\n";
     my $referral_custnum = $1;
     my $cust_main = qsearchs('cust_main', { custnum => $referral_custnum } );
-    print '<FORM METHOD=POST>'.
+    print '<FORM METHOD="GET">'.
           qq!<INPUT TYPE="hidden" NAME="referral_custnum" VALUE="$referral_custnum">!.
           'referrals of <A HREF="'. popurl(2).
           "view/cust_main.cgi?$referral_custnum\">$referral_custnum: ".

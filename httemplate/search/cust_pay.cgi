@@ -98,43 +98,42 @@
 
    my $link = [ "${p}view/cust_main.cgi?", 'custnum' ];
 
-%>
-<%= include( 'elements/search.html',
-               'title'       => $title,
-               'name'        => 'payments',
-               'query'       => $sql_query,
-               'count_query' => $count_query,
-               'count_addl'  => [ '$%.2f total paid', ],
-               'header'      =>
-                 [ qw(Payment Amount Date), 'Cust #', 'Contact name',
-                   'Company', ],
-               'fields'      => [
-                 sub {
-                   my $cust_pay = shift;
-                   if ( $cust_pay->payby eq 'CARD' ) {
-                     'Card #'. $cust_pay->payinfo_masked;
-                   } elsif ( $cust_pay->payby eq 'CHEK' ) {
-                     'E-check acct#'. $cust_pay->payinfo;
-                   } elsif ( $cust_pay->payby eq 'BILL' ) {
-                     'Check #'. $cust_pay->payinfo;
-                   } else {
-                     $cust_pay->payby. ' '. $cust_pay->payinfo;
-                   }
-                 },
-                 sub { sprintf('$%.2f', shift->paid ) },
-                 sub { time2str('%b %d %Y', shift->_date ) },
-                 'custnum',
-                 sub { $_[0]->get('last'). ', '. $_[0]->first; },
-                 'company',
-               ],
-               'align' => 'lrrrll',
-               'links' => [
-                 '',
-                 '',
-                 '',
-                 $link,
-                 $link,
-                 $link,
-               ],
-    )
+%><%= include( 'elements/search.html',
+                 'title'       => $title,
+                 'name'        => 'payments',
+                 'query'       => $sql_query,
+                 'count_query' => $count_query,
+                 'count_addl'  => [ '$%.2f total paid', ],
+                 'header'      =>
+                   [ qw(Payment Amount Date), 'Cust #', 'Contact name',
+                     'Company', ],
+                 'fields'      => [
+                   sub {
+                     my $cust_pay = shift;
+                     if ( $cust_pay->payby eq 'CARD' ) {
+                       'Card #'. $cust_pay->payinfo_masked;
+                     } elsif ( $cust_pay->payby eq 'CHEK' ) {
+                       'E-check acct#'. $cust_pay->payinfo;
+                     } elsif ( $cust_pay->payby eq 'BILL' ) {
+                       'Check #'. $cust_pay->payinfo;
+                     } else {
+                       $cust_pay->payby. ' '. $cust_pay->payinfo;
+                     }
+                   },
+                   sub { sprintf('$%.2f', shift->paid ) },
+                   sub { time2str('%b %d %Y', shift->_date ) },
+                   'custnum',
+                   sub { $_[0]->get('last'). ', '. $_[0]->first; },
+                   'company',
+                 ],
+                 'align' => 'lrrrll',
+                 'links' => [
+                   '',
+                   '',
+                   '',
+                   $link,
+                   $link,
+                   $link,
+                 ],
+      )
 %>

@@ -62,16 +62,16 @@
     <TR><TD>
         <BR><FONT SIZE="+1"><A HREF="edit/cust_main.cgi">New Customer</A></FONT>
         <BR>
-        <BR><FORM ACTION="search/cust_main.cgi" METHOD="POST"><INPUT TYPE="hidden" NAME="custnum_on" VALUE="1">Customer # <INPUT TYPE="text" NAME="custnum_text"><INPUT TYPE="submit" VALUE="Search"> or <A HREF="search/cust_main.cgi?browse=custnum">all customers by customer number</A></FORM>
-        <FORM ACTION="search/cust_main.cgi" METHOD="POST"><INPUT TYPE="hidden" NAME="last_on" VALUE="1">Last name <INPUT TYPE="text" NAME="last_text"><SELECT NAME="last_type"><OPTION SELECTED VALUE="All">(all)</OPTION><OPTION>Fuzzy<OPTION>Substring</OPTION><OPTION>Exact</OPTION></SELECT><INPUT TYPE="submit" VALUE="Search"> or <A HREF="search/cust_main.cgi?browse=last">all customers by last name</A></FORM>
-        <FORM ACTION="search/cust_main.cgi" METHOD="POST"><INPUT TYPE="hidden" NAME="company_on" VALUE="1">Company <INPUT TYPE="text" NAME="company_text"><SELECT NAME="company_type"><OPTION SELECTED VALUE="All">(all)</OPTION><OPTION>Fuzzy<OPTION>Substring</OPTION><OPTION>Exact</OPTION></SELECT><INPUT TYPE="submit" VALUE="Search"> or <A HREF="search/cust_main.cgi?browse=company">all customers by company</A></FORM>
+        <BR><FORM ACTION="search/cust_main.cgi" METHOD="GET"><INPUT TYPE="hidden" NAME="custnum_on" VALUE="1">Customer # <INPUT TYPE="text" NAME="custnum_text"><INPUT TYPE="submit" VALUE="Search"> or <A HREF="search/cust_main.cgi?browse=custnum">all customers by customer number</A></FORM>
+        <FORM ACTION="search/cust_main.cgi" METHOD="GET"><INPUT TYPE="hidden" NAME="last_on" VALUE="1">Last name <INPUT TYPE="text" NAME="last_text"><SELECT NAME="last_type"><OPTION SELECTED VALUE="All">(all)</OPTION><OPTION>Fuzzy<OPTION>Substring</OPTION><OPTION>Exact</OPTION></SELECT><INPUT TYPE="submit" VALUE="Search"> or <A HREF="search/cust_main.cgi?browse=last">all customers by last name</A></FORM>
+        <FORM ACTION="search/cust_main.cgi" METHOD="GET"><INPUT TYPE="hidden" NAME="company_on" VALUE="1">Company <INPUT TYPE="text" NAME="company_text"><SELECT NAME="company_type"><OPTION SELECTED VALUE="All">(all)</OPTION><OPTION>Fuzzy<OPTION>Substring</OPTION><OPTION>Exact</OPTION></SELECT><INPUT TYPE="submit" VALUE="Search"> or <A HREF="search/cust_main.cgi?browse=company">all customers by company</A></FORM>
 <% if ( $conf->exists('address2-search') ) { %>
-        <FORM ACTION="search/cust_main.cgi" METHOD="POST"><INPUT TYPE="hidden" NAME="address2_on" VALUE="1">Unit <INPUT TYPE="text" NAME="address2_text"><INPUT TYPE="submit" VALUE="Search"></FORM>
+        <FORM ACTION="search/cust_main.cgi" METHOD="GET"><INPUT TYPE="hidden" NAME="address2_on" VALUE="1">Unit <INPUT TYPE="text" NAME="address2_text"><INPUT TYPE="submit" VALUE="Search"></FORM>
 <% } %>
-        <FORM ACTION="search/cust_main.cgi" METHOD="POST"><INPUT TYPE="hidden" NAME="phone_on" VALUE="1">Phone # <INPUT TYPE="text" NAME="phone_text"><INPUT TYPE="submit" VALUE="Search"></FORM>
-        <BR><FORM ACTION="search/svc_acct.cgi" METHOD="POST">Username <INPUT TYPE="text" NAME="username"><SELECT NAME="username_type"><OPTION VALUE="All">(all)</OPTION><OPTION>Fuzzy</OPTION><OPTION>Substring</OPTION><OPTION SELECTED>Exact</OPTION></SELECT><INPUT TYPE="submit" VALUE="Search"> or <A HREF="search/svc_acct.cgi?username">all accounts by username</A> or <A HREF="search/svc_acct.cgi?uid">uid</A></FORM>
-        <BR><FORM ACTION="search/svc_domain.cgi" METHOD="POST">Domain <INPUT TYPE="text" NAME="domain"><INPUT TYPE="submit" VALUE="Search"> or <A HREF="search/svc_domain.cgi?domain">all domains</A></FORM>
-	<BR><FORM ACTION="search/svc_broadband.cgi" METHOD="POST">IP Address <INPUT TYPE="text" NAME="ip_addr"><INPUT TYPE="submit" VALUE="Search"> or <A HREF="search/svc_broadband.cgi?svcnum">all services by svcnum</A> or <A HREF="search/svc_broadband.cgi?blocknum">address block</A></FORM>
+        <FORM ACTION="search/cust_main.cgi" METHOD="GET"><INPUT TYPE="hidden" NAME="phone_on" VALUE="1">Phone # <INPUT TYPE="text" NAME="phone_text"><INPUT TYPE="submit" VALUE="Search"></FORM>
+        <BR><FORM ACTION="search/svc_acct.cgi" METHOD="GET">Username <INPUT TYPE="text" NAME="username"><SELECT NAME="username_type"><OPTION VALUE="All">(all)</OPTION><OPTION>Fuzzy</OPTION><OPTION>Substring</OPTION><OPTION SELECTED>Exact</OPTION></SELECT><INPUT TYPE="submit" VALUE="Search"> or <A HREF="search/svc_acct.cgi?username">all accounts by username</A> or <A HREF="search/svc_acct.cgi?uid">uid</A></FORM>
+        <BR><FORM ACTION="search/svc_domain.cgi" METHOD="GET">Domain <INPUT TYPE="text" NAME="domain"><INPUT TYPE="submit" VALUE="Search"> or <A HREF="search/svc_domain.cgi?domain">all domains</A></FORM>
+	<BR><FORM ACTION="search/svc_broadband.cgi" METHOD="GET">IP Address <INPUT TYPE="text" NAME="ip_addr"><INPUT TYPE="submit" VALUE="Search"> or <A HREF="search/svc_broadband.cgi?svcnum">all services by svcnum</A> or <A HREF="search/svc_broadband.cgi?blocknum">address block</A></FORM>
         <BR><A HREF="search/svc_forward.cgi?svcnum">all mail forwards by svcnum</A><BR>
         <BR><A HREF="search/svc_www.cgi?svcnum">all virtual hosts by svcnum</A><BR>
         <BR><A HREF="search/svc_external.cgi?svcnum">all external services by svcnum</A><BR>
@@ -117,9 +117,9 @@
     <TR><TD>
       <BR><A HREF="search/cust_main-quickpay.html">Quick payment entry</A>
       <BR>
-      <BR><FORM ACTION="search/cust_main.cgi" METHOD="POST">Credit card # <INPUT TYPE="hidden" NAME="card_on" VALUE="1"><INPUT TYPE="text" NAME="card"><INPUT TYPE="submit" VALUE="Search"></FORM>
-      <FORM ACTION="search/cust_bill.html" METHOD="POST">Invoice # <INPUT TYPE="text" NAME="invnum" SIZE="8"><INPUT TYPE="submit" VALUE="Search"></FORM>
-      <FORM ACTION="search/cust_pay.cgi" METHOD="POST">Check # <INPUT TYPE="text" NAME="payinfo" SIZE="8"><INPUT TYPE="hidden" NAME="payby" VALUE="BILL"><INPUT TYPE="submit" VALUE="Search"></FORM>
+      <BR><FORM ACTION="search/cust_main.cgi" METHOD="GET">Credit card # <INPUT TYPE="hidden" NAME="card_on" VALUE="1"><INPUT TYPE="text" NAME="card"><INPUT TYPE="submit" VALUE="Search"></FORM>
+      <FORM ACTION="search/cust_bill.html" METHOD="GET">Invoice # <INPUT TYPE="text" NAME="invnum" SIZE="8"><INPUT TYPE="submit" VALUE="Search"></FORM>
+      <FORM ACTION="search/cust_pay.cgi" METHOD="GET">Check # <INPUT TYPE="text" NAME="payinfo" SIZE="8"><INPUT TYPE="hidden" NAME="payby" VALUE="BILL"><INPUT TYPE="submit" VALUE="Search"></FORM>
       <BR><A HREF="browse/cust_pay_batch.cgi">View pending credit card batch</A>      <BR><BR><A HREF="search/cust_pkg_report.cgi">Packages (by next bill date range)</A>
       <BR><BR>Invoice reports
             <UL>
@@ -200,7 +200,7 @@
       <UL>
         <LI><A HREF="search/cust_main-otaker.cgi">Search customers by ordering employee</A>
       </UL>
-    <FORM ACTION="search/sql.html" METHOD="POST">SQL query: <TT>SELECT </TT><INPUT TYPE="text" NAME="sql" SIZE=32><INPUT TYPE="submit" VALUE="Query"></FORM>
+    <FORM ACTION="search/sql.html" METHOD="GET">SQL query: <TT>SELECT </TT><INPUT TYPE="text" NAME="sql" SIZE=32><INPUT TYPE="submit" VALUE="Query"></FORM>
 
     <BR>
     </TD></TR>
