@@ -32,7 +32,10 @@
 # fix radius attributes ivan@sisd.com 98-sep-27
 #
 # $Log: fs-setup,v $
-# Revision 1.5  1998-11-15 09:43:03  ivan
+# Revision 1.6  1998-11-15 13:18:02  ivan
+# remove debugging
+#
+# Revision 1.5  1998/11/15 09:43:03  ivan
 # update for new config file syntax, new adminsuidsetup
 #
 # Revision 1.4  1998/10/22 15:51:23  ivan
@@ -164,7 +167,6 @@ FS::Record::reload_dbdef($dbdef_file);
 ###
 
 my($dbh)=adminsuidsetup $user;
-warn $dbh;
 
 #create tables
 $|=1;
