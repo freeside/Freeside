@@ -97,6 +97,22 @@ sub table { 'cust_pkg'; }
 Adds this billing item to the database ("Orders" the item).  If there is an
 error, returns the error, otherwise returns false.
 
+sub insert {
+  my $self = shift;
+
+  # custnum might not have have been defined in sub check (for one-shot new
+  # customers), so check it here instead
+
+  my $error = $self->ut_number('custnum');
+  return $error if $error
+
+  return "Unknown customer"
+    unless qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
+
+  $self->SUPER::insert;
+
+}
+
 =item delete
 
 Currently unimplemented.  You don't want to delete billing items, because there
@@ -154,7 +170,7 @@ sub check {
 
   my $error = 
     $self->ut_numbern('pkgnum')
-    || $self->ut_number('custnum')
+    || $self->ut_numbern('custnum')
     || $self->ut_number('pkgpart')
     || $self->ut_numbern('setup')
     || $self->ut_numbern('bill')
@@ -163,8 +179,10 @@ sub check {
   ;
   return $error if $error;
 
-  return "Unknown customer"
-    unless qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
+  if ( $self->custnum ) { 
+    return "Unknown customer"
+      unless qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
+  }
 
   return "Unknown pkgpart"
     unless qsearchs( 'part_pkg', { 'pkgpart' => $self->pkgpart } );
@@ -477,7 +495,7 @@ sub order {
 
 =head1 VERSION
 
-$Id: cust_pkg.pm,v 1.7 1999-02-09 09:55:06 ivan Exp $
+$Id: cust_pkg.pm,v 1.8 1999-03-25 13:48:14 ivan Exp $
 
 =head1 BUGS
 
@@ -508,7 +526,11 @@ fixed for new agent->agent_type->type_pkgs in &order ivan@sisd.com 98-mar-7
 pod ivan@sisd.com 98-sep-21
 
 $Log: cust_pkg.pm,v $
-Revision 1.7  1999-02-09 09:55:06  ivan
+Revision 1.8  1999-03-25 13:48:14  ivan
+allow empty custnum in sub check (but call that an error in sub insert),
+for one-screen new customer entry
+
+Revision 1.7  1999/02/09 09:55:06  ivan
 invoices show line items for each service in a package (see the label method
 of FS::cust_svc)
 
