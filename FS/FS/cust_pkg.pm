@@ -8,6 +8,7 @@ use FS::cust_svc;
 use FS::part_pkg;
 use FS::cust_main;
 use FS::type_pkgs;
+use FS::pkg_svc;
 
 # need to 'use' these instead of 'require' in sub { cancel, suspend, unsuspend,
 # setup }
@@ -428,16 +429,15 @@ sub order {
     push @cust_svc, [
       map {
         ( $svcnum{$_} && @{ $svcnum{$_} } ) ? shift @{ $svcnum{$_} } : ();
-      } (split(/,/,
-       qsearchs('part_pkg',{'pkgpart'=>$pkgpart})->getfield('services')
-      ))
+      } map { $_->svcpart } qsearch('pkg_svc', { 'pkgpart' => $pkgpart })
     ];
   }
 
   #check for leftover services
   foreach (keys %svcnum) {
     next unless @{ $svcnum{$_} };
-    return "Leftover services!";
+    return "Leftover services, svcpart $_: svcnum ".
+           join(', ', map { $_->svcnum } @{ $svcnum{$_} } );
   }
 
   #no leftover services, let's make changes.
@@ -490,7 +490,7 @@ sub order {
 
 =head1 VERSION
 
-$Id: cust_pkg.pm,v 1.2 1999-08-04 11:50:41 ivan Exp $
+$Id: cust_pkg.pm,v 1.3 1999-11-08 21:38:38 ivan Exp $
 
 =head1 BUGS
 
