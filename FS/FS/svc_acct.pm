@@ -194,11 +194,24 @@ sub insert {
   return $error if $error;
 
   #no, duplicate checking just got a whole lot more complicated
+  #(perhaps keep this check with a config option to turn on?)
 
   #return gettext('username_in_use'). ": ". $self->username
   #  if qsearchs( 'svc_acct', { 'username' => $self->username,
   #                             'domsvc'   => $self->domsvc,
   #                           } );
+
+  if ( $self->svcnum ) {
+    my $cust_svc = qsearchs('cust_svc',{'svcnum'=>$self->svcnum});
+    unless ( $cust_svc ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "no cust_svc record found for svcnum ". $self->svcnum;
+    }
+    $self->pkgnum($cust_svc->pkgnum);
+    $self->svcpart($cust_svc->svcpart);
+  }
+
+  #new duplicate username checking
 
   my @dup_user = qsearch( 'svc_acct', { 'username' => $self->username } );
   my @dup_userdomain = qsearchs( 'svc_acct', { 'username' => $self->username,
@@ -208,13 +221,19 @@ sub insert {
     my $exports = FS::part_export::export_info('svc_acct');
     my( %conflict_user_svcpart, %conflict_userdomain_svcpart );
 
-    foreach my $part_export ( $self->cust_svc->part_svc->part_export ) {
+    my $part_svc = qsearchs('part_svc', { 'svcpart' => $self->svcpart } );
+    unless ( $part_svc ) {
+      $dbh->rollback if $oldAutoCommit;
+      return 'unknown svcpart '. $self->svcpart;
+    }
+
+    foreach my $part_export ( $part_svc->part_export ) {
 
       #this will catch to the same exact export
       my @svcparts = map { $_->svcpart }
         qsearch('export_svc', { 'exportnum' => $part_export->exportnum });
 
-      #this will catch exports w/same exporthost+type ???
+      #this will catch to exports w/same exporthost+type ???
       #my @other_part_export = qsearch('part_export', {
       #  'machine'    => $part_export->machine,
       #  'exporttype' => $part_export->exporttype,
@@ -254,16 +273,6 @@ sub insert {
   }
 
   #see?  i told you it was more complicated
-
-  if ( $self->svcnum ) {
-    my $cust_svc = qsearchs('cust_svc',{'svcnum'=>$self->svcnum});
-    unless ( $cust_svc ) {
-      $dbh->rollback if $oldAutoCommit;
-      return "no cust_svc record found for svcnum ". $self->svcnum;
-    }
-    $self->pkgnum($cust_svc->pkgnum);
-    $self->svcpart($cust_svc->svcpart);
-  }
 
   my $part_svc = qsearchs( 'part_svc', { 'svcpart' => $self->svcpart } );
   return "Unknown svcpart" unless $part_svc;
@@ -378,8 +387,6 @@ sub delete {
       return $error;
     }
   }
-
-  my $part_svc = $self->cust_svc->part_svc;
 
   my $error = $self->SUPER::delete;
   if ( $error ) {
