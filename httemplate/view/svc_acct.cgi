@@ -146,21 +146,11 @@ print '<TR><TD ALIGN="right">RADIUS groups</TD><TD BGCOLOR="#ffffff">'.
 
 print '</TABLE></TD></TR></TABLE><BR><BR>';
 
-if ( $cust_pkg && $cust_pkg->part_pkg->plan eq 'sqlradacct_hour' ) {
-
-  #false laziness w/httemplate/edit/part_pkg... this stuff doesn't really
-  #belong in plan data
-  my %plandata = map { /^(\w+)=(.*)$/; ( $1 => $2 ); }
-                    split("\n", $cust_pkg->part_pkg->plandata );
+#if ( $cust_pkg && $cust_pkg->part_pkg->plan eq 'sqlradacct_hour' ) {
+if ( $cust_pkg && $part_svc->part_export('sqlradius') ) {
 
   my $last_bill = $cust_pkg->last_bill;
-  my $seconds = $svc_acct->seconds_since_sqlradacct(
-    $last_bill,
-    time,
-    $plandata{sql_datasrc},
-    $plandata{sql_username},
-    $plandata{sql_password},
-  );
+  my $seconds = $svc_acct->seconds_since_sqlradacct( $last_bill, time );
   my $h = int($seconds/3600);
   my $m = int( ($seconds%3600) / 60 );
   my $s = $seconds%60;

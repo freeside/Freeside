@@ -286,21 +286,22 @@ sub all_part_svc_column {
   qsearch('part_svc_column', { 'svcpart' => $self->svcpart } );
 }
 
-=item part_export
+=item part_export [ EXPORTTYPE ]
+
+Returns all exports (see L<FS::part_export>) for this service, or, if an
+export type is specified, only returns exports of the given type.
 
 =cut
 
 sub part_export {
   my $self = shift;
-  map { qsearchs('part_export', { 'exportnum' => $_->exportnum } ) }
+  my %search;
+  $search{'exporttype'} = shift if @_;
+  map { qsearchs('part_export', { 'exportnum' => $_->exportnum, %search } ) }
     qsearch('export_svc', { 'svcpart' => $self->svcpart } );
 }
 
 =back
-
-=head1 VERSION
-
-$Id: part_svc.pm,v 1.14 2002-09-17 09:19:06 ivan Exp $
 
 =head1 BUGS
 
@@ -309,7 +310,7 @@ Delete is unimplemented.
 The list of svc_* tables is hardcoded.  When svc_acct_pop is renamed, this
 should be fixed.
 
-all_part_svc_column and part_export methods should be documented
+all_part_svc_column method should be documented
 
 =head1 SEE ALSO
 
