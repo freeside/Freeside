@@ -8,7 +8,7 @@ BEGIN {
   eval "use Time::Local;";
   die "Time::Local version 1.05 required with Perl versions before 5.6"
     if $] < 5.006 && !defined($Time::Local::VERSION);
-  eval "use Time::Local qw(timelocal_nocheck);";
+  eval "use Time::Local qw(timelocal timelocal_nocheck);";
 }
 use Date::Format;
 #use Date::Manip;
