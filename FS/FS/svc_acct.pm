@@ -708,7 +708,7 @@ sub check {
 
 
     $recref->{dir} =~ /^([\/\w\-\.\&]*)$/
-      or return "Illegal directory";
+      or return "Illegal directory: ". $recref->{dir};
     $recref->{dir} = $1;
     return "Illegal directory"
       if $recref->{dir} =~ /(^|\/)\.+(\/|$)/; #no .. component
