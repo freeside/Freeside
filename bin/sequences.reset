@@ -1,0 +1,28 @@
+#!/usr/bin/perl
+
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw(dbdef dbh);
+
+my $user = shift;
+adminsuidsetup $user or die;
+
+foreach my $table ( dbdef->tables ) {
+  my $primary_key = dbdef->table($table)->primary_key;
+  next unless $primary_key;
+  #my $local = dbdef->table($table)->column($primary_key)->local;
+  ##next unless $default =~ /nextval/;
+  #print "$local\n";
+
+  my $statement = "select setval('${table}_${primary_key}_seq', ( select max($primary_key) from $table ) )\n";
+  my $sth = dbh->prepare($statement) or do {
+    warn dbh->errstr. " preparing $statement\n";
+    next;
+  };
+  $sth->execute or do {
+    warn dbh->errstr. " executing $statement\n";
+    dbh->commit;
+    next;
+  }
+
+}
+

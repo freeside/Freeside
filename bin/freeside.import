@@ -1,0 +1,146 @@
+#!/usr/bin/perl -w
+
+use strict;
+use DBI;
+
+my $s_datasrc = 'DBI:mysql:host=ns1.enetonline.net;port=3307;user=ivan;dbname=freeside';
+my $s_dbuser = 'ivan';
+my $s_dbpass = '';
+
+my $d_datasrc = 'DBI:Pg:dbname=freeside';
+my $d_dbuser = 'freeside';
+my $d_dbpass = '';
+
+#my @tables = qw(
+#addr_block
+#agent
+#agent_type
+#cust_bill
+#cust_bill_event
+#cust_bill_pay
+#cust_bill_pkg
+#cust_bill_pkg_detail
+#cust_credit
+#cust_credit_bill
+#cust_credit_refund
+#cust_main
+#cust_main_county
+#cust_main_invoice
+#cust_pay
+#cust_pay_batch
+#cust_pkg
+#cust_refund
+#cust_svc
+#cust_tax_exempt
+#domain_record
+#export_svc
+#h_addr_block
+#h_agent
+#h_agent_type
+#h_cust_bill
+#h_cust_bill_event
+#h_cust_bill_pay
+#h_cust_bill_pkg
+#h_cust_bill_pkg_detail
+#h_cust_credit
+#h_cust_credit_bill
+#h_cust_credit_refund
+#h_cust_main
+#h_cust_main_county
+#h_cust_main_invoice
+#h_cust_pay
+#h_cust_pay_batch
+#h_cust_pkg
+#h_cust_refund
+#h_cust_svc
+#h_cust_tax_exempt
+#h_domain_record
+#h_export_svc
+#h_msgcat
+#h_nas
+#h_part_bill_event
+#h_part_export
+#h_part_export_option
+#h_part_pkg
+#h_part_pop_local
+#h_part_referral
+#h_part_svc
+#h_part_svc_column
+#h_part_svc_router
+#h_pkg_svc
+#h_port
+#h_prepay_credit
+#h_queue
+#h_queue_arg
+#h_queue_depend
+#h_radius_usergroup
+#h_router
+#h_router_field
+#h_sb_field
+#h_session
+#h_svc_acct
+#h_svc_acct_pop
+#h_svc_broadband
+#h_svc_domain
+#h_svc_forward
+#h_svc_www
+#h_type_pkgs
+#msgcat
+#nas
+#part_bill_event
+#part_export
+#part_export_option
+#part_pkg
+
+my @tables = qw(
+part_pop_local
+part_referral
+part_router_field
+part_sb_field
+part_svc
+part_svc_column
+part_svc_router
+pkg_svc
+port
+prepay_credit
+queue
+queue_arg
+queue_depend
+radius_usergroup
+router
+router_field
+sb_field
+session
+svc_acct
+svc_acct_pop
+svc_broadband
+svc_domain
+svc_forward
+svc_www
+type_pkgs
+);
+
+my $s_dbh = DBI->connect($s_datasrc, $s_dbuser, $s_dbpass) or die $DBI::errstr;
+my $d_dbh = DBI->connect($d_datasrc, $d_dbuser, $d_dbpass) or die $DBI::errstr;
+
+foreach my $table ( @tables ) {
+  $d_dbh->do("delete from $table");
+
+  my $s_sth = $s_dbh->prepare("select * from $table");
+  $s_sth->execute or die $s_sth->errstr;
+
+  my $row;
+  while ( $row = $s_sth->fetchrow_arrayref ) {
+    my $d_sth = $d_dbh->prepare(
+      "insert into $table ( ".
+        join(', ', @{$s_sth->{NAME}} ).
+        ' ) VALUES ( '.
+        join(', ', map { '?' } @{$s_sth->{NAME}} ). 
+        ' )'
+    ) or die $d_dbh->errstr;
+
+    $d_sth->execute(@$row) or die $d_sth->errstr;
+
+  }
+}
+
