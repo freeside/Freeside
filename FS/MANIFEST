@@ -19,6 +19,7 @@ bin/freeside-setinvoice
 bin/freeside-overdue
 bin/freeside-radgroup
 bin/freeside-receivables-report
+bin/freeside-selfservice-server
 bin/freeside-sqlradius-radacctd
 bin/freeside-sqlradius-reset
 bin/freeside-sqlradius-seconds

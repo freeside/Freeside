@@ -34,7 +34,7 @@ case "$1" in
         echo "done."
 
         echo -n "Starting freeside-selfservice-server: "
-        $FREESIDE_PATH/fs_selfservice/freeside-selfservice-server $SELFSERVICE_USER $SELFSERVICE_MACHINE
+        freeside-selfservice-server $SELFSERVICE_USER $SELFSERVICE_MACHINE
         echo "done."
 
         ;;
