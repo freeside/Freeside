@@ -35,14 +35,14 @@ if ( $cgi->param('error') ) {
 
   } else { #adding
 
-    $svc_acct = new FS::svc_acct({}); 
-
     foreach $_ (split(/-/,$query)) {
       $pkgnum=$1 if /^pkgnum(\d+)$/;
       $svcpart=$1 if /^svcpart(\d+)$/;
     }
     $part_svc = qsearchs( 'part_svc', { 'svcpart' => $svcpart } );
     die "No part_svc entry for svcpart $svcpart!" unless $part_svc;
+
+    $svc_acct = new FS::svc_acct({svcpart => $svcpart}); 
 
     $svcnum='';
 
@@ -281,6 +281,14 @@ if ( $part_svc->part_svc_column('usergroup')->columnflag eq "F" ) {
 }
 print '</TD></TR>';
 
+foreach $field ($svc_acct->virtual_fields) {
+  if ( $part_svc->part_svc_column($field)->columnflag ne 'F' ) {
+    # If the flag is X, it won't even show up in $svc_acct->virtual_fields.
+    print $svc_acct->pvf($field)->widget('HTML', 'edit', 
+        $svc_acct->getfield($field));
+  }
+}
+  
 #submit
 print qq!</TABLE><BR><INPUT TYPE="submit" VALUE="Submit">!; 
 

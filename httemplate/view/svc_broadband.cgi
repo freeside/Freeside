@@ -64,26 +64,12 @@ print header('Broadband Service View', menubar(
         qq!<TD BGCOLOR="#ffffff">$ip_addr</TD></TR>!.
       '</TD></TR><TR ROWSPAN="1"><TD></TD></TR>';
 
+foreach (sort { $a cmp $b } $svc_broadband->virtual_fields) {
+  print $svc_broadband->pvf($_)->widget('HTML', 'view', 
+      $svc_broadband->getfield($_)), "\n";
+}
 
-#  foreach my $sb_field 
-#      ( qsearch('sb_field', { svcnum => $svcnum }) ) {
-#    my $part_sb_field = qsearchs('part_sb_field',
-#                         { sbfieldpart => $sb_field->sbfieldpart });
-#    print q!<TR><TD ALIGN="right">! . $part_sb_field->name . 
-#          q!</TD><TD BGCOLOR="#ffffff">! . $sb_field->value . 
-#          q!</TD></TR>!;
-#  }
-#  print '</TABLE>';
-
-
-  my $sb_field = $svc_broadband->sb_field_hashref;
-  foreach (sort { $a cmp $b } keys(%{$sb_field})) {
-    print q!<TR><TD ALIGN="right">! . $_ . 
-          q!</TD><TD BGCOLOR="#ffffff">! . $sb_field->{$_} .
-          q!</TD></TR>!;
-  }
-  print '</TABLE>';
-
+print '</TABLE>';
 
 print '<BR>'. joblisting({'svcnum'=>$svcnum}, 1).
       '</BODY></HTML>'

@@ -161,7 +161,7 @@ sub check {
 
   $self->printed(0) if $self->printed eq '';
 
-  ''; #no error
+  $self->SUPER::check;
 }
 
 =item previous

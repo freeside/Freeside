@@ -85,7 +85,7 @@ sub check {
     || $self->ut_text('routername');
   return $error if $error;
 
-  '';
+  $self->SUPER::check;
 }
 
 =item addr_block
@@ -98,18 +98,6 @@ with this object.
 sub addr_block {
   my $self = shift;
   return qsearch('addr_block', { routernum => $self->routernum });
-}
-
-=item router_field
-
-Returns a list of FS::router_field objects assigned to this object.
-
-=cut
-
-sub router_field {
-  my $self = shift;
-
-  return qsearch('router_field', { routernum => $self->routernum });
 }
 
 =item part_svc_router
@@ -147,7 +135,7 @@ $Id:
 
 =head1 SEE ALSO
 
-FS::svc_broadband, FS::router, FS::addr_block, FS::router_field, FS::part_svc,
+FS::svc_broadband, FS::router, FS::addr_block, FS::part_svc,
 schema.html from the base documentation.
 
 =cut

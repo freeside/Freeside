@@ -234,7 +234,8 @@ sub check {
   return "Unknown usersvc (svc_acct.svcnum): ". $self->usersvc
     unless qsearchs('svc_acct', { 'svcnum' => $self->usersvc } );
 
-  ''; #no error
+  $self->SUPER::check;
+
 }
 
 =item domain_record

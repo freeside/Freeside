@@ -105,7 +105,8 @@ sub check {
     || $self->ut_foreign_key('pkgnum', 'cust_pkg', 'pkgnum')
     || $self->ut_foreign_key('invnum', 'cust_pkg', 'invnum')
     || $self->ut_text('detail')
-  ;
+    || $self->SUPER::check
+    ;
 
 }
 

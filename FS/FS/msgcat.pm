@@ -113,7 +113,7 @@ sub check {
   $self->locale =~ /^([\w\@]+)$/ or return "illegal locale: ". $self->locale;
   $self->locale($1);
 
-  ''; #no error
+  $self->SUPER::check
 }
 
 =back

@@ -234,7 +234,7 @@ sub check {
       if scalar(@cust_svc) >= $quantity && (!$ignore_quantity || !$quantity);
   }
 
-  ''; #no error
+  $self->SUPER::check;
 }
 
 =item part_svc

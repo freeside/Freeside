@@ -91,7 +91,7 @@ sub check {
   return "Unknown pkgpart"
     unless qsearchs( 'part_pkg', { 'pkgpart' => $self->pkgpart } );
 
-  ''; #no error
+  $self->SUPER::check;
 }
 
 =item part_pkg
@@ -111,7 +111,7 @@ sub part_pkg {
 
 =head1 VERSION
 
-$Id: type_pkgs.pm,v 1.2 2002-10-04 12:57:06 ivan Exp $
+$Id: type_pkgs.pm,v 1.3 2003-08-05 00:20:48 khoff Exp $
 
 =head1 BUGS
 

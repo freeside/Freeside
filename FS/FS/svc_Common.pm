@@ -2,7 +2,7 @@ package FS::svc_Common;
 
 use strict;
 use vars qw( @ISA $noexport_hack );
-use FS::Record qw( qsearchs fields dbh );
+use FS::Record qw( qsearch qsearchs fields dbh );
 use FS::cust_svc;
 use FS::part_svc;
 use FS::queue;
@@ -27,6 +27,58 @@ inherit from, i.e. FS::svc_acct.  FS::svc_Common inherits from FS::Record.
 =head1 METHODS
 
 =over 4
+
+=cut
+
+sub virtual_fields {
+
+  # This restricts the fields based on part_svc_column and the svcpart of 
+  # the service.  There are four possible cases:
+  # 1.  svcpart passed as part of the svc_x hash.
+  # 2.  svcpart fetched via cust_svc based on svcnum.
+  # 3.  No svcnum or svcpart.  In this case, return ALL the fields with 
+  #     dbtable eq $self->table.
+  # 4.  Called via "fields('svc_acct')" or something similar.  In this case
+  #     there is no $self object.
+
+  my $self = shift;
+  my $svcpart;
+  my @vfields = $self->SUPER::virtual_fields;
+
+  return @vfields unless (ref $self); # Case 4
+
+  if ($self->svcpart) { # Case 1
+    $svcpart = $self->svcpart;
+  } elsif (my $cust_svc = $self->cust_svc) { # Case 2
+    $svcpart = $cust_svc->svcpart;
+  } else { # Case 3
+    $svcpart = '';
+  }
+
+  if ($svcpart) { #Cases 1 and 2
+    my %flags = map { $_->columnname, $_->columnflag } (
+        qsearch ('part_svc_column', { svcpart => $svcpart } )
+      );
+    return grep { not ($flags{$_} eq 'X') } @vfields;
+  } else { # Case 3
+    return @vfields;
+  } 
+  return ();
+}
+
+=item check
+
+Checks the validity of fields in this record.
+
+At present, this does nothing but call FS::Record::check (which, in turn, 
+does nothing but run virtual field checks).
+
+=cut
+
+sub check {
+  my $self = shift;
+  $self->SUPER::check;
+}
 
 =item insert [ JOBNUM_ARRAYREF ]
 
@@ -254,7 +306,7 @@ sub setx {
 
   #set default/fixed/whatever fields from part_svc
   my $table = $self->table;
-  foreach my $field ( grep { $_ ne 'svcnum' } fields($table) ) {
+  foreach my $field ( grep { $_ ne 'svcnum' } $self->fields ) {
     my $part_svc_column = $part_svc->part_svc_column($field);
     if ( $part_svc_column->columnflag eq $x ) {
       $self->setfield( $field, $part_svc_column->columnvalue );
@@ -364,7 +416,7 @@ sub cancel { ''; }
 
 =head1 VERSION
 
-$Id: svc_Common.pm,v 1.12 2002-06-14 11:22:53 ivan Exp $
+$Id: svc_Common.pm,v 1.13 2003-08-05 00:20:47 khoff Exp $
 
 =head1 BUGS
 

@@ -113,7 +113,7 @@ sub check {
     unless $self->ip || $self->nasport;
   return "Unknown nasnum"
     unless qsearchs('nas', { 'nasnum' => $self->nasnum } );
-  ''; #no error
+  $self->SUPER::check;
 }
 
 =item session
@@ -133,7 +133,7 @@ sub session {
 
 =head1 VERSION
 
-$Id: port.pm,v 1.5 2001-02-14 04:33:06 ivan Exp $
+$Id: port.pm,v 1.6 2003-08-05 00:20:45 khoff Exp $
 
 =head1 BUGS
 

@@ -108,6 +108,7 @@ sub check {
   || $self->ut_alpha('identifier')
   || $self->ut_money('amount')
   || $self->utnumbern('seconds')
+  || $self->SUPER::check
   ;
 
 }

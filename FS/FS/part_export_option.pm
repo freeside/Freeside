@@ -115,7 +115,7 @@ sub check {
 
   #check options & values?
 
-  ''; #no error
+  $self->SUPER::check;
 }
 
 =back

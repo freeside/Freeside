@@ -162,8 +162,7 @@ sub check {
     }
   }
 
-  '';
-
+  $self->SUPER::check;
 }
 
 =back

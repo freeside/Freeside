@@ -170,7 +170,7 @@ sub check {
 
   $self->_date(time) unless $self->_date;
 
-  ''; #no error
+  $self->SUPER::check;
 }
 
 =item cust_pay 
@@ -199,7 +199,7 @@ sub cust_bill {
 
 =head1 VERSION
 
-$Id: cust_bill_pay.pm,v 1.12 2002-02-07 22:29:34 ivan Exp $
+$Id: cust_bill_pay.pm,v 1.13 2003-08-05 00:20:41 khoff Exp $
 
 =head1 BUGS
 

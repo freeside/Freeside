@@ -260,14 +260,14 @@ sub check {
 
   $self->otaker(getotaker);
 
-  ''; #no error
+  $self->SUPER::check;
 }
 
 =back
 
 =head1 VERSION
 
-$Id: cust_refund.pm,v 1.20 2002-11-19 09:51:58 ivan Exp $
+$Id: cust_refund.pm,v 1.21 2003-08-05 00:20:42 khoff Exp $
 
 =head1 BUGS
 

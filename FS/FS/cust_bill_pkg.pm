@@ -171,7 +171,7 @@ sub check {
   return "Unknown invnum"
     unless qsearchs( 'cust_bill' ,{ 'invnum' => $self->invnum } );
 
-  ''; #no error
+  $self->SUPER::check;
 }
 
 =item cust_pkg

@@ -116,50 +116,6 @@ returns the error, otherwise returns false.
 
 # Standard FS::svc_Common::replace
 
-=item sb_field
-
-Returns a list of FS::sb_field objects assigned to this object.
-
-=cut
-
-sub sb_field {
-  my $self = shift;
-
-  return qsearch( 'sb_field', { svcnum => $self->svcnum } );
-}
-
-=item sb_field_hashref
-
-Returns a hashref of the FS::sb_field key/value pairs for this object.
-
-Deprecated.  Please don't use it.
-
-=cut
-
-# Kristian wrote this, but don't hold it against him.  He was under a powerful
-# distracting influence whom he evidently found much more interesting than
-# svc_broadband.pm.  I can't say I blame him.
-
-sub sb_field_hashref {
-  my $self = shift;
-  my $svcpart = shift;
-
-  if ((not $svcpart) && ($self->cust_svc)) {
-    $svcpart = $self->cust_svc->svcpart;
-  }
-
-  my $hashref = {};
-
-  map {
-    my $sb_field = qsearchs('sb_field', { sbfieldpart => $_->sbfieldpart,
-                                          svcnum => $self->svcnum });
-    $hashref->{$_->getfield('name')} = $sb_field ? $sb_field->getfield('value') : '';
-  } qsearch('part_sb_field', { svcpart => $svcpart });
-
-  return $hashref;
-
-}
-
 =item suspend
 
 Called by the suspend method of FS::cust_pkg (see FS::cust_pkg).
@@ -223,8 +179,7 @@ sub check {
     return 'Router '.$router->routernum.' cannot provide svcpart '.$self->svcpart;
   }
 
-
-  ''; #no error
+  $self->SUPER::check;
 }
 
 =item NetAddr
@@ -267,19 +222,11 @@ sub allowed_routers {
 
 =head1 BUGS
 
-I think there's one place in the code where we actually use sb_field_hashref.
-That's a bug in itself.
-
-The real problem with it is that we're still grappling with the question of how
-tightly xfields should be integrated with real fields.  There are a few
-different directions we could go with it--we I<could> override several
-functions in Record so that xfields behave almost exactly like real fields (can
-be set with setfield(), appear in fields() and hash(), used as criteria in
-qsearch(), etc.).
+The business with sb_field has been 'fixed', in a manner of speaking.
 
 =head1 SEE ALSO
 
-FS::svc_Common, FS::Record, FS::addr_block, FS::sb_field,
+FS::svc_Common, FS::Record, FS::addr_block,
 FS::part_svc, schema.html from the base documentation.
 
 =cut

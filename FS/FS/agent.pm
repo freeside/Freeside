@@ -113,8 +113,7 @@ sub check {
   return "Unknown typenum!"
     unless $self->agent_type;
 
-  '';
-
+  $self->SUPER::check;
 }
 
 =item agent_type
@@ -145,7 +144,7 @@ sub pkgpart_hashref {
 
 =head1 VERSION
 
-$Id: agent.pm,v 1.3 2002-03-24 18:23:47 ivan Exp $
+$Id: agent.pm,v 1.4 2003-08-05 00:20:40 khoff Exp $
 
 =head1 BUGS
 

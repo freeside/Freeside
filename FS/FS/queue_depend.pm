@@ -103,6 +103,7 @@ sub check {
   $self->ut_numbern('dependnum')
     || $self->ut_foreign_key('jobnum',        'queue', 'jobnum')
     || $self->ut_foreign_key('depend_jobnum', 'queue', 'jobnum')
+    || $self->SUPER::check
   ;
 }
 

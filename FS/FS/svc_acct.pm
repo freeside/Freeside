@@ -832,7 +832,7 @@ sub check {
            ": ". $recref->{_password};
   }
 
-  ''; #no error
+  $self->SUPER::check;
 }
 
 =item radius

@@ -111,6 +111,7 @@ sub check {
     || $self->ut_number('year') #check better
     || $self->ut_number('month') #check better
     || $self->ut_money('amount')
+    || $self->SUPER::check
   ;
 }
 

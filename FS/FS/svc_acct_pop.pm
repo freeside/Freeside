@@ -93,6 +93,7 @@ sub check {
       or $self->ut_number('ac')
       or $self->ut_number('exch')
       or $self->ut_numbern('loc')
+      or $self->SUPER::check
   ;
 
 }
@@ -187,7 +188,7 @@ END
 
 =head1 VERSION
 
-$Id: svc_acct_pop.pm,v 1.9 2003-07-04 01:37:46 ivan Exp $
+$Id: svc_acct_pop.pm,v 1.10 2003-08-05 00:20:47 khoff Exp $
 
 =head1 BUGS
 

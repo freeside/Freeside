@@ -36,8 +36,6 @@ if ( $cgi->param('error') ) {
 
   } else { #adding
 
-    $svc_broadband = new FS::svc_broadband({});
-
     foreach $_ (split(/-/,$query)) { #get & untaint pkgnum & svcpart
       $pkgnum=$1 if /^pkgnum(\d+)$/;
       $svcpart=$1 if /^svcpart(\d+)$/;
@@ -45,7 +43,7 @@ if ( $cgi->param('error') ) {
     $part_svc=qsearchs('part_svc',{'svcpart'=>$svcpart});
     die "No part_svc entry!" unless $part_svc;
 
-    $svc_broadband->setfield('svcpart', $svcpart);
+    $svc_broadband = new FS::svc_broadband({ svcpart => $svcpart });
 
     $svcnum='';
 
@@ -159,30 +157,12 @@ Service #<B><%=$svcnum ? $svcnum : "(NEW)"%></B><BR><BR>
 <% } %>
 
 <%
-
-  my @part_sb_field = qsearch('part_sb_field', { svcpart => $svcpart });
-  my $sbf_hashref = $svc_broadband->sb_field_hashref($svcpart);
-  foreach (sort { $a->name cmp $b->name } @part_sb_field) {
-    %>
-    <TR>
-      <TD ALIGN="right"><%=$_->name%></TD>
-      <TD><%
-      if(my @opts = $_->list_values) {
-        %>
-	<SELECT NAME="sbf_<%=$_->sbfieldpart%>" SIZE=1> <%
-        foreach $opt (@opts) { %>
-          <OPTION VALUE="<%=$opt%>"<%=
-	    ($opt eq $sbf_hashref->{$_->name}) ? ' SELECTED' : ''%>>
-	    <%=$opt%></OPTION><%
-        } %></SELECT>
-   <% } else { %>
-        <INPUT NAME="sbf_<%=$_->sbfieldpart%>"
-	    VALUE="<%=$sbf_hashref->{$_->name}%>"
-     <%=$_->length ? 'SIZE="'.$_->length.'"' : ''%>>
-   <% } %>
-      </TD>
-    </TR>
-<% } %>
+foreach $field ($svc_broadband->virtual_fields) {
+  if ( $part_svc->part_svc_column($field)->columnflag ne 'F' ) {
+    print $svc_broadband->pvf($field)->widget('HTML', 'edit',
+        $svc_broadband->getfield($field));
+  }
+} %>
   </TABLE>
   <BR>
   <INPUT TYPE="submit" NAME="submit" VALUE="Submit">

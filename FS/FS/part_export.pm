@@ -285,7 +285,7 @@ sub check {
 
   #check exporttype?
 
-  ''; #no error
+  $self->SUPER::check;
 }
 
 #=item part_svc
@@ -667,6 +667,19 @@ END
   },
 ;
 
+tie my %router_options, 'Tie::IxHash',
+  'protocol' => {
+	  label=>'Protocol',
+	  type =>'select',
+	  options => [qw(telnet ssh)],
+	  default => 'telnet'},
+  'insert' => {label=>'Insert command', default=>'' },
+  'delete' => {label=>'Delete command', default=>'' },
+  'replace' => {label=>'Replace command', default=>'' },
+  'Timeout' => {label=>'Time to wait for prompt', default=>'20' },
+  'Prompt' => {label=>'Prompt string', default=>'#' }
+;
+
 tie my %domain_shellcommands_options, 'Tie::IxHash',
   'user' => { lable=>'Remote username', default=>'root' },
   'useradd' => { label=>'Insert command',
@@ -1013,8 +1026,12 @@ tie my %forward_shellcommands_options, 'Tie::IxHash',
   },
 
   'svc_broadband' => {
+    'router' => {
+      'desc' => 'Send a command to a router.',
+      'options' => \%router_options,
+      'notes' => '',
+    },
   },
-
 );
 
 =back

@@ -14,6 +14,24 @@ CREATE TABLE cust_bill_pkg_detail (
 );
 CREATE INDEX cust_bill_pkg_detail1 ON cust_bill_pkg_detail ( pkgnum, invnum );
 
+CREATE TABLE part_virtual_field (
+  vfieldpart int NOT NULL,
+  dbtable varchar(32) NOT NULL,
+  name varchar(32) NOT NULL,
+  check_block text,
+  list_source text,
+  length integer,
+  label varchar(80),
+  PRIMARY KEY (vfieldpart)
+);
+
+CREATE TABLE virtual_field (
+  recnum integer NOT NULL,
+  vfieldpart integer NOT NULL,
+  value varchar(128) NOT NULL,
+  PRIMARY KEY (vfieldpart, recnum)
+);
+
 CREATE TABLE router (
   routernum serial,
   routername varchar(80),
@@ -26,22 +44,6 @@ CREATE TABLE part_svc_router (
   routernum int NOT NULL
 );
 
-CREATE TABLE part_router_field (
-  routerfieldpart serial,
-  name varchar(80),
-  length int NOT NULL,
-  check_block text,
-  list_source text,
-  PRIMARY KEY (routerfieldpart)
-);
-
-CREATE TABLE router_field (
-  routerfieldpart int NOT NULL,
-  routernum int NOT NULL,
-  value varchar(128)
-);
-CREATE UNIQUE INDEX router_field1 ON router_field ( routerfieldpart, routernum );
-
 CREATE TABLE addr_block (
   blocknum serial,
   routernum int NOT NULL,
@@ -50,24 +52,6 @@ CREATE TABLE addr_block (
   PRIMARY KEY (blocknum)
 );
 CREATE UNIQUE INDEX addr_block1 ON addr_block ( blocknum, routernum );
-
-CREATE TABLE part_sb_field (
-  sbfieldpart serial,
-  svcpart int NOT NULL,
-  name varchar(80) NOT NULL,
-  length int NOT NULL,
-  check_block text NULL,
-  list_source text NULL,
-  PRIMARY key (sbfieldpart)
-);
-CREATE UNIQUE INDEX part_sb_field1 ON part_sb_field ( sbfieldpart, svcpart );
-
-CREATE TABLE sb_field (
-  sbfieldpart int NOT NULL,
-  svcnum int NOT NULL,
-  value varchar(128)
-);
-CREATE UNIQUE INDEX sb_field1 ON sb_field ( sbfieldpart, svcnum );
 
 CREATE TABLE svc_broadband (
   svcnum int NOT NULL,
@@ -112,7 +96,7 @@ optionally:
 mandatory again:
 
 dbdef-create username
-create-history-tables username cust_bill_pkg_detail router part_svc_router part_router_field router_field addr_block part_sb_field sb_field svc_broadband
+create-history-tables username cust_bill_pkg_detail router part_svc_router addr_block svc_broadband
 dbdef-create username
 
 

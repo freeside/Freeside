@@ -172,7 +172,7 @@ if ($svc_acct->slipip) {
           : $svc_acct->slipip
         ). "</TD>";
   my($attribute);
-  foreach $attribute ( grep /^radius_/, fields('svc_acct') ) {
+  foreach $attribute ( grep /^radius_/, $svc_acct->fields ) {
     #warn $attribute;
     $attribute =~ /^radius_(.*)$/;
     my $pattribute = $FS::raddb::attrib{$1};
@@ -180,7 +180,7 @@ if ($svc_acct->slipip) {
           "<TD BGCOLOR=\"#ffffff\">". $svc_acct->getfield($attribute).
           "</TD></TR>";
   }
-  foreach $attribute ( grep /^rc_/, fields('svc_acct') ) {
+  foreach $attribute ( grep /^rc_/, $svc_acct->fields ) {
     #warn $attribute;
     $attribute =~ /^rc_(.*)$/;
     my $pattribute = $FS::raddb::attrib{$1};
@@ -195,7 +195,19 @@ if ($svc_acct->slipip) {
 print '<TR><TD ALIGN="right">RADIUS groups</TD><TD BGCOLOR="#ffffff">'.
       join('<BR>', $svc_acct->radius_groups). '</TD></TR>';
 
-print '</TABLE></TD></TR></TABLE><BR><BR>';
+# Can this be abstracted further?  Maybe a library function like
+# widget('HTML', 'view', $svc_acct) ?  It would definitely make UI 
+# style management easier.
+
+foreach (sort { $a cmp $b } $svc_acct->virtual_fields) {
+  print $svc_acct->pvf($_)->widget('HTML', 'view', $svc_acct->getfield($_)),
+      "\n";
+}
+%>
+</TABLE></TD></TR></TABLE>
+<%
+
+print '<BR><BR>';
 
 print join("\n", $conf->config('svc_acct-notes') ). '<BR><BR>'.
       joblisting({'svcnum'=>$svcnum}, 1). '</BODY></HTML>';

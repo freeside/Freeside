@@ -102,7 +102,8 @@ sub check {
   my $self = shift;
 
   $self->ut_numbern('typenum')
-  or $self->ut_text('atype');
+  or $self->ut_text('atype')
+  or $self->SUPER::check;
 
 }
 
@@ -150,7 +151,7 @@ sub pkgpart {
 
 =head1 VERSION
 
-$Id: agent_type.pm,v 1.1 1999-08-04 09:03:53 ivan Exp $
+$Id: agent_type.pm,v 1.2 2003-08-05 00:20:40 khoff Exp $
 
 =head1 BUGS
 

@@ -108,7 +108,7 @@ sub check {
   return "Unknown pkgpart!" unless $self->part_pkg;
   return "Unknown svcpart!" unless $self->part_svc;
 
-  ''; #no error
+  $self->SUPER::check;
 }
 
 =item part_pkg
@@ -137,7 +137,7 @@ sub part_svc {
 
 =head1 VERSION
 
-$Id: pkg_svc.pm,v 1.3 2002-06-10 01:39:50 khoff Exp $
+$Id: pkg_svc.pm,v 1.4 2003-08-05 00:20:45 khoff Exp $
 
 =head1 BUGS
 

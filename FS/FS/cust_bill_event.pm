@@ -122,7 +122,7 @@ sub check {
   return "Unknown eventpart ". $self->eventpart
     unless qsearchs( 'part_bill_event' ,{ 'eventpart' => $self->eventpart } );
 
-  ''; #no error
+  $self->SUPER::check;
 }
 
 =item part_bill_event

@@ -92,9 +92,8 @@ FS/part_pop_local.pm
 FS/part_referral.pm
 FS/part_svc.pm
 FS/part_svc_column.pm
-FS/part_router_field.pm
-FS/part_sb_field.pm
 FS/part_svc_router.pm
+FS/part_virtual_field.pm
 FS/pkg_svc.pm
 FS/svc_Common.pm
 FS/svc_acct.pm
@@ -102,7 +101,6 @@ FS/svc_acct_pop.pm
 FS/svc_broadband.pm
 FS/svc_domain.pm
 FS/router.pm
-FS/router_field.pm
 FS/type_pkgs.pm
 FS/nas.pm
 FS/port.pm
@@ -111,7 +109,6 @@ FS/domain_record.pm
 FS/prepay_credit.pm
 FS/svc_www.pm
 FS/svc_forward.pm
-FS/sb_field.pm
 FS/raddb.pm
 FS/radius_usergroup.pm
 FS/queue.pm

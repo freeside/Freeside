@@ -41,7 +41,7 @@ fields are currently supported:
 
 =item columnvalue - default or fixed value for the column
 
-=item columnflag - null, D or F
+=item columnflag - null, D, F, X (virtual fields)
 
 =back
 
@@ -91,18 +91,18 @@ sub check {
   ;
   return $error if $error;
 
-  $self->columnflag =~ /^([DF])$/
+  $self->columnflag =~ /^([DFX])$/
     or return "illegal columnflag ". $self->columnflag;
   $self->columnflag(uc($1));
 
-  ''; #no error
+  $self->SUPER::check;
 }
 
 =back
 
 =head1 VERSION
 
-$Id: part_svc_column.pm,v 1.1 2001-09-07 20:49:15 ivan Exp $
+$Id: part_svc_column.pm,v 1.2 2003-08-05 00:20:44 khoff Exp $
 
 =head1 BUGS
 

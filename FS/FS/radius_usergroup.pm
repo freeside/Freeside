@@ -100,6 +100,7 @@ sub check {
     || $self->ut_number('svcnum')
     || $self->ut_foreign_key('svcnum','svc_acct','svcnum')
     || $self->ut_text('groupname')
+    || $self->SUPER::check
   ;
 }
 

@@ -14,21 +14,22 @@ my $p2 = popurl(2);
 <A HREF="<%=$p2%>edit/router.cgi"><I>Add a new router</I></A><BR><BR>
 
 <%=table()%>
-<!-- <TH><TD>Field name</TD><TD>Field value</TD></TH> -->
-<% foreach $router (sort {$a->routernum <=> $b->routernum} @router) { %>
   <TR>
-<!--    <TD ROWSPAN="<%=scalar($router->router_field) + 2%>"> -->
-    <TD>
+    <TD><B>Router name</B></TD>
+    <TD><B>Address block(s)</B></TD>
+  </TR>
+<% foreach $router (sort {$a->routernum <=> $b->routernum} @router) {
+     my @addr_block = $router->addr_block;
+%>
+  <TR>
+    <TD ROWSPAN="<%=scalar(@addr_block)%>">
       <A HREF="<%=$p2%>edit/router.cgi?<%=$router->routernum%>"><%=$router->routername%></A>
     </TD>
-  <!-- 
-  <% foreach (sort { $a->part_router_field->name cmp $b->part_router_field->name } $router->router_field )  { %>
-  <TR>
-    <TD BGCOLOR="#cccccc" ALIGN="right"><%=$_->part_router_field->name%></TD>
-    <TD BGCOLOR="#ffffff"><%=$_->value%></TD>
-  </TR>
-  <% } %>
-  -->
+    <TD>
+    <% foreach my $block ( @addr_block ) { %>
+      <%=$block->NetAddr%></BR>
+    <% } %>
+    </TD>
   </TR>
 <% } %>
 </TABLE>

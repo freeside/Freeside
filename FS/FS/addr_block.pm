@@ -122,7 +122,7 @@ sub check {
     }
   }
 
-  '';
+  $self->SUPER::check;
 }
 
 

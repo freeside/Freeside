@@ -114,7 +114,9 @@ sub check {
     || $self->ut_text('nas')
     || $self->ut_ip('nasip')
     || $self->ut_domain('nasfqdn')
-    || $self->ut_numbern('last');
+    || $self->ut_numbern('last')
+    || $self->SUPER::check
+    ;
 }
 
 =item heartbeat TIMESTAMP
@@ -136,7 +138,7 @@ sub heartbeat {
 
 =head1 VERSION
 
-$Id: nas.pm,v 1.6 2002-03-04 12:48:49 ivan Exp $
+$Id: nas.pm,v 1.7 2003-08-05 00:20:43 khoff Exp $
 
 =head1 BUGS
 

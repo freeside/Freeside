@@ -798,7 +798,7 @@ sub check {
 
   #warn "AFTER: \n". $self->_dump;
 
-  ''; #no error
+  $self->SUPER::check;
 }
 
 =item all_pkgs

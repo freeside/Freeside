@@ -93,6 +93,7 @@ sub check {
 
   $self->ut_numbern('refnum')
     || $self->ut_text('referral')
+    || $self->SUPER::check
   ;
 }
 

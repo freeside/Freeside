@@ -68,7 +68,7 @@ TODOC:
 
 =item I<svcdb>__I<field> - Default or fixed value for I<field> in I<svcdb>.
 
-=item I<svcdb>__I<field>_flag - defines I<svcdb>__I<field> action: null, `D' for default, or `F' for fixed
+=item I<svcdb>__I<field>_flag - defines I<svcdb>__I<field> action: null, `D' for default, or `F' for fixed.  For virtual fields, can also be 'X' for excluded.
 
 TODOC: EXTRA_FIELDS_ARRAYREF
 
@@ -113,7 +113,7 @@ sub insert {
     } );
 
     my $flag = $self->getfield($svcdb.'__'.$field.'_flag');
-    if ( uc($flag) =~ /^([DF])$/ ) {
+    if ( uc($flag) =~ /^([DFX])$/ ) {
       $part_svc_column->setfield('columnflag', $1);
       $part_svc_column->setfield('columnvalue',
         $self->getfield($svcdb.'__'.$field)
@@ -201,7 +201,7 @@ sub replace {
       } );
 
       my $flag = $new->getfield($svcdb.'__'.$field.'_flag');
-      if ( uc($flag) =~ /^([DF])$/ ) {
+      if ( uc($flag) =~ /^([DFX])$/ ) {
         $part_svc_column->setfield('columnflag', $1);
         $part_svc_column->setfield('columnvalue',
           $new->getfield($svcdb.'__'.$field)
@@ -254,7 +254,7 @@ sub check {
   my @fields = eval { fields( $recref->{svcdb} ) }; #might die
   return "Unknown svcdb!" unless @fields;
 
-  ''; #no error
+  $self->SUPER::check;
 }
 
 =item part_svc_column COLUMNNAME

@@ -47,8 +47,15 @@ print header('Website View', menubar(
       qq!<TR><TD ALIGN="right">Website name</TD>!.
         qq!<TD BGCOLOR="#ffffff"><A HREF="http://$www">$www<A></TD></TR>!.
       qq!<TR><TD ALIGN="right">Account</TD>!.
-        qq!<TD BGCOLOR="#ffffff"><A HREF="${p}view/svc_acct.cgi?$usersvc">$email</A></TD></TR>!.
-      '</TABLE></TD></TR></TABLE>'.
+        qq!<TD BGCOLOR="#ffffff"><A HREF="${p}view/svc_acct.cgi?$usersvc">$email</A></TD></TR>!;
+
+foreach (sort { $a cmp $b } $svc_www->virtual_fields) {
+  print $svc_www->pvf($_)->widget('HTML', 'view', $svc_www->getfield($_)),
+      "\n";
+}
+
+
+print '</TABLE></TD></TR></TABLE>'.
       '<BR>'. joblisting({'svcnum'=>$svcnum}, 1).
       '</BODY></HTML>'
 ;

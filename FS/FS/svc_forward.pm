@@ -241,7 +241,7 @@ sub check {
     $self->dst('');
   }
 
-  ''; #no error
+  $self->SUPER::check;
 }
 
 =item srcsvc_acct

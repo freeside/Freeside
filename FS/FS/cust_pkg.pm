@@ -249,7 +249,7 @@ sub check {
     $self->manual_flag($1);
   }
 
-  ''; #no error
+  $self->SUPER::check;
 }
 
 =item cancel

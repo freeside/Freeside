@@ -207,7 +207,7 @@ sub check {
   $self->status('new') unless $self->status;
   $self->_date(time) unless $self->_date;
 
-  ''; #no error
+  $self->SUPER::check;
 }
 
 =item args
@@ -385,7 +385,7 @@ END
 
 =head1 VERSION
 
-$Id: queue.pm,v 1.15 2002-07-02 06:48:59 ivan Exp $
+$Id: queue.pm,v 1.16 2003-08-05 00:20:46 khoff Exp $
 
 =head1 BUGS
 

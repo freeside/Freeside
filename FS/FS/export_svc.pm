@@ -105,6 +105,7 @@ sub check {
     || $self->ut_foreign_key('exportnum', 'part_export', 'exportnum')
     || $self->ut_number('svcpart')
     || $self->ut_foreign_key('svcpart', 'part_svc', 'svcpart')
+    || $self->SUPER::check
   ;
 }
 

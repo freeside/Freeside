@@ -29,12 +29,12 @@ if ( $cgi->param('error') ) {
 
   } else { #adding
 
-    $svc_www = new FS::svc_www({});
-
     foreach $_ (split(/-/,$query)) { #get & untaint pkgnum & svcpart
       $pkgnum=$1 if /^pkgnum(\d+)$/;
       $svcpart=$1 if /^svcpart(\d+)$/;
     }
+    $svc_www = new FS::svc_www { svcpart => $svcpart };
+
     $part_svc=qsearchs('part_svc',{'svcpart'=>$svcpart});
     die "No part_svc entry!" unless $part_svc;
 
@@ -166,6 +166,14 @@ foreach $_ (keys %username) {
         qq! VALUE="$_">$username{$_}!;
 }
 print "</SELECT></TD></TR>";
+
+foreach $field ($svc_www->virtual_fields) {
+  if ( $part_svc->part_svc_column($field)->columnflag ne 'F' ) {
+    # If the flag is X, it won't even show up in $svc_acct->virtual_fields.
+    print $svc_www->pvf($field)->widget('HTML', 'edit', 
+        $svc_www->getfield($field));
+  }
+}
 
 print '</TABLE><BR><INPUT TYPE="submit" VALUE="Submit">';
 

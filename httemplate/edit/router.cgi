@@ -16,7 +16,6 @@ if ( $cgi->keywords ) {
 
 my $routernum = $router->routernum;
 my $action = $routernum ? 'Edit' : 'Add';
-my $hashref = $router->hashref;
 
 print header("$action Router", menubar(
   'Main Menu' => "$p",
@@ -28,10 +27,13 @@ if($cgi->param('error')) {
 <% } %>
 
 <FORM ACTION="<%=popurl(1)%>process/router.cgi" METHOD=POST>
+  <INPUT TYPE="hidden" NAME="table" VALUE="router">
+  <INPUT TYPE="hidden" NAME="redirect_ok" VALUE="<%=$p3%>/browse/router.cgi">
+  <INPUT TYPE="hidden" NAME="redirect_error" VALUE="<%=$p3%>/edit/router.cgi">
   <INPUT TYPE="hidden" NAME="routernum" VALUE="<%=$routernum%>">
     Router #<%=$routernum or "(NEW)"%>
 
-<BR><BR>Name <INPUT TYPE="text" NAME="routername" SIZE=32 VALUE="<%=$hashref->{routername}%>">
+<BR><BR>Name <INPUT TYPE="text" NAME="routername" SIZE=32 VALUE="<%=$router->routername%>">
 
 <BR><BR>
 Custom fields:
@@ -39,35 +41,11 @@ Custom fields:
 <%=table() %>
 
 <%
-# I know, I know.  Massive false laziness with edit/svc_broadband.cgi.  But 
-# Kristian won't let me generalize the custom field mechanism to every table in 
-# the database, so this is what we get.  <snarl>
-# -- MW
-
-my @part_router_field = qsearch('part_router_field', { });
-my %rf = map { $_->part_router_field->name, $_->value } $router->router_field;
-foreach (sort { $a->name cmp $b->name } @part_router_field) {
-  %>
-  <TR>
-    <TD ALIGN="right"><%=$_->name%></TD>
-    <TD><%
-  if(my @opts = $_->list_values) {
-    %>  <SELECT NAME="rf_<%=$_->routerfieldpart%>" SIZE="1">
-          <%
-    foreach $opt (@opts) {
-      %>  <OPTION VALUE="<%=$opt%>"<%=($opt eq $rf{$_->name}) 
-              ? ' SELECTED' : ''%>>
-            <%=$opt%>
-	  </OPTION>
-   <% } %>
-	</SELECT>
- <% } else { %>
-        <INPUT NAME="rf_<%=$_->routerfieldpart%>"
-        VALUE="<%=$rf{$_->name}%>"
-        <%=$_->length ? 'SIZE="'.$_->length.'"' : ''%>>
-  <% } %></TD>
-  </TR>
-<% } %>
+foreach my $field ($router->virtual_fields) {
+  print $router->pvf($field)->widget('HTML', 'edit', 
+        $router->getfield($field));
+}
+%>
 </TABLE>
 
 
@@ -81,7 +59,7 @@ foreach my $part_svc ( qsearch('part_svc', { svcdb    => 'svc_broadband',
   <BR>
   <INPUT TYPE="checkbox" NAME="svcpart_<%=$part_svc->svcpart%>"<%=
       qsearchs('part_svc_router', { svcpart   => $part_svc->svcpart, 
-                                    routernum => $routernum } ) ? 'CHECKED' : ''%> VALUE="ON">
+                                    routernum => $routernum } ) ? ' CHECKED' : ''%> VALUE="ON">
   <A HREF="<%=${p}%>edit/part_svc.cgi?<%=$part_svc->svcpart%>">
     <%=$part_svc->svcpart%>: <%=$part_svc->svc%></A>
   <% } %>

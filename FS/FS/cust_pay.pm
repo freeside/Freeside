@@ -354,8 +354,7 @@ sub check {
     return $error if $error;
   }
 
-  ''; #no error
-
+  $self->SUPER::check;
 }
 
 =item cust_bill_pay
@@ -390,7 +389,7 @@ sub unapplied {
 
 =head1 VERSION
 
-$Id: cust_pay.pm,v 1.24 2003-05-19 12:00:44 ivan Exp $
+$Id: cust_pay.pm,v 1.25 2003-08-05 00:20:42 khoff Exp $
 
 =head1 BUGS
 

@@ -61,7 +61,14 @@ print qq!<A HREF="${p}edit/svc_forward.cgi?$svcnum">Edit this information</A>!.
       qq!<TR><TD ALIGN="right">Email to</TD>!.
         qq!<TD BGCOLOR="#ffffff">$source</TD></TR>!.
       qq!<TR><TD ALIGN="right">Forwards to </TD>!.
-        qq!<TD BGCOLOR="#ffffff">$destination</TD></TR></TABLE>!.
+        qq!<TD BGCOLOR="#ffffff">$destination</TD></TR>!;
+
+foreach (sort { $a cmp $b } $svc_forward->virtual_fields) {
+  print $svc_forward->pvf($_)->widget('HTML', 'view', $svc_forward->getfield($_)),
+      "\n";
+}
+
+print qq!  </TABLE>!.
       '<BR>'. joblisting({'svcnum'=>$svcnum}, 1).
       '</BODY></HTML>'
 ;

@@ -241,6 +241,7 @@ sub check {
       || $self->ut_enum('recurtax', [ '', 'Y' ] )
       || $self->ut_textn('taxclass')
       || $self->ut_enum('disabled', [ '', 'Y' ] )
+      || $self->SUPER::check
     ;
 }
 

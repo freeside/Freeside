@@ -53,12 +53,13 @@ function part_export_areyousure(href) {
 <% foreach my $part_svc ( @part_svc ) {
      my $hashref = $part_svc->hashref;
      my $svcdb = $hashref->{svcdb};
-     my @dfields = fields($svcdb);
+     my $svc_x = "FS::$svcdb"->new( { svcpart => $part_svc->svcpart } );
+     my @dfields = $svc_x->fields;
      push @dfields, 'usergroup' if $svcdb eq 'svc_acct'; #kludge
      my @fields =
-       grep { $_ ne 'svcnum' && $part_svc->part_svc_column($_)->columnflag }
-            @dfields;
-
+       grep { $svc_x->pvf($_)
+           or $_ ne 'svcnum' && $part_svc->part_svc_column($_)->columnflag }
+            @dfields ;
      my $rowspan = scalar(@fields) || 1;
      my $url = "${p}edit/part_svc.cgi?$hashref->{svcpart}";
 %>
@@ -96,6 +97,7 @@ map { qsearchs('part_export', { exportnum => $_->exportnum } ) } qsearch('export
 
 <%     if ( $flag eq "D" ) { print "Default"; }
          elsif ( $flag eq "F" ) { print "Fixed"; }
+         elsif ( not $flag ) { }
          else { print "(Unknown!)"; }
 %>
        </TD><TD><%= $part_svc->part_svc_column($field)->columnvalue%></TD>

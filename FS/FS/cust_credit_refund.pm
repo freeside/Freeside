@@ -156,7 +156,7 @@ sub check {
   return "unknown cust_credit.crednum: ". $self->crednum
     unless qsearchs( 'cust_credit', { 'crednum' => $self->crednum } );
 
-  ''; #no error
+  $self->SUPER::check;
 }
 
 =item cust_refund
@@ -185,7 +185,7 @@ sub cust_credit {
 
 =head1 VERSION
 
-$Id: cust_credit_refund.pm,v 1.9 2002-01-26 01:52:31 ivan Exp $
+$Id: cust_credit_refund.pm,v 1.10 2003-08-05 00:20:41 khoff Exp $
 
 =head1 BUGS
 

@@ -113,7 +113,9 @@ sub check {
     || $self->ut_textn('taxclass') # ...
     || $self->ut_money('exempt_amount')
     || $self->ut_textn('taxname')
-  ;
+    || $self->SUPER::check
+    ;
+
 
 }
 
