@@ -1,0 +1,114 @@
+#!/usr/bin/perl -w
+
+use strict;
+use Net::LDAP::LDIF;
+
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw(qsearchs);
+use FS::svc_domain;
+use FS::svc_acct;
+
+my $user = shift or die;
+adminsuidsetup($user);
+
+$FS::svc_Common::noexport_hack = 1;
+$FS::svc_domain::whois_hack = 1;
+
+my $domain_svcpart = 1;
+my $account_svcpart = 2;
+my $mailbox_svcpart = 3;
+my $fedweeknet_svcpart = 4;
+
+#my $ldif =
+#  Net::LDAP::LDIF->new( "ispman-06-23-04.ldif", "r", onerror => 'undef' );
+my $ldif =
+  Net::LDAP::LDIF->new( "ispman-06-23-04.ldif", "r", onerror => 'warn' );
+
+#my %objectclass;
+
+my $acct = 0;
+my $imported = 0;
+
+my $entry;
+while ( $entry = $ldif->read_entry ) {
+  #warn "$entry\n";
+  my %attributes = map { $_ => [ $entry->get_value( $_ ) ]  } $entry->attributes;
+
+  my $objectclass = join('/', @{$attributes{'objectclass'}} );
+
+  next unless $objectclass eq 'posixAccount/ispmanDomainUser/radiusprofile';
+
+  foreach my $attr ( keys %attributes ) {
+    print join( " => ", substr($attr.' 'x30,0,30), @{$attributes{ $attr }} ), "\n";
+    #if ( $attr eq 'objectclass' ) {
+    #  $objectclass{ join('/', @{$attributes{$attr}} ) }++;
+    #}
+  }
+  print "\n";
+
+  $acct++;
+
+  my $email = $attributes{'maillocaladdress'}->[0];
+  $email =~ /^(\w+)\@([\w\.\-]+)$/ or die $email;
+  die "$1 ne ". $attributes{'ispmanuserid'}->[0]. "\n"
+    unless lc($1) eq $attributes{'ispmanuserid'}->[0];
+  my $username = lc($1);
+  my $domain = lc($2);
+
+  my $svc_domain = qsearchs('svc_domain', { 'domain' => $domain } )
+                 || new FS::svc_domain { 'svcpart' => $domain_svcpart,
+                                         'domain'  => $domain,
+                                         'action'  => 'N',
+                                       };
+
+  unless ( $svc_domain->svcnum ) {
+    my $error = $svc_domain->insert;
+    if ( $error ) {
+      die "inserting domain: $error\n";
+    }
+  }
+
+  ( my $password = $attributes{'userpassword'}->[0] ) =~ s/^\{crypt\}//;
+
+  # pick svcpart
+  my $svcpart = $account_svcpart;
+  if ( $domain eq 'fedweeknet.com' ) {
+    $svcpart = $fedweeknet_svcpart;
+  } elsif ( $attributes{'dialupaccess'}->[0] =~ /(false|no)/i ) {
+    $svcpart = $mailbox_svcpart;
+  }
+
+  my $dir = $attributes{'homedirectory'}->[0];
+  $dir =~ s/\s+//g;
+  $dir =~ s/\@/_/;
+
+  my $svc_acct = new FS::svc_acct {
+    'svcpart'   => $svcpart,
+    'username'  => $username,
+    '_password' => $password,
+    'finger'    => $attributes{'cn'}->[0],
+    'domsvc'    => $svc_domain->svcnum,
+    'shell'     => $attributes{'loginshell'}->[0],
+    'uid'       => $attributes{'uidnumber'}->[0],
+    'gid'       => $attributes{'gidnumber'}->[0],
+    'dir'       => $dir,
+    'quota'     => $attributes{'mailquota'}->[0],
+  };
+  my $error = $svc_acct->insert;
+  #my $error = $svc_acct->check;
+
+  if ( $error ) { 
+    warn "$error\n";
+  } else {
+    $imported++;
+  }
+
+}
+
+print "$imported of $acct imported\n";
+
+#print "\n\n";
+
+#foreach ( sort { $objectclass{$b} <=> $objectclass{$a} } keys %objectclass ) {
+#  print "$objectclass{$_}: $_\n";
+#}
