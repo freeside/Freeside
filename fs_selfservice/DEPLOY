@@ -8,6 +8,13 @@ cd FS-SelfService
 perl Makefile.PL && make && make install
 
 cp /home/ivan/freeside/fs_selfservice/FS-SelfService/cgi/* /var/www/MyAccount
-chown freeside /var/www/MyAccount/selfservice.cgi
-chmod 755 /var/www/MyAccount/selfservice.cgi
+chown freeside /var/www/MyAccount/selfservice.cgi /var/www/MyAccount/agent.cgi
+chmod 755 /var/www/MyAccount/selfservice.cgi /var/www/MyAccount/agent.cgi
 ln -s /var/www/MyAccount/selfservice.cgi /var/www/MyAccount/index.cgi || true
+
+cp /home/ivan/freeside/fs_signup/FS-SignupClient/cgi/* /var/www/signup/
+#mv /var/www/signup/signup-snarf.html /var/www/signup/signup.html #!!!!!
+chown freeside /var/www/signup/signup.cgi
+chmod 755 /var/www/signup/signup.cgi
+ln -s /var/www/signup/signup.cgi /var/www/signup/index.cgi || true
+
