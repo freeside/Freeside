@@ -33,6 +33,7 @@ my $rsa_decrypt;
 
 #ask FS::UID to run this stuff for us later
 $FS::UID::callback{'FS::Record'} = sub { 
+  $conf = new FS::Conf; 
   $File::CounterFile::DEFAULT_DIR = "/usr/local/etc/freeside/counters.". datasrc;
   $dbdef_file = "/usr/local/etc/freeside/dbdef.". datasrc;
   &reload_dbdef unless $setup_hack; #$setup_hack needed now?
