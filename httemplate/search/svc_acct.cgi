@@ -30,7 +30,7 @@ if ( $query =~ /^UN_(.*)$/ ) {
       WHERE 0 <
         ( SELECT count(*) FROM cust_svc
             WHERE cust_svc.svcnum = svc_acct.svcnum
-              AND ( pkgnum IS NULL OR pkgnum = 0 OR pkgnum = $empty )
+              AND ( pkgnum IS NULL OR pkgnum = 0 )
         )
     ";
   }
