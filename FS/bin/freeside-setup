@@ -842,10 +842,10 @@ sub tables_hash_hack {
 
     'svc_forward' => {
       'columns' => [
-        'svcnum',   'int',    '',  '',
-        'srcsvc',   'int',    '',  '',
+        'svcnum',   'int',            '',   '',
+        'srcsvc',   'int',        'NULL',   '',
         'src',      'varchar',    'NULL',  255,
-        'dstsvc',   'int',    '',  '',
+        'dstsvc',   'int',        'NULL',   '',
         'dst',      'varchar',    'NULL',  255,
       ],
       'primary_key' => 'svcnum',

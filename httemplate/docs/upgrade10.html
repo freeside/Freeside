@@ -158,6 +158,12 @@ ALTER TABLE pkg_svc ADD primary_svc char(1) NULL;
 ALTER TABLE h_pkg_svc ADD primary_svc char(1) NULL;
 ALTER TABLE svc_forward ADD src varchar(255) NULL;
 ALTER TABLE h_svc_forward ADD src varchar(255) NULL;
+ALTER TABLE svc_forward ALTER COLUMN srcsvc DROP NOT NULL;
+ALTER TABLE h_svc_forward ALTER COLUMN srcsvc DROP NOT NULL;
+ALTER TABLE svc_forward ALTER COLUMN dstsvc DROP NOT NULL;
+ALTER TABLE h_svc_forward ALTER COLUMN dstsvc DROP NOT NULL;
+
+
 
 dump database, edit:
 - cust_main: increase otaker from 8 to 32
