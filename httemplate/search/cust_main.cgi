@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: cust_main.cgi,v 1.2 2001-07-30 10:41:44 ivan Exp $ -->
+#<!-- $Id: cust_main.cgi,v 1.3 2001-08-28 14:34:14 ivan Exp $ -->
 
 use strict;
 #use vars qw( $conf %ncancelled_pkgs %all_pkgs $cgi @cust_main $sortby );
@@ -35,9 +35,10 @@ if ( $cgi->keywords ) {
   }
 } else {
   @cust_main=();
-  &cardsearch if ( $cgi->param('card_on') && $cgi->param('card') );
-  &lastsearch if ( $cgi->param('last_on') && $cgi->param('last_text') );
-  &companysearch if ( $cgi->param('company_on') && $cgi->param('company_text') );
+  &cardsearch if $cgi->param('card_on') && $cgi->param('card');
+  &lastsearch if $cgi->param('last_on') && $cgi->param('last_text');
+  &companysearch if $cgi->param('company_on') && $cgi->param('company_text');
+  &referralsearch if $cgi->param('referral_custnum');
 }
 
 @cust_main = grep { $_->ncancelled_pkgs || ! $_->all_pkgs } @cust_main
@@ -48,7 +49,7 @@ if ( $conf->exists('hidecancelledpackages' ) ) {
   %all_pkgs = map { $_->custnum => [ $_->all_pkgs ] } @cust_main;
 }
 
-if ( scalar(@cust_main) == 1 ) {
+if ( scalar(@cust_main) == 1 && ! $cgi->param('referral_custnum') ) {
   print $cgi->redirect(popurl(2). "view/cust_main.cgi?". $cust_main[0]->custnum);
   exit;
 } elsif ( scalar(@cust_main) == 0 ) {
@@ -58,7 +59,42 @@ if ( scalar(@cust_main) == 1 ) {
   my($total)=scalar(@cust_main);
   print $cgi->header( '-expires' => 'now' ), header("Customer Search Results",menubar(
     'Main Menu', popurl(2)
-  )), "$total matching customers found<BR>", &table(), <<END;
+  )), "$total matching customers found";
+  if ( $cgi->param('referral_custnum') ) {
+    $cgi->param('referral_custnum') =~ /^(\d+)$/
+      or eidiot "Illegal referral_custnum\n";
+    my $referral_custnum = $1;
+    my $cust_main = qsearchs('cust_main', { custnum => $referral_custnum } );
+    print '<FORM METHOD=POST>'.
+          qq!<INPUT TYPE="hidden" NAME="referral_custnum" VALUE="$referral_custnum">!.
+          'referrals of <A HREF="'. popurl(2).
+          "view/cust_main.cgi?$referral_custnum\">$referral_custnum: ".
+          ( $cust_main->company
+            || $cust_main->last. ', '. $cust_main->first ).
+          '</A>';
+    print "\n",<<END;
+      <SCRIPT>
+      function changed(what) {
+        what.form.submit();
+      }
+      </SCRIPT>
+END
+    print ' <SELECT NAME="referral_depth" SIZE="1" onChange="changed(this)">';
+    my $max = 8; #config file
+    $cgi->param('referral_depth') =~ /^(\d+)$/
+      or eidiot "Illegal referral_depth";
+    my $referral_depth = $1;
+
+    foreach my $depth ( 1 .. $max ) {
+      print '<OPTION',
+            ' SELECTED'x($depth == $referral_depth),
+            ">$depth";
+    }
+    print "</SELECT> levels deep".
+          '<NOSCRIPT> <INPUT TYPE="submit" VALUE="change"></NOSCRIPT>'.
+          '</FORM>';
+  }
+  print "<BR>", &table(), <<END;
       <TR>
         <TH></TH>
         <TH>(bill) name</TH>
@@ -175,7 +211,24 @@ sub cardsearch {
   my($payinfo)=$1;
 
   push @cust_main, qsearch('cust_main',{'payinfo'=>$payinfo, 'payby'=>'CARD'});
+  $sortby=\*last_sort;
+}
 
+sub referralsearch {
+  $cgi->param('referral_custnum') =~ /^(\d+)$/
+    or eidiot "Illegal referral_custnum";
+  my $cust_main = qsearchs('cust_main', { 'custnum' => $1 } )
+    or eidiot "Customer $1 not found";
+  my $depth;
+  if ( $cgi->param('referral_depth') ) {
+    $cgi->param('referral_depth') =~ /^(\d+)$/
+      or eidiot "Illegal referral_depth";
+    $depth = $1;
+  } else {
+    $depth = 1;
+  }
+  push @cust_main, $cust_main->referral_cust_main($depth);
+  $sortby=\*last_sort;
 }
 
 sub lastsearch {

@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: cust_main.cgi,v 1.3 2001-08-12 00:07:55 ivan Exp $ -->
+#<!-- $Id: cust_main.cgi,v 1.4 2001-08-28 14:34:14 ivan Exp $ -->
 
 use vars qw( $cgi $custnum $action $cust_main $p1 @agents $agentnum 
              $last $first $ss $company $address1 $address2 $city $zip 
@@ -61,7 +61,8 @@ if ( $cgi->param('error') ) {
 } else {
   $custnum='';
   $cust_main = new FS::cust_main ( {} );
-  $cust_main->setfield('otaker',&getotaker);
+  $cust_main->otaker( &getotaker );
+  $cust_main->referral_custnum( $cgi->param('referral_custnum') );
   $saved_pkgpart = 0;
   $username = '';
   $password = '';
@@ -130,6 +131,22 @@ if ( $custnum && ! $conf->exists('editreferrals') ) {
   }
 }
 
+#referring customer
+
+print qq!<BR><BR>Referring Customer: !;
+if ( $cust_main->referral_custnum ) {
+  my $referring_cust_main =
+    qsearchs('cust_main', { custnum => $cust_main->referral_custnum } );
+  print '<A HREF="'. popurl(1). '/cust_main.cgi?'.
+        $cust_main->referral_custnum. '">'.
+        $cust_main->referral_custnum. ': '.
+        ( $referring_cust_main->company
+          || $referring_cust_main->last. ', '. $referring_cust_main->first ).
+        '</A><INPUT TYPE="hidden" NAME="referral_custnum" VALUE="'.
+        $cust_main->referral_custnum. '">';
+} else {
+  print '(none)<INPUT TYPE="hidden" NAME="referral_custnum" VALUE="">';
+}
 
 # contact info
 

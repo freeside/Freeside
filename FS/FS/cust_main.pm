@@ -502,6 +502,7 @@ sub check {
     || $self->ut_textn('state')
     || $self->ut_country('country')
     || $self->ut_anything('comments')
+    || $self->ut_numbern('referral_custnum')
   ;
   #barf.  need message catalogs.  i18n.  etc.
   $error .= "Please select a referral."
@@ -513,6 +514,10 @@ sub check {
 
   return "Unknown referral"
     unless qsearchs( 'part_referral', { 'refnum' => $self->refnum } );
+
+  return "Unknown referring custnum ". $self->referral_custnum
+    unless ! $self->referral_custnum 
+           || qsearchs( 'cust_main', { 'custnum' => $self->referral_custnum } );
 
   if ( $self->ss eq '' ) {
     $self->ss('');
@@ -1342,6 +1347,34 @@ sub check_invoicing_list {
   '';
 }
 
+=item referral_cust_main [ DEPTH [ EXCLUDE_HASHREF ] ]
+
+Returns an array of customers referred by this customer (referral_custnum set
+to this custnum).  If DEPTH is given, recurses up to the given depth, returning
+customers referred by customers referred by this customer and so on, inclusive.
+The default behavior is DEPTH 1 (no recursion).
+
+=cut
+
+sub referral_cust_main {
+  my $self = shift;
+  my $depth = @_ ? shift : 1;
+  my $exclude = @_ ? shift : {};
+
+  my @cust_main =
+    map { $exclude->{$_->custnum}++; $_; }
+      grep { ! $exclude->{ $_->custnum } }
+        qsearch( 'cust_main', { 'referral_custnum' => $self->custnum } );
+
+  if ( $depth > 1 ) {
+    push @cust_main,
+      map { $_->referral_cust_main($depth-1, $exclude) }
+        @cust_main;
+  }
+
+  @cust_main;
+}
+
 =back
 
 =head1 SUBROUTINES
@@ -1365,7 +1398,7 @@ sub rebuild_fuzzyfiles {
 
 =head1 VERSION
 
-$Id: cust_main.pm,v 1.21 2001-08-26 05:06:19 ivan Exp $
+$Id: cust_main.pm,v 1.22 2001-08-28 14:34:14 ivan Exp $
 
 =head1 BUGS
 

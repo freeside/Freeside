@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: cust_main.cgi,v 1.4 2001-08-13 23:15:35 ivan Exp $ -->
+#<!-- $Id: cust_main.cgi,v 1.5 2001-08-28 14:34:14 ivan Exp $ -->
 
 use strict;
 use vars qw ( $cgi $query $custnum $cust_main $hashref $agent $referral 
@@ -43,8 +43,18 @@ print qq!<A HREF="!, popurl(2),
 print qq! | <A HREF="!, popurl(2), 
       qq!misc/delete-customer.cgi?$custnum"> Delete this customer</A>!
   if $conf->exists('deletecustomers');
-print '<BR><BR>';
 
+unless ( $conf->exists('disable_customer_referrals') ) {
+  print qq! | <A HREF="!, popurl(2),
+        qq!edit/cust_main.cgi?referral_custnum=$custnum">!,
+        qq!Refer a new customer</A>!;
+
+  print qq! | <A HREF="!, popurl(2),
+        qq!search/cust_main.cgi?referral_custnum=$custnum">!,
+        qq!View this customer's referrals<A>!;
+}
+
+print '<BR><BR>';
 print '<A NAME="cust_main"></A>';
 
 print &itable(), '<TR>';
@@ -157,6 +167,22 @@ print '<TD VALIGN="top">';
   }
   print '<TR><TD ALIGN="right">Order taker</TD><TD BGCOLOR="#ffffff">',
     $cust_main->otaker, '</TD></TR>';
+
+  print '<TR><TD ALIGN="right">Referring Customer</TD><TD BGCOLOR="#ffffff">';
+  my $referring_cust_main = '';
+  if ( $cust_main->referral_custnum
+       && ( $referring_cust_main =
+            qsearchs('cust_main', { custnum => $cust_main->referral_custnum } )
+          )
+     ) {
+    print '<A HREF="'. popurl(1). 'cust_main.cgi?'.
+          $cust_main->referral_custnum. '">'.
+          $cust_main->referral_custnum. ': '.
+          ( $referring_cust_main->company
+            || $referring_cust_main->last. ', '. $referring_cust_main->first ).
+          '</A>';
+  }
+  print '</TD></TR>';
 
   print '</TABLE></TD></TR></TABLE>';
 

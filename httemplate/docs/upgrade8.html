@@ -82,7 +82,8 @@ ALTER TABLE part_svc ADD svc_forward__dstsvc integer NULL;
 ALTER TABLE part_svc ADD svc_forward__dstsvc_flag char(1) NULL;
 ALTER TABLE part_svc ADD svc_forward__dst integer NULL;
 ALTER TABLE part_svc ADD svc_forward__dst_flag char(1) NULL;
-
+ALTER TABLE cust_main ADD referral_custnum integer NULL;
+CREATE INDEX cust_main3 ON cust_main ( referral_custnum );
 </pre>
 
   <li>If you are using PostgreSQL, apply the following changes to your database:
