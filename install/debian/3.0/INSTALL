@@ -19,3 +19,11 @@ su postgres -c "createuser -P freeside"
 
 su freeside -c "createdb freeside"
 
+#?
+cd ../..
+make install-perl-modules
+make create-config
+freeside-adduser -c -h /usr/local/etc/freeside/htpasswd ivan
+su freeside -c 'freeside-setup ivan'
+su freeside -c '/home/ivan/freeside/bin/populate-msgcat ivan'
+make deploy
