@@ -1,7 +1,7 @@
 #!/usr/bin/perl -T
 #!/usr/bin/perl -Tw
 #
-# $Id: signup.cgi,v 1.53 2004-11-22 18:20:21 ivan Exp $
+# $Id: signup.cgi,v 1.54 2004-12-01 18:38:22 ivan Exp $
 
 use strict;
 use vars qw( @payby $cgi $locales $packages
@@ -165,6 +165,21 @@ if ( defined $cgi->param('magic') ) {
       $country = $1;
     } else {
       die "illegal state: ". $cgi->param('state');
+    }
+    if ( $cgi->param('ship_state') =~ /^(\w*)( \(([\w ]+)\))? ?\/ ?(\w+)$/ ) {
+      $ship_state = $1;
+      $ship_county = $3 || '';
+      $ship_country = $4;
+    } elsif ( $cgi->param('ship_state') =~ /^(\w*)$/ ) {
+      $ship_state = $1;
+      $cgi->param('ship_county') =~ /^([\w ]*)$/
+        or die "illegal county: ". $cgi->param('ship_county');
+      $ship_county = $1;
+      $cgi->param('ship_country') =~ /^(\w+)$/
+        or die "illegal ship_country: ". $cgi->param('ship_country');
+      $ship_country = $1;
+    #} else {
+    #  die "illegal ship_state: ". $cgi->param('ship_state');
     }
 
     $payby = $cgi->param('payby');
