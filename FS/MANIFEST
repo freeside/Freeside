@@ -45,3 +45,4 @@ MANIFEST.SKIP
 Makefile.PL
 test.pl
 README
+bin/freeside-bill
