@@ -181,3 +181,4 @@ sub new_customer {
 
 }
 
+1;
