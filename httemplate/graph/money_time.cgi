@@ -19,9 +19,63 @@ my $emonth = $cgi->param('emonth') || $curmon+1;
     <TITLE>Graphing monetary values over time</TITLE>
   </HEAD>
 <BODY BGCOLOR="#e8e8e8">
-<IMG SRC="money_time-graph.cgi?<%= $cgi->query_string %>" WIDTH="768" HEIGHT="480">
+<IMG SRC="money_time-graph.cgi?<%= $cgi->query_string %>" WIDTH="976" HEIGHT="384">
+<BR>
+
+<%= table('e8e8e8') %>
+<%
+
+my @items = qw( invoiced netsales credits receipts );
+my %label = (
+  'invoiced' => 'Gross Sales',
+  'netsales' => 'Net Sales',
+  'credits'  => 'Credits',
+  'receipts' => 'Receipts',
+);
+my %color = (
+  'invoiced' => '9999ff', #light blue
+  'netsales' => '0000cc', #blue
+  'credits'  => 'cc0000', #red
+  'receipts' => '00cc00', #green
+);
+
+my $report = new FS::Report::Table::Monthly (
+  'items' => \@items,
+  'start_month' => $smonth,
+  'start_year'  => $syear,
+  'end_month'   => $emonth,
+  'end_year'    => $eyear,
+);
+my $data = $report->data;
+
+
+my @mon = qw(Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec);
+
+%>
+
+<TR><TD></TD>
+<% foreach my $column ( @{$data->{label}} ) {
+     #$column =~ s/^(\d+)\//$mon[$1-1]<BR>/e;
+     $column =~ s/^(\d+)\//$mon[$1-1]<BR>/;
+     %>
+     <TH><%= $column %></TH>
+<% } %>
+</TR>
+
+<% foreach my $row (@items) { %>
+  <TR><TH><FONT COLOR="#<%= $color{$row} %>"><%= $label{$row} %></FONT></TH>
+  <% foreach my $column ( @{$data->{$row}} ) { %>
+    <TD ALIGN="right" BGCOLOR="#ffffff">
+      <FONT COLOR="#<%= $color{$row} %>">$<%= sprintf("%.2f", $column) %></FONT>
+    </TD>
+  <% } %>
+  </TR>
+<% } %>
+</TABLE>
+
 <BR>
 <FORM METHOD="POST">
+<!--
 <INPUT TYPE="checkbox" NAME="ar">
   Accounts receivable (invoices - applied credits)<BR>
 <INPUT TYPE="checkbox" NAME="charged">
@@ -31,8 +85,8 @@ my $emonth = $cgi->param('emonth') || $curmon+1;
 <INPUT TYPE="checkbox" NAME="cash">
   Cashflow (payments - refunds)<BR>
 <BR>
+-->
 From <SELECT NAME="smonth">
-<% my @mon = qw(Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec); %>
 <% foreach my $mon ( 1..12 ) { %>
 <OPTION VALUE="<%= $mon %>"<%= $mon == $smonth ? ' SELECTED' : '' %>><%= $mon[$mon-1] %>
 <% } %>
@@ -53,7 +107,7 @@ From <SELECT NAME="smonth">
 <% } %>
 </SELECT>
 
-<INPUT TYPE="submit" VALUE="Graph">
+<INPUT TYPE="submit" VALUE="Redisplay">
 </FORM>
 </BODY>
 </HTML>

@@ -37,6 +37,9 @@ FS/Conf.pm
 FS/ConfItem.pm
 FS/Misc.pm
 FS/Record.pm
+FS/Report.pm
+FS/Report/Table.pm
+FS/Report/Table/Monthly.pm
 FS/SearchCache.pm
 FS/UI/Base.pm
 FS/UI/CGI.pm
@@ -128,6 +131,9 @@ t/Conf.t
 t/ConfItem.t
 t/Misc.t
 t/Record.t
+t/Report.pm
+t/Report-Table.pm
+t/Report-Table-Monthly.pm
 t/UID.t
 t/Msgcat.t
 t/SearchCache.t

@@ -81,6 +81,7 @@ sub handler
                      small_custview myexit http_header);
       use FS::Msgcat qw(gettext geterror);
       use FS::Misc qw( send_email );
+      use FS::Report::Table::Monthly;
 
       use FS::agent;
       use FS::agent_type;
