@@ -603,6 +603,8 @@ error, returns the error, otherwise returns false.
 
 Called by the suspend method of FS::cust_pkg (see L<FS::cust_pkg>).
 
+Calls any export-specific suspend hooks.
+
 =cut
 
 sub suspend {
@@ -626,6 +628,8 @@ Unsuspends this account by removing *SUSPENDED* from the password.  If there is
 an error, returns the error, otherwise returns false.
 
 Called by the unsuspend method of FS::cust_pkg (see L<FS::cust_pkg>).
+
+Calls any export-specific unsuspend hooks.
 
 =cut
 
