@@ -1031,7 +1031,7 @@ sub ssh {
 
 =head1 VERSION
 
-$Id: svc_acct.pm,v 1.61 2002-01-14 20:28:17 ivan Exp $
+$Id: svc_acct.pm,v 1.62 2002-01-16 15:37:42 ivan Exp $
 
 =head1 BUGS
 
@@ -1046,9 +1046,10 @@ counterintuitive.
 
 =head1 SEE ALSO
 
-L<FS::svc_Common>, L<FS::Record>, L<FS::Conf>, L<FS::cust_svc>,
-L<FS::part_svc>, L<FS::cust_pkg>, L<FS::queue>, L<freeside-queued>),
-L<Net::SSH>, L<ssh>, L<FS::svc_acct_pop>,
+L<FS::svc_Common>, edit/part_svc.cgi from an installed web interface,
+export.html from the base documentation, L<FS::Record>, L<FS::Conf>,
+L<FS::cust_svc>, L<FS::part_svc>, L<FS::cust_pkg>, L<FS::queue>,
+L<freeside-queued>), L<Net::SSH>, L<ssh>, L<FS::svc_acct_pop>,
 schema.html from the base documentation.
 
 =cut
