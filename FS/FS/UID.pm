@@ -171,9 +171,7 @@ Returns the current Freeside user.
 =cut
 
 sub getotaker {
-  #$user;
-  #stupid kludge until schema otaker fields are not 8 chars
-  substr($user,0,8);
+  $user;
 }
 
 =item cgisetotaker
@@ -258,7 +256,7 @@ coderef into the hash %FS::UID::callback :
 
 =head1 VERSION
 
-$Id: UID.pm,v 1.19 2002-08-29 06:02:52 ivan Exp $
+$Id: UID.pm,v 1.20 2002-09-20 10:16:28 ivan Exp $
 
 =head1 BUGS
 

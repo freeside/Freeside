@@ -2,7 +2,7 @@ preliminary upgrade instructions
 
 schema changes:
   *** get svc_broadband changes from pc-intouch
-  *** otaker changes
+  *** otaker changes s/8/32 all otkaer fields
   *** optional: sequence changes
 
 install DBIx::DBSchema 0.21

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: fs-setup,v 1.98 2002-09-19 13:34:51 ivan Exp $
+# $Id: fs-setup,v 1.99 2002-09-20 10:16:28 ivan Exp $
 
 #to delay loading dbdef until we're ready
 BEGIN { $FS::Record::setup_hack = 1; }
@@ -404,7 +404,7 @@ sub tables_hash_hack {
         'custnum',  'int', '', '',
         '_date',    @date_type,
         'amount',   @money_type,
-        'otaker',   'varchar', '', 8,
+        'otaker',   'varchar', '', 32,
         'reason',   'text', 'NULL', '',
         'closed',    'char', 'NULL', 1,
       ],
@@ -466,7 +466,7 @@ sub tables_hash_hack {
         'paydate',  'varchar', 'NULL', 10,
         'payname',  'varchar', 'NULL', $char_d,
         'tax',      'char', 'NULL', 1,
-        'otaker',   'varchar', '',     8,
+        'otaker',   'varchar', '',    32,
         'refnum',   'int',  '',     '',
         'referral_custnum', 'int',  'NULL', '',
         'comments', 'text', 'NULL', '',
@@ -568,7 +568,7 @@ sub tables_hash_hack {
         'pkgnum',    'serial',    '',   '',
         'custnum',   'int',    '',   '',
         'pkgpart',   'int',    '',   '',
-        'otaker',    'varchar', '', 8,
+        'otaker',    'varchar', '', 32,
         'setup',     @date_type,
         'bill',      @date_type,
         'susp',      @date_type,
@@ -588,7 +588,7 @@ sub tables_hash_hack {
         'custnum',  'int',    '',   '',
         '_date',        @date_type,
         'refund',       @money_type,
-        'otaker',       'varchar',   '',   8,
+        'otaker',       'varchar',   '',   32,
         'reason',       'varchar',   '',   $char_d,
         'payby',        'char',   '',     4, # CARD/BILL/COMP, should be index
                                              # into payment type table.
