@@ -168,8 +168,8 @@ print "<BR><BR>Billing address", &itable("#cccccc"), <<END;
 END
 
 print <<END;
-<INPUT TYPE="text" NAME="last" VALUE="$last"> , 
-<INPUT TYPE="text" NAME="first" VALUE="$first">
+<INPUT TYPE="text" NAME="last" VALUE="$last" onChange="changed(this)"> , 
+<INPUT TYPE="text" NAME="first" VALUE="$first" onChange="changed(this)">
 </TD>
 END
 
@@ -181,10 +181,10 @@ if ( $conf->exists('show_ss') ) {
 
 print <<END;
 </TR>
-<TR><TD ALIGN="right">Company</TD><TD COLSPAN=5><INPUT TYPE="text" NAME="company" VALUE="$company" SIZE=70></TD></TR>
-<TR><TH ALIGN="right">${r}Address</TH><TD COLSPAN=5><INPUT TYPE="text" NAME="address1" VALUE="$address1" SIZE=70></TD></TR>
-<TR><TD ALIGN="right">&nbsp;</TD><TD COLSPAN=5><INPUT TYPE="text" NAME="address2" VALUE="$address2" SIZE=70></TD></TR>
-<TR><TH ALIGN="right">${r}City</TH><TD><INPUT TYPE="text" NAME="city" VALUE="$city"></TD><TH ALIGN="right">${r}State</TH><TD>
+<TR><TD ALIGN="right">Company</TD><TD COLSPAN=5><INPUT TYPE="text" NAME="company" VALUE="$company" SIZE=70 onChange="changed(this)"></TD></TR>
+<TR><TH ALIGN="right">${r}Address</TH><TD COLSPAN=5><INPUT TYPE="text" NAME="address1" VALUE="$address1" SIZE=70 onChange="changed(this)"></TD></TR>
+<TR><TD ALIGN="right">&nbsp;</TD><TD COLSPAN=5><INPUT TYPE="text" NAME="address2" VALUE="$address2" SIZE=70 onChange="changed(this)"></TD></TR>
+<TR><TH ALIGN="right">${r}City</TH><TD><INPUT TYPE="text" NAME="city" VALUE="$city" onChange="changed(this)"></TD><TH ALIGN="right">${r}State</TH><TD>
 END
 
 #false laziness with ship state
@@ -203,12 +203,14 @@ my($county_html, $state_html, $country_html) =
 
 print "$county_html $state_html";
 
-print qq!</TD><TH>${r}Zip</TH><TD><INPUT TYPE="text" NAME="zip" VALUE="$zip" SIZE=10></TD></TR>!;
+print qq!</TD><TH>${r}Zip</TH><TD><INPUT TYPE="text" NAME="zip" VALUE="$zip" SIZE=10 onChange="changed(this)"></TD></TR>!;
 
 my($daytime,$night,$fax)=(
   $cust_main->daytime,
   $cust_main->night,
   $cust_main->fax,
+  '',
+  'changed(this)',
 );
 
 my $daytime_label = FS::Msgcat::_gettext('daytime') || 'Day Phone';
@@ -216,9 +218,9 @@ my $night_label = FS::Msgcat::_gettext('night') || 'Night Phone';
 
 print <<END;
 <TR><TH ALIGN="right">${r}Country</TH><TD>$country_html</TD></TR>
-<TR><TD ALIGN="right">$daytime_label</TD><TD COLSPAN=5><INPUT TYPE="text" NAME="daytime" VALUE="$daytime" SIZE=18></TD></TR>
-<TR><TD ALIGN="right">$night_label</TD><TD COLSPAN=5><INPUT TYPE="text" NAME="night" VALUE="$night" SIZE=18></TD></TR>
-<TR><TD ALIGN="right">Fax</TD><TD COLSPAN=5><INPUT TYPE="text" NAME="fax" VALUE="$fax" SIZE=12></TD></TR>
+<TR><TD ALIGN="right">$daytime_label</TD><TD COLSPAN=5><INPUT TYPE="text" NAME="daytime" VALUE="$daytime" SIZE=18 onChange="changed(this)"></TD></TR>
+<TR><TD ALIGN="right">$night_label</TD><TD COLSPAN=5><INPUT TYPE="text" NAME="night" VALUE="$night" SIZE=18 onChange="changed(this)"></TD></TR>
+<TR><TD ALIGN="right">Fax</TD><TD COLSPAN=5><INPUT TYPE="text" NAME="fax" VALUE="$fax" SIZE=12 onChange="changed(this)"></TD></TR>
 END
 
 print "</TABLE>${r}required fields<BR>";

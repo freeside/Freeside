@@ -75,6 +75,8 @@ sub signup_info {
 
     'cvv_enabled' => defined dbdef->table('cust_main')->column('paycvv'),
 
+    'ship_enabled' => defined dbdef->table('cust_main')->column('ship_last'),
+
     'msgcat' => { map { $_=>gettext($_) } qw(
       passwords_dont_match invalid_card unknown_card_type not_a empty_password
     ) },
@@ -102,11 +104,28 @@ sub signup_info {
     }
   }
 
-  if ( $agentnum ) {
-    $signup_info->{'part_pkg'} = $signup_info->{'agentnum2part_pkg'}{$agentnum};
-  } else {
-    delete $signup_info->{'part_pkg'};
+  $signup_info->{'part_pkg'} = [];
+  if ( $packet->{'promo_code'} ) {
+    $signup_info->{'part_pkg'} =
+      [ map { { 'payby'   => [ $_->payby ], %{$_->hashref} } }
+          grep { $_->svcpart('svc_acct') }
+            qsearch( 'part_pkg', { 'promo_code' => {
+                                     op=>'ILIKE',
+                                     value=>$packet->{'promo_code'}
+                                   },
+                                   'disabled'   => '',                  } )
+      ];
+
+    $signup_info->{'error'} = 'Unknown promotional code'
+      unless @{ $signup_info->{'part_pkg'} };
   }
+
+  if ( $agentnum && ! @{ $signup_info->{'part_pkg'} } ) {
+    $signup_info->{'part_pkg'} = $signup_info->{'agentnum2part_pkg'}{$agentnum};
+  }
+  # else {
+  # delete $signup_info->{'part_pkg'};
+  #}
 
   if ( $session ) {
     my $agent_signup_info = { %$signup_info };
@@ -158,10 +177,17 @@ sub new_customer {
                        || $conf->config('signup_server-default_refnum'),
 
     map { $_ => $packet->{$_} } qw(
-      last first ss company address1 address2 city county state zip country
-      daytime night fax payby payinfo paycvv paydate payname referral_custnum
-      comments
-    ),
+
+      last first ss company address1 address2
+      city county state zip country
+      daytime night fax
+
+      ship_last ship_first ship_ss ship_company ship_address1 ship_address2
+      ship_city ship_county ship_state ship_zip ship_country
+      ship_daytime ship_night ship_fax
+
+      payby payinfo paycvv paydate payname referral_custnum comments
+    )
 
   } );
 
@@ -185,10 +211,11 @@ sub new_customer {
 
   my $cust_pkg = new FS::cust_pkg ( {
     #later#'custnum' => $custnum,
-    'pkgpart' => $packet->{'pkgpart'},
+    'pkgpart'    => $packet->{'pkgpart'},
+    'promo_code' => $packet->{'promo_code'},
   } );
-  my $error = $cust_pkg->check;
-  return { 'error' => $error } if $error;
+  #my $error = $cust_pkg->check;
+  #return { 'error' => $error } if $error;
 
   my $svc_acct = new FS::svc_acct ( {
     'svcpart'   => $svcpart,
@@ -214,15 +241,15 @@ sub new_customer {
   my $y = $svc_acct->setdefault; # arguably should be in new method
   return { 'error' => $y } if $y && !ref($y);
 
-  $error = $svc_acct->check;
-  return { 'error' => $error } if $error;
+  #$error = $svc_acct->check;
+  #return { 'error' => $error } if $error;
 
   #setup a job dependancy to delay provisioning
   my $placeholder = new FS::queue ( {
     'job'    => 'FS::ClientAPI::Signup::__placeholder',
     'status' => 'locked',
   } );
-  $error = $placeholder->insert;
+  my $error = $placeholder->insert;
   return { 'error' => $error } if $error;
 
   use Tie::RefHash;

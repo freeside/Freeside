@@ -1,14 +1,22 @@
 #!/usr/bin/perl -T
 #!/usr/bin/perl -Tw
 #
-# $Id: signup.cgi,v 1.52 2004-10-01 01:38:02 ivan Exp $
+# $Id: signup.cgi,v 1.53 2004-11-22 18:20:21 ivan Exp $
 
 use strict;
 use vars qw( @payby $cgi $locales $packages
              $pops %pop %popnum2pop
              $init_data $error
-             $last $first $ss $company $address1 $address2 $city $state $county
-             $country $zip $daytime $night $fax $invoicing_list $payby $payinfo
+
+             $last $first $ss $company $address1
+             $address2 $city $state $county
+             $country $zip $daytime $night $fax
+
+             $ship_last $ship_first $ship_ss $ship_company $ship_address1
+             $ship_address2 $ship_city $ship_state $ship_county
+             $ship_country $ship_zip $ship_daytime $ship_night $ship_fax
+
+             $invoicing_list $payby $payinfo
              $paycvv $paydate $payname $referral_custnum $init_popstate
              $pkgpart $username $password $password2 $sec_phrase $popnum
              $agentnum $refnum
@@ -21,14 +29,14 @@ use vars qw( @payby $cgi $locales $packages
              $self_url
            );
 use subs qw( print_form print_okay print_decline
-             success_default decline_default );
+             success_default decline_default
+           );
 use CGI;
 #use CGI::Carp qw(fatalsToBrowser);
 use Text::Template;
 use Business::CreditCard;
 use HTTP::BrowserDetect;
-use FS::SignupClient 0.03 qw( signup_info new_customer
-                              regionselector expselect popselector);
+use FS::SelfService qw( signup_info new_customer expselect );
 
 #acceptable payment methods
 #
@@ -124,8 +132,13 @@ if ( -e $decline_html ) {
     or die $Text::Template::ERROR;
 }
 
+$cgi = new CGI;
 
-( $locales, $packages, $pops, $init_data ) = signup_info();
+$init_data = signup_info( 'promo_code' => $cgi->param('promo_code') );
+$error = $init_data->{'error'};
+$locales = $init_data->{'cust_main_county'};
+$packages = $init_data->{'part_pkg'};
+$pops = $init_data->{'svc_acct_pop'};
 @payby = @{$init_data->{'payby'}} if @{$init_data->{'payby'}};
 $packages = $init_data->{agentnum2part_pkg}{$agentnum} if $agentnum;
 %pop = ();
@@ -134,8 +147,6 @@ foreach (@$pops) {
   push @{ $pop{ $_->{state} }->{ $_->{ac} } }, $_;
   $popnum2pop{$_->{popnum}} = $_;
 }
-
-$cgi = new CGI;
 
 if ( defined $cgi->param('magic') ) {
   if ( $cgi->param('magic') eq 'process' ) {
@@ -193,6 +204,22 @@ if ( defined $cgi->param('magic') ) {
     $daytime          = $cgi->param('daytime');
     $night            = $cgi->param('night');
     $fax              = $cgi->param('fax');
+
+    $ship_last        = $cgi->param('ship_last');
+    $ship_first       = $cgi->param('ship_first');
+    $ship_ss          = $cgi->param('ship_ss');
+    $ship_company     = $cgi->param('ship_company');
+    $ship_address1    = $cgi->param('ship_address1');
+    $ship_address2    = $cgi->param('ship_address2');
+    $ship_city        = $cgi->param('ship_city');
+    #$ship_county,
+    #$ship_state,
+    $ship_zip         = $cgi->param('ship_zip');
+    #$ship_country,
+    $ship_daytime     = $cgi->param('ship_daytime');
+    $ship_night       = $cgi->param('ship_night');
+    $ship_fax         = $cgi->param('ship_fax');
+
     #$payby,
     #$payinfo,
     #$paydate,
@@ -228,37 +255,56 @@ if ( defined $cgi->param('magic') ) {
           or $error ||= $init_data->{msgcat}{not_a}. $cgi->param('CARD_type');
       }
 
-      $error ||= new_customer ( {
-        'last'             => $last,
-        'first'            => $first,
-        'ss'               => $ss,
-        'company'          => $company,
-        'address1'         => $address1,
-        'address2'         => $address2,
-        'city'             => $city,
-        'county'           => $county,
-        'state'            => $state,
-        'zip'              => $zip,
-        'country'          => $country,
-        'daytime'          => $daytime,
-        'night'            => $night,
-        'fax'              => $fax,
-        'payby'            => $payby,
-        'payinfo'          => $payinfo,
-        'paycvv'           => $paycvv,
-        'paydate'          => $paydate,
-        'payname'          => $payname,
-        'invoicing_list'   => $invoicing_list,
-        'referral_custnum' => $referral_custnum,
-        'pkgpart'          => $pkgpart,
-        'username'         => $username,
-        'sec_phrase'       => $sec_phrase,
-        '_password'        => $password,
-        'popnum'           => $popnum,
-        'agentnum'         => $agentnum,
-        'refnum'           => $refnum,
-        map { $_ => $cgi->param($_) } grep { /^snarf_/ } $cgi->param
-      } );
+      unless ( $error ) {
+
+        my $r = new_customer ( {
+          'last'             => $last,
+          'first'            => $first,
+          'ss'               => $ss,
+          'company'          => $company,
+          'address1'         => $address1,
+          'address2'         => $address2,
+          'city'             => $city,
+          'county'           => $county,
+          'state'            => $state,
+          'zip'              => $zip,
+          'country'          => $country,
+          'daytime'          => $daytime,
+          'night'            => $night,
+          'fax'              => $fax,
+          'ship_last'        => $ship_last,
+          'ship_first'       => $ship_first,
+          'ship_company'     => $ship_company,
+          'ship_address1'    => $ship_address1,
+          'ship_address2'    => $ship_address2,
+          'ship_city'        => $ship_city,
+          'ship_county'      => $ship_county,
+          'ship_state'       => $ship_state,
+          'ship_zip'         => $ship_zip,
+          'ship_country'     => $ship_country,
+          'ship_daytime'     => $ship_daytime,
+          'ship_night'       => $ship_night,
+          'ship_fax'         => $ship_fax,
+          'payby'            => $payby,
+          'payinfo'          => $payinfo,
+          'paycvv'           => $paycvv,
+          'paydate'          => $paydate,
+          'payname'          => $payname,
+          'invoicing_list'   => $invoicing_list,
+          'referral_custnum' => $referral_custnum,
+          'promo_code'       => $cgi->param('promo_code'),
+          'pkgpart'          => $pkgpart,
+          'username'         => $username,
+          'sec_phrase'       => $sec_phrase,
+          '_password'        => $password,
+          'popnum'           => $popnum,
+          'agentnum'         => $agentnum,
+          'refnum'           => $refnum,
+          map { $_ => $cgi->param($_) } grep { /^snarf_/ } $cgi->param
+        } );
+        $error ||= $r->{'error'};
+
+      }
 
     }
     
@@ -277,7 +323,7 @@ if ( defined $cgi->param('magic') ) {
     die "unrecognized magic: ". $cgi->param('magic');
   }
 } else {
-  $error = '';
+  #$error = '';
   $last = '';
   $first = '';
   $ss = '';
@@ -292,6 +338,19 @@ if ( defined $cgi->param('magic') ) {
   $daytime = '';
   $night = '';
   $fax = '';
+  $ship_last = '';
+  $ship_first = '';
+  $ship_company = '';
+  $ship_address1 = '';
+  $ship_address2 = '';
+  $ship_city = '';
+  $ship_state = $init_data->{statedefault};
+  $ship_county = '';
+  $ship_country = $init_data->{countrydefault};
+  $ship_zip = '';
+  $ship_daytime = '';
+  $ship_night = '';
+  $ship_fax = '';
   $invoicing_list = '';
   $payby = '';
   $payinfo = '';
@@ -331,17 +390,17 @@ sub print_okay {
   my $user_agent = new HTTP::BrowserDetect $ENV{HTTP_USER_AGENT};
 
   $cgi->param('username') =~ /^(.+)$/
-    or die "fatal: invalid username got past FS::SignupClient::new_customer";
+    or die "fatal: invalid username got past FS::SelfService::new_customer";
   my $username = $1;
   $cgi->param('_password') =~ /^(.+)$/
-    or die "fatal: invalid password got past FS::SignupClient::new_customer";
+    or die "fatal: invalid password got past FS::SelfService::new_customer";
   my $password = $1;
   ( $cgi->param('first'). ' '. $cgi->param('last') ) =~ /^(.*)$/
-    or die "fatal: invalid email_name got past FS::SignupClient::new_customer";
+    or die "fatal: invalid email_name got past FS::SelfService::new_customer";
   $email_name = $1; #global for template
 
   my $pop = $popnum2pop{$cgi->param('popnum')};
-    #or die "fatal: invalid popnum got past FS::SignupClient::new_customer";
+    #or die "fatal: invalid popnum got past FS::SelfService::new_customer";
   if ( $pop ) {
     ( $ac, $exch, $loc ) = ( $pop->{'ac'}, $pop->{'exch'}, $pop->{'loc'} );
   } else {
@@ -385,5 +444,42 @@ There has been an error processing your account.  Please contact customer
 support.
 </BODY></HTML>
 END
+}
+
+# subs for the templates...
+
+=item regionselector SELECTED_COUNTY, SELECTED_STATE, SELECTED_COUNTRY, PREFIX, ONCHANGE
+
+=cut
+
+sub regionselector {
+  my ( $selected_county, $selected_state, $selected_country,
+       $prefix, $onchange ) = @_;
+  signup_info() unless $init_data;
+  FS::SelfService::regionselector({
+    selected_county  => $selected_county,
+    selected_state   => $selected_state,
+    selected_country => $selected_country,
+    prefix           => $prefix,
+    onchange         => $onchange,
+    default_country  => $init_data->{countrydefault},
+    locales          => $init_data->{cust_main_county},
+  });
+    #default_state    => $init_data->{statedefault},
+}
+
+=item popselector 
+
+=cut
+
+sub popselector {
+  my( $popnum ) = @_;
+  signup_info() unless $init_data;
+  FS::SelfService::popselector({
+    popnum => $popnum,
+    pops   => $init_data->{svc_acct_pop},
+  });
+    #popac =>
+    #acstate =>
 }
 

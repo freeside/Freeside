@@ -28,56 +28,140 @@ Where did you hear about our service? <SELECT NAME="refnum">
   }
 %>
 </SELECT><BR><BR>
-Contact Information
+Billing Address (where credit card statement is sent)
 <TABLE BGCOLOR="#c0c0c0" BORDER=0 CELLSPACING=0 WIDTH="100%">
 <TR>
-  <TH ALIGN="right"><font color="#ff0000">*</font>Contact name<BR>(last, first)</TH>
-  <TD COLSPAN=5><INPUT TYPE="text" NAME="last" VALUE="<%= $last %>">,
-                <INPUT TYPE="text" NAME="first" VALUE="<%= $first %>"></TD>
+  <TH ALIGN="right"><font color="#ff0000">*</font>Exact name on card<BR>(last, first)</TH>
+  <TD COLSPAN=5><INPUT TYPE="text" NAME="last" VALUE="<%= $last %>" onChange="changed(this)">,
+                <INPUT TYPE="text" NAME="first" VALUE="<%= $first %>" onChange="changed(this)"></TD>
 </TR>
 <TR>
   <TD ALIGN="right">Company</TD>
-  <TD COLSPAN=5><INPUT TYPE="text" NAME="company" SIZE=70 VALUE="<%= $company %>"></TD>
+  <TD COLSPAN=5><INPUT TYPE="text" NAME="company" SIZE=70 VALUE="<%= $company %>" onChange="changed(this)"></TD>
 </TR>
 <TR>
   <TH ALIGN="right"><font color="#ff0000">*</font>Address</TH>
-  <TD COLSPAN=5><INPUT TYPE="text" NAME="address1" SIZE=70 VALUE="<%= $address1 %>"></TD>
+  <TD COLSPAN=5><INPUT TYPE="text" NAME="address1" SIZE=70 VALUE="<%= $address1 %>" onChange="changed(this)"></TD>
 </TR>
 <TR>
   <TD ALIGN="right">&nbsp;</TD>
-  <TD COLSPAN=5><INPUT TYPE="text" NAME="address2" SIZE=70 VALUE="<%= $address2 %>"></TD>
+  <TD COLSPAN=5><INPUT TYPE="text" NAME="address2" SIZE=70 VALUE="<%= $address2 %>" onChange="changed(this)"></TD>
 </TR>
 <TR>
   <TH ALIGN="right"><font color="#ff0000">*</font>City</TH>
-  <TD><INPUT TYPE="text" NAME="city" VALUE="<%= $city %>"></TD>
+  <TD><INPUT TYPE="text" NAME="city" VALUE="<%= $city %>" onChange="changed(this)"></TD>
   <TH ALIGN="right"><font color="#ff0000">*</font>State/Country</TH>
   <TD>
     <%=
         ($county_html, $state_html, $country_html) =
-          regionselector( $county, $state, $country );
+          regionselector( $county, $state, $country, '', 'changed(this)' );
  
         "$county_html $state_html";
     %>
   </TD>
   <TH><font color="#ff0000">*</font>Zip</TH>
-  <TD><INPUT TYPE="text" NAME="zip" SIZE=10 VALUE="<%= $zip %>"></TD>
+  <TD><INPUT TYPE="text" NAME="zip" SIZE=10 VALUE="<%= $zip %>" onChange="changed(this)"></TD>
 </TR>
 <TR>
   <TH ALIGN="right"><font color="#ff0000">*</font>Country</TH>
   <TD><%= $country_html %></TD>
 <TR>
   <TD ALIGN="right">Day Phone</TD>
-  <TD COLSPAN=5><INPUT TYPE="text" NAME="daytime" VALUE="<%= $daytime %>" SIZE=18></TD>
+  <TD COLSPAN=5><INPUT TYPE="text" NAME="daytime" VALUE="<%= $daytime %>" SIZE=18 onChange="changed(this)"></TD>
 </TR>
 <TR>
   <TD ALIGN="right">Night Phone</TD>
-  <TD COLSPAN=5><INPUT TYPE="text" NAME="night" VALUE="<%= $night %>" SIZE=18></TD>
+  <TD COLSPAN=5><INPUT TYPE="text" NAME="night" VALUE="<%= $night %>" SIZE=18 onChange="changed(this)"></TD>
 </TR>
 <TR>
   <TD ALIGN="right">Fax</TD>
-  <TD COLSPAN=5><INPUT TYPE="text" NAME="fax" VALUE="<%= $fax %>" SIZE=12></TD>
+  <TD COLSPAN=5><INPUT TYPE="text" NAME="fax" VALUE="<%= $fax %>" SIZE=12 onChange="changed(this)"></TD>
 </TR>
-</TABLE><font color="#ff0000">*</font> required fields<BR>
+</TABLE>
+
+<SCRIPT>
+function changed(what) {
+  what.form.same.checked = false;
+}
+function samechanged(what) {
+  if ( what.checked ) {
+
+    <%= foreach (qw(
+          last first company address1 address2 city zip daytime night fax
+        )) {
+          $OUT .= "what.form.ship_$_.value = what.form.$_.value;\n";
+        }
+    %>
+
+    what.form.ship_country.selectedIndex = what.form.country.selectedIndex;
+    ship_country_changed(what.form.ship_country);
+    what.form.ship_state.selectedIndex = what.form.state.selectedIndex;
+    ship_state_changed(what.form.ship_state);
+    what.form.ship_county.selectedIndex = what.form.county.selectedIndex;
+  }
+}
+</SCRIPT>
+
+<BR><BR>
+Service Address
+(<INPUT TYPE="checkbox" NAME="same" VALUE="Y" onClick="samechanged(this)" <%= $same eq 'Y' ? 'CHECKED' : '' %>>same as billing address)<BR>
+<TABLE BGCOLOR="#c0c0c0" BORDER=0 CELLSPACING=0 WIDTH="100%">
+<TR>
+  <TH ALIGN="right"><font color="#ff0000">*</font>Contact name<BR>(last, first)</TH>
+  <TD COLSPAN=5><INPUT TYPE="text" NAME="ship_last" VALUE="<%= $ship_last %>" onChange="changed(this)">,
+                <INPUT TYPE="text" NAME="ship_first" VALUE="<%= $ship_first %>" onChange="changed(this)"></TD>
+</TR>
+<TR>
+  <TD ALIGN="right">Company</TD>
+  <TD COLSPAN=5><INPUT TYPE="text" NAME="ship_company" SIZE=70 VALUE="<%= $ship_company %>" onChange="changed(this)"></TD>
+</TR>
+<TR>
+  <TH ALIGN="right"><font color="#ff0000">*</font>Address</TH>
+  <TD COLSPAN=5><INPUT TYPE="text" NAME="ship_address1" SIZE=70 VALUE="<%= $ship_address1 %>" onChange="changed(this)"></TD>
+</TR>
+<TR>
+  <TD ALIGN="right">&nbsp;</TD>
+  <TD COLSPAN=5><INPUT TYPE="text" NAME="ship_address2" SIZE=70 VALUE="<%= $ship_address2 %>" onChange="changed(this)"></TD>
+</TR>
+<TR>
+  <TH ALIGN="right"><font color="#ff0000">*</font>City</TH>
+  <TD><INPUT TYPE="text" NAME="ship_city" VALUE="<%= $ship_city %>" onChange="changed(this)"></TD>
+  <TH ALIGN="right"><font color="#ff0000">*</font>State/Country</TH>
+  <TD>
+    <%=
+        ($ship_county_html, $ship_state_html, $ship_country_html) =
+          regionselector( $ship_county,
+                          $ship_state,
+                          $ship_country,
+                          'ship_',
+                          'changed(this)',
+                        );
+ 
+        "$ship_county_html $ship_state_html";
+    %>
+  </TD>
+  <TH><font color="#ff0000">*</font>Zip</TH>
+  <TD><INPUT TYPE="text" NAME="ship_zip" SIZE=10 VALUE="<%= $ship_zip %>" onChange="changed(this)"></TD>
+</TR>
+<TR>
+  <TH ALIGN="right"><font color="#ff0000">*</font>Country</TH>
+  <TD><%= $ship_country_html %></TD>
+<TR>
+  <TD ALIGN="right">Day Phone</TD>
+  <TD COLSPAN=5><INPUT TYPE="text" NAME="ship_daytime" VALUE="<%= $ship_daytime %>" SIZE=18 onChange="changed(this)"></TD>
+</TR>
+<TR>
+  <TD ALIGN="right">Night Phone</TD>
+  <TD COLSPAN=5><INPUT TYPE="text" NAME="ship_night" VALUE="<%= $ship_night %>" SIZE=18 onChange="changed(this)"></TD>
+</TR>
+<TR>
+  <TD ALIGN="right">Fax</TD>
+  <TD COLSPAN=5><INPUT TYPE="text" NAME="ship_fax" VALUE="<%= $ship_fax %>" SIZE=12 onChange="changed(this)"></TD>
+</TR>
+</TABLE>
+
+<font color="#ff0000">*</font> required fields<BR>
+
 <BR>Billing information<TABLE BGCOLOR="#c0c0c0" BORDER=0 CELLSPACING=0 WIDTH="100%">
 <TR><TD>
 
@@ -114,8 +198,8 @@ Contact Information
     $cardselect .= '</SELECT>';
   
     my %payby = (
-      'CARD' => qq!Credit card<BR><font color="#ff0000">*</font>$cardselect<INPUT TYPE="text" NAME="CARD_payinfo" VALUE="" MAXLENGTH=19><BR><font color="#ff0000">*</font>Exp !. expselect("CARD"). qq!<BR><font color="#ff0000">*</font>Name on card<BR><INPUT TYPE="text" NAME="CARD_payname" VALUE="">!,
-      'DCRD' => qq!Credit card<BR><font color="#ff0000">*</font>$cardselect<INPUT TYPE="text" NAME="DCRD_payinfo" VALUE="" MAXLENGTH=19><BR><font color="#ff0000">*</font>Exp !. expselect("DCRD"). qq!<BR><font color="#ff0000">*</font>Name on card<BR><INPUT TYPE="text" NAME="DCRD_payname" VALUE="">!,
+      'CARD' => qq!Credit card<BR><font color="#ff0000">*</font>$cardselect<INPUT TYPE="text" NAME="CARD_payinfo" VALUE="" MAXLENGTH=19><BR><font color="#ff0000">*</font>Exp !. expselect("CARD"), #. qq!<BR><font color="#ff0000">*</font>Name on card<BR><INPUT TYPE="text" NAME="CARD_payname" VALUE="">!,
+      'DCRD' => qq!Credit card<BR><font color="#ff0000">*</font>$cardselect<INPUT TYPE="text" NAME="DCRD_payinfo" VALUE="" MAXLENGTH=19><BR><font color="#ff0000">*</font>Exp !. expselect("DCRD"), #. qq!<BR><font color="#ff0000">*</font>Name on card<BR><INPUT TYPE="text" NAME="DCRD_payname" VALUE="">!,
       'CHEK' => qq!Electronic check<BR>${r}Account number <INPUT TYPE="text" NAME="CHEK_payinfo1" VALUE="" MAXLENGTH=10><BR>${r}ABA/Routing code <INPUT TYPE="text" NAME="CHEK_payinfo2" VALUE="" SIZE=10 MAXLENGTH=9><INPUT TYPE="hidden" NAME="CHEK_month" VALUE="12"><INPUT TYPE="hidden" NAME="CHEK_year" VALUE="2037"><BR>${r}Bank name <INPUT TYPE="text" NAME="CHEK_payname" VALUE="">!,
       'DCHK' => qq!Electronic check<BR>${r}Account number <INPUT TYPE="text" NAME="DCHK_payinfo1" VALUE="" MAXLENGTH=10><BR>${r}ABA/Routing code <INPUT TYPE="text" NAME="DCHK_payinfo2" VALUE="" SIZE=10 MAXLENGTH=9><INPUT TYPE="hidden" NAME="DCHK_month" VALUE="12"><INPUT TYPE="hidden" NAME="DCHK_year" VALUE="2037"><BR>${r}Bank name <INPUT TYPE="text" NAME="DCHK_payname" VALUE="">!,
       'LECB' => qq!Phone bill billing<BR>${r}Phone number <INPUT TYPE="text" BANE="LECB_payinfo" VALUE="" MAXLENGTH=15 SIZE=16><INPUT TYPE="hidden" NAME="LECB_month" VALUE="12"><INPUT TYPE="hidden" NAME="LECB_year" VALUE="2037"><INPUT TYPE="hidden" NAME="LECB_payname" VALUE="">!,
@@ -132,8 +216,8 @@ Contact Information
 
     my( $account, $aba ) = split('@', $payinfo);
     my %paybychecked = (
-      'CARD' => qq!Credit card<BR><font color="#ff0000">*</font>$cardselect<INPUT TYPE="text" NAME="CARD_payinfo" VALUE="$payinfo" MAXLENGTH=19><BR><font color="#ff0000">*</font>Exp !. expselect("CARD", $paydate). qq!<BR><font color="#ff0000">*</font>Name on card<BR><INPUT TYPE="text" NAME="CARD_payname" VALUE="$payname">!,
-      'DCRD' => qq!Credit card<BR><font color="#ff0000">*</font>$cardselect<INPUT TYPE="text" NAME="DCRD_payinfo" VALUE="$payinfo" MAXLENGTH=19><BR><font color="#ff0000">*</font>Exp !. expselect("DCRD", $paydate). qq!<BR><font color="#ff0000">*</font>Name on card<BR><INPUT TYPE="text" NAME="DCRD_payname" VALUE="$payname">!,
+      'CARD' => qq!Credit card<BR><font color="#ff0000">*</font>$cardselect<INPUT TYPE="text" NAME="CARD_payinfo" VALUE="$payinfo" MAXLENGTH=19><BR><font color="#ff0000">*</font>Exp !. expselect("CARD", $paydate), #. qq!<BR><font color="#ff0000">*</font>Name on card<BR><INPUT TYPE="text" NAME="CARD_payname" VALUE="$payname">!,
+      'DCRD' => qq!Credit card<BR><font color="#ff0000">*</font>$cardselect<INPUT TYPE="text" NAME="DCRD_payinfo" VALUE="$payinfo" MAXLENGTH=19><BR><font color="#ff0000">*</font>Exp !. expselect("DCRD", $paydate), #. qq!<BR><font color="#ff0000">*</font>Name on card<BR><INPUT TYPE="text" NAME="DCRD_payname" VALUE="$payname">!,
       'CHEK' => qq!Electronic check<BR>${r}Account number <INPUT TYPE="text" NAME="CHEK_payinfo1" VALUE="$account" MAXLENGTH=10><BR>${r}ABA/Routing code <INPUT TYPE="text" NAME="CHEK_payinfo2" VALUE="$aba" SIZE=10 MAXLENGTH=9><INPUT TYPE="hidden" NAME="CHEK_month" VALUE="12"><INPUT TYPE="hidden" NAME="CHEK_year" VALUE="2037"><BR>${r}Bank name <INPUT TYPE="text" NAME="CHEK_payname" VALUE="$payname">!,
       'DCHK' => qq!Electronic check<BR>${r}Account number <INPUT TYPE="text" NAME="DCHK_payinfo1" VALUE="$account" MAXLENGTH=10><BR>${r}ABA/Routing code <INPUT TYPE="text" NAME="DCHK_payinfo2" VALUE="$aba" SIZE=10 MAXLENGTH=9><INPUT TYPE="hidden" NAME="DCHK_month" VALUE="12"><INPUT TYPE="hidden" NAME="DCHK_year" VALUE="2037"><BR>${r}Bank name <INPUT TYPE="text" NAME="DCHK_payname" VALUE="$payname">!,
       'LECB' => qq!Phone bill billing<BR>${r}Phone number <INPUT TYPE="text" BANE="LECB_payinfo" VALUE="$payinfo" MAXLENGTH=15 SIZE=16><INPUT TYPE="hidden" NAME="LECB_month" VALUE="12"><INPUT TYPE="hidden" NAME="LECB_year" VALUE="2037"><INPUT TYPE="hidden" NAME="LECB_payname" VALUE="">!,
@@ -167,7 +251,8 @@ Contact Information
 
 </TR></TABLE><font color="#ff0000">*</font> required fields for each billing type
 <BR><BR>First package
-<INPUT TYPE="hidden" NAME="promo_code" VALUE="<%= $cgi->param('promo_code') %>"><TABLE BGCOLOR="#c0c0c0" BORDER=0 CELLSPACING=0 WIDTH="100%">
+<INPUT TYPE="hidden" NAME="promo_code" VALUE="<%= $cgi->param('promo_code') %>">
+<TABLE BGCOLOR="#c0c0c0" BORDER=0 CELLSPACING=0 WIDTH="100%">
 <TR>
   <TD COLSPAN=2><SELECT NAME="pkgpart">
 

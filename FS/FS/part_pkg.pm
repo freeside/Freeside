@@ -54,6 +54,8 @@ inherits from FS::Record.  The following fields are currently supported:
 
 =item comment - Text name of this package definition (non-customer-viewable)
 
+=item promo_code - Promotional code
+
 =item setup - Setup fee expression (deprecated)
 
 =item freq - Frequency of recurring fee
@@ -288,6 +290,7 @@ sub check {
   my $error = $self->ut_numbern('pkgpart')
     || $self->ut_text('pkg')
     || $self->ut_text('comment')
+    || $self->ut_textn('promo_code')
     || $self->ut_alphan('plan')
     || $self->ut_enum('setuptax', [ '', 'Y' ] )
     || $self->ut_enum('recurtax', [ '', 'Y' ] )

@@ -196,7 +196,8 @@ sub popselector {
 =head1 BUGS
 
 This is just a wrapper around FS::SelfService functions for backwards
-compatibility and will probably be deprecated soon.
+compatibility.  It is only necessary if you're using a signup.cgi from before
+1.5.0pre7.
 
 =head1 SEE ALSO
 

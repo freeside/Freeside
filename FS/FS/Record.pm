@@ -1424,7 +1424,7 @@ on the column first.
 sub ut_foreign_key {
   my( $self, $field, $table, $foreign ) = @_;
   qsearchs($table, { $foreign => $self->getfield($field) })
-    or return "Can't find $field ". $self->getfield($field).
+    or return "Can't find ". $self->table. ".$field ". $self->getfield($field).
               " in $table.$foreign";
   '';
 }

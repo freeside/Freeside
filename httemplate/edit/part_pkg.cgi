@@ -93,7 +93,12 @@ Package information
       <INPUT TYPE="text" NAME="comment" SIZE=32 VALUE="<%=$part_pkg->comment%>">
     </TD>
   </TR>
-
+  <TR>
+    <TD ALIGN="right">Promotional code</TD>
+    <TD>
+      <INPUT TYPE="text" NAME="promo_code" SIZE=32 VALUE="<%=$part_pkg->promo_code%>">
+    </TD>
+  </TR>
   <TR>
     <TD ALIGN="right">Disable new orders</TD>
     <TD>
@@ -257,7 +262,9 @@ my $widget = new HTML::Widgets::SelectLayers(
   'options'        => \%options,
   'form_name'      => 'dummy',
   'form_action'    => 'process/part_pkg.cgi',
-  'form_text'      => [ qw(pkg comment clone pkgnum pkgpart), @fixups ],
+  'form_text'      => [ qw(pkg comment promo_code clone pkgnum pkgpart),
+                        @fixups
+                      ],
   'form_checkbox'  => [ qw(setuptax recurtax disabled) ],
   'form_radio'     => \@form_radio,
   'form_select'    => \@form_select,

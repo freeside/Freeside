@@ -145,32 +145,9 @@ sub table { 'cust_pkg'; }
 Adds this billing item to the database ("Orders" the item).  If there is an
 error, returns the error, otherwise returns false.
 
-=cut
-
-sub insert {
-  my $self = shift;
-
-  # custnum might not have have been defined in sub check (for one-shot new
-  # customers), so check it here instead
-  # (is this still necessary with transactions?)
-
-  my $error = $self->ut_number('custnum');
-  return $error if $error;
-
-  my $cust_main = $self->cust_main;
-  return "Unknown custnum: ". $self->custnum unless $cust_main;
-
-  unless ( $disable_agentcheck ) {
-    my $agent = qsearchs( 'agent', { 'agentnum' => $cust_main->agentnum } );
-    my $pkgpart_href = $agent->pkgpart_hashref;
-    return "agent ". $agent->agentnum.
-           " can't purchase pkgpart ". $self->pkgpart
-      unless $pkgpart_href->{ $self->pkgpart };
-  }
-
-  $self->SUPER::insert;
-
-}
+If the additional field I<promo_code> is defined instead of I<pkgpart>, it
+will be used to look up the package definition and agent restrictions will be
+ignored.
 
 =item delete
 
@@ -233,8 +210,8 @@ sub check {
 
   my $error = 
     $self->ut_numbern('pkgnum')
-    || $self->ut_numbern('custnum')
-    || $self->ut_number('pkgpart')
+    || $self->ut_foreign_key('custnum', 'cust_main', 'custnum')
+    || $self->ut_numbern('pkgpart')
     || $self->ut_numbern('setup')
     || $self->ut_numbern('bill')
     || $self->ut_numbern('susp')
@@ -242,12 +219,31 @@ sub check {
   ;
   return $error if $error;
 
-  if ( $self->custnum ) { 
-    return "Unknown customer ". $self->custnum unless $self->cust_main;
-  }
+  if ( $self->promo_code ) {
 
-  return "Unknown pkgpart: ". $self->pkgpart
-    unless qsearchs( 'part_pkg', { 'pkgpart' => $self->pkgpart } );
+    my $promo_part_pkg =
+      qsearchs('part_pkg', {
+        'pkgpart'    => $self->pkgpart,
+        'promo_code' => { op=>'ILIKE', value=>$self->promo_code },
+      } );
+    return 'Unknown promotional code' unless $promo_part_pkg;
+    $self->pkgpart($promo_part_pkg->pkgpart);
+
+  } else { 
+
+    unless ( $disable_agentcheck ) {
+      my $agent =
+        qsearchs( 'agent', { 'agentnum' => $self->cust_main->agentnum } );
+      my $pkgpart_href = $agent->pkgpart_hashref;
+      return "agent ". $agent->agentnum.
+             " can't purchase pkgpart ". $self->pkgpart
+        unless $pkgpart_href->{ $self->pkgpart };
+    }
+
+    $error = $self->ut_foreign_key('pkgpart', 'part_pkg', 'pkgpart' );
+    return $error if $error;
+
+  }
 
   $self->otaker(getotaker) unless $self->otaker;
   $self->otaker =~ /^([\w\.\-]{0,16})$/ or return "Illegal otaker";
