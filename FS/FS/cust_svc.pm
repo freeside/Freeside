@@ -373,6 +373,8 @@ sub seconds_since_sqlradacct {
            "; guessing how to convert to UNIX timestamps";
       $str2time = 'extract(epoch from ';
     }
+
+    my $query;
   
     #find closed sessions completely within the given range
     my $sth = $dbh->prepare("SELECT SUM(acctsessiontime)
@@ -387,16 +389,16 @@ sub seconds_since_sqlradacct {
     my $regular = $sth->fetchrow_arrayref->[0];
   
     #find open sessions which start in the range, count session start->range end
-    # don't count them if they are over 1 day old (probably missing stop record)
-    $sth = $dbh->prepare("SELECT SUM( ? - $str2time AcctStartTime ) )
-                            FROM radacct
-                            WHERE UserName = ?
-                              AND $str2time AcctStartTime ) >= ?
-                              AND ( ? - $str2time AcctStartTime ) < 86400
-                              AND (    $str2time AcctStopTime ) = 0
-                                    OR AcctStopTime IS NULL )"
-    ) or die $dbh->errstr;
-    $sth->execute($end, $username, $start, $end) or die $sth->errstr;
+    $query = "SELECT SUM( ? - $str2time AcctStartTime ) )
+                FROM radacct
+                WHERE UserName = ?
+                  AND $str2time AcctStartTime ) >= ?
+                  AND ( ? - $str2time AcctStartTime ) < 86400
+                  AND (    $str2time AcctStopTime ) = 0
+                                    OR AcctStopTime IS NULL )";
+    $sth = $dbh->prepare($query) or die $dbh->errstr;
+    $sth->execute($end, $username, $start, $end)
+      or die $sth->errstr. " executing query $query";
     my $start_during = $sth->fetchrow_arrayref->[0];
   
     #find closed sessions which start before the range but stop during,
