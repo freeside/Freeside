@@ -269,12 +269,6 @@ sub delete {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  my $error = $self->SUPER::delete;
-  if ( $error ) {
-    $dbh->rollback if $oldAutoCommit;
-    return $error;
-  }
-
   foreach my $domain_record ( reverse $self->domain_record ) {
     my $error = $domain_record->delete;
     if ( $error ) {
@@ -282,6 +276,13 @@ sub delete {
       return $error;
     }
   }
+
+  my $error = $self->SUPER::delete;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 }
 
@@ -447,10 +448,6 @@ sub submit_internic {
 }
 
 =back
-
-=head1 VERSION
-
-$Id: svc_domain.pm,v 1.31 2002-06-10 02:52:48 ivan Exp $
 
 =head1 BUGS
 
