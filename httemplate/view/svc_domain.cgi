@@ -54,6 +54,9 @@ Service #<%= $svcnum %>
     if ( confirm("Remove this record?") == true )
       window.location.href = href;
   }
+  function slave_areyousure() {
+    return confirm("Remove all records and slave from " + document.SlaveForm.recdata.value + "?");
+  }
 </SCRIPT>
 
 <% my @records; if ( @records = $svc_domain->domain_record ) { %>
@@ -90,7 +93,7 @@ Service #<%= $svcnum %>
  </SELECT>
 <INPUT TYPE="text" NAME="recdata"> <INPUT TYPE="submit" VALUE="Add record">
 </FORM><BR><BR>or<BR><BR>
-<FORM METHOD="POST" ACTION="<%=$p%>edit/process/domain_record.cgi">
+<FORM NAME="SlaveForm" METHOD="POST" ACTION="<%=$p%>edit/process/domain_record.cgi">
 <INPUT TYPE="hidden" NAME="svcnum" VALUE="<%=$svcnum%>">
 
 <% if ( @records ) { %> Delete all records and <% } %>
@@ -99,7 +102,7 @@ Slave from nameserver IP
 <INPUT TYPE="hidden" NAME="reczone" VALUE="@"> 
 <INPUT TYPE="hidden" NAME="recaf" VALUE="IN">
 <INPUT TYPE="hidden" NAME="rectype" VALUE="_mstr">
-<INPUT TYPE="text" NAME="recdata"> <INPUT TYPE="submit" VALUE="Slave domain">
+<INPUT TYPE="text" NAME="recdata"> <INPUT TYPE="submit" VALUE="Slave domain" onClick="return slave_areyousure()">
 </FORM>
 <BR><BR><%= joblisting({'svcnum'=>$svcnum}, 1) %>
 </BODY></HTML>
