@@ -70,8 +70,7 @@ unless ( $templatename ) {
   print '</TABLE><BR>';
 }
 
-
-print '<PRE>'. $cust_bill->print_text('', $templatename);
+print '<PRE>', $cust_bill->print_text('', $templatename);
 
 	#formatting
 	print <<END;
