@@ -18,19 +18,17 @@ use Net::SSH;
 
 my $pid_file = '/var/run/freeside-queued.pid';
 
-$SIG{CHLD} = sub { wait }; #zombie prevention
-
 my $user = shift or die &usage;
 
 &daemonize;
+
+sub REAPER { my $pid = wait; $SIG{CHLD} = \&REAPER; }
+$SIG{CHLD} =  \&REAPER;
 
  $sigterm = 0;
  $sigint = 0;
 $SIG{INT} = sub { warn "SIGINT received; shutting down\n"; $sigint++; };
 $SIG{TERM} = sub { warn "SIGTERM received; shutting down\n"; $sigterm++; };
-
-#pickup zombie status
-$SIG{CHLD} = sub { wait; };
 
 $> = $FS::UID::freeside_uid unless $>;
 $< = $>;
