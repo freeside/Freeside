@@ -156,11 +156,12 @@ sub calc_recur {
       warn "  (rate region $rate_region)" if $DEBUG;
 
       my @call_details = (
-        time2str("%Y %b %d - %r", $session->{'acctstarttime'}),
-        "+$countrycode $dest",
-        $rate_region->regionname,
+        #time2str("%Y %b %d - %r", $session->{'acctstarttime'}),
+        time2str("%c", $session->{'acctstarttime'}),
         $minutes.'m',
         '$'.$charge,
+        "+$countrycode $dest",
+        $rate_region->regionname,
       );
 
       warn "  adding details on charge to invoice: ".
