@@ -1,12 +1,12 @@
 <%
-#<!-- $Id: quick-cust_pkg.cgi,v 1.1 2001-09-04 14:44:07 ivan Exp $ -->
+#<!-- $Id: quick-cust_pkg.cgi,v 1.2 2001-09-11 09:56:27 ivan Exp $ -->
 
 use strict;
 use vars qw( $cgi $custnum $pkgpart $error ); #@remove_pkgnums @pkgparts
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
-use FS::CGI qw(popurl);
+use FS::CGI qw(popurl eidiot);
 use FS::cust_pkg;
 
 $cgi = new CGI; # create form object

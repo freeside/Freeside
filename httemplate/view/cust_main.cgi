@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: cust_main.cgi,v 1.9 2001-09-04 14:44:07 ivan Exp $ -->
+#<!-- $Id: cust_main.cgi,v 1.10 2001-09-11 09:56:27 ivan Exp $ -->
 
 use strict;
 use vars qw ( $cgi $query $custnum $cust_main $hashref $agent $referral 
@@ -252,7 +252,7 @@ print '</TD></TR></TABLE>';
 print '<BR>'.
   '<FORM ACTION="'.popurl(2).'edit/process/quick-cust_pkg.cgi" METHOD="POST">'.
   qq!<INPUT TYPE="hidden" NAME="custnum" VALUE="$custnum">!.
-  '<SELECT NAME="pkgpart"><OPTION>';
+  '<SELECT NAME="pkgpart"><OPTION> ';
 
 foreach my $type_pkgs ( qsearch('type_pkgs',{'typenum'=> $agent->typenum }) ) {
   my $pkgpart = $type_pkgs->pkgpart;

@@ -27,9 +27,9 @@ CREATE TABLE queue_arg (
 
 CREATE INDEX queue_arg1 ON queue_arg ( jobnum );
 
-Run bin/fs-migrate-part_svc
-
 Run bin/dbdef-create
+
+Run bin/fs-migrate-part_svc
 
 Create the `/usr/local/etc/freeside/cache.<i>datasrc</i>' directory
   (ownded by the freeside user).
