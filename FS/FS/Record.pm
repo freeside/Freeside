@@ -8,7 +8,6 @@ use Carp qw(carp cluck croak confess);
 use File::CounterFile;
 use FS::UID qw(dbh checkruid swapuid getotaker datasrc driver_name);
 use FS::dbdef;
-use diagnostics;
 
 @ISA = qw(Exporter);
 @EXPORT_OK = qw(dbh fields hfields qsearch qsearchs dbdef);
@@ -694,25 +693,32 @@ sub ut_alphan {
   '';
 }
 
-=item ut_phonen COLUMN
+=item ut_phonen COLUMN [ COUNTRY ]
 
 Check/untaint phone numbers.  May be null.  If there is an error, returns
 the error, otherwise returns false.
 
+Takes an optional two-letter ISO country code; without it or with unsupported
+countries, ut_phonen simply calls ut_alphan.
+
 =cut
 
 sub ut_phonen {
-  my($self,$field)=@_;
+  my( $self, $field, $country ) = @_;
+  return $self->ut_alphan($field) unless defined $country;
   my $phonen = $self->getfield($field);
   if ( $phonen eq '' ) {
     $self->setfield($field,'');
-  } else {
+  } elsif ( $country eq 'US' ) {
     $phonen =~ s/\D//g;
     $phonen =~ /^(\d{3})(\d{3})(\d{4})(\d*)$/
       or return "Illegal (phone) $field: ". $self->getfield($field);
     $phonen = "$1-$2-$3";
     $phonen .= " x$4" if $4;
     $self->setfield($field,$phonen);
+  } else {
+    warn "don't know how to check phone numbers for country $country";
+    return $self->ut_alphan($field);
   }
   '';
 }
@@ -841,7 +847,7 @@ sub hfields {
 
 =head1 VERSION
 
-$Id: Record.pm,v 1.6 2000-06-27 11:29:52 ivan Exp $
+$Id: Record.pm,v 1.7 2000-06-27 12:15:37 ivan Exp $
 
 =head1 BUGS
 

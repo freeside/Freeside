@@ -312,9 +312,6 @@ sub check {
     || $self->ut_text('city')
     || $self->ut_textn('county')
     || $self->ut_textn('state')
-    || $self->ut_phonen('daytime')
-    || $self->ut_phonen('night')
-    || $self->ut_phonen('fax')
   ;
   return $error if $error;
 
@@ -357,7 +354,14 @@ sub check {
       } );
   }
 
-  $self->zip =~ /^\s*(\w[\w\-\s]{3,8}\w)\s*$/
+  $error =
+    $self->ut_phonen('daytime', $self->country)
+    || $self->ut_phonen('night', $self->country)
+    || $self->ut_phonen('fax', $self->country)
+  ;
+  return $error if $error;
+
+  $self->zip =~ /^\s*(\w[\w\-\s]{2,8}\w)\s*$/
     or return "Illegal zip: ". $self->zip;
   $self->zip($1);
 
@@ -995,7 +999,7 @@ sub check_invoicing_list {
 
 =head1 VERSION
 
-$Id: cust_main.pm,v 1.6 2000-06-24 00:28:30 ivan Exp $
+$Id: cust_main.pm,v 1.7 2000-06-27 12:15:37 ivan Exp $
 
 =head1 BUGS
 
