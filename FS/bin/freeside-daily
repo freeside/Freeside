@@ -10,7 +10,7 @@ use FS::Conf;
 use FS::cust_main;
 
 &untaint_argv;	#what it sounds like  (eww)
-use vars qw($opt_d $opt_v);
+use vars qw($opt_d $opt_v $opt_p);
 getopts("p:d:v");
 my $user = shift or die &usage;
 
