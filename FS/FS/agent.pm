@@ -5,6 +5,8 @@ use vars qw( @ISA );
 use FS::Record qw( dbh qsearch qsearchs );
 use FS::cust_main;
 use FS::agent_type;
+use FS::reg_code;
+#use Crypt::YAPassGen;
 
 @ISA = qw( FS::Record );
 
@@ -262,6 +264,65 @@ Returns the cancelled customers for this agent, as cust_main objects.
 
 sub cancel_cust_main {
   shift->cust_main_sql(FS::cust_main->cancel_sql);
+}
+
+=item generate_reg_codes NUM PKGPART_ARRAYREF
+
+Generates the specified number of registration codes, allowing purchase of the
+specified package definitions.  Returns an array reference of the newly
+generated codes, or a scalar error message.
+
+=cut
+
+sub generate_reg_codes {
+  my( $self, $num, $pkgparts ) = @_;
+
+  my @codeset = ( 'A'..'Z' );
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my @codes = ();
+  for ( 1 ... $num ) {
+    my $reg_code = new FS::reg_code {
+      'agentnum' => $self->agentnum,
+      'code'     => join('', map($codeset[int(rand $#codeset)], (0..7) ) ),
+    };
+    my $error = $reg_code->insert($pkgparts);
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+    push @codes, $reg_code->code;
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+  \@codes;
+
+}
+
+=item num_reg_code
+
+Returns the number of unused registration codes for this agent.
+
+=cut
+
+sub num_reg_code {
+  my $self = shift;
+  my $sth = dbh->prepare(
+    "SELECT COUNT(*) FROM reg_code WHERE agentnum = ?"
+  ) or die dbh->errstr;
+  $sth->execute($self->agentnum) or die $sth->errstr;
+  $sth->fetchrow_arrayref->[0];
 }
 
 =back

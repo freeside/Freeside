@@ -167,7 +167,9 @@ Contact Information
 
 </TR></TABLE><font color="#ff0000">*</font> required fields for each billing type
 <BR><BR>First package
-<INPUT TYPE="hidden" NAME="promo_code" VALUE="<%= $cgi->param('promo_code') %>"><TABLE BGCOLOR="#c0c0c0" BORDER=0 CELLSPACING=0 WIDTH="100%">
+<INPUT TYPE="hidden" NAME="promo_code" VALUE="<%= $cgi->param('promo_code') %>">
+<INPUT TYPE="hidden" NAME="reg_code" VALUE="<%= uc($cgi->param('reg_code')) %>">
+<TABLE BGCOLOR="#c0c0c0" BORDER=0 CELLSPACING=0 WIDTH="100%">
 <TR>
   <TD COLSPAN=2><SELECT NAME="pkgpart">
 

@@ -584,7 +584,7 @@ Returns the option value for the given name, or the empty string.
 =cut
 
 sub option {
-  my( $self, $opt ) = @_;
+  my( $self, $opt, $ornull ) = @_;
   my $part_pkg_option =
     qsearchs('part_pkg_option', {
       pkgpart    => $self->pkgpart,
@@ -594,7 +594,8 @@ sub option {
   my %plandata = map { /^(\w+)=(.*)$/; ( $1 => $2 ); }
                      split("\n", $self->get('plandata') );
   return $plandata{$opt} if exists $plandata{$opt};
-  cluck "Package definition option $opt not found in options or plandata!\n";
+  cluck "Package definition option $opt not found in options or plandata!\n"
+    unless $ornull;
   '';
 }
 

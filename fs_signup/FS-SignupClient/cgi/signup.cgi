@@ -1,7 +1,7 @@
 #!/usr/bin/perl -T
 #!/usr/bin/perl -Tw
 #
-# $Id: signup.cgi,v 1.54 2004-12-01 18:38:22 ivan Exp $
+# $Id: signup.cgi,v 1.55 2005-01-29 12:34:11 ivan Exp $
 
 use strict;
 use vars qw( @payby $cgi $locales $packages
@@ -134,7 +134,10 @@ if ( -e $decline_html ) {
 
 $cgi = new CGI;
 
-$init_data = signup_info( 'promo_code' => $cgi->param('promo_code') );
+$init_data = signup_info( 'agentnum'   => $agentnum,
+                          'promo_code' => scalar($cgi->param('promo_code')),
+                          'reg_code'   => uc(scalar($cgi->param('reg_code'))),
+                        );
 $error = $init_data->{'error'};
 $locales = $init_data->{'cust_main_county'};
 $packages = $init_data->{'part_pkg'};
@@ -175,7 +178,8 @@ if ( defined $cgi->param('magic') ) {
       $cgi->param('ship_county') =~ /^([\w ]*)$/
         or die "illegal county: ". $cgi->param('ship_county');
       $ship_county = $1;
-      $cgi->param('ship_country') =~ /^(\w+)$/
+      #$cgi->param('ship_country') =~ /^(\w+)$/
+      $cgi->param('ship_country') =~ /^(\w*)$/
         or die "illegal ship_country: ". $cgi->param('ship_country');
       $ship_country = $1;
     #} else {
@@ -307,7 +311,8 @@ if ( defined $cgi->param('magic') ) {
           'payname'          => $payname,
           'invoicing_list'   => $invoicing_list,
           'referral_custnum' => $referral_custnum,
-          'promo_code'       => $cgi->param('promo_code'),
+          'promo_code'       => scalar($cgi->param('promo_code')),
+          'reg_code'         => uc(scalar($cgi->param('reg_code'))),
           'pkgpart'          => $pkgpart,
           'username'         => $username,
           'sec_phrase'       => $sec_phrase,

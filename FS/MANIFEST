@@ -125,6 +125,8 @@ FS/rate.pm
 FS/rate_detail.pm
 FS/rate_region.pm
 FS/rate_prefix.pm
+FS/reg_code.pm
+FS/reg_code_pkg.pm
 FS/svc_Common.pm
 FS/svc_acct.pm
 FS/svc_acct_pop.pm
@@ -248,6 +250,8 @@ t/rate_detail.t
 t/rate_region.t
 t/rate_prefix.t
 t/radius_usergroup.t
+t/reg_code.t
+t/reg_code_pkg.t
 t/session.t
 t/svc_acct.t
 t/svc_acct_pop.t

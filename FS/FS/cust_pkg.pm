@@ -12,6 +12,7 @@ use FS::type_pkgs;
 use FS::pkg_svc;
 use FS::cust_bill_pkg;
 use FS::h_cust_svc;
+use FS::reg_code;
 
 # need to 'use' these instead of 'require' in sub { cancel, suspend, unsuspend,
 # setup }
@@ -176,6 +177,15 @@ sub insert {
     return $error;
   }
 
+  #if ( $self->reg_code ) {
+  #  my $reg_code = qsearchs('reg_code', { 'code' => $self->reg_code } );
+  #  $error = $reg_code->delete;
+  #  if ( $error ) {
+  #    $dbh->rollback if $oldAutoCommit;
+  #    return $error;
+  #  }
+  #}
+
   my $conf = new FS::Conf;
   my $cust_main = $self->cust_main;
   my $part_pkg = $self->part_pkg;
@@ -289,7 +299,17 @@ sub check {
   ;
   return $error if $error;
 
-  if ( $self->promo_code ) {
+  if ( $self->reg_code ) {
+
+    unless ( grep { $self->pkgpart == $_->pkgpart }
+             map  { $_->reg_code_pkg }
+             qsearchs( 'reg_code', { 'code'     => $self->reg_code,
+                                     'agentnum' => $self->cust_main->agentnum })
+           ) {
+      return "Unknown registraiton code";
+    }
+
+  } elsif ( $self->promo_code ) {
 
     my $promo_part_pkg =
       qsearchs('part_pkg', {
@@ -297,7 +317,6 @@ sub check {
         'promo_code' => { op=>'ILIKE', value=>$self->promo_code },
       } );
     return 'Unknown promotional code' unless $promo_part_pkg;
-    $self->pkgpart($promo_part_pkg->pkgpart);
 
   } else { 
 

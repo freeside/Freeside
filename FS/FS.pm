@@ -88,6 +88,10 @@ L<FS::part_pkg_option> - Package definition option class
 L<FS::pkg_svc> - Class linking package definitions (see L<FS::part_pkg>) with
 service definitions (see L<FS::part_svc>)
 
+L<FS::reg_code> - One-time registration codes
+
+L<FS::reg_code_pkg> - Class linking registration codes (see L<FS::reg_code>) with package definitions (see L<FS::part_pkg>)
+
 L<FS::rate> - Rate plans for call billing
 
 L<FS::rate_region> - Rate regions for call billing

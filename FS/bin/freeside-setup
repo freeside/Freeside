@@ -1209,6 +1209,26 @@ sub tables_hash_hack {
       'index'       => [ [ 'countrycode' ], [ 'regionnum' ] ],
     },
 
+    'reg_code' => {
+      'columns' => [
+        'codenum',   'serial',    '', '',
+        'code',      'varchar',   '', $char_d,
+        'agentnum',  'int',       '', '',
+      ],
+      'primary_key' => 'codenum',
+      'unique'      => [ [ 'agentnum', 'code' ] ],
+      'index'       => [ [ 'agentnum' ] ],
+    },
+
+    'reg_code_pkg' => {
+      'columns' => [
+        'codenum',   'int',    '', '',
+        'pkgpart',   'int',    '', '',
+      ],
+      'primary_key' => '',
+      'unique'      => [ [ 'codenum', 'pkgpart' ] ],
+      'index'       => [ [ 'codenum' ] ],
+    },
 
   );
 

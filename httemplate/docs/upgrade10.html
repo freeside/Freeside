@@ -8,7 +8,8 @@ install Net::SSH 0.08
 - In httpd.conf, change &lt;Files ~ \.cgi&gt; to  &lt;Files ~ (\.cgi|\.html)&gt;
 - In httpd.conf, change <b>AddHandler perl-script .cgi</b> or <b>SetHandler perl-script</b> to <b>AddHandler perl-script .cgi .html</b>
 
-install NetAddr::IP, Chart::Base, IPC::ShareLite and Locale::SubCountry
+install NetAddr::IP, Chart::Base, IPC::ShareLite, Locale::SubCountry, 
+JavaScript::RPC (JavaScript::RPC::Server::CGI) <!-- and Crypt::YAPassGen-->
 
 INSERT INTO msgcat ( msgnum, msgcode, locale, msg ) VALUES ( 20, 'svc_external-id', 'en_US', 'External ID' );
 INSERT INTO msgcat ( msgnum, msgcode, locale, msg ) VALUES ( 21, 'svc_external-title', 'en_US', 'Title' );
@@ -223,6 +224,22 @@ CREATE TABLE rate_prefix (
 CREATE INDEX rate_prefix1 ON rate_prefix ( countrycode );
 CREATE INDEX rate_prefix2 ON rate_prefix ( regionnum );
 
+CREATE TABLE reg_code (
+    codenum serial NOT NULL,
+    code varchar(80) NOT NULL,
+    agentnum int NOT NULL,
+    PRIMARY KEY (codenum)
+);
+CREATE UNIQUE INDEX reg_code1 ON reg_code ( agentnum, code );
+CREATE INDEX reg_code2 ON reg_code ( agentnum );
+
+CREATE TABLE reg_code_pkg (
+    codenum int NOT NULL,
+    pkgpart int NOT NULL
+);
+CREATE UNIQUE INDEX reg_code_pkg1 ON reg_code_pkg ( codenum, pkgpart );
+CREATE INDEX reg_code_pkg2 ON reg_code_pkg ( codenum );
+
 DROP INDEX cust_bill_pkg1;
 
 ALTER TABLE cust_bill_pkg ADD itemdesc varchar(80) NULL;
@@ -296,7 +313,7 @@ optionally:
 mandatory again:
 
 dbdef-create username
-create-history-tables username cust_bill_pkg_detail router part_svc_router addr_block svc_broadband acct_snarf svc_external cust_pay_refund cust_pay_void part_pkg_option rate rate_detail rate_region rate_prefix
+create-history-tables username cust_bill_pkg_detail router part_svc_router addr_block svc_broadband acct_snarf svc_external cust_pay_refund cust_pay_void part_pkg_option rate rate_detail rate_region rate_prefix reg_code reg_code_pkg
 dbdef-create username
 
 apache - fix <Files> sections to include .html also

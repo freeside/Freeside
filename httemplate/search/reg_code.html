@@ -1,0 +1,35 @@
+<%
+
+my $agentnum = $cgi->param('agentnum');
+$agentnum =~ /^(\d+)$/ or eidiot "illegal agentnum $agentnum";
+$agentnum = $1;
+my $agent = qsearchs('agent', { 'agentnum' => $agentnum } );
+
+my $count_query = "SELECT COUNT(*) FROM reg_code WHERE agentnum = $agentnum";
+
+%>
+<%= include( 'elements/search.html',
+               'title'       => 'Unused Registration Codes for '. $agent->agent,
+               'name'        => 'registration codes',
+               'query'       => {  'table'   => 'reg_code',
+                                   'hashref' => { 'agentnum' => $agentnum, },
+                                },
+               'count_query' => $count_query,
+               #'redirect'    => $link,
+               'header'      => [ qw(Code Packages) ],
+               'fields'      => [
+                 'code',
+                 sub { map { 
+                         qq!<A HREF="${p}edit/part_pkg.cgi?!. $_->pkgpart. '">'.
+                         $_->pkg. ' - '. $_->comment.
+                         '</A><BR>'
+                       } $_[0]->part_pkg
+                     },
+               ],
+               'links' => [
+                 '',
+                 #$plink,
+                 '',
+               ],
+    )
+%>

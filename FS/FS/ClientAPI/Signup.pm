@@ -14,6 +14,7 @@ use FS::cust_pkg;
 use FS::svc_acct;
 use FS::acct_snarf;
 use FS::queue;
+use FS::reg_code;
 
 use FS::ClientAPI; #hmm
 FS::ClientAPI->register_handlers(
@@ -105,7 +106,22 @@ sub signup_info {
   }
 
   $signup_info->{'part_pkg'} = [];
-  if ( $packet->{'promo_code'} ) {
+
+  if ( $packet->{'reg_code'} ) {
+    $signup_info->{'part_pkg'} = 
+      [ map { { 'payby'   => [ $_->payby ], %{$_->hashref} } }
+          grep { $_->svcpart('svc_acct') }
+          map { $_->part_pkg }
+            qsearchs( 'reg_code', { 'code'     => $packet->{'reg_code'},
+                                    'agentnum' => $agentnum,              } )
+
+      ];
+
+    $signup_info->{'error'} = 'Unknown registration code'
+      unless @{ $signup_info->{'part_pkg'} };
+
+  } elsif ( $packet->{'promo_code'} ) {
+
     $signup_info->{'part_pkg'} =
       [ map { { 'payby'   => [ $_->payby ], %{$_->hashref} } }
           grep { $_->svcpart('svc_acct') }
@@ -209,10 +225,18 @@ sub new_customer {
       or return { 'error' => "WARNING: unknown pkgpart: $pkgpart" };
   my $svcpart = $part_pkg->svcpart('svc_acct');
 
+  my $reg_code = '';
+  if ( $packet->{'reg_code'} ) {
+    $reg_code = qsearchs( 'reg_code', { 'code'     => $packet->{'reg_code'},
+                                        'agentnum' => $agentnum,             } )
+      or return { 'error' => 'Unknown registration code' };
+  }
+
   my $cust_pkg = new FS::cust_pkg ( {
     #later#'custnum' => $custnum,
     'pkgpart'    => $packet->{'pkgpart'},
     'promo_code' => $packet->{'promo_code'},
+    'reg_code'   => $packet->{'reg_code'},
   } );
   #my $error = $cust_pkg->check;
   #return { 'error' => $error } if $error;
@@ -303,6 +327,11 @@ sub new_customer {
       return { 'error' => '_decline' };
     }
 
+  }
+
+  if ( $reg_code ) {
+    $error = $reg_code->delete;
+    return { 'error' => $error } if $error;
   }
 
   $error = $placeholder->delete;
