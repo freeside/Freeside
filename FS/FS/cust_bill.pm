@@ -943,14 +943,21 @@ sub print_latex {
     'footer'       => join("\n", $conf->config('invoice_latexfooter') ),
     'quantity'     => 1,
     'terms'        => $conf->config('invoice_default_terms') || 'Payable upon receipt',
-    'notes'        => join("\n", $conf->config('invoice_latexnotes') ),
+    #'notes'        => join("\n", $conf->config('invoice_latexnotes') ),
   );
-
-  $invoice_data{'footer'} =~ s/\n+$//;
-  $invoice_data{'notes'} =~ s/\n+$//;
 
   my $countrydefault = $conf->config('countrydefault') || 'US';
   $invoice_data{'country'} = '' if $invoice_data{'country'} eq $countrydefault;
+
+  #do variable substitutions in notes
+  $invoice_data{'notes'} =
+    join("\n",
+      map { my $b=$_; $b =~ s/\$(\w+)/$invoice_data{$1}/eg; $b }
+        $conf->config('invoice_latexnotes')
+    );
+
+  $invoice_data{'footer'} =~ s/\n+$//;
+  $invoice_data{'notes'} =~ s/\n+$//;
 
   $invoice_data{'po_line'} =
     (  $cust_main->payby eq 'BILL' && $cust_main->payinfo )
