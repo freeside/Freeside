@@ -131,6 +131,7 @@ cp&nbsp;htetc/global.asa&nbsp;/usr/local/etc/freeside/asp-global/global.asa
       <li>Configure Apache for the Global directory and to execute .cgi files using Apache::ASP.  For example:
 <font size="-1"><pre>
 PerlModule Apache::ASP
+# your freeside document root
 &lt;Directory&nbsp;/usr/local/apache/htdocs/freeside-asp&gt;
 &lt;Files ~ (\.cgi|\.html)&gt;
 SetHandler perl-script
@@ -142,6 +143,8 @@ $MLDBM::RemoveTaint = 1;
 PerlSetVar&nbsp;Global&nbsp;/usr/local/etc/freeside/asp-global/
 PerlSetVar&nbsp;Debug&nbsp;2
 PerlSetVar&nbsp;RequestBinaryRead&nbsp;Off
+# your freeside document root
+PerlSetVar&nbsp;IncludesDir&nbsp;/usr/local/apache/htdocs/freeside-asp
 &lt;/Directory&gt;
 </pre></font>
     </ul></td>

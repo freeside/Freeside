@@ -4,7 +4,7 @@ this is incomplete
 install DBD::Pg 1.32 (or, if you're using a Perl version before 5.6, you could try installing DBD::Pg 1.22 with <a href="http://420.am/~ivan/DBD-Pg-1.22-fixvercmp.patch">this patch</a> and commenting out the "use DBD::Pg 1.32" at the top of DBIx/DBSchema/DBD/Pg.pm)
 install DBIx::DBSchema 0.23
 install Net::SSH 0.08
-- If using Apache::ASP, add PerlSetVar RequestBinaryRead Off to your Apache configuration and make sure you are using Apache::ASP minimum version 2.55. 
+- If using Apache::ASP, add PerlSetVar RequestBinaryRead Off and PerlSetVar IncludesDir /your/freeside/document/root/ to your Apache configuration and make sure you are using Apache::ASP minimum version 2.55. 
 
 install NetAddr::IP, Chart::Base, IPC::ShareLite and Locale::SubCountry
 

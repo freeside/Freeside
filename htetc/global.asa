@@ -197,6 +197,7 @@ sub sprintAutoProfile {
 }
 
 sub include {
+  $_[0] =~ s(^/)();
   $Response->Include(@_);
 }
 
