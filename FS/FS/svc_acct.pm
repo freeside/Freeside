@@ -577,7 +577,9 @@ sub check {
     #you can set a fixed gid in part_svc
 
     return "Only root can have uid 0"
-      if $recref->{uid} == 0 && $recref->{username} ne 'root';
+      if $recref->{uid} == 0
+         && $recref->{username} ne 'root'
+         && $recref->{username} ne 'toor';
 
 #    $error = $self->ut_textn('finger');
 #    return $error if $error;
