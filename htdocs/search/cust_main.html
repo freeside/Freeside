@@ -2,22 +2,22 @@
   <HEAD>
     <TITLE>Customer Search</TITLE>
   </HEAD>
-  <BODY>
-    <CENTER>
-      <H1>Customer Search</H1>
-    </CENTER>
-    <HR>
+  <BODY BGCOLOR="#ffffff">
+    <FONT COLOR="#ff0000" SIZE=7>
+      Customer Search</H1>
+    </FONT>
+    <BR>
     <FORM ACTION="cust_main.cgi" METHOD="post">
-      <INPUT TYPE="checkbox" NAME="last_on"> Search for <B>last name</B>: 
+      <INPUT TYPE="checkbox" NAME="last_on" CHECKED> Search for <B>last name</B>: 
       <INPUT TYPE="text" NAME="last_text">
-      using search method(s): <SELECT NAME="last_type" MULTIPLE>
+      using search method: <SELECT NAME="last_type">
         <OPTION SELECTED>Fuzzy
         <OPTION>Exact
       </SELECT>
 
-      <P><INPUT TYPE="checkbox" NAME="company_on"> Search for <B>company</B>: 
+      <P><INPUT TYPE="checkbox" NAME="company_on" CHECKED> Search for <B>company</B>: 
       <INPUT TYPE="text" NAME="company_text">
-      using search methods(s): <SELECT NAME="company_type" MULTIPLE>
+      using search methods: <SELECT NAME="company_type">
         <OPTION SELECTED>Fuzzy
         <OPTION>Exact
       </SELECT>
