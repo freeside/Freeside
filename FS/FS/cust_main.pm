@@ -2159,28 +2159,29 @@ sub realtime_refund_bop {
     $payname =  "$payfirst $paylast";
   }
 
+  my $payinfo = '';
   if ( $method eq 'CC' ) {
 
     if ( $cust_pay ) {
-      $content{card_number} = $cust_pay->payinfo;
+      $content{card_number} = $payinfo = $cust_pay->payinfo;
       #$self->paydate =~ /^\d{2}(\d{2})[\/\-](\d+)[\/\-]\d+$/;
       #$content{expiration} = "$2/$1";
     } else {
-      $content{card_number} = $self->payinfo;
+      $content{card_number} = $payinfo = $self->payinfo;
       $self->paydate =~ /^\d{2}(\d{2})[\/\-](\d+)[\/\-]\d+$/;
       $content{expiration} = "$2/$1";
     }
 
   } elsif ( $method eq 'ECHECK' ) {
     ( $content{account_number}, $content{routing_code} ) =
-      split('@', $self->payinfo);
+      split('@', $payinfo = $self->payinfo);
     $content{bank_name} = $self->payname;
     $content{account_type} = 'CHECKING';
     $content{account_name} = $payname;
     $content{customer_org} = $self->company ? 'B' : 'I';
     $content{customer_ssn} = $self->ss;
   } elsif ( $method eq 'LEC' ) {
-    $content{phone} = $self->payinfo;
+    $content{phone} = $payinfo = $self->payinfo;
   }
 
   #then try refund
@@ -2229,7 +2230,7 @@ sub realtime_refund_bop {
     'refund'   => $amount,
     '_date'    => '',
     'payby'    => $method2payby{$method},
-    'payinfo'  => $self->payinfo,
+    'payinfo'  => $payinfo,
     'paybatch' => $paybatch,
     'reason'   => $options{'reason'} || 'card or ACH refund',
   } );
