@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# svc_domain.cgi: Search for domains (process form)
+# $Id: svc_domain.cgi,v 1.2 1998-12-17 09:41:12 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/svc_domain.cgi
@@ -15,21 +15,26 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # display total, use FS::CGI now does browsing too ivan@sisd.com 98-jul-17
+#
+# $Log: svc_domain.cgi,v $
+# Revision 1.2  1998-12-17 09:41:12  ivan
+# s/CGI::(Base|Request)/CGI.pm/;
+#
 
 use strict;
-use CGI::Request;
+use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
 use FS::Record qw(qsearch qsearchs);
-use FS::CGI qw(header idiot);
+use FS::CGI qw(header idiot popurl);
 
-my($req)=new CGI::Request;
-&cgisuidsetup($req->cgi);
+my($cgi)=new CGI;
+&cgisuidsetup($cgi);
 
 my(@svc_domain);
 my($sortby);
 
-my($query)=$req->cgi->var('QUERY_STRING');
+my($query)=$cgi->query_string;
 if ( $query eq 'svcnum' ) {
   $sortby=\*svcnum_sort;
   @svc_domain=qsearch('svc_domain',{});
@@ -49,13 +54,13 @@ if ( $query eq 'svcnum' ) {
       'pkgnum' => '',
     }), qsearch('svc_domain',{});
 } else {
-  $req->param('domain') =~ /^([\w\-\.]+)$/; 
+  $cgi->param('domain') =~ /^([\w\-\.]+)$/; 
   my($domain)=$1;
   push @svc_domain, qsearchs('svc_domain',{'domain'=>$domain});
 }
 
 if ( scalar(@svc_domain) == 1 ) {
-  $req->cgi->redirect("../view/svc_domain.cgi?". $svc_domain[0]->svcnum);
+  print $cgi->redirect(popurl(2). "view/svc_domain.cgi?". $svc_domain[0]->svcnum);
   exit;
 } elsif ( scalar(@svc_domain) == 0 ) {
   idiot "No matching domains found!\n";
@@ -76,9 +81,8 @@ if ( scalar(@svc_domain) == 1 ) {
       </TR>
 END
 
-  my($lines)=16;
-  my($lcount)=$lines;
   my(%saw,$svc_domain);
+  my $p = popurl(2);
   foreach $svc_domain (
     sort $sortby grep(!$saw{$_->svcnum}++, @svc_domain)
   ) {
@@ -100,23 +104,11 @@ END
     }
     print <<END;
     <TR>
-      <TD><A HREF="../view/svc_domain.cgi?$svcnum"><FONT SIZE=-1>$svcnum</FONT></A></TD>
+      <TD><A HREF="${p}view/svc_domain.cgi?$svcnum"><FONT SIZE=-1>$svcnum</FONT></A></TD>
       <TD><FONT SIZE=-1>$domain</FONT></TD>
       <TD><FONT SIZE=-1>$malias</FONT></TD>
     </TR>
 END
-    if ($lcount-- == 0) { # lots of little tables instead of one big one
-      $lcount=$lines;
-      print <<END;   
-  </TABLE>
-  <TABLE BORDER=4 CELLSPACING=0 CELLPADDING=0>
-    <TR>
-      <TH>Service #</TH>
-      <TH>Domain</TH>
-      <TH></TH>
-    </TR>
-END
-    }
   }
  
   print <<END;

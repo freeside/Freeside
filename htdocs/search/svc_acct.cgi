@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# svc_acct.cgi: Search for customers (process form)
+# $Id: svc_acct.cgi,v 1.2 1998-12-17 09:41:10 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/svc_acct.cgi
@@ -21,20 +21,25 @@
 # use FS::CGI, show total ivan@sisd.com 98-jul-17
 #
 # give service and customer info too ivan@sisd.com 98-aug-16
+#
+# $Log: svc_acct.cgi,v $
+# Revision 1.2  1998-12-17 09:41:10  ivan
+# s/CGI::(Base|Request)/CGI.pm/;
+#
 
 use strict;
-use CGI::Request; # form processing module
+use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
 use FS::Record qw(qsearch qsearchs);
-use FS::CGI qw(header idiot);
+use FS::CGI qw(header idiot popurl);
 
-my($req)=new CGI::Request; # create form object
-&cgisuidsetup($req->cgi);
+my($cgi)=new CGI;
+&cgisuidsetup($cgi);
 
 my(@svc_acct,$sortby);
 
-my($query)=$req->cgi->var('QUERY_STRING');
+my($query)=$cgi->query_string;
 #this tree is a little bit redundant
 if ( $query eq 'svcnum' ) {
   $sortby=\*svcnum_sort;
@@ -69,15 +74,14 @@ if ( $query eq 'svcnum' ) {
 
 if ( scalar(@svc_acct) == 1 ) {
   my($svcnum)=$svc_acct[0]->svcnum;
-  $req->cgi->redirect("../view/svc_acct.cgi?$svcnum");  #redirect
+  print $cgi->redirect(popurl(2). "view/svc_acct.cgi?$svcnum");  #redirect
   exit;
 } elsif ( scalar(@svc_acct) == 0 ) { #error
   idiot("Account not found");
   exit;
 } else {
   my($total)=scalar(@svc_acct);
-  CGI::Base::SendHeaders(); # one guess
-  print header("Account Search Results",''), <<END;
+  print $cgi->header("Account Search Results",''), <<END;
     $total matching accounts found
     <TABLE BORDER=4 CELLSPACING=0 CELLPADDING=0>
       <TR>
@@ -91,9 +95,8 @@ if ( scalar(@svc_acct) == 1 ) {
       </TR>
 END
 
-  my($lines)=16;
-  my($lcount)=$lines;
   my(%saw,$svc_acct);
+  my $p = popurl(2);
   foreach $svc_acct (
     sort $sortby grep(!$saw{$_->svcnum}++, @svc_acct)
   ) {
@@ -119,13 +122,13 @@ END
       $cust_svc->pkgnum ? $cust_main->company : '',
     );
     my($pcustnum) = $custnum
-      ? "<A HREF=\"../view/cust_main.cgi?$custnum\"><FONT SIZE=-1>$custnum</FONT></A>"
+      ? "<A HREF=\"${p}view/cust_main.cgi?$custnum\"><FONT SIZE=-1>$custnum</FONT></A>"
       : "<I>(unlinked)</I>"
     ;
     my($pname) = $custnum ? "$last, $first" : '';
     print <<END;
     <TR>
-      <TD><A HREF="../view/svc_acct.cgi?$svcnum"><FONT SIZE=-1>$svcnum</FONT></A></TD>
+      <TD><A HREF="${p}view/svc_acct.cgi?$svcnum"><FONT SIZE=-1>$svcnum</FONT></A></TD>
       <TD><FONT SIZE=-1>$username</FONT></TD>
       <TD><FONT SIZE=-1>$uid</FONT></TD>
       <TD><FONT SIZE=-1>$svc</FONT></TH>
@@ -134,22 +137,7 @@ END
       <TD><FONT SIZE=-1>$company</FONT></TH>
     </TR>
 END
-    if ($lcount-- == 0) { # lots of little tables instead of one big one
-      $lcount=$lines;
-      print <<END;   
-  </TABLE>
-  <TABLE BORDER=4 CELLSPACING=0 CELLPADDING=0>
-    <TR>
-      <TH>Service #</TH>
-      <TH>Userame</TH>
-      <TH>UID</TH>
-        <TH>Service</TH>
-        <TH>Customer #</TH>
-        <TH>Contact name</TH>
-        <TH>Company</TH>
-    </TR>
-END
-    }
+
   }
  
   print <<END;
@@ -176,7 +164,7 @@ sub uid_sort {
 
 sub usernamesearch {
 
-  $req->param('username') =~ /^([\w\d\-]{2,8})$/; #untaint username_text
+  $cgi->param('username') =~ /^([\w\d\-]{2,8})$/; #untaint username_text
   my($username)=$1;
 
   @svc_acct=qsearch('svc_acct',{'username'=>$username});

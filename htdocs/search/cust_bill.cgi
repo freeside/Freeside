@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# cust_bill.cgi: Search for invoices (process form)
+# $Id: cust_bill.cgi,v 1.2 1998-12-17 09:41:07 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/cust_bill.cgi
@@ -11,36 +11,28 @@
 #
 # Changes to allow page to work at a relative position in server
 #       bmccane@maxbaud.net     98-apr-3
+#
+# $Log: cust_bill.cgi,v $
+# Revision 1.2  1998-12-17 09:41:07  ivan
+# s/CGI::(Base|Request)/CGI.pm/;
+#
 
 use strict;
-use CGI::Request;
+use CGI;
+use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
+use FS::CGI qw(popurl idiot);
 use FS::Record qw(qsearchs);
 
-my($req)=new CGI::Request;
-cgisuidsetup($req->cgi);
+my($cgi)=new CGI;
+cgisuidsetup($cgi);
 
-$req->param('invnum') =~ /^\s*(FS-)?(\d+)\s*$/;
+$cgi->param('invnum') =~ /^\s*(FS-)?(\d+)\s*$/;
 my($invnum)=$2;
 
 if ( qsearchs('cust_bill',{'invnum'=>$invnum}) ) {
-  $req->cgi->redirect("../view/cust_bill.cgi?$invnum");  #redirect
+  print $cgi->redirect(popurl(2). "view/cust_bill.cgi?$invnum");  #redirect
 } else { #error
-  CGI::Base::SendHeaders(); # one guess
-  print <<END;
-<HTML>
-  <HEAD>
-    <TITLE>Invoice Search Error</TITLE>
-  </HEAD>
-  <BODY>
-    <CENTER>
-    <H3>Invoice Search Error</H3>
-    <HR>
-    Invoice not found.
-    </CENTER>
-  </BODY>
-</HTML>
-END
-
+  idiot("Invoice not found.");
 }
 

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# process/cust_main.cgi: Search for customers (process form)
+# $Id: cust_main.cgi,v 1.3 1998-12-17 09:41:08 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/cust_main.cgi
@@ -19,7 +19,10 @@
 # display total, use FS::CGI ivan@sisd.com 98-jul-17
 #
 # $Log: cust_main.cgi,v $
-# Revision 1.2  1998-11-12 08:10:22  ivan
+# Revision 1.3  1998-12-17 09:41:08  ivan
+# s/CGI::(Base|Request)/CGI.pm/;
+#
+# Revision 1.2  1998/11/12 08:10:22  ivan
 # CGI.pm instead of CGI-modules
 # relative URLs using popurl
 # got rid of lots of little tables
@@ -68,7 +71,7 @@ my(%all_pkgs) =
   map { $_->custnum => [ $_->all_pkgs ] } @cust_main;
 
 if ( scalar(@cust_main) == 1 ) {
-  print $cgi->redirect(popurl(2). "/view/cust_main.cgi?". $cust_main[0]->custnum);
+  print $cgi->redirect(popurl(2). "view/cust_main.cgi?". $cust_main[0]->custnum);
   exit;
 } elsif ( scalar(@cust_main) == 0 ) {
   idiot "No matching customers found!\n";

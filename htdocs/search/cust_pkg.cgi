@@ -1,22 +1,27 @@
 #!/usr/bin/perl -Tw
 #
-# cust_pkg.cgi: search/browse for packages
+# $Id: cust_pkg.cgi,v 1.2 1998-12-17 09:41:09 ivan Exp $
 #
 # based on search/svc_acct.cgi ivan@sisd.com 98-jul-17
+#
+# $Log: cust_pkg.cgi,v $
+# Revision 1.2  1998-12-17 09:41:09  ivan
+# s/CGI::(Base|Request)/CGI.pm/;
+#
 
 use strict;
-use CGI::Request;
+use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
 use FS::Record qw(qsearch qsearchs);
-use FS::CGI qw(header idiot);
+use FS::CGI qw(header idiot popurl);
 
-my($req)=new CGI::Request;
-&cgisuidsetup($req->cgi);
+my($cgi)=new CGI;
+&cgisuidsetup($cgi);
 
 my(@cust_pkg,$sortby);
 
-my($query)=$req->cgi->var('QUERY_STRING');
+my($query)=$cgi->query_string;
 #this tree is a little bit redundant
 if ( $query eq 'pkgnum' ) {
   $sortby=\*pkgnum_sort;
@@ -50,7 +55,7 @@ if ( $query eq 'pkgnum' ) {
 
 if ( scalar(@cust_pkg) == 1 ) {
   my($pkgnum)=$cust_pkg[0]->pkgnum;
-  $req->cgi->redirect("../view/cust_pkg.cgi?$pkgnum");
+  print $cgi->redirect(popurl(2). "view/cust_pkg.cgi?$pkgnum");
   exit;
 } elsif ( scalar(@cust_pkg) == 0 ) { #error
   &idiot("No packages found");

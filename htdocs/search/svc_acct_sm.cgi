@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# svc_acct_sm.cgi: Search for domains (process form)
+# $Id: svc_acct_sm.cgi,v 1.3 1998-12-17 09:41:11 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/svc_domain.cgi
@@ -17,25 +17,31 @@
 #
 # Changes to allow page to work at a relative position in server
 #       bmccane@maxbaud.net     98-apr-3
+#
+# $Log: svc_acct_sm.cgi,v $
+# Revision 1.3  1998-12-17 09:41:11  ivan
+# s/CGI::(Base|Request)/CGI.pm/;
+#
 
 use strict;
 use vars qw($conf);
 use CGI::Request;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
+use FS::CGI qw(popurl idiot header table);
 use FS::Record qw(qsearch qsearchs);
 use FS::Conf;
+
+my($cgi)=new CGI;
+&cgisuidsetup($cgi);
 
 $conf = new FS::Conf;
 my $mydomain = $conf->config('domain');
 
-my($req)=new CGI::Request; # create form object
-&cgisuidsetup($req->cgi);
-
-$req->param('domuser') =~ /^([a-z0-9_\-]{0,32})$/;
+$cgi->param('domuser') =~ /^([a-z0-9_\-]{0,32})$/;
 my($domuser)=$1;
 
-$req->param('domain') =~ /^([\w\-\.]+)$/ or die "Illegal domain";
+$cgi->param('domain') =~ /^([\w\-\.]+)$/ or die "Illegal domain";
 my($svc_domain)=qsearchs('svc_domain',{'domain'=>$1})
   or die "Unknown domain";
 my($domsvc)=$svc_domain->svcnum;
@@ -52,18 +58,10 @@ if ($domuser) {
 
 if ( scalar(@svc_acct_sm) == 1 ) {
   my($svcnum)=$svc_acct_sm[0]->svcnum;
-  $req->cgi->redirect("../view/svc_acct_sm.cgi?$svcnum");  #redirect
+  print $cgi->redirect(popurl(2). "view/svc_acct_sm.cgi?$svcnum");  #redirect
 } elsif ( scalar(@svc_acct_sm) > 1 ) {
   CGI::Base::SendHeaders();
-  print <<END;
-<HTML>
-  <HEAD>
-    <TITLE>Mail Alias Search Results</TITLE>
-  </HEAD>
-  <BODY>
-    <CENTER>
-    <H4>Mail Alias Search Results</H4>
-    <TABLE BORDER=4 CELLSPACING=0 CELLPADDING=0>
+  print $cgi->header, header('Mail Alias Search Results'), table, <<END;
       <TR>
         <TH>Mail to<BR><FONT SIZE=-2>(click here to view mail alias)</FONT></TH>
         <TH>Forwards to<BR><FONT SIZE=-2>(click here to view account)</FONT></TH>
@@ -84,9 +82,7 @@ END
     my($username)=$svc_acct->username;
     my($svc_acct_svcnum)=$svc_acct->svcnum;
 
-    print <<END;
-<TR>\n        <TD> <A HREF="../view/svc_acct_sm.cgi?$svcnum">
-END
+    print qq!<TR>\n        <TD> <A HREF="!. popurl(2). qq!view/svc_acct_sm.cgi?$svcnum">!;
 
     print '', ( ($domuser eq '*') ? "<I>(anything)</I>" : $domuser );
 
@@ -105,21 +101,6 @@ END
 END
 
 } else { #error
-  CGI::Base::SendHeaders(); # one guess
-  print <<END;
-<HTML>
-  <HEAD>
-    <TITLE>Mail Alias Search Error</TITLE>
-  </HEAD>
-  <BODY>
-    <CENTER>
-    <H3>Mail Alias Search Error</H3>
-    <HR>
-    Mail Alias not found.
-    </CENTER>
-  </BODY>
-</HTML>
-END
-
+  idiot("Mail Alias not found");
 }
 
