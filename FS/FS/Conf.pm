@@ -1329,6 +1329,13 @@ httemplate/docs/config.html
   },
 
   {
+    'key'         => 'ticket_system-default_queueid',
+    'section'     => '',
+    'description' => 'Default queue number used when creating new customer tickets.',
+    'type'        => 'text',
+  },
+
+  {
     'key'         => 'ticket_system-custom_priority_field',
     'section'     => '',
     'description' => 'Custom field from the ticketing system to use as a custom priority classification.',

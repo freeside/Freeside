@@ -6,6 +6,7 @@ use FS::UID;
 
 install_callback FS::UID sub { 
   my $conf = new FS::Conf;
+  my $default_queueid = $conf->config('ticket_system-default_queueid');
   $priority_field =
     $conf->config('ticket_system-custom_priority_field');
   if ( $priority_field ) {
@@ -153,7 +154,9 @@ sub href_customer_tickets {
 
 sub href_new_ticket {
   my( $self, $custnum ) = @_;
-  'Ticket/Create.html?Queue=1&new-MemberOf=freeside://freeside/cust_main/'.$custnum;
+  'Ticket/Create.html?'.
+    "Queue=$default_queueid".
+    "&new-MemberOf=freeside://freeside/cust_main/$custnum";
 }
 
 sub href_ticket {
