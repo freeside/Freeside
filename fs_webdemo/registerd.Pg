@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 #
-# $Id: registerd.Pg,v 1.5 2001-04-26 02:18:15 ivan Exp $
+# $Id: registerd.Pg,v 1.6 2001-04-26 02:20:41 ivan Exp $
 
 use strict;
 use vars qw(
@@ -85,13 +85,16 @@ while ( 1 ) {
     my $username = $row->{'username'};
     my $email = $row->{'passwd'};
 
-    $pdbh = DBI->connect( 'DBI:Pg:host=localhost;database=demo_template', 'freeside', 'maelcolm' )
+    my $pdbh = DBI->connect( 'DBI:Pg:host=localhost;database=demo_template', 'freeside', 'maelcolm' )
       or do { &myerr("$username: ". $DBI::errstr); next; };
 
-    $psth = $pdbh->prepare("CREATE DATABASE demo_$username")
+    my $psth = $pdbh->prepare("CREATE DATABASE demo_$username")
       or do { &myerr("$username: ". $pdbh->errstr;); next; };
     $psth->execute()
       or do { &myerr("$username: ". $psth->errstr;); next; };
+
+    $pdbh->disconnect
+      or do { &myerr("fatal: $DBI:errstr"); die; };
 
     open(PSQL,"|psql -U freeside demo_$username")
       or do { &myerr("|psql -U freeside demo_$username: $!"); next; };
