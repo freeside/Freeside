@@ -1,0 +1,38 @@
+<head>
+  <title>Configuration files</title>
+</head>
+<body>
+  <h1>Configuration files</h1>
+Configuration files and directories are located in `/var/spool/freeside/conf'.
+<ul>
+  <li>address - Your company name and address, four lines.
+  <li>bsdshellmachines - Your BSD flavored shell (and mail) machines, one per line.  This enables export of `/etc/passwd' and `/etc/master.passwd'.
+  <li>cybercash2 - <a href="http://www.cybercash.com/cybercash/services/cashreg214.html">CyberCash v2</a> support, four lines: paymentserverhost, paymentserverport, paymentserversecret, and transaction type (`mauthonly' or `mauthcapture').  CCLib.pm is required.
+  <li>cybercash3.2 - <a href="http://www.cybercash.com/cybercash/services/technology.html">CyberCash v3.2</a> support.  Two lines: the full path and name of your merchant_conf file, and the transaction type (`mauthonly' or `mauthcapture').  CCMckLib3_2.pm, CCMckDirectLib3_2.pm and CCMckErrno3_2 are required.
+  <li>domain - Your domain name.
+  <li>erpcdmachines - Your ERPCD authenticaion machines, one per line.  This enables export of `/usr/annex/acp_passwd' and `/usr/annex/acp_dialup'.
+  <li>home - For new users, prefixed to usrename to create a directory name.  Should have a leading but not a trailing slash.
+  <li>lpr - Print command for paper invoices, for example `lpr -h'.
+  <li>nismachines - Your NIS master (not slave master) machines, one per line.  This enables export of `/etc/global/passwd' and `/etc/global/shadow'.
+  <li>qmailmachines - Your qmail machines, one per line.  This enables export of `/var/qmail/control/virtualdomains', `/var/qmail/control/recipientmap', and `/var/qmail/control/rcpthosts'.  The existance of this file (even if empty) also turns on user `.qmail-extension' file maintenance in conjunction with `shellmachine'.
+  <li>radiusmachines - Your RADIUS authentication machines, one per line.  This enables export of `/etc/raddb/users'.
+  <li>registries - Directory which contains domain registry information.  Each registry is a directory.
+    <ul>
+      <li>registries/internic - Currently the only supported registry
+        <ul>
+          <li>registries/internic/from - Email address from which InterNIC domain registrations are sent.
+          <li>regestries/internic/nameservers - The nameservers for InterNIC domain registrations, one per line.  Each line contains an IP address and hostname, separated by whitespace.
+          <li>registries/internic/tech_contact - Technical contact NIC handle for domain registrations.
+          <li>registries/internic/template - Template for InterNIC domain registrations with special markup.  A suitable copy of the InterNIC domain template v4.0 is in `fs-x.y.z/etc/domain-template.txt'.
+          <li>registries/internic/to - Email address to which InterNIC domain registrations are sent.
+        </ul>
+    </ul>
+  <li>secrets - Three lines: Database engine datasource (for example, `DBI:mysql:freeside' or `DBI:Pg:dbname=freeside'), username, and password.  This file should not be world readable.
+  <li>sendmailmachines - Your sendmail machines, one per line.  This enables export of `/etc/virtusertable' and `/etc/sendmail.cw'.
+  <li>shellmachine - A single machine with user home directories mounted.  This enables home directory creation, renaming and archiving/deletion.  In conjunction with `qmailmachines', it also enables `.qmail-extension' file maintenance.
+  <li>shellmachines - Your Linux and System V flavored shell (and mail) machines, one per line.  This enables export of `/etc/passwd' and `/etc/shadow' files.
+  <li>shells - Legal shells (think /etc/shells).  You probably want to `cut -d: -f7 /etc/passwd | sort | uniq' initially so that importing doesn't fail with `Illegal shell' errors, then remove any special entries afterwords.  A blank line specifies that an empty shell is permitted.
+  <li>smtpmachine - SMTP relay for Freeside's outgoing mail.
+</ul>
+</body>
+
