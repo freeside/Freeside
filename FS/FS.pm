@@ -146,11 +146,13 @@ L<FS::msgcat> - Message catalogs
 
 =head1 Remote API modules
 
+L<FS::SelfService>
+
 L<FS::SignupClient>
 
 L<FS::SessionClient>
 
-L<FS::MailAdminServer>
+L<FS::MailAdminServer> (deprecated in favor of the self-service server)
 
 =head2 Command-line utilities
 
