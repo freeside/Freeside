@@ -86,6 +86,10 @@ my %defs = (
                      select_key   => 'svcnum',
                      select_label => 'domain',
                    },
+    'radius_groups' => {
+                         desc =>'ICRADIUS/FreeRADIUS groups',
+                         type =>'radius_usergroup_selector',
+                       },
   },
   'svc_domain' => {
     'domain'    => 'Domain',

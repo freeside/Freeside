@@ -171,6 +171,14 @@ CREATE TABLE part_export_option (
 CREATE INDEX part_export_option1 ON part_export_option ( exportnum );
 CREATE INDEX part_export_option2 ON part_export_option ( optionname );
 
+CREATE TABLE radius_usergroup (
+  usergroupnum int primary key,
+  svcnum int not null,
+  groupname varchar(80) not null
+);
+CREATE INDEX radius_usergroup1 ON radius_usergroup ( svcnum );
+CREATE INDEX radius_usergroup2 ON radius_usergroup ( groupname );
+
 ALTER TABLE svc_acct ADD domsvc integer NOT NULL;
 ALTER TABLE svc_domain ADD catchall integer NULL;
 ALTER TABLE cust_main ADD referral_custnum integer NULL;

@@ -15,6 +15,14 @@ ALTER TABLE cust_bill_event ADD status varchar(80);
 ALTER TABLE cust_bill_event ADD statustext text NULL;
 UPDATE cust_bill_event SET status = 'done';
 
+CREATE TABLE radius_usergroup (
+  usergroupnum int primary key,
+  svcnum int not null,
+  groupname varchar(80) not null
+);
+CREATE INDEX radius_usergroup1 ON radius_usergroup ( svcnum );
+CREATE INDEX radius_usergroup2 ON radius_usergroup ( groupname );
+
 Run bin/dbdef-create
 
 Run bin/create-history-tables

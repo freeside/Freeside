@@ -129,6 +129,9 @@ if ($svc_acct->slipip) {
   print "<TR><TH COLSPAN=2>(No SLIP/PPP account)</TH></TR>";
 }
 
+print '<TR><TD ALIGN="right">RADIUS groups</TD><TD BGCOLOR="#ffffff">'.
+      join('<BR>', $svc_acct->radius_groups). '</TD></TR>';
+
 print "</TABLE></TD></TR></TABLE>".
       '<BR>'. joblisting({'svcnum'=>$svcnum}, 1).
       "</BODY></HTML>";

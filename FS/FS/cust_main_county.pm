@@ -227,7 +227,7 @@ END
 
 =head1 BUGS
 
-regionseletor?  putting web ui components in here?  they should probably live
+regionselector?  putting web ui components in here?  they should probably live
 somewhere else...
 
 =head1 SEE ALSO

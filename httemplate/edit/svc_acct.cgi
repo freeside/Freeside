@@ -239,6 +239,10 @@ foreach my $r ( grep { /^r(adius|[cr])_/ } fields('svc_acct') ) {
   }
 }
 
+print '<TR><TD ALIGN="right">RADIUS groups</TD><TD>'.
+      &FS::svc_acct::radius_usergroup_selector( [ $svc_acct->radius_groups ] ).
+      '</TD></TR>';
+
 #submit
 print qq!</TABLE><BR><INPUT TYPE="submit" VALUE="Submit">!; 
 

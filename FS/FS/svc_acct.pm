@@ -27,6 +27,7 @@ use FS::cust_main_invoice;
 use FS::svc_domain;
 use FS::raddb;
 use FS::queue;
+use FS::radius_usergroup;
 
 @ISA = qw( FS::svc_Common );
 
@@ -1282,7 +1283,63 @@ sub seconds_since {
   $self->cust_svc->seconds_since(@_);
 }
 
+=item radius_groups
+
+Returns all RADIUS groups for this account (see L<FS::radius_usergroup>).
+
+=cut
+
+sub radius_groups {
+  my $self = shift;
+  map { $_->groupname }
+    qsearch('radius_usergroup', { 'svcnum' => $self->svcnum } );
+}
+
 =back
+
+=head1 SUBROUTINES
+
+=item radius_usergroup_selector GROUPS_ARRAYREF
+
+=cut
+
+sub radius_usergroup_selector {
+  my $sel_groups = shift;
+  my %sel_groups = map { $_=>1 } @$sel_groups;
+
+  my $selectname = shift || 'radius_usergroup';
+
+  my $dbh = dbh;
+  my $sth = $dbh->prepare(
+    'SELECT DISTINCT(groupname) FROM radius_usergroup ORDER BY groupname'
+  ) or die $dbh->errstr;
+  $sth->execute() or die $sth->errstr;
+  my @all_groups = map { $_->[0] } @{$sth->fetchall_arrayref};
+
+  my $html = <<END;
+    <SCRIPT>
+    function ${selectname}_doadd(object) {
+      var myvalue = object.${selectname}_add.value;
+      var optionName = new Option(myvalue,myvalue,false,true);
+      var length = object.$selectname.length;
+      object.$selectname.options[length] = optionName;
+    }
+    </SCRIPT>
+    <SELECT MULTIPLE NAME="$selectname">
+END
+
+  foreach my $group ( @all_groups ) {
+    $html .= '<OPTION';
+    $html .= ' SELECTED' if $sel_groups{$group};
+    $html .= ">$group</OPTION>\n";
+  }
+  $html .= '</SELECT>';
+
+  $html .= qq!<BR><INPUT TYPE="text" NAME="${selectname}_add">!.
+           qq!<INPUT TYPE="button" VALUE="Add new group" onClick="${selectname}_doadd(this.form)">!;
+
+  $html;
+}
 
 =head1 BUGS
 
@@ -1291,6 +1348,9 @@ The $recref stuff in sub check should be cleaned up.
 The suspend, unsuspend and cancel methods update the database, but not the
 current object.  This is probably a bug as it's unexpected and
 counterintuitive.
+
+radius_usergroup_selector?  putting web ui components in here?  they should
+probably live somewhere else...
 
 =head1 SEE ALSO
 
