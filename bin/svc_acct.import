@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct.import,v 1.15 2001-07-30 06:07:47 ivan Exp $
+# $Id: svc_acct.import,v 1.16 2001-08-17 10:57:40 ivan Exp $
 #
 # ivan@sisd.com 98-mar-9
 #
@@ -17,7 +17,10 @@
 # don't import /var/spool/freeside/conf/shells!  ivan@sisd.com 98-aug-13
 #
 # $Log: svc_acct.import,v $
-# Revision 1.15  2001-07-30 06:07:47  ivan
+# Revision 1.16  2001-08-17 10:57:40  ivan
+# gah
+#
+# Revision 1.15  2001/07/30 06:07:47  ivan
 # allow !! for locked accounts instead of changing to *SUSPENDED*
 #
 # Revision 1.14  2001/05/07 15:24:15  ivan
@@ -166,7 +169,7 @@ while (<USERS>) {
   next if /^\s*$/;
   next if /^\s*#/;
   if ( /^\S/ ) {
-    /^(\w+)\s+(Auth-Type\s+=\s+Local,\s+)Password\s+=\s+"([^"]+)"(,\s+Expiration\s+=\s+"([^"]*")\s*)?$/
+    /^(\w+)\s+(Auth-Type\s+=\s+Local,\s+)?Password\s+=\s+"([^"]+)"(,\s+Expiration\s+=\s+"([^"]*")\s*)?$/
       or die "1Unexpected line in users.import: $_";
     my($password,$expiration);
     ($username,$password,$expiration)=(lc($1),$3,$5);
