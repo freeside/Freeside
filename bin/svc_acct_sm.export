@@ -1,0 +1,221 @@
+#!/usr/bin/perl -Tw
+#
+# Create and export VoiceNet_quasar.m4
+#
+# ivan@voicenet.com late oct 96
+#
+# change priority (after copies) to 19, not 10
+# ivan@voicenet.com 97-feb-5
+#
+# put file in different place and run different script, as per matt and
+# mohamed
+# ivan@voicenet.com 97-mar-10
+#
+# added exit if stuff is already locked ivan@voicenet.com 97-apr-15
+#
+# removed mail2
+# ivan@voicenet.com 97-jul-10
+#
+# rewrote lots of the bits, now exports qmail "virtualdomain",
+# "recipientmap" and "rcpthosts" files as well
+#
+# ivan@voicenet.com 97-sep-4
+#
+# adds ".extra" files
+#
+# ivan@voicenet.com 97-sep-29
+#
+# added ".pp" files, ugh.
+#
+# ivan@voicenet.com 97-oct-1
+#
+# rewrite ivan@sisd.com 98-mar-9
+#
+# now can create .qmail-default files ivan@sisd.com 98-mar-10
+#
+# put example $my_domain declaration in ivan@sisd.com 98-mar-23
+#
+# /var/spool/freeside/conf and sendmail updates ivan@sisd.com 98-aug-14
+
+use strict;
+use Fcntl qw(:flock);
+use FS::SSH qw(ssh scp);
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw(qsearch qsearchs);
+
+my($conf_shellm)="/var/spool/freeside/conf/shellmachine";
+my($fqmailmachines)="/var/spool/freeside/conf/qmailmachines";
+my($shellmachine);
+my(@qmailmachines);
+if ( -e $fqmailmachines ) {
+  open(SHELLMACHINE,$conf_shellm) or die "Can't open $conf_shellm: $!";
+  <SHELLMACHINE> =~ /^([\w\.\-]+)$/ or die "Illegal $conf_shellm";
+  $shellmachine = $1;
+  close SHELLMACHINE;
+  open(QMAILMACHINES,$fqmailmachines);
+  @qmailmachines=map {
+    /^(.*)$/ or die "Illegal line in conf/qmailmachines"; #we trust the file
+    $1;
+  } grep $_ !~ /^(#|$)/, <QMAILMACHINES>;
+  close QMAILMACHINES;
+}
+
+my($fsendmailmachines)="/var/spool/freeside/conf/sendmailmachines";
+my(@sendmailmachines);
+if ( -e $fsendmailmachines ) {
+  open(SENDMAILMACHINES,$fsendmailmachines);
+  @sendmailmachines=map {
+    /^(.*)$/ or die "Illegal line in conf/sendmailmachines"; #we trust the file
+    $1;
+  } grep $_ !~ /^(#|$)/, <SENDMAILMACHINES>;
+  close SENDMAILMACHINES;
+}
+
+my($conf_domain)="/var/spool/freeside/conf/domain";
+open(DOMAIN,$conf_domain) or die "Can't open $conf_domain: $!";
+my($mydomain)=map {
+  /^(.*)$/ or die "Illegal line in $conf_domain!"; #yes, we trust the file
+  $1
+} grep $_ !~ /^(#|$)/, <DOMAIN>;
+close DOMAIN;
+
+my($spooldir)="/var/spool/freeside/export";
+my($spoollock)="/var/spool/freeside/svc_acct_sm.export.lock";
+
+adminsuidsetup;
+umask 066;
+
+open(EXPORT,"+>>$spoollock") or die "Can't open $spoollock: $!";
+select(EXPORT); $|=1; select(STDOUT);
+unless ( flock(EXPORT,LOCK_EX|LOCK_NB) ) {
+  seek(EXPORT,0,0);
+  my($pid)=<EXPORT>;
+  chop($pid);
+  #no reason to start locks of blocking processes
+  die "Is another export process running under pid $pid?\n";
+}
+seek(EXPORT,0,0);
+print EXPORT $$,"\n";
+
+my(@svc_acct_sm)=qsearch('svc_acct_sm',{});
+
+( open(RCPTHOSTS,">$spooldir/rcpthosts")
+  and flock(RCPTHOSTS,LOCK_EX|LOCK_NB) 
+) or die "Can't open $spooldir/rcpthosts: $!";
+( open(RECIPIENTMAP,">$spooldir/recipientmap") 
+  and flock(RECIPIENTMAP,LOCK_EX|LOCK_NB) 
+) or die "Can't open $spooldir/recipientmap: $!";
+( open(VIRTUALDOMAINS,">$spooldir/virtualdomains") 
+  and flock(VIRTUALDOMAINS,LOCK_EX|LOCK_NB)
+) or die "Can't open $spooldir/virtualdomains: $!";
+( open(VIRTUSERTABLE,">$spooldir/virtusertable")
+  and flock(VIRTUSERTABLE,LOCK_EX|LOCK_NB)
+) or die "Can't open $spooldir/virtusertable: $!";
+( open(SENDMAIL_CW,">$spooldir/sendmail.cw")
+  and flock(SENDMAIL_CW,LOCK_EX|LOCK_NB)
+) or die "Can't open $spooldir/sendmail.cw: $!";
+
+setpriority(0,0,10);
+
+my($svc_domain,%domain);
+foreach $svc_domain ( qsearch('svc_domain',{}) ) {
+  my($domain)=$svc_domain->domain;
+  $domain{$svc_domain->svcnum}=$domain;
+  print RCPTHOSTS "$domain\n.$domain\n";
+  print SENDMAIL_CW "$domain\n";
+}
+
+my(@sendmail);
+
+my($svc_acct_sm);
+foreach $svc_acct_sm ( qsearch('svc_acct_sm') ) { 
+  my($domsvc,$domuid,$domuser)=(
+    $svc_acct_sm->domsvc,
+    $svc_acct_sm->domuid,
+    $svc_acct_sm->domuser,
+  );
+  my($domain)=$domain{$domsvc};
+  my($svc_acct)=qsearchs('svc_acct',{'uid'=>$domuid});
+  my($username,$dir,$uid,$gid)=(
+    $svc_acct->username,
+    $svc_acct->dir,
+    $svc_acct->uid,
+    $svc_acct->gid,
+  );
+  next unless $username && $domain && $domuser;
+
+  if ($domuser eq '*') {
+    push @sendmail, "\@$domain\t$username\n";
+    print VIRTUALDOMAINS "$domain:$username-$domain\n",
+                         ".$domain:$username-$domain\n",
+    ;
+    ###
+    # qmail
+    ssh("root\@$shellmachine",
+      "[ -e $dir/.qmail-default ] || { touch $dir/.qmail-default; chown $uid:$gid $dir/.qmail-default; }"
+    ) if ( $shellmachine && $dir && $uid );
+
+  } else {
+    print VIRTUSERTABLE "$domuser\@$domain\t$username\n";
+    print RECIPIENTMAP "$domuser\@$domain:$username\@$mydomain\n";
+  }
+
+  print VIRTUSERTABLE @sendmail;
+
+}
+
+chmod 0644, "$spooldir/sendmail.cw",
+            "$spooldir/virtusertable",
+            "$spooldir/rcpthosts",
+            "$spooldir/recipientmap",
+            "$spooldir/virtualdomains",
+;
+
+flock(SENDMAIL_CW,LOCK_UN);
+flock(VIRTUSERTABLE,LOCK_UN);
+flock(RCPTHOSTS,LOCK_UN);
+flock(RECIPIENTMAP,LOCK_UN);
+flock(VIRTUALDOMAINS,LOCK_UN);
+
+close SENDMAIL_CW;
+close VIRTUSERTABLE;
+close RCPTHOSTS;
+close RECIPIENTMAP;
+close VIRTUALDOMAINS;
+
+###
+# export stuff
+#
+
+my($sendmailmachine);
+foreach $sendmailmachine (@sendmailmachines) {
+  scp("$spooldir/sendmail.cw","root\@$sendmailmachine:/etc/sendmail.cw.new")
+    == 0 or die "scp error: $!";
+  scp("$spooldir/virtusertable","root\@$sendmailmachine:/etc/virtusertable.new")
+    == 0 or die "scp error: $!";
+  ssh("root\@$sendmailmachine",
+    "( ".
+      "mv /etc/sendmail.cw.new /etc/sendmail.cw; ".
+      "mv /etc/virtusertable.new /etc/virtusertable; ".
+      #"/etc/init.d/sendmail restart; ".
+    " )"
+  )
+    == 0 or die "ssh error: $!";
+}
+
+my($qmailmachine);
+foreach $qmailmachine (@qmailmachines) {
+  scp("$spooldir/recipientmap","root\@$qmailmachine:/var/qmail/control/recipientmap")
+    == 0 or die "scp error: $!";
+  scp("$spooldir/virtualdomains","root\@$qmailmachine:/var/qmail/control/virtualdomains")
+    == 0 or die "scp error: $!";
+  scp("$spooldir/rcpthosts","root\@$qmailmachine:/var/qmail/control/rcpthosts")
+    == 0 or die "scp error: $!";
+  #ssh("root\@$qmailmachine","/etc/init.d/qmail restart")
+  #  == 0 or die "ssh error: $!";
+}
+
+unlink $spoollock;
+flock(EXPORT,LOCK_UN);
+close EXPORT;
+
