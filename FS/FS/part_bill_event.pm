@@ -1,0 +1,132 @@
+package FS::part_bill_event;
+
+use strict;
+use vars qw( @ISA );
+use FS::Record qw( qsearch qsearchs );
+
+@ISA = qw(FS::Record);
+
+=head1 NAME
+
+FS::part_bill_event - Object methods for part_bill_event records
+
+=head1 SYNOPSIS
+
+  use FS::part_bill_event;
+
+  $record = new FS::part_bill_event \%hash;
+  $record = new FS::part_bill_event { 'column' => 'value' };
+
+  $error = $record->insert;
+
+  $error = $new_record->replace($old_record);
+
+  $error = $record->delete;
+
+  $error = $record->check;
+
+=head1 DESCRIPTION
+
+An FS::part_bill_event object represents an invoice event definition -
+a callback which is triggered when an invoice is a certain amount of time
+overdue.  FS::part_bill_event inherits from
+FS::Record.  The following fields are currently supported:
+
+=over 4
+
+=item eventpart - primary key
+
+=item payby - CARD, BILL, or COMP
+
+=item event - event name
+
+=item eventcode - event action
+
+=item seconds - how long after the invoice date events of this type are triggered
+
+=item disabled - Disabled flag, empty or `Y'
+
+=back
+
+=head1 METHODS
+
+=over 4
+
+=item new HASHREF
+
+Creates a new invoice event definition.  To add the example to the database,
+see L<"insert">.
+
+Note that this stores the hash reference, not a distinct copy of the hash it
+points to.  You can ask the object for a copy with the I<hash> method.
+
+=cut
+
+# the new method can be inherited from FS::Record, if a table method is defined
+
+sub table { 'part_bill_event'; }
+
+=item insert
+
+Adds this record to the database.  If there is an error, returns the error,
+otherwise returns false.
+
+=cut
+
+# the insert method can be inherited from FS::Record
+
+=item delete
+
+Delete this record from the database.
+
+=cut
+
+# the delete method can be inherited from FS::Record
+
+=item replace OLD_RECORD
+
+Replaces the OLD_RECORD with this one in the database.  If there is an error,
+returns the error, otherwise returns false.
+
+=cut
+
+# the replace method can be inherited from FS::Record
+
+=item check
+
+Checks all fields to make sure this is a valid invoice event definition.  If
+there is an error, returns the error, otherwise returns false.  Called by the
+insert and replace methods.
+
+=cut
+
+# the check method should currently be supplied - FS::Record contains some
+# data checking routines
+
+sub check {
+  my $self = shift;
+
+  $self->ut_numbern('eventpart')
+    || $self->ut_enum('payby', [qw( CARD BILL COMP )] )
+    || $self->ut_text('event')
+    || $self->ut_anything('eventcode')
+    || $self->ut_number('seconds')
+    || $self->ut_enum('disabled', [ '', 'Y' ] )
+  ;
+}
+
+=back
+
+=head1 BUGS
+
+Alas.
+
+=head1 SEE ALSO
+
+L<FS::cust_bill>, L<FS::cust_bill_event>, L<FS::Record>, schema.html from the
+base documentation.
+
+=cut
+
+1;
+

@@ -31,12 +31,14 @@ FS/cust_main.pm
 FS/cust_main_county.pm
 FS/cust_main_invoice.pm
 FS/cust_pay.pm
+FS/cust_bill_event.pm
 FS/cust_bill_pay.pm
 FS/cust_pay_batch.pm
 FS/cust_pkg.pm
 FS/cust_refund.pm
 FS/cust_credit_refund.pm
 FS/cust_svc.pm
+FS/part_bill_event.pm
 FS/part_pkg.pm
 FS/part_pop_local.pm
 FS/part_referral.pm
@@ -67,6 +69,7 @@ t/CGIwrapper.t
 t/Conf.t
 t/ConfItem.t
 t/cust_bill.t
+t/cust_bill_event.t
 t/cust_bill_pay.t
 t/cust_bill_pkg.t
 t/cust_credit.t
@@ -82,6 +85,7 @@ t/cust_refund.t
 t/cust_svc.t
 t/domain_record.t
 t/nas.t
+t/part_bill_event.t
 t/part_pkg.t
 t/part_pop_local.t
 t/part_referral.t

@@ -25,6 +25,22 @@
         <li>charged - amount of this invoice
         <li>printed - how many times this invoice has been printed automatically
       </ul>
+    <li><a name="cust_bill_event" href="man/FS/cust_bill_event.html">cust_bill_event</a> - Invoice event history
+      <ul>
+        <li>eventnum - primary key
+        <li>invnum - <a href="#cust_bill">invoice</a>
+        <li>eventpart - <a href="#part_bill_event">event definition</a>
+        <li>_date
+      </ul>
+    <li><a name="part_bill_event" href="man/FS/part_bill_event.html">part_bill_event</a> - Invoice event definitions
+      <ul>
+        <li>eventpart - primary key
+        <li>payby - CARD, BILL, or COMP
+        <li>event - event name
+        <li>eventcode - event action
+        <li>seconds - how long after the invoice date (<a href="#cust_bill">cust_bill</a>._date) events of this type are triggered
+        <li>disabled - Disabled flag, empty or `Y'
+      </ul>
     <li><a name="cust_bill_pkg" href="man/FS/cust_bill_pkg.html">cust_bill_pkg</a> - Invoice line items
       <ul>
         <li>invnum - (multiple) key
