@@ -1,0 +1,14 @@
+Thanks to Matt Simerson <matt@michweb.net> of MichWeb Inc. for documentation
+and pre-release testing.  Without his help the documentation in the first
+release would have consisted of a single screenfull of text.
+
+# Steve Cleff <cleff@yahoo.com> did the default background image and is also
+# the creator of Freeside's mascot, Snakeman.
+
+Jerry St. Pierre <jstpi@city.timmins.on.ca> did the "SISD" graphic.
+
+Brian McCane? <bmccane@maxbaud.net> contributed PostgreSQL support, HTML
+style enhancements and many, many bugfixes.
+
+Everything else is my (Ivan Kohler <ivan@sisd.com>) fault.
+
