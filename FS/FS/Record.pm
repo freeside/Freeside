@@ -204,7 +204,7 @@ sub qsearchs { # $result_record = &FS::Record:qsearchs('table',\%hash);
   my(@result) = qsearch(@_);
   carp "warning: Multiple records in scalar search!" if scalar(@result) > 1;
     #should warn more vehemently if the search was on a primary key?
-  $result[0];
+  scalar(@result) ? ($result[0]) : ();
 }
 
 =back
@@ -825,7 +825,7 @@ sub hfields {
 
 =head1 VERSION
 
-$Id: Record.pm,v 1.2 1999-08-04 10:41:22 ivan Exp $
+$Id: Record.pm,v 1.3 2000-03-03 18:21:38 ivan Exp $
 
 =head1 BUGS
 
