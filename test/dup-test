@@ -1,0 +1,32 @@
+#!/usr/bin/perl
+
+use FS::UID qw(adminsuidsetup);
+use FS::svc_acct;
+
+my $user = 'ivan';
+my $svcpart = '2';
+
+my $counter = 10;
+
+my $pid = open(KID_TO_WRITE, "-|");
+
+if ( $pid ) { #parent
+  doit();
+} else { #kid
+  doit();
+  exit;
+}
+
+sub doit {
+
+  adminsuidsetup $user or die;
+
+  my $svc_acct = new FS::svc_acct ( {
+    'svcpart' => $svcpart,
+    'username' => "dup$counter",
+  } );
+  my $error = $svc_acct->insert;
+  warn $error if $error;
+
+}
+
