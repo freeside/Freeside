@@ -3,7 +3,20 @@
 </head>
 <body>
   <h1>Configuration files</h1>
-Configuration files and directories are located in `/var/spool/freeside/conf'.
+Configuration file layout has changed in 1.2.x.
+<ul>
+  <li>First, the file `/usr/local/etc/freeside/mapsecrets' is read.  Each line
+in this file contains a username and filename, separated by whitespace.  Note
+that these are not local usernames - they are passed from Apache (you _did_
+setup <a href="http://www.apache.org/docs/misc/FAQ.html#user-authentication">
+user authetication</a>, correct?).  The default path for the filename is
+`/usr/local/etc/freeside/'.  The specified filename is parsed exactly
+the same as the pre-1.2.x `secrets' file:
+  <li>Three lines: Database engine datasource (for example, `DBI:mysql:freeside' or `DBI:Pg:dbname=freeside'), username, and password.  This file should not be world readable.
+</ul>
+All further configuration files and directories are located in
+`/usr/local/freeside/conf.<i>datasource</i>', for example, 
+`/usr/local/freeside/conf.DBI:Pg:dbname=freeside'
 <ul>
   <li>address - Your company name and address, four lines.
   <li>bsdshellmachines - Your BSD flavored shell (and mail) machines, one per line.  This enables export of `/etc/passwd' and `/etc/master.passwd'.
@@ -27,7 +40,6 @@ Configuration files and directories are located in `/var/spool/freeside/conf'.
           <li>registries/internic/to - Email address to which InterNIC domain registrations are sent.
         </ul>
     </ul>
-  <li>secrets - Three lines: Database engine datasource (for example, `DBI:mysql:freeside' or `DBI:Pg:dbname=freeside'), username, and password.  This file should not be world readable.
   <li>sendmailmachines - Your sendmail machines, one per line.  This enables export of `/etc/virtusertable' and `/etc/sendmail.cw'.
   <li>shellmachine - A single machine with user home directories mounted.  This enables home directory creation, renaming and archiving/deletion.  In conjunction with `qmailmachines', it also enables `.qmail-extension' file maintenance.
   <li>shellmachines - Your Linux and System V flavored shell (and mail) machines, one per line.  This enables export of `/etc/passwd' and `/etc/shadow' files.
