@@ -529,7 +529,7 @@ sub vpopmail_sync {
   my ($machine, $dir, $uid, $gid) = split (/\s+/, $vpopmailmachines[0]);
   
   chdir $exportdir;
-  my @args = ("$rsync", "-rlpt", "-e", "$ssh", "domains/", "vpopmail\@$machine:$vpoppdir/domains/");
+  my @args = ("$rsync", "-rlpt", "-e", "$ssh", "domains/", "vpopmail\@$machine:$vpopdir/domains/");
   system {$args[0]} @args;
 
 }
@@ -1030,7 +1030,8 @@ sub vpopmail_replace_password {
   close(VPASSWD);
 
   my $queue = new FS::queue { 'job' => 'FS::svc_acct::vpopmail_sync' };
-  $error = $queue->insert;
+  my $error = $queue->insert;
+  die $error if $error;
 
   1;
 }
