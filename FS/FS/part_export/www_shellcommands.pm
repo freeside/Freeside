@@ -10,13 +10,13 @@ use FS::part_export;
 tie my %options, 'Tie::IxHash',
   'user' => { label=>'Remote username', default=>'root' },
   'useradd' => { label=>'Insert command',
-                 default=>'mkdir /var/www/$zone; chown $username /var/www/$zone; ln -s /var/www/$zone $homedir/$zone',
+                 default=>'mkdir $homedir/$zone; chown $username $homedir/$zone; ln -s $homedir/$zone /var/www/$zone',
                },
   'userdel'  => { label=>'Delete command',
-                  default=>'[ -n "$zone" ] && rm -rf /var/www/$zone; rm $homedir/$zone',
+                  default=>'[ -n "$zone" ] && rm -rf /var/www/$zone; rm -rf $homedir/$zone',
                 },
   'usermod'  => { label=>'Modify command',
-                  default=>'[ -n "$old_zone" ] && rm $old_homedir/$old_zone; [ "$old_zone" != "$new_zone" -a -n "$new_zone" ] && mv /var/www/$old_zone /var/www/$new_zone; [ "$old_username" != "$new_username" ] && chown -R $new_username /var/www/$new_zone; ln -s /var/www/$new_zone $new_homedir/$new_zone',
+                  default=>'[ -n "$old_zone" ] && rm /var/www/$old_zone; [ "$old_zone" != "$new_zone" -a -n "$new_zone" ] && ( mv $old_homedir/$old_zone $new_homedir/$new_zone; ln -sf $new_homedir/$new_zone /var/www/$new_zone ); [ "$old_username" != "$new_username" ] && chown -R $new_username $new_homedir/$new_zone; ln -sf $new_homedir/$new_zone /var/www/$new_zone',
                 },
 ;
 
@@ -32,9 +32,9 @@ Run remote commands via SSH, for virtual web sites.  You will need to
   <LI>
     <INPUT TYPE="button" VALUE="Maintain directories" onClick='
       this.form.user.value = "root";
-      this.form.useradd.value = "mkdir /var/www/$zone; chown $username /var/www/$zone; ln -s /var/www/$zone $homedir/$zone";
-      this.form.userdel.value = "[ -n "$zone" ] && rm -rf /var/www/$zone; rm $homedir/$zone";
-      this.form.usermod.value = "[ -n "$old_zone" ] && rm $old_homedir/$old_zone; [ "$old_zone" != "$new_zone" -a -n "$new_zone" ] && mv /var/www/$old_zone /var/www/$new_zone; [ "$old_username" != "$new_username" ] && chown -R $new_username /var/www/$new_zone; ln -s /var/www/$new_zone $new_homedir/$new_zone";
+      this.form.useradd.value = "mkdir $homedir/$zone; chown $username $homedir/$zone; ln -s $homedir/$zone /var/www/$zone";
+      this.form.userdel.value = "[ -n \"$zone\" ] && rm -rf /var/www/$zone; rm -rf $homedir/$zone";
+      this.form.usermod.value = "[ -n \"$old_zone\" ] && rm /var/www/$old_zone; [ \"$old_zone\" != \"$new_zone\" -a -n \"$new_zone\" ] && ( mv $old_homedir/$old_zone $new_homedir/$new_zone; ln -sf $new_homedir/$new_zone /var/www/$new_zone ); [ \"$old_username\" != \"$new_username\" ] && chown -R $new_username $new_homedir/$new_zone; ln -sf $new_homedir/$new_zone /var/www/$new_zone";
     '>
   <LI>
     <INPUT TYPE="button" VALUE="ISPMan CLI" onClick='
