@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: signup.cgi,v 1.3 2000-01-28 22:49:49 ivan Exp $
+# $Id: signup.cgi,v 1.4 2000-01-31 05:22:23 ivan Exp $
 
 use strict;
 use vars qw( @payby $cgi $locales $packages $pops $r $error
@@ -22,7 +22,8 @@ use Text::Template;
 #
 #@payby = qw( CARD BILL COMP );
 #@payby = qw( CARD BILL );
-@payby = qw( CARD );
+#@payby = qw( CARD );
+@payby = qw( CARD PREPAY );
 
 $ieak_file = '/usr/local/freeside/ieak.template';
 
@@ -220,12 +221,14 @@ END
     'CARD' => qq!Credit card<BR>${r}<INPUT TYPE="text" NAME="CARD_payinfo" VALUE="" MAXLENGTH=19><BR>${r}Exp !. expselect("CARD"). qq!<BR>${r}Name on card<BR><INPUT TYPE="text" NAME="CARD_payname" VALUE="">!,
     'BILL' => qq!Billing<BR>P.O. <INPUT TYPE="text" NAME="BILL_payinfo" VALUE=""><BR>${r}Exp !. expselect("BILL", "12-2037"). qq!<BR>${r}Attention<BR><INPUT TYPE="text" NAME="BILL_payname" VALUE="Accounts Payable">!,
     'COMP' => qq!Complimentary<BR>${r}Approved by<INPUT TYPE="text" NAME="COMP_payinfo" VALUE=""><BR>${r}Exp !. expselect("COMP"),
+    'PREPAY' => qq!Prepaid card<BR>${r}<INPUT TYPE="text" NAME="PREPAY_payinfo" VALUE="" MAXLENGTH=80>!,
   );
 
   my %paybychecked = (
     'CARD' => qq!Credit card<BR>${r}<INPUT TYPE="text" NAME="CARD_payinfo" VALUE="$payinfo" MAXLENGTH=19><BR>${r}Exp !. expselect("CARD", $paydate). qq!<BR>${r}Name on card<BR><INPUT TYPE="text" NAME="CARD_payname" VALUE="$payname">!,
     'BILL' => qq!Billing<BR>P.O. <INPUT TYPE="text" NAME="BILL_payinfo" VALUE="$payinfo"><BR>${r}Exp !. expselect("BILL", $paydate). qq!<BR>${r}Attention<BR><INPUT TYPE="text" NAME="BILL_payname" VALUE="$payname">!,
     'COMP' => qq!Complimentary<BR>${r}Approved by<INPUT TYPE="text" NAME="COMP_payinfo" VALUE="$payinfo"><BR>${r}Exp !. expselect("COMP", $paydate),
+    'PREPAY' => qq!Prepaid card<BR>${r}<INPUT TYPE="text" NAME="PREPAY_payinfo" VALUE="$payinfo" MAXLENGTH=80>!,
   );
 
   for (@payby) {

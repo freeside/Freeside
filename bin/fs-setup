@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: fs-setup,v 1.21 2000-01-30 06:03:26 ivan Exp $
+# $Id: fs-setup,v 1.22 2000-01-31 05:22:23 ivan Exp $
 #
 # ivan@sisd.com 97-nov-8,9
 #
@@ -32,7 +32,10 @@
 # fix radius attributes ivan@sisd.com 98-sep-27
 #
 # $Log: fs-setup,v $
-# Revision 1.21  2000-01-30 06:03:26  ivan
+# Revision 1.22  2000-01-31 05:22:23  ivan
+# prepaid "internet cards"
+#
+# Revision 1.21  2000/01/30 06:03:26  ivan
 # postgres 6.5 finally supports decimal(10,2)
 #
 # Revision 1.20  2000/01/28 22:53:33  ivan
@@ -662,6 +665,17 @@ sub tables_hash_hack {
     #  'unique' => [ [] ],
     #  'index' => [ [] ],
     #},
+
+    'prepay_credit' => {
+      'columns' => [
+        'prepaynum',   'int',     '',   '',
+        'identifier',  'varchar', '', $char_d,
+        'amount',      @money_type,
+      ],
+      'primary_key' => 'prepaynum',
+      'unique'      => [ ['identifier'] ],
+      'index        => [ [] ],
+    },
 
   );
 

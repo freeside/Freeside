@@ -27,6 +27,7 @@ use FS::part_referral;
 use FS::cust_main_county;
 use FS::agent;
 use FS::cust_main_invoice;
+use FS::prepay_credit;
 
 @ISA = qw( FS::Record );
 
@@ -148,9 +149,9 @@ FS::Record.  The following fields are currently supported:
 
 =item fax - phone (optional)
 
-=item payby - `CARD' (credit cards), `BILL' (billing), or `COMP' (free)
+=item payby - `CARD' (credit cards), `BILL' (billing), `COMP' (free), or `PREPAY' (special billing type: applies a credit - see L<FS::prepay_credit> and sets billing type to BILL)
 
-=item payinfo - card number, P.O.#, or comp issuer (4-8 lowercase alphanumerics; think username)
+=item payinfo - card number, P.O., comp issuer (4-8 lowercase alphanumerics; think username) or prepayment identifier (see L<FS::prepay_credit>)
 
 =item paydate - expiration date, mm/yyyy, m/yyyy, mm/yy or m/yy
 
@@ -181,6 +182,52 @@ sub table { 'cust_main'; }
 
 Adds this customer to the database.  If there is an error, returns the error,
 otherwise returns false.
+
+=cut
+
+sub insert {
+  my $self = shift;
+
+  my $flag = 0;
+  if ( $self->payby eq 'PREPAY' ) {
+    $self->payby('BILL');
+    $flag = 1;
+  }
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $error = $self->SUPER::insert;
+  return $error if $error;
+
+  if ( $flag ) {
+    my $prepay_credit =
+      qsearchs('prepay_credit', { 'identifier' => $self->payinfo } );
+    warn "WARNING: can't find pre-found prepay_credit: ". $self->payinfo
+      unless $prepay_credit;
+    my $amount = $prepay_credit->amount;
+    my $error = $prepay_credit->delete;
+    if ( $error ) {
+      warn "WARNING: can't delete prepay_credit: ". $self->payinfo;
+    } else {
+      my $cust_credit = new FS::cust_credit {
+        'custnum' => $self->custnum,
+        'amount'  => $amount,
+      };
+      my $error = $cust_credit->insert;
+      warn "WARNING: error inserting cust_credit for prepay_credit: $error"
+        if $error;
+    }
+
+  }
+
+  '';
+
+}
 
 =item delete NEW_CUSTNUM
 
@@ -314,7 +361,7 @@ sub check {
     or return "Illegal zip: ". $self->zip;
   $self->zip($1);
 
-  $self->payby =~ /^(CARD|BILL|COMP)$/
+  $self->payby =~ /^(CARD|BILL|COMP|PREPAY)$/
     or return "Illegal payby: ". $self->payby;
   $self->payby($1);
 
@@ -340,10 +387,21 @@ sub check {
     $error = $self->ut_textn('payinfo');
     return "Illegal comp account issuer: ". $self->payinfo if $error;
 
+  } elsif ( $self->payby eq 'PREPAY' ) {
+
+    my $payinfo = $self->payinfo;
+    $payinfo =~ s/\W//g; #anything else would just confuse things
+    $self->payinfo($payinfo);
+    $error = $self->ut_alpha('payinfo');
+    return "Illegal prepayment identifier: ". $self->payinfo if $error;
+    return "Unknown prepayment identifier"
+      unless qsearchs('prepay_credit', { 'identifier' => $self->payinfo } );
+
   }
 
   if ( $self->paydate eq '' ) {
-    return "Expriation date required" unless $self->payby eq 'BILL';
+    return "Expriation date required"
+      unless $self->payby eq 'BILL' || $self->payby eq 'PREPAY';
     $self->paydate('');
   } else {
     $self->paydate =~ /^(\d{1,2})[\/\-](\d{2}(\d{2})?)$/
@@ -799,10 +857,6 @@ sub collect {
       return "Unknown payment type ". $self->payby;
     }
 
-
-
-
-
   }
   '';
 
@@ -939,7 +993,7 @@ sub check_invoicing_list {
 
 =head1 VERSION
 
-$Id: cust_main.pm,v 1.2 1999-08-12 04:16:01 ivan Exp $
+$Id: cust_main.pm,v 1.3 2000-01-31 05:22:23 ivan Exp $
 
 =head1 BUGS
 

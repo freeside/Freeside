@@ -154,8 +154,8 @@
       </ul>
     <li><a name="part_referral">part_referral</a> - Referral listing
       <ul>
-        <li>refnum</li> - primary key
-        <li>referral</li> - referral
+        <li>refnum - primary key
+        <li>referral - referral
       </ul>
     <li><a name="part_svc">part_svc</a> - Service definitions
       <ul>
@@ -175,6 +175,12 @@
         <li>pkgpart - <a href="#part_pkg">Package definition</a>
         <li>svcpart - <a href="#part_svc">Service definition</a>
         <li>quantity - quantity of this service that this package includes
+      </ul>
+    <li><a name="prepay_credit">prepay_credit</a>
+      <ul>
+        <li>prepaynum - primary key
+        <li>identifier - text or numeric string used to receive this credit
+        <li>amount - amount of credit
       </ul>
     <li><a name="svc_acct">svc_acct</a> - Accounts
       <ul>

@@ -12,6 +12,13 @@
   <li>Apply the following changes to your database:
 <pre>
 ALTER TABLE svc_acct_pop ADD loc CHAR(4);
+CREATE TABLE prepay_credit (
+  prepaynum int NOT NULL,
+  identifier varchar(80) NOT NULL,
+  amount decimal(10,2) NOT NULL,
+  PRIMARY KEY (prepaynum),
+  INDEX (identifier)
+);
 </pre>
   <li>Copy or symlink htdocs to the new copy.
   <li>Remove the symlink or directory <i>(your_site_perl_directory)</i>/FS.
