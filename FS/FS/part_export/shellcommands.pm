@@ -63,7 +63,7 @@ sub _export_command {
   #eventually should check a "password-encoding" field
   if ( length($svc_acct->_password) == 13
        || $svc_acct->_password =~ /^\$(1|2a?)\$/ ) {
-    $crypt_password = $svc_acct->_password;
+    $crypt_password = shell_quote $svc_acct->_password;
   } else {
     $crypt_password = crypt(
       $svc_acct->_password,
@@ -98,7 +98,7 @@ sub _export_replace {
   #eventuall should check a "password-encoding" field
   if ( length($new->_password) == 13
        || $new->_password =~ /^\$(1|2a?)\$/ ) {
-    $new_crypt_password = $new->_password;
+    $new_crypt_password = shell_quote $new->_password;
   } else {
     $new_crypt_password =
       crypt( $new->_password, $saltset[int(rand(64))].$saltset[int(rand(64))]
