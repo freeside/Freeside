@@ -1,0 +1,22 @@
+#!/usr/bin/perl
+#
+# hack to update/add read-only permissions for a user on the db
+#
+# usage: pg-readonly freesideuser readonlyuser
+
+use strict;
+use DBI;
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw(dbdef);
+
+my $user = shift or die &usage;
+my $rouser = shift or die &usage;
+
+my $dbh = adminsuidsetup $user;
+
+foreach my $table ( dbdef->tables ) {
+  $dbh->do("GRANT SELECT ON $table TO $rouser");
+  $dbh->commit();
+  $dbh->do("GRANT SELECT ON ${table}_seq TO $rouser");
+  $dbh->commit();
+}
