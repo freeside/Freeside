@@ -73,7 +73,7 @@ sub forksuidsetup {
   $user = shift;
   croak "fatal: adminsuidsetup called without arguements" unless $user;
 
-  $user =~ /^([\w\-\.]+)/ or croak "fatal: illegal user $user";
+  $user =~ /^([\w\-\.]+)$/ or croak "fatal: illegal user $user";
   $user = $1;
 
   $ENV{'PATH'} ='/usr/local/bin:/usr/bin:/usr/ucb:/bin';
@@ -230,7 +230,7 @@ sub getsecrets {
   die "No user!" unless $user;
   my($conf) = new FS::Conf $conf_dir;
   my($line) = grep /^\s*$user\s/, $conf->config('mapsecrets');
-  die "User not found in mapsecrets!" unless $line;
+  die "User $user not found in mapsecrets!" unless $line;
   $line =~ /^\s*$user\s+(.*)$/;
   $secrets = $1;
   die "Illegal mapsecrets line for user?!" unless $secrets;
@@ -255,7 +255,7 @@ coderef into the hash %FS::UID::callback :
 
 =head1 VERSION
 
-$Id: UID.pm,v 1.13 2002-02-23 02:14:25 jeff Exp $
+$Id: UID.pm,v 1.14 2002-02-23 07:00:21 ivan Exp $
 
 =head1 BUGS
 
