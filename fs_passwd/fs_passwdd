@@ -10,7 +10,7 @@ use strict;
 use Socket;
 
 my $fs_passwdd_socket = "/usr/local/freeside/fs_passwdd_socket";
-my $pid_file = "$fs_passwdd_socket.pid"
+my $pid_file = "$fs_passwdd_socket.pid";
 
 $ENV{'PATH'} ='/usr/local/bin:/usr/bin:/usr/ucb:/bin';
 $ENV{'SHELL'} = '/bin/sh';
