@@ -2917,6 +2917,7 @@ sub susp_sql { "
     AND 0 = ( SELECT COUNT(*) FROM cust_pkg
                 WHERE cust_pkg.custnum = cust_main.custnum
                   AND ( cust_pkg.susp IS NULL OR cust_pkg.susp = 0 )
+                  AND ( cust_pkg.cancel IS NULL OR cust_pkg.cancel = 0 )
             )
 "; }
 
