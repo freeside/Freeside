@@ -12,8 +12,8 @@ if ( $cgi->param('error') ) {
   $svcnum = $svc_acct->svcnum;
   $pkgnum = $cgi->param('pkgnum');
   $svcpart = $cgi->param('svcpart');
-  $part_svc=qsearchs('part_svc',{'svcpart'=>$svcpart});
-  die "No part_svc entry!" unless $part_svc;
+  $part_svc = qsearchs( 'part_svc', { 'svcpart' => $svcpart } );
+  die "No part_svc entry for svcpart $svcpart!" unless $part_svc;
   @groups = $cgi->param('radius_usergroup');
 } else {
   my($query) = $cgi->keywords;
@@ -28,8 +28,8 @@ if ( $cgi->param('error') ) {
     $pkgnum=$cust_svc->pkgnum;
     $svcpart=$cust_svc->svcpart;
 
-    $part_svc=qsearchs('part_svc',{'svcpart'=>$svcpart});
-    die "No part_svc entry!" unless $part_svc;
+    $part_svc = qsearchs( 'part_svc', { 'svcpart' => $svcpart } );
+    die "No part_svc entry for svcpart $svcpart!" unless $part_svc;
 
     @groups = $svc_acct->radius_groups;
 
@@ -41,8 +41,8 @@ if ( $cgi->param('error') ) {
       $pkgnum=$1 if /^pkgnum(\d+)$/;
       $svcpart=$1 if /^svcpart(\d+)$/;
     }
-    $part_svc=qsearchs('part_svc',{'svcpart'=>$svcpart});
-    die "No part_svc entry!" unless $part_svc;
+    $part_svc = qsearchs( 'part_svc', { 'svcpart' => $svcpart } );
+    die "No part_svc entry for svcpart $svcpart!" unless $part_svc;
 
     $svcnum='';
 
