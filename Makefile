@@ -63,8 +63,8 @@ SELFSERVICE_USER = fs_selfservice
 #user with sudo access on SELFSERVICE_MACHINES for automated self-service
 #installation.
 SELFSERVICE_INSTALL_USER = ivan
-SELFSERVICE_INSTALL_USERADD = useradd
-#SELFSERVICE_INSTALL_USERADD = "pw useradd"
+SELFSERVICE_INSTALL_USERADD = /usr/sbin/useradd
+#SELFSERVICE_INSTALL_USERADD = "/usr/sbin/pw useradd"
 
 RT_ENABLED = 0
 #RT_ENABLED = 1
@@ -178,7 +178,7 @@ install-selfservice:
 	  ssh ${SELFSERVICE_INSTALL_USER}@$$MACHINE "cd FS-SelfService; perl Makefile.PL && make" ;\
 	  ssh ${SELFSERVICE_INSTALL_USER}@$$MACHINE "cd FS-SelfService; sudo make install" ;\
 	  scp ~freeside/.ssh/id_dsa.pub ${SELFSERVICE_INSTALL_USER}@$$MACHINE:. ;\
-	  ssh ${SELFSERVICE_INSTALL_USER}@$$MACHINE "sudo $SELFSERVICE_INSTALL_USERADD freeside; sudo install -D -o freeside -m 600 ./id_dsa.pub ~freeside/.ssh/authorized_keys" ;\
+	  ssh ${SELFSERVICE_INSTALL_USER}@$$MACHINE "sudo ${SELFSERVICE_INSTALL_USERADD} freeside; sudo install -D -o freeside -m 600 ./id_dsa.pub ~freeside/.ssh/authorized_keys" ;\
 	done
 
 install: install-perl-modules install-docs install-init install-rt
