@@ -1152,7 +1152,7 @@ sub collect {
           }
 
           my @invoicing_list = grep { $_ ne 'POST' } $self->invoicing_list;
-          if ( $conf->config('emailinvoiceonly') ) {
+          if ( $conf->exists('emailinvoiceonly') ) {
             @invoicing_list = $self->default_invoicing_list
               unless @invoicing_list;
           }
@@ -1724,7 +1724,7 @@ sub append_fuzzyfiles {
 
 =head1 VERSION
 
-$Id: cust_main.pm,v 1.36 2001-09-25 18:01:19 ivan Exp $
+$Id: cust_main.pm,v 1.37 2001-09-25 18:03:04 ivan Exp $
 
 =head1 BUGS
 
