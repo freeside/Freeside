@@ -111,7 +111,7 @@ sub insert {
     qsearch('cust_bill_pay', { 'invnum' => $self->invnum } );
   $bill_total += $_ foreach map { $_->amount } 
     qsearch('cust_credit_bill', { 'invnum' => $self->invnum } );
-  if ( $bill_total > $cust_bill->charged ) {
+  if ( sprintf("%.2f", $bill_total) > sprintf("%.2f", $cust_bill->charged) ) {
     $dbh->rollback if $oldAutoCommit;
     return "total cust_bill_pay.amount and cust_credit_bill.amount $bill_total".
            " for invnum ". $self->invnum.
@@ -195,7 +195,7 @@ sub cust_bill {
 
 =head1 VERSION
 
-$Id: cust_bill_pay.pm,v 1.9 2001-12-16 00:55:53 ivan Exp $
+$Id: cust_bill_pay.pm,v 1.10 2001-12-21 20:55:35 ivan Exp $
 
 =head1 BUGS
 
