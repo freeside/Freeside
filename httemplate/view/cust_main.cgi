@@ -217,6 +217,16 @@ if ( $conf->config('payby-default') ne 'HIDE' ) {
           '<TR><TD ALIGN="right">Name on card</TD><TD BGCOLOR="#ffffff">',
           $cust_main->payname, '</TD></TR>'
     ;
+  } elsif ( $cust_main->payby eq 'CHEK' ) {
+    my( $account, $aba ) = split('@', $cust_main->payinfo );
+    print 'Electronic check</TD></TR>',
+          '<TR><TD ALIGN="right">Account number</TD><TD BGCOLOR="#ffffff">',
+          $account, '</TD></TR>',
+          '<TR><TD ALIGN="right">ABA/Routing code</TD><TD BGCOLOR="#ffffff">',
+          $aba, '</TD></TR>',
+          '<TR><TD ALIGN="right">Bank name</TD><TD BGCOLOR="#ffffff">',
+          $cust_main->payname, '</TD></TR>'
+    ;
   } elsif ( $cust_main->payby eq 'BILL' ) {
     print 'Billing</TD></TR>';
     print '<TR><TD ALIGN="right">P.O. </TD><TD BGCOLOR="#ffffff">',

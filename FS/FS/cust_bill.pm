@@ -583,32 +583,48 @@ sub comp {
 
 =item realtime_card
 
-Attempts to pay this invoice with a Business::OnlinePayment realtime gateway.
-See http://search.cpan.org/search?mode=module&query=Business%3A%3AOnlinePayment
-for supproted processors.
+Attempts to pay this invoice with a credit card payment via a
+Business::OnlinePayment realtime gateway.  See
+http://search.cpan.org/search?mode=module&query=Business%3A%3AOnlinePayment
+for supported processors.
 
 =cut
 
 sub realtime_card {
   my $self = shift;
+  $self->realtime_bop('CC', @_);
+}
+
+=item realtime_ach
+
+Attempts to pay this invoice with an electronic check (ACH) payment via a
+Business::OnlinePayment realtime gateway.  See
+http://search.cpan.org/search?mode=module&query=Business%3A%3AOnlinePayment
+for supported processors.
+
+=cut
+
+sub realtime_ach {
+  my $self = shift;
+  $self->realtime_bop('ECHECK', @_);
+}
+
+sub realtime_bop {
+  my $self = shift;
+  my $method = shift;
   my $cust_main = $self->cust_main;
   my $amount = $self->owed;
 
   unless ( $processor =~ /^Business::OnlinePayment::(.*)$/ ) {
-    return "Real-time card processing not enabled (processor $processor)";
+    return "Real-time card/ACH processing not enabled (processor $processor)";
   }
   my $bop_processor = $1; #hmm?
 
   my $address = $cust_main->address1;
   $address .= ", ". $cust_main->address2 if $cust_main->address2;
 
-  #fix exp. date
-  #$cust_main->paydate =~ /^(\d+)\/\d*(\d{2})$/;
-  $cust_main->paydate =~ /^\d{2}(\d{2})[\/\-](\d+)[\/\-]\d+$/;
-  my $exp = "$2/$1";
-
   my($payname, $payfirst, $paylast);
-  if ( $cust_main->payname ) {
+  if ( $cust_main->payname && $method ne 'ECHECK' ) {
     $payname = $cust_main->payname;
     $payname =~ /^\s*([\w \,\.\-\']*)?\s+([\w\,\.\-\']+)\s*$/
       or do {
@@ -646,11 +662,24 @@ sub realtime_card {
     $description = eval qq("$dtempl");
 
   }
+
+  my %content;
+  if ( $method eq 'CC' ) { 
+    $content{card_number} = $cust_main->payinfo;
+    $cust_main->paydate =~ /^\d{2}(\d{2})[\/\-](\d+)[\/\-]\d+$/;
+    $content{expiration} = "$2/$1";
+  } elsif ( $method eq 'ECHECK' ) {
+    my($account_number,$routing_code) = $cust_main->payinfo
+    ( $content{account_number}, $content{routing_code} ) =
+      split('@', $cust_main->payinfo);
+    $content{bank_name} = $cust_main->payname;
+  }
   
   my $transaction =
     new Business::OnlinePayment( $bop_processor, @bop_options );
   $transaction->content(
-    'type'           => 'CC',
+    %content,
+    'type'           => $method,
     'login'          => $bop_login,
     'password'       => $bop_password,
     'action'         => $action1,
@@ -666,8 +695,6 @@ sub realtime_card {
     'state'          => $cust_main->state,
     'zip'            => $cust_main->zip,
     'country'        => $cust_main->country,
-    'card_number'    => $cust_main->payinfo,
-    'expiration'     => $exp,
     'referer'        => 'http://cleanwhisker.420.am/',
     'email'          => $email,
     'phone'          => $cust_main->daytime || $cust_main->night,
@@ -686,7 +713,8 @@ sub realtime_card {
       new Business::OnlinePayment( $bop_processor, @bop_options );
 
     my %capture = (
-      type           => 'CC',
+      %content,
+      type           => $method,
       action         => $action2,
       login          => $bop_login,
       password       => $bop_password,
@@ -694,8 +722,6 @@ sub realtime_card {
       amount         => $amount,
       authorization  => $auth,
       description    => $description,
-      card_number    => $cust_main->payinfo,
-      expiration     => $exp,
     );
 
     foreach my $field (qw( authorization_source_code returned_ACI                                          transaction_identifier validation_code           
@@ -720,18 +746,23 @@ sub realtime_card {
 
   if ( $transaction->is_success() ) {
 
+    my %method2payby = (
+      'CC'     => 'CARD',
+      'ECHECK' => 'CHEK',
+    );
+
     my $cust_pay = new FS::cust_pay ( {
        'invnum'   => $self->invnum,
        'paid'     => $amount,
        '_date'     => '',
-       'payby'    => 'CARD',
+       'payby'    => method2payby{$method},
        'payinfo'  => $cust_main->payinfo,
        'paybatch' => "$processor:". $transaction->authorization,
     } );
     my $error = $cust_pay->insert;
     if ( $error ) {
       # gah, even with transactions.
-      my $e = 'WARNING: Card debited but database not updated - '.
+      my $e = 'WARNING: Card/ACH debited but database not updated - '.
               'error applying payment, invnum #' . $self->invnum.
               " ($processor): $error";
       warn $e;
@@ -766,7 +797,7 @@ sub realtime_card {
         "Sender: $invoice_from",
         "Reply-To: $invoice_from",
         "Date: ". time2str("%a, %d %b %Y %X %z", time),
-        "Subject: Your credit card could not be processed",
+        "Subject: Your payment could not be processed",
       ] );
       my $message = new Mail::Internet (
         'Header' => $header,
@@ -838,7 +869,7 @@ sub print_text {
 #  my $invnum = $self->invnum;
   my $cust_main = qsearchs('cust_main', { 'custnum', $self->custnum } );
   $cust_main->payname( $cust_main->first. ' '. $cust_main->getfield('last') )
-    unless $cust_main->payname;
+    unless $cust_main->payname && $cust_main->payby ne 'CHEK';
 
   my( $pr_total, @pr_cust_bill ) = $self->previous; #previous balance
 #  my( $cr_total, @cr_cust_credit ) = $self->cust_credit; #credits
@@ -1043,7 +1074,7 @@ sub print_text {
 
 =head1 VERSION
 
-$Id: cust_bill.pm,v 1.47 2002-10-04 12:09:21 ivan Exp $
+$Id: cust_bill.pm,v 1.48 2002-10-12 10:15:55 ivan Exp $
 
 =head1 BUGS
 

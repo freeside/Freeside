@@ -60,7 +60,8 @@ currently supported:
 =item _date - specified as a UNIX timestamp; see L<perlfunc/"time">.  Also see
 L<Time::Local> and L<Date::Parse> for conversion functions.
 
-=item payby - `CARD' (credit cards), `BILL' (billing), or `COMP' (free)
+=item payby - `CARD' (credit cards), `CHEK' (electronic check/ACH),
+`BILL' (billing), or `COMP' (free)
 
 =item payinfo - card number, check #, or comp issuer (4-8 lowercase alphanumerics; think username), respectively
 
@@ -346,7 +347,7 @@ sub check {
 
   $self->_date(time) unless $self->_date;
 
-  $self->payby =~ /^(CARD|BILL|COMP)$/ or return "Illegal payby";
+  $self->payby =~ /^(CARD|CHEK|BILL|COMP)$/ or return "Illegal payby";
   $self->payby($1);
 
   #false laziness with cust_refund::check
@@ -405,7 +406,7 @@ sub unapplied {
 
 =head1 VERSION
 
-$Id: cust_pay.pm,v 1.21 2002-06-04 14:35:52 ivan Exp $
+$Id: cust_pay.pm,v 1.22 2002-10-12 10:15:55 ivan Exp $
 
 =head1 BUGS
 

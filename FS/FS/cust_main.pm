@@ -158,7 +158,7 @@ FS::Record.  The following fields are currently supported:
 
 =item ship_fax - phone (optional)
 
-=item payby - `CARD' (credit cards), `BILL' (billing), `COMP' (free), or `PREPAY' (special billing type: applies a credit - see L<FS::prepay_credit> and sets billing type to BILL)
+=item payby - `CARD' (credit cards), `CHEK' (electronic check), `BILL' (billing), `COMP' (free), or `PREPAY' (special billing type: applies a credit - see L<FS::prepay_credit> and sets billing type to BILL)
 
 =item payinfo - card number, P.O., comp issuer (4-8 lowercase alphanumerics; think username) or prepayment identifier (see L<FS::prepay_credit>)
 
@@ -482,9 +482,9 @@ sub replace {
     $self->invoicing_list( $invoicing_list );
   }
 
-  if ( $self->payby eq 'CARD' &&
+  if ( $self->payby =~ /^(CARD|CHEK)$/ &&
        grep { $self->get($_) ne $old->get($_) } qw(payinfo paydate payname) ) {
-    # card info has changed, want to retry realtime_card invoice events
+    # card/check info has changed, want to retry realtime_card invoice events
     #false laziness w/collect
     foreach my $cust_bill_event (
       grep {
@@ -664,7 +664,7 @@ sub check {
     }
   }
 
-  $self->payby =~ /^(CARD|BILL|COMP|PREPAY)$/
+  $self->payby =~ /^(CARD|CHEK|BILL|COMP|PREPAY)$/
     or return "Illegal payby: ". $self->payby;
   $self->payby($1);
 
@@ -680,6 +680,14 @@ sub check {
       or return gettext('invalid_card'); # . ": ". $self->payinfo;
     return gettext('unknown_card_type')
       if cardtype($self->payinfo) eq "Unknown";
+
+  } elsif ( $self->payby eq 'CHEK' ) {
+
+    my $payinfo = $self->payinfo;
+    $payinfo =~ s/[\D\@]//g;
+    $payinfo =~ /^(\d+)\@(\d{9})$/ or return 'invalid echeck account@aba';
+    $payinfo = "$1\@$2";
+    $self->payinfo($payinfo);
 
   } elsif ( $self->payby eq 'BILL' ) {
 
@@ -705,7 +713,7 @@ sub check {
 
   if ( $self->paydate eq '' || $self->paydate eq '-' ) {
     return "Expriation date required"
-      unless $self->payby eq 'BILL' || $self->payby eq 'PREPAY';
+      unless $self->payby =~ /^(BILL|PREPAY|CHEK)$/;
     $self->paydate('');
   } else {
     $self->paydate =~ /^(\d{1,2})[\/\-](\d{2}(\d{2})?)$/
@@ -717,7 +725,7 @@ sub check {
       if !$import && ( $y<$nowy || ( $y==$nowy && $1<$nowm ) );
   }
 
-  if ( $self->payname eq '' &&
+  if ( $self->payname eq '' && $self->payby ne 'CHEK' &&
        ( ! $conf->exists('require_cardname') || $self->payby ne 'CARD' ) ) {
     $self->payname( $self->first. " ". $self->getfield('last') );
   } else {

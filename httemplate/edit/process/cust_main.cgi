@@ -10,9 +10,14 @@ $cgi->param('refnum', (split(/:/, ($cgi->param('refnum'))[0] ))[0] );
 
 my $payby = $cgi->param('payby');
 if ( $payby ) {
-  $cgi->param('payinfo', $cgi->param( $payby. '_payinfo' ) );
+  if ( $payby eq 'CHEK' ) {
+    $cgi->param('payinfo',
+      $cgi->param('CHEK_payinfo1'). '@'. $cgi->param('CHEK_payinfo2') );
+  } else {
+    $cgi->param('payinfo', $cgi->param( $payby. '_payinfo' ) );
+  }
   $cgi->param('paydate',
-  $cgi->param( $payby. '_month' ). '-'. $cgi->param( $payby. '_year' ) );
+    $cgi->param( $payby. '_month' ). '-'. $cgi->param( $payby. '_year' ) );
   $cgi->param('payname', $cgi->param( $payby. '_payname' ) );
 }
 

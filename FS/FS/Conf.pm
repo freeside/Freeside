@@ -870,7 +870,7 @@ httemplate/docs/config.html
     'section'     => '',
     'description' => 'Acceptable payment types for the signup server',
     'type'        => 'selectmultiple',
-    'select_enum' => [ qw(CARD PREPAY BILL COMP) ],
+    'select_enum' => [ qw(CARD CHEK PREPAY BILL COMP) ],
   },
 
   {
@@ -957,7 +957,7 @@ httemplate/docs/config.html
     'section'     => 'UI',
     'description' => 'Default payment type.  HIDE disables display of billing information and sets customers to BILL.',
     'type'        => 'select',
-    'select_enum' => [ '', 'CARD', 'BILL', 'COMP', 'HIDE' ],
+    'select_enum' => [ '', qw(CARD CHEK BILL COMP HIDE) ],
   },
 
   {

@@ -47,7 +47,8 @@ inherits from FS::Record.  The following fields are currently supported:
 =item _date - specified as a UNIX timestamp; see L<perlfunc/"time">.  Also see
 L<Time::Local> and L<Date::Parse> for conversion functions.
 
-=item payby - `CARD' (credit cards), `BILL' (billing), or `COMP' (free)
+=item payby - `CARD' (credit cards), `CHEK' (electronic check/ACH),
+`BILL' (billing), or `COMP' (free)
 
 =item payinfo - card number, P.O.#, or comp issuer (4-8 lowercase alphanumerics; think username)
 
@@ -234,7 +235,7 @@ sub check {
     unless $self->crednum 
            || qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
 
-  $self->payby =~ /^(CARD|BILL|COMP)$/ or return "Illegal payby";
+  $self->payby =~ /^(CARD|CHEK|BILL|COMP)$/ or return "Illegal payby";
   $self->payby($1);
 
   #false laziness with cust_pay::check
@@ -266,7 +267,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: cust_refund.pm,v 1.18 2002-02-19 03:22:39 jeff Exp $
+$Id: cust_refund.pm,v 1.19 2002-10-12 10:15:55 ivan Exp $
 
 =head1 BUGS
 
