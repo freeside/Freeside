@@ -1150,6 +1150,8 @@ sub collect {
             $paylast = $self->getfield('first');
             $payname =  "$payfirst $paylast";
           }
+
+          my( $action1, $action2 ) = split(/\s*\,\s*/, $bop_action );
         
           my $transaction =
             new Business::OnlinePayment( $bop_processor, @bop_options );
@@ -1157,7 +1159,8 @@ sub collect {
             'type'           => 'CC',
             'login'          => $bop_login,
             'password'       => $bop_password,
-            'action'         => $bop_action,
+            'action'         => $action1,
+            'description'    => 'Internet Services',
             'amount'         => $amount,
             'invoice_number' => $cust_bill->invnum,
             'customer_id'    => $self->custnum,
@@ -1171,10 +1174,42 @@ sub collect {
             'country'        => $self->country,
             'card_number'    => $self->payinfo,
             'expiration'     => $exp,
+            'referer'        => 'http://cleanwhisker.420.am/',
           );
           $transaction->submit();
 
-          if ( $transaction->is_success()) {
+          if ( $transaction->is_success() && $action2 ) {
+            my $auth = $transaction->authorization;
+            my $ordernum = $transaction->order_number;
+            #warn "********* $auth ***********\n";
+            #warn "********* $ordernum ***********\n";
+            my $capture =
+              new Business::OnlinePayment( $bop_processor, @bop_options );
+
+            $capture->content(
+              action         => $action2,
+              login          => $bop_login,
+              password       => $bop_password,
+              order_number   => $ordernum,
+              amount         => $amount,
+              authorization  => $auth,
+              description    => 'Internet Services',
+            );
+
+            $capture->submit();
+
+            unless ( $capture->is_success ) {
+              my $e = "Authorization sucessful but capture failed, invnum #".
+                      $cust_bill->invnum. ': '.  $capture->result_code.
+                      ": ". $capture->error_message;
+              warn $e;
+              return $e;
+            }
+
+          }
+
+          if ( $transaction->is_success() ) {
+
             my $cust_pay = new FS::cust_pay ( {
                'invnum'   => $cust_bill->invnum,
                'paid'     => $amount,
@@ -1663,7 +1698,7 @@ sub append_fuzzyfiles {
 
 =head1 VERSION
 
-$Id: cust_main.pm,v 1.34 2001-09-20 00:13:07 ivan Exp $
+$Id: cust_main.pm,v 1.35 2001-09-25 15:55:48 ivan Exp $
 
 =head1 BUGS
 
