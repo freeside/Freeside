@@ -4,6 +4,8 @@ duplication of effort.
 
 -- 1.1.x --
 
+figure out this cvs thing.  :)
+
 postgres can't deal with NULL!
 
 svc_acct.import should recognize "UNIX" in the RADIUS password file as null.
