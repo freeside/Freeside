@@ -909,6 +909,13 @@ httemplate/docs/config.html
     'type'        => 'checkbox',
   },
 
+  {
+    'key'         => 'require_cardname',
+    'section'     => 'billing',
+    'description' => 'Require an "Exact name on card" to be entered explicitly; don\'t default to using the first and last name.',
+    'type'        => 'checkbox',
+  },
+
 );
 
 1;

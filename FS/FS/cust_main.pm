@@ -689,7 +689,7 @@ sub check {
     return gettext('expired_card') if $y<$nowy || ( $y==$nowy && $1<$nowm );
   }
 
-  if ( $self->payname eq '' ) {
+  if ( $self->payname eq '' && ! $conf->exists('require_cardname') ) {
     $self->payname( $self->first. " ". $self->getfield('last') );
   } else {
     $self->payname =~ /^([\w \,\.\-\']+)$/
