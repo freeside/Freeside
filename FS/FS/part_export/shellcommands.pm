@@ -33,6 +33,7 @@ sub _export_unsuspend {
 sub _export_command {
   my ( $self, $action, $svc_acct) = (shift, shift, shift);
   my $command = $self->option($action);
+  return '' if $command =~ /^\s*$/;
   my $stdin = $self->option($action."_stdin");
 
   no strict 'vars';
