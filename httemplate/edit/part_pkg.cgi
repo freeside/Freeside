@@ -231,7 +231,7 @@ tie my %plans, 'Tie::IxHash', %{ FS::part_pkg::plan_info() };
 
 my %plandata = map { /^(\w+)=(.*)$/; ( $1 => $2 ); }
                     split("\n", ($clone_part_pkg||$part_pkg)->plandata );
-warn join("\n", map { "$_: $plandata{$_}" } keys %plandata ). "\n";
+#warn join("\n", map { "$_: $plandata{$_}" } keys %plandata ). "\n";
 
 tie my %options, 'Tie::IxHash', map { $_=>$plans{$_}->{'name'} } keys %plans;
 
