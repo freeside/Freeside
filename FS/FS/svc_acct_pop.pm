@@ -166,7 +166,13 @@ END
   $text .= '</SELECT>'; #callback? return 3 html pieces?  #'</TD><TD>';
 
   $text .= qq!<SELECT NAME="popnum" SIZE=1><OPTION> !;
-  foreach my $pop ( @svc_acct_pop ) {
+  my @initial_select;
+  if ( scalar(@svc_acct_pop) > 100 ) {
+    @initial_select = qsearchs( 'svc_acct_pop', { 'popnum' => $popnum } );
+  } else {
+    @initial_select = @svc_acct_pop;
+  }
+  foreach my $pop ( @initial_select ) {
     $text .= qq!<OPTION VALUE="!. $pop->popnum. '"'.
              ( ( $popnum && $pop->popnum == $popnum ) ? ' SELECTED' : '' ). ">".
              $pop->text;
@@ -181,7 +187,7 @@ END
 
 =head1 VERSION
 
-$Id: svc_acct_pop.pm,v 1.8 2003-07-04 00:51:29 ivan Exp $
+$Id: svc_acct_pop.pm,v 1.9 2003-07-04 01:37:46 ivan Exp $
 
 =head1 BUGS
 
