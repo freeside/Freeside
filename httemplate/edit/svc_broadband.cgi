@@ -11,11 +11,11 @@ use Tie::IxHash;
 my( $svcnum,  $pkgnum, $svcpart, $part_svc, $svc_broadband );
 if ( $cgi->param('error') ) {
   $svc_broadband = new FS::svc_broadband ( {
-    map { $_, scalar($cgi->param($_)) } fields('svc_broadband')
+    map { $_, scalar($cgi->param($_)) } fields('svc_broadband'), qw(svcpart)
   } );
   $svcnum = $svc_broadband->svcnum;
   $pkgnum = $cgi->param('pkgnum');
-  $svcpart = $cgi->param('svcpart');
+  $svcpart = $svc_broadband->svcpart;
   $part_svc=qsearchs('part_svc',{'svcpart'=>$svcpart});
   die "No part_svc entry!" unless $part_svc;
 } else {
@@ -132,7 +132,9 @@ Service #<B><%=$svcnum ? $svcnum : "(NEW)"%></B><BR><BR>
       <TD BGCOLOR="#ffffff">
         <SELECT NAME="blocknum">
 <%
+  warn $svc_broadband->svcpart;
   foreach my $router ($svc_broadband->allowed_routers) {
+    warn $router->routername;
     foreach my $addr_block ($router->addr_block) {
 %>
         <OPTION VALUE="<%=$addr_block->blocknum%>"<%=($addr_block->blocknum eq $blocknum) ? ' SELECTED' : ''%>>
@@ -158,7 +160,8 @@ Service #<B><%=$svcnum ? $svcnum : "(NEW)"%></B><BR><BR>
 
 <%
 foreach my $field ($svc_broadband->virtual_fields) {
-  if ( $part_svc->part_svc_column($field)->columnflag ne 'F' ) {
+  if ( $part_svc->part_svc_column($field)->columnflag ne 'F' &&
+       $part_svc->part_svc_column($field)->columnflag ne 'X') {
     print $svc_broadband->pvf($field)->widget('HTML', 'edit',
         $svc_broadband->getfield($field));
   }
