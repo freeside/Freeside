@@ -6,7 +6,7 @@
 <i>Note: Install Freeside on a firewalled, private server, not a public (web, RADIUS, etc.) server.</i><br><br>
 Before installing, you need:
 <ul>
-  <li><a href="http://www.perl.com/">Perl</a>
+  <li><a href="http://www.perl.com/">Perl</a>, minimum version 5.005_03. (5.8.3 for the integrated RT ticketing)
   <li><a href="http://www.apache.org">Apache</a> (<a href="http://www.modssl.org/">mod_ssl</a> or <a href="http://www.apache-ssl.org">Apache-SSL</a> highly recommended)
   <li><a href="http://perl.apache.org/">mod_perl</a> (if compiling your own mod_perl, make sure you set the <a href="http://perl.apache.org/guide/install.html#EVERYTHING">EVERYTHING</a>=1 compile-time option)
   <li><a href="http://www.openssh.com/">SSH</a> (<a href="http://www.openssh.com//">OpenSSH</a> is recommended.  SSH Communications Security <a href="http://www.ssh.com/products/ssh/download.cfm">commercial SSH version 3</a> has been reported incompatible with Freeside.)
@@ -14,9 +14,9 @@ Before installing, you need:
   <li>A <b>transactional</b> database engine <a href="http://search.cpan.org/search?mode=module&query=DBD%3A%3A">supported</a> by Perl's <a href="http://dbi.perl.org">DBI</a>.
     <ul>
       <li><a href="http://www.postgresql.org/">PostgreSQL</a> is recommended (v7or later).
-      <li><a href="http://www.mysql.com/">MySQL</a> <b>MINIMUM VERSION 4.1</b> is untested but may work.   Versions before 4.1 do not support standard SQL subqueries and are <b>NOT SUPPORTED</b>.  If you are a developer who wishes to contribute MySQL 3.x/4.0 support, see <a href="http://pouncequick.420.am/rt/Ticket/Display.html?id=438">ticket #438</a> in the bug-tracking system and ask on the -devel mailing list.
+      <li><a href="http://www.mysql.com/">MySQL</a> <b>MINIMUM VERSION 4.1</b> is untested but may work.   Versions before 4.1 do not support standard SQL subqueries and are <b>NOT SUPPORTED</b>.<!--  If you are a developer who wishes to contribute MySQL 3.x/4.0 support, see <a href="http://pouncequick.420.am/rt/Ticket/Display.html?id=438">ticket #438</a> in the bug-tracking system and ask on the -devel mailing list. -->
 <!--       <li>MySQL has been reported to work. -->
-         <b>MySQL's default <a href="http://www.mysql.com/doc/M/y/MyISAM.html">MyISAM</a> and <a href="http://www.mysql.com/doc/I/S/ISAM.html">ISAM</a> table types are not supported</b>.  If you want to use MySQL, you <b>must</b> use one of the new <a href="http://www.mysql.com/doc/T/a/Table_types.html">transaction-safe table types</a> such as <a href="http://www.mysql.com/doc/B/D/BDB.html">BDB</a> or <a href="http://www.mysql.com/doc/I/n/InnoDB.html">InnoDB</a>, and set it as the default table type using the <code>--default-table-type=BDB</code> or <code>--default-table-type=InnoDB</code> <a href="http://www.mysql.com/documentation/mysql/bychapter/manual_MySQL_Database_Administration.html#Command-line_options">mysqld command-line option</a> or by setting <code>default-table-type=BDB</code> or <code>default-table-type=InnoDB</code> in the <a href="http://www.mysql.com/documentation/mysql/bychapter/manual_MySQL_Database_Administration.html#Option_files">my.cnf option file</a>.
+         MySQL's default <a href="http://www.mysql.com/doc/M/y/MyISAM.html">MyISAM</a> and <a href="http://www.mysql.com/doc/I/S/ISAM.html">ISAM</a> table types are not supported.  You <b>must</b> use one of the new <a href="http://www.mysql.com/doc/T/a/Table_types.html">transaction-safe table types</a> such as <!-- <a href="http://www.mysql.com/doc/B/D/BDB.html">BDB</a> or --><a href="http://www.mysql.com/doc/I/n/InnoDB.html">InnoDB</a>.  Set it as the default table type using the <!-- <code>--default-table-type=BDB</code> or --><code>--default-table-type=InnoDB</code> <a href="http://www.mysql.com/documentation/mysql/bychapter/manual_MySQL_Database_Administration.html#Command-line_options">mysqld command-line option</a> or by setting <!--<code>default-table-type=BDB</code> or --><code>default-table-type=InnoDB</code> in the <a href="http://www.mysql.com/documentation/mysql/bychapter/manual_MySQL_Database_Administration.html#Option_files">my.cnf option file</a>.
     </ul>
   <li>Perl modules (<a href="http://search.cpan.org/~andk/CPAN/lib/CPAN.pm">CPAN</a> will query, download and build perl modules automatically)
     <ul>
@@ -43,7 +43,7 @@ Before installing, you need:
       <li><a href="http://search.cpan.org/search?dist=Text-Template">Text-Template</a>
       <li><a href="http://search.cpan.org/search?dist=DBI">DBI</a>
       <li><a href="http://search.cpan.org/search?mode=module&query=DBD">DBD for your database engine</a> (<a href="http://search.cpan.org/search?dist=DBD-Pg">DBD::Pg</a> for PostgreSQL, <a href="http://search.cpan.org/search?dist=DBD-mysql">DBD::mysql</a> for MySQL)
-      <li><a href="http://search.cpan.org/search?dist=DBIx-DataSource">DBIx-DataSource</a>
+<!--      <li><a href="http://search.cpan.org/search?dist=DBIx-DataSource">DBIx-DataSource</a> -->
       <li><a href="http://search.cpan.org/search?dist=DBIx-DBSchema">DBIx-DBSchema</a>
       <li><a href="http://search.cpan.org/search?dist=Net-SSH">Net-SSH</a>
       <li><a href="http://search.cpan.org/search?dist=String-ShellQuote">String-ShellQuote</a>
@@ -87,16 +87,15 @@ mysql> GRANT SELECT,INSERT,UPDATE,DELETE,INDEX,ALTER,CREATE,DROP on freeside.* T
       <li>Set <tt>DB_PASSWORD</tt> to the freeside database user's password.
     </ul>
   <li>Add the freeside database to your database engine:
-    <pre>
-$ su
-# make create-database</pre>
-    (or manually, with Postgres:)
-    <pre>
+    <ul>
+      <li>with Postgres:
+        <pre>
 $ su freeside
-$ createdb freeside</pre>
-    (with MySQL:)
-    <pre>
+$ createdb -E sql_ascii freeside</pre>
+      <li>with MySQL:
+        <pre>
 $ mysqladmin -u freeside -p create freeside </pre>
+    </ul>
   <li>Build and install the Perl modules:
     <pre>
 $ make perl-modules
