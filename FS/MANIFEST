@@ -9,6 +9,7 @@ bin/freeside-queued
 bin/freeside-apply-credits
 bin/freeside-adduser
 bin/freeside-setinvoice
+bin/freeside-overdue
 FS.pm
 FS/CGI.pm
 FS/Conf.pm

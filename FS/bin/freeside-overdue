@@ -13,7 +13,7 @@ use FS::UID qw(adminsuidsetup);
 
 &untaint_argv;
 my %opt;
-getopts('ed:qpsc', \%opt);
+getopts('ed:qplsc', \%opt);
 my $user = shift or die &usage;
 
 adminsuidsetup $user;
@@ -48,10 +48,15 @@ foreach $cust_main ( qsearch('cust_main',{} ) ) {
             $cust_main->balance_date(time-$opt{d} * 86400);
     }
 
+    if ( $opt{l} ) {
+      print "\n\tCharging late fee of \$$opt{l}" unless $opt{q};
+
+    }
+
     foreach $cust_pkg ( qsearch( 'cust_pkg', 
                                  { 'custnum' => $cust_main->custnum } ) ) {
 
-      if ($opt{p} && ! grep { $_ eq 'POST' } $cust_main->invoicing_list ) {
+      if ( $opt{p} && ! grep { $_ eq 'POST' } $cust_main->invoicing_list ) {
         print "\n\tAdding postal invoicing" unless $opt{q};
         my @invoicing_list = $cust_main->invoicing_list;
         push @invoicing_list, 'POST';
@@ -84,7 +89,7 @@ sub untaint_argv {
 }
 
 sub usage {
-  die "Usage:\n\n  freeside-overdue [ -e ] [ -d days ] [ -q ] [ -p ] [ -s ] [ -c ] user\n";
+  die "Usage:\n\n  freeside-overdue [ -e ] [ -d days ] [ -q ] [ -p ] [ -l amount ] [ -s ] [ -c ] user\n";
 }
 
 
@@ -94,7 +99,7 @@ freeside-overdue - Perform actions on overdue and/or expired accounts.
 
 =head1 SYNOPSIS
 
-  freeside-overdue [ -e ] [ -d days ] [ -q ] [ -p ] [ -s ] [ -c ] user
+  freeside-overdue [ -e ] [ -d days ] [ -q ] [ -p ] [ -l amount ] [ -s ] [ -c ] user
 
 =head1 DESCRIPTION
 
@@ -109,9 +114,11 @@ Selection options (at least one selection option is required):
 
 Action options: 
 
-  -q:   Be quiet (by default, suspended accounts are printed).
+  -q:   Be quiet (by default, selected accounts are printed).
 
   -p:   Add postal invoicing to the relevant customers.
+
+  -l:   Add a charge of the given amount to the relevant customers.
 
   -s:	Suspend accounts.
 
@@ -123,11 +130,17 @@ Action options:
 
 Example crontab entries:
 
+# suspend expired accounts
 20 4 * * * freeside-overdue -e -s user
+
+# quietly add postal invoicing to customers over 30 days past due
 20 4 * * * freeside-overdue -d 30 -p -q user
-20 4 * * * freeside-overdue -d 60 user
-20 4 * * * freeside-overdue -d 90 -s user
-20 4 * * * freeside-overdue -d 120 -c user
+
+# suspend accounts and charge a $10.23 fee for customers over 60 days past due
+20 4 * * * freeside-overdue -d 60 -s -l 10.23 user
+
+# cancel accounts over 90 days past due
+20 4 * * * freeside-overdue -d 90 -c user
 
 =head1 ORIGINAL AUTHORS
 
