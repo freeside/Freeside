@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: queue.cgi,v 1.2 2001-10-12 15:26:22 ivan Exp $ -->
+#<!-- $Id: queue.cgi,v 1.3 2001-10-24 00:59:56 ivan Exp $ -->
 
 use strict;
 use vars qw( $cgi $p ); # $part_referral );
@@ -39,7 +39,7 @@ foreach my $queue ( sort {
   if ( $status eq 'failed' || $status eq 'locked' ) {
     $status .=
       qq! ( <A HREF="$p/edit/queue.cgi?jobnum=$jobnum&action=new">retry</A> |!.
-      qq! <A HREF="$p/edit/queue.cgi?jobnum$jobnum&action=del">remove </A> )';
+      qq! <A HREF="$p/edit/queue.cgi?jobnum$jobnum&action=del">remove </A> )!;
   }
   print <<END;
       <TR>
