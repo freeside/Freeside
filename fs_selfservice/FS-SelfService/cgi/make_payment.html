@@ -6,7 +6,7 @@
 <!-- <A HREF="<%= $url %>other">SomethingElse</A><BR> -->
 </TD><TD VALIGN="top">
 <FONT SIZE=4>Make a payment</FONT><BR><BR>
-<FORM METHOD="POST" ACTION="<%=$selfurl%>">
+<FORM NAME="OneTrueForm" METHOD="POST" ACTION="<%=$selfurl%>" onSubmit="document.OneTrueForm.process.disabled=true">
 <INPUT TYPE="hidden" NAME="session" VALUE="<%=$session_id%>">
 <INPUT TYPE="hidden" NAME="action" VALUE="process_payment">
 <TABLE BGCOLOR="#cccccc">
@@ -29,8 +29,8 @@
   <TD ALIGN="right">Card&nbsp;type</TD>
   <TD>
     <SELECT NAME="card_type"><OPTION></OPTION>
-      <%= foreach ( keys %$card_types ) {
-            $selected = $card_type eq $card_types->{$_} ? ' SELECTED' : '';
+      <%= foreach ( keys %card_types ) {
+            $selected = $card_type eq $card_types{$_} ? ' SELECTED' : '';
             $OUT .= qq(<OPTION$selected VALUE="). $card_types->{$_}. qq(">$_\n);
       } %>
     </SELECT>
@@ -63,7 +63,7 @@
   </TD>
 </TR><TR>
   <TD ALIGN="right">Exact&nbsp;name&nbsp;on&nbsp;card</TD>
-  <TD><INPUT TYPE="text" SIZE=32 MAXLENGTH=80 NAME="payname" SVALUE="<%=$payname%>"></TD>
+  <TD><INPUT TYPE="text" SIZE=32 MAXLENGTH=80 NAME="payname" VALUE="<%=$payname%>"></TD>
 </TR><TR>
   <TD ALIGN="right">Card&nbsp;billing&nbsp;address</TD>
   <TD>
@@ -85,7 +85,7 @@
         <TD>State</TD>
         <TD>
           <SELECT NAME="state">
-            <%= for ( @$states ) {
+            <%= for ( @states ) {
               $OUT .= '<OPTION'. ($_ eq $state ? ' SELECTED' : '' ). ">$_\n";
             } %>
           </SELECT>
@@ -109,7 +109,9 @@
   </TD>
 </TR>
 </TABLE>
-<INPUT TYPE="submit" VALUE="Process payment">
+<BR>
+<INPUT TYPE="hidden" NAME="paybatch" VALUE="$paybatch">
+<INPUT TYPE="submit" NAME="process" VALUE="Process payment"> <!-- onClick="this.disabled=true"> -->
 </FORM>
 </TD></TR></TABLE>
 <HR>

@@ -7,7 +7,7 @@
 </TD><TD VALIGN="top">
 
 Hello <%= $name %>!<BR><BR>
-Your contact information<BR><%= $small_custview %>
+<%= $small_custview %>
 <BR>
 <%= if ( $balance > 0 ) {
   $OUT .= qq! <B><A HREF="${url}make_payment">Make a payment</A></B><BR><BR>!;

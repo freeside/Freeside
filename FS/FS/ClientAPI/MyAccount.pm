@@ -107,7 +107,6 @@ sub customer_info {
 
   }
 
-
   return { 'error'          => '',
            'custnum'        => $custnum,
            %return,
@@ -130,14 +129,14 @@ sub payment_info {
   $return{balance} = $cust_main->balance;
 
   $return{payname} = $cust_main->payname
-                     || $cust_main->first. ' '. $cust_main->get('last');
+                     || ( $cust_main->first. ' '. $cust_main->get('last') );
 
   $return{$_} = $cust_main->get($_) for qw(address1 address2 city state zip);
 
   $return{payby} = $cust_main->payby;
 
   if ( $cust_main->payby =~ /^(CARD|DCRD)$/ ) {
-    $return{card_type} = cardtype($cust_main->payinfo);
+    warn $return{card_type} = cardtype($cust_main->payinfo);
     $return{payinfo} = $cust_main->payinfo;
 
     if ( $cust_main->paydate  =~ /^(\d{4})-(\d{2})-\d{2}$/ ) { #Pg date format
@@ -166,6 +165,9 @@ sub payment_info {
     'Discover' => 'Discover card',
     'American Express' => 'American Express card',
   };
+
+  my $_date = time;
+  $return{paybatch} = 'webui-MyAccount-$_date-$$-". rand() * 2**32
 
   return { 'error' => '',
            %return,
