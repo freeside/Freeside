@@ -13,9 +13,8 @@ Before installing, you need:
   <li>A <b>transactional</b> database engine supported by Perl's <a href="http://www.hermetica.com/technologia/DBI/">DBI</a>.
     <ul>
       <li><a href="http://www.postgresql.org/">PostgreSQL</a> (v7 or higher) is recommended.
-      <li><b>MySQL is NOT supported at this time.</b>  If you are a developer who wishes to contribute MySQL support, see the <a href="mysql.html">MySQL notes</a>.
-      <!-- <li>MySQL has been reported to work.  -->
-      <!--  <b>MySQL's default <a href="http://www.mysql.com/doc/M/y/MyISAM.html">MyISAM</a> and <a href="http://www.mysql.com/doc/I/S/ISAM.html">ISAM</a> table types are not supported</b>.  If you really want to use MySQL, you need to use one of the new <a href="http://www.mysql.com/doc/T/a/Table_types.html">transaction-safe table types</a> such as <a href="http://www.mysql.com/doc/B/D/BDB.html">BDB</a>, and set it as the default table type using the <code>--default-table-type=BDB</code> <a href="http://www.mysql.com/documentation/mysql/bychapter/manual_MySQL_Database_Administration.html#Command-line_options">mysqld command-line option</a> or by setting <code>default-table-type=BDB</code> in the <a href="http://www.mysql.com/documentation/mysql/bychapter/manual_MySQL_Database_Administration.html#Option_files">my.cnf option file</a>.-->
+       <li>MySQL has been reported to work.
+         <b>MySQL's default <a href="http://www.mysql.com/doc/M/y/MyISAM.html">MyISAM</a> and <a href="http://www.mysql.com/doc/I/S/ISAM.html">ISAM</a> table types are not supported</b>.  If you want to use MySQL, you <b>must</b> use one of the new <a href="http://www.mysql.com/doc/T/a/Table_types.html">transaction-safe table types</a> such as <a href="http://www.mysql.com/doc/B/D/BDB.html">BDB</a> or <a href="http://www.mysql.com/doc/I/n/InnoDB.html">InnoDB</a>, and set it as the default table type when running fs-setup using the <code>--default-table-type=BDB</code> or <code>--default-table-type=InnoDB</code> <a href="http://www.mysql.com/documentation/mysql/bychapter/manual_MySQL_Database_Administration.html#Command-line_options">mysqld command-line option</a> or by setting <code>default-table-type=BDB</code> or <code>--default-table-type=InnoDB</code> in the <a href="http://www.mysql.com/documentation/mysql/bychapter/manual_MySQL_Database_Administration.html#Option_files">my.cnf option file</a>.
     </ul>
   <li>Perl modules (<a href="http://theoryx5.uwinnipeg.ca/CPAN/perl/CPAN.html">CPAN</a> will query, download and build perl modules automatically)
     <ul>
@@ -188,7 +187,7 @@ $ su freeside
 $ cd <b>/path/to/freeside-1.4.0/</b>
 $ bin/populate-msgcat <b>username</b>
 </pre>
-  <li><tt>freeside-queued</tt> was installed with the Perl modules.  Start it now and ensure that is run upon system startup (Do this manually, or, edit the top-level Makefile, replacing INIT_FILE with the appropriate location on your system, and run <tt>make install-init</tt>.
+  <li><tt>freeside-queued</tt> was installed with the Perl modules.  Start it now and ensure that is run upon system startup (Do this manually, or edit the top-level Makefile, replacing INIT_FILE with the appropriate location on your system, and run <tt>make install-init</tt>)
   <li>Now proceed to the initial <a href="admin.html">administration</a> of your installation.
 </ul>
 </body>
