@@ -1,0 +1,62 @@
+Revision history for Perl extension DBIx::DBSchema.
+
+0.23 Mon Feb 16 17:35:54 PST 2004
+	- Update Pg dependancy to 1.32
+	- Update the simple load test so it skips DBIx::DBSchema::DBD::Pg if
+          DBD::Pg 1.32 is not installed.
+
+0.22 Thu Oct 23 15:18:21 PDT 2003
+	- Pg reverse-engineering fix: varchar with no limit
+	- Pg needs (unreleased) DBD::Pg 1.30 (or deb 1.22-2... interesting)
+
+0.21 Thu Sep 19 05:04:18 PDT 2002
+	- Pg reverse-engineering fix: now sets default
+
+0.20 Mon Mar  4 04:58:34 2002
+	- documentation updates
+	- fix Column->new when using named params
+	- fix Pg driver reverse-engineering length of numeric columns:
+	  translate 655362 to 10,2, etc.
+	- fix Pg driver reverse-engineering of text columns (don't have a
+	  length)
+
+0.19 Tue Oct 23 08:49:12 2001
+	- documentation for %typemap
+	- preliminary Sybase driver from Charles Shapiro
+	  <charles.shapiro@numethods.com> and Mitchell J. Friedman
+	  <mitchell.friedman@numethods.com>.
+	- Fix Column::line to return a scalar as documented, not a list.
+	- Should finally eliminate the Use of uninitialized value at
+	  ... DBIx/DBSchema/Column.pm line 251
+
+0.18 Fri Aug 10 17:07:28 2001
+	- Added Table::delcolumn
+	- patch from Charles Shapiro <cshapiro@numethods.com> to add
+          `ORDER BY a.attnum' to the SQL in DBIx::DBSchema::DBD::Pg::columns
+
+0.17  Sat Jul  7 17:55:33 2001
+	- Rework Table->new interface for named params
+	- Fixes for Pg blobs, yay!
+	- MySQL doesn't need non-standard index syntax anymore (since 3.22).
+	- patch from Mark Ethan Trostler <mark@zzo.com> for generating
+	  tables without indices.
+
+0.16  Fri Jan  5 15:55:50 2001
+	- Don't overflow index names.
+
+0.15  Fri Nov 24 23:39:16 2000
+	- MySQL handling of BOOL type (change to TINYINT)
+
+0.14  Tue Oct 24 14:43:16 2000
+        - MySQL handling of SERIAL type (change to INTEGER AUTO_INCREMENT)
+
+0.13  Wed Oct 11 10:47:13 2000
+        - fixed up type mapping foo, added default values, added named
+          parameters to Column->new, fixed quoting of default values
+
+0.11  Sun Sep 28 02:16:25 2000
+        - oops, original verison got 0.10, so this one will get 0.11
+
+0.01  Sun Sep 17 07:57:35 2000
+	- original version; created by h2xs 1.19
+

@@ -1,0 +1,82 @@
+diff -r --unified DBD-Pg-1.00/test.pl DBD-Pg-1.00.alex/test.pl
+--- DBD-Pg-1.00/test.pl	Sun May 27 10:10:13 2001
++++ DBD-Pg-1.00.alex/test.pl	Sun Jun 10 15:38:09 2001
+@@ -40,7 +40,7 @@
+ my $dsn_main = "dbi:Pg:dbname=$dbmain";
+ my $dsn_test = "dbi:Pg:dbname=$dbtest";
+ 
+-my ($dbh0, $dbh, $sth);
++my ($dbh0, $dbh, $dbh1, $sth);
+ 
+ #DBI->trace(3); # make your choice
+ 
+@@ -445,16 +445,56 @@
+ # end transaction
+ $dbh->{AutoCommit} = 1;
+ 
++# compare large objects
++
+ ( $dbh->func($lobjId, 'lo_unlink') )
+     and print "\$dbh->func(lo_unlink) ...... ok\n"
+     or  print "\$dbh->func(lo_unlink) ...... not ok\n";
+ 
+-# compare large objects
+-
+ ( $pgin cmp $buf and $pgin cmp $blob )
+     and print "compare blobs .............. not ok\n"
+     or  print "compare blobs .............. ok\n";
+ 
++my $fd;
++( $fd=$dbh->func( 'getfd') )
++    and print "\$dbh->func(getfd) .......... ok\n"
++    or  print "\$dbh->func(getfd) .......... not ok\n";
++
++( $dbh->do( 'LISTEN test ') )
++    and print "\$dbh->do('LISTEN test') .... ok\n"
++    or  print "\$dbh->do('LISTEN test') .... not ok\n";
++
++( $dbh1 = DBI->connect("$dsn_test", '', '', { AutoCommit => 1 }) )
++    and print "DBI->connect (for notify)... ok\n"
++    or  die   "DBI->connect (for notify)... not ok: ", $DBI::errstr;
++
++# there should be no data for read on $fd , until we send a notify
++   
++    my $rout;
++    my $rin = '';
++    vec($rin,$fd,1) = 1;
++    my $nfound = select( $rout=$rin, undef, undef, 0);
++
++( $nfound==0 ) 
++    and print "select(\$fd) returns no data. ok\n"
++    or  die   "select(\$fd) returns no data. not ok\n";
++
++( $dbh1->do( 'NOTIFY test ') )
++    and print "\$dbh1->do('NOTIFY test') ... ok\n"
++    or  print "\$dbh1->do('NOTIFY test') ... not ok\n";
++
++    my $nfound = select( $rout=$rin, undef, undef, 1);
++
++( $nfound==1 ) 
++    and print "select(\$fd) returns data.... ok\n"
++    or  die   "select(\$fd) returns data.... not ok\n";
++
++my $notify_r;
++
++( $notify_r = $dbh->func('notifies') ) 
++    and print "\$dbh->func('notifies')...... ok\n"
++    or  die   "\$dbh->func('notifies')...... not ok\n";
++
+ ######################### disconnect and drop test database
+ 
+ # disconnect
+@@ -462,6 +502,10 @@
+ ( $dbh->disconnect )
+     and print "\$dbh->disconnect ........... ok\n"
+     or  die   "\$dbh->disconnect ........... not ok: ", $DBI::errstr;
++
++( $dbh1->disconnect )
++    and print "\$dbh1->disconnect .......... ok\n"
++    or  die   "\$dbh1->disconnect .......... not ok: ", $DBI::errstr;
+ 
+ $dbh0->do("DROP DATABASE $dbtest");
+ $dbh0->disconnect;

@@ -1,0 +1,6 @@
+port and test with additional databases
+
+sql CREATE TABLE output should convert integers
+(i.e. use DBI qw(:sql_types);) to local types using DBI->type_info plus a hash
+to fudge things
+
