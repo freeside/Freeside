@@ -46,13 +46,19 @@ if ( $query eq 'svcnum' ) {
   $orderby = "ORDER BY ${tblname}username";
 } elsif ( $query eq 'uid' ) {
   $sortby=\*uid_sort;
-  $orderby = ( $unlinked ? 'AND' : 'WHERE' ).
+  $orderby = ( $unlinked ? ' AND' : ' WHERE' ).
              " ${tblname}uid IS NOT NULL ORDER BY ${tblname}uid";
 } elsif ( $cgi->param('popnum') =~ /^(\d+)$/ ) {
   $unlinked .= ( $unlinked ? 'AND' : 'WHERE' ).
                " popnum = $1";
   $sortby=\*username_sort;
   $orderby = "ORDER BY ${tblname}username";
+} elsif ( $cgi->param('svcpart') =~ /^(\d+)$/ ) {
+  $unlinked .= ( $unlinked ? ' AND' : ' WHERE' ).
+               " $1 = ( SELECT svcpart FROM cust_svc ".
+               "        WHERE cust_svc.svcnum = svc_acct.svcnum ) ";
+  $sortby=\*uid_sort;
+  #$sortby=\*svcnum_sort;
 } else {
   $sortby=\*uid_sort;
   @svc_acct = @{&usernamesearch};

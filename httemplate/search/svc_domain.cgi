@@ -23,6 +23,13 @@ if ( $query eq 'svcnum' ) {
       'svcnum' => $_->svcnum,
       'pkgnum' => '',
     }), qsearch('svc_domain',{});
+} elsif ( $cgi->param('svcpart') =~ /^(\d+)$/ ) {
+  @svc_domain =
+    qsearch( 'svc_domain', {}, '',
+               " WHERE $1 = ( SELECT svcpart FROM cust_svc ".
+               "              WHERE cust_svc.svcnum = svc_domain.svcnum ) "
+    );
+  $sortby=\*svcnum_sort;
 } else {
   $cgi->param('domain') =~ /^([\w\-\.]+)$/; 
   my($domain)=$1;

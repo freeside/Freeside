@@ -13,6 +13,20 @@ my @part_svc =
     qsearch('part_svc', \%search );
 my $total = scalar(@part_svc);
 
+my %num_active_cust_svc = ();
+if ( $cgi->param('active') ) {
+  my $active_sth = dbh->prepare(
+    'SELECT COUNT(*) FROM cust_svc WHERE svcpart = ?'
+  ) or die dbh->errstr;
+  foreach my $part_svc ( @part_svc ) {
+    $active_sth->execute($part_svc->svcpart) or die $active_sth->errstr;
+    $num_active_cust_svc{$part_svc->svcpart} =
+      $active_sth->fetchrow_arrayref->[0];
+  }
+  @part_svc = sort { $num_active_cust_svc{$b->svcpart} <=>
+                     $num_active_cust_svc{$a->svcpart}     } @part_svc;
+}
+
 %>
 <%= header('Service Definition Listing', menubar( 'Main Menu' => $p) ) %>
 
@@ -45,6 +59,9 @@ function part_export_areyousure(href) {
   <TR>
     <TH COLSPAN=<%= $cgi->param('showdisabled') ? 2 : 3 %>>Service</TH>
     <TH>Table</TH>
+<% if ( $cgi->param('active') ) { %>
+    <TH><FONT SIZE=-1>Customer<BR>Services</FONT></TH>
+<% } %>
     <TH>Export</TH>
     <TH>Field</TH>
     <TH COLSPAN=2>Modifier</TH>
@@ -75,6 +92,11 @@ function part_export_areyousure(href) {
       <%= $hashref->{svc} %></A></TD>
     <TD ROWSPAN=<%= $rowspan %>>
       <%= $hashref->{svcdb} %></TD>
+<% if ( $cgi->param('active') ) { %>
+    <TD ROWSPAN=<%= $rowspan %>>
+      <FONT COLOR="#00CC00"><B><%= $num_active_cust_svc{$hashref->{svcpart}} %></B></FONT>&nbsp;<A HREF="<%=$p%>search/<%= $hashref->{svcdb} %>.cgi?svcpart=<%= $hashref->{svcpart} %>">active</A>
+    </TD>
+<% } %>
     <TD ROWSPAN=<%= $rowspan %>><%= itable() %>
 <%
 #  my @part_export =
