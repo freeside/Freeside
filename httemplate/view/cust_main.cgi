@@ -20,7 +20,6 @@ print header("Customer View", menubar(
 <STYLE TYPE="text/css">
 .package TH { font-size: medium }
 .package TR { font-size: smaller }
-.package .pkgnum { font-size: medium }
 .package .provision { font-weight: bold }
 </STYLE>
 
@@ -382,7 +381,7 @@ if ( @$packages ) {
 %>
 <TABLE CLASS="package" BORDER=1 CELLSPACING=0 CELLPADDING=2 BORDERCOLOR="#999999">
 <TR>
-  <TH COLSPAN=2>Package</TH>
+  <TH>Package</TH>
   <TH>Status</TH>
   <TH COLSPAN=2>Services</TH>
 </TR>
@@ -402,9 +401,9 @@ foreach my $pkg (sort pkgsort_pkgnum_cancel @$packages) {
 %>
 <!--pkgnum: <%=$pkg->{pkgnum}%>-->
 <TR>
-  <TD ROWSPAN=<%=$rowspan%> CLASS="pkgnum"><%=$pkg->{pkgnum}%></TD>
   <TD ROWSPAN=<%=$rowspan%>>
-    <%=$pkg->{pkg}%> - <%=$pkg->{comment}%> (&nbsp;<%=pkg_details_link($pkg)%>&nbsp;)<BR>
+    <%=$pkg->{pkgnum}%>:
+    <%=$pkg->{pkg}%> - <%=$pkg->{comment}%><BR>
 <% unless ($pkg->{cancel}) { %>
     (&nbsp;<%=pkg_change_link($pkg)%>&nbsp;)
     (&nbsp;<%=pkg_dates_link($pkg)%>&nbsp;|&nbsp;<%=pkg_customize_link($pkg,$custnum)%>&nbsp;)
@@ -538,7 +537,7 @@ foreach my $pkg (sort pkgsort_pkgnum_cancel @$packages) {
     }
     if ($svcpart->{count} < $svcpart->{quantity}) {
       print qq!<TR>\n! if ($cnt > 0);
-      print qq!  <TD COLSPAN=2>!.svc_provision_link($pkg,$svcpart).qq!</TD>\n</TR>\n!;
+      print qq!  <TD COLSPAN=2>!.svc_provision_link($pkg, $svcpart, $conf).qq!</TD>\n</TR>\n!;
     }
   }
 }
@@ -946,13 +945,21 @@ sub svc_label_link {
 }
 
 sub svc_provision_link {
-  my ($pkg, $svcpart) = (shift,shift) or return '';
+  my ($pkg, $svcpart, $conf) = @_;
   ( my $svc_nbsp = $svcpart->{svc} ) =~ s/\s+/&nbsp;/g;
-  return qq!<A CLASS="provision" HREF="${p}edit/$svcpart->{svcdb}.cgi?! .
-         qq!pkgnum$pkg->{pkgnum}-svcpart$svcpart->{svcpart}">! .
-         "Provision&nbsp;$svc_nbsp&nbsp;(".
-         ($svcpart->{quantity} - $svcpart->{count}).
-         ')</A>';
+  my $pkgnum_svcpart = "pkgnum$pkg->{pkgnum}-svcpart$svcpart->{svcpart}";
+  my $num_left = $svcpart->{quantity} - $svcpart->{count};
+
+  my $link = qq!<A CLASS="provision" HREF="${p}edit/$svcpart->{svcdb}.cgi?!.
+             qq!$pkgnum_svcpart">!.
+             "Provision&nbsp;$svc_nbsp&nbsp;($num_left)</A>";
+  if ( $conf->exists('legacy_link') ) {
+    $link .= '<BR>'.
+             qq!<A CLASS="provision" HREF="${p}misc/link.cgi?!.
+             qq!$pkgnum_svcpart">!.
+            "Link&nbsp;to&nbsp;legacy&nbsp;$svc_nbsp&nbsp;($num_left)</A>";
+  }
+  $link;
 }
 
 sub svc_unprovision_link {
@@ -983,10 +990,10 @@ sub pkg_datestr {
   $strip;
 }
 
-sub pkg_details_link {
-  my $pkg = shift or return '';
-  return qq!<a href="${p}view/cust_pkg.cgi?$pkg->{pkgnum}">Details</a>!;
-}
+#sub pkg_details_link {
+#  my $pkg = shift or return '';
+#  return qq!<a href="${p}view/cust_pkg.cgi?$pkg->{pkgnum}">Details</a>!;
+#}
 
 sub pkg_change_link {
   my $pkg = shift or return '';
@@ -1005,7 +1012,8 @@ sub pkg_unsuspend_link {
 
 sub pkg_cancel_link {
   my $pkg = shift or return '';
-  return qq!<A HREF="javascript:cust_pkg_areyousure('${p}misc/cancel_pkg.cgi?$pkg->{pkgnum}')">Cancel</A>!;
+  qq!<A HREF="javascript:cust_pkg_areyousure('${p}misc/cancel_pkg.cgi?$pkg->{pkgnum}')">Cancel now</A> | !.
+  qq!<A HREF="${p}misc/expire_pkg.cgi?$pkg->{pkgnum}">Cancel later</A>!;
 }
 
 sub pkg_dates_link {
