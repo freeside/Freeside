@@ -9,21 +9,24 @@
 #	bmccane@maxbaud.net	98-apr-3
 #
 # use FS::CGI, added inline documentation ivan@sisd.com 98-jul-12
+#
+# $Log: agent_type.cgi,v $
+# Revision 1.2  1998-11-13 09:56:46  ivan
+# change configuration file layout to support multiple distinct databases (with
+# own set of config files, export, etc.)
+#
 
 use strict;
-use CGI::Base;
+use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
 use FS::Record qw(qsearch qsearchs);
 use FS::agent_type;
 use FS::CGI qw(header menubar);
 
-my($cgi) = new CGI::Base;
-$cgi->get;
+my($cgi) = new CGI;
 
 &cgisuidsetup($cgi);
-
-SendHeaders(); # one guess.
 
 my($agent_type,$action);
 if ( $cgi->var('QUERY_STRING') =~ /^(\d+)$/ ) { #editing
@@ -35,7 +38,7 @@ if ( $cgi->var('QUERY_STRING') =~ /^(\d+)$/ ) { #editing
 }
 my($hashref)=$agent_type->hashref;
 
-print header("$action Agent Type", menubar(
+print $cgi->header, header("$action Agent Type", menubar(
   'Main Menu' => '../',
   'View all agent types' => '../browse/agent_type.cgi',
 )), '<FORM ACTION="process/agent_type.cgi" METHOD=POST>';

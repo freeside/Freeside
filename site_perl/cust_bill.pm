@@ -8,9 +8,11 @@ use FS::Record qw(fields qsearch qsearchs);
 
 @ISA = qw(FS::Record Exporter);
 
-$conf = new FS::Conf;
-
-($add1,$add2,$add3,$add4) = $conf->config('address');
+#ask FS::UID to run this stuff for us later
+$FS::UID::callback{'FS::cust_bill'} = sub { 
+  $conf = new FS::Conf;
+  ( $add1, $add2, $add3, $add4 ) = $conf->config('address');
+};
 
 =head1 NAME
 
@@ -490,7 +492,11 @@ charges can be negative ivan@sisd.com 98-jul-13
 pod, ingegrate with FS::Invoice ivan@sisd.com 98-sep-20
 
 $Log: cust_bill.pm,v $
-Revision 1.2  1998-11-07 10:24:24  ivan
+Revision 1.3  1998-11-13 09:56:53  ivan
+change configuration file layout to support multiple distinct databases (with
+own set of config files, export, etc.)
+
+Revision 1.2  1998/11/07 10:24:24  ivan
 don't use depriciated FS::Bill and FS::Invoice, other miscellania
 
 

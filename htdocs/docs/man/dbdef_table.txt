@@ -76,7 +76,7 @@ SEE ALSO
     manpage
 
 VERSION
-    $Id: dbdef_table.txt,v 1.2 1998-10-14 06:52:48 ivan Exp $
+    $Id: dbdef_table.txt,v 1.5 1999-04-08 13:39:32 ivan Exp $
 
 HISTORY
     class for dealing with table definitions
@@ -96,7 +96,8 @@ HISTORY
     pod ivan@sisd.com 98-sep-24
 
     $Log: dbdef_table.txt,v $
-    Revision 1.2  1998-10-14 06:52:48  ivan
-    1,1,4 release, fix postgresql quirks.
-
+    Revision 1.5  1999-04-08 13:39:32  ivan
+    convert from pod for 1.2.0 release
+ Revision 1.2 1998/10/14 07:05:06 ivan
+    1.1.4 release, fix postgresql
 

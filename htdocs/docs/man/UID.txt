@@ -6,10 +6,9 @@ SYNOPSIS
       use FS::UID qw(adminsuidsetup cgisuidsetup dbh datasrc getotaker
       checkeuid checkruid swapuid);
 
-      adminsuidsetup;
+      adminsuidsetup $user;
 
-      $cgi = new CGI::Base;
-      $cgi->get;
+      $cgi = new CGI;
       $dbh = cgisuidsetup($cgi);
 
       $dbh = dbh;
@@ -20,11 +19,19 @@ DESCRIPTION
     Provides a hodgepodge of subroutines.
 
 SUBROUTINES
-    adminsuidsetup
-        Cleans the environment. Make sure the script is running as
-        freeside, or setuid freeside. Opens a connection to the
-        database. Swaps real and effective UIDs. Returns the DBI
+    adminsuidsetup USER
+        Sets the user to USER (see config.html from the base
+        documentation). Cleans the environment. Make sure the script
+        is running as freeside, or setuid freeside. Opens a
+        connection to the database. Swaps real and effective UIDs.
+        Runs any defined callbacks (see below). Returns the DBI
         database handle (usually you don't need this).
+
+    cgisuidsetup CGI_object
+        Stores the CGI (see the CGI manpage) object for later use.
+        (CGI::Base is depriciated) Runs adminsuidsetup.
+
+    cgi Returns the CGI (see the CGI manpage) object.
 
     dbh Returns the DBI database handle.
 
@@ -32,8 +39,12 @@ SUBROUTINES
         Returns the DBI data source.
 
     getotaker
-        Returns the current Freeside user. Currently that means the
-        CGI REMOTE_USER, or 'freeside'.
+        Returns the current Freeside user.
+
+    cgisetotaker
+        Sets and returns the CGI REMOTE_USER. $cgi should be defined
+        as a CGI.pm object. Support for CGI::Base and derived
+        classes is depriciated.
 
     checkeuid
         Returns true if effective UID is that of the freeside user.
@@ -44,14 +55,36 @@ SUBROUTINES
     swapuid
         Swaps real and effective UIDs.
 
+    getsecrets [ USER ]
+        Sets the user to USER, if supplied. Sets and returns the DBI
+        datasource, username and password for this user from the
+        `/usr/local/etc/freeside/mapsecrets' file.
+
+CALLBACKS
+    Warning: this interface is likely to change in future releases.
+
+    A package can install a callback to be run in adminsuidsetup by
+    putting a coderef into the hash %FS::UID::callback :
+
+        $coderef = sub { warn "Hi, I'm returning your call!" };
+        $FS::UID::callback{'Package::Name'};
+
 BUGS
+    Too many package-global variables.
+
     Not OO.
 
     No capabilities yet. When mod_perl and Authen::DBI are
     implemented, cgisuidsetup will go away as well.
 
+    Goes through contortions to support non-OO syntax with multiple
+    datasrc's.
+
+    Callbacks are inelegant.
+
 SEE ALSO
-    the FS::Record manpage, the CGI::Base manpage, the DBI manpage
+    the FS::Record manpage, the CGI manpage, the DBI manpage,
+    config.html from the base documentation.
 
 HISTORY
     ivan@voicenet.com 97-jun-4 - 9 untaint otaker ivan@voicenet.com
@@ -76,4 +109,15 @@ HISTORY
 
     pod, use FS::Conf, implemented cgisuidsetup as adminsuidsetup,
     inlined suidsetup ivan@sisd.com 98-sep-12
+
+    $Log: UID.txt,v $
+    Revision 1.2  1998-11-13 09:56:37  ivan
+    change configuration file layout to support multiple distinct databases (with
+    own set of config files, export, etc.)
+ Revision 1.3 1998/11/08 10:45:42 ivan got sub
+    cgi for FS::CGI
+
+    Revision 1.2 1998/11/08 09:38:43 ivan cgisuidsetup complains if
+    you pass it a isa CGI::Base instead of an isa CGI (first step in
+    migrating from CGI-modules to CGI.pm)
 

@@ -4,8 +4,10 @@ NAME
 SYNOPSIS
       use FS::Conf;
 
+      $conf = new FS::Conf "/config/directory";
+
+      $FS::Conf::default_dir = "/config/directory";
       $conf = new FS::Conf;
-      $conf = new FS::Conf "/non/standard/config/directory";
 
       $dir = $conf->dir;
 
@@ -19,8 +21,8 @@ DESCRIPTION
 
 METHODS
     new [ DIRECTORY ]
-        Create a new configuration object. Optionally, a non-default
-        directory may be specified.
+        Create a new configuration object. A directory arguement is
+        required if $FS::Conf::default_dir has not been set.
 
     dir Returns the directory.
 
@@ -33,9 +35,6 @@ METHODS
         corresponding value is undefined.
 
 BUGS
-    The option to specify a non-default directory should probably be
-    removed.
-
     Write access (with locking) should be implemented.
 
 SEE ALSO
@@ -46,4 +45,10 @@ HISTORY
     Ivan Kohler <ivan@sisd.com> 98-sep-6
 
     sub exists forgot to fetch $dir ivan@sisd.com 98-sep-27
+
+    $Log: Conf.txt,v $
+    Revision 1.4  1999-02-09 09:37:48  ivan
+    regenerated perl api docs from embedded pod
+ Revision 1.2 1998/11/13 04:08:44 ivan no
+    default default_dir (ironic)
 

@@ -12,10 +12,13 @@ use FS::cust_svc;
 @ISA = qw(FS::Record Exporter);
 @EXPORT_OK = qw(fields);
 
-$conf = new FS::Conf;
-$dir_prefix = $conf->config('home');
-@shells = $conf->config('shells');
-$shellmachine = $conf->config('shellmachine');
+#ask FS::UID to run this stuff for us later
+$FS::UID::callback{'FS::svc_acct'} = sub { 
+  $conf = new FS::Conf;
+  $dir_prefix = $conf->config('home');
+  @shells = $conf->config('shells');
+  $shellmachine = $conf->config('shellmachine');
+};
 
 @saltset = ( 'a'..'z' , 'A'..'Z' , '0'..'9' , '.' , '/' );
 @pw_set = ( 'a'..'z', 'A'..'Z', '0'..'9', '(', ')', '#', '!', '.', ',' );
@@ -550,6 +553,12 @@ arbitrary radius attributes ivan@sisd.com 98-aug-13
 /var/spool/freeside/conf/shellmachine ivan@sisd.com 98-aug-13
 
 pod and FS::conf ivan@sisd.com 98-sep-22
+
+$Log: svc_acct.pm,v $
+Revision 1.2  1998-11-13 09:56:55  ivan
+change configuration file layout to support multiple distinct databases (with
+own set of config files, export, etc.)
+
 
 =cut
 

@@ -21,6 +21,8 @@ SYNOPSIS
 
       $error = $record->unsuspend;
 
+      $part_pkg = $record->part_pkg;
+
       $error = FS::cust_pkg::order( $custnum, \@pkgparts );
       $error = FS::cust_pkg::order( $custnum, \@pkgparts, \@remove_pkgnums ] );
 
@@ -108,6 +110,10 @@ METHODS
         If there is an error, returns the error, otherwise returns
         false.
 
+    part_pkg
+        Returns the definition for this billing item, as an
+        FS::part_pkg object (see L<FS::part_pkg).
+
 SUBROUTINES
     order CUSTNUM, PKGPARTS_ARYREF, [ REMOVE_PKGNUMS_ARYREF ]
         CUSTNUM is a customer (see the FS::cust_main manpage)
@@ -147,4 +153,11 @@ HISTORY
     ivan@sisd.com 98-mar-7
 
     pod ivan@sisd.com 98-sep-21
+
+    $Log: cust_pkg.txt,v $
+    Revision 1.2  1998-11-13 09:56:40  ivan
+    change configuration file layout to support multiple distinct databases (with
+    own set of config files, export, etc.)
+ Revision 1.2 1998/11/12 03:42:45 ivan
+    added label method
 

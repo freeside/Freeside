@@ -2,7 +2,11 @@ package FS::UID;
 
 use strict;
 use vars qw(
-  @ISA @EXPORT_OK $cgi $dbh $freeside_uid $conf $datasrc $db_user $db_pass
+  @ISA @EXPORT_OK $cgi $dbh $freeside_uid $user 
+  $conf_dir $secrets $datasrc $db_user $db_pass %callback
+);
+use subs qw(
+  getsecrets cgisetotaker
 );
 use Exporter;
 use Carp;
@@ -15,9 +19,7 @@ use FS::Conf;
 
 $freeside_uid = scalar(getpwnam('freeside'));
 
-my $conf = new FS::Conf;
-($datasrc, $db_user, $db_pass) = $conf->config('secrets')
-  or die "Can't get secrets: $!";
+$conf_dir = "/usr/local/etc/freeside/";
 
 =head1 NAME
 
@@ -28,7 +30,7 @@ FS::UID - Subroutines for database login and assorted other stuff
   use FS::UID qw(adminsuidsetup cgisuidsetup dbh datasrc getotaker
   checkeuid checkruid swapuid);
 
-  adminsuidsetup;
+  adminsuidsetup $user;
 
   $cgi = new CGI;
   $dbh = cgisuidsetup($cgi);
@@ -45,17 +47,22 @@ Provides a hodgepodge of subroutines.
 
 =over 4
 
-=item adminsuidsetup
+=item adminsuidsetup USER
 
+Sets the user to USER (see config.html from the base documentation).
 Cleans the environment.
 Make sure the script is running as freeside, or setuid freeside.
 Opens a connection to the database.
 Swaps real and effective UIDs.
+Runs any defined callbacks (see below).
 Returns the DBI database handle (usually you don't need this).
 
 =cut
 
 sub adminsuidsetup {
+
+  $user = shift;
+  croak "fatal: adminsuidsetup called without arguements" unless $user;
 
   $ENV{'PATH'} ='/usr/local/bin:/usr/bin:/usr/ucb:/bin';
   $ENV{'SHELL'} = '/bin/sh';
@@ -65,15 +72,17 @@ sub adminsuidsetup {
   $ENV{'BASH_ENV'} = '';
 
   croak "Not running uid freeside!" unless checkeuid();
+  getsecrets;
   $dbh = DBI->connect($datasrc,$db_user,$db_pass, {
-	# hack for web demo
-	#  my($user)=getotaker();
-	#  $dbh = DBI->connect("$datasrc:$user",$db_user,$db_pass, {
                           'AutoCommit' => 'true',
                           'ChopBlanks' => 'true',
-  } ) or die "DBI->connect error: $DBI::errstr\n";;
+  } ) or die "DBI->connect error: $DBI::errstr\n";
 
   swapuid(); #go to non-privledged user if running setuid freeside
+
+  foreach ( keys %callback ) {
+    &{$callback{$_}};
+  }
 
   $dbh;
 }
@@ -86,13 +95,14 @@ Runs adminsuidsetup.
 =cut
 
 sub cgisuidsetup {
-  $cgi=$_[0];
+  $cgi=shift;
   if ( $cgi->isa('CGI::Base') ) {
     carp "Use of CGI::Base is depriciated";
   } elsif ( ! $cgi->isa('CGI') ) {
     croak "Pass a CGI object to cgisuidsetup!";
   }
-  adminsuidsetup;
+  cgisetotaker; 
+  adminsuidsetup($user);
 }
 
 =item cgi
@@ -136,20 +146,31 @@ sub suidsetup {
 
 =item getotaker
 
-Returns the current Freeside user.  Currently that means the CGI REMOTE_USER,
-or 'freeside'.
+Returns the current Freeside user.
 
 =cut
 
 sub getotaker {
-  if ( $cgi && $cgi->can('var') && defined $cgi->var('REMOTE_USER')) {
+  $user;
+}
+
+=item cgisetotaker
+
+Sets and returns the CGI REMOTE_USER.  $cgi should be defined as a CGI.pm
+object.  Support for CGI::Base and derived classes is depriciated.
+
+=cut
+
+sub cgisetotaker {
+  if ( $cgi && $cgi->isa('CGI::Base') && defined $cgi->var('REMOTE_USER')) {
     carp "Use of CGI::Base is depriciated";
-    return $cgi->var('REMOTE_USER'); #for now
-  } elsif ( $cgi && $cgi->can('remote_user') && defined $cgi->remote_user ) {
-    return $cgi->remote_user;
+    $user = $cgi->var('REMOTE_USER');
+  } elsif ( $cgi && $cgi->isa('CGI') && defined $cgi->remote_user ) {
+    $user = $cgi->remote_user;
   } else {
-    return 'freeside';
+    die "fatal: Can't get REMOTE_USER!";
   }
+  return $user;
 }
 
 =item checkeuid
@@ -182,18 +203,57 @@ sub swapuid {
   ($<,$>) = ($>,$<);
 }
 
+=item getsecrets [ USER ]
+
+Sets the user to USER, if supplied.
+Sets and returns the DBI datasource, username and password for this user from
+the `/usr/local/etc/freeside/mapsecrets' file.
+
+=cut
+
+sub getsecrets {
+  my($setuser) = shift;
+  $user = $setuser if $setuser;
+  die "No user!" unless $user;
+  my($conf) = new FS::Conf $conf_dir;
+  my($line) = grep /^\s*$user\s/, $conf->config('mapsecrets');
+  $line =~ /^\s*$user\s+(.*)$/;
+  $secrets = $1;
+  die "User not found in mapsecrets file!" unless $secrets;
+  ($datasrc, $db_user, $db_pass) = $conf->config($secrets)
+    or die "Can't get secrets: $!";
+  $FS::Conf::default_dir .= "/conf.$datasrc";
+  ($datasrc, $db_user, $db_pass);
+}
+
 =back
 
+=head1 CALLBACKS
+
+Warning: this interface is likely to change in future releases.
+
+A package can install a callback to be run in adminsuidsetup by putting a
+coderef into the hash %FS::UID::callback :
+
+    $coderef = sub { warn "Hi, I'm returning your call!" };
+    $FS::UID::callback{'Package::Name'};
+
 =head1 BUGS
+
+Too many package-global variables.
 
 Not OO.
 
 No capabilities yet.  When mod_perl and Authen::DBI are implemented, 
 cgisuidsetup will go away as well.
 
+Goes through contortions to support non-OO syntax with multiple datasrc's.
+
+Callbacks are inelegant.
+
 =head1 SEE ALSO
 
-L<FS::Record>, L<CGI>, L<DBI>
+L<FS::Record>, L<CGI>, L<DBI>, config.html from the base documentation.
 
 =head1 HISTORY
 
@@ -222,7 +282,11 @@ inlined suidsetup
 ivan@sisd.com 98-sep-12
 
 $Log: UID.pm,v $
-Revision 1.3  1998-11-08 10:45:42  ivan
+Revision 1.4  1998-11-13 09:56:52  ivan
+change configuration file layout to support multiple distinct databases (with
+own set of config files, export, etc.)
+
+Revision 1.3  1998/11/08 10:45:42  ivan
 got sub cgi for FS::CGI
 
 Revision 1.2  1998/11/08 09:38:43  ivan

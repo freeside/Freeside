@@ -24,39 +24,43 @@ use FS::cust_pay;
 @ISA = qw(FS::Record Exporter);
 @EXPORT_OK = qw(hfields);
 
-$conf = new FS::Conf;
-$lpr = $conf->config('lpr');
+#ask FS::UID to run this stuff for us later
+$FS::UID::callback{'FS::cust_main'} = sub { 
+  $conf = new FS::Conf;
+  $lpr = $conf->config('lpr');
 
-if ( $conf->exists('cybercash3.2') ) {
-  require CCMckLib3_2;
-    #qw($MCKversion %Config InitConfig CCError CCDebug CCDebug2);
-  require CCMckDirectLib3_2;
-    #qw(SendCC2_1Server);
-  require CCMckErrno3_2;
-    #qw(MCKGetErrorMessage $E_NoErr);
-  import CCMckErrno3_2 qw($E_NoErr);
-  my $merchant_conf;
-  ($merchant_conf,$xaction)= $conf->config('cybercash3.2');
-  my $status = &CCMckLib3_2::InitConfig($merchant_conf);
-  if ( $status != $E_NoErr ) {
-    warn "CCMckLib3_2::InitConfig error:\n";
-    foreach my $key (keys %CCMckLib3_2::Config) {
-      warn "  $key => $CCMckLib3_2::Config{$key}\n"
+  if ( $conf->exists('cybercash3.2') ) {
+    require CCMckLib3_2;
+      #qw($MCKversion %Config InitConfig CCError CCDebug CCDebug2);
+    require CCMckDirectLib3_2;
+      #qw(SendCC2_1Server);
+    require CCMckErrno3_2;
+      #qw(MCKGetErrorMessage $E_NoErr);
+    import CCMckErrno3_2 qw($E_NoErr);
+
+    my $merchant_conf;
+    ($merchant_conf,$xaction)= $conf->config('cybercash3.2');
+    my $status = &CCMckLib3_2::InitConfig($merchant_conf);
+    if ( $status != $E_NoErr ) {
+      warn "CCMckLib3_2::InitConfig error:\n";
+      foreach my $key (keys %CCMckLib3_2::Config) {
+        warn "  $key => $CCMckLib3_2::Config{$key}\n"
+      }
+      my($errmsg) = &CCMckErrno3_2::MCKGetErrorMessage($status);
+      die "CCMckLib3_2::InitConfig fatal error: $errmsg\n";
     }
-    my($errmsg) = &CCMckErrno3_2::MCKGetErrorMessage($status);
-    die "CCMckLib3_2::InitConfig fatal error: $errmsg\n";
+    $processor='cybercash3.2';
+  } elsif ( $conf->exists('cybercash2') ) {
+    require CCLib;
+      #qw(sendmserver);
+    ( $main::paymentserverhost, 
+      $main::paymentserverport, 
+      $main::paymentserversecret,
+      $xaction,
+    ) = $conf->config('cybercash2');
+    $processor='cybercash2';
   }
-  $processor='cybercash3.2';
-} elsif ( $conf->exists('cybercash2') ) {
-  require CCLib;
-    #qw(sendmserver);
-  ( $main::paymentserverhost, 
-    $main::paymentserverport, 
-    $main::paymentserversecret,
-    $xaction,
-  ) = $conf->config('cybercash2');
-  $processor='cybercash2';
-}
+};
 
 =head1 NAME
 
@@ -864,7 +868,11 @@ enable cybercash, cybercash v3 support, don't need to import
 FS::UID::{datasrc,checkruid} ivan@sisd.com 98-sep-19-21
 
 $Log: cust_main.pm,v $
-Revision 1.2  1998-11-07 10:24:25  ivan
+Revision 1.3  1998-11-13 09:56:54  ivan
+change configuration file layout to support multiple distinct databases (with
+own set of config files, export, etc.)
+
+Revision 1.2  1998/11/07 10:24:25  ivan
 don't use depriciated FS::Bill and FS::Invoice, other miscellania
 
 

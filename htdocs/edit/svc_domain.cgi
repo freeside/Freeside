@@ -15,20 +15,26 @@
 # rewrite ivan@sisd.com 98-mar-14
 #
 # no GOV in instructions ivan@sisd.com 98-jul-17
+#
+# $Log: svc_domain.cgi,v $
+# Revision 1.2  1998-11-13 09:56:48  ivan
+# change configuration file layout to support multiple distinct databases (with
+# own set of config files, export, etc.)
+#
 
 use strict;
-use CGI::Base qw(:DEFAULT :CGI);
+use CGI;
+use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup getotaker);
 use FS::Record qw(qsearch qsearchs);
 use FS::svc_domain qw(fields);
 
-my($cgi) = new CGI::Base;
-$cgi->get;
+my($cgi) = new CGI;
 &cgisuidsetup($cgi);
 
 my($action,$svcnum,$svc_domain,$pkgnum,$svcpart,$part_svc);
 
-if ( $QUERY_STRING =~ /^(\d+)$/ ) { #editing
+if ( $cgi->query_string =~ /^(\d+)$/ ) { #editing
 
   $svcnum=$1;
   $svc_domain=qsearchs('svc_domain',{'svcnum'=>$svcnum})
@@ -49,7 +55,7 @@ if ( $QUERY_STRING =~ /^(\d+)$/ ) { #editing
 
   $svc_domain=create FS::svc_domain({});
   
-  foreach $_ (split(/-/,$QUERY_STRING)) {
+  foreach $_ (split(/-/,$cgi->query_string)) {
     $pkgnum=$1 if /^pkgnum(\d+)$/;
     $svcpart=$1 if /^svcpart(\d+)$/;
   }
@@ -78,8 +84,7 @@ my($domain)=(
   $svc_domain->domain,
 );
 
-SendHeaders();
-print <<END;
+print $cgi->header, <<END;
 <HTML>
   <HEAD>
     <TITLE>$action $svc</TITLE>
@@ -112,7 +117,8 @@ Domain Name Registration Agreement</A>
 </UL>
 US state and local government agencies, schools, libraries, museums, and individuals should register under the US domain.  See RFC 1480 for a complete description of the US domain
 and registration procedures.
-<P>GOV registrations are limited to top-level US Federal Government agencies (see RFC 1816).
+<!--  <P>GOV registrations are limited to top-level US Federal Government agencies (see RFC 1816).
+!-->
     </FORM>
   </BODY>
 </HTML>

@@ -12,11 +12,12 @@ use FS::dbdef;
 @ISA = qw(Exporter);
 @EXPORT_OK = qw(dbh fields hfields qsearch qsearchs dbdef);
 
-$File::CounterFile::DEFAULT_DIR = "/var/spool/freeside/counters" ;
-
-$dbdef_file = "/var/spool/freeside/dbdef.". datasrc;
-
-reload_dbdef unless $setup_hack;
+#ask FS::UID to run this stuff for us later
+$FS::UID::callback{'FS::Record'} = sub { 
+  $File::CounterFile::DEFAULT_DIR = "/usr/local/etc/freeside/counters". datasrc;
+  $dbdef_file = "/usr/local/etc/freeside/dbdef.". datasrc;
+  &reload_dbdef unless $setup_hack; #$setup_hack needed now?
+};
 
 =head1 NAME
 
@@ -870,7 +871,11 @@ added pod documentation ivan@sisd.com 98-sep-6
 ut_phonen got ''; at the end ivan@sisd.com 98-sep-27
 
 $Log: Record.pm,v $
-Revision 1.4  1998-11-10 07:45:25  ivan
+Revision 1.5  1998-11-13 09:56:51  ivan
+change configuration file layout to support multiple distinct databases (with
+own set of config files, export, etc.)
+
+Revision 1.4  1998/11/10 07:45:25  ivan
 doc clarification
 
 Revision 1.2  1998/11/07 05:17:18  ivan

@@ -47,6 +47,13 @@ METHODS
         A registration or transfer email will be submitted unless
         $FS::svc_domain::whois_hack is true.
 
+        The additional field *email* can be used to manually set the
+        admin contact email address on this email. Otherwise, the
+        svc_acct records for this package (see the FS::cust_pkg
+        manpage) are searched. If there is exactly one svc_acct
+        record in the same package, it is automatically used.
+        Otherwise an error is returned.
+
     delete
         Deletes this domain from the database. If there is an error,
         returns the error, otherwise returns false.
@@ -114,6 +121,9 @@ SEE ALSO
     schema.html from the base documentation, config.html from the
     base documentation.
 
+VERSION
+    $Id: svc_domain.txt,v 1.2 1998-11-13 09:56:45 ivan Exp $
+
 HISTORY
     ivan@voicenet.com 97-jul-21
 
@@ -128,4 +138,12 @@ HISTORY
     etc. ivan@sisd.com 98-jul-17-19
 
     pod, some FS::Conf (not complete) ivan@sisd.com 98-sep-23
+
+    $Log: svc_domain.txt,v $
+    Revision 1.2  1998-11-13 09:56:45  ivan
+    change configuration file layout to support multiple distinct databases (with
+    own set of config files, export, etc.)
+ Revision 1.2 1998/10/14 08:18:21 ivan
+    More informative error messages and better doc for admin contact
+    email stuff
 

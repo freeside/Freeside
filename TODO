@@ -1,4 +1,4 @@
-$Id: TODO,v 1.12 1998-11-07 08:25:10 ivan Exp $
+$Id: TODO,v 1.13 1998-11-13 09:56:33 ivan Exp $
 
 If you are interested in helping with any of these, please join the mailing
 list (send a blank message to ivan-freeside-subscribe@sisd.com) to avoid 
@@ -6,14 +6,18 @@ duplication of effort.
 
 -- 1.1.x --
 
-qsearch[s] (or just put in new?) in FS::Record should bless the object
-into the appropriate derived class automagically, if possible?
+remove whois_hack set to 1 for svc_domain.pm?  add all known registries and
+whois accordingly.
+
+get rid of all relative URL's (have to make them on the fly) - see doc for
+->redirect in CGI.pm
 
 radius logfile parsing and perl expression check.
 
-mailing list archive, faq
+faq
 
-(test cust_main.pm with cybercash v2 and v3)
+(test cust_main.pm with cybercash v2 and v3, especially with the callback
+ stuff)
 
 Fix in cust_bill BUGS: 
 There is an off-by-one error in print_text which causes a visual error (Page 1
@@ -25,8 +29,6 @@ rep silliness!
 fields should be a method against a FS::Record or derived object, as well as
 being something you can call as FS::Record::fields('tablename').  Might
 even be able to handle both in the same routine (that would be neato).
-Get rid of hfields and other assorted silliness.
-Clean up hfields/sfields/fields crap.  yuck.
 
 Override FS::Record new, add, rep and del (create, insert, replace and
 delete) in all derived classes.
@@ -296,9 +298,6 @@ export a debian-style (also redhat and?) /etc/group file aswell!
 
 seems to be an off-by-one error in the ascii invoice formatting which is saying
 "1 of 2" pages when there is only one.
-
-get rid of agrep?  needs the (non-free) glimpse distribution.  agrep used to
-be free?  what else can do fuzzy searching?
 
 site_perl/svc_domain.cgi (hmm... or maybe should have a button?  or maybe svc_domain.pm should handle this) should set $whois_hack for non-internic domains, so you can add them...
 

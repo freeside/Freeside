@@ -8,24 +8,27 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
+#
+# $Log: svc_acct_pop.cgi,v $
+# Revision 1.2  1998-11-13 09:56:47  ivan
+# change configuration file layout to support multiple distinct databases (with
+# own set of config files, export, etc.)
+#
 
 use strict;
-use CGI::Base;
+use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
 use FS::Record qw(qsearch qsearchs);
 use FS::svc_acct_pop;
 use FS::CGI qw(header menubar);
 
-my($cgi) = new CGI::Base;
-$cgi->get;
+my($cgi) = new CGI;
 
 &cgisuidsetup($cgi);
 
-SendHeaders(); # one guess.
-
 my($svc_acct_pop,$action);
-if ( $cgi->var('QUERY_STRING') =~ /^(\d+)$/ ) { #editing
+if ( $cgi->query_string =~ /^(\d+)$/ ) { #editing
   $svc_acct_pop=qsearchs('svc_acct_pop',{'popnum'=>$1});
   $action='Edit';
 } else { #adding
@@ -34,7 +37,7 @@ if ( $cgi->var('QUERY_STRING') =~ /^(\d+)$/ ) { #editing
 }
 my($hashref)=$svc_acct_pop->hashref;
 
-print header("$action POP", menubar(
+print $cgi->header, header("$action POP", menubar(
   'Main Menu' => '../',
   'View all POPs' => "../browse/svc_acct_pop.cgi",
 )), <<END;

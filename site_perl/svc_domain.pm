@@ -1,7 +1,9 @@
 package FS::svc_domain;
 
 use strict;
-use vars qw(@ISA @EXPORT_OK $whois_hack $conf $mydomain $smtpmachine);
+use vars qw(@ISA @EXPORT_OK $whois_hack $conf $mydomain $smtpmachine
+  $tech_contact $from $to @nameservers @nameserver_ips @template
+);
 use Exporter;
 use Carp;
 use Mail::Internet;
@@ -14,60 +16,31 @@ use FS::Conf;
 @ISA = qw(FS::Record Exporter);
 @EXPORT_OK = qw(fields);
 
-$conf = new FS::Conf;
+#ask FS::UID to run this stuff for us later
+$FS::UID::callback{'FS::domain'} = sub { 
+  $conf = new FS::Conf;
 
-$mydomain = $conf->config('domain');
-$smtpmachine = $conf->config('smtpmachine');
+  $mydomain = $conf->config('domain');
+  $smtpmachine = $conf->config('smtpmachine');
 
-my($internic)="/var/spool/freeside/conf/registries/internic";
-my($conf_tech)="$internic/tech_contact";
-my($conf_from)="$internic/from";
-my($conf_to)="$internic/to";
-my($nameservers)="$internic/nameservers";
-my($template)="$internic/template";
+  my($internic)="/registries/internic";
+  $tech_contact = $conf->config("$internic/tech_contact");
+  $from = $conf->config("$internic/from");
+  $to = $conf->config("$internic/to");
+  my(@ns) = $conf->config("$internic/nameservers");
+  @nameservers=map {
+    /^\s*\d+\.\d+\.\d+\.\d+\s+([^\s]+)\s*$/
+      or die "Illegal line in $internic/nameservers";
+    $1;
+  } @ns;
+  @nameserver_ips=map {
+    /^\s*(\d+\.\d+\.\d+\.\d+)\s+([^\s]+)\s*$/
+      or die "Illegal line in $internic/nameservers!";
+    $1;
+  } @ns;
+  @template = map { $_. "\n" } $conf->config("$internic/template");
 
-open(TECH_CONTACT,$conf_tech) or die "Can't open $conf_tech: $!";
-my($tech_contact)=map {
-  /^(.*)$/ or die "Illegal line in $conf_tech!"; #yes, we trust the file
-  $1;
-} grep $_ !~ /^(#|$)/, <TECH_CONTACT>;
-close TECH_CONTACT;
-
-open(FROM,$conf_from) or die "Can't open $conf_from: $!";
-my($from)=map {
-  /^(.*)$/ or die "Illegal line in $conf_from!"; #yes, we trust the file
-  $1;
-} grep $_ !~ /^(#|$)/, <FROM>;
-close FROM;
-
-open(TO,$conf_to) or die "Can't open $conf_to: $!";
-my($to)=map {
-  /^(.*)$/ or die "Illegal line in $conf_to!"; #yes, we trust the file
-  $1;
-} grep $_ !~ /^(#|$)/, <TO>;
-close TO;
-
-open(NAMESERVERS,$nameservers) or die "Can't open $nameservers: $!";
-my(@nameservers)=map {
-  /^\s*\d+\.\d+\.\d+\.\d+\s+([^\s]+)\s*$/
-    or die "Illegal line in $nameservers!"; #yes, we trust the file
-  $1;
-} grep $_ !~ /^(#|$)/, <NAMESERVERS>;
-close NAMESERVERS;
-open(NAMESERVERS,$nameservers) or die "Can't open $nameservers: $!";
-my(@nameserver_ips)=map {
-  /^\s*(\d+\.\d+\.\d+\.\d+)\s+([^\s]+)\s*$/
-    or die "Illegal line in $nameservers!"; #yes, we trust the file
-  $1;
-} grep $_ !~ /^(#|$)/, <NAMESERVERS>;
-close NAMESERVERS;
-
-open(TEMPLATE,$template) or die "Can't open $template: $!";
-my(@template)=map {
-  /^(.*)$/ or die "Illegal line in $to!"; #yes, we trust the file
-  $1. "\n";
-} <TEMPLATE>;
-close TEMPLATE;
+};
 
 =head1 NAME
 
@@ -523,7 +496,7 @@ config.html from the base documentation.
 
 =head1 VERSION
 
-$Id: svc_domain.pm,v 1.2 1998-10-14 08:18:21 ivan Exp $
+$Id: svc_domain.pm,v 1.3 1998-11-13 09:56:57 ivan Exp $
 
 =head1 HISTORY
 
@@ -542,7 +515,11 @@ ivan@sisd.com 98-jul-17-19
 pod, some FS::Conf (not complete) ivan@sisd.com 98-sep-23
 
 $Log: svc_domain.pm,v $
-Revision 1.2  1998-10-14 08:18:21  ivan
+Revision 1.3  1998-11-13 09:56:57  ivan
+change configuration file layout to support multiple distinct databases (with
+own set of config files, export, etc.)
+
+Revision 1.2  1998/10/14 08:18:21  ivan
 More informative error messages and better doc for admin contact email stuff
 
 

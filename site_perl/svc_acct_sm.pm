@@ -11,11 +11,13 @@ use FS::Conf;
 @ISA = qw(FS::Record Exporter);
 @EXPORT_OK = qw(fields);
 
-$conf = new FS::Conf;
-
-$shellmachine = $conf->exists('qmailmachines')
-                ? $conf->config('shellmachine')
-                : '';
+#ask FS::UID to run this stuff for us later
+$FS::UID::callback{'FS::svc_acct_sm'} = sub { 
+  $conf = new FS::Conf;
+  $shellmachine = $conf->exists('qmailmachines')
+                  ? $conf->config('shellmachine')
+                  : '';
+};
 
 =head1 NAME
 

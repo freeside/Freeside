@@ -77,15 +77,15 @@ METHODS
     qsearch TABLE, HASHREF
         Searches the database for all records matching (at least)
         the key/value pairs in HASHREF. Returns all the records
-        found as FS::Record objects.
+        found as `FS::TABLE' objects if that module is loaded (i.e.
+        via `use FS::cust_main;'), otherwise returns FS::Record
+        objects.
 
     qsearchs TABLE, HASHREF
-        Searches the database for a record matching (at least) the
-        key/value pairs in HASHREF, and returns the record found as
-        an FS::Record object. If more than one record matches, it
-        carps but returns the first. If this happens, you either
-        made a logic error in asking for a single item, or your data
-        is corrupted.
+        Same as qsearch, except that if more than one record
+        matches, it carps but returns the first. If this happens,
+        you either made a logic error in asking for a single item,
+        or your data is corrupted.
 
     table
         Returns the table name.
@@ -236,7 +236,7 @@ BUGS
 
         ut_sqltype (like ut_varchar) should all be defined
 
-        A fallback check method should be provided with uses the
+        A fallback check method should be provided whith uses the
         dbdef.
 
         The ut_money method assumes money has two decimal digits.
@@ -331,4 +331,15 @@ HISTORY
         added pod documentation ivan@sisd.com 98-sep-6
 
         ut_phonen got ''; at the end ivan@sisd.com 98-sep-27
+
+        $Log: Record.txt,v $
+        Revision 1.3  1998-11-13 09:56:36  ivan
+        change configuration file layout to support multiple distinct databases (with
+        own set of config files, export, etc.)
+ Revision 1.4 1998/11/10 07:45:25 ivan
+        doc clarification
+
+        Revision 1.2 1998/11/07 05:17:18 ivan In sub new, Pg wrapper
+        for money fields from dbdef (FS::Record::fields $table), not
+        keys of supplied hashref.
 

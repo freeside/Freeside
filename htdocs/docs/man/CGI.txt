@@ -2,13 +2,16 @@ NAME
     FS::CGI - Subroutines for the web interface
 
 SYNOPSIS
-      use FS::CGI qw(header menubar idiot eidiot);
+      use FS::CGI qw(header menubar idiot eidiot popurl);
 
       print header( 'Title', '' );
       print header( 'Title', menubar('item', 'URL', ... ) );
 
       idiot "error message"; 
       eidiot "error message";
+
+      $url = popurl; #returns current url
+      $url = popurl(3); #three levels up
 
 DESCRIPTION
     Provides a few common subroutines for the web interface.
@@ -26,15 +29,20 @@ SUBROUTINES
     eidiot ERROR
         Sends headers and an HTML error message, then exits.
 
+    popurl LEVEL
+        Returns current URL with LEVEL levels of path removed from
+        the end (default 0).
+
+    table
+        Returns HTML tag for beginning a table.
+
 BUGS
     Not OO.
 
     Not complete.
 
-    Uses CGI-modules instead of CGI.pm
-
 SEE ALSO
-    the CGI::Base manpage
+    the CGI manpage, the CGI::Base manpage
 
 HISTORY
     subroutines for the HTML/CGI GUI, not properly OO. :(
@@ -44,4 +52,24 @@ HISTORY
     lose the background, eidiot ivan@sisd.com 98-sep-2
 
     pod ivan@sisd.com 98-sep-12
+
+    $Log: CGI.txt,v $
+    Revision 1.2  1998-11-13 09:56:34  ivan
+    change configuration file layout to support multiple distinct databases (with
+    own set of config files, export, etc.)
+ Revision 1.11 1998/11/12 07:43:54 ivan ***
+    empty log message ***
+
+    Revision 1.10 1998/11/12 01:53:47 ivan added table command
+
+    Revision 1.9 1998/11/09 08:51:49 ivan bug squash
+
+    Revision 1.7 1998/11/09 06:10:59 ivan added sub url
+
+    Revision 1.6 1998/11/09 05:44:20 ivan *** empty log message ***
+
+    Revision 1.4 1998/11/09 04:55:42 ivan support depriciated
+    CGI::Base as well as CGI.pm (for now)
+
+    Revision 1.3 1998/11/08 10:50:19 ivan s/CGI::Base/CGI/; etc.
 

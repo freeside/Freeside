@@ -138,3 +138,11 @@ HISTORY
 
     pod, ingegrate with FS::Invoice ivan@sisd.com 98-sep-20
 
+    $Log: cust_bill.txt,v $
+    Revision 1.2  1998-11-13 09:56:38  ivan
+    change configuration file layout to support multiple distinct databases (with
+    own set of config files, export, etc.)
+ Revision 1.2 1998/11/07 10:24:24 ivan
+    don't use depriciated FS::Bill and FS::Invoice, other
+    miscellania
+

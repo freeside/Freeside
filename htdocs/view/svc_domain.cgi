@@ -13,18 +13,23 @@
 #
 # Changes to allow page to work at a relative position in server
 #       bmccane@maxbaud.net     98-apr-3
+#
+# $Log: svc_domain.cgi,v $
+# Revision 1.2  1998-11-13 09:56:50  ivan
+# change configuration file layout to support multiple distinct databases (with
+# own set of config files, export, etc.)
+#
 
 use strict;
-use CGI::Base qw(:DEFAULT :CGI);
+use CGI;
 use FS::UID qw(cgisuidsetup);
 use FS::Record qw(qsearchs);
 
-my($cgi) = new CGI::Base;
-$cgi->get;
+my($cgi) = new CGI;
 cgisuidsetup($cgi);
 
 #untaint svcnum
-$QUERY_STRING =~ /^(\d+)$/;
+$cgi->query_string =~ /^(\d+)$/;
 my($svcnum)=$1;
 my($svc_domain)=qsearchs('svc_domain',{'svcnum'=>$svcnum});
 die "Unknown svcnum" unless $svc_domain;
@@ -41,8 +46,7 @@ if ($pkgnum) {
 my($part_svc)=qsearchs('part_svc',{'svcpart'=> $cust_svc->svcpart } );
 die "Unkonwn svcpart" unless $part_svc;
 
-SendHeaders(); # one guess.
-print <<END;
+print $cgi->header, <<END;
 <HTML>
   <HEAD>
     <TITLE>Domain View</TITLE>

@@ -24,22 +24,29 @@
 # ivan@voicenet.com 97-jul-29
 #
 # no FS::Search ivan@sisd.com 98-mar-7
+# 
+# $Log: cust_pkg.cgi,v $
+# Revision 1.2  1998-11-13 09:56:49  ivan
+# change configuration file layout to support multiple distinct databases (with
+# own set of config files, export, etc.)
+#
 
 use strict;
 use Date::Format;
-use CGI::Base qw(:DEFAULT :CGI); # CGI module
+use CGI;
+use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
+use FS::CGI qw(url);
 use FS::Record qw(qsearch qsearchs);
 
-my($cgi) = new CGI::Base;
-$cgi->get;
-&cgisuidsetup($cgi);
+my($cgi) = new CGI;
+cgisuidsetup($cgi);
 
 my(%uiview,%uiadd);
 my($part_svc);
 foreach $part_svc ( qsearch('part_svc',{}) ) {
-  $uiview{$part_svc->svcpart}="../view/". $part_svc->svcdb . ".cgi";
-  $uiadd{$part_svc->svcpart}="../edit/". $part_svc->svcdb . ".cgi";
+  $uiview{$part_svc->svcpart} = url(1). "/view/". $part_svc->svcdb . ".cgi";
+  $uiadd{$part_svc->svcpart}= url(1). "/edit/". $part_svc->svcdb . ".cgi";
 }
 
 SendHeaders(); # one guess.
