@@ -1,11 +1,13 @@
 package FS::part_export::sqlradius;
 
-use vars qw(@ISA %info %options $notes1 $notes2);
+use vars qw(@ISA $DEBUG %info %options $notes1 $notes2);
 use Tie::IxHash;
 use FS::Record qw( dbh );
 use FS::part_export;
 
 @ISA = qw(FS::part_export);
+
+$DEBUG = 0;
 
 tie %options, 'Tie::IxHash',
   'datasrc'  => { label=>'DBI data source ' },
@@ -75,6 +77,7 @@ sub rebless { shift; }
 
 sub export_username {
   my($self, $svc_acct) = (shift, shift);
+  warn "export_username called on $self with arg $svc_acct" if $DEBUG;
   $svc_acct->username;
 }
 
