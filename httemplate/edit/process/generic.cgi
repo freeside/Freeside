@@ -27,6 +27,7 @@ use DBIx::DBSchema::Table;
 
 my $error;
 my $p2 = popurl(2);
+my $p3 = popurl(3);
 my $table = $cgi->param('table');
 my $dbdef = dbdef or die "Cannot fetch dbdef!";
 
@@ -56,7 +57,7 @@ if($pkey_val and (my $old = qsearchs($table, { $pkey, $pkey_val} ))) {
 }
 
 my $redirect_ok = (($cgi->param('redirect_ok')) ?
-                    $cgi->param('redirect_ok') : $p2."view/$table.cgi");
+                    $cgi->param('redirect_ok') : $p3."browse/generic.cgi?$table");
 my $redirect_error = (($cgi->param('redirect_error')) ?
                        $cgi->param('redirect_error') : $cgi->referer());
 
@@ -64,6 +65,6 @@ if($error) {
   $cgi->param('error', $error);
   print $cgi->redirect($redirect_error . '?' . $cgi->query_string);
 } else {
-  print $cgi->redirect($redirect_ok . '?' .$pkey_val);
+  print $cgi->redirect($redirect_ok);
 }
 %>

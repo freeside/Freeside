@@ -21,7 +21,10 @@ if ( $cgi->param('error') ) {
 my $action = $part_router_field->routerfieldpart ? 'Edit' : 'Add';
 
 my $p1 = popurl(1);
-print header("$action Router Extended Field Definition", '');
+print header("$action Router Extended Field Definition",
+             menubar('Main Menu' => $p,
+                     'View all Extended Fields' => $p. 'browse/generic.cgi?part_router_field')
+            );
 
 print qq!<FONT SIZE="+1" COLOR="#ff0000">Error: !, $cgi->param('error'),
       "</FONT>"
@@ -30,8 +33,6 @@ print qq!<FONT SIZE="+1" COLOR="#ff0000">Error: !, $cgi->param('error'),
 <FORM ACTION="<%=$p1%>process/generic.cgi" METHOD=POST>
 
 <INPUT TYPE="hidden" NAME="table" VALUE="part_router_field">
-<INPUT TYPE="hidden" NAME="redirect_ok" 
-    VALUE="<%=$p1%>part_router_field.cgi">
 <INPUT TYPE="hidden" NAME="routerfieldpart" VALUE="<%=
   $routerfieldpart%>">
 Field #<B><%=$routerfieldpart or "(NEW)"%></B><BR><BR>
