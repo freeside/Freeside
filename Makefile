@@ -184,6 +184,13 @@ install-selfservice:
 	   ssh ${SELFSERVICE_INSTALL_USER}@$$MACHINE "sudo install -o freeside -d /usr/local/freeside" ;\
 	done
 
+update-selfservice:
+	for MACHINE in ${SELFSERVICE_MACHINES}; do \
+	  rsync -rlptz fs_selfservice/FS-SelfService/ ${SELFSERVICE_INSTALL_USER}@$$MACHINE:FS-SelfService ;\
+	  ssh ${SELFSERVICE_INSTALL_USER}@$$MACHINE "cd FS-SelfService; perl Makefile.PL && make" ;\
+	  ssh ${SELFSERVICE_INSTALL_USER}@$$MACHINE "cd FS-SelfService; sudo make install" ;\
+	done
+
 install: install-perl-modules install-docs install-init install-rt
 
 deploy: install
