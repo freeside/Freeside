@@ -65,8 +65,10 @@ FS::cust_bill - Object methods for cust_bill records
 
 =head1 DESCRIPTION
 
-An FS::cust_bill object represents an invoice.  FS::cust_bill inherits from
-FS::Record.  The following fields are currently supported:
+An FS::cust_bill object represents an invoice; a declaration that a customer
+owes you money.  The specific charges are itemized as B<cust_bill_pkg> records
+(see L<FS::cust_bill_pkg>).  FS::cust_bill inherits from FS::Record.  The
+following fields are currently supported:
 
 =over 4
 
@@ -424,7 +426,7 @@ sub print_text {
 
 =head1 VERSION
 
-$Id: cust_bill.pm,v 1.4 2000-12-03 15:14:00 ivan Exp $
+$Id: cust_bill.pm,v 1.5 2001-02-11 17:17:39 ivan Exp $
 
 =head1 BUGS
 

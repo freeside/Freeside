@@ -30,8 +30,9 @@ FS::cust_refund - Object method for cust_refund objects
 
 =head1 DESCRIPTION
 
-An FS::cust_refund represents a refund.  FS::cust_refund inherits from
-FS::Record.  The following fields are currently supported:
+An FS::cust_refund represents a refund: the transfer of money to a customer;
+equivalent to a negative payment (see L<FS::cust_pay>).  FS::cust_refund
+inherits from FS::Record.  The following fields are currently supported:
 
 =over 4
 
@@ -171,7 +172,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: cust_refund.pm,v 1.1 1999-08-04 09:03:53 ivan Exp $
+$Id: cust_refund.pm,v 1.2 2001-02-11 17:17:39 ivan Exp $
 
 =head1 BUGS
 

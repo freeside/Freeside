@@ -63,11 +63,15 @@ other stuff I can't recall (sorry).
 Stephen Amadei <amadei@dandy.net> contribued portability cleanups for the
 low-level DBI stuff.
 
-Jason Spence <thalakan@frys.com> contributed admin.html, autocapnames
-javascript, bugfixes & other neat stuff I can't remember.
+Jason Spence <thalakan@frys.com> contributed admin.html and other
+documentation, autocapnames javascript, bugfixes & other neat stuff I can't
+remember.
 
 Brad Dameron <bdameron@tscnet.com> contributed code to do configurable state
 and referral defaults.
+
+Surf and Sip, Inc., <http://www.surfandsip.com> generously sponsored a
+long-requested feature - the session monitor and time-based prepaid cards.
 
 Everything else is my (Ivan Kohler <ivan@420.am>) fault.
 

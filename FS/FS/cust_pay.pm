@@ -29,8 +29,9 @@ FS::cust_pay - Object methods for cust_pay objects
 
 =head1 DESCRIPTION
 
-An FS::cust_pay object represents a payment.  FS::cust_pay inherits from
-FS::Record.  The following fields are currently supported:
+An FS::cust_pay object represents a payment; the transfer of money from a
+customer.  FS::cust_pay inherits from FS::Record.  The following fields are
+currently supported:
 
 =over 4
 
@@ -172,7 +173,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: cust_pay.pm,v 1.1 1999-08-04 09:03:53 ivan Exp $
+$Id: cust_pay.pm,v 1.2 2001-02-11 17:17:39 ivan Exp $
 
 =head1 BUGS
 

@@ -29,7 +29,8 @@ FS::cust_credit - Object methods for cust_credit records
 
 =head1 DESCRIPTION
 
-An FS::cust_credit object represents a credit.  FS::cust_credit inherits from
+An FS::cust_credit object represents a credit; the equivalent of a negative
+B<cust_bill> record (see L<FS::cust_bill>).  FS::cust_credit inherits from
 FS::Record.  The following fields are currently supported:
 
 =over 4
@@ -157,7 +158,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: cust_credit.pm,v 1.1 1999-08-04 09:03:53 ivan Exp $
+$Id: cust_credit.pm,v 1.2 2001-02-11 17:17:39 ivan Exp $
 
 =head1 BUGS
 
