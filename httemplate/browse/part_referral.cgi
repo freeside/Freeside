@@ -92,7 +92,6 @@ foreach my $part_referral ( sort {
           <TD ALIGN="right"><%= $number %></TD>
         <% } %>
       </TR>
-        <TD></TD>
     </TABLE>
   </BODY>
 </HTML>
