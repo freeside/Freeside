@@ -342,7 +342,7 @@ sub tables_hash_hack {
       ],
       'primary_key' => 'agentnum',
       'unique' => [],
-      'index' => [ ['typenum'], ['diabled'] ],
+      'index' => [ ['typenum'], ['disabled'] ],
     },
 
     'agent_type' => {
