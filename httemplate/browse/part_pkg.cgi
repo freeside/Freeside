@@ -61,7 +61,7 @@ my $taxclasses = $conf->exists('enable_taxclasses');
 <% if ( $cgi->param('showdisabled') ) { $cgi->param('showdisabled', 0); %>
   ( <a href="<%= $cgi->self_url %>">hide disabled packages</a> )
 <% } else { $cgi->param('showdisabled', 1); %>
-  ( <a href="<%= $cgi->self_url %>">show disabled packages</a> )!;
+  ( <a href="<%= $cgi->self_url %>">show disabled packages</a> )
 <% } %>
 
 <% my $colspan = $cgi->param('showdisabled') ? 2 : 3; %>
