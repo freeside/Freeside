@@ -29,7 +29,7 @@ case "$1" in
         echo "done."
 
         echo -n "Stopping freeside-selfservice-server: "
-        kill `cat /var/run/freeside-selfservice-server.pid`
+        kill `cat /var/run/freeside-selfservice-server.$SELFSERVICE_USER.pid`
         echo "done."
         ;;
 
