@@ -188,6 +188,18 @@ sub check {
   $self->SUPER::check;
 }
 
+=item cust_main
+
+Returns the customer (see L<FS::cust_main>) for this batched credit card
+payment.
+
+=cut
+
+sub cust_main {
+  my $self = shift;
+  qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
+}
+
 =back
 
 =head1 SUBROUTINES
@@ -212,8 +224,9 @@ sub import_results {
   my @fields;
   my $end_condition;
   my $end_hook;
-  my $condition;
   my $hook;
+  my $approved_condition;
+  my $declined_condition;
 
   if ( $format eq 'csv-td_canada_trust-merchant_pc_batch' ) {
 
@@ -252,11 +265,6 @@ sub import_results {
       '';
     };
 
-    $condition = sub {
-      my $hash = shift;
-      $hash->{'result'} == 3 && $hash->{'type'} eq '0';
-    };
-
     $hook = sub {
       my $hash = shift;
       $hash->{'paid'} = sprintf("%.2f", $hash->{'paid'} / 100 );
@@ -267,6 +275,18 @@ sub import_results {
                                     substr($hash->{'_date'}, 4, 2)-1,
                                     substr($hash->{'_date'}, 0, 4)-1900, );
     };
+
+    $approved_condition = sub {
+      my $hash = shift;
+      $hash->{'type'} eq '0' && $hash->{'result'} == 3;
+    };
+
+    $declined_condition = sub {
+      my $hash = shift;
+      $hash->{'type'} eq '0' && (    $hash->{'result'} == 4
+                                  || $hash->{'result'} == 5 );
+    };
+
 
   } else {
     return "Unknown format $format";
@@ -327,24 +347,31 @@ sub import_results {
       return "error removing paybatchnum $hash{'paybatchnum'}: $error\n";
     }
 
-    next unless &{$condition}(\%hash);
-
     &{$hook}(\%hash);
 
-    my $cust_pay = new FS::cust_pay ( {
-      'custnum'  => $custnum,
-      'payby'    => 'CARD',
-      'paybatch' => $paybatch,
-      map { $_ => $hash{$_} } (qw( paid _date payinfo )),
-    } );
-    $error = $cust_pay->insert;
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return "error adding payment paybatchnum $hash{'paybatchnum'}: $error\n";
-    }
-    $total += $hash{'paid'};
+    if ( &{$approved_condition}(\%hash) ) {
 
-    $cust_pay->cust_main->apply_payments;
+      my $cust_pay = new FS::cust_pay ( {
+        'custnum'  => $custnum,
+        'payby'    => 'CARD',
+        'paybatch' => $paybatch,
+        map { $_ => $hash{$_} } (qw( paid _date payinfo )),
+      } );
+      $error = $cust_pay->insert;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "error adding payment paybatchnum $hash{'paybatchnum'}: $error\n";
+      }
+      $total += $hash{'paid'};
+  
+      $cust_pay->cust_main->apply_payments;
+
+    } elsif ( &{$declined_condition}(\%hash) ) {
+
+      #this should be configurable... if anybody else ever uses batches
+      $cust_pay_batch->cust_main->suspend;
+
+    }
 
   }
   
