@@ -134,13 +134,13 @@ sub check {
 =item pkg_svc
 
 Returns all FS::pkg_svc objects (see L<FS::pkg_svc>) for this package
-definition.
+definition (with non-zero quantity).
 
 =cut
 
 sub pkg_svc {
   my $self = shift;
-  qsearch( 'pkg_svc', { 'pkgpart' => $self->pkgpart } );
+  grep { $_->quantity } qsearch( 'pkg_svc', { 'pkgpart' => $self->pkgpart } );
 }
 
 =item svcpart [ SVCDB ]
@@ -166,7 +166,7 @@ sub svcpart {
 
 =head1 VERSION
 
-$Id: part_pkg.pm,v 1.1 1999-08-04 09:03:53 ivan Exp $
+$Id: part_pkg.pm,v 1.2 1999-08-20 08:27:06 ivan Exp $
 
 =head1 BUGS
 
