@@ -127,7 +127,7 @@ sub check {
     if ( length($self->username) ) {
       my $conflict = qsearchs('agent', { 'username' => $self->username } );
       return 'duplicate agent username (with '. $conflict->agent. ')'
-        if $conflict;
+        if $conflict && $conflict->agentnum != $self->agentnum;
       $error = $self->ut_text('password'); # ut_text... arbitrary choice
     } else {
       $self->_password('');
