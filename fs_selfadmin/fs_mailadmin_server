@@ -17,7 +17,7 @@ use vars qw( $opt $Debug $conf $default_domain );
 
 $Debug = 1;
 
-my @payby = qw(CARD PREPAY);
+#my @payby = qw(CARD PREPAY);
 
 my $user = shift or die &usage;
 &adminsuidsetup( $user ); 

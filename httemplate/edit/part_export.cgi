@@ -87,7 +87,7 @@ my %exports = (
         'groupID'  => { label=>'InfoStreet groupID', },
       },
       'nodomain' => 'Y',
-      'notes' => 'http://www.infostreet.com/ .... install Frontier::Client',
+      'notes' => 'Real-time export to <a href="http://www.infostreet.com/">InfoStreet</a> streetSmartAPI.  Requires installation of <a href="http://search.cpan.org/search?dist=Frontier-Client">Frontier::Client</a> from CPAN.',
     }
   },
 
