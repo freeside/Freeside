@@ -46,6 +46,8 @@ FS::Record.  The following fields are currently supported:
 =item quantity - Quantity of this service definition that this billing item
 definition includes
 
+=item primary_svc - primary flag, empty or 'Y'
+
 =back
 
 =head1 METHODS
@@ -108,6 +110,11 @@ sub check {
   return "Unknown pkgpart!" unless $self->part_pkg;
   return "Unknown svcpart!" unless $self->part_svc;
 
+  if ( $self->dbdef_table->column('primary_svc') ) {
+    $error = $self->ut_enum('primary_svc', [ '', 'Y' ] );
+    return $error if $error;
+  }
+
   $self->SUPER::check;
 }
 
@@ -134,10 +141,6 @@ sub part_svc {
 }
 
 =back
-
-=head1 VERSION
-
-$Id: pkg_svc.pm,v 1.4 2003-08-05 00:20:45 khoff Exp $
 
 =head1 BUGS
 

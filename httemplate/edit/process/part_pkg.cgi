@@ -62,16 +62,24 @@ if ( $error ) {
 
 foreach my $part_svc (qsearch('part_svc',{})) {
   my $quantity = $cgi->param('pkg_svc'. $part_svc->svcpart) || 0;
+  my $primary_svc =
+    $cgi->param('pkg_svc_primary') == $part_svc->svcpart ? 'Y' : '';
   my $old_pkg_svc = qsearchs('pkg_svc', {
     'pkgpart' => $pkgpart,
     'svcpart' => $part_svc->svcpart,
   } );
   my $old_quantity = $old_pkg_svc ? $old_pkg_svc->quantity : 0;
-  next unless $old_quantity != $quantity; #!here
+  my $old_primary_svc =
+    ( $old_pkg_svc && $old_pkg_svc->dbdef_table->column('primary_svc') )
+      ? $old_pkg_svc->primary_svc
+      : '';
+  next unless $old_quantity != $quantity || $old_primary_svc ne $primary_svc;
+
   my $new_pkg_svc = new FS::pkg_svc( {
-    'pkgpart'  => $pkgpart,
-    'svcpart'  => $part_svc->svcpart,
-    'quantity' => $quantity, 
+    'pkgpart'     => $pkgpart,
+    'svcpart'     => $part_svc->svcpart,
+    'quantity'    => $quantity, 
+    'primary_svc' => $primary_svc,
   } );
   if ( $old_pkg_svc ) {
     my $myerror = $new_pkg_svc->replace($old_pkg_svc);

@@ -2,7 +2,7 @@ package FS::part_pkg;
 
 use strict;
 use vars qw( @ISA );
-use FS::Record qw( qsearch dbh );
+use FS::Record qw( qsearch dbh dbdef );
 use FS::pkg_svc;
 use FS::agent_type;
 use FS::type_pkgs;
@@ -267,20 +267,24 @@ sub pkg_svc {
 
 =item svcpart [ SVCDB ]
 
-Returns the svcpart of a single service definition (see L<FS::part_svc>)
+Returns the svcpart of the primary service definition (see L<FS::part_svc>)
 associated with this billing item definition (see L<FS::pkg_svc>).  Returns
-false if there not exactly one service definition with quantity 1, or if 
-SVCDB is specified and does not match the svcdb of the service definition, 
+false if there not a primary service definition or exactly one service
+definition with quantity 1, or if SVCDB is specified and does not match the
+svcdb of the service definition, 
 
 =cut
 
 sub svcpart {
   my $self = shift;
   my $svcdb = scalar(@_) ? shift : '';
-  my @pkg_svc = grep {
-    $_->quantity == 1
-    && ( $svcdb eq $_->part_svc->svcdb || !$svcdb )
-  } $self->pkg_svc;
+  my @svcdb_pkg_svc =
+    grep { ( $svcdb eq $_->part_svc->svcdb || !$svcdb ) } $self->pkg_svc;
+  my @pkg_svc = ();
+  @pkg_svc = grep { $_->primary_svc =~ /^Y/i } @svcdb_pkg_svc
+    if dbdef->table('pkg_svc')->column('primary_svc');
+  @pkg_svc = grep {$_->quantity == 1 } @svcdb_pkg_svc
+    unless @pkg_svc;
   return '' if scalar(@pkg_svc) != 1;
   $pkg_svc[0]->svcpart;
 }

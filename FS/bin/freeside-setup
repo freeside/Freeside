@@ -708,6 +708,7 @@ sub tables_hash_hack {
         'pkgpart',    'int',    '',   '',
         'svcpart',    'int',    '',   '',
         'quantity',   'int',    '',   '',
+        'primary_svc','char', 'NULL',  1,
       ],
       'primary_key' => '',
       'unique' => [ ['pkgpart', 'svcpart'] ],

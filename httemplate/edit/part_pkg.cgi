@@ -152,9 +152,11 @@ print ' CHECKED' if $hashref->{disabled} eq "Y";
 print '>';
 print '</TD></TR></TABLE>';
 
-my $thead =  "\n\n". ntable('#cccccc', 2). <<END;
-<TR><TH BGCOLOR="#dcdcdc"><FONT SIZE=-1>Quan.</FONT></TH><TH BGCOLOR="#dcdcdc">Service</TH></TR>
-END
+my $thead =  "\n\n". ntable('#cccccc', 2).
+             '<TR><TH BGCOLOR="#dcdcdc"><FONT SIZE=-1>Quan.</FONT></TH>';
+$thead .=  '<TH BGCOLOR="#dcdcdc"><FONT SIZE=-1>Primary</FONT></TH>'
+  if dbdef->table('pkg_svc')->column('primary_svc');
+$thead .= '<TH BGCOLOR="#dcdcdc">Service</TH></TR>';
 
 #unless ( $cgi->param('clone') ) {
 #dunno why...
@@ -176,9 +178,10 @@ foreach my $part_svc ( @part_svc ) {
     'pkgpart'  => $pkgpart,
     'svcpart'  => $svcpart,
   } ) || new FS::pkg_svc ( {
-    'pkgpart'  => $pkgpart,
-    'svcpart'  => $svcpart,
-    'quantity' => 0,
+    'pkgpart'     => $pkgpart,
+    'svcpart'     => $svcpart,
+    'quantity'    => 0,
+    'primary_svc' => '',
   });
   #? #next unless $pkg_svc;
 
@@ -190,7 +193,13 @@ foreach my $part_svc ( @part_svc ) {
     print '<TR>'; # if $count == 0 ;
     print qq!<TD><INPUT TYPE="text" NAME="pkg_svc$svcpart" SIZE=4 MAXLENGTH=3 VALUE="!,
           $cgi->param("pkg_svc$svcpart") || $pkg_svc->quantity || 0,
-          qq!"></TD><TD><A HREF="part_svc.cgi?!,$part_svc->svcpart,
+          qq!"></TD>!;
+    if ( dbdef->table('pkg_svc')->column('primary_svc') ) {
+      print qq!<TD><INPUT TYPE="radio" NAME="pkg_svc_primary" VALUE="$svcpart"!;
+      print ' CHECKED' if $pkg_svc->primary_svc =~ /^Y/i;
+      print '></TD>';
+    }
+    print qq!<TD><A HREF="part_svc.cgi?!,$part_svc->svcpart,
           qq!">!, $part_svc->getfield('svc'), "</A></TD></TR>";
 #    print "</TABLE></TD><TD>$thead" if ++$count == int(scalar(@part_svc) / 2);
     $count+=1;
@@ -518,6 +527,10 @@ if ( $conf->exists('enable_taxclasses') ) {
   push @fixups, 'taxclass'; #hidden
 }
 
+my @form_radio = ();
+if ( dbdef->table('pkg_svc')->column('primary_svc') ) {
+  push @form_radio, 'pkg_svc_primary';
+}
 
 my $widget = new HTML::Widgets::SelectLayers(
   'selected_layer' => $part_pkg->plan,
@@ -526,7 +539,8 @@ my $widget = new HTML::Widgets::SelectLayers(
   'form_action'    => 'process/part_pkg.cgi',
   'form_text'      => [ qw(pkg comment freq clone pkgnum pkgpart), @fixups ],
   'form_checkbox'  => [ qw(setuptax recurtax disabled) ],
-  'form_select'    => [ @form_select ],
+  'form_radio'     => \@form_radio,
+  'form_select'    => \@form_select,
   'fixup_callback' => sub {
                         #my $ = @_;
                         my $html = '';

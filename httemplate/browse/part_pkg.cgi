@@ -78,8 +78,10 @@ print <<END;
         <TH><FONT SIZE=-1>Data</FONT></TH>
         <TH>Service</TH>
         <TH><FONT SIZE=-1>Quan.</FONT></TH>
-      </TR>
 END
+print '<TH><FONT SIZE=-1>Primary</FONT></TH>'
+   if dbdef->table('pkg_svc')->column('primary_svc');
+print '</TR>';
 
 foreach my $part_pkg ( sort $sortby @part_pkg ) {
   my($hashref)=$part_pkg->hashref;
@@ -143,7 +145,13 @@ END
     my($part_svc) = qsearchs('part_svc',{'svcpart'=> $svcpart });
     print $n,qq!<TD><A HREF="${p}edit/part_svc.cgi?$svcpart">!,
           $part_svc->getfield('svc'),"</A></TD><TD>",
-          $pkg_svc->getfield('quantity'),"</TD></TR>\n";
+          $pkg_svc->getfield('quantity'),"</TD>";
+    if ( dbdef->table('pkg_svc')->column('primary_svc') ) {
+      print '<TD>';
+      print 'PRIMARY' if $pkg_svc->primary_svc =~ /^Y/i;
+      print '</TD>';
+    }
+    print "</TR>\n";
     $n="<TR>";
   }
 
