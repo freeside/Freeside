@@ -27,10 +27,10 @@ QUEUED_USER=ivan
 #eventually this shouldn't be needed
 FREESIDE_PATH = `pwd`
 
-PASSWD_USER = ivan
+PASSWD_USER = nostart
 PASSWD_MACHINE = localhost
 
-SIGNUP_USER = ivan
+SIGNUP_USER = nostart
 SIGNUP_MACHINE = localhost
 SIGNUP_AGENTNUM = 2
 SIGNUP_REFNUM = 2
@@ -40,10 +40,10 @@ SIGNUP_REFNUM = 2
 #not changable yet
 FREESIDE_CONF = /usr/local/etc/freeside
 
-VERSION=1.4.0pre14
-TAG=freeside_1_4_0_pre14
-#VERSION=1.4.0beta1
-#TAG=freeside_1_4_0_beta1
+#VERSION=1.4.0pre14
+#TAG=freeside_1_4_0_pre14
+VERSION=1.4.0beta1
+TAG=freeside_1_4_0_beta1
 
 help:
 	@echo "supported targets: aspdocs masondocs alldocs docs install-docs"
