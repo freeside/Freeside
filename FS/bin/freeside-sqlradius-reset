@@ -12,9 +12,18 @@ adminsuidsetup $user;
 
 #my $machine = shift or die &usage;
 
-my @exports =  qsearch('part_export', { exporttype=>'sqlradius' } );
-push @exports, qsearch('part_export', { exporttype=>'sqlradius_withdomain' } );
-
+my @exports = ();
+if ( @_ ) {
+  foreach my $exportnum ( @_ ) {
+    foreach my $exporttype (qw( sqlradius sqlradius_withdomain )) {
+    push @exports, qsearch('part_export', { exportnum  => $exportnum,
+                                            exporttype => $exporttype, } );
+    }
+  }
+ } else {
+  @exports = qsearch('part_export', { exporttype=>'sqlradius' } );
+  push @exports, qsearch('part_export', { exporttype=>'sqlradius_withdomain' } );
+}
 
 foreach my $export ( @exports ) {
   my $icradius_dbh = DBI->connect(
@@ -47,8 +56,7 @@ foreach my $export ( @exports ) {
 }
 
 sub usage {
-  #die "Usage:\n\n  sqlradius_reset user machine\n";
-  die "Usage:\n\n  freeside-sqlradius-reset user\n";
+  die "Usage:\n\n  freeside-sqlradius-reset user [ exportnum, ... ]\n";
 }
 
 =head1 NAME
@@ -57,12 +65,13 @@ freeside-sqlradius-reset - Command line interface to reset and recreate RADIUS S
 
 =head1 SYNOPSIS
 
-  freeside-sqlradius-reset username
+  freeside-sqlradius-reset username [ EXPORTNUM, ... ]
 
 =head1 DESCRIPTION
 
 Deletes the radcheck, radreply and usergroup tables and repopulates them from
-the Freeside database, for all sqlradius exports.
+the Freeside database, for the specified exports, or, if no exports are
+specified, for all sqlradius and sqlradius_withdomain exports.
 
 B<username> is a username added by freeside-adduser.
 
