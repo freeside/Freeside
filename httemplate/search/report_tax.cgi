@@ -80,7 +80,7 @@ foreach my $r ( qsearch('cust_main_county', {}) ) {
 
 #ordering
 my @regions = map $regions{$_},
-              sort { ( $b eq $out cmp $a eq $out ) || ( $a cmp $b ) }
+              sort { ( ($b eq $out) cmp ($a eq $out) ) || ($a cmp $b) }
               keys %regions;
 
 push @regions, {
