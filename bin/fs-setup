@@ -32,7 +32,10 @@
 # fix radius attributes ivan@sisd.com 98-sep-27
 #
 # $Log: fs-setup,v $
-# Revision 1.3  1998-10-22 15:46:28  ivan
+# Revision 1.4  1998-10-22 15:51:23  ivan
+# also varchar with no length specified - postgresql fix broke mysql.
+#
+# Revision 1.3  1998/10/22 15:46:28  ivan
 # now smallint is illegal, so remove that too.
 #
 
@@ -73,7 +76,7 @@ my($char_d) = 80; #default maxlength for text fields
 
 #my(@date_type)  = ( 'timestamp', '', ''     );
 my(@date_type)  = ( 'int', 'NULL', ''     );
-my(@perl_type) = ( 'varchar', 'NULL', ''   ); 
+my(@perl_type) = ( 'varchar', 'NULL', 255  ); 
 my(@money_type);
 if (datasrc =~ m/Pg/) { #Pg can't do decimal(10,2)
   @money_type = ( 'money',   '', '' );
