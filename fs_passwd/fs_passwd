@@ -10,14 +10,14 @@
 #
 # password lengths 0,255 instead of 6,8 - we'll let the server process
 # check the data ivan@sisd.com 98-jul-17
+#
+# updated for the exciting new world of self-service 2004-mar-10
 
 use strict;
 use Getopt::Std;
-use Socket;
-use IO::Handle;
+use FS::SelfService qw(passwd);
 use vars qw($opt_f $opt_s);
 
-my($fs_passwdd_socket)="/usr/local/freeside/fs_passwdd_socket";
 my($freeside_uid)=scalar(getpwnam('freeside'));
 
 $ENV{'PATH'} ='/usr/local/bin:/usr/bin:/usr/ucb:/bin';
@@ -114,13 +114,15 @@ print "\n";
 
 system '/bin/stty', 'echo'; 
 
-socket(SOCK, PF_UNIX, SOCK_STREAM, 0) or die "socket: $!";
-connect(SOCK, sockaddr_un($fs_passwdd_socket)) or die "connect: $!";
-print SOCK join("\n",$me,$old_password,$new_password,$new_gecos,$new_shell),"\n";
-SOCK->flush;
-my($error);
-$error = <SOCK>;
-chop $error;
+my $rv = passwd(
+  'username'     => $me,
+  'old_password' => $old_password,
+  'new_password' => $new_password,
+  'new_gecos'    => $new_gecos,
+  'new_shell'    => $new_shell,
+);
+
+my $error = $rv->{error};
 
 if ($error) {
   print "\nUpdate error: $error\n";

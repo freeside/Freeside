@@ -2,12 +2,10 @@
 
 use strict;
 use Getopt::Std;
-use Socket;
-use IO::Handle;
+use FS::SelfService qw(passwd);
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 
-my $fs_passwdd_socket = "/usr/local/freeside/fs_passwdd_socket";
 my $freeside_uid = scalar(getpwnam('freeside'));
 
 $ENV{'PATH'} ='/usr/local/bin:/usr/bin:/usr/ucb:/bin';
@@ -33,12 +31,13 @@ my $new_password = $1;
 die "New passwords don't match"
   unless $new_password eq $cgi->param('new_password2');
 
-socket(SOCK, PF_UNIX, SOCK_STREAM, 0) or die "socket: $!";
-connect(SOCK, sockaddr_un($fs_passwdd_socket)) or die "connect: $!";
-print SOCK join("\n", $me, $old_password, $new_password, '', ''), "\n";
-SOCK->flush;
-my $error = <SOCK>;
-chomp $error;
+my $rv = passwd(
+  'username'     => $me,
+  'old_password' => $old_password,
+  'new_password' => $new_password,
+);
+
+my $error = $rv->{error};
 
 if ($error) {
   die $error;
