@@ -183,7 +183,7 @@ sub insert {
       'to'      => \@invoicing_list,
       'subject' => 'Payment receipt',
       'body'    => $receipt_template->fill_in( HASH => {
-                     'date'    => str2time("%a %B %o, %Y", $self->_date),
+                     'date'    => time2str("%a %B %o, %Y", $self->_date),
                      'paynum'  => $self->paynum,
                      'paid'    => $self->paid,
                      'payby'   => ucfirst(lc($self->payby)),
