@@ -46,7 +46,19 @@ if ( $cgi->param('magic') && $cgi->param('magic') eq 'bill' ) {
 } else {
 
   my $qual = '';
-  if ( $query eq 'pkgnum' ) {
+  if ( $cgi->param('magic') && $cgi->param('magic') eq 'active' ) {
+
+    $qual = 'WHERE ( susp IS NULL OR susp = 0 )'.
+            ' AND ( cancel IS NULL OR cancel = 0)';
+
+    $sortby = \*pkgnum_sort;
+
+    if ( $cgi->param('pkgpart') =~ /^(\d+)$/ ) {
+      $qual .= " AND pkgpart = $1";
+    }
+
+  } elsif ( $query eq 'pkgnum' ) {
+
     $sortby=\*pkgnum_sort;
 
   } elsif ( $query eq 'SUSP_pkgnum' ) {

@@ -23,7 +23,7 @@ function part_export_areyousure(href) {
 }
 </SCRIPT>
 
-    Services are items you offer to your customers.<BR><BR>
+    Service definitions are the templates for items you offer to your customers.<BR><BR>
 
 <FORM METHOD="POST" ACTION="<%= $p %>edit/part_svc.cgi">
 <A HREF="<%= $p %>edit/part_svc.cgi"><I>Add a new service definition</I></A><% if ( @part_svc ) { %>&nbsp;or&nbsp;<SELECT NAME="clone"><OPTION></OPTION>
@@ -34,7 +34,7 @@ function part_export_areyousure(href) {
 <% } %>
 </FORM><BR>
 
-<%= $total %> services
+<%= $total %> service definitions
 <%= $cgi->param('showdisabled')
       ? do { $cgi->param('showdisabled', 0);
              '( <a href="'. $cgi->self_url. '">hide disabled services</a> )'; }

@@ -11,15 +11,35 @@ if ( $cgi->param('showdisabled') ) {
 my @part_pkg = qsearch('part_pkg', \%search );
 my $total = scalar(@part_pkg);
 
+my $sortby;
+my %num_active_cust_pkg;
+if ( $cgi->param('active') ) {
+  my $active_sth = dbh->prepare(
+    'SELECT COUNT(*) FROM cust_pkg WHERE pkgpart = ?'.
+    ' AND ( cancel IS NULL OR cancel = 0 )'.
+    ' AND ( susp IS NULL OR susp = 0 )'
+  ) or die dbh->errstr;
+  foreach my $part_pkg ( @part_pkg ) {
+    $active_sth->execute($part_pkg->pkgpart) or die $active_sth->errstr;
+    $num_active_cust_pkg{$part_pkg->pkgpart} =
+      $active_sth->fetchrow_arrayref->[0];
+  }
+  $sortby = \*active_cust_pkg_sort;
+} else {
+  $sortby = \*pkgpart_sort;
+}
+
 %>
 <%= header("Package Definition Listing",menubar( 'Main Menu' => $p )) %>
-One or more services are grouped together into a package and given pricing
-information. Customers purchase packages rather than purchase services
-directly.<BR><BR>
-<A HREF="<%= $p %>edit/part_pkg.cgi"><I>Add a new package definition</I></A>
-<BR><BR>
+<% unless ( $cgi->param('active') ) { %>
+  One or more service definitions are grouped together into a package 
+  definition and given pricing information.  Customers purchase packages
+  rather than purchase services directly.<BR><BR>
+  <A HREF="<%= $p %>edit/part_pkg.cgi"><I>Add a new package definition</I></A>
+  <BR><BR>
+<% } %>
 
-<%= $total %> packages
+<%= $total %> package definitions
 <%
 if ( $cgi->param('showdisabled') ) {
   $cgi->param('showdisabled', 0);
@@ -34,6 +54,10 @@ print &table(), <<END;
       <TR>
         <TH COLSPAN=$colspan>Package</TH>
         <TH>Comment</TH>
+END
+print '        <TH><FONT SIZE=-1>Customer<BR>packages</FONT></TH>'
+  if $cgi->param('active');
+print <<END;
         <TH><FONT SIZE=-1>Freq.</FONT></TH>
         <TH><FONT SIZE=-1>Plan</FONT></TH>
         <TH><FONT SIZE=-1>Data</FONT></TH>
@@ -42,9 +66,7 @@ print &table(), <<END;
       </TR>
 END
 
-foreach my $part_pkg ( sort { 
-  $a->getfield('pkgpart') <=> $b->getfield('pkgpart')
-} @part_pkg ) {
+foreach my $part_pkg ( sort $sortby @part_pkg ) {
   my($hashref)=$part_pkg->hashref;
   my(@pkg_svc)=grep $_->getfield('quantity'),
     qsearch('pkg_svc',{'pkgpart'=> $hashref->{pkgpart} });
@@ -73,6 +95,16 @@ END
   print <<END;
         <TD ROWSPAN=$rowspan><A HREF="${p}edit/part_pkg.cgi?$hashref->{pkgpart}">$hashref->{pkg}</A></TD>
         <TD ROWSPAN=$rowspan>$hashref->{comment}</TD>
+END
+  if ( $cgi->param('active') ) {
+    print "        <TD ROWSPAN=$rowspan>";
+    print '<FONT COLOR="#00CC00"><B>'.
+          $num_active_cust_pkg{$hashref->{'pkgpart'}}.
+          qq!</B></FONT>&nbsp;<A HREF="${p}search/cust_pkg.cgi?magic=active;pkgpart=$hashref->{pkgpart}">active</A>!;
+    # suspended/cancelled
+    print '</TD>';
+  }
+  print <<END;
         <TD ROWSPAN=$rowspan>$hashref->{freq}</TD>
         <TD ROWSPAN=$rowspan>$hashref->{plan}</TD>
         <TD ROWSPAN=$rowspan>$plandata</TD>
@@ -99,4 +131,14 @@ print <<END;
   </BODY>
 </HTML>
 END
+
+
+sub pkgpart_sort {
+  $a->pkgpart <=> $b->pkgpart;
+}
+
+sub active_cust_pkg_sort {
+  $num_active_cust_pkg{$b->pkgpart} <=> $num_active_cust_pkg{$a->pkgpart};
+}
+
 %>
