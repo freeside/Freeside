@@ -9,7 +9,7 @@ use FS::rate_prefix;
 
 @ISA = qw(FS::part_pkg);
 
-$DEBUG = 0;
+$DEBUG = 1;
 
 %info = (
     'name' => 'VoIP rating by plan of CDR records in an SQL RADIUS radacct table',
@@ -90,6 +90,8 @@ sub calc_recur {
         $countrycode = '1';
       }
 
+      warn "rating call to +$countrycode $dest" if $DEBUG;
+
       #find a rate prefix, first look at most specific (4 digits) then 3, etc.,
       # finally trying the country code only
       my $rate_prefix = '';
@@ -106,6 +108,7 @@ sub calc_recur {
 
       unless ( $rate_prefix ) {
         if ( $self->option('ignore_unrateable') ) {
+          warn "  skipping unrateable call to +$countrycode $dest";
           next;
         } else {
           die "Can't find rate for call to +$countrycode $dest\n"
@@ -118,6 +121,10 @@ sub calc_recur {
         'ratenum'        => $ratenum,
         'dest_regionnum' => $regionnum,
       } );
+
+      warn "  found rate for regionnum $regionnum ".
+           "and rate detail $rate_detail"
+        if $DEBUG;
 
       ###
       # find the price and add detail to the invoice
@@ -141,6 +148,15 @@ sub calc_recur {
         $charge = sprintf('%.2f', $rate_detail->min_charge * $charge_min );
         $charges += $charge;
       }
+
+      warn "  adding details on charge to invoice: ".
+           join(' - ', 
+             "+$countrycode $dest",
+             $rate_prefix->rate_region->regionname,
+             $minutes.'m',
+             '$'.$charge,
+           )
+        if $DEBUG;
 
       push @$details, 
         #[
