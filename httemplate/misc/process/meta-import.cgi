@@ -116,8 +116,8 @@ function SafeOnsubmit() {
   #hashmaker widget
   sub hashmaker {
     my($name, $from, $to, $labelfrom, $labelto) = @_;
-    $fromsize = scalar(@$from);
-    $tosize = scalar(@$to);
+    my $fromsize = scalar(@$from);
+    my $tosize = scalar(@$to);
     "<TABLE><TR><TH>$labelfrom</TH><TH>$labelto</TH></TR><TR><TD>".
         qq!<SELECT NAME="${name}_from" SIZE=$fromsize>\n!.
         join("\n", map { qq!<OPTION VALUE="$_">$_</OPTION>! } sort { $a cmp $b } @$from ).
