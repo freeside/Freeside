@@ -45,7 +45,7 @@ $limit .= "LIMIT $maxrecords" if $maxrecords;
 my $offset = $cgi->param('offset') || 0;
 $limit .= " OFFSET $offset" if $offset;
 
-my $total;
+my $total = 0;
 
 my(@cust_main, $sortby, $orderby);
 if ( $cgi->param('browse') ) {
@@ -134,6 +134,9 @@ if ( $cgi->param('browse') ) {
     if $cgi->param('showcancelledcustomers') eq '0' #see if it was set by me
        || ( $conf->exists('hidecancelledcustomers')
              && ! $cgi->param('showcancelledcustomers') );
+
+  my %saw = ();
+  @cust_main = grep { !$saw{$_->custnum}++ } @cust_main;
 }
 
 my %all_pkgs;
