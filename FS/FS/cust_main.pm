@@ -256,7 +256,8 @@ sub insert {
   my $error = $self->SUPER::insert;
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
-    return "inserting cust_main record (transaction rolled back): $error";
+    #return "inserting cust_main record (transaction rolled back): $error";
+    return $error;
   }
 
   if ( @param ) { # CUST_PKG_HASHREF
@@ -277,7 +278,8 @@ sub insert {
         $error = $svc_something->insert;
         if ( $error ) {
           $dbh->rollback if $oldAutoCommit;
-          return "inserting svc_ (transaction rolled back): $error";
+          #return "inserting svc_ (transaction rolled back): $error";
+          return $error;
         }
       }
     }
