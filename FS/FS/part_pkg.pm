@@ -116,8 +116,8 @@ sub clone {
 Adds this package definition to the database.  If there is an error,
 returns the error, otherwise returns false.
 
-Currently available options are: I<pkg_svc>, I<primary_svc>, I<cust_pkg> and
-I<custnum_ref>.
+Currently available options are: I<pkg_svc>, I<primary_svc>, I<cust_pkg>, 
+I<custnum_ref> and I<options>.
 
 If I<pkg_svc> is set to a hashref with svcparts as keys and quantities as
 values, appropriate FS::pkg_svc records will be inserted.
@@ -130,6 +130,9 @@ record itself), the object will be updated to point to this package definition.
 
 In conjunction with I<cust_pkg>, if I<custnum_ref> is set to a scalar reference,
 the scalar will be updated with the custnum value from the cust_pkg record.
+
+If I<options> is set to a hashref of options, appropriate FS::part_pkg_option
+records will be inserted.
 
 =cut
 
@@ -163,7 +166,8 @@ sub insert {
   }
 
   if ( $plandata ) {
-  warn "  inserting part_pkg_option records for plandata" if $DEBUG;
+
+    warn "  inserting part_pkg_option records for plandata" if $DEBUG;
     foreach my $part_pkg_option ( 
       map { /^(\w+)=(.*)$/ or do { $dbh->rollback if $oldAutoCommit;
                                    return "illegal plandata: $plandata";
@@ -182,6 +186,27 @@ sub insert {
         return $error;
       }
     }
+
+  } elsif ( $options{'options'} ) {
+
+    warn "  inserting part_pkg_option records for options hashref" if $DEBUG;
+    foreach my $optionname ( %{$options{'options'}} ) {
+
+      my $part_pkg_option =
+        new FS::part_pkg_option {
+          'pkgpart'     => $self->pkgpart,
+          'optionname'  => $optionname,
+          'optionvalue' => $options{'options'}->{$optionname},
+        };
+
+      my $error = $part_pkg_option->insert;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
+      }
+
+    }
+
   }
 
   my $conf = new FS::Conf;
