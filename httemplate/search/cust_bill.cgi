@@ -125,10 +125,10 @@ END
     my $view = popurl(2). "view/cust_bill.cgi?$invnum";
     print <<END;
       <TR>
-        <TD ROWSPAN=$rowspan><A HREF="$view"><FONT SIZE=-1>$invnum</FONT></A></TD>
-        <TD ROWSPAN=$rowspan ALIGN="right"><A HREF="$view"><FONT SIZE=-1>\$$owed</FONT></A></TD>
-        <TD ROWSPAN=$rowspan ALIGN="right"><A HREF="$view"><FONT SIZE=-1>\$$charged</FONT></A></TD>
-        <TD ROWSPAN=$rowspan><A HREF="$view"><FONT SIZE=-1>$pdate</FONT></A></TD>
+        <TD ROWSPAN=$rowspan><A HREF="$view">$invnum</A></TD>
+        <TD ROWSPAN=$rowspan ALIGN="right"><A HREF="$view">\$$owed</A></TD>
+        <TD ROWSPAN=$rowspan ALIGN="right"><A HREF="$view">\$$charged</A></TD>
+        <TD ROWSPAN=$rowspan><A HREF="$view">$pdate</A></TD>
 END
     my $custnum = $cust_bill->custnum;
     my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } );
@@ -139,8 +139,8 @@ END
         $cust_main->company,
       );
       print <<END;
-        <TD ROWSPAN=$rowspan><A HREF="$cview"><FONT SIZE=-1>$name</FONT></A></TD>
-        <TD ROWSPAN=$rowspan><A HREF="$cview"><FONT SIZE=-1>$company</FONT></A></TD>
+        <TD ROWSPAN=$rowspan><A HREF="$cview">$name</A></TD>
+        <TD ROWSPAN=$rowspan><A HREF="$cview">$company</A></TD>
 END
     } else {
       print <<END
@@ -153,8 +153,8 @@ END
   $tot_balance = sprintf("%.2f", $tot_balance);
   $tot_amount = sprintf("%.2f", $tot_amount);
   print "</TABLE>$pager<BR>". table(). <<END;
-      <TR><TD>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TD><TH><FONT SIZE=-1>Total<BR>Balance</FONT></TH><TH><FONT SIZE=-1>Total<BR>Amount</FONT></TH></TR>
-      <TR><TD></TD><TD ALIGN="right"><FONT SIZE=-1>\$$tot_balance</FONT></TD><TD ALIGN="right"><FONT SIZE=-1>\$$tot_amount</FONT></TD></TD></TR>
+      <TR><TD>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TD><TH>Total<BR>Balance</TH><TH>Total<BR>Amount</TH></TR>
+      <TR><TD></TD><TD ALIGN="right">\$$tot_balance</TD><TD ALIGN="right">\$$tot_amount</TD></TD></TR>
     </TABLE>
   </BODY>
 </HTML>
