@@ -1,6 +1,6 @@
 <!-- mason kludge -->
 <%
-# <!-- $Id: REAL_cust_pkg.cgi,v 1.6 2003-09-30 08:21:56 ivan Exp $ -->
+# <!-- $Id: REAL_cust_pkg.cgi,v 1.7 2003-11-19 12:21:09 ivan Exp $ -->
 
 my $error ='';
 my $pkgnum = '';
@@ -119,7 +119,7 @@ print '<TR><TD ALIGN="right">Cancellation date</TD><TD BGCOLOR="#ffffff">',
 %>
   Calendar.setup({
     inputField: "<%= $cal %>_text",
-    ifFormat:   "mm/dd/y",
+    ifFormat:   "%m/%d/%Y",
     button:     "<%= $cal %>_button",
     align:      "BR"
   });
