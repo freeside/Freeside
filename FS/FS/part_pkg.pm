@@ -267,12 +267,14 @@ SVCDB is specified and does not match the svcdb of the service definition,
 
 sub svcpart {
   my $self = shift;
-  my $svcdb = shift;
-  my @pkg_svc = $self->pkg_svc;
-  return '' if scalar(@pkg_svc) != 1
-               || $pkg_svc[0]->quantity != 1
-               || ( $svcdb && $pkg_svc[0]->part_svc->svcdb ne $svcdb );
+  my $svcdb = scalar(@_) ? shift : '';
+  my @pkg_svc = grep {
+    $_->quantity == 1
+    && ( $svcdb eq $_->part_svc->svcdb || !$svcdb )
+  } $self->pkg_svc;
+  return '' if scalar(@pkg_svc) != 1;
   $pkg_svc[0]->svcpart;
+
 }
 
 =item payby

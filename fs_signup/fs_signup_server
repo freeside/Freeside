@@ -162,7 +162,7 @@ while (1) {
     my $part_pkg =
       qsearchs( 'part_pkg', { 'pkgpart' => $pkgpart } )
         or $error ||= "WARNING: unknown pkgpart: $pkgpart";
-    my $svcpart = $part_pkg->svcpart unless $error;
+    my $svcpart = $part_pkg->svcpart('svc_acct') unless $error;
 
     my $cust_pkg = new FS::cust_pkg ( {
       #later#'custnum' => $custnum,
