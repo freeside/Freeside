@@ -60,6 +60,8 @@ sub handler
       use FS::UID qw(cgisuidsetup);
       use FS::Record qw(qsearch qsearchs fields);
       use FS::part_svc;
+      use FS::part_pkg;
+      use FS::pkg_svc;
       use FS::CGI qw(header menubar popurl table);
 
       $cgi = new CGI;
