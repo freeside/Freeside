@@ -123,9 +123,14 @@ Sends headers and an HTML error message, then exits.
 sub eidiot {
   #warn "eidiot depriciated";
   idiot(@_);
-  #exit;
-  use Apache;
-  Apache::exit;
+  if (exists $ENV{MOD_PERL}) {
+    eval {
+      use Apache;
+      Apache::exit();
+    };
+  } else {
+    exit;
+  }
 }
 
 =item popurl LEVEL
