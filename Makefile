@@ -39,7 +39,7 @@ INIT_INSTALL = /usr/sbin/update-rc.d freeside defaults 21 20
 #redhat, fedora
 #INIT_INSTALL = /sbin/chkconfig freeside
 #not necessary (freebsd)
-#INIT_INSTALL = /bin/true
+#INIT_INSTALL = /usr/bin/true
 
 #deb, suse
 HTTPD_RESTART = /etc/init.d/apache restart
