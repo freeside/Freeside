@@ -1,10 +1,13 @@
-$Id: TODO,v 1.11 1998-10-13 12:49:50 ivan Exp $
+$Id: TODO,v 1.12 1998-11-07 08:25:10 ivan Exp $
 
 If you are interested in helping with any of these, please join the mailing
 list (send a blank message to ivan-freeside-subscribe@sisd.com) to avoid 
 duplication of effort.
 
 -- 1.1.x --
+
+qsearch[s] (or just put in new?) in FS::Record should bless the object
+into the appropriate derived class automagically, if possible?
 
 radius logfile parsing and perl expression check.
 
