@@ -5,7 +5,8 @@ use vars qw($paymentserversecret $paymentserverport $paymentserverhost);
 package FS::cust_main;
 
 use strict;
-use vars qw(@ISA $conf $lpr $processor $xaction $E_NoErr $invoice_from);
+use vars qw( @ISA $conf $lpr $processor $xaction $E_NoErr $invoice_from
+             $smtpmachine );
 use Safe;
 use Carp;
 use Time::Local;
@@ -34,6 +35,7 @@ $FS::UID::callback{'FS::cust_main'} = sub {
   $conf = new FS::Conf;
   $lpr = $conf->config('lpr');
   $invoice_from = $conf->config('invoice_from');
+  $smtpmachine = $conf->config('smtpmachine');
 
   if ( $conf->exists('cybercash3.2') ) {
     require CCMckLib3_2;
@@ -591,6 +593,8 @@ sub collect {
         #my @print_text = $cust_bill->print_text; #( date )
         my @invoicing_list = $self->invoicing_list;
         if ( grep { $_ ne 'POST' } @invoicing_list ) { #email invoice
+          $ENV{SMTPHOSTS} = $smtpmachine;
+          $ENV{MAILADDRESS} = $invoice_from;
           my $header = new Mail::Header ( [
             "From: $invoice_from",
             "To: ". join(', ', grep { $_ ne 'POST' } @invoicing_list ),
@@ -863,7 +867,7 @@ sub check_invoicing_list {
 
 =head1 VERSION
 
-$Id: cust_main.pm,v 1.13 1999-02-28 20:09:03 ivan Exp $
+$Id: cust_main.pm,v 1.14 1999-03-29 12:06:15 ivan Exp $
 
 =head1 BUGS
 
@@ -919,7 +923,10 @@ enable cybercash, cybercash v3 support, don't need to import
 FS::UID::{datasrc,checkruid} ivan@sisd.com 98-sep-19-21
 
 $Log: cust_main.pm,v $
-Revision 1.13  1999-02-28 20:09:03  ivan
+Revision 1.14  1999-03-29 12:06:15  ivan
+buglet in email invoices fixed
+
+Revision 1.13  1999/02/28 20:09:03  ivan
 allow spaces in zip codes, for (at least) canada.  pointed out by
 Clayton Gray <clgray@bcgroup.net>
 
