@@ -59,14 +59,13 @@ foreach my $cust_bill ( @cust_bill ) {
 END
 }
 
-#print <<END;
 #  if ( cust_bill == "Refund" ) {
 #    what.form.amount.value = "$credited";
 #  }
-#}
-#</SCRIPT>
-#END
-print "</SCRIPT>\n";
+print <<END;
+}
+</SCRIPT>
+END
 
 print qq!<BR>Invoice #<SELECT NAME="invnum" SIZE=1 onChange="changed(this)">!,
       '<OPTION VALUE="">';
