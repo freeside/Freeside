@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main.cgi,v 1.13 1999-04-09 03:52:55 ivan Exp $
+# $Id: cust_main.cgi,v 1.14 1999-04-14 07:47:53 ivan Exp $
 #
 # Usage: cust_main.cgi custnum
 #        http://server.name/path/cust_main.cgi?custnum
@@ -38,7 +38,10 @@
 # fixed one missed day->daytime ivan@sisd.com 98-jul-13
 #
 # $Log: cust_main.cgi,v $
-# Revision 1.13  1999-04-09 03:52:55  ivan
+# Revision 1.14  1999-04-14 07:47:53  ivan
+# i18n fixes
+#
+# Revision 1.13  1999/04/09 03:52:55  ivan
 # explicit & for table/itable/ntable
 #
 # Revision 1.12  1999/04/06 11:16:16  ivan
@@ -115,9 +118,12 @@ if ( $cgi->param('error') ) {
     map { $_, scalar($cgi->param($_)) } fields('cust_main')
   } );
   $custnum = $cust_main->custnum;
-  $pkgpart = $cgi->param('pkgpart_svcpart');
-  $pkgpart =~ /^(\d+)_/;
-  $pkgpart = $1;
+  $pkgpart = $cgi->param('pkgpart_svcpart') || '';
+  if ( $pkgpart =~ /^(\d+)_/ ) {
+    $pkgpart = $1;
+  } else {
+    $pkgpart = '';
+  }
   $username = $cgi->param('username');
   $password = $cgi->param('_password');
   $popnum = $cgi->param('popnum');
@@ -385,9 +391,9 @@ unless ( $custnum ) {
 
     foreach my $part_pkg ( @part_pkg ) {
       print qq!<OPTION VALUE="!,
-              $part_pkg->pkgpart. "_". $pkgpart{ $part_pkg->pkgpart }, '"',
-            " SELECTED"x($part_pkg->pkgpart == $pkgpart),
-            ">", $part_pkg->pkg, " - ", $part_pkg->comment;
+              $part_pkg->pkgpart. "_". $pkgpart{ $part_pkg->pkgpart }, '"';
+      print " SELECTED" if $pkgpart && ( $part_pkg->pkgpart == $pkgpart );
+      print ">", $part_pkg->pkg, " - ", $part_pkg->comment;
     }
     print "</SELECT></TD></TR>";
 

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main.cgi,v 1.9 1999-04-07 15:22:19 ivan Exp $
+# $Id: cust_main.cgi,v 1.10 1999-04-14 07:47:53 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/cust_main.cgi
@@ -20,7 +20,10 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # $Log: cust_main.cgi,v $
-# Revision 1.9  1999-04-07 15:22:19  ivan
+# Revision 1.10  1999-04-14 07:47:53  ivan
+# i18n fixes
+#
+# Revision 1.9  1999/04/07 15:22:19  ivan
 # don't use anchor in redirect
 #
 # Revision 1.8  1999/03/25 13:55:10  ivan
@@ -68,7 +71,8 @@ $cgi->param('tax','') unless defined($cgi->param('tax'));
 
 $cgi->param('refnum', (split(/:/, ($cgi->param('refnum'))[0] ))[0] );
 
-$cgi->param('state') =~ /^(\w+)( \((\w+)\))? \/ (\w+)$/;
+$cgi->param('state') =~ /^(\w*)( \(([\w ]+)\))? ?\/ ?(\w+)$/
+  or die "Oops, illegal \"state\" param: ". $cgi->param('state');
 $cgi->param('state', $1);
 $cgi->param('county', $3 || '');
 $cgi->param('country', $4);
