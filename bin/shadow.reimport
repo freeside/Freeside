@@ -36,15 +36,14 @@ die "No services with svcdb svc_acct!\n" unless %part_svc;
 print "\n\n", &menu_svc, "\n", <<END;
 Enter part number to import.
 END
-#my($shell_svcpart)=&getpart;
-my $shell_svcpart = 2;
+my($shell_svcpart)=&getpart;
 
 print "\n\n", <<END;
 Enter the location and name of your _user_ shadow file, for example
 "mail.isp.com:/etc/shadow" or "bsd.isp.com:/etc/master.passwd"
 END
-#my($loc_shadow)=&getvalue(":");
-#iscp("root\@$loc_shadow", "$spooldir/shadow.import");
+my($loc_shadow)=&getvalue(":");
+iscp("root\@$loc_shadow", "$spooldir/shadow.import");
 
 sub menu_svc {
   ( join "\n", map "$_: ".$part_svc{$_}->svc, sort keys %part_svc ). "\n";
