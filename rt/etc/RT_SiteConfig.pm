@@ -12,4 +12,10 @@ $RT::WebExternalAuto = 1;
 
 $RT::URI::freeside::IntegrationType = 'Internal';
 
+Set($DatabaseHost   , '');
+
+#perl 5.8.0 - 5.8.2 experiment
+#@EmailInputEncodings = qw(iso-8859-1 us-ascii utf-8); # unless (@EmailInputEncodings);
+#Set($EmailOutputEncoding , 'iso-8859-1');
+
 1;
