@@ -487,7 +487,7 @@
     <li><a name="rate_prefix" href="man/FS/rate_prefix.html">rate_prefix</a> - Call rate prefix
       <ul>
         <li>prefixnum - primary key
-        <li>regionnum <a href="#rate_region">rate region</a>
+        <li>regionnum - <a href="#rate_region">rate region</a>
         <li>countrycode
         <li>npa
         <li>nxx
@@ -498,6 +498,19 @@
         <li>msgcode - message code
         <li>locale - locale
         <li>msg - Message text
+      </ul>
+    <li><a name="clientapi_session" href="man/FS/clientapi_session.html">clientapi_session</a> - ClientAPI session store
+      <ul>
+        <li>sessionnum - primary key
+        <li>sessionid - session ID
+        <li>namespace - session namespace
+      </ul>
+    <li><a name="clientapi_session_field" href="man/FS/clientapi_session_field.html">clientapi_session_field</a> - Client API session store data
+      <ul>
+        <li>fieldnum - primary key
+        <li>sessionnum - <a href="#session">session</a>
+        <li>fieldname
+        <li>fieldvalue
       </ul>
   </ul>
 </body>

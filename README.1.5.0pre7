@@ -47,6 +47,23 @@ CREATE TABLE reg_code_pkg (
 CREATE UNIQUE INDEX reg_code_pkg1 ON reg_code_pkg ( codenum, pkgpart );
 CREATE INDEX reg_code_pkg2 ON reg_code_pkg ( codenum );
 
+CREATE TABLE clientapi_session (
+    sessionnum serial NOT NULL,
+    sessionid varchar(80) NOT NULL,
+    namespace varchar(80) NOT NULL,
+    PRIMARY KEY (sessionnum)
+);
+CREATE UNIQUE INDEX clientapi_session1 ON clientapi_session ( sessionid, namespace );
+
+CREATE TABLE clientapi_session_field (
+    fieldnum serial NOT NULL,
+    sessionnum int NOT NULL,
+    fieldname varchar(80) NOT NULL,
+    fieldvalue text NULL,
+    PRIMARY KEY (fieldnum)
+);
+CREATE UNIQUE INDEX clientapi_session_field1 ON clientapi_session_field ( sessionnum, fieldname );
+
 ALTER TABLE part_pkg ADD promo_code varchar(80) NULL;
 ALTER TABLE h_part_pkg ADD promo_code varchar(80) NULL;
 CREATE INDEX part_pkg2 ON part_pkg ( promo_code );

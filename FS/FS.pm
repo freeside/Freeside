@@ -160,6 +160,24 @@ L<FS::queue_depend> - Job dependencies
 
 L<FS::msgcat> - Message catalogs
 
+L<FS::clientapi_session>
+
+L<FS::clientapi_session_field>
+
+=head1 Client API
+
+L<FS::ClientAPI>
+
+L<FS::ClientAPI_SessionCache>
+
+L<FS::ClientAPI::Signup>
+
+L<FS::ClientAPI::passwd>
+
+L<FS::ClientAPI::MyAccount>
+
+L<FS::ClientAPI::Agent>
+
 =head1 Remote API modules
 
 L<FS::SelfService>
@@ -194,15 +212,9 @@ L<freeside-bill>
 
 L<freeside-overdue>
 
-=head2 User Interface classes (under (stalled) development; not yet usable)
+=head2 User Interface classes
 
-L<FS::UI::Base> - User-interface base class
-
-L<FS::UI::Gtk> - Gtk user-interface class
-
-L<FS::UI::CGI> - CGI (HTML) user-interface class
-
-L<FS::UI::agent> - agent table user-interface class
+L<FS::UI::Web> - Web user-interface class
 
 =head2 Notes
 

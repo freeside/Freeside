@@ -5,6 +5,7 @@ use Tie::RefHash;
 use FS::Conf;
 use FS::Record qw(qsearch qsearchs dbdef);
 use FS::Msgcat qw(gettext);
+use FS::ClientAPI_SessionCache;
 use FS::agent;
 use FS::cust_main_county;
 use FS::part_pkg;
@@ -88,7 +89,7 @@ sub signup_info {
 
   my $session = '';
   if ( exists $packet->{'session_id'} ) {
-    my $cache = new Cache::SharedMemoryCache( {
+    my $cache = new FS::ClientAPI_SessionCache( {
       'namespace' => 'FS::ClientAPI::Agent',
     } );
     $session = $cache->get($packet->{'session_id'});
@@ -164,7 +165,7 @@ sub new_customer {
 
   my $agentnum;
   if ( exists $packet->{'session_id'} ) {
-    my $cache = new Cache::SharedMemoryCache( {
+    my $cache = new FS::ClientAPI_SessionCache( {
       'namespace' => 'FS::ClientAPI::Agent',
     } );
     my $session = $cache->get($packet->{'session_id'});

@@ -142,7 +142,11 @@ foreach $attribute (@check_attributes) {
 }
 
 #create history tables (false laziness w/create-history-tables)
-foreach my $table ( grep { ! /^h_/ } $dbdef->tables ) {
+foreach my $table (
+  grep { ! /^clientapi_session/ }
+  grep { ! /^h_/ }
+  $dbdef->tables
+) {
   my $tableobj = $dbdef->table($table)
     or die "unknown table $table";
 
@@ -1228,6 +1232,29 @@ sub tables_hash_hack {
       'primary_key' => '',
       'unique'      => [ [ 'codenum', 'pkgpart' ] ],
       'index'       => [ [ 'codenum' ] ],
+    },
+
+    'clientapi_session' => {
+      'columns' => [
+        'sessionnum',  'serial',  '', '',
+        'sessionid',  'varchar',  '', $char_d,
+        'namespace',  'varchar',  '', $char_d,
+      ],
+      'primary_key' => 'sessionnum',
+      'unique'      => [ [ 'sessionid', 'namespace' ] ],
+      'index'       => [],
+    },
+
+    'clientapi_session_field' => {
+      'columns' => [
+        'fieldnum',    'serial',     '', '',
+        'sessionnum',     'int',     '', '',
+        'fieldname',  'varchar',     '', $char_d,
+        'fieldvalue',    'text', 'NULL', '',
+      ],
+      'primary_key' => 'fieldnum',
+      'unique'      => [ [ 'sessionnum', 'fieldname' ] ],
+      'index'       => [],
     },
 
   );

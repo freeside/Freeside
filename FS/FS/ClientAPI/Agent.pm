@@ -4,16 +4,18 @@ package FS::ClientAPI::Agent;
 
 use strict;
 use vars qw($cache);
+use subs qw(_cache);
 use Digest::MD5 qw(md5_hex);
-use Cache::SharedMemoryCache; #store in db?
 use FS::Record qw(qsearchs); # qsearch dbdef dbh);
+use FS::ClientAPI_SessionCache;
 use FS::agent;
 use FS::cust_main qw(smart_search);
 
-#store in db?
-my $cache = new Cache::SharedMemoryCache( {
-   'namespace' => 'FS::ClientAPI::Agent',
-} );
+sub _cache {
+  $cache ||= new FS::ClientAPI_SessionCache( {
+               'namespace' => 'FS::ClientAPI::Agent',
+             } );
+}
 
 sub agent_login {
   my $p = shift;
@@ -37,9 +39,9 @@ sub agent_login {
   my $session_id;
   do {
     $session_id = md5_hex(md5_hex(time(). {}. rand(). $$))
-  } until ( ! defined $cache->get($session_id) ); #just in case
+  } until ( ! defined _cache->get($session_id) ); #just in case
 
-  $cache->set( $session_id, $session, '1 hour' );
+  _cache->set( $session_id, $session, '1 hour' );
 
   { 'error'      => '',
     'session_id' => $session_id,
@@ -49,7 +51,7 @@ sub agent_login {
 sub agent_logout {
   my $p = shift;
   if ( $p->{'session_id'} ) {
-    $cache->remove($p->{'session_id'});
+    _cache->remove($p->{'session_id'});
     return { 'error' => '' };
   } else {
     return { 'error' => "Can't resume session" }; #better error message
@@ -59,7 +61,7 @@ sub agent_logout {
 sub agent_info {
   my $p = shift;
 
-  my $session = $cache->get($p->{'session_id'})
+  my $session = _cache->get($p->{'session_id'})
     or return { 'error' => "Can't resume session" }; #better error message
 
   #my %return;
@@ -84,7 +86,7 @@ sub agent_info {
 sub agent_list_customers {
   my $p = shift;
 
-  my $session = $cache->get($p->{'session_id'})
+  my $session = _cache->get($p->{'session_id'})
     or return { 'error' => "Can't resume session" }; #better error message
 
   #my %return;
@@ -120,3 +122,4 @@ sub agent_list_customers {
 
 }
 
+1;

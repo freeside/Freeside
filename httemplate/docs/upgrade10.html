@@ -8,7 +8,7 @@ install Net::SSH 0.08
 - In httpd.conf, change &lt;Files ~ \.cgi&gt; to  &lt;Files ~ (\.cgi|\.html)&gt;
 - In httpd.conf, change <b>AddHandler perl-script .cgi</b> or <b>SetHandler perl-script</b> to <b>AddHandler perl-script .cgi .html</b>
 
-install NetAddr::IP, Chart::Base, IPC::ShareLite, Locale::SubCountry, 
+install NetAddr::IP, Chart::Base, Locale::SubCountry, 
 JavaScript::RPC (JavaScript::RPC::Server::CGI) <!-- and Crypt::YAPassGen-->
 
 INSERT INTO msgcat ( msgnum, msgcode, locale, msg ) VALUES ( 20, 'svc_external-id', 'en_US', 'External ID' );
@@ -239,6 +239,23 @@ CREATE TABLE reg_code_pkg (
 );
 CREATE UNIQUE INDEX reg_code_pkg1 ON reg_code_pkg ( codenum, pkgpart );
 CREATE INDEX reg_code_pkg2 ON reg_code_pkg ( codenum );
+
+CREATE TABLE clientapi_session (
+    sessionnum serial NOT NULL,
+    sessionid varchar(80) NOT NULL,
+    namespace varchar(80) NOT NULL,
+    PRIMARY KEY (sessionnum)
+);
+CREATE UNIQUE INDEX clientapi_session1 ON clientapi_session ( sessionid, namespace );
+
+CREATE TABLE clientapi_session_field (
+    fieldnum serial NOT NULL,
+    sessionnum int NOT NULL,
+    fieldname varchar(80) NOT NULL,
+    fieldvalue text NULL,
+    PRIMARY KEY (fieldnum)
+);
+CREATE UNIQUE INDEX clientapi_session_field1 ON clientapi_session_field ( sessionnum, fieldname );
 
 DROP INDEX cust_bill_pkg1;
 

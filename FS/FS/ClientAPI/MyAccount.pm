@@ -2,14 +2,15 @@ package FS::ClientAPI::MyAccount;
 
 use strict;
 use vars qw($cache);
+use subs qw(_cache);
 use Digest::MD5 qw(md5_hex);
 use Date::Format;
 use Business::CreditCard;
-use Cache::SharedMemoryCache; #store in db?
 use FS::CGI qw(small_custview); #doh
 use FS::Conf;
 use FS::Record qw(qsearch qsearchs);
 use FS::Msgcat qw(gettext);
+use FS::ClientAPI_SessionCache;
 use FS::svc_acct;
 use FS::svc_domain;
 use FS::svc_external;
@@ -30,10 +31,11 @@ use vars qw( @cust_main_editable_fields );
 
 use subs qw(_provision);
 
-#store in db?
-my $cache = new Cache::SharedMemoryCache( {
-   'namespace' => 'FS::ClientAPI::MyAccount',
-} );
+sub _cache {
+  $cache ||= new FS::ClientAPI_SessionCache( {
+               'namespace' => 'FS::ClientAPI::MyAccount',
+             } );
+}
 
 #false laziness w/FS::ClientAPI::passwd::passwd
 sub login {
@@ -69,9 +71,9 @@ sub login {
   my $session_id;
   do {
     $session_id = md5_hex(md5_hex(time(). {}. rand(). $$))
-  } until ( ! defined $cache->get($session_id) ); #just in case
+  } until ( ! defined _cache->get($session_id) ); #just in case
 
-  $cache->set( $session_id, $session, '1 hour' );
+  _cache->set( $session_id, $session, '1 hour' );
 
   return { 'error'      => '',
            'session_id' => $session_id,
@@ -81,7 +83,7 @@ sub login {
 sub logout {
   my $p = shift;
   if ( $p->{'session_id'} ) {
-    $cache->remove($p->{'session_id'});
+    _cache->remove($p->{'session_id'});
     return { 'error' => '' };
   } else {
     return { 'error' => "Can't resume session" }; #better error message
@@ -150,7 +152,7 @@ sub customer_info {
 
 sub edit_info {
   my $p = shift;
-  my $session = $cache->get($p->{'session_id'})
+  my $session = _cache->get($p->{'session_id'})
     or return { 'error' => "Can't resume session" }; #better error message
 
   my $custnum = $session->{'custnum'}
@@ -190,7 +192,7 @@ sub edit_info {
 
 sub payment_info {
   my $p = shift;
-  my $session = $cache->get($p->{'session_id'})
+  my $session = _cache->get($p->{'session_id'})
     or return { 'error' => "Can't resume session" }; #better error message
 
   ##
@@ -267,7 +269,7 @@ sub process_payment {
 
   my $p = shift;
 
-  my $session = $cache->get($p->{'session_id'})
+  my $session = _cache->get($p->{'session_id'})
     or return { 'error' => "Can't resume session" }; #better error message
 
   my %return;
@@ -357,7 +359,7 @@ sub process_payment {
 
 sub invoice {
   my $p = shift;
-  my $session = $cache->get($p->{'session_id'})
+  my $session = _cache->get($p->{'session_id'})
     or return { 'error' => "Can't resume session" }; #better error message
 
   my $custnum = $session->{'custnum'};
@@ -379,7 +381,7 @@ sub invoice {
 
 sub list_invoices {
   my $p = shift;
-  my $session = $cache->get($p->{'session_id'})
+  my $session = _cache->get($p->{'session_id'})
     or return { 'error' => "Can't resume session" }; #better error message
 
   my $custnum = $session->{'custnum'};
@@ -400,7 +402,7 @@ sub list_invoices {
 
 sub cancel {
   my $p = shift;
-  my $session = $cache->get($p->{'session_id'})
+  my $session = _cache->get($p->{'session_id'})
     or return { 'error' => "Can't resume session" }; #better error message
 
   my $custnum = $session->{'custnum'};
@@ -571,7 +573,7 @@ sub order_pkg {
 
 sub cancel_pkg {
   my $p = shift;
-  my $session = $cache->get($p->{'session_id'})
+  my $session = _cache->get($p->{'session_id'})
     or return { 'error' => "Can't resume session" }; #better error message
 
   my $custnum = $session->{'custnum'};
@@ -740,14 +742,14 @@ sub _custoragent_session_custnum {
   if ( $p->{'session_id'} ) {
 
     $context = 'customer';
-    $session = $cache->get($p->{'session_id'})
+    $session = _cache->get($p->{'session_id'})
       or return { 'error' => "Can't resume session" }; #better error message
     $custnum = $session->{'custnum'};
 
   } elsif ( $p->{'agent_session_id'} ) {
 
     $context = 'agent';
-    my $agent_cache = new Cache::SharedMemoryCache( {
+    my $agent_cache = new FS::ClientAPI_SessionCache( {
       'namespace' => 'FS::ClientAPI::Agent',
     } );
     $session = $agent_cache->get($p->{'agent_session_id'})
@@ -761,7 +763,6 @@ sub _custoragent_session_custnum {
   ($context, $session, $custnum);
 
 }
-
 
 1;
 

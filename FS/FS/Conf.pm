@@ -1383,6 +1383,13 @@ httemplate/docs/config.html
     'type'        => 'checkbox',
   },
 
+  { 'key'         => 'selfservice_server-cache_module',
+    'section'     => '',
+    'description' => 'Module used to store self-service session information.  All modules handle any number of self-service servers.  Cache::SharedMemoryCache is appropriate for a single database / single Freeside server.  Cache::FileCache is useful for multiple databases on a single server, or when IPC::ShareLite is not available (i.e. FreeBSD).', #  _Database stores session information in the database and is appropriate for multiple Freeside servers, but may be slower.',
+    'type'        => 'select',
+    'select_enum' => [ 'Cache::SharedMemoryCache', 'Cache::FileCache', ], # '_Database' ],
+  },
+
 );
 
 1;
