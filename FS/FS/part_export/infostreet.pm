@@ -1,10 +1,12 @@
 package FS::part_export::infostreet;
 
-use vars qw(@ISA %infostreet2cust_main);
+use vars qw(@ISA %infostreet2cust_main $DEBUG);
 use FS::UID qw(dbh);
 use FS::part_export;
 
 @ISA = qw(FS::part_export);
+
+$DEBUG = 0;
 
 %infostreet2cust_main = (
   'firstName'   => 'first',
@@ -150,6 +152,8 @@ sub infostreet_setContact {
 
 sub infostreet_command { #subroutine, not method
   my($url, $username, $password, $groupID, $method, @args) = @_;
+
+  warn "[FS::part_export::infostreet] $method ".join(' ', @args)."\n" if $DEBUG;
 
   #quelle hack
   if ( $method =~ /,/ ) {
