@@ -1201,15 +1201,15 @@ sub bill {
       }
       $setup = sprintf( "%.2f", $setup );
       $recur = sprintf( "%.2f", $recur );
-      if ( $setup < 0 ) {
+      if ( $setup < 0 && ! $conf->exists('allow_negative_charges') ) {
         $dbh->rollback if $oldAutoCommit;
         return "negative setup $setup for pkgnum ". $cust_pkg->pkgnum;
       }
-      if ( $recur < 0 ) {
+      if ( $recur < 0 && ! $conf->exists('allow_negative_charges') ) {
         $dbh->rollback if $oldAutoCommit;
         return "negative recur $recur for pkgnum ". $cust_pkg->pkgnum;
       }
-      if ( $setup > 0 || $recur > 0 ) {
+      if ( $setup != 0 || $recur != 0 ) {
         my $cust_bill_pkg = new FS::cust_bill_pkg ({
           'pkgnum'  => $cust_pkg->pkgnum,
           'setup'   => $setup,
@@ -1327,7 +1327,7 @@ sub bill {
 
         } #unless $self->tax =~ /Y/i || $self->payby eq 'COMP'
 
-      } #if $setup > 0 || $recur > 0
+      } #if $setup != 0 || $recur != 0
       
     } #if $cust_pkg_mod_flag
 
