@@ -238,7 +238,7 @@ sub payment_info {
 
   #list all counties/states/countries
   $return{'cust_main_county'} = 
-      [ map { $_->hashref } qsearch('cust_main_county', {}) ],
+      [ map { $_->hashref } qsearch('cust_main_county', {}) ];
 
   #shortcut for one-country folks
   my $conf = new FS::Conf;
