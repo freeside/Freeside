@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct_sm.import,v 1.6 2000-06-29 10:48:25 ivan Exp $
+# $Id: svc_acct_sm.import,v 1.7 2000-06-29 10:51:52 ivan Exp $
 #
 # ivan@sisd.com 98-mar-9
 #
@@ -16,7 +16,10 @@
 # ivan@sisd.com 98-jul-13
 #
 # $Log: svc_acct_sm.import,v $
-# Revision 1.6  2000-06-29 10:48:25  ivan
+# Revision 1.7  2000-06-29 10:51:52  ivan
+# oops, silly mistake
+#
+# Revision 1.6  2000/06/29 10:48:25  ivan
 # make svc_acct_sm skip blank lines in sendmail import
 #
 # Revision 1.5  2000/02/03 05:16:52  ivan
@@ -129,8 +132,9 @@ END
 sub getvalue {
   my $prompt = shift;
   $^W=0; #Term::Query isn't -w-safe
-  query $prompt, '';
+  my $data = query $prompt, '';
   $^W=1;
+  $data;
 }
 
 print "\n\n";
