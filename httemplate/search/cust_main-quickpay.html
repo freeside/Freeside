@@ -1,13 +1,14 @@
 <HTML>
   <HEAD>
-    <TITLE>Customer Search</TITLE>
+    <TITLE>Quick payment entry</TITLE>
   </HEAD>
   <BODY BGCOLOR="#e8e8e8">
     <FONT SIZE=7>
-      Customer Search
+      Quick payment entry
     </FONT>
     <BR><BR>
     <FORM ACTION="cust_main.cgi" METHOD="post">
+      <INPUT TYPE="hidden" NAME="quickpay" VALUE="yes">
       <INPUT TYPE="checkbox" NAME="last_on" CHECKED> Search for <B>last name</B>: 
       <INPUT TYPE="text" NAME="last_text">
       using search method: <SELECT NAME="last_type">

@@ -1,8 +1,8 @@
 <%
-#<!-- $Id: cust_pay.cgi,v 1.8 2001-12-26 04:25:04 ivan Exp $ -->
+#<!-- $Id: cust_pay.cgi,v 1.9 2001-12-26 05:19:01 ivan Exp $ -->
 
 use strict;
-use vars qw( $cgi $link $linknum $p1 $_date $payby $payinfo $paid );
+use vars qw( $cgi $link $linknum $p1 $_date $payby $payinfo $paid $quickpay );
 use Date::Format;
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
@@ -21,6 +21,7 @@ if ( $cgi->param('error') ) {
   $paid = $cgi->param('paid');
   $payby = $cgi->param('payby');
   $payinfo = $cgi->param('payinfo');
+  $quickpay = $cgi->param('quickpay');
 } elsif ($cgi->keywords) {
   my($query) = $cgi->keywords;
   $query =~ /^(\d+)$/;
@@ -29,12 +30,14 @@ if ( $cgi->param('error') ) {
   $paid = '';
   $payby = 'BILL';
   $payinfo = "";
+  $quickpay = '';
 } elsif ( $cgi->param('custnum')  =~ /^(\d+)$/ ) {
   $link = 'custnum';
   $linknum = $1;
   $paid = '';
   $payby = 'BILL';
   $payinfo = '';
+  $quickpay = $cgi->param('quickpay');
 } else {
   die "illegal query ". $cgi->keywords;
 }
@@ -51,6 +54,7 @@ print <<END, ntable("#cccccc",2);
     <FORM ACTION="${p1}process/cust_pay.cgi" METHOD=POST>
     <INPUT TYPE="hidden" NAME="link" VALUE="$link">
     <INPUT TYPE="hidden" NAME="linknum" VALUE="$linknum">
+    <INPUT TYPE="hidden" NAME="quickpay" VALUE="$quickpay">
 END
 
 my $custnum;

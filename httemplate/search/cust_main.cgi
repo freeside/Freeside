@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: cust_main.cgi,v 1.18 2001-12-03 11:33:19 ivan Exp $ -->
+#<!-- $Id: cust_main.cgi,v 1.19 2001-12-26 05:19:01 ivan Exp $ -->
 
 use strict;
 #use vars qw( $conf %ncancelled_pkgs %all_pkgs $cgi @cust_main $sortby );
@@ -154,7 +154,11 @@ if ( $conf->exists('hidecancelledpackages' ) ) {
 #%all_pkgs = ();
 
 if ( scalar(@cust_main) == 1 && ! $cgi->param('referral_custnum') ) {
-  print $cgi->redirect(popurl(2). "view/cust_main.cgi?". $cust_main[0]->custnum);
+  if ( $cgi->param('quickpay') eq 'yes' ) {
+    print $cgi->redirect(popurl(2). "edit/cust_pay.cgi?quickpay=yes;custnum=". $cust_main[0]->custnum);
+  } else {
+    print $cgi->redirect(popurl(2). "view/cust_main.cgi?". $cust_main[0]->custnum);
+  }
   exit;
 } elsif ( scalar(@cust_main) == 0 ) {
   eidiot "No matching customers found!\n";
@@ -282,7 +286,12 @@ END
     }
 
     #my($rowspan) = scalar(@{$all_pkgs{$custnum}});
-    my $view = $p. 'view/cust_main.cgi?'. $custnum;
+    my $view;
+    if ( defined $cgi->param('quickpay') && $cgi->param('quickpay') eq 'yes' ) {
+      $view = $p. 'edit/cust_pay.cgi?quickpay=yes;custnum='. $custnum;
+    } else {
+      $view = $p. 'view/cust_main.cgi?'. $custnum;
+    }
     print <<END;
     <TR>
       <TD ROWSPAN=$rowspan><A HREF="$view"><FONT SIZE=-1>$custnum</FONT></A></TD>

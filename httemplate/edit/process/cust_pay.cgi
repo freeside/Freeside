@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: cust_pay.cgi,v 1.4 2001-12-26 04:25:04 ivan Exp $ -->
+#<!-- $Id: cust_pay.cgi,v 1.5 2001-12-26 05:19:01 ivan Exp $ -->
 
 use strict;
 use vars qw( $cgi $link $linknum $new $error );
@@ -43,7 +43,11 @@ if ($error) {
       or die "unknown custnum $linknum";
     $cust_main->apply_payments;
   }
-  print $cgi->redirect(popurl(3). "view/cust_main.cgi?$linknum");
+  if ( $cgi->param('quickpay') eq 'yes' ) {
+    print $cgi->redirect(popurl(3). "search/cust_main-quickpay.html");
+  } else {
+    print $cgi->redirect(popurl(3). "view/cust_main.cgi?$linknum");
+  }
 }
 
 %>
