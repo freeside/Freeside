@@ -240,6 +240,8 @@ sub check {
   ;
   return $error if $error;
 
+  return "paid must be > 0 " if $self->paid == 0;
+
   return "unknown cust_main.custnum: ". $self->custnum
     unless $self->invnum
            || qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
@@ -304,7 +306,7 @@ sub unapplied {
 
 =head1 VERSION
 
-$Id: cust_pay.pm,v 1.10 2001-12-26 07:53:21 ivan Exp $
+$Id: cust_pay.pm,v 1.11 2002-01-22 15:57:33 ivan Exp $
 
 =head1 BUGS
 
