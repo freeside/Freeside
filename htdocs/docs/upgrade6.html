@@ -31,6 +31,7 @@ ALTER TABLE part_svc ADD svc_www__recnum varchar(80) NULL;
 ALTER TABLE part_svc ADD svc_www__recnum_flag char(1) NULL;
 ALTER TABLE part_svc ADD svc_www__usersvc varchar(80) NULL;
 ALTER TABLE part_svc ADD svc_www__uesrsvc_flag char(1) NULL;
+ALTER TABLE svc_acct CHANGE _password _password varchar(50) NULL;
 
 </pre>
   <li>Copy or symlink htdocs to the new copy.

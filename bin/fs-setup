@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: fs-setup,v 1.24 2000-03-02 07:44:07 ivan Exp $
+# $Id: fs-setup,v 1.25 2000-06-29 12:00:49 ivan Exp $
 #
 # ivan@sisd.com 97-nov-8,9
 #
@@ -32,7 +32,10 @@
 # fix radius attributes ivan@sisd.com 98-sep-27
 #
 # $Log: fs-setup,v $
-# Revision 1.24  2000-03-02 07:44:07  ivan
+# Revision 1.25  2000-06-29 12:00:49  ivan
+# support for pre-encrypted md5 passwords.
+#
+# Revision 1.24  2000/03/02 07:44:07  ivan
 # typo forgot closing '
 #
 # Revision 1.23  2000/02/03 05:16:52  ivan
@@ -612,7 +615,7 @@ sub tables_hash_hack {
       'columns' => [
         'svcnum',    'int',    '',   '',
         'username',  'varchar',   '',   $username_len, #unique (& remove dup code)
-        '_password', 'varchar',   '',   25, #13 for encryped pw's plus ' *SUSPENDED*
+        '_password', 'varchar',   '',   50, #13 for encryped pw's plus ' *SUSPENDED* (mp5 passwords can be 34)
         'popnum',    'int',    'NULL',   '',
         'uid',       'int', 'NULL',   '',
         'gid',       'int', 'NULL',   '',
