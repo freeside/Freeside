@@ -23,10 +23,13 @@ sub _export_command {
   my ( $self, $action, $svc_acct) = (shift, shift, shift);
   my $command = $self->option($action);
   my $stdin = $self->option($action."_stdin");
-  no strict 'refs';
-  ${$_} = $svc_acct->getfield($_) foreach $svc_acct->fields;
+  {
+    no strict 'refs';
+    ${$_} = $svc_acct->getfield($_) foreach $svc_acct->fields;
+  }
+  $crypt_password = ''; #surpress "used only once" warnings
   $crypt_password = crypt( $svc_acct->_password,
-                           $saltset[int(rand(64))].$saltset[int(rand(64))] );
+                             $saltset[int(rand(64))].$saltset[int(rand(64))] );
   $self->shellcommands_queue( $svc_acct->svcnum,
     user         => $self->option('user')||'root',
     host         => $self->machine,
@@ -39,10 +42,13 @@ sub _export_replace {
   my($self, $new, $old ) = (shift, shift, shift);
   my $command = $self->option('usermod');
   my $stdin = $self->option('usermod_stdin');
-  no strict 'refs';
-  ${"old_$_"} = $old->getfield($_) foreach $old->fields;
-  ${"new_$_"} = $new->getfield($_) foreach $new->fields;
-  $new_crypt_password = crypt( $svc_acct->_password,
+  {
+    no strict 'refs';
+    ${"old_$_"} = $old->getfield($_) foreach $old->fields;
+    ${"new_$_"} = $new->getfield($_) foreach $new->fields;
+  }
+  $new_crypt_password = ''; #surpress "used only once" warnings
+  $new_crypt_password = crypt( $new->_password,
                                $saltset[int(rand(64))].$saltset[int(rand(64))]);
   $self->shellcommands_queue( $new->svcnum,
     user         => $self->option('user')||'root',
