@@ -1,16 +1,17 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: register.cgi,v 1.3 2000-03-03 05:29:24 ivan Exp $
+# $Id: register.cgi,v 1.4 2000-03-03 05:32:56 ivan Exp $
 
 use strict;
-use vars qw( #$freeside_bin $freeside_test $freeside_conf
+use vars qw(
              $datasrc $user $pass $x
-             #@pw_set @saltset
              $cgi $username $email 
-             #$user_pw $crypt_pw 
              $dbh $sth
-             #$header $msg
              );
+             #$freeside_bin $freeside_test $freeside_conf
+             #@pw_set @saltset
+             #$user_pw $crypt_pw 
+             #$header $msg
 use CGI;
 #use CGI::Carp qw(fatalsToBrowser);
 use DBI;
@@ -77,7 +78,7 @@ $sth = $dbh->prepare("INSERT INTO mysql_auth VALUES (". join(", ",
   $dbh->quote($username),
 #  $dbh->quote("X"),
 #  $dbh->quote($crypt_pw),
-  $dbh->quote($email);
+  $dbh->quote($email),
   $dbh->quote('freeside'),
   $dbh->quote('unconfigured'),
 ). ")" );
