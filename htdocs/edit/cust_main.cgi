@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main.cgi,v 1.16 1999-07-20 10:37:05 ivan Exp $
+# $Id: cust_main.cgi,v 1.17 1999-08-10 11:15:45 ivan Exp $
 #
 # Usage: cust_main.cgi custnum
 #        http://server.name/path/cust_main.cgi?custnum
@@ -38,9 +38,8 @@
 # fixed one missed day->daytime ivan@sisd.com 98-jul-13
 #
 # $Log: cust_main.cgi,v $
-# Revision 1.16  1999-07-20 10:37:05  ivan
-# cleaned up the new one-screen signup bits in htdocs/edit/cust_main.cgi to
-# prepare for a signup server
+# Revision 1.17  1999-08-10 11:15:45  ivan
+# corrected a misleading comment
 #
 # Revision 1.15  1999/04/14 13:14:54  ivan
 # configuration option to edit referrals of existing customers
@@ -339,7 +338,7 @@ unless ( $custnum ) {
   #false laziness, copied from FS::cust_pkg::order
   my $pkgpart;
   if ( scalar(@agents) == 1 ) {
-    # $pkgpart->{$pkgpart} is true iff $custnum may purchase $pkgpart
+    # $pkgpart->{PKGPART} is true iff $custnum may purchase $pkgpart
     my($agent)=qsearchs('agent',{'agentnum'=> $agentnum });
     $pkgpart = $agent->pkgpart_hashref;
   } else {
