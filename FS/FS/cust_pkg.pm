@@ -145,7 +145,7 @@ sub insert {
   my $agent = qsearchs( 'agent', { 'agentnum' => $cust_main->agentnum } );
   my $pkgpart_href = $agent->pkgpart_hashref;
   return "agent ". $agent->agentnum. " can't purchase pkgpart ". $self->pkgpart
-    unless $pkgpart_href->{ $self->{pkgpart} };
+    unless $pkgpart_href->{ $self->pkgpart };
 
   $self->SUPER::insert;
 
@@ -701,7 +701,7 @@ sub order {
 
 =head1 VERSION
 
-$Id: cust_pkg.pm,v 1.19 2002-04-22 20:47:21 ivan Exp $
+$Id: cust_pkg.pm,v 1.20 2002-04-22 21:23:16 ivan Exp $
 
 =head1 BUGS
 
