@@ -370,6 +370,9 @@ foreach my $package (@packages) {
         qq!$pkg - $comment (&nbsp;<a href="$pkgview">Details</a>&nbsp;)!;
        # | !;
 
+  print qq! (&nbsp;<A HREF="${p}misc/change_pkg.cgi?$pkgnum">!.
+        'Change&nbsp;package</A>&nbsp;)';
+
   #false laziness with view/cust_pkg.cgi, but i'm trying to make that go away so
   unless ( $package->getfield('cancel') ) {
     print ' (&nbsp;';

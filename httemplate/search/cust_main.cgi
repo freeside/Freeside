@@ -636,12 +636,19 @@ sub phonesearch {
 
   my $phone = $cgi->param('phone_text');
 
-  #false laziness with Record::ut_phonen, only works with US/CA numbers...
+  #(no longer really) false laziness with Record::ut_phonen
+  #only works with US/CA numbers...
   $phone =~ s/\D//g;
-  $phone =~ /^(\d{3})(\d{3})(\d{4})(\d*)$/
-    or eidiot gettext('illegal_phone'). ": $phone";
-  $phone = "$1-$2-$3";
-  $phone .= " x$4" if $4;
+  if ( $phone =~ /^(\d{3})(\d{3})(\d{4})(\d*)$/ ) {
+    $phone = "$1-$2-$3";
+    $phone .= " x$4" if $4;
+  } elsif ( $phone =~ /^(\d{3})(\d{4})$/ ) {
+    $phone = "$1-$2";
+  } elsif ( $phone =~ /^(\d{3,4})$/ ) {
+    $phone = $1;
+  } else {
+    eidiot gettext('illegal_phone'). ": $phone";
+  }
 
   my @fields = qw(daytime night fax);
   push @fields, qw(ship_daytime ship_night ship_fax)
@@ -650,7 +657,7 @@ sub phonesearch {
   for my $field ( @fields ) {
     push @cust_main, qsearch ( 'cust_main', 
                                { $field => { 'op'    => 'LIKE',
-                                             'value' => "$phone%" } } );
+                                             'value' => "%$phone%" } } );
   }
 
   \@cust_main;

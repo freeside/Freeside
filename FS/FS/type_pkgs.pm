@@ -94,11 +94,24 @@ sub check {
   ''; #no error
 }
 
+=item part_pkg
+
+Returns the FS::part_pkg object associated with this record.
+
+=cut
+
+sub part_pkg {
+  my $self = shift;
+  qsearchs( 'part_pkg', { 'pkgpart' => $self->pkgpart } );
+}
+
+=cut
+
 =back
 
 =head1 VERSION
 
-$Id: type_pkgs.pm,v 1.1 1999-08-04 09:03:53 ivan Exp $
+$Id: type_pkgs.pm,v 1.2 2002-10-04 12:57:06 ivan Exp $
 
 =head1 BUGS
 
