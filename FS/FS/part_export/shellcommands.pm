@@ -65,6 +65,7 @@ sub _export_replace {
   }
   $new_finger = shell_quote $new_finger;
   $quoted_new__password = shell_quote $new__password;
+  $old_domain = $old->domain;
   $new_domain = $new->domain;
   $new_crypt_password = ''; #surpress "used only once" warnings
   $new_crypt_password = crypt( $new->_password,
