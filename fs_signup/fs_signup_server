@@ -113,7 +113,7 @@ while (1) {
     # common that are still here and library them.
     my $cust_main = new FS::cust_main ( {
       #'custnum'          => '',
-      'agentnum'         => $signup-data->{agentnum} || $agentnum,
+      'agentnum'         => $signup_data->{agentnum} || $agentnum,
       'refnum'           => $refnum,
 
       map { $_ => $signup_data->{$_} } qw(
