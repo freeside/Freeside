@@ -9,7 +9,7 @@ sub rebless { shift; }
 
 sub _export_insert {
   my($self, $svc_something) = (shift, shift);
-  $err_or_queue = $self->myexport_queue( $svc_acct->svcnum, 'insert',
+  $err_or_queue = $self->myexport_queue( $svc_something->svcnum, 'insert',
     $svc_something->username, $svc_something->_password );
   ref($err_or_queue) ? '' : $err_or_queue;
 }
@@ -26,7 +26,7 @@ sub _export_replace {
 
 sub _export_delete {
   my( $self, $svc_something ) = (shift, shift);
-  $err_or_queue = $self->myexport_queue( $svc_acct->svcnum,
+  $err_or_queue = $self->myexport_queue( $svc_something->svcnum,
     'delete', $svc_something->username );
   ref($err_or_queue) ? '' : $err_or_queue;
 }
