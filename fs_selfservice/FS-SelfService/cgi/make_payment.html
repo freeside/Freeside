@@ -8,7 +8,7 @@
 <FONT SIZE=4>Make a payment</FONT><BR><BR>
 <FORM NAME="OneTrueForm" METHOD="POST" ACTION="<%=$selfurl%>" onSubmit="document.OneTrueForm.process.disabled=true">
 <INPUT TYPE="hidden" NAME="session" VALUE="<%=$session_id%>">
-<INPUT TYPE="hidden" NAME="action" VALUE="process_payment">
+<INPUT TYPE="hidden" NAME="action" VALUE="do_payment">
 <TABLE BGCOLOR="#cccccc">
 <TR>
   <TD ALIGN="right">Amount&nbsp;Due</TD>
@@ -110,7 +110,7 @@
 </TR>
 </TABLE>
 <BR>
-<INPUT TYPE="hidden" NAME="paybatch" VALUE="$paybatch">
+<INPUT TYPE="hidden" NAME="paybatch" VALUE="<%=$paybatch%>">
 <INPUT TYPE="submit" NAME="process" VALUE="Process payment"> <!-- onClick="this.disabled=true"> -->
 </FORM>
 </TD></TR></TABLE>

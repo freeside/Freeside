@@ -17,11 +17,12 @@ use FS::cust_main_county;
 
 use FS::ClientAPI; #hmm
 FS::ClientAPI->register_handlers(
-  'MyAccount/login'         => \&login,
-  'MyAccount/customer_info' => \&customer_info,
-  'MyAccount/invoice'       => \&invoice,
-  'MyAccount/cancel'        => \&cancel,
-  'MyAccount/payment_info'  => \&payment_info,
+  'MyAccount/login'            => \&login,
+  'MyAccount/customer_info'    => \&customer_info,
+  'MyAccount/invoice'          => \&invoice,
+  'MyAccount/cancel'           => \&cancel,
+  'MyAccount/payment_info'     => \&payment_info,
+  'MyAccount/process_payment'  => \&process_payment,
 );
 
 #store in db?
@@ -175,7 +176,7 @@ sub payment_info {
 
 };
 
-sub make_payment{
+sub process_payment {
   my $p = shift;
 
   my $session = $cache->get($p->{'session_id'})

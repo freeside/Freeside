@@ -6,7 +6,8 @@ use subs qw(do_template);
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use Text::Template;
-use FS::SelfService qw(login customer_info invoice payment_info);
+use FS::SelfService qw( login customer_info invoice payment_info
+                        process_payment );
 
 $template_dir = '.';
 
@@ -54,7 +55,7 @@ if ( $cgi->param('session') eq 'login' ) {
 $session_id = $cgi->param('session');
 
 $cgi->param('action') =~
-    /^(myaccount|view_invoice|make_payment|process_payment)$/
+    /^(myaccount|view_invoice|make_payment|do_payment)$/
   or die "unknown action ". $cgi->param('action');
 my $action = $1;
 
@@ -94,7 +95,7 @@ sub make_payment {
   payment_info( 'session_id' => $session_id );
 }
 
-sub process_payment {
+sub do_payment {
 
   use Business::CreditCard;
 
