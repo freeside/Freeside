@@ -1,5 +1,5 @@
 <%
-# <!-- $Id: svc_acct.cgi,v 1.8 2001-10-30 14:54:07 ivan Exp $ -->
+# <!-- $Id: svc_acct.cgi,v 1.9 2001-12-15 22:59:35 ivan Exp $ -->
 
 use strict;
 use vars qw( $conf $cgi $domain $query $svcnum $svc_acct $cust_svc $pkgnum
@@ -29,15 +29,17 @@ $svcnum = $1;
 $svc_acct = qsearchs('svc_acct',{'svcnum'=>$svcnum});
 die "Unknown svcnum" unless $svc_acct;
 
-$cust_svc = qsearchs('cust_svc',{'svcnum'=>$svcnum});
+#false laziness w/all svc_*.cgi
+$cust_svc = qsearchs( 'cust_svc' , { 'svcnum' => $svcnum } );
 $pkgnum = $cust_svc->getfield('pkgnum');
 if ($pkgnum) {
-  $cust_pkg=qsearchs('cust_pkg',{'pkgnum'=>$pkgnum});
-  $custnum=$cust_pkg->getfield('custnum');
+  $cust_pkg = qsearchs( 'cust_pkg', { 'pkgnum' => $pkgnum } );
+  $custnum = $cust_pkg->custnum;
 } else {
   $cust_pkg = '';
   $custnum = '';
 }
+#eofalse
 
 $part_svc = qsearchs('part_svc',{'svcpart'=> $cust_svc->svcpart } );
 die "Unknown svcpart" unless $part_svc;
