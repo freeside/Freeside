@@ -149,6 +149,16 @@ sub table {
   "<TABLE BORDER=1>";
 }
 
+=item itable
+
+Returns HTML tag for beginning an (invisible) table.
+
+=cut
+
+sub itable {
+  "<TABLE>";
+}
+
 =back
 
 =head1 BUGS
@@ -173,7 +183,10 @@ lose the background, eidiot ivan@sisd.com 98-sep-2
 pod ivan@sisd.com 98-sep-12
 
 $Log: CGI.pm,v $
-Revision 1.12  1998-12-23 02:23:16  ivan
+Revision 1.13  1999-01-17 04:04:13  ivan
+itable
+
+Revision 1.12  1998/12/23 02:23:16  ivan
 popurl always has trailing slash
 
 Revision 1.11  1998/11/12 07:43:54  ivan
