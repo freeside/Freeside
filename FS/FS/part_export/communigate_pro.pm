@@ -109,7 +109,7 @@ sub CreateAccount {
                #externalFlag => $externalFlag,
   push @args, externalFlag => $externalFlag if $externalFlag;
 
-  communigate_pro_command( $machine, $port, $login, $password, $method, @args );
+  &communigate_pro_command( $machine, $port, $login, $password, $method, @args);
 
 }
 
@@ -118,7 +118,7 @@ sub UpdateAccountSettings {
   my $accountName  = delete $args{'accountName'};
   $args{'AccessModes'} = [ split(' ', $args{'AccessModes'}) ];
   @args = ( $accountName, \%args );
-  communigate_pro_command( $machine, $port, $login, $password, $method, @args );
+  &communigate_pro_command( $machine, $port, $login, $password, $method, @args);
 }
 
 sub communigate_pro_command { #subroutine, not method
