@@ -104,7 +104,7 @@ sub _export_insert {
   if ( $result->{'id'} == 1 ) {
     my $new = new FS::svc_external { $svc_external->hash };
     $new->id(sprintf('%010d', $result->{'ASN'}));
-    $new->title(sprintf('%010x', hex($result->{'AKC'}) ));
+    $new->title(uc(sprintf('%010x', hex($result->{'AKC'}) )));
     $new->replace($svc_external);
   } else {
     $result->{'message'} || 'No response from Artera';

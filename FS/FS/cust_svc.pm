@@ -315,7 +315,8 @@ sub _svc_label {
   } elsif ( $svcdb eq 'svc_external' ) {
     my $conf = new FS::Conf;
     if ( $conf->config('svc_external-display_type') eq 'artera_turbo' ) {
-      $tag = sprintf('%010d', $svc_x->id). '-'. sprintf('%010x', hex($svc_x->title) );
+      $tag = sprintf('%010d', $svc_x->id). '-'.
+             uc( sprintf('%010x', hex($svc_x->title)) );
     } else {
       $tag = $svc_x->id. ': '. $svc_x->title;
     }
