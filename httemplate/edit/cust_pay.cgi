@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: cust_pay.cgi,v 1.6 2001-12-21 21:40:24 ivan Exp $ -->
+#<!-- $Id: cust_pay.cgi,v 1.7 2001-12-26 02:33:30 ivan Exp $ -->
 
 use strict;
 use vars qw( $cgi $link $linknum $p1 $_date $payby $payinfo $paid );
@@ -121,15 +121,23 @@ print '</TD>'.
 
 if ( defined $cust_main->dbdef_table->column('ship_last') ) {
 
+  my $pre = $cust_main->ship_last ? 'ship_' : '';
+
   print '<TD>'. ntable("#cccccc",2).
         '<TR><TD ALIGN="right" VALIGN="top">Service</TD><TD BGCOLOR="#ffffff">'.
-        $cust_main->getfield('ship_last'). ', '. $cust_main->ship_first. '<BR>';
-  print $cust_main->ship_company. '<BR>' if $cust_main->ship_company;
-  print $cust_main->ship_address1. '<BR>';
-  print $cust_main->ship_address2. '<BR>' if $cust_main->ship_address2;
-  print $cust_main->ship_city. ', '. $cust_main->ship_state. '  '. $cust_main->ship_zip. '<BR>';
-  print $cust_main->ship_country. '<BR>'
-    if $cust_main->ship_country && $cust_main->ship_country ne $countrydefault;
+        $cust_main->get("${pre}last"). ', '.
+        $cust_main->get("${pre}first"). '<BR>';
+  print $cust_main->get("${pre}company"). '<BR>'
+    if $cust_main->get("${pre}company");
+  print $cust_main->get("${pre}address1"). '<BR>';
+  print $cust_main->get("${pre}address2"). '<BR>'
+    if $cust_main->get("${pre}address2");
+  print $cust_main->get("${pre}city"). ', '.
+        $cust_main->get("${pre}state"). '  '.
+        $cust_main->get("${pre}ship_zip"). '<BR>';
+  print $cust_main->get("${pre}country"). '<BR>'
+    if $cust_main->get("${pre}country")
+       && $cust_main->get("${pre}country") ne $countrydefault;
 
   print '</TD>'.
         '</TR></TABLE></TD>';
