@@ -10,8 +10,9 @@ my $fs_user = shift or die &usage;
 adminsuidsetup( $fs_user );
 
 my $target_user = shift or die &usage;
-my $start = scalar(@_) ? str2time(shift) : die &usage;
-my $stop =  scalar(@_) ? str2time(shift) :  time;
+my $start = shift or die &usage;
+$start = str2time($start);
+my $stop =  scalar(@_) ? str2time(shift) : time;
 
 my $svc_acct = qsearchs( 'svc_acct', { 'username' => $target_user } );
 die "username $target_user not found\n" unless $svc_acct;
