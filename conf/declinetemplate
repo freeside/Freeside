@@ -3,7 +3,7 @@ Hi,
 Your credit card could not be processed for the following reason:
   { $error }
 
-Please provide us with new billing infromation so that we may continue your
+Please provide us with new billing information so that we may continue your
 service uninterrupted.
 
 Thanks.
