@@ -25,3 +25,12 @@
 - VoIP billing for CDRs from RADIUS
 - promotional codes for signup
 - lots of RT integration, integrated RT upgraded to 3.2.2
+- one-time referral credits
+- invoices now use history records (don't lose details)
+- option to credit for remaining service upon cancel (peter bowen)
+- one-time registration codes
+
+notyet (1.5.0pre8?):
+- account merging UI in exports (for example, to consolidate passwd files from
+  multiple servers)
+
