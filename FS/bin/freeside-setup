@@ -337,8 +337,8 @@ sub tables_hash_hack {
         'freq',     'int',       'NULL', '',
         'prog',     @perl_type,
         'disabled',     'char', 'NULL', 1,
-        'username', 'varchar',           '',     $char_d,
-        '_password','varchar',           '',     $char_d,
+        'username', 'varchar',       'NULL',     $char_d,
+        '_password','varchar',       'NULL',     $char_d,
       ],
       'primary_key' => 'agentnum',
       'unique' => [],
@@ -1102,6 +1102,20 @@ sub tables_hash_hack {
       'primary_key' => '',
       'unique' => [ [ 'vfieldpart', 'recnum' ] ],
       'index' => [],
+    },
+
+    'acct_snarf' => {
+      'columns' => [
+        'snarfnum',  'int', '', '',
+        'svcnum',    'int', '', '',
+        'machine',   'varchar', '', 255,
+        'protocol',  'varchar', '', $char_d,
+        'username',  'varchar', '', $char_d,
+        '_password', 'varchar', '', $char_d,
+      ],
+      'primary_key' => 'snarfnum',
+      'unique' => [],
+      'index'  => [ [ 'svcnum' ] ],
     },
 
   );
