@@ -4,8 +4,10 @@ use strict;
 use vars qw( @ISA $conf $Debug $import );
 use Safe;
 use Carp;
-BEGIN { eval "use Time::Local 1.05;" if $] < 5.006; };
-use Time::Local qw(timelocal_nocheck);
+BEGIN {
+  eval "use Time::Local 1.05;" if $] < 5.006;
+  eval "use Time::Local qw(timelocal_nocheck);";
+}
 use Date::Format;
 #use Date::Manip;
 use Business::CreditCard;
