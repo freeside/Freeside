@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: cust_bill_pay.cgi,v 1.2 2001-12-18 19:32:56 ivan Exp $ -->
+#<!-- $Id: cust_bill_pay.cgi,v 1.3 2001-12-18 19:34:08 ivan Exp $ -->
 
 use strict;
 use vars qw( $cgi $query $custnum $paynum $amount $invnum $p1 $otaker $cust_pay );
@@ -64,7 +64,7 @@ foreach my $cust_bill ( @cust_bill ) {
   my $invnum = $cust_bill->invnum;
   my $changeto = $cust_bill->owed < $unapplied
                    ? $cust_bill->owed 
-                   : $unapplied
+                   : $unapplied;
   print <<END;
   if ( cust_bill == $invnum ) {
     what.form.amount.value = "$changeto";
