@@ -8,16 +8,22 @@ apt-get update; apt-get update
 
 #ftp://ftp.pbone.net/mirror/www.aucs.org/rpmcenter/packages/apache13-php43-mods-rh8
 
-apt-get install perl-CGI perl-CPAN perl-DBD-MySQL perl-DBD-Pg perl-DBI perl-DateManip perl-HTML-Parser perl-HTML-Tagset perl-TimeDate perl-URI perl-libwww-perl perl-suidperl rsync postgresql postgresql-docs postgresql-libs postgresql-server screen zsh lftp cvs gcc gd #openssh
-# tetex-fonts tetex-latex tetex tetex-dvips ghostscript ghostscript-fonts
+apt-get install perl-CGI perl-CPAN perl-DBD-MySQL perl-DateManip perl-HTML-Parser perl-HTML-Tagset perl-TimeDate perl-URI perl-libwww-perl perl-suidperl rsync krb5-libs postgresql-server postgresql postgresql-docs postgresql-libs postgresql-devel screen zsh lftp cvs gcc tetex-fonts tetex-latex tetex tetex-dvips ghostscript ghostscript-fonts libpng-devel freetype-devel libjpeg-devel #gd openssh
 
-perl -MCPAN -e"install Locale::Country, Net::Whois, Business::CreditCard, \
-                       Mail::Internet, File::CounterFile, FreezeThaw, \
-                       String::Approx, Text::Template, DBIx::DataSource, \
-                       DBIx::DBSchema, Net::SSH, String::ShellQuote, \
-                       Net::SCP, Apache::ASP, Tie::IxHash, Time::Duration, \
-                       HTML::Widgets::SelectLayers, Apache::DBI, Cache::Cache \
-                       Test::Pod NetAddr::IP IPC::ShareLite Chart::LinesPoints"
+#lftpget http://download.atrpms.net/testing/packages/redhat-8.0-i386/atrpms/gd-2.0.28-0_9.rh8.0.at.i386.rpm 
+lftpget http://download.atrpms.net/testing/packages/redhat-8.0-i386/atrpms/libgd2-2.0.28-0_9.rh8.0.at.i386.rpm http://download.atrpms.net/testing/packages/redhat-8.0-i386/atrpms/gd-devel-2.0.28-0_9.rh8.0.at.i386.rpm
+
+rpm -i libgd2-2.0.28-0_9.rh8.0.at.i386.rpm gd-devel-2.0.28-0_9.rh8.0.at.i386.rpm
+
+perl -MCPAN -e"install Locale::Country, Net::Whois, Business::CreditCard,
+                       Mail::Internet, File::CounterFile, FreezeThaw,
+                       String::Approx, Text::Template, DBIx::DataSource,
+                       DBIx::DBSchema, Net::SSH, String::ShellQuote,
+                       Net::SCP, Apache::ASP, Tie::IxHash, Time::Duration,
+                       HTML::Widgets::SelectLayers, Apache::DBI, Cache::Cache,
+                       Test::Pod, NetAddr::IP, IPC::ShareLite,
+                       Chart::LinesPoints, DBI, DBD::Pg, HTML::Mason,
+                       Net::Whois::Raw, Crypt::PasswdMD5, File::Temp, Storable"
 
 #apachetoolbox i guess
 
