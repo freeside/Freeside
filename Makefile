@@ -43,7 +43,7 @@ HTTPD_RESTART = /etc/init.d/apache restart
 #openbsd
 #HTTPD_RESTART = kill -TERM `cat /var/www/logs/httpd.pid`; sleep 1; /usr/sbin/httpd -u -DSSL
 #apache
-#HTTPD_RESTART = /usr/local/apache/bin/apachectl stop; sleep 1; /usr/local/apache/bin/apachectl startssl
+#HTTPD_RESTART = /usr/local/apache/bin/apachectl stop; sleep 10; /usr/local/apache/bin/apachectl startssl
 
 FREESIDE_RESTART = ${INIT_FILE} restart
 
