@@ -348,7 +348,7 @@ sub check {
   $recref->{username} = $1;
   $recref->{username} =~ /[a-z]/ or return "Illegal username";
 
-  $recref->{popnum} =~ /^(\d*)$/ or return "Illegal popnum";
+  $recref->{popnum} =~ /^(\d*)$/ or return "Illegal popnum: ".$recref->{popnum};
   $recref->{popnum} = $1;
   return "Unkonwn popnum" unless
     ! $recref->{popnum} ||
@@ -450,7 +450,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: svc_acct.pm,v 1.2 1999-08-12 00:05:03 ivan Exp $
+$Id: svc_acct.pm,v 1.3 2000-03-06 16:38:42 ivan Exp $
 
 =head1 BUGS
 
