@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cgi-test,v 1.1 1999-04-08 13:05:40 ivan Exp $
+# $Id: cgi-test,v 1.2 1999-08-23 12:26:37 ivan Exp $
 #
 # This is the beginning of a test suite for the web interface.
 # It's also excellent for populating your database with some meaningful test
@@ -12,7 +12,10 @@
 #  libwww-perl working with SSL to use this.)
 #
 # $Log: cgi-test,v $
-# Revision 1.1  1999-04-08 13:05:40  ivan
+# Revision 1.2  1999-08-23 12:26:37  ivan
+# need to untaint the command line
+#
+# Revision 1.1  1999/04/08 13:05:40  ivan
 # web interface tester / sample data creator
 #
 
@@ -23,6 +26,10 @@ use CGI;
 use LWP::UserAgent;
 
 my ( $base_url, $username, $password ) = ( shift, shift, shift );
+#trust 'em
+$base_url =~ /^(.*)$/; $base_url = $1;
+$username =~ /^(.*)$/; $username = $1;
+$password =~ /^(.*)$/; $password = $1;
 
 my @data = &big_ugly_data_structure;
 
