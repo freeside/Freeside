@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main.cgi,v 1.10 1999-02-28 00:03:34 ivan Exp $
+# $Id: cust_main.cgi,v 1.11 1999-03-25 13:55:10 ivan Exp $
 #
 # Usage: cust_main.cgi custnum
 #        http://server.name/path/cust_main.cgi?custnum
@@ -38,7 +38,11 @@
 # fixed one missed day->daytime ivan@sisd.com 98-jul-13
 #
 # $Log: cust_main.cgi,v $
-# Revision 1.10  1999-02-28 00:03:34  ivan
+# Revision 1.11  1999-03-25 13:55:10  ivan
+# one-screen new customer entry (including package and service) for simple
+# packages with one svc_acct service
+#
+# Revision 1.10  1999/02/28 00:03:34  ivan
 # removed misleading comments
 #
 # Revision 1.9  1999/02/23 08:09:20  ivan
@@ -104,7 +108,9 @@ if ( $cgi->param('error') ) {
     map { $_, scalar($cgi->param($_)) } fields('cust_main')
   } );
   $custnum = $cust_main->custnum;
-  $pkgpart = $cgi->param('pkgpart');
+  $pkgpart = $cgi->param('pkgpart_svcpart');
+  $pkgpart =~ /^(\d+)_/;
+  $pkgpart = $1;
   $username = $cgi->param('username');
   $password = $cgi->param('_password');
   $popnum = $cgi->param('popnum');
@@ -343,27 +349,35 @@ unless ( $custnum ) {
   #foreach ( @pkg_svc ) {
   foreach ( qsearch( 'pkg_svc', {} ) ) {
     my $part_svc = qsearchs ( 'part_svc', { 'svcpart' => $_->svcpart } );
-    $pkgpart{ $_->pkgpart } = 9999 # never will == 1 below
+    $pkgpart{ $_->pkgpart } = -1 # never will == 1 below
       if ( $part_svc->svcdb ne 'svc_acct' );
-    $pkgpart{ $_->pkgpart }++;
+    if ( $pkgpart{ $_->pkgpart } ) {
+      $pkgpart{ $_->pkgpart } = '-1';
+    } else {
+      $pkgpart{ $_->pkgpart } = $_->svcpart;
+    }
   }
 
   my @part_pkg =
     #grep { $pkgpart{ $_->pkgpart } == 1 } qsearch( 'part_pkg', {} );
     grep {
-      ( $pkgpart{ $_->pkgpart } || 0 ) == 1
+      #( $pkgpart{ $_->pkgpart } || 0 ) == 1
+      $pkgpart{ $_->pkgpart } 
+      && $pkgpart{ $_->pkgpart } != -1
       && $part_pkg{ $_->pkgpart }
+      ;
     } qsearch( 'part_pkg', {} );
 
   if ( @part_pkg ) {
 
     print "<BR><BR>First package", itable("#c0c0c0"),
-          qq!<TR><TD COLSPAN=2><SELECT NAME="pkgpart">!;
+          qq!<TR><TD COLSPAN=2><SELECT NAME="pkgpart_svcpart">!;
 
     print qq!<OPTION VALUE="">(none)!;
 
     foreach my $part_pkg ( @part_pkg ) {
-      print qq!<OPTION VALUE="!, $part_pkg->pkgpart, '"',
+      print qq!<OPTION VALUE="!,
+              $part_pkg->pkgpart. "_". $pkgpart{ $part_pkg->pkgpart }, '"',
             " SELECTED"x($part_pkg->pkgpart == $pkgpart),
             ">", $part_pkg->pkg, " - ", $part_pkg->comment;
     }
@@ -383,7 +397,8 @@ END
     print qq!<TR><TD ALIGN="right">POP</TD><TD><SELECT NAME="popnum" SIZE=1><OPTION> !;
     my($svc_acct_pop);
     foreach $svc_acct_pop ( qsearch ('svc_acct_pop',{} ) ) {
-    print "<OPTION", $svc_acct_pop->popnum == $popnum ? ' SELECTED' : '', ">", 
+    print qq!<OPTION VALUE="!, $svc_acct_pop->popnum, '"',
+          ( $popnum && $svc_acct_pop->popnum == $popnum ) ? ' SELECTED' : '', ">", 
           $svc_acct_pop->popnum, ": ", 
           $svc_acct_pop->city, ", ",
           $svc_acct_pop->state,
