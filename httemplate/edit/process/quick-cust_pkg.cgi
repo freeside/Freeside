@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: quick-cust_pkg.cgi,v 1.2 2001-09-11 09:56:27 ivan Exp $ -->
+#<!-- $Id: quick-cust_pkg.cgi,v 1.3 2001-09-11 10:05:30 ivan Exp $ -->
 
 use strict;
 use vars qw( $cgi $custnum $pkgpart $error ); #@remove_pkgnums @pkgparts
@@ -15,10 +15,10 @@ $error = '';
 
 #untaint custnum
 $cgi->param('custnum') =~ /^(\d+)$/
-  or die 'illegal custnum '. $cgi->param('custnum');
+  or eidiot 'illegal custnum '. $cgi->param('custnum');
 $custnum = $1;
 $cgi->param('pkgpart') =~ /^(\d+)$/
-  or die 'illegal pkgpart '. $cgi->param('pkgpart');
+  or eidiot 'illegal pkgpart '. $cgi->param('pkgpart');
 $pkgpart = $1;
 
 my @cust_pkg = ();
