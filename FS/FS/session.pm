@@ -1,13 +1,19 @@
 package FS::session;
 
 use strict;
-use vars qw( @ISA );
+use vars qw( @ISA $conf $start $stop );
 use FS::Record qw( qsearchs );
 use FS::svc_acct;
 use FS::port;
 use FS::nas;
 
 @ISA = qw(FS::Record);
+
+$FS::UID::callback{'FS::session'} = sub {
+  $conf = new FS::Conf;
+  $start = $conf->exists('session-start') ? $conf->config('session-start') : '';
+  $stop = $conf->exists('session-stop') ? $conf->config('session-stop') : '';
+};
 
 =head1 NAME
 
@@ -104,7 +110,13 @@ sub insert {
 
   $self->nas_heartbeat($self->getfield('login'));
 
-  #session-starting callback!
+  #session-starting callback
+    #redundant with heartbeat, yuck
+  my $port = qsearchs('port',{'portnum'=>$self->portnum});
+  my $nas = qsearchs('nas',{'nasnum'=>$port->nasnum});
+    #kcuy
+  my( $ip, $nasip, $nasfqdn ) = ( $port->ip, $nas->nasip, $nas->nasfqdn );
+  system( eval qq("$start") ) if $start;
 
   '';
 
@@ -147,7 +159,13 @@ sub replace {
 
   $self->nas_heartbeat($self->getfield('logout'));
 
-  #session-ending callback!
+  #session-ending callback
+  #redundant with heartbeat, yuck
+  my $port = qsearchs('port',{'portnum'=>$self->portnum});
+  my $nas = qsearchs('nas',{'nasnum'=>$port->nasnum});
+    #kcuy
+  my( $ip, $nasip, $nasfqdn ) = ( $port->ip, $nas->nasip, $nas->nasfqdn );
+  session( eval qq("$stop") ) if $stop;
 
   '';
 }
@@ -206,7 +224,7 @@ sub svc_acct {
 
 =head1 VERSION
 
-$Id: session.pm,v 1.3 2000-12-03 20:25:20 ivan Exp $
+$Id: session.pm,v 1.4 2000-12-08 22:22:31 ivan Exp $
 
 =head1 BUGS
 
