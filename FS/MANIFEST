@@ -17,7 +17,10 @@ bin/freeside-deluser
 bin/freeside-setup
 bin/freeside-setinvoice
 bin/freeside-overdue
+bin/freeside-radgroup
 bin/freeside-receivables-report
+bin/freeside-sqlradius-radacctd
+bin/freeside-sqlradius-reset
 bin/freeside-tax-report
 bin/freeside-cc-receipts-report
 bin/freeside-credit-report

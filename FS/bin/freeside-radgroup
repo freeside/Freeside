@@ -1,0 +1,76 @@
+#!/usr/bin/perl -w
+
+use strict;
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw(qsearch);
+use FS::cust_svc;
+use FS::svc_acct;
+
+&untaint_argv;  #what it sounds like  (eww)
+
+my($user, $action, $groupname, $svcpart) = @ARGV;
+
+adminsuidsetup $user;
+
+my @svc_acct = map { $_->svc_x } qsearch('cust_svc', { svcpart => $svcpart } );
+
+if ( lc($action) eq 'add' ) {
+  foreach my $svc_acct ( @svc_acct ) {
+    my @groups = $svc_acct->radius_groups;
+    next if grep { $_ eq $groupname } @groups;
+    push @groups, $groupname;
+    my %hash = $svc_acct->hash;
+    $hash{radius_groups} = \@groups;
+    my $new = new FS::svc_acct \%hash;
+    my $error = $new->replace($svc_acct);
+    die $error if $error;
+  }
+} else {
+  die &usage;
+}
+
+# subroutines
+
+sub untaint_argv {
+  foreach $_ ( $[ .. $#ARGV ) { #untaint @ARGV
+    $ARGV[$_] =~ /^(.*)$/ || die "Illegal arguement \"$ARGV[$_]\"";
+    $ARGV[$_]=$1;
+  }
+}
+
+sub usage {
+  die "Usage:\n\n  freeside-radgroup user action groupname svcpart\n";
+}
+
+=head1 NAME
+
+freeside-radgroup - Command line utility to manipulate radius groups
+
+=head1 SYNOPSIS
+
+  freeside-addgroup user action groupname svcpart 
+
+=head1 DESCRIPTION
+
+  B<user> is a freeside user as added with freeside-adduser.
+
+  B<command> is the action to take.  Available actions are: I<add>
+
+  B<groupname> is the group to add (or remove, etc.)
+
+  B<svcpart> specifies which accounts will be updated.
+
+=head1 EXAMPLES
+
+freeside-radgroup freesideuser add groupname 3
+
+Adds I<groupname> to all accounts with service definition 3.
+
+=head1 BUGS
+
+=head1 SEE ALSO
+
+L<freeside-adduser>, L<FS::svc_acct>, L<FS::part_svc>
+
+=cut
+
