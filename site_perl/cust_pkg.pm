@@ -7,6 +7,7 @@ use FS::UID qw(getotaker);
 use FS::Record qw(fields qsearch qsearchs);
 use FS::cust_svc;
 use FS::part_pkg;
+use FS::cust_main;
 
 @ISA = qw(FS::Record Exporter);
 
@@ -124,7 +125,7 @@ returns the error, otherwise returns false.
 
 Currently, custnum, setup, bill, susp, expire, and cancel may be changed.
 
-pkgpart may not be changed, but see the order subroutine.
+Changing pkgpart may have disasterous effects.  See the order subroutine.
 
 setup and bill are normally updated by calling the bill method of a customer
 object (see L<FS::cust_main>).
@@ -141,8 +142,8 @@ sub replace {
   return "(Old) Not a cust_pkg record!" if $old->table ne "cust_pkg";
   return "Can't change pkgnum!"
     if $old->getfield('pkgnum') ne $new->getfield('pkgnum');
-  return "Can't (yet?) change pkgpart!"
-    if $old->getfield('pkgpart') ne $new->getfield('pkgpart');
+  #return "Can't (yet?) change pkgpart!"
+  #  if $old->getfield('pkgpart') ne $new->getfield('pkgpart');
   return "Can't change otaker!"
     if $old->getfield('otaker') ne $new->getfield('otaker');
   return "Can't change setup once it exists!"
@@ -492,6 +493,10 @@ sub order {
 
 =back
 
+=head1 VERSION
+
+$Id: cust_pkg.pm,v 1.3 1998-11-15 13:01:35 ivan Exp $
+
 =head1 BUGS
 
 It doesn't properly override FS::Record yet.
@@ -517,7 +522,10 @@ fixed for new agent->agent_type->type_pkgs in &order ivan@sisd.com 98-mar-7
 pod ivan@sisd.com 98-sep-21
 
 $Log: cust_pkg.pm,v $
-Revision 1.2  1998-11-12 03:42:45  ivan
+Revision 1.3  1998-11-15 13:01:35  ivan
+allow pkgpart changing (for per-customer custom pricing).  warn about it in doc
+
+Revision 1.2  1998/11/12 03:42:45  ivan
 added label method
 
 
