@@ -685,7 +685,7 @@ print '</TABLE>';
 
     push @history, {
       'date'   => $cust_pay_void->_date,
-      'desc'   => "Payment $info <I>voided ".
+      'desc'   => "<DEL>Payment $info</DEL> <I>voided ".
                   time2str("%D", $cust_pay_void->void_date).
                   " by ". $cust_pay_void->otaker. '</i>',
       'void_payment' => $cust_pay_void->paid,
