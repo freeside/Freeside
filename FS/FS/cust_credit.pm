@@ -6,6 +6,7 @@ use FS::UID qw( getotaker );
 use FS::Record qw( qsearch qsearchs );
 use FS::cust_main;
 use FS::cust_refund;
+use FS::cust_credit_bill;
 
 @ISA = qw( FS::Record );
 
@@ -132,10 +133,25 @@ sub cust_refund {
   ;
 }
 
+=item cust_credit_bill
+
+Returns all application to invoices (see L<FS::cust_credit_bill>) for this
+credit.
+
+=cut
+
+sub cust_credit_bill {
+  my $self = shift;
+  sort { $a->_date <=> $b->_date }
+    qsearch( 'cust_credit_bill', { 'crednum' => $self->crednum } )
+  ;
+}
+
 =item credited
 
 Returns the amount of this credit that is still outstanding; which is
-amount minus all refunds (see L<FS::cust_refund>).
+amount minus all refunds (see L<FS::cust_refund>) and applications to
+invoices (see L<FS::cust_credit_bill>).
 
 =cut
 
@@ -143,14 +159,15 @@ sub credited {
   my $self = shift;
   my $amount = $self->amount;
   $amount -= $_->refund foreach ( $self->cust_refund );
-  $amount;
+  $amount -= $_->amount foreach ( $self->cust_credit_bill );
+  sprintf( "%.2f", $amount );
 }
 
 =back
 
 =head1 VERSION
 
-$Id: cust_credit.pm,v 1.8 2001-08-26 05:06:19 ivan Exp $
+$Id: cust_credit.pm,v 1.9 2001-09-01 21:52:19 jeff Exp $
 
 =head1 BUGS
 

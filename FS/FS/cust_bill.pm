@@ -11,6 +11,7 @@ use FS::cust_bill_pkg;
 use FS::cust_credit;
 use FS::cust_pay;
 use FS::cust_pkg;
+use FS::cust_credit_bill;
 
 @ISA = qw( FS::Record );
 
@@ -204,8 +205,8 @@ sub cust_bill_pkg {
 =item cust_credit
 
 Returns a list consisting of the total previous credited (see
-L<FS::cust_credit>) for this customer, followed by the previous outstanding
-credits (FS::cust_credit objects).
+L<FS::cust_credit>) and unapplied for this customer, followed by the previous
+outstanding credits (FS::cust_credit objects).
 
 =cut
 
@@ -233,6 +234,19 @@ sub cust_pay {
   ;
 }
 
+=item cust_credited
+
+Returns all applied credits (see L<FS::cust_credit_bill>) for this invoice.
+
+=cut
+
+sub cust_credited {
+  my $self = shift;
+  sort { $a->_date <=> $b->_date }
+    qsearch( 'cust_credit_bill', { 'invnum' => $self->invnum } )
+  ;
+}
+
 =item tax
 
 Returns the tax amount (see L<FS::cust_bill_pkg>) for this invoice.
@@ -251,7 +265,8 @@ sub tax {
 =item owed
 
 Returns the amount owed (still outstanding) on this invoice, which is charged
-minus all payments (see L<FS::cust_pay>).
+minus all payments (see L<FS::cust_pay>) and applied credits
+(see L<FS::cust_credit_bill>).
 
 =cut
 
@@ -259,7 +274,8 @@ sub owed {
   my $self = shift;
   my $balance = $self->charged;
   $balance -= $_->paid foreach ( $self->cust_pay );
-  $balance;
+  $balance -= $_->amount foreach ( $self->cust_credited );
+  $balance = sprintf( "%.2f", $balance);
 }
 
 =item print_text [TIME];
@@ -349,6 +365,12 @@ sub print_text {
   push @buf,['',''];
 
   #credits
+  foreach ( $self->cust_credited ) {
+    push @buf,[
+      "Credit #". $_->crednum. " (" . time2str("%x",$_->_date) .")",
+      $money_char. sprintf("%10.2f",$_->amount)
+    ];
+  }
   foreach ( @cr_cust_credit ) {
     push @buf,[
       "Credit #". $_->crednum. " (" . time2str("%x",$_->_date) .")",
@@ -441,7 +463,7 @@ sub print_text {
 
 =head1 VERSION
 
-$Id: cust_bill.pm,v 1.8 2001-08-03 20:34:28 jeff Exp $
+$Id: cust_bill.pm,v 1.9 2001-09-01 21:52:19 jeff Exp $
 
 =head1 BUGS
 

@@ -28,6 +28,7 @@ use FS::part_referral;
 use FS::cust_main_county;
 use FS::agent;
 use FS::cust_main_invoice;
+use FS::cust_credit_bill;
 use FS::prepay_credit;
 
 @ISA = qw( FS::Record );
@@ -1398,7 +1399,7 @@ sub rebuild_fuzzyfiles {
 
 =head1 VERSION
 
-$Id: cust_main.pm,v 1.23 2001-09-01 20:11:07 ivan Exp $
+$Id: cust_main.pm,v 1.24 2001-09-01 21:52:20 jeff Exp $
 
 =head1 BUGS
 

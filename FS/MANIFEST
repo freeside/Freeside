@@ -13,6 +13,7 @@ FS/agent_type.pm
 FS/cust_bill.pm
 FS/cust_bill_pkg.pm
 FS/cust_credit.pm
+FS/cust_credit_bill.pm
 FS/cust_main.pm
 FS/cust_main_county.pm
 FS/cust_main_invoice.pm

@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: cust_main.cgi,v 1.5 2001-08-28 14:34:14 ivan Exp $ -->
+#<!-- $Id: cust_main.cgi,v 1.6 2001-09-01 21:52:20 jeff Exp $ -->
 
 use strict;
 use vars qw ( $cgi $query $custnum $cust_main $hashref $agent $referral 
@@ -357,9 +357,15 @@ foreach $bill (@bills) {
 @credits = qsearch('cust_credit',{'custnum'=>$custnum});
 foreach $credit (@credits) {
   my($cref)=$credit->hashref;
+  my($credited)=$credit->credited;
   push @history,
-    $cref->{_date} . "\tCredit #" . $cref->{crednum} . ", (Balance \$" .
-    $cref->{credited} . ") by " . $cref->{otaker} . " - " .
+    $cref->{_date} . "\t" .
+    ($credited ?
+       (qq!<A HREF="! . popurl(2). qq!edit/cust_credit_bill.cgi?!. $cref->{crednum} . qq!">!) :
+       "") .
+    "Credit #" .
+    $cref->{crednum} . ", (Balance \$" .
+    $credited . ")" . ($credited ? "</A>" : "") .
     $cref->{reason} . "\t\t\t" . $cref->{amount} . "\t";
 
   my(@refunds)=qsearch('cust_refund',{'crednum'=> $cref->{crednum} } );
