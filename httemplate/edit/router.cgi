@@ -22,6 +22,8 @@ print header("$action Router", menubar(
   'View all routers' => "${p}browse/router.cgi",
 ));
 
+my $p3 = popurl(3);
+
 if($cgi->param('error')) {
 %> <FONT SIZE="+1" COLOR="#ff0000">Error: <%=$cgi->param('error')%></FONT>
 <% } %>
@@ -31,6 +33,7 @@ if($cgi->param('error')) {
   <INPUT TYPE="hidden" NAME="redirect_ok" VALUE="<%=$p3%>/browse/router.cgi">
   <INPUT TYPE="hidden" NAME="redirect_error" VALUE="<%=$p3%>/edit/router.cgi">
   <INPUT TYPE="hidden" NAME="routernum" VALUE="<%=$routernum%>">
+  <INPUT TYPE="hidden" NAME="svcnum" VALUE="<%=$router->svcnum%>">
     Router #<%=$routernum or "(NEW)"%>
 
 <BR><BR>Name <INPUT TYPE="text" NAME="routername" SIZE=32 VALUE="<%=$router->routername%>">
@@ -49,12 +52,14 @@ foreach my $field ($router->virtual_fields) {
 </TABLE>
 
 
-
+<%
+unless ($router->svcnum) {
+%>
 <BR><BR>Select the service types available on this router<BR>
 <%
 
-foreach my $part_svc ( qsearch('part_svc', { svcdb    => 'svc_broadband',
-                                             disabled => '' }) ) {
+  foreach my $part_svc ( qsearch('part_svc', { svcdb    => 'svc_broadband',
+                                               disabled => '' }) ) {
   %>
   <BR>
   <INPUT TYPE="checkbox" NAME="svcpart_<%=$part_svc->svcpart%>"<%=
@@ -63,6 +68,8 @@ foreach my $part_svc ( qsearch('part_svc', { svcdb    => 'svc_broadband',
   <A HREF="<%=${p}%>edit/part_svc.cgi?<%=$part_svc->svcpart%>">
     <%=$part_svc->svcpart%>: <%=$part_svc->svc%></A>
   <% } %>
+
+<% } %>
 
   <BR><BR><INPUT TYPE="submit" VALUE="Apply changes">
   </FORM>
