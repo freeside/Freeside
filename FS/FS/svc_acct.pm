@@ -831,6 +831,15 @@ sub check {
 
   #  $error = $self->ut_textn('finger');
   #  return $error if $error;
+  if ( $self->getfield('finger') eq '' ) {
+    my $cust_pkg = $self->svcnum
+      ? $self->cust_svc->cust_pkg
+      : qsearchs('cust_pkg', { 'pkgnum' => $self->getfield('pkgnum') } );
+    if ( $cust_pkg ) {
+      my $cust_main = $cust_pkg->cust_main;
+      $self->setfield('finger', $cust_main->first.' '.$cust_main->get('last') );
+    }
+  }
   $self->getfield('finger') =~
     /^([\w \t\!\@\#\$\%\&\(\)\-\+\;\'\"\,\.\?\/\*\<\>]*)$/
       or return "Illegal finger: ". $self->getfield('finger');
