@@ -1,9 +1,10 @@
 package FS::part_export::sqlmail;
 
 use vars qw(@ISA);
+use Digest::MD5 qw(md5_hex);
 use FS::Record qw(qsearchs);
 use FS::part_export;
-use Digest::MD5 qw(md5_hex);
+use FS::svc_domain;
 
 @ISA = qw(FS::part_export);
 

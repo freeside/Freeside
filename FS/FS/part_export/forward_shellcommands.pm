@@ -2,7 +2,9 @@ package FS::part_export::forward_shellcommands;
 
 use strict;
 use vars qw(@ISA);
+use FS::Record qw(qsearchs);
 use FS::part_export;
+use FS::svc_acct;
 
 @ISA = qw(FS::part_export);
 
