@@ -904,7 +904,7 @@ sub domain {
 =item svc_domain
 
 Returns the FS::svc_domain record for this account's domain (see
-L<FS::svc_domain).
+L<FS::svc_domain>.
 
 =cut
 
@@ -958,7 +958,7 @@ sub ssh {
 
 =head1 VERSION
 
-$Id: svc_acct.pm,v 1.53 2001-11-03 17:49:52 ivan Exp $
+$Id: svc_acct.pm,v 1.54 2001-11-05 13:57:31 ivan Exp $
 
 =head1 BUGS
 
