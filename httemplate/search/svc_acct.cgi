@@ -1,5 +1,5 @@
 <%
-# <!-- $Id: svc_acct.cgi,v 1.4 2001-08-21 02:16:36 ivan Exp $ -->
+# <!-- $Id: svc_acct.cgi,v 1.5 2001-09-11 20:44:08 ivan Exp $ -->
 
 use strict;
 use vars qw( $cgi @svc_acct $sortby $query $mydomain );
@@ -10,6 +10,8 @@ use FS::Record qw(qsearch qsearchs dbdef);
 use FS::CGI qw(header eidiot popurl table);
 use FS::svc_acct;
 use FS::cust_main;
+
+$mydomain = '';
 
 $cgi = new CGI;
 &cgisuidsetup($cgi);
