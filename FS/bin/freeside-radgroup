@@ -20,7 +20,7 @@ if ( lc($action) eq 'add' ) {
     next if grep { $_ eq $groupname } @groups;
     push @groups, $groupname;
     my %hash = $svc_acct->hash;
-    $hash{radius_groups} = \@groups;
+    $hash{usergroup} = \@groups;
     my $new = new FS::svc_acct \%hash;
     my $error = $new->replace($svc_acct);
     die $error if $error;
