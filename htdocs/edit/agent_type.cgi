@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: agent_type.cgi,v 1.10 1999-01-25 12:09:51 ivan Exp $
+# $Id: agent_type.cgi,v 1.11 1999-04-07 11:19:21 ivan Exp $
 #
 # agent_type.cgi: Add/Edit agent type (output form)
 #
@@ -13,7 +13,10 @@
 # use FS::CGI, added inline documentation ivan@sisd.com 98-jul-12
 #
 # $Log: agent_type.cgi,v $
-# Revision 1.10  1999-01-25 12:09:51  ivan
+# Revision 1.11  1999-04-07 11:19:21  ivan
+# silly HTML typo
+#
+# Revision 1.10  1999/01/25 12:09:51  ivan
 # yet more mod_perl stuff
 #
 # Revision 1.9  1999/01/19 05:13:32  ivan
@@ -103,7 +106,7 @@ foreach $part_pkg ( qsearch('part_pkg',{}) ) {
         })
           ? 'CHECKED '
           : '',
-        qq!"VALUE="ON"> !,
+        qq!VALUE="ON"> !,
     qq!<A HREF="${p}edit/part_pkg.cgi?!, $part_pkg->pkgpart, 
     '">', $part_pkg->getfield('pkg'), '</A>',
   ;
