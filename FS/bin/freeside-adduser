@@ -1,21 +1,23 @@
 #!/usr/bin/perl -w
 #
-# $Id: freeside-adduser,v 1.4 2002-02-06 14:58:05 ivan Exp $
+# $Id: freeside-adduser,v 1.5 2002-08-24 08:13:25 ivan Exp $
 
 use strict;
-use vars qw($opt_h $opt_c $opt_s);
+use vars qw($opt_h $opt_b $opt_c $opt_s);
 use Getopt::Std;
 
 my $FREESIDE_CONF = "/usr/local/etc/freeside";
 
-getopts("ch:s:");
+getopts("bch:s:");
 die &usage if $opt_c && ! $opt_h;
 my $user = shift or die &usage;
 
 if ( $opt_h ) {
   my @args = ( 'htpasswd' );
+  push @args, '-b' if $opt_b;
   push @args, '-c' if $opt_c;
   push @args, $opt_h, $user;
+  push @args, shift if $opt_b;
   system(@args) == 0 or die "htpasswd failed: $?";
 }
 
