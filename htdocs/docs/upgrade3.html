@@ -22,8 +22,15 @@ ALTER TABLE cust_main_county ADD country char(2);
 UPDATE cust_main_county SET country = "US" where country IS NULL;
 CREATE TABLE part_title (
    titlenum int NOT NULL,
-   title varchar(80),
+   title varchar(80) NOT NULL,
    PRIMARY KEY (titlenum)
+);
+CREATE TABLE cust_main_invoice (
+   destnum int NOT NULL,
+   custnum int NOT NULL,
+   dest varchar(80) NOT NULL,
+   PRIMARY KEY (destnum),
+   INDEX ( custnum )
 );
 </pre>
   <li>Run bin/dbdef-create.  This file uses MySQL-specific syntax.  If you are r

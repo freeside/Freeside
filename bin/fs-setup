@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: fs-setup,v 1.9 1998-12-15 04:36:29 ivan Exp $
+# $Id: fs-setup,v 1.10 1998-12-16 06:05:38 ivan Exp $
 #
 # ivan@sisd.com 97-nov-8,9
 #
@@ -32,7 +32,10 @@
 # fix radius attributes ivan@sisd.com 98-sep-27
 #
 # $Log: fs-setup,v $
-# Revision 1.9  1998-12-15 04:36:29  ivan
+# Revision 1.10  1998-12-16 06:05:38  ivan
+# add table cust_main_invoice
+#
+# Revision 1.9  1998/12/15 04:36:29  ivan
 # s/croak/die/; #oops
 #
 # Revision 1.8  1998/12/15 04:33:27  ivan
@@ -366,6 +369,17 @@ sub tables_hash_hack {
       'unique' => [ [] ],
       #'index' => [ ['last'], ['company'] ],
       'index' => [ ['last'], ],
+    },
+
+    'cust_main_invoice' => {
+      'columns' => [
+        'destnum',  'int',  '',     '',
+        'custnum',  'int',  '',     '',
+        'dest',     'varchar', '',  $char_d,
+      ],
+      'primary_key' => 'destnum',
+      'unique' => [ [] ],
+      'index' => [ ['custnum'], ],
     },
 
     'cust_main_county' => { #county+state+country are checked off the

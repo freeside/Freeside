@@ -72,6 +72,11 @@
         <li>tax - tax exempt, Y or null
         <li>otaker - order taker
       </ul>
+    <li><a name="cust_main_invoice">cust_main_invoice</a> - Invoice destinations for email invoices
+      <ul>
+        <li>destnum - primary key
+        <li>custnum - <a href="#cust_main">customer</a>
+        <li>dest - Invoice destination: <a href="#svc_acct">svcnum</a> if numeric, literal email address if string
     <li><a name="cust_main_county">cust_main_county</a> - Tax rates
       <ul>
         <li>taxnum - primary key
