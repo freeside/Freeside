@@ -39,16 +39,27 @@ if ( $svc_acct->domsvc ) {
   $domain = $mydomain;
 }
 
-print header('Account View', menubar(
+%>
+
+<SCRIPT>
+function areyousure(href) {
+    if (confirm("Permanently delete this account?") == true)
+        window.location.href = href;
+}
+</SCRIPT>
+
+<%= header('Account View', menubar(
   ( ( $pkgnum || $custnum )
     ? ( "View this package (#$pkgnum)" => "${p}view/cust_pkg.cgi?$pkgnum",
         "View this customer (#$custnum)" => "${p}view/cust_main.cgi?$custnum",
       )
     : ( "Cancel this (unaudited) account" =>
-          "${p}misc/cancel-unaudited.cgi?$svcnum" )
+          "javascript:areyousure(\'${p}misc/cancel-unaudited.cgi?$svcnum\')" )
   ),
   "Main menu" => $p,
-));
+)) %>
+
+<%
 
 #print qq!<BR><A HREF="../misc/sendconfig.cgi?$svcnum">Send account information</A>!;
 
