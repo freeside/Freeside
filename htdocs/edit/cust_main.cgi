@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main.cgi,v 1.28 2000-12-26 23:51:40 ivan Exp $
+# $Id: cust_main.cgi,v 1.29 2001-05-23 13:47:07 ivan Exp $
 #
 # Usage: cust_main.cgi custnum
 #        http://server.name/path/cust_main.cgi?custnum
@@ -38,7 +38,10 @@
 # fixed one missed day->daytime ivan@sisd.com 98-jul-13
 #
 # $Log: cust_main.cgi,v $
-# Revision 1.28  2000-12-26 23:51:40  ivan
+# Revision 1.29  2001-05-23 13:47:07  ivan
+# bugfix for defaultcountry
+#
+# Revision 1.28  2000/12/26 23:51:40  ivan
 # statedefault & referraldefault config files
 #
 # Revision 1.27  2000/12/03 13:45:15  ivan
@@ -335,7 +338,7 @@ END
 $cust_main->country( $conf->config('countrydefault') || 'US' )
   unless $cust_main->country;
 $cust_main->state( $conf->config('statedefault') || 'CA' )
-  unless $cust_main->state;
+  unless $cust_main->state || $cust_main->country ne 'US';
 foreach ( qsearch('cust_main_county',{}) ) {
   print "<OPTION";
   print " SELECTED" if ( $cust_main->state eq $_->state
