@@ -2,6 +2,7 @@
 
 username=$1
 domain=$2
+password=$3
 
 freeside-adduser -h /usr/local/etc/freeside/htpasswd \
  -s /usr/local/etc/freeside/conf.DBI:Pg:host=localhost\;dbname=$domain/secrets \
