@@ -322,6 +322,10 @@ sub small_custview {
 
   $html .= '</TR></TABLE>';
 
+  $html .= '<BR>Balance: <B>$'. $cust_main->balance. '</B><BR>';
+
+  # last payment might be good here too?
+
   $html;
 }
 
