@@ -9,7 +9,7 @@ use CGI::Carp qw(fatalsToBrowser);
 use FS::UID;
 
 @ISA = qw(Exporter);
-@EXPORT_OK = qw(header menubar idiot eidiot url);
+@EXPORT_OK = qw(header menubar idiot eidiot popurl);
 
 =head1 NAME
 
@@ -17,7 +17,7 @@ FS::CGI - Subroutines for the web interface
 
 =head1 SYNOPSIS
 
-  use FS::CGI qw(header menubar idiot eidiot url);
+  use FS::CGI qw(header menubar idiot eidiot popurl);
 
   print header( 'Title', '' );
   print header( 'Title', menubar('item', 'URL', ... ) );
@@ -25,8 +25,8 @@ FS::CGI - Subroutines for the web interface
   idiot "error message"; 
   eidiot "error message";
 
-  $url = url; #returns current url
-  $url = url (3); #three levels up
+  $url = popurl; #returns current url
+  $url = popurl(3); #three levels up
 
 =head1 DESCRIPTION
 
@@ -121,18 +121,18 @@ sub eidiot {
   exit;
 }
 
-=item url LEVEL
+=item popurl LEVEL
 
 Returns current URL with LEVEL levels of path removed from the end (default 0).
 
 =cut
 
-sub url {
+sub popurl {
   my($up)=@_;
-  my($cgi)=FS::UID::cgi;
-  my($url)=new URI::URL $cgi;
+  my($cgi)=&FS::UID::cgi;
+  my($url)=new URI::URL $cgi->url;
   my(@path)=$url->path_components;
-  pop @path foreach ( 1.. $up );
+  splice @path, 0-$up;
   $url->path_components(@path);
   $url->as_string;
 }
@@ -161,8 +161,8 @@ lose the background, eidiot ivan@sisd.com 98-sep-2
 pod ivan@sisd.com 98-sep-12
 
 $Log: CGI.pm,v $
-Revision 1.8  1998-11-09 08:36:05  ivan
-haha
+Revision 1.9  1998-11-09 08:51:49  ivan
+bug squash
 
 Revision 1.7  1998/11/09 06:10:59  ivan
 added sub url
