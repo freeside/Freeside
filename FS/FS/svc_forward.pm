@@ -271,8 +271,7 @@ sub check {
   ;
   return $error if $error;
 
-  return "Unknown srcsvc"
-    unless qsearchs('svc_acct', { 'svcnum' => $self->srcsvc } );
+  return "Unknown srcsvc" unless $self->srcsvc_acct;
 
   return "Both dstsvc and dst were defined; one one can be specified"
     if $self->dstsvc && $self->dst;
@@ -280,9 +279,7 @@ sub check {
   return "one of dstsvc or dst is required"
     unless $self->dstsvc || $self->dst;
 
-  return "Unknown dstsvc"
-    unless qsearchs('svc_acct', { 'svcnum' => $self->dstsvc } )
-           || ! $self->dstsvc;
+  return "Unknown dstsvc" unless $self->dstsvc_acct || ! $self->dstsvc;
 
   if ( $self->dst ) {
     $self->dst =~ /^([\w\.\-]+)\@(([\w\-]+\.)+\w+)$/
@@ -295,11 +292,32 @@ sub check {
   ''; #no error
 }
 
+=item srcsvc_acct
+
+Returns the FS::svc_acct object referenced by the srcsvc column.
+
+=cut
+
+sub srcsvc_acct {
+  my $self = shift;
+  qsearchs('svc_acct', { 'svcnum' => $self->srcsvc } );
+}
+
+=item dstsvc_acct
+
+Returns the FS::svc_acct object referenced by the srcsvc column, or false for
+forwards not local to freeside.
+
 =back
+
+sub dstsvc_acct {
+  my $self = shift;
+  qsearchs('svc_acct', { 'svcnum' => $self->dstsvc } );
+}
 
 =head1 VERSION
 
-$Id: svc_forward.pm,v 1.7 2001-09-06 20:41:59 ivan Exp $
+$Id: svc_forward.pm,v 1.8 2001-10-29 20:53:38 ivan Exp $
 
 =head1 BUGS
 
