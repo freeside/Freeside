@@ -5,7 +5,7 @@ use vars qw( @ISA $nossh_hack $conf $shellmachine @qmailmachines
              @vpopmailmachines );
 use Net::SSH qw(ssh);
 use FS::Conf;
-use FS::Record qw( fields qsearch qsearchs );
+use FS::Record qw( fields qsearch qsearchs dbh );
 use FS::svc_Common;
 use FS::cust_svc;
 use FS::svc_acct;
@@ -94,9 +94,9 @@ defined.  An FS::cust_svc record will be created and inserted.
 If the configuration value (see L<FS::Conf>) vpopmailmachines exists, then
 the command:
 
-  [ -d $vpopdir/$domain/$source ] || {
-    echo "$destination" >> $vpopdir/$domain/$username/.$qmail
-    chown $vpopuid:$vpopgid $vpopdir/$domain/$username/.$qmail
+  [ -d $vpopdir/domains/$domain/$source ] && {
+    echo "$destination" >> $vpopdir/domains/$domain/$username/.$qmail
+    chown $vpopuid:$vpopgid $vpopdir/domains/$domain/$username/.$qmail
   }
 
 is executed on each vpopmailmachine via ssh (see the vpopmail documentation).
@@ -115,29 +115,42 @@ sub insert {
   local $SIG{TSTP} = 'IGNORE';
   local $SIG{PIPE} = 'IGNORE';
 
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
   $error = $self->check;
   return $error if $error;
 
   $error = $self->SUPER::insert;
-  return $error if $error;
+  if ($error) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
 
   my $svc_acct = qsearchs( 'svc_acct', { 'svcnum' => $self->srcsvc } );
   my $username = $svc_acct->username;
   my $domain = $svc_acct->domain;
   my $destination;
   if ($self->dstsvc) {
-    my $dst_svc_acct = qsearchs( 'svc_acct', { 'svcnum' => $self->dstsvc } );
-    $destination = $dst_svc_acct->email;
+    $destination = $self->dstsvc_acct->email;
   } else {
     $destination = $self->dst;
   }
     
   foreach my $vpopmailmachine ( @vpopmailmachines ) {
     my($machine, $vpopdir, $vpopuid, $vpopgid) = split(/\s+/, $vpopmailmachine);
-    ssh("root\@$machine","[ -d $vpopdir/$domain/$username ] || { echo \"$destination\" >> $vpopdir/$domain/$username/.qmail; chown $vpopuid:$vpopgid $vpopdir/$domain/$username/.qmail; }") 
+    my $queue = new FS::queue { 'job' => 'Net::SSH::ssh_cmd' };  # should be neater
+    my $error = $queue->insert("root\@$machine","[ -d $vpopdir/domains/$domain/$username ] && { echo \"$destination\" >> $vpopdir/domains/$domain/$username/.qmail; chown $vpopuid:$vpopgid $vpopdir/domains/$domain/$username/.qmail; }") 
       unless $nossh_hack;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "queueing job (transaction rolled back): $error";
+    }
+
   }
 
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   ''; #no error
 
 }
@@ -149,25 +162,99 @@ returns the error, otherwise returns false.
 
 The corresponding FS::cust_svc record will be deleted as well.
 
+If the configuration value vpopmailmachines exists, then the command:
+
+  { sed -e '/^$destination/d' < 
+      $vpopdir/domains/$srcdomain/$srcusername/.qmail >
+      $vpopdir/domains/$srcdomain/$srcusername/.qmail.temp;
+    mv $vpopdir/domains/$srcdomain/$srcusername/.qmail.temp
+      $vpopdir/domains/$srcdomain/$srcusername/.qmail;
+    chown $vpopuid.$vpopgid $vpopdir/domains/$srcdomain/$srcusername/.qmail; }
+    
+
+is executed on each vpopmailmachine via ssh.  This behaviour can be supressed
+by setting $FS::svc_forward_nossh_hack true.
+
+=cut
+
+sub delete {
+  my $self = shift;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::Autocommit = 0;
+  my $dbh = dbh;
+
+  my $error = $self->SUPER::delete;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  my $svc_acct = $self->srcsvc_acct;
+  my $username = $svc_acct->username;
+  my $domain = $svc_acct->domain;
+  my $destination;
+  if ($self->dstsvc) {
+    $destination = $self->dstsvc_acct->email;
+  } else {
+    $destination = $self->dst;
+  }
+  foreach my $vpopmailmachine ( @vpopmailmachines ) {
+    my($machine, $vpopdir, $vpopuid, $vpopgid) =
+      split(/\s+/, $vpopmailmachine);
+    my $queue = new FS::queue { 'job' => 'Net::SSH::ssh_cmd' };  # should be neater
+    my $error = $queue->insert("root\@$machine",
+      "sed -e '/^$destination/d' " .
+        "< $vpopdir/domains/$domain/$username/.qmail" .
+        "> $vpopdir/domains/$domain/$username/.qmail.temp; " .
+      "mv $vpopdir/domains/$domain/$username/.qmail.temp " .
+        "$vpopdir/domains/$domain/$username/.qmail; " .
+      "chown $vpopuid.$vpopgid $vpopdir/domains/$domain/$username/.qmail;"
+    )
+      unless $nossh_hack;
+
+    if ($error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "queueing job (transaction rolled back): $error";
+    }
+
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  '';
+}
+
+
 =item replace OLD_RECORD
 
 Replaces OLD_RECORD with this one in the database.  If there is an error,
 returns the error, otherwise returns false.
 
-If srcsvc changes, and the configuration value vpopmailmachines exists, then
-the command:
+If the configuration value vpopmailmachines exists, then the command:
 
-  rm $vpopdir/$domain/$username/.qmail
+  { sed -e '/^$destination/d' < 
+      $vpopdir/domains/$srcdomain/$srcusername/.qmail >
+      $vpopdir/domains/$srcdomain/$srcusername/.qmail.temp;
+    mv $vpopdir/domains/$srcdomain/$srcusername/.qmail.temp
+      $vpopdir/domains/$srcdomain/$srcusername/.qmail; 
+    chown $vpopuid.$vpopgid $vpopdir/domains/$srcdomain/$srcusername/.qmail; }
+    
 
 is executed on each vpopmailmachine via ssh.  This behaviour can be supressed
 by setting $FS::svc_forward_nossh_hack true.
 
-If dstsvc changes (or dstsvc is 0 and dst changes), and the configuration value
-vpopmailmachines exists, then the command:
+Also, if the configuration value vpopmailmachines exists, then the command:
 
-  [ -d $vpopdir/$domain/$source ] || {
-    echo "$destination" >> $vpopdir/$domain/$username/.$qmail
-    chown $vpopuid:$vpopgid $vpopdir/$domain/$username/.$qmail
+  [ -d $vpopdir/domains/$domain/$source ] && {
+    echo "$destination" >> $vpopdir/domains/$domain/$username/.$qmail
+    chown $vpopuid:$vpopgid $vpopdir/domains/$domain/$username/.$qmail
   }
 
 is executed on each vpopmailmachine via ssh.  This behaviour can be supressed
@@ -193,18 +280,43 @@ sub replace {
   local $SIG{TSTP} = 'IGNORE';
   local $SIG{PIPE} = 'IGNORE';
 
-  my $error = $new->SUPER::replace($old);
-  return $error if $error;
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
 
-  if ( $new->srcsvc != $old->srcsvc ) {
-    my $old_svc_acct = qsearchs( 'svc_acct', { 'svcnum' => $old->srcsvc } );
-    my $old_username = $old_svc_acct->username;
-    my $old_domain = $old_svc_acct->domain;
-    foreach my $vpopmailmachine ( @vpopmailmachines ) {
-      my($machine, $vpopdir, $vpopuid, $vpopgid) =
-        split(/\s+/, $vpopmailmachine);
-      ssh("root\@$machine","rm $vpopdir/$old_domain/$old_username/.qmail")
-        unless $nossh_hack;
+  my $error = $new->SUPER::replace($old);
+  if ($error) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  my $old_svc_acct = $old->srcsvc_acct;
+  my $old_username = $old_svc_acct->username;
+  my $old_domain = $old_svc_acct->domain;
+  my $destination;
+  if ($old->dstsvc) {
+    $destination = $old->dstsvc_acct->email;
+  } else {
+    $destination = $old->dst;
+  }
+  foreach my $vpopmailmachine ( @vpopmailmachines ) {
+    my($machine, $vpopdir, $vpopuid, $vpopgid) =
+      split(/\s+/, $vpopmailmachine);
+    my $queue = new FS::queue { 'job' => 'Net::SSH::ssh_cmd' };  # should be neater
+    my $error = $queue->insert("root\@$machine",
+      "sed -e '/^$destination/d' " .
+        "< $vpopdir/domains/$old_domain/$old_username/.qmail" .
+        "> $vpopdir/domains/$old_domain/$old_username/.qmail.temp; " .
+      "mv $vpopdir/domains/$old_domain/$old_username/.qmail.temp " .
+        "$vpopdir/domains/$old_domain/$old_username/.qmail; " .
+      "chown $vpopuid.$vpopgid " .
+        "$vpopdir/domains/$old_domain/$old_username/.qmail;"
+    )
+      unless $nossh_hack;
+
+    if ( $error ) {
+       $dbh->rollback if $oldAutoCommit;
+       return "queueing job (transaction rolled back): $error";
     }
   }
 
@@ -212,21 +324,25 @@ sub replace {
   my $svc_acct = qsearchs( 'svc_acct', { 'svcnum' => $new->srcsvc } );
   my $username = $svc_acct->username;
   my $domain = $svc_acct->domain;
-  my $destination;
   if ($new->dstsvc) {
-    my $dst_svc_acct = qsearchs( 'svc_acct', { 'svcnum' => $new->dstsvc } );
-    $destination = $dst_svc_acct->email;
+    $destination = $new->dstsvc_acct->email;
   } else {
     $destination = $new->dst;
   }
   
   foreach my $vpopmailmachine ( @vpopmailmachines ) {
     my($machine, $vpopdir, $vpopuid, $vpopgid) = split(/\s+/, $vpopmailmachine);
-    ssh("root\@$machine","[ -d $vpopdir/$domain/$username ] || { echo \"$destination\" >> $vpopdir/$domain/$username/.qmail; chown $vpopuid:$vpopgid $vpopdir/$domain/$username/.qmail; }") 
+    my $queue = new FS::queue { 'job' => 'Net::SSH::ssh_cmd' };  # should be neater
+    my $error = $queue->insert("root\@$machine","[ -d $vpopdir/domains/$domain/$username ] && { echo \"$destination\" >> $vpopdir/domains/$domain/$username/.qmail; chown $vpopuid:$vpopgid $vpopdir/domains/$domain/$username/.qmail; }") 
       unless $nossh_hack;
+    if ( $error ) {
+       $dbh->rollback if $oldAutoCommit;
+       return "queueing job (transaction rolled back): $error";
+    }
   }
   #end subroutinable bits
 
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
 }
 
@@ -279,7 +395,11 @@ sub check {
   return "one of dstsvc or dst is required"
     unless $self->dstsvc || $self->dst;
 
-  return "Unknown dstsvc" unless $self->dstsvc_acct || ! $self->dstsvc;
+  #return "Unknown dstsvc: $dstsvc" unless $self->dstsvc_acct || ! $self->dstsvc;
+  return "Unknown dstsvc"
+    unless qsearchs('svc_acct', { 'svcnum' => $self->dstsvc } )
+           || ! $self->dstsvc;
+
 
   if ( $self->dst ) {
     $self->dst =~ /^([\w\.\-]+)\@(([\w\-]+\.)+\w+)$/
@@ -319,7 +439,7 @@ sub dstsvc_acct {
 
 =head1 VERSION
 
-$Id: svc_forward.pm,v 1.9 2002-02-11 23:01:01 ivan Exp $
+$Id: svc_forward.pm,v 1.10 2002-02-17 19:07:32 jeff Exp $
 
 =head1 BUGS
 
