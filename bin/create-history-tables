@@ -20,6 +20,7 @@ my @tables = scalar(@ARGV)
                ? @ARGV
                : grep { ! /^h_/ } $schema->tables;
 foreach my $table ( @tables ) {
+  next if grep { /^h_$table/ } $schema->tables;
   warn "creating history table for $table\n";
   my $tableobj = $schema->table($table)
     or die "unknown table $table (did you run dbdef-create?)\n";
