@@ -10,7 +10,7 @@ CREATE TABLE part_pop_local (
   npa char(3) not null,
   nxx char(3) not null
 );
-CREATE UNIQUE INDEX part_pop_local1 ON part_pop_local ( npa, nxx );
+CREATE INDEX part_pop_local1 ON part_pop_local ( npa, nxx );
 
 Run bin/dbdef-create
 
