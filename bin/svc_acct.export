@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 #
-# $Id: svc_acct.export,v 1.6 2000-03-06 14:48:29 ivan Exp $
+# $Id: svc_acct.export,v 1.7 2000-03-06 14:50:15 ivan Exp $
 #
 # Create and export password files: passwd, passwd.adjunct, shadow,
 # acp_passwd, acp_userinfo, acp_dialup, users
@@ -38,8 +38,8 @@
 # ivan@sisd.com 98-sep-18
 # 
 # $Log: svc_acct.export,v $
-# Revision 1.6  2000-03-06 14:48:29  ivan
-# s/icradiusmachine/machine/
+# Revision 1.7  2000-03-06 14:50:15  ivan
+# oop
 #
 # Revision 1.2  1998/12/10 07:23:15  ivan
 # use FS::Conf, need user (for datasrc)
@@ -78,7 +78,7 @@ my @radiusmachines = $conf->config('radiusmachines')
 my $icradiusmachines = $conf->exists('icradiusmachines');
 my @icradiusmachines = $conf->config('icradiusmachines') if $icradiusmachines;
 my $icradius_mysqldest =
-  $conf->config('icradius_mysqldest') || "/usr/local/var/radius"
+  $conf->config('icradius_mysqldest') || "/usr/local/var/"
     if $icradiusmachines;
 my $icradius_mysqlsource =
   $conf->config('icradius_mysqlsource') || "/usr/local/var/freeside"
