@@ -1,12 +1,12 @@
 <%
-# <!-- $Id: svc_acct.cgi,v 1.3 2001-08-19 15:53:35 jeff Exp $ -->
+# <!-- $Id: svc_acct.cgi,v 1.4 2001-08-21 02:16:36 ivan Exp $ -->
 
 use strict;
-use vars qw( $cgi @svc_acct $sortby $query );
+use vars qw( $cgi @svc_acct $sortby $query $mydomain );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
-use FS::Record qw(qsearch qsearchs);
+use FS::Record qw(qsearch qsearchs dbdef);
 use FS::CGI qw(header eidiot popurl table);
 use FS::svc_acct;
 use FS::cust_main;
@@ -62,16 +62,22 @@ if ( scalar(@svc_acct) == 1 ) {
         "$total matching accounts found",
         &table(), <<END;
       <TR>
-        <TH><FONT SIZE=-1>Service #</FONT></TH>
+        <TH><FONT SIZE=-1>#</FONT></TH>
         <TH><FONT SIZE=-1>Username</FONT></TH>
         <TH><FONT SIZE=-1>Domain</FONT></TH>
         <TH><FONT SIZE=-1>UID</FONT></TH>
         <TH><FONT SIZE=-1>Service</FONT></TH>
-        <TH><FONT SIZE=-1>Customer #</FONT></TH>
-        <TH><FONT SIZE=-1>Contact name</FONT></TH>
-        <TH><FONT SIZE=-1>Company</FONT></TH>
-      </TR>
+        <TH><FONT SIZE=-1>Cust#</FONT></TH>
+        <TH><FONT SIZE=-1>(bill) name</FONT></TH>
+        <TH><FONT SIZE=-1>company</FONT></TH>
 END
+  if ( defined dbdef->table('cust_main')->column('ship_last') ) {
+    print <<END;
+        <TH><FONT SIZE=-1>(service) name</FONT></TH>
+        <TH><FONT SIZE=-1>company</FONT></TH>
+END
+  }
+  print "</TR>";
 
   my(%saw,$svc_acct);
   my $p = popurl(2);
@@ -82,8 +88,22 @@ END
       or die "No cust_svc record for svcnum ". $svc_acct->svcnum;
     my $part_svc = qsearchs('part_svc', { 'svcpart' => $cust_svc->svcpart })
       or die "No part_svc record for svcpart ". $cust_svc->svcpart;
-    my $svc_domain = qsearchs('svc_domain', { 'svcnum' => $svc_acct->domsvc })
-      or die "No svc_domain record for domsvc ". $cust_svc->domsvc;
+
+    my $domain;
+    my $svc_domain = qsearchs('svc_domain', { 'svcnum' => $svc_acct->domsvc });
+    if ( $svc_domain ) {
+      $domain = "<A HREF=\"${p}view/svc_domain.cgi?". $svc_domain->svcnum.
+                "\">". $svc_domain->domain. "</A>";
+    } else {
+      unless ( $mydomain ) {
+        my $conf = new FS::Conf;
+        unless ( $mydomain = $conf->config('domain') ) {
+          die "No legacy domain config file and no svc_domain.svcnum record ".
+              "for svc_acct.domsvc: ". $cust_svc->domsvc;
+        }
+      }
+      $domain = "<i>$mydomain</i><FONT COLOR=\"#FF0000\">*</FONT>";
+    }
     my($cust_pkg,$cust_main);
     if ( $cust_svc->pkgnum ) {
       $cust_pkg = qsearchs('cust_pkg', { 'pkgnum' => $cust_svc->pkgnum })
@@ -91,10 +111,9 @@ END
       $cust_main = qsearchs('cust_main', { 'custnum' => $cust_pkg->custnum })
         or die "No cust_main record for custnum ". $cust_pkg->custnum;
     }
-    my($svcnum,$username,$domain,$uid,$svc,$custnum,$last,$first,$company)=(
+    my($svcnum, $username, $uid, $svc, $custnum, $last, $first, $company) = (
       $svc_acct->svcnum,
       $svc_acct->getfield('username'),
-      $svc_domain->getfield('domain'),
       $svc_acct->getfield('uid'),
       $part_svc->svc,
       $cust_svc->pkgnum ? $cust_main->custnum : '',
@@ -106,8 +125,24 @@ END
       ? "<A HREF=\"${p}view/cust_main.cgi?$custnum\"><FONT SIZE=-1>$custnum</FONT></A>"
       : "<I>(unlinked)</I>"
     ;
-    my($pname) = $custnum ? "<A HREF=\"${p}view/cust_main.cgi?$custnum\">$last, $first</A>" : '';
+    my $pname = $custnum ? "<A HREF=\"${p}view/cust_main.cgi?$custnum\">$last, $first</A>" : '';
     my $pcompany = $custnum ? "<A HREF=\"${p}view/cust_main.cgi?$custnum\">$company</A>" : '';
+    my($pship_name, $pship_company);
+    if ( defined dbdef->table('cust_main')->column('ship_last') ) {
+      my($ship_last, $ship_first, $ship_company) = (
+        $cust_svc->pkgnum ? ( $cust_main->ship_last || $last ) : '',
+        $cust_svc->pkgnum ? ( $cust_main->ship_last
+                              ? $cust_main->ship_first
+                              : $first
+                            ) : '',
+        $cust_svc->pkgnum ? ( $cust_main->ship_last
+                              ? $cust_main->ship_company
+                              : $company
+                            ) : '',
+      );
+      $pship_name = $custnum ? "<A HREF=\"${p}view/cust_main.cgi?$custnum\">$ship_last, $ship_first</A>" : '';
+      $pship_company = $custnum ? "<A HREF=\"${p}view/cust_main.cgi?$custnum\">$ship_company</A>" : '';
+    }
     print <<END;
     <TR>
       <TD><A HREF="${p}view/svc_acct.cgi?$svcnum"><FONT SIZE=-1>$svcnum</FONT></A></TD>
@@ -118,17 +153,28 @@ END
       <TD><FONT SIZE=-1>$pcustnum</FONT></TH>
       <TD><FONT SIZE=-1>$pname<FONT></TH>
       <TD><FONT SIZE=-1>$pcompany</FONT></TH>
-    </TR>
 END
+    if ( defined dbdef->table('cust_main')->column('ship_last') ) {
+      print <<END;
+      <TD><FONT SIZE=-1>$pship_name<FONT></TH>
+      <TD><FONT SIZE=-1>$pship_company</FONT></TH>
+END
+    }
+    print "</TR>";
 
   }
  
-  print <<END;
-    </TABLE>
-    </CENTER>
-  </BODY>
-</HTML>
-END
+  print '</TABLE>';
+
+  if ( $mydomain ) {
+    print "<BR><FONT COLOR=\"#FF0000\">*</FONT> The <I>$mydomain</I> domain ".
+          "is contained in your legacy <CODE>domain</CODE> ".
+          "<A HREF=\"${p}docs/config.html#domain\">configuration file</A>.  ".
+          "You should run the <CODE>bin/fs-migrate-svc_acct_sm</CODE> script ".
+          "to create a proper svc_domain record for this domain."
+  }
+
+  print '</BODY></HTML>';
 
 }
 
