@@ -18,6 +18,7 @@ tie my %options, 'Tie::IxHash',
   'agent_aid'  => { 'label' => 'Export agentnum values to Artera AID',
                     'type'  => 'checkbox',
                   },
+  'aid'        => { 'label' => 'Artera Agent ID to use if not using agentnum values', },
   'production' => { 'label' => 'Production mode (leave unchecked for staging)',
                     'type'  => 'checkbox',
                   },
@@ -80,7 +81,9 @@ sub _export_insert {
     'email'   => $email,
     'cname'   => $cust_main->name,
     'ref'     => $svc_external->svcnum,
-    'aid'     => ( $self->option('agent_aid') ? $cust_main->agentnum : '' ),
+    'aid'     => ( $self->option('agent_aid')
+                     ? $cust_main->agentnum
+                     : $self->option('aid')   ),
     'add1'    => $cust_main->address1,
     'add2'    => $cust_main->address2,
     'add3'    => $cust_main->city,
