@@ -135,7 +135,7 @@ Contact Information
 
   <%=
     foreach my $pop ( @{$pops} ) {
-      $OUT .= '<OPTION VALUE='. $pop->{'popnum'}. '"';
+      $OUT .= '<OPTION VALUE="'. $pop->{'popnum'}. '"';
       $OUT .= ' SELECTED' if $popnum && $pop->{'popnum'} == $popnum;
       $OUT .= '>'. $pop->{'popnum'}. ': '. $pop->{'city'}. ', '.
               $pop->{'state'}. ' ('. $pop->{'ac'}. ')/'. $pop->{'exch'}. "\n";

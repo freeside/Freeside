@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: signup.cgi,v 1.11 2001-08-30 16:23:32 ivan Exp $
+# $Id: signup.cgi,v 1.12 2001-09-11 11:03:06 ivan Exp $
 
 use strict;
 use vars qw( @payby $cgi $locales $packages $pops $error
@@ -414,7 +414,7 @@ Contact Information
 
   <%=
     foreach my $pop ( @{$pops} ) {
-      $OUT .= '<OPTION VALUE='. $pop->{'popnum'}. '"';
+      $OUT .= '<OPTION VALUE="'. $pop->{'popnum'}. '"';
       $OUT .= ' SELECTED' if $popnum && $pop->{'popnum'} == $popnum;
       $OUT .= '>'. $pop->{'popnum'}. ': '. $pop->{'city'}. ', '.
               $pop->{'state'}. ' ('. $pop->{'ac'}. ')/'. $pop->{'exch'}. "\n";
