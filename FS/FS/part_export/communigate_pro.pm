@@ -10,15 +10,18 @@ sub rebless { shift; }
 
 sub _export_insert {
   my( $self, $svc_acct ) = (shift, shift);
-  $self->communigate_pro_queue( $svc_acct->svcnum, 'CreateAccount',
+  my @options = ( $svc_acct->svcnum, 'CreateAccount',
     'accountName'    => $svc_acct->email,
     'accountType'    => $self->option('accountType'),
-    'externalFlag'   => $self->option('externalFlag'),
     'AccessModes'    => $self->option('AccessModes'),
     'RealName'       => $svc_acct->finger,
-    'MaxAccountSize' => $svc_acct->quota,
     'Password'       => $svc_acct->_password,
   );
+  push @options, 'MaxAccountSize' => $svc_acct->quota if $svc_acct->quota;
+  push @options, 'externalFlag'   => $self->option('externalFlag')
+    if $self->option('externalFlag');
+
+  $self->communigate_pro_queue( @options );
 }
 
 sub _export_replace {
