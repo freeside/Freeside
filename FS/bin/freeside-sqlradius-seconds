@@ -11,7 +11,7 @@ adminsuidsetup( $fs_user );
 
 my $target_user = shift or die &usage;
 my $start = shift or die &usage;
-my $stop = shift || time;
+my $stop = scalar(@_) ? shift : '';
 
 my $svc_acct = qsearchs( 'svc_acct', { 'username' => $target_user } );
 die "username $target_user not found\n" unless $svc_acct;
