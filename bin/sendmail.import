@@ -28,7 +28,7 @@ $forward_svcpart = 4;
 
 use vars qw($spooldir);
 $spooldir = "/usr/local/etc/freeside/export.". datasrc. "/sendmail";
-mkdir $spooldir unless -d $spooldir;
+mkdir($spooldir, 0755) unless -d $spooldir;
 
 print "\n\n", <<END;
 Enter the location and name of your Sendmail aliases file, for example
