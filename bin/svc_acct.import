@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct.import,v 1.5 1999-03-25 08:42:19 ivan Exp $
+# $Id: svc_acct.import,v 1.6 1999-07-08 01:49:00 ivan Exp $
 #
 # ivan@sisd.com 98-mar-9
 #
@@ -17,7 +17,10 @@
 # don't import /var/spool/freeside/conf/shells!  ivan@sisd.com 98-aug-13
 #
 # $Log: svc_acct.import,v $
-# Revision 1.5  1999-03-25 08:42:19  ivan
+# Revision 1.6  1999-07-08 01:49:00  ivan
+# updates to avoid -w warnings from Joel Griffiths <griff@aver-computer.com>
+#
+# Revision 1.5  1999/03/25 08:42:19  ivan
 # import stuff uses Term::Query and spits out (some kinds of) nonsensical input
 #
 # Revision 1.4  1999/03/24 00:43:38  ivan
@@ -149,8 +152,12 @@ while (<USERS>) {
   while (<USERS>) {
     chop;
     if ( /^\s*$/ ) {
-      $ip{$username}=$param{'radius_Framed_IP_Address'}||'0e0';
-      delete $param{'radius_Framed_IP_Address'};
+      if ( defined $param{'radius_Framed_IP_Address'} ) {
+        $ip{$username} = $param{'radius_Framed_IP_Address'};
+        delete $param{'radius_Framed_IP_Address'};
+      } else {
+        $ip{$username} = '0e0';
+      }
       $allparam{$username}={ %param };
       last;
     } elsif ( /^\s+([\w\-]+)\s=\s"?([\w\.\-\s]+)"?,?\s*$/ ) {
@@ -163,8 +170,12 @@ while (<USERS>) {
   }
 }
 #? incase there isn't a terminating blank line ?
-$ip{$username}=$param{'radius_Framed_IP_Address'}||'0e0';
-delete $param{'radius_Framed_IP_Address'};
+if ( defined $param{'radius_Framed_IP_Address'} ) {
+  $ip{$username} = $param{'radius_Framed_IP_Address'};
+  delete $param{'radius_Framed_IP_Address'};
+} else {
+  $ip{$username} = '0e0';
+}
 $allparam{$username}={ %param };
 
 my(%password);
