@@ -1,0 +1,109 @@
+#!/usr/bin/perl -w
+
+use strict;
+#use Spreadsheet::ParseExcel;
+use DBI;
+use FS::UID qw(adminsuidsetup);
+use FS::rate_region;
+use FS::rate_prefix;
+use FS::rate_region;
+
+my $ratenum = 1;
+
+my $user = shift or usage();
+adminsuidsetup $user;
+
+sub usage {
+  #die "Usage:\n\n  rate.import user rates.xls worksheet_name";
+  die "Usage:\n\n  rate.import user";
+}
+
+my %rate_region;
+
+foreach my $file ( 'areas and rates US.xls',
+                   'areas and rates US2.xls',
+                   'areas and rates US3.xls',
+                 )
+{
+
+  my $dbh = DBI->connect("DBI:Excel:file=$file")
+    or die "can't connect: $DBI::errstr";
+  
+  #my $table = shift or usage();
+  my $table = 'Sheet1';
+  my $sth = $dbh->prepare("select * from $table")
+    or die "can't prepare: ". $dbh->errstr;
+  $sth->execute
+    or die "can't execute: ". $sth->errstr;
+  
+  while ( my $row = $sth->fetchrow_hashref ) {
+  
+    #print join(' - ', map $row->{$_}, qw( rate_center Code Area_Prefix Rate ) ). "\n";
+  
+    my $regionname = $row->{'rate_center'};
+    $regionname =~ s/\xA0//g;
+    #$regionname =~ s/\xE9/e/g; #e with accent aigu
+    $regionname =~ s/(^\s+|\s+$)//;
+    $regionname .= ', USA';
+  
+    my $prefix = $row->{'area_prefix'};
+    $prefix =~ s/\xA0//g;
+    $prefix =~ s/\s$//;
+    #my $prefixprefix = '';
+    #if ( $prefix =~ /^\s*(\d+)\s*\((.*)\)\s*$/ ) {
+    #  $prefixprefix = $1;
+    #  $prefix = $2;
+    #} elsif ( $prefix =~ /^\s*\((\d{3})\)\s*(.*)$/ ) {
+    #  $prefixprefix = $1;
+    #  $prefix = $2;
+    #}
+  
+    my @rate_prefix = map { 
+                            #warn $row->{'rate_center'}. ": $prefixprefix$_\n";
+                            new FS::rate_prefix {
+                              'countrycode' => '1', # $row->{'Country'}
+                              #'npa'         => $prefixprefix.$_,
+                              'npa'         => $_,
+                            };
+                          }
+                          split(/\s*[;,]\s*/, $prefix);
+  
+  
+    my $dest_detail = new FS::rate_detail {
+                                            'ratenum'         => $ratenum,
+                                            'min_included'    => 0,
+                                            'min_charge'      =>
+                                                sprintf('%.2f', $row->{'rate'} ),
+                                            'sec_granularity' => 60,
+                                          };
+
+    unless ( exists $rate_region{$regionname} ) {
+
+      my $rate_region = new FS::rate_region {
+        'regionname' => $regionname,
+      };
+
+      my $error = $rate_region->insert( 'rate_prefix' => \@rate_prefix,
+                                        'dest_detail' => [ $dest_detail ],
+                                      );
+      die $error if $error;
+
+      $rate_region{$regionname} = $rate_region->regionnum;
+
+    } else {
+
+      foreach my $rate_prefix ( @rate_prefix ) {
+        $rate_prefix->regionnum($rate_region{$regionname});
+        my $error = $rate_prefix->insert;
+        die $error if $error;
+      }
+
+      #$rate_detail->dest_regionnum($rate_region{$regionname});
+      #$error = $rate_detail->insert;
+      #die $error if $error;
+
+    }
+  
+  }
+
+}

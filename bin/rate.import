@@ -1,0 +1,85 @@
+#!/usr/bin/perl
+
+use strict;
+#use Spreadsheet::ParseExcel;
+use DBI;
+use FS::UID qw(adminsuidsetup);
+use FS::rate_region;
+use FS::rate_prefix;
+use FS::rate_region;
+
+my $ratenum = 1;
+
+my $user = shift or usage();
+adminsuidsetup $user;
+
+#my $file = shift or usage();
+my $file = 'areas and rates.xls';
+my $dbh = DBI->connect("DBI:Excel:file=$file")
+  or die "can't connect: $DBI::errstr";
+
+#my $table = shift or usage();
+my $table = 'areas_and_rates';
+my $sth = $dbh->prepare("select * from $table")
+  or die "can't prepare: ". $dbh->errstr;
+$sth->execute
+  or die "can't execute: ". $sth->errstr;
+
+sub usage {
+  #die "Usage:\n\n  rate.import user rates.xls worksheet_name";
+  die "Usage:\n\n  rate.import user";
+}
+
+##
+
+while ( my $row = $sth->fetchrow_hashref ) {
+
+  #print join(' - ', map $row->{$_}, qw( Country Code Area_Prefix Rate ) ). "\n";
+
+  my $regionname = $row->{'Country'};
+  $regionname =~ s/\xA0//g;
+  $regionname =~ s/\xE9/e/g; #e with accent aigu
+  $regionname =~ s/(^\s+|\s+$)//;
+
+  #next if $regionname =~ /Sweden Telia Mobile/;
+
+  my $rate_region = new FS::rate_region {
+    'regionname' => $regionname,
+  };
+
+  my $prefix = $row->{'Area_Prefix'};
+  $prefix =~ s/\xA0//g;
+  $prefix =~ s/\s$//;
+  my $prefixprefix = '';
+  if ( $prefix =~ /^\s*(\d+)\s*\((.*)\)\s*$/ ) {
+    $prefixprefix = $1;
+    $prefix = $2;
+  } elsif ( $prefix =~ /^\s*\((\d{3})\)\s*(.*)$/ ) {
+    $prefixprefix = $1;
+    $prefix = $2;
+  }
+
+  my @rate_prefix = map { 
+                          #warn $row->{'Country'}. ": $prefixprefix$_\n";
+                          new FS::rate_prefix {
+                            'countrycode' => $row->{'Code'},
+                            'npa'         => $prefixprefix.$_,
+                          };
+                        }
+                        split(/\s*[;,]\s*/, $prefix);
+
+
+  my $dest_detail = new FS::rate_detail {
+                                          'ratenum'         => $ratenum,
+                                          'min_included'    => 0,
+                                          'min_charge'      =>
+                                              sprintf('%.2f', $row->{'Rate'} ),
+                                          'sec_granularity' => 60,
+                                        };
+  
+  my $error = $rate_region->insert( 'rate_prefix' => \@rate_prefix,
+                                    'dest_detail' => [ $dest_detail ],
+                                  );
+  die $error if $error;
+
+}
