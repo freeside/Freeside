@@ -4,14 +4,16 @@ use strict;
 use vars qw($cache);
 use Digest::MD5 qw(md5_hex);
 use Date::Format;
+use Business::CreditCard;
 use Cache::SharedMemoryCache; #store in db?
 use FS::CGI qw(small_custview); #doh
 use FS::Conf;
-use FS::Record qw(qsearchs);
+use FS::Record qw(qsearch qsearchs);
 use FS::svc_acct;
 use FS::svc_domain;
 use FS::cust_main;
 use FS::cust_bill;
+use FS::cust_main_county;
 
 use FS::ClientAPI; #hmm
 FS::ClientAPI->register_handlers(
@@ -132,22 +134,44 @@ sub payment_info {
 
   $return{$_} = $cust_main->get($_) for qw(address1 address2 city state zip);
 
-  if ( $cust_main->payby =~ /^(CARD|DCRD)$/ ) {
-    #$return{card_type} = 
-    $return{payinfo} = $cust_main->payinfo;
-    #exp date (month, year)
+  $return{payby} = $cust_main->payby;
 
-    #CARD vd DCRD remembering
+  if ( $cust_main->payby =~ /^(CARD|DCRD)$/ ) {
+    $return{card_type} = cardtype($cust_main->payinfo);
+    $return{payinfo} = $cust_main->payinfo;
+
+    if ( $cust_main->paydate  =~ /^(\d{4})-(\d{2})-\d{2}$/ ) { #Pg date format
+      @return{'month', 'year'} = ( $2, $1 );
+    } elsif ( $cust_main->paydate =~ /^(\d{1,2})-(\d{1,2}-)?(\d{4}$)/ ) {
+      @return{'month', 'year'} = ( $1, $3 );
+    }
+
   }
 
-  #list all states & counties
+  #list all counties/states/countries
+  $return{'cust_main_county'} = 
+      [ map { $_->hashref } qsearch('cust_main_county', {}) ],
+
+  #shortcut for one-country folks
+  my $conf = new FS::Conf;
+  my %states = map { $_->state => 1 }
+                 qsearch('cust_main_county', {
+                   'country' => $conf->config('defaultcountry') || 'US'
+                 } );
+  $return{'states'} = [ sort { $a cmp $b } keys %states ];
+
+  $return{card_types} = {
+    'VISA' => 'VISA card',
+    'MasterCard' => 'MasterCard',
+    'Discover' => 'Discover card',
+    'American Express' => 'American Express card',
+  };
 
   return { 'error' => '',
            %return,
          };
 
 };
-
 
 sub invoice {
   my $p = shift;

@@ -1,13 +1,11 @@
 #!/bin/sh
 
+kill `cat /var/run/freeside-selfservice-server.fs_selfservice.pid`
+
 ( cd ..; make deploy; cd fs_selfservice )
 
 cd FS-SelfService
 perl Makefile.PL && make && make install
-
-cd ..
-kill `cat /var/run/freeside-selfservice-server.ivan.pid`; sleep 3
-./freeside-selfservice-server ivan localhost
 
 cp /home/ivan/freeside/fs_selfservice/FS-SelfService/cgi/* /var/www/MyAccount
 chown freeside /var/www/MyAccount/selfservice.cgi
