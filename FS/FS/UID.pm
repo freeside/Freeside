@@ -87,7 +87,7 @@ sub forksuidsetup {
   getsecrets;
   $dbh = DBI->connect($datasrc,$db_user,$db_pass, {
                           'AutoCommit' => 0,
-                          'ChopBlanks' => 1,
+                          #'ChopBlanks' => 1,
   } ) or die "DBI->connect error: $DBI::errstr\n";
 
   foreach ( keys %callback ) {
@@ -256,7 +256,7 @@ coderef into the hash %FS::UID::callback :
 
 =head1 VERSION
 
-$Id: UID.pm,v 1.20 2002-09-20 10:16:28 ivan Exp $
+$Id: UID.pm,v 1.21 2002-09-27 12:14:12 ivan Exp $
 
 =head1 BUGS
 
