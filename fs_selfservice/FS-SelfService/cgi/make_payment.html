@@ -53,7 +53,7 @@
         <TD> / </TD>
         <TD>
           <SELECT NAME="year">
-            <%= for ( 2003 .. 2012 ) {
+            <%= my @a = localtime; for ( $a[5]+1900 .. $a[5]+1915 ) {
                   $OUT .= '<OPTION'. ($_ eq $year ? ' SELECTED' : ''). ">$_\n";
             } %>
           </SELECT>
