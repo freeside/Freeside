@@ -644,11 +644,11 @@ sub check {
     my $payinfo = $self->payinfo;
     $payinfo =~ s/\D//g;
     $payinfo =~ /^(\d{13,16})$/
-      or return gettext('invalid_catd'); # . ": ". $self->payinfo;
+      or return gettext('invalid_card'); # . ": ". $self->payinfo;
     $payinfo = $1;
     $self->payinfo($payinfo);
     validate($payinfo)
-      or return gettext('invalid_catd'); # . ": ". $self->payinfo;
+      or return gettext('invalid_card'); # . ": ". $self->payinfo;
     return gettext('unknown_card_type')
       if cardtype($self->payinfo) eq "Unknown";
 

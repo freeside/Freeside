@@ -224,10 +224,24 @@ sub qsearch {
       }
 
       if ( ! defined( $record->{$_} ) || $record->{$_} eq '' ) {
-        if ( driver_name =~ /^Pg$/i ) {
-          qq-( $_ IS NULL OR $_ = '' )-;
+        if ( $op eq '=' ) {
+          if ( driver_name =~ /^Pg$/i ) {
+            qq-( $_ IS NULL OR $_ = '' )-;
+          } else {
+            qq-( $_ IS NULL OR $_ = "" )-;
+          }
+        } elsif ( $op eq '!=' ) {
+          if ( driver_name =~ /^Pg$/i ) {
+            qq-( $_ IS NOT NULL AND $_ != '' )-;
+          } else {
+            qq-( $_ IS NOT NULL AND $_ != "" )-;
+          }
         } else {
-          qq-( $_ IS NULL OR $_ = "" )-;
+          if ( driver_name =~ /^Pg$/i ) {
+            qq-( $_ $op '' )-;
+          } else {
+            qq-( $_ $op "" )-;
+          }
         }
       } else {
         "$_ $op ?";

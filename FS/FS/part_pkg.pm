@@ -262,11 +262,33 @@ sub svcpart {
   $pkg_svc[0]->svcpart;
 }
 
+=item payby
+
+Returns a list of the acceptable payment types for this package.  Eventually
+this should come out of a database table and be editable, but currently has the
+following logic instead;
+
+If the package has B<0> setup and B<0> recur, the single item B<BILL> is
+returned, otherwise, the single item B<CARD> is returned.
+
+=cut
+
+sub payby {
+  my $self = shift;
+  #if ( $self->setup == 0 && $self->recur == 0 ) {
+  if (    $self->setup =~ /^\s*0+(\.0*)?\s*$/
+       && $self->recur =~ /^\s*0+(\.0*)?\s*$/ ) {
+    ( 'BILL' );
+  } else {
+    ( 'CARD' );
+  }
+}
+
 =back
 
 =head1 VERSION
 
-$Id: part_pkg.pm,v 1.9 2002-03-24 17:42:58 ivan Exp $
+$Id: part_pkg.pm,v 1.10 2002-04-19 01:16:39 ivan Exp $
 
 =head1 BUGS
 

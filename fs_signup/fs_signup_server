@@ -67,7 +67,8 @@ while (1) {
       
     'part_pkg' =>
       [
-        map { $_->hashref }
+        #map { $_->hashref }
+        map { { 'payby' => [ $_->payby ], %{$_->hashref} } }
           grep { $_->svcpart('svc_acct') && $pkgpart_href->{ $_->pkgpart } }
             qsearch( 'part_pkg', { 'disabled' => '' } )
       ],

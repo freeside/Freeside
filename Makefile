@@ -13,8 +13,10 @@ ASP_GLOBAL = /usr/local/etc/freeside/asp-global
 
 FREESIDE_DOCUMENT_ROOT = /var/www/freeside
 
+INIT_FILE = /etc/init.d/freeside
+
 HTTPD_RESTART = /etc/init.d/apache restart
-QUEUED_RESTART = /etc/init.d/freeside restart
+FREESIDE_RESTART = /etc/init.d/freeside restart
 
 #---
 
@@ -74,11 +76,14 @@ install-perl-modules: perl-modules
 	cd FS; \
 	make install UNINST=1
 
-install: install-perl-modules install-docs
+install-init:
+	[ -e ${INIT_FILE} ] || install -o root -g root -m 711 init.d/freeside-init ${INIT_FILE}
+
+install: install-perl-modules install-docs install-init
 
 deploy: install
 	${HTTPD_RESTART}
-	${QUEUED_RESTART}
+	${FREESIDE_RESTART}
 
 create-database:
 	perl -e 'use DBIx::DataSource qw( create_database ); create_database( "${DATASOURCE}", "${DB_USER}", "${DB_PASSWORD}" ) or die $$DBIx::DataSource::errstr;'
