@@ -19,10 +19,7 @@ perl -MCPAN -e"install Locale::Country, Net::Whois, Business::CreditCard, \
                        HTML::Widgets::SelectLayers, Apache::DBI, Cache::Cache \
                        Test::Pod NetAddr::IP IPC::ShareLite Chart::LinesPoints"
 
-echo 'OPTIONS="-DHAVE_PERL -DHAVE_SSL"' >>/etc/sysconfig/apache
-
-#remove perl & ssl LoadModule lines from /etc/httpd/conf/httpd.conf
-#as they're statically linked
+#apachetoolbox i guess
 
 /usr/sbin/useradd freeside
 
