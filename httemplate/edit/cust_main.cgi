@@ -1,11 +1,12 @@
 <%
-#<!-- $Id: cust_main.cgi,v 1.2 2001-08-11 05:52:56 ivan Exp $ -->
+#<!-- $Id: cust_main.cgi,v 1.3 2001-08-12 00:07:55 ivan Exp $ -->
 
 use vars qw( $cgi $custnum $action $cust_main $p1 @agents $agentnum 
              $last $first $ss $company $address1 $address2 $city $zip 
              $daytime $night $fax @invoicing_list $invoicing_list $payinfo
              $payname %payby %paybychecked $refnum $otaker $r );
-use vars qw ( $conf $pkgpart $username $password $popnum $ulen $ulen2 );
+use vars qw ( $conf $saved_pkgpart $username $password $popnum $ulen $ulen2 );
+use vars qw ( $error );
 #use CGI::Switch;
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
@@ -32,16 +33,18 @@ $conf = new FS::Conf;
 
 #get record
 
+$error = '';
 if ( $cgi->param('error') ) {
+  $error = $cgi->param('error');
   $cust_main = new FS::cust_main ( {
     map { $_, scalar($cgi->param($_)) } fields('cust_main')
   } );
   $custnum = $cust_main->custnum;
-  $pkgpart = $cgi->param('pkgpart_svcpart') || '';
-  if ( $pkgpart =~ /^(\d+)_/ ) {
-    $pkgpart = $1;
+  $saved_pkgpart = $cgi->param('pkgpart_svcpart') || '';
+  if ( $saved_pkgpart =~ /^(\d+)_/ ) {
+    $saved_pkgpart = $1;
   } else {
-    $pkgpart = '';
+    $saved_pkgpart = '';
   }
   $username = $cgi->param('username');
   $password = $cgi->param('_password');
@@ -51,7 +54,7 @@ if ( $cgi->param('error') ) {
   $query =~ /^(\d+)$/;
   $custnum=$1;
   $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } );
-  $pkgpart = 0;
+  $saved_pkgpart = 0;
   $username = '';
   $password = '';
   $popnum = 0;
@@ -59,20 +62,20 @@ if ( $cgi->param('error') ) {
   $custnum='';
   $cust_main = new FS::cust_main ( {} );
   $cust_main->setfield('otaker',&getotaker);
-  $pkgpart = 0;
+  $saved_pkgpart = 0;
   $username = '';
   $password = '';
   $popnum = 0;
 }
+$cgi->delete_all();
 $action = $custnum ? 'Edit' : 'Add';
 
 # top
 
 $p1 = popurl(1);
 print $cgi->header( '-expires' => 'now' ), header("Customer $action", '');
-print qq!<FONT SIZE="+1" COLOR="#ff0000">Error: !, $cgi->param('error'),
-      "</FONT>"
-  if $cgi->param('error');
+print qq!<FONT SIZE="+1" COLOR="#ff0000">Error: !, $error, "</FONT>"
+  if $error;
 
 print qq!<FORM ACTION="${p1}process/cust_main.cgi" METHOD=POST NAME="form1">!,
       qq!<INPUT TYPE="hidden" NAME="custnum" VALUE="$custnum">!,
@@ -210,7 +213,7 @@ print <<END;
 END
 
   print '<BR>Service address ',
-        '(<INPUT TYPE="checkbox" NAME="same" onClick="samechanged(this)"';
+        '(<INPUT TYPE="checkbox" NAME="same" VALUE="Y" onClick="samechanged(this)"';
   unless ( $cust_main->ship_last ) {
     print ' CHECKED';
     foreach (
@@ -369,7 +372,7 @@ unless ( $custnum ) {
   #false laziness, copied from FS::cust_pkg::order
   my $pkgpart;
   if ( scalar(@agents) == 1 ) {
-    # $pkgpart->{PKGPART} is true iff $custnum may purchase $pkgpart
+    # $pkgpart->{PKGPART} is true iff $custnum may purchase PKGPART
     my($agent)=qsearchs('agent',{'agentnum'=> $agentnum });
     $pkgpart = $agent->pkgpart_hashref;
   } else {
@@ -397,7 +400,7 @@ unless ( $custnum ) {
       print qq!<OPTION VALUE="!,
 #              $part_pkg->pkgpart. "_". $pkgpart{ $part_pkg->pkgpart }, '"';
               $part_pkg->pkgpart. "_". $part_pkg->svcpart, '"';
-      print " SELECTED" if $pkgpart && ( $part_pkg->pkgpart == $pkgpart );
+      print " SELECTED" if $saved_pkgpart && ( $part_pkg->pkgpart == $saved_pkgpart );
       print ">", $part_pkg->pkg, " - ", $part_pkg->comment;
     }
     print "</SELECT></TD></TR>";

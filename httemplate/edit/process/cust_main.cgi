@@ -1,60 +1,5 @@
 <%
-#
-# $Id: cust_main.cgi,v 1.1 2001-07-30 07:36:04 ivan Exp $
-#
-# Usage: post form to:
-#        http://server.name/path/cust_main.cgi
-#
-# ivan@voicenet.com 96-dec-04
-#
-# added referral check
-# ivan@voicenet.com 97-jun-4
-#
-# rewrote for new API
-# ivan@voicenet.com 97-jul-28
-#
-# same as above (again) and clean up some stuff ivan@sisd.com 98-feb-23
-#
-# Changes to allow page to work at a relative position in server
-# Changed 'day' to 'daytime' because Pg6.3 reserves the day word
-#       bmccane@maxbaud.net     98-apr-3
-#
-# $Log: cust_main.cgi,v $
-# Revision 1.1  2001-07-30 07:36:04  ivan
-# templates!!!
-#
-# Revision 1.11  1999/08/10 12:54:06  ivan
-# use FS::cust_pkg::pkgpart_href
-#
-# Revision 1.10  1999/04/14 07:47:53  ivan
-# i18n fixes
-#
-# Revision 1.9  1999/04/07 15:22:19  ivan
-# don't use anchor in redirect
-#
-# Revision 1.8  1999/03/25 13:55:10  ivan
-# one-screen new customer entry (including package and service) for simple
-# packages with one svc_acct service
-#
-# Revision 1.7  1999/02/28 00:03:42  ivan
-# removed misleading comments
-#
-# Revision 1.6  1999/01/25 12:10:00  ivan
-# yet more mod_perl stuff
-#
-# Revision 1.5  1999/01/19 05:13:50  ivan
-# for mod_perl: no more top-level my() variables; use vars instead
-# also the last s/create/new/;
-#
-# Revision 1.4  1999/01/18 09:22:32  ivan
-# changes to track email addresses for email invoicing
-#
-# Revision 1.3  1998/12/17 08:40:19  ivan
-# s/CGI::Request/CGI.pm/; etc
-#
-# Revision 1.2  1998/11/18 08:57:36  ivan
-# i18n, s/CGI-modules/CGI.pm/, FS::CGI::idiot instead of inline, FS::CGI::popurl
-#
+# $Id: cust_main.cgi,v 1.2 2001-08-12 00:07:55 ivan Exp $
 
 use strict;
 use vars qw( $cgi $payby @invoicing_list $new $custnum $error );
@@ -70,6 +15,8 @@ use FS::agent;
 
 $cgi = new CGI;
 &cgisuidsetup($cgi);
+
+$error = '';
 
 #unmunge stuff
 
@@ -106,10 +53,14 @@ $new = new FS::cust_main ( {
   } fields('cust_main')
 } );
 
-#perhaps the invocing_list magic should move to cust_main.pm?
-$error = $new->check_invoicing_list( \@invoicing_list );
+if ( defined($cgi->param('same')) && $cgi->param('same') eq "Y" ) {
+  $new->setfield("ship_$_", '') foreach qw(
+    last first company address1 address2 city county state zip
+    country daytime night fax
+  );
+}
 
-#perhaps this stuff should go to cust_main.pm as well
+#perhaps this stuff should go to cust_main.pm
 $cust_pkg = '';
 $svc_acct = '';
 if ( $new->custnum eq '' ) {
@@ -170,26 +121,20 @@ if ( $new->custnum eq '' ) {
     $error = "Can't assign username without a package!";
   }
 
-  $error ||= $new->insert;
-  if ( $cust_pkg && ! $error ) {
-    $cust_pkg->custnum( $new->custnum );
-    $error ||= $cust_pkg->insert; 
-    warn "WARNING: $error on pre-checked cust_pkg record!" if $error;
-    $svc_acct->pkgnum( $cust_pkg->pkgnum );
-    $error ||= $svc_acct->insert;
-    warn "WARNING: $error on pre-checked svc_acct record!" if $error;
-  }
+  use Tie::RefHash;
+  tie my %hash, 'Tie::RefHash';
+  %hash = ( $cust_pkg => [ $svc_acct ] );
+  $error ||= $new->insert( \%hash, \@invoicing_list );
 } else { #create old record object
   my $old = qsearchs( 'cust_main', { 'custnum' => $new->custnum } ); 
   $error ||= "Old record not found!" unless $old;
-  $error ||= $new->replace($old);
+  $error ||= $new->replace($old, \@invoicing_list);
 }
 
 if ( $error ) {
   $cgi->param('error', $error);
   print $cgi->redirect(popurl(2). "cust_main.cgi?". $cgi->query_string );
 } else { 
-  $new->invoicing_list( \@invoicing_list );
   $custnum = $new->custnum;
   print $cgi->redirect(popurl(3). "view/cust_main.cgi?$custnum");
 } 
