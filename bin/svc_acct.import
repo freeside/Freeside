@@ -1,0 +1,227 @@
+#!/usr/bin/perl -Tw
+#
+# ivan@sisd.com 98-mar-9
+#
+# changed 'password' field to '_password' because PgSQL 6.3 reserves this word
+#	bmccane@maxbaud.net  98-Apr-3
+#
+# generalized svcparts (still needs radius import) ivan@sisd.com 98-mar-23
+#
+# radius import, now an interactive script.  still needs erpcd import?
+# ivan@sisd.com 98-jun-24
+#
+# arbitrary radius attributes ivan@sisd.com 98-aug-9
+#
+# don't import /var/spool/freeside/conf/shells!  ivan@sisd.com 98-aug-13
+
+use strict;
+use vars qw(%part_svc);
+use Date::Parse;
+use FS::SSH qw(iscp);
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw(qsearch);
+use FS::svc_acct;
+
+adminsuidsetup;
+
+#my($spooldir)="/var/spool/freeside/export";
+my($spooldir)="unix/";
+
+$FS::svc_acct::nossh_hack = 1;
+
+###
+
+%part_svc=map { $_->svcpart, $_ } qsearch('part_svc',{'svcdb'=>'svc_acct'});
+
+print "\n\n", &menu_svc, "\n", <<END;
+Most accounts probably have entries in passwd and users (with Port-Limit
+nonexistant or 1).
+END
+my($ppp_svcpart)=&getpart;
+
+print "\n\n", &menu_svc, "\n", <<END;
+Some accounts have entries in passwd and users, but with Port-Limit 2 (or
+more).
+END
+my($isdn_svcpart)=&getpart;
+
+print "\n\n", &menu_svc, "\n", <<END;
+Some accounts might have entries in users only (Port-Limit 1)
+END
+my($oppp_svcpart)=&getpart;
+
+print "\n\n", &menu_svc, "\n", <<END;
+Some accounts might have entries in users only (Port-Limit >= 2)
+END
+my($oisdn_svcpart)=&getpart;
+
+print "\n\n", &menu_svc, "\n", <<END;
+POP mail accounts have entries in passwd only, and have a particular shell.
+END
+print "Enter that shell: ";
+my($pop_shell)=&getvalue;
+my($popmail_svcpart)=&getpart;
+
+print "\n\n", &menu_svc, "\n", <<END;
+Everything else in passwd is a shell account.
+END
+my($shell_svcpart)=&getpart;
+
+print "\n\n", <<END;
+Enter the location and name of your _user_ passwd file, for example
+"mail.isp.com:/etc/passwd" or "nis.isp.com:/etc/global/passwd"
+END
+print ":";
+my($loc_passwd)=&getvalue;
+iscp("root\@$loc_passwd", "$spooldir/passwd.import");
+
+print "\n\n", <<END;
+Enter the location and name of your _user_ shadow file, for example
+"mail.isp.com:/etc/shadow" or "bsd.isp.com:/etc/master.passwd"
+END
+print ":";
+my($loc_shadow)=&getvalue;
+iscp("root\@$loc_shadow", "$spooldir/shadow.import");
+
+print "\n\n", <<END;
+Enter the location and name of your radius "users" file, for example
+"radius.isp.com:/etc/raddb/users"
+END
+print ":";
+my($loc_users)=&getvalue;
+iscp("root\@$loc_users", "$spooldir/users.import");
+
+sub menu_svc {
+  ( join "\n", map "$_: ".$part_svc{$_}->svc, sort keys %part_svc ). "\n";
+}
+sub getpart {
+  print "Enter part number, or 0 for none: ";
+  &getvalue;
+}
+sub getvalue {
+  my($x)=scalar(<STDIN>);
+  chop $x;
+  $x;
+}
+
+print "\n\n";
+
+###
+
+open(PASSWD,"<$spooldir/passwd.import");
+open(SHADOW,"<$spooldir/shadow.import");
+open(USERS,"<$spooldir/users.import");
+
+my(%upassword,%ip,%allparam);
+my(%param,$username);
+while (<USERS>) {
+  chop;
+  next if /^$/;
+  if ( /^\S/ ) {
+    /^(\w+)\s+Password\s+=\s+"([^"]+)"(,\s+Expiration\s+=\s+"([^"]*")\s*)?$/
+      or die "1Unexpected line in users.import: $_";
+    my($password,$expiration);
+    ($username,$password,$expiration)=(lc($1),$2,$4);
+    $upassword{$username}=$password;
+    undef %param;
+  } else {
+    die "2Unexpected line in users.import: $_";
+  }
+  while (<USERS>) {
+    chop;
+    if ( /^\s*$/ ) {
+      $ip{$username}=$param{'radius_Framed_IP_Address'}||'0e0';
+      delete $param{'radius_Framed_IP_Address'};
+      $allparam{$username}={ %param };
+      last;
+    } elsif ( /^\s+([\w\-]+)\s=\s"?([\w\.\-\s]+)"?,?\s*$/ ) {
+      my($attribute,$value)=($1,$2);
+      $attribute =~ s/\-/_/g;
+      $param{'radius_'.$attribute}=$value;
+    } else {
+      die "3Unexpected line in users.import: $_";
+    }
+  }
+}
+#? incase there isn't a terminating blank line ?
+$ip{$username}=$param{'radius_Framed_IP_Address'}||'0e0';
+delete $param{'radius_Framed_IP_Address'};
+$allparam{$username}={ %param };
+
+my(%password);
+while (<SHADOW>) {
+  chop;
+  my($username,$password)=split(/:/);
+  $password{$username}=$password;
+}
+
+while (<PASSWD>) {
+  chop;
+  my($username,$x,$uid,$gid,$finger,$dir,$shell)=split(/:/);
+  my($password)=$upassword{$username} || $password{$username};
+
+  my($maxb)=${$allparam{$username}}{'radius_Port_Limit'};
+  my($svcpart);
+  if ( exists $upassword{$username} ) {
+    if ( $maxb >= 2 ) {
+      $svcpart = $isdn_svcpart
+    } elsif ( ! $maxb || $maxb == 1 ) {
+      $svcpart = $ppp_svcpart
+    } else {
+      die "Illegal Port-Limit in users ($username)!\n";
+    }
+  } elsif ( $shell eq $pop_shell ) {
+    $svcpart = $popmail_svcpart;
+  } else {
+    $svcpart = $shell_svcpart;
+  }
+
+  my($svc_acct) = create FS::svc_acct ({
+    'svcpart'  => $svcpart,
+    'username' => $username,
+    'password' => $password,
+    'uid'      => $uid,
+    'gid'      => $gid,
+    'finger'   => $finger,
+    'dir'      => $dir,
+    'shell'    => $shell,
+    'slipip'   => $ip{$username},
+    %{$allparam{$username}},
+  });
+  my($error);
+  $error=$svc_acct->insert;
+  die $error if $error;
+
+  delete $allparam{$username};
+  delete $upassword{$username};
+}
+
+#my($username);
+foreach $username ( keys %upassword ) {
+  my($password)=$upassword{$username};
+
+  my($maxb)=${$allparam{$username}}{'radius_Port_Limit'} || 0;
+  my($svcpart);
+  if ( $maxb == 2 ) {
+    $svcpart = $oisdn_svcpart
+  } elsif ( ! $maxb || $maxb == 1 ) {
+    $svcpart = $oppp_svcpart
+  } else {
+    die "Illegal Port-Limit in users!\n";
+  }
+
+  my($svc_acct) = create FS::svc_acct ({
+    'svcpart'  => $svcpart,
+    'username' => $username,
+    'password' => $password,
+    'slipip'   => $ip{$username},
+    %{$allparam{$username}},
+  });
+  my($error);
+  $error=$svc_acct->insert;
+  die $error, if $error;
+
+  delete $allparam{$username};
+  delete $upassword{$username};
+}
+
