@@ -19,6 +19,7 @@ sub _export_insert {
     crypt($svc_acct->_password,$saltset[int(rand(64))].$saltset[int(rand(64))]),
     $svc_acct->domain,
     $svc_acct->quota,
+    $svc_acct->finger,
   );
 }
 
@@ -46,7 +47,7 @@ sub _export_replace {
   return '' unless $old->_password ne $new->_password;
 
   $self->vpopmail_queue( $new->svcnum, 'replace',
-    $new->username, $cpassword, $new->domain, $new->quota );
+    $new->username, $cpassword, $new->domain, $new->quota, $new->finger );
 }
 
 sub _export_delete {
@@ -77,13 +78,14 @@ sub vpopmail_queue {
     $self->option('dir'),
     $self->option('uid'),
     $self->option('gid'),
+    $self->option('restart'),
     @_
   );
 }
 
 sub vpopmail_insert { #subroutine, not method
-  my( $exportdir, $machine, $dir, $uid, $gid ) = splice @_,0,5;
-  my( $username, $password, $domain, $quota ) = @_;
+  my( $exportdir, $machine, $dir, $uid, $gid, $restart ) = splice @_,0,6;
+  my( $username, $password, $domain, $quota, $finger ) = @_;
 
   mkdir "$exportdir/domains/$domain", 0700 or die $!
     unless -d "$exportdir/domains/$domain";
@@ -112,13 +114,13 @@ sub vpopmail_insert { #subroutine, not method
     mkdir $mkdir, 0700 or die "can't mkdir $mkdir: $!";
   }
 
-  vpopmail_sync( $exportdir, $machine, $dir, $uid, $gid );
+  vpopmail_sync( $exportdir, $machine, $dir, $uid, $gid, $restart );
 
 }
 
 sub vpopmail_replace { #subroutine, not method
-  my( $exportdir, $machine, $dir, $uid, $gid ) = splice @_,0,5;
-  my( $username, $password, $domain ) = @_;
+  my( $exportdir, $machine, $dir, $uid, $gid, $restart ) = splice @_,0,6;
+  my( $username, $password, $domain, $quota, $finger ) = @_;
   
   (open(VPASSWD, "$exportdir/domains/$domain/vpasswd")
     and flock(VPASSWD,LOCK_EX)
@@ -140,7 +142,7 @@ sub vpopmail_replace { #subroutine, not method
       '1',
       '0',
       $finger,
-      $dir,
+      "$dir/domains/$domain/$username", #$vdir
       $quota ? $quota.'S' : 'NOQUOTA',
     ), "\n";
   }
@@ -153,12 +155,12 @@ sub vpopmail_replace { #subroutine, not method
   flock(VPASSWD,LOCK_UN);
   close(VPASSWD);
 
-  vpopmail_sync( $exportdir, $machine, $dir, $uid, $gid );
+  vpopmail_sync( $exportdir, $machine, $dir, $uid, $gid, $restart );
 
 }
 
 sub vpopmail_delete { #subroutine, not method
-  my( $exportdir, $machine, $dir, $uid, $gid ) = splice @_,0,5;
+  my( $exportdir, $machine, $dir, $uid, $gid, $restart ) = splice @_,0,6;
   my( $username, $domain ) = @_;
   
   (open(VPASSWD, "$exportdir/domains/$domain/vpasswd")
@@ -185,11 +187,11 @@ sub vpopmail_delete { #subroutine, not method
   rmtree "$exportdir/domains/$domain/$username"
     or die "can't rmtree $exportdir/domains/$domain/$username: $!";
 
-  vpopmail_sync( $exportdir, $machine, $dir, $uid, $gid );
+  vpopmail_sync( $exportdir, $machine, $dir, $uid, $gid, $restart );
 }
 
 sub vpopmail_sync {
-  my( $exportdir, $machine, $dir, $uid, $gid ) = splice @_,0,5;
+  my( $exportdir, $machine, $dir, $uid, $gid, $restart ) = splice @_,0,6;
   
   chdir $exportdir;
 #  my @args = ( $rsync, "-rlpt", "-e", $ssh, "domains/",
@@ -214,6 +216,11 @@ sub vpopmail_sync {
         'STDERR: '. join(" / ", $rsync->err). ', '.
         'STDOUT: '. join(" / ", $rsync->out);
   }
+
+  eval "use Net::SSH;";
+  die $@ if $@;
+
+  ssh("vpopmail\@$machine", $restart);
 }
 
 

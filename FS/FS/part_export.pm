@@ -643,6 +643,9 @@ tie my %vpopmail_options, 'Tie::IxHash',
   'dir'     => { label=>'directory', }, # ?more info? default?
   'uid'     => { label=>'vpopmail uid' },
   'gid'     => { label=>'vpopmail gid' },
+  'restart' => { label=> 'vpopmail restart command',
+                 default=> 'cd /home/vpopmail/domains; for domain in *; do /home/vpopmail/bin/vmkpasswd $domain; done; /var/qmail/bin/qmail-newu; killall -HUP qmail-send',
+               },
 ;
 
 tie my %bind_options, 'Tie::IxHash',
