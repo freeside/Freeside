@@ -1,20 +1,26 @@
+#BEGIN { eval "use Devel::AutoProfiler;"; } #only if installed...
+#BEGIN { package Devel::AutoProfiler; use vars qw(%caller_info); }
+use Devel::AutoProfiler;
+
 use strict;
 use vars qw( $cgi $p );
 use CGI;
 #use CGI::Carp qw(fatalsToBrowser);
 use Date::Format;
 use Date::Parse;
+use Time::Local;
 use Tie::IxHash;
 use HTML::Entities;
 use IO::Handle;
 use IO::File;
 use String::Approx qw(amatch);
+use Chart::LinesPoints;
 use HTML::Widgets::SelectLayers 0.02;
 use FS::UID qw(cgisuidsetup dbh getotaker datasrc driver_name);
 use FS::Record qw(qsearch qsearchs fields dbdef);
 use FS::Conf;
 use FS::CGI qw(header menubar popurl table itable ntable idiot eidiot
-               small_custview myexit);
+               small_custview myexit http_header);
 use FS::Msgcat qw(gettext geterror);
 
 use FS::agent;
@@ -68,22 +74,113 @@ sub Script_OnStart {
   &cgisuidsetup($cgi);
   $p = popurl(2);
   #print $cgi->header( '-expires' => 'now' );
+  dbh->{'private_profile'} = {} if dbh->can('sprintProfile');
+
+  #really should check for FS::Profiler or something
+    # Devel::AutoProfiler _our_ VERSION?  thanks a fucking lot
+  if ( Devel::AutoProfiler->can('__recursively_fetch_subs_in_package') ) {
+    #should check to see it's my special version.  well, switch to FS::Profiler
+
+    #nicked from Devel::AutoProfiler::INIT
+    my %subs = Devel::AutoProfiler::__recursively_fetch_subs_in_package('main');
+
+
+    SUB : while( my ($name, $ref) = each(%subs) )
+      {
+        #next if $name =~ /^(main::)?Apache::/;
+        next unless $name =~ /FS/;
+        foreach my $sub (@Devel::AutoProfiler::do_not_instrument_this_sub)
+          {
+            if ($name =~ /$sub/)
+              {
+                next SUB;
+              }
+          }
+        next if ($Devel::AutoProfiler::do_not_instrument_this_sub{$name});
+        #warn "INIT name is $name \n";
+        Devel::AutoProfiler::__instrument_sub($name, $ref);
+      }
+
+  }
+
 }
 
 sub Script_OnFlush {
   my $ref = $Response->{BinaryRef};
-  $$ref = $cgi->header( @FS::CGI::header ) . $$ref;
+  #$$ref = $cgi->header( @FS::CGI::header ) . $$ref;
+  #$$ref = $cgi->header() . $$ref;
   if ( dbh->can('sprintProfile') ) {
-
-    $$ref =~ s/<\/BODY>[\s\n]*<\/HTML>[\s\n]*$//i
-      or warn "can't remove";
+    if ( lc($Response->{ContentType}) eq 'text/html' ) {
+      $$ref =~ s/<\/BODY>[\s\n]*<\/HTML>[\s\n]*$//i
+        or warn "can't remove";
   
-    #$$ref .= '<PRE>'. ("\n"x96). encode_entities(dbh->sprintProfile()). '</PRE>';
-    #  wtf?  konqueror...
-    $$ref .= '<PRE>'. ("\n"x4096). encode_entities(dbh->sprintProfile()). '</PRE>';
+      #$$ref .= '<PRE>'. ("\n"x96). encode_entities(dbh->sprintProfile()). '</PRE>';
+      #  wtf?  konqueror...
+      $$ref .= '<PRE>'. ("\n"x4096). encode_entities(dbh->sprintProfile()).
+               "\n\n". &sprintAutoProfile(). '</PRE>';
 
-    $$ref .= '</BODY></HTML>';
-    
+      $$ref .= '</BODY></HTML>';
+    }
     dbh->{'private_profile'} = {};
   }
 }
+
+if ( defined(@DBIx::Profile::ISA) && DBIx::Profile::db->can('sprintProfile') ) {
+
+  #warn "enabling profiling redirects";
+  *CGI::redirect = sub {
+    my( $self, $location) = @_;
+    my $page =
+      $cgi->header.
+      qq!<HTML><BODY>Redirect to <A HREF="$location">$location</A><BR><BR>!.
+      '<PRE>'. encode_entities(dbh->sprintProfile()).
+      "\n\n". &sprintAutoProfile().  '</PRE>'.
+      '</BODY></HTML>';
+    dbh->{'private_profile'} = {};
+    return $page;
+  };
+
+}
+
+sub by_total_time 
+{ 
+  return $a->{total_time_in_sub} <=> $b->{total_time_in_sub}; 
+}
+
+sub sprintAutoProfile {
+  my %caller_info = %Devel::AutoProfiler::caller_info;
+  return unless keys %caller_info;
+
+  %Devel::AutoProfiler::caller_info = ();
+
+  my @keys = keys(%caller_info);
+
+  foreach my $key (@keys)
+    {
+      my $href = $caller_info{$key};
+
+      $href->{who_am_i} = $key;
+    }
+
+  my @subs = values(%caller_info);
+
+  #my @sorted = sort by_total_time ( @subs );
+  my @sorted = reverse sort by_total_time ( @subs );
+
+  # print Dumper \@sorted;
+
+  my @readable_info;
+
+  foreach my $sort (@sorted)
+    {
+      push(@readable_info, delete($sort->{who_am_i}));
+      push(@readable_info, $sort);
+    }
+
+  use Data::Dumper;
+  return encode_entities(Dumper(\@readable_info));
+
+}
+
+1;
+

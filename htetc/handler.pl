@@ -61,17 +61,19 @@ sub handler
       #use CGI::Carp qw(fatalsToBrowser);
       use Date::Format;
       use Date::Parse;
+      use Time::Local;
       use Tie::IxHash;
       use HTML::Entities;
       use IO::Handle;
       use IO::File;
       use String::Approx qw(amatch);
+      use Chart::LinesPoints;
       use HTML::Widgets::SelectLayers 0.02;
       use FS::UID qw(cgisuidsetup dbh getotaker datasrc driver_name);
       use FS::Record qw(qsearch qsearchs fields dbdef);
       use FS::Conf;
       use FS::CGI qw(header menubar popurl table itable ntable idiot eidiot
-                     small_custview myexit);
+                     small_custview myexit http_header);
       use FS::Msgcat qw(gettext geterror);
 
       use FS::agent;

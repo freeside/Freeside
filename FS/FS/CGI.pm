@@ -10,7 +10,7 @@ use FS::UID;
 
 @ISA = qw(Exporter);
 @EXPORT_OK = qw(header menubar idiot eidiot popurl table itable ntable
-                small_custview myexit);
+                small_custview myexit http_header);
 
 =head1 NAME
 
@@ -66,6 +66,38 @@ sub header {
 END
   $x .=  $menubar. "<BR><BR>" if $menubar;
   $x;
+}
+
+=item http_header
+
+Sets an http header.
+
+=cut
+
+sub http_header {
+  my ( $header, $value ) = @_;
+  if (exists $ENV{MOD_PERL}) {
+    if ( defined $main::Response
+         && $main::Response->isa('Apache::ASP::Response') ) {  #Apache::ASP
+      if ( $header =~ /^Content-Type$/ ) {
+        $main::Response->{ContentType} = $value;
+      } else {
+        $main::Response->AddHeader( $header => $value );
+      }
+    } elsif ( defined $HTML::Mason::Commands::r  ) { #Mason
+      ## is this the correct pacakge for $r ???  for 1.0x and 1.1x ?
+      if ( $header =~ /^Content-Type$/ ) {
+        $HTML::Mason::Commands::r->content_type($value);
+      } else {
+        $HTML::Mason::Commands::r->header_out( $header => $value );
+      }
+    } else {
+      die "http_header called in unknown environment";
+    }
+  } else {
+    die "http_header called not running under mod_perl";
+  }
+
 }
 
 =item menubar ITEM, URL, ...
