@@ -122,7 +122,10 @@ foreach my $r (
   my @param = @base_param; 
 
   #match itemdesc if necessary!
-  my $named_tax = $r->taxname ? 'AND itemdesc = '. dbh->quote($r->taxname) : '';
+  my $named_tax =
+    $r->taxname
+      ? 'AND itemdesc = '. dbh->quote($r->taxname)
+      : "AND itemdesc IS NULL or itemdesc = ''";
   my $x = scalar_sql($r, \@taxparam,
     "SELECT SUM(cust_bill_pkg.setup+cust_bill_pkg.recur) $taxwhere ".
     "AND pkgnum = 0 $named_tax",
