@@ -44,12 +44,9 @@ cp -r fs-x.y.z/htdocs/* /usr/local/apache/htdocs/freeside</pre> or <pre>ln -s /f
 <pre>cd /usr/local/apache/htdocs/freeside
 chown -R freeside .
 chmod 4755 browse/*.cgi edit/*.cgi edit/process/*.cgi misc/*.cgi misc/process/*.cgi search/*.cgi view/*.cgi</pre>
-<li>Create the base Freeside directory `/var/spool/freeside', and the subdirectories `conf', `counters', and `export'.  <pre>mkdir /var/spool/freeside
-mkdir /var/spool/freeside/conf
-mkdir /var/spool/freeside/counters
-mkdir /var/spool/freeside/export
-chown -R freeside /var/spool/freeside</pre>
-  <li>Create the necessary <a href="config.html">configuration files</a>.
+<li>Create the necessary <a href="config.html">configuration files</a>.
+<li>Create the `/usr/local/etc/freeside/counters.<i>datasrc</i>', and 
+  `/usr/local/etc/freeside/export.<i>datasrc</i>' directories for each <i>datasrc</i>.
   <li>Run bin/fs-setup to create the database tables.
 </ul>
 </body>
