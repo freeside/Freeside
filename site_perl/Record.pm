@@ -166,13 +166,17 @@ sub qsearch {
     ? " WHERE ". join(' AND ',
       map {
         $record->{$_} eq ''
-          ? "( $_ IS NULL OR $_ = \"\" )"
+          ? ( datasrc =~ m/Pg/
+                ? "$_ IS NULL"
+                : "( $_ IS NULL OR $_ = \"\" )"
+            )
           : "$_ = ". _quote($record->{$_},$table,$_)
       } @fields
     ) : ''
   );
   $sth=$dbh->prepare($statement)
     or croak $dbh->errstr; #is that a little too harsh?  hmm.
+  #warn $statement #if $debug # or some such;
 
   if ( eval ' scalar(@FS::'. $table. '::ISA);' ) {
     map {
@@ -384,7 +388,11 @@ sub delete {
   my($statement)="DELETE FROM ". $self->table. " WHERE ". join(' AND ',
     map {
       $self->getfield($_) eq ''
-        ? "( $_ IS NULL OR $_ = \"\" )"
+        #? "( $_ IS NULL OR $_ = \"\" )"
+        ? ( datasrc =~ m/Pg/
+              ? "$_ IS NULL"
+              : "( $_ IS NULL OR $_ = \"\" )"
+          )
         : "$_ = ". _quote($self->getfield($_),$self->table,$_)
     } ( $self->dbdef_table->primary_key )
           ? ( $self->dbdef_table->primary_key)
@@ -452,7 +460,11 @@ sub replace {
     join(' AND ',
       map {
         $old->getfield($_) eq ''
-          ? "( $_ IS NULL OR $_ = \"\" )"
+          #? "( $_ IS NULL OR $_ = \"\" )"
+          ? ( datasrc =~ m/Pg/
+                ? "$_ IS NULL"
+                : "( $_ IS NULL OR $_ = \"\" )"
+            )
           : "$_ = ". _quote($old->getfield($_),$old->table,$_)
       } ( $primary_key ? ( $primary_key ) : $old->fields )
     )
@@ -810,7 +822,7 @@ sub hfields {
 
 =head1 VERSION
 
-$Id: Record.pm,v 1.13 1999-03-29 11:55:43 ivan Exp $
+$Id: Record.pm,v 1.14 1999-04-07 14:58:31 ivan Exp $
 
 =head1 BUGS
 
@@ -932,7 +944,11 @@ added pod documentation ivan@sisd.com 98-sep-6
 ut_phonen got ''; at the end ivan@sisd.com 98-sep-27
 
 $Log: Record.pm,v $
-Revision 1.13  1999-03-29 11:55:43  ivan
+Revision 1.14  1999-04-07 14:58:31  ivan
+more kludges to get around different null/empty handling in Perl vs. MySQL vs.
+PostgreSQL etc.
+
+Revision 1.13  1999/03/29 11:55:43  ivan
 eliminate warnings in ut_money
 
 Revision 1.12  1999/01/25 12:26:06  ivan
