@@ -7,6 +7,7 @@ use vars qw( @ISA $DEBUG $me $conf
              $username_ampersand $username_letter $username_letterfirst
              $username_noperiod $username_nounderscore $username_nodash
              $username_uppercase
+             $password_noampersand $password_noexclamation
              $welcome_template $welcome_from $welcome_subject $welcome_mimetype
              $smtpmachine
              $radius_password $radius_ip
@@ -55,6 +56,8 @@ $FS::UID::callback{'FS::svc_acct'} = sub {
   $username_nodash = $conf->exists('username-nodash');
   $username_uppercase = $conf->exists('username-uppercase');
   $username_ampersand = $conf->exists('username-ampersand');
+  $password_noampersand = $conf->exists('password-noexclamation');
+  $password_noexclamation = $conf->exists('password-noexclamation');
   $dirhash = $conf->config('dirhash') || 0;
   if ( $conf->exists('welcome_email') ) {
     $welcome_template = new Text::Template (
@@ -682,6 +685,12 @@ sub check {
   }
   unless ( $username_ampersand ) {
     $recref->{username} =~ /\&/ and return gettext('illegal_username');
+  }
+  if ( $password_noampersand ) {
+    $recref->{_password} =~ /\&/ and return gettext('illegal_password');
+  }
+  if ( $password_noexclamation ) {
+    $recref->{_password} =~ /\!/ and return gettext('illegal_password');
   }
 
   $recref->{popnum} =~ /^(\d*)$/ or return "Illegal popnum: ".$recref->{popnum};

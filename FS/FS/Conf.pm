@@ -637,6 +637,20 @@ httemplate/docs/config.html
   },
 
   {
+    'key' => 'password-noampersand',
+    'section' => 'password',
+    'description' => 'Disallow ampersands in passwords',
+    'type' => 'checkbox',
+  },
+
+  {
+    'key' => 'password-noexclamation',
+    'section' => 'password',
+    'description' => 'Disallow exclamations in passwords (Not setting this could break old text Livingston or Cistron Radius servers)',
+    'type' => 'checkbox',
+  },
+
+  {
     'key'         => 'qmailmachines',
     'section'     => 'deprecated',
     'description' => '<b>DEPRECATED</b>, add <i>qmail</i> and <i>shellcommands</i> <a href="../browse/part_export.cgi">exports</a> instead.  This option used to export `/var/qmail/control/virtualdomains\', `/var/qmail/control/recipientmap\', and `/var/qmail/control/rcpthosts\'.  Setting this option (even if empty) also turns on user `.qmail-extension\' file maintenance in conjunction with the <b>shellmachine</b> option.',
