@@ -126,7 +126,7 @@ sub check {
     || $self->ut_text('address1')
     || $self->ut_textn('address2')
     || $self->ut_text('city')
-    || $self->ut_text('state')
+    || $self->ut_textn('state')
   ;
 
   return $error if $error;
@@ -189,7 +189,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: cust_pay_batch.pm,v 1.4 2001-10-30 19:05:27 ivan Exp $
+$Id: cust_pay_batch.pm,v 1.5 2002-02-14 01:12:19 ivan Exp $
 
 =head1 BUGS
 
