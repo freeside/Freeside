@@ -3,8 +3,10 @@
 </head>
 <body>
   <h1>Importing legacy data</h1>
-<font size="+2">NOTE: This file is OUT OF DATE with the landing of the new export code.  Importing your legacy data will most probably involve some hacking on the example scripts noted below.  Contributions to the import process are welcome.</font>
+<font size="+2">In most cases, legacy data import all cases will require writing custom code to deal with your particular legacy data.  The example scripts here will not work "out-of-the-box".  Importing your legacy data will most probably involve some hacking on the example scripts noted below.  Contributions to the import process are welcome.</font>
 <ul>
+  <li><a name="svc_domain">bin/svc_domain.import</a> - Import domain information from BIND named
+  <li><a name="svc_acct">bin/passwd.import</a> - Just import `passwd' and `shadow' or `master.passwd', no RADIUS import.
   <li><a name="svc_acct">bin/svc_acct.import</a> - Import `passwd', ( `shadow' or `master.passwd' ) and RADIUS `users'.  Before running bin/svc_acct.import, you need <a href="../browse/part_svc.cgi">services</a> (with table svc_acct) as follows:
     <ul>
       <li>Most accounts probably have entries in passwd and users (with Port-Limit nonexistant or 1)

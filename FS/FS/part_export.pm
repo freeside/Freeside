@@ -580,7 +580,12 @@ sub exporttype2svcdb {
 
   },
 
-  'svc_domain' => {},
+  'svc_domain' => {
+    'bind' => 'Batch export to BIND named',
+    'options' => {
+    },
+    'notes' => 'bind export notes',
+  },
 
   'svc_acct_sm' => {},
 

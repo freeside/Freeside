@@ -1,0 +1,17 @@
+#!/usr/bin/perl -w
+#
+# $Id: svc_domain.erase,v 1.1 2002-04-20 11:57:35 ivan Exp $
+
+use strict;
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw(qsearch);
+
+use FS::domain_record;
+use FS::svc_domain;
+
+adminsuidsetup(shift @ARGV) or die "Usage: svc_domain.erase user\n";
+
+foreach my $record ( qsearch('domain_record',{}), qsearch('svc_domain', {} ) ) {
+  my $error = $record->delete;
+  die $error if $error;
+}

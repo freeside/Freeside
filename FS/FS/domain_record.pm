@@ -114,7 +114,7 @@ sub check {
   $self->recaf =~ /^(IN)$/ or return "Illegal recaf: ". $self->recaf;
   $self->recaf($1);
 
-  $self->rectype =~ /^(SOA|NS|MX|A|PTR|CNAME)$/
+  $self->rectype =~ /^(SOA|NS|MX|A|PTR|CNAME|_mstr)$/
     or return "Illegal rectype (only SOA NS MX A PTR CNAME recognized): ".
               $self->rectype;
   $self->rectype($1);
@@ -148,6 +148,9 @@ sub check {
     $self->recdata =~ /^([a-z0-9\.\-]+)$/i
       or return "Illegal data for CNAME record: ". $self->recdata;
     $self->recdata($1);
+  } elsif ( $self->rectype eq '_mstr' ) {
+    $self->recdata =~ /^((\d{1,3}\.){3}\d{1,3})$/
+      or return "Illegal data for _master pseudo-record: ". $self->recdata;
   } else {
     die "ack!";
   }
@@ -159,7 +162,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: domain_record.pm,v 1.6 2002-04-20 10:49:33 ivan Exp $
+$Id: domain_record.pm,v 1.7 2002-04-20 11:57:35 ivan Exp $
 
 =head1 BUGS
 
