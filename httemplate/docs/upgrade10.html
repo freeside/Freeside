@@ -1,0 +1,11 @@
+this is very incomplete
+
+CREATE TABLE cust_bill_pkg_detail (
+  detailnum serial,
+  pkgnum int NOT NULL,
+  invnum int NOT NULL,
+  detail varchar(80),
+  PRIMARY KEY (detailnum)
+);
+CREATE INDEX cust_bill_pkg_detail1 ON cust_bill_pkg_detail ( pkgnum, invnum );
+

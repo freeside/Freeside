@@ -51,6 +51,7 @@ FS/agent.pm
 FS/agent_type.pm
 FS/cust_bill.pm
 FS/cust_bill_pkg.pm
+FS/cust_bill_pkg_detail.pm
 FS/cust_credit.pm
 FS/cust_credit_bill.pm
 FS/cust_main.pm
@@ -127,6 +128,7 @@ t/cust_bill.t
 t/cust_bill_event.t
 t/cust_bill_pay.t
 t/cust_bill_pkg.t
+t/cust_bill_pkg_detail.t
 t/cust_credit.t
 t/cust_credit_bill.t
 t/cust_credit_refund.t

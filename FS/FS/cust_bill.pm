@@ -953,38 +953,43 @@ sub print_text {
   }
 
   #new charges
-  foreach ( ( grep {   $_->pkgnum } $self->cust_bill_pkg ),  #packages first
-            ( grep { ! $_->pkgnum } $self->cust_bill_pkg ),  #then taxes
+  foreach my $cust_bill_pkg (
+    ( grep {   $_->pkgnum } $self->cust_bill_pkg ),  #packages first
+    ( grep { ! $_->pkgnum } $self->cust_bill_pkg ),  #then taxes
   ) {
 
-    if ( $_->pkgnum ) {
+    if ( $cust_bill_pkg->pkgnum ) {
 
-      my($cust_pkg)=qsearchs('cust_pkg', { 'pkgnum', $_->pkgnum } );
-      my($part_pkg)=qsearchs('part_pkg',{'pkgpart'=>$cust_pkg->pkgpart});
-      my($pkg)=$part_pkg->pkg;
+      my $cust_pkg = qsearchs('cust_pkg', { pkgnum =>$cust_bill_pkg->pkgnum } );
+      my $part_pkg = qsearchs('part_pkg', { pkgpart=>$cust_pkg->pkgpart } );
+      my $pkg = $part_pkg->pkg;
 
-      if ( $_->setup != 0 ) {
-        push @buf, [ "$pkg Setup", $money_char. sprintf("%10.2f",$_->setup) ];
+      if ( $cust_bill_pkg->setup != 0 ) {
+        push @buf, [ "$pkg Setup",
+                     $money_char. sprintf("%10.2f", $cust_bill_pkg->setup) ];
         push @buf,
           map { [ "  ". $_->[0]. ": ". $_->[1], '' ] } $cust_pkg->labels;
       }
 
-      if ( $_->recur != 0 ) {
+      if ( $cust_bill_pkg->recur != 0 ) {
         push @buf, [
-          "$pkg (" . time2str("%x",$_->sdate) . " - " .
-                                time2str("%x",$_->edate) . ")",
-          $money_char. sprintf("%10.2f",$_->recur)
+          "$pkg (" . time2str("%x", $cust_bill_pkg->sdate) . " - " .
+                                time2str("%x", $cust_bill_pkg->edate) . ")",
+          $money_char. sprintf("%10.2f", $cust_bill_pkg->recur)
         ];
         push @buf,
           map { [ "  ". $_->[0]. ": ". $_->[1], '' ] } $cust_pkg->labels;
       }
 
+      push @buf, map { [ "  $_", '' ] } $cust_bill_pkg->details;
+
     } else { #pkgnum tax
-      my $itemdesc = defined $_->dbdef_table->column('itemdesc')
-                     ? ( $_->itemdesc || 'Tax' )
+      my $itemdesc = defined $cust_bill_pkg->dbdef_table->column('itemdesc')
+                     ? ( $cust_bill_pkg->itemdesc || 'Tax' )
                      : 'Tax';
-      push @buf,[$itemdesc, $money_char. sprintf("%10.2f",$_->setup) ] 
-        if $_->setup != 0;
+      push @buf, [ $itemdesc,
+                   $money_char. sprintf("%10.2f", $cust_bill_pkg->setup) ] 
+        if $cust_bill_pkg->setup != 0;
     }
   }
 
@@ -1127,10 +1132,6 @@ sub print_text {
 }
 
 =back
-
-=head1 VERSION
-
-$Id: cust_bill.pm,v 1.61 2003-01-10 07:41:05 ivan Exp $
 
 =head1 BUGS
 

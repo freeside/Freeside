@@ -2,11 +2,12 @@ package FS::cust_bill_pkg;
 
 use strict;
 use vars qw( @ISA );
-use FS::Record qw( qsearchs );
+use FS::Record qw( qsearch qsearchs dbdef dbh );
 use FS::cust_pkg;
 use FS::cust_bill;
+use FS::cust_bill_pkg_detail;
 
-@ISA = qw(FS::Record );
+@ISA = qw( FS::Record );
 
 =head1 NAME
 
@@ -72,6 +73,51 @@ sub table { 'cust_bill_pkg'; }
 
 Adds this line item to the database.  If there is an error, returns the error,
 otherwise returns false.
+
+=cut
+
+sub insert {
+  my $self = shift;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $error = $self->SUPER::insert;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  unless ( defined dbdef->table('cust_bill_pkg_detail') && $self->get('details') ) {
+    $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+    return '';
+  }
+
+  foreach my $detail ( @{$self->get('details')} ) {
+    my $cust_bill_pkg_detail = new FS::cust_bill_pkg_detail {
+      'pkgnum' => $self->pkgnum,
+      'invnum' => $self->invnum,
+      'detail' => $detail,
+    };
+    $error = $cust_bill_pkg_detail->insert;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  '';
+
+}
 
 =item delete
 
@@ -139,11 +185,22 @@ sub cust_pkg {
   qsearchs( 'cust_pkg', { 'pkgnum' => $self->pkgnum } );
 }
 
+=item details
+
+Returns an array of detail information for the invoice line item.
+
+=cut
+
+sub details {
+  my $self = shift;
+  return () unless defined dbdef->table('cust_bill_pkg_detail');
+  map { $_->detail }
+    qsearch ( 'cust_bill_pkg_detail', { 'pkgnum' => $self->pkgnum,
+                                        'invnum' => $self->invnum, } );
+    #qsearch ( 'cust_bill_pkg_detail', { 'lineitemnum' => $self->lineitemnum });
+}
+
 =back
-
-=head1 VERSION
-
-$Id: cust_bill_pkg.pm,v 1.4 2002-09-21 11:17:39 ivan Exp $
 
 =head1 BUGS
 

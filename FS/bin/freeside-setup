@@ -421,6 +421,18 @@ sub tables_hash_hack {
       'index' => [ ['invnum'] ],
     },
 
+    'cust_bill_pkg_detail' => {
+      'columns' => [
+        'detailnum', 'serial', '', '',
+        'pkgnum',  'int', '', '',
+        'invnum',  'int', '', '',
+        'detail',  'varchar', '', $char_d,
+      ],
+      'primary_key' => 'detailnum',
+      'unique' => [],
+      'index' => [ [ 'pkgnum', 'invnum' ] ],
+    },
+
     'cust_credit' => {
       'columns' => [
         'crednum',  'serial', '', '',

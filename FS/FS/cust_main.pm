@@ -947,6 +947,8 @@ sub bill {
     my %hash = $cust_pkg->hash;
     my $old_cust_pkg = new FS::cust_pkg \%hash;
 
+    my @details = ();
+
     # bill setup
     my $setup = 0;
     unless ( $cust_pkg->setup ) {
@@ -1040,11 +1042,12 @@ sub bill {
       }
       if ( $setup > 0 || $recur > 0 ) {
         my $cust_bill_pkg = new FS::cust_bill_pkg ({
-          'pkgnum' => $cust_pkg->pkgnum,
-          'setup'  => $setup,
-          'recur'  => $recur,
-          'sdate'  => $sdate,
-          'edate'  => $cust_pkg->bill,
+          'pkgnum'  => $cust_pkg->pkgnum,
+          'setup'   => $setup,
+          'recur'   => $recur,
+          'sdate'   => $sdate,
+          'edate'   => $cust_pkg->bill,
+          'details' => \@details,
         });
         push @cust_bill_pkg, $cust_bill_pkg;
         $total_setup += $setup;

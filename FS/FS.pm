@@ -102,6 +102,8 @@ L<FS::cust_bill> - Invoice class
 
 L<FS::cust_bill_pkg> - Invoice line item class
 
+L<FS::cust_bill_pkg_detail> - Invoice line item detail class
+
 L<FS::part_bill_event> - Invoice event definition class
 
 L<FS::cust_bill_event> - Completed invoice event class
