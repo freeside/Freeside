@@ -1,16 +1,12 @@
 package FS::cust_main;
 
 use strict;
-use vars qw( @ISA $conf $lpr $processor $xaction $E_NoErr $invoice_from
-             $smtpmachine $Debug $bop_processor $bop_login $bop_password
-             $bop_action @bop_options $import );
+use vars qw( @ISA $conf $Debug $import );
 use Safe;
 use Carp;
 use Time::Local;
 use Date::Format;
 #use Date::Manip;
-use Mail::Internet;
-use Mail::Header;
 use Business::CreditCard;
 use FS::UID qw( getotaker dbh );
 use FS::Record qw( qsearchs qsearch dbdef );
@@ -19,7 +15,6 @@ use FS::cust_bill;
 use FS::cust_bill_pkg;
 use FS::cust_pay;
 use FS::cust_credit;
-use FS::cust_pay_batch;
 use FS::part_referral;
 use FS::cust_main_county;
 use FS::agent;
@@ -29,6 +24,8 @@ use FS::cust_bill_pay;
 use FS::prepay_credit;
 use FS::queue;
 use FS::part_pkg;
+use FS::part_bill_event;
+use FS::cust_bill_event;
 
 @ISA = qw( FS::Record );
 
@@ -40,42 +37,7 @@ $import = 0;
 #ask FS::UID to run this stuff for us later
 $FS::UID::callback{'FS::cust_main'} = sub { 
   $conf = new FS::Conf;
-  $lpr = $conf->config('lpr');
-  $invoice_from = $conf->config('invoice_from');
-  $smtpmachine = $conf->config('smtpmachine');
-
-  if ( $conf->exists('cybercash3.2') ) {
-    require CCMckLib3_2;
-      #qw($MCKversion %Config InitConfig CCError CCDebug CCDebug2);
-    require CCMckDirectLib3_2;
-      #qw(SendCC2_1Server);
-    require CCMckErrno3_2;
-      #qw(MCKGetErrorMessage $E_NoErr);
-    import CCMckErrno3_2 qw($E_NoErr);
-
-    my $merchant_conf;
-    ($merchant_conf,$xaction)= $conf->config('cybercash3.2');
-    my $status = &CCMckLib3_2::InitConfig($merchant_conf);
-    if ( $status != $E_NoErr ) {
-      warn "CCMckLib3_2::InitConfig error:\n";
-      foreach my $key (keys %CCMckLib3_2::Config) {
-        warn "  $key => $CCMckLib3_2::Config{$key}\n"
-      }
-      my($errmsg) = &CCMckErrno3_2::MCKGetErrorMessage($status);
-      die "CCMckLib3_2::InitConfig fatal error: $errmsg\n";
-    }
-    $processor='cybercash3.2';
-  } elsif ( $conf->exists('business-onlinepayment') ) {
-    ( $bop_processor,
-      $bop_login,
-      $bop_password,
-      $bop_action,
-      @bop_options
-    ) = $conf->config('business-onlinepayment');
-    $bop_action ||= 'normal authorization';
-    eval "use Business::OnlinePayment";  
-    $processor="Business::OnlinePayment::$bop_processor";
-  }
+  #yes, need it for stuff below (prolly should be cached)
 };
 
 sub _cache {
@@ -385,7 +347,8 @@ will be deleted.  Did I mention that this is NOT what you want when a customer
 cancels service and that you really should be looking see L<FS::cust_pkg/cancel>?
 
 You can't delete a customer with invoices (see L<FS::cust_bill>),
-or credits (see L<FS::cust_credit>) or payments (see L<FS::cust_pay>).
+or credits (see L<FS::cust_credit>), payments (see L<FS::cust_pay>) or
+refunds (see L<FS::cust_refund>).
 
 =cut
 
@@ -415,6 +378,10 @@ sub delete {
     $dbh->rollback if $oldAutoCommit;
     return "Can't delete a customer with payments";
   }
+  if ( qsearch( 'cust_refund', { 'custnum' => $self->custnum } ) ) {
+    $dbh->rollback if $oldAutoCommit;
+    return "Can't delete a customer with refunds";
+  }
 
   my @cust_pkg = $self->ncancelled_pkgs;
   if ( @cust_pkg ) {
@@ -443,7 +410,7 @@ sub delete {
     }
   }
 
-  foreach my $cust_main_invoice (
+  foreach my $cust_main_invoice ( #(email invoice destinations, not invoices)
     qsearch( 'cust_main_invoice', { 'custnum' => $self->custnum } )
   ) {
     my $error = $cust_main_invoice->delete;
@@ -1082,6 +1049,9 @@ L<FS::cust_bill>).  Usually used after the bill method.
 Depending on the value of `payby', this may print an invoice (`BILL'), charge
 a credit card (`CARD'), or just add any necessary (pseudo-)payment (`COMP').
 
+Most actions are now triggered by invoice events; see L<FS::part_bill_event>
+and the invoice events web interface.
+
 If there is an error, returns the error, otherwise returns false.
 
 Options are passed as name-value pairs.
@@ -1092,15 +1062,12 @@ invoice_time - Use this time when deciding when to print invoices and
 late notices on those invoices.  The default is now.  It is specified as a UNIX timestamp; see L<perlfunc/"time">).  Also see L<Time::Local> and L<Date::Parse>
 for conversion functions.
 
-batch_card - Set this true to batch cards (see L<FS::cust_pay_batch>).  By
-default, cards are processed immediately, which will generate an error if
-CyberCash is not installed.
+batch_card - This option is deprecated.  See the invoice events web interface
+to control whether cards are batched or run against a realtime gateway.
 
-report_badcard - Set this true if you want bad card transactions to
-return an error.  By default, they don't.
+report_badcard - This option is deprecated.
 
-force_print - force printing even if invoice has been printed more than once
-every 30 days, and don't increment the `printed' field.
+force_print - This option is deprecated; see the invoice events web interface.
 
 =cut
 
@@ -1141,306 +1108,62 @@ sub collect {
     next unless $cust_bill->owed > 0;
 
     # don't try to charge for the same invoice if it's already in a batch
-    next if qsearchs( 'cust_pay_batch', { 'invnum' => $cust_bill->invnum } );
+    #next if qsearchs( 'cust_pay_batch', { 'invnum' => $cust_bill->invnum } );
 
     warn "invnum ". $cust_bill->invnum. " (owed ". $cust_bill->owed. ", amount $amount, balance $balance)" if $Debug;
 
     next unless $amount > 0;
 
-    if ( $self->payby eq 'BILL' ) {
+    foreach my $part_bill_event (
+      sort {    $a->seconds   <=> $b->seconds
+             || $a->weight    <=> $b->weight
+             || $a->eventpart <=> $b->eventpart }
+        grep { $_->seconds > ( $invoice_time - ( $cust_bill->_date || 0 ) )
+               && ! qsearchs( 'cust_bill_event', {
+                                'invnum'    => $cust_bill->invnum,
+                                'eventpart' => $_->eventpart       } )
+             }
+          qsearch('part_bill_event', { 'payby'    => $self->payby,
+                                       'disabled' => '',           } )
+    ) {
+      #run callback
+      my $cust_main = $self; #for callback
+      my $error = eval $part_bill_event->eventcode;
 
-      #30 days 2592000
-      my $since = $invoice_time - ( $cust_bill->_date || 0 );
-      #warn "$invoice_time ", $cust_bill->_date, " $since";
-      if ( $since >= 0 #don't print future invoices
-           && ( ( $cust_bill->printed * 2592000 ) <= $since
-                || $options{'force_print'} )
-      ) {
-
-        #my @print_text = $cust_bill->print_text; #( date )
-        my @invoicing_list = $self->invoicing_list;
-        if ( grep { $_ ne 'POST' } @invoicing_list ) { #email invoice
-          $ENV{SMTPHOSTS} = $smtpmachine;
-          $ENV{MAILADDRESS} = $invoice_from;
-          my $header = new Mail::Header ( [
-            "From: $invoice_from",
-            "To: ". join(', ', grep { $_ ne 'POST' } @invoicing_list ),
-            "Sender: $invoice_from",
-            "Reply-To: $invoice_from",
-            "Date: ". time2str("%a, %d %b %Y %X %z", time),
-            "Subject: Invoice",
-          ] );
-          my $message = new Mail::Internet (
-            'Header' => $header,
-            'Body' => [ $cust_bill->print_text ], #( date)
-          );
-          $message->smtpsend or die "Can't send invoice email!"; #die?  warn?
-
-        } elsif ( ! @invoicing_list || grep { $_ eq 'POST' } @invoicing_list ) {
-          open(LPR, "|$lpr") or die "Can't open pipe to $lpr: $!";
-          print LPR $cust_bill->print_text; #( date )
-          close LPR
-            or die $! ? "Error closing $lpr: $!"
-                         : "Exit status $? from $lpr";
-        }
-
-        unless ( $options{'force_print'} ) {
-          my %hash = $cust_bill->hash;
-          $hash{'printed'}++;
-          my $new_cust_bill = new FS::cust_bill(\%hash);
-          my $error = $new_cust_bill->replace($cust_bill);
-          warn "Error updating $cust_bill->printed: $error" if $error;
-        }
-
-      }
-
-    } elsif ( $self->payby eq 'COMP' ) {
-      my $cust_pay = new FS::cust_pay ( {
-         'invnum' => $cust_bill->invnum,
-         'paid' => $amount,
-         '_date' => '',
-         'payby' => 'COMP',
-         'payinfo' => $self->payinfo,
-         'paybatch' => ''
-      } );
-      my $error = $cust_pay->insert;
       if ( $error ) {
-        $dbh->rollback if $oldAutoCommit;
-        return 'Error COMPing invnum #'. $cust_bill->invnum. ": $error";
-      }
 
+        warn "Error running invoice event (". $part_bill_event->eventcode.
+             "): $error";
 
-    } elsif ( $self->payby eq 'CARD' ) {
+      } else {
 
-      if ( $options{'batch_card'} ne 'yes' ) {
+        #add cust_bill_event
+        my $cust_bill_event = new FS::cust_bill_event {
+          'invnum'    => $cust_bill->invnum,
+          'eventpart' => $part_bill_event->eventpart,
+          '_date'     => $invoice_time,
+        };
+        $cust_bill_event->insert;
+        if ( $error ) {
+          #$dbh->rollback if $oldAutoCommit;
+          #return "error: $error";
 
-        unless ( $processor ) {
-          $dbh->rollback if $oldAutoCommit;
-          return "Real time card processing not enabled!";
+          # gah, even with transactions.
+          $dbh->commit if $oldAutoCommit; #well.
+          my $e = 'WARNING: Event run but database not updated - '.
+                  'error inserting cust_bill_event, invnum #'. $cust_bill->invnum.
+                  ', eventpart '. $part_bill_event->eventpart.
+                  ": $error";
+          warn $e;
+          return $e;
         }
-
-        my $address = $self->address1;
-        $address .= ", ". $self->address2 if $self->address2;
-
-        #fix exp. date
-        #$self->paydate =~ /^(\d+)\/\d*(\d{2})$/;
-        $self->paydate =~ /^\d{2}(\d{2})[\/\-](\d+)[\/\-]\d+$/;
-        my $exp = "$2/$1";
-
-        if ( $processor eq 'cybercash3.2' ) {
-
-          #fix exp. date for cybercash
-          #$self->paydate =~ /^(\d+)\/\d*(\d{2})$/;
-          $self->paydate =~ /^\d{2}(\d{2})[\/\-](\d+)[\/\-]\d+$/;
-          my $exp = "$2/$1";
-
-          my $paybatch = $cust_bill->invnum. 
-                         '-' . time2str("%y%m%d%H%M%S", time);
-
-          my $payname = $self->payname ||
-                        $self->getfield('first'). ' '. $self->getfield('last');
-
-
-          my $country = $self->country eq 'US' ? 'USA' : $self->country;
-
-          my @full_xaction = ( $xaction,
-            'Order-ID'     => $paybatch,
-            'Amount'       => "usd $amount",
-            'Card-Number'  => $self->getfield('payinfo'),
-            'Card-Name'    => $payname,
-            'Card-Address' => $address,
-            'Card-City'    => $self->getfield('city'),
-            'Card-State'   => $self->getfield('state'),
-            'Card-Zip'     => $self->getfield('zip'),
-            'Card-Country' => $country,
-            'Card-Exp'     => $exp,
-          );
-
-          my %result;
-          %result = &CCMckDirectLib3_2::SendCC2_1Server(@full_xaction);
-         
-          #if ( $result{'MActionCode'} == 7 ) { #cybercash smps v.1.1.3
-          #if ( $result{'action-code'} == 7 ) { #cybercash smps v.2.1
-          if ( $result{'MStatus'} eq 'success' ) { #cybercash smps v.2 or 3
-            my $cust_pay = new FS::cust_pay ( {
-               'invnum'   => $cust_bill->invnum,
-               'paid'     => $amount,
-               '_date'     => '',
-               'payby'    => 'CARD',
-               'payinfo'  => $self->payinfo,
-               'paybatch' => "$processor:$paybatch",
-            } );
-            my $error = $cust_pay->insert;
-            if ( $error ) {
-              # gah, even with transactions.
-              $dbh->commit if $oldAutoCommit; #well.
-              my $e = 'WARNING: Card debited but database not updated - '.
-                      'error applying payment, invnum #' . $cust_bill->invnum.
-                      " (CyberCash Order-ID $paybatch): $error";
-              warn $e;
-              return $e;
-            }
-          } elsif ( $result{'Mstatus'} ne 'failure-bad-money'
-                 || $options{'report_badcard'} ) {
-             $dbh->commit if $oldAutoCommit;
-             return 'Cybercash error, invnum #' . 
-               $cust_bill->invnum. ':'. $result{'MErrMsg'};
-          } else {
-            $dbh->commit or die $dbh->errstr if $oldAutoCommit;
-            return '';
-          }
-
-        } elsif ( $processor =~ /^Business::OnlinePayment::(.*)$/ ) {
-
-          my $bop_processor = $1;
-
-          my($payname, $payfirst, $paylast);
-          if ( $self->payname ) {
-            $payname = $self->payname;
-            $payname =~ /^\s*([\w \,\.\-\']*\w)?\s+([\w\,\.\-\']+)$/
-              or do {
-                      $dbh->rollback if $oldAutoCommit;
-                      return "Illegal payname $payname";
-                    };
-            ($payfirst, $paylast) = ($1, $2);
-          } else {
-            $payfirst = $self->getfield('first');
-            $paylast = $self->getfield('first');
-            $payname =  "$payfirst $paylast";
-          }
-
-          my @invoicing_list = grep { $_ ne 'POST' } $self->invoicing_list;
-          if ( $conf->exists('emailinvoiceauto')
-               || ( $conf->exists('emailinvoiceonly') && ! @invoicing_list ) ) {
-            push @invoicing_list, $self->default_invoicing_list;
-          }
-          my $email = $invoicing_list[0];
-
-          my( $action1, $action2 ) = split(/\s*\,\s*/, $bop_action );
-        
-          my $transaction =
-            new Business::OnlinePayment( $bop_processor, @bop_options );
-          $transaction->content(
-            'type'           => 'CC',
-            'login'          => $bop_login,
-            'password'       => $bop_password,
-            'action'         => $action1,
-            'description'    => 'Internet Services',
-            'amount'         => $amount,
-            'invoice_number' => $cust_bill->invnum,
-            'customer_id'    => $self->custnum,
-            'last_name'      => $paylast,
-            'first_name'     => $payfirst,
-            'name'           => $payname,
-            'address'        => $address,
-            'city'           => $self->city,
-            'state'          => $self->state,
-            'zip'            => $self->zip,
-            'country'        => $self->country,
-            'card_number'    => $self->payinfo,
-            'expiration'     => $exp,
-            'referer'        => 'http://cleanwhisker.420.am/',
-            'email'          => $email,
-          );
-          $transaction->submit();
-
-          if ( $transaction->is_success() && $action2 ) {
-            my $auth = $transaction->authorization;
-            my $ordernum = $transaction->order_number;
-            #warn "********* $auth ***********\n";
-            #warn "********* $ordernum ***********\n";
-            my $capture =
-              new Business::OnlinePayment( $bop_processor, @bop_options );
-
-            $capture->content(
-              action         => $action2,
-              login          => $bop_login,
-              password       => $bop_password,
-              order_number   => $ordernum,
-              amount         => $amount,
-              authorization  => $auth,
-              description    => 'Internet Services',
-            );
-
-            $capture->submit();
-
-            unless ( $capture->is_success ) {
-              my $e = "Authorization sucessful but capture failed, invnum #".
-                      $cust_bill->invnum. ': '.  $capture->result_code.
-                      ": ". $capture->error_message;
-              warn $e;
-              return $e;
-            }
-
-          }
-
-          if ( $transaction->is_success() ) {
-
-            my $cust_pay = new FS::cust_pay ( {
-               'invnum'   => $cust_bill->invnum,
-               'paid'     => $amount,
-               '_date'     => '',
-               'payby'    => 'CARD',
-               'payinfo'  => $self->payinfo,
-               'paybatch' => "$processor:". $transaction->authorization,
-            } );
-            my $error = $cust_pay->insert;
-            if ( $error ) {
-              # gah, even with transactions.
-              $dbh->commit if $oldAutoCommit; #well.
-              my $e = 'WARNING: Card debited but database not updated - '.
-                      'error applying payment, invnum #' . $cust_bill->invnum.
-                      " ($processor): $error";
-              warn $e;
-              return $e;
-            }
-          } elsif ( $options{'report_badcard'} ) {
-            $dbh->commit if $oldAutoCommit;
-            return "$processor error, invnum #". $cust_bill->invnum. ': '.
-                   $transaction->result_code. ": ". $transaction->error_message;
-          } else {
-            $dbh->commit or die $dbh->errstr if $oldAutoCommit;
-            #return '';
-          }
-
-        } else {
-          $dbh->rollback if $oldAutoCommit;
-          return "Unknown real-time processor $processor\n";
-        }
-
-      } else { #batch card
-
-       my $cust_pay_batch = new FS::cust_pay_batch ( {
-         'invnum'   => $cust_bill->getfield('invnum'),
-         'custnum'  => $self->getfield('custnum'),
-         'last'     => $self->getfield('last'),
-         'first'    => $self->getfield('first'),
-         'address1' => $self->getfield('address1'),
-         'address2' => $self->getfield('address2'),
-         'city'     => $self->getfield('city'),
-         'state'    => $self->getfield('state'),
-         'zip'      => $self->getfield('zip'),
-         'country'  => $self->getfield('country'),
-         'trancode' => 77,
-         'cardnum'  => $self->getfield('payinfo'),
-         'exp'      => $self->getfield('paydate'),
-         'payname'  => $self->getfield('payname'),
-         'amount'   => $amount,
-       } );
-       my $error = $cust_pay_batch->insert;
-       if ( $error ) {
-         $dbh->rollback if $oldAutoCommit;
-         return "Error adding to cust_pay_batch: $error";
-       }
 
       }
 
-    } else {
-      $dbh->rollback if $oldAutoCommit;
-      return "Unknown payment type ". $self->payby;
     }
 
   }
+
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
 
@@ -1991,10 +1714,6 @@ sub append_fuzzyfiles {
   1;
 }
 
-=head1 VERSION
-
-$Id: cust_main.pm,v 1.55 2002-01-29 16:33:15 ivan Exp $
-
 =head1 BUGS
 
 The delete method.
@@ -2005,8 +1724,6 @@ instead of a scalar customer number.
 Bill and collect options should probably be passed as references instead of a
 list.
 
-CyberCash v2 forces us to define some variables in package main.
-
 There should probably be a configuration file with a list of allowed credit
 card types.
 
@@ -2015,9 +1732,8 @@ No multiple currency support (probably a larger project than just this module).
 =head1 SEE ALSO
 
 L<FS::Record>, L<FS::cust_pkg>, L<FS::cust_bill>, L<FS::cust_credit>
-L<FS::cust_pay_batch>, L<FS::agent>, L<FS::part_referral>,
-L<FS::cust_main_county>, L<FS::cust_main_invoice>,
-L<FS::UID>, schema.html from the base documentation.
+L<FS::agent>, L<FS::part_referral>, L<FS::cust_main_county>,
+L<FS::cust_main_invoice>, L<FS::UID>, schema.html from the base documentation.
 
 =cut
 

@@ -2,8 +2,14 @@ package FS::cust_bill;
 
 use strict;
 use vars qw( @ISA $conf $invoice_template $money_char );
+use vars qw( $lpr $invoice_from $smtpmachine );
+use vars qw( $processor );
+use vars qw( $xaction $E_NoErr );
+use vars qw( $bop_processor $bop_login $bop_password $bop_action @bop_options );
 use vars qw( $invoice_lines @buf ); #yuck
 use Date::Format;
+use Mail::Internet;
+use Mail::Header;
 use Text::Template;
 use FS::Record qw( qsearch qsearchs );
 use FS::cust_main;
@@ -12,6 +18,7 @@ use FS::cust_credit;
 use FS::cust_pay;
 use FS::cust_pkg;
 use FS::cust_credit_bill;
+use FS::cust_pay_batch;
 
 @ISA = qw( FS::Record );
 
@@ -36,6 +43,44 @@ $FS::UID::callback{'FS::cust_bill'} = sub {
   ) or die "can't create new Text::Template object: $Text::Template::ERROR";
   $invoice_template->compile()
     or die "can't compile template: $Text::Template::ERROR";
+
+  $lpr = $conf->config('lpr');
+  $invoice_from = $conf->config('invoice_from');
+  $smtpmachine = $conf->config('smtpmachine');
+
+  if ( $conf->exists('cybercash3.2') ) {
+    require CCMckLib3_2;
+      #qw($MCKversion %Config InitConfig CCError CCDebug CCDebug2);
+    require CCMckDirectLib3_2;
+      #qw(SendCC2_1Server);
+    require CCMckErrno3_2;
+      #qw(MCKGetErrorMessage $E_NoErr);
+    import CCMckErrno3_2 qw($E_NoErr);
+
+    my $merchant_conf;
+    ($merchant_conf,$xaction)= $conf->config('cybercash3.2');
+    my $status = &CCMckLib3_2::InitConfig($merchant_conf);
+    if ( $status != $E_NoErr ) {
+      warn "CCMckLib3_2::InitConfig error:\n";
+      foreach my $key (keys %CCMckLib3_2::Config) {
+        warn "  $key => $CCMckLib3_2::Config{$key}\n"
+      }
+      my($errmsg) = &CCMckErrno3_2::MCKGetErrorMessage($status);
+      die "CCMckLib3_2::InitConfig fatal error: $errmsg\n";
+    }
+    $processor='cybercash3.2';
+  } elsif ( $conf->exists('business-onlinepayment') ) {
+    ( $bop_processor,
+      $bop_login,
+      $bop_password,
+      $bop_action,
+      @bop_options
+    ) = $conf->config('business-onlinepayment');
+    $bop_action ||= 'normal authorization';
+    eval "use Business::OnlinePayment";  
+    $processor="Business::OnlinePayment::$bop_processor";
+  }
+
 };
 
 =head1 NAME
@@ -88,8 +133,7 @@ L<Time::Local> and L<Date::Parse> for conversion functions.
 
 =item charged - amount of this invoice
 
-=item printed - how many times this invoice has been printed automatically
-(see L<FS::cust_main/"collect">).
+=item printed - deprecated
 
 =item closed - books closed flag, empty or `Y'
 
@@ -207,6 +251,17 @@ sub cust_bill_pkg {
   qsearch( 'cust_bill_pkg', { 'invnum' => $self->invnum } );
 }
 
+=item cust_main
+
+Returns the customer (see L<FS::cust_main>) for this invoice.
+
+=cut
+
+sub cust_main {
+  my $self = shift;
+  qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
+}
+
 =item cust_credit
 
 Depreciated.  See the cust_credited method.
@@ -304,6 +359,315 @@ sub owed {
   $balance = sprintf( "%.2f", $balance);
   $balance =~ s/^\-0\.00$/0.00/; #yay ieee fp
   $balance;
+}
+
+=item send
+
+Sends this invoice to the destinations configured for this customer: send
+emails or print.  See L<FS::cust_main_invoice>.
+
+=cut
+
+sub send {
+  my $self = shift;
+
+  #my @print_text = $cust_bill->print_text; #( date )
+  my @invoicing_list = $self->cust_main->invoicing_list;
+  if ( grep { $_ ne 'POST' } @invoicing_list ) { #email invoice
+    $ENV{SMTPHOSTS} = $smtpmachine;
+    $ENV{MAILADDRESS} = $invoice_from;
+    my $header = new Mail::Header ( [
+      "From: $invoice_from",
+      "To: ". join(', ', grep { $_ ne 'POST' } @invoicing_list ),
+      "Sender: $invoice_from",
+      "Reply-To: $invoice_from",
+      "Date: ". time2str("%a, %d %b %Y %X %z", time),
+      "Subject: Invoice",
+    ] );
+    my $message = new Mail::Internet (
+      'Header' => $header,
+      'Body' => [ $self->print_text ], #( date)
+    );
+    $message->smtpsend
+      or return "Can't send invoice email to server $smtpmachine!";
+
+  #} elsif ( grep { $_ eq 'POST' } @invoicing_list ) {
+  } elsif ( ! @invoicing_list || grep { $_ eq 'POST' } @invoicing_list ) {
+    open(LPR, "|$lpr")
+      or return "Can't open pipe to $lpr: $!";
+    print LPR $self->print_text; #( date )
+    close LPR
+      or return $! ? "Error closing $lpr: $!"
+                   : "Exit status $? from $lpr";
+  }
+
+  '';
+
+}
+
+=item comp
+
+Pays this invoice with a compliemntary payment.  If there is an error,
+returns the error, otherwise returns false.
+
+=cut
+
+sub comp {
+  my $self = shift;
+  my $cust_pay = new FS::cust_pay ( {
+    'invnum'   => $self->invnum,
+    'paid'     => $self->owed,
+    '_date'    => '',
+    'payby'    => 'COMP',
+    'payinfo'  => $self->cust_main->payinfo,
+    'paybatch' => '',
+  } );
+  $cust_pay->insert;
+}
+
+=item realtime_card
+
+Attempts to pay this invoice with a Business::OnlinePayment realtime gateway.
+See http://search.cpan.org/search?mode=module&query=Business%3A%3AOnlinePayment
+for supproted processors.
+
+=cut
+
+sub realtime_card {
+  my $self = shift;
+  my $cust_main = $self->cust_main;
+  my $amount = $self->owed;
+
+  unless ( $processor =~ /^Business::OnlinePayment::(.*)$/ ) {
+    return "Real-time card processing not enabled (processor $processor)";
+  }
+  my $bop_processor = $1; #hmm?
+
+  my $address = $cust_main->address1;
+  $address .= ", ". $cust_main->address2 if $cust_main->address2;
+
+  #fix exp. date
+  #$cust_main->paydate =~ /^(\d+)\/\d*(\d{2})$/;
+  $cust_main->paydate =~ /^\d{2}(\d{2})[\/\-](\d+)[\/\-]\d+$/;
+  my $exp = "$2/$1";
+
+  my($payname, $payfirst, $paylast);
+  if ( $cust_main->payname ) {
+    $payname = $cust_main->payname;
+    $payname =~ /^\s*([\w \,\.\-\']*\w)?\s+([\w\,\.\-\']+)$/
+      or do {
+              #$dbh->rollback if $oldAutoCommit;
+              return "Illegal payname $payname";
+            };
+    ($payfirst, $paylast) = ($1, $2);
+  } else {
+    $payfirst = $cust_main->getfield('first');
+    $paylast = $cust_main->getfield('first');
+    $payname =  "$payfirst $paylast";
+  }
+
+  my @invoicing_list = grep { $_ ne 'POST' } $cust_main->invoicing_list;
+  if ( $conf->exists('emailinvoiceauto')
+       || ( $conf->exists('emailinvoiceonly') && ! @invoicing_list ) ) {
+    push @invoicing_list, $cust_main->default_invoicing_list;
+  }
+  my $email = $invoicing_list[0];
+
+  my( $action1, $action2 ) = split(/\s*\,\s*/, $bop_action );
+  
+  my $transaction =
+    new Business::OnlinePayment( $bop_processor, @bop_options );
+  $transaction->content(
+    'type'           => 'CC',
+    'login'          => $bop_login,
+    'password'       => $bop_password,
+    'action'         => $action1,
+    'description'    => 'Internet Services',
+    'amount'         => $amount,
+    'invoice_number' => $self->invnum,
+    'customer_id'    => $self->custnum,
+    'last_name'      => $paylast,
+    'first_name'     => $payfirst,
+    'name'           => $payname,
+    'address'        => $address,
+    'city'           => $cust_main->city,
+    'state'          => $cust_main->state,
+    'zip'            => $cust_main->zip,
+    'country'        => $cust_main->country,
+    'card_number'    => $cust_main->payinfo,
+    'expiration'     => $exp,
+    'referer'        => 'http://cleanwhisker.420.am/',
+    'email'          => $email,
+  );
+  $transaction->submit();
+
+  if ( $transaction->is_success() && $action2 ) {
+    my $auth = $transaction->authorization;
+    my $ordernum = $transaction->order_number;
+    #warn "********* $auth ***********\n";
+    #warn "********* $ordernum ***********\n";
+    my $capture =
+      new Business::OnlinePayment( $bop_processor, @bop_options );
+
+    $capture->content(
+      action         => $action2,
+      login          => $bop_login,
+      password       => $bop_password,
+      order_number   => $ordernum,
+      amount         => $amount,
+      authorization  => $auth,
+      description    => 'Internet Services',
+    );
+
+    $capture->submit();
+
+    unless ( $capture->is_success ) {
+      my $e = "Authorization sucessful but capture failed, invnum #".
+              $self->invnum. ': '.  $capture->result_code.
+              ": ". $capture->error_message;
+      warn $e;
+      return $e;
+    }
+
+  }
+
+  if ( $transaction->is_success() ) {
+
+    my $cust_pay = new FS::cust_pay ( {
+       'invnum'   => $self->invnum,
+       'paid'     => $amount,
+       '_date'     => '',
+       'payby'    => 'CARD',
+       'payinfo'  => $cust_main->payinfo,
+       'paybatch' => "$processor:". $transaction->authorization,
+    } );
+    my $error = $cust_pay->insert;
+    if ( $error ) {
+      # gah, even with transactions.
+      my $e = 'WARNING: Card debited but database not updated - '.
+              'error applying payment, invnum #' . $self->invnum.
+              " ($processor): $error";
+      warn $e;
+      return $e;
+    } else {
+      return '';
+    }
+  #} elsif ( $options{'report_badcard'} ) {
+  } else {
+    return "$processor error, invnum #". $self->invnum. ': '.
+           $transaction->result_code. ": ". $transaction->error_message;
+  }
+
+}
+
+=item realtime_card_cybercash
+
+Attempts to pay this invoice with the CyberCash CashRegister realtime gateway.
+
+=cut
+
+sub realtime_card_cybercash {
+  my $self = shift;
+  my $cust_main = $self->cust_main;
+  my $amount = $self->owed;
+
+  return "CyberCash CashRegister real-time card processing not enabled!"
+    unless $processor eq 'cybercash3.2';
+
+  my $address = $cust_main->address1;
+  $address .= ", ". $cust_main->address2 if $cust_main->address2;
+
+  #fix exp. date
+  #$cust_main->paydate =~ /^(\d+)\/\d*(\d{2})$/;
+  $cust_main->paydate =~ /^\d{2}(\d{2})[\/\-](\d+)[\/\-]\d+$/;
+  my $exp = "$2/$1";
+
+  #
+
+  my $paybatch = $self->invnum. 
+                  '-' . time2str("%y%m%d%H%M%S", time);
+
+  my $payname = $cust_main->payname ||
+                $cust_main->getfield('first').' '.$cust_main->getfield('last');
+
+  my $country = $cust_main->country eq 'US' ? 'USA' : $cust_main->country;
+
+  my @full_xaction = ( $xaction,
+    'Order-ID'     => $paybatch,
+    'Amount'       => "usd $amount",
+    'Card-Number'  => $cust_main->getfield('payinfo'),
+    'Card-Name'    => $payname,
+    'Card-Address' => $address,
+    'Card-City'    => $cust_main->getfield('city'),
+    'Card-State'   => $cust_main->getfield('state'),
+    'Card-Zip'     => $cust_main->getfield('zip'),
+    'Card-Country' => $country,
+    'Card-Exp'     => $exp,
+  );
+
+  my %result;
+  %result = &CCMckDirectLib3_2::SendCC2_1Server(@full_xaction);
+  
+  if ( $result{'MStatus'} eq 'success' ) { #cybercash smps v.2 or 3
+    my $cust_pay = new FS::cust_pay ( {
+       'invnum'   => $self->invnum,
+       'paid'     => $amount,
+       '_date'     => '',
+       'payby'    => 'CARD',
+       'payinfo'  => $cust_main->payinfo,
+       'paybatch' => "$processor:$paybatch",
+    } );
+    my $error = $cust_pay->insert;
+    if ( $error ) {
+      # gah, even with transactions.
+      my $e = 'WARNING: Card debited but database not updated - '.
+              'error applying payment, invnum #' . $self->invnum.
+              " (CyberCash Order-ID $paybatch): $error";
+      warn $e;
+      return $e;
+    } else {
+      return '';
+    }
+#  } elsif ( $result{'Mstatus'} ne 'failure-bad-money'
+#            || $options{'report_badcard'}
+#          ) {
+  } else {
+     return 'Cybercash error, invnum #' . 
+       $self->invnum. ':'. $result{'MErrMsg'};
+  }
+
+}
+
+=item batch_card
+
+Adds a payment for this invoice to the pending credit card batch (see
+L<FS::cust_pay_batch>).
+
+=cut
+
+sub batch_card {
+  my $self = shift;
+  my $cust_main = $self->cust_main;
+
+  my $cust_pay_batch = new FS::cust_pay_batch ( {
+    'invnum'   => $self->getfield('invnum'),
+    'custnum'  => $cust_main->getfield('custnum'),
+    'last'     => $cust_main->getfield('last'),
+    'first'    => $cust_main->getfield('first'),
+    'address1' => $cust_main->getfield('address1'),
+    'address2' => $cust_main->getfield('address2'),
+    'city'     => $cust_main->getfield('city'),
+    'state'    => $cust_main->getfield('state'),
+    'zip'      => $cust_main->getfield('zip'),
+    'country'  => $cust_main->getfield('country'),
+    'trancode' => 77,
+    'cardnum'  => $cust_main->getfield('payinfo'),
+    'exp'      => $cust_main->getfield('paydate'),
+    'payname'  => $cust_main->getfield('payname'),
+    'amount'   => $self->owed,
+  } );
+  $cust_pay_batch->insert;
+
 }
 
 =item print_text [TIME];
@@ -500,7 +864,7 @@ sub print_text {
 
 =head1 VERSION
 
-$Id: cust_bill.pm,v 1.15 2002-01-28 06:57:23 ivan Exp $
+$Id: cust_bill.pm,v 1.16 2002-02-04 16:44:48 ivan Exp $
 
 =head1 BUGS
 

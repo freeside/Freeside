@@ -1,4 +1,4 @@
-<!-- $Id: part_bill_event.cgi,v 1.3 2002-01-30 18:22:54 ivan Exp $ -->
+<!-- $Id: part_bill_event.cgi,v 1.4 2002-02-04 16:44:47 ivan Exp $ -->
 
 <%
 
@@ -93,32 +93,56 @@ tie my %events, 'Tie::IxHash',
 
   'addpost' => {
     'name' => 'Add postal invoicing',
-    'code' => '$cust_main->invoicing_list_addpost();',
+    'code' => '$cust_main->invoicing_list_addpost(); '';',
     'pad'  => 20,
+  },
+
+  'comp' => {
+    'name' => 'Pay invoice with a complimentary "payment"',
+    'code' => '$cust_bill->comp();',
+    'weight' => 30,
+  },
+
+  'realtime-card' => {
+    'name' => 'Run card with a <a href="http://search.cpan.org/search?mode=module&query=Business%3A%3AOnlinePayment">Business::OnlinePayment</a> realtime gateway',
+    'code' => '$cust_bill->realtime_card();',
+    'weight' => 30,
+  },
+
+  'realtime-card-cybercash' => {
+    'name' => '(<b>deprecated</b>) Run card with <a href="http://www.cybercash.com/cashregister">CyberCash CashRegister</a> realtime gateway',
+    'code' => '$cust_bill->realtime_card_cybercash();',
+    'weight => 30,
+  },
+
+  'batch-card' => {
+    'name' => 'Add card to the pending credit card batch',
+    'code' => '$cust_bill->batch_card();',
+    'weight' => 40,
   },
 
   'send' => {
     'name' => 'Send invoice (email/print)',
-    'code' => '',
-    'weight' => 30
+    'code' => '$cust_bill->send();',
+    'weight' => 50,
   },
 
   'bill' => {
-    'name' => 'Generate invoices',
+    'name' => 'Generate invoices (normally only used with a <i>Late Fee</i> event)',
     'code' => '$cust_main->bill();',
-    'weight'  => 40,
+    'weight'  => 60,
   },
 
   'apply' => {
     'name' => 'Apply unapplied payments and credits',
-    'code' => '$cust_main->apply_payments; $cust_main->apply_credits;',
-    'weight'  => 50,
+    'code' => '$cust_main->apply_payments; $cust_main->apply_credits; '';',
+    'weight'  => 70,
   },
 
   'collect' => {
-    'name' => 'Collect on invoices',
+    'name' => 'Collect on invoices (normally only used with a <i>Late Fee</i> and <i>Generate Invoice</i> events)',
     'code' => '$cust_main->collect();',
-    'weight'  => 60,
+    'weight'  => 80,
   },
 
 ;
