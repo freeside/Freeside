@@ -178,7 +178,7 @@ tie my %events, 'Tie::IxHash',
   },
 
   'send_if_newest' => {
-    'name' => 'Send invoice (email/print) with alternate template, if it is still the newest invoice (useful for late notices)',
+    'name' => 'Send invoice (email/print) with alternate template, if it is still the newest invoice (useful for late notices - set to 31 days or later)',
     'code' => '$cust_bill->send_if_newest(\'%%%if_newest_templatename%%%\');',
     'html' =>
         '<INPUT TYPE="text" NAME="if_newest_templatename" VALUE="%%%if_newest_templatename%%%">',
