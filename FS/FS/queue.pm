@@ -253,8 +253,8 @@ END
     $status .= ': '. $queue->statustext if $queue->statustext;
     if ( ! $noactions && $status =~ /^failed/ || $status =~ /^locked/ ) {
       $status .=
-        qq! ( <A HREF="$p/misc/queue.cgi?jobnum=$jobnum&action=new">retry</A> |!.
-        qq! <A HREF="$p/misc/queue.cgi?jobnum=$jobnum&action=del">remove </A> )!;
+        qq! (&nbsp;<A HREF="$p/misc/queue.cgi?jobnum=$jobnum&action=new">retry</A>&nbsp;|!.
+        qq!&nbsp;<A HREF="$p/misc/queue.cgi?jobnum=$jobnum&action=del">remove</A>&nbsp;)!;
     }
     my $cust_svc = $queue->cust_svc;
     my $account;
@@ -289,7 +289,7 @@ END
 
 =head1 VERSION
 
-$Id: queue.pm,v 1.5 2002-02-22 06:39:23 ivan Exp $
+$Id: queue.pm,v 1.6 2002-02-22 06:42:28 ivan Exp $
 
 =head1 BUGS
 
