@@ -586,8 +586,9 @@ sub check {
   );
 
   if ( defined $self->dbdef_table->column('ship_last') ) {
-    if ( grep { $self->getfield($_) ne $self->getfield("ship_$_") } @addfields
-         && grep { $self->getfield("ship_$_") ne '' } @addfields
+    if ( scalar ( grep { $self->getfield($_) ne $self->getfield("ship_$_") }
+                       @addfields )
+         && scalar ( grep { $self->getfield("ship_$_") ne '' } @addfields )
        )
     {
       my $error =
