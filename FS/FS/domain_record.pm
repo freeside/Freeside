@@ -107,7 +107,7 @@ sub check {
   return "Unknown svcnum (in svc_domain)"
     unless qsearchs('svc_domain', { 'svcnum' => $self->svcnum } );
 
-  $self->reczone =~ /^(@|[a-zA-Z0-9\.\-]+)$/
+  $self->reczone =~ /^(@|[a-z0-9\.\-]+)$/i
     or return "Illegal reczone: ". $self->reczone;
   $self->reczone($1);
 
@@ -122,15 +122,15 @@ sub check {
   if ( $self->rectype eq 'SOA' ) {
     my $recdata = $self->recdata;
     $recdata =~ s/\s+/ /g;
-    $recdata =~ /^([a-z0-9\.\-]+ [\w\-\+]+\.[a-z0-9\.\-]+ \( (\d+ ){5}\))$/
+    $recdata =~ /^([a-z0-9\.\-]+ [\w\-\+]+\.[a-z0-9\.\-]+ \( (\d+ ){5}\))$/i
       or return "Illegal data for SOA record: $recdata";
     $self->recdata($1);
   } elsif ( $self->rectype eq 'NS' ) {
-    $self->recdata =~ /^([a-z0-9\.\-]+)$/
+    $self->recdata =~ /^([a-z0-9\.\-]+)$/i
       or return "Illegal data for NS record: ". $self->recdata;
     $self->recdata($1);
   } elsif ( $self->rectype eq 'MX' ) {
-    $self->recdata =~ /^(\d+)\s+([a-z0-9\.\-]+)$/
+    $self->recdata =~ /^(\d+)\s+([a-z0-9\.\-]+)$/i
       or return "Illegal data for MX record: ". $self->recdata;
     $self->recdata("$1 $2");
   } elsif ( $self->rectype eq 'A' ) {
@@ -138,11 +138,11 @@ sub check {
       or return "Illegal data for A record: ". $self->recdata;
     $self->recdata($1);
   } elsif ( $self->rectype eq 'PTR' ) {
-    $self->recdata =~ /^([a-z0-9\.\-]+)$/
+    $self->recdata =~ /^([a-z0-9\.\-]+)$/i
       or return "Illegal data for PTR record: ". $self->recdata;
     $self->recdata($1);
   } elsif ( $self->rectype eq 'CNAME' ) {
-    $self->recdata =~ /^([a-z0-9\.\-]+)$/
+    $self->recdata =~ /^([a-z0-9\.\-]+)$/i
       or return "Illegal data for CNAME record: ". $self->recdata;
     $self->recdata($1);
   } else {
@@ -156,7 +156,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: domain_record.pm,v 1.4 2002-04-20 10:09:42 ivan Exp $
+$Id: domain_record.pm,v 1.5 2002-04-20 10:12:26 ivan Exp $
 
 =head1 BUGS
 
