@@ -15,7 +15,7 @@ MASONDATA = /usr/local/etc/freeside/masondata
 
 #deb
 FREESIDE_DOCUMENT_ROOT = /var/www/freeside
-#redhat, mandrake
+#redhat, fedora, mandrake
 #FREESIDE_DOCUMENT_ROOT = /var/www/html/freeside
 #freebsd
 #FREESIDE_DOCUMENT_ROOT = /usr/local/www/data/freeside
@@ -24,14 +24,14 @@ FREESIDE_DOCUMENT_ROOT = /var/www/freeside
 #suse
 #FREESIDE_DOCUMENT_ROOT = /srv/www/htdocs/freeside
 
-#deb, redhat, mandrake, suse, others?
+#deb, redhat, fedora, mandrake, suse, others?
 INIT_FILE = /etc/init.d/freeside
 #freebsd
 #INIT_FILE = /usr/local/etc/rc.d/011.freeside.sh
 
 #deb, suse
 HTTPD_RESTART = /etc/init.d/apache restart
-#redhat, mandrake
+#redhat, fedora, mandrake
 #HTTPD_RESTART = /etc/init.d/httpd restart
 #freebsd
 #HTTPD_RESTART = /usr/local/etc/rc.d/apache.sh stop; sleep 1; /usr/local/etc/rc.d/apache.sh start
@@ -40,7 +40,7 @@ HTTPD_RESTART = /etc/init.d/apache restart
 
 FREESIDE_RESTART = ${INIT_FILE} restart
 
-#deb, redhat, mandrake, suse, others?
+#deb, redhat, fedora, mandrake, suse, others?
 INSTALLGROUP = root
 #freebsd, openbsd
 #INSTALLGROUP = wheel
