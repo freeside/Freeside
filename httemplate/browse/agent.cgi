@@ -55,7 +55,7 @@ full offerings (via their type).<BR><BR>
 
 <%= table() %>
 <TR>
-  <TH COLSPAN=<%= $cgi->param('showdisabled') ? 2 : 3 %>>Agent</TH>
+  <TH COLSPAN=<%= ( $cgi->param('showdisabled') || !dbdef->table('agent')->column('disabled') ) ? 2 : 3 %>>Agent</TH>
   <TH>Type</TH>
   <TH>Customers</TH>
   <TH><FONT SIZE=-1>Freq.</FONT></TH>
