@@ -1081,6 +1081,11 @@ use vars qw(%attrib);
   'bind_l2tp_flow_control' => 'Bind_L2TP_Flow_Control',
   'ascend_cbcp_delay' => 'Ascend-CBCP-Delay',
   'le_ipsec_deny_action' => 'LE-IPSec-Deny-Action',
+
+  #NOMENT
+  'nomadix_bw_down' => 'Nomadix-Bw-Down',
+  'nomadix_bw_up' => 'Nomadix-Bw-Up',
+  'nomadix_ip_upsell' => 'Nomadix-IP-Upsell',
 );
 
 1;
