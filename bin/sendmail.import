@@ -144,7 +144,9 @@ sub svcnum_or_literal {
   my $svc_domain = qsearchs('svc_domain', { 'domain' => $domain } );
   my $domsvc = $svc_domain ? $svc_domain->svcnum : '';
 
-  my @svc_acct = grep { grep { $_->cust_svc->svcpart == $_ } @svcpart }
+  my @svc_acct = grep { my $svc_acct = $_;
+                        grep { $svc_acct->cust_svc->svcpart == $_ } @svcpart
+                      }
                    qsearch('svc_acct', {
                      'username' => $username,
                      'domsvc'   => $domsvc,
