@@ -1109,9 +1109,7 @@ sub print_ps {
   open(POSTSCRIPT, "<$file.ps")
     or die "can't open $file.ps (probable error in LaTeX template): $!\n";
 
-  #rm $file.dvi $file.log $file.aux
-  unlink("$file.dvi", "$file.log", "$file.aux", "$file.ps");
-  #unlink("$file.dvi", "$file.log", "$file.aux");
+  unlink("$file.dvi", "$file.log", "$file.aux", "$file.ps", "$file.tex");
 
   my $ps = '';
   while (<POSTSCRIPT>) {
@@ -1154,7 +1152,7 @@ sub print_pdf {
   open(PDF, "<$file.pdf")
     or die "can't open $file.pdf (probably error in LaTeX tempalte: $!\n";
 
-  unlink("$file.dvi", "$file.log", "$file.aux", "$file.pdf");
+  unlink("$file.dvi", "$file.log", "$file.aux", "$file.pdf", "$file.tex");
 
   my $pdf = '';
   while (<PDF>) {
