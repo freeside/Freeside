@@ -1,10 +1,13 @@
-$Id: TODO,v 1.49 2000-08-09 11:30:40 ivan Exp $
+$Id: TODO,v 1.50 2000-08-24 07:26:50 ivan Exp $
 
 If you are interested in helping with any of these, please join the
 *development* mailing list (send a blank message to
 ivan-freeside-devel-subscribe@sisd.com) to avoid duplication of effort.
 
 ---
+
+"first package" and email invoice (?) not sticky on errors in new/edit customer
+screen.
 
 http://www.ipmeter.com/ integration would be useful
 

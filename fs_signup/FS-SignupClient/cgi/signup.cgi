@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: signup.cgi,v 1.7 2000-05-10 23:57:57 ivan Exp $
+# $Id: signup.cgi,v 1.8 2000-08-24 07:26:50 ivan Exp $
 
 use strict;
 use vars qw( @payby $cgi $locales $packages $pops $r $error
@@ -29,14 +29,22 @@ $ieak_file = '/usr/local/freeside/ieak.template';
 $cck_file = '/usr/local/freeside/cck.template';
 
 if ( -e $ieak_file ) {
-  $ieak_template = new Text::Template ( TYPE => 'FILE', SOURCE => $ieak_file )
-    or die "Couldn't construct template: $Text::Template::ERROR";
+  my $ieak_txt = Text::Template::_load_text($ieak_file)
+    or die $Text::Template::ERROR;
+  $ieak_txt =~ /^(.*)$/s; #untaint the template source - it's trusted
+  $ieak_txt = $1;
+  $ieak_template = new Text::Template ( TYPE => 'STRING', SOURCE => $ieak_txt )
+    or die $Text::Template::ERROR;
 } else {
   $ieak_template = '';
 }
 if ( -e $cck_file ) {
-  $cck_template = new Text::Template ( TYPE => 'FILE', SOURCE => $cck_file )
-    or die "Couldn't construct template: $Text::Template::ERROR";
+  my $cck_txt = Text::Template::_load_text($cck_file)
+    or die $Text::Template::ERROR;
+  $cck_txt =~ /^(.*)$/s; #untaint the template source - it's trusted
+  $cck_txt = $1;
+  $cck_template = new Text::Template ( TYPE => 'STRING', SOURCE => $cck_txt )
+    or die $Text::Template::ERROR;
 } else {
   $cck_template = '';
 }
