@@ -7,6 +7,7 @@ use FS::Record qw( qsearch qsearchs );
 use FS::cust_svc;
 use FS::part_pkg;
 use FS::cust_main;
+use FS::type_pkgs;
 
 # need to 'use' these instead of 'require' in sub { cancel, suspend, unsuspend,
 # setup }
@@ -495,7 +496,7 @@ sub order {
 
 =head1 VERSION
 
-$Id: cust_pkg.pm,v 1.8 1999-03-25 13:48:14 ivan Exp $
+$Id: cust_pkg.pm,v 1.9 1999-03-29 01:11:51 ivan Exp $
 
 =head1 BUGS
 
@@ -526,7 +527,10 @@ fixed for new agent->agent_type->type_pkgs in &order ivan@sisd.com 98-mar-7
 pod ivan@sisd.com 98-sep-21
 
 $Log: cust_pkg.pm,v $
-Revision 1.8  1999-03-25 13:48:14  ivan
+Revision 1.9  1999-03-29 01:11:51  ivan
+use FS::type_pkgs
+
+Revision 1.8  1999/03/25 13:48:14  ivan
 allow empty custnum in sub check (but call that an error in sub insert),
 for one-screen new customer entry
 
