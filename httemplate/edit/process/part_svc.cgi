@@ -12,7 +12,9 @@ my $new = new FS::part_svc ( {
       map { my $svcdb = $_;
             map { ( $svcdb.'__'.$_, $svcdb.'__'.$_.'_flag' )  }
               fields($svcdb)
-          } qw( svc_acct svc_domain svc_acct_sm svc_forward svc_www ) )
+          } grep defined( $FS::Record::dbdef->table($_) ),
+                 qw( svc_acct svc_domain svc_acct_sm svc_forward svc_www )
+    )
 } );
 
 my $error;
