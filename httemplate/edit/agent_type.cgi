@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: agent_type.cgi,v 1.5 2001-10-30 14:54:07 ivan Exp $ -->
+#<!-- $Id: agent_type.cgi,v 1.6 2001-12-27 09:26:14 ivan Exp $ -->
 
 use strict;
 use vars qw( $cgi $agent_type $action $hashref $p $part_pkg );
@@ -50,7 +50,7 @@ print <<END;
 <BR><BR>Select which packages agents of this type may sell to customers<BR>
 END
 
-foreach $part_pkg ( qsearch('part_pkg',{}) ) {
+foreach $part_pkg ( qsearch('part_pkg',{ 'disabled' => '' }) ) {
   print qq!<BR><INPUT TYPE="checkbox" NAME="pkgpart!,
         $part_pkg->getfield('pkgpart'), qq!" !,
        # ( 'CHECKED 'x scalar(

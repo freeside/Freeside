@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: fs-setup,v 1.67 2001-11-06 17:48:17 ivan Exp $
+# $Id: fs-setup,v 1.68 2001-12-27 09:26:13 ivan Exp $
 
 #to delay loading dbdef until we're ready
 BEGIN { $FS::Record::setup_hack = 1; }
@@ -548,6 +548,7 @@ sub tables_hash_hack {
         'recurtax',  'char', 'NULL', 1,
         'plan',       'varchar', 'NULL', $char_d,
         'plandata',   'text', 'NULL', '',
+        'disabled',   'char', 'NULL', 1,
       ],
       'primary_key' => 'pkgpart',
       'unique' => [ [] ],
@@ -590,6 +591,7 @@ sub tables_hash_hack {
         'svcpart',    'int',    '',   '',
         'svc',        'varchar',   '',   $char_d,
         'svcdb',      'varchar',   '',   $char_d,
+        'disabled',   'char',  'NULL',   1,
       ],
       'primary_key' => 'svcpart',
       'unique' => [ [] ],

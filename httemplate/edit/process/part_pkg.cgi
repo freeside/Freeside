@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: part_pkg.cgi,v 1.5 2001-11-06 18:45:46 ivan Exp $ -->
+#<!-- $Id: part_pkg.cgi,v 1.6 2001-12-27 09:26:14 ivan Exp $ -->
 
 use strict;
 use vars qw( $cgi $pkgpart $old $new $part_svc $error $dbh );
@@ -26,8 +26,9 @@ $cgi->param('plandata',
   join('', map { "$_=". $cgi->param($_). "\n" } @plandata )
 );
 
-$cgi->param('setuptax','') unless defined $cgi->param('setuptax');
-$cgi->param('recurtax','') unless defined $cgi->param('recurtax');
+foreach (qw( setuptax recurtax disabled )) {
+  $cgi->param($_, '') unless defined $cgi->param($_);
+}
 
 $new = new FS::part_pkg ( {
   map {

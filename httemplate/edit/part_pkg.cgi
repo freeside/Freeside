@@ -1,4 +1,4 @@
-<!-- $Id: part_pkg.cgi,v 1.6 2001-10-20 12:17:59 ivan Exp $ -->
+<!-- $Id: part_pkg.cgi,v 1.7 2001-12-27 09:26:14 ivan Exp $ -->
 
 <%
 
@@ -76,7 +76,7 @@ print '<FORM NAME="dummy">';
 #print qq!<INPUT TYPE="hidden" NAME="pkgpart" VALUE="$hashref->{pkgpart}">!,
 print "Package Part #", $hashref->{pkgpart} ? $hashref->{pkgpart} : "(NEW)";
 
-print itable("#cccccc",2), <<END;
+print ntable("#cccccc",2), <<END;
 <TR><TD ALIGN="right">Package (customer-visable)</TD><TD><INPUT TYPE="text" NAME="pkg" SIZE=32 VALUE="$hashref->{pkg}"></TD></TR>
 <TR><TD ALIGN="right">Comment (customer-hidden)</TD><TD><INPUT TYPE="text" NAME="comment" SIZE=32 VALUE="$hashref->{comment}"></TD></TR>
 <TR><TD ALIGN="right">Frequency (months) of recurring fee</TD><TD><INPUT TYPE="text" NAME="freq" VALUE="$hashref->{freq}" SIZE=3></TD></TR>
@@ -96,6 +96,12 @@ print '<INPUT TYPE="checkbox" NAME="recurtax" VALUE="Y"';
 print ' CHECKED' if $hashref->{recurtax} eq "Y";
 print '>';
 
+print '</TD></TR>';
+
+print '<TR><TD ALIGN="right">Disable new orders</TD><TD>';
+print '<INPUT TYPE="checkbox" NAME="disabled" VALUE="Y"';
+print ' CHECKED' if $hashref->{disabled} eq "Y";
+print '>';
 print '</TD></TR></TABLE>';
 
 my $thead =  "\n\n". ntable('#cccccc', 2). <<END;
@@ -112,7 +118,7 @@ END
 my @fixups = ();
 my $count = 0;
 my $columns = 3;
-my @part_svc = qsearch( 'part_svc', {} );
+my @part_svc = qsearch( 'part_svc', { 'disabled' => '' } );
 foreach my $part_svc ( @part_svc ) {
   my $svcpart = $part_svc->svcpart;
   my $pkg_svc = qsearchs( 'pkg_svc', {
@@ -232,7 +238,7 @@ function fixup(what) {
 <% foreach my $f ( qw( pkg comment freq ), @fixups ) { %>
   what.<%= $f %>.value = document.dummy.<%= $f %>.value;
 <% } %>
-<% foreach my $f ( qw( setuptax recurtax ) ) { %>
+<% foreach my $f ( qw( setuptax recurtax disabled ) ) { %>
   if (document.dummy.<%= $f %>.checked)
     what.<%= $f %>.value = 'Y';
   else
@@ -270,6 +276,7 @@ if (document.getElementById) {
 <INPUT TYPE="hidden" NAME="freq" VALUE="<%= $hashref->{freq} %>">
 <INPUT TYPE="hidden" NAME="setuptax" VALUE="<%= $hashref->{setuptax} %>">
 <INPUT TYPE="hidden" NAME="recurtax" VALUE="<%= $hashref->{recurtax} %>">
+<INPUT TYPE="hidden" NAME="disabled" VALUE="<%= $hashref->{disabled} %>">
 <% foreach my $f ( @fixups ) { %>
 <INPUT TYPE="hidden" NAME="<%= $f %>" VALUE="">
 <% } %>
@@ -284,7 +291,7 @@ if ( $cgi->param('pkgnum') ) {
 %>
 
 <INPUT TYPE="hidden" NAME="pkgpart" VALUE="<%= $hashref->{pkgpart} %>">
-<%= itable("#cccccc",2) %>
+<%= ntable("#cccccc",2) %>
 
 <% my $href = $plans{$layer}->{'fields'};
    foreach my $field ( keys %{ $href } ) { %>

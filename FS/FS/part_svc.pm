@@ -40,6 +40,8 @@ FS::Record.  The following fields are currently supported:
 =item svcdb - table used for this service.  See L<FS::svc_acct>,
 L<FS::svc_domain>, and L<FS::svc_forward>, among others.
 
+=item disabled - Disabled flag, empty or `Y'
+
 =back
 
 =head1 METHODS
@@ -235,6 +237,7 @@ sub check {
   my @fields = eval { fields( $recref->{svcdb} ) }; #might die
   return "Unknown svcdb!" unless @fields;
 
+##REPLACED BY part_svc_column
 #  my $svcdb;
 #  foreach $svcdb ( qw(
 #    svc_acct svc_acct_sm svc_domain
@@ -258,6 +261,9 @@ sub check {
 #
 #    }
 #  }
+
+  $self->disabled =~ /^(Y?)$/ or return "Illegal disabled: ". $self->disabled;
+  $self->disabled($1);
 
   ''; #no error
 }
@@ -295,7 +301,7 @@ sub all_part_svc_column {
 
 =head1 VERSION
 
-$Id: part_svc.pm,v 1.6 2001-09-12 15:45:01 ivan Exp $
+$Id: part_svc.pm,v 1.7 2001-12-27 09:26:13 ivan Exp $
 
 =head1 BUGS
 
@@ -306,9 +312,9 @@ should be fixed.
 
 =head1 SEE ALSO
 
-L<FS::Record>, L<FS::part_pkg>, L<FS::pkg_svc>, L<FS::cust_svc>,
-L<FS::svc_acct>, L<FS::svc_forward>, L<FS::svc_domain>, schema.html from the
-base documentation.
+L<FS::Record>, L<FS::part_svc_column, L<FS::part_pkg>, L<FS::pkg_svc>,
+L<FS::cust_svc>, L<FS::svc_acct>, L<FS::svc_forward>, L<FS::svc_domain>,
+schema.html from the base documentation.
 
 =cut
 

@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: cust_main.cgi,v 1.17 2001-12-26 15:41:02 ivan Exp $ -->
+#<!-- $Id: cust_main.cgi,v 1.18 2001-12-27 09:26:14 ivan Exp $ -->
 
 use strict;
 use vars qw ( $cgi $query $custnum $cust_main $hashref $agent $referral 
@@ -268,8 +268,11 @@ print '<BR>'.
 
 foreach my $type_pkgs ( qsearch('type_pkgs',{'typenum'=> $agent->typenum }) ) {
   my $pkgpart = $type_pkgs->pkgpart;
-  my $part_pkg = qsearchs('part_pkg', { 'pkgpart' => $pkgpart } )
-    or do { warn "unknown type_pkgs.pkgpart $pkgpart"; next; };
+#  my $part_pkg = qsearchs('part_pkg', { 'pkgpart' => $pkgpart } )
+#    or do { warn "unknown type_pkgs.pkgpart $pkgpart"; next; };
+  my $part_pkg =
+    qsearchs('part_pkg', { 'pkgpart' => $pkgpart, 'disabled' => '' } )
+    or next;
   print qq!<OPTION VALUE="$pkgpart">!. $part_pkg->pkg. ' - '.
         $part_pkg->comment;
 }

@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: cust_pkg.cgi,v 1.4 2001-10-30 14:54:07 ivan Exp $ -->
+#<!-- $Id: cust_pkg.cgi,v 1.5 2001-12-27 09:26:14 ivan Exp $ -->
 
 use strict;
 use vars qw( $cgi %pkg %comment $custnum $p1 @cust_pkg 
@@ -17,7 +17,7 @@ $cgi = new CGI;
 
 %pkg = ();
 %comment = ();
-foreach (qsearch('part_pkg', {})) {
+foreach (qsearch('part_pkg', { 'disabled' => '' })) {
   $pkg{ $_ -> getfield('pkgpart') } = $_->getfield('pkg');
   $comment{ $_ -> getfield('pkgpart') } = $_->getfield('comment');
 }
@@ -83,6 +83,7 @@ print qq!<TABLE>!;
 foreach $type_pkgs ( qsearch('type_pkgs',{'typenum'=> $agent->typenum }) ) {
   $pkgparts++;
   my($pkgpart)=$type_pkgs->pkgpart;
+  next unless exists $pkg{$pkgpart}; #skip disabled ones
   print qq!<TR>! if ( $count == 0 );
   my $value = $cgi->param("pkg$pkgpart") || 0;
   print <<END;

@@ -29,7 +29,7 @@ sub Script_OnFlush {
     $$ref =~ s/<\/BODY>[\s\n]*<\/HTML>[\s\n]*$//i
       or warn "can't remove";
   
-    $$ref .= '<PRE>'. encode_entities(dbh->sprintProfile()). '</PRE>';
+    $$ref .= '<PRE>'. ("\n"x96). encode_entities(dbh->sprintProfile()). '</PRE>';
 
     $$ref .= '</BODY></HTML>';
     

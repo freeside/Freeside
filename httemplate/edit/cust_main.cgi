@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: cust_main.cgi,v 1.16 2001-12-15 22:47:24 ivan Exp $ -->
+#<!-- $Id: cust_main.cgi,v 1.17 2001-12-27 09:26:14 ivan Exp $ -->
 
 use vars qw( $cgi $custnum $action $cust_main $p1 @agents $agentnum 
              $last $first $ss $company $address1 $address2 $city $zip 
@@ -412,7 +412,7 @@ unless ( $custnum ) {
   #eslaf
 
   my @part_pkg = grep { $_->svcpart('svc_acct') && $pkgpart->{ $_->pkgpart } }
-    qsearch( 'part_pkg', {} );
+    qsearch( 'part_pkg', { 'disabled' => '' } );
 
   if ( @part_pkg ) {
 

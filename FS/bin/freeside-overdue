@@ -48,10 +48,10 @@ foreach $cust_main ( qsearch('cust_main',{} ) ) {
             $cust_main->balance_date(time-$opt{d} * 86400);
     }
 
-    if ( $opt{l} ) {
-      print "\n\tCharging late fee of \$$opt{l}" unless $opt{q};
-
-    }
+#    if ( $opt{l} ) {
+#      print "\n\tCharging late fee of \$$opt{l}" unless $opt{q};
+#
+#    }
 
     foreach $cust_pkg ( qsearch( 'cust_pkg', 
                                  { 'custnum' => $cust_main->custnum } ) ) {
@@ -83,7 +83,7 @@ foreach $cust_main ( qsearch('cust_main',{} ) ) {
 
 sub untaint_argv {
   foreach $_ ( $[ .. $#ARGV ) { 
-    $ARGV[$_] =~ /^([\w\-\/]*)$/ || die "Illegal arguement \"$ARGV[$_]\"";
+    $ARGV[$_] =~ /^([\w\-\/\.]*)$/ || die "Illegal arguement \"$ARGV[$_]\"";
     $ARGV[$_]=$1;
   }
 }

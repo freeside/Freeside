@@ -60,6 +60,8 @@ inherits from FS::Record.  The following fields are currently supported:
 
 =item plandata - Price plan data
 
+=item disabled - Disabled flag, empty or `Y'
+
 =back
 
 setup and recur are evaluated as Safe perl expressions.  You can use numbers
@@ -147,6 +149,9 @@ sub check {
   $self->recurtax =~ /^(Y?)$/ or return "Illegal recrutax: ". $self->recurtax;
   $self->recurtax($1);
 
+  $self->disabled =~ /^(Y?)$/ or return "Illegal disabled: ". $self->disabled;
+  $self->disabled($1);
+
   '';
 }
 
@@ -185,7 +190,7 @@ sub svcpart {
 
 =head1 VERSION
 
-$Id: part_pkg.pm,v 1.4 2001-10-20 12:17:59 ivan Exp $
+$Id: part_pkg.pm,v 1.5 2001-12-27 09:26:13 ivan Exp $
 
 =head1 BUGS
 

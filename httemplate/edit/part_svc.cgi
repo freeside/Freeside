@@ -1,4 +1,4 @@
-<!-- $Id: part_svc.cgi,v 1.12 2001-10-15 10:42:29 ivan Exp $ -->
+<!-- $Id: part_svc.cgi,v 1.13 2001-12-27 09:26:14 ivan Exp $ -->
 <% 
    my $part_svc;
    if ( $cgi->param('error') ) { #error
@@ -45,8 +45,9 @@ function visualize(what) {
 
       Service Part #<%= $part_svc->svcpart ? $part_svc->svcpart : "(NEW)" %>
 <BR><BR>
-Service  <INPUT TYPE="text" NAME="svc" VALUE="<%= $hashref->{svc} %>">
-<BR><BR>
+Service  <INPUT TYPE="text" NAME="svc" VALUE="<%= $hashref->{svc} %>"><BR>
+Disable new orders <INPUT TYPE="checkbox" NAME="disabled" VALUE="Y"<%= $hashref->{disabled} eq 'Y' ? ' CHECKED' : '' %>><BR>
+<BR>
 Services are items you offer to your customers.
 <UL><LI>svc_acct - Shell accounts, POP mailboxes, SLIP/PPP and ISDN accounts
     <LI>svc_domain - Domains
@@ -167,12 +168,17 @@ if (document.getElementById) {
 
 function fixup(what) {
   what.svc.value = document.dummy.svc.value;
-  what.svcdb.value = document.dummy.svcdb.options[document.dummy.svcdb.selectedIndex].value
+  what.svcdb.value = document.dummy.svcdb.options[document.dummy.svcdb.selectedIndex].value;
+  if (document.dummy.disabled.checked)
+    what.disabled.value = 'Y';
+  else
+    what.disabled.value = '';
 }
 </SCRIPT>
 <FORM NAME="<%= $svcdb %>" ACTION="process/part_svc.cgi" METHOD=POST onSubmit="fixup(this)">
 <INPUT TYPE="hidden" NAME="svcpart" VALUE="<%= $hashref->{svcpart} %>">
 <INPUT TYPE="hidden" NAME="svc" VALUE="<%= $hashref->{svc} %>">
+<INPUT TYPE="hidden" NAME="disabled" VALUE="<%= $hashref->{disabled} %>">
 <INPUT TYPE="hidden" NAME="svcdb" VALUE="<%= $svcdb %>">
 <%
   print "$svcdb" unless $svcdb eq 'konq_kludge';

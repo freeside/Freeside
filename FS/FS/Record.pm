@@ -211,7 +211,7 @@ sub qsearch {
     $statement .= ' WHERE '. join(' AND ', map {
       if ( ! defined( $record->{$_} ) || $record->{$_} eq '' ) {
         if ( driver_name =~ /^Pg$/i ) {
-          "$_ IS NULL";
+          qq-( $_ IS NULL OR $_ = '' )-;
         } else {
           qq-( $_ IS NULL OR $_ = "" )-;
         }

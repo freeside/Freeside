@@ -1,0 +1,11 @@
+the following is necessary to upgrade from 1.4.0pre (4 thru 7) to 1.4.0pre8
+
+install the perl modules and httemplate as per install.html or upgrade8.html
+
+ALTER TABLE part_pkg ADD disabled char(1) NULL;
+ALTER TABLE part_svc ADD disabled char(1) NULL;
+
+Run bin/dbdef-create
+
+Restart Apache and freeside-queued
+

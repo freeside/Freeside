@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: part_pkg.cgi,v 1.8 2001-10-30 14:54:07 ivan Exp $ -->
+#<!-- $Id: part_pkg.cgi,v 1.9 2001-12-27 09:26:14 ivan Exp $ -->
 
 use strict;
 use vars qw( $cgi $p $part_pkg );
@@ -18,12 +18,33 @@ $cgi = new CGI;
 
 $p = popurl(2);
 
+my %search;
+if ( $cgi->param('showdisabled') ) {
+  %search = ();
+} else {
+  %search = ( 'disabled' => '' );
+}
+
+my @part_pkg = qsearch('part_pkg', \%search );
+my $total = scalar(@part_pkg);
+
 print header("Package Definition Listing",menubar(
   'Main Menu' => $p,
-)), "One or more services are grouped together into a package and given",
-  " pricing information. Customers purchase packages",
-  " rather than purchase services directly.<BR><BR>", 
-  &table(), <<END;
+)). "One or more services are grouped together into a package and given".
+  " pricing information. Customers purchase packages".
+  " rather than purchase services directly.<BR><BR>".
+  "$total packages ";
+
+if ( $cgi->param('showdisabled') ) {
+  $cgi->param('showdisabled', 0);
+  print qq!( <a href="!. $cgi->self_url. qq!">hide disabled packages</a> )!;
+} else {
+  $cgi->param('showdisabled', 1);
+  print qq!( <a href="!. $cgi->self_url. qq!">show disabled packages</a> )!;
+}
+
+my $colspan = $cgi->param('showdisabled') ? 2 : 3;
+print &table(), <<END;
       <TR>
         <TH COLSPAN=2>Package</TH>
         <TH>Comment</TH>
@@ -37,7 +58,7 @@ END
 
 foreach $part_pkg ( sort { 
   $a->getfield('pkgpart') <=> $b->getfield('pkgpart')
-} qsearch('part_pkg',{}) ) {
+} @part_pkg ) {
   my($hashref)=$part_pkg->hashref;
   my(@pkg_svc)=grep $_->getfield('quantity'),
     qsearch('pkg_svc',{'pkgpart'=> $hashref->{pkgpart} });
@@ -54,9 +75,16 @@ foreach $part_pkg ( sort {
   }
   print <<END;
       <TR>
-        <TD ROWSPAN=$rowspan><A HREF="${p}edit/part_pkg.cgi?$hashref->{pkgpart}">
-          $hashref->{pkgpart}
-        </A></TD>
+        <TD ROWSPAN=$rowspan><A HREF="${p}edit/part_pkg.cgi?$hashref->{pkgpart}">$hashref->{pkgpart}</A></TD>
+END
+
+  unless ( $cgi->param('showdisabled') ) {
+    print "<TD ROWSPAN=$rowspan>";
+    print "DISABLED" if $hashref->{disabled};
+    print '</TD>';
+  }
+
+  print <<END;
         <TD ROWSPAN=$rowspan><A HREF="${p}edit/part_pkg.cgi?$hashref->{pkgpart}">$hashref->{pkg}</A></TD>
         <TD ROWSPAN=$rowspan>$hashref->{comment}</TD>
         <TD ROWSPAN=$rowspan>$hashref->{freq}</TD>

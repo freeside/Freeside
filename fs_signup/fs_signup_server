@@ -57,7 +57,7 @@ while (1) {
 
   warn "[fs_signup_server] Sending package definitions...\n" if $Debug;
   my @part_pkg = grep { $_->svcpart('svc_acct') && $pkgpart->{ $_->pkgpart } }
-    qsearch( 'part_pkg', {} );
+    qsearch( 'part_pkg', { 'disabled' => '' } );
   print $writer $data = join("\n",
     ( scalar(@part_pkg) || die "no usable package definitions, agent $agentnum" ),
     map {
