@@ -2696,7 +2696,7 @@ sub batch_import {
     my %cust_main = (
       agentnum => $agentnum,
       refnum   => $refnum,
-      country  => 'US', #default
+      country  => $conf->config('countrydefault') || 'US',
       payby    => 'BILL', #default
       paydate  => '12/2037', #default
     );
