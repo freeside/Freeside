@@ -59,8 +59,8 @@ SELFSERVICE_MACHINES = localhost
 RT_ENABLED = 0
 #RT_ENABLED = 1
 RT_DOMAIN = example.com
-RT_TIMEZONE = 'US/Pacific';
-#RT_TIMEZONE = 'US/Eastern';
+RT_TIMEZONE = US/Pacific;
+#RT_TIMEZONE = US/Eastern;
 
 #---
 
