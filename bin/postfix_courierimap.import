@@ -1,0 +1,137 @@
+#!/usr/bin/perl -Tw
+
+use strict;
+use vars qw(%part_svc %domain_part_svc);
+#use Date::Parse;
+use DBI;
+use Term::Query qw(query);
+use FS::UID qw(adminsuidsetup); #datasrc
+use FS::Record qw(qsearch qsearchs);
+use FS::svc_acct;
+use FS::part_svc;
+use FS::svc_domain;
+
+my $user = shift or die &usage;
+adminsuidsetup $user;
+
+#push @FS::svc_acct::shells, qw(/bin/sync /sbin/shutdown /bin/halt /sbin/halt); #others?
+
+$FS::svc_Common::noexport_hack = 1;
+$FS::svc_domain::whois_hack = 1;
+
+###
+
+%part_svc=map { $_->svcpart, $_ } qsearch('part_svc',{'svcdb'=>'svc_acct'});
+
+die "No services with svcdb svc_acct!\n" unless %part_svc;
+
+print "\n\n", &menu_svc, "\n", <<END;
+Enter part number to import.
+END
+my $mailbox_svcpart = &getpart;
+
+%domain_part_svc = map { $_->svcpart, $_ }
+                       qsearch('part_svc', { 'svcdb' => 'svc_domain'} );
+
+die "No services with svcdb svc_domain!\n" unless %domain_part_svc;
+
+print "\n\n", &menu_domain_svc, "\n", <<END;
+Enter part number for domains.
+END
+my $domain_svcpart = &getdomainpart;
+
+my $datasrc = &getvalue("\n\nEnter the DBI datasource:");
+my $db_user = &getvalue("\n\nEnter the database user:");
+my $db_pass = &getvalue("\n\nEnter the database password:");
+
+sub menu_svc {
+  ( join "\n", map "$_: ".$part_svc{$_}->svc, sort keys %part_svc ). "\n";
+}
+sub menu_domain_svc {
+  ( join "\n", map "$_: ".$domain_part_svc{$_}->svc, sort keys %domain_part_svc ). "\n";
+}
+sub getpart {
+  $^W=0; # Term::Query isn't -w-safe
+  my $return = query "Enter part number:", 'irk', [ keys %part_svc ];
+  $^W=1;
+  $return;
+}
+sub getdomainpart {
+  $^W=0; # Term::Query isn't -w-safe
+  my $return = query "Enter part number:", 'irk', [ keys %domain_part_svc ];
+  $^W=1;
+  $return;
+}
+sub getvalue {
+  my $prompt = shift;
+  $^W=0; # Term::Query isn't -w-safe
+  my $return = query $prompt, '';
+  $^W=1;
+  $return;
+}
+
+print "\n\n";
+
+###
+
+my $dbh = DBI->connect( $datasrc, $db_user, $db_pass )
+  or die $DBI::errstr;
+
+my $sth = $dbh->prepare('SELECT username, password, crypt name, domain FROM mailbox')
+  or die $dbh->errstr;
+$sth->execute or die $sth->errstr;
+
+my $row;
+while ( defined ( $row = $sth->fetchrow_arrayref ) ) {
+  my( $r_username, $password, $crypt, $finger, $r_domain ) = @$row;
+
+  my( $username, $domain );
+  if ( $r_username =~ /^([^@]+)\@([^@]+)$/ ) {
+    $username = $1;
+    $domain = $2;
+  } else {
+    $username = $r_username;
+    $domain = $r_domain;
+  }
+  my $svc_domain = qsearchs('svc_domain', { 'domain'  => $domain } )
+                   || new FS::svc_domain {
+                                           'domain'  => $domain,
+                                           'svcpart' => $domain_svcpart,
+                                           'action'  => 'N',
+                                         };
+  unless ( $svc_domain->svcnum ) {
+    my $error = $svc_domain->insert;
+    if ( $error ) {
+      die "can't insert domain $domain: $error\n";
+    }
+  }
+
+  $password = $crypt if $password eq '*CRYPTED*';
+
+  $finger =~ s/Outdoor Power.*$/Outdoor Power/;
+
+  my $svc_acct = new FS::svc_acct {
+    'svcpart'   => $mailbox_svcpart,
+    'username'  => $username,
+    'domsvc'    => $svc_domain->svcnum,
+    '_password' => $password,
+    'finger'    => $finger,
+  };
+
+  my $error = $svc_acct->insert;
+  #my $error = $svc_acct->check;
+  if ( $error ) {
+    if ( $error =~ /duplicate/i ) {
+      warn "$r_username / $r_domain: $error";
+    } else {
+      die "$r_username / $r_domain: $error";
+    }
+  }
+
+}
+
+sub usage {
+  die "Usage:\n\n  postfix_courierimap.import user\n";
+}
+
+
