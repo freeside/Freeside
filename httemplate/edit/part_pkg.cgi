@@ -211,7 +211,7 @@ tie my %plans, 'Tie::IxHash',
   },
 
   'flat_comission' => {
-    'name' => 'Flat rate with recurring comission per active package',
+    'name' => 'Flat rate with recurring comission per (any) active package',
     'fields' => {
       'setup_fee' => { 'name' => 'Setup fee for this package',
                        'default' => 0,
@@ -232,7 +232,7 @@ tie my %plans, 'Tie::IxHash',
   },
 
   'flat_comission_pkg' => {
-    'name' => 'Flat rate with recurring comission per active (selected) package',
+    'name' => 'Flat rate with recurring comission per (selected) active package',
     'fields' => {
       'setup_fee' => { 'name' => 'Setup fee for this package',
                        'default' => 0,
