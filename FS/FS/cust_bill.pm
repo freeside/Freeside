@@ -335,7 +335,7 @@ PARAMHASH can contain the following:
 
 =back
 
-Returns an argument list to be passed to L<FS::cust_bill::send>.
+Returns an argument list to be passed to L<FS::Misc::send_email>.
 
 =cut
 
