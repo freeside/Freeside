@@ -77,7 +77,7 @@ create-config: install-perl-modules
 	chown freeside ${FREESIDE_CONF}/secrets
 
 	mkdir "${FREESIDE_CONF}/conf.${DATASOURCE}"
-	cp conf/* "${FREESIDE_CONF}/conf.${DATASOURCE}"
+	cp conf/[a-z]* "${FREESIDE_CONF}/conf.${DATASOURCE}"
 	chown -R freeside "${FREESIDE_CONF}/conf.${DATASOURCE}"
 
 	mkdir "${FREESIDE_CONF}/counters.${DATASOURCE}"
