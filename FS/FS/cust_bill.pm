@@ -483,7 +483,7 @@ sub realtime_card {
   if ( $conf->exists('business-onlinepayment-description') ) {
     my $dtempl = $conf->config('business-onlinepayment-description');
 
-    my $agent = $self->cust_main->agent->agent;
+    my $agent = $cust_main->agent->agent;
     my $pkgs = join(', ',
       map { $_->cust_pkg->part_pkg->pkg }
         grep { $_->pkgnum } $self->cust_bill_pkg
@@ -944,7 +944,7 @@ sub print_text {
 
 =head1 VERSION
 
-$Id: cust_bill.pm,v 1.29 2002-04-16 10:47:34 ivan Exp $
+$Id: cust_bill.pm,v 1.30 2002-04-16 22:38:04 ivan Exp $
 
 =head1 BUGS
 
