@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: cust_main.cgi,v 1.13 2001-10-26 10:24:56 ivan Exp $ -->
+#<!-- $Id: cust_main.cgi,v 1.14 2001-10-30 14:54:07 ivan Exp $ -->
 
 use strict;
 use vars qw ( $cgi $query $custnum $cust_main $hashref $agent $referral 
@@ -29,7 +29,7 @@ $cgi = new CGI;
 
 $conf = new FS::Conf;
 
-print $cgi->header( @FS::CGI::header ), header("Customer View", menubar(
+print header("Customer View", menubar(
   'Main Menu' => popurl(2)
 ));
 

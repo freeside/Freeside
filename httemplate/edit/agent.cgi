@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: agent.cgi,v 1.4 2001-10-26 10:24:56 ivan Exp $ -->
+#<!-- $Id: agent.cgi,v 1.5 2001-10-30 14:54:07 ivan Exp $ -->
 
 use strict;
 use vars qw ( $cgi $agent $action $hashref $p $agent_type );
@@ -31,7 +31,7 @@ $hashref = $agent->hashref;
 
 $p = popurl(2);
 
-print $cgi->header( @FS::CGI::header ), header("$action Agent", menubar(
+print header("$action Agent", menubar(
   'Main Menu' => $p,
   'View all agents' => $p. 'browse/agent.cgi',
 ));

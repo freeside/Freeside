@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: cust_main.cgi,v 1.8 2001-10-26 10:24:56 ivan Exp $ -->
+#<!-- $Id: cust_main.cgi,v 1.9 2001-10-30 14:54:07 ivan Exp $ -->
 
 use vars qw( $cgi $custnum $action $cust_main $p1 @agents $agentnum 
              $last $first $ss $company $address1 $address2 $city $zip 
@@ -74,7 +74,7 @@ $action = $custnum ? 'Edit' : 'Add';
 # top
 
 $p1 = popurl(1);
-print $cgi->header( @FS::CGI::header ), header("Customer $action", '');
+print header("Customer $action", '');
 print qq!<FONT SIZE="+1" COLOR="#ff0000">Error: !, $error, "</FONT>"
   if $error;
 

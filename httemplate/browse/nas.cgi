@@ -17,7 +17,7 @@ $cgi = new CGI;
 
 $p=popurl(2);
 
-print $cgi->header( @FS::CGI::header ), header('NAS ports', menubar(
+print header('NAS ports', menubar(
   'Main Menu' => $p,
 ));
 

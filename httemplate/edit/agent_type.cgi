@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: agent_type.cgi,v 1.4 2001-10-26 10:24:56 ivan Exp $ -->
+#<!-- $Id: agent_type.cgi,v 1.5 2001-10-30 14:54:07 ivan Exp $ -->
 
 use strict;
 use vars qw( $cgi $agent_type $action $hashref $p $part_pkg );
@@ -32,7 +32,7 @@ $action = $agent_type->typenum ? 'Edit' : 'Add';
 $hashref = $agent_type->hashref;
 
 $p = popurl(2);
-print $cgi->header( @FS::CGI::header ), header("$action Agent Type", menubar(
+print header("$action Agent Type", menubar(
   'Main Menu' => "$p",
   'View all agent types' => "${p}browse/agent_type.cgi",
 ));

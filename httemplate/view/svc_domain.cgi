@@ -1,5 +1,5 @@
 <%
-# <!-- $Id: svc_domain.cgi,v 1.4 2001-10-26 10:24:56 ivan Exp $ -->
+# <!-- $Id: svc_domain.cgi,v 1.5 2001-10-30 14:54:07 ivan Exp $ -->
 
 use strict;
 use vars qw( $cgi $query $svcnum $svc_domain $domain $cust_svc $pkgnum 
@@ -44,7 +44,7 @@ if ($svc_domain->catchall) {
 $domain = $svc_domain->domain;
 
 $p = popurl(2);
-print $cgi->header( @FS::CGI::header ), header('Domain View', menubar(
+print header('Domain View', menubar(
   ( ( $pkgnum || $custnum )
     ? ( "View this package (#$pkgnum)" => "${p}view/cust_pkg.cgi?$pkgnum",
         "View this customer (#$custnum)" => "${p}view/cust_main.cgi?$custnum",

@@ -1,5 +1,5 @@
 <%
-# <!-- $Id: cust_bill.cgi,v 1.4 2001-10-26 10:24:56 ivan Exp $ -->
+# <!-- $Id: cust_bill.cgi,v 1.5 2001-10-30 14:54:07 ivan Exp $ -->
 
 use strict;
 use vars qw ( $cgi $query $invnum $cust_bill $custnum $printed $p );
@@ -26,7 +26,7 @@ $custnum = $cust_bill->getfield('custnum');
 $printed = $cust_bill->printed;
 
 $p = popurl(2);
-print $cgi->header( @FS::CGI::header ), header('Invoice View', menubar(
+print header('Invoice View', menubar(
   "Main Menu" => $p,
   "View this customer (#$custnum)" => "${p}view/cust_main.cgi?$custnum",
 ));

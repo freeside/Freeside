@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: svc_acct_pop.cgi,v 1.5 2001-10-26 10:24:56 ivan Exp $ -->
+#<!-- $Id: svc_acct_pop.cgi,v 1.6 2001-10-30 14:54:07 ivan Exp $ -->
 
 use strict;
 use vars qw( $cgi $p $svc_acct_pop );
@@ -16,7 +16,7 @@ $cgi = new CGI;
 
 $p = popurl(2);
 
-print $cgi->header( @FS::CGI::header ), header('POP Listing', menubar(
+print header('POP Listing', menubar(
   'Main Menu' => $p,
 )), "Points of Presence<BR><BR>", &table(), <<END;
       <TR>

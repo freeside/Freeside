@@ -1,5 +1,5 @@
 <%
-# <!-- $Id: svc_domain.cgi,v 1.4 2001-10-26 10:24:56 ivan Exp $ -->
+# <!-- $Id: svc_domain.cgi,v 1.5 2001-10-30 14:54:07 ivan Exp $ -->
 
 use strict;
 use vars qw ( $cgi @svc_domain $sortby $query $conf $mydomain );
@@ -54,8 +54,7 @@ if ( scalar(@svc_domain) == 1 ) {
 } else {
 
   my($total)=scalar(@svc_domain);
-  print $cgi->header( @FS::CGI::header ),
-        header("Domain Search Results",''), <<END;
+  print header("Domain Search Results",''), <<END;
 
     $total matching domains found
     <TABLE BORDER=4 CELLSPACING=0 CELLPADDING=0>

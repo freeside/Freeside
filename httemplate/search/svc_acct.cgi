@@ -1,5 +1,5 @@
 <%
-# <!-- $Id: svc_acct.cgi,v 1.7 2001-10-26 10:24:56 ivan Exp $ -->
+# <!-- $Id: svc_acct.cgi,v 1.8 2001-10-30 14:54:07 ivan Exp $ -->
 
 use strict;
 use vars qw( $cgi @svc_acct $sortby $query $mydomain );
@@ -59,8 +59,7 @@ if ( scalar(@svc_acct) == 1 ) {
   idiot("Account not found");
 } else {
   my($total)=scalar(@svc_acct);
-  print $cgi->header( @FS::CGI::header ),
-        header("Account Search Results",''),
+  print header("Account Search Results",''),
         "$total matching accounts found",
         &table(), <<END;
       <TR>

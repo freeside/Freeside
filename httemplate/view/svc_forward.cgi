@@ -1,5 +1,5 @@
 <%
-# <!-- $Id: svc_forward.cgi,v 1.3 2001-10-26 10:24:56 ivan Exp $ -->
+# <!-- $Id: svc_forward.cgi,v 1.4 2001-10-30 14:54:07 ivan Exp $ -->
 
 use strict;
 use vars qw($conf $cgi $query $svcnum $svc_forward $cust_svc
@@ -41,7 +41,7 @@ $part_svc = qsearchs('part_svc',{'svcpart'=> $cust_svc->svcpart } )
   or die "Unkonwn svcpart";
 
 $p = popurl(2);
-print $cgi->header( @FS::CGI::header ), header('Mail Forward View', menubar(
+print header('Mail Forward View', menubar(
   ( ( $pkgnum || $custnum )
     ? ( "View this package (#$pkgnum)" => "${p}view/cust_pkg.cgi?$pkgnum",
         "View this customer (#$custnum)" => "${p}view/cust_main.cgi?$custnum",

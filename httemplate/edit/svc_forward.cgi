@@ -1,5 +1,5 @@
 <%
-# <!-- $Id: svc_forward.cgi,v 1.5 2001-10-26 10:24:56 ivan Exp $ -->
+# <!-- $Id: svc_forward.cgi,v 1.6 2001-10-30 14:54:07 ivan Exp $ -->
 
 use strict;
 use vars qw( $conf $cgi $mydomain $action $svcnum $svc_forward $pkgnum $svcpart
@@ -128,7 +128,7 @@ if ($pkgnum) {
 #display
 
 $p1 = popurl(1);
-print $cgi->header( @FS::CGI::header ), header("Mail Forward $action", '',
+print header("Mail Forward $action", '',
       " onLoad=\"visualize()\"");
 
 %>

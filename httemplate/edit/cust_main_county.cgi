@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: cust_main_county.cgi,v 1.4 2001-10-26 10:24:56 ivan Exp $ -->
+#<!-- $Id: cust_main_county.cgi,v 1.5 2001-10-30 14:54:07 ivan Exp $ -->
 
 use strict;
 use vars qw( $cgi $cust_main_county );
@@ -14,7 +14,7 @@ $cgi = new CGI;
 
 &cgisuidsetup($cgi);
 
-print $cgi->header( @FS::CGI::header ), header("Edit tax rates", menubar(
+print header("Edit tax rates", menubar(
   'Main Menu' => popurl(2),
 ));
 

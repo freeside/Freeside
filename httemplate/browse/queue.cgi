@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: queue.cgi,v 1.4 2001-10-26 10:24:56 ivan Exp $ -->
+#<!-- $Id: queue.cgi,v 1.5 2001-10-30 14:54:07 ivan Exp $ -->
 
 use strict;
 use vars qw( $cgi $p ); # $part_referral );
@@ -17,7 +17,7 @@ $cgi = new CGI;
 
 $p = popurl(2);
 
-print $cgi->header( @FS::CGI::header ), header("Job Queue", menubar(
+print header("Job Queue", menubar(
   'Main Menu' => $p,
 #  'Add new referral' => "../edit/part_referral.cgi",
 )), &table(), <<END;
