@@ -41,8 +41,8 @@ my $freeside_gid = scalar(getgrnam('freeside'))
 $) = $freeside_gid;
 $( = $freeside_gid;
 #if freebsd can't setuid(), presumably it can't setgid() either.  grr fleabsd
-($<,$>) = ($>,$<);
-$> = $freeside_gid;
+($(,$)) = ($),$();
+$) = $freeside_gid;
 
 $> = $FS::UID::freeside_uid;
 $< = $FS::UID::freeside_uid;
