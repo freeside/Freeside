@@ -57,7 +57,9 @@ function areyousure(href) {
 <%
 
 #if ( $cust_pkg && $cust_pkg->part_pkg->plan eq 'sqlradacct_hour' ) {
-if ( $part_svc->part_export('sqlradius') ) {
+if (    $part_svc->part_export('sqlradius')
+     || $part_svc->part_export('sqlradius_withdomain')
+) {
 
   my $last_bill;
   my %plandata;
