@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# process/agent.cgi: Edit agent (process form)
+# $Id: agent.cgi,v 1.2 1998-11-23 07:52:29 ivan Exp $
 #
 # ivan@sisd.com 97-dec-12
 #
@@ -8,30 +8,35 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
+#
+# $Log: agent.cgi,v $
+# Revision 1.2  1998-11-23 07:52:29  ivan
+# *** empty log message ***
+#
 
 use strict;
-use CGI::Request;
+use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
 use FS::Record qw(qsearch qsearchs);
 use FS::agent qw(fields);
-use FS::CGI qw(idiot);
+use FS::CGI qw(idiot popurl);
 
-my($req)=new CGI::Request; # create form object
+my($cgi)=new CGI;
 
-&cgisuidsetup($req->cgi);
+&cgisuidsetup($cgi);
 
-my($agentnum)=$req->param('agentnum');
+my($agentnum)=$cgi->param('agentnum');
 
 my($old)=qsearchs('agent',{'agentnum'=>$agentnum}) if $agentnum;
 
 #unmunge typenum
-$req->param('typenum') =~ /^(\d+)(:.*)?$/;
-$req->param('typenum',$1);
+$cgi->param('typenum') =~ /^(\d+)(:.*)?$/;
+$cgi->param('typenum',$1);
 
 my($new)=create FS::agent ( {
   map {
-    $_, $req->param($_);
+    $_, scalar($cgi->param($_));
   } fields('agent')
 } );
 
@@ -48,6 +53,6 @@ if ( $error ) {
 } else { 
   #$req->cgi->redirect("../../view/agent.cgi?$agentnum");
   #$req->cgi->redirect("../../edit/agent.cgi?$agentnum");
-  $req->cgi->redirect("../../browse/agent.cgi");
+  print $cgi->redirect(popurl(3). "/browse/agent.cgi");
 }
 

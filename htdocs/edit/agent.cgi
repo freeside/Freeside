@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# agent.cgi: Add/Edit agent (output form)
+# $Id: agent.cgi,v 1.2 1998-11-23 07:52:08 ivan Exp $
 #
 # ivan@sisd.com 97-dec-12
 #
@@ -9,24 +9,28 @@
 #	bmccane@maxbaud.net	98-apr-3
 #
 # use FS::CGI, added inline documentation ivan@sisd.com 98-jul-12
+#
+# $Log: agent.cgi,v $
+# Revision 1.2  1998-11-23 07:52:08  ivan
+# *** empty log message ***
+#
 
 use strict;
-use CGI::Base;
+use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
+use FS::CGI qw(header menubar popurl);
 use FS::Record qw(qsearch qsearchs);
 use FS::agent;
-use FS::CGI qw(header menubar);
+use FS::agent_type;
 
-my($cgi) = new CGI::Base;
-$cgi->get;
+my($cgi) = new CGI;
 
 &cgisuidsetup($cgi);
 
-SendHeaders(); # one guess.
-
 my($agent,$action);
-if ( $cgi->var('QUERY_STRING') =~ /^(\d+)$/ ) { #editing
+my($query) = $cgi->keywords;
+if ( $query =~ /^(\d+)$/ ) { #editing
   $agent=qsearchs('agent',{'agentnum'=>$1});
   $action='Edit';
 } else { #adding
@@ -35,10 +39,10 @@ if ( $cgi->var('QUERY_STRING') =~ /^(\d+)$/ ) { #editing
 }
 my($hashref)=$agent->hashref;
 
-print header("$action Agent", menubar(
-  'Main Menu' => '../',
-  'View all agents' => '../browse/agent.cgi',
-)), '<FORM ACTION="process/agent.cgi" METHOD=POST>';
+print $cgi->header, header("$action Agent", menubar(
+  'Main Menu' => popurl(2),
+  'View all agents' => popurl(2). '/browse/agent.cgi',
+)), '<FORM ACTION="', popurl(1), '/process/agent.cgi" METHOD=POST>';
 
 print qq!<INPUT TYPE="hidden" NAME="agentnum" VALUE="$hashref->{agentnum}">!,
       "Agent #", $hashref->{agentnum} ? $hashref->{agentnum} : "(NEW)";
