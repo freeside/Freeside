@@ -30,6 +30,11 @@
 # ivan@sisd.com 98-sep-4
 #
 # fix radius attributes ivan@sisd.com 98-sep-27
+#
+# $Log: fs-setup,v $
+# Revision 1.3  1998-10-22 15:46:28  ivan
+# now smallint is illegal, so remove that too.
+#
 
 #to delay loading dbdef until we're ready
 BEGIN { $FS::Record::setup_hack = 1; }
@@ -206,7 +211,7 @@ sub tables_hash_hack {
         'agentnum', 'int',            '',     '',
         'agent',    'varchar',           '',     $char_d,
         'typenum',  'int',            '',     '',
-        'freq',     'smallint',       'NULL', '',
+        'freq',     'int',       'NULL', '',
         'prog',     @perl_type,
       ],
       'primary_key' => 'agentnum',
@@ -415,7 +420,7 @@ sub tables_hash_hack {
         'pkg',        'varchar',   '',   $char_d,
         'comment',    'varchar',   '',   $char_d,
         'setup',      @perl_type,
-        'freq',       'smallint', '', '',  #billing frequency (months)
+        'freq',       'int', '', '',  #billing frequency (months)
         'recur',      @perl_type,
       ],
       'primary_key' => 'pkgpart',
