@@ -134,9 +134,8 @@ sub length {
 
 Returns an SQL column definition.
 
-If passed a DBI $datasrc specifying L<DBD::mysql>, will use MySQL-specific
-syntax.  Non-standard syntax for other engines (if applicable) may also be
-supported in the future.
+If passed a DBI $datasrc specifying L<DBD::mysql> or L<DBD::Pg>, will use
+engine-specific syntax.
 
 =cut
 
@@ -167,7 +166,7 @@ L<FS::dbdef_table>, L<FS::dbdef>, L<DBI>
 
 =head1 VERSION
 
-$Id: dbdef_column.pm,v 1.2 1998-10-12 23:40:28 ivan Exp $
+$Id: dbdef_column.pm,v 1.3 1998-10-13 13:04:17 ivan Exp $
 
 =head1 HISTORY
 
@@ -180,7 +179,10 @@ now methods can be used to get or set data ivan@sisd.com 98-may-11
 mySQL-specific hack for null (what should be default?) ivan@sisd.com 98-jun-2
 
 $Log: dbdef_column.pm,v $
-Revision 1.2  1998-10-12 23:40:28  ivan
+Revision 1.3  1998-10-13 13:04:17  ivan
+fixed doc to indicate Pg specific syntax too
+
+Revision 1.2  1998/10/12 23:40:28  ivan
 added Pg-specific behaviour in sub line
 
 
