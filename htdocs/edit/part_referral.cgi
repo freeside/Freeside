@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: part_referral.cgi,v 1.5 1999-02-07 09:59:20 ivan Exp $
+# $Id: part_referral.cgi,v 1.6 1999-04-07 11:43:23 ivan Exp $
 #
 # ivan@sisd.com 98-feb-23
 #
@@ -12,7 +12,10 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: part_referral.cgi,v $
-# Revision 1.5  1999-02-07 09:59:20  ivan
+# Revision 1.6  1999-04-07 11:43:23  ivan
+# pick up errors right away, leave input
+#
+# Revision 1.5  1999/02/07 09:59:20  ivan
 # more mod_perl fixes, and bugfixes Peter Wemm sent via email
 #
 # Revision 1.4  1999/01/19 05:13:41  ivan
@@ -32,7 +35,7 @@ use vars qw( $cgi $part_referral $action $hashref $p1 $query );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
-use FS::Record qw(qsearch qsearchs);
+use FS::Record qw(qsearch qsearchs fields);
 use FS::part_referral;
 use FS::CGI qw(header menubar popurl);
 
@@ -40,14 +43,18 @@ $cgi = new CGI;
 
 &cgisuidsetup($cgi);
 
-($query) = $cgi->keywords;
-if ( $query =~ /^(\d+)$/ ) { #editing
-  $part_referral=qsearchs('part_referral',{'refnum'=>$1});
-  $action='Edit';
+if ( $cgi->param('error') ) {
+  $part_referral = new FS::part_referral ( {
+    map { $_, scalar($cgi->param($_)) } fields('part_referral')
+  } );
+} elsif ( $cgi->keywords ) {
+  my($query) = $cgi->keywords;
+  $query =~ /^(\d+)$/;
+  $part_referral = qsearchs( 'part_referral', { 'refnum' => $1 } );
 } else { #adding
   $part_referral = new FS::part_referral {};
-  $action='Add';
 }
+$action = $part_referral->refnum ? 'Edit' : 'Add';
 $hashref = $part_referral->hashref;
 
 $p1 = popurl(1);
