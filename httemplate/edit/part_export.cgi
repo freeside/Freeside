@@ -39,12 +39,17 @@ my $widget = new HTML::Widgets::SelectLayers(
     my $layer = shift;
     my $html = qq!<INPUT TYPE="hidden" NAME="exporttype" VALUE="$layer">!.
                ntable("#cccccc",2);
+
+    $html .= '<TR><TD ALIGN="right">Description</TD><TD BGCOLOR=#ffffff>'.
+             $exports->{$layer}{notes}. '</TD></TR>'
+      if $layer;
+
     foreach my $option ( keys %{$exports->{$layer}{options}} ) {
 #    foreach my $option ( qw(url login password groupID ) ) {
       my $optinfo = $exports->{$layer}{options}{$option};
       my $label = $optinfo->{label};
       my $value = $cgi->param($option) || $part_export->option($option);
-      $html .= qq!<TR><TD ALIGN="right">$label</TD><TD>!.
+      $html .= qq!<TR><TD ALIGN="right">$label</TD>!.
                qq!<TD><INPUT TYPE="text" NAME="$option" VALUE="$value"></TD>!.
                '</TR>';
     }

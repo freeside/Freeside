@@ -5,6 +5,9 @@ use vars qw($VERSION);
 
 $VERSION = '0.01';
 
+#find missing entries in this file with:
+# for a in `ls *pm | cut -d. -f1`; do grep 'L<FS::'$a'>' ../FS.pm >/dev/null || echo "missing $a" ; done
+
 1;
 __END__
 
@@ -26,6 +29,12 @@ L<FS::UID> - User class (not yet OO)
 
 L<FS::CGI> - Non OO-subroutines for the web interface.
 
+L<FS::Msgcat> - Message catalog
+
+L<FS::SearchCache> - Message catalog
+
+L<FS::raddb> - RADIUS dictionary
+
 =head2 Database record classes
 
 L<FS::Record> - Database record base class
@@ -42,6 +51,8 @@ L<FS::cust_main_county> - Locale (tax rate) class
 L<FS::svc_Common> - Service base class
 
 L<FS::svc_acct> - Account (shell, RADIUS, POP3) class
+
+L<FS::radius_usergroup> - RADIUS groups
 
 L<FS::svc_domain> - Domain class
 
@@ -121,6 +132,8 @@ L<FS::queue> - Job queue
 
 L<FS::queue_arg> - Job arguments
 
+L<FS::msgcat> - Message catalogs
+
 =head1 Remote API modules
 
 L<FS::SignupClient>
@@ -131,11 +144,23 @@ L<FS::MailAdminServer>
 
 =head2 Command-line utilities
 
-L<freeside-email>
+L<freeside-adduser>
 
 L<freeside-queued>
 
-L<freeside-adduser>
+L<freeside-daily>
+
+L<freeside-expiration-alerter>
+
+L<freeside-email>
+
+L<freeside-cc-receipts-report>
+
+L<freeside-credit-report>
+
+L<freeside-receivables-report>
+
+L<freeside-tax-report>
 
 L<freeside-bill>
 

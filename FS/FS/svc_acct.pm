@@ -8,7 +8,6 @@ use vars qw( @ISA $nossh_hack $noexport_hack $conf
              $username_noperiod $username_uppercase
              $shellmachine $useradd $usermod $userdel $mydomain
              $cyrus_server $cyrus_admin_user $cyrus_admin_pass
-             $cp_server $cp_user $cp_pass $cp_workgroup
              $dirhash
              @saltset @pw_set
              $rsync $ssh $exportdir $vpopdir);
@@ -79,16 +78,6 @@ $FS::UID::callback{'FS::svc_acct'} = sub {
     $cyrus_server = '';
     $cyrus_admin_user = '';
     $cyrus_admin_pass = '';
-  }
-  if ( $conf->exists('cp_app') ) {
-    ($cp_server, $cp_user, $cp_pass, $cp_workgroup) =
-      $conf->config('cp_app');
-    eval "use Net::APP;"
-  } else {
-    $cp_server = '';
-    $cp_user = '';
-    $cp_pass = '';
-    $cp_workgroup = '';
   }
 
   $dirhash = $conf->config('dirhash') || 0;
@@ -351,18 +340,6 @@ sub insert {
     }
   }
 
-  if ( $cp_server ) {
-    my $queue = new FS::queue {
-      'svcnum' => $self->svcnum,
-      'job'    => 'FS::svc_acct::cp_insert'
-    };
-    $error = $queue->insert($self->username, $self->_password);
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return "queueing job (transaction rolled back): $error";
-    }
-  }
-  
   if ( $vpopdir ) {
 
     my $vpopmail_queue =
@@ -421,27 +398,6 @@ sub cyrus_insert {
   }
 
   1;
-}
-
-sub cp_insert {
-  my( $username, $password ) = @_;
-
-  my $app = new Net::APP ( $cp_server,
-                        User     => $cp_user,
-                        Password => $cp_pass,
-                        Domain   => $mydomain,
-                        Timeout  => 60,
-                        #Debug    => 1,
-                      ) or die "$@\n";
-
-  $app->create_mailbox(
-                        Mailbox   => $username,
-                        Password  => $password,
-                        Workgroup => $cp_workgroup,
-                        Domain    => $mydomain,
-                      );
-
-  die $app->message."\n" unless $app->ok;
 }
 
 sub vpopmail_insert {
@@ -633,15 +589,6 @@ sub delete {
     }
   }
   
-  if ( $cp_server ) {
-    my $queue = new FS::queue { 'job' => 'FS::svc_acct::cp_delete' };
-    $error = $queue->insert($self->username);
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return "queueing job (transaction rolled back): $error";
-    }
-  }
-
   if ( $vpopdir ) {
     my $queue = new FS::queue { 'job' => 'FS::svc_acct::vpopmail_delete' };
     $error = $queue->insert( $self->username, $self->domain );
@@ -677,24 +624,6 @@ sub cyrus_delete {
   die $error if $error;
 
   1;
-}
-
-sub cp_delete {
-  my( $username ) = @_;
-  my $app = new Net::APP ( $cp_server,
-                        User     => $cp_user,
-                        Password => $cp_pass,
-                        Domain   => $mydomain,
-                        Timeout  => 60,
-                        #Debug    => 1,
-                      ) or die "$@\n";
-
-  $app->delete_mailbox(
-                        Mailbox   => $username,
-                        Domain    => $mydomain,
-                      );
-
-  die $app->message."\n" unless $app->ok;
 }
 
 sub vpopmail_delete {
@@ -871,18 +800,6 @@ sub replace {
     }
   }
 
-  if ( $cp_server && $old->_password ne $new->_password ) {
-    my $queue = new FS::queue {  
-      'svcnum' => $new->svcnum,
-      'job' => 'FS::svc_acct::cp_change'
-    };
-    $error = $queue->insert( $new->username, $new->_password );
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return "queueing job (transaction rolled back): $error";
-    }
-  }
-
   if ( $vpopdir ) {
     my $cpassword = crypt(
       $new->_password,$saltset[int(rand(64))].$saltset[int(rand(64))]
@@ -912,65 +829,6 @@ sub replace {
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   ''; #no error
-}
-
-sub cp_rename {
-  my ( $old_username, $new_username ) = @_;
-
-  my $app = new Net::APP ( $cp_server,
-                        User     => $cp_user,
-                        Password => $cp_pass,
-                        Domain   => $mydomain,
-                        Timeout  => 60,
-                        #Debug    => 1,
-                      ) or die "$@\n";
-
-  $app->rename_mailbox(
-                        Domain        => $mydomain,
-                        Old_Mailbox   => $old_username,
-                        New_Mailbox   => $new_username,
-                      );
-
-  die $app->message."\n" unless $app->ok;
-
-}
-
-sub cp_change {
-  my ( $username, $password ) = @_;
-
-  my $app = new Net::APP ( $cp_server,
-                        User     => $cp_user,
-                        Password => $cp_pass,
-                        Domain   => $mydomain,
-                        Timeout  => 60,
-                        #Debug    => 1,
-                      ) or die "$@\n";
-
-  if ( $password =~ /^\*SUSPENDED\* (.*)$/ ) {
-    $password = $1;
-    $app->set_mailbox_status(
-                              Domain       => $mydomain,
-                              Mailbox      => $username,
-                              Other        => 'T',
-                              Other_Bounce => 'T',
-                            );
-  } else {
-    $app->set_mailbox_status(
-                              Domain       => $mydomain,
-                              Mailbox      => $username,
-                              Other        => 'F',
-                              Other_Bounce => 'F',
-                            );
-  }
-  die $app->message."\n" unless $app->ok;
-
-  $app->change_mailbox(
-                        Domain    => $mydomain,
-                        Mailbox   => $username,
-                        Password  => $password,
-                      );
-  die $app->message."\n" unless $app->ok;
-
 }
 
 sub vpopmail_replace_password {

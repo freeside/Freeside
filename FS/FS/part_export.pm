@@ -505,13 +505,22 @@ sub exporttype2svcdb {
         'password' => { label=>'Database password' },
       },
       'nodomain' => 'Y',
-      'notes' => 'Not specifying datasrc will export to the freeside database? (no...  notes on MySQL replication, DBI::Proxy, etc., from Conf.pm && export.html etc., reset with bin/sqlradius_reset',
+      'notes' => 'Real-time export of radcheck, radreply and usergroup tables to any SQL database for <a href="http://www.freeradius.org/">FreeRADIUS</a> or <a href="http://radius.innercite.com/">ICRADIUS</a>.  Use <a href="../docs/man/bin/freeside-sqlradius-reset">freeside-sqlradius-reset</a> to delete and repopulate the tables from the Freeside database.',
     },
     'cyrus' => {
       'desc' => 'Real-time export to Cyrus IMAP server',
     },
     'cp' => {
       'desc' => 'Real-time export to Critical Path Account Provisioning Protocol',
+      'options' => {
+        'host'      => { label=>'Hostname' },
+        'port'      => { label=>'Port number' },
+        'username'  => { label=>'Username' },
+        'password'  => { label=>'Password' },
+        'domain'    => { label=>'Domain' },
+        'workgroup' => { label=>'Default Workgroup' },
+      },
+      'notes' => 'Real-time export to <a href="http://www.cp.net/">Critial Path Account Provisioning Protocol</a>.  Requires installation of <a href="http://search.cpan.org/search?dist=Net-APP">Net::APP</a> from CPAN.',
     },
     'infostreet' => {
       'desc' => 'Real-time export to InfoStreet streetSmartAPI',

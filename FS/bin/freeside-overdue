@@ -129,6 +129,9 @@ freeside-overdue - Perform actions on overdue and/or expired accounts.
 
 =head1 DESCRIPTION
 
+This script is deprecated in 1.4.0.  You should use freeside-daily and invoice
+events instead.
+
 Performs actions on overdue and/or expired accounts.
 
 Selection options (at least one selection option is required):
