@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 #
-# $Id: registerd,v 1.5 2000-03-03 06:10:18 ivan Exp $
+# $Id: registerd,v 1.6 2000-03-03 06:28:50 ivan Exp $
 
 use strict;
 use vars qw(
@@ -123,7 +123,9 @@ while ( 1 ) {
 
     open(SECRETS, ">${freeside_conf}secrets.demo_$username")
       or die "Can\'t open ${freeside_conf}secrets.demo_$username: $!";
-    chmod 0600, "${freeside_conf}secrets.$username";
+    chown scalar(getpwnam('freeside')), scalar(getgrnam('freeside')),
+          "${freeside_conf}secrets.demo_$username";
+    chmod 0600, "${freeside_conf}secrets.demo_$username";
     print SECRETS "DBI:mysql:demo_$username\nfreeside\nmaelcolm\n";
     close SECRETS;
 
@@ -150,7 +152,8 @@ while ( 1 ) {
       'Bcc: ivan-fsreg_bcc@sisd.com',
       'Sender: ivan-fsreg@sisd.com',
       'Reply-To: ivan-fsreg@sisd.com',
-      'Date: '. time2str("%a, %d %b %Y %X %z", time ),
+      #'Date: '. time2str("%a, %d %b %Y %X %z", time ),
+      'Date: '. time2str("%a, %d %b %Y %X ", time ). "-0800",
       'Subject: Freeside demo information',
     ] );
     $msg = Mail::Internet->new(
