@@ -26,7 +26,7 @@ HTTPD_RESTART = /etc/init.d/apache restart
 #freebsd
 #HTTPD_RESTART = /usr/local/etc/rc.d/apache.sh stop; sleep 1; /usr/local/etc/rc.d/apache.sh start
 
-FREESIDE_RESTART = $INIT_FILE restart
+FREESIDE_RESTART = ${INIT_FILE} restart
 
 #deb, others?
 INSTALLGROUP = root
