@@ -196,7 +196,7 @@ sub check {
     || $self->ut_anything('job')
     || $self->ut_numbern('_date')
     || $self->ut_enum('status',['', qw( new locked failed )])
-    || $self->ut_textn('statustext')
+    || $self->ut_anything('statustext')
     || $self->ut_numbern('svcnum')
   ;
   return $error if $error;
@@ -385,7 +385,7 @@ END
 
 =head1 VERSION
 
-$Id: queue.pm,v 1.14 2002-06-14 11:22:53 ivan Exp $
+$Id: queue.pm,v 1.15 2002-07-02 06:48:59 ivan Exp $
 
 =head1 BUGS
 
