@@ -1,15 +1,15 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: signup.cgi,v 1.6 2000-03-01 08:14:30 ivan Exp $
+# $Id: signup.cgi,v 1.7 2000-05-10 23:57:57 ivan Exp $
 
 use strict;
 use vars qw( @payby $cgi $locales $packages $pops $r $error
              $last $first $ss $company $address1 $address2 $city $state $county
              $country $zip $daytime $night $fax $invoicing_list $payby $payinfo
              $paydate $payname $pkgpart $username $password $popnum
-             $ieak_file $ieak_template $ac $exch $loc
+             $ieak_file $ieak_template $cck_file $cck_template
+             $ac $exch $loc
            );
-             #$ieak_docroot $ieak_baseurl
 use subs qw( print_form print_okay expselect );
 
 use CGI;
@@ -26,6 +26,7 @@ use Text::Template;
 @payby = qw( CARD PREPAY );
 
 $ieak_file = '/usr/local/freeside/ieak.template';
+$cck_file = '/usr/local/freeside/cck.template';
 
 if ( -e $ieak_file ) {
   $ieak_template = new Text::Template ( TYPE => 'FILE', SOURCE => $ieak_file )
@@ -33,14 +34,12 @@ if ( -e $ieak_file ) {
 } else {
   $ieak_template = '';
 }
-
-#	#to enable ieak signups, you need to specify a directory in the web server's
-#	#document space and the equivalent base URL
-#	#
-#	$ieak_docroot = "/var/www/sisd.420.am/freeside/ieak";
-#	$ieak_baseurl = "http://sisd.420.am/freeside/ieak";
-
-#srand (time ^ $$ ^ unpack "%L*", `ps axww | gzip`);
+if ( -e $cck_file ) {
+  $cck_template = new Text::Template ( TYPE => 'FILE', SOURCE => $cck_file )
+    or die "Couldn't construct template: $Text::Template::ERROR";
+} else {
+  $cck_template = '';
+}
 
 ( $locales, $packages, $pops ) = signup_info();
 
@@ -293,24 +292,41 @@ END
 
 sub print_okay {
   my $user_agent = new HTTP::Headers::UserAgent $ENV{HTTP_USER_AGENT};
+
+  $cgi->param('username') =~ /^(.+)$/
+    or die "fatal: invalid username got past FS::SignupClient::new_customer";
+  my $username = $1;
+  $cgi->param('_password') =~ /^(.+)$/
+    or die "fatal: invalid password got past FS::SignupClient::new_customer";
+  my $password = $1;
+  ( $cgi->param('first'). ' '. $cgi->param('last') ) =~ /^(.*)$/
+    or die "fatal: invalid email_name got past FS::SignupCLient::new_customer";
+  my $email_name = $1;
+
+  my $pop = pop_info($cgi->param('popnum'))
+    or die "fatal: invalid popnum got past FS::SignupClient::new_customer";
+  my ( $ac, $exch, $loc ) = ( $pop->{'ac'}, $pop->{'exch'}, $pop->{'loc'} );
+
   if ( $ieak_template
        && $user_agent->platform eq 'ia32'
        && $user_agent->os =~ /^win/
        && ($user_agent->browser)[0] eq 'IE'
      )
   { #send an IEAK config
-    my $username = $cgi->param('username');
-    my $password = $cgi->param('_password');
-    my $email_name = $cgi->param('first'). ' '. $cgi->param('last');
-
     print $cgi->header('application/x-Internet-signup'),
           $ieak_template->fill_in();
-
-#    my $ins_file = rand(4294967296). ".ins";
-#    open(INS_FILE, ">$ieak_docroot/$ins_file");
-#    print INS_FILE <<END;
-#    close INS_FILE;
-#    print $cgi->redirect("$ieak_docroot/$ins_file");
+  } elsif ( $cck_template
+            && $user_agent->platform eq 'ia32'
+            && $user_agent->os =~ /^win/
+            && ($user_agent->browser)[0] eq 'Netscape'
+          )
+  { #send a Netscape config
+    my $cck_data = $cck_template->fill_in();
+    print $cgi->header('application/x-netscape-autoconfigure-dialer-v2'),
+          map {
+            m/(.*)\s+(.*)$/;
+            pack("N", length($1)). $1. pack("N", length($2)). $2;
+          } split(/\n/, $cck_data);
 
   } else { #send a simple confirmation
     print $cgi->header( '-expires' => 'now' ), <<END;
@@ -321,6 +337,15 @@ blah blah blah
 </HTML>
 END
   }
+}
+
+sub pop_info {
+  my $popnum = shift;
+  my $pop;
+  foreach $pop ( @{$pops} ) {
+    if ( $pop->{'popnum'} == $popnum ) { return $pop; }
+  }
+  '';
 }
 
 sub expselect {

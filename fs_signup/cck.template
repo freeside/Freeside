@@ -1,0 +1,14 @@
+SITE_FILE	8chrfile
+SITE_NAME	YourISP
+LOGIN	{ $username }
+PASSWORD	{ $password }
+PHONE_NUM	+1({ $ac }){ $exch }-{ $loc }
+DNS_ADDR	10.0.0.1
+DNS_ADDR2	10.0.0.2
+NNTP_HOST	news.yourisp.com
+SMTP_HOST	mail.yourisp.com
+DOMAIN_NAME	yourisp.com
+POP_SERVER	{ $username }@mail.yourisp.com
+POP_PASSWORD	{ $password }
+HOME_URL	http://www.yourisp.com
+EMAIL_ADDR	{ $username }@yourisp.com
