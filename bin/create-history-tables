@@ -18,7 +18,7 @@ my $schema = dbdef();
 #false laziness w/fs-setup
 my @tables = scalar(@ARGV)
                ? @ARGV
-               : grep { ! /^h_/ } $schema->tables;
+               : grep { ! /^(h|pg)_/ } $schema->tables;
 foreach my $table ( @tables ) {
   next if grep { /^h_$table/ } $schema->tables;
   warn "creating history table for $table\n";
