@@ -42,9 +42,15 @@ sub myexport_queue {
 }
 
 sub myexport_insert { #subroutine, not method
+  my( $username, $password ) = @_;
+  #do things with $username and $password
 }
+
 sub myexport_replace { #subroutine, not method
 }
+
 sub myexport_delete { #subroutine, not method
+  my( $username ) = @_;
+  #do things with $username
 }
 
