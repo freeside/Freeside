@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: signup.cgi,v 1.40 2003-07-04 01:48:24 ivan Exp $
+# $Id: signup.cgi,v 1.41 2003-07-04 01:54:17 ivan Exp $
 
 use strict;
 use vars qw( @payby $cgi $locales $packages
@@ -463,9 +463,9 @@ END
 
 
   #comment this block to disable initial list polulation
-  my @initial_select;
+  my @initial_select = ();
   if ( scalar( @$pops ) > 100 ) {
-    @initial_select = ( $popnum2pop{$popnum} );
+    push @initial_select, $popnum2pop{$popnum} if $popnum2pop{$popnum};
   } else {
     @initial_select = @$pops;
   }
