@@ -7,7 +7,7 @@ $cgi->param('beginning') =~ /^([ 0-9\-\/]{0,10})$/;
 my $beginning = str2time($1) || 0;
 
 $cgi->param('ending') =~ /^([ 0-9\-\/]{0,10})$/;
-my $ending = str2time($1) + 86400;
+my $ending = str2time($1) + 86399;
 
 my @cust_bill_event =
   sort { $a->_date <=> $b->_date }

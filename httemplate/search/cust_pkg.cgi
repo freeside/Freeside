@@ -29,7 +29,7 @@ if ( $cgi->param('magic') && $cgi->param('magic') eq 'bill' ) {
   }
   if ( $cgi->param('ending')
             && $cgi->param('ending') =~ /^([ 0-9\-\/]{0,10})$/ ) {
-    my $ending = str2time($1) + 86400;
+    my $ending = str2time($1) + 86399;
     $range .= ( $range ? ' AND ' : ' WHERE ' ). " bill <= $ending ";
   }
 
