@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: svc_acct_sm.cgi,v 1.2 2001-08-21 02:31:56 ivan Exp $ -->
+#<!-- $Id: svc_acct_sm.cgi,v 1.3 2001-09-11 20:59:32 ivan Exp $ -->
 
 use strict;
 use vars qw( $conf $cgi $mydomain $action $svcnum $svc_acct_sm $pkgnum $svcpart
@@ -72,15 +72,15 @@ if ($pkgnum) {
 
   #find all possible uids (and usernames)
 
-  my($u_part_svc,@u_acct_svcparts);
-  foreach $u_part_svc ( qsearch('part_svc',{'svcdb'=>'svc_acct'}) ) {
+  my @u_acct_svcparts = ();
+  foreach my $u_part_svc ( qsearch('part_svc',{'svcdb'=>'svc_acct'}) ) {
     push @u_acct_svcparts,$u_part_svc->getfield('svcpart');
   }
 
   my($cust_pkg)=qsearchs('cust_pkg',{'pkgnum'=>$pkgnum});
   my($custnum)=$cust_pkg->getfield('custnum');
-  my($i_cust_pkg);
-  foreach $i_cust_pkg ( qsearch('cust_pkg',{'custnum'=>$custnum}) ) {
+  %username = ();
+  foreach my $i_cust_pkg ( qsearch('cust_pkg',{'custnum'=>$custnum}) ) {
     my($cust_pkgnum)=$i_cust_pkg->getfield('pkgnum');
     my($acct_svcpart);
     foreach $acct_svcpart (@u_acct_svcparts) {   #now find the corresponding 
@@ -96,11 +96,12 @@ if ($pkgnum) {
 
   #find all possible domains (and domsvc's)
 
-  my($d_part_svc,@d_acct_svcparts);
-  foreach $d_part_svc ( qsearch('part_svc',{'svcdb'=>'svc_domain'}) ) {
+  my @d_acct_svcparts = ();
+  foreach my $d_part_svc ( qsearch('part_svc',{'svcdb'=>'svc_domain'}) ) {
     push @d_acct_svcparts,$d_part_svc->getfield('svcpart');
   }
 
+  %domain = ();
   foreach $i_cust_pkg ( qsearch('cust_pkg',{'custnum'=>$custnum}) ) {
     my($cust_pkgnum)=$i_cust_pkg->getfield('pkgnum');
     my($acct_svcpart);
