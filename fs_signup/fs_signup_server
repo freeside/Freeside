@@ -94,7 +94,11 @@ while (1) {
 
     'msgcat' => { map { $_=>gettext($_) } qw(
       passwords_dont_match invalid_card unknown_card_type not_a
-    ) }
+    ) },
+
+    'statedefault' => $conf->config('statedefault') || 'CA',
+
+    'countrydefault' => $conf->config('countrydefault') || 'US',
 
   };
 

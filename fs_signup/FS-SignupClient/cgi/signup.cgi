@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: signup.cgi,v 1.32 2002-11-19 09:51:59 ivan Exp $
+# $Id: signup.cgi,v 1.33 2002-11-28 10:54:13 ivan Exp $
 
 use strict;
 use vars qw( @payby $cgi $locales $packages $pops $init_data $error
@@ -260,9 +260,9 @@ if ( defined $cgi->param('magic') ) {
   $address1 = '';
   $address2 = '';
   $city = '';
-  $state = '';
+  $state = $init_data->{statedefault};
   $county = '';
-  $country = '';
+  $country = $init_data->{countrydefault};
   $zip = '';
   $daytime = '';
   $night = '';
@@ -484,6 +484,123 @@ sub expselect {
   $return .= "</SELECT>";
 
   $return;
+}
+
+#false laziness w/FS::cust_main_county
+sub regionselector {
+  my ( $selected_county, $selected_state, $selected_country,
+       $prefix, $onchange ) = @_;
+
+  my $prefix = '' unless defined $prefix;
+
+  my $countyflag = 0;
+
+  my %cust_main_county;
+
+#  unless ( @cust_main_county ) { #cache 
+    #@cust_main_county = qsearch('cust_main_county', {} );
+    #foreach my $c ( @cust_main_county ) {
+    foreach my $c ( @$locales ) {
+      #$countyflag=1 if $c->county;
+      $countyflag=1 if $c->{county};
+      #push @{$cust_main_county{$c->country}{$c->state}}, $c->county;
+      #$cust_main_county{$c->country}{$c->state}{$c->county} = 1;
+      $cust_main_county{$c->{country}}{$c->{state}}{$c->{county}} = 1;
+    }
+#  }
+  $countyflag=1 if $selected_county;
+
+  my $script_html = <<END;
+    <SCRIPT>
+    function opt(what,value,text) {
+      var optionName = new Option(text, value, false, false);
+      var length = what.length;
+      what.options[length] = optionName;
+    }
+    function ${prefix}country_changed(what) {
+      country = what.options[what.selectedIndex].text;
+      for ( var i = what.form.${prefix}state.length; i >= 0; i-- )
+          what.form.${prefix}state.options[i] = null;
+END
+      #what.form.${prefix}state.options[0] = new Option('', '', false, true);
+
+  foreach my $country ( sort keys %cust_main_county ) {
+    $script_html .= "\nif ( country == \"$country\" ) {\n";
+    foreach my $state ( sort keys %{$cust_main_county{$country}} ) {
+      my $text = $state || '(n/a)';
+      $script_html .= qq!opt(what.form.${prefix}state, "$state", "$text");\n!;
+    }
+    $script_html .= "}\n";
+  }
+
+  $script_html .= <<END;
+    }
+    function ${prefix}state_changed(what) {
+END
+
+  if ( $countyflag ) {
+    $script_html .= <<END;
+      state = what.options[what.selectedIndex].text;
+      country = what.form.${prefix}country.options[what.form.${prefix}country.selectedIndex].text;
+      for ( var i = what.form.${prefix}county.length; i >= 0; i-- )
+          what.form.${prefix}county.options[i] = null;
+END
+
+    foreach my $country ( sort keys %cust_main_county ) {
+      $script_html .= "\nif ( country == \"$country\" ) {\n";
+      foreach my $state ( sort keys %{$cust_main_county{$country}} ) {
+        $script_html .= "\nif ( state == \"$state\" ) {\n";
+          #foreach my $county ( sort @{$cust_main_county{$country}{$state}} ) {
+          foreach my $county ( sort keys %{$cust_main_county{$country}{$state}} ) {
+            my $text = $county || '(n/a)';
+            $script_html .=
+              qq!opt(what.form.${prefix}county, "$county", "$text");\n!;
+          }
+        $script_html .= "}\n";
+      }
+      $script_html .= "}\n";
+    }
+  }
+
+  $script_html .= <<END;
+    }
+    </SCRIPT>
+END
+
+  my $county_html = $script_html;
+  if ( $countyflag ) {
+    $county_html .= qq!<SELECT NAME="${prefix}county" onChange="$onchange">!;
+    $county_html .= '</SELECT>';
+  } else {
+    $county_html .=
+      qq!<INPUT TYPE="hidden" NAME="${prefix}county" VALUE="$selected_county">!;
+  }
+
+  my $state_html = qq!<SELECT NAME="${prefix}state" !.
+                   qq!onChange="${prefix}state_changed(this); $onchange">!;
+  foreach my $state ( sort keys %{ $cust_main_county{$selected_country} } ) {
+    my $text = $state || '(n/a)';
+    my $selected = $state eq $selected_state ? 'SELECTED' : '';
+    $state_html .= "\n<OPTION $selected VALUE=$state>$text</OPTION>"
+  }
+  $state_html .= '</SELECT>';
+
+  $state_html .= '</SELECT>';
+
+  my $country_html = qq!<SELECT NAME="${prefix}country" !.
+                     qq!onChange="${prefix}country_changed(this); $onchange">!;
+  my $countrydefault = $init_data->{countrydefault} || 'US';
+  foreach my $country (
+    sort { ($b eq $countrydefault) <=> ($a eq $countrydefault) or $a cmp $b }
+      keys %cust_main_county
+  ) {
+    my $selected = $country eq $selected_country ? ' SELECTED' : '';
+    $country_html .= "\n<OPTION$selected>$country</OPTION>"
+  }
+  $country_html .= '</SELECT>';
+
+  ($county_html, $state_html, $country_html);
+
 }
 
 sub success_default { #html to use if you don't specify a success file

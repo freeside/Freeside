@@ -28,25 +28,20 @@ Contact Information
   <TH ALIGN="right"><font color="#ff0000">*</font>City</TH>
   <TD><INPUT TYPE="text" NAME="city" VALUE="<%= $city %>"></TD>
   <TH ALIGN="right"><font color="#ff0000">*</font>State/Country</TH>
-  <TD><SELECT NAME="state" SIZE="1">
-
-  <%=
-    foreach ( @{$locales} ) {
-      $OUT .= '<OPTION';
-      $OUT .= ' SELECTED' if ( $state eq $_->{'state'}
-                               && $county eq $_->{'county'}
-                               && $country eq $_->{'country'}
-                             );
-      $OUT .= '>'. $_->{'state'};
-      $OUT .= ' ('. $_->{'county'}. ')' if $_->{'county'};
-      $OUT .= ' / '. $_->{'country'};
-    }
-  %>
-
-  </SELECT></TD>
+  <TD>
+    <%=
+        ($county_html, $state_html, $country_html) =
+          regionselector( $county, $state, $country );
+ 
+        "$county_html $state_html";
+    %>
+  </TD>
   <TH><font color="#ff0000">*</font>Zip</TH>
   <TD><INPUT TYPE="text" NAME="zip" SIZE=10 VALUE="<%= $zip %>"></TD>
 </TR>
+<TR>
+  <TH ALIGN="right"><font color="#ff0000">*</font>Country</TH>
+  <TD><%= $country_html %></TD>
 <TR>
   <TD ALIGN="right">Day Phone</TD>
   <TD COLSPAN=5><INPUT TYPE="text" NAME="daytime" VALUE="<%= $daytime %>" SIZE=18></TD>
