@@ -1192,12 +1192,12 @@ sub print_ps {
   my $sfile = shell_quote $file;
 
   system("pslatex $sfile.tex >/dev/null 2>&1") == 0
-    or die "pslatex $file.tex failed: $!";
+    or die "pslatex $file.tex failed; see $file.log for details?\n";
   system("pslatex $sfile.tex >/dev/null 2>&1") == 0
-    or die "pslatex $file.tex failed: $!";
+    or die "pslatex $file.tex failed; see $file.log for details?\n";
 
   system('dvips', '-q', '-t', 'letter', "$file.dvi", '-o', "$file.ps" ) == 0
-    or die "dvips failed: $!";
+    or die "dvips failed";
 
   open(POSTSCRIPT, "<$file.ps")
     or die "can't open $file.ps: $! (error in LaTeX template?)\n";
