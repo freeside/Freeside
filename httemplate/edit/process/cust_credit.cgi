@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: cust_credit.cgi,v 1.2 2001-08-21 02:31:56 ivan Exp $ -->
+#<!-- $Id: cust_credit.cgi,v 1.3 2001-12-26 04:25:04 ivan Exp $ -->
 
 use strict;
 use vars qw( $cgi $custnum $new $error );
@@ -31,6 +31,11 @@ if ( $error ) {
   $cgi->param('error', $error);
   print $cgi->redirect(popurl(2). "cust_credit.cgi?". $cgi->query_string );
 } else {
+  if ( $cgi->param('apply') eq 'yes' ) {
+    my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum })
+      or die "unknown custnum $linknum";
+    $cust_main->apply_payments;
+  }
   print $cgi->redirect(popurl(3). "view/cust_main.cgi?$custnum");
 }
 

@@ -9,7 +9,8 @@ use CGI::Carp qw(fatalsToBrowser);
 use FS::UID;
 
 @ISA = qw(Exporter);
-@EXPORT_OK = qw(header menubar idiot eidiot popurl table itable ntable);
+@EXPORT_OK = qw(header menubar idiot eidiot popurl table itable ntable
+                small_custview);
 
 @header = ( '-Expires' => '-1',
             '-Pragma' => 'no-cache',
@@ -206,6 +207,65 @@ sub ntable {
 
 }
 
+=item small_custview CUSTNUM || CUST_MAIN_OBJECT, COUNTRYDEFAULT
+
+Sheesh. I should just switch to Mason.
+
+=cut
+
+sub small_custview {
+  use FS::Record qw(qsearchs);
+  use FS::cust_main;
+
+  my $arg = shift;
+  my $countrydefault = shift || 'US';
+
+  my $cust_main = ref($arg) ? $arg
+                  : qsearchs('cust_main', { 'custnum' => $arg } )
+    or die "unknown custnum $arg";
+
+  my $html = 'Customer #<B>'. $cust_main->custnum. '</B>'.
+    ntable('#e8e8e8'). '<TR><TD>'. ntable("#cccccc",2).
+    '<TR><TD ALIGN="right" VALIGN="top">Billing</TD><TD BGCOLOR="#ffffff">'.
+    $cust_main->getfield('last'). ', '. $cust_main->first. '<BR>';
+
+  $html .= $cust_main->company. '<BR>' if $cust_main->company;
+  $html .= $cust_main->address1. '<BR>';
+  $html .= $cust_main->address2. '<BR>' if $cust_main->address2;
+  $html .= $cust_main->city. ', '. $cust_main->state. '  '. $cust_main->zip. '<BR>';
+  $html .= $cust_main->country. '<BR>'
+    if $cust_main->country && $cust_main->country ne $countrydefault;
+
+  $html .= '</TD></TR></TABLE></TD>';
+
+  if ( defined $cust_main->dbdef_table->column('ship_last') ) {
+
+    my $pre = $cust_main->ship_last ? 'ship_' : '';
+
+    $html .= '<TD>'. ntable("#cccccc",2).
+      '<TR><TD ALIGN="right" VALIGN="top">Service</TD><TD BGCOLOR="#ffffff">'.
+      $cust_main->get("${pre}last"). ', '.
+      $cust_main->get("${pre}first"). '<BR>';
+    $html .= $cust_main->get("${pre}company"). '<BR>'
+      if $cust_main->get("${pre}company");
+    $html .= $cust_main->get("${pre}address1"). '<BR>';
+    $html .= $cust_main->get("${pre}address2"). '<BR>'
+      if $cust_main->get("${pre}address2");
+    $html .= $cust_main->get("${pre}city"). ', '.
+             $cust_main->get("${pre}state"). '  '.
+             $cust_main->get("${pre}ship_zip"). '<BR>';
+    $html .= $cust_main->get("${pre}country"). '<BR>'
+      if $cust_main->get("${pre}country")
+         && $cust_main->get("${pre}country") ne $countrydefault;
+
+    $html .= '</TD></TR></TABLE></TD>';
+  }
+
+  $html .= '</TR></TABLE>';
+
+  $html;
+}
+
 =back
 
 =head1 BUGS
@@ -213,6 +273,8 @@ sub ntable {
 Not OO.
 
 Not complete.
+
+small_custview sooooo doesn't belong here.  i should just switch to Mason.
 
 =head1 SEE ALSO
 

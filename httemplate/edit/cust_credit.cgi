@@ -1,15 +1,17 @@
 <%
-#<!-- $Id: cust_credit.cgi,v 1.5 2001-10-30 14:54:07 ivan Exp $ -->
+#<!-- $Id: cust_credit.cgi,v 1.6 2001-12-26 04:25:04 ivan Exp $ -->
 
 use strict;
-use vars qw( $cgi $query $custnum $otaker $p1 $crednum $_date $amount $reason );
+use vars qw( $cgi $query $custnum $otaker $p1 $_date $amount $reason );
 use Date::Format;
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup getotaker);
-use FS::CGI qw(header popurl);
+use FS::CGI qw(header popurl small_custview);
 use FS::Record qw(fields);
 #use FS::cust_credit;
+
+my $conf = new FS::Conf;
 
 $cgi = new CGI;
 cgisuidsetup($cgi);
@@ -40,35 +42,31 @@ print header("Post Credit", '');
 print qq!<FONT SIZE="+1" COLOR="#ff0000">Error: !, $cgi->param('error'),
       "</FONT>"
   if $cgi->param('error');
-print <<END;
+print <<END, small_custview($custnum, $conf->config('countrydefault'));
     <FORM ACTION="${p1}process/cust_credit.cgi" METHOD=POST>
+    <INPUT TYPE="hidden" NAME="crednum" VALUE="">
+    <INPUT TYPE="hidden" NAME="paybatch" VALUE="">
+    <INPUT TYPE="hidden" NAME="_date" VALUE="$_date">
+    <INPUT TYPE="hidden" NAME="credited" VALUE="">
+    <INPUT TYPE="hidden" NAME="otaker" VALUE="$otaker">
 END
 
-$crednum = "";
-print qq!Credit #<B>!, $crednum ? $crednum : " <I>(NEW)</I>", qq!</B><INPUT TYPE="hidden" NAME="crednum" VALUE="$crednum">!;
+print '<BR><BR>Credit'. ntable("#cccccc", 2).
+      '<TR><TD ALIGN="right">Date</TD><TD BGCOLOR="#ffffff">'.
+      time2str("%D",$_date).  '</TD></TR>';
 
-print qq!<BR>Customer #<B>$custnum</B><INPUT TYPE="hidden" NAME="custnum" VALUE="$custnum">!;
-
-print qq!<INPUT TYPE="hidden" NAME="paybatch" VALUE="">!;
-
-print qq!<BR>Date: <B>!, time2str("%D",$_date), qq!</B><INPUT TYPE="hidden" NAME="_date" VALUE="">!;
-
-print qq!<BR>Amount \$<INPUT TYPE="text" NAME="amount" VALUE="$amount" SIZE=8 MAXLENGTH=8>!;
-print qq!<INPUT TYPE="hidden" NAME="credited" VALUE="">!;
+print qq!<TR><TD ALIGN="right">Amount</TD><TD BGCOLOR="#ffffff">\$<INPUT TYPE="text" NAME="amount" VALUE="$amount" SIZE=8 MAXLENGTH=8></TD></TR>!;
 
 #print qq! <INPUT TYPE="checkbox" NAME="refund" VALUE="$refund">Also post refund!;
 
-print qq!<INPUT TYPE="hidden" NAME="otaker" VALUE="$otaker">!;
+print qq!<TR><TD ALIGN="right">Reason</TD><TD BGCOLOR="#ffffff"><INPUT TYPE="text" NAME="reason" VALUE="$reason"></TD></TR>!;
 
-print qq!<BR>Reason <INPUT TYPE="text" NAME="reason" VALUE="$reason">!;
+print qq!<TR><TD ALIGN="right">Auto-apply<BR>to invoices</TD><TD><SELECT NAME="apply"><OPTION VALUE="yes" SELECTED>yes<OPTION>no</SELECT></TD>!;
 
 print <<END;
+</TABLE>
 <BR>
-<INPUT TYPE="submit" VALUE="Post">
-END
-
-print <<END;
-
+<INPUT TYPE="submit" VALUE="Post credit">
     </FORM>
   </BODY>
 </HTML>
