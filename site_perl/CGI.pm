@@ -3,8 +3,9 @@ package FS::CGI;
 use strict;
 use vars qw(@EXPORT_OK @ISA);
 use Exporter;
-use CGI::Base;
+use CGI;
 use CGI::Carp qw(fatalsToBrowser);
+use FS::UID;
 
 @ISA = qw(Exporter);
 @EXPORT_OK = qw(header menubar idiot eidiot);
@@ -80,8 +81,8 @@ Sends headers and an HTML error message.
 
 sub idiot {
   my($error)=@_;
-  CGI::Base::SendHeaders();
-  print <<END;
+  my($cgi)=FS::UID::cgi;
+  print $cgi->header, <<END;
 <HTML>
   <HEAD>
     <TITLE>Error processing your request</TITLE>
@@ -136,8 +137,8 @@ lose the background, eidiot ivan@sisd.com 98-sep-2
 pod ivan@sisd.com 98-sep-12
 
 $Log: CGI.pm,v $
-Revision 1.2  1998-11-07 10:24:23  ivan
-don't use depriciated FS::Bill and FS::Invoice, other miscellania
+Revision 1.3  1998-11-08 10:50:19  ivan
+s/CGI::Base/CGI/; etc.
 
 
 =cut
