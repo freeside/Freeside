@@ -9,8 +9,14 @@ apt-get update; apt-get update
 
 apt-get install perl-Devel-Symdump perl-BSD-Resource
 
-wget --passive-ftp http://reb00t.com/linux/RPMS/redhat-9/apache/apache-1.3.28-0.n0i.i686.rpm http://reb00t.com/linux/RPMS/redhat-9/mm/mm-1.2.1-0.n0i.i686.rpm ftp://at.rpmfind.net/linux/redhat.com/dist/linux/beta/severn/en/os/i386/RedHat/RPMS/db4-4.1.25-10.i386.rpm
-rpm -i db4-4.1.25-10.i386.rpm mm-1.2.1-0.n0i.i686.rpm apache-1.3.28-0.n0i.i686.rpm
+wget --passive-ftp http://reb00t.com/linux/RPMS/redhat-9/apache/apache-1.3.28-0.n0i.src.rpm http://reb00t.com/linux/RPMS/redhat-9/mm/mm-1.2.1-0.n0i.i686.rpm http://reb00t.com/linux/RPMS/redhat-9/mm/mm-devel-1.2.1-0.n0i.i686.rpm
+rpm -i mm-1.2.1-0.n0i.i686.rpm mm-devel-1.2.1-0.n0i.i686.rpm apache-1.3.28-0.n0i.src.rpm
+
+cd /usr/src/redhat/SPECS  
+rpmbuild -ba apache.spec
+
+cd /usr/src/redhat/RPMS/i386
+rpm -i apache-1.3.28-0.n0i.i386.rpm
 
 apt-get install perl-CGI perl-CPAN perl-DBD-MySQL perl-DBD-Pg perl-DBI perl-DateManip perl-HTML-Parser perl-HTML-Tagset perl-TimeDate perl-URI perl-libwww-perl perl-suidperl rsync postgresql postgresql-docs postgresql-libs postgresql-server screen zsh lftp cvs #openssh
 
@@ -20,3 +26,25 @@ perl -MCPAN -e"install Locale::Country, Net::Whois, Business::CreditCard, \
                        DBIx::DBSchema, Net::SSH, String::ShellQuote, \
                        Net::SCP, Apache::ASP, Tie::IxHash, Time::Duration, \
                        HTML::Widgets::SelectLayers, Apache::DBI, Cache::Cache"
+
+#edit /etc/init.d/httpd, add -DHAVE_PERL -DHAVE_SSL, then remove perl & ssl
+# module load bits from /etc/httpd/conf/httpd.conf
+
+useradd freeside
+
+chkconfig postgresql on
+/etc/init.d/postgresql start
+
+su postgres -c "createuser -P freeside"
+
+su freeside -c "createdb freeside"
+
+#?
+cd ../..
+make install-perl-modules
+make create-config
+freeside-adduser -c -h /usr/local/etc/freeside/htpasswd ivan
+su freeside -c 'freeside-setup ivan'
+su freeside -c '/home/ivan/freeside/bin/populate-msgcat ivan'
+make deploy
+
