@@ -683,7 +683,7 @@ sub _agent_invoice_from {
 sub _agent_plandata {
   my( $self, $option ) = @_;
 
-  my $cust_bill_event = qsearchs( 'part_bill_event',
+  my $part_bill_event = qsearchs( 'part_bill_event',
     {
       'payby'     => $self->cust_main->payby,
       'plan'      => 'send_agent',
@@ -697,12 +697,13 @@ sub _agent_plandata {
     'ORDER BY seconds LIMIT 1'
   );
 
-  return '' unless $cust_bill_event;
+  return '' unless $part_bill_event;
 
-  if ( $cust_bill_event->plandata =~ /^$option (.*)$/m ) {
+  if ( $part_bill_event->plandata =~ /^$option (.*)$/m ) {
     return $1;
   } else {
-    warn "can't parse plandata for $1";
+    warn "can't parse part_bill_event eventpart#". $part_bill_event->eventpart.
+         " plandata for $option";
     return '';
   }
 
