@@ -93,7 +93,7 @@ tie my %events, 'Tie::IxHash',
   'addpost' => {
     'name' => 'Add postal invoicing',
     'code' => '$cust_main->invoicing_list_addpost(); "";',
-    'pad'  => 20,
+    'weight'  => 20,
   },
 
   'comp' => {
