@@ -809,7 +809,7 @@ sub icradius_rc_replace {
 }
 
 sub cp_rename {
-  my ( $old_username, $new_username );
+  my ( $old_username, $new_username ) = @_;
 
   my $app = new Net::APP ( $cp_server,
                         User     => $cp_user,
@@ -830,7 +830,7 @@ sub cp_rename {
 }
 
 sub cp_change {
-  my ( $username, $password );
+  my ( $username, $password ) = @_;
 
   my $app = new Net::APP ( $cp_server,
                         User     => $cp_user,
