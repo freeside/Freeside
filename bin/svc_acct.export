@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 #
-# $Id: svc_acct.export,v 1.35 2002-03-20 21:31:49 ivan Exp $
+# $Id: svc_acct.export,v 1.36 2002-05-16 14:28:35 ivan Exp $
 #
 # Create and export password, radius and vpopmail password files:
 # passwd, passwd.adjunct, shadow, acp_passwd, acp_userinfo, acp_dialup
@@ -379,12 +379,12 @@ foreach $svc_domain (sort {$a->domain cmp $b->domain} @svc_domain) {
 #        qq(Password = "$rpassword"\n\t),
         join ",\n\t", map { qq($_ = "$radreply{$_}") } keys %radreply;
 
-      if ( $ip && $ip ne '0e0' ) {
-        #print USERS qq(,\n\tFramed-Address = "$ip"\n\n);
-        print USERS qq(,\n\tFramed-IP-Address = "$ip"\n\n);
-      } else {
+      #if ( $ip && $ip ne '0e0' ) {
+      #  #print USERS qq(,\n\tFramed-Address = "$ip"\n\n);
+      #  print USERS qq(,\n\tFramed-IP-Address = "$ip"\n\n);
+      #} else {
         print USERS qq(\n\n);
-      }
+      #}
 
     }
   
