@@ -26,6 +26,7 @@ my $total = scalar(@part_svc);
   <TR>
     <TH COLSPAN=<%= $cgi->param('showdisabled') ? 2 : 3 %>>Service</TH>
     <TH>Table</TH>
+    <TH>Export</TH>
     <TH>Field</TH>
     <TH COLSPAN=2>Modifier</TH>
   </TR>
@@ -54,6 +55,30 @@ my $total = scalar(@part_svc);
       <%= $hashref->{svc} %></A></TD>
     <TD ROWSPAN=<%= $rowspan %>>
       <%= $hashref->{svcdb} %></TD>
+    <TD ROWSPAN=<%= $rowspan %>><%= itable() %>
+<%
+  my @part_export = qsearch('part_export', { svcpart => $part_svc->svcpart } );
+  foreach my $part_export ( @part_export ) {
+%>
+      <TR>
+        <TD><%= $part_export->exporttype %> to <%= $part_export->machine %></TD>
+        <TD>(options)</TD>
+<%  } %>
+      </TR><TR><TD COLSPAN=2><A HREF="<%= $p %>edit/part_export.cgi?new_with_svcpart=<%= $part_svc->svcpart %>"><I>Add a new export</I><A></TD></TR>
+<% if (@part_export) { %>
+      <TR><TD COLSPAN=2>
+        <FORM METHOD="POST" ACTION="<%= $p %>edit/part_export.cgi">
+        <INPUT TYPE="hidden" NAME="svcpart" VALUE="<%= $part_svc->svcpart %>">
+        <SELECT NAME="clone"><OPTION></OPTION>
+<%   foreach my $part_export ( @part_export ) { %>
+          <OPTION VALUE="<%= $part_export->exportnum %>">
+            <%= $part_export->exporttype %> to <%= $part_export->machine %>
+          </OPTION>
+<%   } %>
+        <INPUT TYPE="submit" VALUE="clone existing export">
+        </FORM></TD></TR>
+<% } %>
+      </TABLE></TD>
 
 <%   my($n1)='';
      foreach my $field ( @fields ) {
@@ -73,7 +98,7 @@ my $total = scalar(@part_svc);
 <% } %>
 
   <TR>
-    <TD COLSPAN=<%= $cgi->param('showdisabled') ? 6 : 7 %>><A HREF="<%= $p %>edit/part_svc.cgi"><I>Add a new service definition</I></A></TD>
+    <TD COLSPAN=<%= $cgi->param('showdisabled') ? 7 : 8 %>><A HREF="<%= $p %>edit/part_svc.cgi"><I>Add a new service definition</I></A></TD>
   </TR>
 </TABLE>
 </BODY>
