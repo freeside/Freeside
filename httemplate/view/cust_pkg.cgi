@@ -83,12 +83,14 @@ print  '<TR><TD ALIGN="right">Order taker</TD><TD BGCOLOR="#ffffff">',
       '</TABLE></TD></TR></TABLE>'
 ;
 
-#  print <<END;
-#<FORM ACTION="../misc/expire_pkg.cgi" METHOD="post">
-#<INPUT TYPE="hidden" NAME="pkgnum" VALUE="$pkgnum">
-#Expire (date): <INPUT TYPE="text" NAME="date" VALUE="" >
-#<INPUT TYPE="submit" VALUE="Cancel later">
-#END
+unless ($expire) {
+  print <<END;
+<FORM ACTION="../misc/expire_pkg.cgi" METHOD="post">
+<INPUT TYPE="hidden" NAME="pkgnum" VALUE="$pkgnum">
+Expire (date): <INPUT TYPE="text" NAME="date" VALUE="" >
+<INPUT TYPE="submit" VALUE="Cancel later">
+END
+}
 
 unless ($cancel) {
 
