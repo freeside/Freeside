@@ -2,9 +2,7 @@ package FS::part_export::forward_shellcommands;
 
 use strict;
 use vars qw(@ISA);
-use FS::Record qw(qsearchs);
 use FS::part_export;
-use FS::svc_acct;
 
 @ISA = qw(FS::part_export);
 
@@ -31,13 +29,13 @@ sub _export_command {
     ${$_} = $svc_forward->getfield($_) foreach $svc_forward->fields;
   }
 
-  my $svc_acct = qsearchs( 'svc_acct', { 'svcnum' => $self->srcsvc } );
+  my $svc_acct = $svc_forward->srcsvc_acct;
   $username = $svc_acct->username;
   $domain = $svc_acct->domain;
-  if ($self->dstsvc) {
-    $destination = $self->dstsvc_acct->email;
+  if ($svc_forward->dstsvc_acct) {
+    $destination = $svc_forward->dstsvc_acct->email;
   } else {
-    $destination = $self->dst;
+    $destination = $svc_forward->dst;
   }
 
   #done setting variables for the command
@@ -61,22 +59,22 @@ sub _export_replace {
     ${"new_$_"} = $new->getfield($_) foreach $new->fields;
   }
 
-  my $old_svc_acct = qsearchs( 'svc_acct', { 'svcnum' => $self->srcsvc } );
+  my $old_svc_acct = $old->srcsvc_acct;
   $old_username = $old_svc_acct->username;
   $old_domain = $old_svc_acct->domain;
-  if ($self->dstsvc) {
-    $old_destination = $self->dstsvc_acct->email;
+  if ($old->dstsvc_acct) {
+    $old_destination = $old->dstsvc_acct->email;
   } else {
-    $old_destination = $self->dst;
+    $old_destination = $old->dst;
   }
 
-  my $new_svc_acct = qsearchs( 'svc_acct', { 'svcnum' => $self->srcsvc } );
+  my $new_svc_acct = $new->srcsvc_acct;
   $new_username = $new_svc_acct->username;
   $new_domain = $new_svc_acct->domain;
-  if ($self->dstsvc) {
-    $new_destination = $self->dstsvc_acct->email;
+  if ($new->dstsvc) {
+    $new_destination = $new->dstsvc_acct->email;
   } else {
-    $new_destination = $self->dst;
+    $new_destination = $new->dst;
   }
 
   #done setting variables for the command
