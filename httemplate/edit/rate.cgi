@@ -1,11 +1,51 @@
-<!-- mason kludge -->
 <%
 
-my $rate;
-if ( $cgi->param('error') ) {
+my($rate, $error);
+
+if ( $cgi->param('magic') eq 'process' ) {
+
+  my $ratenum = $cgi->param('ratenum');
+  
+  my $old = qsearchs('rate', { 'ratenum' => $ratenum } ) if $ratenum;
+  
+  my @rate_detail = map {
+    my $regionnum = $_->regionnum;
+    if ( $cgi->param("sec_granularity$regionnum") ) {
+      new FS::rate_detail {
+        'dest_regionnum'  => $regionnum,
+        map { $_ => scalar($cgi->param("$_$regionnum")) }
+            qw( min_included min_charge sec_granularity )
+      };
+    } else {
+      new FS::rate_detail {
+        'dest_regionnum'  => $regionnum,
+        'min_included'    => 0,
+        'min_charge'      => 0,
+        'sec_granularity' => '60'
+      };
+    }
+  } qsearch('rate_region', {} );
+  
   $rate = new FS::rate ( {
-    map { $_, scalar($cgi->param($_)) } fields('rate')
+    map {
+      $_, scalar($cgi->param($_));
+    } fields('rate')
   } );
+  
+  if ( $ratenum ) {
+    warn "$rate replacing $old ($ratenum)\n";
+    $error = $rate->replace($old, 'rate_detail' => \@rate_detail );
+  } else {
+    warn "inserting $rate\n";
+    $error = $rate->insert( 'rate_detail' => \@rate_detail );
+    $ratenum = $rate->getfield('ratenum');
+  }
+
+  unless ( $error ) {
+    print $cgi->redirect("${p}browse/rate.cgi");
+    myexit;
+  }
+  
 } elsif ( $cgi->keywords ) {
   my($query) = $cgi->keywords;
   $query =~ /^(\d+)$/;
@@ -37,12 +77,12 @@ END
     ))
 %>
 
-<% if ( $cgi->param('error') ) { %>
-<FONT SIZE="+1" COLOR="#ff0000">Error: <%= $cgi->param('error') %></FONT><BR>
+<% if ( $error ) { %>
+<FONT SIZE="+1" COLOR="#ff0000">Error: <%= $error %></FONT><BR>
 <% } %>
 
-<FORM ACTION="<%=$p1%>process/rate.cgi" METHOD=POST>
-
+<FORM ACTION="<%=$p1%>rate.cgi" NAME="OneTrueForm" METHOD=POST onSubmit="document.OneTrueForm.submit.disabled=true">
+<INPUT TYPE="hidden" NAME="magic" VALUE="process">
 <INPUT TYPE="hidden" NAME="ratenum" VALUE="<%= $rate->ratenum %>">
 
 Rate plan
@@ -68,7 +108,7 @@ Rate plan
      my $n = $rate_region->regionnum;
      my $rate_detail =
        $rate->dest_detail($rate_region)
-       || new FS::rate_region { 'min_included'    => 0,
+       || new FS::rate_detail { 'min_included'    => 0,
                                 'min_charge'      => 0,
                                 'sec_granularity' => '60'
                               };
@@ -95,9 +135,11 @@ Rate plan
 
 </TABLE>
 
-<BR><INPUT TYPE="submit" VALUE="<%= 
+<BR><INPUT NAME="submit" TYPE="submit" VALUE="<%= 
   $rate->ratenum ? "Apply changes" : "Add rate plan"
 %>">
+Please be patient, <%= $rate->ratenum ? 'editing' : 'adding' %>
+a rate plan can take a few minutes...
 
     </FORM>
   </BODY>
