@@ -1256,7 +1256,7 @@ sub print_pdf {
 
 sub _latex_escape {
   my $value = shift;
-  $value =~ s/([#\$%&~_\^{}])( )?/"\\$1". ( length($2) ? "\\$2" : '' )/ge;
+  $value =~ s/([#\$%&~_\^{}])( )?/"\\$1". ( ( defined($2) && length($2) ) ? "\\$2" : '' )/ge;
   $value;
 }
 
