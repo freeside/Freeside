@@ -16,19 +16,26 @@ machine, not the backend Freeside server.  On the public machine, install:
   <li><a href="http://search.cpan.org/search?dist=HTTP-BrowserDetect">HTTP::BrowserDetect</a>
 
   <li><a href="man/FS/SelfService.html">FS::SelfService</a> (copy the fs_selfservice/FS-SelfService directory to the external machine, then: perl Makefile.PL; make; make install)
-  <li><a href="man/FS/SignupClient.html">FS::SignupClient</a> (copy the fs_signup/FS-SignupClient directory to the external machine, then: perl Makefile.PL; make; make install)
 </ul>
 Then:
 <ul>
   <li>Set the <a href="../config/config.cgi#unclassified"><i>signup_server-default_agentnum</i></a> configuration value to a default <a href="../browse/agent.cgi">agent number</a>.
   <li>Set the <a href="../config/config.cgi#unclassified"><i>signup_server-default_refnum</i></a> to a default <a href="../browse/part_referral.cgi">advertising source</a>.
   <li>Add the user `freeside' to the the external machine.
-  <li>Copy or symlink the <pre>fs_selfservice/FS-SelfService/cgi/</pre> directory into the web server's document space, for customer self-service and reseller access.  Optionally, customize the .html templates.
-  <li>Copy or symlink the <pre>fs_signup/FS-SignupClient/cgi/</pre> directory into the web server's document space, for signups. Optionally, customize the .html templates.
+  <li>Copy or symlink the <code>fs_selfservice/FS-SelfService/cgi/</code> directory into the web server's document space.  Optionally, customize the .html templates.  "Entry points" (useful places to link to) are:
+    <ul>
+      <li>signup.cgi - Signup
+      <li>selfservice.cgi - Customer self-service
+      <li>agent.cgi - Reseller interface
+      <li>passwd.cgi - Simple password-changing interface
+      <li>promocode.html - Promotional code pre-signup
+      <li>regcode.html - Registration code pre-signup
+      <li>stateselect.html - State selection pre-signup
+    </ul>
   <li>When linking to signup.cgi, you can include a referring custnum in the URL as follows: <code>http://public.web.server/path/signup.cgi?ref=1542</code>
   <li>Enable CGI execution for files with the `.cgi' extension.  (with <a href="http://www.apache.org/docs/mod/mod_mime.html#addhandler">Apache</a>)
   <li>Create the /usr/local/freeside directory on the external machine (owned by the freeside user).
-  <li>touch /usr/local/freeside/fs_signupd_socket; chown freeside /usr/local/freeside/fs_signupd_socket; chmod 600 /usr/local/freeside/fs_signupd_socket
+  <li>touch /usr/local/freeside/selfservice_socket; chown freeside /usr/local/freeside/selfservice_socket; chmod 600 /usr/local/freeside/selfservice_socket
   <li>Use <a href="http://www.apache.org/docs/suexec.html">suEXEC</a> or <a href="http://www.perl.com/CPAN-local/doc/manual/html/pod/perlsec.html#Security_Bugs">setuid</a> (see <a href="install.html">install.html</a> for details) to run signup.cgi, selfservice.cgi, agent.cgi and passwd.cgi as the freeside user.
   <li>Append the identity.pub from the freeside user on your freeside machine to the authorized_keys file of the newly created freeside user on the external machine(s).
   <li>Run an instance of <pre>freeside-selfservice-server <i>user</i> <i>machine</i> <i>agentnum</i> <i>refnum</i></pre> on the Freeside machine for each external machine.
@@ -42,7 +49,7 @@ Then:
 Optional:
 <ul>
   <li>If you create a <b>/usr/local/freeside/ieak.template</b> file on the external machine, it will be sent to IE users with MIME type <i>application/x-Internet-signup</i>.  This file will be processed with <a href="http://search.cpan.org/doc/MJD/Text-Template-1.23/Template.pm">Text::Template</a> with the variables listed below available.
-  (an example file is included as <b>fs_signup/ieak.template</b>)  See the section on <a href="http://www.microsoft.com/windows/ieak/techinfo/deploy/60/en/INS.HTM">internet settings files</a> in the <a href="http://www.microsoft.com/windows/ieak/techinfo/deploy/60/en/toc.asp">IEAK documentation</a> for more information.
+  (an example file is included as <b>fs_selfservice/FS-SelfService/ieak.template</b>)  See the section on <a href="http://www.microsoft.com/windows/ieak/techinfo/deploy/60/en/INS.HTM">internet settings files</a> in the <a href="http://www.microsoft.com/windows/ieak/techinfo/deploy/60/en/toc.asp">IEAK documentation</a> for more information.
 <!--  <li>If you create a <b>/usr/local/freeside/success.html</b> file on the external machine, it will be used as the success HTML page.  Although template substiutions are available, a regular HTML file will work fine here, unlike signup.html.  An example file is included as <b>fs_signup/FS-SignupClient/cgi/success.html</b>-->
   <li>Variable substitutions available in <b>ieak.template</b> and <b>success.html</b>:
     <ul>

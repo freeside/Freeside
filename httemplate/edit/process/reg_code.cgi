@@ -22,11 +22,14 @@ my @pkgparts =
 
 $error ||= $agent->generate_reg_codes($num, \@pkgparts);
 
-unless ( ref($error) ) { %><%=
+unless ( ref($error) ) {
+  $cgi->param('error'. $error );
+%><%=
   $cgi->redirect(popurl(3). "edit/reg_code.cgi?". $cgi->query_string )
 %><% } else { %>
 
 <%= header("$num registration codes generated for ". $agent->agent, menubar(
+  'Main menu'       => popurl(3),
   'View all agents' => popurl(3). 'browse/agent.cgi',
 ) ) %>
 

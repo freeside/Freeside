@@ -890,6 +890,7 @@ sub tables_hash_hack {
         'identifier',  'varchar', '', $char_d,
         'amount',      @money_type,
         'seconds',     'int',     'NULL', '',
+        'agentnum',    'int',     'NULL', '',
       ],
       'primary_key' => 'prepaynum',
       'unique'      => [ ['identifier'] ],

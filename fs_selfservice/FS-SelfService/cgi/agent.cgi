@@ -113,7 +113,7 @@ sub process_signup {
 
   my $error = '';
 
-  #some false laziness w/signup.cgi
+  #false laziness w/signup.cgi, identical except for agentnum vs session_id
   my $payby = $cgi->param('payby');
   if ( $payby eq 'CHEK' || $payby eq 'DCHK' ) {
     #$payinfo = join('@', map { $cgi->param( $payby. "_payinfo$_" ) } (1,2) );
@@ -161,17 +161,25 @@ sub process_signup {
   unless ( $error ) {
     my $rv = new_customer ( {
       'session_id'       => $session_id,
-      map { $_ => $cgi->param($_) }
+      map { $_ => scalar($cgi->param($_)) }
         qw( last first ss company
             address1 address2 city county state zip country
             daytime night fax
+
+            ship_last ship_first ship_company
+            ship_address1 ship_address2 ship_city ship_county ship_state
+              ship_zip ship_country
+            ship_daytime ship_night ship_fax
+
             payby payinfo paycvv paydate payname invoicing_list
+            referral_custnum promo_code reg_code
             pkgpart username sec_phrase _password popnum refnum
           ),
         grep { /^snarf_/ } $cgi->param
     } );
     $error = $rv->{'error'};
   }
+  #eslaf
 
   if ( $error ) { 
     $action = 'signup';
@@ -409,7 +417,8 @@ sub do_template {
   #warn join(' / ', map { "$_=>".$fill_in->{$_} } keys %$fill_in). "\n";
 
   $cgi->delete_all();
-  $fill_in->{'selfurl'} = $cgi->self_url;
+  $fill_in->{'selfurl'} = $cgi->self_url; #OLD
+  $fill_in->{'self_url'} = $cgi->self_url;
   $fill_in->{'cgi'} = \$cgi;
 
   my $template = new Text::Template( TYPE    => 'FILE',

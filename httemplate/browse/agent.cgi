@@ -37,6 +37,7 @@ full offerings (via their type).<BR><BR>
   <TH>Customers</TH>
   <TH>Reports</TH>
   <TH>Registration Codes</TH>
+  <TH>Prepaid cards</TH>
   <TH><FONT SIZE=-1>Freq.</FONT></TH>
   <TH><FONT SIZE=-1>Prog.</FONT></TH>
 </TR>
@@ -104,6 +105,13 @@ foreach my $agent ( sort {
           <% if ( $num_reg_code ) { %>
             <A HREF="<%=$p%>search/reg_code.html?agentnum=<%= $agent->agentnum %>"><% } %>Unused<% if ( $num_reg_code ) { %></A><% } %>
           <BR><A HREF="<%=$p%>edit/reg_code.cgi?agentnum=<%= $agent->agentnum %>">Generate codes</A>
+        </TD>
+
+        <TD>
+          <%= my $num_prepay_credit = $agent->num_prepay_credit %>
+          <% if ( $num_prepay_credit ) { %>
+            <A HREF="<%=$p%>search/prepay_credit.html?agentnum=<%= $agent->agentnum %>"><% } %>Unused<% if ( $num_prepay_credit ) { %></A><% } %>
+          <BR><A HREF="<%=$p%>edit/prepay_credit.cgi?agentnum=<%= $agent->agentnum %>">Generate cards</A>
         </TD>
 
         <TD><%= $agent->freq %></TD>

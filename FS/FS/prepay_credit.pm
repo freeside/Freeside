@@ -2,8 +2,8 @@ package FS::prepay_credit;
 
 use strict;
 use vars qw( @ISA );
-#use FS::Record qw( qsearch qsearchs );
-use FS::Record qw();
+use FS::Record qw(qsearchs dbh);
+use FS::agent;
 
 @ISA = qw(FS::Record);
 
@@ -37,8 +37,8 @@ FS::prepay_credit - Object methods for prepay_credit records
 
 =head1 DESCRIPTION
 
-An FS::table_name object represents an pre--paid credit, such as a pre-paid
-"calling card".  FS::prepay_credit inherits from FS::Record.  The following
+An FS::prepay_credit object represents a pre-paid card.  FS::prepay_credit
+inherits from FS::Record.  The following
 fields are currently supported:
 
 =over 4
@@ -107,13 +107,75 @@ sub check {
   $self->ut_numbern('prepaynum')
   || $self->ut_alpha('identifier')
   || $self->ut_money('amount')
-  || $self->utnumbern('seconds')
+  || $self->ut_numbern('seconds')
+  || $self->ut_foreign_keyn('agentnum', 'agent', 'agentnum')
   || $self->SUPER::check
   ;
 
 }
 
+=item agent
+
+Returns the agent (see L<FS::agent>) for this prepaid card, if any.
+
+=cut
+
+sub agent {
+  my $self = shift;
+  qsearchs('agent', { 'agentnum' => $self->agentnum } );
+}
+
 =back
+
+=head1 SUBROUTINES
+
+=over 4
+
+=item generate NUM TYPE HASHREF
+
+Generates the specified number of prepaid cards.  Returns an array reference of
+the newly generated card identifiers, or a scalar error message.
+
+=cut
+
+#false laziness w/agent::generate_reg_codes
+sub generate {
+  my( $num, $type, $hashref ) = @_;
+
+  my @codeset = ();
+  push @codeset, ( 'A'..'Z' ) if $type =~ /alpha/;
+  push @codeset, ( '1'..'9' ) if $type =~ /numeric/;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my @cards = ();
+  for ( 1 ... $num ) {
+    my $prepay_credit = new FS::prepay_credit {
+      'identifier' => join('', map($codeset[int(rand $#codeset)], (0..7) ) ),
+      %$hashref,
+    };
+    my $error = $prepay_credit->check || $prepay_credit->insert;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "(inserting prepay_credit) $error";
+    }
+    push @cards, $prepay_credit->identifier;
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+  \@cards;
+
+}
 
 =head1 BUGS
 

@@ -1,20 +1,27 @@
 #!/bin/sh
 
-kill `cat /var/run/freeside-selfservice-server.fs_selfservice.pid`
+#this is a quick hack for my dev machine.  do not use it.
+# see the "make install-selfservice" and "make update-selfservice" makefile
+# targets to properly install this stuff.
 
-( cd ..; make deploy; cd fs_selfservice )
+#kill `cat /var/run/freeside-selfservice-server.fs_selfservice.pid`
 
 cd FS-SelfService
 perl Makefile.PL && make && make install
+cd ..
+
+( cd ..; make deploy; cd fs_selfservice )
 
 cp /home/ivan/freeside/fs_selfservice/FS-SelfService/cgi/* /var/www/MyAccount
-chown freeside /var/www/MyAccount/selfservice.cgi /var/www/MyAccount/agent.cgi
-chmod 755 /var/www/MyAccount/selfservice.cgi /var/www/MyAccount/agent.cgi
+chown freeside /var/www/MyAccount/*.cgi
+chmod 755 /var/www/MyAccount/*.cgi
 ln -s /var/www/MyAccount/selfservice.cgi /var/www/MyAccount/index.cgi || true
 
-cp /home/ivan/freeside/fs_signup/FS-SignupClient/cgi/* /var/www/signup/
-#mv /var/www/signup/signup-snarf.html /var/www/signup/signup.html #!!!!!
-chown freeside /var/www/signup/signup.cgi
-chmod 755 /var/www/signup/signup.cgi
-ln -s /var/www/signup/signup.cgi /var/www/signup/index.cgi || true
+	#cp /home/ivan/freeside/fs_signup/FS-SignupClient/cgi/* /var/www/signup/
+	##mv /var/www/signup/signup-snarf.html /var/www/signup/signup.html #!!!!!
+	##mv /var/www/signup/signup-billaddress.html /var/www/signup/signup.html #!!!!!
+	##mv /var/www/signup/signup-freeoption.html /var/www/signup/signup.html #!!!!!
+	#chown freeside /var/www/signup/signup.cgi
+	#chmod 755 /var/www/signup/signup.cgi
+	#ln -s /var/www/signup/signup.cgi /var/www/signup/index.cgi || true
 

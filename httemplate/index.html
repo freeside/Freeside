@@ -139,26 +139,6 @@
       <BR><BR><A HREF="search/report_prepaid_income.html">Prepaid Income (Unearned Revenue) Report</A>
       <BR><BR><A HREF="search/report_tax.html">Sales Tax Liability Report</A>
       <BR><BR>
-      <CENTER><HR WIDTH="94%" NOSHADE></CENTER><BR>
-      <A NAME="admin">Administration</a>
-        <ul>
-          <LI><A HREF="browse/part_pkg.cgi">View/Edit package definitions</A>
-            - One or more services are grouped together into a package and
-              given pricing information.  Customers purchase packages, not
-              services.
-<!--          <LI><A HREF="browse/agent_type.cgi">View/Edit agent types</A>
-            - Agent types define groups of package definitions that you can
-              then assign to particular agents.
-          <LI><A HREF="browse/agent.cgi">View/Edit agents</A>
-            - Agents are resellers of your service.  Agents may be limited
-              to a subset of your full offerings (via their type).
--->
-          <LI><A HREF="browse/cust_main_county.cgi">View/Edit locales and tax rates</A>
-            - Change tax rates, or break down a country into states, or a state
-              into counties and assign different tax rates to each.
-          <LI><A HREF="browse/part_bill_event.cgi">View/Edit invoice events</A> - Actions for overdue invoices
-        </ul>
-      <BR>
     </TD></TR>
     </TABLE>
 
@@ -232,7 +212,7 @@
       <BR><A HREF="misc/dump.cgi">Download database dump</A>
       <BR><BR><CENTER><HR WIDTH="94%" NOSHADE></CENTER><BR>
       <A NAME="config" HREF="config/config-view.cgi">Configuration</a><!-- - <font size="+2" color="#ff0000">start here</font> -->
-      <BR><BR><A NAME="admin">Administration</a>
+      <BR><BR><A NAME="admin">Provisioning, services and packages</a>
         <ul>
           <LI><A HREF="browse/part_export.cgi">View/Edit exports</A>
             - Provisioning services to external machines, databases and APIs.
@@ -242,30 +222,49 @@
             - One or more services are grouped together into a package and
               given pricing information.  Customers purchase packages, not
               services.
+        </ul>
+      <A NAME="admin_agent">Resellers</a>
+        <ul>
           <LI><A HREF="browse/agent_type.cgi">View/Edit agent types</A>
             - Agent types define groups of package definitions that you can
               then assign to particular agents.
           <LI><A HREF="browse/agent.cgi">View/Edit agents</A>
             - Agents are resellers of your service.  Agents may be limited
               to a subset of your full offerings (via their type).
-          <LI><A HREF="browse/part_referral.cgi">View/Edit advertising sources</A>
-            - Where a customer heard about your service.  Tracked for
-              informational purposes.
+        </ul>
+      <A NAME="admin_billing">Billing</a>
+        <ul>
+          <LI><A HREF="browse/part_bill_event.cgi">View/Edit invoice events</A>
+            - Actions for overdue invoices
+          <LI><A HREF="search/prepay_credit.html">View/Edit prepaid cards</A>
+            - View outstanding cards, generate new cards
+	  <LI><A HREF="browse/rate.cgi">View/Edit call rates and regions</A>
+	    - Manage rate plans, regions and prefixes for VoIP and call billing.
           <LI><A HREF="browse/cust_main_county.cgi">View/Edit locales and tax rates</A>
             - Change tax rates, or break down a country into states, or a state
               into counties and assign different tax rates to each.
+        </ul>
+      <A NAME="admin_svc_acct">Dialup</a>
+        <ul>
           <LI><A HREF="browse/svc_acct_pop.cgi">View/Edit access numbers</A>
             - Points of Presence 
-          <LI><A HREF="browse/part_bill_event.cgi">View/Edit invoice events</A> - Actions for overdue invoices
-	  <LI><A HREF="browse/msgcat.cgi">View/Edit message catalog</A> - Change error messages and other customizable labels.
-    <LI><A HREF="browse/part_virtual_field.cgi">View/Edit virtual fields</A>
-	  - Locally defined fields
+        </ul>
+      <A NAME="admin_svc_broadband">Fixed (username-less) broadband</a>
+        <ul>
 	  <LI><A HREF="browse/router.cgi">View/Edit routers</A>
 	  - Broadband access routers
 	  <LI><A HREF="browse/addr_block.cgi">View/Edit address blocks</A>
 	  - Manage address blocks and block assignments to broadband routers.
-	  <LI><A HREF="browse/rate.cgi">View/Edit call rates and regions</A>
-	  - Manage rate plans, regions and prefixes for VoIP and call billing.
+	</ul>
+      <A NAME="admin_misc">Miscellaneous</a>
+        <ul>
+          <LI><A HREF="browse/part_referral.cgi">View/Edit advertising sources</A>
+            - Where a customer heard about your service.  Tracked for
+              informational purposes.
+          <LI><A HREF="browse/part_virtual_field.cgi">View/Edit virtual fields</A>
+	  - Locally defined fields
+	  <LI><A HREF="browse/msgcat.cgi">View/Edit message catalog</A>
+	  - Change error messages and other customizable labels.
 	</ul>
         <BR>
       </TD></TR>

@@ -177,9 +177,16 @@
     } else {
       ( my $xlsname = $opt{'name'} ) =~ s/\W//g;
       $opt{'name'} =~ s/s$// if $total == 1;
+
+      my @menubar = ();
+      if ( $opt{'menubar'} ) {
+        @menubar = @{ $opt{'menubar'} };
+      } else {
+        @menubar = ( 'Main menu' => $p );
+      }
   %>
   <%= include( '/elements/header.html', $opt{'title'},
-                 include( '/elements/menubar.html', 'Main menu' => $p )
+                 include( '/elements/menubar.html', @menubar )
              )
   %>
   <% my $pager = include ( '/elements/pager.html',
@@ -195,7 +202,7 @@
   
     <TABLE>
       <TR>
-        <TD>
+        <TD VALIGN="bottom">
           <%= $total %> total <%= $opt{'name'} %><BR>
           <% if ( $opt{'count_addl'} ) { %>
             <% my $n=0; foreach my $count ( @{$opt{'count_addl'}} ) { %>

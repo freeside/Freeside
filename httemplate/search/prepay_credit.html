@@ -1,0 +1,43 @@
+<%
+my $agent = '';
+my $hashref = {};
+if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
+  $hashref->{agentnum} = $1;
+  $agent = qsearchs('agent', { 'agentnum' => $1 } );
+}
+
+my $count_query = 'SELECT COUNT(*) FROM prepay_credit';
+$count_query .= ' WHERE agentnum = '. $agent->agentnum if $agent;
+
+%><%= include( 'elements/search.html',
+                 'title'       => 'Unused Prepaid Cards'.
+                                  ($agent ? ' for '. $agent->agent : ''),
+                 'menubar'     => [
+                   'Main menu'      => $p,
+                   'Generate cards' => $p.'edit/prepay_credit.cgi',
+                 ],
+                 'name'        => 'prepaid cards',
+                 'query'       => {  'table'   => 'prepay_credit',
+                                     'hashref' => $hashref,
+                                  },
+                 'count_query' => $count_query,
+                 #'redirect'    => $link,
+                 'header'      => [ '#', qw(Amount Time Agent) ],
+                 'fields'      => [
+                   'identifier',
+                   sub { sprintf('$%.2f', shift->amount ) },
+                   sub { my $c = shift; $c ? duration_exact($c->seconds) : '' },
+                   sub { my $agent = shift->agent;
+                         $agent ? $agent->agent : '';
+                       },
+                 ],
+                 'links' => [
+                   '',
+                   '',
+                   '',
+                   sub { my $agent = shift->agent;
+                         $agent ? [ "${p}view/agent.cgi?", 'agentnum' ] : '';
+                       },
+                 ],
+      )
+%>

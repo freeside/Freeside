@@ -175,7 +175,7 @@ FS::Record.  The following fields are currently supported:
 
 =item ship_fax - phone (optional)
 
-=item payby - I<CARD> (credit card - automatic), I<DCRD> (credit card - on-demand), I<CHEK> (electronic check - automatic), I<DCHK> (electronic check - on-demand), I<LECB> (Phone bill billing), I<BILL> (billing), I<COMP> (free), or I<PREPAY> (special billing type: applies a credit - see L<FS::prepay_credit> and sets billing type to I<BILL>)
+=item payby - I<CARD> (credit card - automatic), I<DCRD> (credit card - on-demand), I<CHEK> (electronic check - automatic), I<DCHK> (electronic check - on-demand), I<LECB> (Phone bill billing), I<BILL> (billing), I<COMP> (free), or I<PREPAY> (special billing type: applies a payment from a prepaid card - see L<FS::prepay_credit> - and sets billing type to I<BILL>)
 
 =item payinfo - card number, P.O., comp issuer (4-8 lowercase alphanumerics; think username) or prepayment identifier (see L<FS::prepay_credit>)
 
@@ -271,20 +271,28 @@ sub insert {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  my $amount = 0;
+  my $prepay_credit = '';
   my $seconds = 0;
   if ( $self->payby eq 'PREPAY' ) {
     $self->payby('BILL');
-    my $prepay_credit = qsearchs(
+    $prepay_credit = qsearchs(
       'prepay_credit',
       { 'identifier' => $self->payinfo },
       '',
       'FOR UPDATE'
     );
-    warn "WARNING: can't find pre-found prepay_credit: ". $self->payinfo
-      unless $prepay_credit;
-    $amount = $prepay_credit->amount;
+    unless ( $prepay_credit ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "Invalid prepaid card: ". $self->payinfo;
+    }
     $seconds = $prepay_credit->seconds;
+    if ( $prepay_credit->agentnum ) {
+      if ( $self->agentnum && $self->agentnum != $prepay_credit->agentnum ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "prepaid card not valid for agent ". $self->agentnum;
+      }
+      $self->agentnum($prepay_credit->agentnum);
+    }
     my $error = $prepay_credit->delete;
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
@@ -321,15 +329,18 @@ sub insert {
     return "No svc_acct record to apply pre-paid time";
   }
 
-  if ( $amount ) {
-    my $cust_credit = new FS::cust_credit {
+  if ( $prepay_credit && $prepay_credit->amount ) {
+    my $cust_pay = new FS::cust_pay {
       'custnum' => $self->custnum,
-      'amount'  => $amount,
+      'paid'    => $prepay_credit->amount,
+      #'_date'   => #date the prepaid card was purchased???
+      'payby'   => 'PREP',
+      'payinfo' => $prepay_credit->identifier,
     };
-    $error = $cust_credit->insert;
+    $error = $cust_pay->insert;
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
-      return "inserting credit (transaction rolled back): $error";
+      return "inserting prepayment (transaction rolled back): $error";
     }
   }
 

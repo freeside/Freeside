@@ -2,6 +2,7 @@ NOTE: Version numbering has been simplified.  1.5.7 is the version after
 1.5.0pre6.  It is still a development version - releases with odd numbered 
 middle parts (NN in x.NN.x) are development versions, like Perl or Linux.
 
+install DBIx::DBSchema 0.24
 
 CREATE TABLE rate (
     ratenum serial NOT NULL,
@@ -77,6 +78,9 @@ CREATE INDEX h_part_pkg2 ON h_part_pkg ( promo_code );
 ALTER TABLE cust_main ALTER COLUMN zip DROP NOT NULL;
 ALTER TABLE h_cust_main ALTER COLUMN zip DROP NOT NULL;
 
+ALTER TABLE prepay_credit ADD agentnum integer NULL;
+ALTER TABLE h_prepay_credit ADD agentnum integer NULL;
+
 Installs w/integrated RT:
   CREATE SEQUENCE attributes_id_seq;
 
@@ -106,7 +110,7 @@ dbdef-create username
 
 install Javascript::RPC (JavaScript::RPC::Server::CGI), Text::CSV_XS,
 Spreadsheet::WriteExcel, IO-stringy (IO::Scalar) and Frontier::RPC
-((Frontier::RPC2)
+(Frontier::RPC2)
 
 afterwords (for installs w/integrated RT):
 make configure-rt

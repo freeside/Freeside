@@ -274,6 +274,7 @@ generated codes, or a scalar error message.
 
 =cut
 
+#false laziness w/prepay_credit::generate
 sub generate_reg_codes {
   my( $self, $num, $pkgparts ) = @_;
 
@@ -324,6 +325,22 @@ sub num_reg_code {
   $sth->execute($self->agentnum) or die $sth->errstr;
   $sth->fetchrow_arrayref->[0];
 }
+
+=item num_prepay_credit
+
+Returns the number of unused prepaid cards for this agent.
+
+=cut
+
+sub num_prepay_credit {
+  my $self = shift;
+  my $sth = dbh->prepare(
+    "SELECT COUNT(*) FROM prepay_credit WHERE agentnum = ?"
+  ) or die dbh->errstr;
+  $sth->execute($self->agentnum) or die $sth->errstr;
+  $sth->fetchrow_arrayref->[0];
+}
+
 
 =back
 

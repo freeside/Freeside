@@ -50,6 +50,7 @@ foreach my $cust_pay ($cust_main->cust_pay) {
   my $target = "$payby$payinfo";
   $payby =~ s/^BILL$/Check #/ if $payinfo;
   $payby =~ s/^CHEK$/Electronic check /;
+  $payby =~ s/^PREP$/Prepaid card /;
   $payby =~ s/^BILL$//;
   $payby =~ s/^(CARD|COMP)$/$1 /;
   my $info = $payby ? " ($payby$payinfo)" : '';

@@ -357,7 +357,7 @@ sub check {
 
   $self->_date(time) unless $self->_date;
 
-  $self->payby =~ /^(CARD|CHEK|LECB|BILL|COMP)$/ or return "Illegal payby";
+  $self->payby =~ /^(CARD|CHEK|LECB|BILL|COMP|PREP)$/ or return "Illegal payby";
   $self->payby($1);
 
   #false laziness with cust_refund::check

@@ -353,11 +353,13 @@
         <li>nasport - port number on the NAS
         <li>nasnum - <a href="#nas">NAS</a>
       </ul>
-    <li><a name="prepay_credit" href="man/FS/prepay_credit.html">prepay_credit</a>
+    <li><a name="prepay_credit" href="man/FS/prepay_credit.html">prepay_credit</a> - prepaid cards
       <ul>
         <li>prepaynum - primary key
-        <li>identifier - text or numeric string used to receive this credit
-        <li>amount - amount of credit
+        <li>identifier - text or numeric string of prepaid card
+        <li>amount - amount of prepayment
+        <li>seconds - prepaid time instead of (or in addition to) monetary value
+        <li>agentnum - optional agent assignment for prepaid cards
       </ul>
     <li><a name="session" href="man/FS/session.html">session</a>
       <ul>
