@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 #
-# $Id: svc_acct.export,v 1.19 2001-05-08 10:44:17 ivan Exp $
+# $Id: svc_acct.export,v 1.20 2001-06-20 08:33:42 ivan Exp $
 #
 # Create and export password files: passwd, passwd.adjunct, shadow,
 # acp_passwd, acp_userinfo, acp_dialup, users
@@ -38,7 +38,11 @@
 # ivan@sisd.com 98-sep-18
 # 
 # $Log: svc_acct.export,v $
-# Revision 1.19  2001-05-08 10:44:17  ivan
+# Revision 1.20  2001-06-20 08:33:42  ivan
+# >     Use of uninitialized value in concatenation (.) at svc_acct.export line
+# > 276.
+#
+# Revision 1.19  2001/05/08 10:44:17  ivan
 # fix for OO Net::SCP
 #
 # Revision 1.18  2001/04/22 01:56:15  ivan
@@ -118,7 +122,10 @@ if ( $icradiusmachines && $conf->exists('icradius_secrets') ) {
   $icradius_dbh = dbh;
 }
 
-my $textradiusprepend = $conf->config('textradiusprepend');
+my $textradiusprepend =
+  $conf->exists('textradiusprepend')
+    ? $conf->config('textradiusprepend')
+    : '';
 
 my(@saltset)= ( 'a'..'z' , 'A'..'Z' , '0'..'9' , '.' , '/' );
 require 5.004; #srand(time|$$);
