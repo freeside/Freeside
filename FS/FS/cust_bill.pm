@@ -864,7 +864,7 @@ sub print_text {
 
 =head1 VERSION
 
-$Id: cust_bill.pm,v 1.16 2002-02-04 16:44:48 ivan Exp $
+$Id: cust_bill.pm,v 1.17 2002-02-06 15:50:54 ivan Exp $
 
 =head1 BUGS
 
@@ -878,7 +878,7 @@ or something similar so the look can be completely customized?)
 
 =head1 SEE ALSO
 
-L<FS::Record>, L<FS::cust_main>, L<FS::cust_bill_pay>, L<FS:;cust_pay>,
+L<FS::Record>, L<FS::cust_main>, L<FS::cust_bill_pay>, L<FS::cust_pay>,
 L<FS::cust_bill_pkg>, L<FS::cust_bill_credit>, schema.html from the base
 documentation.
 
