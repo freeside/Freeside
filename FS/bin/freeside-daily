@@ -11,16 +11,19 @@ use FS::cust_main;
 
 &untaint_argv;	#what it sounds like  (eww)
 use vars qw($opt_d $opt_v);
-getopts("d:v");
+getopts("p:d:v");
 my $user = shift or die &usage;
 
 adminsuidsetup $user;
 
 $FS::cust_main::Debug = 1 if $opt_v;
 
+my %search;
+$search{'payby'} = $opt_p if $opt_p;
+
 my @cust_main = @ARGV
-  ? map { qsearchs('cust_main', { custnum => $_ } ) } @ARGV
-  : qsearch('cust_main', {} )
+  ? map { qsearchs('cust_main', { custnum => $_, %search } ) } @ARGV
+  : qsearch('cust_main', \%search )
 ;
 
 #we're at now now (and later).
@@ -95,7 +98,7 @@ freeside-daily - Run daily billing and invoice collection events.
 
 =head1 SYNOPSIS
 
-  freeside-daily [ -d 'date' ] user [ custnum custnum ... ]
+  freeside-daily [ -d 'date' ] [ -p 'payby' ] [ -v ] user [ custnum custnum ... ]
 
 =head1 DESCRIPTION
 
@@ -109,6 +112,10 @@ the bill and collect methods of a cust_main object.  See L<FS::cust_main>.
 
   -d: Pretend it's 'date'.  Date is in any format Date::Parse is happy with,
       but be careful.
+
+  -p: Only process customers with the specified payby (CARD, CHEK, BILL, COMP, LECB)
+
+  -v: enable debugging
 
 user: From the mapsecrets file - see config.html from the base documentation
 
