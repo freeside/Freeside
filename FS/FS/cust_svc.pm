@@ -11,6 +11,7 @@ use FS::svc_acct;
 use FS::svc_acct_sm;
 use FS::svc_domain;
 use FS::svc_forward;
+use FS::domain_record;
 
 @ISA = qw( FS::Record );
 
@@ -184,6 +185,9 @@ sub label {
     }
   } elsif ( $svcdb eq 'svc_domain' ) {
     $tag = $svc_x->getfield('domain');
+  } elsif ( $svcdb eq 'svc_www' ) {
+    my $domain = qsearchs( 'domain_record', { 'recnum' => $svc_x->recnum } );
+    $tag = $domain->reczone;
   } else {
     cluck "warning: asked for label of unsupported svcdb; using svcnum";
     $tag = $svc_x->getfield('svcnum');
@@ -195,7 +199,7 @@ sub label {
 
 =head1 VERSION
 
-$Id: cust_svc.pm,v 1.7 2001-11-30 00:04:38 ivan Exp $
+$Id: cust_svc.pm,v 1.8 2001-12-15 22:58:33 ivan Exp $
 
 =head1 BUGS
 
