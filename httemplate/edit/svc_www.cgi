@@ -56,9 +56,13 @@ my $action = $svc_www->svcnum ? 'Edit' : 'Add';
 my( %svc_acct, %arec );
 if ($pkgnum) {
 
-  my($u_part_svc,@u_acct_svcparts);
-  foreach $u_part_svc ( qsearch('part_svc',{'svcdb'=>'svc_acct'}) ) {
-    push @u_acct_svcparts,$u_part_svc->getfield('svcpart');
+  my @u_acct_svcparts;
+  foreach my $svcpart (
+    map { $_->svcpart } qsearch( 'part_svc', { 'svcdb' => 'svc_acct' } )
+  ) {
+    next if $conf->exists('svc_www-usersvc_svcpart')
+            && grep { $svcpart == $_ } $conf->config('svc_www-usersvc_svcpart');
+    push @u_acct_svcparts, $svcpart;
   }
 
   my($cust_pkg)=qsearchs('cust_pkg',{'pkgnum'=>$pkgnum});
@@ -92,25 +96,23 @@ if ($pkgnum) {
       my($i_cust_svc);
       foreach $i_cust_svc ( qsearch('cust_svc',{'pkgnum'=>$cust_pkgnum,'svcpart'=>$acct_svcpart}) ) {
         my($svc_domain)=qsearchs('svc_domain',{'svcnum'=>$i_cust_svc->getfield('svcnum')});
-        my $domain_rec;
-        foreach $domain_rec ( qsearch('domain_record',{
-            'svcnum'  => $svc_domain->svcnum,
-            'rectype' => 'A' } ),
-        qsearch('domain_record',{
-            'svcnum'  => $svc_domain->svcnum,
-            'rectype' => 'CNAME'
-            } ) ) {
-          $arec{$domain_rec->recnum} =
-            $domain_rec->reczone eq '@'
-              ? $svc_domain->domain
-              : $domain_rec->reczone. '.'. $svc_domain->domain;
+        if ( $conf->exists('svc_www-enable_subdomains') ) {
+          foreach my $domain_rec ( qsearch('domain_record',{
+              'svcnum'  => $svc_domain->svcnum,
+              'rectype' => 'A' } ),
+          qsearch('domain_record',{
+              'svcnum'  => $svc_domain->svcnum,
+              'rectype' => 'CNAME'
+              } ) ) {
+            $arec{$domain_rec->recnum} = $domain_rec->zone;
+          }
+          $arec{'www.'. $svc_domain->domain} = 'www.'. $svc_domain->domain
+            unless qsearchs('domain_record', { svcnum  => $svc_domain->svcnum,
+                                               reczone => 'www',            } );
         }
         $arec{'@.'. $svc_domain->domain} = $svc_domain->domain
           unless qsearchs('domain_record', { svcnum  => $svc_domain->svcnum,
                                              reczone => '@',                } );
-        $arec{'www.'. $svc_domain->domain} = 'www.'. $svc_domain->domain
-          unless qsearchs('domain_record', { svcnum  => $svc_domain->svcnum,
-                                             reczone => 'www',              } );
       }
     }
   }
