@@ -263,11 +263,11 @@ END
     my $p = popurl(2);
     print $n1, <<END;
       <TD ROWSPAN=$rowspan><A HREF="${p}view/cust_pkg.cgi?$pkgnum"><FONT SIZE=-1>$pkgnum - $pkg</FONT></A></TD>
-      <TD>$setup</TD>
-      <TD>$bill</TD>
-      <TD>$susp</TD>
-      <TD>$expire</TD>
-      <TD>$cancel</TD>
+      <TD ROWSPAN=$rowspan>$setup</TD>
+      <TD ROWSPAN=$rowspan>$bill</TD>
+      <TD ROWSPAN=$rowspan>$susp</TD>
+      <TD ROWSPAN=$rowspan>$expire</TD>
+      <TD ROWSPAN=$rowspan>$cancel</TD>
 END
     if ( $cust_main ) {
       print <<END;
