@@ -15,7 +15,7 @@ $ENV{'CDPATH'} = '';
 $ENV{'ENV'} = '';
 $ENV{'BASH_ENV'} = '';
 
-die "fs_passwd.cgi isn't running as freeside user\n" if $> != $freeside_uid;
+die "passwd.cgi isn't running as freeside user\n" if $> != $freeside_uid;
 
 my $cgi = new CGI;
 
