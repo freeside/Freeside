@@ -143,6 +143,21 @@ sub cust_bill {
   qsearchs( 'cust_bill', { 'invnum' => $self->invnum } );
 }
 
+=item retry
+
+Changes the status of this event from B<done> to B<failed>, allowing it to be
+retried.
+
+=cut
+
+sub retry {
+  my $self = shift;
+  return '' unless $self->status eq 'done';
+  my $old = ref($self)->new( { $self->hash } );
+  $self->status('failed');
+  $self->replace($old);
+}
+
 =back
 
 =head1 BUGS

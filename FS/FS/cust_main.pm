@@ -482,6 +482,27 @@ sub replace {
     $self->invoicing_list( $invoicing_list );
   }
 
+  if ( $self->payby eq 'CARD' &&
+       grep { $self->get($_) ne $old->get($_) } qw(payinfo paydate payname) ) {
+    # card info has changed, want to retry realtime_card invoice events
+    foreach my $cust_bill_event (
+      grep {
+             #$_->part_bill_event->plan eq 'realtime-card'
+             $_->part_bill_event->eventcode eq '$cust_bill->realtime_card();'
+               && $_->status eq 'done'
+               && $_->statustext
+           }
+        $self->open_cust_bill->cust_bill_event
+    ) {
+      my $error = $cust_bill_event->retry;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "error scheduling invoice events for retry: $error";
+      }
+    }
+
+  }
+
   #false laziness with sub insert
   my $queue = new FS::queue { 'job' => 'FS::cust_main::append_fuzzyfiles' };
   $error = $queue->insert($self->getfield('last'), $self->company);
@@ -1203,9 +1224,7 @@ sub collect {
     return '';
   }
 
-  foreach my $cust_bill (
-    qsearch('cust_bill', { 'custnum' => $self->custnum, } )
-  ) {
+  foreach my $cust_bill ( $self->cust_bill ) {
 
     #this has to be before next's
     my $amount = sprintf( "%.2f", $balance < $cust_bill->owed
@@ -1706,6 +1725,29 @@ sub charge {
 
   $part_pkg->insert;
 
+}
+
+=item cust_bill
+
+Returns all the invoices (see L<FS::cust_bill>) for this customer.
+
+=cut
+
+sub cust_bill {
+  my $self = shift;
+  qsearch('cust_bill', { 'custnum' => $self->custnum, } )
+}
+
+=item open_cust_bill
+
+Returns all the open (owed > 0) invoices (see L<FS::cust_bill>) for this
+customer.
+
+=cut
+
+sub open_cust_bill {
+  my $self = shift;
+  grep { $_->owed > 0 } $self->cust_bill;
 }
 
 =back
