@@ -1,4 +1,4 @@
-$Id: TODO,v 1.29 1999-04-14 11:27:06 ivan Exp $
+$Id: TODO,v 1.30 1999-04-14 13:14:54 ivan Exp $
 
 If you are interested in helping with any of these, please join the mailing
 list (send a blank message to ivan-freeside-subscribe@sisd.com) to avoid 
@@ -6,12 +6,17 @@ duplication of effort.
 
 ---
 
+default (and ordering) state/county/country config file
+expand the
+cust_main_county table to provide a preferred ordering, so the most common
+entries would be at the top of the selection box.  automatically, based on
+recent selections?
+
 hmm... maybe svc_acct__shell should check off the legal shells list if
 applicable?  yeah... cool.
 
 payinfo field should me much larger than 16
 
-default (and ordering) state/county/country config file
 
 [Mon Apr 12 20:31:21 1999] [error] [Mon Apr 12 20:31:21 1999] null: Error closing true: Broken pipe at /usr/local/lib/site_perl/FS/cust_main.pm line 615.
 

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main.cgi,v 1.14 1999-04-14 07:47:53 ivan Exp $
+# $Id: cust_main.cgi,v 1.15 1999-04-14 13:14:54 ivan Exp $
 #
 # Usage: cust_main.cgi custnum
 #        http://server.name/path/cust_main.cgi?custnum
@@ -38,7 +38,10 @@
 # fixed one missed day->daytime ivan@sisd.com 98-jul-13
 #
 # $Log: cust_main.cgi,v $
-# Revision 1.14  1999-04-14 07:47:53  ivan
+# Revision 1.15  1999-04-14 13:14:54  ivan
+# configuration option to edit referrals of existing customers
+#
+# Revision 1.14  1999/04/14 07:47:53  ivan
 # i18n fixes
 #
 # Revision 1.13  1999/04/09 03:52:55  ivan
@@ -110,6 +113,8 @@ use FS::cust_main_county;
 
 $cgi = new CGI;
 cgisuidsetup($cgi);
+
+$conf = new FS::Conf;
 
 #get record
 
@@ -185,7 +190,7 @@ if ( scalar(@agents) == 1 ) {
 #referral
 
 $refnum = $cust_main->refnum || 0;
-if ( $custnum ) {
+if ( $custnum && ! $conf->exists('editreferrals') ) {
   print qq!<INPUT TYPE="hidden" NAME="refnum" VALUE="$refnum">!;
 } else {
   my(@referrals) = qsearch('part_referral',{});
@@ -194,7 +199,7 @@ if ( $custnum ) {
     print qq!<INPUT TYPE="hidden" NAME="refnum" VALUE="$refnum">!;
   } else {
     print qq!<BR><BR>${r}Referral <SELECT NAME="refnum" SIZE="1">!;
-    print "<OPTION> ";
+    print "<OPTION> " unless $refnum;
     my($referral);
     foreach $referral (sort {
       $a->refnum <=> $b->refnum;
