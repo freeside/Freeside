@@ -716,7 +716,7 @@ sub check {
 #    $error = $self->ut_textn('finger');
 #    return $error if $error;
     $self->getfield('finger') =~
-      /^([\w \t\!\@\#\$\%\&\(\)\-\+\;\:\'\"\,\.\?\/\*]*)$/
+      /^([\w \t\!\@\#\$\%\&\(\)\-\+\;\:\'\"\,\.\?\/\*\<\>]*)$/
         or return "Illegal finger: ". $self->getfield('finger');
     $self->setfield('finger', $1);
 
@@ -920,7 +920,7 @@ sub ssh {
 
 =head1 VERSION
 
-$Id: svc_acct.pm,v 1.49 2001-09-30 22:35:34 ivan Exp $
+$Id: svc_acct.pm,v 1.50 2001-10-02 11:10:19 ivan Exp $
 
 =head1 BUGS
 
