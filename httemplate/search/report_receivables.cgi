@@ -12,8 +12,8 @@ select *,
                            ,0
                          )
                        - coalesce(
-                           ( select sum(amount) from cust_bill_pay
-                             where cust_bill.invnum = cust_bill_pay.invnum )
+                           ( select sum(amount) from cust_credit_bill
+                             where cust_bill.invnum = cust_credit_bill.invnum )
                            ,0
                          )
 
@@ -33,8 +33,8 @@ select *,
                            ,0
                          )
                        - coalesce(
-                           ( select sum(amount) from cust_bill_pay
-                             where cust_bill.invnum = cust_bill_pay.invnum )
+                           ( select sum(amount) from cust_credit_bill
+                             where cust_bill.invnum = cust_credit_bill.invnum )
                            ,0
                          )
 
@@ -55,8 +55,8 @@ select *,
                            ,0
                          )
                        - coalesce(
-                           ( select sum(amount) from cust_bill_pay
-                             where cust_bill.invnum = cust_bill_pay.invnum )
+                           ( select sum(amount) from cust_credit_bill
+                             where cust_bill.invnum = cust_credit_bill.invnum )
                            ,0
                          )
 
@@ -77,8 +77,8 @@ select *,
                            ,0
                          )
                        - coalesce(
-                           ( select sum(amount) from cust_bill_pay
-                             where cust_bill.invnum = cust_bill_pay.invnum )
+                           ( select sum(amount) from cust_credit_bill
+                             where cust_bill.invnum = cust_credit_bill.invnum )
                            ,0
                          )
 
@@ -98,8 +98,8 @@ select *,
                            ,0
                          )
                        - coalesce(
-                           ( select sum(amount) from cust_bill_pay
-                             where cust_bill.invnum = cust_bill_pay.invnum )
+                           ( select sum(amount) from cust_credit_bill
+                             where cust_bill.invnum = cust_credit_bill.invnum )
                            ,0
                          )
 
@@ -121,8 +121,8 @@ where 0 <
                              ,0
                            )
                          - coalesce(
-                             ( select sum(amount) from cust_bill_pay
-                               where cust_bill.invnum = cust_bill_pay.invnum )
+                             ( select sum(amount) from cust_credit_bill
+                               where cust_bill.invnum = cust_credit_bill.invnum)
                              ,0
                            )
   
