@@ -229,7 +229,7 @@ sub ldap_connect {
   eval "use Net::LDAP";
   die $@ if $@;
 
-  my $ldap = Net::LDAP->net($machine) or die $@;
+  my $ldap = Net::LDAP->new($machine) or die $@;
   my $status = $ldap->bind( $dn, password=>$password );
   die $status->error if $status->is_error;
 
