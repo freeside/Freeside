@@ -725,7 +725,7 @@ tie my %sqlmail_options, 'Tie::IxHash',
 ;
 
 tie my %ldap_options, 'Tie::IxHash',
-  'dn'         => { label=>'DN' },
+  'dn'         => { label=>'Root DN' },
   'password'   => { label=>'Optional DN password' },
   'attributes' => { label=>'Attributes',
                     type=>'textarea',
