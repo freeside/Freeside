@@ -7,7 +7,6 @@ DB_USER = freeside
 DB_PASSWORD=
 
 TEMPLATE = asp
-#mason's a bit dodgy still
 #TEMPLATE = mason
 
 ASP_GLOBAL = /usr/local/etc/freeside/asp-global

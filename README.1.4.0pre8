@@ -65,3 +65,9 @@ Run bin/dbdef-create
 
 Restart Apache and freeside-queued
 
+Go to the new "View/Edit Invoice events" in the web interface and add the
+appropriate events.  t the very least, you'll want to set some invoice events
+"After 0 days": a BILL invoice event to print invoices, a CARD invoice event to
+batch or run cards real-time, and a COMP invoice event to "pay" complimentary
+customers.
+
