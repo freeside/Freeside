@@ -2,7 +2,8 @@
 
   my $fh = $cgi->upload('batch_results');
   my $filename = $cgi->param('batch_results');
-  my $paybatch = basename($filename);
+  $filename =~ /^.*[\/\\]([^\/\\]+)$/ or die;
+  my $paybatch = $1;
 
   my $error = defined($fh)
     ? FS::cust_pay_batch::import_results( {
