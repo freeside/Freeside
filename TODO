@@ -1,4 +1,4 @@
-$Id: TODO,v 1.23 1999-02-09 09:56:34 ivan Exp $
+$Id: TODO,v 1.24 1999-02-10 08:27:55 ivan Exp $
 
 If you are interested in helping with any of these, please join the mailing
 list (send a blank message to ivan-freeside-subscribe@sisd.com) to avoid 
@@ -30,6 +30,11 @@ update site_perl/table_template* (pry out of date)
 update web demo
 
 -- release 1.2b1 ---
+
+edit/cust_main.cgi gives an uninformative error message:
+> Can't call method "agentnum" without a package or object reference at   
+> /usr/local/apache-ssl/htdocs/freeside/edit/cust_main.cgi line 116.
+if there are no agents.
 
 (is this missing on any web screens?  (easy with $cust_svc->label)
 Add the ability for services to filter information up to the package level
