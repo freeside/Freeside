@@ -986,7 +986,14 @@ sub check {
     for ($self->getfield($field)) {
       # See notes on check_block in FS::part_virtual_field.
       eval $self->pvf($field)->check_block;
-      return $@ if $@;
+      if ( $@ ) {
+        #this is bad, probably want to follow the stack backtrace up and see
+        #wtf happened
+        my $err = "Fatal error checking $field for $self";
+        cluck "$err: $@";
+        return "$err (see log for backtrace): $@";
+
+      }
       $self->setfield($field, $_);
     }
   }
