@@ -532,6 +532,21 @@ httemplate/docs/config.html
     'type'        => 'textarea',
   },
 
+  {
+    'key'         => 'invoice_email_pdf',
+    'section'     => 'billing',
+    'description' => 'Send PDF invoice as an attachment to emailed invoices.  By default, includes the plain text invoice as the email body, unless invoice_email_pdf_note is set.',
+    'type'        => 'checkbox'
+  },
+
+  {
+    'key'         => 'invoice_email_pdf_note',
+    'section'     => 'billing',
+    'description' => 'If defined, this text will replace the default plain text invoice as the body of emailed PDF invoices.',
+    'type'        => 'textarea'
+  },
+
+
   { 
     'key'         => 'invoice_default_terms',
     'section'     => 'billing',

@@ -10,10 +10,9 @@ my $cust_bill = qsearchs('cust_bill',{'invnum'=>$invnum});
 die "Can't find invoice!\n" unless $cust_bill;
 
 my $error = send_email(
-  'from'    => $cust_bill->_agent_invoice_from || $conf->config('invoice_from'),
-  'to'      => [ grep { $_ ne 'POST' } $cust_bill->cust_main->invoicing_list ],
-  'subject' => 'Invoice',
-  'body'    => [ $cust_bill->print_text ],
+  $cust_bill->generate_email(
+    'from'  => $cust_bill->_agent_invoice_from || $conf->config('invoice_from'),
+  )
 );
 eidiot($error) if $error;
 

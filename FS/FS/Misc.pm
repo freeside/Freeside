@@ -41,12 +41,15 @@ I<content-type> - (optional) MIME type
 
 I<body> - (required) arrayref of body text lines
 
+I<mimeparts> - (optional) arrayref of MIME::Entity->build PARAMHASH refs, not MIME::Entity objects.  These will be passed as arguments to MIME::Entity->attach().
+
 =cut
 
 use vars qw( $conf );
 use Date::Format;
 use Mail::Header;
 use Mail::Internet 1.44;
+use MIME::Entity;
 use FS::UID;
 
 FS::UID->install_callback( sub {
@@ -58,22 +61,46 @@ sub send_email {
 
   $ENV{MAILADDRESS} = $options{'from'};
   my $to = ref($options{to}) ? join(', ', @{ $options{to} } ) : $options{to};
-  my @header = (
-    'From: '.     $options{'from'},
-    'To: '.       $to,
-    'Sender: '.   $options{'from'},
-    'Reply-To: '. $options{'from'},
-    'Date: '.     time2str("%a, %d %b %Y %X %z", time),
-    'Subject: '.  $options{'subject'},
-  );
-  push @header, 'Content-Type: '. $options{'content-type'}
-    if exists($options{'content-type'});
-  my $header = new Mail::Header ( \@header );
 
-  my $message = new Mail::Internet (
-    'Header' => $header,
-    'Body'   => $options{'body'},
+  my @mimeparts = (ref($options{'mimeparts'}) eq 'ARRAY')
+                  ? @{$options{'mimeparts'}} : ();
+  my $mimetype = (scalar(@mimeparts)) ? 'multipart/mixed' : 'text/plain';
+
+  my @mimeargs;
+  if (scalar(@mimeparts)) {
+    @mimeargs = (
+      'Type'  => 'multipart/mixed',
+    );
+
+    push @mimeparts,
+      { 
+        'Data'        => $options{'body'},
+        'Disposition' => 'inline',
+        'Type'        => (($options{'content-type'} ne '')
+                          ? $options{'content-type'} : 'text/plain'),
+      };
+  } else {
+    @mimeargs = (
+      'Type'  => (($options{'content-type'} ne '')
+                  ? $options{'content-type'} : 'text/plain'),
+      'Data'  => $options{'body'},
+    );
+  }
+
+  my $message = MIME::Entity->build(
+    'From'      =>    $options{'from'},
+    'To'        =>    $to,
+    'Sender'    =>    $options{'from'},
+    'Reply-To'  =>    $options{'from'},
+    'Date'      =>    time2str("%a, %d %b %Y %X %z", time),
+    'Subject'   =>    $options{'subject'},
+    @mimeargs,
   );
+
+  foreach my $part (@mimeparts) {
+    next unless ref($part) eq 'HASH'; #warn?
+    $message->attach(%$part);
+  }
 
   my $smtpmachine = $conf->config('smtpmachine');
   $!=0;
@@ -137,6 +164,9 @@ sub Mail::Internet::mysmtpsend {
     $hdr->delete('Bcc'); # Remove blind Cc's
 
     # Send it
+
+    #warn "Headers: \n" . join('',@{$hdr->header});
+    #warn "Body: \n" . join('',@{$src->body});
 
     my $ok = $smtp->mail( $envelope ) &&
 		$smtp->to(@addr) &&

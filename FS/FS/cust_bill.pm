@@ -318,6 +318,80 @@ sub owed {
   $balance;
 }
 
+
+=item generate_email PARAMHASH
+
+PARAMHASH can contain the following:
+
+=over 4
+
+=item from       => sender address, required
+
+=item tempate    => alternate template name, optional
+
+=item print_text => text attachment arrayref, optional
+
+=item subject    => email subject, optional
+
+=back
+
+Returns an argument list to be passed to L<FS::cust_bill::send>.
+
+=cut
+
+sub generate_email {
+
+  my $self = shift;
+  my %args = @_;
+
+  my $mimeparts;
+  if ($conf->exists('invoice_email_pdf')) {
+    #warn "[FS::cust_bill::send] creating PDF attachment";
+    #mime parts arguments a la MIME::Entity->build().
+    $mimeparts = [
+      {
+        'Type'        => 'application/pdf',
+        'Encoding'    => 'base64',
+        'Data'        => [ $self->print_pdf('', $args{'template'}) ],
+        'Disposition' => 'attachment',
+        'Filename'    => 'invoice.pdf',
+      },
+    ];
+  }
+
+  my $email_text;
+  if ($conf->exists('invoice_email_pdf')
+      and scalar($conf->config('invoice_email_pdf_note'))) {
+
+    #warn "[FS::cust_bill::send] using 'invoice_email_pdf_note'";
+    $email_text = [ map { $_ . "\n" } $conf->config('invoice_email_pdf_note') ];
+  } else {
+    #warn "[FS::cust_bill::send] not using 'invoice_email_pdf_note'";
+    if (ref($args{'print_text'}) eq 'ARRAY') {
+      $email_text = $args{'print_text'};
+    } else {
+      $email_text = [ $self->print_text('', $args{'template'}) ];
+    }
+  }
+
+  my @invoicing_list;
+  if (ref($args{'to'} eq 'ARRAY')) {
+    @invoicing_list = @{$args{'to'}};
+  } else {
+    @invoicing_list = grep { $_ ne 'POST' } $self->cust_main->invoicing_list;
+  }
+
+  return (
+    'from'      => $args{'from'},
+    'to'        => [ @invoicing_list ],
+    'subject'   => (($args{'subject'}) ? $args{'subject'} : 'Invoice'),
+    'body'      => $email_text,
+    'mimeparts' => $mimeparts,
+  );
+
+
+}
+
 =item send [ TEMPLATENAME [ , AGENTNUM [ , INVOICE_FROM ] ] ]
 
 Sends this invoice to the destinations configured for this customer: send
@@ -350,10 +424,11 @@ sub send {
     @invoicing_list = ($invoice_from) unless @invoicing_list;
 
     my $error = send_email(
-      'from'    => $invoice_from,
-      'to'      => [ grep { $_ ne 'POST' } @invoicing_list ],
-      'subject' => 'Invoice',
-      'body'    => \@print_text,
+      $self->generate_email(
+        'from'   => $invoice_from,
+        'to'     => [ grep { $_ ne 'POST' } @invoicing_list ],
+	'print_text' => [ @print_text ],
+      )
     );
     die "can't email invoice: $error\n" if $error;
     #die "$error\n" if $error;
