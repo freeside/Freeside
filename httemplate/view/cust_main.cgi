@@ -324,7 +324,7 @@ print '</SELECT><INPUT TYPE="submit" VALUE="Order Package"></FORM><BR>';
 
 if ( $conf->config('payby-default') ne 'HIDE' ) {
 
-  print '<BR>'.
+  print
     qq!<FORM ACTION="${p}edit/process/quick-charge.cgi" METHOD="POST">!.
     qq!<INPUT TYPE="hidden" NAME="custnum" VALUE="$custnum">!.
     qq!Description:<INPUT TYPE="text" NAME="pkg">!.
@@ -366,8 +366,7 @@ function svc_areyousure(href) {
 
 <%
 
-print qq!<BR><A NAME="cust_pkg">Packages</A> !,
-#      qq!<BR>Click on package number to view/edit package.!,
+print qq!<A NAME="cust_pkg">Packages</A> !,
       qq!( <A HREF="!, popurl(2), qq!edit/cust_pkg.cgi?$custnum">Order and cancel packages</A> (preserves services) )!,
 ;
 
@@ -806,6 +805,7 @@ function cust_credit_areyousure(href) {
     $balance += $item->{'refund'}  if exists $item->{'refund'};
     $balance = sprintf("%.2f", $balance);
     $balance =~ s/^\-0\.00$/0.00/; #yay ieee fp
+    ( my $showbalance = '$'. $balance ) =~ s/^\$\-/-&nbsp;\$/;
 
   %>
   
@@ -821,11 +821,11 @@ function cust_credit_areyousure(href) {
         </FONT>
       </TD>
       <TD><%= $item->{'desc'} %></TD>
-      <TD><%= $charge  %></TD>
-      <TD><%= $payment %></TD>
-      <TD><%= $credit  %></TD>
-      <TD><%= $refund  %></TD>
-      <TD>$<%= $balance %></TD>
+      <TD ALIGN="right"><%= $charge  %></TD>
+      <TD ALIGN="right"><%= $payment %></TD>
+      <TD ALIGN="right"><%= $credit  %></TD>
+      <TD ALIGN="right"><%= $refund  %></TD>
+      <TD ALIGN="right"><%= $showbalance %></TD>
     </TR>
 
   <% } %>
