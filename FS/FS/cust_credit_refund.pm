@@ -168,11 +168,23 @@ sub cust_refund {
   qsearchs( 'cust_refund', { 'refundnum' => $self->refundnum } );
 }
 
+=item cust_credit
+
+Returns the credit (see L<FS::cust_credit>)
+
+=cut
+
+sub cust_refund {
+  my $self = shift;
+  qsearchs( 'cust_credit', { 'crednum' => $self->crednum } );
+}
+
+
 =back
 
 =head1 VERSION
 
-$Id: cust_credit_refund.pm,v 1.4 2001-09-02 07:49:52 ivan Exp $
+$Id: cust_credit_refund.pm,v 1.5 2002-01-24 11:43:39 ivan Exp $
 
 =head1 BUGS
 
