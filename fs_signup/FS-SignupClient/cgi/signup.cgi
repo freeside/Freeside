@@ -1,13 +1,13 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: signup.cgi,v 1.15 2001-09-27 21:37:57 ivan Exp $
+# $Id: signup.cgi,v 1.16 2002-04-06 20:37:38 ivan Exp $
 
 use strict;
 use vars qw( @payby $cgi $locales $packages $pops $error
              $last $first $ss $company $address1 $address2 $city $state $county
              $country $zip $daytime $night $fax $invoicing_list $payby $payinfo
              $paydate $payname $referral_custnum
-             $pkgpart $username $password $popnum
+             $pkgpart $username $password $password2 $popnum
              $ieak_file $ieak_template $cck_file $cck_template
              $signup_html $signup_template $success_html $success_template
              $ac $exch $loc
@@ -115,37 +115,50 @@ if ( defined $cgi->param('magic') ) {
       $invoicing_list = 'POST';
     }
 
-    $error = new_customer ( {
-      'last'             => $last             = $cgi->param('last'),
-      'first'            => $first            = $cgi->param('first'),
-      'ss'               => $ss               = $cgi->param('ss'),
-      'company'          => $company          = $cgi->param('company'),
-      'address1'         => $address1         = $cgi->param('address1'),
-      'address2'         => $address2         = $cgi->param('address2'),
-      'city'             => $city             = $cgi->param('city'),
-      'county'           => $county,
-      'state'            => $state,
-      'zip'              => $zip              = $cgi->param('zip'),
-      'country'          => $country,
-      'daytime'          => $daytime          = $cgi->param('daytime'),
-      'night'            => $night            = $cgi->param('night'),
-      'fax'              => $fax              = $cgi->param('fax'),
-      'payby'            => $payby,
-      'payinfo'          => $payinfo,
-      'paydate'          => $paydate,
-      'payname'          => $payname,
-      'invoicing_list'   => $invoicing_list,
-      'referral_custnum' => $referral_custnum = $cgi->param('ref'),
-      'pkgpart'          => $pkgpart          = $cgi->param('pkgpart'),
-      'username'         => $username         = $cgi->param('username'),
-      '_password'        => $password         = $cgi->param('_password'),
-      'popnum'           => $popnum           = $cgi->param('popnum'),
-    } );
+    $error = '';
+
+    if ( $cgi->param('_password') ne $cgi->param('_password2') ) {
+      $error = "Passwords don't match";
+      $password  = '';
+      $password2 = '';
+    } else {
+      $password2 = $cgi->param('_password2');
+
+      $error = new_customer ( {
+        'last'             => $last             = $cgi->param('last'),
+        'first'            => $first            = $cgi->param('first'),
+        'ss'               => $ss               = $cgi->param('ss'),
+        'company'          => $company          = $cgi->param('company'),
+        'address1'         => $address1         = $cgi->param('address1'),
+        'address2'         => $address2         = $cgi->param('address2'),
+        'city'             => $city             = $cgi->param('city'),
+        'county'           => $county,
+        'state'            => $state,
+        'zip'              => $zip              = $cgi->param('zip'),
+        'country'          => $country,
+        'daytime'          => $daytime          = $cgi->param('daytime'),
+        'night'            => $night            = $cgi->param('night'),
+        'fax'              => $fax              = $cgi->param('fax'),
+        'payby'            => $payby,
+        'payinfo'          => $payinfo,
+        'paydate'          => $paydate,
+        'payname'          => $payname,
+        'invoicing_list'   => $invoicing_list,
+        'referral_custnum' => $referral_custnum = $cgi->param('ref'),
+        'pkgpart'          => $pkgpart          = $cgi->param('pkgpart'),
+        'username'         => $username         = $cgi->param('username'),
+        '_password'        => $password         = $cgi->param('_password'),
+        'popnum'           => $popnum           = $cgi->param('popnum'),
+      } );
+
+    }
+    
     if ( $error ) {
       print_form();
     } else {
       print_okay();
     }
+
   } else {
     die "unrecognized magic: ". $cgi->param('magic');
   }
@@ -173,6 +186,7 @@ if ( defined $cgi->param('magic') ) {
   $pkgpart = '';
   $username = '';
   $password = '';
+  $password2 = '';
   $popnum = '';
   $referral_custnum = $cgi->param('ref') || '';
   print_form;
@@ -463,8 +477,13 @@ Contact Information
 </TR>
 <TR>
   <TD ALIGN="right">Password</TD>
-  <TD><INPUT TYPE="text" NAME="_password" VALUE="<%= $password %>">
+  <TD><INPUT TYPE="password" NAME="_password" VALUE="<%= $password %>">
   (blank to generate)</TD>
+</TR>
+<TR>
+  <TD ALIGN="right">Re-enter Password</TD>
+  <TD><INPUT TYPE="password" NAME="_password2" VALUE="<%= $password2 %>">
+  </TD>
 </TR>
 <TR>
   <TD ALIGN="right">Access number</TD>

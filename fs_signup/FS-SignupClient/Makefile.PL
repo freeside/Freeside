@@ -6,5 +6,6 @@ WriteMakefile(
     'VERSION_FROM'  => 'SignupClient.pm', # finds $VERSION
     'EXE_FILES'     => [ 'fs_signupd' ],
     'INSTALLSCRIPT' => '/usr/local/sbin',
+    'INSTALLSITEBIN' => '/usr/local/sbin',
     'PERM_RWX'      => '750',
 );

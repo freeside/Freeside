@@ -5,6 +5,7 @@
 
 use strict;
 use IO::Handle;
+use Storable qw(nstore_fd fd_retrieve);
 use Tie::RefHash;
 use Net::SSH qw(sshopen2);
 use FS::UID qw(adminsuidsetup);
@@ -14,7 +15,7 @@ use FS::cust_main;
 
 use vars qw( $opt $Debug );
 
-$Debug = 0;
+$Debug = 2;
 
 my @payby = qw(CARD PREPAY);
 
@@ -25,7 +26,7 @@ my $machine = shift or die &usage;
 
 my $agentnum = shift or die &usage;
 my $agent = qsearchs( 'agent', { 'agentnum' => $agentnum } ) or die &usage;
-my $pkgpart = $agent->pkgpart_hashref;
+my $pkgpart_href = $agent->pkgpart_hashref;
 
 my $refnum = shift or die &usage;
 
@@ -36,61 +37,43 @@ my($fs_signupd)="/usr/local/sbin/fs_signupd";
 
 while (1) {
   my($reader,$writer)=(new IO::Handle, new IO::Handle);
-  $writer->autoflush(1);
+  #seems to be broken - calling ->flush explicitly# $writer->autoflush(1);
   warn "[fs_signup_server] Connecting to $machine...\n" if $Debug;
   sshopen2($machine,$reader,$writer,$fs_signupd);
 
-  my $data;
+  my $init_data = {
 
-  warn "[fs_signup_server] Sending locales...\n" if $Debug;
-  my @cust_main_county = qsearch('cust_main_county', {} );
-  print $writer $data = join("\n",
-    ( scalar(@cust_main_county) || die "no tax rates (cust_main_county records)" ),
-    map {
-      $_->taxnum,
-      $_->state,
-      $_->county,
-      $_->country,
-    } @cust_main_county
-  ),"\n";
-  warn "[fs_signup_server] $data\n" if $Debug > 2;
+    #'_protocol' => 'signup',
+    #'_version' => '0.1',
+    #'_packet' => 'init'
+  
+    'cust_main_county' =>
+      [ map { $_->hashref } qsearch('cust_main_county', {}) ],
+      
+    'part_pkg' =>
+      [
+        map { $_->hashref }
+          grep { $_->svcpart('svc_acct') && $pkgpart_href->{ $_->pkgpart } }
+            qsearch( 'part_pkg', { 'disabled' => '' } )
+      ],
 
-  warn "[fs_signup_server] Sending package definitions...\n" if $Debug;
-  my @part_pkg = grep { $_->svcpart('svc_acct') && $pkgpart->{ $_->pkgpart } }
-    qsearch( 'part_pkg', { 'disabled' => '' } );
-  print $writer $data = join("\n",
-    ( scalar(@part_pkg) || die "no usable package definitions, agent $agentnum" ),
-    map {
-      $_->pkgpart,
-      $_->pkg,
-    } @part_pkg
-  ), "\n";
-  warn "[fs_signup_server] $data\n" if $Debug > 2;
+    'svc_acct_pop' => [ map { $_->hashref } qsearch ('svc_acct_pop',{} ) ],
 
-  warn "[fs_signup_server] Sending POPs...\n" if $Debug;
-  my @svc_acct_pop = qsearch ('svc_acct_pop',{} );
-  print $writer $data = join("\n",
-    ( scalar(@svc_acct_pop) || die "No points of presence (svc_acct_pop records)" ),
-    map {
-      $_->popnum,
-      $_->city,
-      $_->state,
-      $_->ac,
-      $_->exch,
-      $_->loc,
-    } @svc_acct_pop
-  ), "\n";
-  warn "[fs_signup_server] $data\n" if $Debug > 2;
+  };
+
+  warn "[fs_signup_server] Sending init data...\n" if $Debug;
+  nstore_fd($init_data, $writer) or die "can't send init data: $!";
+  $writer->flush;
 
   warn "[fs_signup_server] Entering main loop...\n" if $Debug;
   while (1) {
     warn "[fs_signup_server] Reading (waiting for) signup data...\n" if $Debug;
-    chop( my(
-      $first, $last, $ss, $company, $address1, $address2, $city, $county,
-      $state, $zip, $country, $daytime, $night, $fax, $payby, $payinfo,
-      $paydate, $payname, $invoicing_list, $referral_custnum,
-      $pkgpart, $username, $password, $popnum,
-    ) = map { scalar(<$reader>) } ( 1 .. 24 ) );
+    my $signup_data = fd_retrieve($reader);
+
+    if ( $Debug > 1 ) {
+      warn join('',
+        map { "  $_ => ". $signup_data->{$_}. "\n" } keys %$signup_data );
+    }
 
     warn "[fs_signup_server] Processing signup...\n" if $Debug;
 
@@ -99,64 +82,47 @@ while (1) {
     #shares some stuff with htdocs/edit/process/cust_main.cgi... take any
     # common that are still here and library them.
     my $cust_main = new FS::cust_main ( {
-      'custnum'          => '',
+      #'custnum'          => '',
       'agentnum'         => $agentnum,
       'refnum'           => $refnum,
-      'last'             => $last,
-      'first'            => $first,
-      'ss'               => $ss,
-      'company'          => $company,
-      'address1'         => $address1,
-      'address2'         => $address2,
-      'city'             => $city,
-      'county'           => $county,
-      'state'            => $state,
-      'zip'              => $zip,
-      'country'          => $country,
-      'daytime'          => $daytime,
-      'night'            => $night,
-      'fax'              => $fax,
-      'payby'            => $payby,
-      'payinfo'          => $payinfo,
-      'paydate'          => $paydate,
-      'payname'          => $payname,
-      'referral_custnum' => $referral_custnum,
+
+      map { $_ => $signup_data->{$_} } qw(
+        last first ss company address1 address2 city county state zip country
+        daytime night fax payby payinfo paydate payname referral_custnum
+      ),
+
     } );
 
-    $error = "Illegal payment type" unless grep { $_ eq $payby } @payby;
+    $error = "Illegal payment type"
+      unless grep { $_ eq $signup_data->{'payby'} } @payby;
 
-    my @invoicing_list = split( /\s*\,\s*/, $invoicing_list );
+    my @invoicing_list = split( /\s*\,\s*/, $signup_data->{'invoicing_list'} );
 
-    my $part_pkg = qsearchs( 'part_pkg', { 'pkgpart' => $pkgpart } )
-      or $error ||= "WARNING: unknown pkgpart $pkgpart";
+    my $part_pkg =
+      qsearchs( 'part_pkg', { 'pkgpart' => $signup_data->{'pkgpart'} } )
+        or $error ||= "WARNING: unknown pkgpart ". $signup_data->{pkgpart};
     my $svcpart = $part_pkg->svcpart unless $error;
 
     # this should wind up in FS::cust_pkg!
     my $agent = qsearchs( 'agent', { 'agentnum' => $agentnum } );
-    my $pkgpart_href = $agent->pkgpart_hashref;
-    $error ||= "WARNING: agent $agentnum can't purchase pkgpart $pkgpart"
-      unless $pkgpart_href->{ $pkgpart };
+    #my $pkgpart_href = $agent->pkgpart_hashref;
+    $error ||= "WARNING: agent $agentnum can't purchase pkgpart ".
+               $signup_data->{pkgpart}
+      unless $pkgpart_href->{ $signup_data->{pkgpart} };
 
     my $cust_pkg = new FS::cust_pkg ( {
       #later#'custnum' => $custnum,
-      'pkgpart' => $pkgpart,
+      'pkgpart' => $signup_data->{'pkgpart'},
     } );
     $error ||= $cust_pkg->check;
 
     my $svc_acct = new FS::svc_acct ( {
       'svcpart'   => $svcpart,
-      'username'  => $username,
-      '_password' => $password,
-      'popnum'    => $popnum,
+      map { $_ => $signup_data->{$_} } qw( username _password popnum ),
     } );
 
     my $y = $svc_acct->setdefault; # arguably should be in new method
     $error ||= $y unless ref($y);
-    #and just in case you were silly
-    $svc_acct->svcpart($svcpart);
-    $svc_acct->username($username);
-    $svc_acct->_password($password);
-    $svc_acct->popnum($popnum);
 
     $error ||= $svc_acct->check;
 

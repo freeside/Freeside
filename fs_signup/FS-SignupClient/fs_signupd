@@ -3,14 +3,15 @@
 # fs_signupd
 #
 # This is run REMOTELY over ssh by fs_signup_server.
-#
 
 use strict;
 use Socket;
+use Storable qw(nstore_fd fd_retrieve);
+use IO::Handle;
 
 use vars qw( $Debug );
 
-$Debug = 0;
+$Debug = 1;
 
 my($fs_signupd_socket)="/usr/local/freeside/fs_signupd_socket";
 
@@ -23,50 +24,8 @@ $ENV{'BASH_ENV'} = '';
 
 $|=1;
 
-warn "[fs_signupd] Reading locales...\n" if $Debug;
-chomp( my $n_cust_main_county = <STDIN> );
-my @cust_main_county = map {
-  chomp( my $taxnum = <STDIN> );
-  chomp( my $state = <STDIN> );
-  chomp( my $county = <STDIN> );
-  chomp( my $country = <STDIN> );
-  {
-    'taxnum'  => $taxnum,
-    'state'   => $state,
-    'county'  => $county,
-    'country' => $country,
-  };
-} ( 1 .. $n_cust_main_county );
-
-warn "[fs_signupd] Reading package definitions...\n" if $Debug;
-chomp( my $n_part_pkg = <STDIN> );
-my @part_pkg = map {
-  chomp( my $pkgpart = <STDIN> );
-  chomp( my $pkg = <STDIN> );
-  {
-    'pkgpart' => $pkgpart,
-    'pkg'     => $pkg,
-  };
-} ( 1 .. $n_part_pkg );
-
-warn "[fs_signupd] Reading POPs...\n" if $Debug;
-chomp( my $n_svc_acct_pop = <STDIN> );
-my @svc_acct_pop = map {
-  chomp( my $popnum = <STDIN> );
-  chomp( my $city = <STDIN> );
-  chomp( my $state = <STDIN> );
-  chomp( my $ac = <STDIN> );
-  chomp( my $exch = <STDIN> );
-  chomp( my $loc = <STDIN> );
-  {
-    'popnum' => $popnum,
-    'city'   => $city,
-    'state'  => $state,
-    'ac'     => $ac,
-    'exch'   => $exch,
-    'loc'    => $loc,
-  };
-} ( 1 .. $n_svc_acct_pop );
+warn "[fs_signupd] Reading init data...\n" if $Debug;
+my $init_data = fd_retrieve(\*STDIN);
 
 warn "[fs_signupd] Creating $fs_signupd_socket\n" if $Debug;
 my $uaddr = sockaddr_un($fs_signupd_socket);
@@ -83,56 +42,28 @@ for ( ; $paddr = accept(Client,Server); close Client) {
   chop( my $command = <Client> );
 
   if ( $command eq "signup_info" ) {
+
     warn "[fs_signupd] sending signup info...\n" if $Debug; 
-    print Client join("\n", $n_cust_main_county,
-      map {
-        $_->{taxnum},
-        $_->{state},
-        $_->{county},
-        $_->{country},
-      } @cust_main_county
-    ), "\n";
-
-    print Client join("\n", $n_part_pkg,
-      map {
-        $_->{pkgpart},
-        $_->{pkg},
-      } @part_pkg
-    ), "\n";
-
-    print Client join("\n", $n_svc_acct_pop,
-      map {
-        $_->{popnum},
-        $_->{city},
-        $_->{state},
-        $_->{ac},
-        $_->{exch},
-        $_->{loc},
-      } @svc_acct_pop
-    ), "\n";
+    nstore_fd($init_data, \*Client) or die "can't send init data: $!";
+    Client->flush;
 
   } elsif ( $command eq "new_customer" ) {
+
+    #inefficient...
+
     warn "[fs_signupd] reading customer signup...\n" if $Debug;
-    my(
-      $first, $last, $ss, $company, $address1, $address2, $city, $county,
-      $state, $zip, $country, $daytime, $night, $fax, $payby, $payinfo,
-      $paydate, $payname, $invoicing_list, $referral_custnum,
-      $pkgpart, $username, $password, $popnum,
-    ) = map { scalar(<Client>) } ( 1 .. 24 );
+    my $signup_data = fd_retrieve(\*Client);
 
     warn "[fs_signupd] sending customer data to remote server...\n" if $Debug;
-    print 
-      $first, $last, $ss, $company, $address1, $address2, $city, $county,
-      $state, $zip, $country, $daytime, $night, $fax, $payby, $payinfo,
-      $paydate, $payname, $invoicing_list, $referral_custnum,
-      $pkgpart, $username, $password, $popnum,
-    ;
+    nstore_fd($signup_data, \*STDOUT) or die "can't send signup data: $!";
+    STDOUT->flush;
 
     warn "[fs_signupd] reading error from remote server...\n" if $Debug;
     my $error = <STDIN>;
 
     warn "[fs_signupd] sending error to local client...\n" if $Debug;
     print Client $error;
+    Client->flush;
 
   } else {
     die "unexpected command from client: $command";

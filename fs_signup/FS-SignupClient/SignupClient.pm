@@ -6,6 +6,7 @@ use Exporter;
 use Socket;
 use FileHandle;
 use IO::Handle;
+use Storable qw(nstore_fd fd_retrieve);
 
 $VERSION = '0.02';
 
@@ -58,6 +59,7 @@ FS::SignupClient - Freeside signup client API
     'pkgpart'          => $pkgpart,
     'username'         => $username,
     '_password'        => $password,
+    'sec_phrase'       => $sec_phrase,
     'popnum'           => $popnum,
   } );
 
@@ -104,51 +106,12 @@ sub signup_info {
   print SOCK "signup_info\n";
   SOCK->flush;
 
-  chop ( my $n_cust_main_county = <SOCK> );
-  my @cust_main_county = map {
-    chop ( my $taxnum  = <SOCK> ); 
-    chop ( my $state   = <SOCK> ); 
-    chop ( my $county  = <SOCK> ); 
-    chop ( my $country = <SOCK> );
-    {
-      'taxnum'  => $taxnum,
-      'state'   => $state,
-      'county'  => $county,
-      'country' => $country,
-    };
-  } 1 .. $n_cust_main_county;
-
-  chop ( my $n_part_pkg = <SOCK> );
-  my @part_pkg = map {
-    chop ( my $pkgpart = <SOCK> ); 
-    chop ( my $pkg     = <SOCK> ); 
-    {
-      'pkgpart' => $pkgpart,
-      'pkg'     => $pkg,
-    };
-  } 1 .. $n_part_pkg;
-
-  chop ( my $n_svc_acct_pop = <SOCK> );
-  my @svc_acct_pop = map {
-    chop ( my $popnum = <SOCK> ); 
-    chop ( my $city   = <SOCK> ); 
-    chop ( my $state  = <SOCK> ); 
-    chop ( my $ac     = <SOCK> );
-    chop ( my $exch   = <SOCK> );
-    chop ( my $loc    = <SOCK> );
-    {
-      'popnum' => $popnum,
-      'city'   => $city,
-      'state'  => $state,
-      'ac'     => $ac,
-      'exch'   => $exch,
-      'loc'    => $loc,
-    };
-  } 1 .. $n_svc_acct_pop;
-
+  my $init_data = fd_retrieve(\*SOCK);
   close SOCK;
 
-  \@cust_main_county, \@part_pkg, \@svc_acct_pop;
+  (map { $init_data->{$_} } qw( cust_main_county part_pkg svc_acct_pop ) ),
+  $init_data;
+
 }
 
 =item new_customer HASHREF
@@ -188,6 +151,8 @@ sub new_customer {
   my $hashref = shift;
 
   #things that aren't necessary in base class, but are for signup server
+#  return "Passwords don't match"
+#    if $hashref->{'_password'} ne $hashref->{'_password2'}
   return "Empty password" unless $hashref->{'_password'};
   return "No POP selected" unless $hashref->{'popnum'};
 
@@ -195,11 +160,14 @@ sub new_customer {
   connect(SOCK, sockaddr_un($fs_signupd_socket)) or die "connect: $!";
   print SOCK "new_customer\n";
 
-  print SOCK join("\n", map { $hashref->{$_} } qw(
+  my $signup_data = { map { $_ => $hashref->{$_} } qw(
     first last ss company address1 address2 city county state zip country
     daytime night fax payby payinfo paydate payname invoicing_list
     referral_custnum pkgpart username _password popnum
-  ) ), "\n";
+  ) };
+
+  #
+  nstore_fd($signup_data, \*SOCK) or die "can't send customer signup: $!";
   SOCK->flush;
 
   chop( my $error = <SOCK> );
