@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: signup.cgi,v 1.20 2002-04-10 13:42:48 ivan Exp $
+# $Id: signup.cgi,v 1.21 2002-04-16 00:02:26 ivan Exp $
 
 use strict;
 use vars qw( @payby $cgi $locales $packages $pops $init_data $error
@@ -8,6 +8,7 @@ use vars qw( @payby $cgi $locales $packages $pops $init_data $error
              $country $zip $daytime $night $fax $invoicing_list $payby $payinfo
              $paydate $payname $referral_custnum
              $pkgpart $username $password $password2 $sec_phrase $popnum
+             $agentnum
              $ieak_file $ieak_template $cck_file $cck_template
              $signup_html $signup_template $success_html $success_template
              $ac $exch $loc
@@ -164,6 +165,7 @@ if ( defined $cgi->param('magic') ) {
         'sec_phrase'       => $sec_phrase       = $cgi->param('sec_phrase'),
         '_password'        => $password         = $cgi->param('_password'),
         'popnum'           => $popnum           = $cgi->param('popnum'),
+        'agentnum'         => $agentnum         = $cgi->param('agentnum'),
       } );
 
     }

@@ -61,6 +61,7 @@ FS::SignupClient - Freeside signup client API
     '_password'        => $password,
     'sec_phrase'       => $sec_phrase,
     'popnum'           => $popnum,
+    'agentnum'         => $agentnum, #optional
   } );
 
 =head1 DESCRIPTION
@@ -162,6 +163,8 @@ sub new_customer {
     daytime night fax payby payinfo paydate payname invoicing_list
     referral_custnum pkgpart username _password sec_phrase popnum
   ) };
+
+  $signup_data->{agentnum} = $hashref->{agentnum} if $hashref->{agentnum}
 
   nstore_fd($signup_data, \*SOCK) or die "can't send customer signup: $!";
   SOCK->flush;
