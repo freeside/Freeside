@@ -21,6 +21,12 @@ FS::prepay_credit - Object methods for prepay_credit records
     'amount'     => '19.95',
   };
 
+  $record = new FS::prepay_credit {
+    'identifier' => '4198123455512121'
+    'seconds'    => '7200',
+  };
+
+
   $error = $record->insert;
 
   $error = $new_record->replace($old_record);
@@ -42,6 +48,8 @@ fields are currently supported:
 =item identifier - identifier entered by the user to receive the credit
 
 =item amount - amount of the credit
+
+=item seconds - time amount of credit (see L<FS::svc_acct/seconds>)
 
 =back
 
@@ -99,21 +107,18 @@ sub check {
   $self->ut_numbern('prepaynum')
   || $self->ut_alpha('identifier')
   || $self->ut_money('amount')
+  || $self->utnumbern('seconds')
   ;
 
 }
 
 =back
 
-=head1 VERSION
-
-$Id: prepay_credit.pm,v 1.3 2001-08-21 02:44:47 ivan Exp $
-
 =head1 BUGS
 
 =head1 SEE ALSO
 
-L<FS::Record>, schema.html from the base documentation.
+L<FS::svc_acct>, L<FS::Record>, schema.html from the base documentation.
 
 =cut
 
