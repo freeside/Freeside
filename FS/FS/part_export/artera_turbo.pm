@@ -100,8 +100,8 @@ sub _export_insert {
 
   if ( $result->{'id'} == 1 ) {
     my $new = new FS::svc_external { $svc_external->hash };
-    $new->id($result->{'ASN'});
-    $new->title($result->{'AKC'});
+    $new->id(sprintf('%010d', $result->{'ASN'}));
+    $new->title(sprintf('%010d', $result->{'AKC'}));
     $new->replace($svc_external);
   } else {
     $result->{'message'} || 'No response from Artera';
@@ -119,36 +119,58 @@ sub _export_replace {
 
 sub _export_delete {
   my( $self, $svc_external ) = (shift, shift);
-  $self->statusChange(17, $svc_external);
+  $self->queue_statusChange(17, $svc_external);
 }
 
 sub _export_suspend {
   my( $self, $svc_external ) = (shift, shift);
-  $self->statusChange(16, $svc_external);
+  $self->queue_statusChange(16, $svc_external);
 }
 
 sub _export_unsuspend {
   my( $self, $svc_external ) = (shift, shift);
-  $self->statusChange(15, $svc_external);
+  $self->queue_statusChange(15, $svc_external);
+}
+
+sub queueStatusChange {
+  my( $self, $status, $svc_external ) = @_;
+
+  my $queue = new FS::queue {
+    'svcnum' => $svc_external->svcnum,
+    'job'    => 'FS::part_export::artera_turbo::statusChange',
+  };
+  $queue->insert(
+    ( map { $self->option($_) }
+          qw( rid username password production ) ),
+    $status,
+    $svc_external->id,
+    $svc_external->title,
+    $self->option('debug'),
+  );
 }
 
 sub statusChange {
-  my( $self, $status, $svc_external ) = @_;
+  my( $rid, $username, $password, $prod, $status, $id, $title, $debug ) = @_;
 
   eval "use Net::Artera;";
   return $@ if $@;
-  $Net::Artera::DEBUG = 1 if $self->option('debug');
-  my $artera = $self->_new_Artera;
+  $Net::Artera::DEBUG = 1 if $debug;
+
+  my $artera = new Net::Artera (
+    'rid'        => $rid,
+    'username'   => $username,
+    'password'   => $password,
+    'production' => $prod,
+  );
 
   my $result = $artera->statusChange(
-    'asn'      => sprintf('%010d', $svc_external->id),
-    'akc'      => $svc_external->title,
+    'asn'      => sprintf('%010d', $id),
+    'akc'      => sprintf('%010d', $title),
     'statusid' => $status,
   );
 
-  $result->{'id'} == 1
-    ? ''
-    : $result->{'message'};
+  die $result->{'message'} unless $result->{'id'} == 1;
+
 }
 
 1;
