@@ -24,4 +24,4 @@
 # - historical late notice viewing in web interface
 - VoIP billing for CDRs from RADIUS
 - promotional codes for signup
-- lots of RT integration
+- lots of RT integration, integrated RT upgraded to 3.2.2
