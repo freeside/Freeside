@@ -398,36 +398,47 @@ END
     }
 
     foreach my $addl_col ( @addl_cols ) {
-      print "<TD ROWSPAN=$rowspan ALIGN=right>";
+      print "<TD ROWSPAN=$rowspan ALIGN=right><FONT SIZE=-1>";
       if ( $addl_col eq 'tickets' ) {
         if ( @custom_priorities ) {
           print &itable('', 0);
           foreach my $priority ( @custom_priorities, '' ) {
-            my $ahref =
-              '<A HREF="'.
-                FS::TicketSystem->href_customer_tickets($custnum,$priority).
-              '">';
-            print "<TR><TD ALIGN=right><FONT SIZE=-1>$ahref".
-                    FS::TicketSystem->num_customer_tickets($custnum,$priority).
-                  "</A></FONT></TD>".
+          
+            my $num =
+              FS::TicketSystem->num_customer_tickets($custnum,$priority);
+            my $ahref = '';
+            $aref = '<A HREF="'.
+                    FS::TicketSystem->href_customer_tickets($custnum,$priority).
+                    '">';
+              if $num;
+
+            print '<TR>'.
+                  "  <TD ALIGN=right><FONT SIZE=-1>$ahref$num</A></FONT></TD>".
                   "<TD ALIGN=left><FONT SIZE=-1>$ahref".
                   ( $priority || '<i>(none)</i>' ).
                   "</A></FONT></TD></TR>";
+
           }
           print '<TR><TD BGCOLOR="#000000" COLSPAN=2></TD></TR>'.
-                '<TR><TD ALIGN=right>';
+                '<TR><TD ALIGN=right><FONT SIZE=-1>';
         }
-        my $ahref =
-          '<A HREF="'.
-            FS::TicketSystem->href_customer_tickets($custnum).
-          '">';
+
+        my $ahref = '';
+        my $ahref = '<A HREF="'.
+                    FS::TicketSystem->href_customer_tickets($custnum).
+                    '">';
+          if $cust_main->get($addl_col);
+
         print $ahref. $cust_main->get($addl_col). '</A>';
-        print "</TD><TD ALIGN=left>${ahref}Total</A></TD></TR></TABLE>"
+        print "</FONT></TD><TD ALIGN=left>".
+              "<FONT SIZE=-1>${ahref}Total</A><FONT>".
+              "</TD></TR></TABLE>"
           if @custom_priorities;
+
       } else {
-        print '<FONT SIZE=-1>'. $cust_main->get($addl_col). '</FONT>';
+        print $cust_main->get($addl_col);
       }
-      print "</TD>";
+      print "</FONT></TD>";
     }
 
     my($n1)='';
