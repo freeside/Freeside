@@ -49,7 +49,8 @@ use FS::type_pkgs;
 sub Script_OnStart {
   $Response->AddHeader('Pragma' => 'no-cache');
   $Response->AddHeader('Cache-control' => 'no-cache');
-  $Response->AddHeader('Expires' => 0);
+#  $Response->AddHeader('Expires' => 0);
+  $Response->{Expires} = -36288000;
 
   $cgi = new CGI;
   &cgisuidsetup($cgi);
