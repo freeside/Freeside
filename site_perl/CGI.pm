@@ -9,7 +9,7 @@ use CGI::Carp qw(fatalsToBrowser);
 use FS::UID;
 
 @ISA = qw(Exporter);
-@EXPORT_OK = qw(header menubar idiot eidiot popurl);
+@EXPORT_OK = qw(header menubar idiot eidiot popurl table);
 
 =head1 NAME
 
@@ -137,6 +137,16 @@ sub popurl {
   $url->as_string;
 }
 
+=item table
+
+Returns HTML tag for beginning a table.
+
+=cut
+
+sub table {
+  "<TABLE BORDER>";
+}
+
 =back
 
 =head1 BUGS
@@ -161,7 +171,10 @@ lose the background, eidiot ivan@sisd.com 98-sep-2
 pod ivan@sisd.com 98-sep-12
 
 $Log: CGI.pm,v $
-Revision 1.9  1998-11-09 08:51:49  ivan
+Revision 1.10  1998-11-12 01:53:47  ivan
+added table command
+
+Revision 1.9  1998/11/09 08:51:49  ivan
 bug squash
 
 Revision 1.7  1998/11/09 06:10:59  ivan
