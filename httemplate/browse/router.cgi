@@ -18,7 +18,7 @@ my $p2 = popurl(2);
     <TD><B>Router name</B></TD>
     <TD><B>Address block(s)</B></TD>
   </TR>
-<% foreach $router (sort {$a->routernum <=> $b->routernum} @router) {
+<% foreach my $router (sort {$a->routernum <=> $b->routernum} @router) {
      my @addr_block = $router->addr_block;
 %>
   <TR>
