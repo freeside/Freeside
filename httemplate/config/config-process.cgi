@@ -11,7 +11,9 @@
       if ( $type eq '' ) {
       } elsif ( $type eq 'textarea' ) {
         if ( $cgi->param($i->key. $n) ) {
-          $conf->set($i->key, $cgi->param($i->key. $n));
+          my $value = $cgi->param($i->key. $n);
+          $value =~ s/\r\n/\n/g; #browsers?
+          $conf->set($i->key, $value);
         } else {
           $conf->delete($i->key);
         }
