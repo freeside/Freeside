@@ -30,7 +30,7 @@ foreach $cust_main ( @cust_main ) {
 
   # $^T not $time because -d is for pre-printing invoices
   foreach my $cust_pkg (
-    grep { $_->expire && $_->expire >= $^T } $cust_main->ncancelled_pkgs
+    grep { $_->expire && $_->expire <= $^T } $cust_main->ncancelled_pkgs
   ) {
     my $error = $cust_pkg->cancel;
     warn "Error cancelling expired pkg ". $cust_pkg->pkgnum. " for custnum ".
