@@ -1537,7 +1537,7 @@ sub collect {
              || $a->weight    <=> $b->weight
              || $a->eventpart <=> $b->eventpart }
         grep { $_->seconds <= ( $invoice_time - $cust_bill->_date )
-               && ! qsearchs( 'cust_bill_event', {
+               && ! qsearch( 'cust_bill_event', {
                                 'invnum'    => $cust_bill->invnum,
                                 'eventpart' => $_->eventpart,
                                 'status'    => 'done',
