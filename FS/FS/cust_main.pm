@@ -683,11 +683,10 @@ sub check {
   } else {
     $self->paydate =~ /^(\d{1,2})[\/\-](\d{2}(\d{2})?)$/
       or return "Illegal expiration date: ". $self->paydate;
-    if ( length($2) == 4 ) {
-      $self->paydate("$2-$1-01");
-    } else {
-      $self->paydate("20$2-$1-01");
-    }
+    my $y = length($2) == 4 ? $2 : "20$2";
+    $self->paydate("$y-$1-01");
+    my($nowm,$nowy)=(localtime(time))[4,5]; $nowm++; $nowy+=1900;
+    return gettext('expired_card') if $y<$nowy || ( $y==$nowy && $1<$nowm );
   }
 
   if ( $self->payname eq '' ) {

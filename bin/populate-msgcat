@@ -102,6 +102,10 @@ sub messages {
       #'en_US' => '',
     },
 
+    'expired_card' => {
+      'en_US' => 'Expired card',
+    },
+
   );
 }
 
