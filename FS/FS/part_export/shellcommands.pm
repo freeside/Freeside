@@ -59,9 +59,15 @@ sub _export_command {
   $finger = shell_quote $finger;
   $quoted_password = shell_quote $_password;
   $domain = $svc_acct->domain;
-  $crypt_password = ''; #surpress "used only once" warnings
-  $crypt_password = crypt( $svc_acct->_password,
+
+  #eventually should check a "password-encoding" field
+  if ( length($svc_acct->_password) == 13
+       || $svc_acct->_password =~ /^\$(1|2a?)\$/ ) {
+    $crypt_password = $svc_acct->_password;
+  } else {
+    $crypt_password = crypt( $svc_acct->_password,
                              $saltset[int(rand(64))].$saltset[int(rand(64))] );
+  }
 
   $self->shellcommands_queue( $svc_acct->svcnum,
     user         => $self->option('user')||'root',
