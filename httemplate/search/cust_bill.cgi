@@ -54,7 +54,7 @@ if ( $cgi->keywords ) {
     $orderby = "ORDER BY cust_bill.invnum";
     #@cust_bill =
     #  grep $_->owed != 0 && $_->_date < time - $open, qsearch('cust_bill', {} );
-    push @where, "0 != $owed".
+    push @where, "0 != $owed",
                  "cust_bill._date < ". (time-$open);
   } elsif ( $query =~ /^OPEN(\d+)_date$/ ) {
     my $open = $1 * 86400;
@@ -62,7 +62,7 @@ if ( $cgi->keywords ) {
     $orderby = "ORDER BY cust_bill._date";
     #@cust_bill =
     #  grep $_->owed != 0 && $_->_date < time - $open, qsearch('cust_bill', {} );
-    push @where, "0 != $owed".
+    push @where, "0 != $owed",
                  "cust_bill._date < ". (time-$open);
 
   } elsif ( $query =~ /^OPEN(\d+)_custnum$/ ) {
@@ -71,7 +71,7 @@ if ( $cgi->keywords ) {
     $orderby = "ORDER BY cust_bill.custnum";
     #@cust_bill =
     #  grep $_->owed != 0 && $_->_date < time - $open, qsearch('cust_bill', {} );
-    push @where, "0 != $owed".
+    push @where, "0 != $owed",
                  "cust_bill._date < ". (time-$open);
   } else {
     die "unknown query string $query";
