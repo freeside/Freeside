@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_pkg.cgi,v 1.8 1999-02-28 00:04:01 ivan Exp $
+# $Id: cust_pkg.cgi,v 1.9 1999-04-08 12:00:19 ivan Exp $
 #
 # Usage: cust_pkg.cgi pkgnum
 #        http://server.name/path/cust_pkg.cgi?pkgnum
@@ -24,7 +24,10 @@
 # no FS::Search ivan@sisd.com 98-mar-7
 # 
 # $Log: cust_pkg.cgi,v $
-# Revision 1.8  1999-02-28 00:04:01  ivan
+# Revision 1.9  1999-04-08 12:00:19  ivan
+# aesthetic update
+#
+# Revision 1.8  1999/02/28 00:04:01  ivan
 # removed misleading comments
 #
 # Revision 1.7  1999/01/19 05:14:20  ivan
@@ -54,7 +57,7 @@ use Date::Format;
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
-use FS::CGI qw(popurl header);
+use FS::CGI qw(popurl header menubar ntable table);
 use FS::Record qw(qsearch qsearchs);
 use FS::part_svc;
 use FS::cust_pkg;
@@ -70,8 +73,6 @@ foreach $part_svc ( qsearch('part_svc',{}) ) {
   $uiadd{$part_svc->svcpart}= popurl(2). "edit/". $part_svc->svcdb . ".cgi";
 }
 
-print $cgi->header( '-expires' => 'now' ), header('Package View', '');
-
 ($query) = $cgi->keywords;
 $query =~ /^(\d+)$/;
 $pkgnum = $1;
@@ -81,10 +82,11 @@ $cust_pkg = qsearchs('cust_pkg',{'pkgnum'=>$pkgnum});
 die "No package!" unless $cust_pkg;
 $part_pkg = qsearchs('part_pkg',{'pkgpart'=>$cust_pkg->getfield('pkgpart')});
 
-#nav bar
 $custnum = $cust_pkg->getfield('custnum');
-print qq!<CENTER><A HREF="../view/cust_main.cgi?$custnum">View this customer!,
-      qq! (#$custnum)</A> | <A HREF="../">Main menu</A></CENTER><BR>!;
+print $cgi->header( '-expires' => 'now' ), header('Package View', menubar(
+  "View this customer (#$custnum)" => popurl(2). "view/cust_main.cgi?$custnum",
+  'Main Menu' => popurl(2)
+));
 
 #print info
 ($susp,$cancel,$expire)=(
@@ -92,67 +94,63 @@ print qq!<CENTER><A HREF="../view/cust_main.cgi?$custnum">View this customer!,
   $cust_pkg->getfield('cancel'),
   $cust_pkg->getfield('expire'),
 );
-print "<FONT SIZE=+1><CENTER>Package #<B>$pkgnum</B></FONT>";
-print qq!<BR><A HREF="#package">Package Information</A>!;
-print qq! | <A HREF="#services">Service Information</A>! unless $cancel;
-print qq!</CENTER><HR>\n!;
-
 ($pkg,$comment)=($part_pkg->getfield('pkg'),$part_pkg->getfield('comment'));
-print qq!<A NAME="package"><CENTER><FONT SIZE=+1>Package Information!,
-      qq!</FONT></A>!;
-print qq!<BR><A HREF="../unimp.html">Edit this information</A></CENTER>!;
-print "<P>Package: <B>$pkg - $comment</B>";
-
 ($setup,$bill)=($cust_pkg->getfield('setup'),$cust_pkg->getfield('bill'));
-print "<BR>Setup: <B>", $setup ? time2str("%D",$setup) : "(Not setup)" ,"</B>";
-print "<BR>Next bill: <B>", $bill ? time2str("%D",$bill) : "" ,"</B>";
-
-if ($susp) {
-  print "<BR>Suspended: <B>", time2str("%D",$susp), "</B>";
-  print qq! <A HREF="../misc/unsusp_pkg.cgi?$pkgnum">Unsuspend</A>! unless $cancel;
-} else {
-  print qq!<BR><A HREF="../misc/susp_pkg.cgi?$pkgnum">Suspend</A>! unless $cancel;
-}
-
-if ($expire) {
-  print "<BR>Expire: <B>", time2str("%D",$expire), "</B>";
-}
-  print <<END;
-<FORM ACTION="../misc/expire_pkg.cgi" METHOD="post">
-<INPUT TYPE="hidden" NAME="pkgnum" VALUE="$pkgnum">
-Expire (date): <INPUT TYPE="text" NAME="date" VALUE="" >
-<INPUT TYPE="submit" VALUE="Cancel later">
-END
-
-if ($cancel) {
-  print "<BR>Cancelled: <B>", time2str("%D",$cancel), "</B>";
-} else {
-  print qq!<BR><A HREF="../misc/cancel_pkg.cgi?$pkgnum">Cancel now</A>!;
-}
-
-#otaker
 $otaker = $cust_pkg->getfield('otaker');
-print "<P>Order taken by <B>$otaker</B>";
+
+print "Package information";
+print ' (<A HREF="'. popurl(2). 'misc/unsusp_pkg.cgi?'. $pkgnum.
+      '">unsuspend</A>)' if ( $susp && ! $cancel );
+print ' (<A HREF="'. popurl(2). 'misc/susp_pkg.cgi?'. $pkgnum.
+      '">suspend</A>)' unless ( $susp || $cancel );
+print ' (<A HREF="'. popurl(2). 'misc/cancel_pkg.cgi?'. $pkgnum.
+      '">cancel</A>)' unless $cancel;
+
+print ntable("#c0c0c0"), '<TR><TD>', ntable("#c0c0c0",2),
+      '<TR><TD ALIGN="right">Package number</TD><TD BGCOLOR="#ffffff">',
+      $pkgnum, '</TD></TR>',
+      '<TR><TD ALIGN="right">Package</TD><TD BGCOLOR="#ffffff">',
+      $pkg,  '</TD></TR>',
+      '<TR><TD ALIGN="right">Comment</TD><TD BGCOLOR="#ffffff">',
+      $comment,  '</TD></TR>',
+      '<TR><TD ALIGN="right">Setup date</TD><TD BGCOLOR="#ffffff">',
+      ( $setup ? time2str("%D",$setup) : "(Not setup)" ), '</TD></TR>',
+      '<TR><TD ALIGN="right">Next bill date</TD><TD BGCOLOR="#ffffff">',
+      ( $bill ? time2str("%D",$bill) : "&nbsp;" ), '</TD></TR>',
+;
+print '<TR><TD ALIGN="right">Suspension date</TD><TD BGCOLOR="#ffffff">',
+       time2str("%D",$susp), '</TD></TR>' if $susp;
+print '<TR><TD ALIGN="right">Expiration date</TD><TD BGCOLOR="#ffffff">',
+       time2str("%D",$expire), '</TD></TR>' if $expire;
+print '<TR><TD ALIGN="right">Cancellation date</TD><TD BGCOLOR="#ffffff">',
+       time2str("%D",$cancel), '</TD></TR>' if $cancel;
+print  '<TR><TD ALIGN="right">Order taker</TD><TD BGCOLOR="#ffffff">',
+      $otaker,  '</TD></TR>',
+      '</TABLE></TD></TR></TABLE>'
+;
+
+#  print <<END;
+#<FORM ACTION="../misc/expire_pkg.cgi" METHOD="post">
+#<INPUT TYPE="hidden" NAME="pkgnum" VALUE="$pkgnum">
+#Expire (date): <INPUT TYPE="text" NAME="date" VALUE="" >
+#<INPUT TYPE="submit" VALUE="Cancel later">
+#END
 
 unless ($cancel) {
 
   #services
-  print <<END;
-<HR><A NAME="services"><CENTER><FONT SIZE=+1>Service Information</FONT></A>
-<BR>Click on service to view/edit/add service.</CENTER><BR>
-<CENTER><B>Do NOT pick the "Link to existing" option unless you are auditing!!!</B></CENTER>
-<CENTER><TABLE BORDER=4>
-<TR><TH>Service</TH>
-END
+  print '<BR>Service Information', table,
+  ;
 
   #list of services this pkgpart includes
-  my($pkg_svc,%pkg_svc);
+  my $pkg_svc;
+  my %pkg_svc = ();
   foreach $pkg_svc ( qsearch('pkg_svc',{'pkgpart'=> $cust_pkg->pkgpart }) ) {
     $pkg_svc{$pkg_svc->svcpart} = $pkg_svc->quantity if $pkg_svc->quantity;
   }
 
   #list of records from cust_svc
-  my($svcpart);
+  my $svcpart;
   foreach $svcpart (sort {$a <=> $b} keys %pkg_svc) {
 
     my($svc)=qsearchs('part_svc',{'svcpart'=>$svcpart})->getfield('svc');
@@ -167,8 +165,9 @@ END
       my($cust_svc);
       if ( $cust_svc=shift @cust_svc ) {
         my($svcnum)=$cust_svc->svcnum;
+        my($label, $value, $svcdb) = $cust_svc->label;
         print <<END;
-<TR><TD><A HREF="$uiview{$svcpart}?$svcnum">(View) $svc<A></TD></TR>
+<TR><TD><A HREF="$uiview{$svcpart}?$svcnum">(View) $svc: $value<A></TD></TR>
 END
       } else {
         print <<END;
@@ -186,8 +185,12 @@ END
     warn "WARNING: Leftover services pkgnum $pkgnum!" if @cust_svc;; 
   }
 
-  print "</TABLE></CENTER>";
-
+  print "</TABLE><FONT SIZE=-1>",
+        "Choose (View) to view or edit an existing service<BR>",
+        "Choose (Add) to setup a new service<BR>",
+        "Choose (Link to existing) to link to a legacy (pre-Freeside) service",
+        "</FONT>"
+  ;
 }
 
 #formatting

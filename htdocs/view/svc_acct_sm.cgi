@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct_sm.cgi,v 1.9 1999-02-28 00:04:03 ivan Exp $
+# $Id: svc_acct_sm.cgi,v 1.10 1999-04-08 12:00:19 ivan Exp $
 #
 # Usage: svc_acct_sm.cgi svcnum
 #        http://server.name/path/svc_acct_sm.cgi?svcnum
@@ -20,7 +20,10 @@
 # /var/spool/freeside/conf/domain ivan@sisd.com 98-jul-17
 #
 # $Log: svc_acct_sm.cgi,v $
-# Revision 1.9  1999-02-28 00:04:03  ivan
+# Revision 1.10  1999-04-08 12:00:19  ivan
+# aesthetic update
+#
+# Revision 1.9  1999/02/28 00:04:03  ivan
 # removed misleading comments
 #
 # Revision 1.8  1999/02/09 09:23:00  ivan
@@ -53,7 +56,7 @@ use vars qw($conf $cgi $mydomain $query $svcnum $svc_acct_sm $cust_svc
             $svc $svc_domain $domain $svc_acct $username );
 use CGI;
 use FS::UID qw(cgisuidsetup);
-use FS::CGI qw(header popurl);
+use FS::CGI qw(header popurl menubar );
 use FS::Record qw(qsearchs);
 use FS::Conf;
 use FS::svc_acct_sm;
@@ -69,7 +72,6 @@ cgisuidsetup($cgi);
 $conf = new FS::Conf;
 $mydomain = $conf->config('domain');
 
-#untaint svcnum
 ($query) = $cgi->keywords;
 $query =~ /^(\d+)$/;
 $svcnum = $1;
@@ -89,25 +91,17 @@ if ($pkgnum) {
 $part_svc = qsearchs('part_svc',{'svcpart'=> $cust_svc->svcpart } );
 die "Unkonwn svcpart" unless $part_svc;
 
-print $cgi->header( '-expires' => 'now' ), header('Mail Alias View');
-
 $p = popurl(2);
-if ($pkgnum || $custnum) {
-  print <<END;
-<A HREF="${p}view/cust_pkg.cgi?$pkgnum">View this package (#$pkgnum)</A> | 
-<A HREF="${p}view/cust_main.cgi?$custnum">View this customer (#$custnum)</A> | 
-END
-} else {
-  print <<END;
-<A HREF="${p}misc/cancel-unaudited.cgi?$svcnum">Cancel this (unaudited)account</A> |
-END
-}
-
-print <<END;
-    <A HREF="${p}">Main menu</A></CENTER><BR>
-    Service #$svcnum
-    <P><A HREF="${p}edit/svc_acct_sm.cgi?$svcnum">Edit this information</A>
-END
+print $cgi->header( '-expires' => 'now' ), header('Mail Alias View', menubar(
+  ( ( $pkgnum || $custnum )
+    ? ( "View this package (#$pkgnum)" => "${p}view/cust_pkg.cgi?$pkgnum",
+        "View this customer (#$custnum)" => "${p}view/cust_main.cgi?$custnum",
+      )
+    : ( "Cancel this (unaudited) account" =>
+          "${p}misc/cancel-unaudited.cgi?$svcnum" )
+  ),
+  "Main menu" => $p,
+));
 
 ($domsvc,$domuid,$domuser) = (
   $svc_acct_sm->domsvc,
@@ -120,20 +114,10 @@ $domain = $svc_domain->domain;
 $svc_acct = qsearchs('svc_acct',{'uid'=>$domuid});
 $username = $svc_acct->username;
 
-#formatting
-print qq!<BR><BR>!;
-
-#svc
-print "Service: <B>$svc</B>";
-
-print "<BR><BR>";
-
-print qq!Mail to <B>!, ( ($domuser eq '*') ? "<I>(anything)</I>" : $domuser ) , qq!</B>\@<B>$domain</B> forwards to <B>$username</B>\@$mydomain mailbox.!;
-
-	#formatting
-	print <<END;
-
-  </BODY>
-</HTML>
-END
+print qq!<A HREF="${p}edit/svc_acct_sm.cgi?$svcnum">Edit this information</A>!,
+      "<BR>Service #$svcnum",
+      "<BR>Service: <B>$svc</B>",
+      qq!<BR>Mail to <B>!, ( ($domuser eq '*') ? "<I>(anything)</I>" : $domuser ) , qq!</B>\@<B>$domain</B> forwards to <B>$username</B>\@$mydomain mailbox.!,
+      '</BODY></HTML>'
+;
 

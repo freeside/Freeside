@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_domain.cgi,v 1.8 1999-02-28 00:04:04 ivan Exp $
+# $Id: svc_domain.cgi,v 1.9 1999-04-08 12:00:19 ivan Exp $
 #
 # Usage: svc_domain svcnum
 #        http://server.name/path/svc_domain.cgi?svcnum
@@ -13,7 +13,10 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # $Log: svc_domain.cgi,v $
-# Revision 1.8  1999-02-28 00:04:04  ivan
+# Revision 1.9  1999-04-08 12:00:19  ivan
+# aesthetic update
+#
+# Revision 1.8  1999/02/28 00:04:04  ivan
 # removed misleading comments
 #
 # Revision 1.7  1999/02/23 08:09:25  ivan
@@ -43,7 +46,7 @@ use vars qw( $cgi $query $svcnum $svc_domain $domain $cust_svc $pkgnum
              $cust_pkg $custnum $part_svc $p );
 use CGI;
 use FS::UID qw(cgisuidsetup);
-use FS::CGI qw(header menubar popurl);
+use FS::CGI qw(header menubar popurl menubar);
 use FS::Record qw(qsearchs);
 use FS::svc_domain;
 use FS::cust_svc;
@@ -53,47 +56,41 @@ use FS::part_svc;
 $cgi = new CGI;
 cgisuidsetup($cgi);
 
-#untaint svcnum
 ($query) = $cgi->keywords;
 $query =~ /^(\d+)$/;
 $svcnum = $1;
 $svc_domain = qsearchs('svc_domain',{'svcnum'=>$svcnum});
 die "Unknown svcnum" unless $svc_domain;
-$domain = $svc_domain->domain;
 
 $cust_svc = qsearchs('cust_svc',{'svcnum'=>$svcnum});
 $pkgnum = $cust_svc->getfield('pkgnum');
 if ($pkgnum) {
   $cust_pkg=qsearchs('cust_pkg',{'pkgnum'=>$pkgnum});
   $custnum=$cust_pkg->getfield('custnum');
+} else {
+  $cust_pkg = '';
+  $custnum = '';
 }
 
 $part_svc = qsearchs('part_svc',{'svcpart'=> $cust_svc->svcpart } );
 die "Unkonwn svcpart" unless $part_svc;
 
+$domain = $svc_domain->domain;
+
 $p = popurl(2);
 print $cgi->header( '-expires' => 'now' ), header('Domain View', menubar(
+  ( ( $pkgnum || $custnum )
+    ? ( "View this package (#$pkgnum)" => "${p}view/cust_pkg.cgi?$pkgnum",
+        "View this customer (#$custnum)" => "${p}view/cust_main.cgi?$custnum",
+      )
+    : ( "Cancel this (unaudited) account" =>
+          "${p}misc/cancel-unaudited.cgi?$svcnum" )
+  ),
   "Main menu" => $p,
-  "View this package (#$pkgnum)" => "${p}view/cust_pkg.cgi?$pkgnum",
-  "View this customer (#$custnum)" => "${p}view/cust_main.cgi?$custnum",
-)), <<END;
-    <BR><FONT SIZE=+1>Service #$svcnum</FONT>
-    </CENTER>
-END
-
-print "<HR>";
-print "Service: <B>", $part_svc->svc, "</B>";
-print "<HR>";
-
-print qq!Domain name <B>$domain</B>.!;
-print qq!<P><A HREF="http://rs.internic.net/cgi-bin/whois?do+$domain">View whois information.</A>!;
-
-print "<HR>";
-
-	#formatting
-	print <<END;
-
-  </BODY>
-</HTML>
-END
-
+)),
+      "Service #$svcnum",
+      "<BR>Service: <B>", $part_svc->svc, "</B>",
+      "<BR>Domain name: <B>$domain</B>.",
+      qq!<BR><BR><A HREF="http://rs.internic.net/cgi-bin/whois?do+$domain">View whois information.</A>!,
+      '</BODY></HTML>',
+;

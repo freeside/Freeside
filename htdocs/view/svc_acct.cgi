@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct.cgi,v 1.8 1999-02-28 00:04:02 ivan Exp $
+# $Id: svc_acct.cgi,v 1.9 1999-04-08 12:00:19 ivan Exp $
 #
 # Usage: svc_acct.cgi svcnum
 #        http://server.name/path/svc_acct.cgi?svcnum
@@ -33,7 +33,10 @@
 # displays arbitrary radius attributes ivan@sisd.com 98-aug-16
 #
 # $Log: svc_acct.cgi,v $
-# Revision 1.8  1999-02-28 00:04:02  ivan
+# Revision 1.9  1999-04-08 12:00:19  ivan
+# aesthetic update
+#
+# Revision 1.8  1999/02/28 00:04:02  ivan
 # removed misleading comments
 #
 # Revision 1.7  1999/01/19 05:14:21  ivan
@@ -63,7 +66,7 @@ use vars qw( $conf $cgi $mydomain $query $svcnum $svc_acct $cust_svc $pkgnum
 use CGI;
 use CGI::Carp qw( fatalsToBrowser );
 use FS::UID qw( cgisuidsetup );
-use FS::CGI qw( header popurl );
+use FS::CGI qw( header popurl menubar);
 use FS::Record qw( qsearchs fields );
 use FS::Conf;
 use FS::svc_acct;
@@ -78,7 +81,6 @@ $cgi = new CGI;
 $conf = new FS::Conf;
 $mydomain = $conf->config('domain');
 
-#untaint svcnum
 ($query) = $cgi->keywords;
 $query =~ /^(\d+)$/;
 $svcnum = $1;
@@ -90,83 +92,58 @@ $pkgnum = $cust_svc->getfield('pkgnum');
 if ($pkgnum) {
   $cust_pkg=qsearchs('cust_pkg',{'pkgnum'=>$pkgnum});
   $custnum=$cust_pkg->getfield('custnum');
+} else {
+  $cust_pkg = '';
+  $custnum = '';
 }
 
 $part_svc = qsearchs('part_svc',{'svcpart'=> $cust_svc->svcpart } );
 die "Unkonwn svcpart" unless $part_svc;
 
-print $cgi->header( '-expires' => 'now' ), header('Account View', '');
-
 $p = popurl(2);
-if ($pkgnum || $custnum) {
-  print <<END;
-<A HREF="${p}view/cust_pkg.cgi?$pkgnum">View this package (#$pkgnum)</A> | 
-<A HREF="${p}view/cust_main.cgi?$custnum">View this customer (#$custnum)</A> | 
-END
-} else {
-  print <<END;
-<A HREF="${p}misc/cancel-unaudited.cgi?$svcnum">Cancel this (unaudited)account</A> |
-END
-}
+print $cgi->header( '-expires' => 'now' ), header('Account View', menubar(
+  ( ( $pkgnum || $custnum )
+    ? ( "View this package (#$pkgnum)" => "${p}view/cust_pkg.cgi?$pkgnum",
+        "View this customer (#$custnum)" => "${p}view/cust_main.cgi?$custnum",
+      )
+    : ( "Cancel this (unaudited) account" =>
+          "${p}misc/cancel-unaudited.cgi?$svcnum" )
+  ),
+  "Main menu" => $p,
+));
 
-print <<END;
-<A HREF="${p}">Main menu</A></CENTER><BR>
-<FONT SIZE=+1>Service #$svcnum</FONT>
-END
-
-print qq!<BR><A HREF="${p}edit/svc_acct.cgi?$svcnum">Edit this information</A>!;
 #print qq!<BR><A HREF="../misc/sendconfig.cgi?$svcnum">Send account information</A>!;
-print qq!<BR><BR><A HREF="#general">General</A> | <A HREF="#shell">Shell account</A> | !;
-print qq!<A HREF="#slip">SLIP/PPP account</A></CENTER>!;
 
-#formatting
-print qq!<HR><CENTER><FONT SIZE=+1><A NAME="general">General</A></FONT></CENTER>!;
-
-#svc
-print "Service: <B>", $part_svc->svc, "</B>";
-
-#username
-print "<BR>Username: <B>", $svc_acct->username, "</B>";
-
-#password
+print qq!<A HREF="${p}edit/svc_acct.cgi?$svcnum">Edit this information</A>!,
+      "<BR>Service #$svcnum",
+      "<BR>Service: <B>", $part_svc->svc, "</B>",
+      "<BR><BR>Username: <B>", $svc_acct->username, "</B>"
+;
 if (substr($svc_acct->_password,0,1) eq "*") {
-  print "<BR>Password: <I>(Login disabled)</I><BR>";
+  print "<BR>Password: <I>(Login disabled)</I>";
 } else {
-  print "<BR>Password: <I>(hidden)</I><BR>";
+  print "<BR>Password: <I>(hidden)</I>";
 }
 
-# popnum -> svc_acct_pop record
 $svc_acct_pop = qsearchs('svc_acct_pop',{'popnum'=>$svc_acct->popnum});
-
-#pop
-print "POP: <B>", $svc_acct_pop->city, ", ", $svc_acct_pop->state,
+print "<BR>POP: <B>", $svc_acct_pop->city, ", ", $svc_acct_pop->state,
       " (", $svc_acct_pop->ac, ")/", $svc_acct_pop->exch, "<\B>"
   if $svc_acct_pop;
 
-#shell account
-print qq!<HR><CENTER><FONT SIZE=+1><A NAME="shell">!;
 if ($svc_acct->uid ne '') {
-  print "Shell account";
-  print "</A></FONT></CENTER>";
-  print "Uid: <B>", $svc_acct->uid, "</B>";
-  print "<BR>Gid: <B>", $svc_acct->gid, "</B>";
-
-  print qq!<BR>Finger name: <B>!, $svc_acct->finger, qq!</B><BR>!;
-
-  print "Home directory: <B>", $svc_acct->dir, "</B><BR>";
-
-  print "Shell: <B>", $svc_acct->shell, "</B><BR>";
-
-  print "Quota: <B>", $svc_acct->quota, "</B> <I>(unimplemented)</I>";
+  print "<BR><BR>Uid: <B>", $svc_acct->uid, "</B>",
+        "<BR>Gid: <B>", $svc_acct->gid, "</B>",
+        "<BR>Finger name: <B>", $svc_acct->finger, "</B>",
+        "<BR>Home directory: <B>", $svc_acct->dir, "</B>",
+        "<BR>Shell: <B>", $svc_acct->shell, "</B>",
+        "<BR>Quota: <B>", $svc_acct->quota, "</B> <I>(unimplemented)</I>"
+  ;
 } else {
-  print "No shell account.</A></FONT></CENTER>";
+  print "<BR><BR>(No shell account)";
 }
 
-# SLIP/PPP
-print qq!<HR><CENTER><FONT SIZE=+1><A NAME="slip">!;
 if ($svc_acct->slipip) {
-  print "SLIP/PPP account</A></FONT></CENTER>";
-  print "IP address: <B>", ( $svc_acct->slipip eq "0.0.0.0" || $svc_acct->slipip eq '0e0' ) ? "<I>(Dynamic)</I>" : $svc_acct->slipip ,"</B>";
+  print "<BR><BR>IP address: <B>", ( $svc_acct->slipip eq "0.0.0.0" || $svc_acct->slipip eq '0e0' ) ? "<I>(Dynamic)</I>" : $svc_acct->slipip ,"</B>";
   my($attribute);
   foreach $attribute ( grep /^radius_/, fields('svc_acct') ) {
     #warn $attribute;
@@ -176,15 +153,8 @@ if ($svc_acct->slipip) {
     print "<BR>Radius $pattribute: <B>". $svc_acct->getfield($attribute), "</B>";
   }
 } else {
-  print "No SLIP/PPP account</A></FONT></CENTER>"
+  print "<BR><BR>(No SLIP/PPP account)";
 }
 
-print "<HR>";
-
-	#formatting
-	print <<END;
-
-  </BODY>
-</HTML>
-END
+print "</BODY></HTML>";
 
