@@ -12,7 +12,7 @@
   <li>Run <code>make aspdocs</code> or <code>make masondocs</code>.
   <li>Copy <code>aspdocs/</code> or <code>masondocs/</code> to your web server's document space.
   <li>Run <code>make install-perl-modules</code>.
-  <li>The signup server and password server are deprecated in 1.4.2.  Their functionality has been incorperated into the self-service server.  Edit or reinstall your init script appropriately, and set the "signup_server-default_agentnum" and "signup_server-default_refnum" configuration options appropriately.  The FS::SignupClient interface is still available as a compatibility wrapper.  You should be able to continue to use your current signup.cgi.
+  <li>The signup server and password server are deprecated in 1.4.2.  Their functionality has been incorperated into the self-service server.  Edit or reinstall your init script, and set the "signup_server-default_agentnum" and "signup_server-default_refnum" configuration options.  The FS::SignupClient interface is still available as a compatibility wrapper, so you should be able to continue to use your current signup.cgi.
   <li>Optional: To use typeset invoices, install tetex and ghostscript, and copy conf/invoice_latex, conf/invoice_latexnotes, and conf/invoice_latexfooter to /usr/local/etc/freeside/conf.<datasrc>/
   <li>Restart Apache and freeside-queued.
 </body>
