@@ -78,7 +78,6 @@ sub insert {
   $self->add;
 }
 
-
 =item delete
 
 Delete this record from the database.
@@ -126,6 +125,12 @@ sub check {
   ''; #no error
 }
 
+=back
+
+=head1 VERSION
+
+$Id: table_template.pm,v 1.3 1998-11-15 04:33:00 ivan Exp $
+
 =head1 BUGS
 
 The author forgot to customize this manpage.
@@ -142,7 +147,10 @@ added hfields
 ivan@sisd.com 97-nov-13
 
 $Log: table_template.pm,v $
-Revision 1.2  1998-11-15 03:48:49  ivan
+Revision 1.3  1998-11-15 04:33:00  ivan
+updates for newest versoin
+
+Revision 1.2  1998/11/15 03:48:49  ivan
 update for current version
 
 
