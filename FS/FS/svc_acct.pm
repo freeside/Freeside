@@ -479,6 +479,8 @@ sub check {
     $recref->{_password} = $1.$3;
   } elsif ( $recref->{_password} eq '*' ) {
     $recref->{_password} = '*';
+  } elsif ( $recref->{_password} eq '!!' ) {
+    $recref->{_password} = '!!';
   } else {
     return "Illegal password";
   }
@@ -542,7 +544,7 @@ sub radius_check {
 
 =head1 VERSION
 
-$Id: svc_acct.pm,v 1.17 2001-06-03 12:36:10 ivan Exp $
+$Id: svc_acct.pm,v 1.18 2001-07-30 06:28:45 ivan Exp $
 
 =head1 BUGS
 
