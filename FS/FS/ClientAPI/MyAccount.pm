@@ -118,7 +118,7 @@ sub customer_info {
     }
 
     if ( $cust_main->payby =~ /^(CARD|DCRD)$/ ) {
-      $return{payinfo} = $cust_main->masked_payinfo;
+      $return{payinfo} = $cust_main->payinfo_masked;
       @return{'month', 'year'} = $cust_main->paydate_monthyear;
     }
 
