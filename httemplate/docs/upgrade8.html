@@ -69,6 +69,12 @@ CREATE TABLE svc_forward (
   dst varchar(80),
   PRIMARY KEY (svcnum)
 );
+ALTER TABLE part_svc ADD svc_forward__srcsvc varchar(80) NULL;
+ALTER TABLE part_svc ADD svc_forward__srcsvc_flag char(1) NULL;
+ALTER TABLE part_svc ADD svc_forward__dstsvc varchar(80) NULL;
+ALTER TABLE part_svc ADD svc_forward__dstsvc_flag char(1) NULL;
+ALTER TABLE part_svc ADD svc_forward__dst varchar(80) NULL;
+ALTER TABLE part_svc ADD svc_forward__dst_flag char(1) NULL;
 
 CREATE TABLE cust_credit_bill (
   creditbillnum int primary key,
@@ -214,6 +220,8 @@ CREATE TABLE cust_tax_exempt (
 CREATE UNIQUE INDEX cust_tax_exempt1 ON cust_tax_exempt ( taxnum, year, month );
 
 ALTER TABLE svc_acct ADD domsvc integer NULL;
+ALTER TABLE part_svc ADD svc_acct__domsvc varchar(80) NULL;
+ALTER TABLE part_svc ADD svc_acct__domsvc_flag char(1) NULL;
 ALTER TABLE svc_domain ADD catchall integer NULL;
 ALTER TABLE cust_main ADD referral_custnum integer NULL;
 ALTER TABLE cust_main ADD comments text NULL;
@@ -234,6 +242,8 @@ ALTER TABLE cust_refund ADD closed char(1) NULL;
 ALTER TABLE cust_bill_event ADD status varchar(80);
 ALTER TABLE cust_bill_event ADD statustext text NULL;
 ALTER TABLE svc_acct ADD sec_phrase varchar(80) NULL;
+ALTER TABLE part_svc ADD svc_acct__sec_phrase varchar(80) NULL;
+ALTER TABLE part_svc ADD svc_acct__sec_phrase_flag char(1) NULL;
 ALTER TABLE part_pkg ADD taxclass varchar(80) NULL;
 ALTER TABLE cust_main_county ADD taxclass varchar(80) NULL;
 ALTER TABLE cust_main_county ADD exempt_amount decimal(10,2);
