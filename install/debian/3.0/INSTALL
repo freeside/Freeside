@@ -14,7 +14,7 @@ apt-get install screen zsh libapache-mod-ssl libapache-mod-perl rsync \
         libstring-shellquote-perl libnet-scp-perl libapache-asp-perl \
         libtie-ixhash-perl libtime-duration-perl \
         libhtml-widgets-selectlayers-perl libstorable-perl \
-        libapache-dbi-perl libdbd-mysql-perl
+        libapache-dbi-perl libcache-cache-perl libdbd-mysql-perl
 
 useradd freeside
 su postgres -c "createuser -P freeside"
