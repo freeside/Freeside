@@ -302,6 +302,12 @@ my $widget = new HTML::Widgets::SelectLayers(
                      ? $plandata{$field}
                      : $href->{$field}{'default'} ).
                  qq!" onChange="fchanged(this)">!;
+      } elsif ( $href->{$field}{'type'} eq 'checkbox' ) {
+        $html .= qq!<INPUT TYPE="checkbox" NAME="$field" VALUE=1 !.
+                 ( exists($plandata{$field}) && $plandata{$field}
+                   ? ' CHECKED'
+                   : ''
+                 ). '>';
       } elsif ( $href->{$field}{'type'} =~ /^select/ ) {
         $html .= '<SELECT';
         $html .= ' MULTIPLE'
