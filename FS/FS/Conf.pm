@@ -1159,7 +1159,7 @@ httemplate/docs/config.html
   },
 
   {
-    'key'         => 'system_usernames'
+    'key'         => 'system_usernames',
     'section'     => 'username',
     'description' => 'A list of system usernames that cannot be edited or removed, one per line.  Use a bare username to prohibit modification/deletion of the username in any domain, or username@domain to prohibit modification/deletetion of a specific username and domain.',
     'type'        => 'textarea',
