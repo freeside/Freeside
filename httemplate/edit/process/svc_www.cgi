@@ -5,8 +5,8 @@ my $svcnum = $1;
 
 my $old;
 if ( $svcnum ) {
-  $old = qsearchs('svc_acct', { 'svcnum' => $svcnum } )
-    or die "fatal: can't find account (svcnum $svcnum)!";
+  $old = qsearchs('svc_www', { 'svcnum' => $svcnum } )
+    or die "fatal: can't find website (svcnum $svcnum)!";
 } else {
   $old = '';
 }
