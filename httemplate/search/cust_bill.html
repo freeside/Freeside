@@ -70,12 +70,13 @@
                  sub { sprintf('$%.2f', shift->get('owed') ) },
                  sub { sprintf('$%.2f', shift->charged     ) },
                  sub { time2str('%b %d %Y', shift->_date ) },
-                 sub { my $cust_main = shift->cust_main;
+                 sub { my $cust_bill = shift;
+                       my $cust_main = $cust_bill->cust_main;
                        $cust_main
                          ? $cust_main->get('last'). ', '. $cust_main->first
                          : "WARNING: can't find cust_main.custnum ".
-                           shift->custnum. ' (cust_bill.invnum '.
-                           shift->invnum. ')';
+                           $cust_bill->custnum. ' (cust_bill.invnum '.
+                           $cust_bill->invnum. ')';
                      },
                  sub { my $cust_main = shift->cust_main;
                        $cust_main ? $cust_main->company : '';
