@@ -224,7 +224,6 @@ function fixup(what) {
         print qq!<SELECT NAME="${svcdb}__${field}">!;
         print '<OPTION> </OPTION>' unless $value;
         foreach my $record ( qsearch( $def->{select_table}, {} ) ) {
-          warn $rvalue;
           my $rvalue = $record->getfield($def->{select_key});
           print qq!<OPTION VALUE="$rvalue"!.
                 ( $rvalue==$value ? ' SELECTED>' : '>' ).
