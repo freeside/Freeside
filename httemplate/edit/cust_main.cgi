@@ -73,7 +73,7 @@ my $r = qq!<font color="#ff0000">*</font>&nbsp;!;
 
 my @agents = qsearch( 'agent', {} );
 #die "No agents created!" unless @agents;
-die "You have not created any agents.  You must create at least one agent before adding a customer.  Go to ". popurl(2). "browse/agent.cgi and create one or more agents." unless @agents;
+eidiot "You have not created any agents.  You must create at least one agent before adding a customer.  Go to ". popurl(2). "browse/agent.cgi and create one or more agents." unless @agents;
 my $agentnum = $cust_main->agentnum || $agents[0]->agentnum; #default to first
 if ( scalar(@agents) == 1 ) {
   print qq!<INPUT TYPE="hidden" NAME="agentnum" VALUE="$agentnum">!;
@@ -99,7 +99,7 @@ if ( $custnum && ! $conf->exists('editreferrals') ) {
 } else {
   my(@referrals) = qsearch('part_referral',{});
   if ( scalar(@referrals) == 0 ) {
-    die "You have not created any advertising sources.  You must create at least one advertising source before adding a customer.  Go to ". popurl(2). "browse/part_referral.cgi and create one or more advertising sources.";
+    eidiot "You have not created any advertising sources.  You must create at least one advertising source before adding a customer.  Go to ". popurl(2). "browse/part_referral.cgi and create one or more advertising sources.";
   } elsif ( scalar(@referrals) == 1 ) {
     $refnum ||= $referrals[0]->refnum;
     print qq!<INPUT TYPE="hidden" NAME="refnum" VALUE="$refnum">!;
