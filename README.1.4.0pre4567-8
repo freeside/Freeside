@@ -8,7 +8,9 @@ http://cleanwhisker.420.am/cgi-bin/cvsweb/freeside/Attic/
 
 -----
 
-install the perl modules and httemplate as per install.html or upgrade8.html
+install Time::Duration and Tie::IxHash
+
+install the FS perl modules and httemplate as per install.html or upgrade8.html
 
 ALTER TABLE part_pkg ADD disabled char(1) NULL;
 ALTER TABLE part_svc ADD disabled char(1) NULL;
@@ -17,7 +19,7 @@ CREATE TABLE cust_bill_event (
   eventnum int primary key,
   invnum int not null,
   eventpart int not null,
-  _date int not null,
+  _date int not null
 );
 CREATE UNIQUE INDEX cust_bill_events1 ON cust_bill_events ( eventpart, invnum );
 CREATE INDEX cust_bill_events2 ON cust_bill_events ( invnum );
@@ -28,7 +30,10 @@ CREATE TABLE part_bill_event (
   event varchar(80) not null,
   eventcode text null,
   seconds int null,
-  disabled char(1) null,
+  weight int not null,
+  plan varchar(80) null,
+  plandata text null,
+  disabled char(1) null
 );
 CREATE INDEX part_bill_events1 ON part_bill_events ( payby );
 

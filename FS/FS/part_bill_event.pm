@@ -44,6 +44,12 @@ FS::Record.  The following fields are currently supported:
 
 =item seconds - how long after the invoice date events of this type are triggered
 
+=item weight - ordering for events with identical seconds
+
+=item plan - eventcode plan
+
+=item plandata - additional plan data
+
 =item disabled - Disabled flag, empty or `Y'
 
 =back
@@ -106,12 +112,17 @@ insert and replace methods.
 sub check {
   my $self = shift;
 
+  $self->weight(0) unless $self->weight;
+
   $self->ut_numbern('eventpart')
     || $self->ut_enum('payby', [qw( CARD BILL COMP )] )
     || $self->ut_text('event')
     || $self->ut_anything('eventcode')
     || $self->ut_number('seconds')
     || $self->ut_enum('disabled', [ '', 'Y' ] )
+    || $self->ut_number('weight')
+    || $self->ut_alphan('plan')
+    || $self->ut_anything('plandata')
   ;
 }
 

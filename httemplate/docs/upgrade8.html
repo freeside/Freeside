@@ -128,7 +128,7 @@ CREATE TABLE cust_bill_event (
   eventnum int primary key,
   invnum int not null,
   eventpart int not null,
-  _date int not null,
+  _date int not null
 );
 CREATE UNIQUE INDEX cust_bill_event1 ON cust_bill_event ( eventpart, invnum );
 CREATE INDEX cust_bill_event2 ON cust_bill_event ( invnum );
@@ -139,7 +139,10 @@ CREATE TABLE part_bill_event (
   event varchar(80) not null,
   eventcode text null,
   seconds int null,
-  disabled char(1) null,
+  weight int not null,
+  plan varchar(80) null,
+  plandata text null,
+  disabled char(1) null
 );
 CREATE INDEX part_bill_event1 ON part_bill_event ( payby );
 
