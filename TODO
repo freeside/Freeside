@@ -1,4 +1,4 @@
-$Id: TODO,v 1.10 1998-10-13 12:07:49 ivan Exp $
+$Id: TODO,v 1.11 1998-10-13 12:49:50 ivan Exp $
 
 If you are interested in helping with any of these, please join the mailing
 list (send a blank message to ivan-freeside-subscribe@sisd.com) to avoid 
@@ -24,8 +24,6 @@ being something you can call as FS::Record::fields('tablename').  Might
 even be able to handle both in the same routine (that would be neato).
 Get rid of hfields and other assorted silliness.
 Clean up hfields/sfields/fields crap.  yuck.
-
-$lpr in cust_main.pm (from Bill.pm) should become /var/spool/freeside/conf/lpr
 
 Override FS::Record new, add, rep and del (create, insert, replace and
 delete) in all derived classes.
