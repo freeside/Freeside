@@ -24,7 +24,7 @@ CREATE TABLE rate_prefix (
     prefixnum serial NOT NULL,
     regionnum int NOT NULL, 
     countrycode varchar(3) NOT NULL,
-    npa varchar(4) NULL,
+    npa varchar(6) NULL,
     nxx varchar(3) NULL,
     PRIMARY KEY (prefixnum)
 );

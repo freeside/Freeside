@@ -1201,7 +1201,7 @@ sub tables_hash_hack {
         'prefixnum',   'serial',    '', '',
         'regionnum',   'int',       '', '',,
         'countrycode', 'varchar',     '', 3,
-        'npa',         'varchar', 'NULL', 4, #not 3?
+        'npa',         'varchar', 'NULL', 6,
         'nxx',         'varchar', 'NULL', 3,
       ],
       'primary_key' => 'prefixnum',
