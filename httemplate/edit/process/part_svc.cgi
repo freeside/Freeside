@@ -4,14 +4,18 @@ my $svcpart = $cgi->param('svcpart');
 
 my $old = qsearchs('part_svc',{'svcpart'=>$svcpart}) if $svcpart;
 
+$cgi->param( 'svc_acct__usergroup',
+             join(',', $cgi->param('svc_acct__usergroup') ) );
+
 my $new = new FS::part_svc ( {
   map {
     $_, scalar($cgi->param($_));
 #  } qw(svcpart svc svcdb)
   } ( fields('part_svc'),
       map { my $svcdb = $_;
-            map { ( $svcdb.'__'.$_, $svcdb.'__'.$_.'_flag' )  }
-              fields($svcdb)
+            my @fields = fields($svcdb);
+            push @fields, 'usergroup' if $svcdb eq 'svc_acct'; #kludge
+            map { ( $svcdb.'__'.$_, $svcdb.'__'.$_.'_flag' )  } @fields;
           } grep defined( $FS::Record::dbdef->table($_) ),
                  qw( svc_acct svc_domain svc_acct_sm svc_forward svc_www )
     )
@@ -19,9 +23,9 @@ my $new = new FS::part_svc ( {
 
 my $error;
 if ( $svcpart ) {
-  $error = $new->replace($old, '1.3-COMPAT');
+  $error = $new->replace($old, '1.3-COMPAT', [ 'usergroup' ] );
 } else {
-  $error = $new->insert;
+  $error = $new->insert( [ 'usergroup' ] );
   $svcpart=$new->getfield('svcpart');
 }
 

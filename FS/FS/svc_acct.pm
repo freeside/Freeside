@@ -799,7 +799,7 @@ sub replace {
         $new->usergroup( [ grep { $groupname ne $_ } @{$new->usergroup} ] );
         next;
       }
-      my $radius_usergroup = qsearch('radius_usergroup', {
+      my $radius_usergroup = qsearchs('radius_usergroup', {
         svcnum    => $old->svcnum,
         groupname => $groupname,
       } );
@@ -1395,7 +1395,10 @@ END
 
   foreach my $group ( @all_groups ) {
     $html .= '<OPTION';
-    $html .= ' SELECTED' if $sel_groups{$group}--;
+    if ( $sel_groups{$group} ) {
+      $html .= ' SELECTED';
+      $sel_groups{$group} = 0;
+    }
     $html .= ">$group</OPTION>\n";
   }
   foreach my $group ( grep { $sel_groups{$_} } keys %sel_groups ) {

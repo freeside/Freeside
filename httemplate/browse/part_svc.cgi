@@ -41,13 +41,15 @@ function part_export_areyousure(href) {
 <% foreach my $part_svc ( sort {
      $a->getfield('svcpart') <=> $b->getfield('svcpart')
    } @part_svc ) {
-     my($hashref)=$part_svc->hashref;
-     my($svcdb)=$hashref->{svcdb};
+     my $hashref = $part_svc->hashref;
+     my $svcdb = $hashref->{svcdb};
+     my @dfields = fields($svcdb);
+     push @dfields, 'usergroup' if $svcdb eq 'svc_acct'; #kludge
      my @fields =
        grep { $_ ne 'svcnum' && $part_svc->part_svc_column($_)->columnflag }
-            fields($svcdb);
+            @dfields;
 
-     my($rowspan)=scalar(@fields) || 1;
+     my $rowspan = scalar(@fields) || 1;
      my $url = "${p}edit/part_svc.cgi?$hashref->{svcpart}";
 %>
 

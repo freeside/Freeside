@@ -86,10 +86,10 @@ my %defs = (
                      select_key   => 'svcnum',
                      select_label => 'domain',
                    },
-    'radius_groups' => {
-                         desc =>'ICRADIUS/FreeRADIUS groups',
-                         type =>'radius_usergroup_selector',
-                       },
+    'usergroup' => {
+                     desc =>'ICRADIUS/FreeRADIUS groups',
+                     type =>'radius_usergroup_selector',
+                   },
   },
   'svc_domain' => {
     'domain'    => 'Domain',
@@ -138,6 +138,7 @@ my %defs = (
       my @fields = defined( $FS::Record::dbdef->table($layer) )
                       ? grep { $_ ne 'svcnum' } fields($layer)
                       : ();
+      push @fields, 'usergroup' if $layer eq 'svc_acct'; #kludge
       foreach my $field (@fields) {
         my $part_svc_column = $part_svc->part_svc_column($field);
         my $value = $cgi->param('error')
@@ -171,6 +172,9 @@ my %defs = (
                        $record->getfield($def->{select_label}). '</OPTION>';
             }
             $html .= '</SELECT>';
+          } elsif ( $def->{type} eq 'radius_usergroup_selector' ) {
+            $html .= FS::svc_acct::radius_usergroup_selector(
+              [ split(',', $value) ], "${layer}__${field}" );
           } else {
             $html .= '<font color="#ff0000">unknown type'. $def->{type};
           }

@@ -57,19 +57,25 @@ database, see L<"insert">.
 
 sub table { 'part_svc'; }
 
-=item insert
+=item insert EXTRA_FIELDS_ARRAYREF
 
 Adds this service definition to the database.  If there is an error, returns
 the error, otherwise returns false.
+
+TODOC:
 
 =item I<svcdb>__I<field> - Default or fixed value for I<field> in I<svcdb>.
 
 =item I<svcdb>__I<field>_flag - defines I<svcdb>__I<field> action: null, `D' for default, or `F' for fixed
 
+TODOC: EXTRA_FIELDS_ARRAYREF
+
 =cut
 
 sub insert {
   my $self = shift;
+  my @fields = ();
+  @fields = @{shift(@_)} if @_;
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -96,7 +102,7 @@ sub insert {
   foreach my $field (
     grep { $_ ne 'svcnum'
            && defined( $self->getfield($svcdb.'__'.$_.'_flag') )
-         } fields($svcdb)
+         } (fields($svcdb), @fields)
   ) {
     my $part_svc_column = $self->part_svc_column($field);
     my $previous = qsearchs('part_svc_column', {
@@ -141,10 +147,14 @@ sub delete {
 # check & make sure the svcpart isn't in cust_svc or pkg_svc (in any packages)?
 }
 
-=item replace OLD_RECORD
+=item replace OLD_RECORD [ '1.3-COMPAT' [ , EXTRA_FIELDS_ARRAYREF ] ]
 
 Replaces OLD_RECORD with this one in the database.  If there is an error,
 returns the error, otherwise returns false.
+
+TODOC: 1.3-COMPAT
+
+TODOC: EXTRA_FIELDS_ARRAYREF
 
 =cut
 
@@ -172,11 +182,15 @@ sub replace {
   }
 
   if ( @_ && $_[0] eq '1.3-COMPAT' ) {
+    shift;
+    my @fields = ();
+    @fields = @{shift(@_)} if @_;
+
     my $svcdb = $new->svcdb;
     foreach my $field (
       grep { $_ ne 'svcnum'
              && defined( $new->getfield($svcdb.'__'.$_.'_flag') )
-           } fields($svcdb)
+           } (fields($svcdb),@fields)
     ) {
       my $part_svc_column = $new->part_svc_column($field);
       my $previous = qsearchs('part_svc_column', {
@@ -309,7 +323,7 @@ sub part_export {
 
 =head1 VERSION
 
-$Id: part_svc.pm,v 1.10 2002-03-20 21:31:49 ivan Exp $
+$Id: part_svc.pm,v 1.11 2002-03-23 17:49:01 ivan Exp $
 
 =head1 BUGS
 
