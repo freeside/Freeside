@@ -105,7 +105,7 @@ sub delete {
   '';
 }
 
-=item setfixed;
+=item setfixed
 
 Sets any fixed fields for this service (see L<FS::part_svc>).  If there is an
 error, returns the error, otherwise returns the FS::part_svc object (use ref()
@@ -115,6 +115,25 @@ to test the return).  Usually called by the check method.
 
 sub setfixed {
   my $self = shift;
+  $self->setx('F');
+}
+
+=item setdefault
+
+Sets all fields to their defaults (see L<FS::part_svc>), overriding their
+current values.  If there is an error, returns the error, otherwise returns
+the FS::part_svc object (use ref() to test the return).
+
+=cut
+
+sub setdefault {
+  my $self = shift;
+  $self->setx('D');
+}
+
+sub setx {
+  my $self = shift;
+  my $x = shift;
 
   my $error;
 
@@ -135,9 +154,9 @@ sub setfixed {
   my $part_svc = qsearchs( 'part_svc', { 'svcpart' => $svcpart } );
   return "Unkonwn svcpart" unless $part_svc;
 
-  #set fixed fields from part_svc
+  #set default/fixed/whatever fields from part_svc
   foreach my $field ( fields('svc_acct') ) {
-    if ( $part_svc->getfield('svc_acct__'. $field. '_flag') eq 'F' ) {
+    if ( $part_svc->getfield('svc_acct__'. $field. '_flag') eq $x ) {
       $self->setfield( $field, $part_svc->getfield('svc_acct__'. $field) );
     }
   }
@@ -165,14 +184,14 @@ sub cancel { ''; }
 
 =head1 VERSION
 
-$Id: svc_Common.pm,v 1.2 1999-01-25 12:26:14 ivan Exp $
+$Id: svc_Common.pm,v 1.3 1999-03-25 13:31:29 ivan Exp $
 
 =head1 BUGS
 
 The setfixed method return value.
 
 The new method should set defaults from part_svc (like the check method
-sets fixed values).
+sets fixed values)?
 
 =head1 SEE ALSO
 
@@ -182,7 +201,10 @@ from the base documentation.
 =head1 HISTORY
 
 $Log: svc_Common.pm,v $
-Revision 1.2  1999-01-25 12:26:14  ivan
+Revision 1.3  1999-03-25 13:31:29  ivan
+added setdefault method (generalized setfixed method to setx method)
+
+Revision 1.2  1999/01/25 12:26:14  ivan
 yet more mod_perl stuff
 
 Revision 1.1  1998/12/30 00:30:45  ivan
