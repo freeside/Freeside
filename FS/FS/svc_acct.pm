@@ -3,6 +3,7 @@ package FS::svc_acct;
 use strict;
 use vars qw( @ISA $nossh_hack $conf $dir_prefix @shells $usernamemin
              $usernamemax $passwordmin $username_letter $username_letterfirst
+             $username_noperiod
              $shellmachine $useradd $usermod $userdel $mydomain
              $cyrus_server $cyrus_admin_user $cyrus_admin_pass
              @saltset @pw_set);
@@ -53,6 +54,7 @@ $FS::UID::callback{'FS::svc_acct'} = sub {
   }
   $username_letter = $conf->exists('username-letter');
   $username_letterfirst = $conf->exists('username-letterfirst');
+  $username_noperiod = $conf->exists('username-noperiod');
   $mydomain = $conf->config('domain');
   if ( $conf->exists('cyrus') ) {
     ($cyrus_server, $cyrus_admin_user, $cyrus_admin_pass) =
@@ -574,6 +576,9 @@ sub check {
   } elsif ( $username_letter ) {
     $recref->{username} =~ /[a-z]/ or return "Illegal username";
   }
+  if ( $username_noperiod ) {
+    $recref->{username} =~ /\./ and return "Illegal username";
+  }
 
   $recref->{popnum} =~ /^(\d*)$/ or return "Illegal popnum: ".$recref->{popnum};
   $recref->{popnum} = $1;
@@ -758,7 +763,7 @@ sub email {
 
 =head1 VERSION
 
-$Id: svc_acct.pm,v 1.34 2001-09-11 03:15:58 ivan Exp $
+$Id: svc_acct.pm,v 1.35 2001-09-11 04:17:47 ivan Exp $
 
 =head1 BUGS
 
