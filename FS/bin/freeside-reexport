@@ -47,7 +47,7 @@ foreach my $part_export ( @part_export ) {
 
 
 sub usage {
-  die "Usage:\n\n  freeside-reexport user exportnum|exporttype svcnum|username\n";
+  die "Usage:\n\n  freeside-reexport user exportnum|exporttype [ -s svcnum | -u username | -p svcpart ]\n";
 }
 
 =head1 NAME
