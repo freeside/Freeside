@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 #
-# $Id: svc_acct.export,v 1.11 2000-03-06 16:00:39 ivan Exp $
+# $Id: svc_acct.export,v 1.12 2000-06-15 14:07:02 ivan Exp $
 #
 # Create and export password files: passwd, passwd.adjunct, shadow,
 # acp_passwd, acp_userinfo, acp_dialup, users
@@ -38,7 +38,10 @@
 # ivan@sisd.com 98-sep-18
 # 
 # $Log: svc_acct.export,v $
-# Revision 1.11  2000-03-06 16:00:39  ivan
+# Revision 1.12  2000-06-15 14:07:02  ivan
+# added ICRADIUS radreply table support, courtesy of Kenny Elliott
+#
+# Revision 1.11  2000/03/06 16:00:39  ivan
 # sync up with working versoin
 #
 # Revision 1.2  1998/12/10 07:23:15  ivan
@@ -137,6 +140,8 @@ chmod 0600, "$spooldir/master.passwd",
 if ( $icradiusmachines ) {
   my $sth = $icradius_dbh->prepare("DELETE FROM radcheck");
   $sth->execute or die "Can't reset radcheck table: ". $sth->errstr;
+  my $sth2 = $icradius_dbh->prepare("DELETE FROM radreply");
+  $sth2->execute or die "Can't reset radreply table: ". $sth2->errstr;
 }
 
 setpriority(0,0,10);
@@ -227,19 +232,14 @@ foreach $svc_acct (@svc_acct) {
       print ACP_DIALUP $svc_acct->username, "\t*\t", $svc_acct->slipip, "\n";
     }
 
+    my %radius = $svc_acct->radius;
+
     ###
     # FORMAT OF THE USERS FILE HERE
     print USERS
       $svc_acct->username, qq(\tPassword = "$rpassword"\n\t),
-
-      join ",\n\t",
-        map  {
-          /^(radius_(.*))$/;
-          my($field,$attrib)=($1,$2);
-          $attrib =~ s/_/\-/g;
-          "$attrib = \"". $svc_acct->getfield($field). "\"";
-        } grep /^radius_/ && $svc_acct->getfield($_), fields('svc_acct') 
-    ;
+      join ",\n\t", map { qq($_ = "$radius{$_}") } keys %radius;
+    
     if ( $ip && $ip ne '0e0' ) {
       print USERS qq(,\n\tFramed-Address = "$ip"\n\n);
     } else {
@@ -252,14 +252,28 @@ foreach $svc_acct (@svc_acct) {
       my $sth = $icradius_dbh->prepare(
         "INSERT INTO radcheck ( id, UserName, Attribute, Value ) VALUES ( ".
         join(", ", map { $icradius_dbh->quote( $_ ) } (
-          $svc_acct->svcnum,
+          '',
           $svc_acct->username,
           "Password",
           $svc_acct->_password,
         ) ). " )"
       );
       $sth->execute or die "Can't insert into radcheck table: ". $sth->errstr;
-   }
+
+      foreach my $attribute ( keys %radius ) {
+        my $sth = $icradius_dbh->prepare(
+          "INSERT INTO radreply (id, UserName, Attribute, Value) VALUES ( ".
+          join(", ", map { $icradius_dbh->quote( $_ ) } (
+            '',
+            $svc_acct->username,
+            $attribute,
+            $radius{$attribute},
+          ) ). " )"
+        );
+        $sth->execute or die "Can't insert into radreply table: ". $sth->errstr;
+      }
+
+    }
 
   }
 
@@ -358,8 +372,13 @@ foreach my $icradiusmachine ( @icradiusmachines ) {
   chdir $icradius_mysqlsource or die "Can't cd $icradius_mysqlsource: $!";
   open(WRITER,"|ssh root\@$machine mysql -v --user=$user -p $db");
   my $oldfh = select WRITER; $|=1; select $oldfh;
-  print WRITER "$pass\n"; sleep 2; print WRITER "LOCK TABLES radcheck WRITE;\n";
+  print WRITER "$pass\n";
+  sleep 2;
+  print WRITER "LOCK TABLES radcheck WRITE, radreply WRITE;\n";
   foreach my $file ( glob("radcheck.*") ) {
+    scp($file,"root\@$machine:$icradius_mysqldest/$db/$file");
+  }
+  foreach my $file ( glob("radreply.*") ) {
     scp($file,"root\@$machine:$icradius_mysqldest/$db/$file");
   }
   close WRITER;
