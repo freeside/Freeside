@@ -11,18 +11,31 @@ TEMPLATE = asp
 
 ASP_GLOBAL = /usr/local/etc/freeside/asp-global
 
+#deb, others?
 FREESIDE_DOCUMENT_ROOT = /var/www/freeside
+#freebsd
+#FREESIDE_DOCUMENT_ROOT = /usr/local/www/data/freeside
 
+#deb, others?
 INIT_FILE = /etc/init.d/freeside
+#freebsd
+#INIT_FILE = /usr/local/etc/rc.d/011.freeside.sh
 
+#deb, others?
 HTTPD_RESTART = /etc/init.d/apache restart
-FREESIDE_RESTART = /etc/init.d/freeside restart
+#freebsd
+#HTTPD_RESTART = /usr/local/etc/rc.d/apache.sh stop; sleep 1; /usr/local/etc/rc.d/apache.sh start
 
+FREESIDE_RESTART = $INIT_FILE restart
+
+#deb, others?
 INSTALLGROUP = root
+#freebsd
+INSTALLGROUP = wheel
 
 #edit the stuff below to have the daemons start
 
-QUEUED_USER=ivan
+QUEUED_USER=fs_queue
 
 #eventually this shouldn't be needed
 FREESIDE_PATH = `pwd`

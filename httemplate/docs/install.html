@@ -64,7 +64,7 @@ Install the Freeside distribution:
     <ul>
       <li> with <a href="http://www.postgresql.org/users-lounge/docs/7.1/postgres/user-manag.html#DATABASE-USERS">PostgreSQL</a>:
         <pre>
-$ su postgres
+$ su postgres (pgsql on some distributions)
 $ createuser -P freeside
 Enter password for user "freeside": 
 Enter it again: 
@@ -81,7 +81,7 @@ mysql> GRANT SELECT,INSERT,UPDATE,DELETE,INDEX,ALTER,CREATE,DROP on freeside.* T
 <!--  <li>Unpack the tarball: <pre>gunzip -c fs-x.y.z.tar.gz | tar xvf -</pre>-->
   <li>Edit the top-level Makefile:
     <ul>
-      <li>Set <tt>DATASOURCE</tt> to your <a href="http://search.cpan.org/doc/TIMB/DBI-1.28/DBI.pm">DBI data source</a>, for example, <tt>DBI:Pg:host=localhost;dbname=freeside</tt> for PostgresSQL<!-- or <tt>DBI:mysql:freeside</tt> for MySQL-->.  See the <a href="http://search.cpan.org/doc/TIMB/DBI-1.28/DBI.pm">DBI manpage</a> and the <a href="http://search.cpan.org/search?mode=module&query=DBD%3A%3A">manpage for your DBD</a> for the exact syntax of your DBI data source.
+      <li>Set <tt>DATASOURCE</tt> to your <a href="http://search.cpan.org/doc/TIMB/DBI-1.28/DBI.pm">DBI data source</a>, for example, <tt>DBI:Pg:dbname=freeside</tt> for PostgresSQL<!-- or <tt>DBI:mysql:freeside</tt> for MySQL-->.  See the <a href="http://search.cpan.org/doc/TIMB/DBI-1.28/DBI.pm">DBI manpage</a> and the <a href="http://search.cpan.org/search?mode=module&query=DBD%3A%3A">manpage for your DBD</a> for the exact syntax of your DBI data source.
       <li>Set <tt>DB_PASSWORD</tt> to the freeside database user's password.
     </ul>
   <li>Add the freeside database to your database engine:
@@ -164,7 +164,6 @@ require&nbsp;"/usr/local/apache/conf/handler.pl";
 <li>Restrict access to this web interface - see the <a href="http://httpd.apache.org/docs/misc/FAQ.html#user-authentication">Apache documentation on user authentication</a>.    For example, to configure user authentication with <a href="http://httpd.apache.org/docs/mod/mod_auth.html">mod_auth</a> (flat files):
 <pre>
 &lt;Directory /usr/local/apache/htdocs/freeside-asp&gt;
-PerlSetVar Global /usr/local/etc/freeside/asp-global/
 AuthName Freeside
 AuthType Basic
 AuthUserFile /usr/local/etc/freeside/htpasswd
@@ -181,7 +180,7 @@ $ <a href="man/bin/freeside-adduser.html">freeside-adduser</a> -c -h /usr/local/
 $ <a href="man/bin/freeside-adduser.html">freeside-adduser</a> -h /usr/local/etc/freeside/htpasswd <i>username</i></pre></font>
     </ul>
   <i>(using other auth types, add each user to your <a href="http://httpd.apache.org/docs/misc/FAQ.html#user-authentication">Apache authentication</a> and then run: <tt>freeside-adduser <b>username</b></tt></i>
-  <li>As the freeside UNIX user, run <tt>freeside--setup <b>username</b></tt> (in the untar'ed freeside directory) to create the database tables, passing the username of a Freeside user you created above:
+  <li>As the freeside UNIX user, run <tt>freeside-setup <b>username</b></tt> to create the database tables, passing the username of a Freeside user you created above:
 <pre>
 $ su freeside
 $ freeside-setup <b>username</b>
@@ -190,7 +189,7 @@ $ freeside-setup <b>username</b>
   <li>As the freeside UNIX user, run <tt>bin/populate-msgcat <b>username</b></tt> (in the untar'ed freeside directory) to populate the message catalog, passing the username of a Freeside user you created above:
 <pre>
 $ su freeside
-$ cd <b>/path/to/freeside-1.4.0/</b>
+$ cd <b>/path/to/freeside/</b>
 $ bin/populate-msgcat <b>username</b>
 </pre>
   <li><tt>freeside-queued</tt> was installed with the Perl modules.  Start it now and ensure that is run upon system startup (Do this manually, or edit the top-level Makefile, replacing INIT_FILE with the appropriate location on your systemand QUEUED_USER with the username of a Freeside user you created above, and run <tt>make install-init</tt>)
