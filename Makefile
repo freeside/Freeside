@@ -52,7 +52,7 @@ FREESIDE_PATH = `pwd`
 
 SELFSERVICE_USER = fs_selfservice
 SELFSERVICE_MACHINES = localhost
-# SELFSERVICE_MACHINES = "web1.example.com web2.example.com"
+# SELFSERVICE_MACHINES = web1.example.com web2.example.com
 
 #---
 
