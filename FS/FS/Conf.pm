@@ -958,6 +958,13 @@ httemplate/docs/config.html
   },
 
   {
+    'key'         => 'emaildecline-exclude',
+    'section'     => 'billing',
+    'description' => 'List of error messages that should not trigger email decline notices, one per line.',
+    'type'        => 'textarea',
+  },
+
+  {
     'key'         => 'cancelmessage',
     'section'     => 'billing',
     'description' => 'Template file for cancellation emails.',
