@@ -6,7 +6,7 @@ use Safe;
 use Carp;
 BEGIN {
   eval "use Time::Local;";
-  die "Time::Local version 1.05 with Perl versions before 5.6"
+  die "Time::Local version 1.05 required with Perl versions before 5.6"
     if $] < 5.006 && !defined($Time::Local::VERSION);
   eval "use Time::Local qw(timelocal_nocheck);";
 }
