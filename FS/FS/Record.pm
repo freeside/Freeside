@@ -1101,7 +1101,9 @@ sub check {
 }
 
 sub _h_statement {
-  my( $self, $action ) = @_;
+  my( $self, $action, $time ) = @_;
+
+  $time ||= time;
 
   my @fields =
     grep defined($self->getfield($_)) && $self->getfield($_) ne "",
@@ -1112,7 +1114,7 @@ sub _h_statement {
   "INSERT INTO h_". $self->table. " ( ".
       join(', ', qw(history_date history_user history_action), @fields ).
     ") VALUES (".
-      join(', ', time, dbh->quote(getotaker()), dbh->quote($action), @values).
+      join(', ', $time, dbh->quote(getotaker()), dbh->quote($action), @values).
     ")"
   ;
 }
