@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: signup.cgi,v 1.12 2001-09-11 11:03:06 ivan Exp $
+# $Id: signup.cgi,v 1.13 2001-09-11 11:28:15 ivan Exp $
 
 use strict;
 use vars qw( @payby $cgi $locales $packages $pops $error
@@ -73,7 +73,7 @@ if ( -e $signup_html ) {
 }
 
 if ( -e $success_html ) {
-  my $success_txt = Text::Template::_load_text($signup_html)
+  my $success_txt = Text::Template::_load_text($success_html)
     or die $Text::Template::ERROR;
   $success_txt =~ /^(.*)$/s; #untaint the template source - it's trusted
   $success_txt = $1;
@@ -115,7 +115,7 @@ if ( defined $cgi->param('magic') ) {
       $invoicing_list = 'POST';
     }
 
-    ( $error = new_customer ( {
+    $error = new_customer ( {
       'last'             => $last             = $cgi->param('last'),
       'first'            => $first            = $cgi->param('first'),
       'ss'               => $ss               = $cgi->param('ss'),
@@ -140,9 +140,12 @@ if ( defined $cgi->param('magic') ) {
       'username'         => $username         = $cgi->param('username'),
       '_password'        => $password         = $cgi->param('_password'),
       'popnum'           => $popnum           = $cgi->param('popnum'),
-    } ) )
-      ? print_form()
-      : print_okay();
+    } );
+    if ( $error ) {
+      print_form();
+    } else {
+      print_okay();
+    }
   } else {
     die "unrecognized magic: ". $cgi->param('magic');
   }
