@@ -313,9 +313,9 @@ sub qsearch {
     if ( $record->{$field} =~ /^\d+(\.\d+)?$/
          && $dbdef->table($table)->column($field)->type =~ /(int|serial)/i
     ) {
-      $sth->bind_param($bind++, $record->{$field}, SQL_INTEGER );
+      $sth->bind_param($bind++, $record->{$field}, { TYPE => SQL_INTEGER } );
     } else {
-      $sth->bind_param($bind++, $record->{$field}, SQL_VARCHAR );
+      $sth->bind_param($bind++, $record->{$field}, { TYPE => SQL_VARCHAR } );
     }
   }
 
