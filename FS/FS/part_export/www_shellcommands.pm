@@ -39,8 +39,8 @@ Run remote commands via SSH, for virtual web sites.  You will need to
   <LI>
     <INPUT TYPE="button" VALUE="ISPMan CLI" onClick='
       this.form.user.value = "root";
-      this.form.useradd.value = "/usr/local/ispman/ispman.addvhost -d $domain $zone";
-      this.form.userdel.value = "/usr/local/ispman/idpman.deletevhost -d $domain $zone";
+      this.form.useradd.value = "/usr/local/ispman/bin/ispman.addvhost -d $domain $zone";
+      this.form.userdel.value = "/usr/local/ispman/bin/ispman.deletevhost -d $domain $zone";
       this.form.usermod.value = "";
     '>
 </UL>
