@@ -16,7 +16,7 @@ use FS::Conf;
 
 @ISA = qw(Exporter);
 @EXPORT_OK = qw(checkeuid checkruid cgisuidsetup adminsuidsetup forksuidsetup
-                getotaker dbh datasrc getsecrets driver_name );
+                getotaker dbh datasrc getsecrets driver_name myconnect );
 
 $freeside_uid = scalar(getpwnam('freeside'));
 
@@ -84,11 +84,8 @@ sub forksuidsetup {
   $ENV{'BASH_ENV'} = '';
 
   croak "Not running uid freeside!" unless checkeuid();
-  getsecrets;
-  $dbh = DBI->connect($datasrc,$db_user,$db_pass, {
-                          'AutoCommit' => 0,
-                          'ChopBlanks' => 1,
-  } ) or die "DBI->connect error: $DBI::errstr\n";
+
+  $dbh = &myconnect;
 
   foreach ( keys %callback ) {
     &{$callback{$_}};
@@ -98,6 +95,11 @@ sub forksuidsetup {
   &{$_} foreach @callback;
 
   $dbh;
+}
+
+sub myconnect {
+  $dbh = DBI->connect( getsecrets, {'AutoCommit' => 0, 'ChopBlanks' => 1, } )
+    or die "DBI->connect error: $DBI::errstr\n";
 }
 
 =item install_callback

@@ -7,7 +7,7 @@ use Fcntl qw(:flock);
 use POSIX qw(:sys_wait_h setsid);
 use Date::Format;
 use IO::File;
-use FS::UID qw(adminsuidsetup forksuidsetup driver_name dbh);
+use FS::UID qw(adminsuidsetup forksuidsetup driver_name dbh myconnect);
 use FS::Record qw(qsearch qsearchs);
 use FS::queue;
 use FS::queue_depend;
@@ -75,18 +75,27 @@ while (1) {
   }
   $warnkids=0;
 
-  my $nodepend = driver_name eq 'mysql'
-   ? ''
-   : 'AND 0 = ( SELECT COUNT(*) FROM queue_depend'.
-     ' WHERE queue_depend.jobnum = queue.jobnum ) ';
+  my $dbh = dbh;
+  unless ( $dbh->ping ) {
+    warn "WARNING: connection to database lost, reconnecting...\n";
+    myconnect;
+    unless ( $dbh->ping ) {
+      warn "WARNING: still no connection to database, sleeping for retry...\n";
+      sleep 10;
+      next;
+    }
+  }
 
   #my($job, $ljob);
   #{
   #  my $oldAutoCommit = $FS::UID::AutoCommit;
   #  local $FS::UID::AutoCommit = 0;
   $FS::UID::AutoCommit = 0;
-  my $dbh = dbh; 
   
+  my $nodepend = driver_name eq 'mysql'
+   ? ''
+   : 'AND 0 = ( SELECT COUNT(*) FROM queue_depend'.
+     ' WHERE queue_depend.jobnum = queue.jobnum ) ';
   my $job = qsearchs(
     'queue',
     { 'status' => 'new' },
