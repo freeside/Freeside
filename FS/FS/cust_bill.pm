@@ -1,8 +1,10 @@
 package FS::cust_bill;
 
 use strict;
-use vars qw( @ISA $conf $add1 $add2 $add3 $add4 );
+use vars qw( @ISA $conf $invoice_template );
+use vars qw( $invoice_lines @buf ); #yuck
 use Date::Format;
+use Text::Template;
 use FS::Record qw( qsearch qsearchs );
 use FS::cust_main;
 use FS::cust_bill_pkg;
@@ -15,7 +17,20 @@ use FS::cust_pkg;
 #ask FS::UID to run this stuff for us later
 $FS::UID::callback{'FS::cust_bill'} = sub { 
   $conf = new FS::Conf;
-  ( $add1, $add2, $add3, $add4 ) = ( $conf->config('address'), '', '', '', '' );
+  my @invoice_template = $conf->config('invoice_template')
+    or die "cannot load config file invoice_template";
+  $invoice_lines = 0;
+  foreach ( grep /invoice_lines\(\d+\)/, @invoice_template ) { #kludgy
+    /invoice_lines\((\d+)\)/;
+    $invoice_lines += $1;
+  }
+  die "no invoice_lines() functions in template?" unless $invoice_lines;
+  $invoice_template = new Text::Template (
+    TYPE   => 'ARRAY',
+    SOURCE => [ map "$_\n", @invoice_template ],
+  ) or die "can't create new Text::Template object: $Text::Template::ERROR";
+  $invoice_template->compile()
+    or die "can't compile template: $Text::Template::ERROR";
 };
 
 =head1 NAME
@@ -233,7 +248,7 @@ sub cust_pay {
 
 =item print_text [TIME];
 
-Returns an ASCII invoice, as a list of lines.
+Returns an text invoice, as a list of lines.
 
 TIME an optional value used to control the printing of overdue messages.  The
 default is now.  It isn't the date of the invoice; that's the `_date' field.
@@ -246,7 +261,7 @@ sub print_text {
 
   my( $self, $today ) = ( shift, shift );
   $today ||= time;
-  my $invnum = $self->invnum;
+#  my $invnum = $self->invnum;
   my $cust_main = qsearchs('cust_main', { 'custnum', $self->custnum } );
   $cust_main->payname( $cust_main->first. ' '. $cust_main->getfield('last') )
     unless $cust_main->payname;
@@ -255,48 +270,24 @@ sub print_text {
   my( $cr_total, @cr_cust_credit ) = $self->cust_credit; #credits
   my $balance_due = $self->owed + $pr_total - $cr_total;
 
-  #overdue?
-  my $overdue = ( 
-    $balance_due > 0
-    && $today > $self->_date 
-    && $self->printed > 1
-  );
+  #
 
-  #printing bits here (yuck!)
-
-  my @collect = ();
-
-  my($description,$amount);
-  my(@buf);
-
-  #format address
-  my($l,@address)=(0,'','','','','','','');
-  $address[$l++] =
-    $cust_main->payname.
-      ( ( $cust_main->payby eq 'BILL' ) && $cust_main->payinfo
-        ? " (P.O. #". $cust_main->payinfo. ")"
-        : ''
-      )
-  ;
-  $address[$l++]=$cust_main->company if $cust_main->company;
-  $address[$l++]=$cust_main->address1;
-  $address[$l++]=$cust_main->address2 if $cust_main->address2;
-  $address[$l++]=$cust_main->city. ", ". $cust_main->state. "  ".
-                 $cust_main->zip;
-  $address[$l++]=$cust_main->country unless $cust_main->country eq 'US';
+  #my @collect = ();
+  #my($description,$amount);
+  @buf = ();
 
   #previous balance
   foreach ( @pr_cust_bill ) {
-    push @buf, (
+    push @buf, [
       "Previous Balance, Invoice #". $_->invnum. 
                  " (". time2str("%x",$_->_date). ")",
       '$'. sprintf("%10.2f",$_->owed)
-    );
+    ];
   }
   if (@pr_cust_bill) {
-    push @buf,('','-----------');
-    push @buf,('Total Previous Balance','$' . sprintf("%10.2f",$pr_total ) );
-    push @buf,('','');
+    push @buf,['','-----------'];
+    push @buf,['Total Previous Balance','$' . sprintf("%10.2f",$pr_total ) ];
+    push @buf,['',''];
   }
 
   #new charges
@@ -309,117 +300,122 @@ sub print_text {
       my($pkg)=$part_pkg->pkg;
 
       if ( $_->setup != 0 ) {
-        push @buf, ( "$pkg Setup",'$' . sprintf("%10.2f",$_->setup) );
-        push @buf, map { "  ". $_->[0]. ": ". $_->[1], '' } $cust_pkg->labels;
+        push @buf, [ "$pkg Setup",'$' . sprintf("%10.2f",$_->setup) ];
+        push @buf,
+          map { [ "  ". $_->[0]. ": ". $_->[1], '' ] } $cust_pkg->labels;
       }
 
       if ( $_->recur != 0 ) {
-        push @buf, (
+        push @buf, [
           "$pkg (" . time2str("%x",$_->sdate) . " - " .
                                 time2str("%x",$_->edate) . ")",
           '$' . sprintf("%10.2f",$_->recur)
-        );
-        push @buf, map { "  ". $_->[0]. ": ". $_->[1], '' } $cust_pkg->labels;
+        ];
+        push @buf,
+          map { [ "  ". $_->[0]. ": ". $_->[1], '' ] } $cust_pkg->labels;
       }
 
     } else { #pkgnum Tax
-      push @buf,("Tax",'$' . sprintf("%10.2f",$_->setup) ) 
+      push @buf,["Tax",'$' . sprintf("%10.2f",$_->setup) ] 
         if $_->setup != 0;
     }
   }
 
-  push @buf,('','-----------');
-  push @buf,('Total New Charges',
-             '$' . sprintf("%10.2f",$self->charged) );
-  push @buf,('','');
+  push @buf,['','-----------'];
+  push @buf,['Total New Charges',
+             '$' . sprintf("%10.2f",$self->charged) ];
+  push @buf,['',''];
 
-  push @buf,('','-----------');
-  push @buf,('Total Charges',
-             '$' . sprintf("%10.2f",$self->charged + $pr_total) );
-  push @buf,('','');
+  push @buf,['','-----------'];
+  push @buf,['Total Charges',
+             '$' . sprintf("%10.2f",$self->charged + $pr_total) ];
+  push @buf,['',''];
 
   #credits
   foreach ( @cr_cust_credit ) {
-    push @buf,(
+    push @buf,[
       "Credit #". $_->crednum. " (" . time2str("%x",$_->_date) .")",
       '$' . sprintf("%10.2f",$_->credited)
-    );
+    ];
   }
 
   #get & print payments
   foreach ( $self->cust_pay ) {
-    push @buf,(
+    push @buf,[
       "Payment received ". time2str("%x",$_->_date ),
       '$' . sprintf("%10.2f",$_->paid )
-    );
+    ];
   }
 
   #balance due
-  push @buf,('','-----------');
-  push @buf,('Balance Due','$' . 
-    sprintf("%10.2f",$self->owed + $pr_total - $cr_total ) );
+  push @buf,['','-----------'];
+  push @buf,['Balance Due','$' . 
+    sprintf("%10.2f",$self->owed + $pr_total - $cr_total ) ];
 
-  #now print
+  #setup template variables
+  
+  package FS::cust_bill::_template; #!
+  use vars qw( $invnum $date $page $total_pages @address $overdue @buf );
 
-  my $tot_lines = 50; #should be configurable
-   #header is 17 lines
-  my $tot_pages = int( scalar(@buf) / ( 2 * ( $tot_lines - 17 ) ) );
-  $tot_pages++ if scalar(@buf) % ( 2 * ( $tot_lines - 17 ) );
+  $invnum = $self->invnum;
+  $date = $self->_date;
+  $page = 1;
 
-  my $page = 1;
-  my $lines;
-  while (@buf) {
-    $lines = $tot_lines;
-    my @header = &header(
-      $page, $tot_pages, $self->_date, $self->invnum, @address
-    );
-    push @collect, @header;
-    $lines -= scalar(@header);
+  $total_pages =
+    int( scalar(@FS::cust_bill::buf) / $FS::cust_bill::invoice_lines );
+  $total_pages++
+    if scalar(@FS::cust_bill::buf) % $FS::cust_bill::invoice_lines;
 
-    while ( $lines-- && @buf ) {
-      $description=shift(@buf);
-      $amount=shift(@buf);
-      push @collect, myswrite($description, $amount);
+
+  #format address (variable for the template)
+  my $l = 0;
+  @address = ( '', '', '', '', '', '' );
+  package FS::cust_bill; #!
+  $FS::cust_bill::_template::address[$l++] =
+    $cust_main->payname.
+      ( ( $cust_main->payby eq 'BILL' ) && $cust_main->payinfo
+        ? " (P.O. #". $cust_main->payinfo. ")"
+        : ''
+      )
+  ;
+  $FS::cust_bill::_template::address[$l++] = $cust_main->company
+    if $cust_main->company;
+  $FS::cust_bill::_template::address[$l++] = $cust_main->address1;
+  $FS::cust_bill::_template::address[$l++] = $cust_main->address2
+    if $cust_main->address2;
+  $FS::cust_bill::_template::address[$l++] =
+    $cust_main->city. ", ". $cust_main->state. "  ".  $cust_main->zip;
+  $FS::cust_bill::_template::address[$l++] = $cust_main->country
+    unless $cust_main->country eq 'US';
+
+  #overdue? (variable for the template)
+  $FS::cust_bill::_template::overdue = ( 
+    $balance_due > 0
+    && $today > $self->_date 
+    && $self->printed > 1
+  );
+
+  #and subroutine for the template
+
+  sub FS::cust_bill::_template::invoice_lines {
+    my $lines = shift;
+    map { 
+      scalar(@buf) ? shift @buf : [ '', '' ];
     }
-    $page++;
+    ( 1 .. $lines );
   }
-  while ( $lines-- ) {
-    push @collect, myswrite('', '');
-  }
-
-  return @collect;
-
-  sub header { #17 lines
-    my ( $page, $tot_pages, $date, $invnum, @address ) = @_ ;
-    push @address, '', '', '', '';
-
-    my @return = ();
-    my $i = ' 'x32;
-    push @return,
-      '',
-      $i. 'Invoice',
-      $i. substr("Page $page of $tot_pages".' 'x10, 0, 20).
-        time2str("%x", $date ). "  FS-". $invnum,
-      '',
-      '',
-      $add1,
-      $add2,
-      $add3,
-      $add4,
-      '',
-      splice @address, 0, 7;
-    ;
-    return map $_. "\n", @return;
+    
+  $FS::cust_bill::_template::page = 1;
+  my $lines;
+  my @collect;
+  while (@buf) {
+    push @collect, split("\n",
+      $invoice_template->fill_in( PACKAGE => 'FS::cust_bill::_template' )
+    );
+    $FS::cust_bill::_template::page++;
   }
 
-  sub myswrite {
-    my $format = <<END;
-  @<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< @<<<<<<<<<<
-END
-    $^A = '';
-    formline( $format, @_ );
-    return $^A;
-  }
+  map "$_\n", @collect;
 
 }
 
@@ -427,7 +423,7 @@ END
 
 =head1 VERSION
 
-$Id: cust_bill.pm,v 1.1 1999-08-04 09:03:53 ivan Exp $
+$Id: cust_bill.pm,v 1.2 2000-08-09 11:30:41 ivan Exp $
 
 =head1 BUGS
 

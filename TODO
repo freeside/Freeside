@@ -1,10 +1,63 @@
-$Id: TODO,v 1.48 2000-07-06 08:57:27 ivan Exp $
+$Id: TODO,v 1.49 2000-08-09 11:30:40 ivan Exp $
 
-If you are interested in helping with any of these, please join the mailing
-list (send a blank message to ivan-freeside-subscribe@sisd.com) to avoid 
-duplication of effort.
+If you are interested in helping with any of these, please join the
+*development* mailing list (send a blank message to
+ivan-freeside-devel-subscribe@sisd.com) to avoid duplication of effort.
 
 ---
+
+http://www.ipmeter.com/ integration would be useful
+
+http://tangram.sourceforge.net/
+Tie::DBI
+
+mmm, http://pootpoot.com/~dlowe/DBIx-Table/
+
+The cybercash links in htdocs/docs/config.html are b0rken.
+
+Yes.  Which is what I've been trying to tell you.  (destination user,
+destination domainname) would be represented by the svcnum of a record in
+svc_acct.  (In retrospect, using the uid instead of the svcnum was a bad
+choice).  (domuser, domain name) would be part of the svc_acct_sm record,
+as domuser and domsvc.
+. 
+Upon further consideration, I'll probably eliminate the svc_acct_sm table
+completely, and just add a field for the svcnum of a domain and the svcnum
+of a destination mailbox to svc_acct (or perhaps a one-to-many
+relationship - multiple svcnum(s) for multiple destination mailboxes.
+hmm.)
+
+> > > > Longer-term, I need to do something about the length of the             
+> > > > column names -                                                          
+> > > > The SQL1992 standard defines 18 character column names,                 
+> > > > which would be a                                                        
+> > > > reasonable goal.                                                        
+> > >                                                                           
+> > > Maybe the thing to do would be to separate these out to separate          
+> > > tables.                                                                   
+> > > then we could simply use something like id, attrib_name,                  
+> > attrib_value                                                                
+> > > to                                                                        
+> > > store all of the radius values.                                           
+> >                                                                             
+> > Hmm, no, that's not quite right.  You don't want to store the actual        
+> > strings in the records for each account.  Probably need a table that        
+> > corresponds to the RADIUS dictionary file, with a list of                   
+> > attributes and                                                              
+> > attribute id's, then reference the attribute by id and not name.            
+> >                                                                             
+> > The more difficult bit is handling the service definitions                  
+> > correctly -                                                                 
+> > part_svc and it's effects.                                                  
+>                                                                               
+> Yes that could be a bit tricky. Perhaps just one "radius" field in            
+> part_svc that held a list of id's from the radius table that applied          
+> that particular service?                                                      
+. 
+No, that wouldn't let you set defaults or fixed values for each attribute,
+like part_svc currently does.
+ 
+
 
 hmm - if you delete an account in svc_acct somehow that a mail alias points to,
 svc_acct_sm.export will fail.  make sure this can't be done using

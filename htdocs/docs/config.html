@@ -21,7 +21,7 @@ All further configuration files and directories are located in
 `/usr/local/etc/freeside/conf.<i>datasource</i>', for example, 
 `/usr/local/etc/freeside/conf.DBI:Pg:dbname=freeside'
 <ul>
-  <li><a name="address">address</a> - Your company name and address, four lines.
+  <li><a name="address">address</a> - This configuration file is no longer used.  See <a href="#invoice_template">invoice_template</a> instead.
   <li><a name="apacheroot">apacheroot</a> - The directory containing Apache virtual hosts
   <li><a name="apachemachine">apachemachine</a> - A machine with the apacheroot directory and user home directories.  The existance of this file enables setup of virtual host directories, and, in conjunction with the `home' configuration file, symlinks into user home directories.
   <li><a name="apachemachines">apachemachines</a> - Your Apache machines, one per line.  This enables export of `/etc/apache/vhosts.conf', which can be included in your Apache configuration via the <a href="http://www.apache.org/docs/mod/core.html#include">Include</a> directive.
@@ -42,6 +42,7 @@ All further configuration files and directories are located in
   <li><a name="icradius_mysqldest">icradius_mysqldest</a> - Destination directory for the MySQL databases, on the ICRADIUS machines.  Defaults to "/usr/local/var/".
   <li><a name="icradius_mysqlsource">icradius_mysqlsource</a> - Source directory for for the MySQL radcheck table files, on the Freeside machine.  Defaults to "/usr/local/var/freeside".
   <li><a name="invoice_from">invoice_from</a> - Return address on email invoices.
+  <li><a name="invoice_template">invoice_template</a> - Required template file for invoices.  See the <a href="billing.html">section on billing</a> for details.
   <li><a name="lpr">lpr</a> - Print command for paper invoices, for example `lpr -h'.
   <li><a name="maildisablecatchall">maildisablecatchall</a> - The existance of this file will disable the requirement that each virtual domain have a catch-all mailbox.
   <li><a name="mxmachines">mxmachines</a> - MX entries for new domains, weight and machine, one per line, with trailing `.'
