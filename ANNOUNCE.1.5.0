@@ -9,15 +9,16 @@
 - reseller interface
 
 1.5.0pre6:
-- cust_pay_refund and credit card/ACH refunds w/supported processor
-- proper payment receipts (not invoice copies)
-- expanded reseller interface
 - RADIUS session viewing
+- Major updates for reseller interface
+- Credit card and ACH refunds (w/supported processor module)
+- Proper email payment receipts (not invoice copies)
 - modular price plans, rewrote package add/edit page
-- fixed up tax report - should be correct for all edge cases with named taxes,
+- fixed up tax report - should be correct for edge cases with named taxes,
   tax classes, etc.
-- some documentation updates
+- Documentation updates
 
 1.5.0pre7:
+- fix bug that could cause mis-billing on upgrades! (new installs ok)
+- update install documentation for 1.5 HTML::Mason or Apache::ASP install
 - historical late notice viewing in web interface
-
