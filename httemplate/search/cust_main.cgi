@@ -200,6 +200,8 @@ if ( $cgi->param('browse')
     if $cgi->param('last_on') && $cgi->param('last_text');
   push @cust_main, @{&companysearch}
     if $cgi->param('company_on') && $cgi->param('company_text');
+  push @cust_main, @{&address2search}
+    if $cgi->param('address2_on') && $cgi->param('address2_text');
   push @cust_main, @{&phonesearch}
     if $cgi->param('phone_on') && $cgi->param('phone_text');
   push @cust_main, @{&referralsearch}
@@ -555,9 +557,10 @@ sub companysearch {
     $company_type{$_}++ 
   };
 
-  $cgi->param('company_text') =~ /^([\w \,\.\-\']*)$/
-    or eidiot "Illegal company";
-  my($company)=$1;
+  $cgi->param('company_text') =~
+    /^([\w \!\@\#\$\%\&\(\)\-\+\;\:\'\"\,\.\?\/\=]*)$/
+      or eidiot "Illegal company";
+  my $company = $1;
 
   if ( $company_type{'Exact'} || $company_type{'Fuzzy'} ) {
     push @cust_main, qsearch( 'cust_main',
@@ -605,6 +608,25 @@ sub companysearch {
     }
 
   }
+
+  \@cust_main;
+}
+
+sub address2search {
+  my @cust_main;
+
+  $cgi->param('address2_text') =~
+    /^([\w \!\@\#\$\%\&\(\)\-\+\;\:\'\"\,\.\?\/\=]*)$/
+      or eidiot "Illegal address2";
+  my $address2 = $1;
+
+  push @cust_main, qsearch( 'cust_main',
+                            { 'address2' => { 'op'    => 'ILIKE',
+                                              'value' => $address2 } } );
+  push @cust_main, qsearch( 'cust_main',
+                            { 'address2' => { 'op'    => 'ILIKE',
+                                              'value' => $address2 } } )
+    if defined dbdef->table('cust_main')->column('ship_last');
 
   \@cust_main;
 }
