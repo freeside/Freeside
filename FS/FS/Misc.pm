@@ -50,7 +50,6 @@ use Date::Format;
 use Mail::Header;
 use Mail::Internet 1.44;
 use MIME::Entity;
-use Fax::Hylafax::Client;
 use FS::UID;
 
 FS::UID->install_callback( sub {
@@ -135,6 +134,18 @@ sub send_fax {
 
   die 'HylaFAX support has not been configured.'
     unless $conf->exists('hylafax');
+
+  eval {
+    require Fax::Hylafax::Client;
+  };
+
+  if ($@) {
+    if ($@ =~ /^Can't locate Fax.*/) {
+      die "You must have Fax::Hylafax::Client installed to use invoice faxing."
+    } else {
+      die $@;
+    }
+  }
 
   my %hylafax_opts = map { split /\s+/ } $conf->config('hylafax');
 
