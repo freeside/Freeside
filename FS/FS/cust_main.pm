@@ -280,14 +280,14 @@ sub insert {
     my $error = $prepay_credit->delete;
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
-      return $error;
+      return "removing prepay_credit (transaction rolled back): $error";
     }
   }
 
   my $error = $self->SUPER::insert;
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
-    return $error;
+    return "inserting cust_main record (transaction rolled back): $error";
   }
 
   if ( @param ) { # CUST_PKG_HASHREF
@@ -297,7 +297,7 @@ sub insert {
       $error = $cust_pkg->insert;
       if ( $error ) {
         $dbh->rollback if $oldAutoCommit;
-        return $error;
+        return "inserting cust_pkg (transaction rolled back): $error";
       }
       foreach my $svc_something ( @{$cust_pkgs->{$cust_pkg}} ) {
         $svc_something->pkgnum( $cust_pkg->pkgnum );
@@ -308,7 +308,7 @@ sub insert {
         $error = $svc_something->insert;
         if ( $error ) {
           $dbh->rollback if $oldAutoCommit;
-          return $error;
+          return "inserting svc_ (transaction rolled back): $error";
         }
       }
     }
@@ -324,7 +324,7 @@ sub insert {
     $error = $self->check_invoicing_list( $invoicing_list );
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
-      return $error;
+      return "checking invoicing_list (transaction rolled back): $error";
     }
     $self->invoicing_list( $invoicing_list );
   }
@@ -337,7 +337,7 @@ sub insert {
     $error = $cust_credit->insert;
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
-      return $error;
+      return "inserting credit (transaction rolled back): $error";
     }
   }
 
@@ -1365,7 +1365,7 @@ sub rebuild_fuzzyfiles {
 
 =head1 VERSION
 
-$Id: cust_main.pm,v 1.20 2001-08-23 06:17:03 ivan Exp $
+$Id: cust_main.pm,v 1.21 2001-08-26 05:06:19 ivan Exp $
 
 =head1 BUGS
 
