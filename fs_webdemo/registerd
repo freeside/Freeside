@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 #
-# $Id: registerd,v 1.4 2000-03-03 06:03:15 ivan Exp $
+# $Id: registerd,v 1.5 2000-03-03 06:10:18 ivan Exp $
 
 use strict;
 use vars qw(
@@ -137,19 +137,20 @@ while ( 1 ) {
       crypt($user_pw,$saltset[int(rand(64))].$saltset[int(rand(64))]);
 
     $sth = $dbh->prepare(
-      'UPDATE mysql_auth SET passwd = "$crypt_pw", status = "done" WHERE username = "$username"'
+      qq(UPDATE mysql_auth SET passwd = "$crypt_pw", status = "done" WHERE username = "$username")
     );
     $sth->execute or die $sth->errstr;
 
     $ENV{SMTPHOSTS} = "localhost";
     $ENV{MAILADDRESS} = 'ivan-fsreg@sisd.com';
+    $ENV{TZ} = "PST8PDT";
     $header = Mail::Header->new( [
       'From: ivan-fsreg@sisd.com',
       "To: $email",
       'Bcc: ivan-fsreg_bcc@sisd.com',
       'Sender: ivan-fsreg@sisd.com',
       'Reply-To: ivan-fsreg@sisd.com',
-      'Date: '. time2str("%a, %d %b %Y %X %z", time, 'US/Pacific'),
+      'Date: '. time2str("%a, %d %b %Y %X %z", time ),
       'Subject: Freeside demo information',
     ] );
     $msg = Mail::Internet->new(
