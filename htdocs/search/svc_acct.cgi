@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct.cgi,v 1.8 1999-04-09 23:43:29 ivan Exp $
+# $Id: svc_acct.cgi,v 1.9 1999-04-10 01:53:18 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/svc_acct.cgi
@@ -23,7 +23,10 @@
 # give service and customer info too ivan@sisd.com 98-aug-16
 #
 # $Log: svc_acct.cgi,v $
-# Revision 1.8  1999-04-09 23:43:29  ivan
+# Revision 1.9  1999-04-10 01:53:18  ivan
+# oops, search usernames limited to 8 chars
+#
+# Revision 1.8  1999/04/09 23:43:29  ivan
 # just in case
 #
 # Revision 1.7  1999/02/07 09:59:38  ivan
@@ -187,7 +190,7 @@ sub uid_sort {
 
 sub usernamesearch {
 
-  $cgi->param('username') =~ /^([\w\d\-]{2,8})$/; #untaint username_text
+  $cgi->param('username') =~ /^([\w\d\-]+)$/; #untaint username_text
   my($username)=$1;
 
   @svc_acct=qsearch('svc_acct',{'username'=>$username});
