@@ -711,9 +711,7 @@ sub check {
 
     return "Only root can have uid 0"
       if $recref->{uid} == 0
-         && $recref->{username} ne 'root'
-         && $recref->{username} ne 'toor';
-
+         && $recref->{username} !~ /^(root|toor|smtp)$/;
 
     $recref->{dir} =~ /^([\/\w\-\.\&]*)$/
       or return "Illegal directory: ". $recref->{dir};
