@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main.cgi,v 1.19 2001-04-22 01:38:39 ivan Exp $
+# $Id: cust_main.cgi,v 1.20 2001-06-03 11:40:48 ivan Exp $
 #
 # Usage: cust_main.cgi custnum
 #        http://server.name/path/cust_main.cgi?custnum
@@ -31,7 +31,10 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: cust_main.cgi,v $
-# Revision 1.19  2001-04-22 01:38:39  ivan
+# Revision 1.20  2001-06-03 11:40:48  ivan
+# inline doc clarification
+#
+# Revision 1.19  2001/04/22 01:38:39  ivan
 # svc_domain needs to import dbh sub from Record
 # view/cust_main.cgi needs to use ->owed method, not check (depriciated) owed field
 # search/cust_bill.cgi redirect error when there's only one invoice
@@ -248,7 +251,7 @@ print "</TABLE></TD></TR></TABLE></TD></TR></TABLE>";
 
 print qq!<BR><BR><A NAME="cust_pkg">Packages</A> !,
 #      qq!<BR>Click on package number to view/edit package.!,
-      qq!( <A HREF="!, popurl(2), qq!edit/cust_pkg.cgi?$custnum">Order and cancel packages</A> )!,
+      qq!( <A HREF="!, popurl(2), qq!edit/cust_pkg.cgi?$custnum">Order and cancel packages</A> (preserves services) )!,
 ;
 
 #display packages
