@@ -1,3 +1,4 @@
+<!-- mason kludge -->
 <%
 
 print header("Tax Rate Listing", menubar(

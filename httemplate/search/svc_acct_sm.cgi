@@ -25,6 +25,9 @@ if ( scalar(@svc_acct_sm) == 1 ) {
   my($svcnum)=$svc_acct_sm[0]->svcnum;
   print $cgi->redirect(popurl(2). "view/svc_acct_sm.cgi?$svcnum");
 } elsif ( scalar(@svc_acct_sm) > 1 ) {
+%>
+<!-- mason kludge -->
+<%
   print header('Mail Alias Search Results'), &table(), <<END;
       <TR>
         <TH>Mail to<BR><FONT SIZE=-1>(click to view mail alias)</FONT></TH>

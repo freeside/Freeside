@@ -26,6 +26,9 @@ unless ( $error ) {
 #&eidiot($error) if $error;
 
 if ( $error ) {
+%>
+<!-- mason kludge -->
+<%
   &idiot($error);
 } else {
   print $cgi->redirect(popurl(2). "view/cust_main.cgi?$custnum");

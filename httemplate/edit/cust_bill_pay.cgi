@@ -1,3 +1,4 @@
+<!-- mason kludge -->
 <%
 
 my($paynum, $amount, $invnum);

@@ -1,3 +1,4 @@
+<!-- mason kludge -->
 <%
 
 print header("Edit tax rates", menubar(

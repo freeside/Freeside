@@ -1,5 +1,6 @@
+<!-- mason kludge -->
 <%
-# <!-- $Id: REAL_cust_pkg.cgi,v 1.1 2001-10-15 14:58:03 ivan Exp $ -->
+# <!-- $Id: REAL_cust_pkg.cgi,v 1.2 2002-02-10 16:05:22 ivan Exp $ -->
 
 my $error ='';
 my $pkgnum = '';

@@ -30,15 +30,18 @@ $error = $svc_acct->delete;
 &myeidiot($error) if $error;
 
 $error = $cust_svc->delete;
-&myeidiot($error) if $error;
 
-$dbh->commit or die $dbh->errstr;
-
-print $cgi->redirect(popurl(2));
-
-sub myeidiot {
+if ( $error ) {
   $dbh->rollback;
+  %>
+<!-- mason kludge -->
+<%
   &eidiot(@_);
+} else {
+
+  $dbh->commit or die $dbh->errstr;
+
+  print $cgi->redirect(popurl(2));
 }
 
 %>

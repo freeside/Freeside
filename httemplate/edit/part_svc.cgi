@@ -1,3 +1,4 @@
+<!-- mason kludge -->
 <% 
    my $part_svc;
    if ( $cgi->param('error') ) { #error

@@ -1,3 +1,4 @@
+<!-- mason kludge -->
 <%= header('View Configuration', menubar( 'Main Menu' => $p,
                                      'Edit Configuration' => 'config.cgi' ) ) %>
 

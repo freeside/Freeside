@@ -1,3 +1,4 @@
+<!-- mason kludge -->
 <%
 
 my($svcnum, $pkgnum, $svcpart, $kludge_action, $purpose, $part_svc,

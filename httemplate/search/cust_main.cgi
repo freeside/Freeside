@@ -152,8 +152,14 @@ if ( scalar(@cust_main) == 1 && ! $cgi->param('referral_custnum') ) {
   }
   #exit;
 } elsif ( scalar(@cust_main) == 0 ) {
+%>
+<!-- mason kludge -->
+<%
   eidiot "No matching customers found!\n";
 } else { 
+%>
+<!-- mason kludge -->
+<%
 
   $total ||= scalar(@cust_main);
   print header("Customer Search Results",menubar(

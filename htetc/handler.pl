@@ -34,7 +34,9 @@ my $interp = new HTML::Mason::Interp (parser=>$parser,
                                       data_dir=>'/home/ivan/freeside_current/masondata',
                                       out_mode=>'stream',
                                      );
-my $ah = new HTML::Mason::ApacheHandler (interp=>$interp);
+my $ah = new HTML::Mason::ApacheHandler ( interp => $interp,
+                                          #auto_send_headers => 0,
+                                        );
 
 # Activate the following if running httpd as root (the normal case).
 # Resets ownership of all files created by Mason at startup.
@@ -111,12 +113,12 @@ sub handler
         $r->method('GET');
         $r->headers_in->unset('Content-length');
         $r->content_type('text/html');
-        $r->err_header_out('Location' => $location);
+        #$r->err_header_out('Location' => $location);
+        $r->header_out('Location' => $location);
          $r->header_out('Content-Type' => 'text/html');
          $m->abort(302);
 
         '';
-    
       };
 
       $cgi = new CGI;
@@ -124,6 +126,7 @@ sub handler
       #&cgisuidsetup($r);
       $p = popurl(2);
     }
+
     $r->content_type('text/html');
     #eorar
 
@@ -131,9 +134,12 @@ sub handler
     $headers->{'Pragma'} = $headers->{'Cache-control'} = 'no-cache';
     #$r->no_cache(1);
     $headers->{'Expires'} = '0';
-    
-    $ah->handle_request($r);
 
+#    $r->send_http_header;
+
+    my $status = $ah->handle_request($r);
+
+    $status;
 }
 
 1;

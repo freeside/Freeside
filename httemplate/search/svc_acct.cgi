@@ -63,8 +63,14 @@ if ( scalar(@svc_acct) == 1 ) {
   print $cgi->redirect(popurl(2). "view/svc_acct.cgi?$svcnum");  #redirect
   #exit;
 } elsif ( scalar(@svc_acct) == 0 ) { #error
+%>
+<!-- mason kludge -->
+<%
   idiot("Account not found");
 } else {
+%>
+<!-- mason kludge -->
+<%
   $total ||= scalar(@svc_acct);
 
   #begin pager

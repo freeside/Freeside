@@ -31,6 +31,9 @@ unless ($error) {
   #no errors, so let's view this customer.
   print $cgi->redirect(popurl(3). "view/cust_pkg.cgi?$pkgnum");
 } else {
+%>
+<!-- mason kludge -->
+<%
   idiot($error);
 }
 

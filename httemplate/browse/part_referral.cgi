@@ -1,3 +1,4 @@
+<!-- mason kludge -->
 <%
 
 print header("Referral Listing", menubar(

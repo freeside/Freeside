@@ -1,3 +1,4 @@
+<!-- mason kludge -->
 <%
 
 print header("Agent Type Listing", menubar(

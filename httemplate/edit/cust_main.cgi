@@ -1,3 +1,4 @@
+<!-- mason kludge -->
 <%
 
   #for misplaced logic below

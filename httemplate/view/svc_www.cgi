@@ -1,3 +1,4 @@
+<!-- mason kludge -->
 <%
 
 my($query) = $cgi->keywords;

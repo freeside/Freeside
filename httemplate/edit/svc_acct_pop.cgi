@@ -1,3 +1,4 @@
+<!-- mason kludge -->
 <%
 
 my $svc_acct_pop;

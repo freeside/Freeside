@@ -50,8 +50,14 @@ if ( scalar(@cust_bill) == 1 ) {
   my $invnum = $cust_bill[0]->invnum;
   print $cgi->redirect(popurl(2). "view/cust_bill.cgi?$invnum");  #redirect
 } elsif ( scalar(@cust_bill) == 0 ) {
+%>
+<!-- mason kludge -->
+<%
   eidiot("Invoice not found.");
 } else {
+%>
+<!-- mason kludge -->
+<%
   my $total = scalar(@cust_bill);
   print header("Invoice Search Results", menubar(
           'Main Menu', popurl(2)

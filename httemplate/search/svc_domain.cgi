@@ -35,9 +35,14 @@ if ( scalar(@svc_domain) == 1 ) {
   print $cgi->redirect(popurl(2). "view/svc_domain.cgi?". $svc_domain[0]->svcnum);
   #exit;
 } elsif ( scalar(@svc_domain) == 0 ) {
+%>
+<!-- mason kludge -->
+<%
   eidiot "No matching domains found!\n";
 } else {
-
+%>
+<!-- mason kludge -->
+<%
   my($total)=scalar(@svc_domain);
   print header("Domain Search Results",''), <<END;
 

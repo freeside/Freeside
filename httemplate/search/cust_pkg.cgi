@@ -77,8 +77,14 @@ if ( scalar(@cust_pkg) == 1 ) {
   print $cgi->redirect(popurl(2). "view/cust_pkg.cgi?$pkgnum");
   #exit;
 } elsif ( scalar(@cust_pkg) == 0 ) { #error
+%>
+<!-- mason kludge -->
+<%
   eidiot("No packages found");
 } else {
+%>
+<!-- mason kludge -->
+<%
   $total ||= scalar(@cust_pkg);
 
   #begin pager

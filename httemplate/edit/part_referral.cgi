@@ -1,3 +1,4 @@
+<!-- mason kludge -->
 <%
 
 my $part_referral;

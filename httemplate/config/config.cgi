@@ -1,3 +1,4 @@
+<!-- mason kludge -->
 <%= header('Edit Configuration', menubar( 'Main Menu' => $p ) ) %>
 
 <% my $conf = new FS::Conf; my @config_items = $conf->config_items; %>

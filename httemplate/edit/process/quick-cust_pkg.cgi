@@ -12,6 +12,9 @@ my @cust_pkg = ();
 my $error = FS::cust_pkg::order($custnum, [ $pkgpart ], [], \@cust_pkg, );
 
 if ($error) {
+%>
+<!-- mason kludge -->
+<%
   eidiot($error);
 } else {
   print $cgi->redirect(popurl(3). "view/cust_pkg.cgi?". $cust_pkg[0]->pkgnum );

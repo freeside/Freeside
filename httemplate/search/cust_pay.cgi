@@ -13,11 +13,17 @@ if (0) {
 #  my $invnum = $cust_bill[0]->invnum;
 #  print $cgi->redirect(popurl(2). "view/cust_bill.cgi?$invnum");  #redirect
 } elsif ( scalar(@cust_pay) == 0 ) {
+%>
+<!-- mason kludge -->
+<%
   idiot("Check # not found.");
   #exit;
 } else {
   my $total = scalar(@cust_pay);
   my $s = $total > 1 ? 's' : '';
+%>
+<!-- mason kludge -->
+<%
   print header("Check # Search Results", menubar(
           'Main Menu', popurl(2)
         )), "$total matching check$s found<BR>", &table(), <<END;

@@ -1,3 +1,4 @@
+<!-- mason kludge -->
 <%
 
 my $conf = new FS::Conf;

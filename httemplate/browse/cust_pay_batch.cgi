@@ -1,3 +1,4 @@
+<!-- mason kludge -->
 <%
 
 print header("Pending credit card batch", menubar(

@@ -1,3 +1,4 @@
+<!-- mason kludge -->
 <%
 
 #Begin silliness

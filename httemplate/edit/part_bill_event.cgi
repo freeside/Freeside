@@ -1,3 +1,4 @@
+<!-- mason kludge -->
 <%
 
 if ( $cgi->param('eventpart') && $cgi->param('eventpart') =~ /^(\d+)$/ ) {

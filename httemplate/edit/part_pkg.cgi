@@ -1,3 +1,4 @@
+<!-- mason kludge -->
 <%
 
 if ( $cgi->param('clone') && $cgi->param('clone') =~ /^(\d+)$/ ) {

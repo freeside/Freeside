@@ -43,4 +43,3 @@
 
 %>
 <%= $cgi->redirect("config-view.cgi") %>
-

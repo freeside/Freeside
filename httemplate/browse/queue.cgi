@@ -1,3 +1,4 @@
+<!-- mason kludge -->
 <%
 
 print header("Job Queue", menubar(
