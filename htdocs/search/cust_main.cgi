@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main.cgi,v 1.14 1999-08-12 04:45:21 ivan Exp $
+# $Id: cust_main.cgi,v 1.15 2000-07-17 16:45:41 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/cust_main.cgi
@@ -17,7 +17,10 @@
 # display total, use FS::CGI ivan@sisd.com 98-jul-17
 #
 # $Log: cust_main.cgi,v $
-# Revision 1.14  1999-08-12 04:45:21  ivan
+# Revision 1.15  2000-07-17 16:45:41  ivan
+# first shot at invoice browsing and some other cleanups
+#
+# Revision 1.14  1999/08/12 04:45:21  ivan
 # typo - missed a paren
 #
 # Revision 1.13  1999/08/12 04:32:21  ivan
@@ -92,6 +95,8 @@ if ( $cgi->keywords ) {
   } elsif ( $query eq 'company' ) {
     $sortby=\*company_sort;
     @cust_main=qsearch('cust_main',{});
+  } else {
+    die "unknown query string $query";
   }
 } else {
   @cust_main=();

@@ -1,11 +1,14 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_pkg.cgi,v 1.10 2000-07-17 12:49:29 ivan Exp $
+# $Id: cust_pkg.cgi,v 1.11 2000-07-17 16:45:41 ivan Exp $
 #
 # based on search/svc_acct.cgi ivan@sisd.com 98-jul-17
 #
 # $Log: cust_pkg.cgi,v $
-# Revision 1.10  2000-07-17 12:49:29  ivan
+# Revision 1.11  2000-07-17 16:45:41  ivan
+# first shot at invoice browsing and some other cleanups
+#
+# Revision 1.10  2000/07/17 12:49:29  ivan
 # better error message if a package isn't linked to a customer (that shouldn't happen)
 #
 # Revision 1.9  1999/07/17 10:38:52  ivan
@@ -127,7 +130,7 @@ END
 END
     } else {
       print <<END;
-      <TD COLSPAN=3><FONT SIZE=-1>WARNING: couldn't find cust_main.custnum $custnum (cust_pkg.pkgnum $pkgnum)</TD>
+      <TD COLSPAN=3>WARNING: couldn't find cust_main.custnum $custnum (cust_pkg.pkgnum $pkgnum)</TD>
     </TR>
 END
     }
