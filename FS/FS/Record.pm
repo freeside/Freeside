@@ -180,7 +180,7 @@ sub create {
   }
 }
 
-=item qsearch TABLE, HASHREF, SELECT, EXTRA_SQL
+=item qsearch TABLE, HASHREF, SELECT, EXTRA_SQL, CACHE_OBJ
 
 Searches the database for all records matching (at least) the key/value pairs
 in HASHREF.  Returns all the records found as `FS::TABLE' objects if that
@@ -214,6 +214,14 @@ sub qsearch {
   my $statement = "SELECT $select FROM $stable";
   if ( @fields ) {
     $statement .= ' WHERE '. join(' AND ', map {
+
+      my $op = '=';
+      if ( ref($record->{$_}) ) {
+        $op = $record->{$_}{'op'} if $record->{$_}{'op'};
+        $op = 'LIKE' if $op =~ /^ILIKE$/i && driver_name !~ /^Pg$/i;
+        $record->{$_} = $record->{$_}{'value'}
+      }
+
       if ( ! defined( $record->{$_} ) || $record->{$_} eq '' ) {
         if ( driver_name =~ /^Pg$/i ) {
           qq-( $_ IS NULL OR $_ = '' )-;
@@ -221,7 +229,7 @@ sub qsearch {
           qq-( $_ IS NULL OR $_ = "" )-;
         }
       } else {
-        "$_ = ?";
+        "$_ $op ?";
       }
     } @fields );
   }

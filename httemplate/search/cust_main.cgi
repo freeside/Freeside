@@ -398,24 +398,37 @@ sub lastsearch {
     or eidiot "Illegal last name";
   my($last)=$1;
 
-#  if ( $last_type{'Exact'}
-#       && ! $last_type{'Fuzzy'} 
-#     #  && ! $last_type{'Sound-alike'}
-#  ) {
+  if ( $last_type{'Exact'} || $last_type{'Fuzzy'} ) {
+    push @cust_main, qsearch( 'cust_main',
+                              { 'last' => { 'op'    => 'ILIKE',
+                                            'value' => $last    } } );
 
-    push @cust_main, qsearch('cust_main',{'last'=>$last});
+    push @cust_main, qsearch( 'cust_main',
+                              { 'ship_last' => { 'op'    => 'ILIKE',
+                                                 'value' => $last    } } )
+      if defined dbdef->table('cust_main')->column('ship_last');
+  }
 
-    push @cust_main, qsearch('cust_main',{'ship_last'=>$last})
+  if ( $last_type{'Substring'} || $last_type{'All'} ) {
+
+    push @cust_main, qsearch( 'cust_main',
+                              { 'last' => { 'op'    => 'ILIKE',
+                                            'value' => "%$last%" } } );
+
+    push @cust_main, qsearch( 'cust_main',
+                              { 'ship_last' => { 'op'    => 'ILIKE',
+                                                 'value' => "%$last%" } } )
       if defined dbdef->table('cust_main')->column('ship_last');
 
-#  } else {
-  if ( $last_type{'Fuzzy'} ) {
+  }
+
+  if ( $last_type{'Fuzzy'} || $last_type{'All'} ) {
 
     &FS::cust_main::check_and_rebuild_fuzzyfiles;
     my $all_last = &FS::cust_main::all_last;
 
     my %last;
-    if ($last_type{'Fuzzy'}) { 
+    if ( $last_type{'Fuzzy'} || $last_type{'All'} ) { 
       foreach ( amatch($last, [ qw(i) ], @$all_last) ) {
         $last{$_}++; 
       }
@@ -431,6 +444,7 @@ sub lastsearch {
     }
 
   }
+
   \@cust_main;
 }
 
@@ -446,24 +460,37 @@ sub companysearch {
     or eidiot "Illegal company";
   my($company)=$1;
 
-#  if ( $company_type{'Exact'}
-#       && ! $company_type{'Fuzzy'} 
-#     #  && ! $company_type{'Sound-alike'}
-#  ) {
+  if ( $company_type{'Exact'} || $company_type{'Fuzzy'} ) {
+    push @cust_main, qsearch( 'cust_main',
+                              { 'company' => { 'op'    => 'ILIKE',
+                                               'value' => $company } } );
 
-    push @cust_main, qsearch('cust_main',{'company'=>$company});
+    push @cust_main, qsearch( 'cust_main',
+                              { 'ship_company' => { 'op'    => 'ILIKE',
+                                                    'value' => $company } } )
+      if defined dbdef->table('cust_main')->column('ship_last');
+  }
 
-    push @cust_main, qsearch('cust_main',{'ship_company'=>$company})
+  if ( $company_type{'Substring'} || $company_type{'All'} ) {
+
+    push @cust_main, qsearch( 'cust_main',
+                              { 'company' => { 'op'    => 'ILIKE',
+                                               'value' => "%$company%" } } );
+
+    push @cust_main, qsearch( 'cust_main',
+                              { 'ship_company' => { 'op'    => 'ILIKE',
+                                                    'value' => "%$company%" } })
       if defined dbdef->table('cust_main')->column('ship_last');
 
-#  } else {
-  if ( $company_type{'Fuzzy'} ) {
+  }
+
+  if ( $company_type{'Fuzzy'} || $company_type{'All'} ) {
 
     &FS::cust_main::check_and_rebuild_fuzzyfiles;
     my $all_company = &FS::cust_main::all_company;
 
     my %company;
-    if ($company_type{'Fuzzy'}) { 
+    if ( $company_type{'Fuzzy'} || $company_type{'All'} ) { 
       foreach ( amatch($company, [ qw(i) ], @$all_company ) ) {
         $company{$_}++;
       }

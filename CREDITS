@@ -59,7 +59,7 @@ export, cancel-unaudited.cgi), patches to support billing date modification,
 and probably other things too (sorry if I forgot them).  And yet even more
 bug squashing, thanks!  *and* he single-handedly implemented all the necessary
 work to get rid of svc_acct_sm and the "default domain"  thanks!!  and rewrote
-the financials!  wow, thanks jeff!
+the financials!  wow, thanks jeff!  and contributed financial reports!
 
 Kenny Elliott <kenny@neoserve.com> contributed ICRADIUS radreply table support,
 allowing attributes with ICRADIUS, helped fix many bugs, and some
