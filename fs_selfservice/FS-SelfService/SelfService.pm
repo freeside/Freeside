@@ -15,6 +15,7 @@ $VERSION = '0.03';
 
 $socket =  "/usr/local/freeside/selfservice_socket";
 
+#maybe should ask ClientAPI for this list
 %autoload = (
   'passwd'          => 'passwd/passwd',
   'chfn'            => 'passwd/passwd',
@@ -25,6 +26,8 @@ $socket =  "/usr/local/freeside/selfservice_socket";
   'cancel'          => 'MyAccount/cancel',
   'payment_info'    => 'MyAccount/payment_info',
   'process_payment' => 'MyAccount/process_payment',
+  'signup_info'     => 'Signup/signup_info',
+  'new_customer'    => 'Signup/new_customer',
 );
 @EXPORT_OK = keys %autoload;
 
