@@ -116,7 +116,7 @@
   manualdir:		${datadir}/doc
   localstatedir:	${prefix}/var
   logfiledir:		${localstatedir}/log
-  masonstatedir:	${localstatedir}/mason_data
+  masonstatedir:	%%%MASONDATA%%%
   sessionstatedir:	${localstatedir}/session_data
   customdir:		${prefix}/local
   custometcdir:		${customdir}/etc
