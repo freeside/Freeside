@@ -3,7 +3,7 @@
 #untaint invnum
 my($query) = $cgi->keywords;
 $query =~ /^((.+)-)?(\d+)(.pdf)?$/;
-my $templatename = $1;
+my $templatename = $2;
 my $invnum = $3;
 
 my $cust_bill = qsearchs('cust_bill',{'invnum'=>$invnum});
