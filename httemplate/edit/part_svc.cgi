@@ -104,7 +104,14 @@ my %defs = (
     'dir'       => 'Home directory',
     'uid'       => 'UID (set to fixed and blank for dial-only)',
     'slipip'    => 'IP address (Set to fixed and blank to disable dialin, or, set a value to be exported to RADIUS Framed-IP-Address.  Use the special value <code>0e0</code> [zero e zero] to enable export to RADIUS without a Framed-IP-Address.)',
-    'popnum'    => qq!<A HREF="$p/browse/svc_acct_pop.cgi/">POP number</A>!,
+#    'popnum'    => qq!<A HREF="$p/browse/svc_acct_pop.cgi/">POP number</A>!,
+    'popnum'    => {
+                     desc => 'Access number',
+                     type => 'select',
+                     select_table => 'svc_acct_pop',
+                     select_key   => 'popnum',
+                     select_label => 'city',
+                   },
     'username'  => 'Username',
     'quota'     => '',
     '_password' => 'Password',
@@ -215,13 +222,15 @@ function fixup(what) {
     if ( ref($def) ) {
       if ( $def->{type} eq 'select' ) {
         print qq!<SELECT NAME="${svcdb}__${field}">!;
-        print '<OPTION>' unless $value;
+        print '<OPTION> </OPTION>' unless $value;
         foreach my $record ( qsearch( $def->{select_table}, {} ) ) {
+          warn $rvalue;
           my $rvalue = $record->getfield($def->{select_key});
           print qq!<OPTION VALUE="$rvalue"!.
                 ( $rvalue==$value ? ' SELECTED>' : '>' ).
-                $record->getfield($def->{select_label});
+                $record->getfield($def->{select_label}). '</OPTION>';
         }
+        print '</SELECT>';
       } else {
         print '<font color="#ff0000">unknown type'. $def->{type};
       }
