@@ -5,7 +5,7 @@ use Fcntl qw(:flock);
 use Date::Parse;
 use Getopt::Std;
 use FS::UID qw(adminsuidsetup driver_name dbh datasrc);
-use FS::Record qw(qsearch qsearchs);
+use FS::Record qw(qsearch qsearchs dbdef);
 use FS::Conf;
 use FS::cust_main;
 
@@ -57,8 +57,10 @@ foreach $cust_main ( @cust_main ) {
 
 if ( driver_name eq 'Pg' ) {
   dbh->{AutoCommit} = 1; #so we can vacuum
-  my $sth = dbh->prepare('vacuum analyze') or die dbh->errstr;
-  $sth->execute or die $sth->errstr;
+  foreach my $table ( dbdef->tables ) {
+    my $sth = dbh->prepare("VACUUM ANALYZE $table") or die dbh->errstr;
+    $sth->execute or die $sth->errstr;
+  }
 }
 
 my $conf = new FS::Conf;
