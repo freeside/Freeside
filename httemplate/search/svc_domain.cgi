@@ -50,8 +50,9 @@ if ( scalar(@svc_domain) == 1 ) {
       <TR>
         <TH>Service #</TH>
         <TH>Domain</TH>
-        <TH>Mail to<BR><FONT SIZE=-1>(click to view account)</FONT></TH>
+<!--        <TH>Mail to<BR><FONT SIZE=-1>(click to view account)</FONT></TH>
         <TH>Forwards to<BR><FONT SIZE=-1>(click to view account)</FONT></TH>
+-->
       </TR>
 END
 
@@ -67,57 +68,60 @@ END
       $svc_domain->domain,
     );
 
-    my @svc_acct=qsearch('svc_acct',{'domsvc' => $svcnum});
-    my $rowspan = 0;
+    #don't display all accounts here
+    my $rowspan = 1;
 
-    my $n1 = '';
-    my($svc_acct, @rows);
-    foreach $svc_acct (
-      sort {$b->getfield('username') cmp $a->getfield('username')} (@svc_acct)
-    ) {
-
-      my (@forwards) = ();
-
-      my($svcnum,$username)=(
-        $svc_acct->svcnum,
-        $svc_acct->username,
-      );
-
-      my @svc_forward = qsearch( 'svc_forward', { 'srcsvc' => $svcnum } );
-      my $svc_forward;
-      foreach $svc_forward (@svc_forward) {
-        my($dstsvc,$dst) = (
-          $svc_forward->dstsvc,
-          $svc_forward->dst,
-        );
-        if ($dstsvc) {
-          my $dst_svc_acct=qsearchs( 'svc_acct', { 'svcnum' => $dstsvc } );
-          my $destination=$dst_svc_acct->email;
-          push @forwards, qq!<TD><A HREF="!, popurl(2),
-                qq!view/svc_acct.cgi?$dstsvc">$destination</A>!,
-                qq!</TD></TR>!
-          ;
-        }else{
-          push @forwards, qq!<TD>$dst</TD></TR>!
-          ;
-        }
-      }
-
-      push @rows, qq!$n1<TD ROWSPAN=!, (scalar(@svc_forward) || 1),
-            qq!><A HREF="!. popurl(2). qq!view/svc_acct.cgi?$svcnum">!,
-      #print '', ( ($domuser eq '*') ? "<I>(anything)</I>" : $domuser );
-            ( ($username eq '*') ? "<I>(anything)</I>" : $username ),
-            qq!\@$domain</A> </TD>!,
-      ;
-
-      push @rows, @forwards;
-
-      $rowspan += (scalar(@svc_forward) || 1);
-      $n1 = "</TR><TR>";
-    }
-    #end of false laziness
-
-
+    #my @svc_acct=qsearch('svc_acct',{'domsvc' => $svcnum});
+    #my $rowspan = 0;
+    #
+    #my $n1 = '';
+    #my($svc_acct, @rows);
+    #foreach $svc_acct (
+    #  sort {$b->getfield('username') cmp $a->getfield('username')} (@svc_acct)
+    #) {
+    #
+    #  my (@forwards) = ();
+    #
+    #  my($svcnum,$username)=(
+    #    $svc_acct->svcnum,
+    #    $svc_acct->username,
+    #  );
+    #
+    #  my @svc_forward = qsearch( 'svc_forward', { 'srcsvc' => $svcnum } );
+    #  my $svc_forward;
+    #  foreach $svc_forward (@svc_forward) {
+    #    my($dstsvc,$dst) = (
+    #      $svc_forward->dstsvc,
+    #      $svc_forward->dst,
+    #    );
+    #    if ($dstsvc) {
+    #      my $dst_svc_acct=qsearchs( 'svc_acct', { 'svcnum' => $dstsvc } );
+    #      my $destination=$dst_svc_acct->email;
+    #      push @forwards, qq!<TD><A HREF="!, popurl(2),
+    #            qq!view/svc_acct.cgi?$dstsvc">$destination</A>!,
+    #            qq!</TD></TR>!
+    #      ;
+    #    }else{
+    #      push @forwards, qq!<TD>$dst</TD></TR>!
+    #      ;
+    #    }
+    #  }
+    #
+    #  push @rows, qq!$n1<TD ROWSPAN=!, (scalar(@svc_forward) || 1),
+    #        qq!><A HREF="!. popurl(2). qq!view/svc_acct.cgi?$svcnum">!,
+    #  #print '', ( ($domuser eq '*') ? "<I>(anything)</I>" : $domuser );
+    #        ( ($username eq '*') ? "<I>(anything)</I>" : $username ),
+    #        qq!\@$domain</A> </TD>!,
+    #  ;
+    #
+    #  push @rows, @forwards;
+    #
+    #  $rowspan += (scalar(@svc_forward) || 1);
+    #  $n1 = "</TR><TR>";
+    #}
+    ##end of false laziness
+    #
+    #
 
     print <<END;
     <TR>
@@ -125,7 +129,7 @@ END
       <TD ROWSPAN=$rowspan>$domain</TD>
 END
 
-    print @rows;
+    #print @rows;
     print "</TR>";
 
   }
