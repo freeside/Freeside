@@ -54,6 +54,8 @@ FS::svc_acct - Object methods for svc_acct records
 
   $error = $record->cancel;
 
+  %hash = $record->radius;
+
 =head1 DESCRIPTION
 
 An FS::svc_acct object represents an account.  FS::svc_acct inherits from
@@ -446,11 +448,32 @@ sub check {
   ''; #no error
 }
 
+=item radius
+
+Returns key/value pairs, suitable for assigning to a hash, for any RADIUS
+attributes of this record.
+
+Note that this is now the preferred method for reading RADIUS attributes - 
+accessing the columns directly is discouraged, as the column names are
+expected to change in the future.
+
+=cut
+
+sub radius { 
+  my $self = shift;
+  map {
+    /^(radius_(.*))$/;
+    my($column, $attrib) = ($1, $2);
+    $attrib =~ s/_/\-/g;
+    ( $attrib, $self->getfield($column) );
+  } grep { /^radius_/ && $self->getfield($_) } fields( $self->table );
+}
+
 =back
 
 =head1 VERSION
 
-$Id: svc_acct.pm,v 1.3 2000-03-06 16:38:42 ivan Exp $
+$Id: svc_acct.pm,v 1.4 2000-06-15 13:35:47 ivan Exp $
 
 =head1 BUGS
 
