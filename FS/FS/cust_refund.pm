@@ -133,7 +133,7 @@ sub insert {
 
 }
 
-sub upgrade_replace {
+sub upgrade_replace { #1.3.x->1.4.x
   my $self = shift;
 
   local $SIG{HUP} = 'IGNORE';
@@ -170,7 +170,7 @@ sub upgrade_replace {
     die;
   }
 
-  $error = $new->SUPER::insert($self);
+  $error = $new->SUPER::replace($self);
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
@@ -259,7 +259,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: cust_refund.pm,v 1.10 2002-01-24 02:26:49 ivan Exp $
+$Id: cust_refund.pm,v 1.11 2002-01-24 06:46:29 ivan Exp $
 
 =head1 BUGS
 
