@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: signup.cgi,v 1.18 2002-04-07 00:00:40 ivan Exp $
+# $Id: signup.cgi,v 1.19 2002-04-07 05:56:08 ivan Exp $
 
 use strict;
 use vars qw( @payby $cgi $locales $packages $pops $init_data $error
@@ -120,15 +120,22 @@ if ( defined $cgi->param('magic') ) {
     $error = '';
 
     if ( $cgi->param('_password') ne $cgi->param('_password2') ) {
-      $error = "Passwords don't match"; #msgcat
+      $error = $init_data->{msgcat}{passwords_dont_match}; #msgcat
       $password  = '';
       $password2 = '';
     } else {
       $password2 = $cgi->param('_password2');
 
-      if ( $payby eq 'CARD' && $cgi->param('CARD_type')
-           && cardtype($payinfo) ne $cgi->param('CARD_type') ) {
-        $error = 'Not an '. $cgi->param('CARD_type'). '| - is: |'. cardtype($payinfo). '|'; #msgcat
+      if ( $payby eq 'CARD' && $cgi->param('CARD_type') ) {
+        $payinfo =~ s/\D//g;
+
+        $payinfo =~ /^(\d{13,16})$/
+          or $error ||= $init_data->{msgcat}{invalid_card}; #. $self->payinfo;
+        $payinfo = $1;
+        validate($payinfo)
+          or $error ||= $init_data->{msgcat}{invalid_card}; #. $self->payinfo;
+        cardtype($payinfo) eq $cgi->param('CARD_type')
+          or $error ||= $init_data->{msgcat}{not_a}. $cgi->param('CARD_type');
       }
 
       $error ||= new_customer ( {

@@ -873,6 +873,12 @@ httemplate/docs/config.html
     'select_enum' => [ qw(CARD PREPAY BILL COMP) ],
   },
 
+  {
+    'key'         => 'show-msgcat-codes',
+    'section'     => 'UI',
+    'description' => 'Show msgcat codes in error messages.  Turn this option on before reporting errors to the mailing list.',
+    'type'        => 'checkbox',
+  },
 
 );
 

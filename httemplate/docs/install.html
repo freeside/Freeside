@@ -181,6 +181,11 @@ $ <a href="man/bin/freeside-adduser.html">freeside-adduser</a> -h /usr/local/etc
 $ su freeside
 $ bin/fs-setup <b>username</b>
 </pre>
+  <li>As the freeside UNIX user, run <tt>bin/populate-msgcat <b>username</b></tt> to populate the message catalog, passing the username of a Freeside user you created above:
+<pre>
+$ su freeside
+$ bin/populate-msgcat <b>username</b>
+</pre>
   <li><tt>freeside-queued</tt> was installed with the Perl modules.  Start it now and ensure that is run upon system startup.
   <li>Now proceed to the initial <a href="admin.html">administration</a> of your installation.
 </ul>

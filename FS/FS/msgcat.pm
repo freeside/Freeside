@@ -1,7 +1,7 @@
 package FS::msgcat;
 
 use strict;
-use vars qw( @ISA @EXPORT_OK $conf $locale );
+use vars qw( @ISA @EXPORT_OK $conf $locale $debug );
 use Exporter;
 use FS::UID;
 use FS::Record qw( qsearchs );
@@ -13,6 +13,7 @@ use FS::Conf;
 $FS::UID::callback{'msgcat'} = sub {
   $conf = new FS::Conf;
   $locale = $conf->config('locale') || 'en_US';
+  $debug = $conf->exists('show-msgcat-codes')
 };
 
 =head1 NAME
@@ -140,6 +141,10 @@ Returns the full message for the supplied message code.
 =cut
 
 sub gettext {
+  $debug ? geterror(@_) : _gettext(@_);
+}
+
+sub _gettext {
   my $msgcode = shift;
   my $msgcat = qsearchs('msgcat', {
     'msgcode' => $msgcode,
@@ -163,7 +168,7 @@ code.
 
 sub geterror {
   my $msgcode = shift;
-  my $msg = gettext($msgcode);
+  my $msg = _gettext($msgcode);
   if ( $msg eq $msgcode ) {
     "Error code $msgcode (message for locale $locale not found)";
   } else {
@@ -175,7 +180,7 @@ sub geterror {
 
 =head1 BUGS
 
-i18n/l10n is a mess.
+i18n/l10n, eek
 
 =head1 SEE ALSO
 

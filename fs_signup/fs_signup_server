@@ -13,6 +13,7 @@ use FS::Conf;
 use FS::Record qw( qsearch qsearchs );
 use FS::cust_main_county;
 use FS::cust_main;
+use FS::msgcat qw(gettext);
 
 use vars qw( $opt $Debug );
 
@@ -66,6 +67,10 @@ while (1) {
     'security_phrase' => $conf->exists('security_phrase'),
 
     'payby' => [ $conf->config('signup_server-payby') ],
+
+    'msgcat' => { map { $_=>gettext($_) } qw(
+      passwords_dont_match invalid_card unknown_card_type not_a
+    ) }
 
   };
 
