@@ -130,7 +130,64 @@ Currently unimplemented.
 sub delete {
   my $self = shift;
   return "Can't delete closed credit" if $self->closed =~ /^Y/i;
-  $self->SUPER::delete(@_);
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  foreach my $cust_credit_bill ( $self->cust_credit_bill ) {
+    my $error = $cust_credit_bill->delete;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
+  my $error = $self->SUPER::delete(@_);
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  if ( $conf->config('deletecredits') ne '' ) {
+
+    my $cust_main = qsearchs('cust_main',{ 'custnum' => $self->custnum });
+
+    my $error = send_email(
+      'from'    => $conf->config('invoice_from'), #??? well as good as any
+      'to'      => $conf->config('deletecredits'),
+      'subject' => 'FREESIDE NOTIFICATION: Credit deleted',
+      'body'    => [
+        "This is an automatic message from your Freeside installation\n",
+        "informing you that the following credit has been deleted:\n",
+        "\n",
+        'crednum: '. $self->crednum. "\n",
+        'custnum: '. $self->custnum.
+          " (". $cust_main->last. ", ". $cust_main->first. ")\n",
+        'amount: $'. sprintf("%.2f", $self->amount). "\n",
+        'date: '. time2str("%a %b %e %T %Y", $self->_date). "\n",
+        'reason: '. $self->reason. "\n",
+      ],
+    );
+
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "can't send credit deletion notification: $error";
+    }
+
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+  '';
+
 }
 
 =item replace OLD_RECORD

@@ -332,7 +332,14 @@ httemplate/docs/config.html
   {
     'key'         => 'deletepayments',
     'section'     => 'UI',
-    'description' => 'Enable deletion of unclosed payments.  Be very careful!  Only delete payments that were data-entry errors, not adjustments. Optionally specify one or more comma-separated email addresses to be notified when a payment is deleted.',
+    'description' => 'Enable deletion of unclosed payments.  Be very careful!  Only delete payments that were data-entry errors, not adjustments.  Optionally specify one or more comma-separated email addresses to be notified when a payment is deleted.',
+    'type'        => [qw( checkbox text )],
+  },
+
+  {
+    'key'         => 'deletecredits',
+    'section'     => 'UI',
+    'description' => 'Enable deletion of unclosed credits.  Be very careful!  Only delete credits that were data-entry errors, not adjustments.  Optionally specify one or more comma-separated email addresses to be notified when a credit is deleted.',
     'type'        => [qw( checkbox text )],
   },
 

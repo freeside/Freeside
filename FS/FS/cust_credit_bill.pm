@@ -96,7 +96,10 @@ Currently unimplemented.
 =cut
 
 sub delete {
-  return "Can't unapply credit!"
+  my $self = shift;
+  return "Can't delete application for closed credit"
+    if $self->cust_credit->closed =~ /^Y/i;
+  $self->SUPER::delete(@_);
 }
 
 =item replace OLD_RECORD

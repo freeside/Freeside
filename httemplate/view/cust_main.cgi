@@ -554,6 +554,11 @@ function cust_pay_unapply_areyousure(href) {
  == true)
         window.location.href = href;
 }
+function cust_credit_areyousure(href) {
+    if (confirm("Are you sure you want to delete this credit?")
+ == true)
+        window.location.href = href;
+}
 </SCRIPT>
 END
 
@@ -628,9 +633,13 @@ if ( $conf->config('payby-default') ne 'HIDE' ) {
         $cust_credit->reason,
         time2str("%D", $cust_credit_bill->_date),
       );
+      my $delete =
+        $cust_credit->closed !~ /^Y/i && $conf->exists('deletecredits')
+          ? qq! (<A HREF="javascript:cust_credit_areyousure('${p}misc/delete-cust_credit.cgi?!. $cust_credit->crednum. qq!')">delete</A>)!
+          : '';
       push @history,
         "$date\tCredit #$crednum: $reason<BR>".
-        "(applied to invoice #$invnum on $app_date)\t\t\t$amount\t";
+        "(applied to invoice #$invnum on $app_date)$delete\t\t\t$amount\t";
     }
   }
   
