@@ -96,7 +96,7 @@ sub insert {
   my $dbh = dbh;
 
   if ( $self->crednum ) {
-    my $cust_credit = qsearchs('cust_bill', { 'invnum' => $self->invnum } )
+    my $cust_credit = qsearchs('cust_credit', { 'crednum' => $self->crednum } )
       or do {
         $dbh->rollback if $oldAutoCommit;
         return "Unknown cust_credit.crednum: ". $self->crednum;
@@ -266,7 +266,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: cust_refund.pm,v 1.17 2002-02-19 03:15:11 ivan Exp $
+$Id: cust_refund.pm,v 1.18 2002-02-19 03:22:39 jeff Exp $
 
 =head1 BUGS
 
