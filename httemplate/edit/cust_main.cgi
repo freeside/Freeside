@@ -17,6 +17,7 @@ my $conf = new FS::Conf;
 
 my $error = '';
 my($custnum, $username, $password, $popnum, $cust_main, $saved_pkgpart);
+my(@invoicing_list);
 if ( $cgi->param('error') ) {
   $error = $cgi->param('error');
   $cust_main = new FS::cust_main ( {
@@ -32,6 +33,7 @@ if ( $cgi->param('error') ) {
   $username = $cgi->param('username');
   $password = $cgi->param('_password');
   $popnum = $cgi->param('popnum');
+  @invoicing_list = split( /\s*,\s*/, $cgi->param('invoicing_list') );
 } elsif ( $cgi->keywords ) { #editing
   my( $query ) = $cgi->keywords;
   $query =~ /^(\d+)$/;
@@ -41,6 +43,7 @@ if ( $cgi->param('error') ) {
   $username = '';
   $password = '';
   $popnum = 0;
+  @invoicing_list = $cust_main->invoicing_list;
 } else {
   $custnum='';
   $cust_main = new FS::cust_main ( {} );
@@ -50,6 +53,7 @@ if ( $cgi->param('error') ) {
   $username = '';
   $password = '';
   $popnum = 0;
+  @invoicing_list = ();
 }
 $cgi->delete_all();
 my $action = $custnum ? 'Edit' : 'Add';
@@ -383,7 +387,7 @@ if ( $payby_default eq 'HIDE' ) {
   print qq!>Tax Exempt</TD></TR><TR><TD>!.
         qq!<INPUT TYPE="checkbox" NAME="invoicing_list_POST" VALUE="POST"!;
 
-  my @invoicing_list = $cust_main->invoicing_list;
+  #my @invoicing_list = $cust_main->invoicing_list;
   print qq! CHECKED!
     if ( ! @invoicing_list && ! $conf->exists('disablepostalinvoicedefault') )
        || grep { $_ eq 'POST' } @invoicing_list;
