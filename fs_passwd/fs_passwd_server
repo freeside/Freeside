@@ -11,6 +11,8 @@
 # crypt-aware, s/password/_password/; ivan@sisd.com 98-aug-23
 
 use strict;
+use vars qw($pid);
+use subs qw(killssh);
 use IO::Handle;
 use Net::SSH qw(sshopen2);
 use FS::UID qw(adminsuidsetup);
@@ -25,12 +27,20 @@ my($shellmachine)=shift or die &usage;
 #causing trouble for some folks
 #$SIG{CHLD} = sub { wait() };
 
+$SIG{HUP} = \&killssh;
+$SIG{INT} = \&killssh;
+$SIG{QUIT} = \&killssh;
+$SIG{TERM} = \&killssh;
+$SIG{PIPE} = \&killssh;
+
+sub killssh { kill 'TERM', $pid if $pid; exit; };
+
 my($fs_passwdd)="/usr/local/sbin/fs_passwdd";
 
 while (1) {
   my($reader,$writer)=(new IO::Handle, new IO::Handle);
   $writer->autoflush(1);
-  sshopen2($shellmachine,$reader,$writer,$fs_passwdd);
+  $pid = sshopen2($shellmachine,$reader,$writer,$fs_passwdd);
   while (1) {
     my($username,$old_password,$new_password,$new_gecos,$new_shell);
     defined($username=<$reader>) or last;
