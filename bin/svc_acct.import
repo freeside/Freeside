@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct.import,v 1.6 1999-07-08 01:49:00 ivan Exp $
+# $Id: svc_acct.import,v 1.7 1999-07-08 02:32:26 ivan Exp $
 #
 # ivan@sisd.com 98-mar-9
 #
@@ -17,7 +17,10 @@
 # don't import /var/spool/freeside/conf/shells!  ivan@sisd.com 98-aug-13
 #
 # $Log: svc_acct.import,v $
-# Revision 1.6  1999-07-08 01:49:00  ivan
+# Revision 1.7  1999-07-08 02:32:26  ivan
+# import fix, noticed by Ben Leibig and Joel Griffiths
+#
+# Revision 1.6  1999/07/08 01:49:00  ivan
 # updates to avoid -w warnings from Joel Griffiths <griff@aver-computer.com>
 #
 # Revision 1.5  1999/03/25 08:42:19  ivan
@@ -115,14 +118,16 @@ sub menu_svc {
 }
 sub getpart {
   $^W=0; # Term::Query isn't -w-safe
-  query "Enter part number:", 'irk', [ keys %part_svc ];
+  my $return = query "Enter part number:", 'irk', [ keys %part_svc ];
   $^W=1;
+  $return;
 }
 sub getvalue {
   my $prompt = shift;
   $^W=0; # Term::Query isn't -w-safe
-  query $prompt, '';
+  my $return = query $prompt, '';
   $^W=1;
+  $return;
 }
 
 print "\n\n";
