@@ -11,7 +11,6 @@ WriteMakefile(
     'PREREQ_PM'     => {
                          'Business::CreditCard' => 0,
                          'HTTP::BrowserDetect' => 0,
-                         'HTTP::Headers::UserAgent' => 3,
                          'Text::Template' => 0,
                          'FS::SelfService' => 0,
                        },
