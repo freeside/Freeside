@@ -185,7 +185,7 @@ first time, the suggested order will tend to reduce the number of forward
 references."
 
 If you've never used OO modules before,
-http://www.cpan.org/doc/FMTEYEWTK/easy_objects.html might help you out.
+http://www.perl.com/doc/FMTEYEWTK/easy_objects.html might help you out.
 
 =head1 DESCRIPTION
 
