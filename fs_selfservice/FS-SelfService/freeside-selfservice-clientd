@@ -19,9 +19,10 @@ use IO::File;
 my $tag = scalar(@ARGV) ? '.'.shift : '';
 
 use vars qw( $Debug );
-$Debug = 2; #2 will turn on child logging, 3 will log packet contents,
-            #including potentially compromising information, 4 will log
-            #receipts of all packets from server including keepalives (big!)
+$Debug = 2; #2 will turn on child logging
+            #3 will log packet contents,#including passwords
+            #4 will log receipts of all packets from server including
+            #  keepalives (big!)
 
 my $socket = "/usr/local/freeside/selfservice_socket$tag";
 my $pid_file = "$socket.pid";

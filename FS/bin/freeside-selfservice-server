@@ -25,8 +25,8 @@ use FS::Conf;
 use FS::cust_bill;
 use FS::cust_pkg;
 
-$Debug = 1; # >= 2 will log packet contents, including potentially compromising
-            # information
+$Debug = 1; # 2 will turn on more logging
+            # 3 will log packet contents, including passwords
 
 $shutdown = 0;
 $max_kids = '10'; #?
@@ -73,7 +73,9 @@ while (1) {
       &shutdown if $shutdown;
       if ( $keepalives && $keepalive_count++ > 10 ) {
         $keepalive_count = 0;
+        lock_write;
         nstore_fd( { _token => '_keepalive' }, $writer );
+        unlock_write;
       }
       next;
     }
@@ -96,7 +98,7 @@ while (1) {
     }
     warn "packet received\n".
          join('', map { " $_=>$packet->{$_}\n" } keys %$packet )
-      if $Debug > 1;
+      if $Debug > 2;
 
     if ( $packet->{_packet} eq '_enable_keepalive' ) {
       warn "enabling keep alives\n" if $Debug;
@@ -136,8 +138,8 @@ while (1) {
       }
       $rv->{_token} = $packet->{_token}; #identifier
 
-      warn "sending response\n" if $Debug;
       lock_write;
+      warn "sending response\n" if $Debug;
       nstore_fd($rv, $writer) or die "FATAL: can't send response: $!";
       $writer->flush or die "FATAL: can't flush: $!";
       unlock_write;
@@ -148,6 +150,7 @@ while (1) {
 
   }
 
+  &shutdown if $shutdown;
   warn "connection lost, reconnecting\n" if $Debug;
   sleep 3;
 
@@ -229,10 +232,12 @@ sub init {
 }
 
 sub shutdown {
+  &reap_kids;
   my $wait = 12; #wait up to 1 minute
   while ( $kids > 0 && $wait-- ) {
     warn "waiting for $kids children to terminate";
     sleep 5;
+    &reap_kids;
   }
   warn "abandoning $kids children" if $kids;
   kill 'TERM', $ssh_pid if $ssh_pid;
@@ -261,6 +266,8 @@ sub _do_logmsg {
 }
 
 sub lock_write {
+  warn "locking $lock_file mutex for write to write stream\n" if $Debug > 1;
+
   #broken on freebsd?
   #flock($writer, LOCK_EX) or die "FATAL: can't lock write stream: $!";
 
@@ -269,6 +276,8 @@ sub lock_write {
 }
 
 sub unlock_write {
+  warn "unlocking $lock_file mutex\n" if $Debug > 1;
+
   #broken on freebsd?
   #flock($writer, LOCK_UN) or die "WARNING: can't release write lock: $!";
 
