@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# part_svc.cgi: browse part_pkg
+# $Id: part_pkg.cgi,v 1.2 1998-11-21 07:00:32 ivan Exp $
 #
 # ivan@sisd.com 97-dec-5,9
 #
@@ -8,29 +8,34 @@
 #	bmccane@maxbaud.net	98-apr-3
 #
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
+#
+# $Log: part_pkg.cgi,v $
+# Revision 1.2  1998-11-21 07:00:32  ivan
+# visual
+#
 
 use strict;
-use CGI::Base;
+use CGI;
 use FS::UID qw(cgisuidsetup swapuid);
 use FS::Record qw(qsearch qsearchs);
-use FS::CGI qw(header menubar);
+use FS::CGI qw(header menubar popurl table);
+use FS::part_pkg;
+use FS::pkg_svc;
+use FS::part_svc;
 
-my($cgi) = new CGI::Base;
-$cgi->get;
+my($cgi) = new CGI;
 
 &cgisuidsetup($cgi);
 
-SendHeaders(); # one guess.
-
-print header("Package Part Listing",menubar(
-  'Main Menu' => '../',
-  'Add new package' => "../edit/part_pkg.cgi",
-)), <<END;
-    <BR>Click on package part number to edit.
+print $cgi->header, header("Package Part Listing",menubar(
+  'Main Menu' => popurl(2),
+  'Add new package' => popurl(2). "/edit/part_pkg.cgi",
+)), "One or more services are grouped together into a package and given",
+  " pricing information. Customers purchase packages, not services.<BR><BR>", 
+  table, <<END;
     <TABLE BORDER>
       <TR>
-        <TH><FONT SIZE=-1>Part #</FONT></TH>
-        <TH>Package</TH>
+        <TH COLSPAN=2>Package</TH>
         <TH>Comment</TH>
         <TH><FONT SIZE=-1>Setup Fee</FONT></TH>
         <TH><FONT SIZE=-1>Freq.</FONT></TH>
@@ -41,6 +46,7 @@ print header("Package Part Listing",menubar(
 END
 
 my($part_pkg);
+my($p)=popurl(2);
 foreach $part_pkg ( sort { 
   $a->getfield('pkgpart') <=> $b->getfield('pkgpart')
 } qsearch('part_pkg',{}) ) {
@@ -50,10 +56,10 @@ foreach $part_pkg ( sort {
   my($rowspan)=scalar(@pkg_svc);
   print <<END;
       <TR>
-        <TD ROWSPAN=$rowspan><A HREF="../edit/part_pkg.cgi?$hashref->{pkgpart}">
+        <TD ROWSPAN=$rowspan><A HREF="$p/edit/part_pkg.cgi?$hashref->{pkgpart}">
           $hashref->{pkgpart}
         </A></TD>
-        <TD ROWSPAN=$rowspan>$hashref->{pkg}</TD>
+        <TD ROWSPAN=$rowspan><A HREF="$p/edit/part_pkg.cgi?$hashref->{pkgpart}">$hashref->{pkg}</A></TD>
         <TD ROWSPAN=$rowspan>$hashref->{comment}</TD>
         <TD ROWSPAN=$rowspan>$hashref->{setup}</TD>
         <TD ROWSPAN=$rowspan>$hashref->{freq}</TD>
@@ -61,12 +67,14 @@ foreach $part_pkg ( sort {
 END
 
   my($pkg_svc);
+  my($n)="";
   foreach $pkg_svc ( @pkg_svc ) {
     my($svcpart)=$pkg_svc->getfield('svcpart');
     my($part_svc) = qsearchs('part_svc',{'svcpart'=> $svcpart });
-    print qq!<TD><A HREF="../edit/part_svc.cgi?$svcpart">!,
+    print $n,qq!<TD><A HREF="../edit/part_svc.cgi?$svcpart">!,
           $part_svc->getfield('svc'),"</A></TD><TD>",
-          $pkg_svc->getfield('quantity'),"</TD></TR><TR>\n";
+          $pkg_svc->getfield('quantity'),"</TD></TR>\n";
+    $n="<TR>";
   }
 
   print "</TR>";
@@ -74,7 +82,6 @@ END
 
 print <<END;
     </TR></TABLE>
-    </CENTER>
   </BODY>
 </HTML>
 END
