@@ -24,5 +24,8 @@ based on Freeside:
   - Internationalization wrt addresses (cust_main, cust_main_county)
 Thanks!
 
+Mark Williamson <mark.williamson@ebbs.com.au> and Roger Mangraviti
+<rem@atu.com.au> contributed state/provence listings for Australia.
+
 Everything else is my (Ivan Kohler <ivan@sisd.com>) fault.
 
