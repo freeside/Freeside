@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# cust_credit.cgi: Add a credit (output form)
+# $Id: cust_credit.cgi,v 1.2 1998-12-17 06:16:59 ivan Exp $
 #
 # Usage: cust_credit.cgi custnum [ -paybatch ]
 #        http://server.name/path/cust_credit?custnum [ -paybatch ]
@@ -23,34 +23,33 @@
 # ivan@voicenet.com 97-apr-21
 #
 # rewrite ivan@sisd.com 98-mar-16
+#
+# $Log: cust_credit.cgi,v $
+# Revision 1.2  1998-12-17 06:16:59  ivan
+# fix double // in relative URLs, s/CGI::Base/CGI/;
+#
 
 use strict;
 use Date::Format;
-use CGI::Base qw(:DEFAULT :CGI); #CGI module
-use FS::UID qw(cgisuidsetup getotaker);
+use CGI;
+use CGI::Carp qw(fatalsToBrowser);
+use FS::UID qw(cgisuidsetup getotaker popurl);
+use FS::CGI qw(header popurl);
 
-my($cgi) = new CGI::Base;
-$cgi->get;
+my $cgi = new CGI;
+
 cgisuidsetup($cgi);
 
-#untaint custnum
-$QUERY_STRING =~ /^(\d+)$/;
+my($query) = $cgi->keywords;
+$query =~ /^(\d+)$/;
 my($custnum)=$1;
 
-#untaint otaker
 my($otaker)=getotaker;
 
-SendHeaders(); # one guess.
-print <<END;
-<HTML>
-  <HEAD>
-    <TITLE>Post Credit</TITLE>
-  </HEAD>
-  <BODY>
-    <CENTER>
-    <H1>Post Credit</H1>
-    </CENTER>
-    <FORM ACTION="process/cust_credit.cgi" METHOD=POST>
+my $p1 = popurl(1);
+
+print $cgi->header, header("Post Credit", ''), <<END;
+    <FORM ACTION="${p1}process/cust_credit.cgi" METHOD=POST>
     <HR><PRE>
 END
 

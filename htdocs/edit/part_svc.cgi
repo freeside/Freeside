@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: part_svc.cgi,v 1.3 1998-11-21 06:43:26 ivan Exp $
+# $Id: part_svc.cgi,v 1.4 1998-12-17 06:17:07 ivan Exp $
 #
 # ivan@sisd.com 97-nov-14
 #
@@ -10,7 +10,10 @@
 # use FS::CGI, added inline documentation ivan@sisd.com 98-jul-12
 #
 # $Log: part_svc.cgi,v $
-# Revision 1.3  1998-11-21 06:43:26  ivan
+# Revision 1.4  1998-12-17 06:17:07  ivan
+# fix double // in relative URLs, s/CGI::Base/CGI/;
+#
+# Revision 1.3  1998/11/21 06:43:26  ivan
 # visual
 #
 
@@ -40,8 +43,8 @@ my($hashref)=$part_svc->hashref;
 my $p = popurl(2);
 print $cgi->header, header("$action Service Definition", menubar(
   'Main Menu' => $p,
-  'View all services' => "$p/browse/part_svc.cgi",
-)), '<FORM ACTION="', popurl(1), '/process/part_svc.cgi" METHOD=POST>';
+  'View all services' => "${p}browse/part_svc.cgi",
+)), '<FORM ACTION="', popurl(1), 'process/part_svc.cgi" METHOD=POST>';
 
 print qq!<INPUT TYPE="hidden" NAME="svcpart" VALUE="$hashref->{svcpart}">!,
       "Service Part #", $hashref->{svcpart} ? $hashref->{svcpart} : "(NEW)";

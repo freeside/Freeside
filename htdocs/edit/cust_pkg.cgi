@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# cust_pkg.cgi: Add/edit packages (output form)
+# $Id: cust_pkg.cgi,v 1.2 1998-12-17 06:17:04 ivan Exp $
 #
 # this is for changing packages around, not editing things within the package
 #
@@ -23,15 +23,21 @@
 #
 # fixed a pretty cool bug from above which caused a visual glitch ivan@sisd.com
 # 98-jun-1
+#
+# $Log: cust_pkg.cgi,v $
+# Revision 1.2  1998-12-17 06:17:04  ivan
+# fix double // in relative URLs, s/CGI::Base/CGI/;
+#
 
 use strict;
-use CGI::Base qw(:DEFAULT :CGI); # CGI module
+use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup getotaker);
 use FS::Record qw(qsearch qsearchs);
+use FS::CGI qw(header popurl);
+use FS::part_pkg;
 
-my($cgi) = new CGI::Base;
-$cgi->get;
+my($cgi) = new CGI;
 &cgisuidsetup($cgi);
 
 my(%pkg,%comment);
@@ -41,22 +47,16 @@ foreach (qsearch('part_pkg', {})) {
 }
 
 #untaint custnum
-$QUERY_STRING =~ /^(\d+)$/;
+
+my($query) = $cgi->keywords;
+$query =~ /^(\d+)$/;
 my($custnum)=$1;
 
 my($otaker)=&getotaker;
 
-SendHeaders();
-print <<END;
-<HTML>   
-  <HEAD>
-    <TITLE>Add/Edit Packages</TITLE>
-  </HEAD>
-  <BODY>
-    <CENTER>
-    <H1>Add/Edit Packages</H1>
-    </CENTER>
-    <FORM ACTION="process/cust_pkg.cgi" METHOD=POST>
+my $p1 = popurl(1);
+print $cgi->header, header("Add/Edit Packages", ''), <<END;
+    <FORM ACTION="${p1}process/cust_pkg.cgi" METHOD=POST>
     <HR>
 END
 

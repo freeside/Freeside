@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# svc_domain.cgi: Add domain (output form)
+# $Id: svc_domain.cgi,v 1.3 1998-12-17 06:17:12 ivan Exp $
 #
 # Usage: svc_domain.cgi pkgnum{pkgnum}-svcpart{svcpart}
 #        http://server.name/path/svc_domain.cgi?pkgnum{pkgnum}-svcpart{svcpart}
@@ -17,7 +17,10 @@
 # no GOV in instructions ivan@sisd.com 98-jul-17
 #
 # $Log: svc_domain.cgi,v $
-# Revision 1.2  1998-11-13 09:56:48  ivan
+# Revision 1.3  1998-12-17 06:17:12  ivan
+# fix double // in relative URLs, s/CGI::Base/CGI/;
+#
+# Revision 1.2  1998/11/13 09:56:48  ivan
 # change configuration file layout to support multiple distinct databases (with
 # own set of config files, export, etc.)
 #
@@ -26,6 +29,7 @@ use strict;
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup getotaker);
+use FS::CGI qw(header popurl);
 use FS::Record qw(qsearch qsearchs);
 use FS::svc_domain qw(fields);
 
@@ -84,16 +88,9 @@ my($domain)=(
   $svc_domain->domain,
 );
 
-print $cgi->header, <<END;
-<HTML>
-  <HEAD>
-    <TITLE>$action $svc</TITLE>
-  </HEAD>
-  <BODY>
-    <CENTER>
-    <H1>$action $svc</H1>
-    </CENTER><HR>
-    <FORM ACTION="process/svc_domain.cgi" METHOD=POST>
+my $p1 = popurl(1);
+print $cgi->header, header("$action $svc", ''), <<END;
+    <FORM ACTION="${p1}process/svc_domain.cgi" METHOD=POST>
       <INPUT TYPE="hidden" NAME="svcnum" VALUE="$svcnum">
       <INPUT TYPE="hidden" NAME="pkgnum" VALUE="$pkgnum">
       <INPUT TYPE="hidden" NAME="svcpart" VALUE="$svcpart">

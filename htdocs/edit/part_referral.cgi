@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# agent.cgi: Add/Edit referral (output form)
+# $Id: part_referral.cgi,v 1.2 1998-12-17 06:17:06 ivan Exp $
 #
 # ivan@sisd.com 98-feb-23
 #
@@ -10,21 +10,23 @@
 # confisuing typo on submit button ivan@sisd.com 98-jun-14
 #
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
+#
+# $Log: part_referral.cgi,v $
+# Revision 1.2  1998-12-17 06:17:06  ivan
+# fix double // in relative URLs, s/CGI::Base/CGI/;
+#
 
 use strict;
-use CGI::Base;
+use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
 use FS::Record qw(qsearch qsearchs);
 use FS::part_referral;
 use FS::CGI qw(header menubar);
 
-my($cgi) = new CGI::Base;
-$cgi->get;
+my($cgi) = new CGI;
 
 &cgisuidsetup($cgi);
-
-SendHeaders(); # one guess.
 
 my($part_referral,$action);
 if ( $cgi->var('QUERY_STRING') =~ /^(\d+)$/ ) { #editing
@@ -36,11 +38,12 @@ if ( $cgi->var('QUERY_STRING') =~ /^(\d+)$/ ) { #editing
 }
 my($hashref)=$part_referral->hashref;
 
-print header("$action Referral", menubar(
-  'Main Menu' => '../',
-  'View all referrals' => "../browse/part_referral.cgi",
+my $p1 = popurl(1);
+print $cgi->header, header("$action Referral", menubar(
+  'Main Menu' => popurl(2),
+  'View all referrals' => popurl(2). "browse/part_referral.cgi",
 )), <<END;
-    <FORM ACTION="process/part_referral.cgi" METHOD=POST>
+    <FORM ACTION="${p1}process/part_referral.cgi" METHOD=POST>
 END
 
 #display

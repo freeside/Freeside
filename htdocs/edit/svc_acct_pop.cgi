@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# svc_acct_pop.cgi: Add/Edit pop (output form)
+# $Id: svc_acct_pop.cgi,v 1.3 1998-12-17 06:17:10 ivan Exp $
 #
 # ivan@sisd.com 98-mar-8 
 #
@@ -10,7 +10,10 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: svc_acct_pop.cgi,v $
-# Revision 1.2  1998-11-13 09:56:47  ivan
+# Revision 1.3  1998-12-17 06:17:10  ivan
+# fix double // in relative URLs, s/CGI::Base/CGI/;
+#
+# Revision 1.2  1998/11/13 09:56:47  ivan
 # change configuration file layout to support multiple distinct databases (with
 # own set of config files, export, etc.)
 #
@@ -37,11 +40,12 @@ if ( $cgi->query_string =~ /^(\d+)$/ ) { #editing
 }
 my($hashref)=$svc_acct_pop->hashref;
 
+my $p1 = popurl(1);
 print $cgi->header, header("$action POP", menubar(
-  'Main Menu' => '../',
-  'View all POPs' => "../browse/svc_acct_pop.cgi",
+  'Main Menu' => popurl(2),
+  'View all POPs' => popurl(2). "browse/svc_acct_pop.cgi",
 )), <<END;
-    <FORM ACTION="process/svc_acct_pop.cgi" METHOD=POST>
+    <FORM ACTION="${p1}process/svc_acct_pop.cgi" METHOD=POST>
 END
 
 #display

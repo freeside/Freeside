@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main_county.cgi,v 1.2 1998-11-18 09:01:39 ivan Exp $
+# $Id: cust_main_county.cgi,v 1.3 1998-12-17 06:17:02 ivan Exp $
 #
 # ivan@sisd.com 97-dec-13-16
 #
@@ -11,7 +11,10 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 # 
 # $Log: cust_main_county.cgi,v $
-# Revision 1.2  1998-11-18 09:01:39  ivan
+# Revision 1.3  1998-12-17 06:17:02  ivan
+# fix double // in relative URLs, s/CGI::Base/CGI/;
+#
+# Revision 1.2  1998/11/18 09:01:39  ivan
 # i18n! i18n!
 #
 
@@ -30,7 +33,7 @@ my($cgi) = new CGI;
 print $cgi->header, header("Edit tax rates", menubar(
   'Main Menu' => popurl(2),
 )), qq!<FORM ACTION="!, popurl(1),
-    qq!/process/cust_main_county.cgi" METHOD=POST>!, table, <<END;
+    qq!process/cust_main_county.cgi" METHOD=POST>!, table, <<END;
       <TR>
         <TH><FONT SIZE=-1>Country</FONT></TH>
         <TH><FONT SIZE=-1>State</FONT></TH>

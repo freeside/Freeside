@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct.cgi,v 1.2 1998-12-16 05:17:28 ivan Exp $
+# $Id: svc_acct.cgi,v 1.3 1998-12-17 06:17:08 ivan Exp $
 #
 # Usage: svc_acct.cgi {svcnum} | pkgnum{pkgnum}-svcpart{svcpart}
 #        http://server.name/path/svc_acct.cgi? {svcnum} | pkgnum{pkgnum}-svcpart{svcpart}
@@ -16,25 +16,32 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # use conf/shells and dbdef username length ivan@sisd.com 98-jul-13
+#
+# $Log: svc_acct.cgi,v $
+# Revision 1.3  1998-12-17 06:17:08  ivan
+# fix double // in relative URLs, s/CGI::Base/CGI/;
+#
 
 use strict;
 use vars qw($conf);
-use CGI::Base qw(:DEFAULT :CGI);
+use CGI;
+use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup getotaker);
+use FS::CGI qw(header popurl);
 use FS::Record qw(qsearch qsearchs);
 use FS::svc_acct qw(fields);
 use FS::Conf;
 
+my($cgi) = new CGI;
+&cgisuidsetup($cgi);
+
 $conf = new FS::Conf;
 my @shells = $conf->config('shells');
 
-my($cgi) = new CGI::Base;
-$cgi->get;
-&cgisuidsetup($cgi);
-
 my($action,$svcnum,$svc_acct,$pkgnum,$svcpart,$part_svc);
 
-if ( $QUERY_STRING =~ /^(\d+)$/ ) { #editing
+my($query) = $cgi->keywords;
+if ( $query =~ /^(\d+)$/ ) { #editing
 
   $svcnum=$1;
   $svc_acct=qsearchs('svc_acct',{'svcnum'=>$svcnum})
@@ -55,7 +62,7 @@ if ( $QUERY_STRING =~ /^(\d+)$/ ) { #editing
 
   $svc_acct=create FS::svc_acct({}); 
 
-  foreach $_ (split(/-/,$QUERY_STRING)) {
+  foreach $_ (split(/-/,$query)) {
     $pkgnum=$1 if /^pkgnum(\d+)$/;
     $svcpart=$1 if /^svcpart(\d+)$/;
   }
@@ -97,17 +104,9 @@ my($username,$password)=(
 my($ulen)=$svc_acct->dbdef_table->column('username')->length;
 my($ulen2)=$ulen+2;
 
-SendHeaders();
-print <<END;
-<HTML>
-  <HEAD>
-    <TITLE>$action $svc account</TITLE>
-  </HEAD>
-  <BODY>
-    <CENTER>
-    <H1>$action $svc account</H1>
-    </CENTER><HR>
-    <FORM ACTION="process/svc_acct.cgi" METHOD=POST>
+my $p1 = popurl(1);
+print $cgi->header, header("$action $svc account"), <<END;
+    <FORM ACTION="${p1}process/svc_acct.cgi" METHOD=POST>
       <INPUT TYPE="hidden" NAME="svcnum" VALUE="$svcnum">
       <INPUT TYPE="hidden" NAME="pkgnum" VALUE="$pkgnum">
       <INPUT TYPE="hidden" NAME="svcpart" VALUE="$svcpart">

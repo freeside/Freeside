@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: agent.cgi,v 1.2 1998-11-23 07:52:08 ivan Exp $
+# $Id: agent.cgi,v 1.3 1998-12-17 06:16:57 ivan Exp $
 #
 # ivan@sisd.com 97-dec-12
 #
@@ -11,7 +11,10 @@
 # use FS::CGI, added inline documentation ivan@sisd.com 98-jul-12
 #
 # $Log: agent.cgi,v $
-# Revision 1.2  1998-11-23 07:52:08  ivan
+# Revision 1.3  1998-12-17 06:16:57  ivan
+# fix double // in relative URLs, s/CGI::Base/CGI/;
+#
+# Revision 1.2  1998/11/23 07:52:08  ivan
 # *** empty log message ***
 #
 
@@ -39,10 +42,12 @@ if ( $query =~ /^(\d+)$/ ) { #editing
 }
 my($hashref)=$agent->hashref;
 
+my $p = popurl(2);
+
 print $cgi->header, header("$action Agent", menubar(
-  'Main Menu' => popurl(2),
-  'View all agents' => popurl(2). '/browse/agent.cgi',
-)), '<FORM ACTION="', popurl(1), '/process/agent.cgi" METHOD=POST>';
+  'Main Menu' => $p,
+  'View all agents' => $p. 'browse/agent.cgi',
+)), '<FORM ACTION="', popurl(1), 'process/agent.cgi" METHOD=POST>';
 
 print qq!<INPUT TYPE="hidden" NAME="agentnum" VALUE="$hashref->{agentnum}">!,
       "Agent #", $hashref->{agentnum} ? $hashref->{agentnum} : "(NEW)";

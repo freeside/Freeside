@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# cust_pay.cgi: Add a payment (output form)
+# $Id: cust_pay.cgi,v 1.2 1998-12-17 06:17:03 ivan Exp $
 #
 # Usage: cust_pay.cgi invnum
 #        http://server.name/path/cust_pay.cgi?invnum
@@ -12,31 +12,29 @@
 # ivan@voicenet.com 96-dec-11
 #
 # rewrite ivan@sisd.com 98-mar-16
+#
+# $Log: cust_pay.cgi,v $
+# Revision 1.2  1998-12-17 06:17:03  ivan
+# fix double // in relative URLs, s/CGI::Base/CGI/;
+#
 
 use strict;
 use Date::Format;
-use CGI::Base qw(:DEFAULT :CGI);
+use CGI;
+use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
+use FS::CGI qw(header popurl);
 
-my($cgi) = new CGI::Base;
-$cgi->get;
+my($cgi) = new CGI;
 cgisuidsetup($cgi);
 
-#untaint invnum
-$QUERY_STRING =~ /^(\d+)$/;
+my($query) = $cgi->keywords;
+$query =~ /^(\d+)$/;
 my($invnum)=$1;
 
-SendHeaders(); # one guess.
-print <<END;
-<HTML>
-  <HEAD>
-    <TITLE>Enter payment</TITLE>
-  </HEAD>
-  <BODY>
-    <CENTER>
-    <H1>Enter payment</H1>
-    </CENTER>
-    <FORM ACTION="process/cust_pay.cgi" METHOD=POST>
+my $p1 = popurl(1);
+print $cgi->header, header("Enter payment", ''), <<END;
+    <FORM ACTION="${p1}process/cust_pay.cgi" METHOD=POST>
     <HR><PRE>
 END
 

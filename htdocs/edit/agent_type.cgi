@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: agent_type.cgi,v 1.5 1998-11-21 07:58:27 ivan Exp $
+# $Id: agent_type.cgi,v 1.6 1998-12-17 06:16:58 ivan Exp $
 #
 # agent_type.cgi: Add/Edit agent type (output form)
 #
@@ -13,7 +13,10 @@
 # use FS::CGI, added inline documentation ivan@sisd.com 98-jul-12
 #
 # $Log: agent_type.cgi,v $
-# Revision 1.5  1998-11-21 07:58:27  ivan
+# Revision 1.6  1998-12-17 06:16:58  ivan
+# fix double // in relative URLs, s/CGI::Base/CGI/;
+#
+# Revision 1.5  1998/11/21 07:58:27  ivan
 # package names link to them
 #
 # Revision 1.4  1998/11/21 07:45:19  ivan
@@ -54,9 +57,9 @@ my($hashref)=$agent_type->hashref;
 
 my($p)=popurl(2);
 print $cgi->header, header("$action Agent Type", menubar(
-  'Main Menu' => "$p/",
-  'View all agent types' => "$p/browse/agent_type.cgi",
-)), '<FORM ACTION="', popurl(1), '/process/agent_type.cgi" METHOD=POST>';
+  'Main Menu' => "$p",
+  'View all agent types' => "${p}browse/agent_type.cgi",
+)), '<FORM ACTION="', popurl(1), 'process/agent_type.cgi" METHOD=POST>';
 
 print qq!<INPUT TYPE="hidden" NAME="typenum" VALUE="$hashref->{typenum}">!,
       "Agent Type #", $hashref->{typenum} ? $hashref->{typenum} : "(NEW)";
@@ -78,7 +81,7 @@ foreach $part_pkg ( qsearch('part_pkg',{}) ) {
           ? 'CHECKED '
           : '',
         qq!"VALUE="ON"> !,
-    qq!<A HREF="$p/edit/part_pkg.cgi?!, $part_pkg->pkgpart, 
+    qq!<A HREF="${p}edit/part_pkg.cgi?!, $part_pkg->pkgpart, 
     '">', $part_pkg->getfield('pkg'), '</A>',
   ;
 }

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct_sm.cgi,v 1.2 1998-12-16 05:19:15 ivan Exp $
+# $Id: svc_acct_sm.cgi,v 1.3 1998-12-17 06:17:11 ivan Exp $
 #
 # Usage: svc_acct_sm.cgi {svcnum} | pkgnum{pkgnum}-svcpart{svcpart}
 #        http://server.name/path/svc_acct_sm.cgi? {svcnum} | pkgnum{pkgnum}-svcpart{svcpart}
@@ -35,29 +35,31 @@
 # /var/spool/freeside/conf/domain ivan@sisd.com 98-jul-26
 #
 # $Log: svc_acct_sm.cgi,v $
-# Revision 1.2  1998-12-16 05:19:15  ivan
+# Revision 1.3  1998-12-17 06:17:11  ivan
+# fix double // in relative URLs, s/CGI::Base/CGI/;
+#
+# Revision 1.2  1998/12/16 05:19:15  ivan
 # use FS::Conf
 #
 
 use strict;
 use vars qw($conf);
-use CGI::Base qw(:DEFAULT :CGI);
+use CGI;
+use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
+use FS::CGI qw(header popurl);
 use FS::Record qw(qsearch qsearchs);
 use FS::svc_acct_sm qw(fields);
 use FS::Conf;
 
+my($cgi) = new CGI;
+&cgisuidsetup($cgi);
+
 $conf = new FS::Conf;
 my $mydomain = $conf->config('domain');
 
-my($cgi) = new CGI::Base;
-$cgi->get;
-&cgisuidsetup($cgi);
-
-SendHeaders(); # one guess.
-
 my($action,$svcnum,$svc_acct_sm,$pkgnum,$svcpart,$part_svc);
-if ( $QUERY_STRING =~ /^(\d+)$/ ) { #editing
+if ( $cgi->query_string =~ /^(\d+)$/ ) { #editing
 
   $svcnum=$1;
   $svc_acct_sm=qsearchs('svc_acct_sm',{'svcnum'=>$svcnum})
@@ -78,7 +80,7 @@ if ( $QUERY_STRING =~ /^(\d+)$/ ) { #editing
 
   $svc_acct_sm=create FS::svc_acct_sm({});
 
-  foreach $_ (split(/-/,$QUERY_STRING)) { #get & untaint pkgnum & svcpart
+  foreach $_ (split(/-/,$cgi->query_string)) { #get & untaint pkgnum & svcpart
     $pkgnum=$1 if /^pkgnum(\d+)$/;
     $svcpart=$1 if /^svcpart(\d+)$/;
   }
@@ -157,16 +159,9 @@ if ($pkgnum) {
   die "\$action eq Add, but \$pkgnum is null!\n";
 }
 
-print <<END;
-<HTML>
-  <HEAD>
-    <TITLE>Mail Alias $action</TITLE>
-  </HEAD>
-  <BODY>
-    <CENTER>
-    <H1>Mail Alias $action</H1>
-    </CENTER>
-    <FORM ACTION="process/svc_acct_sm.cgi" METHOD=POST>
+my $p1 = popurl(1);
+print $cgi->header, header("Mail Alias $action", ''), <<END;
+    <FORM ACTION="${p1}process/svc_acct_sm.cgi" METHOD=POST>
 END
 
 #display

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# cust_main.cgi: Edit a customer (output form)
+# $Id: cust_main.cgi,v 1.3 1998-12-17 06:17:00 ivan Exp $
 #
 # Usage: cust_main.cgi custnum
 #        http://server.name/path/cust_main.cgi?custnum
@@ -38,24 +38,28 @@
 #	bmccane@maxbaud.net	98-apr-3
 #
 # fixed one missed day->daytime ivan@sisd.com 98-jul-13
+#
+# $Log: cust_main.cgi,v $
+# Revision 1.3  1998-12-17 06:17:00  ivan
+# fix double // in relative URLs, s/CGI::Base/CGI/;
+#
 
 use strict;
-use CGI::Base;
+use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup getotaker);
 use FS::Record qw(qsearch qsearchs);
+use FS::CGI qw(header popurl);
 use FS::cust_main;
 
-my($cgi) = new CGI::Base;
-$cgi->get;
+my($cgi) = new CGI;
 
 cgisuidsetup($cgi);
 
-SendHeaders(); # one guess.
-
 #get record
 my($custnum,$action,$cust_main);
-if ( $cgi->var('QUERY_STRING') =~ /^(\d+)$/ ) { #editing
+my($query) = $cgi->keywords;
+if ( $query =~ /^(\d+)$/ ) { #editing
   $custnum=$1;
   $cust_main = qsearchs('cust_main',{'custnum'=>$custnum});
   $action='Edit';
@@ -66,16 +70,9 @@ if ( $cgi->var('QUERY_STRING') =~ /^(\d+)$/ ) { #editing
   $action='Add';
 }
 
-print <<END;
-<HTML>
-  <HEAD>
-    <TITLE>Customer $action</TITLE>
-  </HEAD>
-  <BODY>
-    <CENTER>
-    <H1>Customer $action</H1>
-    </CENTER>
-    <FORM ACTION="process/cust_main.cgi" METHOD=POST>
+my $p1 = popurl(1);'
+print $cgi->header, header("Customer $action", ''), <<END;
+    <FORM ACTION="${p1}process/cust_main.cgi" METHOD=POST>
     <PRE>
 END
 
