@@ -13,10 +13,18 @@ END
 while (<>) {
   next if /^(#|\s*$|\$INCLUDE\s+)/;
   next if /^(VALUE|VENDOR|BEGIN\-VENDOR|END\-VENDOR)\s+/;
-  /^(ATTRIBUTE|ATTRIB_NMC)\s+([\w\-]+)\s+/ or die $_;
+  /^(ATTRIBUTE|ATTRIB_NMC)\s+([\w\-\/]+)\s+/ or die $_;
   $attrib = $2;
   $dbname = lc($2);
-  $dbname =~ s/\-/_/g;
+  $dbname =~ s/[\-\/]/_/g;
+  $dbname = substr($dbname,0,24);
+  while ( exists $hash{$dbname} ) {
+    #warn $dbname;
+    $dbname =~ s/(.)$//;
+    my $w = $1;
+    $w =~ tr/_a-z0-9/a-z0-9_/;
+    $dbname = "$dbname$w";
+  }
   $hash{$dbname} = $attrib;
   #print "$2\n";
 }
@@ -25,8 +33,10 @@ foreach ( keys %hash ) {
 #  print "$_\n" if length($_)>24;
 #  print substr($_,0,24),"\n" if length($_)>24; 
 #  $max = length($_) if length($_)>$max;
-#everything >24 is still unique, at least with freeradius comprehensive dataset
-  print "  '". substr($_,0,24). "' => '$hash{$_}',\n";
+# have to fudge things since everything >24 is *not* unique
+
+  #print "  '". substr($_,0,24). "' => '$hash{$_}',\n";
+  print "  '$_' => '$hash{$_}',\n";
 }
 
 print <<END;
