@@ -1067,6 +1067,9 @@ CyberCash is not installed.
 report_badcard - Set this true if you want bad card transactions to
 return an error.  By default, they don't.
 
+force_print - force printing even if invoice has been printed more than once
+every 30 days, and don't increment the `printed' field.
+
 =cut
 
 sub collect {
@@ -1118,7 +1121,8 @@ sub collect {
       my $since = $invoice_time - ( $cust_bill->_date || 0 );
       #warn "$invoice_time ", $cust_bill->_date, " $since";
       if ( $since >= 0 #don't print future invoices
-           && ( $cust_bill->printed * 2592000 ) <= $since
+           && ( ( $cust_bill->printed * 2592000 ) <= $since
+                || $options{'force_print'} )
       ) {
 
         #my @print_text = $cust_bill->print_text; #( date )
@@ -1148,11 +1152,13 @@ sub collect {
                          : "Exit status $? from $lpr";
         }
 
-        my %hash = $cust_bill->hash;
-        $hash{'printed'}++;
-        my $new_cust_bill = new FS::cust_bill(\%hash);
-        my $error = $new_cust_bill->replace($cust_bill);
-        warn "Error updating $cust_bill->printed: $error" if $error;
+        unless ( $options{'force_print'} ) {
+          my %hash = $cust_bill->hash;
+          $hash{'printed'}++;
+          my $new_cust_bill = new FS::cust_bill(\%hash);
+          my $error = $new_cust_bill->replace($cust_bill);
+          warn "Error updating $cust_bill->printed: $error" if $error;
+        }
 
       }
 
@@ -1940,7 +1946,7 @@ sub append_fuzzyfiles {
 
 =head1 VERSION
 
-$Id: cust_main.pm,v 1.52 2001-12-28 14:40:35 ivan Exp $
+$Id: cust_main.pm,v 1.53 2001-12-28 15:14:01 ivan Exp $
 
 =head1 BUGS
 

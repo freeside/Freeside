@@ -92,9 +92,11 @@ foreach $cust_main ( qsearch('cust_main',{} ) ) {
 
     if ( $opt{o} ) {
       print "\n\tCollecting" unless $opt{q};
-      my $error = $cust_main->collect( 'invoice_time'=>$now,
-                                       'batch_card' => $opt{i} ? 'no' : 'yes',
-                                     );
+      my $error = $cust_main->collect(
+        'invoice_time' => $now,
+        'batch_card'   => $opt{i} ? 'no' : 'yes',
+        'force_print'  => 'yes',
+      );
       warn "Error collecting from customer #" . $cust_main->custnum.  ":$error"
         if $error;
     }
