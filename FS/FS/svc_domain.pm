@@ -4,7 +4,7 @@ use strict;
 use vars qw( @ISA $whois_hack $conf $smtpmachine
   $tech_contact $from $to @nameservers @nameserver_ips @template
   @mxmachines @nsmachines $soadefaultttl $soaemail $soaexpire $soamachine
-  $soarefresh $soaretry
+  $soarefresh $soaretry $qshellmachine
 );
 use Carp;
 use Mail::Internet;
@@ -533,7 +533,7 @@ sub submit_internic {
 
 =head1 VERSION
 
-$Id: svc_domain.pm,v 1.17 2001-08-20 11:04:38 ivan Exp $
+$Id: svc_domain.pm,v 1.18 2001-08-20 13:10:31 ivan Exp $
 
 =head1 BUGS
 
