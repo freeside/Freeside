@@ -687,7 +687,7 @@ sub check {
   } elsif ( $self->payby eq 'CHEK' ) {
 
     my $payinfo = $self->payinfo;
-    $payinfo =~ s/[\D\@]//g;
+    $payinfo =~ s/[^\d\@]//g;
     $payinfo =~ /^(\d+)\@(\d{9})$/ or return 'invalid echeck account@aba';
     $payinfo = "$1\@$2";
     $self->payinfo($payinfo);
