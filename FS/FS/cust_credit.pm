@@ -141,7 +141,10 @@ posted.
 =cut
 
 sub replace {
-  return "Can't modify credit!"
+  #return "Can't modify credit!"
+  my $self = shift;
+  return "Can't modify closed credit" if $self->closed =~ /^Y/i;
+  $self->SUPER::replace(@_);
 }
 
 =item check
@@ -240,13 +243,9 @@ sub credited {
 
 =back
 
-=head1 VERSION
-
-$Id: cust_credit.pm,v 1.17 2003-08-05 00:20:41 khoff Exp $
-
 =head1 BUGS
 
-The delete method.
+The delete method.  The replace method.
 
 =head1 SEE ALSO
 
