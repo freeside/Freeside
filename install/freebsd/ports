@@ -50,3 +50,7 @@ net-mgmt/p5-NetAddr-IP
 graphics/p5-GD
 textproc/p5-Spreadsheet-WriteExcel
 textproc/p5-Text-CSV_XS
+misc/p5-Locale-SubCountry
+devel/p5-IO-stringy
+textproc/p5-XML-Parser
+

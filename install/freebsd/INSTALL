@@ -18,13 +18,16 @@ portsdb -Uu
 
 portinstall -PR portupgrade
 
+portinstall -PR lang/perl5.8
+/usr/local/bin/use.perl port
+
 for port in `grep -v '^ *#' ports`; do
   #cd /usr/ports/$port
   #make install || exit
-  portinstall -P -R $port
+  portinstall -P -R $port || exit
 done
 
-for a in JavaScript::RPC::Server::CGI Chart::LinesPoints; do perl -MCPAN -e"install $a"; done
+for a in JavaScript::RPC::Server::CGI Chart::LinesPoints Frontier::RPC2; do perl -MCPAN -e"install $a"; done
 
 su -l pgsql -c initdb
 
@@ -46,4 +49,10 @@ su freeside -c '/home/ivan/freeside/bin/populate-msgcat ivan'
 make deploy
 
 #edit apache config, etc.
+
+#mkdir /etc/rc.conf.d
+#add these to /etc/rc.conf.d/apache
+#apache_enable="YES"
+#apache_flags="-DSSL"
+
 
