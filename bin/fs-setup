@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: fs-setup,v 1.10 1998-12-16 06:05:38 ivan Exp $
+# $Id: fs-setup,v 1.11 1999-01-17 03:11:52 ivan Exp $
 #
 # ivan@sisd.com 97-nov-8,9
 #
@@ -32,7 +32,10 @@
 # fix radius attributes ivan@sisd.com 98-sep-27
 #
 # $Log: fs-setup,v $
-# Revision 1.10  1998-12-16 06:05:38  ivan
+# Revision 1.11  1999-01-17 03:11:52  ivan
+# remove preliminary completehost changes
+#
+# Revision 1.10  1998/12/16 06:05:38  ivan
 # add table cust_main_invoice
 #
 # Revision 1.9  1998/12/15 04:36:29  ivan
@@ -341,9 +344,9 @@ sub tables_hash_hack {
       'columns' => [
         'custnum',  'int',  '',     '',
         'agentnum', 'int',  '',     '',
-        'titlenum', 'int',  'NULL',   '',
+#        'titlenum', 'int',  'NULL',   '',
         'last',     'varchar', '',     $char_d,
-        'middle',   'varchar', 'NULL', $char_d,
+#        'middle',   'varchar', 'NULL', $char_d,
         'first',    'varchar', '',     $char_d,
         'ss',       'char', 'NULL', 11,
         'company',  'varchar', 'NULL', $char_d,
@@ -497,15 +500,15 @@ sub tables_hash_hack {
       'index' => [ [] ],
     },
 
-    'part_title' => {
-      'columns' => [
-        'titlenum',   'int',    '',   '',
-        'title',      'varchar',   '',   $char_d,
-      ],
-      'primary_key' => 'titlenum',
-      'unique' => [ [] ],
-      'index' => [ [] ],
-    },
+#    'part_title' => {
+#      'columns' => [
+#        'titlenum',   'int',    '',   '',
+#        'title',      'varchar',   '',   $char_d,
+#      ],
+#      'primary_key' => 'titlenum',
+#      'unique' => [ [] ],
+#      'index' => [ [] ],
+#    },
 
     'pkg_svc' => {
       'columns' => [
