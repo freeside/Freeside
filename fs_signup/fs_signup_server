@@ -188,9 +188,15 @@ while (1) {
         if $bill_error;
 
       if ( $cust_main->balance > 0 ) {
+
+        #this makes sense.  credit is "un-doing" the invoice
+        $cust_main->credit( $cust_main->balance, 'signup server decline' );
+        $cust_main->apply_credits;
+
         #should check list for errors...
         #$cust_main->suspend;
         $cust_main->cancel;
+
         $error = '_decline';
       }
     }
