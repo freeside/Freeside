@@ -23,7 +23,7 @@ print qq!<A HREF="${p}edit/cust_pay.cgi?$invnum">Enter payments (check/cash) aga
 print qq!<A HREF="${p}misc/print-invoice.cgi?$invnum">Reprint this invoice</A>!.      '<BR><BR>';
 
 print menubar(
-  'View typeset invoice' => "${p}view/cust_bill-ps.cgi?$invnum",
+  'View typeset invoice' => "${p}view/cust_bill-pdf.cgi?$invnum",
 ), '<BR><BR>';
 
 #false laziness with search/cust_bill_event.cgi

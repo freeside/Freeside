@@ -888,9 +888,12 @@ sub print_text {
 
 }
 
-=item print_ps [ TIME [ , TEMPLATE ] ]
+=item print_latex [ TIME [ , TEMPLATE ] ]
 
-Returns an postscript invoice, as a scalar.
+Internal method - returns a filename of a filled-in LaTeX template for this
+invoice (Note: add ".tex" to get the actual filename).
+
+See print_ps and print_pdf for methods that return PostScript and PDF output.
 
 TIME an optional value used to control the printing of overdue messages.  The
 default is now.  It isn't the date of the invoice; that's the `_date' field.
@@ -900,7 +903,7 @@ L<Time::Local> and L<Date::Parse> for conversion functions.
 =cut
 
 #still some false laziness w/print_text
-sub print_ps {
+sub print_latex {
 
   my( $self, $today, $template ) = @_;
   $today ||= time;
@@ -1070,17 +1073,37 @@ sub print_ps {
   print TEX join("\n", @filled_in ), "\n";
   close TEX;
 
+  return $file;
+
+}
+
+=item print_ps [ TIME [ , TEMPLATE ] ]
+
+Returns an postscript invoice, as a scalar.
+
+TIME an optional value used to control the printing of overdue messages.  The
+default is now.  It isn't the date of the invoice; that's the `_date' field.
+It is specified as a UNIX timestamp; see L<perlfunc/"time">.  Also see
+L<Time::Local> and L<Date::Parse> for conversion functions.
+
+=cut
+
+sub print_ps {
+  my $self = shift;
+
+  my $file = $self->print_latex(@_);
+
   #error checking!!
   system('pslatex', "$file.tex");
   system('pslatex', "$file.tex");
-  #system('dvips', '-t', 'letter', "$file.dvi", "$file.ps");
-  system('dvips', '-t', 'letter', "$file.dvi", '-o', "$file.ps" );
+  system('dvips', '-q', '-t', 'letter', "$file.dvi", '-o', "$file.ps" );
 
-  open(POSTSCRIPT, "<$file.ps") or die "can't open $file.ps (probable error in LaTeX template): $!\n";
+  open(POSTSCRIPT, "<$file.ps")
+    or die "can't open $file.ps (probable error in LaTeX template): $!\n";
 
   #rm $file.dvi $file.log $file.aux
-  #unlink("$file.dvi", "$file.log", "$file.aux", "$file.ps");
-  unlink("$file.dvi", "$file.log", "$file.aux");
+  unlink("$file.dvi", "$file.log", "$file.aux", "$file.ps");
+  #unlink("$file.dvi", "$file.log", "$file.aux");
 
   my $ps = '';
   while (<POSTSCRIPT>) {
@@ -1093,7 +1116,50 @@ sub print_ps {
 
 }
 
-# quick subroutine for print_ps
+=item print_pdf [ TIME [ , TEMPLATE ] ]
+
+Returns an PDF invoice, as a scalar.
+
+TIME an optional value used to control the printing of overdue messages.  The
+default is now.  It isn't the date of the invoice; that's the `_date' field.
+It is specified as a UNIX timestamp; see L<perlfunc/"time">.  Also see
+L<Time::Local> and L<Date::Parse> for conversion functions.
+
+=cut
+
+sub print_pdf {
+  my $self = shift;
+
+  my $file = $self->print_latex(@_);
+
+  #system('pdflatex', "$file.tex");
+  #system('pdflatex', "$file.tex");
+  #! LaTeX Error: Unknown graphics extension: .eps.
+
+  #error checking!!
+  system('pslatex', "$file.tex");
+  system('pslatex', "$file.tex");
+
+  #system('dvipdf', "$file.dvi", "$file.pdf" );
+  system("dvips -q -t letter -f $file.dvi | gs -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -sOutputFile=$file.pdf -c save pop -");
+
+  open(PDF, "<$file.pdf")
+    or die "can't open $file.pdf (probably error in LaTeX tempalte: $!\n";
+
+  unlink("$file.dvi", "$file.log", "$file.aux", "$file.pdf");
+
+  my $pdf = '';
+  while (<PDF>) {
+    $pdf .= $_;
+  }
+
+  close PDF;
+
+  return $pdf;
+
+}
+
+# quick subroutine for print_latex
 #
 # There are ten characters that LaTeX treats as special characters, which
 # means that they do not simply typeset themselves: 
