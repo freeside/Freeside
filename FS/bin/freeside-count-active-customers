@@ -1,0 +1,17 @@
+#!/bin/sh
+
+domain=$1
+
+echo "\t
+select count(*) from cust_main where 
+          0 < ( SELECT COUNT(*) FROM cust_pkg
+                       WHERE cust_pkg.custnum = cust_main.custnum
+                         AND ( cust_pkg.cancel IS NULL
+                               OR cust_pkg.cancel = 0
+                             )
+                   )
+            OR 0 = ( SELECT COUNT(*) FROM cust_pkg
+                       WHERE cust_pkg.custnum = cust_main.custnum
+                   );
+" | psql -U freeside -q $domain | head -1
+
