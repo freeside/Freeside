@@ -40,8 +40,8 @@ SIGNUP_REFNUM = 2
 #not changable yet
 FREESIDE_CONF = /usr/local/etc/freeside
 
-VERSION=1.4.1beta1
-TAG=freeside_1_4_1beta1
+VERSION=1.5.0pre1
+TAG=freeside_1_5_0pre1
 
 help:
 	@echo "supported targets: aspdocs masondocs alldocs docs install-docs"
@@ -170,7 +170,7 @@ upload-docs: forcehtmlman
 	scp -pr httemplate/docs cleanwhisker.420.am:/var/www/www.sisd.com/freeside/devdocs
 
 release: upload-docs
-	cd /home/ivan/freeside_current
+	cd /home/ivan/freeside
 	#cvs tag ${TAG}
 	cvs tag -F ${TAG}
 
