@@ -41,7 +41,6 @@ my $tag = scalar(@ARGV) ? shift : '';
 my $pid_file = "/var/run/freeside-selfservice-server.$user.$machine.pid";
 
 my $lock_file = "/usr/local/etc/freeside/selfservice.$machine.writelock";
-open(LOCKFILE,">$lock_file") or die "can't open $lock_file: $!";
 
 &init($user);
 
@@ -201,6 +200,10 @@ sub init {
   #false laziness w/freeside-queued
   my $freeside_gid = scalar(getgrnam('freeside'))
     or die "can't setgid to freeside group\n";
+
+  open(LOCKFILE,">$lock_file") or die "can't open $lock_file: $!";
+  chown $FS::UID::freeside_uid, $freeside_gid, $lock_file;
+
   $) = $freeside_gid;
   $( = $freeside_gid;
   #if freebsd can't setuid(), presumably it can't setgid() either.  grr fleabsd
