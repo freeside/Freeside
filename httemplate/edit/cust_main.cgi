@@ -39,6 +39,12 @@ if ( $cgi->param('error') ) {
   $query =~ /^(\d+)$/;
   $custnum=$1;
   $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } );
+  if ( $cust_main->dbdef_table->column('paycvv')
+       && length($cust_main->paycvv)             ) {
+    my $paycvv = $cust_main->paycvv;
+    $paycvv =~ s/./*/g;
+    $cust_main->paycvv($paycvv);
+  }
   $saved_pkgpart = 0;
   $username = '';
   $password = '';
@@ -61,7 +67,7 @@ my $action = $custnum ? 'Edit' : 'Add';
 # top
 
 my $p1 = popurl(1);
-print header("Customer $action", '');
+print header("Customer $action", '', ' onUnload="myclose()"');
 print qq!<FONT SIZE="+1" COLOR="#ff0000">Error: !, $error, "</FONT>"
   if $error;
 
@@ -400,7 +406,19 @@ if ( $payby_default eq 'HIDE' ) {
   print qq!<TR><TD>Email invoice <INPUT TYPE="text" NAME="invoicing_list" VALUE="$invoicing_list"></TD></TR>!;
 
   print "<TR><TD>Billing type</TD></TR>",
-        "</TABLE>",
+        "</TABLE>", '<script language="JavaScript"><!--
+                       var mywindow = -1;
+                       function myopen(filename,windowname,properties) {
+                         myclose();
+                         mywindow = window.open(filename,windowname,properties);
+                       }
+                       function myclose() {
+                         if ( mywindow != -1 )
+                           mywindow.close();
+                         mywindow = -1;
+                       }
+
+                     //--></script>',
         &table("#cccccc"), "<TR>";
 
   my($payinfo, $payname)=(
@@ -418,6 +436,12 @@ if ( $payby_default eq 'HIDE' ) {
     'COMP' => qq!Complimentary<BR>${r}Approved by<INPUT TYPE="text" NAME="COMP_payinfo" VALUE=""><BR>${r}Exp !. expselect("COMP"),
 );
 
+  if ( $cust_main->dbdef_table->column('paycvv') ) {
+    foreach my $payby ( grep { exists $payby{$_} } qw(CARD DCRD) ) { #1.4/1.5 bs
+      $payby{$payby} .= qq!<BR>CVV2&nbsp;(<A HREF="javascript:myopen('../docs/cvv2.html','cvv2','toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=no,resizable=yes,copyhistory=no,width=480,height=288')">help</A>)&nbsp;<INPUT TYPE="text" NAME=${payby}_paycvv VALUE="" SIZE=4 MAXLENGTH=4>!;
+    }
+  }
+
   my( $account, $aba ) = split('@', $payinfo);
 
   my %paybychecked = (
@@ -429,6 +453,15 @@ if ( $payby_default eq 'HIDE' ) {
     'BILL' => qq!Billing<BR>P.O. <INPUT TYPE="text" NAME="BILL_payinfo" VALUE="$payinfo"><BR><INPUT TYPE="hidden" NAME="BILL_month" VALUE="12"><INPUT TYPE="hidden" NAME="BILL_year" VALUE="2037">Attention<BR><INPUT TYPE="text" NAME="BILL_payname" VALUE="$payname">!,
     'COMP' => qq!Complimentary<BR>${r}Approved by<INPUT TYPE="text" NAME="COMP_payinfo" VALUE="$payinfo"><BR>${r}Exp !. expselect("COMP", $cust_main->paydate),
 );
+
+  if ( $cust_main->dbdef_table->column('paycvv') ) {
+    my $paycvv = $cust_main->paycvv;
+
+    foreach my $payby ( grep { exists $payby{$_} } qw(CARD DCRD) ) { #1.4/1.5 bs
+      $paybychecked{$payby} .= qq!<BR>CVV2&nbsp;(<A HREF="javascript:myopen('../docs/cvv2.html','cvv2','toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=no,resizable=yes,copyhistory=no,width=480,height=288')">help</A>)&nbsp;<INPUT TYPE="text" NAME=${payby}_paycvv VALUE="$paycvv" SIZE=4 MAXLENGTH=4>!;
+    }
+  }
+
 
   $cust_main->payby($payby_default) unless $cust_main->payby;
   for (qw(CARD DCRD CHEK DCHK LECB BILL COMP)) {

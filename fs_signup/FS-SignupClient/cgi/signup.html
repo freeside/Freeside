@@ -1,5 +1,18 @@
 <HTML><HEAD><TITLE>ISP Signup form</TITLE></HEAD>
-<BODY BGCOLOR="#e8e8e8"><FONT SIZE=7>ISP Signup form</FONT><BR><BR>
+<BODY BGCOLOR="#e8e8e8" onUnload="myclose()">
+<script language="JavaScript"><!--
+  var mywindow = -1;
+  function myopen(filename,windowname,properties) {
+    myclose();
+    mywindow = window.open(filename,windowname,properties);
+  }
+  function myclose() {
+    if ( mywindow != -1 )
+      mywindow.close();
+    mywindow = -1
+  }
+//--></script>
+<FONT SIZE=7>ISP Signup form</FONT><BR><BR>
 <FONT SIZE="+1" COLOR="#ff0000"><%= $error %></FONT>
 <FORM ACTION="<%= $self_url %>" METHOD=POST>
 <INPUT TYPE="hidden" NAME="magic" VALUE="process">
@@ -101,6 +114,12 @@ Contact Information
       'PREPAY' => qq!Prepaid card<BR><font color="#ff0000">*</font><INPUT TYPE="text" NAME="PREPAY_payinfo" VALUE="" MAXLENGTH=80>!,
     );
 
+    if ( $init_data->{'cvv_enabled'} ) {
+      foreach my $payby ( grep { exists $payby{$_} } qw(CARD DCRD) ) { #1.4/1.5
+        $payby{$payby} .= qq!<BR>CVV2&nbsp;(<A HREF="javascript:myopen('cvv2.html','cvv2','toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=no,resizable=yes,copyhistory=no,width=480,height=288')">help</A>)&nbsp;<INPUT TYPE="text" NAME=${payby}_paycvv VALUE="" SIZE=4 MAXLENGTH=4>!;
+      }
+    }
+
     my( $account, $aba ) = split('@', $payinfo);
     my %paybychecked = (
       'CARD' => qq!Credit card<BR><font color="#ff0000">*</font>$cardselect<INPUT TYPE="text" NAME="CARD_payinfo" VALUE="$payinfo" MAXLENGTH=19><BR><font color="#ff0000">*</font>Exp !. expselect("CARD", $paydate). qq!<BR><font color="#ff0000">*</font>Name on card<BR><INPUT TYPE="text" NAME="CARD_payname" VALUE="$payname">!,
@@ -112,6 +131,12 @@ Contact Information
       'COMP' => qq!Complimentary<BR><font color="#ff0000">*</font>Approved by<INPUT TYPE="text" NAME="COMP_payinfo" VALUE="$payinfo"><BR><font color="#ff0000">*</font>Exp !. expselect("COMP", $paydate),
       'PREPAY' => qq!Prepaid card<BR><font color="#ff0000">*</font><INPUT TYPE="text" NAME="PREPAY_payinfo" VALUE="$payinfo" MAXLENGTH=80>!,
     );
+
+    if ( $init_data->{'cvv_enabled'} ) {
+      foreach my $payby ( grep { exists $payby{$_} } qw(CARD DCRD) ) { #1.4/1.5
+        $paybychecked{$payby} .= qq!<BR>CVV2&nbsp;(<A HREF="javascript:myopen('cvv2.html','cvv2','toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=no,resizable=yes,copyhistory=no,width=480,height=288')">help</A>)&nbsp;<INPUT TYPE="text" NAME=${payby}_paycvv VALUE="$paycvv" SIZE=4 MAXLENGTH=4>!;
+      }
+    }
 
     for (@payby) {
       if ( scalar(@payby) == 1) {

@@ -43,6 +43,7 @@ FS::SignupClient - Freeside signup client API
     'fax'              => $fax,
     'payby'            => $payby,
     'payinfo'          => $payinfo,
+    'paycvv'           => $paycvv,
     'paydate'          => $paydate,
     'payname'          => $payname,
     'invoicing_list'   => $invoicing_list,
@@ -125,6 +126,7 @@ a paramater with the following keys:
   fax
   payby
   payinfo
+  paycvv
   paydate
   payname
   invoicing_list

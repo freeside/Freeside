@@ -60,6 +60,8 @@ sub signup_info {
 
     'payby' => [ $conf->config('signup_server-payby') ],
 
+    'cvv_enabled' => defined dbdef->table('cust_main')->column('paycvv'),
+
     'msgcat' => { map { $_=>gettext($_) } qw(
       passwords_dont_match invalid_card unknown_card_type not_a
     ) },
@@ -116,7 +118,8 @@ sub new_customer {
 
     map { $_ => $packet->{$_} } qw(
       last first ss company address1 address2 city county state zip country
-      daytime night fax payby payinfo paydate payname referral_custnum comments
+      daytime night fax payby payinfo paycvv paydate payname referral_custnum
+      comments
     ),
 
   } );

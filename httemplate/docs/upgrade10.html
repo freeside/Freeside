@@ -1,7 +1,7 @@
 <pre>
 this is incomplete
 
-install DBIx::DBSchema 0.21
+install DBIx::DBSchema 0.22
 
 install NetAddr::IP and Chart::Base
 
@@ -142,6 +142,8 @@ ALTER TABLE agent ADD username varchar(80) NULL;
 ALTER TABLE h_agent ADD username varchar(80) NULL;
 ALTER TABLE agent ADD _password varchar(80) NULL;
 ALTER TABLE h_agent ADD _password varchar(80) NULL;
+ALTER TABLE cust_main ADD paycvv varchar(4) NULL;
+ALTER TABLE h_cust_main ADD paycvv varchar(4) NULL;
 
 dump database, edit:
 - cust_main: increase otaker from 8 to 32

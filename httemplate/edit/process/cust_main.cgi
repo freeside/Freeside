@@ -19,6 +19,8 @@ if ( $payby ) {
   $cgi->param('paydate',
     $cgi->param( $payby. '_month' ). '-'. $cgi->param( $payby. '_year' ) );
   $cgi->param('payname', $cgi->param( $payby. '_payname' ) );
+  $cgi->param('paycvv', $cgi->param( $payby. '_paycvv' ) )
+    if defined $cgi->param( $payby. '_paycvv' );
 }
 
 $cgi->param('otaker', &getotaker );
@@ -26,6 +28,7 @@ $cgi->param('otaker', &getotaker );
 my @invoicing_list = split( /\s*\,\s*/, $cgi->param('invoicing_list') );
 push @invoicing_list, 'POST' if $cgi->param('invoicing_list_POST');
 $cgi->param('invoicing_list', join(',', @invoicing_list) );
+
 
 #create new record object
 
@@ -113,6 +116,11 @@ if ( $new->custnum eq '' ) {
 } else { #create old record object
   my $old = qsearchs( 'cust_main', { 'custnum' => $new->custnum } ); 
   $error ||= "Old record not found!" unless $old;
+  if ( defined dbdef->table('cust_main')->column('paycvv')
+       && length($old->paycvv)
+       && $new->paycvv =~ /^\s*\*+\s*$/ ) {
+    $new->paycvv($old->paycvv);
+  }
   $error ||= $new->replace($old, \@invoicing_list);
 }
 

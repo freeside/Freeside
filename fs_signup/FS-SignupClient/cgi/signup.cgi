@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: signup.cgi,v 1.46 2003-10-14 17:00:00 ivan Exp $
+# $Id: signup.cgi,v 1.47 2003-10-24 19:28:49 ivan Exp $
 
 use strict;
 use vars qw( @payby $cgi $locales $packages
@@ -8,7 +8,7 @@ use vars qw( @payby $cgi $locales $packages
              $init_data $error
              $last $first $ss $company $address1 $address2 $city $state $county
              $country $zip $daytime $night $fax $invoicing_list $payby $payinfo
-             $paydate $payname $referral_custnum $init_popstate
+             $paycvv $paydate $payname $referral_custnum $init_popstate
              $pkgpart $username $password $password2 $sec_phrase $popnum
              $agentnum
              $ieak_file $ieak_template $cck_file $cck_template
@@ -178,6 +178,9 @@ if ( defined $cgi->param('magic') ) {
     $paydate =
       $cgi->param( $payby. '_month' ). '-'. $cgi->param( $payby. '_year' );
     $payname = $cgi->param( $payby. '_payname' );
+    $paycvv = defined $cgi->param( $payby. '_paycvv' )
+                ? $cgi->param( $payby. '_paycvv' )
+                : '';
 
     if ( $invoicing_list = $cgi->param('invoicing_list') ) {
       $invoicing_list .= ', POST' if $cgi->param('invoicing_list_POST');
@@ -252,6 +255,7 @@ if ( defined $cgi->param('magic') ) {
         'fax'              => $fax,
         'payby'            => $payby,
         'payinfo'          => $payinfo,
+        'paycvv'           => $paycvv,
         'paydate'          => $paydate,
         'payname'          => $payname,
         'invoicing_list'   => $invoicing_list,
