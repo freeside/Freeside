@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 #
-# $Id: freeside-adduser,v 1.5 2002-08-24 08:13:25 ivan Exp $
+# $Id: freeside-adduser,v 1.6 2002-08-25 01:09:50 ivan Exp $
 
 use strict;
 use vars qw($opt_h $opt_b $opt_c $opt_s);
@@ -47,13 +47,15 @@ sales/tech folks) to the web interface, not for adding customer accounts.
 
   -h: Also call htpasswd for this user with the given filename
 
-  -c: Passed to htpasswd
+  -c: Passed to htpasswd(1)
 
   -s: Specify an alternate secret file
 
+  -b: same as htpasswd(1), probably insecure, not recommended
+
 =head1 SEE ALSO
 
-L<htpasswd>, base Freeside documentation
+L<htpasswd>(1), base Freeside documentation
 
 =cut
 
