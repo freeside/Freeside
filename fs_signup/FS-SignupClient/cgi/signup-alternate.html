@@ -71,7 +71,7 @@ Contact Information
         map { $_->{pkgpart} => $_->{pkg} } @{$packages} 
       ;
 
-      use HTML::Widgets::SelectLayers;
+      use HTML::Widgets::SelectLayers 0.02;
       my $widget = new HTML::Widgets::SelectLayers(
         options => \%options,
         selected_layer => $pkgpart,
@@ -79,7 +79,8 @@ Contact Information
         form_action => $self_url,
         form_text => [qw( magic ref ss agentnum
                           last first company address1 address2
-                          city state zip daytime night fax )], #county country
+                          city zip daytime night fax )],
+        form_select => [qw( state )], #county country
         layer_callback => sub {
           my $layer = shift;
           my $html = <<ENDOUT;
