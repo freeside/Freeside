@@ -1,11 +1,14 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_pkg.cgi,v 1.2 1998-12-17 09:41:09 ivan Exp $
+# $Id: cust_pkg.cgi,v 1.3 1998-12-23 03:05:59 ivan Exp $
 #
 # based on search/svc_acct.cgi ivan@sisd.com 98-jul-17
 #
 # $Log: cust_pkg.cgi,v $
-# Revision 1.2  1998-12-17 09:41:09  ivan
+# Revision 1.3  1998-12-23 03:05:59  ivan
+# $cgi->keywords instead of $cgi->query_string
+#
+# Revision 1.2  1998/12/17 09:41:09  ivan
 # s/CGI::(Base|Request)/CGI.pm/;
 #
 
@@ -21,7 +24,7 @@ my($cgi)=new CGI;
 
 my(@cust_pkg,$sortby);
 
-my($query)=$cgi->query_string;
+my($query)=$cgi->keywords;
 #this tree is a little bit redundant
 if ( $query eq 'pkgnum' ) {
   $sortby=\*pkgnum_sort;

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_domain.cgi,v 1.3 1998-12-17 06:17:12 ivan Exp $
+# $Id: svc_domain.cgi,v 1.4 1998-12-23 03:00:16 ivan Exp $
 #
 # Usage: svc_domain.cgi pkgnum{pkgnum}-svcpart{svcpart}
 #        http://server.name/path/svc_domain.cgi?pkgnum{pkgnum}-svcpart{svcpart}
@@ -17,7 +17,10 @@
 # no GOV in instructions ivan@sisd.com 98-jul-17
 #
 # $Log: svc_domain.cgi,v $
-# Revision 1.3  1998-12-17 06:17:12  ivan
+# Revision 1.4  1998-12-23 03:00:16  ivan
+# $cgi->keywords instead of $cgi->query_string
+#
+# Revision 1.3  1998/12/17 06:17:12  ivan
 # fix double // in relative URLs, s/CGI::Base/CGI/;
 #
 # Revision 1.2  1998/11/13 09:56:48  ivan
@@ -38,7 +41,8 @@ my($cgi) = new CGI;
 
 my($action,$svcnum,$svc_domain,$pkgnum,$svcpart,$part_svc);
 
-if ( $cgi->query_string =~ /^(\d+)$/ ) { #editing
+my($query) = $cgi->keywords;
+if ( $query =~ /^(\d+)$/ ) { #editing
 
   $svcnum=$1;
   $svc_domain=qsearchs('svc_domain',{'svcnum'=>$svcnum})
@@ -59,7 +63,7 @@ if ( $cgi->query_string =~ /^(\d+)$/ ) { #editing
 
   $svc_domain=create FS::svc_domain({});
   
-  foreach $_ (split(/-/,$cgi->query_string)) {
+  foreach $_ (split(/-/,$query)) {
     $pkgnum=$1 if /^pkgnum(\d+)$/;
     $svcpart=$1 if /^svcpart(\d+)$/;
   }

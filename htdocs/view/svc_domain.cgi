@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_domain.cgi,v 1.3 1998-12-17 09:57:25 ivan Exp $
+# $Id: svc_domain.cgi,v 1.4 1998-12-23 03:10:19 ivan Exp $
 #
 # Usage: svc_domain svcnum
 #        http://server.name/path/svc_domain.cgi?svcnum
@@ -15,7 +15,10 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # $Log: svc_domain.cgi,v $
-# Revision 1.3  1998-12-17 09:57:25  ivan
+# Revision 1.4  1998-12-23 03:10:19  ivan
+# $cgi->keywords instead of $cgi->query_string
+#
+# Revision 1.3  1998/12/17 09:57:25  ivan
 # s/CGI::(Base|Request)/CGI.pm/;
 #
 # Revision 1.2  1998/11/13 09:56:50  ivan
@@ -33,7 +36,8 @@ my($cgi) = new CGI;
 cgisuidsetup($cgi);
 
 #untaint svcnum
-$cgi->query_string =~ /^(\d+)$/;
+my($query) = $cgi->keywords;
+$query =~ /^(\d+)$/;
 my($svcnum)=$1;
 my($svc_domain)=qsearchs('svc_domain',{'svcnum'=>$svcnum});
 die "Unknown svcnum" unless $svc_domain;

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct.cgi,v 1.2 1998-12-17 09:41:10 ivan Exp $
+# $Id: svc_acct.cgi,v 1.3 1998-12-23 03:06:28 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/svc_acct.cgi
@@ -23,7 +23,10 @@
 # give service and customer info too ivan@sisd.com 98-aug-16
 #
 # $Log: svc_acct.cgi,v $
-# Revision 1.2  1998-12-17 09:41:10  ivan
+# Revision 1.3  1998-12-23 03:06:28  ivan
+# $cgi->keywords instead of $cgi->query_string
+#
+# Revision 1.2  1998/12/17 09:41:10  ivan
 # s/CGI::(Base|Request)/CGI.pm/;
 #
 
@@ -39,7 +42,7 @@ my($cgi)=new CGI;
 
 my(@svc_acct,$sortby);
 
-my($query)=$cgi->query_string;
+my($query)=$cgi->keywords;
 #this tree is a little bit redundant
 if ( $query eq 'svcnum' ) {
   $sortby=\*svcnum_sort;

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct.cgi,v 1.3 1998-12-17 09:57:23 ivan Exp $
+# $Id: svc_acct.cgi,v 1.4 1998-12-23 03:09:19 ivan Exp $
 #
 # Usage: svc_acct.cgi svcnum
 #        http://server.name/path/svc_acct.cgi?svcnum
@@ -35,7 +35,10 @@
 # displays arbitrary radius attributes ivan@sisd.com 98-aug-16
 #
 # $Log: svc_acct.cgi,v $
-# Revision 1.3  1998-12-17 09:57:23  ivan
+# Revision 1.4  1998-12-23 03:09:19  ivan
+# $cgi->keywords instead of $cgi->query_string
+#
+# Revision 1.3  1998/12/17 09:57:23  ivan
 # s/CGI::(Base|Request)/CGI.pm/;
 #
 # Revision 1.2  1998/12/16 05:24:29  ivan
@@ -57,7 +60,8 @@ $conf = new FS::Conf;
 my $mydomain = $conf->config('domain');
 
 #untaint svcnum
-$cgi->query_string =~ /^(\d+)$/;
+my($query) = $cgi->keywords;
+$query =~ /^(\d+)$/;
 my($svcnum)=$1;
 my($svc_acct)=qsearchs('svc_acct',{'svcnum'=>$svcnum});
 die "Unkonwn svcnum" unless $svc_acct;

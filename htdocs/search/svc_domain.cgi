@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_domain.cgi,v 1.2 1998-12-17 09:41:12 ivan Exp $
+# $Id: svc_domain.cgi,v 1.3 1998-12-23 03:06:50 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/svc_domain.cgi
@@ -17,7 +17,10 @@
 # display total, use FS::CGI now does browsing too ivan@sisd.com 98-jul-17
 #
 # $Log: svc_domain.cgi,v $
-# Revision 1.2  1998-12-17 09:41:12  ivan
+# Revision 1.3  1998-12-23 03:06:50  ivan
+# $cgi->keywords instead of $cgi->query_string
+#
+# Revision 1.2  1998/12/17 09:41:12  ivan
 # s/CGI::(Base|Request)/CGI.pm/;
 #
 
@@ -34,7 +37,7 @@ my($cgi)=new CGI;
 my(@svc_domain);
 my($sortby);
 
-my($query)=$cgi->query_string;
+my($query)=$cgi->keywords;
 if ( $query eq 'svcnum' ) {
   $sortby=\*svcnum_sort;
   @svc_domain=qsearch('svc_domain',{});

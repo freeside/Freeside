@@ -1,12 +1,15 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: print-invoice.cgi,v 1.2 1998-12-17 09:12:47 ivan Exp $
+# $Id: print-invoice.cgi,v 1.3 1998-12-23 03:04:24 ivan Exp $
 #
 # just a kludge for now, since this duplicates in a way it shouldn't stuff from
 # Bill.pm (like $lpr) ivan@sisd.com 98-jun-16
 #
 # $Log: print-invoice.cgi,v $
-# Revision 1.2  1998-12-17 09:12:47  ivan
+# Revision 1.3  1998-12-23 03:04:24  ivan
+# $cgi->keywords instead of $cgi->query_string
+#
+# Revision 1.2  1998/12/17 09:12:47  ivan
 # s/CGI::(Request|Base)/CGI.pm/;
 #
 
@@ -26,7 +29,8 @@ $conf = new FS::Conf;
 my $lpr = $conf->config('lpr');
 
 #untaint invnum
-$cgi->query_string =~ /^(\d*)$/;
+my($query) = $cgi->keywords;
+$query =~ /^(\d*)$/;
 my($invnum)=$1;
 my($cust_bill)=qsearchs('cust_bill',{'invnum'=>$invnum});
 die "Can't find invoice!\n" unless $cust_bill;

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_pkg.cgi,v 1.3 1998-12-17 09:57:22 ivan Exp $
+# $Id: cust_pkg.cgi,v 1.4 1998-12-23 03:08:40 ivan Exp $
 #
 # Usage: cust_pkg.cgi pkgnum
 #        http://server.name/path/cust_pkg.cgi?pkgnum
@@ -26,7 +26,10 @@
 # no FS::Search ivan@sisd.com 98-mar-7
 # 
 # $Log: cust_pkg.cgi,v $
-# Revision 1.3  1998-12-17 09:57:22  ivan
+# Revision 1.4  1998-12-23 03:08:40  ivan
+# $cgi->keywords instead of $cgi->query_string
+#
+# Revision 1.3  1998/12/17 09:57:22  ivan
 # s/CGI::(Base|Request)/CGI.pm/;
 #
 # Revision 1.2  1998/11/13 09:56:49  ivan
@@ -41,6 +44,11 @@ use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
 use FS::CGI qw(popurl header);
 use FS::Record qw(qsearch qsearchs);
+use FS::part_svc;
+use FS::cust_pkg;
+use FS::part_pkg;
+use FS::pkg_svc;
+use FS::cust_svc;
 
 my($cgi) = new CGI;
 cgisuidsetup($cgi);
@@ -54,7 +62,7 @@ foreach $part_svc ( qsearch('part_svc',{}) ) {
 
 print $cgi->header, header('Package View', '');
 
-$cgi->query_string =~ /^(\d+)$/;
+$cgi->query_string =~ /^(\d+)$/ or die $cgi->query_string;
 my($pkgnum)=$1;
 
 #get package record

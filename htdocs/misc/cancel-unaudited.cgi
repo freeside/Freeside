@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cancel-unaudited.cgi,v 1.2 1998-12-17 09:12:42 ivan Exp $
+# $Id: cancel-unaudited.cgi,v 1.3 1998-12-23 03:02:05 ivan Exp $
 #
 # Usage: cancel-unaudited.cgi svcnum
 #        http://server.name/path/cancel-unaudited.cgi pkgnum
@@ -18,7 +18,10 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # $Log: cancel-unaudited.cgi,v $
-# Revision 1.2  1998-12-17 09:12:42  ivan
+# Revision 1.3  1998-12-23 03:02:05  ivan
+# $cgi->keywords instead of $cgi->query_string
+#
+# Revision 1.2  1998/12/17 09:12:42  ivan
 # s/CGI::(Request|Base)/CGI.pm/;
 #
 
@@ -35,7 +38,8 @@ my($cgi) = new CGI;
 &cgisuidsetup($cgi);
  
 #untaint svcnum
-$cgi->query_string =~ /^(\d+)$/;
+my($query) = $cgi->keywords;
+$query =~ /^(\d+)$/;
 my($svcnum)=$1;
 
 my($svc_acct) = qsearchs('svc_acct',{'svcnum'=>$svcnum});

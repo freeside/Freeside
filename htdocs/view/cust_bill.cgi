@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_bill.cgi,v 1.2 1998-12-17 09:57:20 ivan Exp $
+# $Id: cust_bill.cgi,v 1.3 1998-12-23 03:07:49 ivan Exp $
 #
 # Note: Should be run setuid freeside as user nobody.
 #
@@ -25,7 +25,10 @@
 # also print 'printed' field ivan@sisd.com 98-jul-10
 #
 # $Log: cust_bill.cgi,v $
-# Revision 1.2  1998-12-17 09:57:20  ivan
+# Revision 1.3  1998-12-23 03:07:49  ivan
+# $cgi->keywords instead of $cgi->query_string
+#
+# Revision 1.2  1998/12/17 09:57:20  ivan
 # s/CGI::(Base|Request)/CGI.pm/;
 #
 
@@ -42,7 +45,8 @@ my($cgi) = new CGI;
 &cgisuidsetup($cgi);
 
 #untaint invnum
-$cgi->query_string =~ /^(\d+)$/;
+my($query) = $cgi->keywords;
+$query =~ /^(\d+)$/;
 my($invnum)=$1;
 
 my($cust_bill) = qsearchs('cust_bill',{'invnum'=>$invnum});

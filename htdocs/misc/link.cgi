@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: link.cgi,v 1.2 1998-12-17 09:12:45 ivan Exp $
+# $Id: link.cgi,v 1.3 1998-12-23 03:03:39 ivan Exp $
 #
 # Note: Should be run setuid freeside as user nobody
 #
@@ -11,7 +11,10 @@
 # can also link on some other fields now (about time) ivan@sisd.com 98-jun-24
 #
 # $Log: link.cgi,v $
-# Revision 1.2  1998-12-17 09:12:45  ivan
+# Revision 1.3  1998-12-23 03:03:39  ivan
+# $cgi->keywords instead of $cgi->query_string
+#
+# Revision 1.2  1998/12/17 09:12:45  ivan
 # s/CGI::(Request|Base)/CGI.pm/;
 #
 
@@ -34,7 +37,8 @@ my($cgi) = new CGI;
 cgisuidsetup($cgi);
 
 my($pkgnum,$svcpart);
-foreach $_ (split(/-/,$cgi->query_string)) { #get & untaint pkgnum & svcpart
+my($query) = $cgi->keywords;
+foreach $_ (split(/-/,$query)) { #get & untaint pkgnum & svcpart
   $pkgnum=$1 if /^pkgnum(\d+)$/;
   $svcpart=$1 if /^svcpart(\d+)$/;
 }

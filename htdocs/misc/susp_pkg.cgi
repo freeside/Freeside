@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: susp_pkg.cgi,v 1.2 1998-12-17 09:12:48 ivan Exp $
+# $Id: susp_pkg.cgi,v 1.3 1998-12-23 03:04:56 ivan Exp $
 #
 # Usage: susp_pkg.cgi pkgnum
 #        http://server.name/path/susp_pkg.cgi pkgnum
@@ -23,7 +23,10 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # $Log: susp_pkg.cgi,v $
-# Revision 1.2  1998-12-17 09:12:48  ivan
+# Revision 1.3  1998-12-23 03:04:56  ivan
+# $cgi->keywords instead of $cgi->query_string
+#
+# Revision 1.2  1998/12/17 09:12:48  ivan
 # s/CGI::(Request|Base)/CGI.pm/;
 #
 
@@ -38,7 +41,8 @@ my($cgi) = new CGI;
 &cgisuidsetup($cgi);
  
 #untaint pkgnum
-$cgi->query_string =~ /^(\d+)$/ || die "Illegal pkgnum";
+my($query) = $cgi->keywords;
+$query =~ /^(\d+)$/ || die "Illegal pkgnum";
 my($pkgnum)=$1;
 
 my($cust_pkg) = qsearchs('cust_pkg',{'pkgnum'=>$pkgnum});

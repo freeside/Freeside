@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct_pop.cgi,v 1.3 1998-12-17 06:17:10 ivan Exp $
+# $Id: svc_acct_pop.cgi,v 1.4 1998-12-23 02:57:45 ivan Exp $
 #
 # ivan@sisd.com 98-mar-8 
 #
@@ -10,7 +10,10 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: svc_acct_pop.cgi,v $
-# Revision 1.3  1998-12-17 06:17:10  ivan
+# Revision 1.4  1998-12-23 02:57:45  ivan
+# $cgi->keywords instead of $cgi->query_string
+#
+# Revision 1.3  1998/12/17 06:17:10  ivan
 # fix double // in relative URLs, s/CGI::Base/CGI/;
 #
 # Revision 1.2  1998/11/13 09:56:47  ivan
@@ -31,7 +34,8 @@ my($cgi) = new CGI;
 &cgisuidsetup($cgi);
 
 my($svc_acct_pop,$action);
-if ( $cgi->query_string =~ /^(\d+)$/ ) { #editing
+my($query)=$cgi->keywords;
+if ( $query =~ /^(\d+)$/ ) { #editing
   $svc_acct_pop=qsearchs('svc_acct_pop',{'popnum'=>$1});
   $action='Edit';
 } else { #adding

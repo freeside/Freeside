@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct_sm.cgi,v 1.3 1998-12-17 09:57:24 ivan Exp $
+# $Id: svc_acct_sm.cgi,v 1.4 1998-12-23 03:09:52 ivan Exp $
 #
 # Usage: svc_acct_sm.cgi svcnum
 #        http://server.name/path/svc_acct_sm.cgi?svcnum
@@ -22,7 +22,10 @@
 # /var/spool/freeside/conf/domain ivan@sisd.com 98-jul-17
 #
 # $Log: svc_acct_sm.cgi,v $
-# Revision 1.3  1998-12-17 09:57:24  ivan
+# Revision 1.4  1998-12-23 03:09:52  ivan
+# $cgi->keywords instead of $cgi->query_string
+#
+# Revision 1.3  1998/12/17 09:57:24  ivan
 # s/CGI::(Base|Request)/CGI.pm/;
 #
 # Revision 1.2  1998/12/16 05:24:30  ivan
@@ -44,7 +47,8 @@ $conf = new FS::Conf;
 my $mydomain = $conf->config('domain');
 
 #untaint svcnum
-$cgi->query_string =~ /^(\d+)$/;
+my($query) = $cgi->keywords;
+$query =~ /^(\d+)$/;
 my($svcnum)=$1;
 my($svc_acct_sm)=qsearchs('svc_acct_sm',{'svcnum'=>$svcnum});
 die "Unknown svcnum" unless $svc_acct_sm;

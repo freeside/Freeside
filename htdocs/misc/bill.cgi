@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: bill.cgi,v 1.2 1998-12-17 09:12:41 ivan Exp $
+# $Id: bill.cgi,v 1.3 1998-12-23 03:01:13 ivan Exp $
 #
 # s/FS:Search/FS::Record/ and cgisuidsetup($cgi) ivan@sisd.com 98-mar-13
 #
@@ -8,7 +8,10 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # $Log: bill.cgi,v $
-# Revision 1.2  1998-12-17 09:12:41  ivan
+# Revision 1.3  1998-12-23 03:01:13  ivan
+# $cgi->keywords instead of $cgi->query_string
+#
+# Revision 1.2  1998/12/17 09:12:41  ivan
 # s/CGI::(Request|Base)/CGI.pm/;
 #
 
@@ -24,7 +27,8 @@ my($cgi) = new CGI;
 &cgisuidsetup($cgi);
 
 #untaint custnum
-$cgi->query_string =~ /^(\d*)$/;
+my($query) = $cgi->keywords;
+$query =~ /^(\d*)$/;
 my($custnum)=$1;
 my($cust_main)=qsearchs('cust_main',{'custnum'=>$custnum});
 die "Can't find customer!\n" unless $cust_main;
