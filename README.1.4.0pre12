@@ -23,11 +23,22 @@ CREATE TABLE radius_usergroup (
 CREATE INDEX radius_usergroup1 ON radius_usergroup ( svcnum );
 CREATE INDEX radius_usergroup2 ON radius_usergroup ( groupname );
 
+ALTER TABLE svc_acct ADD sec_phrase varchar(80) NULL;
+CREATE TABLE msgcat (
+  msgnum int primary key,
+  msgcode varchar(80) not null,
+  locale varchar(16) not null,
+  msg text not null
+);
+CREATE INDEX msgcat1 ON msgcat ( msgcode, locale );
+
 Run bin/dbdef-create
 
 Run bin/create-history-tables
 
 Run bin/dbdef-create again
+
+Run bin/populate-msgcat
 
 the mxmachines, nsmachines, arecords and cnamerecords configuration values have been deprecated.  Use the defaultrecords configuration value instead.
 

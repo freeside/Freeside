@@ -95,7 +95,6 @@ END
 
 print <<END;
     </TABLE>
-    </CENTER>
   </BODY>
 </HTML>
 END

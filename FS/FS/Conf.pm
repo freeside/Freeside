@@ -843,6 +843,21 @@ httemplate/docs/config.html
     'type'        => 'checkbox',
   },
 
+  {
+    'key'         => 'security_phrase',
+    'section'     => 'password',
+    'description' => 'Enable the tracking of a "security phrase" with each account.  Not recommended, as it is vulnerable to social engineering.',
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'locale',
+    'section'     => 'UI',
+    'description' => 'Message locale',
+    'type'        => 'select',
+    'select_enum' => [ qw(en_US) ],
+  },
+
 );
 
 1;

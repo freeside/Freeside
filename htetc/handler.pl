@@ -105,6 +105,7 @@ sub handler
       use FS::type_pkgs;
       use FS::part_export;
       use FS::part_export_option;
+      use FS::msgcat qw(gettext geterror);
 
       *CGI::redirect = sub {
         my( $self, $location ) = @_;

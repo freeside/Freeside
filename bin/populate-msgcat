@@ -1,0 +1,45 @@
+#!/usr/bin/perl
+
+use FS::UID qw(adminsuidsetup);
+use FS::msgcat;
+
+my $user = shift or die &usage;
+adminsuidsetup $user;
+
+foreach my $del_msgcat ( qsearchs('msgcat', {}) ) {
+  my $error = $del_msgcat->delete;
+  die $error if $error;
+}
+
+my %messages = messages();
+
+foreach $msgcode ( keys %messages ) {
+  foreach my $locale ( keys %{$messages{$msgcode}} ) {
+    my $msgcat = new FS::msgcat( {
+      'msgcode' => $msgcode,
+      'locale'  => $locale,
+    });
+    my $error = $msgcat->insert;
+    die $error if $error;
+  }
+}
+
+sub messages {
+
+  #  'msgcode' => {
+  #    'en_US' => 'Message',
+  #  },
+
+  (
+
+    'msgcode' => {
+      'en_US' => 'Message',
+    },
+
+  );
+}
+
+sub usage {
+  die "Usage:\n\n  populate-msgcat user\n";
+}
+

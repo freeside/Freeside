@@ -48,6 +48,7 @@ use FS::svc_www;
 use FS::type_pkgs;
 use FS::part_export;
 use FS::part_export_option;
+use FS::msgcat qw(gettext geterror);
 
 sub Script_OnStart {
   $Response->AddHeader('Pragma' => 'no-cache');

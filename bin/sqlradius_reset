@@ -38,8 +38,8 @@ foreach my $export ( @exports ) {
 }
 
 sub usage {
-  #die "Usage:\n\n  icradius_reset user machine\n";
-  die "Usage:\n\n  icradius_reset user\n";
+  #die "Usage:\n\n  sqlradius_reset user machine\n";
+  die "Usage:\n\n  sqlradius_reset user\n";
 }
 
 

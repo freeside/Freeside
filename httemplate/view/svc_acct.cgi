@@ -79,6 +79,12 @@ if ( $conf->exists('showpasswords') ) {
 print "</TR></TD>";
 $password = '';
 
+if ( $conf->exists('security_phrase') ) {
+  my $sec_phrase = $svc_acct->sec_phrase;
+  print '<TR><TD ALIGN="right">Security phrase</TD><TD BGCOLOR="#ffffff">'.
+        $svc_acct->sec_phrase. '</TD></TR>;
+}
+
 my $svc_acct_pop = qsearchs('svc_acct_pop',{'popnum'=>$svc_acct->popnum});
 print "<TR><TD ALIGN=\"right\">Access number</TD>".
       "<TD BGCOLOR=\"#ffffff\">". $svc_acct_pop->text. '</TD></TR>'

@@ -1,0 +1,187 @@
+package FS::msgcat;
+
+use strict;
+use vars qw( @ISA @EXPORT_OK $conf $locale );
+use Exporter;
+use FS::UID;
+use FS::Record qw( qsearchs );
+use FS::Conf;
+
+@ISA = qw(FS::Record);
+@EXPORT_OK = qw( gettext geterror );
+
+$FS::UID::callback{'msgcat'} = sub {
+  $conf = new FS::Conf;
+  $locale = $conf->config('locale') || 'en_US';
+};
+
+=head1 NAME
+
+FS::msgcat - Object methods for message catalog entries
+
+=head1 SYNOPSIS
+
+  use FS::msgcat qw(gettext);
+
+  #simple interface for retreiving messages...
+  $message = gettext('msgcode');
+  #or errors (includes the error code)
+  $message = geterror('msgcode');
+
+  #maintenance stuff
+  $record = new FS::msgcat \%hash;
+  $record = new FS::msgcat { 'column' => 'value' };
+
+  $error = $record->insert;
+
+  $error = $new_record->replace($old_record);
+
+  $error = $record->delete;
+
+  $error = $record->check;
+
+=head1 DESCRIPTION
+
+An FS::msgcat object represents an message catalog entry.  FS::msgcat inherits 
+from FS::Record.  The following fields are currently supported:
+
+=over 4
+
+=item msgnum - primary key
+
+=item msgcode - Error code
+
+=item locale - Locale
+
+=item msg - Message
+
+=back
+
+=head1 METHODS
+
+=over 4
+
+=item new HASHREF
+
+Creates a new example.  To add the example to the database, see L<"insert">.
+
+Note that this stores the hash reference, not a distinct copy of the hash it
+points to.  You can ask the object for a copy with the I<hash> method.
+
+=cut
+
+# the new method can be inherited from FS::Record, if a table method is defined
+
+sub table { 'msgcat'; }
+
+=item insert
+
+Adds this record to the database.  If there is an error, returns the error,
+otherwise returns false.
+
+=cut
+
+# the insert method can be inherited from FS::Record
+
+=item delete
+
+Delete this record from the database.
+
+=cut
+
+# the delete method can be inherited from FS::Record
+
+=item replace OLD_RECORD
+
+Replaces the OLD_RECORD with this one in the database.  If there is an error,
+returns the error, otherwise returns false.
+
+=cut
+
+# the replace method can be inherited from FS::Record
+
+=item check
+
+Checks all fields to make sure this is a valid example.  If there is
+an error, returns the error, otherwise returns false.  Called by the insert
+and replace methods.
+
+=cut
+
+# the check method should currently be supplied - FS::Record contains some
+# data checking routines
+
+sub check {
+  my $self = shift;
+
+  my $error =
+    $self->ut_numbern('msgnum')
+    || $self->ut_text('msgcode')
+    || $self->ut_text('msg')
+  ;
+  return $error if $error;
+
+  $self->locale =~ /^([\w\@]+)$/ or return "illegal locale: ". $self->locale;
+  $self->locale($1);
+
+  ''; #no error
+}
+
+=back
+
+=head1 SUBROUTINES
+
+=over 4
+
+=item gettext MSGCODE
+
+Returns the full message for the supplied message code.
+
+=cut
+
+sub gettext {
+  my $msgcode = shift;
+  my $msgcat = qsearchs('msgcat', {
+    'msgcode' => $msgcode,
+    'locale' => $locale
+  } );
+  if ( $msgcat ) {
+    $msgcat->msg;
+  } else {
+    warn "WARNING: message for msgcode $msgcode in locale $locale not found";
+    $msgcode;
+  }
+
+}
+
+=item geterror MSGCODE
+
+Returns the full message for the supplied message code, including the message
+code.
+
+=cut
+
+sub geterror {
+  my $msgcode = shift;
+  my $msg = gettext($msgcode);
+  if ( $msg eq $msgcode ) {
+    "Error code $msgcode (message for locale $locale not found)";
+  } else {
+    "$msg (error code $msgcode)";
+  }
+}
+
+=back
+
+=head1 BUGS
+
+i18n/l10n is a mess.
+
+=head1 SEE ALSO
+
+L<FS::Record>, schema.html from the base documentation.
+
+=cut
+
+1;
+

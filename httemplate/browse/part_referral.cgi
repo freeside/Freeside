@@ -30,7 +30,6 @@ print <<END;
         <TD COLSPAN=2><A HREF="${p}edit/part_referral.cgi"><I>Add a new advertising source</I></A></TD>
       </TR>
     </TABLE>
-    </CENTER>
   </BODY>
 </HTML>
 END

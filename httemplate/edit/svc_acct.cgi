@@ -122,6 +122,15 @@ print &ntable("#cccccc",2), <<END;
 </TR>
 END
 
+if ( $conf->exists('security_phrase') ) {
+  print <<END;
+  <TR><TD ALIGN="right">Security phrase</TD>
+  <TD><INPUT TYPE="text" NAME="sec_phrase" VALUE="$sec_phrase" SIZE=32>
+    (for forgotten passwords)</TD>
+  </TD>
+END
+}
+
 #domain
 my $domsvc = $svc_acct->domsvc || 0;
 if ( $part_svc->part_svc_column('domsvc')->columnflag eq 'F' ) {

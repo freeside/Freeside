@@ -117,3 +117,5 @@ new export! (well, almost)
 
 icradius groups (usergroup table if not radgroupreply & radgroupcheck)
 
+message catalogs (infrastructure, anyway)
+

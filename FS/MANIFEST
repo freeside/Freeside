@@ -72,6 +72,7 @@ FS/raddb.pm
 FS/radius_usergroup.pm
 FS/queue.pm
 FS/queue_arg.pm
+FS/msgcat.pm
 t/agent.t
 t/agent_type.t
 t/CGI.t
@@ -120,5 +121,6 @@ t/svc_www.t
 t/type_pkgs.t
 t/queue.t
 t/queue_arg.t
+t/msgcat.t
 t/UID.t
 t/raddb.t

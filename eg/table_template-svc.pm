@@ -146,10 +146,6 @@ sub check {
 
 =back
 
-=head1 VERSION
-
-$Id: table_template-svc.pm,v 1.2 2001-08-21 02:44:47 ivan Exp $
-
 =head1 BUGS
 
 The author forgot to customize this manpage.

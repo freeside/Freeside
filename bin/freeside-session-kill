@@ -98,3 +98,6 @@ foreach my $join ( @session ) {
 
 $dbh->commit or die $dbh->errstr;
 
+sub usage {
+  die "Usage:\n\n  freeside-session-kill user\n";
+}

@@ -98,10 +98,6 @@ sub check {
 
 =back
 
-=head1 VERSION
-
-$Id: table_template.pm,v 1.2 2000-10-27 20:15:50 ivan Exp $
-
 =head1 BUGS
 
 The author forgot to customize this manpage.

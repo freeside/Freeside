@@ -179,6 +179,14 @@ CREATE TABLE radius_usergroup (
 CREATE INDEX radius_usergroup1 ON radius_usergroup ( svcnum );
 CREATE INDEX radius_usergroup2 ON radius_usergroup ( groupname );
 
+CREATE TABLE msgcat (
+  msgnum int primary key,
+  msgcode varchar(80) not null,
+  locale varchar(16) not null,
+  msg text not null
+);
+CREATE INDEX msgcat1 ON msgcat ( msgcode, locale );
+
 ALTER TABLE svc_acct ADD domsvc integer NOT NULL;
 ALTER TABLE svc_domain ADD catchall integer NULL;
 ALTER TABLE cust_main ADD referral_custnum integer NULL;
@@ -198,6 +206,7 @@ ALTER TABLE cust_credit ADD closed char(1) NULL;
 ALTER TABLE cust_refund ADD closed char(1) NULL;
 ALTER TABLE cust_bill_event ADD status varchar(80);
 ALTER TABLE cust_bill_event ADD statustext text NULL;
+ALTER TABLE svc_acct ADD sec_phrase varchar(80) NULL;
 CREATE INDEX cust_main3 ON cust_main ( referral_custnum );
 CREATE INDEX cust_credit_bill1 ON cust_credit_bill ( crednum );
 CREATE INDEX cust_credit_bill2 ON cust_credit_bill ( invnum );

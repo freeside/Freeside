@@ -44,7 +44,6 @@ print <<END;
         <TD COLSPAN=5><A HREF="${p}edit/svc_acct_pop.cgi"><I>Add new Access Number</I></A></TD>
       </TR>
     </TABLE>
-    </CENTER>
   </BODY>
 </HTML>
 END

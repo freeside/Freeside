@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: fs-setup,v 1.84 2002-03-22 18:56:32 ivan Exp $
+# $Id: fs-setup,v 1.85 2002-04-05 23:51:17 ivan Exp $
 
 #to delay loading dbdef until we're ready
 BEGIN { $FS::Record::setup_hack = 1; }
@@ -752,6 +752,7 @@ sub tables_hash_hack {
         'svcnum',    'int',    '',   '',
         'username',  'varchar',   '',   $username_len, #unique (& remove dup code)
         '_password', 'varchar',   '',   50, #13 for encryped pw's plus ' *SUSPENDED* (mp5 passwords can be 34)
+        'sec_phrase', 'varchar',  'NULL',   $char_d,
         'popnum',    'int',    'NULL',   '',
         'uid',       'int', 'NULL',   '',
         'gid',       'int', 'NULL',   '',
@@ -960,6 +961,18 @@ sub tables_hash_hack {
       'primary_key' => 'usergroupnum',
       'unique'      => [],
       'index'       => [ [ 'svcnum' ], [ 'groupname' ] ],
+    },
+
+    'msgcat' => {
+      'columns' => [
+        'msgnum', 'int', '', '',
+        'msgcode', 'varchar', '', $char_d,
+        'locale', 'varchar', '', 16,
+        'msg', 'text', '', '',
+      ],
+      'primary_key' => 'msgnum',
+      'unique'      => [ [ 'msgcode', 'locale' ] ],
+      'index'       => [],
     },
 
   );
