@@ -70,14 +70,14 @@ END
        ( select count(*) from cust_pkg
            where cust_main.custnum = cust_pkg.custnum
              and $recurring
-             and cancel = 0 or cancel is null
+             and ( cancel = 0 or cancel is null )
        ) as uncancelled_pkgs,
 
        ( select count(*) from cust_pkg
            where cust_main.custnum = cust_pkg.custnum
              and $recurring
-             and cancel = 0 or cancel is null
-             and susp = 0 or susp is null
+             and ( cancel = 0 or cancel is null )
+             and ( susp = 0 or susp is null )
        ) as active_pkgs
 
 END
