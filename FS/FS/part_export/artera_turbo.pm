@@ -22,6 +22,9 @@ tie my %options, 'Tie::IxHash',
   'production' => { 'label' => 'Production mode (leave unchecked for staging)',
                     'type'  => 'checkbox',
                   },
+  'debug'      => { 'label' => 'Enable debug logging',
+                    'type'  => 'checkbox',
+                  },
 ;
 
 %info = (
@@ -62,6 +65,7 @@ sub _export_insert {
 
   eval "use Net::Artera;";
   return $@ if $@;
+  $Net::Artera::DEBUG = 1 if $self->option('debug');
   my $artera = $self->_new_Artera;
 
   my $cust_pkg = $svc_external->cust_svc->cust_pkg;
@@ -133,6 +137,7 @@ sub statusChange {
 
   eval "use Net::Artera;";
   return $@ if $@;
+  $Net::Artera::DEBUG = 1 if $self->option('debug');
   my $artera = $self->_new_Artera;
 
   my $result = $artera->statusChange(
