@@ -143,6 +143,14 @@
         <li>pkgnum - <a href="#cust_pkg">package</a>
         <li>svcpart - <a href="#part_svc">Service definition</a>
       </ul>
+    <li><a name="nas">nas</a> - Network Access Server (terminal server)
+      <ul>
+        <li>nasnum - primary key
+        <li>nas - NAS name
+        <li>nasip - NAS ip address
+        <li>nasfqdn - NAS fully-qualified domain name
+        <li>last - timestamp indicating the last instant the NAS was in a known state (used by the session monitoring).
+      </ul>
     <li><a name="part_pkg">part_pkg</a> - Package definitions
       <ul>
         <li>pkgpart - primary key
@@ -176,12 +184,28 @@
         <li>svcpart - <a href="#part_svc">Service definition</a>
         <li>quantity - quantity of this service that this package includes
       </ul>
+    <li><a name="port">port</a> - individual port on a <a href="#nas">nas</a>
+      <ul>
+        <li>portnum - primary key
+        <li>ip - IP address of this port
+        <li>nasport - port number on the NAS
+        <li>nasnum - <a href="#nas">NAS</a>
+      </ul>
     <li><a name="prepay_credit">prepay_credit</a>
       <ul>
         <li>prepaynum - primary key
         <li>identifier - text or numeric string used to receive this credit
         <li>amount - amount of credit
       </ul>
+    <li><a name="session">session</a>
+      <ul>
+        <li>sessionnum - primary key
+        <li>portnum - <a href="#port">Port</a>
+        <li>svcnum - <a href="#svc_acct">Account</a>
+        <li>login - timestamp indicating the beginning of this user session.
+        <li>logout - timestamp indicating the end of this user session.  May be null, which indicates a currently open session.
+      </ul>
+
     <li><a name="svc_acct">svc_acct</a> - Accounts
       <ul>
         <li>svcnum - <a href="#cust_svc">primary key</a>

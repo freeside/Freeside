@@ -731,10 +731,10 @@ Check/untaint ip addresses.  IPv4 only for now.
 
 sub ut_ip {
   my( $self, $field ) = @_;
-  $self->getfield($field) =~ /^(\d+)\.(\d+)\.(\d+)\.(\d+)$/;
+  $self->getfield($field) =~ /^(\d+)\.(\d+)\.(\d+)\.(\d+)$/
     or return "Illegal (IP address) $field: ". $self->getfield($field);
-  for ( $1 $2 $3 $4 ) { return "Illegal (IP address) $field" if $_ > 255; };
-  $self->$setfield($field, "$1.$2.$3.$3");
+  for ( $1, $2, $3, $4 ) { return "Illegal (IP address) $field" if $_ > 255; }
+  $self->setfield($field, "$1.$2.$3.$3");
   '';
 }
 
@@ -895,7 +895,7 @@ sub hfields {
 
 =head1 VERSION
 
-$Id: Record.pm,v 1.8 2000-10-27 20:15:50 ivan Exp $
+$Id: Record.pm,v 1.9 2000-11-07 15:00:37 ivan Exp $
 
 =head1 BUGS
 

@@ -117,11 +117,21 @@ sub check {
     || $self->ut_numbern('last');
 }
 
+=sub heartbeat TIMESTAMP
+
+Updates the timestamp for this nas
+
+=cut
+
+sub heartbeat {
+  warn "warning: heartbeat unimplemented!"
+}
+
 =back
 
 =head1 VERSION
 
-$Id: nas.pm,v 1.1 2000-10-27 20:18:32 ivan Exp $
+$Id: nas.pm,v 1.2 2000-11-07 15:00:37 ivan Exp $
 
 =head1 BUGS
 

@@ -1,7 +1,7 @@
 package FS::SessionClient;
 
 use strict;
-use vars qw($VERSION @ISA @EXPORT_OK $fs_sessiond_socket);
+use vars qw($AUTOLOAD $VERSION @ISA @EXPORT_OK $fs_sessiond_socket);
 use Exporter;
 use Socket;
 use FileHandle;
@@ -10,7 +10,7 @@ use IO::Handle;
 $VERSION = '0.01';
 
 @ISA = qw( Exporter );
-@EXPORT_OK = qw( login logoff );
+@EXPORT_OK = qw( login logoff portnum );
 
 $fs_sessiond_socket = "/usr/local/freeside/fs_sessiond_socket";
 
@@ -104,7 +104,7 @@ sub AUTOLOAD {
 
 =head1 VERSION
 
-$Id: SessionClient.pm,v 1.1 2000-10-27 20:15:50 ivan Exp $
+$Id: SessionClient.pm,v 1.2 2000-11-07 15:00:37 ivan Exp $
 
 =head1 BUGS
 

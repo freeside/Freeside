@@ -4,6 +4,8 @@ use strict;
 use vars qw( @ISA );
 use FS::Record qw( qsearchs );
 use FS::svc_acct;
+use FS::port;
+use FS::nas;
 
 @ISA = qw(FS::Record);
 
@@ -31,6 +33,8 @@ FS::session - Object methods for session records
 
   $error = $record->check;
 
+  $error = $record->nas_heartbeat($timestamp);
+
 =head1 DESCRIPTION
 
 An FS::session object represents an user login session.  FS::session inherits
@@ -57,7 +61,7 @@ from FS::Record.  The following fields are currently supported:
 
 =item new HASHREF
 
-Creates a new example.  To add the example to the database, see L<"insert">.
+Creates a new session.  To add the session to the database, see L<"insert">.
 
 Note that this stores the hash reference, not a distinct copy of the hash it
 points to.  You can ask the object for a copy with the I<hash> method.
@@ -94,6 +98,8 @@ sub insert {
 
   $error = $self->SUPER::insert;
   return $error if $error;
+
+  $self->nas_heartbeat($self->getfield('login'));
 
   #session-starting callback!
 
@@ -136,6 +142,8 @@ sub replace {
   $error = $self->SUPER::replace;
   return $error if $error;
 
+  $self->nas_heartbeat($self->getfield('logout'));
+
   #session-ending callback!
 
   '';
@@ -143,7 +151,7 @@ sub replace {
 
 =item check
 
-Checks all fields to make sure this is a valid example.  If there is
+Checks all fields to make sure this is a valid session.  If there is
 an error, returns the error, otherwise returns false.  Called by the insert
 and replace methods.
 
@@ -167,11 +175,24 @@ sub check {
   '';
 }
 
+=item nas_heartbeat
+
+Heartbeats the nas associated with this session (see L<FS::nas>).
+
+=cut
+
+sub nas_heartbeat {
+  my $self = shift;
+  my $port = qsearchs('port',{'portnum'=>$self->portnum});
+  my $nas = qsearchs('nas',{'nasnum'=>$port->nasnum});
+  $nas->heartbeat(shift);
+}
+
 =back
 
 =head1 VERSION
 
-$Id: session.pm,v 1.1 2000-10-27 20:18:32 ivan Exp $
+$Id: session.pm,v 1.2 2000-11-07 15:00:37 ivan Exp $
 
 =head1 BUGS
 

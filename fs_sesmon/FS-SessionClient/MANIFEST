@@ -7,3 +7,5 @@ test.pl
 fs_sessiond
 cgi/logon.cgi
 cgi/logoff.cgi
+bin/freeside-login
+bin/freeside-logoff
