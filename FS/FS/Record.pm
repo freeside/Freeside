@@ -825,9 +825,9 @@ false.
 
 sub ut_text {
   my($self,$field)=@_;
-  warn "msgcat ". \&msgcat. "\n";
-  warn "notexist ". \&notexist. "\n";
-  warn "AUTOLOAD ". \&AUTOLOAD. "\n";
+  #warn "msgcat ". \&msgcat. "\n";
+  #warn "notexist ". \&notexist. "\n";
+  #warn "AUTOLOAD ". \&AUTOLOAD. "\n";
   $self->getfield($field) =~ /^([\w \!\@\#\$\%\&\(\)\-\+\;\:\'\"\,\.\?\/]+)$/
     or return gettext('illegal_or_empty_text'). " $field: ".
                $self->getfield($field);
