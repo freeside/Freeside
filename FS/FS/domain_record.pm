@@ -5,6 +5,7 @@ use vars qw( @ISA $noserial_hack );
 #use FS::Record qw( qsearch qsearchs );
 use FS::Record qw( qsearchs dbh );
 use FS::svc_domain;
+use FS::svc_www;
 
 @ISA = qw(FS::Record);
 
@@ -123,6 +124,9 @@ Delete this record from the database.
 
 sub delete {
   my $self = shift;
+
+  return "Can't delete a domain record which has a website!"
+    if qsearchs( 'svc_www', { 'recnum' => $self->recnum } );
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -309,7 +313,7 @@ sub svc_domain {
 
 =head1 VERSION
 
-$Id: domain_record.pm,v 1.10 2002-06-10 23:02:41 ivan Exp $
+$Id: domain_record.pm,v 1.11 2002-06-23 19:16:45 ivan Exp $
 
 =head1 BUGS
 
