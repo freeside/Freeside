@@ -10,8 +10,8 @@ use FS::Conf;
 use FS::cust_main;
 
 &untaint_argv;	#what it sounds like  (eww)
-use vars qw($opt_d $opt_v $opt_p $opt_s);
-getopts("p:d:vs");
+use vars qw($opt_d $opt_v $opt_p $opt_s $opt_y);
+getopts("p:d:vsy:");
 my $user = shift or die &usage;
 
 adminsuidsetup $user;
@@ -28,6 +28,7 @@ my @cust_main = @ARGV
 
 #we're at now now (and later).
 my($time)= $opt_d ? str2time($opt_d) : $^T;
+$time += $opt_y * 86400 if $opt_y;
 
 my($cust_main,%saw);
 foreach $cust_main ( @cust_main ) {
@@ -99,7 +100,7 @@ freeside-daily - Run daily billing and invoice collection events.
 
 =head1 SYNOPSIS
 
-  freeside-daily [ -d 'date' ] [ -p 'payby' ] [ -s ] [ -v ] user [ custnum custnum ... ]
+  freeside-daily [ -d 'date' ] [ -y days ] [ -p 'payby' ] [ -s ] [ -v ] user [ custnum custnum ... ]
 
 =head1 DESCRIPTION
 
@@ -113,6 +114,11 @@ the bill and collect methods of a cust_main object.  See L<FS::cust_main>.
 
   -d: Pretend it's 'date'.  Date is in any format Date::Parse is happy with,
       but be careful.
+
+  -y: In addition to -d, which specifies an absolute date, the -y switch
+      specifies an offset, in days.  For example, "-y 15" would increment the
+      "pretend date" 15 days from whatever was specified by the -d switch
+      (or now, if no -d switch was given).
 
   -p: Only process customers with the specified payby (I<CARD>, I<DCRD>, I<CHEK>, I<DCHK>, I<BILL>, I<COMP>, I<LECB>)
 
