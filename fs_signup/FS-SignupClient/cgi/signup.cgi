@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: signup.cgi,v 1.27 2002-04-25 12:03:15 ivan Exp $
+# $Id: signup.cgi,v 1.28 2002-05-30 22:36:38 khoff Exp $
 
 use strict;
 use vars qw( @payby $cgi $locales $packages $pops $init_data $error
@@ -46,11 +46,13 @@ $decline_html = -e 'decline.html'
                   ? 'decline.html'
                   : '/usr/local/freeside/decline.html';
 
+
 if ( -e $ieak_file ) {
   my $ieak_txt = Text::Template::_load_text($ieak_file)
     or die $Text::Template::ERROR;
   $ieak_txt =~ /^(.*)$/s; #untaint the template source - it's trusted
   $ieak_txt = $1;
+  $ieak_txt =~ s/\n/\r\n/g;
   $ieak_template = new Text::Template ( TYPE => 'STRING', SOURCE => $ieak_txt )
     or die $Text::Template::ERROR;
 } else {
