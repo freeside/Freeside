@@ -7,7 +7,7 @@ use FS::UID;
 
 install_callback FS::UID sub { 
   my $conf = new FS::Conf;
-  my $default_queueid = $conf->config('ticket_system-default_queueid');
+  $default_queueid = $conf->config('ticket_system-default_queueid');
   $priority_field =
     $conf->config('ticket_system-custom_priority_field');
   if ( $priority_field ) {
