@@ -201,9 +201,9 @@ configure-rt:
 
 create-rt: configure-rt
 	cd rt; make install
-	rt/sbin/rt-initialize-database --action schema
-	rt/sbin/rt-initialize-database --action insert_initial
-	rt/sbin/rt-initialize-database --action insert --datafile rt/etc/initialdata
+	rt/sbin/rt-setup-database --action schema
+	rt/sbin/rt-setup-database --action insert_initial
+	rt/sbin/rt-setup-database --action insert --datafile rt/etc/initialdata
 
 
 clean:
