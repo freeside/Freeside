@@ -223,7 +223,7 @@ sub getsecrets {
   die "Illegal mapsecrets line for user?!" unless $secrets;
   ($datasrc, $db_user, $db_pass) = $conf->config($secrets)
     or die "Can't get secrets: $!";
-  $FS::Conf::default_dir .= "/conf.$datasrc";
+  $FS::Conf::default_dir = $conf_dir. "/conf.$datasrc";
   ($datasrc, $db_user, $db_pass);
 }
 
@@ -238,6 +238,10 @@ coderef into the hash %FS::UID::callback :
 
     $coderef = sub { warn "Hi, I'm returning your call!" };
     $FS::UID::callback{'Package::Name'};
+
+=head1 VERSION
+
+$Id: UID.pm,v 1.6 1998-11-15 05:27:48 ivan Exp $
 
 =head1 BUGS
 
@@ -283,7 +287,10 @@ inlined suidsetup
 ivan@sisd.com 98-sep-12
 
 $Log: UID.pm,v $
-Revision 1.5  1998-11-15 00:51:51  ivan
+Revision 1.6  1998-11-15 05:27:48  ivan
+bugfix for new configuration layout
+
+Revision 1.5  1998/11/15 00:51:51  ivan
 eliminated some warnings on certain fatal errors (well, it is less confusing)
 
 Revision 1.4  1998/11/13 09:56:52  ivan
