@@ -317,7 +317,7 @@ END
 
   my @custom_priorities = ();
   if ( $conf->config('ticket_system-custom_priority_field')
-       && @{ $conf->config('ticket_system-custom_priority_field-values') } ) {
+       && @{[ $conf->config('ticket_system-custom_priority_field-values') ]} ) {
     @custom_priorities =
       $conf->config('ticket_system-custom_priority_field-values');
   }
