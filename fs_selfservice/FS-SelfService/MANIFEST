@@ -1,6 +1,6 @@
 Changes
 Makefile.PL
 MANIFEST
-README
 SelfService.pm
 test.pl
+freeside-selfservice-clientd

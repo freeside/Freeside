@@ -1,66 +1,95 @@
 package FS::SelfService;
 
-use 5.006;
 use strict;
-use warnings;
+use vars qw($VERSION @ISA @EXPORT_OK $socket);
+use Exporter;
+use Socket;
+use FileHandle;
+#use IO::Handle;
+use IO::Select;
+use Storable qw(nstore_fd fd_retrieve);
 
-require Exporter;
+$VERSION = '0.03';
 
-our @ISA = qw(Exporter);
+@ISA = qw( Exporter );
+@EXPORT_OK = qw( passwd );
 
-# Items to export into callers namespace by default. Note: do not export
-# names by default without a very good reason. Use EXPORT_OK instead.
-# Do not simply export all your public functions/methods/constants.
+$socket =  "/usr/local/freeside/selfservice_socket";
 
-# This allows declaration	use FS::SelfService ':all';
-# If you do not need this, moving things directly into @EXPORT or @EXPORT_OK
-# will save memory.
-our %EXPORT_TAGS = ( 'all' => [ qw(
-	
-) ] );
+$ENV{'PATH'} ='/usr/bin:/usr/ucb:/bin';
+$ENV{'SHELL'} = '/bin/sh';
+$ENV{'IFS'} = " \t\n";
+$ENV{'CDPATH'} = '';
+$ENV{'ENV'} = '';
+$ENV{'BASH_ENV'} = '';
 
-our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
-
-our @EXPORT = qw(
-	
-);
-our $VERSION = '0.01';
-
-
-# Preloaded methods go here.
-
-1;
-__END__
-# Below is stub documentation for your module. You better edit it!
+my $freeside_uid = scalar(getpwnam('freeside'));
+die "not running as the freeside user\n" if $> != $freeside_uid;
 
 =head1 NAME
 
-FS::SelfService - Perl extension for blah blah blah
+FS::SelfService - Freeside self-service API
 
 =head1 SYNOPSIS
 
-  use FS::SelfService;
-  blah blah blah
-
 =head1 DESCRIPTION
 
-Stub documentation for FS::SelfService, created by h2xs. It looks like the
-author of the extension was negligent enough to leave the stub
-unedited.
+Use this API to implement your own client "self-service" module.
 
-Blah blah blah.
+If you just want to customize the look of the existing "self-service" module,
+see XXXX instead.
 
-=head2 EXPORT
+=head1 FUNCTIONS
 
-None by default.
+=over 4
 
+=item passwd
 
-=head1 AUTHOR
+Returns the empty value on success, or an error message on errors.
 
-A. U. Thor, E<lt>a.u.thor@a.galaxy.far.far.awayE<gt>
+=cut
+
+sub passwd {
+  my $param;
+  if ( ref($_[0]) ) {
+    $param = shift;
+  } else {
+    $param = { @_ };
+  }
+
+  $param->{_packet} = 'passwd';
+
+  simple_packet($param);
+}
+
+sub simple_packet {
+  my $packet = shift;
+  socket(SOCK, PF_UNIX, SOCK_STREAM, 0) or die "socket: $!";
+  connect(SOCK, sockaddr_un($socket)) or die "connect: $!";
+  nstore_fd($packet, \*SOCK) or die "can't send packet: $!";
+  SOCK->flush;
+
+  #shoudl trap: Magic number checking on storable file failed at blib/lib/Storable.pm (autosplit into blib/lib/auto/Storable/fd_retrieve.al) line 337, at /usr/local/share/perl/5.6.1/FS/SelfService.pm line 71
+
+  #block until there is a message on socket
+#  my $w = new IO::Select;
+#  $w->add(\*SOCK);
+#  my @wait = $w->can_read;
+  my $return = fd_retrieve(\*SOCK) or die "error reading result: $!";
+  die $return->{'_error'} if defined $return->{_error} && $return->{_error};
+
+  $return->{'error'};
+}
+
+=back
+
+=head1 BUGS
 
 =head1 SEE ALSO
 
-L<perl>.
+L<freeside-selfservice-clientd>, L<freeside-selfservice-server>
 
 =cut
+
+1;
+

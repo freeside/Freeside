@@ -1,0 +1,14 @@
+#!/usr/bin/perl -w
+
+use strict;
+use FS::SelfService qw(passwd);
+
+my $error = passwd(
+  'username' => 'ivan',
+  'old_password' => 'heyhoo',
+  'new_password' => 'haloo',
+);
+
+die $error if $error;
+
+print "password changed sucessfully\n";

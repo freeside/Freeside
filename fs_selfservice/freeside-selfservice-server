@@ -12,10 +12,13 @@ use vars qw( $kids $max_kids $shutdown $log_file );
 use vars qw($ssh_pid);
 use Fcntl qw(:flock);
 use POSIX qw(setsid);
+use Date::Format;
 use IO::Handle;
 use Storable qw(nstore_fd fd_retrieve);
 use Net::SSH qw(sshopen2);
-use FS::UID qw(adminsuidsetup);
+use FS::UID qw(adminsuidsetup forksuidsetup);
+
+use LockFile::Simple qw(lock unlock);
 
 #use Tie::RefHash;
 #use FS::Conf;
@@ -32,6 +35,8 @@ my $user = shift or die &usage;
 my $machine = shift or die &usage;
 my $pid_file = "/var/run/freeside-selfservice-server.$user.pid";
 #my $pid_file = "/var/run/freeside-selfservice-server.$user.pid"; $FS::UID::datasrc not posible, but should include machine name at least, hmm
+my $lock_file = "/usr/local/etc/freeside/freeside-selfservice-server.$user.lock";
+unlink $lock_file;
 
 &init($user);
 
@@ -47,51 +52,64 @@ my %dispatch = (
 my $warnkids=0;
 while (1) {
   my($reader, $writer) = (new IO::Handle, new IO::Handle);
-  warn "connecting to $machine";
+  warn "connecting to $machine\n";
   $ssh_pid = sshopen2($machine,$reader,$writer,$clientd);
 
-  warn "entering main loop";
+#  nstore_fd(\*writer, {'hi'=>'there'});
+
+  warn "entering main loop\n";
+  my $undisp = 0;
   while (1) {
 
-    warn "waiting for packet from client";
+    warn "waiting for packet from client\n" unless $undisp;
+    $undisp = 1;
     my $packet = eval {
       local $SIG{__DIE__};
-      local $SIG{ALRM} = sub { die "alarm\n" }; #NB: \n required
+      local $SIG{ALRM} = sub { local $SIG{__DIE__};die "MyAlarm\n" }; #NB: \n required
       alarm 5;
+      #my $string = <$reader>;
+      #die $string;
       my $p = fd_retrieve($reader);
       alarm 0;
       $p;
     };
     if ($@) {
-      die $@ unless $@ eq "alarm\n";
+      &shutdown if $shutdown && $@;
+      die "Fatal error receiving packet from client: $@" if $@ !~ /^MyAlarm/;
+      #die $@ unless $@ eq "alarm\n" || $@ eq 'Alarm'; #?????
       #timeout
       next unless $shutdown;
       &shutdown;
     }
-    warn "packet received";
+    warn "packet received\n".
+         join('', map { " $_=>$packet->{$_}\n" } keys %$packet );
+
+    $undisp = 0;
 
     #prevent runaway forking
     my $warnkids = 0;
     while ( $kids >= $max_kids ) {
-      warn "WARNING: maximum $kids children reached" unless $warnkids++;
+      warn "WARNING: maximum $kids children reached\n" unless $warnkids++;
       sleep 1;
     }
 
-    warn "forking child";
+    warn "forking child\n";
     defined( my $pid = fork ) or die "can't fork: $!";
     if ( $pid ) {
-      warn "child $pid spawned";
+      warn "child $pid spawned\n";
       $kids++;
     } else { #kid time
 
+      #local($SIG{PIPE});
+
       #get new db handle
-      $FS::UID::dbh->{InactiveDestroy} = 1;
+      #$FS::UID::dbh->{InactiveDestroy} = 1;
       forksuidsetup($user);
 
       my $sub = $dispatch{$packet->{_packet}};
       my $rv;
       if ( $sub ) {
-        warn "calling $sub handler"; 
+        warn "calling $sub handler\n"; 
         $rv = &{$sub}($packet);
       } else {
         warn my $error = "WARNING: unknown packet type ". $packet->{_packet};
@@ -99,17 +117,63 @@ while (1) {
       }
       $rv->{_token} = $packet->{_token}; #identifier
 
-      warn "sending response";
+      warn "sending response\n";
       flock($writer, LOCK_EX); #acquire write lock
+      #lock($lock_file);
       nstore_fd($rv, $writer) or die "can't send response: $!";
       $writer->flush;
+      #unlock($lock_file);
       flock($writer, LOCK_UN); #release write lock
-
-      warn "child exiting";
+#
+      warn "child exiting\n";
       exit; #end-of-kid
     }
 
   }
+
+}
+
+###
+# dispatch subroutines (should live elsewhere eventually)
+###
+
+sub passwd {
+  #sleep 3;
+  use FS::Record qw(qsearchs);
+  use FS::svc_acct;
+  #use FS::svc_domain;
+
+  my $packet = shift;
+
+  #my $domain = qsearchs('svc_domain', { 'domain' => $packet->{'domain'} } )
+  #  or return { error => "Domain $domain not found" };
+
+  my $old_password = $packet->{'old_password'};
+  my $new_password = $packet->{'new_password'};
+  my $new_gecos = $packet->{'new_gecos'};
+  my $new_shell = $packet->{'new_shell'};
+
+  my $svc_acct =
+    ( length($old_password) < 13
+      && qsearchs( 'svc_acct', { 'username'  => $packet->{'username'},
+                                 #'domsvc'    => $svc_domain->domsvc,
+                                 '_password' => $old_password } )
+    )
+    || qsearchs( 'svc_acct', { 'username'  => $packet->{'username'},
+                               #'domsvc'    => $svc_domain->domsvc,
+                               '_password' => $old_password } );
+
+  unless ( $svc_acct ) { return { error => 'Incorrect password.' } }
+
+  my %hash = $svc_acct->hash;
+  my $new_svc_acct = new FS::svc_acct ( \%hash );
+  $new_svc_acct->setfield('_password', $new_password ) 
+    if $new_password && $new_password ne $old_password;
+  $new_svc_acct->setfield('finger',$new_gecos) if $new_gecos;
+  $new_svc_acct->setfield('shell',$new_shell) if $new_shell;
+  my $error = $new_svc_acct->replace($svc_acct);
+
+  return { error => $error };
 
 }
 
@@ -143,6 +207,23 @@ sub init {
 
   $> = $FS::UID::freeside_uid unless $>;
   $< = $>;
+
+  #false laziness w/freeside-queued
+  my $freeside_gid = scalar(getgrnam('freeside'))
+    or die "can't setgid to freeside group\n";
+  $) = $freeside_gid;
+  $( = $freeside_gid;
+  #if freebsd can't setuid(), presumably it can't setgid() either.  grr fleabsd
+  ($(,$)) = ($),$();
+  $) = $freeside_gid;
+
+  $> = $FS::UID::freeside_uid;
+  $< = $FS::UID::freeside_uid;
+  #freebsd is sofa king broken, won't setuid()
+  ($<,$>) = ($>,$<);
+  $> = $FS::UID::freeside_uid;
+  #eslaf
+
   $ENV{HOME} = (getpwuid($>))[7]; #for ssh
   adminsuidsetup $user;
 
@@ -152,7 +233,7 @@ sub init {
   open STDOUT, '>/dev/null'
                             or die "Can't write to /dev/null: $!";
   setsid                  or die "Can't start a new session: $!";
-  open STDERR, '>&STDOUT' or die "Can't dup stdout: $!";
+#  open STDERR, '>&STDOUT' or die "Can't dup stdout: $!";
 
   $SIG{__DIE__} = \&_die;
   $SIG{__WARN__} = \&_logmsg;
@@ -163,7 +244,7 @@ sub init {
 
 sub shutdown {
   my $wait = 12; #wait up to 1 minute
-  while ( $kids && $wait-- ) {
+  while ( $kids > 0 && $wait-- ) {
     warn "waiting for $kids children to terminate";
     sleep 5;
   }
