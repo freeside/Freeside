@@ -4,12 +4,11 @@
 <body>
 <h1>Session monitor</h1>
 <h2>Installation</h2>
-For security reasons, the client portion of the session montior may run on an
-external public machine.  On this machine, install:
+For security reasons, the client portion of the session montior may run on one
+or more external public machine(s).  On these machines, install:
 <ul>
   <li><a href="http://www.perl.com/CPAN/doc/relinfo/INSTALL.html">Perl</a> (at l
-east 5.004_05 for the 5.004 series or 5.005_03 for the 5.005 series.  Don't enab
-le experimental features like threads or the PerlIO abstraction layer.)
+east 5.004_05 for the 5.004 series or 5.005_03 for the 5.005 series.  Don't enable experimental features like threads or the PerlIO abstraction layer.)
   <li><a href="man/FS/SessionClient.html">FS::SessionClient</a> (copy the fs_session/FS-SessionClient directory to the external machine, then: perl Makefile.PL; make; make install)
 </ul>
 Then:
@@ -28,6 +27,11 @@ Then:
 <ul>
   <li>RADIUS
   <li>Web
+    <ul>
+      <li>Copy FS-SessionClient/cgi/login.cgi and logout.cgi to your web
+          server's document space.  
+      <li>Use <a href="http://www.apache.org/docs/suexec.html">suEXEC</a> or <a href="http://www.perl.com/CPAN-local/doc/manual/html/pod/perlsec.html#Security_Bugs">setuid</a> (see <a href="install.html">install.html</a> for details) to run login.cgi and logout.cgi as the freeside user.
+    </ul>
   <li>Command-line
     <br><pre>freeside-login username ( portnum | ip | nasnum nasport )</pre>
     <ul>
