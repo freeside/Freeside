@@ -1,0 +1,530 @@
+If you are interested in helping with any of these, please join the mailing
+list (send a blank message to ivan-freeside-subscribe@sisd.com) to avoid 
+duplication of effort.
+
+-- 1.1.x --
+
+postgres can't deal with NULL!
+
+svc_acct.import should recognize "UNIX" in the RADIUS password file as null.
+
+radius logfile parsing and perl expression check.
+
+mailing list archive, faq, cvs
+
+(test cust_main.pm with cybercash v2 and v3)
+
+Fix in cust_bill BUGS: 
+There is an off-by-one error in print_text which causes a visual error (Page 1
+of 2 printed on some single-page invoices).
+
+FIX It doesn't properly inherit/override FS::Record yet, so no more replace vs
+rep silliness!
+
+fields should be a method against a FS::Record or derived object, as well as
+being something you can call as FS::Record::fields('tablename').  Might
+even be able to handle both in the same routine (that would be neato).
+Get rid of hfields and other assorted silliness.
+Clean up hfields/sfields/fields crap.  yuck.
+
+$lpr in cust_main.pm (from Bill.pm) should become /var/spool/freeside/conf/lpr
+
+Override FS::Record new, add, rep and del (create, insert, replace and
+delete) in all derived classes.
+IE create, insert, delete and replace from derived classes should override new, 
+add, del and rep (respectively) from FS::Record.  Depriciate old names.
+
+Allow a cancelled/suspended/active status from packages to bubble up to
+the customer lists.  Put active, then suspended, then cancelled accounts.
+Similar ordering on the package listing inside a single customer.
+
+Add the ability for services to filter information up to the package level
+for invoices and web screens, so you can select a particlar package based
+on username or domain name, etc.
+
+You can't delete the stuff under administration yet.  Add this,
+_including_ making sure the thing you are deleting is not in use!
+
+Immediate removal of incorrectly entered check payments (can't take too
+long to do this, or accounting is fubared).
+
+Add code to move from one service to another (POP to SLIP/PPP, etc.).
+This _should_ be possible by working off the rules in part_svc rather than
+hardcoding anything in.  The rules in part_svc may need some elaboration,
+perhaps.
+
+Use ut_ FS::Record methods in all derived classes (possibly some from dbdef?... eventually all from dbdef??? - but then `dbdef-create' would be impossible as there would be metadata we couldn't ask the backend for.  hmm.)
+
+(bring back from fsold, ) Generalize config-sending stuff and make more configurable.
+Expand the HylaFAX interface (also possibly generalize for other fax
+softwar ie .comfaxe); allow things like arbitrary faxes of sales
+literature, specific troubleshooting documents and so on.  Maybe even
+allow users to do this (though that might not belong in Freeside).
+misc/sendconfig.cgi
+misc/process/sendconfig.cgi
+Configure fax recipients via a separate box rather than using the finger
+name or first+last from cust_main.
+
+move all phone number logic out of Freeside - let HylaFAX or whatever
+handle it.
+
+soundex searches for customer name and company?  where are free soundex tools? (standard Text::Soundex duh)
+
+should be able to link on (username, domain name, some field in email alias) instead of svcnum only. (username done, what else?)
+
+(done but clean up) change svc_domain.pm mail sending from a pipe to "/usr/lib/sendmail" to Mail::Mailer or Net::SMTP or something.  also is the complete text of the registration agreement needed in there (it used to be)?
+
+generalize and make configurable new invoice printing scheme in FS::Bill::collect (past due)
+
+deleting an svc_domain should delete all associated svc_acct_sm records.
+same with a svc_acct.
+
+periodic password encrypter
+
+Automated, configurable notification, suspension and cancellation of
+defunct accounts.
+...
+expire cron job
+...
+Allow for a future setup date on accounts.
+
+one-time/per-customer/? changes in rates and descriptions ('remembered
+invoices'): implement by creating a new package on the fly... but it isn't 
+associated with any agent types so it won't show up for other customers to buy.
+
+if CGI::Base will not have redirect fixed (cgifix.html), should migrate to
+CGI.pm insetead?  It is >1 year newer.
+
+library repetitve stuff from Bill.pm Invoice.pm and friends (calculating
+previous balances etc etc)
+
+
+sub AUTOLOAD in FS::Record should warn? die? if used with a non-existant column
+name?
+
+edit (not just import, export and allow default/fixed) arbitrary radius stuff
+in svc_acct
+
+edit/svc_acct.cgi and edit/process/svc_acct.cgi should deal with arbitrary radius stuff
+
+radius import should take DEFAULT entry and put it in /var/spool/freeside/conf/radius-default ; svc_acct.export should use it (and doc)
+
+FS::Invoice and FS::Bill should merge with the classes they're derived from
+
+in UI, s/State/State\/Provence/go and s/County/County\/Locality/go
+
+.us domains and others!
+
+what else (besides l10n) for i18n?
+
+audit htdocs/* for things that should be libraried and things that should be
+new methods on the objects (need to do this before implementing a new UI)
+all the big things are done
+
+some places we die() where we should &FS::CGI::idiot (and perhaps vice-versa).
+Decide based on whether or not the "error" should show up in logs.
+
+all .cgi's should use standard header/footer and idiot() subroutines.  maybe HTML:: perl modules
+for HTML creation.  CGI.pm instead.
+
+library the conf reading stuff; bin/svc_acct.export version with missing-filename checking is good
+library conf stuff -> check all the conf stuff to make sure they close filehandles.
+
+When running bin/bill, Fix this (Annoying but harmless):
+Use of uninitialized value at /usr/local/lib/site_perl/FS/cust_pkg.pm line 99, <ADDRESS> chunk 4.
+Use of uninitialized value at /usr/local/lib/site_perl/FS/cust_pkg.pm line 102, <ADDRESS> chunk 4.
+Use of uninitialized value at /usr/local/lib/site_perl/FS/cust_pkg.pm line 105, <ADDRESS> chunk 4.
+
+all cgi (but internal to the isp) places where package names are listed should also have
+comment (like agent_type)
+
+clean up $recref and other silliness and use -> calls where possible, or
+one other alternative.  clean up everything else.
+should FS::Record use Tie::Hash?  That would be very clean, but where do we
+store the other information?  Maybe you could ask any FS::Record object for a
+tied hash?
+
+change all htdocs/edit/process/* loops to look like: (library this sort of thing!!!!)
+
+my($new) = create FS::svc_acct_sm ( {
+  map {
+    ($_, scalar($req->param($_)));
+  } qw(svcnum pkgnum svcpart domuser domuid domsvc)
+} );
+
+to avoid form errors causing too much silliness
+
+add this code to all svc_*.pm (already in acct and acct_sm and domain): (library!)
+
+  #get part_svc
+  my($svcpart);
+  my($svcnum)=$self->getfield('svcnum');
+  if ($svcnum) {
+    my($cust_svc)=qsearchs('cust_svc',{'svcnum'=>$svcnum});
+    return "Unknown svcnum" unless $cust_svc; 
+    $svcpart=$cust_svc->svcpart;
+  } else {
+    $svcpart=$self->getfield('svcpart');
+  }
+  my($part_svc)=qsearchs('part_svc',{'svcpart'=>$svcpart});
+  return "Unkonwn svcpart" unless $part_svc;
+
+  #set fixed fields from part_svc
+  my($field);
+  foreach $field ( fields('svc_acct') ) {
+    if ( $part_svc->getfield('svc_acct__'. $field. '_flag') eq 'F' ) {
+      $self->setfield($field,$part_svc->getfield('svc_acct__'. $field) );
+    }
+  }
+
+change all file access from regular open(FILE,) stuff to OO, because of 
+problems scoping and passing filehandles like that.
+
+svc_domain.pm mail sending uses Date::Format which doesn't seem to pick up 
+correct timezone.
+
+view/svc_domain.cgi needs to know the domain might be unaudited (cosmetic)
+
+Check everything into CVS.
+
+--- 1.1.x or 1.2 or later
+
+the web interface should create a new object and use it instead of a blank
+form for new records.  the create method of svc_ objects should set defaults
+(from part_svc).
+
+sub check in man FS::table_name should be rewriteen.  Get rid of $recref
+stuff.  Make sure all fields that refer to other database are checked.
+
+Integration with signup disks (are there any free ones?  Netscape?).
+
+One-button cancel (+refund) for lusers who can't get online.
+
+Keep information on virtual web servers (hostname, IP, host machine,
+directory, etc.) and export this information for importation into the ISPs
+web farm. 
+
+Remove requirement that the first mail alias be the catchall?  Still make
+sure only one catchall per domain is defined in any case, of course. 
+
+Ability to move cust_pkg records from one customer to another? (proably
+will need to cancel the old and create a new like when we move services
+between packages). 
+
+Auto-increment expired cards one year, and try again?
+
+Lay out the forms a bit better.
+
+More non-US stuff - zip codes, country codes, foreign currencies, etc.
+
+cust_refund.{cgi.pm} need to do cards xaxtions.  (now we only have cust_credit)
+
+Nicer set of integrated reporting possibilities, like weekly sales totals
+by customer, package, agent, referral, etc., aging reports sorted by lots
+of different things, and so on.
+
+Client/server setup for users to modify their own passwords, shells, etc,
+via passwd or secure web interface (prelminary passwd/chfn/chsh
+replacement done).  Complicated by the fact that we don't want to allow
+incoming connections to the machine running Freeside, so we probably need
+to have a daemon on each external shell or web machine that is contacted
+by the Freeside machine.  Be very very careful for both traditional
+security issues and DoS problems. 
+
+An extension of the above to allow users to modify selected parts of their
+own information, order and cancel services.  A web interface for new
+customers.
+
+Expand domain name stuff to house all domain information.  Export
+named.boot/named.conf (primary and secondary) and named.{domain} files.
+Add more registries (not just InterNIC's com org net edu)
+
+Nice postscript paper invoices, rather than current ASCII invoices.
+
+
+think about race-condititions in FS::Record and derived ->check ->insert
+and so on, uid and username checks in svc_acct, etc.
+
+Move to rsync over ssh file exportation rather than scp.
+
+check 'n fix the proactive password checker. (cracklib?)
+
+refunds of "BILL" payments: generate pseudo-check.
+
+write batch senders and batch parsers for the different credit card processors
+people use/
+More CC processors/methods.
+
+In FS::Record, the counter dir should have .datasrc appended to it like the 
+dbdef does, which should place all the (most of) the DB metadata in unique 
+files and let me run concurrent .datasrc's.  Maybe do something similar for 
+user, password and datasrc itself? (or something to get the out of the source
+files) and then we're set. (secrets file also needs .datasrc appended, or maybe
+"/var/spool/freeside".datasrc
+
+you should be able to fiddle the setup date in cust_pkg. (at least initially)
+
+cych v3 and v2 support
+
+delete options in administration section
+
+write a generic batch senders and batch parsers.
+
+need a way to override svc_acct export on a per-machine basis; just use config files based on machine name i suppose; document that.
+
+you should be able to get column types as a method against an FS::Record object
+as well as dbdef->table($table)->column($column)->type
+
+move to perl module for fuzzy and soundex searching.
+
+make fs-setup option to add sample data so you can click on "New Customer" right away?  so people understand what this stuff is?
+
+package view needs to list extraneous services; we need to prevent the
+creation of them so this never happens (and mark it as such in the source)
+(the creation problem should be fixed - though they will still happen if people
+fsck around in the data manually, so list them anyway)
+
+add attribute dictionary to fs-setup as a menu, plus analyze users file to
+decide automatically
+
+Check for and report on duplicate billing accounts (cust_main, though many
+will have a need for these so probably don't disable them outright.)
+
+create a ->warn as well as a ->check method for all FS::table classes?
+(see above)
+
+something to automate making a release and updating the web demo
+
+export a debian-style (also redhat and?) /etc/group file aswell!
+
+seems to be an off-by-one error in the ascii invoice formatting which is saying
+"1 of 2" pages when there is only one.
+
+get rid of agrep?  needs the (non-free) glimpse distribution.  agrep used to
+be free?  what else can do fuzzy searching?
+
+site_perl/svc_domain.cgi (hmm... or maybe should have a button?  or maybe svc_domain.pm should handle this) should set $whois_hack for non-internic domains, so you can add them...
+
+svc_acct_sm.import qmail import should pull in recipientmap people too.
+
+.pm's like svc_acct.pm which need to do time-consuming things like ssh remotely
+should fork and do them in a child.
+
+i18n/l10n: take ALL messages and catalog them in english.txt or in database or something, so we can eventually go int'l.  int'l currency support would be a help aswell.
+
+get some of { city, county, state, zip } from the missing bits if
+possible (where can i get the data to do this?  usps.gov?)
+
+additional interfaces (perltk?  java?)
+
+Put the GPL notice in all files.
+
+-- 1.2 or later --
+
+$cust_bill->owed database field to be eliminated, replaced by a method call
+that calculates on the fly.  make sure to grep for ->(get|set)field('owed') 
+same for cust_credit->credited
+
+Export quota information.
+
+move all configuration to a central place.  maybe in blob's in the
+database.  maybe even things like the code to execute when a username is
+changed can be in there, so less of the distributed scripts change between
+different sites.
+
+Implement setup and recurring fees as Safe perl expressions rather than
+numbers, to allow for variable-rate services.  Backwards compatibility is
+obtained because { 43 } in perl is still 43.  :)  Define API to pass
+starting and ending dates and any other necessary data to expression
+(fees are currently evaluated as Safe expressions but more work needs to
+be done to define an opmask for various needs, write examples
+(usage-based billing, etc.) and so on).
+...
+Add the ability to modify the next billing date in cust_pkg, and take
+appropriate action.  This will allow the implementation of pro-rate/1st of
+the month billing as well as the ability to manually fiddle with
+anniversary dates in cust_pkg, so you can sync a customer's anniversary
+date even if you're using anniversary billing (manually or automatically).
+(now with above, we need to have a way to automatically pro-rate /^(\d+)$/
+charges - anything more complicated should figure it out itself given
+starting and ending dates [document that!])
+...
+Daily Radius log parsing into database; other logfile formats?
+...
+Callbacks to enforce hourly limits on accounts (suspend until the end of
+the billing period?), for those who limit customers rather than tack on
+extra charges.
+
+Flag packages (part_pkg) as taxable or non/taxable as some ISPs (for
+example) need to charge tax on equipment but not service (separate flags
+for setup and recurring fee... or perhaps a setup_tax, setup_notax,
+recur_tax and recur_notax fees, and possibly something more flexible if
+there is need).
+
+Allow for a variable number of invoices for customers who need multiple
+copies.
+
+Add a mail alias service with table svc_acct (not domain mail aliasing
+which is domain with svc_acct_sm)
+
+(bring back from fsold) Change customer comment field from its current kludge to something more
+workable.
+
+Better work orders with more information.  Should eventually open a ticket
+when we have such a thing.
+edit/svc_wo.cgi
+edit/process/svc_wo.cgi
+Call tracking and trouble tickets.
+
+use mod_perl and Apache::AuthDBI instead of mod_auth_mysql when we do local 
+users
+More accoutability for complimentary accounts: approval, expiration, term
+(no more than x months in advance) and notification.
+Flag particular users (or all users, for that matter) as having their
+passwords hidden and/or locked from users of Freeside (maybe need Freeside
+security levels first?). 
+...
+Better Freeside-level configurable access, for those ISP's who have
+employees they can't trust.  Right now you're "stuck" with setting up
+.htaccess stuff yourself.  This should really just be integrated. 
+
+update site_perl/table_template* (pry out of date)
+
+/var/spool/freeside/conf (and whatever else /var/spool/freeside we can)
+in database (except secrets), then web interface, 
+make /var/spool/freeside a configurable directory (probably as part of 
+some automated installation process?)
+
+add a table with column of export services (passwd, shadow, master.passwd, .qmail file update, dns update, etc.) and rows machine groups and whether or not to export that (and any necessary parameters).  wasn't matt (vunderkid, not matt@michweb) working on this?  find him?  each machine goes in a group of its own as well as a group based on function.  add a table with only svcpart and machine group.  now, when you import from each machine, it can get its own accounts with one svcpart and universal accounts with another svcpart.  (though that does make the username duplicate checking more interesting)
+
+password and slipip stuff in svc_acct.pm store need to be split into two fields or something, so the silliness in svc_acct.pm and svc_acct.export with looking at the data to decide what to do with it can be fixed (1.2)
+
+This requires some serious magic in FS::Record:
+ok, if date_type in fs-setup is to be something besides int,
+now we need to create wrappers
+for them so they behave identically across RDBMS's, ie date pops out as as
+UNIX timestamp (or an object of some sort? maybe even a blessed $obj which
+is a string not a hashref for backwards compatibility?) and so on. (remember
+to treat '0' as Not a Date instead of 1/1/70.
+
+Add Freeside-level transactions for RDBMS's which don't support
+transcations?  (Currently we assume a minimal RDBMS which has no rollback,
+transactions or atomic updates).  Or just require a RDBMS that supports
+rollback and/or atomic updates and get rid of the work-arounds?  The /rdb
+interface had this kludge on top of it but is a technical dead-end in most
+other ways, unless it can gain an SQL parser and DBD interface.
+
+Better automated comparison of our CC records with processors (CyberCash,
+at least, has not always had 100% accuracy, though recent versions are
+much better) 
+
+Expect or other pty based login check, where we actually connect to a
+terminal server or shell machine and test logging in as the user (if we
+are keeping a cleartext password for that user)  (This is something tech
+support often needs for new customers)
+
+Use cust_main table for pre-sales tracking as well?
+
+Automatic commision report and check generation via freq and prog (to
+become a Safe perl expression) fields in agent table, and possibly others.
+
+Database and add a mailed-out date and method for disk/CD mailing, so a
+customer can call and you can say, "sent on xx/xx/xx via {US Mail, Fedex,
+UPS, etc}" 
+
+Inventory tracking for physical items such as routers (for sale or
+lease... probably doesn't make a difference in the ordering... but if you
+cancel a router lease the inventory should come back.  hmm.)
+
+-- Matt's wishlist ---
+
+From matt@michweb.net Fri Feb 20 16:39:53 1998
+Date: Thu, 19 Feb 1998 23:20:11 -0500
+From: Matt Simerson <matt@michweb.net>
+Reply-To: quadran-developer@netgoth.com
+To: quadran-developer@netgoth.com
+Subject: Re: Welcome to quadran-developer
+
+>Whats it based on and what is it supposed to do?  I'm interested, but
+>unfortunatly, I don't have that much time to help on the project (I'm busily
+>working on one of my own based around MySQL and Qt right now -- don't know
+>if it will be GPL'ed or not yet -- we'll probably just use it in house since
+>it is designed around our system)...
+
+That's what I set out to find, but didn't find anything on the web site.
+I'm looking for something that will do the following:
+
+Single point of entry for users on a secure system:
+	Creates account on user (public) systems
+		update /etc/passwd/master.passwd file
+		update radius database (if necessary)
+	Set up up disk quotas (although I hacked adduser to do this)
+	Option for adding user to a mailing list(s)
+	Export of new user info to customizable report (for automated entry
+into
+		accounting software, etc...)
+
+Automated billing:
+	Export credit card info for batch processing and have hooks built
+		in for other forms of electronic processing.
+	Batch-Payment (apply payments from formatted text file).
+	Customizable reports for manual entry/importing into Accounting
+software
+	Email or laser print invoices
+	Sanity checks credit card numbers before processing (code available)
+
+Simple method for disabling an account.
+	Arbitrary Expiration Dates (on a given day, in x days)
+	Remove from radius.
+	Changing password to '*'
+	Virtual customers disabling dns, http server, log processing, etc..
+
+Billing for different account types:
+	Dialup monthly flat rate. Prorates for partial months.
+	Dialup monthly flat rate for x hours + hourly usage.
+	Dialup email only
+	Email only accounts
+	Virtual Web accounts - w/multiple mailboxes
+	Leased line accounts
+	Disk space used over quota.
+	Tech support minimum + hourly charges
+	Other for misc stuff (modem, RAM, etc...)
+
+Per user definable RADIUS attributes (ties in with above)
+	Fixed IP
+	Simultaneous Use
+	IP filters (for dialup email only)
+
+Keep logs of modem usage generated daily from radius accounting logs stored
+on multiple radius servers.
+
+Keep logs of disk usage generated from quota.
+
+Method of adding virtual domains to your system:
+	Automatically grabs an IP address from a preassigned pool.
+	Creates a domain.com database file from database fields
+	Updates /etc/named.conf or /etc/named.boot and reloads named.
+	Add's virtual.com to /etc/sendmail.cw or qmail control files.
+	Edits your web servers httpd.conf file and restarts http server.
+	An optional section for adding vif's can be added if the users OS
+		supports adding them on the fly. Otherwise it's up to the end
+		user. Make a hook that can run a custom script that the user
+		tweaks for his system.
+	Update or create the config file your web stats analyzer needs. I've
+		done this for analog (free) and http-analyze. Probably
+		should only officially support analog and let users hack
+		it to their hearts desire.
+I've already written scripts that do most of the virtual web stuff on my
+system...in bash. Shouldn't be hard for a perlmeister to convert. In fact,
+as long as all the info was stored in the database (username, domain name,
+and ip pool) this could easily just be run as an external script that the
+user tweaks to match his system.
+
+We use a great accounting software (M.Y.O.B) that does all the AP, AR,
+Payroll, Tax stuff, and most everything else we could need. It's already
+set up for the type of checks we have, etc, etc... I just need something to
+do the billing part. I can import/export sales and payments directly once
+the billing part is done. You can't write accounting software as good as
+M.Y.O.B. for $120.
+
+
