@@ -1,9 +1,34 @@
 package FS::part_export::myexport;
 
-use vars qw(@ISA);
+use vars qw(@ISA %info);
+use Tie::IxHash;
 use FS::part_export;
 
 @ISA = qw(FS::part_export);
+
+tie my %options, 'Tie::IxHash',
+  'regular_option'  => { label => 'Option description', default => 'value' },
+  'select_option'   => { label   => 'Select option description',
+                         type    => 'select', options=>[qw(chocolate vanilla)],
+                         default => 'vanilla',
+                       },
+  'textarea_option' => { label   => 'Textarea option description',
+                         type    => 'textarea',
+                         default => 'Default text.',
+                      },
+  'checkbox_option' => { label => 'Checkbox label', type => 'checkbox' },
+;
+
+%info = (
+  'svc'      => 'svc_acct',
+  #'svc'      => [qw( svc_acct svc_forward )],
+  'desc'     =>
+    'Export short description',
+  'options'  => \%options,
+  'nodomain' => 'Y',
+  'notes'    => <<'END'
+HTML notes about this export.
+END
 
 sub rebless { shift; }
 
