@@ -896,14 +896,14 @@ httemplate/docs/config.html
   },
 
   {
-    'key'         => 'declinetemplate'
+    'key'         => 'declinetemplate',
     'section'     => 'billing',
     'description' => 'Template file for credit card decline emails.',
     'type'        => 'textarea',
   },
 
   {
-    'key'         => 'emaildecline'
+    'key'         => 'emaildecline',
     'section'     => 'billing',
     'description' => 'Enable emailing of credit card decline notices.',
     'type'        => 'checkbox',

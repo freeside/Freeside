@@ -582,9 +582,9 @@ sub realtime_card {
       my $template = new Text::Template (
         TYPE   => 'ARRAY',
         SOURCE => [ map "$_\n", @templ ],
-      ) or die "($perror) can't create template: $Text::Template::ERROR";
+      ) or return "($perror) can't create template: $Text::Template::ERROR";
       $template->compile()
-        or die "($perror) can't compile template: $Text::Template::ERROR";
+        or return "($perror) can't compile template: $Text::Template::ERROR";
 
       my $error = $transaction->error_message;
 
@@ -605,7 +605,7 @@ sub realtime_card {
       $!=0;
       $message->smtpsend( Host => $smtpmachine )
         or $message->smtpsend( Host => $smtpmachine, Debug => 1 )
-          or die "($perror) (customer # ". $self->custnum.
+          or return "($perror) (customer # ". $self->custnum.
             ") can't send card decline email to ".
             join(', ', grep { $_ ne 'POST' } $cust_main->invoicing_list ).
             " via server $smtpmachine with SMTP: $!";
@@ -944,7 +944,7 @@ sub print_text {
 
 =head1 VERSION
 
-$Id: cust_bill.pm,v 1.28 2002-04-16 09:38:19 ivan Exp $
+$Id: cust_bill.pm,v 1.29 2002-04-16 10:47:34 ivan Exp $
 
 =head1 BUGS
 

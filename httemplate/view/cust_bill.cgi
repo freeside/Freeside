@@ -22,6 +22,8 @@ print qq!<A HREF="${p}edit/cust_pay.cgi?$invnum">Enter payments (check/cash) aga
 
 print qq!<A HREF="${p}misc/print-invoice.cgi?$invnum">Reprint this invoice</A>!.      '<BR><BR>';
 
+#false laziness with search/cust_bill_event.cgi
+
 print table(). '<TR><TH>Event</TH><TH>Date</TH><TH>Status</TH></TR>';
 foreach my $cust_bill_event (
   sort { $a->_date <=> $b->_date } $cust_bill->cust_bill_event

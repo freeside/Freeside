@@ -132,6 +132,17 @@ sub part_bill_event {
   qsearchs( 'part_bill_event', { 'eventpart' => $self->eventpart } );
 }
 
+=item cust_bill
+
+Returns the invoice (see L<FS::cust_bill>) for this completed invoice event.
+
+=cut
+
+sub cust_bill {
+  my $self = shift;
+  qsearchs( 'cust_bill', { 'invnum' => $self->invnum } );
+}
+
 =back
 
 =head1 BUGS
