@@ -168,7 +168,7 @@ sub qsearch {
   my $statement = "SELECT * FROM $table";
   if ( @fields ) {
     $statement .= " WHERE ". join(' AND ', map {
-      if ( ! defined($record->{$_} || $record->{$_} eq '' ) {
+      if ( ! defined( $record->{$_} ) || $record->{$_} eq '' ) {
         if ( driver_name eq 'Pg' ) {
           "$_ IS NULL";
         } else {
@@ -184,7 +184,7 @@ sub qsearch {
   my $sth = $dbh->prepare_cached($statement) or croak $dbh->errstr;
 
   $sth->execute( map $record->{$_},
-    grep $record->{$_} ne '' && $record->{$_} ne undef, @fields
+    grep defined( $record->{$_} ) && $record->{$_} ne '', @fields
   ) or croak $dbh->errstr;
 
   if ( eval 'scalar(@FS::'. $table. '::ISA);' ) {
@@ -841,7 +841,7 @@ sub hfields {
 
 =head1 VERSION
 
-$Id: Record.pm,v 1.5 2000-06-27 11:27:55 ivan Exp $
+$Id: Record.pm,v 1.6 2000-06-27 11:29:52 ivan Exp $
 
 =head1 BUGS
 
