@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: link.cgi,v 1.5 1999-04-15 14:09:17 ivan Exp $
+# $Id: link.cgi,v 1.6 2000-07-17 17:59:33 ivan Exp $
 #
 # ivan@voicenet.com 97-feb-5
 #
@@ -12,7 +12,10 @@
 # can also link on some other fields now (about time) ivan@sisd.com 98-jun-24
 #
 # $Log: link.cgi,v $
-# Revision 1.5  1999-04-15 14:09:17  ivan
+# Revision 1.6  2000-07-17 17:59:33  ivan
+# oops
+#
+# Revision 1.5  1999/04/15 14:09:17  ivan
 # get rid of top-level my() variables
 #
 # Revision 1.4  1999/02/07 09:59:35  ivan
@@ -30,7 +33,7 @@ use strict;
 use vars qw ( $cgi $old $new $error $pkgnum $svcpart $svcnum );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
-use FS::CGI qw(popurl idiot);
+use FS::CGI qw(popurl idiot eidiot);
 use FS::UID qw(cgisuidsetup);
 use FS::cust_svc;
 use FS::Record qw(qsearchs);
