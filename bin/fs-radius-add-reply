@@ -5,7 +5,12 @@
 use strict;
 use DBI;
 use FS::UID qw(adminsuidsetup checkeuid getsecrets);
+use FS::raddb;
+
 die "Not running uid freeside!" unless checkeuid();
+
+my %attrib2db =
+  map { $FS::raddb::attrib{lc($_)} => $_ } keys %FS::raddb::attrib;
 
 my $user = shift or die &usage;
 getsecrets($user);
@@ -18,7 +23,8 @@ print "\n\n", <<END, ":";
 Enter the additional RADIUS reply attributes you need to track for
 each user, separated by whitespace.
 END
-my @attributes = map { s/\-/_/g; $_; } split(" ",&getvalue);
+my @attributes = map { $attrib2db{lc($_)} or die "unknown attribute $_"; }
+                   split(" ",&getvalue);
 
 sub getvalue {
   my($x)=scalar(<STDIN>);

@@ -15,6 +15,7 @@ use FS::svc_acct_pop;
 use FS::svc_acct_sm;
 use FS::cust_main_invoice;
 use FS::svc_domain;
+use FS::raddb;
 
 @ISA = qw( FS::svc_Common );
 
@@ -580,8 +581,8 @@ sub radius_reply {
   map {
     /^(radius_(.*))$/;
     my($column, $attrib) = ($1, $2);
-    $attrib =~ s/_/\-/g;
-    ( $attrib, $self->getfield($column) );
+    #$attrib =~ s/_/\-/g;
+    ( $FS::raddb::attrib{lc($attrib)}, $self->getfield($column) );
   } grep { /^radius_/ && $self->getfield($_) } fields( $self->table );
 }
 
@@ -600,8 +601,8 @@ sub radius_check {
   map {
     /^(rc_(.*))$/;
     my($column, $attrib) = ($1, $2);
-    $attrib =~ s/_/\-/g;
-    ( $attrib, $self->getfield($column) );
+    #$attrib =~ s/_/\-/g;
+    ( $FS::raddb:attrib{lc($attrib)}, $self->getfield($column) );
   } grep { /^rc_/ && $self->getfield($_) } fields( $self->table );
 }
 
@@ -637,7 +638,7 @@ sub email {
 
 =head1 VERSION
 
-$Id: svc_acct.pm,v 1.31 2001-09-06 21:20:58 ivan Exp $
+$Id: svc_acct.pm,v 1.32 2001-09-07 20:17:49 ivan Exp $
 
 =head1 BUGS
 

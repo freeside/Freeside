@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: fs-setup,v 1.54 2001-09-06 20:41:59 ivan Exp $
+# $Id: fs-setup,v 1.55 2001-09-07 20:17:50 ivan Exp $
 
 #to delay loading dbdef until we're ready
 BEGIN { $FS::Record::setup_hack = 1; }
@@ -15,8 +15,12 @@ use DBIx::DBSchema::ColGroup::Index;
 use FS::UID qw(adminsuidsetup datasrc checkeuid getsecrets);
 use FS::Record;
 use FS::cust_main_county;
+use FS::raddb;
 
 die "Not running uid freeside!" unless checkeuid();
+
+my %attrib2db =
+  map { $FS::raddb::attrib{lc($_)} => $_ } keys %FS::raddb::attrib;
 
 my $user = shift or die &usage;
 getsecrets($user);
@@ -35,13 +39,15 @@ reply attribute Framed-IP-Address for each user.  You can specify additional
 check and reply attributes.  First enter any additional RADIUS check attributes
 you need to track for each user, separated by whitespace.
 END
-my @check_attributes = map { s/\-/_/g; $_; } split(" ",&getvalue);
+my @check_attributes = map { $attrib2db{lc($_)} or die "unknown attribute $_"; }
+                         split(" ",&getvalue);
 
 print "\n\n", <<END, ":";
 Now enter any additional reply attributes you need to track for each user,
 separated by whitespace.
 END
-my @attributes = map { s/\-/_/g; $_; } split(" ",&getvalue);
+my @attributes = map { $attrib2db{lc($_)} or die "unknown attribute $_"; }
+                   split(" ",&getvalue);
 
 print "\n\n", <<END, ":";
 Do you wish to enable the tracking of a second, separate shipping/service
