@@ -30,6 +30,10 @@ foreach my $export ( @exports ) {
   my $machine = $export->machine;
   my $prefix = "$spooldir/$machine";
 
+  my $bind_rel = $export->option('bind_release');
+  my $ndc_cmd = ($bind_rel eq 'BIND9') ? 'rndc' : 'ndc';
+  my $minttl = $export->option('bind9_minttl');
+
   #prevent old domain files from piling up
   #rmtree "$prefix" or die "can't rmtree $prefix.db: $!";
 
@@ -79,6 +83,10 @@ END
       open (DB_MASTER,">$prefix/db.$domain")
         or die "can't open $prefix/db.$domain: $!";
 
+      if ($bind_rel eq 'BIND9') {
+        print DB_MASTER "\$TTL $minttl\n\$ORIGIN $domain.\n";
+      }
+
       my @domain_records =
         qsearch('domain_record', { 'svcnum' => $svc_domain->svcnum } );
       foreach my $domain_record (
@@ -114,7 +122,7 @@ END
   } ) or die "rsync to $machine failed: ". join(" / ", $rsync->err);
 #  warn $rsync->out;
 
-  ssh("root\@$machine", 'ndc reload');
+  ssh("root\@$machine", "$ndc_cmd reload");
 
 }
 
@@ -124,6 +132,9 @@ foreach my $sexport ( @sexports ) { #false laziness with above
 
   my $machine = $sexport->machine;
   my $prefix = "$spooldir/$machine";
+
+  my $bind_rel = $sexport->option('bind_release');
+  my $ndc_cmd = ($bind_rel eq 'BIND9') ? 'rndc' : 'ndc';
 
   #prevent old domain files from piling up
   #rmtree "$prefix" or die "can't rmtree $prefix.db: $!";
@@ -166,7 +177,7 @@ END
   } ) or die "rsync to $machine failed: ". join(" / ", $rsync->err);
 #  warn $rsync->out;
 
-  ssh("root\@$machine", 'ndc reload');
+  ssh("root\@$machine", "$ndc_cmd reload");
 
 }
 close NAMED_CONF;
