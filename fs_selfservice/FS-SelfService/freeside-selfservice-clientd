@@ -14,7 +14,7 @@ use IO::Handle qw(_IONBF);
 use IO::Select;
 use IO::File;
 
-STDOUT->setbuf('');
+#STDOUT->setbuf('');
 
 use vars qw( $Debug );
 $Debug = 3; #2 will turn on child logging, 3 will log packet contents,
