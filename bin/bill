@@ -78,9 +78,9 @@
 # ivan@sisd.com 98-may-27
 #
 # $Log: bill,v $
-# Revision 1.2  1998-11-07 08:08:12  ivan
+# Revision 1.3  1998-11-07 08:19:21  ivan
 #
-# Removed depriciated FS::Bill (now in FS::cust_main)
+# still need to bless into FS::cust_main (for now)
 #
 
 # setup
@@ -122,6 +122,8 @@ foreach $cust_main (
   # and bill them
 
   print "Billing customer #" . $cust_main->getfield('custnum') . "\n";
+
+  bless($cust_main,"FS::cust_main");
 
   my($error);
 
