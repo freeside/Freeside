@@ -80,7 +80,12 @@ if ( $args{'action'} eq 'init' ) {
     $dbh = DBI->connect( get_system_dsn(), $args{'dba'}, $args{'dba-password'} )
       || die "Failed to connect to " . get_system_dsn() . " as $args{'dba'}: $DBI::errstr";
     print "Now creating a database for RT.\n";
+    if ($RT::DatabaseType ne 'Oracle' ||
+        $args{'dba'} ne $RT::DatabaseUser) {
     create_db();
+    } else {
+        print "...skipped as ".$args{'dba'} ." is not " . $RT::DatabaseUser . " or we're working with Oracle.\n";
+    }
 
     $dbh->disconnect;
     $dbh = DBI->connect( $Handle->DSN, $args{'dba'}, $args{'dba-password'} )
@@ -89,7 +94,7 @@ if ( $args{'action'} eq 'init' ) {
     print "Now populating database schema.\n";
     insert_schema();
     print "Now inserting database ACLs\n";
-    insert_acl();
+    insert_acl() unless ($RT::DatabaseType eq 'Oracle');
     print "Now inserting RT core system objects\n";
     insert_initial_data();
     print "Now inserting RT data\n";
@@ -137,8 +142,9 @@ sub insert_schema {
         open( SCHEMA_LOCAL, "<" . $RT::LocalEtcPath . "/schema." . $RT::DatabaseType );
 
         my $statement = "";
-        foreach my $line (<SCHEMA>, <SCHEMA_LOCAL>) {
+        foreach my $line (<SCHEMA>, ($_ = ';;'), <SCHEMA_LOCAL>) {
             $line =~ s/\#.*//g;
+            $line =~ s/--.*//g;
             $statement .= $line;
             if ( $line =~ /;(\s*)$/ ) {
                 $statement =~ s/;(\s*)$//g;
@@ -147,10 +153,13 @@ sub insert_schema {
             }
         }
 
+	local $SIG{__WARN__} = sub {};
+	my $is_local = 0; # local/etc/schema needs to be nonfatal. 
         foreach my $statement (@schema) {
-            print STDERR $statement if $args{'debug'};
+	    if ($statement =~ /^\s*;$/) { $is_local = 1; next; }
+            print STDERR "SQL: $statement\n" if defined $args{'debug'};
             my $sth = $dbh->prepare($statement) or die $dbh->errstr;
-            unless ( $sth->execute ) {
+            unless ( $sth->execute or $is_local ) {
                 die "Problem with statement:\n $statement\n" . $sth->errstr;
             }
         }
@@ -168,6 +177,16 @@ sub insert_schema {
 # {{{ sub drop_db
 sub drop_db {
     return if ( $RT::DatabaseType eq 'SQLite' );
+    if ( $RT::DatabaseType eq 'Oracle' ) {
+        print <<END;
+
+To delete the tables and sequences of the RT Oracle database by running 
+    \@etc/drop.Oracle 
+through SQLPlus.
+
+END
+        return;
+    }	
     unless ( $args{'force'} ) {
         print <<END;
 
@@ -197,6 +216,13 @@ sub create_db {
         if ($DBI::errstr) {
             $dbh->do("CREATE DATABASE $RT::DatabaseName") || die $DBI::errstr;
         }
+    }
+    elsif ($RT::DatabaseType eq 'Oracle') {
+        insert_acl();
+    }
+    elsif ( $RT::DatabaseType eq 'Informix' ) {
+	$ENV{DB_LOCALE} = 'en_us.utf8';
+        $dbh->do("CREATE DATABASE $RT::DatabaseName WITH BUFFERED LOG");
     }
     else {
         $dbh->do("CREATE DATABASE $RT::DatabaseName") or die $DBI::errstr;
@@ -248,6 +274,10 @@ sub insert_acl {
         do $base_path . "/acl.mysql"
           || die "Couldn't find ACLS for mysql in " . $RT::EtcPath . "\n" . $@;
     }
+    elsif ( $RT::DatabaseType =~ /^informix$/i ) {
+        do $base_path . "/acl.Informix"
+          || die "Couldn't find ACLS for Informix in " . $RT::EtcPath . "\n" . $@;
+    }
     elsif ( $RT::DatabaseType =~ /^SQLite$/i ) {
         return;
     }
@@ -287,6 +317,10 @@ sub get_system_dsn {
     elsif ( $RT::DatabaseType eq 'Pg' ) {
         $dsn =~ s/dbname=$RT::DatabaseName/dbname=template1/;
     }
+    elsif ( $RT::DatabaseType eq 'Informix' ) {
+	# with Informix, you want to connect sans database:
+	$dsn =~ s/Informix:$RT::DatabaseName/Informix:/;
+    }
     return $dsn;
 }
 
@@ -302,7 +336,7 @@ sub insert_initial_data {
     #Put together a current user object so we can create a User object
     my $CurrentUser = new RT::CurrentUser();
 
-    print "Checking for existing system user...";
+    print "Checking for existing system user ($CurrentUser)...";
     my $test_user = RT::User->new($CurrentUser);
     $test_user->Load('RT_System');
     if ( $test_user->id ) {
@@ -330,7 +364,7 @@ sub insert_initial_data {
         exit(1);
     }
     print "done.\n";
-    $RT::Handle->dbh->disconnect();
+    $RT::Handle->Disconnect();
 
 }
 

@@ -70,7 +70,7 @@ sub _Init  {
     $self->Load($Name);
   }
   
-  $self->CurrentUser($self);
+ # $self->CurrentUser($self);
 
 }
 # }}}
@@ -104,15 +104,13 @@ sub Delete {
 sub UserObj {
     my $self = shift;
     
-    unless ($self->{'UserObj'}) {
 	use RT::User;
-	$self->{'UserObj'} = RT::User->new($self);
-	unless ($self->{'UserObj'}->Load($self->Id)) {
+	my $user = RT::User->new($self);
+
+	unless ($user->Load($self->Id)) {
 	    $RT::Logger->err($self->loc("Couldn't load [_1] from the users database.\n", $self->Id));
 	}
-	
-    }
-    return ($self->{'UserObj'});
+    return ($user);
 }
 # }}}
 
@@ -160,6 +158,7 @@ sub _Accessible  {
 	      Gecos => 'read',
 	      RealName => 'read',
 	      Password => 'neither',
+          Lang => 'read',
 	      EmailAddress => 'read',
 	      Privileged => 'read',
 	      IsAdministrator => 'read'
@@ -241,6 +240,11 @@ sub Load  {
   if ($identifier !~ /\D/) {
     $self->SUPER::LoadById($identifier);
   }
+
+  elsif (UNIVERSAL::isa($identifier,"RT::User")) { 
+         # DWIM if they pass a user in 
+         $self->SUPER::LoadById($identifier->Id); 
+  } 
   else {
       # This is a bit dangerous, we might get false authen if somebody
       # uses ambigous userids or real names:
@@ -329,6 +333,9 @@ sub LanguageHandle {
     if  ((!defined $self->{'LangHandle'}) || 
          (!UNIVERSAL::can($self->{'LangHandle'}, 'maketext')) || 
          (@_))  {
+	if ( $self->Lang) {
+	    push @_, $self->Lang;
+	}
         $self->{'LangHandle'} = RT::I18N->get_handle(@_);
     }
     # Fall back to english.
@@ -364,6 +371,19 @@ sub loc_fuzzy {
     return($result);
 }
 # }}}
+
+
+=head2 CurrentUser
+
+Return  the current currentuser object
+
+=cut
+
+sub CurrentUser  {
+    my $self = shift;
+    return($self);
+
+}
 
 eval "require RT::CurrentUser_Vendor";
 die $@ if ($@ && $@ !~ qr{^Can't locate RT/CurrentUser_Vendor.pm});

@@ -27,7 +27,7 @@ use strict;
 use File::Basename;
 require ('/opt/rt3/bin/webmux.pl');
 
-my $h = &RT::Interface::Web::NewCGIHandler();
+my $h = &RT::Interface::Web::NewCGIHandler(@RT::MasonParameters);
 
 # Enter CGI::Fast mode, which should also work as a vanilla CGI script.
 require CGI::Fast;
@@ -44,11 +44,25 @@ while ( my $cgi = CGI::Fast->new ) {
     $ENV{'ENV'}    = '' if defined $ENV{'ENV'};
     $ENV{'IFS'}    = '' if defined $ENV{'IFS'};
 
-    unless ($h->interp->comp_exists($cgi->path_info)) {
-	$cgi->path_info($cgi->path_info . "/index.html");
+    RT::ConnectToDatabase();
+
+    if ( ( !$h->interp->comp_exists( $cgi->path_info ) )
+        && ( $h->interp->comp_exists( $cgi->path_info . "/index.html" ) ) ) {
+        $cgi->path_info( $cgi->path_info . "/index.html" );
     }
-    $h->handle_cgi_object($cgi);
-    # _should_ always be tied
+
+    eval { $h->handle_cgi_object($cgi); };
+    if ($@) {
+        $RT::Logger->crit($@);
+    }
+
+
+    if ($RT::Handle->TransactionDepth) {
+        $RT::Handle->ForceRollback;
+        $RT::Logger->crit("Transaction not committed. Usually indicates a software fault. Data loss may have occurred") ;
+    }
+
+
 }
 
 1;

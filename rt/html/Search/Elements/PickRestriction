@@ -34,9 +34,10 @@
 <& /Elements/SelectOwner, Name => "ValueOfOwner" &>
 
 <li>
-<&|/l&>Requestor email address</&> 
-<& /Elements/SelectMatch, Name => "RequestorOp" &>
-<INPUT Name="ValueOfRequestor" SIZE=20>
+<& /Elements/SelectWatcherType, Name => "WatcherRole", AllowNull => 0 &>
+<&|/l&>email address</&> 
+<& /Elements/SelectMatch, Name => "WatcherRoleOp" &>
+<INPUT Name="ValueOfWatcherRole" SIZE=20>
 
 <li>
 <&|/l&>Subject</&> <& /Elements/SelectMatch, Name => "SubjectOp" &> 
@@ -47,7 +48,7 @@
 					False => loc("isn't"), 
 					TrueVal=> '=', 
 					FalseVal => '!=' &>
-<& /Elements/SelectQueue, Name => loc("ValueOfQueue") &>
+<& /Elements/SelectQueue, Name => "ValueOfQueue" &>
 
 
 <li><&|/l&>Priority</&> <& /Elements/SelectEqualityOperator, Name => "PriorityOp" &>
@@ -77,7 +78,7 @@
 			    TrueVal=> '=', 
 			    FalseVal => '!=' 
 &>  
-<& /Elements/SelectStatus, Name => "ValueOfStatus" &>
+<& /Elements/SelectStatus, Name => "ValueOfStatus", SkipDeleted => 1 &>
 
 
 % while ( my $CustomField = $CustomFields->Next ) {

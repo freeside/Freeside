@@ -51,6 +51,8 @@ ok(require RT::Transaction);
 use strict;
 no warnings qw(redefine);
 
+use vars qw( %_BriefDescriptions );
+
 use RT::Attachments;
 
 # {{{ sub Create 
@@ -112,66 +114,13 @@ sub Create {
 
     #Provide a way to turn off scrips if we need to
     if ( $args{'ActivateScrips'} ) {
-
-        #We're really going to need a non-acled ticket for the scrips to work
-        my $TicketAsSystem = RT::Ticket->new($RT::SystemUser);
-        $TicketAsSystem->Load( $args{'Ticket'} )
-          || $RT::Logger->err("$self couldn't load ticket $args{'Ticket'}\n");
-
-        my $TransAsSystem = RT::Transaction->new($RT::SystemUser);
-        $TransAsSystem->Load( $self->id )
-          || $RT::Logger->err(
-            "$self couldn't load a copy of itself as superuser\n"); 
-        # {{{ Deal with Scrips
-
-        use RT::Scrips;
-        my $PossibleScrips = RT::Scrips->new($RT::SystemUser);
-
-        $PossibleScrips->LimitToQueue( $TicketAsSystem->QueueObj->Id )
-          ;                                  #Limit it to  $Ticket->QueueObj->Id
-        $PossibleScrips->LimitToGlobal()
-	    unless $TicketAsSystem->QueueObj->Disabled;    # or to "global"
-
-
-        $PossibleScrips->Limit(FIELD => "Stage", VALUE => "TransactionCreate");
-
-
-        my $ConditionsAlias = $PossibleScrips->NewAlias('ScripConditions');
-
-        $PossibleScrips->Join(
-            ALIAS1 => 'main',
-            FIELD1 => 'ScripCondition',
-            ALIAS2 => $ConditionsAlias,
-            FIELD2 => 'id'
+        require RT::Scrips;
+        RT::Scrips->new($RT::SystemUser)->Apply(
+            Stage       => 'TransactionCreate',
+            Type        => $args{'Type'},
+            Ticket      => $args{'Ticket'},
+            Transaction => $self->id,
         );
-
-        #We only want things where the scrip applies to this sort of transaction
-        $PossibleScrips->Limit(
-            ALIAS           => $ConditionsAlias,
-            FIELD           => 'ApplicableTransTypes',
-            OPERATOR        => 'LIKE',
-            VALUE           => $args{'Type'},
-            ENTRYAGGREGATOR => 'OR',
-        );
-
-        # Or where the scrip applies to any transaction
-        $PossibleScrips->Limit(
-            ALIAS           => $ConditionsAlias,
-            FIELD           => 'ApplicableTransTypes',
-            OPERATOR        => 'LIKE',
-            VALUE           => "Any",
-            ENTRYAGGREGATOR => 'OR',
-        );
-
-        #Iterate through each script and check it's applicability.
-
-        while ( my $Scrip = $PossibleScrips->Next() ) {
-            $Scrip->Apply (TicketObj => $TicketAsSystem,
-                           TransactionObj => $TransAsSystem);
-        }
-
-        # }}}
-
     }
 
     return ( $id, $self->loc("Transaction Created") );
@@ -535,16 +484,24 @@ sub BriefDescription {
         return ( $self->loc( "[_1] changed from [_2] to [_3]", $self->Field , ( $self->OldValue || $no_value ) ,  $self->NewValue ));
     }
 
-    if ( $type eq 'Correspond' ) {
+    if (my $code = $_BriefDescriptions{$type}) {
+        return $code->($self);
+    }
+
+    return $self->loc( "Default: [_1]/[_2] changed from [_3] to [_4]", $type, $self->Field, $self->OldValue, $self->NewValue );
+}
+
+%_BriefDescriptions = (
+    Correspond => sub {
+        my $self = shift;
         return $self->loc("Correspondence added");
-    }
-
-    elsif ( $type eq 'Comment' ) {
+    },
+    Comment => sub {
+        my $self = shift;
         return $self->loc("Comments added");
-    }
-
-    elsif ( $type eq 'CustomField' ) {
-
+    },
+    CustomField => sub {
+        my $self = shift;
         my $field = $self->loc('CustomField');
 
         if ( $self->Field ) {
@@ -563,110 +520,127 @@ sub BriefDescription {
         else {
             return $self->loc("[_1] [_2] changed to [_3]", $field, $self->OldValue, $self->NewValue );
         }
-    }
-
-    elsif ( $type eq 'Untake' ) {
+    },
+    Untake => sub {
+        my $self = shift;
         return $self->loc("Untaken");
-    }
-
-    elsif ( $type eq "Take" ) {
+    },
+    Take => sub {
+        my $self = shift;
         return $self->loc("Taken");
-    }
-
-    elsif ( $type eq "Force" ) {
+    },
+    Force => sub {
+        my $self = shift;
         my $Old = RT::User->new( $self->CurrentUser );
         $Old->Load( $self->OldValue );
         my $New = RT::User->new( $self->CurrentUser );
         $New->Load( $self->NewValue );
 
         return $self->loc("Owner forcibly changed from [_1] to [_2]" , $Old->Name , $New->Name);
-    }
-    elsif ( $type eq "Steal" ) {
+    },
+    Steal => sub {
+        my $self = shift;
         my $Old = RT::User->new( $self->CurrentUser );
         $Old->Load( $self->OldValue );
         return $self->loc("Stolen from [_1] ",  $Old->Name);
-    }
-
-    elsif ( $type eq "Give" ) {
+    },
+    Give => sub {
+        my $self = shift;
         my $New = RT::User->new( $self->CurrentUser );
         $New->Load( $self->NewValue );
         return $self->loc( "Given to [_1]",  $New->Name );
-    }
-
-    elsif ( $type eq 'AddWatcher' ) {
+    },
+    AddWatcher => sub {
+        my $self = shift;
         my $principal = RT::Principal->new($self->CurrentUser);
         $principal->Load($self->NewValue);
         return $self->loc( "[_1] [_2] added", $self->Field, $principal->Object->Name);
-    }
-
-    elsif ( $type eq 'DelWatcher' ) {
+    },
+    DelWatcher => sub {
+        my $self = shift;
         my $principal = RT::Principal->new($self->CurrentUser);
         $principal->Load($self->OldValue);
         return $self->loc( "[_1] [_2] deleted", $self->Field, $principal->Object->Name);
-    }
-
-    elsif ( $type eq 'Subject' ) {
+    },
+    Subject => sub {
+        my $self = shift;
         return $self->loc( "Subject changed to [_1]", $self->Data );
-    }
-
-    elsif ( $type eq 'AddLink' ) {
+    },
+    AddLink => sub {
+        my $self = shift;
         my $value;
-	if ($self->NewValue) {
-		my $URI = RT::URI->new($self->CurrentUser);
-		$URI->FromURI($self->NewValue);
-		if ($URI->Resolver) {
-			$value = $URI->Resolver->AsString;
-		} else {
-			$value = $self->NewValue;
-		}
-	}
-	if ($self->Field eq 'DependsOn') {
-		return $self->loc("Dependency on [_1] added",$value);
-	} elsif ($self->Field eq 'DependedOnBy') {
-		return $self->loc("Dependency by [_1] added",$value);
-		
-	} elsif ($self->Field eq 'RefersTo') {
-		return $self->loc("Reference to [_1] added",$value);
-	} elsif ($self->Field eq 'ReferredToBy') {
-		return $self->loc("Reference by [_1] added",$value);
-	} elsif ($self->Field eq 'MemberOf') {
-		return $self->loc("Membership in [_1] added",$value);
-	} elsif ($self->Field eq 'HasMember') {
-		return $self->loc("Member [_1] added",$value);
-	} else {
-        return ( $self->Data );
-	}
-    }
-    elsif ( $type eq 'DeleteLink' ) {
-    my $value;
-	if ($self->OldValue) {
-		my $URI = RT::URI->new($self->CurrentUser);
-		$URI->FromURI($self->OldValue);
-		if ($URI->Resolver) {
-			$value = $URI->Resolver->AsString;
-		} else {
-			$value = $self->OldValue;
-		}
-	}
+        if ( $self->NewValue ) {
+            my $URI = RT::URI->new( $self->CurrentUser );
+            $URI->FromURI( $self->NewValue );
+            if ( $URI->Resolver ) {
+                $value = $URI->Resolver->AsString;
+            }
+            else {
+                $value = $self->NewValue;
+            }
+            if ( $self->Field eq 'DependsOn' ) {
+                return $self->loc( "Dependency on [_1] added", $value );
+            }
+            elsif ( $self->Field eq 'DependedOnBy' ) {
+                return $self->loc( "Dependency by [_1] added", $value );
 
-	if ($self->Field eq 'DependsOn') {
-		return $self->loc("Dependency on [_1] deleted",$value);
-	} elsif ($self->Field eq 'DependedOnBy') {
-		return $self->loc("Dependency by [_1] deleted",$value);
-		
-	} elsif ($self->Field eq 'RefersTo') {
-		return $self->loc("Reference to [_1] deleted",$value);
-	} elsif ($self->Field eq 'ReferredToBy') {
-		return $self->loc("Reference by [_1] deleted",$value);
-	} elsif ($self->Field eq 'MemberOf') {
-		return $self->loc("Membership in [_1] deleted",$value);
-	} elsif ($self->Field eq 'HasMember') {
-		return $self->loc("Member [_1] deleted",$value);
-	} else {
-        return ( $self->Data );
-	}
-    }
-    elsif ( $type eq 'Set' ) {
+            }
+            elsif ( $self->Field eq 'RefersTo' ) {
+                return $self->loc( "Reference to [_1] added", $value );
+            }
+            elsif ( $self->Field eq 'ReferredToBy' ) {
+                return $self->loc( "Reference by [_1] added", $value );
+            }
+            elsif ( $self->Field eq 'MemberOf' ) {
+                return $self->loc( "Membership in [_1] added", $value );
+            }
+            elsif ( $self->Field eq 'HasMember' ) {
+                return $self->loc( "Member [_1] added", $value );
+            }
+        }
+        else {
+            return ( $self->Data );
+        }
+    },
+    DeleteLink => sub {
+        my $self = shift;
+        my $value;
+        if ( $self->OldValue ) {
+            my $URI = RT::URI->new( $self->CurrentUser );
+            $URI->FromURI( $self->OldValue );
+            if ( $URI->Resolver ) {
+                $value = $URI->Resolver->AsString;
+            }
+            else {
+                $value = $self->OldValue;
+            }
+
+            if ( $self->Field eq 'DependsOn' ) {
+                return $self->loc( "Dependency on [_1] deleted", $value );
+            }
+            elsif ( $self->Field eq 'DependedOnBy' ) {
+                return $self->loc( "Dependency by [_1] deleted", $value );
+
+            }
+            elsif ( $self->Field eq 'RefersTo' ) {
+                return $self->loc( "Reference to [_1] deleted", $value );
+            }
+            elsif ( $self->Field eq 'ReferredToBy' ) {
+                return $self->loc( "Reference by [_1] deleted", $value );
+            }
+            elsif ( $self->Field eq 'MemberOf' ) {
+                return $self->loc( "Membership in [_1] deleted", $value );
+            }
+            elsif ( $self->Field eq 'HasMember' ) {
+                return $self->loc( "Member [_1] deleted", $value );
+            }
+        }
+        else {
+            return ( $self->Data );
+        }
+    },
+    Set => sub {
+        my $self = shift;
         if ( $self->Field eq 'Queue' ) {
             my $q1 = new RT::Queue( $self->CurrentUser );
             $q1->Load( $self->OldValue );
@@ -676,25 +650,22 @@ sub BriefDescription {
         }
 
         # Write the date/time change at local time:
-    elsif ($self->Field =~  /Due|Starts|Started|Told/) {
-        my $t1 = new RT::Date($self->CurrentUser);
-        $t1->Set(Format => 'ISO', Value => $self->NewValue);
-        my $t2 = new RT::Date($self->CurrentUser);
-        $t2->Set(Format => 'ISO', Value => $self->OldValue);
-        return $self->loc( "[_1] changed from [_2] to [_3]", $self->Field, $t2->AsString, $t1->AsString );
-    }
+        elsif ($self->Field =~  /Due|Starts|Started|Told/) {
+            my $t1 = new RT::Date($self->CurrentUser);
+            $t1->Set(Format => 'ISO', Value => $self->NewValue);
+            my $t2 = new RT::Date($self->CurrentUser);
+            $t2->Set(Format => 'ISO', Value => $self->OldValue);
+            return $self->loc( "[_1] changed from [_2] to [_3]", $self->Field, $t2->AsString, $t1->AsString );
+        }
         else {
             return $self->loc( "[_1] changed from [_2] to [_3]", $self->Field, $self->OldValue, $self->NewValue );
         }
-    }
-    elsif ( $type eq 'PurgeTransaction' ) {
+    },
+    PurgeTransaction => sub {
+        my $self = shift;
         return $self->loc("Transaction [_1] purged", $self->Data);
-    }
-    else {
-        return $self->loc( "Default: [_1]/[_2] changed from [_3] to [_4]", $type, $self->Field, $self->OldValue, $self->NewValue );
-
-    }
-}
+    },
+);
 
 # }}}
 
@@ -814,4 +785,12 @@ sub CurrentUserHasRight {
 
 # }}}
 
+# Transactions don't change. by adding this cache congif directiove, we don't lose pathalogically on long tickets.
+sub _CacheConfig {
+  {
+     'cache_p'        => 1,
+     'fast_update_p'  => 1,
+     'cache_for_sec'  => 180,
+  }
+}
 1;

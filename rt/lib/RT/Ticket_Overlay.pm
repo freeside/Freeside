@@ -305,6 +305,7 @@ sub Create {
     my $self = shift;
 
     my %args = ( id              => undef,
+                 EffectiveId     => undef,
                  Queue           => undef,
                  Requestor       => undef,
                  Cc              => undef,
@@ -314,6 +315,7 @@ sub Create {
                  Subject         => '',
                  InitialPriority => undef,
                  FinalPriority   => undef,
+                 Priority   => undef,
                  Status          => 'new',
                  TimeWorked      => "0",
                  TimeLeft        => 0,
@@ -377,6 +379,11 @@ sub Create {
     # If there's no queue default final priority and it's not set, set it to 0
     $args{'FinalPriority'} = ( $QueueObj->FinalPriority || 0 )
       unless ( defined $args{'FinalPriority'} );
+
+    # Priority may have changed from InitialPriority, for the case
+    # where we're importing tickets (eg, from an older RT version.)
+    my $priority = $args{'Priority'} || $args{'InitialPriority'};
+
 
     # {{{ Dates
     #TODO we should see what sort of due date we're getting, rather +
@@ -473,7 +480,7 @@ sub Create {
      next unless (defined $args{$type});
         foreach my $watcher ( ref( $args{$type} ) ? @{ $args{$type} } : ( $args{$type} ) ) {
         my $user = RT::User->new($RT::SystemUser);
-        $user->LoadOrCreateByEmail($watcher) if ($watcher !~ /^\d+$/);
+        $user->LoadOrCreateByEmail($watcher) if ($watcher && $watcher !~ /^\d+$/);
         }
     }
 
@@ -485,7 +492,7 @@ sub Create {
                                    Subject         => $args{'Subject'},
                                    InitialPriority => $args{'InitialPriority'},
                                    FinalPriority   => $args{'FinalPriority'},
-                                   Priority        => $args{'InitialPriority'},
+                                   Priority        => $priority,
                                    Status          => $args{'Status'},
                                    TimeWorked      => $args{'TimeWorked'},
                                    TimeEstimated   => $args{'TimeEstimated'},
@@ -515,7 +522,7 @@ sub Create {
     }
 
     #Set the ticket's effective ID now that we've created it.
-    my ( $val, $msg ) = $self->__Set( Field => 'EffectiveId', Value => $id );
+    my ( $val, $msg ) = $self->__Set( Field => 'EffectiveId', Value => ($args{'EffectiveId'} || $id ) );
 
     unless ($val) {
         $RT::Logger->crit("$self ->Create couldn't set EffectiveId: $msg\n");
@@ -545,6 +552,9 @@ sub Create {
     foreach my $type ( "Cc", "AdminCc", "Requestor" ) {
         next unless (defined $args{$type});
         foreach my $watcher ( ref( $args{$type} ) ? @{ $args{$type} } : ( $args{$type} ) ) {
+
+	   # If there is an empty entry in the list, let's get out of here.
+	   next unless $watcher;
 
 	    # we reason that all-digits number must be a principal id, not email
 	    # this is the only way to can add
@@ -601,7 +611,7 @@ sub Create {
     my $cfid = $1;
     foreach
       my $value ( ref( $args{$arg} ) ? @{ $args{$arg} } : ( $args{$arg} ) ) {
-        next unless ($value);
+        next unless (length($value));
         $self->_AddCustomFieldValue( Field => $cfid,
                                      Value => $value,
                                      RecordTransaction => 0
@@ -832,8 +842,8 @@ AddRequestor: jesse\@example.com
 EOF
 
 my $ticket = RT::Ticket->new($RT::SystemUser);
-$ticket->Create(Subject => 'first', Queue => 'general');
-ok($ticket->Id, "Created the test ticket");
+my ($id,$msg) =$ticket->Create(Subject => 'first', Queue => 'general');
+ok($ticket->Id, "Created the test ticket - ".$id ." - ".$msg);
 $ticket->UpdateFrom822($simple_update);
 is($ticket->Subject, 'target', "changed the subject");
 my $jesse = RT::User->new($RT::SystemUser);
@@ -970,7 +980,7 @@ sub UpdateFrom822 {
 
         # If we've been given a number of delresses to del, do it.
                 foreach my $address (@{$ticketargs{'Del'.$type}}) {
-                my ($id, $msg) = $self->DelWatcher( Type => $type, Email => $address);
+                my ($id, $msg) = $self->DeleteWatcher( Type => $type, Email => $address);
                 push (@results, $msg) ;
                 }
 
@@ -2228,9 +2238,11 @@ sub Comment {
     # The "NotifyOtherRecipients" scripAction will look for RT--Send-Cc: and
     # RT-Send-Bcc: headers
 
-    $args{'MIMEObj'}->head->add( 'RT-Send-Cc',  $args{'CcMessageTo'} )
+    $args{'MIMEObj'}->head->add( 'RT-Send-Cc',
+        RT::User::CanonicalizeEmailAddress(undef, $args{'CcMessageTo'}) )
 	if defined $args{'CcMessageTo'};
-    $args{'MIMEObj'}->head->add( 'RT-Send-Bcc', $args{'BccMessageTo'} )
+    $args{'MIMEObj'}->head->add( 'RT-Send-Bcc',
+        RT::User::CanonicalizeEmailAddress(undef, $args{'BccMessageTo'}) )
 	if defined $args{'BccMessageTo'};
 
     #Record the correspondence (write the transaction)
@@ -2296,9 +2308,11 @@ sub Correspond {
     # The "NotifyOtherRecipients" scripAction will look for RT-Send-Cc: and RT-Send-Bcc:
     # headers
 
-    $args{'MIMEObj'}->head->add( 'RT-Send-Cc',  $args{'CcMessageTo'} )
+    $args{'MIMEObj'}->head->add( 'RT-Send-Cc',
+        RT::User::CanonicalizeEmailAddress(undef, $args{'CcMessageTo'}) )
 	if defined $args{'CcMessageTo'};
-    $args{'MIMEObj'}->head->add( 'RT-Send-Bcc', $args{'BccMessageTo'} )
+    $args{'MIMEObj'}->head->add( 'RT-Send-Bcc',
+        RT::User::CanonicalizeEmailAddress(undef, $args{'BccMessageTo'}) )
 	if defined $args{'BccMessageTo'};
 
     #Record the correspondence (write the transaction)
@@ -2894,9 +2908,6 @@ sub MergeInto {
     }
 
 
-    #make a new link: this ticket is merged into that other ticket.
-    $self->AddLink( Type   => 'MergedInto', Target => $NewTicket->Id());
-
     #add all of this ticket's watchers to that ticket.
     my $requestors = $self->Requestors->MembersObj;
     while (my $watcher = $requestors->Next) { 
@@ -2935,6 +2946,9 @@ sub MergeInto {
             Value => $NewTicket->Id()
         );
     }
+
+    #make a new link: this ticket is merged into that other ticket.
+    $self->AddLink( Type   => 'MergedInto', Target => $NewTicket->Id());
 
     $NewTicket->_SetLastUpdated;
 
@@ -3266,8 +3280,14 @@ sub SetStatus {
     }
 
     #Check ACL
-    unless ( $self->CurrentUserHasRight('ModifyTicket') ) {
-        return ( 0, $self->loc('Permission Denied') );
+    if ( $args{Status} eq 'deleted') {
+            unless ($self->CurrentUserHasRight('DeleteTicket')) {
+            return ( 0, $self->loc('Permission Denied') );
+       }
+    } else {
+            unless ($self->CurrentUserHasRight('ModifyTicket')) {
+            return ( 0, $self->loc('Permission Denied') );
+       }
     }
 
     if (!$args{Force} && ($args{'Status'} eq 'resolved') && $self->HasUnresolvedDependencies) {
@@ -3440,6 +3460,7 @@ sub CustomFieldValues {
     my $cf_values = RT::TicketCustomFieldValues->new( $self->CurrentUser );
     $cf_values->LimitToCustomField($cf->id);
     $cf_values->LimitToTicket($self->Id());
+    $cf_values->OrderBy( FIELD => 'id' );
 
     # @values is a CustomFieldValues object;
     return ($cf_values);
@@ -3451,7 +3472,7 @@ sub CustomFieldValues {
 
 =item AddCustomFieldValue { Field => FIELD, Value => VALUE }
 
-VALUE can either be a CustomFieldValue object or a string.
+VALUE should be a string.
 FIELD can be a CustomField object OR a CustomField ID.
 
 
@@ -3798,10 +3819,44 @@ sub _NewTransaction {
     if ( defined $args{'TimeTaken'} ) {
         $self->_UpdateTimeTaken( $args{'TimeTaken'} );
     }
+    if ( $RT::UseTransactionBatch and $transaction ) {
+	push @{$self->{_TransactionBatch}}, $trans;
+    }
     return ( $transaction, $msg, $trans );
 }
 
 # }}}
+
+=head2 TransactionBatch
+
+  Returns an array reference of all transactions created on this ticket during
+  this ticket object's lifetime, or undef if there were none.
+
+  Only works when the $RT::UseTransactionBatch config variable is set to true.
+
+=cut
+
+sub TransactionBatch {
+    my $self = shift;
+    return $self->{_TransactionBatch};
+}
+
+sub DESTROY {
+    my $self = shift;
+
+    # The following line eliminates reentrancy.
+    # It protects against the fact that perl doesn't deal gracefully
+    # when an object's refcount is changed in its destructor.
+    return if $self->{_Destroyed}++;
+
+    my $batch = $self->TransactionBatch or return;
+    require RT::Scrips;
+    RT::Scrips->new($RT::SystemUser)->Apply(
+	Stage		=> 'TransactionBatch',
+	TicketObj	=> $self,
+	TransactionObj	=> $batch->[0],
+    );
+}
 
 # }}}
 

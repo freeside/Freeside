@@ -95,7 +95,7 @@ sub CheckForLoops {
     #If this instance of RT sent it our, we don't want to take it in
     my $RTLoop = $head->get("X-RT-Loop-Prevention") || "";
     chomp($RTLoop);    #remove that newline
-    if ( $RTLoop =~ /^$RT::rtname/ ) {
+    if ( $RTLoop =~ /^\Q$RT::rtname\E/o ) {
         return (1);
     }
 
@@ -159,28 +159,23 @@ sub ParseMIMEEntityFromSTDIN {
 
 # }}}
 
+=head2 ParseMIMEEntityFromScalar  $message
+
+Takes either a scalar or a reference to a scalr which contains a stringified MIME message.
+Parses it.
+
+Returns true if it wins.
+Returns false if it loses.
+
+
+=cut
 
 sub ParseMIMEEntityFromScalar {
     my $self = shift;
     my $message = shift;
 
-    # Create a new parser object:
+    $self->_DoParse('parse_data', $message);
 
-    my $parser = MIME::Parser->new();
-    $self->_SetupMIMEParser($parser);
-
-
-    # TODO: XXX 3.0 we really need to wrap this in an eval { }
-    unless ( $self->{'entity'} = $parser->parse_data($message) ) {
-        # Try again, this time without extracting nested messages
-        $parser->extract_nested_messages(0);
-        unless ( $self->{'entity'} = $parser->parse_data($message) ) {
-            $RT::Logger->crit("couldn't parse MIME stream");
-            return ( undef);
-        }
-    }
-    $self->_PostProcessNewEntity();
-    return (1);
 }
 
 # {{{ ParseMIMEEntityFromFilehandle *FH
@@ -195,6 +190,43 @@ sub ParseMIMEEntityFromFileHandle {
     my $self = shift;
     my $filehandle = shift;
 
+    $self->_DoParse('parse', $filehandle);
+
+}
+
+# }}}
+
+# {{{ ParseMIMEEntityFromFile
+
+=head2 ParseMIMEEntityFromFile 
+
+Parses a mime entity from a filename passed in as an argument
+
+=cut
+
+sub ParseMIMEEntityFromFile {
+    my $self = shift;
+
+    my $file = shift;
+    $self->_DoParse('parse_open', $file);
+}
+
+# }}}
+
+# {{{ _DoParse 
+
+=head2 _DoParse PARSEMETHOD CONTENT
+
+
+A helper for the various parsers to turn around and do the dispatch to the actual parser
+
+=cut
+
+sub _DoParse {
+    my $self = shift;
+    my $method = shift;
+    my $file = shift;
+
     # Create a new parser object:
 
     my $parser = MIME::Parser->new();
@@ -203,11 +235,11 @@ sub ParseMIMEEntityFromFileHandle {
 
     # TODO: XXX 3.0 we really need to wrap this in an eval { }
 
-    unless ( $self->{'entity'} = $parser->parse($filehandle) ) {
+    unless ( $self->{'entity'} = $parser->$method($file) ) {
 
         # Try again, this time without extracting nested messages
         $parser->extract_nested_messages(0);
-        unless ( $self->{'entity'} = $parser->parse($filehandle) ) {
+        unless ( $self->{'entity'} = $parser->$method($file) ) {
             $RT::Logger->crit("couldn't parse MIME stream");
             return ( undef);
         }
@@ -217,6 +249,7 @@ sub ParseMIMEEntityFromFileHandle {
 }
 
 # }}}
+
 
 # {{{ _PostProcessNewEntity 
 
@@ -250,7 +283,7 @@ sub ParseTicketId {
 
     my $Subject = shift;
 
-    if ( $Subject =~ s/\[$RT::rtname \#(\d+)\s*\]//i ) {
+    if ( $Subject =~ s/\[\Q$RT::rtname\E\s+\#(\d+)\s*\]//i ) {
         my $id = $1;
         $RT::Logger->debug("Found a ticket ID. It's $id");
         return ($id);
@@ -762,17 +795,20 @@ sub _SetupMIMEParser {
 
     # Set up output directory for files:
     $parser->output_dir("$AttachmentDir");
+    $parser->filer->ignore_filename(1);
 
-    #If someone includes a message, don't extract it
+
+    #If someone includes a message, extract it
     $parser->extract_nested_messages(1);
+
+    $parser->extract_uuencode(1);           ### default is false
 
     # Set up the prefix for files with auto-generated names:
     $parser->output_prefix("part");
 
-    # If content length is <= 50000 bytes, store each msg as in-core scalar;
-    # Else, write to a disk file (the default action):
+    # do _not_ store each msg as in-core scalar;
 
-    $parser->output_to_core(50000);
+    $parser->output_to_core(0);
 }
 # }}}
 

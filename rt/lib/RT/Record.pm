@@ -211,7 +211,10 @@ sub LoadByCols {
                 $newhash{$key} = $hash{$key};
             }
             else {
-                $newhash{ "lower(" . $key . ")" } = lc( $hash{$key} );
+                my ($op, $val);
+                ($key, $op, $val) = $self->_Handle->_MakeClauseCaseInsensitive($key, '=', $hash{$key});
+                $newhash{$key}->{operator} = $op;
+                $newhash{$key}->{value} = $val;
             }
         }
 

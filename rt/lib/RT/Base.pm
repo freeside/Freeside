@@ -23,6 +23,7 @@
 # END LICENSE BLOCK
 package RT::Base;
 use Carp;
+use Scalar::Util;
 
 use strict;
 use vars qw(@EXPORT);
@@ -47,12 +48,14 @@ sub CurrentUser {
     my $self = shift;
 
     if (@_) {
+        $self->{'original_user'} = $self->{'user'};
         $self->{'user'} = shift;
+        Scalar::Util::weaken($self->{'user'}) if (ref($self->{'user'}) &&
+                                                    $self->{'user'} == $self );
     }
 
-    unless ( $self->{'user'} ) {
-        $RT::Logger->err(
-                  "$self was created without a CurrentUser\n" . Carp::cluck() );
+    unless ( ref( $self->{'user'}) ) {
+        $RT::Logger->err( "$self was created without a CurrentUser\n" . Carp::cluck() );
         return (0);
         die;
     }
@@ -61,6 +64,16 @@ sub CurrentUser {
 
 # }}}
 
+sub OriginalUser {
+    my $self = shift;
+
+    if (@_) {
+        $self->{'original_user'} = shift;
+        Scalar::Util::weaken($self->{'original_user'})
+            if (ref($self->{'original_user'}) && $self->{'original_user'} == $self );
+    }
+    return ( $self->{'original_user'} || $self->{'user'} );
+}
 
 
 =item loc LOC_STRING
@@ -80,12 +93,14 @@ In english, this would return:
 
 sub loc {
     my $self = shift;
-    unless ($self->CurrentUser) {
+    if (my $user = $self->OriginalUser) {
+        return $user->loc(@_);
+    }
+    else {
         use Carp;
         Carp::confess("No currentuser");
         return ("Critical error:$self has no CurrentUser", $self);
     }
-    return($self->CurrentUser->loc(@_));
 }
 
 eval "require RT::Base_Vendor";

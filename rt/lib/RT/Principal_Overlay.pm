@@ -348,6 +348,12 @@ sub HasRight {
             next unless (UNIVERSAL::can($obj, 'id'));
             my $type = ref($obj);
             my $id = $obj->id;
+
+            unless ($id) {
+                use Carp;
+		Carp::cluck("Trying to check $type rights for an unspecified $type");
+                $RT::Logger->crit("Trying to check $type rights for an unspecified $type");
+            }
             push @look_at_objects, "(ACL.ObjectType = '$type' AND ACL.ObjectId = '$id')"; 
             }
 
@@ -385,7 +391,8 @@ sub HasRight {
     "AND ( (  ACL.PrincipalId = Principals.id AND ACL.PrincipalType = 'Group' AND ".
         "(Groups.Domain = 'SystemInternal' OR Groups.Domain = 'UserDefined' OR Groups.Domain = 'ACLEquivalence' OR Groups.Domain = 'Personal'))".
 
-        " ) LIMIT 1";
+        " ) ";
+        $self->_Handle->ApplyLimits(\$groups_query, 1); #only return one result
         
     my @roles;
     foreach my $object (@{$args{'EquivObjects'}}) { 
@@ -397,7 +404,8 @@ sub HasRight {
     if (@roles) {
 	 $roles_query = $query_base . "AND ".
             " ( (".join (' OR ', @roles)." ) ".  
-        " AND Groups.Type = ACL.PrincipalType AND Groups.Id = Principals.id AND Principals.PrincipalType = 'Group') LIMIT 1";
+        " AND Groups.Type = ACL.PrincipalType AND Groups.Id = Principals.id AND Principals.PrincipalType = 'Group') "; 
+        $self->_Handle->ApplyLimits(\$roles_query, 1); #only return one result
 
    }
 
@@ -461,7 +469,18 @@ sub _RolesForObject {
     my $self = shift;
     my $type = shift;
     my $id = shift;
-    my $clause = "(Groups.Domain = '".$type."-Role' AND Groups.Instance = '" . $id. "') ";
+
+    unless ($id) {
+	$id = '0';
+   }
+
+   # This should never be true.
+   unless ($id =~ /^\d+$/) {
+	$RT::Logger->crit("RT::Prinicipal::_RolesForObject called with type $type and a non-integer id: '$id'");
+	$id = "'$id'";
+   }
+
+    my $clause = "(Groups.Domain = '".$type."-Role' AND Groups.Instance = $id) ";
 
     return($clause);
 }

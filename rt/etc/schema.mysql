@@ -62,6 +62,7 @@ CREATE TABLE Links (
 CREATE UNIQUE INDEX Links1 ON Links (Base, Target, Type) ;
 CREATE INDEX Links2 ON Links (Base,  Type) ;
 CREATE INDEX Links3 ON Links (Target,  Type) ;
+CREATE INDEX Links4 ON Links(Type,LocalBase);
 
 # }}}
 
@@ -87,7 +88,7 @@ CREATE TABLE Groups (
   Description varchar(255) NULL  ,
   Domain varchar(64),
   Type varchar(64),
-  Instance varchar(64),
+  Instance integer,
   PRIMARY KEY (id)
 ) TYPE=InnoDB;
 
@@ -125,7 +126,7 @@ CREATE TABLE Transactions (
   Field varchar(40) NULL  ,
   OldValue varchar(255) NULL  ,
   NewValue varchar(255) NULL  ,
-  Data varchar(100) NULL  ,
+  Data varchar(255) NULL  ,
 
   Creator integer NOT NULL DEFAULT 0  ,
   Created DATETIME NULL  ,
@@ -358,6 +359,9 @@ CREATE TABLE TicketCustomFieldValues (
   PRIMARY KEY (id)
 ) TYPE=InnoDB;
 
+CREATE INDEX TicketCustomFieldValues1 ON TicketCustomFieldValues (CustomField,Ticket,Content); 
+CREATE INDEX TicketCustomFieldValues2 ON TicketCustomFieldValues (CustomField,Ticket); 
+
 # }}}
 
 # {{{ CustomFields
@@ -399,6 +403,8 @@ CREATE TABLE CustomFieldValues (
   PRIMARY KEY (id)
 ) TYPE=InnoDB;
 
+CREATE INDEX CustomFieldValues1 ON CustomFieldValues (CustomField);
+ 
 # }}}
 
 # {{{ Sessions

@@ -133,7 +133,7 @@ sub ParseURI {
     if ( $self->IsLocal) {
    
         my $local_uri_prefix = $self->LocalURIPrefix;
-    	if ($self->{'uri'} =~ /^$local_uri_prefix(\d+)$/) {
+    	if ($self->{'uri'} =~ /^$local_uri_prefix(\d+)$/i) {
     		my $id = $1;
     	
     
@@ -170,7 +170,7 @@ Returns undef otherwise.
 sub IsLocal {
 	my $self = shift;
         my $local_uri_prefix = $self->LocalURIPrefix;
-	if ($self->{'uri'} =~ /^$local_uri_prefix/) {
+	if ($self->{'uri'} =~ /^$local_uri_prefix/i) {
 		return 1;
     }
 	else {
@@ -214,7 +214,7 @@ Otherwise, return its URI
 
 sub HREF {
     my $self = shift;
-    if ($self->IsLocal) {
+    if ($self->IsLocal && $self->Object) {
         return ( $RT::WebURL . "Ticket/Display.html?id=".$self->Object->Id);
     }   
     else {
@@ -230,12 +230,11 @@ Returns either a localized string 'ticket #23' or the full URI if the object is 
 
 sub AsString {
     my $self = shift;
-    if ($self->IsLocal) {
-	return $self->loc("ticket #[_1]", $self->Object->Id);
-
+    if ($self->IsLocal && $self->Object) {
+	    return $self->loc("ticket #[_1]", $self->Object->Id);
     }
     else {
-	return $self->Object->URI;
+	    return $self->URI;
     }
 }
 

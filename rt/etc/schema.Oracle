@@ -1,202 +1,198 @@
-CREATE SEQUENCE KEYWORDSELECTS_seq;
-CREATE TABLE KeywordSelects (
-	id		NUMBER(11, 0) PRIMARY KEY,
-	Name		VARCHAR2(255),
-	Keyword		NUMBER(11, 0),
-	Single		NUMBER(11, 0),
-	Depth		NUMBER(11, 0) DEFAULT 0,
-	ObjectType	VARCHAR2(32) NOT NULL,
-	ObjectField	VARCHAR2(32),
-	ObjectValue	VARCHAR2(255),
-	Disabled		NUMBER(11, 0) DEFAULT 0
-);
-
-CREATE INDEX KeywordSelects1 ON KeywordSelects (Keyword);
-CREATE INDEX KeywordSelects2 ON 
-	KeywordSelects(ObjectType, ObjectField, ObjectValue);
-
-
 CREATE SEQUENCE ATTACHMENTS_seq;
 CREATE TABLE Attachments (
-  	id 		NUMBER(11,0) PRIMARY KEY,
+  	id 		NUMBER(11,0) 
+			CONSTRAINT Attachments_Key PRIMARY KEY,
   	TransactionId	NUMBER(11,0) NOT NULL,
-  	Parent 		NUMBER(11,0), 		
+	Parent 		NUMBER(11,0) DEFAULT 0 NOT NULL, 
   	MessageId 	VARCHAR2(160),
   	Subject 	VARCHAR2(255),
   	Filename 	VARCHAR2(255),
   	ContentType 	VARCHAR2(80),
-  	ContentEncoding 	VARCHAR2(80),
+  	ContentEncoding VARCHAR2(80),
   	Content 	CLOB,
   	Headers 	CLOB,
-  	Creator 	NUMBER(11,0),
-  	Created 	DATE,
-  	Disabled 	NUMBER(11,0) DEFAULT 0
+	Creator 	NUMBER(11,0) DEFAULT 0 NOT NULL,
+  	Created 	DATE
 );
+CREATE INDEX Attachments2 ON Attachments (TransactionId);
+CREATE INDEX Attachments3 ON Attachments (Parent, TransactionId);
+
 
 CREATE SEQUENCE QUEUES_seq;
 CREATE TABLE Queues (
- 	id 			NUMBER(11, 0) PRIMARY KEY,
-	Name 			VARCHAR2(40) NOT NULL UNIQUE,
-	Description 		VARCHAR2(120),
- 	CorrespondAddress 	VARCHAR2(40),
- 	CommentAddress 		VARCHAR2(40),
- 	InitialPriority 	NUMBER(11, 0),		
- 	FinalPriority 		NUMBER(11, 0),
- 	DefaultDueIn 		NUMBER(11, 0),
-  	Creator 		NUMBER(11, 0),
-  	Created 		DATE,
-  	LastUpdatedBy 		NUMBER(11, 0),
-  	LastUpdated		DATE,
-  	Disabled 		NUMBER(11,0) DEFAULT 0
+	id 			NUMBER(11,0) 
+		CONSTRAINT Queues_Key PRIMARY KEY,
+	Name 			VARCHAR2(200) CONSTRAINT Queues_Name_Unique UNIQUE NOT NULL,
+	Description 		VARCHAR2(255),
+	CorrespondAddress 	VARCHAR2(120),
+	CommentAddress 		VARCHAR2(120),
+	InitialPriority 	NUMBER(11,0) DEFAULT 0 NOT NULL,
+	FinalPriority 		NUMBER(11,0) DEFAULT 0 NOT NULL,
+	DefaultDueIn 		NUMBER(11,0) DEFAULT 0 NOT NULL,
+	Creator 		NUMBER(11,0) DEFAULT 0 NOT NULL,
+	Created 		DATE,
+	LastUpdatedBy 		NUMBER(11,0) DEFAULT 0 NOT NULL,
+	LastUpdated		DATE,
+	Disabled 		NUMBER(11,0) DEFAULT 0 NOT NULL
 );
+ CREATE  INDEX Queues1 ON Queues (lower(Name));
+CREATE INDEX Queues2 ON Queues (Disabled);
+
 
 CREATE SEQUENCE LINKS_seq;
 CREATE TABLE Links (
-  	id 		NUMBER(11,0) PRIMARY KEY,
-  	Base 		VARCHAR2(255),
-  	Target 		VARCHAR2(255),
+  	id 		NUMBER(11,0) 
+		CONSTRAINT Links_Key PRIMARY KEY,
+	Base 		VARCHAR2(240),
+	Target 		VARCHAR2(240),
   	Type 		VARCHAR2(20) NOT NULL,
-	LocalTarget	NUMBER(11,0),
-	LocalBase	NUMBER(11,0),
-  	LastUpdatedBy 	NUMBER(11,0),
+	LocalTarget	NUMBER(11,0) DEFAULT 0 NOT NULL,
+	LocalBase	NUMBER(11,0) DEFAULT 0 NOT NULL,
+	LastUpdatedBy 	NUMBER(11,0) DEFAULT 0 NOT NULL,
   	LastUpdated 	DATE,
-  	Creator 	NUMBER(11,0),
+	Creator 	NUMBER(11,0) DEFAULT 0 NOT NULL,
   	Created 	DATE
 );
-
 CREATE UNIQUE INDEX Links1 ON Links (Base, Target, Type);
+CREATE INDEX Links2 ON Links (Base, Type);
+CREATE INDEX Links3 ON Links (Target, Type);
+CREATE INDEX Links4 ON Links(Type,LocalBase);
 
+
+CREATE SEQUENCE PRINCIPALS_seq;
+CREATE TABLE Principals (
+	id		NUMBER(11,0) 
+		CONSTRAINT Principals_Key PRIMARY KEY,
+	PrincipalType	VARCHAR2(16),
+	ObjectId	NUMBER(11,0),
+	Disabled	NUMBER(11,0) DEFAULT 0 NOT NULL
+);
+CREATE UNIQUE  INDEX Principals2 ON Principals (ObjectId);
 
 
 CREATE SEQUENCE GROUPS_seq;
 CREATE TABLE Groups (
-	id 		NUMBER(11,0) PRIMARY KEY,
-	Name 		VARCHAR2(16) UNIQUE,
-	Description 	VARCHAR(64),
-	Pseudo		NUMBER(11,0) DEFAULT 0
+	id 		NUMBER(11,0) 
+		CONSTRAINT Groups_Key PRIMARY KEY,
+	Name 		VARCHAR2(200),
+	Description 	VARCHAR2(255),
+	Domain		VARCHAR2(64),
+	Type		VARCHAR2(64),
+	Instance	NUMBER(11,0) DEFAULT 0 -- NOT NULL
+--	Instance	VARCHAR2(64)
 );
-
-CREATE SEQUENCE WATCHERS_seq;
-CREATE TABLE Watchers (
-   	id 		NUMBER(11,0) PRIMARY KEY,
-   	Type 		VARCHAR2(16), 	
-   	Scope 		VARCHAR2(16),	
-   	Value 		NUMBER(11,0),	
-   	Email 		VARCHAR2(255),  
-   	Quiet 		NUMBER(11,0),	
-   	Owner 		NUMBER(11,0),	
-   	Creator 	NUMBER(11,0),
-   	Created 	DATE,
-   	LastUpdatedBy 	NUMBER(11,0),
-   	LastUpdated 	DATE
-);
-
+CREATE INDEX Groups1 ON Groups (lower( Domain), Instance, lower(Type), id);
+CREATE INDEX Groups2 ON Groups (lower(Type), Instance, lower(Domain));
 
 
 CREATE SEQUENCE SCRIPCONDITIONS_seq;
 CREATE TABLE ScripConditions (
- 	id 			NUMBER(11, 0) PRIMARY KEY,
-	Name 			VARCHAR2(255),
+ 	id 			NUMBER(11, 0) 
+		CONSTRAINT ScripConditions_Key PRIMARY KEY,
+	Name 			VARCHAR2(200),
 	Description 		VARCHAR2(255),
 	ExecModule		VARCHAR2(60),
 	Argument		VARCHAR2(255),
 	ApplicableTransTypes	VARCHAR2(60),
-  	Creator 		NUMBER(11, 0),
+  	Creator 		NUMBER(11,0) DEFAULT 0 NOT NULL,
   	Created 		DATE,
-  	LastUpdatedBy 		NUMBER(11, 0),
+  	LastUpdatedBy 		NUMBER(11,0) DEFAULT 0 NOT NULL,
   	LastUpdated		DATE
 );
 
 
 CREATE SEQUENCE TRANSACTIONS_seq;
 CREATE TABLE Transactions (
-  	id 			NUMBER(11,0) PRIMARY KEY,
-  	EffectiveTicket 	NUMBER(11,0),
-  	Ticket 			NUMBER(11,0),
-  	TimeTaken 		NUMBER(11,0),
+  	id 			NUMBER(11,0) 
+		CONSTRAINT Transactions_Key PRIMARY KEY,
+  	EffectiveTicket 	NUMBER(11,0) DEFAULT 0 NOT NULL,
+  	Ticket 			NUMBER(11,0) DEFAULT 0 NOT NULL,
+  	TimeTaken 		NUMBER(11,0) DEFAULT 0 NOT NULL,
   	Type 			VARCHAR2(20),
   	Field 			VARCHAR2(40),
   	OldValue 		VARCHAR2(255),
   	NewValue 		VARCHAR2(255),
-  	Data 			VARCHAR2(100),
-  	Creator 		NUMBER(11,0),
-  	Created 		DATE,
-  	Disabled 		NUMBER(11,0) DEFAULT 0
+  	Data 			VARCHAR2(255),
+  	Creator 		NUMBER(11,0) DEFAULT 0 NOT NULL,
+  	Created 		DATE
 );
+CREATE INDEX Transactions1 ON Transactions (Ticket);
+CREATE INDEX Transactions2 ON Transactions (EffectiveTicket);
+
 
 CREATE SEQUENCE SCRIPS_seq;
 CREATE TABLE Scrips (
-  	id 		NUMBER(11,0) PRIMARY KEY,	
-	ScripCondition 	NUMBER(11,0),
-	ScripAction	NUMBER(11,0),
+  	id 		NUMBER(11,0) 
+		CONSTRAINT Scrips_Key PRIMARY KEY,	
+	Description	VARCHAR2(255),
+	ScripCondition 	NUMBER(11,0) DEFAULT 0 NOT NULL,
+	ScripAction	NUMBER(11,0) DEFAULT 0 NOT NULL,
+	ConditionRules	CLOB,
+	ActionRules	CLOB,
+	CustomIsApplicableCode	CLOB,
+	CustomPrepareCode	CLOB,
+	CustomCommitCode	CLOB,
 	Stage		VARCHAR2(32),
-	Queue		NUMBER(11,0),
-	Template	NUMBER(11,0),
-  	Creator 	NUMBER(11,0),
+	Queue		NUMBER(11,0) DEFAULT 0 NOT NULL,
+	Template	NUMBER(11,0) DEFAULT 0 NOT NULL,
+  	Creator 	NUMBER(11,0) DEFAULT 0 NOT NULL,
   	Created 	DATE,
-  	LastUpdatedBy 	NUMBER(11,0),
+  	LastUpdatedBy 	NUMBER(11,0) DEFAULT 0 NOT NULL,
   	LastUpdated 	DATE  
 );
 
 
-
-
 CREATE SEQUENCE ACL_seq;
 CREATE TABLE ACL (
-	id 		NUMBER(11,0) PRIMARY KEY,
-	PrincipalId 	NUMBER(11,0),
-	PrincipalType 	VARCHAR2(25),
-	RightName	VARCHAR2(25),
-	RightScope	VARCHAR2(25),
-	RightAppliesTo  NUMBER(11,0)
+	id 		NUMBER(11,0) 
+		CONSTRAINT ACL_Key PRIMARY KEY,
+	PrincipalType 	VARCHAR2(25) NOT NULL,
+	PrincipalId 	NUMBER(11,0) NOT NULL,
+	RightName	VARCHAR2(25) NOT NULL,
+	ObjectType	VARCHAR2(25) NOT NULL,
+	ObjectId	NUMBER(11,0) DEFAULT 0 NOT NULL,
+	DelegatedBy	NUMBER(11,0) DEFAULT 0 NOT NULL,
+	DelegatedFrom	NUMBER(11,0) DEFAULT 0 NOT NULL
 );
+CREATE INDEX ACL1 ON ACL(RightName, ObjectType, ObjectId, PrincipalType, PrincipalId);
+
 
 CREATE SEQUENCE GROUPMEMBERS_seq;
 CREATE TABLE GroupMembers (
-	id 		NUMBER(11,0) PRIMARY KEY,
-	GroupId 	NUMBER(11,0),
-	UserId 		NUMBER(11,0) 
+	id 		NUMBER(11,0) 
+		CONSTRAINT GroupMembers_Key PRIMARY KEY,
+	GroupId 	NUMBER(11,0) DEFAULT 0 NOT NULL,
+	MemberId 	NUMBER(11,0) DEFAULT 0 NOT NULL
 );
+CREATE UNIQUE INDEX GroupMembers1 ON GroupMembers (GroupId, MemberId);
 
-CREATE UNIQUE INDEX GroupMembers1 ON GroupMembers (GroupId, UserId);
 
-
-CREATE SEQUENCE OBJECTKEYWORDS_seq;
-CREATE TABLE ObjectKeywords (
-  id 		NUMBER(11,0)  PRIMARY KEY,
-  Keyword	NUMBER(11,0) NOT NULL,
-  KeywordSelect NUMBER(11,0)  NOT NULL,
-  ObjectType	VARCHAR2(32) NOT NULL,
-  ObjectId	NUMBER(11,0) NOT NULL
+CREATE SEQUENCE CachedGroupMembers_seq;
+CREATE TABLE CachedGroupMembers (
+	id		NUMBER(11,0) 
+		CONSTRAINT CachedGroupMembers_Key PRIMARY KEY,
+	GroupId		NUMBER(11,0),
+	MemberId	NUMBER(11,0),
+	Via		NUMBER(11,0),
+	ImmediateParentId	NUMBER(11,0),
+	Disabled	NUMBER(11,0) DEFAULT 0 NOT NULL
 );
+CREATE INDEX DisGrouMem ON CachedGroupMembers (GroupId, MemberId, Disabled);
+CREATE INDEX GrouMem ON CachedGroupMembers (GroupId, MemberId);
 
-CREATE UNIQUE INDEX ObjectKeywords1 ON ObjectKeywords
-	(ObjectId, ObjectType, KeywordSelect, Keyword);
-CREATE INDEX ObjectKeywords3 ON ObjectKeywords (Keyword);
-
-CREATE SEQUENCE KEYWORDS_seq;
-CREATE TABLE Keywords (
-	id		NUMBER(11, 0) PRIMARY KEY,
-	Name		VARCHAR2(255) NOT NULL,
-	Description	VARCHAR2(255),
-	Parent		NUMBER(11, 0),
-	Disabled		NUMBER(11, 0) DEFAULT 0
-);
-
-CREATE UNIQUE INDEX Keywords1 ON Keywords (Name, Parent);
-CREATE INDEX Keywords3 ON Keywords (Parent);
 
 CREATE SEQUENCE USERS_seq;
 CREATE TABLE Users (
-  	id 			NUMBER(11,0) PRIMARY KEY,
-  	Name 			VARCHAR2(120) NOT NULL UNIQUE,
+  	id 			NUMBER(11,0) 
+		CONSTRAINT Users_Key PRIMARY KEY,
+  	Name 			VARCHAR2(200) CONSTRAINT Users_Name_Unique 
+		unique  NOT NULL,
   	Password 		VARCHAR2(40),
   	Comments 		CLOB,
   	Signature 		CLOB,
   	EmailAddress 		VARCHAR2(120),
   	FreeFormContactInfo 	CLOB,
 	Organization		VARCHAR2(200),
-	Privileged		NUMBER(11,0),
   	RealName 		VARCHAR2(120),
   	NickName 		VARCHAR2(16),
   	Lang 			VARCHAR2(16),
@@ -217,71 +213,142 @@ CREATE TABLE Users (
   	State 			VARCHAR2(100),
   	Zip 			VARCHAR2(16),
   	Country 		VARCHAR2(50),
-  	Creator 		NUMBER(11,0),
+	Timezone		VARCHAR2(50),
+	PGPKey			CLOB,
+  	Creator 		NUMBER(11,0) DEFAULT 0 NOT NULL,
   	Created 		DATE,
-  	LastUpdatedBy 		NUMBER(11,0),
-  	LastUpdated 		DATE,
-	Disabled			NUMBER(11,0) DEFAULT 0
+  	LastUpdatedBy 		NUMBER(11,0) DEFAULT 0 NOT NULL,
+  	LastUpdated 		DATE
 );
+-- CREATE UNIQUE INDEX Users1 ON Users (Name);
 
-
+CREATE INDEX Users2 ON Users( LOWER(name));
+CREATE INDEX Users4 ON Users (lower(EmailAddress));
 
 
 CREATE SEQUENCE TICKETS_seq;
 CREATE TABLE Tickets (
-  	id			NUMBER(11, 0) PRIMARY KEY,
-  	EffectiveId		NUMBER(11, 0),
-  	Queue 			NUMBER(11,0),
+       id                      NUMBER(11, 0) 
+               CONSTRAINT Tickets_Key PRIMARY KEY,
+  	EffectiveId		NUMBER(11,0) DEFAULT 0 NOT NULL,
+  	Queue 			NUMBER(11,0) DEFAULT 0 NOT NULL,
   	Type 			VARCHAR2(16), 		
-  	IssueStatement 		NUMBER(11,0), 	
-  	Resolution 		NUMBER(11,0),		
-  	Owner 			NUMBER(11,0),		
-  	Subject			VARCHAR2(200) DEFAULT '', 
-  	InitialPriority 	NUMBER(11,0) DEFAULT 0,
-  	FinalPriority 		NUMBER(11,0) DEFAULT 0,
-  	Priority 		NUMBER(11,0) DEFAULT 0,
+  	IssueStatement 		NUMBER(11,0) DEFAULT 0 NOT NULL,
+  	Resolution 		NUMBER(11,0) DEFAULT 0 NOT NULL,
+  	Owner 			NUMBER(11,0) DEFAULT 0 NOT NULL,
+  	Subject			VARCHAR2(200) DEFAULT '[no subject]', 
+  	InitialPriority 	NUMBER(11,0) DEFAULT 0 NOT NULL,
+  	FinalPriority 		NUMBER(11,0) DEFAULT 0 NOT NULL,
+  	Priority 		NUMBER(11,0) DEFAULT 0 NOT NULL,
+	TimeEstimated		NUMBER(11,0) DEFAULT 0 NOT NULL,
+  	TimeWorked 		NUMBER(11,0) DEFAULT 0 NOT NULL,
   	Status 			VARCHAR2(10), 		
-  	TimeWorked 		NUMBER(11,0) DEFAULT 0,
-	TimeLeft 		NUMBER(11,0) DEFAULT 0,
+	TimeLeft 		NUMBER(11,0) DEFAULT 0 NOT NULL,
   	Told 			DATE,
 	Starts			DATE,
 	Started			DATE,
   	Due 			DATE,
 	Resolved		DATE,
-  	LastUpdatedBy 		NUMBER(11,0),
+  	LastUpdatedBy 		NUMBER(11,0) DEFAULT 0 NOT NULL,
   	LastUpdated 		DATE,
-	Creator 		NUMBER(11,0),
+	Creator 		NUMBER(11,0) DEFAULT 0 NOT NULL,
   	Created 		DATE,
-  	Disabled 		NUMBER(11,0) DEFAULT 0
+  	Disabled 		NUMBER(11,0) DEFAULT 0 NOT NULL
 );
+CREATE INDEX Tickets1 ON Tickets (Queue, Status);
+CREATE INDEX Tickets2 ON Tickets (Owner);
+CREATE INDEX Tickets4 ON Tickets (id, Status);
+CREATE INDEX Tickets5 ON Tickets (id, EffectiveId);
+CREATE INDEX Tickets6 ON Tickets (EffectiveId, Type);
+
 
 CREATE SEQUENCE SCRIPACTIONS_seq;
 CREATE TABLE ScripActions (
-  id		NUMBER(11,0) PRIMARY KEY,
-  Name		VARCHAR2(255),
+  id		NUMBER(11,0) 
+		CONSTRAINT ScripActions_Key PRIMARY KEY,
+  Name		VARCHAR2(200),
   Description	VARCHAR2(255),
   ExecModule	VARCHAR2(60),
   Argument	VARCHAR2(255),
-  Creator	NUMBER(11,0),
+  Creator	NUMBER(11,0) DEFAULT 0 NOT NULL,
   Created	DATE,
-  LastUpdatedBy	NUMBER(11,0),
+  LastUpdatedBy	NUMBER(11,0) DEFAULT 0 NOT NULL,
   LastUpdated	DATE
 );
 
 
 CREATE SEQUENCE TEMPLATES_seq;
 CREATE TABLE Templates (
-  	id 		NUMBER(11,0) PRIMARY KEY,
+  	id 		NUMBER(11,0) 
+		CONSTRAINT Templates_Key PRIMARY KEY,
 	Queue 		NUMBER(11,0) DEFAULT 0 NOT NULL,
-	Name		VARCHAR2(40) NOT NULL UNIQUE,
-	Description	VARCHAR2(120),
+	Name		VARCHAR2(200) NOT NULL,
+	Description	VARCHAR2(255),
 	Type		VARCHAR2(16),
   	Language 	VARCHAR2(16), 
-  	TranslationOf 	NUMBER(11,0),
+  	TranslationOf 	NUMBER(11,0) DEFAULT 0 NOT NULL,
   	Content 	CLOB,
   	LastUpdated 	DATE,
-  	LastUpdatedBy 	NUMBER(11,0),
-  	Creator 	NUMBER(11,0),
+  	LastUpdatedBy 	NUMBER(11,0) DEFAULT 0 NOT NULL,
+  	Creator 	NUMBER(11,0) DEFAULT 0 NOT NULL,
   	Created 	DATE
+);
+
+
+CREATE SEQUENCE TICKETCUSTOMFIELDVALUES_seq;
+CREATE TABLE TicketCustomFieldValues (
+	id		NUMBER(11,0) 
+		CONSTRAINT TicketCustomFieldValues_Key PRIMARY KEY,
+	Ticket		NUMBER(11,0),
+	CustomField	NUMBER(11,0) NOT NULL,
+	Content		VARCHAR2(255),
+	Creator		NUMBER(11,0) DEFAULT 0 NOT NULL,
+	Created		DATE,
+	LastUpdatedBy	NUMBER(11,0) DEFAULT 0 NOT NULL,
+	LastUpdated	DATE
+);
+
+CREATE INDEX TicketCustomFieldValues1 ON TicketCustomFieldValues (CustomField,Ticket,Content); 
+CREATE INDEX TicketCustomFieldValues2 ON TicketCustomFieldValues (CustomField,Ticket); 
+
+CREATE SEQUENCE CUSTOMFIELDS_seq;
+CREATE TABLE CustomFields (
+	id		NUMBER(11,0) 
+		CONSTRAINT CustomFields_Key PRIMARY KEY,
+	Name		VARCHAR2(200),
+	Type		VARCHAR2(200),
+	Queue		NUMBER(11,0) DEFAULT 0 NOT NULL,
+	Description	VARCHAR2(255),
+	SortOrder	NUMBER(11,0) DEFAULT 0 NOT NULL,
+	Creator		NUMBER(11,0) DEFAULT 0 NOT NULL,
+	Created		DATE,
+	LastUpdatedBy	NUMBER(11,0) DEFAULT 0 NOT NULL,
+	LastUpdated	DATE,
+	Disabled	NUMBER(11,0) DEFAULT 0 NOT NULL
+);
+CREATE INDEX CustomFields1 ON CustomFields (Disabled, Queue);
+
+
+CREATE SEQUENCE CUSTOMFIELDVALUES_seq;
+CREATE TABLE CustomFieldValues (
+	id		NUMBER(11,0) 
+		CONSTRAINT CustomFieldValues_Key PRIMARY KEY,
+	CustomField	NUMBER(11,0),
+	Name		VARCHAR2(200),
+	Description	VARCHAR2(255),
+	SortOrder	NUMBER(11,0) DEFAULT 0 NOT NULL,
+	Creator		NUMBER(11,0) DEFAULT 0 NOT NULL,
+	Created		DATE,
+	LastUpdatedBy	NUMBER(11,0) DEFAULT 0 NOT NULL,
+	LastUpdated	DATE
+);
+
+CREATE INDEX CustomFieldValues1 ON CustomFieldValues (CustomField);
+
+CREATE TABLE sessions (
+	id		VARCHAR2(32) 
+		CONSTRAINT Sessions_Key PRIMARY KEY,
+	a_session	CLOB,
+	LastUpdated	DATE
 );
 

@@ -68,6 +68,7 @@ sub NewApacheHandler {
         default_escape_flags => 'h',
         allow_globals        => [qw(%session)],
         data_dir => "$RT::MasonDataDir",
+        autoflush => 1,
         @_
     );
 
@@ -98,7 +99,8 @@ sub NewCGIHandler {
         ],
         data_dir => "$RT::MasonDataDir",
         default_escape_flags => 'h',
-        allow_globals        => [qw(%session)]
+        allow_globals        => [qw(%session)],
+        autoflush => 1,
     );
   
 
@@ -137,6 +139,60 @@ sub EscapeUTF8  {
 
 # }}}
 
+# {{{ WebCanonicalizeInfo
+
+=head2 WebCanonicalizeInfo();
+
+Different web servers set different environmental varibles. This
+function must return something suitable for REMOTE_USER. By default,
+just downcase $ENV{'REMOTE_USER'}
+
+=cut
+
+sub WebCanonicalizeInfo {
+    my $user;
+
+    if ( defined $ENV{'REMOTE_USER'} ) {
+	$user = lc ( $ENV{'REMOTE_USER'} ) if( length($ENV{'REMOTE_USER'}) );
+    }
+
+    return $user;
+}
+
+# }}}
+
+# {{{ WebExternalAutoInfo
+
+=head2 WebExternalAutoInfo($user);
+
+Returns a hash of user attributes, used when WebExternalAuto is set.
+
+=cut
+
+sub WebExternalAutoInfo {
+    my $user = shift;
+
+    my %user_info;
+
+    $user_info{'Privileged'} = 1;
+
+    if ($^O !~ /^(?:riscos|MacOS|MSWin32|dos|os2)$/) {
+	# Populate fields with information from Unix /etc/passwd
+
+	my ($comments, $realname) = (getpwnam($user))[5, 6];
+	$user_info{'Comments'} = $comments if defined $comments;
+	$user_info{'RealName'} = $realname if defined $realname;
+    }
+    elsif ($^O eq 'MSWin32' and eval 'use Net::AdminMisc; 1') {
+	# Populate fields with information from NT domain controller
+    }
+
+    # and return the wad of stuff
+    return {%user_info};
+}
+
+# }}}
+
 
 package HTML::Mason::Commands;
 use strict;
@@ -160,9 +216,12 @@ sub loc {
         UNIVERSAL::can($session{'CurrentUser'}, 'loc')){
         return($session{'CurrentUser'}->loc(@_));
     }
-    else  {
-        my $u = RT::CurrentUser->new($RT::SystemUser);
+    elsif ( my $u = eval { RT::CurrentUser->new($RT::SystemUser->Id) } ) {
         return ($u->loc(@_));
+    }
+    else {
+	# pathetic case -- SystemUser is gone.
+	return $_[0];
     }
 }
 
@@ -189,7 +248,7 @@ sub loc_fuzzy {
         return($session{'CurrentUser'}->loc_fuzzy($msg));
     }
     else  {
-        my $u = RT::CurrentUser->new($RT::SystemUser);
+        my $u = RT::CurrentUser->new($RT::SystemUser->Id);
         return ($u->loc_fuzzy($msg));
     }
 }
@@ -365,7 +424,8 @@ sub ProcessUpdateMessage {
     );
 
     #Make the update content have no 'weird' newlines in it
-    if ( $args{ARGSRef}->{'UpdateContent'} ) {
+    if ( $args{ARGSRef}->{'UpdateContent'} ||
+	 $args{ARGSRef}->{'UpdateAttachments'}) {
 
         if (
             $args{ARGSRef}->{'UpdateSubject'} eq $args{'TicketObj'}->Subject() )
@@ -433,7 +493,8 @@ sub MakeMIMEEntity {
         Cc                  => undef,
         Body                => undef,
         AttachmentFieldName => undef,
-        map Encode::encode_utf8($_), @_,
+#        map Encode::encode_utf8($_), @_,
+        @_,
     );
 
     #Make the update content have no 'weird' newlines in it
@@ -449,6 +510,7 @@ sub MakeMIMEEntity {
             Subject => $args{'Subject'} || "",
             From    => $args{'From'},
             Cc      => $args{'Cc'},
+            Charset => 'utf8',
             Data    => [ $args{'Body'} ]
         );
     }
@@ -463,7 +525,14 @@ sub MakeMIMEEntity {
 
     #foreach my $filehandle (@filenames) {
 
-    my ( $fh, $temp_file ) = tempfile();
+    my ( $fh, $temp_file );
+    for ( 1 .. 10 ) {
+        # on NFS and NTFS, it is possible that tempfile() conflicts
+        # with other processes, causing a race condition. we try to
+        # accommodate this by pausing and retrying.
+        last if ($fh, $temp_file) = eval { tempfile() };
+        sleep 1;
+    }
 
     binmode $fh;    #thank you, windows
     my ($buffer);
@@ -481,7 +550,7 @@ sub MakeMIMEEntity {
 
     $Message->attach(
         Path     => $temp_file,
-        Filename => $filename,
+        Filename => Encode::decode_utf8($filename),
         Type     => $uploadinfo->{'Content-Type'},
     );
     close($fh);
@@ -594,13 +663,13 @@ sub ProcessSearchQuery {
 
     # }}}
     # {{{ Limit requestor email
+     if ( $args{ARGS}->{'ValueOfWatcherRole'} ne '' ) {
+         $session{'tickets'}->LimitWatcher(
+             TYPE     => $args{ARGS}->{'WatcherRole'},
+             VALUE    => $args{ARGS}->{'ValueOfWatcherRole'},
+             OPERATOR => $args{ARGS}->{'WatcherRoleOp'},
 
-    if ( $args{ARGS}->{'ValueOfRequestor'} ne '' ) {
-        my $alias = $session{'tickets'}->LimitRequestor(
-            VALUE    => $args{ARGS}->{'ValueOfRequestor'},
-            OPERATOR => $args{ARGS}->{'RequestorOp'},
         );
-
     }
 
     # }}}
@@ -780,17 +849,13 @@ sub ProcessACLChanges {
 
             my $obj;
 
-            if ($object_type eq 'RT::Queue') {
-                $obj = RT::Queue->new($session{'CurrentUser'});
-                $obj->Load($object_id);      
-            } elsif ($object_type eq 'RT::Group') {
-                $obj = RT::Group->new($session{'CurrentUser'});
-                $obj->Load($object_id);      
-
-            } elsif ($object_type eq 'RT::System') {
+             if ($object_type eq 'RT::System') {
                 $obj = $RT::System;
+	    } elsif ($RT::ACE::OBJECT_TYPES{$object_type}) {
+                $obj = $object_type->new($session{'CurrentUser'});
+                $obj->Load($object_id);      
             } else {
-                push (@results, loc("System Error").
+                push (@results, loc("System Error"). ': '.
                                 loc("Rights could not be granted for [_1]", $object_type));
                 next;
             }
@@ -813,17 +878,14 @@ sub ProcessACLChanges {
             next unless ($right);
             my $obj;
 
-            if ($object_type eq 'RT::Queue') {
-                $obj = RT::Queue->new($session{'CurrentUser'});
-                $obj->Load($object_id);      
-            } elsif ($object_type eq 'RT::Group') {
-                $obj = RT::Group->new($session{'CurrentUser'});
-                $obj->Load($object_id);      
-
-            } elsif ($object_type eq 'RT::System') {
+             if ($object_type eq 'RT::System') {
                 $obj = $RT::System;
+	    } elsif ($RT::ACE::OBJECT_TYPES{$object_type}) {
+                $obj = $object_type->new($session{'CurrentUser'});
+                $obj->Load($object_id);      
             } else {
-                push (@results, loc("System Error").
+		die;
+                push (@results, loc("System Error"). ': '.
                                 loc("Rights could not be revoked for [_1]", $object_type));
                 next;
             }
@@ -953,6 +1015,17 @@ sub ProcessCustomFieldUpdates {
         my ( $err, $msg ) = $Object->DeleteValue($id);
         push ( @results, $msg );
     }
+
+    my $vals = $Object->Values();
+    while (my $cfv = $vals->Next()) {
+        if (my $so = $ARGSRef->{ 'CustomField-' . $Object->Id . '-SortOrder' . $cfv->Id }) {
+            if ($cfv->SortOrder != $so) {
+                my ( $err, $msg ) = $cfv->SetSortOrder($so);
+                push ( @results, $msg );
+            }
+        }
+    }
+
     return (@results);
 }
 
@@ -1050,8 +1123,11 @@ sub ProcessTicketCustomFieldUpdates {
 
     # For each of those tickets
     foreach my $tick ( keys %custom_fields_to_mod ) {
-        my $Ticket = RT::Ticket->new( $session{'CurrentUser'} );
-        $Ticket->Load($tick);
+        my $Ticket = $args{'TicketObj'};
+	if (!$Ticket or $Ticket->id != $tick) {
+	    $Ticket = RT::Ticket->new( $session{'CurrentUser'} );
+	    $Ticket->Load($tick);
+	}
 
         # For each custom field  
         foreach my $cf ( keys %{ $custom_fields_to_mod{$tick} } ) {
@@ -1074,10 +1150,10 @@ sub ProcessTicketCustomFieldUpdates {
                 my @values =
                   ( ref( $ARGSRef->{$arg} ) eq 'ARRAY' ) 
                   ? @{ $ARGSRef->{$arg} }
-                  : ( $ARGSRef->{$arg} );
+                  : split /\n/, $ARGSRef->{$arg} ;
                 if ( ( $arg =~ /-AddValue$/ ) || ( $arg =~ /-Value$/ ) ) {
                     foreach my $value (@values) {
-                        next unless ($value);
+                        next unless length($value);
                         my ( $val, $msg ) = $Ticket->AddCustomFieldValue(
                             Field => $cf,
                             Value => $value
@@ -1087,7 +1163,7 @@ sub ProcessTicketCustomFieldUpdates {
                 }
                 elsif ( $arg =~ /-DeleteValues$/ ) {
                     foreach my $value (@values) {
-                        next unless ($value);
+                        next unless length($value);
                         my ( $val, $msg ) = $Ticket->DeleteCustomFieldValue(
                             Field => $cf,
                             Value => $value
@@ -1100,7 +1176,7 @@ sub ProcessTicketCustomFieldUpdates {
 
                     my %values_hash;
                     foreach my $value (@values) {
-                        next unless ($value);
+                        next unless length($value);
 
                         # build up a hash of values that the new set has
                         $values_hash{$value} = 1;

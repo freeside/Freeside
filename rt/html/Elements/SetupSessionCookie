@@ -22,18 +22,25 @@
 %# 
 %# END LICENSE BLOCK
 <%init>
+return if $m->is_subrequest; # avoid reentrancy, as suggested by masonbook
+
 my %cookies = CGI::Cookie->fetch();
+my $cookiename = "RT_SID_".$RT::rtname.".".$ENV{'SERVER_PORT'};
 my %backends = (
     mysql	=> 'Apache::Session::MySQL',
     Pg		=> 'Apache::Session::Postgres',
-    Oracle	=> 'Apache::Session::Oracle',
+#    Oracle	=> 'Apache::Session::Oracle',
 ) unless $RT::WebSessionClass;
 my $session_class = $RT::WebSessionClass || $backends{$RT::DatabaseType} || 'Apache::Session::File';
 my $pm = "$session_class.pm"; $pm =~ s|::|/|g; require $pm;
 
+    # morning bug avoidance attempt -- pdh 20030815
+    unless ($RT::Handle->dbh && $RT::Handle->dbh->ping) {
+        $RT::Handle->Connect();
+    }
     eval {
         tie %session, $session_class,
-          $SessionCookie || ( $cookies{'RT_SID'} ? $cookies{'RT_SID'}->value() : undef ),
+          $SessionCookie || ( $cookies{$cookiename} ? $cookies{$cookiename}->value() : undef ),
           $backends{$RT::DatabaseType} ? {
             Handle     => $RT::Handle->dbh,
             LockHandle => $RT::Handle->dbh,
@@ -54,22 +61,23 @@ my $pm = "$session_class.pm"; $pm =~ s|::|/|g; require $pm;
                 Directory     => $RT::MasonSessionDir,
                 LockDirectory => $RT::MasonSessionDir,
               };
-            undef $cookies{'RT_SID'};
+            undef $cookies{$cookiename};
         }
         else {
             die "RT Couldn't write to session directory '$RT::MasonSessionDir': $@. Check that this dir ectory's permissions are correct.";
         }
     }
 
-    if ( !$cookies{'RT_SID'} ) {
+    if ( !$cookies{$cookiename} ) {
         my $cookie = new CGI::Cookie(
-            -name  => 'RT_SID',
+            -name  => $cookiename,
             -value => $session{_session_id},
             -path  => '/',
         );
         $r->header_out('Set-Cookie', $cookie->as_string);
 
     } 
+
     return();
 </%init>
 <%args>

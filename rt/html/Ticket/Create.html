@@ -34,55 +34,55 @@
 <BR>
 <& /Elements/TitleBoxStart, contentbg => "#cccccc", title => loc("Create a new ticket") &>
 <TABLE border=0 cellpadding=0 cellspacing=0>
-<TR><TD><&|/l&>Queue</&></TD>
-<TD><% $QueueObj->Name %>
+<TR><TD class=label><&|/l&>Queue</&>:</TD>
+<TD class=value><% $QueueObj->Name %>
 <INPUT TYPE=HIDDEN NAME=Queue Value="<%$QueueObj->Name%>">
 </TD>
-<TD><&|/l&>Status</&>:
+<TD class=label><&|/l&>Status</&>:
 </TD>
-<TD>
+<TD class=value>
 <& /Elements/SelectStatus, Name => "Status", Default => $ARGS{Status}||'new' &>
 </TD>
-<TD>
+<TD class=label>
 <&|/l&>Owner</&>:
 </TD>
-<TD>
+<TD class=value>
 <& /Elements/SelectOwner, Name => "Owner", QueueObj => $QueueObj, Default => $ARGS{Owner}||undef &>
 </TD>
 </TR>
 <TR>
-<TD>
+<TD class=label>
 <&|/l&>Requestors</&>:
 </TD>
-<TD COLSPAN=5>
+<TD class=value COLSPAN=5>
 <INPUT Name="Requestors" Value="<% ($ARGS{Requestors}) || $session{CurrentUser}->EmailAddress %>" SIZE=40>
 </TD>
 </TR>
 <TR>
-<TD>
+<TD class=labeltop>
 <&|/l&>Cc</&>:
 </TD>
-<TD COLSPAN=5>
-<INPUT NAME="Cc" SIZE=40<% $ARGS{Cc} && " VALUE=\"$ARGS{Cc}\""%>><BR>
+<TD class=value COLSPAN=5>
+<INPUT NAME="Cc" SIZE=40 VALUE="<% $ARGS{Cc} %>"><BR>
 <i><font size=-2>
 <&|/l&>(Sends a carbon-copy of this update to a comma-delimited list of email addresses. These people <b>will</b> receive future updates.)</&></font></i>
 </TD>
 </TR>
 <TR>
-<TD>
+<TD class=labeltop>
 <&|/l&>Admin Cc</&>:
 </TD>
-<TD COLSPAN=5>
-<INPUT NAME="AdminCc" SIZE=40<% $ARGS{AdminCc} && " VALUE=\"$ARGS{AdminCc}\""%>><BR>
+<TD class=value COLSPAN=5>
+<INPUT NAME="AdminCc" SIZE=40 VALUE="<% $ARGS{AdminCc} %>"><BR>
 <i><font size=-2>
 <&|/l&>(Sends a carbon-copy of this update to a comma-delimited list of administrative email addresses. These people <b>will</b> receive future updates.)</&></font></i>
 </TD>
 </TR>
 <TR>
-<TD>
+<TD class=label>
 <&|/l&>Subject</&>:
 </TD>
-<TD COLSPAN=5>
+<TD class=value COLSPAN=5>
 <INPUT Name="Subject" SIZE=60 MAXSIZE=100 value="<%$ARGS{Subject} || ''%>">
 </TD>
 </TR>
@@ -93,7 +93,7 @@
 </TR>
 <TR>
 % if (exists $session{'Attachments'}) {
-<TD>
+<TD class=label>
 <&|/l&>Attached file</&>:
 </TD>
 <TD COLSPAN=5>
@@ -108,7 +108,7 @@
 <TD>
 <&|/l&>Attach file</&>:
 </TD>
-<TD COLSPAN=5>
+<TD class=value COLSPAN=5>
 <INPUT TYPE=FILE NAME="Attach">
 <INPUT TYPE=SUBMIT NAME="AddMoreAttach" VALUE="<&|/l&>Add More Files</&>">
 </TD>
@@ -152,8 +152,8 @@
 <TABLE BORDER=0>
 <TR><TD ALIGN=RIGHT><&|/l&>Priority</&>:</TD><TD><input size=3 name="InitialPriority" value="<% $ARGS{InitialPriority} ? $ARGS{InitialPriority} : $QueueObj->InitialPriority %>"></TD></TR>
 <TR><TD ALIGN=RIGHT><&|/l&>Final Priority</&>:</TD><TD><input size=3 name="FinalPriority" value="<% $ARGS{FinalPriority} ? $ARGS{FinalPriority} : $QueueObj->FinalPriority %>"></TD></TR>
-<TR><TD ALIGN=RIGHT><&|/l&>Time Worked</&>:</TD><TD><input size=3 name="TimeWorked"<% $ARGS{TimeWorked} && " VALUE=\"$ARGS{TimeWorked}\""  %>></TD></TR>
-<TR><TD ALIGN=RIGHT><&|/l&>Time Left</&>:</TD><TD><input size=3 name="TimeLeft"<% $ARGS{TimeLeft} && " VALUE=\"$ARGS{TimeLeft}\"" %>></TD></TR>
+<TR><TD ALIGN=RIGHT><&|/l&>Time Worked</&>:</TD><TD><input size=3 name="TimeWorked" value="<% $ARGS{TimeWorked} %>"></TD></TR>
+<TR><TD ALIGN=RIGHT><&|/l&>Time Left</&>:</TD><TD><input size=3 name="TimeLeft" value="<% $ARGS{TimeLeft} %>"></TD></TR>
 </TABLE>
 <& /Elements/TitleBoxEnd &>
 <br>
@@ -162,8 +162,9 @@
 		 color => "#663366" &>
 
 <TABLE BORDER=0>
-<TR><TD ALIGN=RIGHT><&|/l&>Starts</&>:</TD><TD><input size=10 name="Starts"<% $ARGS{Starts} && " VALUE=\"$ARGS{Starts}\"" %>></TD></TR>
-<TR><TD ALIGN=RIGHT><&|/l&>Due</&>:</TD><TD><input size=10 name="Due"<% $ARGS{Due} && " VALUE=\"$ARGS{Due}\"" %>></TD></TR>
+<TR><TD ALIGN=RIGHT><&|/l&>Starts</&>:</TD><TD><input size=10 name="Starts" value="<% $ARGS{Starts} %>"></TD></TR>
+<TR><TD ALIGN=RIGHT><&|/l&>Due</&>:</TD><TD><input size=10 name="Due" value="<%
+$ARGS{Due}%>"></TD></TR>
 </TABLE>
 <& /Elements/TitleBoxEnd &>
 <BR>
@@ -176,12 +177,12 @@
 
 <i><&|/l&>(Enter ticket ids or URLs, seperated with spaces)</&></i>
 <TABLE BORDER=0>
-<TR><TD ALIGN=RIGHT><&|/l&>Depends on</&></TD><TD><input size=10 name="new-DependsOn"<% $ARGS{'new-DependsOn'} && " VALUE=\"$ARGS{'new-DependsOn'}\""%>></TD></TR>
-<TR><TD ALIGN=RIGHT><&|/l&>Depended on by</&></TD><TD><input size=10 name="DependsOn-new"<% $ARGS{'DependsOn-new'} && " VALUE=\"$ARGS{'DependsOn-new'}\"" %>></TD></TR>
-<TR><TD ALIGN=RIGHT><&|/l&>Parents</&></TD><TD><input size=10 name="new-MemberOf"<% $ARGS{'new-MemberOf'} && " VALUE=\"$ARGS{'new-MemberOf'}\"" %>></TD></TR>
-<TR><TD ALIGN=RIGHT><&|/l&>Children</&></TD><TD><input size=10 name="MemberOf-new" <% $ARGS{'MemberOf-new'} && " VALUE=\"$ARGS{'MemberOf-new'}\"" %>></TD></TR>
-<TR><TD ALIGN=RIGHT><&|/l&>Refers to</&></TD><TD><input size=10 name="new-RefersTo"<% $ARGS{'new-RefersTo'} && " VALUE=\"$ARGS{'new-MemberOf'}\"" %>></TD></TR>
-<TR><TD ALIGN=RIGHT><&|/l&>Referred to by</&></TD><TD><input size=10 name="RefersTo-new"<% $ARGS{'RefersTo-new'} && " VALUE=\"$ARGS{'RefersTo-new'}\"" %>></TD></TR>
+<TR><TD ALIGN=RIGHT><&|/l&>Depends on</&></TD><TD><input size=10 name="new-DependsOn" value="<% $ARGS{'new-DependsOn'} %>"></TD></TR>
+<TR><TD ALIGN=RIGHT><&|/l&>Depended on by</&></TD><TD><input size=10 name="DependsOn-new" value="<% $ARGS{'DependsOn-new'} %>"></TD></TR>
+<TR><TD ALIGN=RIGHT><&|/l&>Parents</&></TD><TD><input size=10 name="new-MemberOf" value="<% $ARGS{'new-MemberOf'} %>"></TD></TR>
+<TR><TD ALIGN=RIGHT><&|/l&>Children</&></TD><TD><input size=10 name="MemberOf-new" value="<% $ARGS{'MemberOf-new'} %>"></TD></TR>
+<TR><TD ALIGN=RIGHT><&|/l&>Refers to</&></TD><TD><input size=10 name="new-RefersTo" value="<% $ARGS{'new-RefersTo'} %>"></TD></TR>
+<TR><TD ALIGN=RIGHT><&|/l&>Referred to by</&></TD><TD><input size=10 name="RefersTo-new" value="<% $ARGS{'RefersTo-new'} %>"></TD></TR>
 
 
 </TABLE>
@@ -200,9 +201,19 @@
 <BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR>
 
 <%INIT>
+
+
+
 my $QueueObj = new RT::Queue($session{'CurrentUser'});
 $QueueObj->Load($Queue) || Abort(loc("Queue could not be loaded."));
 my $CFs = $QueueObj->CustomFields();
+
+if ($QueueObj->DefaultDueIn) {
+    my $default_due = RT::Date->new($session{'CurrentUser'});
+    $default_due->SetToNow();
+    $default_due->AddDays($QueueObj->DefaultDueIn);
+    $ARGS{'Due'} = $default_due->ISO();
+}
 
 # {{{ deal with deleting uploaded attachments
 foreach my $key (keys %ARGS) {
@@ -218,8 +229,6 @@ if ($ARGS{'Attach'}) {			# attachment?
 
     my $subject = "$ARGS{'Attach'}";
 
-    # since CGI.pm deutf8izes the magic field, we need to add it back.
-    Encode::_utf8_on($subject);
     # strip leading directories
     $subject =~ s#^.*[\\/]##;
 

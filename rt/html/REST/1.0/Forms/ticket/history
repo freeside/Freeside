@@ -1,0 +1,144 @@
+%# REST/1.0/Forms/ticket/history
+%#
+<%ARGS>
+$id
+$args => undef
+$format => undef
+$fields => undef
+</%ARGS>
+<%perl>
+my $ticket = new RT::Ticket $session{CurrentUser};
+my ($c, $o, $k, $e) = ("", [], {}, "");
+
+$ticket->Load($id);
+unless ($ticket->Id) {
+    return [ "# Ticket $id does not exist.", [], {}, 1 ];
+}
+
+my $trans = $ticket->Transactions();
+my $total = $trans->Count();
+
+chomp $args;
+my @arglist = split('/', $args);
+my ($type, $tid);
+
+if ($arglist[0] eq 'type') {
+    $type = $arglist[1];
+} elsif ($arglist[0] eq 'id') {
+    $tid = $arglist[1];
+} else {
+    $type = $args;
+}
+
+if ($type) {
+    # Create, Set, Status, Correspond, Comment, Give, Steal, Take, Told
+    # CustomField, AddLink, DeleteLink, AddWatcher, DelWatcher
+    if ($args =~ /^links?$/) {
+        $trans->Limit(FIELD => 'Type', OPERATOR => 'LIKE', VALUE => '%Link');
+    }
+    elsif ($args =~ /^watchers?$/) {
+        $trans->Limit(FIELD => 'Type', OPERATOR => 'LIKE', VALUE => '%Watcher');
+    }
+    else {
+        $trans->Limit(FIELD => 'Type', OPERATOR => '=', VALUE => $type);
+    }
+} elsif ($tid) {
+    $trans->Limit(FIELD => 'Id', OPERATOR => '=', VALUE => $tid);
+}
+
+if ($tid) {
+    my @data;
+    my $t = new RT::Transaction $session{CurrentUser};
+    $t->Load($tid);
+
+    push @data, [ id    => $t->Id   ];
+    push @data, [ EffectiveTicket    => $t->EffectiveTicket   ]
+	if (!%$fields || exists $fields->{lc 'EffectiveTicket'});
+    push @data, [ Ticket    => $t->Ticket   ]
+	if (!%$fields || exists $fields->{lc 'Ticket'});
+    push @data, [ TimeTaken    => $t->TimeTaken   ]
+	if (!%$fields || exists $fields->{lc 'TimeTaken'});
+    push @data, [ Type    => $t->Type   ]
+	if (!%$fields || exists $fields->{lc 'Type'});
+    push @data, [ Field    => $t->Field   ]
+	if (!%$fields || exists $fields->{lc 'Field'});
+    push @data, [ OldValue    => $t->OldValue   ]
+	if (!%$fields || exists $fields->{lc 'OldValue'});
+    push @data, [ NewValue    => $t->NewValue   ]
+	if (!%$fields || exists $fields->{lc 'NewValue'});
+    push @data, [ Data    => $t->Data   ]
+	if (!%$fields || exists $fields->{lc 'Data'});
+    push @data, [ Description    => $t->Description   ]
+	if (!%$fields || exists $fields->{lc 'Description'});
+    push @data, [ Content    => $t->Content   ]
+	if (!%$fields || exists $fields->{lc 'Content'});
+
+
+    if (!%$fields || exists $fields->{lc 'Content'}) {    
+	my $creator = new RT::User $session{CurrentUser};
+	$creator->Load($t->Creator);
+	push @data, [ Creator    => $creator->Name   ];
+    }
+    push @data, [ Created    => $t->Created   ]
+	if (!%$fields || exists $fields->{lc 'Created'});
+
+    if (!%$fields || exists $fields->{lc 'Attachments'}) {
+	my $attachlist;
+	my $attachments = $t->Attachments;
+	while (my $a = $attachments->Next) {
+	    my $size = length($a->Content);
+	    if ($size > 1024) { $size  = int($size/102.4)/10 . "k" }
+	    else              { $size .= "b" }
+	    $attachlist .= "\n" . $a->Id.": ".($a->Filename || "untitled")." (".$size.")";
+	}
+	
+	push @data, [Attachments => $attachlist];
+    }
+
+    my %k = map {@$_} @data;
+    $o = [ map {$_->[0]} @data ];
+    $k = \%k;
+
+} else {
+    my (@data, $tids);
+    $format ||= "s";
+    $format = "l" if (%$fields);
+
+    while (my $t = $trans->Next) {
+	my $tid = $t->Id;
+
+	if ($format eq "l") {
+	    $tids .= "," if $tids;
+	    $tids .= $tid;
+	} else {
+	    push @$o, $tid;
+	    $k->{$tid} = $t->Description;
+	}
+    }
+
+    if ($format eq "l") {
+	my @tid;
+	push @tid, "ticket/$id/history/id/$tids";
+	my $fieldstring;
+	foreach my $key (keys %$fields) {
+	    $fieldstring .= "," if $fieldstring;
+	    $fieldstring .= $key;
+	}
+	my ($content, $forms);
+
+	$m->subexec("$RT::WebPath/REST/1.0/show", 
+		    id => \@tid, 
+		    format => $format,
+                    fields => $fieldstring);
+	return [ $c, $o, $k, $e ];
+    }
+}
+
+if (!$c) {
+    my $sub = $trans->Count();
+    $c = "# $sub/$total ($args/total)";
+}
+
+return [ $c, $o, $k, $e ];
+
+</%perl>

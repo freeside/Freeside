@@ -27,14 +27,14 @@ use strict;
 use Mail::Address;
 use MIME::Entity;
 use RT::EmailParser;
-
+use File::Temp;
 
 BEGIN {
     use Exporter ();
     use vars qw ($VERSION  @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
     
     # set the version for version checking
-    $VERSION = do { my @r = (q$Revision: 1.1.1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r }; # must be all one line, for MakeMaker
+    $VERSION = do { my @r = (q$Revision: 1.1.1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r }; # must be all one line, for MakeMaker
     
     @ISA         = qw(Exporter);
     
@@ -153,6 +153,7 @@ sub MailError {
 		Subject => 'There has been an error',
 		Explanation => 'Unexplained error',
 		MIMEObj => undef,
+        Attach => undef,
 		LogLevel => 'crit',
 		@_);
 
@@ -175,7 +176,13 @@ sub MailError {
         $mimeobj->sync_headers();
         $entity->add_part($mimeobj);
     }
-    
+   
+    if ($args{'Attach'}) {
+        $entity->attach(Data => $args{'Attach'}, Type => 'message/rfc822');
+
+    }
+
+ 
     if ($RT::MailCommand eq 'sendmailpipe') {
         open (MAIL, "|$RT::SendmailPath $RT::SendmailArguments") || return(0);
         print MAIL $entity->as_string;
@@ -194,12 +201,6 @@ sub CreateUser {
     my ($Username, $Address, $Name, $ErrorsTo, $entity) = @_;
     my $NewUser = RT::User->new($RT::SystemUser);
 
-    # This data is tainted by some Very Broken mailers.
-    # (Sometimes they send raw ISO 8859-1 data here. fear that.
-    require Encode;
-    $Username = Encode::encode(utf8 => $Username, Encode::FB_PERLQQ()) if defined $Username;
-    $Name = Encode::encode(utf8 => $Name, Encode::FB_PERLQQ()) if defined $Name;
-    
     my ($Val, $Message) = 
       $NewUser->Create(Name => ($Username || $Address),
                        EmailAddress => $Address,
@@ -361,35 +362,107 @@ sub ParseAddressFromHeader{
 
 
 
-=head2 Gateway
+=head2 Gateway ARGSREF
+
+
+Takes parameters:
+
+    action
+    queue
+    message
+
 
 This performs all the "guts" of the mail rt-mailgate program, and is
 designed to be called from the web interface with a message, user
 object, and so on.
 
+Returns:
+
+    An array of:
+    
+    (status code, message, optional ticket object)
+
+    status code is a numeric value.
+
+    for temporary failures, status code should be -75
+
+    for permanent failures which are handled by RT, status code should be 0
+    
+    for succces, the status code should be 1
+
+
+
 =cut
 
 sub Gateway {
-    my %args = ( message => undef,
-                 queue   => 1,
-                 action  => 'correspond',
-                 ticket  => undef,
-                 @_ );
+    my $argsref = shift;
+
+    my %args = %$argsref;
+
+    # Set some reasonable defaults
+    $args{'action'} = 'correspond' unless ( $args{'action'} );
+    $args{'queue'}  = '1'          unless ( $args{'queue'} );
 
     # Validate the action
     unless ( $args{'action'} =~ /^(comment|correspond|action)$/ ) {
 
         # Can't safely loc this. What object do we loc around?
-        return ( 0, "Invalid 'action' parameter", undef );
+        $RT::Logger->crit("Mail gateway called with an invalid action paramenter '".$args{'action'}."' for queue '".$args{'queue'}."'");
+
+        return ( -75, "Invalid 'action' parameter", undef );
     }
 
     my $parser = RT::EmailParser->new();
-    $parser->ParseMIMEEntityFromScalar( $args{'message'} );
+    my ( $fh, $temp_file );
+    for ( 1 .. 10 ) {
+
+        # on NFS and NTFS, it is possible that tempfile() conflicts
+        # with other processes, causing a race condition. we try to
+        # accommodate this by pausing and retrying.
+        last if ( $fh, $temp_file ) = eval { File::Temp::tempfile(undef, UNLINK => 0) };
+        sleep 1;
+    }
+    if ($fh) {
+        binmode $fh;    #thank you, windows
+        $fh->autoflush(1);
+        print $fh $args{'message'};
+        close($fh);
+
+        if ( -f $temp_file ) {
+            $parser->ParseMIMEEntityFromFile($temp_file);
+            File::Temp::unlink0( $fh, $temp_file );
+            if ($parser->Entity) {
+                delete $args{'message'};
+            }
+        }
+
+    }
+
+    #If for some reason we weren't able to parse the message using a temp file 
+    # try it with a scalar
+    if ($args{'message'}) {
+        $parser->ParseMIMEEntityFromScalar($args{'message'});
+
+    } 
+
+    if (!$parser->Entity()) {
+        MailError(
+            To          => $RT::OwnerEmail,
+            Subject     => "RT Bounce: Unparseable message",
+            Explanation => "RT couldn't process the message below",
+            Attach     => $args{'message'}
+        );
+
+        return(0,"Failed to parse this message. Something is likely badly wrong with the message");
+    }
 
     my $Message = $parser->Entity();
-    my $head = $Message->head;
+    my $head    = $Message->head;
 
     my ( $CurrentUser, $AuthStat, $status, $error );
+
+    # Initalize AuthStat so comparisons work correctly
+    $AuthStat = -9999999;
 
     my $ErrorsTo = ParseErrorsToAddressFromHead($head);
 
@@ -400,37 +473,31 @@ sub Gateway {
     my $Subject = $head->get('Subject') || '';
     chomp $Subject;
 
-
     $args{'ticket'} ||= $parser->ParseTicketId($Subject);
 
     my $SystemTicket;
-    if ($args{'ticket'} ) {
+    if ( $args{'ticket'} ) {
         $SystemTicket = RT::Ticket->new($RT::SystemUser);
-        $SystemTicket->Load($args{'ticket'});
+        $SystemTicket->Load( $args{'ticket'} );
     }
 
     #Set up a queue object
     my $SystemQueueObj = RT::Queue->new($RT::SystemUser);
     $SystemQueueObj->Load( $args{'queue'} );
 
-
     # We can safely have no queue of we have a known-good ticket
     unless ( $args{'ticket'} || $SystemQueueObj->id ) {
-        MailError(
-                 To          => $RT::OwnerEmail,
-                 Subject     => "RT Bounce: $Subject",
-                 Explanation => "RT couldn't find the queue: " . $args{'queue'},
-                 MIMEObj     => $Message );
-        return ( 0, "RT couldn't find the queue: " . $args{'queue'}, undef );
+        return ( -75, "RT couldn't find the queue: " . $args{'queue'}, undef );
     }
 
     # Authentication Level
-    # -1 - Get out.  this user has been explicitly declined 
+    # -1 - Get out.  this user has been explicitly declined
     # 0 - User may not do anything (Not used at the moment)
     # 1 - Normal user
     # 2 - User is allowed to specify status updates etc. a la enhanced-mailgate
 
-    push @RT::MailPlugins, "Auth::MailFrom"   unless @RT::MailPlugins;
+    push @RT::MailPlugins, "Auth::MailFrom" unless @RT::MailPlugins;
+
     # Since this needs loading, no matter what
 
     for (@RT::MailPlugins) {
@@ -453,35 +520,59 @@ sub Gateway {
             }
         }
 
-        ( $CurrentUser, $NewAuthStat ) = $Code->( Message     => $Message,
-                                                  CurrentUser => $CurrentUser,
-                                                  AuthLevel   => $AuthStat,
-                                                  Action => $args{'action'},
-                                                  Ticket => $SystemTicket,
-                                                  Queue  => $SystemQueueObj );
+        ( $CurrentUser, $NewAuthStat ) = $Code->(
+            Message     => $Message,
+            CurrentUser => $CurrentUser,
+            AuthLevel   => $AuthStat,
+            Action      => $args{'action'},
+            Ticket      => $SystemTicket,
+            Queue       => $SystemQueueObj
+        );
+
+        # If a module returns a "-1" then we discard the ticket, so.
+        $AuthStat = -1 if $NewAuthStat == -1;
 
         # You get the highest level of authentication you were assigned.
-        last if $AuthStat == -1;
         $AuthStat = $NewAuthStat if $NewAuthStat > $AuthStat;
+        last if $AuthStat == -1;
     }
 
     # {{{ If authentication fails and no new user was created, get out.
     if ( !$CurrentUser or !$CurrentUser->Id or $AuthStat == -1 ) {
 
         # If the plugins refused to create one, they lose.
-        MailError(
-            Subject     => "Could not load a valid user",
-            Explanation => <<EOT,
+        unless ( $AuthStat == -1 ) {
+
+            # Notify the RT Admin of the failure.
+            # XXX Should this be configurable?
+            MailError(
+                To          => $RT::OwnerEmail,
+                Subject     => "Could not load a valid user",
+                Explanation => <<EOT,
+RT could not load a valid user, and RT's configuration does not allow
+for the creation of a new user for this email ($ErrorsTo).
+
+You might need to grant 'Everyone' the right 'CreateTicket' for the
+queue @{[$args{'queue'}]}.
+
+EOT
+                MIMEObj  => $Message,
+                LogLevel => 'error'
+            );
+
+            # Also notify the requestor that his request has been dropped.
+            MailError(
+                To          => $ErrorsTo,
+                Subject     => "Could not load a valid user",
+                Explanation => <<EOT,
 RT could not load a valid user, and RT's configuration does not allow
 for the creation of a new user for your email.
 
-Your RT administrator needs to grant 'Everyone' the right 'CreateTicket'
-for this queue.
-
 EOT
-            MIMEObj  => $Message,
-            LogLevel => 'error' )
-          unless $AuthStat == -1;
+                MIMEObj  => $Message,
+                LogLevel => 'error'
+            );
+        }
         return ( 0, "Could not load a valid user", undef );
     }
 
@@ -508,10 +599,11 @@ EOT
     # {{{ Drop it if it's disallowed
     if ( $AuthStat == 0 ) {
         MailError(
-             To          => $ErrorsTo,
-             Subject     => "Permission Denied",
-             Explanation => "You do not have permission to communicate with RT",
-             MIMEObj     => $Message );
+            To          => $ErrorsTo,
+            Subject     => "Permission Denied",
+            Explanation => "You do not have permission to communicate with RT",
+            MIMEObj     => $Message
+        );
     }
 
     # }}}
@@ -523,10 +615,12 @@ EOT
 
         #Should we mail it to RTOwner?
         if ($RT::LoopsToRTOwner) {
-            MailError( To          => $RT::OwnerEmail,
-                       Subject     => "RT Bounce: $Subject",
-                       Explanation => "RT thinks this message may be a bounce",
-                       MIMEObj     => $Message );
+            MailError(
+                To          => $RT::OwnerEmail,
+                Subject     => "RT Bounce: $Subject",
+                Explanation => "RT thinks this message may be a bounce",
+                MIMEObj     => $Message
+            );
 
             #Do we actually want to store it?
             return ( 0, "Message Bounced", undef ) unless ($RT::StoreLoops);
@@ -538,8 +632,10 @@ EOT
     # {{{ Squelch replies if necessary
     # Don't let the user stuff the RT-Squelch-Replies-To header.
     if ( $head->get('RT-Squelch-Replies-To') ) {
-        $head->add( 'RT-Relocated-Squelch-Replies-To',
-                    $head->get('RT-Squelch-Replies-To') );
+        $head->add(
+            'RT-Relocated-Squelch-Replies-To',
+            $head->get('RT-Squelch-Replies-To')
+        );
         $head->delete('RT-Squelch-Replies-To');
     }
 
@@ -564,22 +660,27 @@ EOT
         my @Requestors = ( $CurrentUser->id );
 
         if ($RT::ParseNewMessageForTicketCcs) {
-            @Cc = ParseCcAddressesFromHead( Head        => $head,
-                                            CurrentUser => $CurrentUser,
-                                            QueueObj    => $SystemQueueObj );
+            @Cc = ParseCcAddressesFromHead(
+                Head        => $head,
+                CurrentUser => $CurrentUser,
+                QueueObj    => $SystemQueueObj
+            );
         }
 
         my ( $id, $Transaction, $ErrStr ) = $Ticket->Create(
-                                                      Queue     => $SystemQueueObj->Id,
-                                                      Subject   => $Subject,
-                                                      Requestor => \@Requestors,
-                                                      Cc        => \@Cc,
-                                                      MIMEObj   => $Message );
+            Queue     => $SystemQueueObj->Id,
+            Subject   => $Subject,
+            Requestor => \@Requestors,
+            Cc        => \@Cc,
+            MIMEObj   => $Message
+        );
         if ( $id == 0 ) {
-            MailError( To          => $ErrorsTo,
-                       Subject     => "Ticket creation failed",
-                       Explanation => $ErrStr,
-                       MIMEObj     => $Message );
+            MailError(
+                To          => $ErrorsTo,
+                Subject     => "Ticket creation failed",
+                Explanation => $ErrStr,
+                MIMEObj     => $Message
+            );
             $RT::Logger->error("Create failed: $id / $Transaction / $ErrStr ");
             return ( 0, "Ticket creation failed", $Ticket );
         }
@@ -591,15 +692,17 @@ EOT
 
     #   If the action is comment, add a comment.
     elsif ( $args{'action'} =~ /^(comment|correspond)$/i ) {
-        $Ticket->Load($args{'ticket'});
+        $Ticket->Load( $args{'ticket'} );
         unless ( $Ticket->Id ) {
-            my $message = "Could not find a ticket with id ".$args{'ticket'};
-            MailError( To          => $ErrorsTo,
-                     Subject     => "Message not recorded",
-                     Explanation => $message,
-                     MIMEObj     => $Message );
+            my $message = "Could not find a ticket with id " . $args{'ticket'};
+            MailError(
+                To          => $ErrorsTo,
+                Subject     => "Message not recorded",
+                Explanation => $message,
+                MIMEObj     => $Message
+            );
 
-            return ( 0, $message);
+            return ( 0, $message );
         }
 
         my ( $status, $msg );
@@ -612,10 +715,12 @@ EOT
         unless ($status) {
 
             #Warn the sender that we couldn't actually submit the comment.
-            MailError( To          => $ErrorsTo,
-                       Subject     => "Message not recorded",
-                       Explanation => $msg,
-                       MIMEObj     => $Message );
+            MailError(
+                To          => $ErrorsTo,
+                Subject     => "Message not recorded",
+                Explanation => $msg,
+                MIMEObj     => $Message
+            );
             return ( 0, "Message not recorded", $Ticket );
         }
     }
@@ -623,21 +728,28 @@ EOT
     else {
 
         #Return mail to the sender with an error
-        MailError( To          => $ErrorsTo,
-                   Subject     => "RT Configuration error",
-                   Explanation => "'"
-                     . $args{'action'}
-                     . "' not a recognized action."
-                     . " Your RT administrator has misconfigured "
-                     . "the mail aliases which invoke RT",
-                   MIMEObj => $Message );
+        MailError(
+            To          => $ErrorsTo,
+            Subject     => "RT Configuration error",
+            Explanation => "'"
+              . $args{'action'}
+              . "' not a recognized action."
+              . " Your RT administrator has misconfigured "
+              . "the mail aliases which invoke RT",
+            MIMEObj => $Message
+        );
         $RT::Logger->crit( $args{'action'} . " type unknown for $MessageId" );
-        return ( 0, "Configuration error: " . $args{'action'} . " not a recognized action", $Ticket );
+        return (
+            -75,
+            "Configuration error: "
+              . $args{'action'}
+              . " not a recognized action",
+            $Ticket
+        );
 
     }
 
-
-return ( 1, "Success", $Ticket );
+    return ( 1, "Success", $Ticket );
 }
 
 eval "require RT::Interface::Email_Vendor";
