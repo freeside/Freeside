@@ -1,6 +1,6 @@
 #!/usr/bin/make
 
-DATASOURCE = DBI:Pg:host=localhost;dbname=freeside
+DATASOURCE = DBI:Pg:dbname=freeside
 #DATASOURCE=DBI:mysql:freeside
 
 DB_USER = freeside
