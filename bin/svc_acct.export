@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 #
-# $Id: svc_acct.export,v 1.26 2001-10-24 15:29:30 ivan Exp $
+# $Id: svc_acct.export,v 1.27 2001-12-11 10:38:56 ivan Exp $
 #
 # Create and export password, radius and vpopmail password files:
 # passwd, passwd.adjunct, shadow, acp_passwd, acp_userinfo, acp_dialup
@@ -67,6 +67,12 @@ my $textradiusprepend =
     : '';
 
 warn "using depriciated textradiusprepend file" if $textradiusprepend;
+
+
+my $radiusprepend =
+  $conf->exists('radiusprepend')
+    ? $conf->config('radiusprepend')
+    : '';
 
 my @vpopmailmachines = $conf->config('vpopmailmachines')
   if $conf->exists('vpopmailmachines');
@@ -189,6 +195,8 @@ if ( $icradiusmachines ) {
 }
 
 setpriority(0,0,10);
+
+print USERS "$radiusprepend\n";
 
 my %usernames;  ## this hack helps keep the passwd files sane
 my @sendmail;
