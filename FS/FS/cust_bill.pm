@@ -317,7 +317,7 @@ sub owed {
   $balance;
 }
 
-=item send [ TEMPLATENAME [ , AGENTNUM ] ]
+=item send [ TEMPLATENAME [ , AGENTNUM [ , INVOICE_FROM ] ] ]
 
 Sends this invoice to the destinations configured for this customer: send
 emails or print.  See L<FS::cust_main_invoice>.
@@ -327,12 +327,15 @@ TEMPLATENAME, if specified, is the name of a suffix for alternate invoices.
 AGENTNUM, if specified, means that this invoice will only be sent for customers
 of the specified agent.
 
+INVOICE_FROM, if specified, overrides the default email invoice From: address.
+
 =cut
 
 sub send {
   my $self = shift;
   my $template = scalar(@_) ? shift : '';
   return '' if scalar(@_) && $_[0] && $self->cust_main->agentnum ne shift;
+  my $invoice_from = scalar(@_) ? shift : $conf->config('invoice_from');
 
   my @print_text = $self->print_text('', $template);
   my @invoicing_list = $self->cust_main->invoicing_list;
@@ -340,10 +343,10 @@ sub send {
   if ( grep { $_ ne 'POST' } @invoicing_list or !@invoicing_list  ) { #email
 
     #better to notify this person than silence
-    @invoicing_list = ($conf->config('invoice_from')) unless @invoicing_list;
+    @invoicing_list = ($invoice_from) unless @invoicing_list;
 
     my $error = send_email(
-      'from'    => $conf->config('invoice_from'),
+      'from'    => $invoice_from,
       'to'      => [ grep { $_ ne 'POST' } @invoicing_list ],
       'subject' => 'Invoice',
       'body'    => \@print_text,

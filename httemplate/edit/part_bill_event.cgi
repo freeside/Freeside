@@ -179,7 +179,7 @@ tie my %events, 'Tie::IxHash',
 
   'send_agent' => {
     'name' => 'Send invoice (email/print) ',
-    'code' => '$cust_bill->send(\'%%%agent_templatename%%%\', %%%agentnum%%%);',
+    'code' => '$cust_bill->send(\'%%%agent_templatename%%%\', %%%agentnum%%%, \'%%%agent_invoice_from%%%\');',
     'html' => sub {
         '<TABLE BORDER=0>
           <TR>
@@ -190,6 +190,10 @@ tie my %events, 'Tie::IxHash',
             <TD ALIGN="right">with template </TD>
             <TD>
               <INPUT TYPE="text" NAME="agent_templatename" VALUE="%%%agent_templatename%%%">
+            </TD>
+            <TD ALIGN="right">email From: </TD>
+            <TD>
+              <INPUT TYPE="text" NAME="agent_invoice_from" VALUE="%%%agent_invoice_from%%%">
             </TD>
           </TR>
         </TABLE>';
