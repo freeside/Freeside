@@ -4,6 +4,7 @@ MANIFEST.SKIP
 Makefile.PL
 README
 bin/freeside-bill
+bin/freeside-daily
 bin/freeside-email
 bin/freeside-queued
 bin/freeside-apply-credits

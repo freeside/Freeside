@@ -97,6 +97,8 @@ freeside-bill - Command line (crontab, script) interface to customer billing.
 
 =head1 DESCRIPTION
 
+This script is deprecated in 1.4.0.  You should use freeside-daily instead.
+
 Bills customers.  Searches for customers who are due for billing and calls
 the bill and collect methods of a cust_main object.  See L<FS::cust_main>.
 
@@ -116,15 +118,11 @@ user: From the mapsecrets file - see config.html from the base documentation
 custnum: if one or more customer numbers are specified, only bills those
 customers.  Otherwise, bills all customers.
 
-=head1 VERSION
-
-$Id: freeside-bill,v 1.12 2002-02-10 01:48:00 ivan Exp $
-
 =head1 BUGS
 
 =head1 SEE ALSO
 
-L<FS::cust_main>, config.html from the base documentation
+L<freeside-daily>, L<FS::cust_main>, config.html from the base documentation
 
 =cut
 
