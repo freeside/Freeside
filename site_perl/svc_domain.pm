@@ -8,6 +8,7 @@ use Carp;
 use Mail::Internet;
 use Mail::Header;
 use Date::Format;
+use Net::Whois; #0.24;
 use FS::Record qw(fields qsearch qsearchs);
 use FS::Conf;
 use FS::svc_Common;
@@ -132,11 +133,11 @@ sub insert {
   return "Domain in use (here)"
     if qsearchs( 'svc_domain', { 'domain' => $self->domain } );
 
-  my $whois = ($self->_whois)[0];
+  my $whois = $self->whois;
   return "Domain in use (see whois)"
-    if ( $self->action eq "N" && $whois !~ /^No match for/ );
+    if ( $self->action eq "N" && $whois );
   return "Domain not found (see whois)"
-    if ( $self->action eq "M" && $whois =~ /^No match for/ );
+    if ( $self->action eq "M" && ! $whois );
 
   $error = $self->SUPER::insert;
   return $error if $error;
@@ -254,25 +255,27 @@ sub check {
 
 }
 
+=item whois
+
+Returns the Net::Whois object corresponding to this domain, or undef if
+the domain is not found in whois.
+
+(If $FS::svc_domain::whois_hack is true, returns that in all cases instead.)
+
+=cut
+
+sub whois {
+  $whois_hack or new Net::Whois::Domain $_[0]->domain;
+}
+
 =item _whois
 
-Executes the command:
-
-  whois do $domain
-
-and returns the output.
-
-(Always returns I<No match for domian "$domain".> if
-$FS::svc_domain::whois_hack is set true.)
+Depriciated.
 
 =cut
 
 sub _whois {
-  my $self = shift;
-  my $domain = $self->domain;
-  return ( "No match for domain \"$domain\"." ) if $whois_hack;
-  open(WHOIS, "whois do $domain |");
-  return <WHOIS>;
+  die "_whois depriciated";
 }
 
 =item submit_internic
@@ -390,7 +393,7 @@ sub submit_internic {
 
 =head1 VERSION
 
-$Id: svc_domain.pm,v 1.7 1999-04-07 14:40:15 ivan Exp $
+$Id: svc_domain.pm,v 1.8 1999-08-03 07:43:33 ivan Exp $
 
 =head1 BUGS
 
@@ -407,7 +410,9 @@ The $recref stuff in sub check should be cleaned up.
 =head1 SEE ALSO
 
 L<FS::svc_Common>, L<FS::Record>, L<FS::Conf>, L<FS::cust_svc>,
-L<FS::part_svc>, L<FS::cust_pkg>, L<FS::SSH>, L<ssh>, L<dot-qmail>, schema.html from the base documentation, config.html from the base documentation.
+L<FS::part_svc>, L<FS::cust_pkg>, L<FS::SSH>, L<Net::Whois>, L<ssh>,
+L<dot-qmail>, schema.html from the base documentation, config.html from the
+base documentation.
 
 =head1 HISTORY
 
@@ -426,7 +431,10 @@ ivan@sisd.com 98-jul-17-19
 pod, some FS::Conf (not complete) ivan@sisd.com 98-sep-23
 
 $Log: svc_domain.pm,v $
-Revision 1.7  1999-04-07 14:40:15  ivan
+Revision 1.8  1999-08-03 07:43:33  ivan
+use Net::Whois;
+
+Revision 1.7  1999/04/07 14:40:15  ivan
 use all stuff that's qsearch'ed to avoid warnings
 
 Revision 1.6  1999/01/25 12:26:17  ivan
