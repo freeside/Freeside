@@ -1,0 +1,252 @@
+#!/usr/bin/perl -Tw
+#
+# ivan@sisd.com 98-mar-9
+#
+# generalized svcparts ivan@sisd.com 98-mar-23
+
+# You really need to enable ssh into a shell machine as this needs to rename
+# .qmail-extension files.
+#
+# now an interactive script ivan@sisd.com 98-jun-30
+#
+# has an (untested) section for sendmail, s/warn/die/g and generates a program
+# to run on your mail machine _later_ instead of ssh'ing for each user
+# ivan@sisd.com 98-jul-13
+
+use strict;
+use vars qw(%d_part_svc %m_part_svc);
+use FS::SSH qw(iscp);
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw(qsearch qsearchs);
+use FS::svc_acct_sm;
+use FS::svc_domain;
+
+adminsuidsetup;
+
+#my($spooldir)="/var/spool/freeside/export";
+my($spooldir)="unix";
+
+my(%mta) = (
+  1 => "qmail",
+  2 => "sendmail",
+);
+
+###
+
+%d_part_svc =
+  map { $_->svcpart, $_ } qsearch('part_svc',{'svcdb'=>'svc_domain'});
+%m_part_svc =
+  map { $_->svcpart, $_ } qsearch('part_svc',{'svcdb'=>'svc_acct_sm'});
+
+print "\n\n", 
+      ( join "\n", map "$_: ".$d_part_svc{$_}->svc, sort keys %d_part_svc ),
+      "\n\nEnter part number for domains: ";
+my($domain_svcpart)=&getvalue;
+
+print "\n\n", 
+      ( join "\n", map "$_: ".$m_part_svc{$_}->svc, sort keys %m_part_svc ),
+      "\n\nEnter part number for mail aliases: ";
+my($mailalias_svcpart)=&getvalue;
+
+print "\n\n", <<END;
+Select your MTA from the following list.
+END
+print join "\n", map "$_: $mta{$_}", sort keys %mta;
+print "\n\n:";
+my($mta)=&getvalue;
+
+if ( $mta{$mta} eq "qmail" ) {
+
+  print "\n\n", <<END;
+Enter the location and name of your qmail control directory, for example
+"mail.isp.com:/var/qmail/control"
+END
+  print ":";
+  my($control)=&getvalue;
+  iscp("root\@$control/rcpthosts","$spooldir/rcpthosts.import");
+#  iscp("root\@$control/recipientmap","$spooldir/recipientmap.import");
+  iscp("root\@$control/virtualdomains","$spooldir/virtualdomains.import");
+
+#  print "\n\n", <<END;
+#Enter the name of the machine with your user .qmail files, for example
+#"mail.isp.com"
+#END
+#  print ":";
+#  my($shellmachine)=&getvalue;
+
+} elsif ( $mta{$mta} eq "sendmail" ) {
+
+  print "\n\n", <<END;
+Enter the location and name of your sendmail virtual user table, for example
+"mail.isp.com:/etc/virtusertable"
+END
+  print ":";
+  my($virtusertable)=&getvalue;
+  iscp("root\@$virtusertable","$spooldir/virtusertable.import");
+
+  print "\n\n", <<END;
+Enter the location and name of your sendmail.cw file, for example
+"mail.isp.com:/etc/sendmail.cw"
+END
+  print ":";
+  my($sendmail_cw)=&getvalue;
+  iscp("root\@$sendmail_cw","$spooldir/sendmail.cw.import");
+
+} else {
+  die "Unknown MTA!\n";
+}
+
+sub getvalue {
+  my($x)=scalar(<STDIN>);
+  chop $x;
+  $x;
+}
+
+print "\n\n";
+
+###
+
+$FS::svc_domain::whois_hack=1;
+$FS::svc_acct_sm::nossh_hack=1;
+
+if ( $mta{$mta} eq "qmail" ) {
+  open(RCPTHOSTS,"<$spooldir/rcpthosts.import")
+    or die "Can't open $spooldir/rcpthosts.import: $!";
+} elsif ( $mta{$mta} eq "sendmail" ) {
+  open(RCPTHOSTS,"<$spooldir/sendmail.cw.import")
+    or die "Can't open $spooldir/sendmail.cw.import: $!";
+} else {
+  die "Unknown MTA!\n";
+}
+
+my(%svcnum);
+
+while (<RCPTHOSTS>) {
+  next if /^(#|$)/;
+  /^\.?([\w\-\.]+)$/
+    #or do { warn "Strange rcpthosts/sendmail.cw line: $_"; next; };
+    or die "Strange rcpthosts/sendmail.cw line: $_";
+  my $domain = $1;
+  my($svc_domain);
+  unless ( $svc_domain = qsearchs('svc_domain', {'domain'=>$domain} ) ) {
+    $svc_domain = create FS::svc_domain ({
+      'domain'  => $domain,
+      'svcpart' => $domain_svcpart,
+      'action'  => 'N',
+    });
+    my $error = $svc_domain->insert;
+    #warn $error if $error;
+    die $error if $error;
+  }
+  $svcnum{$domain}=$svc_domain->svcnum;
+}
+close RCPTHOSTS; 
+
+#these two loops have enough similar parts they should probably be merged
+if ( $mta{$mta} eq "qmail" ) {
+
+  open(VD_FIX,">$spooldir/virtualdomains.FIX");
+  print VD_FIX "#!/usr/bin/perl\n";
+
+  open(VIRTUALDOMAINS,"<$spooldir/virtualdomains.import")
+    or die "Can't open $spooldir/virtualdomains.import: $!";
+  while (<VIRTUALDOMAINS>) {
+    next if /^#/;
+    /^\.?([\w\-\.]+):(\w+)(\-([\w\-\.]+))?$/
+      #or do { warn "Strange virtualdomains line: $_"; next; };
+      or die "Strange virtualdomains line: $_";
+    my($domain,$username,$dash_ext,$extension)=($1,$2,$3,$4);
+    $dash_ext ||= '';
+    $extension ||= '';
+    my($svc_acct)=qsearchs('svc_acct',{'username'=>$username});
+    unless ( $svc_acct ) {
+      #warn "Unknown user $username in virtualdomains; skipping\n";
+      #die "Unknown user $username in virtualdomains; skipping\n";
+      next;
+    }
+    if ( $domain ne $extension ) {
+      #warn "virtualdomains line $domain:$username$dash_ext changed to $domain:$username-$domain\n";
+      my($dir)=$svc_acct->dir;
+      my($qdomain)=$domain;
+      $qdomain =~ s/\./:/g; #see manpage for 'dot-qmail': EXTENSION ADDRESSES
+      #example to move .qmail files for virtual domains to their new location 
+      #dry run
+      #issh("root\@$shellmachine",'perl -e \'foreach $a (<'. $dir. '/.qmail'. $dash_ext. '-*>) { $old=$a; $a =~ s/\\.qmail'. $dash_ext. '\\-/\\.qmail\\-'. $qdomain. '\\-/; print " $old -> $a\n"; }\'');
+      #the real thing
+      #issh("root\@$shellmachine",'perl -e \'foreach $a (<'. $dir. '/.qmail'. $dash_ext. '-*>) { $old=$a; $a =~ s/\\.qmail'. $dash_ext. '\\-/\\.qmail\\-'. $qdomain. '\\-/; rename $old, $a; }\'');
+      print VD_FIX <<END;
+foreach \$file (<$dir/.qmail$dash_ext-*>) {
+  \$old = \$file;
+  \$file =~ s/\.qmail$dash_ext\-/\.qmail\-$qdomain\-/;
+  rename \$old, \$file;
+}
+END
+    }
+
+    unless ( exists $svcnum{$domain} ) {
+      my($svc_domain) = create FS::svc_domain ({
+        'domain'  => $domain,
+        'svcpart' => $domain_svcpart,
+        'action'  => 'N',
+      });
+      my $error = $svc_domain->insert;
+      #warn $error if $error;
+      die $error if $error;
+      $svcnum{$domain}=$svc_domain->svcnum;
+    }
+
+    my($svc_acct_sm)=create FS::svc_acct_sm ({
+      'domsvc'  => $svcnum{$domain},
+      'domuid'  => $svc_acct->uid,
+      'domuser' => '*',
+      'svcpart' => $mailalias_svcpart,
+    });
+    my($error)='';
+    $error=$svc_acct_sm->insert;
+    #warn $error if $error;
+    die $error, ", domain $domain" if $error;
+  }
+  close VIRTUALDOMAINS;
+  close VD_FIX;
+
+} elsif ( $mta{$mta} eq "sendmail" ) {
+
+  open(VIRTUSERTABLE,"<$spooldir/virtusertable.import")
+    or die "Can't open $spooldir/virtusertable.import: $!";
+  while (<VIRTUSERTABLE>) {
+    next if /^#/; #comments?
+    /^([\w\-\.]+)?\@([\w\-\.]+)\t([\w\-\.]+)$/
+      #or do { warn "Strange virtusertable line: $_"; next; };
+      or die "Strange virtusertable line: $_";
+    my($domuser,$domain,$username)=($1,$2,$3);
+    my($svc_acct)=qsearchs('svc_acct',{'username'=>$username});
+    unless ( $svc_acct ) {
+      #warn "Unknown user $username in virtusertable";
+      die "Unknown user $username in virtusertable";
+      next;
+    }
+    my($svc_acct_sm)=create FS::svc_acct_sm ({
+      'domsvc'  => $svcnum{$domain},
+      'domuid'  => $svc_acct->uid,
+      'domuser' => $domuser || '*',
+      'svcpart' => $mailalias_svcpart,
+    });
+    my($error)='';
+    $error=$svc_acct_sm->insert;
+    #warn $error if $error;
+    die $error if $error;
+  }
+  close VIRTUSERTABLE;
+
+} else {
+  die "Unknown MTA!\n";
+}
+
+#open(RECIPIENTMAP,"<$spooldir/recipientmap.import");
+#close RECIPIENTMAP;
+
+print "\n\n", <<END if $mta{$mta} eq "qmail";
+Don\'t forget to run $spooldir/virtualdomains.FIX before using
+$spooldir/virtualdomains !
+END
+
