@@ -120,5 +120,11 @@ Latex invoice template based on a template from eBills
 <http://ebills.sourceforge.net/> by Mark Asplen-Taylor <mark@asplen.co.uk>,
 licensed under the terms fo the GNU GPL.
 
+Contains "Request Tracker" <http://www.bestpractical.com/rt/> by Jesse
+Vincent <jesse@bestpractical.com> licensed under the terms of the GNU GPL.
+
+Contains "SQL Ledger" <http://www.sql-ledger.com/> by DWS Systems Inc. and
+contributors licensed under the terms of the GNU GPL.
+
 Everything else is my (Ivan Kohler <ivan@420.am>) fault.
 
