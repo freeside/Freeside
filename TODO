@@ -1,10 +1,71 @@
-$Id: TODO,v 1.42 2000-03-06 14:12:56 ivan Exp $
+$Id: TODO,v 1.43 2000-05-13 21:57:56 ivan Exp $
 
 If you are interested in helping with any of these, please join the mailing
 list (send a blank message to ivan-freeside-subscribe@sisd.com) to avoid 
 duplication of effort.
 
 ---
+
+pro-rating, fiddling dates
+
+It looks like svc_acct.import doesn't deal well with comments and
+multi-attribute lines.
+
+ivan@rootwood:~/freeside_current$ rgrep -r domuid * | cut -d: -f1 | sort |
+uniq
+CVS/Base/TODO
+TODO
+bin/fs-setup
+bin/svc_acct_sm.export
+bin/svc_acct_sm.import
+htdocs/docs/man/svc_acct_sm.txt
+htdocs/docs/schema.html
+htdocs/edit/CVS/Base/part_svc.cgi
+htdocs/edit/part_svc.cgi
+htdocs/edit/process/svc_acct_sm.cgi
+htdocs/edit/svc_acct_sm.cgi
+htdocs/search/svc_acct_sm.cgi
+htdocs/view/svc_acct_sm.cgi
+site_perl/svc_acct_sm.pm
+
+rootwood:COMPLETEHOST/TODO
+
+Currently, you set a value in the %FS::UID::callback hash with a coderef  
+of the code you want to execute, but this was bad design and will shortly
+be changed to a subroutine to which you pass your coderef to register it.
+
+This is not a bug, it is how the system is currently designed.  After 
+defining a new package, you need to specifically allow agent types to
+purchase packages.  You can do this from the edit screen of the new agent
+type.
+.
+It wouldn't be a bad idea to add a configuration value that makes new
+packages available for all currently existing agent types automatically.
+.
+On Fri, Apr 07, 2000 at 10:50:35AM -0500, David Morton wrote:
+> For some reason, the type_pkgs table didn't get updated when I tried to
+> create a domain service and package...  insert into type_pkgs values   
+> (4,1);  fixed it up so that I could actually order the package.
+
+
+From: Chuck Cochems <zaphod@tdl.com>
+.
+1) automated generating of late notices.  So far the only way I know to
+generate one is to re-invoice manually.
+. 
+2) smart credit card rejection handling.  It should e-mail a note at
+least, explainig that it did't go through, and why.
+. 
+3)coment field in the main customer record.
+.
+4) streamlined payment entry feature. the current scheme has it fairly
+buried.
+. 
+5) queries to show al customers who owe money,and such stuff as that.
+
+
+credits aren't counted against past invoices?  hmm.  something needs to be
+done to "apply payment" genericly. and zero out invoices etc.
 
 more email which should make it into a more organized TODO list:
 .
@@ -176,10 +237,9 @@ in real-time instead of exporting periodically.  See
 <http://www.mysql.com/Manual_chapter/manual_Common_problems.html#Replication>.
 
 these go in docs:
-<http://www.sisd.com/freeside/list-archive/msg00546.html>, and
-<http://www.sisd.com/freeside/list-archive/msg00554.html>
+<http://www.sisd.com/freeside/list-archive/msg00541.html> (was 546), and
 
-and http://www.sisd.com/freeside/list-archive/msg00423.html
+and http://www.sisd.com/freeside/list-archive/msg00421.html (was 423)
 
 > > 5: Is there anyway to get freeside to send a sysadmin a warning when a
 > > credit card has expired?

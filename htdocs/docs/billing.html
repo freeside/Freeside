@@ -3,7 +3,7 @@
 </head>
 <body>
   <h1>Billing</h1>
-  The freeside-bill script can be run daily to bill all customers.  Usage: bill [ -c [ i ] ] [ -d <i>date</i> ] [ -b ]
+  The <b>freeside-bill</b> script can be run daily to bill all customers.  Usage: bill [ -c [ i ] ] [ -d <i>date</i> ] [ -b ] <i>user</i>
   <ul>
     <li>-c: Turn on collecting (you probably want this).
     <li>-i: Real-time billing (as opposed to bacth billing).  Only relevant for credit cards.  Not available without modifying site_perl/Bill.pm
@@ -35,6 +35,14 @@ if ( $error ) {
 
 # end loop
 </pre>
-All fields except paybatch are contained in the cust_pay_batch table.  You can use paybatch field to track particular batches and/or particular transactions within a batch.
+All fields except paybatch are contained in the cust_pay_batch table.  You can use paybatch field to track particular batches and/or particular transactions within a batch.<br><br>
+    <li>The <b>freeside-print-batch</b> script can print or email pending credit card batches for manual entry.  Usage: freeside-print-batch [-v] [-p] [-e] [-a] [-d] <i>user</i>
+      <ul>
+        <li>-v: Verbose - Prints records to STDOUT.
+        <li>-p: Print to printer lpr as found in the conf directory.
+        <li>-e: Email output to user found in the Conf email file.
+        <li>-a: Automatically pays all records in cust_pay_batch.  Use -d with this option usually.
+        <li>-d: Delete - Pays account and deletes record from cust_pay_batch.
+      </ul>
   </ul>
 </body>
