@@ -174,6 +174,24 @@ tie my %plans, 'Tie::IxHash',
     'recur' => 'what.recur_fee.value',
   },
 
+  'flat_delayed' => {
+    'name' => 'Free for X days, then flat rate (anniversary billing)',
+    'fields' =>  {
+      'free_days' => { 'name' => 'Initial free days',
+                       'default' => 0,
+                     },
+      'setup_fee' => { 'name' => 'Setup fee for this package',
+                       'default' => 0,
+                     },
+      'recur_fee' => { 'name' => 'Recurring fee for this package',
+                       'default' => 0,
+                      },
+    },
+    'fieldorder' => [ 'free_days', 'setup_fee', 'recur_fee' ],
+    'setup' => 'what.setup_fee.value',
+    'recur' => '\'$sdate += 86400 * \' + what.free_days.value + \'; \' + what.recur_fee.value',
+  },
+
   'prorate' => {
     'name' => 'First partial month pro-rated, then flat-rate (1st of month billing)',
     'fields' =>  {

@@ -59,6 +59,8 @@ inherits from FS::Record.  The following fields are currently supported:
 
 =item recurtax - Recurring fee tax exempt flag, empty or `Y'
 
+=item taxclass - Texas tax class flag, empty or "none", "access", or "hosting"
+
 =item plan - Price plan
 
 =item plandata - Price plan data
@@ -196,6 +198,8 @@ sub check {
 
     $r =~ /^\s*\d*\.?\d*\s*$/
 
+      or $r =~ /^\$sdate += 86400 \* \s*\d+\s*; \s*\d*\.?\d*\s*$/
+
       or $r =~ /^my \$mnow = \$sdate; my \(\$sec,\$min,\$hour,\$mday,\$mon,\$year\) = \(localtime\(\$sdate\) \)\[0,1,2,3,4,5\]; my \$mstart = timelocal\(0,0,0,1,\$mon,\$year\); my \$mend = timelocal\(0,0,0,1, \$mon == 11 \? 0 : \$mon\+1, \$year\+\(\$mon==11\)\); \$sdate = \$mstart; \( \$part_pkg->freq \- 1 \) \* \d*\.?\d* \/ \$part_pkg\-\>freq \+ \d*\.?\d* \/ \$part_pkg\-\>freq \* \(\$mend\-\$mnow\) \/ \(\$mend\-\$mstart\) ;\s*$/
 
       or $r =~ /^my \$mnow = \$sdate; my \(\$sec,\$min,\$hour,\$mday,\$mon,\$year\) = \(localtime\(\$sdate\) \)\[0,1,2,3,4,5\]; \$sdate = timelocal\(0,0,0,1,\$mon,\$year\); \s*\d*\.?\d*\s*;\s*$/
@@ -227,6 +231,7 @@ sub check {
       || $self->ut_anything('plandata')
       || $self->ut_enum('setuptax', [ '', 'Y' ] )
       || $self->ut_enum('recurtax', [ '', 'Y' ] )
+      || $self->ut_enum('texastax', [ '', 'none', 'access', 'hosting' ] )
       || $self->ut_enum('disabled', [ '', 'Y' ] )
     ;
 }
@@ -288,7 +293,7 @@ sub payby {
 
 =head1 VERSION
 
-$Id: part_pkg.pm,v 1.10 2002-04-19 01:16:39 ivan Exp $
+$Id: part_pkg.pm,v 1.11 2002-04-25 09:47:25 ivan Exp $
 
 =head1 BUGS
 
