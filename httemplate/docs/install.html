@@ -103,11 +103,11 @@ $ su
       <li>Create a <a href="http://www.apache-asp.org/config.html#Global">Global</a> directory, such as <tt>/usr/local/etc/freeside/asp-global/</tt>
       <li>Copy <tt>htetc/global.asa</tt> to the Global directory:
 <font size="-1"><pre>
-cp htetc/global.asa /usr/local/etc/freeside/asp-global/global.asa
+cp&nbsp;htetc/global.asa&nbsp;/usr/local/etc/freeside/asp-global/global.asa
 </pre></font>
       <li>Configure Apache for the Global directory and to execute .cgi files using Apache::ASP.  For example:
 <font size="-1"><pre>
-&lt;Directory /usr/local/apache/htdocs/freeside-asp&gt;
+&lt;Directory&nbsp;/usr/local/apache/htdocs/freeside-asp&gt;
 &lt;Files ~ (\.cgi)&gt;
 AddHandler perl-script .cgi
 PerlHandler Apache::ASP
@@ -115,7 +115,7 @@ PerlHandler Apache::ASP
 &lt;Perl&gt;
 $MLDBM::RemoveTaint = 1;
 &lt;/Perl&gt;
-PerlSetVar Global /usr/local/etc/freeside/asp-global/
+PerlSetVar&nbsp;Global&nbsp;/usr/local/etc/freeside/asp-global/
 PerlSetVar Debug 2
 &lt;/Directory&gt;
 </pre></font>
@@ -127,13 +127,13 @@ PerlSetVar Debug 2
       <li>Edit <tt>handler.pl</tt> and set an appropriate <tt>data_dir</tt>, such as <tt>/usr/local/etc/freeside/mason-data</tt>
       <li>Configure Apache to use the <tt>handler.pl</tt> file and to execute .cgi files using HTML::Mason.  For example:
 <font size="-1"><pre>
-&lt;Directory /usr/local/apache/htdocs/freeside-mason&gt;
+&lt;Directory&nbsp;/usr/local/apache/htdocs/freeside-mason&gt;
 &lt;Files ~ (\.cgi)&gt;
 AddHandler perl-script .cgi
 PerlHandler HTML::Mason
 &lt;/Files&gt;
 &lt;Perl&gt;
-require "/usr/local/apache/conf/handler.pl";
+require&nbsp;"/usr/local/apache/conf/handler.pl";
 &lt;/Perl&gt;
 &lt;/Directory&gt;
 </pre></font>
