@@ -92,7 +92,7 @@ function achclose() {
           <TD>Exp.</TD>
           <TD>
             <SELECT NAME="month">
-              <% for ( ( map "0$_", 1 .. 9 ), 11, 12 ) { %>
+              <% for ( ( map "0$_", 1 .. 9 ), 10 .. 12 ) { %>
                 <OPTION<%= $_ == $month ? ' SELECTED' : '' %>><%= $_ %>
               <% } %>
             </SELECT>
