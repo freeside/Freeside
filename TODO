@@ -1,10 +1,19 @@
-$Id: TODO,v 1.63 2001-04-22 01:38:38 ivan Exp $
+$Id: TODO,v 1.64 2001-06-03 14:15:52 ivan Exp $
 
 If you are interested in helping with any of these, please join the
 *development* mailing list (send a blank message to
 ivan-freeside-devel-subscribe@sisd.com) to avoid duplication of effort.
 
 ---
+
+"Andrew Wafula" <awafula2000@yahoo.co.uk>:
+> Following my recent questions on money_char, i would like to suggest that
+> money_char be used as well in cust_bill.cgi and cust_main.cgi so that the
+> charges are seen in whatever money_char is used in a particular country
+> instead of the default dollar currecny. This would make it such that the
+> system has one monetary unit in its entirety rather than only for the
+> invoicing part. I guess this would be something others would appreciate as
+> well.
 
 Things that would be nice but probably won't happen: testing with 
 MySQL+Sleepycat, a fix for the long-RADIUS-attributes-with Pg problem,    
