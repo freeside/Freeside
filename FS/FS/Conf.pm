@@ -1345,7 +1345,7 @@ httemplate/docs/config.html
   {
     'key'         => 'ticket_system-custom_priority_field-values',
     'section'     => '',
-    'description' => 'Values for the custom field from the ticketing system tobreak down and sort customer ticket lists.',
+    'description' => 'Values for the custom field from the ticketing system to break down and sort customer ticket lists.',
     'type'        => 'textarea',
   },
 
