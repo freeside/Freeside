@@ -170,10 +170,10 @@ sub qsearch {
   my($statement) = "SELECT * FROM $table". ( @fields
     ? " WHERE ". join(' AND ',
       map {
-        $self->getfield($_) eq ''
+        $record->{$_} eq ''
           ? "$_ IS NULL"
-          : "$_ = ". _quote($self->getfield($_),$table,$_)
-      } @fields)
+          : "$_ = ". _quote($record->{$_},$table,$_)
+      } @fields
     ) : ''
   );
   $sth=$dbh->prepare($statement)
@@ -759,7 +759,7 @@ sub fields {
 
 =head1 VERSION
 
-$Id: Record.pm,v 1.7 1998-11-15 10:56:31 ivan Exp $
+$Id: Record.pm,v 1.8 1998-11-15 11:02:04 ivan Exp $
 
 =head1 BUGS
 
@@ -878,7 +878,10 @@ added pod documentation ivan@sisd.com 98-sep-6
 ut_phonen got ''; at the end ivan@sisd.com 98-sep-27
 
 $Log: Record.pm,v $
-Revision 1.7  1998-11-15 10:56:31  ivan
+Revision 1.8  1998-11-15 11:02:04  ivan
+bugsquash
+
+Revision 1.7  1998/11/15 10:56:31  ivan
 qsearch gets sames "IS NULL" semantics as other WHERE clauses
 
 Revision 1.6  1998/11/15 05:31:03  ivan
