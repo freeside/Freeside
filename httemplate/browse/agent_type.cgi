@@ -1,16 +1,19 @@
 <!-- mason kludge -->
-<%
-
-print header("Agent Type Listing", menubar(
+<%= header("Agent Type Listing", menubar(
   'Main Menu' => $p,
-)), "Agent types define groups of packages that you can then assign to".
-    " particular agents.<BR><BR>", &table(), <<END;
-      <TR>
-        <TH COLSPAN=2>Agent Type</TH>
-        <TH COLSPAN=2>Packages</TH>
-      </TR>
-END
+  'Agents'    => $p. 'browse/agent.cgi',
+)) %>
+Agent types define groups of packages that you can then assign to particular
+agents.<BR><BR>
+<A HREF="<%= $p %>edit/agent_type.cgi"><I>Add a new agent type</I></A><BR><BR>
 
+<%= table() %>
+<TR>
+  <TH COLSPAN=2>Agent Type</TH>
+  <TH COLSPAN=2>Packages</TH>
+</TR>
+
+<% 
 foreach my $agent_type ( sort { 
   $a->getfield('typenum') <=> $b->getfield('typenum')
 } qsearch('agent_type',{}) ) {
@@ -47,7 +50,6 @@ END
 }
 
 print <<END;
-  <TR><TD COLSPAN=4><I><A HREF="${p}edit/agent_type.cgi">Add a new agent type</A></I></TD></TR>
     </TABLE>
   </BODY>
 </HTML>

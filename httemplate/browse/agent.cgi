@@ -1,6 +1,5 @@
 <!-- mason kludge -->
 <%
-
 #Begin silliness
 #
 #use FS::UI::CGI;
@@ -11,23 +10,25 @@
 #exit;
 #__END__
 #End silliness
+%>
 
-print header('Agent Listing', menubar(
+<%= header('Agent Listing', menubar(
   'Main Menu'   => $p,
   'Agent Types' => $p. 'browse/agent_type.cgi',
 #  'Add new agent' => '../edit/agent.cgi'
-)), <<END;
+)) %>
 Agents are resellers of your service. Agents may be limited to a subset of your
 full offerings (via their type).<BR><BR>
-END
-print &table(), <<END;
-      <TR>
-        <TH COLSPAN=2>Agent</TH>
-        <TH>Type</TH>
-        <TH><FONT SIZE=-1>Freq.</FONT></TH>
-        <TH><FONT SIZE=-1>Prog.</FONT></TH>
-      </TR>
-END
+<A HREF="<%= $p %>edit/agent.cgi"><I>Add a new agent</I></A><BR><BR>
+
+<%= table() %>
+<TR>
+  <TH COLSPAN=2>Agent</TH>
+  <TH>Type</TH>
+  <TH><FONT SIZE=-1>Freq.</FONT></TH>
+  <TH><FONT SIZE=-1>Prog.</FONT></TH>
+</TR>
+<% 
 #        <TH><FONT SIZE=-1>Agent #</FONT></TH>
 #        <TH>Agent</TH>
 
@@ -54,12 +55,7 @@ END
 }
 
 print <<END;
-      <TR>
-        <TD COLSPAN=2><A HREF="${p}edit/agent.cgi"><I>Add a new agent</I></A></TD>
-        <TD><A HREF="${p}edit/agent_type.cgi"><I>Add a new agent type</I></A></TD>
-      </TR>
     </TABLE>
-
   </BODY>
 </HTML>
 END

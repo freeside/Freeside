@@ -11,13 +11,16 @@ if ( $cgi->param('showdisabled') ) {
 my @part_pkg = qsearch('part_pkg', \%search );
 my $total = scalar(@part_pkg);
 
-print header("Package Definition Listing",menubar(
-  'Main Menu' => $p,
-)). "One or more services are grouped together into a package and given".
-  " pricing information. Customers purchase packages".
-  " rather than purchase services directly.<BR><BR>".
-  "$total packages ";
+%>
+<%= header("Package Definition Listing",menubar( 'Main Menu' => $p )) %>
+One or more services are grouped together into a package and given pricing
+information. Customers purchase packages rather than purchase services
+directly.<BR><BR>
+<A HREF="<%= $p %>edit/part_pkg.cgi"><I>Add a new package definition</I></A>
+<BR><BR>
 
+<%= $total %> packages
+<%
 if ( $cgi->param('showdisabled') ) {
   $cgi->param('showdisabled', 0);
   print qq!( <a href="!. $cgi->self_url. qq!">hide disabled packages</a> )!;
@@ -91,7 +94,7 @@ END
 
 $colspan = $cgi->param('showdisabled') ? 8 : 9;
 print <<END;
-   <TR><TD COLSPAN=$colspan><I><A HREF="${p}edit/part_pkg.cgi">Add a new package definition</A></I></TD></TR>
+
     </TABLE>
   </BODY>
 </HTML>

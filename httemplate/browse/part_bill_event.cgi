@@ -15,6 +15,8 @@ my $total = scalar(@part_bill_event);
 <%= header('Invoice Event Listing', menubar( 'Main Menu' => $p) ) %>
 
     Invoice events are actions taken on overdue invoices.<BR><BR>
+<A HREF="<%= $p %>edit/part_bill_event.cgi"><I>Add a new invoice event</I></A>
+<BR><BR>
 <%= $total %> events
 <%= $cgi->param('showdisabled')
       ? do { $cgi->param('showdisabled', 0);
@@ -64,10 +66,6 @@ my $total = scalar(@part_bill_event);
       <%= $part_bill_event->eventcode %></FONT></TD>
   </TR>
 <% } %>
-
-  <TR>
-    <TD COLSPAN=8><A HREF="<%= $p %>edit/part_bill_event.cgi"><I>Add a new invoice event</I></A></TD>
-  </TR>
 </TABLE>
 </BODY>
 </HTML>

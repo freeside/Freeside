@@ -3,7 +3,10 @@
 
 print header('Access Number Listing', menubar(
   'Main Menu' => $p,
-)), "Points of Presence<BR><BR>", &table(), <<END;
+)) %>
+Points of Presence<BR><BR>
+<A HREF="<%= $p %>edit/svc_acct_pop.cgi"><I>Add new Access Number</I></A><BR><BR>
+<%= table() %>
       <TR>
         <TH></TH>
         <TH>City</TH>
@@ -12,8 +15,8 @@ print header('Access Number Listing', menubar(
         <TH>Exchange</TH>
         <TH>Local</TH>
       </TR>
-END
 
+<%
 foreach my $svc_acct_pop ( sort { 
   #$a->getfield('popnum') <=> $b->getfield('popnum')
   $a->state cmp $b->state || $a->city cmp $b->city
@@ -41,7 +44,6 @@ END
 
 print <<END;
       <TR>
-        <TD COLSPAN=5><A HREF="${p}edit/svc_acct_pop.cgi"><I>Add new Access Number</I></A></TD>
       </TR>
     </TABLE>
   </BODY>
