@@ -306,23 +306,11 @@ sub insert {
     }
   }
 
-  #false laziness with sub replace
-  my $queue = new FS::queue { 'job' => 'FS::cust_main::append_fuzzyfiles' };
-  $error = $queue->insert($self->getfield('last'), $self->company);
+  $error = $self->queue_fuzzyfiles_update;
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
-    return "queueing job (transaction rolled back): $error";
+    return "updating fuzzy search cache: $error";
   }
-
-  if ( defined $self->dbdef_table->column('ship_last') && $self->ship_last ) {
-    $queue = new FS::queue { 'job' => 'FS::cust_main::append_fuzzyfiles' };
-    $error = $queue->insert($self->getfield('last'), $self->company);
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return "queueing job (transaction rolled back): $error";
-    }
-  }
-  #eslaf
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
@@ -525,34 +513,47 @@ sub replace {
 
   if ( $self->payby =~ /^(CARD|CHEK|LECB)$/ &&
        grep { $self->get($_) ne $old->get($_) } qw(payinfo paydate payname) ) {
-    # card/check info has changed, want to retry realtime_card invoice events
-    #false laziness w/collect
-    foreach my $cust_bill_event (
-      grep {
-             #$_->part_bill_event->plan eq 'realtime-card'
-             $_->part_bill_event->eventcode =~
-                 /^\$cust_bill\->realtime_(card|ach|lec)\(\);$/
-               && $_->status eq 'done'
-               && $_->statustext
-           }
-        map { $_->cust_bill_event }
-          grep { $_->cust_bill_event }
-            $self->open_cust_bill
-
-    ) {
-      my $error = $cust_bill_event->retry;
-      if ( $error ) {
-        $dbh->rollback if $oldAutoCommit;
-        return "error scheduling invoice events for retry: $error";
-      }
+    # card/check/lec info has changed, want to retry realtime_ invoice events
+    my $error = $self->retry_realtime;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
     }
-    #eslaf
-
   }
 
-  #false laziness with sub insert
+  $error = $self->queue_fuzzyfiles_update;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return "updating fuzzy search cache: $error";
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  '';
+
+}
+
+=item queue_fuzzyfiles_update
+
+Used by insert & replace to update the fuzzy search cache
+
+=cut
+
+sub queue_fuzzyfiles_update {
+  my $self = shift;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
   my $queue = new FS::queue { 'job' => 'FS::cust_main::append_fuzzyfiles' };
-  $error = $queue->insert($self->getfield('last'), $self->company);
+  my $error = $queue->insert($self->getfield('last'), $self->company);
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return "queueing job (transaction rolled back): $error";
@@ -560,13 +561,12 @@ sub replace {
 
   if ( defined $self->dbdef_table->column('ship_last') && $self->ship_last ) {
     $queue = new FS::queue { 'job' => 'FS::cust_main::append_fuzzyfiles' };
-    $error = $queue->insert($self->getfield('last'), $self->company);
+    $error = $queue->insert($self->getfield('ship_last'), $self->ship_company);
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return "queueing job (transaction rolled back): $error";
     }
   }
-  #eslaf
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
@@ -1276,7 +1276,10 @@ invoice_time - Use this time when deciding when to print invoices and
 late notices on those invoices.  The default is now.  It is specified as a UNIX timestamp; see L<perlfunc/"time">).  Also see L<Time::Local> and L<Date::Parse>
 for conversion functions.
 
-retry_card - Retry cards even when not scheduled by invoice events.
+retry - Retry card/echeck/LEC transactions even when not scheduled by invoice
+events.
+
+retry_card - Deprecated alias for 'retry'
 
 batch_card - This option is deprecated.  See the invoice events web interface
 to control whether cards are batched or run against a realtime gateway.
@@ -1310,26 +1313,16 @@ sub collect {
     return '';
   }
 
-  if ( exists($options{'retry_card'}) && $options{'retry_card'} ) {
-    #false laziness w/replace
-    foreach my $cust_bill_event (
-      grep {
-             #$_->part_bill_event->plan eq 'realtime-card'
-             $_->part_bill_event->eventcode eq '$cust_bill->realtime_card();'
-               && $_->status eq 'done'
-               && $_->statustext
-           }
-        map { $_->cust_bill_event }
-          grep { $_->cust_bill_event }
-            $self->open_cust_bill
-    ) {
-      my $error = $cust_bill_event->retry;
-      if ( $error ) {
-        $dbh->rollback if $oldAutoCommit;
-        return "error scheduling invoice events for retry: $error";
-      }
+  if ( exists($options{'retry_card'}) ) {
+    carp 'retry_card option passed to collect is deprecated; use retry';
+    $options{'retry'} ||= $options{'retry_card'};
+  }
+  if ( exists($options{'retry'}) && $options{'retry'} ) {
+    my $error = $self->retry_realtime;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
     }
-    #eslaf
   }
 
   foreach my $cust_bill ( $self->cust_bill ) {
@@ -1410,6 +1403,60 @@ sub collect {
       }
 
 
+    }
+
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  '';
+
+}
+
+=item retry_realtime
+
+Schedules realtime credit card / electronic check / LEC billing events for
+for retry.  Useful if card information has changed or manual retry is desired.
+The 'collect' method must be called to actually retry the transaction.
+
+Implementation details: For each of this customer's open invoices, changes
+the status of the first "done" (with statustext error) realtime processing
+event to "failed".
+
+=cut
+
+sub retry_realtime {
+  my $self = shift;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  foreach my $cust_bill (
+    grep { $_->cust_bill_event }
+      $self->open_cust_bill
+  ) {
+    my @cust_bill_event =
+      sort { $a->part_bill_event->seconds <=> $b->part_bill_event->seconds }
+        grep {
+               #$_->part_bill_event->plan eq 'realtime-card'
+               $_->part_bill_event->eventcode =~
+                   /\$cust_bill\->realtime_(card|ach|lec)$/
+                 && $_->status eq 'done'
+                 && $_->statustext
+             }
+          $_->cust_bill_event;
+    next unless @cust_bill_event;
+    my $error = $cust_bill_event[0]->retry;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "error scheduling invoice event for retry: $error";
     }
 
   }
@@ -2505,5 +2552,4 @@ L<FS::cust_main_invoice>, L<FS::UID>, schema.html from the base documentation.
 =cut
 
 1;
-
 

@@ -21,7 +21,8 @@ unless ( $error ) {
                                #'batch_card'=> 'yes',
                                #'batch_card'=> 'no',
                                #'report_badcard'=> 'yes',
-                               'retry_card' => 'yes',
+                               #'retry_card' => 'yes',
+                               'retry' => 'yes',
                               );
 }
 #&eidiot($error) if $error;
