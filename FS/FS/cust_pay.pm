@@ -325,13 +325,7 @@ sub delete {
 
 =item replace OLD_RECORD
 
-Currently unimplemented (accounting reasons).
-
-=cut
-
-sub replace {
-   return "Can't (yet?) modify cust_pay records!";
-}
+You probably shouldn't modify payments...
 
 =item check
 
