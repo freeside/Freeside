@@ -8,6 +8,7 @@
   <li>If migrating from less than 1.1.4, see these <a href="upgrade2.html">instructions</a> first.
   <li>If migrating from less than 1.2.0, see these <a href="upgrade3.html">instructions</a> first.
   <li>Back up your data and current Freeside installation.
+  <li>Install the Perl modules <a href="http://www.perl.com/CPAN/modules/by-module/Locale/">Locale-Codes</a> and <a href="http://www.perl.com/CPAN/modules/by-module/Net/">Net-Whois</a>.
   <li>Apply the following changes to your database:
 <pre>
 ALTER TABLE cust_pay_batch CHANGE exp exp VARCHAR(11);
