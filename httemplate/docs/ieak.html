@@ -1,0 +1,75 @@
+<pre>
+this is incomplete
+mostly it should be merged into signup.html and fs_signup/ieak.template
+
+- download and install the IEAK from
+  http://www.microsoft.com/windows/ieak/default.asp
+
+- Good examples may be found in 
+  C:\Program Files\IEAK\toolkit\isp\server\ICW\signup\perl\signup08.pl
+  C:\Program Files\IEAK\toolkit\isp\server\ICW\reconfig\perl\reconfig04.pl
+  C:\Program Files\IEAK6\toolkit\isp\servless\basic\sample.ins
+  C:\Program Files\IEAK6\toolkit\isp\servless\advanced\4567.ins
+  C:\Program Files\IEAK6\toolkit\isp\servless\advanced\4568.ins
+  C:\Program Files\IEAK6\toolkit\isp\servless\advanced\7890.ins
+  C:\Program Files\IEAK6\toolkit\isp\servless\advanced\7891.ins
+
+- Full documentation on all the settings available in .INS files is
+  avaialble under Program Files | Microsoft IEAK 6 | IEAK Help 
+                  | Reference | Internet Settings (.ins) Files
+
+- Freeside will make the following substitutions before sending the file
+  to the user:
+
+  { $ac }         - area code of selected POP
+  { $exch }       - exchange of selected POP
+  { $loc }        - local part of selected POP
+  { $username }
+  { $password }
+  { $email_name } - first and last name
+  { $pkg }        - package name
+
+- Simple example follows:
+
+[Entry]
+Entry Name = IEAK Sample
+[Phone]
+Dial_As_Is = No
+Phone_Number = { $exch }{ $loc }
+Area_Code = { $ac }
+Country_Code = 1
+Country_Id = 1
+[Server]
+Type = PPP
+SW_Compress = Yes
+PW_Encrypt = Yes
+Negotiate_TCP/IP = Yes
+Disable_LCP = No
+[TCP/IP]
+Specity_IP_Address = No
+Specity_Server_Address = No
+IP_Header_Compress = Yes
+Gateway_On_Remote = Yes
+[User]
+Name = { $username }
+Passowrd = { $password }
+Display_Password = Yes
+[Internet_Mail]
+Email_Name = { $email_name }
+Email_Address = { $username }@example.com
+POP_Server = mail.example.com
+POP_Server_Port_Number = 110
+POP_Logon_Password = { $password }
+SMTP_Server = mail.example.com
+SMTP_Server_Port_Number = 25
+Install_Mail = 1
+[URL]
+Help_Page = http://www.ieaksample.net/helpdesk
+Home_Page = http://www.ieaksample.net
+Search_Page = http://www.ieaksample,net/search
+[Favorites]
+IEAK Sample \\ IEAK Sample Home Page.url = http://acme.ieaksample.net/
+[Branding]
+Window_Title = Internet Explorer from Acme Internet Services
+
+</pre>
