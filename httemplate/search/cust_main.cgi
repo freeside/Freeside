@@ -401,7 +401,7 @@ END
       print "<TD ROWSPAN=$rowspan ALIGN=right>";
       if ( $addl_col eq 'tickets' ) {
         if ( @custom_priorities ) {
-          print '<TABLE>';
+          print &itable('', 0);
           foreach my $priority ( @custom_priorities, '' ) {
             my $ahref =
               '<A HREF="'.
