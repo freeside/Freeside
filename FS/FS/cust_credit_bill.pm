@@ -109,7 +109,7 @@ sub check {
   ;
   return $error if $error;
 
-  return "amount must be > 0" if $self->amount == 0;
+  return "amount must be > 0" if $self->amount <= 0;
 
   return "Unknown credit"
     unless my $cust_credit = 
@@ -145,7 +145,7 @@ sub cust_credit {
 
 =head1 VERSION
 
-$Id: cust_credit_bill.pm,v 1.6 2001-09-26 09:17:06 ivan Exp $
+$Id: cust_credit_bill.pm,v 1.7 2002-01-24 16:58:47 ivan Exp $
 
 =head1 BUGS
 

@@ -160,7 +160,7 @@ sub check {
   ;
   return $error if $error;
 
-  return "amount must be > 0 " if $self->amount == 0;
+  return "amount must be > 0 " if $self->amount <= 0;
 
   return "Unknown customer"
     unless qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
@@ -237,7 +237,7 @@ sub credited {
 
 =head1 VERSION
 
-$Id: cust_credit.pm,v 1.13 2002-01-22 15:57:33 ivan Exp $
+$Id: cust_credit.pm,v 1.14 2002-01-24 16:58:47 ivan Exp $
 
 =head1 BUGS
 

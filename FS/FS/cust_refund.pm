@@ -221,7 +221,7 @@ sub check {
   ;
   return $error if $error;
 
-  return "refund must be > 0 " if $self->refund == 0;
+  return "refund must be > 0 " if $self->refund <= 0;
 
   $self->_date(time) unless $self->_date;
 
@@ -261,7 +261,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: cust_refund.pm,v 1.13 2002-01-24 11:52:02 ivan Exp $
+$Id: cust_refund.pm,v 1.14 2002-01-24 16:58:47 ivan Exp $
 
 =head1 BUGS
 

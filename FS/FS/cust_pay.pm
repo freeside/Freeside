@@ -240,7 +240,7 @@ sub check {
   ;
   return $error if $error;
 
-  return "paid must be > 0 " if $self->paid == 0;
+  return "paid must be > 0 " if $self->paid <= 0;
 
   return "unknown cust_main.custnum: ". $self->custnum
     unless $self->invnum
@@ -307,7 +307,7 @@ sub unapplied {
 
 =head1 VERSION
 
-$Id: cust_pay.pm,v 1.12 2002-01-24 11:52:02 ivan Exp $
+$Id: cust_pay.pm,v 1.13 2002-01-24 16:58:47 ivan Exp $
 
 =head1 BUGS
 
