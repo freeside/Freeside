@@ -658,8 +658,8 @@ httemplate/docs/config.html
 
   {
     'key'         => 'report_template',
-    'section'     => 'required',
-    'description' => 'Required template file for reports.  See the <a href="../docs/billing.html">billing documentation</a> for details.',
+    'section'     => 'deprecated',
+    'description' => 'Deprecated template file for reports.',
     'type'        => 'textarea',
   },
 
