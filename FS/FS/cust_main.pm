@@ -859,7 +859,8 @@ sub bill {
     qsearch('cust_pkg', { 'custnum' => $self->custnum } )
   ) {
 
-    next if $cust_pkg->cancel;  
+    #NO!! next if $cust_pkg->cancel;  
+    next if $cust_pkg->getfield('cancel');  
 
     #? to avoid use of uninitialized value errors... ?
     $cust_pkg->setfield('bill', '')
@@ -1880,7 +1881,7 @@ sub append_fuzzyfiles {
 
 =head1 VERSION
 
-$Id: cust_main.pm,v 1.49 2001-12-15 00:17:38 ivan Exp $
+$Id: cust_main.pm,v 1.50 2001-12-16 23:50:10 ivan Exp $
 
 =head1 BUGS
 
