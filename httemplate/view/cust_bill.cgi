@@ -1,4 +1,4 @@
-<!-- $Id: cust_bill.cgi,v 1.7 2002-02-04 16:44:47 ivan Exp $ -->
+<!-- $Id: cust_bill.cgi,v 1.8 2002-02-10 02:16:47 ivan Exp $ -->
 <%
 
 #untaint invnum
@@ -20,10 +20,15 @@ print header('Invoice View', menubar(
 print qq!<A HREF="${p}edit/cust_pay.cgi?$invnum">Enter payments (check/cash) against this invoice</A> | !
   if $cust_bill->owed > 0;
 
-print qq!<A HREF="${p}misc/print-invoice.cgi?$invnum">Reprint this invoice</A>!.
-#     "<BR><BR>(Printed $printed times)".
-#print cust_bill_events
-      '<PRE>'.
+print qq!<A HREF="${p}misc/print-invoice.cgi?$invnum">Reprint this invoice</A>!.      '<BR><BR>';
+
+foreach my $cust_bill_event (
+  sort { $a->_date <=> $b->_date } $cust_bill->cust_bill_event
+) {
+  print time2str("%a %b %e %T %Y", $cust_bill_event->_date). ' - '.
+        $cust_bill_event->part_bill_event->event. '<BR>';
+}
+print '<BR><PRE>';
 
 print $cust_bill->print_text;
 

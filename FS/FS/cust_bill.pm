@@ -19,6 +19,7 @@ use FS::cust_pay;
 use FS::cust_pkg;
 use FS::cust_credit_bill;
 use FS::cust_pay_batch;
+use FS::cust_bill_event;
 
 @ISA = qw( FS::Record );
 
@@ -250,6 +251,19 @@ sub cust_bill_pkg {
   my $self = shift;
   qsearch( 'cust_bill_pkg', { 'invnum' => $self->invnum } );
 }
+
+=item cust_bill_event
+
+Returns the completed invoice events (see L<FS::cust_bill_event>) for this
+invoice.
+
+=cut
+
+sub cust_bill_event {
+  my $self = shift;
+  qsearch( 'cust_bill_event', { 'invnum' => $self->invnum } );
+}
+
 
 =item cust_main
 
@@ -864,7 +878,7 @@ sub print_text {
 
 =head1 VERSION
 
-$Id: cust_bill.pm,v 1.17 2002-02-06 15:50:54 ivan Exp $
+$Id: cust_bill.pm,v 1.18 2002-02-10 02:16:46 ivan Exp $
 
 =head1 BUGS
 

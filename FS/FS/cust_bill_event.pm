@@ -3,6 +3,7 @@ package FS::cust_bill_event;
 use strict;
 use vars qw( @ISA );
 use FS::Record qw( qsearch qsearchs );
+use FS::part_bill_event;
 
 @ISA = qw(FS::Record);
 
@@ -115,6 +116,18 @@ sub check {
     unless qsearchs( 'part_bill_event' ,{ 'eventpart' => $self->eventpart } );
 
   ''; #no error
+}
+
+=item part_bill_event
+
+Returns the invoice event definition (see L<FS::part_bill_event>) for this
+completed invoice event.
+
+=cut
+
+sub part_bill_event {
+  my $self = shift;
+  qsearchs( 'part_bill_event', { 'eventpart' => $self->eventpart } );
 }
 
 =back

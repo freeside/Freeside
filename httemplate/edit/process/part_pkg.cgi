@@ -1,4 +1,4 @@
-<!-- $Id: part_pkg.cgi,v 1.8 2002-02-09 18:24:01 ivan Exp $ -->
+<!-- $Id: part_pkg.cgi,v 1.9 2002-02-10 02:16:47 ivan Exp $ -->
 <%
 
 my $dbh = dbh;
@@ -11,7 +11,7 @@ my $old = qsearchs('part_pkg',{'pkgpart'=>$pkgpart}) if $pkgpart;
 my $plandata = $cgi->param('plandata');
 my @plandata = split(',', $plandata);
 $cgi->param('plandata', 
-  join('', map { "$_=". $cgi->param($_). "\n" } @plandata )
+  join('', map { "$_=". join(', ', $cgi->param($_)). "\n" } @plandata )
 );
 
 foreach (qw( setuptax recurtax disabled )) {

@@ -52,7 +52,7 @@ htmlman:
 	[ -e ./httemplate/docs/man/bin ] || mkdir httemplate/docs/man/bin
 	[ -e ./httemplate/docs/man/FS ] || mkdir httemplate/docs/man/FS
 	[ -e ./httemplate/docs/man/FS/UI ] || mkdir httemplate/docs/man/FS/UI
-	bin/pod2x
+	[ -e DONT_REBUILD_DOCS ] || bin/pod2x
 
 upload-docs:
 	ssh cleanwhisker.420.am rm -rf /var/www/www.sisd.com/freeside/devdocs

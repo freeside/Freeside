@@ -716,6 +716,13 @@ httemplate/docs/config.html
     'type'        => 'textarea',
   },
 
+  {
+    'key'         => 'safe-part_pkg',
+    'section'     => 'UI',
+    'description' => 'Validates package definition setup and recur expressions against a preset list.  Useful for webdemos, annoying to powerusers.',
+    'type'        => 'checkbox',
+  },
+
 );
 
 1;

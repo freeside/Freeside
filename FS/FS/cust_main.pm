@@ -913,6 +913,9 @@ sub bill {
       };
       $recur_prog = $1;
 
+      # shared with $recur_prog
+      $sdate = $cust_pkg->bill || $cust_pkg->setup || $time;
+
         #my $cpt = new Safe;
         ##$cpt->permit(); #what is necessary?
         #$cpt->share(qw( $cust_pkg )); #can $cpt now use $cust_pkg methods?
@@ -925,11 +928,14 @@ sub bill {
       }
       #change this bit to use Date::Manip? CAREFUL with timezones (see
       # mailing list archive)
-      #$sdate=$cust_pkg->bill || time;
-      #$sdate=$cust_pkg->bill || $time;
-      $sdate = $cust_pkg->bill || $cust_pkg->setup || $time;
       my ($sec,$min,$hour,$mday,$mon,$year) =
         (localtime($sdate) )[0,1,2,3,4,5];
+
+      #pro-rating magic - if $recur_prog fiddles $sdate, want to use that
+      # only for figuring next bill date, nothing else, so, reset $sdate again
+      # here
+      $sdate = $cust_pkg->bill || $cust_pkg->setup || $time;
+
       $mon += $part_pkg->getfield('freq');
       until ( $mon < 12 ) { $mon -= 12; $year++; }
       $cust_pkg->setfield('bill',
@@ -1118,7 +1124,7 @@ sub collect {
       sort {    $a->seconds   <=> $b->seconds
              || $a->weight    <=> $b->weight
              || $a->eventpart <=> $b->eventpart }
-        grep { $_->seconds > ( $invoice_time - ( $cust_bill->_date || 0 ) )
+        grep { $_->seconds <= ( $invoice_time - $cust_bill->_date )
                && ! qsearchs( 'cust_bill_event', {
                                 'invnum'    => $cust_bill->invnum,
                                 'eventpart' => $_->eventpart       } )
@@ -1518,11 +1524,23 @@ sub referral_cust_main {
   @cust_main;
 }
 
+=item referral_cust_main_ncancelled
+
+Same as referral_cust_main, except only returns customers with uncancelled
+packages.
+
+=cut
+
+sub referral_cust_main_ncancelled {
+  my $self = shift;
+  grep { scalar($_->ncancelled_pkgs) } $self->referral_cust_main;
+}
+
 =item referral_cust_pkg [ DEPTH ]
 
-Like referral_cust_main, except returns a flat list of all unsuspended packages
-for each customer.  The number of items in this list may be useful for
-comission calculations (perhaps after a grep).
+Like referral_cust_main, except returns a flat list of all unsuspended (and
+uncancelled) packages for each customer.  The number of items in this list may
+be useful for comission calculations (perhaps after a C<grep { my $pkgpart = $_->pkgpart; grep { $_ == $pkgpart } @commission_worthy_pkgparts> } $cust_main-> ).
 
 =cut
 

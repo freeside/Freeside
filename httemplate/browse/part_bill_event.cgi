@@ -1,4 +1,4 @@
-<!-- $Id: part_bill_event.cgi,v 1.3 2002-01-30 18:22:54 ivan Exp $ -->
+<!-- $Id: part_bill_event.cgi,v 1.4 2002-02-10 02:16:46 ivan Exp $ -->
 <% 
 
 my %search;
@@ -66,7 +66,7 @@ my $total = scalar(@part_bill_event);
 <% } %>
 
   <TR>
-    <TD COLSPAN=8><A HREF="<%= $p %>edit/part_bill_event.cgi"><I>Add a new billing event</I></A></TD>
+    <TD COLSPAN=8><A HREF="<%= $p %>edit/part_bill_event.cgi"><I>Add a new invoice event</I></A></TD>
   </TR>
 </TABLE>
 </BODY>

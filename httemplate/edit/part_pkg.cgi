@@ -1,4 +1,4 @@
-<!-- $Id: part_pkg.cgi,v 1.9 2002-01-29 16:33:16 ivan Exp $ -->
+<!-- $Id: part_pkg.cgi,v 1.10 2002-02-10 02:16:47 ivan Exp $ -->
 
 <%
 
@@ -175,8 +175,23 @@ tie my %plans, 'Tie::IxHash',
     'recur' => 'what.recur_fee.value',
   },
 
-  'flat_comission' => {
-    'name' => 'Flat rate with recurring referral comission as credit',
+  'prorate' => {
+    'name' => 'First month pro-rated, then flat-rate',
+    'fields' =>  {
+      'setup_fee' => { 'name' => 'Setup fee for this package',
+                       'default' => 0,
+                     },
+      'recur_fee' => { 'name' => 'Recurring fee for this package',
+                       'default' => 0,
+                      },
+    },
+    'fieldorder' => [ 'setup_fee', 'recur_fee' ],
+    'setup' => 'what.setup_fee.value',
+    'recur' => '\'my $mnow = $sdate; my ($sec,$min,$hour,$mday,$mon,$year) = (localtime($sdate) )[0,1,2,3,4,5]; my $mstart = timelocal(0,0,0,1,$mon,$year); my $mend = timelocal(0,0,0,1, $mon == 11 ? 0 : $mon+1, $year+($mon==11)); $sdate = $mstart; ( $part_pkg->freq - 1 ) * \' + what.recur_fee.value + \' / $part_pkg->freq + \' + what.recur_fee.value + \' / $part_pkg->freq * ($mend-$mnow) / ($mend-$mstart) ; \'',
+  },
+
+  'flat_comission_cust' => {
+    'name' => 'Flat rate with recurring comission per active customer',
     'fields' => {
       'setup_fee' => { 'name' => 'Setup fee for this package',
                        'default' => 0,
@@ -184,7 +199,28 @@ tie my %plans, 'Tie::IxHash',
       'recur_fee' => { 'name' => 'Recurring fee for this package',
                        'default' => 0,
                      },
-      'comission_amount' => { 'name' => 'Comission amount',
+      'comission_amount' => { 'name' => 'Comission amount per month (per active customer)',
+                              'default' => 0,
+                            },
+      'comission_depth'  => { 'name' => 'Number of layers',
+                              'default' => 1,
+                            },
+    },
+    'fieldorder' => [ 'setup_fee', 'recur_fee', 'comission_depth', 'comission_amount' ],
+    'setup' => 'what.setup_fee.value',
+    'recur' => '\'my $error = $cust_pkg->cust_main->credit( \' + what.comission_amount.value + \' * scalar($cust_pkg->cust_main->referral_cust_main_ncancelled(\' + what.comission_depth.value+ \')), "commission" ); die $error if $error; \' + what.recur_fee.value + \';\'',
+  },
+
+  'flat_comission' => {
+    'name' => 'Flat rate with recurring comission per active package',
+    'fields' => {
+      'setup_fee' => { 'name' => 'Setup fee for this package',
+                       'default' => 0,
+                     },
+      'recur_fee' => { 'name' => 'Recurring fee for this package',
+                       'default' => 0,
+                     },
+      'comission_amount' => { 'name' => 'Comission amount per month (per active package)',
                               'default' => 0,
                             },
       'comission_depth'  => { 'name' => 'Number of layers',
@@ -195,6 +231,36 @@ tie my %plans, 'Tie::IxHash',
     'setup' => 'what.setup_fee.value',
     'recur' => '\'my $error = $cust_pkg->cust_main->credit( \' + what.comission_amount.value + \' * scalar($cust_pkg->cust_main->referral_cust_pkg(\' + what.comission_depth.value+ \')), "commission" ); die $error if $error; \' + what.recur_fee.value + \';\'',
   },
+
+  'flat_comission_pkg' => {
+    'name' => 'Flat rate with recurring comission per active (selected) package',
+    'fields' => {
+      'setup_fee' => { 'name' => 'Setup fee for this package',
+                       'default' => 0,
+                     },
+      'recur_fee' => { 'name' => 'Recurring fee for this package',
+                       'default' => 0,
+                     },
+      'comission_amount' => { 'name' => 'Comission amount per month (per uncancelled package)',
+                              'default' => 0,
+                            },
+      'comission_depth'  => { 'name' => 'Number of layers',
+                              'default' => 1,
+                            },
+      'comission_pkgpart' => { 'name' => 'Applicable packages<BR><FONT SIZE="-1">(hold <b>ctrl</b> to select multiple packages)</FONT>',
+                               'type' => 'select_multiple',
+                               'select_table' => 'part_pkg',
+                               'select_hash'  => { 'disabled' => '' } ,
+                               'select_key'   => 'pkgpart',
+                               'select_label' => 'pkg',
+                             },
+    },
+    'fieldorder' => [ 'setup_fee', 'recur_fee', 'comission_depth', 'comission_amount', 'comission_pkgpart' ],
+    'setup' => 'what.setup_fee.value',
+    'recur' => '""; var pkgparts = ""; for ( var c=0; c < document.flat_comission_pkg.comission_pkgpart.options.length; c++ ) { if (document.flat_comission_pkg.comission_pkgpart.options[c].selected) { pkgparts = pkgparts + document.flat_comission_pkg.comission_pkgpart.options[c].value + \', \'; } } what.recur.value = \'my $error = $cust_pkg->cust_main->credit( \' + what.comission_amount.value + \' * scalar( grep { my $pkgpart = $_->pkgpart; grep { $_ == $pkgpart } ( \' + pkgparts + \'  ) } $cust_pkg->cust_main->referral_cust_pkg(\' + what.comission_depth.value+ \')), "commission" ); die $error if $error; \' + what.recur_fee.value + \';\'',
+  },
+
+
 
   'sesmon_hour' => {
     'name' => 'Base charge plus charge per-hour from the session monitor',
@@ -345,9 +411,21 @@ if ( $cgi->param('pkgnum') ) {
                          : keys %{ $href }
                      ) {
 %>
-<TR><TD ALIGN="right"><%= $href->{$field}{'name'} %></TD>
-<TD><INPUT TYPE="text" NAME="<%= $field %>" VALUE="<%= exists($plandata{$field}) ? $plandata{$field} : $href->{$field}{'default'} %>" onChange="fchanged(this)"></TD></TR>
+  <TR><TD ALIGN="right"><%= $href->{$field}{'name'} %></TD>
+  <TD>
+  <% if ( ! exists($href->{$field}{'type'}) ) { %>
+       <INPUT TYPE="text" NAME="<%= $field %>" VALUE="<%= exists($plandata{$field}) ? $plandata{$field} : $href->{$field}{'default'} %>" onChange="fchanged(this)">
+  <% } elsif ( $href->{$field}{'type'} eq 'select_multiple' ) { %>
+       <SELECT MULTIPLE NAME="<%= $field %>" onChange="fchanged(this)">
+       <% foreach $record ( qsearch( $href->{$field}{'select_table'}, $href->{$field}{'select_hash'} ) ) {
+          my $value = $record->getfield($href->{$field}{'select_key'}); %>
+         <OPTION VALUE="<%= $value %>"<%= $plandata{$field} =~ /(^|, *)$value *(,|$)/ ? ' SELECTED' : '' %>><%= $record->getfield($href->{$field}{'select_label'}) %>
+       <% } %>
+       </SELECT>
+  <% } %>
+  </TD></TR>
 <% } %>
+
 </TABLE>
 <INPUT TYPE="hidden" NAME="plandata" VALUE="<%= join(',', keys %{ $href } ) %>">
 <BR><BR>

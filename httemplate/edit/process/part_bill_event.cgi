@@ -34,7 +34,6 @@ if ( ! $cgi->param('plan_weight_eventcode') ) {
     } fields('part_bill_event'),
   } );
 
-  my $error;
   if ( $eventpart ) {
     $error = $new->replace($old);
   } else {

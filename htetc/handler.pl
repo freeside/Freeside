@@ -68,7 +68,7 @@ sub handler
       use FS::Record qw(qsearch qsearchs fields dbdef);
       use FS::Conf;
       use FS::CGI qw(header menubar popurl table itable ntable idiot eidiot
-                     small_custviewm myexit);
+                     small_custview myexit);
 
       use FS::agent;
       use FS::agent_type;
