@@ -132,8 +132,10 @@ END
 
   $tot_amount = sprintf("%.2f", $tot_amount);
   print '</TABLE><BR>'. table(). <<END;
-      <TR><TD>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TD><TH>Total<BR>Amount</TH></TR>
-      <TR><TD><TD ALIGN="right">\$$tot_amount</TD></TR>
+      <TR>
+        <TH>Total&nbsp;Amount</TH>
+        <TD ALIGN="right">\$$tot_amount</TD>
+      </TR>
     </TABLE>
   </BODY>
 </HTML>
