@@ -51,7 +51,16 @@ $< = $FS::UID::freeside_uid;
 $> = $FS::UID::freeside_uid;
 
 $ENV{HOME} = (getpwuid($>))[7]; #for ssh
-adminsuidsetup $user;
+
+$@ = 'not connected';
+while ( $@ ) {
+  eval { adminsuidsetup $user; };
+  if ( $@ ) {
+    warn $@;
+    warn "sleeping for reconnect...\n";
+    sleep 5;
+  }
+}
 
 $log_file = "/usr/local/etc/freeside/queuelog.". $FS::UID::datasrc;
 
@@ -75,14 +84,17 @@ while (1) {
   }
   $warnkids=0;
 
-  my $dbh = dbh;
-  unless ( $dbh->ping ) {
+  unless ( dbh && dbh->ping ) {
     warn "WARNING: connection to database lost, reconnecting...\n";
-    myconnect;
-    unless ( $dbh->ping ) {
+
+    eval { myconnect; };
+
+    unless ( !$@ && dbh && dbh->ping ) {
       warn "WARNING: still no connection to database, sleeping for retry...\n";
       sleep 10;
       next;
+    } else {
+      warn "WARNING: reconnected to database\n";
     }
   }
 
@@ -91,11 +103,15 @@ while (1) {
   #  my $oldAutoCommit = $FS::UID::AutoCommit;
   #  local $FS::UID::AutoCommit = 0;
   $FS::UID::AutoCommit = 0;
-  
-  my $nodepend = driver_name eq 'mysql'
-   ? ''
-   : 'AND 0 = ( SELECT COUNT(*) FROM queue_depend'.
-     ' WHERE queue_depend.jobnum = queue.jobnum ) ';
+
+  #assuming mysql 4.1 w/subqueries now
+  #my $nodepend = driver_name eq 'mysql'
+  # ? ''
+  # : 'AND 0 = ( SELECT COUNT(*) FROM queue_depend'.
+  #   ' WHERE queue_depend.jobnum = queue.jobnum ) ';
+  my $nodepend = 'AND 0 = ( SELECT COUNT(*) FROM queue_depend'.
+                 '           WHERE queue_depend.jobnum = queue.jobnum ) ';
+
   my $job = qsearchs(
     'queue',
     { 'status' => 'new' },
@@ -104,25 +120,43 @@ while (1) {
       ? "$nodepend ORDER BY jobnum LIMIT 1 FOR UPDATE"
       : "$nodepend ORDER BY jobnum FOR UPDATE LIMIT 1"
   ) or do {
-    $dbh->commit or die $dbh->errstr; #if $oldAutoCommit;
+    # if $oldAutoCommit {
+    dbh->commit or do {
+      warn "WARNING: database error, closing connection: ". dbh->errstr;
+      undef $FS::UID::dbh;
+      next;
+    };
+    # }
     sleep 5; #connecting to db is expensive
     next;
   };
 
-  if ( driver_name eq 'mysql'
-       && qsearch('queue_depend', { 'jobnum' => $job->jobnum } ) ) {
-    $dbh->commit or die $dbh->errstr; #if $oldAutoCommit;
-    sleep 5; #would be better if mysql could do everything in query above
-    next;
-  }
+  #assuming mysql 4.1 w/subqueries now
+  #if ( driver_name eq 'mysql'
+  #     && qsearch('queue_depend', { 'jobnum' => $job->jobnum } ) ) {
+  #  dbh->commit or die dbh->errstr; #if $oldAutoCommit;
+  #  sleep 5; #would be better if mysql could do everything in query above
+  #  next;
+  #}
 
   my %hash = $job->hash;
   $hash{'status'} = 'locked';
   my $ljob = new FS::queue ( \%hash );
   my $error = $ljob->replace($job);
-  die $error if $error;
+  if ( $error ) {
+    warn "WARNING: database error locking job, closing connection: ".
+         dbh->errstr;
+    undef $FS::UID::dbh;
+    next;
+  }
 
-  $dbh->commit or die $dbh->errstr; #if $oldAutoCommit;
+  # if $oldAutoCommit {
+  dbh->commit or do {
+    warn "WARNING: database error, closing connection: ". dbh->errstr;
+    undef $FS::UID::dbh;
+    next;
+  };
+  # }
 
   $FS::UID::AutoCommit = 1;
   #} 
