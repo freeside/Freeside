@@ -12,7 +12,7 @@ use Carp;
 use FS::Conf;
 use FS::Record qw( qsearch qsearchs fields dbh );
 use FS::svc_Common;
-use Net::SSH qw(ssh);
+use Net::SSH;
 use FS::part_svc;
 use FS::svc_acct_pop;
 use FS::svc_acct_sm;
@@ -869,14 +869,14 @@ sub email {
 
 sub ssh {
   my @args = @_;
-  ssh(@args,">>/usr/local/etc/freeside/sshoutput 2>&1");
+  &Net::SSH::ssh(@args,">>/usr/local/etc/freeside/sshoutput 2>&1");
 }
 
 =back
 
 =head1 VERSION
 
-$Id: svc_acct.pm,v 1.42 2001-09-19 19:19:00 ivan Exp $
+$Id: svc_acct.pm,v 1.43 2001-09-19 19:28:17 ivan Exp $
 
 =head1 BUGS
 
