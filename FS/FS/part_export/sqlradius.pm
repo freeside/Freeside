@@ -207,7 +207,7 @@ sub sqlradius_usergroup_insert { #subroutine, not method
     "INSERT INTO usergroup ( UserName, GroupName ) VALUES ( ?, ? )"
   ) or die $dbh->errstr;
   foreach my $group ( @groups ) {
-    $sth->execute( '', $username, $group )
+    $sth->execute( $username, $group )
       or die "can't insert into groupname table: ". $sth->errstr;
   }
   $dbh->disconnect;
