@@ -2151,6 +2151,19 @@ sub paydate_monthyear {
   }
 }
 
+=item payinfo_masked
+
+Returns a "masked" payinfo field with all but the last four characters replaced
+by 'x'es.  Useful for displaying credit cards.
+
+=cut
+
+sub payinfo_masked {
+  my $self = shift;
+  my $payinfo = $self->payinfo;
+  'x'x(length($payinfo)-4). substr($payinfo,(length($payinfo)-4));
+}
+
 =item invoicing_list [ ARRAYREF ]
 
 If an arguement is given, sets these email addresses as invoice recipients
@@ -2843,6 +2856,8 @@ There should probably be a configuration file with a list of allowed credit
 card types.
 
 No multiple currency support (probably a larger project than just this module).
+
+payinfo_masked false laziness with cust_pay.pm and cust_refund.pm
 
 =head1 SEE ALSO
 

@@ -396,16 +396,25 @@ sub cust_main {
   qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
 }
 
+=item payinfo_masked
+
+Returns a "masked" payinfo field with all but the last four characters replaced
+by 'x'es.  Useful for displaying credit cards.
+
+=cut
+
+sub payinfo_masked {
+  my $self = shift;
+  my $payinfo = $self->payinfo;
+  'x'x(length($payinfo)-4). substr($payinfo,(length($payinfo)-4));
+}
 
 =back
 
-=head1 VERSION
-
-$Id: cust_pay.pm,v 1.26 2003-09-10 10:54:46 ivan Exp $
-
 =head1 BUGS
 
-Delete and replace methods.
+Delete and replace methods.  payinfo_masked false laziness with cust_main.pm
+and cust_refund.pm
 
 =head1 SEE ALSO
 

@@ -38,6 +38,7 @@ use vars qw( @cust_main_editable_fields );
     county state zip country daytime night fax
   ship_first ship_last ship_company ship_address1 ship_address2 ship_city
     ship_state ship_zip ship_country ship_daytime ship_night ship_fax
+  payby payinfo payname
 );
 
 #store in db?
@@ -116,6 +117,16 @@ sub customer_info {
       $return{$_} = $cust_main->get($_);
     }
 
+    if ( $cust_main->payby =~ /^(CARD|DCRD)$/ ) {
+      $return{payinfo} = $cust_main->masked_payinfo;
+      @return{'month', 'year'} = $cust_main->paydate_monthyear;
+    }
+
+    $return{'invoicing_list'} =
+      join(', ', grep { $_ ne 'POST' } $cust_main->invoicing_list );
+    $return{'postal_invoicing'} =
+      0 < ( grep { $_ eq 'POST' } $cust_main->invoicing_list );
+
   } else { #no customer record
 
     my $svc_acct = qsearchs('svc_acct', { 'svcnum' => $session->{'svcnum'} } )
@@ -145,7 +156,26 @@ sub edit_info {
   my $new = new FS::cust_main { $cust_main->hash };
   $new->set( $_ => $p->{$_} )
     foreach grep { exists $p->{$_} } @cust_main_editable_fields;
-  my $error = $new->replace($cust_main);
+
+  if ( $p->{'payby'} =~ /^(CARD|DCRD)$/ ) {
+    $new->paydate($p->{'year'}. '-'. $p->{'month'}. '-01');
+    if ( $new->payinfo eq $cust_main->payinfo_masked ) {
+      $new->payinfo($cust_main->payinfo);
+    } else {
+      $new->paycvv($p->{'paycvv'});
+    }
+  }
+
+  my @invoicing_list;
+  if ( exists $p->{'invoicing_list'} || exists $p->{'postal_invoicing'} ) {
+    #false laziness with httemplate/edit/process/cust_main.cgi
+    @invoicing_list = split( /\s*\,\s*/, $p->{'invoicing_list'} );
+    push @invoicing_list, 'POST' if $p->{'postal_invoicing'};
+  } else {
+    @invoicing_list = $cust_main->invoicing_list;
+  }
+
+  my $error = $new->replace($cust_main, \@invoicing_list);
   return { 'error' => $error } if $error;
   #$cust_main = $new;
   
@@ -174,7 +204,7 @@ sub payment_info {
   $return{payby} = $cust_main->payby;
 
   if ( $cust_main->payby =~ /^(CARD|DCRD)$/ ) {
-    warn $return{card_type} = cardtype($cust_main->payinfo);
+    #warn $return{card_type} = cardtype($cust_main->payinfo);
     $return{payinfo} = $cust_main->payinfo;
 
     @return{'month', 'year'} = $cust_main->paydate_monthyear;

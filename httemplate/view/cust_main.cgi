@@ -235,8 +235,7 @@ if ( $conf->config('payby-default') ne 'HIDE' ) {
   ;
 
   if ( $cust_main->payby eq 'CARD' || $cust_main->payby eq 'DCRD' ) {
-    my $payinfo = $cust_main->payinfo;
-    $payinfo = 'x'x(length($payinfo)-4). substr($payinfo,(length($payinfo)-4));
+    my $payinfo = $cust_main->payinfo_masked;
     print 'Credit&nbsp;card&nbsp;',
           ( $cust_main->payby eq 'CARD' ? '(automatic)' : '(on-demand)' ),
           '</TD></TR>',
@@ -601,11 +600,11 @@ function cust_credit_areyousure(href) {
   foreach my $cust_pay ($cust_main->cust_pay) {
 
     my $payby = $cust_pay->payby;
-    my $payinfo = $cust_pay->payinfo;
+    my $payinfo = $payby eq 'CARD'
+                    ? $cust_pay->payinfo_masked
+                    : $cust_pay->payinfo;
     my @cust_bill_pay = $cust_pay->cust_bill_pay;
 
-    $payinfo = 'x'x(length($payinfo)-4). substr($payinfo,(length($payinfo)-4))
-      if $payby eq 'CARD';
     my $target = "$payby$payinfo";
     $payby =~ s/^BILL$/Check #/ if $payinfo;
     $payby =~ s/^BILL$//;
@@ -751,10 +750,10 @@ function cust_credit_areyousure(href) {
   foreach my $cust_refund ($cust_main->cust_refund) {
 
     my $payby = $cust_refund->payby;
-    my $payinfo = $cust_refund->payinfo;
+    my $payinfo = $payby eq 'CARD'
+                    ? $cust_refund->payinfo_masked
+                    : $cust_refund->payinfo;
 
-    $payinfo = 'x'x(length($payinfo)-4). substr($payinfo,(length($payinfo)-4))
-      if $payby eq 'CARD';
     $payby =~ s/^BILL$/Check #/ if $payinfo;
     $payby =~ s/^(CARD|COMP)$/$1 /;
 

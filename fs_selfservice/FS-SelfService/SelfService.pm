@@ -246,7 +246,7 @@ the following keys: invnum, date, owed
 
 An HTML fragment containing shipping and billing addresses.
 
-=item The following fields are also returned: first last company address1 address2 city county state zip country daytime night fax ship_first ship_last ship_company ship_address1 ship_address2 ship_city ship_state ship_zip ship_country ship_daytime ship_night ship_fax
+=item The following fields are also returned: first last company address1 address2 city county state zip country daytime night fax ship_first ship_last ship_company ship_address1 ship_address2 ship_city ship_state ship_zip ship_country ship_daytime ship_night ship_fax payby payinfo payname month year invoicing_list postal_invoicing
 
 =back
 
@@ -254,7 +254,7 @@ An HTML fragment containing shipping and billing addresses.
 
 Takes a hash reference as parameter with any of the following keys:
 
-first last company address1 address2 city county state zip country daytime night fax ship_first ship_last ship_company ship_address1 ship_address2 ship_city ship_state ship_zip ship_country ship_daytime ship_night ship_fax
+first last company address1 address2 city county state zip country daytime night fax ship_first ship_last ship_company ship_address1 ship_address2 ship_city ship_state ship_zip ship_country ship_daytime ship_night ship_fax payby payinfo paycvv payname month year invoicing_list postal_invoicing
 
 If a field exists, the customer record is updated with the new value of that
 field.  If a field does not exist, that field is not changed on the customer
