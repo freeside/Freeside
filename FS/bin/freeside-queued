@@ -7,7 +7,7 @@ use Fcntl qw(:flock);
 use POSIX qw(setsid);
 use Date::Format;
 use IO::File;
-use FS::UID qw(adminsuidsetup);
+use FS::UID qw(adminsuidsetup forksuidsetup);
 use FS::Record qw(qsearchs);
 use FS::queue;
 
@@ -28,6 +28,9 @@ my $user = shift or die &usage;
  $sigint = 0;
 $SIG{INT} = sub { warn "SIGINT received; shutting down\n"; $sigint++; };
 $SIG{TERM} = sub { warn "SIGTERM received; shutting down\n"; $sigterm++; };
+
+#pickup zombie status
+$SIG{CHLD} = sub { wait; };
 
 $> = $FS::UID::freeside_uid unless $>;
 $< = $>;
@@ -61,21 +64,40 @@ while (1) {
 
   my @args = $ljob->args;
 
-  #fork a child for each job (up to some maximum perhaps?)
-  #single-threaded for now.
-
-  my $eval = "&". $ljob->job. '(@args);';
-  warn "running $eval";
-  eval $eval;
-  if ( $@ ) {
-    warn "job $eval failed";
-    my %hash = $ljob->hash;
+  # number of children limit?
+  defined( my $pid = fork ) or do {
+    warn "WARNING: can't fork: $!\n";
+    my %hash = $job->hash;
     $hash{'status'} = 'failed';
-    my $fjob = new FS::queue( \%hash );
-    my $error = $fjob->replace($ljob);
+    my $ljob = new FS::queue ( \%hash );
+    my $error = $ljob->replace($job);
     die $error if $error;
-  } else {
-    $ljob->delete;
+  };
+
+  unless ( $pid ) { #kid time
+
+    #get new db handles
+    $FS::UID::dbh->{InactiveDestroy} = 1;
+    $FS::svc_acct::icradius_dbh->{InactiveDestroy}
+      if $FS::svc_acct::icradius_dbh;
+    forksuidsetup($user);
+
+    my $eval = "&". $ljob->job. '(@args);';
+    warn "running $eval";
+    eval $eval;
+    if ( $@ ) {
+      warn "job $eval failed";
+      my %hash = $ljob->hash;
+      $hash{'status'} = 'failed';
+      my $fjob = new FS::queue( \%hash );
+      my $error = $fjob->replace($ljob);
+      die $error if $error;
+    } else {
+      $ljob->delete;
+    }
+
+    exit;
+    #end-of-kid
   }
 
 } continue {

@@ -15,8 +15,8 @@ use DBI;
 use FS::Conf;
 
 @ISA = qw(Exporter);
-@EXPORT_OK = qw(checkeuid checkruid cgisuidsetup
-                adminsuidsetup getotaker dbh datasrc getsecrets driver_name );
+@EXPORT_OK = qw(checkeuid checkruid cgisuidsetup adminsuidsetup forksuidsetup
+                getotaker dbh datasrc getsecrets driver_name );
 
 $freeside_uid = scalar(getpwnam('freeside'));
 
@@ -65,7 +65,11 @@ Returns the DBI database handle (usually you don't need this).
 =cut
 
 sub adminsuidsetup {
+  $dbh->disconnect if $dbh;
+  &forksuidsetup(@_);
+}
 
+sub forksuidsetup {
   $user = shift;
   croak "fatal: adminsuidsetup called without arguements" unless $user;
 
@@ -78,7 +82,6 @@ sub adminsuidsetup {
 
   croak "Not running uid freeside!" unless checkeuid();
   getsecrets;
-  $dbh->disconnect if $dbh;
   $dbh = DBI->connect($datasrc,$db_user,$db_pass, {
                           'AutoCommit' => 0,
                           'ChopBlanks' => 1,
@@ -118,7 +121,7 @@ Returns the CGI (see L<CGI>) object.
 =cut
 
 sub cgi {
-  #carp "warning: \$FS::UID::cgi isa Apache" if $cgi->isa('Apache');
+  carp "warning: \$FS::UID::cgi isa Apache" if $cgi->isa('Apache');
   $cgi;
 }
 
@@ -249,7 +252,7 @@ coderef into the hash %FS::UID::callback :
 
 =head1 VERSION
 
-$Id: UID.pm,v 1.9 2001-09-06 20:41:59 ivan Exp $
+$Id: UID.pm,v 1.10 2001-09-24 03:23:34 ivan Exp $
 
 =head1 BUGS
 
