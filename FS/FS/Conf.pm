@@ -450,6 +450,20 @@ httemplate/docs/config.html
   },
 
   {
+    'key'         => 'arecords',
+    'section'     => 'BIND',
+    'description' => 'A list of tab seperated A records to add automatically when creating a domain',
+    'type'        => 'textarea',
+  },
+
+  {
+    'key'         => 'cnamerecords',
+    'section'     => 'BIND',
+    'description' => 'A list of tab seperated CNAME records to add automatically when creating a domain',
+    'type'        => 'textarea',
+  },
+
+  {
     'key'         => 'nismachines',
     'section'     => 'shell',
     'description' => 'Your NIS master (not slave master) machines, one per line.  This enables export of `/etc/global/passwd\' and `/etc/global/shadow\'.',

@@ -3,7 +3,7 @@ package FS::svc_domain;
 use strict;
 use vars qw( @ISA $whois_hack $conf $smtpmachine
   @mxmachines @nsmachines $soadefaultttl $soaemail $soaexpire $soamachine
-  $soarefresh $soaretry $qshellmachine $nossh_hack
+  $soarefresh $soaretry $qshellmachine $nossh_hack %arecords %cnamerecords
 );
 use Carp;
 use Mail::Internet;
@@ -29,6 +29,8 @@ $FS::UID::callback{'FS::domain'} = sub {
 
   $smtpmachine = $conf->config('smtpmachine');
 
+  %arecords      = map { split /\t/ } $conf->config('arecords');
+  %cnamerecords  = map { split /\t/ } $conf->config('cnamerecords');
   @mxmachines    = $conf->config('mxmachines');
   @nsmachines    = $conf->config('nsmachines');
   $soadefaultttl = $conf->config('soadefaultttl');
@@ -122,6 +124,10 @@ records are added to the domain_record table (see L<FS::domain_record>).
 
 If any machines are defined in the I<mxmachines> configuration file, MX
 records are added to the domain_record table (see L<FS::domain_record>).
+
+If the I<arecords> configuration file exits, A records are added to the
+domain_record table.  The I<cnamerecords> file does the same thing for
+CNAME records.
 
 If a machine is defined in the I<shellmachine> configuration value, the
 I<qmailmachines> configuration file exists, and the I<catchall> field points
@@ -221,6 +227,36 @@ sub insert {
       if ( $error ) {
         $dbh->rollback if $oldAutoCommit;
         return "couldn't insert MX record for new domain: $error";
+      }
+    }
+
+    foreach my $arecord ( keys %arecords ) {
+      my $arec = new FS::domain_record {
+        'svcnum'  => $self->svcnum,
+        'reczone' => $arecord,
+        'recaf'   => 'IN',
+        'rectype' => 'A',
+        'recdata' => $arecords{$arecord},
+      };
+      my $error = $arec->insert;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "WARNING: couldn't insert A record for new domain: $error";
+      }
+    }
+
+    foreach my $cnamerecord ( keys %cnamerecords ) {
+      my $cnamerec = new FS::domain_record {
+        'svcnum'  => $self->svcnum,
+        'reczone' => $cnamerecord,
+        'recaf'   => 'IN',
+        'rectype' => 'CNAME',
+        'recdata' => $cnamerecords{$cnamerecord},
+      };
+      my $error = $cnamerec->insert;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "WARNING: couldn't insert CNAME record for new domain: $error";
       }
     }
 
@@ -424,7 +460,7 @@ sub submit_internic {
 
 =head1 VERSION
 
-$Id: svc_domain.pm,v 1.24 2002-02-20 01:03:09 ivan Exp $
+$Id: svc_domain.pm,v 1.25 2002-03-09 10:19:38 khoff Exp $
 
 =head1 BUGS
 
