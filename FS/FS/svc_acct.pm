@@ -931,8 +931,14 @@ Returns all RADIUS groups for this account (see L<FS::radius_usergroup>).
 
 sub radius_groups {
   my $self = shift;
-  map { $_->groupname }
-    qsearch('radius_usergroup', { 'svcnum' => $self->svcnum } );
+  if ( $self->usergroup ) {
+    #when provisioning records, export callback runs in svc_Common.pm before
+    #radius_usergroup records can be inserted...
+    @{$self->usergroup};
+  } else {
+    map { $_->groupname }
+      qsearch('radius_usergroup', { 'svcnum' => $self->svcnum } );
+  }
 }
 
 =back
