@@ -1,5 +1,5 @@
 <%
-# <!-- $Id: svc_forward.cgi,v 1.6 2001-10-30 14:54:07 ivan Exp $ -->
+# <!-- $Id: svc_forward.cgi,v 1.7 2001-12-04 13:10:16 ivan Exp $ -->
 
 use strict;
 use vars qw( $conf $cgi $mydomain $action $svcnum $svc_forward $pkgnum $svcpart
@@ -99,10 +99,13 @@ if ($pkgnum) {
     foreach $acct_svcpart (@u_acct_svcparts) {   #now find the corresponding 
                                               #record(s) in cust_svc ( for this
                                               #pkgnum ! )
-      my($i_cust_svc);
-      foreach $i_cust_svc ( qsearch('cust_svc',{'pkgnum'=>$cust_pkgnum,'svcpart'=>$acct_svcpart}) ) {
-        $svc_acct=qsearchs('svc_acct',{'svcnum'=>$i_cust_svc->getfield('svcnum')});
-        $email{$svc_acct->getfield('svcnum')}=$svc_acct->email;
+      foreach my $i_cust_svc (
+        qsearch( 'cust_svc', { 'pkgnum'  => $cust_pkgnum,
+                               'svcpart' => $acct_svcpart } )
+      ) {
+        my $svc_acct =
+          qsearchs( 'svc_acct', { 'svcnum' => $i_cust_svc->svcnum } );
+        $email{$svc_acct->svcnum} = $svc_acct->email;
       }  
     }
   }
