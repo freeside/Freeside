@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: fs-setup,v 1.43 2001-08-19 13:50:47 ivan Exp $
+# $Id: fs-setup,v 1.44 2001-08-29 08:45:04 ivan Exp $
 
 #to delay loading dbdef until we're ready
 BEGIN { $FS::Record::setup_hack = 1; }
@@ -359,12 +359,13 @@ sub tables_hash_hack {
         'tax',      'char', 'NULL', 1,
         'otaker',   'varchar', '',     8,
         'refnum',   'int',  '',     '',
+        'referral_custnum', 'int',  'NULL', '',
         'comments', 'varchar', 'NULL', '',
       ],
       'primary_key' => 'custnum',
       'unique' => [ [] ],
       #'index' => [ ['last'], ['company'] ],
-      'index' => [ ['last'], [ 'company' ] ],
+      'index' => [ ['last'], [ 'company' ], [ 'referral_custnum' ] ],
     },
 
     'cust_main_invoice' => {
@@ -598,7 +599,7 @@ sub tables_hash_hack {
       'columns' => [
         'svcnum',    'int',    '',   '',
         'domain',    'varchar',    '',   $char_d,
-        'catchall',  'int',    '',    '',
+        'catchall',  'int', 'NULL',    '',
       ],
       'primary_key' => 'svcnum',
       'unique' => [ ['domain'] ],

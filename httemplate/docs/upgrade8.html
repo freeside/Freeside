@@ -71,7 +71,7 @@ CREATE TABLE svc_forward (
   PRIMARY KEY (svcnum)
 );
 ALTER TABLE svc_acct ADD domsvc integer NOT NULL;
-ALTER TABLE svc_domain ADD catchall integer;
+ALTER TABLE svc_domain ADD catchall integer NULL;
 ALTER TABLE part_svc ADD svc_acct__domsvc integer NULL;
 ALTER TABLE part_svc ADD svc_acct__domsvc_flag char(1) NULL;
 ALTER TABLE part_svc ADD svc_domain__catchall integer NULL;
