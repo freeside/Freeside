@@ -489,7 +489,28 @@ foreach my $bill (@bills) {
   }
 }
 
-my @credits = grep { $_->credited > 0 }
+my @credits = grep { scalar(my @array = $_->cust_credit_refund) }
+           qsearch('cust_credit',{'custnum'=>$custnum});
+foreach my $credit (@credits) {
+  my($cref)=$credit->hashref;
+  my(@cust_credit_refund)=
+    qsearch('cust_credit_refund', { 'crednum'=> $cref->{crednum} } );
+  foreach my $cust_credit_refund (@cust_credit_refund) {
+    my $cust_refund = $cust_credit_refund->cust_credit;
+    my($date, $crednum, $amount, $reason, $app_date ) = (
+      $credit->_date,
+      $credit->crednum,
+      $cust_credit_refund->amount,
+      $credit->reason,
+      time2str("%D", $cust_credit_refund->_date),
+    );
+    push @history,
+      "$date\tCredit #$crednum: $reason<BR>".
+      "(applied to refund on $app_date)\t\t\t$amount\t";
+  }
+}
+
+@credits = grep { $_->credited  > 0 }
            qsearch('cust_credit',{'custnum'=>$custnum});
 foreach my $credit (@credits) {
   my($cref)=$credit->hashref;
