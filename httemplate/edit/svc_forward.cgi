@@ -1,5 +1,5 @@
 <%
-# <!-- $Id: svc_forward.cgi,v 1.2 2001-08-21 02:31:56 ivan Exp $ -->
+# <!-- $Id: svc_forward.cgi,v 1.3 2001-08-21 10:27:11 ivan Exp $ -->
 
 use strict;
 use vars qw( $conf $cgi $mydomain $action $svcnum $svc_forward $pkgnum $svcpart
@@ -73,11 +73,12 @@ if ($pkgnum) {
   #find all possible user svcnums (and emails)
 
   #starting with those currently attached
-  my($svc_acct)=qsearchs('svc_acct',{'svcnum'=>$svc_forward->srcsvc});
-  $email{$svc_forward->srcsvc} = $svc_acct->email;
-
-  if ($svc_forward->dstsvc) {
-    $svc_acct=qsearchs('svc_acct',{'svcnum'=>$svc_forward->dstsvc});
+  if ( $svc_forward->srcsvc ) {
+    my $svc_acct = qsearchs( 'svc_acct', { 'svcnum' => $svc_forward->srcsvc } );
+    $email{$svc_forward->srcsvc} = $svc_acct->email;
+  }
+  if ( $svc_forward->dstsvc ) {
+    my $svc_acct = qsearchs( 'svc_acct', { 'svcnum' => $svc_forward->dstsvc } );
     $email{$svc_forward->dstsvc} = $svc_acct->email;
   }
 

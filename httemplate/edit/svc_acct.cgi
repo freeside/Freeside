@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: svc_acct.cgi,v 1.4 2001-08-20 12:15:05 ivan Exp $ -->
+#<!-- $Id: svc_acct.cgi,v 1.5 2001-08-21 10:27:11 ivan Exp $ -->
 
 use strict;
 use vars qw( $conf $cgi @shells $action $svcnum $svc_acct $pkgnum $svcpart
@@ -128,7 +128,8 @@ if ( $part_svc->svc_acct__domsvc_flag eq "F" ) {
       map { qsearch('cust_svc', { 'pkgnum' => $_->pkgnum } ) }
           qsearch('cust_pkg', { 'custnum' => $cust_pkg->custnum } );
     foreach my $cust_svc ( @cust_svc ) {
-      $svc_domain = qsearchs('svc_domain', { 'svcnum' => $_->svcnum } );
+      my $svc_domain =
+        qsearchs('svc_domain', { 'svcnum' => $cust_svc->svcnum } );
       push @svc_domain, $svc_domain if $svc_domain;
     }
   } else {
