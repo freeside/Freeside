@@ -60,9 +60,31 @@ END
        ) as owed_total
 END
 
+  my $recurring = <<END;
+        0 < ( select freq from part_pkg
+                where cust_pkg.pkgpart = part_pkg.pkgpart )
+END
+
+  my $packages_cols = <<END;
+
+       ( select count(*) from cust_pkg
+           where cust_main.custnum = cust_pkg.custnum
+             and $recurring
+             and cancel = 0 or cancel is null
+       ) as uncancelled_pkgs,
+
+       ( select count(*) from cust_pkg
+           where cust_main.custnum = cust_pkg.custnum
+             and $recurring
+             and cancel = 0 or cancel is null
+             and susp = 0 or susp is null
+       ) as active_pkgs
+
+END
+
   my $sql = <<END;
 
-select *, $owed_cols from cust_main
+select *, $owed_cols, $packages_cols from cust_main
 where 0 <
   coalesce(
            ( select $charged from cust_bill
@@ -88,17 +110,30 @@ END
 <%= table() %>
   <TR>
     <TH>Customer</TH>
+    <TH>Status</TH>
     <TH>0-30</TH>
     <TH>30-60</TH>
     <TH>60-90</TH>
     <TH>90+</TH>
     <TH>Total</TH>
   </TR>
-<% while ( my $row = $sth->fetchrow_hashref() ) { %>
+<% while ( my $row = $sth->fetchrow_hashref() ) {
+     my $status = 'Cancelled';
+     my $statuscol = 'FF0000';
+     if ( $row->{uncancelled_pkgs} ) {
+       $status = 'Suspended';
+       $statuscol = 'FF9900';
+       if ( $row->{active_pkgs} > $row->{uncancelled_pkgs} ) {
+         $status = 'Active';
+         $statuscol = '00CC00';
+       }
+     }
+%>
   <TR>
     <TD><A HREF="<%= $p %>view/cust_main.cgi?<%= $row->{'custnum'} %>">
         <%= $row->{'company'} ? $row->{'company'}. ' (' : '' %><%= $row->{'last'}. ', '. $row->{'first'} %><%= $row->{'company'} ? ')' : '' %></A>
     </TD>
+    <TD><B><FONT SIZE=-1 COLOR="#<%= $statuscol %>"><%= $status %></FONT></B></TD>
     <TD ALIGN="right">$<%= sprintf("%.2f", $row->{'owed_0_30'} ) %></TD>
     <TD ALIGN="right">$<%= sprintf("%.2f", $row->{'owed_30_60'} ) %></TD>
     <TD ALIGN="right">$<%= sprintf("%.2f", $row->{'owed_60_90'} ) %></TD>
@@ -111,7 +146,7 @@ END
     <TD COLSPAN=6>&nbsp;</TD>
   </TR>
   <TR>
-    <TD><I>Total</I></TD>
+    <TD COLSPAN=2><I>Total</I></TD>
     <TD ALIGN="right"><I>$<%= sprintf("%.2f", $row->{'owed_0_30'} ) %></TD>
     <TD ALIGN="right"><I>$<%= sprintf("%.2f", $row->{'owed_30_60'} ) %></TD>
     <TD ALIGN="right"><I>$<%= sprintf("%.2f", $row->{'owed_60_90'} ) %></TD>
