@@ -20,7 +20,8 @@ if ($pkgnum) {
 }
 #eofalse
 
-my $router = $svc_broadband->addr_block->router;
+my $addr_block = $svc_broadband->addr_block;
+my $router = $addr_block->router;
 
 if (not $router) { die "Could not lookup router for svc_broadband (svcnum $svcnum)" };
 
@@ -29,13 +30,17 @@ my (
      $routernum,
      $speed_down,
      $speed_up,
-     $ip_addr
+     $ip_addr,
+     $ip_gateway,
+     $ip_netmask,
    ) = (
      $router->getfield('routername'),
      $router->getfield('routernum'),
      $svc_broadband->getfield('speed_down'),
      $svc_broadband->getfield('speed_up'),
-     $svc_broadband->getfield('ip_addr')
+     $svc_broadband->getfield('ip_addr'),
+     $addr_block->ip_gateway,
+     $addr_block->NetAddr->mask,
    );
 %>
 
@@ -76,6 +81,14 @@ my (
           <TD ALIGN="right">IP Address</TD>
           <TD BGCOLOR="#ffffff"><%=$ip_addr%></TD>
         </TR>
+        <TR>
+          <TD ALIGN="right">IP Netmask</TD>
+          <TD BGCOLOR="#ffffff"><%=$ip_netmask%></TD>
+        </TR>
+        <TR>
+          <TD ALIGN="right">IP Gateway</TD>
+          <TD BGCOLOR="#ffffff"><%=$ip_gateway%></TD>
+        </TR>
         <TR COLSPAN="2"><TD></TD></TR>
 
 <%
@@ -101,16 +114,16 @@ foreach (sort { $a cmp $b } $svc_broadband->virtual_fields) {
     (details)
   </A>
   <BR>
-  <% my @addr_block;
-     if (@addr_block = $sb_router->addr_block) {
+  <% my @sb_addr_block;
+     if (@sb_addr_block = $sb_router->sb_addr_block) {
      %>
   <B>Address space </B>
-  <A HREF="<%=popurl(2)%>browse/addr_block.cgi">
+  <A HREF="<%=popurl(2)%>browse/sb_addr_block.cgi">
     (edit)
   </A>
   <BR>
   <%   print ntable("#cccccc", 1);
-       foreach (@addr_block) { %>
+       foreach (@sb_addr_block) { %>
     <TR>
       <TD><%=$_->ip_gateway%>/<%=$_->ip_netmask%></TD>
     </TR>
