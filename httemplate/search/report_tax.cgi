@@ -33,7 +33,9 @@ foreach my $r ( qsearch('cust_main_county', {}) ) {
       JOIN cust_bill USING ( invnum ) 
       JOIN cust_main USING ( custnum )
     WHERE _date >= $beginning AND _date <= $ending
-      AND county = ? AND state = ? AND country = ?
+      AND ( county  = ? OR ( ? = '' AND county  IS NULL ) )
+      AND ( state   = ? OR ( ? = '' AND state   IS NULL ) )
+      AND ( country = ? OR ( ? = '' AND country IS NULL ) )
   ";
   my $nottax = 'pkgnum != 0';
 
@@ -80,7 +82,7 @@ foreach my $r ( qsearch('cust_main_county', {}) ) {
 
 #ordering
 my @regions = map $regions{$_},
-              sort { ( ($b eq $out) cmp ($a eq $out) ) || ($a cmp $b) }
+              sort { ( ($a eq $out) cmp ($b eq $out) ) || ($b cmp $a) }
               keys %regions;
 
 push @regions, {
@@ -99,7 +101,7 @@ push @regions, {
 sub scalar_sql {
   my( $r, $sql ) = @_;
   my $sth = dbh->prepare($sql) or die dbh->errstr;
-  $sth->execute( map $r->$_(), qw( county state country ) )
+  $sth->execute( map $r->$_(), map { $_, $_ } qw( county state country ) )
     or die "Unexpected error executing statement $sql: ". $sth->errstr;
   $sth->fetchrow_arrayref->[0] || 0;
 }
@@ -123,11 +125,11 @@ sub scalar_sql {
   <% foreach my $region ( @regions ) { %>
     <TR>
       <TD><%= $region->{'label'} %></TD>
-      <TD ALIGN="right">$<%= $region->{'total'} %></TD>
-      <TD ALIGN="right">$<%= $region->{'exempt'} %></TD>
-      <TD ALIGN="right">$<%= $region->{'taxable'} %></TD>
+      <TD ALIGN="right">$<%= sprintf('%.2f', $region->{'total'} ) %></TD>
+      <TD ALIGN="right">$<%= sprintf('%.2f', $region->{'exempt'} ) %></TD>
+      <TD ALIGN="right">$<%= sprintf('%.2f', $region->{'taxable'} ) %></TD>
       <TD ALIGN="right"><%= $region->{'rate'} %></TD>
-      <TD ALIGN="right">$<%= $region->{'tax'} %></TD>
+      <TD ALIGN="right">$<%= sprintf('%.2f', $region->{'tax'} ) %></TD>
     </TR>
   <% } %>
 
