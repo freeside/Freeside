@@ -179,7 +179,7 @@ install-selfservice:
 	  ssh ${SELFSERVICE_INSTALL_USER}@$$MACHINE "cd FS-SelfService; sudo make install" ;\
 	  scp ~freeside/.ssh/id_dsa.pub ${SELFSERVICE_INSTALL_USER}@$$MACHINE:. ;\
 	  ssh ${SELFSERVICE_INSTALL_USER}@$$MACHINE "sudo ${SELFSERVICE_INSTALL_USERADD} freeside; sudo install -D -o freeside -m 600 ./id_dsa.pub ~freeside/.ssh/authorized_keys" ;\
-	   ssh ${SELFSERVICE_INSTALL_USER}@$$MACHINE "sudo install -d /usr/local/freeside" ;\
+	   ssh ${SELFSERVICE_INSTALL_USER}@$$MACHINE "sudo install -o freeside -d /usr/local/freeside" ;\
 	done
 
 install: install-perl-modules install-docs install-init install-rt
