@@ -44,8 +44,8 @@ foreach my $r (
     FROM cust_bill_pkg
       JOIN cust_bill USING ( invnum ) 
       JOIN cust_main USING ( custnum )
-      JOIN cust_pkg USING ( pkgnum )
-      JOIN part_pkg USING ( pkgpart )
+      LEFT OUTER JOIN cust_pkg USING ( pkgnum )
+      LEFT OUTER JOIN part_pkg USING ( pkgpart )
     WHERE _date >= $beginning AND _date <= $ending
       AND ( county  = ? OR ? = '' )
       AND ( state   = ? OR ? = '' )
