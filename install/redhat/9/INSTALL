@@ -30,9 +30,9 @@ perl -MCPAN -e"install Locale::Country, Net::Whois, Business::CreditCard, \
 #edit /etc/init.d/httpd, add -DHAVE_PERL -DHAVE_SSL, then remove perl & ssl
 # module load bits from /etc/httpd/conf/httpd.conf
 
-useradd freeside
+/usr/sbin/useradd freeside
 
-chkconfig postgresql on
+/sbin/chkconfig postgresql on
 /etc/init.d/postgresql start
 
 su postgres -c "createuser -P freeside"
@@ -40,7 +40,7 @@ su postgres -c "createuser -P freeside"
 su freeside -c "createdb freeside"
 
 #?
-cd ../..
+cd ../../..
 make install-perl-modules
 make create-config
 freeside-adduser -c -h /usr/local/etc/freeside/htpasswd ivan
