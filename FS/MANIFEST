@@ -90,4 +90,4 @@ t/svc_forward.t
 t/svc_www.t
 t/type_pkgs.t
 t/UID.t
-t/raddb.pm
+t/raddb.t
