@@ -134,7 +134,8 @@ sub regionselector {
     @cust_main_county = qsearch('cust_main_county', {} );
     foreach my $c ( @cust_main_county ) {
       $countyflag=1 if $c->county;
-      push @{$cust_main_county{$c->country}{$c->state}}, $c->county;
+      #push @{$cust_main_county{$c->country}{$c->state}}, $c->county;
+      $cust_main_county{$c->country}{$c->state}{$c->county} = 1;
     }
 #  }
   $countyflag=1 if $selected_county;
@@ -179,7 +180,8 @@ END
       $script_html .= "\nif ( country == \"$country\" ) {\n";
       foreach my $state ( sort keys %{$cust_main_county{$country}} ) {
         $script_html .= "\nif ( state == \"$state\" ) {\n";
-          foreach my $county ( sort @{$cust_main_county{$country}{$state}} ) {
+          #foreach my $county ( sort @{$cust_main_county{$country}{$state}} ) {
+          foreach my $county ( sort keys %{$cust_main_county{$country}{$state}} ) {
             my $text = $county || '(n/a)';
             $script_html .=
               qq!opt(what.form.${prefix}county, "$county", "$text");\n!;
