@@ -1,7 +1,7 @@
 package FS::svc_domain;
 
 use strict;
-use vars qw( @ISA $whois_hack $conf $mydomain $smtpmachine
+use vars qw( @ISA $whois_hack $conf $smtpmachine
   $tech_contact $from $to @nameservers @nameserver_ips @template
   @mxmachines @nsmachines $soadefaultttl $soaemail $soaexpire $soamachine
   $soarefresh $soaretry
@@ -11,6 +11,7 @@ use Mail::Internet;
 use Mail::Header;
 use Date::Format;
 use Net::Whois 1.0;
+use Net::SSH qw(ssh);
 use FS::Record qw(fields qsearch qsearchs dbh);
 use FS::Conf;
 use FS::svc_Common;
@@ -26,7 +27,6 @@ use FS::domain_record;
 $FS::UID::callback{'FS::domain'} = sub { 
   $conf = new FS::Conf;
 
-  $mydomain = $conf->config('domain');
   $smtpmachine = $conf->config('smtpmachine');
 
   my($internic)="/registries/internic";
@@ -55,6 +55,9 @@ $FS::UID::callback{'FS::domain'} = sub {
   $soarefresh    = $conf->config('soarefresh');
   $soaretry      = $conf->config('soaretry');
 
+  $qshellmachine = $conf->exists('qmailmachines')
+                   ? $conf->config('shellmachine')
+                   : '';
 };
 
 =head1 NAME
@@ -137,9 +140,20 @@ records are added to the domain_record table (see L<FS::domain_record>).
 If any machines are defined in the I<mxmachines> configuration file, MX
 records are added to the domain_record table (see L<FS::domain_record>).
 
-Any problems adding FS::domain_record records will emit warnings, but will
-not return errors from this method.  If your configuration files are correct
-you shouln't have any problems.
+If a machine is defined in the I<shellmachine> configuration value, the
+I<qmailmachines> configuration file exists, and the I<catchall> field points
+to an an account with a home directory (see L<FS::svc_acct>), the command:
+
+  [ -e $dir/.qmail-$qdomain-defualt ] || {
+    touch $dir/.qmail-$qdomain-default;
+    chown $uid:$gid $dir/.qmail-$qdomain-default;
+  }
+
+is executed on shellmachine via ssh (see L<dot-qmail/"EXTENSION ADDRESSES">).
+This behaviour can be supressed by setting $FS::svc_domain::nossh_hack true.
+
+a machine is defined
+in the 
 
 =cut
 
@@ -231,6 +245,21 @@ sub insert {
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
+  if ( $qshellmachine && $self->catchall && ! $nossh_hack ) {
+    my $svc_acct = qsearchs( 'svc_acct', { 'svcnum' => $self->catchall } )
+      or warn "WARNING: inserted unknown catchall: ". $self->catchall;
+    if ( $svc_acct && $svc_acct->dir ) {
+      my $qdomain = $self->domain;
+      $qdomain =~ s/\./:/g; #see manpage for 'dot-qmail': EXTENSION ADDRESSES
+      my ( $uid, $gid, $dir ) = (
+        $svc_acct->uid,
+        $svc_acct->gid,
+        $svc_acct->dir,
+      );
+      ssh("root\@$qshellmachine", "[ -e $dir/.qmail-$qdomain-default ] || { touch $dir/.qmail-$qdomain-default; chown $uid:$gid $dir/.qmail-$qdomain-default; }");
+    }
+  }
+
   ''; #no error
 }
 
@@ -240,6 +269,23 @@ Deletes this domain from the database.  If there is an error, returns the
 error, otherwise returns false.
 
 The corresponding FS::cust_svc record will be deleted as well.
+
+=cut
+
+sub delete {
+  my $self = shift;
+
+  return "Can't delete a domain which has accounts!"
+    if qsearch( 'svc_acct', { 'domsvc' => $self->svcnum } );
+
+  return "Can't delete a domain with (svc_acct_sm) mail aliases!"
+    if qsearch('svc_acct_sm', { 'domsvc' => $self->svcnum } );
+
+  return "Can't delete a domain with (domain_record) zone entries!"
+    if qsearch('domain_record', { 'svcnum' => $self->svcnum } );
+
+  $self->SUPER::delete;
+}
 
 =item replace OLD_RECORD
 
@@ -321,7 +367,7 @@ sub check {
       } elsif ( scalar(@svc_acct) > 1 ) {
         return "More than one account in package ". $pkgnum. ": specify admin contact email";
       } else {
-        $self->email($svc_acct[0]->username. '@'. $mydomain);
+        $self->email($svc_acct[0]->email );
       }
     }
   }
@@ -485,7 +531,7 @@ sub submit_internic {
 
 =head1 VERSION
 
-$Id: svc_domain.pm,v 1.15 2001-08-19 08:18:01 ivan Exp $
+$Id: svc_domain.pm,v 1.16 2001-08-20 09:41:52 ivan Exp $
 
 =head1 BUGS
 

@@ -1,12 +1,13 @@
 package FS::svc_forward;
 
 use strict;
-use vars qw( @ISA $nossh_hack $conf $shellmachine @qmailmachines @vpopmailmachines);
+use vars qw( @ISA $nossh_hack $conf $shellmachine @qmailmachines
+             @vpopmailmachines );
+use Net::SSH qw(ssh);
+use FS::Conf;
 use FS::Record qw( fields qsearch qsearchs );
 use FS::svc_Common;
 use FS::cust_svc;
-use Net::SSH qw(ssh);
-use FS::Conf;
 use FS::svc_acct;
 use FS::svc_domain;
 
@@ -15,11 +16,15 @@ use FS::svc_domain;
 #ask FS::UID to run this stuff for us later
 $FS::UID::callback{'FS::svc_forward'} = sub { 
   $conf = new FS::Conf;
-  $shellmachine = $conf->exists('qmailmachines')
-                  ? $conf->config('shellmachine')
-                  : '';
+  if ( $conf->exists('qmailmachines') ) {
+    $shellmachine = $conf->config('shellmachine')
+  } else {
+    $shellmachine = '';
+  }
   if ( $conf->exists('vpopmailmachines') ) {
     @vpopmailmachines = $conf->config('vpopmailmachines');
+  } else {
+    @vpopmailmachines = ();
   }
 };
 
@@ -234,7 +239,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: svc_forward.pm,v 1.3 2001-08-19 15:53:35 jeff Exp $
+$Id: svc_forward.pm,v 1.4 2001-08-20 09:41:52 ivan Exp $
 
 =head1 BUGS
 

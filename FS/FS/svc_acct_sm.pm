@@ -13,12 +13,12 @@ use FS::svc_domain;
 @ISA = qw( FS::svc_Common );
 
 #ask FS::UID to run this stuff for us later
-$FS::UID::callback{'FS::svc_acct_sm'} = sub { 
-  $conf = new FS::Conf;
-  $shellmachine = $conf->exists('qmailmachines')
-                  ? $conf->config('shellmachine')
-                  : '';
-};
+#$FS::UID::callback{'FS::svc_acct_sm'} = sub { 
+#  $conf = new FS::Conf;
+#  $shellmachine = $conf->exists('qmailmachines')
+#                  ? $conf->config('shellmachine')
+#                  : '';
+#};
 
 =head1 NAME
 
@@ -45,10 +45,15 @@ FS::svc_acct_sm - Object methods for svc_acct_sm records
 
   $error = $record->cancel;
 
+=head1 WARNING
+
+FS::svc_acct_sm is B<depreciated>.  This class is only included for migration
+purposes.  See L<FS::svc_forward>.
+
 =head1 DESCRIPTION
 
-An FS::svc_acct object represents a virtual mail alias.  FS::svc_acct inherits
-from FS::Record.  The following fields are currently supported:
+An FS::svc_acct_sm object represents a virtual mail alias.  FS::svc_acct_sm
+inherits from FS::Record.  The following fields are currently supported:
 
 =over 4
 
@@ -83,16 +88,16 @@ the error, otherwise returns false.
 The additional fields pkgnum and svcpart (see L<FS::cust_svc>) should be 
 defined.  An FS::cust_svc record will be created and inserted.
 
-If the configuration values (see L<FS::Conf>) shellmachine and qmailmachines
-exist, and domuser is `*' (meaning a catch-all mailbox), the command:
-
-  [ -e $dir/.qmail-$qdomain-default ] || {
-    touch $dir/.qmail-$qdomain-default;
-    chown $uid:$gid $dir/.qmail-$qdomain-default;
-  }
-
-is executed on shellmachine via ssh (see L<dot-qmail/"EXTENSION ADDRESSES">).
-This behaviour can be surpressed by setting $FS::svc_acct_sm::nossh_hack true.
+ #If the configuration values (see L<FS::Conf>) shellmachine and qmailmachines
+ #exist, and domuser is `*' (meaning a catch-all mailbox), the command:
+ #
+ #  [ -e $dir/.qmail-$qdomain-default ] || {
+ #    touch $dir/.qmail-$qdomain-default;
+ #    chown $uid:$gid $dir/.qmail-$qdomain-default;
+ #  }
+ #
+ #is executed on shellmachine via ssh (see L<dot-qmail/"EXTENSION ADDRESSES">).
+ #This behaviour can be surpressed by setting $FS::svc_acct_sm::nossh_hack true.
 
 =cut
 
@@ -124,18 +129,18 @@ sub insert {
   $error = $self->SUPER::insert;
   return $error if $error;
 
-  my $svc_domain = qsearchs( 'svc_domain', { 'svcnum' => $self->domsvc } );
-  my $svc_acct = qsearchs( 'svc_acct', { 'uid' => $self->domuid } );
-  my ( $uid, $gid, $dir, $domain ) = (
-    $svc_acct->uid,
-    $svc_acct->gid,
-    $svc_acct->dir,
-    $svc_domain->domain,
-  );
-  my $qdomain = $domain;
-  $qdomain =~ s/\./:/g; #see manpage for 'dot-qmail': EXTENSION ADDRESSES
-  ssh("root\@$shellmachine","[ -e $dir/.qmail-$qdomain-default ] || { touch $dir/.qmail-$qdomain-default; chown $uid:$gid $dir/.qmail-$qdomain-default; }")  
-    if ( ! $nossh_hack && $shellmachine && $dir && $self->domuser eq '*' );
+  #my $svc_domain = qsearchs( 'svc_domain', { 'svcnum' => $self->domsvc } );
+  #my $svc_acct = qsearchs( 'svc_acct', { 'uid' => $self->domuid } );
+  #my ( $uid, $gid, $dir, $domain ) = (
+  #  $svc_acct->uid,
+  #  $svc_acct->gid,
+  #  $svc_acct->dir,
+  #  $svc_domain->domain,
+  #);
+  #my $qdomain = $domain;
+  #$qdomain =~ s/\./:/g; #see manpage for 'dot-qmail': EXTENSION ADDRESSES
+  #ssh("root\@$shellmachine","[ -e $dir/.qmail-$qdomain-default ] || { touch $dir/.qmail-$qdomain-default; chown $uid:$gid $dir/.qmail-$qdomain-default; }")  
+  #  if ( ! $nossh_hack && $shellmachine && $dir && $self->domuser eq '*' );
 
   ''; #no error
 
@@ -233,7 +238,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: svc_acct_sm.pm,v 1.3 2001-04-22 01:56:15 ivan Exp $
+$Id: svc_acct_sm.pm,v 1.4 2001-08-20 09:41:52 ivan Exp $
 
 =head1 BUGS
 
@@ -242,6 +247,8 @@ The remote commands should be configurable.
 The $recref stuff in sub check should be cleaned up.
 
 =head1 SEE ALSO
+
+L<FS::svc_forward>
 
 L<FS::Record>, L<FS::Conf>, L<FS::cust_svc>, L<FS::part_svc>, L<FS::cust_pkg>,
 L<FS::svc_acct>, L<FS::svc_domain>, L<Net::SSH>, L<ssh>, L<dot-qmail>,

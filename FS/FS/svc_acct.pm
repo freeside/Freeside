@@ -13,6 +13,8 @@ use Net::SSH qw(ssh);
 use FS::part_svc;
 use FS::svc_acct_pop;
 use FS::svc_acct_sm;
+use FS::cust_main_invoice;
+use FS::svc_domain;
 
 @ISA = qw( FS::svc_Common );
 
@@ -232,10 +234,20 @@ $username and $dir.
 
 sub delete {
   my $self = shift;
-  my $error;
 
-  return "Can't delete an account which has mail aliases pointed to it!"
+  return "Can't delete an account which has (svc_acct_sm) mail aliases!"
     if $self->uid && qsearch( 'svc_acct_sm', { 'domuid' => $self->uid } );
+
+  return "Can't delete an account which is a (svc_forward) source!"
+    if qsearch( 'svc_forward', { 'srcsvc' => $self->svcnum } );
+
+  return "Can't delete an account which is a (svc_forward) destination!"
+    if qsearch( 'svc_forward', { 'dstsvc' => $self->svcnum } );
+
+  return "Can't delete an account with (svc_www) web service!"
+    if qsearch( 'svc_www', { 'usersvc' => $self->usersvc } );
+
+  # what about records in session ?
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -244,8 +256,43 @@ sub delete {
   local $SIG{TSTP} = 'IGNORE';
   local $SIG{PIPE} = 'IGNORE';
 
-  $error = $self->SUPER::delete;
-  return $error if $error;
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  foreach my $cust_main_invoice (
+    qsearch( 'cust_main_invoice', { 'dest' => $self->svcnum } )
+  ) {
+    my %hash = $cust_main_invoice->hash;
+    $hash{'dest'} = $self->email;
+    my $new = new FS::cust_main_invoice \%hash;
+    my $error = $new->replace($cust_main_invoice);
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
+  foreach my $svc_domain (
+    qsearch( 'svc_domain', { 'catchall' => $self->svcnum } )
+  ) {
+    my %hash = new FS::svc_domain->hash;
+    $hash{'catchall'} = '';
+    my $new = new FS::svc_domain \%hash;
+    my $error = $new->replace($svc_domain);
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
+  my $error = $self->SUPER::delete;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
   my( $username, $dir ) = (
     $self->username,
@@ -574,7 +621,7 @@ sub email {
 
 =head1 VERSION
 
-$Id: svc_acct.pm,v 1.24 2001-08-19 15:53:34 jeff Exp $
+$Id: svc_acct.pm,v 1.25 2001-08-20 09:41:52 ivan Exp $
 
 =head1 BUGS
 
