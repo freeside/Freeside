@@ -143,6 +143,25 @@ CREATE TABLE part_bill_event (
 );
 CREATE INDEX part_bill_event1 ON part_bill_event ( payby );
 
+CREATE TABLE part_export (
+  exportnum int primary key,
+  svcpart int not null,
+  machine varchar(80) not null,
+  exporttype varchar(80) not null,
+  nodomain char(1) NULL
+);
+CREATE INDEX part_export1 ON part_export ( machine );
+CREATE INDEX part_export2 ON part_export ( exporttype );
+
+CREATE INDEX part_export_option (
+  optionnum int primary key,
+  exportnum int not null,
+  option varchar(80) not null,
+  optionvalue text NULL
+);
+CREATE INDEX part_export_option1 ON part_export ( exportnum );
+CREATE INDEX part_export_option2 ON part_export ( option );
+
 ALTER TABLE svc_acct ADD domsvc integer NOT NULL;
 ALTER TABLE svc_domain ADD catchall integer NULL;
 ALTER TABLE cust_main ADD referral_custnum integer NULL;

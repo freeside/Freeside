@@ -247,6 +247,21 @@
         <li>svcpart - <a href="#part_svc">Service definition</a>
         <li>quantity - quantity of this service that this package includes
       </ul>
+    <li><a name="part_export" href="man/FS/part_export.html">part_export</a> - Export to external provisioning
+      <ul>
+        <li>exportnum - primary key
+        <li>svcpart - <a href="#part_svc">Service definition</a>
+        <li>machine - Machine name 
+        <li>exporttype - Export type
+        <li>nodomain - blank or Y: usernames are exported to this service with no domain
+      </ul>
+    <li><a name="part_export_option" href="man/FS/part_export_option.html">part_export_option</a> - provisioning options
+      <ul>
+        <li>optionnum - primary key
+        <li>exportnum - <a href="#part_export">Export</a>
+        <li>option - option name
+        <li>optionvalue - option value
+      </ul>
     <li><a name="port" href="man/FS/port.html">port</a> - individual port on a <a href="#nas">nas</a>
       <ul>
         <li>portnum - primary key
