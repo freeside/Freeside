@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: cust_main.cgi,v 1.2 2001-07-30 10:41:44 ivan Exp $ -->
+#<!-- $Id: cust_main.cgi,v 1.3 2001-08-11 05:52:56 ivan Exp $ -->
 
 use strict;
 use vars qw ( $cgi $query $custnum $cust_main $hashref $agent $referral 
@@ -210,7 +210,16 @@ print '<BR>';
 
 print '</TD></TR></TABLE>';
 
-print qq!<BR><BR><A NAME="cust_pkg">Packages</A> !,
+if ( defined $cust_main->dbdef_table->column('comments') ) {
+  print "<BR>Comments", &ntable("#cccccc"), "<TR><TD>",
+        &ntable("#cccccc",2),
+        '<TR><TD BGCOLOR="#ffffff"><PRE>', $cust_main->comments,
+        '</PRE></TD></TR></TABLE></TABLE>';
+}
+
+print '</TD></TR></TABLE>';
+
+print qq!<BR><A NAME="cust_pkg">Packages</A> !,
 #      qq!<BR>Click on package number to view/edit package.!,
       qq!( <A HREF="!, popurl(2), qq!edit/cust_pkg.cgi?$custnum">Order and cancel packages</A> (preserves services) )!,
 ;

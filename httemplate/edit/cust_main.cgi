@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: cust_main.cgi,v 1.1 2001-07-30 07:36:04 ivan Exp $ -->
+#<!-- $Id: cust_main.cgi,v 1.2 2001-08-11 05:52:56 ivan Exp $ -->
 
 use vars qw( $cgi $custnum $action $cust_main $p1 @agents $agentnum 
              $last $first $ss $company $address1 $address2 $city $zip 
@@ -354,6 +354,13 @@ for (qw(CARD BILL COMP)) {
 }
 
 print "</TR></TABLE>$r required fields for each billing type";
+
+if ( defined $cust_main->dbdef_table->column('comments') ) {
+    print "<BR><BR>Comments", &itable("#cccccc"),
+          qq!<TR><TD><TEXTAREA COLS=80 ROWS=5 WRAP="HARD" NAME="comments">!,
+          $cust_main->comments, "</TEXTAREA>",
+          "</TD></TR></TABLE>";
+}
 
 unless ( $custnum ) {
   # pry the wrong place for this logic.  also pretty expensive
