@@ -7,7 +7,7 @@ use Exporter;
 use Carp qw(carp cluck croak confess);
 use File::CounterFile;
 use Locale::Country;
-use DBIx::DBSchema;
+use DBIx::DBSchema 0.19;
 use FS::UID qw(dbh checkruid getotaker datasrc driver_name);
 
 @ISA = qw(Exporter);
@@ -994,7 +994,7 @@ sub DESTROY { return; }
 
 =head1 VERSION
 
-$Id: Record.pm,v 1.30 2001-10-10 05:24:25 ivan Exp $
+$Id: Record.pm,v 1.31 2001-11-02 05:11:52 ivan Exp $
 
 =head1 BUGS
 
