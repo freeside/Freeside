@@ -7,7 +7,7 @@ use vars qw( @ISA $nossh_hack $conf $dir_prefix @shells $usernamemin
              @saltset @pw_set);
 use Carp;
 use FS::Conf;
-use FS::Record qw( qsearch qsearchs fields );
+use FS::Record qw( qsearch qsearchs fields dbh );
 use FS::svc_Common;
 use Net::SSH qw(ssh);
 use FS::part_svc;
@@ -628,7 +628,7 @@ sub email {
 
 =head1 VERSION
 
-$Id: svc_acct.pm,v 1.26 2001-08-20 11:04:38 ivan Exp $
+$Id: svc_acct.pm,v 1.27 2001-08-21 00:39:07 ivan Exp $
 
 =head1 BUGS
 

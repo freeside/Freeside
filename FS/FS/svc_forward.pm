@@ -226,7 +226,7 @@ sub replace {
       unless $nossh_hack;
   }
   #end subroutinable bits
-  }
+
   '';
 }
 
@@ -299,7 +299,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: svc_forward.pm,v 1.5 2001-08-20 11:04:38 ivan Exp $
+$Id: svc_forward.pm,v 1.6 2001-08-21 00:39:07 ivan Exp $
 
 =head1 BUGS
 
