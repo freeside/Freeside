@@ -1,5 +1,9 @@
 package FS::InitHandler;
 
+# this leaks memory under graceful restarts and i wouldn't use it on any
+# modern server.  useful for very slow machines with memory to spare, just
+# always do a full restart
+
 use strict;
 use vars qw($DEBUG);
 use FS::UID qw(adminsuidsetup);

@@ -15,8 +15,9 @@ FS::ClientAPI->register_handlers(
 sub passwd {
   my $packet = shift;
 
-  #my $domain = qsearchs('svc_domain', { 'domain' => $packet->{'domain'} } )
-  #  or return { error => "Domain $domain not found" };
+  my $domain = $FS::ClientAPI::domain || $packet->{'domain'};
+  my $svc_domain = qsearchs('svc_domain', { 'domain' => $domain } )
+    or return { error => "Domain $domain not found" };
 
   my $old_password = $packet->{'old_password'};
   my $new_password = $packet->{'new_password'};
@@ -27,11 +28,11 @@ sub passwd {
   my $svc_acct =
     ( length($old_password) < 13
       && qsearchs( 'svc_acct', { 'username'  => $packet->{'username'},
-                                 #'domsvc'    => $svc_domain->svcnum,
+                                 'domsvc'    => $svc_domain->svcnum,
                                  '_password' => $old_password } )
     )
     || qsearchs( 'svc_acct', { 'username'  => $packet->{'username'},
-                               #'domsvc'    => $svc_domain->svcnum,
+                               'domsvc'    => $svc_domain->svcnum,
                                '_password' => $old_password } );
 
   unless ( $svc_acct ) { return { error => 'Incorrect password.' } }

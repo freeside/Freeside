@@ -1,13 +1,13 @@
 package FS::ClientAPI;
 
 use strict;
-use vars qw(%handler);
+use vars qw(%handler $domain);
 
 %handler = ();
 
 #find modules
 foreach my $INC ( @INC ) {
-  foreach my $file ( glob("$INC/FS/ClientAPI/*") ) {
+  foreach my $file ( glob("$INC/FS/ClientAPI/*.pm") ) {
     $file =~ /\/(\w+)\.pm$/ or do {
       warn "unrecognized ClientAPI file: $file";
       next

@@ -752,7 +752,7 @@ sub check {
   #  $error = $self->ut_textn('finger');
   #  return $error if $error;
   $self->getfield('finger') =~
-    /^([\w \t\!\@\#\$\%\&\(\)\-\+\;\:\'\"\,\.\?\/\*\<\>]*)$/
+    /^([\w \t\!\@\#\$\%\&\(\)\-\+\;\'\"\,\.\?\/\*\<\>]*)$/
       or return "Illegal finger: ". $self->getfield('finger');
   $self->setfield('finger', $1);
 
