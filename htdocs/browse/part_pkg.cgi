@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: part_pkg.cgi,v 1.2 1998-11-21 07:00:32 ivan Exp $
+# $Id: part_pkg.cgi,v 1.3 1998-11-21 07:23:45 ivan Exp $
 #
 # ivan@sisd.com 97-dec-5,9
 #
@@ -10,12 +10,16 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: part_pkg.cgi,v $
-# Revision 1.2  1998-11-21 07:00:32  ivan
+# Revision 1.3  1998-11-21 07:23:45  ivan
+# visual
+#
+# Revision 1.2  1998/11/21 07:00:32  ivan
 # visual
 #
 
 use strict;
 use CGI;
+use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup swapuid);
 use FS::Record qw(qsearch qsearchs);
 use FS::CGI qw(header menubar popurl table);
@@ -29,7 +33,6 @@ my($cgi) = new CGI;
 
 print $cgi->header, header("Package Part Listing",menubar(
   'Main Menu' => popurl(2),
-  'Add new package' => popurl(2). "/edit/part_pkg.cgi",
 )), "One or more services are grouped together into a package and given",
   " pricing information. Customers purchase packages, not services.<BR><BR>", 
   table, <<END;
@@ -71,7 +74,7 @@ END
   foreach $pkg_svc ( @pkg_svc ) {
     my($svcpart)=$pkg_svc->getfield('svcpart');
     my($part_svc) = qsearchs('part_svc',{'svcpart'=> $svcpart });
-    print $n,qq!<TD><A HREF="../edit/part_svc.cgi?$svcpart">!,
+    print $n,qq!<TD><A HREF="$p/edit/part_svc.cgi?$svcpart">!,
           $part_svc->getfield('svc'),"</A></TD><TD>",
           $pkg_svc->getfield('quantity'),"</TD></TR>\n";
     $n="<TR>";
@@ -81,7 +84,8 @@ END
 }
 
 print <<END;
-    </TR></TABLE>
+   <TR><TD COLSPAN=2><I><A HREF="$p/edit/part_pkg.cgi">Add new package</A></I></TD></TR>
+    </TABLE>
   </BODY>
 </HTML>
 END
