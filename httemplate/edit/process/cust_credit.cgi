@@ -3,12 +3,9 @@
 $cgi->param('custnum') =~ /^(\d*)$/ or die "Illegal custnum!";
 my $custnum = $1;
 
-$cgi->param('otaker',getotaker);
-
 my $new = new FS::cust_credit ( {
   map {
     $_, scalar($cgi->param($_));
-  #} qw(custnum _date amount otaker reason)
   } fields('cust_credit')
 } );
 
@@ -25,6 +22,5 @@ if ( $error ) {
   }
   print $cgi->redirect(popurl(3). "view/cust_main.cgi?$custnum");
 }
-
 
 %>

@@ -396,7 +396,8 @@ payment.
 
 sub cust_bill_pay {
   my $self = shift;
-  sort { $a->_date <=> $b->_date }
+  sort {    $a->_date  <=> $b->_date
+         || $a->invnum <=> $b->invnum }
     qsearch( 'cust_bill_pay', { 'paynum' => $self->paynum } )
   ;
 }
@@ -431,6 +432,21 @@ sub unapplied {
   $amount -= $_->amount foreach ( $self->cust_pay_refund );
   sprintf("%.2f", $amount );
 }
+
+=item unrefunded
+
+Returns the amount of this payment that has not been refuned; which is
+paid minus all  refund applications (see L<FS::cust_pay_refund>).
+
+=cut
+
+sub unrefunded {
+  my $self = shift;
+  my $amount = $self->paid;
+  $amount -= $_->amount foreach ( $self->cust_pay_refund );
+  sprintf("%.2f", $amount );
+}
+
 
 =item cust_main
 

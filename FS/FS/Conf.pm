@@ -543,7 +543,7 @@ httemplate/docs/config.html
   {
     'key'         => 'invoice_send_receipts',
     'section'     => 'deprecated',q
-    'description' => '<b>DEPRECATED</b>, this used to send an invoice copy on payments and credits.  See the payment_receipt_email and  instead.',
+    'description' => '<b>DEPRECATED</b>, this used to send an invoice copy on payments and credits.  See the payment_receipt_email and XXXX instead.',
     'type'        => 'checkbox',
   },
 
@@ -1269,7 +1269,12 @@ httemplate/docs/config.html
     'type'        => 'checkbox',
   },
 
-
+  {
+    'key'         => 'card_refund-days',
+    'section'     => 'billing',
+    'description' => 'After a payment, the number of days a refund link will be available for that payment.  Defaults to 120.',
+    'type'        => 'text',
+  },
 
 );
 

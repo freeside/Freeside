@@ -36,15 +36,15 @@ print qq!<A HREF="${p}edit/cust_main.cgi?$custnum">Edit this customer</A>!;
 %>
 
 <SCRIPT>
-function cancel_areyousure(href) {
-    if (confirm("Perminantly delete all services and cancel this customer?") == true)
+function areyousure(href, message) {
+    if (confirm(message) == true)
         window.location.href = href;
 }
 </SCRIPT>
 
 <%
 
-print qq! | <A HREF="javascript:cancel_areyousure('${p}misc/cust_main-cancel.cgi?$custnum')">!.
+print qq! | <A HREF="javascript:areyousure('${p}misc/cust_main-cancel.cgi?$custnum', 'Perminantly delete all services and cancel this customer?')">!.
       'Cancel this customer</A>'
   if $cust_main->ncancelled_pkgs;
 
@@ -349,21 +349,6 @@ if ( $conf->config('payby-default') ne 'HIDE' ) {
 
 }
 
-%>
-
-<SCRIPT>
-function cust_pkg_areyousure(href) {
-    if (confirm("Permanently delete included services and cancel this package?") == true)
-        window.location.href = href;
-}
-function svc_areyousure(href) {
-    if (confirm("Permanently unprovision and delete this service?") == true)
-        window.location.href = href;
-}
-</SCRIPT>
-
-<%
-
 print qq!<A NAME="cust_pkg">Packages</A> !,
       qq!( <A HREF="!, popurl(2), qq!edit/cust_pkg.cgi?$custnum">Order and cancel packages</A> (preserves services) )!,
 ;
@@ -544,29 +529,6 @@ print '</TABLE>';
 #end display packages
 %>
 
-<SCRIPT>
-function cust_pay_areyousure(href) {
-    if (confirm("Are you sure you want to delete this payment?")
- == true)
-        window.location.href = href;
-}
-function cust_pay_unapply_areyousure(href) {
-    if (confirm("Are you sure you want to unapply this payment?")
- == true)
-        window.location.href = href;
-}
-function cust_credit_unapply_areyousure(href) {
-    if (confirm("Are you sure you want to unapply this credit?")
- == true)
-        window.location.href = href;
-}
-function cust_credit_areyousure(href) {
-    if (confirm("Are you sure you want to delete this credit?")
- == true)
-        window.location.href = href;
-}
-</SCRIPT>
-
 <% if ( $conf->config('payby-default') ne 'HIDE' ) { %>
   
   <BR><BR><A NAME="history"><FONT SIZE="+2">Payment History</FONT></A><BR>
@@ -660,29 +622,75 @@ function cust_credit_areyousure(href) {
       }
     }
 
+    my $refund = '';
+    my $refund_days = $conf->config('card_refund-days') || 120;
+    if (    $cust_pay->closed !~ /^Y/i
+         && $cust_pay->payby eq 'CARD' 
+         && time-$cust_pay->_date < $refund_days*86400
+         && $cust_pay->unrefunded > 0
+    ) {
+      $refund = qq! (<A HREF="!. qq!${p}edit/cust_refund.cgi?payby=CARD;!.
+                qq!paynum=!. $cust_pay->paynum. qq!">refund</A>)!;
+    }
+
+    my $void = '';
+    if (    $cust_pay->closed !~ /^Y/i
+         && $cust_pay->payby ne 'CARD'
+       ) {
+      $void = qq! (<A HREF="javascript:areyousure('!.
+              qq!${p}misc/void-cust_pay.cgi?!. $cust_pay->paynum.
+              qq!', 'Are you sure you want to void this payment?')">!.
+              qq!void</A>)!;
+    }
+
     my $delete = '';
     if ( $cust_pay->closed !~ /^Y/i && $conf->exists('deletepayments') ) {
-      $delete = qq! (<A HREF="javascript:cust_pay_areyousure('!.
+      $delete = qq! (<A HREF="javascript:areyousure('!.
                 qq!${p}misc/delete-cust_pay.cgi?!. $cust_pay->paynum.
-                qq!')">delete</A>)!;
+                qq!', 'Are you sure you want to delete this payment?')">!.
+                qq!delete</A>)!;
     }
 
     my $unapply = '';
     if (    $cust_pay->closed !~ /^Y/i
          && $conf->exists('unapplypayments')
          && scalar(@cust_bill_pay)           ) {
-      $unapply = qq! (<A HREF="javascript:cust_pay_unapply_areyousure('!.
+      $unapply = qq! (<A HREF="javascript:areyousure('!.
                  qq!${p}misc/unapply-cust_pay.cgi?!. $cust_pay->paynum.
-                 qq!')">unapply</A>)!;
+                 qq!', 'Are you sure you want to unapply this payment?')">!.
+                 qq!unapply</A>)!;
     }
 
     push @history, {
       'date'    => $cust_pay->_date,
       'desc'    => $pre. "Payment$post$info$desc".
-                   "$apply$delete$unapply",
+                   "$apply$refund$void$delete$unapply",
       'payment' => $cust_pay->paid,
       'target'  => $target,
     };
+  }
+
+  #voided payments
+  foreach my $cust_pay_void ($cust_main->cust_pay_void) {
+
+    my $payby = $cust_pay_void->payby;
+    my $payinfo = $payby eq 'CARD'
+                    ? $cust_pay_void->payinfo_masked
+                    : $cust_pay_void->payinfo;
+
+    $payby =~ s/^BILL$/Check #/ if $payinfo;
+    $payby =~ s/^BILL$//;
+    $payby =~ s/^(CARD|COMP)$/$1 /;
+    my $info = $payby ? " ($payby$payinfo)" : '';
+
+    push @history, {
+      'date'   => $cust_pay_void->_date,
+      'desc'   => "Payment $info <I>voided ".
+                  time2str("%D", $cust_pay_void->void_date).
+                  " by ". $cust_pay_void->otaker. '</i>',
+      'void_payment' => $cust_pay_void->paid,
+    };
+  
   }
 
   #credits (some false laziness w/payments)
@@ -740,18 +748,20 @@ function cust_credit_areyousure(href) {
 #
     my $delete = '';
     if ( $cust_credit->closed !~ /^Y/i && $conf->exists('deletecredits') ) {
-      $delete = qq! (<A HREF="javascript:cust_credit_areyousure('!.
+      $delete = qq! (<A HREF="javascript:areyousure('!.
                 qq!${p}misc/delete-cust_credit.cgi?!. $cust_credit->crednum.
-                qq!')">delete</A>)!;
+                qq!', 'Are you sure you want to delete this credit?')">!.
+                qq!delete</A>)!;
     }
     
     my $unapply = '';
     if (    $cust_credit->closed !~ /^Y/i
          && $conf->exists('unapplycredits')
          && scalar(@cust_credit_bill)       ) {
-      $unapply = qq! (<A HREF="javascript:cust_credit_unapply_areyousure('!.
+      $unapply = qq! (<A HREF="javascript:areyousure('!.
                  qq!${p}misc/unapply-cust_credit.cgi?!. $cust_credit->crednum.
-                 qq!')">unapply</A>)!;
+                 qq!', 'Are you sure you want to unapply this credit?')">!.
+                 qq!unapply</A>)!;
     }
     
     push @history, {
@@ -809,6 +819,8 @@ function cust_credit_areyousure(href) {
     my $payment = exists($item->{'payment'})
                     ? sprintf('-&nbsp;$%.2f', $item->{'payment'})
                     : '';
+    $payment ||= sprintf('<DEL>-&nbsp;$%.2f</DEL>', $item->{'void_payment'})
+      if exists($item->{'void_payment'});
     my $credit  = exists($item->{'credit'})
                     ? sprintf('-&nbsp;$%.2f', $item->{'credit'})
                     : '';
@@ -976,7 +988,8 @@ sub svc_provision_link {
 
 sub svc_unprovision_link {
   my $svc = shift or return '';
-  return qq!<A HREF="javascript:svc_areyousure('${p}misc/unprovision.cgi?$svc->{svcnum}')">Unprovision</A>!;
+  qq!<A HREF="javascript:areyousure('${p}misc/unprovision.cgi?$svc->{svcnum}',!.
+  qq!'Permanently unprovision and delete this service?')">Unprovision</A>!;
 }
 
 # This should be generalized to use config options to determine order.
@@ -1004,7 +1017,8 @@ sub pkg_datestr {
 
 sub pkg_change_link {
   my $pkg = shift or return '';
-  return qq!<a href="${p}misc/change_pkg.cgi?$pkg->{pkgnum}">Change&nbsp;package</a>!;
+  return qq!<a href="${p}misc/change_pkg.cgi?$pkg->{pkgnum}">!.
+         qq!Change&nbsp;package</a>!;
 }
 
 sub pkg_suspend_link {
@@ -1019,19 +1033,22 @@ sub pkg_unsuspend_link {
 
 sub pkg_cancel_link {
   my $pkg = shift or return '';
-  qq!<A HREF="javascript:cust_pkg_areyousure('${p}misc/cancel_pkg.cgi?$pkg->{pkgnum}')">Cancel now</A> | !.
+  qq!<A HREF="javascript:areyousure('${p}misc/cancel_pkg.cgi?$pkg->{pkgnum}', !.
+  qq!'Permanently delete included services and cancel this package?')">!.
+  qq!Cancel now</A> | !.
   qq!<A HREF="${p}misc/expire_pkg.cgi?$pkg->{pkgnum}">Cancel later</A>!;
 }
 
 sub pkg_dates_link {
   my $pkg = shift or return '';
-  return qq!<A HREF="${p}edit/REAL_cust_pkg.cgi?$pkg->{pkgnum}">Edit&nbsp;dates</A>!;
+  qq!<A HREF="${p}edit/REAL_cust_pkg.cgi?$pkg->{pkgnum}">Edit&nbsp;dates</A>!;
 }
 
 sub pkg_customize_link {
   my $pkg = shift or return '';
   my $custnum = shift;
-  return qq!<A HREF="${p}edit/part_pkg.cgi?keywords=$custnum;clone=$pkg->{pkgpart};pkgnum=$pkg->{pkgnum}">Customize</A>!;
+  qq!<A HREF="${p}edit/part_pkg.cgi?keywords=$custnum;clone=$pkg->{pkgpart};!.
+  qq!pkgnum=$pkg->{pkgnum}">Customize</A>!;
 }
 
 %>

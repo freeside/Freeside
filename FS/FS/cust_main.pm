@@ -21,6 +21,7 @@ use FS::cust_pkg;
 use FS::cust_bill;
 use FS::cust_bill_pkg;
 use FS::cust_pay;
+use FS::cust_pay_void;
 use FS::cust_credit;
 use FS::cust_refund;
 use FS::part_referral;
@@ -1775,7 +1776,7 @@ sub realtime_bop {
   }
   my $email = $invoicing_list[0];
 
-  my %content;
+  my %content = ();
   if ( $method eq 'CC' ) { 
 
     $content{card_number} = $self->payinfo;
@@ -1808,8 +1809,7 @@ sub realtime_bop {
 
   my( $action1, $action2 ) = split(/\s*\,\s*/, $action );
 
-  my $transaction =
-    new Business::OnlinePayment( $processor, @bop_options );
+  my $transaction = new Business::OnlinePayment( $processor, @bop_options );
   $transaction->content(
     'type'           => $method,
     'login'          => $login,
@@ -1900,6 +1900,11 @@ sub realtime_bop {
       'LEC'    => 'LECB',
     );
 
+    my $paybatch = "$processor:". $transaction->authorization;
+    $paybatch .= ':'. $transaction->order_number
+      if $transaction->can('order_number')
+      && length($transaction->order_number);
+
     my $cust_pay = new FS::cust_pay ( {
        'custnum'  => $self->custnum,
        'invnum'   => $options{'invnum'},
@@ -1907,7 +1912,7 @@ sub realtime_bop {
        '_date'     => '',
        'payby'    => $method2payby{$method},
        'payinfo'  => $self->payinfo,
-       'paybatch' => "$processor:". $transaction->authorization,
+       'paybatch' => $paybatch,
     } );
     my $error = $cust_pay->insert;
     if ( $error ) {
@@ -1959,6 +1964,235 @@ sub realtime_bop {
   
     return $perror;
   }
+
+}
+
+=item realtime_refund_bop METHOD [ OPTION => VALUE ... ]
+
+Refunds a realtime credit card, ACH (electronic check) or phone bill transaction
+via a Business::OnlinePayment realtime gateway.  See
+L<http://420.am/business-onlinepayment> for supported gateways.
+
+Available methods are: I<CC>, I<ECHECK> and I<LEC>
+
+Available options are: I<amount>, I<reason>, I<paynum>
+
+Most gateways require a reference to an original payment transaction to refund,
+so you probably need to specify a I<paynum>.
+
+I<amount> defaults to the original amount of the payment if not specified.
+
+I<reason> specifies a reason for the refund.
+
+Implementation note: If I<amount> is unspecified or equal to the amount of the
+orignal payment, first an attempt is made to "void" the transaction via
+the gateway (to cancel a not-yet settled transaction) and then if that fails,
+the normal attempt is made to "refund" ("credit") the transaction via the
+gateway is attempted.
+
+#The additional options I<payname>, I<address1>, I<address2>, I<city>, I<state>,
+#I<zip>, I<payinfo> and I<paydate> are also available.  Any of these options,
+#if set, will override the value from the customer record.
+
+#If an I<invnum> is specified, this payment (if sucessful) is applied to the
+#specified invoice.  If you don't specify an I<invnum> you might want to
+#call the B<apply_payments> method.
+
+=cut
+
+#some false laziness w/realtime_bop, not enough to make it worth merging
+#but some useful small subs should be pulled out
+sub realtime_refund_bop {
+  my( $self, $method, %options ) = @_;
+  if ( $DEBUG ) {
+    warn "$self $method refund\n";
+    warn "  $_ => $options{$_}\n" foreach keys %options;
+  }
+
+  #pre-requisites
+  die "Real-time processing not enabled\n"
+    unless $conf->exists('business-onlinepayment');
+  eval "use Business::OnlinePayment";  
+  die $@ if $@;
+
+  ##overrides
+  #$self->set( $_ => $options{$_} )
+  #  foreach grep { exists($options{$_}) }
+  #          qw( payname address1 address2 city state zip payinfo paydate paycvv);
+
+  #load up config
+  my $bop_config = 'business-onlinepayment';
+  $bop_config .= '-ach'
+    if $method eq 'ECHECK' && $conf->exists($bop_config. '-ach');
+  my ( $processor, $login, $password, $unused_action, @bop_options ) =
+    $conf->config($bop_config);
+  #$action ||= 'normal authorization';
+  pop @bop_options if scalar(@bop_options) % 2 && $bop_options[-1] =~ /^\s*$/;
+  die "No real-time processor is enabled - ".
+      "did you set the business-onlinepayment configuration value?\n"
+    unless $processor;
+
+  my $cust_pay = '';
+  my $amount = $options{'amount'};
+  my( $pay_processor, $auth, $order_number );
+  if ( $options{'paynum'} ) {
+    warn "FS::cust_main::realtime_bop: paynum: $options{paynum}\n" if $DEBUG;
+    $cust_pay = qsearchs('cust_pay', { paynum=>$options{'paynum'} } )
+      or return "Unknown paynum $options{'paynum'}";
+    $amount ||= $cust_pay->paid;
+    $cust_pay->paybatch =~ /^(\w+):(\w+)(:(\w+))?$/
+      or return "Can't parse paybatch for paynum $options{'paynum'}: ".
+                $cust_pay->paybatch;
+    ( $pay_processor, $auth, $order_number ) = ( $1, $2, $4 );
+    return "processor of payment $options{'paynum'} $pay_processor does not".
+           " match current processor $processor"
+      unless $pay_processor eq $processor;
+  }
+  return "neither amount nor paynum specified" unless $amount;
+
+  #first try void if applicable
+  if ( $cust_pay && $cust_pay->paid == $amount ) { #and check dates?
+    my $void = new Business::OnlinePayment( $processor, @bop_options );
+    $void->content(
+      'type'           => $method,
+      'action'         => 'void',
+      'login'          => $login,
+      'password'       => $password,
+      'order_number'   => $order_number,
+      'amount'         => $amount,
+      'authorization'  => $auth,
+      'referer'        => 'http://cleanwhisker.420.am/',
+    );
+    $void->submit();
+    if ( $void->is_success ) {
+      my $error = $cust_pay->void($options{'reason'});
+      if ( $error ) {
+        # gah, even with transactions.
+        my $e = 'WARNING: Card/ACH voided but database not updated - '.
+                "error voiding payment: $error";
+        warn $e;
+        return $e;
+      }
+      return '';
+    }
+  }
+
+  #massage data
+  my $address = $self->address1;
+  $address .= ", ". $self->address2 if $self->address2;
+
+  my($payname, $payfirst, $paylast);
+  if ( $self->payname && $method ne 'ECHECK' ) {
+    $payname = $self->payname;
+    $payname =~ /^\s*([\w \,\.\-\']*)?\s+([\w\,\.\-\']+)\s*$/
+      or return "Illegal payname $payname";
+    ($payfirst, $paylast) = ($1, $2);
+  } else {
+    $payfirst = $self->getfield('first');
+    $paylast = $self->getfield('last');
+    $payname =  "$payfirst $paylast";
+  }
+
+  my %content = ();
+  if ( $method eq 'CC' ) { 
+
+    $content{card_number} = $self->payinfo;
+    $self->paydate =~ /^\d{2}(\d{2})[\/\-](\d+)[\/\-]\d+$/;
+    $content{expiration} = "$2/$1";
+
+    #$content{cvv2} = $self->paycvv
+    #  if defined $self->dbdef_table->column('paycvv')
+    #     && length($self->paycvv);
+
+    #$content{recurring_billing} = 'YES'
+    #  if qsearch('cust_pay', { 'custnum' => $self->custnum,
+    #                           'payby'   => 'CARD',
+    #                           'payinfo' => $self->payinfo, } );
+
+  } elsif ( $method eq 'ECHECK' ) {
+    my($account_number,$routing_code) = $self->payinfo;
+    ( $content{account_number}, $content{routing_code} ) =
+      split('@', $self->payinfo);
+    $content{bank_name} = $self->payname;
+    $content{account_type} = 'CHECKING';
+    $content{account_name} = $payname;
+    $content{customer_org} = $self->company ? 'B' : 'I';
+    $content{customer_ssn} = $self->ss;
+  } elsif ( $method eq 'LEC' ) {
+    $content{phone} = $self->payinfo;
+  }
+
+  #then try refund
+  my $refund = new Business::OnlinePayment( $processor, @bop_options );
+  $refund->content(
+    'type'           => $method,
+    'action'         => 'credit',
+    'login'          => $login,
+    'password'       => $password,
+    'order_number'   => $order_number,
+    'amount'         => $amount,
+    'authorization'  => $auth,
+    'customer_id'    => $self->custnum,
+    'last_name'      => $paylast,
+    'first_name'     => $payfirst,
+    'name'           => $payname,
+    'address'        => $address,
+    'city'           => $self->city,
+    'state'          => $self->state,
+    'zip'            => $self->zip,
+    'country'        => $self->country,
+    'referer'        => 'http://cleanwhisker.420.am/',
+    %content, #after
+  );
+  $refund->submit();
+
+  return "$processor error: ". $refund->error_message
+    unless $refund->is_success();
+
+  my %method2payby = (
+    'CC'     => 'CARD',
+    'ECHECK' => 'CHEK',
+    'LEC'    => 'LECB',
+  );
+
+  my $paybatch = "$processor:". $refund->authorization;
+  $paybatch .= ':'. $refund->order_number
+    if $refund->can('order_number') && $refund->order_number;
+
+  while ( $cust_pay && $cust_pay->unappled < $amount ) {
+    my @cust_bill_pay = $cust_pay->cust_bill_pay;
+    last unless @cust_bill_pay;
+    my $cust_bill_pay = pop @cust_bill_pay;
+    my $error = $cust_bill_pay->delete;
+    last if $error;
+  }
+
+  my $cust_refund = new FS::cust_refund ( {
+    'custnum'  => $self->custnum,
+    'paynum'   => $options{'paynum'},
+    'refund'   => $amount,
+    '_date'    => '',
+    'payby'    => $method2payby{$method},
+    'payinfo'  => $self->payinfo,
+    'paybatch' => $paybatch,
+    'reason'   => $options{'reason'} || 'card refund',
+  } );
+  my $error = $cust_refund->insert;
+  if ( $error ) {
+    $cust_refund->paynum(''); #try again with no specific paynum
+    my $error2 = $cust_refund->insert;
+    if ( $error2 ) {
+      # gah, even with transactions.
+      my $e = 'WARNING: Card/ACH refunded but database not updated - '.
+              "error inserting refund ($processor): $error2".
+              " (previously tried insert with paynum #$options{'paynum'}" .
+              ": $error )";
+      warn $e;
+      return $e;
+    }
+  }
+
+  ''; #no error
 
 }
 
@@ -2515,6 +2749,19 @@ sub cust_pay {
   sort { $a->_date <=> $b->_date }
     qsearch( 'cust_pay', { 'custnum' => $self->custnum } )
 }
+
+=item cust_pay_void
+
+Returns all voided payments (see L<FS::cust_pay_void>) for this customer.
+
+=cut
+
+sub cust_pay_void {
+  my $self = shift;
+  sort { $a->_date <=> $b->_date }
+    qsearch( 'cust_pay_void', { 'custnum' => $self->custnum } )
+}
+
 
 =item cust_refund
 
