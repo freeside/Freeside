@@ -424,7 +424,7 @@ END
         }
 
         my $ahref = '';
-        my $ahref = '<A HREF="'.
+        $ahref = '<A HREF="'.
                     FS::TicketSystem->href_customer_tickets($custnum).
                     '">'
           if $cust_main->get($addl_col);
