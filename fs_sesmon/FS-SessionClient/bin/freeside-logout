@@ -3,7 +3,7 @@
 #false-laziness hack w freeside-login
 
 use strict;
-use FS::SessionClient qw( logoff portnum );
+use FS::SessionClient qw( logout portnum );
 
 my $username = shift;
 
@@ -24,7 +24,7 @@ if ( scalar(@ARGV) == 1 ) {
   &usage;
 }
 
-my $error = login ( {
+my $error = logout ( {
   'username' => $username,
   'portnum'  => $portnum,
 } );
@@ -32,6 +32,5 @@ my $error = login ( {
 warn $error if $error;
 
 sub usage {
-  die "Usage:\n\n  freeside-logoff username ( portnum | ip | nasnum nasport )";
+  die "Usage:\n\n  freeside-logout username ( portnum | ip | nasnum nasport )";
 }
-

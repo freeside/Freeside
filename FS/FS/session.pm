@@ -94,6 +94,9 @@ sub insert {
   $error = $self->check;
   return $error if $error;
 
+  return "a session on that port is already open!"
+    if qsearchs('session', { 'portnum' => $self->portnum, 'logout' => '' } );
+
   $self->setfield('login', time()) unless $self->getfield('login');
 
   $error = $self->SUPER::insert;
@@ -124,7 +127,7 @@ it is replaced with the current time.
 =cut
 
 sub replace {
-  my $self = shift;
+  my($self, $old) = @_;
   my $error;
 
   local $SIG{HUP} = 'IGNORE';
@@ -139,7 +142,7 @@ sub replace {
 
   $self->setfield('logout', time()) unless $self->getfield('logout');
 
-  $error = $self->SUPER::replace;
+  $error = $self->SUPER::replace($old);
   return $error if $error;
 
   $self->nas_heartbeat($self->getfield('logout'));
@@ -188,15 +191,32 @@ sub nas_heartbeat {
   $nas->heartbeat(shift);
 }
 
+=item svc_acct
+
+Returns the svc_acct record associated with this session (see L<FS::svc_acct>).
+
+=cut
+
+sub svc_acct {
+  my $self = shift;
+  qsearchs('svc_acct', { 'svcnum' => $self->svcnum } );
+}
+
 =back
 
 =head1 VERSION
 
-$Id: session.pm,v 1.2 2000-11-07 15:00:37 ivan Exp $
+$Id: session.pm,v 1.3 2000-12-03 20:25:20 ivan Exp $
 
 =head1 BUGS
 
-The author forgot to customize this manpage.
+Maybe you shouldn't be able to insert a session if there's currently an open
+session on that port.  Or maybe the open session on that port should be flagged
+as problematic?  autoclosed?  *sigh*
+
+Hmm, sessions refer to current svc_acct records... probably need to constrain
+deletions to svc_acct records such that no svc_acct records are deleted which
+have a session (even if long-closed).
 
 =head1 SEE ALSO
 

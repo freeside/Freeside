@@ -10,7 +10,7 @@ use IO::Handle;
 $VERSION = '0.01';
 
 @ISA = qw( Exporter );
-@EXPORT_OK = qw( login logoff portnum );
+@EXPORT_OK = qw( login logout portnum );
 
 $fs_sessiond_socket = "/usr/local/freeside/fs_sessiond_socket";
 
@@ -30,7 +30,7 @@ FS::SessionClient - Freeside session client API
 
 =head1 SYNOPSIS
 
-  use FS::SessionClient qw( login portnum logoff );
+  use FS::SessionClient qw( login portnum logout );
 
   $error = login ( {
     'username' => $username,
@@ -43,10 +43,10 @@ FS::SessionClient - Freeside session client API
   $portnum = portnum( { 'nasnum' => $nasnum, 'nasport' => $nasport } )
     or die "unknown nasnum/nasport";
 
-  $error = logoff ( {
+  $error = logout ( {
     'username' => $username,
     'password' => $password,
-    'logoff'   => $timestamp,
+    'logout'   => $timestamp,
     'portnum'  => $portnum,
   } );
 
@@ -73,13 +73,13 @@ Returns a scalar error message, or the empty string for success.
 =item portnum
 
 HASHREF should contain a single key: ip, or the two keys: nasnum and nasport.
-Returns a portnum suitable for the login and logoff subroutines, or false
+Returns a portnum suitable for the login and logout subroutines, or false
 on error.
 
-=item logoff HASHREF
+=item logout HASHREF
 
-HASHREF should have the following keys: usrename, password, logoff and portnum.
-logoff is a UNIX timestamp; if not specified, will default to the current time.
+HASHREF should have the following keys: usrename, password, logout and portnum.
+logout is a UNIX timestamp; if not specified, will default to the current time.
 Starts a new session for the specified user and portnum.  The password is
 optional, but must be correct if specified.
 
@@ -89,9 +89,11 @@ Returns a scalar error message, or the empty string for success.
 
 sub AUTOLOAD {
   my $hashref = shift;
+  my $method = $AUTOLOAD;
+  $method =~ s/^.*:://;
   socket(SOCK, PF_UNIX, SOCK_STREAM, 0) or die "socket: $!";
   connect(SOCK, sockaddr_un($fs_sessiond_socket)) or die "connect: $!";
-  print SOCK "$AUTOLOAD\n";
+  print SOCK "$method\n";
 
   print SOCK join("\n", %{$hashref}, 'END' ), "\n";
   SOCK->flush;
@@ -104,7 +106,7 @@ sub AUTOLOAD {
 
 =head1 VERSION
 
-$Id: SessionClient.pm,v 1.2 2000-11-07 15:00:37 ivan Exp $
+$Id: SessionClient.pm,v 1.3 2000-12-03 20:25:20 ivan Exp $
 
 =head1 BUGS
 

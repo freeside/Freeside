@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct.cgi,v 1.10 1999-04-14 11:27:06 ivan Exp $
+# $Id: svc_acct.cgi,v 1.11 2000-12-03 20:25:20 ivan Exp $
 #
 # Usage: svc_acct.cgi svcnum
 #        http://server.name/path/svc_acct.cgi?svcnum
@@ -33,7 +33,10 @@
 # displays arbitrary radius attributes ivan@sisd.com 98-aug-16
 #
 # $Log: svc_acct.cgi,v $
-# Revision 1.10  1999-04-14 11:27:06  ivan
+# Revision 1.11  2000-12-03 20:25:20  ivan
+# session monitor updates
+#
+# Revision 1.10  1999/04/14 11:27:06  ivan
 # showpasswords config option to show passwords
 #
 # Revision 1.9  1999/04/08 12:00:19  ivan
@@ -138,7 +141,7 @@ $password = '';
 
 $svc_acct_pop = qsearchs('svc_acct_pop',{'popnum'=>$svc_acct->popnum});
 print "<BR>POP: <B>", $svc_acct_pop->city, ", ", $svc_acct_pop->state,
-      " (", $svc_acct_pop->ac, ")/", $svc_acct_pop->exch, "<\B>"
+      " (", $svc_acct_pop->ac, ")/", $svc_acct_pop->exch, "</B>"
   if $svc_acct_pop;
 
 if ($svc_acct->uid ne '') {

@@ -2,8 +2,8 @@ package FS::nas;
 
 use strict;
 use vars qw( @ISA );
-use FS::Record qw();
-#use FS::Record qw( qsearch qsearchs );
+use FS::Record qw(qsearchs); #qsearch);
+use FS::UID qw( dbh ); #to lock the tables for heartbeat; ugh, MySQL-specific
 
 @ISA = qw(FS::Record);
 
@@ -124,18 +124,32 @@ Updates the timestamp for this nas
 =cut
 
 sub heartbeat {
-  warn "warning: heartbeat unimplemented!"
+  my($self, $timestamp) = @_;
+  my $dbh = dbh;
+  my $sth = $dbh->prepare("LOCK TABLES nas WRITE");
+  $sth->execute or die $sth->errstr; #die?
+  my $lock_self = qsearchs('nas', { 'nasnum' => $self->nasnum } )
+    or die "can't find own record for $self nasnum ". $self->nasnum;
+  if ( $timestamp > $lock_self->last ) {
+    my $new_self = new FS::nas ( { $lock_self->hash } );
+    $new_self->last($timestamp);
+    #is there a reason to? #$self->last($timestamp);
+    $new_self->replace($lock_self);
+  };
+  $sth = $dbh->prepare("UNLOCK TABLES");
+  $sth->execute or die $sth->errstr; #die?
 }
 
 =back
 
 =head1 VERSION
 
-$Id: nas.pm,v 1.2 2000-11-07 15:00:37 ivan Exp $
+$Id: nas.pm,v 1.3 2000-12-03 20:25:20 ivan Exp $
 
 =head1 BUGS
 
-The author forgot to customize this manpage.
+The B<heartbeat> method is MySQL-specific.  Yuck.  It's also not quite
+perfectly subclassable, which is much less yuck.
 
 =head1 SEE ALSO
 

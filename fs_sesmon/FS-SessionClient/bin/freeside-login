@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 
-#false-laziness hack w freeside-logoff
+#false-laziness hack w freeside-logout
 
 use strict;
 use FS::SessionClient qw( login portnum );

@@ -6,9 +6,9 @@
 use strict;
 use vars qw( $opt $Debug );
 use IO::Handle;
-use Net::SSH qw(sshopen3)
+use Net::SSH qw(sshopen2);
 use FS::UID qw(adminsuidsetup);
-use FS::Record qw( qsearch qsearchs );
+use FS::Record qw( qsearchs ); #qsearch );
 #use FS::cust_main_county;
 #use FS::cust_main;
 use FS::session;
@@ -31,25 +31,28 @@ while (1) {
   my($reader, $writer) = (new IO::Handle, new IO::Handle);
   $writer->autoflush(1);
   warn "$me Connecting to $machine\n" if $Debug;
-  sshopen2($machine,$reader,$writer,$fs_signupd);
+  sshopen2($machine,$reader,$writer,$fs_sessiond);
 
   warn "$me Entering main loop\n" if $Debug;
   while (1) {
     warn "$me Reading (waiting for) data\n" if $Debug;
-    my $command = scalar(<$reader));
+    my $command = scalar(<$reader>);
+    chomp $command;
     #DoS protection here too, to protect against a compromised client?  *sigh*
-    while ( ( my $key = scalar(<$reader>) ) != "END\n" ) {
+    my %hash;
+    while ( ( my $key = scalar(<$reader>) ) ne "END\n" ) {
       chomp $key;
       chomp( $hash{$key} = scalar(<$reader>) );
     }
 
     if ( $command eq 'login' ) {
-      $error = &login(\%hash);
+      my $error = &login(\%hash);
       print $writer "$error\n";
-    } elsif ( $command eq 'logoff' ) {
-      $error = &logoff(\%hash);
+    } elsif ( $command eq 'logout' ) {
+      my $error = &logout(\%hash);
       print $writer "$error\n";
     } elsif ( $command eq 'portnum' ) {
+      my $port;
       if ( exists $hash{'ip'} ) {
         $hash{'ip'} =~ /^([\d\.]+)$/ or $1='nomatch';
         $port = qsearchs('port', { 'ip' => $1 } );
@@ -60,13 +63,13 @@ while (1) {
       }
       print $writer ( $port ? $port->portnum : '' ), "\n";
     } else {
-      warn "$me WARNING: unrecognized command";
+      warn "$me WARNING: unrecognized command: $command";
     }
   }
   #won't ever reach without code above to throw out of loop, but...
   close $writer;
   close $reader;
-  warn "connection to $machine lost!\n"
+  warn "connection to $machine lost!\n";
   sleep 5;
   warn "reconnecting...\n";
 }
@@ -75,10 +78,10 @@ sub login {
   my $href = shift;
   $href->{'username'} =~ /^([a-z0-9_\-\.]+)$/ or return "Illegal username";
   my $username = $1;
-  $svc_acct = qsearchs('svc_acct', { 'username' => $username } )
+  my $svc_acct = qsearchs('svc_acct', { 'username' => $username } )
     or return "Unknown user";
   return "Incorrect password"
-    if defined($href->{'password'})
+    if exists($href->{'password'})
        && $href->{'password'} ne $svc_acct->_password;
   my $session = new FS::session {
     'portnum' => $href->{'portnum'},
@@ -92,18 +95,19 @@ sub logout {
   my $href = shift;
   $href->{'username'} =~ /^([a-z0-9_\-\.]+)$/ or return "Illegal username";
   my $username = $1;
-  $svc_acct = qsearchs('svc_acct', { 'username' => $username } )
+  my $svc_acct = qsearchs('svc_acct', { 'username' => $username } )
     or return "Unknown user";
   return "Incorrect password"
-    if defined($href->{'password'})
+    if exists($href->{'password'})
        && $href->{'password'} ne $svc_acct->_password;
-  my $session = qsearchs FS::session {
+  my $session = qsearchs( 'session', {
     'portnum' => $href->{'portnum'},
     'svcnum'  => $svc_acct->svcnum,
-    'logoff'  => '',
-  };
-  return "No currently open sessios found for that user/port!" unless $session;
-  my $nsession = new FS::session ( { $old->hash } );
+    'logout'  => '',
+  } );
+  return "No currently open sessions found for that user/port!" unless $session;
+  my $nsession = new FS::session ( { $session->hash } );
+  warn "$nsession replacing $session";
   $nsession->replace($session);
 }
 

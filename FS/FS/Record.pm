@@ -149,22 +149,32 @@ sub create {
   }
 }
 
-=item qsearch TABLE, HASHREF
+=item qsearch TABLE, HASHREF, SELECT, EXTRA_SQL
 
 Searches the database for all records matching (at least) the key/value pairs
 in HASHREF.  Returns all the records found as `FS::TABLE' objects if that
 module is loaded (i.e. via `use FS::cust_main;'), otherwise returns FS::Record
 objects.
 
+###oops, argh, FS::Record::new only lets us create database fields.
+#Normal behaviour if SELECT is not specified is `*', as in
+#C<SELECT * FROM table WHERE ...>.  However, there is an experimental new
+#feature where you can specify SELECT - remember, the objects returned,
+#although blessed into the appropriate `FS::TABLE' package, will only have the
+#fields you specify.  This might have unwanted results if you then go calling
+#regular FS::TABLE methods
+#on it.
+
 =cut
 
 sub qsearch {
-  my($table, $record) = @_;
+  my($table, $record, $select, $extra_sql ) = @_;
+  $select ||= '*';
   my $dbh = dbh;
 
   my @fields = grep exists($record->{$_}), fields($table);
 
-  my $statement = "SELECT * FROM $table";
+  my $statement = "SELECT $select FROM $table";
   if ( @fields ) {
     $statement .= " WHERE ". join(' AND ', map {
       if ( ! defined( $record->{$_} ) || $record->{$_} eq '' ) {
@@ -178,6 +188,7 @@ sub qsearch {
       }
     } @fields );
   }
+  $statement .= " $extra_sql" if defined($extra_sql);
 
   warn $statement if $DEBUG;
   my $sth = $dbh->prepare_cached($statement) or croak $dbh->errstr;
@@ -895,7 +906,7 @@ sub hfields {
 
 =head1 VERSION
 
-$Id: Record.pm,v 1.9 2000-11-07 15:00:37 ivan Exp $
+$Id: Record.pm,v 1.10 2000-12-03 20:25:20 ivan Exp $
 
 =head1 BUGS
 

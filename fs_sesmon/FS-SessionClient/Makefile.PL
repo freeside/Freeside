@@ -4,7 +4,7 @@ use ExtUtils::MakeMaker;
 WriteMakefile(
     'NAME'          => 'FS::SessionClient',
     'VERSION_FROM'  => 'SessionClient.pm', # finds $VERSION
-    'EXE_FILES'     => [ qw(fs_sessiond freeside-login freeside-logoff) ],
+    'EXE_FILES'     => [ qw(fs_sessiond bin/freeside-login bin/freeside-logout) ],
     'INSTALLSCRIPT' => '/usr/local/sbin',
     'PERM_RWX'      => '750',
 );

@@ -6,6 +6,6 @@ SessionClient.pm
 test.pl
 fs_sessiond
 cgi/logon.cgi
-cgi/logoff.cgi
+cgi/logout.cgi
 bin/freeside-login
-bin/freeside-logoff
+bin/freeside-logout

@@ -118,22 +118,37 @@ sub check {
 
 =item session
 
-Returns the currently open session, or if no session is currently open, the
-most recent session.  See L<FS::session>.
+Returns the currently open session on this port, or if no session is currently
+open, the most recent session.  See L<FS::session>.
 
 =cut
 
-
+sub session {
+  my $self = shift;
+  qsearchs('session', { 'portnum' => $self->portnum }, '*',
+                     'ORDER BY login DESC LIMIT 1' );
+}
 
 =back
 
 =head1 VERSION
 
-$Id: port.pm,v 1.2 2000-12-03 13:44:05 ivan Exp $
+$Id: port.pm,v 1.3 2000-12-03 20:25:20 ivan Exp $
 
 =head1 BUGS
 
 The author forgot to customize this manpage.
+
+The session method won't deal well if you have multiple open sessions on a
+port, for example if your RADIUS server drops B<stop> records.  Suggestions for
+how to deal with this sort of lossage welcome; should we close the session
+when we get a new session on that port?  Tag it as invalid somehow?  Close it
+one second after it was opened?  *sigh*  Maybe FS::session shouldn't let you
+create overlapping sessions, at least folks will find out their logging is
+dropping records.
+
+If you think the above refers multiple user logins you need to read the
+manpages again.
 
 =head1 SEE ALSO
 
@@ -147,8 +162,8 @@ added hfields
 ivan@sisd.com 97-nov-13
 
 $Log: port.pm,v $
-Revision 1.2  2000-12-03 13:44:05  ivan
-beginnings of web status for session monitor
+Revision 1.3  2000-12-03 20:25:20  ivan
+session monitor updates
 
 Revision 1.1  2000/10/27 20:18:32  ivan
 oops, also necessary for session monitor
