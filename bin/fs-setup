@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: fs-setup,v 1.18 1999-04-15 22:46:30 ivan Exp $
+# $Id: fs-setup,v 1.19 1999-07-29 08:50:35 ivan Exp $
 #
 # ivan@sisd.com 97-nov-8,9
 #
@@ -32,7 +32,10 @@
 # fix radius attributes ivan@sisd.com 98-sep-27
 #
 # $Log: fs-setup,v $
-# Revision 1.18  1999-04-15 22:46:30  ivan
+# Revision 1.19  1999-07-29 08:50:35  ivan
+# wrong type for cust_pay_batch.exp
+#
+# Revision 1.18  1999/04/15 22:46:30  ivan
 # TT isn't a state!
 #
 # Revision 1.17  1999/04/14 07:58:39  ivan
@@ -469,7 +472,8 @@ sub tables_hash_hack {
         'country',  'char', '',     2,
         'trancode', 'int', '', '',
         'cardnum',  'varchar', '',     16,
-        'exp',      @date_type,
+        #'exp',      @date_type,
+        'exp',      'varchar', '',     11,
         'payname',  'varchar', 'NULL', $char_d,
         'amount',   @money_type,
       ],
