@@ -77,7 +77,7 @@ if ($pkgnum) {
 }
 
 # add an absence of a catchall
-$email{0} = "(none)";
+$email{''} = "(none)";
 
 my $p1 = popurl(1);
 print header("Domain Catchall Edit", '');
