@@ -7,7 +7,7 @@ use vars qw( @ISA $nossh_hack $conf $dir_prefix @shells $usernamemin
              @saltset @pw_set);
 use Carp;
 use FS::Conf;
-use FS::Record qw( qsearchs fields );
+use FS::Record qw( qsearch qsearchs fields );
 use FS::svc_Common;
 use Net::SSH qw(ssh);
 use FS::part_svc;
@@ -536,7 +536,7 @@ sub radius_check {
 
 =head1 VERSION
 
-$Id: svc_acct.pm,v 1.15 2001-04-22 01:56:15 ivan Exp $
+$Id: svc_acct.pm,v 1.16 2001-06-03 11:37:08 ivan Exp $
 
 =head1 BUGS
 
