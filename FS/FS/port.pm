@@ -133,7 +133,7 @@ sub session {
 
 =head1 VERSION
 
-$Id: port.pm,v 1.4 2001-01-30 09:08:40 ivan Exp $
+$Id: port.pm,v 1.5 2001-02-14 04:33:06 ivan Exp $
 
 =head1 BUGS
 
@@ -153,36 +153,6 @@ manpages again.
 =head1 SEE ALSO
 
 L<FS::Record>, schema.html from the base documentation.
-
-=head1 HISTORY
-
-ivan@voicenet.com 97-jul-1
-
-added hfields
-ivan@sisd.com 97-nov-13
-
-$Log: port.pm,v $
-Revision 1.4  2001-01-30 09:08:40  ivan
-tyop, thanks to Mack Nagashima <mackn@moaner.org>
-
-Revision 1.3  2000/12/03 20:25:20  ivan
-session monitor updates
-
-Revision 1.1  2000/10/27 20:18:32  ivan
-oops, also necessary for session monitor
-
-Revision 1.1  1999/08/04 08:03:03  ivan
-move table subclass examples out of production directory
-
-Revision 1.4  1998/12/29 11:59:57  ivan
-mostly properly OO, some work still to be done with svc_ stuff
-
-Revision 1.3  1998/11/15 04:33:00  ivan
-updates for newest versoin
-
-Revision 1.2  1998/11/15 03:48:49  ivan
-update for current version
-
 
 =cut
 
