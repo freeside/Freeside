@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 #
-# $Id: svc_acct.export,v 1.15 2000-07-06 08:57:28 ivan Exp $
+# $Id: svc_acct.export,v 1.16 2000-07-06 13:23:29 ivan Exp $
 #
 # Create and export password files: passwd, passwd.adjunct, shadow,
 # acp_passwd, acp_userinfo, acp_dialup, users
@@ -38,7 +38,10 @@
 # ivan@sisd.com 98-sep-18
 # 
 # $Log: svc_acct.export,v $
-# Revision 1.15  2000-07-06 08:57:28  ivan
+# Revision 1.16  2000-07-06 13:23:29  ivan
+# tyop
+#
+# Revision 1.15  2000/07/06 08:57:28  ivan
 # support for radius check attributes (except importing).  poorly documented.
 #
 # Revision 1.14  2000/06/29 15:01:25  ivan
@@ -286,7 +289,7 @@ foreach $svc_acct (@svc_acct) {
           join(", ", map { $icradius_dbh->quote( $_ ) } (
             '',
             $svc_acct->username,
-            $attribute
+            $attribute,
             $radcheck{$attribute},
           ) ). " )"
         );
