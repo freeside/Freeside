@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct.cgi,v 1.6 1999-02-28 00:03:45 ivan Exp $
+# $Id: svc_acct.cgi,v 1.7 1999-08-27 00:26:33 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/svc_acct.cgi
@@ -21,7 +21,10 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # $Log: svc_acct.cgi,v $
-# Revision 1.6  1999-02-28 00:03:45  ivan
+# Revision 1.7  1999-08-27 00:26:33  ivan
+# better error messages
+#
+# Revision 1.6  1999/02/28 00:03:45  ivan
 # removed misleading comments
 #
 # Revision 1.5  1999/02/07 09:59:30  ivan
@@ -53,13 +56,19 @@ $cgi = new CGI;
 $cgi->param('svcnum') =~ /^(\d*)$/ or die "Illegal svcnum!";
 $svcnum = $1;
 
-$old = qsearchs('svc_acct',{'svcnum'=>$svcnum}) if $svcnum;
+if ( $svcnum ) {
+  $old = qsearchs('svc_acct', { 'svcnum' => $svcnum } )
+    or die "fatal: can't find account (svcnum $svcnum)!";
+} else {
+  $old = '';
+}
 
 #unmunge popnum
 $cgi->param('popnum', (split(/:/, $cgi->param('popnum') ))[0] );
 
 #unmunge passwd
 if ( $cgi->param('_password') eq '*HIDDEN*' ) {
+  die "fatal: no previous account to recall hidden password from!" unless $old;
   $cgi->param('_password',$old->getfield('_password'));
 }
 
