@@ -47,9 +47,11 @@ if ( $cgi->param('error') ) {
     my($cust_pkg)=qsearchs('cust_pkg',{'pkgnum'=>$pkgnum});
     if ($cust_pkg) {
       my($cust_main)=qsearchs('cust_main',{'custnum'=> $cust_pkg->custnum } );
-      $svc_acct->setfield('finger',
-        $cust_main->getfield('first') . " " . $cust_main->getfield('last')
-      ) ;
+      unless ( $part_svc->part_svc_column('uid')->columnflag eq 'F' ) {
+        $svc_acct->setfield('finger',
+          $cust_main->getfield('first') . " " . $cust_main->getfield('last')
+        );
+      }
     }
 
     #set fixed and default fields from part_svc
@@ -187,12 +189,20 @@ my($uid,$gid,$finger,$dir)=(
 print <<END;
 <INPUT TYPE="hidden" NAME="uid" VALUE="$uid">
 <INPUT TYPE="hidden" NAME="gid" VALUE="$gid">
-<TR><TD ALIGN="right">GECOS</TD><TD><INPUT TYPE="text" NAME="finger" VALUE="$finger"></TD></TR>
-<INPUT TYPE="hidden" NAME="dir" VALUE="$dir">
 END
 
+if ( !$finger && $part_svc->part_svc_column('uid')->columnflag eq 'F' ) {
+  print '<INPUT TYPE="hidden" NAME="finger" VALUE="">';
+} else {
+  print '<TR><TD ALIGN="right">GECOS</TD>'.
+        qq!<TD><INPUT TYPE="text" NAME="finger" VALUE="$finger"></TD></TR>!;
+}
+print qq!<INPUT TYPE="hidden" NAME="dir" VALUE="$dir">!;
+
 my $shell = $svc_acct->shell;
-if ( $part_svc->part_svc_column('shell')->columnflag eq "F" ) {
+if ( $part_svc->part_svc_column('shell')->columnflag eq "F"
+     || ( !$shell && $part_svc->part_svc_column('uid')->columnflag eq 'F' )
+   ) {
   print qq!<INPUT TYPE="hidden" NAME="shell" VALUE="$shell">!;
 } else {
   print qq!<TR><TD ALIGN="right">Shell</TD><TD><SELECT NAME="shell" SIZE=1>!;
