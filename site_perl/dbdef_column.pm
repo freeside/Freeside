@@ -143,7 +143,13 @@ supported in the future.
 sub line {
   my($self,$datasrc)=@_;
   my($null)=$self->null;
-  $null ||= "NOT NULL" if $datasrc =~ /mysql/; #yucky mysql hack
+  if ( $datasrc =~ /mysql/ ) { #yucky mysql hack
+    $null ||= "NOT NULL"
+  }
+  if ( $datasrc =~ /Pg/ ) { #yucky Pg hack
+    $null ||= "NOT NULL";
+    $null =~ s/^NULL$//;
+  }
   join(' ',
     $self->name,
     $self->type. ( $self->length ? '('.$self->length.')' : '' ),
@@ -159,6 +165,10 @@ sub line {
 
 L<FS::dbdef_table>, L<FS::dbdef>, L<DBI>
 
+=head1 VERSION
+
+$Id: dbdef_column.pm,v 1.2 1998-10-12 23:40:28 ivan Exp $
+
 =head1 HISTORY
 
 class for dealing with column definitions
@@ -168,6 +178,11 @@ ivan@sisd.com 98-apr-17
 now methods can be used to get or set data ivan@sisd.com 98-may-11
 
 mySQL-specific hack for null (what should be default?) ivan@sisd.com 98-jun-2
+
+$Log: dbdef_column.pm,v $
+Revision 1.2  1998-10-12 23:40:28  ivan
+added Pg-specific behaviour in sub line
+
 
 =cut
 
