@@ -1,10 +1,48 @@
-$Id: TODO,v 1.41 2000-01-30 06:11:09 ivan Exp $
+$Id: TODO,v 1.42 2000-03-06 14:12:56 ivan Exp $
 
 If you are interested in helping with any of these, please join the mailing
 list (send a blank message to ivan-freeside-subscribe@sisd.com) to avoid 
 duplication of effort.
 
 ---
+
+more email which should make it into a more organized TODO list:
+.
+I would also love to see Freeside support bandwidth billing by reading the
+Cisco NetFlow Accounting data so we and other ISP's could automatically bill
+co-located servers and even potentially other virtually hosted sites like
+MUD, Palace Chat, IRC Chat, etc based on the bandwidth they use or average
+sustained rates or whatever. I'm not much of a programmer so I don't know
+what all this entails but I did download a NetFlow client agent/whatever for
+Linux though.
+ .
+It would also be nice to see Freeside be able to read Apache log files and
+bill customers for web traffic that way as an option also. Plus an option to
+bill for excessive disk usage without having to use quotas if you didn't
+want to, would be a nice feature as well. So you could monitor with a script
+or something to see how much disk space a user was using then get some
+average and charge a certain amount for anything above some preset limit for
+that account type. I might be able to hack something like this up, but I'm
+not 100% sure where to start or if there is something out there that could
+be modified or not.
+.
+Do you think that you will ever support the HKS CCVS (Hell's Kitchen
+Software Credit Card Verification Software) since Red Hat bought them out
+and is going to be including that for credit card processing when you buy
+the professional version? What about possibly supporting the OpenCCVS which
+is a GNU/GPL version of a credit card program? I haven't had time to comb
+through the Freeside code to see how hard it would be to add support for
+these as externally called programs.
+.
+Also any thoughts on help desk, and knowledge base stuff? Any thoughts on
+this stuff, and how possible and what kinds of work or time frame would be
+involved?
+.
+Tim Jung
+System Admin
+Internet Gateway Inc.
+tjung@igateway.net
+
 
 
            CVS via SSH (Score:1)

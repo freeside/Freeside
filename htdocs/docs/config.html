@@ -37,6 +37,9 @@ All further configuration files and directories are located in
   <li>hidecancelledpackages - The existance of this file will prevent cancelled packages from showing up in listings (though they will still be in the database)
   <li>hidecancelledcustomers - The existance of this file will prevent customers with only cancelled packages from showing up in listings (though they will still be in the database)
   <li>home - For new users, prefixed to usrename to create a directory name.  Should have a leading but not a trailing slash.
+  <li>icradiusmachines - Your <a href="ftp://ftp.cheapnet.net/pub/icradius">ICRADIUS</a> machines, one per line.  The existance of this file (even if empty) turns on radcheck table creation (in the freeside database - the radcheck table needs to be created manually).  Machines listed in this file will have the radcheck table exported to them.  Each line of this file should contain four items, separted by whitespace: machine name, MySQL database name, MySQL username, and MySQL password.  For example: "<CODE>radius.isp.tld&nbsp;radius_db&nbsp;radius_user&nbsp;passw0rd</CODE>".  Note that to use ICRADIUS export you need to be using MySQL.
+  <li>icradius_mysqldest - Destination directory for the MySQL radcheck table files, on the ICRADIUS machines.  Defaults to "/usr/local/var/radius".
+  <li>icradius_mysqlsource - Source directory for for the MySQL radcheck table files, on the Freeside machine.  Defaults to "/usr/local/var/freeside".
   <li>invoice_from - Return address on email invoices.
   <li>lpr - Print command for paper invoices, for example `lpr -h'.
   <li>mxmachines - MX entries for new domains, weight and machine, one per line, with trailing `.'

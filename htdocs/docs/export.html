@@ -4,14 +4,15 @@
 <body>
   <h1>File exporting</h1>
   <ul>
-    <li>bin/svc_acct.export will create UNIX <b>passwd</b>, <b>shadow</b> and <b>master.passwd</b> files, ERPCD <b>acp_passwd</b> and <b>acp_dialup</b> files and a RADIUS <b>users</b> file in the <b>/usr/local/etc/freeside/export.<i>datasrc</i></b> directory.  Using the appropriate <a href="config.html">configuration files</a>, you can export these files to your remote machines unattended; see below.  Some RADIUS servers (such as <a href="http://www.open.com.au/radiator/">Radiator</a>) will authenticate directly out of an SQL database.  In these cases,
-it is reccommended that you copy the svc_acct table to an external RADIUS machine rather than run the RADIUS server on your Freeside machine.
+    <li>bin/svc_acct.export will create UNIX <b>passwd</b>, <b>shadow</b> and <b>master.passwd</b> files, ERPCD <b>acp_passwd</b> and <b>acp_dialup</b> files and a RADIUS <b>users</b> file in the <b>/usr/local/etc/freeside/export.<i>datasrc</i></b> directory.  Some RADIUS servers (such as <a href="http://www.open.com.au/radiator/">Radiator</a> and <a href="ftp://ftp.cheapnet.net/pub/icradius/">ICRADIUS</a>) will authenticate directly out of an SQL database.  In these cases,
+it is reccommended that you replicate the data to an external RADIUS machine rather than running the RADIUS server on your Freeside machine.  Using the appropriate <a href="config.html">configuration files</a>, you can export these files to your remote machines unattended:
       <ul>
         <li>shellmachines - <b>passwd</b> and <b>shadow</b> are copied to the remote machine as <b>/etc/passwd.new</b> and <b>/etc/shadow.new</b> and then moved to <b>/etc/passwd</b> and <b>/etc/shadow</b> if no errors occur.
         <li>bsdshellmachines - <b>passwd</b> and <b>master.passwd</b> are copied to the remote machine as <b>/etc/passwd.new</b> and <b>/etc/master.passwd.new</b> and moved to <b>/etc/passwd</b> and <b>/etc/master.passwd</b> if no errors occur.
         <li>nismachines - <b>passwd</b> and <b>shadow</b> are copied to the <b>/etc/global</b> directory on the remote machine.  If no errors occur, the command <b>( cd /var/yp; make; )</b> is executed on the remote machine.
         <li>erpcdmachines - <b>acp_passwd</b> and <b>acp_dialup</b> are copied to the <b>/usr/annex</b> directory on the remote machine.  If no errors occur, the command <b>( kill -USR1 `cat /usr/annex/erpcd.pid` )</b> is executed on the remote machine. 
         <li>radiusmachines - <b>users</b> is copied to the <b>/etc/raddb</b> directory on the remote machine.  If no errors occur, the command <b>( builddbm )</b> is executed on the remote machine.
+        <li>icradiusmachines - A local radcheck file will be created.  If any machines are specified, the remote MySQL database will be locked and the radcheck table will be copied to the those machines.  You may also need to set the icradius_mysqlsource and/or icradius_mysqldest <a href="config.html">configuration files</a>.
       </ul>
     <li>site_perl/svc_acct.pm - If a shellmachine is defined, users can be created, modified and deleted remotely; see below.
       <ul>
@@ -19,7 +20,7 @@ it is reccommended that you copy the svc_acct table to an external RADIUS machin
         <li>The command <b>userdel <i>username</i></b> is executed with a user is deleted.
         <li>If a user's home directory changes, the command <b>[ -d <i>old_homedir</i> &amp;&amp; ( chmod u+t <i>old_homedir</i>; umask 022; mkdir <i>new_homedir</i>; cd <i>old_homedir</i>; find . -depth -print | cpio -pdm <i>new_homedir</i>; chmod u-t <i>new_homedir</i>; chown -R <i>uid</i>.<i>gid</i> <i>new_homedir</i>; rm -rf <i>old_homedir</i> )</b> is executed.
       </ul>
-    <li>bin/svc_acct_sm.export will create <a href="http://www.qmail.org">Qmail</a> <b>rcpthosts</b>, <b>recipientmap</b> and <b>virtualdomains</b> files and <a href="http://www.sendmail.org">Sendmail</a> <b>virtusertable</b> and <b>sendmail.cw</b> files in the <b>/usr/local/etc/freeside/export.<i>datasrc</i></b> directory.  Using the appropriate <a href="config.html">configuration files</a>, you can export these files to your remote machines unattemded; see below.
+    <li>bin/svc_acct_sm.export will create <a href="http://www.qmail.org">Qmail</a> <b>rcpthosts</b>, <b>recipientmap</b> and <b>virtualdomains</b> files and <a href="http://www.sendmail.org">Sendmail</a> <b>virtusertable</b> and <b>sendmail.cw</b> files in the <b>/usr/local/etc/freeside/export.<i>datasrc</i></b> directory.  Using the appropriate <a href="config.html">configuration files</a>, you can export these files to your remote machines unattemded:
       <ul>
         <li>qmailmachines - <b>recipientmap</b>, <b>virtualdomains</b> and <b>rcpthosts</b> are copied to the <b>/var/qmail/control</b> directory on the remote machine.  Note: If you <a href="legacy.html#svc_acct_sm">imported</a> qmail configuration files, run the generated <b>/usr/local/etc/freeside/export.<i>datasrc</i>/virtualdomains.FIX</b> on a machine with your user home directories before exporting qmail configuration files.
         <li>shellmachine - The command <b>[ -e <i>homedir</i>/.qmail-default ] || { touch <i>homedir</i>/.qmail-default; chown <i>uid</i>.<i>gid</i> <i>homedir</i>/.qmail-default; }</b> will be run on this machine for users in the virtualdomains file.
