@@ -1,14 +1,21 @@
-#!/usr/bin/perl -Tw
-# $Id: shadow.reimport,v 1.1 2004-02-03 00:19:45 ivan Exp $
+#!/usr/bin/perl -w
+#
+# -d: dry-run: make no changes
+# -r: replace: overwrite existing passwords (otherwise only "*" passwords will
+#              be changed)
 
 use strict;
 use vars qw(%part_svc);
+use Getopt::Std;
 use Term::Query qw(query);
 use Net::SCP qw(iscp);
 use FS::UID qw(adminsuidsetup datasrc);
 use FS::Record qw(qsearch qsearchs);
 use FS::svc_acct;
 use FS::part_svc;
+
+use vars qw($opt_d $opt_r);
+getopts("dr");
 
 my $user = shift or die &usage;
 adminsuidsetup $user;
@@ -29,14 +36,15 @@ die "No services with svcdb svc_acct!\n" unless %part_svc;
 print "\n\n", &menu_svc, "\n", <<END;
 Enter part number to import.
 END
-my($shell_svcpart)=&getpart;
+#my($shell_svcpart)=&getpart;
+my $shell_svcpart = 2;
 
 print "\n\n", <<END;
 Enter the location and name of your _user_ shadow file, for example
 "mail.isp.com:/etc/shadow" or "bsd.isp.com:/etc/master.passwd"
 END
-my($loc_shadow)=&getvalue(":");
-iscp("root\@$loc_shadow", "$spooldir/shadow.import");
+#my($loc_shadow)=&getvalue(":");
+#iscp("root\@$loc_shadow", "$spooldir/shadow.import");
 
 sub menu_svc {
   ( join "\n", map "$_: ".$part_svc{$_}->svc, sort keys %part_svc ). "\n";
@@ -73,18 +81,25 @@ while (<SHADOW>) {
   next unless @svc_acct;
 
   if ( scalar(@svc_acct) > 1 ) {
-    warn "more than one $username found!\n";
+    die "more than one $username found!\n";
     next;
   }
 
   my $svc_acct = shift @svc_acct;
 
+  next unless $svc_acct->_password eq '*' || $opt_r;
+
   next if $svc_acct->_password eq $password;
+  next if $svc_acct->_password =~ /^\*SUSPENDED\*/;
 
   my $new_svc_acct = new FS::svc_acct( { $svc_acct->hash } );
   $new_svc_acct->_password($password);
-  #my $error = $new_svc_acct->replace($svc_acct);
-  #die "$username: $error" if $error;
+  #warn "$username: ". $svc_acct->_password. " -> $password\n";
+  warn "changing password for $username\n";
+  unless ( $opt_d ) {
+    my $error = $new_svc_acct->replace($svc_acct);
+    die "$username: $error" if $error;
+  }
 
   $updated++;
 
@@ -93,6 +108,6 @@ while (<SHADOW>) {
 warn "$updated of $line passwords changed\n";
 
 sub usage {
-  die "Usage:\n\n  shadow.reimport user\n";
+  die "Usage:\n\n  shadow.reimport [ -d ] [ -r ] user\n";
 }
 
