@@ -54,14 +54,10 @@ require "/usr/local/apache/conf/handler.pl";
   </tr>
 </table>
 <ul>
-  <li>Change to the FS directory in the new tarball, and build and install the
-      Perl modules:
+  <li>Build and install the Perl modules:
     <pre>
-$ cd FS/
-$ perl Makefile.PL
-$ make
 $ su
-# make install UNINST=1</pre>
+# make install-perl-modules</pre>
    <li>Apply the following changes to your database:
 <pre>
 CREATE TABLE svc_forward (
@@ -251,7 +247,7 @@ ALTER TABLE cust_refund DROP COLUMN crednum;
 </pre></font>
 </td></tr></table>
   <li><b>IMPORTANT: After applying the second set of database changes</b>, run bin/dbdef-create again.
-  <li>create the <a href="config.html#username_policy">user_policy configuration file</a> as appropriate for your site.
+  <li>set the <a href="../config/config.cgi#username_policy">user_policy configuration value</a> as appropriate for your site.
   <li>Create the `/usr/local/etc/freeside/cache.<i>datasrc</i>' directory
       (ownded by the freeside user).
   <li>freeside-queued was installed with the Perl modules.  Start it now and ensure that is run upon system startup.
