@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 #
-# $Id: svc_domain.import,v 1.4 2002-04-20 11:57:35 ivan Exp $
+# $Id: svc_domain.import,v 1.5 2002-04-30 05:43:34 ivan Exp $
 
 use strict;
 use vars qw( %d_part_svc );
@@ -22,7 +22,8 @@ my $user = shift or die &usage;
 adminsuidsetup $user;
 
 use vars qw($spooldir);
-$spooldir = "/usr/local/etc/freeside/export.". datasrc;
+$spooldir = "/usr/local/etc/freeside/export.". datasrc. "/bind";
+mkdir $spooldir unless -d $spooldir;
 
 %d_part_svc =
   map { $_->svcpart, $_ } qsearch('part_svc',{'svcdb'=>'svc_domain'});
@@ -36,16 +37,20 @@ $domain_svcpart =
   query "Enter part number for domains: ", 'irk', [ keys %d_part_svc ];
 $^W=1;
 
-  print "\n\n", <<END;
+print "\n\n", <<END;
 Enter the location and name of your primary named.conf file, for example
 "ns.isp.com:/var/named/named.conf"
 END
-  my($named_conf)=&getvalue(":");
-  #iscp("root\@$named_conf","$spooldir/named.conf.import");
-  scp("root\@$named_conf","$spooldir/named.conf.import");
-
-use vars qw($named_machine);
+my($named_conf)=&getvalue(":");
+  
+use vars qw($named_machine $prefix);
 $named_machine = (split(/:/, $named_conf))[0];
+$prefix = "$spooldir/$named_machine";
+mkdir $prefix unless -d $prefix;
+
+#iscp("root\@$named_conf","$prefix/named.conf.import");
+scp("root\@$named_conf","$prefix/named.conf.import");
+
 
 sub getvalue {
   my $prompt = shift;
@@ -62,7 +67,7 @@ print "\n\n";
 $FS::svc_domain::whois_hack=1;
 
 my $p = Parser->new;
-$p->parse_file("$spooldir/named.conf.import");
+$p->parse_file("$prefix/named.conf.import");
 
 print "\nBIND import completed.\n";
 
@@ -89,6 +94,8 @@ BEGIN {
   sub handle_zone {
     my($self, $name, $class, $type, $options) = @_;
     return unless $class eq 'in';
+    return if grep { $name eq $_ }
+      ( qw( . localhost 127.in-addr.arpa 0.in-addr.arpa 255.in-addr.arpa ) );
 
     my $domain = new FS::svc_domain( {
       svcpart => $main::domain_svcpart,
@@ -126,10 +133,10 @@ BEGIN {
       $sourcefile = "$named_dir/$sourcefile" unless $file =~ /^\//;
       use Net::SCP qw(iscp scp);
       scp("root\@$main::named_machine:$sourcefile",
-          "$main::spooldir/$basefile.import");
+          "$main::prefix/$basefile.import");
     
       use DNS::ZoneParse;
-      my $zone = DNS::ZoneParse->new("$main::spooldir/$basefile.import");
+      my $zone = DNS::ZoneParse->new("$main::prefix/$basefile.import");
     
       my $dump = $zone->Dump;
   

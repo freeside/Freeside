@@ -540,9 +540,9 @@ tie my %bind_options, 'Tie::IxHash',
 
 tie my %bind_slave_options, 'Tie::IxHash',
   #'machine'    => { label=> 'Slave machine' },
-  'master'     => { label=> 'Master IP address' },
-  'named_conf' => { label  => 'named.conf location',
-                    default=> '/etc/bind/named.conf' },
+  'master'      => { label=> 'Master IP address(s) (semicolon-separated)' },
+  'named_conf'  => { label   => 'named.conf location',
+                     default => '/etc/bind/named.conf' },
 ;
 
 
