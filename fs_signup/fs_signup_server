@@ -73,6 +73,19 @@ while (1) {
             qsearch( 'part_pkg', { 'disabled' => '' } )
       ],
 
+    'agentnum2part_pkg' =>
+      {
+        map {
+          my $href = $_->pkgpart_hashref;
+          $_->agentnum =>
+            [
+              map { { 'payby' => [ $_->payby ], %{$_->hashref} } }
+                grep { $_->svcpart('svc_acct') && $href->{ $_->pkgpart } }
+                  qsearch( 'part_pkg', { 'disabled' => '' } )
+            ];
+        } qsearch('agent', {} )
+      },
+
     'svc_acct_pop' => [ map { $_->hashref } @pops ],
 
     'security_phrase' => $conf->exists('security_phrase'),

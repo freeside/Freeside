@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: signup.cgi,v 1.23 2002-04-17 12:14:37 ivan Exp $
+# $Id: signup.cgi,v 1.24 2002-04-19 13:17:56 ivan Exp $
 
 use strict;
 use vars qw( @payby $cgi $locales $packages $pops $init_data $error
@@ -60,6 +60,7 @@ if ( -e $cck_file ) {
   $cck_template = '';
 }
 
+$agentnum = '';
 if ( -e $signup_html ) {
   my $signup_txt = Text::Template::_load_text($signup_html)
     or die $Text::Template::ERROR;
@@ -70,6 +71,11 @@ if ( -e $signup_html ) {
                                           DELIMITERS => [ '<%=', '%>' ]
                                         )
     or die $Text::Template::ERROR;
+  if ( $signup_txt =~
+         /<\s*INPUT TYPE="?hidden"?\s+NAME="?agentnum"?\s+VALUE="?(\d+)"?\s*>/si
+  ) {
+    $agentnum = $1;
+  }
 } else {
   $signup_template = new Text::Template ( TYPE => 'STRING',
                                           SOURCE => &signup_default,
@@ -96,8 +102,10 @@ if ( -e $success_html ) {
     or die $Text::Template::ERROR;
 }
 
+
 ( $locales, $packages, $pops, $init_data ) = signup_info();
 @payby = @{$init_data->{'payby'}} if @{$init_data->{'payby'}};
+$packages = $init_data->{agentnum2part_pkg}{$agentnum} if $agentnum;
 
 $cgi = new CGI;
 
@@ -169,7 +177,7 @@ if ( defined $cgi->param('magic') ) {
         'sec_phrase'       => $sec_phrase       = $cgi->param('sec_phrase'),
         '_password'        => $password         = $cgi->param('_password'),
         'popnum'           => $popnum           = $cgi->param('popnum'),
-        'agentnum'         => $agentnum         = $cgi->param('agentnum'),
+        'agentnum'         => $agentnum, #         = $cgi->param('agentnum'),
       } );
 
     }
