@@ -103,7 +103,7 @@ if ( $cgi->keywords ) {
   $cgi->param('invnum') =~ /^\s*(FS-)?(\d+)\s*$/;
   my $invnum = $2;
   @cust_bill = qsearchs('cust_bill', { 'invnum' => $invnum } );
-  $sortby = \*invnum_sort;
+#  $sortby = \*invnum_sort;
   $total = scalar(@cust_bill);
 }
 
@@ -166,10 +166,11 @@ if ( $total == 1 ) {
       </TR>
 END
 
-  my(%saw, $cust_bill);
-  foreach $cust_bill (
-    sort $sortby grep(!$saw{$_->invnum}++, @cust_bill)
-  ) {
+#  my(%saw, $cust_bill);
+#  foreach $cust_bill (
+#    sort $sortby grep(!$saw{$_->invnum}++, @cust_bill)
+#  ) {
+  foreach my $cust_bill ( @cust_bill ) {
     my($invnum, $owed, $charged, $date ) = (
       $cust_bill->invnum,
       sprintf("%.2f", $cust_bill->getfield('owed')),
