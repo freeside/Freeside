@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: cust_main.cgi,v 1.6 2001-09-27 21:12:15 ivan Exp $ -->
+#<!-- $Id: cust_main.cgi,v 1.7 2001-10-15 11:35:28 ivan Exp $ -->
 
 use vars qw( $cgi $custnum $action $cust_main $p1 @agents $agentnum 
              $last $first $ss $company $address1 $address2 $city $zip 
@@ -408,7 +408,9 @@ unless ( $custnum ) {
 
   if ( @part_pkg ) {
 
-    print "<BR><BR>First package", &itable("#cccccc", "0 ALIGN=LEFT"), #apiabuse
+#    print "<BR><BR>First package", &itable("#cccccc", "0 ALIGN=LEFT"),
+#apiabuse & undesirable wrapping
+    print "<BR><BR>First package", &itable("#cccccc"),
           qq!<TR><TD COLSPAN=2><SELECT NAME="pkgpart_svcpart">!;
 
     print qq!<OPTION VALUE="">(none)!;
@@ -444,7 +446,7 @@ END
 
 $otaker = $cust_main->otaker;
 print qq!<INPUT TYPE="hidden" NAME="otaker" VALUE="$otaker">!,
-      qq!<BR><BR><INPUT TYPE="submit" VALUE="!,
+      qq!<BR><INPUT TYPE="submit" VALUE="!,
       $custnum ?  "Apply Changes" : "Add Customer", qq!">!,
       "</FORM></BODY></HTML>",
 ;
