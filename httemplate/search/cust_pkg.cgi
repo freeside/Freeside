@@ -19,6 +19,8 @@ my @cust_pkg;
 
 if ( $cgi->param('magic') && $cgi->param('magic') eq 'bill' ) {
   $sortby=\*bill_sort;
+
+  #false laziness with cust_pay.cgi
   my $range = '';
   if ( $cgi->param('beginning')
        && $cgi->param('beginning') =~ /^([ 0-9\-\/]{0,10})$/ ) {

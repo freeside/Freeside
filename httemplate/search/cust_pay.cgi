@@ -1,12 +1,46 @@
 <%
 
-$cgi->param('payinfo') =~ /^\s*(\d+)\s*$/ or die "illegal payinfo";
-my $payinfo = $1;
-$cgi->param('payby') =~ /^(\w+)$/ or die "illegal payby";
-my $payby = $1;
-my @cust_pay = qsearch('cust_pay', { 'payinfo' => $payinfo,
+my $sortby;
+my @cust_pay;
+if ( $cgi->param('magic') && $cgi->param('magic') eq '_date' ) {
+
+  my %search;
+  if ( $cgi->param('payby') ) {
+    $cgi->param('payby') =~ /^(CARD|CHEK|BILL)$/
+      or die "illegal payby ". $cgi->param('payby');
+    $search{'payby'} = $1;
+  }
+
+  #false laziness with cust_pkg.cgi
+  my $range = '';
+  if ( $cgi->param('beginning')
+       && $cgi->param('beginning') =~ /^([ 0-9\-\/]{0,10})$/ ) {
+    my $beginning = str2time($1);
+    $range = " WHERE _date >= $beginning ";
+  }
+  if ( $cgi->param('ending')
+            && $cgi->param('ending') =~ /^([ 0-9\-\/]{0,10})$/ ) {
+    my $ending = str2time($1) + 86400;
+    $range .= ( $range ? ' AND ' : ' WHERE ' ). " _date <= $ending ";
+  }
+
+  @cust_pay = qsearch('cust_pay', \%search, '', " $range" );
+
+  $sortby = \*date_sort;
+
+} else {
+
+  $cgi->param('payinfo') =~ /^\s*(\d+)\s*$/ or die "illegal payinfo";
+  my $payinfo = $1;
+
+  $cgi->param('payby') =~ /^(\w+)$/ or die "illegal payby";
+  my $payby = $1;
+
+  @cust_pay = qsearch('cust_pay', { 'payinfo' => $payinfo,
                                      'payby'   => $payby    } );
-my $sortby = \*date_sort;
+  $sortby = \*date_sort;
+
+}
 
 if (0) {
 #if ( scalar(@cust_pay) == 1 ) {
@@ -16,7 +50,7 @@ if (0) {
 %>
 <!-- mason kludge -->
 <%
-  idiot("Check # not found.");
+  idiot("Payment not found.");
   #exit;
 } else {
   my $total = scalar(@cust_pay);
@@ -24,9 +58,9 @@ if (0) {
 %>
 <!-- mason kludge -->
 <%
-  print header("Check # Search Results", menubar(
+  print header("Payment Search Results", menubar(
           'Main Menu', popurl(2)
-        )), "$total matching check$s found<BR>", &table(), <<END;
+        )), "$total matching payment$s found<BR>", &table(), <<END;
       <TR>
         <TH></TH>
         <TH>Amount</TH>
@@ -40,23 +74,36 @@ END
   foreach my $cust_pay (
     sort $sortby grep(!$saw{$_->paynum}++, @cust_pay)
   ) {
-    my($paynum, $custnum, $payinfo, $amount, $date ) = (
+    my($paynum, $custnum, $payby, $payinfo, $amount, $date ) = (
       $cust_pay->paynum,
       $cust_pay->custnum,
+      $cust_pay->payby,
       $cust_pay->payinfo,
       sprintf("%.2f", $cust_pay->paid),
       $cust_pay->_date,
     );
-    my $pdate = time2str("%b %d %Y", $date);
+    my $pdate = time2str("%b&nbsp;%d&nbsp;%Y", $date);
 
     my $rowspan = 1;
 
     my $view = popurl(2). "view/cust_main.cgi?". $custnum. 
                "#". $payby. $payinfo;
 
+    my $payment_info;
+    if ( $payby eq 'CARD' ) {
+      $payment_info = 'Card&nbsp;#'. 'x'x(length($payinfo)-4).
+                      substr($payinfo,(length($payinfo)-4));
+    } elsif ( $payby eq 'CHEK' ) {
+      $payment_info = "E-check&nbsp;acct#$payinfo";
+    } elsif ( $payby eq 'BILL' ) {
+      $payment_info = "Check&nbsp;#$payinfo";
+    } else {
+      $payment_info = "$payby&nbsp;$payinfo";
+    }
+
     print <<END;
       <TR>
-        <TD ROWSPAN=$rowspan><A HREF="$view"><FONT SIZE=-1>$payinfo</FONT></A></TD>
+        <TD ROWSPAN=$rowspan><A HREF="$view"><FONT SIZE=-1>$payment_info</FONT></A></TD>
         <TD ROWSPAN=$rowspan ALIGN="right"><A HREF="$view"><FONT SIZE=-1>\$$amount</FONT></A></TD>
         <TD ROWSPAN=$rowspan><A HREF="$view"><FONT SIZE=-1>$pdate</FONT></A></TD>
 END

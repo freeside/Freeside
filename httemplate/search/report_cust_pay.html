@@ -1,0 +1,24 @@
+<HTML>
+  <HEAD>
+    <TITLE>Payment report criteria</TITLE>
+  </HEAD>
+  <BODY>
+    <CENTER>
+      <H1>Payment report criteria</H1>
+    </CENTER>
+    <HR>
+    <FORM ACTION="cust_pay.cgi" METHOD="post">
+    <INPUT TYPE="hidden" NAME="magic" VALUE="_date">
+      Return <SELECT NAME="payby">
+        <OPTION VALUE="">all</OPTION>
+        <OPTION VALUE="CARD">credit card</OPTION>
+        <OPTION VALUE="CHEK">electronic check (ACH)</OPTION>
+        <OPTION VALUE="BILL">check/cash</OPTION>
+      </SELECT> payments for period<BR>
+      from <INPUT TYPE="text" NAME="beginning"> <i>m/d/y</i>
+      to <INPUT TYPE="text" NAME="ending"> <i>m/d/y</i>
+      <P><INPUT TYPE="submit" VALUE="Get Report">
+    </FORM>
+  <HR>
+  </BODY>
+</HTML>
