@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: cust_main.cgi,v 1.19 2001-12-26 05:19:01 ivan Exp $ -->
+#<!-- $Id: cust_main.cgi,v 1.20 2002-01-09 13:29:34 ivan Exp $ -->
 
 use strict;
 #use vars qw( $conf %ncancelled_pkgs %all_pkgs $cgi @cust_main $sortby );
@@ -399,17 +399,18 @@ sub lastsearch {
     or eidiot "Illegal last name";
   my($last)=$1;
 
-  if ( $last_type{'Exact'}
-       && ! $last_type{'Fuzzy'} 
-     #  && ! $last_type{'Sound-alike'}
-  ) {
+#  if ( $last_type{'Exact'}
+#       && ! $last_type{'Fuzzy'} 
+#     #  && ! $last_type{'Sound-alike'}
+#  ) {
 
     push @cust_main, qsearch('cust_main',{'last'=>$last});
 
     push @cust_main, qsearch('cust_main',{'ship_last'=>$last})
       if defined dbdef->table('cust_main')->column('ship_last');
 
-  } else {
+#  } else {
+  if ( $last_type{'Fuzzy'} ) {
 
     &FS::cust_main::check_and_rebuild_fuzzyfiles;
     my $all_last = &FS::cust_main::all_last;
@@ -445,17 +446,18 @@ sub companysearch {
     or eidiot "Illegal company";
   my($company)=$1;
 
-  if ( $company_type{'Exact'}
-       && ! $company_type{'Fuzzy'} 
-     #  && ! $company_type{'Sound-alike'}
-  ) {
+#  if ( $company_type{'Exact'}
+#       && ! $company_type{'Fuzzy'} 
+#     #  && ! $company_type{'Sound-alike'}
+#  ) {
 
     push @cust_main, qsearch('cust_main',{'company'=>$company});
 
     push @cust_main, qsearch('cust_main',{'ship_company'=>$company})
       if defined dbdef->table('cust_main')->column('ship_last');
 
-  } else {
+#  } else {
+  if ( $company_type{'Fuzzy'} ) {
 
     &FS::cust_main::check_and_rebuild_fuzzyfiles;
     my $all_company = &FS::cust_main::all_company;

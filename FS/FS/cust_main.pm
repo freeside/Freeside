@@ -347,6 +347,7 @@ sub insert {
     }
   }
 
+  #false laziness with sub replace
   my $queue = new FS::queue { 'job' => 'FS::cust_main::append_fuzzyfiles' };
   $error = $queue->insert($self->getfield('last'), $self->company);
   if ( $error ) {
@@ -362,6 +363,7 @@ sub insert {
       return "queueing job (transaction rolled back): $error";
     }
   }
+  #eslaf
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
@@ -508,6 +510,24 @@ sub replace {
     }
     $self->invoicing_list( $invoicing_list );
   }
+
+  #false laziness with sub insert
+  my $queue = new FS::queue { 'job' => 'FS::cust_main::append_fuzzyfiles' };
+  $error = $queue->insert($self->getfield('last'), $self->company);
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return "queueing job (transaction rolled back): $error";
+  }
+
+  if ( defined $self->dbdef_table->column('ship_last') && $self->ship_last ) {
+    $queue = new FS::queue { 'job' => 'FS::cust_main::append_fuzzyfiles' };
+    $error = $queue->insert($self->getfield('last'), $self->company);
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "queueing job (transaction rolled back): $error";
+    }
+  }
+  #eslaf
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
@@ -1946,7 +1966,7 @@ sub append_fuzzyfiles {
 
 =head1 VERSION
 
-$Id: cust_main.pm,v 1.53 2001-12-28 15:14:01 ivan Exp $
+$Id: cust_main.pm,v 1.54 2002-01-09 13:29:33 ivan Exp $
 
 =head1 BUGS
 
