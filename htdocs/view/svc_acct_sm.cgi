@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct_sm.cgi,v 1.10 1999-04-08 12:00:19 ivan Exp $
+# $Id: svc_acct_sm.cgi,v 1.11 2000-07-17 10:58:42 ivan Exp $
 #
 # Usage: svc_acct_sm.cgi svcnum
 #        http://server.name/path/svc_acct_sm.cgi?svcnum
@@ -20,7 +20,10 @@
 # /var/spool/freeside/conf/domain ivan@sisd.com 98-jul-17
 #
 # $Log: svc_acct_sm.cgi,v $
-# Revision 1.10  1999-04-08 12:00:19  ivan
+# Revision 1.11  2000-07-17 10:58:42  ivan
+# better error messages if svc_acct or svc_domain records are missing
+#
+# Revision 1.10  1999/04/08 12:00:19  ivan
 # aesthetic update
 #
 # Revision 1.9  1999/02/28 00:04:03  ivan
@@ -88,8 +91,8 @@ if ($pkgnum) {
   $custnum = '';
 }
 
-$part_svc = qsearchs('part_svc',{'svcpart'=> $cust_svc->svcpart } );
-die "Unkonwn svcpart" unless $part_svc;
+$part_svc = qsearchs('part_svc',{'svcpart'=> $cust_svc->svcpart } )
+  or die "Unkonwn svcpart";
 
 $p = popurl(2);
 print $cgi->header( '-expires' => 'now' ), header('Mail Alias View', menubar(
@@ -109,9 +112,11 @@ print $cgi->header( '-expires' => 'now' ), header('Mail Alias View', menubar(
   $svc_acct_sm->domuser,
 );
 $svc = $part_svc->svc;
-$svc_domain = qsearchs('svc_domain',{'svcnum'=>$domsvc});
+$svc_domain = qsearchs('svc_domain',{'svcnum'=>$domsvc})
+  or die "Corrupted database: no svc_domain.svcnum matching domsvc $domsvc";
 $domain = $svc_domain->domain;
-$svc_acct = qsearchs('svc_acct',{'uid'=>$domuid});
+$svc_acct = qsearchs('svc_acct',{'uid'=>$domuid})
+  or die "Corrupted database: no svc_acct.uid matching domuid $domuid";
 $username = $svc_acct->username;
 
 print qq!<A HREF="${p}edit/svc_acct_sm.cgi?$svcnum">Edit this information</A>!,
