@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_pkg.cgi,v 1.3 1999-01-19 05:13:54 ivan Exp $
+# $Id: cust_pkg.cgi,v 1.4 1999-01-25 12:19:10 ivan Exp $
 #
 # this is for changing packages around, not for editing things within the
 # package
@@ -21,7 +21,10 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # $Log: cust_pkg.cgi,v $
-# Revision 1.3  1999-01-19 05:13:54  ivan
+# Revision 1.4  1999-01-25 12:19:10  ivan
+# yet more mod_perl stuff
+#
+# Revision 1.3  1999/01/19 05:13:54  ivan
 # for mod_perl: no more top-level my() variables; use vars instead
 # also the last s/create/new/;
 #
@@ -60,7 +63,8 @@ foreach $pkgpart ( map /^pkg(\d+)$/ ? $1 : (), $cgi->param ) {
 $error = FS::cust_pkg::order($custnum,\@pkgparts,\@remove_pkgnums);
 
 if ($error) {
-  idiot($error);
+  $cgi->param('error', $error);
+  print $cgi->redirect(popurl(2). "cust_pkg.cgi?". $cgi->query_string );
 } else {
   print $cgi->redirect(popurl(3). "view/cust_main.cgi?$custnum#cust_pkg");
 }

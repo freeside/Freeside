@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main_county.cgi,v 1.5 1999-01-19 05:13:52 ivan Exp $
+# $Id: cust_main_county.cgi,v 1.6 1999-01-25 12:19:08 ivan Exp $
 #
 # ivan@sisd.com 97-dec-16
 #
@@ -10,7 +10,10 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: cust_main_county.cgi,v $
-# Revision 1.5  1999-01-19 05:13:52  ivan
+# Revision 1.6  1999-01-25 12:19:08  ivan
+# yet more mod_perl stuff
+#
+# Revision 1.5  1999/01/19 05:13:52  ivan
 # for mod_perl: no more top-level my() variables; use vars instead
 # also the last s/create/new/;
 #
@@ -29,7 +32,7 @@ use vars qw( $cgi );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
-use FS::CGI qw(eidiot);
+use FS::CGI qw(popurl);
 use FS::Record qw(qsearch qsearchs);
 use FS::cust_main_county;
 
@@ -46,7 +49,11 @@ foreach ( $cgi->param ) {
   $hash{tax}=$cgi->param("tax$taxnum");
   my($new)=new FS::cust_main_county \%hash;
   my($error)=$new->replace($old);
-  eidiot($error) if $error;
+  if ( $error ) {
+    $cgi->param('error', $error);
+    print $cgi->redirect(popurl(2). "cust_main_county.cgi?". $cgi->query_string );
+    exit;
+  }
 }
 
 print $cgi->redirect(popurl(3). "browse/cust_main_county.cgi");

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main_county-expand.cgi,v 1.5 1999-01-19 05:13:51 ivan Exp $
+# $Id: cust_main_county-expand.cgi,v 1.6 1999-01-25 12:19:07 ivan Exp $
 #
 # ivan@sisd.com 97-dec-16
 #
@@ -15,7 +15,10 @@
 # ivan@sisd.com 98-sep-2
 #
 # $Log: cust_main_county-expand.cgi,v $
-# Revision 1.5  1999-01-19 05:13:51  ivan
+# Revision 1.6  1999-01-25 12:19:07  ivan
+# yet more mod_perl stuff
+#
+# Revision 1.5  1999/01/19 05:13:51  ivan
 # for mod_perl: no more top-level my() variables; use vars instead
 # also the last s/create/new/;
 #
@@ -35,12 +38,11 @@ use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup datasrc);
 use FS::Record qw(qsearch qsearchs);
-use FS::CGI qw(eidiot popurl);
+use FS::CGI qw(popurl);
 use FS::cust_main_county;
 use FS::cust_main;
 
 $cgi = new CGI;
-
 &cgisuidsetup($cgi);
 
 $cgi->param('taxnum') =~ /^(\d+)$/ or die "Illegal taxnum!";
@@ -57,7 +59,11 @@ if ( $cgi->param('delim') eq 'n' ) {
 }
 
 @expansion=map {
-  /^\s*([\w\- ]+)\s*$/ or eidiot("Illegal expansion");
+  unless ( /^\s*([\w\- ]+)\s*$/ ) {
+    $cgi->param('error', "Illegal item in expansion");
+    print $cgi->redirect(popurl(2). "cust_main_county-expand.cgi?". $cgi->query_string );
+    exit;
+  }
   $1;
 } @expansion;
 

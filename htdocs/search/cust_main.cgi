@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main.cgi,v 1.6 1999-01-19 05:14:12 ivan Exp $
+# $Id: cust_main.cgi,v 1.7 1999-01-25 12:19:11 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/cust_main.cgi
@@ -19,7 +19,10 @@
 # display total, use FS::CGI ivan@sisd.com 98-jul-17
 #
 # $Log: cust_main.cgi,v $
-# Revision 1.6  1999-01-19 05:14:12  ivan
+# Revision 1.7  1999-01-25 12:19:11  ivan
+# yet more mod_perl stuff
+#
+# Revision 1.6  1999/01/19 05:14:12  ivan
 # for mod_perl: no more top-level my() variables; use vars instead
 # also the last s/create/new/;
 #
@@ -73,7 +76,7 @@ if ( $cgi->keywords ) {
   &companysearch if ( $cgi->param('company_on') && $cgi->param('company_text') );
 }
 
-%ncancelled_pkgs = map { $_->custnum => [ $_->ncancelled_pkgs ] } @cust_main;
+#%ncancelled_pkgs = map { $_->custnum => [ $_->ncancelled_pkgs ] } @cust_main;
 %all_pkgs = map { $_->custnum => [ $_->all_pkgs ] } @cust_main;
 
 if ( scalar(@cust_main) == 1 ) {
@@ -129,12 +132,13 @@ END
     foreach ( @{$all_pkgs{$custnum}} ) {
       my($pkgnum) = ($_->pkgnum);
       my($pkg) = $_->part_pkg->pkg;
+      my $comment = $_->part_pkg->comment;
       my($pkgview) = popurl(2). "/view/cust_pkg.cgi?$pkgnum";
       #my(@cust_svc) = shift @lol_cust_svc;
       my(@cust_svc) = qsearch( 'cust_svc', { 'pkgnum' => $_->pkgnum } );
       my($rowspan) = scalar(@cust_svc) || 1;
 
-      print $n1, qq!<TD ROWSPAN=$rowspan><A HREF="$pkgview"><FONT SIZE=-1>$pkg</FONT></A></TD>!;
+      print $n1, qq!<TD ROWSPAN=$rowspan><A HREF="$pkgview"><FONT SIZE=-1>$pkg - $comment</FONT></A></TD>!;
       my($n2)='';
       foreach my $cust_svc ( @cust_svc ) {
          my($label, $value, $svcdb) = $cust_svc->label;
