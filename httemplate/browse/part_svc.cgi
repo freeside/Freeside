@@ -73,7 +73,7 @@ my $total = scalar(@part_svc);
 <% } %>
 
   <TR>
-    <TD COLSPAN=6><A HREF="<%= $p %>edit/part_svc.cgi"><I>Add a new service definition</I></A></TD>
+    <TD COLSPAN=<%= $cgi->param('showdisabled') ? 6 : 7 %>><A HREF="<%= $p %>edit/part_svc.cgi"><I>Add a new service definition</I></A></TD>
   </TR>
 </TABLE>
 </BODY>

@@ -29,7 +29,7 @@ if ( $cgi->param('showdisabled') ) {
 my $colspan = $cgi->param('showdisabled') ? 2 : 3;
 print &table(), <<END;
       <TR>
-        <TH COLSPAN=2>Package</TH>
+        <TH COLSPAN=$colspan>Package</TH>
         <TH>Comment</TH>
         <TH><FONT SIZE=-1>Freq.</FONT></TH>
         <TH><FONT SIZE=-1>Plan</FONT></TH>
@@ -90,7 +90,7 @@ END
 }
 
 print <<END;
-   <TR><TD COLSPAN=8><I><A HREF="${p}edit/part_pkg.cgi">Add a new package definition</A></I></TD></TR>
+   <TR><TD COLSPAN=<%= $cgi->param('showdisabled') ? 8 : 9 %>><I><A HREF="${p}edit/part_pkg.cgi">Add a new package definition</A></I></TD></TR>
     </TABLE>
   </BODY>
 </HTML>
