@@ -35,6 +35,7 @@ sub _export_command {
     my $svc_acct = $svc_domain->catchall_svc_acct;
     ${$_} = $svc_acct->getfield($_) foreach qw(uid gid dir);
   } else {
+    no strict 'refs';
     ${$_} = '' foreach qw(uid gid dir);
   }
 
