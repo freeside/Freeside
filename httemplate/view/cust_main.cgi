@@ -970,11 +970,21 @@ sub svc_label_link {
 sub svc_provision_link {
   my ($pkg, $svcpart, $conf) = @_;
   ( my $svc_nbsp = $svcpart->{svc} ) =~ s/\s+/&nbsp;/g;
-  my $pkgnum_svcpart = "pkgnum$pkg->{pkgnum}-svcpart$svcpart->{svcpart}";
   my $num_left = $svcpart->{quantity} - $svcpart->{count};
+  my $pkgnum_svcpart = "pkgnum$pkg->{pkgnum}-svcpart$svcpart->{svcpart}";
 
-  my $link = qq!<A CLASS="provision" HREF="${p}edit/$svcpart->{svcdb}.cgi?!.
-             qq!$pkgnum_svcpart">!.
+  my $url;
+  if ( $svcpart->{svcdb} eq 'svc_external'
+       && $conf->exists('svc_external-skip_manual')
+  ) {
+    $url = "${p}edit/process/$svcpart->{svcdb}.cgi?".
+           "pkgnum=$pkg->{pkgnum}&".
+           "svcpart=$svcpart->{svcpart}";
+  } else {
+    $url = "${p}edit/$svcpart->{svcdb}.cgi?$pkgnum_svcpart";
+  }
+
+  my $link = qq!<A CLASS="provision" HREF="$url">!.
              "Provision&nbsp;$svc_nbsp&nbsp;($num_left)</A>";
   if ( $conf->exists('legacy_link') ) {
     $link .= '<BR>'.
