@@ -110,8 +110,12 @@ sub Script_OnFlush {
   my $ref = $Response->{BinaryRef};
   #$$ref = $cgi->header( @FS::CGI::header ) . $$ref;
   #$$ref = $cgi->header() . $$ref;
-  if ( dbh->can('sprintProfile') ) {
-    if ( lc($Response->{ContentType}) eq 'text/html' ) {
+  #warn "Script_OnFlush called with dbh ". dbh. "\n";
+  #if ( dbh->can('sprintProfile') ) {
+  if ( UNIVERSAL::can(dbh,'sprintProfile') ) {
+    #warn "dbh can sprintProfile\n";
+    if ( lc($Response->{ContentType}) eq 'text/html' ) { #con
+      #warn "contenttype is sprintProfile\n";
       $$ref =~ s/<\/BODY>[\s\n]*<\/HTML>[\s\n]*$//i
         or warn "can't remove";
   
