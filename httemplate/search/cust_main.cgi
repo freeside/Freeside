@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: cust_main.cgi,v 1.15 2001-12-03 08:41:43 ivan Exp $ -->
+#<!-- $Id: cust_main.cgi,v 1.16 2001-12-03 08:43:46 ivan Exp $ -->
 
 use strict;
 #use vars qw( $conf %ncancelled_pkgs %all_pkgs $cgi @cust_main $sortby );
@@ -21,7 +21,7 @@ cgisuidsetup($cgi);
 $conf = new FS::Conf;
 $maxrecords = $conf->config('maxsearchrecordsperpage');
 
-my $cache;
+#my $cache;
 
 #my $monsterjoin = <<END;
 #cust_main left outer join (
@@ -56,26 +56,6 @@ my $cache;
 #  ) using (pkgnum)
 #) using (custnum)
 #END
-
-my $monsterjoin = <<END;
-cust_main left outer join (
-  ( cust_pkg left outer join part_pkg using(pkgpart)
-  ) left outer join (
-    (
-      (
-        ( cust_svc left outer join part_svc using (svcpart)
-        ) left outer join (
-          svc_acct left outer join (
-            select svcnum, domain, catchall from svc_domain
-            ) as svc_acct_domsvc (
-              svc_acct_svcnum, svc_acct_domain, svc_acct_catchall
-          ) on svc_acct.domsvc = svc_acct_domsvc.svc_acct_svcnum
-        ) using (svcnum)
-      ) left outer join svc_domain using(svcnum)
-    ) left outer join svc_forward using(svcnum)
-  ) using (pkgnum)
-) using (custnum)
-END
 
 $orderby = ''; #removeme
 
@@ -350,7 +330,7 @@ END
 
 }
 
-undef $cache; #does this help?
+#undef $cache; #does this help?
 
 #
 
