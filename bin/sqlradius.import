@@ -34,7 +34,7 @@ my $sqlradius_svcpart = &getpart;
 
 die "No services with svcdb svc_domain!\n" unless %domain_part_svc;
 
-print "\n\n", &menu_svc, "\n", <<END;
+print "\n\n", &menu_domain_svc, "\n", <<END;
 Enter part number for domains.
 END
 my $domain_svcpart = &getdomainpart;
@@ -43,6 +43,12 @@ my $datasrc = &getvalue("\n\nEnter the DBI datasource:");
 my $db_user = &getvalue("\n\nEnter the database user:");
 my $db_pass = &getvalue("\n\nEnter the database password:");
 
+sub menu_svc {
+  ( join "\n", map "$_: ".$part_svc{$_}->svc, sort keys %part_svc ). "\n";
+}
+sub menu_domain_svc {
+  ( join "\n", map "$_: ".$part_svc{$_}->svc, sort keys %domain_part_svc ). "\n";
+}
 sub getpart {
   $^W=0; # Term::Query isn't -w-safe
   my $return = query "Enter part number:", 'irk', [ keys %part_svc ];
