@@ -305,6 +305,30 @@ sub part_svc {
   #confess "FS::part_export::part_svc deprecated";
 }
 
+=item svc_x
+
+Returns a list of associate FS::svc_* records.
+
+=cut
+
+sub svc_x {
+  my $self = shift;
+  map { $_->svc_x } $self->cust_svc;
+}
+
+=item cust_svc
+
+Returns a list of associated FS::cust_svc records.
+
+=cut
+
+sub cust_svc {
+  my $self = shift;
+  map { qsearch('cust_svc', { 'svcpart' => $_->svcpart } ) }
+    grep { qsearch('cust_svc', { 'svcpart' => $_->svcpart } ) }
+      $self->export_svc;
+}
+
 =item export_svc
 
 Returns a list of associated FS::export_svc records.
