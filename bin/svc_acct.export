@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 #
-# $Id: svc_acct.export,v 1.20 2001-06-20 08:33:42 ivan Exp $
+# $Id: svc_acct.export,v 1.21 2001-07-30 06:07:46 ivan Exp $
 #
 # Create and export password files: passwd, passwd.adjunct, shadow,
 # acp_passwd, acp_userinfo, acp_dialup, users
@@ -38,7 +38,10 @@
 # ivan@sisd.com 98-sep-18
 # 
 # $Log: svc_acct.export,v $
-# Revision 1.20  2001-06-20 08:33:42  ivan
+# Revision 1.21  2001-07-30 06:07:46  ivan
+# allow !! for locked accounts instead of changing to *SUSPENDED*
+#
+# Revision 1.20  2001/06/20 08:33:42  ivan
 # >     Use of uninitialized value in concatenation (.) at svc_acct.export line
 # > 276.
 #
@@ -191,6 +194,7 @@ foreach $svc_acct (@svc_acct) {
   my($cpassword,$rpassword);
   if ( ( length($password) <= 8 )
        && ( $password ne '*' )
+       && ( $password ne '!!' )
        && ( $password ne '' )
      ) {
     $cpassword=crypt($password,

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct.import,v 1.14 2001-05-07 15:24:15 ivan Exp $
+# $Id: svc_acct.import,v 1.15 2001-07-30 06:07:47 ivan Exp $
 #
 # ivan@sisd.com 98-mar-9
 #
@@ -17,7 +17,10 @@
 # don't import /var/spool/freeside/conf/shells!  ivan@sisd.com 98-aug-13
 #
 # $Log: svc_acct.import,v $
-# Revision 1.14  2001-05-07 15:24:15  ivan
+# Revision 1.15  2001-07-30 06:07:47  ivan
+# allow !! for locked accounts instead of changing to *SUSPENDED*
+#
+# Revision 1.14  2001/05/07 15:24:15  ivan
 # s/!/*/
 #
 # Revision 1.13  2001/05/05 08:51:16  ivan
@@ -206,8 +209,8 @@ my(%password);
 while (<SHADOW>) {
   chop;
   my($username,$password)=split(/:/);
-  $password =~ s/^\!$/\*/;
-  $password =~ s/\!+/\*SUSPENDED\* /;
+  #$password =~ s/^\!$/\*/;
+  #$password =~ s/\!+/\*SUSPENDED\* /;
   $password{$username}=$password;
 }
 
