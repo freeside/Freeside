@@ -131,23 +131,25 @@ my %defs = (
   },
 );
 
-  foreach my $svcdb (grep dbdef->table($_), keys %defs ) {
-    my $self = "FS::$svcdb"->new;
-    $vfields{$svcdb} = {};
-    foreach my $field ($self->virtual_fields) { # svc_Common::virtual_fields with a null svcpart returns all of them
-      my $pvf = $self->pvf($field);
-      my @list = $pvf->list;
-      if (scalar @list) {
-        $defs{$svcdb}->{$field} = { desc        => $pvf->label,
-                                    type        => 'select',
-                                    select_list => \@list };
-      } else {
-        $defs{$svcdb}->{$field} = $pvf->label;
-      } #endif
-      $vfields{$svcdb}->{$field} = $pvf;
-      warn "\$vfields{$svcdb}->{$field} = $pvf";
-    } #next $field
-  } #next $svcdb
+  #comment this out until it can be fixed, see bug#590
+  #
+  #foreach my $svcdb (grep dbdef->table($_), keys %defs ) {
+  #  my $self = "FS::$svcdb"->new;
+  #  $vfields{$svcdb} = {};
+  #  foreach my $field ($self->virtual_fields) { # svc_Common::virtual_fields with a null svcpart returns all of them
+  #    my $pvf = $self->pvf($field);
+  #    my @list = $pvf->list;
+  #    if (scalar @list) {
+  #      $defs{$svcdb}->{$field} = { desc        => $pvf->label,
+  #                                  type        => 'select',
+  #                                  select_list => \@list };
+  #    } else {
+  #      $defs{$svcdb}->{$field} = $pvf->label;
+  #    } #endif
+  #    $vfields{$svcdb}->{$field} = $pvf;
+  #    warn "\$vfields{$svcdb}->{$field} = $pvf";
+  #  } #next $field
+  #} #next $svcdb
   
   my @dbs = $hashref->{svcdb}
              ? ( $hashref->{svcdb} )
