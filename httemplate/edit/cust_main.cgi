@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: cust_main.cgi,v 1.14 2001-11-21 03:42:13 ivan Exp $ -->
+#<!-- $Id: cust_main.cgi,v 1.15 2001-12-12 19:42:21 ivan Exp $ -->
 
 use vars qw( $cgi $custnum $action $cust_main $p1 @agents $agentnum 
              $last $first $ss $company $address1 $address2 $city $zip 
@@ -434,11 +434,13 @@ unless ( $custnum ) {
     #$ulen = $svc_acct->dbdef_table->column('username')->length;
     $ulen = dbdef->table('svc_acct')->column('username')->length;
     $ulen2 = $ulen+2;
+    my $passwordmax = $conf->config('passwordmax') || 8;
+    my $pmax2 = $passwordmax + 2;
     print <<END;
 <TR><TD ALIGN="right">Username</TD>
 <TD><INPUT TYPE="text" NAME="username" VALUE="$username" SIZE=$ulen2 MAXLENGTH=$ulen></TD></TR>
 <TR><TD ALIGN="right">Password</TD>
-<TD><INPUT TYPE="text" NAME="_password" VALUE="$password" SIZE=10 MAXLENGTH=8>
+<TD><INPUT TYPE="text" NAME="_password" VALUE="$password" SIZE=$pmax2 MAXLENGTH=$passwordmax>
 (blank to generate)</TD></TR>
 END
 

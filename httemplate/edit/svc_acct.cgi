@@ -1,9 +1,10 @@
 <%
-#<!-- $Id: svc_acct.cgi,v 1.12 2001-10-30 14:54:07 ivan Exp $ -->
+#<!-- $Id: svc_acct.cgi,v 1.13 2001-12-12 19:42:21 ivan Exp $ -->
 
 use strict;
 use vars qw( $conf $cgi @shells $action $svcnum $svc_acct $pkgnum $svcpart
-             $part_svc $svc $otaker $username $password $ulen $ulen2 $p1
+             $part_svc $svc $otaker $username $password $ulen $ulen2 
+             $pmax $pmax2 $p1
              $popnum $domsvc $uid $gid $finger $dir $shell $quota $slipip
              %svc_domain );
 use CGI;
@@ -100,6 +101,9 @@ if ( $svc_acct->_password ) {
 $ulen = $svc_acct->dbdef_table->column('username')->length;
 $ulen2 = $ulen+2;
 
+$pmax = $conf->config('passwordmax') || 8;
+$pmax2 = $pmax+2;
+
 $p1 = popurl(1);
 print header("$action $svc account");
 
@@ -121,7 +125,7 @@ print &itable("#cccccc",2), <<END;
 <TR><TD ALIGN="right">Username</TD>
 <TD><INPUT TYPE="text" NAME="username" VALUE="$username" SIZE=$ulen2 MAXLENGTH=$ulen></TD></TR>
 <TR><TD ALIGN="right">Password</TD>
-<TD><INPUT TYPE="text" NAME="_password" VALUE="$password" SIZE=10 MAXLENGTH=8>
+<TD><INPUT TYPE="text" NAME="_password" VALUE="$password" SIZE=$pmax2 MAXLENGTH=$pmax>
 (blank to generate)</TD>
 </TR>
 END
