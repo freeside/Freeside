@@ -117,7 +117,7 @@ sub check {
     || $self->ut_numbern('last');
 }
 
-=sub heartbeat TIMESTAMP
+=item heartbeat TIMESTAMP
 
 Updates the timestamp for this nas
 
@@ -144,7 +144,7 @@ sub heartbeat {
 
 =head1 VERSION
 
-$Id: nas.pm,v 1.3 2000-12-03 20:25:20 ivan Exp $
+$Id: nas.pm,v 1.4 2001-02-21 01:45:37 ivan Exp $
 
 =head1 BUGS
 
