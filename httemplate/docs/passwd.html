@@ -16,7 +16,7 @@ You may use fs_passwd/fs_passwd as a "passwd", "chfn" and "chsh" replacement on 
     </ul>
   <li>Copy fs_passwd/fs_passwdd to /usr/local/sbin on the shell or web machine(s).  (chown freeside, chmod 500)
   <li>Create /usr/local/freeside on the shell or web machine(s). (chown freeside, chmod 700)
-  <li>Run an iteration of "fs_passwd/fs_passwd_server <i>user</i> shell.machine" as the freeside user for each shell or web machine (this is a daemon process).  <i>user</i> refers to the freeside user from the <a href="config.html">mapsecrets configuration file</a>.
+  <li>Run an iteration of "fs_passwd/fs_passwd_server <i>user</i> shell.machine" as the freeside user for each shell or web machine (this is a daemon process).  <i>user</i> refers to a freeside user added by <a href="man/bin/freeside-adduser.html">freeside-adduser</a>.
   <li>Copy fs_passwd/fs_passwd to /usr/local/bin on the shell machine(s).  (chown freeside, chmod 4755).  You may link it to passwd, chfn and chsh as well.
   <li>Copy fs_passwd/fs_passwd.cgi to the cgi-bin directory on your web machine(s).  Use <a href="http://www.apache.org/docs/suexec.html">suEXEC</a> or <a href="http://www.perldoc.com/perl5.6.1/pod/perlsec.html">suidperl</a> to run fs_passwd.cgi as the freeside user.
 </ul>
