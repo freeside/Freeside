@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 #
-# $Id: svc_acct.export,v 1.24 2001-09-11 22:20:28 ivan Exp $
+# $Id: svc_acct.export,v 1.25 2001-10-16 20:33:02 jeff Exp $
 #
 # Create and export password, radius and vpopmail password files:
 # passwd, passwd.adjunct, shadow, acp_passwd, acp_userinfo, acp_dialup
@@ -48,7 +48,7 @@ my @radiusmachines = $conf->config('radiusmachines')
 my $icradiusmachines = $conf->exists('icradiusmachines');
 my @icradiusmachines = $conf->config('icradiusmachines') if $icradiusmachines;
 my $icradius_mysqldest =
-  $conf->config('icradius_mysqldest') || "/usr/local/var/"
+  $conf->config('icradius_mysqldest') || "/usr/local/var"
     if $icradiusmachines;
 my $icradius_mysqlsource =
   $conf->config('icradius_mysqlsource') || "/usr/local/var/freeside"
@@ -70,8 +70,11 @@ warn "using depriciated textradiusprepend file" if $textradiusprepend;
 
 my @vpopmailmachines = $conf->config('vpopmailmachines')
   if $conf->exists('vpopmailmachines');
+my $vpopmailrestart = '';
+$vpopmailrestart = $conf->config('vpopmailrestart')
+  if $conf->exists('vpopmailrestart');
 
-my ($machine, $vpopdir, $vpopuid, $vpopgid) = split (/\s+/, $vpopmailmachines[0]);
+my ($machine, $vpopdir, $vpopuid, $vpopgid) = split (/\s+/, $vpopmailmachines[0]) if $vpopmailmachines[0];
 
 my($shellmachine, @qmailmachines);
 if ( $conf->exists('qmailmachines') ) {
@@ -209,7 +212,7 @@ foreach $svc_domain (sort {$a->domain cmp $b->domain} @svc_domain) {
     "-",
     "",
     "",
-  ), "\n";
+  ), "\n" if $vpopmailmachines[0];
 
   (mkdir "$spooldir/domains/" . $domain, 0700)
     or die "Can't create $spooldir/domains/" . $domain .": $!";
@@ -224,7 +227,7 @@ foreach $svc_domain (sort {$a->domain cmp $b->domain} @svc_domain) {
 
   my ($svc_acct);
 
-  if ($svc_domain->catchall) {
+  if ($svc_domain->getfield('catchall')) {
     $svc_acct = qsearchs('svc_acct', {'svcnum' => $svc_domain->catchall});
     die "Cannot find catchall account for domain $domain\n" unless $svc_acct;
 
@@ -236,12 +239,14 @@ foreach $svc_domain (sort {$a->domain cmp $b->domain} @svc_domain) {
 
     ###
     # FORMAT OF THE .QMAIL-DEFAULT FILE HERE
-    print QMAILDEFAULT "| $vpopdir/bin/vdelivermail \"\" $username\@$domain\n";
+    print QMAILDEFAULT "| $vpopdir/bin/vdelivermail \"\" " . $svc_acct->email . "\n"
+      if $vpopmailmachines[0];
 
   }else{
     ###
     # FORMAT OF THE .QMAIL-DEFAULT FILE HERE
-    print QMAILDEFAULT "| $vpopdir/bin/vdelivermail \"\" bounce-no-mailbox\n";
+    print QMAILDEFAULT "| $vpopdir/bin/vdelivermail \"\" bounce-no-mailbox\n"
+      if $vpopmailmachines[0];
   }
 
   print VPOPVIRTUALDOMAINS "$domain:$domain\n";
@@ -424,6 +429,18 @@ foreach $svc_domain (sort {$a->domain cmp $b->domain} @svc_domain) {
               $username,
               $attribute,
               $radreply{$attribute},
+            ) ). " )"
+          );
+          $sth->execute or die "Can't insert into radreply table: ". $sth->errstr;      }
+  
+        if ( $ip && $ip ne '0e0' ) {
+          my $sth = $icradius_dbh->prepare(
+            "INSERT INTO radreply (id, UserName, Attribute, Value) VALUES ( ".
+            join(", ", map { $icradius_dbh->quote( $_ ) } (
+              '',
+              $username,
+              'Framed-IP-Address',
+              $ip,
             ) ). " )"
           );
           $sth->execute or die "Can't insert into radreply table: ". $sth->errstr;      }
@@ -644,6 +661,15 @@ foreach $vpopmailmachine (@vpopmailmachines) {
     or die "scp error: ". $scp->{errstr};
   $scp->scp("$spooldir/vpoprcpthosts","root\@$machine:/var/qmail/control/rcpthosts")
     or die "scp error: ". $scp->{errstr};
+
+  ssh("root\@$machine",
+    "( ".
+      $vpopmailrestart .
+    " )"
+  )
+    == 0 or die "ssh error: $!";
+
+
 }
 
 my($sendmailmachine);
