@@ -1,5 +1,5 @@
 <%
-# <!-- $Id: svc_acct.cgi,v 1.11 2001-12-10 00:44:56 ivan Exp $ -->
+# <!-- $Id: svc_acct.cgi,v 1.12 2001-12-11 21:26:58 ivan Exp $ -->
 
 use strict;
 use vars qw( $cgi @svc_acct $sortby $query $mydomain
@@ -53,7 +53,7 @@ if ( $query eq 'svcnum' ) {
   $orderby = 'ORDER BY username';
 } elsif ( $query eq 'uid' ) {
   $sortby=\*uid_sort;
-  $orderby = ( $unlinked ? 'AND' : 'WHERE' ). 'uid IS NOT NULL ORDER BY uid';
+  $orderby = ( $unlinked ? 'AND' : 'WHERE' ). ' uid IS NOT NULL ORDER BY uid';
 } else {
   $sortby=\*uid_sort;
   &usernamesearch;
