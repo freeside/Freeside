@@ -199,7 +199,7 @@ sub qsearch {
 
   $sth->execute( map $record->{$_},
     grep defined( $record->{$_} ) && $record->{$_} ne '', @fields
-  ) or croak $dbh->errstr;
+  ) or croak "Error executing \"$statement\": ". $dbh->errstr;
   $dbh->commit or croak $dbh->errstr if $FS::UID::AutoCommit;
 
   if ( eval 'scalar(@FS::'. $table. '::ISA);' ) {
@@ -949,7 +949,7 @@ sub DESTROY { return; }
 
 =head1 VERSION
 
-$Id: Record.pm,v 1.19 2001-07-30 10:41:44 ivan Exp $
+$Id: Record.pm,v 1.20 2001-08-08 04:44:41 ivan Exp $
 
 =head1 BUGS
 
