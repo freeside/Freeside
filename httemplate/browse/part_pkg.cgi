@@ -89,8 +89,9 @@ END
   print "</TR>";
 }
 
+$colspan = $cgi->param('showdisabled') ? 8 : 9;
 print <<END;
-   <TR><TD COLSPAN=${ $cgi->param('showdisabled') ? 8 : 9 }><I><A HREF="${p}edit/part_pkg.cgi">Add a new package definition</A></I></TD></TR>
+   <TR><TD COLSPAN=$colspan><I><A HREF="${p}edit/part_pkg.cgi">Add a new package definition</A></I></TD></TR>
     </TABLE>
   </BODY>
 </HTML>
