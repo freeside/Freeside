@@ -2,7 +2,8 @@ package FS::part_pkg;
 
 use strict;
 use vars qw( @ISA );
-use FS::Record;
+use FS::Record qw( qsearch );
+use FS::pkg_svc;
 
 @ISA = qw( FS::Record );
 
@@ -26,6 +27,11 @@ FS::part_pkg - Object methods for part_pkg objects
   $error = $record->delete;
 
   $error = $record->check;
+
+  @pkg_svc = $record->pkg_svc;
+
+  $svcnum = $record->svcpart;
+  $svcnum = $record->svcpart( 'svc_acct' );
 
 =head1 DESCRIPTION
 
@@ -125,15 +131,44 @@ sub check {
   ;
 }
 
+=item pkg_svc
+
+Returns all FS::pkg_svc objects (see L<FS::pkg_svc>) for this package
+definition.
+
+=cut
+
+sub pkg_svc {
+  my $self = shift;
+  qsearch( 'pkg_svc', { 'pkgpart' => $self->pkgpart } );
+}
+
+=item svcpart [ SVCDB ]
+
+Returns the svcpart of a single service definition (see L<FS::part_svc>)
+associated with this billing item definition (see L<FS::pkg_svc>).  Returns
+false if there not exactly one service definition with quantity 1, or if 
+SVCDB is specified and does not match the svcdb of the service definition, 
+
+=cut
+
+sub svcpart {
+  my $self = shift;
+  my $svcdb = shift;
+  my @pkg_svc = $self->pkg_svc;
+  return '' if scalar(@pkg_svc) != 1
+               || $pkg_svc[0]->quantity != 1
+               || ( $svcdb && $pkg_svc[0]->part_svc->svcdb ne $svcdb );
+  $pkg_svc[0]->svcpart;
+}
+
 =back
 
 =head1 VERSION
 
-$Id: part_pkg.pm,v 1.5 1998-12-31 01:04:16 ivan Exp $
+$Id: part_pkg.pm,v 1.6 1999-07-20 10:37:05 ivan Exp $
 
 =head1 BUGS
-
-It doesn't properly override FS::Record yet.
 
 The delete method is unimplemented.
 
@@ -152,7 +187,11 @@ ivan@sisd.com 97-dec-5
 pod ivan@sisd.com 98-sep-21
 
 $Log: part_pkg.pm,v $
-Revision 1.5  1998-12-31 01:04:16  ivan
+Revision 1.6  1999-07-20 10:37:05  ivan
+cleaned up the new one-screen signup bits in htdocs/edit/cust_main.cgi to
+prepare for a signup server
+
+Revision 1.5  1998/12/31 01:04:16  ivan
 doc
 
 Revision 1.3  1998/11/15 13:00:15  ivan

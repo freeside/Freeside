@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main.cgi,v 1.15 1999-04-14 13:14:54 ivan Exp $
+# $Id: cust_main.cgi,v 1.16 1999-07-20 10:37:05 ivan Exp $
 #
 # Usage: cust_main.cgi custnum
 #        http://server.name/path/cust_main.cgi?custnum
@@ -38,7 +38,11 @@
 # fixed one missed day->daytime ivan@sisd.com 98-jul-13
 #
 # $Log: cust_main.cgi,v $
-# Revision 1.15  1999-04-14 13:14:54  ivan
+# Revision 1.16  1999-07-20 10:37:05  ivan
+# cleaned up the new one-screen signup bits in htdocs/edit/cust_main.cgi to
+# prepare for a signup server
+#
+# Revision 1.15  1999/04/14 13:14:54  ivan
 # configuration option to edit referrals of existing customers
 #
 # Revision 1.14  1999/04/14 07:47:53  ivan
@@ -100,8 +104,6 @@ use FS::part_referral;
 use FS::cust_main_county;
 
   #for misplaced logic below
-  use FS::pkg_svc;
-  use FS::part_svc;
   use FS::part_pkg;
 
   #for false laziness below
@@ -332,60 +334,26 @@ print "</TR></TABLE>$r required fields for each billing type";
 
 unless ( $custnum ) {
   # pry the wrong place for this logic.  also pretty expensive
-  #use FS::pkg_svc;
-  #use FS::part_svc;
   #use FS::part_pkg;
 
   #false laziness, copied from FS::cust_pkg::order
-  my %part_pkg;
+  my $pkgpart;
   if ( scalar(@agents) == 1 ) {
-    # generate %part_pkg
-    # $part_pkg{$pkgpart} is true iff $custnum may purchase $pkgpart
-    	#my($cust_main)=qsearchs('cust_main',{'custnum'=>$custnum});
-    	#my($agent)=qsearchs('agent',{'agentnum'=> $cust_main->agentnum });
+    # $pkgpart->{$pkgpart} is true iff $custnum may purchase $pkgpart
     my($agent)=qsearchs('agent',{'agentnum'=> $agentnum });
-
-    my($type_pkgs);
-    foreach $type_pkgs ( qsearch('type_pkgs',{'typenum'=> $agent->typenum }) ) {
-      my($pkgpart)=$type_pkgs->pkgpart;
-      $part_pkg{$pkgpart}++;
-    }
+    $pkgpart = $agent->pkgpart_hashref;
   } else {
     #can't know (agent not chosen), so, allow all
     my %typenum;
     foreach my $agent ( @agents ) {
       next if $typenum{$agent->typenum}++;
-      foreach my $type_pkgs ( qsearch('type_pkgs',{'typenum'=> $agent->typenum }) ) {
-        my($pkgpart)=$type_pkgs->pkgpart;
-        $part_pkg{$pkgpart}++;
-      }
+      $pkgpart->{$_}++ foreach keys %{ $agent->pkgpart_hashref }
     }
-
   }
   #eslaf
 
-  my %pkgpart;
-  #foreach ( @pkg_svc ) {
-  foreach ( qsearch( 'pkg_svc', {} ) ) {
-    my $part_svc = qsearchs ( 'part_svc', { 'svcpart' => $_->svcpart } );
-    $pkgpart{ $_->pkgpart } = -1 # never will == 1 below
-      if ( $part_svc->svcdb ne 'svc_acct' );
-    if ( $pkgpart{ $_->pkgpart } ) {
-      $pkgpart{ $_->pkgpart } = '-1';
-    } else {
-      $pkgpart{ $_->pkgpart } = $_->svcpart;
-    }
-  }
-
-  my @part_pkg =
-    #grep { $pkgpart{ $_->pkgpart } == 1 } qsearch( 'part_pkg', {} );
-    grep {
-      #( $pkgpart{ $_->pkgpart } || 0 ) == 1
-      $pkgpart{ $_->pkgpart } 
-      && $pkgpart{ $_->pkgpart } != -1
-      && $part_pkg{ $_->pkgpart }
-      ;
-    } qsearch( 'part_pkg', {} );
+  my @part_pkg = grep { $_->svcpart('svc_acct') && $pkgpart->{ $_->pkgpart } }
+    qsearch( 'part_pkg', {} );
 
   if ( @part_pkg ) {
 
@@ -396,7 +364,8 @@ unless ( $custnum ) {
 
     foreach my $part_pkg ( @part_pkg ) {
       print qq!<OPTION VALUE="!,
-              $part_pkg->pkgpart. "_". $pkgpart{ $part_pkg->pkgpart }, '"';
+#              $part_pkg->pkgpart. "_". $pkgpart{ $part_pkg->pkgpart }, '"';
+              $part_pkg->pkgpart. "_". $part_pkg->svcpart, '"';
       print " SELECTED" if $pkgpart && ( $part_pkg->pkgpart == $pkgpart );
       print ">", $part_pkg->pkg, " - ", $part_pkg->comment;
     }

@@ -86,6 +86,7 @@ sub check {
   $self->ut_numbern('taxnum')
     || $self->ut_textn('state')
     || $self->ut_textn('county')
+    || $self->ut_text('country')
     || $self->ut_float('tax')
   ;
 
@@ -95,7 +96,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: cust_main_county.pm,v 1.3 1998-12-29 11:59:41 ivan Exp $
+$Id: cust_main_county.pm,v 1.4 1999-07-20 10:37:05 ivan Exp $
 
 =head1 BUGS
 
@@ -114,7 +115,11 @@ Changed check for 'tax' to use the new ut_float subroutine
 pod ivan@sisd.com 98-sep-21
 
 $Log: cust_main_county.pm,v $
-Revision 1.3  1998-12-29 11:59:41  ivan
+Revision 1.4  1999-07-20 10:37:05  ivan
+cleaned up the new one-screen signup bits in htdocs/edit/cust_main.cgi to
+prepare for a signup server
+
+Revision 1.3  1998/12/29 11:59:41  ivan
 mostly properly OO, some work still to be done with svc_ stuff
 
 Revision 1.2  1998/11/18 09:01:43  ivan

@@ -3,6 +3,8 @@ package FS::agent_type;
 use strict;
 use vars qw( @ISA );
 use FS::Record qw( qsearch );
+use FS::agent;
+use FS::type_pkgs;
 
 @ISA = qw( FS::Record );
 
@@ -24,6 +26,13 @@ FS::agent_type - Object methods for agent_type records
   $error = $record->delete;
 
   $error = $record->check;
+
+  $hashref = $record->pkgpart_hashref;
+  #may purchase $pkgpart if $hashref->{$pkgpart};
+
+  @type_pkgs = $record->type_pkgs;
+
+  @pkgparts = $record->pkgpart;
 
 =head1 DESCRIPTION
 
@@ -97,11 +106,49 @@ sub check {
 
 }
 
+=item pkgpart_hashref
+
+Returns a hash reference.  The keys of the hash are pkgparts.  The value is
+true iff this agent may purchase the specified package definition.  See
+L<FS::part_pkg>.
+
+=cut
+
+sub pkgpart_hashref {
+  my $self = shift;
+  my %pkgpart;
+  $pkgpart{$_}++ foreach $self->pkgpart;
+  \%pkgpart;
+}
+
+=item type_pkgs
+
+Returns all FS::type_pkgs objects (see L<FS::type_pkgs>) for this agent type.
+
+=cut
+
+sub type_pkgs {
+  my $self = shift;
+  qsearch('type_pkgs', { 'typenum' => $self->typenum } );
+}
+
+=item pkgpart
+
+Returns the pkgpart of all package definitions (see L<FS::part_pkg>) for this
+agent type.
+
+=cut
+
+sub pkgpart {
+  my $self = shift;
+  map $_->pkgpart, $self->type_pkgs;
+}
+
 =back
 
 =head1 VERSION
 
-$Id: agent_type.pm,v 1.2 1998-12-29 11:59:35 ivan Exp $
+$Id: agent_type.pm,v 1.3 1999-07-20 10:37:05 ivan Exp $
 
 =head1 BUGS
 
@@ -126,7 +173,11 @@ Changed 'type' to 'atype' because Pg6.3 reserves the type word
 pod, added check in delete ivan@sisd.com 98-sep-21
 
 $Log: agent_type.pm,v $
-Revision 1.2  1998-12-29 11:59:35  ivan
+Revision 1.3  1999-07-20 10:37:05  ivan
+cleaned up the new one-screen signup bits in htdocs/edit/cust_main.cgi to
+prepare for a signup server
+
+Revision 1.2  1998/12/29 11:59:35  ivan
 mostly properly OO, some work still to be done with svc_ stuff
 
 

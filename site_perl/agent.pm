@@ -27,6 +27,11 @@ FS::agent - Object methods for agent records
 
   $error = $record->check;
 
+  $agent_type = $record->agent_type;
+
+  $hashref = $record->pkgpart_hashref;
+  #may purchase $pkgpart if $hashref->{$pkgpart};
+
 =head1 DESCRIPTION
 
 An FS::agent object represents an agent.  Every customer has an agent.  Agents
@@ -106,24 +111,48 @@ sub check {
   return $error if $error;
 
   return "Unknown typenum!"
-    unless qsearchs( 'agent_type', { 'typenum' => $self->typenum } );
+    unless $self->agent_type;
 
   '';
 
+}
+
+=item agent_type
+
+Returns the FS::agent_type object (see L<FS::agent_type>) for this agent.
+
+=cut
+
+sub agent_type {
+  my $self = shift;
+  qsearchs( 'agent_type', { 'typenum' => $self->typenum } );
+}
+
+=item pkgpart_hashref
+
+Returns a hash reference.  The keys of the hash are pkgparts.  The value is
+true iff this agent may purchase the specified package definition.  See
+L<FS::part_pkg>.
+
+=cut
+
+sub pkgpart_hashref {
+  my $self = shift;
+  $self->agent_type->pkgpart_hashref;
 }
 
 =back
 
 =head1 VERSION
 
-$Id: agent.pm,v 1.4 1998-12-30 00:30:44 ivan Exp $
+$Id: agent.pm,v 1.5 1999-07-20 10:37:05 ivan Exp $
 
 =head1 BUGS
 
 =head1 SEE ALSO
 
-L<FS::Record>, L<FS::agent_type>, L<FS::cust_main>, schema.html from the base
-documentation.
+L<FS::Record>, L<FS::agent_type>, L<FS::cust_main>, L<FS::part_pkg>, 
+schema.html from the base documentation.
 
 =head1 HISTORY
 

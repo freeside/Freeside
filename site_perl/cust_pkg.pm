@@ -396,18 +396,12 @@ L<FS::pkg_svc>).
 sub order {
   my($custnum,$pkgparts,$remove_pkgnums)=@_;
 
-  my(%part_pkg);
   # generate %part_pkg
   # $part_pkg{$pkgpart} is true iff $custnum may purchase $pkgpart
-    my($cust_main)=qsearchs('cust_main',{'custnum'=>$custnum});
-    my($agent)=qsearchs('agent',{'agentnum'=> $cust_main->agentnum });
-
-    my($type_pkgs);
-    foreach $type_pkgs ( qsearch('type_pkgs',{'typenum'=> $agent->typenum }) ) {
-      my($pkgpart)=$type_pkgs->pkgpart;
-      $part_pkg{$pkgpart}++;
-    }
   #
+  my($cust_main)=qsearchs('cust_main',{'custnum'=>$custnum});
+  my($agent)=qsearchs('agent',{'agentnum'=> $cust_main->agentnum });
+  my %part_pkg = %{ $agent->pkgpart_hashref };
 
   my(%svcnum);
   # generate %svcnum
@@ -496,7 +490,7 @@ sub order {
 
 =head1 VERSION
 
-$Id: cust_pkg.pm,v 1.9 1999-03-29 01:11:51 ivan Exp $
+$Id: cust_pkg.pm,v 1.10 1999-07-20 10:37:05 ivan Exp $
 
 =head1 BUGS
 
@@ -527,7 +521,11 @@ fixed for new agent->agent_type->type_pkgs in &order ivan@sisd.com 98-mar-7
 pod ivan@sisd.com 98-sep-21
 
 $Log: cust_pkg.pm,v $
-Revision 1.9  1999-03-29 01:11:51  ivan
+Revision 1.10  1999-07-20 10:37:05  ivan
+cleaned up the new one-screen signup bits in htdocs/edit/cust_main.cgi to
+prepare for a signup server
+
+Revision 1.9  1999/03/29 01:11:51  ivan
 use FS::type_pkgs
 
 Revision 1.8  1999/03/25 13:48:14  ivan

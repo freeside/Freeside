@@ -3,6 +3,8 @@ package FS::pkg_svc;
 use strict;
 use vars qw( @ISA );
 use FS::Record qw( qsearchs );
+use FS::part_pkg;
+use FS::part_svc;
 
 @ISA = qw( FS::Record );
 
@@ -24,6 +26,10 @@ FS::pkg_svc - Object methods for pkg_svc records
   $error = $record->delete;
 
   $error = $record->check;
+
+  $part_pkg = $record->part_pkg;
+
+  $part_svc = $record->part_svc;
 
 =head1 DESCRIPTION
 
@@ -99,20 +105,39 @@ sub check {
   ;
   return $error if $error;
 
-  return "Unknown pkgpart!"
-    unless qsearchs( 'part_pkg', { 'pkgpart' => $self->pkgpart } );
-
-  return "Unknown svcpart!"
-    unless qsearchs('part_svc', { 'svcpart' => $self->svcpart } );
+  return "Unknown pkgpart!" unless $self->part_pkg;
+  return "Unknown svcpart!" unless $self->part_svc;
 
   ''; #no error
+}
+
+=item part_pkg
+
+Returns the FS::part_pkg object (see L<FS::part_pkg>).
+
+=cut
+
+sub part_pkg {
+  my $self = shift;
+  qsearchs( 'part_pkg', { 'pkgpart' => $self->pkgpart } );
+}
+
+=item part_svc
+
+Returns the FS::part_svc object (see L<FS::part_svc>).
+
+=cut
+
+sub part_svc {
+  my $self = shift;
+  qsearchs( 'part_svc', { 'svcpart' => $self->svcpart } );
 }
 
 =back
 
 =head1 VERSION
 
-$Id: pkg_svc.pm,v 1.3 1999-01-18 21:58:08 ivan Exp $
+$Id: pkg_svc.pm,v 1.4 1999-07-20 10:37:05 ivan Exp $
 
 =head1 BUGS
 
@@ -131,7 +156,11 @@ ivan@sisd.com 97-nov-13
 pod ivan@sisd.com 98-sep-22
 
 $Log: pkg_svc.pm,v $
-Revision 1.3  1999-01-18 21:58:08  ivan
+Revision 1.4  1999-07-20 10:37:05  ivan
+cleaned up the new one-screen signup bits in htdocs/edit/cust_main.cgi to
+prepare for a signup server
+
+Revision 1.3  1999/01/18 21:58:08  ivan
 esthetic: eq and ne were used in a few places instead of == and !=
 
 Revision 1.2  1998/12/29 11:59:51  ivan

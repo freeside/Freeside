@@ -143,6 +143,8 @@ FS::Record.  The following fields are currently supported:
 
 =item night - phone (optional)
 
+=item fax - phone (optional)
+
 =item payby - `CARD' (credit cards), `BILL' (billing), or `COMP' (free)
 
 =item payinfo - card number, P.O.#, or comp issuer (4-8 lowercase alphanumerics; think username)
@@ -928,7 +930,7 @@ sub check_invoicing_list {
 
 =head1 VERSION
 
-$Id: cust_main.pm,v 1.23 1999-07-17 02:24:14 ivan Exp $
+$Id: cust_main.pm,v 1.24 1999-07-20 10:37:05 ivan Exp $
 
 =head1 BUGS
 
@@ -987,7 +989,11 @@ enable cybercash, cybercash v3 support, don't need to import
 FS::UID::{datasrc,checkruid} ivan@sisd.com 98-sep-19-21
 
 $Log: cust_main.pm,v $
-Revision 1.23  1999-07-17 02:24:14  ivan
+Revision 1.24  1999-07-20 10:37:05  ivan
+cleaned up the new one-screen signup bits in htdocs/edit/cust_main.cgi to
+prepare for a signup server
+
+Revision 1.23  1999/07/17 02:24:14  ivan
 bug noticed by Steve Gertz <sglist@hollywood.mwis.net>
 
 Revision 1.22  1999/04/15 16:44:36  ivan
