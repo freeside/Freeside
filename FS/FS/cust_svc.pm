@@ -220,6 +220,7 @@ sub check {
     # or new FS::pkg_svc ( { 'pkgpart'  => $cust_pkg->pkgpart,
     #                        'svcpart'  => $self->svcpart,
     #                        'quantity' => 0                   } );
+    my $quantity = $pkg_svc ? $pkg_svc->quantity : 0;
 
     my @cust_svc = qsearch('cust_svc', {
       'pkgnum'  => $self->pkgnum,
@@ -227,7 +228,7 @@ sub check {
     });
     return "Already ". scalar(@cust_svc). " ". $part_svc->svc.
            " services for pkgnum ". $self->pkgnum
-      if scalar(@cust_svc) >= $pkg_svc->quantity;
+      if scalar(@cust_svc) >= $quantity;
   }
 
   ''; #no error
