@@ -21,13 +21,15 @@ FREESIDE_DOCUMENT_ROOT = /var/www/freeside
 #FREESIDE_DOCUMENT_ROOT = /usr/local/www/data/freeside
 #openbsd
 #FREESIDE_DOCUMENT_ROOT = /var/www/htdocs/freeside
+#suse
+#FREESIDE_DOCUMENT_ROOT = /srv/www/htdocs
 
-#deb, redhat, mandrake, others?
+#deb, redhat, mandrake, suse, others?
 INIT_FILE = /etc/init.d/freeside
 #freebsd
 #INIT_FILE = /usr/local/etc/rc.d/011.freeside.sh
 
-#deb
+#deb, suse
 HTTPD_RESTART = /etc/init.d/apache restart
 #redhat, mandrake
 #HTTPD_RESTART = /etc/init.d/httpd restart
@@ -38,7 +40,7 @@ HTTPD_RESTART = /etc/init.d/apache restart
 
 FREESIDE_RESTART = ${INIT_FILE} restart
 
-#deb, redhat, mandrake, others?
+#deb, redhat, mandrake, suse, others?
 INSTALLGROUP = root
 #freebsd, openbsd
 #INSTALLGROUP = wheel
