@@ -157,7 +157,7 @@ Service #<B><%=$svcnum ? $svcnum : "(NEW)"%></B><BR><BR>
 <% } %>
 
 <%
-foreach $field ($svc_broadband->virtual_fields) {
+foreach my $field ($svc_broadband->virtual_fields) {
   if ( $part_svc->part_svc_column($field)->columnflag ne 'F' ) {
     print $svc_broadband->pvf($field)->widget('HTML', 'edit',
         $svc_broadband->getfield($field));
