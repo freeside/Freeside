@@ -55,7 +55,7 @@ foreach my $table ( @tables ) {
   my $sql = "SELECT setval( '$seq',
                             ( SELECT max($primary_key) FROM $table ) );";
 
-  warn $col->default. " $seq\n$sql\n";
+  #warn $col->default. " $seq\n$sql\n";
   $dbh->do( $sql ) or die $dbh->errstr;
 
 }
