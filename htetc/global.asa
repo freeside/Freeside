@@ -137,8 +137,8 @@ if ( defined(@DBIx::Profile::ISA) ) {
     my( $self, $location) = @_;
     my $page =
       $cgi->header.
-      qq!<HTML><BODY>Redirect to <A HREF="$location">$location</A><BR><BR>!.
-      '<PRE>'.
+      qq!<HTML><BODY>Redirect to <A HREF="$location">$location</A>!.
+      '<BR><BR><PRE>'.
         ( UNIVERSAL::can(dbh, 'sprintProfile')
             ? encode_entities(dbh->sprintProfile())
             : 'DBIx::Profile missing sprintProfile method;'.

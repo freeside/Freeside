@@ -370,7 +370,7 @@ print qq!<BR><A NAME="cust_pkg">Packages</A> !,
 
 #get package info
 
-my $packages = get_packages($cust_main);
+my $packages = get_packages($cust_main, $conf);
 
 if ( @$packages ) {
 %>
@@ -401,27 +401,27 @@ foreach my $pkg (sort pkgsort_pkgnum_cancel @$packages) {
     <%=$pkg->{pkg}%> - <%=$pkg->{comment}%> (&nbsp;<%=pkg_details_link($pkg)%>&nbsp;)<BR>
 <% unless ($pkg->{cancel}) { %>
     (&nbsp;<%=pkg_change_link($pkg)%>&nbsp;)
-    (&nbsp;<%=pkg_dates_link($pkg)%>&nbsp;|&nbsp;<%=pkg_customize_link($pkg)%>&nbsp;)
+    (&nbsp;<%=pkg_dates_link($pkg)%>&nbsp;|&nbsp;<%=pkg_customize_link($pkg,$custnum)%>&nbsp;)
 <% } %>
   </TD>
 <%
   #foreach (qw(setup last_bill next_bill susp expire cancel)) {
-  #  print qq!  <TD ROWSPAN=$rowspan>! . pkg_datestr($pkg,$_) . qq!</TD>\n!;
+  #  print qq!  <TD ROWSPAN=$rowspan>! . pkg_datestr($pkg,$_,$conf) . qq!</TD>\n!;
   #}
   print "<TD ROWSPAN=$rowspan>". &itable('');
 
-  #move
-  my %freq = (
-    1 => 'monthly',
-    2 => 'bi-monthly',
-    3 => 'quarterly',
-    6 => 'semi-annually',
-    12 => 'annually',
-    24 => 'bi-annually',
-    36 => 'tri-annually',
-  );
-
   sub freq {
+
+    my %freq = ( #move this
+      1 => 'monthly',
+      2 => 'bi-monthly',
+      3 => 'quarterly',
+      6 => 'semi-annually',
+      12 => 'annually',
+      24 => 'bi-annually',
+      36 => 'tri-annually',
+    );
+
     my $freq = shift;
     exists $freq{$freq} ? $freq{$freq} : "every&nbsp;$freq&nbsp;months";
   }
@@ -431,17 +431,17 @@ foreach my $pkg (sort pkgsort_pkgnum_cancel @$packages) {
   if ( $pkg->{cancel} ) { #status: cancelled
 
     print '<TR><TD><FONT COLOR="#ff0000"><B>Cancelled&nbsp;</B></FONT></TD>'.
-          '<TD>'. pkg_datestr($pkg,'cancel'). '</TD></TR>';
+          '<TD>'. pkg_datestr($pkg,'cancel',$conf). '</TD></TR>';
     unless ( $pkg->{setup} ) {
       print '<TR><TD COLSPAN=2>Never billed</TD></TR>';
     } else {
       print "<TR><TD>Setup&nbsp;</TD><TD>".
-            pkg_datestr($pkg, 'setup'). '</TD></TR>';
+            pkg_datestr($pkg, 'setup',$conf). '</TD></TR>';
       print "<TR><TD>Last&nbsp;bill&nbsp;</TD><TD>".
-            pkg_datestr($pkg, 'last_bill'). '</TD></TR>'
+            pkg_datestr($pkg, 'last_bill',$conf). '</TD></TR>'
         if $pkg->{'last_bill'};
       print "<TR><TD>Suspended&nbsp;</TD><TD>".
-            pkg_datestr($pkg, 'susp'). '</TD></TR>'
+            pkg_datestr($pkg, 'susp',$conf). '</TD></TR>'
         if $pkg->{'susp'};
     }
 
@@ -449,19 +449,19 @@ foreach my $pkg (sort pkgsort_pkgnum_cancel @$packages) {
 
     if ( $pkg->{susp} ) { #status: suspended
       print '<TR><TD><FONT COLOR="#FF9900"><B>Suspended</B>&nbsp;</FONT></TD>'.
-            '<TD>'. pkg_datestr($pkg,'susp'). '</TD></TR>';
+            '<TD>'. pkg_datestr($pkg,'susp',$conf). '</TD></TR>';
       unless ( $pkg->{setup} ) {
         print '<TR><TD COLSPAN=2>Never billed</TD></TR>';
       } else {
         print "<TR><TD>Setup&nbsp;</TD><TD>". 
-              pkg_datestr($pkg, 'setup'). '</TD></TR>';
+              pkg_datestr($pkg, 'setup',$conf). '</TD></TR>';
       }
       print "<TR><TD>Last&nbsp;bill&nbsp;</TD><TD>".
-            pkg_datestr($pkg, 'last_bill'). '</TD></TR>'
+            pkg_datestr($pkg, 'last_bill',$conf). '</TD></TR>'
         if $pkg->{'last_bill'};
       # next bill ??
       print "<TR><TD>Expires&nbsp;</TD><TD>".
-            pkg_datestr($pkg, 'expire'). '</TD></TR>'
+            pkg_datestr($pkg, 'expire',$conf). '</TD></TR>'
         if $pkg->{'expire'};
       print '<TR><TD COLSPAN=2>(&nbsp;'. pkg_unsuspend_link($pkg).
             '&nbsp;|&nbsp;'. pkg_cancel_link($pkg). '&nbsp;)</TD></TR>';
@@ -484,24 +484,24 @@ foreach my $pkg (sort pkgsort_pkgnum_cancel @$packages) {
         unless ( $pkg->{freq} ) {
           print "<TR><TD COLSPAN=2>One-time&nbsp;charge</TD></TR>".
                 '<TR><TD>Billed&nbsp;</TD><TD>'.
-                pkg_datestr($pkg,'setup'). '</TD></TR>';
+                pkg_datestr($pkg,'setup',$conf). '</TD></TR>';
         } else {
           print '<TR><TD COLSPAN=2><FONT COLOR="#00CC00"><B>Active</B></FONT>'.
                 ',&nbsp;billed&nbsp;'. freq($pkg->{freq}). '</TD></TR>'.
                 '<TR><TD>Setup&nbsp;</TD><TD>'.
-                pkg_datestr($pkg, 'setup'). '</TD></TR>';
+                pkg_datestr($pkg, 'setup',$conf). '</TD></TR>';
         }
 
       }
 
       print "<TR><TD>Last&nbsp;bill&nbsp;</TD><TD>".
-            pkg_datestr($pkg, 'last_bill'). '</TD></TR>'
+            pkg_datestr($pkg, 'last_bill',$conf). '</TD></TR>'
         if $pkg->{'last_bill'};
       print "<TR><TD>Next&nbsp;bill&nbsp;</TD><TD>".
-            pkg_datestr($pkg, 'next_bill'). '</TD></TR>'
+            pkg_datestr($pkg, 'next_bill',$conf). '</TD></TR>'
         if $pkg->{'next_bill'};
       print "<TR><TD>Expires&nbsp;</TD><TD>".
-            pkg_datestr($pkg, 'expire'). '</TD></TR>'
+            pkg_datestr($pkg, 'expire',$conf). '</TD></TR>'
         if $pkg->{'expire'};
       if ( $pkg->{freq} ) {
         print '<TR><TD COLSPAN=2>(&nbsp;'. pkg_suspend_link($pkg).
@@ -767,82 +767,92 @@ sub keyfield_numerically { (split(/\t/,$a))[0] <=> (split(/\t/,$b))[0]; }
 
 
 sub get_packages {
-
-my $cust_main = shift or return undef;
-
-my @packages = ();
-
-foreach my $cust_pkg (($conf->exists('hidecancelledpackages') ? ($cust_main->ncancelled_pkgs)
-                                                              : ($cust_main->all_pkgs))) { 
-
-  my $part_pkg = $cust_pkg->part_pkg;
-
-  my %pkg = ();
-  $pkg{pkgnum} = $cust_pkg->pkgnum;
-  $pkg{pkg} = $part_pkg->pkg;
-  $pkg{pkgpart} = $part_pkg->pkgpart;
-  $pkg{comment} = $part_pkg->getfield('comment');
-  $pkg{freq} = $part_pkg->freq;
-  $pkg{setup} = $cust_pkg->getfield('setup');
-  $pkg{last_bill} = $cust_pkg->getfield('last_bill');
-  $pkg{next_bill} = $cust_pkg->getfield('bill');
-  $pkg{susp} = $cust_pkg->getfield('susp');
-  $pkg{expire} = $cust_pkg->getfield('expire');
-  $pkg{cancel} = $cust_pkg->getfield('cancel');
-
-  $pkg{svcparts} = []; 
-
-  foreach my $pkg_svc (qsearch('pkg_svc', { 'pkgpart' => $part_pkg->pkgpart })) {
-
-    next if ($pkg_svc->quantity == 0);
-
-    my $part_svc = qsearchs('part_svc', { 'svcpart' => $pkg_svc->svcpart });
-
-    my $svcpart = {};
-    $svcpart->{svcpart} = $part_svc->svcpart;
-    $svcpart->{svc} = $part_svc->svc;
-    $svcpart->{svcdb} = $part_svc->svcdb;
-    $svcpart->{quantity} = $pkg_svc->quantity;
-    $svcpart->{count} = 0;
-
-    $svcpart->{services} = [];
-
-    foreach my $cust_svc (qsearch('cust_svc', { 'pkgnum' => $cust_pkg->pkgnum,
-                                                'svcpart' => $part_svc->svcpart } )) {
-
-      my $svc = {};
-      $svc->{svcnum} = $cust_svc->svcnum;
-      $svc->{label} = ($cust_svc->label)[1];
-
-      push @{$svcpart->{services}}, $svc;
-
-      $svcpart->{count}++;
-
+  my $cust_main = shift or return undef;
+  my $conf = shift;
+  
+  my @packages = ();
+  
+  foreach my $cust_pkg (
+    $conf->exists('hidecancelledpackages')
+      ? $cust_main->ncancelled_pkgs
+      : $cust_main->all_pkgs
+  ) { 
+  
+    my $part_pkg = $cust_pkg->part_pkg;
+  
+    my %pkg = ();
+    $pkg{pkgnum} = $cust_pkg->pkgnum;
+    $pkg{pkg} = $part_pkg->pkg;
+    $pkg{pkgpart} = $part_pkg->pkgpart;
+    $pkg{comment} = $part_pkg->getfield('comment');
+    $pkg{freq} = $part_pkg->freq;
+    $pkg{setup} = $cust_pkg->getfield('setup');
+    $pkg{last_bill} = $cust_pkg->getfield('last_bill');
+    $pkg{next_bill} = $cust_pkg->getfield('bill');
+    $pkg{susp} = $cust_pkg->getfield('susp');
+    $pkg{expire} = $cust_pkg->getfield('expire');
+    $pkg{cancel} = $cust_pkg->getfield('cancel');
+  
+    $pkg{svcparts} = []; 
+  
+    foreach my $pkg_svc (
+      qsearch('pkg_svc', { 'pkgpart' => $part_pkg->pkgpart })
+    ) {
+  
+      next if ($pkg_svc->quantity == 0);
+  
+      my $part_svc = qsearchs('part_svc', { 'svcpart' => $pkg_svc->svcpart });
+  
+      my $svcpart = {};
+      $svcpart->{svcpart} = $part_svc->svcpart;
+      $svcpart->{svc} = $part_svc->svc;
+      $svcpart->{svcdb} = $part_svc->svcdb;
+      $svcpart->{quantity} = $pkg_svc->quantity;
+      $svcpart->{count} = 0;
+  
+      $svcpart->{services} = [];
+  
+      foreach my $cust_svc (
+        qsearch( 'cust_svc', {
+                               'pkgnum' => $cust_pkg->pkgnum,
+                               'svcpart' => $part_svc->svcpart,
+                             }
+        )
+      ) {
+  
+        my $svc = {};
+        $svc->{svcnum} = $cust_svc->svcnum;
+        $svc->{label} = ($cust_svc->label)[1];
+  
+        push @{$svcpart->{services}}, $svc;
+  
+        $svcpart->{count}++;
+  
+      }
+  
+      push @{$pkg{svcparts}}, $svcpart;
+  
     }
-
-    push @{$pkg{svcparts}}, $svcpart;
-
+  
+    push @packages, \%pkg;
+  
   }
-
-  push @packages, \%pkg;
-
-}
-
-return \@packages;
+  
+  return \@packages;
 
 }
 
 sub svc_link {
 
- my ($svcpart, $svc) = (shift,shift) or return '';
- return qq!<A HREF="${p}view/$svcpart->{svcdb}.cgi?$svc->{svcnum}">$svcpart->{svc}</A>!;
+  my ($svcpart, $svc) = (shift,shift) or return '';
+  return qq!<A HREF="${p}view/$svcpart->{svcdb}.cgi?$svc->{svcnum}">$svcpart->{svc}</A>!;
 
 }
 
 sub svc_label_link {
 
- my ($svcpart, $svc) = (shift,shift) or return '';
- return qq!<A HREF="${p}view/$svcpart->{svcdb}.cgi?$svc->{svcnum}">$svc->{label}</A>!;
+  my ($svcpart, $svc) = (shift,shift) or return '';
+  return qq!<A HREF="${p}view/$svcpart->{svcdb}.cgi?$svc->{svcnum}">$svc->{label}</A>!;
 
 }
 
@@ -875,7 +885,7 @@ sub pkgsort_pkgnum_cancel {
 }
 
 sub pkg_datestr {
-  my($pkg, $field) = @_ or return '';
+  my($pkg, $field, $conf) = @_ or return '';
   return '&nbsp;' unless $pkg->{$field};
   my $format = $conf->exists('pkg_showtimes')
                ? '<B>%D</B>&nbsp;<FONT SIZE=-3>%l:%M:%S%P&nbsp;%z</FONT>'
@@ -916,6 +926,7 @@ sub pkg_dates_link {
 
 sub pkg_customize_link {
   my $pkg = shift or return '';
+  my $custnum = shift;
   return qq!<A HREF="${p}edit/part_pkg.cgi?keywords=$custnum;clone=$pkg->{pkgpart};pkgnum=$pkg->{pkgnum}">Customize</A>!;
 }
 

@@ -120,16 +120,24 @@ sub handler
       use FS::export_svc;
       use FS::msgcat;
 
-      *notCGI::redirect = sub {
+      *CGI::redirect = sub {
         my( $self, $location ) = @_;
         use vars qw($m);
 
         if ( defined(@DBIx::Profile::ISA) ) { #profiling redirect
 
-       #   my $page =
-
-
-       #   return $page;
+          my $page =
+            qq!<HTML><BODY>Redirect to <A HREF="$location">$location</A>!.
+            '<BR><BR><PRE>'.
+              ( UNIVERSAL::can(dbh, 'sprintProfile')
+                  ? encode_entities(dbh->sprintProfile())
+                  : 'DBIx::Profile missing sprintProfile method;'.
+                    'unpatched or too old?'                        ).
+            #"\n\n". &sprintAutoProfile().  '</PRE>'.
+            "\n\n".                         '</PRE>'.
+            '</BODY></HTML>';
+          dbh->{'private_profile'} = {};
+          return $page;
 
         } else { #normal redirect
 
