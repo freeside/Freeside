@@ -1,0 +1,25 @@
+<html>
+  <head>
+    <title>Change password</title>
+  </head>
+  <body bgcolor="#e8e8e8">
+    <h3>Change password</h3>
+    <form action="/cgi-bin/fs_passwd.cgi" method="post">
+    <table bgcolor="#cccccc" border=0 cellspacing=2>
+      <tr><th align="right">Username</th>
+        <td><input type="text" name="username" size="18"></td>
+      </tr>
+      <tr><th align="right">Current password</th>
+        <td><input type="password" name="old_password" size="18"></td>
+      </tr>
+      <tr><th align="right">New password</th>
+        <td><input type="password" name="new_password" size="18"></td>
+      </tr>
+      <tr><th align="right">Re-enter new password</th>
+        <td><input type="password" name="new_password2" size="18"></td>
+      </tr>
+    </table>
+    <br><input type="submit" value="Change password">
+  </body>
+</html>
+

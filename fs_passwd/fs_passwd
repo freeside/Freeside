@@ -20,7 +20,7 @@ use vars qw($opt_f $opt_s);
 my($fs_passwdd_socket)="/usr/local/freeside/fs_passwdd_socket";
 my($freeside_uid)=scalar(getpwnam('freeside'));
 
-$ENV{'PATH'} ='/usr/bin:/usr/ucb:/bin';
+$ENV{'PATH'} ='/usr/local/bin:/usr/bin:/usr/ucb:/bin';
 $ENV{'SHELL'} = '/bin/sh';
 $ENV{'IFS'} = " \t\n";
 $ENV{'CDPATH'} = '';
