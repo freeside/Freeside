@@ -103,13 +103,6 @@ sub print_okay {
 END
 }
 
-my $error = login ( {
-  'username' => $username,
-  'portnum'  => $portnum,
-} );
-
-warn $error if $error;
-
 sub usage {
   die "Usage:\n\n  freeside-login username ( portnum | ip | nasnum nasport )";
 }

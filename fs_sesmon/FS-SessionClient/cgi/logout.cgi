@@ -78,13 +78,6 @@ sub print_okay {
 END
 }
 
-my $error = logout ( {
-  'username' => $username,
-  'portnum'  => $portnum,
-} );
-
-warn $error if $error;
-
 sub usage {
   die "Usage:\n\n  freeside-logout username ( portnum | ip | nasnum nasport )";
 }
