@@ -249,7 +249,7 @@ sub check {
   #         || ! $self->dstsvc;
 
   if ( $self->src ) {
-    $self->src =~ /^([\w\.\-\&]*)(\@([\w\-]+\.)+\w+)?$/
+    $self->src =~ /^([\w\.\-\&]*)(\@([\w\-]+\.)+\w+)$/
        or return "Illegal src: ". $self->dst;
     $self->src("$1$2");
   } else {
@@ -257,7 +257,7 @@ sub check {
   }
 
   if ( $self->dst ) {
-    $self->dst =~ /^([\w\.\-\&]*)(\@([\w\-]+\.)+\w+)?$/
+    $self->dst =~ /^([\w\.\-\&]*)(\@([\w\-]+\.)+\w+)$/
        or return "Illegal dst: ". $self->dst;
     $self->dst("$1$2");
   } else {
