@@ -336,11 +336,93 @@ sub seconds_since {
   $sth->fetchrow_arrayref->[0];
 }
 
+=item seconds_since_sqlradacct TIMESTAMP_START TIMESTAMP_END ( DBI_DATABASE_HANDLE | DATASRC DB_USERNAME DB_PASSWORD )
+
+See L<FS::svc_acct/seconds_since_sqlradacct>.  Equivalent to
+$cust_svc->svc_x->seconds_since, but more efficient.  Meaningless for records
+where B<svcdb> is not "svc_acct".
+
+NOTE: specifying a DATASRC/USERNAME/PASSWORD instead of a DBI database handle
+is not yet implemented.
+
+=cut
+
+#note: implementation here, POD in FS::svc_acct
+sub seconds_since_sqlradacct {
+  my($self, $start, $end, $dbh) = @_;
+
+  my $username = $self->svc_x->username;
+
+  #select a unix time conversion function based on database type
+  my $str2time;
+  if ( $dbh->{Driver}->{Name} eq 'mysql' ) {
+    $str2time = 'UNIX_TIMESTAMP(';
+  } elsif ( $dbh->{Driver}->{Name} eq 'Pg' ) {
+    $str2time = 'EXTRACT( EPOCH FROM ';
+  } else {
+    warn "warning: unknown database type ". $dbh->{Driver}->{Name}.
+         "; guessing how to convert to UNIX timestamps";
+    $str2time = 'extract(epoch from ';
+  }
+
+  #find sessions completely within the given range
+  my $sth = $dbh->prepare("SELECT SUM(acctsessiontime)
+                             FROM radacct
+                             WHERE UserName = ?
+                               AND $str2time AcctStartTime) >= ?
+                               AND $str2time AcctStopTime ) <  ?
+                               AND AcctStopTime =! 0
+                               AND AcctStopTime IS NOT NULL"
+  ) or die $dbh->errstr;
+  $sth->execute($username, $start, $end) or die $sth->errstr;
+  my $regular = $sth->fetchrow_arrayref->[0];
+
+  #find open sessions which start in the range, count session start->range end
+  $sth = $dbh->prepare("SELECT SUM( ? - $str2time AcctStartTime ) )
+                          FROM radacct
+                          WHERE UserName = ?
+                            AND AcctStartTime >= ?
+                            AND (    AcctStopTime = 0
+                                  OR AcctStopTime IS NULL )"
+  ) or die $dbh->errstr;
+  $sth->execute($end, $username, $start) or die $sth->errstr;
+  my $start_during = $sth->fetchrow_arrayref->[0];
+
+  #find closed sessions which start before the range but stop during,
+  #count range start->session end
+  $sth = $dbh->prepare("SELECT SUM( $str2time AcctStopTime ) - ? ) 
+                          FROM radacct
+                          WHERE UserName = ?
+                            AND AcctStartTime < ?
+                            AND AcctStopTime >= ?
+                            AND AcctStopTime <  ?
+                            AND AcctStopTime != 0
+                            AND AcctStopTime IS NOT NULL"
+  ) or die $dbh->errstr;
+  $sth->execute($start, $username, $start, $start, $end ) or die $sth->errstr;
+  my $end_during = $sth->fetchrow_arrayref->[0];
+
+  #find closed or open sessions which start before the range but stop
+  # after, or are still open, count range start->range end
+  $sth = $dbh->prepare("SELECT COUNT(*)
+                          FROM radacct
+                          WHERE UserName = ?
+                            AND AcctStartTime < ?
+                            AND (    AcctStopTime >= ?
+                                  OR AcctStopTime =  0
+                                  OR AcctStopTime IS NULL )"
+  ) or die $dbh->errstr;
+  $sth->execute($username, $start, $end ) or die $sth->errstr;
+  my $entire_range = ($end-$start) * $sth->fetchrow_arrayref->[0];
+
+  $regular + $end_during + $start_during + $entire_range;
+}
+
 =back
 
 =head1 VERSION
 
-$Id: cust_svc.pm,v 1.17 2002-09-18 22:39:01 ivan Exp $
+$Id: cust_svc.pm,v 1.18 2002-10-12 13:26:45 ivan Exp $
 
 =head1 BUGS
 
@@ -351,6 +433,9 @@ pkg_svc records are not checked in general (here).
 
 Deleting this record doesn't check or delete the svc_* record associated
 with this record.
+
+In seconds_since_sqlradacct, specifying a DATASRC/USERNAME/PASSWORD instead of
+a DBI database handle is not yet implemented.
 
 =head1 SEE ALSO
 

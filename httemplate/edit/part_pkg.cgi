@@ -355,6 +355,37 @@ tie my %plans, 'Tie::IxHash',
 
   },
 
+  'sqlradacct_hour' => {
+    'name' => 'Base charge plus charge per-hour from an external SQL radacct table',
+    'fields' => {
+      'setup_fee' => { 'name' => 'Setup fee for this package',
+                       'default' => 0,
+                     },
+      'recur_flat' => { 'name' => 'Base monthly charge for this package',
+                        'default' => 0,
+                      },
+      'sql_datasrc' => { 'name' => 'DBI data source',
+                         'default' => 'DBI:mysql:host=radius.server.name;dbname=radius',
+                       },
+      'sql_username' => { 'name' => 'Database username',
+                          'default' => 'radius',
+                        },
+      'sql_password' => { 'name' => 'Database password',
+                          'default' => '',
+                        },
+      'recur_included_hours' => { 'name' => 'Hours included',
+                                  'default' => 0,
+                                },
+      'recur_hourly_charge' => { 'name' => 'Additional charge per hour',
+                                 'default' => 0,
+                               },
+    },
+    'fieldorder' => [ 'setup_fee', 'recur_flat', 'recur_included_hours', 'recur_hourly_charge' ],
+    'setup' => 'what.setup_fee.value',
+    'recur' => '\'my ($sec,$min,$hour,$mday,$mon,$year) = (localtime($sdate))[0,1,2,3,4,5]; $mon+=$part_pkg->freq; until ($mon<12) { $mon-=12; $year++ }; $edate = timelocal($sec,$min,$hour,$mday,$mon,$year); my $hours = $cust_pkg->seconds_since_sqlradacct($sdate, $edate, \' + what.sql_datasrc + \', \' + what.sql_username + \', \' + what.sql_password + \' ) / 3600 - \' + what.recur_included_hours.value + \'; $hours = 0 if $hours < 0; \' + what.recur_flat.value + \' + \' + what.recur_hourly_charge.value + \' * $hours;\'',
+  },
+
+
 ;
 
 my %plandata = map { /^(\w+)=(.*)$/; ( $1 => $2 ); }
