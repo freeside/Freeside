@@ -1,9 +1,11 @@
 package FS::part_export::shellcommands;
 
-use vars qw(@ISA);
+use vars qw(@ISA @saltset);
 use FS::part_export;
 
 @ISA = qw(FS::part_export);
+
+@saltset = ( 'a'..'z' , 'A'..'Z' , '0'..'9' , '.' , '/' );
 
 sub rebless { shift; }
 
@@ -23,6 +25,8 @@ sub _export_command {
   my $stdin = $self->option($action."_stdin");
   no strict 'refs';
   ${$_} = $svc_acct->getfield($_) foreach $svc_acct->fields;
+  $crypt_password = crypt( $svc_acct->_password,
+                           $saltset[int(rand(64))].$saltset[int(rand(64))] );
   $self->shellcommands_queue( $svc_acct->svcnum,
     user         => $self->option('user')||'root',
     host         => $self->machine,
@@ -38,6 +42,8 @@ sub _export_replace {
   no strict 'refs';
   ${"old_$_"} = $old->getfield($_) foreach $old->fields;
   ${"new_$_"} = $new->getfield($_) foreach $new->fields;
+  $new_crypt_password = crypt( $svc_acct->_password,
+                               $saltset[int(rand(64))].$saltset[int(rand(64))]);
   $self->shellcommands_queue( $new->svcnum,
     user         => $self->option('user')||'root',
     host         => $self->machine,

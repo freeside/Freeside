@@ -526,12 +526,12 @@ tie my %shellcommands_options, 'Tie::IxHash',
   #'machine' => { label=>'Remote machine' },
   'user' => { label=>'Remote username', default=>'root' },
   'useradd' => { label=>'Insert command',
-                 default=>'useradd -d $dir -m -s $shell -u $uid $username; passwd $username'
+                 default=>'useradd -d $dir -m -s $shell -u $uid -p $crypt_password $username'
                 #default=>'cp -pr /etc/skel $dir; chown -R $uid.$gid $dir'
                },
   'useradd_stdin' => { label=>'Insert command STDIN',
                        type =>'textarea',
-                       default=>"\$_password\n\$_password\n",
+                       default=>"",
                      },
   'userdel' => { label=>'Delete command',
                  default=>'userdel $username',
@@ -542,7 +542,7 @@ tie my %shellcommands_options, 'Tie::IxHash',
                        default=>'',
                      },
   'usermod' => { label=>'Modify command',
-                 default=>'usermod -d $new_dir -l $new_username -s $new_shell -u $new_uid $old_username; passwd $new_username',
+                 default=>'usermod -d $new_dir -m -l $new_username -s $new_shell -u $new_uid -p $new_crypt_password $old_username',
                 #default=>'[ -d $old_dir ] && mv $old_dir $new_dir || ( '.
                  #  'chmod u+t $old_dir; mkdir $new_dir; cd $old_dir; '.
                  #  'find . -depth -print | cpio -pdm $new_dir; '.
@@ -552,7 +552,7 @@ tie my %shellcommands_options, 'Tie::IxHash',
                },
   'usermod_stdin' => { label=>'Modify command STDIN',
                        type =>'textarea',
-                       default=>"\$_password\n\$_password\n",
+                       default=>"",
                      },
 ;
 
@@ -675,7 +675,7 @@ tie my %sqlmail_options, 'Tie::IxHash',
       'desc' => 'Real-time export via remote SSH (i.e. useradd, userdel, etc.)',
       'options' => \%shellcommands_options,
       'nodomain' => 'Y',
-      'notes' => 'Run remote commands via SSH.  Usernames are considered unique (also see shellcommands_withdomain).  You probably want this if the commands you are running will not accept a domain as a parameter.  You will need to <a href="../docs/ssh.html">setup SSH for unattended operation</a>.<BR><BR>Use these buttons for some useful presets:<UL><LI><INPUT TYPE="button" VALUE="Linux/NetBSD" onClick=\'this.form.useradd.value = "useradd -d $dir -m -s $shell -u $uid $username; passwd $username"; this.form.useradd_stdin.value = "$_password\n$_password\n"; this.form.userdel.value = "userdel $username"; this.form.userdel_stdin.value=""; this.form.usermod.value = "usermod -d $new_dir -l $new_username -s $new_shell -u $new_uid $old_username; passwd $new_username"; this.form.usermod_stdin.value = "$_password\n$_password\n";\'><LI><INPUT TYPE="button" VALUE="FreeBSD" onClick=\'this.form.useradd.value = "pw useradd $username -d $dir -m -s $shell -u $uid; passwd $username"; this.form.useradd_stdin.value = "$_password\n$_password\n"; this.form.userdel.value = "pw userdel $username"; this.form.userdel_stdin.value=""; this.form.usermod.value = "pw usermod $old_username -d $new_dir -l $new_username -s $new_shell -u $new_uid; passwd $new_username"; this.form.usermod_stdin.value = "$_password\n$_password\n";\'><LI><INPUT TYPE="button" VALUE="Just maintain directories (use with sysvshell or bsdshell)" onClick=\'this.form.useradd.value = "cp -pr /etc/skel $dir; chown -R $uid.$gid $dir"; this.form.useradd_stdin.value = ""; this.form.usermod.value = "[ -d $old_dir ] && mv $old_dir $new_dir || ( chmod u+t $old_dir; mkdir $new_dir; cd $old_dir; find . -depth -print | cpio -pdm $new_dir; chmod u-t $new_dir; chown -R $uid.$gid $new_dir; rm -rf $old_dir )"; this.form.usermod_stdin.value = ""; this.form.userdel.value = "rm -rf $dir"; this.form.userdel_stdin.value="";\'></UL>',
+      'notes' => 'Run remote commands via SSH.  Usernames are considered unique (also see shellcommands_withdomain).  You probably want this if the commands you are running will not accept a domain as a parameter.  You will need to <a href="../docs/ssh.html">setup SSH for unattended operation</a>.<BR><BR>Use these buttons for some useful presets:<UL><LI><INPUT TYPE="button" VALUE="Linux/NetBSD" onClick=\'this.form.useradd.value = "useradd -d $dir -m -s $shell -u $uid -p $crypt_password $username"; this.form.useradd_stdin.value = ""; this.form.userdel.value = "userdel $username"; this.form.userdel_stdin.value=""; this.form.usermod.value = "usermod -d $new_dir -m -l $new_username -s $new_shell -u $new_uid -p $new_crypt_password $old_username"; this.form.usermod_stdin.value = "";\'><LI><INPUT TYPE="button" VALUE="FreeBSD" onClick=\'this.form.useradd.value = "pw useradd $username -d $dir -m -s $shell -u $uid -h 0"; this.form.useradd_stdin.value = "$_password\n"; this.form.userdel.value = "pw userdel $username"; this.form.userdel_stdin.value=""; this.form.usermod.value = "pw usermod $old_username -d $new_dir -m -l $new_username -s $new_shell -u $new_uid -h 0"; this.form.usermod_stdin.value = "$_password\n";\'><LI><INPUT TYPE="button" VALUE="Just maintain directories (use with sysvshell or bsdshell)" onClick=\'this.form.useradd.value = "cp -pr /etc/skel $dir; chown -R $uid.$gid $dir"; this.form.useradd_stdin.value = ""; this.form.usermod.value = "[ -d $old_dir ] && mv $old_dir $new_dir || ( chmod u+t $old_dir; mkdir $new_dir; cd $old_dir; find . -depth -print | cpio -pdm $new_dir; chmod u-t $new_dir; chown -R $uid.$gid $new_dir; rm -rf $old_dir )"; this.form.usermod_stdin.value = ""; this.form.userdel.value = "rm -rf $dir"; this.form.userdel_stdin.value="";\'></UL>',
     },
 
     'shellcommands_withdomain' => {
