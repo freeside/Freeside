@@ -168,7 +168,7 @@ sub qsearch {
   my $statement = "SELECT * FROM $table";
   if ( @fields ) {
     $statement .= " WHERE ". join(' AND ', map {
-      if ( $record->{$_} eq '' || $record->{$_} eq undef ) {
+      if ( ! defined($record->{$_} || $record->{$_} eq '' ) {
         if ( driver_name eq 'Pg' ) {
           "$_ IS NULL";
         } else {
@@ -841,7 +841,7 @@ sub hfields {
 
 =head1 VERSION
 
-$Id: Record.pm,v 1.4 2000-06-23 12:25:59 ivan Exp $
+$Id: Record.pm,v 1.5 2000-06-27 11:27:55 ivan Exp $
 
 =head1 BUGS
 
