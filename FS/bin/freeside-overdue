@@ -115,7 +115,7 @@ sub untaint_argv {
 }
 
 sub usage {
-  die "Usage:\n\n  freeside-overdue [ -e ] [ -d days ] [ -q ] [ -p ] [ -l amount ] [ -s ] [ -c ] user\n";
+  die "Usage:\n\n    freeside-overdue [ -e ] [ -d days ] [ -q ] [ -p ] [ -l amount ] [ -s ] [ -c ] [ -b ] [ -y ] [ -o [ -i ] ] user\n";
 }
 
 
