@@ -7,7 +7,7 @@
   <li>If migrating from less than 1.3.1, see these <a href="upgrade7.html">instructions</a> first.
   <li><font size="+2" color="#ff0000">Backup your database and current Freeside installation.</font> (with&nbsp;<a href="http://www.ca.postgresql.org/devel-corner/docs/postgres/backup.html">PostgreSQL</a>) (with&nbsp;<a href="http://www.mysql.com/documentation/mysql/bychapter/manual_MySQL_Database_Administration.html#Backup">MySQL</a>)
   <li><a href="http://perl.apache.org/">mod_perl</a> is now required.
-  <li>Install <a href="http://search.cpan.org/search?dist=Time-Duration">Time-Duration</a>, <a href="http://search.cpan.org/search?dist=Tie-IxHash">Tie-IxHash</a> and <a href="http://search.cpan.org/search?dist=HTML-Widgets-SelectLayers">HTML-Widgets-SelectLayers</a>.
+  <li>Install <a href="http://search.cpan.org/search?dist=Time-Duration">Time-Duration</a>, <a href="http://search.cpan.org/search?dist=Tie-IxHash">Tie-IxHash</a> and <a href="http://search.cpan.org/search?dist=HTML-Widgets-SelectLayers">HTML-Widgets-SelectLayers</a> (minimum version 0.02).
   <li>Install <a href="http://www.apache-asp.org/">Apache::ASP</a> or <a href="http://www.masonhq.com/">HTML::Mason</a>.
   <li>Install <a href="http://rsync.samba.org/">rsync</a>
 </ul>
@@ -216,6 +216,7 @@ CREATE UNIQUE INDEX cust_tax_exempt1 ON cust_tax_exempt ( taxnum, year, month );
 ALTER TABLE svc_acct ADD domsvc integer NOT NULL;
 ALTER TABLE svc_domain ADD catchall integer NULL;
 ALTER TABLE cust_main ADD referral_custnum integer NULL;
+ALTER TABLE cust_main ADD comments text NULL;
 ALTER TABLE cust_pay ADD custnum integer;
 ALTER TABLE cust_pay_batch ADD paybatchnum integer;
 ALTER TABLE cust_refund ADD custnum integer;
@@ -276,7 +277,6 @@ CREATE UNIQUE INDEX svc_acct_pop_pkey ON svc_acct_pop ( popnum );
 CREATE UNIQUE INDEX svc_acct_sm_pkey ON svc_acct_sm ( svcnum );
 CREATE UNIQUE INDEX svc_domain_pkey ON svc_domain ( svcnum );
 CREATE UNIQUE INDEX svc_www_pkey ON svc_www ( svcnum );
-CREATE UNIQUE INDEX type_pkgs_pkey ON type_pkgs ( typenum );
 </pre>
   <li>If you wish to enable service/shipping addresses, apply the following
       changes to your database:
@@ -294,23 +294,18 @@ ALTER TABLE cust_main ADD COLUMN ship_country char(2) NULL;
 ALTER TABLE cust_main ADD COLUMN ship_daytime varchar(20) NULL;
 ALTER TABLE cust_main ADD COLUMN ship_night varchar(20) NULL;
 ALTER TABLE cust_main ADD COLUMN ship_fax varchar(12) NULL;
-CREATE INDEX cust_main1 ON cust_main ( ship_last );
-CREATE INDEX cust_main2 ON cust_main ( ship_company );
-</pre>
-  <li>If you wish to enable customer comments, apply the following change to
-      your database:
-<pre>
-ALTER TABLE cust_main ADD COLUMN comments text NULL;
+CREATE INDEX cust_main4 ON cust_main ( ship_last );
+CREATE INDEX cust_main5 ON cust_main ( ship_company );
 </pre>
   <li>If you are using the signup server, reinstall it according to the <a href="signup.html">instructions</a>.  The 1.3.x signup server is not compatible with 1.4.x.
-  <li>Run bin/dbdef-create.
+  <li>Run <tt>bin/dbdef-create <i>username</i></tt>
   <li>If you have svc_acct_sm records or service definitions:
     <ul>
       <li>Create a service definition with table svc_forward
-      <li>Run bin/fs-migrate-svc_acct_sm
+      <li>Run <tt>bin/fs-migrate-svc_acct_sm <i>username</i></tt>
     </ul>
-  <li>Run bin/fs-migrate-payref
-  <li>Run bin/fs-migrate-part_svc
+  <li>Run <tt>bin/fs-migrate-payref<i>username</i></tt>
+  <li>Run <tt>bin/fs-migrate-part_svc<i>username</i></tt>
   <li><b>After running bin/fs-migrate-payref</b>, apply the following changes to your database:
   <table border><tr><th>PostgreSQL</th><th>MySQL, others</th></tr>
 <tr><td>
@@ -322,9 +317,10 @@ CREATE TABLE cust_pay_temp (
   _date int null,
   payby char(4) not null,
   payinfo varchar(16) null,
-  paybatch varchar(80) null
+  paybatch varchar(80) null,
+  closed char(1) null
 );
-INSERT INTO cust_pay_temp SELECT * from cust_pay;
+INSERT INTO cust_pay_temp SELECT paynum, custnum, paid, _date, payby, payinfo, paybatch, closed FROM cust_pay;
 DROP TABLE cust_pay;
 ALTER TABLE cust_pay_temp RENAME TO cust_pay;
 CREATE UNIQUE INDEX cust_pay1 ON cust_pay (paynum);
@@ -337,9 +333,10 @@ CREATE TABLE cust_refund_temp (
   reason varchar(80) not null,
   payby char(4) not null,
   payinfo varchar(16) null,
-  paybatch varchar(80) null
+  paybatch varchar(80) null,
+  closed char(1) null
 );
-INSERT INTO cust_refund_temp SELECT * from cust_refund;
+INSERT INTO cust_refund_temp SELECT refundnum, custnum, _date, refund, otaker, reason, payby, payinfo, '', closed from cust_refund;
 DROP TABLE cust_refund;
 ALTER TABLE cust_refund_temp RENAME TO cust_refund;
 CREATE UNIQUE INDEX cust_refund1 ON cust_refund (refundnum);
@@ -350,16 +347,11 @@ ALTER TABLE cust_pay DROP COLUMN invnum;
 ALTER TABLE cust_refund DROP COLUMN crednum;
 </pre></font>
 </td></tr></table>
-  <li><b>IMPORTANT: After applying the second set of database changes</b>, run bin/dbdef-create again.
-  <li><b>IMPORTANT</b>: run bin/create-history-tables
-  <li><b>IMPORTANT: After running bin/create-history-tables</b>, run bin/dbdef-create again.
-  <li>As the freeside UNIX user, run <tt>bin/populate-msgcat <b>username</b></tt
-> to populate the message catalog, passing the username of a Freeside user you c
-reated above:
-<pre>
-$ su freeside
-$ bin/populate-msgcat <b>username</b>
-</pre>
+  <li><b>IMPORTANT: After applying the second set of database changes</b>, run <tt>bin/dbdef-create <i>username</i></tt> again.
+  <li><b>IMPORTANT</b>: run <tt>bin/create-history-tables <i>username</i></tt>
+  <li><b>IMPORTANT: After running bin/create-history-tables</b>, run <tt>bin/dbdef-create <i>username</i></tt> again.
+  <li>As the freeside UNIX user, run <tt>bin/populate-msgcat <i>username</i></tt
+> to populate the message catalog
   <li>set the <a href="../config/config.cgi#username_policy">user_policy configuration value</a> as appropriate for your site.
   <li>set the <a href="../config/config.cgi#locale">locale configuration value</a> to en_US.
   <li>the mxmachines, nsmachines, arecords and cnamerecords configuration values have been deprecated.  Set the <a href="../config/config.cgi#defaultrecords">defaultrecords configuration value</a> instead.
