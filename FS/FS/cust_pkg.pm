@@ -609,7 +609,7 @@ billing item.
 
 =cut
 
-sub calc_recur {
+sub calc_remain {
   my $self = shift;
   $self->part_pkg->calc_remain($self, @_);
 }
