@@ -1,7 +1,7 @@
 package FS::cust_pkg;
 
 use strict;
-use vars qw(@ISA $disable_agentcheck);
+use vars qw(@ISA $disable_agentcheck $DEBUG);
 use FS::UID qw( getotaker dbh );
 use FS::Record qw( qsearch qsearchs );
 use FS::Misc qw( send_email );
@@ -24,6 +24,8 @@ use FS::svc_forward;
 use FS::Conf;
 
 @ISA = qw( FS::Record );
+
+$DEBUG = 0;
 
 $disable_agentcheck = 0;
 
@@ -614,7 +616,7 @@ sub attribute_since_sqlradacct {
 
 Transfers as many services as possible from this package to another package.
 The destination package must already exist.  Services are moved only if 
-the destination allows services with the correct I<svcnum> (not svcdb).  
+the destination allows services with the correct I<svcpart> (not svcdb).  
 Any services that can't be moved remain in the original package.
 
 Returns an error, if there is one; otherwise, returns the number of services 
@@ -726,13 +728,16 @@ newly-created cust_pkg objects.
 =cut
 
 sub order {
-
-  # Rewritten to make use of the transfer() method, and in general 
-  # to not suck so badly.
-
   my ($custnum, $pkgparts, $remove_pkgnum, $return_cust_pkg) = @_;
 
   # Transactionize this whole mess
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE'; 
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE'; 
+  local $SIG{PIPE} = 'IGNORE'; 
+
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
