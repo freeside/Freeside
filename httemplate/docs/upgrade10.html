@@ -1,7 +1,9 @@
 <pre>
 this is incomplete
 
-install NetAddr::IP and Chart
+install DBIx::DBSchema 0.21
+
+install NetAddr::IP and Chart::Base
 
 CREATE TABLE cust_bill_pkg_detail (
   detailnum serial,
@@ -64,7 +66,7 @@ CREATE TABLE sb_field (
   sbfieldpart int NOT NULL,
   svcnum int NOT NULL,
   value varchar(128)
-)
+);
 CREATE UNIQUE INDEX sb_field1 ON sb_field ( sbfieldpart, svcnum );
 
 CREATE TABLE svc_broadband (
@@ -74,6 +76,7 @@ CREATE TABLE svc_broadband (
   speed_down int NOT NULL,
   ip_addr varchar(15),
   PRIMARY KEY (svcnum)
+);
 
 DELETE INDEX cust_bill_pkg1;
 
@@ -83,9 +86,6 @@ ALTER TABLE cust_main_county ADD taxname varchar(80) NULL;
 ALTER TABLE h_cust_main_county ADD taxname varchar(80) NULL;
 ALTER TABLE cust_pkg ADD last_bill int NULL;
 ALTER TABLE h_cust_pkg ADD last_bill int NULL;
-
-DROP TABLE svc_acct_sm
-DROP TABLE h_svc_acct_sm
 
 dump database, edit:
 - cust_main: increase otaker from 8 to 32
@@ -97,8 +97,6 @@ dump database, edit:
 - domain_record: change rectype from char to varchar
 - domain_record: increase recdata from 80 to 255
 then reload
-
-create all of the new broadband tables
 
 optionally:
 
