@@ -16,7 +16,9 @@ my $stop = shift || time;
 my $svc_acct = qsearchs( 'svc_acct', { 'username' => $target_user } );
 die "username $target_user not found\n" unless $svc_acct;
 
-print $svc_acct->seconds_since_sqlradacct( str2time($start), str2time($stop) ).
+print $svc_acct->seconds_since_sqlradacct(
+                                           str2time($start),
+                                           $stop ? str2time($stop) : time  ).
       "\n";
 
 sub usage {
