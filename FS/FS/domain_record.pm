@@ -241,7 +241,7 @@ sub check {
   if ( $self->rectype eq 'SOA' ) {
     my $recdata = $self->recdata;
     $recdata =~ s/\s+/ /g;
-    $recdata =~ /^([a-z0-9\.\-]+ [\w\-\+]+\.[a-z0-9\.\-]+ \( ([\dwdhmsWDHMS]+ ){5}\))$/i
+    $recdata =~ /^([a-z0-9\.\-]+ [\w\-\+]+\.[a-z0-9\.\-]+ \( ((\d+|((\d+[WDHMS])+)) ){5}\))$/i
       or return "Illegal data for SOA record: $recdata";
     $self->recdata($1);
   } elsif ( $self->rectype eq 'NS' ) {
@@ -332,7 +332,7 @@ sub zone {
 
 =head1 VERSION
 
-$Id: domain_record.pm,v 1.14 2003-04-24 18:45:03 khoff Exp $
+$Id: domain_record.pm,v 1.15 2003-04-29 18:28:50 khoff Exp $
 
 =head1 BUGS
 
