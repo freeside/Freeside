@@ -50,11 +50,13 @@
                'count_addl'  => [ '$%.2f total credited', ],
                #'redirect'    => $link,
                'header'      =>
-                 [ qw(Amount Date), 'Contact name', qw(Company By Reason) ],
+                 [ qw(Amount Date), 'Cust #', 'Contact name',
+                   qw(Company By Reason) ],
                'fields'      => [
                  #'crednum',
                  sub { sprintf('$%.2f', shift->amount ) },
                  sub { time2str('%b %d %Y', shift->_date ) },
+                 'custnum',
                  sub { my $cust_main = shift->cust_main;
                        $cust_main->get('last'). ', '. $cust_main->first;
                      },
@@ -64,9 +66,11 @@
                  'otaker',
                  'reason',
                ],
+               'align' => 'rrrllll',
                'links' => [
                  '',
                  '',
+                 $clink,
                  $clink,
                  $clink,
                  '',
