@@ -206,15 +206,16 @@ points to.  You can ask the object for a copy with the I<hash> method.
 
 sub table { 'cust_main'; }
 
-=item insert
+=item insert [ CUST_PKG_HASHREF [ , INVOICING_LIST_ARYREF ] ]
 
 Adds this customer to the database.  If there is an error, returns the error,
 otherwise returns false.
 
-There is a special insert mode in which you pass a data structure to the insert
-method containing FS::cust_pkg and FS::svc_I<tablename> objects.  When
-running under a transactional database, all records are inserted atomicly, or
-the transaction is rolled back.  There should be a better explanation of this,
+CUST_PKG_HASHREF: If you pass a Tie::RefHash data structure to the insert
+method containing FS::cust_pkg and FS::svc_I<tablename> objects, all records
+are inserted atomicly, or the transaction is rolled back (this requries a 
+transactional database).  Passing an empty hash reference is equivalent to
+not supplying this parameter.  There should be a better explanation of this,
 but until then, here's an example:
 
   use Tie::RefHash;
@@ -224,6 +225,15 @@ but until then, here's an example:
     ...
   );
   $cust_main->insert( \%hash );
+
+INVOICING_LIST_ARYREF: If you pass an arrarref to the insert method, it will
+be set as the invoicing list (see L<"invoicing_list">).  Errors return as
+expected and rollback the entire transaction; it is not necessary to call 
+check_invoicing_list first.  The invoicing_list is set after the records in the
+CUST_PKG_HASHREF above are inserted, so it is now possible set set an
+invoicing_list destination to the newly-created svc_acct.  Here's an example:
+
+  $cust_main->insert( {}, [ $email, 'POST' ] );
 
 =cut
 
@@ -269,7 +279,7 @@ sub insert {
     return $error;
   }
 
-  if ( @param ) {
+  if ( @param ) { # CUST_PKG_HASHREF
     my $cust_pkgs = shift @param;
     foreach my $cust_pkg ( keys %$cust_pkgs ) {
       $cust_pkg->custnum( $self->custnum );
@@ -296,6 +306,16 @@ sub insert {
   if ( $seconds ) {
     $dbh->rollback if $oldAutoCommit;
     return "No svc_acct record to apply pre-paid time";
+  }
+
+  if ( @param ) { # INVOICING_LIST_ARYREF
+    my $invoicing_list = shift @param;
+    $error = $self->check_invoicing_list( $invoicing_list );
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+    $self->invoicing_list( $invoicing_list );
   }
 
   if ( $amount ) {
@@ -394,10 +414,57 @@ sub delete {
 
 }
 
-=item replace OLD_RECORD
+=item replace OLD_RECORD [ INVOICING_LIST_ARYREF ]
 
 Replaces the OLD_RECORD with this one in the database.  If there is an error,
 returns the error, otherwise returns false.
+
+INVOICING_LIST_ARYREF: If you pass an arrarref to the insert method, it will
+be set as the invoicing list (see L<"invoicing_list">).  Errors return as
+expected and rollback the entire transaction; it is not necessary to call 
+check_invoicing_list first.  Here's an example:
+
+  $new_cust_main->replace( $old_cust_main, [ $email, 'POST' ] );
+
+=cut
+
+sub replace {
+  my $self = shift;
+  my $old = shift;
+  my @param = @_;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $error = $self->SUPER::replace($old);
+
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  if ( @param ) { # INVOICING_LIST_ARYREF
+    my $invoicing_list = shift @param;
+    $error = $self->check_invoicing_list( $invoicing_list );
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+    $self->invoicing_list( $invoicing_list );
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  '';
+
+}
 
 =item check
 
@@ -1200,7 +1267,7 @@ sub check_invoicing_list {
 
 =head1 VERSION
 
-$Id: cust_main.pm,v 1.16 2001-08-11 05:52:15 ivan Exp $
+$Id: cust_main.pm,v 1.17 2001-08-12 00:07:00 ivan Exp $
 
 =head1 BUGS
 
