@@ -7,6 +7,7 @@ use vars qw( @ISA $nossh_hack $conf $dir_prefix @shells $usernamemin
              $username_noperiod $username_uppercase
              $shellmachine $useradd $usermod $userdel $mydomain
              $cyrus_server $cyrus_admin_user $cyrus_admin_pass
+             $cp_server $cp_user $cp_pass $cp_workgroup
              $dirhash
              $icradius_dbh
              @saltset @pw_set);
@@ -70,6 +71,16 @@ $FS::UID::callback{'FS::svc_acct'} = sub {
     $cyrus_server = '';
     $cyrus_admin_user = '';
     $cyrus_admin_pass = '';
+  }
+  if ( $conf->exists('cp_app') ) {
+    ($cp_server, $cp_user, $cp_pass, $cp_workgroup) =
+      $conf->config('cp_app');
+    eval "use Net::APP;"
+  } else {
+    $cp_server = '';
+    $cp_user = '';
+    $cp_pass = '';
+    $cp_workgroup = '';
   }
   if ( $conf->exists('icradiusmachines') ) {
     if ( $conf->exists('icradius_secrets') ) {
@@ -286,6 +297,16 @@ sub insert {
       return "queueing job (transaction rolled back): $error";
     }
   }
+
+  if ( $cp_server ) {
+    my $queue = new FS::queue { 'job' => 'FS::svc_acct::cp_insert' };
+    $error = $queue->insert($self->username, $self->_password);
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "queueing job (transaction rolled back): $error";
+    }
+  }
+  
   if ( $icradius_dbh ) {
 
     my $radcheck_queue =
@@ -349,6 +370,27 @@ sub cyrus_insert {
   }
 
   1;
+}
+
+sub cp_insert {
+  my( $username, $password ) = @_;
+
+  my $app = new Net::APP ( $cp_server,
+                        User     => $cp_user,
+                        Password => $cp_pass,
+                        Domain   => $mydomain,
+                        Timeout  => 60,
+                        #Debug    => 1,
+                      ) or die $@;
+
+  $app->create_mailbox(
+                        Mailbox   => $username,
+                        Password  => $password,
+                        Workgroup => $cp_workgroup,
+                        Domain    => $mydomain,
+                      );
+
+  die $app->message unless $app->ok;
 }
 
 sub icradius_rc_insert {
@@ -517,6 +559,16 @@ sub delete {
       return "queueing job (transaction rolled back): $error";
     }
   }
+  
+  if ( $cp_server ) {
+    my $queue = new FS::queue { 'job' => 'FS::svc_acct::cp_delete' };
+    $error = $queue->insert($self->username);
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "queueing job (transaction rolled back): $error";
+    }
+  }
+
   if ( $icradius_dbh ) {
 
     my $radcheck_queue =
@@ -560,6 +612,24 @@ sub cyrus_delete {
   die $error if $error;
 
   1;
+}
+
+sub cp_delete {
+  my( $username ) = @_;
+  my $app = new Net::APP ( $cp_server,
+                        User     => $cp_user,
+                        Password => $cp_pass,
+                        Domain   => $mydomain,
+                        Timeout  => 60,
+                        #Debug    => 1,
+                      ) or die $@;
+
+  $app->delete_mailbox(
+                        Mailbox   => $username,
+                        Domain    => $mydomain,
+                      );
+
+  die $app->message unless $app->ok;
 }
 
 sub icradius_rc_delete {
@@ -666,6 +736,24 @@ sub replace {
     }
   }
 
+  if ( $cp_server && $old->username ne $new->username ) {
+    my $queue = new FS::queue { 'job' => 'FS::svc_acct::cp_rename' };
+    $error = $queue->insert( $old->username, $new->username );
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "queueing job (transaction rolled back): $error";
+    }
+  }
+
+  if ( $cp_server && $old->_password ne $new->_password ) {
+    my $queue = new FS::queue { 'job' => 'FS::svc_acct::cp_change' };
+    $error = $queue->insert( $new->username, $new->_password );
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "queueing job (transaction rolled back): $error";
+    }
+  }
+
   if ( $icradius_dbh ) {
     my $queue = new FS::queue { 'job' => 'FS::svc_acct::icradius_rc_replace' };
     $error = $queue->insert( $new->username,
@@ -691,6 +779,48 @@ sub icradius_rc_replace {
      or die "can't update radcheck table: ". $sth->errstr;
 
   1;
+}
+
+sub cp_rename {
+  my ( $old_username, $new_username );
+
+  my $app = new Net::APP ( $cp_server,
+                        User     => $cp_user,
+                        Password => $cp_pass,
+                        Domain   => $mydomain,
+                        Timeout  => 60,
+                        #Debug    => 1,
+                      ) or die $@;
+
+  $app->rename_mailbox(
+                        Domain        => $mydomain,
+                        Old_Mailbox   => $old_username,
+                        New_Mailbox   => $new_username,
+                      );
+
+  die $app->message unless $app->ok;
+
+}
+
+sub cp_change {
+  my ( $username, $password );
+
+  my $app = new Net::APP ( $cp_server,
+                        User     => $cp_user,
+                        Password => $cp_pass,
+                        Domain   => $mydomain,
+                        Timeout  => 60,
+                        #Debug    => 1,
+                      ) or die $@;
+
+  $app->change_mailbox(
+                        Domain    => $mydomain,
+                        Mailbox   => $username,
+                        Password  => $password,
+                      );
+
+  die $app->message unless $app->ok;
+
 }
 
 =item suspend

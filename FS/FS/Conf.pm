@@ -268,6 +268,13 @@ httemplate/docs/config.html
   },
 
   {
+    'key'         => 'cp_app',
+    'section'     => 'mail',
+    'description' => 'Integration with <a href="http://www.cp.net/">Critial Path Account Provisioning Protocol</a>, four lines: "host:port", username, password, and workgroup (for new users).',
+    'type'        => 'textarea',
+  },
+
+  {
     'key'         => 'deletecustomers',
     'section'     => 'UI',
     'description' => 'Enable customer deletions.  Be very careful!  Deleting a customer will remove all traces that this customer ever existed!  It should probably only be used when auditing a legacy database.  Normally, you cancel all of a customers\' packages if they cancel service.',
