@@ -49,8 +49,8 @@ sub virtual_fields {
 
   if ($self->svcpart) { # Case 1
     $svcpart = $self->svcpart;
-  } elsif (my $cust_svc = $self->cust_svc) { # Case 2
-    $svcpart = $cust_svc->svcpart;
+  } elsif ( $self->svcnum ) { #Case 2
+    $svcpart = $self->cust_svc->svcpart;
   } else { # Case 3
     $svcpart = '';
   }
@@ -427,10 +427,6 @@ methods.  Called by the cancel method of FS::cust_pkg (see L<FS::cust_pkg>).
 sub cancel { ''; }
 
 =back
-
-=head1 VERSION
-
-$Id: svc_Common.pm,v 1.14 2003-10-25 02:05:44 ivan Exp $
 
 =head1 BUGS
 
