@@ -873,7 +873,7 @@ sub ssh {
   use IO::File;
   my $reader = IO::File->new();
   my $writer = IO::File->new();
-  my $error = IO::file->new();
+  my $error = IO::File->new();
 
   &Net::SSH::sshopen3( $host, $reader, $writer, $error, @cmd_and_args) or die $!;
 
@@ -894,7 +894,7 @@ sub ssh {
 
 =head1 VERSION
 
-$Id: svc_acct.pm,v 1.44 2001-09-19 19:39:24 ivan Exp $
+$Id: svc_acct.pm,v 1.45 2001-09-19 19:41:28 ivan Exp $
 
 =head1 BUGS
 
