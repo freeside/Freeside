@@ -25,11 +25,8 @@ local $SIG{TSTP} = 'IGNORE';
 local $FS::UID::AutoCommit = 0;
 
 my $error = $svc_acct->cancel;
-&myeidiot($error) if $error;
-$error = $svc_acct->delete;
-&myeidiot($error) if $error;
-
-$error = $cust_svc->delete;
+$error ||= $svc_acct->delete;
+$error ||= $cust_svc->delete;
 
 if ( $error ) {
   $dbh->rollback;
