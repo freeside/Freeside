@@ -144,8 +144,38 @@ if ($svc_acct->slipip) {
 print '<TR><TD ALIGN="right">RADIUS groups</TD><TD BGCOLOR="#ffffff">'.
       join('<BR>', $svc_acct->radius_groups). '</TD></TR>';
 
-print '</TABLE></TD></TR></TABLE><BR><BR>'.
-      join("\n", $conf->config('svc_acct-notes') ).
-      '<BR><BR>'. joblisting({'svcnum'=>$svcnum}, 1). '</BODY></HTML>';
+print '</TABLE></TD></TR></TABLE><BR><BR>';
+
+if ( $cust_pkg && $cust_pkg->part_pkg->plan eq 'sqlradacct_hour' ) {
+
+  #false laziness w/httemplate/edit/part_pkg... this stuff doesn't really
+  #belong in plan data
+  my %plandata = map { /^(\w+)=(.*)$/; ( $1 => $2 ); }
+                    split("\n", $cust_pkg->part_pkg->plandata );
+
+  my $last_bill = $cust_pkg->last_bill;
+  my $seconds = $svc_acct->seconds_since_sqlradacct(
+    $last_bill,
+    time,
+    $plandata{sql_datasrc},
+    $plandata{sql_username},
+    $plandata{sql_password},
+  );
+  my $h = int($seconds/3600);
+  my $m = int( ($seconds%3600) / 60 );
+  my $s = $seconds%60;
+  if ( $seconds ) {
+    print 'Online $h h $m m $s s this billing cycle (since '.
+          time2str(%C, $last_bill). ') - '. 
+          $plandata{recur_included_hours}. ' total hours in plan<BR><BR>';
+  } else {
+    print 'Has not logged on this billing cycle (since '.
+          time2str(%C, $last_bill). ')<BR><BR>';
+  }
+
+}
+
+print join("\n", $conf->config('svc_acct-notes') ).  '<BR><BR>'.
+      joblisting({'svcnum'=>$svcnum}, 1). '</BODY></HTML>';
 
 %>
