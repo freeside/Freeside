@@ -134,7 +134,7 @@ PerlModule Apache::ASP
 # your freeside document root
 &lt;Directory&nbsp;/usr/local/apache/htdocs/freeside-asp&gt;
 &lt;Files ~ (\.cgi|\.html)&gt;
-SetHandler perl-script
+AddHandler perl-script .cgi .html
 PerlHandler Apache::ASP
 &lt;/Files&gt;
 &lt;Perl&gt;
@@ -162,8 +162,8 @@ PerlSetVar&nbsp;IncludesDir&nbsp;/usr/local/apache/htdocs/freeside-asp
 <font size="-1"><pre>
 PerlModule HTML::Mason
 &lt;Directory&nbsp;/usr/local/apache/htdocs/freeside-mason&gt;
-&lt;Files ~ (\.cgi|.html)&gt;
-SetHandler perl-script
+&lt;Files ~ (\.cgi|\.html)&gt;
+AddHandler perl-script .cgi .html
 PerlHandler HTML::Mason
 &lt;/Files&gt;
 &lt;Perl&gt;
