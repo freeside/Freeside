@@ -1,8 +1,12 @@
 #!/usr/bin/perl -w
 
 use strict;
+use vars qw( $log_file $sigterm $sigint );
+use subs qw( _die _logmsg );
 use Fcntl qw(:flock);
 use POSIX qw(setsid);
+use Date::Format;
+use IO::File;
 use FS::UID qw(adminsuidsetup);
 use FS::Record qw(qsearchs);
 use FS::queue;
@@ -14,16 +18,14 @@ my $pid_file = '/var/run/freeside-queued.pid';
 
 $SIG{CHLD} = sub { wait }; #zombie prevention
 
-my $sigterm = 0;
-my $sigint = 0;
-$SIG{INT} = sub { warn "SIGINT received; shutting down\n"; $sigint++; };
-$SIG{TERM} = sub { warn "SIGTERM received; shutting down\n"; $sigterm++; };
-
 my $user = shift or die &usage;
 
 &daemonize;
 
-my $log_file = "/usr/local/etc/freeside/queuelog.";
+ $sigterm = 0;
+ $sigint = 0;
+$SIG{INT} = sub { warn "SIGINT received; shutting down\n"; $sigint++; };
+$SIG{TERM} = sub { warn "SIGTERM received; shutting down\n"; $sigterm++; };
 
 $> = $FS::UID::freeside_uid unless $>;
 adminsuidsetup $user;
@@ -33,6 +35,7 @@ $log_file = "/usr/local/etc/freeside/queuelog.". $FS::UID::datasrc;
 $SIG{__DIE__} = \&_die;
 $SIG{__WARN__} = \&_logmsg;
 
+warn "freesied-queued starting\n";
 
 while (1) {
 
@@ -82,11 +85,6 @@ while (1) {
   }
 }
 
-
-sub datestamp {
-  time2str("%m%d%Y", time);
-}
-
 sub _die {
   my $msg = shift;
   unlink $pid_file if -e $pid_file;
@@ -100,6 +98,7 @@ sub _logmsg {
   seek($log, 0, 2);
   print $log "[". time2str("%a %b %e %T %Y",time). "] [$$] $msg\n";
   flock($log, LOCK_UN);
+  close $log;
 }
 
 sub daemonize {
