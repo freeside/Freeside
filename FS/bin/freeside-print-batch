@@ -223,21 +223,21 @@ freeside-print-batch - Prints or emails cust_pay_batch. Also deletes
 Prints or emails cust_pay_batch. Can enter payment and delete
 printed records. Usually run as a cron job.
 
--v: Verbose - Prints records to STDOUT.
+B<-v>: Verbose - Prints records to STDOUT.
 
--p: Print to printer lpr as found in the conf directory.
+B<-p>: Print to printer lpr as found in the conf directory.
 
--e: Email output to user found in the Conf email file.
+B<-e>: Email output to user found in the Conf email file.
 
--a: Automatically pays all records in cust_pay_batch. Use -d with this option usually.
+B<-a>: Automatically pays all records in cust_pay_batch. Use -d with this option usually.
 
--d:	Delete - Pays account and deletes record from cust_pay_batch.
+B<-d>:	Delete - Pays account and deletes record from cust_pay_batch.
 
 user: From the mapsecrets file - see config.html from the base documentation
 
 =head1 VERSION
 
-$Id: freeside-print-batch,v 1.1 2000-05-13 21:57:56 ivan Exp $
+$Id: freeside-print-batch,v 1.2 2001-02-21 01:48:07 ivan Exp $
 
 =head1 BUGS
 
@@ -257,7 +257,10 @@ L<FS::cust_main>, config.html from the base documentation
 griff@aver-computer.com July 99
 
 $Log: freeside-print-batch,v $
-Revision 1.1  2000-05-13 21:57:56  ivan
+Revision 1.2  2001-02-21 01:48:07  ivan
+stupid pod errors
+
+Revision 1.1  2000/05/13 21:57:56  ivan
 add print_batch script from Joel Griffiths
 
 
