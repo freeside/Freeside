@@ -44,7 +44,7 @@
 %# 
 %# }}} END BPS TAGGED BLOCK
 <table class="lightgray" border=0 cellspacing=0 cellpadding=0 width="100%">
-  <th class="titlebox" align="left" width=42%><span class="rtname"><%$AppName%></span>
+  <th class="lightgray" align="left" width=42%><span class="rtname"><%$AppName%></span>
   </th>
       <span class="topactions">
 % foreach my $action (sort keys %{$topactions}) {
