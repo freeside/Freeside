@@ -99,12 +99,6 @@ sub insert {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  my $cust_main = qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
-  my $old_balance = $cust_main->balance;
-
-  my $error = $self->check;
-  return $error if $error;
-
   if ( $self->invnum ) {
     my $cust_bill = qsearchs('cust_bill', { 'invnum' => $self->invnum } )
       or do {
@@ -113,6 +107,12 @@ sub insert {
       };
     $self->custnum($cust_bill->custnum );
   }
+
+  my $cust_main = qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
+  my $old_balance = $cust_main->balance;
+
+  my $error = $self->check;
+  return $error if $error;
 
   $error = $self->SUPER::insert;
   if ( $error ) {
@@ -304,7 +304,7 @@ sub unapplied {
 
 =head1 VERSION
 
-$Id: cust_pay.pm,v 1.8 2001-10-09 23:10:16 ivan Exp $
+$Id: cust_pay.pm,v 1.9 2001-12-08 10:07:27 ivan Exp $
 
 =head1 BUGS
 
