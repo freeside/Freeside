@@ -1,5 +1,5 @@
 <%
-# $Id: cust_main.cgi,v 1.2 2001-08-12 00:07:55 ivan Exp $
+# $Id: cust_main.cgi,v 1.3 2001-08-13 23:10:34 ivan Exp $
 
 use strict;
 use vars qw( $cgi $payby @invoicing_list $new $custnum $error );
@@ -29,6 +29,12 @@ $cgi->param('state') =~ /^(\w*)( \(([\w ]+)\))? ?\/ ?(\w+)$/
 $cgi->param('state', $1);
 $cgi->param('county', $3 || '');
 $cgi->param('country', $4);
+
+$cgi->param('ship_state') =~ /^(\w*)( \(([\w ]+)\))? ?\/ ?(\w+)$/
+  or die "Oops, illegal \"ship_state\" param: ". $cgi->param('ship_state');
+$cgi->param('ship_state', $1);
+$cgi->param('ship_county', $3 || '');
+$cgi->param('ship_country', $4);
 
 if ( $payby = $cgi->param('payby') ) {
   $cgi->param('payinfo', $cgi->param( $payby. '_payinfo' ) );
@@ -123,7 +129,7 @@ if ( $new->custnum eq '' ) {
 
   use Tie::RefHash;
   tie my %hash, 'Tie::RefHash';
-  %hash = ( $cust_pkg => [ $svc_acct ] );
+  %hash = ( $cust_pkg => [ $svc_acct ] ) if $cust_pkg;
   $error ||= $new->insert( \%hash, \@invoicing_list );
 } else { #create old record object
   my $old = qsearchs( 'cust_main', { 'custnum' => $new->custnum } ); 
