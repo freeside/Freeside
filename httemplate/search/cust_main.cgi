@@ -414,7 +414,7 @@ END
                   ( $priority || '<i>(none)</i>' ).
                   "</A></TD></TR>";
           }
-          print '<TR><TD BGCOLOR="#000000" COLSPAN=2>&nbsp;</TD></TR>'.
+          print '<TR><TD BGCOLOR="#000000" COLSPAN=2></TD></TR>'.
                 '<TR><TD ALIGN=right>';
         }
         my $ahref =
