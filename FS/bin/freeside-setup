@@ -1031,7 +1031,7 @@ sub tables_hash_hack {
       'columns' => [
         'routernum', 'serial', '', '',
         'routername', 'varchar', '', $char_d,
-        'svcnum', 'int', '0', '',
+        'svcnum', 'int', 'NULL', '',
       ],
       'primary_key' => 'routernum',
       'unique'      => [],
