@@ -8,17 +8,16 @@
 # Proc::Daemon or somesuch
 
 use strict;
-use vars qw( $kids $max_kids $shutdown $log_file );
-use vars qw($ssh_pid);
+use vars qw( $Debug %kids $kids $max_kids $shutdown $log_file $ssh_pid );
 use Fcntl qw(:flock);
-use POSIX qw(setsid);
-use Date::Format;
+use POSIX qw(:sys_wait_h setsid);
 use IO::Handle;
+use IO::Select;
+use IO::File;
 use Storable qw(nstore_fd fd_retrieve);
 use Net::SSH qw(sshopen2);
-use FS::UID qw(adminsuidsetup forksuidsetup);
 
-use LockFile::Simple qw(lock unlock);
+use FS::UID qw(adminsuidsetup forksuidsetup);
 
 #use Tie::RefHash;
 #use FS::Conf;
@@ -26,6 +25,9 @@ use LockFile::Simple qw(lock unlock);
 #use FS::cust_main_county;
 #use FS::cust_main;
 #use FS::Msgcat qw(gettext);
+
+$Debug = 1; # >= 2 will log packet contents, including potentially compromising
+            # information
 
 $shutdown = 0;
 $max_kids = '10'; #?
@@ -35,8 +37,6 @@ my $user = shift or die &usage;
 my $machine = shift or die &usage;
 my $pid_file = "/var/run/freeside-selfservice-server.$user.pid";
 #my $pid_file = "/var/run/freeside-selfservice-server.$user.pid"; $FS::UID::datasrc not posible, but should include machine name at least, hmm
-my $lock_file = "/usr/local/etc/freeside/freeside-selfservice-server.$user.lock";
-unlink $lock_file;
 
 &init($user);
 
@@ -51,65 +51,61 @@ my %dispatch = (
 
 my $warnkids=0;
 while (1) {
-  my($reader, $writer) = (new IO::Handle, new IO::Handle);
-  warn "connecting to $machine\n";
+  my($writer,$reader,$error) = (new IO::Handle, new IO::Handle, new IO::Handle);
+  warn "connecting to $machine\n" if $Debug;
+
   $ssh_pid = sshopen2($machine,$reader,$writer,$clientd);
 
 #  nstore_fd(\*writer, {'hi'=>'there'});
 
-  warn "entering main loop\n";
+  warn "entering main loop\n" if $Debug;
   my $undisp = 0;
+  my $s = IO::Select->new( $reader );
   while (1) {
 
-    warn "waiting for packet from client\n" unless $undisp;
+    &reap_kids;
+
+    warn "waiting for packet from client\n" if $Debug && !$undisp;
     $undisp = 1;
-    my $packet = eval {
-      local $SIG{__DIE__};
-      local $SIG{ALRM} = sub { local $SIG{__DIE__};die "MyAlarm\n" }; #NB: \n required
-      alarm 5;
-      #my $string = <$reader>;
-      #die $string;
-      my $p = fd_retrieve($reader);
-      alarm 0;
-      $p;
-    };
-    if ($@) {
-      &shutdown if $shutdown && $@;
-      die "Fatal error receiving packet from client: $@" if $@ !~ /^MyAlarm/;
-      #die $@ unless $@ eq "alarm\n" || $@ eq 'Alarm'; #?????
-      #timeout
-      next unless $shutdown;
-      &shutdown;
+    my @handles = $s->can_read(5);
+    unless ( @handles ) {
+      &shutdown if $shutdown;
+      next;
     }
-    warn "packet received\n".
-         join('', map { " $_=>$packet->{$_}\n" } keys %$packet );
 
     $undisp = 0;
+
+    warn "receiving packet from client\n" if $Debug;
+
+    my $packet = fd_retrieve($reader);
+    warn "packet received\n".
+         join('', map { " $_=>$packet->{$_}\n" } keys %$packet )
+      if $Debug > 1;
 
     #prevent runaway forking
     my $warnkids = 0;
     while ( $kids >= $max_kids ) {
       warn "WARNING: maximum $kids children reached\n" unless $warnkids++;
+      &reap_kids;
       sleep 1;
     }
 
-    warn "forking child\n";
+    warn "forking child\n" if $Debug;
     defined( my $pid = fork ) or die "can't fork: $!";
     if ( $pid ) {
-      warn "child $pid spawned\n";
       $kids++;
+      $kids{$pid} = 1;
+      warn "child $pid spawned\n" if $Debug;
     } else { #kid time
 
-      #local($SIG{PIPE});
-
       #get new db handle
-      #$FS::UID::dbh->{InactiveDestroy} = 1;
+      $FS::UID::dbh->{InactiveDestroy} = 1;
       forksuidsetup($user);
 
       my $sub = $dispatch{$packet->{_packet}};
       my $rv;
       if ( $sub ) {
-        warn "calling $sub handler\n"; 
+        warn "calling $sub handler\n" if $Debug; 
         $rv = &{$sub}($packet);
       } else {
         warn my $error = "WARNING: unknown packet type ". $packet->{_packet};
@@ -117,15 +113,13 @@ while (1) {
       }
       $rv->{_token} = $packet->{_token}; #identifier
 
-      warn "sending response\n";
-      flock($writer, LOCK_EX); #acquire write lock
-      #lock($lock_file);
-      nstore_fd($rv, $writer) or die "can't send response: $!";
-      $writer->flush;
-      #unlock($lock_file);
-      flock($writer, LOCK_UN); #release write lock
-#
-      warn "child exiting\n";
+      warn "sending response\n" if $Debug;
+      flock($writer, LOCK_EX) or die "FATAL: can't lock write stream: $!";
+      nstore_fd($rv, $writer) or die "FATAL: can't send response: $!";
+      $writer->flush or die "FATAL: can't flush: $!";
+      flock($writer, LOCK_UN) or die "WARNING: can't release write lock: $!";
+
+      warn "child exiting\n" if $Debug;
       exit; #end-of-kid
     }
 
@@ -181,11 +175,23 @@ sub passwd {
 # utility subroutines
 ###
 
+sub reap_kids {
+  #warn "reaping kids\n";
+  foreach my $pid ( keys %kids ) {
+    my $kid = waitpid($pid, WNOHANG);
+    if ( $kid > 0 ) {
+      $kids--;
+      delete $kids{$kid};
+    }
+  }
+  #warn "done reaping\n";
+}
+
 sub init {
   my $user = shift;
 
   chdir "/" or die "Can't chdir to /: $!";
-  open STDIN, '/dev/null'   or die "Can't read /dev/null: $!";
+  open STDIN, '/dev/null' or die "Can't read /dev/null: $!";
   defined(my $pid = fork) or die "Can't fork: $!";
   if ( $pid ) {
     print "freeside-selfservice-server to $machine started with pid $pid\n"; #logging to $log_file
@@ -195,8 +201,9 @@ sub init {
     exit;
   }
 
-  sub REAPER { my $pid = wait; $SIG{CHLD} = \&REAPER; $kids--; }
-  $SIG{CHLD} =  \&REAPER;
+#  sub REAPER { my $pid = wait; $SIG{CHLD} = \&REAPER; $kids--; }
+#  #sub REAPER { my $pid = wait; $kids--; $SIG{CHLD} = \&REAPER; }
+#  $SIG{CHLD} =  \&REAPER;
 
   $shutdown = 0;
   $SIG{HUP} = sub { warn "SIGHUP received; shutting down\n"; $shutdown++; };
@@ -204,9 +211,6 @@ sub init {
   $SIG{TERM} = sub { warn "SIGTERM received; shutting down\n"; $shutdown++; };
   $SIG{QUIT} = sub { warn "SIGQUIT received; shutting down\n"; $shutdown++; };
   $SIG{PIPE} = sub { warn "SIGPIPE received; shutting down\n"; $shutdown++; };
-
-  $> = $FS::UID::freeside_uid unless $>;
-  $< = $>;
 
   #false laziness w/freeside-queued
   my $freeside_gid = scalar(getgrnam('freeside'))
@@ -233,7 +237,7 @@ sub init {
   open STDOUT, '>/dev/null'
                             or die "Can't write to /dev/null: $!";
   setsid                  or die "Can't start a new session: $!";
-#  open STDERR, '>&STDOUT' or die "Can't dup stdout: $!";
+  open STDERR, '>&STDOUT' or die "Can't dup stdout: $!";
 
   $SIG{__DIE__} = \&_die;
   $SIG{__WARN__} = \&_logmsg;
@@ -261,10 +265,15 @@ sub _die {
 
 sub _logmsg {
   chomp( my $msg = shift );
+  _do_logmsg( "[server] [". scalar(localtime). "] [$$] $msg\n" );
+}
+
+sub _do_logmsg {
+  chomp( my $msg = shift );
   my $log = new IO::File ">>$log_file";
   flock($log, LOCK_EX);
   seek($log, 0, 2);
-  print $log "[server] [". time2str("%a %b %e %T %Y",time). "] [$$] $msg\n";
+  print $log "$msg\n";
   flock($log, LOCK_UN);
   close $log;
 }
@@ -272,8 +281,4 @@ sub _logmsg {
 sub usage {
   die "Usage:\n\n  fs_signup_server user machine\n";
 }
-
-###
-# handlers... should go in their own files eventually...
-###
 

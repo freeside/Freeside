@@ -9,6 +9,10 @@ my $error = passwd(
   'new_password' => 'haloo',
 );
 
-die $error if $error;
+if ( $error eq 'Incorrect password.' ) {
+  exit;
+} else {
+  die $error if $error;
+  die "no error";
+}
 
-print "password changed sucessfully\n";

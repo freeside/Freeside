@@ -7,31 +7,35 @@
 use strict;
 use subs qw(spawn logmsg);
 use Fcntl qw(:flock);
+use POSIX qw(:sys_wait_h);
 use Socket;
 use Storable qw(nstore_fd fd_retrieve);
-use IO::Handle;
+use IO::Handle qw(_IONBF);
 use IO::Select;
-use IPC::Open2;
+use IO::File;
 
-use LockFile::Simple qw(lock unlock);
+STDOUT->setbuf('');
 
 use vars qw( $Debug );
-$Debug = 2;
+$Debug = 2; #2 will turn on child logging, 3 will log packet contents,
+            #including potentially compromising information
 
 my $socket = "/usr/local/freeside/selfservice_socket";
 my $pid_file = "$socket.pid";
-my $lock_file = "$socket.lock";
-unlink $lock_file;
 
-my $me = '[client]';
+my $log_file = "/usr/local/freeside/selfservice.log";
+
+#my $me = '[client]';
 
 $|=1;
+
+$SIG{__WARN__} = \&_logmsg;
 
 #read data to be cached or something
 #warn "$me Reading init data\n" if $Debug;
 #my $signup_init = 
 
-warn "[client] Creating $socket\n" if $Debug;
+warn "Creating $socket\n" if $Debug;
 my $uaddr = sockaddr_un($socket);
 my $proto = getprotobyname('tcp');
 socket(Server,PF_UNIX,SOCK_STREAM,0) or die "socket: $!";
@@ -41,7 +45,6 @@ listen(Server,SOMAXCONN) or die "listen: $!";
 
 if ( -e $pid_file ) {
   open(PIDFILE,"<$pid_file");
-  #chomp( my $old_pid = <PIDFILE> );
   my $old_pid = <PIDFILE>;
   close PIDFILE;
   $old_pid =~ /^(\d+)$/;
@@ -55,18 +58,13 @@ close PIDFILE;
 #sub REAPER { $waitedpid = wait; $SIG{CHLD} = \&REAPER; }
 #$SIG{CHLD} =  \&REAPER;
 
-warn "[client] entering main loop\n" if $Debug;
-
-#sub spawn;
-#sub logmsg;
+warn "entering main loop\n" if $Debug;
 
 my %kids;
 
-  #    my $gar = <STDIN>;
-
-#my $s = new IO::Select;
-#$s->add(\*STDIN);
-#$s->add(\*Server);
+my $s = new IO::Select;
+$s->add(\*STDIN);
+$s->add(\*Server);
 
 #for ( $waitedpid = 0;
 #      accept(Client,Server) || $waitedpid;
@@ -77,116 +75,117 @@ my %kids;
 #$SIG{PIPE} = sub { warn "SIGPIPE received" };
 #$SIG{CHLD} = sub { warn "SIGCHLD received" };
 
-sub REAPER { warn "SIGCHLD received"; my $pid = wait; $SIG{CHLD} = \&REAPER; }
+#sub REAPER { warn "SIGCHLD received"; my $pid = wait; $SIG{CHLD} = \&REAPER; }
+#sub REAPER { my $pid = wait; $SIG{CHLD} = \&REAPER; }
 #sub REAPER { my $pid = wait; delete $kids{$pid}; $SIG{CHLD} = \&REAPER; }
-$SIG{CHLD} =  \&REAPER;
+#$SIG{CHLD} =  \&REAPER;
 
-warn "[client] creating IO::Select\n" if $Debug;
-my $s = new IO::Select;
-$s->add(\*STDIN);
-$s->add(\*Server);
-
+my $undisp = 0;
 while (1) {
 
-warn "[client] waiting for connection or token\n" if $Debug;
-while ( my @handles = $s->can_read ) {
+  &reap_kids;
 
+  warn "waiting for connection\n" if $Debug && !$undisp;
+
+  #my @handles = $s->can_read();
+  my @handles = $s->can_read(5);
+  $undisp = !scalar(@handles);
   foreach my $handle ( @handles ) {
 
     if ( $handle == \*STDIN ) {
 
-#      my $gar = <STDIN>;
-#      die $gar;
+      warn "receiving packet from server\n" if $Debug;
 
       my $packet = fd_retrieve(\*STDIN);
       my $token = $packet->{'_token'};
-      warn "[client] received packet with token $token\n".
-           join('', map { " $_=>$packet->{$_}\n" } keys %$packet )
+      warn "received packet from server with token $token\n".
+           ( $Debug > 2
+             ? join('', map { " $_=>$packet->{$_}\n" } keys %$packet )
+             : '' )
         if $Debug;
+
      if ( exists($kids{$token}) ) {
-        warn "[client] sending return packet to $token via $kids{$token}\n"
+        warn "sending return packet to $token via $kids{$token}\n"
           if $Debug;
         nstore_fd($packet, $kids{$token});
-        warn "[client] flushing $kids{$token}\n" if $Debug;
-        $kids{$token}->flush;
-        #eval { $kids{$token}->flush; };
-        #die "error flushing?!?!? $@\n" if $@ ne '';
-        #warn "[client] closing $kids{$token}\n";
-        #close $kids{$token};
-        #warn "[client] deleting $kids{$token}\n";
-        #delete $kids{$token};
-        warn "[client] done with $token\n" if $Debug;
+        warn "flushing to $token\n" if $Debug;
+        until ( $kids{$token}->flush ) {
+          warn "WARNING: error flushing: $!";
+          sleep 1;
+        }
+        #no close or delete here - will block waiting for child
+        warn "done with $token\n" if $Debug;
       } else {
-        warn "[client] WARNING: unknown token $token, discarding message";
-        #die "[client] FATAL: unknown token $token, discarding message";
+        warn "WARNING: unknown token $token, discarding message";
       }
 
     } elsif ( $handle == \*Server ) {
 
-      warn "[client] received local connection; forking\n" if $Debug;
+      until ( accept(Client, Server) ) {
+        warn "WARNING: accept failed: $!";
+        next;
+      }
 
-      accept(Client, Server);
+      warn "received local connection; forking\n" if $Debug;
 
       spawn sub { #child
-        warn "[client-$$] reading packet from local client" if $Debug > 1;
+        warn "[child-$$] reading packet from local client" if $Debug > 1;
         my $packet = fd_retrieve(\*Client);
-        warn "[client-$$] packet received:\n".
+        warn "[child-$$] packet received:\n".
              join('', map { " $_=>$packet->{$_}\n" } keys %$packet )
-          if $Debug > 1;
+          if $Debug > 2;
         my $command = $packet->{'command'};
         #handle some commands weirdly?
-        $packet->{_token}=$$; #??
+        $packet->{_token}=$$;
 
-        warn "[client-$$] sending packet to remote server" if $Debug > 1;
-        flock(STDOUT, LOCK_EX); #acquire write lock
-        #lock($lock_file);
-        nstore_fd($packet, \*STDOUT);
-        STDOUT->flush;
-        #unlock($lock_file);
-        flock(STDOUT, LOCK_UN); #release write lock
+        warn "[child-$$] sending packet to remote server" if $Debug > 1;
+        flock(STDOUT, LOCK_EX) or die "FATAL: can't lock write stream: $!";
+        nstore_fd($packet, \*STDOUT) or die "FATAL: can't send response: $!";
+        STDOUT->flush or die "FATAL: can't flush: $!";
+        flock(STDOUT, LOCK_UN) or die "FATAL: can't release write lock: $!";
+        close STDOUT or die "FATAL: can't close write stream: $!"; #??!
 
-        warn "[client-$$] waiting for response from parent" if $Debug > 1;
-
-        #block until parent has a message
+        warn "[child-$$] waiting for response from parent" if $Debug > 1;
         my $w = new IO::Select;
         $w->add(\*STDIN);
-        my @wait = $w->can_read;
+        until ( $w->can_read ) {
+          warn "[child-$$] WARNING: interrupted select: $!\n";
+        }
         my $rv = fd_retrieve(\*STDIN);
 
         #close STDIN;
 
-        warn "[client-$$] sending response to local client" if $Debug > 1;
-
-        #send message to local client
+        warn "[child-$$] sending response to local client" if $Debug > 1;
         nstore_fd($rv, \*Client);
-        Client->flush;
+        Client->flush or die "FATAL: can't flush to local client: $!";
+        close Client or die "FATAL: can't close connection to local client: $!";
 
-        close Client;
-
-        warn "[client-$$] child exiting" if $Debug > 1;
-
-        #while (1) { sleep 5 };
-        #sleep 5;
+        warn "[child-$$] child exiting" if $Debug > 1;
         exit;
 
       }; #eo child
 
-      #close Client; #in parent, right?
+      #close Client;
 
     } else {
       die "wtf?  $handle";
     }
 
   }
-
-  warn "[client] done handling messages; returning to wait-state" if $Debug;;
-
+  
 }
 
-#die "[client] died unexpectedly: $!\n";
-warn "[client] fell-through unexpectedly: $!\n" if $Debug;
-
-} #WTF?
+sub reap_kids {
+  #warn "reaping kids\n";
+  foreach my $pid ( keys %kids ) {
+    my $kid = waitpid($pid, WNOHANG);
+    if ( $kid > 0 ) {
+      close $kids{$kid};
+      delete $kids{$kid};
+    }
+  }
+  #warn "done reaping\n";
+}
 
 sub spawn {
     my $coderef = shift;
@@ -200,10 +199,10 @@ sub spawn {
     #if (!defined($pid = fork)) {
     my $kid = new IO::Handle;
     if (!defined($pid = open($kid, '|-'))) {
-        logmsg "WARNING: cannot fork: $!";
+        warn "WARNING: cannot fork: $!";
         return;
     } elsif ($pid) {
-        logmsg "begat $pid" if $Debug;
+        warn "begat $pid" if $Debug;
         $kids{$pid} = $kid;
         #$kids{$pid}->autoflush;
         return; # I'm the parent
@@ -212,11 +211,16 @@ sub spawn {
 
 #    open(STDIN,  "<&Client")   || die "can't dup client to stdin";
 #    open(STDOUT, ">&Client")   || die "can't dup client to stdout";
-    ## open(STDERR, ">&STDOUT") || die "can't dup stdout to stderr";
+#     open(STDERR, ">&STDOUT") || die "can't dup stdout to stderr";
     exit &$coderef();
 }
 
-#sub logmsg { print "$0 $$: @_ at ", scalar localtime, "\n" }
-#DON'T PRINT!!!!!
-sub logmsg { warn "[client] $0 $$: @_ at ", scalar localtime, "\n" }
-
+sub _logmsg {
+  chomp( my $msg = shift );
+  my $log = new IO::File ">>$log_file";
+  flock($log, LOCK_EX);
+  seek($log, 0, 2);
+  print $log "[client] [". scalar(localtime). "] [$$] $msg\n";
+  flock($log, LOCK_UN);
+  close $log;
+}
