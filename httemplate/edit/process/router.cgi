@@ -34,6 +34,7 @@ if($old) {
   } #else do nothing
 } else {
   $error = $new->insert;
+  $routernum = $new->routernum;
 }
 
 check($error);
@@ -95,6 +96,6 @@ foreach($cgi->param) {
 
 # Yay, everything worked!
 $dbh->commit or die $dbh->errstr;
-print $cgi->redirect(popurl(3). "edit/router.cgi?$routernum");
+print $cgi->redirect(popurl(3). "browse/router.cgi");
 
 %>
