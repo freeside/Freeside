@@ -213,7 +213,7 @@ CREATE TABLE cust_tax_exempt (
 );
 CREATE UNIQUE INDEX cust_tax_exempt1 ON cust_tax_exempt ( taxnum, year, month );
 
-ALTER TABLE svc_acct ADD domsvc integer NOT NULL;
+ALTER TABLE svc_acct ADD domsvc integer NULL;
 ALTER TABLE svc_domain ADD catchall integer NULL;
 ALTER TABLE cust_main ADD referral_custnum integer NULL;
 ALTER TABLE cust_main ADD comments text NULL;
@@ -303,6 +303,12 @@ CREATE INDEX cust_main5 ON cust_main ( ship_company );
     <ul>
       <li>Create a service definition with table svc_forward
       <li>Run <tt>bin/fs-migrate-svc_acct_sm <i>username</i></tt>
+    </ul>
+  <li>Or if you just have svc_acct records:
+    <ul>
+      <li>Order and provision a package for your default domain and note down the <b>Service #</b> or <i>svcnum</i>.
+      <li><tt>UPDATE svc_acct SET domsvc = </tt><i>svcnum</i>
+      <li>Update your service definitions to have default (or fixed) <b>domsvc</b>.
     </ul>
   <li>Run <tt>bin/fs-migrate-payref<i>username</i></tt>
   <li>Run <tt>bin/fs-migrate-part_svc<i>username</i></tt>
