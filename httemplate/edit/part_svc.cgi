@@ -1,4 +1,4 @@
-<!-- $Id: part_svc.cgi,v 1.4 2001-08-19 15:53:35 jeff Exp $ -->
+<!-- $Id: part_svc.cgi,v 1.5 2001-08-30 15:30:26 ivan Exp $ -->
 <% 
    my $part_svc;
    if ( $cgi->param('error') ) { #error
@@ -104,7 +104,7 @@ my %defs = (
   'svc_acct' => {
     'dir'       => 'Home directory',
     'uid'       => 'UID (set to fixed and blank for dial-only)',
-    'slipip'    => 'IP address (set to fixed and blank to disable dialin)',
+    'slipip'    => 'IP address (Set to fixed and blank to disable dialin, or, set a value to be exported to RADIUS Framed-IP-Address.  Use the special value <code>0e0</code> [zero e zero] to enable export to RADIUS without a Framed-IP-Address.)',
     'popnum'    => qq!<A HREF="$p/browse/svc_acct_pop.cgi/">POP number</A>!,
     'username'  => 'Username',
     'quota'     => '(unimplemented)',
@@ -112,6 +112,7 @@ my %defs = (
     'gid'       => 'GID (when blank, defaults to UID)',
     'shell'     => 'Shell (all service definitions should have a default or fixed shell that is present in the <b>shells</b> configuration file)',
     'finger'    => 'GECOS',
+    'domsvc'    => 'svcnum from svc_domain',
   },
   'svc_domain' => {
     'domain'    => 'Domain',
