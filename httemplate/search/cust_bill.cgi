@@ -79,9 +79,7 @@ if ( $cgi->keywords ) {
   @cust_bill = qsearch(
     'cust_bill',
     {},
-    'cust_bill.*,
-     charged - coalesce(sum(cust_bill_pay.amount),0)
-              - coalesce(sum(cust_credit_bill.amount),0) as owed',
+    "cust_bill.*, $owed as owed"
     "$extra_sql $orderby $limit"
   );
 } else {
