@@ -101,7 +101,10 @@ $ su
       <li>Run <tt>make aspdocs</tt>
       <li>Copy <tt>aspdocs/</tt> to your web server's document space.
       <li>Create a <a href="http://www.apache-asp.org/config.html#Global">Global</a> directory, such as <tt>/usr/local/etc/freeside/asp-global/</tt>
-      <li>Copy <tt>htetc/global.asa</tt> to the Global directory.
+      <li>Copy <tt>htetc/global.asa</tt> to the Global directory:
+<font size="-1"><pre>
+cp htetc/global.asa /usr/local/etc/freeside/asp-global/global.asa
+</pre></font>
       <li>Configure Apache for the Global directory and to execute .cgi files using Apache::ASP.  For example:
 <font size="-1"><pre>
 &lt;Directory /usr/local/apache/htdocs/freeside-asp&gt;
