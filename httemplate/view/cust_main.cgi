@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: cust_main.cgi,v 1.3 2001-08-11 05:52:56 ivan Exp $ -->
+#<!-- $Id: cust_main.cgi,v 1.4 2001-08-13 23:15:35 ivan Exp $ -->
 
 use strict;
 use vars qw ( $cgi $query $custnum $cust_main $hashref $agent $referral 
@@ -210,7 +210,9 @@ print '<BR>';
 
 print '</TD></TR></TABLE>';
 
-if ( defined $cust_main->dbdef_table->column('comments') ) {
+if ( defined $cust_main->dbdef_table->column('comments')
+     && $cust_main->comments )
+{
   print "<BR>Comments", &ntable("#cccccc"), "<TR><TD>",
         &ntable("#cccccc",2),
         '<TR><TD BGCOLOR="#ffffff"><PRE>', $cust_main->comments,
