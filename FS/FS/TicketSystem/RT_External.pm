@@ -44,7 +44,9 @@ sub customer_tickets {
   #$dbh ||= create one from some config options
 
   my( $from_sql, @param) = $self->_from_customer( $custnum, $priority );
-  my $sql = "select * $from_sql order by priority desc limit $limit";
+  my $sql = "select tickets.*, queues.name".
+            ( length($priority) ? ", ticketcustomfieldvalues.content" : '' ).
+            " $from_sql order by priority desc limit $limit";
   my $sth = $dbh->prepare($sql) or die $dbh->errstr. "preparing $sql";
   $sth->execute(@param)         or die $sth->errstr. "executing $sql";
 
