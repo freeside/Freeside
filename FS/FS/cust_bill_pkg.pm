@@ -36,6 +36,8 @@ supported:
 
 =over 4
 
+=item billpkgnum - primary key
+
 =item invnum - invoice (see L<FS::cust_bill>)
 
 =item pkgnum - package (see L<FS::cust_pkg>) or 0 for the special virtual sales tax package
@@ -153,7 +155,8 @@ sub check {
   my $self = shift;
 
   my $error =
-    $self->ut_number('pkgnum')
+         $self->ut_numbern('billpkgnum')
+      || $self->ut_number('pkgnum')
       || $self->ut_number('invnum')
       || $self->ut_money('setup')
       || $self->ut_money('recur')

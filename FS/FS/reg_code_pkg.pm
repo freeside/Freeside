@@ -35,6 +35,8 @@ supported:
 
 =over 4
 
+=item codepkgnum - primary key
+
 =item codenum - registration code (see L<FS::reg_code>)
 
 =item pkgpart - package definition (see L<FS::part_pkg>)
@@ -99,7 +101,8 @@ sub check {
   my $self = shift;
 
   my $error = 
-    $self->ut_foreign_key('codenum', 'reg_code', 'codenum')
+       $self->ut_numbern('codepkgnum')
+    || $self->ut_foreign_key('codenum', 'reg_code', 'codenum')
     || $self->ut_foreign_key('pkgpart', 'part_pkg', 'pkgpart')
   ;
   return $error if $error;

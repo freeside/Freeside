@@ -11,6 +11,7 @@ CREATE TABLE rate (
 );
 
 CREATE TABLE rate_detail (
+    ratedetailnum serial NOT NULL,
     ratenum int NOT NULL,
     orig_regionnum int NULL,
     dest_regionnum int NOT NULL,
@@ -47,8 +48,10 @@ CREATE UNIQUE INDEX reg_code1 ON reg_code ( agentnum, code );
 CREATE INDEX reg_code2 ON reg_code ( agentnum );
 
 CREATE TABLE reg_code_pkg (
+    codepkgnum serial,
     codenum int NOT NULL,
-    pkgpart int NOT NULL
+    pkgpart int NOT NULL,
+    PRIMARY KEY (codepkgnum)
 );
 CREATE UNIQUE INDEX reg_code_pkg1 ON reg_code_pkg ( codenum, pkgpart );
 CREATE INDEX reg_code_pkg2 ON reg_code_pkg ( codenum );
@@ -80,6 +83,30 @@ ALTER TABLE h_cust_main ALTER COLUMN zip DROP NOT NULL;
 
 ALTER TABLE prepay_credit ADD agentnum integer NULL;
 ALTER TABLE h_prepay_credit ADD agentnum integer NULL;
+
+ALTER TABLE type_pkgs ADD typepkgnum int;
+ALTER TABLE type_pkgs ALTER COLUMN typepkgnum SET DEFAULT nextval('public.type_pkgs_typepkgnum_seq'::text);
+CREATE SEQUENCE type_pkgs_typepkgnum_seq;
+ALTER TABLE type_pkgs ALTER typepkgnum SET NOT NULL;
+ALTER TABLE type_pkgs ADD PRIMARY KEY (typepkgnum);
+
+ALTER TABLE cust_bill_pkg ADD billpkgnum int;
+ALTER TABLE cust_bill_pkg ALTER COLUMN billpkgnum SET DEFAULT nextval('public.cust_bill_pkg_billpkgnum_seq'::text);
+CREATE SEQUENCE cust_bill_pkg_billpkgnum_seq;
+ALTER TABLE cust_bill_pkg ALTER billpkgnum SET NOT NULL;
+ALTER TABLE cust_bill_pkg ADD PRIMARY KEY (billpkgnum);
+
+ALTER TABLE pkg_svc ADD pkgsvcnum int;
+ALTER TABLE pkg_svc ALTER COLUMN pkgsvcnum SET DEFAULT nextval('public.pkg_svc_pkgsvcnum_seq'::text);
+CREATE SEQUENCE pkg_svc_pkgsvcnum_seq;
+ALTER TABLE pkg_svc ALTER pkgsvcnum SET NOT NULL;
+ALTER TABLE pkg_svc ADD PRIMARY KEY (pkgsvcnum);
+
+ALTER TABLE part_svc_router ADD svcrouternum int;
+ALTER TABLE part_svc_router ALTER COLUMN svcrouternum SET DEFAULT nextval('public.part_svc_router_svcrouternum_seq'::text);
+CREATE SEQUENCE part_svc_router_svcrouternum_seq;
+ALTER TABLE part_svc_router ALTER svcrouternum SET NOT NULL;
+ALTER TABLE part_svc_router ADD PRIMARY KEY (svcrouternum);
 
 Installs w/integrated RT:
   CREATE SEQUENCE attributes_id_seq;

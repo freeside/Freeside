@@ -35,6 +35,8 @@ FS::Record.  The following fields are currently supported:
 
 =over 4
 
+=item typepkgnum - primary key
+
 =item typenum - Agent type, see L<FS::agent_type>
 
 =item pkgpart - Billing item definition, see L<FS::part_pkg>
@@ -80,7 +82,8 @@ sub check {
   my $self = shift;
 
   my $error = 
-    $self->ut_number('typenum')
+       $self->ut_numbern('typepkgnum')
+    || $self->ut_number('typenum')
     || $self->ut_number('pkgpart')
   ;
   return $error if $error;

@@ -1,0 +1,50 @@
+this is ONLY for people upgrading from CVS snapshots after march 12th who
+have most of the changes in README.1.5.7 already.
+
+if you're upgrading from 1.5.0pre6, see README.1.5.7 instead.
+
+if you're upgrading from 1.4.x, see httemplate/docs/upgrade10.html instead.
+
+
+ALTER TABLE rate_detail ADD COLUMN ratedetailnum int;
+ALTER TABLE rate_detail ALTER COLUMN ratedetailnum SET DEFAULT nextval('public.rate_detail_ratedetailnum_seq'::text);
+CREATE SEQUENCE rate_detail_ratedetailnum_seq;
+ALTER TABLE rate_detail ALTER ratedetailnum SET NOT NULL;
+ALTER TABLE rate_detail ADD PRIMARY KEY (ratedetailnum);
+
+ALTER TABLE type_pkgs ADD typepkgnum int;
+ALTER TABLE type_pkgs ALTER COLUMN typepkgnum SET DEFAULT nextval('public.type_pkgs_typepkgnum_seq'::text);
+CREATE SEQUENCE type_pkgs_typepkgnum_seq;
+ALTER TABLE type_pkgs ALTER typepkgnum SET NOT NULL;
+ALTER TABLE type_pkgs ADD PRIMARY KEY (typepkgnum);
+
+ALTER TABLE cust_bill_pkg ADD billpkgnum int;
+ALTER TABLE cust_bill_pkg ALTER COLUMN billpkgnum SET DEFAULT nextval('public.cust_bill_pkg_billpkgnum_seq'::text);
+CREATE SEQUENCE cust_bill_pkg_billpkgnum_seq;
+ALTER TABLE cust_bill_pkg ALTER billpkgnum SET NOT NULL;
+ALTER TABLE cust_bill_pkg ADD PRIMARY KEY (billpkgnum);
+
+ALTER TABLE pkg_svc ADD pkgsvcnum int;
+ALTER TABLE pkg_svc ALTER COLUMN pkgsvcnum SET DEFAULT nextval('public.pkg_svc_pkgsvcnum_seq'::text);
+CREATE SEQUENCE pkg_svc_pkgsvcnum_seq;
+ALTER TABLE pkg_svc ALTER pkgsvcnum SET NOT NULL;
+ALTER TABLE pkg_svc ADD PRIMARY KEY (pkgsvcnum);
+
+ALTER TABLE part_svc_router ADD svcrouternum int;
+ALTER TABLE part_svc_router ALTER COLUMN svcrouternum SET DEFAULT nextval('public.part_svc_router_svcrouternum_seq'::text);
+CREATE SEQUENCE part_svc_router_svcrouternum_seq;
+ALTER TABLE part_svc_router ALTER svcrouternum SET NOT NULL;
+ALTER TABLE part_svc_router ADD PRIMARY KEY (svcrouternum);
+
+ALTER TABLE reg_code_pkg ADD codepkgnum int;
+ALTER TABLE reg_code_pkg ALTER COLUMN codepkgnum SET DEFAULT nextval('public.reg_code_pkg_codepkgnum_seq'::text);
+CREATE SEQUENCE reg_code_pkg_codepkgnum_seq;
+ALTER TABLE reg_code_pkg ALTER codepkgnum SET NOT NULL;
+ALTER TABLE reg_code_pkg ADD PRIMARY KEY (codepkgnum);
+
+ALTER TABLE virtual_field ADD vfieldnum int;
+ALTER TABLE virtual_field ALTER COLUMN vfieldnum SET DEFAULT nextval('public.virtual_field_vfieldnum_seq'::text);
+CREATE SEQUENCE virtual_field_vfieldnum_seq;
+ALTER TABLE virtual_field ALTER vfieldnum SET NOT NULL;
+ALTER TABLE virtual_field ADD PRIMARY KEY (vfieldnum);
+

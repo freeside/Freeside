@@ -52,8 +52,10 @@ CREATE TABLE router (
 );
 
 CREATE TABLE part_svc_router (
+  svcrouternum serial,
   svcpart int NOT NULL,
-  routernum int NOT NULL
+  routernum int NOT NULL,
+  PRIMARY KEY (svcrouternum),
 );
 
 CREATE TABLE addr_block (
@@ -186,10 +188,11 @@ CREATE TABLE cust_pay_void (
 CREATE INDEX cust_pay_void1 ON cust_pay_void(custnum);
 
 CREATE TABLE part_pkg_option (
-  optionnum int primary key,
+  optionnum serial,
   pkgpart int not null,
   optionname varchar(80) not null,
   optionvalue text NULL
+  PRIMARY KEY (optionnum),
 );
 CREATE INDEX part_pkg_option1 ON part_pkg_option ( pkgpart );
 CREATE INDEX part_pkg_option2 ON part_pkg_option ( optionname );
@@ -201,12 +204,14 @@ CREATE TABLE rate (
 );
 
 CREATE TABLE rate_detail (
+    ratedetailnum serial NOT NULL,
     ratenum int NOT NULL,
     orig_regionnum int NULL,
     dest_regionnum int NOT NULL,
     min_included int NOT NULL,
     min_charge decimal(10,2) NOT NULL,
-    sec_granularity int NOT NULL
+    sec_granularity int NOT NULL,
+    PRIMARY KEY (ratedetailnum)
 );
 CREATE UNIQUE INDEX rate_detail1 ON rate_detail ( ratenum, orig_regionnum, dest_regionnum );
 
@@ -237,8 +242,10 @@ CREATE UNIQUE INDEX reg_code1 ON reg_code ( agentnum, code );
 CREATE INDEX reg_code2 ON reg_code ( agentnum );
 
 CREATE TABLE reg_code_pkg (
+    codepkgnum serial,
     codenum int NOT NULL,
     pkgpart int NOT NULL
+    PRIMARY KEY (codepkgnum)
 );
 CREATE UNIQUE INDEX reg_code_pkg1 ON reg_code_pkg ( codenum, pkgpart );
 CREATE INDEX reg_code_pkg2 ON reg_code_pkg ( codenum );
@@ -297,6 +304,24 @@ CREATE INDEX part_pkg2 ON part_pkg ( promo_code );
 CREATE INDEX h_part_pkg2 ON h_part_pkg ( promo_code );
 ALTER TABLE prepay_credit ADD agentnum integer NULL;
 ALTER TABLE h_prepay_credit ADD agentnum integer NULL;
+
+ALTER TABLE type_pkgs ADD typepkgnum int;
+ALTER TABLE type_pkgs ALTER COLUMN typepkgnum SET DEFAULT nextval('public.type_pkgs_typepkgnum_seq'::text);
+CREATE SEQUENCE type_pkgs_typepkgnum_seq;
+ALTER TABLE type_pkgs ALTER typepkgnum SET NOT NULL;
+ALTER TABLE type_pkgs ADD PRIMARY KEY (typepkgnum);
+
+ALTER TABLE cust_bill_pkg ADD billpkgnum int;
+ALTER TABLE cust_bill_pkg ALTER COLUMN billpkgnum SET DEFAULT nextval('public.cust_bill_pkg_billpkgnum_seq'::text);
+CREATE SEQUENCE cust_bill_pkg_billpkgnum_seq;
+ALTER TABLE cust_bill_pkg ALTER billpkgnum SET NOT NULL;
+ALTER TABLE cust_bill_pkg ADD PRIMARY KEY (billpkgnum);
+
+ALTER TABLE pkg_svc ADD pkgsvcnum int;
+ALTER TABLE pkg_svc ALTER COLUMN pkgsvcnum SET DEFAULT nextval('public.pkg_svc_pkgsvcnum_seq'::text);
+CREATE SEQUENCE pkg_svc_pkgsvcnum_seq;
+ALTER TABLE pkg_svc ALTER pkgsvcnum SET NOT NULL;
+ALTER TABLE pkg_svc ADD PRIMARY KEY (pkgsvcnum);
 
 On recent Pg versions:
 
