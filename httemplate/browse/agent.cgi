@@ -2,6 +2,14 @@
 
 <%
 
+  my %search;
+  if ( $cgi->param('showdisabled')
+       || !dbdef->table('agent')->column('disabled') ) {
+    %search = ();
+  } else {
+    %search = ( 'disabled' => '' );
+  }
+
   #bad false laziness with search/cust_main.cgi (also needs fixing up for
   #old mysql)
   my $ncancelled = "
@@ -36,9 +44,18 @@ Agents are resellers of your service. Agents may be limited to a subset of your
 full offerings (via their type).<BR><BR>
 <A HREF="<%= $p %>edit/agent.cgi"><I>Add a new agent</I></A><BR><BR>
 
+<% if ( dbdef->table('agent')->column('disabled') ) { %>
+  <%= $cgi->param('showdisabled')
+      ? do { $cgi->param('showdisabled', 0);
+             '( <a href="'. $cgi->self_url. '">hide disabled agents</a> )'; }
+      : do { $cgi->param('showdisabled', 1);
+             '( <a href="'. $cgi->self_url. '">show disabled agents</a> )'; }
+  %>
+<% } %>
+
 <%= table() %>
 <TR>
-  <TH COLSPAN=2>Agent</TH>
+  <TH COLSPAN=<%= $cgi->param('showdisabled') ? 2 : 3 %>>Agent</TH>
   <TH>Type</TH>
   <TH>Customers</TH>
   <TH><FONT SIZE=-1>Freq.</FONT></TH>
@@ -51,7 +68,7 @@ full offerings (via their type).<BR><BR>
 foreach my $agent ( sort { 
   #$a->getfield('agentnum') <=> $b->getfield('agentnum')
   $a->getfield('agent') cmp $b->getfield('agent')
-} qsearch('agent',{}) ) {
+} qsearch('agent', \%search ) ) {
 
   $ncancelled_sth->execute($agent->agentnum) or die $ncancelled_sth->errstr;
   my $num_ncancelled = $ncancelled_sth->fetchrow_arrayref->[0];
@@ -66,6 +83,11 @@ foreach my $agent ( sort {
       <TR>
         <TD><A HREF="<%=$p%>edit/agent.cgi?<%= $agent->agentnum %>">
           <%= $agent->agentnum %></A></TD>
+<% if ( dbdef->table('agent')->column('disabled')
+        && !$cgi->param('showdisabled')           ) { %>
+        <TD><%= $agent->disabled ? 'DISABLED' : '' %></TD>
+<% } %>
+
         <TD><A HREF="<%=$p%>edit/agent.cgi?<%= $agent->agentnum %>">
           <%= $agent->agent %></A></TD>
         <TD><A HREF="<%=$p%>edit/agent_type.cgi?<%= $agent->typenum %>"><%= $agent->agent_type->atype %></A></TD>

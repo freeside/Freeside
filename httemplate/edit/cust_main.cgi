@@ -75,9 +75,11 @@ print qq!<FORM ACTION="${p1}process/cust_main.cgi" METHOD=POST NAME="form1">!,
 
 my $r = qq!<font color="#ff0000">*</font>&nbsp;!;
 
-my @agents = qsearch( 'agent', {} );
+my %agent_search = dbdef->table('agent')->column('disabled')
+                     ? ( 'disabled' => '' ) : ();
+my @agents = qsearch( 'agent', \%agent_search );
 #die "No agents created!" unless @agents;
-eidiot "You have not created any agents.  You must create at least one agent before adding a customer.  Go to ". popurl(2). "browse/agent.cgi and create one or more agents." unless @agents;
+eidiot "You have not created any agents (or all agents are disabled).  You must create at least one agent before adding a customer.  Go to ". popurl(2). "browse/agent.cgi and create one or more agents." unless @agents;
 my $agentnum = $cust_main->agentnum || $agents[0]->agentnum; #default to first
 if ( scalar(@agents) == 1 ) {
   print qq!<INPUT TYPE="hidden" NAME="agentnum" VALUE="$agentnum">!;
