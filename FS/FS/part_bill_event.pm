@@ -124,13 +124,15 @@ sub check {
 
     $c =~ /^\s*\$cust_main\->(suspend|cancel|invoicing_list_addpost|bill|collect)\(\);\s*("";)?\s*$/
 
-      or $c =~ /^\s*\$cust_bill\->(comp|realtime_(card|ach|lec)|realtime_card_cybercash|batch_card|send)\(\);\s*$/
+      or $c =~ /^\s*\$cust_bill\->(comp|realtime_(card|ach|lec)|batch_card|send)\(\);\s*$/
 
-      or $c =~ /^\s*\$cust_bill\->send\(\'\w+\'\);\s*$/
+      or $c =~ /^\s*\$cust_bill\->send\(\'[\w\-\s]+\'\s*(,\s*\d+\s*,\s*'[\w\@\.\-\+]*'\s*)?\);\s*$/
 
       or $c =~ /^\s*\$cust_main\->apply_payments; \$cust_main->apply_credits; "";\s*$/
 
       or $c =~ /^\s*\$cust_main\->charge\( \s*\d*\.?\d*\s*,\s*\'[\w \!\@\#\$\%\&\(\)\-\+\;\:\"\,\.\?\/]*\'\s*\);\s*$/
+
+      or $c =~ /^\s*\$cust_main\->suspend_(if|unless)_pkgpart\([\d\,\s]*\);\s*$/
 
       or do {
         #log
