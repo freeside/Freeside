@@ -130,8 +130,8 @@ cp&nbsp;htetc/global.asa&nbsp;/usr/local/etc/freeside/asp-global/global.asa
 <font size="-1"><pre>
 PerlModule Apache::ASP
 &lt;Directory&nbsp;/usr/local/apache/htdocs/freeside-asp&gt;
-&lt;Files ~ (\.cgi)&gt;
-AddHandler perl-script .cgi
+&lt;Files ~ (\.cgi|\.html)&gt;
+SetHandler perl-script
 PerlHandler Apache::ASP
 &lt;/Files&gt;
 &lt;Perl&gt;
@@ -145,7 +145,7 @@ PerlSetVar Debug 2
     <td><ul>
       <li>Run <tt>make masondocs</tt>
       <li>Copy <tt>masondocs/</tt> to your web server's document space. (For example: <tt>/usr/local/apache/htdocs/freeside-mason</tt>)
-      <li>Copy <tt>htetc/handler.pl</tt> to <tt>/usr/local/etc/freeside</tt> (use htetc/handler.pl-1.0x for Mason versions before 1.10).
+      <li>Copy <tt>htetc/handler.pl</tt> to <tt>/usr/local/etc/freeside</tt>
       <li>Edit <tt>handler.pl</tt> and:
       <ul>
         <li> set an appropriate <tt>comp_root</tt>, such as <tt>/usr/local/apache/htdocs/freeside-mason</tt>
@@ -156,8 +156,8 @@ PerlSetVar Debug 2
 <font size="-1"><pre>
 PerlModule HTML::Mason
 &lt;Directory&nbsp;/usr/local/apache/htdocs/freeside-mason&gt;
-&lt;Files ~ (\.cgi)&gt;
-AddHandler perl-script .cgi
+&lt;Files ~ (\.cgi|.html)&gt;
+SetHandler perl-script
 PerlHandler HTML::Mason
 &lt;/Files&gt;
 &lt;Perl&gt;

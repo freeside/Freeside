@@ -72,7 +72,8 @@ sub Script_OnStart {
   &cgisuidsetup($cgi);
   $p = popurl(2);
   #print $cgi->header( '-expires' => 'now' );
-  dbh->{'private_profile'} = {} if dbh->can('sprintProfile');
+  #dbh->{'private_profile'} = {} if dbh->can('sprintProfile');
+  dbh->{'private_profile'} = {} if UNIVERSAL::can(dbh, 'sprintProfile') );
 
   #really should check for FS::Profiler or something
     # Devel::AutoProfiler _our_ VERSION?  thanks a fucking lot
@@ -109,7 +110,7 @@ sub Script_OnFlush {
   #$$ref = $cgi->header() . $$ref;
   #warn "Script_OnFlush called with dbh ". dbh. "\n";
   #if ( dbh->can('sprintProfile') ) {
-  if ( UNIVERSAL::can(dbh,'sprintProfile') ) {
+  if ( UNIVERSAL::can(dbh, 'sprintProfile') ) {
     #warn "dbh can sprintProfile\n";
     if ( lc($Response->{ContentType}) eq 'text/html' ) { #con
       #warn "contenttype is sprintProfile\n";
@@ -137,7 +138,11 @@ if ( defined(@DBIx::Profile::ISA) ) {
     my $page =
       $cgi->header.
       qq!<HTML><BODY>Redirect to <A HREF="$location">$location</A><BR><BR>!.
-      '<PRE>'. encode_entities(dbh->sprintProfile()).
+      '<PRE>'.
+        ( UNIVERSAL::can(dbh, 'sprintProfile')
+            ? encode_entities(dbh->sprintProfile())
+            : 'DBIx::Profile missing sprintProfile method;'.
+              'unpatched or too old?'                        ).
       "\n\n". &sprintAutoProfile().  '</PRE>'.
       '</BODY></HTML>';
     dbh->{'private_profile'} = {};

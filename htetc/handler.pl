@@ -7,7 +7,7 @@
 package HTML::Mason;
 
 # Bring in main Mason package.
-use HTML::Mason;
+use HTML::Mason 1.1;
 
 # Bring in ApacheHandler, necessary for mod_perl integration.
 # Uncomment the second line (and comment the first) to use
@@ -120,29 +120,47 @@ sub handler
       use FS::export_svc;
       use FS::msgcat;
 
-      *CGI::redirect = sub {
+      *notCGI::redirect = sub {
         my( $self, $location ) = @_;
         use vars qw($m);
-        #http://www.masonhq.com/docs/faq/#how_do_i_do_an_external_redirect
-        $m->clear_buffer;
-        # The next two lines are necessary to stop Apache from re-reading
-        # POSTed data.
-        $r->method('GET');
-        $r->headers_in->unset('Content-length');
-        $r->content_type('text/html');
-        #$r->err_header_out('Location' => $location);
-        $r->header_out('Location' => $location);
-         $r->header_out('Content-Type' => 'text/html');
-         $m->abort(302);
 
-        '';
+        if ( defined(@DBIx::Profile::ISA) ) { #profiling redirect
+
+       #   my $page =
+
+
+       #   return $page;
+
+        } else { #normal redirect
+
+          #http://www.masonhq.com/docs/faq/#how_do_i_do_an_external_redirect
+          $m->clear_buffer;
+          # The next two lines are necessary to stop Apache from re-reading
+          # POSTed data.
+          $r->method('GET');
+          $r->headers_in->unset('Content-length');
+          $r->content_type('text/html');
+          #$r->err_header_out('Location' => $location);
+          $r->header_out('Location' => $location);
+          $r->header_out('Content-Type' => 'text/html');
+          $m->abort(302);
+
+          '';
+         }
+
       };
 
       $cgi = new CGI;
       &cgisuidsetup($cgi);
       #&cgisuidsetup($r);
       $p = popurl(2);
-    }
+
+      sub include {
+        use vars qw($m);
+        $m->scomp(@_);
+      }
+
+    } # end package HTML::Mason::Commands;
 
     $r->content_type('text/html');
     #eorar

@@ -1,0 +1,23 @@
+% $m->call_next;
+
+<%init>
+  dbh->{'private_profile'} = {} if UNIVERSAL::can(dbh, 'sprintProfile');
+</%init>
+
+<%filter>
+
+my $profile = '';
+if ( UNIVERSAL::can(dbh, 'sprintProfile') ) {
+
+  #if contenttype is text/html!!  **FIXME**
+
+    $profile = '<PRE>'. ("\n"x4096). encode_entities(dbh->sprintProfile()).
+               #"\n\n". &sprintAutoProfile(). '</PRE>';
+               "\n\n".                        '</PRE>';
+  #endif
+
+  dbh->{'private_profile'} = {};
+}
+
+s/(<\/BODY>[\s\n]*<\/HTML>[\s\n]*)$/$profile$1/i;
+</%filter>
