@@ -3,8 +3,8 @@
 my($query) = $cgi->keywords;
 $query =~ /^(\d+)$/ or die "Illegal taxnum!";
 my $taxnum = $1;
-my $cust_main_county = qsearchs('cust_main_county',{'taxnum'=>$taxnum})
-  or die ("Unknown taxnum!");
+my $cust_main_county = qsearchs('cust_main_county', { 'taxnum' => $taxnum } )
+  or die "Unknown taxnum $taxnum";
 
 #really should do this in a .pm & start transaction
 
