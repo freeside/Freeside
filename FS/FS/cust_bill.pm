@@ -646,7 +646,7 @@ for supported processors.
 
 =cut
 
-sub realtime_ach {
+sub realtime_lec {
   my $self = shift;
   $self->realtime_bop(
     'LEC',
@@ -1121,7 +1121,7 @@ sub print_text {
 
 =head1 VERSION
 
-$Id: cust_bill.pm,v 1.52 2002-11-19 09:51:58 ivan Exp $
+$Id: cust_bill.pm,v 1.53 2002-11-19 10:09:34 ivan Exp $
 
 =head1 BUGS
 
