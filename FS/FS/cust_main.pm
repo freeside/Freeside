@@ -27,6 +27,7 @@ use FS::part_pkg;
 use FS::part_bill_event;
 use FS::cust_bill_event;
 use FS::cust_tax_exempt;
+use FS::type_pkgs;
 use FS::Msgcat qw(gettext);
 
 @ISA = qw( FS::Record );
@@ -1769,9 +1770,20 @@ sub charge {
     return $error;
   }
 
+  my $pkgpart = $part_pkg->pkgpart;
+  my %type_pkgs = ( 'typenum' => $self->agent->typenum, 'pkgpart' => $pkgpart );
+  unless ( qsearchs('type_pkgs', \%type_pkgs ) ) {
+    my $type_pkgs = new FS::type_pkgs \%type_pkgs;
+    $error = $type_pkgs->insert;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
   my $cust_pkg = new FS::cust_pkg ( {
     'custnum' => $self->custnum,
-    'pkgpart' => $part_pkg->pkgpart,
+    'pkgpart' => $pkgpart,
   } );
 
   $error = $cust_pkg->insert;
