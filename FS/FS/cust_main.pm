@@ -6,7 +6,8 @@ package FS::cust_main;
 
 use strict;
 use vars qw( @ISA $conf $lpr $processor $xaction $E_NoErr $invoice_from
-             $smtpmachine $Debug );
+             $smtpmachine $Debug $bop_processor $bop_login $bop_password
+             $bop_action @bop_options);
 use Safe;
 use Carp;
 use Time::Local;
@@ -71,6 +72,16 @@ $FS::UID::callback{'FS::cust_main'} = sub {
       $xaction,
     ) = $conf->config('cybercash2');
     $processor='cybercash2';
+  } elsif ( $conf->exists('business-onlinepayment') ) {
+    ( $bop_processor,
+      $bop_login,
+      $bop_password,
+      $bop_action,
+      @bop_options
+    ) = $conf->config('business-onlinepayment');
+    $bop_action ||= 'normal authorization';
+    eval "use Business::OnlinePayment";  
+    $processor="Business::OnlinePayment::$bop_processor";
   }
 };
 
@@ -1019,6 +1030,14 @@ sub collect {
           return "Real time card processing not enabled!";
         }
 
+        my $address = $self->address1;
+        $address .= ", ". $self->address2 if $self->address2;
+
+        #fix exp. date
+        #$self->paydate =~ /^(\d+)\/\d*(\d{2})$/;
+        $self->paydate =~ /^\d{2}(\d{2})[\/\-](\d+)[\/\-]\d+$/;
+        my $exp = "$2/$1";
+
         if ( $processor =~ /^cybercash/ ) {
 
           #fix exp. date for cybercash
@@ -1032,10 +1051,8 @@ sub collect {
           my $payname = $self->payname ||
                         $self->getfield('first'). ' '. $self->getfield('last');
 
-          my $address = $self->address1;
-          $address .= ", ". $self->address2 if $self->address2;
 
-          my $country = 'USA' if $self->country eq 'US';
+          my $country = $self->country eq 'US' ? 'USA' : $self->country;
 
           my @full_xaction = ( $xaction,
             'Order-ID'     => $paybatch,
@@ -1091,6 +1108,73 @@ sub collect {
           } else {
             $dbh->commit or die $dbh->errstr if $oldAutoCommit;
             return '';
+          }
+
+        } elsif ( $processor =~ /^Business::OnlinePayment::(.*)$/ ) {
+
+          my($payname, $payfirst, $paylast);
+          if ( $self->payname ) {
+            $payname = $self->payname;
+            $payname =~ /^\s*([\w \,\.\-\']*\w)?\s+([\w\,\.\-\']+)$/
+              or do {
+                      $dbh->rollback if $oldAutoCommit;
+                      return "Illegal payname $payname";
+                    };
+            ($payfirst, $paylast) = ($1, $2);
+          } else {
+            $payfirst = $self->getfield('first');
+            $paylast = $self->getfield('first');
+            $payname =  "$payfirst $paylast";
+          }
+        
+          my $transaction = new Business::OnlinePayment( $1, @bop_options );
+          $transaction->content(
+            'type'           => 'CC',
+            'login'          => $bop_login,
+            'password'       => $bop_password,
+            'action'         => $bop_action,
+            'amount'         => $amount,
+            'invoice_number' => $cust_bill->invnum,
+            'customer_id'    => $self->custnum,
+            'last_name'      => $paylast,
+            'first_name'     => $payfirst,
+            'name'           => $payname,
+            'address'        => $address,
+            'city'           => $self->city,
+            'state'          => $self->state,
+            'zip'            => $self->zip,
+            'country'        => $self->country,
+            'card_number'    => $self->payinfo,
+            'expiration'     => $exp,
+          );
+          $transaction->submit();
+
+          if ( $transaction->is_success()) {
+            my $cust_pay = new FS::cust_pay ( {
+               'invnum'   => $cust_bill->invnum,
+               'paid'     => $amount,
+               '_date'     => '',
+               'payby'    => 'CARD',
+               'payinfo'  => $self->payinfo,
+               'paybatch' => "$processor:". $transaction->authorization,
+            } );
+            my $error = $cust_pay->insert;
+            if ( $error ) {
+              # gah, even with transactions.
+              $dbh->commit if $oldAutoCommit; #well.
+              my $e = 'WARNING: Card debited but database not updated - '.
+                      'error applying payment, invnum #' . $cust_bill->invnum.
+                      " ($processor): $error";
+              warn $e;
+              return $e;
+            }
+          } elsif ( $options{'report_badcard'} ) {
+            $dbh->commit if $oldAutoCommit;
+            return "$processor error, invnum #". $cust_bill->invnum. ': '.
+                   $transaction->result_code. ": ". $transaction->error_message;
+          } else {
+            $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+            return ''
           }
 
         } else {
@@ -1267,7 +1351,7 @@ sub check_invoicing_list {
 
 =head1 VERSION
 
-$Id: cust_main.pm,v 1.17 2001-08-12 00:07:00 ivan Exp $
+$Id: cust_main.pm,v 1.18 2001-08-17 10:55:04 ivan Exp $
 
 =head1 BUGS
 

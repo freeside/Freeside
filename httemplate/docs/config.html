@@ -38,6 +38,7 @@ All further configuration files and directories are located in
   <li><a name="autocapnames">autocapnames</a> - The presence of this file will cause Freeside to use Javascript in /htdocs/edit/cust_main.cgi to automatically capitalize the first and last names of customers.
   <li><a name="bindprimary">bindprimary</a> - Your BIND primary nameserver.  This enables export of /var/named/named.conf and zone files into /var/named
   <li><a name="bindsecondaries">bindsecondaries</a> - Your BIND secondary nameservers, one per line.  This enables export of /var/named/named.conf
+  <li><a name="business-onlinepayment">business-onlinepayment</a> - <a href="http://search.cpan.org/search?dist=Business-OnlinePayment">Business::OnlinePayment</a> support, at least three lines: processor, login, and password.  An optional fourth line specifies the action.  Optional additional lines are passed to Business::OnlinePayment as %processor_options.
   <li><a name="bsdshellmachines">bsdshellmachines</a> - Your BSD flavored shell (and mail) machines, one per line.  This enables export of `/etc/passwd' and `/etc/master.passwd'.
   <li><a name="countrydefault">countrydefault</a> - Default two-letter country code (if not supplied, the default is `US')
   <li><a name="cybercash2">cybercash2</a> - <a href="http://www.cybercash.com/cybercash/services/cashreg214.html">CyberCash v2</a> support, four lines: paymentserverhost, paymentserverport, paymentserversecret, and transaction type (`mauthonly' or `mauthcapture').  CCLib.pm is required.
@@ -96,7 +97,7 @@ All further configuration files and directories are located in
   <li><a name="soarefresh">soarefresh</a> - SOA refresh for new domains
   <li><a name="soaretry">soaretry</a> - SOA retry for new domains
   <li><a name="statedefault">statedefault</a> - Default state or province (if not supplied, the default is `CA')
-  <li><a name="textradiusprepend">textradiusprepend</a> - The contents of this file will be prepended to the first line of a user's RADIUS entry in text exports.  If necessary, usually `Auth-Type = Local, '.
+  <li><a name="textradiusprepend">textradiusprepend</a> - <b>depriciated<b>, use RADIUS check attributes instead.  The contents of this file will be prepended to the first line of a user's RADIUS entry in text exports.
   <li><a name="usernamemin">usernamemin</a> - Minimum username length (default 2);
   <li><a name="usernamemax">usernamemax</a> - Maximum username length (default is the size of the SQL column, probably specified when fs-setup was run)
   <li><a name="usernamemax">username-letter</a> - The existance of this file will turn on the requirement that usernames contain at least one letter.
