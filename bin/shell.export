@@ -26,6 +26,9 @@ my $rsync = File::Rsync->new({
 });
 
 foreach my $export ( @sysv_exports ) {
+}
+
+foreach my $export ( @bsd_exports ) {
   my $machine = $export->machine;
   my $prefix = "$spooldir/$machine";
   mkdir $prefix, 0700 unless -d $prefix;
