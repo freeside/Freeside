@@ -72,7 +72,7 @@ my $otaker = getotaker;
 my $username = $svc_acct->username;
 my $password;
 if ( $svc_acct->_password ) {
-  if ( $conf->exists('showpasswords') ) {
+  if ( $conf->exists('showpasswords') || ! $svcnum ) {
     $password = $svc_acct->_password;
   } else {
     $password = "*HIDDEN*";
