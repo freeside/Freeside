@@ -381,6 +381,12 @@ Sets any fixed values; see L<FS::part_svc>.
 sub check {
   my $self = shift;
 
+  my $error = 
+    $self->ut_numbern('svcnum')
+    || $self->ut_number('domsvc')
+  ;
+  return $error if $error;
+
   my($recref) = $self->hashref;
 
   my $x = $self->setfixed;
@@ -416,8 +422,8 @@ sub check {
     return "Only root can have uid 0"
       if $recref->{uid} == 0 && $recref->{username} ne 'root';
 
-    my($error);
-    return $error if $error=$self->ut_textn('finger');
+    $error = $self->ut_textn('finger');
+    return $error if $error;
 
     $recref->{dir} =~ /^([\/\w\-]*)$/
       or return "Illegal directory";
@@ -552,7 +558,7 @@ sub radius_check {
 
 =head1 VERSION
 
-$Id: svc_acct.pm,v 1.20 2001-08-12 19:41:24 jeff Exp $
+$Id: svc_acct.pm,v 1.21 2001-08-13 00:21:54 ivan Exp $
 
 =head1 BUGS
 
