@@ -104,7 +104,7 @@ sub handler
       use FS::svc_www;
       use FS::type_pkgs;
       use FS::part_export;
-      #use FS::part_export_option;
+      use FS::part_export_option;
 
       *CGI::redirect = sub {
         my( $self, $location ) = @_;

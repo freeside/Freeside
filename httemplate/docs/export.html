@@ -3,6 +3,7 @@
 </head>
 <body>
   <h1>File exporting</h1>
+  <font size="+2">NOTE: This file is OUT OF DATE with the landing of the new export code and is only here for reference.  DO NOT follow these instructions.  Instead use the new exports in the web interface.</font>
   <ul>
     <li>bin/svc_acct.export will create UNIX <b>passwd</b>, <b>shadow</b> and <b>master.passwd</b> files, ERPCD <b>acp_passwd</b> and <b>acp_dialup</b> files and a RADIUS <b>users</b> file in the <b>/usr/local/etc/freeside/export.<i>datasrc</i></b> directory.  Some RADIUS servers (such as <a href="http://www.open.com.au/radiator/">Radiator</a>, <a href="ftp://ftp.cheapnet.net/pub/icradius/">ICRADIUS</a> and <a href="http://www.freeradius.org/">FreeRADIUS</a>) will authenticate directly out of an SQL database.  In these cases,
 it is reccommended that you replicate (<a href="http://www.mysql.com/documentation/mysql/bychapter/manual_MySQL_Database_Administration.html#Replication">Replication in MySQL</a>) the data to an external RADIUS machine or point icradius_secrets to the external machine rather than running the RADIUS server on your Freeside machine.  Using the appropriate <a href="../config/config-view.cgi">configuration settings</a>, you can export these files to your remote machines unattended:

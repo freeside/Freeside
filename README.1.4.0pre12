@@ -21,9 +21,16 @@ Run bin/create-history-tables
 
 Run bin/dbdef-create again
 
+the mxmachines, nsmachines, arecords and cnamerecords configuration values have been deprecated.  Use the defaultrecords configuration value instead.
+
+New export code has landed!  If you were using the icradiusmachines,
+icradius_mysqldest, icradius_mysqlsource, or icradius_secrets files, see
+the "sqlradius" export instead.  Use MySQL replication 
+<http://www.mysql.com/documentation/mysql/bychapter/manual_MySQL_Database_Administration.html#Replication>
+or point the "sqlradius" export directly at your external ICRADIUS or
+FreeRADIUS (or through an SSL-encrypting proxy...)
+
 Arrange for freeside-expiration-alerter to be run daily, if desired.
 
 Restart Apache and freeside-queued
-
-the mxmachines, nsmachines, arecords and cnamerecords configuration values have been deprecated.  Use the defaultrecords configuration value instead.
 

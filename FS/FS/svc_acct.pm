@@ -1,7 +1,8 @@
 package FS::svc_acct;
 
 use strict;
-use vars qw( @ISA $nossh_hack $conf $dir_prefix @shells $usernamemin
+use vars qw( @ISA $nossh_hack $noexport_hack $conf
+             $dir_prefix @shells $usernamemin
              $usernamemax $passwordmin $passwordmax
              $username_ampersand $username_letter $username_letterfirst
              $username_noperiod $username_uppercase
@@ -9,7 +10,6 @@ use vars qw( @ISA $nossh_hack $conf $dir_prefix @shells $usernamemin
              $cyrus_server $cyrus_admin_user $cyrus_admin_pass
              $cp_server $cp_user $cp_pass $cp_workgroup
              $dirhash
-             $icradius_dbh
              @saltset @pw_set
              $rsync $ssh $exportdir $vpopdir);
 use Carp;
@@ -88,18 +88,7 @@ $FS::UID::callback{'FS::svc_acct'} = sub {
     $cp_pass = '';
     $cp_workgroup = '';
   }
-  if ( $conf->exists('icradiusmachines') ) {
-    if ( $conf->exists('icradius_secrets') ) {
-      #need some sort of late binding so it's only connected to when
-      # actually used, hmm
-      $icradius_dbh = DBI->connect($conf->config('icradius_secrets'))
-        or die $DBI::errstr;
-    } else {
-      $icradius_dbh = dbh;
-    }
-  } else {
-    $icradius_dbh = '';
-  }
+
   $dirhash = $conf->config('dirhash') || 0;
   $exportdir = "/usr/local/etc/freeside/export." . datasrc;
   if ( $conf->exists('vpopmailmachines') ) {
@@ -246,6 +235,8 @@ $username, $uid, $gid, $dir, and $shell.
 
 (TODOC: cyrus config file, L<FS::queue> and L<freeside-queued>)
 
+(TODOC: new exports! $noexport_hack)
+
 =cut
 
 sub insert {
@@ -297,6 +288,20 @@ sub insert {
     return $error;
   }
 
+  #new-style exports!
+  unless ( $noexport_hack ) {
+    foreach my $part_export ( $self->cust_svc->part_svc->part_export ) {
+      my $error = $part_export->export_insert($self);
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "exporting to ". $part_export->exporttype.
+               " (transaction rolled back): $error";
+      }
+    }
+  }
+
+  #old-style exports
+
   my( $username, $uid, $gid, $dir, $shell ) = (
     $self->username,
     $self->uid,
@@ -340,37 +345,6 @@ sub insert {
     }
   }
   
-  if ( $icradius_dbh ) {
-
-    my $radcheck_queue =
-      new FS::queue {
-      'svcnum' => $self->svcnum,
-      'job' => 'FS::svc_acct::icradius_rc_insert'
-    };
-    $error = $radcheck_queue->insert( $self->username,
-                                      $self->_password,
-                                      $self->radius_check
-                                    );
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return "queueing job (transaction rolled back): $error";
-    }
-
-    my $radreply_queue =
-      new FS::queue { 
-      'svcnum' => $self->svcnum,
-      'job' => 'FS::svc_acct::icradius_rr_insert'
-    };
-    $error = $radreply_queue->insert( $self->username,
-                                      $self->_password,
-                                      $self->radius_reply
-                                    );
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return "queueing job (transaction rolled back): $error";
-    }
-  }
-
   if ( $vpopdir ) {
 
     my $vpopmail_queue =
@@ -390,6 +364,7 @@ sub insert {
 
   }
 
+  #end of old-style exports
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   ''; #no error
@@ -450,56 +425,6 @@ sub cp_insert {
 
   die $app->message."\n" unless $app->ok;
 }
-
-sub icradius_rc_insert {
-  my( $username, $password, %radcheck ) = @_;
-  
-  my $sth = $icradius_dbh->prepare(
-    "INSERT INTO radcheck ( id, UserName, Attribute, Value ) VALUES ( ".
-    join(", ", map { $icradius_dbh->quote($_) } (
-      '',
-      $username,
-      "Password",
-      $password,
-    ) ). " )"
-  );
-  $sth->execute or die "can't insert into radcheck table: ". $sth->errstr;
-
-  foreach my $attribute ( keys %radcheck ) {
-    my $sth = $icradius_dbh->prepare(
-      "INSERT INTO radcheck ( id, UserName, Attribute, Value ) VALUES ( ".
-      join(", ", map { $icradius_dbh->quote($_) } (
-        '',
-        $username,
-        $attribute,
-        $radcheck{$attribute},
-      ) ). " )"
-    );
-    $sth->execute or die "can't insert into radcheck table: ". $sth->errstr;
-  }
-
-  1;
-}
-
-sub icradius_rr_insert {
-  my( $username, $password, %radreply ) = @_;
-  
-  foreach my $attribute ( keys %radreply ) {
-    my $sth = $icradius_dbh->prepare(
-      "INSERT INTO radreply ( id, UserName, Attribute, Value ) VALUES ( ".
-      join(", ", map { $icradius_dbh->quote($_) } (
-        '',
-        $username,
-        $attribute,
-        $radreply{$attribute},
-      ) ). " )"
-    );
-    $sth->execute or die "can't insert into radreply table: ". $sth->errstr;
-  }
-
-  1;
-}
-
 
 sub vpopmail_insert {
   my( $username, $password, $domain, $vpopdir ) = @_;
@@ -571,6 +496,8 @@ $username and $dir.
 
 (TODOC: cyrus config file)
 
+(TODOC: new exports! $noexport_hack)
+
 =cut
 
 sub delete {
@@ -590,7 +517,7 @@ sub delete {
   return "Can't delete an account with (svc_www) web service!"
     if qsearch( 'svc_www', { 'usersvc' => $self->usersvc } );
 
-  # what about records in session ?
+  # what about records in session ? (they should refer to history table)
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -639,6 +566,20 @@ sub delete {
     return $error;
   }
 
+  #new-style exports!
+  unless ( $noexport_hack ) {
+    foreach my $part_export ( $self->cust_svc->part_svc->part_export ) {
+      my $error = $part_export->export_delete($self);
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "exporting to ". $part_export->exporttype.
+               " (transaction rolled back): $error";
+      }
+    }
+  }
+
+  #old-style exports
+
   my( $username, $dir ) = (
     $self->username,
     $self->dir,
@@ -671,24 +612,6 @@ sub delete {
     }
   }
 
-  if ( $icradius_dbh ) {
-
-    my $radcheck_queue =
-      new FS::queue { 'job' => 'FS::svc_acct::icradius_rc_delete' };
-    $error = $radcheck_queue->insert( $self->username );
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return "queueing job (transaction rolled back): $error";
-    }
-
-    my $radreply_queue =
-      new FS::queue { 'job' => 'FS::svc_acct::icradius_rr_delete' };
-    $error = $radreply_queue->insert( $self->username );
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return "queueing job (transaction rolled back): $error";
-    }
-  }
   if ( $vpopdir ) {
     my $queue = new FS::queue { 'job' => 'FS::svc_acct::vpopmail_delete' };
     $error = $queue->insert( $self->username, $self->domain );
@@ -698,6 +621,8 @@ sub delete {
     }
 
   }
+
+  #end of old-style exports
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
@@ -740,30 +665,6 @@ sub cp_delete {
                       );
 
   die $app->message."\n" unless $app->ok;
-}
-
-sub icradius_rc_delete {
-  my $username = shift;
-  
-  my $sth = $icradius_dbh->prepare(
-    'DELETE FROM radcheck WHERE UserName = ?'
-  );
-  $sth->execute($username)
-    or die "can't delete from radcheck table: ". $sth->errstr;
-
-  1;
-}
-
-sub icradius_rr_delete {
-  my $username = shift;
-  
-  my $sth = $icradius_dbh->prepare(
-    'DELETE FROM radreply WHERE UserName = ?'
-  );
-  $sth->execute($username)
-    or die "can't delete from radreply table: ". $sth->errstr;
-
-  1;
 }
 
 sub vpopmail_delete {
@@ -858,6 +759,20 @@ sub replace {
     return $error if $error;
   }
 
+  #new-style exports!
+  unless ( $noexport_hack ) {
+    foreach my $part_export ( $new->cust_svc->part_svc->part_export ) {
+      my $error = $part_export->export_replace($new,$old);
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "exporting to ". $part_export->exporttype.
+               " (transaction rolled back): $error";
+      }
+    }
+  }
+
+  #old-style exports
+
   my ( $old_dir, $new_dir, $uid, $gid ) = (
     $old->getfield('dir'),
     $new->getfield('dir'),
@@ -900,19 +815,6 @@ sub replace {
     }
   }
 
-  if ( $icradius_dbh ) {
-    my $queue = new FS::queue {  
-      'svcnum' => $new->svcnum,
-      'job' => 'FS::svc_acct::icradius_rc_replace'
-    };
-    $error = $queue->insert( $new->username,
-                             $new->_password,
-                           );
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return "queueing job (transaction rolled back): $error";
-    }
-  }
   if ( $vpopdir ) {
     my $cpassword = crypt(
       $new->_password,$saltset[int(rand(64))].$saltset[int(rand(64))]
@@ -938,21 +840,10 @@ sub replace {
     }
   }
 
+  #end of old-style exports
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   ''; #no error
-}
-
-sub icradius_rc_replace {
-  my( $username, $new_password ) = @_;
- 
-   my $sth = $icradius_dbh->prepare(
-     "UPDATE radcheck SET Value = ? WHERE UserName = ? and Attribute = ?"
-   );
-   $sth->execute($new_password, $username, 'Password' )
-     or die "can't update radcheck table: ". $sth->errstr;
-
-  1;
 }
 
 sub cp_rename {
@@ -1305,19 +1196,22 @@ sub radius_reply {
 Returns key/value pairs, suitable for assigning to a hash, for any RADIUS
 check attributes of this record.
 
-Accessing RADIUS attributes directly is not supported and will break in the
-future.
+Note that this is now the preferred method for reading RADIUS attributes - 
+accessing the columns directly is discouraged, as the column names are
+expected to change in the future.
 
 =cut
 
 sub radius_check {
   my $self = shift;
-  map {
-    /^(rc_(.*))$/;
-    my($column, $attrib) = ($1, $2);
-    #$attrib =~ s/_/\-/g;
-    ( $FS::raddb::attrib{lc($attrib)}, $self->getfield($column) );
-  } grep { /^rc_/ && $self->getfield($_) } fields( $self->table );
+  ( 'Password' => $self->_password,
+    map {
+      /^(rc_(.*))$/;
+      my($column, $attrib) = ($1, $2);
+      #$attrib =~ s/_/\-/g;
+      ( $FS::raddb::attrib{lc($attrib)}, $self->getfield($column) );
+    } grep { /^rc_/ && $self->getfield($_) } fields( $self->table )
+  );
 }
 
 =item domain

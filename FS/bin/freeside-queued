@@ -15,6 +15,7 @@ use FS::queue;
 use FS::cust_main;
 use FS::svc_acct;
 use Net::SSH 0.05;
+use FS::part_export;
 
 my $pid_file = '/var/run/freeside-queued.pid';
 
@@ -85,7 +86,7 @@ while (1) {
 
     my $eval = "&". $ljob->job. '(@args);';
     warn "running $eval";
-    eval $eval;
+    eval $eval; #throw away return value?  suppose so
     if ( $@ ) {
       warn "job $eval failed";
       my %hash = $ljob->hash;

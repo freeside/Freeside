@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 #
-# $Id: svc_acct.export,v 1.34 2002-02-23 02:14:26 jeff Exp $
+# $Id: svc_acct.export,v 1.35 2002-03-20 21:31:49 ivan Exp $
 #
 # Create and export password, radius and vpopmail password files:
 # passwd, passwd.adjunct, shadow, acp_passwd, acp_userinfo, acp_dialup
@@ -46,22 +46,6 @@ my @erpcdmachines = $conf->config('erpcdmachines')
 
 my @radiusmachines = $conf->config('radiusmachines')
   if $conf->exists('radiusmachines');
-
-my $icradiusmachines = $conf->exists('icradiusmachines');
-my @icradiusmachines = $conf->config('icradiusmachines') if $icradiusmachines;
-my $icradius_mysqldest =
-  $conf->config('icradius_mysqldest') || "/usr/local/var"
-    if $icradiusmachines;
-my $icradius_mysqlsource =
-  $conf->config('icradius_mysqlsource') || "/usr/local/var/freeside"
-    if $icradiusmachines;
-my $icradius_dbh;
-if ( $icradiusmachines && $conf->exists('icradius_secrets') ) {
-  $icradius_dbh = DBI->connect($conf->config('icradius_secrets'))
-    or die $DBI::errstr;
-} else {
-  $icradius_dbh = dbh;
-}
 
 my $textradiusprepend =
   $conf->exists('textradiusprepend')
@@ -188,13 +172,6 @@ chmod 0600, "$spooldir/master.passwd",
 
 rmtree"$spooldir/domains", 0, 1;
 mkdir "$spooldir/domains", 0700;
-
-if ( $icradiusmachines ) {
-  my $sth = $icradius_dbh->prepare("DELETE FROM radcheck");
-  $sth->execute or die "Can't reset radcheck table: ". $sth->errstr;
-  my $sth2 = $icradius_dbh->prepare("DELETE FROM radreply");
-  $sth2->execute or die "Can't reset radreply table: ". $sth2->errstr;
-}
 
 setpriority(0,0,10);
 
@@ -399,7 +376,7 @@ foreach $svc_domain (sort {$a->domain cmp $b->domain} @svc_domain) {
         $username,
         qq(\t${textradiusprepend}),
         $radcheck,
-        qq(Password = "$rpassword"\n\t),
+#        qq(Password = "$rpassword"\n\t),
         join ",\n\t", map { qq($_ = "$radreply{$_}") } keys %radreply;
 
       if ( $ip && $ip ne '0e0' ) {
@@ -409,57 +386,6 @@ foreach $svc_domain (sort {$a->domain cmp $b->domain} @svc_domain) {
         print USERS qq(\n\n);
       }
 
-      ###
-      # ICRADIUS export
-      if ( $icradiusmachines ) {
-  
-        my $sth = $icradius_dbh->prepare(
-          "INSERT INTO radcheck ( id, UserName, Attribute, Value ) VALUES ( ".
-          join(", ", map { $icradius_dbh->quote( $_ ) } (
-            '',
-            $username,
-            "Password",
-            $svc_acct->_password,
-          ) ). " )"
-        );
-        $sth->execute or die "Can't insert into radcheck table: ". $sth->errstr;
-  
-        foreach my $attribute ( keys %radcheck ) {
-          my $sth = $icradius_dbh->prepare(
-            "INSERT INTO radcheck ( id, UserName, Attribute, Value ) VALUES ( ".
-            join(", ", map { $icradius_dbh->quote( $_ ) } (
-              '',
-              $username,
-              $attribute,
-              $radcheck{$attribute},
-            ) ). " )"
-          );
-          $sth->execute or die "Can't insert into radcheck table: ". $sth->errstr;      }
-  
-        foreach my $attribute ( keys %radreply ) {
-          my $sth = $icradius_dbh->prepare(
-            "INSERT INTO radreply (id, UserName, Attribute, Value) VALUES ( ".
-            join(", ", map { $icradius_dbh->quote( $_ ) } (
-              '',
-              $username,
-              $attribute,
-              $radreply{$attribute},
-            ) ). " )"
-          );
-          $sth->execute or die "Can't insert into radreply table: ". $sth->errstr;      }
-  
-        if ( $ip && $ip ne '0e0' ) {
-          my $sth = $icradius_dbh->prepare(
-            "INSERT INTO radreply (id, UserName, Attribute, Value) VALUES ( ".
-            join(", ", map { $icradius_dbh->quote( $_ ) } (
-              '',
-              $username,
-              'Framed-IP-Address',
-              $ip,
-            ) ). " )"
-          );
-          $sth->execute or die "Can't insert into radreply table: ". $sth->errstr;      }
-      }
     }
   
     ###
@@ -627,27 +553,6 @@ foreach $radiusmachine (@radiusmachines) {
     " )"
   )
     == 0 or die "ssh error: $!";
-}
-
-foreach my $icradiusmachine ( @icradiusmachines ) {
-  my( $machine, $db, $user, $pass ) = split(/\s+/, $icradiusmachine);
-  chdir $icradius_mysqlsource or die "Can't cd $icradius_mysqlsource: $!";
-  open(WRITER,"|ssh root\@$machine mysql -v --user=$user -p $db");
-  my $oldfh = select WRITER; $|=1; select $oldfh;
-  print WRITER "$pass\n";
-  sleep 2;
-  print WRITER "LOCK TABLES radcheck WRITE, radreply WRITE;\n";
-  foreach my $file ( glob("radcheck.*") ) {
-    my $scp = new Net::SCP;
-    $scp->scp($file,"root\@$machine:$icradius_mysqldest/$db/$file")
-      or die "scp error: ". $scp->{errstr};
-  }
-  foreach my $file ( glob("radreply.*") ) {
-    my $scp = new Net::SCP;
-    $scp->scp($file,"root\@$machine:$icradius_mysqldest/$db/$file")
-      or die "scp error: ". $scp->{errstr};
-  }
-  close WRITER;
 }
 
 #my @args = ("/bin/tar", "c", "--force-local", "-C", "$spooldir", "-f", "$spooldir/vpoptarball", "domains");

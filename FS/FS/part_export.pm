@@ -122,6 +122,7 @@ sub insert {
   my $options = shift;
   foreach my $optionname ( keys %{$options} ) {
     my $part_export_option = new FS::part_export_option ( {
+      'exportnum'   => $self->exportnum,
       'optionname'  => $optionname,
       'optionvalue' => $options->{$optionname},
     } );
@@ -144,16 +145,92 @@ Delete this record from the database.
 
 =cut
 
-# the delete method can be inherited from FS::Record
+#foreign keys would make this much less tedious... grr dumb mysql
+sub delete {
+  my $self = shift;
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
 
-=item replace OLD_RECORD
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $error = $self->SUPER::delete;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  foreach my $part_export_option ( $self->part_export_option ) {
+    my $error = $part_export_option->delete;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+  '';
+
+}
+
+=item replace OLD_RECORD HASHREF
 
 Replaces the OLD_RECORD with this one in the database.  If there is an error,
 returns the error, otherwise returns false.
 
+If a hash reference of options is supplied, part_export_option records are
+created or modified (see L<FS::part_export_option>).
+
 =cut
 
-# the replace method can be inherited from FS::Record
+sub replace {
+  my $self = shift;
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $error = $self->SUPER::replace;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  my $options = shift;
+  foreach my $optionname ( keys %{$options} ) {
+    my $old = qsearchs( 'part_export_option', {
+        'exportnum'   => $self->exportnum,
+        'optionname'  => $optionname,
+    } );
+    my $new = new FS::part_export_option ( {
+        'exportnum'   => $self->exportnum,
+        'optionname'  => $optionname,
+        'optionvalue' => $options->{$optionname},
+    } );
+    my $error = $old ? $new->replace($old) : $new->insert;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+  '';
+
+};
 
 =item check
 
@@ -198,11 +275,355 @@ sub part_svc {
   qsearchs('part_svc', { svcpart => $self->svcpart } );
 }
 
+=item part_export_option
+
+=cut
+
+sub part_export_option {
+  my $self = shift;
+  qsearch('part_export_option', { 'exportnum' => $self->exportnum } );
+}
+
+=item options 
+
+=cut
+
+sub options {
+  my $self = shift;
+  map { $_->optionname => $_->optionvalue } $self->part_export_option;
+}
+
+=item option
+
+=cut
+
+sub option {
+  my $self = shift;
+  my $part_export_option =
+    qsearchs('part_export_option', {
+      exportnum  => $self->exportnum,
+      optionname => shift,
+  } );
+  $part_export_option ? $part_export_option->optionvalue : '';
+}
+
+=item rebless
+
+=cut
+
+sub rebless {
+  my $self = shift;
+  my $exporttype = $self->exporttype;
+  my $class = ref($self);
+  bless($self, $class."::$exporttype");
+}
+
+=item export_insert SVC_OBJECT
+
+Calls the appropriate export_I<exporttype> for this object's exporttype.
+
+=cut
+
+sub export_insert {
+  my $self = shift;
+  $self->rebless;
+  $self->_export_insert(@_);
+}
+
+#sub AUTOLOAD {
+#  my $self = shift;
+#  $self->rebless;
+#  my $method = $AUTOLOAD;
+#  #$method =~ s/::(\w+)$/::_$1/; #infinite loop prevention
+#  $method =~ s/::(\w+)$/_$1/; #infinite loop prevention
+#  $self->$method(@_);
+#}
+
+=item export_replace
+
+=cut
+
+sub export_replace {
+  my $self = shift;
+  $self->rebless;
+  $self->_export_replace(@_);
+}
+
+=item export_delete
+
+=cut
+
+sub export_delete {
+  my $self = shift;
+  $self->rebless;
+  $self->_export_delete(@_);
+}
+
 =back
+
+#infostreet
+
+package FS::part_export::infostreet;
+use vars qw(@ISA);
+@ISA = qw(FS::part_export);
+
+sub _export_insert {
+  my( $self, $svc_acct ) = (shift, shift);
+  $self->infostreet_queue( $svc_acct->svcnum,
+    'createUser', $svc_acct->username, $svc_acct->password );
+}
+
+sub _export_replace {
+  my( $self, $new, $old ) = (shift, shift, shift);
+  return "can't change username with InfoStreet"
+    if $old->username ne $new->username;
+  return '' unless $old->_password ne $new->_password;
+  $self->infostreet_queue( $new->svcnum,
+    'passwd', $new->username, $new->password );
+}
+
+sub _export_delete {
+  my( $self, $svc_acct ) = (shift, shift);
+  $self->infostreet_queue( $svc_acct->svcnum,
+    'purgeAccount,releaseUsername', $svc_acct->username );
+}
+
+sub infostreet_queue {
+  my( $self, $svcnum, $method ) = (shift, shift, shift);
+  my $queue = new FS::queue {
+    'svcnum' => $svcnum,
+    'job'    => 'FS::part_export::infostreet::infostreet_command',
+  };
+  $queue->insert(
+    $self->option('url'),
+    $self->option('login'),
+    $self->option('password'),
+    $self->option('groupID'),
+    $method,
+    @_,
+  );
+}
+
+sub infostreet_command { #subroutine, not method
+  my($url, $username, $password, $groupID, $method, @args) = @_;
+
+  #quelle hack
+  if ( $method =~ /,/ ) {
+    foreach my $part ( split(/,\s*/, $method) ) {
+      infostreet_command($url, $username, $password, $groupID, $part, @args);
+    }
+    return;
+  }
+
+  eval "use Frontier::Client;";
+
+  my $conn = Frontier::Client->new( url => $url );
+  my $key_result = $conn->call( 'authenticate', $username, $password, $groupID);
+  my %key_result = _infostreet_parse($key_result);
+  die $key_result{error} unless $key_result{success};
+  my $key = $key_result{data};
+
+  my $result = $conn->call($opt{method}, $key, @{$opt{args}});
+  my %result = _infostreet_parse($result);
+  die $result{error} unless $result{success};
+
+}
+
+sub _infostreet_parse { #subroutine, not method
+  my $arg = shift;
+  map {
+    my $value = $arg->{$_};
+    #warn ref($value);
+    $value = $value->value()
+      if ref($value) && $value->isa('Frontier::RPC2::DataType');
+    $_=>$value;
+  } keys %$arg;
+}
+
+#sqlradius
+
+package FS::part_export::sqlradius;
+use vars qw(@ISA);
+@ISA = qw(FS::part_export);
+
+sub _export_insert {
+  my($self, $svc_acct) = (shift, shift);
+  $self->sqlradius_queue( $svc_acct->svcnum, 'insert',
+    'reply', $svc_acct->username, $svc_acct->radius_reply );
+  $self->sqlradius_queue( $svc_acct->svcnum, 'insert',
+    'check', $svc_acct->username, $svc_acct->radius_check );
+}
+
+sub _export_replace {
+  my( $self, $new, $old ) = (shift, shift, shift);
+
+  #return "can't (yet) change username with sqlradius"
+  #  if $old->username ne $new->username;
+  if ( $old->username ne $new->username ) {
+    my $error = $self->sqlradius_queue( $new->svcnum, 'rename',
+      $new->username, $old->username );
+    return $error if $error;
+  }
+
+  foreach my $table (qw(reply check)) {
+    my $method = "radius_$table";
+    my %new = $new->$method;
+    my %old = $old->$method;
+    if ( grep { !exists $old{$_} #new attributes
+                || $new{$n} ne $old{$n} #changed
+              } keys %new
+    ) {
+      my $error = $self->sqlradius_queue( $new->svcnum, 'insert'
+        $table, $new->username, %new );
+      return $error if $error;
+    }
+
+    my @del = grep { !exists $new{$_} } keys %old;
+    my $error = $self->sqlradius_queue( $new->svcnum, 'sqlradius_attrib_delete',
+      $table, $new->username, @del );
+    return $error if $error;
+  }
+
+  '';
+}
+
+sub _export_delete {
+  my( $self, $svc_something ) = (shift, shift);
+  $self->sqlradius_queue( $svc_acct->svcnum, 'delete',
+    $svc_something->username );
+}
+
+sub sqlradius_queue {
+  my( $self, $svcnum, $method ) = (shift, shift, shift);
+  my $queue = new FS::queue {
+    'svcnum' => $svcnum,
+    'job'    => "FS::part_export::sqlradius::sqlradius_$method",
+  };
+  $queue->insert(
+    $self->option('datasrc'),
+    $self->option('username'),
+    $self->option('password'),
+    @_,
+  );
+}
+
+sub sqlradius_insert { #subroutine, not method
+  my $dbh = sqlradius_connect(shift, shift, shift);
+  my( $replycheck, $username, %attributes ) = @_;
+
+  foreach my $attribute ( keys %attributes ) {
+    my $u_sth = $dbh->prepare(
+      "UPDATE rad$replycheck SET Value = ? WHERE UserName = ? AND Attribute = ?"    ) or die $dbh->errstr;
+    my $i_sth = $dbh->prepare(
+      "INSERT INTO rad$replycheck ( id, UserName, Attribute, Value ) ".
+        "VALUES ( ?, ?, ?, ? )" )
+      or die $dbh->errstr;
+    $u_sth->execute($attributes{$attribute}, $username, $attribute) > 0
+      or $i_sth->execute( '', $username, $attribute, $attributes{$attribute} )
+        or die "can't insert into rad$replycheck table: ". $i_sth->errstr;
+  }
+  $dbh->disconnect;
+}
+
+sub sqlradius_rename { #subroutine, not method
+  my $dbh = sqlradius_connect(shift, shift, shift);
+  my($new_username, $old_username) = @_;
+  foreach my $table (qw(radreply radcheck)) {
+    my $sth = $dbh->prepare("UPDATE $table SET Username = ? WHERE UserName = ?")
+      or die $dbh->errstr;
+    $sth->execute($new_username, $old_username)
+      or die "can't update $table: ". $sth->errstr;
+  }
+  $dbh->disconnect;
+}
+
+sub sqlradius_attrib_delete { #subroutine, not method
+  my $dbh = sqlradius_connect(shift, shift, shift);
+  my( $replycheck, $username, @attrib ) = @_;
+
+  foreach my $attribute ( @attrib ) {
+    my $sth = $dbh->prepare(
+        "DELETE FROM $table WHERE UserName = ? AND Attribute = ?" )
+      or die $dbh->errstr;
+    $sth->execute($username,$attribute)
+      or die "can't delete from $table table: ". $sth->errstr;
+  }
+  $dbh->disconnect;
+}
+
+sub sqlradius_delete { #subroutine, not method
+  my $dbh = sqlradius_connect(shift, shift, shift);
+  my $username = shift;
+
+  foreach my $table (qw( radcheck radreply )) {
+    my $sth = $dbh->prepare( "DELETE FROM $table WHERE UserName = ?" );
+    $sth->execute($username)
+      or die "can't delete from $table table: ". $sth->errstr;
+  }
+  $dbh->disconnect;
+}
+
+sub sqlradius_connect {
+  #my($datasrc, $username, $password) = @_;
+  #DBI->connect($datasrc, $username, $password) or die $DBI::errstr;
+  DBI->connect(@_) or die $DBI::errstr;
+}
+
+=head1 NOTES
+
+Writing a new export class:
+
+#myexport
+
+package FS::part_export::myexport;
+use vars qw(@ISA);
+@ISA = qw(FS::part_export);
+
+sub _export_insert {
+  my($self, $svc_something) = (shift, shift);
+  $self->myexport_queue( $svc_acct->svcnum, 'insert',
+    $svc_something->username, $svc_something->password );
+}
+
+sub _export_replace {
+  my( $self, $new, $old ) = (shift, shift, shift);
+  #return "can't change username with myexport"
+  #  if $old->username ne $new->username;
+  #return '' unless $old->_password ne $new->_password;
+  $self->myexport_queue( $new->svcnum,
+    'replace', $new->username, $new->password );
+}
+
+sub _export_delete {
+  my( $self, $svc_something ) = (shift, shift);
+  $self->myexport_queue( $svc_acct->svcnum,
+    'delete', $svc_something->username );
+}
+
+#a good idea to queue anything that could fail or take any time
+sub myexport_queue {
+  my( $self, $svcnum, $method ) = (shift, shift, shift);
+  my $queue = new FS::queue {
+    'svcnum' => $svcnum,
+    'job'    => "FS::part_export::myexport::myexport_$method",
+  };
+  $queue->insert( @_ );
+}
+
+sub myexport_insert { #subroutine, not method
+}
+sub myexport_replace { #subroutine, not method
+}
+sub myexport_delete { #subroutine, not method
+}
 
 =head1 BUGS
 
 Probably.
+
+Hmm, export code has wound up in here.  Move those sub-classes out into their
+own files, at least.  Also hmm... cust_export class (not necessarily a
+database table...) ... ?
 
 =head1 SEE ALSO
 

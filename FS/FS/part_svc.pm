@@ -295,11 +295,21 @@ sub all_part_svc_column {
   qsearch('part_svc_column', { 'svcpart' => $self->svcpart } );
 }
 
+=item part_export
+
+=cut
+
+sub part_export {
+  my $self = shift;
+  my %search = ( 'svcpart' => $self->svcpart );
+  qsearch('part_export', \%search);
+}
+
 =back
 
 =head1 VERSION
 
-$Id: part_svc.pm,v 1.9 2002-01-28 06:57:23 ivan Exp $
+$Id: part_svc.pm,v 1.10 2002-03-20 21:31:49 ivan Exp $
 
 =head1 BUGS
 

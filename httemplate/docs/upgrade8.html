@@ -319,5 +319,11 @@ ALTER TABLE cust_refund DROP COLUMN crednum;
   <b>freeside-expiration-alerter</b> to be run daily by cron or similar
   facility.  The message it sends can be configured from the
   <u>Configuration</u> choice of the main menu as <u>alerter_template</u>.
+  <li>Export has been rewritten.  If you were using the icradiusmachines,
+  icradius_mysqldest, icradius_mysqlsource, or icradius_secrets files, add
+  an appropriate "sqlradius" export to all relevant Service Definitions
+  instead.  Use <a href="http://www.mysql.com/documentation/mysql/bychapter/manual_MySQL_Database_Administration.html#Replication">MySQL replication</a> or
+  point the "sqlradius" export directly at your external ICRADIUS or FreeRADIUS
+  database (or through an SSL-necrypting proxy...)
 </ul>
 </body>

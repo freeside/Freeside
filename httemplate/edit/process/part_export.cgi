@@ -6,6 +6,9 @@ my $exportnum = $cgi->param('exportnum');
 
 my $old = qsearchs('part_export', { 'exportnum'=>$exportnum } ) if $exportnum;
 
+#fixup options
+my %options = map { $_=>$cgi->param($_) } $cgi->param('options');
+
 my $new = new FS::part_export ( {
   map {
     $_, scalar($cgi->param($_));

@@ -40,7 +40,7 @@ currently supported:
 
 =item optionname - option name
 
-=item opeionvalue - option value
+=item optionvalue - option value
 
 =back
 
