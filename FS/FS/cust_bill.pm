@@ -815,11 +815,13 @@ sub print_text {
   my @invoice_template = $conf->config($templatefile)
   or die "cannot load config file $templatefile";
   $invoice_lines = 0;
+  my $wasfunc = 0;
   foreach ( grep /invoice_lines\(\d+\)/, @invoice_template ) { #kludgy
     /invoice_lines\((\d+)\)/;
     $invoice_lines += $1;
+    $wasfunc=1;
   }
-  die "no invoice_lines() functions in template?" unless $invoice_lines;
+  die "no invoice_lines() functions in template?" unless $wasfunc;
   my $invoice_template = new Text::Template (
     TYPE   => 'ARRAY',
     SOURCE => [ map "$_\n", @invoice_template ],
@@ -835,11 +837,14 @@ sub print_text {
   $date = $self->_date;
   $page = 1;
 
-  $total_pages =
-    int( scalar(@FS::cust_bill::buf) / $FS::cust_bill::invoice_lines );
-  $total_pages++
-    if scalar(@FS::cust_bill::buf) % $FS::cust_bill::invoice_lines;
-
+  if ( $FS::cust_bill::invoice_lines ) {
+    $total_pages =
+      int( scalar(@FS::cust_bill::buf) / $FS::cust_bill::invoice_lines );
+    $total_pages++
+      if scalar(@FS::cust_bill::buf) % $FS::cust_bill::invoice_lines;
+  } else {
+    $total_pages = 1;
+  }
 
   #format address (variable for the template)
   my $l = 0;
@@ -873,7 +878,7 @@ sub print_text {
   #and subroutine for the template
 
   sub FS::cust_bill::_template::invoice_lines {
-    my $lines = shift;
+    my $lines = shift or return @buf;
     map { 
       scalar(@buf) ? shift @buf : [ '', '' ];
     }
@@ -900,7 +905,7 @@ sub print_text {
 
 =head1 VERSION
 
-$Id: cust_bill.pm,v 1.26 2002-04-07 06:23:29 ivan Exp $
+$Id: cust_bill.pm,v 1.27 2002-04-13 09:14:07 ivan Exp $
 
 =head1 BUGS
 
