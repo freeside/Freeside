@@ -22,6 +22,8 @@ my $filename = "$homedir/.fetchmailrc";
 my $gid = scalar(getgrnam($username)) or die "can't find $username's gid\n";
 my $uid = scalar(getpwnam($username)) or die "can't find $username's uid\n";
 
+exit unless $ARGV[0];
+
 open(FETCHMAILRC, ">$filename") or die "can't open $filename: $!\n";
 chown $uid, $gid, $filename     or die "can't chown $uid.$gid $filename: $!\n";
 chmod 0600, $filename           or die "can't chmod 600 $filename: $!\n";
