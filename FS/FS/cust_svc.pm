@@ -126,19 +126,19 @@ sub label {
   my $svc = $part_svc->svc;
   my $tag;
   if ( $svcdb eq 'svc_acct' ) {
-    $tag = $svc_x->getfield('username');
+    $tag = $svc_x->email;
   } elsif ( $svcdb eq 'svc_acct_sm' ) {
     my $domuser = $svc_x->domuser eq '*' ? '(anything)' : $svc_x->domuser;
     my $svc_domain = qsearchs ( 'svc_domain', { 'svcnum' => $svc_x->domsvc } );
     my $domain = $svc_domain->domain;
     $tag = "$domuser\@$domain";
   } elsif ( $svcdb eq 'svc_forward' ) {
-    my $svc_acct = qsearchs ( 'svc_acct', { 'svcnum' => $svc_x->srcsvc } );
-    $tag = $svc_acct->email . '->';
-    if ($svc_x->dstsvc) {
-      $svc_acct = qsearchs ( 'svc_acct', { 'svcnum' => $svc_x->dstsvc } );
+    my $svc_acct = qsearchs( 'svc_acct', { 'svcnum' => $svc_x->srcsvc } );
+    $tag = $svc_acct->email. '->';
+    if ( $svc_x->dstsvc ) {
+      $svc_acct = qsearchs( 'svc_acct', { 'svcnum' => $svc_x->dstsvc } );
       $tag .= $svc_acct->email;
-    }else{
+    } else {
       $tag .= $svc_x->dst;
     }
   } elsif ( $svcdb eq 'svc_domain' ) {
@@ -154,7 +154,7 @@ sub label {
 
 =head1 VERSION
 
-$Id: cust_svc.pm,v 1.2 2001-08-19 15:53:34 jeff Exp $
+$Id: cust_svc.pm,v 1.3 2001-08-20 11:18:20 ivan Exp $
 
 =head1 BUGS
 
