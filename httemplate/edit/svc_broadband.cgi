@@ -96,10 +96,18 @@ Service #<B><%=$svcnum ? $svcnum : "(NEW)"%></B><BR><BR>
   <INPUT TYPE="hidden" NAME="svcnum" VALUE="<%=$svcnum%>">
   <INPUT TYPE="hidden" NAME="pkgnum" VALUE="<%=$pkgnum%>">
   <INPUT TYPE="hidden" NAME="svcpart" VALUE="<%=$svcpart%>">
-  <INPUT TYPE="hidden" NAME="ip_addr" VALUE="<%=$ip_addr%>">
 
   <%=&ntable("#cccccc",2)%>
-
+    <TR>
+      <TD ALIGN="right">IP Address</TD>
+      <TD BGCOLOR="#ffffff">
+<% if ( $part_svc->part_svc_column('ip_addr')->columnflag eq 'F' ) { %>
+        <INPUT TYPE="hidden" NAME="ip_addr" VALUE="<%=$ip_addr%>"><%=$ip_addr%>
+<% } else { %>
+        <INPUT TYPE="text" NAME="ip_addr" VALUE="<%=$ip_addr%>">
+<% } %>
+      </TD>
+    </TR>
     <TR>
       <TD ALIGN="right">Download speed</TD>
       <TD BGCOLOR="#ffffff">
