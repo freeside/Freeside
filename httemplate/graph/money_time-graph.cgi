@@ -1,12 +1,16 @@
 <%
 
+#my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
+my ($curmon,$curyear) = (localtime(time))[4,5];
+
 #find first month
-my $syear = 2001;
-my $smonth = 8;
+my $syear = $cgi->param('syear') || 1899+$curyear;
+my $smonth = $cgi->param('smonth') || $curmon+1;
 
 #find last month
-my $eyear = 2002;
-my $emonth = 12;
+my $eyear = $cgi->param('eyear') || 1900+$curyear;
+my $emonth = $cgi->param('emonth') || $curmon+1;
+if ( $emonth++>12 ) { $emonth-=12; $eyear++; }
 
 my @labels;
 my %data;

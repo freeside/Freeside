@@ -1,9 +1,25 @@
+<!-- mason kludge %>
+<%
+
+#my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
+my ($curmon,$curyear) = (localtime(time))[4,5];
+
+#find first month
+my $syear = $cgi->param('syear') || 1899+$curyear;
+my $smonth = $cgi->param('smonth') || $curmon+1;
+
+#find last month
+my $eyear = $cgi->param('eyear') || 1900+$curyear;
+my $emonth = $cgi->param('emonth') || $curmon+1;
+
+%>
+
 <HTML>
   <HEAD>
     <TITLE>Graphing monetary values over time</TITLE>
   </HEAD>
 <BODY BGCOLOR="#e8e8e8">
-<IMG SRC="money_time-graph.cgi" WIDTH="768" HEIGHT="480">
+<IMG SRC="money_time-graph.cgi?<%= $cgi->query_string %>" WIDTH="768" HEIGHT="480">
 <BR>
 <FORM METHOD="POST">
 <INPUT TYPE="checkbox" NAME="ar">
@@ -18,22 +34,22 @@
 From <SELECT NAME="smonth">
 <% my @m = qw(Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec);
    foreach my $m ( 1..12 ) { %>
-<OPTION VALUE="<%= $m %>"><%= $m[$m-1] %>
+<OPTION VALUE="<%= $m %>"<%= $m == $smonth ? ' SELECTED' : '' %>><%= $m[$m-1] %>
 <% } %>
 </SELECT>
 <SELECT NAME="syear">
 <% foreach my $y ( 1999 .. 2010 ) { %>
-<OPTION VALUE="<%= $y %>"><%= $y %>
+<OPTION VALUE="<%= $y %>"<%= $y == $syear ? ' SELECTED' : '' %>><%= $y %>
 <% } %>
 </SELECT>
  to <SELECT NAME="emonth">
 <% foreach my $m ( 1..12 ) { %>
-<OPTION VALUE="<%= $m %>"><%= $m[$m-1] %>
+<OPTION VALUE="<%= $m %>"<%= $m == $emonth ? ' SELECTED' : '' %>><%= $m[$m-1] %>
 <% } %>
 </SELECT>
 <SELECT NAME="eyear">
 <% foreach my $y ( 1999 .. 2010 ) { %>
-<OPTION VALUE="<%= $y %>"><%= $y %>
+<OPTION VALUE="<%= $y %>"<%= $y == $eyear ? ' SELECTED' : '' %>><%= $y %>
 <% } %>
 </SELECT>
 
