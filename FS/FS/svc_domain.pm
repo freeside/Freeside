@@ -193,14 +193,14 @@ sub insert {
 
     foreach my $record ( @defaultrecords ) {
       my($zone,$af,$type,$data) = split(/\s+/,$record,4);
-      my $record = new FS::domain_record {
+      my $domain_record = new FS::domain_record {
         'svcnum'  => $self->svcnum,
         'reczone' => $zone,
         'recaf'   => $af,
         'rectype' => $type,
         'recdata' => $data,
       };
-      my $error = $record->insert;
+      my $error = $domain_record->insert;
       if ( $error ) {
         $dbh->rollback if $oldAutoCommit;
         return "couldn't insert record for new domain: $error";
@@ -407,7 +407,7 @@ sub submit_internic {
 
 =head1 VERSION
 
-$Id: svc_domain.pm,v 1.26 2002-03-18 09:10:12 ivan Exp $
+$Id: svc_domain.pm,v 1.27 2002-05-10 07:45:29 ivan Exp $
 
 =head1 BUGS
 
