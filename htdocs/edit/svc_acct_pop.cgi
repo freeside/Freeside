@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct_pop.cgi,v 1.8 1999-02-23 08:09:23 ivan Exp $
+# $Id: svc_acct_pop.cgi,v 1.9 2000-01-28 23:02:48 ivan Exp $
 #
 # ivan@sisd.com 98-mar-8 
 #
@@ -10,7 +10,10 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: svc_acct_pop.cgi,v $
-# Revision 1.8  1999-02-23 08:09:23  ivan
+# Revision 1.9  2000-01-28 23:02:48  ivan
+# track full phone number
+#
+# Revision 1.8  1999/02/23 08:09:23  ivan
 # beginnings of one-screen new customer entry and some other miscellania
 #
 # Revision 1.7  1999/02/07 09:59:23  ivan
@@ -83,6 +86,7 @@ City      <INPUT TYPE="text" NAME="city" SIZE=32 VALUE="$hashref->{city}">
 State     <INPUT TYPE="text" NAME="state" SIZE=16 MAXLENGTH=16 VALUE="$hashref->{state}">
 Area Code <INPUT TYPE="text" NAME="ac" SIZE=4 MAXLENGTH=3 VALUE="$hashref->{ac}">
 Exchange  <INPUT TYPE="text" NAME="exch" SIZE=4 MAXLENGTH=3 VALUE="$hashref->{exch}">
+Local     <INPUT TYPE="text" NAME="loc" SIZE=5 MAXLENGTH=4 VALUE="$hashref->{loc}">
 </PRE>
 END
 
