@@ -8,7 +8,7 @@ use FS::svc_Common;
 use FS::cust_svc;
 use FS::domain_record;
 use FS::svc_acct;
-use FS::SSH qw(ssh);
+use Net::SSH qw(ssh);
 
 @ISA = qw( FS::svc_Common );
 
@@ -220,7 +220,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: svc_www.pm,v 1.3 2000-11-22 23:30:51 ivan Exp $
+$Id: svc_www.pm,v 1.4 2001-04-22 01:56:15 ivan Exp $
 
 =head1 BUGS
 
@@ -232,7 +232,10 @@ L<FS::part_svc>, L<FS::cust_pkg>, schema.html from the base documentation.
 =head1 HISTORY
 
 $Log: svc_www.pm,v $
-Revision 1.3  2000-11-22 23:30:51  ivan
+Revision 1.4  2001-04-22 01:56:15  ivan
+get rid of FS::SSH.pm (became Net::SSH and Net::SCP on CPAN)
+
+Revision 1.3  2000/11/22 23:30:51  ivan
 tyop
 
 Revision 1.2  2000/03/01 08:13:59  ivan

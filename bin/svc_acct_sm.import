@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct_sm.import,v 1.8 2000-12-03 15:14:00 ivan Exp $
+# $Id: svc_acct_sm.import,v 1.9 2001-04-22 01:56:15 ivan Exp $
 #
 # ivan@sisd.com 98-mar-9
 #
@@ -16,7 +16,10 @@
 # ivan@sisd.com 98-jul-13
 #
 # $Log: svc_acct_sm.import,v $
-# Revision 1.8  2000-12-03 15:14:00  ivan
+# Revision 1.9  2001-04-22 01:56:15  ivan
+# get rid of FS::SSH.pm (became Net::SSH and Net::SCP on CPAN)
+#
+# Revision 1.8  2000/12/03 15:14:00  ivan
 # bugfixes from Jeff Finucane <jeff@cmh.net>, thanks!
 #
 # Revision 1.7  2000/06/29 10:51:52  ivan
@@ -41,7 +44,7 @@
 use strict;
 use vars qw(%d_part_svc %m_part_svc);
 use Term::Query qw(query);
-use FS::SSH qw(iscp);
+use Net::SCP qw(iscp);
 use FS::UID qw(adminsuidsetup datasrc);
 use FS::Record qw(qsearch qsearchs);
 use FS::svc_acct_sm;

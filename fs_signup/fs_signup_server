@@ -6,7 +6,7 @@
 use strict;
 use IO::Handle;
 use Tie::RefHash;
-use FS::SSH qw(sshopen2);
+use Net::SSH qw(sshopen2);
 use FS::UID qw(adminsuidsetup);
 use FS::Record qw( qsearch qsearchs );
 use FS::cust_main_county;

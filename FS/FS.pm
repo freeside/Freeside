@@ -14,26 +14,10 @@ FS - Freeside Perl modules
 
 =head1 SYNOPSIS
 
-FS is the temporary prefix for many disparate modules written for the Freeside
-ISP billing software.  This includes:
-
-=head2 Database metadata classes
-
-L<FS::dbdef> - Database class
-
-L<FS::dbdef_table> - Database table class
-
-L<FS::dbdef_column> - Database column class
-
-L<FS::dbdef_colgroup> - Database column group class
-
-L<FS::dbdef_index> - Database index class
-
-L<FS::dbdef_unique> - Database unique index class
+FS is the unofficial (i.e. non-CPAN) prefix for the Perl module portion of the
+Freeside ISP billing software.  This includes:
 
 =head2 Utility classes
-
-L<FS::SSH> - Simple wrappers around ssh and scp commands.
 
 L<FS::Conf> - Freeside configuration values
 
@@ -127,7 +111,7 @@ The main documentation is in htdocs/docs.
 
 =head1 VERSION
 
-$Id: FS.pm,v 1.3 1999-08-04 12:41:47 ivan Exp $
+$Id: FS.pm,v 1.4 2001-04-22 01:56:14 ivan Exp $
 
 =head1 SUPPORT
 
@@ -155,7 +139,8 @@ Freeside distribution, which are both different from the CVS version tag for
 each file, which appears under the VERSION heading.
 
 Those modules which would be useful separately should be pulled out, 
-renamed appropriately and uploaded to CPAN.
+renamed appropriately and uploaded to CPAN.  So far: DBIx::DBSchema, Net::SSH
+and Net::SCP...
 
 =cut
 

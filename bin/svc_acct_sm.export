@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct_sm.export,v 1.8 2000-07-06 03:37:24 ivan Exp $
+# $Id: svc_acct_sm.export,v 1.9 2001-04-22 01:56:15 ivan Exp $
 # 
 # Create and export config files for sendmail, qmail
 #
@@ -42,7 +42,10 @@
 # /var/spool/freeside/conf and sendmail updates ivan@sisd.com 98-aug-14
 #
 # $Log: svc_acct_sm.export,v $
-# Revision 1.8  2000-07-06 03:37:24  ivan
+# Revision 1.9  2001-04-22 01:56:15  ivan
+# get rid of FS::SSH.pm (became Net::SSH and Net::SCP on CPAN)
+#
+# Revision 1.8  2000/07/06 03:37:24  ivan
 # don't error out on invalid svc_acct_sm.domuid's that can't be matched in
 # svc_acct.uid - just warn.
 #
@@ -68,7 +71,8 @@
 use strict;
 use vars qw($conf);
 use Fcntl qw(:flock);
-use FS::SSH qw(ssh scp);
+use Net::SSH qw(ssh);
+use Net::SCP qw(scp);
 use FS::UID qw(adminsuidsetup datasrc);
 use FS::Record qw(qsearch qsearchs);
 use FS::svc_acct;

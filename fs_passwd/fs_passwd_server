@@ -12,7 +12,7 @@
 
 use strict;
 use IO::Handle;
-use FS::SSH qw(sshopen2);
+use Net::SSH qw(sshopen2);
 use FS::UID qw(adminsuidsetup);
 use FS::Record qw(qsearchs);
 use FS::svc_acct;

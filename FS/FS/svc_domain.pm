@@ -478,7 +478,7 @@ sub submit_internic {
 
 =head1 VERSION
 
-$Id: svc_domain.pm,v 1.9 2001-04-22 01:38:39 ivan Exp $
+$Id: svc_domain.pm,v 1.10 2001-04-22 01:56:15 ivan Exp $
 
 =head1 BUGS
 
@@ -495,7 +495,7 @@ The $recref stuff in sub check should be cleaned up.
 =head1 SEE ALSO
 
 L<FS::svc_Common>, L<FS::Record>, L<FS::Conf>, L<FS::cust_svc>,
-L<FS::part_svc>, L<FS::cust_pkg>, L<FS::SSH>, L<Net::Whois>, L<ssh>,
+L<FS::part_svc>, L<FS::cust_pkg>, L<Net::Whois>, L<ssh>,
 L<dot-qmail>, schema.html from the base documentation, config.html from the
 base documentation.
 

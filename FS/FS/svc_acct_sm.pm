@@ -5,7 +5,7 @@ use vars qw( @ISA $nossh_hack $conf $shellmachine @qmailmachines );
 use FS::Record qw( fields qsearch qsearchs );
 use FS::svc_Common;
 use FS::cust_svc;
-use FS::SSH qw(ssh);
+use Net::SSH qw(ssh);
 use FS::Conf;
 use FS::svc_acct;
 use FS::svc_domain;
@@ -233,7 +233,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: svc_acct_sm.pm,v 1.2 2000-06-30 10:37:18 ivan Exp $
+$Id: svc_acct_sm.pm,v 1.3 2001-04-22 01:56:15 ivan Exp $
 
 =head1 BUGS
 
@@ -244,7 +244,7 @@ The $recref stuff in sub check should be cleaned up.
 =head1 SEE ALSO
 
 L<FS::Record>, L<FS::Conf>, L<FS::cust_svc>, L<FS::part_svc>, L<FS::cust_pkg>,
-L<FS::svc_acct>, L<FS::svc_domain>, L<FS::SSH>, L<ssh>, L<dot-qmail>,
+L<FS::svc_acct>, L<FS::svc_domain>, L<Net::SSH>, L<ssh>, L<dot-qmail>,
 schema.html from the base documentation.
 
 =cut

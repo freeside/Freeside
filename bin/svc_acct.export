@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 #
-# $Id: svc_acct.export,v 1.17 2001-02-21 23:48:19 ivan Exp $
+# $Id: svc_acct.export,v 1.18 2001-04-22 01:56:15 ivan Exp $
 #
 # Create and export password files: passwd, passwd.adjunct, shadow,
 # acp_passwd, acp_userinfo, acp_dialup, users
@@ -38,7 +38,10 @@
 # ivan@sisd.com 98-sep-18
 # 
 # $Log: svc_acct.export,v $
-# Revision 1.17  2001-02-21 23:48:19  ivan
+# Revision 1.18  2001-04-22 01:56:15  ivan
+# get rid of FS::SSH.pm (became Net::SSH and Net::SCP on CPAN)
+#
+# Revision 1.17  2001/02/21 23:48:19  ivan
 # add icradius_secrets config file to export to a non-Freeside MySQL database for
 # ICRADIUS
 #
@@ -70,7 +73,8 @@ use Fcntl qw(:flock);
 use IO::Handle;
 use DBI;
 use FS::Conf;
-use FS::SSH qw(scp ssh);
+use Net::SSH qw(ssh);
+use Net::SCP qw(scp);
 use FS::UID qw(adminsuidsetup datasrc dbh);
 use FS::Record qw(qsearch fields);
 use FS::svc_acct;

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct.import,v 1.11 2000-06-29 12:27:01 ivan Exp $
+# $Id: svc_acct.import,v 1.12 2001-04-22 01:56:15 ivan Exp $
 #
 # ivan@sisd.com 98-mar-9
 #
@@ -17,7 +17,10 @@
 # don't import /var/spool/freeside/conf/shells!  ivan@sisd.com 98-aug-13
 #
 # $Log: svc_acct.import,v $
-# Revision 1.11  2000-06-29 12:27:01  ivan
+# Revision 1.12  2001-04-22 01:56:15  ivan
+# get rid of FS::SSH.pm (became Net::SSH and Net::SCP on CPAN)
+#
+# Revision 1.11  2000/06/29 12:27:01  ivan
 # s/password/_password/ for PostgreSQL wasn't done in the import.
 #
 # Revision 1.10  2000/06/28 12:32:30  ivan
@@ -49,7 +52,7 @@ use strict;
 use vars qw(%part_svc);
 use Date::Parse;
 use Term::Query qw(query);
-use FS::SSH qw(iscp);
+use Net::SCP qw(iscp);
 use FS::UID qw(adminsuidsetup datasrc);
 use FS::Record qw(qsearch);
 use FS::svc_acct;

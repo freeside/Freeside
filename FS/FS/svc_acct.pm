@@ -9,7 +9,7 @@ use Carp;
 use FS::Conf;
 use FS::Record qw( qsearchs fields );
 use FS::svc_Common;
-use FS::SSH qw(ssh);
+use Net::SSH qw(ssh);
 use FS::part_svc;
 use FS::svc_acct_pop;
 use FS::svc_acct_sm;
@@ -536,7 +536,7 @@ sub radius_check {
 
 =head1 VERSION
 
-$Id: svc_acct.pm,v 1.14 2001-01-31 07:21:00 ivan Exp $
+$Id: svc_acct.pm,v 1.15 2001-04-22 01:56:15 ivan Exp $
 
 =head1 BUGS
 
@@ -552,7 +552,7 @@ counterintuitive.
 =head1 SEE ALSO
 
 L<FS::svc_Common>, L<FS::Record>, L<FS::Conf>, L<FS::cust_svc>,
-L<FS::part_svc>, L<FS::cust_pkg>, L<FS::SSH>, L<ssh>, L<FS::svc_acct_pop>,
+L<FS::part_svc>, L<FS::cust_pkg>, L<Net::SSH>, L<ssh>, L<FS::svc_acct_pop>,
 schema.html from the base documentation.
 
 =cut

@@ -3,7 +3,6 @@ FS.pm
 FS/CGI.pm
 FS/Conf.pm
 FS/Record.pm
-FS/SSH.pm
 FS/UI/Base.pm
 FS/UI/CGI.pm
 FS/UI/Gtk.pm
