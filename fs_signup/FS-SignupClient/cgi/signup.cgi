@@ -1,18 +1,19 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: signup.cgi,v 1.10 2001-08-28 16:58:08 ivan Exp $
+# $Id: signup.cgi,v 1.11 2001-08-30 16:23:32 ivan Exp $
 
 use strict;
-use vars qw( @payby $cgi $locales $packages $pops $r $error
+use vars qw( @payby $cgi $locales $packages $pops $error
              $last $first $ss $company $address1 $address2 $city $state $county
              $country $zip $daytime $night $fax $invoicing_list $payby $payinfo
              $paydate $payname $referral_custnum
              $pkgpart $username $password $popnum
              $ieak_file $ieak_template $cck_file $cck_template
+             $signup_html $signup_template $success_html $success_template
              $ac $exch $loc
+             $self_url
            );
-use subs qw( print_form print_okay expselect );
-
+use subs qw( print_form print_okay expselect signup_default success_default );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use HTTP::Headers::UserAgent 2.00;
@@ -28,6 +29,8 @@ use Text::Template;
 
 $ieak_file = '/usr/local/freeside/ieak.template';
 $cck_file = '/usr/local/freeside/cck.template';
+$signup_html = '/usr/local/freeside/signup.html';
+$success_html = '/usr/local/freeside/success.html';
 
 if ( -e $ieak_file ) {
   my $ieak_txt = Text::Template::_load_text($ieak_file)
@@ -39,6 +42,7 @@ if ( -e $ieak_file ) {
 } else {
   $ieak_template = '';
 }
+
 if ( -e $cck_file ) {
   my $cck_txt = Text::Template::_load_text($cck_file)
     or die $Text::Template::ERROR;
@@ -48,6 +52,42 @@ if ( -e $cck_file ) {
     or die $Text::Template::ERROR;
 } else {
   $cck_template = '';
+}
+
+if ( -e $signup_html ) {
+  my $signup_txt = Text::Template::_load_text($signup_html)
+    or die $Text::Template::ERROR;
+  $signup_txt =~ /^(.*)$/s; #untaint the template source - it's trusted
+  $signup_txt = $1;
+  $signup_template = new Text::Template ( TYPE => 'STRING',
+                                          SOURCE => $signup_txt,
+                                          DELIMITERS => [ '<%=', '%>' ]
+                                        )
+    or die $Text::Template::ERROR;
+} else {
+  $signup_template = new Text::Template ( TYPE => 'STRING',
+                                          SOURCE => &signup_default,
+                                          DELIMITERS => [ '<%=', '%>' ]
+                                        )
+    or die $Text::Template::ERROR;
+}
+
+if ( -e $success_html ) {
+  my $success_txt = Text::Template::_load_text($signup_html)
+    or die $Text::Template::ERROR;
+  $success_txt =~ /^(.*)$/s; #untaint the template source - it's trusted
+  $success_txt = $1;
+  $success_template = new Text::Template ( TYPE => 'STRING',
+                                           SOURCE => $success_txt,
+                                           DELIMITERS => [ '<%=', '%>' ],
+                                         )
+    or die $Text::Template::ERROR;
+} else {
+  $success_template = new Text::Template ( TYPE => 'STRING',
+                                           SOURCE => &success_default,
+                                           DELIMITERS => [ '<%=', '%>' ],
+                                         )
+    or die $Text::Template::ERROR;
 }
 
 ( $locales, $packages, $pops ) = signup_info();
@@ -137,168 +177,13 @@ if ( defined $cgi->param('magic') ) {
 
 sub print_form {
 
-  my $r = qq!<font color="#ff0000">*</font>!;
   $cgi->delete('ref');
-  my $self_url = $cgi->self_url;
+  $self_url = $cgi->self_url;
 
-  print $cgi->header( '-expires' => 'now' ), <<END;
-<HTML><HEAD><TITLE>ISP Signup form</TITLE></HEAD>
-<BODY BGCOLOR="#e8e8e8"><FONT SIZE=7>ISP Signup form</FONT><BR><BR>
-END
+  $error = "Error: $error" if $error;
 
-  print qq!<FONT SIZE="+1" COLOR="#ff0000">Error: $error</FONT>! if $error;
-
-  print <<END;
-<FORM ACTION="$self_url" METHOD=POST>
-<INPUT TYPE="hidden" NAME="magic" VALUE="process">
-<INPUT TYPE="hidden" NAME="ref" VALUE="$referral_custnum">
-Contact Information
-<TABLE BGCOLOR="#c0c0c0" BORDER=0 CELLSPACING=0 WIDTH="100%">
-<TR>
-  <TH ALIGN="right">${r}Contact name<BR>(last, first)</TH>
-  <TD COLSPAN=3><INPUT TYPE="text" NAME="last" VALUE="$last">,
-                <INPUT TYPE="text" NAME="first" VALUE="$first"></TD>
-  <TD ALIGN="right">SS#</TD>
-  <TD><INPUT TYPE="text" NAME="ss" SIZE=11 VALUE="$ss"></TD>
-</TR>
-<TR>
-  <TD ALIGN="right">Company</TD>
-  <TD COLSPAN=5><INPUT TYPE="text" NAME="company" SIZE=70 VALUE="$company"></TD>
-</TR>
-<TR>
-  <TH ALIGN="right">${r}Address</TH>
-  <TD COLSPAN=5><INPUT TYPE="text" NAME="address1" SIZE=70 VALUE="$address1"></TD>
-</TR>
-<TR>
-  <TD ALIGN="right">&nbsp;</TD>
-  <TD COLSPAN=5><INPUT TYPE="text" NAME="address2" SIZE=70 VALUE="$address2"></TD>
-</TR>
-<TR>
-  <TH ALIGN="right">${r}City</TH>
-  <TD><INPUT TYPE="text" NAME="city" VALUE="$city"></TD>
-  <TH ALIGN="right">${r}State/Country</TH>
-  <TD><SELECT NAME="state" SIZE="1">
-END
-
-  foreach ( @{$locales} ) {
-    print "<OPTION";
-    print " SELECTED" if ( $state eq $_->{'state'}
-                           && $county eq $_->{'county'}
-                           && $country eq $_->{'country'}
-                         );
-    print ">", $_->{'state'};
-    print " (",$_->{'county'},")" if $_->{'county'};
-    print " / ", $_->{'country'};
-  }
-
-  print <<END;
-  </SELECT></TD>
-  <TH>${r}Zip</TH>
-  <TD><INPUT TYPE="text" NAME="zip" SIZE=10 VALUE="$zip"></TD>
-</TR>
-<TR>
-  <TD ALIGN="right">Day Phone</TD>
-  <TD COLSPAN=5><INPUT TYPE="text" NAME="daytime" VALUE="$daytime" SIZE=18></TD>
-</TR>
-<TR>
-  <TD ALIGN="right">Night Phone</TD>
-  <TD COLSPAN=5><INPUT TYPE="text" NAME="night" VALUE="$night" SIZE=18></TD>
-</TR>
-<TR>
-  <TD ALIGN="right">Fax</TD>
-  <TD COLSPAN=5><INPUT TYPE="text" NAME="fax" VALUE="$fax" SIZE=12></TD>
-</TR>
-</TABLE>$r required fields<BR>
-<BR>Billing information<TABLE BGCOLOR="#c0c0c0" BORDER=0 CELLSPACING=0 WIDTH="100%">
-<TR><TD>
-END
-
-  print qq!<INPUT TYPE="checkbox" NAME="invoicing_list_POST" VALUE="POST"!;
-  my @invoicing_list = split(', ', $invoicing_list );
-  print ' CHECKED'
-    if ! @invoicing_list || grep { $_ eq 'POST' } @invoicing_list;
-  print '>Postal mail invoice</TD></TR><TR><TD>Email invoice ',
-         qq!<INPUT TYPE="text" NAME="invoicing_list" VALUE="!,
-         join(', ', grep { $_ ne 'POST' } @invoicing_list ),
-         qq!"></TD></TR>!;
-
-  print <<END;
-<TR><TD>Billing type</TD></TR></TABLE>
-<TABLE BGCOLOR="#c0c0c0" BORDER=1 WIDTH="100%">
-<TR>
-END
-
-  my %payby = (
-    'CARD' => qq!Credit card<BR>${r}<INPUT TYPE="text" NAME="CARD_payinfo" VALUE="" MAXLENGTH=19><BR>${r}Exp !. expselect("CARD"). qq!<BR>${r}Name on card<BR><INPUT TYPE="text" NAME="CARD_payname" VALUE="">!,
-    'BILL' => qq!Billing<BR>P.O. <INPUT TYPE="text" NAME="BILL_payinfo" VALUE=""><BR>${r}Exp !. expselect("BILL", "12-2037"). qq!<BR>${r}Attention<BR><INPUT TYPE="text" NAME="BILL_payname" VALUE="Accounts Payable">!,
-    'COMP' => qq!Complimentary<BR>${r}Approved by<INPUT TYPE="text" NAME="COMP_payinfo" VALUE=""><BR>${r}Exp !. expselect("COMP"),
-    'PREPAY' => qq!Prepaid card<BR>${r}<INPUT TYPE="text" NAME="PREPAY_payinfo" VALUE="" MAXLENGTH=80>!,
-  );
-
-  my %paybychecked = (
-    'CARD' => qq!Credit card<BR>${r}<INPUT TYPE="text" NAME="CARD_payinfo" VALUE="$payinfo" MAXLENGTH=19><BR>${r}Exp !. expselect("CARD", $paydate). qq!<BR>${r}Name on card<BR><INPUT TYPE="text" NAME="CARD_payname" VALUE="$payname">!,
-    'BILL' => qq!Billing<BR>P.O. <INPUT TYPE="text" NAME="BILL_payinfo" VALUE="$payinfo"><BR>${r}Exp !. expselect("BILL", $paydate). qq!<BR>${r}Attention<BR><INPUT TYPE="text" NAME="BILL_payname" VALUE="$payname">!,
-    'COMP' => qq!Complimentary<BR>${r}Approved by<INPUT TYPE="text" NAME="COMP_payinfo" VALUE="$payinfo"><BR>${r}Exp !. expselect("COMP", $paydate),
-    'PREPAY' => qq!Prepaid card<BR>${r}<INPUT TYPE="text" NAME="PREPAY_payinfo" VALUE="$payinfo" MAXLENGTH=80>!,
-  );
-
-  for (@payby) {
-    print qq!<TD VALIGN=TOP><INPUT TYPE="radio" NAME="payby" VALUE="$_"!;
-    if ($payby eq $_) {
-      print qq! CHECKED> $paybychecked{$_}</TD>!;
-    } else {
-      print qq!> $payby{$_}</TD>!;
-    }
-  }
-
-  print <<END;
-</TR></TABLE>$r required fields for each billing type
-<BR><BR>First package
-<TABLE BGCOLOR="#c0c0c0" BORDER=0 CELLSPACING=0 WIDTH="100%">
-<TR>
-  <TD COLSPAN=2><SELECT NAME="pkgpart"><OPTION VALUE="">(none)
-END
-
-  foreach my $package ( @{$packages} ) {
-    print qq!<OPTION VALUE="!, $package->{'pkgpart'}, '"';
-    print " SELECTED" if $pkgpart && ( $package->{'pkgpart'} == $pkgpart );
-    print ">", $package->{'pkg'};
-  }
-
-  print <<END;
-  </SELECT></TD>
-</TR>
-<TR>
-  <TD ALIGN="right">Username</TD>
-  <TD><INPUT TYPE="text" NAME="username" VALUE="$username"></TD>
-</TR>
-<TR>
-  <TD ALIGN="right">Password</TD>
-  <TD><INPUT TYPE="text" NAME="_password" VALUE="$password">
-  (blank to generate)</TD>
-</TR>
-<TR>
-  <TD ALIGN="right">POP</TD>
-  <TD><SELECT NAME="popnum" SIZE=1><OPTION> 
-END
-
-  foreach my $pop ( @{$pops} ) {
-    print qq!<OPTION VALUE="!, $pop->{'popnum'}, '"',
-          ( $popnum && $pop->{'popnum'} == $popnum ) ? ' SELECTED' : '', ">", 
-          $pop->{'popnum'}, ": ", 
-          $pop->{'city'}, ", ",
-          $pop->{'state'},
-          " (", $pop->{'ac'}, ")/",
-          $pop->{'exch'}, "\n"
-        ;
-  }
-  print <<END;
-  </SELECT></TD>
-</TR>
-</TABLE>
-<BR><BR><INPUT TYPE="submit" VALUE="Signup">
-</FORM></BODY></HTML>
-END
+  print $cgi->header( '-expires' => 'now' ),
+        $signup_template->fill_in();
 
 }
 
@@ -341,13 +226,8 @@ sub print_okay {
           } split(/\n/, $cck_data);
 
   } else { #send a simple confirmation
-    print $cgi->header( '-expires' => 'now' ), <<END;
-<HTML><HEAD><TITLE>Signup successful</TITLE></HEAD>
-<BODY BGCOLOR="#e8e8e8"><FONT SIZE=7>Signup successful</FONT><BR><BR>
-blah blah blah
-</BODY>
-</HTML>
-END
+    print $cgi->header( '-expires' => 'now' ),
+          $success_template->fill_in();
   }
 }
 
@@ -386,3 +266,165 @@ sub expselect {
   $return;
 }
 
+sub success_default { #html to use if you don't specify a success file
+  <<'END';
+<HTML><HEAD><TITLE>Signup successful</TITLE></HEAD>
+<BODY BGCOLOR="#e8e8e8"><FONT SIZE=7>Signup successful</FONT><BR><BR>
+Thanks for signing up!
+</BODY></HTML>
+END
+}
+
+sub signup_default { #html to use if you don't specify a template file
+  <<'END';
+<HTML><HEAD><TITLE>ISP Signup form</TITLE></HEAD>
+<BODY BGCOLOR="#e8e8e8"><FONT SIZE=7>ISP Signup form</FONT><BR><BR>
+<FONT SIZE="+1" COLOR="#ff0000"><%= $error %></FONT>
+<FORM ACTION="<%= $self_url %>" METHOD=POST>
+<INPUT TYPE="hidden" NAME="magic" VALUE="process">
+<INPUT TYPE="hidden" NAME="ref" VALUE="<%= $referral_custnum %>">
+<INPUT TYPE="hidden" NAME="ss" VALUE="">
+Contact Information
+<TABLE BGCOLOR="#c0c0c0" BORDER=0 CELLSPACING=0 WIDTH="100%">
+<TR>
+  <TH ALIGN="right"><font color="#ff0000">*</font>Contact name<BR>(last, first)</TH>
+  <TD COLSPAN=5><INPUT TYPE="text" NAME="last" VALUE="<%= $last %>">,
+                <INPUT TYPE="text" NAME="first" VALUE="<%= $first %>"></TD>
+</TR>
+<TR>
+  <TD ALIGN="right">Company</TD>
+  <TD COLSPAN=5><INPUT TYPE="text" NAME="company" SIZE=70 VALUE="<%= $company %>"></TD>
+</TR>
+<TR>
+  <TH ALIGN="right"><font color="#ff0000">*</font>Address</TH>
+  <TD COLSPAN=5><INPUT TYPE="text" NAME="address1" SIZE=70 VALUE="<%= $address1 %>"></TD>
+</TR>
+<TR>
+  <TD ALIGN="right">&nbsp;</TD>
+  <TD COLSPAN=5><INPUT TYPE="text" NAME="address2" SIZE=70 VALUE="<%= $address2 %>"></TD>
+</TR>
+<TR>
+  <TH ALIGN="right"><font color="#ff0000">*</font>City</TH>
+  <TD><INPUT TYPE="text" NAME="city" VALUE="<%= $city %>"></TD>
+  <TH ALIGN="right"><font color="#ff0000">*</font>State/Country</TH>
+  <TD><SELECT NAME="state" SIZE="1">
+
+  <%=
+    foreach ( @{$locales} ) {
+      $OUT .= '<OPTION';
+      $OUT .= ' SELECTED' if ( $state eq $_->{'state'}
+                               && $county eq $_->{'county'}
+                               && $country eq $_->{'country'}
+                             );
+      $OUT .= '>'. $_->{'state'};
+      $OUT .= ' ('. $_->{'county'}. ')' if $_->{'county'};
+      $OUT .= ' / '. $_->{'country'};
+    }
+  %>
+
+  </SELECT></TD>
+  <TH><font color="#ff0000">*</font>Zip</TH>
+  <TD><INPUT TYPE="text" NAME="zip" SIZE=10 VALUE="<%= $zip %>"></TD>
+</TR>
+<TR>
+  <TD ALIGN="right">Day Phone</TD>
+  <TD COLSPAN=5><INPUT TYPE="text" NAME="daytime" VALUE="<%= $daytime %>" SIZE=18></TD>
+</TR>
+<TR>
+  <TD ALIGN="right">Night Phone</TD>
+  <TD COLSPAN=5><INPUT TYPE="text" NAME="night" VALUE="<%= $night %>" SIZE=18></TD>
+</TR>
+<TR>
+  <TD ALIGN="right">Fax</TD>
+  <TD COLSPAN=5><INPUT TYPE="text" NAME="fax" VALUE="<%= $fax %>" SIZE=12></TD>
+</TR>
+</TABLE><font color="#ff0000">*</font> required fields<BR>
+<BR>Billing information<TABLE BGCOLOR="#c0c0c0" BORDER=0 CELLSPACING=0 WIDTH="100%">
+<TR><TD>
+
+  <%=
+    $OUT .= '<INPUT TYPE="checkbox" NAME="invoicing_list_POST" VALUE="POST"';
+    my @invoicing_list = split(', ', $invoicing_list );
+    $OUT .= ' CHECKED'
+      if ! @invoicing_list || grep { $_ eq 'POST' } @invoicing_list;
+    $OUT .= '>';
+  %>
+
+  Postal mail invoice
+</TD></TR>
+<TR><TD>Email invoice <INPUT TYPE="text" NAME="invoicing_list" VALUE="<%= join(', ', grep { $_ ne 'POST' } split(', ', $invoicing_list ) ) %>">
+</TD></TR>
+<TR><TD>Billing type</TD></TR></TABLE>
+<TABLE BGCOLOR="#c0c0c0" BORDER=1 WIDTH="100%">
+<TR>
+
+  <%=
+    my %payby = (
+      'CARD' => qq!Credit card<BR><font color="#ff0000">*</font><INPUT TYPE="text" NAME="CARD_payinfo" VALUE="" MAXLENGTH=19><BR><font color="#ff0000">*</font>Exp !. expselect("CARD"). qq!<BR><font color="#ff0000">*</font>Name on card<BR><INPUT TYPE="text" NAME="CARD_payname" VALUE="">!,
+      'BILL' => qq!Billing<BR>P.O. <INPUT TYPE="text" NAME="BILL_payinfo" VALUE=""><BR><font color="#ff0000">*</font>Exp !. expselect("BILL", "12-2037"). qq!<BR><font color="#ff0000">*</font>Attention<BR><INPUT TYPE="text" NAME="BILL_payname" VALUE="Accounts Payable">!,
+      'COMP' => qq!Complimentary<BR><font color="#ff0000">*</font>Approved by<INPUT TYPE="text" NAME="COMP_payinfo" VALUE=""><BR><font color="#ff0000">*</font>Exp !. expselect("COMP"),
+      'PREPAY' => qq!Prepaid card<BR><font color="#ff0000">*</font><INPUT TYPE="text" NAME="PREPAY_payinfo" VALUE="" MAXLENGTH=80>!,
+    );
+
+    my %paybychecked = (
+      'CARD' => qq!Credit card<BR><font color="#ff0000">*</font><INPUT TYPE="text" NAME="CARD_payinfo" VALUE="$payinfo" MAXLENGTH=19><BR><font color="#ff0000">*</font>Exp !. expselect("CARD", $paydate). qq!<BR><font color="#ff0000">*</font>Name on card<BR><INPUT TYPE="text" NAME="CARD_payname" VALUE="$payname">!,
+      'BILL' => qq!Billing<BR>P.O. <INPUT TYPE="text" NAME="BILL_payinfo" VALUE="$payinfo"><BR><font color="#ff0000">*</font>Exp !. expselect("BILL", $paydate). qq!<BR><font color="#ff0000">*</font>Attention<BR><INPUT TYPE="text" NAME="BILL_payname" VALUE="$payname">!,
+      'COMP' => qq!Complimentary<BR><font color="#ff0000">*</font>Approved by<INPUT TYPE="text" NAME="COMP_payinfo" VALUE="$payinfo"><BR><font color="#ff0000">*</font>Exp !. expselect("COMP", $paydate),
+      'PREPAY' => qq!Prepaid card<BR><font color="#ff0000">*</font><INPUT TYPE="text" NAME="PREPAY_payinfo" VALUE="$payinfo" MAXLENGTH=80>!,
+    );
+
+    for (@payby) {
+      $OUT .= qq!<TD VALIGN=TOP><INPUT TYPE="radio" NAME="payby" VALUE="$_"!;
+      if ($payby eq $_) {
+        $OUT .= qq! CHECKED> $paybychecked{$_}</TD>!;
+      } else {
+        $OUT .= qq!> $payby{$_}</TD>!;
+      }
+    }
+  %>
+
+</TR></TABLE><font color="#ff0000">*</font> required fields for each billing type
+<BR><BR>First package
+<TABLE BGCOLOR="#c0c0c0" BORDER=0 CELLSPACING=0 WIDTH="100%">
+<TR>
+  <TD COLSPAN=2><SELECT NAME="pkgpart"><OPTION VALUE="">(none)
+
+  <%=
+    foreach my $package ( @{$packages} ) {
+      $OUT .= '<OPTION VALUE="'. $package->{'pkgpart'}. '"';
+      $OUT .= ' SELECTED' if $pkgpart && $package->{'pkgpart'} == $pkgpart;
+      $OUT .= '>'. $package->{'pkg'};
+    }
+  %>
+
+  </SELECT></TD>
+</TR>
+<TR>
+  <TD ALIGN="right">Username</TD>
+  <TD><INPUT TYPE="text" NAME="username" VALUE="<%= $username %>"></TD>
+</TR>
+<TR>
+  <TD ALIGN="right">Password</TD>
+  <TD><INPUT TYPE="text" NAME="_password" VALUE="<%= $password %>">
+  (blank to generate)</TD>
+</TR>
+<TR>
+  <TD ALIGN="right">POP</TD>
+  <TD><SELECT NAME="popnum" SIZE=1><OPTION> 
+
+  <%=
+    foreach my $pop ( @{$pops} ) {
+      $OUT .= '<OPTION VALUE='. $pop->{'popnum'}. '"';
+      $OUT .= ' SELECTED' if $popnum && $pop->{'popnum'} == $popnum;
+      $OUT .= '>'. $pop->{'popnum'}. ': '. $pop->{'city'}. ', '.
+              $pop->{'state'}. ' ('. $pop->{'ac'}. ')/'. $pop->{'exch'}. "\n";
+    }
+  %>
+
+  </SELECT></TD>
+</TR>
+</TABLE>
+<BR><BR><INPUT TYPE="submit" VALUE="Signup">
+</FORM></BODY></HTML>
+END
+}

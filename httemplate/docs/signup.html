@@ -53,6 +53,8 @@ Optional:
     <li>$email_name - first and last name
   </ul>
   (an example file is included as <b>fs_signup/cck.template</b>).  See the <a href="http://help.netscape.com/products/client/mc/acctproc4.html">Netscape documentation</a> for more information.
+  <li>If you create a <b>/usr/local/freeside/signup.html</b> file on the external machine, it will be used as a template for the form HTML.  This requires the template to be constructed appropriately; probably best to start with the example file included as <b>fs_signup/FS-SignupClient/cgi/signup.html</b>.
+  <li>If you create a <b>/usr/local/freeside/success.html</b> file on the external machine, it will be used as the success HTML page.  Although template substiutions are available, a regular HTML file will work fine here, unlike signup.html.  An example file is included as <b>fs_signup/FS-SignupClient/cgi/success.html</b>
   <li>If there are any entries in the <i>prepay_credit</i> table, a user can enter a string matching the <b>identifier</i> column to receive the credit specified in the <b>amount</b> column, and/or the time specified in the <b>seconds</b> column (for use with the <a href="session.html">session monitor</a>), after which that <b>identifier</b> is no longer valid.  This can be used to implement pre-paid "calling card" type signups.  The <i>bin/generate-prepay</i> script can be used to populate the <i>prepay_credit</i> table.
 </ul>
 </body>

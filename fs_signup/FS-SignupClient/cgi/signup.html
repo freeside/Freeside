@@ -1,0 +1,149 @@
+<HTML><HEAD><TITLE>ISP Signup form</TITLE></HEAD>
+<BODY BGCOLOR="#e8e8e8"><FONT SIZE=7>ISP Signup form</FONT><BR><BR>
+<FONT SIZE="+1" COLOR="#ff0000"><%= $error %></FONT>
+<FORM ACTION="<%= $self_url %>" METHOD=POST>
+<INPUT TYPE="hidden" NAME="magic" VALUE="process">
+<INPUT TYPE="hidden" NAME="ref" VALUE="<%= $referral_custnum %>">
+<INPUT TYPE="hidden" NAME="ss" VALUE="">
+Contact Information
+<TABLE BGCOLOR="#c0c0c0" BORDER=0 CELLSPACING=0 WIDTH="100%">
+<TR>
+  <TH ALIGN="right"><font color="#ff0000">*</font>Contact name<BR>(last, first)</TH>
+  <TD COLSPAN=5><INPUT TYPE="text" NAME="last" VALUE="<%= $last %>">,
+                <INPUT TYPE="text" NAME="first" VALUE="<%= $first %>"></TD>
+</TR>
+<TR>
+  <TD ALIGN="right">Company</TD>
+  <TD COLSPAN=5><INPUT TYPE="text" NAME="company" SIZE=70 VALUE="<%= $company %>"></TD>
+</TR>
+<TR>
+  <TH ALIGN="right"><font color="#ff0000">*</font>Address</TH>
+  <TD COLSPAN=5><INPUT TYPE="text" NAME="address1" SIZE=70 VALUE="<%= $address1 %>"></TD>
+</TR>
+<TR>
+  <TD ALIGN="right">&nbsp;</TD>
+  <TD COLSPAN=5><INPUT TYPE="text" NAME="address2" SIZE=70 VALUE="<%= $address2 %>"></TD>
+</TR>
+<TR>
+  <TH ALIGN="right"><font color="#ff0000">*</font>City</TH>
+  <TD><INPUT TYPE="text" NAME="city" VALUE="<%= $city %>"></TD>
+  <TH ALIGN="right"><font color="#ff0000">*</font>State/Country</TH>
+  <TD><SELECT NAME="state" SIZE="1">
+
+  <%=
+    foreach ( @{$locales} ) {
+      $OUT .= '<OPTION';
+      $OUT .= ' SELECTED' if ( $state eq $_->{'state'}
+                               && $county eq $_->{'county'}
+                               && $country eq $_->{'country'}
+                             );
+      $OUT .= '>'. $_->{'state'};
+      $OUT .= ' ('. $_->{'county'}. ')' if $_->{'county'};
+      $OUT .= ' / '. $_->{'country'};
+    }
+  %>
+
+  </SELECT></TD>
+  <TH><font color="#ff0000">*</font>Zip</TH>
+  <TD><INPUT TYPE="text" NAME="zip" SIZE=10 VALUE="<%= $zip %>"></TD>
+</TR>
+<TR>
+  <TD ALIGN="right">Day Phone</TD>
+  <TD COLSPAN=5><INPUT TYPE="text" NAME="daytime" VALUE="<%= $daytime %>" SIZE=18></TD>
+</TR>
+<TR>
+  <TD ALIGN="right">Night Phone</TD>
+  <TD COLSPAN=5><INPUT TYPE="text" NAME="night" VALUE="<%= $night %>" SIZE=18></TD>
+</TR>
+<TR>
+  <TD ALIGN="right">Fax</TD>
+  <TD COLSPAN=5><INPUT TYPE="text" NAME="fax" VALUE="<%= $fax %>" SIZE=12></TD>
+</TR>
+</TABLE><font color="#ff0000">*</font> required fields<BR>
+<BR>Billing information<TABLE BGCOLOR="#c0c0c0" BORDER=0 CELLSPACING=0 WIDTH="100%">
+<TR><TD>
+
+  <%=
+    $OUT .= '<INPUT TYPE="checkbox" NAME="invoicing_list_POST" VALUE="POST"';
+    my @invoicing_list = split(', ', $invoicing_list );
+    $OUT .= ' CHECKED'
+      if ! @invoicing_list || grep { $_ eq 'POST' } @invoicing_list;
+    $OUT .= '>';
+  %>
+
+  Postal mail invoice
+</TD></TR>
+<TR><TD>Email invoice <INPUT TYPE="text" NAME="invoicing_list" VALUE="<%= join(', ', grep { $_ ne 'POST' } split(', ', $invoicing_list ) ) %>">
+</TD></TR>
+<TR><TD>Billing type</TD></TR></TABLE>
+<TABLE BGCOLOR="#c0c0c0" BORDER=1 WIDTH="100%">
+<TR>
+
+  <%=
+    my %payby = (
+      'CARD' => qq!Credit card<BR><font color="#ff0000">*</font><INPUT TYPE="text" NAME="CARD_payinfo" VALUE="" MAXLENGTH=19><BR><font color="#ff0000">*</font>Exp !. expselect("CARD"). qq!<BR><font color="#ff0000">*</font>Name on card<BR><INPUT TYPE="text" NAME="CARD_payname" VALUE="">!,
+      'BILL' => qq!Billing<BR>P.O. <INPUT TYPE="text" NAME="BILL_payinfo" VALUE=""><BR><font color="#ff0000">*</font>Exp !. expselect("BILL", "12-2037"). qq!<BR><font color="#ff0000">*</font>Attention<BR><INPUT TYPE="text" NAME="BILL_payname" VALUE="Accounts Payable">!,
+      'COMP' => qq!Complimentary<BR><font color="#ff0000">*</font>Approved by<INPUT TYPE="text" NAME="COMP_payinfo" VALUE=""><BR><font color="#ff0000">*</font>Exp !. expselect("COMP"),
+      'PREPAY' => qq!Prepaid card<BR><font color="#ff0000">*</font><INPUT TYPE="text" NAME="PREPAY_payinfo" VALUE="" MAXLENGTH=80>!,
+    );
+
+    my %paybychecked = (
+      'CARD' => qq!Credit card<BR><font color="#ff0000">*</font><INPUT TYPE="text" NAME="CARD_payinfo" VALUE="$payinfo" MAXLENGTH=19><BR><font color="#ff0000">*</font>Exp !. expselect("CARD", $paydate). qq!<BR><font color="#ff0000">*</font>Name on card<BR><INPUT TYPE="text" NAME="CARD_payname" VALUE="$payname">!,
+      'BILL' => qq!Billing<BR>P.O. <INPUT TYPE="text" NAME="BILL_payinfo" VALUE="$payinfo"><BR><font color="#ff0000">*</font>Exp !. expselect("BILL", $paydate). qq!<BR><font color="#ff0000">*</font>Attention<BR><INPUT TYPE="text" NAME="BILL_payname" VALUE="$payname">!,
+      'COMP' => qq!Complimentary<BR><font color="#ff0000">*</font>Approved by<INPUT TYPE="text" NAME="COMP_payinfo" VALUE="$payinfo"><BR><font color="#ff0000">*</font>Exp !. expselect("COMP", $paydate),
+      'PREPAY' => qq!Prepaid card<BR><font color="#ff0000">*</font><INPUT TYPE="text" NAME="PREPAY_payinfo" VALUE="$payinfo" MAXLENGTH=80>!,
+    );
+
+    for (@payby) {
+      $OUT .= qq!<TD VALIGN=TOP><INPUT TYPE="radio" NAME="payby" VALUE="$_"!;
+      if ($payby eq $_) {
+        $OUT .= qq! CHECKED> $paybychecked{$_}</TD>!;
+      } else {
+        $OUT .= qq!> $payby{$_}</TD>!;
+      }
+    }
+  %>
+
+</TR></TABLE><font color="#ff0000">*</font> required fields for each billing type
+<BR><BR>First package
+<TABLE BGCOLOR="#c0c0c0" BORDER=0 CELLSPACING=0 WIDTH="100%">
+<TR>
+  <TD COLSPAN=2><SELECT NAME="pkgpart"><OPTION VALUE="">(none)
+
+  <%=
+    foreach my $package ( @{$packages} ) {
+      $OUT .= '<OPTION VALUE="'. $package->{'pkgpart'}. '"';
+      $OUT .= ' SELECTED' if $pkgpart && $package->{'pkgpart'} == $pkgpart;
+      $OUT .= '>'. $package->{'pkg'};
+    }
+  %>
+
+  </SELECT></TD>
+</TR>
+<TR>
+  <TD ALIGN="right">Username</TD>
+  <TD><INPUT TYPE="text" NAME="username" VALUE="<%= $username %>"></TD>
+</TR>
+<TR>
+  <TD ALIGN="right">Password</TD>
+  <TD><INPUT TYPE="text" NAME="_password" VALUE="<%= $password %>">
+  (blank to generate)</TD>
+</TR>
+<TR>
+  <TD ALIGN="right">POP</TD>
+  <TD><SELECT NAME="popnum" SIZE=1><OPTION> 
+
+  <%=
+    foreach my $pop ( @{$pops} ) {
+      $OUT .= '<OPTION VALUE='. $pop->{'popnum'}. '"';
+      $OUT .= ' SELECTED' if $popnum && $pop->{'popnum'} == $popnum;
+      $OUT .= '>'. $pop->{'popnum'}. ': '. $pop->{'city'}. ', '.
+              $pop->{'state'}. ' ('. $pop->{'ac'}. ')/'. $pop->{'exch'}. "\n";
+    }
+  %>
+
+  </SELECT></TD>
+</TR>
+</TABLE>
+<BR><BR><INPUT TYPE="submit" VALUE="Signup">
+</FORM></BODY></HTML>
