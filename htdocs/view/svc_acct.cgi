@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct.cgi,v 1.11 2000-12-03 20:25:20 ivan Exp $
+# $Id: svc_acct.cgi,v 1.12 2001-01-31 07:21:00 ivan Exp $
 #
 # Usage: svc_acct.cgi svcnum
 #        http://server.name/path/svc_acct.cgi?svcnum
@@ -33,7 +33,10 @@
 # displays arbitrary radius attributes ivan@sisd.com 98-aug-16
 #
 # $Log: svc_acct.cgi,v $
-# Revision 1.11  2000-12-03 20:25:20  ivan
+# Revision 1.12  2001-01-31 07:21:00  ivan
+# fix tyops
+#
+# Revision 1.11  2000/12/03 20:25:20  ivan
 # session monitor updates
 #
 # Revision 1.10  1999/04/14 11:27:06  ivan
@@ -91,7 +94,7 @@ $mydomain = $conf->config('domain');
 $query =~ /^(\d+)$/;
 $svcnum = $1;
 $svc_acct = qsearchs('svc_acct',{'svcnum'=>$svcnum});
-die "Unkonwn svcnum" unless $svc_acct;
+die "Unknown svcnum" unless $svc_acct;
 
 $cust_svc = qsearchs('cust_svc',{'svcnum'=>$svcnum});
 $pkgnum = $cust_svc->getfield('pkgnum');
@@ -104,7 +107,7 @@ if ($pkgnum) {
 }
 
 $part_svc = qsearchs('part_svc',{'svcpart'=> $cust_svc->svcpart } );
-die "Unkonwn svcpart" unless $part_svc;
+die "Unknown svcpart" unless $part_svc;
 
 $p = popurl(2);
 print $cgi->header( '-expires' => 'now' ), header('Account View', menubar(

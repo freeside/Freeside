@@ -806,7 +806,7 @@ sub collect {
           } elsif ( $processor eq 'cybercash3.2' ) {
             %result = &CCMckDirectLib3_2::SendCC2_1Server(@full_xaction);
           } else {
-            return "Unkonwn real-time processor $processor\n";
+            return "Unknown real-time processor $processor\n";
           }
          
           #if ( $result{'MActionCode'} == 7 ) { #cybercash smps v.1.1.3
@@ -832,7 +832,7 @@ sub collect {
           }
 
         } else {
-          return "Unkonwn real-time processor $processor\n";
+          return "Unknown real-time processor $processor\n";
         }
 
       } else { #batch card
@@ -999,7 +999,7 @@ sub check_invoicing_list {
 
 =head1 VERSION
 
-$Id: cust_main.pm,v 1.8 2001-01-23 05:03:50 ivan Exp $
+$Id: cust_main.pm,v 1.9 2001-01-31 07:21:00 ivan Exp $
 
 =head1 BUGS
 

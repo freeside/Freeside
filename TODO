@@ -1,10 +1,56 @@
-$Id: TODO,v 1.56 2000-12-26 23:51:40 ivan Exp $
+$Id: TODO,v 1.57 2001-01-31 07:21:00 ivan Exp $
 
 If you are interested in helping with any of these, please join the
 *development* mailing list (send a blank message to
 ivan-freeside-devel-subscribe@sisd.com) to avoid duplication of effort.
 
 ---
+
+(future templating)
+.
+(at least) These questions need to be answered for Mason, Apache::ASP and
+eperl.  If eperl becomes too much of a pain, I'm okay with forgetting 
+about it - it's not well-maintained.  The answers below are for Mason.
+.
+How do you interpolate a value?  <% $value %>
+.
+How do you interpolate a value without escaping HTML? <% $value |n %>
+.
+How do you interpolate a (possibly non-stand-alone, non-interpolated) 
+control structure?  With an inital % - for example:
+.     
+        % for each $value ( @values ) {
+        <OPTION><% $value %></OPTION>
+        % }
+.     
+This is one of the things I worry that the webmonkey HTML editors will not
+like about Mason.  That and the <%INIT> and <%PERL> tags.
+
+
+in the context of a state machine (& MySQL and Pg locking) for LDAP export:
+.
+Also note that Pg locks are for the duration of the transaction, so 
+Freeside needs to start using transactions for this to happen.  
+FS::UID::adminsuidsetup should explicitly set AutoCommit false and export
+some functions to begin and end transactions on $FS::UID::dbh.  (Well,
+eventually FS::UID should be an overloaded subclass of a DBI handle, but
+we don't have to worry about that until perl threads + mod_perl + threaded
+Apache 2.0 is stable, i.e. quite some time).
+
+Postfix
+also supports virtual domains in a way that's somewhat similar (but not
+compatible with) the way sendmail does.  In the postfix world, all virtual
+domain info is contained in one file (similar to the virtusertable), but
+is formatted as such:
+bar.com         virtual
+foo@bar.com             some@other.net
+quux@bar.com    localuser1
+...
+and so on.  After the file is generated, it gets compiled into a hash db
+using, "postmap /etc/postfix/virtual".
+
+
+steal all the play-nice-with-cache stuff back from RT
 
 Use this for email checking:
 libemail-valid-perl - Check validity of Internet email addresses
@@ -106,6 +152,7 @@ Yes, but we're small and have been tracking projects manually.
 
 
 first package select field in edit/cust_main.cgi isn't sticky on errors, yuck
+(also referral isn't sticky either?  yuck)
 
 > 1. A Web Form to the user get his account added automatically . The
 > /etc/raddb/users and /etc/passwd would be updated automatically (these

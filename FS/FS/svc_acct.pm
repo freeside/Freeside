@@ -170,7 +170,7 @@ sub insert {
     if qsearchs( 'svc_acct', { 'username' => $self->username } );
 
   my $part_svc = qsearchs( 'part_svc', { 'svcpart' => $self->svcpart } );
-  return "Unkonwn svcpart" unless $part_svc;
+  return "Unknown svcpart" unless $part_svc;
   return "uid in use"
     if $part_svc->svc_acct__uid_flag ne 'F'
       && qsearchs( 'svc_acct', { 'uid' => $self->uid } )
@@ -385,7 +385,7 @@ sub check {
 
   $recref->{popnum} =~ /^(\d*)$/ or return "Illegal popnum: ".$recref->{popnum};
   $recref->{popnum} = $1;
-  return "Unkonwn popnum" unless
+  return "Unknown popnum" unless
     ! $recref->{popnum} ||
     qsearchs('svc_acct_pop',{'popnum'=> $recref->{popnum} } );
 
@@ -536,7 +536,7 @@ sub radius_check {
 
 =head1 VERSION
 
-$Id: svc_acct.pm,v 1.13 2000-07-17 13:51:07 ivan Exp $
+$Id: svc_acct.pm,v 1.14 2001-01-31 07:21:00 ivan Exp $
 
 =head1 BUGS
 
