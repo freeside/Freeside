@@ -4,7 +4,7 @@
 up2date cvs perl perl-DateManip perl-HTML-Parser \
         perl-HTML-Tagset perl-URI perl-libwww-perl perl-CPAN \
         rsync screen zsh lftp cvs autoconf \
-        gcc gd
+        gcc gd tetex tetex-afm tetex-dvips tetex-font tetex-latex
 
 up2date --src rh-postgresql rh-postgresql-docs rh-postgresql-libs \
         rh-postgresql-server rh-postgresql-devel
