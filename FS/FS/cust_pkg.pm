@@ -2,7 +2,7 @@ package FS::cust_pkg;
 
 use strict;
 use vars qw(@ISA);
-use FS::UID qw( getotaker );
+use FS::UID qw( getotaker dbh );
 use FS::Record qw( qsearch qsearchs );
 use FS::cust_svc;
 use FS::part_pkg;
@@ -218,26 +218,41 @@ sub cancel {
   local $SIG{TSTP} = 'IGNORE';
   local $SIG{PIPE} = 'IGNORE';
 
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
   foreach my $cust_svc (
     qsearch( 'cust_svc', { 'pkgnum' => $self->pkgnum } )
   ) {
     my $part_svc = qsearchs( 'part_svc', { 'svcpart' => $cust_svc->svcpart } );
 
-    $part_svc->svcdb =~ /^([\w\-]+)$/
-      or return "Illegal svcdb value in part_svc!";
+    $part_svc->svcdb =~ /^([\w\-]+)$/ or do {
+      $dbh->rollback if $oldAutoCommit;
+      return "Illegal svcdb value in part_svc!";
+    };
     my $svcdb = $1;
     require "FS/$svcdb.pm";
 
     my $svc = qsearchs( $svcdb, { 'svcnum' => $cust_svc->svcnum } );
     if ($svc) {
       $error = $svc->cancel;
-      return "Error cancelling service: $error" if $error;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "Error cancelling service: $error" 
+      }
       $error = $svc->delete;
-      return "Error deleting service: $error" if $error;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "Error deleting service: $error";
+      }
     }
 
     $error = $cust_svc->delete;
-    return "Error deleting cust_svc: $error" if $error;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "Error deleting cust_svc: $error";
+    }
 
   }
 
@@ -246,8 +261,13 @@ sub cancel {
     $hash{'cancel'} = time;
     my $new = new FS::cust_pkg ( \%hash );
     $error = $new->replace($self);
-    return $error if $error;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
   }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
   ''; #no errors
 }
@@ -272,20 +292,29 @@ sub suspend {
   local $SIG{TSTP} = 'IGNORE';
   local $SIG{PIPE} = 'IGNORE';
 
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
   foreach my $cust_svc (
     qsearch( 'cust_svc', { 'pkgnum' => $self->pkgnum } )
   ) {
     my $part_svc = qsearchs( 'part_svc', { 'svcpart' => $cust_svc->svcpart } );
 
-    $part_svc->svcdb =~ /^([\w\-]+)$/
-      or return "Illegal svcdb value in part_svc!";
+    $part_svc->svcdb =~ /^([\w\-]+)$/ or do {
+      $dbh->rollback if $oldAutoCommit;
+      return "Illegal svcdb value in part_svc!";
+    };
     my $svcdb = $1;
     require "FS/$svcdb.pm";
 
     my $svc = qsearchs( $svcdb, { 'svcnum' => $cust_svc->svcnum } );
     if ($svc) {
       $error = $svc->suspend;
-      return $error if $error;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
+      }
     }
 
   }
@@ -295,8 +324,13 @@ sub suspend {
     $hash{'susp'} = time;
     my $new = new FS::cust_pkg ( \%hash );
     $error = $new->replace($self);
-    return $error if $error;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
   }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
   ''; #no errors
 }
@@ -321,20 +355,29 @@ sub unsuspend {
   local $SIG{TSTP} = 'IGNORE';
   local $SIG{PIPE} = 'IGNORE';
 
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
   foreach my $cust_svc (
     qsearch('cust_svc',{'pkgnum'=> $self->pkgnum } )
   ) {
     my $part_svc = qsearchs( 'part_svc', { 'svcpart' => $cust_svc->svcpart } );
 
-    $part_svc->svcdb =~ /^([\w\-]+)$/
-      or return "Illegal svcdb value in part_svc!";
+    $part_svc->svcdb =~ /^([\w\-]+)$/ or do {
+      $dbh->rollback if $oldAutoCommit;
+      return "Illegal svcdb value in part_svc!";
+    };
     my $svcdb = $1;
     require "FS/$svcdb.pm";
 
     my $svc = qsearchs( $svcdb, { 'svcnum' => $cust_svc->svcnum } );
     if ($svc) {
       $error = $svc->unsuspend;
-      return $error if $error;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
+      }
     }
 
   }
@@ -344,8 +387,13 @@ sub unsuspend {
     $hash{'susp'} = '';
     my $new = new FS::cust_pkg ( \%hash );
     $error = $new->replace($self);
-    return $error if $error;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
   }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
   ''; #no errors
 }
@@ -398,6 +446,10 @@ L<FS::pkg_svc>).
 sub order {
   my($custnum,$pkgparts,$remove_pkgnums)=@_;
 
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
   # generate %part_pkg
   # $part_pkg{$pkgpart} is true iff $custnum may purchase $pkgpart
   #
@@ -425,8 +477,10 @@ sub order {
   # @cust_svc is a corresponding list of lists of FS::Record objects
   my($pkgpart);
   foreach $pkgpart ( @{$pkgparts} ) {
-    return "Customer not permitted to purchase pkgpart $pkgpart!"
-      unless $part_pkg{$pkgpart};
+    unless ( $part_pkg{$pkgpart} ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "Customer not permitted to purchase pkgpart $pkgpart!";
+    }
     push @cust_svc, [
       map {
         ( $svcnum{$_} && @{ $svcnum{$_} } ) ? shift @{ $svcnum{$_} } : ();
@@ -437,6 +491,7 @@ sub order {
   #check for leftover services
   foreach (keys %svcnum) {
     next unless @{ $svcnum{$_} };
+    $dbh->rollback if $oldAutoCommit;
     return "Leftover services, svcpart $_: svcnum ".
            join(', ', map { $_->svcnum } @{ $svcnum{$_} } );
   }
@@ -454,12 +509,18 @@ sub order {
 #  my($pkgnum);
   foreach $pkgnum ( @{$remove_pkgnums} ) {
     my($old) = qsearchs('cust_pkg',{'pkgnum'=>$pkgnum});
-    die "Package $pkgnum not found to remove!" unless $old;
+    unless ( $old ) {
+      $dbh->rollback if $oldAutoCommit;
+      die "Package $pkgnum not found to remove!";
+    }
     my(%hash) = $old->hash;
     $hash{'cancel'}=time;   
     my($new) = new FS::cust_pkg ( \%hash );
     my($error)=$new->replace($old);
-    die "Couldn't update package $pkgnum: $error" if $error;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      die "Couldn't update package $pkgnum: $error";
+    }
   }
 
   #now add new packages, changing cust_svc records if necessary
@@ -471,7 +532,10 @@ sub order {
                                        'pkgpart' => $pkgpart,
                                     } );
     my($error) = $new->insert;
-    die "Couldn't insert new cust_pkg record: $error" if $error; 
+   if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      die "Couldn't insert new cust_pkg record: $error";
+    }
     my($pkgnum)=$new->getfield('pkgnum');
  
     my($cust_svc);
@@ -480,9 +544,14 @@ sub order {
       $hash{'pkgnum'}=$pkgnum;
       my($new) = new FS::cust_svc ( \%hash );
       my($error)=$new->replace($cust_svc);
-      die "Couldn't link old service to new package: $error" if $error;
+     if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        die "Couldn't link old service to new package: $error";
+      }
     }
   }  
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
   ''; #no errors
 }
@@ -491,7 +560,7 @@ sub order {
 
 =head1 VERSION
 
-$Id: cust_pkg.pm,v 1.4 2000-02-03 05:16:52 ivan Exp $
+$Id: cust_pkg.pm,v 1.5 2001-04-09 23:05:15 ivan Exp $
 
 =head1 BUGS
 

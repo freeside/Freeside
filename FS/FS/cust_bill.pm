@@ -85,9 +85,6 @@ L<Time::Local> and L<Date::Parse> for conversion functions.
 
 =item charged - amount of this invoice
 
-=item owed - amount still outstanding on this invoice, which is charged minus
-all payments (see L<FS::cust_pay>).
-
 =item printed - how many times this invoice has been printed automatically
 (see L<FS::cust_main/"collect">).
 
@@ -112,21 +109,6 @@ sub table { 'cust_bill'; }
 Adds this invoice to the database ("Posts" the invoice).  If there is an error,
 returns the error, otherwise returns false.
 
-When adding new invoices, owed must be charged (or null, in which case it is
-automatically set to charged).
-
-=cut
-
-sub insert {
-  my $self = shift;
-
-  $self->owed( $self->charged ) if $self->owed eq '';
-  return "owed != charged!"
-    unless $self->owed == $self->charged;
-
-  $self->SUPER::insert;
-}
-
 =item delete
 
 Currently unimplemented.  I don't remove invoices because there would then be
@@ -143,9 +125,8 @@ sub delete {
 Replaces the OLD_RECORD with this one in the database.  If there is an error,
 returns the error, otherwise returns false.
 
-Only owed and printed may be changed.  Owed is normally updated by creating and
-inserting a payment (see L<FS::cust_pay>).  Printed is normally updated by
-calling the collect method of a customer object (see L<FS::cust_main>).
+Only printed may be changed.  printed is normally updated by calling the
+collect method of a customer object (see L<FS::cust_main>).
 
 =cut
 
@@ -155,7 +136,6 @@ sub replace {
   #return "Can't change _date!" unless $old->_date eq $new->_date;
   return "Can't change _date!" unless $old->_date == $new->_date;
   return "Can't change charged!" unless $old->charged == $new->charged;
-  return "(New) owed can't be > (new) charged!" if $new->owed > $new->charged;
 
   $new->SUPER::replace($old);
 }
@@ -176,7 +156,6 @@ sub check {
     || $self->ut_number('custnum')
     || $self->ut_numbern('_date')
     || $self->ut_money('charged')
-    || $self->ut_money('owed')
     || $self->ut_numbern('printed')
   ;
   return $error if $error;
@@ -250,6 +229,20 @@ sub cust_pay {
   sort { $a->_date <=> $b->_date }
     qsearch( 'cust_pay', { 'invnum' => $self->invnum } )
   ;
+}
+
+=item owed
+
+Returns the amount owed (still outstanding) on this invoice, which is charged
+minus all payments (see L<FS::cust_pay>).
+
+=cut
+
+sub owed {
+  my $self = shift;
+  my $balance = $self->charged;
+  $balance -= $_->paid foreach ( $self->cust_pay );
+  $balance;
 }
 
 =item print_text [TIME];
@@ -431,7 +424,7 @@ sub print_text {
 
 =head1 VERSION
 
-$Id: cust_bill.pm,v 1.6 2001-03-30 17:33:52 ivan Exp $
+$Id: cust_bill.pm,v 1.7 2001-04-09 23:05:15 ivan Exp $
 
 =head1 BUGS
 

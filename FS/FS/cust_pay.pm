@@ -74,26 +74,11 @@ L<FS::cust_bill>).
 sub insert {
   my $self = shift;
 
-  my $error;
-
-  $error = $self->check;
+  my $error = $self->check;
   return $error if $error;
 
   my $old_cust_bill = qsearchs( 'cust_bill', { 'invnum' => $self->invnum } );
   return "Unknown invnum" unless $old_cust_bill;
-  my %hash = $old_cust_bill->hash;
-  $hash{'owed'} = sprintf("%.2f", $hash{owed} - $self->paid );
-  my $new_cust_bill = new FS::cust_bill ( \%hash );
-
-  local $SIG{HUP} = 'IGNORE';
-  local $SIG{INT} = 'IGNORE';
-  local $SIG{QUIT} = 'IGNORE';
-  local $SIG{TERM} = 'IGNORE';
-  local $SIG{TSTP} = 'IGNORE';
-  local $SIG{PIPE} = 'IGNORE';
-
-  $error = $new_cust_bill->replace($old_cust_bill);
-  return "Error modifying cust_bill: $error" if $error;
 
   $self->SUPER::insert;
 }
@@ -173,7 +158,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: cust_pay.pm,v 1.2 2001-02-11 17:17:39 ivan Exp $
+$Id: cust_pay.pm,v 1.3 2001-04-09 23:05:15 ivan Exp $
 
 =head1 BUGS
 

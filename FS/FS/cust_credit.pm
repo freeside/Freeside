@@ -5,6 +5,7 @@ use vars qw( @ISA );
 use FS::UID qw( getotaker );
 use FS::Record qw( qsearchs );
 use FS::cust_main;
+use FS::cust_refund;
 
 @ISA = qw( FS::Record );
 
@@ -41,9 +42,6 @@ FS::Record.  The following fields are currently supported:
 
 =item amount - amount of the credit
 
-=item credited - how much of this credit that is still outstanding, which is
-amount minus all refunds (see L<FS::cust_refund>).
-
 =item _date - specified as a UNIX timestamp; see L<perlfunc/"time">.  Also see
 L<Time::Local> and L<Date::Parse> for conversion functions.
 
@@ -70,26 +68,6 @@ sub table { 'cust_credit'; }
 Adds this credit to the database ("Posts" the credit).  If there is an error,
 returns the error, otherwise returns false.
 
-When adding new invoices, credited must be amount (or null, in which case it is
-automatically set to amount).
-
-=cut
-
-sub insert {
-  my $self = shift;
-
-  my $error;
-  return $error if $error = $self->ut_money('credited')
-                         || $self->ut_money('amount');
-
-  $self->credited($self->amount) if $self->credited == 0
-                                 || $self->credited eq '';
-  return "credited != amount!"
-    unless $self->credited == $self->amount;
-
-  $self->SUPER::insert;
-}
-
 =item delete
 
 Currently unimplemented.
@@ -102,25 +80,13 @@ sub delete {
 
 =item replace OLD_RECORD
 
-Replaces the OLD_RECORD with this one in the database.  If there is an error,
-returns the error, otherwise returns false.
-
-Only credited may be changed.  Credited is normally updated by creating and
-inserting a refund (see L<FS::cust_refund>).
+Credits may not be modified; there would then be no record the credit was ever
+posted.
 
 =cut
 
 sub replace {
-  my ( $new, $old ) = ( shift, shift );
-
-  return "Can't change custnum!" unless $old->custnum == $new->custnum;
-  #return "Can't change date!" unless $old->_date eq $new->_date;
-  return "Can't change date!" unless $old->_date == $new->_date;
-  return "Can't change amount!" unless $old->amount == $new->amount;
-  return "(New) credited can't be > (new) amount!"
-    if $new->credited > $new->amount;
-
-  $new->SUPER::replace($old);
+  return "Can't modify credit!"
 }
 
 =item check
@@ -139,7 +105,6 @@ sub check {
     || $self->ut_number('custnum')
     || $self->ut_numbern('_date')
     || $self->ut_money('amount')
-    || $self->ut_money('credited')
     || $self->ut_textn('reason');
   ;
   return $error if $error;
@@ -154,11 +119,38 @@ sub check {
   ''; #no error
 }
 
+=item cust_refund
+
+Returns all refunds (see L<FS::cust_refund>) for this credit.
+
+=cut
+
+sub cust_refund {
+  my $self = shift;
+  sort { $a->_date <=> $b->_date }
+    qsearch( 'cust_refund', { 'crednum' => $self->crednum } )
+  ;
+}
+
+=item credited
+
+Returns the amount of this credit that is still outstanding; which is
+amount minus all refunds (see L<FS::cust_refund>).
+
+=cut
+
+sub credited {
+  my $self = shift;
+  my $amount = $self->amount;
+  $amount -= $_->refund foreach ( $self->cust_refund );
+  $amount;
+}
+
 =back
 
 =head1 VERSION
 
-$Id: cust_credit.pm,v 1.2 2001-02-11 17:17:39 ivan Exp $
+$Id: cust_credit.pm,v 1.3 2001-04-09 23:05:15 ivan Exp $
 
 =head1 BUGS
 

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: part_pkg.cgi,v 1.8 1999-02-07 09:59:27 ivan Exp $
+# $Id: part_pkg.cgi,v 1.9 2001-04-09 23:05:16 ivan Exp $
 #
 # process/part_pkg.cgi: Edit package definitions (process form)
 #
@@ -17,7 +17,10 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: part_pkg.cgi,v $
-# Revision 1.8  1999-02-07 09:59:27  ivan
+# Revision 1.9  2001-04-09 23:05:16  ivan
+# Transactions Part I!!!
+#
+# Revision 1.8  1999/02/07 09:59:27  ivan
 # more mod_perl fixes, and bugfixes Peter Wemm sent via email
 #
 # Revision 1.7  1999/01/19 05:13:55  ivan
@@ -41,7 +44,7 @@
 #
 
 use strict;
-use vars qw( $cgi $pkgpart $old $new $part_svc $error );
+use vars qw( $cgi $pkgpart $old $new $part_svc $error $dbh );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
@@ -52,7 +55,7 @@ use FS::pkg_svc;
 use FS::cust_pkg;
 
 $cgi = new CGI;
-&cgisuidsetup($cgi);
+$dbh = &cgisuidsetup($cgi);
 
 $pkgpart = $cgi->param('pkgpart');
 
@@ -82,6 +85,8 @@ local $SIG{TERM} = 'IGNORE';
 local $SIG{TSTP} = 'IGNORE';
 local $SIG{PIPE} = 'IGNORE';
 
+local $FS::UID::AutoCommit = 0;
+
 if ( $pkgpart ) {
   $error = $new->replace($old);
 } else {
@@ -89,6 +94,7 @@ if ( $pkgpart ) {
   $pkgpart=$new->pkgpart;
 }
 if ( $error ) {
+  $dbh->rollback;
   $cgi->param('error', $error );
   print $cgi->redirect(popurl(2). "part_pkg.cgi?". $cgi->query_string );
   exit;
@@ -109,14 +115,21 @@ foreach $part_svc (qsearch('part_svc',{})) {
   } );
   if ( $old_pkg_svc ) {
     my $myerror = $new_pkg_svc->replace($old_pkg_svc);
-    die $myerror if $myerror;
+    if ( $myerror ) {
+      $dbh->rollback;
+      die $myerror;
+    }
   } else {
     my $myerror = $new_pkg_svc->insert;
-    die $myerror if $myerror;
+    if ( $myerror ) {
+      $dbh->rollback;
+      die $myerror;
+    }
   }
 }
 
 unless ( $cgi->param('pkgnum') && $cgi->param('pkgnum') =~ /^(\d+)$/ ) {
+  $dbh->commit or die $dbh->errstr;
   print $cgi->redirect(popurl(3). "browse/part_pkg.cgi");
 } else {
   my($old_cust_pkg) = qsearchs( 'cust_pkg', { 'pkgnum' => $1 } );
@@ -124,8 +137,12 @@ unless ( $cgi->param('pkgnum') && $cgi->param('pkgnum') =~ /^(\d+)$/ ) {
   $hash{'pkgpart'} = $pkgpart;
   my($new_cust_pkg) = new FS::cust_pkg \%hash;
   my $myerror = $new_cust_pkg->replace($old_cust_pkg);
-  die "Error modifying cust_pkg record: $myerror\n" if $myerror;
+  if ( $myerror ) {
+    $dbh->rollback;
+    die "Error modifying cust_pkg record: $myerror\n";
+  }
+
+  $dbh->commit or die $dbh->errstr;
   print $cgi->redirect(popurl(3). "view/cust_main.cgi?". $new_cust_pkg->custnum);
 }
-
 

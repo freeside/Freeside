@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cancel-unaudited.cgi,v 1.7 2000-06-15 12:30:37 ivan Exp $
+# $Id: cancel-unaudited.cgi,v 1.8 2001-04-09 23:05:16 ivan Exp $
 #
 # Usage: cancel-unaudited.cgi svcnum
 #        http://server.name/path/cancel-unaudited.cgi pkgnum
@@ -16,7 +16,10 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # $Log: cancel-unaudited.cgi,v $
-# Revision 1.7  2000-06-15 12:30:37  ivan
+# Revision 1.8  2001-04-09 23:05:16  ivan
+# Transactions Part I!!!
+#
+# Revision 1.7  2000/06/15 12:30:37  ivan
 # bugfix from Jeff Finucane, thanks!
 #
 # Revision 1.6  1999/02/28 00:03:48  ivan
@@ -37,7 +40,7 @@
 #
 
 use strict;
-use vars qw( $cgi $query $svcnum $svc_acct $cust_svc $error );
+use vars qw( $cgi $query $svcnum $svc_acct $cust_svc $error $dbh );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
@@ -47,7 +50,7 @@ use FS::cust_svc;
 use FS::svc_acct;
 
 $cgi = new CGI;
-&cgisuidsetup($cgi);
+$dbh = &cgisuidsetup($cgi);
  
 #untaint svcnum
 ($query) = $cgi->keywords;
@@ -69,13 +72,22 @@ local $SIG{QUIT} = 'IGNORE';
 local $SIG{TERM} = 'IGNORE';
 local $SIG{TSTP} = 'IGNORE';
 
+local $FS::UID::AutoCommit = 0;
+
 $error = $svc_acct->cancel;
-&eidiot($error) if $error;
+&myeidiot($error) if $error;
 $error = $svc_acct->delete;
-&eidiot($error) if $error;
+&myeidiot($error) if $error;
 
 $error = $cust_svc->delete;
-&eidiot($error) if $error;
+&myeidiot($error) if $error;
+
+$dbh->commit or die $dbh->errstr;
 
 print $cgi->redirect(popurl(2));
+
+sub myeidiot {
+  $dbh->rollback;
+  &eidiot(@_);
+}
 

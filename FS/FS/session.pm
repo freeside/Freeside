@@ -2,6 +2,7 @@ package FS::session;
 
 use strict;
 use vars qw( @ISA $conf $start $stop );
+use FS::UID qw( dbh );
 use FS::Record qw( qsearchs );
 use FS::svc_acct;
 use FS::port;
@@ -100,14 +101,24 @@ sub insert {
   $error = $self->check;
   return $error if $error;
 
-  return "a session on that port is already open!"
-    if qsearchs('session', { 'portnum' => $self->portnum, 'logout' => '' } );
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  if ( qsearchs('session', { 'portnum' => $self->portnum, 'logout' => '' } ) ) {
+    $dbh->rollback if $oldAutoCommit;
+    return "a session on that port is already open!";
+  }
 
   $self->setfield('login', time()) unless $self->getfield('login');
 
   $error = $self->SUPER::insert;
-  return $error if $error;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
 
+  #transactional accuracy not essential; just an indication of data freshness
   $self->nas_heartbeat($self->getfield('login'));
 
   #session-starting callback
@@ -117,7 +128,8 @@ sub insert {
     #kcuy
   my( $ip, $nasip, $nasfqdn ) = ( $port->ip, $nas->nasip, $nas->nasfqdn );
   system( eval qq("$start") ) if $start;
-
+  
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
 
 }
@@ -149,14 +161,25 @@ sub replace {
   local $SIG{TSTP} = 'IGNORE';
   local $SIG{PIPE} = 'IGNORE';
 
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
   $error = $self->check;
-  return $error if $error;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
 
   $self->setfield('logout', time()) unless $self->getfield('logout');
 
   $error = $self->SUPER::replace($old);
-  return $error if $error;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
 
+  #transactional accuracy not essential; just an indication of data freshness
   $self->nas_heartbeat($self->getfield('logout'));
 
   #session-ending callback
@@ -166,6 +189,8 @@ sub replace {
     #kcuy
   my( $ip, $nasip, $nasfqdn ) = ( $port->ip, $nas->nasip, $nas->nasfqdn );
   system( eval qq("$stop") ) if $stop;
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
   '';
 }
@@ -224,7 +249,7 @@ sub svc_acct {
 
 =head1 VERSION
 
-$Id: session.pm,v 1.5 2001-02-27 00:59:36 ivan Exp $
+$Id: session.pm,v 1.6 2001-04-09 23:05:15 ivan Exp $
 
 =head1 BUGS
 

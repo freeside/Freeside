@@ -55,7 +55,7 @@ sub insert {
   my $cust_svc;
   unless ( $svcnum ) {
     $cust_svc = new FS::cust_svc ( {
-      'svcnum'  => $svcnum,
+      #hua?# 'svcnum'  => $svcnum,
       'pkgnum'  => $self->pkgnum,
       'svcpart' => $self->svcpart,
     } );
@@ -184,7 +184,7 @@ sub cancel { ''; }
 
 =head1 VERSION
 
-$Id: svc_Common.pm,v 1.1 1999-08-04 09:03:53 ivan Exp $
+$Id: svc_Common.pm,v 1.2 2001-04-09 23:05:15 ivan Exp $
 
 =head1 BUGS
 

@@ -75,27 +75,12 @@ L<FS::cust_credit>).
 sub insert {
   my $self = shift;
 
-  my $error;
-
-  $error=$self->check;
+  my $error = $self->check;
   return $error if $error;
 
   my $old_cust_credit =
     qsearchs( 'cust_credit', { 'crednum' => $self->crednum } );
   return "Unknown crednum" unless $old_cust_credit;
-  my %hash = $old_cust_credit->hash;
-  $hash{credited} = sprintf("%.2f", $hash{credited} - $self->refund );
-  my($new_cust_credit) = new FS::cust_credit ( \%hash );
-
-  local $SIG{HUP} = 'IGNORE';
-  local $SIG{INT} = 'IGNORE';
-  local $SIG{QUIT} = 'IGNORE';
-  local $SIG{TERM} = 'IGNORE';
-  local $SIG{TSTP} = 'IGNORE';
-  local $SIG{PIPE} = 'IGNORE';
-
-  $error = $new_cust_credit->replace($old_cust_credit);
-  return "Error modifying cust_credit: $error" if $error;
 
   $self->SUPER::insert;
 }
@@ -172,7 +157,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: cust_refund.pm,v 1.2 2001-02-11 17:17:39 ivan Exp $
+$Id: cust_refund.pm,v 1.3 2001-04-09 23:05:15 ivan Exp $
 
 =head1 BUGS
 

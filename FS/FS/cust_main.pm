@@ -208,6 +208,7 @@ sub insert {
   local $SIG{TSTP} = 'IGNORE';
   local $SIG{PIPE} = 'IGNORE';
 
+  my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
@@ -227,14 +228,14 @@ sub insert {
     $seconds = $prepay_credit->seconds;
     my $error = $prepay_credit->delete;
     if ( $error ) {
-      $dbh->rollback;
+      $dbh->rollback if $oldAutoCommit;
       return $error;
     }
   }
 
   my $error = $self->SUPER::insert;
   if ( $error ) {
-    $dbh->rollback;
+    $dbh->rollback if $oldAutoCommit;
     return $error;
   }
 
@@ -244,7 +245,7 @@ sub insert {
       $cust_pkg->custnum( $self->custnum );
       $error = $cust_pkg->insert;
       if ( $error ) {
-        $dbh->rollback;
+        $dbh->rollback if $oldAutoCommit;
         return $error;
       }
       foreach my $svc_something ( @{$cust_pkgs->{$cust_pkg}} ) {
@@ -255,7 +256,7 @@ sub insert {
         }
         $error = $svc_something->insert;
         if ( $error ) {
-          $dbh->rollback;
+          $dbh->rollback if $oldAutoCommit;
           return $error;
         }
       }
@@ -263,7 +264,7 @@ sub insert {
   }
 
   if ( $seconds ) {
-    $dbh->rollback;
+    $dbh->rollback if $oldAutoCommit;
     return "No svc_acct record to apply pre-paid time";
   }
 
@@ -274,12 +275,12 @@ sub insert {
     };
     $error = $cust_credit->insert;
     if ( $error ) {
-      $dbh->rollback;
+      $dbh->rollback if $oldAutoCommit;
       return $error;
     }
   }
 
-  $dbh->commit or die $dbh->errstr;
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
 
 }
@@ -304,13 +305,6 @@ or credits (see L<FS::cust_credit>).
 sub delete {
   my $self = shift;
 
-  if ( qsearch( 'cust_bill', { 'custnum' => $self->custnum } ) ) {
-    return "Can't delete a customer with invoices";
-  }
-  if ( qsearch( 'cust_credit', { 'custnum' => $self->custnum } ) ) {
-    return "Can't delete a customer with credits";
-  }
-
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
   local $SIG{QUIT} = 'IGNORE';
@@ -318,27 +312,56 @@ sub delete {
   local $SIG{TSTP} = 'IGNORE';
   local $SIG{PIPE} = 'IGNORE';
 
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  if ( qsearch( 'cust_bill', { 'custnum' => $self->custnum } ) ) {
+    $dbh->rollback if $oldAutoCommit;
+    return "Can't delete a customer with invoices";
+  }
+  if ( qsearch( 'cust_credit', { 'custnum' => $self->custnum } ) ) {
+    $dbh->rollback if $oldAutoCommit;
+    return "Can't delete a customer with credits";
+  }
+
   my @cust_pkg = qsearch( 'cust_pkg', { 'custnum' => $self->custnum } );
   if ( @cust_pkg ) {
     my $new_custnum = shift;
-    return "Invalid new customer number: $new_custnum"
-      unless qsearchs( 'cust_main', { 'custnum' => $new_custnum } );
+    unless ( qsearchs( 'cust_main', { 'custnum' => $new_custnum } ) ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "Invalid new customer number: $new_custnum";
+    }
     foreach my $cust_pkg ( @cust_pkg ) {
       my %hash = $cust_pkg->hash;
       $hash{'custnum'} = $new_custnum;
       my $new_cust_pkg = new FS::cust_pkg ( \%hash );
       my $error = $new_cust_pkg->replace($cust_pkg);
-      return $error if $error;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
+      }
     }
   }
   foreach my $cust_main_invoice (
     qsearch( 'cust_main_invoice', { 'custnum' => $self->custnum } )
   ) {
     my $error = $cust_main_invoice->delete;
-    return $error if $error;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
   }
 
-  $self->SUPER::delete;
+  my $error = $self->SUPER::delete;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  '';
+
 }
 
 =item replace OLD_RECORD
@@ -549,6 +572,10 @@ sub bill {
   local $SIG{TSTP} = 'IGNORE';
   local $SIG{PIPE} = 'IGNORE';
 
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
   # find the packages which are due for billing, find out how much they are
   # & generate invoice database.
  
@@ -648,7 +675,10 @@ sub bill {
 
   my $charged = sprintf( "%.2f", $total_setup + $total_recur );
 
-  return '' if scalar(@cust_bill_pkg) == 0;
+  unless ( @cust_bill_pkg ) {
+    $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+    return '';
+  }
 
   unless ( $self->getfield('tax') =~ /Y/i
            || $self->getfield('payby') eq 'COMP'
@@ -679,11 +709,10 @@ sub bill {
     'charged' => $charged,
   } );
   $error = $cust_bill->insert;
-  #shouldn't happen, but how else to handle this? (wrap me in eval, to catch 
-  # fatal errors)
-  die "Error creating cust_bill record: $error!\n",
-      "Check updated but unbilled packages for customer", $self->custnum, "\n"
-    if $error;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return "$error for customer #". $self->custnum;
+  }
 
   my $invnum = $cust_bill->invnum;
   my $cust_bill_pkg;
@@ -691,11 +720,13 @@ sub bill {
     $cust_bill_pkg->setfield( 'invnum', $invnum );
     $error = $cust_bill_pkg->insert;
     #shouldn't happen, but how else tohandle this?
-    die "Error creating cust_bill_pkg record: $error!\n",
-        "Check incomplete invoice ", $invnum, "\n"
-      if $error;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "$error for customer #". $self->custnum;
+    }
   }
   
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   ''; #no error
 }
 
@@ -728,10 +759,6 @@ sub collect {
   my( $self, %options ) = @_;
   my $invoice_time = $options{'invoice_time'} || time;
 
-  my $total_owed = $self->balance;
-  warn "collect: total owed $total_owed " if $Debug;
-  return '' unless $total_owed > 0; #redundant?????
-
   #put below somehow?
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -739,6 +766,17 @@ sub collect {
   local $SIG{TERM} = 'IGNORE';
   local $SIG{TSTP} = 'IGNORE';
   local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $total_owed = $self->balance;
+  warn "collect: total owed $total_owed " if $Debug;
+  unless ( $total_owed > 0 ) { #redundant?????
+    $dbh->rollback if $oldAutoCommit;
+    return '';
+  }
 
   foreach my $cust_bill (
     qsearch('cust_bill', { 'custnum' => $self->custnum, } )
@@ -813,14 +851,20 @@ sub collect {
          'paybatch' => ''
       } );
       my $error = $cust_pay->insert;
-      return 'Error COMPing invnum #' . $cust_bill->invnum .
-             ':' . $error if $error;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return 'Error COMPing invnum #'. $cust_bill->invnum. ": $error";
+      }
+
 
     } elsif ( $self->payby eq 'CARD' ) {
 
       if ( $options{'batch_card'} ne 'yes' ) {
 
-        return "Real time card processing not enabled!" unless $processor;
+        unless ( $processor ) {
+          $dbh->rollback if $oldAutoCommit;
+          return "Real time card processing not enabled!";
+        }
 
         if ( $processor =~ /^cybercash/ ) {
 
@@ -861,7 +905,8 @@ sub collect {
           } elsif ( $processor eq 'cybercash3.2' ) {
             %result = &CCMckDirectLib3_2::SendCC2_1Server(@full_xaction);
           } else {
-            return "Unknown real-time processor $processor\n";
+            $dbh->rollback if $oldAutoCommit;
+            return "Unknown real-time processor $processor";
           }
          
           #if ( $result{'MActionCode'} == 7 ) { #cybercash smps v.1.1.3
@@ -876,17 +921,27 @@ sub collect {
                'paybatch' => "$processor:$paybatch",
             } );
             my $error = $cust_pay->insert;
-            return 'Error applying payment, invnum #' . 
-              $cust_bill->invnum. ':'. $error if $error;
+            if ( $error ) {
+              # gah, even with transactions.
+              $dbh->commit if $oldAutoCommit; #well.
+              my $e = 'WARNING: Card debited but database not updated - '.
+                      'error applying payment, invnum #' . $cust_bill->invnum.
+                      " (CyberCash Order-ID $paybatch): $error";
+              warn $e;
+              return $e;
+            }
           } elsif ( $result{'Mstatus'} ne 'failure-bad-money'
                  || $options{'report_badcard'} ) {
+             $dbh->commit if $oldAutoCommit;
              return 'Cybercash error, invnum #' . 
                $cust_bill->invnum. ':'. $result{'MErrMsg'};
           } else {
+            $dbh->commit or die $dbh->errstr if $oldAutoCommit;
             return '';
           }
 
         } else {
+          $dbh->rollback if $oldAutoCommit;
           return "Unknown real-time processor $processor\n";
         }
 
@@ -910,15 +965,20 @@ sub collect {
          'amount'   => $amount,
        } );
        my $error = $cust_pay_batch->insert;
-       return "Error adding to cust_pay_batch: $error" if $error;
+       if ( $error ) {
+         $dbh->rollback if $oldAutoCommit;
+         return "Error adding to cust_pay_batch: $error";
+       }
 
       }
 
     } else {
+      $dbh->rollback if $oldAutoCommit;
       return "Unknown payment type ". $self->payby;
     }
 
   }
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
 
 }
@@ -1054,7 +1114,7 @@ sub check_invoicing_list {
 
 =head1 VERSION
 
-$Id: cust_main.pm,v 1.10 2001-02-03 14:03:50 ivan Exp $
+$Id: cust_main.pm,v 1.11 2001-04-09 23:05:15 ivan Exp $
 
 =head1 BUGS
 
