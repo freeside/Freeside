@@ -1,25 +1,15 @@
+<!-- mason kludge -->
 <%
 
-use strict;
-use vars qw( $cgi $user $beginning $ending );
-use CGI;
-use CGI::Carp qw( fatalsToBrowser );
-use FS::UID qw( cgisuidsetup getotaker );
-use FS::CGI qw( header );
-
-$cgi = new CGI;
-&cgisuidsetup($cgi);
-
-$user = getotaker;
+my $user = getotaker;
 
 $cgi->param('beginning') =~ /^([ 0-9\-\/]{0,10})$/;
-$beginning = $1;
+my $beginning = $1;
 
 $cgi->param('ending') =~ /^([ 0-9\-\/]{0,10})$/;
-$ending = $1;
+my $ending = $1;
 
-print $cgi->header( '-expires' => '-2m' ),
-  header('Tax Report Results');
+print header('Tax Report Results');
 
 open (REPORT, "freeside-tax-report -v -s $beginning -d $ending $user |");
 
