@@ -6,6 +6,7 @@ use vars qw( @ISA $nossh_hack $conf $dir_prefix @shells $usernamemin
              $username_noperiod
              $shellmachine $useradd $usermod $userdel $mydomain
              $cyrus_server $cyrus_admin_user $cyrus_admin_pass
+             $icradius_dbh
              @saltset @pw_set);
 use Carp;
 use FS::Conf;
@@ -64,6 +65,12 @@ $FS::UID::callback{'FS::svc_acct'} = sub {
     $cyrus_server = '';
     $cyrus_admin_user = '';
     $cyrus_admin_pass = '';
+  }
+  if ( $conf->exists('icradius_secrets') ) {
+    $icradius_dbh = DBI->connect($conf->config('icradius_secrets'))
+      or die $DBI::errstr;
+  } else {
+    $icradius_dbh = '';
   }
 };
 
@@ -247,6 +254,17 @@ sub insert {
       return "queueing job (transaction rolled back): $error";
     }
   }
+  if ( $icradius_dbh ) {
+    my $queue = new FS::queue { 'job' => 'FS::svc_acct::icradius_rc_insert' };
+    $error = $queue->insert( $self->username,
+                             $self->_password,
+                             $self->radius_check
+                           );
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "queueing job (transaction rolled back): $error";
+    }
+  }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   ''; #no error
@@ -275,13 +293,43 @@ sub cyrus_insert {
   warn "cyrus_insert: setacl user.$username, $username => all\n";
   $rc = $client->setacl("user.$username", $username => 'all' );
   $error = $client->error;
-  die $error if $error;
+  die "cyrus_insert: error setacl user.$username: $error" if $error;
 
   if ( $quota ) {
     warn "cyrus_insert: setquota user.$username, STORAGE => $quota\n";
     $rc = $client->setquota("user.$username", 'STORAGE' => $quota );
     $error = $client->error;
-    die $error if $error;
+    die "cyrus_insert: error setquota user.$username: $error" if $error;
+  }
+
+  1;
+}
+
+sub icradius_rc_insert {
+  my( $username, $password, %radcheck ) = @_;
+  
+  my $sth = $icradius_dbh->prepare(
+    "INSERT INTO radcheck ( id, UserName, Attribute, Value ) VALUES ( ".
+    join(", ", map { $icradius_dbh->quote($_) } (
+      '',
+      $username,
+      "Password",
+      $password,
+    ) ). " )"
+  );
+  $sth->execute or die "can't insert into radcheck table: ". $sth->errstr;
+
+  foreach my $attribute ( keys %radcheck ) {
+    my $sth = $icradius_dbh->prepare(
+      "INSERT INTO radcheck ( id, UserName, Attribute, Value ) VALUES ( ".
+      join(", ", map { $icradius_dbh->quote($_) } (
+        '',
+        $username,
+        $attribute,
+        $radcheck{$attribute},
+      ) ). " )"
+    );
+    $sth->execute or die "can't insert into radcheck table: ". $sth->errstr;
   }
 
   1;
@@ -398,6 +446,14 @@ sub delete {
       return "queueing job (transaction rolled back): $error";
     }
   }
+  if ( $icradius_dbh ) {
+    my $queue = new FS::queue { 'job' => 'FS::svc_acct::icradius_rc_delete' };
+    $error = $queue->insert( $self->username );
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "queueing job (transaction rolled back): $error";
+    }
+  }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
@@ -420,6 +476,18 @@ sub cyrus_delete {
   $rc = $client->delete("user.$username");
   $error = $client->error;
   die $error if $error;
+
+  1;
+}
+
+sub icradius_rc_delete {
+  my $username = shift;
+  
+  my $sth = $icradius_dbh->prepare(
+    'DELETE FROM radcheck WHERE UserName = ?'
+  );
+  $sth->execute($username)
+    or die "can't delete from radcheck table: ". $sth->errstr;
 
   1;
 }
@@ -771,7 +839,7 @@ sub email {
 
 =head1 VERSION
 
-$Id: svc_acct.pm,v 1.37 2001-09-11 12:06:57 ivan Exp $
+$Id: svc_acct.pm,v 1.38 2001-09-11 13:10:22 ivan Exp $
 
 =head1 BUGS
 
