@@ -122,7 +122,7 @@ Returns the rate region (see L<FS::rate_region>) for this prefix.
 
 sub rate_region {
   my $self = shift;
-  qsearch('rate_region', { 'regionnum' => $self->regionnum } );
+  qsearchs('rate_region', { 'regionnum' => $self->regionnum } );
 }
 
 =back

@@ -30,9 +30,6 @@ $DEBUG = 1;
                      'select_key'   => 'ratenum',
                      'select_label' => 'ratename',
                    },
-    'ignore_unrateable' => { 'name' => 'Ignore calls for which not rate prefix can be found (otherwise they are fatal)',
-                             'type' => 'checkbox',
-                           },
   },
   'fieldorder' => [qw( setup_fee recur_flat unused_credit ratenum ignore_unrateable )],
   'weight' => 40,
@@ -61,7 +58,10 @@ sub calc_recur {
     foreach my $session (
       $cust_svc->get_session_history( $last_bill, $$sdate )
     ) {
-      warn "rating session $session" if $DEBUG;
+      if ( $DEBUG > 1 ) {
+        warn "rating session $session\n".
+             join('', map { "  $_ => ". $session->{$_}. "\n" } keys %$session );
+      }
 
       ###
       # look up rate details based on called station id
@@ -73,18 +73,21 @@ sub calc_recur {
       $dest =~ s/\s//g;
       my $proto = '';
       $dest =~ s/^(\w+):// and $proto = $1; #sip:
-      my $ip = '';
-      $dest =~ s/\@((\d{1,3}\.){3}\d{1,3})$// and $ip = $1; # @10.54.32.1
+      my $siphost = '';
+      $dest =~ s/\@(.*)$// and $siphost = $1; # @10.54.32.1, @sip.example.com
 
       #determine the country code
       my $countrycode;
-      if ( $dest =~ /^011((\d\d)(\d))(\d+)$/ ) {
+      if ( $dest =~ /^011(((\d)(\d))(\d))(\d+)$/ ) {
 
-        my( $three, $two, $unknown, $rest ) = ( $1, $2, $3, $4 );
-        #first look for 2 digit country code
-        if ( qsearch('rate_prefix', { 'countrycode' => $two } ) ) {
+        my( $three, $two, $one, $u1, $u2, $rest ) = ( $1, $2, $3, $4, $5, $6 );
+        #first look for 1 digit country code
+        if ( qsearch('rate_prefix', { 'countrycode' => $one } ) ) {
+          $countrycode = $one;
+          $dest = $u1.$u2.$rest;
+        } elsif ( qsearch('rate_prefix', { 'countrycode' => $two } ) ) { #or 2
           $countrycode = $two;
-          $dest = $unknown.$rest;
+          $dest = $u2.$rest;
         } else { #3 digit country code
           $countrycode = $three;
           $dest = $rest;
@@ -92,17 +95,19 @@ sub calc_recur {
 
       } else {
         $countrycode = '1';
+        $dest =~ s/^1//;# if length($dest) > 10;
       }
 
-      warn "rating call to +$countrycode $dest" if $DEBUG;
+      warn "rating call to +$countrycode $dest\n" if $DEBUG;
 
       #find a rate prefix, first look at most specific (4 digits) then 3, etc.,
       # finally trying the country code only
       my $rate_prefix = '';
-      for my $len ( reverse(1..4) ) {
+      for my $len ( reverse(1..6) ) {
         $rate_prefix = qsearchs('rate_prefix', {
           'countrycode' => $countrycode,
-          'npa'         => { op=> 'LIKE', value=> substr($dest, 0, $len) }
+          #'npa'         => { op=> 'LIKE', value=> substr($dest, 0, $len) }
+          'npa'         => substr($dest, 0, $len),
         } ) and last;
       }
       $rate_prefix ||= qsearchs('rate_prefix', {
@@ -110,17 +115,10 @@ sub calc_recur {
         'npa'         => '',
       });
 
-      unless ( $rate_prefix ) {
-        if ( $self->option('ignore_unrateable') ) {
-          warn "  skipping unrateable call to +$countrycode $dest";
-          next;
-        } else {
-          die "Can't find rate for call to +$countrycode $dest\n"
-        }
-      }
+      die "Can't find rate for call to +$countrycode $dest\n"
+        unless $rate_prefix;
 
       my $regionnum = $rate_prefix->regionnum;
-
       my $rate_detail = qsearchs('rate_detail', {
         'ratenum'        => $ratenum,
         'dest_regionnum' => $regionnum,
@@ -153,10 +151,13 @@ sub calc_recur {
         $charges += $charge;
       }
 
+      my $rate_region = $rate_prefix->rate_region;
+      warn "  (rate region $rate_region)" if $DEBUG;
+
       warn "  adding details on charge to invoice: ".
            join(' - ', 
              "+$countrycode $dest",
-             $rate_prefix->rate_region->regionname,
+             $rate_region->regionname,
              $minutes.'m',
              '$'.$charge,
            )
@@ -166,7 +167,7 @@ sub calc_recur {
         #[
         join(' - ', 
           "+$countrycode $dest",
-          $rate_prefix->rate_region->regionname,
+          $rate_region->regionname,
           $minutes.'m',
           '$'.$charge,
         #]
