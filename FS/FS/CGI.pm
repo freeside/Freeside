@@ -61,7 +61,7 @@ sub header {
         <META HTTP-Equiv="Expires" Content="0"> 
       </HEAD>
       <BODY BGCOLOR="#e8e8e8"$etc>
-          <FONT SIZE=7>
+          <FONT SIZE=5>
             $title
           </FONT>
           <BR><BR>
