@@ -244,7 +244,9 @@ sub check {
   $self->otaker($1);
 
   if ( $self->dbdef_table->column('manual_flag') ) {
-    $self->manual_flag =~ /^([01]?)$/ or return "Illegal manual_flag";
+    $self->manual_flag('') if $self->manual_flag eq ' ';
+    $self->manual_flag =~ /^([01]?)$/
+      or return "Illegal manual_flag ". $self->manual_flag;
     $self->manual_flag($1);
   }
 
