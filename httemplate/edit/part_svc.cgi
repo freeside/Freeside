@@ -1,4 +1,4 @@
-<!-- $Id: part_svc.cgi,v 1.9 2001-09-11 03:15:58 ivan Exp $ -->
+<!-- $Id: part_svc.cgi,v 1.10 2001-09-11 12:42:54 ivan Exp $ -->
 <% 
    my $part_svc;
    if ( $cgi->param('error') ) { #error
@@ -145,9 +145,13 @@ foreach my $svcdb ( qw(
   konq_kludge svc_acct svc_domain svc_acct_sm svc_forward svc_www
 ) ) {
 
-  my(@fields) = $svcdb eq 'konq_kludge'
-                  ? ()
-                  : grep { $_ ne 'svcnum' } fields($svcdb);
+#  my(@fields) = $svcdb eq 'konq_kludge'
+#                  ? ()
+#                  : grep { $_ ne 'svcnum' } fields($svcdb);
+  #yucky kludge
+  my(@fields) = defined( $FS::Record::dbdef->table($svcdb) )
+                  ? grep { $_ ne 'svcnum' } fields($svcdb)
+                  : ();
   #my($rowspan)=scalar(@rows);
 
   #my($ptmp)="<TD ROWSPAN=$rowspan>$svcdb</TD>";
