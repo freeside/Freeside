@@ -119,15 +119,17 @@ sub check {
 sub regionselector {
   my ( $selected_county, $selected_state, $selected_country,
        $prefix, $onchange ) = @_;
-  $countyflag=1 if $selected_county;
 
-  unless ( @cust_main_county ) { #cache 
+  $countyflag = 0;
+
+#  unless ( @cust_main_county ) { #cache 
     @cust_main_county = qsearch('cust_main_county', {} );
     foreach my $c ( @cust_main_county ) {
       $countyflag=1 if $c->county;
       push @{$cust_main_county{$c->country}{$c->state}}, $c->county;
     }
-  }
+#  }
+  $countyflag=1 if $selected_county;
 
   my $script_html = <<END;
     <SCRIPT>
