@@ -82,7 +82,12 @@ Sends headers and an HTML error message.
 sub idiot {
   my($error)=@_;
   my($cgi)=FS::UID::cgi;
-  print $cgi->header, <<END;
+  if ( $cgi->isa('CGI::Base') ) {
+    CGI::Base::SendHeaders;
+  } else {
+    print $cgi->header;
+  }
+  print <<END;
 <HTML>
   <HEAD>
     <TITLE>Error processing your request</TITLE>
@@ -119,11 +124,9 @@ Not OO.
 
 Not complete.
 
-Uses CGI-modules instead of CGI.pm
-
 =head1 SEE ALSO
 
-L<CGI::Base>
+L<CGI>, L<CGI::Base>
 
 =head1 HISTORY
 
@@ -137,7 +140,10 @@ lose the background, eidiot ivan@sisd.com 98-sep-2
 pod ivan@sisd.com 98-sep-12
 
 $Log: CGI.pm,v $
-Revision 1.3  1998-11-08 10:50:19  ivan
+Revision 1.4  1998-11-09 04:55:42  ivan
+support depriciated CGI::Base as well as CGI.pm (for now)
+
+Revision 1.3  1998/11/08 10:50:19  ivan
 s/CGI::Base/CGI/; etc.
 
 
