@@ -182,16 +182,17 @@ sub insert {
       'from'    => $conf->config('invoice_from'), #??? well as good as any
       'to'      => \@invoicing_list,
       'subject' => 'Payment receipt',
-      'body'    => $receipt_template->fill_in( HASH => {
-                     'date'    => time2str("%a %B %o, %Y", $self->_date),
-                     'paynum'  => $self->paynum,
-                     'paid'    => $self->paid,
-                     'payby'   => ucfirst(lc($self->payby)),
-                     'payinfo' => ( $self->payby eq 'CARD'
-                                      ? $self->payinfo_masked
-                                      : $self->payinfo        ),
-                     'balance' => $cust_main->balance,
-                   } ),
+      'body'    => [ $receipt_template->fill_in( HASH => {
+                       'date'    => time2str("%a %B %o, %Y", $self->_date),
+                       'name'    => $cust_main->name,
+                       'paynum'  => $self->paynum,
+                       'paid'    => $self->paid,
+                       'payby'   => ucfirst(lc($self->payby)),
+                       'payinfo' => ( $self->payby eq 'CARD'
+                                        ? $self->payinfo_masked
+                                        : $self->payinfo        ),
+                       'balance' => $cust_main->balance,
+                   } ) ],
     );
     if ( $error ) {
       warn "can't send payment receipt: $error";
