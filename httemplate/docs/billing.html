@@ -11,7 +11,7 @@
     <li>Credit card decline alerts: Customize the <a href="../config/config.cgi#declinetemplate">declinetemplate</a> configuration option and set the <a href="../config/config.cgi#emaildecline">emaildecline</a> configuration option.
     <li>Optional: Invoice template customization
       <ul>
-        <li>See the <a href="http://search.cpan.org/doc/MJD/Text-Template-1.42/Template.pm">Text::Template</a> documentation for details on the substitution language.
+        <li>See the <a href="http://search.cpan.org/~mjd/Text-Template/lib/Text/Template.pm">Text::Template</a> documentation for details on the substitution language.
         <li>You <b>must</b> call the invoice_lines() function at least once - pass it a number of lines, and it returns a list of array references, each of two elements: a service description column, and a price column.  Alternatively, call invoice_lines() with no arguments, and pagination will be disabled - all invoice line items will print on one page, with no padding (recommended for email invoices).
         <li>In addition, the following variables are available:
           <ul>
