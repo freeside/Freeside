@@ -838,7 +838,7 @@ sub replace {
         $old->getfield($_) eq ''
           #? "( $_ IS NULL OR $_ = \"\" )"
           ? ( driver_name eq 'Pg'
-                ? "$_ IS NULL"
+                ? "( $_ IS NULL OR $_ = '' )"
                 : "( $_ IS NULL OR $_ = \"\" )"
             )
           : "$_ = ". _quote($old->getfield($_),$old->table,$_)
@@ -1050,6 +1050,21 @@ sub ut_float {
    $self->getfield($field) =~ /^(\d+e\d+)$/)
     or return "Illegal or empty (float) $field: ". $self->getfield($field);
   $self->setfield($field,$1);
+  '';
+}
+
+=item ut_snumber COLUMN
+
+Check/untaint signed numeric data (whole numbers).  May not be null.  If there
+is an error, returns the error, otherwise returns false.
+
+=cut
+
+sub ut_snumber {
+  my($self, $field) = @_;
+  $self->getfield($field) =~ /^(-?)\s*(\d+)$/
+    or return "Illegal or empty (numeric) $field: ". $self->getfield($field);
+  $self->setfield($field, "$1$2");
   '';
 }
 
