@@ -384,7 +384,7 @@ $record->column('value') is a synonym for $record->set('column','value');
 sub AUTOLOAD {
   my $field = $AUTOLOAD;
   $field =~ s/.*://;
-  if ( scalar(@_) == 2 ) {
+  if ( defined($_[1]) ) {
     $_[0]->setfield($field, $_[1]);
   } else {
     $_[0]->getfield($field);
@@ -1036,12 +1036,12 @@ sub hfields {
   \%hash;
 }
 
-#sub _dump {
-#  my($self)=@_;
-#  join("\n", map {
-#    "$_: ". $self->getfield($_). "|"
-#  } (fields($self->table)) );
-#}
+sub _dump {
+  my($self)=@_;
+  join("\n", map {
+    "$_: ". $self->getfield($_). "|"
+  } (fields($self->table)) );
+}
 
 sub DESTROY { return; }
 
