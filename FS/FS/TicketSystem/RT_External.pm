@@ -3,6 +3,7 @@ package FS::TicketSystem::RT_External;
 use strict;
 use vars qw( $conf $default_queueid
              $priority_field $priority_field_queue $field );
+use URI::Escape;
 use FS::UID;
 
 install_callback FS::UID sub { 
@@ -122,6 +123,8 @@ sub _from_customer {
 sub href_customer_tickets {
   my( $self, $custnum, $priority ) = @_;
 
+  #i snarfed this from an RT bookmarked search, it could be unescaped in the
+  #source for readability and run through uri_escape
   my $href = 
     'Search/Results.html?Order=ASC&Query=%20MemberOf%20%3D%20%27freeside%3A%2F%2Ffreeside%2Fcust_main%2F'.
     $custnum.
@@ -156,10 +159,12 @@ sub href_customer_tickets {
 
 
 sub href_new_ticket {
-  my( $self, $custnum ) = @_;
+  my( $self, $custnum, $requestors ) = @_;
   'Ticket/Create.html?'.
     "Queue=$default_queueid".
-    "&new-MemberOf=freeside://freeside/cust_main/$custnum";
+    "&new-MemberOf=freeside://freeside/cust_main/$custnum".
+    ( $requestors ? '&Requestors='. uri_escape($requestors) : '' )
+    ;
 }
 
 sub href_ticket {
