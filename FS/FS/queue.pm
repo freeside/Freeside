@@ -185,9 +185,11 @@ sub check {
     || $self->ut_enum('status',['', qw( new locked failed )])
     || $self->ut_textn('statustext')
     || $self->ut_numbern('svcnum')
-    || $self->ut_foreign_keyn('svcnum', 'cust_svc', 'svcnum')
   ;
   return $error if $error;
+
+  $error = $self->ut_foreign_keyn('svcnum', 'cust_svc', 'svcnum');
+  $self->svcnum('') if $error;
 
   $self->status('new') unless $self->status;
   $self->_date(time) unless $self->_date;
@@ -287,7 +289,7 @@ END
 
 =head1 VERSION
 
-$Id: queue.pm,v 1.4 2002-02-20 01:03:09 ivan Exp $
+$Id: queue.pm,v 1.5 2002-02-22 06:39:23 ivan Exp $
 
 =head1 BUGS
 
