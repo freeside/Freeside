@@ -266,7 +266,11 @@ sub insert {
       #    qsearch('export_svc', { 'exportnum' => $part_export->exportnum });
       #}
 
-      my $nodomain = $exports->{$part_export->exporttype}{'nodomain'};
+      #my $nodomain = $exports->{$part_export->exporttype}{'nodomain'};
+      #silly kludge to avoid uninitialized value errors
+      my $nodomain = exists( $exports->{$part_export->exporttype}{'nodomain'} )
+                     ? $exports->{$part_export->exporttype}{'nodomain'}
+                     : '';
       if ( $nodomain =~ /^Y/i ) {
         $conflict_user_svcpart{$_} = $part_export->exportnum
           foreach @svcparts;
