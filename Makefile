@@ -129,6 +129,10 @@ install-docs: docs
 	[ "${TEMPLATE}" = "asp" -a ! -e ${ASP_GLOBAL} ] && mkdir ${ASP_GLOBAL} || true
 	[ "${TEMPLATE}" = "asp" ] && chown -R freeside ${ASP_GLOBAL} || true
 	[ "${TEMPLATE}" = "asp" ] && cp htetc/global.asa ${ASP_GLOBAL} || true
+	[ "${TEMPLATE}" = "asp" ] && \
+	  perl -p -i -e "\
+	    s'%%%FREESIDE_DOCUMENT_ROOT%%%'${FREESIDE_DOCUMENT_ROOT}'g; \
+	  " ${ASP_GLOBAL}/global.asa || true
 	[ "${TEMPLATE}" = "mason" ] && cp htetc/handler.pl ${MASON_HANDLER} || true
 	[ "${TEMPLATE}" = "mason" ] && \
 	  perl -p -i -e "\
