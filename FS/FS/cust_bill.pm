@@ -681,7 +681,8 @@ sub realtime_card {
     my $capture =
       new Business::OnlinePayment( $bop_processor, @bop_options );
 
-    $capture->content(
+    my %capture = (
+      type           => 'CC',
       action         => $action2,
       login          => $bop_login,
       password       => $bop_password,
@@ -689,7 +690,17 @@ sub realtime_card {
       amount         => $amount,
       authorization  => $auth,
       description    => $description,
+      card_number    => $cust_main->payinfo,
+      expiration     => $exp,
     );
+
+    foreach my $field (qw( authorization_source_code returned_ACI                                          transaction_identifier validation_code           
+                           transaction_sequence_num local_transaction_date    
+                           local_transaction_time AVS_result_code          )) {
+      $capture{$field} = $transaction->$field() if $transaction->can($field);
+    }
+
+    $capture->content( %capture );
 
     $capture->submit();
 
@@ -1101,7 +1112,7 @@ sub print_text {
 
 =head1 VERSION
 
-$Id: cust_bill.pm,v 1.40 2002-08-30 23:48:43 ivan Exp $
+$Id: cust_bill.pm,v 1.41 2002-09-05 16:51:49 ivan Exp $
 
 =head1 BUGS
 
