@@ -13,8 +13,7 @@ die "Can't find invoice!\n" unless $cust_bill;
         open(LPR,"|$lpr") or die "Can't open $lpr: $!";
 
         if ( $conf->exists('invoice_latex') ) {
-          $cust_bill->print_ps;
-          #print LPR $cust_bill->print_ps; #( date )
+          print LPR $cust_bill->print_ps; #( date )
         } else {
           print LPR $cust_bill->print_text; #( date )
         }
