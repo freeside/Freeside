@@ -43,7 +43,10 @@ Returns an HTML header.
 =cut
 
 sub header {
-  my($title,$menubar)=@_;
+  my($title,$menubar,$etc)=@_;
+  #use Carp;
+  #confess $etc if defined $etc;
+  $etc = '' unless defined $etc;
 
   my $x =  <<END;
     <HTML>
@@ -52,7 +55,7 @@ sub header {
           $title
         </TITLE>
       </HEAD>
-      <BODY BGCOLOR="#e8e8e8">
+      <BODY BGCOLOR="#e8e8e8"$etc>
           <FONT SIZE=7>
             $title
           </FONT>
@@ -124,6 +127,9 @@ sub eidiot {
   warn "eidiot depriciated";
   idiot(@_);
   if (exists $ENV{MOD_PERL}) {
+    $main::Response->End()
+      if defined $main::Response
+         && $main::Response->isa('Apache::ASP::Response');
     require Apache;
     Apache::exit();
   } else {
