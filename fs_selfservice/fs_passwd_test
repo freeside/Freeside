@@ -3,11 +3,12 @@
 use strict;
 use FS::SelfService qw(passwd);
 
-my $error = passwd(
+my $rv = passwd(
   'username' => 'ivan',
   'old_password' => 'heyhoo',
   'new_password' => 'haloo',
 );
+my $error = $rv->{error};
 
 if ( $error eq 'Incorrect password.' ) {
   exit;

@@ -16,17 +16,10 @@ use IO::Select;
 use IO::File;
 use Storable qw(nstore_fd fd_retrieve);
 use Net::SSH qw(sshopen2);
-
 use FS::UID qw(adminsuidsetup forksuidsetup);
+use FS::ClientAPI;
 
-#use Tie::RefHash;
-#use FS::Conf;
-#use FS::Record qw( qsearch qsearchs );
-#use FS::cust_main_county;
-#use FS::cust_main;
-#use FS::Msgcat qw(gettext);
-
-$Debug = 1; # >= 2 will log packet contents, including potentially compromising
+$Debug = 2; # >= 2 will log packet contents, including potentially compromising
             # information
 
 $shutdown = 0;
@@ -41,13 +34,6 @@ my $pid_file = "/var/run/freeside-selfservice-server.$user.pid";
 &init($user);
 
 my $clientd = "/usr/local/sbin/freeside-selfservice-clientd"; #better name?
-
-my %dispatch = (
-  'signup' => \&signup,
-  #'signup_init' => 'signup_init',
-  'passwd' => \&passwd,
-
-);
 
 my $warnkids=0;
 while (1) {
@@ -102,13 +88,11 @@ while (1) {
       $FS::UID::dbh->{InactiveDestroy} = 1;
       forksuidsetup($user);
 
-      my $sub = $dispatch{$packet->{_packet}};
-      my $rv;
-      if ( $sub ) {
-        warn "calling $sub handler\n" if $Debug; 
-        $rv = &{$sub}($packet);
-      } else {
-        warn my $error = "WARNING: unknown packet type ". $packet->{_packet};
+      my $type = $packet->{_packet};
+      warn "calling $type handler\n" if $Debug; 
+      my $rv = eval { FS::ClientAPI->dispatch($type, $packet); };
+      if ( $@ ) {
+        warn my $error = "WARNING: error dispatching $type: $@";
         $rv = { _error => $error };
       }
       $rv->{_token} = $packet->{_token}; #identifier
@@ -124,50 +108,6 @@ while (1) {
     }
 
   }
-
-}
-
-###
-# dispatch subroutines (should live elsewhere eventually)
-###
-
-sub passwd {
-  #sleep 3;
-  use FS::Record qw(qsearchs);
-  use FS::svc_acct;
-  #use FS::svc_domain;
-
-  my $packet = shift;
-
-  #my $domain = qsearchs('svc_domain', { 'domain' => $packet->{'domain'} } )
-  #  or return { error => "Domain $domain not found" };
-
-  my $old_password = $packet->{'old_password'};
-  my $new_password = $packet->{'new_password'};
-  my $new_gecos = $packet->{'new_gecos'};
-  my $new_shell = $packet->{'new_shell'};
-
-  my $svc_acct =
-    ( length($old_password) < 13
-      && qsearchs( 'svc_acct', { 'username'  => $packet->{'username'},
-                                 #'domsvc'    => $svc_domain->domsvc,
-                                 '_password' => $old_password } )
-    )
-    || qsearchs( 'svc_acct', { 'username'  => $packet->{'username'},
-                               #'domsvc'    => $svc_domain->domsvc,
-                               '_password' => $old_password } );
-
-  unless ( $svc_acct ) { return { error => 'Incorrect password.' } }
-
-  my %hash = $svc_acct->hash;
-  my $new_svc_acct = new FS::svc_acct ( \%hash );
-  $new_svc_acct->setfield('_password', $new_password ) 
-    if $new_password && $new_password ne $old_password;
-  $new_svc_acct->setfield('finger',$new_gecos) if $new_gecos;
-  $new_svc_acct->setfield('shell',$new_shell) if $new_shell;
-  my $error = $new_svc_acct->replace($svc_acct);
-
-  return { error => $error };
 
 }
 

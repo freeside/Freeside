@@ -1,7 +1,7 @@
 package FS::SelfService;
 
 use strict;
-use vars qw($VERSION @ISA @EXPORT_OK $socket);
+use vars qw($VERSION @ISA @EXPORT_OK $socket %autoload );
 use Exporter;
 use Socket;
 use FileHandle;
@@ -12,9 +12,18 @@ use Storable qw(nstore_fd fd_retrieve);
 $VERSION = '0.03';
 
 @ISA = qw( Exporter );
-@EXPORT_OK = qw( passwd );
 
 $socket =  "/usr/local/freeside/selfservice_socket";
+
+%autoload = (
+  'passwd'        => 'passwd/passwd',
+  'chfn'          => 'passwd/passwd',
+  'chsh'          => 'passwd/passwd',
+  'login'         => 'MyAccount/login',
+  'customer_info' => 'MyAccount/customer_info',
+  'invoice'       => 'MyAccount/invoice',
+);
+@EXPORT_OK = keys %autoload;
 
 $ENV{'PATH'} ='/usr/bin:/usr/ucb:/bin';
 $ENV{'SHELL'} = '/bin/sh';
@@ -49,17 +58,25 @@ Returns the empty value on success, or an error message on errors.
 
 =cut
 
-sub passwd {
-  my $param;
-  if ( ref($_[0]) ) {
-    $param = shift;
-  } else {
-    $param = { @_ };
-  }
+foreach my $autoload ( keys %autoload ) {
 
-  $param->{_packet} = 'passwd';
+  my $eval =
+  "sub $autoload { ". '
+                   my $param;
+                   if ( ref($_[0]) ) {
+                     $param = shift;
+                   } else {
+                     $param = { @_ };
+                   }
 
-  simple_packet($param);
+                   $param->{_packet} = \''. $autoload{$autoload}. '\';
+
+                   simple_packet($param);
+                 }';
+
+  eval $eval;
+  die $@ if $@;
+
 }
 
 sub simple_packet {
@@ -78,7 +95,7 @@ sub simple_packet {
   my $return = fd_retrieve(\*SOCK) or die "error reading result: $!";
   die $return->{'_error'} if defined $return->{_error} && $return->{_error};
 
-  $return->{'error'};
+  $return;
 }
 
 =back

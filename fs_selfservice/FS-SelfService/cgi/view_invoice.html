@@ -1,0 +1,21 @@
+<HTML><HEAD><TITLE>MyAccount</TITLE></HEAD>
+<BODY BGCOLOR="#eeeeee"><FONT SIZE=5>MyAccount</FONT><BR><BR>
+<%= $url = "$selfurl?session=$session_id;action="; ''; %>
+<TABLE BORDER=0 CELLPADDING=4><TR><TD VALIGN="top" HEIGHT=384 BGCOLOR="#dddddd">
+<A HREF="<%= $url %>myaccount">MyAccount</A><BR>
+<A HREF="<%= $url %>other">SomethingElse</A><BR>
+</TD><TD VALIGN="top">
+
+<A HREF="<%= $url %>myaccount"><-- back to MyAccount</A><BR><BR>
+
+<FONT SIZE="-1"><PRE>
+<%= $invoice_text %>
+</FONT></PRE>
+
+</TD></TR></TABLE>
+<HR>
+<FONT SIZE="-2">small text</FONT>
+</BODY></HTML>
+
+
+
