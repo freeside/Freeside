@@ -539,6 +539,8 @@ sub tables_hash_hack {
         'exempt_amount', @money_type,
         'tax',      'real',  '',    '', #tax %
         'taxname',  'varchar',  'NULL',    $char_d,
+        'setuptax',  'char', 'NULL', 1, # Y = setup tax exempt
+        'recurtax',  'char', 'NULL', 1, # Y = recur tax exempt
       ],
       'primary_key' => 'taxnum',
       'unique' => [],
