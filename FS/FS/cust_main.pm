@@ -608,6 +608,9 @@ sub bill {
     my $setup = 0;
     unless ( $cust_pkg->setup ) {
       my $setup_prog = $part_pkg->getfield('setup');
+      $setup_prog =~ /^(.*)$/ #presumably trusted
+        or die "Illegal setup for package ". $cust_pkg->pkgnum. ": $setup_prog";
+      $setup_prog = $1;
       my $cpt = new Safe;
       #$cpt->permit(); #what is necessary?
       $cpt->share(qw( $cust_pkg )); #can $cpt now use $cust_pkg methods?
@@ -629,6 +632,9 @@ sub bill {
          ( $cust_pkg->getfield('bill') || 0 ) < $time
     ) {
       my $recur_prog = $part_pkg->getfield('recur');
+      $recur_prog =~ /^(.*)$/ #presumably trusted
+        or die "Illegal recur for package ". $cust_pkg->pkgnum. ": $recur_prog";
+      $recur_prog = $1;
       my $cpt = new Safe;
       #$cpt->permit(); #what is necessary?
       $cpt->share(qw( $cust_pkg )); #can $cpt now use $cust_pkg methods?
@@ -1119,7 +1125,7 @@ sub check_invoicing_list {
 
 =head1 VERSION
 
-$Id: cust_main.pm,v 1.13 2001-05-07 02:07:38 ivan Exp $
+$Id: cust_main.pm,v 1.14 2001-06-03 10:51:54 ivan Exp $
 
 =head1 BUGS
 
