@@ -39,6 +39,8 @@ sub _export_replace {
                 || $old->finger ne $new->finger
                 || $old->quota ne $new->quota;
 
+  return '' if '*SUSPENDED* '. $old->_password eq $new->_password;
+
   #my $err_or_queue = $self->communigate_pro_queue( $new->svcnum,'RenameAccount',
   #  $old->email, $new->email );
   #return $err_or_queue unless ref($err_or_queue);
