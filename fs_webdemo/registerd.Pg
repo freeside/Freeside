@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 #
-# $Id: registerd.Pg,v 1.9 2001-04-26 02:28:40 ivan Exp $
+# $Id: registerd.Pg,v 1.10 2001-09-30 07:55:52 ivan Exp $
 
 use strict;
 use vars qw(
@@ -184,6 +184,8 @@ while ( 1 ) {
     "\n",
     "Your sample Freeside database has been setup.\n",
     "\n",
+    "Your login and database will be automatically deleted in 1-2 months.\n",
+    "\n",        
     "Point your web browswer at http://freeside.sisd.com/ and use the following\n",
     "authentication information:\n",
     "\n",
