@@ -674,9 +674,8 @@ tie my %sqlmail_options, 'Tie::IxHash',
     },
 
     'shellcommands_withdomain' => {
-      'desc' => 'Real-time export via remote SSH,',
+      'desc' => 'Real-time export via remote SSH.',
       'options' => \%shellcommands_withdomain_options,
-      'nodomain' => 'Y',
       'notes' => 'Run remote commands via SSH.  username@domain (rather than just usernames) are considered unique (also see shellcommands)',
     },
 
