@@ -119,9 +119,27 @@ $ su
 </ul>
 <table>
   <tr>
-    <th>Apache::ASP</th><th>Mason</th>
+    <th>Mason (recommended)</th><th>Apache::ASP (deprecated)</th>
   </tr>
   <tr>
+
+    <td valign="top"><ul>
+      <li>Configure Apache:
+<font size="-1"><pre>
+PerlModule HTML::Mason
+# your freeside docuemnt root
+&lt;Directory&nbsp;/var/www/freeside&gt;
+&lt;Files ~ (\.cgi|\.html)&gt;
+AddHandler perl-script .cgi .html
+PerlHandler HTML::Mason
+&lt;/Files&gt;
+&lt;Perl&gt;
+require&nbsp;"/usr/local/etc/freeside/handler.pl";
+&lt;/Perl&gt;
+&lt;/Directory&gt;
+</pre></font>
+    </ul></td>
+
     <td valign="top"><ul>
       <li>Configure Apache:
 <font size="-1"><pre>
@@ -143,22 +161,7 @@ PerlSetVar&nbsp;IncludesDir&nbsp;/var/www/freeside
 &lt;/Directory&gt;
 </pre></font>
     </ul></td>
-    <td valign="top"><ul>
-      <li>Configure Apache:
-<font size="-1"><pre>
-PerlModule HTML::Mason
-# your freeside docuemnt root
-&lt;Directory&nbsp;/var/www/freeside&gt;
-&lt;Files ~ (\.cgi|\.html)&gt;
-AddHandler perl-script .cgi .html
-PerlHandler HTML::Mason
-&lt;/Files&gt;
-&lt;Perl&gt;
-require&nbsp;"/usr/local/etc/freeside/handler.pl";
-&lt;/Perl&gt;
-&lt;/Directory&gt;
-</pre></font>
-    </ul></td>
+
   </tr>
 </table>
 <ul>
