@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: agent_type.cgi,v 1.9 1999-01-19 05:13:32 ivan Exp $
+# $Id: agent_type.cgi,v 1.10 1999-01-25 12:09:51 ivan Exp $
 #
 # agent_type.cgi: Add/Edit agent type (output form)
 #
@@ -13,7 +13,10 @@
 # use FS::CGI, added inline documentation ivan@sisd.com 98-jul-12
 #
 # $Log: agent_type.cgi,v $
-# Revision 1.9  1999-01-19 05:13:32  ivan
+# Revision 1.10  1999-01-25 12:09:51  ivan
+# yet more mod_perl stuff
+#
+# Revision 1.9  1999/01/19 05:13:32  ivan
 # for mod_perl: no more top-level my() variables; use vars instead
 # also the last s/create/new/;
 #
@@ -46,7 +49,7 @@ use vars qw( $cgi $agent_type $action $hashref $p $part_pkg );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
-use FS::Record qw(qsearch qsearchs);
+use FS::Record qw(qsearch qsearchs fields);
 use FS::agent_type;
 use FS::CGI qw(header menubar popurl);
 use FS::agent_type;
@@ -57,24 +60,32 @@ $cgi = new CGI;
 
 &cgisuidsetup($cgi);
 
-if ( $cgi->keywords ) { #editing
+if ( $cgi->param('error') ) {
+  $agent_type = new FS::agent_type ( {
+    map { $_, scalar($cgi->param($_)) } fields('agent')
+  } );
+} elsif ( $cgi->keywords ) { #editing
   my( $query ) = $cgi->keywords;
   $query =~ /^(\d+)$/;
   $agent_type=qsearchs('agent_type',{'typenum'=>$1});
-  $action='Edit';
 } else { #adding
   $agent_type = new FS::agent_type {};
-  $action='Add';
 }
+$action = $agent_type->typenum ? 'Edit' : 'Add';
 $hashref = $agent_type->hashref;
 
 $p = popurl(2);
 print $cgi->header( '-expires' => 'now' ), header("$action Agent Type", menubar(
   'Main Menu' => "$p",
   'View all agent types' => "${p}browse/agent_type.cgi",
-)), '<FORM ACTION="', popurl(1), 'process/agent_type.cgi" METHOD=POST>';
+));
 
-print qq!<INPUT TYPE="hidden" NAME="typenum" VALUE="$hashref->{typenum}">!,
+print qq!<FONT SIZE="+1" COLOR="#ff0000">Error: !, $cgi->param('error'),
+      "</FONT>"
+  if $cgi->param('error');
+
+print '<FORM ACTION="', popurl(1), 'process/agent_type.cgi" METHOD=POST>',
+      qq!<INPUT TYPE="hidden" NAME="typenum" VALUE="$hashref->{typenum}">!,
       "Agent Type #", $hashref->{typenum} ? $hashref->{typenum} : "(NEW)";
 
 print <<END;

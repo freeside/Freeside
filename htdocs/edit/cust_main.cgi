@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main.cgi,v 1.7 1999-01-19 05:13:34 ivan Exp $
+# $Id: cust_main.cgi,v 1.8 1999-01-25 12:09:53 ivan Exp $
 #
 # Usage: cust_main.cgi custnum
 #        http://server.name/path/cust_main.cgi?custnum
@@ -40,7 +40,10 @@
 # fixed one missed day->daytime ivan@sisd.com 98-jul-13
 #
 # $Log: cust_main.cgi,v $
-# Revision 1.7  1999-01-19 05:13:34  ivan
+# Revision 1.8  1999-01-25 12:09:53  ivan
+# yet more mod_perl stuff
+#
+# Revision 1.7  1999/01/19 05:13:34  ivan
 # for mod_perl: no more top-level my() variables; use vars instead
 # also the last s/create/new/;
 #
@@ -62,11 +65,11 @@ use strict;
 use vars qw( $cgi $custnum $action $cust_main $p1 @agents $agentnum 
              $last $first $ss $company $address1 $address2 $city $zip 
              $daytime $night $fax @invoicing_list $invoicing_list $payinfo
-             $payname %payby %paybychecked $refnum $otaker );
+             $payname %payby %paybychecked $refnum $otaker $r );
 use CGI::Switch;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup getotaker);
-use FS::Record qw(qsearch qsearchs);
+use FS::Record qw(qsearch qsearchs fields);
 use FS::CGI qw(header popurl itable table);
 use FS::cust_main;
 
@@ -75,24 +78,31 @@ cgisuidsetup($cgi);
 
 #get record
 
-if ( $cgi->keywords ) { #editing
+if ( $cgi->param('error') ) {
+  $cust_main = new FS::cust_main ( {
+    map { $_, scalar($cgi->param($_)) } fields('cust_main')
+  } );
+  $custnum = $cust_main->custnum;
+} elsif ( $cgi->keywords ) { #editing
   my( $query ) = $cgi->keywords;
   $query =~ /^(\d+)$/;
   $custnum=$1;
   $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } );
-  $action='Edit';
 } else {
   $custnum='';
   $cust_main = new FS::cust_main ( {} );
   $cust_main->setfield('otaker',&getotaker);
-  $action='Add';
 }
+$action = $custnum ? 'Edit' : 'Add';
 
 # top
 
 $p1 = popurl(1);
-print $cgi->header( '-expires' => 'now' ), header("Customer $action", ''),
-      qq!<FORM ACTION="${p1}process/cust_main.cgi" METHOD=POST>!,
+print $cgi->header( '-expires' => 'now' ), header("Customer $action", '');
+print qq!<FONT SIZE="+1" COLOR="#ff0000">Error: !, $cgi->param('error'),
+      "</FONT>"
+  if $cgi->param('error');
+print qq!<FORM ACTION="${p1}process/cust_main.cgi" METHOD=POST>!,
       qq!<INPUT TYPE="hidden" NAME="custnum" VALUE="$custnum">!,
       qq!Customer # !, ( $custnum ? $custnum : " (NEW)" ),
       
@@ -100,21 +110,49 @@ print $cgi->header( '-expires' => 'now' ), header("Customer $action", ''),
 
 # agent
 
+$r = qq!<font color="#ff0000">*</font>!;
+
 @agents = qsearch( 'agent', {} );
 $agentnum = $cust_main->agentnum || $agents[0]->agentnum; #default to first
 if ( scalar(@agents) == 1 ) {
   print qq!<INPUT TYPE="hidden" NAME="agentnum" VALUE="$agentnum">!;
 } else {
-  print qq!<BR><BR>Agent <SELECT NAME="agentnum" SIZE="1">!;
+  print qq!<BR><BR>${r}Agent <SELECT NAME="agentnum" SIZE="1">!;
   my $agent;
   foreach $agent (sort {
     $a->agent cmp $b->agent;
   } @agents) {
-      print "<OPTION" . " SELECTED"x($agent->agentnum==$agentnum),
+      print '<OPTION VALUE="', $agent->agentnum, '"',
+      " SELECTED"x($agent->agentnum==$agentnum),
       ">", $agent->agentnum,": ", $agent->agent;
   }
   print "</SELECT>";
 }
+
+#referral
+
+$refnum = $cust_main->refnum || 0;
+if ( $custnum ) {
+  print qq!<INPUT TYPE="hidden" NAME="refnum" VALUE="$refnum">!;
+} else {
+  my(@referrals) = qsearch('part_referral',{});
+  if ( scalar(@referrals) == 1 ) {
+    $refnum ||= $referrals[0]->refnum;
+    print qq!<INPUT TYPE="hidden" NAME="refnum" VALUE="$refnum">!;
+  } else {
+    print qq!<BR>${r}Referral <SELECT NAME="refnum" SIZE="1">!;
+    print "<OPTION> ";
+    my($referral);
+    foreach $referral (sort {
+      $a->refnum <=> $b->refnum;
+    } @referrals) {
+      print "<OPTION" . " SELECTED"x($referral->refnum==$refnum),
+      ">", $referral->refnum, ": ", $referral->referral;
+    }
+    print "</SELECT>";
+  }
+}
+
 
 # contact info
 
@@ -130,11 +168,11 @@ if ( scalar(@agents) == 1 ) {
 );
 
 print "<BR><BR>Contact information", itable("#c0c0c0"), <<END;
-<TR><TH ALIGN="right">Contact name<BR>(last, first)</TH><TD COLSPAN=3><INPUT TYPE="text" NAME="last" VALUE="$last">, <INPUT TYPE="text" NAME="first" VALUE="$first"></TD><TD ALIGN="right">SS#</TD><TD><INPUT TYPE="text" NAME="ss" VALUE="$ss" SIZE=11></TD></TR>
+<TR><TH ALIGN="right">${r}Contact name<BR>(last, first)</TH><TD COLSPAN=3><INPUT TYPE="text" NAME="last" VALUE="$last">, <INPUT TYPE="text" NAME="first" VALUE="$first"></TD><TD ALIGN="right">SS#</TD><TD><INPUT TYPE="text" NAME="ss" VALUE="$ss" SIZE=11></TD></TR>
 <TR><TD ALIGN="right">Company</TD><TD COLSPAN=5><INPUT TYPE="text" NAME="company" VALUE="$company" SIZE=70></TD></TR>
-<TR><TH ALIGN="right">Address</TH><TD COLSPAN=5><INPUT TYPE="text" NAME="address1" VALUE="$address1" SIZE=70></TH></TR>
+<TR><TH ALIGN="right">${r}Address</TH><TD COLSPAN=5><INPUT TYPE="text" NAME="address1" VALUE="$address1" SIZE=70></TD></TR>
 <TR><TD ALIGN="right">&nbsp;</TD><TD COLSPAN=5><INPUT TYPE="text" NAME="address2" VALUE="$address2" SIZE=70></TD></TR>
-<TR><TH ALIGN="right">City</TH><TD><INPUT TYPE="text" NAME="city" VALUE="$city"><TH ALIGN="right">State/Country</TH><TD><SELECT NAME="state" SIZE="1">
+<TR><TH ALIGN="right">${r}City</TH><TD><INPUT TYPE="text" NAME="city" VALUE="$city"><TH ALIGN="right">${r}State/Country</TH><TD><SELECT NAME="state" SIZE="1">
 END
 
 $cust_main->country('US') unless $cust_main->country; #eww
@@ -148,7 +186,7 @@ foreach ( qsearch('cust_main_county',{}) ) {
   print " (",$_->county,")" if $_->county;
   print " / ", $_->country;
 }
-print qq!</SELECT></TD><TH>Zip</TH><TD><INPUT TYPE="text" NAME="zip" VALUE="$zip" SIZE=10></TD></TR>!;
+print qq!</SELECT></TD><TH>${r}Zip</TH><TD><INPUT TYPE="text" NAME="zip" VALUE="$zip" SIZE=10></TD></TR>!;
 
 ($daytime,$night,$fax)=(
   $cust_main->daytime,
@@ -162,7 +200,7 @@ print <<END;
 <TR><TD ALIGN="right">Fax</TD><TD COLSPAN=5><INPUT TYPE="text" NAME="fax" VALUE="$fax" SIZE=12></TD></TR>
 END
 
-print "</TABLE>";
+print "</TABLE>$r designates required fields<BR>";
 
 # billing info
 
@@ -195,18 +233,18 @@ sub expselect {
 print "<BR>Billing information", itable("#c0c0c0"),
       qq!<TR><TD><INPUT TYPE="checkbox" NAME="tax" VALUE="Y"!;
 print qq! CHECKED! if $cust_main->tax eq "Y";
-print qq!>Tax Exempt!;
-print qq!</TD></TR><TR><TD><INPUT TYPE="checkbox" NAME="invoicing_list_POST" VALUE="POST"!;
+print qq!>Tax Exempt</TD></TR>!;
+print qq!<TR><TD><INPUT TYPE="checkbox" NAME="invoicing_list_POST" VALUE="POST"!;
 @invoicing_list = $cust_main->invoicing_list;
 print qq! CHECKED!
   if ! @invoicing_list || grep { $_ eq 'POST' } @invoicing_list;
-print qq!> Postal mail invoice!;
+print qq!>Postal mail invoice</TD></TR>!;
 $invoicing_list = join(', ', grep { $_ ne 'POST' } @invoicing_list );
-print qq!</TD></TR><TR><TD>Email invoice <INPUT TYPE="text" NAME="invoicing_list" VALUE="$invoicing_list"></TD>!;
+print qq!<TR><TD>Email invoice <INPUT TYPE="text" NAME="invoicing_list" VALUE="$invoicing_list"></TD></TR>!;
 
-print "</TD></TR></TABLE>";
-
-print table("#c0c0c0"), "<TR>";
+print "<TR><TD>Billing type</TD></TR>",
+      "</TABLE>",
+      table("#c0c0c0"), "<TR>";
 
 ($payinfo, $payname)=(
   $cust_main->payinfo,
@@ -214,14 +252,14 @@ print table("#c0c0c0"), "<TR>";
 );
 
 %payby = (
-  'CARD' => qq!Credit card<BR><INPUT TYPE="text" NAME="CARD_payinfo" VALUE="" MAXLENGTH=19><BR>Exp !. expselect("CARD"). qq!<BR>Name on card<BR><INPUT TYPE="text" NAME="CARD_payname" VALUE="">!,
-  'BILL' => qq!Billing<BR>P.O. <INPUT TYPE="text" NAME="BILL_payinfo" VALUE=""><BR>Exp !. expselect("BILL", "12-2037"). qq!<BR>Attention<BR><INPUT TYPE="text" NAME="BILL_payname" VALUE="Accounts Payable">!,
-  'COMP' => qq!Complimentary<BR>Approved by<INPUT TYPE="text" NAME="COMP_payinfo" VALUE=""><BR>Exp !. expselect("COMP"),
+  'CARD' => qq!Credit card<BR>${r}<INPUT TYPE="text" NAME="CARD_payinfo" VALUE="" MAXLENGTH=19><BR>${r}Exp !. expselect("CARD"). qq!<BR>${r}Name on card<BR><INPUT TYPE="text" NAME="CARD_payname" VALUE="">!,
+  'BILL' => qq!Billing<BR>P.O. <INPUT TYPE="text" NAME="BILL_payinfo" VALUE=""><BR>${r}Exp !. expselect("BILL", "12-2037"). qq!<BR>${r}Attention<BR><INPUT TYPE="text" NAME="BILL_payname" VALUE="Accounts Payable">!,
+  'COMP' => qq!Complimentary<BR>${r}Approved by<INPUT TYPE="text" NAME="COMP_payinfo" VALUE=""><BR>${r}Exp !. expselect("COMP"),
 );
 %paybychecked = (
-  'CARD' => qq!Credit card<BR><INPUT TYPE="text" NAME="CARD_payinfo" VALUE="$payinfo" MAXLENGTH=19><BR>Exp !. expselect("CARD", $cust_main->paydate). qq!<BR>Name on card<BR><INPUT TYPE="text" NAME="CARD_payname" VALUE="$payname">!,
-  'BILL' => qq!Billing<BR>P.O. <INPUT TYPE="text" NAME="BILL_payinfo" VALUE="$payinfo"><BR>Exp !. expselect("BILL", $cust_main->paydate). qq!<BR>Attention<BR><INPUT TYPE="text" NAME="BILL_payname" VALUE="$payname">!,
-  'COMP' => qq!Complimentary<BR>Approved by<INPUT TYPE="text" NAME="COMP_payinfo" VALUE="$payinfo"><BR>Exp !. expselect("COMP", $cust_main->paydate),
+  'CARD' => qq!Credit card<BR>${r}<INPUT TYPE="text" NAME="CARD_payinfo" VALUE="$payinfo" MAXLENGTH=19><BR>${r}Exp !. expselect("CARD", $cust_main->paydate). qq!<BR>${r}Name on card<BR><INPUT TYPE="text" NAME="CARD_payname" VALUE="$payname">!,
+  'BILL' => qq!Billing<BR>P.O. <INPUT TYPE="text" NAME="BILL_payinfo" VALUE="$payinfo"><BR>${r}Exp !. expselect("BILL", $cust_main->paydate). qq!<BR>${r}Attention<BR><INPUT TYPE="text" NAME="BILL_payname" VALUE="$payname">!,
+  'COMP' => qq!Complimentary<BR>${r}Approved by<INPUT TYPE="text" NAME="COMP_payinfo" VALUE="$payinfo"><BR>${r}Exp !. expselect("COMP", $cust_main->paydate),
 );
 for (qw(CARD BILL COMP)) {
   print qq!<TD VALIGN=TOP><INPUT TYPE="radio" NAME="payby" VALUE="$_"!;
@@ -232,26 +270,8 @@ for (qw(CARD BILL COMP)) {
   }
 }
 
-print "</TR></TABLE>";
+print "</TR></TABLE>$r designates required fields for each billing type";
 
-#referral
-
-$refnum = $cust_main->refnum || 0;
-if ( $custnum ) {
-  print qq!<INPUT TYPE="hidden" NAME="refnum" VALUE="$refnum">!;
-} else {
-  my(@referrals) = qsearch('part_referral',{});
-  print qq!<BR>Referral <SELECT NAME="refnum" SIZE="1">!;
-  print "<OPTION> ";
-  my($referral);
-  foreach $referral (sort {
-    $a->refnum <=> $b->refnum;
-  } @referrals) {
-    print "<OPTION" . " SELECTED"x($referral->refnum==$refnum),
-    ">", $referral->refnum, ": ", $referral->referral;
-  }
-  print "</SELECT>";
-}
 
 $otaker = $cust_main->otaker;
 print qq!<INPUT TYPE="hidden" NAME="otaker" VALUE="$otaker">!,

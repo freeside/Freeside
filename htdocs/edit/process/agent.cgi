@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: agent.cgi,v 1.6 1999-01-19 05:13:47 ivan Exp $
+# $Id: agent.cgi,v 1.7 1999-01-25 12:09:57 ivan Exp $
 #
 # ivan@sisd.com 97-dec-12
 #
@@ -10,7 +10,10 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: agent.cgi,v $
-# Revision 1.6  1999-01-19 05:13:47  ivan
+# Revision 1.7  1999-01-25 12:09:57  ivan
+# yet more mod_perl stuff
+#
+# Revision 1.6  1999/01/19 05:13:47  ivan
 # for mod_perl: no more top-level my() variables; use vars instead
 # also the last s/create/new/;
 #
@@ -34,7 +37,7 @@ use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
 use FS::Record qw(qsearch qsearchs fields);
 use FS::agent;
-use FS::CGI qw(idiot popurl);
+use FS::CGI qw(popurl);
 
 $cgi = new CGI;
 
@@ -43,10 +46,6 @@ $cgi = new CGI;
 $agentnum = $cgi->param('agentnum');
 
 $old = qsearchs('agent',{'agentnum'=>$agentnum}) if $agentnum;
-
-#unmunge typenum
-$cgi->param('typenum') =~ /^(\d+)(:.*)?$/;
-$cgi->param('typenum',$1);
 
 $new = new FS::agent ( {
   map {
@@ -62,7 +61,8 @@ if ( $agentnum ) {
 }
 
 if ( $error ) {
-  &idiot($error);
+  $cgi->param('error', $error);
+  print $cgi->redirect(popurl(2). "agent.cgi?". $cgi->query_string );
 } else { 
   print $cgi->redirect(popurl(3). "browse/agent.cgi");
 }

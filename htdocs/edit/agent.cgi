@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: agent.cgi,v 1.5 1999-01-19 05:13:31 ivan Exp $
+# $Id: agent.cgi,v 1.6 1999-01-25 12:09:50 ivan Exp $
 #
 # ivan@sisd.com 97-dec-12
 #
@@ -11,7 +11,10 @@
 # use FS::CGI, added inline documentation ivan@sisd.com 98-jul-12
 #
 # $Log: agent.cgi,v $
-# Revision 1.5  1999-01-19 05:13:31  ivan
+# Revision 1.6  1999-01-25 12:09:50  ivan
+# yet more mod_perl stuff
+#
+# Revision 1.5  1999/01/19 05:13:31  ivan
 # for mod_perl: no more top-level my() variables; use vars instead
 # also the last s/create/new/;
 #
@@ -27,12 +30,12 @@
 #
 
 use strict;
-use vars qw ( $cgi $agent $action $query $hashref $p $agent_type );
+use vars qw ( $cgi $agent $action $hashref $p $agent_type );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
 use FS::CGI qw(header menubar popurl);
-use FS::Record qw(qsearch qsearchs);
+use FS::Record qw(qsearch qsearchs fields);
 use FS::agent;
 use FS::agent_type;
 
@@ -40,14 +43,18 @@ $cgi = new CGI;
 
 &cgisuidsetup($cgi);
 
-($query) = $cgi->keywords;
-if ( $query =~ /^(\d+)$/ ) { #editing
-  $agent=qsearchs('agent',{'agentnum'=>$1});
-  $action='Edit';
+if ( $cgi->param('error') ) {
+  $agent = new FS::agent ( {
+    map { $_, scalar($cgi->param($_)) } fields('agent')
+  } );
+} elsif ( $cgi->keywords ) {
+  my($query) = $cgi->keywords;
+  $query =~ /^(\d+)$/;
+  $agent = qsearchs( 'agent', { 'agentnum' => $1 } );
 } else { #adding
   $agent = new FS::agent {};
-  $action='Add';
 }
+$action = $agent->agentnum ? 'Edit' : 'Add';
 $hashref = $agent->hashref;
 
 $p = popurl(2);
@@ -55,9 +62,14 @@ $p = popurl(2);
 print $cgi->header( '-expires' => 'now' ), header("$action Agent", menubar(
   'Main Menu' => $p,
   'View all agents' => $p. 'browse/agent.cgi',
-)), '<FORM ACTION="', popurl(1), 'process/agent.cgi" METHOD=POST>';
+));
 
-print qq!<INPUT TYPE="hidden" NAME="agentnum" VALUE="$hashref->{agentnum}">!,
+print qq!<FONT SIZE="+1" COLOR="#ff0000">Error: !, $cgi->param('error'),
+      "</FONT>"
+  if $cgi->param('error');
+
+print '<FORM ACTION="', popurl(1), 'process/agent.cgi" METHOD=POST>',
+      qq!<INPUT TYPE="hidden" NAME="agentnum" VALUE="$hashref->{agentnum}">!,
       "Agent #", $hashref->{agentnum} ? $hashref->{agentnum} : "(NEW)";
 
 print <<END;
@@ -67,7 +79,7 @@ Agent type                <SELECT NAME="typenum" SIZE=1>
 END
 
 foreach $agent_type (qsearch('agent_type',{})) {
-  print "<OPTION";
+  print "<OPTION VALUE=". $agent_type->typenum;
   print " SELECTED"
     if $hashref->{typenum} == $agent_type->getfield('typenum');
   print ">", $agent_type->getfield('typenum'), ": ",

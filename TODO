@@ -1,4 +1,4 @@
-$Id: TODO,v 1.19 1999-01-18 23:05:00 ivan Exp $
+$Id: TODO,v 1.20 1999-01-25 12:09:48 ivan Exp $
 
 If you are interested in helping with any of these, please join the mailing
 list (send a blank message to ivan-freeside-subscribe@sisd.com) to avoid 
@@ -6,18 +6,9 @@ duplication of effort.
 
 -- before 1.2b1 --
 
+Can't use [e]idiot with mod_perl.
+
 Lay out the forms a bit better.
-
-view/cust_main.cgi should show country
-
-add doc on mod_perl: upgrade to current CGI.pm
-doc Apache::AuthDBI as well
-
-FS::cust_pkg _require_'s FS::$svc, but this won't work with %FS::UID::callback
-loading of configuration.  (pry need same idea, but will run immediately if
-context allows).  Looks like error is masked by 'use FS::cust_svc' which in
-turn 'use's FS::{svc_acct, svc_acct_sm, svc_domain}' which is now explicit
-w/comments in source
 
 libwww regression test - since it will create sample data, can also use this
 for the web demo
@@ -41,10 +32,23 @@ associated with any agent types so it won't show up for other customers to buy.
 (but also... make sure they go away when the customer does! - need this? :
  one-off package edits! : need a cust_pkgs or cust_part_pkgs or something table,
  with custnum and partpkg (like type_pkgs)
+(what happens if you hit "custom pricing" but the pricing is already custom?)
 
 update site_perl/table_template* (pry out of date)
 
+update web demo
+
 -- before or after ---
+
+FS::cust_pkg _require_'s FS::$svc, but this won't work with %FS::UID::callback
+loading of configuration.  (pry need same idea, but will run immediately if
+context allows).  Looks like error is masked by 'use FS::cust_svc' which in
+turn 'use's FS::{svc_acct, svc_acct_sm, svc_domain}' which is now explicit
+w/comments in source
+
+Allow a cancelled/suspended/active status from packages to bubble up to
+the customer lists.  Put active, then suspended, then cancelled accounts.
+Similar ordering on the package listing inside a single customer.
 
 svc_domain.pm mail sending uses Date::Format which doesn't seem to pick up 
 correct timezone.
@@ -61,6 +65,19 @@ site_perl/svc_domain.cgi (hmm... or maybe should have a button?  or maybe svc_do
 (callback stuff should be eliminated by now)
 
 -- after --
+
+bah, table/itable/*table in FS::CGI is silly.
+
+doc Apache::AuthDBI as well
+..
+Provide sample httpd.conf files.
+
+hey look: Tie::DBI!  Check that out.  Override its commit with something that
+does perl-side caching for ? a performance improvement and as an emulation
+layer to plug in f.ex mysql's atomic transactions
+..
+Record.pm uses does some non-portable DBI things.  MySQL and Pg seem fine.
+Fix it anyway unless we migrate to Tie::DBI.
 
 faq
 
@@ -366,6 +383,13 @@ transactions or atomic updates).  Or just require a RDBMS that supports
 rollback and/or atomic updates and get rid of the work-arounds?  The /rdb
 interface had this kludge on top of it but is a technical dead-end in most
 other ways, unless it can gain an SQL parser and DBD interface.
+...
+if i'm really bored, find the /rdb interface in fsold and port it to NoSQL,
+and while I'm add it add interfaces for AnyDBM_File tied hash.. hmm.  Shouldn't
+an FS::Record have something to do with a tied hash?  But we don't want
+performance to go gaga... maybe something with commit to help out here?
+...
+Ok: FS::Record gives you a tied hash, and you get methods for commit, etc.
 
 Better automated comparison of our CC records with processors (CyberCash,
 at least, has not always had 100% accuracy, though recent versions are

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_pay.cgi,v 1.4 1999-01-19 05:13:37 ivan Exp $
+# $Id: cust_pay.cgi,v 1.5 1999-01-25 12:09:56 ivan Exp $
 #
 # Usage: cust_pay.cgi invnum
 #        http://server.name/path/cust_pay.cgi?invnum
@@ -14,7 +14,10 @@
 # rewrite ivan@sisd.com 98-mar-16
 #
 # $Log: cust_pay.cgi,v $
-# Revision 1.4  1999-01-19 05:13:37  ivan
+# Revision 1.5  1999-01-25 12:09:56  ivan
+# yet more mod_perl stuff
+#
+# Revision 1.4  1999/01/19 05:13:37  ivan
 # for mod_perl: no more top-level my() variables; use vars instead
 # also the last s/create/new/;
 #
@@ -27,7 +30,7 @@
 #
 
 use strict;
-use vars qw( $cgi $query $invnum $p1 $date $payby $payinfo );
+use vars qw( $cgi $invnum $p1 $_date $payby $payinfo $paid );
 use Date::Format;
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
@@ -37,32 +40,42 @@ use FS::CGI qw(header popurl);
 $cgi = new CGI;
 cgisuidsetup($cgi);
 
-($query) = $cgi->keywords;
-$query =~ /^(\d+)$/;
-$invnum = $1;
+if ( $cgi->param('error') ) {
+  $invnum = $cgi->param('invnum');
+  $paid = $cgi->param('paid');
+  $payby = $cgi->param('payby');
+  $payinfo = $cgi->param('payinfo');
+} else {
+  my ($query) = $cgi->keywords;
+  $query =~ /^(\d+)$/;
+  $invnum = $1;
+  $paid = '';
+  $payby = "BILL";
+  $payinfo = "";
+}
+$_date = time;
 
 $p1 = popurl(1);
-print $cgi->header( '-expires' => 'now' ), header("Enter payment", ''), <<END;
+print $cgi->header( '-expires' => 'now' ), header("Enter payment", '');
+
+print qq!<FONT SIZE="+1" COLOR="#ff0000">Error: !, $cgi->param('error'),
+      "</FONT>"
+  if $cgi->param('error');
+
+print <<END;
     <FORM ACTION="${p1}process/cust_pay.cgi" METHOD=POST>
     <HR><PRE>
 END
 
-#invnum
 print qq!Invoice #<B>$invnum</B><INPUT TYPE="hidden" NAME="invnum" VALUE="$invnum">!;
 
-#date
-$date = time;
-print qq!<BR>Date: <B>!, time2str("%D",$date), qq!</B><INPUT TYPE="hidden" NAME="_date" VALUE="$date">!;
+print qq!<BR>Date: <B>!, time2str("%D",$_date), qq!</B><INPUT TYPE="hidden" NAME="_date" VALUE="$_date">!;
 
-#paid
-print qq!<BR>Amount \$<INPUT TYPE="text" NAME="paid" VALUE="" SIZE=8 MAXLENGTH=8>!;
+print qq!<BR>Amount \$<INPUT TYPE="text" NAME="paid" VALUE="$paid" SIZE=8 MAXLENGTH=8>!;
 
-#payby
-$payby = "BILL";
 print qq!<BR>Payby: <B>$payby</B><INPUT TYPE="hidden" NAME="payby" VALUE="$payby">!;
 
 #payinfo (check # now as payby="BILL" hardcoded.. what to do later?)
-$payinfo = "";
 print qq!<BR>Check #<INPUT TYPE="text" NAME="payinfo" VALUE="$payinfo">!;
 
 #paybatch
@@ -71,7 +84,7 @@ print qq!<INPUT TYPE="hidden" NAME="paybatch" VALUE="">!;
 print <<END;
 </PRE>
 <BR>
-<CENTER><INPUT TYPE="submit" VALUE="Post"></CENTER>
+<INPUT TYPE="submit" VALUE="Post payment">
 END
 
 print <<END;

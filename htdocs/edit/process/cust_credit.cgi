@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_credit.cgi,v 1.4 1999-01-19 05:13:49 ivan Exp $
+# $Id: cust_credit.cgi,v 1.5 1999-01-25 12:09:59 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/cust_credit.cgi
@@ -22,7 +22,10 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # $Log: cust_credit.cgi,v $
-# Revision 1.4  1999-01-19 05:13:49  ivan
+# Revision 1.5  1999-01-25 12:09:59  ivan
+# yet more mod_perl stuff
+#
+# Revision 1.4  1999/01/19 05:13:49  ivan
 # for mod_perl: no more top-level my() variables; use vars instead
 # also the last s/create/new/;
 #
@@ -38,7 +41,7 @@ use vars qw( $cgi $custnum $new $error );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup getotaker);
-use FS::CGI qw(popurl eidiot);
+use FS::CGI qw(popurl);
 use FS::Record qw(fields);
 use FS::cust_credit;
 
@@ -54,12 +57,16 @@ $new = new FS::cust_credit ( {
   map {
     $_, scalar($cgi->param($_));
   #} qw(custnum _date amount otaker reason)
-  } fields('cust_credit');
+  } fields('cust_credit')
 } );
 
 $error=$new->insert;
-&eidiot($error) if $error;
 
-#no errors, no refund, so view our credit.
-print $cgi->redirect(popurl(3). "view/cust_main.cgi?$custnum#history");
+if ( $error ) {
+  $cgi->param('error', $error);
+  print $cgi->redirect(popurl(2). "cust_credit.cgi?". $cgi->query_string );
+} else {
+  print $cgi->redirect(popurl(3). "view/cust_main.cgi?$custnum#history");
+}
+
 

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_credit.cgi,v 1.5 1999-01-19 05:13:33 ivan Exp $
+# $Id: cust_credit.cgi,v 1.6 1999-01-25 12:09:52 ivan Exp $
 #
 # Usage: cust_credit.cgi custnum [ -paybatch ]
 #        http://server.name/path/cust_credit?custnum [ -paybatch ]
@@ -25,7 +25,10 @@
 # rewrite ivan@sisd.com 98-mar-16
 #
 # $Log: cust_credit.cgi,v $
-# Revision 1.5  1999-01-19 05:13:33  ivan
+# Revision 1.6  1999-01-25 12:09:52  ivan
+# yet more mod_perl stuff
+#
+# Revision 1.5  1999/01/19 05:13:33  ivan
 # for mod_perl: no more top-level my() variables; use vars instead
 # also the last s/create/new/;
 #
@@ -41,56 +44,65 @@
 #
 
 use strict;
-use vars qw( $cgi $query $custnum $otaker $p1 $crednum $date $amount $reason );
+use vars qw( $cgi $query $custnum $otaker $p1 $crednum $_date $amount $reason );
 use Date::Format;
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup getotaker);
 use FS::CGI qw(header popurl);
+use FS::Record qw(fields);
+#use FS::cust_credit;
 
 $cgi = new CGI;
-
 cgisuidsetup($cgi);
 
-($query) = $cgi->keywords;
-$query =~ /^(\d+)$/;
-$custnum = $1;
+if ( $cgi->param('error') ) {
+  #$cust_credit = new FS::cust_credit ( {
+  #  map { $_, scalar($cgi->param($_)) } fields('cust_credit')
+  #} );
+  $custnum = $cgi->param('custnum');
+  $amount = $cgi->param('amount');
+  #$refund = $cgi->param('refund');
+  $reason = $cgi->param('reason');
+} else {
+  ($query) = $cgi->keywords;
+  $query =~ /^(\d+)$/;
+  $custnum = $1;
+  $amount = '';
+  #$refund = 'yes';
+  $reason = '';
+}
+$_date = time;
 
 $otaker = getotaker;
 
 $p1 = popurl(1);
 
-print $cgi->header( '-expires' => 'now' ), header("Post Credit", ''), <<END;
+print $cgi->header( '-expires' => 'now' ), header("Post Credit", '');
+print qq!<FONT SIZE="+1" COLOR="#ff0000">Error: !, $cgi->param('error'),
+      "</FONT>"
+  if $cgi->param('error');
+print <<END;
     <FORM ACTION="${p1}process/cust_credit.cgi" METHOD=POST>
-    <HR><PRE>
+    <PRE>
 END
 
-#crednum
 $crednum = "";
 print qq!Credit #<B>!, $crednum ? $crednum : " <I>(NEW)</I>", qq!</B><INPUT TYPE="hidden" NAME="crednum" VALUE="$crednum">!;
 
-#custnum
 print qq!\nCustomer #<B>$custnum</B><INPUT TYPE="hidden" NAME="custnum" VALUE="$custnum">!;
 
-#paybatch
 print qq!<INPUT TYPE="hidden" NAME="paybatch" VALUE="">!;
 
-#date
-$date = time;
-print qq!\nDate: <B>!, time2str("%D",$date), qq!</B><INPUT TYPE="hidden" NAME="_date" VALUE="$date">!;
+print qq!\nDate: <B>!, time2str("%D",$_date), qq!</B><INPUT TYPE="hidden" NAME="_date" VALUE="">!;
 
-#amount
-$amount = '';
 print qq!\nAmount \$<INPUT TYPE="text" NAME="amount" VALUE="$amount" SIZE=8 MAXLENGTH=8>!;
+print qq!<INPUT TYPE="hidden" NAME="credited" VALUE="">!;
 
-#refund?
-#print qq! <INPUT TYPE="checkbox" NAME="refund" VALUE="yes">Also post refund!;
+#print qq! <INPUT TYPE="checkbox" NAME="refund" VALUE="$refund">Also post refund!;
 
-#otaker (hidden)
 print qq!<INPUT TYPE="hidden" NAME="otaker" VALUE="$otaker">!;
 
-#reason
-$reason = '';
 print qq!\nReason <INPUT TYPE="text" NAME="reason" VALUE="$reason" SIZE=72>!;
 
 print <<END;

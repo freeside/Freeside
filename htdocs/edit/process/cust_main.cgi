@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main.cgi,v 1.5 1999-01-19 05:13:50 ivan Exp $
+# $Id: cust_main.cgi,v 1.6 1999-01-25 12:10:00 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/cust_main.cgi
@@ -22,7 +22,10 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # $Log: cust_main.cgi,v $
-# Revision 1.5  1999-01-19 05:13:50  ivan
+# Revision 1.6  1999-01-25 12:10:00  ivan
+# yet more mod_perl stuff
+#
+# Revision 1.5  1999/01/19 05:13:50  ivan
 # for mod_perl: no more top-level my() variables; use vars instead
 # also the last s/create/new/;
 #
@@ -37,11 +40,11 @@
 #
 
 use strict;
-use vars qw( $cgi $payby @invoicing_list $new $custnum );
+use vars qw( $cgi $payby @invoicing_list $new $custnum $error );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup getotaker);
-use FS::CGI qw(eidiot popurl);
+use FS::CGI qw( popurl );
 use FS::Record qw(qsearchs fields);
 use FS::cust_main;
 
@@ -49,8 +52,6 @@ $cgi = new CGI;
 &cgisuidsetup($cgi);
 
 #unmunge stuff
-
-$cgi->param('agentnum', (split(/:/, ($cgi->param('agentnum'))[0] ))[0] );
 
 $cgi->param('tax','') unless defined($cgi->param('tax'));
 
@@ -61,11 +62,12 @@ $cgi->param('state', $1);
 $cgi->param('county', $3 || '');
 $cgi->param('country', $4);
 
-$payby = $cgi->param('payby');
-$cgi->param('payinfo', $cgi->param( $payby. '_payinfo' ) );
-$cgi->param('paydate',
+if ( $payby = $cgi->param('payby') ) {
+  $cgi->param('payinfo', $cgi->param( $payby. '_payinfo' ) );
+  $cgi->param('paydate',
   $cgi->param( $payby. '_month' ). '-'. $cgi->param( $payby. '_year' ) );
-$cgi->param('payname', $cgi->param( $payby. '_payname' ) );
+  $cgi->param('payname', $cgi->param( $payby. '_payname' ) );
+}
 
 $cgi->param('otaker', &getotaker );
 
@@ -83,25 +85,22 @@ $new = new FS::cust_main ( {
   } fields('cust_main')
 } );
 
+$error = $new->check_invoicing_list( \@invoicing_list );
+
 #perhaps the invocing_list magic should move to cust_main.pm?
 if ( $new->custnum eq '' ) {
-  my $error;
-  $error = $new->check_invoicing_list( \@invoicing_list );
-  &ediot($error) if $error;
-  $error = $new->insert;
-  &eidiot($error) if $error;
-  $new->invoicing_list( \@invoicing_list );
+  $error ||= $new->insert;
 } else { #create old record object
-  my $error;
   my $old = qsearchs( 'cust_main', { 'custnum' => $new->custnum } ); 
-  &eidiot("Old record not found!") unless $old;
-  $error = $new->check_invoicing_list( \@invoicing_list );
-  &eidiot($error) if $error;
-  $error = $new->replace($old);
-  &eidiot($error) if $error;
-  $new->invoicing_list( \@invoicing_list );
+  $error ||= "Old record not found!" unless $old;
+  $error ||= $new->replace($old);
 }
 
-$custnum = $new->custnum;
-print $cgi->redirect(popurl(3). "view/cust_main.cgi?$custnum#cust_main");
-
+if ( $error ) {
+  $cgi->param('error', $error);
+  print $cgi->redirect(popurl(2). "cust_main.cgi?". $cgi->query_string );
+} else { 
+  $new->invoicing_list( \@invoicing_list );
+  $custnum = $new->custnum;
+  print $cgi->redirect(popurl(3). "view/cust_main.cgi?$custnum#cust_main");
+} 
