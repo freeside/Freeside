@@ -401,7 +401,6 @@ sub send {
     my $message = new Mail::Internet (
       'Header' => $header,
       'Body' => [ $self->print_text ], #( date)
-      #'Debug' => 1,
     );
     $!=0;
     $message->smtpsend( Host => $smtpmachine )
@@ -883,7 +882,7 @@ sub print_text {
 
 =head1 VERSION
 
-$Id: cust_bill.pm,v 1.21 2002-03-07 14:10:10 ivan Exp $
+$Id: cust_bill.pm,v 1.22 2002-03-07 14:13:21 ivan Exp $
 
 =head1 BUGS
 
