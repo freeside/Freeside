@@ -1,9 +1,14 @@
 <%
 
-  my %opt = @_;
+  my(%opt) = @_;
+
+  if ( ref($opt{'query'}) ) {
+
+  }
+
   unless (exists($opt{'count_query'}) && length($opt{'count_query'})) {
     ( $opt{'count_query'} = $opt{'query'} ) =~
-      s/^\s*SELECT\s*(.*)\s+FROM\s/SELECT COUNT(*) FROM /i;
+      s/^\s*SELECT\s*(.*?)\s+FROM\s/SELECT COUNT(*) FROM /i;
   }
 
   my $conf = new FS::Conf;
@@ -18,18 +23,43 @@
     or die "Error preparing $opt{'count_query'}: ". dbh->errstr;
   $count_sth->execute
     or die "Error executing $opt{'count_query'}: ". $count_sth->errstr;
-  my $total = $count_sth->fetchrow_arrayref->[0];
+  my $count_arrayref = $count_sth->fetchrow_arrayref;
+  my $total = $count_arrayref->[0];
 
-  my $sth = dbh->prepare("$opt{'query'} $limit")
-    or die "Error preparing $opt{'query'}: ". dbh->errstr;
-  $sth->execute
-    or die "Error executing $opt{'query'}: ". $sth->errstr;
+  #warn join(' / ', map { "$_ => $opt{$_}" } keys %opt ). "\n";
 
-  #can get # of rows without fetching them all?
-  my $rows = $sth->fetchall_arrayref;
+  my $header = $opt{'header'};
+  my $rows;
+  if ( ref($opt{'query'}) ) {
+    #eval "use FS::$opt{'query'};";
+    $rows = [ qsearch(
+      $opt{'query'}->{'table'}, 
+      $opt{'query'}->{'hashref'} || {}, 
+      $opt{'query'}->{'select'},
+      $opt{'query'}->{'extra_sql'}. " $limit",
+    ) ];
+  } else {
+    my $sth = dbh->prepare("$opt{'query'} $limit")
+      or die "Error preparing $opt{'query'}: ". dbh->errstr;
+    $sth->execute
+      or die "Error executing $opt{'query'}: ". $sth->errstr;
+
+    #can get # of rows without fetching them all?
+    $rows = $sth->fetchall_arrayref;
+
+    $header ||= $sth->{NAME};
+  }
+
+  if ( exists($opt{'redirect'}) && scalar(@$rows) == 1 ) {
+    my( $url, $method ) = @{$opt{'redirect'}};
+    redirect( $url. $rows->[0]->$method() );
+  } else {
 
 %>
-<!-- mason kludge -->
+<%= include( '/elements/header.html', $opt{'title'},
+               include( '/elements/menubar.html', 'Main menu' => $p )
+           )
+%>
 <% my $pager = include ( '/elements/pager.html',
                            'offset'     => $offset,
                            'num_rows'   => scalar(@$rows),
@@ -37,18 +67,41 @@
                            'maxrecords' => $maxrecords,
                        );
 %>
-
-<%= $total %> total <%= $opt{'name'} %><BR><BR><%= $pager %>
+<%= $total %> total <%= $opt{'name'} %><BR>
+<% if ( $opt{'count_addl'} ) { %>
+  <% my $n=0; foreach my $count ( @{$opt{'count_addl'}} ) { %>
+    <%= sprintf( $count, $count_arrayref->[++$n] ) %><BR>
+  <% } %>
+<% } %>
+<BR><%= $pager %>
 <%= include( '/elements/table.html' ) %>
   <TR>
-  <% foreach ( @{$sth->{NAME}} ) { %>
-       <TH><%= $_ %></TH>
+  <% foreach my $header ( @$header ) { %>
+       <TH><%= $header %></TH>
   <% } %>
   </TR>
   <% foreach my $row ( @$rows ) { %>
        <TR>
-       <% foreach ( @$row ) { %>
-            <TD><%= $_ %></TD>
+       <% if ( $opt{'fields'} ) { %>
+         <% my $links = $opt{'links'} ? [ @{$opt{'links'}} ] : ''; %>
+         <% foreach my $field ( @{$opt{'fields'}} ) { %>
+           <% my $a = ''; %>
+           <% if ( $links ) {
+                my( $url, $method ) = @{shift @$links};
+                $a = $url. $row->$method();
+                $a = qq(<A HREF="$a">);
+              }
+           %>
+           <% if ( ref($field) eq 'CODE' ) { %>
+             <TD><%= $a %><%= &{$field}($row) %><%= $a ? '</A>' : '' %></TD>
+           <% } else { %>
+             <TD><%= $a %><%= $row->$field() %><%= $a ? '</A>' : '' %></TD>
+           <% } %>
+         <% } %>
+       <% } else { %>
+         <% foreach ( @$row ) { %>
+              <TD><%= $_ %></TD>
+         <% } %>
        <% } %>
        </TR>
   <% } %>
@@ -57,3 +110,4 @@
 <%= $pager %>
 </BODY>
 </HTML>
+<% } %>
