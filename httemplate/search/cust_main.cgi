@@ -48,19 +48,34 @@ $limit .= " OFFSET $offset" if $offset;
 my $total = 0;
 
 my(@cust_main, $sortby, $orderby);
-if ( $cgi->param('browse') ) {
-  my $query = $cgi->param('browse');
-  if ( $query eq 'custnum' ) {
-    $sortby=\*custnum_sort;
-    $orderby = 'ORDER BY custnum';
-  } elsif ( $query eq 'last' ) {
-    $sortby=\*last_sort;
-    $orderby = 'ORDER BY last';
-  } elsif ( $query eq 'company' ) {
-    $sortby=\*company_sort;
-    $orderby = 'ORDER BY company';
+if ( $cgi->param('browse')
+     || $cgi->param('otaker_on')
+) {
+
+  my %search = ();
+  if ( $cgi->param('browse') ) {
+    my $query = $cgi->param('browse');
+    if ( $query eq 'custnum' ) {
+      $sortby=\*custnum_sort;
+      $orderby = 'ORDER BY custnum';
+    } elsif ( $query eq 'last' ) {
+      $sortby=\*last_sort;
+      $orderby = 'ORDER BY last';
+    } elsif ( $query eq 'company' ) {
+      $sortby=\*company_sort;
+      $orderby = 'ORDER BY company';
+    } else {
+      die "unknown browse field $query";
+    }
   } else {
-    die "unknown browse field $query";
+    $sortby = \*last_sort; #??
+    $orderby = 'ORDER BY last'; #??
+    if ( $cgi->param('otaker_on') ) {
+      $cgi->param('otaker') =~ /^(\w{1,32})$/ or eidiot "Illegal otaker\n";
+      $search{otaker} = $1;
+    } else {
+      die "unknown query...";
+    }
   }
 
   my $ncancelled = '';
@@ -72,7 +87,7 @@ if ( $cgi->param('browse') ) {
     #grep { $_->ncancelled_pkgs || ! $_->all_pkgs }
     #needed for MySQL???    OR cust_pkg.cancel = \"\"
     $ncancelled = "
-      WHERE 0 < ( SELECT COUNT(*) FROM cust_pkg
+       0 < ( SELECT COUNT(*) FROM cust_pkg
                     WHERE cust_pkg.custnum = cust_main.custnum
                       AND ( cust_pkg.cancel IS NULL
                             OR cust_pkg.cancel = 0
@@ -84,14 +99,32 @@ if ( $cgi->param('browse') ) {
     ";
   }
 
-  my $statement = "SELECT COUNT(*) FROM cust_main $ncancelled";
+  #EWWWWWW
+  my $qual = join(' AND ',
+            map { "$_ = ". dbh->quote($search{$_}) } keys %search );
+
+  if ( $ncancelled ) {
+    $qual .= ' AND ' if $qual;
+    $qual .= $ncancelled;
+  }
+    
+  $qual = " WHERE $qual" if $qual;
+
+  my $statement = "SELECT COUNT(*) FROM cust_main $qual";
   my $sth = dbh->prepare($statement)
     or die dbh->errstr. " doing $statement";
   $sth->execute or die "Error executing \"$statement\": ". $sth->errstr;
 
   $total = $sth->fetchrow_arrayref->[0];
 
-  my @just_cust_main = qsearch('cust_main',{}, '',
+  if ( $ncancelled ) {
+    if ( %search ) {
+      $ncancelled = " AND $ncancelled";
+    } else {
+      $ncancelled = " WHERE $ncancelled";
+    }
+  }
+  my @just_cust_main = qsearch('cust_main', \%search, '',
     "$ncancelled $orderby $limit"
   );    
 
