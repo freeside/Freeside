@@ -436,7 +436,7 @@ sub check {
     #$recref->{password} = $1.
     #  crypt($3,$saltset[int(rand(64))].$saltset[int(rand(64))]
     #;
-  } elsif ( $recref->{_password} =~ /^((\*SUSPENDED\* )?)([\w\.\/]{13,24})$/ ) {
+  } elsif ( $recref->{_password} =~ /^((\*SUSPENDED\* )?)([\w\.\/\$]{13,34})$/ ) {
     $recref->{_password} = $1.$3;
   } elsif ( $recref->{_password} eq '*' ) {
     $recref->{_password} = '*';
@@ -472,7 +472,7 @@ sub radius {
 
 =head1 VERSION
 
-$Id: svc_acct.pm,v 1.6 2000-06-28 12:54:33 ivan Exp $
+$Id: svc_acct.pm,v 1.7 2000-06-29 11:56:52 ivan Exp $
 
 =head1 BUGS
 
