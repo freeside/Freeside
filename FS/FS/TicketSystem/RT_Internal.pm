@@ -29,19 +29,25 @@ sub customer_tickets {
 sub href_customer_tickets {
   my $self = shift;
   # well, 2 is wrong here but will have to do for now
-  popurl(2).'rt/'. $self->SUPER::href_customer_tickets(@_);
+  baseurl().'rt/'. $self->_href_customer_tickets(@_);
 }
 
 sub href_new_ticket {
   my $self = shift;
   # well, 2 is wrong here but will have to do for now
-  popurl(2).'rt/'. $self->SUPER::href_new_ticket(@_);
+  baseurl().'rt/'. $self->_href_new_ticket(@_);
 }
 
 sub href_ticket {
   my $self = shift;
   # well, 2 is wrong here but will have to do for now
-  popurl(2).'rt/'. $self->SUPER::href_ticket(@_);
+  baseurl().'rt/'. $self->_href_ticket(@_);
+}
+
+sub baseurl {
+
+  return popurl(2);
+
 }
 
 1;

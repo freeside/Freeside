@@ -2,7 +2,8 @@ package FS::TicketSystem::RT_External;
 
 use strict;
 use vars qw( $conf $default_queueid
-             $priority_field $priority_field_queue $field );
+             $priority_field $priority_field_queue $field
+	     $external_dbh $external_url );
 use URI::Escape;
 use FS::UID;
 
@@ -21,12 +22,22 @@ install_callback FS::UID sub {
     $priority_field_queue = '';
     $field = '';
   }
+
+  $external_url = '';
+  if ($conf->config('ticket_system') eq 'RT_External') {
+    my ($datasrc, $user, $pass) = $conf->config('ticket_system-rt_external_datasrc');
+    $external_dbh = DBI->connect($datasrc, $user, $pass, { 'ChopBlanks' => 1 })
+      or die "RT_External DBI->connect error: $DBI::errstr\n";
+
+    $external_url = $conf->config('ticket_system-rt_external_url');
+  }
+
 };
 
 sub num_customer_tickets {
   my( $self, $custnum, $priority, $dbh ) = @_;
 
-  #$dbh ||= create one from some config options
+  $dbh ||= $external_dbh;
 
   my( $from_sql, @param) = $self->_from_customer( $custnum, $priority );
 
@@ -42,7 +53,7 @@ sub customer_tickets {
   my( $self, $custnum, $limit, $priority, $dbh ) = @_;
   $limit ||= 0;
 
-  #$dbh ||= create one from some config options
+  $dbh ||= $external_dbh;
 
   my( $from_sql, @param) = $self->_from_customer( $custnum, $priority );
   my $sql = "select tickets.*, queues.name".
@@ -120,7 +131,7 @@ sub _from_customer {
 
 }
 
-sub href_customer_tickets {
+sub _href_customer_tickets {
   my( $self, $custnum, $priority ) = @_;
 
   #i snarfed this from an RT bookmarked search, it could be unescaped in the
@@ -145,7 +156,11 @@ sub href_customer_tickets {
 
   $href .= '&Rows=100'.
            '&OrderBy=id&Page=1'.
-           '&Format=%27%20%20%20%3Cb%3E%3Ca%20href%3D%22%2Ffreeside%2Frt%2FTicket%2FDisplay.html%3Fid%3D__id__%22%3E__id__%3C%2Fa%3E%3C%2Fb%3E%2FTITLE%3A%23%27%2C%20%0A%27%3Cb%3E%3Ca%20href%3D%22%2Ffreeside%2Frt%2FTicket%2FDisplay.html%3Fid%3D__id__%22%3E__Subject__%3C%2Fa%3E%3C%2Fb%3E%2FTITLE%3ASubject%27%2C%20%0A%27__Status__%27%2C%20';
+           '&Format=%27%20%20%20%3Cb%3E%3Ca%20href%3D%22'.
+	   $self->baseurl.
+	   'Ticket%2FDisplay.html%3Fid%3D__id__%22%3E__id__%3C%2Fa%3E%3C%2Fb%3E%2FTITLE%3A%23%27%2C%20%0A%27%3Cb%3E%3Ca%20href%3D%22'.
+	   $self->baseurl.
+	   'Ticket%2FDisplay.html%3Fid%3D__id__%22%3E__Subject__%3C%2Fa%3E%3C%2Fb%3E%2FTITLE%3ASubject%27%2C%20%0A%27__Status__%27%2C%20';
 
   if ( defined($priority) && $field ) {
     $href .= '%0A%27__CustomField.'. $field. '__%2FTITLE%3ASeverity%27%2C%20';
@@ -160,11 +175,20 @@ sub href_customer_tickets {
   $href .= '%20%0A%27%3Csmall%3E__ToldRelative__%3C%2Fsmall%3E%27%2C%20%0A%27%3Csmall%3E__LastUpdatedRelative__%3C%2Fsmall%3E%27%2C%20%0A%27%3Csmall%3E__TimeLeft__%3C%2Fsmall%3E%27';
 
   $href;
+
+}
+
+sub href_customer_tickets {
+
+  my $self = shift;
+  return $external_url . $self->_href_customer_tickets(@_);
+
 }
 
 
-sub href_new_ticket {
+sub _href_new_ticket {
   my( $self, $custnum, $requestors ) = @_;
+
   'Ticket/Create.html?'.
     "Queue=$default_queueid".
     "&new-MemberOf=freeside://freeside/cust_main/$custnum".
@@ -172,9 +196,29 @@ sub href_new_ticket {
     ;
 }
 
-sub href_ticket {
+sub href_new_ticket {
+
+  my $self = shift;
+  return return $external_url . $self->_href_new_ticket(@_);
+
+}
+
+sub _href_ticket {
   my($self, $ticketnum) = @_;
   'Ticket/Display.html?id='.$ticketnum;
+}
+
+sub href_ticket {
+
+  my $self = shift;
+  return $external_url . $self->_href_ticket(@_);
+
+}
+
+sub baseurl {
+
+  return $external_url;
+
 }
 
 1;

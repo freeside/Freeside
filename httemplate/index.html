@@ -91,12 +91,17 @@
     <TABLE CELLSPACING=2 CELLPADDING=0 BORDER=0" WIDTH="100%" BGCOLOR="#eeeeee">
     <TR><TH BGCOLOR="#cccccc">Support/Ticketing</TH></TR>
     <TR><TD>
+	<% if ( $conf->config('ticket_system') eq 'RT_Internal' ) { %>
         <BR><FONT SIZE="+1"><A HREF="rt/">Ticketing Main</A></FONT>
         <BR><BR>
         Reports
         <UL>
           <LI><A HREF="search/cust_main.cgi?browse=tickets">Customers sorted by active tickets</A>
-          <!-- <LI><A HREF="">Active tickets not assigned to a customer</A> -->
+	  <!-- <LI><A HREF="">Active tickets not assigned to a customer</A> -->
+	<% } else { %>
+	<BR><FONT SIZE="+1"><A HREF="<%=FS::TicketSystem->baseurl()%>">Ticketing Main</A></FONT>
+        <BR><BR>
+        <% } %>
     </TD></TR>
     </TABLE>
 
