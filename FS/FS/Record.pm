@@ -1231,15 +1231,23 @@ type (see L<DBIx::DBSchema::Column>) does not end in `char' or `binary'.
 =cut
 
 sub _quote {
-  my($value,$table,$field)=@_;
-  my($dbh)=dbh;
-  if ( $value =~ /^\d+(\.\d+)?$/ && 
-#       ! ( datatype($table,$field) =~ /^char/ ) 
-       ! $dbdef->table($table)->column($field)->type =~ /(char|binary|text)$/i 
-  ) {
+  my($value, $table, $column) = @_;
+  my $column_obj = $dbdef->table($table)->column($column);
+  my $column_type = $column_obj->type;
+
+  if ( $value eq '' && $column_type =~ /^int/ ) {
+    if ( $column_obj->null ) {
+      'NULL';
+    } else {
+      cluck "WARNING: Attempting to set non-null integer $table.$column null; ".
+            "using 0 instead";
+      0;
+    }
+  } elsif ( $value =~ /^\d+(\.\d+)?$/ && 
+            ! $column_type =~ /(char|binary|text)$/i ) {
     $value;
   } else {
-    $dbh->quote($value);
+    dbh->quote($value);
   }
 }
 

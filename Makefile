@@ -50,7 +50,7 @@ SIGNUP_MACHINE = localhost
 SIGNUP_AGENTNUM = 2
 SIGNUP_REFNUM = 2
 
-SELFSERVICE_USER = nostart
+SELFSERVICE_USER = fs_selfservice
 SELFSERVICE_MACHINE = localhost
 
 #---
