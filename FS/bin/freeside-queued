@@ -1,10 +1,10 @@
 #!/usr/bin/perl -w
 
 use strict;
-use vars qw( $log_file $sigterm $sigint $kids $max_kids );
+use vars qw( $log_file $sigterm $sigint $kids $max_kids %kids );
 use subs qw( _die _logmsg );
 use Fcntl qw(:flock);
-use POSIX qw(setsid);
+use POSIX qw(:sys_wait_h setsid);
 use Date::Format;
 use IO::File;
 use FS::UID qw(adminsuidsetup forksuidsetup driver_name dbh);
@@ -28,8 +28,8 @@ my $pid_file = "/var/run/freeside-queued.pid";
 
 &daemonize1;
 
-sub REAPER { my $pid = wait; $SIG{CHLD} = \&REAPER; $kids--; }
-$SIG{CHLD} =  \&REAPER;
+#sub REAPER { my $pid = wait; $SIG{CHLD} = \&REAPER; $kids--; }
+#$SIG{CHLD} =  \&REAPER;
 
 $sigterm = 0;
 $sigint = 0;
@@ -65,9 +65,11 @@ warn "freeside-queued starting\n";
 my $warnkids=0;
 while (1) {
 
+  &reap_kids;
   #prevent runaway forking
   if ( $kids >= $max_kids ) {
     warn "WARNING: maximum $kids children reached\n" unless $warnkids++;
+    &reap_kids;
     sleep 1; #waiting for signals is cheap
     next;
   }
@@ -131,6 +133,7 @@ while (1) {
 
   if ( $pid ) {
     $kids++;
+    $kids{$pid} = 1;
   } else { #kid time
 
     #get new db handle
@@ -228,6 +231,16 @@ sub daemonize2 {
                             or die "Can't write to /dev/null: $!";
   setsid                  or die "Can't start a new session: $!";
   open STDERR, '>&STDOUT' or die "Can't dup stdout: $!";
+}
+
+sub reap_kids {
+  foreach my $pid ( keys %kids ) {
+    my $kid = waitpid($pid, WNOHANG);
+    if ( $kid > 0 ) {
+      $kids--;
+      delete $kids{$kid};
+    }
+  }
 }
 
 =head1 NAME
