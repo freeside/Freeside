@@ -18,13 +18,19 @@ INIT_FILE = /etc/init.d/freeside
 HTTPD_RESTART = /etc/init.d/apache restart
 FREESIDE_RESTART = /etc/init.d/freeside restart
 
+INSTALLGROUP = root
+
 #---
 
 #not changable yet
 FREESIDE_CONF = /usr/local/etc/freeside
 
-VERSION=1.4.0pre12
-TAG=freeside_1_4_0_pre12
+#VERSION=1.4.0pre12
+#TAG=freeside_1_4_0_pre12
+VERSION=1.4.0pre13
+TAG=freeside_1_4_0_pre13
+#VERSION=1.4.0beta1
+#TAG=freeside_1_4_0_beta1
 
 help:
 	@echo "supported targets: aspdocs masondocs alldocs docs install-docs"
@@ -77,7 +83,7 @@ install-perl-modules: perl-modules
 	make install UNINST=1
 
 install-init:
-	[ -e ${INIT_FILE} ] || install -o root -g root -m 711 init.d/freeside-init ${INIT_FILE}
+	[ -e ${INIT_FILE} ] || install -o root -g ${INSTALLGROUP} -m 711 init.d/freeside-init ${INIT_FILE}
 
 install: install-perl-modules install-docs install-init
 
