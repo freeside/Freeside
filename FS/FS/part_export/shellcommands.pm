@@ -93,6 +93,9 @@ sub _export_replace {
     if ( $old_uid != $new_uid ) {
       $error ||= "can't change uid";
     }
+    if ( $old_dir ne $new_dir ) {
+      $error ||= "can't change dir";
+    }
     return $error. ' ('. $self->exporttype. ' to '. $self->machine. ')'
       if $error;
   }
