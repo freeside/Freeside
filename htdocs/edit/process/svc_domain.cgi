@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_domain.cgi,v 1.2 1998-12-17 08:40:30 ivan Exp $
+# $Id: svc_domain.cgi,v 1.3 1999-01-18 22:48:02 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/svc_domain.cgi
@@ -20,7 +20,10 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # $Log: svc_domain.cgi,v $
-# Revision 1.2  1998-12-17 08:40:30  ivan
+# Revision 1.3  1999-01-18 22:48:02  ivan
+# s/create/new/g; and use fields('table_name')
+#
+# Revision 1.2  1998/12/17 08:40:30  ivan
 # s/CGI::Request/CGI.pm/; etc
 #
 
@@ -40,10 +43,11 @@ my($cgi) = new CGI;
 $cgi->param('svcnum') =~ /^(\d*)$/ or die "Illegal svcnum!";
 my($svcnum)=$1;
 
-my($new) = create FS::svc_domain ( {
+my($new) = new FS::svc_domain ( {
   map {
     $_, scalar($cgi->param($_));
-  } qw(svcnum pkgnum svcpart domain action purpose)
+  #} qw(svcnum pkgnum svcpart domain action purpose)
+  } ( fields('svc_domain'), qw( pkgnum svcpart action purpose ) )
 } );
 
 my($error);

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main_county-expand.cgi,v 1.3 1998-12-17 08:40:20 ivan Exp $
+# $Id: cust_main_county-expand.cgi,v 1.4 1999-01-18 22:47:52 ivan Exp $
 #
 # ivan@sisd.com 97-dec-16
 #
@@ -15,7 +15,10 @@
 # ivan@sisd.com 98-sep-2
 #
 # $Log: cust_main_county-expand.cgi,v $
-# Revision 1.3  1998-12-17 08:40:20  ivan
+# Revision 1.4  1999-01-18 22:47:52  ivan
+# s/create/new/g; and use fields('table_name')
+#
+# Revision 1.3  1998/12/17 08:40:20  ivan
 # s/CGI::Request/CGI.pm/; etc
 #
 # Revision 1.2  1998/11/18 09:01:40  ivan
@@ -57,7 +60,7 @@ if ( $cgi->param('delim') eq 'n' ) {
 my($expansion);
 foreach ( @expansion) {
   my(%hash)=$cust_main_county->hash;
-  my($new)=create FS::cust_main_county \%hash;
+  my($new)=new FS::cust_main_county \%hash;
   $new->setfield('taxnum','');
   if ( ! $cust_main_county->state ) {
     $new->setfield('state',$_);

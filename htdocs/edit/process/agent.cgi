@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: agent.cgi,v 1.4 1998-12-30 23:03:26 ivan Exp $
+# $Id: agent.cgi,v 1.5 1999-01-18 22:47:49 ivan Exp $
 #
 # ivan@sisd.com 97-dec-12
 #
@@ -10,7 +10,10 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: agent.cgi,v $
-# Revision 1.4  1998-12-30 23:03:26  ivan
+# Revision 1.5  1999-01-18 22:47:49  ivan
+# s/create/new/g; and use fields('table_name')
+#
+# Revision 1.4  1998/12/30 23:03:26  ivan
 # bugfixes; fields isn't exported by derived classes
 #
 # Revision 1.3  1998/12/17 08:40:16  ivan
@@ -40,7 +43,7 @@ my($old)=qsearchs('agent',{'agentnum'=>$agentnum}) if $agentnum;
 $cgi->param('typenum') =~ /^(\d+)(:.*)?$/;
 $cgi->param('typenum',$1);
 
-my($new)=create FS::agent ( {
+my($new)=new FS::agent ( {
   map {
     $_, scalar($cgi->param($_));
   } fields('agent')

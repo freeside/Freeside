@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: part_svc.cgi,v 1.4 1998-12-30 23:03:31 ivan Exp $
+# $Id: part_svc.cgi,v 1.5 1999-01-18 22:47:58 ivan Exp $
 #
 # ivan@sisd.com 97-nov-14
 #
@@ -10,7 +10,10 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: part_svc.cgi,v $
-# Revision 1.4  1998-12-30 23:03:31  ivan
+# Revision 1.5  1999-01-18 22:47:58  ivan
+# s/create/new/g; and use fields('table_name')
+#
+# Revision 1.4  1998/12/30 23:03:31  ivan
 # bugfixes; fields isn't exported by derived classes
 #
 # Revision 1.3  1998/12/17 08:40:26  ivan
@@ -28,15 +31,14 @@ use FS::Record qw(qsearchs fields);
 use FS::part_svc;
 use FS::CGI qw(eidiot popurl);
 
-my($cgi)=new CGI; # create form object
-
+my($cgi)=new CGI;
 &cgisuidsetup($cgi);
 
 my($svcpart)=$cgi->param('svcpart');
 
 my($old)=qsearchs('part_svc',{'svcpart'=>$svcpart}) if $svcpart;
 
-my($new)=create FS::part_svc ( {
+my($new)=new FS::part_svc ( {
   map {
     $_, scalar($cgi->param($_));
 #  } qw(svcpart svc svcdb)

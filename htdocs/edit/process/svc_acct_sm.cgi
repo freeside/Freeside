@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct_sm.cgi,v 1.2 1998-12-17 08:40:29 ivan Exp $
+# $Id: svc_acct_sm.cgi,v 1.3 1999-01-18 22:48:01 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/svc_acct_sm.cgi
@@ -24,7 +24,10 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # $Log: svc_acct_sm.cgi,v $
-# Revision 1.2  1998-12-17 08:40:29  ivan
+# Revision 1.3  1999-01-18 22:48:01  ivan
+# s/create/new/g; and use fields('table_name')
+#
+# Revision 1.2  1998/12/17 08:40:29  ivan
 # s/CGI::Request/CGI.pm/; etc
 #
 
@@ -32,10 +35,10 @@ use strict;
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
-use FS::Record qw(qsearchs);
+use FS::Record qw(qsearchs fields);
 use FS::svc_acct_sm;
 
-my($cgi)=new CGI; # create form object
+my($cgi)=new CGI;
 cgisuidsetup($cgi);
 
 $cgi->param('svcnum') =~ /^(\d*)$/ or die "Illegal svcnum!";
@@ -47,10 +50,11 @@ my($old)=qsearchs('svc_acct_sm',{'svcnum'=>$svcnum}) if $svcnum;
 $cgi->param('domsvc',(split(/:/, $cgi->param('domsvc') ))[0] );
 $cgi->param('domuid',(split(/:/, $cgi->param('domuid') ))[0] );
 
-my($new) = create FS::svc_acct_sm ( {
+my($new) = new FS::svc_acct_sm ( {
   map {
     ($_, scalar($cgi->param($_)));
-  } qw(svcnum pkgnum svcpart domuser domuid domsvc)
+  #} qw(svcnum pkgnum svcpart domuser domuid domsvc)
+  } ( fields('svc_acct_sm'), qw( pkgnum svcpart) )
 } );
 
 my($error);

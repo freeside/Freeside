@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: agent_type.cgi,v 1.4 1998-12-30 23:03:27 ivan Exp $
+# $Id: agent_type.cgi,v 1.5 1999-01-18 22:47:50 ivan Exp $
 #
 # ivan@sisd.com 97-dec-11
 #
@@ -10,7 +10,10 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: agent_type.cgi,v $
-# Revision 1.4  1998-12-30 23:03:27  ivan
+# Revision 1.5  1999-01-18 22:47:50  ivan
+# s/create/new/g; and use fields('table_name')
+#
+# Revision 1.4  1998/12/30 23:03:27  ivan
 # bugfixes; fields isn't exported by derived classes
 #
 # Revision 1.3  1998/12/17 08:40:17  ivan
@@ -36,7 +39,7 @@ my($cgi)=new CGI;
 my($typenum)=$cgi->param('typenum');
 my($old)=qsearchs('agent_type',{'typenum'=>$typenum}) if $typenum;
 
-my($new)=create FS::agent_type ( {
+my($new)=new FS::agent_type ( {
   map {
     $_, scalar($cgi->param($_));
   } fields('agent_type')
@@ -75,7 +78,7 @@ foreach $part_pkg (qsearch('part_pkg',{})) {
             && ! $type_pkgs
   ) {
     #ok to clobber it now (but bad form nonetheless?)
-    $type_pkgs=create FS::type_pkgs ({
+    $type_pkgs=new FS::type_pkgs ({
       'typenum' => $typenum,
       'pkgpart' => $pkgpart,
     });

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_pay.cgi,v 1.3 1998-12-30 23:03:28 ivan Exp $
+# $Id: cust_pay.cgi,v 1.4 1999-01-18 22:47:54 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/cust_pay.cgi
@@ -15,7 +15,10 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # $Log: cust_pay.cgi,v $
-# Revision 1.3  1998-12-30 23:03:28  ivan
+# Revision 1.4  1999-01-18 22:47:54  ivan
+# s/create/new/g; and use fields('table_name')
+#
+# Revision 1.3  1998/12/30 23:03:28  ivan
 # bugfixes; fields isn't exported by derived classes
 #
 # Revision 1.2  1998/12/17 08:40:22  ivan
@@ -27,6 +30,7 @@ use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
 use FS::CGI qw(idiot popurl);
+use FS::Record qw(fields);
 use FS::cust_pay;
 
 my($cgi)=new CGI;
@@ -35,10 +39,11 @@ my($cgi)=new CGI;
 $cgi->param('invnum') =~ /^(\d*)$/ or die "Illegal svcnum!";
 my($invnum)=$1;
 
-my($new) = create FS::cust_pay ( {
+my($new) = new FS::cust_pay ( {
   map {
     $_, scalar($cgi->param($_));
-  } qw(invnum paid _date payby payinfo paybatch)
+  #} qw(invnum paid _date payby payinfo paybatch)
+  } fields('cust_pay')
 } );
 
 my($error);

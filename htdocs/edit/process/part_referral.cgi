@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: part_referral.cgi,v 1.3 1998-12-30 23:03:30 ivan Exp $
+# $Id: part_referral.cgi,v 1.4 1999-01-18 22:47:57 ivan Exp $
 #
 # ivan@sisd.com 98-feb-23
 #
@@ -10,7 +10,10 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: part_referral.cgi,v $
-# Revision 1.3  1998-12-30 23:03:30  ivan
+# Revision 1.4  1999-01-18 22:47:57  ivan
+# s/create/new/g; and use fields('table_name')
+#
+# Revision 1.3  1998/12/30 23:03:30  ivan
 # bugfixes; fields isn't exported by derived classes
 #
 # Revision 1.2  1998/12/17 08:40:25  ivan
@@ -25,13 +28,12 @@ use FS::Record qw(qsearchs fields);
 use FS::part_referral;
 use FS::CGI qw(popurl eidiot);
 
-my($cgi)=new CGI; # create form object
-
+my($cgi)=new CGI;
 &cgisuidsetup($cgi);
 
 my($refnum)=$cgi->param('refnum');
 
-my($new)=create FS::part_referral ( {
+my($new)=new FS::part_referral ( {
   map {
     $_, scalar($cgi->param($_));
   } fields('part_referral')

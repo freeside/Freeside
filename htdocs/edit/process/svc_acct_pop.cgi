@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct_pop.cgi,v 1.3 1998-12-30 23:03:32 ivan Exp $
+# $Id: svc_acct_pop.cgi,v 1.4 1999-01-18 22:48:00 ivan Exp $
 #
 # ivan@sisd.com 98-mar-8
 #
@@ -10,7 +10,10 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: svc_acct_pop.cgi,v $
-# Revision 1.3  1998-12-30 23:03:32  ivan
+# Revision 1.4  1999-01-18 22:48:00  ivan
+# s/create/new/g; and use fields('table_name')
+#
+# Revision 1.3  1998/12/30 23:03:32  ivan
 # bugfixes; fields isn't exported by derived classes
 #
 # Revision 1.2  1998/12/17 08:40:28  ivan
@@ -33,7 +36,7 @@ my($popnum)=$cgi->param('popnum');
 
 my($old)=qsearchs('svc_acct_pop',{'popnum'=>$popnum}) if $popnum;
 
-my($new)=create FS::svc_acct_pop ( {
+my($new)=new FS::svc_acct_pop ( {
   map {
     $_, scalar($cgi->param($_));
   } fields('svc_acct_pop')

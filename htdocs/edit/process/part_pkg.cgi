@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: part_pkg.cgi,v 1.5 1998-12-30 23:03:29 ivan Exp $
+# $Id: part_pkg.cgi,v 1.6 1999-01-18 22:47:56 ivan Exp $
 #
 # process/part_pkg.cgi: Edit package definitions (process form)
 #
@@ -17,7 +17,10 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: part_pkg.cgi,v $
-# Revision 1.5  1998-12-30 23:03:29  ivan
+# Revision 1.6  1999-01-18 22:47:56  ivan
+# s/create/new/g; and use fields('table_name')
+#
+# Revision 1.5  1998/12/30 23:03:29  ivan
 # bugfixes; fields isn't exported by derived classes
 #
 # Revision 1.4  1998/12/17 08:40:24  ivan
@@ -47,7 +50,7 @@ my($pkgpart)=$cgi->param('pkgpart');
 
 my($old)=qsearchs('part_pkg',{'pkgpart'=>$pkgpart}) if $pkgpart;
 
-my($new)=create FS::part_pkg ( {
+my($new)=new FS::part_pkg ( {
   map {
     $_, scalar($cgi->param($_));
   } fields('part_pkg')
@@ -80,7 +83,7 @@ foreach $part_svc (qsearch('part_svc',{})) {
   });
   my($old_quantity)=$old_pkg_svc ? $old_pkg_svc->quantity : 0;
   next unless $old_quantity != $quantity; #!here
-  my($new_pkg_svc)=create FS::pkg_svc({
+  my($new_pkg_svc)=new FS::pkg_svc({
     'pkgpart'  => $pkgpart,
     'svcpart'  => $part_svc->getfield('svcpart'),
     #'quantity' => $cgi->param('pkg_svc'. $part_svc->getfield('svcpart')),
@@ -101,7 +104,7 @@ unless ( $cgi->param('pkgnum') && $cgi->param('pkgnum') =~ /^(\d+)$/ ) {
   my($old_cust_pkg) = qsearchs( 'cust_pkg', { 'pkgnum' => $1 } );
   my %hash = $old_cust_pkg->hash;
   $hash{'pkgpart'} = $pkgpart;
-  my($new_cust_pkg) = create FS::cust_pkg \%hash;
+  my($new_cust_pkg) = new FS::cust_pkg \%hash;
   my $error = $new_cust_pkg->replace($old_cust_pkg);
   eidiot "Error modifying cust_pkg record: $error\n" if $error;
   print $cgi->redirect(popurl(3). "view/cust_main.cgi?". $new_cust_pkg->custnum);

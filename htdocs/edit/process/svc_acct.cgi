@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct.cgi,v 1.2 1998-12-17 08:40:27 ivan Exp $
+# $Id: svc_acct.cgi,v 1.3 1999-01-18 22:47:59 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/svc_acct.cgi
@@ -23,7 +23,10 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # $Log: svc_acct.cgi,v $
-# Revision 1.2  1998-12-17 08:40:27  ivan
+# Revision 1.3  1999-01-18 22:47:59  ivan
+# s/create/new/g; and use fields('table_name')
+#
+# Revision 1.2  1998/12/17 08:40:27  ivan
 # s/CGI::Request/CGI.pm/; etc
 #
 
@@ -32,7 +35,7 @@ use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
 use FS::CGI qw(eidiot popurl);
-use FS::Record qw(qsearchs);
+use FS::Record qw(qsearchs fields);
 use FS::svc_acct;
 
 my($cgi) = new CGI;
@@ -51,11 +54,12 @@ if ( $cgi->param('_password') eq '*HIDDEN*' ) {
   $cgi->param('_password',$old->getfield('_password'));
 }
 
-my($new) = create FS::svc_acct ( {
+my($new) = new FS::svc_acct ( {
   map {
     $_, scalar($cgi->param($_));
-  } qw(svcnum pkgnum svcpart username _password popnum uid gid finger dir
-    shell quota slipip)
+  #} qw(svcnum pkgnum svcpart username _password popnum uid gid finger dir
+  #  shell quota slipip)
+  } ( fields('svc_acct'), qw( pkgnum svcpart ) )
 } );
 
 if ( $svcnum ) {
