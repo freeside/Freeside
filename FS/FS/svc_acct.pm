@@ -840,12 +840,25 @@ sub cp_change {
                         #Debug    => 1,
                       ) or die "$@\n";
 
+  if ( $password =~ /^\*SUSPENDED\* (.*)$/ ) {
+    $password = $1;
+    $app->set_mailbox_status(
+                              Other => 'T',
+                              Other_Bounce => 'T',
+                            );
+  } else {
+    $app->set_mailbox_status(
+                              Other => 'F',
+                              Other_Bounce => 'F',
+                            );
+  }
+  die $app->message."\n" unless $app->ok;
+
   $app->change_mailbox(
                         Domain    => $mydomain,
                         Mailbox   => $username,
                         Password  => $password,
                       );
-
   die $app->message."\n" unless $app->ok;
 
 }
