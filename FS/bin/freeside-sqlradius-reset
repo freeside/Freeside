@@ -12,7 +12,9 @@ adminsuidsetup $user;
 
 #my $machine = shift or die &usage;
 
-my @exports = qsearch('part_export', { 'exporttype' => 'sqlradius' } );
+my @exports =  qsearch('part_export', { exporttype=>'sqlradius' } );
+push @exports, qsearch('part_export', { exporttype=>'sqlradius_withdomain' } );
+
 
 foreach my $export ( @exports ) {
   my $icradius_dbh = DBI->connect(

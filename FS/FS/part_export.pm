@@ -691,6 +691,12 @@ tie my %sqlradius_options, 'Tie::IxHash',
   'password' => { label=>'Database password' },
 ;
 
+tie my %sqlradius_withdomain_options, 'Tie::IxHash',
+  'datasrc'  => { label=>'DBI data source ' },
+  'username' => { label=>'Database username' },
+  'password' => { label=>'Database password' },
+;
+
 tie my %cyrus_options, 'Tie::IxHash',
   'server' => { label=>'IMAP server' },
   'username' => { label=>'Admin username' },
@@ -896,7 +902,14 @@ tie my %forward_shellcommands_options, 'Tie::IxHash',
       'desc' => 'Real-time export to SQL-backed RADIUS (ICRADIUS, FreeRADIUS)',
       'options' => \%sqlradius_options,
       'nodomain' => 'Y',
-      'notes' => 'Real-time export of radcheck, radreply and usergroup tables to any SQL database for <a href="http://www.freeradius.org/">FreeRADIUS</a> or <a href="http://radius.innercite.com/">ICRADIUS</a>.  An existing RADIUS database will be updated in realtime, but you can use <a href="../docs/man/bin/freeside-sqlradius-reset">freeside-sqlradius-reset</a> to delete the entire RADIUS database and repopulate the tables from the Freeside database.  See the <a href="http://search.cpan.org/doc/TIMB/DBI-1.23/DBI.pm">DBI documentation</a> and the <a href="http://search.cpan.org/search?mode=module&query=DBD%3A%3A">documentation for your DBD</a> for the exact syntax of a DBI data source.',
+      'notes' => 'Real-time export of radcheck, radreply and usergroup tables to any SQL database for <a href="http://www.freeradius.org/">FreeRADIUS</a> or <a href="http://radius.innercite.com/">ICRADIUS</a>.  This export does not export RADIUS realms (see also sqlradius_withdomain).  AAn existing RADIUS database will be updated in realtime, but you can use <a href="../docs/man/bin/freeside-sqlradius-reset">freeside-sqlradius-reset</a> to delete the entire RADIUS database and repopulate the tables from the Freeside database.  See the <a href="http://search.cpan.org/doc/TIMB/DBI/DBI.pm">DBI documentation</a> and the <a href="http://search.cpan.org/search?mode=module&query=DBD%3A%3A">documentation for your DBD</a> for the exact syntax of a DBI data source.',
+    },
+
+    'sqlradius_withdomain' => {
+      'desc' => 'Real-time export to SQL-backed RADIUS (ICRADIUS, FreeRADIUS) with realms',
+      'options' => \%sqlradius_withdomain_options,
+      'nodomain' => '',
+      'notes' => 'Real-time export of radcheck, radreply and usergroup tables to any SQL database for <a href="http://www.freeradius.org/">FreeRADIUS</a> or <a href="http://radius.innercite.com/">ICRADIUS</a>.  This export exports domains to RADIUS realms (see also sqlradius).  An existing RADIUS database will be updated in realtime, but you can use <a href="../docs/man/bin/freeside-sqlradius-reset">freeside-sqlradius-reset</a> to delete the entire RADIUS database and repopulate the tables from the Freeside database.  See the <a href="http://search.cpan.org/doc/TIMB/DBI/DBI.pm">DBI documentation</a> and the <a href="http://search.cpan.org/search?mode=module&query=DBD%3A%3A">documentation for your DBD</a> for the exact syntax of a DBI data source.',
     },
 
     'sqlmail' => {
