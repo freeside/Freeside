@@ -24,7 +24,9 @@ if ( $cgi->param('active') ) {
     $num_active_cust_pkg{$part_pkg->pkgpart} =
       $active_sth->fetchrow_arrayref->[0];
   }
-  $sortby = \*active_cust_pkg_sort;
+  $sortby = sub {
+    $num_active_cust_pkg{$b->pkgpart} <=> $num_active_cust_pkg{$a->pkgpart};
+  };
 } else {
   $sortby = \*pkgpart_sort;
 }
@@ -132,13 +134,8 @@ print <<END;
 </HTML>
 END
 
-
 sub pkgpart_sort {
   $a->pkgpart <=> $b->pkgpart;
-}
-
-sub active_cust_pkg_sort {
-  $num_active_cust_pkg{$b->pkgpart} <=> $num_active_cust_pkg{$a->pkgpart};
 }
 
 %>
