@@ -3,7 +3,7 @@ package FS::ClientAPI;
 use strict;
 use vars qw(%handler $domain $DEBUG);
 
-$DEBUG = 1;
+$DEBUG = 0;
 
 %handler = ();
 
@@ -23,24 +23,13 @@ foreach my $INC ( @INC ) {
   }
 }
 
-#(sub for modules)
-sub register_handlers {
-  my $self = shift;
-  my %new_handlers = @_;
-  foreach my $key ( keys %new_handlers ) {
-    warn "WARNING: redefining sub $key" if exists $handler{$key};
-    #warn "registering $key";
-    $handler{$key} = $new_handlers{$key};
-  }
-}
-
 #---
 
 sub dispatch {
   my ( $self, $name ) = ( shift, shift );
-  my $sub = $handler{$name}
-    or die "unknown FS::ClientAPI sub $name (known: ". join(" ", keys %handler );
-    #or die "unknown FS::ClientAPI sub $name";
+  $name =~ s(/)(::)g;
+  my $sub = "FS::ClientAPI::$name";
+  no strict 'refs';
   &{$sub}(@_);
 }
 

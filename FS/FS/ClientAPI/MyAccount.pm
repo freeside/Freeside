@@ -19,27 +19,6 @@ use FS::cust_bill;
 use FS::cust_main_county;
 use FS::cust_pkg;
 
-#use FS::ClientAPI; #hmm
-FS::ClientAPI->register_handlers(
-  'MyAccount/login'              => \&login,
-  'MyAccount/logout'             => \&logout,
-  'MyAccount/customer_info'      => \&customer_info,
-  'MyAccount/edit_info'          => \&edit_info,
-  'MyAccount/invoice'            => \&invoice,
-  'MyAccount/list_invoices'      => \&list_invoices,
-  'MyAccount/cancel'             => \&cancel,
-  'MyAccount/payment_info'       => \&payment_info,
-  'MyAccount/process_payment'    => \&process_payment,
-  'MyAccount/list_pkgs'          => \&list_pkgs,
-  'MyAccount/order_pkg'          => \&order_pkg,
-  'MyAccount/cancel_pkg'         => \&cancel_pkg,
-  'MyAccount/charge'             => \&charge,
-  'MyAccount/part_svc_info'      => \&part_svc_info,
-  'MyAccount/provision_acct'     => \&provision_acct,
-  'MyAccount/provision_external' => \&provision_external,
-  'MyAccount/unprovision_svc'    => \&unprovision_svc,
-);
-
 use vars qw( @cust_main_editable_fields );
 @cust_main_editable_fields = qw(
   first last company address1 address2 city

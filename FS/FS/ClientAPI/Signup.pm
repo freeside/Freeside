@@ -16,12 +16,6 @@ use FS::acct_snarf;
 use FS::queue;
 use FS::reg_code;
 
-#use FS::ClientAPI; #hmm
-FS::ClientAPI->register_handlers(
-  'Signup/signup_info'  => \&signup_info,
-  'Signup/new_customer' => \&new_customer,
-);
-
 sub signup_info {
   my $packet = shift;
 
