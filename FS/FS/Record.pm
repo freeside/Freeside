@@ -132,15 +132,8 @@ sub new {
 
   my $hashref = $self->{'Hash'} = shift;
 
-  foreach my $field ( $self->fields ) { 
-    $hashref->{$field}='' unless defined $hashref->{$field};
-    #trim the '$' and ',' from money fields for Pg (belong HERE?)
-    #(what about Pg i18n?)
-    if ( driver_name =~ /^Pg$/i
-         && $self->dbdef_table->column($field)->type eq 'money' ) {
-      ${$hashref}{$field} =~ s/^\$//;
-      ${$hashref}{$field} =~ s/\,//;
-    }
+  foreach my $field ( grep defined($hashref->{$_}), $self->fields ) { 
+    $hashref->{$field}='';
   }
 
   $self->_cache($hashref, shift) if $self->can('_cache') && @_;
