@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main.cgi,v 1.16 2001-02-07 19:45:45 ivan Exp $
+# $Id: cust_main.cgi,v 1.17 2001-04-23 16:07:54 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/cust_main.cgi
@@ -17,7 +17,11 @@
 # display total, use FS::CGI ivan@sisd.com 98-jul-17
 #
 # $Log: cust_main.cgi,v $
-# Revision 1.16  2001-02-07 19:45:45  ivan
+# Revision 1.17  2001-04-23 16:07:54  ivan
+# fix
+# Insecure dependency in eval while running with -T switch at /usr/local/lib/site_perl/FS/Record.pm line 202.
+#
+# Revision 1.16  2001/02/07 19:45:45  ivan
 # tyop
 #
 # Revision 1.15  2000/07/17 16:45:41  ivan
@@ -81,6 +85,7 @@ use FS::UID qw(cgisuidsetup);
 use FS::Record qw(qsearch qsearchs);
 use FS::CGI qw(header menubar eidiot popurl table);
 use FS::cust_main;
+use FS::cust_svc;
 
 $cgi = new CGI;
 cgisuidsetup($cgi);
