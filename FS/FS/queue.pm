@@ -251,17 +251,26 @@ END
   $html .= '<TH>Account</TH>' unless $hashref->{svcnum};
   $html .= '</TR>';
 
+  my $dangerous = $conf->exists('queue_dangerous_controls');
+
   my $p = FS::CGI::popurl(2);
   foreach my $queue ( sort { 
     $a->getfield('jobnum') <=> $b->getfield('jobnum')
   } @queue ) {
     my $queue_hashref = $queue->hashref;
     my $jobnum = $queue->jobnum;
-    my $args = join(' ', $queue->args);
+
+    my $args;
+    if ( $dangerous || $queue->job !~ /^FS::part_export::/ || !$noactions ) {
+      $args = join(' ', $queue->args);
+    } else {
+      $args = '';
+    }
+
     my $date = time2str( "%a %b %e %T %Y", $queue->_date );
     my $status = $queue->status;
     $status .= ': '. $queue->statustext if $queue->statustext;
-    if ( $conf->exists('queue_dangerous_controls')
+    if ( $dangerous
          || ( ! $noactions && $status =~ /^failed/ || $status =~ /^locked/ ) ) {
       $status .=
         qq! (&nbsp;<A HREF="$p/misc/queue.cgi?jobnum=$jobnum&action=new">retry</A>&nbsp;|!.
@@ -305,7 +314,7 @@ END
 
 =head1 VERSION
 
-$Id: queue.pm,v 1.9 2002-03-24 14:29:00 ivan Exp $
+$Id: queue.pm,v 1.10 2002-03-27 07:08:08 ivan Exp $
 
 =head1 BUGS
 
