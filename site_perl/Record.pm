@@ -127,7 +127,7 @@ sub new {
   #  }
   #}
 
-  foreach my $column (keys %{$hashref}) {
+  foreach my $column ( FS::Record::fields $table ) { 
     #trim the '$' from money fields for Pg (beong HERE?)
     #(what about Pg i18n?)
     if ( datasrc =~ m/Pg/ 
@@ -861,6 +861,12 @@ ivan@sisd.com 98-aug-18
 added pod documentation ivan@sisd.com 98-sep-6
 
 ut_phonen got ''; at the end ivan@sisd.com 98-sep-27
+
+$Log: Record.pm,v $
+Revision 1.2  1998-11-07 05:17:18  ivan
+In sub new, Pg wrapper for money fields from dbdef (FS::Record::fields $table),
+not keys of supplied hashref.
+
 
 =cut
 
