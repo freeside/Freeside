@@ -9,7 +9,8 @@
 use strict;
 use Socket;
 
-my($fs_passwdd_socket)="/usr/local/freeside/fs_passwdd_socket";
+my $fs_passwdd_socket = "/usr/local/freeside/fs_passwdd_socket";
+my $pid_file = "$fs_passwdd_socket.pid"
 
 $ENV{'PATH'} ='/usr/local/bin:/usr/bin:/usr/ucb:/bin';
 $ENV{'SHELL'} = '/bin/sh';
@@ -27,6 +28,16 @@ socket(Server,PF_UNIX,SOCK_STREAM,0) or die "socket: $!";
 unlink($fs_passwdd_socket);
 bind(Server, $uaddr) or die "bind: $!";
 listen(Server,SOMAXCONN) or die "listen: $!";
+
+if ( -e $pid_file ) {
+  open(PIDFILE,"<$pid_file");
+  chomp( my $old_pid = <$pid_file> );
+  close PIDFILE;
+  kill 'TERM', $pid_file;
+}
+open(PIDFILE,">$pid_file");
+print PIDFILE "$$\n";
+close PIDFILE;
 
 my($paddr);
 for ( ; $paddr = accept(Client,Server); close Client) {
