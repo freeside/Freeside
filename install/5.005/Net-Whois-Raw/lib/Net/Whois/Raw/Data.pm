@@ -1,9 +1,9 @@
 package Net::Whois::Raw::Data;
 
 use strict;
-use vars qw(%notfound %strip);
+use vars qw(%notfound %strip %servers);
 
-our %servers = qw(
+%servers = qw(
     COM    whois.crsnic.net
     NET    whois.crsnic.net
     EDU    whois.educause.net
