@@ -110,10 +110,11 @@ ALTER TABLE part_pkg DROP CONSTRAINT part_pkg_temp_pkey;
 ALTER TABLE part_pkg ADD PRIMARY KEY (pkgpart);
 select setval('public.part_pkg_temp_pkgpart_seq', ( select max(pkgpart) from part_pkg) );
 
-Or on Pg versions that don't support DROP CONSTRAINT and ADD PRIMARY KEY (tested on 7.1 so far):
+Or on Pg versions that don't support DROP CONSTRAINT and ADD PRIMARY KEY (tested on 7.1 and 7.2 so far):
 DROP INDEX part_pkg_temp_pkey;
 CREATE UNIQUE INDEX part_pkg_pkey ON part_pkg (pkgpart);
-select setval('part_pkg_temp_pkgpart_seq', ( select max(pkgpart) from part_pkg) );
+7.1?: select setval('part_pkg_temp_pkgpart_seq', ( select max(pkgpart) from part_pkg) );
+7.2: select setval('part_pkg_pkgpart_seq', ( select max(pkgpart) from part_pkg) );
 
 CREATE TABLE h_part_pkg_temp (
     historynum serial NOT NULL,
@@ -144,10 +145,11 @@ ALTER TABLE h_part_pkg DROP CONSTRAINT h_part_pkg_temp_pkey;
 ALTER TABLE h_part_pkg ADD PRIMARY KEY (historynum);
 select setval('public.h_part_pkg_temp_historynum_seq', ( select max(historynum) from h_part_pkg) );
 
-Or on Pg versions that don't support DROP CONSTRAINT and ADD PRIMARY KEY (tested on 7.1 so far):
+Or on Pg versions that don't support DROP CONSTRAINT and ADD PRIMARY KEY (tested on 7.1 and 7.2 so far):
 DROP INDEX h_part_pkg_temp_pkey;
 CREATE UNIQUE INDEX h_part_pkg_pkey ON h_part_pkg (historynum);
-select setval('h_part_pkg_temp_historynum_seq', ( select max(historynum) from h_part_pkg) );
+7.1?: select setval('h_part_pkg_temp_historynum_seq', ( select max(historynum) from h_part_pkg) );
+7.2: select setval('h_part_pkg_historynum_seq', ( select max(historynum) from h_part_pkg) );
 
 
 DROP INDEX cust_bill_pkg1;
