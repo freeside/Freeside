@@ -1,7 +1,8 @@
 #!/bin/sh
 
-cd /usr/ports/sysutils/portupgrade
-make install
+( cd /usr/ports/sysutils/portupgrade
+  make install
+)
 
 pkgdb -u
 
@@ -18,4 +19,22 @@ for port in `grep -v '^ *#' ports`; do
 done
 
 for a in Net::SSH DBIx::DBSchema HTML::Widgets::SelectLayers Time::Duration Business::CreditCard; do perl -MCPAN -e"install $a"; done
+
+su -l pgsql -c initdb
+
+/usr/local/etc/rc.d/010.pgsql.sh start
+
+pw user add freeside -m
+
+su -l pgsql -c 'createuser -P freeside'
+
+su -l freeside -c 'createdb freeside'
+
+#?
+cd ../..
+make install-perl-modules
+make create-config
+make deploy
+
+#edit apache config, etc.
 

@@ -2,6 +2,7 @@ shells/zsh
 misc/screen
 ftp/lftp
 www/mod_perl
+www/apache13-modssl
 net/rsync
 databases/postgresql7
 misc/p5-Array-PrintCols
