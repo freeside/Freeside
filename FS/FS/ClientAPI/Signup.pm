@@ -83,14 +83,14 @@ sub new_customer {
   my $packet = shift;
 
   my $conf = new FS::Conf;
-  my $error = '';
   
   #things that aren't necessary in base class, but are for signup server
     #return "Passwords don't match"
     #  if $hashref->{'_password'} ne $hashref->{'_password2'}
-  $error ||= gettext('empty_password') unless $packet->{'_password'};
+  return { 'error' => gettext('empty_password') }
+    unless $packet->{'_password'};
   # a bit inefficient for large numbers of pops
-  $error ||= gettext('no_access_number_selected')
+  return { 'error' => gettext('no_access_number_selected') }
     unless $packet->{'popnum'} || !scalar(qsearch('svc_acct_pop',{} ));
 
   #shares some stuff with htdocs/edit/process/cust_main.cgi... take any
@@ -109,7 +109,7 @@ sub new_customer {
 
   } );
 
-  $error ||= "Illegal payment type"
+  return { 'error' => "Illegal payment type" }
     unless grep { $_ eq $packet->{'payby'} }
                 $conf->config('signup_server-payby');
 
@@ -120,18 +120,19 @@ sub new_customer {
 
   $packet->{'pkgpart'} =~ /^(\d+)$/ or '' =~ /^()$/;
   my $pkgpart = $1;
-  $error ||= 'Please select a package' unless $pkgpart; #msgcat
+  return { 'error' => 'Please select a package' } unless $pkgpart; #msgcat
 
   my $part_pkg =
     qsearchs( 'part_pkg', { 'pkgpart' => $pkgpart } )
-      or $error ||= "WARNING: unknown pkgpart: $pkgpart";
-  my $svcpart = $part_pkg->svcpart('svc_acct') unless $error;
+      or return { 'error' => "WARNING: unknown pkgpart: $pkgpart" };
+  my $svcpart = $part_pkg->svcpart('svc_acct');
 
   my $cust_pkg = new FS::cust_pkg ( {
     #later#'custnum' => $custnum,
     'pkgpart' => $packet->{'pkgpart'},
   } );
-  $error ||= $cust_pkg->check;
+  my $error = $cust_pkg->check;
+  return { 'error' => $error } if $error;
 
   my $svc_acct = new FS::svc_acct ( {
     'svcpart'   => $svcpart,
@@ -140,17 +141,19 @@ sub new_customer {
   } );
 
   my $y = $svc_acct->setdefault; # arguably should be in new method
-  $error ||= $y unless ref($y);
+  return { 'error' => $y } if $y && !ref($y);
 
-  $error ||= $svc_acct->check;
+  $error = $svc_acct->check;
+  return { 'error' => $error } if $error;
 
   use Tie::RefHash;
   tie my %hash, 'Tie::RefHash';
   %hash = ( $cust_pkg => [ $svc_acct ] );
   #msgcat
-  $error ||= $cust_main->insert( \%hash, \@invoicing_list, 'noexport' => 1 );
+  $error = $cust_main->insert( \%hash, \@invoicing_list, 'noexport' => 1 );
+  return { 'error' => $error } if $error;
 
-  if ( ! $error && $conf->exists('signup_server-realtime') ) {
+  if ( $conf->exists('signup_server-realtime') ) {
 
     #warn "[fs_signup_server] Billing customer...\n" if $Debug;
 
@@ -176,13 +179,13 @@ sub new_customer {
       local $FS::svc_Common::noexport_hack = 1;
       $cust_main->cancel('quiet'=>1);
 
-      $error = '_decline';
+      return { 'error' => '_decline' };
     }
 
   }
-  $cust_main->reexport unless $error;
+  $cust_main->reexport;
 
-  return { error => $error };
+  return { error => '' };
 
 }
 
