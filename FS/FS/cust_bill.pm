@@ -377,6 +377,29 @@ sub send {
 
 }
 
+=item send_if_newest [ TEMPLATENAME [ , AGENTNUM [ , INVOICE_FROM ] ] ]
+
+Like B<send>, but only sends the invoice if it is the newest open invoice for
+this customer.
+
+=cut
+
+sub send_if_newest {
+  my $self = shift;
+
+  return ''
+    if scalar(
+               grep { $_->owed > 0 } 
+                    qsearch('cust_bill', {
+                      'custnum' => $self->custnum,
+                      #'_date'   => { op=>'>', value=>$self->_date },
+                      'invnum'  => { op=>'>', value=>$self->invnum },
+                    } )
+             );
+    
+  $self->send(@_);
+}
+
 =item send_csv OPTIONS
 
 Sends invoice as a CSV data-file to a remote host with the specified protocol.

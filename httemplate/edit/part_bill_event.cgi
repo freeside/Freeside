@@ -177,6 +177,14 @@ tie my %events, 'Tie::IxHash',
     'weight' => 50,
   },
 
+  'send_if_newest' => {
+    'name' => 'Send invoice (email/print) with alternate template, if it is still the newest invoice (useful for late notices)',
+    'code' => '$cust_bill->send_if_newest(\'%%%if_newest_templatename%%%\');',
+    'html' =>
+        '<INPUT TYPE="text" NAME="if_newest_templatename" VALUE="%%%if_newest_templatename%%%">',
+    'weight' => 50,
+  },
+
   'send_agent' => {
     'name' => 'Send invoice (email/print) ',
     'code' => '$cust_bill->send(\'%%%agent_templatename%%%\', %%%agentnum%%%, \'%%%agent_invoice_from%%%\');',
