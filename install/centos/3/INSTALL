@@ -1,0 +1,66 @@
+#!/bin/sh
+
+yum install cvs perl perl-DateManip perl-HTML-Parser \
+            perl-HTML-Tagset perl-URI perl-libwww-perl perl-CPAN \
+            rsync screen zsh lftp cvs autoconf \
+            gcc gd \
+            rh-postgresql rh-postgresql-docs rh-postgresql-libs \
+            rh-postgresql-server rh-postgresql-devel
+
+
+perl -MCPAN -e"install Net::Whois::Raw, Business::CreditCard, \
+                       File::CounterFile, String::Approx, Text::Template, \
+                       FreezeThaw, DBIx::DBSchema, \
+                       Net::SSH, String::ShellQuote, Net::SCP, \
+                       HTML::Mason, Tie::IxHash, Time::Duration, \
+                       HTML::Widgets::SelectLayers, Apache::DBI, \
+                       Cache::Cache, IPC::ShareLite, Locale::SubCountry, \
+                       Crypt::PasswdMD5, \
+                       Locale::SubCountry, DBI, DBD::Pg, \
+                       File::Temp, Storable, JavaScript::RPC::Server::CGI"
+
+#RT
+#perl -MCPAN -e "install Digest::MD5, Test::Inline, Class::ReturnValue, DBIx::SearchBuilder, HTML::Scrubber, Log::Dispatch, Locale::Maketext::Fuzzy, MIME::Entity, Text::Wrapper, Time::ParseDate, Term::ReadKey, Text::Autoformat, Text::Quoted, Tree::Simple, Module::Versions::Report"
+
+lftpget http://dag.wieers.com/packages/apt/apt-0.5.15cnc6-3.1.el3.dag.i386.rpm
+rpm -i apt-0.5.15cnc6-3.1.el3.dag.i386.rpm 
+apt-get update
+apt-get install perl-GD perl-MailTools perl-TimeDate perl-NetAddr-IP
+
+perl -MCPAN -e"install Chart::Base"
+
+#apachetoolbox
+apt-get remove httpd
+yum install krb5-devel openssl-devel
+lftpget http://umn.dl.sourceforge.net/sourceforge/apachetoolbox/Apachetoolbox-install-1.5.72.tar.gz
+tar xzvf Apachetoolbox-install-1.5.72.tar.gz
+cd Apachetoolbox-1.5.72
+./install.sh
+# export INCLUDES="-I/usr/kerberos/include"
+cd apache_1.3.31;make
+make certificate TYPE=dummy
+make install
+ln -s /usr/local/apache/bin/htpasswd /usr/local/bin
+cp httpd-init /etc/init.d/httpd-freeside
+chmod a+rx /etc/init.d/httpd-freeside 
+/sbin/chkconfig httpd-freeside on
+#end apachetoolbox
+
+/usr/sbin/useradd freeside
+
+/sbin/chkconfig rhdb on
+/etc/init.d/rhdb start
+
+su postgres -c "createuser -P freeside"
+
+su freeside -c "createdb freeside"
+
+#?
+cd ../../..
+make install-perl-modules
+make create-config
+freeside-adduser -c -h /usr/local/etc/freeside/htpasswd ivan
+LANG=C su freeside -c 'freeside-setup ivan'
+su freeside -c '/home/ivan/freeside/bin/populate-msgcat ivan'
+make deploy
+

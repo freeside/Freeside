@@ -1,0 +1,50 @@
+#!/bin/bash
+#
+# Startup script for the Apache Web Server
+#
+# chkconfig: - 85 15
+# description: Apache is a World Wide Web server.  It is used to serve \
+#              HTML files and CGI.
+# processname: httpd
+# Source function library.
+
+# Path to the apachectl script, server binary, and short-form for messages.
+apachectl=/usr/local/apache/bin/apachectl
+prog=httpd
+RETVAL=0
+
+start() {
+        echo -n $"Starting $prog: "
+        $apachectl startssl
+        RETVAL=$?
+}
+stop() {
+        echo -n $"Stopping $prog: "
+        $apachectl stop
+        RETVAL=$?
+}
+
+# See how we were called.
+case "$1" in
+  start)
+        start
+        ;;
+  stop)
+        stop
+        ;;
+  restart)
+        stop
+        sleep 3
+        start
+        ;;
+  graceful|help|configtest)
+        $apachectl $@
+        RETVAL=$?
+        ;;
+  *)
+        echo $"Usage: $prog {start|stop|restart|graceful|help|configtest}"
+        exit 1
+esac
+
+exit $RETVAL
+
