@@ -115,8 +115,7 @@ sub insert {
   my $error = $self->ut_number('custnum');
   return $error if $error;
 
-  return "Unknown customer ". $self->custnum
-    unless qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
+  return "Unknown customer ". $self->custnum unless $self->cust_main;
 
   $self->SUPER::insert;
 
@@ -189,8 +188,7 @@ sub check {
   return $error if $error;
 
   if ( $self->custnum ) { 
-    return "Unknown customer"
-      unless qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
+    return "Unknown customer ". $self->custnum unless $self->cust_main;
   }
 
   return "Unknown pkgpart"
@@ -433,6 +431,17 @@ sub labels {
   map { [ $_->label ] } qsearch ( 'cust_svc', { 'pkgnum' => $self->pkgnum } );
 }
 
+=item cust_main
+
+Returns the parent customer object (see L<FS::cust_main>).
+
+=cut
+
+sub cust_main {
+  my $self = shift;
+  qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
+}
+
 =back
 
 =head1 SUBROUTINES
@@ -576,7 +585,7 @@ sub order {
 
 =head1 VERSION
 
-$Id: cust_pkg.pm,v 1.9 2001-10-09 23:10:16 ivan Exp $
+$Id: cust_pkg.pm,v 1.10 2001-10-15 12:16:42 ivan Exp $
 
 =head1 BUGS
 
@@ -598,8 +607,8 @@ moved to check ?
 
 =head1 SEE ALSO
 
-L<FS::Record>, L<FS::cust_main>, L<FS::part_pkg>, L<FS::cust_svc>
-, L<FS::pkg_svc>, schema.html from the base documentation
+L<FS::Record>, L<FS::cust_main>, L<FS::part_pkg>, L<FS::cust_svc>,
+L<FS::pkg_svc>, schema.html from the base documentation
 
 =cut
 

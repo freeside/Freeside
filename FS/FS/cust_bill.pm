@@ -389,8 +389,12 @@ sub print_text {
 
     #something more elaborate if $_->amount ne $_->cust_credit->credited ?
 
+    my $reason = substr($_->cust_credit->reason,0,32);
+    $reason .= '...' if length($reason) < length($_->cust_credit->reason);
+    $reason = " ($reason) " if $reason;
     push @buf,[
-      "Credit #". $_->crednum. " (". time2str("%x",$_->cust_credit->_date) .")",
+      "Credit #". $_->crednum. " (". time2str("%x",$_->cust_credit->_date) .")".
+        $reason,
       $money_char. sprintf("%10.2f",$_->amount)
     ];
   }
@@ -489,7 +493,7 @@ sub print_text {
 
 =head1 VERSION
 
-$Id: cust_bill.pm,v 1.11 2001-09-03 22:07:38 ivan Exp $
+$Id: cust_bill.pm,v 1.12 2001-10-15 12:16:41 ivan Exp $
 
 =head1 BUGS
 

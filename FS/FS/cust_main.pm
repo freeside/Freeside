@@ -843,10 +843,11 @@ sub bill {
       };
       $setup_prog = $1;
 
-      my $cpt = new Safe;
-      #$cpt->permit(); #what is necessary?
-      $cpt->share(qw( $cust_pkg )); #can $cpt now use $cust_pkg methods?
-      $setup = $cpt->reval($setup_prog);
+        #my $cpt = new Safe;
+        ##$cpt->permit(); #what is necessary?
+        #$cpt->share(qw( $cust_pkg )); #can $cpt now use $cust_pkg methods?
+        #$setup = $cpt->reval($setup_prog);
+      $setup = eval $setup_prog;
       unless ( defined($setup) ) {
         $dbh->rollback if $oldAutoCommit;
         return "Error reval-ing part_pkg->setup pkgpart ". $part_pkg->pkgpart.
@@ -871,10 +872,11 @@ sub bill {
       };
       $recur_prog = $1;
 
-      my $cpt = new Safe;
-      #$cpt->permit(); #what is necessary?
-      $cpt->share(qw( $cust_pkg )); #can $cpt now use $cust_pkg methods?
-      $recur = $cpt->reval($recur_prog);
+        #my $cpt = new Safe;
+        ##$cpt->permit(); #what is necessary?
+        #$cpt->share(qw( $cust_pkg )); #can $cpt now use $cust_pkg methods?
+        #$recur = $cpt->reval($recur_prog);
+      $recur = eval $recur_prog;
       unless ( defined($recur) ) {
         $dbh->rollback if $oldAutoCommit;
         return "Error reval-ing part_pkg->recur pkgpart ".
@@ -1825,7 +1827,7 @@ sub append_fuzzyfiles {
 
 =head1 VERSION
 
-$Id: cust_main.pm,v 1.40 2001-10-15 10:42:28 ivan Exp $
+$Id: cust_main.pm,v 1.41 2001-10-15 12:16:42 ivan Exp $
 
 =head1 BUGS
 
