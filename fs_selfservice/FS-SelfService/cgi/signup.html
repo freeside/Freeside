@@ -14,10 +14,10 @@
 //--></script>
 <FONT SIZE=7><%= $agent || 'ISP' %> Signup form</FONT><BR><BR>
 <FONT SIZE="+1" COLOR="#ff0000"><%= $error %></FONT>
-<FORM NAME="OneTrueForm" ACTION="<%= $selfurl %>" METHOD=POST onSubmit="document.OneTrueForm.signup.disabled=true">
+<FORM NAME="OneTrueForm" ACTION="<%= $self_url %>" METHOD=POST onSubmit="document.OneTrueForm.signup.disabled=true">
 <INPUT TYPE="hidden" NAME="session" VALUE="<%= $session_id %>">
 <INPUT TYPE="hidden" NAME="action" VALUE="process_signup">
-<INPUT TYPE="hidden" NAME="ref" VALUE="<%= $referral_custnum %>">
+<INPUT TYPE="hidden" NAME="referral_custnum" VALUE="<%= $referral_custnum %>">
 <INPUT TYPE="hidden" NAME="ss" VALUE="">
 Where did you hear about our service? <SELECT NAME="refnum">
 <%=
@@ -175,11 +175,14 @@ Contact Information
 
 </TR></TABLE><font color="#ff0000">*</font> required fields for each billing type
 <BR><BR>First package
+<INPUT TYPE="hidden" NAME="promo_code" VALUE="<%= $promo_code %>">
+<INPUT TYPE="hidden" NAME="reg_code" VALUE="<%= $reg_code %>">
 <TABLE BGCOLOR="#c0c0c0" BORDER=0 CELLSPACING=0 WIDTH="100%">
 <TR>
-  <TD COLSPAN=2><SELECT NAME="pkgpart"><OPTION VALUE="">(none)
+  <TD COLSPAN=2><SELECT NAME="pkgpart">
 
   <%=
+    $OUT .= '<OPTION VALUE="">(none)' unless scalar(@part_pkg ) ==1;
     foreach my $part_pkg ( @part_pkg ) {
       $OUT .= '<OPTION VALUE="'. $part_pkg->{'pkgpart'}. '"';
       $OUT .= ' SELECTED' if $pkgpart && $part_pkg->{'pkgpart'} == $pkgpart;

@@ -1,7 +1,7 @@
 #!/usr/bin/perl -T
 #!/usr/bin/perl -Tw
 #
-# $Id: signup.cgi,v 1.1 2005-03-12 14:31:50 ivan Exp $
+# $Id: signup.cgi,v 1.2 2005-03-12 14:35:12 ivan Exp $
 
 use strict;
 use vars qw( @payby $cgi $init_data
@@ -12,24 +12,7 @@ use vars qw( @payby $cgi $init_data
              $success_html $success_template
              $decline_html $decline_template
            );
-             #$locales $packages
-             #$pops %pop %popnum2pop
 
-             #$last $first $ss $company $address1
-             #$address2 $city $state $county
-             #$country $zip $daytime $night $fax
-
-             #$ship_last $ship_first $ship_ss $ship_company $ship_address1
-             #$ship_address2 $ship_city $ship_state $ship_county
-             #$ship_country $ship_zip $ship_daytime $ship_night $ship_fax
-
-             #$invoicing_list $payby $payinfo
-             #$paycvv $paydate $payname $referral_custnum $init_popstate
-             #$pkgpart $username $_password $_password2 $sec_phrase $popnum
-             #$refnum
-
-             #$ac $exch $loc
-             #$email_name $pkg
 use subs qw( print_form print_okay print_decline
              success_default decline_default
            );
@@ -140,48 +123,10 @@ $init_data = signup_info( 'agentnum'   => $agentnum,
                           'promo_code' => scalar($cgi->param('promo_code')),
                           'reg_code'   => uc(scalar($cgi->param('reg_code'))),
                         );
-#$error = $init_data->{'error'};
-#$locales = $init_data->{'cust_main_county'};
-#$packages = $init_data->{'part_pkg'};
-#$pops = $init_data->{'svc_acct_pop'};
-#@payby = @{$init_data->{'payby'}} if @{$init_data->{'payby'}};
-#$packages = $init_data->{agentnum2part_pkg}{$agentnum} if $agentnum;
 
 if (    ( defined($cgi->param('magic')) && $cgi->param('magic') eq 'process' )
      || ( defined($cgi->param('action')) && $cgi->param('action') eq 'process_signup' )
    ) {
-
-#    if ( $cgi->param('state') =~ /^(\w*)( \(([\w ]+)\))? ?\/ ?(\w+)$/ ) {
-#      $state = $1;
-#      $county = $3 || '';
-#      $country = $4;
-#    } elsif ( $cgi->param('state') =~ /^(\w*)$/ ) {
-#      $state = $1;
-#      $cgi->param('county') =~ /^([\w ]*)$/
-#        or die "illegal county: ". $cgi->param('county');
-#      $county = $1;
-#      $cgi->param('country') =~ /^(\w+)$/
-#        or die "illegal country: ". $cgi->param('country');
-#      $country = $1;
-#    } else {
-#      die "illegal state: ". $cgi->param('state');
-#    }
-#    if ( $cgi->param('ship_state') =~ /^(\w*)( \(([\w ]+)\))? ?\/ ?(\w+)$/ ) {
-#      $ship_state = $1;
-#      $ship_county = $3 || '';
-#      $ship_country = $4;
-#    } elsif ( $cgi->param('ship_state') =~ /^(\w*)$/ ) {
-#      $ship_state = $1;
-#      $cgi->param('ship_county') =~ /^([\w ]*)$/
-#        or die "illegal county: ". $cgi->param('ship_county');
-#      $ship_county = $1;
-#      #$cgi->param('ship_country') =~ /^(\w+)$/
-#      $cgi->param('ship_country') =~ /^(\w*)$/
-#        or die "illegal ship_country: ". $cgi->param('ship_country');
-#      $ship_country = $1;
-#    #} else {
-#    #  die "illegal ship_state: ". $cgi->param('ship_state');
-#    }
 
     $error = '';
 
@@ -271,47 +216,6 @@ if (    ( defined($cgi->param('magic')) && $cgi->param('magic') eq 'process' )
 
 } else {
   $error = '';
-#  $last = '';
-#  $first = '';
-#  $ss = '';
-#  $company = '';
-#  $address1 = '';
-#  $address2 = '';
-#  $city = '';
-#  $state = $init_data->{statedefault};
-#  $county = '';
-#  $country = $init_data->{countrydefault};
-#  $zip = '';
-#  $daytime = '';
-#  $night = '';
-#  $fax = '';
-#  $ship_last = '';
-#  $ship_first = '';
-#  $ship_company = '';
-#  $ship_address1 = '';
-#  $ship_address2 = '';
-#  $ship_city = '';
-#  $ship_state = $init_data->{statedefault};
-#  $ship_county = '';
-#  $ship_country = $init_data->{countrydefault};
-#  $ship_zip = '';
-#  $ship_daytime = '';
-#  $ship_night = '';
-#  $ship_fax = '';
-#  $invoicing_list = '';
-#  $payby = '';
-#  $payinfo = '';
-#  $paydate = '';
-#  $payname = '';
-#  $pkgpart = '';
-#  $username = '';
-#  $_password = '';
-#  $_password2 = '';
-#  $sec_phrase = '';
-#  $popnum = '';
-#  $referral_custnum = $cgi->param('ref') || '';
-#  $init_popstate = $cgi->param('init_popstate') || '';
-#  $refnum = $init_data->{'refnum'};
   print_form;
 }
 

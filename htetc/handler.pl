@@ -93,6 +93,7 @@ sub handler
       use Date::Format;
       use Date::Parse;
       use Time::Local;
+      use Time::Duration;
       use Tie::IxHash;
       use HTML::Entities;
       use IO::Handle;
