@@ -162,8 +162,8 @@ CREATE INDEX part_export_option (
   option varchar(80) not null,
   optionvalue text NULL
 );
-CREATE INDEX part_export_option1 ON part_export ( exportnum );
-CREATE INDEX part_export_option2 ON part_export ( option );
+CREATE INDEX part_export_option1 ON part_export_option ( exportnum );
+CREATE INDEX part_export_option2 ON part_export_option ( option );
 
 ALTER TABLE svc_acct ADD domsvc integer NOT NULL;
 ALTER TABLE svc_domain ADD catchall integer NULL;
