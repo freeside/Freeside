@@ -185,7 +185,7 @@ install-init:
 	${INIT_INSTALL}
 
 install-selfservice:
-	[ -e ~freeside/.ssh/id_dsa.pub ] || su -c 'ssh-keygen -t dsa' - freeside
+	[ -e ~freeside/.ssh/id_dsa.pub ] || su - freeside -c 'ssh-keygen -t dsa'
 	for MACHINE in ${SELFSERVICE_MACHINES}; do \
 	  scp -r fs_selfservice/FS-SelfService ${SELFSERVICE_INSTALL_USER}@$$MACHINE:. ;\
 	  ssh ${SELFSERVICE_INSTALL_USER}@$$MACHINE "cd FS-SelfService; perl Makefile.PL && make" ;\
