@@ -1,5 +1,5 @@
 <%
-# <!-- $Id: svc_acct.cgi,v 1.9 2001-12-03 11:33:19 ivan Exp $ -->
+# <!-- $Id: svc_acct.cgi,v 1.10 2001-12-09 23:31:55 ivan Exp $ -->
 
 use strict;
 use vars qw( $cgi @svc_acct $sortby $query $mydomain
@@ -221,7 +221,7 @@ END
           "is contained in your legacy <CODE>domain</CODE> ".
           "<A HREF=\"${p}docs/config.html#domain\">configuration file</A>.  ".
           "You should run the <CODE>bin/fs-migrate-svc_acct_sm</CODE> script ".
-          "to create a proper svc_domain record for this domain."
+          "to create a proper svc_domain record for this domain.";
   }
 
   print '</BODY></HTML>';
