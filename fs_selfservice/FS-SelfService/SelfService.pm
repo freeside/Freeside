@@ -7,7 +7,7 @@ use Socket;
 use FileHandle;
 #use IO::Handle;
 use IO::Select;
-use Storable qw(nstore_fd fd_retrieve);
+use Storable 2.09 qw(nstore_fd fd_retrieve);
 
 $VERSION = '0.03';
 
@@ -31,6 +31,7 @@ $socket .= '.'.$tag if defined $tag && length($tag);
   'list_pkgs'       => 'MyAccount/list_pkgs',
   'order_pkg'       => 'MyAccount/order_pkg',
   'cancel_pkg'      => 'MyAccount/cancel_pkg',
+  'charge'          => 'MyAccount/charge',
   'signup_info'     => 'Signup/signup_info',
   'new_customer'    => 'Signup/new_customer',
 );

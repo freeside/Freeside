@@ -15,7 +15,7 @@ use POSIX qw(:sys_wait_h setsid);
 use IO::Handle;
 use IO::Select;
 use IO::File;
-use Storable qw(nstore_fd fd_retrieve);
+use Storable 2.09 qw(nstore_fd fd_retrieve);
 use Net::SSH qw(sshopen2);
 use FS::UID qw(adminsuidsetup forksuidsetup);
 use FS::ClientAPI;

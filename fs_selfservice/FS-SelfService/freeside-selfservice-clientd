@@ -9,7 +9,7 @@ use subs qw(spawn logmsg lock_write unlock_write);
 use Fcntl qw(:flock);
 use POSIX qw(:sys_wait_h);
 use Socket;
-use Storable qw(nstore_fd fd_retrieve);
+use Storable 2.09 qw(nstore_fd fd_retrieve);
 use IO::Handle qw(_IONBF);
 use IO::Select;
 use IO::File;
@@ -233,6 +233,7 @@ sub spawn {
 sub _logmsg {
   chomp( my $msg = shift );
   my $log = new IO::File ">>$log_file";
+  die "can't open $log_file: $!" unless defined($log);
   flock($log, LOCK_EX);
   seek($log, 0, 2);
   print $log "[client] [". scalar(localtime). "] [$$] $msg\n";
