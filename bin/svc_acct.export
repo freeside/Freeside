@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 #
-# $Id: svc_acct.export,v 1.13 2000-06-28 12:37:28 ivan Exp $
+# $Id: svc_acct.export,v 1.14 2000-06-29 15:01:25 ivan Exp $
 #
 # Create and export password files: passwd, passwd.adjunct, shadow,
 # acp_passwd, acp_userinfo, acp_dialup, users
@@ -38,7 +38,10 @@
 # ivan@sisd.com 98-sep-18
 # 
 # $Log: svc_acct.export,v $
-# Revision 1.13  2000-06-28 12:37:28  ivan
+# Revision 1.14  2000-06-29 15:01:25  ivan
+# another silly typo in svc_acct.export
+#
+# Revision 1.13  2000/06/28 12:37:28  ivan
 # add support for config option textradiusprepend
 #
 # Revision 1.12  2000/06/15 14:07:02  ivan
@@ -364,7 +367,7 @@ my($radiusmachine);
 foreach $radiusmachine (@radiusmachines) {
   scp("$spooldir/users","root\@$radiusmachine:/etc/raddb/users")
     == 0 or die "scp error: $!";
-  ssh("root\@$erpcdmachine",
+  ssh("root\@$radiusmachine",
     "( ".
       "builddbm".
     " )"
