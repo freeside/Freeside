@@ -1,7 +1,7 @@
 <HTML>
 <HEAD>
 <TITLE>FS::svc_domain - Object methods for svc_domain records</TITLE>
-<LINK REV="made" HREF="mailto:ivan@rootwood.sisd.com">
+<LINK REV="made" HREF="mailto:none">
 </HEAD>
 
 <BODY>
@@ -97,6 +97,21 @@ The additional field <EM>email</EM> can be used to manually set the admin contac
 Otherwise, the svc_acct records for this package (see <A HREF="../FS/cust_pkg.html">FS::cust_pkg</A>) are searched. If there is exactly one svc_acct record in the same
 package, it is automatically used. Otherwise an error is returned.
 
+<P>
+If any <EM>soamachine</EM> configuration file exists, an SOA record is added to the domain_record
+table (see &lt;FS::domain_record&gt;).
+
+<P>
+If any machines are defined in the <EM>nsmachines</EM> configuration file, NS records are added to the domain_record table (see <A HREF="../FS/domain_record.html">FS::domain_record</A>).
+
+<P>
+If any machines are defined in the <EM>mxmachines</EM> configuration file, MX records are added to the domain_record table (see <A HREF="../FS/domain_record.html">FS::domain_record</A>).
+
+<P>
+Any problems adding FS::domain_record records will emit warnings, but will
+not return errors from this method. If your configuration files are correct
+you shouln't have any problems.
+
 <DT><STRONG><A NAME="item_delete">delete</A></STRONG><DD>
 <P>
 Deletes this domain from the database. If there is an error, returns the
@@ -142,8 +157,7 @@ Sets any fixed values; see <A HREF="../FS/part_svc.html">FS::part_svc</A>.
 
 <DT><STRONG><A NAME="item_whois">whois</A></STRONG><DD>
 <P>
-Returns the Net::Whois object corresponding to this domain, or undef if the
-domain is not found in whois.
+Returns the Net::Whois::Domain object (see <A HREF="../Net/Whois.html">Net::Whois</A>) for this domain, or undef if the domain is not found in whois.
 
 <P>
 (If $FS::svc_domain::whois_hack is true, returns that in all cases
@@ -162,7 +176,7 @@ Submits a registration email for this domain.
 <HR>
 <H1><A NAME="VERSION">VERSION</A></H1>
 <P>
-$Id: svc_domain.html,v 1.1 1999-08-04 12:13:27 ivan Exp $
+$Id: svc_domain.html,v 1.2 2000-03-03 18:22:43 ivan Exp $
 
 <P>
 <HR>

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_domain.cgi,v 1.10 1999-07-17 10:38:52 ivan Exp $
+# $Id: svc_domain.cgi,v 1.11 2000-03-03 18:22:44 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/svc_domain.cgi
@@ -15,7 +15,10 @@
 # display total, use FS::CGI now does browsing too ivan@sisd.com 98-jul-17
 #
 # $Log: svc_domain.cgi,v $
-# Revision 1.10  1999-07-17 10:38:52  ivan
+# Revision 1.11  2000-03-03 18:22:44  ivan
+# changes from 1.2.3 release, fixes from webdemo
+#
+# Revision 1.10  1999/07/17 10:38:52  ivan
 # scott nelson <scott@ultimanet.com> noticed this mod_perl-triggered bug and
 # gave me a great bugreport at the last rhythmethod
 #
@@ -64,6 +67,7 @@ $conf = new FS::Conf;
 $mydomain = $conf->config('domain');
 
 ($query)=$cgi->keywords;
+$query ||= ''; #to avoid use of unitialized value errors
 if ( $query eq 'svcnum' ) {
   $sortby=\*svcnum_sort;
   @svc_domain=qsearch('svc_domain',{});

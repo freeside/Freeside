@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: register.cgi,v 1.4 2000-03-03 05:32:56 ivan Exp $
+# $Id: register.cgi,v 1.5 2000-03-03 18:22:42 ivan Exp $
 
 use strict;
 use vars qw(
@@ -13,7 +13,7 @@ use vars qw(
              #$user_pw $crypt_pw 
              #$header $msg
 use CGI;
-#use CGI::Carp qw(fatalsToBrowser);
+use CGI::Carp qw(fatalsToBrowser);
 use DBI;
 #use Mail::Internet;
 #use Mail::Header;
