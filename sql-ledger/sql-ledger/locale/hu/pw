@@ -1,0 +1,11 @@
+$self{texts} = {
+  'Continue'                    => 'Folytatás',
+  'Password'                    => 'Jelszó',
+};
+
+$self{subs} = {
+  'getpassword'                 => 'getpassword',
+  'folytatás'                   => 'continue',
+};
+
+1;

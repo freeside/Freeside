@@ -1,0 +1,224 @@
+<head>
+  <title>Arve</title>
+</head>
+
+<body bgcolor=ffffff>
+
+<table width=100%>
+<tr>
+  <td width=10>
+  </td> 
+  <td>
+  
+  <table width=100%>
+  <tr>
+    <td>
+      <h4>
+      <%company%>
+      <br><%address%>
+      </h4>
+    </td>
+
+    <th colspan=2>
+      <h4 align=center>A R V E</h4>
+    </th>
+  </tr>
+
+  </table>
+
+<!-- other variables you can use include
+tel, fax, signature, username, businessnumber -->
+
+  <table width=100% callspacing=0 cellpadding=0>
+    
+  <tr>
+    <td align=right>
+    <table>
+    <tr>
+      <th align=right>Kuupäev</th><td width=10> </td><td><%invdate%></td>
+    </tr>
+  
+    <tr>
+      <th align=right>Arve Nr.</th><td></td><td><%invnumber%></td></tr>
+    </tr>
+  
+    </td>
+    </table>
+  </tr>
+
+  <tr>
+    <td>
+    <table width=100%>
+    <tr bgcolor=000000>
+      <th align=left><font color=ffffff>Arve aadress:</th>
+      <th align=left><font color=ffffff>Tarneaadress:</th>
+    </tr>
+
+    <tr>
+      <td><%name%>
+      <br><%address1%>
+      <%if address2%>
+<br><%address2%>
+<%end address2%>
+      <br><%city%> <%state%> <%zipcode%>
+      <%if country%>
+<%country%>
+<%end country%>
+      </td>
+      
+      <td><%shiptoname%>
+      <br><%shiptoaddress1%>
+      <%if shiptoaddress2%>
+<br><%shiptoaddress2%>
+<%end shiptoaddress2%>
+      <br><%shiptocity%> <%shiptostate%> <%shiptozipcode%>
+      <%if shiptocountry%>
+<%shiptocountry%>
+<%end shiptocountry%>
+      </td>
+    </tr>
+    </table>
+    </td>
+  </tr>
+
+  <tr>
+    <td>
+    <table width=100%>
+    <tr bgcolor=000000>
+      <th align=left><font color=ffffff>Kood</th>
+      <th align=left><font color=ffffff>Selgitus</th>
+      <th colspan=2><font color=ffffff>Kogus</th>
+      <th><font color=ffffff>Hind</th>
+      <th><font color=ffffff>Alh%</th>
+      <th><font color=ffffff>Kogus</th>
+    </tr>
+
+<%foreach number%>
+    <tr valign=top>
+      <td><%number%></td>
+      <td><%description%></td>
+      <td align=right><%qty%></td>
+      <td><%unit%></td>
+      <td align=right><%sellprice%></td>
+      <td align=right><%discount%></td>
+      <td align=right><%linetotal%></td>
+    </tr>
+<%end number%>
+
+<!--
+you can also use netprice instead of sellprice if you
+don't want to show the discount
+netprice = sellprice - discount
+to show the percentage for a discount use <%discountrate%>
+-->
+
+    <tr>
+      <td colspan=7><hr noshade></td>
+    </tr>
+    
+    <tr>
+      <th colspan=5 align=right>Summa</th>
+      <td colspan=2 align=right><%subtotal%></td>
+    </tr>
+
+<%foreach tax%>
+    <tr>
+      <th colspan=5 align=right><%taxdescription%> @ <%taxrate%> %</th>
+      <td colspan=2 align=right><%tax%></td>
+    </tr>
+<%end tax%>
+
+<%if paid%>
+    <tr>
+      <th colspan=5 align=right>Makstud</th>
+      <td colspan=2 align=right>- <%paid%></td>
+    </tr>
+<%end paid%>
+
+    <tr>
+      <td colspan=3> </td>
+      <td colspan=4><hr noshade></td>
+    </tr>
+
+    <tr>
+      <td colspan=3>Maksetingimus <b><%terms%></b> päeva</td>
+      <th colspan=2 align=right>Lõppsumma</th>
+      <th colspan=2 align=right><%total%></th>
+    </tr>
+    
+    <tr>
+      <td> 
+      </td>
+    </tr>
+
+    </table>
+    </td>
+  </tr>
+
+<tr>
+  <td>
+  <table width=100%>
+    <tr valign=top>
+<%if notes%>
+      <td>Märkused</td>
+      <td><pre><%notes%></pre></td>
+<%end notes%>
+      <td align=right>
+      Kõik hinnad: <b><%currency%></b>
+      <br><%shippingpoint%>
+      </td>
+    </tr>
+
+  </table>
+  </td>
+</tr>
+
+<tr><td colspan=7 align=right>Summa sõnadega: <%sum_as_words_ee%> </td></tr>
+
+<tr><td> </td></tr>
+  
+<tr>
+  <th colspan=7>
+  Palun märkige pangatsheki saajaks <%company%>
+  <br>Täname meeldiva koostöö eest!
+  </th>
+</tr>
+
+
+<tr><td> </td></tr>
+
+<tr>
+  <td>
+  <table width=100%>
+  <tr valign=top>
+    <td><font size=-3>
+    Maksetähtaeg <%terms%> päeva alates arve kuupäevast.
+    Intress tasumata summadelt on 1.5% kuus kuni arve täeliku tasumiseni.
+ Tagastatud toodetele kehtib 10% tagastamistasu. Enne toodete tagastamist on vajalik 
+<%company%> nõusolek. Tagastavad tooted peavad olema makstud ning kindlustatud,
+<%company%> ei vastuta transpordi käigus tekkinud kahjude eest.
+    </font>
+    </td>
+    <td width=150>
+    X <hr noshade>
+    </td>
+  </tr>
+  </table>
+  </td>
+</tr>
+
+<%foreach tax%>
+<tr>
+  <th colspan=7 align=left><font size=-2><%taxdescription%> Registration <%taxnumber%></th>
+</tr>
+<%end tax%>
+
+</table>
+
+</td>
+</tr>
+</table>
+
+</body>
+</html>
+
