@@ -599,12 +599,10 @@ sub replace {
 
 =item suspend
 
-Suspends this account by prefixing *SUSPENDED* to the password.  If there is an
-error, returns the error, otherwise returns false.
+Suspends this account by calling export-specific suspend hooks.  If there is
+an error, returns the error, otherwise returns false.
 
 Called by the suspend method of FS::cust_pkg (see L<FS::cust_pkg>).
-
-Calls any export-specific suspend hooks.
 
 =cut
 
@@ -625,12 +623,10 @@ sub suspend {
 
 =item unsuspend
 
-Unsuspends this account by removing *SUSPENDED* from the password.  If there is
-an error, returns the error, otherwise returns false.
+Unsuspends this account by by calling export-specific suspend hooks.  If there
+is an error, returns the error, otherwise returns false.
 
 Called by the unsuspend method of FS::cust_pkg (see L<FS::cust_pkg>).
-
-Calls any export-specific unsuspend hooks.
 
 =cut
 
