@@ -339,7 +339,7 @@ sub send {
       'subject' => 'Invoice',
       'body'    => \@print_text,
     );
-    return "can't send invoice: $error" if $error;
+    die "can't email invoice: $error\n" if $error;
 
   }
 
@@ -350,11 +350,11 @@ sub send {
   if ( grep { $_ eq 'POST' } @invoicing_list ) { #postal
     my $lpr = $conf->config('lpr');
     open(LPR, "|$lpr")
-      or return "Can't open pipe to $lpr: $!";
+      or die "Can't open pipe to $lpr: $!\n";
     print LPR @print_text;
     close LPR
-      or return $! ? "Error closing $lpr: $!"
-                   : "Exit status $? from $lpr";
+      or die $! ? "Error closing $lpr: $!\n"
+                : "Exit status $? from $lpr\n";
   }
 
   '';
