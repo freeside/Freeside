@@ -4,6 +4,7 @@
 #
 
 use strict;
+use vars qw($pid);
 use IO::Handle;
 use Storable qw(nstore_fd fd_retrieve);
 use Tie::RefHash;
@@ -39,13 +40,20 @@ my $refnum = shift or die &usage;
 #causing trouble for some folks
 #$SIG{CHLD} = sub { wait() };
 
+$SIG{HUP} = \&killssh;
+$SIG{INT} = \&killssh;
+$SIG{QUIT} = \&killssh;
+$SIG{TERM} = \&killssh;
+$SIG{PIPE} = \&killssh;
+sub killssh { kill 'TERM', $pid if $pid; exit; };
+
 my($fs_signupd)="/usr/local/sbin/fs_signupd";
 
 while (1) {
   my($reader,$writer)=(new IO::Handle, new IO::Handle);
   #seems to be broken - calling ->flush explicitly# $writer->autoflush(1);
   warn "[fs_signup_server] Connecting to $machine...\n" if $Debug;
-  sshopen2($machine,$reader,$writer,$fs_signupd);
+  $pid = sshopen2($machine,$reader,$writer,$fs_signupd);
 
   my @pops = qsearch('svc_acct_pop',{} );
   my $init_data = {
