@@ -1113,6 +1113,7 @@ sub _latex_escape {
 sub balance_due_msg {
   my $self = shift;
   my $msg = 'Balance Due';
+  return $msg unless $conf->exists('invoice_default_terms');
   if ( $conf->config('invoice_default_terms') =~ /^\s*Net\s*(\d+)\s*$/ ) {
     $msg .= ' - Please pay by '. time2str("%x", $self->_date + ($1*86400) );
   } elsif ( $conf->config('invoice_default_terms') ) {
