@@ -1,7 +1,7 @@
 package FS::SelfService;
 
 use strict;
-use vars qw($VERSION @ISA @EXPORT_OK $socket %autoload );
+use vars qw($VERSION @ISA @EXPORT_OK $socket %autoload $tag);
 use Exporter;
 use Socket;
 use FileHandle;
@@ -14,6 +14,7 @@ $VERSION = '0.03';
 @ISA = qw( Exporter );
 
 $socket =  "/usr/local/freeside/selfservice_socket";
+$socket .= '.'.$tag if defined $tag && length($tag);
 
 #maybe should ask ClientAPI for this list
 %autoload = (

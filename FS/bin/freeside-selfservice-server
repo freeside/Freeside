@@ -33,6 +33,7 @@ $kids = 0;
 
 my $user = shift or die &usage;
 my $machine = shift or die &usage;
+my $tag = scalar(@ARGV) ? shift : '';
 my $pid_file = "/var/run/freeside-selfservice-server.$user.pid";
 #my $pid_file = "/var/run/freeside-selfservice-server.$user.pid"; $FS::UID::datasrc not posible, but should include machine name at least, hmm
 
@@ -50,7 +51,7 @@ while (1) {
   my($writer,$reader,$error) = (new IO::Handle, new IO::Handle, new IO::Handle);
   warn "connecting to $machine\n" if $Debug;
 
-  $ssh_pid = sshopen2($machine,$reader,$writer,$clientd);
+  $ssh_pid = sshopen2($machine,$reader,$writer,$clientd,$tag);
 
 #  nstore_fd(\*writer, {'hi'=>'there'});
 
