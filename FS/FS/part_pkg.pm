@@ -189,16 +189,20 @@ sub check {
 
     my $s = $self->setup;
 
-    $s =~ /^\s*\d*\.?\d*\s*$/ or do {
-      #log!
-      return "illegal setup: $s";
-    };
+    $s =~ /^\s*\d*\.?\d*\s*$/
+
+      or $s =~ /^my \$d = \$cust_pkg->bill || \$time; \$d += 86400 \* \s*\d+\s*; \$cust_pkg->bill\(\$d\); \$cust_pkg_mod_flag=1; \s*\d*\.?\d*\s*$/
+
+      or do {
+        #log!
+        return "illegal setup: $s";
+      };
 
     my $r = $self->recur;
 
     $r =~ /^\s*\d*\.?\d*\s*$/
 
-      or $r =~ /^\$sdate += 86400 \* \s*\d+\s*; \s*\d*\.?\d*\s*$/
+      #or $r =~ /^\$sdate += 86400 \* \s*\d+\s*; \s*\d*\.?\d*\s*$/
 
       or $r =~ /^my \$mnow = \$sdate; my \(\$sec,\$min,\$hour,\$mday,\$mon,\$year\) = \(localtime\(\$sdate\) \)\[0,1,2,3,4,5\]; my \$mstart = timelocal\(0,0,0,1,\$mon,\$year\); my \$mend = timelocal\(0,0,0,1, \$mon == 11 \? 0 : \$mon\+1, \$year\+\(\$mon==11\)\); \$sdate = \$mstart; \( \$part_pkg->freq \- 1 \) \* \d*\.?\d* \/ \$part_pkg\-\>freq \+ \d*\.?\d* \/ \$part_pkg\-\>freq \* \(\$mend\-\$mnow\) \/ \(\$mend\-\$mstart\) ;\s*$/
 
@@ -293,7 +297,7 @@ sub payby {
 
 =head1 VERSION
 
-$Id: part_pkg.pm,v 1.11 2002-04-25 09:47:25 ivan Exp $
+$Id: part_pkg.pm,v 1.12 2002-04-25 10:37:08 ivan Exp $
 
 =head1 BUGS
 

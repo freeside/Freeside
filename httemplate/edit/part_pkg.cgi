@@ -188,8 +188,8 @@ tie my %plans, 'Tie::IxHash',
                       },
     },
     'fieldorder' => [ 'free_days', 'setup_fee', 'recur_fee' ],
-    'setup' => 'what.setup_fee.value',
-    'recur' => '\'$sdate += 86400 * \' + what.free_days.value + \'; \' + what.recur_fee.value',
+    'setup' => '\'my $d = $cust_pkg->bill || $time; $d += 86400 * \' + what.free_days.value + \'; $cust_pkg->bill($d); $cust_pkg_mod_flag=1; \' + what.setup_fee.value',
+    'recur' => 'what.recur_fee.value',
   },
 
   'prorate' => {
