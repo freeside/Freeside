@@ -100,6 +100,8 @@ inherits from FS::Record.  The following fields are currently supported:
 
 =item bill - date (next bill date)
 
+=item last_bill - last bill date
+
 =item susp - date
 
 =item expire - date
