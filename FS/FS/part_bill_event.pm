@@ -124,7 +124,7 @@ sub check {
 
     $c =~ /^\s*\$cust_main\->(suspend|cancel|invoicing_list_addpost|bill|collect)\(\);\s*("";)?\s*$/
 
-      or $c =~ /^\s*\$cust_bill\->(comp|realtime_card|realtime_ach|realtime_card_cybercash|batch_card|send)\(\);\s*$/
+      or $c =~ /^\s*\$cust_bill\->(comp|realtime_(card|ach|lec)|realtime_card_cybercash|batch_card|send)\(\);\s*$/
 
       or $c =~ /^\s*\$cust_bill\->send\(\'\w+\'\);\s*$/
 

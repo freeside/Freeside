@@ -114,6 +114,12 @@ tie my %events, 'Tie::IxHash',
     'weight' => 30,
   },
 
+  'realtime-lec' => {
+    'name' => 'Run phone bill ("LEC") billing with a <a href="http://search.cpan.org/search?mode=module&query=Business%3A%3AOnlinePayment">Business::OnlinePayment</a> realtime gateway',
+    'code' => '$cust_bill->realtime_lec();',
+    'weight' => 30,
+  },
+
   'batch-card' => {
     'name' => 'Add card to the pending credit card batch',
     'code' => '$cust_bill->batch_card();',
