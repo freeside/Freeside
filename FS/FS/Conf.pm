@@ -605,28 +605,28 @@ httemplate/docs/config.html
   {
     'key'         => 'shellmachine',
     'section'     => 'deprecated',
-    'description' => '<b>DEPRECATED</b>, add a <i>cp</i> <a href="../browse/part_export.cgi">export</a> instead.  This option used to contain a single machine with user home directories mounted.  This enables home directory creation, renaming and archiving/deletion.  In conjunction with `qmailmachines\', it also enables `.qmail-extension\' file maintenance.',
+    'description' => '<b>DEPRECATED</b>, add a <i>shellcommands</i> <a href="../browse/part_export.cgi">export</a> instead.  This option used to contain a single machine with user home directories mounted.  This enables home directory creation, renaming and archiving/deletion.  In conjunction with `qmailmachines\', it also enables `.qmail-extension\' file maintenance.',
     'type'        => 'text',
   },
 
   {
     'key'         => 'shellmachine-useradd',
     'section'     => 'deprecated',
-    'description' => '<b>DEPRECATED</b>, add a <i>cp</i> <a href="../browse/part_export.cgi">export</a> instead.  This option used to contain command(s) to run on shellmachine when an account is created.  If the <b>shellmachine</b> option is set but this option is not, <code>useradd -d $dir -m -s $shell -u $uid $username</code> is the default.  If this option is set but empty, <code>cp -pr /etc/skel $dir; chown -R $uid.$gid $dir</code> is the default instead.  Otherwise the value is evaluated as a double-quoted perl string, with the following variables available: <code>$username</code>, <code>$uid</code>, <code>$gid</code>, <code>$dir</code>, and <code>$shell</code>.',
+    'description' => '<b>DEPRECATED</b>, add a <i>shellcommands</i> <a href="../browse/part_export.cgi">export</a> instead.  This option used to contain command(s) to run on shellmachine when an account is created.  If the <b>shellmachine</b> option is set but this option is not, <code>useradd -d $dir -m -s $shell -u $uid $username</code> is the default.  If this option is set but empty, <code>cp -pr /etc/skel $dir; chown -R $uid.$gid $dir</code> is the default instead.  Otherwise the value is evaluated as a double-quoted perl string, with the following variables available: <code>$username</code>, <code>$uid</code>, <code>$gid</code>, <code>$dir</code>, and <code>$shell</code>.',
     'type'        => [qw( checkbox text )],
   },
 
   {
     'key'         => 'shellmachine-userdel',
     'section'     => 'deprecated',
-    'description' => '<b>DEPRECATED</b>, add a <i>cp</i> <a href="../browse/part_export.cgi">export</a> instead.  This option used to contain command(s) to run on shellmachine when an account is deleted.  If the <b>shellmachine</b> option is set but this option is not, <code>userdel $username</code> is the default.  If this option is set but empty, <code>rm -rf $dir</code> is the default instead.  Otherwise the value is evaluated as a double-quoted perl string, with the following variables available: <code>$username</code> and <code>$dir</code>.',
+    'description' => '<b>DEPRECATED</b>, add a <i>shellcommands</i> <a href="../browse/part_export.cgi">export</a> instead.  This option used to contain command(s) to run on shellmachine when an account is deleted.  If the <b>shellmachine</b> option is set but this option is not, <code>userdel $username</code> is the default.  If this option is set but empty, <code>rm -rf $dir</code> is the default instead.  Otherwise the value is evaluated as a double-quoted perl string, with the following variables available: <code>$username</code> and <code>$dir</code>.',
     'type'        => [qw( checkbox text )],
   },
 
   {
     'key'         => 'shellmachine-usermod',
     'section'     => 'deprecated',
-    'description' => '<b>DEPRECATED</b>, add a <i>cp</i> <a href="../browse/part_export.cgi">export</a> instead.  This option used to contain command(s) to run on shellmachine when an account is modified.  If the <b>shellmachine</b> option is set but this option is empty, <code>[ -d $old_dir ] &amp;&amp; mv $old_dir $new_dir || ( chmod u+t $old_dir; mkdir $new_dir; cd $old_dir; find . -depth -print | cpio -pdm $new_dir; chmod u-t $new_dir; chown -R $uid.$gid $new_dir; rm -rf $old_dir )</code> is the default.  Otherwise the contents of the file are treated as a double-quoted perl string, with the following variables available: <code>$old_dir</code>, <code>$new_dir</code>, <code>$uid</code> and <code>$gid</code>.',
+    'description' => '<b>DEPRECATED</b>, add a <i>shellcommands</i> <a href="../browse/part_export.cgi">export</a> instead.  This option used to contain command(s) to run on shellmachine when an account is modified.  If the <b>shellmachine</b> option is set but this option is empty, <code>[ -d $old_dir ] &amp;&amp; mv $old_dir $new_dir || ( chmod u+t $old_dir; mkdir $new_dir; cd $old_dir; find . -depth -print | cpio -pdm $new_dir; chmod u-t $new_dir; chown -R $uid.$gid $new_dir; rm -rf $old_dir )</code> is the default.  Otherwise the contents of the file are treated as a double-quoted perl string, with the following variables available: <code>$old_dir</code>, <code>$new_dir</code>, <code>$uid</code> and <code>$gid</code>.',
     #'type'        => [qw( checkbox text )],
     'type'        => 'text',
   },
@@ -796,8 +796,8 @@ httemplate/docs/config.html
 
   {
     'key'         => 'vpopmailmachines',
-    'section'     => 'mail',
-    'description' => 'Your vpopmail pop toasters, one per line.  Each line is of the form "machinename vpopdir vpopuid vpopgid".  For example: <code>poptoaster.domain.tld /home/vpopmail 508 508</code>  Note: vpopuid and vpopgid are values taken from the vpopmail machine\'s /etc/passwd',
+    'section'     => 'deprecated',
+    'description' => '<b>DEPRECATED</b>, add a <i>cp</i> <a href="../browse/part_export.cgi">export</a> instead.  This option used to contain your vpopmail pop toasters, one per line.  Each line is of the form "machinename vpopdir vpopuid vpopgid".  For example: <code>poptoaster.domain.tld /home/vpopmail 508 508</code>  Note: vpopuid and vpopgid are values taken from the vpopmail machine\'s /etc/passwd',
     'type'        => 'textarea',
   },
 

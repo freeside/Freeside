@@ -1,17 +1,15 @@
 package FS::svc_acct;
 
 use strict;
-use vars qw( @ISA $nossh_hack $noexport_hack $conf
+use vars qw( @ISA $noexport_hack $conf
              $dir_prefix @shells $usernamemin
              $usernamemax $passwordmin $passwordmax
              $username_ampersand $username_letter $username_letterfirst
              $username_noperiod $username_uppercase
              $mydomain
              $dirhash
-             @saltset @pw_set
-             $rsync $ssh $exportdir $vpopdir);
+             @saltset @pw_set );
 use Carp;
-use File::Path;
 use Fcntl qw(:flock);
 use FS::UID qw( datasrc );
 use FS::Conf;
@@ -32,8 +30,6 @@ use FS::Msgcat qw(gettext);
 
 #ask FS::UID to run this stuff for us later
 $FS::UID::callback{'FS::svc_acct'} = sub { 
-  $rsync = "rsync";
-  $ssh = "ssh";
   $conf = new FS::Conf;
   $dir_prefix = $conf->config('home');
   @shells = $conf->config('shells');
@@ -49,14 +45,6 @@ $FS::UID::callback{'FS::svc_acct'} = sub {
   $mydomain = $conf->config('domain');
 
   $dirhash = $conf->config('dirhash') || 0;
-  $exportdir = "/usr/local/etc/freeside/export." . datasrc;
-  if ( $conf->exists('vpopmailmachines') ) {
-    my (@vpopmailmachines) = $conf->config('vpopmailmachines');
-    my ($machine, $dir, $uid, $gid) = split (/\s+/, $vpopmailmachines[0]);
-    $vpopdir = $dir;
-  } else {
-    $vpopdir = '';
-  }
 };
 
 @saltset = ( 'a'..'z' , 'A'..'Z' , '0'..'9' , '.' , '/' );
@@ -176,24 +164,6 @@ The additional field I<usergroup> can optionally be defined; if so it should
 contain an arrayref of group names.  See L<FS::radius_usergroup>.  (used in
 sqlradius export only)
 
-If the configuration value (see L<FS::Conf>) shellmachine exists, and the 
-username, uid, and dir fields are defined, the command(s) specified in
-the shellmachine-useradd configuration are added to the job queue (see
-L<FS::queue> and L<freeside-queued>) to be exectued on shellmachine via ssh.
-This behaviour can be surpressed by setting $FS::svc_acct::nossh_hack true.
-If the shellmachine-useradd configuration file does not exist,
-
-  useradd -d $dir -m -s $shell -u $uid $username
-
-is the default.  If the shellmachine-useradd configuration file exists but
-it empty,
-
-  cp -pr /etc/skel $dir; chown -R $uid.$gid $dir
-
-is the default instead.  Otherwise the contents of the file are treated as
-a double-quoted perl string, with the following variables available:
-$username, $uid, $gid, $dir, and $shell.
-
 (TODOC: L<FS::queue> and L<freeside-queued>)
 
 (TODOC: new exports! $noexport_hack)
@@ -273,74 +243,8 @@ sub insert {
     }
   }
 
-  #old-style exports
-
-  if ( $vpopdir ) {
-
-    my $vpopmail_queue =
-      new FS::queue { 
-      'svcnum' => $self->svcnum,
-      'job' => 'FS::svc_acct::vpopmail_insert'
-    };
-    $error = $vpopmail_queue->insert( $self->username,
-      crypt($self->_password,$saltset[int(rand(64))].$saltset[int(rand(64))]),
-                                      $self->domain,
-                                      $vpopdir,
-                                    );
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return "queueing job (transaction rolled back): $error";
-    }
-
-  }
-
-  #end of old-style exports
-
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   ''; #no error
-}
-
-sub vpopmail_insert {
-  my( $username, $password, $domain, $vpopdir ) = @_;
-  
-  (open(VPASSWD, ">>$exportdir/domains/$domain/vpasswd")
-    and flock(VPASSWD,LOCK_EX)
-  ) or die "can't open vpasswd file for $username\@$domain: $exportdir/domains/$domain/vpasswd";
-  print VPASSWD join(":",
-    $username,
-    $password,
-    '1',
-    '0',
-    $username,
-    "$vpopdir/domains/$domain/$username",
-    'NOQUOTA',
-  ), "\n";
-
-  flock(VPASSWD,LOCK_UN);
-  close(VPASSWD);
-
-  mkdir "$exportdir/domains/$domain/$username", 0700  or die "can't create Maildir";
-  mkdir "$exportdir/domains/$domain/$username/Maildir", 0700 or die "can't create Maildir";
-  mkdir "$exportdir/domains/$domain/$username/Maildir/cur", 0700 or die "can't create Maildir";
-  mkdir "$exportdir/domains/$domain/$username/Maildir/new", 0700 or die "can't create Maildir";
-  mkdir "$exportdir/domains/$domain/$username/Maildir/tmp", 0700 or die "can't create Maildir";
- 
-  my $queue = new FS::queue { 'job' => 'FS::svc_acct::vpopmail_sync' };
-  my $error = $queue->insert;
-  die $error if $error;
-
-  1;
-}
-
-sub vpopmail_sync {
-
-  my (@vpopmailmachines) = $conf->config('vpopmailmachines');
-  my ($machine, $dir, $uid, $gid) = split (/\s+/, $vpopmailmachines[0]);
-  
-  chdir $exportdir;
-  my @args = ("$rsync", "-rlpt", "-e", "$ssh", "domains/", "vpopmail\@$machine:$vpopdir/domains/");
-  system {$args[0]} @args;
-
 }
 
 =item delete
@@ -349,24 +253,6 @@ Deletes this account from the database.  If there is an error, returns the
 error, otherwise returns false.
 
 The corresponding FS::cust_svc record will be deleted as well.
-
-If the configuration value (see L<FS::Conf>) shellmachine exists, the
-command(s) specified in the shellmachine-userdel configuration file are
-added to the job queue (see L<FS::queue> and L<freeside-queued>) to be executed
-on shellmachine via ssh.  This behavior can be surpressed by setting
-$FS::svc_acct::nossh_hack true.  If the shellmachine-userdel configuration
-file does not exist,
-
-  userdel $username
-
-is the default.  If the shellmachine-userdel configuration file exists but
-is empty,
-
-  rm -rf $dir
-
-is the default instead.  Otherwise the contents of the file are treated as a
-double-quoted perl string, with the following variables available:
-$username and $dir.
 
 (TODOC: new exports! $noexport_hack)
 
@@ -462,49 +348,8 @@ sub delete {
     }
   }
 
-  #old-style exports
-
-  if ( $vpopdir ) {
-    my $queue = new FS::queue { 'job' => 'FS::svc_acct::vpopmail_delete' };
-    $error = $queue->insert( $self->username, $self->domain );
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return "queueing job (transaction rolled back): $error";
-    }
-
-  }
-
-  #end of old-style exports
-
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
-}
-
-sub vpopmail_delete {
-  my( $username, $domain ) = @_;
-  
-  (open(VPASSWD, "$exportdir/domains/$domain/vpasswd")
-    and flock(VPASSWD,LOCK_EX)
-  ) or die "can't open $exportdir/domains/$domain/vpasswd: $!";
-
-  open(VPASSWDTMP, ">$exportdir/domains/$domain/vpasswd.tmp")
-    or die "Can't open $exportdir/domains/$domain/vpasswd.tmp: $!";
-
-  while (<VPASSWD>) {
-    my ($mailbox, $rest) = split(':', $_);
-    print VPASSWDTMP $_ unless $username eq $mailbox;
-  }
-
-  close(VPASSWDTMP);
-
-  rename "$exportdir/domains/$domain/vpasswd.tmp", "$exportdir/domains/$domain/vpasswd"
-    or die "Can't rename $exportdir/domains/$domain/vpasswd.tmp: $!";
-
-  flock(VPASSWD,LOCK_UN);
-  close(VPASSWD);
-
-  rmtree "$exportdir/domains/$domain/$username" or die "can't destroy Maildir"; 
-  1;
 }
 
 =item replace OLD_RECORD
@@ -515,26 +360,6 @@ returns the error, otherwise returns false.
 The additional field I<usergroup> can optionally be defined; if so it should
 contain an arrayref of group names.  See L<FS::radius_usergroup>.  (used in
 sqlradius export only)
-
-If the configuration value (see L<FS::Conf>) shellmachine exists, and the 
-dir field has changed, the command(s) specified in the shellmachine-usermod
-configuraiton file are added to the job queue (see L<FS::queue> and
-L<freeside-queued>) to be executed on shellmachine via ssh.  This behavior can
-be surpressed by setting $FS::svc-acct::nossh_hack true.  If the
-shellmachine-userdel configuration file does not exist or is empty,
-
-  [ -d $old_dir ] && mv $old_dir $new_dir || (
-    chmod u+t $old_dir;
-    mkdir $new_dir;
-    cd $old_dir;
-    find . -depth -print | cpio -pdm $new_dir;
-    chmod u-t $new_dir;
-    chown -R $uid.$gid $new_dir;
-    rm -rf $old_dir
-  )
-
-is the default.  This behaviour can be surpressed by setting
-$FS::svc_acct::nossh_hack true.
 
 =cut
 
@@ -619,71 +444,9 @@ sub replace {
     }
   }
 
-  #old-style exports
-
-  if ( $vpopdir ) {
-    my $cpassword = crypt(
-      $new->_password,$saltset[int(rand(64))].$saltset[int(rand(64))]
-    );
-
-    if ($old->username ne $new->username || $old->domain ne $new->domain ) {
-      my $queue  = new FS::queue { 'job' => 'FS::svc_acct::vpopmail_delete' };
-        $error = $queue->insert( $old->username, $old->domain );
-      my $queue2 = new FS::queue { 'job' => 'FS::svc_acct::vpopmail_insert' };
-        $error = $queue2->insert( $new->username,
-                                  $cpassword,
-                                  $new->domain,
-                                  $vpopdir,
-                                )
-        unless $error;
-    } elsif ($old->_password ne $new->_password) {
-      my $queue = new FS::queue { 'job' => 'FS::svc_acct::vpopmail_replace_password' };
-      $error = $queue->insert( $new->username, $cpassword, $new->domain );
-    }
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return "queueing job (transaction rolled back): $error";
-    }
-  }
-
-  #end of old-style exports
-
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   ''; #no error
 }
-
-sub vpopmail_replace_password {
-  my( $username, $password, $domain ) = @_;
-  
-  (open(VPASSWD, "$exportdir/domains/$domain/vpasswd")
-    and flock(VPASSWD,LOCK_EX)
-  ) or die "can't open $exportdir/domains/$domain/vpasswd: $!";
-
-  open(VPASSWDTMP, ">$exportdir/domains/$domain/vpasswd.tmp")
-    or die "Can't open $exportdir/domains/$domain/vpasswd.tmp: $!";
-
-  while (<VPASSWD>) {
-    my ($mailbox, $pw, @rest) = split(':', $_);
-    print VPASSWDTMP $_ unless $username eq $mailbox;
-    print VPASSWDTMP join (':', ($mailbox, $password, @rest))
-      if $username eq $mailbox;
-  }
-
-  close(VPASSWDTMP);
-
-  rename "$exportdir/domains/$domain/vpasswd.tmp", "$exportdir/domains/$domain/vpasswd"
-    or die "Can't rename $exportdir/domains/$domain/vpasswd.tmp: $!";
-
-  flock(VPASSWD,LOCK_UN);
-  close(VPASSWD);
-
-  my $queue = new FS::queue { 'job' => 'FS::svc_acct::vpopmail_sync' };
-  my $error = $queue->insert;
-  die $error if $error;
-
-  1;
-}
-
 
 =item suspend
 

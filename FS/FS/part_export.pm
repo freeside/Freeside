@@ -539,7 +539,7 @@ sub exporttype2svcdb {
         'password' => { label=>'Admin password' },
       },
       'nodomain' => 'Y',
-      'notes' => 'Integration with <a href="http://asg.web.cmu.edu/cyrus/imapd/">Cyrus IMAP Server</a>.  Cyrus::IMAP::Admin should be installed locally and the connection to the server secured.  <B>svc_acct.quota</B> is used to set the Cyrus quota if available. '
+      'notes' => 'Integration with <a href="http://asg.web.cmu.edu/cyrus/imapd/">Cyrus IMAP Server</a>.  Cyrus::IMAP::Admin should be installed locally and the connection to the server secured.  <B>svc_acct.quota</B>, if available, is used to set the Cyrus quota. '
     },
 
     'cp' => {
@@ -565,6 +565,17 @@ sub exporttype2svcdb {
       },
       'nodomain' => 'Y',
       'notes' => 'Real-time export to <a href="http://www.infostreet.com/">InfoStreet</a> streetSmartAPI.  Requires installation of <a href="http://search.cpan.org/search?dist=Frontier-Client">Frontier::Client</a> from CPAN.',
+    },
+
+    'vpopmail' => {
+      'desc' => 'Real-time export to vpopmail text files',
+      'options' => {
+        'machine' => { label=>'vpopmail machine', },
+        'dir'     => { label=>'directory', }, # ?more info? default?
+        'uid'     => { label=>'vpopmail uid' },
+        'gid'     => { label=>'vpopmail gid' },
+      },
+      'notes' => 'Real time export to <a href="http://inter7.com/vpopmail/">vpopmail</a> text files (...extended description from jeff?...)',
     },
 
   },

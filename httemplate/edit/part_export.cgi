@@ -48,7 +48,9 @@ my $widget = new HTML::Widgets::SelectLayers(
 #    foreach my $option ( qw(url login password groupID ) ) {
       my $optinfo = $exports->{$layer}{options}{$option};
       my $label = $optinfo->{label};
-      my $value = $cgi->param($option) || $part_export->option($option);
+      my $value = $cgi->param($option)
+                  || $part_export->option($option)
+                  || (exists $optinfo->{default} ? $optinfo->{default} : '');
       $html .= qq!<TR><TD ALIGN="right">$label</TD>!.
                qq!<TD><INPUT TYPE="text" NAME="$option" VALUE="$value"></TD>!.
                '</TR>';
