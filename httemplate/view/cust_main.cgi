@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: cust_main.cgi,v 1.11 2001-09-16 12:45:35 ivan Exp $ -->
+#<!-- $Id: cust_main.cgi,v 1.12 2001-09-21 03:47:26 ivan Exp $ -->
 
 use strict;
 use vars qw ( $cgi $query $custnum $cust_main $hashref $agent $referral 
@@ -189,7 +189,11 @@ print '<TD VALIGN="top">';
           $cust_main->referral_custnum. '">'.
           $cust_main->referral_custnum. ': '.
           ( $referring_cust_main->company
-            || $referring_cust_main->last. ', '. $referring_cust_main->first ).
+              ? $referring_cust_main->company. ' ('.
+                  $referring_cust_main->last. ', '. $referring_cust_main->first.
+                  ')'
+              : $referring_cust_main->last. ', '. $referring_cust_main->first
+          ).
           '</A>';
   }
   print '</TD></TR>';
