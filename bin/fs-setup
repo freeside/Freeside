@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: fs-setup,v 1.58 2001-09-11 22:20:28 ivan Exp $
+# $Id: fs-setup,v 1.59 2001-09-26 09:17:06 ivan Exp $
 
 #to delay loading dbdef until we're ready
 BEGIN { $FS::Record::setup_hack = 1; }
@@ -611,7 +611,21 @@ sub tables_hash_hack {
       ],
       'primary_key' => 'popnum',
       'unique' => [ [] ],
-      'index' => [ [] ],
+      'index' => [ [ 'state' ] ],
+    },
+
+    'part_pop_local' => {
+      'columns' => [
+        'localnum',  'int',     '',     '',
+        'popnum',    'int',     '',     '',
+        'city',      'varchar', 'NULL', $char_d,
+        'state',     'char',    'NULL', 2,
+        'npa',       'char',    '',     3,
+        'nxx',       'char',    '',     3,
+      ],
+      'primary_key' => 'popnum',
+      'unique' => [ [] ],
+      'index' => [ [ 'npa', 'nxx' ] ],
     },
 
     'svc_acct' => {

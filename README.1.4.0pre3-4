@@ -2,5 +2,15 @@ the following is necessary to upgrade from 1.4.0pre3 to pre4 or later.
 
 install the perl modules and httemplate as per install.html or upgrade8.html
 
+CREATE TABLE part_pop_local (
+  localnum int primary key,
+  popnum int not null,
+  city varchar(80) null,
+  state char(2) null,
+  npa char(3) not null,
+  nxx char(3) not null
+);
+CREATE UNIQUE INDEX part_pop_local1 ON part_pop_local ( npa, nxx );
+
 Run bin/dbdef-create
 

@@ -34,6 +34,8 @@ L<FS::Record> - Database record base class
 L<FS::svc_acct_pop> - POP (Point of Presence, not Post
 Office Protocol) class
 
+L<FS::part_pop_local> - Local calling area class
+
 L<FS::part_referral> - Referral class
 
 L<FS::cust_main_county> - Locale (tax rate) class
@@ -139,7 +141,7 @@ The main documentation is in htdocs/docs.
 
 =head1 VERSION
 
-$Id: FS.pm,v 1.8 2001-09-11 00:08:18 ivan Exp $
+$Id: FS.pm,v 1.9 2001-09-26 09:17:06 ivan Exp $
 
 =head1 SUPPORT
 

@@ -118,6 +118,16 @@ CREATE TABLE queue_arg (
 );
 CREATE INDEX queue_arg1 ON queue_arg ( jobnum );
 
+CREATE TABLE part_pop_local (
+  localnum int primary key,
+  popnum int not null,
+  city varchar(80) null,
+  state char(2) null,
+  npa char(3) not null,
+  nxx char(3) not null
+);
+CREATE UNIQUE INDEX part_pop_local1 ON part_pop_local ( npa, nxx );
+
 ALTER TABLE svc_acct ADD domsvc integer NOT NULL;
 ALTER TABLE svc_domain ADD catchall integer NULL;
 ALTER TABLE cust_main ADD referral_custnum integer NULL;

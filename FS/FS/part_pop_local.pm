@@ -1,21 +1,21 @@
-package FS::svc_acct_pop;
+package FS::part_pop_local;
 
 use strict;
 use vars qw( @ISA );
-use FS::Record qw( qsearchs );
+use FS::Record; # qw( qsearchs );
 
 @ISA = qw( FS::Record );
 
 =head1 NAME
 
-FS::svc_acct_pop - Object methods for svc_acct_pop records
+FS::part_pop_local - Object methods for part_pop_local records
 
 =head1 SYNOPSIS
 
-  use FS::svc_acct_pop;
+  use FS::part_pop_local;
 
-  $record = new FS::svc_acct_pop \%hash;
-  $record = new FS::svc_acct_pop { 'column' => 'value' };
+  $record = new FS::part_pop_local \%hash;
+  $record = new FS::part_pop_local { 'column' => 'value' };
 
   $error = $record->insert;
 
@@ -27,22 +27,24 @@ FS::svc_acct_pop - Object methods for svc_acct_pop records
 
 =head1 DESCRIPTION
 
-An FS::svc_acct object represents an point of presence.  FS::svc_acct_pop
-inherits from FS::Record.  The following fields are currently supported:
+An FS::part_pop_local object represents a local call area.  Each
+FS::part_pop_local record maps a NPA/NXX (area code and exchange) to the POP
+(see L<FS::svc_acct_pop>) which is a local call.  FS::part_pop_local inherits
+from FS::Record.  The following fields are currently supported:
 
 =over 4
 
-=item popnum - primary key (assigned automatically for new accounts)
+=item localnum - primary key (assigned automatically for new accounts)
+
+=item popnum - see L<FS::svc_acct_pop>
 
 =item city
 
 =item state
 
-=item ac - area code
+=item npa - area code
 
-=item exch - exchange
-
-=item loc - rest of number
+=item nxx - exchange
 
 =back
 
@@ -57,7 +59,7 @@ point of presence to the database, see L<"insert">.
 
 =cut
 
-sub table { 'svc_acct_pop'; }
+sub table { 'part_pop_local'; }
 
 =item insert
 
@@ -84,12 +86,12 @@ and replace methods.
 sub check {
   my $self = shift;
 
-    $self->ut_numbern('popnum')
+    $self->ut_numbern('localnum')
+      or $self->ut_numbern('popnum')
       or $self->ut_text('city')
       or $self->ut_text('state')
-      or $self->ut_number('ac')
-      or $self->ut_number('exch')
-      or $self->ut_numbern('loc')
+      or $self->ut_number('npa')
+      or $self->ut_number('nxx')
   ;
 
 }
@@ -98,16 +100,15 @@ sub check {
 
 =head1 VERSION
 
-$Id: svc_acct_pop.pm,v 1.3 2001-09-26 09:17:06 ivan Exp $
+$Id: part_pop_local.pm,v 1.1 2001-09-26 09:17:06 ivan Exp $
 
 =head1 BUGS
 
-It should be renamed to part_pop.
+US/CA-centric.
 
 =head1 SEE ALSO
 
-L<FS::Record>, L<FS::svc_acct>, L<FS::part_pop_local>, schema.html from the
-base documentation.
+L<FS::Record>, L<FS::svc_acct_pop>, schema.html from the base documentation.
 
 =cut
 

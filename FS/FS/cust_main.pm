@@ -940,7 +940,7 @@ invoice_time - Use this time when deciding when to print invoices and
 late notices on those invoices.  The default is now.  It is specified as a UNIX timestamp; see L<perlfunc/"time">).  Also see L<Time::Local> and L<Date::Parse>
 for conversion functions.
 
-batch_card - Set this true to batch cards (see L<cust_pay_batch>).  By
+batch_card - Set this true to batch cards (see L<FS::cust_pay_batch>).  By
 default, cards are processed immediately, which will generate an error if
 CyberCash is not installed.
 
@@ -1724,7 +1724,7 @@ sub append_fuzzyfiles {
 
 =head1 VERSION
 
-$Id: cust_main.pm,v 1.37 2001-09-25 18:03:04 ivan Exp $
+$Id: cust_main.pm,v 1.38 2001-09-26 09:17:06 ivan Exp $
 
 =head1 BUGS
 

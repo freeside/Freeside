@@ -145,7 +145,7 @@ sub cust_credit {
 
 =head1 VERSION
 
-$Id: cust_credit_bill.pm,v 1.5 2001-09-11 00:08:18 ivan Exp $
+$Id: cust_credit_bill.pm,v 1.6 2001-09-26 09:17:06 ivan Exp $
 
 =head1 BUGS
 
@@ -153,7 +153,7 @@ The delete method.
 
 =head1 SEE ALSO
 
-L<FS::Record>, L<FS::cust_refund>, L<FS::cust_bill>, L<cust_credit>,
+L<FS::Record>, L<FS::cust_refund>, L<FS::cust_bill>, L<FS::cust_credit>,
 schema.html from the base documentation.
 
 =cut
