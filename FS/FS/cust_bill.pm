@@ -1148,7 +1148,7 @@ sub print_ps {
     or die "pslatex $file.tex failed: $!";
 
   system('dvips', '-q', '-t', 'letter', "$file.dvi", '-o', "$file.ps" ) == 0
-    or die "dbips failed: $!";
+    or die "dvips failed: $!";
 
   open(POSTSCRIPT, "<$file.ps")
     or die "can't open $file.ps: $! (error in LaTeX template?)\n";
