@@ -1,4 +1,4 @@
-<!-- $Id: part_pkg.cgi,v 1.4 2001-10-15 10:42:29 ivan Exp $ -->
+<!-- $Id: part_pkg.cgi,v 1.5 2001-10-15 11:39:29 ivan Exp $ -->
 
 <%
 
@@ -28,14 +28,14 @@ if ( $cgi->param('clone') ) {
   $part_pkg ||= $old_part_pkg->clone;
 } elsif ( $query && $query =~ /^(\d+)$/ ) {
   $part_pkg ||= qsearchs('part_pkg',{'pkgpart'=>$1});
-  unless ( $part_pkg->plan ) {
-    $part_pkg->plan('flat');
-    $part_pkg->plandata("setup=". $part_pkg->setup. "\n".
-                        "recur=". $part_pkg->recur. "\n");
-  }
 } else {
   $part_pkg ||= new FS::part_pkg {};
   $part_pkg->plan('flat');
+}
+unless ( $part_pkg->plan ) { #backwards-compat
+  $part_pkg->plan('flat');
+  $part_pkg->plandata("setup=". $part_pkg->setup. "\n".
+                      "recur=". $part_pkg->recur. "\n");
 }
 $action ||= $part_pkg->pkgpart ? 'Edit' : 'Add';
 my $hashref = $part_pkg->hashref;
@@ -213,7 +213,6 @@ function fchanged(what) {
 }
 
 function fixup(what) {
-alert(what);
 <% foreach my $f ( qw( pkg comment freq ), @fixups ) { %>
   what.<%= $f %>.value = document.dummy.<%= $f %>.value;
 <% } %>
