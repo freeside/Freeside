@@ -409,7 +409,7 @@ sub rep {
   my(@diff)=grep $new->getfield($_) ne $old->getfield($_), @fields;
 
   if ( scalar(@diff) == 0 ) {
-    carp "Records identical";
+    carp "warning: records identical";
     return '';
   }
 
@@ -759,7 +759,7 @@ sub fields {
 
 =head1 VERSION
 
-$Id: Record.pm,v 1.8 1998-11-15 11:02:04 ivan Exp $
+$Id: Record.pm,v 1.9 1998-11-21 07:26:45 ivan Exp $
 
 =head1 BUGS
 
@@ -878,7 +878,10 @@ added pod documentation ivan@sisd.com 98-sep-6
 ut_phonen got ''; at the end ivan@sisd.com 98-sep-27
 
 $Log: Record.pm,v $
-Revision 1.8  1998-11-15 11:02:04  ivan
+Revision 1.9  1998-11-21 07:26:45  ivan
+"Records identical" carp tells us it is just a warning.
+
+Revision 1.8  1998/11/15 11:02:04  ivan
 bugsquash
 
 Revision 1.7  1998/11/15 10:56:31  ivan
