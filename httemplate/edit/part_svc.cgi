@@ -1,33 +1,74 @@
-<!-- mason kludge -->
-<% 
-   my $part_svc;
-   my $clone = '';
-   if ( $cgi->param('error') ) { #error
-     $part_svc = new FS::part_svc ( {
-       map { $_, scalar($cgi->param($_)) } fields('part_svc')
-     } );
-   } elsif ( $cgi->param('clone') && $cgi->param('clone') =~ /^(\d+)$/ ) {#clone
-     #$cgi->param('clone') =~ /^(\d+)$/ or die "malformed query: $query";
-     $part_svc = qsearchs('part_svc', { 'svcpart'=>$1 } )
-       or die "unknown svcpart: $1";
-     $clone = $part_svc->svcpart;
-     $part_svc->svcpart('');
-   } elsif ( $cgi->keywords ) { #edit
-     my($query) = $cgi->keywords;
-     $query =~ /^(\d+)$/ or die "malformed query: $query";
-     $part_svc=qsearchs('part_svc', { 'svcpart'=>$1 } )
-       or die "unknown svcpart: $1";
-   } else { #adding
-     $part_svc = new FS::part_svc {};
-   }
-   my $action = $part_svc->svcpart ? 'Edit' : 'Add';
-   my $hashref = $part_svc->hashref;
+<%
+my $part_svc;
+my $clone = '';
+my $error = '';
+if ( $cgi->param('magic') eq 'process' ) {
+
+  my $svcpart = $cgi->param('svcpart');
+  my $old = qsearchs('part_svc', { 'svcpart' => $svcpart }) if $svcpart;
+  
+  $cgi->param( 'svc_acct__usergroup',
+               join(',', $cgi->param('svc_acct__usergroup') ) );
+  
+  my $new = new FS::part_svc ( {
+    map {
+      $_, scalar($cgi->param($_));
+  #  } qw(svcpart svc svcdb)
+    } ( fields('part_svc'),
+        map { my $svcdb = $_;
+              my @fields = fields($svcdb);
+              push @fields, 'usergroup' if $svcdb eq 'svc_acct'; #kludge
+              map { ( $svcdb.'__'.$_, $svcdb.'__'.$_.'_flag' )  } @fields;
+            } grep defined( $FS::Record::dbdef->table($_) ),
+                   qw( svc_acct svc_domain svc_forward svc_www svc_broadband )
+      )
+  } );
+  
+  my %exportnums =
+    map { $_->exportnum => $cgi->param('exportnum'.$_->exportnum) }
+        qsearch('part_export', {} );
+  
+  if ( $svcpart ) {
+    $error = $new->replace($old, '1.3-COMPAT', [ 'usergroup' ], \%exportnums );
+  } else {
+    $error = $new->insert( [ 'usergroup' ], \%exportnums );
+    $svcpart = $new->getfield('svcpart');
+  }
+
+  unless ( $error ) { #no error, redirect
+    #print $cgi->redirect(popurl(3)."browse/part_svc.cgi");
+    print $cgi->redirect("${p}browse/part_svc.cgi");
+    myexit;
+  }
+
+  $part_svc = $new; #??
+  #$part_svc = new FS::part_svc ( {
+  #  map { $_, scalar($cgi->param($_)) } fields('part_svc')
+  #} );
+
+} elsif ( $cgi->param('clone') && $cgi->param('clone') =~ /^(\d+)$/ ) {#clone
+  #$cgi->param('clone') =~ /^(\d+)$/ or die "malformed query: $query";
+  $part_svc = qsearchs('part_svc', { 'svcpart'=>$1 } )
+    or die "unknown svcpart: $1";
+  $clone = $part_svc->svcpart;
+  $part_svc->svcpart('');
+} elsif ( $cgi->keywords ) { #edit
+  my($query) = $cgi->keywords;
+  $query =~ /^(\d+)$/ or die "malformed query: $query";
+  $part_svc=qsearchs('part_svc', { 'svcpart'=>$1 } )
+    or die "unknown svcpart: $1";
+} else { #adding
+  $part_svc = new FS::part_svc {};
+}
+
+my $action = $part_svc->svcpart ? 'Edit' : 'Add';
+my $hashref = $part_svc->hashref;
 #   my $p_svcdb = $part_svc->svcdb || 'svc_acct';
 
 
            #" onLoad=\"visualize()\""
 %>
-
+<!-- mason kludge -->
 <%= header("$action Service Definition",
            menubar( 'Main Menu'         => $p,
                     'View all service definitions' => "${p}browse/part_svc.cgi"
@@ -35,8 +76,8 @@
            )
 %>
 
-<% if ( $cgi->param('error') ) { %>
-<FONT SIZE="+1" COLOR="#ff0000">Error: <%= $cgi->param('error') %></FONT>
+<% if ( $error ) { %>
+<FONT SIZE="+1" COLOR="#ff0000">Error: <%= $error %></FONT>
 <% } %>
 
 <FORM NAME="dummy">
@@ -45,6 +86,7 @@
 <BR><BR>
 Service  <INPUT TYPE="text" NAME="svc" VALUE="<%= $hashref->{svc} %>"><BR>
 Disable new orders <INPUT TYPE="checkbox" NAME="disabled" VALUE="Y"<%= $hashref->{disabled} eq 'Y' ? ' CHECKED' : '' %>><BR>
+<INPUT TYPE="hidden" NAME="magic" VALUE="process">
 <INPUT TYPE="hidden" NAME="svcpart" VALUE="<%= $hashref->{svcpart} %>">
 <BR>
 Services are items you offer to your customers.
@@ -169,8 +211,9 @@ my %defs = (
     'selected_layer' => $hashref->{svcdb} || 'svc_acct',
     'options'        => \%svcdb,
     'form_name'      => 'dummy',
-    'form_action'    => 'process/part_svc.cgi',
-    'form_text'      => [ qw( svc svcpart ) ],
+    #'form_action'    => 'process/part_svc.cgi',
+    'form_action'    => 'part_svc.cgi', #self
+    'form_text'      => [ qw( magic svc svcpart ) ],
     'form_checkbox'  => [ 'disabled' ],
     'layer_callback' => sub {
       my $layer = shift;
@@ -207,10 +250,10 @@ my %defs = (
       $part_svc->svcpart($clone) if $clone; #haha, undone below
       foreach my $field (@fields) {
         my $part_svc_column = $part_svc->part_svc_column($field);
-        my $value = $cgi->param('error')
+        my $value = $error
                       ? $cgi->param("${layer}__${field}")
                       : $part_svc_column->columnvalue;
-        my $flag = $cgi->param('error')
+        my $flag = $error
                      ? $cgi->param("${layer}__${field}_flag")
                      : $part_svc_column->columnflag;
         my $def = $defs{$layer}{$field};

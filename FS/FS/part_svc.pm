@@ -22,8 +22,12 @@ FS::part_svc - Object methods for part_svc objects
   $record = new FS::part_svc { 'column' => 'value' };
 
   $error = $record->insert;
+  $error = $record->insert( [ 'pseudofield' ] );
+  $error = $record->insert( [ 'pseudofield' ], \%exportnums );
 
   $error = $new_record->replace($old_record);
+  $error = $new_record->replace($old_record, '1.3-COMPAT', [ 'pseudofield' ] );
+  $error = $new_record->replace($old_record, '1.3-COMPAT', [ 'pseudofield' ], \%exportnums );
 
   $error = $record->delete;
 
@@ -60,25 +64,40 @@ database, see L<"insert">.
 
 sub table { 'part_svc'; }
 
-=item insert EXTRA_FIELDS_ARRAYREF
+=item insert [ EXTRA_FIELDS_ARRAYREF [ , EXPORTNUMS_HASHREF ] ] 
 
 Adds this service definition to the database.  If there is an error, returns
 the error, otherwise returns false.
 
-TODOC:
+The following pseudo-fields may be defined, and will be maintained in
+the part_svc_column table appropriately (see L<FS::part_svc_column>).
+
+=over 4
 
 =item I<svcdb>__I<field> - Default or fixed value for I<field> in I<svcdb>.
 
 =item I<svcdb>__I<field>_flag - defines I<svcdb>__I<field> action: null, `D' for default, or `F' for fixed.  For virtual fields, can also be 'X' for excluded.
 
-TODOC: EXTRA_FIELDS_ARRAYREF
+=back
+
+If you want to add part_svc_column records for fields that do not exist as
+(real or virtual) fields in the I<svcdb> table, make sure to list then in 
+EXTRA_FIELDS_ARRAYREF also.
+
+If EXPORTNUMS_HASHREF is specified (keys are exportnums and values are
+boolean), the appopriate export_svc records will be inserted.
 
 =cut
 
 sub insert {
   my $self = shift;
   my @fields = ();
+  my @exportnums = ();
   @fields = @{shift(@_)} if @_;
+  if ( @_ ) {
+    my $exportnums = shift;
+    @exportnums = grep $exportnums->{$_}, keys %$exportnums;
+  }
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -96,6 +115,8 @@ sub insert {
     $dbh->rollback if $oldAutoCommit;
     return $error;
   }
+
+  # add part_svc_column records
 
   my $svcdb = $self->svcdb;
 #  my @rows = map { /^${svcdb}__(.*)$/; $1 }
@@ -134,6 +155,20 @@ sub insert {
 
   }
 
+  # add export_svc records
+
+  foreach my $exportnum ( @exportnums ) {
+    my $export_svc = new FS::export_svc ( {
+      'exportnum' => $exportnum,
+      'svcpart'   => $self->svcpart,
+    } );
+    $error = $export_svc->insert;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
   '';
@@ -141,7 +176,7 @@ sub insert {
 
 =item delete
 
-Currently unimplemented.
+Currently unimplemented.  Set the "disabled" field instead.
 
 =cut
 
@@ -150,14 +185,14 @@ sub delete {
 # check & make sure the svcpart isn't in cust_svc or pkg_svc (in any packages)?
 }
 
-=item replace OLD_RECORD [ '1.3-COMPAT' [ , EXTRA_FIELDS_ARRAYREF ] ]
+=item replace OLD_RECORD [ '1.3-COMPAT' [ , EXTRA_FIELDS_ARRAYREF [ , EXPORTNUMS_HASHREF ] ] ]
 
 Replaces OLD_RECORD with this one in the database.  If there is an error,
 returns the error, otherwise returns false.
 
 TODOC: 1.3-COMPAT
 
-TODOC: EXTRA_FIELDS_ARRAYREF
+TODOC: EXTRA_FIELDS_ARRAYREF (same as insert method)
 
 =cut
 
@@ -188,6 +223,9 @@ sub replace {
     shift;
     my @fields = ();
     @fields = @{shift(@_)} if @_;
+    my $exportnums = @_ ? shift : '';
+
+   # maintain part_svc_column records
 
     my $svcdb = $new->svcdb;
     foreach my $field (
@@ -220,6 +258,39 @@ sub replace {
         return $error;
       }
     }
+
+    # maintain export_svc records
+
+    if ( $exportnums ) {
+
+      #false laziness w/ edit/process/agent_type.cgi
+      foreach my $part_export ( qsearch('part_export', {}) ) {
+        my $exportnum = $part_export->exportnum;
+        my $hashref = {
+          'exportnum' => $exportnum,
+          'svcpart'   => $new->svcpart,
+        };
+        my $export_svc = qsearchs('export_svc', $hashref);
+
+        if ( $export_svc && ! $exportnums->{$exportnum} ) {
+          $error = $export_svc->delete;
+          if ( $error ) {
+            $dbh->rollback if $oldAutoCommit;
+            return $error;
+          }
+        } elsif ( ! $export_svc && $exportnums->{$exportnum} ) {
+          $export_svc = new FS::export_svc ( $hashref );
+          $error = $export_svc->insert;
+          if ( $error ) {
+            $dbh->rollback if $oldAutoCommit;
+            return $error;
+          }
+        }
+        
+      }
+
+    }
+
   } else {
     $dbh->rollback if $oldAutoCommit;
     return 'non-1.3-COMPAT interface not yet written';
