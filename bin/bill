@@ -78,9 +78,8 @@
 # ivan@sisd.com 98-may-27
 #
 # $Log: bill,v $
-# Revision 1.3  1998-11-07 08:19:21  ivan
-#
-# still need to bless into FS::cust_main (for now)
+# Revision 1.4  1998-11-07 08:21:26  ivan
+# missing use
 #
 
 # setup
@@ -91,6 +90,7 @@ use Date::Parse;
 use Getopt::Std;
 use FS::UID qw(adminsuidsetup swapuid);
 use FS::Record qw(qsearch qsearchs);
+use FS::cust_main;
 
 my($batchfile)="/var/spool/freeside/batch";
 my($batchlock)="/var/spool/freeside/batch.lock";
