@@ -52,7 +52,7 @@ my $widget = new HTML::Widgets::SelectLayers(
                   || $part_export->option($option)
                   || (exists $optinfo->{default} ? $optinfo->{default} : '');
       $html .= qq!<TR><TD ALIGN="right">$label</TD>!.
-               qq!<TD><INPUT TYPE="text" NAME="$option" VALUE="$value"></TD>!.
+               qq!<TD><INPUT TYPE="text" NAME="$option" VALUE="$value" SIZE=64></TD>!.
                '</TR>';
     }
     $html .= '</TABLE>';

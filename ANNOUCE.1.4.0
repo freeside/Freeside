@@ -120,3 +120,9 @@ icradius groups (usergroup table if not radgroupreply & radgroupcheck)
 message catalogs (infrastructure, anyway) & anything which gets sent to a
 customer from the signup server should use message catalog
 
+multi-agent signup server
+
+signup_server-realtime to run cards immediately
+
+and signup-alternate.html for free/paid packages on same signup
+

@@ -472,6 +472,7 @@ sub exporttype2svcdb {
   '';
 }
 
+#export names cannot have dashes...
 %exports = (
   'svc_acct' => {
     'sysvshell' => {
@@ -494,9 +495,9 @@ sub exporttype2svcdb {
     },
 
     'shellcommands' => {
-      'desc' => 'Real-time export via arbitrary commands on a remote machine (i.e. useradd, userdel, etc.)',
+      'desc' => 'Real-time export via remote SSH (i.e. useradd, userdel, etc.)',
       'options' => {
-        'machine' => { label=>'Remote machine' },
+        #'machine' => { label=>'Remote machine' },
         'user' => { label=>'Remote username', default=>'root' },
         'useradd' => { label=>'Insert command',
                        default=>'useradd -d $dir -m -s $shell -u $uid $username'
@@ -581,10 +582,31 @@ sub exporttype2svcdb {
   },
 
   'svc_domain' => {
-    'bind' => 'Batch export to BIND named',
-    'options' => {
+
+    'bind' => {
+      'desc' =>'Batch export to BIND named',
+      'options' => {
+        #'machine'    => { label=>'named machine' },
+        'named_conf' => { label  => 'named.conf location',
+                          default=> '/etc/bind/named.conf' },
+        'zonepath'   => { label => 'path to zone files',
+                          default=> '/etc/bind/', },
+      },
+      'notes' => 'bind export notes',
     },
-    'notes' => 'bind export notes',
+
+    'bind_slave' => {
+      'desc' =>'Batch export to slave BIND named',
+      'options' => {
+        #'machine'    => { label=> 'Slave machine' },
+        'master'     => { label=> 'Master IP address' },
+        'named_conf' => { label  => 'named.conf location',
+                          default=> '/etc/bind/named.conf' },
+      },
+      'notes' => 'bind export notes (secondary munge)',
+    },
+
+
   },
 
   'svc_acct_sm' => {},
