@@ -493,7 +493,10 @@ sub replace {
                && $_->status eq 'done'
                && $_->statustext
            }
-        $self->open_cust_bill->cust_bill_event
+        map { $_->cust_bill_event }
+          grep { $_->cust_bill_event }
+            $self->open_cust_bill
+
     ) {
       my $error = $cust_bill_event->retry;
       if ( $error ) {
@@ -1237,7 +1240,9 @@ sub collect {
                && $_->status eq 'done'
                && $_->statustext
            }
-        $self->open_cust_bill->cust_bill_event
+        map { $_->cust_bill_event }
+          grep { $_->cust_bill_event }
+            $self->open_cust_bill
     ) {
       my $error = $cust_bill_event->retry;
       if ( $error ) {
