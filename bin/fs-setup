@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: fs-setup,v 1.17 1999-04-14 07:58:39 ivan Exp $
+# $Id: fs-setup,v 1.18 1999-04-15 22:46:30 ivan Exp $
 #
 # ivan@sisd.com 97-nov-8,9
 #
@@ -32,7 +32,10 @@
 # fix radius attributes ivan@sisd.com 98-sep-27
 #
 # $Log: fs-setup,v $
-# Revision 1.17  1999-04-14 07:58:39  ivan
+# Revision 1.18  1999-04-15 22:46:30  ivan
+# TT isn't a state!
+#
+# Revision 1.17  1999/04/14 07:58:39  ivan
 # export getsecrets from FS::UID instead of calling it explicitly
 #
 # Revision 1.16  1999/02/28 19:44:16  ivan
@@ -232,7 +235,7 @@ foreach  ($dbdef->tables) {
 foreach ( qw(
 AL AK AS AZ AR CA CO CT DC DE FM FL GA GU HI ID IL IN IA KS KY LA
 ME MH MD MA MI MN MS MO MT NC ND NE NH NJ NM NV NY MP OH OK OR PA PW PR RI 
-SC SD TN TX TT UT VT VI VA WA WV WI WY AE AA AP
+SC SD TN TX UT VT VI VA WA WV WI WY AE AA AP
 ) ) {
   my($cust_main_county)=new FS::cust_main_county({
     'state' => $_,
