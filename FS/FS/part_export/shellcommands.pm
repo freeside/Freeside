@@ -216,7 +216,7 @@ sub _export_command {
 
   my $cust_pkg = $svc_acct->cust_svc->cust_pkg;
   if ( $cust_pkg ) {
-    $email = ( grep { $_ ne 'POST' } $cust_pkg->cust_main->invoicing_list )[0];
+    $email = ( grep { $_ !~ /^(POST|FAX)$/ } $cust_pkg->cust_main->invoicing_list )[0];
   } else {
     $email = '';
   }

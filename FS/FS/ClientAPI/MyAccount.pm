@@ -131,7 +131,7 @@ sub customer_info {
     }
 
     $return{'invoicing_list'} =
-      join(', ', grep { $_ ne 'POST' } $cust_main->invoicing_list );
+      join(', ', grep { $_ !~ /^(POST|FAX)$/ } $cust_main->invoicing_list );
     $return{'postal_invoicing'} =
       0 < ( grep { $_ eq 'POST' } $cust_main->invoicing_list );
 

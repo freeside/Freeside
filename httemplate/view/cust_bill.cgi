@@ -7,6 +7,8 @@ $query =~ /^((.+)-)?(\d+)$/;
 my $templatename = $2;
 my $invnum = $3;
 
+my $conf = new FS::Conf;
+
 my $cust_bill = qsearchs('cust_bill',{'invnum'=>$invnum});
 die "Invoice #$invnum not found!" unless $cust_bill;
 my $custnum = $cust_bill->getfield('custnum');
@@ -27,9 +29,11 @@ if ( grep { $_ ne 'POST' } $cust_bill->cust_main->invoicing_list ) {
         qq!Re-email this invoice</A>!;
 }
 
+print qq! | <A HREF="${p}misc/fax-invoice.cgi?$invnum">Refax this invoice</A>!
+  if ($conf->exists('hylafax'));
+
 print '<BR><BR>';
 
-my $conf = new FS::Conf;
 if ( $conf->exists('invoice_latex') ) {
   my $link = "${p}view/cust_bill-pdf.cgi?";
   $link .= "$templatename-" if $templatename;

@@ -118,7 +118,7 @@ sub handler
                      small_custview myexit http_header);
       use FS::UI::Web;
       use FS::Msgcat qw(gettext geterror);
-      use FS::Misc qw( send_email );
+      use FS::Misc qw( send_email send_fax );
       use FS::Report::Table::Monthly;
       use FS::TicketSystem;
 

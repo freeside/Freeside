@@ -5,7 +5,7 @@ use vars qw ( @ISA @EXPORT_OK );
 use Exporter;
 
 @ISA = qw( Exporter );
-@EXPORT_OK = qw( send_email );
+@EXPORT_OK = qw( send_email send_fax );
 
 =head1 NAME
 
@@ -50,6 +50,7 @@ use Date::Format;
 use Mail::Header;
 use Mail::Internet 1.44;
 use MIME::Entity;
+use Fax::Hylafax::Client;
 use FS::UID;
 
 FS::UID->install_callback( sub {
@@ -108,6 +109,77 @@ sub send_email {
   $message->mysmtpsend( 'Host'     => $smtpmachine,
                         'MailFrom' => $options{'from'},
                       );
+
+}
+
+=item send_fax OPTION => VALUE ...
+
+Options:
+
+I<dialstring> - (required) 10-digit phone number w/ area code
+
+I<docdata> - (required) Array ref containing PostScript or TIFF Class F document
+
+-or-
+
+I<docfile> - (required) Filename of PostScript TIFF Class F document
+
+...any other options will be passed to L<Fax::Hylafax::Client::sendfax>
+
+
+=cut
+
+sub send_fax {
+
+  my %options = @_;
+
+  die 'HylaFAX support has not been configured.'
+    unless $conf->exists('hylafax');
+
+  my %hylafax_opts = map { split /\s+/ } $conf->config('hylafax');
+
+  die 'Called send_fax without a \'dialstring\'.'
+    unless exists($options{'dialstring'});
+
+  if (exists($options{'docdata'}) and ref($options{'docdata'}) eq 'ARRAY') {
+      my $dir = $FS::UID::conf_dir. "cache.". $FS::UID::datasrc;
+      my $fh = new File::Temp(
+        TEMPLATE => 'faxdoc.'. $options{'dialstring'} . '.XXXXXXXX',
+        DIR      => $dir,
+        UNLINK   => 0,
+      ) or die "can't open temp file: $!\n";
+
+      $options{docfile} = $fh->filename;
+
+      print $fh @{$options{'docdata'}};
+      close $fh;
+
+      delete $options{'docdata'};
+  }
+
+  die 'Called send_fax without a \'docfile\' or \'docdata\'.'
+    unless exists($options{'docfile'});
+
+  #FIXME: Need to send canonical dialstring to HylaFAX, but this only
+  #       works in the US.
+
+  $options{'dialstring'} =~ s/[^\d\+]//g;
+  if ($options{'dialstring'} =~ /^\d{10}$/) {
+    $options{dialstring} = '+1' . $options{'dialstring'};
+  } else {
+    return 'Invalid dialstring ' . $options{'dialstring'} . '.';
+  }
+
+  my $faxjob = &Fax::Hylafax::Client::sendfax(%options, %hylafax_opts);
+
+  if ($faxjob->success) {
+    warn "Successfully queued fax to '$options{dialstring}' with jobid " .
+            $faxjob->jobid;
+  } else {
+    return 'Error while sending FAX: ' . $faxjob->trace;
+  }
+
+  return '';
 
 }
 
@@ -190,6 +262,8 @@ This package exists.
 =head1 SEE ALSO
 
 L<FS::UID>, L<FS::CGI>, L<FS::Record>, the base documentation.
+
+L<Fax::Hylafax::Client>
 
 =cut
 

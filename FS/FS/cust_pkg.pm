@@ -423,7 +423,7 @@ sub cancel {
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
   my $conf = new FS::Conf;
-  my @invoicing_list = grep { $_ ne 'POST' } $self->cust_main->invoicing_list;
+  my @invoicing_list = grep { $_ !~ /^(POST|FAX)$/ } $self->cust_main->invoicing_list;
   if ( !$options{'quiet'} && $conf->exists('emailcancel') && @invoicing_list ) {
     my $conf = new FS::Conf;
     my $error = send_email(

@@ -2655,6 +2655,11 @@ is an error, returns the error, otherwise returns false.
 sub check_invoicing_list {
   my( $self, $arrayref ) = @_;
   foreach my $address ( @{$arrayref} ) {
+
+    if ($address eq 'FAX' and $self->getfield('fax') eq '') {
+      return 'Can\'t add FAX invoice destination with a blank FAX number.';
+    }
+
     my $cust_main_invoice = new FS::cust_main_invoice ( {
       'custnum' => $self->custnum,
       'dest'    => $address,

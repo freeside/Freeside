@@ -302,8 +302,11 @@ if ( $payby_default eq 'HIDE' ) {
   print qq! CHECKED!
     if ( ! @invoicing_list && ! $conf->exists('disablepostalinvoicedefault') )
        || grep { $_ eq 'POST' } @invoicing_list;
-  print qq!>Postal mail invoice</TD></TR>!;
-  my $invoicing_list = join(', ', grep { $_ ne 'POST' } @invoicing_list );
+  print qq!>Postal mail invoice</TD></TR><TR><TD>!;
+  print qq!<INPUT TYPE="checkbox" NAME="invoicing_list_FAX" VALUE="FAX"!;
+  print qq! CHECKED! if (grep { $_ eq 'FAX' } @invoicing_list);
+  print qq!>FAX invoice</TD></TR>!;
+  my $invoicing_list = join(', ', grep { $_ !~ /^(POST|FAX)$/ } @invoicing_list );
   print qq!<TR><TD>Email invoice <INPUT TYPE="text" NAME="invoicing_list" VALUE="$invoicing_list"></TD></TR>!;
 
   print "<TR><TD>Billing type</TD></TR>",

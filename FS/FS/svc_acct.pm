@@ -296,7 +296,7 @@ sub insert {
     #welcome email
     my $to = '';
     if ( $welcome_template && $cust_pkg ) {
-      my $to = join(', ', grep { $_ ne 'POST' } $cust_main->invoicing_list );
+      my $to = join(', ', grep { $_ !~ /^(POST|FAX)$/ } $cust_main->invoicing_list );
       if ( $to ) {
         my $wqueue = new FS::queue {
           'svcnum' => $self->svcnum,

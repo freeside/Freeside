@@ -1433,6 +1433,13 @@ httemplate/docs/config.html
     'select_enum' => [ 'Cache::SharedMemoryCache', 'Cache::FileCache', ], # '_Database' ],
   },
 
+  {
+    'key'         => 'hylafax',
+    'section'     => '',
+    'description' => 'Options for a HylaFAX server to enable the FAX invoice destination.  They should be in the form of a space separated list of arguments to the Fax::Hylafax::Client::sendfax subroutine.  You probably shouldn\'t override things like \'docfile\'.  *Note* Only supported when using typeset invoices (see the invoice_latex configuration option).',
+    'type'        => [qw( checkbox textarea )],
+  },
+
 );
 
 1;

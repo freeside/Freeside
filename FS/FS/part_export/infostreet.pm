@@ -67,7 +67,7 @@ sub _export_insert {
     $_ => $cust_main->getfield( $infostreet2cust_main{$_} );
   } keys %infostreet2cust_main );
 
-  my @emails = grep { $_ ne 'POST' } $cust_main->invoicing_list;
+  my @emails = grep { $_ !~ /^(POST|FAX)$/ } $cust_main->invoicing_list;
   $contact_info{'email'} = $emails[0] if @emails;
 
   #this one is kinda noment-specific

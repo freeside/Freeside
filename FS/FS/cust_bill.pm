@@ -9,7 +9,7 @@ use File::Temp 0.14;
 use String::ShellQuote;
 use FS::UID qw( datasrc );
 use FS::Record qw( qsearch qsearchs );
-use FS::Misc qw( send_email );
+use FS::Misc qw( send_email send_fax );
 use FS::cust_main;
 use FS::cust_bill_pkg;
 use FS::cust_credit;
@@ -378,7 +378,7 @@ sub generate_email {
   if (ref($args{'to'} eq 'ARRAY')) {
     @invoicing_list = @{$args{'to'}};
   } else {
-    @invoicing_list = grep { $_ ne 'POST' } $self->cust_main->invoicing_list;
+    @invoicing_list = grep { $_ !~ /^(POST|FAX)$/ } $self->cust_main->invoicing_list;
   }
 
   return (
@@ -418,7 +418,7 @@ sub send {
   my @print_text = $self->print_text('', $template);
   my @invoicing_list = $self->cust_main->invoicing_list;
 
-  if ( grep { $_ ne 'POST' } @invoicing_list or !@invoicing_list  ) { #email
+  if ( grep { $_ !~ /^(POST|FAX)$/ } @invoicing_list or !@invoicing_list  ) { #email
 
     #better to notify this person than silence
     @invoicing_list = ($invoice_from) unless @invoicing_list;
@@ -426,7 +426,7 @@ sub send {
     my $error = send_email(
       $self->generate_email(
         'from'   => $invoice_from,
-        'to'     => [ grep { $_ ne 'POST' } @invoicing_list ],
+        'to'     => [ grep { $_ !~ /^(POST|FAX)$/ } @invoicing_list ],
 	'print_text' => [ @print_text ],
       )
     );
@@ -435,16 +435,34 @@ sub send {
 
   }
 
-  if ( grep { $_ eq 'POST' } @invoicing_list ) { #postal
-    @print_text = $self->print_ps('', $template)
-      if $conf->config('invoice_latex');
-    my $lpr = $conf->config('lpr');
-    open(LPR, "|$lpr")
-      or die "Can't open pipe to $lpr: $!\n";
-    print LPR @print_text;
-    close LPR
-      or die $! ? "Error closing $lpr: $!\n"
-                : "Exit status $? from $lpr\n";
+  if ( grep { $_ =~ /^(POST|FAX)$/ } @invoicing_list ) {
+    my $lpr_data;
+    if ($conf->config('invoice_latex')) {
+      $lpr_data = [ $self->print_ps('', $template) ];
+    } else {
+      $lpr_data = \@print_text;
+    }
+
+    if ( grep { $_ eq 'POST' } @invoicing_list ) { #postal
+      my $lpr = $conf->config('lpr');
+      open(LPR, "|$lpr")
+        or die "Can't open pipe to $lpr: $!\n";
+      print LPR @{$lpr_data};
+      close LPR
+        or die $! ? "Error closing $lpr: $!\n"
+                  : "Exit status $? from $lpr\n";
+    }
+
+    if ( grep { $_ eq 'FAX' } @invoicing_list ) { #fax
+      unless ($conf->exists('invoice_latex')) {
+	die 'FAX invoice destination not supported with plain text invoices.'
+      }
+      my $dialstring = $self->cust_main->getfield('fax');
+      #Check $dialstring?
+      my $error = send_fax(docdata => $lpr_data, dialstring => $dialstring);
+      die $error if $error;
+    }
+
   }
 
   '';

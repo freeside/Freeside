@@ -17,9 +17,15 @@ Billing information
   </TD>
 </TR>
 <TR>
+  <TD ALIGN="right">FAX&nbsp;invoices</TD>
+  <TD BGCOLOR="#ffffff">
+    <%= ( grep { $_ eq 'FAX' } @invoicing_list ) ? 'yes' : 'no' %>
+  </TD>
+</TR>
+<TR>
   <TD ALIGN="right">Email&nbsp;invoices</TD>
   <TD BGCOLOR="#ffffff">
-    <%= join(', ', grep { $_ ne 'POST' } @invoicing_list ) || 'no' %>
+    <%= join(', ', grep { $_ !~ /^(POST|FAX)$/ } @invoicing_list ) || 'no' %>
   </TD>
 </TR>
 <TR>

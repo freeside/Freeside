@@ -167,7 +167,7 @@ sub insert {
 
   #my $cust_main = $self->cust_main;
   if ( $conf->exists('payment_receipt_email')
-       && grep { $_ ne 'POST' } $cust_main->invoicing_list
+       && grep { $_ !~ /^(POST|FAX)$/ } $cust_main->invoicing_list
   ) {
 
     my $receipt_template = new Text::Template (
@@ -178,7 +178,7 @@ sub insert {
       return '';
     };
 
-    my @invoicing_list = grep { $_ ne 'POST' } $cust_main->invoicing_list;
+    my @invoicing_list = grep { $_ !~ /^(POST|FAX)$/ } $cust_main->invoicing_list;
 
     my $payby = $self->payby;
     my $payinfo = $self->payinfo;

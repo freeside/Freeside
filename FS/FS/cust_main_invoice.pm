@@ -43,7 +43,7 @@ FS::Record.  The following fields are currently supported:
 
 =item custnum - customer (see L<FS::cust_main>)
 
-=item dest - Invoice destination: If numeric, a svcnum (see L<FS::svc_acct>), if string, a literal email address, or `POST' to enable mailing (the default if no cust_main_invoice records exist)
+=item dest - Invoice destination: If numeric, a svcnum (see L<FS::svc_acct>), if string, a literal email address, `POST' to enable mailing (the default if no cust_main_invoice records exist), or `FAX' to enable faxing via a HylaFAX server.
 
 =back
 
@@ -127,7 +127,7 @@ sub checkdest {
   my $error = $self->ut_text('dest');
   return $error if $error;
 
-  if ( $self->dest eq 'POST' ) {
+  if ( $self->dest =~ /^(POST|FAX)$/ ) {
     #contemplate our navel
   } elsif ( $self->dest =~ /^(\d+)$/ ) {
     return "Unknown local account (specified by svcnum: ". $self->dest. ")"
@@ -144,7 +144,7 @@ sub checkdest {
 
 =item address
 
-Returns the literal email address for this record (or `POST').
+Returns the literal email address for this record (or `POST' or `FAX').
 
 =cut
 
