@@ -197,9 +197,12 @@ print '<BR>';
   ;
 
   if ( $cust_main->payby eq 'CARD' ) {
+    my $payinfo = $cust_main->payinfo;
+    $payinfo = substr($payinfo,0,4). 'x'x(length($payinfo)-4);
+
     print 'Credit card</TD></TR>',
           '<TR><TD ALIGN="right">Card number</TD><TD BGCOLOR="#ffffff">',
-          $cust_main->payinfo, '</TD></TR>',
+          $payinfo, '</TD></TR>',
           '<TR><TD ALIGN="right">Expiration</TD><TD BGCOLOR="#ffffff">',
           $cust_main->paydate, '</TD></TR>',
           '<TR><TD ALIGN="right">Name on card</TD><TD BGCOLOR="#ffffff">',
