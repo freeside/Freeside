@@ -4,7 +4,7 @@
 
 use strict;
 use DBI;
-use FS::UID qw(adminsuidsetup checkeuid);
+use FS::UID qw(adminsuidsetup checkeuid getsecrets);
 die "Not running uid freeside!" unless checkeuid();
 
 my $user = shift or die &usage;
