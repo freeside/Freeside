@@ -31,7 +31,9 @@ function SafeOnsubmit() {
     <INPUT TYPE="hidden" NAME=<%= $field %> VALUE="<%= $cgi->param($field) %>">
   <% }
 
-  my %schema = ();
+  my %schema;
+  use Tie::DxHash;
+  tie %schema, 'Tie::DxHash';
   if ( $cgi->param('schema') ) {
     my $schema_string = $cgi->param('schema');
     %> <INPUT TYPE="hidden" NAME="schema" VALUE="<%=$schema_string%>"> <%
@@ -57,14 +59,16 @@ function SafeOnsubmit() {
     <INPUT TYPE="hidden" NAME="magic" VALUE="process2">
     <%
 
+    my %unique;
     foreach my $table ( keys %schema ) {
 
       my @from_columns = $schema->table($table)->columns;
       my @fs_columns = dbdef->table($schema{$table})->columns;
 
       %>
-      <%= hashmaker($table, \@from_columns => \@fs_columns,
-                            $table         =>  $schema{$table}, ) %>
+      <%= hashmaker( $table.'__'.$unique{$table}++,
+                     \@from_columns => \@fs_columns,
+                     $table         =>  $schema{$table}, ) %>
       <br><hr><br>
       <%
 
@@ -79,6 +83,7 @@ function SafeOnsubmit() {
 
     print "<pre>\n";
 
+    my %unique;
     foreach my $table ( keys %schema ) {
       ( my $spaces = $table ) =~ s/./ /g;
       print "'$table' => { 'table' => '$schema{$table}',\n".
@@ -88,7 +93,7 @@ function SafeOnsubmit() {
                          or die "guru meditation #420: $_";
                        ( $1 => $2 );
                      }
-                 split( /\n/, $cgi->param($table) );
+                 split( /\n/, $cgi->param($table.'__'.$unique{$table}++) );
       foreach ( keys %map ) {
         print "$spaces                     '$_' => '$map{$_}',\n";
       }
@@ -116,11 +121,13 @@ function SafeOnsubmit() {
     "<TABLE><TR><TH>$labelfrom</TH><TH>$labelto</TH></TR><TR><TD>".
         qq!<SELECT NAME="${name}_from" SIZE=$fromsize>\n!.
         join("\n", map { qq!<OPTION VALUE="$_">$_</OPTION>! } sort { $a cmp $b } @$from ).
-        "</SELECT>\n".
+        "</SELECT>\n<BR>".
+      qq!<INPUT TYPE="button" VALUE="refill" onClick="repack_${name}_from()">!.
       '</TD><TD>'.
         qq!<SELECT NAME="${name}_to" SIZE=$tosize>\n!.
         join("\n", map { qq!<OPTION VALUE="$_">$_</OPTION>! } sort { $a cmp $b } @$to ).
-        "</SELECT>\n".
+        "</SELECT>\n<BR>".
+      qq!<INPUT TYPE="button" VALUE="refill" onClick="repack_${name}_to()">!.
       '</TD></TR>'.
       '<TR><TD COLSPAN=2>'.
         qq!<INPUT TYPE="button" VALUE="map" onClick="toke_$name(this.form)">!.
@@ -145,6 +152,24 @@ function SafeOnsubmit() {
               value = object.options[index].value;
               object.options[index] = null;
               return value;
+            }
+            function repack_${name}_from() {
+              var object = document.OneTrueForm.${name}_from;
+              object.options.length = 0;
+              ". join("\n", 
+                   map { "addOption_$name(object, '$_');\n" }
+                       ( sort { $a cmp $b } @$from )           ). "
+            }
+            function repack_${name}_to() {
+              var object = document.OneTrueForm.${name}_to;
+              object.options.length = 0;
+              ". join("\n", 
+                   map { "addOption_$name(object, '$_');\n" }
+                       ( sort { $a cmp $b } @$to )           ). "
+            }
+            function addOption_$name(object,value) {
+              var length = object.length;
+              object.options[length] = new Option(value, value, false, false);
             }
       </script>".
       '';
