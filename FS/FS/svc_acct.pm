@@ -11,7 +11,11 @@ use vars qw( @ISA $nossh_hack $conf $dir_prefix @shells $usernamemin
              $dirhash
              $icradius_dbh
              @saltset @pw_set);
+             $rsync $ssh);
 use Carp;
+use File::Path;
+use Fcntl qw(:flock);
+use FS::UID qw( datasrc );
 use FS::Conf;
 use FS::Record qw( qsearch qsearchs fields dbh );
 use FS::svc_Common;
@@ -28,6 +32,8 @@ use FS::queue;
 
 #ask FS::UID to run this stuff for us later
 $FS::UID::callback{'FS::svc_acct'} = sub { 
+  $rsync = "rsync";
+  $ssh = "ssh";
   $conf = new FS::Conf;
   $dir_prefix = $conf->config('home');
   @shells = $conf->config('shells');
@@ -95,6 +101,14 @@ $FS::UID::callback{'FS::svc_acct'} = sub {
     $icradius_dbh = '';
   }
   $dirhash = $conf->config('dirhash') || 0;
+  $exportdir = "/usr/local/etc/freeside/export." . datasrc;
+  if ( $conf->exists('vpopmailmachines') ) {
+    my (@vpopmailmachines) = $conf->config('vpopmailmachines');
+    my ($machine, $dir, $uid, $gid) = split (/\s+/, $vpopmailmachines[0]);
+    $vpopdir = $dir;
+  } else {
+    $vpopdir = '';
+  }
 };
 
 @saltset = ( 'a'..'z' , 'A'..'Z' , '0'..'9' , '.' , '/' );
@@ -345,8 +359,27 @@ sub insert {
       $dbh->rollback if $oldAutoCommit;
       return "queueing job (transaction rolled back): $error";
     }
+  }
+
+  if ( $vpopdir ) {
+
+    my $vpopmail_queue =
+      new FS::queue { 
+      'svcnum' => $self->svcnum,
+      'job' => 'FS::svc_acct::vpopmail_insert'
+    };
+    $error = $vpopmail_queue->insert( $self->username,
+      crypt($self->_password,$saltset[int(rand(64))].$saltset[int(rand(64))]),
+                                      $self->domain,
+                                      $vpopdir,
+                                    );
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "queueing job (transaction rolled back): $error";
+    }
 
   }
+
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   ''; #no error
@@ -455,6 +488,49 @@ sub icradius_rr_insert {
   }
 
   1;
+}
+
+
+sub vpopmail_insert {
+  my( $username, $password, $domain, $vpopdir ) = @_;
+  
+  (open(VPASSWD, ">>$exportdir/domains/$domain/vpasswd")
+    and flock(VPASSWD,LOCK_EX|LOCK_NB)
+  ) or die "can't open vpasswd file for $username\@$domain: $exportdir/domains/$domain/vpasswd";
+  print VPASSWD join(":",
+    $username,
+    $password,
+    '1',
+    '0',
+    $username,
+    "$vpopdir/domains/$domain/$username",
+    'NOQUOTA',
+  ), "\n";
+
+  flock(VPASSWD,LOCK_UN);
+  close(VPASSWD);
+
+  mkdir "$exportdir/domains/$domain/$username", 0700  or die "can't create Maildir";
+  mkdir "$exportdir/domains/$domain/$username/Maildir", 0700 or die "can't create Maildir";
+  mkdir "$exportdir/domains/$domain/$username/Maildir/cur", 0700 or die "can't create Maildir";
+  mkdir "$exportdir/domains/$domain/$username/Maildir/new", 0700 or die "can't create Maildir";
+  mkdir "$exportdir/domains/$domain/$username/Maildir/tmp", 0700 or die "can't create Maildir";
+ 
+  my $queue = new FS::queue { 'job' => 'FS::svc_acct::vpopmail_sync' };
+  $error = $queue->insert;
+
+  1;
+}
+
+sub vpopmail_sync {
+
+  my (@vpopmailmachines) = $conf->config('vpopmailmachines');
+  my ($machine, $dir, $uid, $gid) = split (/\s+/, $vpopmailmachines[0]);
+  
+  chdir $exportdir;
+  my @args = ("$rsync", "-rlpt", "-e", "$ssh", "domains/", "vpopmail\@$machine:$pdir/domains/")
+  system {$args[0]} @args;
+
 }
 
 =item delete
@@ -601,6 +677,14 @@ sub delete {
       $dbh->rollback if $oldAutoCommit;
       return "queueing job (transaction rolled back): $error";
     }
+  }
+  if ( $vpopdir ) {
+    my $queue = new FS::queue { 'job' => 'FS::svc_acct::vpopmail_delete' };
+    $error = $queue->insert( $self->username, $self->domain );
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "queueing job (transaction rolled back): $error";
+    }
 
   }
 
@@ -668,6 +752,33 @@ sub icradius_rr_delete {
   $sth->execute($username)
     or die "can't delete from radreply table: ". $sth->errstr;
 
+  1;
+}
+
+sub vpopmail_delete {
+  my( $username, $domain ) = @_;
+  
+  (open(VPASSWD, "$exportdir/domains/$domain/vpasswd")
+    and flock(VPASSWD,LOCK_EX|LOCK_NB)
+  ) or die "can't open $exportdir/domains/$domain/vpasswd: $!";
+
+  open(VPASSWDTMP, ">$exportdir/domains/$domain/vpasswd.tmp")
+    or die "Can't open $exportdir/domains/$domain/vpasswd.tmp: $!";
+
+  while (<VPASSWD>) {
+    my ($mailbox, $rest) = split(':', $_);
+    print VPASSWDTMP $_ unless $username eq $mailbox;
+  }
+
+  close(VPASSWDTMP);
+
+  rename "$exportdir/domains/$domain/vpasswd.tmp", "$exportdir/domains/$domain/vpasswd"
+    or die "Can't rename $exportdir/domains/$domain/vpasswd.tmp: $!";
+
+  flock(VPASSWD,LOCK_UN);
+  close(VPASSWD);
+
+  rmtree "$exportdir/domains/$domain/$username" or die "can't destroy Maildir";+ 
   1;
 }
 
@@ -791,6 +902,31 @@ sub replace {
       return "queueing job (transaction rolled back): $error";
     }
   }
+  if ( $vpopdir ) {
+    my $cpassword = crypt(
+      $new->_password,$saltset[int(rand(64))].$saltset[int(rand(64))]
+    );
+
+    if ($old->username ne $new->username || $old->domain ne $new->domain ) {
+      my $queue  = new FS::queue { 'job' => 'FS::svc_acct::vpopmail_delete' };
+        $error = $queue->insert( $old->username, $old->domain );
+      my $queue2 = new FS::queue { 'job' => 'FS::svc_acct::vpopmail_insert' };
+        $error = $queue2->insert( $new->username,
+                                  $cpassword,
+                                  $new->domain,
+                                  $vpopdir,
+                                )
+        unless $error;
+    } elsif ($old->_password ne $new->_password) {
+      my $queue = new FS::queue { 'job' => 'FS::svc_acct::vpopmail_replace_password' };
+      $error = $queue->insert( $new->username, $cpassword, $new->domain );
+    }
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "queueing job (transaction rolled back): $error";
+    }
+  }
+
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   ''; #no error
@@ -866,6 +1002,38 @@ sub cp_change {
   die $app->message."\n" unless $app->ok;
 
 }
+
+sub vpopmail_replace_password {
+  my( $username, $password, $domain ) = @_;
+  
+  (open(VPASSWD, "$exportdir/domains/$domain/vpasswd")
+    and flock(VPASSWD,LOCK_EX|LOCK_NB)
+  ) or die "can't open $exportdir/domains/$domain/vpasswd: $!";
+
+  open(VPASSWDTMP, ">$exportdir/domains/$domain/vpasswd.tmp")
+    or die "Can't open $exportdir/domains/$domain/vpasswd.tmp: $!";
+
+  while (<VPASSWD>) {
+    my ($mailbox, $pw, @rest) = split(':', $_);
+    print VPASSWDTMP $_ unless $username eq $mailbox;
+    print VPASSWDTMP join (':', ($mailbox, $password, @rest))
+      if $username eq $mailbox;
+  }
+
+  close(VPASSWDTMP);
+
+  rename "$exportdir/domains/$domain/vpasswd.tmp", "$exportdir/domains/$domain/vpasswd"
+    or die "Can't rename $exportdir/domains/$domain/vpasswd.tmp: $!";
+
+  flock(VPASSWD,LOCK_UN);
+  close(VPASSWD);
+
+  my $queue = new FS::queue { 'job' => 'FS::svc_acct::vpopmail_sync' };
+  $error = $queue->insert;
+
+  1;
+}
+
 
 =item suspend
 
