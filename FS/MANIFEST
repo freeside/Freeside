@@ -24,7 +24,6 @@ bin/freeside-setup
 bin/freeside-sqlradius-radacctd
 bin/freeside-sqlradius-reset
 bin/freeside-sqlradius-seconds
-bin/freeside-tax-report
 FS.pm
 FS/CGI.pm
 FS/InitHandler.pm
