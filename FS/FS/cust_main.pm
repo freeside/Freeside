@@ -512,6 +512,8 @@ and repalce methods.
 sub check {
   my $self = shift;
 
+  warn "BEFORE: \n". $self->_dump;
+
   my $error =
     $self->ut_numbern('custnum')
     || $self->ut_number('agentnum')
@@ -553,7 +555,9 @@ sub check {
     $self->ss("$1-$2-$3");
   }
 
-  unless ( $import ) {
+
+# bad idea to disable, causes billing to fail because of no tax rates later
+#  unless ( $import ) {
     unless ( qsearchs('cust_main_county', {
       'country' => $self->country,
       'state'   => '',
@@ -566,7 +570,7 @@ sub check {
           'country' => $self->country,
         } );
     }
-  }
+#  }
 
   $error =
     $self->ut_phonen('daytime', $self->country)
@@ -583,7 +587,7 @@ sub check {
 
   if ( defined $self->dbdef_table->column('ship_last') ) {
     if ( grep { $self->getfield($_) ne $self->getfield("ship_$_") } @addfields
-         && grep $self->getfield("ship_$_"), grep $_ ne 'state', @addfields
+         && grep { $self->getfield("ship_$_") ne '' } @addfields
        )
     {
       my $error =
@@ -693,6 +697,8 @@ sub check {
   $self->tax($1);
 
   $self->otaker(getotaker);
+
+  warn "AFTER: \n". $self->_dump;
 
   ''; #no error
 }
