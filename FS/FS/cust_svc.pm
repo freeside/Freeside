@@ -159,6 +159,10 @@ sub check {
       'pkgpart' => $cust_pkg->pkgpart,
       'svcpart' => $self->svcpart,
     });
+    # or new FS::pkg_svc ( { 'pkgpart'  => $cust_pkg->pkgpart,
+    #                        'svcpart'  => $self->svcpart,
+    #                        'quantity' => 0                   } );
+
     my @cust_svc = qsearch('cust_svc', {
       'pkgnum'  => $self->pkgnum,
       'svcpart' => $self->svcpart,
@@ -282,7 +286,7 @@ sub seconds_since {
 
 =head1 VERSION
 
-$Id: cust_svc.pm,v 1.13 2002-04-12 15:14:58 ivan Exp $
+$Id: cust_svc.pm,v 1.14 2002-04-20 02:06:38 ivan Exp $
 
 =head1 BUGS
 

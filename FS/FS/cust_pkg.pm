@@ -577,7 +577,9 @@ sub order {
     push @cust_svc, [
       map {
         ( $svcnum{$_} && @{ $svcnum{$_} } ) ? shift @{ $svcnum{$_} } : ();
-      } map { $_->svcpart } qsearch('pkg_svc', { 'pkgpart' => $pkgpart })
+      } map { $_->svcpart }
+          qsearch('pkg_svc', { pkgpart  => $pkgpart,
+                               quantity => { op=>'>', value=>'0', } } )
     ];
   }
 
@@ -597,7 +599,11 @@ sub order {
     #find an empty place to put one
     my $i = 0;
     foreach my $pkgpart ( @{$pkgparts} ) {
-      my @pkg_svc = qsearch('pkg_svc', { pkgpart=>$pkgpart } );
+      my @pkg_svc =
+        qsearch('pkg_svc', { pkgpart  => $pkgpart,
+                             quantity => { op=>'>', value=>'0', } } );
+      #my @pkg_svc =
+      #  grep { $_->quantity > 0 } qsearch('pkg_svc', { pkgpart=>$pkgpart } );
       if ( ! @{$cust_svc[$i]} #find an empty place to put them with 
            && grep { $svcdb eq $_->part_svc->svcdb } #with appropriate svcdb
                 @pkg_svc
@@ -689,7 +695,7 @@ sub order {
 
 =head1 VERSION
 
-$Id: cust_pkg.pm,v 1.17 2002-04-12 15:14:58 ivan Exp $
+$Id: cust_pkg.pm,v 1.18 2002-04-20 02:06:38 ivan Exp $
 
 =head1 BUGS
 
