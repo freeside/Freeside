@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: signup.cgi,v 1.34 2002-11-29 05:14:21 ivan Exp $
+# $Id: signup.cgi,v 1.35 2002-12-24 23:03:27 ivan Exp $
 
 use strict;
 use vars qw( @payby $cgi $locales $packages $pops $init_data $error
@@ -160,7 +160,12 @@ if ( defined $cgi->param('magic') ) {
     }
 
     $payby = $cgi->param('payby');
-    $payinfo = $cgi->param( $payby. '_payinfo' );
+    if ( $payby eq 'CHEK' ) {
+      #$payinfo = join('@', map { $cgi->param( $payby. "_payinfo$_" ) } (1,2) );
+      $payinfo = $cgi->param('CHEK_payinfo1').'@'.$cgi->param('CHEK_payinfo2');
+    } else {
+      $payinfo = $cgi->param( $payby. '_payinfo' );
+    }
     $paydate =
       $cgi->param( $payby. '_month' ). '-'. $cgi->param( $payby. '_year' );
     $payname = $cgi->param( $payby. '_payname' );
