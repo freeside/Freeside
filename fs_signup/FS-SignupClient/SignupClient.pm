@@ -8,7 +8,7 @@ use FileHandle;
 use IO::Handle;
 use Storable qw(nstore_fd fd_retrieve);
 
-$VERSION = '0.02';
+$VERSION = '0.03';
 
 @ISA = qw( Exporter );
 @EXPORT_OK = qw( signup_info new_customer );
@@ -98,6 +98,8 @@ Each hash reference has the following keys:
   ac
   exch
 
+(Future expansion: fourth argument is the $init_data hash reference)
+
 =cut
 
 sub signup_info {
@@ -141,6 +143,7 @@ a paramater with the following keys:
   pkgpart
   username
   _password
+  sec_phrase
   popnum
 
 Returns a scalar error message, or the empty string for success.
@@ -150,12 +153,6 @@ Returns a scalar error message, or the empty string for success.
 sub new_customer {
   my $hashref = shift;
 
-  #things that aren't necessary in base class, but are for signup server
-#  return "Passwords don't match"
-#    if $hashref->{'_password'} ne $hashref->{'_password2'}
-  return "Empty password" unless $hashref->{'_password'};
-  return "No POP selected" unless $hashref->{'popnum'};
-
   socket(SOCK, PF_UNIX, SOCK_STREAM, 0) or die "socket: $!";
   connect(SOCK, sockaddr_un($fs_signupd_socket)) or die "connect: $!";
   print SOCK "new_customer\n";
@@ -163,10 +160,9 @@ sub new_customer {
   my $signup_data = { map { $_ => $hashref->{$_} } qw(
     first last ss company address1 address2 city county state zip country
     daytime night fax payby payinfo paydate payname invoicing_list
-    referral_custnum pkgpart username _password popnum
+    referral_custnum pkgpart username _password sec_phrase popnum
   ) };
 
-  #
   nstore_fd($signup_data, \*SOCK) or die "can't send customer signup: $!";
   SOCK->flush;
 

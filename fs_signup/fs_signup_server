@@ -9,6 +9,7 @@ use Storable qw(nstore_fd fd_retrieve);
 use Tie::RefHash;
 use Net::SSH qw(sshopen2);
 use FS::UID qw(adminsuidsetup);
+use FS::Conf;
 use FS::Record qw( qsearch qsearchs );
 use FS::cust_main_county;
 use FS::cust_main;
@@ -21,6 +22,8 @@ my @payby = qw(CARD PREPAY);
 
 my $user = shift or die &usage;
 &adminsuidsetup( $user ); 
+
+my $conf = new FS::Conf;
 
 my $machine = shift or die &usage;
 
@@ -59,6 +62,8 @@ while (1) {
 
     'svc_acct_pop' => [ map { $_->hashref } qsearch ('svc_acct_pop',{} ) ],
 
+    'security_phrase' => $conf->exists('security_phrase'),
+
   };
 
   warn "[fs_signup_server] Sending init data...\n" if $Debug;
@@ -79,6 +84,12 @@ while (1) {
 
     my $error = '';
 
+    #things that aren't necessary in base class, but are for signup server
+      #return "Passwords don't match"
+      #  if $hashref->{'_password'} ne $hashref->{'_password2'}
+    $error ||= "Empty password" unless $signup_data->{'_password'};
+    $error ||= "No POP selected" unless $signup_data->{'popnum'};
+
     #shares some stuff with htdocs/edit/process/cust_main.cgi... take any
     # common that are still here and library them.
     my $cust_main = new FS::cust_main ( {
@@ -93,7 +104,7 @@ while (1) {
 
     } );
 
-    $error = "Illegal payment type"
+    $error ||= "Illegal payment type"
       unless grep { $_ eq $signup_data->{'payby'} } @payby;
 
     my @invoicing_list = split( /\s*\,\s*/, $signup_data->{'invoicing_list'} );
@@ -118,7 +129,8 @@ while (1) {
 
     my $svc_acct = new FS::svc_acct ( {
       'svcpart'   => $svcpart,
-      map { $_ => $signup_data->{$_} } qw( username _password popnum ),
+      map { $_ => $signup_data->{$_} }
+        qw( username _password sec_phrase popnum ),
     } );
 
     my $y = $svc_acct->setdefault; # arguably should be in new method

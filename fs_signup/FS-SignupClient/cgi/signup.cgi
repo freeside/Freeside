@@ -1,13 +1,13 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: signup.cgi,v 1.16 2002-04-06 20:37:38 ivan Exp $
+# $Id: signup.cgi,v 1.17 2002-04-06 21:39:22 ivan Exp $
 
 use strict;
-use vars qw( @payby $cgi $locales $packages $pops $error
+use vars qw( @payby $cgi $locales $packages $pops $init_data $error
              $last $first $ss $company $address1 $address2 $city $state $county
              $country $zip $daytime $night $fax $invoicing_list $payby $payinfo
              $paydate $payname $referral_custnum
-             $pkgpart $username $password $password2 $popnum
+             $pkgpart $username $password $password2 $sec_phrase $popnum
              $ieak_file $ieak_template $cck_file $cck_template
              $signup_html $signup_template $success_html $success_template
              $ac $exch $loc
@@ -17,7 +17,7 @@ use subs qw( print_form print_okay expselect signup_default success_default );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use HTTP::Headers::UserAgent 2.00;
-use FS::SignupClient 0.02 qw( signup_info new_customer );
+use FS::SignupClient 0.03 qw( signup_info new_customer );
 use Text::Template;
 
 #acceptable payment methods
@@ -90,7 +90,7 @@ if ( -e $success_html ) {
     or die $Text::Template::ERROR;
 }
 
-( $locales, $packages, $pops ) = signup_info();
+( $locales, $packages, $pops, $init_data ) = signup_info();
 
 $cgi = new CGI;
 
@@ -147,6 +147,7 @@ if ( defined $cgi->param('magic') ) {
         'referral_custnum' => $referral_custnum = $cgi->param('ref'),
         'pkgpart'          => $pkgpart          = $cgi->param('pkgpart'),
         'username'         => $username         = $cgi->param('username'),
+        'sec_phrase'       => $sec_phrase       = $cgi->param('sec_phrase'),
         '_password'        => $password         = $cgi->param('_password'),
         'popnum'           => $popnum           = $cgi->param('popnum'),
       } );
@@ -187,6 +188,7 @@ if ( defined $cgi->param('magic') ) {
   $username = '';
   $password = '';
   $password2 = '';
+  $sec_phrase = '';
   $popnum = '';
   $referral_custnum = $cgi->param('ref') || '';
   print_form;
@@ -485,6 +487,19 @@ Contact Information
   <TD><INPUT TYPE="password" NAME="_password2" VALUE="<%= $password2 %>">
   </TD>
 </TR>
+<%=
+  if ( $init_data->{'security_phrase'} ) {
+    $OUT .= <<ENDOUT;
+<TR>
+  <TD ALIGN="right">Security Phrase</TD>
+  <TD><INPUT TYPE="text" NAME="sec_phrase" VALUE="$sec_phrase">
+  </TD>
+</TR>
+ENDOUT
+  } else {
+    $OUT .= '<INPUT TYPE="hidden" NAME="sec_phrase" VALUE="">';
+  }
+%>
 <TR>
   <TD ALIGN="right">Access number</TD>
   <TD><%= popselector($popnum) %></TD>

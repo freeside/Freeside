@@ -134,6 +134,19 @@ Contact Information
   <TD><INPUT TYPE="password" NAME="_password2" VALUE="<%= $password2 %>">
   </TD>
 </TR>
+<%=
+  if ( $init_data->{'security_phrase'} ) {
+    $OUT .= <<ENDOUT;
+<TR>
+  <TD ALIGN="right">Security Phrase</TD>
+  <TD><INPUT TYPE="text" NAME="sec_phrase" VALUE="$sec_phrase">
+  </TD>
+</TR>
+ENDOUT
+  } else {
+    $OUT .= '<INPUT TYPE="hidden" NAME="sec_phrase" VALUE="">';
+  }
+%>
 <TR>
   <TD ALIGN="right">Access number</TD>
   <TD><%= popselector($popnum) %></TD>
