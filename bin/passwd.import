@@ -1,5 +1,5 @@
 #!/usr/bin/perl -Tw
-# $Id: passwd.import,v 1.4 2002-06-21 09:15:59 ivan Exp $
+# $Id: passwd.import,v 1.5 2002-06-21 09:57:05 ivan Exp $
 
 use strict;
 use vars qw(%part_svc);
@@ -86,10 +86,10 @@ while (<PASSWD>) {
 
   my $svcpart = $shell_svcpart;
 
-  if ( qsearchs('svc_acct', { 'username' => $username } ) ) {
-    warn "warning: $username already exists; skipping\n";
-    next;
-  }
+  #if ( qsearchs('svc_acct', { 'username' => $username } ) ) {
+  #  warn "warning: $username already exists; skipping\n";
+  #  next;
+  #}
 
   my($svc_acct) = new FS::svc_acct ({
     'svcpart'   => $svcpart,
