@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: cust_credit_bill.cgi,v 1.1 2001-09-01 21:52:20 jeff Exp $ -->
+#<!-- $Id: cust_credit_bill.cgi,v 1.2 2001-12-18 19:30:31 ivan Exp $ -->
 
 use strict;
 use vars qw( $cgi $custnum $crednum $new $error );
@@ -10,6 +10,8 @@ use FS::CGI qw(popurl);
 use FS::Record qw(qsearchs fields);
 use FS::cust_credit;
 use FS::cust_credit_bill;
+use FS::cust_refund;
+use FS::cust_main;
 
 $cgi = new CGI;
 cgisuidsetup($cgi);
@@ -34,7 +36,7 @@ if ($cgi->param('invnum') =~ /^Refund$/) {
     'payinfo' => 'Cash',
     'crednum' => $crednum,
   } );
-}else{
+} else {
   $new = new FS::cust_credit_bill ( {
     map {
       $_, scalar($cgi->param($_));
