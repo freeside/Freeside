@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# cust_pkg.cgi: View a package
+# $Id: cust_pkg.cgi,v 1.3 1998-12-17 09:57:22 ivan Exp $
 #
 # Usage: cust_pkg.cgi pkgnum
 #        http://server.name/path/cust_pkg.cgi?pkgnum
@@ -26,7 +26,10 @@
 # no FS::Search ivan@sisd.com 98-mar-7
 # 
 # $Log: cust_pkg.cgi,v $
-# Revision 1.2  1998-11-13 09:56:49  ivan
+# Revision 1.3  1998-12-17 09:57:22  ivan
+# s/CGI::(Base|Request)/CGI.pm/;
+#
+# Revision 1.2  1998/11/13 09:56:49  ivan
 # change configuration file layout to support multiple distinct databases (with
 # own set of config files, export, etc.)
 #
@@ -36,7 +39,7 @@ use Date::Format;
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
-use FS::CGI qw(url);
+use FS::CGI qw(popurl header);
 use FS::Record qw(qsearch qsearchs);
 
 my($cgi) = new CGI;
@@ -45,25 +48,13 @@ cgisuidsetup($cgi);
 my(%uiview,%uiadd);
 my($part_svc);
 foreach $part_svc ( qsearch('part_svc',{}) ) {
-  $uiview{$part_svc->svcpart} = url(1). "/view/". $part_svc->svcdb . ".cgi";
-  $uiadd{$part_svc->svcpart}= url(1). "/edit/". $part_svc->svcdb . ".cgi";
+  $uiview{$part_svc->svcpart} = popurl(2). "view/". $part_svc->svcdb . ".cgi";
+  $uiadd{$part_svc->svcpart}= popurl(2). "edit/". $part_svc->svcdb . ".cgi";
 }
 
-SendHeaders(); # one guess.
-print <<END;
-<HTML>
-  <HEAD>
-    <TITLE>Package View</TITLE>
-  </HEAD>
-  <BODY>
-    <CENTER>
-    <H1>Package View</H1>
-    </CENTER>
-    <BASEFONT SIZE=3>
-END
+print $cgi->header, header('Package View', '');
 
-#untaint pkgnum
-$QUERY_STRING =~ /^(\d+)$/;
+$cgi->query_string =~ /^(\d+)$/;
 my($pkgnum)=$1;
 
 #get package record

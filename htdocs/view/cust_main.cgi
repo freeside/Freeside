@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# cust_main.cgi: View a customer
+# $Id: cust_main.cgi,v 1.4 1998-12-17 09:57:21 ivan Exp $
 #
 # Usage: cust_main.cgi custnum
 #        http://server.name/path/cust_main.cgi?custnum
@@ -33,7 +33,10 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: cust_main.cgi,v $
-# Revision 1.3  1998-11-15 13:14:20  ivan
+# Revision 1.4  1998-12-17 09:57:21  ivan
+# s/CGI::(Base|Request)/CGI.pm/;
+#
+# Revision 1.3  1998/11/15 13:14:20  ivan
 # first pass as per-customer custom pricing
 #
 # Revision 1.2  1998/11/13 11:28:08  ivan

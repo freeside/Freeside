@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct_sm.cgi,v 1.2 1998-12-16 05:24:30 ivan Exp $
+# $Id: svc_acct_sm.cgi,v 1.3 1998-12-17 09:57:24 ivan Exp $
 #
 # Usage: svc_acct_sm.cgi svcnum
 #        http://server.name/path/svc_acct_sm.cgi?svcnum
@@ -22,26 +22,29 @@
 # /var/spool/freeside/conf/domain ivan@sisd.com 98-jul-17
 #
 # $Log: svc_acct_sm.cgi,v $
-# Revision 1.2  1998-12-16 05:24:30  ivan
+# Revision 1.3  1998-12-17 09:57:24  ivan
+# s/CGI::(Base|Request)/CGI.pm/;
+#
+# Revision 1.2  1998/12/16 05:24:30  ivan
 # use FS::Conf;
 #
 
 use strict;
 use vars qw($conf);
-use CGI::Base qw(:DEFAULT :CGI);
+use CGI;
 use FS::UID qw(cgisuidsetup);
+use FS::CGI qw(header popurl);
 use FS::Record qw(qsearchs);
 use FS::Conf;
+
+my($cgi) = new CGI;
+cgisuidsetup($cgi);
 
 $conf = new FS::Conf;
 my $mydomain = $conf->config('domain');
 
-my($cgi) = new CGI::Base;
-$cgi->get;
-cgisuidsetup($cgi);
-
 #untaint svcnum
-$QUERY_STRING =~ /^(\d+)$/;
+$cgi->query_string =~ /^(\d+)$/;
 my($svcnum)=$1;
 my($svc_acct_sm)=qsearchs('svc_acct_sm',{'svcnum'=>$svcnum});
 die "Unknown svcnum" unless $svc_acct_sm;
@@ -57,30 +60,24 @@ if ($pkgnum) {
 my($part_svc)=qsearchs('part_svc',{'svcpart'=> $cust_svc->svcpart } );
 die "Unkonwn svcpart" unless $part_svc;
 
-SendHeaders(); # one guess.
-print <<END;
-<HTML>
-  <HEAD>
-    <TITLE>Mail Alias View</TITLE>
-  </HEAD>
-  <BODY>
-    <CENTER><H1>Mail Alias View</H1>
-END
+print $cgi->header, header('Mail Alias View');
+
+my $p = popurl(2);
 if ($pkgnum || $custnum) {
   print <<END;
-<A HREF="../view/cust_pkg.cgi?$pkgnum">View this package (#$pkgnum)</A> | 
-<A HREF="../view/cust_main.cgi?$custnum">View this customer (#$custnum)</A> | 
+<A HREF="${p}view/cust_pkg.cgi?$pkgnum">View this package (#$pkgnum)</A> | 
+<A HREF="${p}view/cust_main.cgi?$custnum">View this customer (#$custnum)</A> | 
 END
 } else {
   print <<END;
-<A HREF="../misc/cancel-unaudited.cgi?$svcnum">Cancel this (unaudited)account</A> |
+<A HREF="${p}misc/cancel-unaudited.cgi?$svcnum">Cancel this (unaudited)account</A> |
 END
 }
 
 print <<END;
-    <A HREF="../">Main menu</A></CENTER><BR<
+    <A HREF="${p}">Main menu</A></CENTER><BR<
     <FONT SIZE=+1>Service #$svcnum</FONT>
-    <P><A HREF="../edit/svc_acct_sm.cgi?$svcnum">Edit this information</A>
+    <P><A HREF="${p}edit/svc_acct_sm.cgi?$svcnum">Edit this information</A>
     <BASEFONT SIZE=3>
 END
 

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct.cgi,v 1.2 1998-12-16 05:24:29 ivan Exp $
+# $Id: svc_acct.cgi,v 1.3 1998-12-17 09:57:23 ivan Exp $
 #
 # Usage: svc_acct.cgi svcnum
 #        http://server.name/path/svc_acct.cgi?svcnum
@@ -35,27 +35,29 @@
 # displays arbitrary radius attributes ivan@sisd.com 98-aug-16
 #
 # $Log: svc_acct.cgi,v $
-# Revision 1.2  1998-12-16 05:24:29  ivan
+# Revision 1.3  1998-12-17 09:57:23  ivan
+# s/CGI::(Base|Request)/CGI.pm/;
+#
+# Revision 1.2  1998/12/16 05:24:29  ivan
 # use FS::Conf;
 #
 
 use strict;
 use vars qw($conf);
-use CGI::Base qw(:DEFAULT :CGI);
+use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
 use FS::Record qw(qsearchs fields);
 use FS::Conf;
 
+my($cgi) = new CGI;
+&cgisuidsetup($cgi);
+
 $conf = new FS::Conf;
 my $mydomain = $conf->config('domain');
 
-my($cgi) = new CGI::Base;
-$cgi->get;
-&cgisuidsetup($cgi);
-
 #untaint svcnum
-$QUERY_STRING =~ /^(\d+)$/;
+$cgi->query_string =~ /^(\d+)$/;
 my($svcnum)=$1;
 my($svc_acct)=qsearchs('svc_acct',{'svcnum'=>$svcnum});
 die "Unkonwn svcnum" unless $svc_acct;
@@ -71,35 +73,26 @@ if ($pkgnum) {
 my($part_svc)=qsearchs('part_svc',{'svcpart'=> $cust_svc->svcpart } );
 die "Unkonwn svcpart" unless $part_svc;
 
-SendHeaders(); # one guess.
-print <<END;
-<HTML>
-  <HEAD>
-    <TITLE>Account View</TITLE>
-  </HEAD>
-  <BODY>
-    <CENTER><H1>Account View</H1>
-    <BASEFONT SIZE=3>
-<CENTER>
-END
+print $cgi->header, header('Account View', '');
 
+my $p = popurl(2);
 if ($pkgnum || $custnum) {
   print <<END;
-<A HREF="../view/cust_pkg.cgi?$pkgnum">View this package (#$pkgnum)</A> | 
-<A HREF="../view/cust_main.cgi?$custnum">View this customer (#$custnum)</A> | 
+<A HREF="${p}view/cust_pkg.cgi?$pkgnum">View this package (#$pkgnum)</A> | 
+<A HREF="${p}view/cust_main.cgi?$custnum">View this customer (#$custnum)</A> | 
 END
 } else {
   print <<END;
-<A HREF="../misc/cancel-unaudited.cgi?$svcnum">Cancel this (unaudited)account</A> |
+<A HREF="${p}misc/cancel-unaudited.cgi?$svcnum">Cancel this (unaudited)account</A> |
 END
 }
 
 print <<END;
-<A HREF="../">Main menu</A></CENTER><BR>
+<A HREF="${p}">Main menu</A></CENTER><BR>
 <FONT SIZE=+1>Service #$svcnum</FONT>
 END
 
-print qq!<BR><A HREF="../edit/svc_acct.cgi?$svcnum">Edit this information</A>!;
+print qq!<BR><A HREF="${p}edit/svc_acct.cgi?$svcnum">Edit this information</A>!;
 #print qq!<BR><A HREF="../misc/sendconfig.cgi?$svcnum">Send account information</A>!;
 print qq!<BR><BR><A HREF="#general">General</A> | <A HREF="#shell">Shell account</A> | !;
 print qq!<A HREF="#slip">SLIP/PPP account</A></CENTER>!;

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# View svc_domain records
+# $Id: svc_domain.cgi,v 1.3 1998-12-17 09:57:25 ivan Exp $
 #
 # Usage: svc_domain svcnum
 #        http://server.name/path/svc_domain.cgi?svcnum
@@ -15,7 +15,10 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # $Log: svc_domain.cgi,v $
-# Revision 1.2  1998-11-13 09:56:50  ivan
+# Revision 1.3  1998-12-17 09:57:25  ivan
+# s/CGI::(Base|Request)/CGI.pm/;
+#
+# Revision 1.2  1998/11/13 09:56:50  ivan
 # change configuration file layout to support multiple distinct databases (with
 # own set of config files, export, etc.)
 #
@@ -23,6 +26,7 @@
 use strict;
 use CGI;
 use FS::UID qw(cgisuidsetup);
+use FS::CGI qw(header menubar popurl);
 use FS::Record qw(qsearchs);
 
 my($cgi) = new CGI;
@@ -46,19 +50,13 @@ if ($pkgnum) {
 my($part_svc)=qsearchs('part_svc',{'svcpart'=> $cust_svc->svcpart } );
 die "Unkonwn svcpart" unless $part_svc;
 
-print $cgi->header, <<END;
-<HTML>
-  <HEAD>
-    <TITLE>Domain View</TITLE>
-  </HEAD>
-  <BODY>
-    <CENTER><H1>Domain View</H1>
-    <BASEFONT SIZE=3>
-<CENTER>
-<A HREF="../view/cust_pkg.cgi?$pkgnum">View this package (#$pkgnum)</A> | 
-<A HREF="../view/cust_main.cgi?$custnum">View this customer (#$custnum)</A> | 
-<A HREF="../">Main menu</A></CENTER><BR>
-    <FONT SIZE=+1>Service #$svcnum</FONT>
+my $p = popurl(2);
+print $cgi->header, header('Domain View', menubar(
+  "Main menu" => $p,
+  "View this package (#$pkgnum)" => "${p}view/cust_pkg.cgi?$pkgnum",
+  "View this customer (#$custnum)" => "${p}view/cust_main.cgi?$custnum",
+)), <<END;
+    <BR><FONT SIZE=+1>Service #$svcnum</FONT>
     </CENTER>
 END
 

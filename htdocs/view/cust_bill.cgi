@@ -1,7 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# Usage: cust_bill.cgi invnum
-#        http://server.name/path/cust_bill.cgi?invnum
+# $Id: cust_bill.cgi,v 1.2 1998-12-17 09:57:20 ivan Exp $
 #
 # Note: Should be run setuid freeside as user nobody.
 #
@@ -24,21 +23,26 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # also print 'printed' field ivan@sisd.com 98-jul-10
+#
+# $Log: cust_bill.cgi,v $
+# Revision 1.2  1998-12-17 09:57:20  ivan
+# s/CGI::(Base|Request)/CGI.pm/;
+#
 
 use strict;
 use IO::File;
-use CGI::Base qw(:DEFAULT :CGI); # CGI module
+use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
+use FS::CGI qw(header popurl);
 use FS::Record qw(qsearchs);
-use FS::Invoice;
+use FS::cust_bill;
 
-my($cgi) = new CGI::Base;
-$cgi->get;
+my($cgi) = new CGI;
 &cgisuidsetup($cgi);
 
 #untaint invnum
-$QUERY_STRING =~ /^(\d+)$/;
+$cgi->query_string =~ /^(\d+)$/;
 my($invnum)=$1;
 
 my($cust_bill) = qsearchs('cust_bill',{'invnum'=>$invnum});
@@ -47,27 +51,17 @@ my($custnum) = $cust_bill->getfield('custnum');
 
 my($printed) = $cust_bill->printed;
 
-SendHeaders(); # one guess.
-print <<END;
-<HTML>
-  <HEAD>
-    <TITLE>Invoice View</TITLE>
-  </HEAD>
-  <BODY>
-    <CENTER>
-    <H1>Invoice View</H1>
-    <A HREF="../view/cust_main.cgi?$custnum">View this customer (#$custnum)</A> | <A HREF="../">Main menu</A>
-    </CENTER><HR>
-    <BASEFONT SIZE=3>
-    <CENTER>
-      <A HREF="../edit/cust_pay.cgi?$invnum">Enter payments (check/cash) against this invoice</A>
-      <BR><A HREF="../misc/print-invoice.cgi?$invnum">Reprint this invoice</A>
+my $p = popurl(2);
+print $cgi->header, header('Invoice View', menubar(
+  "Main Menu" => $p,
+  "View this customer (#$custnum)" => "${p}view/cust_main.cgi?$custnum",
+)), <<END;
+      <A HREF="${p}edit/cust_pay.cgi?$invnum">Enter payments (check/cash) against this invoice</A>
+      <BR><A HREF="${p}misc/print-invoice.cgi?$invnum">Reprint this invoice</A>
       <BR><BR>(Printed $printed times)
-    </CENTER>
     <FONT SIZE=-1><PRE>
 END
 
-bless($cust_bill,"FS::Invoice");
 print $cust_bill->print_text;
 
 	#formatting
