@@ -102,7 +102,7 @@ CREATE TABLE part_svc_column (
 
 CREATE TABLE queue (
   jobnum int primary key,
-  job varchar not null,
+  job text not null,
   _date int not null,
   status varchar(80) not null
 );
@@ -110,7 +110,7 @@ CREATE TABLE queue (
 CREATE TABLE queue_arg (
   argnum int primary key,
   jobnum int not null,
-  arg varchar null
+  arg text null
 );
 CREATE INDEX queue_arg1 ON queue_arg ( jobnum );
 
@@ -150,8 +150,8 @@ ALTER TABLE cust_pay ADD custnum integer;
 ALTER TABLE cust_pay_batch ADD paybatchnum integer;
 ALTER TABLE cust_refund ADD custnum integer;
 ALTER TABLE cust_pkg ADD manual_flag char(1) NULL;
-ALTER TABLE part_pkg ADD plan varchar NULL;
-ALTER TABLE part_pkg ADD plandata varchar NULL;
+ALTER TABLE part_pkg ADD plan varchar(80) NULL;
+ALTER TABLE part_pkg ADD plandata text NULL;
 ALTER TABLE part_pkg ADD setuptax char(1) NULL;
 ALTER TABLE part_pkg ADD recurtax char(1) NULL;
 ALTER TABLE part_pkg ADD disabled char(1) NULL;
@@ -217,7 +217,7 @@ CREATE INDEX cust_main2 ON cust_main ( ship_company );
   <li>If you wish to enable customer comments, apply the following change to
       your database:
 <pre>
-ALTER TABLE cust_main ADD COLUMN comments varchar NULL;
+ALTER TABLE cust_main ADD COLUMN comments text NULL;
 </pre>
   <li>If you are using the signup server, reinstall it according to the <a href="signup.html">instructions</a>.  The 1.3.x signup server is not compatible with 1.4.x.
   <li>Run bin/dbdef-create.
