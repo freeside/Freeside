@@ -1,11 +1,16 @@
 #!/usr/bin/perl -w
 #
-# $Id: bind.import,v 1.4 2004-02-12 10:44:11 ivan Exp $
-
-#need to manually put header in /usr/local/etc/freeside/export.<datasrc./bind/<machine>/named.conf.HEADER
+# -s: import slave zones as master.  useful if you need to recreate your
+#     primary nameserver from a secondary
+# -c chroot_dir: import data from chrooted bind (corrects the path for
+#                downloading zone files
+#
+# need to manually put header in
+#  /usr/local/etc/freeside/export.<datasrc./bind/<machine>/named.conf.HEADER
 
 use strict;
 use vars qw( %d_part_svc );
+use Getopt::Std;
 use Term::Query qw(query);
 #use BIND::Conf_Parser;
 #use DNS::ZoneParse 0.81;
@@ -19,6 +24,9 @@ use FS::svc_domain;
 use FS::domain_record;
 #use FS::svc_acct;
 #use FS::part_svc;
+
+use vars qw($opt_s $opt_c);
+getopts("sc:");
 
 my $user = shift or die &usage;
 adminsuidsetup $user;
@@ -99,18 +107,28 @@ BEGIN {
   sub handle_zone {
     my($self, $name, $class, $type, $options) = @_;
     return unless $class eq 'in';
-    return if grep { $name eq $_ }
-      ( qw( . localhost 127.in-addr.arpa 0.in-addr.arpa 255.in-addr.arpa ) );
+    return if grep { $name eq $_ } (qw(
+      . localhost 127.in-addr.arpa 0.in-addr.arpa 255.in-addr.arpa
+      0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.ip6.arpa
+      0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.ip6.int
+    ));
 
-    my $domain = new FS::svc_domain( {
-      svcpart => $main::domain_svcpart,
-      domain  => $name,
-      action  => 'N',
-    } );
-    my $error = $domain->insert;
-    die $error if $error;
+    use FS::Record qw(qsearchs);
+    use FS::svc_domain;
 
-    if ( $type eq 'slave' ) {
+    my $domain =
+      qsearchs('svc_domain', { 'domain' => $name } )
+      || new FS::svc_domain( {
+                               svcpart => $main::domain_svcpart,
+                               domain  => $name,
+                               action  => 'N',
+                           } );
+    unless ( $domain->svcnum ) {
+      my $error = $domain->insert;
+      die $error if $error;
+    }
+
+    if ( $type eq 'slave' && !$main::opt_s ) {
 
       #use Data::Dumper;
       #print Dumper($options);
@@ -128,7 +146,7 @@ BEGIN {
         die $error if $error;
       }
 
-    } elsif ( $type eq 'master' ) {
+    } elsif ( $type eq 'master' || ( $type eq 'slave' && $main::opt_s ) ) {
 
       my $file = $options->{file};
   
@@ -136,14 +154,16 @@ BEGIN {
       my $basefile = basename($file);
       my $sourcefile = $file;
       $sourcefile = "$named_dir/$sourcefile" unless $file =~ /^\//;
+      $sourcefile = "$main::opt_c/$sourcefile" if $main::opt_c;
+
       use Net::SCP qw(iscp scp);
       scp("root\@$main::named_machine:$sourcefile",
-          "$main::prefix/$basefile.import");
+           "$main::prefix/$basefile.import");
     
-      use DNS::ZoneParse 0.81;
+      use DNS::ZoneParse 0.84;
       my $zone = DNS::ZoneParse->new("$main::prefix/$basefile.import");
     
-      my $dump = $zone->Dump;
+      my $dump = $zone->dump;
   
       #use Data::Dumper;
       #print "$name: ". Dumper($dump);
@@ -183,6 +203,8 @@ BEGIN {
         }
       }
 
+    #} else {
+    #  die "unrecognized type $type\n";
     }
     
   }
