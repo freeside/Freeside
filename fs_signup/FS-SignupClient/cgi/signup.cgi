@@ -1,21 +1,33 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: signup.cgi,v 1.1 1999-08-24 07:40:45 ivan Exp $
+# $Id: signup.cgi,v 1.2 1999-12-17 12:03:03 ivan Exp $
 
 use strict;
 use vars qw( @payby $cgi $locales $packages $pops $r $error
              $last $first $ss $company $address1 $address2 $city $state $county
              $country $zip $daytime $night $fax $invoicing_list $payby $payinfo
-             $paydate $payname $pkgpart $username $password $popnum );
+             $paydate $payname $pkgpart $username $password $popnum
+             $ieak_docroot $ieak_baseurl );
 use subs qw( print_form print_okay expselect );
 
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
+use HTTP::Headers::UserAgent 2.00;
 use FS::SignupClient qw( signup_info new_customer );
 
+#acceptable payment methods
+#
 #@payby = qw( CARD BILL COMP );
 #@payby = qw( CARD BILL );
 @payby = qw( CARD );
+
+#to enable ieak signups, you need to specify a directory in the web server's
+#document space and the equivalent base URL
+#
+$ieak_docroot = "/var/www/sisd.420.am/freeside/ieak";
+$ieak_baseurl = "http://sisd.420.am/freeside/ieak";
+
+#srand (time ^ $$ ^ unpack "%L*", `ps axww | gzip`);
 
 ( $locales, $packages, $pops ) = signup_info();
 
@@ -265,13 +277,75 @@ END
 }
 
 sub print_okay {
-  print $cgi->header( '-expires' => 'now' ), <<END;
+  $user_agent = new HTTP::Headers::UserAgnet $ENV{HTTP_USER_AGENT};
+  if (    defined($ieak_docroot)
+       && defined($ieak_baseurl)
+       && defined($ieak_secret)
+       && $user_agent->platform eq 'ia32'
+       && $user_agent->os =~ /^win/
+       && ($user-agent->browser)[0] eq 'IE'
+     )
+  { #send an IEAK config
+    my $username = $cgi->param('username');
+    my $password = $cgi->param('_password');
+    my $email_name = $cgi->param('first'). ' '. $cgi->param('last');
+    my $ins_file = rand(4294967296). ".ins";
+    open(INS_FILE, ">$ieak_docroot/$ins_file");
+    print INS_FILE <<END;
+[Entry]\r
+Entry_Name = Netloud\r
+[Phone]\r
+Dial_As_Is=no\r
+Phone_Number = 5551212\r
+Area_Code = 415\r
+Country_Code = 1\r
+Country_Id = 1\r
+[Server]\r
+Type = PPP\r
+SW_Compress = Yes\r
+PW_Encrypt = Yes\r
+Negotiate_TCP/IP = Yes\r
+Disable_LCP = No\r
+[TCP/IP]\r
+Specify_IP_Address = No\r
+Specity_Server_Address = No\r
+IP_Header_Compress = Yes\r
+Gateway_On_Remote = Yes\r
+[User]\r
+Name = $username\r
+Password = $password\r
+Display_Password = Yes\r
+[Internet_Mail]\r
+Email_Name = $email_name\r
+Email_Address = $username\@netloud.com\r
+POP_Server = mail.netloud.com\r
+POP_Server_Port_Number = 110\r
+POP_Login_Name = $username\r
+POP_Login_Password = $password\r
+SMTP_Server = mail.netloud.com\r
+SMTP_Server_Port_Number = 25\r
+Install_Mail = 1\r
+[Internet_News]\r
+NNTP_Server = news.netloud.com\r
+NNTP_Server_Port_Number = 119\r
+Logon_Required = No\r
+Install_News = 1\r
+[Branding]\r
+Window_Title = Internet Explorer From Netloud.com\r
+END
+    close INS_FILE;
+
+    print $cgi->redirect("$ieak_docroot/$ins_file");
+
+  } else { #send a simple confirmation
+    print $cgi->header( '-expires' => 'now' ), <<END;
 <HTML><HEAD><TITLE>Signup successful</TITLE></HEAD>
 <BODY BGCOLOR="#e8e8e8"><FONT SIZE=7>Signup successful</FONT><BR><BR>
 blah blah blah
 </BODY>
 </HTML>
 END
+  }
 }
 
 sub expselect {
