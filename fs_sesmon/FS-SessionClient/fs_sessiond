@@ -44,7 +44,8 @@ for ( ; $paddr = accept(Client,Server); close Client) {
 
   if ( $command eq 'login' || $command eq 'logout' || $command eq 'portnum' ) {
     warn "$me reading data from local client\n" if $Debug;
-    my( @data, $dos );
+    my @data;
+    my $dos = 0;
     push @data, scalar(<Client>) until $dos++ == 99 || $data[$#data] eq "END\n";
     if ( $dos == 99 ) { 
       warn "$me WARNING: DoS attempt!" 
