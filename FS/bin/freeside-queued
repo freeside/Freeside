@@ -8,7 +8,7 @@ use POSIX qw(setsid);
 use Date::Format;
 use IO::File;
 use FS::UID qw(adminsuidsetup forksuidsetup driver_name dbh);
-use FS::Record qw(qsearchs);
+use FS::Record qw(qsearch qsearchs);
 use FS::queue;
 use FS::queue_depend;
 
