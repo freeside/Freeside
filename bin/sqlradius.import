@@ -116,7 +116,7 @@ while ( defined ( $row = $sth->fetchrow_arrayref ) ) {
   $rc_sth->execute($r_username, $realm) or die $rc_sth->errstr;
 
   foreach my $rc_row ( @{$rc_sth->fetchall_arrayref} ) {
-    my($attribute, $value, $name, $groupname) = @$row;
+    my($attribute, $value, $name, $groupname) = @$rc_row;
     if ( $attribute =~ /^((User|Crypt)-)?Password$/ ) {
       $password = $value;
       $finger = $name;
