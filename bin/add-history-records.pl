@@ -4,42 +4,61 @@
 use strict;
 use FS::UID qw(adminsuidsetup);
 use FS::Record qw(qsearchs qsearch);
-use FS::svc_domain;
-use FS::h_svc_domain;
-use FS::domain_record;
-use FS::h_domain_record;
 
 use Data::Dumper;
 
-adminsuidsetup(shift);
+my @tables = qw(svc_acct svc_broadband svc_domain svc_external svc_forward svc_www cust_svc domain_record);
+
+my $user = shift or die &usage;
+my $dbh = adminsuidsetup($user);
+
+my $dbdef = FS::Record::dbdef;
+
+foreach my $table (@tables) {
+
+  my $h_table = 'h_' . $table;
+  my $cnt = 0;
+  my $t_cnt = 0;
+
+  eval "use FS::${table}";
+  die $@ if $@;
+  eval "use FS::${h_table}";
+  die $@ if $@;
+
+  print "Adding history records for ${table}...\n";
+
+  my $dbdef_table = $dbdef->table($table);
+  my $pkey = $dbdef_table->primary_key;
+
+  foreach my $rec (qsearch($table, {})) {
+
+    my $h_rec = qsearchs(
+      $h_table,
+      { $pkey => $rec->getfield($pkey) },
+      eval "FS::${h_table}->sql_h_searchs(time)",
+    );
+
+    unless ($h_rec) {
+      my $h_insert_rec = $rec->_h_statement('insert', 1);
+      #print $h_insert_rec . "\n";
+      $dbh->do($h_insert_rec);
+      die $dbh->errstr if $dbh->err;
+      $cnt++;
+    }
 
 
-my $svcnum = shift;
+  $t_cnt++;
 
-my $svc_domain = qsearchs('svc_domain', { svcnum => $svcnum }) or die "no svcnum '$svcnum'";
-
-my $h_svc_domain = qsearchs(
-  'h_svc_domain',
-  { 'svcnum' => $svc_domain->svcnum },
-  FS::h_svc_domain->sql_h_searchs(time),
-);
-
-unless ($h_svc_domain) {
-  print $svc_domain->_h_statement('insert', 1) . "\n";
-}
-
-foreach my $rec ($svc_domain->domain_record) {
-  my $h_rec =  qsearchs(
-    'h_domain_record',
-    { 'svcnum' => $svc_domain->svcnum },
-    FS::h_domain_record->sql_h_searchs(time),
-  );
-
-  #print Dumper($h_rec);
-
-  unless ($h_rec) {
-    print $rec->_h_statement('insert', 1) . "\n";
   }
 
+  print "History records inserted into $h_table: $cnt\n";
+  print "               Total records in $table: $t_cnt\n";
+
+  print "\n";
+
+}
+
+sub usage {
+  die "Usage:\n  add-history-records.pl user\n";
 }
 
