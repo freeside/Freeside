@@ -151,7 +151,9 @@ sub new {
 =item qsearch TABLE, HASHREF
 
 Searches the database for all records matching (at least) the key/value pairs
-in HASHREF.  Returns all the records found as FS::Record objects.
+in HASHREF.  Returns all the records found as objects blessed into 
+`FS::TABLE' if that module is loaded (i.e. via `use FS::cust_main;'), otherwise
+returns an FS::Record object;
 
 =cut
 
@@ -173,19 +175,24 @@ sub qsearch {
   $sth=$dbh->prepare($statement)
     or croak $dbh->errstr; #is that a little too harsh?  hmm.
 
-  map {
-    new FS::Record ($table,$sth->fetchrow_hashref);
-  } ( 1 .. $sth->execute );
+  if ( eval ' scalar(@FS::'. $table. '::ISA);' ) {
+    map {
+      eval 'create FS::'. $table. ' ( $sth->fetchrow_hashref );';
+    } ( 1 .. $sth->execute );
+  } else {
+    carp "qsearch: warning: FS::$table not loaded; returning generic FS::Record objects";
+    map {
+      new FS::Record ($table,$sth->fetchrow_hashref);
+    } ( 1 .. $sth->execute );
+  }
 
 }
 
 =item qsearchs TABLE, HASHREF
 
-Searches the database for a record matching (at least) the key/value pairs
-in HASHREF, and returns the record found as an FS::Record object.  If more than
-one record matches, it B<carp>s but returns the first.  If this happens, you
-either made a logic error in asking for a single item, or your data is
-corrupted.
+Same as qsearch, except that if more than one record matches, it B<carp>s but
+returns the first.  If this happens, you either made a logic error in asking
+for a single item, or your data is corrupted.
 
 =cut
 
@@ -768,7 +775,7 @@ The ut_ methods should ask the dbdef for a default length.
 
 ut_sqltype (like ut_varchar) should all be defined
 
-A fallback check method should be provided with uses the dbdef.
+A fallback check method should be provided whith uses the dbdef.
 
 The ut_money method assumes money has two decimal digits.
 
@@ -863,7 +870,11 @@ added pod documentation ivan@sisd.com 98-sep-6
 ut_phonen got ''; at the end ivan@sisd.com 98-sep-27
 
 $Log: Record.pm,v $
-Revision 1.2  1998-11-07 05:17:18  ivan
+Revision 1.3  1998-11-10 07:44:08  ivan
+qsearch returns `FS::TABLE' objects if that module is loaded (i.e. via
+`use FS::cust_main;') instead of always an FS::Record object
+
+Revision 1.2  1998/11/07 05:17:18  ivan
 In sub new, Pg wrapper for money fields from dbdef (FS::Record::fields $table),
 not keys of supplied hashref.
 
