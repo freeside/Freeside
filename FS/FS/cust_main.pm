@@ -2122,6 +2122,7 @@ sub realtime_refund_bop {
 
   #first try void if applicable
   if ( $cust_pay && $cust_pay->paid == $amount ) { #and check dates?
+    warn "FS::cust_main::realtime_bop: attempting void\n" if $DEBUG;
     my $void = new Business::OnlinePayment( $processor, @bop_options );
     $void->content( 'action' => 'void', %content );
     $void->submit();
@@ -2134,9 +2135,13 @@ sub realtime_refund_bop {
         warn $e;
         return $e;
       }
+      warn "FS::cust_main::realtime_bop: void successful\n" if $DEBUG;
       return '';
     }
   }
+
+  warn "FS::cust_main::realtime_bop: void unsuccessful, trying refund\n"
+    if $DEBUG;
 
   #massage data
   my $address = $self->address1;
@@ -2183,7 +2188,7 @@ sub realtime_refund_bop {
 
   #then try refund
   my $refund = new Business::OnlinePayment( $processor, @bop_options );
-  $refund->content(
+  my %sub_content = $refund->content(
     'action'         => 'credit',
     'customer_id'    => $self->custnum,
     'last_name'      => $paylast,
@@ -2196,6 +2201,8 @@ sub realtime_refund_bop {
     'country'        => $self->country,
     %content, #after
   );
+  warn join('', map { "  $_ => $sub_content{$_}\n" } keys %sub_content )
+    if $DEBUG > 1;
   $refund->submit();
 
   return "$processor error: ". $refund->error_message
