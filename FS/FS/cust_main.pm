@@ -1398,7 +1398,7 @@ sub rebuild_fuzzyfiles {
 
 =head1 VERSION
 
-$Id: cust_main.pm,v 1.22 2001-08-28 14:34:14 ivan Exp $
+$Id: cust_main.pm,v 1.23 2001-09-01 20:11:07 ivan Exp $
 
 =head1 BUGS
 
@@ -1414,8 +1414,6 @@ CyberCash v2 forces us to define some variables in package main.
 
 There should probably be a configuration file with a list of allowed credit
 card types.
-
-CyberCash is the only processor.
 
 No multiple currency support (probably a larger project than just this module).
 

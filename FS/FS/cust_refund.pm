@@ -3,9 +3,10 @@ package FS::cust_refund;
 use strict;
 use vars qw( @ISA );
 use Business::CreditCard;
-use FS::Record qw( qsearchs );
+use FS::Record qw( qsearchs dbh );
 use FS::UID qw(getotaker);
 use FS::cust_credit;
+use FS::cust_credit_refund;
 
 @ISA = qw( FS::Record );
 
@@ -38,8 +39,6 @@ inherits from FS::Record.  The following fields are currently supported:
 
 =item refundnum - primary key (assigned automatically for new refunds)
 
-=item crednum - Credit (see L<FS::cust_credit>)
-
 =item refund - Amount of the refund
 
 =item _date - specified as a UNIX timestamp; see L<perlfunc/"time">.  Also see
@@ -48,6 +47,8 @@ L<Time::Local> and L<Date::Parse> for conversion functions.
 =item payby - `CARD' (credit cards), `BILL' (billing), or `COMP' (free)
 
 =item payinfo - card number, P.O.#, or comp issuer (4-8 lowercase alphanumerics; think username)
+
+=item paybatch - text field for tracking card processing
 
 =item otaker - order taker (assigned automatically, see L<FS::UID>)
 
@@ -67,22 +68,55 @@ sub table { 'cust_refund'; }
 
 =item insert
 
-Adds this refund to the database, and updates the credit (see
-L<FS::cust_credit>).
+Adds this refund to the database.
+
+For backwards-compatibility and convenience, if the additional field crednum is
+defined, an FS::cust_credit_refund record for the full amount of the refund
+will be created.
 
 =cut
 
 sub insert {
   my $self = shift;
 
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
   my $error = $self->check;
   return $error if $error;
 
-  my $old_cust_credit =
-    qsearchs( 'cust_credit', { 'crednum' => $self->crednum } );
-  return "Unknown crednum" unless $old_cust_credit;
+  $error = $self->SUPER::insert;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
 
-  $self->SUPER::insert;
+  if ( $self->crednum ) {
+    my $cust_credit_refund = new FS::cust_credit_refund {
+      'cred' => $self->cred,
+      'refundnum' => $self->refundnum,
+      'amount' => $self->refund,
+      '_date' => $self->_date,
+    };
+    $error = $cust_bill_pay->insert;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+  '';
+
 }
 
 =item delete
@@ -115,13 +149,11 @@ returns the error, otherwise returns false.  Called by the insert method.
 sub check {
   my $self = shift;
 
-  my $error;
-
-  $error =
+  my $error =
     $self->ut_number('refundnum')
-    || $self->ut_number('crednum')
     || $self->ut_money('amount')
     || $self->ut_numbern('_date')
+    || $self->ut_textn('paybatch')
   ;
   return $error if $error;
 
@@ -157,7 +189,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: cust_refund.pm,v 1.3 2001-04-09 23:05:15 ivan Exp $
+$Id: cust_refund.pm,v 1.4 2001-09-01 20:11:07 ivan Exp $
 
 =head1 BUGS
 

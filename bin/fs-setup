@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: fs-setup,v 1.44 2001-08-29 08:45:04 ivan Exp $
+# $Id: fs-setup,v 1.45 2001-09-01 20:11:07 ivan Exp $
 
 #to delay loading dbdef until we're ready
 BEGIN { $FS::Record::setup_hack = 1; }
@@ -398,7 +398,7 @@ sub tables_hash_hack {
     'cust_pay' => {
       'columns' => [
         'paynum',   'int',    '',   '',
-        'invnum',   'int',    '',   '',
+        #now cust_bill_pay #'invnum',   'int',    '',   '',
         'paid',     @money_type,
         '_date',    @date_type,
         'payby',    'char',   '',     4, # CARD/BILL/COMP, should be index into
@@ -409,6 +409,19 @@ sub tables_hash_hack {
       'primary_key' => 'paynum',
       'unique' => [ [] ],
       'index' => [ ['invnum'] ],
+    },
+
+    'cust_bill_pay' => {
+      'column' => [
+        'billpaynum', 'int',     '',   '',
+        'invnum',  'int',     '',   '',
+        'paynum',  'int',     '',   '',
+        'amount',  @money_type,
+        '_date',   @date_type
+      ],
+      'primary_key' => 'billpaynum'
+      'unique' => [ [] ],
+      'index' => [ [ 'paynum', 'invnum' ] ],
     },
 
     'cust_pay_batch' => { #what's this used for again?  list of customers
@@ -456,7 +469,7 @@ sub tables_hash_hack {
     'cust_refund' => {
       'columns' => [
         'refundnum',    'int',    '',   '',
-        'crednum',      'int',    '',   '',
+        #now cust_credit_refund #'crednum',      'int',    '',   '',
         '_date',        @date_type,
         'refund',       @money_type,
         'otaker',       'varchar',   '',   8,
@@ -464,11 +477,26 @@ sub tables_hash_hack {
         'payby',        'char',   '',     4, # CARD/BILL/COMP, should be index
                                              # into payment type table.
         'payinfo',      'varchar',   'NULL', 16,  #see cust_main above
+        'paybatch',     'varchar',   'NULL', $char_d,
       ],
       'primary_key' => 'refundnum',
       'unique' => [ [] ],
       'index' => [ ['crednum'] ],
     },
+
+    'cust_credit_refund' => {
+      'column' => [
+        'creditrefundnum', 'int',     '',   '',
+        'crednum',  'int',     '',   '',
+        'refundnum',  'int',     '',   '',
+        'amount',  @money_type,
+        '_date',   @date_type
+      ],
+      'primary_key' => 'creditrefundnum'
+      'unique' => [ [] ],
+      'index' => [ [ 'crednum', 'refundnum' ] ],
+    },
+
 
     'cust_svc' => {
       'columns' => [

@@ -3,8 +3,9 @@ package FS::cust_pay;
 use strict;
 use vars qw( @ISA );
 use Business::CreditCard;
-use FS::Record qw( qsearchs );
+use FS::Record qw( dbh );
 use FS::cust_bill;
+use FS::cust_bill_pay;
 
 @ISA = qw( FS::Record );
 
@@ -37,8 +38,6 @@ currently supported:
 
 =item paynum - primary key (assigned automatically for new payments)
 
-=item invnum - Invoice (see L<FS::cust_bill>)
-
 =item paid - Amount of this payment
 
 =item _date - specified as a UNIX timestamp; see L<perlfunc/"time">.  Also see
@@ -66,21 +65,55 @@ sub table { 'cust_pay'; }
 
 =item insert
 
-Adds this payment to the databse, and updates the invoice (see
-L<FS::cust_bill>).
+Adds this payment to the database.
+
+For backwards-compatibility and convenience, if the additional field invnum
+is defined, an FS::cust_bill_pay record for the full amount of the payment
+will be created.
 
 =cut
 
 sub insert {
   my $self = shift;
 
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
   my $error = $self->check;
   return $error if $error;
 
-  my $old_cust_bill = qsearchs( 'cust_bill', { 'invnum' => $self->invnum } );
-  return "Unknown invnum" unless $old_cust_bill;
+  $error = $self->SUPER::insert;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
 
-  $self->SUPER::insert;
+  if ( $self->invnum ) {
+    my $cust_bill_pay = new FS::cust_bill_pay {
+      'invnum' => $self->invnum,
+      'paynum' => $self->paynum,
+      'amount' => $self->paid,
+      '_date'  => $self->_date,
+    };
+    $error = $cust_bill_pay->insert;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+  '';
+
 }
 
 =item delete
@@ -113,13 +146,11 @@ returns the error, otherwise returns false.  Called by the insert method.
 sub check {
   my $self = shift;
 
-  my $error;
-
-  $error =
+  my $error =
     $self->ut_numbern('paynum')
-    || $self->ut_number('invnum')
     || $self->ut_money('paid')
     || $self->ut_numbern('_date')
+    || $self->ut_textn('paybatch')
   ;
   return $error if $error;
 
@@ -147,9 +178,6 @@ sub check {
     return $error if $error;
   }
 
-  $error = $self->ut_textn('paybatch');
-  return $error if $error;
-
   ''; #no error
 
 }
@@ -158,7 +186,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: cust_pay.pm,v 1.3 2001-04-09 23:05:15 ivan Exp $
+$Id: cust_pay.pm,v 1.4 2001-09-01 20:11:07 ivan Exp $
 
 =head1 BUGS
 
@@ -166,7 +194,8 @@ Delete and replace methods.
 
 =head1 SEE ALSO
 
-L<FS::Record>, L<FS::cust_bill>, schema.html from the base documentation.
+L<FS::cust_bill_pay>, L<FS::cust_bill>, L<FS::Record>, schema.html from the
+base documentation.
 
 =cut
 

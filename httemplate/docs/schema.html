@@ -100,12 +100,19 @@
     <li><a name="cust_pay" href="man/FS/cust_pay.html">cust_pay</a> - Payments.  Money being transferred from a customer.
       <ul>
         <li>paynum - primary key
-        <li>invnum - <a href="#cust_bill">invoice</a>
         <li>paid - amount
         <li>_date
         <li>payby - CARD, BILL, or COMP
         <li>payinfo - card number, P.O.#, or comp issuer
         <li>paybatch - text field for tracking card processor batches
+      </ul>
+    <li><a name="cust_bill_pay" href="man/FS/cust_bill_pay.html">cust_bill_pay</a> - Applicaton of a payment to a specific invoice.
+      <ul>
+        <li>billpaynum
+        <li>invnum - <a href="#cust_bill">invoice</a>
+        <li>paynum - <a href="#cust_pay">payment</a>
+        <li>amount
+        <li>_date
       </ul>
     <li><a name="cust_pay_batch" href="man/FS/cust_pay_batch.html">cust_pay_batch</a> - Pending batch
       <ul>
@@ -140,12 +147,19 @@
     <li><a name="cust_refund" href="man/FS/cust_refund.html">cust_refund</a> - Refunds.  The transfer of money to a customer; equivalent to a negative <a href="#cust_pay">cust_pay</a> record.
       <ul>
         <li>refundnum - primary key
-        <li>crednum - <a href="#cust_credit">credit</a>
         <li>refund - amount
         <li>_date
         <li>payby - CARD, BILL or COMP
         <li>payinfo - card number, P.O.#, or comp issuer
         <li>otaker - order taker
+      </ul>
+    <li><a name="cust_credit_refund" href="man/FS/cust_credit_refund.html">cust_credit_refund</a> - Applicaton of a refund to a specific credit.
+      <ul>
+        <li>creditrefundnum - primary key
+        <li>crednum - <a href="#cust_credit">credit</a>
+        <li>refundnum - <a href="#cust_refund">refund</a>
+        <li>amount
+        <li>_date
       </ul>
     <li><a name="cust_svc" href="man/FS/cust_svc.html">cust_svc</a> - Customer services
       <ul>
