@@ -1,22 +1,6 @@
-<!-- $Id: part_pkg.cgi,v 1.3 2001-10-11 17:44:33 ivan Exp $ -->
-
-<% my $plan = 'flat'; %>
-
-<SCRIPT>
-function visualize(what) {
-  if (document.getElementById) {
-    document.getElementById('d<%= $plan %>').style.visibility = "visible";
-  } else {
-    document.l<%= $plan %>.visibility = "visible";
-  }
-}
-</SCRIPT>
+<!-- $Id: part_pkg.cgi,v 1.4 2001-10-15 10:42:29 ivan Exp $ -->
 
 <%
-
-$cgi = new CGI;
-
-&cgisuidsetup($cgi);
 
 if ( $cgi->param('clone') && $cgi->param('clone') =~ /^(\d+)$/ ) {
   $cgi->param('clone', $1);
@@ -44,16 +28,36 @@ if ( $cgi->param('clone') ) {
   $part_pkg ||= $old_part_pkg->clone;
 } elsif ( $query && $query =~ /^(\d+)$/ ) {
   $part_pkg ||= qsearchs('part_pkg',{'pkgpart'=>$1});
+  unless ( $part_pkg->plan ) {
+    $part_pkg->plan('flat');
+    $part_pkg->plandata("setup=". $part_pkg->setup. "\n".
+                        "recur=". $part_pkg->recur. "\n");
+  }
 } else {
   $part_pkg ||= new FS::part_pkg {};
+  $part_pkg->plan('flat');
 }
 $action ||= $part_pkg->pkgpart ? 'Edit' : 'Add';
 my $hashref = $part_pkg->hashref;
 
+%>
+
+<SCRIPT>
+function visualize(what) {
+  if (document.getElementById) {
+    document.getElementById('d<%= $part_pkg->plan %>').style.visibility = "visible";
+  } else {
+    document.l<%= $part_pkg->plan %>.visibility = "visible";
+  }
+}
+</SCRIPT>
+
+<% 
+
 print header("$action Package Definition", menubar(
   'Main Menu' => popurl(2),
   'View all packages' => popurl(2). 'browse/part_pkg.cgi',
-));
+), ' onLoad="visualize()"');
 
 print qq!<FONT SIZE="+1" COLOR="#ff0000">Error: !, $cgi->param('error'),
       "</FONT>"
@@ -136,8 +140,12 @@ my %plans = (
   'flat' => {
     'name' => 'Flat rate',
     'fields' => {
-      'setup_fee' => { 'name' => 'Setup fee for this package' },
-      'recur_fee' => { 'name' => 'Recurring fee for this package' },
+      'setup_fee' => { 'name' => 'Setup fee for this package',
+                       'default' => 0,
+                     },
+      'recur_fee' => { 'name' => 'Recurring fee for this package',
+                       'default' => 0,
+                      },
     },
     'setup' => 'what.setup_fee.value',
     'recur' => 'what.recur_fee.value',
@@ -146,13 +154,21 @@ my %plans = (
   'flat_comission' => {
     'name' => 'Flat rate with recurring referral comission as credit',
     'fields' => {
-      'setup_fee' => { 'name' => 'Setup fee for this package' },
-      'recur_fee' => { 'name' => 'Recurring fee for this package' },
-      'comission_amount' => { 'name' => 'Comission amount' },
-      'comission_depth' => { 'name' => 'Number of layers' },
+      'setup_fee' => { 'name' => 'Setup fee for this package',
+                       'default' => 0,
+                     },
+      'recur_fee' => { 'name' => 'Recurring fee for this package',
+                       'default' => 0,
+                     },
+      'comission_amount' => { 'name' => 'Comission amount',
+                              'default' => 0,
+                            },
+      'comission_depth'  => { 'name' => 'Number of layers',
+                              'default' => 1,
+                            },
     },
     'setup' => 'what.setup_fee.value',
-    'recur' => '\'$cust_pkg->cust_main->credit( \' + what.comission_amount.value + \' * scalar($cust_pkg->cust_main->referral_cust_pkg(\' + what.comission_depth.value+ \')), "commission" ) ; \' + what.recur_fee.value + \';\'',
+    'recur' => '\'my $error = $cust_pkg->cust_main->credit( \' + what.comission_amount.value + \' * scalar($cust_pkg->cust_main->referral_cust_pkg(\' + what.comission_depth.value+ \')), "commission" ); die $error if $error; \' + what.recur_fee.value + \';\'',
   },
 
 );
@@ -160,8 +176,7 @@ my %plans = (
 %>
 
 <SCRIPT>
-var svcdb = null;
-var something = null;
+var layer = null;
 
 function changed(what) {
   layer = what.options[what.selectedIndex].value;
@@ -185,9 +200,10 @@ function changed(what) {
 
 </SCRIPT>
 <BR>
-Price plan <SELECT NAME="plan" SIZE=1 onChange="changed(this)">
+Price plan <SELECT NAME="plan" SIZE=1 onChange="changed(this);">
+<OPTION>
 <% foreach my $layer (keys %plans ) { %>
-<OPTION VALUE="<%= $layer %>"<%= ' SELECTED'x($layer eq $plan) %>><%= $plans{$layer}->{'name'} %>
+<OPTION VALUE="<%= $layer %>"<%= ' SELECTED'x($layer eq $part_pkg->plan) %>><%= $plans{$layer}->{'name'} %>
 <% } %>
 </SELECT></FORM>
 
@@ -197,6 +213,7 @@ function fchanged(what) {
 }
 
 function fixup(what) {
+alert(what);
 <% foreach my $f ( qw( pkg comment freq ), @fixups ) { %>
   what.<%= $f %>.value = document.dummy.<%= $f %>.value;
 <% } %>
@@ -210,7 +227,9 @@ function fixup(what) {
 }
 </SCRIPT>
 
-<% #foreach my $layer ( 'konq_kludge', keys %plans ) { 
+<% my %plandata = map { /^(\w+)=(.*)$/; ( $1 => $2 ); }
+                    split("\n", $part_pkg->plandata );
+   #foreach my $layer ( 'konq_kludge', keys %plans ) { 
    foreach my $layer ( 'konq_kludge', keys %plans ) {
      my $visibility = "hidden";
 %>
@@ -224,9 +243,9 @@ if (document.getElementById) {
 </SCRIPT>
 
 <FORM NAME="<%= $layer %>" ACTION="process/part_pkg.cgi" METHOD=POST onSubmit="fixup(this)">
-<INPUT TYPE="hidden" NAME="plan" VALUE="<%= $plan %>">
+<INPUT TYPE="hidden" NAME="plan" VALUE="<%= $part_pkg->plan %>">
 <INPUT TYPE="hidden" NAME="pkg" VALUE="<%= $hashref->{pkg} %>">
-<INPUT TYPE="hidden" NAME="comment" VALUE="$<%= hashref->{comment} %>">
+<INPUT TYPE="hidden" NAME="comment" VALUE="$<%= $hashref->{comment} %>">
 <INPUT TYPE="hidden" NAME="freq" VALUE="<%= $hashref->{freq} %>">
 <% foreach my $f ( @fixups ) { %>
 <INPUT TYPE="hidden" NAME="<%= $f %>" VALUE="">
@@ -245,12 +264,13 @@ print qq!<INPUT TYPE="hidden" NAME="pkgpart" VALUE="$hashref->{pkgpart}">!,
 <% my $href = $plans{$layer}->{'fields'};
    foreach my $field ( keys %{ $href } ) { %>
 <%= $href->{$field}{'name'} %>: 
-<INPUT TYPE="text" NAME="<%= $field %>" VALUE="<%= $ref->{$field}{'default'} %>" onChange="fchanged(this)"><BR>
+<INPUT TYPE="text" NAME="<%= $field %>" VALUE="<%= exists($plandata{$field}) ? $plandata{$field} : $href->{$field}{'default'} %>" onChange="fchanged(this)"><BR>
 <% } %>
+<INPUT TYPE="hidden" NAME="plandata" VALUE="<%= join(',', keys %{ $href } ) %>">
 
-<FONT SIZE="-2">
-Setup expression                    <INPUT TYPE="text" NAME="setup" SIZE="100%" VALUE="<%= $hashref->{setup} %>"><BR>
-Recurring espression                <INPUT TYPE="text" NAME="recur" SIZE="100%" VALUE="<%= $hashref->{recur} %>"><BR>
+<FONT SIZE="1">
+Setup expression<BR><INPUT TYPE="text" NAME="setup" SIZE="160" VALUE="<%= $hashref->{setup} %>" onLoad="fchanged(this)"><BR>
+Recurring espression<BR><INPUT TYPE="text" NAME="recur" SIZE="160" VALUE="<%= $hashref->{recur} %>" onLoad="fchanged(this)"><BR>
 </FONT>
 
 <%
@@ -273,9 +293,9 @@ if (document.getElementById) {
 
 <TAG onLoad="
     if (document.getElementById) {
-      document.getElementById('d<%= $plan %>').style.visibility = 'visible';
+      document.getElementById('d<%= $part_pkg->plan %>').style.visibility = 'visible';
     } else {
-      document.l<%= $plan %>.visibility = 'visible';
+      document.l<%= $part_pkg->plan %>.visibility = 'visible';
     }
 ">
   </BODY>

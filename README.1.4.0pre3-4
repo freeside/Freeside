@@ -14,6 +14,8 @@ CREATE INDEX part_pop_local1 ON part_pop_local ( npa, nxx );
 ALTER TABLE cust_pkg ADD manual_flag char(1) NULL;
 ALTER TABLE cust_pay_batch ADD paybatchnum integer;
 CREATE UNIQUE INDEX cust_pay_batch_pkey ON cust_pay_batch ( paybatchnum );
+ALTER TABLE part_pkg ADD plan varchar NULL;
+ALTER TABLE part_pkg ADD plandata varchar NULL;
 
 Run bin/dbdef-create
 

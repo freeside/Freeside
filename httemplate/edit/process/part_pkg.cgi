@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: part_pkg.cgi,v 1.2 2001-08-21 02:31:56 ivan Exp $ -->
+#<!-- $Id: part_pkg.cgi,v 1.3 2001-10-15 10:42:29 ivan Exp $ -->
 
 use strict;
 use vars qw( $cgi $pkgpart $old $new $part_svc $error $dbh );
@@ -18,6 +18,13 @@ $dbh = &cgisuidsetup($cgi);
 $pkgpart = $cgi->param('pkgpart');
 
 $old = qsearchs('part_pkg',{'pkgpart'=>$pkgpart}) if $pkgpart;
+
+#fixup plandata
+my $plandata = $cgi->param('plandata');
+my @plandata = split(',', $plandata);
+$cgi->param('plandata', 
+  join('', map { "$_=". $cgi->param($_). "\n" } @plandata )
+);
 
 $new = new FS::part_pkg ( {
   map {

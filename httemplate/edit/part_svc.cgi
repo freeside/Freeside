@@ -1,4 +1,4 @@
-<!-- $Id: part_svc.cgi,v 1.11 2001-09-11 19:16:41 ivan Exp $ -->
+<!-- $Id: part_svc.cgi,v 1.12 2001-10-15 10:42:29 ivan Exp $ -->
 <% 
    my $part_svc;
    if ( $cgi->param('error') ) { #error
@@ -65,7 +65,6 @@ blank <B>slipip</B> as well as a fixed shell something like <B>/bin/true</B> or
 <BR><BR>
 <SCRIPT>
 var svcdb = null;
-var something = null;
 function changed(what) {
   svcdb = what.options[what.selectedIndex].value;
 <% foreach my $svcdb ( qw( svc_acct svc_domain svc_acct_sm svc_forward svc_www ) ) { %>

@@ -216,10 +216,9 @@ otherwise returns false.
 
 CUST_PKG_HASHREF: If you pass a Tie::RefHash data structure to the insert
 method containing FS::cust_pkg and FS::svc_I<tablename> objects, all records
-are inserted atomicly, or the transaction is rolled back (this requries a 
-transactional database).  Passing an empty hash reference is equivalent to
-not supplying this parameter.  There should be a better explanation of this,
-but until then, here's an example:
+are inserted atomicly, or the transaction is rolled back.  Passing an empty
+hash reference is equivalent to not supplying this parameter.  There should be
+a better explanation of this, but until then, here's an example:
 
   use Tie::RefHash;
   tie %hash, 'Tie::RefHash'; #this part is important
@@ -233,7 +232,7 @@ INVOICING_LIST_ARYREF: If you pass an arrarref to the insert method, it will
 be set as the invoicing list (see L<"invoicing_list">).  Errors return as
 expected and rollback the entire transaction; it is not necessary to call 
 check_invoicing_list first.  The invoicing_list is set after the records in the
-CUST_PKG_HASHREF above are inserted, so it is now possible set set an
+CUST_PKG_HASHREF above are inserted, so it is now possible to set an
 invoicing_list destination to the newly-created svc_acct.  Here's an example:
 
   $cust_main->insert( {}, [ $email, 'POST' ] );
@@ -1216,9 +1215,9 @@ sub collect {
           }
 
           my @invoicing_list = grep { $_ ne 'POST' } $self->invoicing_list;
-          if ( $conf->exists('emailinvoiceonly') ) {
-            @invoicing_list = $self->default_invoicing_list
-              unless @invoicing_list;
+          if ( $conf->exists('emailinvoiceauto')
+               || ( $conf->exists('emailinvoiceonly') && ! @invoicing_list ) ) {
+            push @invoicing_list, $self->default_invoicing_list;
           }
           my $email = $invoicing_list[0];
 
@@ -1467,7 +1466,7 @@ sub apply_payments {
 
   }
 
-  # return 0; 
+  return $self->total_unapplied_payments;
 }
 
 =item total_credited
@@ -1559,15 +1558,17 @@ sub invoicing_list {
     } else {
       @cust_main_invoice = ();
     }
+    my %seen = map { $_->address => 1 } @cust_main_invoice;
     foreach my $address ( @{$arrayref} ) {
-      unless ( grep { $address eq $_->address } @cust_main_invoice ) {
-        my $cust_main_invoice = new FS::cust_main_invoice ( {
-          'custnum' => $self->custnum,
-          'dest'    => $address,
-        } );
-        my $error = $cust_main_invoice->insert;
-        warn $error if $error;
-      } 
+      #unless ( grep { $address eq $_->address } @cust_main_invoice ) {
+      next if exists $seen{$address} && $seen{$address};
+      $seen{$address} = 1;
+      my $cust_main_invoice = new FS::cust_main_invoice ( {
+        'custnum' => $self->custnum,
+        'dest'    => $address,
+      } );
+      my $error = $cust_main_invoice->insert;
+      warn $error if $error;
     }
   }
   if ( $self->custnum ) {
@@ -1602,6 +1603,8 @@ sub check_invoicing_list {
 }
 
 =item default_invoicing_list
+
+Returns the email addresses of any 
 
 =cut
 
@@ -1645,6 +1648,40 @@ sub referral_cust_main {
   }
 
   @cust_main;
+}
+
+=item referral_cust_pkg [ DEPTH ]
+
+Like referral_cust_main, except returns a flat list of all unsuspended packages
+for each customer.  The number of items in this list may be useful for
+comission calculations (perhaps after a grep).
+
+=cut
+
+sub referral_cust_pkg {
+  my $self = shift;
+  my $depth = @_ ? shift : 1;
+
+  map { $_->unsuspended_pkgs }
+    grep { $_->unsuspended_pkgs }
+      $self->referral_cust_main($depth);
+}
+
+=item credit AMOUNT, REASON
+
+Applies a credit to this customer.  If there is an error, returns the error,
+otherwise returns false.
+
+=cut
+
+sub credit {
+  my( $self, $amount, $reason ) = @_;
+  my $cust_credit = new FS::cust_credit {
+    'custnum' => $self->custnum,
+    'amount'  => $amount,
+    'reason'  => $reason,
+  };
+  $cust_credit->insert;
 }
 
 =back
@@ -1788,7 +1825,7 @@ sub append_fuzzyfiles {
 
 =head1 VERSION
 
-$Id: cust_main.pm,v 1.39 2001-10-09 23:10:16 ivan Exp $
+$Id: cust_main.pm,v 1.40 2001-10-15 10:42:28 ivan Exp $
 
 =head1 BUGS
 

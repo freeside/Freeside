@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: fs-setup,v 1.61 2001-10-09 23:10:17 ivan Exp $
+# $Id: fs-setup,v 1.62 2001-10-15 10:42:28 ivan Exp $
 
 #to delay loading dbdef until we're ready
 BEGIN { $FS::Record::setup_hack = 1; }
@@ -73,7 +73,7 @@ my($char_d) = 80; #default maxlength for text fields
 
 #my(@date_type)  = ( 'timestamp', '', ''     );
 my(@date_type)  = ( 'int', 'NULL', ''     );
-my(@perl_type) = ( 'varchar', 'NULL', 255  ); 
+my(@perl_type) = ( 'varchar', 'NULL', ''  ); 
 my @money_type = ( 'decimal',   '', '10,2' );
 
 ###
@@ -540,6 +540,8 @@ sub tables_hash_hack {
         'setup',      @perl_type,
         'freq',       'int', '', '',  #billing frequency (months)
         'recur',      @perl_type,
+        'plan',       'varchar', 'NULL', '',
+        'plandata',   'varchar', 'NULL', '',
       ],
       'primary_key' => 'pkgpart',
       'unique' => [ [] ],

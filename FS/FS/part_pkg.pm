@@ -46,11 +46,15 @@ inherits from FS::Record.  The following fields are currently supported:
 
 =item comment - Text name of this billing item definition (non-customer-viewable)
 
-=item setup - Setup fee
+=item setup - Setup fee expression
 
 =item freq - Frequency of recurring fee
 
-=item recur - Recurring fee
+=item recur - Recurring fee expression
+
+=item plan - Price plan
+
+=item plandata - Price plan data
 
 =back
 
@@ -128,6 +132,8 @@ sub check {
     || $self->ut_anything('setup')
     || $self->ut_number('freq')
     || $self->ut_anything('recur')
+    || $self->ut_alphan('plan')
+    || $self->ut_anything('plandata')
   ;
 }
 
@@ -166,7 +172,7 @@ sub svcpart {
 
 =head1 VERSION
 
-$Id: part_pkg.pm,v 1.2 1999-08-20 08:27:06 ivan Exp $
+$Id: part_pkg.pm,v 1.3 2001-10-15 10:42:28 ivan Exp $
 
 =head1 BUGS
 

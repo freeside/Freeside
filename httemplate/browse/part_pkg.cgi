@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: part_pkg.cgi,v 1.4 2001-09-04 14:44:06 ivan Exp $ -->
+#<!-- $Id: part_pkg.cgi,v 1.5 2001-10-15 10:42:28 ivan Exp $ -->
 
 use strict;
 use vars qw( $cgi $p $part_pkg );
@@ -27,9 +27,9 @@ print $cgi->header( '-expires' => 'now' ), header("Package Definition Listing",m
       <TR>
         <TH COLSPAN=2>Package</TH>
         <TH>Comment</TH>
-        <TH><FONT SIZE=-1>Setup Fee</FONT></TH>
         <TH><FONT SIZE=-1>Freq.</FONT></TH>
-        <TH><FONT SIZE=-1>Recur. Fee</FONT></TH>
+        <TH><FONT SIZE=-1>Plan</FONT></TH>
+        <TH><FONT SIZE=-1>Data</FONT></TH>
         <TH>Service</TH>
         <TH><FONT SIZE=-1>Quan.</FONT></TH>
       </TR>
@@ -42,6 +42,16 @@ foreach $part_pkg ( sort {
   my(@pkg_svc)=grep $_->getfield('quantity'),
     qsearch('pkg_svc',{'pkgpart'=> $hashref->{pkgpart} });
   my($rowspan)=scalar(@pkg_svc);
+  my $plandata;
+  if ( $hashref->{plan} ) {
+    $plandata = $hashref->{plandata};
+    $plandata =~ s/^(\w+)=/$1&nbsp;/mg;
+    $plandata =~ s/\n/<BR>/g;
+  } else {
+    $hashref->{plan} = "(legacy)";
+    $plandata = "Setup&nbsp;". $hashref->{setup}.
+                "<BR>Recur&nbsp;". $hashref->{recur};
+  }
   print <<END;
       <TR>
         <TD ROWSPAN=$rowspan><A HREF="${p}edit/part_pkg.cgi?$hashref->{pkgpart}">
@@ -49,9 +59,9 @@ foreach $part_pkg ( sort {
         </A></TD>
         <TD ROWSPAN=$rowspan><A HREF="${p}edit/part_pkg.cgi?$hashref->{pkgpart}">$hashref->{pkg}</A></TD>
         <TD ROWSPAN=$rowspan>$hashref->{comment}</TD>
-        <TD ROWSPAN=$rowspan>$hashref->{setup}</TD>
         <TD ROWSPAN=$rowspan>$hashref->{freq}</TD>
-        <TD ROWSPAN=$rowspan>$hashref->{recur}</TD>
+        <TD ROWSPAN=$rowspan>$hashref->{plan}</TD>
+        <TD ROWSPAN=$rowspan>$plandata</TD>
 END
 
   my($pkg_svc);
