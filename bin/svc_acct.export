@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 #
-# $Id: svc_acct.export,v 1.7 2000-03-06 14:50:15 ivan Exp $
+# $Id: svc_acct.export,v 1.8 2000-03-06 14:51:27 ivan Exp $
 #
 # Create and export password files: passwd, passwd.adjunct, shadow,
 # acp_passwd, acp_userinfo, acp_dialup, users
@@ -38,8 +38,8 @@
 # ivan@sisd.com 98-sep-18
 # 
 # $Log: svc_acct.export,v $
-# Revision 1.7  2000-03-06 14:50:15  ivan
-# oop
+# Revision 1.8  2000-03-06 14:51:27  ivan
+# eek
 #
 # Revision 1.2  1998/12/10 07:23:15  ivan
 # use FS::Conf, need user (for datasrc)
@@ -251,11 +251,11 @@ foreach $svc_acct (@svc_acct) {
     if ( $icradiusmachines ) {
       my $sth = $icradius_dbh->prepare(
         "INSERT INTO radcheck ( id, UserName, Attribute, Value ) VALUES ( ".
-        join(", ", map { $icradius_dbh->quote( $_ ) } qw (
-          $svc_acct->svcnum
-          $svc_acct->username
-          "Password"
-          $svc_acct->_password
+        join(", ", map { $icradius_dbh->quote( $_ ) } (
+          $svc_acct->svcnum,
+          $svc_acct->username,
+          "Password",
+          $svc_acct->_password,
         ) ). " )"
       );
       $sth->execute or die "Can't insert into radcheck table: ". $sth->errstr;
