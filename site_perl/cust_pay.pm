@@ -144,7 +144,8 @@ sub check {
 
   if ( $self->payby eq 'CARD' ) {
     my $payinfo = $self->payinfo;
-    $self->payinfo($payinfo =~ s/\D//g);
+    $payinfo =~ s/\D//g;
+    $self->payinfo($payinfo);
     if ( $self->payinfo ) {
       $self->payinfo =~ /^(\d{13,16})$/
         or return "Illegal (mistyped?) credit card number (payinfo)";
@@ -171,7 +172,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: cust_pay.pm,v 1.3 1999-01-25 12:26:11 ivan Exp $
+$Id: cust_pay.pm,v 1.4 1999-07-29 09:07:44 ivan Exp $
 
 =head1 BUGS
 
@@ -190,7 +191,10 @@ new api ivan@sisd.com 98-mar-13
 pod ivan@sisd.com 98-sep-21
 
 $Log: cust_pay.pm,v $
-Revision 1.3  1999-01-25 12:26:11  ivan
+Revision 1.4  1999-07-29 09:07:44  ivan
+embarassing.
+
+Revision 1.3  1999/01/25 12:26:11  ivan
 yet more mod_perl stuff
 
 Revision 1.2  1998/12/29 11:59:43  ivan
