@@ -50,6 +50,7 @@ foreach $cust_main ( @cust_main ) {
 }
 
 if ( driver_name eq 'Pg' ) {
+  dbh->{AutoCommit} = 1; #so we can vacuum
   foreach my $statement ( 'vacuum', 'vacuum analyze' ) {
     my $sth = dbh->prepare($statement) or die dbh->errstr;
     $sth->execute or die $sth->errstr;
