@@ -6,7 +6,7 @@ use vars qw( @ISA $whois_hack $conf $smtpmachine
   $soarefresh $soaretry $qshellmachine $nossh_hack 
 );
 use Carp;
-use Mail::Internet;
+use Mail::Internet 1.44;
 use Mail::Header;
 use Date::Format;
 use Net::Whois 1.0;
@@ -407,7 +407,7 @@ sub submit_internic {
 
 =head1 VERSION
 
-$Id: svc_domain.pm,v 1.27 2002-05-10 07:45:29 ivan Exp $
+$Id: svc_domain.pm,v 1.28 2002-05-18 09:51:30 ivan Exp $
 
 =head1 BUGS
 

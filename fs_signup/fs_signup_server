@@ -205,7 +205,7 @@ while (1) {
 
       #false laziness w/FS::cust_bill::send & FS::cust_pay::delete
       use Mail::Header;
-      use Mail::Internet;
+      use Mail::Internet 1.44;
       use Date::Format;
       my $from = $conf->config('invoice_from'); #??? as good as any
       $ENV{MAILADDRESS} = $from;

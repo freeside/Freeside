@@ -4,7 +4,7 @@ use strict;
 use vars qw( @ISA $conf $unsuspendauto $smtpmachine $invoice_from );
 use Date::Format;
 use Mail::Header;
-use Mail::Internet;
+use Mail::Internet 1.44;
 use Business::CreditCard;
 use FS::UID qw( dbh );
 use FS::Record qw( dbh qsearch qsearchs dbh );
@@ -405,7 +405,7 @@ sub unapplied {
 
 =head1 VERSION
 
-$Id: cust_pay.pm,v 1.19 2002-04-07 06:23:29 ivan Exp $
+$Id: cust_pay.pm,v 1.20 2002-05-18 09:51:30 ivan Exp $
 
 =head1 BUGS
 

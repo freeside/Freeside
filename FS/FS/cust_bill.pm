@@ -8,7 +8,7 @@ use vars qw( $xaction $E_NoErr );
 use vars qw( $bop_processor $bop_login $bop_password $bop_action @bop_options );
 use vars qw( $invoice_lines @buf ); #yuck
 use Date::Format;
-use Mail::Internet;
+use Mail::Internet 1.44;
 use Mail::Header;
 use Text::Template;
 use FS::Record qw( qsearch qsearchs );
@@ -948,7 +948,7 @@ sub print_text {
 
 =head1 VERSION
 
-$Id: cust_bill.pm,v 1.34 2002-05-06 13:36:02 ivan Exp $
+$Id: cust_bill.pm,v 1.35 2002-05-18 09:51:30 ivan Exp $
 
 =head1 BUGS
 
