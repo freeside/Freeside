@@ -380,7 +380,7 @@ sub seconds_since_sqlradacct {
 
     #select a unix time conversion function based on database type
     my $str2time;
-    if ( $dbh->{Driver}->{Name} eq 'mysql' ) {
+    if ( $dbh->{Driver}->{Name} =~ /^mysql(PP)?$/ ) {
       $str2time = 'UNIX_TIMESTAMP(';
     } elsif ( $dbh->{Driver}->{Name} eq 'Pg' ) {
       $str2time = 'EXTRACT( EPOCH FROM ';
@@ -498,7 +498,7 @@ sub attribute_since_sqlradacct {
 
     #select a unix time conversion function based on database type
     my $str2time;
-    if ( $dbh->{Driver}->{Name} eq 'mysql' ) {
+    if ( $dbh->{Driver}->{Name} =~ /^mysql(PP)?$/ ) {
       $str2time = 'UNIX_TIMESTAMP(';
     } elsif ( $dbh->{Driver}->{Name} eq 'Pg' ) {
       $str2time = 'EXTRACT( EPOCH FROM ';
@@ -561,7 +561,7 @@ sub get_session_history {
 
     #select a unix time conversion function based on database type
     my $str2time;                                                 
-    if ( $dbh->{Driver}->{Name} eq 'mysql' ) {
+    if ( $dbh->{Driver}->{Name} =~ /^mysql(PP)?$/ ) {
       $str2time = 'UNIX_TIMESTAMP(';          
     } elsif ( $dbh->{Driver}->{Name} eq 'Pg' ) {
       $str2time = 'EXTRACT( EPOCH FROM ';       
