@@ -14,7 +14,8 @@ use FS::part_export;
   'state'       => 'state',
   'zipCode'     => 'zip',
   'country'     => 'country',
-  'phoneNumber' => 'dayphone',
+  'phoneNumber' => 'daytime',
+  'faxNumber'   => 'night',
 );
 
 sub rebless { shift; }
