@@ -165,8 +165,12 @@ while (1) {
     warn "[fs_signup_server] Sending results...\n" if $Debug;
     print $writer $error, "\n";
 
+    next if $error;
+
     if ( $conf->exists('signup_server-realtime') ) {
-      
+
+      warn "[fs_signup_server] Billing customer...\n" if $Debug;
+
       my $bill_error = $cust_main->bill;
       warn "[fs_signup_server] error billing new customer: $bill_error"
         if $bill_error;
@@ -184,7 +188,7 @@ while (1) {
       }
     }
 
-    if ( $error && $conf->config('signup_server-email') ) {
+    if ( $conf->config('signup_server-email') ) {
       warn "[fs_signup_server] Sending email...\n" if $Debug;
 
       #false laziness w/FS::cust_bill::send & FS::cust_pay::delete
