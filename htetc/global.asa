@@ -126,7 +126,9 @@ sub Script_OnFlush {
   }
 }
 
-if ( defined(@DBIx::Profile::ISA) && DBIx::Profile::db->can('sprintProfile') ) {
+#if ( defined(@DBIx::Profile::ISA) && DBIx::Profile::db->can('sprintProfile') ) {
+#if ( defined(@DBIx::Profile::ISA) && UNIVERSAL::can('DBIx::Profile::db', 'sprintProfile') ) {
+if ( defined(@DBIx::Profile::ISA) ) {
 
   #warn "enabling profiling redirects";
   *CGI::redirect = sub {
