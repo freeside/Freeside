@@ -28,7 +28,7 @@ print header('Mail Forward View', menubar(
     ? ( "View this package (#$pkgnum)" => "${p}view/cust_pkg.cgi?$pkgnum",
         "View this customer (#$custnum)" => "${p}view/cust_main.cgi?$custnum",
       )
-    : ( "Cancel this (unaudited) account" =>
+    : ( "Cancel this (unaudited) mail forward" =>
           "${p}misc/cancel-unaudited.cgi?$svcnum" )
   ),
   "Main menu" => $p,
