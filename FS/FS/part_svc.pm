@@ -2,7 +2,8 @@ package FS::part_svc;
 
 use strict;
 use vars qw( @ISA );
-use FS::Record qw( fields );
+use FS::Record qw( qsearchs fields dbh );
+use FS::part_svc_column;
 
 @ISA = qw(FS::Record);
 
@@ -14,8 +15,8 @@ FS::part_svc - Object methods for part_svc objects
 
   use FS::part_svc;
 
-  $record = new FS::part_referral \%hash
-  $record = new FS::part_referral { 'column' => 'value' };
+  $record = new FS::part_svc \%hash
+  $record = new FS::part_svc { 'column' => 'value' };
 
   $error = $record->insert;
 
@@ -37,7 +38,7 @@ FS::Record.  The following fields are currently supported:
 =item svc - text name of this service definition
 
 =item svcdb - table used for this service.  See L<FS::svc_acct>,
-L<FS::svc_domain>, and L<FS::svc_acct_sm>, among others.
+L<FS::svc_domain>, and L<FS::svc_forward>, among others.
 
 =item I<svcdb>__I<field> - Default or fixed value for I<field> in I<svcdb>.
 
@@ -62,6 +63,73 @@ sub table { 'part_svc'; }
 
 Adds this service definition to the database.  If there is an error, returns
 the error, otherwise returns false.
+=item I<svcdb>__I<field> - Default or fixed value for I<field> in I<svcdb>.
+
+=item I<svcdb>__I<field>_flag - defines I<svcdb>__I<field> action: null, `D' for default, or `F' for fixed
+
+=cut
+
+sub insert {
+  my $self = shift;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $error = $self->SUPER::insert;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  my $svcdb = $self->svcdb;
+#  my @rows = map { /^${svcdb}__(.*)$/; $1 }
+#    grep ! /_flag$/,
+#      grep /^${svcdb}__/,
+#        fields('part_svc');
+  foreach my $field (
+    grep { $_ ne 'svcnum'
+           && defined( $self->getfield($svcdb.'__'.$_.'_flag') )
+         } fields($svcdb)
+  ) {
+    my $part_svc_column = $self->part_svc_column($field);
+    my $previous = qsearchs('part_svc_column', {
+      'svcpart'    => $self->svcpart,
+      'columnname' => $field,
+    } );
+
+    my $flag = $self->getfield($svcdb.'__'.$field.'_flag');
+    if ( uc($flag) =~ /^([DF])$/ ) {
+      $part_svc_column->setfield('columnflag', $1);
+      $part_svc_column->setfield('columnvalue',
+        $self->getfield($svcdb.'__'.$field)
+      );
+      if ( $previous ) {
+        $error = $part_svc_column->replace($previous);
+      } else {
+        $error = $part_svc_column->insert;
+      }
+    } else {
+      $error = $part_svc_column->delete;
+    }
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+  '';
+}
 
 =item delete
 
@@ -113,38 +181,58 @@ sub check {
   my @fields = eval { fields( $recref->{svcdb} ) }; #might die
   return "Unknown svcdb!" unless @fields;
 
-  my $svcdb;
-  foreach $svcdb ( qw(
-    svc_acct svc_acct_sm svc_domain
-  ) ) {
-    my @rows = map { /^${svcdb}__(.*)$/; $1 }
-      grep ! /_flag$/,
-        grep /^${svcdb}__/,
-          fields('part_svc');
-    foreach my $row (@rows) {
-      unless ( $svcdb eq $recref->{svcdb} ) {
-        $recref->{$svcdb.'__'.$row}='';
-        $recref->{$svcdb.'__'.$row.'_flag'}='';
-        next;
-      }
-      $recref->{$svcdb.'__'.$row.'_flag'} =~ /^([DF]?)$/
-        or return "Illegal flag for $svcdb $row";
-      $recref->{$svcdb.'__'.$row.'_flag'} = $1;
-
-      my $error = $self->ut_anything($svcdb.'__'.$row);
-      return $error if $error;
-
-    }
-  }
+#  my $svcdb;
+#  foreach $svcdb ( qw(
+#    svc_acct svc_acct_sm svc_domain
+#  ) ) {
+#    my @rows = map { /^${svcdb}__(.*)$/; $1 }
+#      grep ! /_flag$/,
+#        grep /^${svcdb}__/,
+#          fields('part_svc');
+#    foreach my $row (@rows) {
+#      unless ( $svcdb eq $recref->{svcdb} ) {
+#        $recref->{$svcdb.'__'.$row}='';
+#        $recref->{$svcdb.'__'.$row.'_flag'}='';
+#        next;
+#      }
+#      $recref->{$svcdb.'__'.$row.'_flag'} =~ /^([DF]?)$/
+#        or return "Illegal flag for $svcdb $row";
+#      $recref->{$svcdb.'__'.$row.'_flag'} = $1;
+#
+#      my $error = $self->ut_anything($svcdb.'__'.$row);
+#      return $error if $error;
+#
+#    }
+#  }
 
   ''; #no error
+}
+
+=item part_svc_column COLUMNNAME
+
+Returns the part_svc_column object (see L<FS::part_svc_column>) for the given
+COLUMNNAME, or a new part_svc_column object if none exists.
+
+=cut
+
+sub part_svc_column {
+  my $self = shift;
+  my $columnname = shift;
+  qsearchs('part_svc_column',  {
+                                 'svcpart'    => $self->svcpart,
+                                 'columnname' => $columnname,
+                               }
+  ) or new FS::part_svc_column {
+                                 'svcpart'    => $self->svcpart,
+                                 'columnname' => $columnname,
+                               };
 }
 
 =back
 
 =head1 VERSION
 
-$Id: part_svc.pm,v 1.2 2001-08-11 05:51:24 ivan Exp $
+$Id: part_svc.pm,v 1.3 2001-09-06 20:41:59 ivan Exp $
 
 =head1 BUGS
 
@@ -156,7 +244,7 @@ should be fixed.
 =head1 SEE ALSO
 
 L<FS::Record>, L<FS::part_pkg>, L<FS::pkg_svc>, L<FS::cust_svc>,
-L<FS::svc_acct>, L<FS::svc_acct_sm>, L<FS::svc_domain>, schema.html from the
+L<FS::svc_acct>, L<FS::svc_forward>, L<FS::svc_domain>, schema.html from the
 base documentation.
 
 =cut

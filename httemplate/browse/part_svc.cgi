@@ -1,4 +1,4 @@
-<!-- $Id: part_svc.cgi,v 1.3 2001-09-04 14:44:06 ivan Exp $ -->
+<!-- $Id: part_svc.cgi,v 1.4 2001-09-06 20:41:59 ivan Exp $ -->
 <%= header('Service Definition Listing', menubar( 'Main Menu' => $p) ) %>
 
     Services are items you offer to your customers.<BR><BR>
@@ -15,14 +15,11 @@
    } qsearch('part_svc',{}) ) {
      my($hashref)=$part_svc->hashref;
      my($svcdb)=$hashref->{svcdb};
-     my(@rows)=
-       grep $hashref->{${svcdb}.'__'.$_.'_flag'},
-         map { /^${svcdb}__(.*)$/; $1 }
-           grep ! /_flag$/,
-             grep /^${svcdb}__/,
-               fields('part_svc')
-     ;
-     my($rowspan)=scalar(@rows) || 1;
+     my @fields =
+       grep { $_ ne 'svcnum' && $part_svc->part_svc_column($_)->columnflag }
+            fields($svcdb);
+
+     my($rowspan)=scalar(@fields) || 1;
      my $url = "${p}edit/part_svc.cgi?$hashref->{svcpart}";
 %>
 
@@ -35,9 +32,8 @@
       <%= $hashref->{svcdb} %></TD>
 
 <%   my($n1)='';
-     my($row);
-     foreach $row ( @rows ) {
-       my($flag)=$part_svc->getfield($svcdb.'__'.$row.'_flag');
+     foreach my $field ( @fields ) {
+       my $flag = $part_svc->part_svc_column($field)->columnflag;
 %>
      <%= $n1 %><TD><%= $row %></TD><TD>
 
@@ -45,7 +41,7 @@
          elsif ( $flag eq "F" ) { print "Fixed"; }
          else { print "(Unknown!)"; }
 %>
-       </TD><TD><%= $part_svc->getfield($svcdb."__".$row) %></TD>
+       </TD><TD><%= $part_svc->part_svc_column($field)->columnvalue%></TD>
 <%     $n1="</TR><TR>";
      }
 %>

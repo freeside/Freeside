@@ -164,9 +164,11 @@ sub setx {
   return "Unkonwn svcpart" unless $part_svc;
 
   #set default/fixed/whatever fields from part_svc
-  foreach my $field ( fields('svc_acct') ) {
-    if ( $part_svc->getfield('svc_acct__'. $field. '_flag') eq $x ) {
-      $self->setfield( $field, $part_svc->getfield('svc_acct__'. $field) );
+  my $table = $self->table;
+  foreach my $field ( grep { $_ ne 'svcnum' } fields($table) ) {
+    my $part_svc_column = $part_svc->part_svc_column($field);
+    if ( $part_svc_column->columnflag eq $x ) {
+      $self->setfield( $field, $part_svc_column->columnvalue );
     }
   }
 
@@ -193,7 +195,7 @@ sub cancel { ''; }
 
 =head1 VERSION
 
-$Id: svc_Common.pm,v 1.4 2001-04-22 00:49:30 ivan Exp $
+$Id: svc_Common.pm,v 1.5 2001-09-06 20:41:59 ivan Exp $
 
 =head1 BUGS
 

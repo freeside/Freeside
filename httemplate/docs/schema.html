@@ -196,8 +196,17 @@
         <li>svcpart - primary key
         <li>svc - name of this service
         <li>svcdb - table used for this service: svc_acct, svc_acct_sm, svc_forward, svc_domain, svc_charge or svc_wo
-        <li><i>table</i>__<i>field</i> - Default or fixed value for <i>field</i> in <i>table</i>
+<!--        <li><i>table</i>__<i>field</i> - Default or fixed value for <i>field</i> in <i>table</i>
         <li><i>table</i>__<i>field</i>_flag - null, D or F
+-->
+      </ul>
+    <li><a name="part_svc_column" href="man/FS/part_svc_column.html">part_svc_column</a>
+      <ul>
+        <li>columnnum - primary key
+        <li>svcpart - <a href="#part_svc">Service definition</a>
+        <li>columnname - column name in part_svc.svcdb table
+        <li>columnvalue - default or fixed value for the column
+        <li>columnflag - null, D or F
       </ul>
     <li><a name="pkg_svc" href="man/FS/pkg_svc.html">pkg_svc</a>
       <ul>

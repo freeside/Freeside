@@ -263,7 +263,7 @@ sub check {
 
   my $x = $self->setfixed;
   return $x unless ref($x);
-  my $part_svc = $x;
+  #my $part_svc = $x;
 
   my $error = $self->ut_numbern('svcnum')
               || $self->ut_number('srcsvc')
@@ -299,7 +299,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: svc_forward.pm,v 1.6 2001-08-21 00:39:07 ivan Exp $
+$Id: svc_forward.pm,v 1.7 2001-09-06 20:41:59 ivan Exp $
 
 =head1 BUGS
 

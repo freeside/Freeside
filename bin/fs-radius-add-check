@@ -35,8 +35,8 @@ my($char_d) = 80; #default maxlength for text fields
 foreach my $attribute ( @attributes ) {
   foreach my $statement ( 
     "ALTER TABLE svc_acct ADD rc_$attribute varchar($char_d) NULL",
-    "ALTER TABLE part_svc ADD svc_acct__rc_$attribute varchar($char_d) NULL;",
-    "ALTER TABLE part_svc ADD svc_acct__rc_${attribute}_flag char(1) NULL;",
+#    "ALTER TABLE part_svc ADD svc_acct__rc_$attribute varchar($char_d) NULL;",
+#    "ALTER TABLE part_svc ADD svc_acct__rc_${attribute}_flag char(1) NULL;",
   ) {
     $dbh->do( $statement ) or warn "Error executing $statement: ". $dbh->errstr;  }
 }

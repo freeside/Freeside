@@ -8,7 +8,11 @@ my $new = new FS::part_svc ( {
   map {
     $_, scalar($cgi->param($_));
 #  } qw(svcpart svc svcdb)
-  } fields('part_svc')
+  } ( fields('part_svc'),
+      map { my $svcdb = $_;
+            map { ( $svcdb.'__'.$_, $svcdb.'__'.$_.'_flag' )  }
+              fields($svcdb)
+          } qw( svc_acct svc_domain svc_acct_sm svc_forward svc_www ) )
 } );
 
 my $error;

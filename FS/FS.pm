@@ -46,11 +46,15 @@ L<FS::svc_domain> - Domain class
 
 L<FS::domain_record> - DNS zone entries
 
-L<FS::svc_acct_sm> - Vitual mail alias class
+L<FS::svc_forward> - Mail forwarding class
+
+L<FS::svc_acct_sm> - (Depreciated) Vitual mail alias class
 
 L<FS::svc_www> - Web virtual host class.
 
 L<FS::part_svc> - Service definition class
+
+L<FS::part_svc_column> - Column constraint class
 
 L<FS::part_pkg> - Package (billing item) definition class
 
@@ -117,6 +121,9 @@ To quote perl(1), "If you're intending to read these straight through for the
 first time, the suggested order will tend to reduce the number of forward
 references."
 
+If you've never used OO modules before,
+http://www.cpan.org/doc/FMTEYEWTK/easy_objects.html might help you out.
+
 =head1 DESCRIPTION
 
 Freeside is a billing and administration package for Internet Service
@@ -128,7 +135,7 @@ The main documentation is in htdocs/docs.
 
 =head1 VERSION
 
-$Id: FS.pm,v 1.6 2001-09-02 04:25:55 ivan Exp $
+$Id: FS.pm,v 1.7 2001-09-06 20:41:59 ivan Exp $
 
 =head1 SUPPORT
 

@@ -118,7 +118,7 @@ Returns the CGI (see L<CGI>) object.
 =cut
 
 sub cgi {
-  carp "warning: \$FS::UID::cgi isa Apache" if $cgi->isa('Apache');
+  #carp "warning: \$FS::UID::cgi isa Apache" if $cgi->isa('Apache');
   $cgi;
 }
 
@@ -249,7 +249,7 @@ coderef into the hash %FS::UID::callback :
 
 =head1 VERSION
 
-$Id: UID.pm,v 1.8 2001-08-21 09:34:13 ivan Exp $
+$Id: UID.pm,v 1.9 2001-09-06 20:41:59 ivan Exp $
 
 =head1 BUGS
 

@@ -185,7 +185,7 @@ sub insert {
   my $part_svc = qsearchs( 'part_svc', { 'svcpart' => $self->svcpart } );
   return "Unknown svcpart" unless $part_svc;
   return "uid in use"
-    if $part_svc->svc_acct__uid_flag ne 'F'
+    if $part_svc->part_svc_column('uid')->columnflag ne 'F'
       && qsearchs( 'svc_acct', { 'uid' => $self->uid } )
       && $self->username !~ /^(hyla)?fax$/
     ;
@@ -456,7 +456,7 @@ sub check {
     ! $recref->{popnum} ||
     qsearchs('svc_acct_pop',{'popnum'=> $recref->{popnum} } );
 
-  unless ( $part_svc->getfield('svc_acct__uid_flag') eq 'F' ) {
+  unless ( $part_svc->part_svc_column('uid')->columnflag eq 'F' ) {
 
     $recref->{uid} =~ /^(\d*)$/ or return "Illegal uid";
     $recref->{uid} = $1 eq '' ? $self->unique('uid') : $1;
@@ -506,7 +506,7 @@ sub check {
       return "Can't have quota without uid" : ( $recref->{quota}='' );
   }
 
-  unless ( $part_svc->getfield('svc_acct__slipip_flag') eq 'F' ) {
+  unless ( $part_svc->part_svc_column('slipip')->columnflag eq 'F' ) {
     unless ( $recref->{slipip} eq '0e0' ) {
       $recref->{slipip} =~ /^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/
         or return "Illegal slipip". $self->slipip;
@@ -633,7 +633,7 @@ sub email {
 
 =head1 VERSION
 
-$Id: svc_acct.pm,v 1.29 2001-09-02 04:51:11 ivan Exp $
+$Id: svc_acct.pm,v 1.30 2001-09-06 20:41:59 ivan Exp $
 
 =head1 BUGS
 

@@ -1,0 +1,16 @@
+the following is necessary to upgrade from 1.4.0pre2 to pre3 or later.
+
+CREATE TABLE part_svc_column (
+  columnnum int primary key,
+  svcpart int not null,
+  columnname varchar(64) not null,
+  columnvalue varchar(80) null,
+  columnflag char(1) null
+);
+
+CREATE UNIQUE INDEX part_svc_column1 ON part_svc_column ( svcpart, columnname );
+
+Run bin/fs-migrate-part_svc
+
+Run bin/dbdef-create
+

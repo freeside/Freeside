@@ -9,9 +9,6 @@ use FS::cust_refund;
 my $user = shift or die &usage;
 my $dbh = adminsuidsetup $user;
 
-#local $FS::UID::AutoCommit = 0; #quelle hack, in this case
-# $FS::UID::AutoCommit = 0; #quelle hack, in this case
-
 # apply payments to invoices
 
 foreach my $cust_pay ( qsearch('cust_pay', {} ) ) {
@@ -27,4 +24,8 @@ foreach my $cust_refund ( qsearch('cust_refund') ) {
 }
 
 # ? apply credits to invoices
+
+sub usage {
+  die "Usage:\n  fs-migrate-payref user\n"; 
+}
 

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: fs-setup,v 1.53 2001-09-04 11:15:58 ivan Exp $
+# $Id: fs-setup,v 1.54 2001-09-06 20:41:59 ivan Exp $
 
 #to delay loading dbdef until we're ready
 BEGIN { $FS::Record::setup_hack = 1; }
@@ -122,32 +122,32 @@ foreach $attribute (@check_attributes) {
   ));
 }
 
-#make part_svc table (but now as object)
-
-my($part_svc)=$dbdef->table('part_svc');
-
-#because of svc_acct_pop
-#foreach (grep /^svc_/, $dbdef->tables) { 
-#foreach (qw(svc_acct svc_acct_sm svc_charge svc_domain svc_wo)) {
-foreach (qw(svc_acct svc_domain svc_forward svc_www)) {
-  my($table)=$dbdef->table($_);
-  my($col);
-  foreach $col ( $table->columns ) {
-    next if $col =~ /^svcnum$/;
-    $part_svc->addcolumn( new DBIx::DBSchema::Column (
-      $table->name. '__' . $table->column($col)->name,
-      'varchar', #$table->column($col)->type, 
-      'NULL',
-      $char_d, #$table->column($col)->length,
-    ));
-    $part_svc->addcolumn ( new DBIx::DBSchema::Column (
-      $table->name. '__'. $table->column($col)->name . "_flag",
-      'char',
-      'NULL',
-      1,
-    ));
-  }
-}
+##make part_svc table (but now as object)
+#
+#my($part_svc)=$dbdef->table('part_svc');
+#
+##because of svc_acct_pop
+##foreach (grep /^svc_/, $dbdef->tables) { 
+##foreach (qw(svc_acct svc_acct_sm svc_charge svc_domain svc_wo)) {
+#foreach (qw(svc_acct svc_domain svc_forward svc_www)) {
+#  my($table)=$dbdef->table($_);
+#  my($col);
+#  foreach $col ( $table->columns ) {
+#    next if $col =~ /^svcnum$/;
+#    $part_svc->addcolumn( new DBIx::DBSchema::Column (
+#      $table->name. '__' . $table->column($col)->name,
+#      'varchar', #$table->column($col)->type, 
+#      'NULL',
+#      $char_d, #$table->column($col)->length,
+#    ));
+#    $part_svc->addcolumn ( new DBIx::DBSchema::Column (
+#      $table->name. '__'. $table->column($col)->name . "_flag",
+#      'char',
+#      'NULL',
+#      1,
+#    ));
+#  }
+#}
 
 #important
 $dbdef->save($dbdef_file);
@@ -579,6 +579,19 @@ sub tables_hash_hack {
       'unique' => [ [] ],
       'index' => [ [] ],
     },
+
+    'part_svc_column' => {
+      'columns' => [
+        'columnnum',   'int',         '', '',
+        'svcpart',     'int',         '', '',
+        'columnname',  'varchar',     '', 64,
+        'columnvalue', 'varchar', 'NULL', $char_d,
+        'columnflag',  'char',    'NULL', 1, 
+      ],
+      'primary_key' => 'columnnum',
+      'unique' => [ [ 'svcpart', 'columnname' ] ],
+      'index' => [ [ 'svcpart' ] ],
+    }
 
     #(this should be renamed to part_pop)
     'svc_acct_pop' => {

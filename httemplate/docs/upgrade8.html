@@ -95,19 +95,17 @@ CREATE TABLE cust_credit_refund (
   amount decimal(10,2) not null
 );
 
+CREATE TABLE part_svc_column (
+  columnnum int primary key,
+  svcpart int not null,
+  columnname varchar(64) not null,
+  columnvalue varchar(80) null,
+  columnflag char(1) null
+);
+
 
 ALTER TABLE svc_acct ADD domsvc integer NOT NULL;
 ALTER TABLE svc_domain ADD catchall integer NULL;
-ALTER TABLE part_svc ADD svc_acct__domsvc integer NULL;
-ALTER TABLE part_svc ADD svc_acct__domsvc_flag char(1) NULL;
-ALTER TABLE part_svc ADD svc_domain__catchall integer NULL;
-ALTER TABLE part_svc ADD svc_domain__catchall_flag char(1) NULL;
-ALTER TABLE part_svc ADD svc_forward__srcsvc integer NULL;
-ALTER TABLE part_svc ADD svc_forward__srcsvc_flag char(1) NULL;
-ALTER TABLE part_svc ADD svc_forward__dstsvc integer NULL;
-ALTER TABLE part_svc ADD svc_forward__dstsvc_flag char(1) NULL;
-ALTER TABLE part_svc ADD svc_forward__dst integer NULL;
-ALTER TABLE part_svc ADD svc_forward__dst_flag char(1) NULL;
 ALTER TABLE cust_main ADD referral_custnum integer NULL;
 ALTER TABLE cust_pay ADD custnum integer;
 ALTER TABLE cust_refund ADD custnum integer;
@@ -118,6 +116,7 @@ CREATE INDEX cust_bill_pay1 ON cust_bill_pay ( invnum );
 CREATE INDEX cust_bill_pay2 ON cust_bill_pay ( paynum );
 CREATE INDEX cust_credit_refund1 ON cust_credit_refund ( crednum );
 CREATE INDEX cust_credit_refund2 ON cust_credit_refund ( refundnum );
+CREATE UNIQUE INDEX part_svc_column1 ON part_svc_column ( svcpart, columnname );
 </pre>
 
   <li>If you are using PostgreSQL, apply the following changes to your database:
@@ -177,6 +176,7 @@ ALTER TABLE cust_main ADD COLUMN comments varchar NULL;
   <li>create a service based on svc_forward
   <li>Run bin/fs-migrate-svc_acct_sm
   <li>Run bin/fs-migrate-payref
+  <li>Run bin/fs-migrate-part_svc
   <li><b>After running bin/fs-migrate-payref</b>, apply the following changes to your database:
   <table border><tr><th>PostgreSQL</th><th>MySQL, others</th></tr>
 <tr><td>

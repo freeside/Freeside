@@ -1,0 +1,40 @@
+#!/usr/bin/perl
+
+use strict;
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw(qsearchs);
+use FS::part_svc
+
+my $user = shift or die &usage;
+my $dbh = adminsuidsetup $user;
+
+my $oldAutoCommit = $FS::UID::AutoCommit;
+local $FS::UID::AutoCommit = 0
+
+foreach my $part_svc ( qsearch('part_svc', {} ) ) {
+  foreach my $field (
+    grep { defined($part_svc->getfield($part_svc->svcdb.'__'.$field.'_flag') ) }
+      fields($self->svcdb)
+  ) {
+    my $flag = $self->getfield($part_svc->svcdb.'__'.$field.'_flag');
+    if ( uc($flag) =~ /^([DF])$/ ) {
+      $part_svc_column->setfield('columnflag', $1);
+      $part_svc_column->setfield('columnvalue',
+        $self->getfield($part_svc->svcdb.'__'.$field)
+      );
+      $error = $part_svc_column->insert;
+    } else {
+      $error = $part_svc_column->delete;
+    }
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      die $error;
+    }
+
+  }
+}
+
+sub usage {
+  die "Usage:\n  fs-migrate-part_svc user\n"; 
+}
+

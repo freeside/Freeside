@@ -1,4 +1,4 @@
-<!-- $Id: part_svc.cgi,v 1.6 2001-09-04 14:44:06 ivan Exp $ -->
+<!-- $Id: part_svc.cgi,v 1.7 2001-09-06 20:42:00 ivan Exp $ -->
 <% 
    my $part_svc;
    if ( $cgi->param('error') ) { #error
@@ -145,10 +145,9 @@ foreach my $svcdb ( qw(
   konq_kludge svc_acct svc_domain svc_acct_sm svc_forward svc_www
 ) ) {
 
-  my(@rows)=map { /^${svcdb}__(.*)$/; $1 }
-    grep ! /_flag$/,
-      grep /^${svcdb}__/,
-        fields('part_svc');
+  my(@fields) = $svcdb eq 'konq_kludge'
+                  ? ()
+                  : grep { $_ ne 'svcnum' } fields($svcdb) );
   #my($rowspan)=scalar(@rows);
 
   #my($ptmp)="<TD ROWSPAN=$rowspan>$svcdb</TD>";
@@ -177,22 +176,26 @@ function fixup(what) {
   print "$svcdb" unless $svcdb eq 'konq_kludge';
   print "<BR><TABLE BORDER=1><TH>Field</TH><TH COLSPAN=2>Modifier</TH>" unless $svcdb eq 'konq_kludge';
 
-  my($row);
-  foreach $row (@rows) {
-    my $value = $part_svc->getfield($svcdb. '__'. $row);
-    my $flag = $part_svc->getfield($svcdb. '__'. $row. '_flag');
-    #print "<TR>$ptmp<TD>$row";
-    print "<TR><TD>$row";
-    print "- <FONT SIZE=-1>$defs{$svcdb}{$row}</FONT>"
-      if defined $defs{$svcdb}{$row};
+  foreach my $field (@fields) {
+    my $part_svc_column = $part_svc->part_svc_column($field);
+    my $value = $cgi->param('error')
+                  ? $cgi->param("${svcdb}__${field}")
+                  : $$part_svc_column->columnvalue;
+    my $flag = $cgi->param('error')
+                 ? $cgi->param("${svcdb}__${field}_flag")
+                 : $part_svc_column->columnflag;
+    #print "<TR>$ptmp<TD>$field";
+    print "<TR><TD>$field";
+    print "- <FONT SIZE=-1>$defs{$svcdb}{$field}</FONT>"
+      if defined $defs{$svcdb}{$field};
     print "</TD>";
-    print qq!<TD><INPUT TYPE="radio" NAME="${svcdb}__${row}_flag" VALUE=""!.
+    print qq!<TD><INPUT TYPE="radio" NAME="${svcdb}__${field}_flag" VALUE=""!.
       ' CHECKED'x($flag eq ''). ">Off</TD>";
-    print qq!<TD><INPUT TYPE="radio" NAME="${svcdb}__${row}_flag" VALUE="D"!.
+    print qq!<TD><INPUT TYPE="radio" NAME="${svcdb}__${field}_flag" VALUE="D"!.
       ' CHECKED'x($flag eq 'D'). ">Default ";
-    print qq!<INPUT TYPE="radio" NAME="${svcdb}__${row}_flag" VALUE="F"!.
+    print qq!<INPUT TYPE="radio" NAME="${svcdb}__${field}_flag" VALUE="F"!.
       ' CHECKED'x($flag eq 'F'). ">Fixed ";
-    print qq!<INPUT TYPE="text" NAME="${svcdb}__${row}" VALUE="$value">!,
+    print qq!<INPUT TYPE="text" NAME="${svcdb}__${field}" VALUE="$value">!,
       "</TD></TR>\n";
     #$ptmp='';
   }

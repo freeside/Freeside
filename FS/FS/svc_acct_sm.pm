@@ -211,7 +211,7 @@ sub check {
 
   my $x = $self->setfixed;
   return $x unless ref($x);
-  my $part_svc = $x;
+  #my $part_svc = $x;
 
   my($recref) = $self->hashref;
 
@@ -238,7 +238,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: svc_acct_sm.pm,v 1.4 2001-08-20 09:41:52 ivan Exp $
+$Id: svc_acct_sm.pm,v 1.5 2001-09-06 20:41:59 ivan Exp $
 
 =head1 BUGS
 
