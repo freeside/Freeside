@@ -469,7 +469,9 @@ sub cardsearch {
   $card =~ /^(\d{13,16})$/ or eidiot "Illegal card number\n";
   my($payinfo)=$1;
 
-  [ qsearch('cust_main',{'payinfo'=>$payinfo, 'payby'=>'CARD'}) ];
+  [ qsearch('cust_main',{'payinfo'=>$payinfo, 'payby'=>'CARD'}) 
+    qsearch('cust_main',{'payinfo'=>$payinfo, 'payby'=>'DCRD'})
+  ];
 }
 
 sub referralsearch {

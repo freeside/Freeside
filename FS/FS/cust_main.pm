@@ -159,7 +159,7 @@ FS::Record.  The following fields are currently supported:
 
 =item ship_fax - phone (optional)
 
-=item payby - `CARD' (credit cards), `CHEK' (electronic check), `LECB' (Phone bill billing), `BILL' (billing), `COMP' (free), or `PREPAY' (special billing type: applies a credit - see L<FS::prepay_credit> and sets billing type to BILL)
+=item payby - I<CARD> (credit card - automatic), I<DCRD> (credit card - on-demand), I<CHEK> (electronic check - automatic), I<DCHK> (electronic check - on-demand), I<LECB> (Phone bill billing), I<BILL> (billing), I<COMP> (free), or I<PREPAY> (special billing type: applies a credit - see L<FS::prepay_credit> and sets billing type to I<BILL>)
 
 =item payinfo - card number, P.O., comp issuer (4-8 lowercase alphanumerics; think username) or prepayment identifier (see L<FS::prepay_credit>)
 
@@ -700,11 +700,11 @@ sub check {
     }
   }
 
-  $self->payby =~ /^(CARD|CHEK|LECB|BILL|COMP|PREPAY)$/
+  $self->payby =~ /^(CARD|DCRD|CHEK|DCHK|LECB|BILL|COMP|PREPAY)$/
     or return "Illegal payby: ". $self->payby;
   $self->payby($1);
 
-  if ( $self->payby eq 'CARD' ) {
+  if ( $self->payby eq 'CARD' || $self->payby eq 'DCRD' ) {
 
     my $payinfo = $self->payinfo;
     $payinfo =~ s/\D//g;
@@ -717,7 +717,7 @@ sub check {
     return gettext('unknown_card_type')
       if cardtype($self->payinfo) eq "Unknown";
 
-  } elsif ( $self->payby eq 'CHEK' ) {
+  } elsif ( $self->payby eq 'CHEK' || $self->payby eq 'DCHK' ) {
 
     my $payinfo = $self->payinfo;
     $payinfo =~ s/[^\d\@]//g;
@@ -770,7 +770,9 @@ sub check {
   }
 
   if ( $self->payname eq '' && $self->payby ne 'CHEK' &&
-       ( ! $conf->exists('require_cardname') || $self->payby ne 'CARD' ) ) {
+       ( ! $conf->exists('require_cardname')
+         || $self->payby !~ /^(CARD|DCRD)$/  ) 
+  ) {
     $self->payname( $self->first. " ". $self->getfield('last') );
   } else {
     $self->payname =~ /^([\w \,\.\-\']+)$/
@@ -1244,8 +1246,9 @@ sub bill {
 (Attempt to) collect money for this customer's outstanding invoices (see
 L<FS::cust_bill>).  Usually used after the bill method.
 
-Depending on the value of `payby', this may print an invoice (`BILL'), charge
-a credit card (`CARD'), or just add any necessary (pseudo-)payment (`COMP').
+Depending on the value of `payby', this may print or email an invoice (I<BILL>,
+I<DCRD>, or I<DCHK>), charge a credit card (I<CARD>), charge via electronic
+check/ACH (I<CHEK>), or just add any necessary (pseudo-)payment (I<COMP>).
 
 Most actions are now triggered by invoice events; see L<FS::part_bill_event>
 and the invoice events web interface.

@@ -113,7 +113,7 @@ the bill and collect methods of a cust_main object.  See L<FS::cust_main>.
   -d: Pretend it's 'date'.  Date is in any format Date::Parse is happy with,
       but be careful.
 
-  -p: Only process customers with the specified payby (CARD, CHEK, BILL, COMP, LECB)
+  -p: Only process customers with the specified payby (I<CARD>, I<DCRD>, I<CHEK>, I<DCHK>, I<BILL>, I<COMP>, I<LECB>)
 
   -v: enable debugging
 

@@ -97,7 +97,7 @@ foreach my $customer (@customers)
   my $expire_time = timelocal(0,0,0,$payday,--$paymonth,$payyear);
 
   #credit cards expire at the end of the month/year of their exp date
-  if ($payby eq 'CARD') {
+  if ($payby eq 'CARD' || $payby eq 'DCRD') {
     ($paymonth < 11) ? $paymonth++ : ($paymonth=0, $payyear++);
     $expire_time = timelocal(0,0,0,$payday,$paymonth,$payyear);
     $expire_time--;
@@ -127,7 +127,7 @@ foreach my $customer (@customers)
         $FS::alerter::_template::first = $first;
         $FS::alerter::_template::last = $last;
         $FS::alerter::_template::company = $company;
-        if ($payby eq 'CARD') {
+        if ($payby eq 'CARD' || $payby eq 'DCRD') {
           $FS::alerter::_template::payby = "credit card (" .
             substr($payinfo, 0, 2) . "xxxxxxxxxx" .
             substr($payinfo, -4) . ")";
@@ -202,7 +202,7 @@ user: From the mapsecrets file - see config.html from the base documentation
 
 =head1 VERSION
 
-$Id: freeside-expiration-alerter,v 1.4 2002-09-16 09:27:14 ivan Exp $
+$Id: freeside-expiration-alerter,v 1.5 2003-04-21 20:53:57 ivan Exp $
 
 =head1 BUGS
 

@@ -291,6 +291,8 @@ foreach my $aref (
   [ 'COMP', 'Comp invoice', '$cust_bill->comp();', 30, 'comp' ],
   [ 'CARD', 'Batch card', '$cust_bill->batch_card();', 40, 'batch-card' ],
   [ 'BILL', 'Send invoice', '$cust_bill->send();', 50, 'send' ],
+  [ 'DCRD', 'Send invoice', '$cust_bill->send();', 50, 'send' ],
+  [ 'DCHK', 'Send invoice', '$cust_bill->send();', 50, 'send' ],
 ) {
 
   my $part_bill_event = new FS::part_bill_event({

@@ -905,7 +905,7 @@ httemplate/docs/config.html
     'section'     => '',
     'description' => 'Acceptable payment types for the signup server',
     'type'        => 'selectmultiple',
-    'select_enum' => [ qw(CARD CHEK LECB PREPAY BILL COMP) ],
+    'select_enum' => [ qw(CARD DCRD CHEK DCHK LECB PREPAY BILL COMP) ],
   },
 
   {
@@ -1013,7 +1013,7 @@ httemplate/docs/config.html
     'section'     => 'UI',
     'description' => 'Default payment type.  HIDE disables display of billing information and sets customers to BILL.',
     'type'        => 'select',
-    'select_enum' => [ '', qw(CARD CHEK LECB BILL COMP HIDE) ],
+    'select_enum' => [ '', qw(CARD DCRD CHEK DCHK LECB BILL COMP HIDE) ],
   },
 
   {
