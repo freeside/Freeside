@@ -979,7 +979,7 @@ sub bill {
     my $sdate;
     if ( $part_pkg->getfield('freq') > 0 &&
          ! $cust_pkg->getfield('susp') &&
-         ( $cust_pkg->getfield('bill') || 0 ) < $time
+         ( $cust_pkg->getfield('bill') || 0 ) <= $time
     ) {
       my $recur_prog = $part_pkg->getfield('recur');
       $recur_prog =~ /^(.*)$/ or do {
