@@ -1165,18 +1165,20 @@ sub bill {
 
         unless ( $self->tax =~ /Y/i || $self->payby eq 'COMP' ) {
 
-          my @taxes =  qsearch( 'cust_main_county', {
-                                  'state'    => $self->state,
-                                  'county'   => $self->county,
-                                  'country'  => $self->country,
-                                  'taxclass' => $part_pkg->taxclass,
-                                                                      } )
-                    || qsearch( 'cust_main_county', {
+          my @taxes = qsearch( 'cust_main_county', {
+                                 'state'    => $self->state,
+                                 'county'   => $self->county,
+                                 'country'  => $self->country,
+                                 'taxclass' => $part_pkg->taxclass,
+                                                                      } );
+          unless ( @taxes ) {
+            @taxes =  qsearch( 'cust_main_county', {
                                   'state'    => $self->state,
                                   'county'   => $self->county,
                                   'country'  => $self->country,
                                   'taxclass' => '',
                                                                       } );
+          }
 
           # maybe eliminate this entirely, along with all the 0% records
           unless ( @taxes ) {
