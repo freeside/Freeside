@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: susp_pkg.cgi,v 1.5 1999-02-28 00:03:52 ivan Exp $
+# $Id: susp_pkg.cgi,v 1.6 1999-04-08 10:35:02 ivan Exp $
 #
 # Usage: susp_pkg.cgi pkgnum
 #        http://server.name/path/susp_pkg.cgi pkgnum
@@ -21,7 +21,10 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # $Log: susp_pkg.cgi,v $
-# Revision 1.5  1999-02-28 00:03:52  ivan
+# Revision 1.6  1999-04-08 10:35:02  ivan
+# import necessary subroutines from FS::CGI
+#
+# Revision 1.5  1999/02/28 00:03:52  ivan
 # removed misleading comments
 #
 # Revision 1.4  1999/01/19 05:14:08  ivan
@@ -41,6 +44,7 @@ use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
 use FS::Record qw(qsearchs);
+use FS::CGI qw(popurl eidiot);
 use FS::cust_pkg;
 
 $cgi = new CGI;
