@@ -105,7 +105,7 @@ if ($pkgnum) {
           qsearchs( 'svc_domain', { 'svcnum' => $i_cust_svc->svcnum } );
 
         my $extra_sql = "AND ( rectype = 'A' OR rectype = 'CNAME' )";
-        if ( $conf->exists('svc_www-enable_subdomains') ) {
+        unless ( $conf->exists('svc_www-enable_subdomains') ) {
           $extra_sql .= " AND ( reczone = '@' OR reczone = '".
                         $svc_domain->domain. ".' )";
         }
