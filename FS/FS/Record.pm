@@ -204,7 +204,10 @@ sub qsearch {
   my $dbh = dbh;
 
   my $table = $cache ? $cache->table : $stable;
-  my $pkey = $dbdef->table($table)->primary_key;
+  my $dbdef_table = $dbdef->table($table)
+    or die "No schema for table $table found - ".
+           "do you need to create it or run dbdef-create?";
+  my $pkey = $dbdef_table->primary_key;
 
   my @real_fields = grep exists($record->{$_}), real_fields($table);
   my @virtual_fields = grep exists($record->{$_}), "FS::$table"->virtual_fields;
