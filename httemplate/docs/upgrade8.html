@@ -106,8 +106,12 @@ CREATE TABLE queue (
   jobnum int primary key,
   job text not null,
   _date int not null,
-  status varchar(80) not null
+  status varchar(80) not null,
+  statustext text null,
+  svcnum int null
 );
+CREATE INDEX queue1 ON queue ( svcnum );
+CREATE INDEX queue2 ON queue ( status );
 
 CREATE TABLE queue_arg (
   argnum int primary key,
@@ -161,11 +165,11 @@ CREATE INDEX part_export2 ON part_export ( exporttype );
 CREATE INDEX part_export_option (
   optionnum int primary key,
   exportnum int not null,
-  option varchar(80) not null,
+  optionname varchar(80) not null,
   optionvalue text NULL
 );
 CREATE INDEX part_export_option1 ON part_export_option ( exportnum );
-CREATE INDEX part_export_option2 ON part_export_option ( option );
+CREATE INDEX part_export_option2 ON part_export_option ( optionname );
 
 ALTER TABLE svc_acct ADD domsvc integer NOT NULL;
 ALTER TABLE svc_domain ADD catchall integer NULL;
