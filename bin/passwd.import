@@ -1,5 +1,5 @@
 #!/usr/bin/perl -Tw
-# $Id: passwd.import,v 1.7 2003-06-12 14:06:06 ivan Exp $
+# $Id: passwd.import,v 1.8 2003-06-12 14:08:00 ivan Exp $
 
 use strict;
 use vars qw(%part_svc);
@@ -14,7 +14,7 @@ use FS::part_svc;
 my $user = shift or die &usage;
 adminsuidsetup $user;
 
-push @FS::svc_acct::shells, qw(/bin/sync /sbin/shutdown /bin/halt); #others?
+push @FS::svc_acct::shells, qw(/bin/sync /sbin/shutdown /bin/halt /sbin/halt); #others?
 
 my($spooldir)="/usr/local/etc/freeside/export.". datasrc;
 
