@@ -159,7 +159,7 @@ if ( $cgi->param('browse')
   }
 
   my @just_cust_main;
-  if ( driver_name eq /mysql/ ) {
+  if ( driver_name eq 'mysql' ) {
     @just_cust_main = qsearch('cust_main', \%search, 'cust_main.*',
                               ",temp1_$$,temp2_$$ $ncancelled $orderby $limit");
   } else {

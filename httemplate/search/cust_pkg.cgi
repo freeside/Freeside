@@ -86,7 +86,7 @@ if ( $cgi->param('magic') && $cgi->param('magic') eq 'bill' ) {
                       WHERE cust_pkg.pkgnum = cust_svc.pkgnum
                       AND cust_svc.svcpart = pkg_svc.svcpart
                       AND cust_pkg.pkgpart = pkg_svc.pkgpart
-                      GROUP BY cust_svc.pkgnum,cust_svc.svcnum";
+                      GROUP BY cust_svc.pkgnum,cust_svc.svcpart";
       $sth = dbh->prepare($query) or die dbh->errstr. " preparing $query";
          
       $sth->execute or die "Error executing \"$query\": ". $sth->errstr;
@@ -129,12 +129,9 @@ if ( $cgi->param('magic') && $cgi->param('magic') eq 'bill' ) {
   
   $total = $sth->fetchrow_arrayref->[0];
 
-  #if ( driver_name eq 'mysql' ) { #remove ORDER BY for mysql?  hua?
-  #  @cust_pkg = qsearch('cust_pkg',{}, '', "$unconf $limit" );
-  #} else {
-  #  @cust_pkg = qsearch('cust_pkg',{}, '', "$unconf ORDER BY pkgnum $limit" );
-  #}                                            
-  @cust_pkg = qsearch('cust_pkg',{}, '', "$unconf ORDER BY pkgnum $limit" );
+  my $tblname = driver_name eq 'mysql' ? 'cust_pkg.' : '';
+  @cust_pkg =
+    qsearch('cust_pkg',{}, '', "$unconf ORDER BY ${tblname}pkgnum $limit" );
 
   if ( driver_name eq 'mysql' ) {
     $query = "DROP TABLE temp1_$$,temp2_$$;";

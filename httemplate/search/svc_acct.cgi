@@ -64,11 +64,6 @@ if ( $query eq 'svcnum' || $query eq 'username' || $query eq 'uid' ) {
 
   $total = $sth->fetchrow_arrayref->[0];
 
-  #if ( driver_name eq 'mysql' ) { #remove ORDER BY for mysql?  hua?
-  #  @svc_acct = qsearch('svc_acct', {}, '', "$unlinked $limit");
-  #} else {
-  #  @svc_acct = qsearch('svc_acct', {}, '', "$unlinked $orderby $limit");
-  #}
   @svc_acct = qsearch('svc_acct', {}, '', "$unlinked $orderby $limit");
 
 }
