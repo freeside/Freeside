@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: cust_main.cgi,v 1.10 2001-10-30 15:39:27 ivan Exp $ -->
+#<!-- $Id: cust_main.cgi,v 1.11 2001-10-30 15:41:00 ivan Exp $ -->
 
 use vars qw( $cgi $custnum $action $cust_main $p1 @agents $agentnum 
              $last $first $ss $company $address1 $address2 $city $zip 
@@ -183,10 +183,10 @@ $cust_main->country( $countrydefault ) unless $cust_main->country;
 $cust_main->state( $conf->config('statedefault') || 'CA' )
   unless $cust_main->state || $cust_main->country ne 'US';
 foreach ( sort {
-     $a->country eq $countrydefault <=> $b->country eq $countrydefault
-  or $a->country                    cmp $b->country
-  or $a->state                      cmp $b->state
-  or $a->county                     cmp $b->county
+     ( $a->country eq $countrydefault ) <=> ( $b->country eq $countrydefault )
+  or $a->country                        cmp $b->country
+  or $a->state                          cmp $b->state
+  or $a->county                         cmp $b->county
 } qsearch('cust_main_county',{}) ) {
   print "<OPTION";
   print " SELECTED" if ( $cust_main->state eq $_->state
