@@ -941,7 +941,7 @@ sub print_latex {
     'zip'          => _latex_escape($cust_main->zip),
     'country'      => _latex_escape($cust_main->country),
     'footer'       => join("\n", $conf->config('invoice_latexfooter') ),
-    'smallfooter'  => $conf->config('invoice_latexsmallfooter'),
+    'smallfooter'  => join("\n", $conf->config('invoice_latexsmallfooter') ),
     'quantity'     => 1,
     'terms'        => $conf->config('invoice_default_terms') || 'Payable upon receipt',
     #'notes'        => join("\n", $conf->config('invoice_latexnotes') ),
@@ -958,6 +958,7 @@ sub print_latex {
     );
 
   $invoice_data{'footer'} =~ s/\n+$//;
+  $invoice_data{'smallfooter'} =~ s/\n+$//;
   $invoice_data{'notes'} =~ s/\n+$//;
 
   $invoice_data{'po_line'} =
@@ -1152,7 +1153,7 @@ sub print_pdf {
   open(PDF, "<$file.pdf")
     or die "can't open $file.pdf (probably error in LaTeX tempalte: $!\n";
 
-  unlink("$file.dvi", "$file.log", "$file.aux", "$file.pdf", "$file.tex");
+#  unlink("$file.dvi", "$file.log", "$file.aux", "$file.pdf", "$file.tex");
 
   my $pdf = '';
   while (<PDF>) {
@@ -1263,20 +1264,31 @@ sub _items_cust_bill_pkg {
       my $part_pkg = qsearchs('part_pkg', { pkgpart=>$cust_pkg->pkgpart } );
       my $pkg = $part_pkg->pkg;
 
+      my %labels;
+      #tie %labels, 'Tie::IxHash';
+      push @{ $labels{$_->[0]} }, $_->[1] foreach $cust_pkg->labels;
+      my @ext_description;
+      foreach my $label ( keys %labels ) {
+        my @values = @{ $labels{$label} };
+        my $num = scalar(@values);
+        if ( $num > 5 ) {
+          push @ext_description, "$label ($num)";
+        } else {
+          push @ext_description, map { "$label: $_" } @values;
+        }
+      }
+
       if ( $cust_bill_pkg->setup != 0 ) {
         my $description = $pkg;
         $description .= ' Setup' if $cust_bill_pkg->recur != 0;
-        my @d = ();
-        @d = $cust_bill_pkg->details if $cust_bill_pkg->recur == 0;
+        my @d = @ext_description;
+        push @d, $cust_bill_pkg->details if $cust_bill_pkg->recur == 0;
         push @b, {
           'description'     => $description,
           #'pkgpart'         => $part_pkg->pkgpart,
           'pkgnum'          => $cust_pkg->pkgnum,
           'amount'          => sprintf("%10.2f", $cust_bill_pkg->setup),
-          'ext_description' => [ ( map { $_->[0]. ": ". $_->[1] }
-                                         $cust_pkg->labels        ),
-                                 @d,
-                               ],
+          'ext_description' => \@d,
         };
       }
 
@@ -1288,8 +1300,7 @@ sub _items_cust_bill_pkg {
           #'pkgpart'         => $part_pkg->pkgpart,
           'pkgnum'          => $cust_pkg->pkgnum,
           'amount'          => sprintf("%10.2f", $cust_bill_pkg->recur),
-          'ext_description' => [ ( map { $_->[0]. ": ". $_->[1] }
-                                       $cust_pkg->labels          ),
+          'ext_description' => [ @ext_description,
                                  $cust_bill_pkg->details,
                                ],
         };
