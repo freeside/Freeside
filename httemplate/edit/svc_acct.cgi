@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: svc_acct.cgi,v 1.6 2001-09-04 14:44:06 ivan Exp $ -->
+#<!-- $Id: svc_acct.cgi,v 1.7 2001-09-11 23:44:01 ivan Exp $ -->
 
 use strict;
 use vars qw( $conf $cgi @shells $action $svcnum $svc_acct $pkgnum $svcpart
@@ -13,6 +13,7 @@ use FS::CGI qw(header popurl);
 use FS::Record qw(qsearch qsearchs fields);
 use FS::svc_acct;
 use FS::Conf;
+use FS::raddb;
 
 $cgi = new CGI;
 &cgisuidsetup($cgi);
@@ -68,11 +69,12 @@ if ( $cgi->param('error') ) {
     }
 
     #set fixed and default fields from part_svc
-    my($field);
-    foreach $field ( fields('svc_acct') ) {
-      if ( $part_svc->getfield('svc_acct__'. $field. '_flag') ne '' ) {
-        $svc_acct->setfield($field,$part_svc->getfield('svc_acct__'. $field) );
-      }
+    foreach my $part_svc_column (
+      grep { $_->columnflag } $part_svc->all_part_svc_column
+    ) {
+      $svc_acct->setfield( $part_svc_column->columnname,
+                           $part_svc_column->columnvalue,
+                         );
     }
 
   }
@@ -118,18 +120,19 @@ END
 
 #domain
 $domsvc = $svc_acct->domsvc || 0;
-if ( $part_svc->svc_acct__domsvc_flag eq 'F' ) {
+if ( $part_svc->part_svc_column('domsvc')->columnflag eq 'F' ) {
   print qq!<INPUT TYPE="hidden" NAME="domsvc" VALUE="$domsvc">!;
 } else { 
   my @svc_domain = ();
-  if ( $part_svc->svc_acct__domsvc_flag eq 'D' ) {
-    my $svc_domain =
-      qsearchs('svc_domain', { 'svcnum' => $part_svc->svc_acct__domsvc } );
+  if ( $part_svc->part_svc_column('domsvc')->columnflag eq 'D' ) {
+    my $svc_domain = qsearchs('svc_domain', {
+      'svcnum' => $part_svc->part_svc_column('domsvc')->columnvalue,
+    } );
     if ( $svc_domain ) {
       push @svc_domain, $svc_domain;
     } else {
-      warn "unknown svc_domain.svcnum for part_svc.svc_acct__domsvc: ".
-           $part_svc->svc_acct__domsvc;
+      warn "unknown svc_domain.svcnum for part_svc_column domsvc: ".
+           $part_svc->part_svc_column('domsvc')->columnvalue;
     }
   }
   my $cust_pkg = qsearchs('cust_pkg', { 'pkgnum' => $pkgnum } );
@@ -157,7 +160,7 @@ if ( $part_svc->svc_acct__domsvc_flag eq 'F' ) {
 
 #pop
 $popnum = $svc_acct->popnum || 0;
-if ( $part_svc->svc_acct__popnum_flag eq "F" ) {
+if ( $part_svc->part_svc_column('popnum')->columnflag eq "F" ) {
   print qq!<INPUT TYPE="hidden" NAME="popnum" VALUE="$popnum">!;
 } else { 
   print qq!<BR>POP: <SELECT NAME="popnum" SIZE=1><OPTION>\n!;
@@ -189,7 +192,7 @@ print <<END;
 END
 
 $shell = $svc_acct->shell;
-if ( $part_svc->svc_acct__shell_flag eq "F" ) {
+if ( $part_svc->part_svc_column('shell')->columnflag eq "F" ) {
   print qq!<INPUT TYPE="hidden" NAME="shell" VALUE="$shell">!;
 } else {
   print qq!<BR>Shell: <SELECT NAME="shell" SIZE=1>!;
@@ -208,10 +211,22 @@ if ( $part_svc->svc_acct__shell_flag eq "F" ) {
 
 print qq!<INPUT TYPE="hidden" NAME="quota" VALUE="$quota">!;
 
-if ( $part_svc->svc_acct__slipip_flag eq "F" ) {
+if ( $part_svc->part_svc_column('slipip')->columnflag eq "F" ) {
   print qq!<INPUT TYPE="hidden" NAME="slipip" VALUE="$slipip">!;
 } else {
   print qq!<BR>IP: <INPUT TYPE="text" NAME="slipip" VALUE="$slipip">!;
+}
+
+foreach my $r ( grep { /^r(adius|[cr])_/ } fields('svc_acct') ) {
+  $r =~ /^^r(adius|[cr])_(.+)$/ or next; #?
+  my $a = $2;
+  if ( $part_svc->part_svc_column($r)->columnflag eq 'F' ) {
+    print qq!<INPUT TYPE="hidden" NAME="$r" VALUE="!.
+          $svc_acct->getfield($r). '">';
+  } else {
+    print qq!<BR>$FS::raddb::attrib{$a}: <INPUT TYPE="text" NAME="$r" VALUE="!.
+          $svc_acct->getfield($r). '">';
+  }
 }
 
 #submit

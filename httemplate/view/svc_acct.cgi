@@ -1,5 +1,5 @@
 <%
-# <!-- $Id: svc_acct.cgi,v 1.3 2001-08-21 02:31:57 ivan Exp $ -->
+# <!-- $Id: svc_acct.cgi,v 1.4 2001-09-11 23:44:01 ivan Exp $ -->
 
 use strict;
 use vars qw( $conf $cgi $svc_domain $query $svcnum $svc_acct $cust_svc $pkgnum
@@ -15,6 +15,7 @@ use FS::cust_svc;
 use FS::cust_pkg;
 use FS::part_svc;
 use FS::svc_acct_pop;
+use FS::raddb;
 
 $cgi = new CGI;
 &cgisuidsetup($cgi);
@@ -101,9 +102,14 @@ if ($svc_acct->slipip) {
   foreach $attribute ( grep /^radius_/, fields('svc_acct') ) {
     #warn $attribute;
     $attribute =~ /^radius_(.*)$/;
-    my($pattribute) = ($1);
-    $pattribute =~ s/_/-/g;
-    print "<BR>Radius $pattribute: <B>". $svc_acct->getfield($attribute), "</B>";
+    my $pattribute = $FS::raddb::attrib{$1};
+    print "<BR>Radius (reply) $pattribute: <B>". $svc_acct->getfield($attribute), "</B>";
+  }
+  foreach $attribute ( grep /^rc_/, fields('svc_acct') ) {
+    #warn $attribute;
+    $attribute =~ /^rc_(.*)$/;
+    my $pattribute = $FS::raddb::attrib{$1};
+    print "<BR>Radius (check) $pattribute: <B>". $svc_acct->getfield($attribute), "</B>";
   }
 } else {
   print "<BR><BR>(No SLIP/PPP account)";

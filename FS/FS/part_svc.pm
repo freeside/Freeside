@@ -40,10 +40,6 @@ FS::Record.  The following fields are currently supported:
 =item svcdb - table used for this service.  See L<FS::svc_acct>,
 L<FS::svc_domain>, and L<FS::svc_forward>, among others.
 
-=item I<svcdb>__I<field> - Default or fixed value for I<field> in I<svcdb>.
-
-=item I<svcdb>__I<field>_flag - defines I<svcdb>__I<field> action: null, `D' for default, or `F' for fixed
-
 =back
 
 =head1 METHODS
@@ -63,6 +59,7 @@ sub table { 'part_svc'; }
 
 Adds this service definition to the database.  If there is an error, returns
 the error, otherwise returns false.
+
 =item I<svcdb>__I<field> - Default or fixed value for I<field> in I<svcdb>.
 
 =item I<svcdb>__I<field>_flag - defines I<svcdb>__I<field> action: null, `D' for default, or `F' for fixed
@@ -285,11 +282,20 @@ sub part_svc_column {
                                };
 }
 
+=item all_part_svc_column
+
+=cut
+
+sub all_part_svc_column {
+  my $self = shift;
+  qsearch('part_svc_column', { 'svcpart' => $self->svcpart } );
+}
+
 =back
 
 =head1 VERSION
 
-$Id: part_svc.pm,v 1.4 2001-09-11 00:08:18 ivan Exp $
+$Id: part_svc.pm,v 1.5 2001-09-11 23:44:01 ivan Exp $
 
 =head1 BUGS
 

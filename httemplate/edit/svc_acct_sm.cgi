@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: svc_acct_sm.cgi,v 1.3 2001-09-11 20:59:32 ivan Exp $ -->
+#<!-- $Id: svc_acct_sm.cgi,v 1.4 2001-09-11 23:44:01 ivan Exp $ -->
 
 use strict;
 use vars qw( $conf $cgi $mydomain $action $svcnum $svc_acct_sm $pkgnum $svcpart
@@ -57,11 +57,12 @@ if ( $cgi->param('error') ) {
     $svcnum='';
 
     #set fixed and default fields from part_svc
-    my($field);
-    foreach $field ( fields('svc_acct_sm') ) {
-      if ( $part_svc->getfield('svc_acct_sm__'. $field. '_flag') ne '' ) {
-        $svc_acct_sm->setfield($field,$part_svc->getfield('svc_acct_sm__'. $field) );
-      }
+    foreach my $part_svc_column (
+      grep { $_->columnflag } $part_svc->all_part_svc_column
+    ) {
+      $svc_acct_sm->setfield( $part_svc_column->columnname,
+                              $part_svc_column->columnvalue,
+                            );
     }
 
   }
