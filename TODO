@@ -1,10 +1,89 @@
-$Id: TODO,v 1.53 2000-12-03 20:25:20 ivan Exp $
+$Id: TODO,v 1.54 2000-12-11 01:10:15 ivan Exp $
 
 If you are interested in helping with any of these, please join the
 *development* mailing list (send a blank message to
 ivan-freeside-devel-subscribe@sisd.com) to avoid duplication of effort.
 
 ---
+
+wishlist wrt projects/consulting from jivko@ijs.com:
+>The other thing, which is the serious part, is the following: We do not
+>offer dial-up services and that part of the system does not have to work,
+>but we have many customer, for which we do both hosting and consulting work.
+.
+>The hosting can be handled by freeside fine, but in the little time I spent 
+>on it I could not see how exactly to solve the consulting problem. What I
+>would love to see there is a way to create 'projects' for each customer and
+>ability to follow up on those (I mean to be able to add new comments,
+>descriptions, progress updates etc.). You already have the feature, which
+>allows multiple people to access the system with different access rights so
+>it should be possible to make it keep track of who and when updated given
+>'project' so we could have the developers access the database and update
+>the projects they are working on.
+.
+Hmm.  Is this accurate:  Each project is related to a single customer, and
+zero or more packages (billing items).  Each project has a name, due date,    
+and zero or more log entries consisting of date, user, and a text field
+(for "new comments, descriptions, progress updates etc." - would you like
+anything more specific?)
+
+In conjunction with that it looks like you need the ability to create
+"one-off" packages on the fly for arbitrary charges.
+
+> Additionally it would be nice to have a page, where all open projects can
+> be listed and not only that but be able list them by date too. (Say I want
+> to find out which projects are due today or two days from today, or which
+> projects are running late)
+.
+Browse/search project by date and customer.
+.
+> Finally it would be real nice if the billing script could add the cost for
+> all completed projects (or work done by the hour) to the monthly bill along   
+> with the hosting information and using the description of the work from the
+> 'project' table. 
+.
+Can you be more specific about your needs here?
+.
+> This is a lot of work, unless you disagree :-), and I would not expect you
+> to do all of it - we can work on it too - but I would hope for you to lead 
+> the effort.
+.
+I'm trying to get a handle on specifically what you need.
+.
+> Oh, and there is one more thing, but that should be simple to do. I would
+> like to be able to give the customers access to selected information from
+> their account. I want them to be able to monitor the progress of their
+> projects and the status of their accounts. 
+.
+Ok.
+.
+> Does all this make sense? It must be close to what you need at your office
+> though or at least I think so.
+.
+Yes, but we're small and have been tracking projects manually.
+.
+.
+>You may have this already .. what I have in mind is the following. Say you
+>have a customer for which you do hosting and some consulting (CGI, JAVA
+>etc) At the end of the month you need to bill the customer for the hosting,
+>35hours of Java programming and 10 hours of HTML authoring. The last two
+>are not because the project is over but because the work was done during
+>that month.
+>
+>So the way I see it, and it could be wrong, is that during the month the
+>people who work on particular project enter their comments and time spent
+>on the project. At the end of the month the billing script generates
+>invoices in which besides the hosting charges there are also charges for
+>work done during the period.
+>
+>Currently we do this in a very stupid way by maintaining a customer file,
+>in which a script saves things to be invoiced. At the end of the month a
+>script goes through these files and generates invoices with all items from
+>the files, which have not been flagged as 'paid'. The convenience of this
+>is that no one needs to worry about the invoices containing the items they
+>need to contain.
+
+
 
 first package select field in edit/cust_main.cgi isn't sticky on errors, yuck
 
