@@ -126,8 +126,6 @@ while (1) {
 
     my @invoicing_list = split( /\s*\,\s*/, $invoicing_list );
 
-    $error ||= $cust_main->check_invoicing_list( \@invoicing_list );
-
     my $part_pkg = qsearchs( 'part_pkg', { 'pkgpart' => $pkgpart } )
       or $error ||= "WARNING: unknown pkgpart $pkgpart";
     my $svcpart = $part_pkg->svcpart unless $error;
@@ -164,21 +162,10 @@ while (1) {
     use Tie::RefHash;
     tie my %hash, 'Tie::RefHash';
     %hash = ( $cust_pkg => [ $svc_acct ] );
-    $error ||= $cust_main->insert( \%hash );
-    #if ( $cust_pkg && ! $error ) { #in this case, $cust_pkg should always
-    #                               #be definied, but....
-    #  $cust_pkg->custnum( $cust_main->custnum );
-    #  $error ||= $cust_pkg->insert; 
-    #  warn "WARNING: $error on pre-checked cust_pkg record!" if $error;
-    #  $svc_acct->pkgnum( $cust_pkg->pkgnum );
-    #  $error ||= $svc_acct->insert;
-    #  warn "WARNING: $error on pre-checked svc_acct record!" if $error;
-    #}
+    $error ||= $cust_main->insert( \%hash, \@invoicing_list );
 
     warn "[fs_signup_server] Sending results...\n" if $Debug;
     print $writer $error, "\n";
-
-    $cust_main->invoicing_list( \@invoicing_list ) unless $error;
 
   }
   close $writer;
