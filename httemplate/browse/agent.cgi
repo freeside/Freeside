@@ -75,8 +75,8 @@ foreach my $agent ( sort {
           <BR><FONT COLOR="#FF0000"><B><%= $num_cancelled %></B></FONT>
             cancelled
         </TD>
-        <TD>$hashref->{freq}</TD>
-        <TD>$hashref->{prog}</TD>
+        <TD><%= $agent->freq %></TD>
+        <TD><%= $agent->prog %></TD>
       </TR>
 
 <% } %>
