@@ -96,7 +96,7 @@ sub check {
   $identifier =~ s/\W//g; #anything else would just confuse things
   $self->identifier($identifier);
 
-  $self->ut_number('prepaynum')
+  $self->ut_numbern('prepaynum')
   || $self->ut_alpha('identifier')
   || $self->ut_money('amount')
   ;
@@ -107,7 +107,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: prepay_credit.pm,v 1.1 2000-01-31 05:22:23 ivan Exp $
+$Id: prepay_credit.pm,v 1.2 2000-02-02 20:22:18 ivan Exp $
 
 =head1 BUGS
 
@@ -118,7 +118,10 @@ L<FS::Record>, schema.html from the base documentation.
 =head1 HISTORY
 
 $Log: prepay_credit.pm,v $
-Revision 1.1  2000-01-31 05:22:23  ivan
+Revision 1.2  2000-02-02 20:22:18  ivan
+bugfix prepayment in signup server
+
+Revision 1.1  2000/01/31 05:22:23  ivan
 prepaid "internet cards"
 
 

@@ -399,7 +399,7 @@ sub check {
 
   }
 
-  if ( $self->paydate eq '' ) {
+  if ( $self->paydate eq '' || $self->paydate eq '-' ) {
     return "Expriation date required"
       unless $self->payby eq 'BILL' || $self->payby eq 'PREPAY';
     $self->paydate('');
@@ -993,7 +993,7 @@ sub check_invoicing_list {
 
 =head1 VERSION
 
-$Id: cust_main.pm,v 1.3 2000-01-31 05:22:23 ivan Exp $
+$Id: cust_main.pm,v 1.4 2000-02-02 20:22:18 ivan Exp $
 
 =head1 BUGS
 

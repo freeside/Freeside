@@ -1,0 +1,32 @@
+#!/usr/bin/perl -w
+
+use strict;
+use FS::UID qw(adminsuidsetup);
+use FS::prepay_credit;
+
+require 5.004; #srand(time|$$);
+
+my $user = shift or die &usage;
+&adminsuidsetup( $user );
+
+my $amount = shift or die &usage;
+
+my $num_digits = shift or die &usage;
+
+my $num_entries = shift or die &usage;
+
+for ( 1 .. $num_entries ) {
+  my $identifier = join( '', map int(rand(10)), ( 1 .. $num_digits ) );
+  my $prepay_credit = new FS::prepay_credit {
+    'identifier' => $identifier,
+    'amount'     => $amount,
+  };
+  my $error = $prepay_credit->insert;
+  die $error if $error;
+  print "$identifier\n";
+}
+
+sub usage {
+  die "Usage:\n\n  generate-prepay user amount num_digits num_entries";
+}
+

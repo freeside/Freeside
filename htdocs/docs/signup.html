@@ -42,6 +42,6 @@ Optional:
     <li>$email_name - first and last name
   </ul>
   (an example file is included as <b>fs_signup/ieak.template</b>)
-  <li>If there are any entries in the <i>prepay_credit</i> table, a user can enter a string matching the <b>identifier</i> column to receive the credit specified in the <b>amount</b> column, after which that <b>identifier</b> is no longer valid.  This can be used to implement pre-paid "calling card" type signups.
+  <li>If there are any entries in the <i>prepay_credit</i> table, a user can enter a string matching the <b>identifier</i> column to receive the credit specified in the <b>amount</b> column, after which that <b>identifier</b> is no longer valid.  This can be used to implement pre-paid "calling card" type signups.  The <i>bin/generate-prepay</i> script can be used to populate the <i>prepay_credit</i> table.
 </ul>
 </body>
