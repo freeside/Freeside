@@ -47,6 +47,7 @@
         <li>plan - eventcode plan
         <li>plandata - additional plan data
         <li>disabled - Disabled flag, empty or `Y'
+        <li>taxclass - Texas tax class flag, empty or "none", "access", or "hosting"
       </ul>
     <li><a name="cust_bill_pkg" href="man/FS/cust_bill_pkg.html">cust_bill_pkg</a> - Invoice line items
       <ul>
@@ -130,6 +131,16 @@
         <li>county
         <li>country
         <li>tax - % rate
+        <li>taxclass
+        <li>exempt_amount
+      </ul>
+    <li><a name="cust_tax_exempt" href="man/FS/cust_tax_exempt.html">cust_tax_exempt</a> - Tax exemption record
+      <ul>
+        <li>exemptnum - primary key
+        <li>taxnum - <a href="#cust_main_county">tax rate</a>
+        <li>year
+        <li>month
+        <li>amount
       </ul>
     <li><a name="cust_pay" href="man/FS/cust_pay.html">cust_pay</a> - Payments.  Money being transferred from a customer.
       <ul>

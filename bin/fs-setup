@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: fs-setup,v 1.89 2002-04-20 06:33:03 ivan Exp $
+# $Id: fs-setup,v 1.90 2002-05-04 15:00:18 ivan Exp $
 
 #to delay loading dbdef until we're ready
 BEGIN { $FS::Record::setup_hack = 1; }
@@ -518,6 +518,8 @@ sub tables_hash_hack {
         'state',    'varchar',  'NULL',    $char_d,
         'county',   'varchar',  'NULL',    $char_d,
         'country',  'char',  '', 2, 
+        'taxclass',   'varchar', 'NULL', $char_d,
+        'exempt_amount', @money_type,
         'tax',      'real',  '',    '', #tax %
       ],
       'primary_key' => 'taxnum',
@@ -659,6 +661,7 @@ sub tables_hash_hack {
         'plan',       'varchar', 'NULL', $char_d,
         'plandata',   'text', 'NULL', '',
         'disabled',   'char', 'NULL', 1,
+        'taxclass',   'varchar', 'NULL', $char_d,
       ],
       'primary_key' => 'pkgpart',
       'unique' => [ [] ],
@@ -988,6 +991,22 @@ sub tables_hash_hack {
       'unique'      => [ [ 'msgcode', 'locale' ] ],
       'index'       => [],
     },
+
+    'cust_tax_exempt' => {
+      'columns' => [
+        'exemptnum', 'int', '', '',
+        'custnum',   'int', '', '',
+        'taxnum',    'int', '', '',
+        'year',      'int', '', '',
+        'month',     'int', '', '',
+        'amount',   @money_type,
+      ],
+      'primary_key' => 'exemptnum',
+      'unique'      => [ [ 'custnum', 'taxnum', 'year', 'month' ] ],
+      'index'       => [],
+    },
+
+
 
   );
 

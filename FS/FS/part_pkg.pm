@@ -235,7 +235,7 @@ sub check {
       || $self->ut_anything('plandata')
       || $self->ut_enum('setuptax', [ '', 'Y' ] )
       || $self->ut_enum('recurtax', [ '', 'Y' ] )
-      || $self->ut_enum('texastax', [ '', 'none', 'access', 'hosting' ] )
+      || $self->ut_enum('taxclass', [ '', 'none', 'access', 'hosting' ] )
       || $self->ut_enum('disabled', [ '', 'Y' ] )
     ;
 }
@@ -297,7 +297,7 @@ sub payby {
 
 =head1 VERSION
 
-$Id: part_pkg.pm,v 1.12 2002-04-25 10:37:08 ivan Exp $
+$Id: part_pkg.pm,v 1.13 2002-05-04 15:00:18 ivan Exp $
 
 =head1 BUGS
 

@@ -48,6 +48,8 @@ L<FS::part_referral> - Referral class
 
 L<FS::cust_main_county> - Locale (tax rate) class
 
+L<FS::cust_tax_exempt> - Tax exemption record class
+
 L<FS::svc_Common> - Service base class
 
 L<FS::svc_acct> - Account (shell, RADIUS, POP3) class

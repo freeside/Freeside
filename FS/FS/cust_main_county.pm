@@ -57,6 +57,10 @@ currently supported:
 
 =item tax - percentage
 
+=item taxclass
+
+=item exempt_amount
+
 =back
 
 =head1 METHODS
@@ -97,11 +101,15 @@ methods.
 sub check {
   my $self = shift;
 
+  $self->amount(0) unless $self->amount;
+
   $self->ut_numbern('taxnum')
     || $self->ut_textn('state')
     || $self->ut_textn('county')
     || $self->ut_text('country')
     || $self->ut_float('tax')
+    || $self->ut_textn('taxclass') # ...
+    || $self->ut_money('amount')
   ;
 
 }

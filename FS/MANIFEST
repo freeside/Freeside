@@ -79,6 +79,7 @@ FS/radius_usergroup.pm
 FS/queue.pm
 FS/queue_arg.pm
 FS/msgcat.pm
+FS/cust_tax_exempt.pm
 t/agent.t
 t/agent_type.t
 t/CGI.t
@@ -136,3 +137,4 @@ t/queue.t
 t/queue_arg.t
 t/msgcat.t
 t/raddb.t
+t/cust_tax_exempt.t

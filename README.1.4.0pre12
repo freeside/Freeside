@@ -44,6 +44,21 @@ CREATE INDEX export_svc3 ON export_svc ( svcpart );
 
 ALTER TABLE part_export RENAME svcpart TO deprecated;
 
+ALTER TABLE part_pkg ADD taxclass varchar(80) NULL;
+
+CREATE TABLE cust_tax_exempt (
+  exemptnum int primary key,
+  custnum int not null,
+  taxnum int not null,
+  year int not null,
+  month int not null,
+  amount decimal(10,2)
+);
+CREATE UNIQUE INDEX cust_tax_exempt1 ON cust_tax_exempt ( custnum, taxnum, year, month );
+
+ALTER TABLE cust_main_county ADD taxclass varchar(80) NULL;
+ALTER TABLE cust_main_county ADD exempt_amount decimal(10,2);
+
 Run bin/dbdef-create
 
 Run bin/create-history-tables
