@@ -31,7 +31,7 @@ print '<BR><BR>';
 my $conf = new FS::Conf;
 if ( $conf->exists('invoice_latex') ) {
   print menubar(
-    'View typeset invoice' => "${p}view/cust_bill-pdf.cgi?$invnum",
+    'View typeset invoice' => "${p}view/cust_bill-pdf.cgi?$invnum.pdf",
   ), '<BR><BR>';
 }
 
