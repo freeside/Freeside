@@ -125,8 +125,8 @@ END
 
     print <<END;
     <TR>
-      <TD ROWSPAN=$rowspan><A HREF="${p}view/svc_domain.cgi?$svcnum"><FONT SIZE=-1>$svcnum</FONT></A></TD>
-      <TD ROWSPAN=$rowspan>$domain</TD>
+      <TD ROWSPAN=$rowspan><A HREF="${p}view/svc_domain.cgi?$svcnum">$svcnum</A></TD>
+      <TD ROWSPAN=$rowspan><A HREF="${p}view/svc_domain.cgi?$svcnum">$domain</A></TD>
 END
 
     #print @rows;
