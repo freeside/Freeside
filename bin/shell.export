@@ -8,6 +8,8 @@ use Net::SSH qw(ssh);
 use FS::UID qw(adminsuidsetup datasrc);
 use FS::Record qw(qsearch qsearchs);
 use FS::part_export;
+use FS::cust_svc;
+use FS::svc_acct;
 
 my @saltset = ( 'a'..'z' , 'A'..'Z' , '0'..'9' , '.' , '/' );
 
