@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_pkg.cgi,v 1.6 1999-02-28 00:03:36 ivan Exp $
+# $Id: cust_pkg.cgi,v 1.7 1999-04-14 01:03:01 ivan Exp $
 #
 # this is for changing packages around, not editing things within the package
 #
@@ -23,7 +23,11 @@
 # 98-jun-1
 #
 # $Log: cust_pkg.cgi,v $
-# Revision 1.6  1999-02-28 00:03:36  ivan
+# Revision 1.7  1999-04-14 01:03:01  ivan
+# oops, in 1.2 tree, can't do searches until [cgi|admin]suidsetup,
+# bug is hidden by mod_perl persistance
+#
+# Revision 1.6  1999/02/28 00:03:36  ivan
 # removed misleading comments
 #
 # Revision 1.5  1999/02/07 09:59:18  ivan
@@ -52,13 +56,15 @@ use FS::CGI qw(header popurl);
 use FS::part_pkg;
 use FS::type_pkgs;
 
+$cgi = new CGI;
+&cgisuidsetup($cgi);
+
+%pkg = ();
+%comment = ();
 foreach (qsearch('part_pkg', {})) {
   $pkg{ $_ -> getfield('pkgpart') } = $_->getfield('pkg');
   $comment{ $_ -> getfield('pkgpart') } = $_->getfield('comment');
 }
-
-$cgi = new CGI;
-&cgisuidsetup($cgi);
 
 if ( $cgi->param('error') ) {
   $custnum = $cgi->param('custnum');
