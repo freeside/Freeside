@@ -22,7 +22,7 @@ su postgres -c "createuser -P freeside"
 su freeside -c "createdb freeside"
 
 #?
-cd ../..
+cd ../../..
 make install-perl-modules
 make create-config
 freeside-adduser -c -h /usr/local/etc/freeside/htpasswd ivan
