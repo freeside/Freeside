@@ -187,6 +187,8 @@ FS::Record.  The following fields are currently supported:
 
 =item otaker - order taker (assigned automatically, see L<FS::UID>)
 
+=item comments - comments (optional)
+
 =back
 
 =head1 METHODS
@@ -420,6 +422,7 @@ sub check {
     || $self->ut_text('city')
     || $self->ut_textn('county')
     || $self->ut_textn('state')
+    || $self->ut_anything('comments')
   ;
   #barf.  need message catalogs.  i18n.  etc.
   $error .= "Please select a referral."
@@ -465,11 +468,15 @@ sub check {
   ;
   return $error if $error;
 
+  my @addfields = qw(
+    last first company address1 address2 city county state zip
+    country daytime night fax
+  );
+
   if ( defined $self->dbdef_table->column('ship_last') ) {
-    if ( grep { $self->getfield($_) ne $self->getfield("ship_$_") }
-              qw( last first company address1 address2 city county state zip
-                  country daytime night fax )
-       ) # if any address fields differ
+    if ( grep { $self->getfield($_) ne $self->getfield("ship_$_") } @addfields
+         && grep $self->getfield("ship_$_"), grep $_ ne 'state', @addfields
+       )
     {
       my $error =
         $self->ut_name('ship_last')
@@ -1193,7 +1200,7 @@ sub check_invoicing_list {
 
 =head1 VERSION
 
-$Id: cust_main.pm,v 1.15 2001-07-30 10:41:44 ivan Exp $
+$Id: cust_main.pm,v 1.16 2001-08-11 05:52:15 ivan Exp $
 
 =head1 BUGS
 
