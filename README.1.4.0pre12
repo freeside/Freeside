@@ -15,5 +15,9 @@ UPDATE cust_bill_event SET status = 'done';
 
 Run bin/dbdef-create
 
+Run bin/create-history-tables
+
+Run bin/dbdef-create again
+
 Restart Apache and freeside-queued
 

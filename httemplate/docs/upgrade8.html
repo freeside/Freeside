@@ -305,6 +305,8 @@ ALTER TABLE cust_refund DROP COLUMN crednum;
 </pre></font>
 </td></tr></table>
   <li><b>IMPORTANT: After applying the second set of database changes</b>, run bin/dbdef-create again.
+  <li><b>IMPORTANT</b>: run bin/create-history-tables
+  <li><b>IMPORTANT: After running bin/create-history-tables</b>, run bin/dbdef-create again.
   <li>set the <a href="../config/config.cgi#username_policy">user_policy configuration value</a> as appropriate for your site.
   <li>Create the `/usr/local/etc/freeside/cache.<i>datasrc</i>' directory
       (ownded by the freeside user).

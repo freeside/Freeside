@@ -344,7 +344,7 @@ sub table {
 
 =item dbdef_table
 
-Returns the FS::dbdef_table object for the table.
+Returns the DBIx::DBSchema::Table object for the table.
 
 =cut
 
@@ -473,19 +473,26 @@ sub insert {
   $self->unique($primary_key) 
     if $primary_key && ! $self->getfield($primary_key);
 
+  #false laziness w/delete
   my @fields =
     grep defined($self->getfield($_)) && $self->getfield($_) ne "",
     $self->fields
   ;
+  my @values = map { _quote( $self->getfield($_), $self->table, $_) } @fields;
+  #eslaf
 
   my $statement = "INSERT INTO ". $self->table. " ( ".
-      join(', ',@fields ).
+      join( ', ', @fields ).
     ") VALUES (".
-      join(', ',map(_quote($self->getfield($_),$self->table,$_), @fields)).
+      join( ', ', @values ).
     ")"
   ;
   warn "[debug]$me $statement\n" if $DEBUG;
   my $sth = dbh->prepare($statement) or return dbh->errstr;
+
+  my $h_statement = $self->_h_statement('insert');
+  warn "[debug]$me $h_statement\n" if $DEBUG;
+  my $h_sth = dbh->prepare($h_statement) or return dbh->errstr;
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -495,6 +502,7 @@ sub insert {
   local $SIG{PIPE} = 'IGNORE';
 
   $sth->execute or return $sth->errstr;
+  $h_sth->execute or return $h_sth->errstr;
   dbh->commit or croak dbh->errstr if $FS::UID::AutoCommit;
 
   '';
@@ -521,7 +529,7 @@ otherwise returns false.
 sub delete {
   my $self = shift;
 
-  my($statement)="DELETE FROM ". $self->table. " WHERE ". join(' AND ',
+  my $statement = "DELETE FROM ". $self->table. " WHERE ". join(' AND ',
     map {
       $self->getfield($_) eq ''
         #? "( $_ IS NULL OR $_ = \"\" )"
@@ -537,6 +545,10 @@ sub delete {
   warn "[debug]$me $statement\n" if $DEBUG;
   my $sth = dbh->prepare($statement) or return dbh->errstr;
 
+  my $h_statement = $self->_h_statement('delete');
+  warn "[debug]$me $h_statement\n" if $DEBUG;
+  my $h_sth = dbh->prepare($h_statement) or return dbh->errstr;
+
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
   local $SIG{QUIT} = 'IGNORE'; 
@@ -546,6 +558,7 @@ sub delete {
 
   my $rc = $sth->execute or return $sth->errstr;
   #not portable #return "Record not found, statement:\n$statement" if $rc eq "0E0";
+  $h_sth->execute or return $h_sth->errstr;
   dbh->commit or croak dbh->errstr if $FS::UID::AutoCommit;
 
   undef $self; #no need to keep object!
@@ -611,6 +624,14 @@ sub replace {
   warn "[debug]$me $statement\n" if $DEBUG;
   my $sth = dbh->prepare($statement) or return dbh->errstr;
 
+  my $h_old_statement = $old->_h_statement('replace_old');
+  warn "[debug]$me $h_old_statement\n" if $DEBUG;
+  my $h_old_sth = dbh->prepare($h_old_statement) or return dbh->errstr;
+
+  my $h_new_statement = $new->_h_statement('replace_new');
+  warn "[debug]$me $h_new_statement\n" if $DEBUG;
+  my $h_new_sth = dbh->prepare($h_new_statement) or return dbh->errstr;
+
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
   local $SIG{QUIT} = 'IGNORE'; 
@@ -620,6 +641,8 @@ sub replace {
 
   my $rc = $sth->execute or return $sth->errstr;
   #not portable #return "Record not found (or records identical)." if $rc eq "0E0";
+  $h_old_sth->execute or return $h_old_sth->errstr;
+  $h_new_sth->execute or return $h_new_sth->errstr;
   dbh->commit or croak dbh->errstr if $FS::UID::AutoCommit;
 
   '';
@@ -645,6 +668,23 @@ Not yet implemented, croaks.  Derived classes should provide a check method.
 
 sub check {
   confess "FS::Record::check not implemented; supply one in subclass!";
+}
+
+sub _h_statement {
+  my( $self, $action ) = @_;
+
+  my @fields =
+    grep defined($self->getfield($_)) && $self->getfield($_) ne "",
+    $self->fields
+  ;
+  my @values = map { _quote( $self->getfield($_), $self->table, $_) } @fields;
+
+  "INSERT INTO h_". $self->table. " ( ".
+      join(', ', qw(history_date history_user history_action), @fields ).
+    ") VALUES (".
+      join(', ', time, dbh->quote(getotaker()), dbh->quote($action), @values).
+    ")"
+  ;
 }
 
 =item unique COLUMN
@@ -1056,7 +1096,7 @@ sub reload_dbdef {
 
 =item dbdef
 
-Returns the current database definition.  See L<FS::dbdef>.
+Returns the current database definition.  See L<DBIx::DBSchema>.
 
 =cut
 
@@ -1066,7 +1106,7 @@ sub dbdef { $dbdef; }
 
 This is an internal function used to construct SQL statements.  It returns
 VALUE DBI-quoted (see L<DBI/"quote">) unless VALUE is a number and the column
-type (see L<FS::dbdef_column>) does not end in `char' or `binary'.
+type (see L<DBIx::DBSchema::Column>) does not end in `char' or `binary'.
 
 =cut
 
@@ -1136,7 +1176,7 @@ The whole fields / hfields mess should be removed.
 
 The various WHERE clauses should be subroutined.
 
-table string should be depriciated in favor of FS::dbdef_table.
+table string should be depriciated in favor of DBIx::DBSchema::Table.
 
 No doubt we could benefit from a Tied hash.  Documenting how exists / defined
 true maps to the database (and WHERE clauses) would also help.

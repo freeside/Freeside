@@ -1,13 +1,13 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: fs-setup,v 1.82 2002-02-27 22:39:14 ivan Exp $
+# $Id: fs-setup,v 1.83 2002-03-04 12:48:49 ivan Exp $
 
 #to delay loading dbdef until we're ready
 BEGIN { $FS::Record::setup_hack = 1; }
 
 use strict;
 use DBI;
-use DBIx::DBSchema 0.19;
+use DBIx::DBSchema 0.20;
 use DBIx::DBSchema::Table;
 use DBIx::DBSchema::Column;
 use DBIx::DBSchema::ColGroup::Unique;
@@ -160,6 +160,56 @@ foreach $attribute (@check_attributes) {
 #  }
 #}
 
+#create history tables (false laziness w/create-history-tables)
+foreach my $table ( grep { ! /^h_/ } $dbdef->tables ) {
+  my $tableobj = $dbdef->table($table);
+  my $h_tableobj = DBIx::DBSchema::Table->new( {
+    name        => "h_$table",
+    primary_key => 'historynum',
+    unique      => DBIx::DBSchema::ColGroup::Unique->new( [] ),
+    'index'     => DBIx::DBSchema::ColGroup::Index->new( [
+                     @{$tableobj->unique->lol_ref},
+                     @{$tableobj->index->lol_ref}
+                   ] ),
+    columns     => [
+                     DBIx::DBSchema::Column->new( {
+                       'name'    => 'historynum',
+                       'type'    => 'serial',
+                       'null'    => 'NOT NULL',
+                       'length'  => '',
+                       'default' => '',
+                       'local'   => '',
+                     } ),
+                     DBIx::DBSchema::Column->new( {
+                       'name'    => 'history_date',
+                       'type'    => 'int',
+                       'null'    => 'NULL',
+                       'length'  => '',
+                       'default' => '',
+                       'local'   => '',
+                     } ),
+                     DBIx::DBSchema::Column->new( {
+                       'name'    => 'history_user',
+                       'type'    => 'varchar',
+                       'null'    => 'NOT NULL',
+                       'length'  => '80',
+                       'default' => '',
+                       'local'   => '',
+                     } ),
+                     DBIx::DBSchema::Column->new( {
+                       'name'    => 'history_action',
+                       'type'    => 'varchar',
+                       'null'    => 'NOT NULL',
+                       'length'  => '80',
+                       'default' => '',
+                       'local'   => '',
+                     } ),
+                     map { $tableobj->column($_) } $tableobj->columns
+                   ],
+  } );
+  $dbdef->addtable($h_tableobj);
+}
+
 #important
 $dbdef->save($dbdef_file);
 &FS::Record::reload_dbdef($dbdef_file);
@@ -173,10 +223,9 @@ my($dbh)=adminsuidsetup $user;
 #create tables
 $|=1;
 
-my @sql = $dbdef->sql($dbh);
 foreach my $statement ( $dbdef->sql($dbh) ) {
   $dbh->do( $statement )
-    or die "CREATE error: ",$dbh->errstr, "\ndoing statement: $statement";
+    or die "CREATE error: ". $dbh->errstr. "\ndoing statement: $statement";
 }
 
 #not really sample data (and shouldn't default to US)
@@ -256,7 +305,7 @@ foreach my $aref (
 
 }
 
-
+$dbh->commit or die $dbh->errstr;
 $dbh->disconnect or die $dbh->errstr;
 
 print "Freeside database initialized sucessfully\n";

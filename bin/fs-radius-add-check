@@ -39,12 +39,21 @@ my($char_d) = 80; #default maxlength for text fields
 ###
 
 foreach my $attribute ( @attributes ) {
+
   my $statement =
     "ALTER TABLE svc_acct ADD COLUMN rc_$attribute varchar($char_d) NULL";
   my $sth = $dbh->prepare( $statement )
    or warn "Error preparing $statement: ". $dbh->errstr;
   my $rc = $sth->execute
     or warn "Error executing $statement: ". $sth->errstr;
+
+  $statement =
+    "ALTER TABLE h_svc_acct ADD COLUMN rc_$attribute varchar($char_d) NULL";
+  $sth = $dbh->prepare( $statement )
+   or warn "Error preparing $statement: ". $dbh->errstr;
+  $rc = $sth->execute
+    or warn "Error executing $statement: ". $sth->errstr;
+
 }
 
 $dbh->commit or die $dbh->errstr;

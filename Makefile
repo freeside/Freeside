@@ -21,8 +21,8 @@ QUEUED_RESTART = /etc/init.d/freeside restart
 #not changable yet
 FREESIDE_CONF = /usr/local/etc/freeside
 
-VERSION="1.4.0pre11"
-TAG="1_4_0_PRE11"
+VERSION="1.4.0pre12"
+TAG="1_4_0_PRE12"
 
 help:
 	@echo "supported targets: aspdocs masondocs alldocs docs install-docs"
