@@ -122,7 +122,7 @@ sub new {
   my $self = {};
   bless ($self, $class);
 
-  unless defined ( $self->table ) {
+  unless ( defined ( $self->table ) ) {
     $self->{'Table'} = shift;
     carp "warning: FS::Record::new called with table name ". $self->{'Table'};
   }
