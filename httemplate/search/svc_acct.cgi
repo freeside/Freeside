@@ -100,7 +100,7 @@ if ( scalar(@svc_acct) == 1 ) {
   }
   #end pager
 
-  print header("Account Search Results",menubar('Main Menu'=>popurl(2)),
+  print header("Account Search Results",menubar('Main Menu'=>popurl(2))),
         "$total matching accounts found<BR><BR>$pager",
         &table(), <<END;
       <TR>
