@@ -68,7 +68,7 @@ if ( $cgi->keywords ) {
     die "unknown query string $query";
   }
 
-  my $extra_sql = scalar(@where) ? join(' AND ', @where) : '';
+  my $extra_sql = scalar(@where) ? 'WHERE '. join(' AND ', @where) : '';
 
   my $statement = "SELECT COUNT(*) FROM cust_bill $extra_sql";
   my $sth = dbh->prepare($statement) or die dbh->errstr. " doing $statement";
