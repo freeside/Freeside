@@ -565,9 +565,9 @@ sub bill {
       }
     }
 
-    warn "setup is undefinded" unless defined($setup);
-    warn "recur is undefinded" unless defined($recur);
-    warn "cust_pkg bill is undefinded" unless defined($cust_pkg->bill);
+    warn "setup is undefined" unless defined($setup);
+    warn "recur is undefined" unless defined($recur);
+    warn "cust_pkg bill is undefined" unless defined($cust_pkg->bill);
 
     if ( $cust_pkg_mod_flag ) {
       $error=$cust_pkg->replace($old_cust_pkg);
@@ -999,7 +999,7 @@ sub check_invoicing_list {
 
 =head1 VERSION
 
-$Id: cust_main.pm,v 1.7 2000-06-27 12:15:37 ivan Exp $
+$Id: cust_main.pm,v 1.8 2001-01-23 05:03:50 ivan Exp $
 
 =head1 BUGS
 
