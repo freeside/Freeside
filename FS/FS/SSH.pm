@@ -121,8 +121,7 @@ Connects the supplied filehandles to the ssh process (in batch mode).
 
 sub sshopen3 {
   my($host,$writer,$reader,$error,$command)=@_;
-  #open3($writer,$reader,$error,$ssh,'-o','Batchmode yes',$host,$command);
-  open3($reader,$writer,$error,$ssh,'-o','Batchmode yes',$host,$command);
+  open3($writer,$reader,$error,$ssh,'-o','Batchmode yes',$host,$command);
 }
 
 sub _yesno {
