@@ -107,7 +107,7 @@ foreach my $export ( @exports ) {
     dest    => "$user\@$machine:". $export->option('virtual'),
   } ) or die "rsync to $machine failed: ". join(" / ", $rsync->err);
 #  warn $rsync->out;
-
+  ssh("$user\@$machine", "postmap hash:/etc/postfix/virtual");
   ssh("$user\@$machine", "postfix reload");
 
 }
