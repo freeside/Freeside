@@ -80,7 +80,10 @@ my %defs = (
                      select_key   => 'popnum',
                      select_label => 'city',
                    },
-    'username'  => 'Username',
+    'username'  => {
+                      desc => 'Username',
+                      type => 'disabled',
+                   },
     'quota'     => '',
     '_password' => 'Password',
     'gid'       => 'GID (when blank, defaults to UID)',
@@ -188,15 +191,20 @@ my %defs = (
         $html .= "<TR><TD>$field";
         $html .= "- <FONT SIZE=-1>$desc</FONT>" if $desc;
         $html .=  "</TD>";
-        $html .=
-          qq!<TD><INPUT TYPE="radio" NAME="${layer}__${field}_flag" VALUE=""!.
-          ' CHECKED'x($flag eq ''). ">Off</TD>".
-          qq!<TD><INPUT TYPE="radio" NAME="${layer}__${field}_flag" VALUE="D"!.
-          ' CHECKED'x($flag eq 'D'). ">Default ".
-          qq!<INPUT TYPE="radio" NAME="${layer}__${field}_flag" VALUE="F"!.
-          ' CHECKED'x($flag eq 'F'). ">Fixed ".
-          '<BR>';
         if ( ref($def) ) {
+          $flag = '' if $def->{type} eq 'disabled';
+          $html .=
+            qq!<TD><INPUT TYPE="radio" NAME="${layer}__${field}_flag" VALUE=""!.
+            ' CHECKED'x($flag eq ''). ">Off</TD>".
+            '<TD>';
+          unless ( $def->{type} eq 'disabled' ) {
+            $html .= 
+              qq!<INPUT TYPE="radio" NAME="${layer}__${field}_flag" VALUE="D"!.
+              ' CHECKED'x($flag eq 'D'). ">Default ".
+              qq!<INPUT TYPE="radio" NAME="${layer}__${field}_flag" VALUE="F"!.
+              ' CHECKED'x($flag eq 'F'). ">Fixed ".
+              '<BR>';
+          }
           if ( $def->{type} eq 'select' ) {
             $html .= qq!<SELECT NAME="${layer}__${field}">!;
             $html .= '<OPTION> </OPTION>' unless $value;
@@ -210,6 +218,9 @@ my %defs = (
           } elsif ( $def->{type} eq 'radius_usergroup_selector' ) {
             $html .= FS::svc_acct::radius_usergroup_selector(
               [ split(',', $value) ], "${layer}__${field}" );
+          } elsif ( $def->{type} eq 'disabled' ) {
+            $html .=
+              qq!<INPUT TYPE="hidden" NAME="${layer}__${field}" VALUE="">!;
           } else {
             $html .= '<font color="#ff0000">unknown type'. $def->{type};
           }
