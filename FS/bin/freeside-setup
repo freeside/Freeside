@@ -541,7 +541,7 @@ sub tables_hash_hack {
         '_date',    @date_type,
         'payby',    'char',   '',     4, # CARD/BILL/COMP, should be index into
                                          # payment type table.
-        'payinfo',  'varchar',   'NULL', 16,  #see cust_main above
+        'payinfo',  'varchar',   'NULL', $char_d,  #see cust_main above
         'paybatch', 'varchar',   'NULL', $char_d, #for auditing purposes.
         'closed',    'char', 'NULL', 1,
       ],
@@ -618,7 +618,7 @@ sub tables_hash_hack {
         'reason',       'varchar',   '',   $char_d,
         'payby',        'char',   '',     4, # CARD/BILL/COMP, should be index
                                              # into payment type table.
-        'payinfo',      'varchar',   'NULL', 16,  #see cust_main above
+        'payinfo',      'varchar',   'NULL', $char_d,  #see cust_main above
         'paybatch',     'varchar',   'NULL', $char_d,
         'closed',    'char', 'NULL', 1,
       ],

@@ -15,5 +15,6 @@
 INSERT INTO msgcat ( msgnum, msgcode, locale, msg ) VALUES ( 18, 'daytime', 'en_US', 'Day Phone' );
 INSERT INTO msgcat ( msgnum, msgcode, locale, msg ) VALUES ( 19, 'night', 'en_US', 'Night Phone' );
 </pre>
+  <li>If you want to use ACH (electronic checks), you will need to make changes to your database.  The easiest way to make these changes is to dump your database (with pg_dump), change the payinfo field in the cust_pay, cust_refund, h_cust_pay and h_cust_refund tables from varchar(16) to varchar(80), reload the database from the dump, and run dbdef-create
   <li>Restart Apache and freeside-queued.
 </body>
