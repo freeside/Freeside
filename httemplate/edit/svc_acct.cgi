@@ -1,58 +1,11 @@
 <%
-#
-# $Id: svc_acct.cgi,v 1.2 2001-08-19 15:53:35 jeff Exp $
-#
-# Usage: svc_acct.cgi {svcnum} | pkgnum{pkgnum}-svcpart{svcpart}
-#        http://server.name/path/svc_acct.cgi? {svcnum} | pkgnum{pkgnum}-svcpart{svcpart}
-#
-# ivan@voicenet.com 96-dec-18
-#
-# rewrite ivan@sisd.com 98-mar-8
-#
-# Changes to allow page to work at a relative position in server
-# Changed 'password' to '_password' because Pg6.3 reserves the password word
-#       bmccane@maxbaud.net     98-apr-3
-#
-# use conf/shells and dbdef username length ivan@sisd.com 98-jul-13
-#
-# $Log: svc_acct.cgi,v $
-# Revision 1.2  2001-08-19 15:53:35  jeff
-# added user interface for svc_forward and vpopmail support
-#
-# Revision 1.1  2001/07/30 07:36:04  ivan
-# templates!!!
-#
-# Revision 1.10  1999/04/14 11:27:06  ivan
-# showpasswords config option to show passwords
-#
-# Revision 1.9  1999/02/28 00:03:37  ivan
-# removed misleading comments
-#
-# Revision 1.8  1999/02/23 08:09:22  ivan
-# beginnings of one-screen new customer entry and some other miscellania
-#
-# Revision 1.7  1999/02/07 09:59:22  ivan
-# more mod_perl fixes, and bugfixes Peter Wemm sent via email
-#
-# Revision 1.6  1999/01/19 05:13:43  ivan
-# for mod_perl: no more top-level my() variables; use vars instead
-# also the last s/create/new/;
-#
-# Revision 1.5  1999/01/18 09:41:32  ivan
-# all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
-# (good idea anyway)
-#
-# Revision 1.4  1998/12/30 23:03:22  ivan
-# bugfixes; fields isn't exported by derived classes
-#
-# Revision 1.3  1998/12/17 06:17:08  ivan
-# fix double // in relative URLs, s/CGI::Base/CGI/;
-#
+<!-- $Id: svc_acct.cgi,v 1.3 2001-08-20 12:13:09 ivan Exp $ -->
 
 use strict;
 use vars qw( $conf $cgi @shells $action $svcnum $svc_acct $pkgnum $svcpart
              $part_svc $svc $otaker $username $password $ulen $ulen2 $p1
-             $popnum $domsvc $uid $gid $finger $dir $shell $quota $slipip );
+             $popnum $domsvc $uid $gid $finger $dir $shell $quota $slipip
+             @svc_domain );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup getotaker);
@@ -168,11 +121,21 @@ $domsvc = $svc_acct->domsvc || 0;
 if ( $part_svc->svc_acct__domsvc_flag eq "F" ) {
   print qq!<INPUT TYPE="hidden" NAME="domsvc" VALUE="$domsvc">!;
 } else { 
+  my @svc_domain = ();
+  my $cust_pkg = qsearchs('cust_pkg', { 'pkgnum' => $pkgnum } );
+  if ($cust_pkg) {
+    my @cust_svc =
+      map { qsearch('cust_svc', { 'pkgnum' => $_->pkgnum } ) }
+          qsearch('cust_pkg', { 'custnum' => $cust_pkg->custnum } );
+    foreach my $cust_svc ( @cust_svc ) {
+      $svc_domain = qsearchs('svc_domain', { 'svcnum' => $_->svcnum } );
+      push @svc_domain, $svc_domain if $svc_domain;
+    }
+  } else {
+    @svc_domain = qsearch('svc_domain', {} );
+  }
   print qq!<BR>Domain: <SELECT NAME="domsvc" SIZE=1>\n!;
-  my($svc_domain);
-  foreach $svc_domain
-    ( sort {$a->domain cmp $b->domain} (qsearch ('svc_domain',{} ) ) ) 
-  {
+  foreach my $svc_domain ( sort { $a->domain cmp $b->domain } @svc_domain ) {
     print qq!<OPTION VALUE="!, $svc_domain->svcnum, qq!"!,
           $svc_domain->svcnum == $domsvc ? ' SELECTED' : '',
           ">", $svc_domain->domain, "\n"
@@ -248,6 +211,5 @@ print <<END;
   </BODY>
 </HTML>
 END
-
 
 %>
