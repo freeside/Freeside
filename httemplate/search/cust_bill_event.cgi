@@ -4,7 +4,7 @@
 #false laziness with view/cust_bill.cgi
 
 $cgi->param('beginning') =~ /^([ 0-9\-\/]{0,10})$/;
-my $beginning = str2time($1);
+my $beginning = str2time($1) || 0;
 
 $cgi->param('ending') =~ /^([ 0-9\-\/]{0,10})$/;
 my $ending = str2time($1) + 86400;
