@@ -11,7 +11,21 @@ my $p2 = popurl(2);
    <BR><BR>
 <% } %>
 
-<A HREF="<%=$p2%>edit/router.cgi"><I>Add a new router</I></A><BR><BR>
+<%
+my $hidecustomerrouters = 0;
+my $hideurl = '';
+if ($cgi->param('hidecustomerrouters') eq '1') {
+  $hidecustomerrouters = 1;
+  $cgi->param('hidecustomerrouters', 0);
+  $hideurl = '<A HREF="' . $cgi->self_url() . '">Show customer routers</A>';
+} else {
+  $hidecustomerrouters = 0;
+  $cgi->param('hidecustomerrouters', 1);
+  $hideurl = '<A HREF="' . $cgi->self_url() . '">Hide customer routers</A>';
+}
+%>
+
+<A HREF="<%=$p2%>edit/router.cgi">Add a new router</A>&nbsp;|&nbsp;<%=$hideurl%>
 
 <%=table()%>
   <TR>
@@ -19,6 +33,7 @@ my $p2 = popurl(2);
     <TD><B>Address block(s)</B></TD>
   </TR>
 <% foreach my $router (sort {$a->routernum <=> $b->routernum} @router) {
+     next if $hidecustomerrouters && $router->svcnum;
      my @addr_block = $router->addr_block;
      if (scalar(@addr_block) == 0) {
        push @addr_block, '&nbsp;';
