@@ -164,7 +164,7 @@ my %defs = (
               && qsearchs( 'export_svc', {
                                    exportnum => $part_export->exportnum,
                                    svcpart   => $clone || $part_svc->svcpart });
-        $html .= '>'. $part_export->exportnum. ': '.  $part_export->exporttype.
+        $html .= '>'. $part_export->exportnum. ': '. $part_export->exporttype.
                  ' to '. $part_export->machine. '</TD>';
         $count++;
         $html .= '</TR><TR>' unless $count % $columns;
