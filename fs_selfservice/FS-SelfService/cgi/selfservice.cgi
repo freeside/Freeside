@@ -53,7 +53,7 @@ if ( $cgi->param('session') eq 'login' ) {
 
 $session_id = $cgi->param('session');
 
-$cgi->param('action') =~ /^(myaccount|view_invoice)$/
+$cgi->param('action') =~ /^(myaccount|view_invoice|make_payment)$/
   or die "unknown action ". $cgi->param('action');
 my $action = $1;
 
@@ -88,6 +88,10 @@ sub view_invoice {
 
 }
 
+sub make_payment {
+
+}
+
 #--
 
 sub do_template {
@@ -95,7 +99,7 @@ sub do_template {
   my $fill_in = shift;
 
   $cgi->delete_all();
-  $fill_in->{'self_url'} = $cgi->self_url;
+  $fill_in->{'selfurl'} = $cgi->self_url;
 
   my $template = new Text::Template( TYPE    => 'FILE',
                                      SOURCE  => "$template_dir/$name.html",

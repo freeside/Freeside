@@ -922,6 +922,8 @@ sub svc_domain {
 
 Returns the FS::cust_svc record for this account (see L<FS::cust_svc>).
 
+=cut
+
 sub cust_svc {
   my $self = shift;
   qsearchs( 'cust_svc', { 'svcnum' => $self->svcnum } );

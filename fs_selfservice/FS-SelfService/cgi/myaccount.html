@@ -3,20 +3,23 @@
 <%= $url = "$selfurl?session=$session_id;action="; ''; %>
 <TABLE BORDER=0 CELLPADDING=4><TR><TD VALIGN="top" HEIGHT=384 BGCOLOR="#dddddd">
 <A HREF="<%= $url %>myaccount">MyAccount</A><BR>
-<A HREF="<%= $url %>other">SomethingElse</A><BR>
+<!-- <A HREF="<%= $url %>other">SomethingElse</A><BR> -->
 </TD><TD VALIGN="top">
 
 Hello <%= $name %>!<BR><BR>
-Your customer number is <%= $custnum %><BR><BR>
 Your contact information<BR><%= $small_custview %>
-Your outstanding balance is $<%= $balance %><BR><BR>
+<BR>
+<%= if ( $balance ) {
+  $OUT .= qq! <B><A HREF="${url}make_payment">Make a $balance payment</A></B>!;
+} %>
+<BR><BR>
 <!--<TABLE BORDER=1 CELLSPACING=0 CELLPADDING=2 BORDERCOLOR="#999999">
 <TR><TH>Invoice</TH><TH>Date</TH><TH>Owed</TH></TR>-->
 <%=
   if ( @open_invoices ) {
     $OUT .= '<TABLE BORDER=0 CELLSPACING=0 CELLPADDING=2 BGCOLOR="#eeeeee">'.
             '<TR><TH BGCOLOR="#ff3333" COLSPAN=5>Open Invoices</TH><TD>';
-    my $link = qq!<A HREF="<%= $selfurl %>?session=<%= $session_id %>;action=myaccount!;
+    my $link = qq!<A HREF="<%= $url %>myaccount!;
     my $col1 = "ffffff";
     my $col2 = "dddddd";
     my $col = $col1;
@@ -40,7 +43,7 @@ Your outstanding balance is $<%= $balance %><BR><BR>
 
 </TD></TR></TABLE>
 <HR>
-<FONT SIZE="-2">small text</FONT>
+<FONT SIZE="-2">powered by <a href="http://www.sisd.com/freeside">freeside</a></FONT>
 </BODY></HTML>
 
 
