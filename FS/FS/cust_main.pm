@@ -172,6 +172,8 @@ FS::Record.  The following fields are currently supported:
 
 =item comments - comments (optional)
 
+=item referral_custnum - referring customer number
+
 =back
 
 =head1 METHODS
