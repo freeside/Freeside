@@ -411,7 +411,7 @@ if ( $payby_default eq 'HIDE' ) {
   print qq!<TR><TD>Email invoice <INPUT TYPE="text" NAME="invoicing_list" VALUE="$invoicing_list"></TD></TR>!;
 
   print "<TR><TD>Billing type</TD></TR>",
-        "</TABLE>", '<script language="JavaScript"><!--
+        "</TABLE>", '<SCRIPT>
                        var mywindow = -1;
                        function myopen(filename,windowname,properties) {
                          myclose();
@@ -422,8 +422,17 @@ if ( $payby_default eq 'HIDE' ) {
                            mywindow.close();
                          mywindow = -1;
                        }
-
-                     //--></script>',
+                       var achwindow = -1;
+                       function achopen(filename,windowname,properties) {
+                         achclose();
+                         achwindow = window.open(filename,windowname,properties);
+                       }
+                       function achclose() {
+                         if ( achwindow != -1 )
+                           achwindow.close();
+                         achwindow = -1;
+                       }
+                     </SCRIPT>',
         &table("#cccccc"), "<TR>";
 
   my($payinfo, $payname)=(
@@ -434,8 +443,8 @@ if ( $payby_default eq 'HIDE' ) {
   my %payby = (
     'CARD' => qq!Credit card (automatic)<BR>${r}<INPUT TYPE="text" NAME="CARD_payinfo" VALUE="" MAXLENGTH=19><BR>${r}Exp !. expselect("CARD"). qq!<BR>${r}Name on card<BR><INPUT TYPE="text" NAME="CARD_payname" VALUE="">!,
     'DCRD' => qq!Credit card (on-demand)<BR>${r}<INPUT TYPE="text" NAME="DCRD_payinfo" VALUE="" MAXLENGTH=19><BR>${r}Exp !. expselect("DCRD"). qq!<BR>${r}Name on card<BR><INPUT TYPE="text" NAME="DCRD_payname" VALUE="">!,
-    'CHEK' => qq!Electronic check (automatic)<BR>${r}Account number <INPUT TYPE="text" NAME="CHEK_payinfo1" VALUE=""><BR>${r}ABA/Routing number <INPUT TYPE="text" NAME="CHEK_payinfo2" VALUE="" SIZE=10 MAXLENGTH=9><INPUT TYPE="hidden" NAME="CHEK_month" VALUE="12"><INPUT TYPE="hidden" NAME="CHEK_year" VALUE="2037"><BR>${r}Bank name <INPUT TYPE="text" NAME="CHEK_payname" VALUE="">!,
-    'DCHK' => qq!Electronic check (on-demand)<BR>${r}Account number <INPUT TYPE="text" NAME="DCHK_payinfo1" VALUE=""><BR>${r}ABA/Routing number <INPUT TYPE="text" NAME="DCHK_payinfo2" VALUE="" SIZE=10 MAXLENGTH=9><INPUT TYPE="hidden" NAME="DCHK_month" VALUE="12"><INPUT TYPE="hidden" NAME="DCHK_year" VALUE="2037"><BR>${r}Bank name <INPUT TYPE="text" NAME="DCHK_payname" VALUE="">!,
+    'CHEK' => qq!Electronic check (automatic)<BR>${r}Account number <INPUT TYPE="text" NAME="CHEK_payinfo1" VALUE=""><BR>${r}ABA/Routing number <INPUT TYPE="text" NAME="CHEK_payinfo2" VALUE="" SIZE=10 MAXLENGTH=9> (<A HREF="javascript:achopen('../docs/ach.html','ach','toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=no,resizable=yes,copyhistory=no,width=384,height=256')">help</A>)<INPUT TYPE="hidden" NAME="CHEK_month" VALUE="12"><INPUT TYPE="hidden" NAME="CHEK_year" VALUE="2037"><BR>${r}Bank name <INPUT TYPE="text" NAME="CHEK_payname" VALUE="">!,
+    'DCHK' => qq!Electronic check (on-demand)<BR>${r}Account number <INPUT TYPE="text" NAME="DCHK_payinfo1" VALUE=""><BR>${r}ABA/Routing number <INPUT TYPE="text" NAME="DCHK_payinfo2" VALUE="" SIZE=10 MAXLENGTH=9> (<A HREF="javascript:achopen('../docs/ach.html','ach','toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=no,resizable=yes,copyhistory=no,width=384,height=256')">help</A>)<INPUT TYPE="hidden" NAME="DCHK_month" VALUE="12"><INPUT TYPE="hidden" NAME="DCHK_year" VALUE="2037"><BR>${r}Bank name <INPUT TYPE="text" NAME="DCHK_payname" VALUE="">!,
     'LECB' => qq!Phone bill billing<BR>${r}Phone number <INPUT TYPE="text" BANE="LECB_payinfo" VALUE="" MAXLENGTH=15 SIZE=16><INPUT TYPE="hidden" NAME="LECB_month" VALUE="12"><INPUT TYPE="hidden" NAME="LECB_year" VALUE="2037"><INPUT TYPE="hidden" NAME="LECB_payname" VALUE="">!,
     'BILL' => qq!Billing<BR>P.O. <INPUT TYPE="text" NAME="BILL_payinfo" VALUE=""><BR><INPUT TYPE="hidden" NAME="BILL_month" VALUE="12"><INPUT TYPE="hidden" NAME="BILL_year" VALUE="2037">Attention<BR><INPUT TYPE="text" NAME="BILL_payname" VALUE="">!,
     'COMP' => qq!Complimentary<BR>${r}Approved by<INPUT TYPE="text" NAME="COMP_payinfo" VALUE=""><BR>${r}Exp !. expselect("COMP"),
@@ -452,8 +461,8 @@ if ( $payby_default eq 'HIDE' ) {
   my %paybychecked = (
     'CARD' => qq!Credit card (automatic)<BR>${r}<INPUT TYPE="text" NAME="CARD_payinfo" VALUE="$payinfo" MAXLENGTH=19><BR>${r}Exp !. expselect("CARD", $cust_main->paydate). qq!<BR>${r}Name on card<BR><INPUT TYPE="text" NAME="CARD_payname" VALUE="$payname">!,
     'DCRD' => qq!Credit card (on-demand)<BR>${r}<INPUT TYPE="text" NAME="DCRD_payinfo" VALUE="$payinfo" MAXLENGTH=19><BR>${r}Exp !. expselect("DCRD", $cust_main->paydate). qq!<BR>${r}Name on card<BR><INPUT TYPE="text" NAME="DCRD_payname" VALUE="$payname">!,
-    'CHEK' => qq!Electronic check (automatic)<BR>${r}Account number <INPUT TYPE="text" NAME="CHEK_payinfo1" VALUE="$account"><BR>${r}ABA/Routing number <INPUT TYPE="text" NAME="CHEK_payinfo2" VALUE="$aba" SIZE=10 MAXLENGTH=9><INPUT TYPE="hidden" NAME="CHEK_month" VALUE="12"><INPUT TYPE="hidden" NAME="CHEK_year" VALUE="2037"><BR>${r}Bank name <INPUT TYPE="text" NAME="CHEK_payname" VALUE="$payname">!,
-    'DCHK' => qq!Electronic check (on-demand)<BR>${r}Account number <INPUT TYPE="text" NAME="DCHK_payinfo1" VALUE="$account"><BR>${r}ABA/Routing number <INPUT TYPE="text" NAME="DCHK_payinfo2" VALUE="$aba" SIZE=10 MAXLENGTH=9><INPUT TYPE="hidden" NAME="DCHK_month" VALUE="12"><INPUT TYPE="hidden" NAME="DCHK_year" VALUE="2037"><BR>${r}Bank name <INPUT TYPE="text" NAME="DCHK_payname" VALUE="$payname">!,
+    'CHEK' => qq!Electronic check (automatic)<BR>${r}Account number <INPUT TYPE="text" NAME="CHEK_payinfo1" VALUE="$account"><BR>${r}ABA/Routing number <INPUT TYPE="text" NAME="CHEK_payinfo2" VALUE="$aba" SIZE=10 MAXLENGTH=9> (<A HREF="javascript:achopen('../docs/ach.html','ach','toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=no,resizable=yes,copyhistory=no,width=384,height=256')">help</A>)<INPUT TYPE="hidden" NAME="CHEK_month" VALUE="12"><INPUT TYPE="hidden" NAME="CHEK_year" VALUE="2037"><BR>${r}Bank name <INPUT TYPE="text" NAME="CHEK_payname" VALUE="$payname">!,
+    'DCHK' => qq!Electronic check (on-demand)<BR>${r}Account number <INPUT TYPE="text" NAME="DCHK_payinfo1" VALUE="$account"><BR>${r}ABA/Routing number <INPUT TYPE="text" NAME="DCHK_payinfo2" VALUE="$aba" SIZE=10 MAXLENGTH=9> (<A HREF="javascript:achopen('../docs/ach.html','ach','toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=no,resizable=yes,copyhistory=no,width=384,height=256')">help</A>)<INPUT TYPE="hidden" NAME="DCHK_month" VALUE="12"><INPUT TYPE="hidden" NAME="DCHK_year" VALUE="2037"><BR>${r}Bank name <INPUT TYPE="text" NAME="DCHK_payname" VALUE="$payname">!,
     'LECB' => qq!Phone bill billing<BR>${r}Phone number <INPUT TYPE="text" BANE="LECB_payinfo" VALUE="$payinfo" MAXLENGTH=15 SIZE=16><INPUT TYPE="hidden" NAME="LECB_month" VALUE="12"><INPUT TYPE="hidden" NAME="LECB_year" VALUE="2037"><INPUT TYPE="hidden" NAME="LECB_payname" VALUE="">!,
     'BILL' => qq!Billing<BR>P.O. <INPUT TYPE="text" NAME="BILL_payinfo" VALUE="$payinfo"><BR><INPUT TYPE="hidden" NAME="BILL_month" VALUE="12"><INPUT TYPE="hidden" NAME="BILL_year" VALUE="2037">Attention<BR><INPUT TYPE="text" NAME="BILL_payname" VALUE="$payname">!,
     'COMP' => qq!Complimentary<BR>${r}Approved by<INPUT TYPE="text" NAME="COMP_payinfo" VALUE="$payinfo"><BR>${r}Exp !. expselect("COMP", $cust_main->paydate),
