@@ -41,3 +41,4 @@ devel/p5-Tie-IxHash
     #www/p5-HTML-Widgets-SelectLayers
 devel/p5-Storable
 www/p5-Apache-DBI
+devel/p5-Cache-Cache
