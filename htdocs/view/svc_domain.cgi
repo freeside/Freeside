@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_domain.cgi,v 1.6 1999-01-19 05:14:23 ivan Exp $
+# $Id: svc_domain.cgi,v 1.7 1999-02-23 08:09:25 ivan Exp $
 #
 # Usage: svc_domain svcnum
 #        http://server.name/path/svc_domain.cgi?svcnum
@@ -15,7 +15,10 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # $Log: svc_domain.cgi,v $
-# Revision 1.6  1999-01-19 05:14:23  ivan
+# Revision 1.7  1999-02-23 08:09:25  ivan
+# beginnings of one-screen new customer entry and some other miscellania
+#
+# Revision 1.6  1999/01/19 05:14:23  ivan
 # for mod_perl: no more top-level my() variables; use vars instead
 # also the last s/create/new/;
 #
@@ -41,6 +44,10 @@ use CGI;
 use FS::UID qw(cgisuidsetup);
 use FS::CGI qw(header menubar popurl);
 use FS::Record qw(qsearchs);
+use FS::svc_domain;
+use FS::cust_svc;
+use FS::cust_pkg;
+use FS::part_svc;
 
 $cgi = new CGI;
 cgisuidsetup($cgi);

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: part_svc.cgi,v 1.8 1999-02-07 09:59:21 ivan Exp $
+# $Id: part_svc.cgi,v 1.9 1999-02-23 08:09:21 ivan Exp $
 #
 # ivan@sisd.com 97-nov-14
 #
@@ -10,7 +10,10 @@
 # use FS::CGI, added inline documentation ivan@sisd.com 98-jul-12
 #
 # $Log: part_svc.cgi,v $
-# Revision 1.8  1999-02-07 09:59:21  ivan
+# Revision 1.9  1999-02-23 08:09:21  ivan
+# beginnings of one-screen new customer entry and some other miscellania
+#
+# Revision 1.8  1999/02/07 09:59:21  ivan
 # more mod_perl fixes, and bugfixes Peter Wemm sent via email
 #
 # Revision 1.7  1999/01/19 05:13:42  ivan
@@ -151,9 +154,12 @@ foreach $svcdb ( qw(
   my($ptmp)="<TD ROWSPAN=$rowspan>$svcdb</TD>";
   my($row);
   foreach $row (@rows) {
-    my($value)=$part_svc->getfield($svcdb.'__'.$row);
-    my($flag)=$part_svc->getfield($svcdb.'__'.$row.'_flag');
-    print "<TR>$ptmp<TD>$row - <FONT SIZE=-1>$defs{$svcdb}{$row}</FONT></TD>";
+    my $value = $part_svc->getfield($svcdb. '__'. $row);
+    my $flag = $part_svc->getfield($svcdb. '__'. $row. '_flag');
+    print "<TR>$ptmp<TD>$row";
+    print "- <FONT SIZE=-1>$defs{$svcdb}{$row}</FONT>"
+      if defined $defs{$svcdb}{$row};
+    print "</TD>";
     print qq!<TD><INPUT TYPE="radio" NAME="${svcdb}__${row}_flag" VALUE=""!.
       ' CHECKED'x($flag eq ''). ">Off</TD>";
     print qq!<TD><INPUT TYPE="radio" NAME="${svcdb}__${row}_flag" VALUE="D"!.

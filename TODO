@@ -1,10 +1,12 @@
-$Id: TODO,v 1.24 1999-02-10 08:27:55 ivan Exp $
+$Id: TODO,v 1.25 1999-02-23 08:09:18 ivan Exp $
 
 If you are interested in helping with any of these, please join the mailing
 list (send a blank message to ivan-freeside-subscribe@sisd.com) to avoid 
 duplication of effort.
 
 -- before 1.2b1 --
+
+TEST email invoices
 
 one-screen new customer entry
 
@@ -15,6 +17,8 @@ Lay out the forms a bit better.
 libwww regression test - since it will create sample data, can also use this
 for the web demo
 make fs-setup option to add sample data so you can click on "New Customer" right away?  so people understand what this stuff is?
+(in sample data [ AND DOCUMENT! ] all svc_acct services should have a default
+ or fixed shell )
 
 (Test this)
 one-time/per-customer/? changes in rates and descriptions ('remembered
@@ -27,9 +31,23 @@ associated with any agent types so it won't show up for other customers to buy.
 
 update site_perl/table_template* (pry out of date)
 
+remove "records identical" warning?  gets in the way of more important stuff.
+
 update web demo
 
 -- release 1.2b1 ---
+
+password and slipip stuff in svc_acct.pm store need to be split into two fields or something, so the silliness in svc_acct.pm and svc_acct.export with looking at the data to decide what to do with it can be fixed
+
+i10n: Apache::Language
+
+Apache::Session?  Other useful Apache::* ?
+
+email invoices are only sent for the BILL payby.  If setup, should statements
+(since they're not invoices) be sent for COMP and CARD as well?
+
+$cgi->keywords is causing the (hard to trace) error:
+   	Use of uninitialized value at (eval 5) line 5
 
 edit/cust_main.cgi gives an uninformative error message:
 > Can't call method "agentnum" without a package or object reference at   
@@ -45,13 +63,16 @@ Allow a cancelled/suspended/active status from packages to bubble up to
 the customer lists.  Put active, then suspended, then cancelled accounts.
 Similar ordering on the package listing inside a single customer.
 
+false laziness: edit/cust_main.cgi got some parts copied from edit/svc_acct.cgi
+the web interface in general needs to be redone in a more abstract way.
+
 false laziness: some of search/svc_acct_sm.cgi was copied to search/svc_domain.cgi.  but web interface in general needs to be rewritten in a mucho cleaner way.
 
 Portability: in FS::Record, $sth->execute does not return a number of rows for all DBD's.  see man DBI
 
 subroutine the where clause (eventually all SQL) as OO perhaps (has anyone done this?)
 
-add a select method to 
+add a select method to ?
 
 You can't delete the stuff under administration yet.  Add this,
 _including_ making sure the thing you are deleting is not in use!
@@ -385,8 +406,6 @@ configuration/setup should get web interface
 /usr/local/etc/freeside should be configurable
 ...
 (probably as part of some automated installation process?)
-
-password and slipip stuff in svc_acct.pm store need to be split into two fields or something, so the silliness in svc_acct.pm and svc_acct.export with looking at the data to decide what to do with it can be fixed (1.2)
 
 This requires some serious magic in FS::Record:
 ok, if date_type in fs-setup is to be something besides int,

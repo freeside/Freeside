@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_domain.cgi,v 1.6 1999-02-09 09:22:59 ivan Exp $
+# $Id: svc_domain.cgi,v 1.7 1999-02-23 08:09:24 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/svc_domain.cgi
@@ -17,7 +17,10 @@
 # display total, use FS::CGI now does browsing too ivan@sisd.com 98-jul-17
 #
 # $Log: svc_domain.cgi,v $
-# Revision 1.6  1999-02-09 09:22:59  ivan
+# Revision 1.7  1999-02-23 08:09:24  ivan
+# beginnings of one-screen new customer entry and some other miscellania
+#
+# Revision 1.6  1999/02/09 09:22:59  ivan
 # visual and bugfixes
 #
 # Revision 1.5  1999/02/07 09:59:39  ivan
@@ -35,12 +38,16 @@
 #
 
 use strict;
-use vars qw ( $cgi @svc_domain $sortby $query $conf );
+use vars qw ( $cgi @svc_domain $sortby $query $conf $mydomain );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
 use FS::Record qw(qsearch qsearchs);
 use FS::CGI qw(header eidiot popurl);
+use FS::svc_domain;
+use FS::cust_svc;
+use FS::svc_acct_sm;
+use FS::svc_acct;
 
 $cgi = new CGI;
 &cgisuidsetup($cgi);

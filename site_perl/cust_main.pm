@@ -5,12 +5,14 @@ use vars qw($paymentserversecret $paymentserverport $paymentserverhost);
 package FS::cust_main;
 
 use strict;
-use vars qw(@ISA $conf $lpr $processor $xaction $E_NoErr);
+use vars qw(@ISA $conf $lpr $processor $xaction $E_NoErr $invoice_from);
 use Safe;
 use Carp;
 use Time::Local;
 use Date::Format;
 use Date::Manip;
+use Mail::Internet;
+use Mail::Header;
 use Business::CreditCard;
 use FS::UID qw( getotaker );
 use FS::Record qw( qsearchs qsearch );
@@ -31,6 +33,7 @@ use FS::cust_main_invoice;
 $FS::UID::callback{'FS::cust_main'} = sub { 
   $conf = new FS::Conf;
   $lpr = $conf->config('lpr');
+  $invoice_from = $conf->config('invoice_from');
 
   if ( $conf->exists('cybercash3.2') ) {
     require CCMckLib3_2;
@@ -585,11 +588,30 @@ sub collect {
            && ( $cust_bill->printed * 2592000 ) <= $since
       ) {
 
-        open(LPR, "|$lpr") or die "Can't open pipe to $lpr: $!";
-        print LPR $cust_bill->print_text; #( date )
-        close LPR
-          or die $! ? "Error closing $lpr: $!"
-                       : "Exit status $? from $lpr";
+        #my @print_text = $cust_bill->print_text; #( date )
+        my @invoicing_list = $self->invoicing_list;
+        if ( grep { $_ ne 'POST' } @invoicing_list ) { #email invoice
+          my $header = new Mail::Header ( [
+            "From: $invoice_from",
+            "To: ". join(', ', grep { $_ ne 'POST' } @invoicing_list ),
+            "Sender: $invoice_from",
+            "Reply-To: $invoice_from",
+            "Date: ". time2str("%a, %d %b %Y %X %z", time),
+            "Subject: Invoice",
+          ] );
+          my $message = new Mail::Internet (
+            'Header' => $header,
+            'Body' => [ $cust_bill->print_text ], #( date)
+          );
+          $message->smtpsend or die "Can't send invoice email!"; #die?  warn?
+
+        } elsif ( ! @invoicing_list || grep { $_ eq 'POST' } @invoicing_list ) {
+          open(LPR, "|$lpr") or die "Can't open pipe to $lpr: $!";
+          print LPR $cust_bill->print_text; #( date )
+          close LPR
+            or die $! ? "Error closing $lpr: $!"
+                         : "Exit status $? from $lpr";
+        }
 
         my %hash = $cust_bill->hash;
         $hash{'printed'}++;
@@ -611,6 +633,7 @@ sub collect {
       my $error = $cust_pay->insert;
       return 'Error COMPing invnum #' . $cust_bill->invnum .
              ':' . $error if $error;
+
     } elsif ( $self->payby eq 'CARD' ) {
 
       if ( $options{'batch_card'} ne 'yes' ) {
@@ -711,6 +734,10 @@ sub collect {
     } else {
       return "Unknown payment type ". $self->payby;
     }
+
+
+
+
 
   }
   '';
@@ -835,7 +862,7 @@ sub check_invoicing_list {
 
 =head1 VERSION
 
-$Id: cust_main.pm,v 1.10 1999-01-25 12:26:09 ivan Exp $
+$Id: cust_main.pm,v 1.11 1999-02-23 08:09:27 ivan Exp $
 
 =head1 BUGS
 
@@ -891,7 +918,10 @@ enable cybercash, cybercash v3 support, don't need to import
 FS::UID::{datasrc,checkruid} ivan@sisd.com 98-sep-19-21
 
 $Log: cust_main.pm,v $
-Revision 1.10  1999-01-25 12:26:09  ivan
+Revision 1.11  1999-02-23 08:09:27  ivan
+beginnings of one-screen new customer entry and some other miscellania
+
+Revision 1.10  1999/01/25 12:26:09  ivan
 yet more mod_perl stuff
 
 Revision 1.9  1999/01/18 09:22:41  ivan

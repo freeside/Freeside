@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct.cgi,v 1.7 1999-02-07 09:59:22 ivan Exp $
+# $Id: svc_acct.cgi,v 1.8 1999-02-23 08:09:22 ivan Exp $
 #
 # Usage: svc_acct.cgi {svcnum} | pkgnum{pkgnum}-svcpart{svcpart}
 #        http://server.name/path/svc_acct.cgi? {svcnum} | pkgnum{pkgnum}-svcpart{svcpart}
@@ -18,7 +18,10 @@
 # use conf/shells and dbdef username length ivan@sisd.com 98-jul-13
 #
 # $Log: svc_acct.cgi,v $
-# Revision 1.7  1999-02-07 09:59:22  ivan
+# Revision 1.8  1999-02-23 08:09:22  ivan
+# beginnings of one-screen new customer entry and some other miscellania
+#
+# Revision 1.7  1999/02/07 09:59:22  ivan
 # more mod_perl fixes, and bugfixes Peter Wemm sent via email
 #
 # Revision 1.6  1999/01/19 05:13:43  ivan
@@ -156,7 +159,7 @@ if ( $part_svc->svc_acct__popnum_flag eq "F" ) {
         $svc_acct_pop->popnum, ": ", 
         $svc_acct_pop->city, ", ",
         $svc_acct_pop->state,
-        "(", $svc_acct_pop->ac, ")/",
+        " (", $svc_acct_pop->ac, ")/",
         $svc_acct_pop->exch, "\n"
       ;
   }

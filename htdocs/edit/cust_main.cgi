@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main.cgi,v 1.8 1999-01-25 12:09:53 ivan Exp $
+# $Id: cust_main.cgi,v 1.9 1999-02-23 08:09:20 ivan Exp $
 #
 # Usage: cust_main.cgi custnum
 #        http://server.name/path/cust_main.cgi?custnum
@@ -40,7 +40,10 @@
 # fixed one missed day->daytime ivan@sisd.com 98-jul-13
 #
 # $Log: cust_main.cgi,v $
-# Revision 1.8  1999-01-25 12:09:53  ivan
+# Revision 1.9  1999-02-23 08:09:20  ivan
+# beginnings of one-screen new customer entry and some other miscellania
+#
+# Revision 1.8  1999/01/25 12:09:53  ivan
 # yet more mod_perl stuff
 #
 # Revision 1.7  1999/01/19 05:13:34  ivan
@@ -66,12 +69,25 @@ use vars qw( $cgi $custnum $action $cust_main $p1 @agents $agentnum
              $last $first $ss $company $address1 $address2 $city $zip 
              $daytime $night $fax @invoicing_list $invoicing_list $payinfo
              $payname %payby %paybychecked $refnum $otaker $r );
+use vars qw ( $conf $pkgpart $username $password $popnum $ulen $ulen2 );
 use CGI::Switch;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup getotaker);
-use FS::Record qw(qsearch qsearchs fields);
+#use FS::Record qw(qsearch qsearchs fields);
+use FS::Record qw(qsearch qsearchs fields dbdef);
 use FS::CGI qw(header popurl itable table);
 use FS::cust_main;
+use FS::agent;
+use FS::part_referral;
+use FS::cust_main_county;
+
+  #for misplaced logic below
+  use FS::pkg_svc;
+  use FS::part_svc;
+  use FS::part_pkg;
+
+  #for false laziness below
+  use FS::svc_acct_pop;
 
 $cgi = new CGI;
 cgisuidsetup($cgi);
@@ -83,15 +99,27 @@ if ( $cgi->param('error') ) {
     map { $_, scalar($cgi->param($_)) } fields('cust_main')
   } );
   $custnum = $cust_main->custnum;
+  $pkgpart = $cgi->param('pkgpart');
+  $username = $cgi->param('username');
+  $password = $cgi->param('_password');
+  $popnum = $cgi->param('popnum');
 } elsif ( $cgi->keywords ) { #editing
   my( $query ) = $cgi->keywords;
   $query =~ /^(\d+)$/;
   $custnum=$1;
   $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } );
+  $pkgpart = 0;
+  $username = '';
+  $password = '';
+  $popnum = 0;
 } else {
   $custnum='';
   $cust_main = new FS::cust_main ( {} );
   $cust_main->setfield('otaker',&getotaker);
+  $pkgpart = 0;
+  $username = '';
+  $password = '';
+  $popnum = 0;
 }
 $action = $custnum ? 'Edit' : 'Add';
 
@@ -140,7 +168,7 @@ if ( $custnum ) {
     $refnum ||= $referrals[0]->refnum;
     print qq!<INPUT TYPE="hidden" NAME="refnum" VALUE="$refnum">!;
   } else {
-    print qq!<BR>${r}Referral <SELECT NAME="refnum" SIZE="1">!;
+    print qq!<BR><BR>${r}Referral <SELECT NAME="refnum" SIZE="1">!;
     print "<OPTION> ";
     my($referral);
     foreach $referral (sort {
@@ -200,7 +228,7 @@ print <<END;
 <TR><TD ALIGN="right">Fax</TD><TD COLSPAN=5><INPUT TYPE="text" NAME="fax" VALUE="$fax" SIZE=12></TD></TR>
 END
 
-print "</TABLE>$r designates required fields<BR>";
+print "</TABLE>$r required fields<BR>";
 
 # billing info
 
@@ -270,8 +298,66 @@ for (qw(CARD BILL COMP)) {
   }
 }
 
-print "</TR></TABLE>$r designates required fields for each billing type";
+print "</TR></TABLE>$r required fields for each billing type";
 
+unless ( $custnum ) {
+  # pry the wrong place for this logic.  also pretty expensive
+  #use FS::pkg_svc;
+  #use FS::part_svc;
+  #use FS::part_pkg;
+
+  my %pkgpart;
+  #foreach ( @pkg_svc ) {
+  foreach ( qsearch( 'pkg_svc', {} ) ) {
+    my $part_svc = qsearchs ( 'part_svc', { 'svcpart' => $_->svcpart } );
+    $pkgpart{ $_->pkgpart } = 9999 # never will == 1 below
+      if ( $part_svc->svcdb ne 'svc_acct' );
+    $pkgpart{ $_->pkgpart }++;
+  }
+
+  my @part_pkg =
+    #grep { $pkgpart{ $_->pkgpart } == 1 } qsearch( 'part_pkg', {} );
+    grep { ( $pkgpart{ $_->pkgpart } || 0 ) == 1 } qsearch( 'part_pkg', {} );
+
+  if ( @part_pkg ) {
+
+    print "<BR><BR>First package", itable("#c0c0c0"),
+          qq!<TR><TD COLSPAN=2><SELECT NAME="pkgpart">!;
+
+    print qq!<OPTION VALUE="">(none)!;
+
+    foreach my $part_pkg ( @part_pkg ) {
+      print qq!<OPTION VALUE="!, $part_pkg->pkgpart, '"',
+            " SELECTED"x($part_pkg->pkgpart == $pkgpart),
+            ">", $part_pkg->pkg, " - ", $part_pkg->comment;
+    }
+    print "</SELECT></TD></TR>";
+
+    #false laziness: (mostly) copied from edit/svc_acct.cgi
+    #$ulen = $svc_acct->dbdef_table->column('username')->length;
+    $ulen = dbdef->table('svc_acct')->column('username')->length;
+    $ulen2 = $ulen+2;
+    print <<END;
+<TR><TD ALIGN="right">Username</TD>
+<TD><INPUT TYPE="text" NAME="username" VALUE="$username" SIZE=$ulen2 MAXLENGTH=$ulen></TD></TR>
+<TR><TD ALIGN="right">Password</TD>
+<TD><INPUT TYPE="text" NAME="_password" VALUE="$password" SIZE=10 MAXLENGTH=8>
+(blank to generate)</TD></TR>
+END
+    print qq!<TR><TD ALIGN="right">POP</TD><TD><SELECT NAME="popnum" SIZE=1><OPTION> !;
+    my($svc_acct_pop);
+    foreach $svc_acct_pop ( qsearch ('svc_acct_pop',{} ) ) {
+    print "<OPTION", $svc_acct_pop->popnum == $popnum ? ' SELECTED' : '', ">", 
+          $svc_acct_pop->popnum, ": ", 
+          $svc_acct_pop->city, ", ",
+          $svc_acct_pop->state,
+          " (", $svc_acct_pop->ac, ")/",
+          $svc_acct_pop->exch, "\n"
+        ;
+    }
+    print "</SELECT></TD></TR></TABLE>";
+  }
+}
 
 $otaker = $cust_main->otaker;
 print qq!<INPUT TYPE="hidden" NAME="otaker" VALUE="$otaker">!,

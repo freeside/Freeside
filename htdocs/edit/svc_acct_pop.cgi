@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct_pop.cgi,v 1.7 1999-02-07 09:59:23 ivan Exp $
+# $Id: svc_acct_pop.cgi,v 1.8 1999-02-23 08:09:23 ivan Exp $
 #
 # ivan@sisd.com 98-mar-8 
 #
@@ -10,7 +10,10 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: svc_acct_pop.cgi,v $
-# Revision 1.7  1999-02-07 09:59:23  ivan
+# Revision 1.8  1999-02-23 08:09:23  ivan
+# beginnings of one-screen new customer entry and some other miscellania
+#
+# Revision 1.7  1999/02/07 09:59:23  ivan
 # more mod_perl fixes, and bugfixes Peter Wemm sent via email
 #
 # Revision 1.6  1999/01/19 05:13:44  ivan
@@ -38,11 +41,9 @@ use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
 use FS::Record qw(qsearch qsearchs fields);
-use FS::svc_acct_pop;
 use FS::CGI qw(header menubar popurl);
-
+use FS::svc_acct_pop;
 $cgi = new CGI;
-
 &cgisuidsetup($cgi);
 
 if ( $cgi->param('error') ) {
