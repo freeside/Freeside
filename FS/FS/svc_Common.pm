@@ -2,7 +2,7 @@ package FS::svc_Common;
 
 use strict;
 use vars qw( @ISA );
-use FS::Record qw( qsearchs fields );
+use FS::Record qw( qsearchs fields dbh );
 use FS::cust_svc;
 use FS::part_svc;
 
@@ -193,7 +193,7 @@ sub cancel { ''; }
 
 =head1 VERSION
 
-$Id: svc_Common.pm,v 1.3 2001-04-15 13:35:12 ivan Exp $
+$Id: svc_Common.pm,v 1.4 2001-04-22 00:49:30 ivan Exp $
 
 =head1 BUGS
 
