@@ -1064,14 +1064,7 @@ sub ssh {
 
 =back
 
-=head1 VERSION
-
-$Id: svc_acct.pm,v 1.64 2002-01-29 16:33:15 ivan Exp $
-
 =head1 BUGS
-
-The bits which ssh should fork before doing so (or maybe queue jobs for a
-daemon).
 
 The $recref stuff in sub check should be cleaned up.
 
