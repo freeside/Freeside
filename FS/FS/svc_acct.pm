@@ -381,17 +381,17 @@ Sets any fixed values; see L<FS::part_svc>.
 sub check {
   my $self = shift;
 
-  my $error = 
-    $self->ut_numbern('svcnum')
-    || $self->ut_number('domsvc')
-  ;
-  return $error if $error;
-
   my($recref) = $self->hashref;
 
   my $x = $self->setfixed;
   return $x unless ref($x);
   my $part_svc = $x;
+
+  my $error = 
+    $self->ut_numbern('svcnum')
+    || $self->ut_number('domsvc')
+  ;
+  return $error if $error;
 
   my $ulen = $usernamemax || $self->dbdef_table->column('username')->length;
   $recref->{username} =~ /^([a-z0-9_\-\.]{$usernamemin,$ulen})$/
@@ -558,7 +558,7 @@ sub radius_check {
 
 =head1 VERSION
 
-$Id: svc_acct.pm,v 1.21 2001-08-13 00:21:54 ivan Exp $
+$Id: svc_acct.pm,v 1.22 2001-08-19 08:15:10 ivan Exp $
 
 =head1 BUGS
 
