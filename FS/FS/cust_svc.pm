@@ -134,6 +134,18 @@ sub part_svc {
     : qsearchs( 'part_svc', { 'svcpart' => $self->svcpart } );
 }
 
+=item cust_pkg
+
+Returns the definition for this service, as a FS::part_svc object (see
+L<FS::part_svc>).
+
+=cut
+
+sub cust_pkg {
+  my $self = shift;
+  qsearchs( 'cust_pkg', { 'pkgnum' => $self->pkgnum } );
+}
+
 =item label
 
 Returns a list consisting of:
@@ -183,7 +195,7 @@ sub label {
 
 =head1 VERSION
 
-$Id: cust_svc.pm,v 1.6 2001-11-03 17:49:52 ivan Exp $
+$Id: cust_svc.pm,v 1.7 2001-11-30 00:04:38 ivan Exp $
 
 =head1 BUGS
 

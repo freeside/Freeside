@@ -107,7 +107,7 @@ sub delete {
   $error = $self->SUPER::delete;
   return $error if $error;
 
-  my $cust_svc = qsearchs( 'cust_svc' , { 'svcnum' => $svcnum } );  
+  my $cust_svc = $self->cust_svc;
   $error = $cust_svc->delete;
   return $error if $error;
 
@@ -154,7 +154,7 @@ sub setx {
   #get part_svc
   my $svcpart;
   if ( $self->svcnum ) {
-    my $cust_svc = qsearchs( 'cust_svc', { 'svcnum' => $self->svcnum } );
+    my $cust_svc = $self->cust_svc;
     return "Unknown svcnum" unless $cust_svc; 
     $svcpart = $cust_svc->svcpart;
   } else {
@@ -176,6 +176,18 @@ sub setx {
 
 }
 
+=item cust_svc
+
+Returns the cust_svc record associated with this svc_ record, as a FS::cust_svc
+object (see L<FS::cust_svc>).
+
+=cut
+
+sub cust_svc {
+  my $self = shift;
+  qsearchs('cust_svc', { 'svcnum' => $self->svcnum } );
+}
+
 =item suspend
 
 =item unsuspend
@@ -195,7 +207,7 @@ sub cancel { ''; }
 
 =head1 VERSION
 
-$Id: svc_Common.pm,v 1.6 2001-09-11 22:20:28 ivan Exp $
+$Id: svc_Common.pm,v 1.7 2001-11-30 00:04:38 ivan Exp $
 
 =head1 BUGS
 

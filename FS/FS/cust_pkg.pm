@@ -99,7 +99,7 @@ inherits from FS::Record.  The following fields are currently supported:
 =item otaker - order taker (assigned automatically if null, see L<FS::UID>)
 
 =item manual_flag - If this field is set to 1, disables the automatic
-unsuspensiond of this package when using the B<unsuspendauto> config file.
+unsuspension of this package when using the B<unsuspendauto> config file.
 
 =back
 
@@ -629,7 +629,7 @@ sub order {
 
 =head1 VERSION
 
-$Id: cust_pkg.pm,v 1.13 2001-11-03 17:49:52 ivan Exp $
+$Id: cust_pkg.pm,v 1.14 2001-11-30 00:04:38 ivan Exp $
 
 =head1 BUGS
 
