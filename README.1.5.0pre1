@@ -6,6 +6,7 @@ schema changes:
   *** optional: sequence changes
 
 install DBIx::DBSchema 0.21
+install NetAddr::IP
 
 Run dbdef-create
 something about history tables
