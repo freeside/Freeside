@@ -381,7 +381,7 @@ sub usage_sessions {
 
   $end ||= 2147483647;
 
-  return () if $self->option('ignore_accounting');
+  return [] if $self->option('ignore_accounting');
 
   my $dbh = sqlradius_connect( map $self->option($_),
                                    qw( datasrc username password ) );
