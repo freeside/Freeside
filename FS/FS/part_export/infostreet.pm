@@ -145,7 +145,7 @@ sub infostreet_setContact {
     'getAccountID', $username);
   foreach my $field ( keys %contact_info ) {
     infostreet_command($url, $is_username, $is_password, $groupID,
-      'setContactField', $accountID, $field, $contact_info{$field} );
+      'setContactField', [ 'int'=>$accountID ], $field, $contact_info{$field} );
   }
 
 }
@@ -165,6 +165,13 @@ sub infostreet_command { #subroutine, not method
 
   eval "use Frontier::Client;";
 
+  eval 'sub Frontier::RPC2::String::repr {
+    my $self = shift
+    my $value = $$self;
+    $value =~ s/([&<>\"])/$Frontier::RPC2::char_entities{$1}/ge;
+    $value;
+  }';
+
   my $conn = Frontier::Client->new( url => $url );
   my $key_result = $conn->call( 'authenticate', $username, $password, $groupID);
   my %key_result = _infostreet_parse($key_result);
@@ -172,7 +179,15 @@ sub infostreet_command { #subroutine, not method
   my $key = $key_result{data};
 
   #my $result = $conn->call($method, $key, @args);
-  my $result = $conn->call($method, $key, map { $conn->string($_) } @args);
+  my $result = $conn->call( $method, $key,
+                            map {
+                                  if ( ref($_) ) {
+                                    my( $type, $value) = @{$_};
+                                    $conn->$type($value);
+                                  } else {
+                                    $conn->string($_);
+                                  }
+                                } @args );
   my %result = _infostreet_parse($result);
   die $result{error} unless $result{success};
 
