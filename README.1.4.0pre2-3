@@ -1,5 +1,7 @@
 the following is necessary to upgrade from 1.4.0pre2 to pre3 or later.
 
+install the perl modules and httemplate as per install.html or upgrade8.html
+
 CREATE TABLE part_svc_column (
   columnnum int primary key,
   svcpart int not null,

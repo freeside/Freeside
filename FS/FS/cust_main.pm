@@ -1,7 +1,3 @@
-#this is so kludgy i'd be embarassed if it wasn't cybercash's fault
-package main;
-use vars qw($paymentserversecret $paymentserverport $paymentserverhost);
-
 package FS::cust_main;
 
 use strict;
@@ -66,15 +62,6 @@ $FS::UID::callback{'FS::cust_main'} = sub {
       die "CCMckLib3_2::InitConfig fatal error: $errmsg\n";
     }
     $processor='cybercash3.2';
-  } elsif ( $conf->exists('cybercash2') ) {
-    require CCLib;
-      #qw(sendmserver);
-    ( $main::paymentserverhost, 
-      $main::paymentserverport, 
-      $main::paymentserversecret,
-      $xaction,
-    ) = $conf->config('cybercash2');
-    $processor='cybercash2';
   } elsif ( $conf->exists('business-onlinepayment') ) {
     ( $bop_processor,
       $bop_login,
@@ -1082,7 +1069,7 @@ sub collect {
         $self->paydate =~ /^\d{2}(\d{2})[\/\-](\d+)[\/\-]\d+$/;
         my $exp = "$2/$1";
 
-        if ( $processor =~ /^cybercash/ ) {
+        if ( $processor eq 'cybercash3.2' ) {
 
           #fix exp. date for cybercash
           #$self->paydate =~ /^(\d+)\/\d*(\d{2})$/;
@@ -1112,16 +1099,7 @@ sub collect {
           );
 
           my %result;
-          if ( $processor eq 'cybercash2' ) {
-            $^W=0; #CCLib isn't -w safe, ugh!
-            %result = &CCLib::sendmserver(@full_xaction);
-            $^W=1;
-          } elsif ( $processor eq 'cybercash3.2' ) {
-            %result = &CCMckDirectLib3_2::SendCC2_1Server(@full_xaction);
-          } else {
-            $dbh->rollback if $oldAutoCommit;
-            return "Unknown real-time processor $processor";
-          }
+          %result = &CCMckDirectLib3_2::SendCC2_1Server(@full_xaction);
          
           #if ( $result{'MActionCode'} == 7 ) { #cybercash smps v.1.1.3
           #if ( $result{'action-code'} == 7 ) { #cybercash smps v.2.1
@@ -1683,7 +1661,7 @@ sub append_fuzzyfiles {
 
 =head1 VERSION
 
-$Id: cust_main.pm,v 1.30 2001-09-11 00:08:18 ivan Exp $
+$Id: cust_main.pm,v 1.31 2001-09-11 03:15:58 ivan Exp $
 
 =head1 BUGS
 

@@ -4,6 +4,7 @@ use strict;
 use vars qw( @ISA $nossh_hack $conf $dir_prefix @shells $usernamemin
              $usernamemax $passwordmin $username_letter $username_letterfirst
              $shellmachine $useradd $usermod $userdel $mydomain
+             $cyrus_server $cyrus_admin_user $cyrus_admin_pass
              @saltset @pw_set);
 use Carp;
 use FS::Conf;
@@ -16,6 +17,7 @@ use FS::svc_acct_sm;
 use FS::cust_main_invoice;
 use FS::svc_domain;
 use FS::raddb;
+use FS::queue;
 
 @ISA = qw( FS::svc_Common );
 
@@ -52,6 +54,15 @@ $FS::UID::callback{'FS::svc_acct'} = sub {
   $username_letter = $conf->exists('username-letter');
   $username_letterfirst = $conf->exists('username-letterfirst');
   $mydomain = $conf->config('domain');
+  if ( $conf->exists('cyrus') ) {
+    ($cyrus_server, $cyrus_admin_user, $cyrus_admin_pass) =
+      $conf->config('cyrus');
+    eval "use Cyrus::IMAP::Admin;"
+  } else {
+    $cyrus_server = '';
+    $cyrus_admin_user = '';
+    $cyrus_admin_pass = '';
+  }
 };
 
 @saltset = ( 'a'..'z' , 'A'..'Z' , '0'..'9' , '.' , '/' );
@@ -151,7 +162,8 @@ defined.  An FS::cust_svc record will be created and inserted.
 
 If the configuration value (see L<FS::Conf>) shellmachine exists, and the 
 username, uid, and dir fields are defined, the command(s) specified in
-the shellmachine-useradd configuration are exectued on shellmachine via ssh.
+the shellmachine-useradd configuration are added to the job queue (see
+L<FS::queue> and L<freeside-queued>) to be exectued on shellmachine via ssh.
 This behaviour can be surpressed by setting $FS::svc_acct::nossh_hack true.
 If the shellmachine-useradd configuration file does not exist,
 
@@ -166,6 +178,8 @@ is the default instead.  Otherwise the contents of the file are treated as
 a double-quoted perl string, with the following variables available:
 $username, $uid, $gid, $dir, and $shell.
 
+(TODOC: cyrus config file, L<FS::queue> and L<freeside-queued>)
+
 =cut
 
 sub insert {
@@ -178,6 +192,12 @@ sub insert {
   local $SIG{TERM} = 'IGNORE';
   local $SIG{TSTP} = 'IGNORE';
   local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $amount = 0;
 
   $error = $self->check;
   return $error if $error;
@@ -196,7 +216,10 @@ sub insert {
     ;
 
   $error = $self->SUPER::insert;
-  return $error if $error;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
 
   my( $username, $uid, $gid, $dir, $shell ) = (
     $self->username,
@@ -206,10 +229,52 @@ sub insert {
     $self->shell,
   );
   if ( $username && $uid && $dir && $shellmachine && ! $nossh_hack ) {
-    ssh("root\@$shellmachine", eval qq("$useradd") );
+    my $queue = new FS::queue { 'job' => 'Net::SSH::ssh' };
+    $error = $queue->insert("root\@$shellmachine", eval qq("$useradd") );
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "queueing job (transaction rolled back): $error";
+    }
   }
 
+  if ( $cyrus_server ) {
+    my $queue = new FS::queue { 'job' => 'FS::svc_acct::cyrus_insert' };
+    $error = $queue->insert($self->username, $self->quota);
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "queueing job (transaction rolled back): $error";
+    }
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   ''; #no error
+}
+
+sub cyrus_insert {
+  my( $username, $quota ) = 
+
+  my $client = Cyrus::IMAP::Admin->new($cyrus_server);
+  $client->authenticate(
+    -user      => $cyrus_admin_user,
+    -mechanism => "login",       
+    -password  => $cyrus_admin_pass
+  );
+
+  my $rc = $client->create("user.$username");
+  my $error = $client->error;
+  die $error if $error;
+
+  $rc = $client->setacl("user.$username", $username => 'all' );
+  $error = $client->error;
+  die $error if $error;
+
+  if ( $quota ) {
+    $rc = $client->setquota("user.$username", 'STORAGE' => $quota );
+    $error = $client->error;
+    die $error if $error;
+  }
+
+  1;
 }
 
 =item delete
@@ -221,7 +286,8 @@ The corresponding FS::cust_svc record will be deleted as well.
 
 If the configuration value (see L<FS::Conf>) shellmachine exists, the
 command(s) specified in the shellmachine-userdel configuration file are
-executed on shellmachine via ssh.  This behavior can be surpressed by setting
+added to the job queue (see L<FS::queue> and L<freeside-queued>) to be executed
+on shellmachine via ssh.  This behavior can be surpressed by setting
 $FS::svc_acct::nossh_hack true.  If the shellmachine-userdel configuration
 file does not exist,
 
@@ -235,6 +301,8 @@ is empty,
 is the default instead.  Otherwise the contents of the file are treated as a
 double-quoted perl string, with the following variables available:
 $username and $dir.
+
+(TODOC: cyrus config file)
 
 =cut
 
@@ -298,17 +366,52 @@ sub delete {
     return $error;
   }
 
-  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
-
   my( $username, $dir ) = (
     $self->username,
     $self->dir,
   );
   if ( $username && $shellmachine && ! $nossh_hack ) {
-    ssh("root\@$shellmachine", eval qq("$userdel") );
+    my $queue = new FS::queue { 'job' => 'Net::SSH::ssh' };
+    $error = $queue->insert("root\@$shellmachine", eval qq("$userdel") );
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "queueing job (transaction rolled back): $error";
+    }
+
   }
 
+  if ( $cyrus_server ) {
+    my $queue = new FS::queue { 'job' => 'FS::svc_acct::cyrus_delete' };
+    $error = $queue->insert($self->username);
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "queueing job (transaction rolled back): $error";
+    }
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
+}
+
+sub cyrus_delete {
+  my( $username ) = shift; 
+
+  my $client = Cyrus::IMAP::Admin->new($cyrus_server);
+  $client->authenticate(
+    -user      => $cyrus_admin_user,
+    -mechanism => "login",       
+    -password  => $cyrus_admin_pass
+  );
+
+  my $rc = $client->setacl("user.$username", $cyrus_admin_user => 'all' );
+  my $error = $client->error;
+  die $error if $error;
+
+  $rc = $client->delete("user.$username");
+  $error = $client->error;
+  die $error if $error;
+
+  1;
 }
 
 =item replace OLD_RECORD
@@ -318,9 +421,10 @@ returns the error, otherwise returns false.
 
 If the configuration value (see L<FS::Conf>) shellmachine exists, and the 
 dir field has changed, the command(s) specified in the shellmachine-usermod
-configuraiton file are executed on shellmachine via ssh.  This behavior can
+configuraiton file are added to the job queue (see L<FS::queue> and
+L<freeside-queued>) to be executed on shellmachine via ssh.  This behavior can
 be surpressed by setting $FS::svc-acct::nossh_hack true.  If the
-shellmachine-userdel configuration file does not exist or is empty, :
+shellmachine-userdel configuration file does not exist or is empty,
 
   [ -d $old_dir ] && mv $old_dir $new_dir || (
     chmod u+t $old_dir;
@@ -332,8 +436,8 @@ shellmachine-userdel configuration file does not exist or is empty, :
     rm -rf $old_dir
   )
 
-is executed on shellmachine via ssh.  This behaviour can be surpressed by
-setting $FS::svc_acct::nossh_hack true.
+is the default.  This behaviour can be surpressed by setting
+$FS::svc_acct::nossh_hack true.
 
 =cut
 
@@ -347,6 +451,9 @@ sub replace {
 
   return "Can't change uid!" if $old->uid != $new->uid;
 
+  return "can't change username using Cyrus"
+    if $cyrus_server && $old->username ne $new->username;
+
   #change homdir when we change username
   $new->setfield('dir', '') if $old->username ne $new->username;
 
@@ -357,8 +464,15 @@ sub replace {
   local $SIG{TSTP} = 'IGNORE';
   local $SIG{PIPE} = 'IGNORE';
 
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
   $error = $new->SUPER::replace($old);
-  return $error if $error;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error if $error;
+  }
 
   my ( $old_dir, $new_dir, $uid, $gid ) = (
     $old->getfield('dir'),
@@ -367,9 +481,15 @@ sub replace {
     $new->getfield('gid'),
   );
   if ( $old_dir && $new_dir && $old_dir ne $new_dir && ! $nossh_hack ) {
-    ssh("root\@$shellmachine", eval qq("$usermod") );
+    my $queue = new FS::queue { 'job' => 'Net::SSH::ssh' };
+    $error = $queue->insert("root\@$shellmachine", eval qq("$usermod") );
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "queueing job (transaction rolled back): $error";
+    }
   }
 
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   ''; #no error
 }
 
@@ -638,7 +758,7 @@ sub email {
 
 =head1 VERSION
 
-$Id: svc_acct.pm,v 1.33 2001-09-07 20:26:33 ivan Exp $
+$Id: svc_acct.pm,v 1.34 2001-09-11 03:15:58 ivan Exp $
 
 =head1 BUGS
 
@@ -654,7 +774,8 @@ counterintuitive.
 =head1 SEE ALSO
 
 L<FS::svc_Common>, L<FS::Record>, L<FS::Conf>, L<FS::cust_svc>,
-L<FS::part_svc>, L<FS::cust_pkg>, L<Net::SSH>, L<ssh>, L<FS::svc_acct_pop>,
+L<FS::part_svc>, L<FS::cust_pkg>, L<FS::queue>, L<freeside-queued>),
+L<Net::SSH>, L<ssh>, L<FS::svc_acct_pop>,
 schema.html from the base documentation.
 
 =cut
