@@ -31,12 +31,8 @@ at <i>/your/path</i>/site_perl/FS/UID.pm line 26.
 BEGIN failed--compilation aborted at
 <i>/your/path</i>/edit/process/part_svc.cgi line 15.
 </pre>
-        Then the scripts are not running setuid freeside.  If you were editing
-the files, it is possible you inadvertantly removed the setuid bit.
-As mentioned in the <a href="install.html">New Installation</a> section of the documentation, set ownership and permissions for the web interface.  Your system should support secure setuid scripts or Perl's emulation, see <a href="http://www.perl.com/CPAN-local/doc/manual/html/pod/perlsec.html#Security_Bugs">perlsec: Security Bugs</a> for information and workarounds.
-<pre>cd /usr/local/apache/htdocs/freeside
-chown -R freeside .
-chmod 4755 browse/*.cgi edit/*.cgi edit/process/*.cgi misc/*.cgi misc/process/*.cgi search/*.cgi view/*.cgi</pre>
+        Then the scripts are not running as the freeside freeside user.  See
+the <a href="install.html">New Installation</a> section of the documentation.
   <li>If you receive `can not connect to server' errors using MySQL on a system that doesn't support native threading, you may need to specify the full hostname in your DBI datasource.  See the <a href="http://www.mysql.com/Manual_chapter/manual_Problems.html#Can_not_connect_to_server">MySQL documentation</a>, DBI manpage and the DBD::mysql manpage for details.
   </ul>
 </body>

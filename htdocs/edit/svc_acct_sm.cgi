@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct_sm.cgi,v 1.7 1999-01-19 05:13:45 ivan Exp $
+# $Id: svc_acct_sm.cgi,v 1.8 1999-02-07 09:59:24 ivan Exp $
 #
 # Usage: svc_acct_sm.cgi {svcnum} | pkgnum{pkgnum}-svcpart{svcpart}
 #        http://server.name/path/svc_acct_sm.cgi? {svcnum} | pkgnum{pkgnum}-svcpart{svcpart}
@@ -35,7 +35,10 @@
 # /var/spool/freeside/conf/domain ivan@sisd.com 98-jul-26
 #
 # $Log: svc_acct_sm.cgi,v $
-# Revision 1.7  1999-01-19 05:13:45  ivan
+# Revision 1.8  1999-02-07 09:59:24  ivan
+# more mod_perl fixes, and bugfixes Peter Wemm sent via email
+#
+# Revision 1.7  1999/01/19 05:13:45  ivan
 # for mod_perl: no more top-level my() variables; use vars instead
 # also the last s/create/new/;
 #
@@ -73,49 +76,55 @@ $cgi = new CGI;
 $conf = new FS::Conf;
 $mydomain = $conf->config('domain');
 
+if ( $cgi->param('error') ) {
+  $svc_acct_sm = new FS::svc_acct_sm ( {
+    map { $_, scalar($cgi->param($_)) } fields('svc_acct_sm')
+  } );
+  $svcnum = $svc_acct_sm->svcnum;
+  $pkgnum = $cgi->param('pkgnum');
+  $svcpart = $cgi->param('svcpart');
+  $part_svc=qsearchs('part_svc',{'svcpart'=>$svcpart});
+  die "No part_svc entry!" unless $part_svc;
+} else {
+  my($query) = $cgi->keywords;
+  if ( $query =~ /^(\d+)$/ ) { #editing
+    $svcnum=$1;
+    $svc_acct_sm=qsearchs('svc_acct_sm',{'svcnum'=>$svcnum})
+      or die "Unknown (svc_acct_sm) svcnum!";
 
-($query) = $cgi->keywords;
-if ( $query =~ /^(\d+)$/ ) { #editing
+    my($cust_svc)=qsearchs('cust_svc',{'svcnum'=>$svcnum})
+      or die "Unknown (cust_svc) svcnum!";
 
-  $svcnum=$1;
-  $svc_acct_sm=qsearchs('svc_acct_sm',{'svcnum'=>$svcnum})
-    or die "Unknown (svc_acct_sm) svcnum!";
-
-  my($cust_svc)=qsearchs('cust_svc',{'svcnum'=>$svcnum})
-    or die "Unknown (cust_svc) svcnum!";
-
-  $pkgnum=$cust_svc->pkgnum;
-  $svcpart=$cust_svc->svcpart;
+    $pkgnum=$cust_svc->pkgnum;
+    $svcpart=$cust_svc->svcpart;
   
-  $part_svc=qsearchs('part_svc',{'svcpart'=>$svcpart});
-  die "No part_svc entry!" unless $part_svc;
+    $part_svc=qsearchs('part_svc',{'svcpart'=>$svcpart});
+    die "No part_svc entry!" unless $part_svc;
 
-  $action="Edit";
+  } else { #adding
 
-} else { #adding
+    $svc_acct_sm = new FS::svc_acct_sm({});
 
-  $svc_acct_sm = new FS::svc_acct_sm({});
-
-  foreach $_ (split(/-/,$query)) { #get & untaint pkgnum & svcpart
-    $pkgnum=$1 if /^pkgnum(\d+)$/;
-    $svcpart=$1 if /^svcpart(\d+)$/;
-  }
-  $part_svc=qsearchs('part_svc',{'svcpart'=>$svcpart});
-  die "No part_svc entry!" unless $part_svc;
-
-  $svcnum='';
-
-  #set fixed and default fields from part_svc
-  my($field);
-  foreach $field ( fields('svc_acct_sm') ) {
-    if ( $part_svc->getfield('svc_acct_sm__'. $field. '_flag') ne '' ) {
-      $svc_acct_sm->setfield($field,$part_svc->getfield('svc_acct_sm__'. $field) );
+    foreach $_ (split(/-/,$query)) { #get & untaint pkgnum & svcpart
+      $pkgnum=$1 if /^pkgnum(\d+)$/;
+      $svcpart=$1 if /^svcpart(\d+)$/;
     }
+    $part_svc=qsearchs('part_svc',{'svcpart'=>$svcpart});
+    die "No part_svc entry!" unless $part_svc;
+
+    $svcnum='';
+
+    #set fixed and default fields from part_svc
+    my($field);
+    foreach $field ( fields('svc_acct_sm') ) {
+      if ( $part_svc->getfield('svc_acct_sm__'. $field. '_flag') ne '' ) {
+        $svc_acct_sm->setfield($field,$part_svc->getfield('svc_acct_sm__'. $field) );
+      }
+    }
+
   }
-
-  $action='Add';
-
 }
+$action = $svc_acct_sm->svcnum ? 'Edit' : 'Add';
 
 if ($pkgnum) {
 
@@ -175,9 +184,13 @@ if ($pkgnum) {
 }
 
 $p1 = popurl(1);
-print $cgi->header( '-expires' => 'now' ), header("Mail Alias $action", ''), <<END;
-    <FORM ACTION="${p1}process/svc_acct_sm.cgi" METHOD=POST>
-END
+print $cgi->header( '-expires' => 'now' ), header("Mail Alias $action", '');
+
+print qq!<FONT SIZE="+1" COLOR="#ff0000">Error: !, $cgi->param('error'),
+      "</FONT>"
+  if $cgi->param('error');
+
+print qq!<FORM ACTION="${p1}process/svc_acct_sm.cgi" METHOD=POST>!;
 
 #display
 
@@ -206,14 +219,16 @@ print qq!\n\nMail to <INPUT TYPE="text" NAME="domuser" VALUE="$domuser"> <I>( * 
 #domsvc
 print qq! \@ <SELECT NAME="domsvc" SIZE=1>!;
 foreach $_ (keys %domain) {
-  print "<OPTION", $_ eq $domsvc ? " SELECTED" : "", ">$_: $domain{$_}";
+  print "<OPTION", $_ eq $domsvc ? " SELECTED" : "",
+        qq! VALUE="$_">$domain{$_}!;
 }
 print "</SELECT>";
 
 #uid
 print qq!\nforwards to <SELECT NAME="domuid" SIZE=1>!;
 foreach $_ (keys %username) {
-  print "<OPTION", ($_ eq $domuid) ? " SELECTED" : "", ">$_: $username{$_}";
+  print "<OPTION", ($_ eq $domuid) ? " SELECTED" : "",
+        qq! VALUE="$_">$username{$_}!;
 }
 print "</SELECT>\@$mydomain mailbox.";
 

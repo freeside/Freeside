@@ -1,11 +1,14 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_pkg.cgi,v 1.6 1999-01-19 05:14:13 ivan Exp $
+# $Id: cust_pkg.cgi,v 1.7 1999-02-07 09:59:37 ivan Exp $
 #
 # based on search/svc_acct.cgi ivan@sisd.com 98-jul-17
 #
 # $Log: cust_pkg.cgi,v $
-# Revision 1.6  1999-01-19 05:14:13  ivan
+# Revision 1.7  1999-02-07 09:59:37  ivan
+# more mod_perl fixes, and bugfixes Peter Wemm sent via email
+#
+# Revision 1.6  1999/01/19 05:14:13  ivan
 # for mod_perl: no more top-level my() variables; use vars instead
 # also the last s/create/new/;
 #
@@ -29,7 +32,11 @@ use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
 use FS::Record qw(qsearch qsearchs);
-use FS::CGI qw(header idiot popurl);
+use FS::CGI qw(header eidiot popurl);
+use FS::cust_pkg;
+use FS::pkg_svc;
+use FS::cust_svc;
+use FS::cust_main;
 
 $cgi = new CGI;
 &cgisuidsetup($cgi);
@@ -71,8 +78,7 @@ if ( scalar(@cust_pkg) == 1 ) {
   print $cgi->redirect(popurl(2). "view/cust_pkg.cgi?$pkgnum");
   exit;
 } elsif ( scalar(@cust_pkg) == 0 ) { #error
-  &idiot("No packages found");
-  exit;
+  eidiot("No packages found");
 } else {
   my($total)=scalar(@cust_pkg);
   print $cgi->header( '-expires' => 'now' ), header('Package Search Results',''), <<END;
@@ -110,7 +116,6 @@ END
  
   print <<END;
     </TABLE>
-    </CENTER>
   </BODY>
 </HTML>
 END

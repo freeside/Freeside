@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: link.cgi,v 1.3 1999-01-19 05:14:10 ivan Exp $
+# $Id: link.cgi,v 1.4 1999-02-07 09:59:35 ivan Exp $
 #
 # ivan@voicenet.com 97-feb-5
 #
@@ -12,7 +12,10 @@
 # can also link on some other fields now (about time) ivan@sisd.com 98-jun-24
 #
 # $Log: link.cgi,v $
-# Revision 1.3  1999-01-19 05:14:10  ivan
+# Revision 1.4  1999-02-07 09:59:35  ivan
+# more mod_perl fixes, and bugfixes Peter Wemm sent via email
+#
+# Revision 1.3  1999/01/19 05:14:10  ivan
 # for mod_perl: no more top-level my() variables; use vars instead
 # also the last s/create/new/;
 #
@@ -24,7 +27,7 @@ use strict;
 use vars qw ( $cgi $old $new $error );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
-use FS::CGI qw(popurlidiot);
+use FS::CGI qw(popurl idiot);
 use FS::UID qw(cgisuidsetup);
 use FS::cust_svc;
 use FS::Record qw(qsearchs);
@@ -41,7 +44,7 @@ unless ( $svcnum ) {
   my($svcdb) = $part_svc->getfield('svcdb');
   $cgi->param('link_field') =~ /^(\w+)$/; my($link_field)=$1;
   my($svc_acct)=qsearchs($svcdb,{$link_field => $cgi->param('link_value') });
-  idiot("$link_field not found!") unless $svc_acct;
+  eidiot("$link_field not found!") unless $svc_acct;
   $svcnum=$svc_acct->svcnum;
 }
 

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_pkg.cgi,v 1.4 1999-01-25 12:19:10 ivan Exp $
+# $Id: cust_pkg.cgi,v 1.5 1999-02-07 09:59:26 ivan Exp $
 #
 # this is for changing packages around, not for editing things within the
 # package
@@ -21,8 +21,8 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # $Log: cust_pkg.cgi,v $
-# Revision 1.4  1999-01-25 12:19:10  ivan
-# yet more mod_perl stuff
+# Revision 1.5  1999-02-07 09:59:26  ivan
+# more mod_perl fixes, and bugfixes Peter Wemm sent via email
 #
 # Revision 1.3  1999/01/19 05:13:54  ivan
 # for mod_perl: no more top-level my() variables; use vars instead
@@ -37,15 +37,15 @@ use vars qw( $cgi $custnum @remove_pkgnums @pkgparts $pkgpart $error );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
-use FS::CGI qw(idiot popurl);
+use FS::CGI qw(popurl);
 use FS::cust_pkg;
 
 $cgi = new CGI; # create form object
-
 &cgisuidsetup($cgi);
+$error = '';
 
 #untaint custnum
-$cgi->param('new_custnum') =~ /^(\d+)$/;
+$cgi->param('custnum') =~ /^(\d+)$/;
 $custnum = $1;
 
 @remove_pkgnums = map {
@@ -54,13 +54,18 @@ $custnum = $1;
 } $cgi->param('remove_pkg');
 
 foreach $pkgpart ( map /^pkg(\d+)$/ ? $1 : (), $cgi->param ) {
-  my($num_pkgs)=$cgi->param("pkg$pkgpart");
-  while ( $num_pkgs-- ) {
-    push @pkgparts,$pkgpart;
+  if ( $cgi->param("pkg$pkgpart") =~ /^(\d+)$/ ) {
+    my $num_pkgs = $1;
+    while ( $num_pkgs-- ) {
+      push @pkgparts,$pkgpart;
+    }
+  } else {
+    $error = "Illegal quantity";
+    last;
   }
 }
 
-$error = FS::cust_pkg::order($custnum,\@pkgparts,\@remove_pkgnums);
+$error ||= FS::cust_pkg::order($custnum,\@pkgparts,\@remove_pkgnums);
 
 if ($error) {
   $cgi->param('error', $error);

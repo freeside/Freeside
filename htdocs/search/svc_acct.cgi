@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct.cgi,v 1.6 1999-01-19 05:14:14 ivan Exp $
+# $Id: svc_acct.cgi,v 1.7 1999-02-07 09:59:38 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/svc_acct.cgi
@@ -23,7 +23,10 @@
 # give service and customer info too ivan@sisd.com 98-aug-16
 #
 # $Log: svc_acct.cgi,v $
-# Revision 1.6  1999-01-19 05:14:14  ivan
+# Revision 1.7  1999-02-07 09:59:38  ivan
+# more mod_perl fixes, and bugfixes Peter Wemm sent via email
+#
+# Revision 1.6  1999/01/19 05:14:14  ivan
 # for mod_perl: no more top-level my() variables; use vars instead
 # also the last s/create/new/;
 #
@@ -47,7 +50,7 @@ use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
 use FS::Record qw(qsearch qsearchs);
-use FS::CGI qw(header idiot popurl);
+use FS::CGI qw(header eidiot popurl);
 use FS::svc_acct;
 use FS::cust_main;
 
@@ -93,8 +96,7 @@ if ( scalar(@svc_acct) == 1 ) {
   print $cgi->redirect(popurl(2). "view/svc_acct.cgi?$svcnum");  #redirect
   exit;
 } elsif ( scalar(@svc_acct) == 0 ) { #error
-  idiot("Account not found");
-  exit;
+  eidiot("Account not found");
 } else {
   my($total)=scalar(@svc_acct);
   print $cgi->header( '-expires' => 'now' ), header("Account Search Results",''), <<END;

@@ -171,7 +171,7 @@ sub itable {
   if ( $col ) {
     qq!<TABLE BGCOLOR="$col" BORDER=0 CELLSPACING=$cellspacing WIDTH="100%">!;
   } else {
-    qq!<TABLE BORDER=0 $cellspacing=$cellspacing WIDTH="100%">!;
+    qq!<TABLE BORDER=0 CELLSPACING=$cellspacing WIDTH="100%">!;
   }
 }
 
@@ -216,7 +216,10 @@ lose the background, eidiot ivan@sisd.com 98-sep-2
 pod ivan@sisd.com 98-sep-12
 
 $Log: CGI.pm,v $
-Revision 1.16  1999-01-25 12:26:05  ivan
+Revision 1.17  1999-02-07 09:59:43  ivan
+more mod_perl fixes, and bugfixes Peter Wemm sent via email
+
+Revision 1.16  1999/01/25 12:26:05  ivan
 yet more mod_perl stuff
 
 Revision 1.15  1999/01/18 09:41:48  ivan

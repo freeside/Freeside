@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_pkg.cgi,v 1.4 1999-01-19 05:13:38 ivan Exp $
+# $Id: cust_pkg.cgi,v 1.5 1999-02-07 09:59:18 ivan Exp $
 #
 # this is for changing packages around, not editing things within the package
 #
@@ -25,7 +25,10 @@
 # 98-jun-1
 #
 # $Log: cust_pkg.cgi,v $
-# Revision 1.4  1999-01-19 05:13:38  ivan
+# Revision 1.5  1999-02-07 09:59:18  ivan
+# more mod_perl fixes, and bugfixes Peter Wemm sent via email
+#
+# Revision 1.4  1999/01/19 05:13:38  ivan
 # for mod_perl: no more top-level my() variables; use vars instead
 # also the last s/create/new/;
 #
@@ -38,60 +41,62 @@
 #
 
 use strict;
-use vars qw( $cgi %pkg %comment $query $custnum $otaker $p1 @cust_pkg 
-             $cust_main $agent $type_pkgs $count );
+use vars qw( $cgi %pkg %comment $custnum $p1 @cust_pkg 
+             $cust_main $agent $type_pkgs $count %remove_pkg );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
-use FS::UID qw(cgisuidsetup getotaker);
+use FS::UID qw(cgisuidsetup);
 use FS::Record qw(qsearch qsearchs);
 use FS::CGI qw(header popurl);
 use FS::part_pkg;
-
-$cgi = new CGI;
-&cgisuidsetup($cgi);
+use FS::type_pkgs;
 
 foreach (qsearch('part_pkg', {})) {
   $pkg{ $_ -> getfield('pkgpart') } = $_->getfield('pkg');
   $comment{ $_ -> getfield('pkgpart') } = $_->getfield('comment');
 }
 
-#untaint custnum
+$cgi = new CGI;
+&cgisuidsetup($cgi);
 
-($query) = $cgi->keywords;
-$query =~ /^(\d+)$/;
-$custnum = $1;
-
-$otaker = &getotaker;
+if ( $cgi->param('error') ) {
+  $custnum = $cgi->param('custnum');
+  %remove_pkg = map { $_ => 1 } $cgi->param('remove_pkg');
+} else {
+  my($query) = $cgi->keywords;
+  $query =~ /^(\d+)$/;
+  $custnum = $1;
+  undef %remove_pkg;
+}
 
 $p1 = popurl(1);
-print $cgi->header( '-expires' => 'now' ), header("Add/Edit Packages", ''), <<END;
-    <FORM ACTION="${p1}process/cust_pkg.cgi" METHOD=POST>
-    <HR>
-END
+print $cgi->header( '-expires' => 'now' ), header("Add/Edit Packages", '');
 
-#custnum
-print qq!<INPUT TYPE="hidden" NAME="new_custnum" VALUE="$custnum">!;
+print qq!<FONT SIZE="+1" COLOR="#ff0000">Error: !, $cgi->param('error'),
+      "</FONT>"
+  if $cgi->param('error');
 
-#current packages (except cancelled packages)
-@cust_pkg = grep ! $_->getfield('cancel'),
-  qsearch('cust_pkg',{'custnum'=>$custnum});
+print qq!<FORM ACTION="${p1}process/cust_pkg.cgi" METHOD=POST>!;
+
+print qq!<INPUT TYPE="hidden" NAME="custnum" VALUE="$custnum">!;
+
+#current packages
+@cust_pkg = qsearch('cust_pkg',{ 'custnum' => $custnum, 'cancel' => '' } );
 
 if (@cust_pkg) {
   print <<END;
-<CENTER><FONT SIZE="+2">Current packages</FONT></CENTER>
-These are packages the customer currently has.  Select those packages you
-wish to remove (if any).<BR><BR>
+Current packages - select to remove (services are moved to a new package below)
+<BR><BR>
 END
 
   my ($count) = 0 ;
-  print qq!<CENTER><TABLE>! ;
+  print qq!<TABLE>! ;
   foreach (@cust_pkg) {
-    print qq!<TR>! if ($count ==0) ;
+    print '<TR>' if $count == 0;
     my($pkgnum,$pkgpart)=( $_->getfield('pkgnum'), $_->getfield('pkgpart') );
-    print qq!<TD><INPUT TYPE="checkbox" NAME="remove_pkg" VALUE="$pkgnum">!,
-          #qq!$pkgnum: $pkg{$pkgpart} - $comment{$pkgpart}</TD>\n!,
-          #now you've got to admit this bug was pretty cool
-          qq!$pkgnum: $pkg{$pkgpart} - $comment{$pkgpart}</TD>\n!;
+    print qq!<TD><INPUT TYPE="checkbox" NAME="remove_pkg" VALUE="$pkgnum"!;
+    print " CHECKED" if $remove_pkg{$pkgnum};
+    print qq!>$pkgnum: $pkg{$pkgpart} - $comment{$pkgpart}</TD>\n!;
     $count ++ ;
     if ($count == 2)
     {
@@ -99,28 +104,25 @@ END
       print qq!</TR>\n! ;
     }
   }
-  print qq!</TABLE></CENTER>! ;
-
-  print "<HR>";
+  print qq!</TABLE><BR><BR>!;
 }
 
 print <<END;
-<CENTER><FONT SIZE="+2">New packages</FONT></CENTER>
-These are packages the customer can purchase.  Specify the quantity to add
-of each package.<BR><BR>
+Order new packages<BR><BR>
 END
 
 $cust_main = qsearchs('cust_main',{'custnum'=>$custnum});
 $agent = qsearchs('agent',{'agentnum'=> $cust_main->agentnum });
 
 $count = 0 ;
-print qq!<CENTER><TABLE>! ;
+print qq!<TABLE>! ;
 foreach $type_pkgs ( qsearch('type_pkgs',{'typenum'=> $agent->typenum }) ) {
   my($pkgpart)=$type_pkgs->pkgpart;
   print qq!<TR>! if ($count == 0) ;
+  my $value = $cgi->param("pkg$pkgpart") || 0;
   print <<END;
   <TD>
-  <INPUT TYPE="text" NAME="pkg$pkgpart" VALUE="0" SIZE="2" MAXLENGTH="2">
+  <INPUT TYPE="text" NAME="pkg$pkgpart" VALUE="$value" SIZE="2" MAXLENGTH="2">
   $pkgpart: $pkg{$pkgpart} - $comment{$pkgpart}</TD>\n
 END
   $count ++ ;
@@ -130,13 +132,10 @@ END
     $count = 0 ;
   }
 }
-print qq!</TABLE></CENTER>! ;
-
-#otaker
-print qq!<INPUT TYPE="hidden" NAME="new_otaker" VALUE="$otaker">\n!;
+print qq!</TABLE>! ;
 
 #submit
-print qq!<P><CENTER><INPUT TYPE="submit" VALUE="Order"></CENTER>\n!;
+print qq!<P><INPUT TYPE="submit" VALUE="Order">\n!;
 
 print <<END;
     </FORM>

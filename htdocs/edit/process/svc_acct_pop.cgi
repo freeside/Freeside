@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct_pop.cgi,v 1.5 1999-01-19 05:13:59 ivan Exp $
+# $Id: svc_acct_pop.cgi,v 1.6 1999-02-07 09:59:31 ivan Exp $
 #
 # ivan@sisd.com 98-mar-8
 #
@@ -10,7 +10,10 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: svc_acct_pop.cgi,v $
-# Revision 1.5  1999-01-19 05:13:59  ivan
+# Revision 1.6  1999-02-07 09:59:31  ivan
+# more mod_perl fixes, and bugfixes Peter Wemm sent via email
+#
+# Revision 1.5  1999/01/19 05:13:59  ivan
 # for mod_perl: no more top-level my() variables; use vars instead
 # also the last s/create/new/;
 #
@@ -25,13 +28,13 @@
 #
 
 use strict;
-use vars qw( $cgi $popnum $old $new );
+use vars qw( $cgi $popnum $old $new $error );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
 use FS::Record qw(qsearch qsearchs fields);
 use FS::svc_acct_pop;
-use FS::CGI qw(popurl eidiot);
+use FS::CGI qw(popurl);
 
 $cgi = new CGI; # create form object
 
@@ -48,12 +51,16 @@ $new = new FS::svc_acct_pop ( {
 } );
 
 if ( $popnum ) {
-  my($error)=$new->replace($old);
-  eidiot($error) if $error;
+  $error = $new->replace($old);
 } else {
-  my($error)=$new->insert;
-  eidiot($error) if $error;
+  $error = $new->insert;
   $popnum=$new->getfield('popnum');
 }
-print $cgi->redirect(popurl(3). "browse/svc_acct_pop.cgi");
+
+if ( $error ) {
+  $cgi->param('error', $error);
+  print $cgi->redirect(popurl(2). "svc_acct_pop.cgi?". $cgi->query_string );
+} else {
+  print $cgi->redirect(popurl(3). "browse/svc_acct_pop.cgi");
+}
 

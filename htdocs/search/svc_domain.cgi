@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_domain.cgi,v 1.4 1999-01-19 05:14:17 ivan Exp $
+# $Id: svc_domain.cgi,v 1.5 1999-02-07 09:59:39 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/svc_domain.cgi
@@ -17,7 +17,10 @@
 # display total, use FS::CGI now does browsing too ivan@sisd.com 98-jul-17
 #
 # $Log: svc_domain.cgi,v $
-# Revision 1.4  1999-01-19 05:14:17  ivan
+# Revision 1.5  1999-02-07 09:59:39  ivan
+# more mod_perl fixes, and bugfixes Peter Wemm sent via email
+#
+# Revision 1.4  1999/01/19 05:14:17  ivan
 # for mod_perl: no more top-level my() variables; use vars instead
 # also the last s/create/new/;
 #
@@ -34,7 +37,7 @@ use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
 use FS::Record qw(qsearch qsearchs);
-use FS::CGI qw(header idiot popurl);
+use FS::CGI qw(header eidiot popurl);
 
 $cgi = new CGI;
 &cgisuidsetup($cgi);
@@ -68,8 +71,7 @@ if ( scalar(@svc_domain) == 1 ) {
   print $cgi->redirect(popurl(2). "view/svc_domain.cgi?". $svc_domain[0]->svcnum);
   exit;
 } elsif ( scalar(@svc_domain) == 0 ) {
-  idiot "No matching domains found!\n";
-  exit;
+  eidiot "No matching domains found!\n";
 } else {
   CGI::Base::SendHeaders(); # one guess
 

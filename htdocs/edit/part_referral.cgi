@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: part_referral.cgi,v 1.4 1999-01-19 05:13:41 ivan Exp $
+# $Id: part_referral.cgi,v 1.5 1999-02-07 09:59:20 ivan Exp $
 #
 # ivan@sisd.com 98-feb-23
 #
@@ -12,7 +12,10 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: part_referral.cgi,v $
-# Revision 1.4  1999-01-19 05:13:41  ivan
+# Revision 1.5  1999-02-07 09:59:20  ivan
+# more mod_perl fixes, and bugfixes Peter Wemm sent via email
+#
+# Revision 1.4  1999/01/19 05:13:41  ivan
 # for mod_perl: no more top-level my() variables; use vars instead
 # also the last s/create/new/;
 #
@@ -25,19 +28,20 @@
 #
 
 use strict;
-use vars qw( $cgi $part_referral $action $hashref $p1 );
+use vars qw( $cgi $part_referral $action $hashref $p1 $query );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
 use FS::Record qw(qsearch qsearchs);
 use FS::part_referral;
-use FS::CGI qw(header menubar);
+use FS::CGI qw(header menubar popurl);
 
 $cgi = new CGI;
 
 &cgisuidsetup($cgi);
 
-if ( $cgi->var('QUERY_STRING') =~ /^(\d+)$/ ) { #editing
+($query) = $cgi->keywords;
+if ( $query =~ /^(\d+)$/ ) { #editing
   $part_referral=qsearchs('part_referral',{'refnum'=>$1});
   $action='Edit';
 } else { #adding
@@ -50,11 +54,13 @@ $p1 = popurl(1);
 print $cgi->header( '-expires' => 'now' ), header("$action Referral", menubar(
   'Main Menu' => popurl(2),
   'View all referrals' => popurl(2). "browse/part_referral.cgi",
-)), <<END;
-    <FORM ACTION="${p1}process/part_referral.cgi" METHOD=POST>
-END
+));
 
-#display
+print qq!<FONT SIZE="+1" COLOR="#ff0000">Error: !, $cgi->param('error'),
+      "</FONT>"
+  if $cgi->param('error');
+
+print qq!<FORM ACTION="${p1}process/part_referral.cgi" METHOD=POST>!;
 
 print qq!<INPUT TYPE="hidden" NAME="refnum" VALUE="$hashref->{refnum}">!,
       "Referral #", $hashref->{refnum} ? $hashref->{refnum} : "(NEW)";

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: part_pkg.cgi,v 1.8 1999-01-19 05:13:39 ivan Exp $
+# $Id: part_pkg.cgi,v 1.9 1999-02-07 09:59:19 ivan Exp $
 #
 # part_pkg.cgi: Add/Edit package (output form)
 #
@@ -13,7 +13,10 @@
 # use FS::CGI, added inline documentation ivan@sisd.com 98-jul-12
 #
 # $Log: part_pkg.cgi,v $
-# Revision 1.8  1999-01-19 05:13:39  ivan
+# Revision 1.9  1999-02-07 09:59:19  ivan
+# more mod_perl fixes, and bugfixes Peter Wemm sent via email
+#
+# Revision 1.8  1999/01/19 05:13:39  ivan
 # for mod_perl: no more top-level my() variables; use vars instead
 # also the last s/create/new/;
 #
@@ -42,7 +45,7 @@ use vars qw( $cgi $part_pkg $action $query $hashref $part_svc $count );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
-use FS::Record qw(qsearch qsearchs);
+use FS::Record qw(qsearch qsearchs fields);
 use FS::part_pkg;
 use FS::part_svc;
 use FS::pkg_svc;
@@ -64,24 +67,36 @@ if ( $cgi->param('pkgnum') && $cgi->param('pkgnum') =~ /^(\d+)$/ ) {
 }
 
 ($query) = $cgi->keywords;
+$action = '';
+$part_pkg = '';
+if ( $cgi->param('error') ) {
+  $part_pkg = new FS::part_pkg ( {
+    map { $_, scalar($cgi->param($_)) } fields('part_pkg')
+  } );
+}
 if ( $cgi->param('clone') ) {
   $action='Custom Pricing';
   my $old_part_pkg =
     qsearchs('part_pkg', { 'pkgpart' => $cgi->param('clone') } );
-  $part_pkg = $old_part_pkg->clone;
-} elsif ( $query =~ /^(\d+)$/ ) {
-  $action='Edit';
-  $part_pkg=qsearchs('part_pkg',{'pkgpart'=>$1});
+  $part_pkg ||= $old_part_pkg->clone;
+} elsif ( $query && $query =~ /^(\d+)$/ ) {
+  $part_pkg ||= qsearchs('part_pkg',{'pkgpart'=>$1});
 } else {
-  $action='Add';
-  $part_pkg = new FS::part_pkg {};
+  $part_pkg ||= new FS::part_pkg {};
 }
+$action ||= $part_pkg->pkgpart ? 'Edit' : 'Add';
 $hashref = $part_pkg->hashref;
 
 print $cgi->header( '-expires' => 'now' ), header("$action Package Definition", menubar(
   'Main Menu' => popurl(2),
   'View all packages' => popurl(2). 'browse/part_pkg.cgi',
-)), '<FORM ACTION="', popurl(1), 'process/part_pkg.cgi" METHOD=POST>';
+));
+
+print qq!<FONT SIZE="+1" COLOR="#ff0000">Error: !, $cgi->param('error'),
+      "</FONT>"
+  if $cgi->param('error');
+
+print '<FORM ACTION="', popurl(1), 'process/part_pkg.cgi" METHOD=POST>';
 
 if ( $cgi->param('clone') ) {
   print qq!<INPUT TYPE="hidden" NAME="clone" VALUE="!, $cgi->param('clone'), qq!">!;
@@ -113,34 +128,34 @@ Enter the quantity of each service this package includes.<BR><BR>
 END
 }
 
-foreach $part_svc ( qsearch('part_svc',{}) ) {
-
-  my($svcpart)=$part_svc->getfield('svcpart');
-  my($pkg_svc)=qsearchs('pkg_svc',{
-    'pkgpart'  => $cgi->param('clone') || $part_pkg->getfield('pkgpart'),
+$count = 0;
+foreach $part_svc ( ( qsearch( 'part_svc', {} ) ) ) {
+  my $svcpart = $part_svc->svcpart;
+  my $pkg_svc = qsearchs( 'pkg_svc', {
+    'pkgpart'  => $cgi->param('clone') || $part_pkg->pkgpart,
     'svcpart'  => $svcpart,
-  })  || new FS::pkg_svc({
-    'pkgpart'  => $part_pkg->getfield('pkgpart'),
+  } ) || new FS::pkg_svc ( {
+    'pkgpart'  => $cgi->param('clone') || $part_pkg->pkgpart,
     'svcpart'  => $svcpart,
     'quantity' => 0,
   });
-  next unless $pkg_svc;
+  #? #next unless $pkg_svc;
 
-  unless ( $cgi->param('clone') ) {
-    print qq!<TR>! if $count == 0 ;
+  unless ( defined ($cgi->param('clone')) && $cgi->param('clone') ) {
+    print '<TR>' if $count == 0 ;
     print qq!<TD><INPUT TYPE="text" NAME="pkg_svc$svcpart" SIZE=3 VALUE="!,
-          $pkg_svc->getfield('quantity') || 0,qq!"></TD>!,
-          qq!<TD><A HREF="part_svc.cgi?!,$part_svc->getfield('svcpart'),
+          $cgi->param("pkg_svc$svcpart") || $pkg_svc->quantity || 0,
+          qq!"></TD><TD><A HREF="part_svc.cgi?!,$part_svc->svcpart,
           qq!">!, $part_svc->getfield('svc'), "</A></TD>";
-    $count ++ ;
+    $count++;
     if ($count == 2)
     {
-      print qq!</TR>! ;
-      $count = 0 ;
+      print '</TR>';
+      $count = 0;
     }
   } else {
     print qq!<INPUT TYPE="hidden" NAME="pkg_svc$svcpart" VALUE="!,
-          $pkg_svc->getfield('quantity') || 0, qq!">\n!;
+          $cgi->param("pkg_svc$svcpart") || $pkg_svc->quantity || 0, qq!">\n!;
   }
 }
 

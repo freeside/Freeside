@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: fs-setup,v 1.13 1999-02-04 06:09:23 ivan Exp $
+# $Id: fs-setup,v 1.14 1999-02-07 09:59:14 ivan Exp $
 #
 # ivan@sisd.com 97-nov-8,9
 #
@@ -32,7 +32,10 @@
 # fix radius attributes ivan@sisd.com 98-sep-27
 #
 # $Log: fs-setup,v $
-# Revision 1.13  1999-02-04 06:09:23  ivan
+# Revision 1.14  1999-02-07 09:59:14  ivan
+# more mod_perl fixes, and bugfixes Peter Wemm sent via email
+#
+# Revision 1.13  1999/02/04 06:09:23  ivan
 # add AU provences
 #
 # Revision 1.12  1999/02/03 10:42:27  ivan
@@ -374,7 +377,7 @@ sub tables_hash_hack {
         'address2', 'varchar', 'NULL', $char_d,
         'city',     'varchar', '',     $char_d,
         'county',   'varchar', 'NULL', $char_d,
-        'state',    'varchar', '',     $char_d,
+        'state',    'varchar', 'NULL', $char_d,
         'zip',      'varchar', '',     10,
         'country',  'char', '',     2,
         'daytime',  'varchar', 'NULL', 20,
@@ -410,7 +413,7 @@ sub tables_hash_hack {
                             # a tax rate.
       'columns' => [
         'taxnum',   'int',   '',    '',
-        'state',    'char',  'NULL',    $char_d,
+        'state',    'varchar',  'NULL',    $char_d,
         'county',   'varchar',  'NULL',    $char_d,
         'country',  'char',  '', 2, 
         'tax',      'real',  '',    '', #tax %
@@ -447,7 +450,7 @@ sub tables_hash_hack {
         'address1', 'varchar', '',     $char_d,
         'address2', 'varchar', 'NULL', $char_d,
         'city',     'varchar', '',     $char_d,
-        'state',    'char', '',     2,
+        'state',    'varchar', '',     $char_d,
         'zip',      'varchar', '',     10,
         'country',  'char', '',     2,
         'trancode', 'int', '', '',
@@ -567,7 +570,7 @@ sub tables_hash_hack {
       'columns' => [
         'popnum',    'int',    '',   '',
         'city',      'varchar',   '',   $char_d,
-        'state',     'char',   '',   2,
+        'state',     'varchar',   '',   $char_d,
         'ac',        'char',   '',   3,
         'exch',      'char',   '',   3,
         #rest o' number?

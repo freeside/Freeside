@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct_sm.cgi,v 1.6 1999-01-19 05:14:22 ivan Exp $
+# $Id: svc_acct_sm.cgi,v 1.7 1999-02-07 09:59:42 ivan Exp $
 #
 # Usage: svc_acct_sm.cgi svcnum
 #        http://server.name/path/svc_acct_sm.cgi?svcnum
@@ -22,7 +22,10 @@
 # /var/spool/freeside/conf/domain ivan@sisd.com 98-jul-17
 #
 # $Log: svc_acct_sm.cgi,v $
-# Revision 1.6  1999-01-19 05:14:22  ivan
+# Revision 1.7  1999-02-07 09:59:42  ivan
+# more mod_perl fixes, and bugfixes Peter Wemm sent via email
+#
+# Revision 1.6  1999/01/19 05:14:22  ivan
 # for mod_perl: no more top-level my() variables; use vars instead
 # also the last s/create/new/;
 #
@@ -42,7 +45,7 @@
 
 use strict;
 use vars qw($conf $cgi $mydomain $query $svcnum $svc_acct_sm $cust_svc
-            $pkgnum cust_pkg $custnum $part_svc $p $domsvc,$domuid,$domuser
+            $pkgnum $cust_pkg $custnum $part_svc $p $domsvc $domuid $domuser
             $svc $svc_domain $domain $svc_acct $username );
 use CGI;
 use FS::UID qw(cgisuidsetup);
@@ -68,6 +71,9 @@ $pkgnum = $cust_svc->getfield('pkgnum');
 if ($pkgnum) {
   $cust_pkg=qsearchs('cust_pkg',{'pkgnum'=>$pkgnum});
   $custnum=$cust_pkg->getfield('custnum');
+} else {
+  $cust_pkg = '';
+  $custnum = '';
 }
 
 $part_svc = qsearchs('part_svc',{'svcpart'=> $cust_svc->svcpart } );
@@ -88,10 +94,9 @@ END
 }
 
 print <<END;
-    <A HREF="${p}">Main menu</A></CENTER><BR<
-    <FONT SIZE=+1>Service #$svcnum</FONT>
+    <A HREF="${p}">Main menu</A></CENTER><BR>
+    Service #$svcnum
     <P><A HREF="${p}edit/svc_acct_sm.cgi?$svcnum">Edit this information</A>
-    <BASEFONT SIZE=3>
 END
 
 ($domsvc,$domuid,$domuser) = (
@@ -106,16 +111,14 @@ $svc_acct = qsearchs('svc_acct',{'uid'=>$domuid});
 $username = $svc_acct->username;
 
 #formatting
-print qq!<HR>!;
+print qq!<BR><BR>!;
 
 #svc
 print "Service: <B>$svc</B>";
 
-print "<HR>";
+print "<BR><BR>";
 
 print qq!Mail to <B>!, ( ($domuser eq '*') ? "<I>(anything)</I>" : $domuser ) , qq!</B>\@<B>$domain</B> forwards to <B>$username</B>\@$mydomain mailbox.!;
-
-print "<HR>";
 
 	#formatting
 	print <<END;

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct.cgi,v 1.4 1999-01-19 05:13:58 ivan Exp $
+# $Id: svc_acct.cgi,v 1.5 1999-02-07 09:59:30 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/svc_acct.cgi
@@ -23,7 +23,10 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # $Log: svc_acct.cgi,v $
-# Revision 1.4  1999-01-19 05:13:58  ivan
+# Revision 1.5  1999-02-07 09:59:30  ivan
+# more mod_perl fixes, and bugfixes Peter Wemm sent via email
+#
+# Revision 1.4  1999/01/19 05:13:58  ivan
 # for mod_perl: no more top-level my() variables; use vars instead
 # also the last s/create/new/;
 #
@@ -35,11 +38,11 @@
 #
 
 use strict;
-use vars qw( $cgi $svcnum $old $new );
+use vars qw( $cgi $svcnum $old $new $error );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
-use FS::CGI qw(eidiot popurl);
+use FS::CGI qw(popurl);
 use FS::Record qw(qsearchs fields);
 use FS::svc_acct;
 
@@ -68,15 +71,16 @@ $new = new FS::svc_acct ( {
 } );
 
 if ( $svcnum ) {
-  my($error) = $new->replace($old);
-  &eidiot($error) if $error;
+  $error = $new->replace($old);
 } else {
-  my($error) = $new->insert;
-  &eidiot($error) if $error;
-  $svcnum = $new->getfield('svcnum');
+  $error = $new->insert;
+  $svcnum = $new->svcnum;
 }
 
-#no errors, view account
-print $cgi->redirect(popurl(3). "view/svc_acct.cgi?" . $svcnum );
-
+if ( $error ) {
+  $cgi->param('error', $error);
+  print $cgi->redirect(popurl(2). "svc_acct.cgi?". $cgi->query_string );
+} else {
+  print $cgi->redirect(popurl(3). "view/svc_acct.cgi?" . $svcnum );
+}
 

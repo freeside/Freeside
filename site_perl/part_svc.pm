@@ -82,7 +82,7 @@ returns the error, otherwise returns false.
 =cut
 
 sub replace {
-  my ( $new, $old ) = shift, shift;
+  my ( $new, $old ) = ( shift, shift );
 
   return "Can't change svcdb!"
     unless $old->svcdb eq $new->svcdb;
@@ -144,7 +144,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: part_svc.pm,v 1.2 1998-12-29 11:59:50 ivan Exp $
+$Id: part_svc.pm,v 1.3 1999-02-07 09:59:44 ivan Exp $
 
 =head1 BUGS
 
@@ -169,7 +169,10 @@ ivan@sisd.com 97-dec-6
 pod ivan@sisd.com 98-sep-21
 
 $Log: part_svc.pm,v $
-Revision 1.2  1998-12-29 11:59:50  ivan
+Revision 1.3  1999-02-07 09:59:44  ivan
+more mod_perl fixes, and bugfixes Peter Wemm sent via email
+
+Revision 1.2  1998/12/29 11:59:50  ivan
 mostly properly OO, some work still to be done with svc_ stuff
 
 

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: part_svc.cgi,v 1.7 1999-01-19 05:13:42 ivan Exp $
+# $Id: part_svc.cgi,v 1.8 1999-02-07 09:59:21 ivan Exp $
 #
 # ivan@sisd.com 97-nov-14
 #
@@ -10,7 +10,10 @@
 # use FS::CGI, added inline documentation ivan@sisd.com 98-jul-12
 #
 # $Log: part_svc.cgi,v $
-# Revision 1.7  1999-01-19 05:13:42  ivan
+# Revision 1.8  1999-02-07 09:59:21  ivan
+# more mod_perl fixes, and bugfixes Peter Wemm sent via email
+#
+# Revision 1.7  1999/01/19 05:13:42  ivan
 # for mod_perl: no more top-level my() variables; use vars instead
 # also the last s/create/new/;
 #
@@ -41,21 +44,31 @@ $cgi = new CGI;
 
 &cgisuidsetup($cgi);
 
-($query) = $cgi->keywords;
-if ( $query && $query =~ /^(\d+)$/ ) { #editing
+if ( $cgi->param('error') ) {
+  $part_svc = new FS::part_svc ( {
+    map { $_, scalar($cgi->param($_)) } fields('part_svc')
+  } );
+} elsif ( $cgi->keywords ) {
+  my ($query) = $cgi->keywords;
+  $query =~ /^(\d+)$/;
   $part_svc=qsearchs('part_svc',{'svcpart'=>$1});
-  $action='Edit';
 } else { #adding
   $part_svc = new  FS::part_svc {};
-  $action='Add';
 }
+$action = $part_svc->svcpart ? 'Edit' : 'Add';
 $hashref = $part_svc->hashref;
 
 $p = popurl(2);
 print $cgi->header( '-expires' => 'now' ), header("$action Service Definition", menubar(
   'Main Menu' => $p,
   'View all services' => "${p}browse/part_svc.cgi",
-)), '<FORM ACTION="', popurl(1), 'process/part_svc.cgi" METHOD=POST>';
+));
+
+print qq!<FONT SIZE="+1" COLOR="#ff0000">Error: !, $cgi->param('error'),
+      "</FONT>"
+  if $cgi->param('error');
+
+print '<FORM ACTION="', popurl(1), 'process/part_svc.cgi" METHOD=POST>';
 
 print qq!<INPUT TYPE="hidden" NAME="svcpart" VALUE="$hashref->{svcpart}">!,
       "Service Part #", $hashref->{svcpart} ? $hashref->{svcpart} : "(NEW)";

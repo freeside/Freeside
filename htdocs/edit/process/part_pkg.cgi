@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: part_pkg.cgi,v 1.7 1999-01-19 05:13:55 ivan Exp $
+# $Id: part_pkg.cgi,v 1.8 1999-02-07 09:59:27 ivan Exp $
 #
 # process/part_pkg.cgi: Edit package definitions (process form)
 #
@@ -17,7 +17,10 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: part_pkg.cgi,v $
-# Revision 1.7  1999-01-19 05:13:55  ivan
+# Revision 1.8  1999-02-07 09:59:27  ivan
+# more mod_perl fixes, and bugfixes Peter Wemm sent via email
+#
+# Revision 1.7  1999/01/19 05:13:55  ivan
 # for mod_perl: no more top-level my() variables; use vars instead
 # also the last s/create/new/;
 #
@@ -38,11 +41,11 @@
 #
 
 use strict;
-use vars qw( $cgi $pkgpart $old $new $part_svc );
+use vars qw( $cgi $pkgpart $old $new $part_svc $error );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
-use FS::CGI qw(eidiot popurl);
+use FS::CGI qw(popurl);
 use FS::Record qw(qsearch qsearchs fields);
 use FS::part_pkg;
 use FS::pkg_svc;
@@ -61,44 +64,55 @@ $new = new FS::part_pkg ( {
   } fields('part_pkg')
 } );
 
+#most of the stuff below should move to part_pkg.pm
+
+foreach $part_svc ( qsearch('part_svc', {} ) ) {
+  my $quantity = $cgi->param('pkg_svc'. $part_svc->svcpart) || 0;
+  unless ( $quantity =~ /^(\d+)$/ ) {
+    $cgi->param('error', "Illegal quantity" );
+    print $cgi->redirect(popurl(2). "part_pkg.cgi?". $cgi->query_string );
+    exit;
+  }
+}
+
 local $SIG{HUP} = 'IGNORE';
 local $SIG{INT} = 'IGNORE';
 local $SIG{QUIT} = 'IGNORE';
 local $SIG{TERM} = 'IGNORE';
 local $SIG{TSTP} = 'IGNORE';
+local $SIG{PIPE} = 'IGNORE';
 
 if ( $pkgpart ) {
-  my($error)=$new->replace($old);
-  eidiot($error) if $error;
+  $error = $new->replace($old);
 } else {
-  my($error)=$new->insert;
-  eidiot($error) if $error;
-  $pkgpart=$new->getfield('pkgpart');
+  $error = $new->insert;
+  $pkgpart=$new->pkgpart;
+}
+if ( $error ) {
+  $cgi->param('error', $error );
+  print $cgi->redirect(popurl(2). "part_pkg.cgi?". $cgi->query_string );
+  exit;
 }
 
 foreach $part_svc (qsearch('part_svc',{})) {
-# don't update non-changing records in part_svc (causing harmless but annoying
-# "Records identical" errors). ivan@sisd.com 98-jan-19
-  #my($quantity)=$cgi->param('pkg_svc'. $part_svc->getfield('svcpart')),
-  my($quantity)=$cgi->param('pkg_svc'. $part_svc->svcpart) || 0,
-  my($old_pkg_svc)=qsearchs('pkg_svc',{
-    'pkgpart'  => $pkgpart,
-    'svcpart'  => $part_svc->getfield('svcpart'),
-  });
-  my($old_quantity)=$old_pkg_svc ? $old_pkg_svc->quantity : 0;
+  my $quantity = $cgi->param('pkg_svc'. $part_svc->svcpart) || 0;
+  my $old_pkg_svc = qsearchs('pkg_svc', {
+    'pkgpart' => $pkgpart,
+    'svcpart' => $part_svc->svcpart,
+  } );
+  my $old_quantity = $old_pkg_svc ? $old_pkg_svc->quantity : 0;
   next unless $old_quantity != $quantity; #!here
-  my($new_pkg_svc)=new FS::pkg_svc({
+  my $new_pkg_svc = new FS::pkg_svc( {
     'pkgpart'  => $pkgpart,
-    'svcpart'  => $part_svc->getfield('svcpart'),
-    #'quantity' => $cgi->param('pkg_svc'. $part_svc->getfield('svcpart')),
+    'svcpart'  => $part_svc->svcpart,
     'quantity' => $quantity, 
-  });
-  if ($old_pkg_svc) {
-    my($error)=$new_pkg_svc->replace($old_pkg_svc);
-    eidiot($error) if $error;
+  } );
+  if ( $old_pkg_svc ) {
+    my $myerror = $new_pkg_svc->replace($old_pkg_svc);
+    die $myerror if $myerror;
   } else {
-    my($error)=$new_pkg_svc->insert;
-    eidiot($error) if $error;
+    my $myerror = $new_pkg_svc->insert;
+    die $myerror if $myerror;
   }
 }
 
@@ -109,8 +123,8 @@ unless ( $cgi->param('pkgnum') && $cgi->param('pkgnum') =~ /^(\d+)$/ ) {
   my %hash = $old_cust_pkg->hash;
   $hash{'pkgpart'} = $pkgpart;
   my($new_cust_pkg) = new FS::cust_pkg \%hash;
-  my $error = $new_cust_pkg->replace($old_cust_pkg);
-  eidiot "Error modifying cust_pkg record: $error\n" if $error;
+  my $myerror = $new_cust_pkg->replace($old_cust_pkg);
+  die "Error modifying cust_pkg record: $myerror\n" if $myerror;
   print $cgi->redirect(popurl(3). "view/cust_main.cgi?". $new_cust_pkg->custnum);
 }
 

@@ -1,4 +1,4 @@
-$Id: TODO,v 1.21 1999-02-06 22:43:24 ivan Exp $
+$Id: TODO,v 1.22 1999-02-07 09:59:12 ivan Exp $
 
 If you are interested in helping with any of these, please join the mailing
 list (send a blank message to ivan-freeside-subscribe@sisd.com) to avoid 
@@ -6,23 +6,9 @@ duplication of effort.
 
 -- before 1.2b1 --
 
-Can't use [e]idiot with mod_perl (not with forms and `press back button' and
-expire=>now, anyway).
+missed popurl in (at least) search/cust_pkg.cgi
 
-"popurlidiot" is not exported by the FS::CGI module at htdocs/misc/process/link.cgi line 27
-Content-type: text/html
-
-<H1>Software error:</H1>
-<CODE>Can't continue after import errors at htdocs/misc/process/link.cgi line 27
-BEGIN failed--compilation aborted at htdocs/misc/process/link.cgi line 27.
-</CODE>
-<P>
-For help, please send mail to this site's webmaster, giving this error message 
-and the time and date of the error.
-
-[Fri Feb  5 02:26:23 1999] link.cgi: Can't continue after import errors at htdocs/misc/process/link.cgi line 27
-[Fri Feb  5 02:26:23 1999] link.cgi: BEGIN failed--compilation aborted at htdocs/misc/process/link.cgi line 27.
-
+one-screen new customer entry
 
 clean up view/cust_pkg and view/svc_* yuck!
 
@@ -40,9 +26,6 @@ Add the ability for services to filter information up to the package level
 for invoices and web screens, so you can select a particlar package based
 on username or domain name, etc.
 
-You can't delete the stuff under administration yet.  Add this,
-_including_ making sure the thing you are deleting is not in use!
-
 (Test this)
 one-time/per-customer/? changes in rates and descriptions ('remembered
 invoices'): implement by creating a new package on the fly... but it isn't 
@@ -56,7 +39,10 @@ update site_perl/table_template* (pry out of date)
 
 update web demo
 
--- before or after ---
+-- release 1.2b1 ---
+
+You can't delete the stuff under administration yet.  Add this,
+_including_ making sure the thing you are deleting is not in use!
 
 add links on view/cust_main.cgi to setup services, like view/cust_pkg.cgi
 
@@ -80,11 +66,12 @@ whois accordingly.
 .us domains and others!
 site_perl/svc_domain.cgi (hmm... or maybe should have a button?  or maybe svc_domain.pm should handle this) should set $whois_hack for non-internic domains, so you can add them...
 
+turn on the depriciation warnings for [e]idiot in FS::CGI. Stop using [e]idiot
+the last places it is (htdocs/search/ htdocs/misc/ htdocs/misc/process)
+
 (test cust_main.pm with cybercash v2 and v3, especially with the callback
  stuff AND with mod_perl w/cybercash v2 kludge in package main)
 (callback stuff should be eliminated by now)
-
--- after --
 
 bah, table/itable/*table in FS::CGI is silly.
 

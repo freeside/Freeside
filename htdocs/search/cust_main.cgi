@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main.cgi,v 1.7 1999-01-25 12:19:11 ivan Exp $
+# $Id: cust_main.cgi,v 1.8 1999-02-07 09:59:36 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/cust_main.cgi
@@ -19,7 +19,10 @@
 # display total, use FS::CGI ivan@sisd.com 98-jul-17
 #
 # $Log: cust_main.cgi,v $
-# Revision 1.7  1999-01-25 12:19:11  ivan
+# Revision 1.8  1999-02-07 09:59:36  ivan
+# more mod_perl fixes, and bugfixes Peter Wemm sent via email
+#
+# Revision 1.7  1999/01/25 12:19:11  ivan
 # yet more mod_perl stuff
 #
 # Revision 1.6  1999/01/19 05:14:12  ivan
@@ -52,7 +55,7 @@ use IO::Handle;
 use String::Approx qw(amatch);
 use FS::UID qw(cgisuidsetup);
 use FS::Record qw(qsearch qsearchs);
-use FS::CGI qw(header menubar idiot popurl table);
+use FS::CGI qw(header menubar eidiot popurl table);
 use FS::cust_main;
 
 $cgi = new CGI;
@@ -83,8 +86,7 @@ if ( scalar(@cust_main) == 1 ) {
   print $cgi->redirect(popurl(2). "view/cust_main.cgi?". $cust_main[0]->custnum);
   exit;
 } elsif ( scalar(@cust_main) == 0 ) {
-  idiot "No matching customers found!\n";
-  exit;
+  eidiot "No matching customers found!\n";
 } else { 
 
   my($total)=scalar(@cust_main);
@@ -156,7 +158,6 @@ END
  
   print <<END;
     </TABLE>
-    </CENTER>
   </BODY>
 </HTML>
 END
@@ -183,7 +184,7 @@ sub cardsearch {
 
   my($card)=$cgi->param('card');
   $card =~ s/\D//g;
-  $card =~ /^(\d{13,16})$/ or do { idiot "Illegal card number\n"; exit; };
+  $card =~ /^(\d{13,16})$/ or eidiot "Illegal card number\n";
   my($payinfo)=$1;
 
   push @cust_main, qsearch('cust_main',{'payinfo'=>$payinfo, 'payby'=>'CARD'});
@@ -197,7 +198,7 @@ sub lastsearch {
   }
 
   $cgi->param('last_text') =~ /^([\w \,\.\-\']*)$/
-    or do { idiot "Illegal last name"; exit; };
+    or eidiot "Illegal last name";
   my($last)=$1;
 
   if ( $last_type{'Exact'}
@@ -237,7 +238,7 @@ sub companysearch {
   };
 
   $cgi->param('company_text') =~ /^([\w \,\.\-\']*)$/
-    or do { idiot "Illegal company"; exit; };
+    or eidiot "Illegal company";
   my($company)=$1;
 
   if ( $company_type{'Exact'}

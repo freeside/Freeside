@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main.cgi,v 1.11 1999-01-25 12:26:04 ivan Exp $
+# $Id: cust_main.cgi,v 1.12 1999-02-07 09:59:40 ivan Exp $
 #
 # Usage: cust_main.cgi custnum
 #        http://server.name/path/cust_main.cgi?custnum
@@ -33,7 +33,10 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: cust_main.cgi,v $
-# Revision 1.11  1999-01-25 12:26:04  ivan
+# Revision 1.12  1999-02-07 09:59:40  ivan
+# more mod_perl fixes, and bugfixes Peter Wemm sent via email
+#
+# Revision 1.11  1999/01/25 12:26:04  ivan
 # yet more mod_perl stuff
 #
 # Revision 1.10  1999/01/19 05:14:19  ivan
@@ -182,7 +185,7 @@ print "Billing information (",
       ( grep { $_ eq 'POST' } @invoicing_list ) ? 'yes' : 'no',
       '</TD></TR>',
       '<TR><TD ALIGN="right">Email invoices</TD><TD BGCOLOR="#ffffff">',
-      join(', ', grep { $_ ne 'POST' } @invoicing_list ),
+      join(', ', grep { $_ ne 'POST' } @invoicing_list ) || 'no',
       '</TD></TR>',
       '<TR><TD ALIGN="right">Billing type</TD><TD BGCOLOR="#ffffff">',
 ;
@@ -219,7 +222,7 @@ print "</TABLE></TD></TR></TABLE></TD></TR></TABLE>";
 
 print qq!<BR><BR><A NAME="cust_pkg">Packages</A> !,
 #      qq!<BR>Click on package number to view/edit package.!,
-      qq!( <A HREF="!, popurl(2), qq!/edit/cust_pkg.cgi?$custnum">Order and cancel packages</A> )!,
+      qq!( <A HREF="!, popurl(2), qq!edit/cust_pkg.cgi?$custnum">Order and cancel packages</A> )!,
 ;
 
 #display packages
@@ -239,7 +242,7 @@ print qq!!, table, "\n",
 @packages = $cust_main->all_pkgs;
 #@packages = $cust_main->ncancelled_pkgs;
 
-$n1 = '';
+$n1 = '<TR>';
 foreach $package (@packages) {
   my $pkgnum = $package->pkgnum;
   my $pkg = $package->part_pkg->pkg;
@@ -258,7 +261,7 @@ foreach $package (@packages) {
         qq!<TD ROWSPAN=$rowspan><FONT SIZE=-1>!,
         #qq!<A HREF="$pkgview">$pkg - $comment</A>!,
         qq!$pkg - $comment!,
-        qq! ( <A HREF="$pkgview">Edit</A> | <A HREF="$button_url">Customize pricing</A>)</FONT></TD>!,
+        qq! ( <A HREF="$pkgview">Edit</A> | <A HREF="$button_url">Customize pricing</A> )</FONT></TD>!,
   ;
   for ( qw( setup bill susp expire cancel ) ) {
     print "<TD ROWSPAN=$rowspan><FONT SIZE=-1>", ( $package->getfield($_)

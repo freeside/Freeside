@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: part_svc.cgi,v 1.6 1999-01-19 05:13:57 ivan Exp $
+# $Id: part_svc.cgi,v 1.7 1999-02-07 09:59:29 ivan Exp $
 #
 # ivan@sisd.com 97-nov-14
 #
@@ -10,7 +10,10 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: part_svc.cgi,v $
-# Revision 1.6  1999-01-19 05:13:57  ivan
+# Revision 1.7  1999-02-07 09:59:29  ivan
+# more mod_perl fixes, and bugfixes Peter Wemm sent via email
+#
+# Revision 1.6  1999/01/19 05:13:57  ivan
 # for mod_perl: no more top-level my() variables; use vars instead
 # also the last s/create/new/;
 #
@@ -28,13 +31,13 @@
 #
 
 use strict;
-use vars qw ( $cgi $svcpart $old $new );
+use vars qw ( $cgi $svcpart $old $new $error );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
 use FS::Record qw(qsearchs fields);
 use FS::part_svc;
-use FS::CGI qw(eidiot popurl);
+use FS::CGI qw(popurl);
 
 $cgi = new CGI;
 &cgisuidsetup($cgi);
@@ -51,13 +54,16 @@ $new = new FS::part_svc ( {
 } );
 
 if ( $svcpart ) {
-  my($error)=$new->replace($old);
-  eidiot($error) if $error;
+  $error = $new->replace($old);
 } else {
-  my($error)=$new->insert;
-  eidiot($error) if $error;
+  $error = $new->insert;
   $svcpart=$new->getfield('svcpart');
 }
 
-print $cgi->redirect(popurl(3)."browse/part_svc.cgi");
+if ( $error ) {
+  $cgi->param('error', $error);
+  print $cgi->redirect(popurl(2). "part_svc.cgi?". $cgi->query_string );
+} else {
+  print $cgi->redirect(popurl(3)."browse/part_svc.cgi");
+}
 

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cancel-unaudited.cgi,v 1.4 1999-01-19 05:14:03 ivan Exp $
+# $Id: cancel-unaudited.cgi,v 1.5 1999-02-07 09:59:34 ivan Exp $
 #
 # Usage: cancel-unaudited.cgi svcnum
 #        http://server.name/path/cancel-unaudited.cgi pkgnum
@@ -18,7 +18,10 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # $Log: cancel-unaudited.cgi,v $
-# Revision 1.4  1999-01-19 05:14:03  ivan
+# Revision 1.5  1999-02-07 09:59:34  ivan
+# more mod_perl fixes, and bugfixes Peter Wemm sent via email
+#
+# Revision 1.4  1999/01/19 05:14:03  ivan
 # for mod_perl: no more top-level my() variables; use vars instead
 # also the last s/create/new/;
 #
@@ -48,7 +51,7 @@ $query =~ /^(\d+)$/;
 $svcnum = $1;
 
 $svc_acct = qsearchs('svc_acct',{'svcnum'=>$svcnum});
-&eidiot("Unknown svcnum!") unless $svc_acct;
+die "Unknown svcnum!" unless $svc_acct;
 
 $cust_svc = qsearchs('cust_svc',{'svcnum'=>$svcnum});
 &eidiot(qq!This account has already been audited.  Cancel the 
@@ -70,5 +73,5 @@ $error = $svc_acct->delete;
 $error = $cust_svc->delete;
 &eidiot($error) if $error;
 
-$cgi->redirect(popurl(2));
+print $cgi->redirect(popurl(2));
 

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_domain.cgi,v 1.4 1999-01-19 05:14:01 ivan Exp $
+# $Id: svc_domain.cgi,v 1.5 1999-02-07 09:59:33 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/svc_domain.cgi
@@ -20,7 +20,10 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # $Log: svc_domain.cgi,v $
-# Revision 1.4  1999-01-19 05:14:01  ivan
+# Revision 1.5  1999-02-07 09:59:33  ivan
+# more mod_perl fixes, and bugfixes Peter Wemm sent via email
+#
+# Revision 1.4  1999/01/19 05:14:01  ivan
 # for mod_perl: no more top-level my() variables; use vars instead
 # also the last s/create/new/;
 #
@@ -36,8 +39,9 @@ use vars qw( $cgi $svcnum $new $error );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
-use FS::Record qw(qsearchs);
+use FS::Record qw(qsearchs fields);
 use FS::svc_domain;
+use FS::CGI qw(popurl);
 
 #remove this to actually test the domains!
 $FS::svc_domain::whois_hack = 1;
@@ -66,9 +70,10 @@ if ($cgi->param('legal') ne "Yes") {
   $svcnum=$new->svcnum;
 }
 
-unless ($error) {
-  print $cgi->redirect(popurl(3). "view/svc_domain.cgi?$svcnum");
+if ($error) {
+  $cgi->param('error', $error);
+  print $cgi->redirect(popurl(2). "svc_domain.cgi?". $cgi->query_string );
 } else {
-  idiot($error);
+  print $cgi->redirect(popurl(3). "view/svc_domain.cgi?$svcnum");
 }
 
