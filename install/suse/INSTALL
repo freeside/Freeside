@@ -1,0 +1,11 @@
+#!/bin/sh
+
+# based on install/redhat/9/INSTALL
+
+# apt for SuSE howto: http://linux01.gwdg.de/apt4rpm/
+
+for file in ftp://ftp.gwdg.de/pub/linux/suse/apt/SuSE/9.0-i386/RPMS.suser-rbos/apt-0.5.5cnc6-rb6.i586.rpm ftp://ftp.gwdg.de/pub/linux/suse/apt/SuSE/9.0-i386/RPMS.suser-rbos/apt-libs-0.5.5cnc6-rb6.i586.rpm ftp://ftp.gwdg.de/pub/linux/suse/apt/SuSE/9.0-i386/RPMS.suser-rbos/lua-5.0-rb3.i586.rpm; do
+  curl -C - $file
+done
+
+
