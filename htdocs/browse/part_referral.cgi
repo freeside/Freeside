@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: part_referral.cgi,v 1.2 1998-12-17 04:26:04 ivan Exp $
+# $Id: part_referral.cgi,v 1.3 1998-12-17 04:31:36 ivan Exp $
 #
 # ivan@sisd.com 98-feb-23 
 #
@@ -10,12 +10,16 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: part_referral.cgi,v $
-# Revision 1.2  1998-12-17 04:26:04  ivan
+# Revision 1.3  1998-12-17 04:31:36  ivan
+# use CGI::Carp
+#
+# Revision 1.2  1998/12/17 04:26:04  ivan
 # use CGI; no relative URLs
 #
 
 use strict;
 use CGI;
+use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup swapuid);
 use FS::Record qw(qsearch);
 use FS::CGI qw(header menubar popurl table);
