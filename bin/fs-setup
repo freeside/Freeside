@@ -1,0 +1,542 @@
+#!/usr/bin/perl -Tw
+#
+# create database and necessary tables, etc.  DBI version.
+#
+# ivan@sisd.com 97-nov-8,9
+#
+# agent_type and type_pkgs added.
+# (index need to be declared, & primary keys shoudln't have mysql syntax)
+# ivan@sisd.com 97-nov-13
+#
+# pulled modified version back out of register.cgi ivan@sisd.com 98-feb-21
+#
+# removed extraneous sample data ivan@sisd.com 98-mar-23
+#
+# gained the big hash from dbdef.pm, dbdef.pm usage rewrite ivan@sisd.com
+# 98-apr-19 - 98-may-11 plus
+#
+# finished up ivan@sisd.com 98-jun-1
+#
+# part_svc fields are all forced NULL, not the opposite
+# hmm: also are forced varchar($char_d) as fixed '0' for things like
+# uid is Not Good.  will this break anything else?
+# ivan@sisd.com 98-jun-29
+#
+# ss is 11 chars ivan@sisd.com 98-jul-20
+#
+# setup of arbitrary radius fields ivan@sisd.com 98-aug-9
+#
+# ouch, removed index on company name that wasn't supposed to be there
+# ivan@sisd.com 98-sep-4
+#
+# fix radius attributes ivan@sisd.com 98-sep-27
+
+#to delay loading dbdef until we're ready
+BEGIN { $FS::Record::setup_hack = 1; }
+
+use strict;
+use DBI;
+use FS::dbdef;
+use FS::UID qw(adminsuidsetup datasrc);
+use FS::Record;
+use FS::cust_main_county;
+
+#needs to match FS::Record
+my($dbdef_file) = "/var/spool/freeside/dbdef.". datasrc;
+
+###
+
+print "\nEnter the maximum username length: ";
+my($username_len)=&getvalue;
+
+print "\n\n", <<END, ":";
+Freeside tracks the RADIUS attributes User-Name, Password and Framed-IP-Address
+for each user.  Enter any additional RADIUS attributes you need to track for
+each user, separated by whitespace.
+END
+my @attributes = map { s/\-/_/g; $_; } split(" ",&getvalue);
+
+sub getvalue {
+  my($x)=scalar(<STDIN>);
+  chop $x;
+  $x;
+}
+
+###
+
+my($char_d) = 80; #default maxlength for text fields
+
+#my(@date_type)  = ( 'timestamp', '', ''     );
+my(@date_type)  = ( 'int', 'NULL', ''     );
+my(@perl_type) = ( 'long varchar', 'NULL', ''   ); 
+my(@money_type);
+if (datasrc =~ m/Pg/) { #Pg can't do decimal(10,2)
+  @money_type = ( 'money',   '', '' );
+} else {
+  @money_type = ( 'decimal',   '', '10,2' );
+}
+
+###
+# create a dbdef object from the old data structure
+###
+
+my(%tables)=&tables_hash_hack;
+
+#turn it into objects
+my($dbdef) = new FS::dbdef ( map {  
+  my(@columns);
+  while (@{$tables{$_}{'columns'}}) {
+    my($name,$type,$null,$length)=splice @{$tables{$_}{'columns'}}, 0, 4;
+    push @columns, new FS::dbdef_column ( $name,$type,$null,$length );
+  }
+  FS::dbdef_table->new(
+    $_,
+    $tables{$_}{'primary_key'},
+    #FS::dbdef_unique->new(@{$tables{$_}{'unique'}}),
+    #FS::dbdef_index->new(@{$tables{$_}{'index'}}),
+    FS::dbdef_unique->new($tables{$_}{'unique'}),
+    FS::dbdef_index->new($tables{$_}{'index'}),
+    @columns,
+  );
+} (keys %tables) );
+
+#add radius attributes to svc_acct
+
+my($svc_acct)=$dbdef->table('svc_acct');
+
+my($attribute);
+foreach $attribute (@attributes) {
+  $svc_acct->addcolumn ( new FS::dbdef_column (
+    'radius_'. $attribute,
+    'varchar',
+    'NULL',
+    $char_d,
+  ));
+}
+
+#make part_svc table (but now as object)
+
+my($part_svc)=$dbdef->table('part_svc');
+
+#because of svc_acct_pop
+#foreach (grep /^svc_/, $dbdef->tables) { 
+#foreach (qw(svc_acct svc_acct_sm svc_charge svc_domain svc_wo)) {
+foreach (qw(svc_acct svc_acct_sm svc_domain)) {
+  my($table)=$dbdef->table($_);
+  my($col);
+  foreach $col ( $table->columns ) {
+    next if $col =~ /^svcnum$/;
+    $part_svc->addcolumn( new FS::dbdef_column (
+      $table->name. '__' . $table->column($col)->name,
+      'varchar', #$table->column($col)->type, 
+      'NULL',
+      $char_d, #$table->column($col)->length,
+    ));
+    $part_svc->addcolumn ( new FS::dbdef_column (
+      $table->name. '__'. $table->column($col)->name . "_flag",
+      'char',
+      'NULL',
+      1,
+    ));
+  }
+}
+
+#important
+$dbdef->save($dbdef_file);
+FS::Record::reload_dbdef;
+
+###
+# create 'em
+###
+
+my($dbh)=adminsuidsetup;
+
+#create tables
+$|=1;
+
+my($table);
+foreach  ($dbdef->tables) {
+  my($table)=$dbdef->table($_);
+  print "Creating $_...";
+
+  my($statement);
+
+  #create table
+  foreach $statement ($table->sql_create_table(datasrc)) {
+    #print $statement, "\n"; 
+    $dbh->do( $statement )
+      or die "CREATE error: ",$dbh->errstr, "\ndoing statement: $statement";
+  }
+
+  print "\n";
+}
+
+#not really sample data (and shouldn't default to US)
+
+#cust_main_county
+foreach ( qw(
+AL AK AS AZ AR CA CO CT DC DE FM FL GA GU HI ID IL IN IA KS KY LA
+ME MH MD MA MI MN MS MO MT NC ND NE NH NJ NM NV NY MP OH OK OR PA PW PR RI 
+SC SD TN TX TT UT VT VI VA WA WV WI WY AE AA AP
+) ) {
+  my($cust_main_county)=create FS::cust_main_county({
+    'state' => $_,
+    'tax'   => 0,
+  });  
+  my($error);
+  $error=$cust_main_county->insert;
+  die $error if $error;
+}
+
+$dbh->disconnect or die $dbh->errstr;
+
+###
+# Now it becomes an object.  much better.
+###
+sub tables_hash_hack {
+
+  #note that s/(date|change)/_$1/; to avoid keyword conflict.
+  #put a kludge in FS::Record to catch this or? (pry need some date-handling
+  #stuff anyway also)
+
+  my(%tables)=( #yech.}
+
+    'agent' => {
+      'columns' => [
+        'agentnum', 'int',            '',     '',
+        'agent',    'varchar',           '',     $char_d,
+        'typenum',  'int',            '',     '',
+        'freq',     'smallint',       'NULL', '',
+        'prog',     @perl_type,
+      ],
+      'primary_key' => 'agentnum',
+      'unique' => [ [] ],
+      'index' => [ ['typenum'] ],
+    },
+
+    'agent_type' => {
+      'columns' => [
+        'typenum',   'int',  '', '',
+        'atype',     'varchar', '', $char_d,
+      ],
+      'primary_key' => 'typenum',
+      'unique' => [ [] ],
+      'index' => [ [] ],
+    },
+
+    'type_pkgs' => {
+      'columns' => [
+        'typenum',   'int',  '', '',
+        'pkgpart',   'int',  '', '',
+      ],
+      'primary_key' => '',
+      'unique' => [ ['typenum', 'pkgpart'] ],
+      'index' => [ ['typenum'] ],
+    },
+
+    'cust_bill' => {
+      'columns' => [
+        'invnum',    'int',  '', '',
+        'custnum',   'int',  '', '',
+        '_date',     @date_type,
+        'charged',   @money_type,
+        'owed',      @money_type,
+        'printed',   'int',  '', '',
+      ],
+      'primary_key' => 'invnum',
+      'unique' => [ [] ],
+      'index' => [ ['custnum'] ],
+    },
+
+    'cust_bill_pkg' => {
+      'columns' => [
+        'pkgnum',  'int', '', '',
+        'invnum',  'int', '', '',
+        'setup',   @money_type,
+        'recur',   @money_type,
+        'sdate',   @date_type,
+        'edate',   @date_type,
+      ],
+      'primary_key' => '',
+      'unique' => [ ['pkgnum', 'invnum'] ],
+      'index' => [ ['invnum'] ],
+    },
+
+    'cust_credit' => {
+      'columns' => [
+        'crednum',  'int', '', '',
+        'custnum',  'int', '', '',
+        '_date',    @date_type,
+        'amount',   @money_type,
+        'credited', @money_type,
+        'otaker',   'varchar', '', 8,
+        'reason',   'varchar', '', 255,
+      ],
+      'primary_key' => 'crednum',
+      'unique' => [ [] ],
+      'index' => [ ['custnum'] ],
+    },
+
+    'cust_main' => {
+      'columns' => [
+        'custnum',  'int',  '',     '',
+        'agentnum', 'int',  '',     '',
+        'last',     'varchar', '',     $char_d,
+        'first',    'varchar', '',     $char_d,
+        'ss',       'char', 'NULL', 11,
+        'company',  'varchar', 'NULL', $char_d,
+        'address1', 'varchar', '',     $char_d,
+        'address2', 'varchar', 'NULL', $char_d,
+        'city',     'varchar', '',     $char_d,
+        'county',   'varchar', 'NULL', $char_d,
+        'state',    'char', '',     2,
+        'zip',      'varchar', '',     10,
+        'country',  'char', '',     2,
+        'daytime',  'varchar', 'NULL', 20,
+        'night',    'varchar', 'NULL', 20,
+        'fax',      'varchar', 'NULL', 12,
+        'payby',    'char', '',     4,
+        'payinfo',  'varchar', 'NULL', 16,
+        'paydate',  @date_type,
+        'payname',  'varchar', 'NULL', $char_d,
+        'tax',      'char', 'NULL', 1,
+        'otaker',   'varchar', '',     8,
+        'refnum',   'int',  '',     '',
+      ],
+      'primary_key' => 'custnum',
+      'unique' => [ [] ],
+      #'index' => [ ['last'], ['company'] ],
+      'index' => [ ['last'], ],
+    },
+
+    'cust_main_county' => { #county+state are checked off the cust_main_county
+                            #table for validation and to provide a tax rate.
+                            #add country?
+      'columns' => [
+        'taxnum',   'int',   '',    '',
+        'state',    'char',  '',    2,  #two letters max in US... elsewhere?
+        'county',   'varchar',  '',    $char_d,
+        'tax',      'real',  '',    '', #tax %
+      ],
+      'primary_key' => 'taxnum',
+      'unique' => [ [] ],
+  #    'unique' => [ ['taxnum'], ['state', 'county'] ],
+      'index' => [ [] ],
+    },
+
+    'cust_pay' => {
+      'columns' => [
+        'paynum',   'int',    '',   '',
+        'invnum',   'int',    '',   '',
+        'paid',     @money_type,
+        '_date',    @date_type,
+        'payby',    'char',   '',     4, # CARD/BILL/COMP, should be index into
+                                         # payment type table.
+        'payinfo',  'varchar',   'NULL', 16,  #see cust_main above
+        'paybatch', 'varchar',   'NULL', $char_d, #for auditing purposes.
+      ],
+      'primary_key' => 'paynum',
+      'unique' => [ [] ],
+      'index' => [ ['invnum'] ],
+    },
+
+    'cust_pay_batch' => { #what's this used for again?  list of customers
+                          #in current CARD batch? (necessarily CARD?)
+      'columns' => [
+        'invnum',   'int',    '',   '',
+        'custnum',   'int',    '',   '',
+        'last',     'varchar', '',     $char_d,
+        'first',    'varchar', '',     $char_d,
+        'address1', 'varchar', '',     $char_d,
+        'address2', 'varchar', 'NULL', $char_d,
+        'city',     'varchar', '',     $char_d,
+        'state',    'char', '',     2,
+        'zip',      'varchar', '',     10,
+        'country',  'char', '',     2,
+        'trancode', 'TINYINT', '', '',
+        'cardnum',  'varchar', '',     16,
+        'exp',      @date_type,
+        'payname',  'varchar', 'NULL', $char_d,
+        'amount',   @money_type,
+      ],
+      'primary_key' => '',
+      'unique' => [ [] ],
+      'index' => [ ['invnum'], ['custnum'] ],
+    },
+
+    'cust_pkg' => {
+      'columns' => [
+        'pkgnum',    'int',    '',   '',
+        'custnum',   'int',    '',   '',
+        'pkgpart',   'int',    '',   '',
+        'otaker',    'varchar', '', 8,
+        'setup',     @date_type,
+        'bill',      @date_type,
+        'susp',      @date_type,
+        'cancel',    @date_type,
+        'expire',    @date_type,
+      ],
+      'primary_key' => 'pkgnum',
+      'unique' => [ [] ],
+      'index' => [ ['custnum'] ],
+    },
+
+    'cust_refund' => {
+      'columns' => [
+        'refundnum',    'int',    '',   '',
+        'crednum',      'int',    '',   '',
+        '_date',        @date_type,
+        'refund',       @money_type,
+        'otaker',       'varchar',   '',   8,
+        'reason',       'varchar',   '',   $char_d,
+        'payby',        'char',   '',     4, # CARD/BILL/COMP, should be index
+                                             # into payment type table.
+        'payinfo',      'varchar',   'NULL', 16,  #see cust_main above
+      ],
+      'primary_key' => 'refundnum',
+      'unique' => [ [] ],
+      'index' => [ ['crednum'] ],
+    },
+
+    'cust_svc' => {
+      'columns' => [
+        'svcnum',    'int',    '',   '',
+        'pkgnum',    'int',    '',   '',
+        'svcpart',   'int',    '',   '',
+      ],
+      'primary_key' => 'svcnum',
+      'unique' => [ [] ],
+      'index' => [ ['svcnum'], ['pkgnum'], ['svcpart'] ],
+    },
+
+    'part_pkg' => {
+      'columns' => [
+        'pkgpart',    'int',    '',   '',
+        'pkg',        'varchar',   '',   $char_d,
+        'comment',    'varchar',   '',   $char_d,
+        'setup',      @perl_type,
+        'freq',       'smallint', '', '',  #billing frequency (months)
+        'recur',      @perl_type,
+      ],
+      'primary_key' => 'pkgpart',
+      'unique' => [ [] ],
+      'index' => [ [] ],
+    },
+
+    'pkg_svc' => {
+      'columns' => [
+        'pkgpart',    'int',    '',   '',
+        'svcpart',    'int',    '',   '',
+        'quantity',   'int',    '',   '',
+      ],
+      'primary_key' => '',
+      'unique' => [ ['pkgpart', 'svcpart'] ],
+      'index' => [ ['pkgpart'] ],
+    },
+
+    'part_referral' => {
+      'columns' => [
+        'refnum',   'int',    '',   '',
+        'referral', 'varchar',   '',   $char_d,
+      ],
+      'primary_key' => 'refnum',
+      'unique' => [ [] ],
+      'index' => [ [] ],
+    },
+
+    'part_svc' => {
+      'columns' => [
+        'svcpart',    'int',    '',   '',
+        'svc',        'varchar',   '',   $char_d,
+        'svcdb',      'varchar',   '',   $char_d,
+      ],
+      'primary_key' => 'svcpart',
+      'unique' => [ [] ],
+      'index' => [ [] ],
+    },
+
+    #(this should be renamed to part_pop)
+    'svc_acct_pop' => {
+      'columns' => [
+        'popnum',    'int',    '',   '',
+        'city',      'varchar',   '',   $char_d,
+        'state',     'char',   '',   2,
+        'ac',        'char',   '',   3,
+        'exch',      'char',   '',   3,
+        #rest o' number?
+      ],
+      'primary_key' => 'popnum',
+      'unique' => [ [] ],
+      'index' => [ [] ],
+    },
+
+    'svc_acct' => {
+      'columns' => [
+        'svcnum',    'int',    '',   '',
+        'username',  'varchar',   '',   $username_len, #unique (& remove dup code)
+        '_password', 'varchar',   '',   25, #13 for encryped pw's plus ' *SUSPENDED*
+        'popnum',    'int',    'NULL',   '',
+        'uid',       'bigint', 'NULL',   '',
+        'gid',       'bigint', 'NULL',   '',
+        'finger',    'varchar',   'NULL',   $char_d,
+        'dir',       'varchar',   'NULL',   $char_d,
+        'shell',     'varchar',   'NULL',   $char_d,
+        'quota',     'varchar',   'NULL',   $char_d,
+        'slipip',    'varchar',   'NULL',   15, #four TINYINTs, bah.
+      ],
+      'primary_key' => 'svcnum',
+      'unique' => [ [] ],
+      'index' => [ ['username'] ],
+    },
+
+    'svc_acct_sm' => {
+      'columns' => [
+        'svcnum',    'int',    '',   '',
+        'domsvc',    'int',    '',   '',
+        'domuid',    'bigint', '',   '',
+        'domuser',   'varchar',   '',   $char_d,
+      ],
+      'primary_key' => 'svcnum',
+      'unique' => [ [] ],
+      'index' => [ ['domsvc'], ['domuid'] ], 
+    },
+
+    #'svc_charge' => {
+    #  'columns' => [
+    #    'svcnum',    'int',    '',   '',
+    #    'amount',    @money_type,
+    #  ],
+    #  'primary_key' => 'svcnum',
+    #  'unique' => [ [] ],
+    #  'index' => [ [] ],
+    #},
+
+    'svc_domain' => {
+      'columns' => [
+        'svcnum',    'int',    '',   '',
+        'domain',    'varchar',    '',   $char_d,
+      ],
+      'primary_key' => 'svcnum',
+      'unique' => [ ['domain'] ],
+      'index' => [ [] ],
+    },
+
+    #'svc_wo' => {
+    #  'columns' => [
+    #    'svcnum',    'int',    '',   '',
+    #    'svcnum',    'int',    '',   '',
+    #    'svcnum',    'int',    '',   '',
+    #    'worker',    'varchar',   '',   $char_d,
+    #    '_date',     @date_type,
+    #  ],
+    #  'primary_key' => 'svcnum',
+    #  'unique' => [ [] ],
+    #  'index' => [ [] ],
+    #},
+
+  );
+
+  %tables;
+
+}
+
