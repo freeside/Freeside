@@ -1,10 +1,17 @@
-$Id: TODO,v 1.65 2001-06-06 22:22:13 ivan Exp $
+$Id: TODO,v 1.66 2001-07-30 07:13:34 ivan Exp $
 
 If you are interested in helping with any of these, please join the
 *development* mailing list (send a blank message to
 ivan-freeside-devel-subscribe@sisd.com) to avoid duplication of effort.
 
 ---
+
+> Does Freeside currently support notification to the customer that their
+> credit card on file is about to expire?
+> What about notification that their
+> credit card was declined after they sign up, say like in 5 months when it
+> fails?
+
 
 random templating thoughts:
 for starters, read the "Template Syntax" section of Text::Template
@@ -48,18 +55,27 @@ write some sample billing expressions with libcflow-perl :)
 .
 (at least) These questions need to be answered for Mason, Apache::ASP and
 eperl.  If eperl becomes too much of a pain, I'm okay with forgetting 
-about it - it's not well-maintained.  The answers below are for Mason.
+about it - it's not well-maintained.
 .
-How do you interpolate a value?  <% $value %>
+How do you interpolate a value?
+mason: <% $value %>
+apache-asp(don't think there is a "with-escaping-HTML" way?): <%= $value %>
 .
-How do you interpolate a value without escaping HTML? <% $value |n %>
+How do you interpolate a value without escaping HTML?
+mason: <% $value |n %>
+apache-asp??: <%= $value %> 
 .
 How do you interpolate a (possibly non-stand-alone, non-interpolated) 
 control structure?  With an inital % - for example:
 .     
-        % for each $value ( @values ) {
+mason:
+        % foreach $value ( @values ) {
         <OPTION><% $value %></OPTION>
         % }
+apache-asp:
+        <% foreach $value ( @values ) { %>
+        <OPTION><%= $value %></OPTION>
+        <% } %>
 .     
 This is one of the things I worry that the webmonkey HTML editors will not
 like about Mason.  That and the <%INIT> and <%PERL> tags.
