@@ -8,7 +8,7 @@ use Carp;
 use Mail::Internet;
 use Mail::Header;
 use Date::Format;
-use Net::Whois; #0.24;
+use Net::Whois 1.001;
 use FS::Record qw(fields qsearch qsearchs);
 use FS::Conf;
 use FS::svc_Common;
@@ -393,7 +393,7 @@ sub submit_internic {
 
 =head1 VERSION
 
-$Id: svc_domain.pm,v 1.1 1999-08-04 09:03:53 ivan Exp $
+$Id: svc_domain.pm,v 1.2 1999-08-11 13:12:11 ivan Exp $
 
 =head1 BUGS
 
