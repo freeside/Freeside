@@ -125,6 +125,9 @@ sub check {
     $error = $self->ut_alphan('username');
     return $error if $error;
     if ( length($self->username) ) {
+      my $conflict = qsearchs('agent', { 'username' => $self->username } );
+      return 'duplicate agent username (with '. $conflict->agent. ')'
+        if $conflict;
       $error = $self->ut_text('password'); # ut_text... arbitrary choice
     } else {
       $self->_password('');
@@ -165,7 +168,7 @@ sub pkgpart_hashref {
 
 =head1 VERSION
 
-$Id: agent.pm,v 1.5 2003-09-29 05:51:50 ivan Exp $
+$Id: agent.pm,v 1.6 2003-09-30 15:01:46 ivan Exp $
 
 =head1 BUGS
 
