@@ -144,7 +144,7 @@ Returns HTML tag for beginning a table.
 =cut
 
 sub table {
-  "<TABLE BORDER>";
+  "<TABLE BORDER=1>";
 }
 
 =back
@@ -171,7 +171,10 @@ lose the background, eidiot ivan@sisd.com 98-sep-2
 pod ivan@sisd.com 98-sep-12
 
 $Log: CGI.pm,v $
-Revision 1.10  1998-11-12 01:53:47  ivan
+Revision 1.11  1998-11-12 07:43:54  ivan
+*** empty log message ***
+
+Revision 1.10  1998/11/12 01:53:47  ivan
 added table command
 
 Revision 1.9  1998/11/09 08:51:49  ivan
