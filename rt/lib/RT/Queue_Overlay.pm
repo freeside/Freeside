@@ -48,6 +48,7 @@ no warnings qw(redefine);
 use vars qw(@STATUS @ACTIVE_STATUS @INACTIVE_STATUS $RIGHTS);
 use RT::Groups;
 use RT::ACL;
+use RT::EmailParser;
 
 
 @ACTIVE_STATUS = qw(new open stalled);
@@ -518,6 +519,8 @@ Email       The email address of the new watcher. If a user with this
 
 If the watcher you\'re trying to set has an RT account, set the Owner paremeter to their User Id. Otherwise, set the Email parameter to their Email address.
 
+Returns a tuple of (status/id, message).
+
 =cut
 
 sub AddWatcher {
@@ -602,10 +605,13 @@ sub _AddWatcher {
         # if the user doesn't exist, we need to create a new user
              my $new_user = RT::User->new($RT::SystemUser);
 
+            my ( $Address, $Name ) =  
+               RT::EmailParser::ParseAddressFromHeader('', $args{'Email'});
+
             my ( $Val, $Message ) = $new_user->Create(
-                Name => $args{'Email'},
-                EmailAddress => $args{'Email'},
-                RealName     => $args{'Email'},
+                Name => $Address,
+                EmailAddress => $Address,
+                RealName     => $Name,
                 Privileged   => 0,
                 Comments     => 'Autocreated when added as a watcher');
             unless ($Val) {

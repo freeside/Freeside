@@ -30,14 +30,18 @@
 
 <& /Elements/ListActions, actions => \@Actions &>
 
-<& /Ticket/Elements/ShowSummary,  Ticket => $TicketObj &>
+<& /Ticket/Elements/ShowSummary,  Ticket => $TicketObj, Attachments => $attachments &>
 
 
 <BR>
 <& /Ticket/Elements/ShowHistory , 
       Ticket => $TicketObj, 
       Collapsed => $ARGS{'Collapsed'}, 
-      ShowHeaders => $ARGS{'ShowHeaders'} &> 
+      ShowHeaders => $ARGS{'ShowHeaders'},
+      Attachments => $attachments,
+      AttachmentContent => $attachment_content
+      
+      &> 
 
   
 <%ARGS>
@@ -92,18 +96,17 @@ if ($ARGS{'id'} eq 'new') {
 	}
     }
 
-    if ( $ARGS{'UpdateContent'} || $session{'Attachments'}) {
-        $ARGS{'UpdateContent'} =~ s/\r\n/\n/g;
-        if ( $session{'Attachments'} || 
-	     (   $ARGS{'UpdateContent'} ne ''
-		 && $ARGS{'UpdateContent'} ne "-- \n"
-		 . $session{'CurrentUser'}->UserObj->Signature )) {
-            $ARGS{UpdateAttachments} = $session{'Attachments'};
-            ProcessUpdateMessage( ARGSRef   => \%ARGS,
-                                  Actions   => \@Actions,
-                                  TicketObj => $TicketObj );
-            delete $session{'Attachments'};
-        }
+    $ARGS{'UpdateContent'} =~ s/\r\n/\n/g;
+    if ( $ARGS{'UpdateTimeWorked'} ||
+	 $session{'Attachments'} || 
+	 (   $ARGS{'UpdateContent'} ne ''
+	     && $ARGS{'UpdateContent'} ne "-- \n"
+	     . $session{'CurrentUser'}->UserObj->Signature )) {
+	$ARGS{UpdateAttachments} = $session{'Attachments'};
+	ProcessUpdateMessage( ARGSRef   => \%ARGS,
+			      Actions   => \@Actions,
+			      TicketObj => $TicketObj );
+	delete $session{'Attachments'};
     }
     #Process status updates
     my @BasicActions = ProcessTicketBasics(ARGSRef => \%ARGS, TicketObj=>$TicketObj);
@@ -111,6 +114,11 @@ if ($ARGS{'id'} eq 'new') {
 
     push (@Actions, @BasicActions, @results);
 }
+
+my $attachments = $m->comp('Elements/FindAttachments', Ticket => $TicketObj);
+my $attachment_content = $m->comp('Elements/LoadTextAttachments', Ticket => $TicketObj);
+
+
 </%INIT>
 
 

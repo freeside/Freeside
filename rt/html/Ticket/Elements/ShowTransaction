@@ -36,8 +36,7 @@
 <%PERL>
 
 unless ($Collapsed) {
- $attachments->GotoFirstItem;
- while (my $message=$attachments->Next) {
+ foreach my $message (@$Attachments) { 
 
   my ($headers, $quoted);
       if ($ShowHeaders && ($ShowHeaders == $Ticket->Id)) {
@@ -50,20 +49,31 @@ unless ($Collapsed) {
 	   # localize the common headers (like 'Subject:'), too.
 	   eval {$headers =~ s/^([^:]+)(?=:)/loc($1)/em; } # we eval here to catch errors when 5.6 panics
       }
-     # 13456 is a random # of about the biggest size we want to see inline text
-     # It's here to catch anyone who hasn't updated RT_Config.pm since this
-     # constant was moved out there.
+     
+
      my $MAX_INLINE_BODY = $RT::MaxInlineBody || 13456;
-     if ($message->ContentType =~ m{^(text/plain|message|text$)}i && 
-				    $message->ContentLength < $MAX_INLINE_BODY ) {
-         eval {
-         require Text::Quoted;
-	     $quoted = Text::Quoted::extract($message->Content); 
-        }; 
+    if (    $message->ContentType =~ m{^(text/plain|message|text$)}i
+         && $message->ContentLength < $MAX_INLINE_BODY ) {
+
+        my $content;
+        # If we've preloaded all the content, let's pull from there
+        # if we haven't, load it now
+        if ($AttachmentContent->{$message->id}) {
+            $content = $AttachmentContent->{$message->id}->Content;
+        } else {
+            $content = $message->Content;
+        } 
+
+
+
+        eval {
+            require Text::Quoted;
+            $quoted = Text::Quoted::extract( $content );
+        };
         if ($@) {
-            $quoted = $message->Content;
+            $quoted = $content;
         }
-     }
+    }
         
 </%PERL>
 <TR class="<% $RowNum%2 ? 'oddline' : 'evenline'%>" >                                
@@ -74,7 +84,7 @@ unless ($Collapsed) {
 	<PRE>
 <& ShowMessageHeaders, Headers => $headers, Transaction => $Transaction &>
 </PRE>
-% if (!length($quoted) && $message->ContentType =~ m#^text/#) {
+% if ($message->ContentLength && !length($quoted) && $message->ContentType =~ m#^text/#) {
 <blockquote><i><&|/l&>Message body not shown because it is too large or is not plain text.</&><br>
 <&|/l&>You can access it with the Download button on the right.</&></i></blockquote>
 % } else {
@@ -115,6 +125,9 @@ $Collapsed => undef
 $ShowTitleBarCommands => 1
 $RowNum => 1
 $AttachPath => $RT::WebPath."/Ticket/Attachment"
+$UpdatePath => $RT::WebPath."/Ticket/Update.html"
+$Attachments => undef
+$AttachmentContent => undef
 </%ARGS>
 
 <%INIT>
@@ -126,12 +139,7 @@ my $transdate = $Transaction->CreatedAsString();
 $transdate =~ s/\s/&nbsp;/g;
 
 if ($Transaction->Type =~ /^(Create|Correspond|Comment$)/) {
-	if ($Transaction->IsInbound) {
 		$bgcolor="#336699";
-	}
-	else {
-		$bgcolor="#339999";
-	}
 } elsif (($Transaction->Field =~ /^Owner$/) or 
 	 ($Transaction->Type =~ /^(AddWatcher|DelWatcher)$/)) {
 	$bgcolor="#333399";
@@ -154,25 +162,30 @@ if ($Ticket->Id != $Transaction->Ticket) {
 	$TicketString = "Ticket ".$Transaction->Ticket .": ";
 }
 
-if ($Transaction->TimeTaken > 0) {
+if ($Transaction->TimeTaken != 0) {
 	$TimeTaken = $Transaction->TimeTaken." min"
 }
-my $attachments = $Transaction->Attachments;
-$attachments->Columns( qw( Id Filename ContentType Headers Subject Parent ContentEncoding ContentType TransactionId) );
+
+unless ($Attachments) { 
+    my $attachments = $Transaction->Attachments;
+    $attachments->Columns( qw( Id Filename ContentType Headers Subject Parent ContentEncoding ContentType TransactionId) );
+    $Attachments = $attachments->ItemsArrayRef();
+}
+
 
 my $titlebar_commands='&nbsp;';
 
 # If the transaction has anything attached to it at all
-if ($Transaction->Attachments->First && $ShowTitleBarCommands) {
-	if ($Transaction->TicketObj->CurrentUserHasRight('ReplyToTicket')) {
+if ($Attachments->[0] && $ShowTitleBarCommands) {
+	if ($Ticket->CurrentUserHasRight('ReplyToTicket')) {
 		$titlebar_commands .= 
-	  	  "[<a href=\"Update.html?id=".
+	  	  "[<a href=\"".$UpdatePath."?id=".
 		  $Transaction->Ticket . "&QuoteTransaction=".$Transaction->Id.
 		  "&Action=Respond\">". loc('Reply') ."</a>]&nbsp;";
 	}
-	if ($Transaction->TicketObj->CurrentUserHasRight('CommentOnTicket')) {
+	if ($Ticket->CurrentUserHasRight('CommentOnTicket')) {
 	     $titlebar_commands .= 
-	     "[<a href=\"Update.html?id=".$Transaction->Ticket. 
+	     "[<a href=\"".$UpdatePath."?id=".$Transaction->Ticket. 
 	     "&QuoteTransaction=".$Transaction->Id.
 	     "&Action=Comment\">". loc('Comment') ."</a>]";
 	}

@@ -25,7 +25,7 @@
 <& /Admin/Elements/UserTabs, 
     id => $id, 
     UserObj => $UserObj,
-    current_subtab => $current_tab, 
+    current_tab => $current_tab, 
     Title => $title &>
 
 <& /Elements/ListActions, actions => \@results &>
@@ -197,7 +197,7 @@
 </TR>
 </TABLE>
 
-<& /Elements/Submit &>
+<& /Elements/Submit, Label => loc('Save Changes') &>
 </form>
 
 <%INIT>
@@ -242,8 +242,6 @@ else {
 	$title = loc("Create a new user");
 	$Create = 1;
     }    
-
-    
 
 }
 

@@ -229,6 +229,45 @@ sub WithMember {
 }
 
 
+=head2 WithRight { Right => RIGHTNAME, Object => RT::Record, IncludeSystemRights => 1, IncludeSuperusers => 0 }
+
+
+Find all groups which have RIGHTNAME for RT::Record. Optionally include global rights and superusers. By default, include the global rights, but not the superusers.
+
+=begin testing
+
+my $q = RT::Queue->new($RT::SystemUser);
+my ($id, $msg) =$q->Create( Name => 'GlobalACLTest');
+ok ($id, $msg);
+
+my $testuser = RT::User->new($RT::SystemUser);
+($id,$msg) = $testuser->Create(Name => 'JustAnAdminCc');
+ok ($id,$msg);
+
+my $global_admin_cc = RT::Group->new($RT::SystemUser);
+$global_admin_cc->LoadSystemRoleGroup('AdminCc');
+ok($global_admin_cc->id, "Found the global admincc group");
+my $groups = RT::Groups->new($RT::SystemUser);
+$groups->WithRight(Right => 'OwnTicket', Object => $q);
+is($groups->Count, 1);
+($id, $msg) = $global_admin_cc->PrincipalObj->GrantRight(Right =>'OwnTicket', Object=> $RT::System);
+ok ($id,$msg);
+ok (!$testuser->HasRight(Object => $q, Right => 'OwnTicket') , "The test user does not have the right to own tickets in the test queue");
+($id, $msg) = $q->AddWatcher(Type => 'AdminCc', PrincipalId => $testuser->id);
+ok($id,$msg);
+ok ($testuser->HasRight(Object => $q, Right => 'OwnTicket') , "The test user does have the right to own tickets now. thank god.");
+
+$groups = RT::Groups->new($RT::SystemUser);
+$groups->WithRight(Right => 'OwnTicket', Object => $q);
+ok ($id,$msg);
+is($groups->Count, 2);
+
+=end testing
+
+
+=cut
+
+
 sub WithRight {
     my $self = shift;
     my %args = ( Right                  => undef,
@@ -237,7 +276,6 @@ sub WithRight {
                  IncludeSuperusers      => undef,
                  @_ );
 
-    my $groupprinc = $self->NewAlias('Principals');
     my $acl        = $self->NewAlias('ACL');
 
     # {{{ Find only rows where the right granted is the one we're looking up or _possibly_ superuser 
@@ -274,7 +312,7 @@ sub WithRight {
             $or_check_roles =
                 " OR ( ( (main.Domain = 'RT::Queue-Role' AND main.Instance = " .
                 $args{'Object'}->Id . ") $or_check_ticket_roles ) " .
-                " AND main.Type = $acl.PrincipalType AND main.id = $groupprinc.id) ";
+                " AND main.Type = $acl.PrincipalType) ";
         }
 
 	if ( $args{'IncludeSystemRights'} ) {
@@ -292,12 +330,11 @@ sub WithRight {
 
     $self->_AddSubClause( "WhichGroup",
         qq{
-          ( (    $acl.PrincipalId = $groupprinc.id
+          ( (    $acl.PrincipalId = main.id
              AND $acl.PrincipalType = 'Group'
              AND (   main.Domain = 'SystemInternal'
                   OR main.Domain = 'UserDefined'
-                  OR main.Domain = 'ACLEquivalence')
-             AND main.id = $groupprinc.id)
+                  OR main.Domain = 'ACLEquivalence'))
            $or_check_roles)
         }
     );
@@ -319,7 +356,7 @@ sub LimitToEnabled {
 	ALIAS1 => 'main',
 	FIELD1 => 'id',
 	TABLE2 => 'Principals',
-	FIELD2 => 'ObjectId'
+	FIELD2 => 'id'
     );
 
     $self->Limit( ALIAS => $alias,
@@ -345,7 +382,7 @@ sub LimitToDeleted {
 	ALIAS1 => 'main',
 	FIELD1 => 'id',
 	TABLE2 => 'Principals',
-	FIELD2 => 'ObjectId'
+	FIELD2 => 'id'
     );
 
     $self->{'find_disabled_rows'} = 1;
@@ -356,5 +393,18 @@ sub LimitToDeleted {
 		);
 }
 # }}}
+
+sub _DoSearch {
+    my $self = shift;
+    
+    #unless we really want to find disabled rows, make sure we\'re only finding enabled ones.
+    unless($self->{'find_disabled_rows'}) {
+	$self->LimitToEnabled();
+    }
+    
+    return($self->SUPER::_DoSearch(@_));
+    
+}
+
 1;
 
