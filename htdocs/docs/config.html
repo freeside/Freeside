@@ -99,6 +99,8 @@ All further configuration files and directories are located in
   <li><a name="textradiusprepend">textradiusprepend</a> - The contents of this file will be prepended to the first line of a user's RADIUS entry in text exports.  If necessary, usually `Auth-Type = Local, '.
   <li><a name="usernamemin">usernamemin</a> - Minimum username length (default 2);
   <li><a name="usernamemax">usernamemax</a> - Maximum username length (default is the size of the SQL column, probably specified when fs-setup was run)
+  <li><a name="usernamemax">username-letter</a> - The existance of this file will turn on the requirement that usernames contain at least one letter.
+  <li><a name="usernamemax">username-letterfirst</a> - The existance of this file will turn on the requirement that usernames start with a letter.
 </ul>
 </body>
 

@@ -2,7 +2,7 @@ package FS::svc_acct;
 
 use strict;
 use vars qw( @ISA $nossh_hack $conf $dir_prefix @shells $usernamemin
-             $usernamemax $passwordmin
+             $usernamemax $passwordmin $username_letter $username_letterfirst
              $shellmachine $useradd $usermod $userdel 
              @saltset @pw_set);
 use Carp;
@@ -46,6 +46,8 @@ $FS::UID::callback{'FS::svc_acct'} = sub {
                     'rm -rf $old_dir'.
                   ')';
   }
+  $username_letter = $conf->exists('username-letter');
+  $username_letterfirst = $conf->exists('username-letterfirst');
 };
 
 @saltset = ( 'a'..'z' , 'A'..'Z' , '0'..'9' , '.' , '/' );
@@ -381,7 +383,11 @@ sub check {
   $recref->{username} =~ /^([a-z0-9_\-\.]{$usernamemin,$ulen})$/
     or return "Illegal username";
   $recref->{username} = $1;
-  $recref->{username} =~ /[a-z]/ or return "Illegal username";
+  if ( $username_letterfirst ) {
+    $recref->{username} =~ /^[a-z]/ or return "Illegal username";
+  } elsif ( $username_letter ) {
+    $recref->{username} =~ /[a-z]/ or return "Illegal username";
+  }
 
   $recref->{popnum} =~ /^(\d*)$/ or return "Illegal popnum: ".$recref->{popnum};
   $recref->{popnum} = $1;
@@ -536,7 +542,7 @@ sub radius_check {
 
 =head1 VERSION
 
-$Id: svc_acct.pm,v 1.16 2001-06-03 11:37:08 ivan Exp $
+$Id: svc_acct.pm,v 1.17 2001-06-03 12:36:10 ivan Exp $
 
 =head1 BUGS
 
