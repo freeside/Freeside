@@ -57,6 +57,21 @@ METHODS
         If there is an error, returns the error, otherwise returns
         false.
 
+        sub insert { my $self = shift;
+
+          # custnum might not have have been defined in sub check (for one-shot new
+          # customers), so check it here instead
+
+          my $error = $self->ut_number('custnum');
+          return $error if $error
+
+          return "Unknown customer"
+            unless qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
+
+          $self->SUPER::insert;
+
+        }
+
     delete
         Currently unimplemented. You don't want to delete billing
         items, because there would then be no record the customer
@@ -135,7 +150,7 @@ SUBROUTINES
         FS::pkg_svc manpage).
 
 VERSION
-    $Id: cust_pkg.txt,v 1.3 1999-02-09 09:38:01 ivan Exp $
+    $Id: cust_pkg.txt,v 1.4 1999-04-08 13:39:32 ivan Exp $
 
 BUGS
     sub order is not OO. Perhaps it should be moved to FS::cust_main
@@ -169,10 +184,20 @@ HISTORY
     pod ivan@sisd.com 98-sep-21
 
     $Log: cust_pkg.txt,v $
-    Revision 1.3  1999-02-09 09:38:01  ivan
-    regenerated perl api docs from embedded pod
- Revision 1.6 1999/01/25 12:26:12 ivan yet
-    more mod_perl stuff
+    Revision 1.4  1999-04-08 13:39:32  ivan
+    convert from pod for 1.2.0 release
+ Revision 1.9 1999/03/29 01:11:51 ivan use
+    FS::type_pkgs
+
+    Revision 1.8 1999/03/25 13:48:14 ivan allow empty custnum in sub
+    check (but call that an error in sub insert), for one-screen new
+    customer entry
+
+    Revision 1.7 1999/02/09 09:55:06 ivan invoices show line items
+    for each service in a package (see the label method of
+    FS::cust_svc)
+
+    Revision 1.6 1999/01/25 12:26:12 ivan yet more mod_perl stuff
 
     Revision 1.5 1999/01/18 21:58:07 ivan esthetic: eq and ne were
     used in a few places instead of == and !=

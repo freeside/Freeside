@@ -47,8 +47,11 @@ HISTORY
     sub exists forgot to fetch $dir ivan@sisd.com 98-sep-27
 
     $Log: Conf.txt,v $
-    Revision 1.4  1999-02-09 09:37:48  ivan
-    regenerated perl api docs from embedded pod
- Revision 1.2 1998/11/13 04:08:44 ivan no
-    default default_dir (ironic)
+    Revision 1.5  1999-04-08 13:39:31  ivan
+    convert from pod for 1.2.0 release
+ Revision 1.3 1999/03/29 01:29:33 ivan die
+    unless the configuration directory exists
+
+    Revision 1.2 1998/11/13 04:08:44 ivan no default default_dir
+    (ironic)
 
