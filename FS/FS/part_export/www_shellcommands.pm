@@ -39,8 +39,8 @@ Run remote commands via SSH, for virtual web sites.  You will need to
   <LI>
     <INPUT TYPE="button" VALUE="ISPMan CLI" onClick='
       this.form.user.value = "root";
-      this.form.useradd.value = "/usr/local/ispman/bin/ispman.addvhost -d $domain $zone";
-      this.form.userdel.value = "/usr/local/ispman/bin/ispman.deletevhost -d $domain $zone";
+      this.form.useradd.value = "/usr/local/ispman/bin/ispman.addvhost -d $domain $bare_zone";
+      this.form.userdel.value = "/usr/local/ispman/bin/ispman.deletevhost -d $domain $bare_zone";
       this.form.usermod.value = "";
     '>
 </UL>
@@ -48,6 +48,7 @@ The following variables are available for interpolation (prefixed with
 <code>new_</code> or <code>old_</code> for replace operations):
 <UL>
   <LI><code>$zone</code> - fully-qualified zone of this virtual host
+  <LI><code>$bare_zone</code> - just the zone of this virtual host, without the domain portion
   <LI><code>$domain</code> - base domain
   <LI><code>$username</code>
   <LI><code>$homedir</code>
@@ -83,6 +84,7 @@ sub _export_command {
   my $domain_record = $svc_www->domain_record; # or die ?
   my $zone = $domain_record->zone; # or die ?
   my $domain = $domain_record->svc_domain->domain;
+  ( my $bare_zone = $zone ) =~ s/\.$domain$//;
   my $svc_acct = $svc_www->svc_acct; # or die ?
   my $username = $svc_acct->username;
   my $homedir = $svc_acct->dir; # or die ?
@@ -108,22 +110,17 @@ sub _export_replace {
     ${"new_$_"} = $new->getfield($_) foreach $new->fields;
   }
   my $old_domain_record = $old->domain_record; # or die ?
-  my $old_zone = $old_domain_record->reczone; # or die ?
+  my $old_zone = $old_domain_record->zone; # or die ?
   my $old_domain = $old_domain_record->svc_domain->domain;
-  $old_zone .= ".$old_domain" unless $old_zone =~ /\.$/;
-
+  ( my $old_bare_zone = $old_zone ) =~ s/\.$old_domain$//;
   my $old_svc_acct = $old->svc_acct; # or die ?
   my $old_username = $old_svc_acct->username;
   my $old_homedir = $old_svc_acct->dir; # or die ?
 
   my $new_domain_record = $new->domain_record; # or die ?
-  my $new_zone = $new_domain_record->reczone; # or die ?
+  my $new_zone = $new_domain_record->zone; # or die ?
   my $new_domain = $new_domain_record->svc_domain->domain;
-  unless ( $new_zone =~ /\.$/ ) {
-    my $new_svc_domain = $new_domain_record->svc_domain; # or die ?
-    $new_zone .= '.'. $new_svc_domain->domain;
-  }
-
+  ( my $new_bare_zone = $new_zone ) =~ s/\.$new_domain$//;
   my $new_svc_acct = $new->svc_acct; # or die ?
   my $new_username = $new_svc_acct->username;
   my $new_homedir = $new_svc_acct->dir; # or die ?
