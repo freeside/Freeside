@@ -1199,6 +1199,13 @@ httemplate/docs/config.html
     'type'        => 'checkbox',
   },
 
+  {
+    'key'         => 'disable_autoreverse',
+    'section'     => 'BIND',
+    'description' => 'Disable automatic synchronization of reverse-ARPA entries.',
+    'type'        => 'checkbox',
+  },
+
 );
 
 1;

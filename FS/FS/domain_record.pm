@@ -1,13 +1,16 @@
 package FS::domain_record;
 
 use strict;
-use vars qw( @ISA $noserial_hack );
+use vars qw( @ISA $noserial_hack $DEBUG );
+use FS::Conf;
 #use FS::Record qw( qsearch qsearchs );
 use FS::Record qw( qsearchs dbh );
 use FS::svc_domain;
 use FS::svc_www;
 
 @ISA = qw(FS::Record);
+
+$DEBUG = 1;
 
 =head1 NAME
 
@@ -110,6 +113,18 @@ sub insert {
     }
   }
 
+  my $conf = new FS::Conf;
+  if ( $self->rectype =~ /^A$/ && ! $conf->exists('disable_autoreverse') ) {
+    my $reverse = $self->reverse_record;
+    if ( $reverse && ! $reverse->recnum ) {
+      my $error = $reverse->insert;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "error adding corresponding reverse-ARPA record: $error";
+      }
+    }
+  }
+
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
   '';
@@ -150,6 +165,18 @@ sub delete {
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return $error;
+    }
+  }
+
+  my $conf = new FS::Conf;
+  if ( $self->rectype =~ /^A$/ && ! $conf->exists('disable_autoreverse') ) {
+    my $reverse = $self->reverse_record;
+    if ( $reverse && $reverse->recnum && $reverse->recdata eq $self->zone.'.' ){
+      my $error = $reverse->delete;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "error removing corresponding reverse-ARPA record: $error";
+      }
     }
   }
 
@@ -284,10 +311,16 @@ sub increment_serial {
 
   my $soa = qsearchs('domain_record', {
     svcnum  => $self->svcnum,
-    reczone => '@', #or full domain ?
+    reczone => '@',
+    recaf   => 'IN',
+    rectype => 'SOA', } )
+  || qsearchs('domain_record', {
+    svcnum  => $self->svcnum,
+    reczone => $self->svc_domain->domain.'.',
     recaf   => 'IN',
     rectype => 'SOA', 
-  } ) or return "soa record not found; can't increment serial";
+  } )
+  or return "soa record not found; can't increment serial";
 
   my $data = $soa->recdata;
   $data =~ s/(\(\D*)(\d+)/$1.($2+1)/e; #well, it works.
@@ -328,11 +361,44 @@ sub zone {
   $zone;
 }
 
+=item reverse_record 
+
+Returns the corresponding reverse-ARPA record as another FS::domain_record
+object.  If the specific record does not exist in the database but the 
+reverse-ARPA zone itself does, an appropriate new record is created.  If no
+reverse-ARPA zone is available at all, returns false.
+
+(You can test whether or not record itself exists in the database or is a new
+object that might need to be inserted by checking the recnum field)
+
+Mostly used by the insert and delete methods - probably should see them for
+examples.
+
+=cut
+
+sub reverse_record {
+  my $self = shift;
+  warn "reverse_record called\n" if $DEBUG;
+  #should support classless reverse-ARPA ala rfc2317 too
+  $self->recdata =~ /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/
+    or return '';
+  my $domain = "$3.$2.$1.in-addr.arpa"; 
+  my $ptr_reczone = $4;
+  warn "reverse_record: searching for domain: $domain\n" if $DEBUG;
+  my $svc_domain = qsearchs('svc_domain', { 'domain' => $domain } )
+    or return '';
+  warn "reverse_record: found domain: $domain\n" if $DEBUG;
+  my %hash = (
+    'svcnum'  => $svc_domain->svcnum,
+    'reczone' => $ptr_reczone,
+    'recaf'   => 'IN',
+    'rectype' => 'PTR',
+  );
+  qsearchs('domain_record', \%hash )
+    or new FS::domain_record { %hash, 'recdata' => $self->zone.'.' };
+}
+
 =back
-
-=head1 VERSION
-
-$Id: domain_record.pm,v 1.16 2003-08-05 00:20:43 khoff Exp $
 
 =head1 BUGS
 
