@@ -144,6 +144,44 @@ sub credits {
   );
 }
 
+sub canceled { #active
+  my( $self, $speriod, $eperiod ) = ( shift, shift, shift );
+  $self->scalar_sql("
+    SELECT COUNT(*) FROM cust_pkg
+    WHERE cust_pkg.custnum = cust_main.custnum
+    AND 0 = ( SELECT COUNT(*) FROM cust_pkg
+              WHERE cust_pkg.custnum = cust_main.custnum
+              AND ( cust_pkg.cancel IS NULL OR cust_pkg.cancel = 0 )
+            )
+    AND cust_pkg.cancel > $speriod AND cust_pkg.cancel < $eperiod
+  ");
+}
+ 
+sub newaccount { #newaccount
+  my( $self, $speriod, $eperiod ) = ( shift, shift, shift );
+  $self->scalar_sql("
+     SELECT COUNT(*) FROM cust_pkg
+     WHERE cust_pkg.custnum = cust_main.custnum
+     AND ( cust_pkg.cancel IS NULL OR cust_pkg.cancel = 0 )
+     AND ( cust_pkg.susp IS NULL OR cust_pkg.susp = 0 )
+     AND cust_pkg.setup > $speriod AND cust_pkg.setup < $eperiod
+  ");
+}
+ 
+sub suspended { #suspended
+  my( $self, $speriod, $eperiod ) = ( shift, shift, shift );
+  $self->scalar_sql("
+     SELECT COUNT(*) FROM cust_pkg
+     WHERE cust_pkg.custnum = cust_main.custnum
+     AND ( cust_pkg.cancel IS NULL OR cust_pkg.cancel = 0 )
+     AND 0 = ( SELECT COUNT(*) FROM cust_pkg
+               WHERE cust_pkg.custnum = cust_main.custnum
+               AND ( cust_pkg.susp IS NULL OR cust_pkg.susp = 0 )
+             )
+     AND cust_pkg.susp > $speriod AND cust_pkg.susp < $eperiod
+  ");
+}
+
 sub in_time_period {
   my( $self, $speriod, $eperiod ) = ( shift, shift, shift );
   my $table = @_ ? shift().'.' : '';

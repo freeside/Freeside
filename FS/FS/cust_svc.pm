@@ -19,7 +19,7 @@ use FS::part_export;
 
 @ISA = qw( FS::Record );
 
-$DEBUG = 1;
+$DEBUG = 0;
 
 $ignore_quantity = 0;
 
