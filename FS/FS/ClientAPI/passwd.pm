@@ -5,7 +5,7 @@ use FS::Record qw(qsearchs);
 use FS::svc_acct;
 use FS::svc_domain;
 
-use FS::ClientAPI; #hmm
+#use FS::ClientAPI; #hmm
 FS::ClientAPI->register_handlers(
   'passwd/passwd' => \&passwd,
   'passwd/chfn' => \&chfn,

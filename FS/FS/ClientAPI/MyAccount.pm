@@ -19,7 +19,7 @@ use FS::cust_bill;
 use FS::cust_main_county;
 use FS::cust_pkg;
 
-use FS::ClientAPI; #hmm
+#use FS::ClientAPI; #hmm
 FS::ClientAPI->register_handlers(
   'MyAccount/login'              => \&login,
   'MyAccount/logout'             => \&logout,

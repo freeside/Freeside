@@ -10,7 +10,7 @@ use FS::Record qw(qsearchs); # qsearch dbdef dbh);
 use FS::agent;
 use FS::cust_main qw(smart_search);
 
-use FS::ClientAPI;
+#use FS::ClientAPI;
 FS::ClientAPI->register_handlers(
   'Agent/agent_login'          => \&agent_login,
   'Agent/agent_logout'         => \&agent_logout,
