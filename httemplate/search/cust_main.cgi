@@ -200,6 +200,8 @@ if ( $cgi->param('browse')
     if $cgi->param('last_on') && $cgi->param('last_text');
   push @cust_main, @{&companysearch}
     if $cgi->param('company_on') && $cgi->param('company_text');
+  push @cust_main, @{&phonesearch}
+    if $cgi->param('phone_on') && $cgi->param('phone_text');
   push @cust_main, @{&referralsearch}
     if $cgi->param('referral_custnum');
 
@@ -606,4 +608,30 @@ sub companysearch {
 
   \@cust_main;
 }
+
+sub phonesearch {
+  my @cust_main;
+
+  my $phone = $cgi->param('phone_text');
+
+  #false laziness with Record::ut_phonen, only works with US/CA numbers...
+  $phone =~ s/\D//g;
+  $phone =~ /^(\d{3})(\d{3})(\d{4})(\d*)$/
+    or eidiot gettext('illegal_phone'). ": $phone";
+  $phone = "$1-$2-$3";
+  $phone .= " x$4" if $4;
+
+  my @fields = qw(daytime night fax);
+  push @fields, qw(ship_daytime ship_night ship_fax)
+    if defined dbdef->table('cust_main')->column('ship_last');
+
+  for my $field ( @fields ) {
+    push @cust_main, qsearch ( 'cust_main', 
+                               { $field => { 'op'    => 'LIKE',
+                                             'value' => "$phone%" } } );
+  }
+
+  \@cust_main;
+}
+
 %>
