@@ -144,6 +144,11 @@ for transfers.
 A registration or transfer email will be submitted unless
 $FS::svc_domain::whois_hack is true.
 
+The additional field I<email> can be used to manually set the admin contact
+email address on this email.  Otherwise, the svc_acct records for this package 
+(see L<FS::cust_pkg>) are searched.  If there is exactly one svc_acct record
+in the same package, it is automatically used.  Otherwise an error is returned.
+
 =cut
 
 sub insert {
@@ -337,7 +342,7 @@ sub check {
       }
 
       if ( scalar(@svc_acct) == 0 ) {
-        return "Must order an account first";
+        return "Must order an account in package ". $pkgnum. " first";
       } elsif ( scalar(@svc_acct) > 1 ) {
         return "More than one account in package ". $pkgnum. ": specify admin contact email";
       } else {
@@ -516,6 +521,10 @@ L<FS::Record>, L<FS::Conf>, L<FS::cust_svc>, L<FS::part_svc>, L<FS::cust_pkg>,
 L<FS::SSH>, L<ssh>, L<dot-qmail>, schema.html from the base documentation,
 config.html from the base documentation.
 
+=head1 VERSION
+
+$Id: svc_domain.pm,v 1.2 1998-10-14 08:18:21 ivan Exp $
+
 =head1 HISTORY
 
 ivan@voicenet.com 97-jul-21
@@ -531,6 +540,11 @@ Changed 'day' to 'daytime' because Pg6.3 reserves the day word
 ivan@sisd.com 98-jul-17-19
 
 pod, some FS::Conf (not complete) ivan@sisd.com 98-sep-23
+
+$Log: svc_domain.pm,v $
+Revision 1.2  1998-10-14 08:18:21  ivan
+More informative error messages and better doc for admin contact email stuff
+
 
 =cut
 
