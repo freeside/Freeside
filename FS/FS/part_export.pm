@@ -615,14 +615,14 @@ tie my %sqlmail_options, 'Tie::IxHash',
         'Batch export of /etc/passwd and /etc/shadow files (Linux/SysV)',
       'options' => \%sysvshell_options,
       'nodomain' => 'Y',
-      'notes' => 'MD5 crypt requires installation of <a href="http://search.cpan.org/search?dist=Crypt-PasswdMD5">Crypt::PasswdMD5</a> from CPAN.',
+      'notes' => 'MD5 crypt requires installation of <a href="http://search.cpan.org/search?dist=Crypt-PasswdMD5">Crypt::PasswdMD5</a> from CPAN.  Run shell.export, etc.',
     },
     'bsdshell' => {
       'desc' =>
         'Batch export of /etc/passwd and /etc/master.passwd files (BSD)',
       'options' => \%bsdshell_options,
       'nodomain' => 'Y',
-      'notes' => 'MD5 crypt requires installation of <a href="http://search.cpan.org/search?dist=Crypt-PasswdMD5">Crypt::PasswdMD5</a> from CPAN.',
+      'notes' => 'MD5 crypt requires installation of <a href="http://search.cpan.org/search?dist=Crypt-PasswdMD5">Crypt::PasswdMD5</a> from CPAN.  Run shell.export, etc.',
     },
 #    'nis' => {
 #      'desc' =>
