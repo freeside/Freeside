@@ -1171,6 +1171,12 @@ httemplate/docs/config.html
     'description' => 'Allow negative charges.  Normally not used unless importing data from a legacy system that requires this.',
     'type'        => 'checkbox',
   },
+  {
+      'key'         => 'auto_unset_catchall',
+      'section'     => '',
+      'description' => 'When canceling a svc_acct that is the email catchall for one or more svc_domains, automatically set their catchall fields to null.  If this option is not set, the attempt will simply fail.',
+      'type'        => 'checkbox',
+  },
 
   {
     'key'         => 'system_usernames',

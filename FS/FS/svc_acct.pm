@@ -674,9 +674,35 @@ sub unsuspend {
 
 =item cancel
 
-Just returns false (no error) for now.
-
 Called by the cancel method of FS::cust_pkg (see L<FS::cust_pkg>).
+
+If the B<auto_unset_catchall> configuration option is set, this method will
+automatically remove any references to the canceled service in the catchall
+field of svc_domain.  This allows packages that contain both a svc_domain and
+its catchall svc_acct to be canceled in one step.
+
+=cut
+
+sub cancel {
+  # Only one thing to do at this level
+  my $self = shift;
+  foreach my $svc_domain (
+      qsearch( 'svc_domain', { catchall => $self->svcnum } ) ) {
+    if($conf->exists('auto_unset_catchall')) {
+      my %hash = $svc_domain->hash;
+      $hash{catchall} = '';
+      my $new = new FS::svc_domain ( \%hash );
+      my $error = $new->replace($svc_domain);
+      return $error if $error;
+    } else {
+      return "cannot unprovision svc_acct #".$self->svcnum.
+	  " while assigned as catchall for svc_domain #".$svc_domain->svcnum;
+    }
+  }
+
+  $self->SUPER::cancel;
+}
+
 
 =item check
 

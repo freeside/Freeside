@@ -1,7 +1,7 @@
 package FS::cust_pkg;
 
 use strict;
-use vars qw(@ISA $disable_agentcheck $DEBUG);
+use vars qw(@ISA $disable_agentcheck @SVCDB_CANCEL_SEQ $DEBUG);
 use FS::UID qw( getotaker dbh );
 use FS::Record qw( qsearch qsearchs );
 use FS::Misc qw( send_email );
@@ -28,6 +28,14 @@ use FS::Conf;
 $DEBUG = 0;
 
 $disable_agentcheck = 0;
+
+# The order in which to unprovision services.
+@SVCDB_CANCEL_SEQ = qw( svc_external
+			svc_www
+			svc_forward 
+			svc_acct 
+			svc_domain 
+			svc_broadband );
 
 sub _cache {
   my $self = shift;
@@ -284,16 +292,22 @@ sub cancel {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
+  my %svc;
   foreach my $cust_svc (
-    qsearch( 'cust_svc', { 'pkgnum' => $self->pkgnum } )
+      qsearch( 'cust_svc', { 'pkgnum' => $self->pkgnum } )
   ) {
-    my $error = $cust_svc->cancel;
+    push @{ $svc{$cust_svc->part_svc->svcdb} }, $cust_svc;
+  }
 
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return "Error cancelling cust_svc: $error";
+  foreach my $svcdb (@SVCDB_CANCEL_SEQ) {
+    foreach my $cust_svc (@{ $svc{$svcdb} }) {
+      my $error = $cust_svc->cancel;
+
+      if ( $error ) {
+	$dbh->rollback if $oldAutoCommit;
+	return "Error cancelling cust_svc: $error";
+      }
     }
-
   }
 
   unless ( $self->getfield('cancel') ) {

@@ -256,6 +256,8 @@ sub replace {
   return "Can't change domain - reorder."
     if $old->getfield('domain') ne $new->getfield('domain'); 
 
+  # Better to do it here than to force the caller to remember that svc_domain is weird.
+  $new->setfield(action => 'M');
   my $error = $new->SUPER::replace($old);
   return $error if $error;
 }
