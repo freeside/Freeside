@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct.cgi,v 1.9 1999-04-08 12:00:19 ivan Exp $
+# $Id: svc_acct.cgi,v 1.10 1999-04-14 11:27:06 ivan Exp $
 #
 # Usage: svc_acct.cgi svcnum
 #        http://server.name/path/svc_acct.cgi?svcnum
@@ -33,7 +33,10 @@
 # displays arbitrary radius attributes ivan@sisd.com 98-aug-16
 #
 # $Log: svc_acct.cgi,v $
-# Revision 1.9  1999-04-08 12:00:19  ivan
+# Revision 1.10  1999-04-14 11:27:06  ivan
+# showpasswords config option to show passwords
+#
+# Revision 1.9  1999/04/08 12:00:19  ivan
 # aesthetic update
 #
 # Revision 1.8  1999/02/28 00:04:02  ivan
@@ -62,7 +65,7 @@
 
 use strict;
 use vars qw( $conf $cgi $mydomain $query $svcnum $svc_acct $cust_svc $pkgnum
-             $cust_pkg $custnum $part_svc $p $svc_acct_pop );
+             $cust_pkg $custnum $part_svc $p $svc_acct_pop $password );
 use CGI;
 use CGI::Carp qw( fatalsToBrowser );
 use FS::UID qw( cgisuidsetup );
@@ -119,11 +122,19 @@ print qq!<A HREF="${p}edit/svc_acct.cgi?$svcnum">Edit this information</A>!,
       "<BR>Service: <B>", $part_svc->svc, "</B>",
       "<BR><BR>Username: <B>", $svc_acct->username, "</B>"
 ;
-if (substr($svc_acct->_password,0,1) eq "*") {
-  print "<BR>Password: <I>(Login disabled)</I>";
-} else {
-  print "<BR>Password: <I>(hidden)</I>";
+
+print "<BR>Password: ";
+$password = $svc_acct->_password;
+if ( $password =~ /^\*\w+\* (.*)$/ ) {
+  $password = $1;
+  print "<I>(login disabled)</I> ";
 }
+if ( $conf->exists('showpasswords') ) {
+  print "<B>$password</B>";
+} else {
+  print "<I>(hidden)</I>";
+}
+$password = '';
 
 $svc_acct_pop = qsearchs('svc_acct_pop',{'popnum'=>$svc_acct->popnum});
 print "<BR>POP: <B>", $svc_acct_pop->city, ", ", $svc_acct_pop->state,

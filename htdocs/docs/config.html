@@ -48,6 +48,7 @@ All further configuration files and directories are located in
   <li>shellmachine - A single machine with user home directories mounted.  This enables home directory creation, renaming and archiving/deletion.  In conjunction with `qmailmachines', it also enables `.qmail-extension' file maintenance.
   <li>shellmachines - Your Linux and System V flavored shell (and mail) machines, one per line.  This enables export of `/etc/passwd' and `/etc/shadow' files.
   <li>shells - Legal shells (think /etc/shells).  You probably want to `cut -d: -f7 /etc/passwd | sort | uniq' initially so that importing doesn't fail with `Illegal shell' errors, then remove any special entries afterwords.  A blank line specifies that an empty shell is permitted.
+  <li>showpasswords - The existance of this file will allow unencrypted user passwords to be displayed.
   <li>smtpmachine - SMTP relay for Freeside's outgoing mail.
 </ul>
 </body>

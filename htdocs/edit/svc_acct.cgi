@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct.cgi,v 1.9 1999-02-28 00:03:37 ivan Exp $
+# $Id: svc_acct.cgi,v 1.10 1999-04-14 11:27:06 ivan Exp $
 #
 # Usage: svc_acct.cgi {svcnum} | pkgnum{pkgnum}-svcpart{svcpart}
 #        http://server.name/path/svc_acct.cgi? {svcnum} | pkgnum{pkgnum}-svcpart{svcpart}
@@ -16,7 +16,10 @@
 # use conf/shells and dbdef username length ivan@sisd.com 98-jul-13
 #
 # $Log: svc_acct.cgi,v $
-# Revision 1.9  1999-02-28 00:03:37  ivan
+# Revision 1.10  1999-04-14 11:27:06  ivan
+# showpasswords config option to show passwords
+#
+# Revision 1.9  1999/02/28 00:03:37  ivan
 # removed misleading comments
 #
 # Revision 1.8  1999/02/23 08:09:22  ivan
@@ -121,10 +124,16 @@ $svc = $part_svc->getfield('svc');
 
 $otaker = getotaker;
 
-($username,$password)=(
-  $svc_acct->username,
-  $svc_acct->_password ? "*HIDDEN*" : '',
-);
+$username = $svc_acct->username;
+if ( $svc_acct->_password ) {
+  if ( $conf->exists('showpasswords') ) {
+    $password = $svc_acct->_password;
+  } else {
+    $password = "*HIDDEN*";
+  }
+} else {
+  $password = '';
+}
 
 $ulen = $svc_acct->dbdef_table->column('username')->length;
 $ulen2 = $ulen+2;
@@ -208,7 +217,7 @@ if ( $part_svc->svc_acct__slipip_flag eq "F" ) {
 }
 
 #submit
-print qq!<P><CENTER><INPUT TYPE="submit" VALUE="Submit"></CENTER>!; 
+print qq!<P><INPUT TYPE="submit" VALUE="Submit">!; 
 
 print <<END;
     </FORM>
