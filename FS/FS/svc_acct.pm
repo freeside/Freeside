@@ -237,7 +237,7 @@ sub insert {
     $self->svcpart($cust_svc->svcpart);
   }
 
-  my $error = $self->_check_duplicate;
+  $error = $self->_check_duplicate;
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
