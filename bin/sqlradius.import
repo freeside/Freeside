@@ -17,6 +17,7 @@ adminsuidsetup $user;
 #push @FS::svc_acct::shells, qw(/bin/sync /sbin/shutdown /bin/halt /sbin/halt); #others?
 
 $FS::svc_Common::noexport_hack = 1;
+$FS::svc_domain::whois_hack = 1;
 
 ###
 
@@ -47,7 +48,7 @@ sub menu_svc {
   ( join "\n", map "$_: ".$part_svc{$_}->svc, sort keys %part_svc ). "\n";
 }
 sub menu_domain_svc {
-  ( join "\n", map "$_: ".$part_svc{$_}->svc, sort keys %domain_part_svc ). "\n";
+  ( join "\n", map "$_: ".$domain_part_svc{$_}->svc, sort keys %domain_part_svc ). "\n";
 }
 sub getpart {
   $^W=0; # Term::Query isn't -w-safe
@@ -81,22 +82,24 @@ my $sth = $dbh->prepare('SELECT DISTINCT UserName, Realm FROM radcheck')
 $sth->execute or die $sth->errstr;
 
 my $row;
-while ( $row = $sth->fetchrow_arrayref ) {
+while ( defined ( $row = $sth->fetchrow_arrayref ) ) {
   my( $r_username, $realm ) = @$row;
 
   my( $username, $domain );
-  if ( $r_username =~ s/([^@]+)\@([^@]+)$// ) {
+  if ( $r_username =~ /^([^@]+)\@([^@]+)$/ ) {
     $username = $1;
     $domain = $2;
   } else {
     $username = $r_username;
     $domain = $realm;
   }
-  my %svc_domain = ( 'svcpart' => $domain_svcpart,
-                     'domain'  => $domain,         );
-  my $svc_domain = qsearchs('svc_domain', \%svc_domain )
-                   || new FS::svc_domain \%svc_domain;
-  unless ( $svc_domain->domsvc ) {
+  my $svc_domain = qsearchs('svc_domain', { 'domain'  => $domain } )
+                   || new FS::svc_domain {
+                                           'domain'  => $domain,
+                                           'svcpart' => $domain_svcpart,
+                                           'action'  => 'N',
+                                         };
+  unless ( $svc_domain->svcnum ) {
     my $error = $svc_domain->insert;
     if ( $error ) {
       die "can't insert domain $domain: $error\n";
@@ -123,22 +126,22 @@ while ( $row = $sth->fetchrow_arrayref ) {
     }
   }
 
-  my $svc_acct = new FS::svc_acct (
+  my $svc_acct = new FS::svc_acct {
     'svcpart'   => $sqlradius_svcpart,
     'username'  => $username,
-    'domsvc'    => $svc_domain->domsvc,
+    'domsvc'    => $svc_domain->svcnum,
     '_password' => $password,
     'finger'    => $finger,
-  );
+  };
 
   my($error);
-  #$error = $svc_acct->insert;
-  $error = $svc_acct->check;
+  $error = $svc_acct->insert;
+  #$error = $svc_acct->check;
   if ( $error ) {
     if ( $error =~ /duplicate/i ) {
-      warn "$r_username: $error";
+      warn "$r_username / $realm: $error";
     } else {
-      die "$r_username: $error";
+      die "$r_username / $realm: $error";
     }
   }
 
