@@ -93,6 +93,8 @@ FS::svc_Common.  The following fields are currently supported:
 
 =item domain
 
+=item catchall - optional svcnum of an svc_acct record, designating an email catchall account.
+
 =back
 
 =head1 METHODS
@@ -287,7 +289,11 @@ Sets any fixed values; see L<FS::part_svc>.
 
 sub check {
   my $self = shift;
-  my $error;
+  my $error =
+    $self->ut_numbern('svcnum')
+    || $self->ut_numbern('catchall')
+  ;
+  return $error if $error;
 
   my $x = $self->setfixed;
   return $x unless ref($x);
@@ -481,7 +487,7 @@ sub submit_internic {
 
 =head1 VERSION
 
-$Id: svc_domain.pm,v 1.13 2001-08-12 19:41:24 jeff Exp $
+$Id: svc_domain.pm,v 1.14 2001-08-17 10:57:23 ivan Exp $
 
 =head1 BUGS
 
