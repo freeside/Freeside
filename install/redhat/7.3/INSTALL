@@ -11,4 +11,23 @@ perl -MCPAN -e"install Locale::Country, Net::Whois, Business::CreditCard, \
                        String::Approx, Text::Template, DBIx::DataSource, \
                        DBIx::DBSchema, Net::SSH, String::ShellQuote, \
                        Net::SCP, Apache::ASP, Tie::IxHash, Time::Duration, \
-                       HTML::Widgets::SelectLayers,  Apache::DBI"
+                       HTML::Widgets::SelectLayers, Apache::DBI, Cache::Cache"
+
+useradd freeside
+
+chkconfig postgresql on
+/etc/init.d/postgresql start
+
+su postgres -c "createuser -P freeside"
+
+su freeside -c "createdb freeside"
+
+#?
+cd ../..
+make install-perl-modules
+make create-config
+freeside-adduser -c -h /usr/local/etc/freeside/htpasswd ivan
+su freeside -c 'freeside-setup ivan'
+su freeside -c '/home/ivan/freeside/bin/populate-msgcat ivan'
+make deploy
+
