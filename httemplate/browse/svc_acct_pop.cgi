@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: svc_acct_pop.cgi,v 1.3 2001-08-21 09:34:13 ivan Exp $ -->
+#<!-- $Id: svc_acct_pop.cgi,v 1.4 2001-08-31 08:43:41 ivan Exp $ -->
 
 use strict;
 use vars qw( $cgi $p $svc_acct_pop );
@@ -30,7 +30,9 @@ print $cgi->header( '-expires' => 'now' ), header('POP Listing', menubar(
 END
 
 foreach $svc_acct_pop ( sort { 
-  $a->getfield('popnum') <=> $b->getfield('popnum')
+  #$a->getfield('popnum') <=> $b->getfield('popnum')
+  $a->state cmp $b->state || $a->city cmp $b->city
+    || $a->ac <=> $b->ac || $a->exch <=> $b->exch || $a->loc <=> $b->loc
 } qsearch('svc_acct_pop',{}) ) {
   my($hashref)=$svc_acct_pop->hashref;
   print <<END;
