@@ -993,14 +993,18 @@ conjunction with the collect method.
 
 Options are passed as name-value pairs.
 
-The only currently available option is `time', which bills the customer as if
-it were that time.  It is specified as a UNIX timestamp; see
-L<perlfunc/"time">).  Also see L<Time::Local> and L<Date::Parse> for conversion
-functions.  For example:
+Currently available options are:
+
+resetup - if set true, re-charges setup fees.
+
+time - bills the customer as if it were that time.  Specified as a UNIX
+timestamp; see L<perlfunc/"time">).  Also see L<Time::Local> and
+L<Date::Parse> for conversion functions.  For example:
 
  use Date::Parse;
  ...
  $cust_main->bill( 'time' => str2time('April 20th, 2001') );
+
 
 If there is an error, returns the error, otherwise returns false.
 
@@ -1058,7 +1062,7 @@ sub bill {
 
     # bill setup
     my $setup = 0;
-    unless ( $cust_pkg->setup ) {
+    if ( !$cust_pkg->setup || $options{'resetup'} ) {
       my $setup_prog = $part_pkg->getfield('setup');
       $setup_prog =~ /^(.*)$/ or do {
         $dbh->rollback if $oldAutoCommit;
@@ -1078,7 +1082,7 @@ sub bill {
         return "Error eval-ing part_pkg->setup pkgpart ". $part_pkg->pkgpart.
                "(expression $setup_prog): $@";
       }
-      $cust_pkg->setfield('setup',$time);
+      $cust_pkg->setfield('setup', $time) unless $cust_pkg->setup;
       $cust_pkg_mod_flag=1; 
     }
 

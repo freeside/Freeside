@@ -10,8 +10,8 @@ use FS::Conf;
 use FS::cust_main;
 
 &untaint_argv;	#what it sounds like  (eww)
-use vars qw($opt_d $opt_v $opt_p);
-getopts("p:d:v");
+use vars qw($opt_d $opt_v $opt_p $opt_s);
+getopts("p:d:vs");
 my $user = shift or die &usage;
 
 adminsuidsetup $user;
@@ -42,7 +42,8 @@ foreach $cust_main ( @cust_main ) {
       if $error;
   }
 
-  my $error = $cust_main->bill( 'time' => $time );
+  my $error = $cust_main->bill( 'time'    => $time,
+                                'resetup' => $opt_s, );
   warn "Error billing, custnum ". $cust_main->custnum. ": $error" if $error;
 
   $cust_main->apply_payments;
@@ -98,7 +99,7 @@ freeside-daily - Run daily billing and invoice collection events.
 
 =head1 SYNOPSIS
 
-  freeside-daily [ -d 'date' ] [ -p 'payby' ] [ -v ] user [ custnum custnum ... ]
+  freeside-daily [ -d 'date' ] [ -p 'payby' ] [ -s ] [ -v ] user [ custnum custnum ... ]
 
 =head1 DESCRIPTION
 
@@ -114,6 +115,8 @@ the bill and collect methods of a cust_main object.  See L<FS::cust_main>.
       but be careful.
 
   -p: Only process customers with the specified payby (I<CARD>, I<DCRD>, I<CHEK>, I<DCHK>, I<BILL>, I<COMP>, I<LECB>)
+
+  -s: re-charge setup fees
 
   -v: enable debugging
 
