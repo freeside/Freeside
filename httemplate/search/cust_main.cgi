@@ -192,6 +192,8 @@ if ( $cgi->param('browse')
   @cust_main=();
   $sortby = \*last_sort;
 
+  push @cust_main, @{&custnumsearch}
+    if $cgi->param('custnum_on') && $cgi->param('custnum_text');
   push @cust_main, @{&cardsearch}
     if $cgi->param('card_on') && $cgi->param('card');
   push @cust_main, @{&lastsearch}
@@ -444,6 +446,16 @@ sub company_sort {
 
 sub custnum_sort {
   $a->getfield('custnum') <=> $b->getfield('custnum');
+}
+
+sub custnumsearch {
+
+  my $custnum = $cgi->param('custnum_text');
+  $custnum =~ s/\D//g;
+  $custnum =~ /^(\d{1,23})$/ or eidiot "Illegal customer number\n";
+  my $custnum = $1;
+  
+  [ qsearchs('cust_main', { 'custnum' => $custnum } ) ];
 }
 
 sub cardsearch {
