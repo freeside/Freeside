@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_domain.cgi,v 1.9 1999-02-28 00:03:39 ivan Exp $
+# $Id: svc_domain.cgi,v 1.10 2001-04-23 07:12:44 ivan Exp $
 #
 # Usage: svc_domain.cgi pkgnum{pkgnum}-svcpart{svcpart}
 #        http://server.name/path/svc_domain.cgi?pkgnum{pkgnum}-svcpart{svcpart}
@@ -15,7 +15,11 @@
 # no GOV in instructions ivan@sisd.com 98-jul-17
 #
 # $Log: svc_domain.cgi,v $
-# Revision 1.9  1999-02-28 00:03:39  ivan
+# Revision 1.10  2001-04-23 07:12:44  ivan
+# better error message (if kludgy) for no referral
+# remove outdated NSI foo from domain ordering.  also, fuck NSI.
+#
+# Revision 1.9  1999/02/28 00:03:39  ivan
 # removed misleading comments
 #
 # Revision 1.8  1999/02/07 09:59:25  ivan
@@ -138,10 +142,6 @@ print ' CHECKED' if $kludge_action eq 'M';
 print qq!>Transfer!;
 
 print <<END;
-<P>Customer agrees to be bound by NSI's
-<A HREF="http://rs.internic.net/help/agreement.txt">
-Domain Name Registration Agreement</A>
-<SELECT NAME="legal" SIZE=1><OPTION SELECTED>No<OPTION>Yes</SELECT>
 <P>Domain <INPUT TYPE="text" NAME="domain" VALUE="$domain" SIZE=28 MAXLENGTH=26>
 <BR>Purpose/Description: <INPUT TYPE="text" NAME="purpose" VALUE="$purpose" SIZE=64>
 <P><CENTER><INPUT TYPE="submit" VALUE="Submit"></CENTER>

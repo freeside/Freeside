@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_domain.cgi,v 1.6 1999-02-28 00:03:47 ivan Exp $
+# $Id: svc_domain.cgi,v 1.7 2001-04-23 07:12:44 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/svc_domain.cgi
@@ -18,7 +18,11 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # $Log: svc_domain.cgi,v $
-# Revision 1.6  1999-02-28 00:03:47  ivan
+# Revision 1.7  2001-04-23 07:12:44  ivan
+# better error message (if kludgy) for no referral
+# remove outdated NSI foo from domain ordering.  also, fuck NSI.
+#
+# Revision 1.6  1999/02/28 00:03:47  ivan
 # removed misleading comments
 #
 # Revision 1.5  1999/02/07 09:59:33  ivan
@@ -60,11 +64,7 @@ $new = new FS::svc_domain ( {
   } ( fields('svc_domain'), qw( pkgnum svcpart action purpose ) )
 } );
 
-if ($cgi->param('legal') ne "Yes") {
-  $error = "Customer did not agree to be bound by NSI's ".
-    qq!<A HREF="http://rs.internic.net/help/agreement.txt">!.
-    "Domain Name Resgistration Agreement</A>";
-} elsif ($cgi->param('svcnum')) {
+if ($cgi->param('svcnum')) {
   $error="Can't modify a domain!";
 } else {
   $error=$new->insert;

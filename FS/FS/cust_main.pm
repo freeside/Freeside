@@ -391,6 +391,9 @@ sub check {
     || $self->ut_textn('county')
     || $self->ut_textn('state')
   ;
+  #barf.  need message catalogs.  i18n.  etc.
+  $error .= "Please select a referral."
+    if $error =~ /^Illegal or empty \(numeric\) refnum: /;
   return $error if $error;
 
   return "Unknown agent"
@@ -1114,7 +1117,7 @@ sub check_invoicing_list {
 
 =head1 VERSION
 
-$Id: cust_main.pm,v 1.11 2001-04-09 23:05:15 ivan Exp $
+$Id: cust_main.pm,v 1.12 2001-04-23 07:12:44 ivan Exp $
 
 =head1 BUGS
 
