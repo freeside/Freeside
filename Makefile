@@ -22,7 +22,7 @@ FREESIDE_DOCUMENT_ROOT = /var/www/freeside
 #openbsd
 #FREESIDE_DOCUMENT_ROOT = /var/www/htdocs/freeside
 #suse
-#FREESIDE_DOCUMENT_ROOT = /srv/www/htdocs
+#FREESIDE_DOCUMENT_ROOT = /srv/www/htdocs/freeside
 
 #deb, redhat, mandrake, suse, others?
 INIT_FILE = /etc/init.d/freeside
