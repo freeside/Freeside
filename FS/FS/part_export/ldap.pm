@@ -1,10 +1,12 @@
 package FS::part_export::ldap;
 
-use vars qw(@ISA);
+use vars qw(@ISA @saltset);
 use FS::Record qw( dbh );
 use FS::part_export;
 
 @ISA = qw(FS::part_export);
+
+@saltset = ( 'a'..'z' , 'A'..'Z' , '0'..'9' , '.' , '/' );
 
 sub rebless { shift; }
 
@@ -25,7 +27,6 @@ sub _export_insert {
   $crypt_password = ''; #surpress "used only once" warnings
   $crypt_password = crypt( $svc_acct->_password,
                              $saltset[int(rand(64))].$saltset[int(rand(64))] );
-
 
   my $username_attrib;
   my %attrib = map    { /^\s*(\w+)\s+(.*\S)\s*$/;
@@ -218,7 +219,7 @@ sub ldap_insert { #subroutine, not method
   }
 
   my $status = $ldap->add( $userdn, attrs => [ %attrib ] );
-  die $status->error if $status->is_error;
+  die 'LDAP error: '. $status->error. "\n" if $status->is_error;
 
   $ldap->unbind;
 }
@@ -245,7 +246,7 @@ sub ldap_connect {
 
   my $ldap = Net::LDAP->new($machine) or die $@;
   my $status = $ldap->bind( $dn, %bind_options );
-  die $status->error if $status->is_error;
+  die 'LDAP error: '. $status->error. "\n" if $status->is_error;
 
   $ldap;
 }
