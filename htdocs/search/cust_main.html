@@ -1,0 +1,36 @@
+<HTML>
+  <HEAD>
+    <TITLE>Customer Search</TITLE>
+  </HEAD>
+  <BODY>
+    <CENTER>
+      <H1>Customer Search</H1>
+    </CENTER>
+    <HR>
+    <FORM ACTION="cust_main.cgi" METHOD="post">
+      <INPUT TYPE="checkbox" NAME="last_on"> Search for <B>last name</B>: 
+      <INPUT TYPE="text" NAME="last_text">
+      using search method(s): <SELECT NAME="last_type" MULTIPLE>
+        <OPTION SELECTED>Fuzzy
+        <OPTION>Exact
+      </SELECT>
+
+      <P><INPUT TYPE="checkbox" NAME="company_on"> Search for <B>company</B>: 
+      <INPUT TYPE="text" NAME="company_text">
+      using search methods(s): <SELECT NAME="company_type" MULTIPLE>
+        <OPTION SELECTED>Fuzzy
+        <OPTION>Exact
+      </SELECT>
+
+      <P><INPUT TYPE="submit" VALUE="Search"> Note: Fuzzy searching can take a while.  Please be patient.
+
+    </FORM>
+
+  <HR>Explanation of search methods:
+  <UL>
+    <LI><B>Fuzzy</B> - Searches for matches that are close to your text.
+    <LI><B>Exact</B> - Finds exact matches only, but much faster than the other search methods.
+  </UL>
+  </BODY>
+</HTML>
+
