@@ -141,8 +141,8 @@ Returns current URL with LEVEL levels of path removed from the end (default 0).
 
 sub popurl {
   my($up)=@_;
-  my($cgi)=&FS::UID::cgi;
-  my($url)=new URI::URL $cgi->url;
+  my $cgi = &FS::UID::cgi;
+  my $url = new URI::URL ( $cgi->isa('Apache') ? $cgi->uri : $cgi->url );
   my(@path)=$url->path_components;
   splice @path, 0-$up;
   $url->path_components(@path);

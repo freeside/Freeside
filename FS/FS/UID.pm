@@ -98,8 +98,10 @@ sub cgisuidsetup {
   $cgi=shift;
   if ( $cgi->isa('CGI::Base') ) {
     carp "Use of CGI::Base is depriciated";
+  } elsif ( $cgi->isa('Apache') ) {
+
   } elsif ( ! $cgi->isa('CGI') ) {
-    croak "Pass a CGI object to cgisuidsetup!";
+    croak "fatal: unrecognized object $cgi";
   }
   cgisetotaker; 
   adminsuidsetup($user);
@@ -112,6 +114,7 @@ Returns the CGI (see L<CGI>) object.
 =cut
 
 sub cgi {
+  carp "warning: \$FS::UID::cgi isa Apache" if $cgi->isa('Apache');
   $cgi;
 }
 
@@ -167,8 +170,10 @@ sub cgisetotaker {
     $user = lc ( $cgi->var('REMOTE_USER') );
   } elsif ( $cgi && $cgi->isa('CGI') && defined $cgi->remote_user ) {
     $user = lc ( $cgi->remote_user );
+  } elsif ( $cgi && $cgi->isa('Apache') ) {
+    $user = lc ( $cgi->connection->user );
   } else {
-    die "fatal: Can't get REMOTE_USER!";
+    die "fatal: Can't get REMOTE_USER! for cgi $cgi";
   }
   $user;
 }
@@ -241,7 +246,7 @@ coderef into the hash %FS::UID::callback :
 
 =head1 VERSION
 
-$Id: UID.pm,v 1.1 1999-08-04 09:03:53 ivan Exp $
+$Id: UID.pm,v 1.2 2000-05-13 21:50:12 ivan Exp $
 
 =head1 BUGS
 
