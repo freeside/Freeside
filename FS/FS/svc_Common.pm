@@ -394,12 +394,12 @@ sub setx {
 
   #get part_svc
   my $svcpart;
-  if ( $self->svcnum && qsearchs('cust_svc', {'svcnum'=>$self->svcnum}) ) {
+  if ( $self->get('svcpart') ) {
+    $svcpart = $self->get('svcpart');
+  } elsif ( $self->svcnum && qsearchs('cust_svc', {'svcnum'=>$self->svcnum}) ) {
     my $cust_svc = $self->cust_svc;
     return "Unknown svcnum" unless $cust_svc; 
     $svcpart = $cust_svc->svcpart;
-  } else {
-    $svcpart = $self->getfield('svcpart');
   }
   my $part_svc = qsearchs( 'part_svc', { 'svcpart' => $svcpart } );
   return "Unkonwn svcpart" unless $part_svc;
