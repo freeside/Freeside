@@ -129,6 +129,8 @@ ALTER TABLE cust_main ADD COLUMN ship_country char(2) NULL;
 ALTER TABLE cust_main ADD COLUMN ship_daytime varchar(20) NULL;
 ALTER TABLE cust_main ADD COLUMN ship_night varchar(20) NULL;
 ALTER TABLE cust_main ADD COLUMN ship_fax varchar(12) NULL;
+CREATE INDEX cust_main1 ON cust_main ( ship_last );
+CREATE INDEX cust_main2 ON cust_main ( ship_company );
 </pre>
   <li>If you wish to enable customer comments, apply the following change to
       your database:
