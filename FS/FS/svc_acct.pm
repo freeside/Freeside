@@ -9,7 +9,7 @@ use vars qw( @ISA $DEBUG $me $conf
              $username_uppercase
              $welcome_template $welcome_from $welcome_subject $welcome_mimetype
              $smtpmachine
-             $radius_password
+             $radius_password $radius_ip
              $dirhash
              @saltset @pw_set );
 use Carp;
@@ -68,6 +68,7 @@ $FS::UID::callback{'FS::svc_acct'} = sub {
   }
   $smtpmachine = $conf->config('smtpmachine');
   $radius_password = $conf->config('radius-password') || 'Password';
+  $radius_ip = $conf->config('radius-ip') || 'Framed-IP-Address';
 };
 
 @saltset = ( 'a'..'z' , 'A'..'Z' , '0'..'9' , '.' , '/' );
@@ -866,7 +867,7 @@ sub radius_reply {
       ( $FS::raddb::attrib{lc($attrib)}, $self->getfield($column) );
     } grep { /^radius_/ && $self->getfield($_) } fields( $self->table );
   if ( $self->slipip && $self->slipip ne '0e0' ) {
-    $reply{'Framed-IP-Address'} = $self->slipip;
+    $reply{$radius_ip} = $self->slipip;
   }
   %reply;
 }
