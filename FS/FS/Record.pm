@@ -890,13 +890,25 @@ sub replace {
   ). ' WHERE '.
     join(' AND ',
       map {
-        $old->getfield($_) eq ''
-          #? "( $_ IS NULL OR $_ = \"\" )"
-          ? ( driver_name eq 'Pg'
-                ? "( $_ IS NULL OR $_ = '' )"
-                : "( $_ IS NULL OR $_ = \"\" )"
-            )
-          : "$_ = ". _quote($old->getfield($_),$old->table,$_)
+
+        if ( $old->getfield($_) eq '' ) {
+
+         #false laziness w/qsearch
+         if ( driver_name eq 'Pg' ) {
+            my $type = $old->dbdef_table->column($_)->type;
+            if ( $type =~ /(int|serial)/i ) {
+              qq-( $_ IS NULL )-;
+            } else {
+              qq-( $_ IS NULL OR $_ = '' )-;
+            }
+          } else {
+            qq-( $_ IS NULL OR $_ = "" )-;
+          }
+
+        } else {
+          "$_ = ". _quote($old->getfield($_),$old->table,$_);
+        }
+
       } ( $primary_key ? ( $primary_key ) : real_fields($old->table) )
     )
   ;
@@ -1572,9 +1584,14 @@ sub _quote {
   my($value, $table, $column) = @_;
   my $column_obj = $dbdef->table($table)->column($column);
   my $column_type = $column_obj->type;
+  my $nullable = $column_obj->null;
+
+  warn "  $table.$column: $value ($column_type".
+       ( $nullable ? ' NULL' : ' NOT NULL' ).
+       ")\n" if $DEBUG > 2;
 
   if ( $value eq '' && $column_type =~ /^int/ ) {
-    if ( $column_obj->null ) {
+    if ( $nullable ) {
       'NULL';
     } else {
       cluck "WARNING: Attempting to set non-null integer $table.$column null; ".
