@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: cust_main.cgi,v 1.12 2001-10-30 15:42:33 ivan Exp $ -->
+#<!-- $Id: cust_main.cgi,v 1.13 2001-11-21 03:40:03 ivan Exp $ -->
 
 use vars qw( $cgi $custnum $action $cust_main $p1 @agents $agentnum 
              $last $first $ss $company $address1 $address2 $city $zip 
@@ -345,7 +345,8 @@ print qq!>Tax Exempt</TD></TR>!;
 print qq!<TR><TD><INPUT TYPE="checkbox" NAME="invoicing_list_POST" VALUE="POST"!;
 @invoicing_list = $cust_main->invoicing_list;
 print qq! CHECKED!
-  if ! @invoicing_list || grep { $_ eq 'POST' } @invoicing_list;
+  if ( ! @invoicing_list && ! $conf->exists('postalinvoicedefault') )
+     || grep { $_ eq 'POST' } @invoicing_list;
 print qq!>Postal mail invoice</TD></TR>!;
 $invoicing_list = join(', ', grep { $_ ne 'POST' } @invoicing_list );
 print qq!<TR><TD>Email invoice <INPUT TYPE="text" NAME="invoicing_list" VALUE="$invoicing_list"></TD></TR>!;
