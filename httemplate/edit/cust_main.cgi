@@ -69,7 +69,7 @@ print qq!<FORM ACTION="${p1}process/cust_main.cgi" METHOD=POST NAME="form1">!,
 
 # agent
 
-my $r = qq!<font color="#ff0000">*</font>!;
+my $r = qq!<font color="#ff0000">*</font>&nbsp;!;
 
 my @agents = qsearch( 'agent', {} );
 #die "No agents created!" unless @agents;
@@ -147,7 +147,7 @@ my($last,$first,$ss,$company,$address1,$address2,$city,$zip)=(
 );
 
 print "<BR><BR>Billing address", &itable("#cccccc"), <<END;
-<TR><TH ALIGN="right">${r}Contact name<BR>(last, first)</TH><TD COLSPAN=3>
+<TR><TH ALIGN="right">${r}Contact&nbsp;name<BR>(last,&nbsp;first)</TH><TD COLSPAN=3>
 END
 
 print <<END;
@@ -167,30 +167,24 @@ print <<END;
 <TR><TD ALIGN="right">Company</TD><TD COLSPAN=5><INPUT TYPE="text" NAME="company" VALUE="$company" SIZE=70></TD></TR>
 <TR><TH ALIGN="right">${r}Address</TH><TD COLSPAN=5><INPUT TYPE="text" NAME="address1" VALUE="$address1" SIZE=70></TD></TR>
 <TR><TD ALIGN="right">&nbsp;</TD><TD COLSPAN=5><INPUT TYPE="text" NAME="address2" VALUE="$address2" SIZE=70></TD></TR>
-<TR><TH ALIGN="right">${r}City</TH><TD><INPUT TYPE="text" NAME="city" VALUE="$city"></TD><TH ALIGN="right">${r}State/Country</TH><TD><SELECT NAME="state" SIZE="1">
+<TR><TH ALIGN="right">${r}City</TH><TD><INPUT TYPE="text" NAME="city" VALUE="$city"></TD><TH ALIGN="right">${r}State</TH><TD>
 END
 
-#false laziness with ship_state
+#false laziness with ship state
 my $countrydefault = $conf->config('countrydefault') || 'US';
 $cust_main->country( $countrydefault ) unless $cust_main->country;
+
 $cust_main->state( $conf->config('statedefault') || 'CA' )
   unless $cust_main->state || $cust_main->country ne 'US';
-foreach ( sort {
-     ( $b->country eq $countrydefault ) <=> ( $a->country eq $countrydefault )
-  or $a->country                        cmp $b->country
-  or $a->state                          cmp $b->state
-  or $a->county                         cmp $b->county
-} qsearch('cust_main_county',{}) ) {
-  print "<OPTION";
-  print " SELECTED" if ( $cust_main->state eq $_->state
-                         && $cust_main->county eq $_->county 
-                         && $cust_main->country eq $_->country
-                       );
-  print ">",$_->state;
-  print " (",$_->county,")" if $_->county;
-  print " / ", $_->country;
-}
-print qq!</SELECT></TD><TH>${r}Zip</TH><TD><INPUT TYPE="text" NAME="zip" VALUE="$zip" SIZE=10></TD></TR>!;
+
+my($county_html, $state_html, $country_html) =
+  FS::cust_main_county::regionselector( $cust_main->county,
+                                        $cust_main->state,
+                                        $cust_main->country );
+
+print "$county_html $state_html";
+
+print qq!</TD><TH>${r}Zip</TH><TD><INPUT TYPE="text" NAME="zip" VALUE="$zip" SIZE=10></TD></TR>!;
 
 my($daytime,$night,$fax)=(
   $cust_main->daytime,
@@ -199,12 +193,13 @@ my($daytime,$night,$fax)=(
 );
 
 print <<END;
+<TR><TH ALIGN="right">${r}Country</TH><TD>$country_html</TD></TR>
 <TR><TD ALIGN="right">Day Phone</TD><TD COLSPAN=5><INPUT TYPE="text" NAME="daytime" VALUE="$daytime" SIZE=18></TD></TR>
 <TR><TD ALIGN="right">Night Phone</TD><TD COLSPAN=5><INPUT TYPE="text" NAME="night" VALUE="$night" SIZE=18></TD></TR>
 <TR><TD ALIGN="right">Fax</TD><TD COLSPAN=5><INPUT TYPE="text" NAME="fax" VALUE="$fax" SIZE=12></TD></TR>
 END
 
-print "</TABLE>$r required fields<BR>";
+print "</TABLE>${r}required fields<BR>";
 
 # service address
 
@@ -221,7 +216,11 @@ END
 print "      what.form.ship_$_.value = what.form.$_.value;\n"
   for (qw( last first company address1 address2 city zip daytime night fax ));
 print <<END;
+      what.form.ship_country.selectedIndex = what.form.country.selectedIndex;
+      ship_country_changed(what.form.ship_country);
       what.form.ship_state.selectedIndex = what.form.state.selectedIndex;
+      ship_state_changed(what.form.ship_state);
+      what.form.ship_county.selectedIndex = what.form.county.selectedIndex;
     }
   }
   </SCRIPT>
@@ -251,7 +250,7 @@ END
   );
 
   print &itable("#cccccc"), <<END;
-  <TR><TH ALIGN="right">${r}Contact name<BR>(last, first)</TH><TD COLSPAN=5>
+  <TR><TH ALIGN="right">${r}Contact&nbsp;name<BR>(last,&nbsp;first)</TH><TD COLSPAN=5>
 END
 
   print <<END;
@@ -264,30 +263,25 @@ END
   <TR><TD ALIGN="right">Company</TD><TD COLSPAN=5><INPUT TYPE="text" NAME="ship_company" VALUE="$ship_company" SIZE=70 onChange="changed(this)"></TD></TR>
   <TR><TH ALIGN="right">${r}Address</TH><TD COLSPAN=5><INPUT TYPE="text" NAME="ship_address1" VALUE="$ship_address1" SIZE=70 onChange="changed(this)"></TD></TR>
   <TR><TD ALIGN="right">&nbsp;</TD><TD COLSPAN=5><INPUT TYPE="text" NAME="ship_address2" VALUE="$ship_address2" SIZE=70 onChange="changed(this)"></TD></TR>
-  <TR><TH ALIGN="right">${r}City</TH><TD><INPUT TYPE="text" NAME="ship_city" VALUE="$ship_city" onChange="changed(this)"></TD><TH ALIGN="right">${r}State/Country</TH><TD><SELECT NAME="ship_state" SIZE="1" onChange="changed(this)">
+  <TR><TH ALIGN="right">${r}City</TH><TD><INPUT TYPE="text" NAME="ship_city" VALUE="$ship_city" onChange="changed(this)"></TD><TH ALIGN="right">${r}State</TH><TD>
 END
 
   #false laziness with regular state
-  $cust_main->ship_country( $conf->config('countrydefault') || 'US' )
-    unless $cust_main->ship_country;
+  $cust_main->ship_country( $countrydefault ) unless $cust_main->ship_country;
+
   $cust_main->ship_state( $conf->config('statedefault') || 'CA' )
     unless $cust_main->ship_state || $cust_main->ship_country ne 'US';
-  foreach ( sort {
-       ( $b->country eq $countrydefault ) <=> ( $a->country eq $countrydefault )
-    or $a->country                        cmp $b->country
-    or $a->state                          cmp $b->state
-    or $a->county                         cmp $b->county
-  } qsearch('cust_main_county',{}) ) {
-    print "<OPTION";
-    print " SELECTED" if ( $cust_main->ship_state eq $_->state
-                           && $cust_main->ship_county eq $_->county 
-                           && $cust_main->ship_country eq $_->country
-                         );
-    print ">",$_->state;
-    print " (",$_->county,")" if $_->county;
-    print " / ", $_->country;
-  }
-  print qq!</SELECT></TD><TH>${r}Zip</TH><TD><INPUT TYPE="text" NAME="ship_zip" VALUE="$ship_zip" SIZE=10 onChange="changed(this)"></TD></TR>!;
+
+  my($ship_county_html, $ship_state_html, $ship_country_html) =
+    FS::cust_main_county::regionselector( $cust_main->ship_county,
+                                          $cust_main->ship_state,
+                                          $cust_main->ship_country,
+                                          'ship_',
+                                          'changed(this)', );
+
+  print "$ship_county_html $ship_state_html";
+
+  print qq!</TD><TH>${r}Zip</TH><TD><INPUT TYPE="text" NAME="ship_zip" VALUE="$ship_zip" SIZE=10 onChange="changed(this)"></TD></TR>!;
 
   my($ship_daytime,$ship_night,$ship_fax)=(
     $cust_main->ship_daytime,
@@ -296,12 +290,13 @@ END
   );
 
   print <<END;
+  <TR><TH ALIGN="right">${r}Country</TH><TD>$ship_country_html</TD></TR>
   <TR><TD ALIGN="right">Day Phone</TD><TD COLSPAN=5><INPUT TYPE="text" NAME="ship_daytime" VALUE="$ship_daytime" SIZE=18 onChange="changed(this)"></TD></TR>
   <TR><TD ALIGN="right">Night Phone</TD><TD COLSPAN=5><INPUT TYPE="text" NAME="ship_night" VALUE="$ship_night" SIZE=18 onChange="changed(this)"></TD></TR>
   <TR><TD ALIGN="right">Fax</TD><TD COLSPAN=5><INPUT TYPE="text" NAME="ship_fax" VALUE="$ship_fax" SIZE=12 onChange="changed(this)"></TD></TR>
 END
 
-  print "</TABLE>$r required fields<BR>";
+  print "</TABLE>${r}required fields<BR>";
 
 }
 

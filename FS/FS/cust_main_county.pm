@@ -1,10 +1,21 @@
 package FS::cust_main_county;
 
 use strict;
-use vars qw( @ISA );
-use FS::Record;
+use vars qw( @ISA @EXPORT_OK $conf
+             @cust_main_county %cust_main_county $countyflag );
+use Exporter;
+use FS::Record qw( qsearch );
 
 @ISA = qw( FS::Record );
+@EXPORT_OK = qw( regionselector );
+
+@cust_main_county = ();
+$countyflag = '';
+
+#ask FS::UID to run this stuff for us later
+$FS::UID::callback{'FS::cust_main_county'} = sub { 
+  $conf = new FS::Conf;
+};
 
 =head1 NAME
 
@@ -24,6 +35,9 @@ FS::cust_main_county - Object methods for cust_main_county objects
   $error = $record->delete;
 
   $error = $record->check;
+
+  ($county_html, $state_html, $country_html) =
+    FS::cust_main_county::regionselector( $county, $state, $country );
 
 =head1 DESCRIPTION
 
@@ -94,11 +108,125 @@ sub check {
 
 =back
 
-=head1 VERSION
+=head1 SUBROUTINES
 
-$Id: cust_main_county.pm,v 1.1 1999-08-04 09:03:53 ivan Exp $
+=over 4
+
+=item regionselector [ COUNTY STATE COUNTRY [ PREFIX [ ONCHANGE ] ] ]
+
+=cut
+
+sub regionselector {
+  my ( $selected_county, $selected_state, $selected_country,
+       $prefix, $onchange ) = @_;
+  $countyflag=1 if $selected_county;
+
+  unless ( @cust_main_county ) { #cache 
+    @cust_main_county = qsearch('cust_main_county', {} );
+    foreach my $c ( @cust_main_county ) {
+      $countyflag=1 if $c->county;
+      push @{$cust_main_county{$c->country}{$c->state}}, $c->county;
+    }
+  }
+
+  my $script_html = <<END;
+    <SCRIPT>
+    function opt(what,value,text) {
+      var optionName = new Option(text, value, false, false);
+      var length = what.length;
+      what.options[length] = optionName;
+    }
+    function ${prefix}country_changed(what) {
+      country = what.options[what.selectedIndex].text;
+      for ( var i = what.form.${prefix}state.length; i >= 0; i-- )
+          what.form.${prefix}state.options[i] = null;
+END
+      #what.form.${prefix}state.options[0] = new Option('', '', false, true);
+
+  foreach my $country ( sort keys %cust_main_county ) {
+    $script_html .= "\nif ( country == \"$country\" ) {\n";
+    foreach my $state ( sort keys %{$cust_main_county{$country}} ) {
+      my $text = $state || '(n/a)';
+      $script_html .= qq!opt(what.form.${prefix}state, "$state", "$text");\n!;
+    }
+    $script_html .= "}\n";
+  }
+
+  $script_html .= <<END;
+    }
+    function ${prefix}state_changed(what) {
+END
+
+  if ( $countyflag ) {
+    $script_html .= <<END;
+      state = what.options[what.selectedIndex].text;
+      country = what.form.${prefix}country.options[what.form.${prefix}country.selectedIndex].text;
+      for ( var i = what.form.${prefix}county.length; i >= 0; i-- )
+          what.form.${prefix}county.options[i] = null;
+END
+
+    foreach my $country ( sort keys %cust_main_county ) {
+      $script_html .= "\nif ( country == \"$country\" ) {\n";
+      foreach my $state ( sort keys %{$cust_main_county{$country}} ) {
+        $script_html .= "\nif ( state == \"$state\" ) {\n";
+          foreach my $county ( sort @{$cust_main_county{$country}{$state}} ) {
+            my $text = $county || '(n/a)';
+            $script_html .=
+              qq!opt(what.form.${prefix}county, "$county", "$text");\n!;
+          }
+        $script_html .= "}\n";
+      }
+      $script_html .= "}\n";
+    }
+  }
+
+  $script_html .= <<END;
+    }
+    </SCRIPT>
+END
+
+  my $county_html = $script_html;
+  if ( $countyflag ) {
+    $county_html .= qq!<SELECT NAME="${prefix}county" onChange="$onchange">!;
+    $county_html .= '</SELECT>';
+  } else {
+    $county_html .=
+      qq!<INPUT TYPE="hidden" NAME="${prefix}county" VALUE="$selected_county">!;
+  }
+
+  my $state_html = qq!<SELECT NAME="${prefix}state" !.
+                   qq!onChange="${prefix}state_changed(this); $onchange">!;
+  foreach my $state ( sort keys %{ $cust_main_county{$selected_country} } ) {
+    my $text = $state || '(n/a)';
+    my $selected = $state eq $selected_state ? 'SELECTED' : '';
+    $state_html .= "\n<OPTION $selected VALUE=$state>$text</OPTION>"
+  }
+  $state_html .= '</SELECT>';
+
+  $state_html .= '</SELECT>';
+
+  my $country_html = qq!<SELECT NAME="${prefix}country" !.
+                     qq!onChange="${prefix}country_changed(this); $onchange">!;
+  my $countrydefault = $conf->config('countrydefault') || 'US';
+  foreach my $country (
+    sort { ($b eq $countrydefault) <=> ($a eq $countrydefault) or $a cmp $b }
+      keys %cust_main_county
+  ) {
+    my $selected = $country eq $selected_country ? ' SELECTED' : '';
+    $country_html .= "\n<OPTION$selected>$country</OPTION>"
+  }
+  $country_html .= '</SELECT>';
+
+  ($county_html, $state_html, $country_html);
+
+}
+
+=back
 
 =head1 BUGS
+
+regionseletor?  putting web ui components in here?  they should probably live
+somewhere else...
 
 =head1 SEE ALSO
 

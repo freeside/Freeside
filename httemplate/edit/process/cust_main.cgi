@@ -8,19 +8,6 @@ $cgi->param('tax','') unless defined $cgi->param('tax');
 
 $cgi->param('refnum', (split(/:/, ($cgi->param('refnum'))[0] ))[0] );
 
-$cgi->param('state') =~ /^(\w*)( \(([\w ]+)\))? ?\/ ?(\w+)$/
-  or die "Oops, illegal \"state\" param: ". $cgi->param('state');
-$cgi->param('state', $1);
-$cgi->param('county', $3 || '');
-$cgi->param('country', $4);
-
-$cgi->param('ship_state') =~ /^(\w*)( \(([\w ]+)\))? ?\/ ?(\w+)$/
-  or $cgi->param('ship_state') =~ /^(((())))$/
-  or die "Oops, illegal \"ship_state\" param: ". $cgi->param('ship_state');
-$cgi->param('ship_state', $1);
-$cgi->param('ship_county', $3 || '');
-$cgi->param('ship_country', $4);
-
 my $payby = $cgi->param('payby');
 if ( $payby ) {
   $cgi->param('payinfo', $cgi->param( $payby. '_payinfo' ) );
