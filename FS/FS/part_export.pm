@@ -141,7 +141,7 @@ sub insert {
 
   '';
 
-};
+}
 
 =item delete
 
@@ -361,7 +361,8 @@ sub option {
 
 Reblesses the object into the FS::part_export::EXPORTTYPE class, where
 EXPORTTYPE is the object's I<exporttype> field.  There should be better docs
-on how to create new exports, but until then, see L</NEW EXPORT CLASSES>.
+on how to create new exports (and they should live in their own files and be
+autoloaded-on-demand), but until then, see L</NEW EXPORT CLASSES>.
 
 =cut
 
@@ -369,7 +370,7 @@ sub rebless {
   my $self = shift;
   my $exporttype = $self->exporttype;
   my $class = ref($self). "::$exporttype";
-  eval "use $class;" or die $@;
+  eval "use $class;";
   bless($self, $class);
 }
 
@@ -617,13 +618,13 @@ tie my %bind_slave_options, 'Tie::IxHash',
     'bind' => {
       'desc' =>'Batch export to BIND named',
       'options' => \%bind_options,
-      'notes' => 'bind export notes',
+      'notes' => 'bind export notes File::Rsync dependancy, run bind.export',
     },
 
     'bind_slave' => {
       'desc' =>'Batch export to slave BIND named',
       'options' => \%bind_slave_options,
-      'notes' => 'bind export notes (secondary munge)',
+      'notes' => 'bind export notes (secondary munge) File::Rsync dependancy, run bind.export',
     },
 
 

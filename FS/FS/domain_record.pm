@@ -3,7 +3,7 @@ package FS::domain_record;
 use strict;
 use vars qw( @ISA );
 #use FS::Record qw( qsearch qsearchs );
-use FS::Record qw( qsearchs );
+use FS::Record qw( qsearchs dbh );
 use FS::svc_domain;
 
 @ISA = qw(FS::Record);
@@ -71,11 +71,79 @@ otherwise returns false.
 
 =cut
 
+sub insert {
+  my $self = shift;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $error = $self->SUPER::insert;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  unless ( $self->rectype =~ /^(SOA|_mstr)$/ ) {
+    my $error = $self->increment_serial;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+  '';
+
+}
+
 =item delete
 
 Delete this record from the database.
 
 =cut
+
+sub delete {
+  my $self = shift;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $error = $self->SUPER::delete;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  unless ( $self->rectype =~ /^(SOA|_mstr)$/ ) {
+    my $error = $self->increment_serial;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+  '';
+
+}
 
 =item replace OLD_RECORD
 
@@ -83,6 +151,40 @@ Replaces the OLD_RECORD with this one in the database.  If there is an error,
 returns the error, otherwise returns false.
 
 =cut
+
+sub replace {
+  my $self = shift;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $error = $self->SUPER::replace(@_);
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  unless ( $self->rectype eq 'SOA' ) {
+    my $error = $self->increment_serial;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+  '';
+
+}
 
 =item check
 
@@ -158,11 +260,34 @@ sub check {
   ''; #no error
 }
 
+=item increment_serial
+
+=cut
+
+sub increment_serial {
+  my $self = shift;
+
+  my $soa = qsearchs('domain_record', {
+    svcnum  => $self->svcnum,
+    reczone => '@', #or full domain ?
+    recaf   => 'IN',
+    rectype => 'SOA', 
+  } ) or return "soa record not found; can't increment serial";
+
+  my $data = $soa->recdata;
+  $data =~ s/(\(\D*)(\d+)/$1.($2+1)/e; #well, it works.
+
+  my %hash = $soa->hash;
+  $hash{recdata} = $data;
+  my $new = new FS::domain_record \%hash;
+  $new->replace($soa);
+}
+
 =back
 
 =head1 VERSION
 
-$Id: domain_record.pm,v 1.7 2002-04-20 11:57:35 ivan Exp $
+$Id: domain_record.pm,v 1.8 2002-05-22 18:44:01 ivan Exp $
 
 =head1 BUGS
 

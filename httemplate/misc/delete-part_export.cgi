@@ -1,6 +1,6 @@
 <%
 
-#untaint paynum
+#untaint exportnum
 my($query) = $cgi->keywords;
 $query =~ /^(\d+)$/ || die "Illegal exportnum";
 my $exportnum = $1;

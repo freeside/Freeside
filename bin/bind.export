@@ -2,6 +2,8 @@
 
 use strict;
 use File::Path;
+use File::Rsync;
+use Net::SSH qw(ssh);
 use FS::UID qw(adminsuidsetup datasrc);
 use FS::Record qw(qsearch qsearchs);
 use FS::part_export;
@@ -18,9 +20,15 @@ mkdir $spooldir unless -d $spooldir;
 my @exports = qsearch('part_export', { 'exporttype' => 'bind' } );
 my @sexports = qsearch('part_export', { 'exporttype' => 'bind_slave' } );
 
+my $rsync = File::Rsync->new({
+  rsh     => 'ssh',
+#  dry_run => 1,
+});
+
 foreach my $export ( @exports ) {
 
-  my $prefix = "$spooldir/". $export->machine;
+  my $machine = $export->machine;
+  my $prefix = "$spooldir/$machine";
 
   #prevent old domain files from piling up
   #rmtree "$prefix" or die "can't rmtree $prefix.db: $!";
@@ -96,12 +104,30 @@ END
 
   }
 
+  $rsync->exec( {
+    src       => "$prefix/",
+    recursive => 1,
+    dest      => "root\@$machine:$zonepath/",
+    exclude   => [qw( *.import named.conf.HEADER named.conf )],
+  } ) or die "rsync to $machine failed: ". join(" / ", $rsync->err);
+ # warn $rsync->out;
+
+  $rsync->exec( {
+    src     => "$prefix/named.conf",
+    dest    => "root\@$machine:". $export->option('named_conf'),
+  } ) or die "rsync to $machine failed: ". join(" / ", $rsync->err);
+#  warn $rsync->out;
+
+  ssh("root\@$machine", 'ndc reload');
+
 }
+
 close NAMED_CONF;
 
 foreach my $sexport ( @sexports ) { #false laziness with above
 
-  my $prefix = "$spooldir/". $sexport->machine;
+  my $machine = $sexport->machine;
+  my $prefix = "$spooldir/$machine";
 
   #prevent old domain files from piling up
   #rmtree "$prefix" or die "can't rmtree $prefix.db: $!";
@@ -136,6 +162,14 @@ zone "$domain" {
 END
 
   }
+
+  $rsync->exec( {
+    src     => "$prefix/named.conf",
+    dest    => "root\@$machine:". $sexport->option('named_conf'),
+  } ) or die "rsync to $machine failed: ". join(" / ", $rsync->err);
+#  warn $rsync->out;
+
+  ssh("root\@$machine", 'ndc reload');
 
 }
 close NAMED_CONF;

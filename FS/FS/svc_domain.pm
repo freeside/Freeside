@@ -255,10 +255,33 @@ sub delete {
     if defined( $FS::Record::dbdef->table('svc_acct_sm') )
        && qsearch('svc_acct_sm', { 'domsvc' => $self->svcnum } );
 
-  return "Can't delete a domain with (domain_record) zone entries!"
-    if qsearch('domain_record', { 'svcnum' => $self->svcnum } );
+  #return "Can't delete a domain with (domain_record) zone entries!"
+  #  if qsearch('domain_record', { 'svcnum' => $self->svcnum } );
 
-  $self->SUPER::delete;
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $error = $self->SUPER::delete;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  foreach my $domain_record ( reverse $self->domain_record ) {
+    my $error = $domain_record->delete;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
 }
 
 =item replace OLD_RECORD
@@ -369,6 +392,26 @@ sub check {
 
 }
 
+=item domain_record
+
+=cut
+
+sub domain_record {
+  my $self = shift;
+
+  my %order = (
+    SOA => 1,
+    NS => 2,
+    MX => 3,
+    CNAME => 4,
+    A => 5,
+  );
+
+  sort { $order{$a->rectype} <=> $order{$b->rectype} }
+    qsearch('domain_record', { svcnum => $self->svcnum } );
+
+}
+
 =item whois
 
 Returns the Net::Whois::Domain object (see L<Net::Whois>) for this domain, or
@@ -407,7 +450,7 @@ sub submit_internic {
 
 =head1 VERSION
 
-$Id: svc_domain.pm,v 1.28 2002-05-18 09:51:30 ivan Exp $
+$Id: svc_domain.pm,v 1.29 2002-05-22 18:44:01 ivan Exp $
 
 =head1 BUGS
 
