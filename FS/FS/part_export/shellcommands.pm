@@ -22,7 +22,7 @@ sub _export_command {
   my $command = $self->option($action);
   no strict 'refs';
   ${$_} = $svc_acct->getfield($_) foreach $svc_acct->fields;
-  $self->shellcommands_queue(
+  $self->shellcommands_queue( $svc_acct->svcnum,
     $self->options('user')||'root'. "\@". $self->options('machine'),
     eval(qq("$command"))
   );
@@ -34,7 +34,7 @@ sub _export_replace {
   no strict 'refs';
   ${"old_$_"} = $old->getfield($_) foreach $old->fields;
   ${"new_$_"} = $new->getfield($_) foreach $new->fields;
-  $self->shellcommands_queue(
+  $self->shellcommands_queue( $new->svcnum,
     $self->options('user')||'root'. "\@". $self->options('machine'),
     eval(qq("$command"))
   );
