@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: part_referral.cgi,v 1.6 1999-01-18 09:41:18 ivan Exp $
+# $Id: part_referral.cgi,v 1.7 1999-01-19 05:13:28 ivan Exp $
 #
 # ivan@sisd.com 98-feb-23 
 #
@@ -10,7 +10,11 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: part_referral.cgi,v $
-# Revision 1.6  1999-01-18 09:41:18  ivan
+# Revision 1.7  1999-01-19 05:13:28  ivan
+# for mod_perl: no more top-level my() variables; use vars instead
+# also the last s/create/new/;
+#
+# Revision 1.6  1999/01/18 09:41:18  ivan
 # all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
 # (good idea anyway)
 #
@@ -28,6 +32,7 @@
 #
 
 use strict;
+use vars qw( $cgi $p $part_referral );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup swapuid);
@@ -35,11 +40,11 @@ use FS::Record qw(qsearch);
 use FS::CGI qw(header menubar popurl table);
 use FS::part_referral;
 
-my $cgi = new CGI;
+$cgi = new CGI;
 
 &cgisuidsetup($cgi);
 
-my $p = popurl(2);
+$p = popurl(2);
 
 print $cgi->header( '-expires' => 'now' ), header("Referral Listing", menubar(
   'Main Menu' => $p,
@@ -50,7 +55,6 @@ print $cgi->header( '-expires' => 'now' ), header("Referral Listing", menubar(
       </TR>
 END
 
-my($part_referral);
 foreach $part_referral ( sort { 
   $a->getfield('refnum') <=> $b->getfield('refnum')
 } qsearch('part_referral',{}) ) {

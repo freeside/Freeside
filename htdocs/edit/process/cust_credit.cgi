@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_credit.cgi,v 1.3 1999-01-18 22:47:51 ivan Exp $
+# $Id: cust_credit.cgi,v 1.4 1999-01-19 05:13:49 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/cust_credit.cgi
@@ -22,7 +22,11 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # $Log: cust_credit.cgi,v $
-# Revision 1.3  1999-01-18 22:47:51  ivan
+# Revision 1.4  1999-01-19 05:13:49  ivan
+# for mod_perl: no more top-level my() variables; use vars instead
+# also the last s/create/new/;
+#
+# Revision 1.3  1999/01/18 22:47:51  ivan
 # s/create/new/g; and use fields('table_name')
 #
 # Revision 1.2  1998/12/17 08:40:18  ivan
@@ -30,6 +34,7 @@
 #
 
 use strict;
+use vars qw( $cgi $custnum $new $error );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup getotaker);
@@ -37,22 +42,21 @@ use FS::CGI qw(popurl eidiot);
 use FS::Record qw(fields);
 use FS::cust_credit;
 
-my($cgi)=new CGI; # create form object
+$cgi = new CGI;
 cgisuidsetup($cgi);
 
 $cgi->param('custnum') =~ /^(\d*)$/ or die "Illegal custnum!";
-my($custnum)=$1;
+$custnum = $1;
 
 $cgi->param('otaker',getotaker);
 
-my($new) = new FS::cust_credit ( {
+$new = new FS::cust_credit ( {
   map {
     $_, scalar($cgi->param($_));
   #} qw(custnum _date amount otaker reason)
   } fields('cust_credit');
 } );
 
-my($error);
 $error=$new->insert;
 &eidiot($error) if $error;
 

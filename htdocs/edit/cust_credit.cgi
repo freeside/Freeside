@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_credit.cgi,v 1.4 1999-01-18 09:41:23 ivan Exp $
+# $Id: cust_credit.cgi,v 1.5 1999-01-19 05:13:33 ivan Exp $
 #
 # Usage: cust_credit.cgi custnum [ -paybatch ]
 #        http://server.name/path/cust_credit?custnum [ -paybatch ]
@@ -25,7 +25,11 @@
 # rewrite ivan@sisd.com 98-mar-16
 #
 # $Log: cust_credit.cgi,v $
-# Revision 1.4  1999-01-18 09:41:23  ivan
+# Revision 1.5  1999-01-19 05:13:33  ivan
+# for mod_perl: no more top-level my() variables; use vars instead
+# also the last s/create/new/;
+#
+# Revision 1.4  1999/01/18 09:41:23  ivan
 # all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
 # (good idea anyway)
 #
@@ -37,23 +41,24 @@
 #
 
 use strict;
+use vars qw( $cgi $query $custnum $otaker $p1 $crednum $date $amount $reason );
 use Date::Format;
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup getotaker);
 use FS::CGI qw(header popurl);
 
-my $cgi = new CGI;
+$cgi = new CGI;
 
 cgisuidsetup($cgi);
 
-my($query) = $cgi->keywords;
+($query) = $cgi->keywords;
 $query =~ /^(\d+)$/;
-my($custnum)=$1;
+$custnum = $1;
 
-my($otaker)=getotaker;
+$otaker = getotaker;
 
-my $p1 = popurl(1);
+$p1 = popurl(1);
 
 print $cgi->header( '-expires' => 'now' ), header("Post Credit", ''), <<END;
     <FORM ACTION="${p1}process/cust_credit.cgi" METHOD=POST>
@@ -61,7 +66,7 @@ print $cgi->header( '-expires' => 'now' ), header("Post Credit", ''), <<END;
 END
 
 #crednum
-my($crednum)="";
+$crednum = "";
 print qq!Credit #<B>!, $crednum ? $crednum : " <I>(NEW)</I>", qq!</B><INPUT TYPE="hidden" NAME="crednum" VALUE="$crednum">!;
 
 #custnum
@@ -71,11 +76,11 @@ print qq!\nCustomer #<B>$custnum</B><INPUT TYPE="hidden" NAME="custnum" VALUE="$
 print qq!<INPUT TYPE="hidden" NAME="paybatch" VALUE="">!;
 
 #date
-my($date)=time;
+$date = time;
 print qq!\nDate: <B>!, time2str("%D",$date), qq!</B><INPUT TYPE="hidden" NAME="_date" VALUE="$date">!;
 
 #amount
-my($amount)='';
+$amount = '';
 print qq!\nAmount \$<INPUT TYPE="text" NAME="amount" VALUE="$amount" SIZE=8 MAXLENGTH=8>!;
 
 #refund?
@@ -85,7 +90,7 @@ print qq!\nAmount \$<INPUT TYPE="text" NAME="amount" VALUE="$amount" SIZE=8 MAXL
 print qq!<INPUT TYPE="hidden" NAME="otaker" VALUE="$otaker">!;
 
 #reason
-my($reason)='';
+$reason = '';
 print qq!\nReason <INPUT TYPE="text" NAME="reason" VALUE="$reason" SIZE=72>!;
 
 print <<END;

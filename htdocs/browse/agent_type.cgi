@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: agent_type.cgi,v 1.4 1999-01-18 09:41:15 ivan Exp $
+# $Id: agent_type.cgi,v 1.5 1999-01-19 05:13:25 ivan Exp $
 #
 # ivan@sisd.com 97-dec-10
 #
@@ -11,7 +11,11 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: agent_type.cgi,v $
-# Revision 1.4  1999-01-18 09:41:15  ivan
+# Revision 1.5  1999-01-19 05:13:25  ivan
+# for mod_perl: no more top-level my() variables; use vars instead
+# also the last s/create/new/;
+#
+# Revision 1.4  1999/01/18 09:41:15  ivan
 # all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
 # (good idea anyway)
 #
@@ -23,6 +27,7 @@
 #
 
 use strict;
+use vars qw( $cgi $p $agent_type );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup swapuid);
@@ -32,11 +37,11 @@ use FS::agent_type;
 use FS::type_pkgs;
 use FS::part_pkg;
 
-my($cgi) = new CGI;
+$cgi = new CGI;
 
 &cgisuidsetup($cgi);
 
-my($p)=popurl(2);
+$p = popurl(2);
 print $cgi->header( '-expires' => 'now' ), header("Agent Type Listing", menubar(
   'Main Menu' => $p,
 )), "Agent types define groups of packages that you can then assign to".
@@ -47,7 +52,6 @@ print $cgi->header( '-expires' => 'now' ), header("Agent Type Listing", menubar(
       </TR>
 END
 
-my($agent_type);
 foreach $agent_type ( sort { 
   $a->getfield('typenum') <=> $b->getfield('typenum')
 } qsearch('agent_type',{}) ) {

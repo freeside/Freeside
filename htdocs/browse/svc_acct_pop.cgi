@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct_pop.cgi,v 1.4 1999-01-18 09:41:20 ivan Exp $
+# $Id: svc_acct_pop.cgi,v 1.5 1999-01-19 05:13:30 ivan Exp $
 #
 # ivan@sisd.com 98-mar-8
 #
@@ -10,7 +10,11 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: svc_acct_pop.cgi,v $
-# Revision 1.4  1999-01-18 09:41:20  ivan
+# Revision 1.5  1999-01-19 05:13:30  ivan
+# for mod_perl: no more top-level my() variables; use vars instead
+# also the last s/create/new/;
+#
+# Revision 1.4  1999/01/18 09:41:20  ivan
 # all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
 # (good idea anyway)
 #
@@ -22,6 +26,7 @@
 #
 
 use strict;
+use vars qw( $cgi $p $svc_acct_pop );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup swapuid);
@@ -29,11 +34,11 @@ use FS::Record qw(qsearch qsearchs);
 use FS::CGI qw(header menubar table popurl);
 use FS::svc_acct_pop;
 
-my($cgi) = new CGI;
+$cgi = new CGI;
 
 &cgisuidsetup($cgi);
 
-my $p = popurl(2);
+$p = popurl(2);
 
 print $cgi->header( '-expires' => 'now' ), header('POP Listing', menubar(
   'Main Menu' => $p,
@@ -47,7 +52,6 @@ print $cgi->header( '-expires' => 'now' ), header('POP Listing', menubar(
       </TR>
 END
 
-my($svc_acct_pop);
 foreach $svc_acct_pop ( sort { 
   $a->getfield('popnum') <=> $b->getfield('popnum')
 } qsearch('svc_acct_pop',{}) ) {

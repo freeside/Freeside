@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main.cgi,v 1.9 1999-01-18 09:41:43 ivan Exp $
+# $Id: cust_main.cgi,v 1.10 1999-01-19 05:14:19 ivan Exp $
 #
 # Usage: cust_main.cgi custnum
 #        http://server.name/path/cust_main.cgi?custnum
@@ -33,7 +33,11 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: cust_main.cgi,v $
-# Revision 1.9  1999-01-18 09:41:43  ivan
+# Revision 1.10  1999-01-19 05:14:19  ivan
+# for mod_perl: no more top-level my() variables; use vars instead
+# also the last s/create/new/;
+#
+# Revision 1.9  1999/01/18 09:41:43  ivan
 # all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
 # (good idea anyway)
 #
@@ -60,6 +64,9 @@
 #
 
 use strict;
+use vars qw ( $cgi $query $custnum $cust_main $hashref $agent $referral 
+              @packages $package @history @bills $bill @credits $credit
+              $balance $item ); 
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use Date::Format;
@@ -76,7 +83,7 @@ use FS::agent;
 use FS::cust_main;
 use FS::cust_refund;
 
-my($cgi) = new CGI;
+$cgi = new CGI;
 &cgisuidsetup($cgi);
 
 print $cgi->header( '-expires' => 'now' ), header("Customer View", menubar(
@@ -86,12 +93,12 @@ print $cgi->header( '-expires' => 'now' ), header("Customer View", menubar(
 END
 
 die "No customer specified (bad URL)!" unless $cgi->keywords;
-my($query) = $cgi->keywords; # needs parens with my, ->keywords returns array
+($query) = $cgi->keywords; # needs parens with my, ->keywords returns array
 $query =~ /^(\d+)$/;
-my($custnum)=$1;
-my($cust_main)=qsearchs('cust_main',{'custnum'=>$custnum});
+$custnum = $1;
+$cust_main = qsearchs('cust_main',{'custnum'=>$custnum});
 die "Customer not found!" unless $cust_main;
-my($hashref)=$cust_main->hashref;
+$hashref = $cust_main->hashref;
 
 #custnum
 print "<FONT SIZE=+1><CENTER>Customer #<B>$custnum</B></CENTER></FONT>",
@@ -111,7 +118,7 @@ print qq!<HR><A NAME="cust_main"><CENTER><FONT SIZE=+1>Customer Information!,
       qq!">Edit this information</A></CENTER><FONT SIZE=-1>!;
 
 #agentnum
-my($agent)=qsearchs('agent',{
+$agent = qsearchs('agent',{
   'agentnum' => $cust_main->getfield('agentnum')
 } );
 die "Agent not found!" unless $agent;
@@ -119,7 +126,7 @@ print "<BR>Agent #<B>" , $agent->getfield('agentnum') , ": " ,
                          $agent->getfield('agent') , "</B>";
 
 #refnum
-my($referral)=qsearchs('part_referral',{'refnum' => $cust_main->refnum});
+$referral = qsearchs('part_referral',{'refnum' => $cust_main->refnum});
 die "Referral not found!" unless $referral;
 print "<BR>Referral #<B>", $referral->refnum, ": ",
       $referral->referral, "<\B>"; 
@@ -215,8 +222,7 @@ print qq!<CENTER>!, table, "\n",
       qq!</TR>\n!;
 
 #get package info
-my(@packages)=qsearch('cust_pkg',{'custnum'=>$custnum});
-my($package);
+@packages = qsearch('cust_pkg',{'custnum'=>$custnum});
 foreach $package (@packages) {
   my($pref)=$package->hashref;
   my($part_pkg)=qsearchs('part_pkg',{
@@ -265,10 +271,7 @@ print qq!<CENTER><HR><A NAME="history"><FONT SIZE=+1>Payment History!,
 # major problem: this whole thing is way too sloppy.
 # minor problem: the description lines need better formatting.
 
-my(@history);
-
-my(@bills)=qsearch('cust_bill',{'custnum'=>$custnum});
-my($bill);
+@bills = qsearch('cust_bill',{'custnum'=>$custnum});
 foreach $bill (@bills) {
   my($bref)=$bill->hashref;
   push @history,
@@ -292,8 +295,7 @@ foreach $bill (@bills) {
   }
 }
 
-my(@credits)=qsearch('cust_credit',{'custnum'=>$custnum});
-my($credit);
+@credits = qsearch('cust_credit',{'custnum'=>$custnum});
 foreach $credit (@credits) {
   my($cref)=$credit->hashref;
   push @history,
@@ -328,8 +330,7 @@ END
 
 #display payment history
 
-my($balance)=0;
-my($item);
+$balance = 0;
 foreach $item (sort keyfield_numerically @history) {
   my($date,$desc,$charge,$payment,$credit,$refund)=split(/\t/,$item);
   $charge ||= 0;

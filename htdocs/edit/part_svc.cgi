@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: part_svc.cgi,v 1.6 1999-01-18 09:41:31 ivan Exp $
+# $Id: part_svc.cgi,v 1.7 1999-01-19 05:13:42 ivan Exp $
 #
 # ivan@sisd.com 97-nov-14
 #
@@ -10,7 +10,11 @@
 # use FS::CGI, added inline documentation ivan@sisd.com 98-jul-12
 #
 # $Log: part_svc.cgi,v $
-# Revision 1.6  1999-01-18 09:41:31  ivan
+# Revision 1.7  1999-01-19 05:13:42  ivan
+# for mod_perl: no more top-level my() variables; use vars instead
+# also the last s/create/new/;
+#
+# Revision 1.6  1999/01/18 09:41:31  ivan
 # all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
 # (good idea anyway)
 #
@@ -25,6 +29,7 @@
 #
 
 use strict;
+use vars qw( $cgi $part_svc $action $query $hashref $p %defs $svcdb );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
@@ -32,22 +37,21 @@ use FS::Record qw(qsearchs fields);
 use FS::part_svc;
 use FS::CGI qw(header menubar popurl table);
 
-my($cgi) = new CGI;
+$cgi = new CGI;
 
 &cgisuidsetup($cgi);
 
-my($part_svc,$action);
-my($query) = $cgi->keywords;
+($query) = $cgi->keywords;
 if ( $query && $query =~ /^(\d+)$/ ) { #editing
   $part_svc=qsearchs('part_svc',{'svcpart'=>$1});
   $action='Edit';
 } else { #adding
-  $part_svc=create FS::part_svc {};
+  $part_svc = new  FS::part_svc {};
   $action='Add';
 }
-my($hashref)=$part_svc->hashref;
+$hashref = $part_svc->hashref;
 
-my $p = popurl(2);
+$p = popurl(2);
 print $cgi->header( '-expires' => 'now' ), header("$action Service Definition", menubar(
   'Main Menu' => $p,
   'View all services' => "${p}browse/part_svc.cgi",
@@ -90,7 +94,7 @@ END
 
 #these might belong somewhere else for other user interfaces 
 #pry need to eventually create stuff that's shared amount UIs
-my(%defs)=(
+%defs = (
   'svc_acct' => {
     'dir'       => 'Home directory',
     'uid'       => 'UID (set to fixed and blank for dial-only)',
@@ -120,7 +124,6 @@ my(%defs)=(
   },
 );
 
-my($svcdb);
 #  svc_acct svc_domain svc_acct_sm svc_charge svc_wo
 foreach $svcdb ( qw(
   svc_acct svc_domain svc_acct_sm

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct_sm.cgi,v 1.6 1999-01-18 09:41:34 ivan Exp $
+# $Id: svc_acct_sm.cgi,v 1.7 1999-01-19 05:13:45 ivan Exp $
 #
 # Usage: svc_acct_sm.cgi {svcnum} | pkgnum{pkgnum}-svcpart{svcpart}
 #        http://server.name/path/svc_acct_sm.cgi? {svcnum} | pkgnum{pkgnum}-svcpart{svcpart}
@@ -35,7 +35,11 @@
 # /var/spool/freeside/conf/domain ivan@sisd.com 98-jul-26
 #
 # $Log: svc_acct_sm.cgi,v $
-# Revision 1.6  1999-01-18 09:41:34  ivan
+# Revision 1.7  1999-01-19 05:13:45  ivan
+# for mod_perl: no more top-level my() variables; use vars instead
+# also the last s/create/new/;
+#
+# Revision 1.6  1999/01/18 09:41:34  ivan
 # all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
 # (good idea anyway)
 #
@@ -53,7 +57,8 @@
 #
 
 use strict;
-use vars qw($conf);
+use vars qw( $conf $cgi $mydomain $action $svcnum $svc_acct_sm $pkgnum $svcpart
+             $part_svc $query %username %domain $p1 $domuser $domsvc $domuid );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
@@ -62,15 +67,14 @@ use FS::Record qw(qsearch qsearchs fields);
 use FS::svc_acct_sm;
 use FS::Conf;
 
-my($cgi) = new CGI;
+$cgi = new CGI;
 &cgisuidsetup($cgi);
 
 $conf = new FS::Conf;
-my $mydomain = $conf->config('domain');
+$mydomain = $conf->config('domain');
 
-my($action,$svcnum,$svc_acct_sm,$pkgnum,$svcpart,$part_svc);
 
-my($query) = $cgi->keywords;
+($query) = $cgi->keywords;
 if ( $query =~ /^(\d+)$/ ) { #editing
 
   $svcnum=$1;
@@ -90,7 +94,7 @@ if ( $query =~ /^(\d+)$/ ) { #editing
 
 } else { #adding
 
-  $svc_acct_sm=create FS::svc_acct_sm({});
+  $svc_acct_sm = new FS::svc_acct_sm({});
 
   foreach $_ (split(/-/,$query)) { #get & untaint pkgnum & svcpart
     $pkgnum=$1 if /^pkgnum(\d+)$/;
@@ -113,7 +117,6 @@ if ( $query =~ /^(\d+)$/ ) { #editing
 
 }
 
-my(%username,%domain);
 if ($pkgnum) {
 
   #find all possible uids (and usernames)
@@ -171,7 +174,7 @@ if ($pkgnum) {
   die "\$action eq Add, but \$pkgnum is null!\n";
 }
 
-my $p1 = popurl(1);
+$p1 = popurl(1);
 print $cgi->header( '-expires' => 'now' ), header("Mail Alias $action", ''), <<END;
     <FORM ACTION="${p1}process/svc_acct_sm.cgi" METHOD=POST>
 END
@@ -191,7 +194,7 @@ print qq!<INPUT TYPE="hidden" NAME="pkgnum" VALUE="$pkgnum">!;
 #svcpart
 print qq!<INPUT TYPE="hidden" NAME="svcpart" VALUE="$svcpart">!;
 
-my($domuser,$domsvc,$domuid)=(
+($domuser,$domsvc,$domuid)=(
   $svc_acct_sm->domuser,
   $svc_acct_sm->domsvc,
   $svc_acct_sm->domuid,

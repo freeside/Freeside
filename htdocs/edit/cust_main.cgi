@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main.cgi,v 1.6 1999-01-18 09:41:24 ivan Exp $
+# $Id: cust_main.cgi,v 1.7 1999-01-19 05:13:34 ivan Exp $
 #
 # Usage: cust_main.cgi custnum
 #        http://server.name/path/cust_main.cgi?custnum
@@ -40,7 +40,11 @@
 # fixed one missed day->daytime ivan@sisd.com 98-jul-13
 #
 # $Log: cust_main.cgi,v $
-# Revision 1.6  1999-01-18 09:41:24  ivan
+# Revision 1.7  1999-01-19 05:13:34  ivan
+# for mod_perl: no more top-level my() variables; use vars instead
+# also the last s/create/new/;
+#
+# Revision 1.6  1999/01/18 09:41:24  ivan
 # all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
 # (good idea anyway)
 #
@@ -55,6 +59,10 @@
 #
 
 use strict;
+use vars qw( $cgi $custnum $action $cust_main $p1 @agents $agentnum 
+             $last $first $ss $company $address1 $address2 $city $zip 
+             $daytime $night $fax @invoicing_list $invoicing_list $payinfo
+             $payname %payby %paybychecked $refnum $otaker );
 use CGI::Switch;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup getotaker);
@@ -62,12 +70,11 @@ use FS::Record qw(qsearch qsearchs);
 use FS::CGI qw(header popurl itable table);
 use FS::cust_main;
 
-my $cgi = new CGI;
+$cgi = new CGI;
 cgisuidsetup($cgi);
 
 #get record
 
-my ( $custnum, $action, $cust_main );
 if ( $cgi->keywords ) { #editing
   my( $query ) = $cgi->keywords;
   $query =~ /^(\d+)$/;
@@ -83,7 +90,7 @@ if ( $cgi->keywords ) { #editing
 
 # top
 
-my $p1 = popurl(1);
+$p1 = popurl(1);
 print $cgi->header( '-expires' => 'now' ), header("Customer $action", ''),
       qq!<FORM ACTION="${p1}process/cust_main.cgi" METHOD=POST>!,
       qq!<INPUT TYPE="hidden" NAME="custnum" VALUE="$custnum">!,
@@ -93,8 +100,8 @@ print $cgi->header( '-expires' => 'now' ), header("Customer $action", ''),
 
 # agent
 
-my @agents = qsearch( 'agent', {} );
-my $agentnum = $cust_main->agentnum || $agents[0]->agentnum; #default to first
+@agents = qsearch( 'agent', {} );
+$agentnum = $cust_main->agentnum || $agents[0]->agentnum; #default to first
 if ( scalar(@agents) == 1 ) {
   print qq!<INPUT TYPE="hidden" NAME="agentnum" VALUE="$agentnum">!;
 } else {
@@ -111,7 +118,7 @@ if ( scalar(@agents) == 1 ) {
 
 # contact info
 
-my($last,$first,$ss,$company,$address1,$address2,$city,$zip)=(
+($last,$first,$ss,$company,$address1,$address2,$city,$zip)=(
   $cust_main->last,
   $cust_main->first,
   $cust_main->ss,
@@ -143,7 +150,7 @@ foreach ( qsearch('cust_main_county',{}) ) {
 }
 print qq!</SELECT></TD><TH>Zip</TH><TD><INPUT TYPE="text" NAME="zip" VALUE="$zip" SIZE=10></TD></TR>!;
 
-my($daytime,$night,$fax)=(
+($daytime,$night,$fax)=(
   $cust_main->daytime,
   $cust_main->night,
   $cust_main->fax,
@@ -190,28 +197,28 @@ print "<BR>Billing information", itable("#c0c0c0"),
 print qq! CHECKED! if $cust_main->tax eq "Y";
 print qq!>Tax Exempt!;
 print qq!</TD></TR><TR><TD><INPUT TYPE="checkbox" NAME="invoicing_list_POST" VALUE="POST"!;
-my @invoicing_list = $cust_main->invoicing_list;
+@invoicing_list = $cust_main->invoicing_list;
 print qq! CHECKED!
   if ! @invoicing_list || grep { $_ eq 'POST' } @invoicing_list;
 print qq!> Postal mail invoice!;
-my $invoicing_list = join(', ', grep { $_ ne 'POST' } @invoicing_list );
+$invoicing_list = join(', ', grep { $_ ne 'POST' } @invoicing_list );
 print qq!</TD></TR><TR><TD>Email invoice <INPUT TYPE="text" NAME="invoicing_list" VALUE="$invoicing_list"></TD>!;
 
 print "</TD></TR></TABLE>";
 
 print table("#c0c0c0"), "<TR>";
 
-my($payinfo, $payname)=(
+($payinfo, $payname)=(
   $cust_main->payinfo,
   $cust_main->payname,
 );
 
-my %payby = (
+%payby = (
   'CARD' => qq!Credit card<BR><INPUT TYPE="text" NAME="CARD_payinfo" VALUE="" MAXLENGTH=19><BR>Exp !. expselect("CARD"). qq!<BR>Name on card<BR><INPUT TYPE="text" NAME="CARD_payname" VALUE="">!,
   'BILL' => qq!Billing<BR>P.O. <INPUT TYPE="text" NAME="BILL_payinfo" VALUE=""><BR>Exp !. expselect("BILL", "12-2037"). qq!<BR>Attention<BR><INPUT TYPE="text" NAME="BILL_payname" VALUE="Accounts Payable">!,
   'COMP' => qq!Complimentary<BR>Approved by<INPUT TYPE="text" NAME="COMP_payinfo" VALUE=""><BR>Exp !. expselect("COMP"),
 );
-my %paybychecked = (
+%paybychecked = (
   'CARD' => qq!Credit card<BR><INPUT TYPE="text" NAME="CARD_payinfo" VALUE="$payinfo" MAXLENGTH=19><BR>Exp !. expselect("CARD", $cust_main->paydate). qq!<BR>Name on card<BR><INPUT TYPE="text" NAME="CARD_payname" VALUE="$payname">!,
   'BILL' => qq!Billing<BR>P.O. <INPUT TYPE="text" NAME="BILL_payinfo" VALUE="$payinfo"><BR>Exp !. expselect("BILL", $cust_main->paydate). qq!<BR>Attention<BR><INPUT TYPE="text" NAME="BILL_payname" VALUE="$payname">!,
   'COMP' => qq!Complimentary<BR>Approved by<INPUT TYPE="text" NAME="COMP_payinfo" VALUE="$payinfo"><BR>Exp !. expselect("COMP", $cust_main->paydate),
@@ -229,7 +236,7 @@ print "</TR></TABLE>";
 
 #referral
 
-my $refnum = $cust_main->refnum || 0;
+$refnum = $cust_main->refnum || 0;
 if ( $custnum ) {
   print qq!<INPUT TYPE="hidden" NAME="refnum" VALUE="$refnum">!;
 } else {
@@ -246,7 +253,7 @@ if ( $custnum ) {
   print "</SELECT>";
 }
 
-my $otaker = $cust_main->otaker;
+$otaker = $cust_main->otaker;
 print qq!<INPUT TYPE="hidden" NAME="otaker" VALUE="$otaker">!,
       qq!<BR><BR><INPUT TYPE="submit" VALUE="!,
       $custnum ?  "Apply Changes" : "Add Customer", qq!">!,

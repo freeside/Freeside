@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: part_svc.cgi,v 1.5 1999-01-18 22:47:58 ivan Exp $
+# $Id: part_svc.cgi,v 1.6 1999-01-19 05:13:57 ivan Exp $
 #
 # ivan@sisd.com 97-nov-14
 #
@@ -10,7 +10,11 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: part_svc.cgi,v $
-# Revision 1.5  1999-01-18 22:47:58  ivan
+# Revision 1.6  1999-01-19 05:13:57  ivan
+# for mod_perl: no more top-level my() variables; use vars instead
+# also the last s/create/new/;
+#
+# Revision 1.5  1999/01/18 22:47:58  ivan
 # s/create/new/g; and use fields('table_name')
 #
 # Revision 1.4  1998/12/30 23:03:31  ivan
@@ -24,6 +28,7 @@
 #
 
 use strict;
+use vars qw ( $cgi $svcpart $old $new );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
@@ -31,14 +36,14 @@ use FS::Record qw(qsearchs fields);
 use FS::part_svc;
 use FS::CGI qw(eidiot popurl);
 
-my($cgi)=new CGI;
+$cgi = new CGI;
 &cgisuidsetup($cgi);
 
-my($svcpart)=$cgi->param('svcpart');
+$svcpart = $cgi->param('svcpart');
 
-my($old)=qsearchs('part_svc',{'svcpart'=>$svcpart}) if $svcpart;
+$old = qsearchs('part_svc',{'svcpart'=>$svcpart}) if $svcpart;
 
-my($new)=new FS::part_svc ( {
+$new = new FS::part_svc ( {
   map {
     $_, scalar($cgi->param($_));
 #  } qw(svcpart svc svcdb)

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct_pop.cgi,v 1.5 1999-01-18 09:41:33 ivan Exp $
+# $Id: svc_acct_pop.cgi,v 1.6 1999-01-19 05:13:44 ivan Exp $
 #
 # ivan@sisd.com 98-mar-8 
 #
@@ -10,7 +10,11 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: svc_acct_pop.cgi,v $
-# Revision 1.5  1999-01-18 09:41:33  ivan
+# Revision 1.6  1999-01-19 05:13:44  ivan
+# for mod_perl: no more top-level my() variables; use vars instead
+# also the last s/create/new/;
+#
+# Revision 1.5  1999/01/18 09:41:33  ivan
 # all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
 # (good idea anyway)
 #
@@ -26,6 +30,7 @@
 #
 
 use strict;
+use vars qw( $cgi $svc_acct_pop $action $query $hashref $p1 );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
@@ -33,22 +38,21 @@ use FS::Record qw(qsearch qsearchs);
 use FS::svc_acct_pop;
 use FS::CGI qw(header menubar);
 
-my($cgi) = new CGI;
+$cgi = new CGI;
 
 &cgisuidsetup($cgi);
 
-my($svc_acct_pop,$action);
-my($query)=$cgi->keywords;
+($query)=$cgi->keywords;
 if ( $query =~ /^(\d+)$/ ) { #editing
   $svc_acct_pop=qsearchs('svc_acct_pop',{'popnum'=>$1});
   $action='Edit';
 } else { #adding
-  $svc_acct_pop=create FS::svc_acct_pop {};
+  $svc_acct_pop = new FS::svc_acct_pop {};
   $action='Add';
 }
-my($hashref)=$svc_acct_pop->hashref;
+$hashref = $svc_acct_pop->hashref;
 
-my $p1 = popurl(1);
+$p1 = popurl(1);
 print $cgi->header( '-expires' => 'now' ), header("$action POP", menubar(
   'Main Menu' => popurl(2),
   'View all POPs' => popurl(2). "browse/svc_acct_pop.cgi",

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_bill.cgi,v 1.5 1999-01-18 09:41:42 ivan Exp $
+# $Id: cust_bill.cgi,v 1.6 1999-01-19 05:14:18 ivan Exp $
 #
 # Note: Should be run setuid freeside as user nobody.
 #
@@ -25,7 +25,11 @@
 # also print 'printed' field ivan@sisd.com 98-jul-10
 #
 # $Log: cust_bill.cgi,v $
-# Revision 1.5  1999-01-18 09:41:42  ivan
+# Revision 1.6  1999-01-19 05:14:18  ivan
+# for mod_perl: no more top-level my() variables; use vars instead
+# also the last s/create/new/;
+#
+# Revision 1.5  1999/01/18 09:41:42  ivan
 # all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
 # (good idea anyway)
 #
@@ -40,6 +44,7 @@
 #
 
 use strict;
+use vars qw ( $cgi $query $invnum $cust_bill $custnum $printed $p );
 use IO::File;
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
@@ -48,21 +53,21 @@ use FS::CGI qw(header popurl menubar);
 use FS::Record qw(qsearchs);
 use FS::cust_bill;
 
-my($cgi) = new CGI;
+$cgi = new CGI;
 &cgisuidsetup($cgi);
 
 #untaint invnum
-my($query) = $cgi->keywords;
+($query) = $cgi->keywords;
 $query =~ /^(\d+)$/;
-my($invnum)=$1;
+$invnum = $1;
 
-my($cust_bill) = qsearchs('cust_bill',{'invnum'=>$invnum});
+$cust_bill = qsearchs('cust_bill',{'invnum'=>$invnum});
 die "Invoice #$invnum not found!" unless $cust_bill;
-my($custnum) = $cust_bill->getfield('custnum');
+$custnum = $cust_bill->getfield('custnum');
 
-my($printed) = $cust_bill->printed;
+$printed = $cust_bill->printed;
 
-my $p = popurl(2);
+$p = popurl(2);
 print $cgi->header( '-expires' => 'now' ), header('Invoice View', menubar(
   "Main Menu" => $p,
   "View this customer (#$custnum)" => "${p}view/cust_main.cgi?$custnum",

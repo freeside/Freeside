@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_pay.cgi,v 1.4 1999-01-18 22:47:54 ivan Exp $
+# $Id: cust_pay.cgi,v 1.5 1999-01-19 05:13:53 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/cust_pay.cgi
@@ -15,7 +15,11 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # $Log: cust_pay.cgi,v $
-# Revision 1.4  1999-01-18 22:47:54  ivan
+# Revision 1.5  1999-01-19 05:13:53  ivan
+# for mod_perl: no more top-level my() variables; use vars instead
+# also the last s/create/new/;
+#
+# Revision 1.4  1999/01/18 22:47:54  ivan
 # s/create/new/g; and use fields('table_name')
 #
 # Revision 1.3  1998/12/30 23:03:28  ivan
@@ -26,6 +30,7 @@
 #
 
 use strict;
+use vars qw( $cgi $invnum $new $error );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
@@ -33,20 +38,19 @@ use FS::CGI qw(idiot popurl);
 use FS::Record qw(fields);
 use FS::cust_pay;
 
-my($cgi)=new CGI;
+$cgi = new CGI;
 &cgisuidsetup($cgi);
 
 $cgi->param('invnum') =~ /^(\d*)$/ or die "Illegal svcnum!";
-my($invnum)=$1;
+$invnum = $1;
 
-my($new) = new FS::cust_pay ( {
+$new = new FS::cust_pay ( {
   map {
     $_, scalar($cgi->param($_));
   #} qw(invnum paid _date payby payinfo paybatch)
   } fields('cust_pay')
 } );
 
-my($error);
 $error=$new->insert;
 
 if ($error) { #error!

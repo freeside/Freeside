@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct.cgi,v 1.5 1999-01-18 09:41:39 ivan Exp $
+# $Id: svc_acct.cgi,v 1.6 1999-01-19 05:14:14 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/svc_acct.cgi
@@ -23,7 +23,11 @@
 # give service and customer info too ivan@sisd.com 98-aug-16
 #
 # $Log: svc_acct.cgi,v $
-# Revision 1.5  1999-01-18 09:41:39  ivan
+# Revision 1.6  1999-01-19 05:14:14  ivan
+# for mod_perl: no more top-level my() variables; use vars instead
+# also the last s/create/new/;
+#
+# Revision 1.5  1999/01/18 09:41:39  ivan
 # all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
 # (good idea anyway)
 #
@@ -38,6 +42,7 @@
 #
 
 use strict;
+use vars qw( $cgi @svc_acct $sortby $query );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
@@ -46,12 +51,10 @@ use FS::CGI qw(header idiot popurl);
 use FS::svc_acct;
 use FS::cust_main;
 
-my($cgi)=new CGI;
+$cgi = new CGI;
 &cgisuidsetup($cgi);
 
-my(@svc_acct,$sortby);
-
-my($query)=$cgi->keywords;
+($query)=$cgi->keywords;
 $query ||= ''; #to avoid use of unitialized value errors
 #this tree is a little bit redundant
 if ( $query eq 'svcnum' ) {

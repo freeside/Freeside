@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: part_pkg.cgi,v 1.5 1999-01-18 09:41:17 ivan Exp $
+# $Id: part_pkg.cgi,v 1.6 1999-01-19 05:13:27 ivan Exp $
 #
 # ivan@sisd.com 97-dec-5,9
 #
@@ -10,7 +10,11 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: part_pkg.cgi,v $
-# Revision 1.5  1999-01-18 09:41:17  ivan
+# Revision 1.6  1999-01-19 05:13:27  ivan
+# for mod_perl: no more top-level my() variables; use vars instead
+# also the last s/create/new/;
+#
+# Revision 1.5  1999/01/18 09:41:17  ivan
 # all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
 # (good idea anyway)
 #
@@ -25,6 +29,7 @@
 #
 
 use strict;
+use vars qw( $cgi $p $part_pkg );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup swapuid);
@@ -34,11 +39,11 @@ use FS::part_pkg;
 use FS::pkg_svc;
 use FS::part_svc;
 
-my($cgi) = new CGI;
+$cgi = new CGI;
 
 &cgisuidsetup($cgi);
 
-my $p = popurl(2);
+$p = popurl(2);
 
 print $cgi->header( '-expires' => 'now' ), header("Package Part Listing",menubar(
   'Main Menu' => $p,
@@ -57,7 +62,6 @@ print $cgi->header( '-expires' => 'now' ), header("Package Part Listing",menubar
       </TR>
 END
 
-my($part_pkg);
 foreach $part_pkg ( sort { 
   $a->getfield('pkgpart') <=> $b->getfield('pkgpart')
 } qsearch('part_pkg',{}) ) {

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: agent.cgi,v 1.9 1999-01-18 09:41:14 ivan Exp $
+# $Id: agent.cgi,v 1.10 1999-01-19 05:13:24 ivan Exp $
 #
 # ivan@sisd.com 97-dec-12
 #
@@ -15,7 +15,11 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: agent.cgi,v $
-# Revision 1.9  1999-01-18 09:41:14  ivan
+# Revision 1.10  1999-01-19 05:13:24  ivan
+# for mod_perl: no more top-level my() variables; use vars instead
+# also the last s/create/new/;
+#
+# Revision 1.9  1999/01/18 09:41:14  ivan
 # all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
 # (good idea anyway)
 #
@@ -42,6 +46,7 @@
 #
 
 use strict;
+use vars qw( $ui $cgi $p $agent );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup swapuid);
@@ -55,7 +60,7 @@ use FS::agent_type;
 use FS::UI::CGI;
 use FS::UI::agent;
 
-my $ui = new FS::UI::agent;
+$ui = new FS::UI::agent;
 $ui->browse;
 exit;
 
@@ -63,11 +68,11 @@ exit;
 
 __END__
 
-my($cgi) = new CGI;
+$cgi = new CGI;
 
 &cgisuidsetup($cgi);
 
-my($p)=popurl(2);
+$p = popurl(2);
 
 print $cgi->header( '-expires' => 'now' ), header('Agent Listing', menubar(
   'Main Menu'   => $p,
@@ -88,7 +93,6 @@ END
 #        <TH><FONT SIZE=-1>Agent #</FONT></TH>
 #        <TH>Agent</TH>
 
-my($agent);
 foreach $agent ( sort { 
   $a->getfield('agentnum') <=> $b->getfield('agentnum')
 } qsearch('agent',{}) ) {

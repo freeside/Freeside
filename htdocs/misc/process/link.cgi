@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: link.cgi,v 1.2 1998-12-17 09:15:00 ivan Exp $
+# $Id: link.cgi,v 1.3 1999-01-19 05:14:10 ivan Exp $
 #
 # ivan@voicenet.com 97-feb-5
 #
@@ -12,11 +12,16 @@
 # can also link on some other fields now (about time) ivan@sisd.com 98-jun-24
 #
 # $Log: link.cgi,v $
-# Revision 1.2  1998-12-17 09:15:00  ivan
+# Revision 1.3  1999-01-19 05:14:10  ivan
+# for mod_perl: no more top-level my() variables; use vars instead
+# also the last s/create/new/;
+#
+# Revision 1.2  1998/12/17 09:15:00  ivan
 # s/CGI::Request/CGI.pm/;
 #
 
 use strict;
+use vars qw ( $cgi $old $new $error );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::CGI qw(popurlidiot);
@@ -24,7 +29,7 @@ use FS::UID qw(cgisuidsetup);
 use FS::cust_svc;
 use FS::Record qw(qsearchs);
 
-my($cgi)=new CGI;
+$cgi = new CGI;
 cgisuidsetup($cgi);
 
 $cgi->param('pkgnum') =~ /^(\d+)$/; my($pkgnum)=$1;
@@ -40,15 +45,14 @@ unless ( $svcnum ) {
   $svcnum=$svc_acct->svcnum;
 }
 
-my($old)=qsearchs('cust_svc',{'svcnum'=>$svcnum});
+$old = qsearchs('cust_svc',{'svcnum'=>$svcnum});
 die "svcnum not found!" unless $old;
-my($new)=create FS::cust_svc ({
+$new = new FS::cust_svc ({
   'svcnum' => $svcnum,
   'pkgnum' => $pkgnum,
   'svcpart' => $svcpart,
 });
 
-my($error);
 $error = $new->replace($old);
 
 unless ($error) {

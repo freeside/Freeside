@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: part_pkg.cgi,v 1.6 1999-01-18 22:47:56 ivan Exp $
+# $Id: part_pkg.cgi,v 1.7 1999-01-19 05:13:55 ivan Exp $
 #
 # process/part_pkg.cgi: Edit package definitions (process form)
 #
@@ -17,7 +17,11 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: part_pkg.cgi,v $
-# Revision 1.6  1999-01-18 22:47:56  ivan
+# Revision 1.7  1999-01-19 05:13:55  ivan
+# for mod_perl: no more top-level my() variables; use vars instead
+# also the last s/create/new/;
+#
+# Revision 1.6  1999/01/18 22:47:56  ivan
 # s/create/new/g; and use fields('table_name')
 #
 # Revision 1.5  1998/12/30 23:03:29  ivan
@@ -34,6 +38,7 @@
 #
 
 use strict;
+use vars qw( $cgi $pkgpart $old $new $part_svc );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
@@ -43,14 +48,14 @@ use FS::part_pkg;
 use FS::pkg_svc;
 use FS::cust_pkg;
 
-my($cgi)=new CGI;
+$cgi = new CGI;
 &cgisuidsetup($cgi);
 
-my($pkgpart)=$cgi->param('pkgpart');
+$pkgpart = $cgi->param('pkgpart');
 
-my($old)=qsearchs('part_pkg',{'pkgpart'=>$pkgpart}) if $pkgpart;
+$old = qsearchs('part_pkg',{'pkgpart'=>$pkgpart}) if $pkgpart;
 
-my($new)=new FS::part_pkg ( {
+$new = new FS::part_pkg ( {
   map {
     $_, scalar($cgi->param($_));
   } fields('part_pkg')
@@ -71,7 +76,6 @@ if ( $pkgpart ) {
   $pkgpart=$new->getfield('pkgpart');
 }
 
-my($part_svc);
 foreach $part_svc (qsearch('part_svc',{})) {
 # don't update non-changing records in part_svc (causing harmless but annoying
 # "Records identical" errors). ivan@sisd.com 98-jan-19

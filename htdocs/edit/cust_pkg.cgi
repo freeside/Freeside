@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_pkg.cgi,v 1.3 1999-01-18 09:41:28 ivan Exp $
+# $Id: cust_pkg.cgi,v 1.4 1999-01-19 05:13:38 ivan Exp $
 #
 # this is for changing packages around, not editing things within the package
 #
@@ -25,7 +25,11 @@
 # 98-jun-1
 #
 # $Log: cust_pkg.cgi,v $
-# Revision 1.3  1999-01-18 09:41:28  ivan
+# Revision 1.4  1999-01-19 05:13:38  ivan
+# for mod_perl: no more top-level my() variables; use vars instead
+# also the last s/create/new/;
+#
+# Revision 1.3  1999/01/18 09:41:28  ivan
 # all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
 # (good idea anyway)
 #
@@ -34,6 +38,8 @@
 #
 
 use strict;
+use vars qw( $cgi %pkg %comment $query $custnum $otaker $p1 @cust_pkg 
+             $cust_main $agent $type_pkgs $count );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup getotaker);
@@ -41,10 +47,9 @@ use FS::Record qw(qsearch qsearchs);
 use FS::CGI qw(header popurl);
 use FS::part_pkg;
 
-my($cgi) = new CGI;
+$cgi = new CGI;
 &cgisuidsetup($cgi);
 
-my(%pkg,%comment);
 foreach (qsearch('part_pkg', {})) {
   $pkg{ $_ -> getfield('pkgpart') } = $_->getfield('pkg');
   $comment{ $_ -> getfield('pkgpart') } = $_->getfield('comment');
@@ -52,13 +57,13 @@ foreach (qsearch('part_pkg', {})) {
 
 #untaint custnum
 
-my($query) = $cgi->keywords;
+($query) = $cgi->keywords;
 $query =~ /^(\d+)$/;
-my($custnum)=$1;
+$custnum = $1;
 
-my($otaker)=&getotaker;
+$otaker = &getotaker;
 
-my $p1 = popurl(1);
+$p1 = popurl(1);
 print $cgi->header( '-expires' => 'now' ), header("Add/Edit Packages", ''), <<END;
     <FORM ACTION="${p1}process/cust_pkg.cgi" METHOD=POST>
     <HR>
@@ -68,7 +73,7 @@ END
 print qq!<INPUT TYPE="hidden" NAME="new_custnum" VALUE="$custnum">!;
 
 #current packages (except cancelled packages)
-my(@cust_pkg) = grep ! $_->getfield('cancel'),
+@cust_pkg = grep ! $_->getfield('cancel'),
   qsearch('cust_pkg',{'custnum'=>$custnum});
 
 if (@cust_pkg) {
@@ -105,11 +110,10 @@ These are packages the customer can purchase.  Specify the quantity to add
 of each package.<BR><BR>
 END
 
-my($cust_main)=qsearchs('cust_main',{'custnum'=>$custnum});
-my($agent)=qsearchs('agent',{'agentnum'=> $cust_main->agentnum });
+$cust_main = qsearchs('cust_main',{'custnum'=>$custnum});
+$agent = qsearchs('agent',{'agentnum'=> $cust_main->agentnum });
 
-my($type_pkgs);
-my ($count) = 0 ;
+$count = 0 ;
 print qq!<CENTER><TABLE>! ;
 foreach $type_pkgs ( qsearch('type_pkgs',{'typenum'=> $agent->typenum }) ) {
   my($pkgpart)=$type_pkgs->pkgpart;

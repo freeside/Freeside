@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_domain.cgi,v 1.6 1999-01-18 09:41:35 ivan Exp $
+# $Id: svc_domain.cgi,v 1.7 1999-01-19 05:13:46 ivan Exp $
 #
 # Usage: svc_domain.cgi pkgnum{pkgnum}-svcpart{svcpart}
 #        http://server.name/path/svc_domain.cgi?pkgnum{pkgnum}-svcpart{svcpart}
@@ -17,7 +17,11 @@
 # no GOV in instructions ivan@sisd.com 98-jul-17
 #
 # $Log: svc_domain.cgi,v $
-# Revision 1.6  1999-01-18 09:41:35  ivan
+# Revision 1.7  1999-01-19 05:13:46  ivan
+# for mod_perl: no more top-level my() variables; use vars instead
+# also the last s/create/new/;
+#
+# Revision 1.6  1999/01/18 09:41:35  ivan
 # all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
 # (good idea anyway)
 #
@@ -36,6 +40,8 @@
 #
 
 use strict;
+use vars qw( $cgi $action $svcnum $svc_domain $pkgnum $svcpart $part_svc
+             $query $svc $otaker $domain $p1 );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup getotaker);
@@ -43,12 +49,10 @@ use FS::CGI qw(header popurl);
 use FS::Record qw(qsearch qsearchs fields);
 use FS::svc_domain;
 
-my($cgi) = new CGI;
+$cgi = new CGI;
 &cgisuidsetup($cgi);
 
-my($action,$svcnum,$svc_domain,$pkgnum,$svcpart,$part_svc);
-
-my($query) = $cgi->keywords;
+($query) = $cgi->keywords;
 if ( $query =~ /^(\d+)$/ ) { #editing
 
   $svcnum=$1;
@@ -68,7 +72,7 @@ if ( $query =~ /^(\d+)$/ ) { #editing
 
 } else { #adding
 
-  $svc_domain=create FS::svc_domain({});
+  $svc_domain = new FS::svc_domain({});
   
   foreach $_ (split(/-/,$query)) {
     $pkgnum=$1 if /^pkgnum(\d+)$/;
@@ -91,15 +95,13 @@ if ( $query =~ /^(\d+)$/ ) { #editing
 
 }
 
-my($svc)=$part_svc->getfield('svc');
+$svc = $part_svc->getfield('svc');
 
-my($otaker)=getotaker;
+$otaker = getotaker;
 
-my($domain)=(
-  $svc_domain->domain,
-);
+$domain = $svc_domain->domain;
 
-my $p1 = popurl(1);
+$p1 = popurl(1);
 print $cgi->header( '-expires' => 'now' ), header("$action $svc", ''), <<END;
     <FORM ACTION="${p1}process/svc_domain.cgi" METHOD=POST>
       <INPUT TYPE="hidden" NAME="svcnum" VALUE="$svcnum">

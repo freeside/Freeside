@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: agent_type.cgi,v 1.5 1999-01-18 22:47:50 ivan Exp $
+# $Id: agent_type.cgi,v 1.6 1999-01-19 05:13:48 ivan Exp $
 #
 # ivan@sisd.com 97-dec-11
 #
@@ -10,7 +10,11 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: agent_type.cgi,v $
-# Revision 1.5  1999-01-18 22:47:50  ivan
+# Revision 1.6  1999-01-19 05:13:48  ivan
+# for mod_perl: no more top-level my() variables; use vars instead
+# also the last s/create/new/;
+#
+# Revision 1.5  1999/01/18 22:47:50  ivan
 # s/create/new/g; and use fields('table_name')
 #
 # Revision 1.4  1998/12/30 23:03:27  ivan
@@ -24,6 +28,7 @@
 #
 
 use strict;
+use vars qw ( $cgi $typenum $old $new $error $part_pkg );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::CGI qw(idiot popurl);
@@ -33,19 +38,18 @@ use FS::agent_type;
 use FS::type_pkgs;
 use FS::part_pkg;
 
-my($cgi)=new CGI;
+$cgi = new CGI;
 &cgisuidsetup($cgi);
 
-my($typenum)=$cgi->param('typenum');
-my($old)=qsearchs('agent_type',{'typenum'=>$typenum}) if $typenum;
+$typenum = $cgi->param('typenum');
+$old = qsearchs('agent_type',{'typenum'=>$typenum}) if $typenum;
 
-my($new)=new FS::agent_type ( {
+$new = new FS::agent_type ( {
   map {
     $_, scalar($cgi->param($_));
   } fields('agent_type')
 } );
 
-my($error);
 if ( $typenum ) {
   $error=$new->replace($old);
 } else {
@@ -58,7 +62,6 @@ if ( $error ) {
   exit;
 }
 
-my($part_pkg);
 foreach $part_pkg (qsearch('part_pkg',{})) {
   my($pkgpart)=$part_pkg->getfield('pkgpart');
 

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: part_pkg.cgi,v 1.7 1999-01-18 09:41:29 ivan Exp $
+# $Id: part_pkg.cgi,v 1.8 1999-01-19 05:13:39 ivan Exp $
 #
 # part_pkg.cgi: Add/Edit package (output form)
 #
@@ -13,7 +13,11 @@
 # use FS::CGI, added inline documentation ivan@sisd.com 98-jul-12
 #
 # $Log: part_pkg.cgi,v $
-# Revision 1.7  1999-01-18 09:41:29  ivan
+# Revision 1.8  1999-01-19 05:13:39  ivan
+# for mod_perl: no more top-level my() variables; use vars instead
+# also the last s/create/new/;
+#
+# Revision 1.7  1999/01/18 09:41:29  ivan
 # all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
 # (good idea anyway)
 #
@@ -34,6 +38,7 @@
 #
 
 use strict;
+use vars qw( $cgi $part_pkg $action $query $hashref $part_svc $count );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
@@ -43,7 +48,7 @@ use FS::part_svc;
 use FS::pkg_svc;
 use FS::CGI qw(header menubar popurl);
 
-my($cgi) = new CGI;
+$cgi = new CGI;
 
 &cgisuidsetup($cgi);
 
@@ -58,8 +63,7 @@ if ( $cgi->param('pkgnum') && $cgi->param('pkgnum') =~ /^(\d+)$/ ) {
   $cgi->param('pkgnum', '');
 }
 
-my($part_pkg,$action);
-my($query) = $cgi->keywords;
+($query) = $cgi->keywords;
 if ( $cgi->param('clone') ) {
   $action='Custom Pricing';
   my $old_part_pkg =
@@ -70,9 +74,9 @@ if ( $cgi->param('clone') ) {
   $part_pkg=qsearchs('part_pkg',{'pkgpart'=>$1});
 } else {
   $action='Add';
-  $part_pkg=create FS::part_pkg {};
+  $part_pkg = new FS::part_pkg {};
 }
-my($hashref)=$part_pkg->hashref;
+$hashref = $part_pkg->hashref;
 
 print $cgi->header( '-expires' => 'now' ), header("$action Package Definition", menubar(
   'Main Menu' => popurl(2),
@@ -109,15 +113,13 @@ Enter the quantity of each service this package includes.<BR><BR>
 END
 }
 
-my($part_svc);
-my($count) = 0 ;
 foreach $part_svc ( qsearch('part_svc',{}) ) {
 
   my($svcpart)=$part_svc->getfield('svcpart');
   my($pkg_svc)=qsearchs('pkg_svc',{
     'pkgpart'  => $cgi->param('clone') || $part_pkg->getfield('pkgpart'),
     'svcpart'  => $svcpart,
-  })  || create FS::pkg_svc({
+  })  || new FS::pkg_svc({
     'pkgpart'  => $part_pkg->getfield('pkgpart'),
     'svcpart'  => $svcpart,
     'quantity' => 0,

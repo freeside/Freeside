@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main_county.cgi,v 1.4 1999-01-18 09:41:16 ivan Exp $
+# $Id: cust_main_county.cgi,v 1.5 1999-01-19 05:13:26 ivan Exp $
 #
 # ivan@sisd.com 97-dec-13
 #
@@ -10,7 +10,11 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: cust_main_county.cgi,v $
-# Revision 1.4  1999-01-18 09:41:16  ivan
+# Revision 1.5  1999-01-19 05:13:26  ivan
+# for mod_perl: no more top-level my() variables; use vars instead
+# also the last s/create/new/;
+#
+# Revision 1.4  1999/01/18 09:41:16  ivan
 # all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
 # (good idea anyway)
 #
@@ -22,6 +26,7 @@
 #
 
 use strict;
+use vars qw( $cgi $p $cust_main_county );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup swapuid);
@@ -29,11 +34,11 @@ use FS::Record qw(qsearch qsearchs);
 use FS::CGI qw(header menubar popurl table);
 use FS::cust_main_county;
 
-my($cgi) = new CGI;
+$cgi = new CGI;
 
 &cgisuidsetup($cgi);
 
-my($p) = popurl(2);
+$p = popurl(2);
 
 print $cgi->header( '-expires' => 'now' ), header("Tax Rate Listing", menubar(
   'Main Menu' => $p,
@@ -52,7 +57,6 @@ print table, <<END;
       </TR>
 END
 
-my($cust_main_county);
 foreach $cust_main_county ( qsearch('cust_main_county',{}) ) {
   my($hashref)=$cust_main_county->hashref;
   print <<END;

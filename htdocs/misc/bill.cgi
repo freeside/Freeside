@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: bill.cgi,v 1.3 1998-12-23 03:01:13 ivan Exp $
+# $Id: bill.cgi,v 1.4 1999-01-19 05:14:02 ivan Exp $
 #
 # s/FS:Search/FS::Record/ and cgisuidsetup($cgi) ivan@sisd.com 98-mar-13
 #
@@ -8,7 +8,11 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # $Log: bill.cgi,v $
-# Revision 1.3  1998-12-23 03:01:13  ivan
+# Revision 1.4  1999-01-19 05:14:02  ivan
+# for mod_perl: no more top-level my() variables; use vars instead
+# also the last s/create/new/;
+#
+# Revision 1.3  1998/12/23 03:01:13  ivan
 # $cgi->keywords instead of $cgi->query_string
 #
 # Revision 1.2  1998/12/17 09:12:41  ivan
@@ -16,6 +20,7 @@
 #
 
 use strict;
+use vars qw( $cgi $query $custnum $cust_main $error );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
@@ -23,17 +28,15 @@ use FS::CGI qw(popurl eidiot);
 use FS::Record qw(qsearchs);
 use FS::cust_main;
 
-my($cgi) = new CGI;
+$cgi = new CGI;
 &cgisuidsetup($cgi);
 
 #untaint custnum
-my($query) = $cgi->keywords;
+($query) = $cgi->keywords;
 $query =~ /^(\d*)$/;
-my($custnum)=$1;
-my($cust_main)=qsearchs('cust_main',{'custnum'=>$custnum});
+$custnum = $1;
+$cust_main = qsearchs('cust_main',{'custnum'=>$custnum});
 die "Can't find customer!\n" unless $cust_main;
-
-my($error);
 
 $error = $cust_main->bill(
 #                          'time'=>$time

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct_sm.cgi,v 1.5 1999-01-18 09:41:46 ivan Exp $
+# $Id: svc_acct_sm.cgi,v 1.6 1999-01-19 05:14:22 ivan Exp $
 #
 # Usage: svc_acct_sm.cgi svcnum
 #        http://server.name/path/svc_acct_sm.cgi?svcnum
@@ -22,7 +22,11 @@
 # /var/spool/freeside/conf/domain ivan@sisd.com 98-jul-17
 #
 # $Log: svc_acct_sm.cgi,v $
-# Revision 1.5  1999-01-18 09:41:46  ivan
+# Revision 1.6  1999-01-19 05:14:22  ivan
+# for mod_perl: no more top-level my() variables; use vars instead
+# also the last s/create/new/;
+#
+# Revision 1.5  1999/01/18 09:41:46  ivan
 # all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
 # (good idea anyway)
 #
@@ -37,40 +41,41 @@
 #
 
 use strict;
-use vars qw($conf);
+use vars qw($conf $cgi $mydomain $query $svcnum $svc_acct_sm $cust_svc
+            $pkgnum cust_pkg $custnum $part_svc $p $domsvc,$domuid,$domuser
+            $svc $svc_domain $domain $svc_acct $username );
 use CGI;
 use FS::UID qw(cgisuidsetup);
 use FS::CGI qw(header popurl);
 use FS::Record qw(qsearchs);
 use FS::Conf;
 
-my($cgi) = new CGI;
+$cgi = new CGI;
 cgisuidsetup($cgi);
 
 $conf = new FS::Conf;
-my $mydomain = $conf->config('domain');
+$mydomain = $conf->config('domain');
 
 #untaint svcnum
-my($query) = $cgi->keywords;
+($query) = $cgi->keywords;
 $query =~ /^(\d+)$/;
-my($svcnum)=$1;
-my($svc_acct_sm)=qsearchs('svc_acct_sm',{'svcnum'=>$svcnum});
+$svcnum = $1;
+$svc_acct_sm = qsearchs('svc_acct_sm',{'svcnum'=>$svcnum});
 die "Unknown svcnum" unless $svc_acct_sm;
 
-my($cust_svc)=qsearchs('cust_svc',{'svcnum'=>$svcnum});
-my($pkgnum)=$cust_svc->getfield('pkgnum');
-my($cust_pkg,$custnum);
+$cust_svc = qsearchs('cust_svc',{'svcnum'=>$svcnum});
+$pkgnum = $cust_svc->getfield('pkgnum');
 if ($pkgnum) {
   $cust_pkg=qsearchs('cust_pkg',{'pkgnum'=>$pkgnum});
   $custnum=$cust_pkg->getfield('custnum');
 }
 
-my($part_svc)=qsearchs('part_svc',{'svcpart'=> $cust_svc->svcpart } );
+$part_svc = qsearchs('part_svc',{'svcpart'=> $cust_svc->svcpart } );
 die "Unkonwn svcpart" unless $part_svc;
 
 print $cgi->header( '-expires' => 'now' ), header('Mail Alias View');
 
-my $p = popurl(2);
+$p = popurl(2);
 if ($pkgnum || $custnum) {
   print <<END;
 <A HREF="${p}view/cust_pkg.cgi?$pkgnum">View this package (#$pkgnum)</A> | 
@@ -89,16 +94,16 @@ print <<END;
     <BASEFONT SIZE=3>
 END
 
-my($domsvc,$domuid,$domuser)=(
+($domsvc,$domuid,$domuser) = (
   $svc_acct_sm->domsvc,
   $svc_acct_sm->domuid,
   $svc_acct_sm->domuser,
 );
-my($svc) = $part_svc->svc;
-my($svc_domain)=qsearchs('svc_domain',{'svcnum'=>$domsvc});
-my($domain)=$svc_domain->domain;
-my($svc_acct)=qsearchs('svc_acct',{'uid'=>$domuid});
-my($username)=$svc_acct->username;
+$svc = $part_svc->svc;
+$svc_domain = qsearchs('svc_domain',{'svcnum'=>$domsvc});
+$domain = $svc_domain->domain;
+$svc_acct = qsearchs('svc_acct',{'uid'=>$domuid});
+$username = $svc_acct->username;
 
 #formatting
 print qq!<HR>!;

@@ -1,11 +1,15 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_pkg.cgi,v 1.5 1999-01-18 09:41:38 ivan Exp $
+# $Id: cust_pkg.cgi,v 1.6 1999-01-19 05:14:13 ivan Exp $
 #
 # based on search/svc_acct.cgi ivan@sisd.com 98-jul-17
 #
 # $Log: cust_pkg.cgi,v $
-# Revision 1.5  1999-01-18 09:41:38  ivan
+# Revision 1.6  1999-01-19 05:14:13  ivan
+# for mod_perl: no more top-level my() variables; use vars instead
+# also the last s/create/new/;
+#
+# Revision 1.5  1999/01/18 09:41:38  ivan
 # all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
 # (good idea anyway)
 #
@@ -20,18 +24,17 @@
 #
 
 use strict;
+use vars qw ( $cgi @cust_pkg $sortby $query );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
 use FS::Record qw(qsearch qsearchs);
 use FS::CGI qw(header idiot popurl);
 
-my($cgi)=new CGI;
+$cgi = new CGI;
 &cgisuidsetup($cgi);
 
-my(@cust_pkg,$sortby);
-
-my($query)=$cgi->keywords;
+($query) = $cgi->keywords;
 #this tree is a little bit redundant
 if ( $query eq 'pkgnum' ) {
   $sortby=\*pkgnum_sort;

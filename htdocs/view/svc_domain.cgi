@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_domain.cgi,v 1.5 1999-01-18 09:41:47 ivan Exp $
+# $Id: svc_domain.cgi,v 1.6 1999-01-19 05:14:23 ivan Exp $
 #
 # Usage: svc_domain svcnum
 #        http://server.name/path/svc_domain.cgi?svcnum
@@ -15,7 +15,11 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # $Log: svc_domain.cgi,v $
-# Revision 1.5  1999-01-18 09:41:47  ivan
+# Revision 1.6  1999-01-19 05:14:23  ivan
+# for mod_perl: no more top-level my() variables; use vars instead
+# also the last s/create/new/;
+#
+# Revision 1.5  1999/01/18 09:41:47  ivan
 # all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
 # (good idea anyway)
 #
@@ -31,34 +35,35 @@
 #
 
 use strict;
+use vars qw( $cgi $query $svcnum $svc_domain $domain $cust_svc $pkgnum 
+             $cust_pkg $custnum $part_svc $p );
 use CGI;
 use FS::UID qw(cgisuidsetup);
 use FS::CGI qw(header menubar popurl);
 use FS::Record qw(qsearchs);
 
-my($cgi) = new CGI;
+$cgi = new CGI;
 cgisuidsetup($cgi);
 
 #untaint svcnum
-my($query) = $cgi->keywords;
+($query) = $cgi->keywords;
 $query =~ /^(\d+)$/;
-my($svcnum)=$1;
-my($svc_domain)=qsearchs('svc_domain',{'svcnum'=>$svcnum});
+$svcnum = $1;
+$svc_domain = qsearchs('svc_domain',{'svcnum'=>$svcnum});
 die "Unknown svcnum" unless $svc_domain;
-my($domain)=$svc_domain->domain;
+$domain = $svc_domain->domain;
 
-my($cust_svc)=qsearchs('cust_svc',{'svcnum'=>$svcnum});
-my($pkgnum)=$cust_svc->getfield('pkgnum');
-my($cust_pkg,$custnum);
+$cust_svc = qsearchs('cust_svc',{'svcnum'=>$svcnum});
+$pkgnum = $cust_svc->getfield('pkgnum');
 if ($pkgnum) {
   $cust_pkg=qsearchs('cust_pkg',{'pkgnum'=>$pkgnum});
   $custnum=$cust_pkg->getfield('custnum');
 }
 
-my($part_svc)=qsearchs('part_svc',{'svcpart'=> $cust_svc->svcpart } );
+$part_svc = qsearchs('part_svc',{'svcpart'=> $cust_svc->svcpart } );
 die "Unkonwn svcpart" unless $part_svc;
 
-my $p = popurl(2);
+$p = popurl(2);
 print $cgi->header( '-expires' => 'now' ), header('Domain View', menubar(
   "Main menu" => $p,
   "View this package (#$pkgnum)" => "${p}view/cust_pkg.cgi?$pkgnum",

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_domain.cgi,v 1.3 1998-12-23 03:06:50 ivan Exp $
+# $Id: svc_domain.cgi,v 1.4 1999-01-19 05:14:17 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/svc_domain.cgi
@@ -17,7 +17,11 @@
 # display total, use FS::CGI now does browsing too ivan@sisd.com 98-jul-17
 #
 # $Log: svc_domain.cgi,v $
-# Revision 1.3  1998-12-23 03:06:50  ivan
+# Revision 1.4  1999-01-19 05:14:17  ivan
+# for mod_perl: no more top-level my() variables; use vars instead
+# also the last s/create/new/;
+#
+# Revision 1.3  1998/12/23 03:06:50  ivan
 # $cgi->keywords instead of $cgi->query_string
 #
 # Revision 1.2  1998/12/17 09:41:12  ivan
@@ -25,19 +29,17 @@
 #
 
 use strict;
+use vars qw ( $cgi @svc_domain $sortby $query );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
 use FS::Record qw(qsearch qsearchs);
 use FS::CGI qw(header idiot popurl);
 
-my($cgi)=new CGI;
+$cgi = new CGI;
 &cgisuidsetup($cgi);
 
-my(@svc_domain);
-my($sortby);
-
-my($query)=$cgi->keywords;
+($query)=$cgi->keywords;
 if ( $query eq 'svcnum' ) {
   $sortby=\*svcnum_sort;
   @svc_domain=qsearch('svc_domain',{});

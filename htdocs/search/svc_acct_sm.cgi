@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct_sm.cgi,v 1.4 1999-01-18 09:41:40 ivan Exp $
+# $Id: svc_acct_sm.cgi,v 1.5 1999-01-19 05:14:16 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/svc_domain.cgi
@@ -19,7 +19,11 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # $Log: svc_acct_sm.cgi,v $
-# Revision 1.4  1999-01-18 09:41:40  ivan
+# Revision 1.5  1999-01-19 05:14:16  ivan
+# for mod_perl: no more top-level my() variables; use vars instead
+# also the last s/create/new/;
+#
+# Revision 1.4  1999/01/18 09:41:40  ivan
 # all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
 # (good idea anyway)
 #
@@ -28,7 +32,7 @@
 #
 
 use strict;
-use vars qw($conf);
+use vars qw( $conf $cgi $mydomain $domuser $svc_domain $domsvc @svc_acct_sm );
 use CGI::Request;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
@@ -36,21 +40,20 @@ use FS::CGI qw(popurl idiot header table);
 use FS::Record qw(qsearch qsearchs);
 use FS::Conf;
 
-my($cgi)=new CGI;
+$cgi = new CGI;
 &cgisuidsetup($cgi);
 
 $conf = new FS::Conf;
-my $mydomain = $conf->config('domain');
+$mydomain = $conf->config('domain');
 
 $cgi->param('domuser') =~ /^([a-z0-9_\-]{0,32})$/;
-my($domuser)=$1;
+$domuser = $1;
 
 $cgi->param('domain') =~ /^([\w\-\.]+)$/ or die "Illegal domain";
-my($svc_domain)=qsearchs('svc_domain',{'domain'=>$1})
+$svc_domain = qsearchs('svc_domain',{'domain'=>$1})
   or die "Unknown domain";
-my($domsvc)=$svc_domain->svcnum;
+$domsvc = $svc_domain->svcnum;
 
-my(@svc_acct_sm);
 if ($domuser) {
   @svc_acct_sm=qsearch('svc_acct_sm',{
     'domuser' => $domuser,

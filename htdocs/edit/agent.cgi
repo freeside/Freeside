@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: agent.cgi,v 1.4 1999-01-18 09:41:21 ivan Exp $
+# $Id: agent.cgi,v 1.5 1999-01-19 05:13:31 ivan Exp $
 #
 # ivan@sisd.com 97-dec-12
 #
@@ -11,7 +11,11 @@
 # use FS::CGI, added inline documentation ivan@sisd.com 98-jul-12
 #
 # $Log: agent.cgi,v $
-# Revision 1.4  1999-01-18 09:41:21  ivan
+# Revision 1.5  1999-01-19 05:13:31  ivan
+# for mod_perl: no more top-level my() variables; use vars instead
+# also the last s/create/new/;
+#
+# Revision 1.4  1999/01/18 09:41:21  ivan
 # all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
 # (good idea anyway)
 #
@@ -23,6 +27,7 @@
 #
 
 use strict;
+use vars qw ( $cgi $agent $action $query $hashref $p $agent_type );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
@@ -31,22 +36,21 @@ use FS::Record qw(qsearch qsearchs);
 use FS::agent;
 use FS::agent_type;
 
-my($cgi) = new CGI;
+$cgi = new CGI;
 
 &cgisuidsetup($cgi);
 
-my($agent,$action);
-my($query) = $cgi->keywords;
+($query) = $cgi->keywords;
 if ( $query =~ /^(\d+)$/ ) { #editing
   $agent=qsearchs('agent',{'agentnum'=>$1});
   $action='Edit';
 } else { #adding
-  $agent=create FS::agent {};
+  $agent = new FS::agent {};
   $action='Add';
 }
-my($hashref)=$agent->hashref;
+$hashref = $agent->hashref;
 
-my $p = popurl(2);
+$p = popurl(2);
 
 print $cgi->header( '-expires' => 'now' ), header("$action Agent", menubar(
   'Main Menu' => $p,
@@ -62,7 +66,6 @@ Agent                     <INPUT TYPE="text" NAME="agent" SIZE=32 VALUE="$hashre
 Agent type                <SELECT NAME="typenum" SIZE=1>
 END
 
-my($agent_type);
 foreach $agent_type (qsearch('agent_type',{})) {
   print "<OPTION";
   print " SELECTED"

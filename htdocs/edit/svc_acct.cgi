@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct.cgi,v 1.5 1999-01-18 09:41:32 ivan Exp $
+# $Id: svc_acct.cgi,v 1.6 1999-01-19 05:13:43 ivan Exp $
 #
 # Usage: svc_acct.cgi {svcnum} | pkgnum{pkgnum}-svcpart{svcpart}
 #        http://server.name/path/svc_acct.cgi? {svcnum} | pkgnum{pkgnum}-svcpart{svcpart}
@@ -18,7 +18,11 @@
 # use conf/shells and dbdef username length ivan@sisd.com 98-jul-13
 #
 # $Log: svc_acct.cgi,v $
-# Revision 1.5  1999-01-18 09:41:32  ivan
+# Revision 1.6  1999-01-19 05:13:43  ivan
+# for mod_perl: no more top-level my() variables; use vars instead
+# also the last s/create/new/;
+#
+# Revision 1.5  1999/01/18 09:41:32  ivan
 # all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
 # (good idea anyway)
 #
@@ -30,7 +34,9 @@
 #
 
 use strict;
-use vars qw($conf);
+use vars qw( $conf $cgi @shells $action $svcnum $svc_acct $pkgnum $svcpart
+             $part_svc $query $svc $otaker $username $password $ulen $ulen2 $p1
+             $popnum $uid $gid $finger $dir $shell $quota $slipip );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup getotaker);
@@ -39,15 +45,13 @@ use FS::Record qw(qsearch qsearchs fields);
 use FS::svc_acct;
 use FS::Conf;
 
-my($cgi) = new CGI;
+$cgi = new CGI;
 &cgisuidsetup($cgi);
 
 $conf = new FS::Conf;
-my @shells = $conf->config('shells');
+@shells = $conf->config('shells');
 
-my($action,$svcnum,$svc_acct,$pkgnum,$svcpart,$part_svc);
-
-my($query) = $cgi->keywords;
+($query) = $cgi->keywords;
 if ( $query =~ /^(\d+)$/ ) { #editing
 
   $svcnum=$1;
@@ -67,7 +71,7 @@ if ( $query =~ /^(\d+)$/ ) { #editing
 
 } else { #adding
 
-  $svc_acct=create FS::svc_acct({}); 
+  $svc_acct = new FS::svc_acct({}); 
 
   foreach $_ (split(/-/,$query)) {
     $pkgnum=$1 if /^pkgnum(\d+)$/;
@@ -99,19 +103,19 @@ if ( $query =~ /^(\d+)$/ ) { #editing
 
 }
 
-my($svc)=$part_svc->getfield('svc');
+$svc = $part_svc->getfield('svc');
 
-my($otaker)=getotaker;
+$otaker = getotaker;
 
-my($username,$password)=(
+($username,$password)=(
   $svc_acct->username,
   $svc_acct->_password ? "*HIDDEN*" : '',
 );
 
-my($ulen)=$svc_acct->dbdef_table->column('username')->length;
-my($ulen2)=$ulen+2;
+$ulen = $svc_acct->dbdef_table->column('username')->length;
+$ulen2 = $ulen+2;
 
-my $p1 = popurl(1);
+$p1 = popurl(1);
 print $cgi->header( '-expires' => 'now' ), header("$action $svc account"), <<END;
     <FORM ACTION="${p1}process/svc_acct.cgi" METHOD=POST>
       <INPUT TYPE="hidden" NAME="svcnum" VALUE="$svcnum">
@@ -125,7 +129,7 @@ Username:
 END
 
 #pop
-my($popnum)=$svc_acct->popnum || 0;
+$popnum = $svc_acct->popnum || 0;
 if ( $part_svc->svc_acct__popnum_flag eq "F" ) {
   print qq!<INPUT TYPE="hidden" NAME="popnum" VALUE="$popnum">!;
 } else { 
@@ -143,7 +147,7 @@ if ( $part_svc->svc_acct__popnum_flag eq "F" ) {
   print "</SELECT>";
 }
 
-my($uid,$gid,$finger,$dir)=(
+($uid,$gid,$finger,$dir)=(
   $svc_acct->uid,
   $svc_acct->gid,
   $svc_acct->finger,
@@ -157,7 +161,7 @@ print <<END;
 <INPUT TYPE="hidden" NAME="dir" VALUE="$dir">
 END
 
-my($shell)=$svc_acct->shell;
+$shell = $svc_acct->shell;
 if ( $part_svc->svc_acct__shell_flag eq "F" ) {
   print qq!<INPUT TYPE="hidden" NAME="shell" VALUE="$shell">!;
 } else {
@@ -170,7 +174,7 @@ if ( $part_svc->svc_acct__shell_flag eq "F" ) {
   print "</SELECT>";
 }
 
-my($quota,$slipip)=(
+($quota,$slipip)=(
   $svc_acct->quota,
   $svc_acct->slipip,
 );

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main.cgi,v 1.5 1999-01-18 09:41:37 ivan Exp $
+# $Id: cust_main.cgi,v 1.6 1999-01-19 05:14:12 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/cust_main.cgi
@@ -19,7 +19,11 @@
 # display total, use FS::CGI ivan@sisd.com 98-jul-17
 #
 # $Log: cust_main.cgi,v $
-# Revision 1.5  1999-01-18 09:41:37  ivan
+# Revision 1.6  1999-01-19 05:14:12  ivan
+# for mod_perl: no more top-level my() variables; use vars instead
+# also the last s/create/new/;
+#
+# Revision 1.5  1999/01/18 09:41:37  ivan
 # all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
 # (good idea anyway)
 #
@@ -38,7 +42,7 @@
 #
 
 use strict;
-use vars qw(%ncancelled_pkgs %all_pkgs);
+use vars qw(%ncancelled_pkgs %all_pkgs $cgi @cust_main $sortby );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use IO::Handle;
@@ -48,11 +52,8 @@ use FS::Record qw(qsearch qsearchs);
 use FS::CGI qw(header menubar idiot popurl table);
 use FS::cust_main;
 
-my($cgi)=new CGI;
+$cgi = new CGI;
 cgisuidsetup($cgi);
-
-my(@cust_main);
-my($sortby);
 
 if ( $cgi->keywords ) {
   my($query)=$cgi->keywords;
@@ -72,10 +73,8 @@ if ( $cgi->keywords ) {
   &companysearch if ( $cgi->param('company_on') && $cgi->param('company_text') );
 }
 
-my(%ncancelled_pkgs) =
-  map { $_->custnum => [ $_->ncancelled_pkgs ] } @cust_main;
-my(%all_pkgs) = 
-  map { $_->custnum => [ $_->all_pkgs ] } @cust_main;
+%ncancelled_pkgs = map { $_->custnum => [ $_->ncancelled_pkgs ] } @cust_main;
+%all_pkgs = map { $_->custnum => [ $_->all_pkgs ] } @cust_main;
 
 if ( scalar(@cust_main) == 1 ) {
   print $cgi->redirect(popurl(2). "view/cust_main.cgi?". $cust_main[0]->custnum);

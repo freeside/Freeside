@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: part_svc.cgi,v 1.8 1999-01-18 09:41:19 ivan Exp $
+# $Id: part_svc.cgi,v 1.9 1999-01-19 05:13:29 ivan Exp $
 #
 # ivan@sisd.com 97-nov-14, 97-dec-9
 #
@@ -10,7 +10,11 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: part_svc.cgi,v $
-# Revision 1.8  1999-01-18 09:41:19  ivan
+# Revision 1.9  1999-01-19 05:13:29  ivan
+# for mod_perl: no more top-level my() variables; use vars instead
+# also the last s/create/new/;
+#
+# Revision 1.8  1999/01/18 09:41:19  ivan
 # all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
 # (good idea anyway)
 #
@@ -34,6 +38,7 @@
 #
 
 use strict;
+use vars qw( $cgi $p $part_svc );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
@@ -41,11 +46,11 @@ use FS::Record qw(qsearch fields);
 use FS::part_svc;
 use FS::CGI qw(header menubar popurl table);
 
-my($cgi) = new CGI;
+$cgi = new CGI;
 
 &cgisuidsetup($cgi);
 
-my $p = popurl(2);
+$p = popurl(2);
 
 print $cgi->header( '-expires' => 'now' ), header('Service Part Listing', menubar(
   'Main Menu' => $p,
@@ -61,7 +66,6 @@ print table, <<END;
       </TR>
 END
 
-my($part_svc);
 foreach $part_svc ( sort {
   $a->getfield('svcpart') <=> $b->getfield('svcpart')
 } qsearch('part_svc',{}) ) {

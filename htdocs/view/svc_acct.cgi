@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct.cgi,v 1.6 1999-01-18 09:41:45 ivan Exp $
+# $Id: svc_acct.cgi,v 1.7 1999-01-19 05:14:21 ivan Exp $
 #
 # Usage: svc_acct.cgi svcnum
 #        http://server.name/path/svc_acct.cgi?svcnum
@@ -35,7 +35,11 @@
 # displays arbitrary radius attributes ivan@sisd.com 98-aug-16
 #
 # $Log: svc_acct.cgi,v $
-# Revision 1.6  1999-01-18 09:41:45  ivan
+# Revision 1.7  1999-01-19 05:14:21  ivan
+# for mod_perl: no more top-level my() variables; use vars instead
+# also the last s/create/new/;
+#
+# Revision 1.6  1999/01/18 09:41:45  ivan
 # all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
 # (good idea anyway)
 #
@@ -53,7 +57,8 @@
 #
 
 use strict;
-use vars qw( $conf );
+use vars qw( $conf $cgi $mydomain $query $svcnum $svc_acct $cust_svc $pkgnum
+             $cust_pkg $custnum $part_svc $p $svc_acct_pop );
 use CGI;
 use CGI::Carp qw( fatalsToBrowser );
 use FS::UID qw( cgisuidsetup );
@@ -66,33 +71,32 @@ use FS::cust_pkg;
 use FS::part_svc;
 use FS::svc_acct_pop;
 
-my($cgi) = new CGI;
+$cgi = new CGI;
 &cgisuidsetup($cgi);
 
 $conf = new FS::Conf;
-my $mydomain = $conf->config('domain');
+$mydomain = $conf->config('domain');
 
 #untaint svcnum
-my($query) = $cgi->keywords;
+($query) = $cgi->keywords;
 $query =~ /^(\d+)$/;
-my($svcnum)=$1;
-my($svc_acct)=qsearchs('svc_acct',{'svcnum'=>$svcnum});
+$svcnum = $1;
+$svc_acct = qsearchs('svc_acct',{'svcnum'=>$svcnum});
 die "Unkonwn svcnum" unless $svc_acct;
 
-my($cust_svc)=qsearchs('cust_svc',{'svcnum'=>$svcnum});
-my($pkgnum)=$cust_svc->getfield('pkgnum');
-my($cust_pkg,$custnum);
+$cust_svc = qsearchs('cust_svc',{'svcnum'=>$svcnum});
+$pkgnum = $cust_svc->getfield('pkgnum');
 if ($pkgnum) {
   $cust_pkg=qsearchs('cust_pkg',{'pkgnum'=>$pkgnum});
   $custnum=$cust_pkg->getfield('custnum');
 }
 
-my($part_svc)=qsearchs('part_svc',{'svcpart'=> $cust_svc->svcpart } );
+$part_svc = qsearchs('part_svc',{'svcpart'=> $cust_svc->svcpart } );
 die "Unkonwn svcpart" unless $part_svc;
 
 print $cgi->header( '-expires' => 'now' ), header('Account View', '');
 
-my $p = popurl(2);
+$p = popurl(2);
 if ($pkgnum || $custnum) {
   print <<END;
 <A HREF="${p}view/cust_pkg.cgi?$pkgnum">View this package (#$pkgnum)</A> | 
@@ -131,7 +135,7 @@ if (substr($svc_acct->_password,0,1) eq "*") {
 }
 
 # popnum -> svc_acct_pop record
-my($svc_acct_pop)=qsearchs('svc_acct_pop',{'popnum'=>$svc_acct->popnum});
+$svc_acct_pop = qsearchs('svc_acct_pop',{'popnum'=>$svc_acct->popnum});
 
 #pop
 print "POP: <B>", $svc_acct_pop->city, ", ", $svc_acct_pop->state,

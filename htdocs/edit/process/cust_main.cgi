@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main.cgi,v 1.4 1999-01-18 09:22:32 ivan Exp $
+# $Id: cust_main.cgi,v 1.5 1999-01-19 05:13:50 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/cust_main.cgi
@@ -22,7 +22,11 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # $Log: cust_main.cgi,v $
-# Revision 1.4  1999-01-18 09:22:32  ivan
+# Revision 1.5  1999-01-19 05:13:50  ivan
+# for mod_perl: no more top-level my() variables; use vars instead
+# also the last s/create/new/;
+#
+# Revision 1.4  1999/01/18 09:22:32  ivan
 # changes to track email addresses for email invoicing
 #
 # Revision 1.3  1998/12/17 08:40:19  ivan
@@ -33,7 +37,7 @@
 #
 
 use strict;
-#use CGI;
+use vars qw( $cgi $payby @invoicing_list $new $custnum );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup getotaker);
@@ -41,7 +45,7 @@ use FS::CGI qw(eidiot popurl);
 use FS::Record qw(qsearchs fields);
 use FS::cust_main;
 
-my($cgi)=new CGI;
+$cgi = new CGI;
 &cgisuidsetup($cgi);
 
 #unmunge stuff
@@ -57,7 +61,7 @@ $cgi->param('state', $1);
 $cgi->param('county', $3 || '');
 $cgi->param('country', $4);
 
-my $payby = $cgi->param('payby');
+$payby = $cgi->param('payby');
 $cgi->param('payinfo', $cgi->param( $payby. '_payinfo' ) );
 $cgi->param('paydate',
   $cgi->param( $payby. '_month' ). '-'. $cgi->param( $payby. '_year' ) );
@@ -65,12 +69,12 @@ $cgi->param('payname', $cgi->param( $payby. '_payname' ) );
 
 $cgi->param('otaker', &getotaker );
 
-my @invoicing_list = split( /\s*\,\s*/, $cgi->param('invoicing_list') );
+@invoicing_list = split( /\s*\,\s*/, $cgi->param('invoicing_list') );
 push @invoicing_list, 'POST' if $cgi->param('invoicing_list_POST');
 
 #create new record object
 
-my($new) = new FS::cust_main ( {
+$new = new FS::cust_main ( {
   map {
     $_, scalar($cgi->param($_))
 #  } qw(custnum agentnum last first ss company address1 address2 city county
@@ -98,6 +102,6 @@ if ( $new->custnum eq '' ) {
   $new->invoicing_list( \@invoicing_list );
 }
 
-my $custnum = $new->custnum;
+$custnum = $new->custnum;
 print $cgi->redirect(popurl(3). "view/cust_main.cgi?$custnum#cust_main");
 

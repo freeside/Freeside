@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct.cgi,v 1.3 1999-01-18 22:47:59 ivan Exp $
+# $Id: svc_acct.cgi,v 1.4 1999-01-19 05:13:58 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/svc_acct.cgi
@@ -23,7 +23,11 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # $Log: svc_acct.cgi,v $
-# Revision 1.3  1999-01-18 22:47:59  ivan
+# Revision 1.4  1999-01-19 05:13:58  ivan
+# for mod_perl: no more top-level my() variables; use vars instead
+# also the last s/create/new/;
+#
+# Revision 1.3  1999/01/18 22:47:59  ivan
 # s/create/new/g; and use fields('table_name')
 #
 # Revision 1.2  1998/12/17 08:40:27  ivan
@@ -31,6 +35,7 @@
 #
 
 use strict;
+use vars qw( $cgi $svcnum $old $new );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
@@ -38,13 +43,13 @@ use FS::CGI qw(eidiot popurl);
 use FS::Record qw(qsearchs fields);
 use FS::svc_acct;
 
-my($cgi) = new CGI;
+$cgi = new CGI;
 &cgisuidsetup($cgi);
 
 $cgi->param('svcnum') =~ /^(\d*)$/ or die "Illegal svcnum!";
-my($svcnum)=$1;
+$svcnum = $1;
 
-my($old)=qsearchs('svc_acct',{'svcnum'=>$svcnum}) if $svcnum;
+$old = qsearchs('svc_acct',{'svcnum'=>$svcnum}) if $svcnum;
 
 #unmunge popnum
 $cgi->param('popnum', (split(/:/, $cgi->param('popnum') ))[0] );
@@ -54,7 +59,7 @@ if ( $cgi->param('_password') eq '*HIDDEN*' ) {
   $cgi->param('_password',$old->getfield('_password'));
 }
 
-my($new) = new FS::svc_acct ( {
+$new = new FS::svc_acct ( {
   map {
     $_, scalar($cgi->param($_));
   #} qw(svcnum pkgnum svcpart username _password popnum uid gid finger dir

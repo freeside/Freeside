@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_pkg.cgi,v 1.6 1999-01-18 09:41:44 ivan Exp $
+# $Id: cust_pkg.cgi,v 1.7 1999-01-19 05:14:20 ivan Exp $
 #
 # Usage: cust_pkg.cgi pkgnum
 #        http://server.name/path/cust_pkg.cgi?pkgnum
@@ -26,7 +26,11 @@
 # no FS::Search ivan@sisd.com 98-mar-7
 # 
 # $Log: cust_pkg.cgi,v $
-# Revision 1.6  1999-01-18 09:41:44  ivan
+# Revision 1.7  1999-01-19 05:14:20  ivan
+# for mod_perl: no more top-level my() variables; use vars instead
+# also the last s/create/new/;
+#
+# Revision 1.6  1999/01/18 09:41:44  ivan
 # all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
 # (good idea anyway)
 #
@@ -42,6 +46,9 @@
 #
 
 use strict;
+use vars qw ( $cgi %uiview %uiadd $part_svc $query $pkgnum $cust_pkg $part_pkg
+              $custnum $susp $cancel $expire $pkg $comment $setup $bill
+              $otaker );
 use Date::Format;
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
@@ -54,11 +61,9 @@ use FS::part_pkg;
 use FS::pkg_svc;
 use FS::cust_svc;
 
-my($cgi) = new CGI;
+$cgi = new CGI;
 cgisuidsetup($cgi);
 
-my(%uiview,%uiadd);
-my($part_svc);
 foreach $part_svc ( qsearch('part_svc',{}) ) {
   $uiview{$part_svc->svcpart} = popurl(2). "view/". $part_svc->svcdb . ".cgi";
   $uiadd{$part_svc->svcpart}= popurl(2). "edit/". $part_svc->svcdb . ".cgi";
@@ -66,22 +71,22 @@ foreach $part_svc ( qsearch('part_svc',{}) ) {
 
 print $cgi->header( '-expires' => 'now' ), header('Package View', '');
 
-my($query) = $cgi->keywords;
+($query) = $cgi->keywords;
 $query =~ /^(\d+)$/;
-my($pkgnum)=$1;
+$pkgnum = $1;
 
 #get package record
-my($cust_pkg)=qsearchs('cust_pkg',{'pkgnum'=>$pkgnum});
+$cust_pkg = qsearchs('cust_pkg',{'pkgnum'=>$pkgnum});
 die "No package!" unless $cust_pkg;
-my($part_pkg)=qsearchs('part_pkg',{'pkgpart'=>$cust_pkg->getfield('pkgpart')});
+$part_pkg = qsearchs('part_pkg',{'pkgpart'=>$cust_pkg->getfield('pkgpart')});
 
 #nav bar
-my($custnum)=$cust_pkg->getfield('custnum');
+$custnum = $cust_pkg->getfield('custnum');
 print qq!<CENTER><A HREF="../view/cust_main.cgi?$custnum">View this customer!,
       qq! (#$custnum)</A> | <A HREF="../">Main menu</A></CENTER><BR>!;
 
 #print info
-my($susp,$cancel,$expire)=(
+($susp,$cancel,$expire)=(
   $cust_pkg->getfield('susp'),
   $cust_pkg->getfield('cancel'),
   $cust_pkg->getfield('expire'),
@@ -91,13 +96,13 @@ print qq!<BR><A HREF="#package">Package Information</A>!;
 print qq! | <A HREF="#services">Service Information</A>! unless $cancel;
 print qq!</CENTER><HR>\n!;
 
-my($pkg,$comment)=($part_pkg->getfield('pkg'),$part_pkg->getfield('comment'));
+($pkg,$comment)=($part_pkg->getfield('pkg'),$part_pkg->getfield('comment'));
 print qq!<A NAME="package"><CENTER><FONT SIZE=+1>Package Information!,
       qq!</FONT></A>!;
 print qq!<BR><A HREF="../unimp.html">Edit this information</A></CENTER>!;
 print "<P>Package: <B>$pkg - $comment</B>";
 
-my($setup,$bill)=($cust_pkg->getfield('setup'),$cust_pkg->getfield('bill'));
+($setup,$bill)=($cust_pkg->getfield('setup'),$cust_pkg->getfield('bill'));
 print "<BR>Setup: <B>", $setup ? time2str("%D",$setup) : "(Not setup)" ,"</B>";
 print "<BR>Next bill: <B>", $bill ? time2str("%D",$bill) : "" ,"</B>";
 
@@ -125,7 +130,7 @@ if ($cancel) {
 }
 
 #otaker
-my($otaker)=$cust_pkg->getfield('otaker');
+$otaker = $cust_pkg->getfield('otaker');
 print "<P>Order taken by <B>$otaker</B>";
 
 unless ($cancel) {

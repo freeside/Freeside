@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: agent_type.cgi,v 1.8 1999-01-18 09:41:22 ivan Exp $
+# $Id: agent_type.cgi,v 1.9 1999-01-19 05:13:32 ivan Exp $
 #
 # agent_type.cgi: Add/Edit agent type (output form)
 #
@@ -13,7 +13,11 @@
 # use FS::CGI, added inline documentation ivan@sisd.com 98-jul-12
 #
 # $Log: agent_type.cgi,v $
-# Revision 1.8  1999-01-18 09:41:22  ivan
+# Revision 1.9  1999-01-19 05:13:32  ivan
+# for mod_perl: no more top-level my() variables; use vars instead
+# also the last s/create/new/;
+#
+# Revision 1.8  1999/01/18 09:41:22  ivan
 # all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
 # (good idea anyway)
 #
@@ -38,6 +42,7 @@
 #
 
 use strict;
+use vars qw( $cgi $agent_type $action $hashref $p $part_pkg );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
@@ -48,23 +53,22 @@ use FS::agent_type;
 use FS::part_pkg;
 use FS::type_pkgs;
 
-my($cgi) = new CGI;
+$cgi = new CGI;
 
 &cgisuidsetup($cgi);
 
-my($agent_type,$action);
 if ( $cgi->keywords ) { #editing
   my( $query ) = $cgi->keywords;
   $query =~ /^(\d+)$/;
   $agent_type=qsearchs('agent_type',{'typenum'=>$1});
   $action='Edit';
 } else { #adding
-  $agent_type=create FS::agent_type {};
+  $agent_type = new FS::agent_type {};
   $action='Add';
 }
-my($hashref)=$agent_type->hashref;
+$hashref = $agent_type->hashref;
 
-my($p)=popurl(2);
+$p = popurl(2);
 print $cgi->header( '-expires' => 'now' ), header("$action Agent Type", menubar(
   'Main Menu' => "$p",
   'View all agent types' => "${p}browse/agent_type.cgi",
@@ -78,7 +82,6 @@ print <<END;
 <BR><BR>Select which packages agents of this type may sell to customers<BR>
 END
 
-my($part_pkg);
 foreach $part_pkg ( qsearch('part_pkg',{}) ) {
   print qq!<BR><INPUT TYPE="checkbox" NAME="pkgpart!,
         $part_pkg->getfield('pkgpart'), qq!" !,

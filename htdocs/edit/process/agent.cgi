@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: agent.cgi,v 1.5 1999-01-18 22:47:49 ivan Exp $
+# $Id: agent.cgi,v 1.6 1999-01-19 05:13:47 ivan Exp $
 #
 # ivan@sisd.com 97-dec-12
 #
@@ -10,7 +10,11 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: agent.cgi,v $
-# Revision 1.5  1999-01-18 22:47:49  ivan
+# Revision 1.6  1999-01-19 05:13:47  ivan
+# for mod_perl: no more top-level my() variables; use vars instead
+# also the last s/create/new/;
+#
+# Revision 1.5  1999/01/18 22:47:49  ivan
 # s/create/new/g; and use fields('table_name')
 #
 # Revision 1.4  1998/12/30 23:03:26  ivan
@@ -24,6 +28,7 @@
 #
 
 use strict;
+use vars qw ( $cgi $agentnum $old $new $error );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
@@ -31,25 +36,24 @@ use FS::Record qw(qsearch qsearchs fields);
 use FS::agent;
 use FS::CGI qw(idiot popurl);
 
-my($cgi)=new CGI;
+$cgi = new CGI;
 
 &cgisuidsetup($cgi);
 
-my($agentnum)=$cgi->param('agentnum');
+$agentnum = $cgi->param('agentnum');
 
-my($old)=qsearchs('agent',{'agentnum'=>$agentnum}) if $agentnum;
+$old = qsearchs('agent',{'agentnum'=>$agentnum}) if $agentnum;
 
 #unmunge typenum
 $cgi->param('typenum') =~ /^(\d+)(:.*)?$/;
 $cgi->param('typenum',$1);
 
-my($new)=new FS::agent ( {
+$new = new FS::agent ( {
   map {
     $_, scalar($cgi->param($_));
   } fields('agent')
 } );
 
-my($error);
 if ( $agentnum ) {
   $error=$new->replace($old);
 } else {

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main_county-expand.cgi,v 1.4 1999-01-18 09:41:25 ivan Exp $
+# $Id: cust_main_county-expand.cgi,v 1.5 1999-01-19 05:13:35 ivan Exp $
 #
 # ivan@sisd.com 97-dec-16
 #
@@ -10,7 +10,11 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: cust_main_county-expand.cgi,v $
-# Revision 1.4  1999-01-18 09:41:25  ivan
+# Revision 1.5  1999-01-19 05:13:35  ivan
+# for mod_perl: no more top-level my() variables; use vars instead
+# also the last s/create/new/;
+#
+# Revision 1.4  1999/01/18 09:41:25  ivan
 # all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
 # (good idea anyway)
 #
@@ -22,6 +26,7 @@
 #
 
 use strict;
+use vars qw( $cgi $query $taxnum $cust_main_county $p1 );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
@@ -29,19 +34,19 @@ use FS::Record qw(qsearch qsearchs);
 use FS::CGI qw(header menubar popurl);
 use FS::cust_main_county;
 
-my($cgi) = new CGI;
+$cgi = new CGI;
 
 &cgisuidsetup($cgi);
 
-my($query) = $cgi->keywords;
+($query) = $cgi->keywords;
 $query =~ /^(\d+)$/
   or die "Illegal taxnum!";
-my($taxnum)=$1;
+$taxnum = $1;
 
-my($cust_main_county)=qsearchs('cust_main_county',{'taxnum'=>$taxnum});
+$cust_main_county = qsearchs('cust_main_county',{'taxnum'=>$taxnum});
 die "Can't expand entry!" if $cust_main_county->getfield('county');
 
-my $p1 = popurl(1);
+$p1 = popurl(1);
 print $cgi->header( '-expires' => 'now' ), header("Tax Rate (expand)", menubar(
   'Main Menu' => popurl(2),
 )), <<END;

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: link.cgi,v 1.4 1999-01-18 09:41:36 ivan Exp $
+# $Id: link.cgi,v 1.5 1999-01-19 05:14:06 ivan Exp $
 #
 # Note: Should be run setuid freeside as user nobody
 #
@@ -11,7 +11,11 @@
 # can also link on some other fields now (about time) ivan@sisd.com 98-jun-24
 #
 # $Log: link.cgi,v $
-# Revision 1.4  1999-01-18 09:41:36  ivan
+# Revision 1.5  1999-01-19 05:14:06  ivan
+# for mod_perl: no more top-level my() variables; use vars instead
+# also the last s/create/new/;
+#
+# Revision 1.4  1999/01/18 09:41:36  ivan
 # all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
 # (good idea anyway)
 #
@@ -23,13 +27,15 @@
 #
 
 use strict;
+use vars qw ( %link_field $cgi $pkgnum $svcpart $query $part_svc $svc $svcdb 
+              $link_field );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
 use FS::CGI qw(popurl);
 use FS::Record qw(qsearchs);
 
-my(%link_field)=(
+%link_field = (
   'svc_acct'    => 'username',
   'svc_domain'  => 'domain',
   'svc_acct_sm' => '',
@@ -37,20 +43,19 @@ my(%link_field)=(
   'svc_wo'      => '',
 );
 
-my($cgi) = new CGI;
+$cgi = new CGI;
 cgisuidsetup($cgi);
 
-my($pkgnum,$svcpart);
-my($query) = $cgi->keywords;
+($query) = $cgi->keywords;
 foreach $_ (split(/-/,$query)) { #get & untaint pkgnum & svcpart
   $pkgnum=$1 if /^pkgnum(\d+)$/;
   $svcpart=$1 if /^svcpart(\d+)$/;
 }
 
-my($part_svc) = qsearchs('part_svc',{'svcpart'=>$svcpart});
-my($svc) = $part_svc->getfield('svc');
-my($svcdb) = $part_svc->getfield('svcdb');
-my($link_field) = $link_field{$svcdb};
+$part_svc = qsearchs('part_svc',{'svcpart'=>$svcpart});
+$svc = $part_svc->getfield('svc');
+$svcdb = $part_svc->getfield('svcdb');
+$link_field = $link_field{$svcdb};
 
 print $cgi->header( '-expires' => 'now' ), header("Link to existing $svc account"),
       qq!<FORM ACTION="!, popurl(1), qq!process/link.cgi" METHOD=POST>!;

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main_county-expand.cgi,v 1.4 1999-01-18 22:47:52 ivan Exp $
+# $Id: cust_main_county-expand.cgi,v 1.5 1999-01-19 05:13:51 ivan Exp $
 #
 # ivan@sisd.com 97-dec-16
 #
@@ -15,7 +15,11 @@
 # ivan@sisd.com 98-sep-2
 #
 # $Log: cust_main_county-expand.cgi,v $
-# Revision 1.4  1999-01-18 22:47:52  ivan
+# Revision 1.5  1999-01-19 05:13:51  ivan
+# for mod_perl: no more top-level my() variables; use vars instead
+# also the last s/create/new/;
+#
+# Revision 1.4  1999/01/18 22:47:52  ivan
 # s/create/new/g; and use fields('table_name')
 #
 # Revision 1.3  1998/12/17 08:40:20  ivan
@@ -26,6 +30,7 @@
 #
 
 use strict;
+use vars qw ( $cgi $taxnum $cust_main_county @expansion $expansion );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup datasrc);
@@ -34,16 +39,15 @@ use FS::CGI qw(eidiot popurl);
 use FS::cust_main_county;
 use FS::cust_main;
 
-my($cgi)=new CGI;
+$cgi = new CGI;
 
 &cgisuidsetup($cgi);
 
 $cgi->param('taxnum') =~ /^(\d+)$/ or die "Illegal taxnum!";
-my($taxnum)=$1;
-my($cust_main_county)=qsearchs('cust_main_county',{'taxnum'=>$taxnum})
+$taxnum = $1;
+$cust_main_county = qsearchs('cust_main_county',{'taxnum'=>$taxnum})
   or die ("Unknown taxnum!");
 
-my(@expansion);
 if ( $cgi->param('delim') eq 'n' ) {
   @expansion=split(/\n/,$cgi->param('expansion'));
 } elsif ( $cgi->param('delim') eq 's' ) {
@@ -57,7 +61,6 @@ if ( $cgi->param('delim') eq 'n' ) {
   $1;
 } @expansion;
 
-my($expansion);
 foreach ( @expansion) {
   my(%hash)=$cust_main_county->hash;
   my($new)=new FS::cust_main_county \%hash;
