@@ -1598,7 +1598,7 @@ sub all_last {
   my $dir = $FS::UID::conf_dir. "cache.". $FS::UID::datasrc;
   open(LASTCACHE,"<$dir/cust_main.last")
     or die "can't open $dir/cust_main.last: $!";
-  my @array = split(/\n/, <LASTCACHE> );
+  my @array = map chomp, <LASTCACHE>;
   close LASTCACHE;
   \@array;
 }
@@ -1611,7 +1611,7 @@ sub all_company {
   my $dir = $FS::UID::conf_dir. "cache.". $FS::UID::datasrc;
   open(COMPANYCACHE,"<$dir/cust_main.company")
     or die "can't open $dir/cust_main.last: $!";
-  my @array = split(/\n/, <COMPANYCACHE> );
+  my @array = map chomp, <COMPANYCACHE>;
   close COMPANYCACHE;
   \@array;
 }
@@ -1663,7 +1663,7 @@ sub append_fuzzyfiles {
 
 =head1 VERSION
 
-$Id: cust_main.pm,v 1.32 2001-09-11 12:10:56 ivan Exp $
+$Id: cust_main.pm,v 1.33 2001-09-20 00:10:51 ivan Exp $
 
 =head1 BUGS
 
