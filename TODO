@@ -1,10 +1,69 @@
-$Id: TODO,v 1.38 1999-08-27 06:25:56 ivan Exp $
+$Id: TODO,v 1.39 1999-09-22 22:06:34 ivan Exp $
 
 If you are interested in helping with any of these, please join the mailing
 list (send a blank message to ivan-freeside-subscribe@sisd.com) to avoid 
 duplication of effort.
 
 ---
+
+Your suggested script with back up /usr/local/etc/freeside, but will miss
+any database not named `freeside'.  Both of our scripts are specific to
+MySQL.  If you're interested in contributing to Freeside, maybe you could
+work on a script which: reads the mapsecrets configuration file and then
+each secrets file to find out what specific database engine(s) (MySQL,
+PostgreSQL, etc.) and database(s) need to be backed up, then does so,
+serializing backups of the same engine, i.e. stop mysql, do all the mysql
+backups, start mysql, stop postgresql, do all the postgresql backups,
+start postgresql, etc.
+> #!/bin/sh                                                                     
+> apachectl stop                                                                
+> mysqldump -t freeside > fs-backup.sql                                         
+> apachectl start                                                               
+> tar -Pzcvf fs-backup-`date +%y%m%d%H%M%S`.tgz fs-backup.sql /usr/local/etc/freeside/                                                       
+> rm fs-backup.sql                                                              
+
+I chose to use counters in the filesystem because there is no standard way
+to get the value of an auto-incrementing keyfield which is common across  
+all databases (as seen through DBI/DBD).
+.
+It certainly wouldn't be a bad idea to use the database-specific methods,
+when available.
+
+htdocs/edit/svc_acct.cgi:
+(Does the `*HIDDEN*' show up when you are adding a new account, and 
+specify the password, then receive an error and are returned to the form?)
+
+more DOC:
+Thought some of you might be interested in this:
+  
+<ftp://ftp.minivend.com/pub> has CyberCash compatibility modules for 
+Paymentnet <http://www.paymentnet.com> and Authorizenet 
+<http://www.authorizenet.com> which should allow you process transactions
+using those services as well as CyberCash.
+
+The files are named CCLib.pm.paymentnet and CCLib.pm_authorizenet,
+respectively, and are installed by renaming to CCLib.pm and moving to your
+site_perl directory.  Otherwise, follow the directions for Cybercash v2 in
+htdocs/docs/config.html
+
+DOC:
+fs_passwd/ is a client-server replacement for the `passwd', `chfn' and    
+`chsh' commands that updates the Freeside database.  (so for that to be   
+useful, you'd have to be exporting that data periodically)
+  
+fs_radlog/ is a client-server RADIUS log parser that stuffs the data into
+SQL.  It isn't finished, and probably won't be unless someone who I can't
+convince to use one of the RADIUS daemons that logs to SQL directly pays  
+me money or something.
+  
+fs_signup/ is a client-server signup server.  i'm just finishing it up    
+now; probably isn't on your machine yet.
+
+
+http://www.sisd.com/freeside/list-archive/msg00812.html
+
+package definitions should be implicit allow wrt agent types, not implicit deny
+(with the old behavior possible via a config file)
 
 > So is there anyway it could be setup to allow you to select a "primary
 > service" from each package?  This service would be the one you were prompted
