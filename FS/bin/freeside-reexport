@@ -1,6 +1,8 @@
-#!/usr/bin/perl -Tw
+#!/usr/bin/perl -w
 
 use strict;
+use vars qw($opt_s $opt_u $opt_p);
+use Getopt::Std;
 use FS::UID qw(adminsuidsetup);
 use FS::Record qw(qsearch qsearchs);
 use FS::part_export;
@@ -20,20 +22,27 @@ if ( $export_x =~ /^(\d+)$/ ) {
     or die "no exports of type $export_x found\n";
 }
 
-my $svc_something = shift or die &usage;
-my $svc_x;
-if ( $svc_something =~ /^(\d+)$/ ) {
-  my $cust_svc = qsearchs('cust_svc', { svcnum=>$1 } )
-    or die "svcnum $svc_something not found\n";
-  $svc_x = $cust_svc->svc_x;
-} else {
-  $svc_x = qsearchs('svc_acct', { username=>$svc_something } )
-    or die "username $svc_something not found\n";
+getopts('s:u:p:');
+
+my @svc_x = ();
+if ( $opt_s ) {
+  my $cust_svc = qsearchs('cust_svc', { svcnum=>$opt_s } )
+    or die "svcnum $opt_s not found\n";
+  push @svc_x, $cust_svc->svc_x;
+} elsif ( $opt_u ) {
+  my $svc_x = qsearchs('svc_acct', { username=>$opt_u } )
+    or die "username $opt_u not found\n";
+  push @svc_x, $svc_x;
+} elsif ( $opt_p ) {
+  push @svc_x, map { $_->svc_x } qsearch('cust_svc', { svcpart=>$opt_p } );
+  die "no services with svcpart $opt_p found\n" unless @svc_x;
 }
 
 foreach my $part_export ( @part_export ) {
-  my $error = $part_export->export_insert($svc_x);
-  die $error if $error;
+  foreach my $svc_x ( @svc_x ) {
+    my $error = $part_export->export_insert($svc_x);
+    die $error if $error;
+  }
 }
 
 
@@ -47,7 +56,7 @@ freeside-reexport - Command line tool to re-trigger export jobs for existing ser
 
 =head1 SYNOPSIS
 
-  freeside-reexport user exportnum|exporttype svcnum|username
+  freeside-reexport user exportnum|exporttype [ -s svcnum | -u username | -p svcpart ]
 
 =head1 DESCRIPTION
 
