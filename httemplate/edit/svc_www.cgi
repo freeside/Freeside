@@ -63,7 +63,8 @@ if ($pkgnum) {
     map { $_->svcpart } qsearch( 'part_svc', { 'svcdb' => 'svc_acct' } )
   ) {
     next if $conf->exists('svc_www-usersvc_svcpart')
-            && grep { $svcpart == $_ } $conf->config('svc_www-usersvc_svcpart');
+            && ! grep { $svcpart == $_ }
+                      $conf->config('svc_www-usersvc_svcpart');
     push @u_acct_svcparts, $svcpart;
   }
 
@@ -91,31 +92,61 @@ if ($pkgnum) {
     push @d_acct_svcparts,$d_part_svc->getfield('svcpart');
   }
 
-  foreach $i_cust_pkg ( qsearch('cust_pkg',{'custnum'=>$custnum}) ) {
-    my($cust_pkgnum)=$i_cust_pkg->getfield('pkgnum');
-    my($acct_svcpart);
-    foreach $acct_svcpart (@d_acct_svcparts) {
-      my($i_cust_svc);
-      foreach $i_cust_svc ( qsearch('cust_svc',{'pkgnum'=>$cust_pkgnum,'svcpart'=>$acct_svcpart}) ) {
-        my($svc_domain)=qsearchs('svc_domain',{'svcnum'=>$i_cust_svc->getfield('svcnum')});
+  foreach $i_cust_pkg ( qsearch( 'cust_pkg', { 'custnum' => $custnum } ) ) {
+    my $cust_pkgnum = $i_cust_pkg->pkgnum;
+
+    foreach my $acct_svcpart (@d_acct_svcparts) {
+
+      foreach my $i_cust_svc (
+        qsearch( 'cust_svc', { 'pkgnum'  => $cust_pkgnum,
+                               'svcpart' => $acct_svcpart } )
+      ) {
+        my $svc_domain =
+          qsearchs( 'svc_domain', { 'svcnum' => $i_cust_svc->svcnum } );
+
+        my $extra_sql = "AND ( rectype = 'A' OR rectype = 'CNAME' )";
         if ( $conf->exists('svc_www-enable_subdomains') ) {
-          foreach my $domain_rec ( qsearch('domain_record',{
-              'svcnum'  => $svc_domain->svcnum,
-              'rectype' => 'A' } ),
-          qsearch('domain_record',{
-              'svcnum'  => $svc_domain->svcnum,
-              'rectype' => 'CNAME'
-              } ) ) {
-            $arec{$domain_rec->recnum} = $domain_rec->zone;
-          }
-          $arec{'www.'. $svc_domain->domain} = 'www.'. $svc_domain->domain
-            unless qsearchs('domain_record', { svcnum  => $svc_domain->svcnum,
-                                               reczone => 'www',            } );
+          my $domain = $
+          $extra_sql .= " AND ( reczone = '@' OR reczone = '".
+                        $svc_domain->domain. ".' )";
         }
+
+        foreach my $domain_rec (
+          qsearch( 'domain_record',
+                   {
+                     'svcnum' => $svc_domain->svcnum,
+                   },
+                   '',
+                   $extra_sql,
+          )
+        ) {
+          $arec{$domain_rec->recnum} = $domain_rec->zone;
+        }
+
+        if ( $conf->exists('svc_www-enable_subdomains') ) {
+          $arec{'www.'. $svc_domain->domain} = 'www.'. $svc_domain->domain
+            unless    qsearchs( 'domain_record', {
+                                  svcnum  => $svc_domain->svcnum,
+                                  reczone => 'www',
+                      } )
+                   || qsearchs( 'domain_record', {
+                                  svcnum  => $svc_domain->svcnum,
+                                  reczone => 'www.'.$svc-domain->domain.'.',
+                    } );
+        }
+
         $arec{'@.'. $svc_domain->domain} = $svc_domain->domain
-          unless qsearchs('domain_record', { svcnum  => $svc_domain->svcnum,
-                                             reczone => '@',                } );
+          unless   qsearchs('domain_record', {
+                              svcnum  => $svc_domain->svcnum,
+                              reczone => '@',
+                   } )
+                || qsearchs('domain_record', {
+                              svcnum  => $svc_domain->svcnum,
+                              reczone => $svc_domain->domain.'.',
+                   } );
+
       }
+
     }
   }
 
