@@ -366,7 +366,6 @@ Called-Station-ID.
 #SQL_SELECT defaults to * if unspecified.  It can be useful to set it to 
 #SUM(acctsessiontime) or SUM(AcctInputOctets), etc.
 
-Returns an array of hash references
 Returns an arrayref of hashrefs with the following fields:
 
 =over 4
