@@ -430,8 +430,8 @@ foreach my $pkg (sort pkgsort_pkgnum_cancel @$packages) {
 
   if ( $pkg->{cancel} ) { #status: cancelled
 
-    print '<TR><TD><FONT COLOR="#ff0000">Cancelled&nbsp;</FONT></TD><TD>'.
-          pkg_datestr($pkg,'cancel'). '</TD></TR>';
+    print '<TR><TD><FONT COLOR="#ff0000"><B>Cancelled</B>&nbsp;</FONT></TD>'.
+          '<TD>'. pkg_datestr($pkg,'cancel'). '</TD></TR>';
     unless ( $pkg->{setup} ) {
       print '<TR><TD COLSPAN=2>Never billed</TD></TR>';
     } else {
@@ -448,8 +448,8 @@ foreach my $pkg (sort pkgsort_pkgnum_cancel @$packages) {
   } else {
 
     if ( $pkg->{susp} ) { #status: suspended
-      print '<TR><TD><FONT COLOR="#FF9900">Suspended&nbsp;</FONT></TD><TD>'.
-            pkg_datestr($pkg,'susp'). '</TD></TR>';
+      print '<TR><TD><FONT COLOR="#FF9900"><B>Suspended</B>&nbsp;</FONT></TD>'.
+            '<TD>'. pkg_datestr($pkg,'susp'). '</TD></TR>';
       unless ( $pkg->{setup} ) {
         print '<TR><TD COLSPAN=2>Never billed</TD></TR>';
       } else {
@@ -486,8 +486,8 @@ foreach my $pkg (sort pkgsort_pkgnum_cancel @$packages) {
                 '<TR><TD>Billed&nbsp;</TD><TD>'.
                 pkg_datestr($pkg,'setup'). '</TD></TR>';
         } else {
-          print '<TR><TD COLSPAN=2><FONT COLOR="#00CC00">Active</FONT>,&nbsp;'.
-                'billed&nbsp;'. freq($pkg->{freq}). '</TD></TR>'.
+          print '<TR><TD COLSPAN=2><FONT COLOR="#00CC00"><B>Active</B></FONT>'.
+                ',&nbsp;billed&nbsp;'. freq($pkg->{freq}). '</TD></TR>'.
                 '<TR><TD>Setup&nbsp;</TD><TD>'.
                 pkg_datestr($pkg, 'setup'). '</TD></TR>';
         }
@@ -835,14 +835,14 @@ return \@packages;
 sub svc_link {
 
  my ($svcpart, $svc) = (shift,shift) or return '';
- return qq!<A HREF="$p1/view/$svcpart->{svcdb}.cgi?$svc->{svcnum}">$svcpart->{svc}</A>!;
+ return qq!<A HREF="${p}view/$svcpart->{svcdb}.cgi?$svc->{svcnum}">$svcpart->{svc}</A>!;
 
 }
 
 sub svc_label_link {
 
  my ($svcpart, $svc) = (shift,shift) or return '';
- return qq!<A HREF="$p1/view/$svcpart->{svcdb}.cgi?$svc->{svcnum}">$svc->{label}</A>!;
+ return qq!<A HREF="${p}view/$svcpart->{svcdb}.cgi?$svc->{svcnum}">$svc->{label}</A>!;
 
 }
 
