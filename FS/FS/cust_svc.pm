@@ -128,7 +128,7 @@ sub check {
     });
     return "Already ". scalar(@cust_svc). " ". $part_svc->svc.
            " services for pkgnum ". $self->pkgnum
-      if $pkg_svc->quantity >= scalar(@cust_svc);
+      if scalar(@cust_svc) >= $pkg_svc->quantity;
   }
 
   ''; #no error
@@ -245,7 +245,7 @@ sub seconds_since {
 
 =head1 VERSION
 
-$Id: cust_svc.pm,v 1.11 2002-02-10 21:37:24 ivan Exp $
+$Id: cust_svc.pm,v 1.12 2002-02-10 22:06:28 ivan Exp $
 
 =head1 BUGS
 
