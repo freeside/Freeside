@@ -36,7 +36,7 @@ print <<END;
 This will <b>completely remove</b> all traces of this customer record.  This
 is <B>not</B> what you want if this is a real customer who has simply
 canceled service with you.  For that, cancel all of the customer's packages.
-(you can optionally hide cancelled customers with the <a href="../docs/config.html#hidecancelledcustomers">hidecancelledcustomers</a> configuration file)
+(you can optionally hide cancelled customers with the <a href="../config/config-view.cgi#hidecancelledcustomers">hidecancelledcustomers</a> configuration option)
 <br>
 <br>Are you <b>absolutely sure</b> you want to delete this customer?
 <br><input type="submit" value="Yes">
