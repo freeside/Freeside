@@ -122,6 +122,7 @@ print &ntable("#cccccc",2), <<END;
 </TR>
 END
 
+my $sec_phrase = $svc_acct->sec_phrase;
 if ( $conf->exists('security_phrase') ) {
   print <<END;
   <TR><TD ALIGN="right">Security phrase</TD>
@@ -129,6 +130,8 @@ if ( $conf->exists('security_phrase') ) {
     (for forgotten passwords)</TD>
   </TD>
 END
+} else {
+  print qq!<INPUT TYPE="hidden" NAME="sec_phrase" VALUE="$sec_phrase">!;
 }
 
 #domain

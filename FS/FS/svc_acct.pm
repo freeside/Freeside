@@ -170,6 +170,8 @@ FS::svc_Common.  The following fields are currently supported:
 
 =item _password - generated if blank
 
+=item sec_phrase - security phrase
+
 =item popnum - Point of presence (see L<FS::svc_acct_pop>)
 
 =item uid
