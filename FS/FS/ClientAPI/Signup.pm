@@ -169,7 +169,7 @@ sub new_customer {
       #should check list for errors...
       #$cust_main->suspend;
       local $FS::svc_Common::noexport_hack = 1;
-      $cust_main->cancel;
+      $cust_main->cancel('quiet'=>1);
 
       $error = '_decline';
     }
