@@ -18,9 +18,10 @@ unless ( $error ) {
 
   $error = $cust_main->collect(
   #                             'invoice-time'=>$time,
-  #                             'batch_card'=> 'yes',
-                               'batch_card'=> 'no',
-                               'report_badcard'=> 'yes',
+                               #'batch_card'=> 'yes',
+                               #'batch_card'=> 'no',
+                               #'report_badcard'=> 'yes',
+                               'retry_card' => 'yes',
                               );
 }
 #&eidiot($error) if $error;

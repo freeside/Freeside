@@ -485,6 +485,7 @@ sub replace {
   if ( $self->payby eq 'CARD' &&
        grep { $self->get($_) ne $old->get($_) } qw(payinfo paydate payname) ) {
     # card info has changed, want to retry realtime_card invoice events
+    #false laziness w/collect
     foreach my $cust_bill_event (
       grep {
              #$_->part_bill_event->plan eq 'realtime-card'
@@ -500,6 +501,7 @@ sub replace {
         return "error scheduling invoice events for retry: $error";
       }
     }
+    #eslaf
 
   }
 
@@ -1192,6 +1194,8 @@ invoice_time - Use this time when deciding when to print invoices and
 late notices on those invoices.  The default is now.  It is specified as a UNIX timestamp; see L<perlfunc/"time">).  Also see L<Time::Local> and L<Date::Parse>
 for conversion functions.
 
+retry_card - Retry cards even when not scheduled by invoice events.
+
 batch_card - This option is deprecated.  See the invoice events web interface
 to control whether cards are batched or run against a realtime gateway.
 
@@ -1224,6 +1228,26 @@ sub collect {
     return '';
   }
 
+  if ( exists($options{'retry_card'}) && $options{'retry_card'} ) {
+    #false laziness w/replace
+    foreach my $cust_bill_event (
+      grep {
+             #$_->part_bill_event->plan eq 'realtime-card'
+             $_->part_bill_event->eventcode eq '$cust_bill->realtime_card();'
+               && $_->status eq 'done'
+               && $_->statustext
+           }
+        $self->open_cust_bill->cust_bill_event
+    ) {
+      my $error = $cust_bill_event->retry;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "error scheduling invoice events for retry: $error";
+      }
+    }
+    #eslaf
+  }
+
   foreach my $cust_bill ( $self->cust_bill ) {
 
     #this has to be before next's
@@ -1241,6 +1265,7 @@ sub collect {
     warn "invnum ". $cust_bill->invnum. " (owed ". $cust_bill->owed. ", amount $amount, balance $balance)" if $Debug;
 
     next unless $amount > 0;
+
 
     foreach my $part_bill_event (
       sort {    $a->seconds   <=> $b->seconds
