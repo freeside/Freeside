@@ -74,7 +74,13 @@ while (1) {
 
     warn "receiving packet from client\n" if $Debug;
 
-    my $packet = fd_retrieve($reader);
+    my $packet = eval { fd_retrieve($reader); };
+    if ( $@ ) {
+      warn "Storable error receiving packet from client".
+           " (assuming lost connection): $@\n"
+        if $Debug;
+      last;
+    }
     warn "packet received\n".
          join('', map { " $_=>$packet->{$_}\n" } keys %$packet )
       if $Debug > 1;
@@ -119,6 +125,9 @@ while (1) {
     }
 
   }
+
+  warn "connection lost, reconnecting\n" if $Debug;
+  sleep 3;
 
 }
 
