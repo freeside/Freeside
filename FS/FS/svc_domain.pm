@@ -160,7 +160,7 @@ sub insert {
 
   my $whois = $self->whois;
   return "Domain in use (see whois)"
-    if ( $self->action eq "N" && $whois );
+    if ( $self->action eq "N" && ! $whois_hack && $whois );
   return "Domain not found (see whois)"
     if ( $self->action eq "M" && ! $whois );
 
@@ -459,7 +459,7 @@ sub submit_internic {
 
 =head1 VERSION
 
-$Id: svc_domain.pm,v 1.6 2000-03-01 08:13:59 ivan Exp $
+$Id: svc_domain.pm,v 1.7 2000-06-29 11:12:20 ivan Exp $
 
 =head1 BUGS
 
