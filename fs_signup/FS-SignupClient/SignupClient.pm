@@ -7,7 +7,7 @@ use Exporter;
 #use FileHandle;
 #use IO::Handle;
 #use Storable qw(nstore_fd fd_retrieve);
-use FS::SelfService qw( new_customer ); #qw( signup_info );
+use FS::SelfService; # qw( new_customer signup_info );
 
 $VERSION = '0.04';
 
@@ -137,6 +137,14 @@ a paramater with the following keys:
   popnum
 
 Returns a scalar error message, or the empty string for success.
+
+=cut
+
+#compatibility bit
+sub new_customer { 
+  my $hash = FS::SelfService::new_customer(@_);
+  $hash->{'error'};
+}
 
 =back
 
