@@ -34,17 +34,27 @@ sub _export_command {
   my ( $self, $action, $svc_acct) = (shift, shift, shift);
   my $command = $self->option($action);
   my $stdin = $self->option($action."_stdin");
+
   no strict 'vars';
   {
     no strict 'refs';
     ${$_} = $svc_acct->getfield($_) foreach $svc_acct->fields;
   }
+
+  my $cust_pkg = $svc_acct->cust_svc->cust_pkg;
+  if ( $cust_pkg ) {
+    $email = ( grep { $_ ne 'POST' } $cust_pkg->cust_main->invoicing_list )[0];
+  } else {
+    $email = '';
+  }
+
   $finger = shell_quote $finger;
   $quoted_password = shell_quote $_password;
   $domain = $svc_acct->domain;
   $crypt_password = ''; #surpress "used only once" warnings
   $crypt_password = crypt( $svc_acct->_password,
                              $saltset[int(rand(64))].$saltset[int(rand(64))] );
+
   $self->shellcommands_queue( $svc_acct->svcnum,
     user         => $self->option('user')||'root',
     host         => $self->machine,
