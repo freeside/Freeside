@@ -57,16 +57,27 @@ sub _export_delete {
   );
 }
 
-#sub _export_suspend {
-#}
+sub _export_suspend {
+  my( $self, $svc_acct ) = (shift, shift);
+  $self->communigate_pro_queue( $svc_acct->svcnum, 'UpdateAccountSettings',
+    'accountName' => $svc_acct->email,
+    'AccessModes' => 'Mail',
+  );
+}
 
-#sub _export_unsuspend {
-#}
+sub _export_unsuspend {
+  my( $self, $svc_acct ) = (shift, shift);
+  $self->communigate_pro_queue( $svc_acct->svcnum, 'UpdateAccountSettings',
+    'accountName' => $svc_acct->email,
+    'AccessModes' => $self->option('AccessModes'),
+  );
+}
 
 sub communigate_pro_queue {
   my( $self, $svcnum, $method ) = (shift, shift, shift);
-  my $sub = $method eq 'CreateAccount'
-              ? 'CreateAccount'
+  my @kludge_methods = qw(CreateAccount UpdateAccountSettings);
+  my $sub = grep { $method eq $_ } @kludge_methods
+              ? $method
               : 'communigate_pro_command';
   my $queue = new FS::queue {
     'svcnum' => $svcnum,
@@ -84,22 +95,28 @@ sub communigate_pro_queue {
 }
 
 sub CreateAccount {
-  my( $machine, $port, $login, $password, $method, @args ) = @_;
-
-  my %args = @args;
+  my( $machine, $port, $login, $password, $method, %args ) = @_;
   my $accountName  = delete $args{'accountName'};
   my $accountType  = delete $args{'accountType'};
   my $externalFlag = delete $args{'externalFlag'};
   $args{'AccessModes'} = [ split(' ', $args{'AccessModes'}) ];
-  @args = ( accountName => $accountName,
-            accountType  => $accountType,
-            settings     => \%args,
-          );
-            #externalFlag => $externalFlag,
+  my @args = ( accountName => $accountName,
+               accountType  => $accountType,
+               settings     => \%args,
+             );
+               #externalFlag => $externalFlag,
   push @args, externalFlag => $externalFlag if $externalFlag;
 
   communigate_pro_command( $machine, $port, $login, $password, $method, @args );
 
+}
+
+sub UpdateAccountSettings {
+  my( $machine, $port, $login, $password, $method, %args ) = @_;
+  my $accountName  = delete $args{'accountName'};
+  $args{'AccessModes'} = [ split(' ', $args{'AccessModes'}) ];
+  @args = ( $accountName, \%args );
+  communigate_pro_command( $machine, $port, $login, $password, $method, @args );
 }
 
 sub communigate_pro_command { #subroutine, not method
