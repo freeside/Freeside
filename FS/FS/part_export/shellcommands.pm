@@ -81,6 +81,17 @@ sub _export_replace {
   $new_crypt_password = ''; #surpress "used only once" warnings
   $new_crypt_password = crypt( $new->_password,
                                $saltset[int(rand(64))].$saltset[int(rand(64))]);
+  if ( $self->option('usermod_pwonly') ) {
+    my $error = '';
+    if ( $old_username ne $new_username ) {
+      $error ||= "can't change username";
+    }
+    if ( $old_domain ne $new_domain ) {
+      $error ||= "can't change domain";
+    }
+    return $error. ' ('. $self->exporttype. ' to '. $self->machine. ')'
+      if $error;
+  }
   $self->shellcommands_queue( $new->svcnum,
     user         => $self->option('user')||'root',
     host         => $self->machine,
