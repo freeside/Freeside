@@ -60,15 +60,17 @@ function areyousure(href) {
 if ( $part_svc->part_export('sqlradius') ) {
 
   my $last_bill;
+  my %plandata;
   if ( $cust_pkg ) {
     #false laziness w/httemplate/edit/part_pkg... this stuff doesn't really
     #belong in plan data
-     my %plandata = map { /^(\w+)=(.*)$/; ( $1 => $2 ); }
-                      split("\n", $cust_pkg->part_pkg->plandata );
+    %plandata = map { /^(\w+)=(.*)$/; ( $1 => $2 ); }
+                    split("\n", $cust_pkg->part_pkg->plandata );
 
     $last_bill = $cust_pkg->last_bill;
   } else {
     $last_bill = 0;
+    %plandata = ();
   }
 
   my $seconds = $svc_acct->seconds_since_sqlradacct( $last_bill, time );
@@ -83,7 +85,7 @@ if ( $part_svc->part_export('sqlradius') ) {
   }
 
   if ( $cust_pkg ) {
-    print ' this billing cycle (since '. time2str(%C, $last_bill). ') - '. 
+    print ' this billing cycle (since '. time2str("%C", $last_bill). ') - '. 
           $plandata{recur_included_hours}. ' total hours in plan<BR><BR>';
   } else {
     print ' (no billing cycle available for unaudited account)<BR><BR>';
