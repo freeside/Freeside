@@ -62,6 +62,9 @@ $FS::UID::callback{'FS::svc_acct'} = sub {
     $welcome_mimetype = $conf->config('welcome_email-mimetype') || 'text/plain';
   } else {
     $welcome_template = '';
+    $welcome_from = '';
+    $welcome_subject = '';
+    $welcome_mimetype = '';
   }
   $smtpmachine = $conf->config('smtpmachine');
   $radius_password = $conf->config('radius-password') || 'Password';

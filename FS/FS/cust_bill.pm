@@ -36,6 +36,11 @@ $FS::UID::callback{'FS::cust_bill'} = sub {
   $invoice_from = $conf->config('invoice_from');
   $smtpmachine = $conf->config('smtpmachine');
 
+  ( $bop_processor,$bop_login, $bop_password, $bop_action ) = ( '', '', '', '');
+  @bop_options = ();
+  ( $ach_processor,$ach_login, $ach_password, $ach_action ) = ( '', '', '', '');
+  @ach_options = ();
+
   if ( $conf->exists('business-onlinepayment') ) {
     ( $bop_processor,
       $bop_login,
@@ -1121,7 +1126,7 @@ sub print_text {
 
 =head1 VERSION
 
-$Id: cust_bill.pm,v 1.59 2002-12-23 15:21:55 ivan Exp $
+$Id: cust_bill.pm,v 1.60 2002-12-28 09:16:49 ivan Exp $
 
 =head1 BUGS
 
