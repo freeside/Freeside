@@ -116,6 +116,7 @@ sub new_customer {
 
   $packet->{'pkgpart'} =~ /^(\d+)$/ or '' =~ /^()$/;
   my $pkgpart = $1;
+  $error ||= 'Please select a package' unless $pkgpart; #msgcat
 
   my $part_pkg =
     qsearchs( 'part_pkg', { 'pkgpart' => $pkgpart } )
