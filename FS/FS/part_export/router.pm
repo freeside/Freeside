@@ -55,7 +55,7 @@ tie my %options, 'Tie::IxHash',
   'svc'     => 'svc_broadband',
   'desc'    => 'Send a command to a router.',
   'options' => \%options,
-  'notes'   => '( more detailed description from Kristian / fire2wire? )',
+  'notes'   => 'Installation of Net::Telnet from CPAN is required for telnet connections.  ( more detailed description from Kristian / fire2wire? )',
 );
 
 @saltset = ( 'a'..'z' , 'A'..'Z' , '0'..'9' , '.' , '/' );
@@ -164,7 +164,8 @@ sub ssh_cmd { #subroutine, not method
 }
 
 sub telnet_cmd {
-  use Net::Telnet;
+  eval 'use Net::Telnet;';
+  die $@ if $@;
 
   warn join(', ', @_);
 
