@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: signup.cgi,v 1.26 2002-04-20 00:48:17 ivan Exp $
+# $Id: signup.cgi,v 1.27 2002-04-25 12:03:15 ivan Exp $
 
 use strict;
 use vars qw( @payby $cgi $locales $packages $pops $init_data $error
@@ -10,12 +10,16 @@ use vars qw( @payby $cgi $locales $packages $pops $init_data $error
              $pkgpart $username $password $password2 $sec_phrase $popnum
              $agentnum
              $ieak_file $ieak_template $cck_file $cck_template
-             $signup_html $signup_template $success_html $success_template
+             $signup_html $signup_template
+             $success_html $success_template
+             $decline_html $decline_template
              $ac $exch $loc
              $email_name $pkg
              $self_url
            );
-use subs qw( print_form print_okay expselect signup_default success_default );
+use subs qw( print_form print_okay print_decline
+             signup_default success_default decline_default
+             expselect );
 use CGI;
 #use CGI::Carp qw(fatalsToBrowser);
 use Text::Template;
@@ -38,6 +42,9 @@ $signup_html = -e 'signup.html'
 $success_html = -e 'success.html'
                   ? 'success.html'
                   : '/usr/local/freeside/success.html';
+$decline_html = -e 'decline.html'
+                  ? 'decline.html'
+                  : '/usr/local/freeside/decline.html';
 
 if ( -e $ieak_file ) {
   my $ieak_txt = Text::Template::_load_text($ieak_file)
@@ -98,6 +105,24 @@ if ( -e $success_html ) {
 } else {
   $success_template = new Text::Template ( TYPE => 'STRING',
                                            SOURCE => &success_default,
+                                           DELIMITERS => [ '<%=', '%>' ],
+                                         )
+    or die $Text::Template::ERROR;
+}
+
+if ( -e $decline_html ) {
+  my $decline_txt = Text::Template::_load_text($decline_html)
+    or die $Text::Template::ERROR;
+  $decline_txt =~ /^(.*)$/s; #untaint the template source - it's trusted
+  $decline_txt = $1;
+  $decline_template = new Text::Template ( TYPE => 'STRING',
+                                           SOURCE => $decline_txt,
+                                           DELIMITERS => [ '<%=', '%>' ],
+                                         )
+    or die $Text::Template::ERROR;
+} else {
+  $decline_template = new Text::Template ( TYPE => 'STRING',
+                                           SOURCE => &decline_default,
                                            DELIMITERS => [ '<%=', '%>' ],
                                          )
     or die $Text::Template::ERROR;
@@ -210,7 +235,9 @@ if ( defined $cgi->param('magic') ) {
 
     }
     
-    if ( $error ) {
+    if ( $error eq '_decline' ) {
+      print_decline();
+    } elsif ( $error ) {
       print_form();
     } else {
       print_okay();
@@ -260,6 +287,11 @@ sub print_form {
   print $cgi->header( '-expires' => 'now' ),
         $signup_template->fill_in();
 
+}
+
+sub print_decline {
+  print $cgi->header( '-expires' => 'now' ),
+        $decline_template->fill_in();
 }
 
 sub print_okay {
@@ -421,6 +453,16 @@ Username: <%= $username %><BR>
 Password: <%= $password %><BR>
 Access number: (<%= $ac %>) / $exch - $local<BR>
 Package: <%= $pkg %><BR>
+</BODY></HTML>
+END
+}
+
+sub decline_default { #html to use if there is a decline
+  <<'END';
+<HTML><HEAD><TITLE>Processing error</TITLE></HEAD>
+<BODY BGCOLOR="#e8e8e8"><FONT SIZE=7>Processing error</FONT><BR><BR>
+There has been an error processing your account.  Please contact customer
+support.
 </BODY></HTML>
 END
 }

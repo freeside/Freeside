@@ -169,12 +169,7 @@ while (1) {
     %hash = ( $cust_pkg => [ $svc_acct ] );
     $error ||= $cust_main->insert( \%hash, \@invoicing_list ); #msgcat
 
-    warn "[fs_signup_server] Sending results...\n" if $Debug;
-    print $writer $error, "\n";
-
-    next if $error;
-
-    if ( $conf->exists('signup_server-realtime') ) {
+    if ( ! $error && $conf->exists('signup_server-realtime') ) {
 
       warn "[fs_signup_server] Billing customer...\n" if $Debug;
 
@@ -191,9 +186,17 @@ while (1) {
 
       if ( $cust_main->balance > 0 ) {
         #should check list for errors...
-        $cust_main->suspend;
+        #$cust_main->suspend;
+        $cust_main->cancel;
       }
     }
+
+    $error ||= '_decline';
+
+    warn "[fs_signup_server] Sending results...\n" if $Debug;
+    print $writer $error, "\n";
+
+    next if $error;
 
     if ( $conf->config('signup_server-email') ) {
       warn "[fs_signup_server] Sending email...\n" if $Debug;
