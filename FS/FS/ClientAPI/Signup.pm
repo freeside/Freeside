@@ -23,7 +23,8 @@ sub signup_info {
 
   my $conf = new FS::Conf;
 
-  my $signup_info = {
+  use vars qw($signup_info); #cache for performance;
+  $signup_info ||= {
 
     'cust_main_county' =>
       [ map { $_->hashref } qsearch('cust_main_county', {}) ],
@@ -57,7 +58,10 @@ sub signup_info {
 
   };
 
-  if ( $conf->config('signup_server-default_agentnum') ) {
+  if (
+    $conf->config('signup_server-default_agentnum')
+    || !exists $signup_info->{'part_pkg'} #cache for performance
+  ) {
     my $agentnum = $conf->config('signup_server-default_agentnum');
     my $agent = qsearchs( 'agent', { 'agentnum' => $agentnum } )
       or die "fatal: signup_server-default_agentnum $agentnum not found\n";
