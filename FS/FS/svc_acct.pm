@@ -472,7 +472,7 @@ sub radius {
 
 =head1 VERSION
 
-$Id: svc_acct.pm,v 1.7 2000-06-29 11:56:52 ivan Exp $
+$Id: svc_acct.pm,v 1.8 2000-07-04 13:42:37 ivan Exp $
 
 =head1 BUGS
 
@@ -481,6 +481,10 @@ The remote commands should be configurable.
 The bits which ssh should fork before doing so.
 
 The $recref stuff in sub check should be cleaned up.
+
+The suspend, unsuspend and cancel methods update the database, but not the
+current object.  This is probably a bug as it's unexpected and
+counterintuitive.
 
 =head1 SEE ALSO
 
