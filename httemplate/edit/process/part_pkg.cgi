@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: part_pkg.cgi,v 1.4 2001-10-20 12:18:00 ivan Exp $ -->
+#<!-- $Id: part_pkg.cgi,v 1.5 2001-11-06 18:45:46 ivan Exp $ -->
 
 use strict;
 use vars qw( $cgi $pkgpart $old $new $part_svc $error $dbh );
@@ -35,8 +35,8 @@ $new = new FS::part_pkg ( {
   } fields('part_pkg')
 } );
 
-warn "setuptax: ". $new->setuptax;
-warn "recurtax: ". $new->recurtax;
+#warn "setuptax: ". $new->setuptax;
+#warn "recurtax: ". $new->recurtax;
 
 #most of the stuff below should move to part_pkg.pm
 
