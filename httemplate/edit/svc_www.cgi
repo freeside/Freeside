@@ -1,6 +1,8 @@
 <!-- mason kludge -->
 <%
 
+my $conf = new FS::Conf;
+
 my( $svcnum,  $pkgnum, $svcpart, $part_svc, $svc_www );
 if ( $cgi->param('error') ) {
   $svc_www = new FS::svc_www ( {
