@@ -20,7 +20,7 @@ if ( $query && $query =~ /^(\d+)$/ ) {
 } else {
   $part_bill_event ||= new FS::part_bill_event {};
 }
-$action ||= $part_bill_event->pkgpart ? 'Edit' : 'Add';
+$action ||= $part_bill_event->eventpart ? 'Edit' : 'Add';
 my $hashref = $part_bill_event->hashref;
 
 print header("$action Invoice Event Definition", menubar(
