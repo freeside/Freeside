@@ -339,7 +339,6 @@ print <<END;
 END
 
   my(%saw,$cust_main);
-  my $p = popurl(2);
   foreach $cust_main (
     sort $sortby grep(!$saw{$_->custnum}++, @cust_main)
   ) {
@@ -391,7 +390,10 @@ END
     }
 
     foreach my $addl_col ( @addl_cols ) {
-      print qq!<TD ROWSPAN=$rowspan><A HREF="XXXnotyetXXX">!.
+      print "<TD ROWSPAN=$rowspan>". 
+            qq!<A HREF="${p}rt/Search/Results.html?Order=ASC&Query=%20MemberOf%20%3D%20%27freeside%3A%2F%2Ffreeside%2Fcust_main%2F!.
+            $cust_main->custnum. 
+            qq!%27%20%20AND%20%28%20Status%20%3D%20%27open%27%20%20OR%20Status%20%3D%20%27new%27%20%20OR%20Status%20%3D%20%27stalled%27%20%29%20&Rows=50&OrderBy=id&Page=1&Format=%27%20%20%20%3Cb%3E%3Ca%20href%3D%22%2Ffreeside%2Frt%2FTicket%2FDisplay.html%3Fid%3D__id__%22%3E__id__%3C%2Fa%3E%3C%2Fb%3E%2FTITLE%3A%23%27%2C%20%0A%27%3Cb%3E%3Ca%20href%3D%22%2Ffreeside%2Frt%2FTicket%2FDisplay.html%3Fid%3D__id__%22%3E__Subject__%3C%2Fa%3E%3C%2Fb%3E%2FTITLE%3ASubject%27%2C%20%0A%27__Status__%27%2C%20%0A%27__QueueName__%27%2C%20%0A%27__OwnerName__%27%2C%20%0A%27__Priority__%27%2C%20%0A%27__NEWLINE__%27%2C%20%0A%27%27%2C%20%0A%27%3Csmall%3E__Requestors__%3C%2Fsmall%3E%27%2C%20%0A%27%3Csmall%3E__CreatedRelative__%3C%2Fsmall%3E%27%2C%20%0A%27%3Csmall%3E__ToldRelative__%3C%2Fsmall%3E%27%2C%20%0A%27%3Csmall%3E__LastUpdatedRelative__%3C%2Fsmall%3E%27%2C%20%0A%27%3Csmall%3E__TimeLeft__%3C%2Fsmall%3E%27">!.
               $cust_main->get($addl_col).
             "</A></TD>";
     }
