@@ -57,7 +57,7 @@ function SafeOnsubmit() {
           <% if ( $type eq '' ) { %>
             <font color="#ff0000">no type</font>
           <% } elsif ( $type eq 'textarea' ) { %>
-            <textarea name="<%= $i->key. $n %>" rows=5><%= join("\n", $conf->config($i->key) ) %></textarea>
+            <textarea name="<%= $i->key. $n %>" rows=5><%= "\n". join("\n", $conf->config($i->key) ) %></textarea>
           <% } elsif ( $type eq 'checkbox' ) { %>
             <input name="<%= $i->key. $n %>" type="checkbox" value="1"<%= $conf->exists($i->key) ? ' CHECKED' : '' %>>
           <% } elsif ( $type eq 'text' )  { %>
