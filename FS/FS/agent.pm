@@ -40,7 +40,7 @@ from FS::Record.  The following fields are currently supported:
 
 =over 4
 
-=item agemtnum - primary key (assigned automatically for new agents)
+=item agentnum - primary key (assigned automatically for new agents)
 
 =item agent - Text name of this agent
 
@@ -145,7 +145,7 @@ sub pkgpart_hashref {
 
 =head1 VERSION
 
-$Id: agent.pm,v 1.2 2000-12-03 13:45:15 ivan Exp $
+$Id: agent.pm,v 1.3 2002-03-24 18:23:47 ivan Exp $
 
 =head1 BUGS
 
