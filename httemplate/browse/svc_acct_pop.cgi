@@ -48,7 +48,7 @@ foreach my $svc_acct_pop ( sort {
           <%= $svc_acct_pop->loc %></A></TD>
         <TD>
           <FONT COLOR="#00CC00"><B><%= $num_accounts %></B></FONT>
-            <A HREF="<%= $svc_acct_link %>&showcancelledcustomers=0">active</A>
+            <A HREF="<%= $svc_acct_link %>">active</A>
         </TD>
       </TR>
 <% } %>
