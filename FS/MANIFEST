@@ -65,7 +65,6 @@ FS/queue_arg.pm
 t/agent.t
 t/agent_type.t
 t/CGI.t
-t/CGIwrapper.t
 t/Conf.t
 t/ConfItem.t
 t/cust_bill.t
