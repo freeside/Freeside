@@ -1,0 +1,54 @@
+#!/bin/sh
+
+DIR=`pwd`
+
+#cd /usr/ports
+#cvs -q -d anoncvs@anoncvs6.usa.openbsd.org:/cvs up -r OPENBSD_`uname -r | perl -pe 's/\./_/g;'` -Pd
+
+for a in `grep -v '^ *#' $DIR/ports`
+do cd /usr/ports/$a
+  make install
+done
+
+for a in `grep -v '^ *#' $DIR/cpan`
+do perl -MCPAN -e "install $a"
+done
+
+#from /usr/local/share/doc/postgresql/README.OpenBSD
+useradd -c "PostgreSQL Admin User" -g =uid -m -d /var/postgresql -s /bin/sh postgresql
+
+su -l postgresql -c 'mkdir /var/postgresql/data'
+su -l postgresql -c 'initdb -D /var/postgresql/data'
+
+cat <<END >>/etc/rc.local
+if [ -x /usr/local/bin/pg_ctl ]; then
+        su -l postgresql -c "/usr/local/bin/pg_ctl start \
+                -D /var/postgresql/data -l /var/postgresql/logfile \
+                -o '-D /var/postgresql/data'"
+        echo -n ' postgresql'
+fi
+END
+
+cat <<END >>/etc/rc.shutdown
+if [ -f /var/postgresql/data/postmaster.pid ]; then
+        su -l postgresql -c "/usr/local/bin/pg_ctl stop -m fast \
+                -D /var/postgresql/data"
+        rm -f /var/postgresql/data/postmaster.pid
+fi
+
+su -l postgresql -c "/usr/local/bin/pg_ctl start \
+        -D /var/postgresql/data -l /var/postgresql/logfile \
+        -o '-D /var/postgresql/data'"
+
+useradd -c "Freeside" -g =uid -m freeside
+su -l postgresql -c 'createuser -P freeside'
+su -l freeside -c 'createdb freeside'
+
+#?
+cd ../..
+make install-perl-modules
+make create-config
+make deploy
+
+#edit apache config, etc.
+
