@@ -123,7 +123,9 @@ Sends headers and an HTML error message, then exits.
 sub eidiot {
   #warn "eidiot depriciated";
   idiot(@_);
-  exit;
+  #exit;
+  use Apache;
+  Apache::exit;
 }
 
 =item popurl LEVEL
