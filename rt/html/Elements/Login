@@ -1,0 +1,101 @@
+%# BEGIN LICENSE BLOCK
+%# 
+%# Copyright (c) 1996-2003 Jesse Vincent <jesse@bestpractical.com>
+%# 
+%# (Except where explictly superceded by other copyright notices)
+%# 
+%# This work is made available to you under the terms of Version 2 of
+%# the GNU General Public License. A copy of that license should have
+%# been provided with this software, but in any event can be snarfed
+%# from www.gnu.org.
+%# 
+%# This work is distributed in the hope that it will be useful, but
+%# WITHOUT ANY WARRANTY; without even the implied warranty of
+%# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+%# General Public License for more details.
+%# 
+%# Unless otherwise specified, all modifications, corrections or
+%# extensions to this work which alter its source code become the
+%# property of Best Practical Solutions, LLC when submitted for
+%# inclusion in the work.
+%# 
+%# 
+%# END LICENSE BLOCK
+<%INIT>
+if ($m->request_comp->path =~ '^/REST/\d+\.\d+/') {
+    $r->content_type("text/plain");
+    $m->error_format("text");
+    $m->out("RT/$RT::VERSION 401 Credentials required\n");
+    $m->out("\n$Error\n") if $Error;
+    $m->abort;
+}
+</%INIT>
+
+<& /Elements/Callback, %ARGS, _CallbackName => 'Header' &>
+<& /Elements/Header, Title => loc('Login'), Focus => 'user' &>
+
+<DIV ALIGN=CENTER>
+% if ($Error) {
+<& /Elements/TitleBoxStart, title => loc('Error') &>
+<% $Error %>
+<& /Elements/TitleBoxEnd &>
+% }
+<BR>
+<& /Elements/TitleBoxStart, width=> "40%", titleright => loc("RT [_1]", $RT::VERSION), title => loc('Login') ,
+contentbg=>"#cccccc" &>
+
+% unless ($RT::WebExternalAuth and !$RT::WebFallbackToInternalAuth) {
+<FORM METHOD=POST ACTION="<% (UNIVERSAL::can($r, 'uri') && ($r->uri) =~ m!.*/(.*)!) %>" >
+<TABLE BORDER=0 WIDTH=100%>
+<TR ALIGN=RIGHT>
+<TD ALIGN=RIGHT><&|/l&>Username</&>:</TD><TD ALIGN=LEFT><input name=user value="<%$user%>"></TD></TR>
+<TR><TD ALIGN=RIGHT><&|/l&>Password</&>:</TD><TD ALIGN=LEFT><input type=password name=pass></TD></TR>
+<TR><TD colspan=2 align=right>
+<input type=submit Value="<&|/l&>Login</&>">
+</TD></TR>
+</TABLE>
+
+%# Give callbacks a chance to add more control elements
+<& /Elements/Callback, %ARGS &>
+
+<&/Elements/TitleBoxEnd&>
+% # From mason 1.0.1 forward, this doesn't work. in fact, it breaks things.
+% # But on Mason 1.15 it's fixed again, so we still use it.
+% # The code below iterates through everything in the passed in arguments
+% # Preserving all the old parameters
+% # This would be easier, except mason is 'smart' and calls multiple values
+% # arrays rather than multiple hash keys
+% my $key; my $val;
+% foreach $key (keys %ARGS) {
+%  if (($key ne 'user') and ($key ne 'pass')) {
+% 	if (ref($ARGS{$key}) =~ /ARRAY/) {
+% 		foreach $val (@{$ARGS{$key}}) {
+<input type=hidden name="<%$key %>" value="<% $val %>">
+% 		}
+% 	}
+%	else {
+<input type="hidden" name="<% $key %>" value="<% $ARGS{$key} %>">
+% 	}
+%  }
+% }
+</FORM>
+% }
+</DIV>
+
+<BR>
+<!-- TODO: not yet implemented
+If you've forgotten your username or password, RT can <A
+href="/NoAuth/Reminder.html">send you a reminder</a>.
+-->
+<BR>
+<BR>
+<BR>
+<HR>
+<&|/l, '2003'&>RT is &copy; Copyright 1996-[_1] Jesse Vincent &lt;jesse@bestpractical.com&gt;.  It is distributed under <a href="http://www.gnu.org/copyleft/gpl.html">Version 2 of the GNU General Public License.</a></&>
+
+<%ARGS>
+$user => ""
+$pass => undef
+$goto => undef
+$Error => undef
+</%ARGS>

@@ -1,0 +1,338 @@
+%# BEGIN LICENSE BLOCK
+%# 
+%# Copyright (c) 1996-2003 Jesse Vincent <jesse@bestpractical.com>
+%# 
+%# (Except where explictly superceded by other copyright notices)
+%# 
+%# This work is made available to you under the terms of Version 2 of
+%# the GNU General Public License. A copy of that license should have
+%# been provided with this software, but in any event can be snarfed
+%# from www.gnu.org.
+%# 
+%# This work is distributed in the hope that it will be useful, but
+%# WITHOUT ANY WARRANTY; without even the implied warranty of
+%# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+%# General Public License for more details.
+%# 
+%# Unless otherwise specified, all modifications, corrections or
+%# extensions to this work which alter its source code become the
+%# property of Best Practical Solutions, LLC when submitted for
+%# inclusion in the work.
+%# 
+%# 
+%# END LICENSE BLOCK
+SPAN.nav {  font-family: Verdana, Arial, Helvetica, sans-serif;
+	 font-size: 12px;
+	 color: #FFFFFF;
+	 text-decoration: none;
+	 white-space: nowrap}
+.nav2 {	 font-size: 10px;
+	 white-space: nowrap}
+.nav {  font-family: Verdana, Arial, Helvetica, sans-serif;
+	 font-size: 13px;
+	 font-weight: normal;
+	 color: #FFFFFF;
+	 text-decoration: none;
+	 white-space: nowrap}
+.currentnav {  font-family: Verdana, Arial, Helvetica, sans-serif;
+	 font-size: 13px;
+         font-weight: bold;
+	 color: #FFFF66;
+	 text-decoration: none;
+	 white-space: nowrap}
+.topnav {  font-family: Verdana, Arial, Helvetica, sans-serif;
+	 font-size: 16px;
+	 font-weight: normal;
+	 color: #FFFFFF;
+	 text-decoration: none;
+	 white-space: nowrap}
+.currenttopnav {  font-family: Verdana, Arial, Helvetica, sans-serif;
+	 font-size: 16px;
+         font-weight: bold;
+	 color: #FFFF66;
+	 text-decoration: none;
+	 white-space: nowrap}
+.topactions {  font-family: Verdana, Arial, Helvetica, sans-serif;
+	 font-size: 10px;
+	 color: #FFFFFF;
+	 text-decoration: none;
+	 white-space: nowrap}
+.subnav {  font-family: Verdana, Arial, Helvetica, sans-serif;
+	 font-size: 11px;
+	 font-weight: normal;
+	 color: #FFFFFF;
+	 text-decoration: none;
+	 white-space: nowrap}
+.currentsubnav {  font-family: Verdana, Arial, Helvetica, sans-serif;
+	 font-size: 11px;
+         font-weight: bold;
+	 color: #FFFF66;
+	 text-decoration: none;
+	 white-space: nowrap}
+.error {  background-color: #ff0000;
+	 background-position: left top;
+	 vertical-align: top;
+	 text-align: left;
+         }
+.oldblue {  background-color: #0066CC;
+	 background-position: left top;
+	 vertical-align: top;
+	 text-align: left;
+         }
+.blue {  background-color: #4682B4;
+	 background-position: left top;
+	 vertical-align: top;
+	 text-align: left;
+         }
+.blueright {  background-color: #4682B4;
+	 background-position: left top;
+	 vertical-align: top;
+	 text-align: right;
+         }
+.olddarkblue {  background-color: #003399;
+	 background-position: left top;
+	 vertical-align: top;
+	 text-align: left;
+         }
+.darkblue {  background-color: #000080;
+	 background-position: left top;
+	 vertical-align: top;
+	 text-align: left;
+         }
+.darkblueright {  background-color: #000080;
+	 background-position: left top;
+	 vertical-align: top;
+	 text-align: right;
+         }
+
+td {  font-family: Verdana, Arial, Helvetica, sans-serif;
+	 font-size: 11px;
+	 background-position: left top;
+         }
+.black { background-color: #000000;
+	 background-position: left top;
+         }
+span.rtname {  font-family: Verdana, Arial, Helvetica, sans-serif;
+	 font-size: 18px;
+	 font-weight: normal;
+	 color: #ffffff}
+span.title {  font-family: Verdana, Arial, Helvetica, sans-serif;
+	 font-size: 20px;
+	 font-weight: bold;
+	 color: #ffffff}
+.header {  font-family: Verdana, Arial, Helvetica, sans-serif;
+	 font-size: 12px;
+	 font-weight: bold;
+	 color: #0066CC}
+.subheader { font-family: Verdana, Arial, Helvetica, sans-serif;
+	 font-size: 11px;
+	 font-weight: bold;
+	 color: #0066CC }
+.value {       font-weight: bold; }
+.entry {       font-weight: normal; }
+.label {       font-weight: normal;
+	       text-align: right; }
+.labeltop {       font-weight: normal;
+	       text-align: right;
+	       vertical-align: top }
+.productnav {  font-family: Verdana, Arial, Helvetica, sans-serif;
+	 font-size: 11px;
+	 color: #000000;
+	 text-align: center;
+	 vertical-align: middle;
+	 text-decoration: none}
+.rtblue { background-color: #3399FF;
+         margin-top: 0.2em;
+	 background-position: left top;
+	 vertical-align: top }
+
+
+.currenttab { margin: 0.2em; background: #336699; }
+.othertab { margin: 0.2em; background: #efefef; }
+.oddline { background-color : #ccccee; }
+
+UL.topnav LI :focus { text-decoration: underline; }
+
+TD.mainbody {
+        padding-top: 0.5em;
+        padding-left: 0em;
+        padding-right: 1em;
+        margin-left: 1em;
+        margin-right: 1em;
+}
+
+th.ticketheader { font-size: 80%;
+     font-weight: bold;
+     color: #336699;
+     background: #cccccc; 
+}
+
+th.titlebox {
+        text-align: left;
+        padding-left: 0.5em;
+        padding-right: 0.5em;
+        margin-left: 0.5em;
+        margin-right: 0.5em;
+        border-top: solid black 1px;
+        border-bottom: solid black 1px;
+}    
+th.titleboxright {
+        text-align: right;
+        padding-left: 0.5em;
+        padding-right: 0.5em;
+        margin-left: 0.5em;
+        margin-right: 0.5em;
+        border-top: solid black 1px;
+        border-bottom: solid black 1px;
+}    
+
+TD.titlebox {
+        padding-left: 1em;
+        padding-right: 1em;
+        padding-top: 1em;
+        padding-bottom: 1em;
+}
+
+SPAN.message {
+	font-size: 100%;
+        font-family: Verdana, Arial, Helvetica, sans-serif;
+}
+
+
+BODY {
+  color: #000;
+  background: #FFFFFF;
+  font-family: "Helvetica", sans-serif;
+  margin-top: 0px;
+  margin-bottom: 0px;
+  margin-left: 0px;
+  margin-right: 0px;
+  border-top: 0px;
+  border-bottom: 0px;
+  border-left: 0px;
+  border-right: 0px;
+}
+
+
+TR.oddline { 
+    background-color : #ffffff;
+}
+
+TR.evenline { 
+    background-color : #ccccee;
+}
+
+H1, H2, H3 { 
+  margin-top: 0.2em;
+  color: #336699;
+  font-family: "Helvetica", sans-serif;
+
+  clear: both;
+}
+
+
+DIV.endmatter { margin-left: -7% }
+.bpscredits {margin-top: 1em;
+             text-align: right; 
+             color: #666666;
+             }
+
+
+A { font-weight: bold; color: #000000;
+            }
+
+.currenttab { color: #ffffff;}
+.othertab { color: #336699; }
+
+.inverse { color: #ffffff; }
+
+
+
+A:link IMG, A:visited IMG { border-style: none }
+a:focus {text-decoration: underline }
+A IMG { color: white } /* The only way to hide the border in NS 4.x */
+
+a:link {  text-decoration: none}
+a:visited {  text-decoration: none}  
+a:hover {  text-decoration: underline}
+/* a:focus { background-color: #ccccee } */
+
+.hide {
+  display: none;
+  color: white;
+}
+
+SPAN.date { font-size: 0.8em }
+
+span.title { font-size: 1.6em;
+	     vertical-align: middle;
+             color: #ffffff;}
+span.productname { font-size: 2em;
+             color: #0066cc;}
+SPAN.titleboxtitle {
+        font-size: 1.1em;
+        color: #ffffff;
+	 vertical-align: middle;
+	 text-align: left;
+        }
+
+SPAN.titleboxright {
+        font-size: 0.8em;
+        color: #ffffff;
+	 vertical-align: middle;
+	 text-align: right;
+        }
+
+SPAN.attribution {
+  font-weight: bold;
+}
+
+SPAN.label { font-size: 0.8em; 
+}
+
+BLOCKQUOTE {
+  font-style: italic;
+  /* color: #990; */
+}
+
+ADDRESS { 
+  text-align: right;
+  font-weight: bold;
+  font-style: italic 
+}
+
+BLOCKQUOTE P {			/* Try to avoid space above the attribution */
+  margin-bottom: 0;
+}
+BLOCKQUOTE ADDRESS {
+  margin: 0;
+}
+
+
+.emphasized {
+  font-weight: bold
+}
+
+
+P.map-also { font-style: italic; margin-left: 15%; text-align: right }
+
+.oddline { 
+        background-color : #ccccee;
+}
+
+ul.topnav {
+	list-style: none;
+	margin-left: 0;
+ 	margin-right: 0.25em;		
+	padding-left: 0.25em;
+	padding-bottom: 0;	
+	padding-top:0;
+	margin-top: 0;
+	margin-bottom:0;
+}
+
+
+<%init>
+$r->content_type('text/css');
+$r->header_out('Expires' ,'+30m');
+</%init>

@@ -1,7 +1,31 @@
-#$Header: /home/cvs/cvsroot/freeside/rt/lib/RT/Action/Autoreply.pm,v 1.1 2002-08-12 06:17:07 ivan Exp $
-
+# BEGIN LICENSE BLOCK
+# 
+# Copyright (c) 1996-2003 Jesse Vincent <jesse@bestpractical.com>
+# 
+# (Except where explictly superceded by other copyright notices)
+# 
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+# 
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+# 
+# Unless otherwise specified, all modifications, corrections or
+# extensions to this work which alter its source code become the
+# property of Best Practical Solutions, LLC when submitted for
+# inclusion in the work.
+# 
+# 
+# END LICENSE BLOCK
 package RT::Action::Autoreply;
 require RT::Action::SendEmail;
+
+use strict;
+use vars qw/@ISA/;
 @ISA = qw(RT::Action::SendEmail);
 
 
@@ -17,7 +41,7 @@ Sets the recipients of this message to this ticket's Requestor.
 sub SetRecipients {
     my $self=shift;
 
-    push(@{$self->{'To'}}, @{$self->TicketObj->Requestors->Emails});
+    push(@{$self->{'To'}}, $self->TicketObj->Requestors->MemberEmailAddresses);
     
     return(1);
 }
@@ -39,6 +63,7 @@ sub SetReturnAddress {
 		 @_
 	       );
     
+    my $replyto;
     if ($args{'is_comment'}) { 
 	$replyto = $self->TicketObj->QueueObj->CommentAddress || 
 		     $RT::CommentAddress;
@@ -49,7 +74,9 @@ sub SetReturnAddress {
     }
     
     unless ($self->TemplateObj->MIMEObj->head->get('From')) {
-	my $friendly_name=$self->TicketObj->QueueObj->Name;
+	my $friendly_name = $self->TicketObj->QueueObj->Description ||
+		$self->TicketObj->QueueObj->Name;
+	$friendly_name =~ s/"/\\"/g;
 	$self->SetHeader('From', "\"$friendly_name\" <$replyto>");
     }
     
@@ -60,5 +87,10 @@ sub SetReturnAddress {
 }
   
 # }}}
+
+eval "require RT::Action::Autoreply_Vendor";
+die $@ if ($@ && $@ !~ qr{^Can't locate RT/Action/Autoreply_Vendor.pm});
+eval "require RT::Action::Autoreply_Local";
+die $@ if ($@ && $@ !~ qr{^Can't locate RT/Action/Autoreply_Local.pm});
 
 1;

@@ -1,0 +1,347 @@
+%# BEGIN LICENSE BLOCK
+%# 
+%# Copyright (c) 1996-2003 Jesse Vincent <jesse@bestpractical.com>
+%# 
+%# (Except where explictly superceded by other copyright notices)
+%# 
+%# This work is made available to you under the terms of Version 2 of
+%# the GNU General Public License. A copy of that license should have
+%# been provided with this software, but in any event can be snarfed
+%# from www.gnu.org.
+%# 
+%# This work is distributed in the hope that it will be useful, but
+%# WITHOUT ANY WARRANTY; without even the implied warranty of
+%# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+%# General Public License for more details.
+%# 
+%# Unless otherwise specified, all modifications, corrections or
+%# extensions to this work which alter its source code become the
+%# property of Best Practical Solutions, LLC when submitted for
+%# inclusion in the work.
+%# 
+%# 
+%# END LICENSE BLOCK
+<& /Admin/Elements/Header, Title => $title  &>
+<& /Admin/Elements/UserTabs, 
+    id => $id, 
+    UserObj => $UserObj,
+    current_subtab => $current_tab, 
+    Title => $title &>
+
+<& /Elements/ListActions, actions => \@results &>
+
+<FORM ACTION="<%$RT::WebPath%>/Admin/Users/Modify.html" METHOD=POST>
+%if ($Create) {
+<INPUT TYPE=HIDDEN NAME=id VALUE="new">
+% } else {
+<INPUT TYPE=HIDDEN NAME=id VALUE="<%$UserObj->Id%>">
+% }
+<TABLE WIDTH=100% BORDER=0>
+<TR>
+
+<TD VALIGN=TOP ROWSPAN=2>
+<& /Elements/TitleBoxStart, title => loc('Identity') &>
+
+<TABLE>
+<TR><TD ALIGN="RIGHT">
+<&|/l&>Username</&>:
+</TD><TD>
+<input name="Name" value="<%$UserObj->Name%>"> <b><&|/l&>(required)</&></b>
+</TD></TR>
+<TR><TD ALIGN="RIGHT">
+<&|/l&>Email</&>:
+</TD><TD>
+<input name="EmailAddress" value="<%$UserObj->EmailAddress%>">
+</TD></TR>
+<TR><TD ALIGN="RIGHT">
+<&|/l&>Real Name</&>: 
+</TD><TD>
+<input name="RealName" value="<%$UserObj->RealName%>">
+</TD></TR>
+<TR><TD ALIGN="RIGHT">
+<&|/l&>Nickname</&>: 
+</TD><TD>
+<input name="NickName" value="<%$UserObj->NickName%>">
+</TD></TR>
+<TR><TD ALIGN="RIGHT">
+<&|/l&>Unix login</&>: 
+</TD><TD>
+<input name="Gecos" value="<%$UserObj->Gecos%>">
+</TD></TR>
+<TR><TD ALIGN="RIGHT">
+<&|/l&>Extra info</&>: 
+</TD><TD>
+<textarea name="FreeformContactInfo" cols=20 rows=5><%$UserObj->FreeformContactInfo%></TEXTAREA>
+</TD></TR>
+</TABLE>
+<& /Elements/TitleBoxEnd &>
+<br>
+<& /Elements/TitleBoxStart, title => loc('Access control') &>
+<INPUT TYPE=HIDDEN NAME="SetEnabled" VALUE="1">
+<INPUT TYPE=CHECKBOX NAME="Enabled" VALUE="1" <%$EnabledChecked%>>
+<&|/l&>Let this user access RT</&><BR>
+
+
+<INPUT TYPE=HIDDEN NAME="SetPrivileged" VALUE="1">
+<INPUT TYPE=CHECKBOX NAME="Privileged" VALUE="1" <%$PrivilegedChecked%>> <&|/l&>Let this user be granted rights</&><BR>
+		    
+% unless ($RT::WebExternalAuth and !$RT::WebFallbackToInternalAuth) {
+<TABLE>
+<TR>
+<TD ALIGN=RIGHT>
+<&|/l&>New Password</&>:
+</TD>
+<TD ALIGN=LEFT>
+<input type=password name="Pass1">
+</TD>
+</TR>
+<TR><TD ALIGN=RIGHT>
+<&|/l&>Retype Password</&>:
+</TD>
+<TD>
+<input type=password name="Pass2">
+</TD>
+</TR>
+</TABLE>
+% }
+<& /Elements/TitleBoxEnd &>
+</TD>
+</TR>
+<TR>
+
+<TD VALIGN=TOP>
+<& /Elements/TitleBoxStart, title => loc('Location') &>
+<TABLE>
+<TR><TD ALIGN="RIGHT">
+<&|/l&>Organization</&>: 
+</TD><TD>
+<input name="Organization" value="<%$UserObj->Organization%>">
+</TD></TR>
+<TR><TD ALIGN="RIGHT">
+<&|/l&>Address1</&>: 
+</TD><TD>
+<input name="Address1" value="<%$UserObj->Address1%>">
+</TD></TR>
+<TR><TD ALIGN="RIGHT">
+<&|/l&>Address2</&>: 
+</TD><TD>
+<input name="Address2" value="<%$UserObj->Address2%>">
+</TD></TR>
+<TR><TD ALIGN="RIGHT">
+<&|/l&>City</&>: 
+</TD><TD>
+<input name="City" value="<%$UserObj->City%>" size=14>
+
+</TD></TR>
+<TR><TD ALIGN="RIGHT">
+<&|/l&>State</&>: 
+</TD><TD>
+<input name="State" value="<%$UserObj->State%>" size=3>
+
+</TD></TR>
+<TR><TD ALIGN="RIGHT">
+<&|/l&>Zip</&>: 
+</TD><TD>
+<input name="Zip" value="<%$UserObj->Zip%>" size=9>
+</TD></TR>
+<TR><TD ALIGN="RIGHT">
+<&|/l&>Country</&>: 
+</TD><TD>
+<input name="Country" value="<%$UserObj->Country%>">
+</TD></TR>
+</TABLE>
+<& /Elements/TitleBoxEnd &>
+<br>
+<& /Elements/TitleBoxStart, title => loc('Phone numbers') &>
+<TABLE>
+<TR><TD ALIGN="RIGHT">
+<&|/l&>Residence</&>: 
+</TD><TD>
+<input name="HomePhone" value="<%$UserObj->HomePhone%>" size=13><br>
+</TD></TR>
+<TR><TD ALIGN="RIGHT">
+<&|/l&>Work</&>: 
+</TD><TD>
+<input name="WorkPhone" value="<%$UserObj->WorkPhone%>" size=13><br>
+</TD></TR>
+<TR><TD ALIGN="RIGHT">
+<&|/l&>Mobile</&>: 
+</TD><TD>
+<input name="MobilePhone" value="<%$UserObj->MobilePhone%>" size=13><br>
+</TD></TR>
+<TR><TD ALIGN="RIGHT">
+<&|/l&>Pager</&>: 
+</TD><TD>
+<input name="PagerPhone" value="<%$UserObj->PagerPhone%>" size=13><br>
+<& /Elements/TitleBoxEnd &>
+</TD>
+
+<TR>
+</TR>
+</TABLE>
+<TR>
+<TD colspan="2">
+<& /Elements/TitleBoxStart, title => loc('Comments about this user') &>
+<TEXTAREA name="Comments" COLS=80 ROWS=5 WRAP=VIRTUAL><%$UserObj->Comments%>
+</TEXTAREA>
+<& /Elements/TitleBoxEnd &>
+%if ($UserObj->Privileged) {
+<BR>
+<& /Elements/TitleBoxStart, title => loc('Signature') &>
+<TEXTAREA COLS=80 ROWS=5 name="Signature" WRAP=HARD>
+<%$UserObj->Signature%></TEXTAREA>
+<& /Elements/TitleBoxEnd &>
+% }
+
+</TD>
+</TR>
+</TABLE>
+
+<& /Elements/Submit &>
+</form>
+
+<%INIT>
+
+my $current_tab;
+my $UserObj = new RT::User($session{'CurrentUser'});
+my ($title, $PrivilegedChecked, $EnabledChecked, $Disabled, $result, @results);
+
+my ($val, $msg);
+
+if ($Create) {
+    $current_tab = 'Admin/Users/Modify.html?Create=1';
+    $title = loc("Create a new user");
+} 
+else {
+
+    $current_tab = 'Admin/Users/Modify.html?id='.$id;
+    if ($id eq 'new') {
+	($val, $msg) = $UserObj->Create( Name => $Name,
+					 EmailAddress => $ARGS{'EmailAddress'}
+				       );
+	if ($val) {
+		push @results, $msg;
+	} else {
+		push @results, loc('User could not be created: [_1]', $msg);
+	}	
+	
+    }
+    else {
+	$UserObj->Load($id) || $UserObj->Load($Name) || Abort("Couldn't load user '$Name'");
+	$val = $UserObj->Id();
+    }
+
+    if ($val) {
+	$title = loc("Modify the user [_1]", $UserObj->Name);
+    }	
+
+    # If the create failed
+    else {
+	$title = loc("Create a new user");
+	$Create = 1;
+    }    
+
+    
+
+}
+
+
+
+
+# If we have a user to modify, lets try. 
+if ($UserObj->Id) {
+    
+    my @fields = qw(Name Comments Signature EmailAddress FreeformContactInfo 
+		    Organization RealName NickName Lang EmailEncoding WebEncoding 
+		    ExternalContactInfoId ContactInfoSystem Gecos ExternalAuthId 
+		    AuthSystem HomePhone WorkPhone MobilePhone PagerPhone Address1
+		Address2 City State Zip Country 
+		   );
+    
+    my @fieldresults = UpdateRecordObject ( AttributesRef => \@fields,
+					    Object => $UserObj,
+					    ARGSRef => \%ARGS );
+    push (@results,@fieldresults);
+
+
+# {{{ Deal with special fields: Privileged, Enabled and Password
+if  ( ($SetPrivileged) and ( $Privileged != $UserObj->Privileged) ) {
+my  ($code, $msg) = $UserObj->SetPrivileged($Privileged);
+     push @results, loc('Privileged status: [_1]', loc_fuzzy($msg));
+}
+
+#we're asking about enabled on the web page but really care about disabled.
+if ($Enabled == 1) {
+    $Disabled = 0;
+}	
+else {
+    $Disabled = 1;
+}
+if  ( ($SetEnabled) and ( $Disabled != $UserObj->Disabled) ) { 
+    my  ($code, $msg) = $UserObj->SetDisabled($Disabled);
+    push @results, loc('Enabled status [_1]', loc_fuzzy($msg));
+}
+
+
+#TODO: make this report errors properly
+if ((defined $Pass1) and ($Pass1 ne '') and ($Pass1 eq $Pass2) and (!$UserObj->IsPassword($Pass1))) {
+    my ($code, $msg);
+    ($code, $msg) = $UserObj->SetPassword($Pass1);
+    push @results, loc('Password: [_1]', loc_fuzzy($msg));
+} elsif ( $Pass1 && ($Pass1 ne $Pass2)) {
+    push @results, loc("Passwords do not match.");
+}
+
+# }}}
+}
+
+
+# {{{ Do some setup for the ui
+unless ($UserObj->Disabled()) {
+    $EnabledChecked ="CHECKED";
+}
+
+if ($UserObj->Privileged()) {  
+    $PrivilegedChecked = "CHECKED";
+}
+
+# }}}
+</%INIT>
+
+
+<%ARGS>
+$id => undef
+$Name  => undef
+$Comments  => undef
+$Signature  => undef
+$EmailAddress  => undef
+$FreeformContactInfo => undef
+$Organization  => undef
+$RealName  => undef
+$NickName  => undef
+$Privileged => undef
+$SetPrivileged => undef
+$Enabled => undef
+$SetEnabled => undef
+$Lang  => undef
+$EmailEncoding  => undef
+$WebEncoding => undef
+$ExternalContactInfoId  => undef
+$ContactInfoSystem  => undef
+$Gecos => undef
+$ExternalAuthId  => undef
+$AuthSystem  => undef
+$HomePhone => undef
+$WorkPhone  => undef
+$MobilePhone  => undef
+$PagerPhone  => undef
+$Address1 => undef
+$Address2  => undef
+$City  => undef
+$State  => undef
+$Zip  => undef
+$Country => undef
+$Pass1 => undef
+$Pass2=> undef
+$Create=> undef
+</%ARGS>

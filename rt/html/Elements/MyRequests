@@ -1,0 +1,78 @@
+%# BEGIN LICENSE BLOCK
+%# 
+%# Copyright (c) 1996-2003 Jesse Vincent <jesse@bestpractical.com>
+%# 
+%# (Except where explictly superceded by other copyright notices)
+%# 
+%# This work is made available to you under the terms of Version 2 of
+%# the GNU General Public License. A copy of that license should have
+%# been provided with this software, but in any event can be snarfed
+%# from www.gnu.org.
+%# 
+%# This work is distributed in the hope that it will be useful, but
+%# WITHOUT ANY WARRANTY; without even the implied warranty of
+%# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+%# General Public License for more details.
+%# 
+%# Unless otherwise specified, all modifications, corrections or
+%# extensions to this work which alter its source code become the
+%# property of Best Practical Solutions, LLC when submitted for
+%# inclusion in the work.
+%# 
+%# 
+%# END LICENSE BLOCK
+<& /Elements/TitleBoxStart, title => loc("[_1] highest priority tickets I requested...", $rows), bodyclass=> '' &>
+<TABLE BORDER=0 cellspacing=0 cellpadding=1 WIDTH=100%>
+<TR>
+<TH align=right><&|/l&>#</&></TH>
+<TH align=left><&|/l&>Subject</&></TH>
+<TH align=left><&|/l&>Queue</&></TH>
+<TH align=left><&|/l&>Status</&></TH>
+<TH align=left><&|/l&>Owner</&></TH>
+</TR>
+% my $i;
+% while (my $Ticket = $MyTickets->Next) {
+% $i++;
+<TR class="<% $i%2 ? 'oddline' : 'evenline'%>" >
+<TD ALIGN=RIGHT>
+<%$Ticket->Id%>
+</TD>
+<TD>
+<A HREF="<% $RT::WebPath %>/Ticket/Display.html?id=<%$Ticket->Id%>">
+<%$Ticket->Subject || loc('(no subject)')%>
+</A>
+</TD>
+<TD>
+<%$Ticket->QueueObj->Name%>
+</TD>
+<TD>
+% if ($Ticket->HasUnresolvedDependencies ) {
+%     if ($Ticket->HasUnresolvedDependencies( Type => 'approval'  )) { 
+<em><&|/l&>(pending approval)</&></em>
+%     } else {
+<em><&|/l&>(pending other tickets)</&></em>
+%     }
+% } else {
+<%loc($Ticket->Status)%>
+% }
+</TD>
+<TD>
+<%$Ticket->OwnerObj->Name%>
+</TD>
+</TR>
+% }
+</TABLE>
+<& /Elements/TitleBoxEnd &>
+
+
+<%INIT>
+my $rows = 10;
+my $MyTickets;
+$MyTickets = new RT::Tickets ($session{'CurrentUser'});
+$MyTickets->LimitWatcher(TYPE => 'Requestor', VALUE => $session{'CurrentUser'}->EmailAddress);
+$MyTickets->LimitStatus(VALUE => "open");
+$MyTickets->LimitStatus(VALUE => "new");
+$MyTickets->RowsPerPage($rows);
+$MyTickets->OrderBy(FIELD => 'Priority', ORDER => 'DESC');
+
+</%INIT>

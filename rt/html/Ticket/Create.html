@@ -1,0 +1,257 @@
+%# BEGIN LICENSE BLOCK
+%# 
+%# Copyright (c) 1996-2003 Jesse Vincent <jesse@bestpractical.com>
+%# 
+%# (Except where explictly superceded by other copyright notices)
+%# 
+%# This work is made available to you under the terms of Version 2 of
+%# the GNU General Public License. A copy of that license should have
+%# been provided with this software, but in any event can be snarfed
+%# from www.gnu.org.
+%# 
+%# This work is distributed in the hope that it will be useful, but
+%# WITHOUT ANY WARRANTY; without even the implied warranty of
+%# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+%# General Public License for more details.
+%# 
+%# Unless otherwise specified, all modifications, corrections or
+%# extensions to this work which alter its source code become the
+%# property of Best Practical Solutions, LLC when submitted for
+%# inclusion in the work.
+%# 
+%# 
+%# END LICENSE BLOCK
+<& /Elements/Header, Title => loc("Create a new ticket") &>
+<& /Elements/Tabs, 
+    current_toptab => "Ticket/Create.html", 
+    Title => loc("Create a new ticket") &>
+<FORM ACTION="<%$RT::WebPath%>/Ticket/Create.html" METHOD="POST" ENCTYPE="multipart/form-data">
+<INPUT TYPE=HIDDEN Name="id" VALUE="new">
+<A NAME="top">
+	
+	
+[<a class="currenttab"><&|/l&>Show basics</&></a>] [<A HREF="#detail"><&|/l&>Show details</&></a>]
+<BR>
+<& /Elements/TitleBoxStart, contentbg => "#cccccc", title => loc("Create a new ticket") &>
+<TABLE border=0 cellpadding=0 cellspacing=0>
+<TR><TD><&|/l&>Queue</&></TD>
+<TD><% $QueueObj->Name %>
+<INPUT TYPE=HIDDEN NAME=Queue Value="<%$QueueObj->Name%>">
+</TD>
+<TD><&|/l&>Status</&>:
+</TD>
+<TD>
+<& /Elements/SelectStatus, Name => "Status", Default => $ARGS{Status}||'new' &>
+</TD>
+<TD>
+<&|/l&>Owner</&>:
+</TD>
+<TD>
+<& /Elements/SelectOwner, Name => "Owner", QueueObj => $QueueObj, Default => $ARGS{Owner}||undef &>
+</TD>
+</TR>
+<TR>
+<TD>
+<&|/l&>Requestors</&>:
+</TD>
+<TD COLSPAN=5>
+<INPUT Name="Requestors" Value="<% ($ARGS{Requestors}) || $session{CurrentUser}->EmailAddress %>" SIZE=40>
+</TD>
+</TR>
+<TR>
+<TD>
+<&|/l&>Cc</&>:
+</TD>
+<TD COLSPAN=5>
+<INPUT NAME="Cc" SIZE=40<% $ARGS{Cc} && " VALUE=\"$ARGS{Cc}\""%>><BR>
+<i><font size=-2>
+<&|/l&>(Sends a carbon-copy of this update to a comma-delimited list of email addresses. These people <b>will</b> receive future updates.)</&></font></i>
+</TD>
+</TR>
+<TR>
+<TD>
+<&|/l&>Admin Cc</&>:
+</TD>
+<TD COLSPAN=5>
+<INPUT NAME="AdminCc" SIZE=40<% $ARGS{AdminCc} && " VALUE=\"$ARGS{AdminCc}\""%>><BR>
+<i><font size=-2>
+<&|/l&>(Sends a carbon-copy of this update to a comma-delimited list of administrative email addresses. These people <b>will</b> receive future updates.)</&></font></i>
+</TD>
+</TR>
+<TR>
+<TD>
+<&|/l&>Subject</&>:
+</TD>
+<TD COLSPAN=5>
+<INPUT Name="Subject" SIZE=60 MAXSIZE=100 value="<%$ARGS{Subject} || ''%>">
+</TD>
+</TR>
+<TR>
+<TD COLSPAN=6>
+<& /Ticket/Elements/EditCustomFields, QueueObj => $QueueObj &>
+</TD>
+</TR>
+<TR>
+% if (exists $session{'Attachments'}) {
+<TD>
+<&|/l&>Attached file</&>:
+</TD>
+<TD COLSPAN=5>
+<&|/l&>Check box to delete</&><BR>
+% foreach my $attach_name (keys %{$session{'Attachments'}}) {
+<input type="checkbox" name="DeleteAttach-<%$attach_name%>"><%$attach_name%><BR>
+% } # end of foreach
+</TD>
+</TR>
+<TR>
+% } # end of if
+<TD>
+<&|/l&>Attach file</&>:
+</TD>
+<TD COLSPAN=5>
+<INPUT TYPE=FILE NAME="Attach">
+<INPUT TYPE=SUBMIT NAME="AddMoreAttach" VALUE="<&|/l&>Add More Files</&>">
+</TD>
+</TR>
+<TR>
+<TD COLSPAN=6>
+<&|/l&>Describe the issue below</&>:<br>
+% if (exists $ARGS{Content}) {
+<& /Elements/MessageBox, Default => $ARGS{Content} &>
+% } else {
+<& /Elements/MessageBox, QuoteTransaction => $QuoteTransaction &>
+%}
+
+<BR>
+</TD>
+</TR>
+<TR>
+<TD ALIGN=RIGHT COLSPAN=2>
+</TD>
+</TR>
+</TABLE>
+<& /Elements/TitleBoxEnd &>
+<& /Elements/Submit, Label => loc("Create")&>
+
+<BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR>
+<BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR>
+<BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR>
+<BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR>
+<BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR>
+
+<A NAME="detail">
+	[<A HREF="#top"><&|/l&>Show basics</&></a>] [<a class="currenttab"><&|/l&>Show details</&></a>]
+<BR>
+<TABLE WIDTH="100%" BORDER=0>
+<TR>
+<TD WIDTH="50%" VALIGN=TOP>
+
+	  <& /Elements/TitleBoxStart, title => loc('The Basics'), 
+		title_class=> 'inverse',  
+		color => "#993333" &>
+<TABLE BORDER=0>
+<TR><TD ALIGN=RIGHT><&|/l&>Priority</&>:</TD><TD><input size=3 name="InitialPriority" value="<% $ARGS{InitialPriority} ? $ARGS{InitialPriority} : $QueueObj->InitialPriority %>"></TD></TR>
+<TR><TD ALIGN=RIGHT><&|/l&>Final Priority</&>:</TD><TD><input size=3 name="FinalPriority" value="<% $ARGS{FinalPriority} ? $ARGS{FinalPriority} : $QueueObj->FinalPriority %>"></TD></TR>
+<TR><TD ALIGN=RIGHT><&|/l&>Time Worked</&>:</TD><TD><input size=3 name="TimeWorked"<% $ARGS{TimeWorked} && " VALUE=\"$ARGS{TimeWorked}\""  %>></TD></TR>
+<TR><TD ALIGN=RIGHT><&|/l&>Time Left</&>:</TD><TD><input size=3 name="TimeLeft"<% $ARGS{TimeLeft} && " VALUE=\"$ARGS{TimeLeft}\"" %>></TD></TR>
+</TABLE>
+<& /Elements/TitleBoxEnd &>
+<br>
+<& /Elements/TitleBoxStart, title => loc("Dates"),
+		title_class=> 'inverse',  
+		 color => "#663366" &>
+
+<TABLE BORDER=0>
+<TR><TD ALIGN=RIGHT><&|/l&>Starts</&>:</TD><TD><input size=10 name="Starts"<% $ARGS{Starts} && " VALUE=\"$ARGS{Starts}\"" %>></TD></TR>
+<TR><TD ALIGN=RIGHT><&|/l&>Due</&>:</TD><TD><input size=10 name="Due"<% $ARGS{Due} && " VALUE=\"$ARGS{Due}\"" %>></TD></TR>
+</TABLE>
+<& /Elements/TitleBoxEnd &>
+<BR>
+</TD>
+
+<TD VALIGN="TOP">
+<& /Elements/TitleBoxStart, title => loc('Relationships'), 
+	title_class=> 'inverse',  
+	titleright => '', color=> "#336633" &>
+
+<i><&|/l&>(Enter ticket ids or URLs, seperated with spaces)</&></i>
+<TABLE BORDER=0>
+<TR><TD ALIGN=RIGHT><&|/l&>Depends on</&></TD><TD><input size=10 name="new-DependsOn"<% $ARGS{'new-DependsOn'} && " VALUE=\"$ARGS{'new-DependsOn'}\""%>></TD></TR>
+<TR><TD ALIGN=RIGHT><&|/l&>Depended on by</&></TD><TD><input size=10 name="DependsOn-new"<% $ARGS{'DependsOn-new'} && " VALUE=\"$ARGS{'DependsOn-new'}\"" %>></TD></TR>
+<TR><TD ALIGN=RIGHT><&|/l&>Parents</&></TD><TD><input size=10 name="new-MemberOf"<% $ARGS{'new-MemberOf'} && " VALUE=\"$ARGS{'new-MemberOf'}\"" %>></TD></TR>
+<TR><TD ALIGN=RIGHT><&|/l&>Children</&></TD><TD><input size=10 name="MemberOf-new" <% $ARGS{'MemberOf-new'} && " VALUE=\"$ARGS{'MemberOf-new'}\"" %>></TD></TR>
+<TR><TD ALIGN=RIGHT><&|/l&>Refers to</&></TD><TD><input size=10 name="new-RefersTo"<% $ARGS{'new-RefersTo'} && " VALUE=\"$ARGS{'new-MemberOf'}\"" %>></TD></TR>
+<TR><TD ALIGN=RIGHT><&|/l&>Referred to by</&></TD><TD><input size=10 name="RefersTo-new"<% $ARGS{'RefersTo-new'} && " VALUE=\"$ARGS{'RefersTo-new'}\"" %>></TD></TR>
+
+
+</TABLE>
+<& /Elements/TitleBoxEnd &>
+<BR>
+
+</TD>
+</TR>
+</TABLE>
+<& /Elements/Submit, Label => loc("Create") &>
+</FORM>
+<BR><BR><BR><BR><BR><BR><BR><BR><BR><BR>
+<BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR>
+<BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR>
+<BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR>
+<BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR>
+
+<%INIT>
+my $QueueObj = new RT::Queue($session{'CurrentUser'});
+$QueueObj->Load($Queue) || Abort(loc("Queue could not be loaded."));
+my $CFs = $QueueObj->CustomFields();
+
+# {{{ deal with deleting uploaded attachments
+foreach my $key (keys %ARGS) {
+    if ($key =~ m/^DeleteAttach-(.+)$/) {
+	delete $session{'Attachments'}{$1};
+    }
+    $session{'Attachments'} = { %{$session{'Attachments'} || {}} };
+}
+
+# {{{ store the uploaded attachment in session
+if ($ARGS{'Attach'}) {			# attachment?
+    $session{'Attachments'} = {} unless defined $session{'Attachments'};
+
+    my $subject = "$ARGS{'Attach'}";
+
+    # since CGI.pm deutf8izes the magic field, we need to add it back.
+    Encode::_utf8_on($subject);
+    # strip leading directories
+    $subject =~ s#^.*[\\/]##;
+
+    my $attachment = MakeMIMEEntity(
+        Subject             => $subject,
+        Body                => "",
+        AttachmentFieldName => 'Attach'
+    );
+
+    $session{'Attachments'} = { %{$session{'Attachments'} || {}},
+				$ARGS{'Attach'} => $attachment };
+}
+# }}}
+
+# delete temporary storage entry to make WebUI clean
+unless (keys %{$session{'Attachments'}} and $ARGS{'id'} eq 'new') {
+    delete $session{'Attachments'};
+}
+
+
+# }}}
+
+if ((!exists $ARGS{'AddMoreAttach'}) && ($ARGS{'id'} eq 'new')) { # new ticket?
+    $m->comp('Display.html', %ARGS);
+    $m->abort();
+}
+</%INIT>
+
+<%ARGS>
+$DependsOn => undef
+$DependedOnBy => undef
+$MemberOf => undef
+$QuoteTransaction => undef
+$Queue => undef
+</%ARGS>

@@ -1,0 +1,101 @@
+%# BEGIN LICENSE BLOCK
+%# 
+%# Copyright (c) 1996-2003 Jesse Vincent <jesse@bestpractical.com>
+%# 
+%# (Except where explictly superceded by other copyright notices)
+%# 
+%# This work is made available to you under the terms of Version 2 of
+%# the GNU General Public License. A copy of that license should have
+%# been provided with this software, but in any event can be snarfed
+%# from www.gnu.org.
+%# 
+%# This work is distributed in the hope that it will be useful, but
+%# WITHOUT ANY WARRANTY; without even the implied warranty of
+%# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+%# General Public License for more details.
+%# 
+%# Unless otherwise specified, all modifications, corrections or
+%# extensions to this work which alter its source code become the
+%# property of Best Practical Solutions, LLC when submitted for
+%# inclusion in the work.
+%# 
+%# 
+%# END LICENSE BLOCK
+<& /Admin/Elements/Header, Title => $title &>
+<& /Admin/Elements/QueueTabs, id => $Queue, 
+    QueueObj => $TemplateObj->QueueObj,
+     current_tab => 'Admin/Queues/Templates.html?id='.$Queue,
+     current_subtab => $current_subtab, 
+     subtabs => $subtabs, 
+     Title => $title &>
+<& /Elements/ListActions, actions => \@results &>
+
+<FORM METHOD=POST ACTION="Template.html">
+%if ($Create ) {
+<INPUT TYPE=HIDDEN NAME="Template" VALUE="new">
+% } else {
+<INPUT TYPE=HIDDEN NAME="Template" VALUE="<%$TemplateObj->Id%>">
+% }
+
+%# hang onto the queue id
+<INPUT TYPE=HIDDEN name="Queue" value="<%$Queue%>">
+<& /Admin/Elements/ModifyTemplate, Name => $TemplateObj->Name, Description =>
+$TemplateObj->Description, Content => $TemplateObj->Content &> 
+<& /Elements/Submit, Caption => loc("Be sure to save your changes"), Reset => 1 &>
+</FORM>
+
+
+<%INIT>
+
+my $TemplateObj = new RT::Template($session{'CurrentUser'});
+my  ($title, @results, $current_subtab);
+
+my $subtabs = {
+		 A => { title => loc('Select template'),
+  		     	path => "Admin/Queues/Templates.html?id=$Queue"
+			   },
+		 B => { title => loc('New template'),
+  		     	path => "Admin/Queues/Template.html?Create=1&Queue=$Queue",
+			separator => 1,
+			   }
+	      };
+
+if ($Create) {
+  $title = loc("Create a template");
+  $current_subtab = "Admin/Queues/Template.html?create=1&Queue=".$Queue;
+}
+
+else {
+  if ($Template eq 'new') {
+      my ($val, $msg) =  $TemplateObj->Create(Queue => $Queue, Name => $Name);
+      Abort(loc("Could not create template: [_1]", $msg)) unless ($val);
+     push @results, $msg;
+    }
+    else {
+       $TemplateObj->Load($Template) || Abort(loc('No Template'));
+    }
+     $title = loc('Modify template [_1]', loc($TemplateObj->Name())); 
+  
+    
+}
+if ($TemplateObj->Id()) {
+  $Queue = $TemplateObj->Queue;
+
+  my @attribs = qw( Description Content Queue Name);
+  my @aresults = UpdateRecordObject( AttributesRef => \@attribs, 
+				     Object => $TemplateObj, 
+				     ARGSRef => \%ARGS);
+  $current_subtab = "Admin/Queues/Template.html?Queue=$Queue&Template=".$TemplateObj->Id();
+  $subtabs->{"C"} = { title => loc('Template #[_1]', $TemplateObj->Id()),
+  		     	path => "Admin/Queues/Template.html?Queue=$Queue&Template=".$TemplateObj->Id(),
+			};
+  push @results, @aresults;
+}
+
+</%INIT>
+<%ARGS>
+$Queue => undef
+$Template => undef
+$Create => undef
+$Name => undef
+</%ARGS>

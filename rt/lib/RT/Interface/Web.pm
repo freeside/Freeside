@@ -1,129 +1,214 @@
-## $Header: /home/cvs/cvsroot/freeside/rt/lib/RT/Interface/Web.pm,v 1.1 2002-08-12 06:17:08 ivan Exp $
-
+# BEGIN LICENSE BLOCK
+# 
+# Copyright (c) 1996-2003 Jesse Vincent <jesse@bestpractical.com>
+# 
+# (Except where explictly superceded by other copyright notices)
+# 
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+# 
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+# 
+# Unless otherwise specified, all modifications, corrections or
+# extensions to this work which alter its source code become the
+# property of Best Practical Solutions, LLC when submitted for
+# inclusion in the work.
+# 
+# 
+# END LICENSE BLOCK
 ## Portions Copyright 2000 Tobias Brox <tobix@fsck.com>
-## Copyright 1996-2002 Jesse Vincent <jesse@bestpractical.com>
 
 ## This is a library of static subs to be used by the Mason web
 ## interface to RT
 
+
+=head1 NAME
+
+RT::Interface::Web
+
+=begin testing
+
+use_ok(RT::Interface::Web);
+
+=end testing
+
+=cut
+
+
 package RT::Interface::Web;
+use strict;
 
-# {{{ sub NewParser
 
-=head2 NewParser
 
-  Returns a new Mason::Parser object. Takes a param hash of things 
-  that get passed to HTML::Mason::Parser. Currently hard coded to only
-  take the parameter 'allow_globals'.
 
-=cut
-
-sub NewParser {
-    my %args = (
-        allow_globals => undef,
-        @_
-    );
-
-    my $parser = new HTML::Mason::Parser(
-        default_escape_flags => 'h',
-        allow_globals        => $args{'allow_globals'}
-    );
-    return ($parser);
-}
-
-# }}}
-
-# {{{ sub NewInterp
-
-=head2 NewInterp 
-
-  Takes a paremeter hash. Needs a param called 'parser' which is a reference
-  to an HTML::Mason::Parser.
-  returns a new Mason::Interp object
-
-=cut
-
-sub NewInterp {
-    my %params = (
-        comp_root                    => [
-            [ local    => $RT::MasonLocalComponentRoot ],
-            [ standard => $RT::MasonComponentRoot ]
-        ],
-        data_dir => "$RT::MasonDataDir",
-        @_
-    );
-
-    #We allow recursive autohandlers to allow for RT auth.
-
-    use HTML::Mason::Interp;
-    my $interp = new HTML::Mason::Interp(%params);
-
-}
-
-# }}}
 
 # {{{ sub NewApacheHandler 
 
 =head2 NewApacheHandler
 
-  Takes a Mason::Interp object
+  Takes extra options to pass to HTML::Mason::ApacheHandler->new
   Returns a new Mason::ApacheHandler object
 
 =cut
 
 sub NewApacheHandler {
-    my $interp = shift;
-    my $ah = new HTML::Mason::ApacheHandler( interp => $interp );
+    require HTML::Mason::ApacheHandler;
+    my $ah = new HTML::Mason::ApacheHandler( 
+    
+        comp_root                    => [
+            [ local    => $RT::MasonLocalComponentRoot ],
+            [ standard => $RT::MasonComponentRoot ]
+        ],
+        args_method => "CGI",
+        default_escape_flags => 'h',
+        allow_globals        => [qw(%session)],
+        data_dir => "$RT::MasonDataDir",
+        @_
+    );
+
+    $ah->interp->set_escape( h => \&RT::Interface::Web::EscapeUTF8 );
+    
     return ($ah);
 }
 
 # }}}
 
+# {{{ sub NewCGIHandler 
 
-# {{{ sub NewMason11ApacheHandler
+=head2 NewCGIHandler
 
-=head2 NewMason11ApacheHandler
-
-  Returns a new Mason::ApacheHandler object
+  Returns a new Mason::CGIHandler object
 
 =cut
 
-sub NewMason11ApacheHandler {
-        my %args = ( default_escape_flags => 'h',
-                    allow_globals        => [%session],
+sub NewCGIHandler {
+    my %args = (
+        @_
+    );
+
+    my $handler = HTML::Mason::CGIHandler->new(
         comp_root                    => [
             [ local    => $RT::MasonLocalComponentRoot ],
             [ standard => $RT::MasonComponentRoot ]
         ],
         data_dir => "$RT::MasonDataDir",
-        args_method => 'CGI'
+        default_escape_flags => 'h',
+        allow_globals        => [qw(%session)]
     );
-    my $ah = new HTML::Mason::ApacheHandler(%args);
-    return ($ah);
+  
+
+    $handler->interp->set_escape( h => \&RT::Interface::Web::EscapeUTF8 );
+
+
+    return ($handler);
+
+}
+# }}}
+
+
+# {{{ EscapeUTF8
+
+=head2 EscapeUTF8 SCALARREF
+
+does a css-busting but minimalist escaping of whatever html you're passing in.
+
+=cut
+
+sub EscapeUTF8  {
+        my  $ref = shift;
+        my $val = $$ref;
+        use bytes;
+        $val =~ s/&/&#38;/g;
+        $val =~ s/</&lt;/g; 
+        $val =~ s/>/&gt;/g;
+        $val =~ s/\(/&#40;/g;
+        $val =~ s/\)/&#41;/g;
+        $val =~ s/"/&#34;/g;
+        $val =~ s/'/&#39;/g;
+        $$ref = $val;
+        Encode::_utf8_on($$ref);
+
 }
 
 # }}}
 
 
+package HTML::Mason::Commands;
+use strict;
+use vars qw/$r $m %session/;
 
 
+# {{{ loc
+
+=head2 loc ARRAY
+
+loc is a nice clean global routine which calls $session{'CurrentUser'}->loc()
+with whatever it's called with. If there is no $session{'CurrentUser'}, 
+it creates a temporary user, so we have something to get a localisation handle
+through
+
+=cut
+
+sub loc {
+
+    if ($session{'CurrentUser'} && 
+        UNIVERSAL::can($session{'CurrentUser'}, 'loc')){
+        return($session{'CurrentUser'}->loc(@_));
+    }
+    else  {
+        my $u = RT::CurrentUser->new($RT::SystemUser);
+        return ($u->loc(@_));
+    }
+}
 
 # }}}
 
-package HTML::Mason::Commands;
+
+# {{{ loc_fuzzy
+
+=head2 loc_fuzzy STRING
+
+loc_fuzzy is for handling localizations of messages that may already
+contain interpolated variables, typically returned from libraries
+outside RT's control.  It takes the message string and extracts the
+variable array automatically by matching against the candidate entries
+inside the lexicon file.
+
+=cut
+
+sub loc_fuzzy {
+    my $msg  = shift;
+    
+    if ($session{'CurrentUser'} && 
+        UNIVERSAL::can($session{'CurrentUser'}, 'loc')){
+        return($session{'CurrentUser'}->loc_fuzzy($msg));
+    }
+    else  {
+        my $u = RT::CurrentUser->new($RT::SystemUser);
+        return ($u->loc_fuzzy($msg));
+    }
+}
+
+# }}}
+
 
 # {{{ sub Abort
 # Error - calls Error and aborts
 sub Abort {
 
-    if ( $session{'ErrorDocument'} && $session{'ErrorDocumentType'} ) {
-        SetContentType( $session{'ErrorDocumentType'} );
-        $m->comp( $session{'ErrorDocument'}, Why => shift );
+    if ($session{'ErrorDocument'} && 
+        $session{'ErrorDocumentType'}) {
+        $r->content_type($session{'ErrorDocumentType'});
+        $m->comp($session{'ErrorDocument'} , Why => shift);
         $m->abort;
-    }
-    else {
-        SetContentType('text/html');
-        $m->comp( "/Elements/Error", Why => shift );
+    } 
+    else  {
+        $m->comp("/Elements/Error" , Why => shift);
         $m->abort;
     }
 }
@@ -135,6 +220,7 @@ sub Abort {
 =head2 CreateTicket ARGS
 
 Create a new ticket, using Mason's %ARGS.  returns @results.
+
 =cut
 
 sub CreateTicket {
@@ -158,38 +244,45 @@ sub CreateTicket {
     my $starts = new RT::Date( $session{'CurrentUser'} );
     $starts->Set( Format => 'unknown', Value => $ARGS{'Starts'} );
 
-    my @Requestors = split ( /,/, $ARGS{'Requestors'} );
-    my @Cc         = split ( /,/, $ARGS{'Cc'} );
-    my @AdminCc    = split ( /,/, $ARGS{'AdminCc'} );
+    my @Requestors = split ( /\s*,\s*/, $ARGS{'Requestors'} );
+    my @Cc         = split ( /\s*,\s*/, $ARGS{'Cc'} );
+    my @AdminCc    = split ( /\s*,\s*/, $ARGS{'AdminCc'} );
 
     my $MIMEObj = MakeMIMEEntity(
         Subject             => $ARGS{'Subject'},
         From                => $ARGS{'From'},
         Cc                  => $ARGS{'Cc'},
         Body                => $ARGS{'Content'},
-        AttachmentFieldName => 'Attach'
     );
 
+    if ($ARGS{'Attachments'}) {
+        $MIMEObj->make_multipart;
+        $MIMEObj->add_part($_) foreach values %{$ARGS{'Attachments'}};
+    }
+
     my %create_args = (
-        Queue           => $ARGS{Queue},
-        Owner           => $ARGS{Owner},
-        InitialPriority => $ARGS{InitialPriority},
-        FinalPriority   => $ARGS{FinalPriority},
-        TimeLeft        => $ARGS{TimeLeft},
-        TimeWorked      => $ARGS{TimeWorked},
+        Queue           => $ARGS{'Queue'},
+        Owner           => $ARGS{'Owner'},
+        InitialPriority => $ARGS{'InitialPriority'},
+        FinalPriority   => $ARGS{'FinalPriority'},
+        TimeLeft        => $ARGS{'TimeLeft'},
+        TimeEstimated        => $ARGS{'TimeEstimated'},
+        TimeWorked      => $ARGS{'TimeWorked'},
         Requestor       => \@Requestors,
         Cc              => \@Cc,
         AdminCc         => \@AdminCc,
-        Subject         => $ARGS{Subject},
-        Status          => $ARGS{Status},
+        Subject         => $ARGS{'Subject'},
+        Status          => $ARGS{'Status'},
         Due             => $due->ISO,
         Starts          => $starts->ISO,
         MIMEObj         => $MIMEObj
     );
-
-    # we need to get any KeywordSelect-<integer> fields into %create_args..
-    grep { $_ =~ /^KeywordSelect-/ &&{ $create_args{$_} = $ARGS{$_} } } %ARGS;
-
+  foreach my $arg (%ARGS) {
+        if ($arg =~ /^CustomField-(\d+)(.*?)$/) {
+            next if ($arg =~ /-Magic$/);
+            $create_args{"CustomField-".$1} = $ARGS{"$arg"};
+        }
+    }
     my ( $id, $Trans, $ErrMsg ) = $Ticket->Create(%create_args);
     unless ( $id && $Trans ) {
         Abort($ErrMsg);
@@ -216,7 +309,7 @@ sub CreateTicket {
         }
     }
 
-    push ( @Actions, $ErrMsg );
+    push ( @Actions, split("\n", $ErrMsg) );
     unless ( $Ticket->CurrentUserHasRight('ShowTicket') ) {
         Abort( "No permission to view newly created ticket #"
             . $Ticket->id . "." );
@@ -283,80 +376,38 @@ sub ProcessUpdateMessage {
         my $Message = MakeMIMEEntity(
             Subject             => $args{ARGSRef}->{'UpdateSubject'},
             Body                => $args{ARGSRef}->{'UpdateContent'},
-            AttachmentFieldName => 'UpdateAttachment'
         );
 
-	## Check whether this was a refresh or not.  
+        if ($args{ARGSRef}->{'UpdateAttachments'}) {
+            $Message->make_multipart;
+            $Message->add_part($_) foreach values %{$args{ARGSRef}->{'UpdateAttachments'}};
+        }
 
-	# Match Correspondence or Comments.
-        my $trans_flag = -2;
-	my $trans_type = undef;
-	my $orig_trans = $args{ARGSRef}->{'UpdateType'};
-        if ( $orig_trans =~ /^(private|public)$/ ) {
-	    $trans_type = "Comment";
-        }elsif ( $orig_trans eq 'response' ) {
-	    $trans_type = "Correspond";
-	}
-
-	# Do we have a transaction that we need to update on? session
-	if( defined( $trans_type ) ){
-	    $trans_flag = 0;
-
-	    # Prepare a checksum.
-	    # See perldoc -f unpack for example of this.
-	    my $this_checksum = unpack("%32C*", $Message->body_as_string ) % 65535;
-
-	    # The above *could* generate duplicate checksums.  Crosscheck with
-	    # the length.
-	    my $this_length = length( $Message->body_as_string );
-
-	    # Don't forget the ticket id.
-	    my $this_id = $args{TicketObj}->id;
-
-	    # Check whether the previous transaction in the
-	    # ticket is the same as the current transaction.
-	    if( defined( $session{'prev_trans_type'} ) && defined( $session{'prev_trans_chksum'} ) && defined( $session{'prev_trans_length'} ) && defined( $session{'prev_trans_tickid'} ) ){
-		if( $session{'prev_trans_type'} eq $orig_trans && $session{'prev_trans_chksum'} == $this_checksum && $session{'prev_trans_length'} == $this_length && $session{'prev_trans_tickid'} == $this_id ){
-		    # Its the same as the previous transaction for this user.
-		    $trans_flag = -1;
-		}
-	    }
-
-	    # Store them for next time.
-	    $session{'prev_trans_type'} = $orig_trans;
-	    $session{'prev_trans_chksum'} = $this_checksum;
-	    $session{'prev_trans_length'} = $this_length;
-	    $session{'prev_trans_tickid'} = $this_id;
-
-	    if( $trans_flag == -1 ){
-                push ( @{ $args{'Actions'} },
-"This appears to be a duplicate of your previous update (please do not refresh this page)" );
-	    }
-
-
-            if ( $trans_type eq 'Comment' && $trans_flag >= 0 ) {
-                my ( $Transaction, $Description ) = $args{TicketObj}->Comment(
-                    CcMessageTo  => $args{ARGSRef}->{'UpdateCc'},
-                    BccMessageTo => $args{ARGSRef}->{'UpdateBcc'},
-                    MIMEObj      => $Message,
-                    TimeTaken    => $args{ARGSRef}->{'UpdateTimeWorked'}
-                );
-                push ( @{ $args{Actions} }, $Description );
-            }
-            elsif ( $trans_type eq 'Correspond' && $trans_flag >= 0 ) {
-                my ( $Transaction, $Description ) = $args{TicketObj}->Correspond(
-                    CcMessageTo  => $args{ARGSRef}->{'UpdateCc'},
-                    BccMessageTo => $args{ARGSRef}->{'UpdateBcc'},
-                    MIMEObj      => $Message,
-                    TimeTaken    => $args{ARGSRef}->{'UpdateTimeWorked'}
-                );
-                push ( @{ $args{Actions} }, $Description );
-            }
-	}
+        ## TODO: Implement public comments
+        if ( $args{ARGSRef}->{'UpdateType'} =~ /^(private|public)$/ ) {
+            my ( $Transaction, $Description ) = $args{TicketObj}->Comment(
+                CcMessageTo  => $args{ARGSRef}->{'UpdateCc'},
+                BccMessageTo => $args{ARGSRef}->{'UpdateBcc'},
+                MIMEObj      => $Message,
+                TimeTaken    => $args{ARGSRef}->{'UpdateTimeWorked'}
+            );
+            push ( @{ $args{Actions} }, $Description );
+        }
+        elsif ( $args{ARGSRef}->{'UpdateType'} eq 'response' ) {
+            my ( $Transaction, $Description ) = $args{TicketObj}->Correspond(
+                CcMessageTo  => $args{ARGSRef}->{'UpdateCc'},
+                BccMessageTo => $args{ARGSRef}->{'UpdateBcc'},
+                MIMEObj      => $Message,
+                TimeTaken    => $args{ARGSRef}->{'UpdateTimeWorked'}
+            );
+            push ( @{ $args{Actions} }, $Description );
+        }
         else {
             push ( @{ $args{'Actions'} },
-    "Update type was neither correspondence nor comment. Update not recorded"
-                );
+                loc("Update type was neither correspondence nor comment.").
+                " ".
+                loc("Update not recorded.")
+            );
         }
     }
 }
@@ -382,61 +433,66 @@ sub MakeMIMEEntity {
         Cc                  => undef,
         Body                => undef,
         AttachmentFieldName => undef,
-        @_
+        map Encode::encode_utf8($_), @_,
     );
 
     #Make the update content have no 'weird' newlines in it
 
     $args{'Body'} =~ s/\r\n/\n/gs;
-    my $Message = MIME::Entity->build(
-        Subject => $args{'Subject'} || "",
-        From    => $args{'From'},
-        Cc      => $args{'Cc'},
-        Data    => [ $args{'Body'} ]
-    );
-
-    my $cgi_object = CGIObject();
-    if ( $cgi_object->param( $args{'AttachmentFieldName'} ) ) {
-
-        my $cgi_filehandle =
-          $cgi_object->upload( $args{'AttachmentFieldName'} );
-
-        use File::Temp qw(tempfile tempdir);
-
-        #foreach my $filehandle (@filenames) {
-
-        # my ( $fh, $temp_file ) = tempfile();
-
-        #$binmode $fh;    #thank you, windows
-
-        # We're having trouble with tempfiles not getting created. Let's try it with 
-        # a scalar instead
-
-        my ( $buffer, @file );
-
-        while ( my $bytesread = read( $cgi_filehandle, $buffer, 4096 ) ) {
-            push ( @file, $buffer );
-        }
-
-        $RT::Logger->debug($file);
-        my $filename = "$cgi_filehandle";
-        $filename =~ s#^(.*)/##;
-        $filename =~ s#^(.*)\\##;
-        my $uploadinfo = $cgi_object->uploadInfo($cgi_filehandle);
-        $Message->attach(
-            Data => \@file,
-
-            #Path     => $temp_file,
-            Filename => $filename,
-            Type     => $uploadinfo->{'Content-Type'}
+    my $Message;
+    {
+        # MIME::Head is not happy in utf-8 domain.  This only happens
+        # when processing an incoming email (so far observed).
+        no utf8;
+        use bytes;
+        $Message = MIME::Entity->build(
+            Subject => $args{'Subject'} || "",
+            From    => $args{'From'},
+            Cc      => $args{'Cc'},
+            Data    => [ $args{'Body'} ]
         );
-
-        #close($fh);
-        #unlink($temp_file);
-
-        #	}
     }
+
+    my $cgi_object = $m->cgi_object;
+
+    if (my $filehandle = $cgi_object->upload( $args{'AttachmentFieldName'} ) ) {
+
+
+
+    use File::Temp qw(tempfile tempdir);
+
+    #foreach my $filehandle (@filenames) {
+
+    my ( $fh, $temp_file ) = tempfile();
+
+    binmode $fh;    #thank you, windows
+    my ($buffer);
+    while ( my $bytesread = read( $filehandle, $buffer, 4096 ) ) {
+        print $fh $buffer;
+    }
+
+    my $uploadinfo = $cgi_object->uploadInfo($filehandle);
+
+    # Prefer the cached name first over CGI.pm stringification.
+    my $filename = $RT::Mason::CGI::Filename;
+    $filename = "$filehandle" unless defined($filename);
+                   
+    $filename =~ s#^.*[\\/]##;
+
+    $Message->attach(
+        Path     => $temp_file,
+        Filename => $filename,
+        Type     => $uploadinfo->{'Content-Type'},
+    );
+    close($fh);
+
+    #   }
+
+    }
+
     $Message->make_singlepart();
+    RT::I18N::SetMIMEEntityToUTF8($Message); # convert text parts into utf-8
+
     return ($Message);
 
 }
@@ -484,6 +540,9 @@ sub ProcessSearchQuery {
     }
     elsif ( $args{ARGS}->{'GotoPage'} eq 'Prev' ) {
         $session{'tickets'}->PrevPage;
+    }
+    elsif ( $args{ARGS}->{'GotoPage'} > 0 ) {
+        $session{'tickets'}->GotoPage( $args{ARGS}->{GotoPage} - 1 );
     }
 
     # }}}
@@ -576,8 +635,12 @@ sub ProcessSearchQuery {
     # }}}
     # {{{ Limit Subject
     if ( $args{ARGS}->{'ValueOfSubject'} ne '' ) {
+            my $val = $args{ARGS}->{'ValueOfSubject'};
+        if ($args{ARGS}->{'SubjectOp'} =~ /like/) {
+            $val = "%".$val."%";
+        }
         $session{'tickets'}->LimitSubject(
-            VALUE    => $args{ARGS}->{'ValueOfSubject'},
+            VALUE    => $val,
             OPERATOR => $args{ARGS}->{'SubjectOp'},
         );
     }
@@ -585,40 +648,59 @@ sub ProcessSearchQuery {
     # }}}    
     # {{{ Limit Dates
     if ( $args{ARGS}->{'ValueOfDate'} ne '' ) {
-
         my $date = ParseDateToISO( $args{ARGS}->{'ValueOfDate'} );
         $args{ARGS}->{'DateType'} =~ s/_Date$//;
 
-        $session{'tickets'}->LimitDate(
-            FIELD    => $args{ARGS}->{'DateType'},
-            VALUE    => $date,
-            OPERATOR => $args{ARGS}->{'DateOp'},
-        );
+        if ( $args{ARGS}->{'DateType'} eq 'Updated' ) {
+            $session{'tickets'}->LimitTransactionDate(
+                                            VALUE    => $date,
+                                            OPERATOR => $args{ARGS}->{'DateOp'},
+            );
+        }
+        else {
+            $session{'tickets'}->LimitDate( FIELD => $args{ARGS}->{'DateType'},
+                                            VALUE => $date,
+                                            OPERATOR => $args{ARGS}->{'DateOp'},
+            );
+        }
     }
 
     # }}}    
     # {{{ Limit Content
-    if ( $args{ARGS}->{'ValueOfContent'} ne '' ) {
-        $session{'tickets'}->LimitContent(
-            VALUE    => $args{ARGS}->{'ValueOfContent'},
-            OPERATOR => $args{ARGS}->{'ContentOp'},
+    if ( $args{ARGS}->{'ValueOfAttachmentField'} ne '' ) {
+        my $val = $args{ARGS}->{'ValueOfAttachmentField'};
+        if ($args{ARGS}->{'AttachmentFieldOp'} =~ /like/) {
+            $val = "%".$val."%";
+        }
+        $session{'tickets'}->Limit(
+            FIELD   => $args{ARGS}->{'AttachmentField'},
+            VALUE    => $val,
+            OPERATOR => $args{ARGS}->{'AttachmentFieldOp'},
         );
     }
 
     # }}}   
-    # {{{ Limit KeywordSelects
 
-    foreach my $KeywordSelectId (
-        map { /^KeywordSelect(\d+)$/; $1 }
-        grep { /^KeywordSelect(\d+)$/; } keys %{ $args{ARGS} }
-      )
-    {
-        my $form = $args{ARGS}->{"KeywordSelect$KeywordSelectId"};
-        my $oper = $args{ARGS}->{"KeywordSelectOp$KeywordSelectId"};
-        foreach my $KeywordId ( ref($form) ? @{$form} : ($form) ) {
-            next unless ($KeywordId);
+ # {{{ Limit CustomFields
+
+    foreach my $arg ( keys %{ $args{ARGS} } ) {
+        my $id;
+        if ( $arg =~ /^CustomField(\d+)$/ ) {
+            $id = $1;
+        }
+        else {
+            next;
+        }
+        next unless ( $args{ARGS}->{$arg} );
+
+        my $form = $args{ARGS}->{$arg};
+        my $oper = $args{ARGS}->{ "CustomFieldOp" . $id };
+        foreach my $value ( ref($form) ? @{$form} : ($form) ) {
             my $quote = 1;
-            if ( $KeywordId =~ /^null$/i ) {
+            if ($oper =~ /like/i) {
+                $value = "%".$value."%";
+            }
+            if ( $value =~ /^null$/i ) {
 
                 #Don't quote the string 'null'
                 $quote = 0;
@@ -627,16 +709,15 @@ sub ProcessSearchQuery {
                 $oper = 'IS'     if ( $oper eq '=' );
                 $oper = 'IS NOT' if ( $oper eq '!=' );
             }
-            $session{'tickets'}->LimitKeyword(
-                KEYWORDSELECT => $KeywordSelectId,
-                OPERATOR      => $oper,
-                QUOTEVALUE    => $quote,
-                KEYWORD       => $KeywordId
-            );
+            $session{'tickets'}->LimitCustomField( CUSTOMFIELD => $id,
+                                                   OPERATOR    => $oper,
+                                                   QUOTEVALUE  => $quote,
+                                                   VALUE       => $value );
         }
     }
 
     # }}}
+
 
 }
 
@@ -654,7 +735,7 @@ Returns an ISO date and time in GMT
 sub ParseDateToISO {
     my $date = shift;
 
-    my $date_obj = new RT::Date($CurrentUser);
+    my $date_obj = RT::Date->new($session{'CurrentUser'});
     $date_obj->Set(
         Format => 'unknown',
         Value  => $date
@@ -680,172 +761,82 @@ sub Config {
 # {{{ sub ProcessACLChanges
 
 sub ProcessACLChanges {
-    my $ACLref  = shift;
     my $ARGSref = shift;
 
-    my @CheckACL = @$ACLref;
     my %ARGS     = %$ARGSref;
 
     my ( $ACL, @results );
 
-    # {{{ Add rights
-    foreach $ACL (@CheckACL) {
-        my ($Principal);
 
-        next unless ($ACL);
+    foreach my $arg (keys %ARGS) {
+        if ($arg =~ /GrantRight-(\d+)-(.*?)-(\d+)$/) {
+            my $principal_id = $1;
+            my $object_type = $2;
+            my $object_id = $3;
+            my $rights = $ARGS{$arg};
 
-        # Parse out what we're really talking about. 
-        if ( $ACL =~ /^(.*?)-(\d+)-(.*?)-(\d+)/ ) {
-            my $PrincipalType = $1;
-            my $PrincipalId   = $2;
-            my $Scope         = $3;
-            my $AppliesTo     = $4;
+            my $principal = RT::Principal->new($session{'CurrentUser'});
+            $principal->Load($principal_id);
 
-            # {{{ Create an object called Principal
-            # so we can do rights operations
+            my $obj;
 
-            if ( $PrincipalType eq 'User' ) {
-                $Principal = new RT::User( $session{'CurrentUser'} );
-            }
-            elsif ( $PrincipalType eq 'Group' ) {
-                $Principal = new RT::Group( $session{'CurrentUser'} );
-            }
-            else {
-                Abort("$PrincipalType unknown principal type");
-            }
+            if ($object_type eq 'RT::Queue') {
+                $obj = RT::Queue->new($session{'CurrentUser'});
+                $obj->Load($object_id);      
+            } elsif ($object_type eq 'RT::Group') {
+                $obj = RT::Group->new($session{'CurrentUser'});
+                $obj->Load($object_id);      
 
-            $Principal->Load($PrincipalId)
-              || Abort("$PrincipalType $PrincipalId couldn't be loaded");
-
-            # }}}
-
-            # {{{ load up an RT::ACL object with the same current vals of this ACL
-
-            my $CurrentACL = new RT::ACL( $session{'CurrentUser'} );
-            if ( $Scope eq 'Queue' ) {
-                $CurrentACL->LimitToQueue($AppliesTo);
-            }
-            elsif ( $Scope eq 'System' ) {
-                $CurrentACL->LimitToSystem();
+            } elsif ($object_type eq 'RT::System') {
+                $obj = $RT::System;
+            } else {
+                push (@results, loc("System Error").
+                                loc("Rights could not be granted for [_1]", $object_type));
+                next;
             }
 
-            $CurrentACL->LimitPrincipalToType($PrincipalType);
-            $CurrentACL->LimitPrincipalToId($PrincipalId);
-
-            # }}}
-
-            # {{{ Get the values of the select we're working with 
-            # into an array. it will contain all the new rights that have 
-            # been granted
-            #Hack to turn the ACL returned into an array
-            my @rights =
-              ref( $ARGS{"GrantACE-$ACL"} ) eq 'ARRAY'
-              ? @{ $ARGS{"GrantACE-$ACL"} }
-              : ( $ARGS{"GrantACE-$ACL"} );
-
-            # }}}
-
-            # {{{ Add any rights we need.
-
+            my @rights = ref($ARGS{$arg}) eq 'ARRAY' ? @{$ARGS{$arg}} : ($ARGS{$arg});
             foreach my $right (@rights) {
                 next unless ($right);
-
-                #if the right that's been selected wasn't there before, add it.
-                unless (
-                    $CurrentACL->HasEntry(
-                        RightScope     => "$Scope",
-                        RightName      => "$right",
-                        RightAppliesTo => "$AppliesTo",
-                        PrincipalType  => $PrincipalType,
-                        PrincipalId    => $Principal->Id
-                    )
-                  )
-                {
-
-                    #Add new entry to list of rights.
-                    if ( $Scope eq 'Queue' ) {
-                        my $Queue = new RT::Queue( $session{'CurrentUser'} );
-                        $Queue->Load($AppliesTo);
-                        unless ( $Queue->id ) {
-                            Abort("Couldn't find a queue called $AppliesTo");
-                        }
-
-                        my ( $val, $msg ) = $Principal->GrantQueueRight(
-                            RightAppliesTo => $Queue->id,
-                            RightName      => "$right"
-                        );
-
-                        if ($val) {
-                            push ( @results,
-                                "Granted right $right to "
-                                  . $Principal->Name
-                                  . " for queue "
-                                  . $Queue->Name );
-                        }
-                        else {
-                            push ( @results, $msg );
-                        }
-                    }
-                    elsif ( $Scope eq 'System' ) {
-                        my ( $val, $msg ) = $Principal->GrantSystemRight(
-                            RightAppliesTo => $AppliesTo,
-                            RightName      => "$right"
-                        );
-                        if ($val) {
-                            push ( @results, "Granted system right '$right' to "
-                                  . $Principal->Name );
-                        }
-                        else {
-                            push ( @results, $msg );
-                        }
-                    }
-                }
+                my ($val, $msg) = $principal->GrantRight(Object => $obj, Right => $right);
+                push (@results, $msg);
             }
-
-            # }}}
         }
+       elsif ($arg =~ /RevokeRight-(\d+)-(.*?)-(\d+)-(.*?)$/) {
+            my $principal_id = $1;
+            my $object_type = $2;
+            my $object_id = $3;
+            my $right = $4;
+
+            my $principal = RT::Principal->new($session{'CurrentUser'});
+            $principal->Load($principal_id);
+            next unless ($right);
+            my $obj;
+
+            if ($object_type eq 'RT::Queue') {
+                $obj = RT::Queue->new($session{'CurrentUser'});
+                $obj->Load($object_id);      
+            } elsif ($object_type eq 'RT::Group') {
+                $obj = RT::Group->new($session{'CurrentUser'});
+                $obj->Load($object_id);      
+
+            } elsif ($object_type eq 'RT::System') {
+                $obj = $RT::System;
+            } else {
+                push (@results, loc("System Error").
+                                loc("Rights could not be revoked for [_1]", $object_type));
+                next;
+            }
+            my ($val, $msg) = $principal->RevokeRight(Object => $obj, Right => $right);
+            push (@results, $msg);
+        }
+
+
     }
-
-    # }}} Add rights
-
-    # {{{ remove any rights that have been deleted
-
-    my @RevokeACE =
-      ref( $ARGS{"RevokeACE"} ) eq 'ARRAY' 
-      ? @{ $ARGS{"RevokeACE"} }
-      : ( $ARGS{"RevokeACE"} );
-
-    foreach my $aceid (@RevokeACE) {
-
-        my $right = new RT::ACE( $session{'CurrentUser'} );
-        $right->Load($aceid);
-        next unless ( $right->id );
-
-        my $phrase = "Revoked "
-          . $right->PrincipalType . " "
-          . $right->PrincipalObj->Name
-          . "'s right to "
-          . $right->RightName;
-
-        if ( $right->RightScope eq 'System' ) {
-            $phrase .= ' across all queues.';
-        }
-        else {
-            $phrase .= ' for the queue ' . $right->AppliesToObj->Name . '.';
-        }
-        my ( $val, $msg ) = $right->Delete();
-        if ($val) {
-            push ( @results, $phrase );
-        }
-        else {
-            push ( @results, $msg );
-        }
-    }
-
-    # }}}
 
     return (@results);
-}
+
+    }
 
 # }}}
 
@@ -864,6 +855,7 @@ sub UpdateRecordObject {
         ARGSRef       => undef,
         AttributesRef => undef,
         Object        => undef,
+        AttributePrefix => undef,
         @_
     );
 
@@ -872,17 +864,94 @@ sub UpdateRecordObject {
     my $object     = $args{'Object'};
     my $attributes = $args{'AttributesRef'};
     my $ARGSRef    = $args{'ARGSRef'};
-
-    foreach $attribute (@$attributes) {
-        if ( ( defined $ARGSRef->{"$attribute"} )
-            and ( $ARGSRef->{"$attribute"} ne $object->$attribute() ) )
-        {
-            $ARGSRef->{"$attribute"} =~ s/\r\n/\n/gs;
-
-            my $method = "Set$attribute";
-            my ( $code, $msg ) = $object->$method( $ARGSRef->{"$attribute"} );
-            push @results, "$attribute: $msg";
+    foreach my $attribute (@$attributes) {
+        my $value;
+        if ( defined $ARGSRef->{$attribute} ) {
+            $value = $ARGSRef->{$attribute};
         }
+        elsif (
+              defined( $args{'AttributePrefix'} )
+              && defined(
+                  $ARGSRef->{ $args{'AttributePrefix'} . "-" . $attribute }
+              )
+          ) {
+            $value = $ARGSRef->{ $args{'AttributePrefix'} . "-" . $attribute };
+
+        } else {
+                next;
+        }
+
+            $value =~ s/\r\n/\n/gs;
+
+        if ($value ne $object->$attribute()){
+
+              my $method = "Set$attribute";
+              my ( $code, $msg ) = $object->$method($value);
+
+              push @results, loc($attribute) . ': ' . loc_fuzzy($msg);
+=for loc
+                                   "[_1] could not be set to [_2].",       # loc
+                                   "That is already the current value",    # loc
+                                   "No value sent to _Set!\n",             # loc
+                                   "Illegal value for [_1]",               # loc
+                                   "The new value has been set.",          # loc
+                                   "No column specified",                  # loc
+                                   "Immutable field",                      # loc
+                                   "Nonexistant field?",                   # loc
+                                   "Invalid data",                         # loc
+                                   "Couldn't find row",                    # loc
+                                   "Missing a primary key?: [_1]",         # loc
+                                   "Found Object",                         # loc
+=cut
+          };
+    }
+    return (@results);
+}
+
+# }}}
+
+# {{{ Sub ProcessCustomFieldUpdates
+
+sub ProcessCustomFieldUpdates {
+    my %args = (
+        CustomFieldObj => undef,
+        ARGSRef        => undef,
+        @_
+    );
+
+    my $Object  = $args{'CustomFieldObj'};
+    my $ARGSRef = $args{'ARGSRef'};
+
+    my @attribs = qw( Name Type Description Queue SortOrder);
+    my @results = UpdateRecordObject(
+        AttributesRef => \@attribs,
+        Object        => $Object,
+        ARGSRef       => $ARGSRef
+    );
+
+    if ( $ARGSRef->{ "CustomField-" . $Object->Id . "-AddValue-Name" } ) {
+
+        my ( $addval, $addmsg ) = $Object->AddValue(
+            Name =>
+              $ARGSRef->{ "CustomField-" . $Object->Id . "-AddValue-Name" },
+            Description => $ARGSRef->{ "CustomField-"
+                  . $Object->Id
+                  . "-AddValue-Description" },
+            SortOrder => $ARGSRef->{ "CustomField-"
+                  . $Object->Id
+                  . "-AddValue-SortOrder" },
+        );
+        push ( @results, $addmsg );
+    }
+    my @delete_values = (
+        ref $ARGSRef->{ 'CustomField-' . $Object->Id . '-DeleteValue' } eq
+          'ARRAY' )
+      ? @{ $ARGSRef->{ 'CustomField-' . $Object->Id . '-DeleteValue' } }
+      : ( $ARGSRef->{ 'CustomField-' . $Object->Id . '-DeleteValue' } );
+    foreach my $id (@delete_values) {
+        next unless defined $id;
+        my ( $err, $msg ) = $Object->DeleteValue($id);
+        push ( @results, $msg );
     }
     return (@results);
 }
@@ -913,6 +982,7 @@ sub ProcessTicketBasics {
       Subject
       FinalPriority
       Priority
+      TimeEstimated
       TimeWorked
       TimeLeft
       Status
@@ -934,7 +1004,7 @@ sub ProcessTicketBasics {
     );
 
     # We special case owner changing, so we can use ForceOwnerChange
-    if ( $ARGSRef->{'Owner'} && ( $TicketObj->Owner ne $ARGSRef->{'Owner'} ) ) {
+    if ( $ARGSRef->{'Owner'} && ( $TicketObj->Owner != $ARGSRef->{'Owner'} ) ) {
         my ($ChownType);
         if ( $ARGSRef->{'ForceOwnerChange'} ) {
             $ChownType = "Force";
@@ -945,12 +1015,148 @@ sub ProcessTicketBasics {
 
         my ( $val, $msg ) =
           $TicketObj->SetOwner( $ARGSRef->{'Owner'}, $ChownType );
-        push ( @results, "$msg" );
+        push ( @results, $msg );
     }
 
     # }}}
 
     return (@results);
+}
+
+# }}}
+
+# {{{ Sub ProcessTicketCustomFieldUpdates
+
+sub ProcessTicketCustomFieldUpdates {
+    my %args = (
+        ARGSRef => undef,
+        @_
+    );
+
+    my @results;
+
+    my $ARGSRef = $args{'ARGSRef'};
+
+    # Build up a list of tickets that we want to work with
+    my %tickets_to_mod;
+    my %custom_fields_to_mod;
+    foreach my $arg ( keys %{$ARGSRef} ) {
+        if ( $arg =~ /^Ticket-(\d+)-CustomField-(\d+)-/ ) {
+
+            # For each of those tickets, find out what custom fields we want to work with.
+            $custom_fields_to_mod{$1}{$2} = 1;
+        }
+    }
+
+    # For each of those tickets
+    foreach my $tick ( keys %custom_fields_to_mod ) {
+        my $Ticket = RT::Ticket->new( $session{'CurrentUser'} );
+        $Ticket->Load($tick);
+
+        # For each custom field  
+        foreach my $cf ( keys %{ $custom_fields_to_mod{$tick} } ) {
+
+	    my $CustomFieldObj = RT::CustomField->new($session{'CurrentUser'});
+	    $CustomFieldObj->LoadById($cf);
+
+            foreach my $arg ( keys %{$ARGSRef} ) {
+                # since http won't pass in a form element with a null value, we need
+                # to fake it
+                if ($arg =~ /^(.*?)-Values-Magic$/ ) {
+                    # We don't care about the magic, if there's really a values element;
+                    next if (exists $ARGSRef->{$1.'-Values'}) ;
+
+                    $arg = $1."-Values";
+                    $ARGSRef->{$1."-Values"} = undef;
+                
+                }
+                next unless ( $arg =~ /^Ticket-$tick-CustomField-$cf-/ );
+                my @values =
+                  ( ref( $ARGSRef->{$arg} ) eq 'ARRAY' ) 
+                  ? @{ $ARGSRef->{$arg} }
+                  : ( $ARGSRef->{$arg} );
+                if ( ( $arg =~ /-AddValue$/ ) || ( $arg =~ /-Value$/ ) ) {
+                    foreach my $value (@values) {
+                        next unless ($value);
+                        my ( $val, $msg ) = $Ticket->AddCustomFieldValue(
+                            Field => $cf,
+                            Value => $value
+                        );
+                        push ( @results, $msg );
+                    }
+                }
+                elsif ( $arg =~ /-DeleteValues$/ ) {
+                    foreach my $value (@values) {
+                        next unless ($value);
+                        my ( $val, $msg ) = $Ticket->DeleteCustomFieldValue(
+                            Field => $cf,
+                            Value => $value
+                        );
+                        push ( @results, $msg );
+                    }
+                }
+                elsif ( $arg =~ /-Values$/ and $CustomFieldObj->Type !~ /Entry/) {
+                    my $cf_values = $Ticket->CustomFieldValues($cf);
+
+                    my %values_hash;
+                    foreach my $value (@values) {
+                        next unless ($value);
+
+                        # build up a hash of values that the new set has
+                        $values_hash{$value} = 1;
+
+                        unless ( $cf_values->HasEntry($value) ) {
+                            my ( $val, $msg ) = $Ticket->AddCustomFieldValue(
+                                Field => $cf,
+                                Value => $value
+                            );
+                            push ( @results, $msg );
+                        }
+
+                    }
+                    while ( my $cf_value = $cf_values->Next ) {
+                        unless ( $values_hash{ $cf_value->Content } == 1 ) {
+                            my ( $val, $msg ) = $Ticket->DeleteCustomFieldValue(
+                                Field => $cf,
+                                Value => $cf_value->Content
+                            );
+                            push ( @results, $msg);
+
+                        }
+
+                    }
+                }
+                elsif ( $arg =~ /-Values$/ ) {
+                    my $cf_values = $Ticket->CustomFieldValues($cf);
+
+		    # keep everything up to the point of difference, delete the rest
+		    my $delete_flag;
+		    foreach my $old_cf (@{$cf_values->ItemsArrayRef}) {
+			if (!$delete_flag and @values and $old_cf->Content eq $values[0]) {
+			    shift @values;
+			    next;
+			}
+
+			$delete_flag ||= 1;
+			$old_cf->Delete;
+		    }
+
+		    # now add/replace extra things, if any
+		    foreach my $value (@values) {
+			my ( $val, $msg ) = $Ticket->AddCustomFieldValue(
+			    Field => $cf,
+			    Value => $value
+			);
+			push ( @results, $msg );
+		    }
+		}
+                else {
+                    push ( @results, "User asked for an unknown update type for custom field " . $cf->Name . " for ticket " . $Ticket->id );
+                }
+            }
+        }
+        return (@results);
+    }
 }
 
 # }}}
@@ -978,17 +1184,21 @@ sub ProcessTicketWatchers {
 
     foreach my $key ( keys %$ARGSRef ) {
 
-        # Delete deletable watchers
-        if ( ( $key =~ /^DelWatcher(\d*)$/ ) and ( $ARGSRef->{$key} ) ) {
-            my ( $code, $msg ) = $Ticket->DeleteWatcher($1);
+        # {{{ Delete deletable watchers
+        if ( ( $key =~ /^Ticket-DelWatcher-Type-(.*)-Principal-(\d+)$/ )  ) {
+            my ( $code, $msg ) = 
+                $Ticket->DeleteWatcher(PrincipalId => $2,
+                                       Type => $1);
             push @results, $msg;
         }
 
         # Delete watchers in the simple style demanded by the bulk manipulator
         elsif ( $key =~ /^Delete(Requestor|Cc|AdminCc)$/ ) {
-            my ( $code, $msg ) = $Ticket->DeleteWatcher( $ARGSRef->{$key}, $1 );
+            my ( $code, $msg ) = $Ticket->DeleteWatcher( Type => $ARGSRef->{$key}, PrincipalId => $1 );
             push @results, $msg;
         }
+
+        # }}}
 
         # Add new wathchers by email address      
         elsif ( ( $ARGSRef->{$key} =~ /^(AdminCc|Cc|Requestor)$/ )
@@ -1014,12 +1224,11 @@ sub ProcessTicketWatchers {
 
         # Add new  watchers by owner
         elsif ( ( $ARGSRef->{$key} =~ /^(AdminCc|Cc|Requestor)$/ )
-            and ( $key =~ /^WatcherTypeUser(\d*)$/ ) )
-        {
+            and ( $key =~ /^Ticket-AddWatcher-Principal-(\d*)$/ ) ) {
 
             #They're in this order because otherwise $1 gets clobbered :/
             my ( $code, $msg ) =
-              $Ticket->AddWatcher( Type => $ARGSRef->{$key}, Owner => $1 );
+              $Ticket->AddWatcher( Type => $ARGSRef->{$key}, PrincipalId => $1 );
             push @results, $msg;
         }
     }
@@ -1061,7 +1270,7 @@ sub ProcessTicketDates {
     );
 
     #Run through each field in this list. update the value if apropriate
-    foreach $field (@date_fields) {
+    foreach my $field (@date_fields) {
         my ( $code, $msg );
 
         my $DateObj = RT::Date->new( $session{'CurrentUser'} );
@@ -1098,11 +1307,9 @@ Returns an array of results messages.
 =cut
 
 sub ProcessTicketLinks {
-    my %args = (
-        TicketObj => undef,
-        ARGSRef   => undef,
-        @_
-    );
+    my %args = ( TicketObj => undef,
+                 ARGSRef   => undef,
+                 @_ );
 
     my $Ticket  = $args{'TicketObj'};
     my $ARGSRef = $args{'ARGSRef'};
@@ -1118,11 +1325,9 @@ sub ProcessTicketLinks {
 
             push @results,
               "Trying to delete: Base: $base Target: $target  Type $type";
-            my ( $val, $msg ) = $Ticket->DeleteLink(
-                Base   => $base,
-                Type   => $type,
-                Target => $target
-            );
+            my ( $val, $msg ) = $Ticket->DeleteLink( Base   => $base,
+                                                     Type   => $type,
+                                                     Target => $target );
 
             push @results, $msg;
 
@@ -1133,26 +1338,23 @@ sub ProcessTicketLinks {
     my @linktypes = qw( DependsOn MemberOf RefersTo );
 
     foreach my $linktype (@linktypes) {
-
-        for my $luri ( split ( / /, $ARGSRef->{ $Ticket->Id . "-$linktype" } ) )
-        {
-            $luri =~ s/\s*$//;    # Strip trailing whitespace
-            my ( $val, $msg ) = $Ticket->AddLink(
-                Target => $luri,
-                Type   => $linktype
-            );
-            push @results, $msg;
+        if ( $ARGSRef->{ $Ticket->Id . "-$linktype" } ) {
+            for my $luri ( split ( / /, $ARGSRef->{ $Ticket->Id . "-$linktype" } ) ) {
+                $luri =~ s/\s*$//;    # Strip trailing whitespace
+                my ( $val, $msg ) = $Ticket->AddLink( Target => $luri,
+                                                      Type   => $linktype );
+                push @results, $msg;
+            }
         }
+        if ( $ARGSRef->{ "$linktype-" . $Ticket->Id } ) {
 
-        for my $luri ( split ( / /, $ARGSRef->{ "$linktype-" . $Ticket->Id } ) )
-        {
-            my ( $val, $msg ) = $Ticket->AddLink(
-                Base => $luri,
-                Type => $linktype
-            );
+            for my $luri ( split ( / /, $ARGSRef->{ "$linktype-" . $Ticket->Id } ) ) {
+                my ( $val, $msg ) = $Ticket->AddLink( Base => $luri,
+                                                      Type => $linktype );
 
-            push @results, $msg;
-        }
+                push @results, $msg;
+            }
+        } 
     }
 
     #Merge if we need to
@@ -1167,121 +1369,9 @@ sub ProcessTicketLinks {
 
 # }}}
 
-# {{{ sub ProcessTicketObjectKeywords
-
-=head2 ProcessTicketObjectKeywords ( TicketObj => $Ticket, ARGSRef => \%ARGS );
-
-Returns an array of results messages.
-
-=cut
-
-sub ProcessTicketObjectKeywords {
-    my %args = (
-        TicketObj => undef,
-        ARGSRef   => undef,
-        @_
-    );
-
-    my $TicketObj = $args{'TicketObj'};
-    my $ARGSRef   = $args{'ARGSRef'};
-
-    my (@results);
-
-    # {{{ set ObjectKeywords.
-
-    my $KeywordSelects = $TicketObj->QueueObj->KeywordSelects;
-
-    # iterate through all the keyword selects for this queue
-    while ( my $KeywordSelect = $KeywordSelects->Next ) {
-
-        # {{{ do some setup
-
-        # if we have KeywordSelectMagic for this keywordselect:
-        next
-          unless
-          defined $ARGSRef->{ 'KeywordSelectMagic' . $KeywordSelect->id };
-
-        # Lets get a hash of the possible values to work with
-        my $value = $ARGSRef->{ 'KeywordSelect' . $KeywordSelect->id } || [];
-
-        #lets get all those values in a hash. regardless of # of entries
-        #we'll use this for adding and deleting keywords from this object.
-        my %values = map { $_ => 1 } ref($value) ? @{$value} : ($value);
-
-        # Load up the ObjectKeywords for this KeywordSelect for this ticket
-        my $ObjectKeys = $TicketObj->KeywordsObj( $KeywordSelect->id );
-
-        # }}}
-        # {{{ add new keywords
-
-        foreach my $key ( keys %values ) {
-
-            #unless the ticket has that keyword for that keyword select,
-            unless ( $ObjectKeys->HasEntry($key) ) {
-
-                #Add the keyword
-                my ( $result, $msg ) = $TicketObj->AddKeyword(
-                    Keyword       => $key,
-                    KeywordSelect => $KeywordSelect->id
-                );
-                push ( @results, $msg );
-            }
-        }
-
-        # }}}
-        # {{{ Delete unused keywords
-
-        #redo this search, so we don't ask it to delete things that are already gone
-        # such as when a single keyword select gets its value changed.
-        $ObjectKeys = $TicketObj->KeywordsObj( $KeywordSelect->id );
-
-        while ( my $TicketKey = $ObjectKeys->Next ) {
-
-            # if the hash defined above doesn\'t contain the keyword mentioned,
-            unless ( $values{ $TicketKey->Keyword } ) {
-
-                #I'd really love to just call $keyword->Delete, but then 
-                # we wouldn't get a transaction recorded
-                my ( $result, $msg ) = $TicketObj->DeleteKeyword(
-                    Keyword       => $TicketKey->Keyword,
-                    KeywordSelect => $KeywordSelect->id
-                );
-                push ( @results, $msg );
-            }
-        }
-
-        # }}}
-    }
-
-    #Iterate through the keyword selects for BulkManipulator style access
-    while ( my $KeywordSelect = $KeywordSelects->Next ) {
-        if ( $ARGSRef->{ "AddToKeywordSelect" . $KeywordSelect->Id } ) {
-
-            #Add the keyword
-            my ( $result, $msg ) = $TicketObj->AddKeyword(
-                Keyword =>
-                $ARGSRef->{ "AddToKeywordSelect" . $KeywordSelect->Id },
-                KeywordSelect => $KeywordSelect->id
-            );
-            push ( @results, $msg );
-        }
-        if ( $ARGSRef->{ "DeleteFromKeywordSelect" . $KeywordSelect->Id } ) {
-
-            #Delete the keyword
-            my ( $result, $msg ) = $TicketObj->DeleteKeyword(
-                Keyword =>
-                $ARGSRef->{ "DeleteFromKeywordSelect" . $KeywordSelect->Id },
-                KeywordSelect => $KeywordSelect->id
-            );
-            push ( @results, $msg );
-        }
-    }
-
-    # }}}
-
-    return (@results);
-}
-
-# }}}
+eval "require RT::Interface::Web_Vendor";
+die $@ if ($@ && $@ !~ qr{^Can't locate RT/Interface/Web_Vendor.pm});
+eval "require RT::Interface::Web_Local";
+die $@ if ($@ && $@ !~ qr{^Can't locate RT/Interface/Web_Local.pm});
 
 1;

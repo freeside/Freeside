@@ -1,0 +1,59 @@
+%# BEGIN LICENSE BLOCK
+%# 
+%# Copyright (c) 1996-2003 Jesse Vincent <jesse@bestpractical.com>
+%# 
+%# (Except where explictly superceded by other copyright notices)
+%# 
+%# This work is made available to you under the terms of Version 2 of
+%# the GNU General Public License. A copy of that license should have
+%# been provided with this software, but in any event can be snarfed
+%# from www.gnu.org.
+%# 
+%# This work is distributed in the hope that it will be useful, but
+%# WITHOUT ANY WARRANTY; without even the implied warranty of
+%# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+%# General Public License for more details.
+%# 
+%# Unless otherwise specified, all modifications, corrections or
+%# extensions to this work which alter its source code become the
+%# property of Best Practical Solutions, LLC when submitted for
+%# inclusion in the work.
+%# 
+%# 
+%# END LICENSE BLOCK
+<%PERL>
+my $rows = 10;
+my $people = $Ticket->Requestors->MembersObj;
+while (my $member=$people->Next) {
+my $requestor = $member->MemberObj->Object;
+my $name=$requestor->RealName || $requestor->EmailAddress;	
+my $tickets = RT::Tickets->new($session{'CurrentUser'});
+$tickets->LimitWatcher(TYPE => 'Requestor', VALUE => $requestor->EmailAddress );
+$tickets->LimitStatus( VALUE => 'open');
+$tickets->LimitStatus( VALUE => 'new');
+$tickets->RowsPerPage($rows);
+$tickets->OrderBy(FIELD => 'Priority',
+		  ORDER => 'DESC');
+</%PERL>
+
+% unless ($requestor->Privileged) {
+<& /Elements/TitleBoxStart, 
+	title => "<a class='inverse' href=\"$RT::WebPath/Admin/Users/Modify.html?id=".$requestor->id."\">".loc("More about [_1]", $name)."</a>" &>
+
+<&|/l&>Comments about this user</&>:<BR>
+<B><% ($requestor->Comments || loc("No comment entered about this user")) %></B><BR>
+
+<&|/l, $rows &>This user's [_1] highest priority tickets</&>:<BR>
+<UL>
+%while (my $w=$tickets->Next) {
+<LI><a href="<%$RT::WebPath%><%$DisplayPath%>?id=<%$w->id%>"><%$w->Id%>: <%$w->Subject%></a> (<%$w->Status%>)
+%}
+</UL>
+<& /Elements/TitleBoxEnd &>
+
+% }
+%}
+<%ARGS>
+$Ticket=>undef
+$DisplayPath => "/Ticket/Display.html"
+</%ARGS>

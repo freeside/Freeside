@@ -1,7 +1,26 @@
-# $Header: /home/cvs/cvsroot/freeside/rt/lib/RT/Condition/Generic.pm,v 1.1 2002-08-12 06:17:07 ivan Exp $
-# (c) 1996-2000 Jesse Vincent <jesse@fsck.com>
-# This software is redistributable under the terms of the GNU GPL
-
+# BEGIN LICENSE BLOCK
+# 
+# Copyright (c) 1996-2003 Jesse Vincent <jesse@bestpractical.com>
+# 
+# (Except where explictly superceded by other copyright notices)
+# 
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+# 
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+# 
+# Unless otherwise specified, all modifications, corrections or
+# extensions to this work which alter its source code become the
+# property of Best Practical Solutions, LLC when submitted for
+# inclusion in the work.
+# 
+# 
+# END LICENSE BLOCK
 =head1 NAME
 
   RT::Condition::Generic - ;
@@ -29,7 +48,6 @@
 
 =begin testing
 
-ok (require RT::TestHarness);
 ok (require RT::Condition::Generic);
 
 =end testing
@@ -38,6 +56,11 @@ ok (require RT::Condition::Generic);
 =cut
 
 package RT::Condition::Generic;
+
+use RT::Base;
+use strict;
+use vars qw/@ISA/;
+@ISA = qw(RT::Base);
 
 # {{{ sub new 
 sub new  {
@@ -60,7 +83,6 @@ sub _Init  {
 	       Argument => undef,
 	       ApplicableTransTypes => undef,
 	       @_ );
-  
   
   $self->{'Argument'} = $args{'Argument'};
   $self->{'ScripObj'} = $args{'ScripObj'};
@@ -100,6 +122,19 @@ sub TicketObj  {
 }
 # }}}
 
+# {{{ sub ScripObj
+
+=head2 ScripObj
+
+Return the Scrip object we're talking about
+
+=cut
+
+sub ScripObj  {
+  my $self = shift;
+  return($self->{'ScripObj'});
+}
+# }}}
 # {{{ sub TransactionObj
 
 =head2 TransactionObj
@@ -137,7 +172,7 @@ sub ApplicableTransTypes  {
 # {{{ sub Describe 
 sub Describe  {
   my $self = shift;
-  return ("No description for " . ref $self);
+  return ($self->loc("No description for [_1]", ref $self));
 }
 # }}}
 
@@ -167,4 +202,10 @@ sub DESTROY {
 }
 
 # }}}
+
+eval "require RT::Condition::Generic_Vendor";
+die $@ if ($@ && $@ !~ qr{^Can't locate RT/Condition/Generic_Vendor.pm});
+eval "require RT::Condition::Generic_Local";
+die $@ if ($@ && $@ !~ qr{^Can't locate RT/Condition/Generic_Local.pm});
+
 1;

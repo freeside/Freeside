@@ -1,0 +1,63 @@
+%# BEGIN LICENSE BLOCK
+%# 
+%# Copyright (c) 1996-2003 Jesse Vincent <jesse@bestpractical.com>
+%# 
+%# (Except where explictly superceded by other copyright notices)
+%# 
+%# This work is made available to you under the terms of Version 2 of
+%# the GNU General Public License. A copy of that license should have
+%# been provided with this software, but in any event can be snarfed
+%# from www.gnu.org.
+%# 
+%# This work is distributed in the hope that it will be useful, but
+%# WITHOUT ANY WARRANTY; without even the implied warranty of
+%# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+%# General Public License for more details.
+%# 
+%# Unless otherwise specified, all modifications, corrections or
+%# extensions to this work which alter its source code become the
+%# property of Best Practical Solutions, LLC when submitted for
+%# inclusion in the work.
+%# 
+%# 
+%# END LICENSE BLOCK
+<& /Elements/Header, Title => loc('Modify ticket #[_1]', $TicketObj->Id) &>
+<& /Ticket/Elements/Tabs, 
+    Ticket => $TicketObj, current_subtab => "Ticket/Modify.html?id=".$TicketObj->Id, 
+    Title => loc('Modify ticket #[_1]', $TicketObj->Id) &>
+
+<& /Elements/ListActions, actions => \@results &>
+<FORM METHOD=POST ACTION="Modify.html">
+<INPUT TYPE=HIDDEN NAME=id VALUE="<%$TicketObj->Id%>">
+
+<& /Elements/TitleBoxStart, title => loc('Modify ticket #[_1]',$TicketObj->Id),   color=> "#993333", width => "100%" &>
+<& Elements/EditBasics, TicketObj => $TicketObj &>
+<& Elements/EditCustomFields, TicketObj => $TicketObj &>
+<& /Elements/TitleBoxEnd &>
+
+<& /Elements/Submit, Label => loc('Save Changes'), Caption => loc("If you've updated anything above, be sure to"), color => "#993333" &>
+</form>
+<%INIT>
+  
+my $TicketObj = LoadTicket($id);
+my $CustomFields = $TicketObj->QueueObj->CustomFields();
+
+# Now let callbacks have a chance at editing %ARGS
+$m->comp('/Elements/Callback', TicketObj => $TicketObj, CustomFields => $CustomFields, %ARGS);
+
+my @results = ProcessTicketBasics(TicketObj => $TicketObj, ARGSRef => \%ARGS);
+my @cf_results = ProcessTicketCustomFieldUpdates(ARGSRef => \%ARGS);
+push (@results, @cf_results);
+
+# TODO: display the results, even if we can't display the ticket
+
+unless ($TicketObj->CurrentUserHasRight('ShowTicket')) {
+    Abort("No permission to view ticket");
+} 
+
+</%INIT>
+
+
+<%ARGS>
+$id => undef
+</%ARGS>

@@ -1,0 +1,50 @@
+%# BEGIN LICENSE BLOCK
+%# 
+%# Copyright (c) 1996-2003 Jesse Vincent <jesse@bestpractical.com>
+%# 
+%# (Except where explictly superceded by other copyright notices)
+%# 
+%# This work is made available to you under the terms of Version 2 of
+%# the GNU General Public License. A copy of that license should have
+%# been provided with this software, but in any event can be snarfed
+%# from www.gnu.org.
+%# 
+%# This work is distributed in the hope that it will be useful, but
+%# WITHOUT ANY WARRANTY; without even the implied warranty of
+%# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+%# General Public License for more details.
+%# 
+%# Unless otherwise specified, all modifications, corrections or
+%# extensions to this work which alter its source code become the
+%# property of Best Practical Solutions, LLC when submitted for
+%# inclusion in the work.
+%# 
+%# 
+%# END LICENSE BLOCK
+<& /Elements/Header, Title =>  $title &>
+
+<& Elements/Tabs, 
+    current_tab => "Approvals/Display.html", 
+    Title =>  $title &>
+<form method=post action="<%$RT::WebPath%>/Approvals/">
+
+<& /Elements/TitleBoxStart, title => $title &>
+<& /Ticket/Elements/ShowHistory , Ticket => $Ticket, Collapsed => 0, ShowTitle => 0, ShowHeaders => 0, ShowDisplayModes => 0, ShowTitleBarCommands => 0 &>
+<hr>
+<table width=100%>
+<& Elements/Approve, ticket => $Ticket, ShowApproving => 0 &>
+</table>
+<& /Elements/TitleBoxEnd &>
+<& /Elements/Submit&>
+</form>
+<& Elements/ShowDependency, Ticket => $Ticket &>
+
+<%init>
+my $Ticket = LoadTicket($id);
+
+my $title = loc("Approval #[_1]: [_2]", $Ticket->Id, $Ticket->Subject);
+
+</%init>
+<%ARGS>
+$id => undef
+</%ARGS>

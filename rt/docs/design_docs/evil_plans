@@ -3,8 +3,7 @@ Current planned 2.2 feature list. subject to change.
 
 Core
 
-Should	Make "Owner" a watcher type, rather than a special ticket attribute,
-	under the hood.  This wins for ACL and code consistency reasons.
+
 
 Web UI
 
@@ -67,8 +66,6 @@ nice	Scrips could apply to a list of queues, rather than just one queue or
 
 Custom fields
 
-Must	"KeywordSelects" become "Custom Fields"
-Should	String and multi-string custom fields.
 Nice	Date custom fields
 Nice	Some way to order and group custom fields.
 Nice	Default values
@@ -78,8 +75,6 @@ Nice	Make custom fields apply to an enumerated list of queues,
 
 
 Web infrastructure
-
-Must	Full fastcgi support.
 
 
 Installation 
@@ -116,7 +111,7 @@ Nice	Export full ticket metadata and history as XML
 Note: 	I currently favor the REST philosophy that GET and POST to specific,
 	defined URLs provides everything one needs to build comprehensive
 	web services without the massive added complexity of a SOAP or XML-RPC
-	framework.
+	framework. Sadly, the world doesn't agree with me
 
 
 ACLs:

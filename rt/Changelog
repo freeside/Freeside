@@ -1,0 +1,1286 @@
+
+
+
+Project "rt.3", Branch 0						  Page 1
+Change Log						Sat Jul 12 04:24:41 2003
+
+rt.3.D000, C0, jesse, Thu Mar 13 20:43:23 2003, RT: Request Tracker, branch 3.0.
+    RT: Request Tracker, branch 3.0.
+
+    Change Delta  Brief Description
+      10      1	  Bumping the version to rt.3.0.0rc0
+      11      2	  Minor CSS update. rollback fix; new database indices;
+		  copyright update
+      15      3	  removing the old REST API
+      16      4	  Performance work on 'WhoHaveRight'; bumping to 3.0.0rc2
+      12      5	  fixing indices for postgres
+      17      6	  fixing fastcgi's ability to load webmux.pl on some platforms
+      18      7	  More performance work; backing out 'enhancements' that killed
+		  system performance
+      19      8	  Caving in to the masses and making 'notify sender'
+		  configurable
+      20      9	  finishing the notify stuff
+      22     10	  Bumping to RC3; fixing the display of 'This user's n highest
+		  priority tix'
+      23     11	  New french translation
+      25     12	  Brazilian Portuguese translation
+      26     13	  Postgres fixes
+      27     14	  Postgres schema tweak
+      28     15	  Further postgres tweaks and fixes
+      29     16	  RT should now be less overzealous about opening and then
+		  marking a ticket 'new' again
+      30     17	  Bumping to 3.0.0rc4
+      31     18	  Minor fixes - Bumped to 3.0.0;
+		  2266 - postgres scrip creation bug
+		  2267 - Tickets not reopened after being stalled
+		  2265 - Fixed css nits from blaise
+		  Unreported - Fixed quick-search bug
+      32     19	  Added better error checking for failed ticket creation
+      33     20	  A tiny bit of extra data passing for some callbacks
+      35     21	  New czech translation
+      37     22	  Updated dependencies
+      36     23	  Updated Spanish translation
+      38     24	  Updates for RT RPC interface from AMS
+      39     25	  Many users should be able to have a blank address; neew test
+		  suite to ensure this
+      50     26	  Integrating rafael's failing test suite and proposed fix from
+		  autrijus
+      51     27	  Changing address used in example to not send mail to author
+      52     28	  More I18N testing  for rafael
+      53     29	  Added preliminary left to right hebrew translation
+      55     30	  #2365 Removing outdated Mason setup parameter
+      56     31	  Testing fixes for mail authentication/authorization
+      57     32	  Testing and fixing binary attachment corruption
+      58     33	  Better binary attachment handling fix from autrijus
+      59     34	  Bumping to RT 3.0.1pre2
+      60     35	  SMTP and I18N fixes from autrijus tang. Updated chinese
+		  translations
+      61     36	  New speedycgi support from vivek khera
+      62     37	  Bumping to version 3.0.1
+      63     38	  Fixing a showmessagestanza bug found in RTIR
+      65     39	  Fixing an untainting bug in 3.0.1
+      66     40	  Quicksearch bug fix from Stan
+      67     41	  updating autrijus' autohandler patch. seems to break lots of
+		  stuff
+      68     42	  Bumping to 3.0.2pre1
+      69     43	  make ids clicky
+      70     44	  fixing utf8 tainting issue in autohandler; bumped to 3.0.2pre2
+      71     45	  Another go at fixing the ARRAY()  issue; bumping to 3.0.2pre3
+      72     46	  bulk links
+      73     47	  I18N patches from autrijus; bouncing to 3.0.2pre4
+      75     48	  bumped version to 3.0.2pre5; attachments performance fixes;
+		  utf-8 mailgateway fixes; more extension hooks; template
+		  updates for approvals
+      76     49	  [#2437] CanonicalizeEmailAddress fixes; [# 2449] html fixes
+		  for right editing; [# 2457] email addresses weren't always
+		  being canonicalized
+      77     50	  Fixing bogus anchor tags
+      78     51	  More performance work on WhoHaveRight; removing an extra join
+      79     52	  Cleaning up RT tag processing
+      80     53	  Importing utf8 fixes, _Vendor overlay support from ourinternet
+      81     54	  Bumping the version to 3.0.2pre6
+      82     55	  Bumping the version to RT 3.0.2
+      83     56	  merge from ourinternet; one CreateTickets fix and some utf8
+		  updates
+      85     57	  Robert's updated search stuff
+      86     58	  Fix for #2602 - make test fails on _Config.pm
+      87     59	  Including norwegian bokmal translation
+      14     60	  #2539: Re: [rt-users] unexpected usage: change sort order with
+		  column headers in search window
+      88     61	  Fix to honor '$LogDir' for LogToFile
+      89     62	  #2603: /opt/rt3/share/doc should not be a file.
+      90     63	  Merging utf8 fixes from autrijus tang
+      91     64	  Fixing an upgrade bug from 3.0.2->3.0.3
+      92     65	  MIME::Words encoding fixes for mail sending
+      93     66	  Additional work on the SQLite port
+      95     67	  Merge from ourinternet: UTF8 fixes; more configurable apache
+		  sessions;
+      96     68	  ACL HasRight system replaced with an algorithm that does more
+		  looking ahead
+      97     69	  A fix to Tickets_Overlay.pm to make the 'Count' methods
+		  actually do a count, not a full SELECT
+      98     70	  Further UTF8-fixed from autrijus
+      99     71	  Bumping the version to 3.0.3pre1
+     100     72	  update layout fix
+     101     73	  #2662 Fixing an overly restrictive ACL check on group creation
+     102     74	  #2657 Web UI Scrip creation bug
+     103     75	  #2652 - de.po updates
+     105     76	  #2658 Cosmetic issue with Scrip menu listing
+     106     77	  fix for FastCGI and SpeedyCGI setgidness with weird
+		  environments
+     107     78	  Continued performance improvements for caching
+     108     79	  Log path enhancment to deal more gracefully with absolutely
+		  specified logfile paths
+     109     80	  CF defaults; fix Starts set
+     110     81	  ACL cache made postgres safe
+     111     82	  Fixing an acl bug in Principal_Overlay introduced after 3.0.2
+		  and a possible 'Deep' transaction issue. now requires
+		  DBIx::SearchBuilder 0.83_05 or newer
+     112     83	  #2678 Fixing crit messages in RT::User
+     113     84	  Bumping DBIx::SearchBuilder requirement to 0.84
+     115     85	  The "rt" program, branch 3.0.
+     117     86	  pass title to Header
+     116     87	  Better testing for internationalization of outoging messages;
+		  slight refactoring to SendEmail to be more testable; added
+		  missing deps to EmailParser
+     118     88	  Bump to 3.0.3pre2; fix a misspelled right in Queue.pm (#2686)
+     119     89	  #2721 - 'id' attribute had mixed casing. this bothers certain
+		  databases (Sybase)
+     120     90	  Header & Logout take URL
+     121     91	  Fixes for: Bogus message headers containing high-bit
+		  characters; database handle reconnections; postgres test suite
+		  failures
+     123     92	  support group & queue acl setting from rt-setup-database
+     125     93	  add TakeTicket, StealTicket rights
+     122     94	  Bumping version to 3.0.3pre3, bumping searchbuilder dependency
+     126     95	  Really bumping the version to 3.0.3pre3
+     129     96	  Various fixes from a pull-up of the ourinternet branch
+     128     97	  #2605 - SpamAssassin Filter returns the wrong codes on
+		  success/failure
+     127     98	  Fixes the cascading style sheet to properly reference message
+		  bodies
+     130     99	  Attempting to be smarter about guessing encodings for outgoing
+		  mail
+     131    100	  Fixing search navigation links (they were made to disappear)
+     132    101	  #2776 - 'new' ACL cache had bad behaviour. rolled back to
+		  older cache and added tests
+     133    102	  On postgres, RT didn't previously cope well with multipart
+		  messages including non-plain parts containing non-ascii
+     135    103	  Efficiency tweaks for WhoHaveRight
+     136    104	  Bumping version to RT 3.0.3pre4
+     137    105	  #2813 Duplicate tickets created at the same time could cause a
+		  user creation race condition
+     138    106	  Importing minor bugfixes from ourinternet
+     139    107	  #2816 new callback to ShowLinks
+     150    108	  #2799: Display URIs instead of HREFs in ticket display
+     151    109	  #2797 Clean up automatich chmodding on installation
+     152    110	  ShowRequestor takes path
+     153    111	  SystemInternal group ACLs in setup
+     155    112	  Better encoding and error checking for message headers
+     156    113	  better handle notification messages containing only text/html
+		  content.
+     157    114	  Bumping to 3.0.3pre5
+     158    115	  More I18N fixes from ourinternet
+     159    116	  Bumping version to RC-1
+     160    117	  Another shot at the header encoding fix
+     161    118	  Mitya's failing processing of html email
+     162    119	  Bumping to 3.0.3rc2
+     163    120	  Anonymizing addresses in mitya's submitted testcases
+     165    121	  Better handling of malformed email messages
+     166    122	  Bumping version to 3.0rc3
+     167    123	  #2850 - With some configurations, users could not create new
+		  tickets with 'new' requestors - Bumped to 3.0 RC 4
+     168    124	  Scrip data updates weren't propagating to parent Ticket
+		  objects; Bumping to 3.0.3
+     169    125	  CustomField rights checking was overly restrictive for users
+		  without queue-specific rights
+     170    126	  I18N mail testing was was being cavalier with the state of
+		  acls after its testing.  (clone of 3.0.C167)
+     171    127	  Ticket Update.html fix to not doubly load content
+     172    128	  Fixing postgres sortorder bug unmased by searchbuilder fix
+     176    129	  Applying POD patches from ourinternet (clone of 3.0.C173)
+     177    130	  UTF8, Custom Field and text message rendering fixes from
+		  ourinternet
+     178    131	  #2843 Date relations were too strict in RT::Tickets searches
+     179    132	  #2847: allow URI Resolver to render itself
+     173    133	  ShowMessageHeaders; make headers clicky
+     180    134	  use RTIR callbacks
+     175    135	  Updating rt-setup-database to take acl and schema file names
+		  on the commandline
+     181    136	  Refactored Users::WhoHaveRight from Chris Audley at Blackrock
+     182    137	  Download link in ShowTransaction
+     185    138	  Fix for speedycgi disappearing database connections
+     183    139	  #2873: Fix for insufficently agressive loop culling
+     186    140	  Fix for nested email message parsing
+     187    141	  Split the HasRight ACL query into two parts. It's now two
+		  small and light SQL queries, instead of one big one that
+		  overwhelmed databases
+     188    142	  Stylistic cleanups for HasRight optimizations
+     189    143	  Relationship transactions are recorded and displayed more
+		  robustly
+     190    144	  Bumping the version to 3.0.4pre1
+     191    145	  Updated french translation from Blaise Thauvin
+      13    146	  Bumping to 3.0.4RC1
+     192    147	  Attachment display bug fix from autrijus tang
+     193    148	  Bumping the version to 3.0.4RC2
+     198    149	  ShowAttachments had a relative path which hurt extensions
+     199    150	  README updates to indicate deprecated dependencies
+     200    151	  Debugging framework cleanup
+     201    152	  Bumping version to 3.0.4
+
+  rt.3.0.D152, C201, jesse, Sat Jul 12 02:41:34 2003, Bumping version to 3.0.4
+      From: Jesse Vincent <jesse@localhost>
+      Date: Fri Jul 11 23:35:03 2003
+
+      none
+
+  rt.3.0.D151, C200, jesse, Sat Jul 12 01:34:41 2003, Debugging framework
+  cleanup
+      From: Jesse Vincent <jesse@localhost>
+      Date: Fri Jul 11 22:31:37 2003
+
+      none
+
+  rt.3.0.D150, C199, jesse, Sat Jul 12 01:17:57 2003, README updates to indicate
+  deprecated dependencies
+      From: Jesse Vincent <jesse@localhost>
+      Date: Fri Jul 11 22:14:37 2003
+
+      none
+
+  rt.3.0.D149, C198, leira, Sat Jul 12 01:17:08 2003, ShowAttachments had a
+  relative path which hurt extensions
+      From: Linda L. Julien <leira@starsong.org>
+      Date: Wed Jul  9 23:33:21 2003
+      Warning: the original change was in the 'being_developed' state
+
+      none
+
+  rt.3.0.D148, C193, jesse, Sat Jul  5 17:34:46 2003, Bumping the version to
+  3.0.4RC2
+      From: Jesse Vincent <jesse@Jesse-Vincents-Computer.local.>
+      Date: Sat Jul  5 17:22:07 2003
+
+      none
+
+  rt.3.0.D147, C192, jesse, Sat Jul  5 17:11:25 2003, Attachment display bug fix
+  from autrijus tang
+      From: Jesse Vincent <jesse@Jesse-Vincents-Computer.local.>
+      Date: Sat Jul  5 17:09:07 2003
+
+      none
+
+  rt.3.0.D146, C13, jesse, Fri Jul  4 14:54:43 2003, Bumping to 3.0.4RC1
+      From: Jesse Vincent <jesse@eris>
+      Date: Fri Jul  4 14:52:56 2003
+
+      none
+
+  rt.3.0.D145, C191, jesse, Fri Jul  4 14:50:26 2003, Updated french translation
+  from Blaise Thauvin
+      From: Jesse Vincent <jesse@eris>
+      Date: Fri Jul  4 14:48:56 2003
+
+      none
+
+  rt.3.0.D144, C190, jesse, Thu Jul  3 01:48:45 2003, Bumping the version to
+  3.0.4pre1
+      From: Jesse Vincent <jesse@Jesse-Vincents-Computer.local.>
+      Date: Thu Jul  3 01:47:25 2003
+
+      none
+
+  rt.3.0.D143, C189, jesse, Thu Jul  3 01:44:51 2003, Relationship transactions
+  are recorded and displayed more robustly
+      From: Jesse Vincent <jesse@Jesse-Vincents-Computer.local.>
+      Date: Thu Jul  3 01:44:08 2003
+
+      none
+
+  rt.3.0.D142, C188, jesse, Wed Jul  2 21:01:44 2003, Stylistic cleanups for
+  HasRight optimizations
+      From: Jesse Vincent <jesse@Jesse-Vincents-Computer.local.>
+      Date: Wed Jul  2 20:58:51 2003
+
+      none
+
+  rt.3.0.D141, C187, jesse, Wed Jul  2 02:48:21 2003, Split the HasRight ACL
+  query into two parts. It's now two small and light SQL queries, instead of one
+  big one that overwhelmed databases
+      From: Jesse Vincent <jesse@Jesse-Vincents-Computer.local.>
+      Date: Wed Jul  2 02:45:49 2003
+
+      none
+
+  rt.3.0.D140, C186, jesse, Wed Jul  2 02:19:47 2003, Fix for nested email
+  message parsing
+      From: Jesse Vincent <jesse@Jesse-Vincents-Computer.local.>
+      Date: Wed Jul  2 02:17:38 2003
+
+      none
+
+  rt.3.0.D139, C183, jesse, Tue Jul  1 23:18:28 2003, #2873: Fix for
+  insufficently agressive loop culling
+      From: Jesse Vincent <jesse@eris>
+      Date: Mon Jun 30 21:12:50 2003
+
+      none
+
+  rt.3.0.D138, C185, jesse, Tue Jul  1 19:08:47 2003, Fix for speedycgi
+  disappearing database connections
+      From: Jesse Vincent <jesse@Jesse-Vincents-Computer.local.>
+      Date: Tue Jul  1 19:05:19 2003
+
+      none
+
+  rt.3.0.D137, C182, leira, Tue Jul  1 16:10:33 2003, Download link in
+  ShowTransaction
+      From: Linda L. Julien <leira@starsong.org>
+      Date: Mon Jun 30 18:04:52 2003
+      Warning: the original change was in the 'awaiting_integration' state
+
+      none
+
+  rt.3.0.D136, C181, jesse, Mon Jun 30 15:25:46 2003, Refactored
+  Users::WhoHaveRight from Chris Audley at Blackrock
+      From: Jesse Vincent <jesse@eris>
+      Date: Mon Jun 30 15:23:18 2003
+
+      none
+
+  rt.3.0.D135, C175, jesse, Mon Jun 30 15:24:56 2003, Updating rt-setup-database
+  to take acl and schema file names on the commandline
+      From: Jesse Vincent <jesse@eris>
+      Date: Mon Jun 30 13:41:12 2003
+
+      none
+
+  rt.3.0.D134, C180, leira, Mon Jun 30 02:19:05 2003, use RTIR callbacks
+      From: Linda Julien <leira@hawthorn.local.>
+      Date: Mon Jun 30 02:11:25 2003
+      Warning: the original change was in the 'awaiting_integration' state
+
+      none
+
+  rt.3.0.D133, C173, leira, Mon Jun 30 02:17:05 2003, ShowMessageHeaders; make
+  headers clicky
+      From: Linda Julien <leira@hawthorn.local.>
+      Date: Sun Jun 29 23:31:39 2003
+      Warning: the original change was in the 'awaiting_integration' state
+
+      none
+
+  rt.3.0.D132, C179, jesse, Sun Jun 29 03:06:36 2003, #2847: allow URI Resolver
+  to render itself
+      From: Jesse Vincent <jesse@eris>
+      Date: Sun Jun 29 03:04:30 2003
+
+      none
+
+  rt.3.0.D131, C178, jesse, Sun Jun 29 02:59:13 2003, #2843 Date relations were
+  too strict in RT::Tickets searches
+      From: Jesse Vincent <jesse@eris>
+      Date: Sun Jun 29 02:57:53 2003
+
+      none
+
+  rt.3.0.D130, C177, jesse, Sat Jun 28 18:17:28 2003, UTF8, Custom Field and
+  text message rendering fixes from ourinternet
+      From: Jesse Vincent <jesse@eris>
+      Date: Sat Jun 28 18:15:09 2003
+
+      none
+
+  rt.3.0.D129, C176, jesse, Sat Jun 28 17:23:01 2003, Applying POD patches from
+  ourinternet (clone of 3.0.C173)
+      From: Jesse Vincent <jesse@eris>
+      Date: Sat Jun 28 17:15:38 2003
+
+      none
+
+  rt.3.0.D128, C172, jesse, Sat Jun 28 17:17:53 2003, Fixing postgres sortorder
+  bug unmased by searchbuilder fix
+      From: Jesse Vincent <jesse@eris>
+      Date: Fri Jun 27 01:12:13 2003
+
+      none
+
+  rt.3.0.D127, C171, jesse, Tue Jun 24 16:42:07 2003, Ticket Update.html fix to
+  not doubly load content
+      From: Jesse Vincent <jesse@eris>
+      Date: Tue Jun 24 16:28:49 2003
+
+      none
+
+  rt.3.0.D126, C170, jesse, Tue Jun 24 16:23:49 2003, I18N mail testing was was
+  being cavalier with the state of acls after its testing.  (clone of 3.0.C167)
+      From: Jesse Vincent <jesse@eris>
+      Date: Tue Jun 24 16:22:16 2003
+
+      none
+
+  rt.3.0.D125, C169, jesse, Tue Jun 24 16:23:37 2003, CustomField rights
+  checking was overly restrictive for users without queue-specific rights
+      From: Jesse Vincent <jesse@eris>
+      Date: Tue Jun 24 16:18:05 2003
+
+      none
+
+  rt.3.0.D124, C168, jesse, Sat Jun 21 13:01:18 2003, Scrip data updates weren't
+  propagating to parent Ticket objects; Bumping to 3.0.3
+      From: Jesse Vincent <jesse@eris>
+      Date: Sat Jun 21 12:55:04 2003
+
+      none
+
+  rt.3.0.D123, C167, jesse, Thu Jun 19 22:23:01 2003, #2850 - With some
+  configurations, users could not create new tickets with 'new' requestors -
+  Bumped to 3.0 RC 4
+      From: Jesse Vincent <jesse@eris>
+      Date: Thu Jun 19 22:22:20 2003
+
+      none
+
+  rt.3.0.D122, C166, jesse, Thu Jun 19 14:25:03 2003, Bumping version to 3.0rc3
+      From: Jesse Vincent <jesse@eris>
+      Date: Thu Jun 19 14:18:19 2003
+
+      none
+
+  rt.3.0.D121, C165, jesse, Thu Jun 19 12:25:20 2003, Better handling of
+  malformed email messages
+      From: Jesse Vincent <jesse@eris>
+      Date: Thu Jun 19 12:21:56 2003
+
+      none
+
+  rt.3.0.D120, C163, jesse, Thu Jun 19 03:17:20 2003, Anonymizing addresses in
+  mitya's submitted testcases
+      From: Jesse Vincent <jesse@eris>
+      Date: Thu Jun 19 03:16:47 2003
+
+      none
+
+  rt.3.0.D119, C162, jesse, Thu Jun 19 03:03:16 2003, Bumping to 3.0.3rc2
+      From: Jesse Vincent <jesse@eris>
+      Date: Thu Jun 19 03:01:10 2003
+
+      none
+
+  rt.3.0.D118, C161, jesse, Thu Jun 19 02:58:24 2003, Mitya's failing processing
+  of html email
+      From: Jesse Vincent <jesse@eris>
+      Date: Thu Jun 19 02:56:48 2003
+
+      none
+
+  rt.3.0.D117, C160, jesse, Wed Jun 18 17:58:34 2003, Another shot at the header
+  encoding fix
+      From: Jesse Vincent <jesse@eris>
+      Date: Wed Jun 18 17:58:01 2003
+
+      none
+
+  rt.3.0.D116, C159, jesse, Wed Jun 18 01:27:03 2003, Bumping version to RC-1
+      From: Jesse Vincent <jesse@eris>
+      Date: Wed Jun 18 01:25:13 2003
+
+      none
+
+  rt.3.0.D115, C158, jesse, Wed Jun 18 01:01:22 2003, More I18N fixes from
+  ourinternet
+      From: Jesse Vincent <jesse@eris>
+      Date: Wed Jun 18 01:00:11 2003
+
+      none
+
+  rt.3.0.D114, C157, jesse, Tue Jun 17 22:24:03 2003, Bumping to 3.0.3pre5
+      From: Jesse Vincent <jesse@eris>
+      Date: Tue Jun 17 22:20:51 2003
+
+      none
+
+  rt.3.0.D113, C156, jesse, Tue Jun 17 22:14:35 2003, better handle notification
+  messages containing only text/html content.
+      From: Jesse Vincent <jesse@eris>
+      Date: Tue Jun 17 21:55:06 2003
+
+      none
+
+  rt.3.0.D112, C155, jesse, Tue Jun 17 21:55:16 2003, Better encoding and error
+  checking for message headers
+      From: Jesse Vincent <jesse@eris>
+      Date: Tue Jun 17 21:26:27 2003
+      Warning: the original change was in the 'being_developed' state
+
+      none
+
+  rt.3.0.D111, C153, leira, Tue Jun 17 17:47:18 2003, SystemInternal group ACLs
+  in setup
+      From: Linda L. Julien <leira@starsong.org>
+      Date: Tue Jun 17 18:19:58 2003
+      Warning: the original change was in the 'awaiting_integration' state
+
+      none
+
+  rt.3.0.D110, C152, leira, Tue Jun 17 16:46:34 2003, ShowRequestor takes path
+      From: Linda L. Julien <leira@oak.starsong.org>
+      Date: Tue Jun 17 12:53:35 2003
+      Warning: the original change was in the 'awaiting_integration' state
+
+      none
+
+  rt.3.0.D109, C151, jesse, Mon Jun 16 23:48:53 2003, #2797 Clean up automatich
+  chmodding on installation
+      From: Jesse Vincent <jesse@eris>
+      Date: Mon Jun 16 23:48:19 2003
+
+      none
+
+  rt.3.0.D108, C150, jesse, Mon Jun 16 23:36:29 2003, #2799: Display URIs
+  instead of HREFs in ticket display
+      From: Jesse Vincent <jesse@eris>
+      Date: Mon Jun 16 23:35:00 2003
+
+      none
+
+  rt.3.0.D107, C139, jesse, Mon Jun 16 23:16:45 2003, #2816 new callback to
+  ShowLinks
+      From: Jesse Vincent <jesse@eris>
+      Date: Mon Jun 16 23:14:05 2003
+
+      none
+
+  rt.3.0.D106, C138, jesse, Mon Jun 16 23:16:29 2003, Importing minor bugfixes
+  from ourinternet
+      From: Jesse Vincent <jesse@eris>
+      Date: Mon Jun 16 23:06:00 2003
+
+      none
+
+  rt.3.0.D105, C137, jesse, Mon Jun 16 19:41:13 2003, #2813 Duplicate tickets
+  created at the same time could cause a user creation race condition
+      From: Jesse Vincent <jesse@eris>
+      Date: Mon Jun 16 19:39:57 2003
+
+      none
+
+  rt.3.0.D104, C136, jesse, Fri Jun 13 18:27:11 2003, Bumping version to RT
+  3.0.3pre4
+      From: Jesse Vincent <jesse@eris>
+      Date: Fri Jun 13 18:25:57 2003
+
+      none
+
+  rt.3.0.D103, C135, jesse, Fri Jun 13 18:22:33 2003, Efficiency tweaks for
+  WhoHaveRight
+      From: Jesse Vincent <jesse@eris>
+      Date: Fri Jun 13 18:19:02 2003
+
+      none
+
+  rt.3.0.D102, C133, jesse, Fri Jun 13 18:18:32 2003, On postgres, RT didn't
+  previously cope well with multipart messages including non-plain parts
+  containing non-ascii
+      From: Jesse Vincent <jesse@eris>
+      Date: Fri Jun 13 18:17:37 2003
+
+      none
+
+  rt.3.0.D101, C132, jesse, Fri Jun 13 01:41:24 2003, #2776 - 'new' ACL cache
+  had bad behaviour. rolled back to older cache and added tests
+      From: Jesse Vincent <jesse@eris>
+      Date: Fri Jun 13 01:40:26 2003
+
+      none
+
+  rt.3.0.D100, C131, jesse, Thu Jun 12 13:22:10 2003, Fixing search navigation
+  links (they were made to disappear)
+      From: Jesse Vincent <jesse@eris>
+      Date: Thu Jun 12 13:19:37 2003
+
+      none
+
+  rt.3.0.D099, C130, jesse, Wed Jun 11 16:44:16 2003, Attempting to be smarter
+  about guessing encodings for outgoing mail
+      From: Jesse Vincent <jesse@eris>
+      Date: Wed Jun 11 16:42:50 2003
+      Warning: the original change was in the 'being_developed' state
+
+      none
+
+  rt.3.0.D098, C127, jesse, Wed Jun 11 16:39:39 2003, Fixes the cascading style
+  sheet to properly reference message bodies
+      From: Jesse Vincent <jesse@eris>
+      Date: Wed Jun 11 15:43:39 2003
+      Warning: the original change was in the 'being_developed' state
+
+  rt.3.0.D097, C128, jesse, Wed Jun 11 16:37:38 2003, #2605 - SpamAssassin
+  Filter returns the wrong codes on success/failure
+      From: Jesse Vincent <jesse@eris>
+      Date: Wed Jun 11 15:53:58 2003
+
+      none
+
+  rt.3.0.D096, C129, jesse, Wed Jun 11 16:36:53 2003, Various fixes from a pull-
+  up of the ourinternet branch
+      From: Jesse Vincent <jesse@eris>
+      Date: Wed Jun 11 16:17:44 2003
+
+      none
+
+  rt.3.0.D095, C126, jesse, Tue Jun 10 16:17:50 2003, Really bumping the version
+  to 3.0.3pre3
+      From: Jesse Vincent <jesse@eris>
+      Date: Tue Jun 10 16:17:08 2003
+
+      none
+
+  rt.3.0.D094, C122, jesse, Tue Jun 10 15:58:32 2003, Bumping version to
+  3.0.3pre3, bumping searchbuilder dependency
+      From: Jesse Vincent <jesse@eris>
+      Date: Tue Jun 10 15:56:41 2003
+
+      none
+
+  rt.3.0.D093, C125, jesse, Tue Jun 10 15:54:52 2003, add TakeTicket,
+  StealTicket rights
+      From: Jesse Vincent <jesse@eris>
+      Date: Tue Jun 10 15:41:43 2003
+      Warning: the original change was in the 'being_developed' state
+
+      From: Jesse <jesse@fsck.com>
+      Date: Tue Jun 10 11:01:04 2003
+      Warning: the original change was in the 'being_reviewed' state
+
+      From: Linda L. Julien <leira@oak.starsong.org>
+      Date: Tue Jun 10 11:58:03 2003
+      Warning: the original change was in the 'awaiting_integration' state
+
+      none
+
+  rt.3.0.D092, C123, leira, Tue Jun 10 15:54:10 2003, support group & queue acl
+  setting from rt-setup-database
+      From: Linda L. Julien <leira@oak.starsong.org>
+      Date: Tue Jun 10 14:13:46 2003
+      Warning: the original change was in the 'awaiting_integration' state
+
+      none
+
+  rt.3.0.D091, C121, jesse, Sun Jun  8 00:41:47 2003, Fixes for: Bogus message
+  headers containing high-bit characters; database handle reconnections;
+  postgres test suite failures
+      From: Jesse Vincent <jesse@eris>
+      Date: Sun Jun  8 00:32:40 2003
+
+      none
+
+  rt.3.0.D090, C120, leira, Sun Jun  8 00:34:40 2003, Header & Logout take URL
+      From: Linda L. Julien <leira@oak.starsong.org>
+      Date: Fri Jun  6 19:06:41 2003
+      Warning: the original change was in the 'awaiting_integration' state
+
+      none
+
+  rt.3.0.D089, C119, jesse, Fri Jun  6 17:33:37 2003, #2721 - 'id' attribute had
+  mixed casing. this bothers certain databases (Sybase)
+      From: Jesse Vincent <jesse@eris>
+      Date: Fri Jun  6 17:32:16 2003
+
+      none
+
+  rt.3.0.D088, C118, jesse, Wed Jun  4 17:21:24 2003, Bump to 3.0.3pre2; fix a
+  misspelled right in Queue.pm (#2686)
+      From: Jesse Vincent <jesse@eris>
+      Date: Wed Jun  4 17:19:39 2003
+      Warning: the original change was in the 'being_developed' state
+
+      The "rt" program, branch 3.0.
+
+  rt.3.0.D087, C116, jesse, Wed Jun  4 17:17:08 2003, Better testing for
+  internationalization of outoging messages; slight refactoring to SendEmail to
+  be more testable; added missing deps to EmailParser
+      From: Jesse Vincent <jesse@eris>
+      Date: Wed Jun  4 16:53:07 2003
+
+      none
+
+  rt.3.0.D086, C117, leira, Wed Jun  4 00:23:20 2003, pass title to Header
+      From: Linda L. Julien <leira@oak.starsong.org>
+      Date: Tue Jun  3 18:09:39 2003
+      Warning: the original change was in the 'being_developed' state
+
+      none
+
+  rt.3.0.D085, C115, jesse, Tue Jun  3 00:45:12 2003, The "rt" program, branch
+  3.0.
+      From: Jesse Vincent <jesse@eris>
+      Date: Tue Jun  3 00:43:15 2003
+      Warning: the original change was in the 'being_developed' state
+
+      The "rt" program, branch 3.0.
+
+  rt.3.0.D084, C113, jesse, Tue Jun  3 00:20:07 2003, Bumping
+  DBIx::SearchBuilder requirement to 0.84
+      From: Jesse Vincent <jesse@eris>
+      Date: Tue Jun  3 00:19:50 2003
+
+      none
+
+  rt.3.0.D083, C112, jesse, Tue Jun  3 00:18:43 2003, #2678 Fixing crit messages
+  in RT::User
+      From: Jesse Vincent <jesse@eris>
+      Date: Tue Jun  3 00:18:12 2003
+
+      none
+
+  rt.3.0.D082, C111, jesse, Tue Jun  3 00:04:45 2003, Fixing an acl bug in
+  Principal_Overlay introduced after 3.0.2 and a possible 'Deep' transaction
+  issue. now requires DBIx::SearchBuilder 0.83_05 or newer
+      From: Jesse Vincent <jesse@eris>
+      Date: Tue Jun  3 00:02:23 2003
+
+      none
+
+  rt.3.0.D081, C110, jesse, Mon Jun  2 22:40:34 2003, ACL cache made postgres
+  safe
+      From: Jesse Vincent <jesse@eris>
+      Date: Mon Jun  2 22:39:03 2003
+
+      none
+
+  rt.3.0.D080, C109, leira, Mon Jun  2 17:10:05 2003, CF defaults; fix Starts
+  set
+      From: Linda L. Julien <leira@oak.starsong.org>
+      Date: Mon Jun  2 17:32:11 2003
+      Warning: the original change was in the 'awaiting_integration' state
+
+      none
+
+  rt.3.0.D079, C108, jesse, Sat May 31 00:28:37 2003, Log path enhancment to
+  deal more gracefully with absolutely specified logfile paths
+      From: Jesse Vincent <jesse@eris>
+      Date: Sat May 31 00:27:38 2003
+
+      none
+
+  rt.3.0.D078, C107, jesse, Sat May 31 00:20:53 2003, Continued performance
+  improvements for caching
+      From: Jesse Vincent <jesse@eris>
+      Date: Sat May 31 00:19:32 2003
+
+      none
+
+  rt.3.0.D077, C106, jesse, Sat May 31 00:20:32 2003, fix for FastCGI and
+  SpeedyCGI setgidness with weird environments
+      From: Jesse Vincent <jesse@eris>
+      Date: Sat May 31 00:19:15 2003
+
+      none
+
+  rt.3.0.D076, C105, jesse, Fri May 30 16:21:14 2003, #2658 Cosmetic issue with
+  Scrip menu listing
+      From: Jesse Vincent <jesse@eris>
+      Date: Fri May 30 16:14:02 2003
+
+      none
+
+  rt.3.0.D075, C103, jesse, Fri May 30 16:20:57 2003, #2652 - de.po updates
+      From: Jesse Vincent <jesse@eris>
+      Date: Fri May 30 15:57:44 2003
+
+      none
+
+  rt.3.0.D074, C102, jesse, Fri May 30 16:18:57 2003, #2657 Web UI Scrip
+  creation bug
+      From: Jesse Vincent <jesse@eris>
+      Date: Fri May 30 15:50:16 2003
+
+      none
+
+  rt.3.0.D073, C101, jesse, Fri May 30 16:17:43 2003, #2662 Fixing an overly
+  restrictive ACL check on group creation
+      From: Jesse Vincent <jesse@eris>
+      Date: Fri May 30 15:46:22 2003
+
+      none
+
+  rt.3.0.D072, C100, leira, Fri May 30 16:17:05 2003, update layout fix
+      From: Linda L. Julien <leira@oak.starsong.org>
+      Date: Thu May 29 14:30:01 2003
+      Warning: the original change was in the 'awaiting_integration' state
+
+      none
+
+  rt.3.0.D071, C99, jesse, Wed May 28 17:54:48 2003, Bumping the version to
+  3.0.3pre1
+      From: Jesse Vincent <jesse@eris>
+      Date: Wed May 28 17:52:51 2003
+
+      none
+
+  rt.3.0.D070, C98, jesse, Wed May 28 17:54:40 2003, Further UTF8-fixed from
+  autrijus
+      From: Jesse Vincent <jesse@eris>
+      Date: Wed May 28 17:49:32 2003
+
+      none
+
+  rt.3.0.D069, C97, jesse, Wed May 28 17:07:10 2003, A fix to Tickets_Overlay.pm
+  to make the 'Count' methods actually do a count, not a full SELECT
+      From: Jesse Vincent <jesse@eris>
+      Date: Wed May 28 17:04:50 2003
+
+      none
+
+  rt.3.0.D068, C96, jesse, Wed May 28 17:06:43 2003, ACL HasRight system
+  replaced with an algorithm that does more looking ahead
+      From: Jesse Vincent <jesse@eris>
+      Date: Wed May 28 16:36:10 2003
+
+      none
+
+  rt.3.0.D067, C95, jesse, Tue May 27 13:22:19 2003, Merge from ourinternet:
+  UTF8 fixes; more configurable apache sessions;
+      From: Jesse Vincent <jesse@Jesse-Vincents-Computer.local.>
+      Date: Tue May 27 13:07:41 2003
+
+      none
+
+  rt.3.0.D066, C93, jesse, Sat May 24 18:05:36 2003, Additional work on the
+  SQLite port
+      From: Jesse Vincent <jesse@eris>
+      Date: Sat May 24 18:04:50 2003
+
+      none
+
+  rt.3.0.D065, C92, jesse, Fri May 23 16:45:23 2003, MIME::Words encoding fixes
+  for mail sending
+      From: Jesse Vincent <jesse@eris>
+      Date: Fri May 23 16:44:28 2003
+
+      none
+
+  rt.3.0.D064, C91, jesse, Fri May 23 16:12:26 2003, Fixing an upgrade bug from
+  3.0.2->3.0.3
+      From: Jesse Vincent <jesse@eris>
+      Date: Fri May 23 15:57:50 2003
+
+      none
+
+  rt.3.0.D063, C90, jesse, Fri May 23 15:27:47 2003, Merging utf8 fixes from
+  autrijus tang
+      From: Jesse Vincent <jesse@eris>
+      Date: Fri May 23 15:25:23 2003
+
+      none
+
+  rt.3.0.D062, C89, jesse, Wed May 21 00:58:34 2003, #2603: /opt/rt3/share/doc
+  should not be a file.
+      From: Jesse Vincent <jesse@Jesse-Vincents-Computer.local.>
+      Date: Wed May 21 00:29:55 2003
+
+      none
+
+  rt.3.0.D061, C88, jesse, Wed May 21 00:57:45 2003, Fix to honor '$LogDir' for
+  LogToFile
+      From: Jesse Vincent <jesse@Jesse-Vincents-Computer.local.>
+      Date: Wed May 21 00:17:18 2003
+
+      none
+
+  rt.3.0.D060, C14, jesse, Wed May 21 00:56:31 2003, #2539: Re: [rt-users]
+  unexpected usage: change sort order with column headers in search window
+      From: Jesse Vincent <jesse@Jesse-Vincents-Computer.local.>
+      Date: Tue May 20 23:19:46 2003
+
+      none
+
+  rt.3.0.D059, C87, jesse, Wed May 21 00:55:08 2003, Including norwegian bokmal
+  translation
+      From: Jesse Vincent <jesse@Jesse-Vincents-Computer.local.>
+      Date: Tue May 20 23:05:17 2003
+
+      none
+
+  rt.3.0.D058, C86, jesse, Wed May 21 00:54:06 2003, Fix for #2602 - make test
+  fails on _Config.pm
+      From: Jesse Vincent <jesse@Jesse-Vincents-Computer.local.>
+      Date: Tue May 20 22:32:52 2003
+
+      none
+
+  rt.3.0.D057, C85, leira, Tue May 20 12:15:11 2003, Robert's updated search
+  stuff
+      From: Linda L. Julien <leira@oak.starsong.org>
+      Date: Mon May 19 18:19:14 2003
+      Warning: the original change was in the 'awaiting_integration' state
+
+      none
+
+  rt.3.0.D056, C83, jesse, Sat May 17 17:34:32 2003, merge from ourinternet; one
+  CreateTickets fix and some utf8 updates
+      From: Jesse Vincent <jesse@eris>
+      Date: Sat May 17 17:31:43 2003
+
+      none
+
+  rt.3.0.D055, C82, jesse, Mon May 12 20:30:45 2003, Bumping the version to RT
+  3.0.2
+      From: Jesse Vincent <jesse@eris>
+      Date: Tue May 13 02:29:44 2003
+
+      none
+
+  rt.3.0.D054, C81, jesse, Wed May  7 09:18:28 2003, Bumping the version to
+  3.0.2pre6
+      From: Jesse Vincent <jesse@eris>
+      Date: Wed May  7 15:16:55 2003
+      Warning: the original change was in the 'being_developed' state
+
+      none
+
+  rt.3.0.D053, C80, jesse, Wed May  7 09:02:24 2003, Importing utf8 fixes, _
+  Vendor overlay support from ourinternet
+      From: Jesse Vincent <jesse@eris>
+      Date: Wed May  7 14:52:58 2003
+
+      none
+
+  rt.3.0.D052, C79, jesse, Wed May  7 07:05:14 2003, Cleaning up RT tag
+  processing
+      From: Jesse Vincent <jesse@eris>
+      Date: Wed May  7 13:04:17 2003
+
+      none
+
+  rt.3.0.D051, C78, jesse, Wed May  7 07:03:27 2003, More performance work on
+  WhoHaveRight; removing an extra join
+      From: Jesse Vincent <jesse@eris>
+      Date: Wed May  7 13:00:43 2003
+
+      none
+
+  rt.3.0.D050, C77, jesse, Fri May  2 11:23:23 2003, Fixing bogus anchor tags
+      From: Jesse Vincent <jesse@eris>
+      Date: Fri May  2 17:19:54 2003
+
+      none
+
+  rt.3.0.D049, C76, jesse, Fri May  2 10:26:30 2003, [#2437]
+  CanonicalizeEmailAddress fixes; [# 2449] html fixes for right editing; [#
+  2457] email addresses weren't always being canonicalized
+      From: Jesse Vincent <jesse@eris>
+      Date: Fri May  2 16:24:40 2003
+
+      none
+
+  rt.3.0.D048, C75, jesse, Fri May  2 08:35:38 2003, bumped version to
+  3.0.2pre5; attachments performance fixes; utf-8 mailgateway fixes; more
+  extension hooks; template updates for approvals
+      From: Jesse Vincent <jesse@eris>
+      Date: Fri May  2 14:32:57 2003
+
+      none
+
+  rt.3.0.D047, C73, jesse, Sun Apr 27 19:06:46 2003, I18N patches from autrijus;
+  bouncing to 3.0.2pre4
+      From: Jesse Vincent <jesse@eris>
+      Date: Mon Apr 28 01:02:18 2003
+
+      none
+
+  rt.3.0.D046, C72, leira, Sun Apr 27 19:06:04 2003, bulk links
+      From: Linda L. Julien <leira@oak.starsong.org>
+      Date: Thu Apr 24 01:23:01 2003
+      Warning: the original change was in the 'awaiting_integration' state
+
+      none
+
+  rt.3.0.D045, C71, jesse, Sat Apr 19 03:42:39 2003, Another go at fixing the
+  ARRAY()  issue; bumping to 3.0.2pre3
+      From: Jesse Vincent <jesse@eris>
+      Date: Sat Apr 19 08:39:19 2003
+
+      none
+
+  rt.3.0.D044, C70, jesse, Fri Apr 18 16:37:00 2003, fixing utf8 tainting issue
+  in autohandler; bumped to 3.0.2pre2
+      From: Jesse Vincent <jesse@eris>
+      Date: Fri Apr 18 21:32:04 2003
+
+      none
+
+  rt.3.0.D043, C69, leira, Thu Apr 17 18:51:41 2003, make ids clicky
+      From: Linda L. Julien <leira@oak.starsong.org>
+      Date: Thu Apr 17 18:31:40 2003
+      Warning: the original change was in the 'awaiting_integration' state
+
+      none
+
+  rt.3.0.D042, C68, jesse, Thu Apr 17 18:39:54 2003, Bumping to 3.0.2pre1
+      From: Jesse Vincent <jesse@eris>
+      Date: Thu Apr 17 23:37:59 2003
+
+      none
+
+  rt.3.0.D041, C67, jesse, Thu Apr 17 18:33:15 2003, updating autrijus'
+  autohandler patch. seems to break lots of stuff
+      From: Jesse Vincent <jesse@eris>
+      Date: Thu Apr 17 23:21:02 2003
+
+      none
+
+  rt.3.0.D040, C66, jesse, Thu Apr 17 18:32:24 2003, Quicksearch bug fix from
+  Stan
+      From: Jesse Vincent <jesse@eris>
+      Date: Thu Apr 17 23:16:58 2003
+
+      none
+
+  rt.3.0.D039, C65, jesse, Thu Apr 17 18:29:31 2003, Fixing an untainting bug in
+  3.0.1
+      From: Jesse Vincent <jesse@eris>
+      Date: Thu Apr 17 23:15:01 2003
+      Warning: the original change was in the 'being_developed' state
+
+      none
+
+  rt.3.0.D038, C63, jesse, Thu Apr 17 04:46:42 2003, Fixing a showmessagestanza
+  bug found in RTIR
+      From: Jesse Vincent <jesse@eris>
+      Date: Thu Apr 17 09:45:48 2003
+
+      none
+
+  rt.3.0.D037, C62, jesse, Tue Apr 15 11:53:58 2003, Bumping to version 3.0.1
+      From: Jesse Vincent <jesse@eris>
+      Date: Tue Apr 15 11:52:00 2003
+
+      none
+
+  rt.3.0.D036, C61, jesse, Mon Apr 14 18:18:03 2003, New speedycgi support from
+  vivek khera
+      From: Jesse Vincent <jesse@eris>
+      Date: Mon Apr 14 14:49:49 2003
+
+      none
+
+  rt.3.0.D035, C60, jesse, Sun Apr 13 21:43:32 2003, SMTP and I18N fixes from
+  autrijus tang. Updated chinese translations
+      From: Jesse Vincent <jesse@eris>
+      Date: Sun Apr 13 21:32:55 2003
+
+      none
+
+  rt.3.0.D034, C59, jesse, Fri Apr 11 21:58:36 2003, Bumping to RT 3.0.1pre2
+      From: Jesse Vincent <jesse@eris>
+      Date: Fri Apr 11 21:58:06 2003
+
+      none
+
+  rt.3.0.D033, C58, jesse, Fri Apr 11 21:56:11 2003, Better binary attachment
+  handling fix from autrijus
+      From: Jesse Vincent <jesse@eris>
+      Date: Fri Apr 11 21:52:12 2003
+
+      none
+
+  rt.3.0.D032, C57, jesse, Fri Apr 11 21:35:17 2003, Testing and fixing binary
+  attachment corruption
+      From: Jesse Vincent <jesse@eris>
+      Date: Fri Apr 11 21:34:28 2003
+
+      none
+
+  rt.3.0.D031, C56, jesse, Fri Apr 11 21:34:56 2003, Testing fixes for mail
+  authentication/authorization
+      From: Jesse Vincent <jesse@eris>
+      Date: Thu Apr 10 00:08:29 2003
+
+      none
+
+  rt.3.0.D030, C55, jesse, Wed Apr  9 13:55:18 2003, #2365 Removing outdated
+  Mason setup parameter
+      From: Jesse Vincent <jesse@eris>
+      Date: Wed Apr  9 13:54:43 2003
+
+      none
+
+  rt.3.0.D029, C53, jesse, Wed Apr  9 13:22:35 2003, Added preliminary left to
+  right hebrew translation
+      From: Jesse Vincent <jesse@eris>
+      Date: Wed Apr  9 13:18:16 2003
+
+      none
+
+  rt.3.0.D028, C52, jesse, Fri Apr  4 02:10:01 2003, More I18N testing	for
+  rafael
+      From: Jesse Vincent <jesse@eris>
+      Date: Fri Apr  4 02:08:49 2003
+
+      none
+
+  rt.3.0.D027, C51, jesse, Thu Apr  3 19:33:34 2003, Changing address used in
+  example to not send mail to author
+      From: Jesse Vincent <jesse@eris>
+      Date: Thu Apr  3 19:29:02 2003
+      Warning: the original change was in the 'being_integrated' state
+
+      none
+
+  rt.3.0.D026, C50, jesse, Thu Apr  3 19:16:37 2003, Integrating rafael's
+  failing test suite and proposed fix from autrijus
+      From: Jesse Vincent <jesse@eris>
+      Date: Thu Apr  3 19:15:03 2003
+
+      none
+
+  rt.3.0.D025, C39, jesse, Thu Apr  3 19:16:15 2003, Many users should be able
+  to have a blank address; neew test suite to ensure this
+      From: Jesse Vincent <jesse@eris>
+      Date: Thu Apr  3 13:27:36 2003
+
+      none
+
+  rt.3.0.D024, C38, jesse, Thu Apr  3 13:30:37 2003, Updates for RT RPC
+  interface from AMS
+      From: Jesse Vincent <jesse@eris>
+      Date: Wed Apr  2 15:32:15 2003
+
+      none
+
+  rt.3.0.D023, C36, jesse, Wed Apr  2 14:14:07 2003, Updated Spanish translation
+      From: Jesse Vincent <jesse@eris>
+      Date: Tue Apr  1 14:02:36 2003
+
+      none
+
+  rt.3.0.D022, C37, jesse, Wed Apr  2 14:13:55 2003, Updated dependencies
+      From: Jesse Vincent <jesse@eris>
+      Date: Wed Apr  2 14:09:41 2003
+
+      none
+
+  rt.3.0.D021, C35, jesse, Tue Apr  1 13:00:22 2003, New czech translation
+      From: Jesse Vincent <jesse@eris>
+      Date: Tue Apr  1 12:58:57 2003
+
+      none
+
+  rt.3.0.D020, C33, jesse, Fri Mar 28 14:48:20 2003, A tiny bit of extra data
+  passing for some callbacks
+      From: Jesse Vincent <jesse@eris>
+      Date: Fri Mar 28 14:43:28 2003
+
+      none
+
+  rt.3.0.D019, C32, jesse, Fri Mar 28 14:35:10 2003, Added better error checking
+  for failed ticket creation
+      From: Jesse Vincent <jesse@eris>
+      Date: Fri Mar 28 14:32:52 2003
+
+      none
+
+  rt.3.0.D018, C31, jesse, Sun Mar 23 17:21:45 2003, Minor fixes - Bumped to
+  3.0.0;
+  2266 - postgres scrip creation bug
+  2267 - Tickets not reopened after being stalled
+  2265 - Fixed css nits from blaise
+  Unreported - Fixed quick-search bug
+      From: Jesse Vincent <jesse@eris>
+      Date: Sun Mar 23 17:17:55 2003
+
+      none
+
+  rt.3.0.D017, C30, jesse, Thu Mar 20 21:38:30 2003, Bumping to 3.0.0rc4
+      From: Jesse Vincent <jesse@eris>
+      Date: Thu Mar 20 21:28:01 2003
+
+      none
+
+  rt.3.0.D016, C29, jesse, Thu Mar 20 21:18:27 2003, RT should now be less
+  overzealous about opening and then marking a ticket 'new' again
+      From: Jesse Vincent <jesse@eris>
+      Date: Thu Mar 20 21:14:47 2003
+
+      none
+
+  rt.3.0.D015, C28, jesse, Thu Mar 20 15:21:49 2003, Further postgres tweaks and
+  fixes
+      From: Jesse Vincent <jesse@eris>
+      Date: Thu Mar 20 15:20:21 2003
+
+      none
+
+  rt.3.0.D014, C27, jesse, Thu Mar 20 01:48:42 2003, Postgres schema tweak
+      From: Jesse Vincent <jesse@eris>
+      Date: Thu Mar 20 01:47:20 2003
+
+      none
+
+  rt.3.0.D013, C26, jesse, Wed Mar 19 21:26:47 2003, Postgres fixes
+      From: Jesse Vincent <jesse@eris>
+      Date: Wed Mar 19 21:26:24 2003
+
+      none
+
+  rt.3.0.D012, C25, jesse, Wed Mar 19 16:27:29 2003, Brazilian Portuguese
+  translation
+      From: Jesse Vincent <jesse@eris>
+      Date: Wed Mar 19 16:25:48 2003
+
+      none
+
+  rt.3.0.D011, C23, jesse, Wed Mar 19 13:03:15 2003, New french translation
+      From: Jesse Vincent <jesse@eris>
+      Date: Wed Mar 19 13:02:47 2003
+
+      none
+
+  rt.3.0.D010, C22, jesse, Wed Mar 19 01:01:24 2003, Bumping to RC3; fixing the
+  display of 'This user's n highest priority tix'
+      From: Jesse Vincent <jesse@eris>
+      Date: Wed Mar 19 01:00:33 2003
+
+      none
+
+  rt.3.0.D009, C20, jesse, Wed Mar 19 00:46:17 2003, finishing the notify stuff
+      From: Jesse Vincent <jesse@eris>
+      Date: Wed Mar 19 00:45:09 2003
+
+      none
+
+  rt.3.0.D008, C19, jesse, Wed Mar 19 00:40:45 2003, Caving in to the masses and
+  making 'notify sender' configurable
+      From: Jesse Vincent <jesse@eris>
+      Date: Wed Mar 19 00:38:50 2003
+
+      none
+
+  rt.3.0.D007, C18, jesse, Tue Mar 18 16:29:45 2003, More performance work;
+  backing out 'enhancements' that killed system performance
+      From: Jesse Vincent <jesse@eris>
+      Date: Tue Mar 18 16:26:07 2003
+
+      none
+
+  rt.3.0.D006, C17, jesse, Tue Mar 18 11:29:28 2003, fixing fastcgi's ability to
+  load webmux.pl on some platforms
+      From: Jesse Vincent <jesse@eris>
+      Date: Tue Mar 18 11:28:11 2003
+
+      none
+
+  rt.3.0.D005, C12, jesse, Tue Mar 18 00:58:52 2003, fixing indices for postgres
+      From: Jesse Vincent <jesse@eris>
+      Date: Tue Mar 18 00:53:06 2003
+
+      none
+
+  rt.3.0.D004, C16, jesse, Tue Mar 18 00:41:26 2003, Performance work on
+  'WhoHaveRight'; bumping to 3.0.0rc2
+      From: Jesse Vincent <jesse@eris>
+      Date: Tue Mar 18 00:37:30 2003
+
+      none
+
+  rt.3.0.D003, C15, jesse, Fri Mar 14 17:07:28 2003, removing the old REST API
+      From: Jesse Vincent <jesse@eris>
+      Date: Fri Mar 14 16:50:38 2003
+
+      none
+
+  rt.3.0.D002, C11, jesse, Fri Mar 14 16:42:46 2003, Minor CSS update. rollback
+  fix; new database indices; copyright update
+      From: Jesse Vincent <jesse@eris>
+      Date: Fri Mar 14 16:35:01 2003
+
+      none
+
+  rt.3.0.D001, C10, jesse, Fri Mar 14 01:26:22 2003, Bumping the version to
+  rt.3.0.0rc0
+      From: Jesse Vincent <jesse@eris>
+      Date: Fri Mar 14 01:25:51 2003
+
+      none

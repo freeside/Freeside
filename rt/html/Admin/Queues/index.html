@@ -1,0 +1,61 @@
+%# BEGIN LICENSE BLOCK
+%# 
+%# Copyright (c) 1996-2003 Jesse Vincent <jesse@bestpractical.com>
+%# 
+%# (Except where explictly superceded by other copyright notices)
+%# 
+%# This work is made available to you under the terms of Version 2 of
+%# the GNU General Public License. A copy of that license should have
+%# been provided with this software, but in any event can be snarfed
+%# from www.gnu.org.
+%# 
+%# This work is distributed in the hope that it will be useful, but
+%# WITHOUT ANY WARRANTY; without even the implied warranty of
+%# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+%# General Public License for more details.
+%# 
+%# Unless otherwise specified, all modifications, corrections or
+%# extensions to this work which alter its source code become the
+%# property of Best Practical Solutions, LLC when submitted for
+%# inclusion in the work.
+%# 
+%# 
+%# END LICENSE BLOCK
+<& /Admin/Elements/Header, Title => loc("Admin queues") &>
+<& /Admin/Elements/QueueTabs, current_tab => 'Admin/Queues/', 
+    current_subtab => 'Admin/Queues/', 
+    Title => loc("Admin queues") &>
+
+
+
+<%$caption%>:<BR>
+<UL>
+%if ($queues->Count == 0) {
+<LI> <i><&|/l&>No queues matching search criteria found.</&></i>
+% }
+%while ( $queue = $queues->Next) {
+<LI><A HREF="Modify.html?id=<%$queue->id%>"><%$queue->Name%></a></LI>
+%}
+</UL>
+<BR>
+<FORM METHOD=POST ACTION="<% $RT::WebPath %>/Admin/Queues/">
+<input type="checkbox" name="FindDisabledQueues"> <&|/l&>Include disabled queues in listing.</&>
+<div align=right><input type=submit value="<&|/l&>Go!</&>"></div> 
+</FORM>
+
+<%INIT>
+my ($queue, $caption);
+my $queues = new RT::Queues($session{'CurrentUser'});
+$queues->UnLimit();
+
+if ($FindDisabledQueues) {
+        $caption = loc("All Queues");
+        $queues->{'find_disabled_rows'} = 1;
+} else {
+    $caption = loc("Enabled Queues");
+}
+
+</%INIT>
+<%ARGS>
+$FindDisabledQueues => 0
+</%ARGS>

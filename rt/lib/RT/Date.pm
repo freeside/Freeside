@@ -1,7 +1,26 @@
-#$Header: /home/cvs/cvsroot/freeside/rt/lib/RT/Date.pm,v 1.1 2002-08-12 06:17:07 ivan Exp $
-# (c) 1996-2000 Jesse Vincent <jesse@fsck.com>
-# This software is redistributable under the terms of the GNU GPL
-
+# BEGIN LICENSE BLOCK
+# 
+# Copyright (c) 1996-2003 Jesse Vincent <jesse@bestpractical.com>
+# 
+# (Except where explictly superceded by other copyright notices)
+# 
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+# 
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+# 
+# Unless otherwise specified, all modifications, corrections or
+# extensions to this work which alter its source code become the
+# property of Best Practical Solutions, LLC when submitted for
+# inclusion in the work.
+# 
+# 
+# END LICENSE BLOCK
 =head1 NAME
 
   RT::Date - a simple Object Oriented date.
@@ -28,7 +47,15 @@ ok (require RT::Date);
 
 
 package RT::Date;
+
 use Time::Local;
+
+use RT::Base;
+
+use strict;
+use vars qw/@ISA/;
+@ISA = qw/RT::Base/;
+
 use vars qw($MINUTE $HOUR $DAY $WEEK $MONTH $YEAR);
 
 $MINUTE = 60;
@@ -45,6 +72,7 @@ sub new  {
   my $class = ref($proto) || $proto;
   my $self  = {};
   bless ($self, $class);
+  $self->CurrentUser(@_);
   $self->Unix(0);
   return $self;
 }
@@ -61,91 +89,114 @@ if $args->{'Format'} is 'unix', takes the number of seconds since the epoch
 
 If $args->{'Format'} is ISO, tries to parse an ISO date.
 
-If $args->{'Format'} is 'unknown', require Date::Parse and make it figure things
-out. This is a heavyweight operation that should never be called from within 
-RT's core. But it's really useful for something like the textbox date entry
-where we let the user do whatever they want.
+If $args->{'Format'} is 'unknown', require Time::ParseDate and make it figure
+things out. This is a heavyweight operation that should never be called from
+within RT's core. But it's really useful for something like the textbox date
+entry where we let the user do whatever they want.
 
 If $args->{'Value'}  is 0, assumes you mean never.
 
+=begin testing
+
+use_ok(RT::Date);
+my $date = RT::Date->new($RT::SystemUser);
+$date->Set(Format => 'unix', Value => '0');
+ok ($date->ISO eq '1970-01-01 00:00:00', "Set a date to midnight 1/1/1970 GMT");
+
+=end testing
 
 =cut
 
 sub Set {
     my $self = shift;
     my %args = ( Format => 'unix',
-		 Value => time,
-		 @_);
-    if (($args{'Value'} =~ /^\d*$/) and ($args{'Value'} == 0)) {
-	$self->Unix(-1);
-	return($self->Unix());
+                 Value  => time,
+                 @_ );
+    if ( !$args{'Value'}
+         || ( ( $args{'Value'} =~ /^\d*$/ ) and ( $args{'Value'} == 0 ) ) ) {
+        $self->Unix(-1);
+        return ( $self->Unix() );
     }
 
-    if ($args{'Format'} =~ /^unix$/i) {
-	$self->Unix($args{'Value'});
+    if ( $args{'Format'} =~ /^unix$/i ) {
+        $self->Unix( $args{'Value'} );
     }
-    
-    elsif ($args{'Format'} =~ /^(sql|datemanip|iso)$/i) {
-	
-	if (($args{'Value'} =~ /^(\d{4}?)(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)$/) ||
-	    ($args{'Value'} =~ /^(\d{4}?)-(\d\d)-(\d\d) (\d\d):(\d\d):(\d\d)$/) ||
-	    ($args{'Value'} =~ /^(\d{4}?)-(\d\d)-(\d\d) (\d\d):(\d\d):(\d\d)\+00$/) ||
-	    ($args{'Value'} =~ /^(\d{4}?)(\d\d)(\d\d)(\d\d):(\d\d):(\d\d)$/)) {
-	    
-        my $year = $1;
-	    my $mon = $2;
-	    my $mday = $3;
-	    my $hours = $4;
-	    my $min = $5;
-	    my $sec = $6;
-	    
-	    #timegm expects month as 0->11
-	    $mon--;
-	    
-	    #now that we've parsed it, deal with the case where everything
-	    #was 0
-            if ($mon == -1) {
-	            $self->Unix(-1);
-	        } else {
 
-		    #Dateamnip strings aren't in GMT.
-		    if ($args{'Format'} =~ /^datemanip$/i) {
-			$self->Unix(timelocal($sec,$min,$hours,$mday,$mon,$year));
-		    }
-		    #ISO and SQL dates are in GMT
-		    else {
-			$self->Unix(timegm($sec,$min,$hours,$mday,$mon,$year));
-		    }
-		    
-		    $self->Unix(-1) unless $self->Unix;
-		}
-   }  
-	else {
-	    use Carp;
-	    Carp::cluck;
-	    $RT::Logger->debug( "Couldn't parse date $args{'Value'} as a $args{'Format'}");
-	    
-	}
+    elsif ( $args{'Format'} =~ /^(sql|datemanip|iso)$/i ) {
+	$args{'Value'} =~ s!/!-!g;
+
+        if (( $args{'Value'} =~ /^(\d{4}?)(\d\d)(\d\d)(\d\d)(\d\d)(\d\d)$/ )
+            || ( $args{'Value'} =~
+                 /^(\d{4}?)-(\d\d)-(\d\d) (\d\d):(\d\d):(\d\d)$/ )
+            || ( $args{'Value'} =~
+                 /^(\d{4}?)-(\d\d)-(\d\d) (\d\d):(\d\d):(\d\d)\+00$/ )
+            || ($args{'Value'} =~ /^(\d{4}?)(\d\d)(\d\d)(\d\d):(\d\d):(\d\d)$/ )
+          ) {
+
+            my $year  = $1;
+            my $mon   = $2;
+            my $mday  = $3;
+            my $hours = $4;
+            my $min   = $5;
+            my $sec   = $6;
+
+            #timegm expects month as 0->11
+            $mon--;
+
+            #now that we've parsed it, deal with the case where everything
+            #was 0
+            if ( $mon == -1 ) {
+                $self->Unix(-1);
+            }
+            else {
+
+                #Dateamnip strings aren't in GMT.
+                if ( $args{'Format'} =~ /^datemanip$/i ) {
+                    $self->Unix(
+                          timelocal( $sec, $min, $hours, $mday, $mon, $year ) );
+                }
+
+                #ISO and SQL dates are in GMT
+                else {
+                    $self->Unix(
+                             timegm( $sec, $min, $hours, $mday, $mon, $year ) );
+                }
+
+                $self->Unix(-1) unless $self->Unix;
+            }
+        }
+        else {
+            use Carp;
+            Carp::cluck;
+            $RT::Logger->debug(
+                     "Couldn't parse date $args{'Value'} as a $args{'Format'}");
+
+        }
     }
-    elsif ($args{'Format'} =~ /^unknown$/i) {
-        require Date::Parse;
-        #Convert it to an ISO format string 
-        
-	my $date = Date::Parse::str2time($args{'Value'});
-        
-	#This date has now been set to a date in the _local_ timezone.
-	#since ISO dates are known to be in GMT (for RT's purposes);
-	
-	$RT::Logger->debug("RT::Date used date::parse to make ".$args{'Value'} . " $date\n");
-        
-	
-	return ($self->Set( Format => 'unix', Value => "$date"));
-    }                                                    
+    elsif ( $args{'Format'} =~ /^unknown$/i ) {
+        require Time::ParseDate;
+
+        #Convert it to an ISO format string
+
+	my $date = Time::ParseDate::parsedate($args{'Value'},
+			UK => $RT::DateDayBeforeMonth,
+			PREFER_PAST => $RT::AmbiguousDayInPast,
+			PREFER_FUTURE => !($RT::AmbiguousDayInPast));
+
+        #This date has now been set to a date in the _local_ timezone.
+        #since ISO dates are known to be in GMT (for RT's purposes);
+
+        $RT::Logger->debug( "RT::Date used date::parse to make "
+                            . $args{'Value'}
+                            . " $date\n" );
+
+        return ( $self->Set( Format => 'unix', Value => "$date" ) );
+    }
     else {
-	die "Unknown Date format: ".$args{'Format'}."\n";
+        die "Unknown Date format: " . $args{'Format'} . "\n";
     }
-    
-    return($self->Unix());
+
+    return ( $self->Unix() );
 }
 
 # }}}
@@ -232,47 +283,59 @@ sub DiffAsString {
 
 # {{{ sub DurationAsString
 
+
 =head2 DurationAsString
 
 Takes a number of seconds. returns a string describing that duration
 
 =cut
 
-sub DurationAsString{
+sub DurationAsString {
 
-    my $self=shift;
+    my $self     = shift;
     my $duration = shift;
-    
-    my ($negative, $s);
-    
-    $negative = 'ago' if ($duration < 0);
+
+    my ( $negative, $s );
+
+    $negative = 1 if ( $duration < 0 );
 
     $duration = abs($duration);
 
-    if($duration < $MINUTE) {
-	$s=$duration;
-	$string="sec";
-    } elsif($duration < (2 * $HOUR)) {
-	$s = int($duration/$MINUTE);
-	$string="min";
-    } elsif($duration < (2 * $DAY)) {
-	$s = int($duration/$HOUR);
-	$string="hours";
-    } elsif($duration < (2 * $WEEK)) {
-	$s = int($duration/$DAY);
-	$string="days";
-    } elsif($duration < (2 * $MONTH)) {
-	$s = int($duration/$WEEK);
-	$string="weeks";
-    } elsif($duration < $YEAR) {
-	$s = int($duration/$MONTH);
-	$string="months";
-    } else {
-	$s = int($duration/$YEAR);
-	$string="years";
+    my $time_unit;
+    if ( $duration < $MINUTE ) {
+        $s         = $duration;
+        $time_unit = $self->loc("sec");
     }
-    
-    return ("$s $string $negative");
+    elsif ( $duration < ( 2 * $HOUR ) ) {
+        $s         = int( $duration / $MINUTE );
+        $time_unit = $self->loc("min");
+    }
+    elsif ( $duration < ( 2 * $DAY ) ) {
+        $s         = int( $duration / $HOUR );
+        $time_unit = $self->loc("hours");
+    }
+    elsif ( $duration < ( 2 * $WEEK ) ) {
+        $s         = int( $duration / $DAY );
+        $time_unit = $self->loc("days");
+    }
+    elsif ( $duration < ( 2 * $MONTH ) ) {
+        $s         = int( $duration / $WEEK );
+        $time_unit = $self->loc("weeks");
+    }
+    elsif ( $duration < $YEAR ) {
+        $s         = int( $duration / $MONTH );
+        $time_unit = $self->loc("months");
+    }
+    else {
+        $s         = int( $duration / $YEAR );
+        $time_unit = $self->loc("years");
+    }
+    if (0) { # For now, never display the "AGO" # $negative) {
+        return $self->loc( "[_1] [_2] ago", $s, $time_unit );
+    }
+    else {
+        return $self->loc( "[_1] [_2]", $s, $time_unit );
+    }
 }
 
 # }}}
@@ -303,10 +366,62 @@ Returns the object\'s time as a string with the current timezone.
 
 sub AsString {
     my $self = shift;
-    return ("Not set") if ($self->Unix <= 0);
+    return ($self->loc("Not set")) if ($self->Unix <= 0);
 
-    return (scalar(localtime($self->Unix)));
+    my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime($self->Unix);
+
+    return $self->loc("[_1] [_2] [_3] [_4]:[_5]:[_6] [_7]", $self->GetWeekday($wday), $self->GetMonth($mon), map {sprintf "%02d", $_} ($mday, $hour, $min, $sec), ($year+1900));
 }
+# }}}
+
+# {{{ GetWeekday
+=head2 GetWeekday DAY
+
+Takes an integer day of week and returns a localized string for that day of week
+
+=cut
+
+sub GetWeekday {
+    my $self = shift;
+    my $dow = shift;
+    
+    return $self->loc('Mon.') if ($dow == 1);
+    return $self->loc('Tue.') if ($dow == 2);
+    return $self->loc('Wed.') if ($dow == 3);
+    return $self->loc('Thu.') if ($dow == 4);
+    return $self->loc('Fri.') if ($dow == 5);
+    return $self->loc('Sat.') if ($dow == 6);
+    return $self->loc('Sun.') if ($dow == 0);
+}
+
+# }}}
+
+# {{{ GetMonth
+=head2 GetMonth DAY
+
+Takes an integer month and returns a localized string for that month 
+
+=cut
+
+sub GetMonth {
+    my $self = shift;
+   my $mon = shift;
+
+    # We do this rather than an array so that we don't call localize 12x what we need to
+    return $self->loc('Jan.') if ($mon == 0);
+    return $self->loc('Feb.') if ($mon == 1);
+    return $self->loc('Mar.') if ($mon == 2);
+    return $self->loc('Apr.') if ($mon == 3);
+    return $self->loc('May.') if ($mon == 4);
+    return $self->loc('Jun.') if ($mon == 5);
+    return $self->loc('Jul.') if ($mon == 6);
+    return $self->loc('Aug.') if ($mon == 7);
+    return $self->loc('Sep.') if ($mon == 8);
+    return $self->loc('Oct.') if ($mon == 9);
+    return $self->loc('Nov.') if ($mon == 10);
+    return $self->loc('Dec.') if ($mon == 11);
+}
+
 # }}}
 
 # {{{ sub AddSeconds
@@ -425,12 +540,18 @@ pull from a 'Timezone' attribute of the CurrentUser
 
 sub LocalTimezone {
     my $self = shift;
-    
+
+    return $self->CurrentUser->Timezone
+	if $self->CurrentUser and $self->CurrentUser->can('Timezone');
+
     return ($RT::Timezone);
 }
 
 # }}}
 
-
+eval "require RT::Date_Vendor";
+die $@ if ($@ && $@ !~ qr{^Can't locate RT/Date_Vendor.pm});
+eval "require RT::Date_Local";
+die $@ if ($@ && $@ !~ qr{^Can't locate RT/Date_Local.pm});
 
 1;

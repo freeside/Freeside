@@ -1,0 +1,170 @@
+%# BEGIN LICENSE BLOCK
+%# 
+%# Copyright (c) 1996-2003 Jesse Vincent <jesse@bestpractical.com>
+%# 
+%# (Except where explictly superceded by other copyright notices)
+%# 
+%# This work is made available to you under the terms of Version 2 of
+%# the GNU General Public License. A copy of that license should have
+%# been provided with this software, but in any event can be snarfed
+%# from www.gnu.org.
+%# 
+%# This work is distributed in the hope that it will be useful, but
+%# WITHOUT ANY WARRANTY; without even the implied warranty of
+%# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+%# General Public License for more details.
+%# 
+%# Unless otherwise specified, all modifications, corrections or
+%# extensions to this work which alter its source code become the
+%# property of Best Practical Solutions, LLC when submitted for
+%# inclusion in the work.
+%# 
+%# 
+%# END LICENSE BLOCK
+<& /Elements/Callback, Ticket => $Ticket, actions=> $actions, tabs => $tabs, %ARGS &>
+<& /Elements/Tabs, 
+    tabs => $tabs, 
+    actions => $actions, 
+    current_tab => $current_tab, 
+    current_toptab => $current_toptab,
+    Title => $Title &> 
+<%INIT>
+
+my $tabs = {};
+my $current_toptab = "Search/Listing.html",
+    my $searchtabs = { new => { title => loc('New Search'),
+                                path => 'Search/Listing.html?ClearRestrictions=1'}
+                        
+
+} ;
+my $actions;
+
+if ( $Ticket) {
+	
+my $id   = $Ticket->id();
+
+if ( defined $session{'tickets'} ) {
+
+
+my $item_map = $session{'tickets'}->ItemMap;
+
+            # Don't $current_toptab = display prev links if we're on the first ticket
+
+        if ($item_map->{$Ticket->Id}->{prev}) {
+                $searchtabs->{'_a'} = {
+                            class => "nav",
+                            path => "Ticket/Display.html?id=" . $item_map->{first},
+                            title => '<< ' . loc('First') };
+                $searchtabs->{"_b"} = { class => "nav",
+                            path => "Ticket/Display.html?id=" . $item_map->{$Ticket->Id}->{prev},
+                                  title => '< ' . loc('Prev') };
+       } 
+
+
+        # Don't display next links if we're on the last ticket
+        if ($item_map->{$Ticket->Id}->{next}) {
+            $searchtabs->{'d'} = { class => "nav",
+                            path => "Ticket/Display.html?id=" . $item_map->{$Ticket->Id}->{next},
+                             title => loc('Next') . ' >' };
+            $searchtabs->{'e'} = {
+                           class => "nav",
+                           path => "Ticket/Display.html?id=" . $item_map->{last},
+                           title => loc('Last') . ' >>' };
+        }
+}
+
+
+
+$tabs->{"this"} = { class => "currentnav",
+                    path  => "Ticket/Display.html?id=" . $Ticket->id,
+                    title => "#" . $id,
+                    current_subtab => $current_subtab };
+
+my $ticket_page_tabs = {
+    _A => { title => loc('Display'),
+            path  => "Ticket/Display.html?id=" . $id, },
+
+    _Ab => { title => loc('History'),
+             path  => "Ticket/History.html?id=" . $id, },
+    _B => { title => loc('Basics'),
+            path  => "Ticket/Modify.html?id=" . $id, },
+
+    _C => { title => loc('Dates'),
+            path  => "Ticket/ModifyDates.html?id=" . $id, },
+    _D =>
+      { title => loc('People'), path => "Ticket/ModifyPeople.html?id=" . $id, },
+    _E => { title => loc('Links'),
+            path  => "Ticket/ModifyLinks.html?id=" . $id, },
+    _F => { title => loc('Jumbo'),
+            path  => "Ticket/ModifyAll.html?id=" . $id,
+            seperator => 1
+ },
+
+};
+
+foreach my $tab ( sort keys %{$ticket_page_tabs} ) {
+    if ( $ticket_page_tabs->{$tab}->{'path'} eq $current_tab ) {
+        $ticket_page_tabs->{$tab}->{"subtabs"}        = $subtabs;
+        $tabs->{'this'}->{"current_subtab"}        = 
+        $ticket_page_tabs->{$tab}->{"path"};
+    }
+}
+$tabs->{'this'}->{"subtabs"} = $ticket_page_tabs;
+$current_tab = "Ticket/Display.html?id=" . $id;
+
+
+
+
+
+if (    $Ticket->CurrentUserHasRight('ModifyTicket')
+     or $Ticket->CurrentUserHasRight('ReplyToTicket') ) {
+    $actions->{'A'} = { title => loc('Reply'),
+                        path  => "Ticket/Update.html?Action=Respond&id=" . $id,
+    };
+}
+
+if ( $Ticket->CurrentUserHasRight('ModifyTicket') ) {
+    if ( $Ticket->Status ne 'resolved' ) {
+        $actions->{'B'} = {
+
+            path => "Ticket/Update.html?Action=Comment&DefaultStatus=resolved&id=" . $id,
+            title => loc('Resolve') };
+    }
+    if ( $Ticket->Status ne 'open' ) {
+        $actions->{'C'} = { path => "Ticket/Display.html?Status=open&id=" . $id,
+                            title => loc('Open it') };
+    }
+}
+
+if ( $Ticket->CurrentUserHasRight('OwnTicket') ) {
+    if ( $Ticket->OwnerObj->id == $RT::Nobody->id ) {
+        $actions->{'D'} = { path => "Ticket/Display.html?Action=Take&id=" . $id,
+                            title => loc('Take') };
+    }
+    elsif ( $Ticket->OwnerObj->id != $session{CurrentUser}->id ) {
+        $actions->{'E'} = {path => "Ticket/Display.html?Action=Steal&id=" . $id,
+                           title => loc('Steal') };
+    }
+}
+
+if (    $Ticket->CurrentUserHasRight('ModifyTicket')
+     or $Ticket->CurrentUserHasRight('CommentOnTicket') ) {
+    $actions->{'F'} = { title => loc('Comment'),
+                        path  => "Ticket/Update.html?Action=Comment&id=" . $id,
+    };
+}
+}
+$tabs->{"g"} = { path      => 'Search/Listing.html',
+                 title     => loc('Search'),
+                 separator => 1,
+                 subtabs   => $searchtabs };
+</%INIT>
+
+  
+<%ARGS>
+$Ticket => undef
+$subtabs => undef
+$current_tab => undef
+$current_subtab => undef
+$Title => undef
+</%ARGS>

@@ -1,0 +1,81 @@
+%# BEGIN LICENSE BLOCK
+%# 
+%# Copyright (c) 1996-2003 Jesse Vincent <jesse@bestpractical.com>
+%# 
+%# (Except where explictly superceded by other copyright notices)
+%# 
+%# This work is made available to you under the terms of Version 2 of
+%# the GNU General Public License. A copy of that license should have
+%# been provided with this software, but in any event can be snarfed
+%# from www.gnu.org.
+%# 
+%# This work is distributed in the hope that it will be useful, but
+%# WITHOUT ANY WARRANTY; without even the implied warranty of
+%# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+%# General Public License for more details.
+%# 
+%# Unless otherwise specified, all modifications, corrections or
+%# extensions to this work which alter its source code become the
+%# property of Best Practical Solutions, LLC when submitted for
+%# inclusion in the work.
+%# 
+%# 
+%# END LICENSE BLOCK
+<& /Admin/Elements/Header, Title => loc('Select a user') &>
+<& /Admin/Elements/UserTabs, current_tab => 'Admin/Users/', 
+    current_subtab => 'Admin/Users/',
+    Title => loc('Select a user') &>
+
+
+
+
+<%$caption%>:<BR>
+<UL>
+%if ($users->Count == 0) {
+<LI> <i><&|/l&>No users matching search criteria found.</&></i>
+% }
+%while ( $user = $users->Next) {
+<LI><A HREF="Modify.html?id=<%$user->id%>"><%$user->Name || loc('(no name listed)')%></a></LI>
+%}
+
+</UL>
+<br><br>
+<FORM METHOD=POST ACTION="<% $RT::WebPath %>/Admin/Users/">
+
+<&|/l&>Find people whose</&> <& /Elements/SelectUsers &><BR>
+<input type="checkbox" name="FindDisabledUsers"> <&|/l&>Include disabled users in search.</&>
+<BR>
+<div align=right><input type=submit value="<&|/l&>Go!</&>"></div> 
+</FORM>
+
+<%INIT>
+my ($user, $caption);
+my $users = new RT::Users($session{'CurrentUser'});
+
+if ($FindDisabledUsers) {
+	$users->{'find_disabled_rows'} = 1;
+}
+
+unless (defined $UserString) {
+    $users->LimitToPrivileged();
+    $caption = loc("Privileged users");
+}
+else {
+    $caption = loc("Users matching search criteria");
+
+  if ($UserString) {
+	$users->Limit( FIELD => $UserField,
+		        OPERATOR => $UserOp,
+		       VALUE => $UserString); 
+
+}
+}
+</%INIT>
+<%ARGS>
+$UserString => undef
+$UserOp => '='
+$UserField => 'Name'
+$IdLike => undef
+$EmailLike => undef
+$FindDisabledUsers => 0
+</%ARGS>

@@ -1,0 +1,53 @@
+%# BEGIN LICENSE BLOCK
+%# 
+%# Copyright (c) 1996-2003 Jesse Vincent <jesse@bestpractical.com>
+%# 
+%# (Except where explictly superceded by other copyright notices)
+%# 
+%# This work is made available to you under the terms of Version 2 of
+%# the GNU General Public License. A copy of that license should have
+%# been provided with this software, but in any event can be snarfed
+%# from www.gnu.org.
+%# 
+%# This work is distributed in the hope that it will be useful, but
+%# WITHOUT ANY WARRANTY; without even the implied warranty of
+%# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+%# General Public License for more details.
+%# 
+%# Unless otherwise specified, all modifications, corrections or
+%# extensions to this work which alter its source code become the
+%# property of Best Practical Solutions, LLC when submitted for
+%# inclusion in the work.
+%# 
+%# 
+%# END LICENSE BLOCK
+<SELECT NAME ="<%$Name%>">
+<OPTION VALUE="LIKE" <%$LikeDefault%>><%$Like%></OPTION>
+<OPTION VALUE="NOT LIKE" <%$NotLikeDefault%>><%$NotLike%></OPTION>
+<OPTION VALUE="=" <%$TrueDefault%>><%$True%></OPTION>
+<OPTION VALUE="!=" <%$FalseDefault%>><%$False%></OPTION>
+</SELECT>
+
+<%ARGS>
+$Name => undef
+$Like => loc('contains')
+$NotLike => loc("doesn't contain")
+$True => loc('is')
+$False => loc("isn't")
+$Default => undef
+</%ARGS>
+<%INIT>
+my ($TrueDefault, $FalseDefault, $LikeDefault, $NotLikeDefault);
+if ($Default && $Default !~ /true/i) {
+	$FalseDefault = "SELECTED";
+}
+elsif ($Default && $Default !~ /false/i) {
+	$TrueDefault = "SELECTED";
+} 
+elsif ($Default && $Default !~ /notlike/i) {
+	$NotLikeDefault = "SELECTED";
+}
+else {
+	$LikeDefault = "SELECTED";
+}
+</%INIT>

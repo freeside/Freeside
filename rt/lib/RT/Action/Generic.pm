@@ -1,7 +1,26 @@
-# $Header: /home/cvs/cvsroot/freeside/rt/lib/RT/Action/Generic.pm,v 1.1 2002-08-12 06:17:07 ivan Exp $
-# (c) 1996-2000 Jesse Vincent <jesse@fsck.com>
-# This software is redistributable under the terms of the GNU GPL
-
+# BEGIN LICENSE BLOCK
+# 
+# Copyright (c) 1996-2003 Jesse Vincent <jesse@bestpractical.com>
+# 
+# (Except where explictly superceded by other copyright notices)
+# 
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+# 
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+# 
+# Unless otherwise specified, all modifications, corrections or
+# extensions to this work which alter its source code become the
+# property of Best Practical Solutions, LLC when submitted for
+# inclusion in the work.
+# 
+# 
+# END LICENSE BLOCK
 =head1 NAME
 
   RT::Action::Generic - a generic baseclass for RT Actions
@@ -16,7 +35,6 @@
 
 =begin testing
 
-ok (require RT::TestHarness);
 ok (require RT::Action::Generic);
 
 =end testing
@@ -24,6 +42,8 @@ ok (require RT::Action::Generic);
 =cut
 
 package RT::Action::Generic;
+
+use strict;
 
 # {{{ sub new 
 sub new  {
@@ -33,6 +53,13 @@ sub new  {
   bless ($self, $class);
   $self->_Init(@_);
   return $self;
+}
+# }}}
+
+# {{{ sub new 
+sub loc {
+    my $self = shift;
+    return $self->{'ScripObj'}->loc(@_);
 }
 # }}}
 
@@ -87,6 +114,13 @@ sub TemplateObj  {
 }
 # }}}
 
+# {{{ sub ScripObj
+sub ScripObj  {
+  my $self = shift;
+  return($self->{'ScripObj'});
+}
+# }}}
+
 # {{{ sub Type
 sub Type  {
   my $self = shift;
@@ -102,7 +136,7 @@ sub Type  {
 # {{{ sub Commit 
 sub Commit  {
   my $self = shift;
-  return(0,"Commit Stubbed");
+  return(0, $self->loc("Commit Stubbed"));
 }
 # }}}
 
@@ -112,7 +146,7 @@ sub Commit  {
 # {{{ sub Describe 
 sub Describe  {
   my $self = shift;
-  return ("No description for " . ref $self);
+  return $self->loc("No description for [_1]", ref $self);
 }
 # }}}
 
@@ -122,7 +156,7 @@ sub Describe  {
 # {{{ sub Prepare 
 sub Prepare  {
   my $self = shift;
-  return (0,"Prepare Stubbed");
+  return (0, $self->loc("Prepare Stubbed"));
 }
 # }}}
 
@@ -152,4 +186,10 @@ sub DESTROY {
 }
 
 # }}}
+
+eval "require RT::Action::Generic_Vendor";
+die $@ if ($@ && $@ !~ qr{^Can't locate RT/Action/Generic_Vendor.pm});
+eval "require RT::Action::Generic_Local";
+die $@ if ($@ && $@ !~ qr{^Can't locate RT/Action/Generic_Local.pm});
+
 1;
