@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct.cgi,v 1.9 1999-04-10 01:53:18 ivan Exp $
+# $Id: svc_acct.cgi,v 1.10 1999-04-14 11:20:21 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/svc_acct.cgi
@@ -23,7 +23,10 @@
 # give service and customer info too ivan@sisd.com 98-aug-16
 #
 # $Log: svc_acct.cgi,v $
-# Revision 1.9  1999-04-10 01:53:18  ivan
+# Revision 1.10  1999-04-14 11:20:21  ivan
+# visual fix
+#
+# Revision 1.9  1999/04/10 01:53:18  ivan
 # oops, search usernames limited to 8 chars
 #
 # Revision 1.8  1999/04/09 23:43:29  ivan
@@ -56,7 +59,7 @@ use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
 use FS::Record qw(qsearch qsearchs);
-use FS::CGI qw(header eidiot popurl);
+use FS::CGI qw(header eidiot popurl table);
 use FS::svc_acct;
 use FS::cust_main;
 
@@ -106,17 +109,19 @@ if ( scalar(@svc_acct) == 1 ) {
   eidiot("Account not found");
 } else {
   my($total)=scalar(@svc_acct);
-  print $cgi->header( '-expires' => 'now' ), header("Account Search Results",''), <<END;
+  print $cgi->header( '-expires' => 'now' ),
+        header("Account Search Results",''),
+        "$total matching accounts found",
+        &table(), <<END;
     $total matching accounts found
-    <TABLE BORDER=4 CELLSPACING=0 CELLPADDING=0>
       <TR>
-        <TH>Service #</TH>
-        <TH>Username</TH>
-        <TH>UID</TH>
-        <TH>Service</TH>
-        <TH>Customer #</TH>
-        <TH>Contact name</TH>
-        <TH>Company</TH>
+        <TH><FONT SIZE=-1>Service #</FONT></TH>
+        <TH><FONT SIZE=-1>Username</FONT></TH>
+        <TH><FONT SIZE=-1>UID</FONT></TH>
+        <TH><FONT SIZE=-1>Service</FONT></TH>
+        <TH><FONT SIZE=-1>Customer #</FONT></TH>
+        <TH><FONT SIZE=-1>Contact name</FONT></TH>
+        <TH><FONT SIZE=-1>Company</FONT></TH>
       </TR>
 END
 
@@ -155,8 +160,8 @@ END
     print <<END;
     <TR>
       <TD><A HREF="${p}view/svc_acct.cgi?$svcnum"><FONT SIZE=-1>$svcnum</FONT></A></TD>
-      <TD><FONT SIZE=-1>$username</FONT></TD>
-      <TD><FONT SIZE=-1>$uid</FONT></TD>
+      <TD><A HREF="${p}view/svc_acct.cgi?$svcnum"><FONT SIZE=-1>$username</FONT></A></TD>
+      <TD><A HREF="${p}view/svc_acct.cgi?$svcnum"><FONT SIZE=-1>$uid</FONT></A></TD>
       <TD><FONT SIZE=-1>$svc</FONT></TH>
       <TD><FONT SIZE=-1>$pcustnum</FONT></TH>
       <TD><FONT SIZE=-1>$pname<FONT></TH>
