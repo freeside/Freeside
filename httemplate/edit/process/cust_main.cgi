@@ -52,7 +52,7 @@ if ( $new->custnum eq '' ) {
 
   if ( $cgi->param('pkgpart_svcpart') ) {
     my $x = $cgi->param('pkgpart_svcpart');
-    $x =~ /^(\d+)_(\d+)$/;
+    $x =~ /^(\d+)_(\d+)$/ or die "illegal pkgpart_svcpart $x\n";
     my($pkgpart, $svcpart) = ($1, $2);
     #false laziness: copied from FS::cust_pkg::order (which should become a
     #FS::cust_main method)
@@ -70,7 +70,7 @@ if ( $new->custnum eq '' ) {
     #eslaf
 
     # this should wind up in FS::cust_pkg!
-    $error ||= "Agent ". $new->agentnum. " (type ". $agent->typenum. ") can't".
+    $error ||= "Agent ". $new->agentnum. " (type ". $agent->typenum. ") can't ".
                "purchase pkgpart ". $pkgpart
       #unless $part_pkg{ $pkgpart };
       unless $pkgpart_href->{ $pkgpart };

@@ -485,7 +485,7 @@ unless ( $custnum ) {
     foreach my $part_pkg ( @part_pkg ) {
       print qq!<OPTION VALUE="!,
 #              $part_pkg->pkgpart. "_". $pkgpart{ $part_pkg->pkgpart }, '"';
-              $part_pkg->pkgpart. "_". $part_pkg->svcpart, '"';
+              $part_pkg->pkgpart. "_". $part_pkg->svcpart('svc_acct'), '"';
       print " SELECTED" if $saved_pkgpart && ( $part_pkg->pkgpart == $saved_pkgpart );
       print ">", $part_pkg->pkg, " - ", $part_pkg->comment;
     }
