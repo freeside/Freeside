@@ -541,6 +541,11 @@ sub order_pkg {
 
     if ( $cust_main->balance > $old_balance
          && $cust_main->payby !~ /^(BILL|DCRD|DCHK)$/ ) {
+      #this makes sense.  credit is "un-doing" the invoice
+      $cust_main->credit( sprintf("%.2f", $cust_main->balance - $old_balance ),
+                          'self-service decline' );
+      $cust_main->apply_credits( 'order' => 'newest' );
+
       $cust_pkg->cancel('quiet'=>1);
       return { 'error' => '_decline' };
     } else {

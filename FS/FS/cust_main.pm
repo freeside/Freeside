@@ -1995,28 +1995,30 @@ sub total_owed_date {
   sprintf( "%.2f", $total_bill );
 }
 
-=item apply_credits
+=item apply_credits OPTION => VALUE ...
 
 Applies (see L<FS::cust_credit_bill>) unapplied credits (see L<FS::cust_credit>)
-to outstanding invoice balances in chronological order and returns the value
-of any remaining unapplied credits available for refund
-(see L<FS::cust_refund>).
+to outstanding invoice balances in chronological order (or reverse
+chronological order if the I<order> option is set to B<newest>) and returns the
+value of any remaining unapplied credits available for refund (see
+L<FS::cust_refund>).
 
 =cut
 
 sub apply_credits {
   my $self = shift;
+  my %opt = @_;
 
   return 0 unless $self->total_credited;
 
   my @credits = sort { $b->_date <=> $a->_date} (grep { $_->credited > 0 }
       qsearch('cust_credit', { 'custnum' => $self->custnum } ) );
 
-  my @invoices = sort { $a->_date <=> $b->_date} (grep { $_->owed > 0 }
-      qsearch('cust_bill', { 'custnum' => $self->custnum } ) );
+  my @invoices = $self->open_cust_bill;
+  @invoices = sort { $b->_date <=> $a->_date } @invoices
+    if defined($opt{'order'}) && $opt{'order'} eq 'newest';
 
   my $credit;
-
   foreach my $cust_bill ( @invoices ) {
     my $amount;
 
