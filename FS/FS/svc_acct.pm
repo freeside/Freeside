@@ -465,7 +465,7 @@ sub delete {
     if qsearch( 'svc_forward', { 'dstsvc' => $self->svcnum } );
 
   return "Can't delete an account with (svc_www) web service!"
-    if qsearch( 'svc_www', { 'usersvc' => $self->usersvc } );
+    if qsearch( 'svc_www', { 'usersvc' => $self->svcnum } );
 
   # what about records in session ? (they should refer to history table)
 
