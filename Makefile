@@ -138,6 +138,7 @@ create-config: install-perl-modules
 	chown freeside ${FREESIDE_CONF}/secrets
 
 	mkdir "${FREESIDE_CONF}/conf.${DATASOURCE}"
+	rm -rf conf/registries #old dirs just won't go away
 	cp conf/[a-z]* "${FREESIDE_CONF}/conf.${DATASOURCE}"
 	chown -R freeside "${FREESIDE_CONF}/conf.${DATASOURCE}"
 
