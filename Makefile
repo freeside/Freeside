@@ -83,7 +83,8 @@ install-perl-modules: perl-modules
 	make install UNINST=1
 
 install-init:
-	[ -e ${INIT_FILE} ] || install -o root -g ${INSTALLGROUP} -m 711 init.d/freeside-init ${INIT_FILE}
+	#[ -e ${INIT_FILE} ] || install -o root -g ${INSTALLGROUP} -m 711 init.d/freeside-init ${INIT_FILE}
+	install -o root -g ${INSTALLGROUP} -m 711 init.d/freeside-init ${INIT_FILE}
 
 install: install-perl-modules install-docs install-init
 
