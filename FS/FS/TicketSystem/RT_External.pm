@@ -135,7 +135,12 @@ sub href_customer_tickets {
     $href .= 'AND%20Queue%20%3D%20%27'. $priority_field_queue. '%27%20';
   }
   if ( defined($priority) && $field ) {
-    $href .= '%20AND%20%27CF.'. $field. '%27%20%3D%20%27'. $priority. '%27%20';
+    $href .= '%20AND%20%27CF.'. $field. '%27%20';
+    if ( $priority ) {
+      $href .= '%3D%20%27'. $priority. '%27%20';
+    } else {
+      $href .= 'IS%20%27NULL%27%20';
+    }
   }
 
   $href .= '&Rows=100'.
