@@ -131,7 +131,7 @@ my %defs = (
   },
 );
 
-  foreach $svcdb (keys(%defs)) {
+  foreach my $svcdb (grep dbdef->table($_), keys %defs ) {
     my $self = "FS::$svcdb"->new;
     $vfields{$svcdb} = {};
     foreach my $field ($self->virtual_fields) { # svc_Common::virtual_fields with a null svcpart returns all of them
@@ -153,7 +153,7 @@ my %defs = (
              ? ( $hashref->{svcdb} )
              : qw( svc_acct svc_domain svc_forward svc_www svc_broadband );
 
-  tie my %svcdb, 'Tie::IxHash', map { $_=>$_ } @dbs;
+  tie my %svcdb, 'Tie::IxHash', map { $_=>$_ } grep dbdef->table($_), @dbs;
   my $widget = new HTML::Widgets::SelectLayers(
     #'selected_layer' => $p_svcdb,
     'selected_layer' => $hashref->{svcdb} || 'svc_acct',
