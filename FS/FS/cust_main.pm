@@ -817,6 +817,17 @@ sub cancel {
   grep { $_->cancel } $self->ncancelled_pkgs;
 }
 
+=item agent
+
+Returns the agent (see L<FS::agent>) for this customer.
+
+=cut
+
+sub agent {
+  my $self = shift;
+  qsearchs( 'agent', { 'agent' => $self->agentnum } );
+}
+
 =item bill OPTIONS
 
 Generates invoices (see L<FS::cust_bill>) for this customer.  Usually used in

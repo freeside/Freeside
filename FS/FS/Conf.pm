@@ -269,6 +269,13 @@ httemplate/docs/config.html
   },
 
   {
+    'key'         => 'business-onlinepayment-description',
+    'section'     => 'billing',
+    'description' => 'String passed as the description field to <a href="http://search.cpan.org/search?mode=module&query=Business%3A%3AOnlinePayment">Business::OnlinePayment</a>.  Evaluated as a double-quoted perl string, with the following variables available: <code>$agent</code> (the agent name), and <code>$pkgs</code> (a comma-separated list of packages to which the invoiced being charged applies)',
+    'type'        => 'textarea',
+  },
+
+  {
     'key'         => 'bsdshellmachines',
     'section'     => 'shell',
     'description' => 'Your BSD flavored shell (and mail) machines, one per line.  This enables export of `/etc/passwd\' and `/etc/master.passwd\'.',

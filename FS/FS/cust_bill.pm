@@ -478,6 +478,19 @@ sub realtime_card {
   my $email = $invoicing_list[0];
 
   my( $action1, $action2 ) = split(/\s*\,\s*/, $bop_action );
+
+  my $description = 'Internet Services';
+  if ( $conf->exists('business-onlinepayment-description') ) {
+    my $dtempl = $conf->config('business-onlinepayment-description');
+
+    my $agent = $self->cust_main->agent->agent;
+    my $pkgs = join(', ',
+      map { $_->cust_pkg->part_pkg->pkg }
+        grep { $_->pkgnum } $self->cust_bill_pkg
+    );
+    $description = eval qq("$dtempl");
+
+  }
   
   my $transaction =
     new Business::OnlinePayment( $bop_processor, @bop_options );
@@ -486,7 +499,7 @@ sub realtime_card {
     'login'          => $bop_login,
     'password'       => $bop_password,
     'action'         => $action1,
-    'description'    => 'Internet Services',
+    'description'    => $description,
     'amount'         => $amount,
     'invoice_number' => $self->invnum,
     'customer_id'    => $self->custnum,
@@ -520,7 +533,7 @@ sub realtime_card {
       order_number   => $ordernum,
       amount         => $amount,
       authorization  => $auth,
-      description    => 'Internet Services',
+      description    => $description,
     );
 
     $capture->submit();
@@ -887,7 +900,7 @@ sub print_text {
 
 =head1 VERSION
 
-$Id: cust_bill.pm,v 1.24 2002-03-18 21:40:17 ivan Exp $
+$Id: cust_bill.pm,v 1.25 2002-04-06 22:32:43 ivan Exp $
 
 =head1 BUGS
 

@@ -125,11 +125,22 @@ sub check {
   ''; #no error
 }
 
+=item cust_pkg
+
+Returns the package (see L<FS::cust_pkg>) for this invoice line item.
+
+=cut
+
+sub cust_pkg {
+  my $self = shift;
+  qsearchs( 'cust_pkg', { 'pkgnum' => $self->pkgnum } );
+}
+
 =back
 
 =head1 VERSION
 
-$Id: cust_bill_pkg.pm,v 1.2 2001-02-11 17:34:44 ivan Exp $
+$Id: cust_bill_pkg.pm,v 1.3 2002-04-06 22:32:43 ivan Exp $
 
 =head1 BUGS
 
