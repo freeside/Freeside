@@ -277,26 +277,10 @@ sub insert {
   }
 
   # packages
-  foreach my $cust_pkg ( keys %$cust_pkgs ) {
-    $cust_pkg->custnum( $self->custnum );
-    $error = $cust_pkg->insert;
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return "inserting cust_pkg (transaction rolled back): $error";
-    }
-    foreach my $svc_something ( @{$cust_pkgs->{$cust_pkg}} ) {
-      $svc_something->pkgnum( $cust_pkg->pkgnum );
-      if ( $seconds && $svc_something->isa('FS::svc_acct') ) {
-        $svc_something->seconds( $svc_something->seconds + $seconds );
-        $seconds = 0;
-      }
-      $error = $svc_something->insert;
-      if ( $error ) {
-        $dbh->rollback if $oldAutoCommit;
-        #return "inserting svc_ (transaction rolled back): $error";
-        return $error;
-      }
-    }
+  $error = $self->order_pkgs($cust_pkgs, \$seconds);
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
   }
 
   if ( $seconds ) {
@@ -337,6 +321,54 @@ sub insert {
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
 
+}
+
+=item order_pkgs
+
+document me.  like ->insert(%cust_pkg) on an existing record
+
+=cut
+
+sub order_pkgs {
+  my $self = shift;
+  my $cust_pkgs = shift;
+  my $seconds = shift;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  foreach my $cust_pkg ( keys %$cust_pkgs ) {
+    $cust_pkg->custnum( $self->custnum );
+    my $error = $cust_pkg->insert;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "inserting cust_pkg (transaction rolled back): $error";
+    }
+    foreach my $svc_something ( @{$cust_pkgs->{$cust_pkg}} ) {
+      $svc_something->pkgnum( $cust_pkg->pkgnum );
+      if ( $seconds && $$seconds && $svc_something->isa('FS::svc_acct') ) {
+        $svc_something->seconds( $svc_something->seconds + $$seconds );
+        $$seconds = 0;
+      }
+      $error = $svc_something->insert;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        #return "inserting svc_ (transaction rolled back): $error";
+        return $error;
+      }
+    }
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  ''; #no error
 }
 
 =item delete NEW_CUSTNUM
