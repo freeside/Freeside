@@ -1,0 +1,141 @@
+%# BEGIN LICENSE BLOCK
+%# 
+%# Copyright (c) 1996-2003 Jesse Vincent <jesse@bestpractical.com>
+%# 
+%# (Except where explictly superceded by other copyright notices)
+%# 
+%# This work is made available to you under the terms of Version 2 of
+%# the GNU General Public License. A copy of that license should have
+%# been provided with this software, but in any event can be snarfed
+%# from www.gnu.org.
+%# 
+%# This work is distributed in the hope that it will be useful, but
+%# WITHOUT ANY WARRANTY; without even the implied warranty of
+%# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+%# General Public License for more details.
+%# 
+%# Unless otherwise specified, all modifications, corrections or
+%# extensions to this work which alter its source code become the
+%# property of Best Practical Solutions, LLC when submitted for
+%# inclusion in the work.
+%# 
+%# 
+%# END LICENSE BLOCK
+<& /SelfService/Elements/Header, Title => loc('#[_1]: [_2]', $Ticket->id, $Ticket->Subject) &>
+
+<& /Elements/ListActions, actions => \@results &>
+
+  <TABLE WIDTH="100%" class="ticketsummary" >
+      <TR>
+        <TD VALIGN=TOP WIDTH="50%">
+          <& /Elements/TitleBoxStart, title => loc('The Basics'), 
+                title_class=> 'inverse',  
+                color => "#993333" &>
+                <& /Ticket/Elements/ShowBasics, Ticket => $Ticket &>
+          <& /Elements/TitleBoxEnd &>
+</TD>
+        <TD VALIGN=TOP WIDTH="50%">
+          <& /Elements/TitleBoxStart, title => loc("Dates"),
+                title_class=> 'inverse',
+                 color => "#663366" &>
+          <& /Ticket/Elements/ShowDates, Ticket => $Ticket &>
+          <& /Elements/TitleBoxEnd &>
+</TD>
+</TR>
+</TABLE>
+
+
+
+<& /Ticket/Elements/ShowHistory, Ticket => $Ticket&>
+
+
+
+<%INIT>
+
+my ( $field, @results );
+
+# {{{ Load the ticket
+#If we get handed two ids, mason will make them an array. bleck.
+# We want teh first one. Just because there's no other sensible way
+# to deal
+my @id = ( ref $id eq 'ARRAY' ) ? @{$id} : ($id);
+
+my $Ticket = new RT::Ticket( $session{'CurrentUser'} );
+if ( $id[0] eq 'new' ) {
+
+    # {{{ Create a new ticket
+
+    my $Queue = new RT::Queue( $session{'CurrentUser'} );
+    unless ( $Queue->Load( $ARGS{'Queue'} ) ) {
+        $m->comp( 'Error.html', Why => loc('Queue not found') );
+        $m->abort;
+    }
+
+    unless ( $Queue->CurrentUserHasRight('CreateTicket') ) {
+        $m->comp( 'Error.html',
+             Why =>
+               loc('You have no permission to create tickets in that queue.') );
+        $m->abort;
+    }
+
+    my @Requestors = split ( /\s*,\s*/, $ARGS{'Requestors'} );
+    my @Cc         = split ( /\s*,\s*/, $ARGS{'Cc'} );
+
+    my $MIMEObj = MakeMIMEEntity( Subject             => $ARGS{'Subject'},
+                                  From                => $ARGS{'From'},
+                                  Cc                  => $ARGS{'Cc'},
+                                  Body                => $ARGS{'Content'},
+                                  AttachmentFieldName => 'Attach' );
+
+    #TODO in Create_Details.html: priorities and due-date
+    my ( $id, $Trans, $ErrMsg ) = $Ticket->Create( Queue     => $ARGS{Queue},
+                                                   Requestor => \@Requestors,
+                                                   Cc        => \@Cc,
+                                                   Subject   => $ARGS{Subject},
+                                                   MIMEObj   => $MIMEObj );
+    unless ( $id && $Trans ) {
+        $m->comp( 'Error.html', Why => $ErrMsg );
+        $m->abort();
+    }
+
+    push ( @results, $ErrMsg );
+
+    # }}}
+}
+else {
+    unless ( $Ticket->Load( $id[0] ) ) {
+        $m->comp( 'Error.html',
+                  Why => loc( "Couldn't load ticket '[_1]'", $id ) );
+        $m->abort();
+    }
+}
+
+# }}}
+
+unless ( $Ticket->CurrentUserHasRight('ShowTicket') ) {
+    $m->comp( 'Error.html',
+              Why => loc("No permission to display that ticket") );
+    $m->abort();
+}
+
+my ( $code, $msg );
+
+#Update the status
+if (     ( defined $ARGS{'Status'} )
+     and ( $ARGS{'Status'} ne $Ticket->Status ) ) {
+    ( $code, $msg ) = $Ticket->SetStatus( $ARGS{'Status'} );
+    push @results, "$msg";
+}
+
+ProcessUpdateMessage( ARGSRef   => \%ARGS,
+                      Actions   => \@results,
+                      TicketObj => $Ticket );
+
+my $Transactions = $Ticket->Transactions;
+
+</%INIT>
+
+
+<%ARGS>
+$id => undef
+</%ARGS>

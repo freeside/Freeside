@@ -1,0 +1,56 @@
+%# BEGIN LICENSE BLOCK
+%# 
+%# Copyright (c) 1996-2003 Jesse Vincent <jesse@bestpractical.com>
+%# 
+%# (Except where explictly superceded by other copyright notices)
+%# 
+%# This work is made available to you under the terms of Version 2 of
+%# the GNU General Public License. A copy of that license should have
+%# been provided with this software, but in any event can be snarfed
+%# from www.gnu.org.
+%# 
+%# This work is distributed in the hope that it will be useful, but
+%# WITHOUT ANY WARRANTY; without even the implied warranty of
+%# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+%# General Public License for more details.
+%# 
+%# Unless otherwise specified, all modifications, corrections or
+%# extensions to this work which alter its source code become the
+%# property of Best Practical Solutions, LLC when submitted for
+%# inclusion in the work.
+%# 
+%# 
+%# END LICENSE BLOCK
+<LABEL ACCESSKEY="9">
+<SELECT NAME ="<%$Name%>">
+% foreach my $queue (@{$session{'create_in_queues'}}) {
+<OPTION VALUE="<%$queue->{'id'}%>" <%($Default && ($queue->{'id'} == $Default)) && 'SELECTED'%>><%$queue->{'Name'}%>
+%   if (($Verbose) and ($queue->{'Description'}) ){
+(<%$queue->{'Description'}%>)
+%  }
+</OPTION>
+% }
+</SELECT>
+</LABEL>
+
+<%INIT>
+unless ($session{'create_in_queues'}) { 
+
+@{$session{'create_in_queues'}} = ();
+my $q=new RT::Queues($session{'CurrentUser'});
+$q->UnLimit;
+while (my $queue=$q->Next) {
+        if ($queue->CurrentUserHasRight('CreateTicket')) {
+                my $ds = { Name => $queue->Name, Description => $queue->Description, id => $queue->id };
+                push (@{$session{'create_in_queues'}}, $ds);
+        }        
+}
+}
+</%INIT>
+
+
+<%ARGS>
+$Name => 'Queue'
+$Verbose => undef
+$Default => undef
+</%ARGS>

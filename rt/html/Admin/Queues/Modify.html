@@ -1,0 +1,163 @@
+%# BEGIN LICENSE BLOCK
+%# 
+%# Copyright (c) 1996-2003 Jesse Vincent <jesse@bestpractical.com>
+%# 
+%# (Except where explictly superceded by other copyright notices)
+%# 
+%# This work is made available to you under the terms of Version 2 of
+%# the GNU General Public License. A copy of that license should have
+%# been provided with this software, but in any event can be snarfed
+%# from www.gnu.org.
+%# 
+%# This work is distributed in the hope that it will be useful, but
+%# WITHOUT ANY WARRANTY; without even the implied warranty of
+%# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+%# General Public License for more details.
+%# 
+%# Unless otherwise specified, all modifications, corrections or
+%# extensions to this work which alter its source code become the
+%# property of Best Practical Solutions, LLC when submitted for
+%# inclusion in the work.
+%# 
+%# 
+%# END LICENSE BLOCK
+<& /Admin/Elements/Header, Title => loc('Admin/Queue/Basics') &>
+<& /Admin/Elements/QueueTabs, id => $QueueObj->id, 
+    QueueObj => $QueueObj,
+    current_tab => $current_tab, 
+    Title => loc('Admin/Queue/Basics') &>
+<& /Elements/ListActions, actions => \@results &>
+
+
+
+<FORM ACTION="<%$RT::WebPath%>/Admin/Queues/Modify.html" METHOD=POST>
+%if ($Create ) { 
+<INPUT TYPE=HIDDEN NAME=id VALUE="new">
+% } else {
+<INPUT TYPE=HIDDEN NAME=id VALUE="<%$QueueObj->Id%>">
+% }
+
+<TABLE>
+<TR><TD ALIGN=RIGHT>
+<&|/l&>Queue Name</&>: 
+</TD>
+<TD><INPUT name="Name" value="<% ($Create) ? "" : $QueueObj->Name %>"></TD>
+</TR><TR>
+<TD ALIGN=RIGHT>
+<&|/l&>Description</&>:</TD><TD COLSPAN=3><INPUT name="Description" value="<% ($Create) ? "" : $QueueObj->Description %>" size=60></TD></TR>
+<TR>
+<TD ALIGN=RIGHT>
+<&|/l&>Correspondence Address</&>:
+</TD><TD>
+<INPUT name="CorrespondAddress" value="<% ($Create) ? "" : $QueueObj->CorrespondAddress %>">
+<BR><font size="-1"><i><&|/l , $RT::CorrespondAddress&>(If left blank, will default to [_1]</&></i></font>
+</TD>
+<TD ALIGN=RIGHT>
+
+<&|/l&>Comment Address</&>: </TD><TD>
+<INPUT NAME="CommentAddress" value="<% ($Create) ? "" : $QueueObj->CommentAddress %>">
+<BR><font size="-1"><i><&|/l , $RT::CommentAddress&>(If left blank, will default to [_1]</&></i></font>
+</TD>
+</TR><TR>
+
+<TD ALIGN=RIGHT>
+<&|/l&>Priority starts at</&>: 
+</TD><TD><INPUT NAME="InitialPriority" value="<% ($Create) ? "" : $QueueObj->InitialPriority %>">
+</TD>
+<TD ALIGN=RIGHT>
+<&|/l&>Over time, priority moves toward</&>:
+</TD><TD><INPUT NAME="FinalPriority" value="<% ($Create) ? "" : $QueueObj->FinalPriority %>">
+</TD>
+</TR>
+<TR>
+<TD ALIGN=RIGHT>
+<&|/l&>Requests should be due in</&>:
+</TD><TD>
+<INPUT NAME="DefaultDueIn" VALUE="<% ($Create) ? "" : $QueueObj->DefaultDueIn%>"> <&|/l&>days</&>.
+</TD>
+</TR>
+<TR>
+<TD>
+</TD>
+<TD COLSPAN=4><INPUT TYPE=HIDDEN NAME="SetEnabled" VALUE="1">
+<INPUT TYPE=CHECKBOX NAME="Enabled" VALUE="1" <%$EnabledChecked%>> <&|/l&>Enabled (Unchecking this box disables this queue)</&><BR>
+<& /Elements/Callback, QueueObj => $QueueObj, results => \@results, %ARGS &>
+</TD>
+</TR>
+
+</TABLE>
+<& /Elements/Submit &>
+</form>
+
+
+
+<%INIT>
+my $current_tab;
+my $QueueObj = new RT::Queue($session{'CurrentUser'});
+$QueueObj->Load($id);
+my  ($title, @results, $Disabled, $EnabledChecked);
+$EnabledChecked = "CHECKED";
+
+if ($Create) {
+    $current_tab = 'Admin/Queues/Modify.html?Create=1';
+    $title = loc("Create a queue");
+} else {
+    if ($id eq 'new') {
+       my ($val, $msg) =  $QueueObj->Create(Name => $Name);
+       delete $session{'create_in_queues'};
+       if ($val == 0 ) {
+           Abort("$msg");
+	}
+	else {
+		push @results, $msg;
+	}    
+     }
+     else {
+        $QueueObj->Load($id) || $QueueObj->Load($Name) || Abort("Couldn't load queue '$Name'");
+    }
+        $title = loc('Editing Configuration for queue [_1]', $QueueObj->Name);
+    
+    $current_tab = 'Admin/Queues/Modify.html?id='.$QueueObj->id;
+}
+if ($QueueObj->Id()) {
+    delete $session{'create_in_queues'};
+my @attribs= qw(Description CorrespondAddress CommentAddress Name 
+                InitialPriority FinalPriority DefaultDueIn);
+
+  @results = UpdateRecordObject( AttributesRef => \@attribs, 
+				    Object => $QueueObj, 
+				    ARGSRef => \%ARGS);
+
+  #we're asking about enabled on the web page but really care about disabled.
+  if ($Enabled == 1) {
+      $Disabled = 0;
+  }	
+  else {
+      $Disabled = 1;
+  }
+  if  ( ($SetEnabled) and ( $Disabled != $QueueObj->Disabled) ) { 
+      my  ($code, $msg) = $QueueObj->SetDisabled($Disabled);
+      push @results, loc('Enabled status [_1]', loc_fuzzy($msg));
+  }
+  
+  if ($QueueObj->Disabled()) {
+      $EnabledChecked ="";
+  }
+}
+</%INIT>
+
+
+<%ARGS>
+$id => undef
+$result => undef
+$Name => undef
+$Create => undef
+$Description => undef
+$CorrespondAddress => undef
+$CommentAddress => undef
+$InitialPriority => undef
+$FinalPriority => undef
+$DefaultDueIn => undef
+$SetEnabled => undef
+$Enabled => undef
+</%ARGS>

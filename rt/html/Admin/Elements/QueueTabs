@@ -1,0 +1,93 @@
+%# BEGIN LICENSE BLOCK
+%# 
+%# Copyright (c) 1996-2003 Jesse Vincent <jesse@bestpractical.com>
+%# 
+%# (Except where explictly superceded by other copyright notices)
+%# 
+%# This work is made available to you under the terms of Version 2 of
+%# the GNU General Public License. A copy of that license should have
+%# been provided with this software, but in any event can be snarfed
+%# from www.gnu.org.
+%# 
+%# This work is distributed in the hope that it will be useful, but
+%# WITHOUT ANY WARRANTY; without even the implied warranty of
+%# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+%# General Public License for more details.
+%# 
+%# Unless otherwise specified, all modifications, corrections or
+%# extensions to this work which alter its source code become the
+%# property of Best Practical Solutions, LLC when submitted for
+%# inclusion in the work.
+%# 
+%# 
+%# END LICENSE BLOCK
+<& /Admin/Elements/Tabs, 
+    subtabs => $tabs, 
+    current_tab => 'Admin/Queues/', 
+    current_subtab => $current_tab, 
+    Title => $Title &>
+
+<%INIT>
+my $tabs;
+if ($id) {
+  $tabs->{'this'}  = {
+                title => $QueueObj->Name,
+  		     	path => "Admin/Queues/Modify.html?id=".$id,
+                    current_subtab => $current_tab,     
+                subtabs => {
+		 C => { title => loc('Basics'),
+  		     	path => "Admin/Queues/Modify.html?id=".$id,
+			   },
+		 D => { title => loc('Watchers'),
+		 	path => "Admin/Queues/People.html?id=".$id,
+		      },
+
+		 E => { title => loc('Scrips'),
+			     path => "Admin/Queues/Scrips.html?id=".$id,
+			   },
+		 F => { title => loc('Templates'),
+				path => "Admin/Queues/Templates.html?id=".$id,
+			      },
+
+                 G => { title => loc('Custom Fields'),
+                        path => 'Admin/Queues/CustomFields.html?id='.$id,
+                        },
+
+		 H => { title => loc('Group Rights'),
+			  path => "Admin/Queues/GroupRights.html?id=".$id,
+			},	
+		 I => { title => loc('User Rights'),
+			  path => "Admin/Queues/UserRights.html?id=".$id,
+			}
+        }
+        };
+}
+if ($session{'CurrentUser'}->HasRight( Object => $RT::System, Right => 'AdminQueue')) {
+  $tabs->{"A"} = { title => loc('Select queue'),
+  		     	path => "Admin/Queues/",
+			   };
+  $tabs->{"B"} = { title => loc('New queue'),
+  		     	path => "Admin/Queues/Modify.html?Create=1",
+			separator => 1,
+			   };
+}
+
+  # Now let callbacks add their extra tabs
+  $m->comp('/Elements/Callback', tabs => $tabs, %ARGS);
+foreach my $tab ( sort keys %{$tabs->{'this'}->{'subtabs'}} ) {  
+    if ( $tabs->{'this'}->{'subtabs'}->{$tab}->{'path'} eq $current_tab ) {
+        $tabs->{'this'}->{'subtabs'}->{$tab}->{"subtabs"}        = $subtabs; 
+        $tabs->{'this'}->{'subtabs'}->{$tab}->{"current_subtab"} = $current_subtab; 
+    }                                                                           
+}   
+  		     	$current_tab = "Admin/Queues/Modify.html?id=".$id if $id;
+</%INIT>
+  
+<%ARGS>
+$QueueObj => undef
+$id => undef
+$subtabs => undef
+$current_subtab => undef
+$current_tab => undef
+$Title => undef
+</%ARGS>

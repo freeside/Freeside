@@ -1,0 +1,74 @@
+%# BEGIN LICENSE BLOCK
+%# 
+%# Copyright (c) 1996-2003 Jesse Vincent <jesse@bestpractical.com>
+%# 
+%# (Except where explictly superceded by other copyright notices)
+%# 
+%# This work is made available to you under the terms of Version 2 of
+%# the GNU General Public License. A copy of that license should have
+%# been provided with this software, but in any event can be snarfed
+%# from www.gnu.org.
+%# 
+%# This work is distributed in the hope that it will be useful, but
+%# WITHOUT ANY WARRANTY; without even the implied warranty of
+%# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+%# General Public License for more details.
+%# 
+%# Unless otherwise specified, all modifications, corrections or
+%# extensions to this work which alter its source code become the
+%# property of Best Practical Solutions, LLC when submitted for
+%# inclusion in the work.
+%# 
+%# 
+%# END LICENSE BLOCK
+<table>
+<tr>
+<td valign="top" width="50%">
+<table>
+
+% my @entry_fields;
+% my $i;
+% my $cfcount = $CustomFields->Count;
+%  $cfcount++ if ($cfcount % 2) ; # if we have an odd number of 
+% #custom fields, fudge it so we know where to put in the table break
+% while (my $CustomField = $CustomFields->Next()) {
+% if ($cfcount == 2 * $i) {
+</table>
+</td>
+<td valign="top" width="50%">
+<table>
+% }
+% $i++;
+  <tr>
+    <td class="labeltop">
+      <b><%$CustomField->Name%></b><br>
+      <i><%$CustomField->FriendlyType%></i>
+    </td>
+    <td class="entry"><& EditCustomField, TicketObj => $TicketObj, CustomField => $CustomField, NamePrefix => $NamePrefix &></td>
+  </tr>
+% }
+</table>
+</td>
+</tr>
+</table>
+
+<%INIT>
+my $CustomFields;
+my $NamePrefix;
+
+if ($TicketObj) {
+ $CustomFields = $TicketObj->QueueObj->CustomFields();
+  $NamePrefix = "Ticket-".$TicketObj->Id."-CustomField-";
+
+} else {
+ $CustomFields = $QueueObj->CustomFields();
+  $NamePrefix = "CustomField-";
+}
+
+
+
+</%INIT>
+<%ARGS>
+$TicketObj => undef
+$QueueObj => undef
+</%ARGS>

@@ -1,0 +1,59 @@
+%# BEGIN LICENSE BLOCK
+%# 
+%# Copyright (c) 1996-2003 Jesse Vincent <jesse@bestpractical.com>
+%# 
+%# (Except where explictly superceded by other copyright notices)
+%# 
+%# This work is made available to you under the terms of Version 2 of
+%# the GNU General Public License. A copy of that license should have
+%# been provided with this software, but in any event can be snarfed
+%# from www.gnu.org.
+%# 
+%# This work is distributed in the hope that it will be useful, but
+%# WITHOUT ANY WARRANTY; without even the implied warranty of
+%# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+%# General Public License for more details.
+%# 
+%# Unless otherwise specified, all modifications, corrections or
+%# extensions to this work which alter its source code become the
+%# property of Best Practical Solutions, LLC when submitted for
+%# inclusion in the work.
+%# 
+%# 
+%# END LICENSE BLOCK
+<SELECT NAME="<%$Name%>">
+<OPTION VALUE="">-</OPTION>
+<OPTION <% ($RT::Nobody->Id() == $Default) && "SELECTED" %> VALUE="<%$RT::Nobody->Id%>"><%$RT::Nobody->Name%></OPTION>
+%while ( my $User = $Users->Next())  {
+<OPTION VALUE="<%$User->Id()%>" <% ($User->Id() == $Default) && "SELECTED" %>><%$User->Name()%></OPTION>
+%}
+</SELECT>
+
+<%INIT>
+my $Users = RT::Users->new($session{CurrentUser});
+my $object;
+
+
+if ($TicketObj) {
+        $object = $TicketObj;
+}
+elsif ($QueueObj) {
+        $object = $QueueObj;
+}
+if ($object) {
+        $Users->WhoHaveRight(Right => 'OwnTicket',
+                     Object => $object,
+                     IncludeSystemRights => 1,
+                     IncludeSuperusers => 1);
+} else {
+        $Users->LimitToPrivileged;
+}
+</%INIT>
+
+<%ARGS>
+$QueueObj => undef
+$Name => undef
+$Default => undef
+$User => undef
+$TicketObj => undef
+</%ARGS>
