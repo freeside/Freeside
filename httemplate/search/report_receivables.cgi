@@ -93,7 +93,7 @@ where 0 <
            ,0
          )
 
-order by lower(company), lower(last)
+order by coalesce(lower(company), ''), lower(last)
 
 END
 
