@@ -403,7 +403,9 @@ sub send {
       'Body' => [ $self->print_text ], #( date)
     );
     $message->smtpsend
-      or return "Can't send invoice email to server $smtpmachine!";
+      or return "(customer # ". $self->custnum. ") can't send invoice email".
+                " for ". join(', ', grep { $_ ne 'POST' } @invoicing_list ).
+                " to server $smtpmachine!";
 
   #} elsif ( grep { $_ eq 'POST' } @invoicing_list ) {
   } elsif ( ! @invoicing_list || grep { $_ eq 'POST' } @invoicing_list ) {
@@ -878,7 +880,7 @@ sub print_text {
 
 =head1 VERSION
 
-$Id: cust_bill.pm,v 1.18 2002-02-10 02:16:46 ivan Exp $
+$Id: cust_bill.pm,v 1.19 2002-02-12 18:56:16 ivan Exp $
 
 =head1 BUGS
 
