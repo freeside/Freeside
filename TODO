@@ -1,4 +1,4 @@
-$Id: TODO,v 1.17 1998-12-29 11:59:32 ivan Exp $
+$Id: TODO,v 1.18 1998-12-30 23:03:19 ivan Exp $
 
 If you are interested in helping with any of these, please join the mailing
 list (send a blank message to ivan-freeside-subscribe@sisd.com) to avoid 
@@ -6,7 +6,8 @@ duplication of effort.
 
 -- 1.1.x --
 
-check all .pm's for numeric comparisons done as `eq'
+check all .pm's for numeric comparisons done as `eq' - works fine now because
+only used with integers that aren't space-padded.
 
 FS::cust_pkg _require_'s FS::$svc, but this won't work with %FS::UID::callback
 loading of configuration.  (pry need same idea, but will run immediately if

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: part_svc.cgi,v 1.5 1998-12-17 05:25:21 ivan Exp $
+# $Id: part_svc.cgi,v 1.6 1998-12-30 23:03:20 ivan Exp $
 #
 # ivan@sisd.com 97-nov-14, 97-dec-9
 #
@@ -10,7 +10,10 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: part_svc.cgi,v $
-# Revision 1.5  1998-12-17 05:25:21  ivan
+# Revision 1.6  1998-12-30 23:03:20  ivan
+# bugfixes; fields isn't exported by derived classes
+#
+# Revision 1.5  1998/12/17 05:25:21  ivan
 # fix visual and other bugs
 #
 # Revision 1.4  1998/11/21 02:26:22  ivan
@@ -27,8 +30,8 @@ use strict;
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
-use FS::Record qw(qsearch);
-use FS::part_svc qw(fields);
+use FS::Record qw(qsearch fields);
+use FS::part_svc);
 use FS::CGI qw(header menubar popurl table);
 
 my($cgi) = new CGI;

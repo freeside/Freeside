@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: agent_type.cgi,v 1.3 1998-12-17 08:40:17 ivan Exp $
+# $Id: agent_type.cgi,v 1.4 1998-12-30 23:03:27 ivan Exp $
 #
 # ivan@sisd.com 97-dec-11
 #
@@ -10,7 +10,10 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: agent_type.cgi,v $
-# Revision 1.3  1998-12-17 08:40:17  ivan
+# Revision 1.4  1998-12-30 23:03:27  ivan
+# bugfixes; fields isn't exported by derived classes
+#
+# Revision 1.3  1998/12/17 08:40:17  ivan
 # s/CGI::Request/CGI.pm/; etc
 #
 # Revision 1.2  1998/11/21 07:49:20  ivan
@@ -22,8 +25,8 @@ use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::CGI qw(idiot popurl);
 use FS::UID qw(cgisuidsetup);
-use FS::Record qw(qsearch qsearchs);
-use FS::agent_type qw(fields);
+use FS::Record qw(qsearch qsearchs fields);
+use FS::agent_type;
 use FS::type_pkgs;
 use FS::part_pkg;
 

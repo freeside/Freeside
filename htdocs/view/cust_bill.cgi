@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_bill.cgi,v 1.3 1998-12-23 03:07:49 ivan Exp $
+# $Id: cust_bill.cgi,v 1.4 1998-12-30 23:03:33 ivan Exp $
 #
 # Note: Should be run setuid freeside as user nobody.
 #
@@ -25,7 +25,10 @@
 # also print 'printed' field ivan@sisd.com 98-jul-10
 #
 # $Log: cust_bill.cgi,v $
-# Revision 1.3  1998-12-23 03:07:49  ivan
+# Revision 1.4  1998-12-30 23:03:33  ivan
+# bugfixes; fields isn't exported by derived classes
+#
+# Revision 1.3  1998/12/23 03:07:49  ivan
 # $cgi->keywords instead of $cgi->query_string
 #
 # Revision 1.2  1998/12/17 09:57:20  ivan
@@ -37,7 +40,7 @@ use IO::File;
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
-use FS::CGI qw(header popurl);
+use FS::CGI qw(header popurl menubar);
 use FS::Record qw(qsearchs);
 use FS::cust_bill;
 

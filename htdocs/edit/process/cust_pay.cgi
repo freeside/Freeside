@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_pay.cgi,v 1.2 1998-12-17 08:40:22 ivan Exp $
+# $Id: cust_pay.cgi,v 1.3 1998-12-30 23:03:28 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/cust_pay.cgi
@@ -15,7 +15,10 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # $Log: cust_pay.cgi,v $
-# Revision 1.2  1998-12-17 08:40:22  ivan
+# Revision 1.3  1998-12-30 23:03:28  ivan
+# bugfixes; fields isn't exported by derived classes
+#
+# Revision 1.2  1998/12/17 08:40:22  ivan
 # s/CGI::Request/CGI.pm/; etc
 #
 
@@ -24,7 +27,7 @@ use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
 use FS::CGI qw(idiot popurl);
-use FS::cust_pay qw(fields);
+use FS::cust_pay;
 
 my($cgi)=new CGI;
 &cgisuidsetup($cgi);

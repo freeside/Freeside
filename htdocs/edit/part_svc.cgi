@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: part_svc.cgi,v 1.4 1998-12-17 06:17:07 ivan Exp $
+# $Id: part_svc.cgi,v 1.5 1998-12-30 23:03:21 ivan Exp $
 #
 # ivan@sisd.com 97-nov-14
 #
@@ -10,7 +10,10 @@
 # use FS::CGI, added inline documentation ivan@sisd.com 98-jul-12
 #
 # $Log: part_svc.cgi,v $
-# Revision 1.4  1998-12-17 06:17:07  ivan
+# Revision 1.5  1998-12-30 23:03:21  ivan
+# bugfixes; fields isn't exported by derived classes
+#
+# Revision 1.4  1998/12/17 06:17:07  ivan
 # fix double // in relative URLs, s/CGI::Base/CGI/;
 #
 # Revision 1.3  1998/11/21 06:43:26  ivan
@@ -21,8 +24,8 @@ use strict;
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
-use FS::Record qw(qsearchs);
-use FS::part_svc qw(fields);
+use FS::Record qw(qsearchs fields);
+use FS::part_svc;
 use FS::CGI qw(header menubar popurl table);
 
 my($cgi) = new CGI;

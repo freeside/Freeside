@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: part_referral.cgi,v 1.2 1998-12-17 08:40:25 ivan Exp $
+# $Id: part_referral.cgi,v 1.3 1998-12-30 23:03:30 ivan Exp $
 #
 # ivan@sisd.com 98-feb-23
 #
@@ -10,7 +10,10 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: part_referral.cgi,v $
-# Revision 1.2  1998-12-17 08:40:25  ivan
+# Revision 1.3  1998-12-30 23:03:30  ivan
+# bugfixes; fields isn't exported by derived classes
+#
+# Revision 1.2  1998/12/17 08:40:25  ivan
 # s/CGI::Request/CGI.pm/; etc
 #
 
@@ -18,8 +21,8 @@ use strict;
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
-use FS::Record qw(qsearchs);
-use FS::part_referral qw(fields);
+use FS::Record qw(qsearchs fields);
+use FS::part_referral;
 use FS::CGI qw(popurl eidiot);
 
 my($cgi)=new CGI; # create form object

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main.cgi,v 1.6 1998-12-23 02:42:33 ivan Exp $
+# $Id: cust_main.cgi,v 1.7 1998-12-30 23:03:34 ivan Exp $
 #
 # Usage: cust_main.cgi custnum
 #        http://server.name/path/cust_main.cgi?custnum
@@ -33,7 +33,10 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: cust_main.cgi,v $
-# Revision 1.6  1998-12-23 02:42:33  ivan
+# Revision 1.7  1998-12-30 23:03:34  ivan
+# bugfixes; fields isn't exported by derived classes
+#
+# Revision 1.6  1998/12/23 02:42:33  ivan
 # remove double '/' in link urls
 #
 # Revision 1.5  1998/12/23 02:36:28  ivan
@@ -247,7 +250,7 @@ print "</TABLE></CENTER>";
 print qq!<CENTER><HR><A NAME="history"><FONT SIZE=+1>Payment History!,
       qq!</FONT></A><BR>!,
       qq!Click on invoice to view invoice/enter payment.<BR>!,
-      qq!<A HREF="!, popurl(2), qq!/edit/cust_credit.cgi?$custnum">!,
+      qq!<A HREF="!, popurl(2), qq!edit/cust_credit.cgi?$custnum">!,
       qq!Post Credit / Refund</A></CENTER><BR>!;
 
 #get payment history
@@ -262,7 +265,7 @@ my($bill);
 foreach $bill (@bills) {
   my($bref)=$bill->hashref;
   push @history,
-    $bref->{_date} . qq!\t<A HREF="!. popurl(2). qq!/view/cust_bill.cgi?! .
+    $bref->{_date} . qq!\t<A HREF="!. popurl(2). qq!view/cust_bill.cgi?! .
     $bref->{invnum} . qq!">Invoice #! . $bref->{invnum} .
     qq! (Balance \$! . $bref->{owed} . qq!)</A>\t! .
     $bref->{charged} . qq!\t\t\t!;

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_domain.cgi,v 1.4 1998-12-23 03:00:16 ivan Exp $
+# $Id: svc_domain.cgi,v 1.5 1998-12-30 23:03:25 ivan Exp $
 #
 # Usage: svc_domain.cgi pkgnum{pkgnum}-svcpart{svcpart}
 #        http://server.name/path/svc_domain.cgi?pkgnum{pkgnum}-svcpart{svcpart}
@@ -17,7 +17,10 @@
 # no GOV in instructions ivan@sisd.com 98-jul-17
 #
 # $Log: svc_domain.cgi,v $
-# Revision 1.4  1998-12-23 03:00:16  ivan
+# Revision 1.5  1998-12-30 23:03:25  ivan
+# bugfixes; fields isn't exported by derived classes
+#
+# Revision 1.4  1998/12/23 03:00:16  ivan
 # $cgi->keywords instead of $cgi->query_string
 #
 # Revision 1.3  1998/12/17 06:17:12  ivan
@@ -33,8 +36,8 @@ use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup getotaker);
 use FS::CGI qw(header popurl);
-use FS::Record qw(qsearch qsearchs);
-use FS::svc_domain qw(fields);
+use FS::Record qw(qsearch qsearchs fields);
+use FS::svc_domain;
 
 my($cgi) = new CGI;
 &cgisuidsetup($cgi);

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: part_pkg.cgi,v 1.4 1998-12-17 08:40:24 ivan Exp $
+# $Id: part_pkg.cgi,v 1.5 1998-12-30 23:03:29 ivan Exp $
 #
 # process/part_pkg.cgi: Edit package definitions (process form)
 #
@@ -17,7 +17,10 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: part_pkg.cgi,v $
-# Revision 1.4  1998-12-17 08:40:24  ivan
+# Revision 1.5  1998-12-30 23:03:29  ivan
+# bugfixes; fields isn't exported by derived classes
+#
+# Revision 1.4  1998/12/17 08:40:24  ivan
 # s/CGI::Request/CGI.pm/; etc
 #
 # Revision 1.3  1998/11/21 07:17:58  ivan
@@ -32,8 +35,8 @@ use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
 use FS::CGI qw(eidiot popurl);
-use FS::Record qw(qsearch qsearchs);
-use FS::part_pkg qw(fields);
+use FS::Record qw(qsearch qsearchs fields);
+use FS::part_pkg;
 use FS::pkg_svc;
 use FS::cust_pkg;
 
