@@ -1111,7 +1111,7 @@ sub print_latex {
 
   my $dir = $FS::UID::conf_dir. "cache.". $FS::UID::datasrc;
   my $fh = new File::Temp( TEMPLATE => 'invoice.'. $self->invnum. '.XXXXXXXX',
-                           DIR      => $dir
+                           DIR      => $dir,
                            SUFFIX   => '.tex',
                            UNLINK   => 0,
                          ) or die "can't open temp file: $!\n";
