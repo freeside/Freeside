@@ -7,6 +7,7 @@ use vars qw( $xaction $E_NoErr );
 use vars qw( $bop_processor $bop_login $bop_password $bop_action @bop_options );
 use vars qw( $ach_processor $ach_login $ach_password $ach_action @ach_options );
 use vars qw( $invoice_lines @buf ); #yuck
+use vars qw( $quiet );
 use Date::Format;
 use Mail::Internet 1.44;
 use Mail::Header;
@@ -823,7 +824,7 @@ sub realtime_bop {
     my $perror = "$processor error, invnum #". $self->invnum. ': '.
                  $transaction->result_code. ": ". $transaction->error_message;
 
-    if ( $conf->exists('emaildecline')
+    if ( !$quiet && $conf->exists('emaildecline')
          && grep { $_ ne 'POST' } $cust_main->invoicing_list
     ) {
       my @templ = $conf->config('declinetemplate');
@@ -1119,7 +1120,7 @@ sub print_text {
 
 =head1 VERSION
 
-$Id: cust_bill.pm,v 1.57 2002-12-17 21:31:20 ivan Exp $
+$Id: cust_bill.pm,v 1.58 2002-12-23 14:22:48 steve Exp $
 
 =head1 BUGS
 
