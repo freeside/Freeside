@@ -525,6 +525,7 @@ sub realtime_card {
   if ( $transaction->is_success() && $action2 ) {
     my $auth = $transaction->authorization;
     my $ordernum = $transaction->order_number;
+
     #warn "********* $auth ***********\n";
     #warn "********* $ordernum ***********\n";
     my $capture =
@@ -590,7 +591,7 @@ sub realtime_card {
       $template->compile()
         or return "($perror) can't compile template: $Text::Template::ERROR";
 
-      my $error = $transaction->error_message;
+      my $templ_hash = { error => $transaction->error_message };
 
       #false laziness w/FS::cust_pay::delete & fs_signup_server && ::send
       $ENV{MAILADDRESS} = $invoice_from;
@@ -604,7 +605,7 @@ sub realtime_card {
       ] );
       my $message = new Mail::Internet (
         'Header' => $header,
-        'Body' => [ $template->fill_in() ],
+        'Body' => [ $template->fill_in(HASH => $templ_hash) ],
       );
       $!=0;
       $message->smtpsend( Host => $smtpmachine )
@@ -950,7 +951,7 @@ sub print_text {
 
 =head1 VERSION
 
-$Id: cust_bill.pm,v 1.36 2002-05-31 20:31:05 ivan Exp $
+$Id: cust_bill.pm,v 1.37 2002-06-07 20:33:27 khoff Exp $
 
 =head1 BUGS
 
