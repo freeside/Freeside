@@ -142,7 +142,7 @@ amount minus all refunds (see L<FS::cust_refund>).
 sub credited {
   my $self = shift;
   my $amount = $self->amount;
-  $amount -= $_->amount() foreach ( $self->cust_refund );
+  $amount -= $_->refund foreach ( $self->cust_refund );
   $amount;
 }
 
@@ -150,7 +150,7 @@ sub credited {
 
 =head1 VERSION
 
-$Id: cust_credit.pm,v 1.4 2001-04-23 19:21:31 ivan Exp $
+$Id: cust_credit.pm,v 1.5 2001-04-23 19:27:28 ivan Exp $
 
 =head1 BUGS
 
