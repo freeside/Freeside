@@ -215,7 +215,7 @@ sub insert {
         'svcnum'  => $self->svcnum,
         'reczone' => '@',
         'recaf'   => 'IN',
-        'rectype' => 'mx',
+        'rectype' => 'MX',
         'recdata' => $mxmachine,
       };
       my $error = $mx->insert;
@@ -478,7 +478,7 @@ sub submit_internic {
 
 =head1 VERSION
 
-$Id: svc_domain.pm,v 1.10 2001-04-22 01:56:15 ivan Exp $
+$Id: svc_domain.pm,v 1.11 2001-05-22 16:43:28 ivan Exp $
 
 =head1 BUGS
 
