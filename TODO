@@ -1,10 +1,62 @@
-$Id: TODO,v 1.66 2001-07-30 07:13:34 ivan Exp $
+$Id: TODO,v 1.67 2001-08-19 09:08:18 ivan Exp $
 
 If you are interested in helping with any of these, please join the
 *development* mailing list (send a blank message to
 ivan-freeside-devel-subscribe@sisd.com) to avoid duplication of effort.
 
 ---
+
+Does Freeside currently support notification to the customer that their
+credit card on file is about to expire? What about notification that their
+credit card was declined after they sign up, say like in 5 months when it
+fails? If not are these options being planned to be added in the next
+release? I think they would be nice options to see Freeside support.
+.
+Tim Jung
+System Admin
+Internet Gateway Inc.
+tjung@igateway.net
+
+deleting an account doesn't remove any references to it in cust_main_invoice.
+it should, or error perhaps?  ("this account is used as an invoice destination,
+remove that first?")  or the cust_main_invoice should be changed to literal.
+it'll bounce, but that seems reasonable...
+
+also cust_main_invoice uses `mydomain' in a way that will have to be changed
+when jeff's branch merges
+
+> I can't use the built in agent mechanism to do ACLs for things like
+> suspension and cancellation, but I can use it for selecting which
+> package types the marketing types are allowed to sign up.  Problem is,
+> I can't seem to figure out the rules as to how cust_main.cgi figures
+> out which packages to stick in the list of packages available for new
+> customers.
+.
+Currently, only packages with a single service with table `svc_acct'
+appear on the `New Customer' screen.  Other packages may be ordered from
+the `Order and cancel packages' link on the main `Customer View' screen.
+.
+Perhaps the `New Customer' UI could be changed like the new `Service Edit'
+screen in CVS, to support all available packages, not just those with a
+single service with table `svc_acct'.
+
+> +----------
+> | Thank you for the response.That being the case do you have any
+> | recommendations as to the most effective way to add prior balances?
+> +----------                                                          
+> 
+>   You could create a package called 'Starting Balance' and sell it
+> to them.  Adjust the price as neccessary.
+.
+Yes, this is what to do with the current system.
+.
+In the future, this is what the database would do internally, but
+eventually I'd like the user-interface and the Perl API to offer a
+one-step way to "add a starting balance" that does this underneath.
+.
+I'm also thinking it might be necessary for accouting reasons to add a
+flag to these charges and payments against them, so you can run totals and
+reports ignoring them.  Not sure about this.
 
 > Does Freeside currently support notification to the customer that their
 > credit card on file is about to expire?
@@ -530,12 +582,12 @@ specify the password, then receive an error and are returned to the form?)
 
 more DOC:
 Thought some of you might be interested in this:
-  
+. 
 <ftp://ftp.minivend.com/pub> has CyberCash compatibility modules for 
 Paymentnet <http://www.paymentnet.com> and Authorizenet 
 <http://www.authorizenet.com> which should allow you process transactions
 using those services as well as CyberCash.
-
+.
 The files are named CCLib.pm.paymentnet and CCLib.pm_authorizenet,
 respectively, and are installed by renaming to CCLib.pm and moving to your
 site_perl directory.  Otherwise, follow the directions for Cybercash v2 in
@@ -658,7 +710,7 @@ statement!
     this if you are using it.
 
 > 2. can customers view their bills on-line.                                    
- 
+. 
 Not yet; it needs to be proxied from Freeside to a customer web server in
 a secure way using something not completely unlike the fs_passwd,
 fs_passwdd, fs_passwd_server trio.
@@ -666,10 +718,10 @@ fs_passwdd, fs_passwd_server trio.
 
 > Lastly, if someone over pays on an invoice, the credit part does not flow
 > over to other invoices..
-
+.
 The total balance flows over correctly, but individual payments don't.
 The code you're looking for is in FS::cust_pay::insert
-
+.
 The question of what to do with overpayments that don't have another 
 invoice to flow into (yet.. or possibly not) is still an open one.    The
 legacy system Freeside replaced long ago had a separate place for this
@@ -688,7 +740,7 @@ warn or complain or something when invoice_from is empty (and we use it)
 Right now Freeside uses the `freq' field of a package definition as a 
 number of months.  The specific section of code you're looking for is in  
 FS::cust_main::bill:
-        
+.       
         #change this bit to use Date::Manip?
         #$sdate=$cust_pkg->bill || time;
         #$sdate=$cust_pkg->bill || $time;
@@ -700,10 +752,10 @@ FS::cust_main::bill:
         $cust_pkg->setfield('bill',
           timelocal($sec,$min,$hour,$mday,$mon,$year));
         $cust_pkg_mod_flag = 1;
-  
+. 
 ..and when I went poking for this, looks like it tells us just what needs   
 to be done!  Hehehe...
-
+.
 Date::Manip can handle cool things like "+ 1 month" (actually the current
 case of /^(\d+)$/ would have to be added as a special case of "+ $1 
 month") and "+ 30 days" (what you need) and even "+ 5 business days" !
@@ -714,7 +766,7 @@ On Wed, Apr 28, 1999 at 08:38:16PM +0000, Kristian Hoffmann wrote:
 > understand, when you run svc_acct.export, it rewrites the /etc/passwd,
 > /etc/shadow, etc. files.  Is this only for initial setups with the
 > export hooks being in the pm's?
- 
+.
 You can use both, or just one method.  The configuration files control    
 this.  One of the things in the TODO is to take out the last few things   
 that aren't customizable wrt this and put them in config files.
@@ -768,8 +820,6 @@ hooks for arbitrary commands out of configuration files
 svc_acct.pm svc_acct_sm.pm etc.
 
 Add this to a FAQ, along with doing it for middle names:
-
-
 >  What I'm finding difficult is how to easily 
 > customize fields.  For example, I am trying to add a "middle name" field
 > to the Customer Edit, view, etc.  If I'm going about it right, it appears
@@ -783,7 +833,7 @@ You have the basic idea.  To implement that completely, I would:
 - Document the change in a new file, htdocs/docs/upgrade4.html
 * Run bin/dbdef-create
 * Add the new field to edit/cust_main.cgi and edit/process/cust_main.cgi
-
+.
 For bonus points, I'd grep around for the various bits which use "$first 
 $last" or "$last, $first" and replace them with a method call in cust_main.pm,
  , like search/cust_main.cgi
@@ -1281,23 +1331,23 @@ lease... probably doesn't make a difference in the ordering... but if you
 cancel a router lease the inventory should come back.  hmm.)
 
 -- Matt's wishlist ---
-
+.
 From matt@michweb.net Fri Feb 20 16:39:53 1998
 Date: Thu, 19 Feb 1998 23:20:11 -0500
 From: Matt Simerson <matt@michweb.net>
 Reply-To: quadran-developer@netgoth.com
 To: quadran-developer@netgoth.com
 Subject: Re: Welcome to quadran-developer
-
+.
 >Whats it based on and what is it supposed to do?  I'm interested, but
 >unfortunatly, I don't have that much time to help on the project (I'm busily
 >working on one of my own based around MySQL and Qt right now -- don't know
 >if it will be GPL'ed or not yet -- we'll probably just use it in house since
 >it is designed around our system)...
-
+.
 That's what I set out to find, but didn't find anything on the web site.
 I'm looking for something that will do the following:
-
+.
 Single point of entry for users on a secure system:
 	Creates account on user (public) systems
 		update /etc/passwd/master.passwd file
@@ -1307,7 +1357,7 @@ Single point of entry for users on a secure system:
 	Export of new user info to customizable report (for automated entry
 into
 		accounting software, etc...)
-
+.
 Automated billing:
 	Export credit card info for batch processing and have hooks built
 		in for other forms of electronic processing.
@@ -1316,13 +1366,13 @@ Automated billing:
 software
 	Email or laser print invoices
 	Sanity checks credit card numbers before processing (code available)
-
+.
 Simple method for disabling an account.
 	Arbitrary Expiration Dates (on a given day, in x days)
 	Remove from radius.
 	Changing password to '*'
 	Virtual customers disabling dns, http server, log processing, etc..
-
+.
 Billing for different account types:
 	Dialup monthly flat rate. Prorates for partial months.
 	Dialup monthly flat rate for x hours + hourly usage.
@@ -1333,17 +1383,17 @@ Billing for different account types:
 	Disk space used over quota.
 	Tech support minimum + hourly charges
 	Other for misc stuff (modem, RAM, etc...)
-
+.
 Per user definable RADIUS attributes (ties in with above)
 	Fixed IP
 	Simultaneous Use
 	IP filters (for dialup email only)
-
+.
 Keep logs of modem usage generated daily from radius accounting logs stored
 on multiple radius servers.
-
+.
 Keep logs of disk usage generated from quota.
-
+.
 Method of adding virtual domains to your system:
 	Automatically grabs an IP address from a preassigned pool.
 	Creates a domain.com database file from database fields
@@ -1363,7 +1413,7 @@ system...in bash. Shouldn't be hard for a perlmeister to convert. In fact,
 as long as all the info was stored in the database (username, domain name,
 and ip pool) this could easily just be run as an external script that the
 user tweaks to match his system.
-
+.
 We use a great accounting software (M.Y.O.B) that does all the AP, AR,
 Payroll, Tax stuff, and most everything else we could need. It's already
 set up for the type of checks we have, etc, etc... I just need something to
