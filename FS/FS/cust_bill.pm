@@ -392,7 +392,8 @@ sub print_text {
   $FS::cust_bill::_template::overdue = ( 
     $balance_due > 0
     && $today > $self->_date 
-    && $self->printed > 1
+#    && $self->printed > 1
+    && $self->printed > 0
   );
 
   #and subroutine for the template
@@ -423,7 +424,7 @@ sub print_text {
 
 =head1 VERSION
 
-$Id: cust_bill.pm,v 1.2 2000-08-09 11:30:41 ivan Exp $
+$Id: cust_bill.pm,v 1.3 2000-09-20 10:35:21 ivan Exp $
 
 =head1 BUGS
 
