@@ -103,7 +103,7 @@ ONLOAD="
           <td align=right>
             <FONT SIZE="-3">
               <A HREF="http://www.sisd.com/freeside">Freeside</A>&nbsp;v<% $FS::VERSION %><BR>
-             <A HREF="docs/">Documentation</A><BR>
+             <A HREF="../docs/">Documentation</A><BR>
             </FONT>
           </td>
           <td bgcolor=#000000></td>
