@@ -43,7 +43,7 @@ foreach my $export ( @exports ) {
   }
 
   my $user = $export->option('user');
-  my $httpd_conf = $export->option('httpd_conf')
+  my $httpd_conf = $export->option('httpd_conf');
 
   $rsync->exec( {
     src       => $file,
@@ -55,7 +55,7 @@ foreach my $export ( @exports ) {
 
 }
 
-close NAMED_CONF;
+close HTTPD_CONF;
 
 # -----
 
