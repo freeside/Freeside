@@ -1,5 +1,7 @@
 #!/usr/bin/perl -Tw
 
+# run dbdef-create first!
+
 use strict;
 use DBI;
 use DBIx::DBSchema 0.21;
