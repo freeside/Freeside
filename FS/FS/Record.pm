@@ -230,7 +230,8 @@ sub qsearch {
       if ( ! defined( $record->{$_} ) || $record->{$_} eq '' ) {
         if ( $op eq '=' ) {
           if ( driver_name eq 'Pg' ) {
-            if ( $dbdef->table($table)->column($column)->type =~ /(int)/i ) {
+            my $type = $dbdef->table($table)->column($column)->type;
+            if ( $type =~ /(int|serial)/i ) {
               qq-( $column IS NULL )-;
             } else {
               qq-( $column IS NULL OR $column = '' )-;
@@ -310,7 +311,7 @@ sub qsearch {
     grep defined( $record->{$_} ) && $record->{$_} ne '', @real_fields
   ) {
     if ( $record->{$field} =~ /^\d+(\.\d+)?$/
-         && $dbdef->table($table)->column($field)->type =~ /(int)/i
+         && $dbdef->table($table)->column($field)->type =~ /(int|serial)/i
     ) {
       $sth->bind_param($bind++, $record->{$field}, { TYPE => SQL_INTEGER } );
     } else {
