@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main.cgi,v 1.20 1999-08-23 07:08:11 ivan Exp $
+# $Id: cust_main.cgi,v 1.21 1999-08-23 07:40:38 ivan Exp $
 #
 # Usage: cust_main.cgi custnum
 #        http://server.name/path/cust_main.cgi?custnum
@@ -38,7 +38,10 @@
 # fixed one missed day->daytime ivan@sisd.com 98-jul-13
 #
 # $Log: cust_main.cgi,v $
-# Revision 1.20  1999-08-23 07:08:11  ivan
+# Revision 1.21  1999-08-23 07:40:38  ivan
+# missing </TD> flag
+#
+# Revision 1.20  1999/08/23 07:08:11  ivan
 # no CGI::Switch for now
 #
 # Revision 1.19  1999/08/21 02:14:25  ivan
@@ -242,7 +245,7 @@ print "<BR><BR>Contact information", &itable("#c0c0c0"), <<END;
 <TR><TD ALIGN="right">Company</TD><TD COLSPAN=5><INPUT TYPE="text" NAME="company" VALUE="$company" SIZE=70></TD></TR>
 <TR><TH ALIGN="right">${r}Address</TH><TD COLSPAN=5><INPUT TYPE="text" NAME="address1" VALUE="$address1" SIZE=70></TD></TR>
 <TR><TD ALIGN="right">&nbsp;</TD><TD COLSPAN=5><INPUT TYPE="text" NAME="address2" VALUE="$address2" SIZE=70></TD></TR>
-<TR><TH ALIGN="right">${r}City</TH><TD><INPUT TYPE="text" NAME="city" VALUE="$city"><TH ALIGN="right">${r}State/Country</TH><TD><SELECT NAME="state" SIZE="1">
+<TR><TH ALIGN="right">${r}City</TH><TD><INPUT TYPE="text" NAME="city" VALUE="$city"></TD><TH ALIGN="right">${r}State/Country</TH><TD><SELECT NAME="state" SIZE="1">
 END
 
 $cust_main->country('US') unless $cust_main->country; #eww
