@@ -167,7 +167,7 @@ sub infostreet_command { #subroutine, not method
   die $@ if $@;
 
   eval 'sub Frontier::RPC2::String::repr {
-    my $self = shift
+    my $self = shift;
     my $value = $$self;
     $value =~ s/([&<>\"])/$Frontier::RPC2::char_entities{$1}/ge;
     $value;
