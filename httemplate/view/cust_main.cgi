@@ -714,9 +714,9 @@ function cust_credit_areyousure(href) {
       }
       if ( $cust_credit->credited > 0 ) {
         $desc .= ' - <B><FONT COLOR="#FF0000">$'.
-                 $cust_credit->unapplied. ' unapplied</FONT></B>'.
+                 $cust_credit->credited. ' unapplied</FONT></B>'.
                  qq! (<A HREF="${p}edit/cust_credit_bill.cgi?!.
-                 $cust_credit->crednum. '">apply</A>'.
+                 $cust_credit->crednum. '">apply</A>)'.
                  '<BR>';
       }
     }
