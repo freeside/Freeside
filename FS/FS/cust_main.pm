@@ -38,7 +38,8 @@ $Debug = 0;
 $import = 0;
 
 #ask FS::UID to run this stuff for us later
-$FS::UID::callback{'FS::cust_main'} = sub { 
+#$FS::UID::callback{'FS::cust_main'} = sub { 
+install_callback FS::UID sub { 
   $conf = new FS::Conf;
   #yes, need it for stuff below (prolly should be cached)
 };

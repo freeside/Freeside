@@ -3,8 +3,8 @@ package FS::UID;
 use strict;
 use vars qw(
   @ISA @EXPORT_OK $cgi $dbh $freeside_uid $user 
-  $conf_dir $secrets $datasrc $db_user $db_pass %callback $driver_name
-  $AutoCommit
+  $conf_dir $secrets $datasrc $db_user $db_pass %callback @callback
+  $driver_name $AutoCommit
 );
 use subs qw(
   getsecrets cgisetotaker
@@ -95,7 +95,31 @@ sub forksuidsetup {
     # breaks multi-database installs # delete $callback{$_}; #run once
   }
 
+  &{$_} foreach @callback;
+
   $dbh;
+}
+
+=item install_callback
+
+A package can install a callback to be run in adminsuidsetup by passing
+a coderef to the FS::UID->install_callback class method.  If adminsuidsetup has
+run already, the callback will also be run immediately.
+
+    $coderef = sub { warn "Hi, I'm returning your call!" };
+    FS::UID->install_callback($coderef);
+
+    install_callback FS::UID sub { 
+      warn "Hi, I'm returning your call!"
+    };
+
+=cut
+
+sub install_callback {
+  my $class = shift;
+  my $callback = shift;
+  push @callback, $callback;
+  &{$callback} if $dbh;
 }
 
 =item cgisuidsetup CGI_object
@@ -246,17 +270,28 @@ sub getsecrets {
 
 =head1 CALLBACKS
 
-Warning: this interface is likely to change in future releases.
+Warning: this interface is (still) likely to change in future releases.
+
+New (experimental) callback interface:
+
+A package can install a callback to be run in adminsuidsetup by passing
+a coderef to the FS::UID->install_callback class method.  If adminsuidsetup has
+run already, the callback will also be run immediately.
+
+    $coderef = sub { warn "Hi, I'm returning your call!" };
+    FS::UID->install_callback($coderef);
+
+    install_callback FS::UID sub { 
+      warn "Hi, I'm returning your call!"
+    };
+
+Old (deprecated) callback interface:
 
 A package can install a callback to be run in adminsuidsetup by putting a
 coderef into the hash %FS::UID::callback :
 
     $coderef = sub { warn "Hi, I'm returning your call!" };
-    $FS::UID::callback{'Package::Name'};
-
-=head1 VERSION
-
-$Id: UID.pm,v 1.21 2002-09-27 12:14:12 ivan Exp $
+    $FS::UID::callback{'Package::Name'} = $coderef;
 
 =head1 BUGS
 
@@ -269,7 +304,7 @@ cgisuidsetup will go away as well.
 
 Goes through contortions to support non-OO syntax with multiple datasrc's.
 
-Callbacks are inelegant.
+Callbacks are (still) inelegant.
 
 =head1 SEE ALSO
 
