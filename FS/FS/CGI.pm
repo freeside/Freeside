@@ -131,6 +131,8 @@ Sends an HTML error message, then exits.
 
 sub eidiot {
   warn "eidiot depriciated";
+  $HTML::Mason::Commands::r->send_http_header
+    if defined $HTML::Mason::Commands::r;
   idiot(@_);
   &myexit();
 }
@@ -145,11 +147,22 @@ If running under mod_perl, calles Apache::exit, otherwise, calls exit.
 
 sub myexit {
   if (exists $ENV{MOD_PERL}) {
-    $main::Response->End()
-      if defined $main::Response
-         && $main::Response->isa('Apache::ASP::Response');
-    require Apache;
-    Apache::exit();
+
+    if ( defined $main::Response
+         && $main::Response->isa('Apache::ASP::Response') ) {  #Apache::ASP
+      $main::Response->End();
+      require Apache;
+      Apache::exit();
+    } elsif ( defined $HTML::Mason::Commands::m  ) { #Mason
+      #$HTML::Mason::Commands::m->flush_buffer();
+      $HTML::Mason::Commands::m->abort();
+      die "shouldn't fall through to here (mason \$m->abort didn't)";
+    } else {
+      #??? well, it is $ENV{MOD_PERL}
+      warn "running under unknown mod_perl environment; trying Apache::exit()";
+      require Apache;
+      Apache::exit();
+    }
   } else {
     exit;
   }
