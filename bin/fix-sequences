@@ -7,7 +7,7 @@ use DBIx::DBSchema::Table;
 use DBIx::DBSchema::Column;
 use DBIx::DBSchema::ColGroup::Unique;
 use DBIx::DBSchema::ColGroup::Index;
-use FS::UID qw(adminsuidsetup);
+use FS::UID qw(adminsuidsetup driver_name);
 use FS::Record qw(dbdef);
 
 my $user = shift or die &usage;
@@ -50,6 +50,6 @@ $dbh->commit or die $dbh->errstr;
 $dbh->disconnect or die $dbh->errstr;
 
 sub usage {
-  die "Usage:\n  create-history-tables user [ table table ... ] \n";
+  die "Usage:\n  fix-sequences user [ table table ... ] \n";
 }
 
