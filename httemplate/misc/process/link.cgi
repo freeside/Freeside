@@ -16,8 +16,11 @@ unless ( $svcnum ) {
   if ( $cgi->param('link_field2') =~ /^(\w+)$/ ) {
     $search{$1} = $cgi->param('link_value2');
   }
-  my $svc_x = ( grep { $_->cust_svc->svcpart == $svcpart } 
-                  qsearch( $svcdb, \%search )
+  my $svc_x = ( sort { ($b->cust_svc->pkgnum > 0) <=> ($a->cust_svc->pkgnum > 0)
+                       or ($b->cust_svc->svcpart == $svcpart)
+                            <=> ($a->cust_svc->svcpart == $svcpart)
+                     }
+                     qsearch( $svcdb, \%search )
               )[0];
   eidiot("$link_field not found!") unless $svc_x;
   $svcnum = $svc_x->svcnum;

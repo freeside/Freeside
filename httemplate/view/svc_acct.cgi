@@ -108,6 +108,48 @@ if (    $part_svc->part_export('sqlradius')
 
 #print qq!<BR><A HREF="../misc/sendconfig.cgi?$svcnum">Send account information</A>!;
 
+%>
+
+<% 
+  my @part_svc = ();
+  if ( $pkgnum ) { 
+    @part_svc = grep {    $_->svcdb   eq 'svc_acct'
+                       && $_->svcpart != $part_svc->svcpart }
+                $cust_pkg->available_part_svc;
+  } else {
+    @part_svc = qsearch('part_svc', {
+      svcdb    => 'svc_acct',
+      disabled => '',
+      svcpart  => { op=>'!=', value=>$part_svc->svcpart },
+    } );
+  }
+  if ( @part_svc ) {
+%>
+  <SCRIPT TYPE="text/javascript">
+  function enable_change () {
+    if ( document.OneTrueForm.svcpart.selectedIndex > 1 ) {
+      document.OneTrueForm.submit.disabled = false;
+    } else {
+      document.OneTrueForm.submit.disabled = true;
+    }
+  }
+  </SCRIPT>
+  <FORM NAME="OneTrueForm" ACTION="<%=$p%>edit/process/cust_svc.cgi">
+  <INPUT TYPE="hidden" NAME="svcnum" VALUE="<%= $svcnum %>">
+  <INPUT TYPE="hidden" NAME="pkgnum" VALUE="<%= $pkgnum %>">
+  <SELECT NAME="svcpart" onChange="enable_change()">
+    <OPTION VALUE="">Change service</OPTION>
+    <OPTION VALUE="">--------------</OPTION>
+    <% foreach my $part_svc ( @part_svc ) { %>
+      <OPTION VALUE="<%= $part_svc->svcpart %>"><%= $part_svc->svc %></OPTION>
+    <% } %>
+  </SELECT>
+  <INPUT NAME="submit" TYPE="submit" VALUE="Change" disabled>
+  </FORM>
+<% } %>
+
+<%
+
 print qq!<A HREF="${p}edit/svc_acct.cgi?$svcnum">Edit this information</A><BR>!.
       &ntable("#cccccc"). '<TR><TD>'. &ntable("#cccccc",2).
       "<TR><TD ALIGN=\"right\">Service number</TD>".

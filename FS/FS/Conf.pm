@@ -1237,7 +1237,7 @@ httemplate/docs/config.html
   {
     'key'         => 'cust_pkg-change_svcpart',
     'section'     => '',
-    'description' => "When changing packages, move services even if svcparts don't match between old and new pacakge definitions.  Use with caution!  No provision is made for export differences between the old and new service definitions.  Probably only should be used when your exports for all service definitions of a given svcdb are identical.",
+    'description' => "When changing packages, move services even if svcparts don't match between old and new pacakge definitions.",
     'type'        => 'checkbox',
   },
 

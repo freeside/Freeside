@@ -302,14 +302,52 @@ sub replace {
 
   #new-style exports!
   unless ( $noexport_hack ) {
-    foreach my $part_export ( $new->cust_svc->part_svc->part_export ) {
-      my $error = $part_export->export_replace($new,$old);
+
+    #not quite false laziness, but same pattern as FS::svc_acct::replace and
+    #FS::part_export::sqlradius::_export_replace.  List::Compare or something
+    #would be useful but too much of a pain in the ass to deploy
+
+    my @old_part_export = $old->cust_svc->part_svc->part_export;
+    my %old_exportnum = map { $_->exportnum => 1 } @old_part_export;
+    my @new_part_export = 
+      $new->svcpart
+        ? qsearchs('part_svc', { svcpart=>$new->svcpart } )->part_export
+        : $new->cust_svc->part_svc->part_export;
+    my %new_exportnum = map { $_->exportnum => 1 } @new_part_export;
+
+    foreach my $delete_part_export (
+      grep { ! $new_exportnum{$_->exportnum} } @old_part_export
+    ) {
+      my $error = $delete_part_export->export_delete($old);
       if ( $error ) {
         $dbh->rollback if $oldAutoCommit;
-        return "error exporting to ". $part_export->exporttype.
+        return "error deleting, export to ". $delete_part_export->exporttype.
                " (transaction rolled back): $error";
       }
     }
+
+    foreach my $replace_part_export (
+      grep { $old_exportnum{$_->exportnum} } @new_part_export
+    ) {
+      my $error = $replace_part_export->export_replace($new,$old);
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "error exporting to ". $replace_part_export->exporttype.
+               " (transaction rolled back): $error";
+      }
+    }
+
+    foreach my $insert_part_export (
+      grep { ! $old_exportnum{$_->exportnum} } @new_part_export
+    ) {
+      my $error = $insert_part_export->export_insert($new);
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "error inserting export to ". $insert_part_export->exporttype.
+               " (transaction rolled back): $error";
+      }
+    }
+
   }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;

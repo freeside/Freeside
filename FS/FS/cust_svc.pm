@@ -172,20 +172,20 @@ sub replace {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  my $error = $new->SUPER::replace($old);
-  if ( $error ) {
-    $dbh->rollback if $oldAutoCommit;
-    return $error if $error;
-  }
-
   if ( $new->svcpart != $old->svcpart ) {
     my $svc_x = $new->svc_x;
-    my $new_svc_x = ref($svc_x)->new({$svc_x->hash});
+    my $new_svc_x = ref($svc_x)->new({$svc_x->hash, svcpart=>$new->svcpart });
     my $error = $new_svc_x->replace($svc_x);
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return $error if $error;
     }
+  }
+
+  my $error = $new->SUPER::replace($old);
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error if $error;
   }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
