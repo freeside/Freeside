@@ -19,6 +19,7 @@ use FS::Conf;
 use FS::Record qw( qsearch qsearchs fields dbh );
 use FS::svc_Common;
 use Net::SSH;
+use FS::cust_svc;
 use FS::part_svc;
 use FS::svc_acct_pop;
 use FS::svc_acct_sm;
@@ -233,8 +234,8 @@ sub insert {
   }
 
   my @dup_user = qsearch( 'svc_acct', { 'username' => $self->username } );
-  my @dup_userdomain = qsearchs( 'svc_acct', { 'username' => $self->username,
-                                               'domsvc'   => $self->domsvc } );
+  my @dup_userdomain = qsearch( 'svc_acct', { 'username' => $self->username,
+                                              'domsvc'   => $self->domsvc } );
   my @dup_uid;
   if ( $part_svc->part_svc_column('uid')->columnflag ne 'F'
        && $self->username !~ /^(toor|(hyla)?fax)$/          ) {
@@ -276,6 +277,7 @@ sub insert {
     foreach my $dup_user ( @dup_user ) {
       my $dup_svcpart = $dup_user->cust_svc->svcpart;
       if ( exists($conflict_user_svcpart{$dup_svcpart}) ) {
+        $dbh->rollback if $oldAutoCommit;
         return "duplicate username: conflicts with svcnum ". $dup_user->svcnum.
                " via exportnum ". $conflict_user_svcpart{$dup_svcpart};
       }
@@ -284,6 +286,7 @@ sub insert {
     foreach my $dup_userdomain ( @dup_userdomain ) {
       my $dup_svcpart = $dup_userdomain->cust_svc->svcpart;
       if ( exists($conflict_userdomain_svcpart{$dup_svcpart}) ) {
+        $dbh->rollback if $oldAutoCommit;
         return "duplicate username\@domain: conflicts with svcnum ".
                $dup_userdomain->svcnum. " via exportnum ".
                $conflict_userdomain_svcpart{$dup_svcpart};
@@ -294,6 +297,7 @@ sub insert {
       my $dup_svcpart = $dup_uid->cust_svc->svcpart;
       if ( exists($conflict_user_svcpart{$dup_svcpart})
            || exists($conflict_userdomain_svcpart{$dup_svcpart}) ) {
+        $dbh->rollback if $oldAutoCommit;
         return "duplicate uid: conflicts with svcnum". $dup_uid->svcnum.
                "via exportnum ". $conflict_user_svcpart{$dup_svcpart}
                                  || $conflict_userdomain_svcpart{$dup_svcpart};
