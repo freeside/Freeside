@@ -68,6 +68,10 @@ ALTER TABLE cust_bill_pkg ADD itemdesc varchar(80) NULL;
 ALTER TABLE h_cust_bill_pkg ADD itemdesc varchar(80) NULL;
 ALTER TABLE cust_main_county ADD taxname varchar(80) NULL;
 ALTER TABLE h_cust_main_county ADD taxname varchar(80) NULL;
+ALTER TABLE cust_main_county ADD setuptax char(1) NULL;
+ALTER TABLE h_cust_main_county ADD setuptax char(1) NULL;
+ALTER TABLE cust_main_county ADD recurtax char(1) NULL;
+ALTER TABLE h_cust_main_county ADD recurtax char(1) NULL;
 ALTER TABLE cust_pkg ADD last_bill int NULL;
 ALTER TABLE h_cust_pkg ADD last_bill int NULL;
 
