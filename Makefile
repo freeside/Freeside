@@ -137,6 +137,8 @@ install-init:
 	  s/%%%SIGNUP_MACHINE%%%/${SIGNUP_MACHINE}/g;\
 	  s/%%%SIGNUP_AGENTNUM%%%/${SIGNUP_AGENTNUM}/g;\
 	  s/%%%SIGNUP_REFNUM%%%/${SIGNUP_REFNUM}/g;\
+	  s/%%%SELFSERVICE_USER%%%/${SELFSERVICE_USER}/g;\
+	  s/%%%SELFSERVICE_MACHINE%%%/${SELFSERVICE_MACHINE}/g;\
 	" ${INIT_FILE}
 
 install: install-perl-modules install-docs install-init
