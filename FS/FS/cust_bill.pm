@@ -369,9 +369,9 @@ emails or print.  See L<FS::cust_main_invoice>.
 
 sub send {
   my($self,$template) = @_;
-
-  #my @print_text = $cust_bill->print_text; #( date )
+  my @print_text = $self->print_text('', $template);
   my @invoicing_list = $self->cust_main->invoicing_list;
+
   if ( grep { $_ ne 'POST' } @invoicing_list ) { #email invoice
     #false laziness w/FS::cust_pay::delete & fs_signup_server && ::realtime_card
     #$ENV{SMTPHOSTS} = $smtpmachine;
@@ -386,7 +386,7 @@ sub send {
     ] );
     my $message = new Mail::Internet (
       'Header' => $header,
-      'Body' => [ $self->print_text('', $template) ], #( date)
+      'Body' => [ @print_text ], #( date)
     );
     $!=0;
     $message->smtpsend( Host => $smtpmachine )
@@ -395,11 +395,12 @@ sub send {
                   " to ". join(', ', grep { $_ ne 'POST' } @invoicing_list ).
                   " via server $smtpmachine with SMTP: $!";
 
-  #} elsif ( grep { $_ eq 'POST' } @invoicing_list ) {
-  } elsif ( ! @invoicing_list || grep { $_ eq 'POST' } @invoicing_list ) {
+  }
+
+  if ( ! @invoicing_list || grep { $_ eq 'POST' } @invoicing_list ) { #postal
     open(LPR, "|$lpr")
       or return "Can't open pipe to $lpr: $!";
-    print LPR $self->print_text; #( date )
+    print LPR @print_text;
     close LPR
       or return $! ? "Error closing $lpr: $!"
                    : "Exit status $? from $lpr";
@@ -951,7 +952,7 @@ sub print_text {
 
 =head1 VERSION
 
-$Id: cust_bill.pm,v 1.37 2002-06-07 20:33:27 khoff Exp $
+$Id: cust_bill.pm,v 1.38 2002-06-26 02:37:48 ivan Exp $
 
 =head1 BUGS
 
