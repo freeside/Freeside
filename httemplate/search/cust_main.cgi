@@ -57,19 +57,19 @@ if ( $cgi->param('browse')
     my $query = $cgi->param('browse');
     if ( $query eq 'custnum' ) {
       $sortby=\*custnum_sort;
-      $orderby = 'ORDER BY custnum';
+      $orderby = "ORDER BY custnum";
     } elsif ( $query eq 'last' ) {
       $sortby=\*last_sort;
-      $orderby = 'ORDER BY last';
+      $orderby = "ORDER BY LOWER(last || ' ' || first)";
     } elsif ( $query eq 'company' ) {
       $sortby=\*company_sort;
-      $orderby = 'ORDER BY company';
+      $orderby = "ORDER BY LOWER(company || ' ' || last || ' ' || first )";
     } else {
       die "unknown browse field $query";
     }
   } else {
     $sortby = \*last_sort; #??
-    $orderby = 'ORDER BY last'; #??
+    $orderby = "ORDER BY LOWER(last || ' ' || first)"; #??
     if ( $cgi->param('otaker_on') ) {
       $cgi->param('otaker') =~ /^(\w{1,32})$/ or eidiot "Illegal otaker\n";
       $search{otaker} = $1;
@@ -387,13 +387,16 @@ END
 #
 
 sub last_sort {
-  $a->getfield('last') cmp $b->getfield('last');
+  lc($a->getfield('last')) cmp lc($b->getfield('last'))
+  || lc($a->first) cmp lc($b->first);
 }
 
 sub company_sort {
   return -1 if $a->company && ! $b->company;
   return 1 if ! $a->company && $b->company;
-  $a->getfield('company') cmp $b->getfield('company');
+  lc($a->company) cmp lc($b->company)
+  || lc($a->getfield('last')) cmp lc($b->getfield('last'))
+  || lc($a->first) cmp lc($b->first);;
 }
 
 sub custnum_sort {
