@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: fs-setup,v 1.32 2000-12-04 00:13:02 ivan Exp $
+# $Id: fs-setup,v 1.33 2001-02-03 14:03:50 ivan Exp $
 #
 # ivan@sisd.com 97-nov-8,9
 #
@@ -32,7 +32,10 @@
 # fix radius attributes ivan@sisd.com 98-sep-27
 #
 # $Log: fs-setup,v $
-# Revision 1.32  2000-12-04 00:13:02  ivan
+# Revision 1.33  2001-02-03 14:03:50  ivan
+# time-based prepaid cards, session monitor.  woop!
+#
+# Revision 1.32  2000/12/04 00:13:02  ivan
 # fix nas.last type
 #
 # Revision 1.31  2000/12/01 18:34:53  ivan
@@ -658,6 +661,7 @@ sub tables_hash_hack {
         'shell',     'varchar',   'NULL',   $char_d,
         'quota',     'varchar',   'NULL',   $char_d,
         'slipip',    'varchar',   'NULL',   15, #four TINYINTs, bah.
+        'seconds',   'int', 'NULL',   '', #uhhhh
       ],
       'primary_key' => 'svcnum',
       'unique' => [ [] ],
@@ -739,6 +743,7 @@ sub tables_hash_hack {
         'prepaynum',   'int',     '',   '',
         'identifier',  'varchar', '', $char_d,
         'amount',      @money_type,
+        'seconds',     'int',     'NULL', '',
       ],
       'primary_key' => 'prepaynum',
       'unique'      => [ ['identifier'] ],

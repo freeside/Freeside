@@ -52,6 +52,6 @@ Optional:
     <li>$email_name - first and last name
   </ul>
   (an example file is included as <b>fs_signup/cck.template</b>).  See the <a href="http://help.netscape.com/products/client/mc/acctproc4.html">Netscape documentation</a> for more information.
-  <li>If there are any entries in the <i>prepay_credit</i> table, a user can enter a string matching the <b>identifier</i> column to receive the credit specified in the <b>amount</b> column, after which that <b>identifier</b> is no longer valid.  This can be used to implement pre-paid "calling card" type signups.  The <i>bin/generate-prepay</i> script can be used to populate the <i>prepay_credit</i> table.
+  <li>If there are any entries in the <i>prepay_credit</i> table, a user can enter a string matching the <b>identifier</i> column to receive the credit specified in the <b>amount</b> column, and/or the time specified in the <b>seconds</b> column (for use with the <a href="session.html">session monitor</a>), after which that <b>identifier</b> is no longer valid.  This can be used to implement pre-paid "calling card" type signups.  The <i>bin/generate-prepay</i> script can be used to populate the <i>prepay_credit</i> table.
 </ul>
 </body>

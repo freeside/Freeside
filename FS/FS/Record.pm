@@ -176,7 +176,7 @@ sub qsearch {
 
   my $statement = "SELECT $select FROM $table";
   if ( @fields ) {
-    $statement .= " WHERE ". join(' AND ', map {
+    $statement .= ' WHERE '. join(' AND ', map {
       if ( ! defined( $record->{$_} ) || $record->{$_} eq '' ) {
         if ( driver_name eq 'Pg' ) {
           "$_ IS NULL";
@@ -191,11 +191,13 @@ sub qsearch {
   $statement .= " $extra_sql" if defined($extra_sql);
 
   warn $statement if $DEBUG;
-  my $sth = $dbh->prepare_cached($statement) or croak $dbh->errstr;
+  my $sth = $dbh->prepare_cached($statement)
+    or croak "$dbh->errstr doing $statement";
 
   $sth->execute( map $record->{$_},
     grep defined( $record->{$_} ) && $record->{$_} ne '', @fields
   ) or croak $dbh->errstr;
+  $dbh->commit or croak $dbh->errstr if $FS::UID::AutoCommit;
 
   if ( eval 'scalar(@FS::'. $table. '::ISA);' ) {
     if ( eval 'FS::'. $table. '->can(\'new\')' eq \&new ) {
@@ -387,6 +389,7 @@ sub insert {
   local $SIG{PIPE} = 'IGNORE';
 
   $sth->execute or return $sth->errstr;
+  dbh->commit or croak dbh->errstr if $FS::UID::AutoCommit;
 
   '';
 }
@@ -436,6 +439,7 @@ sub delete {
 
   my $rc = $sth->execute or return $sth->errstr;
   #not portable #return "Record not found, statement:\n$statement" if $rc eq "0E0";
+  dbh->commit or croak dbh->errstr if $FS::UID::AutoCommit;
 
   undef $self; #no need to keep object!
 
@@ -507,6 +511,7 @@ sub replace {
 
   my $rc = $sth->execute or return $sth->errstr;
   #not portable #return "Record not found (or records identical)." if $rc eq "0E0";
+  dbh->commit or croak dbh->errstr if $FS::UID::AutoCommit;
 
   '';
 
@@ -908,7 +913,7 @@ sub DESTROY { return; }
 
 =head1 VERSION
 
-$Id: Record.pm,v 1.11 2000-12-06 10:21:13 ivan Exp $
+$Id: Record.pm,v 1.12 2001-02-03 14:03:49 ivan Exp $
 
 =head1 BUGS
 

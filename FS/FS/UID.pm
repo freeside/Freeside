@@ -4,6 +4,7 @@ use strict;
 use vars qw(
   @ISA @EXPORT_OK $cgi $dbh $freeside_uid $user 
   $conf_dir $secrets $datasrc $db_user $db_pass %callback $driver_name
+  $AutoCommit
 );
 use subs qw(
   getsecrets cgisetotaker
@@ -20,6 +21,8 @@ use FS::Conf;
 $freeside_uid = scalar(getpwnam('freeside'));
 
 $conf_dir = "/usr/local/etc/freeside/";
+
+$AutoCommit = 1; #ours, not DBI
 
 =head1 NAME
 
@@ -76,7 +79,7 @@ sub adminsuidsetup {
   croak "Not running uid freeside!" unless checkeuid();
   getsecrets;
   $dbh = DBI->connect($datasrc,$db_user,$db_pass, {
-                          'AutoCommit' => 'true',
+                          'AutoCommit' => 'false',
                           'ChopBlanks' => 'true',
   } ) or die "DBI->connect error: $DBI::errstr\n";
 
@@ -256,7 +259,7 @@ coderef into the hash %FS::UID::callback :
 
 =head1 VERSION
 
-$Id: UID.pm,v 1.3 2000-06-23 12:25:59 ivan Exp $
+$Id: UID.pm,v 1.4 2001-02-03 14:03:49 ivan Exp $
 
 =head1 BUGS
 

@@ -5,6 +5,7 @@
 
 use strict;
 use IO::Handle;
+use Tie::RefHash;
 use FS::SSH qw(sshopen2);
 use FS::UID qw(adminsuidsetup);
 use FS::Record qw( qsearch qsearchs );
@@ -160,16 +161,19 @@ while (1) {
 
     $error ||= $svc_acct->check;
 
-    $error ||= $cust_main->insert;
-    if ( $cust_pkg && ! $error ) { #in this case, $cust_pkg should always
-                                   #be definied, but....
-      $cust_pkg->custnum( $cust_main->custnum );
-      $error ||= $cust_pkg->insert; 
-      warn "WARNING: $error on pre-checked cust_pkg record!" if $error;
-      $svc_acct->pkgnum( $cust_pkg->pkgnum );
-      $error ||= $svc_acct->insert;
-      warn "WARNING: $error on pre-checked svc_acct record!" if $error;
-    }
+    use Tie::RefHash;
+    tie my %hash, 'Tie::RefHash';
+    %hash = { $cust_pkg => [ $svc_acct ] };
+    $error ||= $cust_main->insert( \%hash );
+    #if ( $cust_pkg && ! $error ) { #in this case, $cust_pkg should always
+    #                               #be definied, but....
+    #  $cust_pkg->custnum( $cust_main->custnum );
+    #  $error ||= $cust_pkg->insert; 
+    #  warn "WARNING: $error on pre-checked cust_pkg record!" if $error;
+    #  $svc_acct->pkgnum( $cust_pkg->pkgnum );
+    #  $error ||= $svc_acct->insert;
+    #  warn "WARNING: $error on pre-checked svc_acct record!" if $error;
+    #}
 
     warn "[fs_signup_server] Sending results...\n" if $Debug;
     print $writer $error, "\n";

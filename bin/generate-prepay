@@ -11,6 +11,8 @@ my $user = shift or die &usage;
 
 my $amount = shift or die &usage;
 
+my $seconds = shift or die &usage;
+
 my $num_digits = shift or die &usage;
 
 my $num_entries = shift or die &usage;
@@ -20,6 +22,7 @@ for ( 1 .. $num_entries ) {
   my $prepay_credit = new FS::prepay_credit {
     'identifier' => $identifier,
     'amount'     => $amount,
+    'seconds'    => $seconds,
   };
   my $error = $prepay_credit->insert;
   die $error if $error;
@@ -27,6 +30,6 @@ for ( 1 .. $num_entries ) {
 }
 
 sub usage {
-  die "Usage:\n\n  generate-prepay user amount num_digits num_entries";
+  die "Usage:\n\n  generate-prepay user amount seconds num_digits num_entries";
 }
 

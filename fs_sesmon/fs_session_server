@@ -7,7 +7,7 @@ use strict;
 use vars qw( $opt $Debug );
 use IO::Handle;
 use Net::SSH qw(sshopen2);
-use FS::UID qw(adminsuidsetup);
+use FS::UID qw(adminsuidsetup dbh);
 use FS::Record qw( qsearchs ); #qsearch );
 #use FS::cust_main_county;
 #use FS::cust_main;
@@ -83,6 +83,7 @@ sub login {
   return "Incorrect password"
     if exists($href->{'password'})
        && $href->{'password'} ne $svc_acct->_password;
+  return "Time limit exceeded" unless $svc_acct->seconds;
   my $session = new FS::session {
     'portnum' => $href->{'portnum'},
     'svcnum'  => $svc_acct->svcnum,
@@ -95,20 +96,42 @@ sub logout {
   my $href = shift;
   $href->{'username'} =~ /^([a-z0-9_\-\.]+)$/ or return "Illegal username";
   my $username = $1;
-  my $svc_acct = qsearchs('svc_acct', { 'username' => $username } )
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+  my $svc_acct =
+    qsearchs('svc_acct', { 'username' => $username }, '', 'FOR UPDATE' )
     or return "Unknown user";
   return "Incorrect password"
     if exists($href->{'password'})
        && $href->{'password'} ne $svc_acct->_password;
   my $session = qsearchs( 'session', {
-    'portnum' => $href->{'portnum'},
-    'svcnum'  => $svc_acct->svcnum,
-    'logout'  => '',
-  } );
-  return "No currently open sessions found for that user/port!" unless $session;
+                                       'portnum' => $href->{'portnum'},
+                                       'svcnum'  => $svc_acct->svcnum,
+                                       'logout'  => '',
+                                     },
+                          '', 'FOR UPDATE'
+  );
+  unless ( $session ) {
+    $dbh->rollback;
+    return "No currently open sessions found for that user/port!";
+  }
   my $nsession = new FS::session ( { $session->hash } );
   warn "$nsession replacing $session";
-  $nsession->replace($session);
+  my $error = $nsession->replace($session);
+  if ( $error ) {
+    $dbh->rollback;
+    return "can't logout: $error";
+  }
+  my $time = $nsession->logout - $nsession->login;
+  my $new_svc_acct = new FS::svc_acct ( { $svc_acct->hash } );
+  my $seconds = $new_svc_acct->seconds;
+  $seconds -= $time;
+  $seconds = 0 if $seconds < 0;
+  $new_svc_acct->seconds( $seconds );
+  $error = $new_svc_acct->replace( $svc_acct );
+  warn "can't debit time: $error\n"; #don't want to rollback, though
+  $dbh->commit or die $dbh->errstr;
+  ''
 }
 
 sub usage {

@@ -15,7 +15,7 @@ use Date::Format;
 use Mail::Internet;
 use Mail::Header;
 use Business::CreditCard;
-use FS::UID qw( getotaker );
+use FS::UID qw( getotaker dbh );
 use FS::Record qw( qsearchs qsearch );
 use FS::cust_pkg;
 use FS::cust_bill;
@@ -183,16 +183,23 @@ sub table { 'cust_main'; }
 Adds this customer to the database.  If there is an error, returns the error,
 otherwise returns false.
 
+There is a special insert mode in which you pass a data structure to the insert
+method containing FS::cust_pkg and FS::svc_I<tablename> objects.  When
+running under a transactional database, all records are inserted atomicly, or
+the transaction is rolled back.  There should be a better explanation of this,
+but until then, here's an example:
+
+  use Tie::RefHash;
+  tie %hash, 'Tie::RefHash'; #this part is important
+  %hash = {
+    $cust_pkg => [ $svc_acct ],
+  };
+  $cust_main->insert( \%hash );
+
 =cut
 
 sub insert {
   my $self = shift;
-
-  my $flag = 0;
-  if ( $self->payby eq 'PREPAY' ) {
-    $self->payby('BILL');
-    $flag = 1;
-  }
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -201,30 +208,78 @@ sub insert {
   local $SIG{TSTP} = 'IGNORE';
   local $SIG{PIPE} = 'IGNORE';
 
-  my $error = $self->SUPER::insert;
-  return $error if $error;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
 
-  if ( $flag ) {
-    my $prepay_credit =
-      qsearchs('prepay_credit', { 'identifier' => $self->payinfo } );
+  my $amount = 0;
+  my $seconds = 0;
+  if ( $self->payby eq 'PREPAY' ) {
+    $self->payby('BILL');
+    my $prepay_credit = qsearchs(
+      'prepay_credit',
+      { 'identifier' => $self->payinfo },
+      '',
+      'FOR UPDATE'
+    );
     warn "WARNING: can't find pre-found prepay_credit: ". $self->payinfo
       unless $prepay_credit;
-    my $amount = $prepay_credit->amount;
+    $amount = $prepay_credit->amount;
+    $seconds = $prepay_credit->seconds;
     my $error = $prepay_credit->delete;
     if ( $error ) {
-      warn "WARNING: can't delete prepay_credit: ". $self->payinfo;
-    } else {
-      my $cust_credit = new FS::cust_credit {
-        'custnum' => $self->custnum,
-        'amount'  => $amount,
-      };
-      my $error = $cust_credit->insert;
-      warn "WARNING: error inserting cust_credit for prepay_credit: $error"
-        if $error;
+      $dbh->rollback;
+      return $error;
     }
-
   }
 
+  my $error = $self->SUPER::insert;
+  if ( $error ) {
+    $dbh->rollback;
+    return $error;
+  }
+
+  if ( @_ ) {
+    my $cust_pkgs = shift;
+    foreach my $cust_pkg ( keys %$cust_pkgs ) {
+      $cust_pkg->custnum( $self->custnum );
+      $error = $cust_pkg->insert;
+      if ( $error ) {
+        $dbh->rollback;
+        return $error;
+      }
+      foreach my $svc_something ( @{$cust_pkgs->{$cust_pkg}} ) {
+        $svc_something->pkgnum( $cust_pkg->pkgnum );
+        if ( $seconds && $svc_something->isa('FS::svc_acct') ) {
+          $svc_something->seconds( $svc_something->seconds + $seconds );
+          $seconds = 0;
+        }
+        $error = $svc_something->insert;
+        if ( $error ) {
+          $dbh->rollback;
+          return $error;
+        }
+      }
+    }
+  }
+
+  if ( $seconds ) {
+    $dbh->rollback;
+    return "No svc_acct record to apply pre-paid time";
+  }
+
+  if ( $amount ) {
+    my $cust_credit = new FS::cust_credit {
+      'custnum' => $self->custnum,
+      'amount'  => $amount,
+    };
+    $error = $cust_credit->insert;
+    if ( $error ) {
+      $dbh->rollback;
+      return $error;
+    }
+  }
+
+  $dbh->commit or die $dbh->errstr;
   '';
 
 }
@@ -999,7 +1054,7 @@ sub check_invoicing_list {
 
 =head1 VERSION
 
-$Id: cust_main.pm,v 1.9 2001-01-31 07:21:00 ivan Exp $
+$Id: cust_main.pm,v 1.10 2001-02-03 14:03:50 ivan Exp $
 
 =head1 BUGS
 
