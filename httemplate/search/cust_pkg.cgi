@@ -19,20 +19,21 @@ my @cust_pkg;
 
 if ( $cgi->param('magic') && $cgi->param('magic') eq 'bill' ) {
   $sortby=\*bill_sort;
-  my($beginning, $ending) = (0, 0);
   my $range = '';
   if ( $cgi->param('beginning')
        && $cgi->param('beginning') =~ /^([ 0-9\-\/]{0,10})$/ ) {
     my $beginning = str2time($1);
     $range = " WHERE bill >= $beginning ";
-  } elsif ( $cgi->param('ending')
+  }
+  if ( $cgi->param('ending')
             && $cgi->param('ending') =~ /^([ 0-9\-\/]{0,10})$/ ) {
-    $ending = str2time($1) + 86400;
+    my $ending = str2time($1) + 86400;
     $range .= ( $range ? ' AND ' : ' WHERE ' ). " bill <= $ending ";
   }
 
   #false laziness with below
   my $statement = "SELECT COUNT(*) FROM cust_pkg $range";
+  warn $statement;
   my $sth = dbh->prepare($statement)
     or die dbh->errstr. " doing $statement";
   $sth->execute or die "Error executing \"$statement\": ". $sth->errstr;
