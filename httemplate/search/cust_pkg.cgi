@@ -35,6 +35,12 @@ if ( $cgi->param('magic') && $cgi->param('magic') eq 'bill' ) {
 
   $range .= ( $range ? 'AND ' : ' WHERE ' ). '( cancel IS NULL OR cancel = 0 )';
 
+  if ( $cgi->param('agentnum') =~ /^(\d+)$/ and $1 ) {
+    $range .= ( $range ? 'AND ' : ' WHERE ' ). 
+              "$1 = ( SELECT agentnum FROM cust_main".
+                    " WHERE cust_main.custnum = cust_pkg.custnum )";
+  }
+
   #false laziness with below
   my $statement = "SELECT COUNT(*) FROM cust_pkg $range";
   warn $statement;

@@ -36,6 +36,23 @@
   });
 </SCRIPT>
         </TR>
+<% my %agent_search = dbdef->table('agent')->column('disabled')
+                        ? ( 'disabled' => '' ) : ();
+   my @agents = qsearch( 'agent', \%agent_search );
+   if ( scalar(@agents) == 1 ) {
+%>
+     <INPUT TYPE="hidden" NAME="agentnum" VALUE="<%= $agents[0]->agentnum %>">
+<% } else { %>
+
+        <TR>
+          <TD ALIGN="right">Agent: </TD>
+          <TD><SELECT NAME="agentnum"><OPTION VALUE="">(all)
+          <% foreach my $agent ( sort { $a->agent cmp $b->agent; } @agents) { %>
+            <OPTION VALUE="<%= $agent->agentnum %>"><%= $agent->agent %>
+          <% } %>
+          </TD>
+        </TR>
+<% } %>
       </TABLE>
       <BR><INPUT TYPE="submit" VALUE="Get Report">
 
