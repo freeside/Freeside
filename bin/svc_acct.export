@@ -1,5 +1,7 @@
 #!/usr/bin/perl -Tw
 #
+# $Id: svc_acct.export,v 1.2 1998-12-10 07:23:15 ivan Exp $
+#
 # Create and export password files: passwd, passwd.adjunct, shadow,
 # acp_passwd, acp_userinfo, acp_dialup, users
 #
@@ -34,75 +36,46 @@
 #
 # OOPS!  added arbitrary radius fields (pry 98-aug-16) but forgot to say so.
 # ivan@sisd.com 98-sep-18
+# 
+# $Log: svc_acct.export,v $
+# Revision 1.2  1998-12-10 07:23:15  ivan
+# use FS::Conf, need user (for datasrc)
+#
 
 use strict;
+use vars qw($conf);
 use Fcntl qw(:flock);
+use FS::Conf;
 use FS::SSH qw(scp ssh);
-use FS::UID qw(adminsuidsetup);
+use FS::UID qw(adminsuidsetup datasrc);
 use FS::Record qw(qsearch fields);
+use FS::svc_acct;
 
-my($fshellmachines)="/var/spool/freeside/conf/shellmachines";
-my(@shellmachines);
-if ( -e $fshellmachines ) {
-  open(SHELLMACHINES,$fshellmachines);
-  @shellmachines=map {
-    /^(.*)$/ or die "Illegal line in conf/shellmachines"; #we trust the file
-    $1;
-  } grep $_ !~ /^(#|$)/, <SHELLMACHINES>;
-  close SHELLMACHINES;
-}
+my $user = shift or die &usage;
+adminsuidsetup $user;
 
-my($fbsdshellmachines)="/var/spool/freeside/conf/bsdshellmachines";
-my(@bsdshellmachines);
-if ( -e $fbsdshellmachines ) {
-  open(BSDSHELLMACHINES,$fbsdshellmachines);
-  @bsdshellmachines=map {
-    /^(.*)$/ or die "Illegal line in conf/bsdshellmachines"; #we trust the file
-    $1;
-  } grep $_ !~ /^(#|$)/, <BSDSHELLMACHINES>;
-  close BSDSHELLMACHINES;
-}
+$conf = new FS::Conf;
 
-my($fnismachines)="/var/spool/freeside/conf/nismachines";
-my(@nismachines);
-if ( -e $fnismachines ) {
-  open(NISMACHINES,$fnismachines);
-  @nismachines=map {
-    /^(.*)$/ or die "Illegal line in conf/nismachines"; #we trust the file
-    $1;
-  } grep $_ !~ /^(#|$)/, <NISMACHINES>;
-  close NISMACHINES;
-}
+my @shellmachines = $conf->config('shellmachines')
+  if $conf->exists('shellmachines');
 
-my($ferpcdmachines)="/var/spool/freeside/conf/erpcdmachines";
-my(@erpcdmachines);
-if ( -e $ferpcdmachines ) {
-  open(ERPCDMACHINES,$ferpcdmachines);
-  @erpcdmachines=map {
-    /^(.*)$/ or die "Illegal line in conf/erpcdmachines"; #we trust the file
-    $1;
-  } grep $_ !~ /^(#|$)/, <ERPCDMACHINES>;
-  close ERPCDMACHINES;
-}
+my @bsdshellmachines = $conf->config('bsdshellmachines')
+  if $conf->exists('bsdshellmachines');
 
-my($fradiusmachines)="/var/spool/freeside/conf/radiusmachines";
-my(@radiusmachines);
-if ( -e $fradiusmachines ) {
-  open(RADIUSMACHINES,$fradiusmachines);
-  @radiusmachines=map {
-    /^(.*)$/ or die "Illegal line in conf/radiusmachines"; #we trust the file
-    $1;
-  } grep $_ !~ /^(#|$)/, <RADIUSMACHINES>;
-  close RADIUSMACHINES;
-}
+my @nismachines = $conf->config('nismachines')
+  if $conf->exists('nismachines');
 
-my($spooldir)="/var/spool/freeside/export";
-my($spoollock)="/var/spool/freeside/svc_acct.export.lock";
+my @erpcdmachines = $conf->config('erpcdmachines')
+  if $conf->exists('erpcdmachines');
 
-adminsuidsetup;
+my @radiusmachines = $conf->config('radiusmachines')
+  if $conf->exists('radiusmachines');
 
 my(@saltset)= ( 'a'..'z' , 'A'..'Z' , '0'..'9' , '.' , '/' );
-srand(time|$$);
+require 5.004; #srand(time|$$);
+
+my $spooldir = "/usr/local/etc/freeside/export.". datasrc;
+my $spoollock = "/usr/local/etc/freeside/svc_acct.export.lock.". datasrc;
 
 open(EXPORT,"+>>$spoollock") or die "Can't open $spoollock: $!";
 select(EXPORT); $|=1; select(STDOUT);
@@ -348,4 +321,10 @@ foreach $radiusmachine (@radiusmachines) {
 unlink $spoollock;
 flock(EXPORT,LOCK_UN);
 close EXPORT;
+
+#
+
+sub usage {
+  die "Usage:\n\n  svc_acct.export user\n";
+}
 

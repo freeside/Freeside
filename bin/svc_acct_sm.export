@@ -1,6 +1,10 @@
 #!/usr/bin/perl -Tw
 #
-# Create and export VoiceNet_quasar.m4
+# $Id: svc_acct_sm.export,v 1.2 1998-12-10 07:23:17 ivan Exp $
+# 
+# Create and export config files for sendmail, qmail
+#
+# (used to) Create and export VoiceNet_quasar.m4
 #
 # ivan@voicenet.com late oct 96
 #
@@ -36,53 +40,42 @@
 # put example $my_domain declaration in ivan@sisd.com 98-mar-23
 #
 # /var/spool/freeside/conf and sendmail updates ivan@sisd.com 98-aug-14
+#
+# $Log: svc_acct_sm.export,v $
+# Revision 1.2  1998-12-10 07:23:17  ivan
+# use FS::Conf, need user (for datasrc)
+#
 
 use strict;
+use vars qw($conf);
 use Fcntl qw(:flock);
 use FS::SSH qw(ssh scp);
-use FS::UID qw(adminsuidsetup);
+use FS::UID qw(adminsuidsetup datasrc);
 use FS::Record qw(qsearch qsearchs);
+use FS::svc_acct;
+use FS::svc_acct_sm;
+use FS::svc_domain;
 
-my($conf_shellm)="/var/spool/freeside/conf/shellmachine";
-my($fqmailmachines)="/var/spool/freeside/conf/qmailmachines";
+my $user = shift or die &usage;
+adminsuidsetup $user;
+
+$conf = new FS::Conf;
+
 my($shellmachine);
 my(@qmailmachines);
-if ( -e $fqmailmachines ) {
-  open(SHELLMACHINE,$conf_shellm) or die "Can't open $conf_shellm: $!";
-  <SHELLMACHINE> =~ /^([\w\.\-]+)$/ or die "Illegal $conf_shellm";
-  $shellmachine = $1;
-  close SHELLMACHINE;
-  open(QMAILMACHINES,$fqmailmachines);
-  @qmailmachines=map {
-    /^(.*)$/ or die "Illegal line in conf/qmailmachines"; #we trust the file
-    $1;
-  } grep $_ !~ /^(#|$)/, <QMAILMACHINES>;
-  close QMAILMACHINES;
+if ( $conf->exists('qmailmachines') ) {
+  $shellmachine = $conf->config('shellmachine');
+  @qmailmachines = $conf->config('qmailmachines');
 }
 
-my($fsendmailmachines)="/var/spool/freeside/conf/sendmailmachines";
-my(@sendmailmachines);
-if ( -e $fsendmailmachines ) {
-  open(SENDMAILMACHINES,$fsendmailmachines);
-  @sendmailmachines=map {
-    /^(.*)$/ or die "Illegal line in conf/sendmailmachines"; #we trust the file
-    $1;
-  } grep $_ !~ /^(#|$)/, <SENDMAILMACHINES>;
-  close SENDMAILMACHINES;
-}
+my @sendmailmachines = $conf->config('sendmailmachines')
+  if $conf->exists('sendmailmachines');
 
-my($conf_domain)="/var/spool/freeside/conf/domain";
-open(DOMAIN,$conf_domain) or die "Can't open $conf_domain: $!";
-my($mydomain)=map {
-  /^(.*)$/ or die "Illegal line in $conf_domain!"; #yes, we trust the file
-  $1
-} grep $_ !~ /^(#|$)/, <DOMAIN>;
-close DOMAIN;
+my $mydomain = $conf->config('domain');
 
-my($spooldir)="/var/spool/freeside/export";
-my($spoollock)="/var/spool/freeside/svc_acct_sm.export.lock";
+my $spooldir = "/usr/local/etc/freeside/export.". datasrc;
+my $spoollock = "/usr/local/etc/freeside/svc_acct_sm.export.lock.". datasrc;
 
-adminsuidsetup;
 umask 066;
 
 open(EXPORT,"+>>$spoollock") or die "Can't open $spoollock: $!";
@@ -218,4 +211,10 @@ foreach $qmailmachine (@qmailmachines) {
 unlink $spoollock;
 flock(EXPORT,LOCK_UN);
 close EXPORT;
+
+#
+
+sub usage {
+  die "Usage:\n\n  svc_acct.export user\n";
+}
 

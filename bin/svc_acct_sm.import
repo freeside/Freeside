@@ -1,5 +1,7 @@
 #!/usr/bin/perl -Tw
 #
+# $Id: svc_acct_sm.import,v 1.2 1998-12-10 07:23:18 ivan Exp $
+#
 # ivan@sisd.com 98-mar-9
 #
 # generalized svcparts ivan@sisd.com 98-mar-23
@@ -12,19 +14,26 @@
 # has an (untested) section for sendmail, s/warn/die/g and generates a program
 # to run on your mail machine _later_ instead of ssh'ing for each user
 # ivan@sisd.com 98-jul-13
+#
+# $Log: svc_acct_sm.import,v $
+# Revision 1.2  1998-12-10 07:23:18  ivan
+# use FS::Conf, need user (for datasrc)
+#
 
 use strict;
 use vars qw(%d_part_svc %m_part_svc);
 use FS::SSH qw(iscp);
-use FS::UID qw(adminsuidsetup);
+use FS::UID qw(adminsuidsetup datasrc);
 use FS::Record qw(qsearch qsearchs);
 use FS::svc_acct_sm;
 use FS::svc_domain;
+use FS::svc_acct;
+use FS::part_svc;
 
-adminsuidsetup;
+my $user = shift or die &usage;
+adminsuidsetup $user;
 
-#my($spooldir)="/var/spool/freeside/export";
-my($spooldir)="unix";
+my($spooldir)="/usr/local/etc/freeside/export.". datasrc;
 
 my(%mta) = (
   1 => "qmail",
@@ -249,4 +258,10 @@ print "\n\n", <<END if $mta{$mta} eq "qmail";
 Don\'t forget to run $spooldir/virtualdomains.FIX before using
 $spooldir/virtualdomains !
 END
+
+#
+
+sub usage {
+  die "Usage:\n\n  svc_acct_sm.export user\n";
+}
 

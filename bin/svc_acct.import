@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct.import,v 1.2 1998-10-13 12:07:51 ivan Exp $
+# $Id: svc_acct.import,v 1.3 1998-12-10 07:23:16 ivan Exp $
 #
 # ivan@sisd.com 98-mar-9
 #
@@ -17,7 +17,10 @@
 # don't import /var/spool/freeside/conf/shells!  ivan@sisd.com 98-aug-13
 #
 # $Log: svc_acct.import,v $
-# Revision 1.2  1998-10-13 12:07:51  ivan
+# Revision 1.3  1998-12-10 07:23:16  ivan
+# use FS::Conf, need user (for datasrc)
+#
+# Revision 1.2  1998/10/13 12:07:51  ivan
 # Assigns password from the shadow file for RADIUS password "UNIX"
 #
 
@@ -25,14 +28,15 @@ use strict;
 use vars qw(%part_svc);
 use Date::Parse;
 use FS::SSH qw(iscp);
-use FS::UID qw(adminsuidsetup);
+use FS::UID qw(adminsuidsetup datasrc);
 use FS::Record qw(qsearch);
 use FS::svc_acct;
+use FS::part_svc;
 
-adminsuidsetup;
+my $user = shift or die &usage;
+adminsuidsetup $user;
 
-#my($spooldir)="/var/spool/freeside/export";
-my($spooldir)="unix/";
+my($spooldir)="/usr/local/etc/freeside/export.". datasrc;
 
 $FS::svc_acct::nossh_hack = 1;
 
@@ -231,5 +235,11 @@ foreach $username ( keys %upassword ) {
 
   delete $allparam{$username};
   delete $upassword{$username};
+}
+
+#
+
+sub usage {
+  die "Usage:\n\n  svc_acct.export user\n";
 }
 
