@@ -827,7 +827,7 @@ Returns the agent (see L<FS::agent>) for this customer.
 
 sub agent {
   my $self = shift;
-  qsearchs( 'agent', { 'agent' => $self->agentnum } );
+  qsearchs( 'agent', { 'agentnum' => $self->agentnum } );
 }
 
 =item bill OPTIONS
