@@ -2,13 +2,12 @@
 
 DATASOURCE = DBI:Pg:host=localhost;dbname=freeside
 #DATASOURCE=DBI:mysql:freeside
-#pgsql on some systems; check /etc/passwd
 
 DB_USER = freeside
 DB_PASSWORD=
 
 TEMPLATE = asp
-#mason's a bit dodgy stil
+#mason's a bit dodgy still
 #TEMPLATE = mason
 
 FREESIDE_DOCUMENT_ROOT = /var/www/freeside
@@ -44,6 +43,7 @@ docs:
 	make ${TEMPLATE}docs
 
 install-docs: docs
+	mv ${FREESIDE_DOCUMENT_ROOT} ${FREESIDE_DOCUMENT_ROOT}.`date +%Y%m%d%H%M%S`
 	cp -r ${TEMPLATE}docs ${FREESIDE_DOCUMENT_ROOT}
 
 perl-modules:
@@ -71,19 +71,19 @@ create-config: install-perl-modules
 
 	[ -d "${FREESIDE_CONF}/conf.${DATASOURCE}" ] \
 	  || mkdir "${FREESIDE_CONF}/conf.${DATASOURCE}"
-	chown freeside "${FREESIDE_CONF/conf.${DATASOURCE}"
+	chown freeside "${FREESIDE_CONF}/conf.${DATASOURCE}"
 
 	[ -d "${FREESIDE_CONF}/counters.${DATASOURCE}" ] \
 	  || mkdir "${FREESIDE_CONF}/counters.${DATASOURCE}"
-	chown freeside "${FREESIDE_CONF/counters.${DATASOURCE}"
+	chown freeside "${FREESIDE_CONF}/counters.${DATASOURCE}"
 
 	[ -d "${FREESIDE_CONF}/cache.${DATASOURCE}" ] \
 	  || mkdir "${FREESIDE_CONF}/cache.${DATASOURCE}"
-	chown freeside "${FREESIDE_CONF/cache.${DATASOURCE}"
+	chown freeside "${FREESIDE_CONF}/cache.${DATASOURCE}"
 
 	[ -d "${FREESIDE_CONF}/export.${DATASOURCE}" ] \
 	  || mkdir "${FREESIDE_CONF}/export.${DATASOURCE}"
-	chown freeside "${FREESIDE_CONF/export.${DATASOURCE}"
+	chown freeside "${FREESIDE_CONF}/export.${DATASOURCE}"
 
 clean:
 	rm -rf aspdocs masondocs

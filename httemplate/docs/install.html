@@ -138,7 +138,7 @@ AuthUserFile /usr/local/etc/freeside/htpasswd
 require valid-user
 &lt;/Directory&gt;
 </pre>
-  <li>Create one or more Freeside users (your internal sales/tech folks, not customer accounts).  These users are setup using using Apache authentication; they're not UNIX user accounts.  For example, using <a href="http://httpd.apache.org/docs/mod/mod_auth.html">mod_auth</a> (flat files):
+  <li>Create one or more Freeside users (your internal sales/tech folks, not customer accounts).  These users are setup using using Apache authentication, not UNIX user accounts.  For example, using <a href="http://httpd.apache.org/docs/mod/mod_auth.html">mod_auth</a> (flat files):
     <ul>
       <li>First user:<font size="-1">
 <pre>$ su
