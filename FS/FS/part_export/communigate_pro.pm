@@ -17,6 +17,7 @@ sub _export_insert {
     'AccessModes'    => $self->option('AccessModes'),
     'RealName'       => $svc_acct->finger,
     'MaxAccountSize' => $svc_acct->quota,
+    'Password'       => $svc_acct->_password,
   );
 }
 
