@@ -51,7 +51,7 @@ foreach my $export ( @exports ) {
   } ) or die "rsync to $machine failed: ". join(" / ", $rsync->err);
  # warn $rsync->out;
 
-  ssh("root\@$machine", 'ndc reload');
+  ssh("root\@$machine", 'apachectl graceful');
 
 }
 
