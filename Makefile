@@ -76,6 +76,7 @@ htmlman:
 	[ -e ./httemplate/docs/man/bin ] || mkdir httemplate/docs/man/bin
 	[ -e ./httemplate/docs/man/FS ] || mkdir httemplate/docs/man/FS
 	[ -e ./httemplate/docs/man/FS/UI ] || mkdir httemplate/docs/man/FS/UI
+	[ -e ./httemplate/docs/man/FS/part_export ] || mkdir httemplate/docs/man/FS/part_export
 	[ -e DONT_REBUILD_DOCS ] || bin/pod2x
 
 forcehtmlman:
@@ -83,6 +84,7 @@ forcehtmlman:
 	[ -e ./httemplate/docs/man/bin ] || mkdir httemplate/docs/man/bin
 	[ -e ./httemplate/docs/man/FS ] || mkdir httemplate/docs/man/FS
 	[ -e ./httemplate/docs/man/FS/UI ] || mkdir httemplate/docs/man/FS/UI
+	[ -e ./httemplate/docs/man/FS/part_export ] || mkdir httemplate/docs/man/FS/part_export
 	bin/pod2x
 
 install-docs: docs
