@@ -93,7 +93,7 @@ function achclose() {
           <TD>
             <SELECT NAME="month">
               <% for ( ( map "0$_", 1 .. 9 ), 11, 12 ) { %>
-                <OPTION<%= $_ eq $month ? ' SELECTED' : '' %>><%= $_ %>
+                <OPTION<%= $_ == $month ? ' SELECTED' : '' %>><%= $_ %>
               <% } %>
             </SELECT>
           </TD>
@@ -101,7 +101,7 @@ function achclose() {
           <TD>
             <SELECT NAME="year">
               <% my @a = localtime; for ( $a[5]+1900 .. $a[5]+1915 ) { %>
-                <OPTION<%= $_ eq $year ? ' SELECTED' : '' %>><%= $_ %>
+                <OPTION<%= $_ == $year ? ' SELECTED' : '' %>><%= $_ %>
               <% } %>
             </SELECT>
           </TD>
