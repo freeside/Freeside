@@ -30,9 +30,12 @@ sub _export_command {
   }
   my $domain_record = $svc_www->domain_record; # or die ?
   my $zone = $domain_record->reczone; # or die ?
-  unless ( $zone =~ /\.$/ ) {
+  if ( $zone =~ /\.$/ ) {
+    $zone =~ s/\.$//;
+  } else {
     my $svc_domain = $domain_record->svc_domain; # or die ?
     $zone .= '.'. $svc_domain->domain;
+    $zone =~ s/^\@\.//;
   }
 
   my $svc_acct = $svc_www->svc_acct; # or die ?
