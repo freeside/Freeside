@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: fs-setup,v 1.27 2000-10-27 20:15:50 ivan Exp $
+# $Id: fs-setup,v 1.28 2000-10-30 10:47:26 ivan Exp $
 #
 # ivan@sisd.com 97-nov-8,9
 #
@@ -32,8 +32,8 @@
 # fix radius attributes ivan@sisd.com 98-sep-27
 #
 # $Log: fs-setup,v $
-# Revision 1.27  2000-10-27 20:15:50  ivan
-# session monitor
+# Revision 1.28  2000-10-30 10:47:26  ivan
+# nas.last can't be defined NULL if indexed
 #
 # Revision 1.26  2000/07/06 08:57:27  ivan
 # support for radius check attributes (except importing).  poorly documented.
@@ -751,9 +751,9 @@ sub tables_hash_hack {
         'nas',      'varchar', '',    $char_d,
         'nasip',    'varchar', '',    15,
         'nasfqdn',  'varchar', '',    $char_d,
-#        'last',     'timestamp', NULL, '',
+#        'last',     'timestamp', '', '',
 #change to above when move to DBIx::DBSchema!!!
-        'last',     'datetime', NULL, '',
+        'last',     'datetime', '', '',
       ],
       'primary_key' => 'nasnum',
       'unique'      => [ [ 'nas' ], [ 'nasip' ] ],
