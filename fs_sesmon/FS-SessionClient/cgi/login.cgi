@@ -51,17 +51,42 @@ sub print_form {
 
   print $cgi->header( '-expires' => 'now' ), <<END;
 <HTML><HEAD><TITLE>login</TITLE></HEAD>
-<BODY>
+<BODY BGCOLOR="#FFFFFF">
 END
 
 print qq!<FONT SIZE="+1" COLOR="#ff0000">Error: $error</FONT>! if $error;
 
 print <<END;
-<FORM ACTION="$self_url" METHOD=POST>
+<FORM ACTION="$self_url" METHOD="POST">
 <INPUT TYPE="hidden" NAME="magic" VALUE="process">
-Username <INPUT TYPE="text" NAME="username" VALUE="$username"><BR>
-Password <INPUT TYPE="password" NAME="password"><BR>
-<INPUT TYPE="submit">
+<TABLE BORDER="0" CELLSPACING="0" CELLPADDING="4" ALIGN="center">
+<TR>
+        <TD ALIGN="center" COLSPAN="2">
+      <STRONG>Welcome</STRONG>
+      </TD>
+</TR>
+<TR>
+      <TD ALIGN="right">
+      Username
+      </TD>
+      <TD ALIGN="left">
+      <INPUT TYPE="text" NAME="username" VALUE="$username">
+      </TD>
+</TR>
+<TR>
+      <TD ALIGN="right">
+      Password
+      </TD>
+      <TD ALIGN="left">
+      <INPUT TYPE="password" NAME="password">
+      </TD>
+</TR>
+<TR>
+      <TD ALIGN="center" COLSPAN="2">
+      <INPUT TYPE="submit" VALUE=" Login ">
+      </TD>
+</TR>
+</TABLE>
 </FORM>
 </BODY>
 </HTML>
