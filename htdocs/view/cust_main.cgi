@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main.cgi,v 1.5 1998-12-23 02:36:28 ivan Exp $
+# $Id: cust_main.cgi,v 1.6 1998-12-23 02:42:33 ivan Exp $
 #
 # Usage: cust_main.cgi custnum
 #        http://server.name/path/cust_main.cgi?custnum
@@ -33,7 +33,10 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: cust_main.cgi,v $
-# Revision 1.5  1998-12-23 02:36:28  ivan
+# Revision 1.6  1998-12-23 02:42:33  ivan
+# remove double '/' in link urls
+#
+# Revision 1.5  1998/12/23 02:36:28  ivan
 # use FS::cust_refund; to eliminate warning
 #
 # Revision 1.4  1998/12/17 09:57:21  ivan
@@ -209,12 +212,12 @@ foreach $package (@packages) {
   my($part_pkg)=qsearchs('part_pkg',{
     'pkgpart' => $pref->{pkgpart}
   } );
-  print qq!<TR><TD><FONT SIZE=-1><A HREF="!, popurl(2), qq!/view/cust_pkg.cgi?!,
+  print qq!<TR><TD><FONT SIZE=-1><A HREF="!, popurl(2), qq!view/cust_pkg.cgi?!,
         $pref->{pkgnum}, qq!">!, 
         $pref->{pkgnum}, qq!</A></FONT></TD>!,
         "<TD><FONT SIZE=-1>", $part_pkg->getfield('pkg'), " - ",
         $part_pkg->getfield('comment'), 
-          qq!<FORM ACTION="!, popurl(2), qq!/edit/part_pkg.cgi" METHOD=POST>!,
+          qq!<FORM ACTION="!, popurl(2), qq!edit/part_pkg.cgi" METHOD=POST>!,
           qq!<INPUT TYPE="hidden" NAME="clone" VALUE="!, $part_pkg->pkgpart, qq!">!,
           qq!<INPUT TYPE="hidden" NAME="pkgnum" VALUE="!, $package->pkgnum, qq!">!,
           qq!<INPUT TYPE="submit" VALUE="Customize Pricing">!,
