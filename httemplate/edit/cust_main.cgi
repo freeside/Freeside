@@ -232,7 +232,8 @@ END
   unless ( $cust_main->ship_last ) {
     print ' CHECKED';
     foreach (
-      qw( last first company address1 address2 city state zip daytime night fax)
+      qw( last first company address1 address2 city county state zip country
+          daytime night fax )
     ) {
       $cust_main->set("ship_$_", $cust_main->get($_) );
     }
