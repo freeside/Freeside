@@ -1090,6 +1090,21 @@ sub print_ps {
 
 }
 
+# quick subroutine for print_ps
+#
+# There are ten characters that LaTeX treats as special characters, which
+# means that they do not simply typeset themselves: 
+#      # $ % & ~ _ ^ \ { }
+#
+# TeX ignores blanks following an escaped character; if you want a blank (as
+# in "10% of ..."), you have to "escape" the blank as well ("10\%\ of ..."). 
+
+sub _latex_escape {
+  my $value = shift;
+  $value =~ s/([#\$%&~_\^{}])( )?/"\\$1". ( length($2) ? "\\$2" : '' )/ge;
+  $value;
+}
+
 #utility methods for print_*
 
 sub balance_due_msg {
