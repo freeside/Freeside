@@ -2,7 +2,7 @@ package FS::h_svc_forward;
 
 use strict;
 use vars qw( @ISA );
-se FS::Record qw(qsearchs);
+use FS::Record qw(qsearchs);
 use FS::h_Common;
 use FS::svc_forward;
 use FS::h_svc_acct;
