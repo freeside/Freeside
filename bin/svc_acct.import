@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct.import,v 1.4 1999-03-24 00:43:38 ivan Exp $
+# $Id: svc_acct.import,v 1.5 1999-03-25 08:42:19 ivan Exp $
 #
 # ivan@sisd.com 98-mar-9
 #
@@ -17,7 +17,10 @@
 # don't import /var/spool/freeside/conf/shells!  ivan@sisd.com 98-aug-13
 #
 # $Log: svc_acct.import,v $
-# Revision 1.4  1999-03-24 00:43:38  ivan
+# Revision 1.5  1999-03-25 08:42:19  ivan
+# import stuff uses Term::Query and spits out (some kinds of) nonsensical input
+#
+# Revision 1.4  1999/03/24 00:43:38  ivan
 # die if no relevant services
 #
 # Revision 1.3  1998/12/10 07:23:16  ivan
@@ -30,6 +33,7 @@
 use strict;
 use vars qw(%part_svc);
 use Date::Parse;
+use Term::Query qw(query);
 use FS::SSH qw(iscp);
 use FS::UID qw(adminsuidsetup datasrc);
 use FS::Record qw(qsearch);
@@ -74,8 +78,7 @@ my($oisdn_svcpart)=&getpart;
 print "\n\n", &menu_svc, "\n", <<END;
 POP mail accounts have entries in passwd only, and have a particular shell.
 END
-print "Enter that shell: ";
-my($pop_shell)=&getvalue;
+my($pop_shell)=&getvalue("Enter that shell:");
 my($popmail_svcpart)=&getpart;
 
 print "\n\n", &menu_svc, "\n", <<END;
@@ -87,37 +90,36 @@ print "\n\n", <<END;
 Enter the location and name of your _user_ passwd file, for example
 "mail.isp.com:/etc/passwd" or "nis.isp.com:/etc/global/passwd"
 END
-print ":";
-my($loc_passwd)=&getvalue;
+my($loc_passwd)=&getvalue(":");
 iscp("root\@$loc_passwd", "$spooldir/passwd.import");
 
 print "\n\n", <<END;
 Enter the location and name of your _user_ shadow file, for example
 "mail.isp.com:/etc/shadow" or "bsd.isp.com:/etc/master.passwd"
 END
-print ":";
-my($loc_shadow)=&getvalue;
+my($loc_shadow)=&getvalue(":");
 iscp("root\@$loc_shadow", "$spooldir/shadow.import");
 
 print "\n\n", <<END;
 Enter the location and name of your radius "users" file, for example
 "radius.isp.com:/etc/raddb/users"
 END
-print ":";
-my($loc_users)=&getvalue;
+my($loc_users)=&getvalue(":");
 iscp("root\@$loc_users", "$spooldir/users.import");
 
 sub menu_svc {
   ( join "\n", map "$_: ".$part_svc{$_}->svc, sort keys %part_svc ). "\n";
 }
 sub getpart {
-  print "Enter part number, or 0 for none: ";
-  &getvalue;
+  $^W=0; # Term::Query isn't -w-safe
+  query "Enter part number:", 'irk', [ keys %part_svc ];
+  $^W=1;
 }
 sub getvalue {
-  my($x)=scalar(<STDIN>);
-  chop $x;
-  $x;
+  my $prompt = shift;
+  $^W=0; # Term::Query isn't -w-safe
+  query $prompt, '';
+  $^W=1;
 }
 
 print "\n\n";
@@ -193,7 +195,7 @@ while (<PASSWD>) {
     $svcpart = $shell_svcpart;
   }
 
-  my($svc_acct) = create FS::svc_acct ({
+  my($svc_acct) = new FS::svc_acct ({
     'svcpart'  => $svcpart,
     'username' => $username,
     'password' => $password,
@@ -227,7 +229,7 @@ foreach $username ( keys %upassword ) {
     die "Illegal Port-Limit in users!\n";
   }
 
-  my($svc_acct) = create FS::svc_acct ({
+  my($svc_acct) = new FS::svc_acct ({
     'svcpart'  => $svcpart,
     'username' => $username,
     'password' => $password,
