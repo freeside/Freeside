@@ -107,7 +107,7 @@ sub check {
     || $self->ut_number('invnum')
     || $self->ut_number('eventpart')
     || $self->ut_number('_date')
-    || $self->ut_enum('status', [qw( done failed )]
+    || $self->ut_enum('status', [qw( done failed )])
     || $self->ut_textn('statustext')
   ;
 
