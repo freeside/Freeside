@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct.cgi,v 1.7 1999-02-07 09:59:38 ivan Exp $
+# $Id: svc_acct.cgi,v 1.8 1999-04-09 23:43:29 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/svc_acct.cgi
@@ -23,7 +23,10 @@
 # give service and customer info too ivan@sisd.com 98-aug-16
 #
 # $Log: svc_acct.cgi,v $
-# Revision 1.7  1999-02-07 09:59:38  ivan
+# Revision 1.8  1999-04-09 23:43:29  ivan
+# just in case
+#
+# Revision 1.7  1999/02/07 09:59:38  ivan
 # more mod_perl fixes, and bugfixes Peter Wemm sent via email
 #
 # Revision 1.6  1999/01/19 05:14:14  ivan
@@ -88,6 +91,7 @@ if ( $query eq 'svcnum' ) {
       'pkgnum' => '',
     }), qsearch('svc_acct',{});
 } else {
+  $sortby=\*uid_sort;
   &usernamesearch;
 }
 
