@@ -19,7 +19,8 @@ use FS::cust_pkg;
 use FS::cust_bill;
 use FS::cust_bill_pkg;
 use FS::cust_pay;
-#use FS::cust_pay_batch;
+use FS::cust_credit;
+use FS::cust_pay_batch;
 
 @ISA = qw(FS::Record Exporter);
 @EXPORT_OK = qw(hfields);
@@ -868,7 +869,10 @@ enable cybercash, cybercash v3 support, don't need to import
 FS::UID::{datasrc,checkruid} ivan@sisd.com 98-sep-19-21
 
 $Log: cust_main.pm,v $
-Revision 1.3  1998-11-13 09:56:54  ivan
+Revision 1.4  1998-11-15 05:30:48  ivan
+bugfix for new config layout
+
+Revision 1.3  1998/11/13 09:56:54  ivan
 change configuration file layout to support multiple distinct databases (with
 own set of config files, export, etc.)
 

@@ -4,7 +4,7 @@ use strict;
 use vars qw($dbdef_file $dbdef $setup_hack $AUTOLOAD @ISA @EXPORT_OK);
 use subs qw(reload_dbdef);
 use Exporter;
-use Carp;
+use Carp qw(carp cluck croak confess);
 use File::CounterFile;
 use FS::UID qw(dbh checkruid swapuid getotaker datasrc);
 use FS::dbdef;
@@ -14,7 +14,7 @@ use FS::dbdef;
 
 #ask FS::UID to run this stuff for us later
 $FS::UID::callback{'FS::Record'} = sub { 
-  $File::CounterFile::DEFAULT_DIR = "/usr/local/etc/freeside/counters". datasrc;
+  $File::CounterFile::DEFAULT_DIR = "/usr/local/etc/freeside/counters.". datasrc;
   $dbdef_file = "/usr/local/etc/freeside/dbdef.". datasrc;
   &reload_dbdef unless $setup_hack; #$setup_hack needed now?
 };
@@ -181,7 +181,7 @@ sub qsearch {
       eval 'create FS::'. $table. ' ( $sth->fetchrow_hashref );';
     } ( 1 .. $sth->execute );
   } else {
-    carp "qsearch: warning: FS::$table not loaded; returning generic FS::Record objects";
+    cluck "qsearch: warning: FS::$table not loaded; returning generic FS::Record objects";
     map {
       new FS::Record ($table,$sth->fetchrow_hashref);
     } ( 1 .. $sth->execute );
@@ -871,7 +871,10 @@ added pod documentation ivan@sisd.com 98-sep-6
 ut_phonen got ''; at the end ivan@sisd.com 98-sep-27
 
 $Log: Record.pm,v $
-Revision 1.5  1998-11-13 09:56:51  ivan
+Revision 1.6  1998-11-15 05:31:03  ivan
+bugfix for new config layout
+
+Revision 1.5  1998/11/13 09:56:51  ivan
 change configuration file layout to support multiple distinct databases (with
 own set of config files, export, etc.)
 
