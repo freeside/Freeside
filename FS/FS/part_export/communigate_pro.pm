@@ -8,10 +8,15 @@ use FS::queue;
 
 sub rebless { shift; }
 
+sub export_username {
+  my($self, $svc_acct) = (shift, shift);
+  $svc_acct->email;
+}
+
 sub _export_insert {
   my( $self, $svc_acct ) = (shift, shift);
   my @options = ( $svc_acct->svcnum, 'CreateAccount',
-    'accountName'    => $svc_acct->email,
+    'accountName'    => $self->export_username($svc_acct),
     'accountType'    => $self->option('accountType'),
     'AccessModes'    => $self->option('AccessModes'),
     'RealName'       => $svc_acct->finger,
@@ -47,7 +52,7 @@ sub _export_replace {
   #my $jobnum = $err_or_queue->jobnum;
 
   $self->communigate_pro_queue( $new->svcnum, 'SetAccountPassword',
-                                $new->email, $new->_password        )
+                                $self->export_username($new), $new->_password        )
     if $new->_password ne $old->_password;
 
 }
@@ -55,14 +60,14 @@ sub _export_replace {
 sub _export_delete {
   my( $self, $svc_acct ) = (shift, shift);
   $self->communigate_pro_queue( $svc_acct->svcnum, 'DeleteAccount',
-    $svc_acct->email,
+    $self->export_username($svc_acct),
   );
 }
 
 sub _export_suspend {
   my( $self, $svc_acct ) = (shift, shift);
   $self->communigate_pro_queue( $svc_acct->svcnum, 'UpdateAccountSettings',
-    'accountName' => $svc_acct->email,
+    'accountName' => $self->export_username($svc_acct),
     'AccessModes' => 'Mail',
   );
 }
@@ -70,7 +75,7 @@ sub _export_suspend {
 sub _export_unsuspend {
   my( $self, $svc_acct ) = (shift, shift);
   $self->communigate_pro_queue( $svc_acct->svcnum, 'UpdateAccountSettings',
-    'accountName' => $svc_acct->email,
+    'accountName' => $self->export_username($svc_acct),
     'AccessModes' => $self->option('AccessModes'),
   );
 }

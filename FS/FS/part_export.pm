@@ -754,6 +754,24 @@ tie my %communigate_pro_options, 'Tie::IxHash',
                    },
 ;
 
+tie my %communigate_pro_singledomain_options, 'Tie::IxHash',
+  'port'     => { label=>'Port number', default=>'106', },
+  'login'    => { label=>'The administrator account name.  The name can contain a domain part.', },
+  'password' => { label=>'The administrator account password.', },
+  'domain'   => { label=>'Domain', },
+  'accountType' => { label=>'Type for newly-created accounts',
+                     type=>'select',
+                     options=>[qw( MultiMailbox TextMailbox MailDirMailbox )],
+                     default=>'MultiMailbox',
+                   },
+  'externalFlag' => { label=> 'Create accounts with an external (visible for legacy mailers) INBOX.',
+                      type=>'checkbox',
+                    },
+  'AccessModes' => { label=>'Access modes',
+                     default=>'Mail POP IMAP PWD WebMail WebSite',
+                   },
+;
+
 tie my %bind_options, 'Tie::IxHash',
   #'machine'     => { label=>'named machine' },
   'named_conf'   => { label  => 'named.conf location',
@@ -975,6 +993,13 @@ tie my %forward_shellcommands_options, 'Tie::IxHash',
       'desc' => 'Real-time export to a CommuniGate Pro mail server',
       'options' => \%communigate_pro_options,
       'notes' => 'Real time export to a <a href="http://www.stalker.com/CommuniGatePro/"> mail server.  The <a href="http://www.stalker.com/CGPerl/">CommuniGate Pro Perl Interface</a> must be installed as CGP::CLI.',
+    },
+
+    'communigate_pro_singledomain' => {
+      'desc' => 'Real-time export to a CommuniGate Pro mail server, one domain only',
+      'options' => \%communigate_pro_singledomain_options,
+      'nodomain' => 'Y',
+      'notes' => 'Real time export to a <a href="http://www.stalker.com/CommuniGatePro/"> mail server.  This is an unusual export to CommuniGate Pro that forces all accounts into a single domain.  As CommuniGate Pro supports multiple domains, unless you have a specific reason for using this export, you probably want to use the communigate_pro export instead.  The <a href="http://www.stalker.com/CGPerl/">CommuniGate Pro Perl Interface</a> must be installed as CGP::CLI.',
     },
 
   },
