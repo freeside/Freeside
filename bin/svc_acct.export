@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 #
-# $Id: svc_acct.export,v 1.9 2000-03-06 14:59:06 ivan Exp $
+# $Id: svc_acct.export,v 1.10 2000-03-06 15:59:19 ivan Exp $
 #
 # Create and export password files: passwd, passwd.adjunct, shadow,
 # acp_passwd, acp_userinfo, acp_dialup, users
@@ -38,9 +38,8 @@
 # ivan@sisd.com 98-sep-18
 # 
 # $Log: svc_acct.export,v $
-# Revision 1.9  2000-03-06 14:59:06  ivan
-# s/sshopen2/sshopen3/ to prevent spurious mysql "Enter password: " dialog from
-# showing up in cron/terminal
+# Revision 1.10  2000-03-06 15:59:19  ivan
+# finally get MySQL locking working for ICRADIUS export
 #
 # Revision 1.2  1998/12/10 07:23:15  ivan
 # use FS::Conf, need user (for datasrc)
@@ -358,16 +357,13 @@ foreach my $icradiusmachine ( @icradiusmachines ) {
   my( $machine, $db, $user, $pass ) = split(/\s+/, $icradiusmachine);
   chdir $icradius_mysqlsource or die "Can't cd $icradius_mysqlsource: $!";
   my($reader,$writer,$error)=(new IO::Handle, new IO::Handle, new IO::Handle);
-  sshopen3("root\@$machine", $reader, $writer, $error,
-    "mysql --user=$user -p $db"
-  );
-  print $writer "$pass\nLOCK TABLES radcheck WRITE;\n";
+  open(WRITER,"|ssh root\@$machine mysql -v --user=$user -p $db");
+  my $oldfh = select WRITER; $|=1; select $oldfh;
+  print WRITER "$pass\n"; sleep 2; print WRITER "LOCK TABLES radcheck WRITE;\n";
   foreach my $file ( glob("radcheck.*") ) {
     scp($file,"root\@$machine:$icradius_mysqldest/$db/$file");
   }
-  close $writer;
-  close $reader;
-  close $error;
+  close WRITER;
 }
 
 unlink $spoollock;
