@@ -1,0 +1,180 @@
+#!/usr/bin/perl -Tw
+
+use strict;
+use vars qw( $log_file $sigterm $sigint );
+use subs qw( _die _logmsg );
+use Fcntl qw(:flock);
+use POSIX qw(setsid);
+use Date::Format;
+use IO::File;
+use FS::UID qw(adminsuidsetup);
+#use FS::Record qw(qsearch qsearchs);
+#use FS::part_export;
+#use FS::svc_acct;
+#use FS::cust_svc;
+
+#lots of false laziness w/freeside-queued
+
+my $user = shift or die &usage;
+
+#my $pid_file = "/var/run/freeside-sqlradius-radacctd.$user.pid";
+my $pid_file = "/var/run/freeside-sqlradius-radacctd.pid";
+
+&daemonize1;
+
+#sub REAPER { my $pid = wait; $SIG{CHLD} = \&REAPER; $kids--; }
+#$SIG{CHLD} =  \&REAPER;
+
+$sigterm = 0;
+$sigint = 0;
+$SIG{INT} = sub { warn "SIGINT received; shutting down\n"; $sigint++; };
+$SIG{TERM} = sub { warn "SIGTERM received; shutting down\n"; $sigterm++; };
+
+my $freeside_gid = scalar(getgrnam('freeside'))
+  or die "can't setgid to freeside group\n";
+$) = $freeside_gid;
+$( = $freeside_gid;
+#if freebsd can't setuid(), presumably it can't setgid() either.  grr fleabsd
+($(,$)) = ($),$();
+$) = $freeside_gid;
+
+$> = $FS::UID::freeside_uid;
+$< = $FS::UID::freeside_uid;
+#freebsd is sofa king broken, won't setuid()
+($<,$>) = ($>,$<);
+$> = $FS::UID::freeside_uid;
+
+#$ENV{HOME} = (getpwuid($>))[7]; #for ssh
+adminsuidsetup $user;
+
+$log_file= "/usr/local/etc/freeside/sqlradius-radacctd-log.". $FS::UID::datasrc;
+
+&daemonize2;
+
+$SIG{__DIE__} = \&_die;
+$SIG{__WARN__} = \&_logmsg;
+
+warn "freeside-sqlradius-radacctd starting\n";
+
+#eslaf
+
+#my $machine = shift or die &usage; #would need to be up higher for real
+my @exports = qsearch('part_export', { 'exporttype' => 'sqlradius' } );
+
+while (1) {
+
+  my %seen = ();
+  foreach my $export ( @exports ) {
+    next if $seen{$export->option('datasrc')}++;
+    my $dbh = DBI->connect(
+      map { $export->option($_) } qw( datasrc username password )
+    ) or do {
+      warn "can't connect to ". $export->option('datasrc'). ": ". $DBI::errstr;
+      next;
+    }
+
+    # find old radacct position
+    #$lastid = 0;
+
+    # get new radacct records
+    my $sth = $dbh->prepare('SELECT * FROM radacct WHERE radacctid > ?') or do {
+      warn "can't select in radacct table from ". $export->option('datasrc').
+           ": ". $dbh->errstr;
+      next;
+    };
+
+    while ( my $radacct = $sth->fetchrow_arrayref({}) ) {
+
+      my $session = new FS::session {
+        portnum =>
+        svcnum  => 
+        login   =>
+        #logout  =>
+      };
+
+    }
+
+    # look for updated radacct records & replace them
+
+  }
+
+  sleep 5;
+
+}
+
+#more false laziness w/freeside-queued
+
+sub usage {
+  die "Usage:\n\n  freeside-sqlradius-radacctd user\n";
+}
+
+sub _die {
+  my $msg = shift;
+  unlink $pid_file if -e $pid_file;
+  _logmsg($msg);
+}
+
+sub _logmsg {
+  chomp( my $msg = shift );
+  my $log = new IO::File ">>$log_file";
+  flock($log, LOCK_EX);
+  seek($log, 0, 2);
+  print $log "[". time2str("%a %b %e %T %Y",time). "] [$$] $msg\n";
+  flock($log, LOCK_UN);
+  close $log;
+}
+
+sub daemonize1 {
+
+  chdir "/" or die "Can't chdir to /: $!";
+  open STDIN, '/dev/null'   or die "Can't read /dev/null: $!";
+  defined(my $pid = fork) or die "Can't fork: $!";
+  if ( $pid ) {
+    print "freeside-sqlradius-radacctd started with pid $pid\n";
+          #logging to $log_file\n";
+    exit unless $pid_file;
+    my $pidfh = new IO::File ">$pid_file" or exit;
+    print $pidfh "$pid\n";
+    exit;
+  }
+  #open STDOUT, '>/dev/null'
+  #                          or die "Can't write to /dev/null: $!";
+  #setsid                  or die "Can't start a new session: $!";
+  #open STDERR, '>&STDOUT' or die "Can't dup stdout: $!";
+
+}
+
+sub daemonize2 {
+  open STDOUT, '>/dev/null'
+                            or die "Can't write to /dev/null: $!";
+  setsid                  or die "Can't start a new session: $!";
+  open STDERR, '>&STDOUT' or die "Can't dup stdout: $!";
+}
+
+
+#eslaf
+
+=head1 NAME
+
+freeside-sqlradius-radacctd - Real-time radacct import daemon
+
+=head1 SYNOPSIS
+
+  freeside-sqlradius-radacctd username
+
+=head1 DESCRIPTION
+
+Imports records from an SQL radacct table in real-time into the session
+monitor.
+
+This enables per-minute or per-hour charges as well as the
+"View active NAS ports" function.
+
+B<username> is a username added by freeside-adduser.
+
+=head1 SEE ALSO
+
+session.html from the base documentation.
+
+=cut
+
