@@ -67,7 +67,7 @@ print '<FORM NAME="dummy">';
 print "Package Part #", $hashref->{pkgpart} ? $hashref->{pkgpart} : "(NEW)";
 
 print ntable("#cccccc",2), <<END;
-<TR><TD ALIGN="right">Package (customer-visable)</TD><TD><INPUT TYPE="text" NAME="pkg" SIZE=32 VALUE="$hashref->{pkg}"></TD></TR>
+<TR><TD ALIGN="right">Package (customer-visible)</TD><TD><INPUT TYPE="text" NAME="pkg" SIZE=32 VALUE="$hashref->{pkg}"></TD></TR>
 <TR><TD ALIGN="right">Comment (customer-hidden)</TD><TD><INPUT TYPE="text" NAME="comment" SIZE=32 VALUE="$hashref->{comment}"></TD></TR>
 <TR><TD ALIGN="right">Frequency (months) of recurring fee</TD><TD><INPUT TYPE="text" NAME="freq" VALUE="$hashref->{freq}" SIZE=3>&nbsp;&nbsp;<I>0=no recurring fee, 1=monthly, 3=quarterly, 12=yearly</TD></TR>
 <TR><TD ALIGN="right">Setup fee tax exempt</TD><TD>
