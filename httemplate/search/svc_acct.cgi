@@ -63,7 +63,7 @@ if ( $query eq 'svcnum' ) {
 if (    $query eq 'svcnum'
      || $query eq 'username'
      || $query eq 'uid'
-     || $query =~ /^popnum=(\d+)$/ ) {
+     || $query =~ /^popnum=(\d+)$/
    ) {
 
   my $statement = "SELECT COUNT(*) FROM svc_acct $unlinked";
