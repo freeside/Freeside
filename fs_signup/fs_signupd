@@ -1,17 +1,16 @@
 #!/usr/bin/perl -Tw
 #
-# fs_passwdd
+# fs_signupd
 #
-# This is run REMOTELY over ssh by fs_passwd_server.
+# This is run REMOTELY over ssh by fs_signup_server.
 #
-# ivan@sisd.com 98-mar-9
 
 use strict;
 use Socket;
 
-my($fs_passwdd_socket)="/usr/local/freeside/fs_passwdd_socket";
+my($fs_passwdd_socket)="/usr/local/freeside/fs_signupd_socket";
 
-$ENV{'PATH'} ='/usr/bin:/usr/ucb:/bin';
+$ENV{'PATH'} ='/usr/local/bin:/usr/bin:/usr/ucb:/bin';
 $ENV{'SHELL'} = '/bin/sh';
 $ENV{'IFS'} = " \t\n";
 $ENV{'CDPATH'} = '';
@@ -19,6 +18,46 @@ $ENV{'ENV'} = '';
 $ENV{'BASH_ENV'} = '';
 
 $|=1;
+
+chomp( my $n_cust_main_county = <STDIN> );
+my @cust_main_county = map {
+  chomp( my $taxnum = <STDIN> );
+  chomp( my $state = <STDIN> );
+  chomp( my $county = <STDIN> );
+  chomp( my $country = <STDIN> );
+  {
+    'taxnum'  => $taxnum,
+    'state'   => $state,
+    'county'  => $county,
+    'country' => $country,
+  };
+} ( 1 .. $n_cust_main_county );
+
+chomp( my $n_part_pkg = <STDIN> );
+my @part_pkg = map {
+  chomp( my $pkgpart = <STDIN> );
+  chomp( my $pkg = <STDIN> );
+  {
+    'pkgpart' => $pkgpart,
+    'pkg'     => $pkg,
+  };
+} ( 1 .. $n_part_pkg );
+
+chomp( my $n_svc_acct_pop = <STDIN> );
+my @svc_acct_pop = map {
+  chomp( my $popnum = <STDIN> );
+  chomp( my $city = <STDIN> );
+  chomp( my $state = <STDIN> );
+  chomp( my $ac = <STDIN> );
+  chomp( my $exch = <STDIN> );
+  {
+    'popnum' => $popnum,
+    'city'   => $city,
+    'state'  => $state,
+    'ac'     => $ac,
+    'exch'   => $exch,
+  };
+} ( 1 .. $n_svc_acct_pop );
 
 my $uaddr = sockaddr_un($fs_passwdd_socket);
 my $proto = getprotobyname('tcp');
@@ -28,22 +67,63 @@ unlink($fs_passwdd_socket);
 bind(Server, $uaddr) or die "bind: $!";
 listen(Server,SOMAXCONN) or die "listen: $!";
 
-my($paddr);
+my $paddr;
+
 for ( ; $paddr = accept(Client,Server); close Client) {
-  my($me,$old_password,$new_password,$new_gecos,$new_shell);
 
-  $me=<Client>;
-  $old_password=<Client>;
-  $new_password=<Client>;
-  $new_gecos=<Client>;
-  $new_shell=<Client>;
+  chop( my $command = <Client> );
 
-  print $me,$old_password,$new_password,$new_gecos,$new_shell;
-  my($error);
+  if ( $command eq "signup_info" ) {
 
-  $error=<STDIN>;
-  
-  print Client $error;
-  close Client;
+    print Client join("\n", $n_cust_main_county,
+      map {
+        $_->{taxnum},
+        $_->{state},
+        $_->{county},
+        $_->{country},
+      } @cust_main_county
+    ), "\n";
+
+    print Client join("\n", $n_part_pkg,
+      map {
+        $_->{pkgpart},
+        $_->{pkg},
+      } @part_pkg
+    ), "\n";
+
+    print Client join("\n", $n_svc_acct_pop,
+      map {
+        $_->{popnum},
+        $_->{city},
+        $_->{state},
+        $_->{ac},
+        $_->{exch},
+      } @svc_acct_pop
+    ), "\n";
+
+  } elsif ( $operation eq "new_customer" ) {
+
+    my(
+      $first, $last, $ss, $company, $address1, $address2, $city, $county,
+      $state, $zip, $country, $daytime, $night, $fax, $payby, $payinfo,
+      $paydate, $payname, $invoicing_list, $pkgpart, $username, $password,
+      $popnum,
+    ) = <Client>;
+
+    print 
+      $first, $last, $ss, $company, $address1, $address2, $city, $county,
+      $state, $zip, $country, $daytime, $night, $fax, $payby, $payinfo,
+      $paydate, $payname, $invoicing_list, $pkgpart, $username, $password,
+      $popnum,
+    ;
+
+    my $error = <STDIN>;
+
+    print Client $error;
+
+  } else {
+    die "unexpected command from client: $command";
+  }
+
 }
 
