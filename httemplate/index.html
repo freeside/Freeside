@@ -14,26 +14,50 @@
       version 1.4.0
       <BR><A HREF="http://www.sisd.com/freeside">Freeside home page</A>
       <BR><A HREF="docs/">Documentation</A>
+      <BR><A HREF="classic.html">Classic interface</A>
     </td></tr>
   </table>
-    <hr noshade>
-    <ul>
-      <li><A HREF="edit/cust_main.cgi">New Customer</A>
-      <li><A NAME="search">Search</A>
-        <ul>
-        <LI><A HREF="search/cust_main.html">customers (by last name and/or company)</A>
-        <LI><A HREF="search/cust_main-payinfo.html">customers (by credit card number)</A>
-        <LI><A HREF="search/svc_acct.html">accounts (by username)</A>
-        <LI><A HREF="search/svc_domain.html">domains (by domain)</A>
+
+<BR>
+[<A NAME="customer_service" style="background-color: #cccccc"> Sales / Customer service </A>]
+[ <A HREF="#bookkeeping">Bookkeeping / Collections</A> ]
+[ <A HREF="#reports">Reports</A> ]
+[ <A HREF="#sysadmin">Sysadmin</A> ]
+    <TABLE CELLSPACING=2 CELLPADDING=0 BORDERCOLOR="#000000" WIDTH="100%" BGCOLOR="#eeeeee">
+    <TR><TH BGCOLOR="#cccccc">Sales / Customer service</TH></TR>
+    <TR><TD>
+        <BR><FONT SIZE="+1"><A HREF="edit/cust_main.cgi">New Customer</A></FONT>
+        <BR>
+        <BR><FORM ACTION="search/cust_main.cgi" METHOD="POST"><INPUT TYPE="hidden" NAME="last_on" VALUE="1">Last name <INPUT TYPE="text" NAME="last_text"><INPUT TYPE="hidden" NAME="last_type" VALUE="Fuzzy"><INPUT TYPE="submit" VALUE="Search"> or <A HREF="search/cust_main.cgi?browse=last">all customers by last name</A>
+        <BR><FORM ACTION="search/cust_main.cgi" METHOD="POST"><INPUT TYPE="hidden" NAME="company_on" VALUE="1">Company <INPUT TYPE="text" NAME="company_text"><INPUT TYPE="hidden" NAME="company_type" VALUE="Fuzzy"><INPUT TYPE="submit" VALUE="Search"> or <A HREF="search/cust_main.cgi?browse=company">all customers by company</A>
+        <BR><FORM ACTION="search/svc_acct.cgi" METHOD="POST">Username <INPUT TYPE="text" NAME="username"><INPUT TYPE="submit" VALUE="Search"> or <A HREF="search/svc_acct.cgi?username">all accounts by username</A>
+        <BR><FORM ACTION="search/svc_domain.cgi" METHOD="POST">Domain <INPUT TYPE="text" NAME="domain"><INPUT TYPE="submit" VALUE="Search"> or <A HREF="search/svc_domain.cgi?domain">all domains
 <!--        <LI><A HREF="search/svc_acct_sm.html">mail aliases (by domain, and optionally username)</A>-->
 <!--        <LI><A HREF="search/svc_forward.html">mail forwards (by ?)</A>-->
-        <LI><A HREF="search/cust_bill.html">invoices (by invoice number)</A>
-        <LI><A HREF="search/cust_pay.html">checks (by check number)</A>
-        </ul>
-      <li><A NAME="browse">Browse</A>
-        <ul>
-          <LI>customers (<A HREF="search/cust_main.cgi?browse=custnum">by customer number</A>) (<A HREF="search/cust_main.cgi?browse=last">by last name</A>) (<A HREF="search/cust_main.cgi?browse=company">by company</A>)
-          <LI>invoices
+      <BR><BR>
+    </TD></TR>
+    </TABLE>
+
+
+
+    <BR><BR><BR>
+
+
+[ <A HREF="#customer_service">Sales / Customer service</A> ]
+[<A NAME="bookkeeping" style="background-color: #cccccc"> Bookkeeping / Collections </A>]
+[ <A HREF="#reports">Reports</A> ]
+[ <A HREF="#sysadmin">Sysadmin</A> ]
+    <TABLE CELLSPACING=2 CELLPADDING=0 BORDERCOLOR="#000000" WIDTH="100%" BGCOLOR="#eeeeee">
+    <TR><TH BGCOLOR="#cccccc">Bookkeeping / Collections</TH></TR>
+    <TR><TD>
+      <BR><A HREF="search/cust_main-quickpay.html">Quick payment entry</A>
+      <BR>
+      <BR><FORM ACTION="search/cust_main.cgi" METHOD="POST">Credit card # <INPUT TYPE="hidden" NAME="card_on" VALUE="1"><INPUT TYPE="text" NAME="card"><INPUT TYPE="submit" VALUE="Search">
+      <BR><FORM ACTION="search/cust_bill.cgi" METHOD="POST">Invoice # <INPUT TYPE="text" NAME="invnum" SIZE="8"><INPUT TYPE="submit" VALUE="Search">
+      <BR><FORM ACTION="search/cust_pay.cgi" METHOD="POST">Check # <INPUT TYPE="text" NAME="payinfo" SIZE="8"><INPUT TYPE="hidden" NAME="payby" VALUE="BILL"><INPUT TYPE="submit" VALUE="Search">
+      <BR>
+      <BR><A HREF="browse/cust_pay_batch.cgi">View pending credit card batch</A>
+      <BR><BR>Invoice reports
             <UL>
               <LI>open invoices (<A HREF="search/cust_bill.cgi?OPEN_invnum">by invoice number</A>) (<A HREF="search/cust_bill.cgi?OPEN_date">by date</A>) (<A HREF="search/cust_bill.cgi?OPEN_custnum">by customer number</A>)
               <LI>30 day open invoices (<A HREF="search/cust_bill.cgi?OPEN30_invnum">by invoice number</A>) (<A HREF="search/cust_bill.cgi?OPEN30_date">by date</A>) (<A HREF="search/cust_bill.cgi?OPEN30_custnum">by customer number</A>)
@@ -42,36 +66,76 @@
               <LI>120 day open invoices (<A HREF="search/cust_bill.cgi?OPEN120_invnum">by invoice number</A>) (<A HREF="search/cust_bill.cgi?OPEN120_date">by date</A>) (<A HREF="search/cust_bill.cgi?OPEN120_custnum">by customer number</A>)
               <LI>all invoices (<A HREF="search/cust_bill.cgi?invnum">by invoice number</A>) (<A HREF="search/cust_bill.cgi?date">by date</A>) (<A HREF="search/cust_bill.cgi?custnum">by customer number</A>)
             </UL>
-          <LI>packages
-            <UL>
-              <LI><A HREF="search/cust_pkg.cgi?pkgnum">packages (by package number)</A>
-              <LI><A HREF="search/cust_pkg.cgi?APKG_pkgnum">packages with unconfigured services (by package number)</A>
-            </UL>
-          <LI>services
-            <UL>
-              <LI>accounts (<A HREF="search/svc_acct.cgi?svcnum">by service number</A>) (<A HREF="search/svc_acct.cgi?username">by username</A>) (<A HREF="search/svc_acct.cgi?uid">by uid</A>)
-              <LI>mail forwards (<A HREF="search/svc_forward.cgi?svcnum">by service number</A>) (by ?))
-              <LI>domains (<A HREF="search/svc_domain.cgi?svcnum">by service number</A>) (<A HREF="search/svc_domain.cgi?domain">by domain</A>)
-            </UL>
-          <LI>unlinked services
-            <UL>
-              <LI>unlinked accounts (<A HREF="search/svc_acct.cgi?UN_svcnum">by service number</A>) (<A HREF="search/svc_acct.cgi?UN_username">by username</A>) (<A HREF="search/svc_acct.cgi?UN_uid">by uid</A>)
-              <LI>unlinked mail forwards (<A HREF="search/svc_forward.cgi?UN_svcnum">by service number</A>) (by ?))
-              <LI>unlinked domains (<A HREF="search/svc_domain.cgi?UN_svcnum">by service number</A>) (<A HREF="search/svc_domain.cgi?UN_domain">by domain</A>)
-            </UL>
-          <LI><A HREF="browse/nas.cgi">NAS ports</A>
-          <LI><A HREF="browse/queue.cgi">Job queue</A>
-          <LI><A HREF="browse/cust_pay_batch.cgi">Pending credit card batch</A>
-        </ul>
-      <li>Miscellaneous
+      <BR><CENTER><HR WIDTH="87%" NOSHADE></CENTER><BR>
+      <A NAME="admin">Administration</a>
         <ul>
-          <li><A HREF="search/cust_main-quickpay.html">Quick payment entry</A>
+          <LI><A HREF="browse/part_pkg.cgi">View/Edit package definitions</A>
+            - One or more services are grouped together into a package and
+              given pricing information.  Customers purchase packages, not
+              services.
+<!--          <LI><A HREF="browse/agent_type.cgi">View/Edit agent types</A>
+            - Agent types define groups of package definitions that you can
+              then assign to particular agents.
+          <LI><A HREF="browse/agent.cgi">View/Edit agents</A>
+            - Agents are resellers of your service.  Agents may be limited
+              to a subset of your full offerings (via their type).
+-->
+          <LI><A HREF="browse/cust_main_county.cgi">View/Edit locales and tax rates</A>
+            - Change tax rates, or break down a country into states, or a state
+              into counties and assign different tax rates to each.
+          <LI><A HREF="browse/part_bill_event.cgi">View/Edit invoice events</A> - Actions for overdue invoices
         </ul>
-    </ul>
-    <hr noshade>
-    <ul>
-      <li><A NAME="config" HREF="config/config-view.cgi">Configuration</a><!-- - <font size="+2" color="#ff0000">start here</font> -->
-      <li><A NAME="admin">Administration</a>
+      <BR>
+    </TD></TR>
+    </TABLE>
+
+
+
+    <BR><BR><BR>
+
+
+
+[ <A HREF="#customer_service">Sales / Customer service</A> ]
+[ <A HREF="#bookkeeping">Bookkeeping / Collections</A> ]
+[<A NAME="reports" style="background-color: #cccccc"> Reports </A>]
+[ <A HREF="#sysadmin">Sysadmin</A> ]
+    <TABLE CELLSPACING=2 CELLPADDING=0 BORDERCOLOR="#000000" WIDTH="100%" BGCOLOR="#eeeeee">
+    <TR><TH BGCOLOR="#cccccc">Reports</TH></TR>
+    <TR><TD>
+      <BR>
+      Auditing pre-Freeside services with no customer record
+      <UL>
+        <LI>unlinked accounts (<A HREF="search/svc_acct.cgi?UN_svcnum">by service number</A>) (<A HREF="search/svc_acct.cgi?UN_username">by username</A>) (<A HREF="search/svc_acct.cgi?UN_uid">by uid</A>)
+        <LI>unlinked mail forwards (<A HREF="search/svc_forward.cgi?UN_svcnum">by service number</A>) (by ?))
+        <LI>unlinked domains (<A HREF="search/svc_domain.cgi?UN_svcnum">by service number</A>) (<A HREF="search/svc_domain.cgi?UN_domain">by domain</A>)
+      </UL>
+      Packages
+      <UL>
+        <LI><A HREF="search/cust_pkg.cgi?pkgnum">packages (by package number)</A>
+        <LI><A HREF="search/cust_pkg.cgi?APKG_pkgnum">packages with unconfigured services (by package number)</A>
+      </UL>
+      <BR>
+    </TD></TR>
+    </TABLE>
+
+
+
+    <BR><BR><BR>
+
+
+[ <A HREF="#customer_service">Sales / Customer service</A> ]
+[ <A HREF="#bookkeeping">Bookkeeping / Collections</A> ]
+[ <A HREF="#reports">Reports</A> ]
+[<A NAME="sysadmin" style="background-color: #cccccc"> Sysadmin </A>]
+    <TABLE CELLSPACING=2 CELLPADDING=0 BORDERCOLOR="#000000" WIDTH="100%" BGCOLOR="#eeeeee">
+    <TR><TH BGCOLOR="#cccccc">Sysadmin</TH></TR>
+    <TR><TD>
+      <BR>
+      <A HREF="browse/nas.cgi">View active NAS ports</A>
+      <BR><A HREF="browse/queue.cgi">View pending job queue</A>
+      <BR><BR><CENTER><HR WIDTH="87%" NOSHADE></CENTER><BR>
+      <A NAME="config" HREF="config/config-view.cgi">Configuration</a><!-- - <font size="+2" color="#ff0000">start here</font> -->
+      <BR><BR><A NAME="admin">Administration</a>
         <ul>
           <LI><A HREF="browse/part_svc.cgi">View/Edit service definitions</A>
             - Services are items you offer to your customers.
@@ -95,6 +159,16 @@
             - Points of Presence 
           <LI><A HREF="browse/part_bill_event.cgi">View/Edit invoice events</A> - Actions for overdue invoices
         </ul>
-      </ul>
+        <BR>
+      </TD></TR>
+      </TABLE>
+      <BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR>
+      <BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR>
+      <BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR>
+      <BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR>
+      <BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR>
+      <BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR>
+      <BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR>
+      <BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR>
   </BODY>
 </HTML>
