@@ -480,10 +480,17 @@ sub insert {
   my $db_seq = 0;
   if ( $primary_key ) {
     my $col = $self->dbdef_table->column($primary_key);
-    my $db_seq =
+    
+    $db_seq =
       uc($col->type) eq 'SERIAL'
-      || ( driver_name eq 'Pg'    && $col->default =~ /^nextval\(/i     )
-      || ( driver_name eq 'mysql' && $col->local   =~ /AUTO_INCREMENT/i );
+      || ( driver_name eq 'Pg'
+             && defined($col->default)
+             && $col->default =~ /^nextval\(/i
+         )
+      || ( driver_name eq 'mysql'
+             && defined($col->local)
+             && $col->local =~ /AUTO_INCREMENT/i
+         );
     $self->unique($primary_key) unless $self->getfield($primary_key) || $db_seq;
   }
 
@@ -515,11 +522,12 @@ sub insert {
   $sth->execute or return $sth->errstr;
 
   if ( $db_seq ) { # get inserted id from the database, if applicable
+    warn "[debug]$me retreiving sequence from database\n" if $DEBUG;
     my $insertid = '';
     if ( driver_name eq 'Pg' ) {
 
       my $oid = $sth->{'pg_oid_status'};
-      my $i_sql = "SELECT id FROM $table WHERE oid = ?";
+      my $i_sql = "SELECT $primary_key FROM $table WHERE oid = ?";
       my $i_sth = dbh->prepare($i_sql) or do {
         dbh->rollback if $FS::UID::AutoCommit;
         return dbh->errstr;
