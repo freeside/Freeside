@@ -134,9 +134,8 @@ while ( defined ( $row = $sth->fetchrow_arrayref ) ) {
     'finger'    => $finger,
   };
 
-  my($error);
-  $error = $svc_acct->insert;
-  #$error = $svc_acct->check;
+  my $error = $svc_acct->insert;
+  #my $error = $svc_acct->check;
   if ( $error ) {
     if ( $error =~ /duplicate/i ) {
       warn "$r_username / $realm: $error";
