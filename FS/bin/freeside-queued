@@ -40,7 +40,7 @@ $log_file = "/usr/local/etc/freeside/queuelog.". $FS::UID::datasrc;
 $SIG{__DIE__} = \&_die;
 $SIG{__WARN__} = \&_logmsg;
 
-warn "freesied-queued starting\n";
+warn "freeside-queued starting\n";
 
 while (1) {
 
