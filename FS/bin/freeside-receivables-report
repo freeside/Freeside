@@ -91,7 +91,7 @@ foreach my $customer (@customers)
 
   if ($balance != 0) {
     $total += $balance;
-    push @buf, sprintf(qq{%5d %-32.32s %12s %9.2f},
+    push @buf, sprintf(qq{%8d %-32.32s %12s %9.2f},
       $custnum,
       $first . " " . $last . "   " . $company,
       $daytime,
@@ -183,7 +183,7 @@ user: From the mapsecrets file - see config.html from the base documentation
 
 =head1 VERSION
 
-$Id: freeside-receivables-report,v 1.1 2002-02-22 23:18:32 jeff Exp $
+$Id: freeside-receivables-report,v 1.2 2002-03-05 09:44:09 ivan Exp $
 
 =head1 BUGS
 
@@ -203,7 +203,10 @@ L<FS::cust_main>, config.html from the base documentation
 griff@aver-computer.com July 99
 
 $Log: freeside-receivables-report,v $
-Revision 1.1  2002-02-22 23:18:32  jeff
+Revision 1.2  2002-03-05 09:44:09  ivan
+yes i have crazy customers with 8-digit customer numbers
+
+Revision 1.1  2002/02/22 23:18:32  jeff
 add some reporting features
 
 Revision 1.1  2000/09/20 19:25:19  jeff
