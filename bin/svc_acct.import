@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct.import,v 1.8 2000-02-03 05:16:52 ivan Exp $
+# $Id: svc_acct.import,v 1.9 2000-06-28 12:03:53 ivan Exp $
 #
 # ivan@sisd.com 98-mar-9
 #
@@ -17,7 +17,10 @@
 # don't import /var/spool/freeside/conf/shells!  ivan@sisd.com 98-aug-13
 #
 # $Log: svc_acct.import,v $
-# Revision 1.8  2000-02-03 05:16:52  ivan
+# Revision 1.9  2000-06-28 12:03:53  ivan
+# make svc_acct more forgiving about RADIUS users files
+#
+# Revision 1.8  2000/02/03 05:16:52  ivan
 # beginning of DNS and Apache support
 #
 # Revision 1.7  1999/07/08 02:32:26  ivan
@@ -145,7 +148,8 @@ my(%upassword,%ip,%allparam);
 my(%param,$username);
 while (<USERS>) {
   chop;
-  next if /^$/;
+  next if /^\s*$/;
+  next if /^\s*#/;
   if ( /^\S/ ) {
     /^(\w+)\s+Password\s+=\s+"([^"]+)"(,\s+Expiration\s+=\s+"([^"]*")\s*)?$/
       or die "1Unexpected line in users.import: $_";
