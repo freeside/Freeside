@@ -1,4 +1,4 @@
-$Id: TODO,v 1.26 1999-04-08 13:03:02 ivan Exp $
+$Id: TODO,v 1.27 1999-04-09 03:52:16 ivan Exp $
 
 If you are interested in helping with any of these, please join the mailing
 list (send a blank message to ivan-freeside-subscribe@sisd.com) to avoid 
@@ -14,6 +14,15 @@ get rid of time2str("%D") which formats dates in a non-y2k-safe looking fashion
 
 uncomment expire in view/cust_pkg.cgi and find the expire cron from fsold
 
+(Test this)
+one-time/per-customer/? changes in rates and descriptions ('remembered
+invoices'): implement by creating a new package on the fly... but it isn't 
+associated with any agent types so it won't show up for other customers to buy.
+(but also... make sure they go away when the customer does! - need this? :
+ one-off package edits! : need a cust_pkgs or cust_part_pkgs or something table,
+ with custnum and partpkg (like type_pkgs)
+(what happens if you hit "custom pricing" but the pricing is already custom?)
+
 Lay out any remaining ugly forms better.
 
 remove "records identical" warning?  gets in the way of more important stuff.
@@ -28,7 +37,19 @@ stock Postgres.  see rfc2138 for what's affected
 What's a good fix?  (besides recompiling postgres with NAMEDATALEN 64)
 (mysql has a 64 character max column length.  others?)
 
+[Mon Mar 29 06:57:56 1999] -e: Use of uninitialized value at /usr/lib/perl5/Date/Format.pm line 333.
+(when sending mail in cust_main.pm::bill or svc_domain.pm)
+
 look at DBIx::Recordset!  (and Tie::DBI, and...)
+
+undefined conf/lpr gives this uninfomative error:
+[Fri Feb 26 16:42:36 1999] bill.cgi: Can't do bidirectional pipe at
+/usr/lib/per
+l5/site_perl/FS/cust_main.pm line 629.
+[Fri Feb 26 16:42:38 1999] bill.cgi: Error closing : Broken pipe at
+/usr/lib/per
+l5/site_perl/FS/cust_main.pm line 631.
+So give a meaningful error!
 
 password and slipip stuff in svc_acct.pm store need to be split into two fields or something, so the silliness in svc_acct.pm and svc_acct.export with looking at the data to decide what to do with it can be fixed
 
