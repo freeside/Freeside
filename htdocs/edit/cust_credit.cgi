@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_credit.cgi,v 1.2 1998-12-17 06:16:59 ivan Exp $
+# $Id: cust_credit.cgi,v 1.3 1998-12-23 02:26:06 ivan Exp $
 #
 # Usage: cust_credit.cgi custnum [ -paybatch ]
 #        http://server.name/path/cust_credit?custnum [ -paybatch ]
@@ -25,7 +25,10 @@
 # rewrite ivan@sisd.com 98-mar-16
 #
 # $Log: cust_credit.cgi,v $
-# Revision 1.2  1998-12-17 06:16:59  ivan
+# Revision 1.3  1998-12-23 02:26:06  ivan
+# *** empty log message ***
+#
+# Revision 1.2  1998/12/17 06:16:59  ivan
 # fix double // in relative URLs, s/CGI::Base/CGI/;
 #
 
@@ -33,7 +36,7 @@ use strict;
 use Date::Format;
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
-use FS::UID qw(cgisuidsetup getotaker popurl);
+use FS::UID qw(cgisuidsetup getotaker);
 use FS::CGI qw(header popurl);
 
 my $cgi = new CGI;
