@@ -1,40 +1,40 @@
-[Entry]\r
-Entry_Name = The Internet\r
-[Phone]\r
-Dial_As_Is=no\r
-Phone_Number = { $exch. $loc }\r
-Area_Code = { $ac }\r
-Country_Code = 1\r
-Country_Id = 1\r
-[Server]\r
-Type = PPP\r
-SW_Compress = Yes\r
-PW_Encrypt = Yes\r
-Negotiate_TCP/IP = Yes\r
-Disable_LCP = No\r
-[TCP/IP]\r
-Specify_IP_Address = No\r
-Specity_Server_Address = No\r
-IP_Header_Compress = Yes\r
-Gateway_On_Remote = Yes\r
-[User]\r
-Name = { $username }\r
-Password = { $password }\r
-Display_Password = Yes\r
-[Internet_Mail]\r
-Email_Name = { $email_name }\r
-Email_Address = { $username }\@domain.tld\r
-POP_Server = mail.domain.tld\r
-POP_Server_Port_Number = 110\r
-POP_Login_Name = { $username }\r
-POP_Login_Password = { $password }\r
-SMTP_Server = mail.domain.tld\r
-SMTP_Server_Port_Number = 25\r
-Install_Mail = 1\r
-[Internet_News]\r
-NNTP_Server = news.domain.tld\r
-NNTP_Server_Port_Number = 119\r
-Logon_Required = No\r
-Install_News = 1\r
-[Branding]\r
-Window_Title = The Internet\r
+[Entry]
+Entry_Name = The Internet
+[Phone]
+Dial_As_Is=no
+Phone_Number = { $exch. $loc }
+Area_Code = { $ac }
+Country_Code = 1
+Country_Id = 1
+[Server]
+Type = PPP
+SW_Compress = Yes
+PW_Encrypt = Yes
+Negotiate_TCP/IP = Yes
+Disable_LCP = No
+[TCP/IP]
+Specify_IP_Address = No
+Specity_Server_Address = No
+IP_Header_Compress = Yes
+Gateway_On_Remote = Yes
+[User]
+Name = { $username }
+Password = { $password }
+Display_Password = Yes
+[Internet_Mail]
+Email_Name = { $email_name }
+Email_Address = { $username }\@domain.tld
+POP_Server = mail.domain.tld
+POP_Server_Port_Number = 110
+POP_Login_Name = { $username }
+POP_Login_Password = { $password }
+SMTP_Server = mail.domain.tld
+SMTP_Server_Port_Number = 25
+Install_Mail = 1
+[Internet_News]
+NNTP_Server = news.domain.tld
+NNTP_Server_Port_Number = 119
+Logon_Required = No
+Install_News = 1
+[Branding]
+Window_Title = The Internet
