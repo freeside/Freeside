@@ -1,5 +1,5 @@
 <%
-# <!-- $Id: cust_pkg.cgi,v 1.9 2001-12-18 06:38:25 ivan Exp $ -->
+# <!-- $Id: cust_pkg.cgi,v 1.10 2001-12-18 06:45:32 ivan Exp $ -->
 
 use strict;
 use vars qw ( $cgi @cust_pkg $sortby $query %part_pkg
@@ -159,11 +159,11 @@ END
     my($cust_main)=qsearchs('cust_main',{'custnum'=>$cust_pkg->custnum});
     my($pkgnum, $custnum, $last, $first, $company) = (
       $cust_pkg->pkgnum,
-      time2str("%D", $cust_pkg->setup ),
-      time2str("%D", $cust_pkg->bill ),
-      time2str("%D", $cust_pkg->susp ),
-      time2str("%D", $cust_pkg->expire ),
-      time2str("%D", $cust_pkg->cancel ),
+      time2str("%D", $cust_pkg->getfield('setup') ),
+      time2str("%D", $cust_pkg->getfield('bill') ),
+      time2str("%D", $cust_pkg->getfield('susp') ),
+      time2str("%D", $cust_pkg->getfield('expire') ),
+      time2str("%D", $cust_pkg->getfield('cancel') ),
       $cust_pkg->custnum,
       $cust_main ? $cust_main->last : '',
       $cust_main ? $cust_main->first : '',
