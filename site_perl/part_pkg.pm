@@ -19,6 +19,8 @@ FS::part_pkg - Object methods for part_pkg objects
   $record = create FS::part_pkg \%hash
   $record = create FS::part_pkg { 'column' => 'value' };
 
+  $custom_record = $template_record->clone;
+
   $error = $record->insert;
 
   $error = $new_record->replace($old_record);
@@ -72,6 +74,21 @@ sub create {
   #}
 
   $proto->new('part_pkg',$hashref);
+}
+
+=item clone
+
+Creates a new billing item definition by duplicating an existing definition.
+A new pkgpart is assigned and "(CUSTOM) " is prepended to the comment field.
+
+=cut
+
+sub clone {
+  my $self = shift;
+  my %hash = $self->hash;
+  $hash{'comment'} = "(CUSTOM) ". $hash{'comment'}
+    unless $hash{'comment'} =~ /^\(CUSTOM\) /;
+  create ( { $self->hash } );
 }
 
 =item insert
@@ -142,6 +159,10 @@ sub check {
 
 =back
 
+=head1 VERSION
+
+$Id: part_pkg.pm,v 1.2 1998-11-15 09:08:15 ivan Exp $
+
 =head1 BUGS
 
 It doesn't properly override FS::Record yet.
@@ -161,6 +182,11 @@ schema.html from the base documentation.
 ivan@sisd.com 97-dec-5
 
 pod ivan@sisd.com 98-sep-21
+
+$Log: part_pkg.pm,v $
+Revision 1.2  1998-11-15 09:08:15  ivan
+added clone method to support per-customer pricing
+
 
 =cut
 
