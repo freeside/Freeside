@@ -548,7 +548,7 @@ tie my %shellcommands_options, 'Tie::IxHash',
   #'machine' => { label=>'Remote machine' },
   'user' => { label=>'Remote username', default=>'root' },
   'useradd' => { label=>'Insert command',
-                 default=>'useradd -d $dir -m -s $shell -u $uid -p $crypt_password $username'
+                 default=>'useradd -c $finger -d $dir -m -s $shell -u $uid -p $crypt_password $username'
                 #default=>'cp -pr /etc/skel $dir; chown -R $uid.$gid $dir'
                },
   'useradd_stdin' => { label=>'Insert command STDIN',
@@ -564,7 +564,7 @@ tie my %shellcommands_options, 'Tie::IxHash',
                        default=>'',
                      },
   'usermod' => { label=>'Modify command',
-                 default=>'usermod -d $new_dir -m -l $new_username -s $new_shell -u $new_uid -p $new_crypt_password $old_username',
+                 default=>'usermod -c $new_finger -d $new_dir -m -l $new_username -s $new_shell -u $new_uid -p $new_crypt_password $old_username',
                 #default=>'[ -d $old_dir ] && mv $old_dir $new_dir || ( '.
                  #  'chmod u+t $old_dir; mkdir $new_dir; cd $old_dir; '.
                  #  'find . -depth -print | cpio -pdm $new_dir; '.
