@@ -17,7 +17,7 @@ use Mail::Internet;
 use Mail::Header;
 use Business::CreditCard;
 use FS::UID qw( getotaker dbh );
-use FS::Record qw( qsearchs qsearch );
+use FS::Record qw( qsearchs qsearch dbdef );
 use FS::cust_pkg;
 use FS::cust_bill;
 use FS::cust_bill_pkg;
@@ -645,8 +645,6 @@ sub check {
       or return "Illegal expiration date: ". $self->paydate;
     if ( length($2) == 4 ) {
       $self->paydate("$2-$1-01");
-    } elsif ( $2 > 97 ) { #should pry change to check for "this year"
-      $self->paydate("19$2-$1-01");
     } else {
       $self->paydate("20$2-$1-01");
     }
@@ -1346,9 +1344,28 @@ sub check_invoicing_list {
 
 =back
 
+=head1 SUBROUTINES
+
+=over 4
+
+=item rebuild_fuzzyfile
+
+=cut
+
+sub rebuild_fuzzyfiles {
+  my @all_last = map $_->getfield('last'), qsearch('cust_main', {});
+  push @all_last,
+                 grep $_, map $_->getfield('ship_last'), qsearch('cust_main',{})
+      if defined dbdef->table('cust_main')->column('ship_last');
+#  open(
+
+}
+
+=back
+
 =head1 VERSION
 
-$Id: cust_main.pm,v 1.19 2001-08-19 00:48:49 ivan Exp $
+$Id: cust_main.pm,v 1.20 2001-08-23 06:17:03 ivan Exp $
 
 =head1 BUGS
 
