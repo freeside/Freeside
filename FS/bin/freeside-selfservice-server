@@ -34,8 +34,9 @@ $kids = 0;
 my $user = shift or die &usage;
 my $machine = shift or die &usage;
 my $tag = scalar(@ARGV) ? shift : '';
-my $pid_file = "/var/run/freeside-selfservice-server.$user.pid";
-#my $pid_file = "/var/run/freeside-selfservice-server.$user.pid"; $FS::UID::datasrc not posible, but should include machine name at least, hmm
+
+# $FS::UID::datasrc not posible
+my $pid_file = "/var/run/freeside-selfservice-server.$user.$machine.pid";
 
 my $lock_file = "/usr/local/etc/freeside/selfservice.$machine.writelock";
 open(LOCKFILE,">$lock_file") or die "can't open $lock_file: $!";

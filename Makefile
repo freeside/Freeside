@@ -51,7 +51,8 @@ QUEUED_USER=fs_queue
 FREESIDE_PATH = `pwd`
 
 SELFSERVICE_USER = fs_selfservice
-SELFSERVICE_MACHINE = localhost
+SELFSERVICE_MACHINES = localhost
+# SELFSERVICE_MACHINES = "web1.example.com web2.example.com"
 
 #---
 
@@ -137,7 +138,7 @@ install-init:
 	  s/%%%QUEUED_USER%%%/${QUEUED_USER}/g;\
 	  s'%%%FREESIDE_PATH%%%'${FREESIDE_PATH}'g;\
 	  s/%%%SELFSERVICE_USER%%%/${SELFSERVICE_USER}/g;\
-	  s/%%%SELFSERVICE_MACHINE%%%/${SELFSERVICE_MACHINE}/g;\
+	  s/%%%SELFSERVICE_MACHINES%%%/${SELFSERVICE_MACHINES}/g;\
 	" ${INIT_FILE}
 
 install: install-perl-modules install-docs install-init

@@ -8,7 +8,7 @@ QUEUED_USER=%%%QUEUED_USER%%%
 FREESIDE_PATH="%%%FREESIDE_PATH%%%"
 
 SELFSERVICE_USER=%%%SELFSERVICE_USER%%%
-SELFSERVICE_MACHINE=%%%SELFSERVICE_MACHINE%%%
+SELFSERVICE_MACHINES="%%%SELFSERVICE_MACHINES%%%"
 
 case "$1" in
   start)
@@ -17,9 +17,11 @@ case "$1" in
         freeside-queued $QUEUED_USER
         echo "done."
 
-        echo -n "Starting freeside-selfservice-server: "
-        freeside-selfservice-server $SELFSERVICE_USER $SELFSERVICE_MACHINE
-        echo "done."
+        for MACHINE in $SELFSERVICE_MACHINES; do
+          echo -n "Starting freeside-selfservice-server to $MACHINE: "
+          freeside-selfservice-server $SELFSERVICE_USER $MACHINE
+          echo "done."
+        done
 
         ;;
   stop)
@@ -28,9 +30,19 @@ case "$1" in
         kill `cat /var/run/freeside-queued.pid`
         echo "done."
 
-        echo -n "Stopping freeside-selfservice-server: "
-        kill `cat /var/run/freeside-selfservice-server.$SELFSERVICE_USER.pid`
-        echo "done."
+        if [ -e /var/run/freeside-selfservice-server.$SELFSERVICE_USER.pid ]
+        then
+          echo -n "Stopping (old) freeside-selfservice-server: "
+          kill `cat /var/run/freeside-selfservice-server.$SELFSERVICE_USER.pid`
+          rm /var/run/freeside-selfservice-server.$SELFSERVICE_USER.pid
+        fi
+
+        for MACHINE in $SELFSERVICE_MACHINES; do
+          echo -n "Stopping freeside-selfservice-server to $MACHINE: "
+          kill `cat /var/run/freeside-selfservice-server.$SELFSERVICE_USER.$MACHINE.pid`
+          echo "done."
+        done
+
         ;;
 
   restart)

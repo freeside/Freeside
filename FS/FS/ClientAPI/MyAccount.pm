@@ -28,6 +28,7 @@ FS::ClientAPI->register_handlers(
   'MyAccount/list_pkgs'        => \&list_pkgs,
   'MyAccount/order_pkg'        => \&order_pkg,
   'MyAccount/cancel_pkg'       => \&cancel_pkg,
+  'MyAccount/charge'           => \&charge,
 );
 
 use vars qw( @cust_main_editable_fields );
@@ -39,7 +40,9 @@ use vars qw( @cust_main_editable_fields );
 );
 
 #store in db?
-my $cache = new Cache::SharedMemoryCache();
+my $cache = new Cache::SharedMemoryCache( {
+   'namespace' => 'FS::ClientAPI::MyAccount',
+} );
 
 #false laziness w/FS::ClientAPI::passwd::passwd (needs to handle encrypted pw)
 sub login {
