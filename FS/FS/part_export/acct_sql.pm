@@ -69,7 +69,7 @@ mail server setups through some subclassing rather than options.
     this.form.primary_key.value = "username";
   '>
   <LI><INPUT TYPE="button" VALUE="postfix_courierimap_alias" onClick='
-    this.form.table.value = "mailbox";
+    this.form.table.value = "alias";
     this.form.schema.value = "$postfix_courierimap_alias_map";
     this.form.primary_key.value = "address";
   '>
