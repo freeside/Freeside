@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: part_pkg.cgi,v 1.3 1998-11-21 07:07:40 ivan Exp $
+# $Id: part_pkg.cgi,v 1.4 1998-11-21 07:11:08 ivan Exp $
 #
 # part_pkg.cgi: Add/Edit package (output form)
 #
@@ -13,7 +13,10 @@
 # use FS::CGI, added inline documentation ivan@sisd.com 98-jul-12
 #
 # $Log: part_pkg.cgi,v $
-# Revision 1.3  1998-11-21 07:07:40  ivan
+# Revision 1.4  1998-11-21 07:11:08  ivan
+# *** empty log message ***
+#
+# Revision 1.3  1998/11/21 07:07:40  ivan
 # popurl, bugfix
 #
 # Revision 1.2  1998/11/15 13:14:55  ivan
@@ -28,7 +31,7 @@ use FS::Record qw(qsearch qsearchs);
 use FS::part_pkg;
 use FS::part_svc;
 use FS::pkg_svc;
-use FS::CGI qw(header menubar);
+use FS::CGI qw(header menubar popurl);
 
 my($cgi) = new CGI;
 
