@@ -1,6 +1,6 @@
 <!-- mason kludge -->
 <%
-# <!-- $Id: REAL_cust_pkg.cgi,v 1.5 2003-04-01 01:22:24 ivan Exp $ -->
+# <!-- $Id: REAL_cust_pkg.cgi,v 1.6 2003-09-30 08:21:56 ivan Exp $ -->
 
 my $error ='';
 my $pkgnum = '';
@@ -30,6 +30,15 @@ print header('Package Edit'); #, menubar(
 #  'Main Menu' => popurl(2)
 #));
 
+%>
+
+    <LINK REL="stylesheet" TYPE="text/css" HREF="../elements/calendar-win2k-2.css" TITLE="win2k-2">
+    <SCRIPT TYPE="text/javascript" SRC="../elements/calendar_stripped.js"></SCRIPT>
+    <SCRIPT TYPE="text/javascript" SRC="../elements/calendar-en.js"></SCRIPT>
+    <SCRIPT TYPE="text/javascript" SRC="../elements/calendar-setup.js"></SCRIPT>
+
+<%
+
 #print info
 my($susp,$cancel,$expire)=(
   $cust_pkg->getfield('susp'),
@@ -45,6 +54,9 @@ print '<FORM NAME="formname" ACTION="process/REAL_cust_pkg.cgi" METHOD="POST">',
 print qq!<FONT SIZE="+1" COLOR="#ff0000">Error: $error</FONT>!
   if $error;
 
+#my $format = "%c %z (%Z)";
+my $format = "%m/%d/%Y %T %z (%Z)";
+
 print ntable("#cccccc",2),
       '<TR><TD ALIGN="right">Package number</TD><TD BGCOLOR="#ffffff">',
       $pkgnum, '</TD></TR>',
@@ -55,23 +67,29 @@ print ntable("#cccccc",2),
       '<TR><TD ALIGN="right">Order taker</TD><TD BGCOLOR="#ffffff">',
       $otaker,  '</TD></TR>',
       '<TR><TD ALIGN="right">Setup date</TD><TD>'.
-      '<INPUT TYPE="text" NAME="setup" SIZE=32 VALUE="',
-      ( $setup ? time2str("%c %z (%Z)",$setup) : "" ), '"></TD></TR>';
+      '<INPUT TYPE="text" NAME="setup" SIZE=32 ID="setup_text" VALUE="',
+      ( $setup ? time2str($format, $setup) : "" ), '">'.
+      ' <IMG SRC="../images/calendar.png" ID="setup_button" STYLE="cursor: pointer" TITLE="Select date">'.
+      '</TD></TR>';
 
 print '<TR><TD ALIGN="right">Last bill date</TD><TD>',
-      '<INPUT TYPE="text" NAME="last_bill" SIZE=32 VALUE="',
+      '<INPUT TYPE="text" NAME="last_bill" SIZE=32 ID="last_bill_text" VALUE="',
       ( $cust_pkg->last_bill
-        ? time2str("%c %z (%Z)", $cust_pkg->last_bill)
+        ? time2str($format, $cust_pkg->last_bill)
         : ""                                          ),
-      '"></TD></TR>'
+      '">'.
+      ' <IMG SRC="../images/calendar.png" ID="last_bill_button" STYLE="cursor: pointer" TITLE="Select date">'.
+      '</TD></TR>'
   if $cust_pkg->dbdef_table->column('last_bill');
 
 print '<TR><TD ALIGN="right">Next bill date</TD><TD>',
-      '<INPUT TYPE="text" NAME="bill" SIZE=32 VALUE="',
-      ( $bill ? time2str("%c %z (%Z)",$bill) : "" ), '"></TD></TR>';
+      '<INPUT TYPE="text" NAME="bill" SIZE=32 ID="bill_text" VALUE="',
+      ( $bill ? time2str($format, $bill) : "" ), '">'.
+      ' <IMG SRC="../images/calendar.png" ID="bill_button" STYLE="cursor: pointer" TITLE="Select date">'.
+      '</TD></TR>';
 
 print '<TR><TD ALIGN="right">Suspension date</TD><TD BGCOLOR="#ffffff">',
-       time2str("%D",$susp), '</TD></TR>'
+       time2str($format, $susp), '</TD></TR>'
   if $susp;
 
 #print '<TR><TD ALIGN="right">Expiration date</TD><TD BGCOLOR="#ffffff">',
@@ -79,18 +97,34 @@ print '<TR><TD ALIGN="right">Suspension date</TD><TD BGCOLOR="#ffffff">',
 #  if $expire;
 print '<TR><TD ALIGN="right">Expiration date'.
       '</TD><TD>',
-      '<INPUT TYPE="text" NAME="expire" SIZE=32 VALUE="',
-      ( $expire ? time2str("%c %z (%Z)",$expire) : "" ), '">'.
+      '<INPUT TYPE="text" NAME="expire" SIZE=32 ID="expire_text" VALUE="',
+      ( $expire ? time2str($format, $expire) : "" ), '">'.
+      ' <IMG SRC="../images/calendar.png" ID="expire_button" STYLE="cursor: pointer" TITLE="Select date">'.
       '<BR><FONT SIZE=-1>(will <b>cancel</b> this package'.
       ' when the date is reached)</FONT>'.
       '</TD></TR>';
 
 print '<TR><TD ALIGN="right">Cancellation date</TD><TD BGCOLOR="#ffffff">',
-       time2str("%D",$cancel), '</TD></TR>'
+       time2str($format, $cancel), '</TD></TR>'
   if $cancel;
 
 %>
 </TABLE>
+<SCRIPT TYPE="text/javascript">
+<%
+  my @cal = qw( setup bill expire );
+  push @cal, 'last_bill'
+    if $cust_pkg->dbdef_table->column('last_bill');
+  foreach my $cal (@cal) {
+%>
+  Calendar.setup({
+    inputField: "<%= $cal %>_text",
+    ifFormat:   "mm/dd/y",
+    button:     "<%= $cal %>_button",
+    align:      "BR"
+  });
+<% } %>
+</SCRIPT>
 <BR><INPUT TYPE="submit" VALUE="Apply Changes">
 </FORM>
 </BODY>
