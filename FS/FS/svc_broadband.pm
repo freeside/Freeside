@@ -155,8 +155,10 @@ sub check {
   if($self->speed_down < 0) { return 'speed_down must be positive'; }
 
   if (not($self->ip_addr) or $self->ip_addr eq '0.0.0.0') {
-    $self->ip_addr($self->addr_block->next_free_addr->addr);
-    if (not $self->ip_addr) {
+    my $next_addr = $self->addr_block->next_free_addr;
+    if ($next_addr) {
+      $self->ip_addr($next_addr->addr);
+    } else {
       return "No free addresses in addr_block (blocknum: ".$self->blocknum.")";
     }
   }
