@@ -5,11 +5,6 @@
   <h1>Troubleshooting</h1>
   <ul>
     <li>When troubleshooting the web interface, helpful information is often in your web server's error log.
-    <li>Internet Explorer will not work with Freeside's HTML interface.  <b>This may be fixed in >1.2, please report your experiences!</b>
-<a HREF="http://www.netscape.com">Netscape</a>,                                 
-<a HREF="http://lynx.browser.org">Lynx</a>, and                                 
-<a HREF="http://www.cs.indiana.edu/elisp/w3/docs.html">Emacs/W3</a>,            
-among others, should work fine.
     <li>If bin/svc_acct.import fails with an "Out of memory!" error using MySQL, upgrede MySQL and recompile the Perl DBD.  There was a memory leak in some older versions of MySQL.
     <li>If you get tons of errors in your web server's error log like this:
 <pre>
@@ -17,13 +12,6 @@ Ambiguous use of value => resolved to "value" =>
 at /usr/lib/perl5/site_perl/File/CounterFile.pm line 132.
 </pre>
         This clutters up your log files but is otherwise harmless.  Upgrade to the latest File::CounterFile. 
-    <li><b>(No longer applicable in >1.2!)</b> If you get an Internal Server Error when adding or editing, but find that the update has occured, and you get something like the following in your web server's error log:
-<pre>
-access to <i>/your/path</i>/edit/process/<i>some_table</i>.cgi failed for
-<i>machine.domain.tld</i>, reason: malformed header from script.
-Bad header=HTTP/1.0 302 Moved Temporarily
-</pre>
-        Then you forgot to apply this <a href="CGI-modules-2.76-patch.txt">patch</a> as mentioned in the <a href="install.html">New Installation</a> section of the documentation.
     <li>If you get errors like this:
 <pre>
 UID.pm: Can't open /var/spool/freeside/conf/secrets: Permission denied 
