@@ -40,8 +40,9 @@ sub sql_h_search {
   my( $self, $end ) = ( shift, shift );
 
   my $table = $self->table;
-  my $pkey = dbdef->table($table)->primary_key
-    or die "can't (yet) search history table $table without a primary key";
+  my $real_table = ($table =~ /^h_(.*)$/) ? $1 : $table;
+  my $pkey = dbdef->table($real_table)->primary_key
+    or die "can't (yet) search history table $real_table without a primary key";
 
   unless ($end) {
     confess 'Called sql_h_search without END_TIMESTAMP';
