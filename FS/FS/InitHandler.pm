@@ -9,8 +9,6 @@ $DEBUG = 1;
 
 sub handler {
 
-#=pod
-
   use Date::Format;
   use Date::Parse;
   use Tie::IxHash;
@@ -45,11 +43,11 @@ sub handler {
   use FS::part_svc;
   use FS::pkg_svc;
   use FS::port;
-  use FS::queue qw(joblisting);
+  use FS::queue;
   use FS::raddb;
   use FS::session;
   use FS::svc_acct;
-  use FS::svc_acct_pop qw(popselector);
+  use FS::svc_acct_pop;
   use FS::svc_acct_sm;
   use FS::svc_domain;
   use FS::svc_forward;
@@ -59,8 +57,6 @@ sub handler {
   use FS::part_export_option;
   use FS::export_svc;
   use FS::msgcat;
-
-=cut
 
   warn "[FS::InitHandler] handler called\n" if $DEBUG;
 
