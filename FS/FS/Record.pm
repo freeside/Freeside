@@ -122,7 +122,10 @@ sub new {
   my $self = {};
   bless ($self, $class);
 
-  $self->{'Table'} = shift unless defined ( $self->table );
+  unless defined ( $self->table ) {
+    $self->{'Table'} = shift;
+    carp "warning: FS::Record::new called with table name ". $self->{'Table'};
+  }
 
   my $hashref = $self->{'Hash'} = shift;
 
