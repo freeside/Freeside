@@ -1,4 +1,4 @@
-<!-- $Id: cust_pay.cgi,v 1.6 2002-01-30 14:18:09 ivan Exp $ -->
+<!-- $Id: cust_pay.cgi,v 1.7 2002-02-09 18:24:01 ivan Exp $ -->
 <%
 
 $cgi->param('linknum') =~ /^(\d+)$/
@@ -22,7 +22,6 @@ my $error = $new->insert;
 if ($error) {
   $cgi->param('error', $error);
   print $cgi->redirect(popurl(2). 'cust_pay.cgi?'. $cgi->query_string );
-  exit;
 } elsif ( $link eq 'invnum' ) {
   print $cgi->redirect(popurl(3). "view/cust_bill.cgi?$linknum");
 } elsif ( $link eq 'custnum' ) {

@@ -10,7 +10,7 @@ use FS::UID;
 
 @ISA = qw(Exporter);
 @EXPORT_OK = qw(header menubar idiot eidiot popurl table itable ntable
-                small_custview);
+                small_custview myexit);
 
 =head1 NAME
 
@@ -132,6 +132,18 @@ Sends an HTML error message, then exits.
 sub eidiot {
   warn "eidiot depriciated";
   idiot(@_);
+  &myexit();
+}
+
+=item myexit
+
+You probably shouldn't use this; but if you must:
+
+If running under mod_perl, calles Apache::exit, otherwise, calls exit.
+
+=cut
+
+sub myexit {
   if (exists $ENV{MOD_PERL}) {
     $main::Response->End()
       if defined $main::Response

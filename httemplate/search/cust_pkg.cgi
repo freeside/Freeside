@@ -1,4 +1,4 @@
-<!-- $Id: cust_pkg.cgi,v 1.13 2002-01-30 14:18:09 ivan Exp $ -->
+<!-- $Id: cust_pkg.cgi,v 1.14 2002-02-09 18:24:02 ivan Exp $ -->
 <%
 
 my $conf = new FS::Conf;
@@ -76,7 +76,7 @@ my @cust_pkg = qsearch('cust_pkg',{}, '', "$unconf ORDER BY pkgnum $limit" );
 if ( scalar(@cust_pkg) == 1 ) {
   my($pkgnum)=$cust_pkg[0]->pkgnum;
   print $cgi->redirect(popurl(2). "view/cust_pkg.cgi?$pkgnum");
-  exit;
+  #exit;
 } elsif ( scalar(@cust_pkg) == 0 ) { #error
   eidiot("No packages found");
 } else {

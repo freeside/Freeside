@@ -1,4 +1,4 @@
-<!-- $Id: cust_main_county-expand.cgi,v 1.4 2002-01-30 14:18:09 ivan Exp $ -->
+<!-- $Id: cust_main_county-expand.cgi,v 1.5 2002-02-09 18:24:01 ivan Exp $ -->
 <%
 
 $cgi->param('taxnum') =~ /^(\d+)$/ or die "Illegal taxnum!";
@@ -19,7 +19,7 @@ if ( $cgi->param('delim') eq 'n' ) {
   unless ( /^\s*([\w\- ]+)\s*$/ ) {
     $cgi->param('error', "Illegal item in expansion");
     print $cgi->redirect(popurl(2). "cust_main_county-expand.cgi?". $cgi->query_string );
-    exit;
+    myexit();
   }
   $1;
 } @expansion;

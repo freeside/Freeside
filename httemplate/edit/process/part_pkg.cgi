@@ -1,4 +1,4 @@
-<!-- $Id: part_pkg.cgi,v 1.7 2002-01-30 14:18:09 ivan Exp $ -->
+<!-- $Id: part_pkg.cgi,v 1.8 2002-02-09 18:24:01 ivan Exp $ -->
 <%
 
 my $dbh = dbh;
@@ -34,7 +34,7 @@ foreach my $part_svc ( qsearch('part_svc', {} ) ) {
   unless ( $quantity =~ /^(\d+)$/ ) {
     $cgi->param('error', "Illegal quantity" );
     print $cgi->redirect(popurl(2). "part_pkg.cgi?". $cgi->query_string );
-    exit;
+    myexit();
   }
 }
 
@@ -58,7 +58,7 @@ if ( $error ) {
   $dbh->rollback;
   $cgi->param('error', $error );
   print $cgi->redirect(popurl(2). "part_pkg.cgi?". $cgi->query_string );
-  exit;
+  myexit();
 }
 
 foreach $part_svc (qsearch('part_svc',{})) {

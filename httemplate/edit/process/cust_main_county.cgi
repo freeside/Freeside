@@ -1,4 +1,4 @@
-<!-- $Id: cust_main_county.cgi,v 1.3 2002-01-30 14:18:09 ivan Exp $ -->
+<!-- $Id: cust_main_county.cgi,v 1.4 2002-02-09 18:24:01 ivan Exp $ -->
 <%
 
 foreach ( $cgi->param ) {
@@ -14,7 +14,7 @@ foreach ( $cgi->param ) {
   if ( $error ) {
     $cgi->param('error', $error);
     print $cgi->redirect(popurl(2). "cust_main_county.cgi?". $cgi->query_string );
-    exit;
+    myexit();
   }
 }
 

@@ -1,4 +1,4 @@
-<!-- $Id: svc_domain.cgi,v 1.6 2002-01-30 14:18:09 ivan Exp $ -->
+<!-- $Id: svc_domain.cgi,v 1.7 2002-02-09 18:24:02 ivan Exp $ -->
 <%
 
 my $conf = new FS::Conf;
@@ -34,7 +34,7 @@ if ( $query eq 'svcnum' ) {
 
 if ( scalar(@svc_domain) == 1 ) {
   print $cgi->redirect(popurl(2). "view/svc_domain.cgi?". $svc_domain[0]->svcnum);
-  exit;
+  #exit;
 } elsif ( scalar(@svc_domain) == 0 ) {
   eidiot "No matching domains found!\n";
 } else {

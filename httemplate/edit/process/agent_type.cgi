@@ -1,4 +1,4 @@
-<!-- $Id: agent_type.cgi,v 1.3 2002-01-30 14:18:08 ivan Exp $ -->
+<!-- $Id: agent_type.cgi,v 1.4 2002-02-09 18:24:01 ivan Exp $ -->
 <%
 
 my $typenum = $cgi->param('typenum');
@@ -21,35 +21,35 @@ if ( $typenum ) {
 if ( $error ) {
   $cgi->param('error', $error);
   print $cgi->redirect(popurl(2). "agent_type.cgi?". $cgi->query_string );
-  exit;
-}
+} else {
 
-foreach my $part_pkg (qsearch('part_pkg',{})) {
-  my($pkgpart)=$part_pkg->getfield('pkgpart');
+  foreach my $part_pkg (qsearch('part_pkg',{})) {
+    my($pkgpart)=$part_pkg->getfield('pkgpart');
 
-  my($type_pkgs)=qsearchs('type_pkgs',{
-      'typenum' => $typenum,
-      'pkgpart' => $pkgpart,
-  });
-  if ( $type_pkgs && ! $cgi->param("pkgpart$pkgpart") ) {
-    my($d_type_pkgs)=$type_pkgs; #need to save $type_pkgs for below.
-    $error=$d_type_pkgs->delete;
-    die $error if $error;
-
-  } elsif ( $cgi->param("pkgpart$pkgpart")
-            && ! $type_pkgs
-  ) {
-    #ok to clobber it now (but bad form nonetheless?)
-    $type_pkgs=new FS::type_pkgs ({
-      'typenum' => $typenum,
-      'pkgpart' => $pkgpart,
+    my($type_pkgs)=qsearchs('type_pkgs',{
+        'typenum' => $typenum,
+        'pkgpart' => $pkgpart,
     });
-    $error= $type_pkgs->insert;
-    die $error if $error;
+    if ( $type_pkgs && ! $cgi->param("pkgpart$pkgpart") ) {
+      my($d_type_pkgs)=$type_pkgs; #need to save $type_pkgs for below.
+      $error=$d_type_pkgs->delete;
+      die $error if $error;
+
+    } elsif ( $cgi->param("pkgpart$pkgpart")
+              && ! $type_pkgs
+    ) {
+      #ok to clobber it now (but bad form nonetheless?)
+      $type_pkgs=new FS::type_pkgs ({
+        'typenum' => $typenum,
+        'pkgpart' => $pkgpart,
+      });
+      $error= $type_pkgs->insert;
+      die $error if $error;
+    }
+
   }
 
+  print $cgi->redirect(popurl(3). "browse/agent_type.cgi");
 }
-
-print $cgi->redirect(popurl(3). "browse/agent_type.cgi");
 
 %>

@@ -150,7 +150,7 @@ if ( scalar(@cust_main) == 1 && ! $cgi->param('referral_custnum') ) {
   } else {
     print $cgi->redirect(popurl(2). "view/cust_main.cgi?". $cust_main[0]->custnum);
   }
-  exit;
+  #exit;
 } elsif ( scalar(@cust_main) == 0 ) {
   eidiot "No matching customers found!\n";
 } else { 
