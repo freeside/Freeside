@@ -294,7 +294,6 @@ returns the error, otherwise returns false.
 
 sub replace {
   my ( $new, $old ) = ( shift, shift );
-  my $error;
 
   return "Can't change domain - reorder."
     if $old->getfield('domain') ne $new->getfield('domain'); 
@@ -451,7 +450,7 @@ sub submit_internic {
 
 =head1 VERSION
 
-$Id: svc_domain.pm,v 1.30 2002-05-31 00:18:57 khoff Exp $
+$Id: svc_domain.pm,v 1.31 2002-06-10 02:52:48 ivan Exp $
 
 =head1 BUGS
 

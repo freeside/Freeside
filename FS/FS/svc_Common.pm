@@ -163,7 +163,6 @@ otherwise returns false.
 
 sub replace {
   my ($new, $old) = (shift, shift);
-  my $error;
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -188,7 +187,7 @@ sub replace {
       my $error = $part_export->export_replace($new,$old);
       if ( $error ) {
         $dbh->rollback if $oldAutoCommit;
-        return "exporting to ". $part_export->exporttype.
+        return "error exporting to ". $part_export->exporttype.
                " (transaction rolled back): $error";
       }
     }
@@ -292,7 +291,7 @@ sub cancel { ''; }
 
 =head1 VERSION
 
-$Id: svc_Common.pm,v 1.9 2002-05-31 00:18:56 khoff Exp $
+$Id: svc_Common.pm,v 1.10 2002-06-10 02:52:37 ivan Exp $
 
 =head1 BUGS
 
