@@ -87,7 +87,7 @@ sub forksuidsetup {
   getsecrets;
   $dbh = DBI->connect($datasrc,$db_user,$db_pass, {
                           'AutoCommit' => 0,
-                          #'ChopBlanks' => 1,
+                          'ChopBlanks' => 1,
   } ) or die "DBI->connect error: $DBI::errstr\n";
 
   foreach ( keys %callback ) {
