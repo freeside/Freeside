@@ -594,6 +594,19 @@ tie my %www_shellcommands_options, 'Tie::IxHash',
                 },
 ;
 
+tie my %domain_shellcommands_options, 'Tie::IxHash',
+  'user' => { lable=>'Remote username', default=>'root' },
+  'useradd' => { label=>'Insert command',
+                 default=>'',
+               },
+  'userdel'  => { label=>'Delete command',
+                  default=>'',
+                },
+  'usermod'  => { label=>'Modify command',
+                  default=>'',
+                },
+;
+
 tie my %textradius_options, 'Tie::IxHash',
   'user' => { label=>'Remote username', default=>'root' },
   'users' => { label=>'users file location', default=>'/etc/raddb/users' },
@@ -795,6 +808,12 @@ tie my %sqlmail_options, 'Tie::IxHash',
       'options' => \%sqlmail_options,
       #'nodomain' => 'Y',
       'notes' => 'Database schema can be made to work with Courier IMAP and Exim.  Others could work but are untested. (...extended description from pc-intouch?...)',
+    },
+
+    'domain_shellcommands' => {
+      'desc' => 'Run remote commands via SSH, for domains.',
+      'options' => \%domain_shellcommands_options,
+      'notes'    => 'Run remote commands via SSH, for domains.  You will need to <a href="../docs/ssh.html">setup SSH for unattended operation</a>.',
     },
 
 
