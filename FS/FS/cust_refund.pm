@@ -93,10 +93,23 @@ sub insert {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
+  if ( $self->crednum ) {
+    my $cust_credit = qsearchs('cust_bill', { 'invnum' => $self->invnum } )
+      or do {
+        $dbh->rollback if $oldAutoCommit;
+        return "Unknown cust_credit.crednum: ". $self->crednum;
+      };
+    $self->custnum($cust_credit->custnum);
+  }
+
   my $error = $self->check;
   return $error if $error;
 
-  die;
+  $error = $self->SUPER::insert;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
 
   if ( $self->crednum ) {
     my $cust_credit_refund = new FS::cust_credit_refund {
@@ -110,14 +123,9 @@ sub insert {
       $dbh->rollback if $oldAutoCommit;
       return $error;
     }
-    $self->custnum($cust_credit_refund->cust_credit->custnum);
+    #$self->custnum($cust_credit_refund->cust_credit->custnum);
   }
 
-  $error = $self->SUPER::insert;
-  if ( $error ) {
-    $dbh->rollback if $oldAutoCommit;
-    return $error;
-  }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
@@ -206,7 +214,7 @@ sub check {
 
   my $error =
     $self->ut_number('refundnum')
-    || $self->ut_number('custnum')
+    || $self->ut_numbern('custnum')
     || $self->ut_money('amount')
     || $self->ut_numbern('_date')
     || $self->ut_textn('paybatch')
@@ -218,8 +226,8 @@ sub check {
   $self->_date(time) unless $self->_date;
 
   return "unknown cust_main.custnum: ". $self->custnum
-    unless $self->invnum 
-           ||  qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
+    unless $self->crednum 
+           || qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
 
   $self->payby =~ /^(CARD|BILL|COMP)$/ or return "Illegal payby";
   $self->payby($1);
@@ -251,7 +259,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: cust_refund.pm,v 1.9 2002-01-22 15:57:33 ivan Exp $
+$Id: cust_refund.pm,v 1.10 2002-01-24 02:26:49 ivan Exp $
 
 =head1 BUGS
 
