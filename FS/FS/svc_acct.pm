@@ -381,8 +381,8 @@ sub check {
 
     unless ( $recref->{username} eq 'sync' ) {
       my($shell);
-      if ( $shell = (grep $_ eq $recref->{shell}, @shells)[0] ) {
-        $recref->{shell} = $shell;
+      if ( grep $_ eq $recref->{shell}, @shells ) {
+        $recref->{shell} = (grep $_ eq $recref->{shell}, @shells)[0];
       } else {
         return "Illegal shell \`". $self->shell. "\'; ".
                $conf->dir. "/shells contains: @shells";
@@ -473,7 +473,7 @@ sub radius {
 
 =head1 VERSION
 
-$Id: svc_acct.pm,v 1.4 2000-06-15 13:35:47 ivan Exp $
+$Id: svc_acct.pm,v 1.5 2000-06-28 12:52:22 ivan Exp $
 
 =head1 BUGS
 
