@@ -698,12 +698,20 @@ tie my %sqlradius_options, 'Tie::IxHash',
   'datasrc'  => { label=>'DBI data source ' },
   'username' => { label=>'Database username' },
   'password' => { label=>'Database password' },
+  'ignore_accounting' => {
+     type => 'checkbox',
+     label=>'Ignore accounting records from this database'
+  },
 ;
 
 tie my %sqlradius_withdomain_options, 'Tie::IxHash',
   'datasrc'  => { label=>'DBI data source ' },
   'username' => { label=>'Database username' },
   'password' => { label=>'Database password' },
+  'ignore_accounting' => {
+     type => 'checkbox',
+     label=>'Ignore accounting records from this database'
+  },
 ;
 
 tie my %cyrus_options, 'Tie::IxHash',

@@ -367,6 +367,8 @@ sub seconds_since_sqlradacct {
   my $seconds = 0;
   foreach my $part_export ( @part_export ) {
 
+    next if $part_export->option('ignore_accounting');
+
     my $dbh = DBI->connect( map { $part_export->option($_) }
                             qw(datasrc username password)    )
       or die "can't connect to sqlradius database: ". $DBI::errstr;
@@ -482,6 +484,8 @@ sub attribute_since_sqlradacct {
   my $sum = 0;
 
   foreach my $part_export ( @part_export ) {
+
+    next if $part_export->option('ignore_accounting');
 
     my $dbh = DBI->connect( map { $part_export->option($_) }
                             qw(datasrc username password)    )
