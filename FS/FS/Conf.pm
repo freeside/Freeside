@@ -967,6 +967,14 @@ httemplate/docs/config.html
     'type'        => 'textarea',
   },
 
+  {
+    'key'         => 'raidus-password',
+    'section'     => 'unclassified',
+    'description' => 'RADIUS attribute for plain-text passwords.',
+    'type'        => 'select',
+    'select_enum' => [ 'Password', 'User-Password' ],
+  },
+
 );
 
 1;

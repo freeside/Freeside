@@ -9,6 +9,7 @@ use vars qw( @ISA $noexport_hack $conf
              $username_uppercase
              $welcome_template $welcome_from $welcome_subject $welcome_mimetype
              $smtpmachine
+             $radius_password
              $dirhash
              @saltset @pw_set );
 use Carp;
@@ -60,6 +61,7 @@ $FS::UID::callback{'FS::svc_acct'} = sub {
     $welcome_template = '';
   }
   $smtpmachine = $conf->config('smtpmachine');
+  $radius_password = $conf->config('radius-password') || 'Password';
 };
 
 @saltset = ( 'a'..'z' , 'A'..'Z' , '0'..'9' , '.' , '/' );
@@ -858,7 +860,7 @@ expected to change in the future.
 sub radius_check {
   my $self = shift;
   my $password = $self->_password;
-  my $pw_attrib = length($password) <= 12 ? 'Password' : 'Crypt-Password';
+  my $pw_attrib = length($password) <= 12 ? $radius_password : 'Crypt-Password';
   ( $pw_attrib => $password,
     map {
       /^(rc_(.*))$/;
