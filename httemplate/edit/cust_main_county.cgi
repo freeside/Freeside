@@ -65,21 +65,21 @@ END
         qq!" VALUE="!, $hashref->{taxname}, qq!"></TD>!
     if dbdef->table('cust_main_county')->column('taxname');
 
-  print qq!<TD><INPUT TYPE="text" NAME="tax!, $hashref->{taxnum},
-        qq!" VALUE="!, $hashref->{tax}, qq!" SIZE=6 MAXLENGTH=6>%</TD>!;
-  print qq!<TD>\$<INPUT TYPE="text" NAME="exempt_amount!, $hashref->{taxnum},
-        qq!" VALUE="!, $hashref->{exempt_amount}||0, qq!" SIZE=6></TD>!;
+  print qq!<TD><TABLE><TR><TD><INPUT TYPE="text" NAME="tax!, $hashref->{taxnum},
+        qq!" VALUE="!, $hashref->{tax}, qq!" SIZE=6 MAXLENGTH=6></TD><TD>%</TD></TR></TABLE></TD>!;
+  print qq!<TD><TABLE><TR><TD>\$</TD><TD><INPUT TYPE="text" NAME="exempt_amount!, $hashref->{taxnum},
+        qq!" VALUE="!, $hashref->{exempt_amount}||0, qq!" SIZE=6></TD></TR></TABLE></TD>!;
 
   print qq!<TD><INPUT TYPE="checkbox" NAME="setuptax!. $hashref->{taxnum}.
         '" VALUE="Y"'.
         ( $hashref->{setuptax} =~ /^Y$/i ? ' CHECKED' : '' ).
-        '"></TD>'
+        '></TD>'
     if dbdef->table('cust_main_county')->column('setuptax');
 
   print qq!<TD><INPUT TYPE="checkbox" NAME="recurtax!. $hashref->{taxnum}.
         '" VALUE="Y"'.
         ( $hashref->{recurtax} =~ /^Y$/i ? ' CHECKED' : '' ).
-        '"></TD>'
+        '></TD>'
     if dbdef->table('cust_main_county')->column('recurtax');
 
   print '</TR>';

@@ -126,7 +126,7 @@ END
         '<TD BGCOLOR="#ffffff">';
   print '$'. sprintf("%.2f", $hashref->{exempt_amount} ).
         '&nbsp;per&nbsp;month<BR>'
-    if $hashref->{exempt_amount};
+    if $hashref->{exempt_amount} > 0;
   print 'Setup&nbsp;fee<BR>' if $hashref->{setuptax} =~ /^Y$/i;
   print 'Recurring&nbsp;fee<BR>' if $hashref->{recurtax} =~ /^Y$/i;
   print '</TD></TR>';
