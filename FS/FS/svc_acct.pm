@@ -488,7 +488,7 @@ check attributes of this record.
 Accessing RADIUS attributes directly is not supported and will break in the
 future.
 
-=back
+=cut
 
 sub radius_check {
   my $self = shift;
@@ -500,9 +500,11 @@ sub radius_check {
   } grep { /^rc_/ && $self->getfield($_) } fields( $self->table );
 }
 
+=cut
+
 =head1 VERSION
 
-$Id: svc_acct.pm,v 1.9 2000-07-06 08:57:27 ivan Exp $
+$Id: svc_acct.pm,v 1.10 2000-07-06 13:56:42 ivan Exp $
 
 =head1 BUGS
 
