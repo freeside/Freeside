@@ -399,31 +399,31 @@ $record->column('value') is a synonym for $record->set('column','value');
 =cut
 
 # readable/safe
-#sub AUTOLOAD {
-#  my($self,$value)=@_;
-#  my($field)=$AUTOLOAD;
-#  $field =~ s/.*://;
-#  if ( defined($value) ) {
-#    confess "errant AUTOLOAD $field for $self (arg $value)"
-#      unless $self->can('setfield');
-#    $self->setfield($field,$value);
-#  } else {
-#    confess "errant AUTOLOAD $field for $self (no args)"
-#      unless $self->can('getfield');
-#    $self->getfield($field);
-#  }    
-#}
-
-# efficient
 sub AUTOLOAD {
-  my $field = $AUTOLOAD;
+  my($self,$value)=@_;
+  my($field)=$AUTOLOAD;
   $field =~ s/.*://;
-  if ( defined($_[1]) ) {
-    $_[0]->setfield($field, $_[1]);
+  if ( defined($value) ) {
+    confess "errant AUTOLOAD $field for $self (arg $value)"
+      unless $self->can('setfield');
+    $self->setfield($field,$value);
   } else {
-    $_[0]->getfield($field);
+    confess "errant AUTOLOAD $field for $self (no args)"
+      unless $self->can('getfield');
+    $self->getfield($field);
   }    
 }
+
+# efficient
+#sub AUTOLOAD {
+#  my $field = $AUTOLOAD;
+#  $field =~ s/.*://;
+#  if ( defined($_[1]) ) {
+#    $_[0]->setfield($field, $_[1]);
+#  } else {
+#    $_[0]->getfield($field);
+#  }    
+#}
 
 =item hash
 
@@ -949,7 +949,7 @@ Check/untaint host and domain names.
 sub ut_domain {
   my( $self, $field ) = @_;
   #$self->getfield($field) =~/^(\w+\.)*\w+$/
-  $self->getfield($field) =~/^([\w\-]+\.)*\w+$/
+  $self->getfield($field) =~/^(([\w\-]+\.)*\w+)$/
     or return "Illegal (domain) $field: ". $self->getfield($field);
   $self->setfield($field,$1);
   '';
