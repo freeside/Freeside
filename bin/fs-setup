@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: fs-setup,v 1.74 2002-02-04 17:04:33 ivan Exp $
+# $Id: fs-setup,v 1.75 2002-02-06 15:07:49 ivan Exp $
 
 #to delay loading dbdef until we're ready
 BEGIN { $FS::Record::setup_hack = 1; }
@@ -16,7 +16,7 @@ use FS::UID qw(adminsuidsetup datasrc checkeuid getsecrets);
 use FS::Record;
 use FS::cust_main_county;
 use FS::raddb;
-use FS::part_bill_invoice;
+use FS::part_bill_event;
 
 die "Not running uid freeside!" unless checkeuid();
 
