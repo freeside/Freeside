@@ -11,8 +11,8 @@ use FS::Record qw(qsearch qsearchs);
 use FS::cust_main;
 
 &untaint_argv;	#what it sounds like  (eww)
-use vars qw($opt_a $opt_c $opt_i $opt_d $opt_p);
-getopts("acid:p");
+use vars qw($opt_a $opt_c $opt_d $opt_p);
+getopts("acd:p");
 my $user = shift or die &usage;
 
 adminsuidsetup $user;
@@ -63,9 +63,7 @@ foreach $cust_main (
   }
 
   if ($opt_c) {
-    $error=$cust_main->collect('invoice_time'=>$time,
-                               'batch_card' => $opt_i ? 'no' : 'yes',
-                              );
+    $error=$cust_main->collect( 'invoice_time' => $time);
     warn "Error collecting from customer #" . $cust_main->custnum.  ":$error"
       if $error;
 
@@ -86,7 +84,7 @@ sub untaint_argv {
 }
 
 sub usage {
-  die "Usage:\n\n  freeside-bill [ -c [ i ] ] [ -d 'date' ] [ -b ] user\n";
+  die "Usage:\n\n  freeside-bill [ -c [ -p ] ] [ -d 'date' ] user [ custnum custnum ... ]\n";
 }
 
 =head1 NAME
@@ -95,7 +93,7 @@ freeside-bill - Command line (crontab, script) interface to customer billing.
 
 =head1 SYNOPSIS
 
-  freeside-bill [ -c [ -p ] [ -a ] [ -i ] ] [ -d 'date' ] user [ custnum custnum ... ]
+  freeside-bill [ -c [ -p ] [ -a ] ] [ -d 'date' ] user [ custnum custnum ... ]
 
 =head1 DESCRIPTION
 
@@ -110,9 +108,6 @@ the bill and collect methods of a cust_main object.  See L<FS::cust_main>.
   -a: Call collect even if there isn't a new invoice (probably a bad idea for
       daily use)
 
-  -i: real-time billing (as opposed to batch billing).  only relevant
-      for credit cards.
-
   -d: Pretend it's 'date'.  Date is in any format Date::Parse is happy with,
       but be careful.
 
@@ -123,7 +118,7 @@ customers.  Otherwise, bills all customers.
 
 =head1 VERSION
 
-$Id: freeside-bill,v 1.11 2001-12-28 14:40:35 ivan Exp $
+$Id: freeside-bill,v 1.12 2002-02-10 01:48:00 ivan Exp $
 
 =head1 BUGS
 
