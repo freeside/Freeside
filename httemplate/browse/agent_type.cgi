@@ -17,9 +17,11 @@ agents.<BR><BR>
 foreach my $agent_type ( sort { 
   $a->getfield('typenum') <=> $b->getfield('typenum')
 } qsearch('agent_type',{}) ) {
-  my($hashref)=$agent_type->hashref;
-  my(@type_pkgs)=qsearch('type_pkgs',{'typenum'=> $hashref->{typenum} });
-  my($rowspan)=scalar(@type_pkgs);
+  my $hashref = $agent_type->hashref;
+  #more efficient to do this with SQL...
+  my @type_pkgs = grep { ! $_->part_pkg->disabled }
+                       qsearch('type_pkgs',{'typenum'=> $hashref->{typenum} });
+  my $rowspan = scalar(@type_pkgs);
   $rowspan = int($rowspan/2+0.5) ;
   print <<END;
       <TR>
