@@ -2075,6 +2075,91 @@ sub batch_import {
 
 }
 
+=item batch_charge
+
+=cut
+
+sub batch_charge {
+  my $param = shift;
+  #warn join('-',keys %$param);
+  my $fh = $param->{filehandle};
+  my @fields = @{$param->{fields}};
+
+  eval "use Date::Parse;";
+  die $@ if $@;
+  eval "use Text::CSV_XS;";
+  die $@ if $@;
+
+  my $csv = new Text::CSV_XS;
+  #warn $csv;
+  #warn $fh;
+
+  my $imported = 0;
+  #my $columns;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+  
+  #while ( $columns = $csv->getline($fh) ) {
+  my $line;
+  while ( defined($line=<$fh>) ) {
+
+    $csv->parse($line) or do {
+      $dbh->rollback if $oldAutoCommit;
+      return "can't parse: ". $csv->error_input();
+    };
+
+    my @columns = $csv->fields();
+    #warn join('-',@columns);
+
+    my %row = ();
+    foreach my $field ( @fields ) {
+      $row{$field} = shift @columns;
+    }
+
+    my $cust_main = qsearchs('cust_main', { 'custnum' => $row{'custnum'} } );
+    unless ( $cust_main ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "unknown custnum $row{'custnum'}";
+    }
+
+    if ( $row{'amount'} > 0 ) {
+      my $error = $cust_main->charge($row{'amount'}, $row{'pkg'});
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
+      }
+      $imported++;
+    } elsif ( $row{'amount'} < 0 ) {
+      my $error = $cust_main->credit( sprintf( "%.2f", 0-$row{'amount'} ),
+                                      $row{'pkg'}                         );
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
+      }
+      $imported++;
+    } else {
+      #hmm?
+    }
+
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+  return "Empty file!" unless $imported;
+
+  ''; #no error
+
+}
+
 =back
 
 =head1 BUGS
