@@ -82,119 +82,62 @@ if ( $cgi->param('browse')
     }
   }
 
+  my @qual = ();
+
   my $ncancelled = '';
-
-  if ( driver_name eq 'mysql' ) {
-
-       my $sql = "CREATE TEMPORARY TABLE temp1_$$ TYPE=MYISAM
-                    SELECT cust_pkg.custnum,COUNT(*) as count
-                      FROM cust_pkg,cust_main
-                        WHERE cust_pkg.custnum = cust_main.custnum
-                              AND ( cust_pkg.cancel IS NULL
-                                    OR cust_pkg.cancel = 0 )
-                        GROUP BY cust_pkg.custnum";
-       my $sth = dbh->prepare($sql) or die dbh->errstr. " preparing $sql";
-       $sth->execute or die "Error executing \"$sql\": ". $sth->errstr;
-       $sql = "CREATE TEMPORARY TABLE temp2_$$ TYPE=MYISAM
-                 SELECT cust_pkg.custnum,COUNT(*) as count
-                   FROM cust_pkg,cust_main
-                     WHERE cust_pkg.custnum = cust_main.custnum
-                     GROUP BY cust_pkg.custnum";
-       $sth = dbh->prepare($sql) or die dbh->errstr. " preparing $sql";
-       $sth->execute or die "Error executing \"$sql\": ". $sth->errstr;
-  }
 
   if (  $cgi->param('showcancelledcustomers') eq '0' #see if it was set by me
        || ( $conf->exists('hidecancelledcustomers')
              && ! $cgi->param('showcancelledcustomers') )
      ) {
     #grep { $_->ncancelled_pkgs || ! $_->all_pkgs }
-    if ( driver_name eq 'mysql' ) {
-       $ncancelled = "
-          temp1_$$.custnum = cust_main.custnum
-               AND temp2_$$.custnum = cust_main.custnum
-               AND (temp1_$$.count > 0
-                       OR temp2_$$.count = 0 )
-       ";
-
-    } else {
-       $ncancelled = "
-          0 < ( SELECT COUNT(*) FROM cust_pkg
-                       WHERE cust_pkg.custnum = cust_main.custnum
-                         AND ( cust_pkg.cancel IS NULL
-                               OR cust_pkg.cancel = 0
-                             )
-                   )
-            OR 0 = ( SELECT COUNT(*) FROM cust_pkg
-                       WHERE cust_pkg.custnum = cust_main.custnum
-                   )
-       ";
-     }
-   }
-
-  my $cancelled = '';
-  if ( $cgi->param('cancelled') ) {
-    $cancelled = "
-      0 = ( SELECT COUNT(*) FROM cust_pkg
-                   WHERE cust_pkg.custnum = cust_main.custnum
-                      AND ( cust_pkg.cancel IS NULL
-                            OR cust_pkg.cancel = 0
-                          )
-          )
-        AND 0 < ( SELECT COUNT(*) FROM cust_pkg
+    push @qual, "
+       ( 0 < ( SELECT COUNT(*) FROM cust_pkg
+                      WHERE cust_pkg.custnum = cust_main.custnum
+                        AND ( cust_pkg.cancel IS NULL
+                              OR cust_pkg.cancel = 0
+                            )
+             )
+         OR 0 = ( SELECT COUNT(*) FROM cust_pkg
                     WHERE cust_pkg.custnum = cust_main.custnum
                 )
+       )
     ";
-  }
+   }
+
+  push @qual, FS::cust_main->cancel_sql   if $cgi->param('cancelled');
+  push @qual, FS::cust_main->prospect_sql if $cgi->param('prospect');
+  push @qual, FS::cust_main->active_sql   if $cgi->param('active');
+  push @qual, FS::cust_main->susp_sql     if $cgi->param('suspended');
 
   #EWWWWWW
   my $qual = join(' AND ',
             map { "$_ = ". dbh->quote($search{$_}) } keys %search );
 
-  if ( $cancelled ) {
+  my $addl_qual = join(' AND ', @qual);
+
+  if ( $addl_qual ) {
     $qual .= ' AND ' if $qual;
-    $qual .= $cancelled;
-  } elsif ( $ncancelled ) {
-    $qual .= ' AND ' if $qual;
-    $qual .= $ncancelled;
+    $qual .= $addl_qual;
   }
     
   $qual = " WHERE $qual" if $qual;
-  my $statement;
-  if ( driver_name eq 'mysql' ) {
-    $statement = "SELECT COUNT(*) FROM cust_main";
-    $statement .= ", temp1_$$, temp2_$$ $qual" if $qual;
-  } else {
-    $statement = "SELECT COUNT(*) FROM cust_main $qual";
-  }
+  my $statement = "SELECT COUNT(*) FROM cust_main $qual";
   my $sth = dbh->prepare($statement) or die dbh->errstr." preparing $statement";
   $sth->execute or die "Error executing \"$statement\": ". $sth->errstr;
 
   $total = $sth->fetchrow_arrayref->[0];
 
-  my $rqual = $cancelled || $ncancelled;
-  if ( $rqual ) {
+  if ( $addl_qual ) {
     if ( %search ) {
-      $rqual = " AND $rqual";
+      $addl_qual = " AND $addl_qual";
     } else {
-      $rqual = " WHERE $rqual";
+      $addl_qual = " WHERE $addl_qual";
     }
   }
 
-  my @just_cust_main;
-  if ( driver_name eq 'mysql' ) {
-    @just_cust_main = qsearch('cust_main', \%search, 'cust_main.*',
-                              ",temp1_$$,temp2_$$ $rqual $orderby $limit");
-  } else {
-    @just_cust_main = qsearch('cust_main', \%search, '',   
-                              "$rqual $orderby $limit" );
-  }
-  if ( driver_name eq 'mysql' ) {
-    my $sql = "DROP TABLE temp1_$$,temp2_$$;";
-    my $sth = dbh->prepare($sql) or die dbh->errstr. " preparing $sql";
-    $sth->execute or die "Error executing \"$sql\": ". $sth->errstr;
-  }
-  @cust_main = @just_cust_main;
+  @cust_main = qsearch('cust_main', \%search, '',   
+                         "$addl_qual $orderby $limit" );
 
 #  foreach my $cust_main ( @just_cust_main ) {
 #

@@ -25,6 +25,7 @@ FS::ClientAPI->register_handlers(
   'MyAccount/customer_info'    => \&customer_info,
   'MyAccount/edit_info'        => \&edit_info,
   'MyAccount/invoice'          => \&invoice,
+  'MyAccount/list_invoices'    => \&list_invoices,
   'MyAccount/cancel'           => \&cancel,
   'MyAccount/payment_info'     => \&payment_info,
   'MyAccount/process_payment'  => \&process_payment,
@@ -86,16 +87,31 @@ sub login {
 
 sub customer_info {
   my $p = shift;
-  my $session = $cache->get($p->{'session_id'})
-    or return { 'error' => "Can't resume session" }; #better error message
+
+  my($session, $custnum, $context);
+  if ( $p->{'session_id'} ) {
+    $context = 'customer';
+    $session = $cache->get($p->{'session_id'})
+      or return { 'error' => "Can't resume session" }; #better error message
+    $custnum = $session->{'custnum'};
+  } elsif ( $p->{'agent_session_id'} ) {
+    $context = 'agent';
+    my $agent_cache = new Cache::SharedMemoryCache( {
+      'namespace' => 'FS::ClientAPI::Agent',
+    } );
+    $session = $agent_cache->get($p->{'agent_session_id'})
+      or return { 'error' => "Can't resume session" }; #better error message
+    $custnum = $p->{'custnum'};
+  } else {
+    return { 'error' => "Can't resume session" }; #better error message
+  }
 
   my %return;
-
-  my $custnum = $session->{'custnum'};
-
   if ( $custnum ) { #customer record
 
-    my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
+    my $search = { 'custnum' => $custnum };
+    $search->{'agentnum'} = $session->{'agentnum'} if $context eq 'agent';
+    my $cust_main = qsearchs('cust_main', $search )
       or return { 'error' => "unknown custnum $custnum" };
 
     $return{balance} = $cust_main->balance;
@@ -357,6 +373,27 @@ sub invoice {
 
 }
 
+sub list_invoices {
+  my $p = shift;
+  my $session = $cache->get($p->{'session_id'})
+    or return { 'error' => "Can't resume session" }; #better error message
+
+  my $custnum = $session->{'custnum'};
+
+  my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
+    or return { 'error' => "unknown custnum $custnum" };
+
+  my @cust_bill = $cust_main->cust_bill;
+
+  return  { 'error'       => '',
+            'invoices'    =>  [ map { { 'invnum' => $_->invnum,
+                                        '_date'  => $_->_date,
+                                      }
+                                    } @cust_bill
+                              ]
+          };
+}
+
 sub cancel {
   my $p = shift;
   my $session = $cache->get($p->{'session_id'})
@@ -391,12 +428,30 @@ sub list_pkgs {
 
 sub order_pkg {
   my $p = shift;
-  my $session = $cache->get($p->{'session_id'})
-    or return { 'error' => "Can't resume session" }; #better error message
 
-  my $custnum = $session->{'custnum'};
+  my($session, $custnum, $context);
 
-  my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
+  if ( $p->{'session_id'} ) {
+    $context = 'customer';
+    $session = $cache->get($p->{'session_id'})
+      or return { 'error' => "Can't resume session" }; #better error message
+    $custnum = $session->{'custnum'};
+  } elsif ( $p->{'agent_session_id'} ) {
+    $context = 'agent';
+    my $agent_cache = new Cache::SharedMemoryCache( {
+      'namespace' => 'FS::ClientAPI::Agent',
+    } );
+    $session = $agent_cache->get($p->{'agent_session_id'})
+      or return { 'error' => "Can't resume session" }; #better error message
+    $custnum = $p->{'custnum'};
+  } else {
+    return { 'error' => "Can't resume session" }; #better error message
+  }
+
+  my $search = { 'custnum' => $custnum };
+  $search->{'agentnum'} = $session->{'agentnum'} if $context eq 'agent';
+
+  my $cust_main = qsearchs('cust_main', $search )
     or return { 'error' => "unknown custnum $custnum" };
 
   #false laziness w/ClientAPI/Signup.pm
@@ -503,13 +558,13 @@ sub cancel_pkg {
   my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
     or return { 'error' => "unknown custnum $custnum" };
 
-  my $pkgnum = $session->{'pkgnum'};
+  my $pkgnum = $p->{'pkgnum'};
 
   my $cust_pkg = qsearchs('cust_pkg', { 'custnum' => $custnum,
                                         'pkgnum'  => $pkgnum,   } )
     or return { 'error' => "unknown pkgnum $pkgnum" };
 
-  my $error = $cust_main->cancel( 'quiet'=>1 );
+  my $error = $cust_pkg->cancel( 'quiet'=>1 );
   return { 'error' => $error };
 
 }

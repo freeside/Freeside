@@ -22,7 +22,7 @@ FS::ClientAPI->register_handlers(
 );
 
 sub signup_info {
-  #my $packet = shift;
+  my $packet = shift;
 
   my $conf = new FS::Conf;
 
@@ -87,24 +87,35 @@ sub signup_info {
 
   };
 
-  if (
-    $conf->config('signup_server-default_agentnum')
-    && !exists $signup_info->{'part_pkg'} #cache for performance
-  ) {
-    my $agentnum = $conf->config('signup_server-default_agentnum');
-    my $agent = qsearchs( 'agent', { 'agentnum' => $agentnum } )
-      or die "fatal: signup_server-default_agentnum $agentnum not found\n";
-    my $pkgpart_href = $agent->pkgpart_hashref;
+  my $agentnum = $conf->config('signup_server-default_agentnum');
 
-    $signup_info->{'part_pkg'} = [
-      #map { $_->hashref }
-      map { { 'payby' => [ $_->payby ], %{$_->hashref} } }
-        grep { $_->svcpart('svc_acct') && $pkgpart_href->{ $_->pkgpart } }
-          qsearch( 'part_pkg', { 'disabled' => '' } )
-    ];
+  my $session = '';
+  if ( exists $packet->{'session_id'} ) {
+    my $cache = new Cache::SharedMemoryCache( {
+      'namespace' => 'FS::ClientAPI::Agent',
+    } );
+    $session = $cache->get($packet->{'session_id'});
+    if ( $session ) {
+      $agentnum = $session->{'agentnum'};
+    } else {
+      return { 'error' => "Can't resume session" }; #better error message
+    }
   }
 
-  $signup_info;
+  if ( $agentnum ) {
+    $signup_info->{'part_pkg'} = $signup_info->{'agentnum2part_pkg'}{$agentnum};
+  } else {
+    delete $signup_info->{'part_pkg'};
+  }
+
+  if ( $session ) {
+    my $agent_signup_info = { %$signup_info };
+    delete $agent_signup_info->{agentnum2part_pkg};
+    $agent_signup_info->{'agent'} = $session->{'agent'};
+    $agent_signup_info;
+  } else {
+    $signup_info;
+  }
 
 }
 
@@ -122,12 +133,27 @@ sub new_customer {
   return { 'error' => gettext('no_access_number_selected') }
     unless $packet->{'popnum'} || !scalar(qsearch('svc_acct_pop',{} ));
 
+  my $agentnum;
+  if ( exists $packet->{'session_id'} ) {
+    my $cache = new Cache::SharedMemoryCache( {
+      'namespace' => 'FS::ClientAPI::Agent',
+    } );
+    my $session = $cache->get($packet->{'session_id'});
+    if ( $session ) {
+      $agentnum = $session->{'agentnum'};
+    } else {
+      return { 'error' => "Can't resume session" }; #better error message
+    }
+  } else {
+    $agentnum = $packet->{agentnum}
+                || $conf->config('signup_server-default_agentnum');
+  }
+
   #shares some stuff with htdocs/edit/process/cust_main.cgi... take any
   # common that are still here and library them.
   my $cust_main = new FS::cust_main ( {
     #'custnum'          => '',
-    'agentnum'      => $packet->{agentnum}
-                       || $conf->config('signup_server-default_agentnum'),
+    'agentnum'      => $agentnum,
     'refnum'        => $packet->{refnum}
                        || $conf->config('signup_server-default_refnum'),
 

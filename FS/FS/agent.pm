@@ -2,7 +2,7 @@ package FS::agent;
 
 use strict;
 use vars qw( @ISA );
-use FS::Record qw( qsearch qsearchs );
+use FS::Record qw( dbh qsearch qsearchs );
 use FS::cust_main;
 use FS::agent_type;
 
@@ -164,11 +164,107 @@ sub pkgpart_hashref {
   $self->agent_type->pkgpart_hashref;
 }
 
+=item num_prospect_cust_main
+
+Returns the number of prospects (customers with no packages ever ordered) for
+this agent.
+
+=cut
+
+sub num_prospect_cust_main {
+  shift->num_sql(FS::cust_main->prospect_sql);
+}
+
+sub num_sql {
+  my( $self, $sql ) = @_;
+  my $sth = dbh->prepare(
+    "SELECT COUNT(*) FROM cust_main WHERE agentnum = ? AND $sql"
+  ) or die dbh->errstr;
+  $sth->execute($self->agentnum) or die $sth->errstr;
+  $sth->fetchrow_arrayref->[0];
+}
+
+=item prospect_cust_main
+
+Returns the prospects (customers with no packages ever ordered) for this agent,
+as cust_main objects.
+
+=cut
+
+sub prospect_cust_main {
+  shift->cust_main_sql(FS::cust_main->prospect_sql);
+}
+
+sub cust_main_sql {
+  my( $self, $sql ) = @_;
+  qsearch( 'cust_main',
+           { 'agentnum' => $self->agentnum },
+           '',
+           " AND $sql"
+  );
+}
+
+=item num_active_cust_main
+
+Returns the number of active customers for this agent.
+
+=cut
+
+sub num_active_cust_main {
+  shift->num_sql(FS::cust_main->active_sql);
+}
+
+=item active_cust_main
+
+Returns the active customers for this agent, as cust_main objects.
+
+=cut
+
+sub active_cust_main {
+  shift->cust_main_sql(FS::cust_main->active_sql);
+}
+
+=item num_susp_cust_main
+
+Returns the number of suspended customers for this agent.
+
+=cut
+
+sub num_susp_cust_main {
+  shift->num_sql(FS::cust_main->susp_sql);
+}
+
+=item susp_cust_main
+
+Returns the suspended customers for this agent, as cust_main objects.
+
+=cut
+
+sub susp_cust_main {
+  shift->cust_main_sql(FS::cust_main->susp_sql);
+}
+
+=item num_cancel_cust_main
+
+Returns the number of cancelled customer for this agent.
+
+=cut
+
+sub num_cancel_cust_main {
+  shift->num_sql(FS::cust_main->cancel_sql);
+}
+
+=item cancel_cust_main
+
+Returns the cancelled customers for this agent, as cust_main objects.
+
+=cut
+
+sub cancel_cust_main {
+  shift->cust_main_sql(FS::cust_main->cancel_sql);
+}
+
 =back
-
-=head1 VERSION
-
-$Id: agent.pm,v 1.6 2003-09-30 15:01:46 ivan Exp $
 
 =head1 BUGS
 

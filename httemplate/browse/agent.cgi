@@ -95,10 +95,30 @@ foreach my $agent ( sort {
           <%= $agent->agent %></A></TD>
         <TD><A HREF="<%=$p%>edit/agent_type.cgi?<%= $agent->typenum %>"><%= $agent->agent_type->atype %></A></TD>
         <TD>
-          <FONT COLOR="#00CC00"><B><%= $num_ncancelled %></B></FONT>
-            <A HREF="<%= $cust_main_link %>&showcancelledcustomers=0">active</A>
-          <BR><FONT COLOR="#FF0000"><B><%= $num_cancelled %></B></FONT>
-            <A HREF="<%= $cust_main_link %>&showcancelledcustomers=1&cancelled=1">cancelled</A>
+
+          <B>
+            <%= my $num_prospect = $agent->num_prospect_cust_main %>
+          </B>
+          <% if ( $num_prospect ) { %>
+            <A HREF="<%= $cust_main_link %>&prospect=1"><% } %>prospects<% if ($num_prospect ) { %></A><% } %>
+
+          <BR><FONT COLOR="#00CC00"><B>
+            <%= my $num_active = $agent->num_active_cust_main %>
+          </B></FONT>
+          <% if ( $num_active ) { %>
+            <A HREF="<%= $cust_main_link %>&active=1"><% } %>active<% if ( $num_active ) { %></A><% } %>
+
+          <BR><FONT COLOR="#FF9900"><B>
+            <%= my $num_susp = $agent->num_susp_cust_main %>
+          </B></FONT>
+          <% if ( $num_susp ) { %>
+            <A HREF="<%= $cust_main_link %>&suspended=1"><% } %>suspended<% if ( $num_susp ) { %></A><% } %>
+
+          <BR><FONT COLOR="#FF0000"><B>
+            <%= my $num_cancel = $agent->num_cancel_cust_main %>
+          </B></FONT>
+          <% if ( $num_cancel ) { %>
+            <A HREF="<%= $cust_main_link %>&showcancelledcustomers=1&cancelled=1"><% } %>cancelled<% if ( $num_cancel ) { %></A><% } %>
         </TD>
         <TD><%= $agent->freq %></TD>
         <TD><%= $agent->prog %></TD>

@@ -1,0 +1,22 @@
+<HTML><HEAD><TITLE>Reseller Login</TITLE></HEAD>
+<BODY BGCOLOR="#e8e8e8"><FONT SIZE=5>Reseller Login</FONT><BR><BR>
+<FONT SIZE="+1" COLOR="#ff0000"><%= $error %></FONT>
+<FORM ACTION="<%= $self_url %>" METHOD=POST>
+<INPUT TYPE="hidden" NAME="session" VALUE="login">
+<TABLE BGCOLOR="#c0c0c0" BORDER=0 CELLSPACING=2 CELLPADDING=0>
+<TR>
+  <TH ALIGN="right">Username </TH>
+  <TD>
+    <INPUT TYPE="text" NAME="username" VALUE="<%= $username %>">
+  </TD>
+</TR>
+<TR>
+  <TH ALIGN="right">Password </TH>
+  <TD>
+    <INPUT TYPE="password" NAME="password">
+  </TD>
+</TR>
+</TABLE>
+<BR><BR><INPUT TYPE="submit" VALUE="Login">
+</FORM></BODY></HTML>
+

@@ -1,7 +1,7 @@
 package FS::SignupClient;
 
 use strict;
-use vars qw($VERSION @ISA @EXPORT_OK); # $fs_signupd_socket);
+use vars qw($VERSION @ISA @EXPORT_OK $init_data); # $fs_signupd_socket);
 use Exporter;
 #use Socket;
 #use FileHandle;
@@ -12,7 +12,7 @@ use FS::SelfService; # qw( new_customer signup_info );
 $VERSION = '0.04';
 
 @ISA = qw( Exporter );
-@EXPORT_OK = qw( signup_info new_customer );
+@EXPORT_OK = qw( signup_info new_customer regionselector );
 
 =head1 NAME
 
@@ -99,7 +99,7 @@ Each hash reference has the following keys:
 #compatibility bit
 sub signup_info {
 
-  my $init_data = FS::SelfService::signup_info();
+  $init_data = FS::SelfService::signup_info();
 
   (map { $init_data->{$_} } qw( cust_main_county part_pkg svc_acct_pop ) ),
   $init_data;
@@ -148,9 +148,55 @@ sub new_customer {
   $hash->{'error'};
 }
 
+=item regionselector SELECTED_COUNTY, SELECTED_STATE, SELECTED_COUNTRY, PREFIX, ONCHANGE
+
+=cut
+
+sub regionselector {
+  my ( $selected_county, $selected_state, $selected_country,
+       $prefix, $onchange ) = @_;
+  signup_info() unless $init_data;
+  FS::SelfService::regionselector({
+    selected_county  => $selected_county,
+    selected_state   => $selected_state,
+    selected_country => $selected_country,
+    prefix           => $prefix,
+    onchange         => $onchange,
+    default_country  => $init_data->{countrydefault},
+    locales          => $init_data->{cust_main_county},
+  });
+    #default_state    => $init_data->{statedefault},
+}
+
+=item expselect PREFIX, DATE
+
+=cut
+
+sub expselect {
+  FS::SelfService::expselect(@_);
+}
+
+=item popselector 
+
+=cut
+
+sub popselector {
+  my( $popnum ) = @_;
+  signup_info() unless $init_data;
+  FS::SelfService::popselector({
+    popnum => $popnum,
+    pops   => $init_data->{svc_acct_pop},
+  });
+    #popac =>
+    #acstate =>
+}
+
 =back
 
 =head1 BUGS
+
+This is just a wrapper around FS::SelfService functions for backwards
+compatibility and will probably be deprecated soon.
 
 =head1 SEE ALSO
 

@@ -2538,6 +2538,136 @@ sub select_for_update {
   qsearch('cust_main', { 'custnum' => $self->custnum }, '*', 'FOR UPDATE' );
 }
 
+=item name
+
+Returns a name string for this customer, either "Company (Last, First)" or
+"Last, First".
+
+=cut
+
+sub name {
+  my $self = shift;
+  my $name = $self->get('last'). ', '. $self->first;
+  $name = $self->company. " ($name)" if $self->company;
+  $name;
+}
+
+=item status
+
+Returns a status string for this customer, currently:
+
+=over 4
+
+=item prospect - No packages have ever been ordered
+
+=item active - One or more recurring packages is active
+
+=item suspended - All non-cancelled recurring packages are suspended
+
+=item cancelled - All recurring packages are cancelled
+
+=back
+
+=cut
+
+sub status {
+  my $self = shift;
+  for my $status (qw( prospect active suspended cancelled )) {
+    my $method = $status.'_sql';
+    my $numnum = ( my $sql = $self->$method() ) =~ s/cust_main\.custnum/?/g;
+    my $sth = dbh->prepare("SELECT $sql") or die dbh->errstr;
+    $sth->execute( ($self->custnum) x $numnum ) or die $sth->errstr;
+    return $status if $sth->fetchrow_arrayref->[0];
+  }
+}
+
+=item statuscolor
+
+Returns a hex triplet color string for this customer's status.
+
+=cut
+
+my %statuscolor = (
+  'prospect'  => '000000',
+  'active'    => '00CC00',
+  'suspended' => 'FF9900',
+  'cancelled' => 'FF0000',
+);
+sub statuscolor {
+  my $self = shift;
+  $statuscolor{$self->status};
+}
+
+=back
+
+=head1 CLASS METHODS
+
+=over 4
+
+=item prospect_sql
+
+Returns an SQL expression identifying prospective cust_main records (customers
+with no packages ever ordered)
+
+=cut
+
+sub prospect_sql { "
+  0 = ( SELECT COUNT(*) FROM cust_pkg
+          WHERE cust_pkg.custnum = cust_main.custnum
+      )
+"; }
+
+=item active_sql
+
+Returns an SQL expression identifying active cust_main records.
+
+=cut
+
+sub active_sql { "
+  0 < ( SELECT COUNT(*) FROM cust_pkg
+          WHERE cust_pkg.custnum = cust_main.custnum
+            AND ( cust_pkg.cancel IS NULL OR cust_pkg.cancel = 0 )
+            AND ( cust_pkg.susp   IS NULL OR cust_pkg.susp   = 0 )
+      )
+"; }
+
+=item susp_sql
+=item suspended_sql
+
+Returns an SQL expression identifying suspended cust_main records.
+
+=cut
+
+sub suspended_sql { susp_sql(@_); }
+sub susp_sql { "
+    0 < ( SELECT COUNT(*) FROM cust_pkg
+            WHERE cust_pkg.custnum = cust_main.custnum
+              AND ( cust_pkg.cancel IS NULL OR cust_pkg.cancel = 0 )
+        )
+    AND 0 = ( SELECT COUNT(*) FROM cust_pkg
+                WHERE cust_pkg.custnum = cust_main.custnum
+                  AND ( cust_pkg.susp IS NULL OR cust_pkg.susp = 0 )
+            )
+"; }
+
+=item cancel_sql
+=item cancelled_sql
+
+Returns an SQL expression identifying cancelled cust_main records.
+
+=cut
+
+sub cancelled_sql { cancel_sql(@_); }
+sub cancel_sql { "
+  0 < ( SELECT COUNT(*) FROM cust_pkg
+          WHERE cust_pkg.custnum = cust_main.custnum
+      )
+  AND 0 = ( SELECT COUNT(*) FROM cust_pkg
+              WHERE cust_pkg.custnum = cust_main.custnum
+                AND ( cust_pkg.cancel IS NULL OR cust_pkg.cancel = 0 )
+          )
+"; }
+
 =back
 
 =head1 SUBROUTINES

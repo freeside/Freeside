@@ -18,24 +18,28 @@ $socket .= '.'.$tag if defined $tag && length($tag);
 
 #maybe should ask ClientAPI for this list
 %autoload = (
-  'passwd'          => 'passwd/passwd',
-  'chfn'            => 'passwd/passwd',
-  'chsh'            => 'passwd/passwd',
-  'login'           => 'MyAccount/login',
-  'customer_info'   => 'MyAccount/customer_info',
-  'edit_info'       => 'MyAccount/edit_info',
-  'invoice'         => 'MyAccount/invoice',
-  'cancel'          => 'MyAccount/cancel',
-  'payment_info'    => 'MyAccount/payment_info',
-  'process_payment' => 'MyAccount/process_payment',
-  'list_pkgs'       => 'MyAccount/list_pkgs',
-  'order_pkg'       => 'MyAccount/order_pkg',
-  'cancel_pkg'      => 'MyAccount/cancel_pkg',
-  'charge'          => 'MyAccount/charge',
-  'signup_info'     => 'Signup/signup_info',
-  'new_customer'    => 'Signup/new_customer',
+  'passwd'               => 'passwd/passwd',
+  'chfn'                 => 'passwd/passwd',
+  'chsh'                 => 'passwd/passwd',
+  'login'                => 'MyAccount/login',
+  'customer_info'        => 'MyAccount/customer_info',
+  'edit_info'            => 'MyAccount/edit_info',
+  'invoice'              => 'MyAccount/invoice',
+  'list_invoices'        => 'MyAccount/list_invoices',
+  'cancel'               => 'MyAccount/cancel',
+  'payment_info'         => 'MyAccount/payment_info',
+  'process_payment'      => 'MyAccount/process_payment',
+  'list_pkgs'            => 'MyAccount/list_pkgs',
+  'order_pkg'            => 'MyAccount/order_pkg',
+  'cancel_pkg'           => 'MyAccount/cancel_pkg',
+  'charge'               => 'MyAccount/charge',
+  'signup_info'          => 'Signup/signup_info',
+  'new_customer'         => 'Signup/new_customer',
+  'agent_login'          => 'Agent/agent_login',
+  'agent_info'           => 'Agent/agent_info',
+  'agent_list_customers' => 'Agent/agent_list_customers',
 );
-@EXPORT_OK = keys %autoload;
+@EXPORT_OK = ( keys(%autoload), qw( regionselector expselect popselector ) );
 
 $ENV{'PATH'} ='/usr/bin:/usr/ucb:/bin';
 $ENV{'SHELL'} = '/bin/sh';
@@ -286,6 +290,37 @@ Invoice text
 
 =back
 
+=item list_invoices HASHREF
+
+Returns a list of all customer invoices.  Takes a hash references with a single
+key, session_id.
+
+Returns a hash reference with the following keys:
+
+=over 4
+
+=item error
+
+Empty on success, or an error message on errors
+
+=item invoices
+
+Reference to array of hash references with the following keys:
+
+=over 4
+
+=item invnum
+
+Invoice ID
+
+=item _date
+
+Invoice date, in UNIX epoch time
+
+=back
+
+=back
+
 =item cancel HASHREF
 
 Cancels this customer.
@@ -492,7 +527,15 @@ error message on errors.
 
 =over 4
 
-=item signup_info
+=item signup_info HASHREF
+
+Takes a hash reference as parameter with the following keys:
+
+=over 4
+
+=item session_id - Optional agent/reseller interface session
+
+=back
 
 Returns a hash reference containing information that may be useful in
 displaying a signup page.  The hash reference contains the following keys:
@@ -505,7 +548,9 @@ County/state/country data - array reference of hash references, each of which ha
 
 =item part_pkg
 
-Available packages - array reference of hash references, each of which has the fields of a part_pkg record (see L<FS::part_pkg>).  Each hash reference also has an additional 'payby' field containing an array reference of acceptable payment types specific to this package (see below and L<FS::part_pkg/payby>).  Note these are not FS::part_pkg objects, but hash references of columns and values.  Requires the 'signup_server-default_agentnum' configuration value to be set.
+Available packages - array reference of hash references, each of which has the fields of a part_pkg record (see L<FS::part_pkg>).  Each hash reference also has an additional 'payby' field containing an array reference of acceptable payment types specific to this package (see below and L<FS::part_pkg/payby>).  Note these are not FS::part_pkg objects, but hash references of columns and values.  Requires the 'signup_server-default_agentnum' configuration value to be set, or
+an agentnum specified explicitly via reseller interface session_id in the
+options.
 
 =item agent
 
@@ -634,6 +679,369 @@ Returns a hash reference with the following keys:
 
 =back
 
+=item regionselector HASHREF | LIST
+
+Takes as input a hashref or list of key/value pairs with the following keys:
+
+=over 4
+
+=item selected_county
+
+=item selected_state
+
+=item selected_country
+
+=item prefix - Specify a unique prefix string  if you intend to use the HTML output multiple time son one page.
+
+=item onchange - Specify a javascript subroutine to call on changes
+
+=item default_state
+
+=item default_country
+
+=item locales - An arrayref of hash references specifying regions.  Normally you can just pass the value of the I<cust_main_county> field returned by B<signup_info>.
+
+=back
+
+Returns a list consisting of three HTML fragments for county selection,
+state selection and country selection, respectively.
+
+=cut
+
+#false laziness w/FS::cust_main_county (this is currently the "newest" version)
+sub regionselector {
+  my $param;
+  if ( ref($_[0]) ) {
+    $param = shift;
+  } else {
+    $param = { @_ };
+  }
+  $param->{'selected_country'} ||= $param->{'default_country'};
+  $param->{'selected_state'} ||= $param->{'default_state'};
+
+  my $prefix = exists($param->{'prefix'}) ? $param->{'prefix'} : '';
+
+  my $countyflag = 0;
+
+  my %cust_main_county;
+
+#  unless ( @cust_main_county ) { #cache 
+    #@cust_main_county = qsearch('cust_main_county', {} );
+    #foreach my $c ( @cust_main_county ) {
+    foreach my $c ( @{ $param->{'locales'} } ) {
+      #$countyflag=1 if $c->county;
+      $countyflag=1 if $c->{county};
+      #push @{$cust_main_county{$c->country}{$c->state}}, $c->county;
+      #$cust_main_county{$c->country}{$c->state}{$c->county} = 1;
+      $cust_main_county{$c->{country}}{$c->{state}}{$c->{county}} = 1;
+    }
+#  }
+  $countyflag=1 if $param->{selected_county};
+
+  my $script_html = <<END;
+    <SCRIPT>
+    function opt(what,value,text) {
+      var optionName = new Option(text, value, false, false);
+      var length = what.length;
+      what.options[length] = optionName;
+    }
+    function ${prefix}country_changed(what) {
+      country = what.options[what.selectedIndex].text;
+      for ( var i = what.form.${prefix}state.length; i >= 0; i-- )
+          what.form.${prefix}state.options[i] = null;
+END
+      #what.form.${prefix}state.options[0] = new Option('', '', false, true);
+
+  foreach my $country ( sort keys %cust_main_county ) {
+    $script_html .= "\nif ( country == \"$country\" ) {\n";
+    foreach my $state ( sort keys %{$cust_main_county{$country}} ) {
+      my $text = $state || '(n/a)';
+      $script_html .= qq!opt(what.form.${prefix}state, "$state", "$text");\n!;
+    }
+    $script_html .= "}\n";
+  }
+
+  $script_html .= <<END;
+    }
+    function ${prefix}state_changed(what) {
+END
+
+  if ( $countyflag ) {
+    $script_html .= <<END;
+      state = what.options[what.selectedIndex].text;
+      country = what.form.${prefix}country.options[what.form.${prefix}country.selectedIndex].text;
+      for ( var i = what.form.${prefix}county.length; i >= 0; i-- )
+          what.form.${prefix}county.options[i] = null;
+END
+
+    foreach my $country ( sort keys %cust_main_county ) {
+      $script_html .= "\nif ( country == \"$country\" ) {\n";
+      foreach my $state ( sort keys %{$cust_main_county{$country}} ) {
+        $script_html .= "\nif ( state == \"$state\" ) {\n";
+          #foreach my $county ( sort @{$cust_main_county{$country}{$state}} ) {
+          foreach my $county ( sort keys %{$cust_main_county{$country}{$state}} ) {
+            my $text = $county || '(n/a)';
+            $script_html .=
+              qq!opt(what.form.${prefix}county, "$county", "$text");\n!;
+          }
+        $script_html .= "}\n";
+      }
+      $script_html .= "}\n";
+    }
+  }
+
+  $script_html .= <<END;
+    }
+    </SCRIPT>
+END
+
+  my $county_html = $script_html;
+  if ( $countyflag ) {
+    $county_html .= qq!<SELECT NAME="${prefix}county" onChange="$param->{'onchange'}">!;
+    $county_html .= '</SELECT>';
+  } else {
+    $county_html .=
+      qq!<INPUT TYPE="hidden" NAME="${prefix}county" VALUE="$param->{'selected_county'}">!;
+  }
+
+  my $state_html = qq!<SELECT NAME="${prefix}state" !.
+                   qq!onChange="${prefix}state_changed(this); $param->{'onchange'}">!;
+  foreach my $state ( sort keys %{ $cust_main_county{$param->{'selected_country'}} } ) {
+    my $text = $state || '(n/a)';
+    my $selected = $state eq $param->{'selected_state'} ? 'SELECTED' : '';
+    $state_html .= "\n<OPTION $selected VALUE=$state>$text</OPTION>"
+  }
+  $state_html .= '</SELECT>';
+
+  $state_html .= '</SELECT>';
+
+  my $country_html = qq!<SELECT NAME="${prefix}country" !.
+                     qq!onChange="${prefix}country_changed(this); $param->{'onchange'}">!;
+  my $countrydefault = $param->{default_country} || 'US';
+  foreach my $country (
+    sort { ($b eq $countrydefault) <=> ($a eq $countrydefault) or $a cmp $b }
+      keys %cust_main_county
+  ) {
+    my $selected = $country eq $param->{'selected_country'} ? ' SELECTED' : '';
+    $country_html .= "\n<OPTION$selected>$country</OPTION>"
+  }
+  $country_html .= '</SELECT>';
+
+  ($county_html, $state_html, $country_html);
+
+}
+
+#=item expselect HASHREF | LIST
+#
+#Takes as input a hashref or list of key/value pairs with the following keys:
+#
+#=over 4
+#
+#=item prefix - Specify a unique prefix string  if you intend to use the HTML output multiple time son one page.
+#
+#=item date - current date, in yyyy-mm-dd or m-d-yyyy format
+#
+#=back
+
+=item expselect PREFIX [ DATE ]
+
+Takes as input a unique prefix string and the current expiration date, in
+yyyy-mm-dd or m-d-yyyy format
+
+Returns an HTML fragments for expiration date selection.
+
+=cut
+
+sub expselect {
+  #my $param;
+  #if ( ref($_[0]) ) {
+  #  $param = shift;
+  #} else {
+  #  $param = { @_ };
+  #my $prefix = $param->{'prefix'};
+  #my $prefix = exists($param->{'prefix'}) ? $param->{'prefix'} : '';
+  #my $date =   exists($param->{'date'})   ? $param->{'date'}   : '';
+  my $prefix = shift;
+  my $date = scalar(@_) ? shift : '';
+
+  my( $m, $y ) = ( 0, 0 );
+  if ( $date  =~ /^(\d{4})-(\d{2})-\d{2}$/ ) { #PostgreSQL date format
+    ( $m, $y ) = ( $2, $1 );
+  } elsif ( $date =~ /^(\d{1,2})-(\d{1,2}-)?(\d{4}$)/ ) {
+    ( $m, $y ) = ( $1, $3 );
+  }
+  my $return = qq!<SELECT NAME="$prefix!. qq!_month" SIZE="1">!;
+  for ( 1 .. 12 ) {
+    $return .= "<OPTION";
+    $return .= " SELECTED" if $_ == $m;
+    $return .= ">$_";
+  }
+  $return .= qq!</SELECT>/<SELECT NAME="$prefix!. qq!_year" SIZE="1">!;
+  my @t = localtime;
+  my $thisYear = $t[5] + 1900;
+  for ( ($thisYear > $y && $y > 0 ? $y : $thisYear) .. 2037 ) {
+    $return .= "<OPTION";
+    $return .= " SELECTED" if $_ == $y;
+    $return .= ">$_";
+  }
+  $return .= "</SELECT>";
+
+  $return;
+}
+
+=item popselector HASHREF | LIST
+
+Takes as input a hashref or list of key/value pairs with the following keys:
+
+=over 4
+
+=item popnum
+
+=item pops - An arrayref of hash references specifying access numbers.  Normally you can just pass the value of the I<svc_acct_pop> field returned by B<signup_info>.
+
+=back
+
+Returns an HTML fragment for access number selection.
+
+=cut
+
+#horrible false laziness with FS/FS/svc_acct_pop.pm::popselector
+sub popselector {
+  my $param;
+  if ( ref($_[0]) ) {
+    $param = shift;
+  } else {
+    $param = { @_ };
+  }
+  my $popnum = $param->{'popnum'};
+  my $pops = $param->{'pops'};
+
+  return '<INPUT TYPE="hidden" NAME="popnum" VALUE="">' unless @$pops;
+  return $pops->[0]{city}. ', '. $pops->[0]{state}.
+         ' ('. $pops->[0]{ac}. ')/'. $pops->[0]{exch}. '-'. $pops->[0]{loc}.
+         '<INPUT TYPE="hidden" NAME="popnum" VALUE="'. $pops->[0]{popnum}. '">'
+    if scalar(@$pops) == 1;
+
+  my %pop = ();
+  my %popnum2pop = ();
+  foreach (@$pops) {
+    push @{ $pop{ $_->{state} }->{ $_->{ac} } }, $_;
+    $popnum2pop{$_->{popnum}} = $_;
+  }
+
+  my $text = <<END;
+    <SCRIPT>
+    function opt(what,href,text) {
+      var optionName = new Option(text, href, false, false)
+      var length = what.length;
+      what.options[length] = optionName;
+    }
+END
+
+  my $init_popstate = $param->{'init_popstate'};
+  if ( $init_popstate ) {
+    $text .= '<INPUT TYPE="hidden" NAME="init_popstate" VALUE="'.
+             $init_popstate. '">';
+  } else {
+    $text .= <<END;
+      function acstate_changed(what) {
+        state = what.options[what.selectedIndex].text;
+        what.form.popac.options.length = 0
+        what.form.popac.options[0] = new Option("Area code", "-1", false, true);
+END
+  } 
+
+  my @states = $init_popstate ? ( $init_popstate ) : keys %pop;
+  foreach my $state ( sort { $a cmp $b } @states ) {
+    $text .= "\nif ( state == \"$state\" ) {\n" unless $init_popstate;
+
+    foreach my $ac ( sort { $a cmp $b } keys %{ $pop{$state} }) {
+      $text .= "opt(what.form.popac, \"$ac\", \"$ac\");\n";
+      if ($ac eq $param->{'popac'}) {
+        $text .= "what.form.popac.options[what.form.popac.length-1].selected = true;\n";
+      }
+    }
+    $text .= "}\n" unless $init_popstate;
+  }
+  $text .= "popac_changed(what.form.popac)}\n";
+
+  $text .= <<END;
+  function popac_changed(what) {
+    ac = what.options[what.selectedIndex].text;
+    what.form.popnum.options.length = 0;
+    what.form.popnum.options[0] = new Option("City", "-1", false, true);
+
+END
+
+  foreach my $state ( @states ) {
+    foreach my $popac ( keys %{ $pop{$state} } ) {
+      $text .= "\nif ( ac == \"$popac\" ) {\n";
+
+      foreach my $pop ( @{$pop{$state}->{$popac}}) {
+        my $o_popnum = $pop->{popnum};
+        my $poptext =  $pop->{city}. ', '. $pop->{state}.
+                       ' ('. $pop->{ac}. ')/'. $pop->{exch}. '-'. $pop->{loc};
+
+        $text .= "opt(what.form.popnum, \"$o_popnum\", \"$poptext\");\n";
+        if ($popnum == $o_popnum) {
+          $text .= "what.form.popnum.options[what.form.popnum.length-1].selected = true;\n";
+        }
+      }
+      $text .= "}\n";
+    }
+  }
+
+
+  $text .= "}\n</SCRIPT>\n";
+
+  $text .=
+    qq!<TABLE CELLPADDING="0"><TR><TD><SELECT NAME="acstate"! .
+    qq!SIZE=1 onChange="acstate_changed(this)"><OPTION VALUE=-1>State!;
+  $text .= "<OPTION" . ($_ eq $param->{'acstate'} ? " SELECTED" : "") .
+           ">$_" foreach sort { $a cmp $b } @states;
+  $text .= '</SELECT>'; #callback? return 3 html pieces?  #'</TD>';
+
+  $text .=
+    qq!<SELECT NAME="popac" SIZE=1 onChange="popac_changed(this)">!.
+    qq!<OPTION>Area code</SELECT></TR><TR VALIGN="top">!;
+
+  $text .= qq!<TR><TD><SELECT NAME="popnum" SIZE=1 STYLE="width: 20em"><OPTION>City!;
+
+
+  #comment this block to disable initial list polulation
+  my @initial_select = ();
+  if ( scalar( @$pops ) > 100 ) {
+    push @initial_select, $popnum2pop{$popnum} if $popnum2pop{$popnum};
+  } else {
+    @initial_select = @$pops;
+  }
+  foreach my $pop ( sort { $a->{state} cmp $b->{state} } @initial_select ) {
+    $text .= qq!<OPTION VALUE="!. $pop->{popnum}. '"'.
+             ( ( $popnum && $pop->{popnum} == $popnum ) ? ' SELECTED' : '' ). ">".
+             $pop->{city}. ', '. $pop->{state}.
+               ' ('. $pop->{ac}. ')/'. $pop->{exch}. '-'. $pop->{loc};
+  }
+
+  $text .= qq!</SELECT></TD></TR></TABLE>!;
+
+  $text;
+
+}
+
+=back
+
+=head1 RESELLER FUNCTIONS
+
+Note: Resellers can also use the B<signup_info> and B<new_customer> functions
+with their active session.
+
+=over 4
+
+=item agent_login
+
+=item agent_info
+
+=item agent_list_customers
 
 =back
 

@@ -294,6 +294,8 @@ sub small_custview {
     or die "unknown custnum $arg";
 
   my $html = 'Customer #<B>'. $cust_main->custnum. '</B>'.
+    ' - <B><FONT COLOR="'. $cust_main->statuscolor. '">'.
+    ucfirst($cust_main->status). '</FONT></B>'.
     ntable('#e8e8e8'). '<TR><TD>'. ntable("#cccccc",2).
     '<TR><TD ALIGN="right" VALIGN="top">Billing<BR>Address</TD><TD BGCOLOR="#ffffff">'.
     $cust_main->getfield('last'). ', '. $cust_main->first. '<BR>';
@@ -304,6 +306,20 @@ sub small_custview {
   $html .= $cust_main->city. ', '. $cust_main->state. '  '. $cust_main->zip. '<BR>';
   $html .= $cust_main->country. '<BR>'
     if $cust_main->country && $cust_main->country ne $countrydefault;
+
+  $html .= '</TD></TR><TR><TD></TD><TD BGCOLOR="#ffffff">';
+  if ( $cust_main->daytime && $cust_main->night ) {
+    use FS::Msgcat;
+    $html .= ( FS::Msgcat::_gettext('daytime') || 'Day' ).
+             ' '. $cust_main->daytime.
+             '<BR>'. ( FS::Msgcat::_gettext('night') || 'Night' ).
+             ' '. $cust_main->night;
+  } elsif ( $cust_main->daytime || $cust_main->night ) {
+    $html .= $cust_main->daytime || $cust_main->night;
+  }
+  if ( $cust_main->fax ) {
+    $html .= '<BR>Fax '. $cust_main->fax;
+  }
 
   $html .= '</TD></TR></TABLE></TD>';
 
@@ -326,6 +342,23 @@ sub small_custview {
     $html .= $cust_main->get("${pre}country"). '<BR>'
       if $cust_main->get("${pre}country")
          && $cust_main->get("${pre}country") ne $countrydefault;
+
+    $html .= '</TD></TR><TR><TD></TD><TD BGCOLOR="#ffffff">';
+
+    if ( $cust_main->get("${pre}daytime") && $cust_main->get("${pre}night") ) {
+      use FS::Msgcat;
+      $html .= ( FS::Msgcat::_gettext('daytime') || 'Day' ).
+               ' '. $cust_main->get("${pre}daytime").
+               '<BR>'. ( FS::Msgcat::_gettext('night') || 'Night' ).
+               ' '. $cust_main->get("${pre}night");
+    } elsif ( $cust_main->get("${pre}daytime")
+              || $cust_main->get("${pre}night") ) {
+      $html .= $cust_main->get("${pre}daytime")
+               || $cust_main->get("${pre}night");
+    }
+    if ( $cust_main->get("${pre}fax") ) {
+      $html .= '<BR>Fax '. $cust_main->get("${pre}fax");
+    }
 
     $html .= '</TD></TR></TABLE></TD>';
   }
