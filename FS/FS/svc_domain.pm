@@ -7,7 +7,7 @@ use vars qw( @ISA $whois_hack $conf
 );
 use Carp;
 use Date::Format;
-use Net::Whois 1.0;
+#use Net::Whois::Raw;
 use FS::Record qw(fields qsearch qsearchs dbh);
 use FS::Conf;
 use FS::svc_Common;
@@ -386,15 +386,16 @@ sub catchall_svc_acct {
 
 =item whois
 
-Returns the Net::Whois::Domain object (see L<Net::Whois>) for this domain, or
-undef if the domain is not found in whois.
+# Returns the Net::Whois::Domain object (see L<Net::Whois>) for this domain, or
+# undef if the domain is not found in whois.
 
 (If $FS::svc_domain::whois_hack is true, returns that in all cases instead.)
 
 =cut
 
 sub whois {
-  $whois_hack or new Net::Whois::Domain $_[0]->domain;
+  #$whois_hack or new Net::Whois::Domain $_[0]->domain;
+  $whois_hack or die "whois_hack not set...\n";
 }
 
 =item _whois
