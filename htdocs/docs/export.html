@@ -1,0 +1,39 @@
+<head>
+  <title>File exporting</title>
+</head>
+<body>
+  <h1>File exporting</h1>
+  <ul>
+    <li>bin/svc_acct.export will create UNIX `passwd', `shadow' and `master.passwd' files, ERPCD `acp_passwd' and `acp_dialup' files and a RADIUS `users' file in the `/var/spool/freeside/export' directory.  Using the appropriate <a href="config.html">configuration files</a>, you can export these files to your remote machines unattended; see below.
+      <ul>
+        <li>shellmachines - passwd and shadow are copied to the remote machine as /etc/passwd.new and /etc/shadow.net and then moved to /etc/passwd and /etc/shadow if no errors occur.
+        <li>bsdshellmachines - passwd and master.passwd are copied to the remote machine as /etc/passwd.new and /etc/master.passwd.new and moved to /etc/passwd and /etc/master.passwd if no errors occur.
+        <li>nismachines - passwd and shadow are copied to the `/etc/global' directory on the remote machine.  If no errors occur, the command `( cd /var/yp; make; )' is executed on the remote machine.
+        <li>erpcdmachines - acp_passwd and acp_dialup are copied to the `/usr/annex' directory on the remote machine.  If no errors occur, the command `( kill -USR1 `cat /usr/annex/erpcd.pid` )' is executed on the remote machine. 
+        <li>radiusmachines - users is copied to the `/etc/raddb' directory on the remote machine.  If no errors occur, the command `( builddbm )' is executed on the remote machine.
+      </ul>
+    <li>site_perl/svc_acct.pm - If a shellmachine is defined, users can be created, modified and deleted remotely; see below.
+      <ul>
+        <li>The command `useradd -d <i>homedir</i> -s <i>shell</i> -u <i>uid</i> <i>username</i>' is executed when a user is added.
+        <li>The command `userdel <i>username</i>' is executed with a user is deleted.
+        <li>If a user's home directory changes, the command `[ -d <i>old_homedir</i> &amp;&amp; ( chmod u+t <i>old_homedir</i>; umask 022; mkdir <i>new_homedir</i>; cd <i>old_homedir</i>; find . -depth -print | cpio -pdm <i>new_homedir</i>; chmod u-t <i>new_homedir</i>; chown -R <i>uid</i>.<i>gid</i> <i>new_homedir</i>; rm -rf <i>old_homedir</i> )' is executed.
+      </ul>
+    <li>bin/svc_acct_sm.export will create <a href="http://www.qmail.org">Qmail</a> `rcpthosts', `recipientmap' and `virtualdomains' files and <a href="http://www.sendmail.org">Sendmail</a> `virtusertable' and `sendmail.cw' files in the `/var/spool/freeside/export' directory.  Using the appropriate <a href="config.html">configuration files</a>, you can export these files to your remote machines unattemded; see below.
+      <ul>
+        <li>qmailmachines - recipientmap, virtualdomains and rcpthosts are copied to the `/var/qmail/control' directory on the remote machine.  Note: If you <a href="legacy.html#svc_acct_sm">imported</a> qmail configuration files, run the generated `/var/spool/freeside/export/virtualdomains.FIX' on a machine with your user home directories before exporting qmail configuration files.
+        <li>shellmachine - The command `[ -e <i>homedir</i>/.qmail-default ] || { touch <i>homedir</i>/.qmail-default; chown <i>uid</i>.<i>gid</i> <i>homedir</i>/.qmail-default; }' will be run on this machine for users in the virtualdomains file.
+        <li>sendmailmachines - sendmail.cw and virtusertable are copied to the remote machine as /etc/sendmail.cw.new and /etc/virtusertable.new and moved to /etc/sendmail.cw and /etc/virtusertable if no errors occur.
+      </ul>
+    <li>site_perl/svc_acct_sm.pm - If the qmailmachines configuration file exists and a shellmachine is defined, user `.qmail-' files can be updated.
+      <ul>
+        <li>The command `[ -e <i>homedir</i>/.qmail-<i>domain</i>-default ] || { touch <i>homedir</i>/.qmail-<i>domain</i>-default; chown <i>uid</i>.<i>gid</i> <i>homedir</i>/.qmail-<i>domain</i>-default; }' is run.
+      </ul>
+  </ul>
+  <br><a name=ssh>Unattended remote login</a> - Freeside can login to remote machines unattended using SSH.  This can pose a security risk if not configured correctly, and will allow an intruder who breaks into your freeside machine full access to your remote machines.  <b>Do not use this feature unless you understand what you are doing!</b>
+    <ul>
+      <li>As the freeside user (on your freeside machine), generate an authentication key using <a href="http://www.tac.nyc.ny.us/cgi-bin/man-cgi?ssh-keygen+1">ssh-keygen</a>.  Since this is for unattended operation, you need to use a blank passphrase.
+      <li>Append the newly-created identity.pub file to root's authorized_keys on the remote machine(s).
+    </ul>
+
+</body>
+
