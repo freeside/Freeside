@@ -158,12 +158,16 @@ ALTER TABLE pkg_svc ADD primary_svc char(1) NULL;
 ALTER TABLE h_pkg_svc ADD primary_svc char(1) NULL;
 ALTER TABLE svc_forward ADD src varchar(255) NULL;
 ALTER TABLE h_svc_forward ADD src varchar(255) NULL;
+
+On recent Pg versions:
+
 ALTER TABLE svc_forward ALTER COLUMN srcsvc DROP NOT NULL;
 ALTER TABLE h_svc_forward ALTER COLUMN srcsvc DROP NOT NULL;
 ALTER TABLE svc_forward ALTER COLUMN dstsvc DROP NOT NULL;
 ALTER TABLE h_svc_forward ALTER COLUMN dstsvc DROP NOT NULL;
 
-
+Or on Pg versions that don't support DROP NOT NULL (tested only on 7.2 so far):
+UPDATE pg_attribute SET attnotnull = FALSE WHERE ( attname = 'srcsvc' OR attname = 'dstsvc' ) AND ( attrelid = ( SELECT oid FROM pg_class WHERE relname = 'svc_forward' ) OR attrelid = ( SELECT oid FROM pg_class WHERE relname = 'h_svc_forward' ) );
 
 dump database, edit:
 - cust_main: increase otaker from 8 to 32
