@@ -819,7 +819,7 @@ sub check {
     #$recref->{password} = $1.
     #  crypt($3,$saltset[int(rand(64))].$saltset[int(rand(64))]
     #;
-  } elsif ( $recref->{_password} =~ /^((\*SUSPENDED\* )?)([\w\.\/\$\;\+]{13,34})$/ ) {
+  } elsif ( $recref->{_password} =~ /^((\*SUSPENDED\* )?)([\w\.\/\$\;\+]{13,60})$/ ) {
     $recref->{_password} = $1.$3;
   } elsif ( $recref->{_password} eq '*' ) {
     $recref->{_password} = '*';
