@@ -64,7 +64,7 @@ create-database:
 	perl -e 'use DBIx::DataSource qw( create_database ); create_database( \'${DATASOURCE}\', \'${DB_USER}\', \'${DB_PASSWORD}\' ) or die $DBIx::DataSource::errstr;'
 
 create-config: install-perl-modules
-	[ -e ${FREESIDE_CONF} ] || mv ${FREESIDE_CONF} ${FREESIDE_CONF}.`date +%Y%m%d%H%M%S`
+	[ -e ${FREESIDE_CONF} ] && mv ${FREESIDE_CONF} ${FREESIDE_CONF}.`date +%Y%m%d%H%M%S`
 	mkdir ${FREESIDE_CONF}
 	chown freeside ${FREESIDE_CONF}
 
