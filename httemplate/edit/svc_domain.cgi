@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: svc_domain.cgi,v 1.3 2001-09-11 23:44:01 ivan Exp $ -->
+#<!-- $Id: svc_domain.cgi,v 1.4 2001-10-25 21:24:12 ivan Exp $ -->
 
 use strict;
 use vars qw( $cgi $action $svcnum $svc_domain $pkgnum $svcpart $part_svc
@@ -100,19 +100,7 @@ print qq!>Transfer!;
 print <<END;
 <P>Domain <INPUT TYPE="text" NAME="domain" VALUE="$domain" SIZE=28 MAXLENGTH=26>
 <BR>Purpose/Description: <INPUT TYPE="text" NAME="purpose" VALUE="$purpose" SIZE=64>
-<P><CENTER><INPUT TYPE="submit" VALUE="Submit"></CENTER>
-<UL>
-  <LI>COM is for commercial, for-profit organziations
-  <LI>ORG is for miscellaneous, usually, non-profit organizations
-  <LI>NET is for network infrastructure machines and organizations
-  <LI>EDU is for 4-year, degree granting institutions
-<!--  <LI>GOV is for United States federal government agencies
-!-->
-</UL>
-US state and local government agencies, schools, libraries, museums, and individuals should register under the US domain.  See RFC 1480 for a complete description of the US domain
-and registration procedures.
-<!--  <P>GOV registrations are limited to top-level US Federal Government agencies (see RFC 1816).
-!-->
+<P><INPUT TYPE="submit" VALUE="Submit">
     </FORM>
   </BODY>
 </HTML>
