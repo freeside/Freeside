@@ -212,6 +212,7 @@ sub insert {
     if $part_svc->part_svc_column('uid')->columnflag ne 'F'
       && qsearchs( 'svc_acct', { 'uid' => $self->uid } )
       && $self->username !~ /^(hyla)?fax$/
+      && $self->username !~ /^toor$/ #FreeBSD
     ;
 
   $error = $self->SUPER::insert;
