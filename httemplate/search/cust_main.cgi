@@ -340,12 +340,10 @@ END
         $cust_main->ship_last ? $cust_main->ship_first : $cust_main->first,
         $cust_main->ship_last ? $cust_main->ship_company : $cust_main->company,
       );
-    my $pship_company = $ship_company
-      ? qq!<A HREF="$view"><FONT SIZE=-1>$ship_company</FONT></A>!
-      : '<FONT SIZE=-1>&nbsp;</FONT>';
-    print <<END;
-
-print <<END;
+      my $pship_company = $ship_company
+        ? qq!<A HREF="$view"><FONT SIZE=-1>$ship_company</FONT></A>!
+        : '<FONT SIZE=-1>&nbsp;</FONT>';
+      print <<END;
       <TD ROWSPAN=$rowspan><A HREF="$view"><FONT SIZE=-1>$ship_last, $ship_first</FONT></A></TD>
       <TD ROWSPAN=$rowspan>$pship_company</A></TD>
 END
