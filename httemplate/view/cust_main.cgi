@@ -231,6 +231,13 @@ if ( $conf->config('payby-default') ne 'HIDE' ) {
           '<TR><TD ALIGN="right">Bank name</TD><TD BGCOLOR="#ffffff">',
           $cust_main->payname, '</TD></TR>'
     ;
+  } elsif ( $cust_main->payby eq 'LECB' ) {
+    $cust_main->payinfo =~ /^(\d{3})(\d{3})(\d{4})$/;
+    my $payinfo = "$1-$2-$3";
+    print 'Phone bill billing</TD></TR>',
+          '<TR><TD ALIGN="right">Phone number</TD><TD BGCOLOR="#ffffff">',
+          $payinfo, '</TD></TR>',
+    ;
   } elsif ( $cust_main->payby eq 'BILL' ) {
     print 'Billing</TD></TR>';
     print '<TR><TD ALIGN="right">P.O. </TD><TD BGCOLOR="#ffffff">',

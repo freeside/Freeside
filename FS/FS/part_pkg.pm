@@ -282,6 +282,8 @@ following logic instead;
 If the package has B<0> setup and B<0> recur, the single item B<BILL> is
 returned, otherwise, the single item B<CARD> is returned.
 
+(CHEK?  LEC?  Probably shouldn't accept those by default, prone to abuse)
+
 =cut
 
 sub payby {

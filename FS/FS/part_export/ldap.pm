@@ -31,7 +31,7 @@ sub _export_insert {
                  grep { /^\s*(\w+)\s+(.*\S)\s*$/ }
                    split("\n", $self->option('attributes'));
 
-  if ( $self->option('radius') {
+  if ( $self->option('radius') ) {
     foreach my $table (qw(reply check)) {
       my $method = "radius_$table";
       my %radius = $svc_acct->$method();

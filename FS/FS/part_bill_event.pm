@@ -37,7 +37,7 @@ FS::Record.  The following fields are currently supported:
 
 =item eventpart - primary key
 
-=item payby - CARD, CHEK, BILL, or COMP
+=item payby - CARD, CHEK, LECB, BILL, or COMP
 
 =item event - event name
 
@@ -140,7 +140,7 @@ sub check {
   }
 
   my $error = $self->ut_numbern('eventpart')
-    || $self->ut_enum('payby', [qw( CARD CHEK BILL COMP )] )
+    || $self->ut_enum('payby', [qw( CARD CHEK LECB BILL COMP )] )
     || $self->ut_text('event')
     || $self->ut_anything('eventcode')
     || $self->ut_number('seconds')

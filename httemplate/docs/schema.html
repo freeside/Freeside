@@ -39,7 +39,7 @@
     <li><a name="part_bill_event" href="man/FS/part_bill_event.html">part_bill_event</a> - Invoice event definitions
       <ul>
         <li>eventpart - primary key
-        <li>payby - CARD, BILL, or COMP
+        <li>payby - CARD, CHEK, LECB, BILL, or COMP
         <li>event - event name
         <li>eventcode - event action
         <li>seconds - how long after the invoice date (<a href="#cust_bill">cust_bill</a>._date) events of this type are triggered
@@ -109,7 +109,7 @@
         <li><i>ship_daytime</i>
         <li><i>ship_night</i>
         <li><i>ship_fax</i>
-        <li>payby - CARD, BILL, or COMP
+        <li>payby - CARD, CHEK, LECB, BILL, or COMP
         <li>payinfo - card number, P.O.#, or comp issuer
         <li>paydate - expiration date
         <li>payname - billing name (name on card)
@@ -150,7 +150,7 @@
         <li>custnum - <a href="#cust_main">customer</a>
         <li>paid - amount
         <li>_date
-        <li>payby - CARD, BILL, or COMP
+        <li>payby - CARD, CHEK, LECB, BILL, or COMP
         <li>payinfo - card number, P.O.#, or comp issuer
         <li>paybatch - text field for tracking card processor batches
         <li>closed - books closed flag, empty or `Y'
@@ -200,7 +200,7 @@
         <li>custnum - <a href="#cust_main">customer</a>
         <li>refund - amount
         <li>_date
-        <li>payby - CARD, BILL or COMP
+        <li>payby - CARD, CHEK, LECB, BILL or COMP
         <li>payinfo - card number, P.O.#, or comp issuer
         <li>otaker - order taker
         <li>closed - books closed flag, empty or `Y'

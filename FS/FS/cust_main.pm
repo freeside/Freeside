@@ -158,7 +158,7 @@ FS::Record.  The following fields are currently supported:
 
 =item ship_fax - phone (optional)
 
-=item payby - `CARD' (credit cards), `CHEK' (electronic check), `BILL' (billing), `COMP' (free), or `PREPAY' (special billing type: applies a credit - see L<FS::prepay_credit> and sets billing type to BILL)
+=item payby - `CARD' (credit cards), `CHEK' (electronic check), `LECB' (Phone bill billing), `BILL' (billing), `COMP' (free), or `PREPAY' (special billing type: applies a credit - see L<FS::prepay_credit> and sets billing type to BILL)
 
 =item payinfo - card number, P.O., comp issuer (4-8 lowercase alphanumerics; think username) or prepayment identifier (see L<FS::prepay_credit>)
 
@@ -484,14 +484,15 @@ sub replace {
     $self->invoicing_list( $invoicing_list );
   }
 
-  if ( $self->payby =~ /^(CARD|CHEK)$/ &&
+  if ( $self->payby =~ /^(CARD|CHEK|LECB)$/ &&
        grep { $self->get($_) ne $old->get($_) } qw(payinfo paydate payname) ) {
     # card/check info has changed, want to retry realtime_card invoice events
     #false laziness w/collect
     foreach my $cust_bill_event (
       grep {
              #$_->part_bill_event->plan eq 'realtime-card'
-             $_->part_bill_event->eventcode eq '$cust_bill->realtime_card();'
+             $_->part_bill_event->eventcode =~
+                 /^\$cust_bill\->realtime_(card|ach|lec)\(\);$/
                && $_->status eq 'done'
                && $_->statustext
            }
@@ -691,6 +692,14 @@ sub check {
     $payinfo = "$1\@$2";
     $self->payinfo($payinfo);
 
+  } elsif ( $self->payby eq 'LECB' ) {
+
+    my $payinfo = $self->payinfo;
+    $payinfo =~ s/\D//g;
+    $payinfo =~ /^1?(\d{10})$/ or return 'invalid btn billing telephone number';
+    $payinfo = $1;
+    $self->payinfo($payinfo);
+
   } elsif ( $self->payby eq 'BILL' ) {
 
     $error = $self->ut_textn('payinfo');
@@ -715,7 +724,7 @@ sub check {
 
   if ( $self->paydate eq '' || $self->paydate eq '-' ) {
     return "Expriation date required"
-      unless $self->payby =~ /^(BILL|PREPAY|CHEK)$/;
+      unless $self->payby =~ /^(BILL|PREPAY|CHEK|LECB)$/;
     $self->paydate('');
   } else {
     $self->paydate =~ /^(\d{1,2})[\/\-](\d{2}(\d{2})?)$/

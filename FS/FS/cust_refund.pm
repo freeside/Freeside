@@ -48,7 +48,7 @@ inherits from FS::Record.  The following fields are currently supported:
 L<Time::Local> and L<Date::Parse> for conversion functions.
 
 =item payby - `CARD' (credit cards), `CHEK' (electronic check/ACH),
-`BILL' (billing), or `COMP' (free)
+`LECB' (Phone bill billing), `BILL' (billing), or `COMP' (free)
 
 =item payinfo - card number, P.O.#, or comp issuer (4-8 lowercase alphanumerics; think username)
 
@@ -235,7 +235,7 @@ sub check {
     unless $self->crednum 
            || qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
 
-  $self->payby =~ /^(CARD|CHEK|BILL|COMP)$/ or return "Illegal payby";
+  $self->payby =~ /^(CARD|CHEK|LECB|BILL|COMP)$/ or return "Illegal payby";
   $self->payby($1);
 
   #false laziness with cust_pay::check
@@ -267,7 +267,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: cust_refund.pm,v 1.19 2002-10-12 10:15:55 ivan Exp $
+$Id: cust_refund.pm,v 1.20 2002-11-19 09:51:58 ivan Exp $
 
 =head1 BUGS
 
