@@ -1,10 +1,27 @@
-$Id: TODO,v 1.35 1999-07-16 00:20:53 ivan Exp $
+$Id: TODO,v 1.36 1999-07-29 19:13:06 ivan Exp $
 
 If you are interested in helping with any of these, please join the mailing
 list (send a blank message to ivan-freeside-subscribe@sisd.com) to avoid 
 duplication of effort.
 
 ---
+
+A web version of the fs_passwd stuff would be nifty.   
+
+If you have Cistron authenticating directly from MySQL, you can replicate
+in real-time instead of exporting periodically.  See 
+<http://www.mysql.com/Manual_chapter/manual_Common_problems.html#Replication>.
+
+these go in docs:
+<http://www.sisd.com/freeside/list-archive/msg00546.html>, and
+<http://www.sisd.com/freeside/list-archive/msg00554.html>
+
+and http://www.sisd.com/freeside/list-archive/msg00423.html
+
+> > 5: Is there anyway to get freeside to send a sysadmin a warning when a
+> > credit card has expired?
+No, but there should be.
+
 Put this in the doc (quoting Mark Wells <mark@pc-intouch.com>):
 >Of course, thanks to the sheer coolness of SQL and MyODBC, you can do
 >whatever reports you want in basically whatever application you want.

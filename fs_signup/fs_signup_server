@@ -1,36 +1,64 @@
 #!/usr/bin/perl -Tw
 #
-# fs_passwd_server
+# fs_signup_server
 #
-# portions of this script are copied from the `passwd' script in the original
-# (perl 4) camel book, now archived at 
-# http://www.perl.com/CPAN/scripts/nutshell/ch6/passwd
-#
-# ivan@sisd.com 98-mar-9
-#
-# crypt-aware, s/password/_password/; ivan@sisd.com 98-aug-23
 
 use strict;
 use IO::Handle;
 use FS::SSH qw(sshopen2);
 use FS::UID qw(adminsuidsetup);
 use FS::Record qw(qsearchs);
-use FS::svc_acct;
+use FS::cust_main_county;
+use FS::cust_main;
+
+use vars qw( $opt );
 
 my $user = shift or die &usage;
 adminsuidsetup $user; 
 
-my($shellmachine)=shift or die &usage;
+my $machine = shift or die &usage;
+
+my $agentnum = shift or die &usage;
+my $agent = qsearchs( 'agent', { 'agentnum' => $agentnum } ) or die &usage;
+#my %part_pkg = %{ $agent->pkgpart_hashref };
+
+my $refnum = shift or die &usage;
 
 $SIG{CHLD} = sub { wait() };
 
-my($fs_passwdd)="/usr/local/sbin/fs_passwdd";
+my($fs_signupd)="/usr/local/sbin/fs_signupd";
 
 while (1) {
   my($reader,$writer)=(new IO::Handle, new IO::Handle);
   $writer->autoflush(1);
-  sshopen2($shellmachine,$reader,$writer,$fs_passwdd);
+  sshopen2($shellmachine,$reader,$writer,$fs_signupd);
+
+  #send fs_signupd state/county/country
+  @cust_main_county = qsearch('cust_main_county', {} );
+  print $writer join("\n",
+    scalar(@cust_main_county),
+    map {
+      $_->taxnum,
+      $_->state,
+      $_->county,
+      $_->country,
+    } @cust_main_county
+  ),"\n";
+
+  #send fs_signupd package definitions
+
+  #send fs_signupd POPs
+
+
+
   while (1) {
+    my( $first, $last, $ss, $company, $address1, $address2, $city, $county,
+        $state, $zip, $country, $daytime, $night, $fax, $payby, $payinfo,
+        $paydate, $payname, $username, $password, $popnum,
+    );
+
+
+
     my($username,$old_password,$new_password,$new_gecos,$new_shell);
     defined($username=<$reader>) or last;
     defined($old_password=<$reader>) or last; 
@@ -72,6 +100,6 @@ while (1) {
 }
 
 sub usage {
-  die "Usage:\n\n  fs_passwd_server user shellmachine\n";
+  die "Usage:\n\n  fs_signup_server user machine agentnum refnum\n";
 }
 
