@@ -308,7 +308,7 @@ sub _svc_label {
   } elsif ( $svcdb eq 'svc_domain' ) {
     $tag = $svc_x->getfield('domain');
   } elsif ( $svcdb eq 'svc_www' ) {
-    my $domain_record = $svc_x->domain_record;
+    my $domain_record = $svc_x->domain_record(@_);
     $tag = $domain_record->zone;
   } elsif ( $svcdb eq 'svc_broadband' ) {
     $tag = $svc_x->ip_addr;
