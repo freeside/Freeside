@@ -20,6 +20,7 @@ sub _export_insert {
     $svc_acct->username,
     crypt($svc_acct->_password,$saltset[int(rand(64))].$saltset[int(rand(64))]),
     $svc_acct->domain,
+    $svc_acct->quota,
   );
 }
 
@@ -47,7 +48,7 @@ sub _export_replace {
   return '' unless $old->_password ne $new->_password;
 
   $self->vpopmail_queue( $new->svcnum, 'replace',
-    $new->username, $cpassword, $new->domain );
+    $new->username, $cpassword, $new->domain, $new->quota );
 }
 
 sub _export_delete {
@@ -76,7 +77,7 @@ sub vpopmail_queue {
 
 sub vpopmail_insert { #subroutine, not method
   my( $exportdir, $machine, $dir, $uid, $gid ) = splice @_,0,5;
-  my( $username, $password, $domain ) = @_;
+  my( $username, $password, $domain, $quota ) = @_;
   
   (open(VPASSWD, ">>$exportdir/domains/$domain/vpasswd")
     and flock(VPASSWD,LOCK_EX)
@@ -87,9 +88,9 @@ sub vpopmail_insert { #subroutine, not method
     $password,
     '1',
     '0',
-    $username,
+    $finger,
     "$dir/domains/$domain/$username",
-    'NOQUOTA',
+    $quota ? $quota.'S' : 'NOQUOTA',
   ), "\n";
 
   flock(VPASSWD,LOCK_UN);
@@ -118,10 +119,21 @@ sub vpopmail_replace { #subroutine, not method
     or die "Can't open $exportdir/domains/$domain/vpasswd.tmp: $!";
 
   while (<VPASSWD>) {
-    my ($mailbox, $pw, @rest) = split(':', $_);
-    print VPASSWDTMP $_ unless $username eq $mailbox;
-    print VPASSWDTMP join (':', ($mailbox, $password, @rest))
-      if $username eq $mailbox;
+    my ($mailbox, $pw, $vuid, $vgid, $vfinger, $vdir, $vquota, @rest) =
+      split(':', $_);
+    if ( $username ne $mailbox ) {
+      print VPASSWDTMP $_;
+      next
+    }
+    print VPASSWDTMP join (':',
+      $mailbox,
+      $password,
+      '1',
+      '0',
+      $finger,
+      $dir,
+      $quota ? $quota.'S' : 'NOQUOTA',
+    ), "\n";
   }
 
   close(VPASSWDTMP);
@@ -171,9 +183,28 @@ sub vpopmail_sync {
   my( $exportdir, $machine, $dir, $uid, $gid ) = splice @_,0,5;
   
   chdir $exportdir;
-  my @args = ( $rsync, "-rlpt", "-e", $ssh, "domains/",
-               "vpopmail\@$machine:$dir/domains/"  );
-  system {$args[0]} @args;
+#  my @args = ( $rsync, "-rlpt", "-e", $ssh, "domains/",
+#               "vpopmail\@$machine:$dir/domains/"  );
+#  system {$args[0]} @args;
+
+  eval "use File::Rsync;";
+  die $@ if $@;
+
+  my $rsync = File::Rsync->new({ rsh => 'ssh' });
+
+  $rsync->exec( {
+    recursive => 1,
+    perms     => 1,
+    times     => 1,
+    src       => "$exportdir/domains/",
+    dest      => "vpopmail\@$machine:$dir/domains/",
+  } ); # true/false return value from exec is not working, alas
+  if ( $rsync->err ) {
+    die "error uploading to vpopmail\@$machine:$dir/domains/ : ".
+        'exit status: '. $rsync->status. ', '.
+        'STDERR: '. join(" / ", $rsync->err). ', '.
+        'STDOUT: '. join(" / ", $rsync->out);
+  }
 }
 
 
