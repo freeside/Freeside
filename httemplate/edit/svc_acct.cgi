@@ -81,7 +81,8 @@ if ( $svc_acct->_password ) {
   $password = '';
 }
 
-my $ulen = $svc_acct->dbdef_table->column('username')->length;
+my $ulen = $conf->config('usernamemax')
+           || $svc_acct->dbdef_table->column('username')->length;
 my $ulen2 = $ulen+2;
 
 my $pmax = $conf->config('passwordmax') || 8;
@@ -103,7 +104,7 @@ print 'Service # '. ( $svcnum ? "<B>$svcnum</B>" : " (NEW)" ). '<BR>'.
       <INPUT TYPE="hidden" NAME="svcpart" VALUE="$svcpart">
 END
 
-print &itable("#cccccc",2), <<END;
+print &ntable("#cccccc",2), <<END;
 <TR><TD>
 <TR><TD ALIGN="right">Username</TD>
 <TD><INPUT TYPE="text" NAME="username" VALUE="$username" SIZE=$ulen2 MAXLENGTH=$ulen></TD></TR>
