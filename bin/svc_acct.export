@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 #
-# $Id: svc_acct.export,v 1.31 2002-02-14 22:37:38 jeff Exp $
+# $Id: svc_acct.export,v 1.32 2002-02-15 20:21:56 jeff Exp $
 #
 # Create and export password, radius and vpopmail password files:
 # passwd, passwd.adjunct, shadow, acp_passwd, acp_userinfo, acp_dialup
@@ -350,20 +350,20 @@ foreach $svc_domain (sort {$a->domain cmp $b->domain} @svc_domain) {
           '',
         ), "\n";
       }
-
-      ###
-      # FORMAT OF THE VPASSWD FILE HERE
-      print VPASSWD join(":",
-        $svc_acct->username,
-        $cpassword,
-        '1',
-        '0',
-        $svc_acct->username,
-        "$vpopdir/domains/" . $svc_domain->domain ."/" . $svc_acct->username,
-        'NOQUOTA',
-      ), "\n";
-
     }
+
+    ###
+    # FORMAT OF THE VPASSWD FILE HERE
+    print VPASSWD join(":",
+      $svc_acct->username,
+      $cpassword,
+      '1',
+      '0',
+      $svc_acct->username,
+      "$vpopdir/domains/" . $svc_domain->domain ."/" . $svc_acct->username,
+      'NOQUOTA',
+    ), "\n";
+
 
     if ( $svc_acct->slipip ne '' ) {
 
