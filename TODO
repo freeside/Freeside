@@ -1,9 +1,0 @@
-$Id: TODO,v 1.68 2002-02-16 18:14:23 ivan Exp $
-
-The TODO list / bug-tracking is now kept in a database.  See
-http://pouncequick.420.am/rt/
-
-If you are interested in helping with any of these, please join the
-*development* mailing list (send a blank message to
-ivan-freeside-devel-subscribe@sisd.com) to avoid duplication of effort.
-

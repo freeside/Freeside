@@ -1,6 +1,0 @@
-Revision history for Perl extension FS::SelfService.
-
-0.01  Tue May 28 16:49:41 2002
-	- original version; created by h2xs 1.21 with options
-		-A -X -n FS::SelfService
-
