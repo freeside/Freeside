@@ -1481,24 +1481,15 @@ sub collect {
     }
   }
 
-  foreach my $cust_bill ( $self->cust_bill ) {
-
-    #this has to be before next's
-    my $amount = sprintf( "%.2f", $balance < $cust_bill->owed
-                                  ? $balance
-                                  : $cust_bill->owed
-    );
-    $balance = sprintf( "%.2f", $balance - $amount );
-
-    next unless $cust_bill->owed > 0;
+  foreach my $cust_bill ( $self->open_cust_bill ) {
 
     # don't try to charge for the same invoice if it's already in a batch
     #next if qsearchs( 'cust_pay_batch', { 'invnum' => $cust_bill->invnum } );
 
-    warn "invnum ". $cust_bill->invnum. " (owed ". $cust_bill->owed. ", amount $amount, balance $balance)" if $Debug;
+    last if $self->balance <= 0;
 
-    next unless $amount > 0;
-
+    warn "invnum ". $cust_bill->invnum. " (owed ". $cust_bill->owed. ")"
+      if $Debug;
 
     foreach my $part_bill_event (
       sort {    $a->seconds   <=> $b->seconds
@@ -1515,7 +1506,8 @@ sub collect {
                                        'disabled' => '',           } )
     ) {
 
-      last unless $cust_bill->owed > 0; #don't run subsequent events if owed=0
+      last if $cust_bill->owed <= 0  # don't run subsequent events if owed<=0
+           || $self->balance   <= 0; # or if balance<=0
 
       warn "calling invoice event (". $part_bill_event->eventcode. ")\n"
         if $Debug;

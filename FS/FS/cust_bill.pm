@@ -594,7 +594,10 @@ sub realtime_bop {
   my( $self, $method ) = @_;
 
   my $cust_main = $self->cust_main;
-  my $amount = $self->owed;
+  my $balance = $cust_main->balance;
+  my $amount = ( $balance < $self->owed ) ? $balance : $self->owed;
+  $amount = sprintf("%.2f", $amount);
+  return "not run (balance $balance)" unless $amount > 0;
 
   my $description = 'Internet Services';
   if ( $conf->exists('business-onlinepayment-description') ) {
