@@ -32,6 +32,17 @@ CREATE TABLE msgcat (
 );
 CREATE INDEX msgcat1 ON msgcat ( msgcode, locale );
 
+CREATE TABLE export_svc (
+  exportsvcnum int primary key,
+  exportnum int not null,
+  svcpart int not null
+);
+CREATE UNIQUE INDEX export_svc1 ON export_svc ( exportnum, svcpart );
+CREATE INDEX export_svc2 ON export_svc ( exportnum );
+CREATE INDEX export_svc3 ON export_svc ( svcpart );
+
+ALTER TABLE part_export RENAME svcpart TO deprecated;
+
 Run bin/dbdef-create
 
 Run bin/create-history-tables

@@ -45,6 +45,7 @@ FS/cust_refund.pm
 FS/cust_credit_refund.pm
 FS/cust_svc.pm
 FS/part_bill_event.pm
+FS/export_svc.pm
 FS/part_export.pm
 FS/part_export_option.pm
 FS/part_export/infostreet.pm
@@ -97,6 +98,7 @@ t/cust_svc.t
 t/domain_record.t
 t/nas.t
 t/part_bill_event.t
+t/export_svc.t
 t/part_export.t
 t/part_export_option.t
 t/part_export-infostreet.t

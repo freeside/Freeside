@@ -152,9 +152,17 @@ CREATE TABLE part_bill_event (
 );
 CREATE INDEX part_bill_event1 ON part_bill_event ( payby );
 
+CREATE TABLE export_svc (
+  exportsvcnum int primary key,
+  exportnum int not null,
+  svcpart int not null
+);
+CREATE UNIQUE INDEX export_svc1 ON export_svc ( exportnum, svcpart );
+CREATE INDEX export_svc2 ON export_svc ( exportnum );
+CREATE INDEX export_svc3 ON export_svc ( svcpart );
+
 CREATE TABLE part_export (
   exportnum int primary key,
-  svcpart int not null,
   machine varchar(80) not null,
   exporttype varchar(80) not null,
   nodomain char(1) NULL

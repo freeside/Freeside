@@ -57,6 +57,9 @@ L<FS::part_svc> - Service definition class
 
 L<FS::part_svc_column> - Column constraint class
 
+L<FS::export_svc> - Class linking service definitions (see L<FS::part_svc>)
+with exports (see L<FS::part_export>)
+
 L<FS::part_export> - External provisioning export class
 
 L<FS::part_export_option> - Export option class

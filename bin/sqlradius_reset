@@ -25,9 +25,15 @@ foreach my $export ( @exports ) {
 }
 
 foreach my $export ( @exports ) {
+
+  #my @svcparts = map { $_->svcpart } $export->export_svc;
+
   my @svc_acct =
     map { qsearchs('svc_acct', { 'svcnum' => $_->svcnum } ) }
-      qsearch('cust_svc', { 'svcpart' => $export->part_svc->svcpart } );
+      map { qsearch('cust_svc', { 'svcpart' => $_->svcpart } ) }
+        grep { qsearch('cust_svc', { 'svcpart' => $_->svcpart } ) }
+          $export->export_svc;
+
   foreach my $svc_acct ( @svc_acct ) {
 
     #false laziness with FS::svc_acct::insert (like it matters)

@@ -70,31 +70,8 @@ function part_export_areyousure(href) {
   foreach my $part_export ( @part_export ) {
 %>
       <TR>
-        <TD><%= $part_export->exporttype %> to <%= $part_export->machine %> (<A HREF="<%= $p %>edit/part_export.cgi?<%= $part_export->exportnum %>">edit</A>&nbsp;|&nbsp;<A HREF="javascript:part_export_areyousure('<%= $p %>misc/delete-part_export.cgi?<%= $part_export->exportnum %>')">delete</A>)</TD>
-        <TD>
-          <%= itable() %>
-          <% my %opt = $part_export->options;
-             foreach my $opt ( keys %opt ) { %>
-               <TR><TD><%= $opt %></TD><TD><%= $opt{$opt} %></TD></TR>
-          <% } %>
-          </TABLE>
-        </TD>
+        <TD><A HREF="<%= $p %>edit/part_export.cgi?<%= $part_export->exportnum %>"><%= $part_export->exporttype %> to <%= $part_export->machine %></A></TD></TR>
 <%  } %>
-      </TR><TR><TD COLSPAN=2><A HREF="<%= $p %>edit/part_export.cgi?new_with_svcpart=<%= $part_svc->svcpart %>"><I>Add a new export</I></A></TD></TR>
-<% if (@part_export) { %>
-      <TR><TD COLSPAN=2>
-        <FORM METHOD="POST" ACTION="<%= $p %>edit/part_export.cgi">
-        <INPUT TYPE="hidden" NAME="svcpart" VALUE="<%= $part_svc->svcpart %>">
-        <SELECT NAME="clone"><OPTION></OPTION>
-<%   foreach my $part_export ( @part_export ) { %>
-          <OPTION VALUE="<%= $part_export->exportnum %>">
-            <%= $part_export->exporttype %> to <%= $part_export->machine %>
-          </OPTION>
-<%   } %>
-        </SELECT>
-        <INPUT TYPE="submit" VALUE="clone existing export">
-        </FORM></TD></TR>
-<% } %>
       </TABLE></TD>
 
 <%   my($n1)='';

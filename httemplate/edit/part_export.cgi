@@ -6,34 +6,18 @@
 #} else {
 #  $cgi->param('clone', '');
 #}
-#if ( $cgi->param('svcpart') && $cgi->param('svcpart') =~ /^(\d+)$/ ) {
-#  $cgi->param('svcpart', $1);
-#} else {
-#  $cgi->param('svcpart', '');
-#}
 
 my($query) = $cgi->keywords;
 my $action = '';
 my $part_export = '';
-my $options = {};
 if ( $cgi->param('error') ) {
   $part_export = new FS::part_export ( {
     map { $_, scalar($cgi->param($_)) } fields('part_export')
   } );
-}
-
-#warn "***$query***";
-if ( $cgi->param('clone') && $cgi->param('clone') =~ /^(\d+)$/ ) {
-  $action = 'Add';
-  my $old_part_export = qsearchs('part_export', { 'exportnum' => $1 } );
-  unless ( $part_export ) {
-    ($part_export, $options) = $old_part_export->clone($cgi->param('svcpart'));
-  }
-} elsif ( $cgi->param('new_with_svcpart') 
-          && $cgi->param('new_with_svcpart') =~ /^(\d+)$/ ) {
-  $part_export ||= new FS::part_export ( { 'svcpart' => $1 } );
 } elsif ( $query =~ /^(\d+)$/ ) {
-  $part_export ||= qsearchs('part_export', { 'exportnum' => $1 } );
+  $part_export = qsearchs('part_export', { 'exportnum' => $1 } );
+} else {
+  $part_export = new FS::part_export;
 }
 $action ||= $part_export->exportnum ? 'Edit' : 'Add';
 
@@ -101,18 +85,20 @@ my %exports = (
 
 );
 
-my $svcdb = $part_export->part_svc->svcdb;
+#my $svcdb = $part_export->part_svc->svcdb;
+#YUCK
+my $svcdb = 'svc_acct';
+
 my %layers = map { $_ => "$_ - ". $exports{$svcdb}{$_}{desc} }
                keys %{$exports{$svcdb}};
 $layers{''}='';
 
 my $widget = new HTML::Widgets::SelectLayers(
   'selected_layer' => $part_export->exporttype,
-  'selected_layer' => $part_export->exporttype,
   'options'        => \%layers,
   'form_name'      => 'dummy',
   'form_action'    => 'process/part_export.cgi',
-  'form_text'      => [qw( exportnum svcpart machine )],
+  'form_text'      => [qw( exportnum machine )],
 #  'form_checkbox'  => [qw()],
   'html_between'    => "</TD></TR></TABLE>\n",
   'layer_callback'  => sub {
@@ -123,7 +109,7 @@ my $widget = new HTML::Widgets::SelectLayers(
 #    foreach my $option ( qw(url login password groupID ) ) {
       my $optinfo = $exports{$svcdb}->{$layer}{options}{$option};
       my $label = $optinfo->{label};
-      my $value = $part_export->option($option);
+      my $value = $cgi->param($option) || $part_export->option($option);
       $html .= qq!<TR><TD ALIGN="right">$label</TD><TD>!.
                qq!<TD><INPUT TYPE="text" NAME="$option" VALUE="$value"></TD>!.
                '</TR>';
@@ -159,13 +145,6 @@ my $widget = new HTML::Widgets::SelectLayers(
 <INPUT TYPE="hidden" NAME="exportnum" VALUE="<%= $part_export->exportnum %>">
 
 <%= ntable("#cccccc",2) %>
-<TR>
-  <TD ALIGN="right">Service</TD>
-  <TD BGCOLOR="#ffffff">
-    <%= $part_export->svcpart %> - <%= $part_export->part_svc->svc %>
-    <INPUT TYPE="hidden" NAME="svcpart" VALUE="<%= $part_export->svcpart %>">
-  </TD>
-</TR>
 <TR>
   <TD ALIGN="right">Export host</TD>
   <TD>

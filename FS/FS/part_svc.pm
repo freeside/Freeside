@@ -5,6 +5,7 @@ use vars qw( @ISA );
 use FS::Record qw( qsearch qsearchs fields dbh );
 use FS::part_svc_column;
 use FS::part_export;
+use FS::export_svc;
 
 @ISA = qw(FS::Record);
 
@@ -316,15 +317,15 @@ sub all_part_svc_column {
 
 sub part_export {
   my $self = shift;
-  my %search = ( 'svcpart' => $self->svcpart );
-  qsearch('part_export', \%search);
+  map { qsearchs('part_export', { 'exportnum' => $_->exportnum } ) }
+    qsearch('export_svc', { 'svcpart' => $self->svcpart } );
 }
 
 =back
 
 =head1 VERSION
 
-$Id: part_svc.pm,v 1.12 2002-03-26 13:58:29 ivan Exp $
+$Id: part_svc.pm,v 1.13 2002-04-11 22:05:31 ivan Exp $
 
 =head1 BUGS
 
@@ -332,6 +333,8 @@ Delete is unimplemented.
 
 The list of svc_* tables is hardcoded.  When svc_acct_pop is renamed, this
 should be fixed.
+
+all_part_svc_column and part_export methods should be documented
 
 =head1 SEE ALSO
 

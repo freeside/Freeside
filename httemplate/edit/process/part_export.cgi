@@ -18,6 +18,7 @@ my $error;
 if ( $exportnum ) {
   warn $old;
   warn $exportnum;
+  warn $new->machine;
   $error = $new->replace($old,\%options);
 } else {
   $error = $new->insert(\%options);
@@ -28,7 +29,7 @@ if ( $error ) {
   $cgi->param('error', $error );
   print $cgi->redirect(popurl(2). "part_export.cgi?". $cgi->query_string );
 } else {
-  print $cgi->redirect(popurl(3). "browse/part_svc.cgi");
+  print $cgi->redirect(popurl(3). "browse/part_export.cgi");
 }
 
 %>

@@ -5,6 +5,7 @@ use vars qw( @ISA );
 use FS::Record qw( qsearch qsearchs dbh );
 use FS::part_svc;
 use FS::part_export_option;
+use FS::export_svc;
 
 @ISA = qw(FS::Record);
 
@@ -19,7 +20,7 @@ FS::part_export - Object methods for part_export records
   $record = new FS::part_export \%hash;
   $record = new FS::part_export { 'column' => 'value' };
 
-  ($new_record, $options) = $template_recored->clone( $svcpart );
+  #($new_record, $options) = $template_recored->clone( $svcpart );
 
   $error = $record->insert( { 'option' => 'value' } );
   $error = $record->insert( \%options );
@@ -39,8 +40,6 @@ fields are currently supported:
 =over 4
 
 =item exportnum - primary key
-
-=item svcpart - Service definition (see L<FS::part_svc>) to which this export applies
 
 =item machine - Machine name 
 
@@ -67,27 +66,29 @@ points to.  You can ask the object for a copy with the I<hash> method.
 
 sub table { 'part_export'; }
 
-=item clone SVCPART
-
-An alternate constructor.  Creates a new export by duplicating an existing
-export.  The given svcpart is assigned to the new export.
-
-Returns a list consisting of the new export object and a hashref of options.
-
 =cut
 
-sub clone {
-  my $self = shift;
-  my $class = ref($self);
-  my %hash = $self->hash;
-  $hash{'exportnum'} = '';
-  $hash{'svcpart'} = shift;
-  ( $class->new( \%hash ),
-    { map { $_->optionname => $_->optionvalue }
-        qsearch('part_export_option', { 'exportnum' => $self->exportnum } )
-    }
-  );
-}
+#=item clone SVCPART
+#
+#An alternate constructor.  Creates a new export by duplicating an existing
+#export.  The given svcpart is assigned to the new export.
+#
+#Returns a list consisting of the new export object and a hashref of options.
+#
+#=cut
+#
+#sub clone {
+#  my $self = shift;
+#  my $class = ref($self);
+#  my %hash = $self->hash;
+#  $hash{'exportnum'} = '';
+#  $hash{'svcpart'} = shift;
+#  ( $class->new( \%hash ),
+#    { map { $_->optionname => $_->optionvalue }
+#        qsearch('part_export_option', { 'exportnum' => $self->exportnum } )
+#    }
+#  );
+#}
 
 =item insert HASHREF
 
@@ -167,6 +168,14 @@ sub delete {
 
   foreach my $part_export_option ( $self->part_export_option ) {
     my $error = $part_export_option->delete;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
+  foreach my $export_svc ( $self->export_svc ) {
+    my $error = $export_svc->delete;
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return $error;
@@ -258,13 +267,11 @@ sub check {
   my $error = 
     $self->ut_numbern('exportnum')
     || $self->ut_domain('machine')
-    || $self->ut_number('svcpart')
     || $self->ut_alpha('exporttype')
   ;
   return $error if $error;
 
-  return "Unknown svcpart: ". $self->svcpart
-    unless qsearchs( 'part_svc', { 'svcpart' => $self->svcpart } );
+  warn $self->machine. "!!!\n";
 
   $self->machine =~ /^([\w\-\.]*)$/
     or return "Illegal machine: ". $self->machine;
@@ -273,20 +280,39 @@ sub check {
   $self->nodomain =~ /^(Y?)$/ or return "Illegal nodomain: ". $self->nodomain;
   $self->nodomain($1);
 
+  $self->deprecated(1); #BLAH
+
   #check exporttype?
 
   ''; #no error
 }
 
-=item part_svc
+#=item part_svc
+#
+#Returns the service definition (see L<FS::part_svc>) for this export.
+#
+#=cut
+#
+#sub part_svc {
+#  my $self = shift;
+#  qsearchs('part_svc', { svcpart => $self->svcpart } );
+#}
 
-Returns the service definition (see L<FS::part_svc>) for this export.
+sub part_svc {
+  use Carp;
+  croak "FS::part_export::part_svc deprecated";
+  #confess "FS::part_export::part_svc deprecated";
+}
+
+=item export_svc
+
+Returns a list of associated FS::export_svc records.
 
 =cut
 
-sub part_svc {
+sub export_svc {
   my $self = shift;
-  qsearchs('part_svc', { svcpart => $self->svcpart } );
+  qsearch('export_svc', { 'exportnum' => $self->exportnum } );
 }
 
 =item part_export_option
@@ -413,9 +439,12 @@ Probably.
 
 Hmm... cust_export class (not necessarily a database table...) ... ?
 
+deprecated column...
+
 =head1 SEE ALSO
 
-L<FS::part_export_option>, L<FS::part_svc>, L<FS::svc_acct>, L<FS::svc_domain>,
+L<FS::part_export_option>, L<FS::export_svc>, L<FS::svc_acct>,
+L<FS::svc_domain>,
 L<FS::svc_forward>, L<FS::Record>, schema.html from the base documentation.
 
 =cut
