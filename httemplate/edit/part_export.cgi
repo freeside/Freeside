@@ -60,7 +60,7 @@ my $widget = new HTML::Widgets::SelectLayers(
         foreach my $select_option ( @{$optinfo->{options}} ) {
           #if ( ref($select_option) ) {
           #} else {
-            $selected = $select_option eq $value ? ' SELECTED' : '';
+            my $selected = $select_option eq $value ? ' SELECTED' : '';
             $html .= qq!<OPTION VALUE="$select_option"$selected>!.
                      qq!$select_option</OPTION>!;
           #}
