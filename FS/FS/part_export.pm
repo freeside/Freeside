@@ -274,10 +274,6 @@ sub check {
   ;
   return $error if $error;
 
-  $self->machine =~ /^([\w\-\.]*)$/
-    or return "Illegal machine: ". $self->machine;
-  $self->machine($1);
-
   $self->nodomain =~ /^(Y?)$/ or return "Illegal nodomain: ". $self->nodomain;
   $self->nodomain($1);
 

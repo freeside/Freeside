@@ -54,6 +54,8 @@ L<FS::svc_Common> - Service base class
 
 L<FS::svc_acct> - Account (shell, RADIUS, POP3) class
 
+L<FS::acct_snarf> - External mail account class
+
 L<FS::radius_usergroup> - RADIUS groups
 
 L<FS::svc_domain> - Domain class
