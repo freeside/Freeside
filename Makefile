@@ -46,7 +46,7 @@ HTTPD_RESTART = /etc/init.d/apache restart
 #redhat, fedora, mandrake
 #HTTPD_RESTART = /etc/init.d/httpd restart
 #freebsd
-#HTTPD_RESTART = /usr/local/etc/rc.d/apache.sh stop; sleep 10; /usr/local/etc/rc.d/apache.sh start
+#HTTPD_RESTART = /usr/local/etc/rc.d/apache.sh stop || true; sleep 10; /usr/local/etc/rc.d/apache.sh start
 #openbsd
 #HTTPD_RESTART = kill -TERM `cat /var/www/logs/httpd.pid`; sleep 10; /usr/sbin/httpd -u -DSSL
 #apache
