@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct.cgi,v 1.10 1999-04-14 11:20:21 ivan Exp $
+# $Id: svc_acct.cgi,v 1.11 1999-04-14 11:25:33 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/svc_acct.cgi
@@ -23,7 +23,10 @@
 # give service and customer info too ivan@sisd.com 98-aug-16
 #
 # $Log: svc_acct.cgi,v $
-# Revision 1.10  1999-04-14 11:20:21  ivan
+# Revision 1.11  1999-04-14 11:25:33  ivan
+# *** empty log message ***
+#
+# Revision 1.10  1999/04/14 11:20:21  ivan
 # visual fix
 #
 # Revision 1.9  1999/04/10 01:53:18  ivan
@@ -113,7 +116,6 @@ if ( scalar(@svc_acct) == 1 ) {
         header("Account Search Results",''),
         "$total matching accounts found",
         &table(), <<END;
-    $total matching accounts found
       <TR>
         <TH><FONT SIZE=-1>Service #</FONT></TH>
         <TH><FONT SIZE=-1>Username</FONT></TH>
