@@ -5,16 +5,30 @@ my $user = getotaker;
 
 $cgi->param('beginning') =~ /^([ 0-9\-\/]{0,10})$/;
 my $pbeginning = $1;
-my $beginning = str2time($1) || 0;
+my $beginning = $1 ? str2time($1) : 0;
 
 $cgi->param('ending') =~ /^([ 0-9\-\/]{0,10})$/;
 my $pending = $1;
-my $ending = ( str2time($1) || 4294880896 ) + 86399;
+my $ending = ( $1 ? str2time($1) : 4294880896 ) + 86399;
 
 my($total, $exempt, $taxable, $tax) = ( 0, 0, 0, 0 );
 my $out = 'Out of taxable region(s)';
 my %regions;
-foreach my $r ( qsearch('cust_main_county', {}) ) {
+foreach my $r (
+  qsearch('cust_main_county', {}, '',
+          "WHERE 0 < ( SELECT COUNT(*) FROM cust_main
+                       WHERE ( cust_main.county  = cust_main_county.county
+                               OR cust_main_county.county = ''
+                               OR cust_main_county.county IS NULL )
+                         AND ( cust_main.state   = cust_main_county.state
+                               OR cust_main_county.state = ''
+                               OR cust_main_county.state IS NULL )
+                         AND ( cust_main.country = cust_main_county.country )
+                       LIMIT 1
+                     )"
+         )
+) {
+  #warn $r->county. ' '. $r->state. ' '. $r->country. "\n";
   my $label;
   if ( $r->tax == 0 ) {
     $label = $out;
@@ -33,9 +47,10 @@ foreach my $r ( qsearch('cust_main_county', {}) ) {
       JOIN cust_bill USING ( invnum ) 
       JOIN cust_main USING ( custnum )
     WHERE _date >= $beginning AND _date <= $ending
-      AND ( county  = ? OR ( ? = '' AND county  IS NULL ) )
-      AND ( state   = ? OR ( ? = '' AND state   IS NULL ) )
-      AND ( country = ? OR ( ? = '' AND country IS NULL ) )
+      AND ( county  = ? OR ? = '' )
+      AND ( state   = ? OR ? = '' )
+      AND ( country = ? )
+      AND payby != 'COMP'
   ";
   my $nottax = 'pkgnum != 0';
 
@@ -54,11 +69,17 @@ foreach my $r ( qsearch('cust_main_county', {}) ) {
   }
 
   foreach my $e ( grep { $r->get($_.'tax') !~ /^Y/i } qw( setup recur ) ) {
-    my $x = scalar_sql($r,
-      "SELECT SUM($e) $fromwhere AND $nottax"
+    my $t = scalar_sql($r,
+      "SELECT SUM($e) $fromwhere AND $nottax AND ( tax != 'Y' OR tax IS NULL )"
     );
-    $taxable += $x;
-    $regions{$label}->{'taxable'} += $x;
+    $taxable += $t;
+    $regions{$label}->{'taxable'} += $t;
+
+    my $x = scalar_sql($r,
+      "SELECT SUM($e) $fromwhere AND $nottax AND tax = 'Y'"
+    );
+    $exempt += $x;
+    $regions{$label}->{'exempt'} += $x;
   }
 
   if ( defined($regions{$label}->{'rate'})
@@ -100,8 +121,9 @@ push @regions, {
 #to FS::Report or FS::Record or who the fuck knows where)
 sub scalar_sql {
   my( $r, $sql ) = @_;
+  #warn "$sql\n";
   my $sth = dbh->prepare($sql) or die dbh->errstr;
-  $sth->execute( map $r->$_(), map { $_, $_ } qw( county state country ) )
+  $sth->execute( map $r->$_(), qw( county county state state country ) )
     or die "Unexpected error executing statement $sql: ". $sth->errstr;
   $sth->fetchrow_arrayref->[0] || 0;
 }
