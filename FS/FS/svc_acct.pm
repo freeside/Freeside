@@ -527,7 +527,7 @@ sub replace {
   my $dbh = dbh;
 
   # redundant, but so $new->usergroup gets set
-  my $error = $new->check;
+  $error = $new->check;
   return $error if $error;
 
   $old->usergroup( [ $old->radius_groups ] );
