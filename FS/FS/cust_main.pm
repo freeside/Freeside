@@ -2204,7 +2204,7 @@ sub realtime_refund_bop {
     $cust_pay = qsearchs('cust_pay', { paynum=>$options{'paynum'} } )
       or return "Unknown paynum $options{'paynum'}";
     $amount ||= $cust_pay->paid;
-    $cust_pay->paybatch =~ /^(\w+):(\w*)(:(\w+))?$/
+    $cust_pay->paybatch =~ /^(\w+):([\w-]*)(:(\w+))?$/
       or return "Can't parse paybatch for paynum $options{'paynum'}: ".
                 $cust_pay->paybatch;
     ( $pay_processor, $auth, $order_number ) = ( $1, $2, $4 );
