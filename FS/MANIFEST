@@ -8,6 +8,7 @@ bin/freeside-email
 bin/freeside-queued
 bin/freeside-apply-credits
 bin/freeside-adduser
+bin/freeside-setinvoice
 FS.pm
 FS/CGI.pm
 FS/Conf.pm

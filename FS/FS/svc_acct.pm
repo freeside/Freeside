@@ -415,9 +415,10 @@ sub delete {
   foreach my $cust_main_invoice (
     qsearch( 'cust_main_invoice', { 'dest' => $self->svcnum } )
   ) {
-    #next unless defined; #wtf is up with qsearch?
-    warn $cust_main_invoice;
-    next unless defined $cust_main_invoice;
+    unless ( defined($cust_main_invoice) ) {
+      warn "WARNING: something's wrong with qsearch";
+      next;
+    }
     my %hash = $cust_main_invoice->hash;
     $hash{'dest'} = $self->email;
     my $new = new FS::cust_main_invoice \%hash;
@@ -960,7 +961,7 @@ sub ssh {
 
 =head1 VERSION
 
-$Id: svc_acct.pm,v 1.55 2001-11-05 17:00:41 jeff Exp $
+$Id: svc_acct.pm,v 1.56 2001-12-18 01:49:35 ivan Exp $
 
 =head1 BUGS
 
