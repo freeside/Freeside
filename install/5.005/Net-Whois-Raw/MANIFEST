@@ -1,0 +1,10 @@
+Changes
+MANIFEST
+Makefile.PL
+lib/Net/Whois/Raw.pm
+lib/Net/Whois/Raw/Data.pm
+t/01.t
+pwhois
+README
+COPYRIGHT
+META.yml                                Module meta-data (added by MakeMaker)
