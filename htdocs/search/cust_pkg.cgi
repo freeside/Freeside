@@ -1,11 +1,15 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_pkg.cgi,v 1.8 1999-02-09 09:22:57 ivan Exp $
+# $Id: cust_pkg.cgi,v 1.9 1999-07-17 10:38:52 ivan Exp $
 #
 # based on search/svc_acct.cgi ivan@sisd.com 98-jul-17
 #
 # $Log: cust_pkg.cgi,v $
-# Revision 1.8  1999-02-09 09:22:57  ivan
+# Revision 1.9  1999-07-17 10:38:52  ivan
+# scott nelson <scott@ultimanet.com> noticed this mod_perl-triggered bug and
+# gave me a great bugreport at the last rhythmethod
+#
+# Revision 1.8  1999/02/09 09:22:57  ivan
 # visual and bugfixes
 #
 # Revision 1.7  1999/02/07 09:59:37  ivan
@@ -51,7 +55,7 @@ if ( $query eq 'pkgnum' ) {
   @cust_pkg=qsearch('cust_pkg',{});
 } elsif ( $query eq 'APKG_pkgnum' ) {
   $sortby=\*pkgnum_sort;
-
+  @cust_pkg=();
   #perhaps this should go in cust_pkg as a qsearch-like constructor?
   my($cust_pkg);
   foreach $cust_pkg (qsearch('cust_pkg',{})) {

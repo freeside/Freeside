@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_domain.cgi,v 1.9 1999-04-15 13:39:16 ivan Exp $
+# $Id: svc_domain.cgi,v 1.10 1999-07-17 10:38:52 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/svc_domain.cgi
@@ -15,7 +15,11 @@
 # display total, use FS::CGI now does browsing too ivan@sisd.com 98-jul-17
 #
 # $Log: svc_domain.cgi,v $
-# Revision 1.9  1999-04-15 13:39:16  ivan
+# Revision 1.10  1999-07-17 10:38:52  ivan
+# scott nelson <scott@ultimanet.com> noticed this mod_perl-triggered bug and
+# gave me a great bugreport at the last rhythmethod
+#
+# Revision 1.9  1999/04/15 13:39:16  ivan
 # $cgi->header( '-expires' => 'now' )
 #
 # Revision 1.8  1999/02/28 00:03:57  ivan
@@ -81,7 +85,8 @@ if ( $query eq 'svcnum' ) {
 } else {
   $cgi->param('domain') =~ /^([\w\-\.]+)$/; 
   my($domain)=$1;
-  push @svc_domain, qsearchs('svc_domain',{'domain'=>$domain});
+  #push @svc_domain, qsearchs('svc_domain',{'domain'=>$domain});
+  @svc_domain = qsearchs('svc_domain',{'domain'=>$domain});
 }
 
 if ( scalar(@svc_domain) == 1 ) {

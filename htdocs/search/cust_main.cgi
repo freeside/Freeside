@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main.cgi,v 1.11 1999-04-09 04:22:34 ivan Exp $
+# $Id: cust_main.cgi,v 1.12 1999-07-17 10:38:52 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/cust_main.cgi
@@ -17,7 +17,11 @@
 # display total, use FS::CGI ivan@sisd.com 98-jul-17
 #
 # $Log: cust_main.cgi,v $
-# Revision 1.11  1999-04-09 04:22:34  ivan
+# Revision 1.12  1999-07-17 10:38:52  ivan
+# scott nelson <scott@ultimanet.com> noticed this mod_perl-triggered bug and
+# gave me a great bugreport at the last rhythmethod
+#
+# Revision 1.11  1999/04/09 04:22:34  ivan
 # also table()
 #
 # Revision 1.10  1999/04/09 03:52:55  ivan
@@ -81,6 +85,7 @@ if ( $cgi->keywords ) {
     @cust_main=qsearch('cust_main',{});
   }
 } else {
+  @cust_main=();
   &cardsearch if ( $cgi->param('card_on') && $cgi->param('card') );
   &lastsearch if ( $cgi->param('last_on') && $cgi->param('last_text') );
   &companysearch if ( $cgi->param('company_on') && $cgi->param('company_text') );
