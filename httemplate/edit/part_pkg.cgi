@@ -112,7 +112,10 @@ print '>';
 print '</TD></TR></TABLE>';
 
 my $thead =  "\n\n". ntable('#cccccc', 2). <<END;
-<TR><TH BGCOLOR="#dcdcdc"><FONT SIZE=-1>Quan.</FONT></TH><TH BGCOLOR="#dcdcdc">Service</TH></TR>
+<TR>
+<TH BGCOLOR="#dcdcdc"><FONT SIZE=-1>Quan.</FONT></TH>
+<TH BGCOLOR="#dcdcdc"><FONT SIZE=-1>Service</FONT></TH>
+</TR>
 END
 
 #unless ( $cgi->param('clone') ) {
@@ -168,6 +171,16 @@ unless ( 0 ) {
   print "</TR></TABLE></TD></TR></TABLE>";
   #print "</TR></TABLE>";
 }
+
+print qq!Default service <SELECT NAME="def_svcpart" onChange="fchanged(this)">!,
+      qq!<OPTION VALUE="0">None!;
+foreach my $part_svc ( @part_svc ) {
+  print qq!<OPTION VALUE="!, $part_svc->svcpart, '"',
+        (($hashref->{def_svcpart} == $part_svc->svcpart) ? " SELECTED>" : ">"),
+        $part_svc->svc, qq!</OPTION>!;
+}
+print qq!</SELECT><BR>\n!;
+
 
 foreach my $f ( qw( clone pkgnum ) ) {
   print qq!<INPUT TYPE="hidden" NAME="$f" VALUE="!. $cgi->param($f). '">';
@@ -376,7 +389,7 @@ my $widget = new HTML::Widgets::SelectLayers(
   'form_action'    => 'process/part_pkg.cgi',
   'form_text'      => [ qw(pkg comment freq clone pkgnum pkgpart), @fixups ],
   'form_checkbox'  => [ qw(setuptax recurtax disabled) ],
-  'form_select'    => [ @form_select ],
+  'form_select'    => [ qw(def_svcpart), @form_select ],
   'fixup_callback' => sub {
                         #my $ = @_;
                         my $html = '';
