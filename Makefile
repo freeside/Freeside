@@ -57,6 +57,8 @@ QUEUED_USER=fs_queue
 FREESIDE_PATH = `pwd`
 
 SELFSERVICE_USER = fs_selfservice
+#never run on the same machine in production!!!
+SELFSERVICE_MACHINES = localhost
 # SELFSERVICE_MACHINES = www.example.com
 # SELFSERVICE_MACHINES = web1.example.com web2.example.com
 
