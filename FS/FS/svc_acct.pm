@@ -246,7 +246,8 @@ sub insert {
 
   if ( @dup_user || @dup_userdomain || @dup_uid ) {
     my $exports = FS::part_export::export_info('svc_acct');
-    my( %conflict_user_svcpart, %conflict_userdomain_svcpart );
+    my %conflict_user_svcpart;
+    my %conflict_userdomain_svcpart = ( $self->svcpart => 'SELF', );
 
     foreach my $part_export ( $part_svc->part_export ) {
 
@@ -705,12 +706,6 @@ sub check {
          && $recref->{username} ne 'root'
          && $recref->{username} ne 'toor';
 
-#    $error = $self->ut_textn('finger');
-#    return $error if $error;
-    $self->getfield('finger') =~
-      /^([\w \t\!\@\#\$\%\&\(\)\-\+\;\:\'\"\,\.\?\/\*\<\>]*)$/
-        or return "Illegal finger: ". $self->getfield('finger');
-    $self->setfield('finger', $1);
 
     $recref->{dir} =~ /^([\/\w\-\.\&]*)$/
       or return "Illegal directory";
@@ -745,21 +740,24 @@ sub check {
       $recref->{shell} = '/bin/sync';
     }
 
-    $recref->{quota} =~ /^(\d*)$/ or return "Illegal quota (unimplemented)";
-    $recref->{quota} = $1;
-
   } else {
     $recref->{gid} ne '' ? 
       return "Can't have gid without uid" : ( $recref->{gid}='' );
-    $recref->{finger} ne '' ? 
-      return "Can't have finger-name without uid" : ( $recref->{finger}='' );
     $recref->{dir} ne '' ? 
       return "Can't have directory without uid" : ( $recref->{dir}='' );
     $recref->{shell} ne '' ? 
       return "Can't have shell without uid" : ( $recref->{shell}='' );
-    $recref->{quota} ne '' ? 
-      return "Can't have quota without uid" : ( $recref->{quota}='' );
   }
+
+  #  $error = $self->ut_textn('finger');
+  #  return $error if $error;
+  $self->getfield('finger') =~
+    /^([\w \t\!\@\#\$\%\&\(\)\-\+\;\:\'\"\,\.\?\/\*\<\>]*)$/
+      or return "Illegal finger: ". $self->getfield('finger');
+  $self->setfield('finger', $1);
+
+  $recref->{quota} =~ /^(\d*)$/ or return "Illegal quota";
+  $recref->{quota} = $1;
 
   unless ( $part_svc->part_svc_column('slipip')->columnflag eq 'F' ) {
     unless ( $recref->{slipip} eq '0e0' ) {
@@ -791,7 +789,7 @@ sub check {
     #$recref->{password} = $1.
     #  crypt($3,$saltset[int(rand(64))].$saltset[int(rand(64))]
     #;
-  } elsif ( $recref->{_password} =~ /^((\*SUSPENDED\* )?)([\w\.\/\$]{13,34})$/ ) {
+  } elsif ( $recref->{_password} =~ /^((\*SUSPENDED\* )?)([\w\.\/\$\;]{13,34})$/ ) {
     $recref->{_password} = $1.$3;
   } elsif ( $recref->{_password} eq '*' ) {
     $recref->{_password} = '*';
