@@ -40,10 +40,8 @@ SIGNUP_REFNUM = 2
 #not changable yet
 FREESIDE_CONF = /usr/local/etc/freeside
 
-#VERSION=1.4.0pre14
-#TAG=freeside_1_4_0_pre14
-VERSION=1.4.0beta1
-TAG=freeside_1_4_0_beta1
+VERSION=1.4.0beta2
+TAG=freeside_1_4_0_beta2
 
 help:
 	@echo "supported targets: aspdocs masondocs alldocs docs install-docs"
