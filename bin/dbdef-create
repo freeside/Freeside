@@ -1,0 +1,85 @@
+#!/usr/bin/perl -Tw
+#
+# create dbdef file for existing mySQL database (needs SHOW|DESCRIBE command
+# not in Pg) based on fs-setup
+#
+# ivan@sisd.com 98-jun-2
+
+use strict;
+use DBI;
+use FS::dbdef;
+use FS::UID qw(adminsuidsetup datasrc);
+
+#needs to match FS::Record
+my($dbdef_file) = "/var/spool/freeside/dbdef.". datasrc;
+
+my($dbh)=adminsuidsetup;
+
+my($tables_sth)=$dbh->prepare("SHOW TABLES");
+my($tables_rv)=$tables_sth->execute;
+
+my(@tables);
+foreach ( @{$tables_sth->fetchall_arrayref} ) {
+  my($table)=${$_}[0]; 
+  #print "TABLE\t$table\n";
+
+  my($index_sth)=$dbh->prepare("SHOW INDEX FROM $table");
+  my($primary_key)='';
+  my(%index,%unique);
+  for ( 1 .. $index_sth->execute ) {
+    my($row)=$index_sth->fetchrow_hashref;
+    if ( ${$row}{'Key_name'} eq "PRIMARY" ) {
+      $primary_key=${$row}{'Column_name'};
+      next;
+    }
+    if ( ${$row}{'Non_unique'} ) { #index
+      push @{$index{${$row}{'Key_name'}}}, ${$row}{'Column_name'};
+    } else { #unique
+      push @{$unique{${$row}{'Key_name'}}}, ${$row}{'Column_name'};
+    }
+  }
+
+  my(@index)=values %index;
+  my(@unique)=values %unique;
+  #print "\tPRIMARY KEY $primary_key\n";
+  foreach (@index) {
+    #print "\tINDEX\t", join(', ', @{$_}), "\n";
+  }
+  foreach (@unique) {
+    #print "\tUNIQUE\t", join(', ', @{$_}), "\n";
+  }
+
+  my($columns_sth)=$dbh->prepare("SHOW COLUMNS FROM $table");
+  my(@columns);
+  for ( 1 .. $columns_sth->execute ) {
+    my($row)=$columns_sth->fetchrow_hashref;
+    #print "\t", ${$row}{'Field'}, "\n";
+    ${$row}{'Type'} =~ /^(\w+)\(?([\d\,]+)?\)?( unsigned)?$/
+      or die "Illegal type ${$row}{'Type'}\n";
+    my($type,$length)=($1,$2);
+    my($null)=${$row}{'Null'};
+    $null =~ s/YES/NULL/;
+    push @columns, new FS::dbdef_column (
+      ${$row}{'Field'},
+      $type,
+      $null,
+      $length,
+    );
+  }
+
+  #print "\n";
+  push @tables, new FS::dbdef_table (
+    $table,
+    $primary_key,
+    new FS::dbdef_unique (\@unique),
+    new FS::dbdef_index (\@index),
+    @columns,
+  );
+
+}
+
+my($dbdef) = new FS::dbdef ( @tables );
+
+#important
+$dbdef->save($dbdef_file);
+
