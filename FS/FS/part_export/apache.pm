@@ -1,4 +1,4 @@
-package FS::part_export::bind;
+package FS::part_export::apache;
 
 use vars qw(@ISA);
 use FS::part_export::null;
