@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: cust_bill.cgi,v 1.2 2001-08-21 02:31:56 ivan Exp $ -->
+#<!-- $Id: cust_bill.cgi,v 1.3 2001-09-01 12:35:39 ivan Exp $ -->
 
 use strict;
 use vars qw ( $cgi $invnum $query $sortby @cust_bill );
@@ -82,16 +82,20 @@ if ( scalar(@cust_bill) == 1 ) {
 END
 
   my(%saw, $cust_bill);
+  my($tot_balance, $tot_amount) = (0, 0);
   foreach $cust_bill (
     sort $sortby grep(!$saw{$_->invnum}++, @cust_bill)
   ) {
     my($invnum, $owed, $charged, $date ) = (
       $cust_bill->invnum,
-      $cust_bill->owed,
-      $cust_bill->charged,
+      sprintf("%.2f", $cust_bill->owed),
+      sprintf("%.2f", $cust_bill->charged),
       $cust_bill->_date,
     );
     my $pdate = time2str("%b %d %Y", $date);
+
+    $tot_balance += $owed;
+    $tot_amount += $charged;
 
     my $rowspan = 1;
 
@@ -99,8 +103,8 @@ END
     print <<END;
       <TR>
         <TD ROWSPAN=$rowspan><A HREF="$view"><FONT SIZE=-1>$invnum</FONT></A></TD>
-        <TD ROWSPAN=$rowspan><A HREF="$view"><FONT SIZE=-1>\$$owed</FONT></A></TD>
-        <TD ROWSPAN=$rowspan><A HREF="$view"><FONT SIZE=-1>\$$charged</FONT></A></TD>
+        <TD ROWSPAN=$rowspan ALIGN="right"><A HREF="$view"><FONT SIZE=-1>\$$owed</FONT></A></TD>
+        <TD ROWSPAN=$rowspan ALIGN="right"><A HREF="$view"><FONT SIZE=-1>\$$charged</FONT></A></TD>
         <TD ROWSPAN=$rowspan><A HREF="$view"><FONT SIZE=-1>$pdate</FONT></A></TD>
 END
     my $custnum = $cust_bill->custnum;
@@ -123,8 +127,11 @@ END
 
     print "</TR>";
   }
-
+  $tot_balance = sprintf("%.2f", $tot_balance);
+  $tot_amount = sprintf("%.2f", $tot_amount);
   print <<END;
+      <TR><TD></TD><TH><FONT SIZE=-1>Total</FONT></TH><TH><FONT SIZE=-1>Total</FONT></TH></TR>
+      <TR><TD></TD><TD ALIGN="right"><FONT SIZE=-1>\$$tot_balance</FONT></TD><TD ALIGN="right"><FONT SIZE=-1>\$$tot_amount</FONT></TD></TD></TR>
     </TABLE>
   </BODY>
 </HTML>
