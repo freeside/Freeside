@@ -382,7 +382,7 @@ tie my %plans, 'Tie::IxHash',
     },
     'fieldorder' => [ 'setup_fee', 'recur_flat', 'recur_included_hours', 'recur_hourly_charge' ],
     'setup' => 'what.setup_fee.value',
-    'recur' => '\'my ($sec,$min,$hour,$mday,$mon,$year) = (localtime($sdate))[0,1,2,3,4,5]; $mon+=$part_pkg->freq; until ($mon<12) { $mon-=12; $year++ }; $edate = timelocal($sec,$min,$hour,$mday,$mon,$year); my $hours = $cust_pkg->seconds_since_sqlradacct($sdate, $edate, \' + what.sql_datasrc + \', \' + what.sql_username + \', \' + what.sql_password + \' ) / 3600 - \' + what.recur_included_hours.value + \'; $hours = 0 if $hours < 0; \' + what.recur_flat.value + \' + \' + what.recur_hourly_charge.value + \' * $hours;\'',
+    'recur' => '\'my $hours = $cust_pkg->seconds_since_sqlradacct($cust_pkg->last_bill, $sdate, \' + what.sql_datasrc + \', \' + what.sql_username + \', \' + what.sql_password + \' ) / 3600 - \' + what.recur_included_hours.value + \'; $hours = 0 if $hours < 0; \' + what.recur_flat.value + \' + \' + what.recur_hourly_charge.value + \' * $hours;\'',
   },
 
 

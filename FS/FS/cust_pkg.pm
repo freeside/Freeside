@@ -9,6 +9,7 @@ use FS::part_pkg;
 use FS::cust_main;
 use FS::type_pkgs;
 use FS::pkg_svc;
+use FS::cust_bill_pkg;
 
 # need to 'use' these instead of 'require' in sub { cancel, suspend, unsuspend,
 # setup }
@@ -90,7 +91,7 @@ inherits from FS::Record.  The following fields are currently supported:
 
 =item setup - date
 
-=item bill - date
+=item bill - date (next bill date)
 
 =item susp - date
 
@@ -418,6 +419,20 @@ sub unsuspend {
   ''; #no errors
 }
 
+=item last_bill
+
+Returns the last bill date, or if there is no last bill date, the setup date.
+Useful for billing metered services.
+
+=cut
+
+sub last_bill {
+  my $self = shift;
+  my $cust_bill_pkg = qsearchs('cust_bill_pkg', { 'pkgnum' => $self->pkgnum,
+                                                  'edate'  => $self->bill,  } );
+  $cust_bill_pkg ? $cust_bill_pkg->sdate : $self->setup || 0;
+}
+
 =item part_pkg
 
 Returns the definition for this billing item, as an FS::part_pkg object (see
@@ -715,7 +730,7 @@ sub order {
 
 =head1 VERSION
 
-$Id: cust_pkg.pm,v 1.25 2002-10-12 13:26:45 ivan Exp $
+$Id: cust_pkg.pm,v 1.26 2002-10-14 06:17:14 ivan Exp $
 
 =head1 BUGS
 
