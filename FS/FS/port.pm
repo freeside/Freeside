@@ -104,7 +104,7 @@ sub check {
   my $self = shift;
   my $error =
     $self->ut_numbern('portnum')
-    || $self->ut_ipn('ipn')
+    || $self->ut_ipn('ip')
     || $self->ut_numbern('nasport')
     || $self->ut_number('nasnum');
   ;
@@ -133,7 +133,7 @@ sub session {
 
 =head1 VERSION
 
-$Id: port.pm,v 1.3 2000-12-03 20:25:20 ivan Exp $
+$Id: port.pm,v 1.4 2001-01-30 09:08:40 ivan Exp $
 
 =head1 BUGS
 
@@ -162,7 +162,10 @@ added hfields
 ivan@sisd.com 97-nov-13
 
 $Log: port.pm,v $
-Revision 1.3  2000-12-03 20:25:20  ivan
+Revision 1.4  2001-01-30 09:08:40  ivan
+tyop, thanks to Mack Nagashima <mackn@moaner.org>
+
+Revision 1.3  2000/12/03 20:25:20  ivan
 session monitor updates
 
 Revision 1.1  2000/10/27 20:18:32  ivan
