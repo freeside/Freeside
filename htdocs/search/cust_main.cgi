@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main.cgi,v 1.15 2000-07-17 16:45:41 ivan Exp $
+# $Id: cust_main.cgi,v 1.16 2001-02-07 19:45:45 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/cust_main.cgi
@@ -17,7 +17,10 @@
 # display total, use FS::CGI ivan@sisd.com 98-jul-17
 #
 # $Log: cust_main.cgi,v $
-# Revision 1.15  2000-07-17 16:45:41  ivan
+# Revision 1.16  2001-02-07 19:45:45  ivan
+# tyop
+#
+# Revision 1.15  2000/07/17 16:45:41  ivan
 # first shot at invoice browsing and some other cleanups
 #
 # Revision 1.14  1999/08/12 04:45:21  ivan
@@ -184,7 +187,7 @@ END
       #print qq!</TR><TR>\n!;
       $n1="</TR><TR>";
     }
-    print "<\TR>";
+    print "</TR>";
   }
  
   print <<END;
