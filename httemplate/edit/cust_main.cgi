@@ -336,48 +336,94 @@ sub expselect {
   $return;
 }
 
-print "<BR>Billing information", &itable("#cccccc"),
-      qq!<TR><TD><INPUT TYPE="checkbox" NAME="tax" VALUE="Y"!;
-print qq! CHECKED! if $cust_main->tax eq "Y";
-print qq!>Tax Exempt</TD></TR>!;
-print qq!<TR><TD><INPUT TYPE="checkbox" NAME="invoicing_list_POST" VALUE="POST"!;
-my @invoicing_list = $cust_main->invoicing_list;
-print qq! CHECKED!
-  if ( ! @invoicing_list && ! $conf->exists('disablepostalinvoicedefault') )
-     || grep { $_ eq 'POST' } @invoicing_list;
-print qq!>Postal mail invoice</TD></TR>!;
-my $invoicing_list = join(', ', grep { $_ ne 'POST' } @invoicing_list );
-print qq!<TR><TD>Email invoice <INPUT TYPE="text" NAME="invoicing_list" VALUE="$invoicing_list"></TD></TR>!;
+my $payby_default = $conf->config('payby-default');
 
-print "<TR><TD>Billing type</TD></TR>",
-      "</TABLE>",
-      &table("#cccccc"), "<TR>";
+if ( $payby_default eq 'HIDE' ) {
 
-my($payinfo, $payname)=(
-  $cust_main->payinfo,
-  $cust_main->payname,
-);
+  $cust_main->payby('BILL') unless $cust_main->payby;
 
-my %payby = (
-  'CARD' => qq!Credit card<BR>${r}<INPUT TYPE="text" NAME="CARD_payinfo" VALUE="" MAXLENGTH=19><BR>${r}Exp !. expselect("CARD"). qq!<BR>${r}Name on card<BR><INPUT TYPE="text" NAME="CARD_payname" VALUE="">!,
-  'BILL' => qq!Billing<BR>P.O. <INPUT TYPE="text" NAME="BILL_payinfo" VALUE=""><BR>${r}Exp !. expselect("BILL", "12-2037"). qq!<BR>Attention<BR><INPUT TYPE="text" NAME="BILL_payname" VALUE="">!,
-  'COMP' => qq!Complimentary<BR>${r}Approved by<INPUT TYPE="text" NAME="COMP_payinfo" VALUE=""><BR>${r}Exp !. expselect("COMP"),
-);
-my %paybychecked = (
-  'CARD' => qq!Credit card<BR>${r}<INPUT TYPE="text" NAME="CARD_payinfo" VALUE="$payinfo" MAXLENGTH=19><BR>${r}Exp !. expselect("CARD", $cust_main->paydate). qq!<BR>${r}Name on card<BR><INPUT TYPE="text" NAME="CARD_payname" VALUE="$payname">!,
-  'BILL' => qq!Billing<BR>P.O. <INPUT TYPE="text" NAME="BILL_payinfo" VALUE="$payinfo"><BR>${r}Exp !. expselect("BILL", $cust_main->paydate). qq!<BR>Attention<BR><INPUT TYPE="text" NAME="BILL_payname" VALUE="$payname">!,
-  'COMP' => qq!Complimentary<BR>${r}Approved by<INPUT TYPE="text" NAME="COMP_payinfo" VALUE="$payinfo"><BR>${r}Exp !. expselect("COMP", $cust_main->paydate),
-);
-for (qw(CARD BILL COMP)) {
-  print qq!<TD VALIGN=TOP><INPUT TYPE="radio" NAME="payby" VALUE="$_"!;
-  if ($cust_main->payby eq "$_") {
-    print qq! CHECKED> $paybychecked{$_}</TD>!;
-  } else {
-    print qq!> $payby{$_}</TD>!;
+  foreach my $field (qw( tax payby )) {
+    print qq!<INPUT TYPE="hidden" NAME="$field" VALUE="!.
+          $cust_main->getfield($field). '">';
   }
-}
 
-print "</TR></TABLE>$r required fields for each billing type";
+  print qq!<INPUT TYPE="hidden" NAME="invoicing_list" VALUE="!.
+        join(', ', $cust_main->invoicing_list). '">';
+
+  foreach my $payby (qw( CARD BILL COMP )) {
+    foreach my $field (qw( payinfo payname )) {
+      print qq!<INPUT TYPE="hidden" NAME="${payby}_$field" VALUE="!.
+            $cust_main->getfield($field). '">';
+    }
+
+    #false laziness w/expselect
+    my( $m, $y ) = (0, 0);
+    if ( scalar(@_) ) {
+      my $date = shift || '01-2000';
+      if ( $date  =~ /^(\d{4})-(\d{1,2})-\d{1,2}$/ ) { #PostgreSQL date format
+        ( $m, $y ) = ( $2, $1 );
+      } elsif ( $date =~ /^(\d{1,2})-(\d{1,2}-)?(\d{4}$)/ ) {
+        ( $m, $y ) = ( $1, $3 );
+      } else {
+        die "unrecognized expiration date format: $date";
+      }
+    }
+
+    print qq!<INPUT TYPE="hidden" NAME="${payby}_month" VALUE="$m"!.
+          qq!<INPUT TYPE="hidden" NAME="${payby}_year"  VALUE="$y"!;
+
+  }
+
+} else {
+
+  print "<BR>Billing information", &itable("#cccccc"),
+        qq!<TR><TD><INPUT TYPE="checkbox" NAME="tax" VALUE="Y"!;
+  print qq! CHECKED! if $cust_main->tax eq "Y";
+  print qq!>Tax Exempt</TD></TR><TR><TD>!.
+        qq!<INPUT TYPE="checkbox" NAME="invoicing_list_POST" VALUE="POST"!;
+
+  my @invoicing_list = $cust_main->invoicing_list;
+  print qq! CHECKED!
+    if ( ! @invoicing_list && ! $conf->exists('disablepostalinvoicedefault') )
+       || grep { $_ eq 'POST' } @invoicing_list;
+  print qq!>Postal mail invoice</TD></TR>!;
+  my $invoicing_list = join(', ', grep { $_ ne 'POST' } @invoicing_list );
+  print qq!<TR><TD>Email invoice <INPUT TYPE="text" NAME="invoicing_list" VALUE="$invoicing_list"></TD></TR>!;
+
+  print "<TR><TD>Billing type</TD></TR>",
+        "</TABLE>",
+        &table("#cccccc"), "<TR>";
+
+  my($payinfo, $payname)=(
+    $cust_main->payinfo,
+    $cust_main->payname,
+  );
+
+  my %payby = (
+    'CARD' => qq!Credit card<BR>${r}<INPUT TYPE="text" NAME="CARD_payinfo" VALUE="" MAXLENGTH=19><BR>${r}Exp !. expselect("CARD"). qq!<BR>${r}Name on card<BR><INPUT TYPE="text" NAME="CARD_payname" VALUE="">!,
+    'BILL' => qq!Billing<BR>P.O. <INPUT TYPE="text" NAME="BILL_payinfo" VALUE=""><BR>${r}Exp !. expselect("BILL", "12-2037"). qq!<BR>Attention<BR><INPUT TYPE="text" NAME="BILL_payname" VALUE="">!,
+    'COMP' => qq!Complimentary<BR>${r}Approved by<INPUT TYPE="text" NAME="COMP_payinfo" VALUE=""><BR>${r}Exp !. expselect("COMP"),
+);
+
+  my %paybychecked = (
+    'CARD' => qq!Credit card<BR>${r}<INPUT TYPE="text" NAME="CARD_payinfo" VALUE="$payinfo" MAXLENGTH=19><BR>${r}Exp !. expselect("CARD", $cust_main->paydate). qq!<BR>${r}Name on card<BR><INPUT TYPE="text" NAME="CARD_payname" VALUE="$payname">!,
+    'BILL' => qq!Billing<BR>P.O. <INPUT TYPE="text" NAME="BILL_payinfo" VALUE="$payinfo"><BR>${r}Exp !. expselect("BILL", $cust_main->paydate). qq!<BR>Attention<BR><INPUT TYPE="text" NAME="BILL_payname" VALUE="$payname">!,
+    'COMP' => qq!Complimentary<BR>${r}Approved by<INPUT TYPE="text" NAME="COMP_payinfo" VALUE="$payinfo"><BR>${r}Exp !. expselect("COMP", $cust_main->paydate),
+);
+
+  $cust_main->payby($payby_default) unless $cust_main->payby;
+  for (qw(CARD BILL COMP)) {
+    print qq!<TD VALIGN=TOP><INPUT TYPE="radio" NAME="payby" VALUE="$_"!;
+    if ($cust_main->payby eq "$_") {
+      print qq! CHECKED> $paybychecked{$_}</TD>!;
+    } else {
+      print qq!> $payby{$_}</TD>!;
+    }
+  }
+
+  print "</TR></TABLE>$r required fields for each billing type";
+
+}
 
 if ( defined $cust_main->dbdef_table->column('comments') ) {
     print "<BR><BR>Comments", &itable("#cccccc"),

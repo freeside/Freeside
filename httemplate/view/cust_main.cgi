@@ -188,6 +188,8 @@ print '<TD VALIGN="top">';
 
 print '<BR>';
 
+if ( $conf->config('payby-default') ne 'HIDE' ) {
+
   my @invoicing_list = $cust_main->invoicing_list;
   print "Billing information (",
        qq!<A HREF="!, popurl(2), qq!misc/bill.cgi?$custnum">!, "Bill now</A>)",
@@ -236,6 +238,8 @@ print '<BR>';
 
   print "</TABLE></TD></TR></TABLE>";
 
+}
+
 print '</TD></TR></TABLE>';
 
 if ( defined $cust_main->dbdef_table->column('comments')
@@ -268,30 +272,34 @@ foreach my $type_pkgs ( qsearch('type_pkgs',{'typenum'=> $agent->typenum }) ) {
 
 print '</SELECT><INPUT TYPE="submit" VALUE="Order Package"></FORM><BR>';
 
-print '<BR>'.
-  qq!<FORM ACTION="${p}edit/process/quick-charge.cgi" METHOD="POST">!.
-  qq!<INPUT TYPE="hidden" NAME="custnum" VALUE="$custnum">!.
-  qq!Description:<INPUT TYPE="text" NAME="pkg">!.
-  qq!&nbsp;Amount:<INPUT TYPE="text" NAME="amount" SIZE=6>!.
-  qq!&nbsp;!;
+if ( $conf->config('payby-default') ne 'HIDE' ) {
 
-#false laziness w/ edit/part_pkg.cgi
-if ( $conf->exists('enable_taxclasses') ) {
-  print '<SELECT NAME="taxclass">';
-  my $sth = dbh->prepare('SELECT DISTINCT taxclass FROM cust_main_county')
-    or die dbh->errstr;
-  $sth->execute or die $sth->errstr;
-  foreach my $taxclass ( map $_->[0], @{$sth->fetchall_arrayref} ) {
-    print qq!<OPTION VALUE="$taxclass"!;
-    #print ' SELECTED' if $taxclass eq $hashref->{taxclass};
-    print qq!>$taxclass</OPTION>!;
+  print '<BR>'.
+    qq!<FORM ACTION="${p}edit/process/quick-charge.cgi" METHOD="POST">!.
+    qq!<INPUT TYPE="hidden" NAME="custnum" VALUE="$custnum">!.
+    qq!Description:<INPUT TYPE="text" NAME="pkg">!.
+    qq!&nbsp;Amount:<INPUT TYPE="text" NAME="amount" SIZE=6>!.
+    qq!&nbsp;!;
+  
+  #false laziness w/ edit/part_pkg.cgi
+  if ( $conf->exists('enable_taxclasses') ) {
+    print '<SELECT NAME="taxclass">';
+    my $sth = dbh->prepare('SELECT DISTINCT taxclass FROM cust_main_county')
+      or die dbh->errstr;
+    $sth->execute or die $sth->errstr;
+    foreach my $taxclass ( map $_->[0], @{$sth->fetchall_arrayref} ) {
+      print qq!<OPTION VALUE="$taxclass"!;
+      #print ' SELECTED' if $taxclass eq $hashref->{taxclass};
+      print qq!>$taxclass</OPTION>!;
+    }
+    print '</SELECT>';
+  } else {
+    print '<INPUT TYPE="hidden" NAME="taxclass" VALUE="">';
   }
-  print '</SELECT>';
-} else {
-  print '<INPUT TYPE="hidden" NAME="taxclass" VALUE="">';
-}
+  
+  print qq!<INPUT TYPE="submit" VALUE="One-time charge"></FORM><BR>!;
 
-print qq!<INPUT TYPE="submit" VALUE="One-time charge"></FORM><BR>!;
+}
 
 print <<END;
 <SCRIPT>
@@ -451,48 +459,132 @@ function cust_pay_areyousure(href) {
 </SCRIPT>
 END
 
-#formatting
-print qq!<BR><BR><A NAME="history">Payment History!.
-      qq!</A> ( !.
-      qq!<A HREF="!. popurl(2). qq!edit/cust_pay.cgi?custnum=$custnum">!.
-      qq!Post payment</A> | !.
-      qq!<A HREF="!. popurl(2). qq!edit/cust_credit.cgi?$custnum">!.
-      qq!Post credit</A> )!;
-
-#get payment history
-#
-# major problem: this whole thing is way too sloppy.
-# minor problem: the description lines need better formatting.
-
-my @history = (); #needed for mod_perl :)
-
-my %target = ();
-
-my @bills = qsearch('cust_bill',{'custnum'=>$custnum});
-foreach my $bill (@bills) {
-  my($bref)=$bill->hashref;
-  my $bpre = ( $bill->owed > 0 )
-               ? '<b><font size="+1" color="#ff0000"> Open '
-               : '';
-  my $bpost = ( $bill->owed > 0 ) ? '</font></b>' : '';
-  push @history,
-    $bref->{_date} . qq!\t<A HREF="!. popurl(2). qq!view/cust_bill.cgi?! .
-    $bref->{invnum} . qq!">${bpre}Invoice #! . $bref->{invnum} .
-    qq! (Balance \$! . $bill->owed . qq!)$bpost</A>\t! .
-    $bref->{charged} . qq!\t\t\t!;
-
-  my(@cust_bill_pay)=qsearch('cust_bill_pay',{'invnum'=> $bref->{invnum} } );
-#  my(@payments)=qsearch('cust_pay',{'invnum'=> $bref->{invnum} } );
-#  my($payment);
-#  foreach $payment (@payments) {
-  foreach my $cust_bill_pay (@cust_bill_pay) {
-    my $payment = $cust_bill_pay->cust_pay;
-    my($date,$invnum,$payby,$payinfo,$paid)=($payment->_date,
-                                             $cust_bill_pay->invnum,
-                                             $payment->payby,
-                                             $payment->payinfo,
-                                             $cust_bill_pay->amount,
-                      );
+if ( $conf->config('payby-default') ne 'HIDE' ) {
+  
+  #formatting
+  print qq!<BR><BR><A NAME="history">Payment History!.
+        qq!</A> ( !.
+        qq!<A HREF="!. popurl(2). qq!edit/cust_pay.cgi?custnum=$custnum">!.
+        qq!Post payment</A> | !.
+        qq!<A HREF="!. popurl(2). qq!edit/cust_credit.cgi?$custnum">!.
+        qq!Post credit</A> )!;
+  
+  #get payment history
+  #
+  # major problem: this whole thing is way too sloppy.
+  # minor problem: the description lines need better formatting.
+  
+  my @history = (); #needed for mod_perl :)
+  
+  my %target = ();
+  
+  my @bills = qsearch('cust_bill',{'custnum'=>$custnum});
+  foreach my $bill (@bills) {
+    my($bref)=$bill->hashref;
+    my $bpre = ( $bill->owed > 0 )
+                 ? '<b><font size="+1" color="#ff0000"> Open '
+                 : '';
+    my $bpost = ( $bill->owed > 0 ) ? '</font></b>' : '';
+    push @history,
+      $bref->{_date} . qq!\t<A HREF="!. popurl(2). qq!view/cust_bill.cgi?! .
+      $bref->{invnum} . qq!">${bpre}Invoice #! . $bref->{invnum} .
+      qq! (Balance \$! . $bill->owed . qq!)$bpost</A>\t! .
+      $bref->{charged} . qq!\t\t\t!;
+  
+    my(@cust_bill_pay)=qsearch('cust_bill_pay',{'invnum'=> $bref->{invnum} } );
+  #  my(@payments)=qsearch('cust_pay',{'invnum'=> $bref->{invnum} } );
+  #  my($payment);
+    foreach my $cust_bill_pay (@cust_bill_pay) {
+      my $payment = $cust_bill_pay->cust_pay;
+      my($date,$invnum,$payby,$payinfo,$paid)=($payment->_date,
+                                               $cust_bill_pay->invnum,
+                                               $payment->payby,
+                                               $payment->payinfo,
+                                               $cust_bill_pay->amount,
+                        );
+      $payinfo = 'x'x(length($payinfo)-4). substr($payinfo,(length($payinfo)-4))
+        if $payby eq 'CARD';
+      my $target = "$payby$payinfo";
+      $payby =~ s/^BILL$/Check #/ if $payinfo;
+      $payby =~ s/^(CARD|COMP)$/$1 /;
+      my $delete = $payment->closed !~ /^Y/i && $conf->exists('deletepayments')
+                     ? qq! (<A HREF="javascript:cust_pay_areyousure('${p}misc/delete-cust_pay.cgi?!. $payment->paynum. qq!')">delete</A>)!
+                     : '';
+      push @history,
+        "$date\tPayment, Invoice #$invnum ($payby$payinfo)$delete\t\t$paid\t\t\t$target";
+    }
+  
+    my(@cust_credit_bill)=
+      qsearch('cust_credit_bill', { 'invnum'=> $bref->{invnum} } );
+    foreach my $cust_credit_bill (@cust_credit_bill) {
+      my $cust_credit = $cust_credit_bill->cust_credit;
+      my($date, $invnum, $crednum, $amount, $reason, $app_date ) = (
+        $cust_credit->_date,
+        $cust_credit_bill->invnum,
+        $cust_credit_bill->crednum,
+        $cust_credit_bill->amount,
+        $cust_credit->reason,
+        time2str("%D", $cust_credit_bill->_date),
+      );
+      push @history,
+        "$date\tCredit #$crednum: $reason<BR>".
+        "(applied to invoice #$invnum on $app_date)\t\t\t$amount\t";
+    }
+  }
+  
+  my @credits = grep { scalar(my @array = $_->cust_credit_refund) }
+             qsearch('cust_credit',{'custnum'=>$custnum});
+  foreach my $credit (@credits) {
+    my($cref)=$credit->hashref;
+    my(@cust_credit_refund)=
+      qsearch('cust_credit_refund', { 'crednum'=> $cref->{crednum} } );
+    foreach my $cust_credit_refund (@cust_credit_refund) {
+      my $cust_refund = $cust_credit_refund->cust_credit;
+      my($date, $crednum, $amount, $reason, $app_date ) = (
+        $credit->_date,
+        $credit->crednum,
+        $cust_credit_refund->amount,
+        $credit->reason,
+        time2str("%D", $cust_credit_refund->_date),
+      );
+      push @history,
+        "$date\tCredit #$crednum: $reason<BR>".
+        "(applied to refund on $app_date)\t\t\t$amount\t";
+    }
+  }
+  
+  @credits = grep { $_->credited  > 0 }
+             qsearch('cust_credit',{'custnum'=>$custnum});
+  foreach my $credit (@credits) {
+    my($cref)=$credit->hashref;
+    push @history,
+      $cref->{_date} . "\t" .
+      qq!<A HREF="! . popurl(2). qq!edit/cust_credit_bill.cgi?!. $cref->{crednum} . qq!">!.
+      '<b><font size="+1" color="#ff0000">Unapplied credit #' .
+      $cref->{crednum} . "</font></b></A>: ".
+      $cref->{reason} . "\t\t\t" . $credit->credited . "\t";
+  }
+  
+  my(@refunds)=qsearch('cust_refund',{'custnum'=> $custnum } );
+  foreach my $refund (@refunds) {
+    my($rref)=$refund->hashref;
+    my($refundnum) = (
+      $refund->refundnum,
+    );
+  
+    push @history,
+      $rref->{_date} . "\tRefund #$refundnum, (" .
+      $rref->{payby} . " " . $rref->{payinfo} . ") by " .
+      $rref->{otaker} . " - ". $rref->{reason} . "\t\t\t\t" .
+      $rref->{refund};
+  }
+  
+  my @unapplied_payments =
+    grep { $_->unapplied > 0 } qsearch('cust_pay', { 'custnum' => $custnum } );
+  foreach my $payment (@unapplied_payments) {
+    my $payby = $payment->payby;
+    my $payinfo = $payment->payinfo;
+    #false laziness w/above
     $payinfo = 'x'x(length($payinfo)-4). substr($payinfo,(length($payinfo)-4))
       if $payby eq 'CARD';
     my $target = "$payby$payinfo";
@@ -502,161 +594,72 @@ foreach my $bill (@bills) {
                    ? qq! (<A HREF="javascript:cust_pay_areyousure('${p}misc/delete-cust_pay.cgi?!. $payment->paynum. qq!')">delete</A>)!
                    : '';
     push @history,
-      "$date\tPayment, Invoice #$invnum ($payby$payinfo)$delete\t\t$paid\t\t\t$target";
+      $payment->_date. "\t".
+      '<b><font size="+1" color="#ff0000">Unapplied payment #' .
+      $payment->paynum . " ($payby$payinfo)</font></b> ".
+      '(<A HREF="'. popurl(2). 'edit/cust_bill_pay.cgi?'. $payment->paynum. '">'.
+      "apply</A>)$delete".
+      "\t\t" . $payment->unapplied . "\t\t\t$target";
   }
-
-  my(@cust_credit_bill)=
-    qsearch('cust_credit_bill', { 'invnum'=> $bref->{invnum} } );
-  foreach my $cust_credit_bill (@cust_credit_bill) {
-    my $cust_credit = $cust_credit_bill->cust_credit;
-    my($date, $invnum, $crednum, $amount, $reason, $app_date ) = (
-      $cust_credit->_date,
-      $cust_credit_bill->invnum,
-      $cust_credit_bill->crednum,
-      $cust_credit_bill->amount,
-      $cust_credit->reason,
-      time2str("%D", $cust_credit_bill->_date),
-    );
-    push @history,
-      "$date\tCredit #$crednum: $reason<BR>".
-      "(applied to invoice #$invnum on $app_date)\t\t\t$amount\t";
-  }
-}
-
-my @credits = grep { scalar(my @array = $_->cust_credit_refund) }
-           qsearch('cust_credit',{'custnum'=>$custnum});
-foreach my $credit (@credits) {
-  my($cref)=$credit->hashref;
-  my(@cust_credit_refund)=
-    qsearch('cust_credit_refund', { 'crednum'=> $cref->{crednum} } );
-  foreach my $cust_credit_refund (@cust_credit_refund) {
-    my $cust_refund = $cust_credit_refund->cust_credit;
-    my($date, $crednum, $amount, $reason, $app_date ) = (
-      $credit->_date,
-      $credit->crednum,
-      $cust_credit_refund->amount,
-      $credit->reason,
-      time2str("%D", $cust_credit_refund->_date),
-    );
-    push @history,
-      "$date\tCredit #$crednum: $reason<BR>".
-      "(applied to refund on $app_date)\t\t\t$amount\t";
-  }
-}
-
-@credits = grep { $_->credited  > 0 }
-           qsearch('cust_credit',{'custnum'=>$custnum});
-foreach my $credit (@credits) {
-  my($cref)=$credit->hashref;
-  push @history,
-    $cref->{_date} . "\t" .
-    qq!<A HREF="! . popurl(2). qq!edit/cust_credit_bill.cgi?!. $cref->{crednum} . qq!">!.
-    '<b><font size="+1" color="#ff0000">Unapplied credit #' .
-    $cref->{crednum} . "</font></b></A>: ".
-    $cref->{reason} . "\t\t\t" . $credit->credited . "\t";
-}
-
-my(@refunds)=qsearch('cust_refund',{'custnum'=> $custnum } );
-foreach my $refund (@refunds) {
-  my($rref)=$refund->hashref;
-  my($refundnum) = (
-    $refund->refundnum,
-  );
-
-  push @history,
-    $rref->{_date} . "\tRefund #$refundnum, (" .
-    $rref->{payby} . " " . $rref->{payinfo} . ") by " .
-    $rref->{otaker} . " - ". $rref->{reason} . "\t\t\t\t" .
-    $rref->{refund};
-}
-
-my @unapplied_payments =
-  grep { $_->unapplied > 0 } qsearch('cust_pay', { 'custnum' => $custnum } );
-foreach my $payment (@unapplied_payments) {
-  my $payby = $payment->payby;
-  my $payinfo = $payment->payinfo;
-  #false laziness w/above
-  $payinfo = 'x'x(length($payinfo)-4). substr($payinfo,(length($payinfo)-4))
-    if $payby eq 'CARD';
-  my $target = "$payby$payinfo";
-  $payby =~ s/^BILL$/Check #/ if $payinfo;
-  $payby =~ s/^(CARD|COMP)$/$1 /;
-  my $delete = $payment->closed !~ /^Y/i && $conf->exists('deletepayments')
-                 ? qq! (<A HREF="javascript:cust_pay_areyousure('${p}misc/delete-cust_pay.cgi?!. $payment->paynum. qq!')">delete</A>)!
-                 : '';
-  push @history,
-    $payment->_date. "\t".
-    '<b><font size="+1" color="#ff0000">Unapplied payment #' .
-    $payment->paynum . " ($payby$payinfo)</font></b> ".
-    '(<A HREF="'. popurl(2). 'edit/cust_bill_pay.cgi?'. $payment->paynum. '">'.
-    "apply</A>)$delete".
-    "\t\t" . $payment->unapplied . "\t\t\t$target";
-}
-
-        #formatting
-        print &table(), <<END;
-<TR>
-  <TH>Date</TH>
-  <TH>Description</TH>
-  <TH><FONT SIZE=-1>Charge</FONT></TH>
-  <TH><FONT SIZE=-1>Payment</FONT></TH>
-  <TH><FONT SIZE=-1>In-house<BR>Credit</FONT></TH>
-  <TH><FONT SIZE=-1>Refund</FONT></TH>
-  <TH><FONT SIZE=-1>Balance</FONT></TH>
-</TR>
+  
+          #formatting
+          print &table(), <<END;
+  <TR>
+    <TH>Date</TH>
+    <TH>Description</TH>
+    <TH><FONT SIZE=-1>Charge</FONT></TH>
+    <TH><FONT SIZE=-1>Payment</FONT></TH>
+    <TH><FONT SIZE=-1>In-house<BR>Credit</FONT></TH>
+    <TH><FONT SIZE=-1>Refund</FONT></TH>
+    <TH><FONT SIZE=-1>Balance</FONT></TH>
+  </TR>
 END
+  
+  #display payment history
+  
+  my $balance = 0;
+  foreach my $item (sort keyfield_numerically @history) {
+    my($date,$desc,$charge,$payment,$credit,$refund,$target)=split(/\t/,$item);
+    $charge ||= 0;
+    $payment ||= 0;
+    $credit ||= 0;
+    $refund ||= 0;
+    $balance += $charge - $payment;
+    $balance -= $credit - $refund;
+    $balance = sprintf("%.2f", $balance);
+    $balance =~ s/^\-0\.00$/0.00/; #yay ieee fp
+    $target = '' unless defined $target;
+  
+    print "<TR><TD><FONT SIZE=-1>";
+    print qq!<A NAME="$target">! unless $target && $target{$target}++;
+    print time2str("%D",$date);
+    print '</A>' if $target && $target{$target} == 1;
+    print "</FONT></TD>",
+  	"<TD><FONT SIZE=-1>$desc</FONT></TD>",
+  	"<TD><FONT SIZE=-1>",
+          ( $charge ? "\$".sprintf("%.2f",$charge) : '' ),
+          "</FONT></TD>",
+  	"<TD><FONT SIZE=-1>",
+          ( $payment ? "-&nbsp;\$".sprintf("%.2f",$payment) : '' ),
+          "</FONT></TD>",
+  	"<TD><FONT SIZE=-1>",
+          ( $credit ? "-&nbsp;\$".sprintf("%.2f",$credit) : '' ),
+          "</FONT></TD>",
+  	"<TD><FONT SIZE=-1>",
+          ( $refund ? "\$".sprintf("%.2f",$refund) : '' ),
+          "</FONT></TD>",
+  	"<TD><FONT SIZE=-1>\$" . $balance,
+          "</FONT></TD>",
+          "\n";
+  }
+  
+  print "</TABLE>";
 
-#display payment history
-
-my $balance = 0;
-foreach my $item (sort keyfield_numerically @history) {
-  my($date,$desc,$charge,$payment,$credit,$refund,$target)=split(/\t/,$item);
-  $charge ||= 0;
-  $payment ||= 0;
-  $credit ||= 0;
-  $refund ||= 0;
-  $balance += $charge - $payment;
-  $balance -= $credit - $refund;
-  $balance = sprintf("%.2f", $balance);
-  $balance =~ s/^\-0\.00$/0.00/; #yay ieee fp
-  $target = '' unless defined $target;
-
-  print "<TR><TD><FONT SIZE=-1>";
-  print qq!<A NAME="$target">! unless $target && $target{$target}++;
-  print time2str("%D",$date);
-  print '</A>' if $target && $target{$target} == 1;
-  print "</FONT></TD>",
-	"<TD><FONT SIZE=-1>$desc</FONT></TD>",
-	"<TD><FONT SIZE=-1>",
-        ( $charge ? "\$".sprintf("%.2f",$charge) : '' ),
-        "</FONT></TD>",
-	"<TD><FONT SIZE=-1>",
-        ( $payment ? "-&nbsp;\$".sprintf("%.2f",$payment) : '' ),
-        "</FONT></TD>",
-	"<TD><FONT SIZE=-1>",
-        ( $credit ? "-&nbsp;\$".sprintf("%.2f",$credit) : '' ),
-        "</FONT></TD>",
-	"<TD><FONT SIZE=-1>",
-        ( $refund ? "\$".sprintf("%.2f",$refund) : '' ),
-        "</FONT></TD>",
-	"<TD><FONT SIZE=-1>\$" . $balance,
-        "</FONT></TD>",
-        "\n";
 }
 
-#formatting
-print "</TABLE>";
-
-#end
-
-#formatting
-print <<END;
-
-  </BODY>
-</HTML>
-END
+print '</BODY></HTML>';
 
 #subroutiens
-sub keyfield_numerically { (split(/\t/,$a))[0] <=> (split(/\t/,$b))[0] ; }
+sub keyfield_numerically { (split(/\t/,$a))[0] <=> (split(/\t/,$b))[0]; }
 
 %>

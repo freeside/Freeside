@@ -952,6 +952,15 @@ httemplate/docs/config.html
     'select_enum' => [ 'text/plain', 'text/html' ],
   },
 
+  {
+    'key'         => 'payby-default',
+    'section'     => 'UI',
+    'description' => 'Default payment type.  HIDE disables display of billing information and sets customers to BILL.',
+    'type'        => 'select',
+    'select_enum' => [ '', 'CARD', 'BILL', 'COMP', 'HIDE' ],
+  },
+
+
 );
 
 1;
