@@ -1031,7 +1031,7 @@ sub tables_hash_hack {
       'columns' => [
         'routernum', 'serial', '', '',
         'routername', 'varchar', '', $char_d,
-        'svcnum', 'int', 'NULL', '',
+        'svcnum', 'int', '0', '',
       ],
       'primary_key' => 'routernum',
       'unique'      => [],
@@ -1074,7 +1074,7 @@ sub tables_hash_hack {
 
     'addr_block' => {
       'columns' => [
-        'blocknum', 'int', '', '',
+        'blocknum', 'serial', '', '',
 	'routernum', 'int', '', '',
         'ip_gateway', 'varchar', '', 15,
         'ip_netmask', 'int', '', '',
@@ -1086,7 +1086,7 @@ sub tables_hash_hack {
 
     'part_sb_field' => {
       'columns' => [
-        'sbfieldpart', 'int', '', '',
+        'sbfieldpart', 'serial', '', '',
 	'svcpart', 'int', '', '',
 	'name', 'varchar', '', $char_d,
 	'length', 'int', '', '',
