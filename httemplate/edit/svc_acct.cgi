@@ -281,7 +281,7 @@ if ( $part_svc->part_svc_column('usergroup')->columnflag eq "F" ) {
 }
 print '</TD></TR>';
 
-foreach $field ($svc_acct->virtual_fields) {
+foreach my $field ($svc_acct->virtual_fields) {
   if ( $part_svc->part_svc_column($field)->columnflag ne 'F' ) {
     # If the flag is X, it won't even show up in $svc_acct->virtual_fields.
     print $svc_acct->pvf($field)->widget('HTML', 'edit', 
