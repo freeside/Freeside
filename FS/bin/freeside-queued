@@ -15,7 +15,7 @@ use FS::queue_depend;
 # no autoloading just yet
 use FS::cust_main;
 use FS::svc_acct;
-use Net::SSH 0.05;
+use Net::SSH 0.06;
 use FS::part_export;
 
 $max_kids = '10'; #guess it should be a config file...

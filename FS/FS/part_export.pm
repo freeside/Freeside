@@ -526,21 +526,33 @@ tie my %shellcommands_options, 'Tie::IxHash',
   #'machine' => { label=>'Remote machine' },
   'user' => { label=>'Remote username', default=>'root' },
   'useradd' => { label=>'Insert command',
-                 default=>'useradd -d $dir -m -s $shell -u $uid $username'
+                 default=>'useradd -d $dir -m -s $shell -u $uid $username; passwd $username'
                 #default=>'cp -pr /etc/skel $dir; chown -R $uid.$gid $dir'
                },
+  'useradd_stdin' => { label=>'Insert command STDIN',
+                       type =>'textarea',
+                       default=>'$_password\n$_password\n',
+                     },
   'userdel' => { label=>'Delete command',
                  default=>'userdel $username',
                  #default=>'rm -rf $dir',
                },
+  'userdel_stdin' => { label=>'Delete command STDIN',
+                       type =>'textarea',
+                       default=>'',
+                     },
   'usermod' => { label=>'Modify command',
-                 default=>'usermod -d $new_dir -l $new_username -s $new_shell -u $new_uid $old_username',
+                 default=>'usermod -d $new_dir -l $new_username -s $new_shell -u $new_uid $old_username; passwd $new_username',
                 #default=>'[ -d $old_dir ] && mv $old_dir $new_dir || ( '.
                  #  'chmod u+t $old_dir; mkdir $new_dir; cd $old_dir; '.
                  #  'find . -depth -print | cpio -pdm $new_dir; '.
                  #  'chmod u-t $new_dir; chown -R $uid.$gid $new_dir; '.
                  #  'rm -rf $old_dir'.
                  #')'
+  'usermod_stdin' => { label=>'Modify command STDIN',
+                       type =>'textarea',
+                       default=>'$_password\n$_password\n',
+                     },
                },
 ;
 

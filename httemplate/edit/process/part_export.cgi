@@ -6,7 +6,11 @@ my $old = qsearchs('part_export', { 'exportnum'=>$exportnum } ) if $exportnum;
 
 #fixup options
 #warn join('-', split(',',$cgi->param('options')));
-my %options = map { $_=>$cgi->param($_) } split(',',$cgi->param('options'));
+my %options = map {
+  my $value = $cgi->param($_);
+  $value =~ s/\r\n/\n/g; #browsers? (textarea)
+  $_ => $value;
+} split(',', $cgi->param('options'));
 
 my $new = new FS::part_export ( {
   map {
