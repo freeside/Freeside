@@ -136,7 +136,9 @@ the scalar will be updated with the custnum value from the cust_pkg record.
 sub insert {
   my $self = shift;
   my %options = @_;
-  warn "FS::part_pkg::insert called on $self with options %options" if $DEBUG;
+  warn "FS::part_pkg::insert called on $self with options ".
+       join(', ', map "$_=>$options{$_}", keys %options)
+    if $DEBUG;
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
