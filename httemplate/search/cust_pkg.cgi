@@ -1,5 +1,5 @@
 <%
-# <!-- $Id: cust_pkg.cgi,v 1.10 2001-12-18 06:45:32 ivan Exp $ -->
+# <!-- $Id: cust_pkg.cgi,v 1.11 2001-12-18 07:08:16 ivan Exp $ -->
 
 use strict;
 use vars qw ( $cgi @cust_pkg $sortby $query %part_pkg
@@ -157,13 +157,25 @@ END
     sort $sortby grep(!$saw{$_->pkgnum}++, @cust_pkg)
   ) {
     my($cust_main)=qsearchs('cust_main',{'custnum'=>$cust_pkg->custnum});
-    my($pkgnum, $custnum, $last, $first, $company) = (
+    my($pkgnum, $setup, $bill, $susp, $expire, $cancel,
+       $custnum, $last, $first, $company
+    ) = (
       $cust_pkg->pkgnum,
-      time2str("%D", $cust_pkg->getfield('setup') ),
-      time2str("%D", $cust_pkg->getfield('bill') ),
-      time2str("%D", $cust_pkg->getfield('susp') ),
-      time2str("%D", $cust_pkg->getfield('expire') ),
-      time2str("%D", $cust_pkg->getfield('cancel') ),
+      $cust_pkg->getfield('setup')
+        ? time2str("%D", $cust_pkg->getfield('setup') )
+        : '',
+      $cust_pkg->getfield('bill')
+        ? time2str("%D", $cust_pkg->getfield('bill') ),
+        : '',
+      $cust_pkg->getfield('susp')
+        ? time2str("%D", $cust_pkg->getfield('susp') ),
+        : '',
+      $cust_pkg->getfield('expire')
+        ? time2str("%D", $cust_pkg->getfield('expire') ),
+        : '',
+      $cust_pkg->getfield('cancel')
+        ? time2str("%D", $cust_pkg->getfield('cancel') ),
+        : '',
       $cust_pkg->custnum,
       $cust_main ? $cust_main->last : '',
       $cust_main ? $cust_main->first : '',
@@ -194,6 +206,11 @@ END
     my $p = popurl(2);
     print $n1, <<END;
       <TD ROWSPAN=$rowspan><A HREF="${p}view/cust_pkg.cgi?$pkgnum"><FONT SIZE=-1>$pkgnum - $pkg</FONT></A></TD>
+      <TD>$setup</TD>
+      <TD>$bill</TD>
+      <TD>$susp</TD>
+      <TD>$expire</TD>
+      <TD>$cancel</TD>
 END
     if ( $cust_main ) {
       print <<END;
