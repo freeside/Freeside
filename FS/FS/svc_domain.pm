@@ -382,8 +382,10 @@ sub check {
   $recref->{action} =~ /^(M|N)$/ or return "Illegal action";
   $recref->{action} = $1;
 
-  my $svc_acct = qsearchs( 'svc_acct', { 'svcnum' => $recref->{catchall} } );
-  return "Unknown catchall" unless $svc_acct || ! $recref->{catchall};
+  if ( $recref->{catchall} ne '' ) {
+    my $svc_acct = qsearchs( 'svc_acct', { 'svcnum' => $recref->{catchall} } );
+    return "Unknown catchall" unless $svc_acct;
+  }
 
   $self->ut_textn('purpose');
 
