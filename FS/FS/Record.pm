@@ -1014,7 +1014,8 @@ I<$FS::Record::setup_hack> is true.  Returns a DBIx::DBSchema object.
 
 sub reload_dbdef {
   my $file = shift || $dbdef_file;
-  $dbdef = load DBIx::DBSchema $file;
+  $dbdef = load DBIx::DBSchema $file
+    or die "can't load database schema from $file";
 }
 
 =item dbdef
