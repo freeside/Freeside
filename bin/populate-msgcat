@@ -76,7 +76,11 @@ sub messages {
     },
 
     'illegal_password' => {
-      'en_US' => 'Illegal password',
+      'en_US' => 'Illegal password (',
+    },
+
+    'illeggal_password_characters' => {
+      'en_US' => ' characters)',
     },
 
     'username_in_use' => {
