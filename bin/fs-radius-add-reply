@@ -54,7 +54,7 @@ $dbh->disconnect or die $dbh->errstr;
 print "\n\n", "Now you must run dbdef-create.\n\n";
 
 sub usage {
-  die "Usage:\n  fs-radius-add user\n"; 
+  die "Usage:\n  fs-radius-add-reply user\n"; 
 }
 
 
