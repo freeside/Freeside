@@ -66,26 +66,38 @@ if ( $cgi->keywords ) {
   } else {
     die "unknown query string $query";
   }
+
+  my $extra_sql = "
+    left outer join cust_bill_pay using ( invnum )
+    left outer join cust_credit_bill using ( invnum )
+    $where
+    group by ". join(', ', map "cust_bill.$_", fields('cust_bill') ). ' '.
+    $having;
+
+  my $statement = "SELECT COUNT(*) FROM cust_bill $extra_sql";
+  my $sth = dbh->prepare($statement) or die dbh->errstr. " doing $statement";
+  $sth->execute or die "Error executing \"$statement\": ". $sth->errstr;
+
+  $total = $sth->fetchrow_arrayref->[0];
+
   @cust_bill = qsearch(
     'cust_bill',
     {},
     'cust_bill.*,
      charged - coalesce(sum(cust_bill_pay.amount),0)
               - coalesce(sum(cust_credit_bill.amount),0) as owed',
-    "left outer join cust_bill_pay using ( invnum )
-     left outer join cust_credit_bill using ( invnum )
-     $where
-     group by ". join(', ', map "cust_bill.$_", fields('cust_bill') ). ' '.
-     $having
+    "$extra_sql $orderby $limit"
   );
 } else {
   $cgi->param('invnum') =~ /^\s*(FS-)?(\d+)\s*$/;
   my $invnum = $2;
   @cust_bill = qsearchs('cust_bill', { 'invnum' => $invnum } );
   $sortby = \*invnum_sort;
+  $total = scalar(@cust_bill);
 }
 
-if ( scalar(@cust_bill) == 1 ) {
+#if ( scalar(@cust_bill) == 1 ) {
+if ( $total == 1 ) {
   my $invnum = $cust_bill[0]->invnum;
   print $cgi->redirect(popurl(2). "view/cust_bill.cgi?$invnum");  #redirect
 } elsif ( scalar(@cust_bill) == 0 ) {
@@ -97,10 +109,38 @@ if ( scalar(@cust_bill) == 1 ) {
 %>
 <!-- mason kludge -->
 <%
-  $total = scalar(@cust_bill);
+  #$total = scalar(@cust_bill);
+
+  #begin pager
+  my $pager = '';
+  if ( $total != scalar(@cust_bill) && $maxrecords ) {
+    unless ( $offset == 0 ) {
+      $cgi->param('offset', $offset - $maxrecords);
+      $pager .= '<A HREF="'. $cgi->self_url.
+                '"><B><FONT SIZE="+1">Previous</FONT></B></A> ';
+    }
+    my $poff;
+    my $page;
+    for ( $poff = 0; $poff < $total; $poff += $maxrecords ) {
+      $page++;
+      if ( $offset == $poff ) {
+        $pager .= qq!<FONT SIZE="+2">$page</FONT> !;
+      } else {
+        $cgi->param('offset', $poff);
+        $pager .= qq!<A HREF="!. $cgi->self_url. qq!">$page</A> !;
+      }
+    }
+    unless ( $offset + $maxrecords > $total ) {
+      $cgi->param('offset', $offset + $maxrecords);
+      $pager .= '<A HREF="'. $cgi->self_url.
+                '"><B><FONT SIZE="+1">Next</FONT></B></A> ';
+    }
+  }
+  #end pager
+
   print header("Invoice Search Results", menubar(
           'Main Menu', popurl(2)
-        )), "$total matching invoices found<BR>", &table(), <<END;
+        )), "$total matching invoices found<BR><BR>$pager", &table(), <<END;
       <TR>
         <TH></TH>
         <TH>Balance</TH>
@@ -112,7 +152,7 @@ if ( scalar(@cust_bill) == 1 ) {
 END
 
   my(%saw, $cust_bill);
-  my($tot_balance, $tot_amount) = (0, 0);
+  my($tot_balance, $tot_amount) = (0, 0); #BOGUS
   foreach $cust_bill (
     sort $sortby grep(!$saw{$_->invnum}++, @cust_bill)
   ) {
@@ -162,7 +202,7 @@ END
   print <<END;
       <TR><TD></TD><TH><FONT SIZE=-1>Total</FONT></TH><TH><FONT SIZE=-1>Total</FONT></TH></TR>
       <TR><TD></TD><TD ALIGN="right"><FONT SIZE=-1>\$$tot_balance</FONT></TD><TD ALIGN="right"><FONT SIZE=-1>\$$tot_amount</FONT></TD></TD></TR>
-    </TABLE>
+    </TABLE>$pager
   </BODY>
 </HTML>
 END
