@@ -234,7 +234,7 @@ sub uid_sort {
 
 sub usernamesearch {
 
-  $cgi->param('username') =~ /^([\w\d\-]+)$/; #untaint username_text
+  $cgi->param('username') =~ /^([\w\-\.\&]+)$/; #untaint username_text
   my($username)=$1;
 
   [ qsearch('svc_acct',{'username'=>$username}) ];
