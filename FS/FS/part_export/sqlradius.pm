@@ -187,11 +187,15 @@ sub sqlradius_insert { #subroutine, not method
     } else {
 
       my $i_sth = $dbh->prepare(
-        "INSERT INTO rad$table ( UserName, Attribute, Value ) ".
-          "VALUES ( ?, ?, ? )"
+        "INSERT INTO rad$table ( UserName, Attribute, op, Value ) ".
+          "VALUES ( ?, ?, ?, ? )"
       ) or die $dbh->errstr;
-      $i_sth->execute( $username, $attribute, $attributes{$attribute} )
-        or die $i_sth->errstr;
+      $i_sth->execute(
+        $username,
+        $attribute,
+        ( $attribute =~ /Password/i ? '==' : ':=' ),
+        $attributes{$attribute},
+      ) or die $i_sth->errstr;
 
     }
 
