@@ -204,8 +204,8 @@ END
   }
   $tot_balance = sprintf("%.2f", $tot_balance);
   $tot_amount = sprintf("%.2f", $tot_amount);
-  print "</TABLE>$pager<BR><BR>". table(). <<END;
-      <TR><TD>-----</TD><TH><FONT SIZE=-1>Total<BR>Balance</FONT></TH><TH><FONT SIZE=-1>Total<BR>Amount</FONT></TH></TR>
+  print "</TABLE>$pager<BR>". table(). <<END;
+      <TR><TD>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TD><TH><FONT SIZE=-1>Total<BR>Balance</FONT></TH><TH><FONT SIZE=-1>Total<BR>Amount</FONT></TH></TR>
       <TR><TD></TD><TD ALIGN="right"><FONT SIZE=-1>\$$tot_balance</FONT></TD><TD ALIGN="right"><FONT SIZE=-1>\$$tot_amount</FONT></TD></TD></TR>
     </TABLE>
   </BODY>
