@@ -258,7 +258,7 @@ sub check {
       } );
   }
 
-  $self->zip =~ /^([\w\-]{5,10})$/ or return "Illegal zip";
+  $self->zip =~ /^\s*(\w[\w\-\s]{3,8}\w)\s*$/ or return "Illegal zip";
   $self->zip($1);
 
   $self->payby =~ /^(CARD|BILL|COMP)$/ or return "Illegal payby";
@@ -863,7 +863,7 @@ sub check_invoicing_list {
 
 =head1 VERSION
 
-$Id: cust_main.pm,v 1.12 1999-02-27 21:24:22 ivan Exp $
+$Id: cust_main.pm,v 1.13 1999-02-28 20:09:03 ivan Exp $
 
 =head1 BUGS
 
@@ -919,7 +919,11 @@ enable cybercash, cybercash v3 support, don't need to import
 FS::UID::{datasrc,checkruid} ivan@sisd.com 98-sep-19-21
 
 $Log: cust_main.pm,v $
-Revision 1.12  1999-02-27 21:24:22  ivan
+Revision 1.13  1999-02-28 20:09:03  ivan
+allow spaces in zip codes, for (at least) canada.  pointed out by
+Clayton Gray <clgray@bcgroup.net>
+
+Revision 1.12  1999/02/27 21:24:22  ivan
 parse paydate correctly for cybercash
 
 Revision 1.11  1999/02/23 08:09:27  ivan
