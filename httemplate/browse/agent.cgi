@@ -18,7 +18,7 @@
 
   my $ncancelled_sth = dbh->prepare("SELECT COUNT(*) FROM cust_main
                                        WHERE agentnum = ?
-                                         AND $ncancelled             ")
+                                         AND ( $ncancelled )         ")
     or die dbh->errstr;
 
   my $total_sth = dbh->prepare("SELECT COUNT(*) FROM cust_main
