@@ -68,6 +68,7 @@ FS/part_bill_event.pm
 FS/export_svc.pm
 FS/part_export.pm
 FS/part_export_option.pm
+FS/part_export/acct_sql.pm
 FS/part_export/apache.pm
 FS/part_export/bind.pm
 FS/part_export/bind_slave.pm
@@ -158,6 +159,8 @@ t/part_bill_event.t
 t/export_svc.t
 t/part_export.t
 t/part_export_option.t
+t/part_export-acct_sql.t
+t/part_export-apache.t
 t/part_export-bind.t
 t/part_export-bind_slave.t
 t/part_export-bsdshell.t
