@@ -290,13 +290,6 @@ httemplate/docs/config.html
   },
 
   {
-    'key'         => 'cybercash3.2',
-    'section'     => 'billing',
-    'description' => '<a href="http://www.cybercash.com/cashregister/">CyberCash Cashregister v3.2</a> support.  Two lines: the full path and name of your merchant_conf file, and the transaction type (`mauthonly\' or `mauthcapture\').',
-    'type'        => 'textarea',
-  },
-
-  {
     'key'         => 'cyrus',
     'section'     => 'deprecated',
     'description' => '<b>DEPRECATED</b>, add a <i>cyrus</i> <a href="../browse/part_export.cgi">export</a> instead.  This option used to integrate with <a href="http://asg.web.cmu.edu/cyrus/imapd/">Cyrus IMAP Server</a>, three lines: IMAP server, admin username, and admin password.  Cyrus::IMAP::Admin should be installed locally and the connection to the server secured.',

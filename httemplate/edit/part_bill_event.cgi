@@ -108,12 +108,6 @@ tie my %events, 'Tie::IxHash',
     'weight' => 30,
   },
 
-  'realtime-card-cybercash' => {
-    'name' => '(<b>deprecated</b>) Run card with <a href="http://www.cybercash.com/cashregister">CyberCash CashRegister</a> realtime gateway',
-    'code' => '$cust_bill->realtime_card_cybercash();',
-    'weight' => 30,
-  },
-
   'batch-card' => {
     'name' => 'Add card to the pending credit card batch',
     'code' => '$cust_bill->batch_card();',

@@ -35,28 +35,7 @@ $FS::UID::callback{'FS::cust_bill'} = sub {
   $invoice_from = $conf->config('invoice_from');
   $smtpmachine = $conf->config('smtpmachine');
 
-  if ( $conf->exists('cybercash3.2') ) {
-    require CCMckLib3_2;
-      #qw($MCKversion %Config InitConfig CCError CCDebug CCDebug2);
-    require CCMckDirectLib3_2;
-      #qw(SendCC2_1Server);
-    require CCMckErrno3_2;
-      #qw(MCKGetErrorMessage $E_NoErr);
-    import CCMckErrno3_2 qw($E_NoErr);
-
-    my $merchant_conf;
-    ($merchant_conf,$xaction)= $conf->config('cybercash3.2');
-    my $status = &CCMckLib3_2::InitConfig($merchant_conf);
-    if ( $status != $E_NoErr ) {
-      warn "CCMckLib3_2::InitConfig error:\n";
-      foreach my $key (keys %CCMckLib3_2::Config) {
-        warn "  $key => $CCMckLib3_2::Config{$key}\n"
-      }
-      my($errmsg) = &CCMckErrno3_2::MCKGetErrorMessage($status);
-      die "CCMckLib3_2::InitConfig fatal error: $errmsg\n";
-    }
-    $processor='cybercash3.2';
-  } elsif ( $conf->exists('business-onlinepayment') ) {
+  if ( $conf->exists('business-onlinepayment') ) {
     ( $bop_processor,
       $bop_login,
       $bop_password,
@@ -800,84 +779,6 @@ sub realtime_card {
 
 }
 
-=item realtime_card_cybercash
-
-Attempts to pay this invoice with the CyberCash CashRegister realtime gateway.
-
-=cut
-
-sub realtime_card_cybercash {
-  my $self = shift;
-  my $cust_main = $self->cust_main;
-  my $amount = $self->owed;
-
-  return "CyberCash CashRegister real-time card processing not enabled!"
-    unless $processor eq 'cybercash3.2';
-
-  my $address = $cust_main->address1;
-  $address .= ", ". $cust_main->address2 if $cust_main->address2;
-
-  #fix exp. date
-  #$cust_main->paydate =~ /^(\d+)\/\d*(\d{2})$/;
-  $cust_main->paydate =~ /^\d{2}(\d{2})[\/\-](\d+)[\/\-]\d+$/;
-  my $exp = "$2/$1";
-
-  #
-
-  my $paybatch = $self->invnum. 
-                  '-' . time2str("%y%m%d%H%M%S", time);
-
-  my $payname = $cust_main->payname ||
-                $cust_main->getfield('first').' '.$cust_main->getfield('last');
-
-  my $country = $cust_main->country eq 'US' ? 'USA' : $cust_main->country;
-
-  my @full_xaction = ( $xaction,
-    'Order-ID'     => $paybatch,
-    'Amount'       => "usd $amount",
-    'Card-Number'  => $cust_main->getfield('payinfo'),
-    'Card-Name'    => $payname,
-    'Card-Address' => $address,
-    'Card-City'    => $cust_main->getfield('city'),
-    'Card-State'   => $cust_main->getfield('state'),
-    'Card-Zip'     => $cust_main->getfield('zip'),
-    'Card-Country' => $country,
-    'Card-Exp'     => $exp,
-  );
-
-  my %result;
-  %result = &CCMckDirectLib3_2::SendCC2_1Server(@full_xaction);
-  
-  if ( $result{'MStatus'} eq 'success' ) { #cybercash smps v.2 or 3
-    my $cust_pay = new FS::cust_pay ( {
-       'invnum'   => $self->invnum,
-       'paid'     => $amount,
-       '_date'     => '',
-       'payby'    => 'CARD',
-       'payinfo'  => $cust_main->payinfo,
-       'paybatch' => "$processor:$paybatch",
-    } );
-    my $error = $cust_pay->insert;
-    if ( $error ) {
-      # gah, even with transactions.
-      my $e = 'WARNING: Card debited but database not updated - '.
-              'error applying payment, invnum #' . $self->invnum.
-              " (CyberCash Order-ID $paybatch): $error";
-      warn $e;
-      return $e;
-    } else {
-      return '';
-    }
-#  } elsif ( $result{'Mstatus'} ne 'failure-bad-money'
-#            || $options{'report_badcard'}
-#          ) {
-  } else {
-     return 'Cybercash error, invnum #' . 
-       $self->invnum. ':'. $result{'MErrMsg'};
-  }
-
-}
-
 =item batch_card
 
 Adds a payment for this invoice to the pending credit card batch (see
@@ -1130,7 +1031,7 @@ sub print_text {
 
 =head1 VERSION
 
-$Id: cust_bill.pm,v 1.44 2002-09-17 00:40:07 ivan Exp $
+$Id: cust_bill.pm,v 1.45 2002-09-17 10:21:47 ivan Exp $
 
 =head1 BUGS
 
