@@ -147,13 +147,6 @@ while (1) {
         or $error ||= "WARNING: unknown pkgpart ". $signup_data->{pkgpart};
     my $svcpart = $part_pkg->svcpart unless $error;
 
-    # this should wind up in FS::cust_pkg!
-    my $agent = qsearchs( 'agent', { 'agentnum' => $agentnum } );
-    #my $pkgpart_href = $agent->pkgpart_hashref;
-    $error ||= "WARNING: agent $agentnum can't purchase pkgpart ".
-               $signup_data->{pkgpart}
-      unless $pkgpart_href->{ $signup_data->{pkgpart} };
-
     my $cust_pkg = new FS::cust_pkg ( {
       #later#'custnum' => $custnum,
       'pkgpart' => $signup_data->{'pkgpart'},

@@ -108,7 +108,9 @@ ENDOUT
       my %pkgpart2payby = map { $_->{pkgpart} => $_->{payby}[0] } @{$packages};
       tie my %options, 'Tie::IxHash',
         '' => '(none)',
-        map { $_->{pkgpart} => $_->{pkg} } @{$packages} 
+        map { $_->{pkgpart} => $_->{pkg} }
+          sort { $a->{recur} <=> $b->{recur} }
+            @{$packages} 
       ;
 
       use HTML::Widgets::SelectLayers 0.02;

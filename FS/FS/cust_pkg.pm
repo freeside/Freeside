@@ -139,7 +139,13 @@ sub insert {
   my $error = $self->ut_number('custnum');
   return $error if $error;
 
-  return "Unknown customer ". $self->custnum unless $self->cust_main;
+  my $cust_main = $self->cust_main;
+  return "Unknown customer ". $self->custnum unless $cust_main;
+
+  my $agent = qsearchs( 'agent', { 'agentnum' => $cust_main->agentnum } );
+  my $pkgpart_href = $agent->pkgpart_hashref;
+  return "agent ". $agent->agentnum. " can't purchase pkgpart ". $self->pkgpart
+    unless $pkgpart_href->{ $self->{pkgpart} };
 
   $self->SUPER::insert;
 
@@ -695,7 +701,7 @@ sub order {
 
 =head1 VERSION
 
-$Id: cust_pkg.pm,v 1.18 2002-04-20 02:06:38 ivan Exp $
+$Id: cust_pkg.pm,v 1.19 2002-04-22 20:47:21 ivan Exp $
 
 =head1 BUGS
 
