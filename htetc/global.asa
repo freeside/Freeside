@@ -197,8 +197,8 @@ sub sprintAutoProfile {
 }
 
 sub include {
-  $_[0] =~ s(^/)();
-  $Response->Include(@_);
+  ( my $file = shift ) =~ s(^/)();
+  $Response->Include($file, @_);
 }
 
 if ( defined(@DBIx::Profile::ISA) ) {
