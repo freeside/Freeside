@@ -257,8 +257,8 @@ sub check {
 
 =item whois
 
-Returns the Net::Whois object corresponding to this domain, or undef if
-the domain is not found in whois.
+Returns the Net::Whois::Domain object (see L<Net::Whois>) for this domain, or
+undef if the domain is not found in whois.
 
 (If $FS::svc_domain::whois_hack is true, returns that in all cases instead.)
 
@@ -393,7 +393,7 @@ sub submit_internic {
 
 =head1 VERSION
 
-$Id: svc_domain.pm,v 1.3 1999-08-11 20:41:27 ivan Exp $
+$Id: svc_domain.pm,v 1.4 2000-01-29 21:10:13 ivan Exp $
 
 =head1 BUGS
 
