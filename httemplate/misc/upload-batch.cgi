@@ -2,8 +2,9 @@
 
   my $fh = $cgi->upload('batch_results');
   my $filename = $cgi->param('batch_results');
-  $filename =~ /^.*[\/\\]([^\/\\]+)$/ or die "unparsable filename: $filename\n";
-  my $paybatch = $1;
+  $filename =~ /^(.*[\/\\])?([^\/\\]+)$/
+    or die "unparsable filename: $filename\n";
+  my $paybatch = $2;
 
   my $error = defined($fh)
     ? FS::cust_pay_batch::import_results( {
