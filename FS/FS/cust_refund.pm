@@ -232,9 +232,11 @@ sub check {
   $self->payby =~ /^(CARD|BILL|COMP)$/ or return "Illegal payby";
   $self->payby($1);
 
+  #false laziness with cust_pay::check
   if ( $self->payby eq 'CARD' ) {
     my $payinfo = $self->payinfo;
-    $self->payinfo($payinfo =~ s/\D//g);
+    $payinfo =~ s/\D//g;
+    $self->payinfo($payinfo);
     if ( $self->payinfo ) {
       $self->payinfo =~ /^(\d{13,16})$/
         or return "Illegal (mistyped?) credit card number (payinfo)";
@@ -259,7 +261,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: cust_refund.pm,v 1.12 2002-01-24 06:52:44 ivan Exp $
+$Id: cust_refund.pm,v 1.13 2002-01-24 11:52:02 ivan Exp $
 
 =head1 BUGS
 

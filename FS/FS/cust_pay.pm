@@ -251,6 +251,7 @@ sub check {
   $self->payby =~ /^(CARD|BILL|COMP)$/ or return "Illegal payby";
   $self->payby($1);
 
+  #false laziness with cust_refund::check
   if ( $self->payby eq 'CARD' ) {
     my $payinfo = $self->payinfo;
     $payinfo =~ s/\D//g;
@@ -306,7 +307,7 @@ sub unapplied {
 
 =head1 VERSION
 
-$Id: cust_pay.pm,v 1.11 2002-01-22 15:57:33 ivan Exp $
+$Id: cust_pay.pm,v 1.12 2002-01-24 11:52:02 ivan Exp $
 
 =head1 BUGS
 
