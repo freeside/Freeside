@@ -388,6 +388,7 @@ sub send {
   #my @print_text = $cust_bill->print_text; #( date )
   my @invoicing_list = $self->cust_main->invoicing_list;
   if ( grep { $_ ne 'POST' } @invoicing_list ) { #email invoice
+    #false laziness w/FS::cust_pay::delete
     #$ENV{SMTPHOSTS} = $smtpmachine;
     $ENV{MAILADDRESS} = $invoice_from;
     my $header = new Mail::Header ( [
@@ -882,7 +883,7 @@ sub print_text {
 
 =head1 VERSION
 
-$Id: cust_bill.pm,v 1.22 2002-03-07 14:13:21 ivan Exp $
+$Id: cust_bill.pm,v 1.23 2002-03-18 19:49:10 ivan Exp $
 
 =head1 BUGS
 

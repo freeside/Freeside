@@ -571,7 +571,8 @@ sub delete {
   $h_sth->execute or return $h_sth->errstr if $h_sth;
   dbh->commit or croak dbh->errstr if $FS::UID::AutoCommit;
 
-  undef $self; #no need to keep object!
+  #no need to needlessly destoy the data either
+  #undef $self; #no need to keep object!
 
   '';
 }
