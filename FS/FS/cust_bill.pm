@@ -726,8 +726,10 @@ sub batch_card {
     'payname'  => $cust_main->getfield('payname'),
     'amount'   => $self->owed,
   } );
-  $cust_pay_batch->insert;
+  my $error = $cust_pay_batch->insert;
+  die $error if $error;
 
+  '';
 }
 
 =item print_text [TIME];
@@ -948,7 +950,7 @@ sub print_text {
 
 =head1 VERSION
 
-$Id: cust_bill.pm,v 1.35 2002-05-18 09:51:30 ivan Exp $
+$Id: cust_bill.pm,v 1.36 2002-05-31 20:31:05 ivan Exp $
 
 =head1 BUGS
 
