@@ -115,10 +115,10 @@ foreach (sort { $a cmp $b } $svc_broadband->virtual_fields) {
   </A>
   <BR>
   <% my @sb_addr_block;
-     if (@sb_addr_block = $sb_router->sb_addr_block) {
+     if (@sb_addr_block = $sb_router->addr_block) {
      %>
   <B>Address space </B>
-  <A HREF="<%=popurl(2)%>browse/sb_addr_block.cgi">
+  <A HREF="<%=popurl(2)%>browse/addr_block.cgi">
     (edit)
   </A>
   <BR>
