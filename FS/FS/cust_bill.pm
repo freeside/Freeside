@@ -3,9 +3,9 @@ package FS::cust_bill;
 use strict;
 use vars qw( @ISA $conf $money_char );
 use vars qw( $lpr $invoice_from $smtpmachine );
-use vars qw( $processor );
 use vars qw( $xaction $E_NoErr );
 use vars qw( $bop_processor $bop_login $bop_password $bop_action @bop_options );
+use vars qw( $ach_processor $ach_login $ach_password $ach_action @ach_options );
 use vars qw( $invoice_lines @buf ); #yuck
 use Date::Format;
 use Mail::Internet 1.44;
@@ -43,8 +43,20 @@ $FS::UID::callback{'FS::cust_bill'} = sub {
       @bop_options
     ) = $conf->config('business-onlinepayment');
     $bop_action ||= 'normal authorization';
+    ( $ach_processor, $ach_login, $ach_password, $ach_action, @ach_options ) =
+      ( $bop_processor, $bop_login, $bop_password, $bop_action, @bop_options );
     eval "use Business::OnlinePayment";  
-    $processor="Business::OnlinePayment::$bop_processor";
+  }
+
+  if ( $conf->exists('business-onlinepayment-ach') ) {
+    ( $ach_processor,
+      $ach_login,
+      $ach_password,
+      $ach_action,
+      @ach_options
+    ) = $conf->config('business-onlinepayment-ach');
+    $ach_action ||= 'normal authorization';
+    eval "use Business::OnlinePayment";  
   }
 
 };
@@ -592,7 +604,15 @@ for supported processors.
 
 sub realtime_card {
   my $self = shift;
-  $self->realtime_bop('CC', @_);
+  $self->realtime_bop(
+    'CC',
+    $bop_processor,
+    $bop_login,
+    $bop_password,
+    $bop_action,
+    \@bop_options,
+    @_
+  );
 }
 
 =item realtime_ach
@@ -606,19 +626,21 @@ for supported processors.
 
 sub realtime_ach {
   my $self = shift;
-  $self->realtime_bop('CHECK', @_);
+  $self->realtime_bop(
+    'CHECK',
+    $ach_processor,
+    $ach_login,
+    $ach_password,
+    $ach_action,
+    \@ach_options,
+    @_
+  );
 }
 
 sub realtime_bop {
-  my $self = shift;
-  my $method = shift;
+  my( $self, $method, $processor, $login, $password, $action, $options ) = @_;
   my $cust_main = $self->cust_main;
   my $amount = $self->owed;
-
-  unless ( $processor =~ /^Business::OnlinePayment::(.*)$/ ) {
-    return "Real-time card/ACH processing not enabled (processor $processor)";
-  }
-  my $bop_processor = $1; #hmm?
 
   my $address = $cust_main->address1;
   $address .= ", ". $cust_main->address2 if $cust_main->address2;
@@ -645,7 +667,7 @@ sub realtime_bop {
   }
   my $email = $invoicing_list[0];
 
-  my( $action1, $action2 ) = split(/\s*\,\s*/, $bop_action );
+  my( $action1, $action2 ) = split(/\s*\,\s*/, $action );
 
   my $description = 'Internet Services';
   if ( $conf->exists('business-onlinepayment-description') ) {
@@ -676,12 +698,12 @@ sub realtime_bop {
   }
   
   my $transaction =
-    new Business::OnlinePayment( $bop_processor, @bop_options );
+    new Business::OnlinePayment( $processor, @$options );
   $transaction->content(
     %content,
     'type'           => $method,
-    'login'          => $bop_login,
-    'password'       => $bop_password,
+    'login'          => $login,
+    'password'       => $password,
     'action'         => $action1,
     'description'    => $description,
     'amount'         => $amount,
@@ -710,14 +732,14 @@ sub realtime_bop {
     #warn "********* $auth ***********\n";
     #warn "********* $ordernum ***********\n";
     my $capture =
-      new Business::OnlinePayment( $bop_processor, @bop_options );
+      new Business::OnlinePayment( $processor, @$options );
 
     my %capture = (
       %content,
       type           => $method,
       action         => $action2,
-      login          => $bop_login,
-      password       => $bop_password,
+      login          => $login,
+      password       => $password,
       order_number   => $ordernum,
       amount         => $amount,
       authorization  => $auth,
@@ -1074,7 +1096,7 @@ sub print_text {
 
 =head1 VERSION
 
-$Id: cust_bill.pm,v 1.50 2002-10-15 09:54:24 ivan Exp $
+$Id: cust_bill.pm,v 1.51 2002-11-16 10:33:16 ivan Exp $
 
 =head1 BUGS
 

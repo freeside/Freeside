@@ -269,6 +269,13 @@ httemplate/docs/config.html
   },
 
   {
+    'key'         => 'business-onlinepayment-ach',
+    'section'     => 'billing',
+    'description' => 'Alternate <a href="http://search.cpan.org/search?mode=module&query=Business%3A%3AOnlinePayment">Business::OnlinePayment</a> support for ACH transactions (defaults to regular <b>business-onlinepayment</b>).  At least three lines: processor, login, and password.  An optional fourth line specifies the action or actions (multiple actions are separated with `,\': for example: `Authorization Only, Post Authorization\').    Optional additional lines are passed to Business::OnlinePayment as %processor_options.',
+    'type'        => 'textarea',
+  },
+
+  {
     'key'         => 'business-onlinepayment-description',
     'section'     => 'billing',
     'description' => 'String passed as the description field to <a href="http://search.cpan.org/search?mode=module&query=Business%3A%3AOnlinePayment">Business::OnlinePayment</a>.  Evaluated as a double-quoted perl string, with the following variables available: <code>$agent</code> (the agent name), and <code>$pkgs</code> (a comma-separated list of packages to which the invoiced being charged applies)',
@@ -877,7 +884,7 @@ httemplate/docs/config.html
     'section'     => '',
     'description' => 'Acceptable payment types for the signup server',
     'type'        => 'selectmultiple',
-    'select_enum' => [ qw(CARD CHEK PREPAY BILL COMP) ],
+    'select_enum' => [ qw(CARD CHEK LECB PREPAY BILL COMP) ],
   },
 
   {
@@ -964,7 +971,7 @@ httemplate/docs/config.html
     'section'     => 'UI',
     'description' => 'Default payment type.  HIDE disables display of billing information and sets customers to BILL.',
     'type'        => 'select',
-    'select_enum' => [ '', qw(CARD CHEK BILL COMP HIDE) ],
+    'select_enum' => [ '', qw(CARD CHEK LECB BILL COMP HIDE) ],
   },
 
   {
