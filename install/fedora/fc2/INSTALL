@@ -23,6 +23,9 @@ apt-get remove httpd mod_perl
 
 apt-get install perl-Devel-Symdump perl-BSD-Resource perl-DBD-MySQL perl-DBI perl-DateManip perl-HTML-Parser perl-HTML-Tagset perl-TimeDate perl-URI perl-libwww-perl perl-suidperl rsync postgresql postgresql-docs postgresql-libs postgresql-server postgresql-devel screen zsh lftp cvs gcc gd perl-GD perl-MailTools perl-FreezeThaw perl-NetAddr-IP perl-Chart perl-Text-Template perl-Cache-Cache
 
+#for rt
+#apt-get install perl-Apache-Session perl-MIME-tools perl-TermReadKey
+
 perl -MCPAN -e"install Net::Whois::Raw, Business::CreditCard, \
                        File::CounterFile, String::Approx, Text::Template, \
                        DBIx::DataSource, DBIx::DBSchema, Net::SSH, \
