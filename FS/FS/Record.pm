@@ -73,7 +73,7 @@ FS::Record - Database record objects
     $value = $record->ut_alpha('column');
     $value = $record->ut_alphan('column');
     $value = $record->ut_phonen('column');
-    $value = $record->ut_anythingn('column');
+    $value = $record->ut_anything('column');
     $value = $record->ut_name('column');
 
     $dbdef = reload_dbdef;
@@ -829,7 +829,7 @@ Untaints arbitrary data.  Be careful.
 
 sub ut_anything {
   my($self,$field)=@_;
-  $self->getfield($field) =~ /^(.*)$/
+  $self->getfield($field) =~ /^(.*)$/s
     or return "Illegal $field: ". $self->getfield($field);
   $self->setfield($field,$1);
   '';
@@ -949,7 +949,7 @@ sub DESTROY { return; }
 
 =head1 VERSION
 
-$Id: Record.pm,v 1.20 2001-08-08 04:44:41 ivan Exp $
+$Id: Record.pm,v 1.21 2001-08-11 05:50:52 ivan Exp $
 
 =head1 BUGS
 
