@@ -3,7 +3,7 @@
 #some false laziness w/selfservice.cgi
 
 use strict;
-use vars qw($cgi $session_id $form_max $template_dir);
+use vars qw($DEBUG $me $cgi $session_id $form_max $template_dir);
 use subs qw(do_template);
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
@@ -15,18 +15,27 @@ use FS::SelfService qw( agent_login agent_info
                         customer_info order_pkg
                       );
 
+$DEBUG = 0;
+$me = 'agent.cgi:';
+
 $template_dir = '.';
 
 $form_max = 255;
 
+warn "$me starting\n" if $DEBUG;
+
+warn "$me initializing CGI\n" if $DEBUG;
 $cgi = new CGI;
 
 unless ( defined $cgi->param('session') ) {
+  warn "$me no session defined, sending login page\n" if $DEBUG;
   do_template('agent_login',{});
   exit;
 }
 
 if ( $cgi->param('session') eq 'login' ) {
+
+  warn "$me processing login\n" if $DEBUG;
 
   $cgi->param('username') =~ /^\s*([a-z0-9_\-\.\&]{0,$form_max})\s*$/i
     or die "illegal username";
@@ -54,12 +63,13 @@ if ( $cgi->param('session') eq 'login' ) {
 
 $session_id = $cgi->param('session');
 
+warn "$me checking action\n" if $DEBUG;
 $cgi->param('action') =~
    /^(agent_main|signup|process_signup|list_customers|view_customer|process_order_pkg)$/
   or die "unknown action ". $cgi->param('action');
 my $action = $1;
 
-warn "running $action\n";
+warn "$me running $action\n" if $DEBUG;
 my $result = eval "&$action();";
 die $@ if $@;
 
@@ -68,11 +78,12 @@ if ( $result->{error} eq "Can't resume session" ) { #ick
   exit;
 }
 
-warn "processing template $action\n";
+warn "$me processing template $action\n" if $DEBUG;
 do_template($action, {
   'session_id' => $session_id,
   %{$result}
 });
+warn "$me done processing template $action\n" if $DEBUG;
 
 #-- 
 
@@ -254,6 +265,7 @@ sub do_template {
                                      UNTAINT => 1,                    )
     or die $Text::Template::ERROR;
 
+  local $^W = 0;
   print $cgi->header( '-expires' => 'now' ),
         $template->fill_in( PACKAGE => 'FS::SelfService::_agentcgi',
                             HASH    => $fill_in
