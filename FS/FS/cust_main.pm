@@ -958,16 +958,21 @@ sub suspend {
   grep { $_->suspend } $self->unsuspended_pkgs;
 }
 
-=item cancel
+=item cancel [ OPTION => VALUE ... ]
 
 Cancels all uncancelled packages (see L<FS::cust_pkg>) for this customer.
+
+Available options are: I<quiet>
+
+I<quiet> can be set true to supress email cancellation notices.
+
 Always returns a list: an empty list on success or a list of errors.
 
 =cut
 
 sub cancel {
   my $self = shift;
-  grep { $_->cancel } $self->ncancelled_pkgs;
+  grep { $_->cancel(@_) } $self->ncancelled_pkgs;
 }
 
 =item agent
