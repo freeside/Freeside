@@ -40,9 +40,10 @@ foreach my $table (@tables) {
 
     unless ($h_rec) {
       my $h_insert_rec = $rec->_h_statement('insert', 1);
-      #print $h_insert_rec . "\n";
+      print $h_insert_rec . "\n";
       $dbh->do($h_insert_rec);
       die $dbh->errstr if $dbh->err;
+      $dbh->commit or die $dbh->errstr;
       $cnt++;
     }
 
