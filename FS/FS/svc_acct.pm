@@ -367,8 +367,10 @@ $username and $dir.
 sub delete {
   my $self = shift;
 
-  return "Can't delete an account which has (svc_acct_sm) mail aliases!"
-    if $self->uid && qsearch( 'svc_acct_sm', { 'domuid' => $self->uid } );
+  if ( defined( $FS::Record::dbdef->table('svc_acct_sm') ) ) {
+    return "Can't delete an account which has (svc_acct_sm) mail aliases!"
+      if $self->uid && qsearch( 'svc_acct_sm', { 'domuid' => $self->uid } );
+  }
 
   return "Can't delete an account which is a (svc_forward) source!"
     if qsearch( 'svc_forward', { 'srcsvc' => $self->svcnum } );
@@ -839,7 +841,7 @@ sub email {
 
 =head1 VERSION
 
-$Id: svc_acct.pm,v 1.38 2001-09-11 13:10:22 ivan Exp $
+$Id: svc_acct.pm,v 1.39 2001-09-14 19:54:22 ivan Exp $
 
 =head1 BUGS
 
