@@ -1,5 +1,5 @@
 <%
-# <!-- $Id: svc_acct.cgi,v 1.10 2001-12-09 23:31:55 ivan Exp $ -->
+# <!-- $Id: svc_acct.cgi,v 1.11 2001-12-10 00:44:56 ivan Exp $ -->
 
 use strict;
 use vars qw( $cgi @svc_acct $sortby $query $mydomain
@@ -214,7 +214,7 @@ END
 
   }
  
-  print '</TABLE>$pager<BR>';
+  print "</TABLE>$pager<BR>";
 
   if ( $mydomain ) {
     print "<BR><FONT COLOR=\"#FF0000\">*</FONT> The <I>$mydomain</I> domain ".
