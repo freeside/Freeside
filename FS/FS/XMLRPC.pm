@@ -7,6 +7,7 @@ use Frontier::RPC2;
 # Instead of 'use'ing freeside modules on the fly below, just preload them now.
 use FS;
 use FS::CGI;
+use FS::Conf;
 use FS::Record;
 use FS::cust_main;
 
@@ -96,23 +97,37 @@ sub _serve { #Subroutine, not method
     warn "fssub: ${fssub}" if $DEBUG;
     warn "params: " . Dumper($params) if $DEBUG;
 
-    unless (UNIVERSAL::can("FS::${class}", $sub)) {
-      warn "FS::XMLRPC: Can't call undefined subroutine '${fssub}'";
-      # Should we encode an error in the response,
-      # or just break silently to the remote caller and complain locally?
-      return [];
-    }
-
     my @result;
-    eval { 
-      no strict 'refs';
-      my $fssub = "FS::${class}::${sub}";
-      @result = (&$fssub(@$params));
-    };
 
-    if ($@) {
-      warn "FS::XMLRPC: Error while calling '${fssub}': $@";
-      return [];
+    if ($class eq 'Conf') { #Special case for FS::Conf because we need an obj.
+
+      if ($sub eq 'config') {
+        my $conf = new FS::Conf;
+        @result = ($conf->config(@$params));
+      } else {
+	warn "FS::XMLRPC: Can't call undefined subroutine '${fssub}'";
+      }
+
+    } else {
+
+      unless (UNIVERSAL::can("FS::${class}", $sub)) {
+        warn "FS::XMLRPC: Can't call undefined subroutine '${fssub}'";
+        # Should we encode an error in the response,
+        # or just break silently to the remote caller and complain locally?
+        return [];
+      }
+
+      eval { 
+        no strict 'refs';
+        my $fssub = "FS::${class}::${sub}";
+        @result = (&$fssub(@$params));
+      };
+
+      if ($@) {
+        warn "FS::XMLRPC: Error while calling '${fssub}': $@";
+        return [];
+      }
+
     }
 
     warn Dumper(@result);
