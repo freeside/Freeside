@@ -1,13 +1,16 @@
 <%
 
-foreach ( $cgi->param ) {
+foreach ( grep { /^tax\d+$/ } $cgi->param ) {
   /^tax(\d+)$/ or die "Illegal form $_!";
   my($taxnum)=$1;
   my($old)=qsearchs('cust_main_county',{'taxnum'=>$taxnum})
     or die "Couldn't find taxnum $taxnum!";
-  next unless $old->getfield('tax') ne $cgi->param("tax$taxnum");
-  my(%hash)=$old->hash;
-  $hash{tax}=$cgi->param("tax$taxnum");
+  my $exempt_amount = $cgi->param("exempt_amount$taxnum");
+  next unless $old->tax ne $cgi->param("tax$taxnum")
+              || $old->exempt_amount ne $exempt_amount;
+  my %hash = $old->hash;
+  $hash{tax} = $cgi->param("tax$taxnum");
+  $hash{exempt_amount} = $exempt_amount;
   my($new)=new FS::cust_main_county \%hash;
   my($error)=$new->replace($old);
   if ( $error ) {

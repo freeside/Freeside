@@ -14,8 +14,10 @@ print qq!<FORM ACTION="!, popurl(1),
       <TR>
         <TH><FONT SIZE=-1>Country</FONT></TH>
         <TH><FONT SIZE=-1>State</FONT></TH>
-        <TH>County</TH>
+        <TH><FONT SIZE=-1>County</FONT></TH>
+        <TH><FONT SIZE=-1>Taxclass</FONT></TH>
         <TH><FONT SIZE=-1>Tax</FONT></TH>
+        <TH><FONT SIZE=-1>Exempt<BR>per<BR>month</TH>
       </TR>
 END
 
@@ -26,22 +28,29 @@ foreach my $cust_main_county ( sort {    $a->country cmp $b->country
   my($hashref)=$cust_main_county->hashref;
   print <<END;
       <TR>
-        <TD>$hashref->{country}</TD>
+        <TD BGCOLOR="#ffffff">$hashref->{country}</TD>
 END
 
-  print "<TD>", $hashref->{state}
-      ? $hashref->{state}
-      : '(ALL)'
+  print "<TD", $hashref->{state}
+      ? ' BGCOLOR="#ffffff">'.$hashref->{state}
+      : ' BGCOLOR="#cccccc">(ALL)'
     , "</TD>";
 
-  print "<TD>", $hashref->{county}
-      ? $hashref->{county}
-      : '(ALL)'
+  print "<TD", $hashref->{county}
+      ? ' BGCOLOR="#ffffff">'. $hashref->{county}
+      : ' BGCOLOR="#cccccc">(ALL)'
+    , "</TD>";
+
+  print "<TD", $hashref->{taxclass}
+      ? ' BGCOLOR="#ffffff">'. $hashref->{taxclass}
+      : ' BGCOLOR="#cccccc">(ALL)'
     , "</TD>";
 
   print qq!<TD><INPUT TYPE="text" NAME="tax!, $hashref->{taxnum},
-        qq!" VALUE="!, $hashref->{tax}, qq!" SIZE=6 MAXLENGTH=6>%</TD></TR>!;
-END
+        qq!" VALUE="!, $hashref->{tax}, qq!" SIZE=6 MAXLENGTH=6>%</TD>!;
+  print qq!<TD>\$<INPUT TYPE="text" NAME="exempt_amount!, $hashref->{taxnum},
+        qq!" VALUE="!, $hashref->{exempt_amount}||0, qq!" SIZE=6></TD>!;
+  print '</TR>';
 
 }
 

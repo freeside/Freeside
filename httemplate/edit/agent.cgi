@@ -51,12 +51,12 @@ print <<END;
 </SELECT></TD>
 </TR>
 <TR>
-  <TD ALIGN="right">Frequency (unimplemented)</TD>
-  <TD><INPUT TYPE="text" NAME="freq" VALUE="$hashref->{freq}"></TD>
+  <TD ALIGN="right"><!--Frequency--></TD>
+  <TD><INPUT TYPE="hidden" NAME="freq" VALUE="$hashref->{freq}"></TD>
 </TR>
 <TR>
-  <TD ALIGN="right">Program (unimplemented)</TD>
-  <TD><INPUT TYPE="text" NAME="prog" VALUE="$hashref->{prog}"></TD>
+  <TD ALIGN="right"><!--Program--></TD>
+  <TD><INPUT TYPE="hidden" NAME="prog" VALUE="$hashref->{prog}"></TD>
 </TR>
 </TABLE>
 END

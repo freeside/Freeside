@@ -88,6 +88,23 @@ print '>';
 
 print '</TD></TR>';
 
+my $conf = new FS::Conf;
+if ( $conf->exists('enable_taxclasses') ) {
+  print '<TR><TD ALIGN="right">Tax class</TD><TD><SELECT NAME="taxclass">';
+  my $sth = dbh->prepare('SELECT DISTINCT taxclass FROM cust_main_county')
+    or die dbh->errstr;
+  $sth->execute or die $sth->errstr;
+  foreach my $taxclass ( map $_->[0], @{$sth->fetchall_arrayref} ) {
+    print qq!<OPTION VALUE="$taxclass"!;
+    print ' SELECTED' if $taxclass eq $hashref->{taxclass};
+    print qq!>$taxclass</OPTION>!;
+  }
+  print '</SELECT></TD></TR>';
+} else {
+  print
+    '<INPUT TYPE="hidden" NAME="taxclass" VALUE="'. $hashref->{taxclass}. '">';
+}
+
 print '<TR><TD ALIGN="right">Disable new orders</TD><TD>';
 print '<INPUT TYPE="checkbox" NAME="disabled" VALUE="Y"';
 print ' CHECKED' if $hashref->{disabled} eq "Y";
@@ -344,6 +361,14 @@ my %plandata = map { /^(\w+)=(.*)$/; ( $1 => $2 ); }
 
 tie my %options, 'Tie::IxHash', map { $_=>$plans{$_}->{'name'} } keys %plans;
 
+my @form_select = ();
+if ( $conf->exists('enable_taxclasses') ) {
+  push @form_select, 'taxclass';
+} else {
+  push @fixups, 'taxclass'; #hidden
+}
+
+
 my $widget = new HTML::Widgets::SelectLayers(
   'selected_layer' => $part_pkg->plan,
   'options'        => \%options,
@@ -351,6 +376,7 @@ my $widget = new HTML::Widgets::SelectLayers(
   'form_action'    => 'process/part_pkg.cgi',
   'form_text'      => [ qw(pkg comment freq clone pkgnum pkgpart), @fixups ],
   'form_checkbox'  => [ qw(setuptax recurtax disabled) ],
+  'form_select'    => [ @form_select ],
   'fixup_callback' => sub {
                         #my $ = @_;
                         my $html = '';

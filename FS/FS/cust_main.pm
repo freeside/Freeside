@@ -26,6 +26,7 @@ use FS::queue;
 use FS::part_pkg;
 use FS::part_bill_event;
 use FS::cust_bill_event;
+use FS::cust_tax_exempt;
 use FS::Msgcat qw(gettext);
 
 @ISA = qw( FS::Record );
@@ -874,8 +875,11 @@ sub bill {
   # & generate invoice database.
  
   my( $total_setup, $total_recur ) = ( 0, 0 );
-  my( $taxable_setup, $taxable_recur ) = ( 0, 0 );
+  #my( $taxable_setup, $taxable_recur ) = ( 0, 0 );
   my @cust_bill_pkg = ();
+  my $tax = 0;##
+  #my $taxable_charged = 0;##
+  #my $charged = 0;##
 
   foreach my $cust_pkg (
     qsearch('cust_pkg', { 'custnum' => $self->custnum } )
@@ -888,7 +892,7 @@ sub bill {
     $cust_pkg->setfield('bill', '')
       unless defined($cust_pkg->bill);
  
-    my $part_pkg = qsearchs( 'part_pkg', { 'pkgpart' => $cust_pkg->pkgpart } );
+    my $part_pkg = $cust_pkg->part_pkg;
 
     #so we don't modify cust_pkg record unnecessarily
     my $cust_pkg_mod_flag = 0;
@@ -958,7 +962,7 @@ sub bill {
       # here
       $sdate = $cust_pkg->bill || $cust_pkg->setup || $time;
 
-      $mon += $part_pkg->getfield('freq');
+      $mon += $part_pkg->freq;
       until ( $mon < 12 ) { $mon -= 12; $year++; }
       $cust_pkg->setfield('bill',
         timelocal($sec,$min,$hour,$mday,$mon,$year));
@@ -969,6 +973,7 @@ sub bill {
     warn "\$recur is undefined" unless defined($recur);
     warn "\$cust_pkg->bill is undefined" unless defined($cust_pkg->bill);
 
+    my $taxable_charged = 0;
     if ( $cust_pkg_mod_flag ) {
       $error=$cust_pkg->replace($old_cust_pkg);
       if ( $error ) { #just in case
@@ -996,51 +1001,126 @@ sub bill {
         push @cust_bill_pkg, $cust_bill_pkg;
         $total_setup += $setup;
         $total_recur += $recur;
-        $taxable_setup += $setup
-          unless $part_pkg->dbdef_table->column('setuptax')
-                 && $part_pkg->setuptax =~ /^Y$/i;
-        $taxable_recur += $recur
-          unless $part_pkg->dbdef_table->column('recurtax')
-                 && $part_pkg->recurtax =~ /^Y$/i;
-      }
-    }
+        $taxable_charged += $setup
+          unless $part_pkg->setuptax =~ /^Y$/i;
+        $taxable_charged += $recur
+          unless $part_pkg->recurtax =~ /^Y$/i;
+          
+        unless ( $self->tax =~ /Y/i
+                 || $self->payby eq 'COMP'
+                 || $taxable_charged == 0 ) {
 
-  }
+          my $cust_main_county =
+            qsearchs('cust_main_county',{
+              'state'    => $self->state,
+              'county'   => $self->county,
+              'country'  => $self->country,
+              'taxclass' => $part_pkg->taxclass,
+            } )
+            or qsearchs('cust_main_county',{
+              'state'    => $self->state,
+              'county'   => $self->county,
+              'country'  => $self->country,
+              'taxclass' => '',
+            } )
+            or do {
+              $dbh->rollback if $oldAutoCommit;
+              return
+                "fatal: can't find tax rate for state/county/country/taxclass ".
+                join('/', map $self->$_(), qw(state county country taxclass) ).
+                "\n";
+            };
+
+          if ( $cust_main_county->exempt_amount ) {
+            my ($mon,$year) = (localtime($sdate) )[4,5];
+            $mon++;
+            my $freq = $part_pkg->freq || 1;
+            my $taxable_per_month = sprintf("%.2f", $taxable_charged / $freq );
+            foreach my $which_month ( 1 .. $freq ) {
+              my %hash = (
+                'custnum' => $self->custnum,
+                'taxnum'  => $cust_main_county->taxnum,
+                'year'    => 1900+$year,
+                'month'   => $mon++,
+              );
+              #until ( $mon < 12 ) { $mon -= 12; $year++; }
+              until ( $mon < 13 ) { $mon -= 12; $year++; }
+              my $cust_tax_exempt =
+                qsearchs('cust_tax_exempt', \%hash)
+                || new FS::cust_tax_exempt( { %hash, 'amount' => 0 } );
+              my $remaining_exemption = sprintf("%.2f",
+                $cust_main_county->exempt_amount - $cust_tax_exempt->amount );
+              if ( $remaining_exemption > 0 ) {
+                my $addl = $remaining_exemption > $taxable_per_month
+                  ? $taxable_per_month
+                  : $remaining_exemption;
+                $taxable_charged -= $addl;
+                my $new_cust_tax_exempt = new FS::cust_tax_exempt ( {
+                  $cust_tax_exempt->hash,
+                  'amount' => sprintf("%.2f", $cust_tax_exempt->amount + $addl),
+                } );
+                $error = $new_cust_tax_exempt->exemptnum
+                  ? $new_cust_tax_exempt->replace($cust_tax_exempt)
+                  : $new_cust_tax_exempt->insert;
+                if ( $error ) {
+                  $dbh->rollback if $oldAutoCommit;
+                  return "fatal: can't update cust_tax_exempt: $error";
+                }
+
+              } # if $remaining_exemption > 0
+
+            } #foreach $which_month
+
+          } #if $cust_main_county->exempt_amount
+
+          $taxable_charged = sprintf( "%.2f", $taxable_charged);
+          $tax += $taxable_charged * $cust_main_county->tax / 100
+
+        } #unless $self->tax =~ /Y/i
+          #       || $self->payby eq 'COMP'
+          #       || $taxable_charged == 0
+
+      } #if $setup > 0 || $recur > 0
+      
+    } #if $cust_pkg_mod_flag
+
+  } #foreach my $cust_pkg
 
   my $charged = sprintf( "%.2f", $total_setup + $total_recur );
-  my $taxable_charged = sprintf( "%.2f", $taxable_setup + $taxable_recur );
+#  my $taxable_charged = sprintf( "%.2f", $taxable_setup + $taxable_recur );
 
-  unless ( @cust_bill_pkg ) {
+  unless ( @cust_bill_pkg ) { #don't create invoices with no line items
     $dbh->commit or die $dbh->errstr if $oldAutoCommit;
     return '';
   } 
 
-  unless ( $self->tax =~ /Y/i
-           || $self->payby eq 'COMP'
-           || $taxable_charged == 0 ) {
-    my $cust_main_county = qsearchs('cust_main_county',{
-        'state'   => $self->state,
-        'county'  => $self->county,
-        'country' => $self->country,
-    } ) or die "fatal: can't find tax rate for state/county/country ".
-               $self->state. "/". $self->county. "/". $self->country. "\n";
-    my $tax = sprintf( "%.2f",
-      $taxable_charged * ( $cust_main_county->getfield('tax') / 100 )
-    );
+#  unless ( $self->tax =~ /Y/i
+#           || $self->payby eq 'COMP'
+#           || $taxable_charged == 0 ) {
+#    my $cust_main_county = qsearchs('cust_main_county',{
+#        'state'   => $self->state,
+#        'county'  => $self->county,
+#        'country' => $self->country,
+#    } ) or die "fatal: can't find tax rate for state/county/country ".
+#               $self->state. "/". $self->county. "/". $self->country. "\n";
+#    my $tax = sprintf( "%.2f",
+#      $taxable_charged * ( $cust_main_county->getfield('tax') / 100 )
+#    );
 
-    if ( $tax > 0 ) {
-      $charged = sprintf( "%.2f", $charged+$tax );
+  $tax = sprintf("%.2f", $tax);
+  if ( $tax > 0 ) {
+    $charged = sprintf( "%.2f", $charged+$tax );
 
-      my $cust_bill_pkg = new FS::cust_bill_pkg ({
-        'pkgnum' => 0,
-        'setup'  => $tax,
-        'recur'  => 0,
-        'sdate'  => '',
-        'edate'  => '',
-      });
-      push @cust_bill_pkg, $cust_bill_pkg;
-    }
+    my $cust_bill_pkg = new FS::cust_bill_pkg ({
+      'pkgnum' => 0,
+      'setup'  => $tax,
+      'recur'  => 0,
+      'sdate'  => '',
+      'edate'  => '',
+    });
+    push @cust_bill_pkg, $cust_bill_pkg;
   }
+#  }
 
   my $cust_bill = new FS::cust_bill ( {
     'custnum' => $self->custnum,

@@ -59,7 +59,7 @@ inherits from FS::Record.  The following fields are currently supported:
 
 =item recurtax - Recurring fee tax exempt flag, empty or `Y'
 
-=item taxclass - Texas tax class flag, empty or "none", "access", or "hosting"
+=item taxclass - Tax class flag
 
 =item plan - Price plan
 
@@ -235,7 +235,7 @@ sub check {
       || $self->ut_anything('plandata')
       || $self->ut_enum('setuptax', [ '', 'Y' ] )
       || $self->ut_enum('recurtax', [ '', 'Y' ] )
-      || $self->ut_enum('taxclass', [ '', 'none', 'access', 'hosting' ] )
+      || $self->ut_textn('taxclass')
       || $self->ut_enum('disabled', [ '', 'Y' ] )
     ;
 }
@@ -297,7 +297,7 @@ sub payby {
 
 =head1 VERSION
 
-$Id: part_pkg.pm,v 1.13 2002-05-04 15:00:18 ivan Exp $
+$Id: part_pkg.pm,v 1.14 2002-05-09 12:38:39 ivan Exp $
 
 =head1 BUGS
 

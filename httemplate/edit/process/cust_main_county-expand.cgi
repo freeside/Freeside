@@ -27,7 +27,9 @@ foreach ( @expansion) {
   my(%hash)=$cust_main_county->hash;
   my($new)=new FS::cust_main_county \%hash;
   $new->setfield('taxnum','');
-  if ( ! $cust_main_county->state ) {
+  if ( $cgi->param('taxclass') ) {
+    $new->setfield('taxclass', $_);
+  } elsif ( ! $cust_main_county->state ) {
     $new->setfield('state',$_);
   } else {
     $new->setfield('county',$_);

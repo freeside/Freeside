@@ -24,8 +24,8 @@ print &table(), <<END;
       <TR>
         <TH COLSPAN=2>Agent</TH>
         <TH>Type</TH>
-        <TH><FONT SIZE=-1>Freq. (unimp.)</FONT></TH>
-        <TH><FONT SIZE=-1>Prog. (unimp.)</FONT></TH>
+        <TH><FONT SIZE=-1>Freq.</FONT></TH>
+        <TH><FONT SIZE=-1>Prog.</FONT></TH>
       </TR>
 END
 #        <TH><FONT SIZE=-1>Agent #</FONT></TH>

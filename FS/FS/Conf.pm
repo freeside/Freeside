@@ -930,6 +930,13 @@ httemplate/docs/config.html
     'type'        => 'checkbox',
   },
 
+  {
+    'key'         => 'enable_taxclasses',
+    'section'     => 'billing',
+    'description' => 'Enable per-package tax classes',
+    'type'        => 'checkbox',
+  },
+
 );
 
 1;

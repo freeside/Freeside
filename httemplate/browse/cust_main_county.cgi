@@ -1,26 +1,36 @@
 <!-- mason kludge -->
 <%
 
+my $conf = new FS::Conf;
+my $enable_taxclasses = $conf->exists('enable_taxclasses');
+
 print header("Tax Rate Listing", menubar(
   'Main Menu' => $p,
   'Edit tax rates' => $p. "edit/cust_main_county.cgi",
 )),<<END;
     Click on <u>expand country</u> to specify a country's tax rates by state.
     <BR>Click on <u>expand state</u> to specify a state's tax rates by county.
-    <BR><BR>
 END
-print &table(), <<END;
+
+if ( $enable_taxclasses ) {
+  print '<BR>Click on <u>expand taxclasses</u> to specify tax classes';
+}
+
+print '<BR><BR>'. &table(). <<END;
       <TR>
         <TH><FONT SIZE=-1>Country</FONT></TH>
         <TH><FONT SIZE=-1>State</FONT></TH>
         <TH>County</TH>
+        <TH>Taxclass</TH>
         <TH><FONT SIZE=-1>Tax</FONT></TH>
+        <TH><FONT SIZE=-1>Exempt<BR>per<BR>month</TH>
       </TR>
 END
 
-my @regions = sort {    $a->country cmp $b->country
-                     or $a->state   cmp $b->state
-                     or $a->county  cmp $b->county
+my @regions = sort {    $a->country  cmp $b->country
+                     or $a->state    cmp $b->state
+                     or $a->county   cmp $b->county
+                     or $a->taxclass cmp $b->taxclass
                    } qsearch('cust_main_county',{});
 
 my $sup=0;
@@ -30,7 +40,7 @@ for ( my $i=0; $i<@regions; $i++ ) {
   my $hashref = $cust_main_county->hashref;
   print <<END;
       <TR>
-        <TD>$hashref->{country}</TD>
+        <TD BGCOLOR="#ffffff">$hashref->{country}</TD>
 END
 
   my $j;
@@ -42,7 +52,8 @@ END
     for ( $j=1; $i+$j<@regions; $j++ ) {
       last if $hashref->{country} ne $regions[$i+$j]->country
            || $hashref->{state} ne $regions[$i+$j]->state
-           || $hashref->{tax} != $regions[$i+$j]->tax;
+           || $hashref->{tax} != $regions[$i+$j]->tax
+           || $hashref->{exempt_amount} != $regions[$i+$j]->exempt_amount;
     }
 
     my $newsup=0;
@@ -60,9 +71,9 @@ END
       $j = 1;
     }
 
-    print "<TD ROWSPAN=$j>", $hashref->{state}
-        ? $hashref->{state}
-        : qq!(ALL) <FONT SIZE=-1>!.
+    print "<TD ROWSPAN=$j", $hashref->{state}
+        ? ' BGCOLOR="#ffffff">'. $hashref->{state}
+        : qq! BGCOLOR="#cccccc">(ALL) <FONT SIZE=-1>!.
           qq!<A HREF="${p}edit/cust_main_county-expand.cgi?!. $hashref->{taxnum}.
           qq!">expand country</A></FONT>!;
 
@@ -73,11 +84,11 @@ END
 
 #  $sup=$newsup;
 
-  print "<TD>";
+  print "<TD";
   if ( $hashref->{county} ) {
-    print $hashref->{county};
+    print ' BGCOLOR="#ffffff">'. $hashref->{county};
   } else {
-    print "(ALL)";
+    print ' BGCOLOR="#cccccc">(ALL)';
     if ( $hashref->{state} ) {
       print qq!<FONT SIZE=-1>!.
           qq!<A HREF="${p}edit/cust_main_county-expand.cgi?!. $hashref->{taxnum}.
@@ -86,10 +97,24 @@ END
   }
   print "</TD>";
 
-  print <<END;
-        <TD>$hashref->{tax}%</TD>
-      </TR>
-END
+  print "<TD";
+  if ( $hashref->{taxclass} ) {
+    print ' BGCOLOR="#ffffff">'. $hashref->{taxclass};
+  } else {
+    print ' BGCOLOR="#cccccc">(ALL)';
+    if ( $enable_taxclasses ) {
+      print qq!<FONT SIZE=-1>!.
+            qq!<A HREF="${p}edit/cust_main_county-expand.cgi?taxclass!.
+            $hashref->{taxnum}. qq!">expand taxclasses</A></FONT>!;
+    }
+
+  }
+  print "</TD>";
+
+  print "<TD BGCOLOR=\"#ffffff\">$hashref->{tax}%</TD>".
+        '<TD BGCOLOR="#ffffff">$'.
+          sprintf("%.2f", $hashref->{exempt_amount} || 0). '</TD>'.
+        '</TR>';
 
 }
 

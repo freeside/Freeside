@@ -98,7 +98,9 @@ if ( $custnum && ! $conf->exists('editreferrals') ) {
   print qq!<INPUT TYPE="hidden" NAME="refnum" VALUE="$refnum">!;
 } else {
   my(@referrals) = qsearch('part_referral',{});
-  if ( scalar(@referrals) == 1 ) {
+  if ( scalar(@referrals) == 0 ) {
+    die "You have not created any advertising sources.  You must create at least one advertising source before adding a customer.  Go to ". popurl(2). "browse/part_referral.cgi and create one or more advertising sources.";
+  } elsif ( scalar(@referrals) == 1 ) {
     $refnum ||= $referrals[0]->refnum;
     print qq!<INPUT TYPE="hidden" NAME="refnum" VALUE="$refnum">!;
   } else {

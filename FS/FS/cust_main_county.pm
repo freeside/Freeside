@@ -101,7 +101,7 @@ methods.
 sub check {
   my $self = shift;
 
-  $self->amount(0) unless $self->amount;
+  $self->exempt_amount(0) unless $self->exempt_amount;
 
   $self->ut_numbern('taxnum')
     || $self->ut_textn('state')
@@ -109,7 +109,7 @@ sub check {
     || $self->ut_text('country')
     || $self->ut_float('tax')
     || $self->ut_textn('taxclass') # ...
-    || $self->ut_money('amount')
+    || $self->ut_money('exempt_amount')
   ;
 
 }

@@ -1,16 +1,18 @@
 <!-- mason kludge -->
 <%
 
-my($taxnum, $delim, $expansion );
+my($taxnum, $delim, $expansion, $taxclass );
+my($query) = $cgi->keywords;
 if ( $cgi->param('error') ) {
   $taxnum = $cgi->param('taxnum');
   $delim = $cgi->param('delim');
   $expansion = $cgi->param('expansion');
+  $taxclass = $cgi->param('taxclass');
 } else {
-  my ($query) = $cgi->keywords;
-  $query =~ /^(\d+)$/
-    or die "Illegal taxnum!";
-  $taxnum = $1;
+  $query =~ /^(taxclass)?(\d+)$/
+    or die "Illegal taxnum (query $query)";
+  $taxclass = $1 ? 'taxclass' : '';
+  $taxnum = $2;
   $delim = 'n';
   $expansion = '';
 }
@@ -31,11 +33,12 @@ print qq!<FONT SIZE="+1" COLOR="#ff0000">Error: !, $cgi->param('error'),
 print <<END;
     <FORM ACTION="${p1}process/cust_main_county-expand.cgi" METHOD=POST>
       <INPUT TYPE="hidden" NAME="taxnum" VALUE="$taxnum">
+      <INPUT TYPE="hidden" NAME="taxclass" VALUE="$taxclass">
       Separate by
 END
 print '<INPUT TYPE="radio" NAME="delim" VALUE="n"';
 print ' CHECKED' if $delim eq 'n';
-print '>line (rumor has it broken on some browsers) or',
+print '>line (broken on some browsers) or',
       '<INPUT TYPE="radio" NAME="delim" VALUE="s"';
 print ' CHECKED' if $delim eq 's';
 print '>whitespace.';
