@@ -152,6 +152,10 @@ sub insert {
   local $SIG{TSTP} = 'IGNORE';
   local $SIG{PIPE} = 'IGNORE';
 
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
   $error = $self->check;
   return $error if $error;
 
@@ -159,13 +163,20 @@ sub insert {
     if qsearchs( 'svc_domain', { 'domain' => $self->domain } );
 
   my $whois = $self->whois;
-  return "Domain in use (see whois)"
-    if ( $self->action eq "N" && ! $whois_hack && $whois );
-  return "Domain not found (see whois)"
-    if ( $self->action eq "M" && ! $whois );
+  if ( $self->action eq "N" && ! $whois_hack && $whois ) {
+    $dbh->rollback if $oldAutoCommit;
+    return "Domain in use (see whois)";
+  }
+  if ( $self->action eq "M" && ! $whois ) {
+    $dbh->rollback if $oldAutoCommit;
+    return "Domain not found (see whois)";
+  }
 
   $error = $self->SUPER::insert;
-  return $error if $error;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
 
   $self->submit_internic unless $whois_hack;
 
@@ -179,7 +190,10 @@ sub insert {
                    "$soarefresh $soaretry $soaexpire $soadefaultttl )"
     };
     $error = $soa->insert;
-    warn "WARNING: couldn't insert SOA record for new domain: $error" if $error;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "couldn't insert SOA record for new domain: $error";
+    }
 
     foreach my $nsmachine ( @nsmachines ) {
       my $ns = new FS::domain_record {
@@ -190,8 +204,10 @@ sub insert {
         'recdata' => $nsmachine,
       };
       my $error = $ns->insert;
-      warn "WARNING: couldn't insert NS record for new domain: $error"
-        if $error;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "couldn't insert NS record for new domain: $error";
+      }
     }
 
     foreach my $mxmachine ( @mxmachines ) {
@@ -203,12 +219,15 @@ sub insert {
         'recdata' => $mxmachine,
       };
       my $error = $mx->insert;
-      warn "WARNING: couldn't insert MX record for new domain: $error"
-        if $error;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "couldn't insert MX record for new domain: $error";
+      }
     }
 
   }
 
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
   ''; #no error
 }
@@ -459,7 +478,7 @@ sub submit_internic {
 
 =head1 VERSION
 
-$Id: svc_domain.pm,v 1.7 2000-06-29 11:12:20 ivan Exp $
+$Id: svc_domain.pm,v 1.8 2001-04-15 13:35:12 ivan Exp $
 
 =head1 BUGS
 

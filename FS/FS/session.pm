@@ -118,7 +118,6 @@ sub insert {
     return $error;
   }
 
-  #transactional accuracy not essential; just an indication of data freshness
   $self->nas_heartbeat($self->getfield('login'));
 
   #session-starting callback
@@ -179,7 +178,6 @@ sub replace {
     return $error;
   }
 
-  #transactional accuracy not essential; just an indication of data freshness
   $self->nas_heartbeat($self->getfield('logout'));
 
   #session-ending callback
@@ -249,7 +247,7 @@ sub svc_acct {
 
 =head1 VERSION
 
-$Id: session.pm,v 1.6 2001-04-09 23:05:15 ivan Exp $
+$Id: session.pm,v 1.7 2001-04-15 13:35:12 ivan Exp $
 
 =head1 BUGS
 

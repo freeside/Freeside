@@ -48,6 +48,10 @@ sub insert {
   local $SIG{TSTP} = 'IGNORE';
   local $SIG{PIPE} = 'IGNORE';
 
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
   $error = $self->check;
   return $error if $error;
 
@@ -60,15 +64,20 @@ sub insert {
       'svcpart' => $self->svcpart,
     } );
     $error = $cust_svc->insert;
-    return $error if $error;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
     $svcnum = $self->svcnum($cust_svc->svcnum);
   }
 
   $error = $self->SUPER::insert;
   if ( $error ) {
-    $cust_svc->delete if $cust_svc;
+    $dbh->rollback if $oldAutoCommit;
     return $error;
   }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
   '';
 }
@@ -184,7 +193,7 @@ sub cancel { ''; }
 
 =head1 VERSION
 
-$Id: svc_Common.pm,v 1.2 2001-04-09 23:05:15 ivan Exp $
+$Id: svc_Common.pm,v 1.3 2001-04-15 13:35:12 ivan Exp $
 
 =head1 BUGS
 
