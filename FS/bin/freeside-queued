@@ -87,6 +87,10 @@ while (1) {
   }
 }
 
+sub usage {
+  die "Usage:\n\n  freeside-queued user\n";
+}
+
 sub _die {
   my $msg = shift;
   unlink $pid_file if -e $pid_file;
