@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct_sm.export,v 1.9 2001-04-22 01:56:15 ivan Exp $
+# $Id: svc_acct_sm.export,v 1.10 2001-05-08 10:44:17 ivan Exp $
 # 
 # Create and export config files for sendmail, qmail
 #
@@ -42,7 +42,10 @@
 # /var/spool/freeside/conf and sendmail updates ivan@sisd.com 98-aug-14
 #
 # $Log: svc_acct_sm.export,v $
-# Revision 1.9  2001-04-22 01:56:15  ivan
+# Revision 1.10  2001-05-08 10:44:17  ivan
+# fix for OO Net::SCP
+#
+# Revision 1.9  2001/04/22 01:56:15  ivan
 # get rid of FS::SSH.pm (became Net::SSH and Net::SCP on CPAN)
 #
 # Revision 1.8  2000/07/06 03:37:24  ivan
@@ -211,10 +214,11 @@ close VIRTUALDOMAINS;
 
 my($sendmailmachine);
 foreach $sendmailmachine (@sendmailmachines) {
-  scp("$spooldir/sendmail.cw","root\@$sendmailmachine:$sendmailconfigpath/sendmail.cw.new")
-    == 0 or die "scp error: $!";
-  scp("$spooldir/virtusertable","root\@$sendmailmachine:$sendmailconfigpath/virtusertable.new")
-    == 0 or die "scp error: $!";
+  my $scp = new Net::SCP;
+  $scp->scp("$spooldir/sendmail.cw","root\@$sendmailmachine:$sendmailconfigpath/sendmail.cw.new")
+    or die "scp error: ". $scp->{errstr};
+  $scp->scp("$spooldir/virtusertable","root\@$sendmailmachine:$sendmailconfigpath/virtusertable.new")
+    or die "scp error: ". $scp->{errstr};
   ssh("root\@$sendmailmachine",
     "( ".
       "mv $sendmailconfigpath/sendmail.cw.new $sendmailconfigpath/sendmail.cw; ".
@@ -227,12 +231,13 @@ foreach $sendmailmachine (@sendmailmachines) {
 
 my($qmailmachine);
 foreach $qmailmachine (@qmailmachines) {
-  scp("$spooldir/recipientmap","root\@$qmailmachine:/var/qmail/control/recipientmap")
-    == 0 or die "scp error: $!";
-  scp("$spooldir/virtualdomains","root\@$qmailmachine:/var/qmail/control/virtualdomains")
-    == 0 or die "scp error: $!";
-  scp("$spooldir/rcpthosts","root\@$qmailmachine:/var/qmail/control/rcpthosts")
-    == 0 or die "scp error: $!";
+  my $scp = new Net::SCP;
+  $scp->scp("$spooldir/recipientmap","root\@$qmailmachine:/var/qmail/control/recipientmap")
+    or die "scp error: ". $scp->{errstr};
+  $scp->scp("$spooldir/virtualdomains","root\@$qmailmachine:/var/qmail/control/virtualdomains")
+    or die "scp error: ". $scp->{errstr};
+  $scp->scp("$spooldir/rcpthosts","root\@$qmailmachine:/var/qmail/control/rcpthosts")
+    or die "scp error: ". $scp->{errstr};
   #ssh("root\@$qmailmachine","/etc/init.d/qmail restart")
   #  == 0 or die "ssh error: $!";
 }

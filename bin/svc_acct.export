@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 #
-# $Id: svc_acct.export,v 1.18 2001-04-22 01:56:15 ivan Exp $
+# $Id: svc_acct.export,v 1.19 2001-05-08 10:44:17 ivan Exp $
 #
 # Create and export password files: passwd, passwd.adjunct, shadow,
 # acp_passwd, acp_userinfo, acp_dialup, users
@@ -38,7 +38,10 @@
 # ivan@sisd.com 98-sep-18
 # 
 # $Log: svc_acct.export,v $
-# Revision 1.18  2001-04-22 01:56:15  ivan
+# Revision 1.19  2001-05-08 10:44:17  ivan
+# fix for OO Net::SCP
+#
+# Revision 1.18  2001/04/22 01:56:15  ivan
 # get rid of FS::SSH.pm (became Net::SSH and Net::SCP on CPAN)
 #
 # Revision 1.17  2001/02/21 23:48:19  ivan
@@ -349,10 +352,11 @@ close USERS;
 
 my($shellmachine);
 foreach $shellmachine (@shellmachines) {
-  scp("$spooldir/passwd","root\@$shellmachine:/etc/passwd.new")
-    == 0 or die "scp error: $!";
-  scp("$spooldir/shadow","root\@$shellmachine:/etc/shadow.new")
-    == 0 or die "scp error: $!";
+  my $scp = new Net::SCP;
+  $scp->scp("$spooldir/passwd","root\@$shellmachine:/etc/passwd.new")
+    or die "scp error: ". $scp->{errstr};
+  $scp->scp("$spooldir/shadow","root\@$shellmachine:/etc/shadow.new")
+    or die "scp error: ". $scp->{errstr};
   ssh("root\@$shellmachine",
     "( ".
       "mv /etc/passwd.new /etc/passwd; ".
@@ -364,10 +368,11 @@ foreach $shellmachine (@shellmachines) {
 
 my($bsdshellmachine);
 foreach $bsdshellmachine (@bsdshellmachines) {
-  scp("$spooldir/passwd","root\@$bsdshellmachine:/etc/passwd.new")
-    == 0 or die "scp error: $!";
-  scp("$spooldir/master.passwd","root\@$bsdshellmachine:/etc/master.passwd.new")
-    == 0 or die "scp error: $!";
+  my $scp = new Net::SCP;
+  $scp->scp("$spooldir/passwd","root\@$bsdshellmachine:/etc/passwd.new")
+    or die "scp error: ". $scp->{errstr};
+  $scp->scp("$spooldir/master.passwd","root\@$bsdshellmachine:/etc/master.passwd.new")
+    or die "scp error: ". $scp->{errstr};
   ssh("root\@$bsdshellmachine",
     "( ".
       "mv /etc/passwd.new /etc/passwd; ".
@@ -379,10 +384,11 @@ foreach $bsdshellmachine (@bsdshellmachines) {
 
 my($nismachine);
 foreach $nismachine (@nismachines) {
-  scp("$spooldir/passwd","root\@$nismachine:/etc/global/passwd")
-    == 0 or die "scp error: $!";
-  scp("$spooldir/shadow","root\@$nismachine:/etc/global/shadow")
-    == 0 or die "scp error: $!";
+  my $scp = new Net::SCP;
+  $scp->scp("$spooldir/passwd","root\@$nismachine:/etc/global/passwd")
+    or die "scp error: ". $scp->{errstr};
+  $scp->scp("$spooldir/shadow","root\@$nismachine:/etc/global/shadow")
+    or die "scp error: ". $scp->{errstr};
   ssh("root\@$nismachine",
     "( ".
       "cd /var/yp; make; ".
@@ -393,10 +399,11 @@ foreach $nismachine (@nismachines) {
 
 my($erpcdmachine);
 foreach $erpcdmachine (@erpcdmachines) {
-  scp("$spooldir/acp_passwd","root\@$erpcdmachine:/usr/annex/acp_passwd")
-    == 0 or die "scp error: $!";
-  scp("$spooldir/acp_dialup","root\@$erpcdmachine:/usr/annex/acp_dialup")
-    == 0 or die "scp error: $!";
+  my $scp = new Net::SCP;
+  $scp->scp("$spooldir/acp_passwd","root\@$erpcdmachine:/usr/annex/acp_passwd")
+    or die "scp error: ". $scp->{errstr};
+  $scp->scp("$spooldir/acp_dialup","root\@$erpcdmachine:/usr/annex/acp_dialup")
+    or die "scp error: ". $scp->{errstr};
   ssh("root\@$erpcdmachine",
     "( ".
       "kill -USR1 \`cat /usr/annex/erpcd.pid\'".
@@ -407,8 +414,9 @@ foreach $erpcdmachine (@erpcdmachines) {
 
 my($radiusmachine);
 foreach $radiusmachine (@radiusmachines) {
-  scp("$spooldir/users","root\@$radiusmachine:/etc/raddb/users")
-    == 0 or die "scp error: $!";
+  my $scp = new Net::SCP;
+  $scp->scp("$spooldir/users","root\@$radiusmachine:/etc/raddb/users")
+    or die "scp error: ". $scp->{errstr};
   ssh("root\@$radiusmachine",
     "( ".
       "builddbm".
@@ -426,10 +434,14 @@ foreach my $icradiusmachine ( @icradiusmachines ) {
   sleep 2;
   print WRITER "LOCK TABLES radcheck WRITE, radreply WRITE;\n";
   foreach my $file ( glob("radcheck.*") ) {
-    scp($file,"root\@$machine:$icradius_mysqldest/$db/$file");
+    my $scp = new Net::SCP;
+    $scp->scp($file,"root\@$machine:$icradius_mysqldest/$db/$file")
+      or die "scp error: ". $scp->{errstr};
   }
   foreach my $file ( glob("radreply.*") ) {
-    scp($file,"root\@$machine:$icradius_mysqldest/$db/$file");
+    my $scp = new Net::SCP;
+    $scp->scp($file,"root\@$machine:$icradius_mysqldest/$db/$file")
+      or die "scp error: ". $scp->{errstr};
   }
   close WRITER;
 }
