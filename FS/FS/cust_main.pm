@@ -21,6 +21,7 @@ use FS::UID qw( getotaker dbh );
 use FS::Record qw( qsearchs qsearch dbdef );
 use FS::Misc qw( send_email );
 use FS::cust_pkg;
+use FS::cust_svc;
 use FS::cust_bill;
 use FS::cust_bill_pkg;
 use FS::cust_pay;
@@ -445,6 +446,9 @@ be a better explanation of this, but until then, here's an example:
   );
   $cust_main->order_pkgs( \%hash, \'0', 'noexport'=>1 );
 
+Services can be new, in which case they are inserted, or existing unaudited
+services, in which case they are linked to the newly-created package.
+
 Currently available options are: I<depend_jobnum> and I<noexport>.
 
 If I<depend_jobnum> is set, all provisioning jobs will have a dependancy
@@ -493,12 +497,19 @@ sub order_pkgs {
       return "inserting cust_pkg (transaction rolled back): $error";
     }
     foreach my $svc_something ( @{$cust_pkgs->{$cust_pkg}} ) {
-      $svc_something->pkgnum( $cust_pkg->pkgnum );
-      if ( $seconds && $$seconds && $svc_something->isa('FS::svc_acct') ) {
-        $svc_something->seconds( $svc_something->seconds + $$seconds );
-        $$seconds = 0;
+      if ( $svc_something->svcnum ) {
+        my $old_cust_svc = $svc_something->cust_svc;
+        my $new_cust_svc = new FS::cust_svc { $old_cust_svc->hash };
+        $new_cust_svc->pkgnum( $cust_pkg->pkgnum);
+        $error = $new_cust_svc->replace($old_cust_svc);
+      } else {
+        $svc_something->pkgnum( $cust_pkg->pkgnum );
+        if ( $seconds && $$seconds && $svc_something->isa('FS::svc_acct') ) {
+          $svc_something->seconds( $svc_something->seconds + $$seconds );
+          $$seconds = 0;
+        }
+        $error = $svc_something->insert(%svc_options);
       }
-      $error = $svc_something->insert(%svc_options);
       if ( $error ) {
         $dbh->rollback if $oldAutoCommit;
         #return "inserting svc_ (transaction rolled back): $error";
