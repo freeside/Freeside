@@ -764,9 +764,27 @@ tie my %http_options, 'Tie::IxHash',
 ;
 
 tie my %sqlmail_options, 'Tie::IxHash',
-  'datasrc'  => { label=>'DBI data source' },
-  'username' => { label=>'Database username' },
-  'password' => { label=>'Database password' },
+  'datasrc'            => { label => 'DBI data source' },
+  'username'           => { label => 'Database username' },
+  'password'           => { label => 'Database password' },
+  'server_type'        => {
+    label   => 'Server type',
+    type    => 'select',
+    options => [qw(dovecot_plain dovecot_crypt dovecot_digest_md5 courier_plain
+                   courier_crypt)],
+    default => ['dovecot_plain'], },
+  'svc_acct_table'     => { label => 'User Table', default => 'user_acct' },
+  'svc_forward_table'  => { label => 'Forward Table', default => 'forward' },
+  'svc_domain_table'   => { label => 'Domain Table', default => 'domain' },
+  'svc_acct_fields'    => { label => 'svc_acct Export Fields',
+                            default => 'username _password domsvc svcnum' },
+  'svc_forward_fields' => { label => 'svc_forward Export Fields',
+                            default => 'domain svcnum catchall' },
+  'svc_domain_fields'  => { label => 'svc_domain Export Fields',
+                            default => 'srcsvc dstsvc dst' },
+  'resolve_dstsvc'     => { label => q{Resolve svc_forward.dstsvc to an email address and store it in dst. (Doesn't require that you also export dstsvc.)},
+                            type => 'checkbox' },
+
 ;
 
 tie my %ldap_options, 'Tie::IxHash',
@@ -855,7 +873,7 @@ tie my %ldap_options, 'Tie::IxHash',
     'sqlmail' => {
       'desc' => 'Real-time export to SQL-backed mail server',
       'options' => \%sqlmail_options,
-      'nodomain' => 'Y',
+      'nodomain' => 'N',
       'notes' => 'Database schema can be made to work with Courier IMAP and Exim.  Others could work but are untested. (...extended description from pc-intouch?...)',
     },
 
