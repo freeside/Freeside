@@ -75,6 +75,9 @@ SEE ALSO
     FS::dbdef_index manpage, the FS::dbdef_unique manpage, the DBI
     manpage
 
+VERSION
+    $Id: dbdef_table.txt,v 1.2 1998-10-14 06:52:48 ivan Exp $
+
 HISTORY
     class for dealing with table definitions
 
@@ -91,4 +94,9 @@ HISTORY
     ivan@sisd.com 98-jun-4
 
     pod ivan@sisd.com 98-sep-24
+
+    $Log: dbdef_table.txt,v $
+    Revision 1.2  1998-10-14 06:52:48  ivan
+    1,1,4 release, fix postgresql quirks.
+
 

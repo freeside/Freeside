@@ -45,3 +45,5 @@ SEE ALSO
 HISTORY
     Ivan Kohler <ivan@sisd.com> 98-sep-6
 
+    sub exists forgot to fetch $dir ivan@sisd.com 98-sep-27
+

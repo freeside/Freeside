@@ -21,3 +21,7 @@ HISTORY
     =< 0 return address comes from /var/spool/freeside/conf/address
     ivan@sisd.com 98-jul-2
 
+    pod ivan@sisd.com 98-sep-20something
+
+    s/ISA/@ISA/ in use vars ivan@sisd.com 98-sep-27
+

@@ -330,3 +330,5 @@ HISTORY
 
         added pod documentation ivan@sisd.com 98-sep-6
 
+        ut_phonen got ''; at the end ivan@sisd.com 98-sep-27
+
