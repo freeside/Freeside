@@ -4,11 +4,12 @@ use strict;
 use vars qw(@EXPORT_OK @ISA);
 use Exporter;
 use CGI;
+use URI::URL;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID;
 
 @ISA = qw(Exporter);
-@EXPORT_OK = qw(header menubar idiot eidiot);
+@EXPORT_OK = qw(header menubar idiot eidiot url);
 
 =head1 NAME
 
@@ -16,13 +17,16 @@ FS::CGI - Subroutines for the web interface
 
 =head1 SYNOPSIS
 
-  use FS::CGI qw(header menubar idiot eidiot);
+  use FS::CGI qw(header menubar idiot eidiot url);
 
   print header( 'Title', '' );
   print header( 'Title', menubar('item', 'URL', ... ) );
 
   idiot "error message"; 
   eidiot "error message";
+
+  $url = url; #returns current url
+  $url = url (3); #three levels up
 
 =head1 DESCRIPTION
 
@@ -117,6 +121,22 @@ sub eidiot {
   exit;
 }
 
+=item url LEVEL
+
+Returns current URL with LEVEL levels of path removed from the end (default 0).
+
+=cut
+
+=item url {
+  my($up)=@_;
+  my($cgi)=FS::UID::cgi;
+  my($url)=new URI::URL $cgi;
+  my(@path)=$url->path_components;
+  pop @path foreach ( 1.. $up );
+  $url->path_components(@path);
+  $url->as_string;
+}
+
 =back
 
 =head1 BUGS
@@ -141,7 +161,10 @@ lose the background, eidiot ivan@sisd.com 98-sep-2
 pod ivan@sisd.com 98-sep-12
 
 $Log: CGI.pm,v $
-Revision 1.6  1998-11-09 05:44:20  ivan
+Revision 1.7  1998-11-09 06:10:59  ivan
+added sub url
+
+Revision 1.6  1998/11/09 05:44:20  ivan
 *** empty log message ***
 
 Revision 1.4  1998/11/09 04:55:42  ivan
