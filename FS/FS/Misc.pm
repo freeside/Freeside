@@ -77,9 +77,16 @@ sub send_email {
 
   my $smtpmachine = $conf->config('smtpmachine');
   $!=0;
-  $message->smtpsend( 'Host' => $smtpmachine )
-    or $message->smtpsend( Host => $smtpmachine, Debug => 1 )
-      or return "can't send email to $to via server $smtpmachine with SMTP: $!";
+
+  my $rv = $message->smtpsend( 'Host' => $smtpmachine )
+    or $message->smtpsend( Host => $smtpmachine, Debug => 1 );
+
+  if ($rv) { #smtpsend returns a list of addresses, not true/false
+    return '';
+  } else {
+    return "can't send email to $to via server $smtpmachine with SMTP: $!";
+  }  
+
 }
 
 =head1 BUGS
