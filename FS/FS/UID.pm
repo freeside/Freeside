@@ -78,6 +78,7 @@ sub adminsuidsetup {
 
   croak "Not running uid freeside!" unless checkeuid();
   getsecrets;
+  $dbh->disconnect if $dbh;
   $dbh = DBI->connect($datasrc,$db_user,$db_pass, {
                           'AutoCommit' => 0,
                           'ChopBlanks' => 1,
@@ -259,7 +260,7 @@ coderef into the hash %FS::UID::callback :
 
 =head1 VERSION
 
-$Id: UID.pm,v 1.5 2001-02-21 01:45:07 ivan Exp $
+$Id: UID.pm,v 1.6 2001-04-23 09:00:06 ivan Exp $
 
 =head1 BUGS
 
