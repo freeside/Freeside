@@ -65,17 +65,17 @@ FS::Record - Database record objects
 
     $value = $record->unique('column');
 
-    $value = $record->ut_float('column');
-    $value = $record->ut_number('column');
-    $value = $record->ut_numbern('column');
-    $value = $record->ut_money('column');
-    $value = $record->ut_text('column');
-    $value = $record->ut_textn('column');
-    $value = $record->ut_alpha('column');
-    $value = $record->ut_alphan('column');
-    $value = $record->ut_phonen('column');
-    $value = $record->ut_anything('column');
-    $value = $record->ut_name('column');
+    $error = $record->ut_float('column');
+    $error = $record->ut_number('column');
+    $error = $record->ut_numbern('column');
+    $error = $record->ut_money('column');
+    $error = $record->ut_text('column');
+    $error = $record->ut_textn('column');
+    $error = $record->ut_alpha('column');
+    $error = $record->ut_alphan('column');
+    $error = $record->ut_phonen('column');
+    $error = $record->ut_anything('column');
+    $error = $record->ut_name('column');
 
     $dbdef = reload_dbdef;
     $dbdef = reload_dbdef "/non/standard/filename";
@@ -994,7 +994,7 @@ sub DESTROY { return; }
 
 =head1 VERSION
 
-$Id: Record.pm,v 1.29 2001-09-16 12:45:35 ivan Exp $
+$Id: Record.pm,v 1.30 2001-10-10 05:24:25 ivan Exp $
 
 =head1 BUGS
 
