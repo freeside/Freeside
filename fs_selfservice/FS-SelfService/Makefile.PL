@@ -4,12 +4,14 @@ use ExtUtils::MakeMaker;
 WriteMakefile(
     'NAME'		=> 'FS::SelfService',
     'VERSION_FROM'	=> 'SelfService.pm', # finds $VERSION
-    'EXE_FILES'         => [ 'freeside-selfservice-clientd' ],
+    'EXE_FILES'         => [ 'freeside-selfservice-clientd',
+                             'freeside-selfservice-xmlrpc-server',
+                           ],
     'INSTALLSCRIPT'     => '/usr/local/sbin',
     'INSTALLSITEBIN'    => '/usr/local/sbin',
     'PERM_RWX'          => '750',
     'PREREQ_PM'		=> {
-                             'Storable' => 0,
+                             'Storable' => 2.09,
                            }, # e.g., Module::Name => 1.1
     ($] >= 5.005 ?    ## Add these new keywords supported since 5.005
       (ABSTRACT_FROM => 'SelfService.pm', # retrieve abstract from module
