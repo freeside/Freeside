@@ -148,7 +148,7 @@ sub insert {
   return $error if $error;
 
   my $cust_main = $self->cust_main;
-  return "Unknown customer ". $self->custnum unless $cust_main;
+  return "Unknown custnum: ". $self->custnum unless $cust_main;
 
   unless ( $disable_agentcheck ) {
     my $agent = qsearchs( 'agent', { 'agentnum' => $cust_main->agentnum } );
