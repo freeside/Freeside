@@ -508,11 +508,21 @@ L<FS::cust_svc>)
 
 sub cust_svc {
   my $self = shift;
-  if ( $self->{'_svcnum'} ) {
-    values %{ $self->{'_svcnum'}->cache };
-  } else {
+  #if ( $self->{'_svcnum'} ) {
+  #  values %{ $self->{'_svcnum'}->cache };
+  #} else {
+    map  { $_->[0] }
+    sort { $b->[1] cmp $a->[1]  or  $a->[2] <=> $b->[2] } 
+    map {
+          my $pkg_svc = qsearchs( 'pkg_svc', { 'pkgpart' => $self->pkgpart,
+                                               'svcpart' => $_->svcpart     } );
+          [ $_,
+            $pkg_svc ? $pkg_svc->primary_svc : '',
+            $pkg_svc ? $pkg_svc->quantity : 0,
+          ];
+        }
     qsearch ( 'cust_svc', { 'pkgnum' => $self->pkgnum } );
-  }
+  #}
 }
 
 =item labels
@@ -654,7 +664,6 @@ sub transfer {
   my $remaining = 0;
   my $dest;
   my %target;
-  my $pkg_svc;
 
   if (ref ($dest_pkgnum) eq 'FS::cust_pkg') {
     $dest = $dest_pkgnum;
@@ -665,13 +674,11 @@ sub transfer {
 
   return ('Package does not exist: '.$dest_pkgnum) unless $dest;
 
-  foreach $pkg_svc (qsearch('pkg_svc', { pkgpart => $dest->pkgpart })) {
+  foreach my $pkg_svc ( $dest->part_pkg->pkg_svc ) {
     $target{$pkg_svc->svcpart} = $pkg_svc->quantity;
   }
 
-  my $cust_svc;
-
-  foreach $cust_svc ($dest->cust_svc) {
+  foreach my $cust_svc ($dest->cust_svc) {
     $target{$cust_svc->svcpart}--;
   }
 
@@ -682,9 +689,20 @@ sub transfer {
       next if exists $svcpart2svcparts{$svcpart};
       my $part_svc = qsearchs('part_svc', { 'svcpart' => $svcpart } );
       $svcpart2svcparts{$svcpart} = [
+        map  { $_->[0] }
+        sort { $b->[1] cmp $a->[1]  or  $a->[2] <=> $b->[2] } 
+        map {
+              my $pkg_svc = qsearchs( 'pkg_svc', { 'pkgpart' => $dest->pkgpart,
+                                                   'svcpart' => $_          } );
+              [ $_,
+                $pkg_svc ? $pkg_svc->primary_svc : '',
+                $pkg_svc ? $pkg_svc->quantity : 0,
+              ];
+            }
+
         grep { $_ != $svcpart }
-          map { $_->svcpart }
-            qsearch('part_svc', { 'svcdb' => $part_svc->svcdb } )
+        map  { $_->svcpart }
+        qsearch('part_svc', { 'svcdb' => $part_svc->svcdb } )
       ];
       warn "alternates for svcpart $svcpart: ".
            join(', ', @{$svcpart2svcparts{$svcpart}}). "\n"
@@ -692,7 +710,7 @@ sub transfer {
     }
   }
 
-  foreach $cust_svc ($self->cust_svc) {
+  foreach my $cust_svc ($self->cust_svc) {
     if($target{$cust_svc->svcpart} > 0) {
       $target{$cust_svc->svcpart}--;
       my $new = new FS::cust_svc {
@@ -716,7 +734,7 @@ sub transfer {
                            } @{$svcpart2svcparts{$cust_svc->svcpart}};
       if ( @alternate ) {
         warn "alternate(s) found\n" if $DEBUG;
-        my $change_svcpart = $alternate[0]; #arbitrary.
+        my $change_svcpart = $alternate[0];
         $target{$change_svcpart}--;
         my $new = new FS::cust_svc {
           svcnum  => $cust_svc->svcnum,

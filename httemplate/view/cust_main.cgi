@@ -891,14 +891,7 @@ sub get_packages {
 
     }
 
-    foreach my $cust_svc (
-      qsearch( 'cust_svc', {
-                             'pkgnum' => $cust_pkg->pkgnum,
-                             #'svcpart' => $part_svc->svcpart,
-                           }
-      )
-    ) {
-
+    foreach my $cust_svc ( $cust_pkg->cust_svc ) {
       #warn "svcnum ". $cust_svc->svcnum. " / svcpart ". $cust_svc->svcpart. "\n";
       my $svc = {
         'svcnum' => $cust_svc->svcnum,
