@@ -1,0 +1,45 @@
+<& /Elements/TitleBoxStart, title => "25 highest priority tickets I requested..." &>
+<TABLE BORDER=0 cellspacing=0 cellpadding=1 WIDTH=100%>
+<TR>
+<TH align=right>#</TH>
+<TH align=left>Subject</TH>
+<TH align=left>Queue</TH>
+<TH align=left>Status</TH>
+<TH align=left>Owner</TH>
+<TH>&nbsp;</TH>
+</TR>
+% while (my $Ticket = $MyTickets->Next) {
+<TR>
+<TD ALIGN=RIGHT>
+<%$Ticket->Id%>
+</TD>
+<TD>
+<A HREF="<% $RT::WebPath %>/Ticket/Display.html?id=<%$Ticket->Id%>">
+<%$Ticket->Subject || '[no subject]'%>
+</A>
+</TD>
+<TD>
+<%$Ticket->QueueObj->Name%>
+</TD><TD>
+<%$Ticket->Status%>
+</TD><TD>
+<%$Ticket->OwnerObj->Name%>
+</TD><TD ALIGN=RIGHT>
+[<A HREF="<% $RT::WebPath %>/Ticket/Display.html?id=<%$Ticket->Id%>">Display</A>]
+</TD>
+</TR>
+% }
+</TABLE>
+<& /Elements/TitleBoxEnd &>
+
+
+<%INIT>
+my $MyTickets;
+$MyTickets = new RT::Tickets ($session{'CurrentUser'});
+$MyTickets->LimitRequestor(VALUE => $session{'CurrentUser'}->EmailAddress);
+$MyTickets->LimitStatus(VALUE => "open");
+$MyTickets->LimitStatus(VALUE => "new");
+$MyTickets->OrderBy(FIELD => 'Priority', ORDER => 'DESC');
+$MyTickets->RowsPerPage(25);
+
+</%INIT>

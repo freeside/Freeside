@@ -1,0 +1,115 @@
+#!/usr/bin/perl -w
+
+# $Header: /home/cvs/cvsroot/freeside/rt/tools/Attic/testdeps,v 1.1 2002-08-12 06:17:08 ivan Exp $
+
+# Copyright 2000 Jesse Vincent <jesse@fsck.com>
+# Distributed under the GNU General Public License
+# 
+
+#
+# This is just a basic script that checks to make sure that all
+# the modules needed by RT before you can install it.
+#
+
+use strict;
+
+use vars qw($mode $dbd $module @modules);
+
+$mode = shift || print_help();
+$dbd = shift || print_help();
+
+@modules = qw(
+Digest::MD5
+Storable
+DBI 1.18
+DBIx::DataSource 0.02
+DBIx::SearchBuilder 0.48
+HTML::Entities 
+MLDBM
+Net::Domain
+Net::SMTP
+Params::Validate 0.02
+HTML::Mason 1.02
+CGI::Cookie 1.20
+Apache::Cookie
+Apache::Session 1.53
+Date::Parse
+Date::Format 
+MIME::Entity 5.108
+Mail::Mailer 1.20
+Getopt::Long 2.24
+Tie::IxHash 
+Text::Wrapper 
+Text::Template
+File::Spec 0.8
+Errno
+FreezeThaw
+File::Temp 
+Log::Dispatch 1.6
+);
+
+
+if ($dbd =~ /mysql/i) {
+	push @modules, ('DBD::mysql','2.0416'); 
+}
+elsif ($dbd =~ /oracle/i) {
+	push @modules, ('DBD::Oracle','');
+}
+elsif ($dbd =~ /pg/i) {
+	push @modules, ('DBD::Pg','');
+}
+use CPAN;
+
+while ($module= shift @modules) {
+	my $version = "";
+	$version = " ". shift (@modules) . " " if ($modules[0] =~ /^([\d\.]*)$/);
+	print "Checking for $module$version";
+	eval "use $module$version" ;
+	if ($@) {
+	&resolve_dependency($module, $version) 
+	}
+	else {
+	print "...found\n";
+	}
+}
+
+sub print_help {
+print <<EOF;
+
+$0 FLAG DBTYPE
+
+
+$0 is a tool for RT that will tell you if you've got all
+the modules RT depends on properly installed.
+
+Flags: (only one flag is valid for a given run)
+
+-quiet will check to see if we've got everything we need
+	and will exit with a return code of (1) if we don't.
+
+-warn will tell you what isn't properly installed
+
+-fix will use CPAN to magically make everything better
+
+DBTYPE is one of:
+	oracle, pg, mysql
+
+EOF
+
+exit(0);
+}
+
+sub resolve_dependency {
+	my $module = shift;
+	my $version = shift;
+        print "....$module$version not installed.";
+    if ($mode =~ /-f/) {
+	$module = "DBD::mysql::Install" if ($module =~ /DBD::mysql/);
+	
+        print "Installing with CPAN...";
+        CPAN::install($module);
+     }
+     print "\n";
+	exit(1) if ($mode =~ /-q/);
+}	
+	

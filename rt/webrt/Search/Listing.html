@@ -1,0 +1,134 @@
+%# $Header: /home/cvs/cvsroot/freeside/rt/webrt/Search/Attic/Listing.html,v 1.1 2002-08-12 06:17:09 ivan Exp $
+%# Copyright 1996-2001 Jesse Vincent <jesse@fsck.com>
+<& /Elements/Header, Title => "Search", Refresh => $session{'tickets_refresh_interval'} &>
+<& /Elements/Tabs, current_toptab => 'Search/Listing.html' &>
+
+
+% unless ($ARGS{'Action'} eq 'Refine') {
+<TABLE WIDTH=100% border=0 cellpadding=3 CELLSPACING=1>
+<TR>
+%foreach my $col (@{Config(\%ARGS, 'QueueListingCols')}) {
+<TH>
+
+<%PERL>	
+my ($order);
+ my $attr = $col->{'TicketAttribute'};
+ $attr =~ s/Obj->(Name|AsString|AgeAsString)//g;
+  if ($session{'tickets_sort_order'} =~ /^asc$/i) {
+   $order = 'DESC';
+ } else {
+   $order = 'ASC';
+ }
+</%PERL>
+
+% if (grep (/^$attr$/i, $session{'tickets'}->SortFields)) {
+<A 
+% if ($attr eq $session{'tickets_sort_by'}) {
+class="currenttab"
+% }
+HREF="<% $RT::WebPath%>/Search/Listing.html?Bookmark=<%$session{'tickets'}->FreezeLimits()|u%>&TicketsSortBy=<%$attr%>&TicketsSortOrder=<%$order%>&RowsPerPage=<%$session{'tickets_rows_per_page'}%>">
+<%$col->{Header}%>
+</A>
+% } else {
+<% $col->{Header} %>
+% }
+</TH>
+%}
+</TR>
+
+<%PERL>
+
+my $i;
+      
+$session{'tickets'}->RedoSearch();
+while (my $Ticket = $session{'tickets'}->Next) {
+ $i++;
+ if ($i % 2) {
+     $bgcolor = "#dddddd";
+ }
+ else {
+     $bgcolor = "#ffffff";
+ }
+      </%PERL>
+<TR bgcolor="<%$bgcolor%>" >
+%# The ticket view is controlled by config.pm, WebOptions
+%foreach my $col (@{Config(\%ARGS,'QueueListingCols')}) {
+<TD><& TicketCell , Ticket=>$Ticket,  Column=>$col &></TD>
+%}
+</TR>
+%}
+
+
+
+</TABLE>
+
+<div align=center>
+<font size=2>
+<a href="Listing.html?GotoPage=1">First page</a>
+&nbsp;&nbsp;
+<a href="Listing.html?GotoPage=Prev">&lt;Previous page</a>
+&nbsp;&nbsp;
+<a href="Listing.html?GotoPage=Next">Next page&gt;</a>
+%#&nbsp;&nbsp;<form method=get action="Listing.html">Goto page <input name=GotoPage size=2></form>
+</font>
+</div>
+% if ($session{'tickets'}->Count()) { 
+<div align=right>
+<a href="Bulk.html">Update all these tickets at once</a>
+</div>
+% }
+<HR>
+
+% } #endif {$ARGS{'Action'} eq 'Refine')
+<TABLE WIDTH="100%">
+<TR>
+<TD VALIGN="TOP">
+<& /Elements/TitleBoxStart, title => 'Search Criteria'&>
+
+<A HREF="<% $RT::WebPath%>/Search/Listing.html?ClearRestrictions=1">New search</a><br>
+<A HREF="<% $RT::WebPath%>/Search/Listing.html?Bookmark=<%$session{'tickets'}->FreezeLimits()|u%>&TicketsSortBy=<%$session{'tickets_sort_by'}%>&TicketsSortOrder=<%$session{'tickets_sort_order'}%>&RowsPerPage=<%$session{'tickets_rows_per_page'}%>">Bookmarkable URL for this search</a>
+<BR>
+<BR>
+% my %restrictions=$session{'tickets'}->DescribeRestrictions();
+% my %seen_restrictions=();
+% foreach $row (keys %restrictions){
+%  my $tmp=$restrictions{"$row"};
+%  if( ! defined( $seen_restrictions{"$tmp"} ) ){
+<%$restrictions{"$row"}%> <A HREF="<% $RT::WebPath%>/Search/Listing.html?DeleteRestriction=<%$row%>">[delete]</a><br>
+%   } else {
+%     $session{'tickets'}->DeleteRestriction($row);
+<b>Deleted Duplicate Restriction <i><%$tmp%></i></b><br>
+% }
+% $seen_restrictions{"$tmp"}++;
+%}
+<& /Elements/TitleBoxEnd&>
+</TD>
+<TD>
+
+<& PickRestriction &>
+
+</TD>
+</TR>
+</TABLE>
+
+<%INIT>
+
+my $bgcolor;
+require RT::Interface::Web;
+
+$session{'i'}++;
+if ($session{'tickets'}) {
+    if ( ($ARGS{'ClearRestrictions'}) ||
+	 ($ARGS{'NewSearch'}) ) {
+	$session{'tickets'}->ClearRestrictions;
+    }
+    
+    if ($ARGS{'DeleteRestriction'}) {
+	$session{'tickets'}->DeleteRestriction($ARGS{'DeleteRestriction'});
+    }
+}
+&ProcessSearchQuery(ARGS=>\%ARGS);
+
+my $row;
+
+</%INIT>

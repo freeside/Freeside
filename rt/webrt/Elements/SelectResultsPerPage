@@ -1,0 +1,22 @@
+%# $Header: /home/cvs/cvsroot/freeside/rt/webrt/Elements/Attic/SelectResultsPerPage,v 1.1 2002-08-12 06:17:08 ivan Exp $
+
+%# TODO: Better default handling
+
+<SELECT NAME ="<%$Name%>">
+% foreach my $value (@values) {
+<OPTION VALUE="<%$value%>" <% $value == $Default && 'SELECTED' %>>
+<% shift @labels %>
+</OPTION>
+% }
+</SELECT>
+
+<%INIT>
+my @values = qw(0 10 25 50 100);
+my @labels = qw(Unlimited 10 25 50 100);
+</%INIT>
+<%ARGS>
+
+$Name => undef
+$Default => 50
+
+</%ARGS>

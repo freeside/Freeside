@@ -1,0 +1,12 @@
+Owner<BR>
+&nbsp;<B><%$Ticket->OwnerObj->Name%></B><BR>
+Requestors<BR>
+&nbsp;<B><%$Ticket->RequestorsAsString%></B><BR>
+Cc<BR>
+&nbsp;<B><%$Ticket->CcAsString%></B><BR>
+AdminCc<BR>
+&nbsp;<B><%$Ticket->AdminCcAsString%></B>
+<%ARGS>
+$Ticket => undef
+</%ARGS>
+

@@ -1,0 +1,73 @@
+%# $Header: /home/cvs/cvsroot/freeside/rt/webrt/Attic/autohandler,v 1.1 2002-08-12 06:17:08 ivan Exp $
+<& /Elements/Footer, %ARGS &>
+
+<%INIT>
+
+$m->{'rt_base_time'} = time;
+
+#if it's a noauth file, don't ask for auth.
+if ($m->base_comp->path =~ '^/+NoAuth/') {
+        $m->call_next();
+	$m->abort();
+}
+
+# If RT is configured for external auth, let's get REMOTE_USER
+# We intentionally don't test for REMOTE_USER to meet our policy
+elsif ($RT::WebExternalAuth){
+
+    $user = $ENV{'REMOTE_USER'};
+    $session{'CurrentUser'} = RT::CurrentUser->new();
+    $session{'CurrentUser'}->Load($user);
+    unless ($session{'CurrentUser'}->id() ) {
+        delete $session{'CurrentUser'};
+        $m->comp('/Elements/Login', %ARGS, Error=> 'You are not an authorized user');
+        $m->abort();
+    }
+}
+ 
+# If the user is loging in, let's authenticate
+elsif (defined ($user) && defined ($pass)){
+    
+    $session{'CurrentUser'} = RT::CurrentUser->new();
+    $session{'CurrentUser'}->Load($user);
+    unless ($session{'CurrentUser'}->id() ) {
+	delete $session{'CurrentUser'};
+	$m->comp('/Elements/Login', %ARGS, Error=> 'Your username or password is incorrect');
+        $m->abort();
+    };
+    unless ($session{'CurrentUser'}->IsPassword($pass)) {
+	delete $session{'CurrentUser'};
+	
+	$m->comp('/Elements/Login', Error => 'Your username or password is incorrect', %ARGS);
+	$m->abort();
+    }
+}
+  
+
+#If we've got credentials, lets serve the file up.
+if ( (defined $session{'CurrentUser'}) and 
+     ( $session{'CurrentUser'}->Id) ) {
+    
+    # If the user isn\'t privileged, they can only see SelfService
+    if ((! $session{'CurrentUser'}->Privileged) and
+	($m->base_comp->path !~ '^/+SelfService/') ) {
+	$m->comp('/SelfService/index.html');
+	$m->abort();
+    }
+    else {
+	$m->call_next;
+    }
+}
+
+#If we have no credentials
+else {
+    $m->comp('/Elements/Login', %ARGS);
+    $m->abort();
+}
+
+</%INIT>
+
+<%ARGS>
+$user => undef
+$pass => undef
+</%ARGS>

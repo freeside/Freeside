@@ -1,0 +1,18 @@
+<& /Admin/Elements/Tabs, subtabs => $subtabs, current_tab => 'Admin/Groups/' &>
+<hr>
+<%INIT>
+my $subtabs = { 
+             Basics => { title => 'Basics',
+                         path => "Admin/Groups/Modify.html?id=". $GroupObj->id
+                       }
+	};
+
+unless ($GroupObj->Pseudo) {
+$subtabs->{'Members'} = { title => 'Members',
+                         path => "Admin/Groups/Members.html?id=".$GroupObj->id };
+}
+</%INIT>
+
+<%ARGS>
+$GroupObj => undef
+</%ARGS>

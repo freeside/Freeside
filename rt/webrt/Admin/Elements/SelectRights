@@ -1,0 +1,58 @@
+<INPUT TYPE=HIDDEN NAME="CheckACL"  VALUE="<%$ACLDesc%>">
+     <TABLE BORDER=0>
+<TR>
+<TD valign=top>
+<h3>New rights</h3> 
+<SELECT SIZE=5  MULTIPLE  NAME="GrantACE-<%$ACLDesc%>">
+% foreach $right (sort keys %Rights) {
+      <OPTION VALUE="<%$right%>"  
+	><%$right%></OPTION>
+% }
+<OPTION VALUE="" SELECTED>(no value)</OPTION>
+</SELECT>
+</TD>
+<TD valign=top> 
+<h3>Current rights</h3>
+<i>(Check box to revoke right)</i> <BR>
+% while (my $right = $ACLObj->Next()) {
+% if ($right->RightName) {
+<input type=checkbox value="<%$right->Id%>" name="RevokeACE"> <%$right->RightName%><br>
+% }
+%  }
+</TD>
+</TR>
+</TABLE>
+<%INIT>
+    my ($right, $ACLDesc, $AppliesTo, %Rights);
+   
+       
+    my $ACLObj = new RT::ACL($session{'CurrentUser'});
+    my $ACE = new RT::ACE($session{'CurrentUser'});
+
+    if ($Scope eq 'Queue') { 
+        $AppliesTo = $QueueObj->Id;
+        $ACLObj->LimitToQueue($AppliesTo);
+        %Rights = $ACE->QueueRights();
+    } 
+    elsif ($Scope eq 'System') {
+        $AppliesTo = 0;
+        $ACLObj->LimitToSystem();
+        %Rights =  ( $ACE->SystemRights , $ACE->QueueRights());
+    }
+
+    if ($PrincipalType eq 'Group') {
+        $ACLObj->LimitPrincipalToGroup($PrincipalObj->Id);
+    } 
+    elsif ($PrincipalType eq 'User') {
+        $ACLObj->LimitPrincipalToUser($PrincipalObj->Id);
+    } 
+    
+    $ACLDesc = "$PrincipalType-".$PrincipalObj->Id."-$Scope-$AppliesTo";
+</%INIT>
+    
+<%ARGS>
+$PrincipalType => undef
+$PrincipalObj => undef
+$Scope => undef
+$QueueObj => undef
+</%ARGS>

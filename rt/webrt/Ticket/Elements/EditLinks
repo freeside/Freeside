@@ -1,0 +1,109 @@
+%# $Header: /home/cvs/cvsroot/freeside/rt/webrt/Ticket/Elements/Attic/EditLinks,v 1.1 2002-08-12 06:17:09 ivan Exp $
+%# Copyright 1996-2000 Jesse Vincent <jesse@fsck.com>
+
+
+<TABLE>
+<TR>
+<TD VALIGN=TOP>
+<h3>New Relationships</h3>
+<i>Enter tickets or URIs to link tickets to. Seperate multiple entries with spaces.</i><br>
+<TABLE>
+<TR><TD>Merge into:</TD><TD><input name="<%$Ticket->Id%>-MergeInto"> <i>(only one ticket)</i></TD></TR>
+<TR><TD>Depends on:</TD><TD><input name="<%$Ticket->Id%>-DependsOn"></TD></TR>
+<TR><TD>Depended on by:</TD><TD><input name="DependsOn-<%$Ticket->Id%>"></TD></TR>
+<TR><TD>Parents:</TD><TD><input name="<%$Ticket->Id%>-MemberOf"></TD></TR>
+<TR><TD>Children:</TD><TD> <input name="MemberOf-<%$Ticket->Id%>"></TD></TR>
+<TR><TD>Refers to:</TD><TD><input name="<%$Ticket->Id%>-RefersTo"></TD></TR>
+<TR><TD>Referred to by:</TD><TD> <input name="RefersTo-<%$Ticket->Id%>"></TD></TR>
+</TABLE>
+</TD>
+<TD VALIGN=TOP WIDTH=50%>
+<h3>Current Relationships</h3>
+<i>(Check boxes to delete)</i><br>
+
+Depends on:<BR>
+<UL>
+% while (my $link = $Ticket->DependsOn->Next) {
+% my $member = $link->TargetObj;
+<LI>
+<INPUT TYPE=CHECKBOX NAME="DeleteLink--<%$link->Type%>-<%$link->Target%>">
+<a href="<%$RT::WebPath%>/Ticket/Display.html?id=<%$member->Id%>"><%$member->Id%></a>: (<%$member->OwnerObj->Name%>) <%$member->Subject%>
+[<%$member->Status%>]
+
+% }
+</UL>
+
+Depended on by:<BR>
+<UL>
+% while (my $link = $Ticket->DependedOnBy->Next) {
+% my $member = $link->BaseObj;
+<LI>
+<INPUT TYPE=CHECKBOX NAME="DeleteLink-<%$link->Base%>-<%$link->Type%>-">
+<a href="<%$RT::WebPath%>/Ticket/Display.html?id=<%$member->Id%>"><%$member->Id%></a>: (<%$member->OwnerObj->Name%>) <%$member->Subject%> 
+[<%$member->Status%>]
+% }
+</UL>
+
+Parents:<BR>
+<UL>
+% while (my $link = $Ticket->MemberOf->Next) {
+% my $member = $link->TargetObj;
+<LI>
+<INPUT TYPE=CHECKBOX NAME="DeleteLink--<%$link->Type%>-<%$link->Target%>">
+<a href="<%$RT::WebPath%>/Ticket/Display.html?id=<%$member->Id%>"><%$member->Id%></a>: (<%$member->OwnerObj->Name%>) <%$member->Subject%>
+[<%$member->Status%>]
+
+% }
+</UL>
+
+Children:<BR>
+<UL>
+% while (my $link = $Ticket->Members->Next) {
+<LI>
+<INPUT TYPE=CHECKBOX NAME="DeleteLink-<%$link->Base%>-<%$link->Type%>-">
+% my $member = $link->BaseObj;
+<a href="<%$RT::WebPath%>/Ticket/Display.html?id=<%$member->Id%>"><%$member->Id%></a>: (<%$member->OwnerObj->Name%>) <%$member->Subject%> 
+[<%$member->Status%>]
+% }
+</UL>
+
+
+Refers to:<BR>
+<UL>
+% while (my $link = $Ticket->RefersTo->Next) {
+<LI>
+<INPUT TYPE=CHECKBOX NAME="DeleteLink--<%$link->Type%>-<%$link->Target%>">
+% if ($link->TargetIsLocal) {
+% my $member = $link->TargetObj;
+
+<a href="<%$RT::WebPath%>/Ticket/Display.html?id=<%$member->Id%>"><%$member->Id%></a>: (<%$member->OwnerObj->Name%>) <%$member->Subject%> [<%$member->Status%>]<br>
+% } else {
+<A HREF="<%$link->TargetAsHREF%>"><%$link->Target%></A>
+% }
+%}
+</UL>
+
+Referred to by:<BR>
+<UL>
+% while (my $link = $Ticket->ReferredToBy->Next) {
+<LI>
+<INPUT TYPE=CHECKBOX NAME="DeleteLink-<%$link->Base%>-<%$link->Type%>-">
+% if ($link->BaseIsLocal) {
+% my $member = $link->BaseObj;
+<a href="<%$RT::WebPath%>/Ticket/Display.html?id=<%$member->Id%>"><%$member->Id%></a>: (<%$member->OwnerObj->Name%>) <%$member->Subject%> [<%$member->Status%>]<br>
+% } else {
+<A HREF="<%$link->BaseAsHREF%>"><%$link->Base%></A>
+%}
+% }
+</UL>
+
+			    
+</TD>
+</TR>
+</TABLE>
+
+
+      
+<%ARGS>
+$Ticket => undef
+</%ARGS>

@@ -1,0 +1,12 @@
+<UL>
+% my $memberof = $Ticket->MemberOf;
+% while (my $member_of = $memberof->Next) {
+<LI><a href="/Ticket/Display.html?id=<%$member_of->Id%>"><%$member_of->Id%></a>: <%$member_of->Subject%> [<%$member_of->Status%>]
+% }
+</UL>
+
+<%INIT>
+</%INIT>
+<%ARGS>
+$Ticket => undef
+</%ARGS>

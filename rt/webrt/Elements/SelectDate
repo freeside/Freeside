@@ -1,0 +1,25 @@
+<INPUT NAME="<%$Name%>" VALUE="<%$Default%>" size=16> 
+
+<%init>
+unless ((defined $Default) or 
+	($current <= 0)) {
+	my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) =
+                                            localtime($current);
+        $Default = sprintf("%04d-%02d-%02d %02d:%02d",                         
+                           $year+1900,$mon+1,$mday,                            
+                           $hour,$min);   
+}
+
+unless ($Name) {
+	$Name = $menu_prefix. "_Date";
+}
+</%init>
+
+<%args>
+
+$ShowTime => undef
+$menu_prefix=>''
+$current=>time
+$Default => undef
+$Name => undef
+</%args>

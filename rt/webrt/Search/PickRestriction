@@ -1,0 +1,112 @@
+%# $Header: /home/cvs/cvsroot/freeside/rt/webrt/Search/Attic/PickRestriction,v 1.1 2002-08-12 06:17:09 ivan Exp $
+<FORM ACTION="Listing.html" METHOD="GET">
+<INPUT TYPE=HIDDEN NAME="Bookmark" VALUE="<% $session{'tickets'}->FreezeLimits()|u %>">
+<& /Elements/TitleBoxStart, title => 'Refine Search'&>
+<INPUT TYPE=HIDDEN NAME="CompileRestriction" VALUE=1>
+
+<ul>
+<li>Owner is  <& /Elements/SelectBoolean, Name => "OwnerOp", 
+					  TrueVal=> '=', 
+					  FalseVal => '!=' 
+&> 
+<& /Elements/SelectOwner, Name => "ValueOfOwner" &>
+
+<li>
+Requestor email address 
+<& /Elements/SelectMatch, Name => "RequestorOp" &>
+<INPUT Name="ValueOfRequestor" SIZE=20>
+
+<li>
+Subject <& /Elements/SelectMatch, Name => "SubjectOp" &> 
+<INPUT Name="ValueOfSubject" SIZE=20>
+
+<li>Queue  <& /Elements/SelectBoolean,  Name => "QueueOp" , 
+					True => "is", 
+					False => "isn't", 
+					TrueVal=> '=', 
+					FalseVal => '!=' &>
+<& /Elements/SelectQueue, Name => "ValueOfQueue" &>
+
+
+<li>Priority  <& /Elements/SelectEqualityOperator,  Name => "PriorityOp" &>
+
+<INPUT Name="ValueOfPriority" SIZE=5>
+
+
+<li>
+<& /Elements/SelectDateType, Name => 'DateType' &>
+<& /Elements/SelectDateRelation, Name=>"DateOp" &>
+<& /Elements/SelectDate, Name => "ValueOfDate", ShowTime => 0, Default => '' &>
+
+<li>Ticket content 
+<& /Elements/SelectBoolean, Name => "ContentOp", 
+			    True => "matches", 
+			    False => "does not match", 
+			    TrueVal => 'LIKE', 
+			    FalseVal => 'NOT LIKE' 
+&> 
+<Input Name="ValueOfContent" Size=20>
+
+<li>Status 
+<& /Elements/SelectBoolean, Name => "StatusOp", 
+			    True => "is", 
+  			    False => "isn't", 
+			    TrueVal=> '=', 
+			    FalseVal => '!=' 
+&>  
+<& /Elements/SelectStatus, Name => "ValueOfStatus" &>
+
+% while ( my $KeywordSelect = $KeywordSelects->Next ) {
+
+<li><% $KeywordSelect->Name %> 
+	<& /Elements/SelectBoolean, Name => "KeywordSelectOp". $KeywordSelect->id, 
+				    True => "is", False => "isn't", 
+  				    TrueVal=> '=', FalseVal => '!=' &>
+
+<& /Elements/SelectKeyword, Name => "KeywordSelect".$KeywordSelect->id,
+			    KeywordObj => $KeywordSelect->KeywordObj
+			    &>
+% }
+
+</UL>
+
+<& /Elements/TitleBoxEnd &>
+
+<& /Elements/TitleBoxStart, title => 'Ordering and sorting'&>
+
+<UL>
+
+<li>Results per page <& /Elements/SelectResultsPerPage, Name => "RowsPerPage", 
+							Default => $session{'tickets_rows_per_page'} || '50'
+&>
+
+<li>Sort results by <& /Elements/SelectTicketSortBy, Name => "TicketsSortBy", 
+						     Default => $session{'tickets_sort_by'} 
+&> 
+<& /Elements/SelectSortOrder, Name => 'TicketsSortOrder', Default => $session{'tickets_sort_order'} &>
+
+<li> <& /Elements/Refresh, Name => 'RefreshSearchInterval' , Default => $session{'tickets_refresh_interval'} &>
+
+
+</UL>
+
+
+</DIV>
+
+
+
+<& /Elements/TitleBoxEnd &>
+
+<& /Elements/Submit, Label => 'Show Results', AlternateLabel => 'Refine', Name => 'Action'&>
+
+</FORM>
+
+
+ <%INIT>
+ my $KeywordSelects = new RT::KeywordSelects $session{'CurrentUser'};
+ foreach ( $session{'tickets'}->RestrictionValues('Queue') ) {
+        $KeywordSelects->LimitToQueue($_);
+ }
+
+ $KeywordSelects->IncludeGlobals;
+</%INIT>

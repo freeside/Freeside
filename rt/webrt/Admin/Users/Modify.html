@@ -1,0 +1,259 @@
+<& /Admin/Elements/Header, Title => $title &>
+<& /Admin/Elements/UserTabs, id => $id, current_subtab => '/Admin/Elements/Modify.html?id='.$id &>
+
+<& /Elements/ListActions, actions => \@results &>
+
+<FORM ACTION="<%$RT::WebPath%>/Admin/Users/Modify.html" METHOD=POST>
+%if ($Create) {
+<INPUT TYPE=HIDDEN NAME=id VALUE="new">
+% } else {
+<INPUT TYPE=HIDDEN NAME=id VALUE="<%$UserObj->Id%>">
+% }
+
+<TABLE WIDTH=100% BORDER=0>
+<TR>
+
+<TD VALIGN=TOP ROWSPAN=2>
+<& /Elements/TitleBoxStart, title => 'Identity' &>
+
+Username: <input name="Name" value="<%$UserObj->Name%>"> <b>(required)</b> <BR>
+Email: <input name="EmailAddress" value="<%$UserObj->EmailAddress%>"><BR>
+Real Name: <input name="RealName" value="<%$UserObj->RealName%>"> <BR>
+Nickname: <input name="NickName" value="<%$UserObj->NickName%>">
+<BR>
+Unix login: <input name="Gecos" value="<%$UserObj->Gecos%>">
+<BR>
+Extra info: <textarea name="FreeformContactInfo" cols=20 rows=5><%$UserObj->FreeformContactInfo%></TEXTAREA>
+<& /Elements/TitleBoxEnd &>
+</TD>
+<TD VALIGN=TOP>
+<& /Elements/TitleBoxStart, title => 'Access control' &>
+<INPUT TYPE=HIDDEN NAME="SetEnabled" VALUE="1">
+<INPUT TYPE=CHECKBOX NAME="Enabled" VALUE="1" <%$EnabledChecked%>>
+Let this user access RT<BR>
+
+
+<INPUT TYPE=HIDDEN NAME="SetPrivileged" VALUE="1">
+<INPUT TYPE=CHECKBOX NAME="Privileged" VALUE="1" <%$PrivilegedChecked%>> Let this user be granted rights<BR>
+		    
+% unless ($RT::WebExternalAuth) {
+<TABLE>
+<TR>
+<TD ALIGN=RIGHT>
+New Password:
+</TD>
+<TD ALIGN=LEFT>
+<input type=password name="Pass1">
+</TD>
+</TR>
+<TR><TD ALIGN=RIGHT>
+Retype Password:
+</TD>
+<TD>
+<input type=password name="Pass2">
+</TD>
+</TR>
+</TABLE>
+% }
+<& /Elements/TitleBoxEnd &>
+</TD>
+<TR>
+
+<TD VALIGN=TOP>
+<& /Elements/TitleBoxStart, title => 'Location' &>
+Organization: <input name="Organization" value="<%$UserObj->Organization%>">
+<BR>
+Address1: <input name="Address1" value="<%$UserObj->Address1%>">
+<BR>
+Address2: <input name="Address2" value="<%$UserObj->Address2%>">
+<BR>
+City: <input name="City" value="<%$UserObj->City%>" size=14>
+
+State: <input name="State" value="<%$UserObj->State%>" size=3>
+
+Zip: <input name="Zip" value="<%$UserObj->Zip%>" size=9>
+<BR>
+Country: <input name="Country" value="<%$UserObj->Country%>">
+<BR>
+
+
+<& /Elements/TitleBoxEnd &>
+</TD>
+</TR>
+<TR>
+<TD COLSPAN=2 VALIGN=TOP>
+
+
+<& /Elements/TitleBoxStart, title => 'Phone numbers' &>
+Home: <input name="HomePhone" value="<%$UserObj->HomePhone%>" size=13>
+
+Work: <input name="WorkPhone" value="<%$UserObj->WorkPhone%>" size=13>
+
+Mobile: <input name="MobilePhone" value="<%$UserObj->MobilePhone%>" size=13>
+
+Pager: <input name="PagerPhone" value="<%$UserObj->PagerPhone%>" size=13>
+<& /Elements/TitleBoxEnd &>
+<BR>
+<& /Elements/TitleBoxStart, title => 'Comments about this user' &>
+<TEXTAREA name="Comments" COLS=80 ROWS=5 WRAP=VIRTUAL><%$UserObj->Comments%></TEXTAREA>
+<& /Elements/TitleBoxEnd &>
+
+
+%if ($UserObj->Privileged) {
+<BR>
+<& /Elements/TitleBoxStart, title => 'Signature' &>
+<TEXTAREA COLS=80 ROWS=5 name="Signature" WRAP=HARD>
+<%$UserObj->Signature%></TEXTAREA>
+<& /Elements/TitleBoxEnd &>
+% }
+
+</TD>
+
+</TR>
+</TABLE>
+
+
+<& /Elements/Submit &>
+</form>
+
+
+<%INIT>
+
+my $UserObj = new RT::User($session{'CurrentUser'});
+my ($title, $PrivilegedChecked, $EnabledChecked, $Disabled, $result, @results);
+
+my ($val, $msg);
+
+if ($Create) {
+    $title = "Create a new user";
+} 
+else {
+
+    if ($id eq 'new') {
+	($val, $msg) = $UserObj->Create( Name => $Name,
+					 EmailAddress => $ARGS{'EmailAddress'}
+				       );
+	if ($val) {
+		push @results, $msg;
+	} else {
+		push @results, 'User could not be created: '. $msg;
+	}	
+	
+    }
+    else {
+	$UserObj->Load($id) || $UserObj->Load($Name) || Abort("Couldn't load user '$Name'");
+	$val = $UserObj->Id();
+    }
+
+    if ($val) {
+	$title = "Modify the user ". $UserObj->Name;
+    }	
+
+    # If the create failed
+    else {
+	$title = "Create a new user";
+	$Create = 1;
+    }    
+
+    
+
+}
+
+
+
+
+# If we have a user to modify, lets try. 
+if ($UserObj->Id) {
+    
+    my @fields = qw(Name Comments Signature EmailAddress FreeformContactInfo 
+		    Organization RealName NickName Lang EmailEncoding WebEncoding 
+		    ExternalContactInfoId ContactInfoSystem Gecos ExternalAuthId 
+		    AuthSystem HomePhone WorkPhone MobilePhone PagerPhone Address1
+		Address2 City State Zip Country 
+		   );
+    
+    my @fieldresults = UpdateRecordObject ( AttributesRef => \@fields,
+					    Object => $UserObj,
+					    ARGSRef => \%ARGS );
+    push (@results,@fieldresults);
+
+
+# {{{ Deal with special fields: Privileged, Enabled and Password
+if  ( ($SetPrivileged) and ( $Privileged != $UserObj->Privileged) ) {
+my  ($code, $msg) = $UserObj->SetPrivileged($Privileged);
+     push @results, 'Privileged status: '. $msg;
+}
+
+#we're asking about enabled on the web page but really care about disabled.
+if ($Enabled == 1) {
+    $Disabled = 0;
+}	
+else {
+    $Disabled = 1;
+}
+if  ( ($SetEnabled) and ( $Disabled != $UserObj->Disabled) ) { 
+    my  ($code, $msg) = $UserObj->SetDisabled($Disabled);
+    push @results, 'Enabled status '. $msg;
+}
+
+
+#TODO: make this report errors properly
+if ((defined $Pass1) and ($Pass1 ne '') and ($Pass1 eq $Pass2) and (!$UserObj->IsPassword($Pass1))) {
+    my ($code, $msg);
+    ($code, $msg) = $UserObj->SetPassword($Pass1);
+    push @results, 'Password: '. $msg;
+}
+
+# }}}
+}
+
+
+# {{{ Do some setup for the ui
+unless ($UserObj->Disabled()) {
+    $EnabledChecked ="CHECKED";
+}
+
+if ($UserObj->Privileged()) {  
+    $PrivilegedChecked = "CHECKED";
+}
+
+# }}}
+</%INIT>
+
+
+<%ARGS>
+$id => undef
+$Name  => undef
+$Comments  => undef
+$Signature  => undef
+$EmailAddress  => undef
+$FreeformContactInfo => undef
+$Organization  => undef
+$RealName  => undef
+$NickName  => undef
+$Privileged => undef
+$SetPrivileged => undef
+$Enabled => undef
+$SetEnabled => undef
+$Lang  => undef
+$EmailEncoding  => undef
+$WebEncoding => undef
+$ExternalContactInfoId  => undef
+$ContactInfoSystem  => undef
+$Gecos => undef
+$ExternalAuthId  => undef
+$AuthSystem  => undef
+$HomePhone => undef
+$WorkPhone  => undef
+$MobilePhone  => undef
+$PagerPhone  => undef
+$Address1 => undef
+$Address2  => undef
+$City  => undef
+$State  => undef
+$Zip  => undef
+$Country => undef
+$Pass1 => undef
+$Pass2=> undef
+$Create=> undef
+</%ARGS>

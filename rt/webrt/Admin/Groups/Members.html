@@ -1,0 +1,76 @@
+<& /Admin/Elements/Header, Title => "RT/Admin/Edit the group ". $Group->Name &>
+<& /Admin/Elements/GroupTabs, GroupObj => $Group &>
+<& /Elements/ListActions, actions => \@results &>
+
+
+<& /Elements/TitleBoxStart, title => 'Editing membership for group '.$Group->Name &>
+
+<FORM ACTION="<%$RT::WebPath%>/Admin/Groups/Members.html" METHOD=POST>
+<INPUT TYPE=HIDDEN NAME=id VALUE="<%$Group->Id%>">
+<TABLE WIDTH="100%">
+<TR>
+<TD>
+Add members
+</TD>
+<TD>
+Current members
+</TD>
+</TR>
+
+<TR>
+<TD VALIGN=TOP>
+<& /Admin/Elements/SelectUsers, Name => "AddMembers" &>
+</TD>
+<TD VALIGN=TOP>
+% if ($Group->MembersObj->Count == 0 ) {
+<i>(No members)</i>
+% } else {
+(Check box to delete group member)
+<UL>
+% while (my $member = $Group->MembersObj->Next()) {
+<LI><INPUT TYPE=CHECKBOX Name="DeleteMember-<%$member->UserObj->id%>">
+<%$member->UserObj->Name%> (<%$member->UserObj->RealName%>)
+% }
+% }
+</UL>
+</TD>
+</TR>
+</TABLE>
+<& /Elements/TitleBoxEnd &>
+<& /Elements/Submit &>
+</form>
+
+
+<%INIT>
+
+my $Group = new RT::Group($session{'CurrentUser'});
+$Group->Load($id) || Abort('Could not load group');
+
+my (@results);
+
+my $key;
+foreach $key (keys %ARGS) {
+
+if ($key =~ /^DeleteMember-(\d+)$/) {
+    my $id = $1; 
+    my ($val,$msg) = $Group->DeleteMember($id);
+    push (@results, $msg);
+}
+}
+
+# Make sure AddMembers is always an array
+my @AddMembers = (ref $AddMembers eq 'ARRAY') ? @{$AddMembers} : ($AddMembers);
+
+foreach my $member (@AddMembers) {
+    next unless ($member);
+    my ($val, $msg) = $Group->AddMember($member);
+    push (@results, $msg);
+}
+
+
+</%INIT>
+
+<%ARGS>
+$AddMembers => undef
+$id => undef
+</%ARGS>

@@ -1,0 +1,5 @@
+<div align="left"><span class=label><%$title |n %></span><br><b><%$content |n %></b></div>
+<%ARGS>
+$title => undef
+$content => "&nbsp;"
+</%ARGS>

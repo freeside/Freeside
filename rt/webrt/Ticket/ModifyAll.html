@@ -1,0 +1,124 @@
+<& /Elements/Header, Title => "Ticket #".$Ticket->Id ." Jumbo update: ".$Ticket->Subject &>
+<& /Ticket/Elements/Tabs, Ticket => $Ticket , current_tab => "Ticket/ModifyAll.html?id=".$Ticket->Id &>
+
+<& /Elements/ListActions, actions => \@results &>
+
+<FORM METHOD=POST ACTION="ModifyAll.html" ENCTYPE="multipart/form-data">
+<INPUT TYPE=HIDDEN NAME=id VALUE="<%$Ticket->Id%>">
+
+
+<& /Elements/TitleBoxStart, title => 'Modify ticket #'.$Ticket->Id,   color=> "#993333", width => "100%" &>
+<& Elements/EditBasics, TicketObj => $Ticket &>
+<& /Elements/TitleBoxEnd &>
+
+<BR>
+
+<& /Elements/TitleBoxStart, title => 'Dates',  width => "100%", color => "#663366"  &>
+<& Elements/EditDates, TicketObj => $Ticket &>
+<& /Elements/TitleBoxEnd &>
+
+<BR>
+
+<& /Elements/TitleBoxStart, title => 'Keywords', color =>"#993333"&>
+<& Elements/EditKeywordSelects, TicketObj=>$Ticket &>
+<& /Elements/TitleBoxEnd &>
+
+<BR>
+
+<& /Elements/TitleBoxStart, title => 'People',width => "100%", color=> "#333399" &>
+<& Elements/EditPeople, Ticket => $Ticket, UserField => $UserField, UserString => $UserString, UserOp => $UserOp &>
+<& /Elements/TitleBoxEnd &>
+
+<BR>
+
+<& /Elements/TitleBoxStart, title => 'Relationships', color => "#336633"&>
+<& Elements/EditLinks, Ticket => $Ticket &>
+<& /Elements/TitleBoxEnd &>
+
+<BR>
+
+<& /Elements/TitleBoxStart, title => 'Update ticket' &>
+<hr>
+Update Type: <select name="UpdateType">
+% if ($CanComment) {
+  <option value="private" >Comments (Not sent to requestors)</option>
+% }
+% if ($CanRespond) {
+   <option value="response">Response to requestors</option>
+% }
+</select> 
+<br>
+
+Subject: <input name="UpdateSubject" size=60 value=""> <br>
+Attach: <input name="UpdateAttachment" type=file> <br>
+<& /Elements/MessageBox, Name=>"UpdateContent", QuoteTransaction=>$ARGS{QuoteTransaction} &>
+<& /Elements/TitleBoxEnd &>
+
+
+<& /Elements/Submit, Label => 'Save Changes', Caption => "If you've updated anything above, be sure to", color => "#333399" &>
+</form>
+
+<%INIT>
+
+
+
+my $Ticket = LoadTicket($id);
+
+my $CanRespond = 0;
+my $CanComment = 0;
+
+
+$CanRespond = 1 if ( $Ticket->CurrentUserHasRight('ReplyToTicket') or
+                     $Ticket->CurrentUserHasRight('ModifyTicket') ); 
+
+$CanComment = 1 if ( $Ticket->CurrentUserHasRight('CommentOnTicket') or
+                     $Ticket->CurrentUserHasRight('ModifyTicket') );
+
+
+my (@wresults, @results, @okresults, @dresults, @lresults);
+
+unless ($OnlySearchForPeople) {
+    @wresults = ProcessTicketWatchers( TicketObj => $Ticket, ARGSRef => \%ARGS);
+    @results = ProcessTicketBasics( TicketObj => $Ticket, ARGSRef => \%ARGS);
+    @okresults = ProcessTicketObjectKeywords(TicketObj => $Ticket, ARGSRef => \%ARGS);
+
+    @dresults = ProcessTicketDates( TicketObj => $Ticket, ARGSRef => \%ARGS);
+    @lresults = ProcessTicketLinks( TicketObj => $Ticket, ARGSRef => \%ARGS);
+
+    $ARGS{'UpdateContent'} =~ s/\r\n/\n/g;
+
+    if ($ARGS{'UpdateContent'} && 
+	$ARGS{'UpdateContent'} ne '' && 
+	$ARGS{'UpdateContent'} ne  "-- \n" . 
+				$session{'CurrentUser'}->UserObj->Signature
+       ) {
+   	 ProcessUpdateMessage(TicketObj => $Ticket, 
+			      ARGSRef=>\%ARGS, 
+                              Actions=>\@results);
+	}
+}
+push @results, @wresults;
+push @results, @dresults;
+push @results, @lresults;
+push @results, @okresults;
+
+# If they've gone and moved the ticket to somewhere they can't see, etc...
+# TODO: display the results, even if we can't display the ticket.
+
+unless ($Ticket->CurrentUserHasRight('ShowTicket')) {
+   Abort("No permission to view ticket");
+}
+
+
+</%INIT>
+
+
+
+<%ARGS>
+$OnlySearchForPeople => undef
+$UserField => undef
+$UserOp => undef
+$UserString => undef
+$id => undef
+</%ARGS>
+

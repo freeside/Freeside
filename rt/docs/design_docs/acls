@@ -1,0 +1,206 @@
+$Header: /home/cvs/cvsroot/freeside/rt/docs/design_docs/acls,v 1.1 2002-08-12 06:17:07 ivan Exp $
+
+
+
+# {{{ Requirements 
+
+Here's the rough scheme I was thinking of for RT2 acls. Thoughts? I think
+it's a lot more flexible than RT 1.0, but not so crazily complex that
+it will be impossible to implement.  One of the "interesting" features
+is the ability to grant acls based on watcher status. This now lives
+in design-docs/acls
+
+        jesse
+
+Who can rights be granted to:
+
+	users whose id is <foo>
+	users who are watchers of type <requestor/cc/admincc> for <queue/ticket> <id>
+	users who are watchers of type <requestor/cc/admincc> for <this ticket / this queue>
+
+
+what scope do these rights apply to
+	queue <id>
+	system
+	
+
+What rights can be granted
+	Display Ticket
+	Manipulate Ticket
+		Only users with manipulate ticket level access will see comments
+	Maniplulate Ticket Status
+	Create Ticket	
+
+	Admin Queue Watchers 
+	Admin Ticket Watchers
+	Admin user accounts
+	Admin scrips
+	Admin scripscopes
+	Admin Queue ACLS
+	Admin System ACLs
+
+# }}}
+
+
+# {{{ Prinicpals  These are the entities in your Access Control Element
+#
+
+Principal: What user does this right apply to
+
+	Made up of: 
+		PrincipalScope, PrincipalType and PrincipalId
+
+	
+	User:	
+		Scope: 	User	
+		Type: 	null
+		Id:	A userid or 0
+
+	Owner:
+		Scope:  Owner
+		Type: 	null
+		Id:	none
+
+
+	Watchers:
+
+		Scope: Ticket
+		Type:	Requestors; Cc; AdminCc
+		Id:	A ticket id or 0 for "this ticket"
+
+		Scope: Queue
+		Type:	Cc; AdminCc
+		Id:	A queue id or 0 for "this queue"
+
+
+# }}}
+
+# {{{ Object: What object does this right apply to
+
+	Object is composed of an ObjectType and an ObjectId
+
+	Type:	System 	
+	Id:	NULL
+
+	Type:	Queue
+	Id:	Integer ref to queue id or 0 for all queues
+	
+# }}}
+
+# {{{ Right: (What does this entry give the principal the right to do)
+
+
+
+	For the Object System:
+		System::SetACL
+		System::AdminScrips
+
+		User::Display
+		User::Create
+		User::Destroy
+		User::Modify
+		User::SetPassword
+
+
+
+	For the Object "Queue":
+		Queue::Admin
+		Queue::SetACL
+		Queue::Create
+		Queue::Display
+		Queue::Destroy
+		Queue::ModifyWatchers
+		Ticket::Create
+		Ticket::Destory
+		Ticket::Display
+		Ticket::Update
+		Ticket::UpdateRequestors
+		Ticket::UpdateCc
+		Ticket::UpdateAdminCc
+		Ticket::NotifyWatchers
+
+		
+		DEFERRED
+
+		Ticket::SetStatus:	(Values)
+					Open
+					Resolved
+					Stalled
+					<null> means any
+
+
+# }}}
+
+
+# {{{ Implementation:
+
+# {{{ SQL Schema 
+CREATE TABLE ACL (
+	id int not null primary_key autoincrement,
+	PrinicpalId INT(11),
+	PrincipalType VARCHAR(16),
+	PrincipalScope VARCHAR(16),
+	ObjectType VARCHAR(16),
+	ObjectId  INT,
+	Right VARCHAR(16)
+);
+
+# }}}
+
+# {{{ perl implementation of rights searches
+
+sub Principals {
+if (defined $Ticket) {
+	return "($UserPrincipal) OR ($OwnerPrincipal) OR ($WatchersPrincipal)";
+	}
+else {
+	return 	 "($UserPrincipal) OR ($WatchersPrincipal)";
+	}  
+}
+	
+$Principals = " ($UserPrincipal) OR ($OwnerPrincipal) OR ($WatchersPrincipal)";
+
+$UserPrincipal = " ( ACE.PrincipalScope = 'User') AND 
+		   ( ACE.PrincipalId = $User OR ACE.PrincipalId = 0)";
+
+$OwnerPrincipal = " ( ACE.PrinciaplScope = 'Owner') AND 
+		      ( Tickets.Owner = "$User ) AND	
+		      ( Tickets.Id = $Ticket)";
+
+$WatchersPrincipal = " ( ACE.PrincipalScope = Watchers.Scope ) AND 
+		      ( ACE.PrincipalType = Watchers.Type ) AND 
+		      ( ACL.PrincipalId = Watchers.Value ) AND 
+		      ( Watchers.Owner = $User )";
+
+$QueueObject = "( ACE.ObjectType = 'Queue' and (ACE.ObjectId = $Queue OR ACE.ObjectId = 0)";
+
+$SystemObject = "( ACE.ObjectType = 'System' )";
+
+
+# This select statement would figure out if A user has $Right at the queue level
+
+SELECT ACE.id from ACE, Watchers, Tickets WHERE ( 
+	     $QueueObject
+	     AND ( ACE.Right = $Right) 
+	     AND ($Principals))
+
+# This select statement would figure outif a user has $Right for the "System"
+
+SELECT ACE.id from ACE, Watchers, Tickets WHERE ( 
+	     ($SystemObject) AND ( ACE.Right = $Right ) AND ($Principals))
+
+# }}}
+
+# }}}
+
+# {{{ Examples
+#
+
+# }}}	
+
+
+
+Unaddressed issues:
+
+	There needs to be a more refined method for grouping users, such that members of the customer service department
+can't change sysadmins' passwords.
