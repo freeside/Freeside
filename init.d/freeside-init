@@ -40,7 +40,7 @@ case "$1" in
         killall fs_passwd_server
         echo "done."
 
-        echo -n "Stopping fs_passwd_server: "
+        echo -n "Stopping fs_signup_server: "
         killall fs_signup_server
         echo "done."
         ;;
