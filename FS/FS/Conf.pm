@@ -1370,6 +1370,13 @@ httemplate/docs/config.html
     'type'        => 'checkbox',
   },
 
+  {
+    'key'         => 'address2-search',
+    'section'     => 'UI',
+    'description' => 'Enable a "Unit" search box which searches the second address field',
+    'type'        => 'checkbox',
+  },
+
 );
 
 1;
