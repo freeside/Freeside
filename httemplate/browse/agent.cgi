@@ -32,7 +32,8 @@ END
 #        <TH>Agent</TH>
 
 foreach my $agent ( sort { 
-  $a->getfield('agentnum') <=> $b->getfield('agentnum')
+  #$a->getfield('agentnum') <=> $b->getfield('agentnum')
+  $a->getfield('agent') cmp $b->getfield('agent')
 } qsearch('agent',{}) ) {
   my($hashref)=$agent->hashref;
   my($typenum)=$hashref->{typenum};

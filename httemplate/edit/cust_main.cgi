@@ -85,7 +85,8 @@ if ( scalar(@agents) == 1 ) {
   } @agents) {
       print '<OPTION VALUE="', $agent->agentnum, '"',
       " SELECTED"x($agent->agentnum==$agentnum),
-      ">", $agent->agentnum,": ", $agent->agent;
+      ">". $agent->agent;
+      #">", $agent->agentnum,": ", $agent->agent;
   }
   print "</SELECT>";
 }

@@ -141,7 +141,7 @@ END
         my $conf = new FS::Conf;
         unless ( $mydomain = $conf->config('domain') ) {
           die "No legacy domain config file and no svc_domain.svcnum record ".
-              "for svc_acct.domsvc: ". $cust_svc->domsvc;
+              "for svc_acct.domsvc: ". $svc_acct->domsvc;
         }
       }
       $domain = "<i>$mydomain</i><FONT COLOR=\"#FF0000\">*</FONT>";
