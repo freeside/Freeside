@@ -15,21 +15,21 @@ MASONDATA = /usr/local/etc/freeside/masondata
 
 #deb
 FREESIDE_DOCUMENT_ROOT = /var/www/freeside
-#redhat
+#redhat, mandrake
 #FREESIDE_DOCUMENT_ROOT = /var/www/html/freeside
 #freebsd
 #FREESIDE_DOCUMENT_ROOT = /usr/local/www/data/freeside
 #openbsd
 #FREESIDE_DOCUMENT_ROOT = /var/www/htdocs/freeside
 
-#deb, redhat, others?
+#deb, redhat, mandrake, others?
 INIT_FILE = /etc/init.d/freeside
 #freebsd
 #INIT_FILE = /usr/local/etc/rc.d/011.freeside.sh
 
 #deb
 HTTPD_RESTART = /etc/init.d/apache restart
-#redhat
+#redhat, mandrake
 #HTTPD_RESTART = /etc/init.d/httpd restart
 #freebsd
 #HTTPD_RESTART = /usr/local/etc/rc.d/apache.sh stop; sleep 1; /usr/local/etc/rc.d/apache.sh start
@@ -38,9 +38,9 @@ HTTPD_RESTART = /etc/init.d/apache restart
 
 FREESIDE_RESTART = ${INIT_FILE} restart
 
-#deb, redhat, others?
+#deb, redhat, mandrake, others?
 INSTALLGROUP = root
-#freebsd,openbsd
+#freebsd, openbsd
 #INSTALLGROUP = wheel
 
 #edit the stuff below to have the daemons start
