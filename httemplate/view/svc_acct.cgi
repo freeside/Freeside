@@ -152,7 +152,7 @@ function enable_change () {
 %>
 
 Service Information
-| <A HREF="${p}edit/svc_acct.cgi?$svcnum">Edit this information</A>
+| <A HREF="<%=$p%>edit/svc_acct.cgi?<%=$svcnum%>">Edit this information</A>
 
 <% if ( @part_svc ) { %>
 | <SELECT NAME="svcpart" onChange="enable_change()">
