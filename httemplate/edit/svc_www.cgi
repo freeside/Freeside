@@ -106,7 +106,6 @@ if ($pkgnum) {
 
         my $extra_sql = "AND ( rectype = 'A' OR rectype = 'CNAME' )";
         if ( $conf->exists('svc_www-enable_subdomains') ) {
-          my $domain = $
           $extra_sql .= " AND ( reczone = '@' OR reczone = '".
                         $svc_domain->domain. ".' )";
         }
