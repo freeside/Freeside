@@ -387,10 +387,7 @@ sub check {
   return $x unless ref($x);
   my $part_svc = $x;
 
-  my $error = 
-    $self->ut_numbern('svcnum')
-    || $self->ut_number('domsvc')
-  ;
+  my $error = $self->ut_number('domsvc');
   return $error if $error;
 
   my $ulen = $usernamemax || $self->dbdef_table->column('username')->length;
@@ -558,7 +555,7 @@ sub radius_check {
 
 =head1 VERSION
 
-$Id: svc_acct.pm,v 1.22 2001-08-19 08:15:10 ivan Exp $
+$Id: svc_acct.pm,v 1.23 2001-08-19 08:18:01 ivan Exp $
 
 =head1 BUGS
 
