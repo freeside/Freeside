@@ -1,12 +1,14 @@
 package FS::Report::Table::Monthly;
 
 use strict;
-use vars qw( @ISA );
+use vars qw( @ISA $expenses_kludge );
 use Time::Local;
 use FS::UID qw( dbh );
 use FS::Report::Table;
 
 @ISA = qw( FS::Report::Table );
+
+$expenses_kludge = 0;
 
 =head1 NAME
 
@@ -83,7 +85,7 @@ sub netsales { #net sales
   );
 
   #horrible local kludge
-  my $expenses = $self->scalar_sql("
+  my $expenses = !$expenses_kludge ? 0 : $self->scalar_sql("
     SELECT SUM(cust_bill_pkg.setup)
     FROM cust_bill_pkg, cust_bill, cust_pkg, part_pkg
     WHERE cust_bill.invnum = cust_bill_pkg.invnum
@@ -113,7 +115,7 @@ sub receipts { #cashflow
   );
 
   #horrible local kludge that doesn't even really work right
-  my $expenses = $self->scalar_sql("
+  my $expenses = !$expenses_kludge ? 0 : $self->scalar_sql("
     SELECT SUM(cust_bill_pay.amount)
     FROM cust_bill_pay, cust_bill
     WHERE cust_bill_pay.invnum = cust_bill.invnum
