@@ -537,6 +537,8 @@ To make a distinct duplicate of an FS::Record object, you can do:
 
 sub hash {
   my($self) = @_;
+  confess $self. ' -> hash: Hash attribute is undefined'
+    unless defined($self->{'Hash'});
   %{ $self->{'Hash'} }; 
 }
 
