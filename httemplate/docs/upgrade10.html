@@ -73,6 +73,13 @@ CREATE TABLE acct_snarf (
 );
 CREATE INDEX acct_snarf1 ON acct_snarf ( svcnum );
 
+CREATE TABLE svc_external (
+  svcnum int NOT NULL,
+  id int NOT NULL,
+  title varchar(80),
+  PRIMARY KEY (svcnum)
+);
+
 CREATE TABLE part_pkg_temp (
     pkgpart serial NOT NULL,
     pkg varchar(80) NOT NULL,
@@ -175,7 +182,7 @@ optionally:
 mandatory again:
 
 dbdef-create username
-create-history-tables username cust_bill_pkg_detail router part_svc_router addr_block svc_broadband acct_snarf
+create-history-tables username cust_bill_pkg_detail router part_svc_router addr_block svc_broadband acct_snarf svc_external
 dbdef-create username
 
 apache - fix <Files> sections to include .html also

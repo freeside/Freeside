@@ -296,6 +296,8 @@ sub label {
     $tag = $domain->zone;
   } elsif ( $svcdb eq 'svc_broadband' ) {
     $tag = $svc_x->ip_addr;
+  } elsif ( $svcdb eq 'svc_external' ) {
+    $tag = $svc_x->id. ': '. $svc_x->title;
   } else {
     cluck "warning: asked for label of unsupported svcdb; using svcnum";
     $tag = $svc_x->getfield('svcnum');

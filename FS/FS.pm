@@ -66,6 +66,10 @@ L<FS::svc_forward> - Mail forwarding class
 
 L<FS::svc_www> - Web virtual host class.
 
+L<FS::svc_broadband> - DSL, wireless and other broadband class.
+
+L<FS::svc_external> - Externally tracked service class.
+
 L<FS::part_svc> - Service definition class
 
 L<FS::part_svc_column> - Column constraint class
