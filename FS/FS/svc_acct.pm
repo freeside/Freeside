@@ -551,11 +551,30 @@ sub radius_check {
   } grep { /^rc_/ && $self->getfield($_) } fields( $self->table );
 }
 
+=item email
+
+Returns an email address associated with the account.
+
+=cut
+
+sub email {
+  my $self = shift;
+  my $domain;
+  my $svc_domain = qsearchs( 'svc_domain', { 'svcnum' => $self->domsvc } );
+  if ($svc_domain) {
+    $domain=$svc_domain->domain;
+  }else{
+    warn "couldn't find svc_acct.domsvc " . $self->domsvc . "!";
+    $domain="unknown";
+  }
+  return $self->username . "@" . $domain;
+}
+
 =back
 
 =head1 VERSION
 
-$Id: svc_acct.pm,v 1.23 2001-08-19 08:18:01 ivan Exp $
+$Id: svc_acct.pm,v 1.24 2001-08-19 15:53:34 jeff Exp $
 
 =head1 BUGS
 

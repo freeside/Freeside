@@ -10,6 +10,7 @@ use FS::part_svc;
 use FS::svc_acct;
 use FS::svc_acct_sm;
 use FS::svc_domain;
+use FS::svc_forward;
 
 @ISA = qw( FS::Record );
 
@@ -131,6 +132,15 @@ sub label {
     my $svc_domain = qsearchs ( 'svc_domain', { 'svcnum' => $svc_x->domsvc } );
     my $domain = $svc_domain->domain;
     $tag = "$domuser\@$domain";
+  } elsif ( $svcdb eq 'svc_forward' ) {
+    my $svc_acct = qsearchs ( 'svc_acct', { 'svcnum' => $svc_x->srcsvc } );
+    $tag = $svc_acct->email . '->';
+    if ($svc_x->dstsvc) {
+      $svc_acct = qsearchs ( 'svc_acct', { 'svcnum' => $svc_x->dstsvc } );
+      $tag .= $svc_acct->email;
+    }else{
+      $tag .= $svc_x->dst;
+    }
   } elsif ( $svcdb eq 'svc_domain' ) {
     $tag = $svc_x->getfield('domain');
   } else {
@@ -144,7 +154,7 @@ sub label {
 
 =head1 VERSION
 
-$Id: cust_svc.pm,v 1.1 1999-08-04 09:03:53 ivan Exp $
+$Id: cust_svc.pm,v 1.2 2001-08-19 15:53:34 jeff Exp $
 
 =head1 BUGS
 

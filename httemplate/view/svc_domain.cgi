@@ -1,6 +1,6 @@
 <%
 #
-# $Id: svc_domain.cgi,v 1.1 2001-07-30 07:36:04 ivan Exp $
+# $Id: svc_domain.cgi,v 1.2 2001-08-19 15:53:36 jeff Exp $
 #
 # Usage: svc_domain svcnum
 #        http://server.name/path/svc_domain.cgi?svcnum
@@ -13,7 +13,10 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # $Log: svc_domain.cgi,v $
-# Revision 1.1  2001-07-30 07:36:04  ivan
+# Revision 1.2  2001-08-19 15:53:36  jeff
+# added user interface for svc_forward and vpopmail support
+#
+# Revision 1.1  2001/07/30 07:36:04  ivan
 # templates!!!
 #
 # Revision 1.11  2000/12/03 15:14:00  ivan
@@ -52,7 +55,7 @@
 
 use strict;
 use vars qw( $cgi $query $svcnum $svc_domain $domain $cust_svc $pkgnum 
-             $cust_pkg $custnum $part_svc $p );
+             $cust_pkg $custnum $part_svc $p $svc_acct $email);
 use CGI;
 use FS::UID qw(cgisuidsetup);
 use FS::CGI qw(header menubar popurl menubar);
@@ -82,7 +85,13 @@ if ($pkgnum) {
 }
 
 $part_svc = qsearchs('part_svc',{'svcpart'=> $cust_svc->svcpart } );
-die "Unkonwn svcpart" unless $part_svc;
+die "Unknown svcpart" unless $part_svc;
+
+if ($svc_domain->catchall) {
+  $svc_acct = qsearchs('svc_acct',{'svcnum'=> $svc_domain->catchall } );
+  die "Unknown svcpart" unless $svc_acct;
+  $email = $svc_acct->email;
+}
 
 $domain = $svc_domain->domain;
 
@@ -100,6 +109,8 @@ print $cgi->header( '-expires' => 'now' ), header('Domain View', menubar(
       "Service #$svcnum",
       "<BR>Service: <B>", $part_svc->svc, "</B>",
       "<BR>Domain name: <B>$domain</B>.",
+      qq!<BR>Catch all email <A HREF="${p}misc/catchall.cgi?$svcnum">(change)</A>:!,
+      $email ? "<B>$email</B>." : "<I>(none)<I>",
       qq!<BR><BR><A HREF="http://www.geektools.com/cgi-bin/proxy.cgi?query=$domain;targetnic=auto">View whois information.</A>!,
       '</BODY></HTML>',
 ;

@@ -223,9 +223,8 @@ sub check {
   }
 
   if ($recref->{dst}) {
-    $recref->{dst} =~ /^(\w\.\-]+)\@(([\w\.\-]+\.)+\w+)$/
+    $recref->{dst} =~ /^([\w\.\-]+)\@(([\w\.\-]+\.)+\w+)$/
        or return "Illegal dst";
-    $recref->{dst} = $1;
   }
 
   ''; #no error
@@ -235,7 +234,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: svc_forward.pm,v 1.2 2001-08-12 19:41:24 jeff Exp $
+$Id: svc_forward.pm,v 1.3 2001-08-19 15:53:35 jeff Exp $
 
 =head1 BUGS
 

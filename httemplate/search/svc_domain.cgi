@@ -1,6 +1,6 @@
 <%
 #
-# $Id: svc_domain.cgi,v 1.1 2001-07-30 07:36:04 ivan Exp $
+# $Id: svc_domain.cgi,v 1.2 2001-08-19 15:53:36 jeff Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/svc_domain.cgi
@@ -15,7 +15,10 @@
 # display total, use FS::CGI now does browsing too ivan@sisd.com 98-jul-17
 #
 # $Log: svc_domain.cgi,v $
-# Revision 1.1  2001-07-30 07:36:04  ivan
+# Revision 1.2  2001-08-19 15:53:36  jeff
+# added user interface for svc_forward and vpopmail support
+#
+# Revision 1.1  2001/07/30 07:36:04  ivan
 # templates!!!
 #
 # Revision 1.11  2000/03/03 18:22:44  ivan
@@ -60,8 +63,8 @@ use FS::Record qw(qsearch qsearchs);
 use FS::CGI qw(header eidiot popurl);
 use FS::svc_domain;
 use FS::cust_svc;
-use FS::svc_acct_sm;
 use FS::svc_acct;
+use FS::svc_forward;
 
 $cgi = new CGI;
 &cgisuidsetup($cgi);
@@ -112,15 +115,19 @@ if ( scalar(@svc_domain) == 1 ) {
       <TR>
         <TH>Service #</TH>
         <TH>Domain</TH>
-        <TH>Mail to<BR><FONT SIZE=-1>(click to view mail alias)</FONT></TH>
+        <TH>Mail to<BR><FONT SIZE=-1>(click to view account)</FONT></TH>
         <TH>Forwards to<BR><FONT SIZE=-1>(click to view account)</FONT></TH>
       </TR>
 END
 
-  my(%saw,$svc_domain);
+#  my(%saw);                 # if we've multiple domains with the same
+                             # svcnum, then we've a corrupt database
+
+  my($svc_domain);
   my $p = popurl(2);
   foreach $svc_domain (
-    sort $sortby grep(!$saw{$_->svcnum}++, @svc_domain)
+#    sort $sortby grep(!$saw{$_->svcnum}++, @svc_domain)
+    sort $sortby (@svc_domain)
   ) {
     my($svcnum,$domain)=(
       $svc_domain->svcnum,
@@ -139,8 +146,57 @@ END
     #  $malias='';
     #}
 
-    my @svc_acct_sm=qsearch('svc_acct_sm',{'domsvc' => $svcnum});
-    my $rowspan = scalar(@svc_acct_sm) || 1;
+    my @svc_acct=qsearch('svc_acct',{'domsvc' => $svcnum});
+    my $rowspan = 0;
+
+    my $n1 = '';
+    my($svc_acct, @rows);
+    foreach $svc_acct (
+      sort {$b->getfield('username') cmp $a->getfield('username')} (@svc_acct)
+    ) {
+
+      my (@forwards) = ();
+
+      my($svcnum,$username)=(
+        $svc_acct->svcnum,
+        $svc_acct->username,
+      );
+
+      my @svc_forward = qsearch( 'svc_forward', { 'srcsvc' => $svcnum } );
+      my $svc_forward;
+      foreach $svc_forward (@svc_forward) {
+        my($dstsvc,$dst) = (
+          $svc_forward->dstsvc,
+          $svc_forward->dst,
+        );
+        if ($dstsvc) {
+          my $dst_svc_acct=qsearchs( 'svc_acct', { 'svcnum' => $dstsvc } );
+          my $destination=$dst_svc_acct->email;
+          push @forwards, qq!<TD><A HREF="!, popurl(2),
+                qq!view/svc_acct.cgi?$dstsvc">$destination</A>!,
+                qq!</TD></TR>!
+          ;
+        }else{
+          push @forwards, qq!<TD>$dst</TD></TR>!
+          ;
+        }
+      }
+
+      push @rows, qq!$n1<TD ROWSPAN=!, (scalar(@svc_forward) || 1),
+            qq!><A HREF="!. popurl(2). qq!view/svc_acct.cgi?$svcnum">!,
+      #print '', ( ($domuser eq '*') ? "<I>(anything)</I>" : $domuser );
+            ( ($username eq '*') ? "<I>(anything)</I>" : $username ),
+            qq!\@$domain</A> </TD>!,
+      ;
+
+      push @rows, @forwards;
+
+      $rowspan += (scalar(@svc_forward) || 1);
+      $n1 = "</TR><TR>";
+    }
+    #end of false laziness
+
+
 
     print <<END;
     <TR>
@@ -148,48 +204,7 @@ END
       <TD ROWSPAN=$rowspan>$domain</TD>
 END
 
-    my $n1 = '';
-    # false laziness: this was stolen from search/svc_acct_sm.cgi.  but the
-    # web interface in general needs to be rewritten in a mucho cleaner way
-    my($svc_acct_sm);
-    foreach $svc_acct_sm (@svc_acct_sm) {
-      my($svcnum,$domuser,$domuid,$domsvc)=(
-        $svc_acct_sm->svcnum,
-        $svc_acct_sm->domuser,
-        $svc_acct_sm->domuid,
-        $svc_acct_sm->domsvc,
-      );
-      #my $svc_domain = qsearchs( 'svc_domain', { 'svcnum' => $domsvc } );
-      #if ( $svc_domain ) {
-      #  my $domain = $svc_domain->domain;
-
-        print qq!$n1<TD><A HREF="!. popurl(2). qq!view/svc_acct_sm.cgi?$svcnum">!,
-        #print '', ( ($domuser eq '*') ? "<I>(anything)</I>" : $domuser );
-              ( ($domuser eq '*') ? "<I>(anything)</I>" : $domuser ),
-              qq!\@$domain</A> </TD>!,
-        ;
-      #} else {
-      #  my $warning = "couldn't find svc_domain.svcnum $svcnum ( svc_acct_sm.svcnum $svcnum";
-      #  warn $warning;
-      #  print "$n1<TD>WARNING: $warning</TD>";
-      #}
-
-      my $svc_acct = qsearchs( 'svc_acct', { 'uid' => $domuid } );
-      if ( $svc_acct ) {
-        my $username = $svc_acct->username;
-        my $svc_acct_svcnum =$svc_acct->svcnum;
-        print qq!<TD><A HREF="!, popurl(2),
-              qq!view/svc_acct.cgi?$svc_acct_svcnum">$username\@$mydomain</A>!,
-              qq!</TD></TR>!
-        ;
-      } else {
-        my $warning = "couldn't find svc_acct.uid $domuid (svc_acct_sm.svcnum $svcnum)!";
-        warn $warning;
-        print "<TD>WARNING: $warning</TD>";
-      }
-      $n1 = "</TR><TR>";
-    }
-    #end of false laziness
+    print @rows;
     print "</TR>";
 
   }
@@ -207,7 +222,7 @@ sub svcnum_sort {
 }
 
 sub domain_sort {
-  $a->getfield('domain') cmp $b->getfield('doimain');
+  $a->getfield('domain') cmp $b->getfield('domain');
 }
 
 

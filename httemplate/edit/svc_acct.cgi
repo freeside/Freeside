@@ -1,6 +1,6 @@
 <%
 #
-# $Id: svc_acct.cgi,v 1.1 2001-07-30 07:36:04 ivan Exp $
+# $Id: svc_acct.cgi,v 1.2 2001-08-19 15:53:35 jeff Exp $
 #
 # Usage: svc_acct.cgi {svcnum} | pkgnum{pkgnum}-svcpart{svcpart}
 #        http://server.name/path/svc_acct.cgi? {svcnum} | pkgnum{pkgnum}-svcpart{svcpart}
@@ -16,7 +16,10 @@
 # use conf/shells and dbdef username length ivan@sisd.com 98-jul-13
 #
 # $Log: svc_acct.cgi,v $
-# Revision 1.1  2001-07-30 07:36:04  ivan
+# Revision 1.2  2001-08-19 15:53:35  jeff
+# added user interface for svc_forward and vpopmail support
+#
+# Revision 1.1  2001/07/30 07:36:04  ivan
 # templates!!!
 #
 # Revision 1.10  1999/04/14 11:27:06  ivan
@@ -49,7 +52,7 @@
 use strict;
 use vars qw( $conf $cgi @shells $action $svcnum $svc_acct $pkgnum $svcpart
              $part_svc $svc $otaker $username $password $ulen $ulen2 $p1
-             $popnum $uid $gid $finger $dir $shell $quota $slipip );
+             $popnum $domsvc $uid $gid $finger $dir $shell $quota $slipip );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup getotaker);
@@ -159,6 +162,24 @@ Username:
 <INPUT TYPE="text" NAME="_password" VALUE="$password" SIZE=10 MAXLENGTH=8> 
 (blank to generate)
 END
+
+#domain
+$domsvc = $svc_acct->domsvc || 0;
+if ( $part_svc->svc_acct__domsvc_flag eq "F" ) {
+  print qq!<INPUT TYPE="hidden" NAME="domsvc" VALUE="$domsvc">!;
+} else { 
+  print qq!<BR>Domain: <SELECT NAME="domsvc" SIZE=1>\n!;
+  my($svc_domain);
+  foreach $svc_domain
+    ( sort {$a->domain cmp $b->domain} (qsearch ('svc_domain',{} ) ) ) 
+  {
+    print qq!<OPTION VALUE="!, $svc_domain->svcnum, qq!"!,
+          $svc_domain->svcnum == $domsvc ? ' SELECTED' : '',
+          ">", $svc_domain->domain, "\n"
+      ;
+  }
+  print "</SELECT>";
+}
 
 #pop
 $popnum = $svc_acct->popnum || 0;

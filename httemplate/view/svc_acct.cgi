@@ -1,6 +1,6 @@
 <%
 #
-# $Id: svc_acct.cgi,v 1.1 2001-07-30 07:36:04 ivan Exp $
+# $Id: svc_acct.cgi,v 1.2 2001-08-19 15:53:36 jeff Exp $
 #
 # Usage: svc_acct.cgi svcnum
 #        http://server.name/path/svc_acct.cgi?svcnum
@@ -33,7 +33,10 @@
 # displays arbitrary radius attributes ivan@sisd.com 98-aug-16
 #
 # $Log: svc_acct.cgi,v $
-# Revision 1.1  2001-07-30 07:36:04  ivan
+# Revision 1.2  2001-08-19 15:53:36  jeff
+# added user interface for svc_forward and vpopmail support
+#
+# Revision 1.1  2001/07/30 07:36:04  ivan
 # templates!!!
 #
 # Revision 1.12  2001/01/31 07:21:00  ivan
@@ -73,7 +76,7 @@
 #
 
 use strict;
-use vars qw( $conf $cgi $mydomain $query $svcnum $svc_acct $cust_svc $pkgnum
+use vars qw( $conf $cgi $svc_domain $query $svcnum $svc_acct $cust_svc $pkgnum
              $cust_pkg $custnum $part_svc $p $svc_acct_pop $password );
 use CGI;
 use CGI::Carp qw( fatalsToBrowser );
@@ -91,7 +94,6 @@ $cgi = new CGI;
 &cgisuidsetup($cgi);
 
 $conf = new FS::Conf;
-$mydomain = $conf->config('domain');
 
 ($query) = $cgi->keywords;
 $query =~ /^(\d+)$/;
@@ -112,6 +114,9 @@ if ($pkgnum) {
 $part_svc = qsearchs('part_svc',{'svcpart'=> $cust_svc->svcpart } );
 die "Unknown svcpart" unless $part_svc;
 
+$svc_domain = qsearchs('svc_domain', { 'svcnum' => $svc_acct->domsvc } );
+die "Unknown domain" unless $svc_domain;
+
 $p = popurl(2);
 print $cgi->header( '-expires' => 'now' ), header('Account View', menubar(
   ( ( $pkgnum || $custnum )
@@ -131,6 +136,8 @@ print qq!<A HREF="${p}edit/svc_acct.cgi?$svcnum">Edit this information</A>!,
       "<BR>Service: <B>", $part_svc->svc, "</B>",
       "<BR><BR>Username: <B>", $svc_acct->username, "</B>"
 ;
+
+print "<BR>Domain: <B>", $svc_domain->domain, "</B>";
 
 print "<BR>Password: ";
 $password = $svc_acct->_password;

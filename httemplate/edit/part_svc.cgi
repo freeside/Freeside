@@ -1,4 +1,4 @@
-<!-- $Id: part_svc.cgi,v 1.3 2001-08-11 23:19:09 ivan Exp $ -->
+<!-- $Id: part_svc.cgi,v 1.4 2001-08-19 15:53:35 jeff Exp $ -->
 <% 
    my $part_svc;
    if ( $cgi->param('error') ) { #error
@@ -51,7 +51,8 @@ Service  <INPUT TYPE="text" NAME="svc" VALUE="<%= $hashref->{svc} %>">
 Services are items you offer to your customers.
 <UL><LI>svc_acct - Shell accounts, POP mailboxes, SLIP/PPP and ISDN accounts
     <LI>svc_domain - Virtual domains
-    <LI>svc_acct_sm - Virtual domain mail aliasing
+    <LI>svc_acct_sm - Virtual domain mail aliasing (*depreciated*)
+    <LI>svc_forward - mail forwarding
     <LI>svc_www - Virtual domain website
 <!--   <LI>svc_charge - One-time charges (Partially unimplemented)
        <LI>svc_wo - Work orders (Partially unimplemented)
@@ -68,10 +69,10 @@ var svcdb = null;
 var something = null;
 function changed(what) {
   svcdb = what.options[what.selectedIndex].value;
-<% foreach my $svcdb ( qw( svc_acct svc_domain svc_acct_sm svc_www ) ) { %>
+<% foreach my $svcdb ( qw( svc_acct svc_domain svc_acct_sm svc_forward svc_www ) ) { %>
   if (svcdb == "<%= $svcdb %>" ) {
     <% foreach my $not ( grep { $_ ne $svcdb } (
-                           qw(svc_acct svc_domain svc_acct_sm svc_www) ) ) { %>
+                           qw(svc_acct svc_domain svc_acct_sm svc_forward svc_www) ) ) { %>
       if (document.getElementById) {
         document.getElementById('d<%= $not %>').style.visibility = "hidden";
       } else {
@@ -89,7 +90,7 @@ function changed(what) {
 </SCRIPT>
 <% my @dbs = $hashref->{svcdb}
              ? ( $hashref->{svcdb} )
-             : qw( svc_acct svc_domain svc_acct_sm svc_www ); %>
+             : qw( svc_acct svc_domain svc_acct_sm svc_forward svc_www ); %>
 Table<SELECT NAME="svcdb" SIZE=1 onChange="changed(this)">
 <% foreach my $svcdb (@dbs) { %>
 <OPTION VALUE="<%= $svcdb %>" <%= ' SELECTED'x($svcdb eq $hashref->{svcdb}) %>><%= $svcdb %>
@@ -120,6 +121,11 @@ my %defs = (
     'domuid'    => 'UID where domuser@virtualdomain.com mail is forwarded',
     'domsvc'    => 'svcnum from svc_domain for virtualdomain.com',
   },
+  'svc_forward' => {
+    'srcsvc'    => 'service from which mail is to be forwarded',
+    'dstsvc'    => 'service to which mail is to be forwarded',
+    'dst'       => 'someone@another.domain.com to use when dstsvc is 0',
+  },
   'svc_charge' => {
     'amount'    => 'amount',
   },
@@ -135,7 +141,7 @@ my %defs = (
 
 #  svc_acct svc_domain svc_acct_sm svc_charge svc_wo
 foreach my $svcdb ( qw(
-  konq_kludge svc_acct svc_domain svc_acct_sm svc_www
+  konq_kludge svc_acct svc_domain svc_acct_sm svc_forward svc_www
 ) ) {
 
   my(@rows)=map { /^${svcdb}__(.*)$/; $1 }
