@@ -208,7 +208,12 @@ sub ldap_queue {
 sub ldap_insert { #subroutine, not method
   my $ldap = ldap_connect(shift, (my $dn = shift), shift);
   my( $username_attrib, %attrib ) = @_;
+
   $dn = "$username_attrib=$attrib{$username_attrib}, $dn" if $username_attrib;
+  #icky hack, but should be unsurprising to the LDAPers
+  foreach my $key ( grep { $attrib{$_} =~ /,/ } keys %attrib ) {
+    $attrib{$key} = [ split(/,/, $attrib{$key}) ]; 
+  }
 
   my $status = $ldap->add( $dn, attrs => [ %attrib ] );
   die $status->error if $status->is_error;
