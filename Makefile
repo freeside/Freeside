@@ -187,7 +187,7 @@ create-config: install-perl-modules
 configure-rt:
 	cd rt; \
 	cp config.layout.in config.layout; \
-	perl -p -i -e \"
+	perl -p -i -e "\
 	  s/%%%FREESIDE_DOCUMENT_ROOT%%%/${FREESIDE_DOCUMENT_ROOT}/g;\
 	" config.layout
 	./configure --with-layout=Freeside\
