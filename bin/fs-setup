@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: fs-setup,v 1.36 2001-04-15 12:56:31 ivan Exp $
+# $Id: fs-setup,v 1.37 2001-06-03 14:16:11 ivan Exp $
 #
 # ivan@sisd.com 97-nov-8,9
 #
@@ -32,7 +32,10 @@
 # fix radius attributes ivan@sisd.com 98-sep-27
 #
 # $Log: fs-setup,v $
-# Revision 1.36  2001-04-15 12:56:31  ivan
+# Revision 1.37  2001-06-03 14:16:11  ivan
+# allow empty refund reasons
+#
+# Revision 1.36  2001/04/15 12:56:31  ivan
 # s/dbdef/DBIx::DBSchema/
 #
 # Revision 1.35  2001/04/15 09:36:43  ivan
@@ -422,7 +425,7 @@ sub tables_hash_hack {
         '_date',    @date_type,
         'amount',   @money_type,
         'otaker',   'varchar', '', 8,
-        'reason',   'varchar', '', 255,
+        'reason',   'varchar', 'NULL', 255,
       ],
       'primary_key' => 'crednum',
       'unique' => [ [] ],
