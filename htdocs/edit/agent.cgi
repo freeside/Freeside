@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: agent.cgi,v 1.6 1999-01-25 12:09:50 ivan Exp $
+# $Id: agent.cgi,v 1.7 1999-04-07 11:27:50 ivan Exp $
 #
 # ivan@sisd.com 97-dec-12
 #
@@ -11,7 +11,10 @@
 # use FS::CGI, added inline documentation ivan@sisd.com 98-jul-12
 #
 # $Log: agent.cgi,v $
-# Revision 1.6  1999-01-25 12:09:50  ivan
+# Revision 1.7  1999-04-07 11:27:50  ivan
+# avoid perl's silly arguement not numeric error
+#
+# Revision 1.6  1999/01/25 12:09:50  ivan
 # yet more mod_perl stuff
 #
 # Revision 1.5  1999/01/19 05:13:31  ivan
@@ -81,7 +84,7 @@ END
 foreach $agent_type (qsearch('agent_type',{})) {
   print "<OPTION VALUE=". $agent_type->typenum;
   print " SELECTED"
-    if $hashref->{typenum} == $agent_type->getfield('typenum');
+    if $hashref->{typenum} && ( $hashref->{typenum} == $agent_type->typenum );
   print ">", $agent_type->getfield('typenum'), ": ",
         $agent_type->getfield('atype'),"\n";
 }
