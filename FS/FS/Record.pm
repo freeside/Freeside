@@ -739,7 +739,7 @@ sub ut_phonen {
     $self->setfield($field,$phonen);
   } else {
     warn "don't know how to check phone numbers for country $country";
-    return $self->ut_alphan($field);
+    return $self->ut_textn($field);
   }
   '';
 }
@@ -949,7 +949,7 @@ sub DESTROY { return; }
 
 =head1 VERSION
 
-$Id: Record.pm,v 1.22 2001-08-17 11:28:03 ivan Exp $
+$Id: Record.pm,v 1.23 2001-08-17 11:33:17 ivan Exp $
 
 =head1 BUGS
 
