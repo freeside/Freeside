@@ -11,7 +11,7 @@ $limit .= "LIMIT $maxrecords" if $maxrecords;
 my $offset = $cgi->param('offset') || 0;
 $limit .= " OFFSET $offset" if $offset;
 
-my $total;
+my($total, $tot_amount, $tot_balance);
 
 my(@cust_bill);
 if ( $cgi->keywords ) {
