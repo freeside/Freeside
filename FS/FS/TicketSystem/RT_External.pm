@@ -1,7 +1,8 @@
 package FS::TicketSystem::RT_External;
 
 use strict;
-use vars qw( $conf $priority_field $priority_field_queue $field );
+use vars qw( $conf $default_queueid
+             $priority_field $priority_field_queue $field );
 use FS::UID;
 
 install_callback FS::UID sub { 
