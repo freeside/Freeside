@@ -1,10 +1,28 @@
-$Id: TODO,v 1.51 2000-10-15 12:58:25 ivan Exp $
+$Id: TODO,v 1.52 2000-10-27 20:15:50 ivan Exp $
 
 If you are interested in helping with any of these, please join the
 *development* mailing list (send a blank message to
 ivan-freeside-devel-subscribe@sisd.com) to avoid duplication of effort.
 
 ---
+
+> 1. A Web Form to the user get his account added automatically . The
+> /etc/raddb/users and /etc/passwd would be updated automatically (these
+> file are on the same machine Freeside is). I guess the the Add
+> Customer
+> page with some customization could be the work.
+> 2. A Canceling Account Web Form available to user cancel his account   
+> at
+> any time he wants.
+> 3. A Password Changing Web Form where the user could change your
+> password by sending your username, old and new password.
+> 4. Additional POP Accounts Creation where the user supply only his
+> main
+> username/password (probably provided from a PPP Account already
+> created)
+> and his POP username/password for this specific account.
+(actually need something more general i guess - probably need some way to say
+which accounts (svc_acct) can log in and make changes per customer (cust_main) )
 
 this is awfully vauge, perhaps email for more info?  don't want to alientate
 someone with accounting experience, but i just don't have time right now.

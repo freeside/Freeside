@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: fs-setup,v 1.26 2000-07-06 08:57:27 ivan Exp $
+# $Id: fs-setup,v 1.27 2000-10-27 20:15:50 ivan Exp $
 #
 # ivan@sisd.com 97-nov-8,9
 #
@@ -32,7 +32,10 @@
 # fix radius attributes ivan@sisd.com 98-sep-27
 #
 # $Log: fs-setup,v $
-# Revision 1.26  2000-07-06 08:57:27  ivan
+# Revision 1.27  2000-10-27 20:15:50  ivan
+# session monitor
+#
+# Revision 1.26  2000/07/06 08:57:27  ivan
 # support for radius check attributes (except importing).  poorly documented.
 #
 # Revision 1.25  2000/06/29 12:00:49  ivan
@@ -728,6 +731,49 @@ sub tables_hash_hack {
       'primary_key' => 'prepaynum',
       'unique'      => [ ['identifier'] ],
       'index'       => [ [] ],
+    },
+
+    'port' => {
+      'columns' => [
+        'portnum',  'int',     '',   '',
+        'ip',       'varchar', NULL, 15,
+        'nasport'   'int',     NULL, '',
+        'nasnum',   'int',     '',   '',
+      ],
+      'primary_key' => 'portnum',
+      'unique'      => [],
+      'index'       => [],
+    },
+
+    'nas' => {
+      'columns' => [
+        'nasnum',   'int',     '',    '',
+        'nas',      'varchar', '',    $char_d,
+        'nasip',    'varchar', '',    15,
+        'nasfqdn',  'varchar', '',    $char_d,
+#        'last',     'timestamp', NULL, '',
+#change to above when move to DBIx::DBSchema!!!
+        'last',     'datetime', NULL, '',
+      ],
+      'primary_key' => 'nasnum',
+      'unique'      => [ [ 'nas' ], [ 'nasip' ] ],
+      'index'       => [ [ 'last' ] ],
+    },
+
+    'session' => {
+      'columns' => [
+        'sessionnum', 'int',       '',   '',
+        'portnum',    'int',       '',   '',
+        'svcnum',     'int',       '',   '',
+#        'login',      'timestamp', '',   '',
+#        'logout',     'timestamp', '',   '',
+#change to above when move to DBIx::DBSchema!!!
+        'login',      'datetime',  '',   '',
+        'logout',     'datetime',  NULL, '',
+      ],
+      'primary_key' => 'sessionnum',
+      'unique'      => [],
+      'index'       => [ [ 'portnum' ] ],
     },
 
   );

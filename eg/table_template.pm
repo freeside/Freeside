@@ -100,7 +100,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: table_template.pm,v 1.1 1999-08-04 08:03:03 ivan Exp $
+$Id: table_template.pm,v 1.2 2000-10-27 20:15:50 ivan Exp $
 
 =head1 BUGS
 
@@ -109,27 +109,6 @@ The author forgot to customize this manpage.
 =head1 SEE ALSO
 
 L<FS::Record>, schema.html from the base documentation.
-
-=head1 HISTORY
-
-ivan@voicenet.com 97-jul-1
-
-added hfields
-ivan@sisd.com 97-nov-13
-
-$Log: table_template.pm,v $
-Revision 1.1  1999-08-04 08:03:03  ivan
-move table subclass examples out of production directory
-
-Revision 1.4  1998/12/29 11:59:57  ivan
-mostly properly OO, some work still to be done with svc_ stuff
-
-Revision 1.3  1998/11/15 04:33:00  ivan
-updates for newest versoin
-
-Revision 1.2  1998/11/15 03:48:49  ivan
-update for current version
-
 
 =cut
 

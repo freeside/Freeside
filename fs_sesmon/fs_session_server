@@ -1,0 +1,53 @@
+#!/usr/bin/perl -Tw
+#
+# fs_session_server
+#
+
+use strict;
+use vars qw( $opt $Debug );
+use IO::Handle;
+use Net::SSH qw(sshopen3)
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw( qsearch qsearchs );
+#use FS::cust_main_county;
+#use FS::cust_main;
+use FS::session;
+
+#require "configfile";
+$Debug = 1;
+
+my $user = shift or die &usage;
+&adminsuidsetup( $user ); 
+
+my $machine = shift or die &usage;
+
+my $fs_sessiond = "/usr/local/sbin/fs_sessiond";
+
+my $me = "[fs_session_server]";
+
+while (1) {
+  my($reader, $writer) = (new IO::Handle, new IO::Handle);
+  $writer->autoflush(1);
+  warn "$me Connecting to $machine\n" if $Debug;
+  sshopen2($machine,$reader,$writer,$fs_signupd);
+
+  warn "$me Entering main loop\n" if $Debug;
+  while (1) {
+    warn "$me Reading (waiting for) data\n" if $Debug;
+    my $command = scalar(<$reader));
+    #DoS protection here too, to protect against a compromised client?  *sigh*
+    while ( ( my $key = scalar(<$reader>) ) != "END\n" ) {
+      chomp $key;
+      chomp( $hash{$key} = scalar(<$reader>) );
+    }
+
+    if ( $command eq 'login' ) {
+
+    } elsif ( $command eq 'logoff' ) {
+
+    } elsif ( $command eq 'portnum' ) {
+
+    } else {
+      warn "$me WARNING: unrecognized command";
+    }
+

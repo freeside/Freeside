@@ -1,0 +1,9 @@
+Changes
+MANIFEST
+MANIFEST.SKIP
+Makefile.PL
+SessionClient.pm
+test.pl
+fs_sessiond
+cgi/logon.cgi
+cgi/logoff.cgi

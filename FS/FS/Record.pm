@@ -723,6 +723,54 @@ sub ut_phonen {
   '';
 }
 
+=item ut_ip COLUMN
+
+Check/untaint ip addresses.  IPv4 only for now.
+
+=cut
+
+sub ut_ip {
+  my( $self, $field ) = @_;
+  $self->getfield($field) =~ /^(\d+)\.(\d+)\.(\d+)\.(\d+)$/;
+    or return "Illegal (IP address) $field: ". $self->getfield($field);
+  for ( $1 $2 $3 $4 ) { return "Illegal (IP address) $field" if $_ > 255; };
+  $self->$setfield($field, "$1.$2.$3.$3");
+  '';
+}
+
+=item ut_ipn COLUMN
+
+Check/untaint ip addresses.  IPv4 only for now.  May be null.
+
+=cut
+
+sub ut_ipn {
+  my( $self, $field ) = @_;
+  if ( $self->getfield($field) =~ /^()$/ ) {
+    $self->setfield($field,'');
+    '';
+  } else {
+    $self->ut_ip($field);
+  }
+}
+
+=item ut_domain COLUMN
+
+Check/untaint host and domain names.
+
+=cut
+
+sub ut_domain {
+  my( $self, $field ) = @_;
+  #$self->getfield($field) =~/^(\w+\.)*\w+$/
+  $self->getfield($field) =~/^(\w+\.)*\w+$/
+    or return "Illegal (domain) $field: ". $self->getfield($field);
+  $self->setfield($field,$1);
+  '';
+}
+
+=cut
+
 =item ut_anything COLUMN
 
 Untaints arbitrary data.  Be careful.
@@ -847,7 +895,7 @@ sub hfields {
 
 =head1 VERSION
 
-$Id: Record.pm,v 1.7 2000-06-27 12:15:37 ivan Exp $
+$Id: Record.pm,v 1.8 2000-10-27 20:15:50 ivan Exp $
 
 =head1 BUGS
 
