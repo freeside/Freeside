@@ -242,7 +242,7 @@
 ) { %>
   <TR>
     <% foreach my $field ( keys %fields ) { %>
-      <TD ALIGN="right">
+      <TD ALIGN="<%= $fields{$field}->{align} %>">
         <%= &{ $fields{$field}->{fmt} }( $session->{$field},
                                          $session,
                                          $part_export,
