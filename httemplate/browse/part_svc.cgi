@@ -8,7 +8,9 @@ if ( $cgi->param('showdisabled') ) {
   %search = ( 'disabled' => '' );
 }
 
-my @part_svc = qsearch('part_svc', \%search );
+my @part_svc =
+  sort { $a->getfield('svcpart') <=> $b->getfield('svcpart') }
+    qsearch('part_svc', \%search );
 my $total = scalar(@part_svc);
 
 %>
@@ -38,9 +40,7 @@ function part_export_areyousure(href) {
     <TH COLSPAN=2>Modifier</TH>
   </TR>
 
-<% foreach my $part_svc ( sort {
-     $a->getfield('svcpart') <=> $b->getfield('svcpart')
-   } @part_svc ) {
+<% foreach my $part_svc ( @part_svc ) {
      my $hashref = $part_svc->hashref;
      my $svcdb = $hashref->{svcdb};
      my @dfields = fields($svcdb);
@@ -96,7 +96,14 @@ map { qsearchs('part_export', { exportnum => $_->exportnum } ) } qsearch('export
 <% } %>
 
   <TR>
-    <TD COLSPAN=<%= $cgi->param('showdisabled') ? 7 : 8 %>><A HREF="<%= $p %>edit/part_svc.cgi"><I>Add a new service definition</I></A></TD>
+    <TD COLSPAN=<%= $cgi->param('showdisabled') ? 7 : 8 %>>
+      <FORM METHOD="POST" ACTION="<%= $p %>edit/part_svc.cgi"><A HREF="<%= $p %>edit/part_svc.cgi"><I>Add a new service definition</I></A>&nbsp;or&nbsp;<SELECT NAME="clone"><OPTION></OPTION>
+<% foreach my $part_svc ( @part_svc ) { %>
+  <OPTION VALUE="<%= $part_svc->svcpart %>"><%= $part_svc->svc %></OPTION>
+<% } %>
+      </SELECT><INPUT TYPE="submit" VALUE="Clone existing service">
+      </FORM>
+    </TD>
   </TR>
 </TABLE>
 </BODY>

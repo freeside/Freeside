@@ -1,10 +1,17 @@
 <!-- mason kludge -->
 <% 
    my $part_svc;
+   my $clone = '';
    if ( $cgi->param('error') ) { #error
      $part_svc = new FS::part_svc ( {
        map { $_, scalar($cgi->param($_)) } fields('part_svc')
      } );
+   } elsif ( $cgi->param('clone') && $cgi->param('clone') =~ /^(\d+)$/ ) {#clone
+     #$cgi->param('clone') =~ /^(\d+)$/ or die "malformed query: $query";
+     $part_svc = qsearchs('part_svc', { 'svcpart'=>$1 } )
+       or die "unknown svcpart: $1";
+     $clone = $part_svc->svcpart;
+     $part_svc->svcpart('');
    } elsif ( $cgi->keywords ) { #edit
      my($query) = $cgi->keywords;
      $query =~ /^(\d+)$/ or die "malformed query: $query";
@@ -146,8 +153,8 @@ my %defs = (
                  ' NAME="exportnum'. $part_export->exportnum. '"  VALUE="1" ';
         $html .= 'CHECKED'
           if qsearchs( 'export_svc', {
-                                       exportnum => $part_export->exportnum,
-                                       svcpart   => $part_svc->svcpart       });
+                                   exportnum => $part_export->exportnum,
+                                   svcpart   => $clone || $part_svc->svcpart });
         $html .= '> '. $part_export->exporttype. ' to '. $part_export->machine.
                  '</TD>';
         $count++;
@@ -161,6 +168,7 @@ my %defs = (
                       ? grep { $_ ne 'svcnum' } fields($layer)
                       : ();
       push @fields, 'usergroup' if $layer eq 'svc_acct'; #kludge
+      $part_svc->svcpart($clone) if $clone; #haha, undone below
       foreach my $field (@fields) {
         my $part_svc_column = $part_svc->part_svc_column($field);
         my $value = $cgi->param('error')
@@ -206,6 +214,7 @@ my %defs = (
         }
         $html .= "</TD></TR>\n";
       }
+      $part_svc->svcpart('') if $clone; #undone
       $html .= "</TABLE>";
 
       $html .= '<BR><INPUT TYPE="submit" VALUE="'.
