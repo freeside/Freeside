@@ -72,6 +72,7 @@ if (0) {
 END
 
   my(%saw, $cust_pay);
+  my $tot_amount = 0;
   foreach my $cust_pay (
     sort $sortby grep(!$saw{$_->paynum}++, @cust_pay)
   ) {
@@ -83,6 +84,7 @@ END
       sprintf("%.2f", $cust_pay->paid),
       $cust_pay->_date,
     );
+    $tot_amount += $amount;
     my $pdate = time2str("%b&nbsp;%d&nbsp;%Y", $date);
 
     my $rowspan = 1;
@@ -127,7 +129,11 @@ END
 
     print "</TR>";
   }
-  print <<END;
+
+  $tot_amount = sprintf("%.2f", $tot_amount);
+  print '</TABLE><BR>'. table(). <<END;
+      <TR><TD>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TD><TH>Total<BR>Amount</TH></TR>
+      <TR><TD><TD ALIGN="right">\$$tot_amount</TD></TR>
     </TABLE>
   </BODY>
 </HTML>
