@@ -15,7 +15,7 @@ use FS::Conf;
 
 @ISA = qw(Exporter);
 @EXPORT_OK = qw(checkeuid checkruid swapuid cgisuidsetup
-                adminsuidsetup getotaker dbh datasrc);
+                adminsuidsetup getotaker dbh datasrc getsecrets );
 
 $freeside_uid = scalar(getpwnam('freeside'));
 
@@ -241,7 +241,7 @@ coderef into the hash %FS::UID::callback :
 
 =head1 VERSION
 
-$Id: UID.pm,v 1.10 1999-04-12 22:41:09 ivan Exp $
+$Id: UID.pm,v 1.11 1999-04-14 07:58:39 ivan Exp $
 
 =head1 BUGS
 
@@ -287,7 +287,10 @@ inlined suidsetup
 ivan@sisd.com 98-sep-12
 
 $Log: UID.pm,v $
-Revision 1.10  1999-04-12 22:41:09  ivan
+Revision 1.11  1999-04-14 07:58:39  ivan
+export getsecrets from FS::UID instead of calling it explicitly
+
+Revision 1.10  1999/04/12 22:41:09  ivan
 bugfix; $user is a global (yuck)
 
 Revision 1.9  1999/04/12 21:09:39  ivan
