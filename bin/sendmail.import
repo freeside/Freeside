@@ -4,7 +4,7 @@ use strict;
 use Term::Query qw(query);
 use Net::SCP qw(iscp);
 use FS::UID qw(adminsuidsetup datasrc);
-use FS::Record qw(qsearch); #qsearchs);
+use FS::Record qw(qsearch qsearchs);
 ##use FS::svc_acct_sm;
 #use FS::svc_domain;
 #use FS::domain_record;
@@ -22,9 +22,9 @@ adminsuidsetup $user;
 use vars qw($defaultdomain);
 $defaultdomain = 'surferz.net';
 
-use vars qw($svcpart $domain_svcpart);
+use vars qw($svcpart $forward_svcpart);
 $svcpart = 2;
-$domain_svcpart = 1;
+$forward_svcpart = 4;
 
 use vars qw($spooldir);
 $spooldir = "/usr/local/etc/freeside/export.". datasrc. "/sendmail";
@@ -37,11 +37,12 @@ END
 my($aliases)=&getvalue(":");
 
 use vars qw($aliases_machine $aliases_prefix);
-$alises_machine = (split(/:/, $aliases))[0];
+$aliases_machine = (split(/:/, $aliases))[0];
 $aliases_prefix = "$spooldir/$aliases_machine";
 mkdir $aliases_prefix unless -d $aliases_prefix;
 
-iscp("root\@$aliases","$aliases_prefix/aliases.import");
+#iscp("root\@$aliases","$aliases_prefix/aliases.import");
+iscp("ivan\@$aliases","$aliases_prefix/aliases.import");
 
 print "\n\n", <<END;
 Enter the location and name of your Sendmail virtusertable directory, for example
@@ -51,11 +52,13 @@ my($virtusertable)=&getvalue(":");
 
 use vars qw($virtusertable_machine $virtusertable_prefix);
 $virtusertable_machine = (split(/:/, $virtusertable))[0];
-$prefix = "$spooldir/$aliases_machine";
-mkdir $prefix unless -d $prefix;
-mkdir "$prefix/virtusertable.import" unless -d "$prefix/virtusertable.import";
+$virtusertable_prefix = "$spooldir/$virtusertable_machine";
+mkdir $virtusertable_prefix unless -d $virtusertable_prefix;
+mkdir "$virtusertable_prefix/virtusertable.import"
+  unless -d "$virtusertable_prefix/virtusertable.import";
 
-iscp("root\@$virtusertable/*","$aliases_prefix/virtusertable.import/");
+#iscp("root\@$virtusertable/*","$aliases_prefix/virtusertable.import/");
+iscp("ivan\@$virtusertable/*","$aliases_prefix/virtusertable.import/");
 
 sub getvalue {
   my $prompt = shift;
@@ -69,87 +72,99 @@ print "\n\n";
 
 ##
 
-#!! handle all files
+foreach my $file ( 
+  "$aliases_prefix/aliases.import",
+  glob("$aliases_prefix/virtusertable.import/*"),
+) {
 
-open(ALIASES,"<$aliases_prefix/aliases.import") or die $!;
-while (<ALIASES>) {
-  next if /^\s*#/ || /^\s*$/; #skip comments & blank lines
+  warn "importing $file\n";
+  
+  open(FILE,"<$file") or die $!;
+  while (<FILE>) {
+    next if /^\s*#/ || /^\s*$/; #skip comments & blank lines
+  
+    unless ( /^([\w\@\.\-]+)[:\s]\s*(.*\S)\s*$/ ) {
+      warn "Unparsable line: $_";
+      next;
+    }
+    my($rawusername, $rawdest) = ($1, $2);
+  
+    my($username, $domain);
+    if ( $rawusername =~ /^([\w\-\.\&]*)\@([\w\.\-]+)$/ ) {
+      $username = $1;
+      $domain = $2;
+    } elsif ( $rawusername =~ /\@/ ) {
+      die "Unparsable username: $rawusername\n";
+    } else {
+      $username = $rawusername;
+      $domain = $defaultdomain;
+    }
+  
+    #find svc_acct record or set $src
+    my($srcsvc, $src) = &svcnum_or_literal($username, $domain);
 
-  #!! handle catchalls!!!
+    foreach my $dest ( split(/,/, $rawdest) ) {
 
-  unless ( /^([\w\@\.]+):\s*()\s*$/ ) {
-    warn "Unparsable line: $_";
-    next;
-  }
-  my($rawusername, $rawdest) = ($1, $2)
+      my($dusername, $ddomain);
+      if ( $dest =~ /^([\w\-\.\&]+)\@([\w\.\-]+)$/ ) {
+        $dusername = $1;
+        $ddomain = $2;          
+      } elsif ( $dest =~ /\@/ ) {
+        die "Unparsable username: $dest\n";
+      } else {                 
+        $dusername = $dest;
+        $ddomain = $defaultdomain;
+      }
+      my($dstsvc, $dst) = &svcnum_or_literal($dusername, $ddomain);
 
-  my($username, $domain);
-  if ( $rawusername =~ /^(\w+)\@([\w\.]+)$/ ) {
-    $username = $1;
-    $domain = $2;
-  } elsif ( $rawusername =~ /\@/ ) {
-    die "Unparsable username: $rawusername\n";
-  } else {
-    $username = $rawusername;
-    $domain = $defaultdomain;
-  }
+      my $svc_forward = new FS::svc_forward ({
+        svcpart => $forward_svcpart,
+        srcsvc => $srcsvc,
+        src    => $src,
+        dstsvc => $dstsvc,
+        dst    => $dst,
+      });
+      my $error = $svc_forward->insert;
+      #my $error = $svc_forward->check;
+      if ( $error ) {
+        die "$rawusername: $rawdest: $error\n";
+      }
+    }
 
-  #find or create svc_acct record
+
+  } #next entry
+
+} #next file
+  
+##
+
+sub svcnum_or_literal {
+  my($username, $domain) = @_;
+
+  my $svc_domain = qsearchs('svc_domain', { 'domain' => $domain } );
+  my $domsvc = $svc_domain ? $svc_domain->svcnum : '';
 
   my @svc_acct = grep { $_->cust_svc->svcpart == $svcpart }
                    qsearch('svc_acct', {
                      'username' => $username,
-                     'domain'   => $domain,
+                     'domsvc'   => $domsvc,
                    });
 
   if ( scalar(@svc_acct) > 1 ) {
     die "multiple sources found for $username\@$domain !\n";
   }
 
-  my $svc_acct;
+  my( $svcnum, $literal ) = ('', '');
   if ( @svc_acct ) {
-    $svc_acct = $svc_acct[0];
+    my $svc_acct = $svc_acct[0];
+    $svcnum = $svc_acct->svcnum;
   } else {
-
-    my $svc_domain = qsearchs('svc_domain', { 'domain' => $domain } );
-    $svc_domain ||= new FS::svc_domain ({
-      'svcpart' => $domain_svcpart,
-      'domain'  => $domain,
-    });
-    unless ( $svc_domain->svcnum ) {
-      my $error = $svc_domain->insert;
-      if ( $error ) {
-        die "can't insert domain: $domain\n";
-      }
-    }
-
-    $svc_acct = new FS::svc_acct ({
-      svcpart => $svcpart,
-      username => $username,
-      domsvc   => $svc_domain->svcnum,
-    });
-    my $error = $svc_acct->insert;
-    if ( $error ) {
-      die "can't insert account: $username\@$domain\n";
-    }
-
+    $literal = "$username\@$domain";
   }
 
-  #!!handle multiple destinations!
-
-  my $svc_forward = new FS::svc_forward ({
-    srcsvc => $svc_acct->srcsvc,
-    dstsvc => 
-    dst    =>
-  });
-  my $error = $svc_forward->insert;
-  if ( $error ) {
-    die "$rawusername: $rawdest: $error\n";
-  }
+  return( $svcnum, $literal );
 
 }
-
-##
 
 sub usage {
   die "Usage:\n\n  sendmail.import user\n";
