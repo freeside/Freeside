@@ -78,6 +78,12 @@ htmlman:
 	[ -e ./httemplate/docs/man/FS/UI ] || mkdir httemplate/docs/man/FS/UI
 	[ -e DONT_REBUILD_DOCS ] || bin/pod2x
 
+forcehtmlman:
+	[ -e ./httemplate/docs/man ] || mkdir httemplate/docs/man
+	[ -e ./httemplate/docs/man/bin ] || mkdir httemplate/docs/man/bin
+	[ -e ./httemplate/docs/man/FS ] || mkdir httemplate/docs/man/FS
+	[ -e ./httemplate/docs/man/FS/UI ] || mkdir httemplate/docs/man/FS/UI
+	bin/pod2x
 
 install-docs: docs
 	[ -e ${FREESIDE_DOCUMENT_ROOT} ] && mv ${FREESIDE_DOCUMENT_ROOT} ${FREESIDE_DOCUMENT_ROOT}.`date +%Y%m%d%H%M%S` || true
@@ -151,7 +157,7 @@ clean:
 
 #these are probably only useful if you're me...
 
-upload-docs:
+upload-docs: forcehtmlman
 	ssh cleanwhisker.420.am rm -rf /var/www/www.sisd.com/freeside/devdocs
 	scp -pr httemplate/docs cleanwhisker.420.am:/var/www/www.sisd.com/freeside/devdocs
 
