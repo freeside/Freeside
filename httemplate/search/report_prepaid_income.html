@@ -9,7 +9,29 @@
   <BODY BGCOLOR="#e8e8e8">
     <H1>Prepaid Income (Unearned Revenue) Report</H1>
     <FORM ACTION="report_prepaid_income.cgi" METHOD="post">
-    Prepaid income (unearned revenue) as of <INPUT TYPE="text" NAME="date" VALUE="now">
+    <TABLE>
+      <TR>
+        <TD>Prepaid income (unearned revenue) as of </TD>
+        <TD>
+          <INPUT TYPE="text" NAME="date" ID="date_text" VALUE="now">
+          <IMG SRC="../images/calendar.png" ID="date_button" STYLE="cursor: pointer" TITLE="Select date">
+        </TD>
+      </TR>
+      <TR>
+        <TD>
+        </TD>
+        <TD><i>m/d/y</i></TD>
+      </TR>
+    </TABLE>
+<SCRIPT TYPE="text/javascript">
+  Calendar.setup({
+    inputField: "date_text",
+    ifFormat:   "%m/%d/%Y",
+    button:     "date_button",
+    align:      "BR"
+  });
+</SCRIPT>
+
     <INPUT TYPE="submit" VALUE="Generate report">
   </BODY>
 </HTML>

@@ -5,11 +5,13 @@
 
   #needs to be re-written in sql for efficiency
 
-  my $now = $cgi->param('date') && str2time($cgi->param('date')) || time;
+  my $time = time;
+
+  my $now = $cgi->param('date') && str2time($cgi->param('date')) || $time;
   $now =~ /^(\d+)$/ or die "unparsable date?";
   $now = $1;
 
-  my %prepaid;
+  my( $total, $total_legacy ) = ( 0, 0 );
 
   my @cust_bill_pkg =
     grep { $_->cust_pkg && $_->cust_pkg->part_pkg->freq !~ /^([01]|\d+[dw])$/ }
@@ -18,58 +20,67 @@
                                   'edate' => { op=>'>', value=>$now },
                                 }, );
 
-  foreach my $cust_bill_pkg ( @cust_bill_pkg ) {
+  my @cust_pkg = 
+    grep { $_->part_pkg->recur != 0
+           && $_->part_pkg->freq !~ /^([01]|\d+[dw])$/
+         }
+      qsearch ( 'cust_pkg', {
+                              'bill' => { op=>'>', value=>$now }
+                            } );
 
-    #conceptual false laziness w/texas tax exempt_amount stuff in
-    #FS::cust_main::bill
+  foreach my $cust_bill_pkg ( @cust_bill_pkg) { 
+    my $period = $cust_bill_pkg->edate - $cust_bill_pkg->sdate;
 
-    my $freq = $cust_bill_pkg->cust_pkg->part_pkg->freq;
-    my $per_month = sprintf("%.2f", $cust_bill_pkg->recur / $freq);
+    my $elapsed = $now - $cust_bill_pkg->sdate;
+    $elapsed = 0 if $elapsed < 0;
 
-    my($mon, $year) = (localtime($cust_bill_pkg->sdate) )[4,5];
-    $mon+=2; $year+=1900;
+    my $remaining = 1 - $elapsed/$period;
 
-    foreach my $which_month ( 2 .. $freq ) {
-      until ( $mon < 13 ) { $mon -= 12; $year++; }
-      $prepaid{"$year-$mon"} += $per_month;
-      $mon++;
-    }
+    my $unearned = $remaining * $cust_bill_pkg->recur;
+    $total += $unearned;
 
   }
 
-  my @mon = qw(Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec);
+  foreach my $cust_pkg ( @cust_pkg ) {
+    my $period = $cust_pkg->bill - $cust_pkg->last_bill;
+
+    my $elapsed = $now - $cust_pkg->last_bill;
+    $elapsed = 0 if $elapsed < 0;
+
+    my $remaining = 1 - $elapsed/$period;
+
+    my $unearned = $remaining * $cust_pkg->part_pkg->recur; #!! only works for flat/legacy
+    $total_legacy += $unearned;
+
+  }
+
+  $total = sprintf('%.2f', $total);
+  $total_legacy = sprintf('%.2f', $total_legacy);
 
 %>
 
 <%= header( 'Prepaid Income (Unearned Revenue) Report',
             menubar( 'Main Menu'=>$p, ) )               %>
 <%= table() %>
-<%
+  <TR>
+    <TH>Actual Unearned Revenue</TH>
+    <TH>Legacy Unearned Revenue</TH>
+  </TR>
+  <TR>
+    <TD ALIGN="right">$<%= $total %>
+    <TD ALIGN="right">
+      <%= $now == $time ? "\$$total_legacy" : '<i>N/A</i>'%>
+    </TD>
+  </TR>
 
-  my $total = 0;
-
-  my ($now_mon, $now_year) = (localtime($now))[4,5];
-  $now_mon+=2; $now_year+=1900;
-  until ( $now_mon < 13 ) { $now_mon -= 12; $now_year++; }
-
-  my $subseq = 0;
-  for my $year ( $now_year .. 2037 ) {
-    for my $mon ( ( $subseq++ ? 1 : $now_mon ) .. 12 ) {
-      if ( $prepaid{"$year-$mon"} ) {
-        $total += $prepaid{"$year-$mon"};
-        %> <TR><TD ALIGN="right"><%= $mon[$mon-1]. ' '. $year %></TD>
-               <TD ALIGN="right">
-                 <%= sprintf("%.2f", $prepaid{"$year-$mon"} ) %>
-               </TD>
-           </TR>
-        <%
-      }
-    }
-
-  }
-
-%>
-<TR><TH>Total</TH><TD ALIGN="right"><%= sprintf("%.2f", $total) %></TD></TR>
 </TABLE>
+<BR>
+Actual unearned revenue is the amount of unearned revenue Freeside has  
+actually invoiced for packages with longer-than monthly terms.
+<BR><BR>
+Legacy unearned revenue is the amount of unearned revenue represented by 
+customer packages.  This number may be larger than actual unearned 
+revenue if you have imported longer-than monthly customer packages from
+a previous billing system.
 </BODY>
 </HTML>
