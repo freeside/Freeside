@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 #
-# $Id: svc_acct.export,v 1.29 2002-02-12 02:11:07 ivan Exp $
+# $Id: svc_acct.export,v 1.30 2002-02-12 18:37:43 ivan Exp $
 #
 # Create and export password, radius and vpopmail password files:
 # passwd, passwd.adjunct, shadow, acp_passwd, acp_userinfo, acp_dialup
@@ -289,7 +289,7 @@ foreach $svc_domain (sort {$a->domain cmp $b->domain} @svc_domain) {
       $username=$svc_acct->username . $svc_domain->domain;
     } elsif ($userpolicy =~ /^append domain$/) {
       $username=$svc_acct->username . $svc_domain->domain;
-    } elsif ($userpolicy =~ /^append @domain$/) {
+    } elsif ($userpolicy =~ /^append \@domain$/) {
       $username=$svc_acct->username . '@'. $svc_domain->domain;
     } else {
       die "Unknown policy in username_policy\n";
