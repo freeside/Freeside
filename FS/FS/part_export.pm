@@ -514,6 +514,20 @@ sub exporttype2svcdb {
   '';
 }
 
+tie my %sysvshell_options, 'Tie::IxHash',
+  'crypt' => { label=>'Password encryption',
+               type=>'select', options=>[qw(crypt md5)],
+               default=>'crypt',
+             },
+;
+
+tie my %bsdshell_options, 'Tie::IxHash', 
+  'crypt' => { label=>'Password encryption',
+               type=>'select', options=>[qw(crypt md5)],
+               default=>'crypt',
+             },
+;
+
 tie my %shellcommands_options, 'Tie::IxHash',
   #'machine' => { label=>'Remote machine' },
   'user' => { label=>'Remote username', default=>'root' },
@@ -599,12 +613,16 @@ tie my %sqlmail_options, 'Tie::IxHash',
     'sysvshell' => {
       'desc' =>
         'Batch export of /etc/passwd and /etc/shadow files (Linux/SysV)',
-      'options' => {},
+      'options' => \%sysvshell_options,
+      'nodomain' => 'Y',
+      'notes' => 'MD5 crypt requires installation of <a href="http://search.cpan.org/search?dist=Crypt-PasswdMD5">Crypt::PasswdMD5</a> from CPAN.',
     },
     'bsdshell' => {
       'desc' =>
         'Batch export of /etc/passwd and /etc/master.passwd files (BSD)',
-      'options' => {},
+      'options' => \%bsdshell_options,
+      'nodomain' => 'Y',
+      'notes' => 'MD5 crypt requires installation of <a href="http://search.cpan.org/search?dist=Crypt-PasswdMD5">Crypt::PasswdMD5</a> from CPAN.',
     },
 #    'nis' => {
 #      'desc' =>
@@ -614,6 +632,7 @@ tie my %sqlmail_options, 'Tie::IxHash',
     'textradius' => {
       'desc' => 'Batch export of a text /etc/raddb/users file (Livingston, Cistron)',
       'options' => {},
+      'notes' => 'unfinished...',
     },
 
     'shellcommands' => {
@@ -634,8 +653,7 @@ tie my %sqlmail_options, 'Tie::IxHash',
       'desc' => 'Real-time export to SQL-backed mail server',
       'options' => \%sqlmail_options,
       'nodomain' => 'Y',
-      'notes' => 'Database schema can be made to work with Courier IMAP and
- Exim.  Others could work but are untested.',
+      'notes' => 'Database schema can be made to work with Courier IMAP and Exim.  Others could work but are untested.',
     },
 
     'cyrus' => {

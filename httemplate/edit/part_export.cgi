@@ -45,15 +45,30 @@ my $widget = new HTML::Widgets::SelectLayers(
       if $layer;
 
     foreach my $option ( keys %{$exports->{$layer}{options}} ) {
-#    foreach my $option ( qw(url login password groupID ) ) {
       my $optinfo = $exports->{$layer}{options}{$option};
       my $label = $optinfo->{label};
+      my $type = defined($optinfo->{type}) ? $optinfo->{type} : 'text';
       my $value = $cgi->param($option)
                   || $part_export->option($option)
                   || (exists $optinfo->{default} ? $optinfo->{default} : '');
-      $html .= qq!<TR><TD ALIGN="right">$label</TD>!.
-               qq!<TD><INPUT TYPE="text" NAME="$option" VALUE="$value" SIZE=64></TD>!.
-               '</TR>';
+      $html .= qq!<TR><TD ALIGN="right">$label</TD><TD>!;
+      if ( $type eq 'select' ) {
+        $html .= qq!<SELECT NAME="$option">!;
+        foreach my $select_option ( @{$optinfo->{options}} ) {
+          #if ( ref($select_option) ) {
+          #} else {
+            $selected = $select_option eq $value ? ' SELECTED' : '';
+            $html .= qq!<OPTION VALUE="$select_option"$selected>!.
+                     qq!$select_option</OPTION>!;
+          #}
+        }
+        $html .= '</SELECT>';
+      } elsif ( $type eq 'text' ) {
+        $html .= qq!<INPUT TYPE="text" NAME="$option" VALUE="$value" SIZE=64>!;
+      } else {
+        $html .= "unknown type $type";
+      }
+      $html .= '</TD></TR>';
     }
     $html .= '</TABLE>';
 
