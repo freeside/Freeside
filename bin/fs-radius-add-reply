@@ -15,7 +15,7 @@ my $dbh = adminsuidsetup $user;
 ###
 
 print "\n\n", <<END, ":";
-Enter the additional RADIUS attributes you need to track for
+Enter the additional RADIUS reply attributes you need to track for
 each user, separated by whitespace.
 END
 my @attributes = map { s/\-/_/g; $_; } split(" ",&getvalue);

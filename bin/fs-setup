@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: fs-setup,v 1.25 2000-06-29 12:00:49 ivan Exp $
+# $Id: fs-setup,v 1.26 2000-07-06 08:57:27 ivan Exp $
 #
 # ivan@sisd.com 97-nov-8,9
 #
@@ -32,7 +32,10 @@
 # fix radius attributes ivan@sisd.com 98-sep-27
 #
 # $Log: fs-setup,v $
-# Revision 1.25  2000-06-29 12:00:49  ivan
+# Revision 1.26  2000-07-06 08:57:27  ivan
+# support for radius check attributes (except importing).  poorly documented.
+#
+# Revision 1.25  2000/06/29 12:00:49  ivan
 # support for pre-encrypted md5 passwords.
 #
 # Revision 1.24  2000/03/02 07:44:07  ivan
@@ -127,9 +130,16 @@ print "\nEnter the maximum username length: ";
 my($username_len)=&getvalue;
 
 print "\n\n", <<END, ":";
-Freeside tracks the RADIUS attributes User-Name, Password and Framed-IP-Address
-for each user.  Enter any additional RADIUS attributes you need to track for
-each user, separated by whitespace.
+Freeside tracks the RADIUS attributes User-Name, check attribute Password and
+reply attribute Framed-IP-Address for each user.  You can specify additional
+check and reply attributes.  First enter any additional RADIUS check attributes
+you need to track for each user, separated by whitespace.
+END
+my @check_attributes = map { s/\-/_/g; $_; } split(" ",&getvalue);
+
+print "\n\n", <<END, ":";
+Now enter any additional reply attributes you need to track for each user,
+separated by whitespace.
 END
 my @attributes = map { s/\-/_/g; $_; } split(" ",&getvalue);
 
@@ -180,6 +190,15 @@ my($attribute);
 foreach $attribute (@attributes) {
   $svc_acct->addcolumn ( new FS::dbdef_column (
     'radius_'. $attribute,
+    'varchar',
+    'NULL',
+    $char_d,
+  ));
+}
+
+foreach $attribute (@check_attributes) {
+  $svc_acct->addcolumn( new FS::dbdef_column (
+    'rc_'. $attribute,
     'varchar',
     'NULL',
     $char_d,

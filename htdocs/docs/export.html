@@ -12,7 +12,7 @@ it is reccommended that you replicate the data to an external RADIUS machine rat
         <li>nismachines - <b>passwd</b> and <b>shadow</b> are copied to the <b>/etc/global</b> directory on the remote machine.  If no errors occur, the command <b>( cd /var/yp; make; )</b> is executed on the remote machine.
         <li>erpcdmachines - <b>acp_passwd</b> and <b>acp_dialup</b> are copied to the <b>/usr/annex</b> directory on the remote machine.  If no errors occur, the command <b>( kill -USR1 `cat /usr/annex/erpcd.pid` )</b> is executed on the remote machine. 
         <li>radiusmachines - <b>users</b> is copied to the <b>/etc/raddb</b> directory on the remote machine.  If no errors occur, the command <b>( builddbm )</b> is executed on the remote machine.
-        <li>icradiusmachines - A local radcheck file will be created.  If any machines are specified, the remote MySQL database will be locked and the radcheck table will be copied to the those machines.  You may also need to set the icradius_mysqlsource and/or icradius_mysqldest <a href="config.html">configuration files</a>.
+        <li>icradiusmachines - Local radcheck and radreply tables will be created.  If any machines are specified, the remote MySQL database will be locked and the radcheck table will be copied to the those machines.  You may also need to set the icradius_mysqlsource and/or icradius_mysqldest <a href="config.html">configuration files</a>.  Currently you need to be running MySQL for your Freeside database to use this feature.
       </ul>
     <li>site_perl/svc_acct.pm - If a shellmachine is defined, users can be created, modified and deleted remotely; see below.
       <ul>

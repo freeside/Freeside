@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 #
-# $Id: svc_acct.export,v 1.14 2000-06-29 15:01:25 ivan Exp $
+# $Id: svc_acct.export,v 1.15 2000-07-06 08:57:28 ivan Exp $
 #
 # Create and export password files: passwd, passwd.adjunct, shadow,
 # acp_passwd, acp_userinfo, acp_dialup, users
@@ -38,7 +38,10 @@
 # ivan@sisd.com 98-sep-18
 # 
 # $Log: svc_acct.export,v $
-# Revision 1.14  2000-06-29 15:01:25  ivan
+# Revision 1.15  2000-07-06 08:57:28  ivan
+# support for radius check attributes (except importing).  poorly documented.
+#
+# Revision 1.14  2000/06/29 15:01:25  ivan
 # another silly typo in svc_acct.export
 #
 # Revision 1.13  2000/06/28 12:37:28  ivan
@@ -240,16 +243,24 @@ foreach $svc_acct (@svc_acct) {
       print ACP_DIALUP $svc_acct->username, "\t*\t", $svc_acct->slipip, "\n";
     }
 
-    my %radius = $svc_acct->radius;
+    my %radreply = $svc_acct->radius_reply;
+    my %radcheck = $svc_acct->radius_check;
+
+    my $radcheck = join ", ", map { qq($_ = "$radcheck{$_}") } keys %radcheck;
+    $radcheck .= ", " if $radcheck;
 
     ###
     # FORMAT OF THE USERS FILE HERE
     print USERS
-      $svc_acct->username, qq(\t${textradiusprepend}Password = "$rpassword"\n\t),
-      join ",\n\t", map { qq($_ = "$radius{$_}") } keys %radius;
+      $svc_acct->username,
+      qq(\t${textradiusprepend}),
+      $radcheck,
+      qq(Password = "$rpassword"\n\t),
+      join ",\n\t", map { qq($_ = "$radreply{$_}") } keys %radreply;
     
     if ( $ip && $ip ne '0e0' ) {
-      print USERS qq(,\n\tFramed-Address = "$ip"\n\n);
+      #print USERS qq(,\n\tFramed-Address = "$ip"\n\n);
+      print USERS qq(,\n\tFramed-IP-Address = "$ip"\n\n);
     } else {
       print USERS qq(\n\n);
     }
@@ -257,6 +268,7 @@ foreach $svc_acct (@svc_acct) {
     ###
     # ICRADIUS export
     if ( $icradiusmachines ) {
+
       my $sth = $icradius_dbh->prepare(
         "INSERT INTO radcheck ( id, UserName, Attribute, Value ) VALUES ( ".
         join(", ", map { $icradius_dbh->quote( $_ ) } (
@@ -268,14 +280,27 @@ foreach $svc_acct (@svc_acct) {
       );
       $sth->execute or die "Can't insert into radcheck table: ". $sth->errstr;
 
-      foreach my $attribute ( keys %radius ) {
+      foreach my $attribute ( keys %radcheck ) {
+        my $sth = $icradius_dbh->prepare(
+          "INSERT INTO radcheck ( id, UserName, Attribute, Value ) VALUES ( ".
+          join(", ", map { $icradius_dbh->quote( $_ ) } (
+            '',
+            $svc_acct->username,
+            $attribute
+            $radcheck{$attribute},
+          ) ). " )"
+        );
+        $sth->execute or die "Can't insert into radcheck table: ". $sth->errstr;
+      }
+
+      foreach my $attribute ( keys %radreply ) {
         my $sth = $icradius_dbh->prepare(
           "INSERT INTO radreply (id, UserName, Attribute, Value) VALUES ( ".
           join(", ", map { $icradius_dbh->quote( $_ ) } (
             '',
             $svc_acct->username,
             $attribute,
-            $radius{$attribute},
+            $radreply{$attribute},
           ) ). " )"
         );
         $sth->execute or die "Can't insert into radreply table: ". $sth->errstr;

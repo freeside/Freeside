@@ -4,6 +4,7 @@ use strict;
 use vars qw( @ISA $nossh_hack $conf $dir_prefix @shells $usernamemin
              $usernamemax $passwordmin
              $shellmachine @saltset @pw_set);
+use Carp;
 use FS::Conf;
 use FS::Record qw( qsearchs fields );
 use FS::svc_Common;
@@ -449,8 +450,19 @@ sub check {
 
 =item radius
 
+Depriciated, use radius_reply instead.
+
+=cut
+
+sub radius {
+  carp "FS::svc_acct::radius depriciated, use radius_reply";
+  $_[0]->radius_reply;
+}
+
+=item radius_reply
+
 Returns key/value pairs, suitable for assigning to a hash, for any RADIUS
-attributes of this record.
+reply attributes of this record.
 
 Note that this is now the preferred method for reading RADIUS attributes - 
 accessing the columns directly is discouraged, as the column names are
@@ -458,7 +470,7 @@ expected to change in the future.
 
 =cut
 
-sub radius { 
+sub radius_reply { 
   my $self = shift;
   map {
     /^(radius_(.*))$/;
@@ -468,11 +480,29 @@ sub radius {
   } grep { /^radius_/ && $self->getfield($_) } fields( $self->table );
 }
 
+=item radius_check
+
+Returns key/value pairs, suitable for assigning to a hash, for any RADIUS
+check attributes of this record.
+
+Accessing RADIUS attributes directly is not supported and will break in the
+future.
+
 =back
+
+sub radius_check {
+  my $self = shift;
+  map {
+    /^(rc_(.*))$/;
+    my($column, $attrib) = ($1, $2);
+    $attrib =~ s/_/\-/g;
+    ( $attrib, $self->getfield($column) );
+  } grep { /^rc_/ && $self->getfield($_) } fields( $self->table );
+}
 
 =head1 VERSION
 
-$Id: svc_acct.pm,v 1.8 2000-07-04 13:42:37 ivan Exp $
+$Id: svc_acct.pm,v 1.9 2000-07-06 08:57:27 ivan Exp $
 
 =head1 BUGS
 
