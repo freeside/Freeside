@@ -38,9 +38,14 @@ freeside-logout username ( portnum | ip | nasnum nasport )</pre>
       <li><i>username</i> is a customer username from the svc_acct table
       <li><i>portnum</i>, <i>ip</i> or <i>nasport</i> and <i>nasnum</i> uniquely identify a port in the <a href="schema.html#port">port</a> database table.
     </ul>
-  <li>RADIUS
+  <li>RADIUS - One of:
     <ul>
+      <li>Run the <b>freeside-sqlradius-radacctd</b> daemon to import radacct
+        records from all configured sqlradius exports:
+          <tt>freeside-sqlradius-radacctd username</tt>
       <li>Configure your RADIUS server's login and logout callbacks to use the command-line <tt>freeside-login</tt> and <tt>freeside-logout</tt> utilites.
+      <li> <i>(incomplete)</i>Use the <b>fs_radlog/fs_radlogd</b> tool to
+        import records from a text radacct file.
     </ul>
 </ul>
 <h2>Callbacks</h2>
