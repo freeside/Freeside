@@ -20,8 +20,13 @@ if ($pkgnum) {
 }
 #eofalse
 
+my $usersvc = $svc_www->usersvc;
+my $svc_acct = qsearchs('svc_acct', { 'svcnum' => $usersvc } )
+  or die "svc_www: Unknown usersvc $usersvc";
+my $email = $svc_acct->email;
+
 my $domain_record = qsearchs('domain_record', { 'recnum' => $svc_www->recnum } )
-  or die "svc_www: Unknown recnum". $svc_www->recnum;
+  or die "svc_www: Unknown recnum ". $svc_www->recnum;
 
 my $www = $domain_record->reczone;
 unless ( $www =~ /\.$/ ) {
@@ -45,6 +50,8 @@ print header('Website View', menubar(
         qq!<TD BGCOLOR="#ffffff">$svcnum</TD></TR>!.
       qq!<TR><TD ALIGN="right">Website name</TD>!.
         qq!<TD BGCOLOR="#ffffff"><A HREF="http://$www">$www<A></TD></TR>!.
+      qq!<TR><TD ALIGN="right">Account</TD>!.
+        qq!<TD BGCOLOR="#ffffff"><A HREF="${p}view/svc_acct.cgi?$usersvc">$email</A></TD></TR>!.
       '</TABLE></TD></TR></TABLE>'.
       '<BR>'. joblisting({'svcnum'=>$svcnum}, 1).
       '</BODY></HTML>'
