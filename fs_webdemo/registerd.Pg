@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 #
-# $Id: registerd.Pg,v 1.10 2001-09-30 07:55:52 ivan Exp $
+# $Id: registerd.Pg,v 1.11 2001-10-24 15:29:30 ivan Exp $
 
 use strict;
 use vars qw(
@@ -131,15 +131,15 @@ while ( 1 ) {
     print LPR "mail $email";
     close LPR;
 
-    open(FROM, ">${freeside_conf}conf.DBI:Pg:host=localhost;dbname=demo_$username/registries/internic/from")
-      or die "Can\'t open ${freeside_conf}conf.DBI:Pg:host=localhost;dbname=demo_$username/registries/internic/from: $!";
-    print FROM "$email\n";
-    close FROM;
-
-    open(TO, ">${freeside_conf}conf.DBI:Pg:host=localhost;dbname=demo_$username/registries/internic/to")
-      or die "Can\'t open ${freeside_conf}conf.DBI:Pg:host=localhost;dbname=demo_$username/registries/internic/to: $!";
-    print TO "$email\n";
-    close TO;
+#    open(FROM, ">${freeside_conf}conf.DBI:Pg:host=localhost;dbname=demo_$username/registries/internic/from")
+#      or die "Can\'t open ${freeside_conf}conf.DBI:Pg:host=localhost;dbname=demo_$username/registries/internic/from: $!";
+#    print FROM "$email\n";
+#    close FROM;
+#
+#    open(TO, ">${freeside_conf}conf.DBI:Pg:host=localhost;dbname=demo_$username/registries/internic/to")
+#      or die "Can\'t open ${freeside_conf}conf.DBI:Pg:host=localhost;dbname=demo_$username/registries/internic/to: $!";
+#    print TO "$email\n";
+#    close TO;
 
     open(SECRETS, ">${freeside_conf}secrets.demo_$username")
       or die "Can\'t open ${freeside_conf}secrets.demo_$username: $!";

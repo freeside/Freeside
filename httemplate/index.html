@@ -5,22 +5,18 @@
     </TITLE>
   </HEAD>
   <BODY BGCOLOR="#FFFFFF">
-  <table>
+  <table width="100%">
     <tr><td>
-    <P ALIGN=CENTER>
         <IMG BORDER=0 ALT="Silicon Interactive Software Design" SRC="images/small-logo.png">
     </td><td>
-      <center><font color="#ff0000" size=7>freeside main menu</font></center>
+      <font color="#ff0000" size=7>freeside main menu</font>
+    </td><td align=right valign=bottom>
+      version 1.4.0
+      <BR><A HREF="http://www.sisd.com/freeside">Freeside home page</A>
+      <BR><A HREF="docs/">Documentation</A>
     </td></tr>
   </table>
-      <A HREF="http://www.sisd.com/freeside">
-        Freeside home page
-      </A>
-      <BR><A HREF="docs/">
-        Documentation
-      </A>
-    </P>
-    <HR>
+    <hr noshade>
     <ul>
       <li><A HREF="edit/cust_main.cgi">New Customer</A>
       <li><A NAME="search">Search</A>
@@ -29,7 +25,8 @@
         <LI><A HREF="search/cust_main-payinfo.html">customers (by credit card number)</A>
         <LI><A HREF="search/svc_acct.html">accounts (by username)</A>
         <LI><A HREF="search/svc_domain.html">domains (by domain)</A>
-        <LI><A HREF="search/svc_acct_sm.html">mail aliases (by domain, and optionally username)</A>
+<!--        <LI><A HREF="search/svc_acct_sm.html">mail aliases (by domain, and optionally username)</A>-->
+        <LI><A HREF="search/svc_forward.html">mail forwards (by ?)</A>
         <LI><A HREF="search/cust_bill.html">invoices (by invoice number)</A>
         </ul>
       <li><A NAME="browse">Browse</A>
@@ -52,16 +49,22 @@
           <LI>services
             <UL>
               <LI>accounts (<A HREF="search/svc_acct.cgi?svcnum">by service number</A>) (<A HREF="search/svc_acct.cgi?username">by username</A>) (<A HREF="search/svc_acct.cgi?uid">by uid</A>)
+              <LI>mail forwards (<A HREF="search/svc_forward.cgi?svcnum">by service number</A>) (by ?))
               <LI>domains (<A HREF="search/svc_domain.cgi?svcnum">by service number</A>) (<A HREF="search/svc_domain.cgi?domain">by domain</A>)
             </UL>
           <LI>unlinked services
             <UL>
               <LI>unlinked accounts (<A HREF="search/svc_acct.cgi?UN_svcnum">by service number</A>) (<A HREF="search/svc_acct.cgi?UN_username">by username</A>) (<A HREF="search/svc_acct.cgi?UN_uid">by uid</A>)
+              <LI>unlinked mail forwards (<A HREF="search/svc_forward.cgi?UN_svcnum">by service number</A>) (by ?))
               <LI>unlinked domains (<A HREF="search/svc_domain.cgi?UN_svcnum">by service number</A>) (<A HREF="search/svc_domain.cgi?UN_domain">by domain</A>)
             </UL>
           <LI><A HREF="browse/nas.cgi">NAS ports</A>
           <LI><A HREF="browse/queue.cgi">Joe queue</A>
         </ul>
+    </ul>
+    <hr noshade>
+    <ul>
+      <li><A NAME="config" HREF="config/config-view.cgi">Configuration</a><!-- - <font size="+2" color="#ff0000">start here</font> -->
       <li><A NAME="admin">Administration</a>
         <ul>
           <LI><A HREF="browse/part_svc.cgi">View/Edit service definitions</A>

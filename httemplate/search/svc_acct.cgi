@@ -1,5 +1,5 @@
 <%
-# <!-- $Id: svc_acct.cgi,v 1.5 2001-09-11 20:44:08 ivan Exp $ -->
+# <!-- $Id: svc_acct.cgi,v 1.6 2001-10-24 15:29:31 ivan Exp $ -->
 
 use strict;
 use vars qw( $cgi @svc_acct $sortby $query $mydomain );
@@ -7,7 +7,7 @@ use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
 use FS::Record qw(qsearch qsearchs dbdef);
-use FS::CGI qw(header eidiot popurl table);
+use FS::CGI qw(header idiot popurl table);
 use FS::svc_acct;
 use FS::cust_main;
 
@@ -54,9 +54,9 @@ if ( $query eq 'svcnum' ) {
 if ( scalar(@svc_acct) == 1 ) {
   my($svcnum)=$svc_acct[0]->svcnum;
   print $cgi->redirect(popurl(2). "view/svc_acct.cgi?$svcnum");  #redirect
-  exit;
+  #exit;
 } elsif ( scalar(@svc_acct) == 0 ) { #error
-  eidiot("Account not found");
+  idiot("Account not found");
 } else {
   my($total)=scalar(@svc_acct);
   print $cgi->header( '-expires' => 'now' ),

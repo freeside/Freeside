@@ -26,100 +26,10 @@ DBI:Pg:host=localhost;dbname=freeside
 dbusername
 dbpassword
 </pre>
-</ul>
-All further configuration files and directories are located in
-<tt>/usr/local/etc/freeside/conf.<i>datasource</i></tt>, for example, 
-<tt>/usr/local/etc/freeside/conf.DBI:Pg:host=localhost;dbname=freeside</tt> (remember to backslash-escape the ; character when creating directories in the shell: <tt>mkdir&nbsp;/usr/local/etc/freeside/conf.DBI:Pg:host=localhost\;dbname=freeside</tt>).  Files listed in <font color="#ff0000">red</font> are requried.
-<ul>
-  <li><a name="address">address</a> - This configuration file is no longer used.  See <a href="#invoice_template">invoice_template</a> instead.
-  <li><a name="apacheroot">apacheroot</a> - The directory containing Apache virtual hosts
-  <li><a name="apachemachine">apachemachine</a> - A machine with the apacheroot directory and user home directories.  The existance of this file enables setup of virtual host directories, and, in conjunction with the `home' configuration file, symlinks into user home directories.
-  <li><a name="apachemachines">apachemachines</a> - Your Apache machines, one per line.  This enables export of `/etc/apache/vhosts.conf', which can be included in your Apache configuration via the <a href="http://www.apache.org/docs/mod/core.html#include">Include</a> directive.
-  <li><a name="bindprimary">bindprimary</a> - Your BIND primary nameserver.  This enables export of /var/named/named.conf and zone files into /var/named
-  <li><a name="bindsecondaries">bindsecondaries</a> - Your BIND secondary nameservers, one per line.  This enables export of /var/named/named.conf
-  <li><a name="business-onlinepayment">business-onlinepayment</a> - <a href="http://search.cpan.org/search?dist=Business-OnlinePayment">Business::OnlinePayment</a> support, at least three lines: processor, login, and password.  An optional fourth line specifies the action or actions (multiple actions are separated with `,': for example: `Authorization Only, Post Authorization').    Optional additional lines are passed to Business::OnlinePayment as %processor_options.
-  <li><a name="bsdshellmachines">bsdshellmachines</a> - Your BSD flavored shell (and mail) machines, one per line.  This enables export of `/etc/passwd' and `/etc/master.passwd'.
-  <li><a name="countrydefault">countrydefault</a> - Default two-letter country code (if not supplied, the default is `US')
-  <li>cybercash3.2 - <a href="http://www.cybercash.com/cybercash/services/technology.html">CyberCash v3.2</a> support.  Two lines: the full path and name of your merchant_conf file, and the transaction type (`mauthonly' or `mauthcapture').  CCMckLib3_2.pm, CCMckDirectLib3_2.pm and CCMckErrno3_2 are required.
-  <li>cyrus</li> - Integration with <a href="http://asg.web.cmu.edu/cyrus/imapd/">Cyrus IMAP Server</a>, three lines: IMAP server, admin username, and admin password.  Cyrus::IMAP::Admin should be installed locally and the connection to the server secured.
-  <li><a name="deletecustomers">deletecustomers</a> - The existance of this file will enable customer deletions.  Be very careful!  Deleting a customer will remove all traces that this customer ever existed!  It should probably only be used when auditing a legacy database.  Normally, you cancel all of a customers' packages if they cancel service.
-  <li><a name="dirhash">dirhash</a> - Optional numeric value to control director hashing.  If positive, hashes directories for the specified number of levels from the front of the username.  If negative, hashes directories for the specified number of levels from the end of the username.  Some examples:
-    <ul>
-      <li>1: user -> <a href="#home">/home</a>/u/user
-      <li>2: user -> <a href="#home">/home</a>/u/s/user
-      <li>-1: user -> <a href="#home">/home</a>/r/user
-      <li>-2: user -> <a href="#home">home</a>/r/e/user
-    </ul>
-  <li><a name="disable_customer_referrals">disable_customer_referrals</a> - The existance of this file will disable new customer-to-customer referrals in the web interface.
-  <li><a name="domain"><font color="#ff0000">domain</font></a> - Your domain name.
-  <li><a name="editreferrals">editreferrals</a> - The existance of this file will allow you to change the referral of existing customers.
-  <li><a name="emailinvoiceonly">emailinvoiceonly</a> - Disables postal mail invoices.
-  <li><a name="emailinvoiceauto">emailinvoiceauto</a> - Automatically adds new accounts to the email invoice list upon customer creation.
-  <li><a name="erpcdmachines">erpcdmachines</a> - Your ERPCD authenticaion machines, one per line.  This enables export of `/usr/annex/acp_passwd' and `/usr/annex/acp_dialup'.
-  <li><a name="hidecancelledpackages">hidecancelledpackages</a> - The existance of this file will prevent cancelled packages from showing up in listings (though they will still be in the database)
-  <li><a name="hidecancelledcustomers">hidecancelledcustomers</a> - The existance of this file will prevent customers with only cancelled packages from showing up in listings (though they will still be in the database)
-  <li><a name="home"><font color="#ff0000">home</font></a> - For new users, prefixed to usrename to create a directory name.  Should have a leading but not a trailing slash.
-  <li><a name="icradiusmachines">icradiusmachines</a> - Your <a href="ftp://ftp.cheapnet.net/pub/icradius">ICRADIUS</a> machines, one per line.  The existance of this file (even if empty) turns on radcheck table creation (in the freeside database - the radcheck table needs to be created manually).  Machines listed in this file will have the radcheck table exported to them.  Each line of this file should contain four items, separted by whitespace: machine name, MySQL database name, MySQL username, and MySQL password.  For example: "<CODE>radius.isp.tld&nbsp;radius_db&nbsp;radius_user&nbsp;passw0rd</CODE>".  Note that to use ICRADIUS export you need to be using MySQL.
-  <li><a name="icradius_mysqldest">icradius_mysqldest</a> - Destination directory for the MySQL databases, on the ICRADIUS machines.  Defaults to "/usr/local/var/".
-  <li><a name="icradius_mysqlsource">icradius_mysqlsource</a> - Source directory for for the MySQL radcheck table files, on the Freeside machine.  Defaults to "/usr/local/var/freeside".
-  <li><a name="icradius_secrets">icradius_secrets</a> - Optionally specifies a MySQL database for ICRADIUS export, if you're not running MySQL for your Freeside database.  The database should be on the Freeside machine and store data in the <a href="#icradius_mysqlsource">icradius_mysqlsource</a> directory.  Three lines: DBI data source, username and password.  This file should not be world readable.
-  <li><a name="invoice_from"><font color="#ff0000">invoice_from</font></a> - Return address on email invoices.
-  <li><a name="invoice_template"><font color="#ff0000">invoice_template</font></a> - Required template file for invoices.  See the <a href="billing.html">section on billing</a> for details.
-  <li><a name="lpr"><font color="#ff0000">lpr</font></a> - Print command for paper invoices, for example `lpr -h'.
-  <li><a name="maildisablecatchall">maildisablecatchall</a> - <b>DEPRECIATED</b>, now the default.  The existance of this file used to disable the requirement that each virtual domain have a catch-all mailbox.
-  <li><a name="money_char">money_char</a> - Currency symbol - defaults to `$'.
-  <li><a name="mxmachines">mxmachines</a> - MX entries for new domains, weight and machine, one per line, with trailing `.'
-  <li><a name="nsmachines">nsmachines</a> - NS nameservers for new domains, one per line, with trailing `.'
-  <li><a name="nismachines">nismachines</a> - Your NIS master (not slave master) machines, one per line.  This enables export of `/etc/global/passwd' and `/etc/global/shadow'.
-  <li><a name="passwordmin">passwordmin</a> - Minimum password length (default 6)
-  <li><a name="passwordmax">passwordmax</a> - Maximum password length (default 8) (don't set this over 12 if you need to import or export crypt() passwords)
-  <li><a name="qmailmachines">qmailmachines</a> - Your qmail machines, one per line.  This enables export of `/var/qmail/control/virtualdomains', `/var/qmail/control/recipientmap', and `/var/qmail/control/rcpthosts'.  The existance of this file (even if empty) also turns on user `.qmail-extension' file maintenance in conjunction with `shellmachine'.
-  <li><a name="radiusmachines">radiusmachines</a> - Your RADIUS authentication machines, one per line.  This enables export of `/etc/raddb/users'.
-  <li><a name="referraldefault">referraldefault</a> - Default referral, specified by refnum.
-  <li><a name="registries"><font color="#ff0000">registries</font></a> - Directory which contains domain registry information.  Each registry is a directory.
-    <ul>
-      <li>registries/internic - Currently the only supported registry
-        <ul>
-          <li>registries/internic/from - Email address from which InterNIC domain registrations are sent.
-          <li>regestries/internic/nameservers - The nameservers for InterNIC domain registrations, one per line.  Each line contains an IP address and hostname, separated by whitespace.
-          <li>registries/internic/tech_contact - Technical contact NIC handle for domain registrations.
-          <li>registries/internic/template - Template for InterNIC domain registrations with special markup.  A suitable copy of the InterNIC domain template v4.0 is in `fs-x.y.z/etc/domain-template.txt'.
-          <li>registries/internic/to - Email address to which InterNIC domain registrations are sent.
-        </ul>
-    </ul>
-  <li><a name="sendmailconfigpath">sendmailconfigpath</a> - Sendmail configuration file path - defaults to `/etc'.  Many newer distributions use `/etc/mail'.
-  <li><a name="sendmailmachines">sendmailmachines</a> - Your sendmail machines, one per line.  This enables export of `/etc/virtusertable' and `/etc/sendmail.cw'.
-  <li><a name="sendmailrestart">sendmailrestart</a> - If defined, the command which is run on sendmail machines after files are copied.
-  <li><a name="session-start">session-start</a> - If defined, the command which is executed on the Freeside machine when a session begins.  The contents of the file are treated as a double-quoted perl string, with the following variables available: <code>$ip</code>, <code>$nasip</code> and <code>$nasfqdn</code>, which are the IP address of the starting session, and the IP address and fully-qualified domain name of the NAS this session is on.
-  <li><a name="session-stop">session-stop</a> - If defined, the command which is executed on the Freeside machine when a session ends.  The contents of the file are treated as a double-quoted perl string, with the following variables available: <code>$ip</code>, <code>$nasip</code> and <code>$nasfqdn</code>, which are the IP address of the starting session, and the IP address and fully-qualified domain name of the NAS this session is on.
-  <li><a name="shellmachine">shellmachine</a> - A single machine with user home directories mounted.  This enables home directory creation, renaming and archiving/deletion.  In conjunction with `qmailmachines', it also enables `.qmail-extension' file maintenance.
-  <li><a name="shellmachine-useradd">shellmachine-useradd</a> - The command(s) to run on shellmachine when an account is created.  If this file does not exist, <code>useradd -d $dir -m -s $shell -u $uid $username</code> is the default.  If the file exists but is empty, <code>cp -pr /etc/skel $dir; chown -R $uid.$gid $dir</code> is the default instead.  Otherwise the contents of the file are treated as a double-quoted perl string, with the following variables available: <code>$username</code>, <code>$uid</code>, <code>$gid</code>, <code>$dir</code>, and <code>$shell</code>.
-  <li><a name="shellmachine-userdel">shellmachine-userdel</a> - The command(s) to run on shellmachine when an account is deleted.  If this file does not exist, <code>userdel $username</code> is the default.  If the file exists but is empty, <code>rm -rf $dir</code> is the default instead.  Otherwise the contents of the file are treated as a double-quoted perl string, with the following variables available: <code>$username</code> and <code>$dir</code>.
-  <li><a name="shellmachine-usermod">shellmachine-usermod</a> - The command(s) to run on shellmachine when an account is modified.  If this file does not exist or is empty, <code>[ -d $old_dir ] &amp;&amp; mv $old_dir $new_dir || ( chmod u+t $old_dir; mkdir $new_dir; cd $old_dir; find . -depth -print | cpio -pdm $new_dir; chmod u-t $new_dir; chown -R $uid.$gid $new_dir; rm -rf $old_dir )</code> is the default.  Otherwise the contents of the file are treated as a double-quoted perl string, with the following variables available: <code>$old_dir</code>, <code>$new_dir</code>, <code>$uid</code> and <code>$gid</code>.
-  <li><a name="shellmachines">shellmachines</a> - Your Linux and System V flavored shell (and mail) machines, one per line.  This enables export of `/etc/passwd' and `/etc/shadow' files.
-  <li><a name="shells"><font color="#ff0000">shells</font></a> - Legal shells (think /etc/shells).  You probably want to `cut -d: -f7 /etc/passwd | sort | uniq' initially so that importing doesn't fail with `Illegal shell' errors, then remove any special entries afterwords.  A blank line specifies that an empty shell is permitted.
-  <li><a name="showpasswords">showpasswords</a> - The existance of this file will allow unencrypted user passwords to be displayed.
-  <li><a name="signupurl">signupurl</a> - if you are using customer-to-customer referrals, and you enter the URL of your <a href="signup.html">signup server CGI</a>, the customer view screen will display a customized link to the signup server with the appropriate customer as referral.
-  <li><a name="smtpmachine"><font color="#ff0000">smtpmachine</font></a> - SMTP relay for Freeside's outgoing mail.
-  <li><a name="soadefaultttl">soadefaultttl</a> - SOA default TTL for new domains.
-  <li><a name="soaemail">soaemail</a> - SOA email for new domains, in BIND form (`.' instead of `@'), with trailing `.'
-  <li><a name="soaexpire">soaexpire</a> - SOA expire for new domains
-  <li><a name="soamachine">soamachine</a> - SOA machine for new domains, with trailing `.'
-  <li><a name="soarefresh">soarefresh</a> - SOA refresh for new domains
-  <li><a name="soaretry">soaretry</a> - SOA retry for new domains
-  <li><a name="statedefault">statedefault</a> - Default state or province (if not supplied, the default is `CA')
-  <li><a name="textradiusprepend">textradiusprepend</a> - <b>DEPRECIATED</b>, use RADIUS check attributes instead.  This option will be removed soon.  The contents of this file will be prepended to the first line of a user's RADIUS entry in text exports.
-  <li><a name="unsuspendauto">unsuspendauto</a> _ The existance of this file will enable the automatic unsuspension of suspended packages when a customer's balance due changes from positive to zero or negative as the result of a payment or credit.
-  <li><a name="usernamemin">usernamemin</a> - Minimum username length (default 2);
-  <li><a name="usernamemax">usernamemax</a> - Maximum username length (default is the size of the SQL column, probably specified when fs-setup was run)
-  <li><a name="username-ampersand">username-ampersand</a> - The existance of this file will allow the ampersand character (&amp;) in usernames.  Be careful when using this option in conjunction with <a href="#shellmachine-useradd">shellmachine-useradd</a> and other configuration options which execute shell commands, as the ampersand will be interpreted by the shell if not quoted.
-  <li><a name="username-letter">username-letter</a> - The existance of this file will turn on the requirement that usernames contain at least one letter.
-  <li><a name="username-letterfirst">username-letterfirst</a> - The existance of this file will turn on the requirement that usernames start with a letter.
-  <li><a name="username-noperiod">username-noperiod</a> - The existance of this file will disallow periods in usernames.
-  <li><a name="username-uppercase">username-uppercase</a> - The existance of this file will allow uppercase characters in username.
-   <li><a name="username_policy">username_policy</a> - This file controls the mechanism for preventing duplicate usernames in passwd/radius files exported from svc_accts.  This should be one of 'prepend domsvc' 'append domsvc' or 'append domain'
-   <li><a name="vpopmailmachines">vpopmailmachines</a> - Your vpopmail pop toasters, one per line.  Each line is of the form "machinename vpopdir vpopuid vpopgid".  For example: <code>poptoaster.domain.tld /home/vpopmail 508 508</code>  Note: vpopuid and vpopgid are values taken from the vpopmail machine's /etc/passwd
-
+<li>Create the <b>/usr/local/etc/freeside/conf.<i>datasource</i></b> directory, for example, <b>/usr/local/etc/freeside/conf.DBI:Pg:host=localhost;dbname=freeside</b> (remember to backslash-escape the ; character when creating directories in the shell:
+<pre>mkdir&nbsp;/usr/local/etc/freeside/conf.DBI:Pg:host=localhost\;dbname=freeside
+</pre>
+<li>The rest of the configuration can be done with the web interface.  Select <u>Configuration</u> from the main menu and update your configuration values.
 </ul>
 </body>
-
+</html>

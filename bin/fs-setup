@@ -1,13 +1,13 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: fs-setup,v 1.64 2001-10-23 18:15:06 ivan Exp $
+# $Id: fs-setup,v 1.65 2001-10-24 15:29:30 ivan Exp $
 
 #to delay loading dbdef until we're ready
 BEGIN { $FS::Record::setup_hack = 1; }
 
 use strict;
 use DBI;
-use DBIx::DBSchema 0.18;
+use DBIx::DBSchema 0.19;
 use DBIx::DBSchema::Table;
 use DBIx::DBSchema::Column;
 use DBIx::DBSchema::ColGroup::Unique;
@@ -30,14 +30,18 @@ my($dbdef_file) = "/usr/local/etc/freeside/dbdef.". datasrc;
 
 ###
 
-print "\nEnter the maximum username length: ";
-my($username_len)=&getvalue;
+#print "\nEnter the maximum username length: ";
+#my($username_len)=&getvalue;
+my $username_len = 32; #usernamemax config file
 
 print "\n\n", <<END, ":";
-Freeside tracks the RADIUS attributes User-Name, check attribute Password and
+Freeside tracks the RADIUS User-Name, check attribute Password and
 reply attribute Framed-IP-Address for each user.  You can specify additional
-check and reply attributes.  First enter any additional RADIUS check attributes
-you need to track for each user, separated by whitespace.
+check and reply attributes (or you can add them later with the
+fs-radius-add-check and fs-radius-add-reply programs).
+
+First enter any additional RADIUS check attributes you need to track for each 
+user, separated by whitespace.
 END
 my @check_attributes = map { $attrib2db{lc($_)} or die "unknown attribute $_"; }
                          split(" ",&getvalue);

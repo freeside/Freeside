@@ -11,6 +11,7 @@ fin/freeside-apply-credits
 FS.pm
 FS/CGI.pm
 FS/Conf.pm
+FS/ConfItem.pm
 FS/Record.pm
 FS/UI/Base.pm
 FS/UI/CGI.pm
@@ -61,6 +62,7 @@ t/agent_type.t
 t/CGI.t
 t/CGIwrapper.t
 t/Conf.t
+t/ConfItem.t
 t/cust_bill.t
 t/cust_bill_pay.t
 t/cust_bill_pkg.t

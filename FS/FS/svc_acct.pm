@@ -2,7 +2,8 @@ package FS::svc_acct;
 
 use strict;
 use vars qw( @ISA $nossh_hack $conf $dir_prefix @shells $usernamemin
-             $usernamemax $passwordmin $username_letter $username_letterfirst
+             $usernamemax $passwordmin $passwordmax
+             $username_ampersand $username_letter $username_letterfirst
              $username_noperiod $username_uppercase
              $shellmachine $useradd $usermod $userdel $mydomain
              $cyrus_server $cyrus_admin_user $cyrus_admin_pass
@@ -33,6 +34,7 @@ $FS::UID::callback{'FS::svc_acct'} = sub {
   $usernamemin = $conf->config('usernamemin') || 2;
   $usernamemax = $conf->config('usernamemax');
   $passwordmin = $conf->config('passwordmin') || 6;
+  $passwordmax = $conf->config('passwordmax') || 8;
   if ( $shellmachine ) {
     if ( $conf->exists('shellmachine-useradd') ) {
       $useradd = join("\n", $conf->config('shellmachine-useradd') )
@@ -58,6 +60,7 @@ $FS::UID::callback{'FS::svc_acct'} = sub {
   $username_letterfirst = $conf->exists('username-letterfirst');
   $username_noperiod = $conf->exists('username-noperiod');
   $username_uppercase = $conf->exists('username-uppercase');
+  $username_ampersand = $conf->exists('username-ampersand');
   $mydomain = $conf->config('domain');
   if ( $conf->exists('cyrus') ) {
     ($cyrus_server, $cyrus_admin_user, $cyrus_admin_pass) =
@@ -676,11 +679,11 @@ sub check {
 
   my $ulen = $usernamemax || $self->dbdef_table->column('username')->length;
   if ( $username_uppercase ) {
-    $recref->{username} =~ /^([a-z0-9_\-\.]{$usernamemin,$ulen})$/i
+    $recref->{username} =~ /^([a-z0-9_\-\.\&]{$usernamemin,$ulen})$/i
       or return "Illegal username: ". $recref->{username};
     $recref->{username} = $1;
   } else {
-    $recref->{username} =~ /^([a-z0-9_\-\.]{$usernamemin,$ulen})$/
+    $recref->{username} =~ /^([a-z0-9_\-\.\&]{$usernamemin,$ulen})$/
       or return "Illegal username: ". $recref->{username};
     $recref->{username} = $1;
   }
@@ -692,6 +695,9 @@ sub check {
   }
   if ( $username_noperiod ) {
     $recref->{username} =~ /\./ and return "Illegal username";
+  }
+  unless ( $username_ampersand ) {
+    $recref->{username} =~ /\&/ and return "Illegal username";
   }
 
   $recref->{popnum} =~ /^(\d*)$/ or return "Illegal popnum: ".$recref->{popnum};
@@ -720,10 +726,13 @@ sub check {
         or return "Illegal finger: ". $self->getfield('finger');
     $self->setfield('finger', $1);
 
-    $recref->{dir} =~ /^([\/\w\-\.]*)$/
+    $recref->{dir} =~ /^([\/\w\-\.\&]*)$/
       or return "Illegal directory";
     $recref->{dir} = $1;
-    return "Illegal directory" if $recref->{dir} =~ /\.\./; #no ..
+    return "Illegal directory"
+      if $recref->{dir} =~ /(^|\/)\.+(\/|$)/; #no .. component
+    return "Illegal directory"
+      if $recref->{dir} =~ /\&/ && ! $username_ampersand;
     unless ( $recref->{dir} ) {
       $recref->{dir} = $dir_prefix . '/';
       if ( $dirhash > 0 ) {
@@ -787,7 +796,7 @@ sub check {
     unless ( $recref->{_password} );
 
   #if ( $recref->{_password} =~ /^((\*SUSPENDED\* )?)([^\t\n]{4,16})$/ ) {
-  if ( $recref->{_password} =~ /^((\*SUSPENDED\* )?)([^\t\n]{$passwordmin,8})$/ ) {
+  if ( $recref->{_password} =~ /^((\*SUSPENDED\* )?)([^\t\n]{$passwordmin,$passwordmax})$/ ) {
     $recref->{_password} = $1.$3;
     #uncomment this to encrypt password immediately upon entry, or run
     #bin/crypt_pw in cron to give new users a window during which their
@@ -803,7 +812,8 @@ sub check {
   } elsif ( $recref->{_password} eq '!!' ) {
     $recref->{_password} = '!!';
   } else {
-    return "Illegal password";
+    #return "Illegal password";
+    return "Illegal password: ". $recref->{_password};
   }
 
   ''; #no error
@@ -921,7 +931,7 @@ sub ssh {
 
 =head1 VERSION
 
-$Id: svc_acct.pm,v 1.51 2001-10-22 14:48:28 ivan Exp $
+$Id: svc_acct.pm,v 1.52 2001-10-24 15:29:30 ivan Exp $
 
 =head1 BUGS
 

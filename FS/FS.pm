@@ -21,6 +21,8 @@ Freeside ISP billing software.  This includes:
 
 L<FS::Conf> - Freeside configuration values
 
+L<FS::ConfItem> - Freeside configuration option meta-data.
+
 L<FS::UID> - User class (not yet OO)
 
 L<FS::CGI> - Non OO-subroutines for the web interface.  This is
@@ -141,7 +143,7 @@ The main documentation is in htdocs/docs.
 
 =head1 VERSION
 
-$Id: FS.pm,v 1.9 2001-09-26 09:17:06 ivan Exp $
+$Id: FS.pm,v 1.10 2001-10-24 15:29:30 ivan Exp $
 
 =head1 SUPPORT
 

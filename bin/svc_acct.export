@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 #
-# $Id: svc_acct.export,v 1.25 2001-10-16 20:33:02 jeff Exp $
+# $Id: svc_acct.export,v 1.26 2001-10-24 15:29:30 ivan Exp $
 #
 # Create and export password, radius and vpopmail password files:
 # passwd, passwd.adjunct, shadow, acp_passwd, acp_userinfo, acp_dialup
@@ -254,7 +254,8 @@ foreach $svc_domain (sort {$a->domain cmp $b->domain} @svc_domain) {
   foreach $svc_acct (qsearch('svc_acct', {'domsvc' => $svc_domain->svcnum})) {
     my($password)=$svc_acct->getfield('_password');
     my($cpassword,$rpassword);
-    if ( ( length($password) <= 8 )
+    #if ( ( length($password) <= 8 )
+    if ( ( length($password) <= 12 )
          && ( $password ne '*' )
          && ( $password ne '!!' )
          && ( $password ne '' )

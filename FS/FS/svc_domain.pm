@@ -2,7 +2,6 @@ package FS::svc_domain;
 
 use strict;
 use vars qw( @ISA $whois_hack $conf $smtpmachine
-  $tech_contact $from $to @nameservers @nameserver_ips @template
   @mxmachines @nsmachines $soadefaultttl $soaemail $soaexpire $soamachine
   $soarefresh $soaretry $qshellmachine $nossh_hack
 );
@@ -28,23 +27,6 @@ $FS::UID::callback{'FS::domain'} = sub {
   $conf = new FS::Conf;
 
   $smtpmachine = $conf->config('smtpmachine');
-
-  my($internic)="/registries/internic";
-  $tech_contact = $conf->config("$internic/tech_contact");
-  $from = $conf->config("$internic/from");
-  $to = $conf->config("$internic/to");
-  my(@ns) = $conf->config("$internic/nameservers");
-  @nameservers=map {
-    /^\s*\d+\.\d+\.\d+\.\d+\s+([^\s]+)\s*$/
-      or die "Illegal line in $internic/nameservers";
-    $1;
-  } @ns;
-  @nameserver_ips=map {
-    /^\s*(\d+\.\d+\.\d+\.\d+)\s+([^\s]+)\s*$/
-      or die "Illegal line in $internic/nameservers!";
-    $1;
-  } @ns;
-  @template = map { $_. "\n" } $conf->config("$internic/template");
 
   @mxmachines    = $conf->config('mxmachines');
   @nsmachines    = $conf->config('nsmachines');
@@ -426,115 +408,15 @@ Submits a registration email for this domain.
 =cut
 
 sub submit_internic {
-  my $self = shift;
-
-  my $cust_pkg = qsearchs( 'cust_pkg', { 'pkgnum' => $self->pkgnum } );
-  return unless $cust_pkg;
-  my $cust_main = qsearchs( 'cust_main', { 'custnum' => $cust_pkg->custnum } );
-  return unless $cust_main;
-
-  my %subs = (
-    'action'       => $self->action,
-    'purpose'      => $self->purpose,
-    'domain'       => $self->domain,
-    'company'      => $cust_main->company 
-                        || $cust_main->getfield('first'). ' '.
-                           $cust_main->getfield('last')
-                      ,
-    'city'         => $cust_main->city,
-    'state'        => $cust_main->state,
-    'zip'          => $cust_main->zip,
-    'country'      => $cust_main->country,
-    'last'         => $cust_main->getfield('last'),
-    'first'        => $cust_main->getfield('first'),
-    'daytime'      => $cust_main->daytime,
-    'fax'          => $cust_main->fax,
-    'email'        => $self->email,
-    'tech_contact' => $tech_contact,
-    'primary'      => shift @nameservers,
-    'primary_ip'   => shift @nameserver_ips,
-  );
-
-  #yuck
-  my @xtemplate = @template;
-  my @body;
-  my $line;
-  OLOOP: while ( defined( $line = shift @xtemplate ) ) {
-
-    if ( $line =~ /^###LOOP###$/ ) {
-      my(@buffer);
-      LOADBUF: while ( defined( $line = shift @xtemplate ) ) {
-        last LOADBUF if ( $line =~ /^###ENDLOOP###$/ );
-        push @buffer, $line;
-      }
-      my %lubs = (
-        'address'      => $cust_main->address2 
-                            ? [ $cust_main->address1, $cust_main->address2 ]
-                            : [ $cust_main->address1 ]
-                          ,
-        'secondary'    => [ @nameservers ],
-        'secondary_ip' => [ @nameserver_ips ],
-      );
-      LOOP: while (1) {
-        my @xbuffer = @buffer;
-        SUBLOOP: while ( defined( $line = shift @xbuffer ) ) {
-          if ( $line =~ /###(\w+)###/ ) {
-            #last LOOP unless my($lub)=shift@{$lubs{$1}};
-            next OLOOP unless my $lub = shift @{$lubs{$1}};
-            $line =~ s/###(\w+)###/$lub/e;
-            redo SUBLOOP;
-          } else {
-            push @body, $line;
-          }
-        } #SUBLOOP
-      } #LOOP
-
-    }
-
-    if ( $line =~ /###(\w+)###/ ) {
-      #$line =~ s/###(\w+)###/$subs{$1}/eg;
-      $line =~ s/###(\w+)###/$subs{$1}/e;
-      redo OLOOP;
-    } else {
-      push @body, $line;
-    }
-
-  } #OLOOP
-
-  my $subject;
-  if ( $self->action eq "M" ) {
-    $subject = "MODIFY DOMAIN ". $self->domain;
-  } elsif ( $self->action eq "N" ) { 
-    $subject = "NEW DOMAIN ". $self->domain;
-  } else {
-    croak "submit_internic called with action ". $self->action;
-  }
-
-  $ENV{SMTPHOSTS} = $smtpmachine;
-  $ENV{MAILADDRESS} = $from;
-  my $header = Mail::Header->new( [
-    "From: $from",
-    "To: $to",
-    "Sender: $from",
-    "Reply-To: $from",
-    "Date: ". time2str("%a, %d %b %Y %X %z", time),
-    "Subject: $subject",
-  ] );
-
-  my($msg)=Mail::Internet->new(
-    'Header' => $header,
-    'Body' => \@body,
-  );
-
-  $msg->smtpsend or die "Can't send registration email"; #die? warn?
-
+  #my $self = shift;
+  carp "submit_internic depreciated";
 }
 
 =back
 
 =head1 VERSION
 
-$Id: svc_domain.pm,v 1.21 2001-10-22 12:22:03 ivan Exp $
+$Id: svc_domain.pm,v 1.22 2001-10-24 15:29:30 ivan Exp $
 
 =head1 BUGS
 
