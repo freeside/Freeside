@@ -7,6 +7,7 @@ use Exporter;
 use Carp qw(carp cluck croak confess);
 use File::CounterFile;
 use Locale::Country;
+use DBI qw(:sql_types);
 use DBIx::DBSchema 0.19;
 use FS::UID qw(dbh checkruid getotaker datasrc driver_name);
 use FS::SearchCache;
@@ -225,9 +226,26 @@ sub qsearch {
   my $sth = $dbh->prepare($statement)
     or croak "$dbh->errstr doing $statement";
 
-  $sth->execute( map $record->{$_},
+  my $bind = 1;
+
+  foreach my $field (
     grep defined( $record->{$_} ) && $record->{$_} ne '', @fields
-  ) or croak "Error executing \"$statement\": ". $sth->errstr;
+  ) {
+    if ( $record->{$field} =~ /^\d+(\.\d+)?$/
+         && $dbdef->table($table)->column($field)->type =~ /(int)/i
+    ) {
+      $sth->bind_param($bind++, $record->{$field}, SQL_INTEGER );
+    } else {
+      $sth->bind_param($bind++, $record->{$field}, SQL_VARCHAR );
+    }
+  }
+
+#  $sth->execute( map $record->{$_},
+#    grep defined( $record->{$_} ) && $record->{$_} ne '', @fields
+#  ) or croak "Error executing \"$statement\": ". $sth->errstr;
+
+  $sth->execute or croak "Error executing \"$statement\": ". $sth->errstr;
+
   $dbh->commit or croak $dbh->errstr if $FS::UID::AutoCommit;
 
   if ( eval 'scalar(@FS::'. $table. '::ISA);' ) {
