@@ -320,10 +320,10 @@ foreach my $aref (
 $dbh->commit or die $dbh->errstr;
 $dbh->disconnect or die $dbh->errstr;
 
-print "Freeside database initialized sucessfully\n";
+#print "Freeside database initialized sucessfully\n";
 
 sub usage {
-  die "Usage:\n  fs-setup user\n"; 
+  die "Usage:\n  freeside-setup [ -s ] user\n"; 
 }
 
 ###
