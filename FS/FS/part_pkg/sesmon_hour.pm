@@ -8,25 +8,29 @@ use FS::part_pkg;
 @ISA = qw(FS::part_pkg::flat);
 
 %info = (
-    'name' => 'Base charge plus charge per-hour from the session monitor',
-    'fields' => {
-      'setup_fee' => { 'name' => 'Setup fee for this package',
-                       'default' => 0,
-                     },
-      'recur_flat' => { 'name' => 'Base monthly charge for this package',
-                        'default' => 0,
-                      },
-      'recur_included_hours' => { 'name' => 'Hours included',
-                                  'default' => 0,
-                                },
-      'recur_hourly_charge' => { 'name' => 'Additional charge per hour',
-                                 'default' => 0,
-                               },
-    },
-    'fieldorder' => [ 'setup_fee', 'recur_flat', 'recur_included_hours', 'recur_hourly_charge' ],
-    #'setup' => 'what.setup_fee.value',
-    #'recur' => '\'my $hours = $cust_pkg->seconds_since($cust_pkg->bill || 0) / 3600 - \' + what.recur_included_hours.value + \'; $hours = 0 if $hours < 0; \' + what.recur_flat.value + \' + \' + what.recur_hourly_charge.value + \' * $hours;\'',
-    'weight' => 80,
+  'name' => 'Base charge plus charge per-hour from the session monitor',
+  'fields' => {
+    'setup_fee' => { 'name' => 'Setup fee for this package',
+                     'default' => 0,
+                   },
+    'recur_flat' => { 'name' => 'Base monthly charge for this package',
+                      'default' => 0,
+                    },
+    'unused_credit' => { 'name' => 'Credit the customer for the unused portion'.
+                                   ' of service at cancellation',
+                         'type' => 'checkbox',
+                       },
+    'recur_included_hours' => { 'name' => 'Hours included',
+                                'default' => 0,
+                              },
+    'recur_hourly_charge' => { 'name' => 'Additional charge per hour',
+                               'default' => 0,
+                             },
+  },
+  'fieldorder' => [ 'setup_fee', 'recur_flat', 'unused_credit', 'recur_included_hours', 'recur_hourly_charge' ],
+  #'setup' => 'what.setup_fee.value',
+  #'recur' => '\'my $hours = $cust_pkg->seconds_since($cust_pkg->bill || 0) / 3600 - \' + what.recur_included_hours.value + \'; $hours = 0 if $hours < 0; \' + what.recur_flat.value + \' + \' + what.recur_hourly_charge.value + \' * $hours;\'',
+  'weight' => 80,
 );
 
 sub calc_recur {

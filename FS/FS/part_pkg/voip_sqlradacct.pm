@@ -7,31 +7,35 @@ use FS::part_pkg;
 #use FS::rate;
 use FS::rate_prefix;
 
-@ISA = qw(FS::part_pkg);
+@ISA = qw(FS::part_pkg::flat);
 
 $DEBUG = 1;
 
 %info = (
-    'name' => 'VoIP rating by plan of CDR records in an SQL RADIUS radacct table',
-    'fields' => {
-      'setup_fee' => { 'name' => 'Setup fee for this package',
-                       'default' => 0,
-                     },
-      'recur_flat' => { 'name' => 'Base monthly charge for this package',
-                        'default' => 0,
-                      },
-      'ratenum'   => { 'name' => 'Rate plan',
-                       'type' => 'select',
-                       'select_table' => 'rate',
-                       'select_key'   => 'ratenum',
-                       'select_label' => 'ratename',
-                     },
-      'ignore_unrateable' => { 'name' => 'Ignore calls for which not rate prefix can be found (otherwise they are fatal)',
-                               'type' => 'checkbox',
-                             },
-    },
-    'fieldorder' => [qw( setup_fee recur_flat ratenum ignore_unrateable )],
-    'weight' => 40,
+  'name' => 'VoIP rating by plan of CDR records in an SQL RADIUS radacct table',
+  'fields' => {
+    'setup_fee'     => { 'name' => 'Setup fee for this package',
+                         'default' => 0,
+                       },
+    'recur_flat'     => { 'name' => 'Base monthly charge for this package',
+                          'default' => 0,
+                        },
+    'unused_credit' => { 'name' => 'Credit the customer for the unused portion'.
+                                   ' of service at cancellation',
+                         'type' => 'checkbox',
+                       },
+    'ratenum'   => { 'name' => 'Rate plan',
+                     'type' => 'select',
+                     'select_table' => 'rate',
+                     'select_key'   => 'ratenum',
+                     'select_label' => 'ratename',
+                   },
+    'ignore_unrateable' => { 'name' => 'Ignore calls for which not rate prefix can be found (otherwise they are fatal)',
+                             'type' => 'checkbox',
+                           },
+  },
+  'fieldorder' => [qw( setup_fee recur_flat unused_credit ratenum ignore_unrateable )],
+  'weight' => 40,
 );
 
 sub calc_setup {

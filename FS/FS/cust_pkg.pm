@@ -376,6 +376,16 @@ sub cancel {
     }
   }
 
+  # Add a credit for remaining service
+  my $remaining_value= $self->calc_remain();
+  if ($remaining_value > 0) {
+    my $error = $self->credit($remaining_value, 'Credit for service remaining');
+    if ($error) {
+      $dbh->rollback if $oldAutoCommit;
+      return "Error crediting customer for service remaining: $error";
+    }                                                                          
+  }                                                                            
+
   unless ( $self->getfield('cancel') ) {
     my %hash = $self->hash;
     $hash{'cancel'} = time;
@@ -590,6 +600,30 @@ item.
 sub calc_recur {
   my $self = shift;
   $self->part_pkg->calc_recur($self, @_);
+}
+
+=item calc_remain
+
+Calls the I<calc_remain> of the FS::part_pkg object associated with this
+billing item.
+
+=cut
+
+sub calc_recur {
+  my $self = shift;
+  $self->part_pkg->calc_remain($self, @_);
+}
+
+=item calc_cancel
+
+Calls the I<calc_cancel> of the FS::part_pkg object associated with this
+billing item.
+
+=cut
+
+sub calc_cancel {
+  my $self = shift;
+  $self->part_pkg->calc_cancel($self, @_);
 }
 
 =item cust_svc [ SVCPART ]

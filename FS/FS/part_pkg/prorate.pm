@@ -9,20 +9,24 @@ use FS::part_pkg;
 @ISA = qw(FS::part_pkg::flat);
 
 %info = (
-    'name' => 'First partial month pro-rated, then flat-rate (1st of month billing)',
-    'fields' =>  {
-      'setup_fee' => { 'name' => 'Setup fee for this package',
-                       'default' => 0,
-                     },
-      'recur_fee' => { 'name' => 'Recurring fee for this package',
-                       'default' => 0,
-                      },
-    },
-    'fieldorder' => [ 'setup_fee', 'recur_fee' ],
-    #'setup' => 'what.setup_fee.value',
-    #'recur' => '\'my $mnow = $sdate; my ($sec,$min,$hour,$mday,$mon,$year) = (localtime($sdate) )[0,1,2,3,4,5]; my $mstart = timelocal(0,0,0,1,$mon,$year); my $mend = timelocal(0,0,0,1, $mon == 11 ? 0 : $mon+1, $year+($mon==11)); $sdate = $mstart; ( $part_pkg->freq - 1 ) * \' + what.recur_fee.value + \' / $part_pkg->freq + \' + what.recur_fee.value + \' / $part_pkg->freq * ($mend-$mnow) / ($mend-$mstart) ; \'',
-    'freq' => 'm',
-    'weight' => 20,
+  'name' => 'First partial month pro-rated, then flat-rate (1st of month billing)',
+  'fields' =>  {
+    'setup_fee' => { 'name' => 'Setup fee for this package',
+                     'default' => 0,
+                   },
+    'recur_fee' => { 'name' => 'Recurring fee for this package',
+                     'default' => 0,
+                    },
+    'unused_credit' => { 'name' => 'Credit the customer for the unused portion'.
+                                   ' of service at cancellation',
+                         'type' => 'checkbox',
+                       },
+  },
+  'fieldorder' => [ 'setup_fee', 'recur_fee', 'unused_credit' ],
+  #'setup' => 'what.setup_fee.value',
+  #'recur' => '\'my $mnow = $sdate; my ($sec,$min,$hour,$mday,$mon,$year) = (localtime($sdate) )[0,1,2,3,4,5]; my $mstart = timelocal(0,0,0,1,$mon,$year); my $mend = timelocal(0,0,0,1, $mon == 11 ? 0 : $mon+1, $year+($mon==11)); $sdate = $mstart; ( $part_pkg->freq - 1 ) * \' + what.recur_fee.value + \' / $part_pkg->freq + \' + what.recur_fee.value + \' / $part_pkg->freq * ($mend-$mnow) / ($mend-$mstart) ; \'',
+  'freq' => 'm',
+  'weight' => 20,
 );
 
 sub calc_recur {
