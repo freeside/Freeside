@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# process/agent_type.cgi: Edit agent type (process form)
+# $Id: agent_type.cgi,v 1.2 1998-11-21 07:49:20 ivan Exp $
 #
 # ivan@sisd.com 97-dec-11
 #
@@ -8,25 +8,31 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
+#
+# $Log: agent_type.cgi,v $
+# Revision 1.2  1998-11-21 07:49:20  ivan
+# s/CGI::Request/CGI.pm/
+#
 
 use strict;
-use CGI::Request;
+use CGI;
 use CGI::Carp qw(fatalsToBrowser);
+use FS::CGI qw(idiot popurl);
 use FS::UID qw(cgisuidsetup);
 use FS::Record qw(qsearch qsearchs);
 use FS::agent_type qw(fields);
 use FS::type_pkgs;
-use FS::CGI qw(idiot);
+use FS::part_pkg;
 
-my($req)=new CGI::Request;
-&cgisuidsetup($req->cgi);
+my($cgi)=new CGI;
+&cgisuidsetup($cgi);
 
-my($typenum)=$req->param('typenum');
+my($typenum)=$cgi->param('typenum');
 my($old)=qsearchs('agent_type',{'typenum'=>$typenum}) if $typenum;
 
 my($new)=create FS::agent_type ( {
   map {
-    $_, $req->param($_);
+    $_, scalar($cgi->param($_));
   } fields('agent_type')
 } );
 
@@ -51,7 +57,7 @@ foreach $part_pkg (qsearch('part_pkg',{})) {
       'typenum' => $typenum,
       'pkgpart' => $pkgpart,
   });
-  if ( $type_pkgs && ! $req->param("pkgpart$pkgpart") ) {
+  if ( $type_pkgs && ! $cgi->param("pkgpart$pkgpart") ) {
     my($d_type_pkgs)=$type_pkgs; #need to save $type_pkgs for below.
     $error=$d_type_pkgs->del; #FS::Record not FS::type_pkgs,
                                   #so ->del not ->delete.  hmm.  hmm.
@@ -60,7 +66,7 @@ foreach $part_pkg (qsearch('part_pkg',{})) {
       exit;
     }
 
-  } elsif ( $req->param("pkgpart$pkgpart")
+  } elsif ( $cgi->param("pkgpart$pkgpart")
             && ! $type_pkgs
   ) {
     #ok to clobber it now (but bad form nonetheless?)
@@ -79,5 +85,5 @@ foreach $part_pkg (qsearch('part_pkg',{})) {
 
 #$req->cgi->redirect("../../view/agent_type.cgi?$typenum");
 #$req->cgi->redirect("../../edit/agent_type.cgi?$typenum");
-$req->cgi->redirect("../../browse/agent_type.cgi");
+print $cgi->redirect(popurl(3). "/browse/agent_type.cgi");
 
