@@ -111,7 +111,13 @@ my %defs = (
     'gid'       => 'GID (when blank, defaults to UID)',
     'shell'     => 'Shell (all service definitions should have a default or fixed shell that is present in the <b>shells</b> configuration file)',
     'finger'    => 'GECOS',
-    'domsvc'    => 'svcnum from svc_domain',
+    'domsvc'    => {
+                     desc =>'svcnum from svc_domain',
+                     type =>'select',
+                     select_table => 'svc_domain',
+                     select_key   => 'svcnum',
+                     select_label => 'domain',
+                   },
   },
   'svc_domain' => {
     'domain'    => 'Domain',
@@ -194,8 +200,10 @@ function fixup(what) {
                  : $part_svc_column->columnflag;
     #print "<TR>$ptmp<TD>$field";
     print "<TR><TD>$field";
-    print "- <FONT SIZE=-1>$defs{$svcdb}{$field}</FONT>"
-      if defined $defs{$svcdb}{$field};
+    my $def = $defs{$svcdb}{$field};
+    my $desc = ref($def) ? $def->{desc} : $def;
+    
+    print "- <FONT SIZE=-1>$desc</FONT>" if $desc;
     print "</TD>";
     print qq!<TD><INPUT TYPE="radio" NAME="${svcdb}__${field}_flag" VALUE=""!.
       ' CHECKED'x($flag eq ''). ">Off</TD>";
@@ -203,8 +211,24 @@ function fixup(what) {
       ' CHECKED'x($flag eq 'D'). ">Default ";
     print qq!<INPUT TYPE="radio" NAME="${svcdb}__${field}_flag" VALUE="F"!.
       ' CHECKED'x($flag eq 'F'). ">Fixed ";
-    print qq!<INPUT TYPE="text" NAME="${svcdb}__${field}" VALUE="$value">!,
-      "</TD></TR>\n";
+    print '<BR>';
+    if ( ref($def) ) {
+      if ( $def->{type} eq 'select' ) {
+        print qq!<SELECT NAME="${svcdb}__${field}">!;
+        print '<OPTION>' unless $value;
+        foreach my $record ( qsearch( $def->{select_table}, {} ) ) {
+          my $rvalue = $record->getfield($def->{select_key});
+          print qq!<OPTION VALUE="$rvalue"!.
+                ( $rvalue==$value ? ' SELECTED>' : '>' ).
+                $record->getfield($def->{select_label});
+        }
+      } else {
+        print 'UNKNOWN TYPE '. $def->{type};
+      }
+    } else {
+      print qq!<INPUT TYPE="text" NAME="${svcdb}__${field}" VALUE="$value">!;
+    }
+    print "</TD></TR>\n";
     #$ptmp='';
   }
   print "</TABLE>" unless $svcdb eq 'konq_kludge';
