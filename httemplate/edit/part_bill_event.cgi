@@ -126,6 +126,14 @@ tie my %events, 'Tie::IxHash',
     'weight' => 50,
   },
 
+  'send_alternate' => {
+    'name' => 'Send invoice (email/print) with alternate template',
+    'code' => '$cust_bill->send(\'%%%templatename%%%\');',
+    'html' =>
+        '<INPUT TYPE="text" NAME="templatename" VALUE="%%%templatename%%%">',
+    'weight' => 50,
+  },
+
   'bill' => {
     'name' => 'Generate invoices (normally only used with a <i>Late Fee</i> event)',
     'code' => '$cust_main->bill();',

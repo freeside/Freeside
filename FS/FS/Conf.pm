@@ -2,6 +2,7 @@ package FS::Conf;
 
 use vars qw($default_dir @config_items $DEBUG );
 use IO::File;
+use File::Basename;
 use FS::ConfItem;
 
 $DEBUG = 0;
@@ -24,6 +25,10 @@ FS::Conf - Freeside configuration values
   $value = $conf->config('key');
   @list  = $conf->config('key');
   $bool  = $conf->exists('key');
+
+  $conf->touch('key');
+  $conf->set('key' => 'value');
+  $conf->delete('key');
 
   @config_items = $conf->config_items;
 
@@ -67,7 +72,7 @@ sub dir {
   $1;
 }
 
-=item config 
+=item config KEY
 
 Returns the configuration value or values (depending on context) for key.
 
@@ -90,7 +95,7 @@ sub config {
   }
 }
 
-=item exists
+=item exists KEY
 
 Returns true if the specified key exists, even if the corresponding value
 is undefined.
@@ -103,7 +108,9 @@ sub exists {
   -e "$dir/$file";
 }
 
-=item touch
+=item touch KEY
+
+Creates the specified configuration key if it does not exist.
 
 =cut
 
@@ -116,7 +123,9 @@ sub touch {
   }
 }
 
-=item set
+=item set KEY VALUE
+
+Sets the specified configuration key to the given value.
 
 =cut
 
@@ -139,7 +148,9 @@ sub set {
 #             return ! eval { join('',@_), kill 0; 1; };
 #         }
 
-=item delete
+=item delete KEY
+
+Deletes the specified configuration key.
 
 =cut
 
@@ -160,15 +171,22 @@ L<FS::ConfItem>.
 =cut
 
 sub config_items {
-#  my $self = shift; 
-  @config_items;
+  my $self = shift; 
+  #quelle kludge
+  @config_items,
+  map { new FS::ConfItem {
+                           'key'         => basename($_),
+                           'section'     => 'billing',
+                           'description' => 'Alternate template file for invoices.  See the <a href="../docs/billing.html">billing documentation</a> for details.',
+                           'type'        => 'textarea',
+                         }
+      } glob($self->dir. '/invoice_template_*')
+  ;
 }
 
 =back
 
 =head1 BUGS
-
-Write access (touch, set, delete) should be documented.
 
 If this was more than just crud that will never be useful outside Freeside I'd
 worry that config_items is freeside-specific and icky.

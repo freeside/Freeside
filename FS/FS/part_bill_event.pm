@@ -126,6 +126,8 @@ sub check {
 
       or $c =~ /^\s*\$cust_bill\->(comp|realtime_card|realtime_card_cybercash|batch_card|send)\(\);\s*$/
 
+      or $c =~ /^\s*\$cust_bill\->send\(\'\w+\'\);\s*$/
+
       or $c =~ /^\s*\$cust_main\->apply_payments; \$cust_main->apply_credits; "";\s*$/
 
       or $c =~ /^\s*\$cust_main\->charge\( \s*\d*\.?\d*\s*,\s*\'[\w \!\@\#\$\%\&\(\)\-\+\;\:\"\,\.\?\/]*\'\s*\);\s*$/
@@ -137,7 +139,7 @@ sub check {
 
   }
 
-  $self->ut_numbern('eventpart')
+  my $error = $self->ut_numbern('eventpart')
     || $self->ut_enum('payby', [qw( CARD BILL COMP )] )
     || $self->ut_text('event')
     || $self->ut_anything('eventcode')
@@ -147,6 +149,21 @@ sub check {
     || $self->ut_textn('plan')
     || $self->ut_anything('plandata')
   ;
+  return $error if $error;
+
+  #quelle kludge
+  if ( $self->plandata =~ /^templatename\s+(.*)$/ ) {
+    my $name= $1;
+    unless ( $conf->config("invoice_template_$name") ) {
+      $conf->set(
+        "invoice_template_$name" =>
+          join("\n", $conf->config('invoice_template') )
+      );
+    }
+  }
+
+  '';
+
 }
 
 =back
