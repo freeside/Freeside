@@ -1707,13 +1707,21 @@ sub _dump {
 sub encrypt {
   my ($self, $value) = @_;
   my $encrypted;
-  if ($conf->exists('encryption') && !$self->is_encrypted($value)) {
-    $self->loadRSA;
-    if (ref($rsa_encrypt) =~ /::RSA/) { # We Can Encrypt
-      # RSA doesn't like the empty string so let's pack it up
-      # The database doesn't like the RSA data so uuencode it
-      my $length = length($value)+1;
-      $encrypted = pack("u*",$rsa_encrypt->encrypt(pack("Z$length",$value)));
+
+  if ($conf->exists('encryption')) {
+    if ($self->is_encrypted($value)) {
+      # Return the original value if it isn't plaintext.
+      $encrypted = $value;
+    } else {
+      $self->loadRSA;
+      if (ref($rsa_encrypt) =~ /::RSA/) { # We Can Encrypt
+        # RSA doesn't like the empty string so let's pack it up
+        # The database doesn't like the RSA data so uuencode it
+        my $length = length($value)+1;
+        $encrypted = pack("u*",$rsa_encrypt->encrypt(pack("Z$length",$value)));
+      } else {
+        die ("You can't encrypt w/o a valid RSA engine - Check your installation or disable encryption");
+      }
     }
   }
   return $encrypted;
@@ -1744,13 +1752,14 @@ sub decrypt {
 }
 
 sub loadRSA {
-    my $self = shift;;
+    my $self = shift;
     #Initialize the Module
-    if (!$conf->exists('encryptionmodule')) {
-	carp "warning: There is no Encryption Module Defined!";
-	return;
+    $rsa_module = 'Crypt::OpenSSL::RSA'; # The Default
+
+    if ($conf->exists('encryptionmodule') && $conf->config('encryptionmodule') ne '') {
+      $rsa_module = $conf->config('encryptionmodule');
     }
-    $rsa_module = $conf->config('encryptionmodule');
+
     if (!$rsa_loaded) {
 	eval ("require $rsa_module"); # No need to import the namespace
 	$rsa_loaded++;

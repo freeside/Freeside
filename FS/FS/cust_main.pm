@@ -247,7 +247,7 @@ sub paymask {
       $paymask = $payinfo;
     }
     $self->setfield('paymask', $paymask); # This is okay since we are the 'setter'
-  } else {
+  } elsif (defined($value) && $self->is_encrypted($value)) {
     $paymask = 'N/A';
   }
   return $paymask;
@@ -678,7 +678,7 @@ sub replace {
   local $SIG{PIPE} = 'IGNORE';
 
   # If the mask is blank then try to set it - if we can...
-  if (!defined($self->paymask) && $self->paymask eq '') {
+  if (!defined($self->getfield('paymask')) || $self->getfield('paymask') eq '') {
     $self->paymask($self->payinfo);
   }
 
@@ -936,7 +936,7 @@ sub check {
     return gettext('unknown_card_type')
       if cardtype($self->payinfo) eq "Unknown";
     if ( defined $self->dbdef_table->column('paycvv') ) {
-      if ( length($self->paycvv) ) {
+      if (length($self->paycvv) && !$self->is_encrypted($self->paycvv)) {
         if ( cardtype($self->payinfo) eq 'American Express card' ) {
           $self->paycvv =~ /^(\d{4})$/
             or return "CVV2 (CID) for American Express cards is four digits.";
