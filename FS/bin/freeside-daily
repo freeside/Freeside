@@ -63,7 +63,6 @@ if ( driver_name eq 'Pg' ) {
   }
 }
 
-#local hack
 my $conf = new FS::Conf;
 my $dest = $conf->config('dump-scpdest');
 if ( $dest ) {
@@ -75,7 +74,18 @@ if ( $dest ) {
   } else {
     die "database dumps not yet supported for ". driver_name;
   }
-  scp("/var/tmp/$database.sql", $dest);
+  if ( $conf->config('dump-pgpid') ) {
+    eval 'use GnuPG';
+    my $gpg = new GnuPG;
+    $gpg->encrypt( plaintext => "/var/tmp/$database.sql",
+                   output    => "/var/tmp/$database.gpg",
+                   recipient => $conf->config('dump-pgpid'),
+                 );
+    scp("/var/tmp/$database.gpg", $dest);
+    unlink "/var/tmp/$database.gpg" or die $!;
+  } else {
+    scp("/var/tmp/$database.sql", $dest);
+  }
   unlink "/var/tmp/$database.sql" or die $!;
 }
 

@@ -1178,6 +1178,13 @@ httemplate/docs/config.html
   },
 
   {
+    'key'         => 'dump-pgpid',
+    'section'     => '',
+    'description' => "Optional PGP public key user or key id for database dumps.  The public key should exist on the freeside user's public keyring, and the gpg binary and GnuPG perl module should be installed.",
+    'type'        => 'text',
+  },
+
+  {
     'key'         => 'users-allow_comp',
     'section'     => '',
     'description' => 'Usernames (Freeside users, created with <a href="../docs/man/bin/freeside-adduser.html">freeside-adduser</a>) which can create complimentary customers, one per line.  If no usernames are entered, all users can create complimentary accounts.',
