@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: fs-setup,v 1.35 2001-04-15 09:36:43 ivan Exp $
+# $Id: fs-setup,v 1.36 2001-04-15 12:56:31 ivan Exp $
 #
 # ivan@sisd.com 97-nov-8,9
 #
@@ -32,7 +32,10 @@
 # fix radius attributes ivan@sisd.com 98-sep-27
 #
 # $Log: fs-setup,v $
-# Revision 1.35  2001-04-15 09:36:43  ivan
+# Revision 1.36  2001-04-15 12:56:31  ivan
+# s/dbdef/DBIx::DBSchema/
+#
+# Revision 1.35  2001/04/15 09:36:43  ivan
 # http://www.sisd.com/freeside/list-archive/msg01450.html
 #
 # Revision 1.34  2001/04/09 23:05:16  ivan
@@ -135,7 +138,11 @@ BEGIN { $FS::Record::setup_hack = 1; }
 
 use strict;
 use DBI;
-use FS::dbdef;
+use DBIx::DBSchema;
+use DBIx::DBSchema::Table;
+use DBIx::DBSchema::Column;
+use DBIx::DBSchema::ColGroup::Unique;
+use DBIx::DBSchema::ColGroup::Index;
 use FS::UID qw(adminsuidsetup datasrc checkeuid getsecrets);
 use FS::Record;
 use FS::cust_main_county;
@@ -189,19 +196,17 @@ my @money_type = ( 'decimal',   '', '10,2' );
 my(%tables)=&tables_hash_hack;
 
 #turn it into objects
-my($dbdef) = new FS::dbdef ( map {  
+my($dbdef) = new DBIx::DBSchema ( map {  
   my(@columns);
   while (@{$tables{$_}{'columns'}}) {
     my($name,$type,$null,$length)=splice @{$tables{$_}{'columns'}}, 0, 4;
-    push @columns, new FS::dbdef_column ( $name,$type,$null,$length );
+    push @columns, new DBIx::DBSchema::Column ( $name,$type,$null,$length );
   }
-  FS::dbdef_table->new(
+  DBIx::DBSchema::Table->new(
     $_,
     $tables{$_}{'primary_key'},
-    #FS::dbdef_unique->new(@{$tables{$_}{'unique'}}),
-    #FS::dbdef_index->new(@{$tables{$_}{'index'}}),
-    FS::dbdef_unique->new($tables{$_}{'unique'}),
-    FS::dbdef_index->new($tables{$_}{'index'}),
+    DBIx::DBSchema::ColGroup::Unique->new($tables{$_}{'unique'}),
+    DBIx::DBSchema::ColGroup::Index->new($tables{$_}{'index'}),
     @columns,
   );
 } (keys %tables) );
@@ -212,7 +217,7 @@ my($svc_acct)=$dbdef->table('svc_acct');
 
 my($attribute);
 foreach $attribute (@attributes) {
-  $svc_acct->addcolumn ( new FS::dbdef_column (
+  $svc_acct->addcolumn ( new DBIx::DBSchema::Column (
     'radius_'. $attribute,
     'varchar',
     'NULL',
@@ -221,7 +226,7 @@ foreach $attribute (@attributes) {
 }
 
 foreach $attribute (@check_attributes) {
-  $svc_acct->addcolumn( new FS::dbdef_column (
+  $svc_acct->addcolumn( new DBIx::DBSchema::Column (
     'rc_'. $attribute,
     'varchar',
     'NULL',
@@ -241,13 +246,13 @@ foreach (qw(svc_acct svc_acct_sm svc_domain svc_www)) {
   my($col);
   foreach $col ( $table->columns ) {
     next if $col =~ /^svcnum$/;
-    $part_svc->addcolumn( new FS::dbdef_column (
+    $part_svc->addcolumn( new DBIx::DBSchema::Column (
       $table->name. '__' . $table->column($col)->name,
       'varchar', #$table->column($col)->type, 
       'NULL',
       $char_d, #$table->column($col)->length,
     ));
-    $part_svc->addcolumn ( new FS::dbdef_column (
+    $part_svc->addcolumn ( new DBIx::DBSchema::Column (
       $table->name. '__'. $table->column($col)->name . "_flag",
       'char',
       'NULL',
@@ -269,21 +274,10 @@ my($dbh)=adminsuidsetup $user;
 #create tables
 $|=1;
 
-my($table);
-foreach  ($dbdef->tables) {
-  my($table)=$dbdef->table($_);
-  print "Creating $_...";
-
-  my($statement);
-
-  #create table
-  foreach $statement ($table->sql_create_table(datasrc)) {
-    #print $statement, "\n"; 
-    $dbh->do( $statement )
-      or die "CREATE error: ",$dbh->errstr, "\ndoing statement: $statement";
-  }
-
-  print "\n";
+my @sql = $dbdef->sql($dbh);
+foreach my $statement ( $dbdef->sql($dbh) ) {
+  $dbh->do( $statement )
+    or die "CREATE error: ",$dbh->errstr, "\ndoing statement: $statement";
 }
 
 #not really sample data (and shouldn't default to US)
@@ -343,6 +337,8 @@ YE YU ZR ZM ZW
 }
 
 $dbh->disconnect or die $dbh->errstr;
+
+print "Freeside database initialized sucessfully\n";
 
 sub usage {
   die "Usage:\n  fs-setup user\n"; 

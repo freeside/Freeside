@@ -6,8 +6,8 @@ use subs qw(reload_dbdef);
 use Exporter;
 use Carp qw(carp cluck croak confess);
 use File::CounterFile;
+use DBIx::DBSchema;
 use FS::UID qw(dbh checkruid swapuid getotaker datasrc driver_name);
-use FS::dbdef;
 
 @ISA = qw(Exporter);
 @EXPORT_OK = qw(dbh fields hfields qsearch qsearchs dbdef);
@@ -126,7 +126,7 @@ sub new {
     $hashref->{$field}='' unless defined $hashref->{$field};
     #trim the '$' and ',' from money fields for Pg (belong HERE?)
     #(what about Pg i18n?)
-    if ( driver_name eq 'Pg' 
+    if ( driver_name =~ /^Pg$/i
          && $self->dbdef_table->column($field)->type eq 'money' ) {
       ${$hashref}{$field} =~ s/^\$//;
       ${$hashref}{$field} =~ s/\,//;
@@ -178,7 +178,7 @@ sub qsearch {
   if ( @fields ) {
     $statement .= ' WHERE '. join(' AND ', map {
       if ( ! defined( $record->{$_} ) || $record->{$_} eq '' ) {
-        if ( driver_name eq 'Pg' ) {
+        if ( driver_name =~ /^Pg$/i ) {
           "$_ IS NULL";
         } else {
           qq-( $_ IS NULL OR $_ = "" )-;
@@ -419,7 +419,7 @@ sub delete {
     map {
       $self->getfield($_) eq ''
         #? "( $_ IS NULL OR $_ = \"\" )"
-        ? ( driver_name eq 'Pg' 
+        ? ( driver_name =~ /^Pg$/i
               ? "$_ IS NULL"
               : "( $_ IS NULL OR $_ = \"\" )"
           )
@@ -492,7 +492,7 @@ sub replace {
       map {
         $old->getfield($_) eq ''
           #? "( $_ IS NULL OR $_ = \"\" )"
-          ? ( driver_name eq 'Pg' 
+          ? ( driver_name =~ /^Pg$/i
                 ? "$_ IS NULL"
                 : "( $_ IS NULL OR $_ = \"\" )"
             )
@@ -541,7 +541,7 @@ sub check {
 =item unique COLUMN
 
 Replaces COLUMN in record with a unique number.  Called by the B<add> method
-on primary keys and single-field unique columns (see L<FS::dbdef_table>).
+on primary keys and single-field unique columns (see L<DBIx::DBSchema::Table>).
 Returns the new value.
 
 =cut
@@ -805,7 +805,7 @@ sub ut_anything {
 
 This can be used as both a subroutine and a method call.  It returns a list
 of the columns in this record's table, or an explicitly specified table.
-(See L<FS::dbdef_table>).
+(See L<DBIx::DBSchema::Table>).
 
 =cut
 
@@ -831,15 +831,15 @@ sub fields {
 
 =item reload_dbdef([FILENAME])
 
-Load a database definition (see L<FS::dbdef>), optionally from a non-default
-filename.  This command is executed at startup unless
-I<$FS::Record::setup_hack> is true.  Returns a FS::dbdef object.
+Load a database definition (see L<DBIx::DBSchema>), optionally from a
+non-default filename.  This command is executed at startup unless
+I<$FS::Record::setup_hack> is true.  Returns a DBIx::DBSchema object.
 
 =cut
 
 sub reload_dbdef {
   my $file = shift || $dbdef_file;
-  $dbdef = load FS::dbdef ($file);
+  $dbdef = load DBIx::DBSchema $file;
 }
 
 =item dbdef
@@ -913,7 +913,7 @@ sub DESTROY { return; }
 
 =head1 VERSION
 
-$Id: Record.pm,v 1.13 2001-02-20 16:31:06 ivan Exp $
+$Id: Record.pm,v 1.14 2001-04-15 12:56:30 ivan Exp $
 
 =head1 BUGS
 
@@ -958,7 +958,7 @@ be fixed.  (only affects RDBMS which return uppercase column names)
 
 =head1 SEE ALSO
 
-L<FS::dbdef>, L<FS::UID>, L<DBI>
+L<DBIx::DBSchema>, L<FS::UID>, L<DBI>
 
 Adapter::DBI from Ch. 11 of Advanced Perl Programming by Sriram Srinivasan.
 
