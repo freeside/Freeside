@@ -107,23 +107,13 @@ sub check {
 
 =head1 VERSION
 
-$Id: prepay_credit.pm,v 1.2 2000-02-02 20:22:18 ivan Exp $
+$Id: prepay_credit.pm,v 1.3 2001-08-21 02:44:47 ivan Exp $
 
 =head1 BUGS
 
 =head1 SEE ALSO
 
 L<FS::Record>, schema.html from the base documentation.
-
-=head1 HISTORY
-
-$Log: prepay_credit.pm,v $
-Revision 1.2  2000-02-02 20:22:18  ivan
-bugfix prepayment in signup server
-
-Revision 1.1  2000/01/31 05:22:23  ivan
-prepaid "internet cards"
-
 
 =cut
 

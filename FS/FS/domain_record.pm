@@ -156,7 +156,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: domain_record.pm,v 1.2 2001-05-18 14:08:55 ivan Exp $
+$Id: domain_record.pm,v 1.3 2001-08-21 02:44:47 ivan Exp $
 
 =head1 BUGS
 
@@ -168,16 +168,6 @@ course, it's still better than editing the zone files directly.  :)
 =head1 SEE ALSO
 
 L<FS::Record>, schema.html from the base documentation.
-
-=head1 HISTORY
-
-$Log: domain_record.pm,v $
-Revision 1.2  2001-05-18 14:08:55  ivan
-tyop
-
-Revision 1.1  2000/02/03 05:16:52  ivan
-beginning of DNS and Apache support
-
 
 =cut
 

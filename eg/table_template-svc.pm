@@ -148,7 +148,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: table_template-svc.pm,v 1.1 1999-08-04 08:03:03 ivan Exp $
+$Id: table_template-svc.pm,v 1.2 2001-08-21 02:44:47 ivan Exp $
 
 =head1 BUGS
 
@@ -158,21 +158,6 @@ The author forgot to customize this manpage.
 
 L<FS::svc_Common>, L<FS::Record>, L<FS::cust_svc>, L<FS::part_svc>,
 L<FS::cust_pkg>, schema.html from the base documentation.
-
-=head1 HISTORY
-
-ivan@voicenet.com 97-jul-21
-
-$Log: table_template-svc.pm,v $
-Revision 1.1  1999-08-04 08:03:03  ivan
-move table subclass examples out of production directory
-
-Revision 1.4  1998/12/30 00:30:48  ivan
-svc_ stuff is more properly OO - has a common superclass FS::svc_Common
-
-Revision 1.2  1998/11/15 04:33:01  ivan
-updates for newest versoin
-
 
 =cut
 

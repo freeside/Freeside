@@ -220,7 +220,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: svc_www.pm,v 1.4 2001-04-22 01:56:15 ivan Exp $
+$Id: svc_www.pm,v 1.5 2001-08-21 02:44:47 ivan Exp $
 
 =head1 BUGS
 
@@ -228,22 +228,6 @@ $Id: svc_www.pm,v 1.4 2001-04-22 01:56:15 ivan Exp $
 
 L<FS::svc_Common>, L<FS::Record>, L<FS::domain_record>, L<FS::cust_svc>,
 L<FS::part_svc>, L<FS::cust_pkg>, schema.html from the base documentation.
-
-=head1 HISTORY
-
-$Log: svc_www.pm,v $
-Revision 1.4  2001-04-22 01:56:15  ivan
-get rid of FS::SSH.pm (became Net::SSH and Net::SCP on CPAN)
-
-Revision 1.3  2000/11/22 23:30:51  ivan
-tyop
-
-Revision 1.2  2000/03/01 08:13:59  ivan
-compilation bugfixes
-
-Revision 1.1  2000/02/03 05:16:52  ivan
-beginning of DNS and Apache support
-
 
 =cut
 
