@@ -3,6 +3,7 @@ package FS::cust_bill_event;
 use strict;
 use vars qw( @ISA );
 use FS::Record qw( qsearch qsearchs );
+use FS::cust_bill;
 use FS::part_bill_event;
 
 @ISA = qw(FS::Record);
@@ -111,10 +112,10 @@ sub check {
     || $self->ut_textn('statustext')
   ;
 
-  return "Unknown invnum"
+  return "Unknown invnum ". $self->invnum
     unless qsearchs( 'cust_bill' ,{ 'invnum' => $self->invnum } );
 
-  return "Unknown eventpart"
+  return "Unknown eventpart ". $self->eventpart
     unless qsearchs( 'part_bill_event' ,{ 'eventpart' => $self->eventpart } );
 
   ''; #no error
