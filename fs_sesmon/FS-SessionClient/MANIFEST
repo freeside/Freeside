@@ -5,7 +5,7 @@ Makefile.PL
 SessionClient.pm
 test.pl
 fs_sessiond
-cgi/logon.cgi
+cgi/login.cgi
 cgi/logout.cgi
 bin/freeside-login
 bin/freeside-logout
