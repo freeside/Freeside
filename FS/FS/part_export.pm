@@ -468,18 +468,22 @@ sub _export_delete {
   return "_export_delete: unknown export type ". $self->exporttype;
 }
 
-#fallbacks providing null operations
+#call svcdb-specific fallbacks
 
 sub _export_suspend {
   my $self = shift;
   #warn "warning: _export_suspened unimplemented for". ref($self);
-  '';
+  my $svc_x = shift;
+  my $new = $svc_x->clone_suspended;
+  $self->_export_replace( $new, $svc_x );
 }
 
 sub _export_unsuspend {
   my $self = shift;
   #warn "warning: _export_unsuspend unimplemented for ". ref($self);
-  '';
+  my $svc_x = shift;
+  my $old = $svc_x->clone_kludge_unsuspend;
+  $self->_export_replace( $svc_x, $old );
 }
 
 =back

@@ -1061,6 +1061,34 @@ sub radius_groups {
   }
 }
 
+=item clone_suspended
+
+Constructor used by FS::part_export::_export_suspend fallback.  Document
+better.
+
+=cut
+
+sub clone_suspended {
+  my $self = shift;
+  my %hash = $self->hash;
+  $hash{_password} = join('',map($pw_set[ int(rand $#pw_set) ], (0..7) ) );
+  new FS::svc_acct \%hash;
+}
+
+=item clone_kludge_unsuspend 
+
+Constructor used by FS::part_export::_export_unsuspend fallback.  Document
+better.
+
+=cut
+
+sub clone_kludge_unsuspend {
+  my $self = shift;
+  my %hash = $self->hash;
+  $hash{_password} = '';
+  new FS::svc_acct \%hash;
+}
+
 =back
 
 =head1 SUBROUTINES
