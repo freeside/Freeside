@@ -253,7 +253,7 @@ sub small_custview {
 
   my $html = 'Customer #<B>'. $cust_main->custnum. '</B>'.
     ntable('#e8e8e8'). '<TR><TD>'. ntable("#cccccc",2).
-    '<TR><TD ALIGN="right" VALIGN="top">Billing</TD><TD BGCOLOR="#ffffff">'.
+    '<TR><TD ALIGN="right" VALIGN="top">Billing<BR>Address</TD><TD BGCOLOR="#ffffff">'.
     $cust_main->getfield('last'). ', '. $cust_main->first. '<BR>';
 
   $html .= $cust_main->company. '<BR>' if $cust_main->company;
@@ -270,7 +270,7 @@ sub small_custview {
     my $pre = $cust_main->ship_last ? 'ship_' : '';
 
     $html .= '<TD>'. ntable("#cccccc",2).
-      '<TR><TD ALIGN="right" VALIGN="top">Service</TD><TD BGCOLOR="#ffffff">'.
+      '<TR><TD ALIGN="right" VALIGN="top">Service<BR>Address</TD><TD BGCOLOR="#ffffff">'.
       $cust_main->get("${pre}last"). ', '.
       $cust_main->get("${pre}first"). '<BR>';
     $html .= $cust_main->get("${pre}company"). '<BR>'
