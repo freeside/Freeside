@@ -9,7 +9,7 @@ use Carp qw(carp cluck croak confess);
 use File::CounterFile;
 use Locale::Country;
 use DBI qw(:sql_types);
-use DBIx::DBSchema 0.21;
+use DBIx::DBSchema 0.23;
 use FS::UID qw(dbh getotaker datasrc driver_name);
 use FS::SearchCache;
 use FS::Msgcat qw(gettext);
