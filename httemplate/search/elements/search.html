@@ -88,6 +88,7 @@
            <% my $a = ''; %>
            <% if ( $links ) {
                 my $link = shift @$links;
+                $link = &{$link}($row) if ref($link) eq 'CODE';
                 if ( $link ) {
                   my( $url, $method ) = @{$link};
                   if ( ref($method) eq 'CODE' ) {

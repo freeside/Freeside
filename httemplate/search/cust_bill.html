@@ -50,7 +50,13 @@
    }
 
    my $link  = [ "${p}view/cust_bill.cgi?", 'invnum', ];
-   my $clink = [ "${p}view/cust_main.cgi?", 'custnum' ];
+   my $clink = sub {
+     my $cust_bill = shift;
+     my $cust_main = $cust_bill->cust_main;
+     $cust_main
+       ? [ "${p}view/cust_main.cgi?", 'custnum' ]
+       : '';
+   };
 
 %>
 <%= include( 'elements/search.html',
