@@ -25,7 +25,7 @@ foreach my $cust_main (
     }
   }
   push @dest, 'POST' unless @dest;
-  $cust_main->invoicing_list(@dest);
+  $cust_main->invoicing_list(\@dest);
 }
 
 sub untaint_argv {
