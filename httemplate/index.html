@@ -28,13 +28,13 @@
     <TR><TD>
         <BR><FONT SIZE="+1"><A HREF="edit/cust_main.cgi">New Customer</A></FONT>
         <BR>
-        <BR><FORM ACTION="search/cust_main.cgi" METHOD="POST"><INPUT TYPE="hidden" NAME="last_on" VALUE="1">Last name <INPUT TYPE="text" NAME="last_text"><INPUT TYPE="hidden" NAME="last_type" VALUE="Fuzzy"><INPUT TYPE="submit" VALUE="Search"> or <A HREF="search/cust_main.cgi?browse=last">all customers by last name</A></FORM>
-        <BR><FORM ACTION="search/cust_main.cgi" METHOD="POST"><INPUT TYPE="hidden" NAME="company_on" VALUE="1">Company <INPUT TYPE="text" NAME="company_text"><INPUT TYPE="hidden" NAME="company_type" VALUE="Fuzzy"><INPUT TYPE="submit" VALUE="Search"> or <A HREF="search/cust_main.cgi?browse=company">all customers by company</A></FORM>
-        <BR><FORM ACTION="search/svc_acct.cgi" METHOD="POST">Username <INPUT TYPE="text" NAME="username"><INPUT TYPE="submit" VALUE="Search"> or <A HREF="search/svc_acct.cgi?username">all accounts by username</A></FORM>
-        <BR><FORM ACTION="search/svc_domain.cgi" METHOD="POST">Domain <INPUT TYPE="text" NAME="domain"><INPUT TYPE="submit" VALUE="Search"> or <A HREF="search/svc_domain.cgi?domain">all domains</A></FORM>
+        <BR><FORM ACTION="search/cust_main.cgi" METHOD="POST"><INPUT TYPE="hidden" NAME="last_on" VALUE="1">Last name <INPUT TYPE="text" NAME="last_text"><INPUT TYPE="hidden" NAME="last_type" VALUE="All"><INPUT TYPE="submit" VALUE="Search"> or <A HREF="search/cust_main.cgi?browse=last">all customers by last name</A></FORM>
+        <FORM ACTION="search/cust_main.cgi" METHOD="POST"><INPUT TYPE="hidden" NAME="company_on" VALUE="1">Company <INPUT TYPE="text" NAME="company_text"><INPUT TYPE="hidden" NAME="company_type" VALUE="All"><INPUT TYPE="submit" VALUE="Search"> or <A HREF="search/cust_main.cgi?browse=company">all customers by company</A></FORM>
+        <FORM ACTION="search/svc_acct.cgi" METHOD="POST">Username <INPUT TYPE="text" NAME="username"><INPUT TYPE="submit" VALUE="Search"> or <A HREF="search/svc_acct.cgi?username">all accounts by username</A></FORM>
+        <FORM ACTION="search/svc_domain.cgi" METHOD="POST">Domain <INPUT TYPE="text" NAME="domain"><INPUT TYPE="submit" VALUE="Search"> or <A HREF="search/svc_domain.cgi?domain">all domains</A></FORM>
 <!--        <LI><A HREF="search/svc_acct_sm.html">mail aliases (by domain, and optionally username)</A>-->
 <!--        <LI><A HREF="search/svc_forward.html">mail forwards (by ?)</A>-->
-      <BR><BR>
+      <BR>
     </TD></TR>
     </TABLE>
 
@@ -53,9 +53,8 @@
       <BR><A HREF="search/cust_main-quickpay.html">Quick payment entry</A>
       <BR>
       <BR><FORM ACTION="search/cust_main.cgi" METHOD="POST">Credit card # <INPUT TYPE="hidden" NAME="card_on" VALUE="1"><INPUT TYPE="text" NAME="card"><INPUT TYPE="submit" VALUE="Search"></FORM>
-      <BR><FORM ACTION="search/cust_bill.cgi" METHOD="POST">Invoice # <INPUT TYPE="text" NAME="invnum" SIZE="8"><INPUT TYPE="submit" VALUE="Search"></FORM>
-      <BR><FORM ACTION="search/cust_pay.cgi" METHOD="POST">Check # <INPUT TYPE="text" NAME="payinfo" SIZE="8"><INPUT TYPE="hidden" NAME="payby" VALUE="BILL"><INPUT TYPE="submit" VALUE="Search"></FORM>
-      <BR>
+      <FORM ACTION="search/cust_bill.cgi" METHOD="POST">Invoice # <INPUT TYPE="text" NAME="invnum" SIZE="8"><INPUT TYPE="submit" VALUE="Search"></FORM>
+      <FORM ACTION="search/cust_pay.cgi" METHOD="POST">Check # <INPUT TYPE="text" NAME="payinfo" SIZE="8"><INPUT TYPE="hidden" NAME="payby" VALUE="BILL"><INPUT TYPE="submit" VALUE="Search"></FORM>
       <BR><A HREF="browse/cust_pay_batch.cgi">View pending credit card batch</A>
       <BR><BR>Invoice reports
             <UL>
