@@ -856,10 +856,10 @@ sub bill {
   my @cust_bill_pkg = ();
 
   foreach my $cust_pkg (
-    qsearch('cust_pkg',{'custnum'=> $self->getfield('custnum') } )
+    qsearch('cust_pkg', { 'custnum' => $self->custnum } )
   ) {
 
-    next if $cust_pkg->getfield('cancel');  
+    next if $cust_pkg->cancel;  
 
     #? to avoid use of uninitialized value errors... ?
     $cust_pkg->setfield('bill', '')
@@ -1880,7 +1880,7 @@ sub append_fuzzyfiles {
 
 =head1 VERSION
 
-$Id: cust_main.pm,v 1.48 2001-12-08 10:03:11 ivan Exp $
+$Id: cust_main.pm,v 1.49 2001-12-15 00:17:38 ivan Exp $
 
 =head1 BUGS
 
