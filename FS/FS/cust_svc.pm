@@ -3,7 +3,7 @@ package FS::cust_svc;
 use strict;
 use vars qw( @ISA );
 use Carp qw( cluck );
-use FS::Record qw( qsearchs dbh );
+use FS::Record qw( qsearch qsearchs dbh );
 use FS::cust_pkg;
 use FS::part_pkg;
 use FS::part_svc;
@@ -245,7 +245,7 @@ sub seconds_since {
 
 =head1 VERSION
 
-$Id: cust_svc.pm,v 1.10 2002-02-09 17:45:26 ivan Exp $
+$Id: cust_svc.pm,v 1.11 2002-02-10 21:37:24 ivan Exp $
 
 =head1 BUGS
 
