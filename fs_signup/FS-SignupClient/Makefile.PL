@@ -12,7 +12,7 @@ WriteMakefile(
                          'Business::CreditCard' => 0,
                          'HTTP::BrowserDetect' => 0,
                          'HTTP::Headers::UserAgent' => 3,
-                         'Storable' => 0,
                          'Text::Template' => 0,
+                         'FS::SelfService' => 0,
                        },
 );

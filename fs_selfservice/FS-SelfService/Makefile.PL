@@ -8,7 +8,9 @@ WriteMakefile(
     'INSTALLSCRIPT'     => '/usr/local/sbin',
     'INSTALLSITEBIN'    => '/usr/local/sbin',
     'PERM_RWX'          => '750',
-    'PREREQ_PM'		=> {}, # e.g., Module::Name => 1.1
+    'PREREQ_PM'		=> {
+                             'Storable' => 0,
+                           }, # e.g., Module::Name => 1.1
     ($] >= 5.005 ?    ## Add these new keywords supported since 5.005
       (ABSTRACT_FROM => 'SelfService.pm', # retrieve abstract from module
        AUTHOR     => 'Ivan Kohler <ivan-freeside-selfservice@420.am>') : ()),
