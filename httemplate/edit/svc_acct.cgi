@@ -244,7 +244,16 @@ my($quota,$slipip)=(
   $svc_acct->slipip,
 );
 
-print qq!<INPUT TYPE="hidden" NAME="quota" VALUE="$quota">!;
+if ( $part_svc->part_svc_column('quota')->columnflag eq "F" )
+{
+  print qq!<INPUT TYPE="hidden" NAME="quota" VALUE="$quota">!;
+} else {
+  print <<END;
+    <TR><TD ALIGN="right">Quota:</TD>
+        <TD> <INPUT TYPE="text" NAME="quota" VALUE="$quota" ></TD>
+    </TR>
+END
+}
 
 if ( $part_svc->part_svc_column('slipip')->columnflag eq "F" ) {
   print qq!<INPUT TYPE="hidden" NAME="slipip" VALUE="$slipip">!;

@@ -55,6 +55,12 @@ sub _export_insert {
   $err_or_queue = $self->infostreet_queueContact( $svc_acct->svcnum,
     $svc_acct->username, %contact_info );
   return $err_or_queue unless ref($err_or_queue);
+
+  # If a quota has been specified set the quota because it is not the default
+  $err_or_queue = $self->infostreet_queueSetQuota( $svc_acct->svcnum, 
+    $svc_acct->username, $svc_acct->quota ) if $svc_acct->quota;
+  return $err_or_queue unless ref($err_or_queue);
+
   my $error = $err_or_queue->depend_insert( $jobnum );
   return $error if $error;
 
@@ -68,6 +74,13 @@ sub _export_replace {
   my( $self, $new, $old ) = (shift, shift, shift);
   return "can't change username with InfoStreet"
     if $old->username ne $new->username;
+
+  # If the quota has changed then do the export to setQuota
+  my $err_or_queue = $self->infostreet_queueSetQuota( $new->svcnum, $new->username, $new->quota ) 
+        if ( $old->quota != $new->quota );  
+  return $err_or_queue unless ref($err_or_queue);
+
+
   return '' unless $old->_password ne $new->_password;
   $self->infostreet_queue( $new->svcnum,
     'passwd', $new->username, $new->_password );
@@ -149,6 +162,30 @@ sub infostreet_setContact {
   }
 
 }
+
+sub infostreet_queueSetQuota {
+
+ my( $self, $svcnum) = (shift, shift);
+ my $queue = new FS::queue {
+    'svcnum' => $svcnum,
+    'job'    => 'FS::part_export::infostreet::infostreet_setQuota',
+ };
+
+ $queue->insert(
+    $self->option('url'),
+    $self->option('login'),
+    $self->option('password'),
+    $self->option('groupID'),
+    @_,
+ ) or $queue;
+
+}
+
+sub infostreet_setQuota {
+  my($url, $is_username, $is_password, $groupID, $username, $quota) = @_;
+  infostreet_command($url, $is_username, $is_password, $groupID, 'setQuota', $username, [ 'int'=> $quota ]  );
+}
+
 
 sub infostreet_command { #subroutine, not method
   my($url, $username, $password, $groupID, $method, @args) = @_;
