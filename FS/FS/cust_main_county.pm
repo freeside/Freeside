@@ -63,6 +63,10 @@ currently supported:
 
 =item taxname - if defined, printed on invoices instead of "Tax"
 
+=item setuptax - if 'Y', this tax does not apply to setup fees
+
+=item recurtax - if 'Y', this tax does not apply to recurring fees
+
 =back
 
 =head1 METHODS
@@ -113,10 +117,38 @@ sub check {
     || $self->ut_textn('taxclass') # ...
     || $self->ut_money('exempt_amount')
     || $self->ut_textn('taxname')
+    || $self->ut_enum('setuptax', [ '', 'Y' ] )
+    || $self->ut_enum('recurtax', [ '', 'Y' ] )
     || $self->SUPER::check
     ;
 
+}
 
+sub taxname {
+  my $self = shift;
+  if ( $self->dbdef_table->column('taxname') ) {
+    return $self->setfield('taxname', $_[0]) if @_;
+    return $self->getfield('taxname');
+  }  
+  return '';
+}
+
+sub setuptax {
+  my $self = shift;
+  if ( $self->dbdef_table->column('setuptax') ) {
+    return $self->setfield('setuptax', $_[0]) if @_;
+    return $self->getfield('setuptax');
+  }  
+  return '';
+}
+
+sub recurtax {
+  my $self = shift;
+  if ( $self->dbdef_table->column('recurtax') ) {
+    return $self->setfield('recurtax', $_[0]) if @_;
+    return $self->getfield('recurtax');
+  }  
+  return '';
 }
 
 =back
