@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: agent.cgi,v 1.2 1998-11-23 07:52:29 ivan Exp $
+# $Id: agent.cgi,v 1.3 1998-12-17 08:40:16 ivan Exp $
 #
 # ivan@sisd.com 97-dec-12
 #
@@ -10,7 +10,10 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: agent.cgi,v $
-# Revision 1.2  1998-11-23 07:52:29  ivan
+# Revision 1.3  1998-12-17 08:40:16  ivan
+# s/CGI::Request/CGI.pm/; etc
+#
+# Revision 1.2  1998/11/23 07:52:29  ivan
 # *** empty log message ***
 #
 
@@ -51,8 +54,6 @@ if ( $agentnum ) {
 if ( $error ) {
   &idiot($error);
 } else { 
-  #$req->cgi->redirect("../../view/agent.cgi?$agentnum");
-  #$req->cgi->redirect("../../edit/agent.cgi?$agentnum");
-  print $cgi->redirect(popurl(3). "/browse/agent.cgi");
+  print $cgi->redirect(popurl(3). "browse/agent.cgi");
 }
 

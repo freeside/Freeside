@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# process/part_referral.cgi: Edit referrals (process form)
+# $Id: part_referral.cgi,v 1.2 1998-12-17 08:40:25 ivan Exp $
 #
 # ivan@sisd.com 98-feb-23
 #
@@ -8,25 +8,29 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
+#
+# $Log: part_referral.cgi,v $
+# Revision 1.2  1998-12-17 08:40:25  ivan
+# s/CGI::Request/CGI.pm/; etc
+#
 
 use strict;
-use CGI::Request;
+use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
 use FS::Record qw(qsearchs);
 use FS::part_referral qw(fields);
-use FS::CGI qw(eidiot);
-use FS::CGI qw(eidiot);
+use FS::CGI qw(popurl eidiot);
 
-my($req)=new CGI::Request; # create form object
+my($cgi)=new CGI; # create form object
 
-&cgisuidsetup($req->cgi);
+&cgisuidsetup($cgi);
 
-my($refnum)=$req->param('refnum');
+my($refnum)=$cgi->param('refnum');
 
 my($new)=create FS::part_referral ( {
   map {
-    $_, $req->param($_);
+    $_, scalar($cgi->param($_));
   } fields('part_referral')
 } );
 
@@ -41,5 +45,5 @@ if ( $refnum ) {
 }
 
 $refnum=$new->getfield('refnum');
-$req->cgi->redirect("../../browse/part_referral.cgi");
+print $cgi->redirect(popurl(3). "browse/part_referral.cgi");
 

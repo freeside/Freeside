@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: agent_type.cgi,v 1.2 1998-11-21 07:49:20 ivan Exp $
+# $Id: agent_type.cgi,v 1.3 1998-12-17 08:40:17 ivan Exp $
 #
 # ivan@sisd.com 97-dec-11
 #
@@ -10,7 +10,10 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: agent_type.cgi,v $
-# Revision 1.2  1998-11-21 07:49:20  ivan
+# Revision 1.3  1998-12-17 08:40:17  ivan
+# s/CGI::Request/CGI.pm/; etc
+#
+# Revision 1.2  1998/11/21 07:49:20  ivan
 # s/CGI::Request/CGI.pm/
 #
 
@@ -59,8 +62,7 @@ foreach $part_pkg (qsearch('part_pkg',{})) {
   });
   if ( $type_pkgs && ! $cgi->param("pkgpart$pkgpart") ) {
     my($d_type_pkgs)=$type_pkgs; #need to save $type_pkgs for below.
-    $error=$d_type_pkgs->del; #FS::Record not FS::type_pkgs,
-                                  #so ->del not ->delete.  hmm.  hmm.
+    $error=$d_type_pkgs->delete;
     if ( $error ) {
       idiot($error);
       exit;
@@ -83,7 +85,5 @@ foreach $part_pkg (qsearch('part_pkg',{})) {
 
 }
 
-#$req->cgi->redirect("../../view/agent_type.cgi?$typenum");
-#$req->cgi->redirect("../../edit/agent_type.cgi?$typenum");
-print $cgi->redirect(popurl(3). "/browse/agent_type.cgi");
+print $cgi->redirect(popurl(3). "browse/agent_type.cgi");
 

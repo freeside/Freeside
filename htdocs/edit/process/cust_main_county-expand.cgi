@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main_county-expand.cgi,v 1.2 1998-11-18 09:01:40 ivan Exp $
+# $Id: cust_main_county-expand.cgi,v 1.3 1998-12-17 08:40:20 ivan Exp $
 #
 # ivan@sisd.com 97-dec-16
 #
@@ -15,7 +15,10 @@
 # ivan@sisd.com 98-sep-2
 #
 # $Log: cust_main_county-expand.cgi,v $
-# Revision 1.2  1998-11-18 09:01:40  ivan
+# Revision 1.3  1998-12-17 08:40:20  ivan
+# s/CGI::Request/CGI.pm/; etc
+#
+# Revision 1.2  1998/11/18 09:01:40  ivan
 # i18n! i18n!
 #
 
@@ -78,5 +81,5 @@ unless ( qsearch('cust_main',{
   die $error if $error;
 }
 
-print $cgi->redirect(popurl(3). "/edit/cust_main_county.cgi");
+print $cgi->redirect(popurl(3). "edit/cust_main_county.cgi");
 

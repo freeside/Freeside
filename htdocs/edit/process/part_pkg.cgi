@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: part_pkg.cgi,v 1.3 1998-11-21 07:17:58 ivan Exp $
+# $Id: part_pkg.cgi,v 1.4 1998-12-17 08:40:24 ivan Exp $
 #
 # process/part_pkg.cgi: Edit package definitions (process form)
 #
@@ -17,7 +17,10 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: part_pkg.cgi,v $
-# Revision 1.3  1998-11-21 07:17:58  ivan
+# Revision 1.4  1998-12-17 08:40:24  ivan
+# s/CGI::Request/CGI.pm/; etc
+#
+# Revision 1.3  1998/11/21 07:17:58  ivan
 # bugfix to work for regular aswell as custom pricing
 #
 # Revision 1.2  1998/11/15 13:16:15  ivan
@@ -43,7 +46,7 @@ my($old)=qsearchs('part_pkg',{'pkgpart'=>$pkgpart}) if $pkgpart;
 
 my($new)=create FS::part_pkg ( {
   map {
-    $_, $cgi->param($_);
+    $_, scalar($cgi->param($_));
   } fields('part_pkg')
 } );
 
@@ -90,9 +93,7 @@ foreach $part_svc (qsearch('part_svc',{})) {
 }
 
 unless ( $cgi->param('pkgnum') && $cgi->param('pkgnum') =~ /^(\d+)$/ ) {
-  #$req->cgi->redirect("../../view/part_pkg.cgi?$pkgpart");
-  #$req->cgi->redirect("../../edit/part_pkg.cgi?$pkgpart");
-  print $cgi->redirect(popurl(3). "/browse/part_pkg.cgi");
+  print $cgi->redirect(popurl(3). "browse/part_pkg.cgi");
 } else {
   my($old_cust_pkg) = qsearchs( 'cust_pkg', { 'pkgnum' => $1 } );
   my %hash = $old_cust_pkg->hash;
@@ -100,7 +101,7 @@ unless ( $cgi->param('pkgnum') && $cgi->param('pkgnum') =~ /^(\d+)$/ ) {
   my($new_cust_pkg) = create FS::cust_pkg \%hash;
   my $error = $new_cust_pkg->replace($old_cust_pkg);
   eidiot "Error modifying cust_pkg record: $error\n" if $error;
-  print $cgi->redirect(popurl(3). "/view/cust_main.cgi?". $new_cust_pkg->custnum);
+  print $cgi->redirect(popurl(3). "view/cust_main.cgi?". $new_cust_pkg->custnum);
 }
 
 

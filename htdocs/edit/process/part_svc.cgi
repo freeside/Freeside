@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: part_svc.cgi,v 1.2 1998-11-21 06:43:08 ivan Exp $
+# $Id: part_svc.cgi,v 1.3 1998-12-17 08:40:26 ivan Exp $
 #
 # ivan@sisd.com 97-nov-14
 #
@@ -10,7 +10,10 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: part_svc.cgi,v $
-# Revision 1.2  1998-11-21 06:43:08  ivan
+# Revision 1.3  1998-12-17 08:40:26  ivan
+# s/CGI::Request/CGI.pm/; etc
+#
+# Revision 1.2  1998/11/21 06:43:08  ivan
 # s/CGI::Request/CGI.pm/
 #
 
@@ -46,7 +49,5 @@ if ( $svcpart ) {
   $svcpart=$new->getfield('svcpart');
 }
 
-#$req->cgi->redirect("../../view/part_svc.cgi?$svcpart");
-#$req->cgi->redirect("../../edit/part_svc.cgi?$svcpart");
-print $cgi->redirect(popurl(3)."/browse/part_svc.cgi");
+print $cgi->redirect(popurl(3)."browse/part_svc.cgi");
 

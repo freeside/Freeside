@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# process/svc_domain.cgi: Add a domain (process form)
+# $Id: svc_domain.cgi,v 1.2 1998-12-17 08:40:30 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/svc_domain.cgi
@@ -18,9 +18,14 @@
 #
 # Changes to allow page to work at a relative position in server
 #       bmccane@maxbaud.net     98-apr-3
+#
+# $Log: svc_domain.cgi,v $
+# Revision 1.2  1998-12-17 08:40:30  ivan
+# s/CGI::Request/CGI.pm/; etc
+#
 
 use strict;
-use CGI::Request;
+use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
 use FS::Record qw(qsearchs);
@@ -29,24 +34,24 @@ use FS::svc_domain;
 #remove this to actually test the domains!
 $FS::svc_domain::whois_hack = 1;
 
-my($req) = new CGI::Request;
-&cgisuidsetup($req->cgi);
+my($cgi) = new CGI;
+&cgisuidsetup($cgi);
 
-$req->param('svcnum') =~ /^(\d*)$/ or die "Illegal svcnum!";
+$cgi->param('svcnum') =~ /^(\d*)$/ or die "Illegal svcnum!";
 my($svcnum)=$1;
 
 my($new) = create FS::svc_domain ( {
   map {
-    $_, $req->param($_);
+    $_, scalar($cgi->param($_));
   } qw(svcnum pkgnum svcpart domain action purpose)
 } );
 
 my($error);
-if ($req->param('legal') ne "Yes") {
+if ($cgi->param('legal') ne "Yes") {
   $error = "Customer did not agree to be bound by NSI's ".
     qq!<A HREF="http://rs.internic.net/help/agreement.txt">!.
     "Domain Name Resgistration Agreement</A>";
-} elsif ($req->param('svcnum')) {
+} elsif ($cgi->param('svcnum')) {
   $error="Can't modify a domain!";
 } else {
   $error=$new->insert;
@@ -54,25 +59,8 @@ if ($req->param('legal') ne "Yes") {
 }
 
 unless ($error) {
-  $req->cgi->redirect("../../view/svc_domain.cgi?$svcnum");
+  print $cgi->redirect(popurl(3). "view/svc_domain.cgi?$svcnum");
 } else {
-  CGI::Base::SendHeaders(); # one guess
-  print <<END;
-<HTML>
-  <HEAD>
-    <TITLE>Error adding domain</TITLE>
-  </HEAD>
-  <BODY>
-    <CENTER>
-    <H4>Error adding domain</H4>
-    </CENTER>
-    Your update did not occur because of the following error:
-    <P><B>$error</B>
-    <P>Hit the <I>Back</I> button in your web browser, correct this mistake, and submit the form again.
-  </BODY>
-</HTML>
-END
-
+  idiot($error);
 }
-
 

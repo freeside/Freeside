@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# process/cust_credit.cgi: Add a credit (process form)
+# $Id: cust_credit.cgi,v 1.2 1998-12-17 08:40:18 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/cust_credit.cgi
@@ -20,51 +20,37 @@
 #
 # Changes to allow page to work at a relative position in server
 #       bmccane@maxbaud.net     98-apr-3
+#
+# $Log: cust_credit.cgi,v $
+# Revision 1.2  1998-12-17 08:40:18  ivan
+# s/CGI::Request/CGI.pm/; etc
+#
 
 use strict;
-use CGI::Request;
+use CGI;
+use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup getotaker);
+use FS::CGI qw(popurl eidiot);
 use FS::cust_credit;
 
-my($req)=new CGI::Request; # create form object
-cgisuidsetup($req->cgi);
+my($cgi)=new CGI; # create form object
+cgisuidsetup($cgi);
 
-$req->param('custnum') =~ /^(\d*)$/ or die "Illegal custnum!";
+$cgi->param('custnum') =~ /^(\d*)$/ or die "Illegal custnum!";
 my($custnum)=$1;
 
-$req->param('otaker',getotaker);
+$cgi->param('otaker',getotaker);
 
 my($new) = create FS::cust_credit ( {
   map {
-    $_, $req->param($_);
+    $_, scalar($cgi->param($_));
   } qw(custnum _date amount otaker reason)
 } );
 
 my($error);
 $error=$new->insert;
-&idiot($error) if $error;
+&eidiot($error) if $error;
 
 #no errors, no refund, so view our credit.
-$req->cgi->redirect("../../view/cust_main.cgi?$custnum#history");
-
-sub idiot {
-  my($error)=@_;
-  CGI::Base::SendHeaders(); # one guess
-  print <<END;
-<HTML>
-  <HEAD>
-    <TITLE>Error posting credit/refund</TITLE>
-  </HEAD>
-  <BODY>
-    <CENTER>
-    <H4>Error posting credit/refund</H4>
-    </CENTER>
-    Your update did not occur because of the following error:
-    <P><B>$error</B>
-    <P>Hit the <I>Back</I> button in your web browser, correct this mistake, and press the <I>Post</I> button again.
-  </BODY>
-</HTML>
-END
-
-}
+print $cgi->redirect(popurl(3). "view/cust_main.cgi?$custnum#history");
 

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# process/svc_acct_pop.cgi: Edit POP (process form)
+# $Id: svc_acct_pop.cgi,v 1.2 1998-12-17 08:40:28 ivan Exp $
 #
 # ivan@sisd.com 98-mar-8
 #
@@ -8,26 +8,31 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
+#
+# $Log: svc_acct_pop.cgi,v $
+# Revision 1.2  1998-12-17 08:40:28  ivan
+# s/CGI::Request/CGI.pm/; etc
+#
 
 use strict;
-use CGI::Request;
+use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
 use FS::Record qw(qsearch qsearchs);
 use FS::svc_acct_pop qw(fields);
-use FS::CGI qw(eidiot);
+use FS::CGI qw(popurl eidiot);
 
-my($req)=new CGI::Request; # create form object
+my($cgi)=new CGI; # create form object
 
-&cgisuidsetup($req->cgi);
+&cgisuidsetup($cgi);
 
-my($popnum)=$req->param('popnum');
+my($popnum)=$cgi->param('popnum');
 
 my($old)=qsearchs('svc_acct_pop',{'popnum'=>$popnum}) if $popnum;
 
 my($new)=create FS::svc_acct_pop ( {
   map {
-    $_, $req->param($_);
+    $_, scalar($cgi->param($_));
   } fields('svc_acct_pop')
 } );
 
@@ -39,5 +44,5 @@ if ( $popnum ) {
   eidiot($error) if $error;
   $popnum=$new->getfield('popnum');
 }
-$req->cgi->redirect("../../browse/svc_acct_pop.cgi");
+print $cgi->redirect(popurl(3). "browse/svc_acct_pop.cgi");
 

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main.cgi,v 1.2 1998-11-18 08:57:36 ivan Exp $
+# $Id: cust_main.cgi,v 1.3 1998-12-17 08:40:19 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/cust_main.cgi
@@ -22,7 +22,10 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # $Log: cust_main.cgi,v $
-# Revision 1.2  1998-11-18 08:57:36  ivan
+# Revision 1.3  1998-12-17 08:40:19  ivan
+# s/CGI::Request/CGI.pm/; etc
+#
+# Revision 1.2  1998/11/18 08:57:36  ivan
 # i18n, s/CGI-modules/CGI.pm/, FS::CGI::idiot instead of inline, FS::CGI::popurl
 #
 
@@ -34,7 +37,7 @@ use FS::CGI qw(eidiot popurl);
 use FS::Record qw(qsearchs);
 use FS::cust_main;
 
-my($req)=new CGI;
+my($cgi)=new CGI;
 
 &cgisuidsetup($cgi);
 
@@ -61,7 +64,7 @@ $cgi->param('country', $4);
 
 my($new) = create FS::cust_main ( {
   map {
-    $_, $cgi->param("$_") || ''
+    $_, scalar($cgi->param($_))
   } qw(custnum agentnum last first ss company address1 address2 city county
        state zip daytime night fax payby payinfo paydate payname tax
        otaker refnum)
@@ -82,5 +85,5 @@ if ( $new->custnum eq '' ) {
 }
 
 my($custnum)=$new->custnum;
-print $cgi->redirect(popurl(3). "/view/cust_main.cgi?$custnum#cust_main");
+print $cgi->redirect(popurl(3). "view/cust_main.cgi?$custnum#cust_main");
 

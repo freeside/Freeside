@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main_county.cgi,v 1.2 1998-11-18 09:01:41 ivan Exp $
+# $Id: cust_main_county.cgi,v 1.3 1998-12-17 08:40:21 ivan Exp $
 #
 # ivan@sisd.com 97-dec-16
 #
@@ -10,7 +10,10 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: cust_main_county.cgi,v $
-# Revision 1.2  1998-11-18 09:01:41  ivan
+# Revision 1.3  1998-12-17 08:40:21  ivan
+# s/CGI::Request/CGI.pm/; etc
+#
+# Revision 1.2  1998/11/18 09:01:41  ivan
 # i18n! i18n!
 #
 
@@ -22,7 +25,7 @@ use FS::CGI qw(eidiot);
 use FS::Record qw(qsearch qsearchs);
 use FS::cust_main_county;
 
-my($req)=new CGI;
+my($cgi)=new CGI;
 &cgisuidsetup($cgi);
 
 foreach ( $cgi->param ) {
@@ -38,5 +41,5 @@ foreach ( $cgi->param ) {
   eidiot($error) if $error;
 }
 
-$cgi->redirect(popurl(3). "/browse/cust_main_county.cgi");
+print $cgi->redirect(popurl(3). "browse/cust_main_county.cgi");
 
