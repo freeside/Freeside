@@ -64,10 +64,10 @@ foreach my $part_referral ( sort {
           <%= $part_referral->refnum %></A></TD>
         <TD><A HREF="<%= $p %>edit/part_referral.cgi?<%= $part_referral->refnum %>">
           <%= $part_referral->referral %></A></TD>
-        <% for my $after ( values %after ) {
+        <% for my $period ( keys %after ) {
           $sth->execute( $part_referral->refnum,
-                         $today-$after,
-                         $today+$before{$today},
+                         $today-$after{$period},
+                         $today+$before{$period},
           ) or die $sth->errstr;
           my $number = $sth->fetchrow_arrayref->[0];
         %>
@@ -83,9 +83,9 @@ foreach my $part_referral ( sort {
 %>
       <TR>
         <TH COLSPAN=2>Total</TH>
-        <% for my $after ( values %after ) {
-          $sth->execute( $today-$after,
-                         $today+$before{$today},
+        <% for my $period ( keys %after ) {
+          $sth->execute( $today-$after{$period},
+                         $today+$before{$period},
           ) or die $sth->errstr;
           my $number = $sth->fetchrow_arrayref->[0];
         %>
