@@ -674,7 +674,9 @@ sub realtime_card {
 
   if ( $transaction->is_success() && $action2 ) {
     my $auth = $transaction->authorization;
-    my $ordernum = $transaction->order_number;
+    my $ordernum = $transaction->can('order_number')
+                   ? $transaction->order_number
+                   : '';
 
     #warn "********* $auth ***********\n";
     #warn "********* $ordernum ***********\n";
@@ -1112,7 +1114,7 @@ sub print_text {
 
 =head1 VERSION
 
-$Id: cust_bill.pm,v 1.41 2002-09-05 16:51:49 ivan Exp $
+$Id: cust_bill.pm,v 1.42 2002-09-10 03:31:00 ivan Exp $
 
 =head1 BUGS
 
