@@ -17,30 +17,14 @@ die "Unknown svcnum!" unless $cust_svc;
     qq!pkgnum"> package</A> instead.!) 
   if $cust_svc->pkgnum ne '' && $cust_svc->pkgnum ne '0';
 
-my $svc_x = $cust_svc->svc_x;
-
-local $SIG{HUP} = 'IGNORE';
-local $SIG{INT} = 'IGNORE';
-local $SIG{QUIT} = 'IGNORE';
-local $SIG{TERM} = 'IGNORE';
-local $SIG{TSTP} = 'IGNORE';
-
-local $FS::UID::AutoCommit = 0;
-
-my $error = $svc_x->cancel;
-$error ||= $svc_x->delete;
-$error ||= $cust_svc->delete;
+my $error = $cust_svc->cancel;
 
 if ( $error ) {
-  $dbh->rollback;
   %>
 <!-- mason kludge -->
 <%
   &eidiot($error);
 } else {
-
-  $dbh->commit or die $dbh->errstr;
-
   print $cgi->redirect(popurl(2));
 }
 
