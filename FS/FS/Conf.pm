@@ -934,6 +934,13 @@ httemplate/docs/config.html
   },
 
   {
+    'key'         => 'legacy_link-steal',
+    'section'     => 'UI',
+    'description' => 'Allow "stealing" an already-audited service from one customer (or package) to another using the link function.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'queue_dangerous_controls',
     'section'     => 'UI',
     'description' => 'Enable queue modification controls on account pages and for new jobs.  Unless you are a developer working on new export code, you should probably leave this off to avoid causing provisioning problems.',
