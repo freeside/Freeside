@@ -1026,7 +1026,8 @@ sub bill {
   my $invnum = $cust_bill->invnum;
   my $cust_bill_pkg;
   foreach $cust_bill_pkg ( @cust_bill_pkg ) {
-    #warn $cust_bill_pkg->invnum($invnum);
+    #warn $invnum;
+    $cust_bill_pkg->invnum($invnum);
     $error = $cust_bill_pkg->insert;
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
@@ -1879,7 +1880,7 @@ sub append_fuzzyfiles {
 
 =head1 VERSION
 
-$Id: cust_main.pm,v 1.47 2001-11-12 13:19:52 ivan Exp $
+$Id: cust_main.pm,v 1.48 2001-12-08 10:03:11 ivan Exp $
 
 =head1 BUGS
 
