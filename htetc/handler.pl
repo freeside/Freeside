@@ -213,9 +213,9 @@ sub handler
         $cgi = new CGI;
         &cgisuidsetup($cgi);
         #&cgisuidsetup($r);
+        $p = popurl(2);
       }
 
-      $p = popurl(2);
 
       sub include {
         use vars qw($m);
