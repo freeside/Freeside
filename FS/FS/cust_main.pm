@@ -41,7 +41,7 @@ use FS::Msgcat qw(gettext);
 
 $realtime_bop_decline_quiet = 0;
 
-$Debug = 1;
+$Debug = 0;
 #$Debug = 1;
 
 $import = 0;
