@@ -9,16 +9,20 @@ pkgdb -u
 portinstall -PR cvsup-without-gui
 
 cp /usr/share/examples/cvsup/ports-supfile /root
-perl -pi -e 's/CHANGE_THIS/cvsup1/;' /root/ports-supfile
+perl -pi -e 's/CHANGE_THIS/cvsup13/;' /root/ports-supfile
 cvsup /root/ports-supfile
+
+portsdb -Uu
+
+portinstall -P -R portupgrade
 
 for port in `grep -v '^ *#' ports`; do
   #cd /usr/ports/$port
   #make install || exit
-  portinstall -P -R $port || exit
+  portinstall -P -R $port
 done
 
-for a in Net::SSH DBIx::DBSchema HTML::Widgets::SelectLayers Time::Duration Business::CreditCard; do perl -MCPAN -e"install $a"; done
+for a in JavaScript::RPC::Server::CGI Chart::LinesPoints; do perl -MCPAN -e"install $a"; done
 
 su -l pgsql -c initdb
 
@@ -34,6 +38,9 @@ su -l freeside -c 'createdb freeside'
 cd ../..
 make install-perl-modules
 make create-config
+freeside-adduser -c -h /usr/local/etc/freeside/htpasswd ivan
+su freeside -c 'freeside-setup ivan'
+su freeside -c '/home/ivan/freeside/bin/populate-msgcat ivan'
 make deploy
 
 #edit apache config, etc.
