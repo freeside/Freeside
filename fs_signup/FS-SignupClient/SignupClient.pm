@@ -164,7 +164,7 @@ sub new_customer {
     referral_custnum pkgpart username _password sec_phrase popnum
   ) };
 
-  $signup_data->{agentnum} = $hashref->{agentnum} if $hashref->{agentnum}
+  $signup_data->{agentnum} = $hashref->{agentnum} if $hashref->{agentnum};
 
   nstore_fd($signup_data, \*SOCK) or die "can't send customer signup: $!";
   SOCK->flush;

@@ -8,4 +8,11 @@ WriteMakefile(
     'INSTALLSCRIPT' => '/usr/local/sbin',
     'INSTALLSITEBIN' => '/usr/local/sbin',
     'PERM_RWX'      => '750',
+    'PREREQ_PM'     => {
+                         'Business::CreditCard' => 0,
+                         'HTTP::BrowserDetect' => 0,
+                         'HTTP::Headers::UserAgent' => 3,
+                         'Storable' => 0,
+                         'Text::Template' => 0,
+                       },
 );
