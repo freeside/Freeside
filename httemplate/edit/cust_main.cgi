@@ -76,7 +76,7 @@ my $action = $custnum ? 'Edit' : 'Add';
 
 <FORM ACTION="<%= popurl(1) %>process/cust_main.cgi" METHOD=POST NAME="form1" onSubmit="document.form1.submit.disabled=true">
 <INPUT TYPE="hidden" NAME="custnum" VALUE="<%= $custnum %>">
-ustomer # <%= $custnum ? "<B>$custnum</B>" : " (NEW)" %>
+Customer # <%= $custnum ? "<B>$custnum</B>" : " (NEW)" %>
 
 <!-- agent -->
 
