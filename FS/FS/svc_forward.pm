@@ -250,7 +250,7 @@ sub check {
 
   if ( $self->src ) {
     $self->src =~ /^([\w\.\-\&]*)(\@([\w\-]+\.)+\w+)$/
-       or return "Illegal src: ". $self->dst;
+       or return "Illegal src: ". $self->src;
     $self->src("$1$2");
   } else {
     $self->src('');
