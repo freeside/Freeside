@@ -793,7 +793,7 @@ sub realtime_bop {
   if ( $transaction->is_success() ) {
 
     my %method2payby = (
-      ' CC'    => 'CARD',
+      'CC'     => 'CARD',
       'ECHECK' => 'CHEK',
       'LEC'    => 'LECB',
     );
@@ -1121,7 +1121,7 @@ sub print_text {
 
 =head1 VERSION
 
-$Id: cust_bill.pm,v 1.54 2002-11-19 22:48:02 ivan Exp $
+$Id: cust_bill.pm,v 1.55 2002-11-22 12:19:15 ivan Exp $
 
 =head1 BUGS
 
