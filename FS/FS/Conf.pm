@@ -374,9 +374,9 @@ httemplate/docs/config.html
   },
 
   {
-    'key'         => 'excludeaddr',
-    'section'     => 'deprecated',
-    'description' => 'Addresses to exclude from assignment, one per line.',
+    'key'         => 'exclude_ip_addr',
+    'section'     => '',
+    'description' => 'Exclude these from the list of available broadband service IP addresses. (One per line)',
     'type'        => 'textarea',
   },
   
