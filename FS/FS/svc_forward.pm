@@ -47,9 +47,11 @@ inherits from FS::Record.  The following fields are currently supported:
 
 =item srcsvc - svcnum of the source of the forward (see L<FS::svc_acct>)
 
+=item src - literal source (username or full email address)
+
 =item dstsvc - svcnum of the destination of the forward (see L<FS::svc_acct>)
 
-=item dst - foreign destination (email address) - forward not local to freeside
+=item dst - literal destination (username or full email address)
 
 =back
 
@@ -214,12 +216,19 @@ sub check {
   #my $part_svc = $x;
 
   my $error = $self->ut_numbern('svcnum')
-              || $self->ut_number('srcsvc')
+              || $self->ut_numbern('srcsvc')
               || $self->ut_numbern('dstsvc')
   ;
   return $error if $error;
 
-  return "Unknown srcsvc" unless $self->srcsvc_acct;
+  return "Both srcsvc and src were defined; only one can be specified"
+    if $self->srcsvc && $self->src;
+
+  return "one of srcsvc or src is required"
+    unless $self->srcsvc || $self->src;
+
+  return "Unknown srcsvc: ". $self->srcsvc
+    unless ! $self->srcsvc || $self->srcsvc_acct;
 
   return "Both dstsvc and dst were defined; only one can be specified"
     if $self->dstsvc && $self->dst;
@@ -227,16 +236,24 @@ sub check {
   return "one of dstsvc or dst is required"
     unless $self->dstsvc || $self->dst;
 
-  #return "Unknown dstsvc: $dstsvc" unless $self->dstsvc_acct || ! $self->dstsvc;
-  return "Unknown dstsvc"
-    unless qsearchs('svc_acct', { 'svcnum' => $self->dstsvc } )
-           || ! $self->dstsvc;
+  return "Unknown dstsvc: ". $self->dstsvc
+    unless ! $self->dstsvc || $self->dstsvc_acct;
+  #return "Unknown dstsvc"
+  #  unless qsearchs('svc_acct', { 'svcnum' => $self->dstsvc } )
+  #         || ! $self->dstsvc;
 
+  if ( $self->src ) {
+    $self->src =~ /^([\w\.\-\&]*)(\@([\w\-]+\.)+\w+)?$/
+       or return "Illegal src: ". $self->dst;
+    $self->src("$1$2");
+  } else {
+    $self->src('');
+  }
 
   if ( $self->dst ) {
-    $self->dst =~ /^([\w\.\-]+)\@(([\w\-]+\.)+\w+)$/
+    $self->dst =~ /^([\w\.\-\&]*)(\@([\w\-]+\.)+\w+)?$/
        or return "Illegal dst: ". $self->dst;
-    $self->dst("$1\@$2");
+    $self->dst("$1$2");
   } else {
     $self->dst('');
   }
@@ -246,7 +263,8 @@ sub check {
 
 =item srcsvc_acct
 
-Returns the FS::svc_acct object referenced by the srcsvc column.
+Returns the FS::svc_acct object referenced by the srcsvc column, or false for
+literally specified forwards.
 
 =cut
 
@@ -258,7 +276,7 @@ sub srcsvc_acct {
 =item dstsvc_acct
 
 Returns the FS::svc_acct object referenced by the srcsvc column, or false for
-forwards not local to freeside.
+literally specified forwards.
 
 =cut
 

@@ -844,8 +844,9 @@ sub tables_hash_hack {
       'columns' => [
         'svcnum',   'int',    '',  '',
         'srcsvc',   'int',    '',  '',
+        'src',      'varchar',    'NULL',  255,
         'dstsvc',   'int',    '',  '',
-        'dst',      'varchar',    'NULL',  $char_d,
+        'dst',      'varchar',    'NULL',  255,
       ],
       'primary_key' => 'svcnum',
       'unique'      => [],

@@ -156,6 +156,8 @@ ALTER TABLE h_part_referral ADD disabled char(1) NULL;
 CREATE INDEX part_referral1 ON part_referral ( disabled );
 ALTER TABLE pkg_svc ADD primary_svc char(1) NULL;
 ALTER TABLE h_pkg_svc ADD primary_svc char(1) NULL;
+ALTER TABLE svc_forward ADD src varchar(255) NULL;
+ALTER TABLE h_svc_forward ADD src varchar(255) NULL;
 
 dump database, edit:
 - cust_main: increase otaker from 8 to 32
