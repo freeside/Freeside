@@ -3,6 +3,7 @@ package FS::part_export;
 use strict;
 use vars qw( @ISA @EXPORT_OK %exports );
 use Exporter;
+use Tie::IxHash;
 use FS::Record qw( qsearch qsearchs dbh );
 use FS::part_svc;
 use FS::part_export_option;
@@ -472,6 +473,80 @@ sub exporttype2svcdb {
   '';
 }
 
+tie my %shellcommands_options, 'Tie::IxHash',
+  #'machine' => { label=>'Remote machine' },
+  'user' => { label=>'Remote username', default=>'root' },
+  'useradd' => { label=>'Insert command',
+                 default=>'useradd -d $dir -m -s $shell -u $uid $username'
+                #default=>'cp -pr /etc/skel $dir; chown -R $uid.$gid $dir'
+               },
+  'userdel' => { label=>'Delete command',
+                 default=>'userdel $username',
+                 #default=>'rm -rf $dir',
+               },
+  'usermod' => { label=>'Modify command',
+                 default=>'usermod -d $new_dir -l $new_username -s $new_shell -u $new_uid $old_username',
+                #default=>'[ -d $old_dir ] && mv $old_dir $new_dir || ( '.
+                 #  'chmod u+t $old_dir; mkdir $new_dir; cd $old_dir; '.
+                 #  'find . -depth -print | cpio -pdm $new_dir; '.
+                 #  'chmod u-t $new_dir; chown -R $uid.$gid $new_dir; '.
+                 #  'rm -rf $old_dir'.
+                 #')'
+               },
+;
+
+tie my %sqlradius_options, 'Tie::IxHash',
+  'datasrc'  => { label=>'DBI data source' },
+  'username' => { label=>'Database username' },
+  'password' => { label=>'Database password' },
+;
+
+tie my %cyrus_options, 'Tie::IxHash',
+  'server' => { label=>'IMAP server' },
+  'username' => { label=>'Admin username' },
+  'password' => { label=>'Admin password' },
+;
+
+tie my %cp_options, 'Tie::IxHash',
+  'host'      => { label=>'Hostname' },
+  'port'      => { label=>'Port number' },
+  'username'  => { label=>'Username' },
+  'password'  => { label=>'Password' },
+  'domain'    => { label=>'Domain' },
+  'workgroup' => { label=>'Default Workgroup' },
+;
+
+tie my %infostreet_options, 'Tie::IxHash',
+  'url'      => { label=>'XML-RPC Access URL', },
+  'login'    => { label=>'InfoStreet login', },
+  'password' => { label=>'InfoStreet password', },
+  'groupID'  => { label=>'InfoStreet groupID', },
+;
+
+tie my %vpopmail_options, 'Tie::IxHash',
+  'machine' => { label=>'vpopmail machine', },
+  'dir'     => { label=>'directory', }, # ?more info? default?
+  'uid'     => { label=>'vpopmail uid' },
+  'gid'     => { label=>'vpopmail gid' },
+;
+
+tie my %bind_options, 'Tie::IxHash',
+  #'machine'    => { label=>'named machine' },
+  'named_conf' => { label  => 'named.conf location',
+                    default=> '/etc/bind/named.conf' },
+  'zonepath'   => { label => 'path to zone files',
+                    default=> '/etc/bind/', },
+;
+
+tie my %bind_slave_options, 'Tie::IxHash',
+  #'machine'    => { label=> 'Slave machine' },
+  'master'     => { label=> 'Master IP address' },
+  'named_conf' => { label  => 'named.conf location',
+                    default=> '/etc/bind/named.conf' },
+;
+
+
+
 #export names cannot have dashes...
 %exports = (
   'svc_acct' => {
@@ -492,90 +567,47 @@ sub exporttype2svcdb {
 #    },
     'textradius' => {
       'desc' => 'Batch export of a text /etc/raddb/users file (Livingston, Cistron)',
+      'options' => {},
     },
 
     'shellcommands' => {
       'desc' => 'Real-time export via remote SSH (i.e. useradd, userdel, etc.)',
-      'options' => {
-        #'machine' => { label=>'Remote machine' },
-        'user' => { label=>'Remote username', default=>'root' },
-        'useradd' => { label=>'Insert command',
-                       default=>'useradd -d $dir -m -s $shell -u $uid $username'
-                      #default=>'cp -pr /etc/skel $dir; chown -R $uid.$gid $dir'
-                     },
-        'userdel' => { label=>'Delete command',
-                       default=>'userdel $username',
-                       #default=>'rm -rf $dir',
-                     },
-        'usermod' => { label=>'Modify command',
-                       default=>'usermod -d $new_dir -l $new_username -s $new_shell -u $new_uid $old_username',
-                      #default=>'[ -d $old_dir ] && mv $old_dir $new_dir || ( '.
-                       #  'chmod u+t $old_dir; mkdir $new_dir; cd $old_dir; '.
-                       #  'find . -depth -print | cpio -pdm $new_dir; '.
-                       #  'chmod u-t $new_dir; chown -R $uid.$gid $new_dir; '.
-                       #  'rm -rf $old_dir'.
-                       #')'
-                     },
-      },
+      'options' => \%shellcommands_options,
       'nodomain' => 'Y',
       'notes' => 'shellcommandsnotes... (this one is the nodomain one)',
     },
 
     'sqlradius' => {
       'desc' => 'Real-time export to SQL-backed RADIUS (ICRADIUS, FreeRADIUS)',
-      'options' => {
-        'datasrc'  => { label=>'DBI data source' },
-        'username' => { label=>'Database username' },
-        'password' => { label=>'Database password' },
-      },
+      'options' => \%sqlradius_options,
       'nodomain' => 'Y',
       'notes' => 'Real-time export of radcheck, radreply and usergroup tables to any SQL database for <a href="http://www.freeradius.org/">FreeRADIUS</a> or <a href="http://radius.innercite.com/">ICRADIUS</a>.  Use <a href="../docs/man/bin/freeside-sqlradius-reset">freeside-sqlradius-reset</a> to delete and repopulate the tables from the Freeside database.',
     },
 
     'cyrus' => {
       'desc' => 'Real-time export to Cyrus IMAP server',
-      'options' => {
-        'server' => { label=>'IMAP server' },
-        'username' => { label=>'Admin username' },
-        'password' => { label=>'Admin password' },
-      },
+      'options' => \%cyrus_options,
       'nodomain' => 'Y',
       'notes' => 'Integration with <a href="http://asg.web.cmu.edu/cyrus/imapd/">Cyrus IMAP Server</a>.  Cyrus::IMAP::Admin should be installed locally and the connection to the server secured.  <B>svc_acct.quota</B>, if available, is used to set the Cyrus quota. '
     },
 
     'cp' => {
       'desc' => 'Real-time export to Critical Path Account Provisioning Protocol',
-      'options' => {
-        'host'      => { label=>'Hostname' },
-        'port'      => { label=>'Port number' },
-        'username'  => { label=>'Username' },
-        'password'  => { label=>'Password' },
-        'domain'    => { label=>'Domain' },
-        'workgroup' => { label=>'Default Workgroup' },
-      },
+      'options' => \%cp_options,
       'notes' => 'Real-time export to <a href="http://www.cp.net/">Critial Path Account Provisioning Protocol</a>.  Requires installation of <a href="http://search.cpan.org/search?dist=Net-APP">Net::APP</a> from CPAN.',
     },
     
     'infostreet' => {
       'desc' => 'Real-time export to InfoStreet streetSmartAPI',
-      'options' => {
-        'url'      => { label=>'XML-RPC Access URL', },
-        'login'    => { label=>'InfoStreet login', },
-        'password' => { label=>'InfoStreet password', },
-        'groupID'  => { label=>'InfoStreet groupID', },
-      },
+      'options' => \%infostreet_options,
       'nodomain' => 'Y',
       'notes' => 'Real-time export to <a href="http://www.infostreet.com/">InfoStreet</a> streetSmartAPI.  Requires installation of <a href="http://search.cpan.org/search?dist=Frontier-Client">Frontier::Client</a> from CPAN.',
     },
 
     'vpopmail' => {
       'desc' => 'Real-time export to vpopmail text files',
-      'options' => {
-        'machine' => { label=>'vpopmail machine', },
-        'dir'     => { label=>'directory', }, # ?more info? default?
-        'uid'     => { label=>'vpopmail uid' },
-        'gid'     => { label=>'vpopmail gid' },
-      },
+      'options' => \%vpopmail_options,
+
       'notes' => 'Real time export to <a href="http://inter7.com/vpopmail/">vpopmail</a> text files (...extended description from jeff?...)',
     },
 
@@ -585,24 +617,13 @@ sub exporttype2svcdb {
 
     'bind' => {
       'desc' =>'Batch export to BIND named',
-      'options' => {
-        #'machine'    => { label=>'named machine' },
-        'named_conf' => { label  => 'named.conf location',
-                          default=> '/etc/bind/named.conf' },
-        'zonepath'   => { label => 'path to zone files',
-                          default=> '/etc/bind/', },
-      },
+      'options' => \%bind_options,
       'notes' => 'bind export notes',
     },
 
     'bind_slave' => {
       'desc' =>'Batch export to slave BIND named',
-      'options' => {
-        #'machine'    => { label=> 'Slave machine' },
-        'master'     => { label=> 'Master IP address' },
-        'named_conf' => { label  => 'named.conf location',
-                          default=> '/etc/bind/named.conf' },
-      },
+      'options' => \%bind_slave_options,
       'notes' => 'bind export notes (secondary munge)',
     },
 
