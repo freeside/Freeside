@@ -23,6 +23,8 @@ FREESIDE_DOCUMENT_ROOT = /var/www/freeside
 #FREESIDE_DOCUMENT_ROOT = /var/www/htdocs/freeside
 #suse
 #FREESIDE_DOCUMENT_ROOT = /srv/www/htdocs/freeside
+#apache
+#FREESIDE_DOCUMENT_ROOT = /usr/local/apache/htdocs/freeside
 
 #deb, redhat, fedora, mandrake, suse, others?
 INIT_FILE = /etc/init.d/freeside
@@ -37,6 +39,8 @@ HTTPD_RESTART = /etc/init.d/apache restart
 #HTTPD_RESTART = /usr/local/etc/rc.d/apache.sh stop; sleep 1; /usr/local/etc/rc.d/apache.sh start
 #openbsd
 #HTTPD_RESTART = kill -TERM `cat /var/www/logs/httpd.pid`; sleep 1; /usr/sbin/httpd -u -DSSL
+#apache
+#HTTPD_RESTART = /usr/local/apache/bin/apachectl restart
 
 FREESIDE_RESTART = ${INIT_FILE} restart
 
