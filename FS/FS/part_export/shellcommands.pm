@@ -30,6 +30,7 @@ sub _export_command {
     ${$_} = $svc_acct->getfield($_) foreach $svc_acct->fields;
   }
   $finger = shell_quote $finger;
+  $domain = $svc_acct->domain;
   $crypt_password = ''; #surpress "used only once" warnings
   $crypt_password = crypt( $svc_acct->_password,
                              $saltset[int(rand(64))].$saltset[int(rand(64))] );
@@ -52,6 +53,7 @@ sub _export_replace {
     ${"new_$_"} = $new->getfield($_) foreach $new->fields;
   }
   $new_finger = shell_quote $new_finger;
+  $new_domain = $new->domain;
   $new_crypt_password = ''; #surpress "used only once" warnings
   $new_crypt_password = crypt( $new->_password,
                                $saltset[int(rand(64))].$saltset[int(rand(64))]);
