@@ -9,6 +9,7 @@ use CGI;
 use Date::Format;
 use Date::Parse;
 use Time::Local;
+use File::Basename;
 use Tie::IxHash;
 use HTML::Entities;
 use IO::Handle;
@@ -193,6 +194,37 @@ sub sprintAutoProfile {
 
 sub include {
   $Response->Include(@_);
+}
+
+if ( defined(@DBIx::Profile::ISA) ) {
+
+  #false laziness w/above
+  *redirect = sub {
+    my($location) = @_;
+
+    ${$Response->{BinaryRef}} = 
+      $cgi->header.
+      qq!<HTML><BODY>Redirect to <A HREF="$location">$location</A>!.
+      '<BR><BR><PRE>'.
+        ( UNIVERSAL::can(dbh, 'sprintProfile')
+            ? encode_entities(dbh->sprintProfile())
+            : 'DBIx::Profile missing sprintProfile method;'.
+              'unpatched or too old?'                        ).
+      "\n\n". &sprintAutoProfile().  '</PRE>'.
+      '</BODY></HTML>';
+
+    dbh->{'private_profile'} = {};
+
+    $Response->End;
+
+  };
+
+} else {
+
+  *redirect = sub {
+    $Response->Redirect(@_);
+  }
+
 }
 
 1;

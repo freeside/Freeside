@@ -2,7 +2,7 @@ package FS::cust_pay_batch;
 
 use strict;
 use vars qw( @ISA );
-use FS::Record;
+use FS::Record qw(dbh qsearchs);
 use Business::CreditCard;
 
 @ISA = qw( FS::Record );
@@ -190,9 +190,141 @@ sub check {
 
 =back
 
-=head1 VERSION
+=head1 SUBROUTINES
 
-$Id: cust_pay_batch.pm,v 1.7 2003-08-05 00:20:42 khoff Exp $
+=over 4
+
+=item import_results
+
+=cut
+
+sub import_results {
+  use Time::Local;
+  use FS::cust_pay;
+  eval "use Text::CSV_XS;";
+  die $@ if $@;
+#
+  my $param = shift;
+  my $fh = $param->{'filehandle'};
+  my $format = $param->{'format'};
+  my $paybatch = $param->{'paybatch'};
+
+  my @fields;
+  my $condition;
+  my $hook;
+
+  if ( $format eq 'csv-td_canada_trust-merchant_pc_batch' ) {
+
+    @fields = (
+      'paybatchnum', # Reference#:  Invoice number of the transaction
+      'paid',        # Amount:  Amount of the transaction.  Dollars and cents
+                     #          with no decimal entered.
+      '',            # Card Type:  0 - MCrd, 1 - Visa, 2 - AMEX, 3 - Discover,
+                     #             4 - Insignia, 5 - Diners/EnRoute, 6 - JCB
+      '_date',       # Transaction Date:  Date the Transaction was processed
+      'time',        # Transaction Time:  Time the transaction was processed
+      'payinfo',     # Card Number:  Card number for the transaction
+      '',            # Expiry Date:  Expiry date of the card
+      '',            # Auth#:  Authorization number entered for force post
+                     #         transaction
+      'type',        # Transaction Type:  0 - purchase, 40 - refund,
+                     #                    20 - force post
+      'result',      # Processing Result: 3 - Approval,
+                     #                    4 - Declined/Amount over limit,
+                     #                    5 - Invalid/Expired/stolen card,
+                     #                    6 - Comm Error
+      '',            # Terminal ID: Terminal ID used to process the transaction
+    );
+
+    $condition = sub {
+      my $hash = shift;
+      $hash->{'result'} == 3 && $hash->{'type'} == 0;
+    };
+
+    $hook = sub {
+      my $hash = shift;
+      $hash->{'paid'} = sprintf("%.2f", $hash->{'paid'} / 100 );
+      $hash->{'_date'} = timelocal( substr($hash->{'time'},  4, 2),
+                                    substr($hash->{'time'},  2, 2),
+                                    substr($hash->{'time'},  0, 2),
+                                    substr($hash->{'_date'}, 6, 2),
+                                    substr($hash->{'_date'}, 4, 2)-1,
+                                    substr($hash->{'_date'}, 0, 4)-1900, );
+    };
+
+  } else {
+    return "Unknown format $format";
+  }
+
+  my $csv = new Text::CSV_XS;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $line;
+  while ( defined($line=<$fh>) ) {
+
+    $csv->parse($line) or do {
+      $dbh->rollback if $oldAutoCommit;
+      return "can't parse: ". $csv->error_input();
+    };
+
+    my @values = $csv->fields();
+    my %hash;
+    foreach my $field ( @fields ) {
+      my $value = shift @values;
+      next unless $field;
+      $hash{$field} = $value;
+    }
+
+    my $cust_pay_batch =
+      qsearchs('cust_pay_batch', { 'paybatchnum' => $hash{'paybatchnum'} } );
+    unless ( $cust_pay_batch ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "unknown paybatchnum $hash{'paybatchnum'}\n";
+    }
+    my $custnum = $cust_pay_batch->custnum,
+
+    my $error = $cust_pay_batch->delete;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "error removing paybatchnum $hash{'paybatchnum'}: $error\n";
+    }
+
+    next unless &{$condition}(\%hash);
+
+    &{$hook}(\%hash);
+
+    my $cust_pay = new FS::cust_pay ( {
+      'custnum'  => $custnum,
+      'payby'    => 'CARD',
+      'paybatch' => $paybatch,
+      map { $_ => $hash{$_} } (qw( paid _date payinfo )),
+    } );
+    $error = $cust_pay->insert;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "error adding payment paybatchnum $hash{'paybatchnum'}: $error\n";
+    }
+
+    $cust_pay->cust_main->apply_payments;
+
+  }
+  
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  '';
+
+}
+
+=back
 
 =head1 BUGS
 

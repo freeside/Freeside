@@ -67,6 +67,7 @@ sub handler
       use Date::Format;
       use Date::Parse;
       use Time::Local;
+      use File::Basename;
       use Tie::IxHash;
       use HTML::Entities;
       use IO::Handle;
@@ -141,20 +142,10 @@ sub handler
 
         } else { #normal redirect
 
-          #http://www.masonhq.com/docs/faq/#how_do_i_do_an_external_redirect
-          $m->clear_buffer;
-          # The next two lines are necessary to stop Apache from re-reading
-          # POSTed data.
-          $r->method('GET');
-          $r->headers_in->unset('Content-length');
-          $r->content_type('text/html');
-          #$r->err_header_out('Location' => $location);
-          $r->header_out('Location' => $location);
-          $r->header_out('Content-Type' => 'text/html');
-          $m->abort(302);
-
+          $m->redirect($location);
           '';
-         }
+
+        }
 
       };
 
@@ -166,6 +157,36 @@ sub handler
       sub include {
         use vars qw($m);
         $m->scomp(@_);
+      }
+
+      sub redirect {
+        my( $location ) = @_;
+        use vars qw($m);
+        $m->clear_buffer;
+        #false laziness w/above
+        if ( defined(@DBIx::Profile::ISA) ) { #profiling redirect
+
+          $m->print(
+            qq!<HTML><BODY>Redirect to <A HREF="$location">$location</A>!.
+            '<BR><BR><PRE>'.
+              ( UNIVERSAL::can(dbh, 'sprintProfile')
+                  ? encode_entities(dbh->sprintProfile())
+                  : 'DBIx::Profile missing sprintProfile method;'.
+                    'unpatched or too old?'                        ).
+            #"\n\n". &sprintAutoProfile().  '</PRE>'.
+            "\n\n".                         '</PRE>'.
+            '</BODY></HTML>'
+          );
+          dbh->{'private_profile'} = {};
+
+          $m->abort(200);
+
+        } else { #normal redirect
+
+          $m->redirect($location);
+
+        }
+
       }
 
     } # end package HTML::Mason::Commands;

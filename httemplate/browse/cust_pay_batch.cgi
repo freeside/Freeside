@@ -2,11 +2,18 @@
 <%= header("Pending credit card batch", menubar( 'Main Menu' => $p,)) %>
 
 <FORM ACTION="<%=$p%>misc/download-batch.cgi" METHOD="POST">
-
 Download batch in format <SELECT NAME="format">
-<OPTION VALUE="csv">Generic CSV (comma-separated value)</OPTION>
 <OPTION VALUE="csv-td_canada_trust-merchant_pc_batch">CSV file for TD Canada Trust Merchant PC Batch</OPTION>
-</SELECT><INPUT TYPE="submit" VALUE="Download">
+</SELECT><INPUT TYPE="submit" VALUE="Download"></FORM>
+<BR><BR>
+
+<FORM ACTION="<%=$p%>misc/upload-batch.cgi" METHOD="POST" ENCTYPE="multipart/form-data">
+Upload results<BR>
+Filename <INPUT TYPE="file" NAME="batch_results"><BR>
+Format <SELECT NAME="format">
+<OPTION VALUE="csv-td_canada_trust-merchant_pc_batch">CSV results from TD Canada Trust Merchant PC Batch</OPTION>
+</SELECT><BR>
+<INPUT TYPE="submit" VALUE="Upload"></FORM>
 <BR><BR>
 
 <%= &table() %>
