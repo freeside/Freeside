@@ -121,13 +121,11 @@ Sends headers and an HTML error message, then exits.
 =cut
 
 sub eidiot {
-  #warn "eidiot depriciated";
+  warn "eidiot depriciated";
   idiot(@_);
   if (exists $ENV{MOD_PERL}) {
-    eval {
-      use Apache;
-      Apache::exit();
-    };
+    require Apache;
+    Apache::exit();
   } else {
     exit;
   }
