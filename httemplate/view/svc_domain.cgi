@@ -46,6 +46,17 @@ print header('Domain View', menubar(
       qq!<BR>Catch all email <A HREF="${p}misc/catchall.cgi?$svcnum">(change)</A>:!,
       $email ? "<B>$email</B>." : "<I>(none)<I>",
       qq!<BR><BR><A HREF="http://www.geektools.com/cgi-bin/proxy.cgi?query=$domain;targetnic=auto">View whois information.</A>!,
-      '</BODY></HTML>',
+      '<BR><BR>', ntable("",2),
+      '<tr><th>Zone</th><th>Type</th><th>Data</th></tr>',
 ;
+
+foreach my $domain_record ( qsearch('domain_record', { svcnum => $svcnum } ) ) {
+  print '<tr><td>'. $domain_record->reczone. '</td>'.
+        '<td>'. $domain_record->recaf. ' '. $domain_record->rectype. '</td>'.
+        '<td>'. $domain_record->recdata. '</td></tr>';
+}
+print '</table>';
+
+print '</BODY></HTML>';
+
 %>

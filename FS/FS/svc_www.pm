@@ -1,13 +1,14 @@
 package FS::svc_www;
 
 use strict;
-use vars qw(@ISA $conf $apacheroot $apachemachine $nossh_hack );
+use vars qw(@ISA $conf $apacheroot $apachemachine $apacheip $nossh_hack );
 #use FS::Record qw( qsearch qsearchs );
-use FS::Record qw( qsearchs );
+use FS::Record qw( qsearchs dbh );
 use FS::svc_Common;
 use FS::cust_svc;
 use FS::domain_record;
 use FS::svc_acct;
+use FS::svc_domain;
 use Net::SSH qw(ssh);
 
 @ISA = qw( FS::svc_Common );
@@ -17,6 +18,7 @@ $FS::UID::callback{'FS::svc_www'} = sub {
   $conf = new FS::Conf;
   $apacheroot = $conf->config('apacheroot');
   $apachemachine = $conf->config('apachemachine');
+  $apacheip = $conf->config('apacheip');
 };
 
 =head1 NAME
@@ -101,10 +103,49 @@ setting $FS::svc_www::nossh_hack true.
 
 sub insert {
   my $self = shift;
-  my $error;
+
+  my $error = $self->check;
+  return $error if $error;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  #if ( $self->recnum =~ /^([\w\-]+|\@)\.(([\w\.\-]+\.)+\w+)$/ ) {
+  if ( $self->recnum =~ /^([\w\-]+|\@)\.(\d+)$/ ) {
+    my( $reczone, $domain_svcnum ) = ( $1, $2 );
+    unless ( $apacheip ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "Configuration option apacheip not set; can't autocreate A record";
+             #"for $reczone". $svc_domain->domain;
+    }
+    my $domain_record = new FS::domain_record {
+      'svcnum'  => $domain_svcnum,
+      'reczone' => $reczone,
+      'recaf'   => 'IN',
+      'rectype' => 'A',
+      'recdata' => $apacheip,
+    };
+    $error = $domain_record->insert;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+    $self->recnum($domain_record->recnum);
+  }
 
   $error = $self->SUPER::insert;
-  return $error if $error;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
 
   my $domain_record = qsearchs('domain_record', { 'recnum' => $self->recnum } );    # or die ?
   my $zone = $domain_record->reczone;
@@ -137,6 +178,7 @@ sub insert {
     );
   }
 
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
 }
 
@@ -187,7 +229,7 @@ Called by the cancel method of FS::cust_pkg (see L<FS::cust_pkg>).
 
 =item check
 
-Checks all fields to make sure this is a valid example.  If there is
+Checks all fields to make sure this is a valid web virtual host.  If there is
 an error, returns the error, otherwise returns false.  Called by the insert
 and repalce methods.
 
@@ -202,13 +244,40 @@ sub check {
 
   my $error =
     $self->ut_numbern('svcnum')
-    || $self->ut_number('recnum')
+#    || $self->ut_number('recnum')
     || $self->ut_number('usersvc')
   ;
   return $error if $error;
 
-  return "Unknown recnum: ". $self->recnum
-    unless qsearchs('domain_record', { 'recnum' => $self->recnum } );
+  if ( $self->recnum =~ /^(\d+)$/ ) {
+  
+    $self->recnum($1);
+    return "Unknown recnum: ". $self->recnum
+      unless qsearchs('domain_record', { 'recnum' => $self->recnum } );
+
+  } elsif ( $self->recnum =~ /^([\w\-]+|\@)\.(([\w\.\-]+\.)+\w+)$/ ) {
+
+    my( $reczone, $domain ) = ( $1, $2 );
+
+    my $svc_domain = qsearchs( 'svc_domain', { 'domain' => $domain } )
+      or return "unknown domain $domain (recnum $1.$2)";
+
+    my $domain_record = qsearchs( 'domain_record', {
+      'reczone' => $reczone,
+      'svcnum' => $svc_domain->svcnum,
+    });
+
+    if ( $domain_record ) {
+      $self->recnum($domain_record->recnum);
+    } else {
+      #insert will create it
+      #$self->recnum("$reczone.$domain");
+      $self->recnum("$reczone.". $svc_domain->svcnum);
+    }
+
+  } else {
+    return "Illegal recnum: ". $self->recnum;
+  }
 
   return "Unknown usersvc (svc_acct.svcnum): ". $self->usersvc
     unless qsearchs('svc_acct', { 'svcnum' => $self->usersvc } );
@@ -217,10 +286,6 @@ sub check {
 }
 
 =back
-
-=head1 VERSION
-
-$Id: svc_www.pm,v 1.6 2001-09-06 20:41:59 ivan Exp $
 
 =head1 BUGS
 

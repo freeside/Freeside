@@ -10,7 +10,7 @@ my $svc_www = qsearchs( 'svc_www', { 'svcnum' => $svcnum } )
 #false laziness w/all svc_*.cgi
 my $cust_svc = qsearchs( 'cust_svc', { 'svcnum' => $svcnum } );
 my $pkgnum = $cust_svc->getfield('pkgnum');
-my($cust_pkg, custnum);
+my($cust_pkg, $custnum);
 if ($pkgnum) {
   $cust_pkg = qsearchs( 'cust_pkg', { 'pkgnum' => $pkgnum } );
   $custnum = $cust_pkg->custnum;
@@ -24,6 +24,10 @@ my $domain_record = qsearchs('domain_record', { 'recnum' => $svc_www->recnum } )
   or die "svc_www: Unknown recnum". $svc_www->recnum;
 
 my $www = $domain_record->reczone;
+unless ( $www =~ /\.$/ ) {
+  my $svc_domain = qsearchs('svc_domain', { svcnum=>$domain_record->svcnum } );
+  $www .= '.'. $svc_domain->domain;
+}
 
 print header('Website View', menubar(
   ( ( $custnum )
@@ -36,7 +40,7 @@ print header('Website View', menubar(
   "Main menu" => $p,
 )),
       "Service #$svcnum",
-      "<BR>Website name: <B>$www</B>.",
+      qq!<BR>Website name: <B><A HREF="http://$www">$www</A></B>!,
       '</BODY></HTML>',                
 ;
 %>

@@ -105,7 +105,6 @@ print 'Service # '. ( $svcnum ? "<B>$svcnum</B>" : " (NEW)" ). '<BR>'.
 END
 
 print &ntable("#cccccc",2), <<END;
-<TR><TD>
 <TR><TD ALIGN="right">Username</TD>
 <TD><INPUT TYPE="text" NAME="username" VALUE="$username" SIZE=$ulen2 MAXLENGTH=$ulen></TD></TR>
 <TR><TD ALIGN="right">Password</TD>

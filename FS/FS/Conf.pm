@@ -198,6 +198,13 @@ httemplate/docs/config.html
   },
 
   {
+    'key'         => 'apacheip',
+    'section'     => 'apache',
+    'description' => 'The current IP address to assign to new virtual hosts',
+    'type'        => 'text',
+  },
+
+  {
     'key'         => 'apachemachine',
     'section'     => 'apache',
     'description' => 'A machine with the apacheroot directory and user home directories.  The existance of this file enables setup of virtual host directories, and, in conjunction with the `home\' configuration file, symlinks into user home directories.',
