@@ -77,43 +77,45 @@ foreach my $r (qsearch('cust_main_county', {}, '', $gotcust) ) {
     $regions{$label}->{'exempt'} += $x;
   }
 
+  my($t, $x) = (0, 0);
   foreach my $e ( grep { $r->get($_.'tax') !~ /^Y/i }
                        qw( cust_bill_pkg.setup cust_bill_pkg.recur ) ) {
-    my $t = scalar_sql($r, \@param, 
+    $t += scalar_sql($r, \@param, 
       "SELECT SUM($e) $fromwhere AND $nottax AND ( tax != 'Y' OR tax IS NULL )"
     );
 
-    my $x = scalar_sql($r, \@param, 
+    $x += scalar_sql($r, \@param, 
       "SELECT SUM($e) $fromwhere AND $nottax AND tax = 'Y'"
     );
-
-    my($sday,$smon,$syear) = (localtime($beginning) )[ 3, 4, 5 ];
-    $monthly_exempt_warning=1 if $sday != 1 && $beginning;
-    $smon++; $syear+=1900;
-
-    my($eday,$emon,$eyear) = (localtime($ending) )[ 3, 4, 5 ];
-    $emon++; $eyear+=1900;
-
-    my $monthly_exemption = scalar_sql($r, [ 'taxnum' ],
-      "SELECT SUM(amount) FROM cust_tax_exempt where taxnum = ? ".
-      "  AND ( year > $syear OR ( year = $syear and month >= $smon ) )".
-      "  AND ( year < $eyear OR ( year = $eyear and month <= $emon ) )"
-    );
-    if ( $monthly_exemption ) {
-      $t -= $monthly_exemption;
-      $x += $monthly_exemption;
-    }
-
-    $taxable += $t;
-    $regions{$label}->{'taxable'} += $t;
-
-    $exempt += $x;
-    $regions{$label}->{'exempt'} += $x;
-
-    $owed += $t * ($r->tax/100);
-    $regions{$label}->{'owed'} += $t * ($r->tax/100);
-
   }
+
+  my($sday,$smon,$syear) = (localtime($beginning) )[ 3, 4, 5 ];
+  $monthly_exempt_warning=1 if $sday != 1 && $beginning;
+  $smon++; $syear+=1900;
+
+  my $eending = ( $ending == 4294967295 ) ? time : $ending;
+  my($eday,$emon,$eyear) = (localtime($eending) )[ 3, 4, 5 ];
+  $emon++; $eyear+=1900;
+
+  my $monthly_exemption = scalar_sql($r, [ 'taxnum' ],
+    "SELECT SUM(amount) FROM cust_tax_exempt where taxnum = ? ".
+    "  AND ( year > $syear OR ( year = $syear and month >= $smon ) )".
+    "  AND ( year < $eyear OR ( year = $eyear and month <= $emon ) )"
+  );
+  #warn $r->taxnum(). ": $monthly_exemption\n";
+  if ( $monthly_exemption ) {
+    $t -= $monthly_exemption;
+    $x += $monthly_exemption;
+  }
+
+  $taxable += $t;
+  $regions{$label}->{'taxable'} += $t;
+
+  $exempt += $x;
+  $regions{$label}->{'exempt'} += $x;
+
+  $owed += $t * ($r->tax/100);
+  $regions{$label}->{'owed'} += $t * ($r->tax/100);
 
   if ( defined($regions{$label}->{'rate'})
        && $regions{$label}->{'rate'} != $r->tax.'%' ) {
@@ -168,6 +170,7 @@ push @regions, {
   'exempt'    => $exempt,
   'taxable'   => $taxable,
   'rate'      => '',
+  'owed'      => $owed,
   'tax'       => $tax,
 };
 
