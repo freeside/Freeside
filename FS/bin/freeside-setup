@@ -498,7 +498,7 @@ sub tables_hash_hack {
       'unique' => [],
       #'index' => [ ['last'], ['company'] ],
       'index' => [ ['last'], [ 'company' ], [ 'referral_custnum' ],
-                   [ 'daytime' ], [ 'night' ], [ 'fax' ],
+                   [ 'daytime' ], [ 'night' ], [ 'fax' ], [ 'refnum' ],
                  ],
     },
 
