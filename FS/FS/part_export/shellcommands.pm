@@ -90,6 +90,9 @@ sub _export_replace {
     if ( $old_domain ne $new_domain ) {
       $error ||= "can't change domain";
     }
+    if ( $old_uid != $new_uid ) {
+      $error ||= "can't change uid";
+    }
     return $error. ' ('. $self->exporttype. ' to '. $self->machine. ')'
       if $error;
   }
