@@ -119,105 +119,58 @@ my($srcsvc,$dstsvc,$dst)=(
 
 #display
 
-my $p1 = popurl(1);
-print header("Mail Forward $action", '',
-      " onLoad=\"visualize()\"");
-
 %>
 
-<SCRIPT>
-function visualize(what){
-    if (document.getElementById) {
-      document.getElementById('dother').style.visibility = '<%= $dstsvc ? 'hidden' : 'visible' %>';
-    }
-}
-function fixup(what){
-    if (document.getElementById) {
-      if (document.getElementById('dother').style.visibility == 'hidden') {
-        what.dst.value='';
+<%= header("Mail Forward $action") %>
+
+<% if ( $cgi->param('error') ) { %>
+  <FONT SIZE="+1" COLOR="#ff0000">Error: <%= $cgi->param('error') %></FONT>
+  <BR><BR>
+<% } %>
+
+Service #<%= $svcnum ? "<B>$svcnum</B>" : " (NEW)" %><BR>
+Service: <B><%= $part_svc->svc %></B><BR><BR>
+
+<FORM NAME="dummy">
+
+<%= ntable("#cccccc",2) %>
+<TR><TD ALIGN="right">Email to</TD><TD><SELECT NAME="srcsvc" SIZE=1>
+<% foreach $_ (keys %email) { %>
+  <OPTION<%= $_ eq $srcsvc ? " SELECTED" : "" %> VALUE="<%= $_ %>"><%= $email{$_} %></OPTION>
+<% } %>
+</SELECT></TD></TR>
+
+<%
+  tie my %tied_email, 'Tie::IxHash',
+    ''  => 'SELECT DESTINATION',
+    %email,
+    '0' => '(other email address)';
+  my $widget = new HTML::Widgets::SelectLayers(
+    'selected_layer' => $dstsvc,
+    'options'        => \%tied_email,
+    'form_name'      => 'dummy',
+    'form_action'    => 'process/svc_forward.cgi',
+    'form_select'    => ['srcsvc'],
+    'html_between'   => '</TD></TR></TABLE>',
+    'layer_callback' => sub {
+      my $layer = shift;
+      my $html = qq!<INPUT TYPE="hidden" NAME="svcnum" VALUE="$svcnum">!.
+                 qq!<INPUT TYPE="hidden" NAME="pkgnum" VALUE="$pkgnum">!.
+                 qq!<INPUT TYPE="hidden" NAME="svcpart" VALUE="$svcpart">!.
+                 qq!<INPUT TYPE="hidden" NAME="dstsvc" VALUE="$layer">!;
+      if ( $layer eq '0' ) {
+        $html .= ntable("#cccccc",2).
+                 '<TR><TD ALIGN="right">Destination email</TD>'.
+                 qq!<TD><INPUT TYPE="text" NAME="dst" VALUE="$dst"></TD>!.
+                 '</TR></TABLE>';
       }
-    }
-}
-</SCRIPT>
-
-<%
-
-print qq!<FONT SIZE="+1" COLOR="#ff0000">Error: !, $cgi->param('error'),
-      "</FONT>"
-  if $cgi->param('error');
-
-print qq!<FORM ACTION="${p1}process/svc_forward.cgi" onSubmit="fixup(this)" METHOD=POST>!;
-
-#svcnum
-print qq!<INPUT TYPE="hidden" NAME="svcnum" VALUE="$svcnum">!;
-print qq!Service #<FONT SIZE=+1><B>!, $svcnum ? $svcnum : " (NEW)", "</B></FONT>";
-print qq!<BR>!;
-
-#pkgnum
-print qq!<INPUT TYPE="hidden" NAME="pkgnum" VALUE="$pkgnum">!;
- 
-#svcpart
-print qq!<INPUT TYPE="hidden" NAME="svcpart" VALUE="$svcpart">!;
-
-#srcsvc
-print qq!\n\nMail to <SELECT NAME="srcsvc" SIZE=1>!;
-foreach $_ (keys %email) {
-  print "<OPTION", $_ eq $srcsvc ? " SELECTED" : "",
-        qq! VALUE="$_">$email{$_}!;
-}
-print "</SELECT>";
-
-#dstsvc
-print qq! forwards to <SELECT NAME="dstsvc" SIZE=1 onChange="changed(this)">!;
-foreach $_ (keys %email) {
-  print "<OPTION", $_ eq $dstsvc ? " SELECTED" : "",
-        qq! VALUE="$_">$email{$_}!;
-}
-print "<OPTION", 0 eq $dstsvc ? " SELECTED" : "",
-      qq! VALUE="0">(other)!;
-print "</SELECT> mailbox.";
-
+      $html .= '<BR><INPUT TYPE="submit" VALUE="Submit">';
+      $html;
+    },
+  );
 %>
 
-<SCRIPT>
-var selectchoice = null;
-function changed(what) {
-  selectchoice = what.options[what.selectedIndex].value;
-  if (selectchoice == "0") {
-    if (document.getElementById) {
-      document.getElementById('dother').style.visibility = "visible";
-    }
-  }else{
-    if (document.getElementById) {
-      document.getElementById('dother').style.visibility = "hidden";
-    }
-  }
-}
-if (document.getElementById) {
-    document.write("<DIV ID=\"dother\" STYLE=\"visibility: hidden\">");
-}
-</SCRIPT>
-
-<%
-print qq! Other destination: <INPUT TYPE="text" NAME="dst" VALUE="$dst">!;
-%>
-
-<SCRIPT>
-if (document.getElementById) {
-    document.write("</DIV>");
-}
-</SCRIPT>
-
-<CENTER><INPUT TYPE="submit" VALUE="Submit"></CENTER>
-</FORM>
-
-<TAG onLoad="
-    if (document.getElementById) {
-      document.getElementById('dother').style.visibility = '<%= $dstsvc ? 'hidden' : 'visible' %>';
-      document.getElementById('dlabel').style.visibility = '<%= $dstsvc ? 'hidden' : 'visible' %>';
-    }
-">
-
-
+<TR><TD ALIGN="right">Forwards to</TD>
+<TD><%= $widget->html %>
   </BODY>
 </HTML>

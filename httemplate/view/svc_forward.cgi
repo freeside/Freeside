@@ -53,9 +53,15 @@ if ($dstsvc) {
 }
 
 print qq!<A HREF="${p}edit/svc_forward.cgi?$svcnum">Edit this information</A>!.
-      "<BR>Service #$svcnum".
-      "<BR>Service: <B>$svc</B>".
-      qq!<BR>Mail to <B>$source</B> forwards to <B>$destination</B> mailbox.!.
+      ntable("#cccccc",2).
+      '<TR><TD ALIGN="right">Service number</TD>'.
+        qq!<TD BGCOLOR="#ffffff">$svcnum</TD></TR>!.
+      '<TR><TD ALIGN="right">Service</TD>'.
+        qq!<TD BGCOLOR="#ffffff">$svc</TD></TR>!.
+      qq!<TR><TD ALIGN="right">Email to</TD>!.
+        qq!<TD BGCOLOR="#ffffff">$source</TD></TR>!.
+      qq!<TR><TD ALIGN="right">Forwards to </TD>!.
+        qq!<TD BGCOLOR="#ffffff">$destination</TD></TR></TABLE>!.
       '<BR>'. joblisting({'svcnum'=>$svcnum}, 1).
       '</BODY></HTML>'
 ;
