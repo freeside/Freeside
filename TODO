@@ -1,10 +1,22 @@
-$Id: TODO,v 1.31 1999-04-29 09:37:45 ivan Exp $
+$Id: TODO,v 1.32 1999-07-08 01:02:24 ivan Exp $
 
 If you are interested in helping with any of these, please join the mailing
 list (send a blank message to ivan-freeside-subscribe@sisd.com) to avoid 
 duplication of effort.
 
 ---
+
+Multiple tax rates by geographic region (county, state, and county) are   
+supported; just choose View/Edit tax rates from the main menu.
+
+Multiple tax rates by package are not (yet) supported.
+
+On Wed, Jul 07, 1999 at 12:13:36PM -0400, Shaun Batterton wrote:
+> How would you handle something like multiple tax rates and multiple   
+> states?  For example in Connecticut, they just changed computer and/or
+> data processing services to 3% (whatever that is), and everything else
+> is 6%.
+
 
 > Second, when trying to add a new user I get two types of errors; first one
 > is when I place an e-mail address and select the "submit," Freeside
