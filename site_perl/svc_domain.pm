@@ -9,9 +9,12 @@ use Mail::Internet;
 use Mail::Header;
 use Date::Format;
 use FS::Record qw(fields qsearch qsearchs);
+use FS::Conf;
 use FS::svc_Common;
 use FS::cust_svc;
-use FS::Conf;
+use FS::svc_acct;
+use FS::cust_pkg;
+use FS::cust_main;
 
 @ISA = qw( FS::svc_Common );
 
@@ -387,7 +390,7 @@ sub submit_internic {
 
 =head1 VERSION
 
-$Id: svc_domain.pm,v 1.6 1999-01-25 12:26:17 ivan Exp $
+$Id: svc_domain.pm,v 1.7 1999-04-07 14:40:15 ivan Exp $
 
 =head1 BUGS
 
@@ -423,7 +426,10 @@ ivan@sisd.com 98-jul-17-19
 pod, some FS::Conf (not complete) ivan@sisd.com 98-sep-23
 
 $Log: svc_domain.pm,v $
-Revision 1.6  1999-01-25 12:26:17  ivan
+Revision 1.7  1999-04-07 14:40:15  ivan
+use all stuff that's qsearch'ed to avoid warnings
+
+Revision 1.6  1999/01/25 12:26:17  ivan
 yet more mod_perl stuff
 
 Revision 1.5  1998/12/30 00:30:47  ivan

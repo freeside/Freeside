@@ -7,6 +7,8 @@ use FS::svc_Common;
 use FS::cust_svc;
 use FS::SSH qw(ssh);
 use FS::Conf;
+use FS::svc_acct;
+use FS::svc_domain;
 
 @ISA = qw( FS::svc_Common );
 
@@ -230,7 +232,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: svc_acct_sm.pm,v 1.6 1999-01-25 12:26:16 ivan Exp $
+$Id: svc_acct_sm.pm,v 1.7 1999-04-07 14:40:15 ivan Exp $
 
 =head1 BUGS
 
