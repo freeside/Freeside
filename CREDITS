@@ -35,8 +35,8 @@ release.
 
 Greg Kuhnert <gregk@no1.com.au> sent some documentation updates.
 
-Joel Griffiths <griff@aver-computer.com> contribued many bugfixes, and offers
-invaluable help to users on the mailing list.
+Joel Griffiths <griff@aver-computer.com> contribued many bugfixes as well as
+the print-batch script.
 
 NetLoud <http://www.netloud.com/> funded the development of the following
 features:
@@ -47,6 +47,9 @@ NetAcces.Net (not netaccess.net) funded the development of the following
 features:
   - DNS tracking and export to BIND configuration files
   - Web site virtual host tracking and export to Apache configuration files
+
+Kristian Hoffmann <khoff@pc-intouch.com> contributed Netscape CCK
+autoconfiguration support for the signup server.
 
 Everything else is my (Ivan Kohler <ivan@420.am>) fault.
 
