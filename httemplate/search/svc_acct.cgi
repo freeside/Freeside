@@ -48,10 +48,9 @@ if ( $query eq 'svcnum' ) {
   $sortby=\*uid_sort;
   $orderby = ( $unlinked ? 'AND' : 'WHERE' ).
              " ${tblname}uid IS NOT NULL ORDER BY ${tblname}uid";
-} elsif ( $query =~ /^popnum=(\d+)$/ ) {
-  my $popnum = $1;
+} elsif ( $cgi->param('popnum') =~ /^(\d+)$/ ) {
   $unlinked .= ( $unlinked ? 'AND' : 'WHERE' ).
-               " popnum = $popnum";
+               " popnum = $1";
   $sortby=\*username_sort;
   $orderby = "ORDER BY ${tblname}username";
 } else {
@@ -63,7 +62,7 @@ if ( $query eq 'svcnum' ) {
 if (    $query eq 'svcnum'
      || $query eq 'username'
      || $query eq 'uid'
-     || $query =~ /^popnum=(\d+)$/
+     || $cgi->param('popnum') =~ /^(\d+)$/
    ) {
 
   my $statement = "SELECT COUNT(*) FROM svc_acct $unlinked";
