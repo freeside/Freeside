@@ -10,6 +10,10 @@ FREESIDE_PATH="%%%FREESIDE_PATH%%%"
 SELFSERVICE_USER=%%%SELFSERVICE_USER%%%
 SELFSERVICE_MACHINES="%%%SELFSERVICE_MACHINES%%%"
 
+#INSTALLSCRIPT/INSTALLSITEBIN from Makefile.PL
+PATH="$PATH:/usr/local/bin"
+export PATH
+
 case "$1" in
   start)
         # Start daemons.
