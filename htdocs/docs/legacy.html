@@ -4,7 +4,7 @@
 <body>
   <h1>Importing legacy data</h1>
 <ul>
-  <li><a name="svc_acct">bin/svc_acct.import</a> - Import `passwd', ( `shadow' or `master.passwd' ) and RADIUS `users'.  Before running bin/svc_acct.import, you need <a href="http://rootwood.sisd.com/freeside/browse/part_svc.cgi">services</a> (with table svc_acct) as follows:
+  <li><a name="svc_acct">bin/svc_acct.import</a> - Import `passwd', ( `shadow' or `master.passwd' ) and RADIUS `users'.  Before running bin/svc_acct.import, you need <a href="../browse/part_svc.cgi">services</a> (with table svc_acct) as follows:
     <ul>
       <li>Most accounts probably have entries in passwd and users (with Port-Limit nonexistant or 1)
       <li>Some accounts have entries in passwd and users, but with Port-Limit 2 (or more)
@@ -13,7 +13,7 @@
       <li>POP mail accounts have entries in passwd only, and have a particular shell.
       <li>Everything else in passwd is a shell account.
     </ul>
-  <li><a name="svc_acct_sm">bin/svc_acct_sm.import</a> - Import qmail ( `virtualdomains' and `rcpthosts' ), or sendmail ( `virtusertable' and `sendmail.cw' ) files.  Before running bin/svc_acct_sm.import, you need <a href="http://rootwood.sisd.com/freeside/browse/part_svc.cgi">services</a> as follows:
+  <li><a name="svc_acct_sm">bin/svc_acct_sm.import</a> - Import qmail ( `virtualdomains' and `rcpthosts' ), or sendmail ( `virtusertable' and `sendmail.cw' ) files.  Before running bin/svc_acct_sm.import, you need <a href="../browse/part_svc.cgi">services</a> as follows:
     <ul>
       <li>Domain (table svc_acct)
       <li>Mail alias (table svc_acct_sm)
