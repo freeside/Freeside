@@ -1,6 +1,6 @@
-#BEGIN { eval "use Devel::AutoProfiler;"; } #only if installed...
+BEGIN { eval "use Devel::AutoProfiler;"; } #only if installed...
 #BEGIN { package Devel::AutoProfiler; use vars qw(%caller_info); }
-use Devel::AutoProfiler;
+#use Devel::AutoProfiler;
 
 use strict;
 use vars qw( $cgi $p );
