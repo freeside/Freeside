@@ -162,6 +162,22 @@ CREATE TABLE cust_pay_refund (
 CREATE INDEX cust_pay_refund1 ON cust_pay_refund(paynum);
 CREATE INDEX cust_pay_refund2 ON cust_pay_refund(refundnum);
 
+CREATE TABLE cust_pay_void (
+  paynum int NOT NULL,
+  custnum int NOT NULL,
+  paid decimal(10,2) NOT NULL,
+  _date int,
+  payby char(4) NOT NULL,
+  payinfo varchar(80),
+  paybatch varchar(80),
+  closed char(1),
+  void_date int,
+  reason varchar(80),
+  otaker varchar(32) NOT NULL,
+  PRIMARY KEY (paynum)
+);
+CREATE INDEX cust_pay_void1 ON cust_pay_void(custnum);
+
 DROP INDEX cust_bill_pkg1;
 
 ALTER TABLE cust_bill_pkg ADD itemdesc varchar(80) NULL;
@@ -228,7 +244,7 @@ optionally:
 mandatory again:
 
 dbdef-create username
-create-history-tables username cust_bill_pkg_detail router part_svc_router addr_block svc_broadband acct_snarf svc_external
+create-history-tables username cust_bill_pkg_detail router part_svc_router addr_block svc_broadband acct_snarf svc_external cust_pay_refund cust_pay_void
 dbdef-create username
 
 apache - fix <Files> sections to include .html also

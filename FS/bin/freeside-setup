@@ -552,6 +552,26 @@ sub tables_hash_hack {
       'index' => [ [ 'custnum' ], [ 'paybatch' ], [ 'payby' ], [ '_date' ] ],
     },
 
+    'cust_pay_void' => {
+      'columns' => [
+        'paynum',    'int',    '',   '',
+        'custnum',   'int',    '',   '',
+        'paid',      @money_type,
+        '_date',     @date_type,
+        'payby',     'char',   '',     4, # CARD/BILL/COMP, should be index into
+                                          # payment type table.
+        'payinfo',   'varchar',   'NULL', $char_d,  #see cust_main above
+        'paybatch',  'varchar',   'NULL', $char_d, #for auditing purposes.
+        'closed',    'char', 'NULL', 1,
+        'void_date', @date_type,
+        'reason',    'varchar',   'NULL', $char_d,
+        'otaker',   'varchar', '', 32,
+      ],
+      'primary_key' => 'paynum',
+      'unique' => [],
+      'index' => [ [ 'custnum' ] ],
+    },
+
     'cust_bill_pay' => {
       'columns' => [
         'billpaynum', 'serial',     '',   '',

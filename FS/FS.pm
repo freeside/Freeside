@@ -116,6 +116,8 @@ L<FS::cust_bill_event> - Completed invoice event class
 
 L<FS::cust_pay> - Payment class
 
+L<FS::cust_pay_void) - Voided payment class
+
 L<FS::cust_bill_pay> - Payment application class
 
 L<FS::cust_credit> - Credit class

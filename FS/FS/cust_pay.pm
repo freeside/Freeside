@@ -5,13 +5,13 @@ use vars qw( @ISA $conf $unsuspendauto );
 use Date::Format;
 use Business::CreditCard;
 use Text::Template;
-use FS::UID qw( dbh );
-use FS::Record qw( dbh qsearch qsearchs dbh );
+use FS::Record qw( dbh qsearch qsearchs );
 use FS::Misc qw(send_email);
 use FS::cust_bill;
 use FS::cust_bill_pay;
 use FS::cust_pay_refund;
 use FS::cust_main;
+use FS::cust_pay_void;
 
 @ISA = qw( FS::Record );
 
@@ -207,10 +207,54 @@ sub insert {
 
 }
 
+=item void [ REASON ]
+
+Voids this payment: deletes the payment and all associated applications and
+adds a record of the voided payment to the FS::cust_pay_void table.
+
+=cut
+
+sub void {
+  my $self = shift;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $cust_pay_void = new FS::cust_pay_void ( {
+    map { $_ => $self->get($_) } $self->fields
+  } );
+  $cust_pay_void->reason(shift) if scalar(@_);
+  my $error = $cust_pay_void->insert;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  $error = $self->delete;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+  '';
+
+}
+
 =item delete
 
 Deletes this payment and all associated applications (see L<FS::cust_bill_pay>),
-unless the closed flag is set.
+unless the closed flag is set.  In most cases, you want to use the void
+method instead to leave a record of the deleted payment.
 
 =cut
 
@@ -229,8 +273,8 @@ sub delete {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  foreach my $cust_bill_pay ( $self->cust_bill_pay ) {
-    my $error = $cust_bill_pay->delete;
+  foreach my $app ( $self->cust_bill_pay, $self->cust_pay_refund ) {
+    my $error = $app->delete;
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return $error;

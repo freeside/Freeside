@@ -176,6 +176,20 @@
         <li>paybatch - text field for tracking card processor batches
         <li>closed - books closed flag, empty or `Y'
       </ul>
+    <li><a name="cust_pay-void" href="man/FS/cust_pay_void.html">cust_pay_void</a> - Voided payments.
+      <ul>
+        <li>paynum - primary key
+        <li>custnum - <a href="#cust_main">customer</a>
+        <li>paid - amount
+        <li>_date
+        <li>payby - CARD, CHEK, LECB, BILL, or COMP
+        <li>payinfo - card number, P.O.#, or comp issuer
+        <li>paybatch - text field for tracking card processor batches
+        <li>closed - books closed flag, empty or `Y'
+        <li>void_date
+        <li>reason
+        <li>otaker - order taker
+      </ul>
     <li><a name="cust_bill_pay" href="man/FS/cust_bill_pay.html">cust_bill_pay</a> - Applicaton of a payment to a specific invoice.
       <ul>
         <li>billpaynum
