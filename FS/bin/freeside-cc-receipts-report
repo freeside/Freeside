@@ -1,9 +1,11 @@
 #!/usr/bin/perl -Tw
 
+
 use strict;
 use Date::Parse;
 use Time::Local;
 use Getopt::Std;
+use Text::Template;
 use FS::Conf;
 use FS::UID qw(adminsuidsetup);
 use FS::Record qw(qsearch qsearchs);
@@ -14,24 +16,24 @@ use FS::cust_pay_batch;
 my $mail_program = "/usr/sbin/sendmail -t -n"; 
 
 &untaint_argv;	#what it sounds like  (eww)
-use vars qw($opt_v $opt_p $opt_e $opt_d $opt_s);
-getopts("vped:s:");	#switches
+use vars qw($opt_v $opt_p $opt_m $opt_e $opt_t $opt_s $opt_f $report_lines $report_template @buf);
+getopts("vpmef:s:");	#switches
 
 #we're at now now (and later).
-my($_enddate)= $main::opt_d ? str2time($main::opt_d) : $^T;
-my($_startdate)= $main::opt_d ? str2time($main::opt_s) : $^T;
+my($_finishdate)= $opt_f ? str2time($main::opt_f) : $^T;
+my($_startdate)= $opt_s ? str2time($main::opt_s) : $^T;
 
 # Get the current month
 my ($ssec,$smin,$shour,$smday,$smon,$syear) =
 	(localtime($_startdate) )[0,1,2,3,4,5]; 
-$syear+=1900;
 $smon++;
+$syear += 1900;
 
 # Get the current month
-my ($esec,$emin,$ehour,$emday,$emon,$eyear) =
-	(localtime($_enddate) )[0,1,2,3,4,5]; 
-$eyear+=1900;
-$emon++;
+my ($fsec,$fmin,$fhour,$fmday,$fmon,$fyear) =
+	(localtime($_finishdate) )[0,1,2,3,4,5]; 
+$fmon++;
+$fyear += 1900;
 
 # Login to the database
 my $user = shift or die &usage;
@@ -41,6 +43,19 @@ adminsuidsetup $user;
 my $conf = new FS::Conf;
 my $lpr = $conf->config('lpr');
 my $email = $conf->config('email');
+my @report_template = $conf->config('report_template')
+  or die "cannot load config file report_template";
+$report_lines = 0;
+foreach ( grep /report_lines\(\d+\)/, @report_template ) { #kludgy :/
+  /report_lines\((\d+)\)/;
+  $report_lines += $1;
+}
+die "no report_lines() functions in template?" unless $report_lines;
+$report_template = new Text::Template (
+  TYPE   => 'ARRAY',
+  SOURCE => [ map "$_\n", @report_template ],
+) or die "can't create new Text::Template object: $Text::Template::ERROR";
+
 
 my(@cust_pays)=qsearch('cust_pay',{});
 if (scalar(@cust_pays) == 0)
@@ -50,15 +65,14 @@ if (scalar(@cust_pays) == 0)
 
 # Open print and email pipes
 # $lpr and opt_p for printing
-# $email and opt_e for email
+# $email and opt_m for email
 
 if ($lpr && $main::opt_p)
 {
         open(LPR, "|$lpr");
-        print LPR qq~ C R E D I T  C A R D  R E C E I P T S  for period beginning: $smon/$smday/$syear and ending $emon/$emday/$eyear\n\n~;
 }
 
-if ($email && $main::opt_e)
+if ($email && $main::opt_m)
 {
 	open (MAIL, "|$mail_program");
 	print MAIL <<END
@@ -66,8 +80,6 @@ To: $email
 From: Account Processor
 Subject: Receivables
 
-
-C R E D I T  C A R D  R E C E I P T S  for period beginning: $smon/$smday/$syear and ending $emon/$emday/$eyear
 
 END
 }
@@ -87,7 +99,7 @@ foreach my $cust_pay (@cust_pays)
 	my $payby = $cust_pay->getfield('payby');
 	
 
-	if ($_date >= $_startdate && $_date <= $_enddate && $payby =~ 'CARD') {
+	if ($_date >= $_startdate && $_date <= $_finishdate && $payby =~ 'CARD') {
 		$total += $paid;
 
 		$uninvoiced += $cust_pay->unapplied; 
@@ -131,31 +143,54 @@ foreach my $cust_pay (@cust_pays)
 
 }
 
-if ($main::opt_v) {
-	printf(qq{\n%25s%14.2f\n}, "Uninvoiced", $uninvoiced);
-	printf(qq{%25s%14.2f\n}, "Untaxed", $untaxed);
-	printf(qq{%25s%14.2f\n}, "Taxed", $taxed);
-	printf(qq{%25s%14.2f\n}, "Tax", $total_tax);
-	printf(qq{\n%39s\n%39.2f\n}, "=========", $total);
+push @buf, sprintf(qq{\n%25s%14.2f\n}, "Uninvoiced", $uninvoiced);
+push @buf, sprintf(qq{%25s%14.2f\n}, "Untaxed", $untaxed);
+push @buf, sprintf(qq{%25s%14.2f\n}, "Taxed", $taxed);
+push @buf, sprintf(qq{%25s%14.2f\n}, "Tax", $total_tax);
+push @buf, sprintf(qq{\n%39s\n%39.2f\n}, "=========", $total);
+
+sub FS::cc_receipts_report::_template::report_lines {
+  my $lines = shift;
+  map {
+    scalar(@buf) ? shift @buf : '' ;
+  }
+  ( 1 .. $lines );
 }
 
-# Now I need to close LPR and EMAIL if they were open
-if($lpr && $main::opt_p)
-{
-	printf(LPR qq{\n%25s%14.2f\n}, "Uninvoiced", $uninvoiced);
-	printf(LPR qq{%25s%14.2f\n}, "Untaxed", $untaxed);
-	printf(LPR qq{%25s%14.2f\n}, "Taxed", $taxed);
-	printf(LPR qq{%25s%14.2f\n}, "Tax", $total_tax);
-	printf(LPR qq{\n%39s\n%39.2f\n}, "=========", $total);
-	close LPR || die "Could not close printer: $lpr\n";
+$FS::cc_receipts_report::_template::title = qq~CREDIT CARD RECEIPTS for period $smon/$smday/$syear through $fmon/$fmday/$fyear~;
+$FS::cc_receipts_report::_template::title = $opt_t if $opt_t;
+$FS::cc_receipts_report::_template::page = 1;
+$FS::cc_receipts_report::_template::date = $^T;
+$FS::cc_receipts_report::_template::date = $^T;
+$FS::cc_receipts_report::_template::fdate = $_finishdate;
+$FS::cc_receipts_report::_template::fdate = $_finishdate;
+$FS::cc_receipts_report::_template::sdate = $_startdate;
+$FS::cc_receipts_report::_template::sdate = $_startdate;
+$FS::cc_receipts_report::_template::total_pages = 
+  int( scalar(@buf) / $report_lines);
+$FS::cc_receipts_report::_template::total_pages++ if scalar(@buf) % $report_lines;
+
+my @report;
+while (@buf) {
+  push @report, split("\n", 
+    $report_template->fill_in( PACKAGE => 'FS::cc_receipts_report::_template' )
+  );
+  $FS::cc_receipts_report::_template::page++;
 }
-if($email && $main::opt_e)
+
+if ($opt_v) {
+  print map "$_\n", @report;
+}
+if($lpr && $opt_p)
 {
-	printf(MAIL qq{\n%25s%14.2f\n}, "Untaxed", $untaxed);
-	printf(MAIL qq{%25s%14.2f\n}, "Taxed", $taxed);
-	printf(MAIL qq{%25s%14.2f\n}, "Tax", $total_tax);
-	printf(MAIL qq{\n%39s\n%39.2f\n}, "=========", $total);
-	close MAIL || die "Could not close printer: $email\n";
+  print LPR map "$_\n", @report;
+  print LPR "\f" if $opt_e;
+  close LPR || die "Could not close printer: $lpr\n";
+}
+if($email && $opt_m)
+{
+  print MAIL map "$_\n", @report;
+  close MAIL || die "Could not close printer: $email\n";
 }
 
 
@@ -168,16 +203,16 @@ sub untaint_argv {
 }
 
 sub usage {
-  die "Usage:\n\n  freeside-tax-report [-v] [-p] [-e] user\n";
+  die "Usage:\n\n  freeside-cc-receipts-report [-v] [-p] [-e] user\n";
 }
 
 =head1 NAME
 
-freeside-tax-report - Prints or emails sales taxes invoiced in a given period.
+freeside-cc-receipts-report - Prints or emails total credit card receipts in a given period.
 
 =head1 SYNOPSIS
 
-  freeside-tax-report [-v] [-p] [-e] user
+  freeside-cc-receipts-report [-v] [-p] [-m] [-e] [-t "title"] [-s date] [-f date] user
 
 =head1 DESCRIPTION
 
@@ -187,13 +222,21 @@ Prints or emails sales taxes invoiced in a given period.
 
 -p: Print to printer lpr as found in the conf directory.
 
--e: Email output to user found in the Conf email file.
+-m: Email output to user found in the Conf email file.
+
+-e: Print a final form feed to the printer.
+
+-t: supply a title for the top of each page.
+
+-s: starting date for inclusion
+
+-f: final date for inclusion
 
 user: From the mapsecrets file - see config.html from the base documentation
 
 =head1 VERSION
 
-$Id: freeside-cc-receipts-report,v 1.1 2002-02-22 23:18:32 jeff Exp $
+$Id: freeside-cc-receipts-report,v 1.2 2002-03-05 23:13:23 jeff Exp $
 
 =head1 BUGS
 
@@ -213,8 +256,8 @@ L<FS::cust_main>, config.html from the base documentation
 griff@aver-computer.com July 99
 
 $Log: freeside-cc-receipts-report,v $
-Revision 1.1  2002-02-22 23:18:32  jeff
-add some reporting features
+Revision 1.2  2002-03-05 23:13:23  jeff
+consistency is nice
 
 Revision 1.2  2002/02/19 14:24:53  jeff
 might be functional now

@@ -11,7 +11,7 @@ my $ending = $1;
 
 print header('Credit Card Recipt Report Results');
 
-open (REPORT, "freeside-cc-receipts-report -v -s $beginning -d $ending $user |");
+open (REPORT, "freeside-cc-receipts-report -v -s $beginning -f $ending $user |");
 
 print '<PRE>';
 while(<REPORT>) {

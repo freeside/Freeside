@@ -11,7 +11,7 @@ my $ending = $1;
 
 print header('In House Credit Report Results');
 
-open (REPORT, "freeside-credit-report -v -s $beginning -d $ending $user |");
+open (REPORT, "freeside-credit-report -v -s $beginning -f $ending $user |");
 
 print '<PRE>';
 while(<REPORT>) {

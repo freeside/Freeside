@@ -11,7 +11,7 @@ my $ending = $1;
 
 print header('Tax Report Results');
 
-open (REPORT, "freeside-tax-report -v -s $beginning -d $ending $user |");
+open (REPORT, "freeside-tax-report -v -s $beginning -f $ending $user |");
 
 print '<PRE>';
 while(<REPORT>) {
