@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: queue.cgi,v 1.1 2001-09-11 04:44:58 ivan Exp $ -->
+#<!-- $Id: queue.cgi,v 1.2 2001-10-12 15:26:22 ivan Exp $ -->
 
 use strict;
 use vars qw( $cgi $p ); # $part_referral );
@@ -35,13 +35,19 @@ foreach my $queue ( sort {
   my($hashref)=$queue->hashref;
   my $args = join(' ', $queue->args);
   my $date = time2str( "%a %b %e %T %Y", $queue->_date );
+  my $status = $hashref->{status};
+  if ( $status eq 'failed' || $status eq 'locked' ) {
+    $status .=
+      qq! ( <A HREF="$p/edit/queue.cgi?jobnum=$jobnum&action=new">retry</A> |!.
+      qq! <A HREF="$p/edit/queue.cgi?jobnum$jobnum&action=del">remove </A> )';
+  }
   print <<END;
       <TR>
         <TD>$hashref->{jobnum}</TD>
         <TD>$hashref->{job}</TD>
         <TD>$args</TD>
         <TD>$date</TD>
-        <TD>$hashref->{status}</TD>
+        <TD>$status</TD>
       </TR>
 END
 
