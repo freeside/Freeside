@@ -15,7 +15,8 @@ print qq!<FORM ACTION="!, popurl(1),
         <TH><FONT SIZE=-1>Country</FONT></TH>
         <TH><FONT SIZE=-1>State</FONT></TH>
         <TH><FONT SIZE=-1>County</FONT></TH>
-        <TH><FONT SIZE=-1>Taxclass</FONT></TH>
+        <TH><FONT SIZE=-1>Taxclass</FONT><BR><FONT SIZE=-2>(per-package classification)</FONT></TH>
+        <TH><FONT SIZE=-1>Tax name</FONT><BR><FONT SIZE=-2>(printed on invoices)</FONT></TH>
         <TH><FONT SIZE=-1>Tax</FONT></TH>
         <TH><FONT SIZE=-1>Exempt<BR>per<BR>month</TH>
       </TR>
@@ -46,6 +47,8 @@ END
       : ' BGCOLOR="#cccccc">(ALL)'
     , "</TD>";
 
+  print qq!<TD><INPUT TYPE="text" NAME="taxname!, $hashref->{taxnum},
+        qq!" VALUE="!, $hashref->{taxname}, qq!"></TD>!;
   print qq!<TD><INPUT TYPE="text" NAME="tax!, $hashref->{taxnum},
         qq!" VALUE="!, $hashref->{tax}, qq!" SIZE=6 MAXLENGTH=6>%</TD>!;
   print qq!<TD>\$<INPUT TYPE="text" NAME="exempt_amount!, $hashref->{taxnum},

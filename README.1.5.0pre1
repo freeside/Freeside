@@ -4,6 +4,9 @@ schema changes:
   *** get svc_broadband changes from pc-intouch
   *** otaker changes s/8/32 all otkaer fields
   *** optional: sequence changes
+  *** add column cust_main_county.taxname
+  *** add column cust_bill_pkg.itemdesc
+  *** drop index cust_bill_pkg1
 
 install DBIx::DBSchema 0.21
 install NetAddr::IP

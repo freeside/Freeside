@@ -2,7 +2,7 @@
 
 use strict;
 use DBI;
-use DBIx::DBSchema 0.20;
+use DBIx::DBSchema 0.21;
 use DBIx::DBSchema::Table;
 use DBIx::DBSchema::Column;
 use DBIx::DBSchema::ColGroup::Unique;
@@ -64,7 +64,16 @@ foreach my $table ( @tables ) {
                        'default' => '',
                        'local'   => '',
                      } ),
-                     map { $tableobj->column($_) } $tableobj->columns
+                     map {
+                       my $column = $tableobj->column($_);
+                       $column->type('int')
+                         if $column->type eq 'serial';
+                       $column->default('')
+                         if $column->default =~ /^nextval\(/i;
+                       ( my $local = $column->local ) =~ s/AUTO_INCREMENT//i;
+                       $column->local($local);
+                       $column;
+                     } $tableobj->columns
                    ],
   } );
   foreach my $statement ( $h_tableobj->sql_create_table($dbh) ) {

@@ -904,9 +904,11 @@ sub bill {
   my( $total_setup, $total_recur ) = ( 0, 0 );
   #my( $taxable_setup, $taxable_recur ) = ( 0, 0 );
   my @cust_bill_pkg = ();
-  my $tax = 0;##
+  #my $tax = 0;##
   #my $taxable_charged = 0;##
   #my $charged = 0;##
+
+  my %tax;
 
   foreach my $cust_pkg (
     qsearch('cust_pkg', { 'custnum' => $self->custnum } )
@@ -1101,7 +1103,10 @@ sub bill {
           } #if $cust_main_county->exempt_amount
 
           $taxable_charged = sprintf( "%.2f", $taxable_charged);
-          $tax += $taxable_charged * $cust_main_county->tax / 100
+
+          #$tax += $taxable_charged * $cust_main_county->tax / 100
+          $tax{ $cust_main_county->taxname || 'Tax' } +=
+            $taxable_charged * $cust_main_county->tax / 100
 
         } #unless $self->tax =~ /Y/i
           #       || $self->payby eq 'COMP'
@@ -1134,16 +1139,17 @@ sub bill {
 #      $taxable_charged * ( $cust_main_county->getfield('tax') / 100 )
 #    );
 
-  $tax = sprintf("%.2f", $tax);
-  if ( $tax > 0 ) {
+  foreach my $taxname ( grep { $tax{$_} > 0 } keys %tax ) {
+    my $tax = sprintf("%.2f", $tax{$taxname} );
     $charged = sprintf( "%.2f", $charged+$tax );
 
     my $cust_bill_pkg = new FS::cust_bill_pkg ({
-      'pkgnum' => 0,
-      'setup'  => $tax,
-      'recur'  => 0,
-      'sdate'  => '',
-      'edate'  => '',
+      'pkgnum'   => 0,
+      'setup'    => $tax,
+      'recur'    => 0,
+      'sdate'    => '',
+      'edate'    => '',
+      'itemdesc' => $taxname,
     });
     push @cust_bill_pkg, $cust_bill_pkg;
   }

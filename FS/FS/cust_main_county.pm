@@ -61,6 +61,8 @@ currently supported:
 
 =item exempt_amount
 
+=item taxname - if defined, printed on invoices instead of "Tax"
+
 =back
 
 =head1 METHODS
@@ -110,6 +112,7 @@ sub check {
     || $self->ut_float('tax')
     || $self->ut_textn('taxclass') # ...
     || $self->ut_money('exempt_amount')
+    || $self->ut_textn('taxname')
   ;
 
 }

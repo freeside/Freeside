@@ -47,6 +47,8 @@ supported:
 
 =item edate - ending date of recurring fee
 
+=item itemdesc - Line item description (currentlty used only when pkgnum is 0)
+
 =back
 
 sdate and edate are specified as UNIX timestamps; see L<perlfunc/"time">.  Also
@@ -111,6 +113,7 @@ sub check {
       || $self->ut_money('recur')
       || $self->ut_numbern('sdate')
       || $self->ut_numbern('edate')
+      || $self->ut_textn('itemdesc')
   ;
   return $error if $error;
 
@@ -140,7 +143,7 @@ sub cust_pkg {
 
 =head1 VERSION
 
-$Id: cust_bill_pkg.pm,v 1.3 2002-04-06 22:32:43 ivan Exp $
+$Id: cust_bill_pkg.pm,v 1.4 2002-09-21 11:17:39 ivan Exp $
 
 =head1 BUGS
 

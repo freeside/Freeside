@@ -21,7 +21,8 @@ print '<BR><BR>'. &table(). <<END;
         <TH><FONT SIZE=-1>Country</FONT></TH>
         <TH><FONT SIZE=-1>State</FONT></TH>
         <TH>County</TH>
-        <TH>Taxclass</TH>
+        <TH>Taxclass<BR><FONT SIZE=-1>(per-package classification)</FONT></TH>
+        <TH>Tax name<BR><FONT SIZE=-1>(printed on invoices)</FONT></TH>
         <TH><FONT SIZE=-1>Tax</FONT></TH>
         <TH><FONT SIZE=-1>Exempt<BR>per<BR>month</TH>
       </TR>
@@ -108,6 +109,14 @@ END
             $hashref->{taxnum}. qq!">expand taxclasses</A></FONT>!;
     }
 
+  }
+  print "</TD>";
+
+  print "<TD";
+  if ( $hashref->{taxname} ) {
+    print ' BGCOLOR="#ffffff">'. $hashref->{taxname};
+  } else {
+    print ' BGCOLOR="#cccccc">Tax';
   }
   print "</TD>";
 

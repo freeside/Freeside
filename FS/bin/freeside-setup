@@ -189,7 +189,23 @@ foreach my $table ( grep { ! /^h_/ } $dbdef->tables ) {
                        'default' => '',
                        'local'   => '',
                      } ),
-                     map { $tableobj->column($_) } $tableobj->columns
+                     map {
+                       my $column = $tableobj->column($_);
+
+                       #clone so as to not disturb the original
+                       $column = DBIx::DBSchema::Column->new( {
+                         map { $_ => $column->$_() }
+                           qw( name type null length default local )
+                       } );
+
+                       $column->type('int')
+                         if $column->type eq 'serial';
+                       #$column->default('')
+                       #  if $column->default =~ /^nextval\(/i;
+                       #( my $local = $column->local ) =~ s/AUTO_INCREMENT//i;
+                       #$column->local($local);
+                       $column;
+                     } $tableobj->columns
                    ],
   } );
   $dbdef->addtable($h_tableobj);
@@ -397,9 +413,10 @@ sub tables_hash_hack {
         'recur',   @money_type,
         'sdate',   @date_type,
         'edate',   @date_type,
+        'itemdesc', 'varchar', 'NULL', $char_d,
       ],
       'primary_key' => '',
-      'unique' => [ ['pkgnum', 'invnum'] ],
+      'unique' => [],
       'index' => [ ['invnum'] ],
     },
 
@@ -504,6 +521,7 @@ sub tables_hash_hack {
         'taxclass',   'varchar', 'NULL', $char_d,
         'exempt_amount', @money_type,
         'tax',      'real',  '',    '', #tax %
+        'taxname',  'varchar',  'NULL',    $char_d,
       ],
       'primary_key' => 'taxnum',
       'unique' => [],

@@ -510,10 +510,13 @@ sub send_csv {
         time2str("%x", $cust_bill_pkg->edate),
       );
 
-    } else { #pkgnum Tax
+    } else { #pkgnum tax
       next unless $cust_bill_pkg->setup != 0;
+      my $itemdesc = defined $cust_bill_pkg->dbdef_table->column('itemdesc')
+                       ? ( $cust_bill_pkg->itemdesc || 'Tax' )
+                       : 'Tax';
       ($pkg, $setup, $recur, $sdate, $edate) =
-        ( 'Tax', sprintf("%10.2f",$cust_bill_pkg->setup), '', '', '' );
+        ( $itemdesc, sprintf("%10.2f",$cust_bill_pkg->setup), '', '', '' );
     }
 
     $csv->combine(
@@ -858,7 +861,9 @@ sub print_text {
   }
 
   #new charges
-  foreach ( $self->cust_bill_pkg ) {
+  foreach ( ( grep {   $_->pkgnum } $self->cust_bill_pkg ),  #packages first
+            ( grep { ! $_->pkgnum } $self->cust_bill_pkg ),  #then taxes
+  ) {
 
     if ( $_->pkgnum ) {
 
@@ -882,8 +887,11 @@ sub print_text {
           map { [ "  ". $_->[0]. ": ". $_->[1], '' ] } $cust_pkg->labels;
       }
 
-    } else { #pkgnum Tax
-      push @buf,["Tax", $money_char. sprintf("%10.2f",$_->setup) ] 
+    } else { #pkgnum tax
+      my $itemdesc = defined $_->dbdef_table->column('itemdesc')
+                     ? ( $_->itemdesc || 'Tax' )
+                     : 'Tax';
+      push @buf,[$itemdesc, $money_char. sprintf("%10.2f",$_->setup) ] 
         if $_->setup != 0;
     }
   }
@@ -1031,7 +1039,7 @@ sub print_text {
 
 =head1 VERSION
 
-$Id: cust_bill.pm,v 1.45 2002-09-17 10:21:47 ivan Exp $
+$Id: cust_bill.pm,v 1.46 2002-09-21 11:17:39 ivan Exp $
 
 =head1 BUGS
 
