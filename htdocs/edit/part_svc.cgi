@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: part_svc.cgi,v 1.12 1999-04-09 04:22:34 ivan Exp $
+# $Id: part_svc.cgi,v 1.13 2000-06-15 11:10:31 ivan Exp $
 #
 # ivan@sisd.com 97-nov-14
 #
@@ -10,7 +10,10 @@
 # use FS::CGI, added inline documentation ivan@sisd.com 98-jul-12
 #
 # $Log: part_svc.cgi,v $
-# Revision 1.12  1999-04-09 04:22:34  ivan
+# Revision 1.13  2000-06-15 11:10:31  ivan
+# update to the inline documentation, hopefully will make things more clear
+#
+# Revision 1.12  1999/04/09 04:22:34  ivan
 # also table()
 #
 # Revision 1.11  1999/04/09 03:52:55  ivan
@@ -124,7 +127,7 @@ END
   'svc_acct' => {
     'dir'       => 'Home directory',
     'uid'       => 'UID (set to fixed and blank for dial-only)',
-    'slipip'    => 'IP address',
+    'slipip'    => 'IP address (set to fixed and blank to disable dialin)',
     'popnum'    => qq!<A HREF="$p/browse/svc_acct_pop.cgi/">POP number</A>!,
     'username'  => 'Username',
     'quota'     => '(unimplemented)',
