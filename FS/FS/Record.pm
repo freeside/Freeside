@@ -250,7 +250,7 @@ sub qsearch {
   }
   $statement .= " $extra_sql" if defined($extra_sql);
 
-  warn "[debug]$me $statement\n" if $DEBUG;
+  warn "[debug]$me $statement\n" if $DEBUG > 1;
   my $sth = $dbh->prepare($statement)
     or croak "$dbh->errstr doing $statement";
 
@@ -502,13 +502,13 @@ sub insert {
       join( ', ', @values ).
     ")"
   ;
-  warn "[debug]$me $statement\n" if $DEBUG;
+  warn "[debug]$me $statement\n" if $DEBUG > 1;
   my $sth = dbh->prepare($statement) or return dbh->errstr;
 
   my $h_sth;
   if ( defined $dbdef->table('h_'. $self->table) ) {
     my $h_statement = $self->_h_statement('insert');
-    warn "[debug]$me $h_statement\n" if $DEBUG;
+    warn "[debug]$me $h_statement\n" if $DEBUG > 2;
     $h_sth = dbh->prepare($h_statement) or return dbh->errstr;
   } else {
     $h_sth = '';
@@ -562,13 +562,13 @@ sub delete {
           ? ( $self->dbdef_table->primary_key)
           : $self->fields
   );
-  warn "[debug]$me $statement\n" if $DEBUG;
+  warn "[debug]$me $statement\n" if $DEBUG > 1;
   my $sth = dbh->prepare($statement) or return dbh->errstr;
 
   my $h_sth;
   if ( defined $dbdef->table('h_'. $self->table) ) {
     my $h_statement = $self->_h_statement('delete');
-    warn "[debug]$me $h_statement\n" if $DEBUG;
+    warn "[debug]$me $h_statement\n" if $DEBUG > 2;
     $h_sth = dbh->prepare($h_statement) or return dbh->errstr;
   } else {
     $h_sth = '';
@@ -647,13 +647,13 @@ sub replace {
       } ( $primary_key ? ( $primary_key ) : $old->fields )
     )
   ;
-  warn "[debug]$me $statement\n" if $DEBUG;
+  warn "[debug]$me $statement\n" if $DEBUG > 1;
   my $sth = dbh->prepare($statement) or return dbh->errstr;
 
   my $h_old_sth;
   if ( defined $dbdef->table('h_'. $old->table) ) {
     my $h_old_statement = $old->_h_statement('replace_old');
-    warn "[debug]$me $h_old_statement\n" if $DEBUG;
+    warn "[debug]$me $h_old_statement\n" if $DEBUG > 2;
     $h_old_sth = dbh->prepare($h_old_statement) or return dbh->errstr;
   } else {
     $h_old_sth = '';
@@ -662,7 +662,7 @@ sub replace {
   my $h_new_sth;
   if ( defined $dbdef->table('h_'. $new->table) ) {
     my $h_new_statement = $new->_h_statement('replace_new');
-    warn "[debug]$me $h_new_statement\n" if $DEBUG;
+    warn "[debug]$me $h_new_statement\n" if $DEBUG > 2;
     $h_new_sth = dbh->prepare($h_new_statement) or return dbh->errstr;
   } else {
     $h_new_sth = '';
@@ -1130,10 +1130,15 @@ I<$FS::Record::setup_hack> is true.  Returns a DBIx::DBSchema object.
 
 sub reload_dbdef {
   my $file = shift || $dbdef_file;
-  $dbdef = exists $dbdef_cache{$file}
-    ? $dbdef_cache{$file}
-    : $dbdef_cache{$file} = DBIx::DBSchema->load( $file )
-                              or die "can't load database schema from $file";
+
+  unless ( exists $dbdef_cache{$file} ) {
+    warn "[debug]$me loading dbdef for $file\n" if $DEBUG;
+    $dbdef_cache{$file} = DBIx::DBSchema->load( $file )
+                            or die "can't load database schema from $file";
+  } else {
+    warn "[debug]$me re-using cached dbdef for $file\n" if $DEBUG;
+  }
+  $dbdef = $dbdef_cache{$file};
 }
 
 =item dbdef
