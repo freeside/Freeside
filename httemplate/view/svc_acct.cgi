@@ -144,8 +144,8 @@ if ($svc_acct->slipip) {
 print '<TR><TD ALIGN="right">RADIUS groups</TD><TD BGCOLOR="#ffffff">'.
       join('<BR>', $svc_acct->radius_groups). '</TD></TR>';
 
-print "</TABLE></TD></TR></TABLE>".
-      '<BR>'. joblisting({'svcnum'=>$svcnum}, 1).
-      "</BODY></HTML>";
+print '</TABLE></TD></TR></TABLE><BR><BR>'.
+      join("\n", $conf->config('svc_acct-notes') ).
+      '<BR><BR>'. joblisting({'svcnum'=>$svcnum}, 1). '</BODY></HTML>';
 
 %>
