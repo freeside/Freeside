@@ -20,6 +20,9 @@ bin/freeside-reexport
 FS.pm
 FS/CGI.pm
 FS/InitHandler.pm
+FS/ClientAPI.pm
+FS/ClientAPI/passwd.pm
+FS/ClientAPI/MyAccount.pm
 FS/Conf.pm
 FS/ConfItem.pm
 FS/Record.pm
@@ -97,6 +100,7 @@ t/agent.t
 t/agent_type.t
 t/CGI.t
 t/InitHandler.t
+t/ClientAPI.t
 t/Conf.t
 t/ConfItem.t
 t/Record.t
