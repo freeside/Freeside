@@ -1447,7 +1447,7 @@ sub retry_realtime {
         grep {
                #$_->part_bill_event->plan eq 'realtime-card'
                $_->part_bill_event->eventcode =~
-                   /\$cust_bill\->realtime_(card|ach|lec)$/
+                   /\$cust_bill\->realtime_(card|ach|lec)/
                  && $_->status eq 'done'
                  && $_->statustext
              }
