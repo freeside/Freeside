@@ -813,6 +813,7 @@ sub bill {
   # & generate invoice database.
  
   my( $total_setup, $total_recur ) = ( 0, 0 );
+  my( $taxable_setup, $taxable_recur ) = ( 0, 0 );
   my @cust_bill_pkg = ();
 
   foreach my $cust_pkg (
@@ -927,37 +928,49 @@ sub bill {
         push @cust_bill_pkg, $cust_bill_pkg;
         $total_setup += $setup;
         $total_recur += $recur;
+        $taxable_setup += $setup
+          unless $part_pkg->dbdef_table->column('setuptax')
+                 || $part_pkg->setuptax =~ /^Y$/i;
+        $taxable_recur += $recur
+          unless $part_pkg->dbdef_table->column('recurtax')
+                 || $part_pkg->recurtax =~ /^Y$/i;
       }
     }
 
   }
 
   my $charged = sprintf( "%.2f", $total_setup + $total_recur );
+  my $taxable_charged = sprintf( "%.2f", $taxable_setup + $taxable_recur );
 
   unless ( @cust_bill_pkg ) {
     $dbh->commit or die $dbh->errstr if $oldAutoCommit;
     return '';
   } 
 
-  unless ( $self->tax =~ /Y/i || $self->payby eq 'COMP' ) {
+  unless ( $self->tax =~ /Y/i
+           || $self->payby eq 'COMP'
+           || $taxable_charged == 0 ) {
     my $cust_main_county = qsearchs('cust_main_county',{
         'state'   => $self->state,
         'county'  => $self->county,
         'country' => $self->country,
     } );
     my $tax = sprintf( "%.2f",
-      $charged * ( $cust_main_county->getfield('tax') / 100 )
+      $taxable_charged * ( $cust_main_county->getfield('tax') / 100 )
     );
-    $charged = sprintf( "%.2f", $charged+$tax );
 
-    my $cust_bill_pkg = new FS::cust_bill_pkg ({
-      'pkgnum' => 0,
-      'setup'  => $tax,
-      'recur'  => 0,
-      'sdate'  => '',
-      'edate'  => '',
-    });
-    push @cust_bill_pkg, $cust_bill_pkg;
+    if ( $tax > 0 ) {
+      $charged = sprintf( "%.2f", $charged+$tax );
+
+      my $cust_bill_pkg = new FS::cust_bill_pkg ({
+        'pkgnum' => 0,
+        'setup'  => $tax,
+        'recur'  => 0,
+        'sdate'  => '',
+        'edate'  => '',
+      });
+      push @cust_bill_pkg, $cust_bill_pkg;
+    }
   }
 
   my $cust_bill = new FS::cust_bill ( {
@@ -1827,7 +1840,7 @@ sub append_fuzzyfiles {
 
 =head1 VERSION
 
-$Id: cust_main.pm,v 1.41 2001-10-15 12:16:42 ivan Exp $
+$Id: cust_main.pm,v 1.42 2001-10-20 12:17:59 ivan Exp $
 
 =head1 BUGS
 

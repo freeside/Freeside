@@ -1,5 +1,5 @@
 <%
-# $Id: cust_main.cgi,v 1.4 2001-09-04 15:06:03 ivan Exp $
+# $Id: cust_main.cgi,v 1.5 2001-10-20 12:18:00 ivan Exp $
 
 use strict;
 use vars qw( $cgi $payby @invoicing_list $new $custnum $error );
@@ -20,7 +20,7 @@ $error = '';
 
 #unmunge stuff
 
-$cgi->param('tax','') unless defined($cgi->param('tax'));
+$cgi->param('tax','') unless defined $cgi->param('tax');
 
 $cgi->param('refnum', (split(/:/, ($cgi->param('refnum'))[0] ))[0] );
 

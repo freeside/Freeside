@@ -66,7 +66,7 @@ sub handler
       use FS::pkg_svc;
       use FS::cust_pkg;
       use FS::cust_svc;
-      use FS::CGI qw(header menubar popurl table ntable);
+      use FS::CGI qw(header menubar popurl table itable ntable);
 
       $cgi = new CGI;
       &cgisuidsetup($cgi);

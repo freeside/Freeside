@@ -52,6 +52,10 @@ inherits from FS::Record.  The following fields are currently supported:
 
 =item recur - Recurring fee expression
 
+=item setuptax - Setup fee tax exempt flag, empty or `Y'
+
+=item recurtax - Recurring fee tax exempt flag, empty or `Y'
+
 =item plan - Price plan
 
 =item plandata - Price plan data
@@ -126,7 +130,7 @@ insert and replace methods.
 sub check {
   my $self = shift;
 
-  $self->ut_numbern('pkgpart')
+  my $error = $self->ut_numbern('pkgpart')
     || $self->ut_text('pkg')
     || $self->ut_text('comment')
     || $self->ut_anything('setup')
@@ -135,6 +139,15 @@ sub check {
     || $self->ut_alphan('plan')
     || $self->ut_anything('plandata')
   ;
+  return $error if $error;
+
+  $self->setuptax =~ /^(Y?)$/ or return "Illegal setuptax: ". $self->setuptax;
+  $self->setuptax($1);
+
+  $self->recurtax =~ /^(Y?)$/ or return "Illegal recrutax: ". $self->recurtax;
+  $self->recurtax($1);
+
+  '';
 }
 
 =item pkg_svc
@@ -172,7 +185,7 @@ sub svcpart {
 
 =head1 VERSION
 
-$Id: part_pkg.pm,v 1.3 2001-10-15 10:42:28 ivan Exp $
+$Id: part_pkg.pm,v 1.4 2001-10-20 12:17:59 ivan Exp $
 
 =head1 BUGS
 

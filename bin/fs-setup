@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: fs-setup,v 1.62 2001-10-15 10:42:28 ivan Exp $
+# $Id: fs-setup,v 1.63 2001-10-20 12:17:59 ivan Exp $
 
 #to delay loading dbdef until we're ready
 BEGIN { $FS::Record::setup_hack = 1; }
@@ -540,6 +540,8 @@ sub tables_hash_hack {
         'setup',      @perl_type,
         'freq',       'int', '', '',  #billing frequency (months)
         'recur',      @perl_type,
+        'setuptax',  'char', 'NULL', 1,
+        'recurtax',  'char', 'NULL', 1,
         'plan',       'varchar', 'NULL', '',
         'plandata',   'varchar', 'NULL', '',
       ],

@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: svc_acct.cgi,v 1.9 2001-09-27 21:12:15 ivan Exp $ -->
+#<!-- $Id: svc_acct.cgi,v 1.10 2001-10-20 12:18:00 ivan Exp $ -->
 
 use strict;
 use vars qw( $conf $cgi @shells $action $svcnum $svc_acct $pkgnum $svcpart
@@ -116,7 +116,7 @@ print 'Service # '. ( $svcnum ? "<B>$svcnum</B>" : " (NEW)" ). '<BR>'.
       <INPUT TYPE="hidden" NAME="svcpart" VALUE="$svcpart">
 END
 
-print &itable("#cccccc"), <<END;
+print &itable("#cccccc",2), <<END;
 <TR><TD>
 <TR><TD ALIGN="right">Username</TD>
 <TD><INPUT TYPE="text" NAME="username" VALUE="$username" SIZE=$ulen2 MAXLENGTH=$ulen></TD></TR>

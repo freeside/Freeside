@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: part_pkg.cgi,v 1.3 2001-10-15 10:42:29 ivan Exp $ -->
+#<!-- $Id: part_pkg.cgi,v 1.4 2001-10-20 12:18:00 ivan Exp $ -->
 
 use strict;
 use vars qw( $cgi $pkgpart $old $new $part_svc $error $dbh );
@@ -26,11 +26,17 @@ $cgi->param('plandata',
   join('', map { "$_=". $cgi->param($_). "\n" } @plandata )
 );
 
+$cgi->param('setuptax','') unless defined $cgi->param('setuptax');
+$cgi->param('recurtax','') unless defined $cgi->param('recurtax');
+
 $new = new FS::part_pkg ( {
   map {
     $_, scalar($cgi->param($_));
   } fields('part_pkg')
 } );
+
+warn "setuptax: ". $new->setuptax;
+warn "recurtax: ". $new->recurtax;
 
 #most of the stuff below should move to part_pkg.pm
 

@@ -1,4 +1,4 @@
-<!-- $Id: part_pkg.cgi,v 1.5 2001-10-15 11:39:29 ivan Exp $ -->
+<!-- $Id: part_pkg.cgi,v 1.6 2001-10-20 12:17:59 ivan Exp $ -->
 
 <%
 
@@ -34,8 +34,8 @@ if ( $cgi->param('clone') ) {
 }
 unless ( $part_pkg->plan ) { #backwards-compat
   $part_pkg->plan('flat');
-  $part_pkg->plandata("setup=". $part_pkg->setup. "\n".
-                      "recur=". $part_pkg->recur. "\n");
+  $part_pkg->plandata("setup_fee=". $part_pkg->setup. "\n".
+                      "recur_fee=". $part_pkg->recur. "\n");
 }
 $action ||= $part_pkg->pkgpart ? 'Edit' : 'Add';
 my $hashref = $part_pkg->hashref;
@@ -76,28 +76,44 @@ print '<FORM NAME="dummy">';
 #print qq!<INPUT TYPE="hidden" NAME="pkgpart" VALUE="$hashref->{pkgpart}">!,
 print "Package Part #", $hashref->{pkgpart} ? $hashref->{pkgpart} : "(NEW)";
 
+print itable("#cccccc",2), <<END;
+<TR><TD ALIGN="right">Package (customer-visable)</TD><TD><INPUT TYPE="text" NAME="pkg" SIZE=32 VALUE="$hashref->{pkg}"></TD></TR>
+<TR><TD ALIGN="right">Comment (customer-hidden)</TD><TD><INPUT TYPE="text" NAME="comment" SIZE=32 VALUE="$hashref->{comment}"></TD></TR>
+<TR><TD ALIGN="right">Frequency (months) of recurring fee</TD><TD><INPUT TYPE="text" NAME="freq" VALUE="$hashref->{freq}" SIZE=3></TD></TR>
+<TR><TD ALIGN="right">Setup fee tax exempt</TD><TD>
+END
+
+print '<INPUT TYPE="checkbox" NAME="setuptax" VALUE="Y"';
+print ' CHECKED' if $hashref->{setuptax} eq "Y";
+print '>';
+
 print <<END;
-<PRE>
-Package (customer-visable)          <INPUT TYPE="text" NAME="pkg" SIZE=32 VALUE="$hashref->{pkg}">
-Comment (customer-hidden)           <INPUT TYPE="text" NAME="comment" SIZE=32 VALUE="$hashref->{comment}">
+</TD></TR>
+<TR><TD ALIGN="right">Recurring fee tax exempt</TD><TD>
+END
 
-Frequency (months) of recurring fee <INPUT TYPE="text" NAME="freq" VALUE="$hashref->{freq}">
+print '<INPUT TYPE="checkbox" NAME="recurtax" VALUE="Y"';
+print ' CHECKED' if $hashref->{recurtax} eq "Y";
+print '>';
 
-</PRE>
+print '</TD></TR></TABLE>';
 
+my $thead =  "\n\n". ntable('#cccccc', 2). <<END;
+<TR><TH BGCOLOR="#dcdcdc"><FONT SIZE=-1>Quan.</FONT></TH><TH BGCOLOR="#dcdcdc">Service</TH></TR>
 END
 
 unless ( $cgi->param('clone') ) {
-  print <<END;
-Enter the quantity of each service this package includes.<BR><BR>
-<TABLE BORDER><TR><TH><FONT SIZE=-1>Quan.</FONT></TH><TH>Service</TH>
-		  <TH><FONT SIZE=-1>Quan.</FONT></TH><TH>Service</TH></TR>
+  #print <<END, $thead;
+  print <<END, itable(), '<TR><TD VALIGN="top">', $thead;
+<BR><BR>Enter the quantity of each service this package includes.<BR><BR>
 END
 }
 
-my $count = 0;
 my @fixups = ();
-foreach my $part_svc ( ( qsearch( 'part_svc', {} ) ) ) {
+my $count = 0;
+my $columns = 3;
+my @part_svc = qsearch( 'part_svc', {} );
+foreach my $part_svc ( @part_svc ) {
   my $svcpart = $part_svc->svcpart;
   my $pkg_svc = qsearchs( 'pkg_svc', {
     'pkgpart'  => $cgi->param('clone') || $part_pkg->pkgpart,
@@ -112,16 +128,16 @@ foreach my $part_svc ( ( qsearch( 'part_svc', {} ) ) ) {
   push @fixups, "pkg_svc$svcpart";
 
   unless ( defined ($cgi->param('clone')) && $cgi->param('clone') ) {
-    print '<TR>' if $count == 0 ;
-    print qq!<TD><INPUT TYPE="text" NAME="pkg_svc$svcpart" SIZE=3 VALUE="!,
+    print '<TR>'; # if $count == 0 ;
+    print qq!<TD><INPUT TYPE="text" NAME="pkg_svc$svcpart" SIZE=4 MAXLENGTH=3 VALUE="!,
           $cgi->param("pkg_svc$svcpart") || $pkg_svc->quantity || 0,
           qq!"></TD><TD><A HREF="part_svc.cgi?!,$part_svc->svcpart,
-          qq!">!, $part_svc->getfield('svc'), "</A></TD>";
-    $count++;
-    if ($count == 2)
-    {
-      print '</TR>';
-      $count = 0;
+          qq!">!, $part_svc->getfield('svc'), "</A></TD></TR>";
+#    print "</TABLE></TD><TD>$thead" if ++$count == int(scalar(@part_svc) / 2);
+    $count+=1;
+    foreach ( 1 .. $columns-1 ) {
+      print "</TABLE></TD><TD VALIGN=\"top\">$thead"
+        if $count == int( $_ * scalar(@part_svc) / $columns );
     }
   } else {
     print qq!<INPUT TYPE="hidden" NAME="pkg_svc$svcpart" VALUE="!,
@@ -130,8 +146,8 @@ foreach my $part_svc ( ( qsearch( 'part_svc', {} ) ) ) {
 }
 
 unless ( $cgi->param('clone') ) {
-  print qq!</TR>! if ($count != 0) ;
-  print "</TABLE>";
+  print "</TR></TABLE></TD></TR></TABLE>";
+  #print "</TR></TABLE>";
 }
 
 # prolly should be in database
@@ -216,6 +232,12 @@ function fixup(what) {
 <% foreach my $f ( qw( pkg comment freq ), @fixups ) { %>
   what.<%= $f %>.value = document.dummy.<%= $f %>.value;
 <% } %>
+<% foreach my $f ( qw( setuptax recurtax ) ) { %>
+  if (document.dummy.<%= $f %>.checked)
+    what.<%= $f %>.value = 'Y';
+  else
+    what.<%= $f %>.value = '';
+<% } %>
   what.plan.value = document.dummy.plan.options[document.dummy.plan.selectedIndex].value;
 <% foreach my $p ( keys %plans ) { %>
   if ( what.plan.value == "<%= $p %>" ) {
@@ -246,6 +268,8 @@ if (document.getElementById) {
 <INPUT TYPE="hidden" NAME="pkg" VALUE="<%= $hashref->{pkg} %>">
 <INPUT TYPE="hidden" NAME="comment" VALUE="$<%= $hashref->{comment} %>">
 <INPUT TYPE="hidden" NAME="freq" VALUE="<%= $hashref->{freq} %>">
+<INPUT TYPE="hidden" NAME="setuptax" VALUE="<%= $hashref->{setuptax} %>">
+<INPUT TYPE="hidden" NAME="recurtax" VALUE="<%= $hashref->{recurtax} %>">
 <% foreach my $f ( @fixups ) { %>
 <INPUT TYPE="hidden" NAME="<%= $f %>" VALUE="">
 <% } %>
@@ -257,17 +281,20 @@ if ( $cgi->param('clone') ) {
 if ( $cgi->param('pkgnum') ) {
   print qq!<INPUT TYPE="hidden" NAME="pkgnum" VALUE="!, $cgi->param('pkgnum'), qq!">!;
 }
-print qq!<INPUT TYPE="hidden" NAME="pkgpart" VALUE="$hashref->{pkgpart}">!,
 %>
+
+<INPUT TYPE="hidden" NAME="pkgpart" VALUE="<%= $hashref->{pkgpart} %>">
+<%= itable("#cccccc",2) %>
 
 <% my $href = $plans{$layer}->{'fields'};
    foreach my $field ( keys %{ $href } ) { %>
-<%= $href->{$field}{'name'} %>: 
-<INPUT TYPE="text" NAME="<%= $field %>" VALUE="<%= exists($plandata{$field}) ? $plandata{$field} : $href->{$field}{'default'} %>" onChange="fchanged(this)"><BR>
+<TR><TD ALIGN="right"><%= $href->{$field}{'name'} %></TD>
+<TD><INPUT TYPE="text" NAME="<%= $field %>" VALUE="<%= exists($plandata{$field}) ? $plandata{$field} : $href->{$field}{'default'} %>" onChange="fchanged(this)"></TD></TR>
 <% } %>
+</TABLE>
 <INPUT TYPE="hidden" NAME="plandata" VALUE="<%= join(',', keys %{ $href } ) %>">
-
 <FONT SIZE="1">
+<BR><BR>
 Setup expression<BR><INPUT TYPE="text" NAME="setup" SIZE="160" VALUE="<%= $hashref->{setup} %>" onLoad="fchanged(this)"><BR>
 Recurring espression<BR><INPUT TYPE="text" NAME="recur" SIZE="160" VALUE="<%= $hashref->{recur} %>" onLoad="fchanged(this)"><BR>
 </FONT>
