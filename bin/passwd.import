@@ -1,5 +1,5 @@
 #!/usr/bin/perl -Tw
-# $Id: passwd.import,v 1.5 2002-06-21 09:57:05 ivan Exp $
+# $Id: passwd.import,v 1.6 2003-06-12 13:57:08 ivan Exp $
 
 use strict;
 use vars qw(%part_svc);
@@ -104,7 +104,13 @@ while (<PASSWD>) {
   });
   my($error);
   $error=$svc_acct->insert;
-  die $error if $error;
+  if ( $error ) {
+    if ( $error =~ /duplicate/i ) {
+      warn "$username: $error";
+    } else {
+      die "$username: $error";
+    }
+  }
 
 }
 
