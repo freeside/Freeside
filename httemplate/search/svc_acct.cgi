@@ -244,10 +244,50 @@ sub uid_sort {
 
 sub usernamesearch {
 
-  $cgi->param('username') =~ /^([\w\-\.\&]+)$/; #untaint username_text
-  my($username)=$1;
+  my @svc_acct;
 
-  [ qsearch('svc_acct',{'username'=>$username}) ];
+  my %username_type;
+  foreach ( $cgi->param('username_type') ) {
+    $username_type{$_}++;
+  }
+
+  $cgi->param('username') =~ /^([\w\-\.\&]+)$/; #untaint username_text
+  my $username = $1;
+
+  if ( $username_type{'Exact'} || $username_type{'Fuzzy'} ) {
+    push @svc_acct, qsearch( 'svc_acct',
+                             { 'username' => { 'op'    => 'ILIKE',
+                                               'value' => $username } } );
+  }
+
+  if ( $username_type{'Substring'} || $username_type{'All'} ) {
+    push @svc_acct, qsearch( 'svc_acct',
+                             { 'username' => { 'op'    => 'ILIKE',
+                                               'value' => "%$username%" } } );
+  }
+
+  if ( $username_type{'Fuzzy'} || $username_type{'All'} ) {
+    &FS::svc_acct::check_and_rebuild_fuzzyfiles;
+    my $all_username = &FS::svc_acct::all_username;
+
+    my %username;
+    if ( $username_type{'Fuzzy'} || $username_type{'All'} ) { 
+      foreach ( amatch($username, [ qw(i) ], @$all_username) ) {
+        $username{$_}++; 
+      }
+    }
+
+    #if ($username_type{'Sound-alike'}) {
+    #}
+
+    foreach ( keys %username ) {
+      push @svc_acct, qsearch('svc_acct',{'username'=>$_});
+    }
+
+  }
+
+  #[ qsearch('svc_acct',{'username'=>$username}) ];
+  \@svc_acct;
 
 }
 

@@ -303,6 +303,14 @@ sub insert {
     }
   }
 
+  #false laziness with sub replace (and cust_main)
+  my $queue = new FS::queue { 'job' => 'FS::svc_acct::append_fuzzyfiles' };
+  $error = $queue->insert($self->username);
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return "queueing job (transaction rolled back): $error";
+  }
+
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   ''; #no error
 }
@@ -477,6 +485,15 @@ sub replace {
     }
 
   }
+
+  #false laziness with sub insert (and cust_main)
+  my $queue = new FS::queue { 'job' => 'FS::svc_acct::append_fuzzyfiles' };
+  $error = $queue->insert($new->username);
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return "queueing job (transaction rolled back): $error";
+  }
+
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   ''; #no error
@@ -860,6 +877,89 @@ sub radius_groups {
 
 =head1 SUBROUTINES
 
+=over 4
+
+=item check_and_rebuild_fuzzyfiles
+
+=cut
+
+sub check_and_rebuild_fuzzyfiles {
+  my $dir = $FS::UID::conf_dir. "cache.". $FS::UID::datasrc;
+  -e "$dir/svc_acct.username"
+    or &rebuild_fuzzyfiles;
+}
+
+=item rebuild_fuzzyfiles
+
+=cut
+
+sub rebuild_fuzzyfiles {
+
+  use Fcntl qw(:flock);
+
+  my $dir = $FS::UID::conf_dir. "cache.". $FS::UID::datasrc;
+
+  #username
+
+  open(USERNAMELOCK,">>$dir/svc_acct.username")
+    or die "can't open $dir/svc_acct.username: $!";
+  flock(USERNAMELOCK,LOCK_EX)
+    or die "can't lock $dir/svc_acct.username: $!";
+
+  my @all_username = map $_->getfield('username'), qsearch('svc_acct', {});
+
+  open (USERNAMECACHE,">$dir/svc_acct.username.tmp")
+    or die "can't open $dir/svc_acct.username.tmp: $!";
+  print USERNAMECACHE join("\n", @all_username), "\n";
+  close USERNAMECACHE or die "can't close $dir/svc_acct.username.tmp: $!";
+
+  rename "$dir/svc_acct.username.tmp", "$dir/svc_acct.username";
+  close USERNAMELOCK;
+
+}
+
+=item all_username
+
+=cut
+
+sub all_username {
+  my $dir = $FS::UID::conf_dir. "cache.". $FS::UID::datasrc;
+  open(USERNAMECACHE,"<$dir/svc_acct.username")
+    or die "can't open $dir/svc_acct.username: $!";
+  my @array = map { chomp; $_; } <USERNAMECACHE>;
+  close USERNAMECACHE;
+  \@array;
+}
+
+=item append_fuzzyfiles USERNAME
+
+=cut
+
+sub append_fuzzyfiles {
+  my $username = shift;
+
+  &check_and_rebuild_fuzzyfiles;
+
+  use Fcntl qw(:flock);
+
+  my $dir = $FS::UID::conf_dir. "cache.". $FS::UID::datasrc;
+
+  open(USERNAME,">>$dir/svc_acct.username")
+    or die "can't open $dir/svc_acct.username: $!";
+  flock(USERNAME,LOCK_EX)
+    or die "can't lock $dir/svc_acct.username: $!";
+
+  print USERNAME "$username\n";
+
+  flock(USERNAME,LOCK_UN)
+    or die "can't unlock $dir/svc_acct.username: $!";
+  close USERNAME;
+
+  1;
+}
+
+
+
 =item radius_usergroup_selector GROUPS_ARRAYREF [ SELECTNAME ]
 
 =cut
@@ -908,6 +1008,8 @@ END
 
   $html;
 }
+
+=back
 
 =head1 BUGS
 
