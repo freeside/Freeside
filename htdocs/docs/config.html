@@ -33,6 +33,7 @@ All further configuration files and directories are located in
   <li>invoice_from - Return address on email invoices.
   <li>lpr - Print command for paper invoices, for example `lpr -h'.
   <li>nismachines - Your NIS master (not slave master) machines, one per line.  This enables export of `/etc/global/passwd' and `/etc/global/shadow'.
+  <li>passwordmin - Minimum password length (default 6);
   <li>qmailmachines - Your qmail machines, one per line.  This enables export of `/var/qmail/control/virtualdomains', `/var/qmail/control/recipientmap', and `/var/qmail/control/rcpthosts'.  The existance of this file (even if empty) also turns on user `.qmail-extension' file maintenance in conjunction with `shellmachine'.
   <li>radiusmachines - Your RADIUS authentication machines, one per line.  This enables export of `/etc/raddb/users'.
   <li>registries - Directory which contains domain registry information.  Each registry is a directory.
@@ -52,6 +53,8 @@ All further configuration files and directories are located in
   <li>shells - Legal shells (think /etc/shells).  You probably want to `cut -d: -f7 /etc/passwd | sort | uniq' initially so that importing doesn't fail with `Illegal shell' errors, then remove any special entries afterwords.  A blank line specifies that an empty shell is permitted.
   <li>showpasswords - The existance of this file will allow unencrypted user passwords to be displayed.
   <li>smtpmachine - SMTP relay for Freeside's outgoing mail.
+  <li>usernamemin - Minimum username length (default 2);
+  <li>usernamemax - Maximum username length (default is the size of the SQL column, probably specified when fs-setup was run)
 </ul>
 </body>
 

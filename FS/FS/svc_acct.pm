@@ -1,8 +1,9 @@
 package FS::svc_acct;
 
 use strict;
-use vars qw(@ISA $nossh_hack $conf $dir_prefix @shells
-            $shellmachine @saltset @pw_set);
+use vars qw( @ISA $nossh_hack $conf $dir_prefix @shells $usernamemin
+             $usernamemax $passwordmin
+             $shellmachine @saltset @pw_set);
 use FS::Conf;
 use FS::Record qw( qsearchs fields );
 use FS::svc_Common;
@@ -18,6 +19,9 @@ $FS::UID::callback{'FS::svc_acct'} = sub {
   $dir_prefix = $conf->config('home');
   @shells = $conf->config('shells');
   $shellmachine = $conf->config('shellmachine');
+  $usernamemin = $conf->config('usernamemin') || 2;
+  $usernamemax = $conf->config('usernamemax');
+  $passwordmin = $conf->config('passwordmin') || 6;
 };
 
 @saltset = ( 'a'..'z' , 'A'..'Z' , '0'..'9' , '.' , '/' );
@@ -338,8 +342,8 @@ sub check {
   return $x unless ref($x);
   my $part_svc = $x;
 
-  my $ulen =$self->dbdef_table->column('username')->length;
-  $recref->{username} =~ /^([a-z0-9_\-]{2,$ulen})$/
+  my $ulen = $usernamemax || $self->dbdef_table->column('username')->length;
+  $recref->{username} =~ /^([a-z0-9_\-\.]{$usernamemin,$ulen})$/
     or return "Illegal username";
   $recref->{username} = $1;
   $recref->{username} =~ /[a-z]/ or return "Illegal username";
@@ -422,7 +426,7 @@ sub check {
     unless ( $recref->{_password} );
 
   #if ( $recref->{_password} =~ /^((\*SUSPENDED\* )?)([^\t\n]{4,16})$/ ) {
-  if ( $recref->{_password} =~ /^((\*SUSPENDED\* )?)([^\t\n]{4,8})$/ ) {
+  if ( $recref->{_password} =~ /^((\*SUSPENDED\* )?)([^\t\n]{$passwordmin,8})$/ ) {
     $recref->{_password} = $1.$3;
     #uncomment this to encrypt password immediately upon entry, or run
     #bin/crypt_pw in cron to give new users a window during which their
@@ -446,7 +450,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: svc_acct.pm,v 1.1 1999-08-04 09:03:53 ivan Exp $
+$Id: svc_acct.pm,v 1.2 1999-08-12 00:05:03 ivan Exp $
 
 =head1 BUGS
 
