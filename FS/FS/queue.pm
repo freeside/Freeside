@@ -232,13 +232,26 @@ sub cust_svc {
   qsearchs('cust_svc', { 'svcnum' => $self->svcnum } );
 }
 
+=item queue_depend
+
+Returns the FS::queue_depend objects associated with this job, if any.
+
+=cut
+
+sub queue_depend {
+  my $self = shift;
+  qsearch('queue_depend', { 'jobnum' => $self->jobnum } );
+}
+
+
 =item depend_insert OTHER_JOBNUM
 
-Inserts a dependancy for this job.  If there is an error, returns the error,
-otherwise returns false.
+Inserts a dependancy for this job - it will not be run until the other job
+specified completes.  If there is an error, returns the error, otherwise
+returns false.
 
-When using job dependancies, you should wrap the insertion of jobs in a
-database transaction.  
+When using job dependancies, you should wrap the insertion of all relevant jobs
+in a database transaction.  
 
 =cut
 
@@ -303,6 +316,11 @@ END
     my $date = time2str( "%a %b %e %T %Y", $queue->_date );
     my $status = $queue->status;
     $status .= ': '. $queue->statustext if $queue->statustext;
+    my @queue_depend = $queue->queue_depend;
+    $status .= ' (waiting for '.
+               join(', ', map { $_->other_jobnum } @queue_depend ). 
+               ')'
+      if @queue_depend;
     my $changable = $dangerous
          || ( ! $noactions && $status =~ /^failed/ || $status =~ /^locked/ );
     if ( $changable ) {
@@ -360,7 +378,7 @@ END
 
 =head1 VERSION
 
-$Id: queue.pm,v 1.12 2002-05-15 13:24:24 ivan Exp $
+$Id: queue.pm,v 1.13 2002-05-15 14:00:32 ivan Exp $
 
 =head1 BUGS
 

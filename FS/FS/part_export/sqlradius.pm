@@ -1,6 +1,7 @@
 package FS::part_export::sqlradius;
 
 use vars qw(@ISA);
+use FS::Record qw( dbh );
 use FS::part_export;
 
 @ISA = qw(FS::part_export);
@@ -31,12 +32,26 @@ sub _export_insert {
 sub _export_replace {
   my( $self, $new, $old ) = (shift, shift, shift);
 
-  #return "can't (yet) change username with sqlradius"
-  #  if $old->username ne $new->username;
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $jobnum = '';
   if ( $old->username ne $new->username ) {
     my $err_or_queue = $self->sqlradius_queue( $new->svcnum, 'rename',
       $new->username, $old->username );
-    return $err_or_queue unless ref($err_or_queue);
+    unless ( ref($err_or_queue) ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $err_or_queue;
+    }
+    $jobnum = $err_or_queue->jobnum;
   }
 
   foreach my $table (qw(reply check)) {
@@ -49,14 +64,34 @@ sub _export_replace {
     ) {
       my $err_or_queue = $self->sqlradius_queue( $new->svcnum, 'insert',
         $table, $new->username, %new );
-      return $err_or_queue unless ref($err_or_queue);
+      unless ( ref($err_or_queue) ) {
+        $dbh->rollback if $oldAutoCommit;
+        return $err_or_queue;
+      }
+      if ( $jobnum ) {
+        my $error = $err_or_queue->depend_insert( $jobnum );
+        if ( $error ) {
+          $dbh->rollback if $oldAutoCommit;
+          return $error;
+        }
+      }
     }
 
     my @del = grep { !exists $new{$_} } keys %old;
     if ( @del ) {
       my $err_or_queue = $self->sqlradius_queue( $new->svcnum, 'attrib_delete',
         $table, $new->username, @del );
-      return $err_or_queue unless ref($err_or_queue);
+      unless ( ref($err_or_queue) ) {
+        $dbh->rollback if $oldAutoCommit;
+        return $err_or_queue;
+      }
+      if ( $jobnum ) {
+        my $error = $err_or_queue->depend_insert( $jobnum );
+        if ( $error ) {
+          $dbh->rollback if $oldAutoCommit;
+          return $error;
+        }
+      }
     }
   }
 
@@ -75,14 +110,36 @@ sub _export_replace {
   if ( @delgroups ) {
     my $err_or_queue = $self->sqlradius_queue( $new->svcnum, 'usergroup_delete',
       $new->username, @delgroups );
-    return $err_or_queue unless ref($err_or_queue);
+    unless ( ref($err_or_queue) ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $err_or_queue;
+    }
+    if ( $jobnum ) {
+      my $error = $err_or_queue->depend_insert( $jobnum );
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
+      }
+    }
   }
 
   if ( @newgroups ) {
     my $err_or_queue = $self->sqlradius_queue( $new->svcnum, 'usergroup_insert',
       $new->username, @newgroups );
-    return $err_or_queue unless ref($err_or_queue);
+    unless ( ref($err_or_queue) ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $err_or_queue;
+    }
+    if ( $jobnum ) {
+      my $error = $err_or_queue->depend_insert( $jobnum );
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
+      }
+    }
   }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
   '';
 }
