@@ -70,11 +70,13 @@ if ( $cgi->keywords ) {
 
   my $extra_sql = scalar(@where) ? 'WHERE '. join(' AND ', @where) : '';
 
-  my $statement = "SELECT COUNT(*) FROM cust_bill $extra_sql";
+  my $statement = "SELECT COUNT(*), sum(charged), sum($owed)
+                   FROM cust_bill $extra_sql";
   my $sth = dbh->prepare($statement) or die dbh->errstr. " doing $statement";
   $sth->execute or die "Error executing \"$statement\": ". $sth->errstr;
 
-  $total = $sth->fetchrow_arrayref->[0];
+  #$total = $sth->fetchrow_arrayref->[0];
+  ( $total, $tot_amount, $tot_balance ) = @{$sth->fetchrow_arrayref};
 
   @cust_bill = qsearch(
     'cust_bill',
@@ -91,8 +93,7 @@ if ( $cgi->keywords ) {
 }
 
 #if ( scalar(@cust_bill) == 1 ) {
-if ( scalar(@cust_bill) == 1 && $total == 1) {
-#if ( $total == 1 ) {
+if ( $total == 1 ) {
   my $invnum = $cust_bill[0]->invnum;
   print $cgi->redirect(popurl(2). "view/cust_bill.cgi?$invnum");  #redirect
 } elsif ( scalar(@cust_bill) == 0 ) {
@@ -159,8 +160,8 @@ END
     );
     my $pdate = time2str("%b %d %Y", $date);
 
-    $tot_balance += $owed;
-    $tot_amount += $charged;
+    #$tot_balance += $owed;
+    #$tot_amount += $charged;
 
     my $rowspan = 1;
 
