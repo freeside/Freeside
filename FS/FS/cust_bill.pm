@@ -1162,9 +1162,11 @@ sub print_ps {
   my $dir = $FS::UID::conf_dir. "cache.". $FS::UID::datasrc;
   chdir($dir);
 
-  system("pslatex $file.tex >/dev/null 2>&1") == 0
+  my $sfile = shell_quote $file;
+
+  system("pslatex $sfile.tex >/dev/null 2>&1") == 0
     or die "pslatex $file.tex failed: $!";
-  system("pslatex $file.tex >/dev/null 2>&1") == 0
+  system("pslatex $sfile.tex >/dev/null 2>&1") == 0
     or die "pslatex $file.tex failed: $!";
 
   system('dvips', '-q', '-t', 'letter', "$file.dvi", '-o', "$file.ps" ) == 0
@@ -1209,13 +1211,14 @@ sub print_pdf {
   #system('pdflatex', "$file.tex");
   #! LaTeX Error: Unknown graphics extension: .eps.
 
-  system("pslatex $file.tex >/dev/null 2>&1") == 0
+  my $sfile = shell_quote $file;
+
+  system("pslatex $sfile.tex >/dev/null 2>&1") == 0
     or die "pslatex $file.tex failed: $!";
-  system("pslatex $file.tex >/dev/null 2>&1") == 0
+  system("pslatex $sfile.tex >/dev/null 2>&1") == 0
     or die "pslatex $file.tex failed: $!";
 
   #system('dvipdf', "$file.dvi", "$file.pdf" );
-  my $sfile = shell_quote $file;
   system(
     "dvips -q -t letter -f $sfile.dvi ".
     "| gs -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -sOutputFile=$sfile.pdf ".
