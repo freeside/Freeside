@@ -145,22 +145,22 @@ while (1) {
         #handle some commands weirdly?
         $packet->{_token}=$$;
 
-        warn "[child-$$] locking write stream" if $Debug > 1;
+        warn "[child-$$] locking write stream\n" if $Debug > 1;
         lock_write;
 
-        warn "[child-$$] sending packet to remote server" if $Debug > 1;
+        warn "[child-$$] sending packet to remote server\n" if $Debug > 1;
         nstore_fd($packet, \*STDOUT) or die "FATAL: can't send response: $!";
         
-        warn "[child-$$] flushing write stream" if $Debug > 1;
+        warn "[child-$$] flushing write stream\n" if $Debug > 1;
         STDOUT->flush or die "FATAL: can't flush: $!";
         
-        warn "[child-$$] releasing write lock" if $Debug > 1;
+        warn "[child-$$] releasing write lock\n" if $Debug > 1;
         unlock_write;
 
-        warn "[child-$$] closing write stream" if $Debug > 1;
+        warn "[child-$$] closing write stream\n" if $Debug > 1;
         close STDOUT or die "FATAL: can't close write stream: $!"; #??!
 
-        warn "[child-$$] waiting for response from parent" if $Debug > 1;
+        warn "[child-$$] waiting for response from parent\n" if $Debug > 1;
         my $w = new IO::Select;
         $w->add(\*STDIN);
         until ( $w->can_read ) {
