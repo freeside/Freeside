@@ -117,8 +117,9 @@ sub insert {
 
   return "First domain username (domuser) for domain (domsvc) must be " .
          qq='*' (catch-all)!=
-    if $self->domuser ne '*' &&
-       ! qsearch('svc_acct_sm',{ 'domsvc' => $self->domsvc } );
+    if $self->domuser ne '*'
+       && ! qsearch('svc_acct_sm',{ 'domsvc' => $self->domsvc } )
+       && ! $conf->exists('maildisablecatchall');
 
   $error = $self->SUPER::insert;
   return $error if $error;
@@ -232,7 +233,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: svc_acct_sm.pm,v 1.1 1999-08-04 09:03:53 ivan Exp $
+$Id: svc_acct_sm.pm,v 1.2 2000-06-30 10:37:18 ivan Exp $
 
 =head1 BUGS
 
