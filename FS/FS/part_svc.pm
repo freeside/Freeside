@@ -84,7 +84,7 @@ returns the error, otherwise returns false.
 sub replace {
   my ( $new, $old ) = ( shift, shift );
 
-  return "Can't change svcdb!"
+  return "Can't change svcdb for an existing service definition!"
     unless $old->svcdb eq $new->svcdb;
 
   $new->SUPER::replace( $old );
@@ -144,7 +144,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: part_svc.pm,v 1.1 1999-08-04 09:03:53 ivan Exp $
+$Id: part_svc.pm,v 1.2 2001-08-11 05:51:24 ivan Exp $
 
 =head1 BUGS
 
