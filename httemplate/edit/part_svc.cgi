@@ -25,9 +25,9 @@ if ( $cgi->param('magic') eq 'process' ) {
   } );
   
   my %exportnums =
-    map { $_->exportnum => $cgi->param('exportnum'.$_->exportnum) }
+    map { $_->exportnum => ( $cgi->param('exportnum'.$_->exportnum) || '') }
         qsearch('part_export', {} );
-  
+
   if ( $svcpart ) {
     $error = $new->replace($old, '1.3-COMPAT', [ 'usergroup' ], \%exportnums );
   } else {

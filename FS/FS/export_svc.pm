@@ -86,52 +86,84 @@ sub insert {
   return $error if $error;
 
   #check for duplicates!
-#TODO:
-#- XXX here
-#
-#- have edit/process/part_svc.cgi redirect with error back to 
-#edit/part_svc.cgi rather than eidiot out
-#
-#- rewrite in SQL for efficiency
-
-  my $label = '';
-  my $method = '';
+  my @checks = ();
   my $svcdb = $self->part_svc->svcdb;
-  if ( $svcdb eq 'svc_acct' ) { #XXX AND UID!  sheesh @method or %method not $method
+  if ( $svcdb eq 'svc_acct' ) {
+
     if ( $self->part_export->nodomain =~ /^Y/i ) {
-      $label = 'usernames';
-      $method = 'username';
+      push @checks, {
+        label  => 'usernames',
+        method => 'username',
+        sortby => sub { $a cmp $b },
+      };
     } else {
-      $label = 'username@domain';
-      $method = 'email';
+      push @checks, {
+        label  => 'username@domain',
+        method => 'email',
+        sortby => sub {
+                        my($auser, $adomain) = split('@', $a);
+                        my($buser, $bdomain) = split('@', $b);
+                        $adomain cmp $bdomain || $auser cmp $buser;
+                      },
+      };
     }
-  } elsif ( $svcdb eq 'domain' ) {
-    $label = 'domains';
-    $method = 'domain';
+
+    unless ( $self->part_svc->part_svc_column('uid')->columnflag eq 'F' ) {
+      push @checks, {
+        label  => 'uids',
+        method => 'uid',
+        sortby => sub { $a <=> $b },
+      };
+    }
+
+  } elsif ( $svcdb eq 'svc_domain' ) {
+    push @checks, {
+      label  => 'domains',
+      method => 'domain',
+      sortby => sub { $a cmp $b },
+    };
   } else {
-    warn "WARNING: XXX fill in this warning";
+    warn "WARNING: No duplicate checking done on merge of $svcdb exports";
   }
 
-  #warn "$method\n";
-  if ( $method ) {
+  foreach my $check ( @checks ) {
     my @current_svc = $self->part_export->svc_x;
     #warn "current: ". scalar(@current_svc). " $current_svc[0]\n";
     my @new_svc = $self->part_svc->svc_x;
     #warn "new: ". scalar(@new_svc). " $new_svc[0]\n";
-    my %cur_svc = map { $_->$method() => 1 } @current_svc;
+    my $method = $check->{'method'};
+    my %cur_svc = map { $_->$method() => $_ } @current_svc;
     my @dup_svc = grep { $cur_svc{$_->$method()} } @new_svc;
+    #my @diff_customer = grep { 
+    #                           $_->cust_pkg->custnum != $cur_svc{$_->$method()}->cust_pkg->custnum
+    #                         } @dup_svc;
+
+
 
     if ( @dup_svc ) { #aye, that's the rub
       #error out for now, eventually accept different options of adjustments
       # to make to allow us to continue forward
       $dbh->rollback if $oldAutoCommit;
+
+      my @diff_customer_svc = grep {
+        my $cust_pkg = $_->cust_svc->cust_pkg;
+        my $custnum = $cust_pkg ? $cust_pkg->custnum : 0;
+        my $other_cust_pkg = $cur_svc{$_->$method()}->cust_svc->cust_pkg;
+        my $other_custnum = $other_cust_pkg ? $other_cust_pkg->custnum : 0;
+        $custnum != $other_custnum;
+      } @dup_svc;
+
+      my $label = $check->{'label'};
+      my $sortby = $check->{'sortby'};
       return "Can't export ".
              $self->part_svc->svcpart.':'.$self->part_svc->svc. " service to ".
              $self->part_export->exportnum.':'.$self->part_export->exporttype.
                ' on '. $self->part_export->machine.
-             ' : '. scalar(@dup_svc). " duplicate $label: ".
-               join(', ', sort map { $_->$method() } @dup_svc );
-             #XXX eventually a sort sub so usernames and domains are default alpha, username@domain is domain first then username, and uid is numeric
+             ' : '. scalar(@dup_svc). " duplicate $label".
+             ' ('. scalar(@diff_customer_svc). " from different customers)".
+             #": ". join(', ', sort $sortby map { $_->$method() } @dup_svc )
+             ": ". join(', ', sort $sortby map { $_->$method() } @diff_customer_svc )
+             ;
     }
   }
 
