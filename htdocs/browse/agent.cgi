@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: agent.cgi,v 1.4 1998-11-20 08:50:36 ivan Exp $
+# $Id: agent.cgi,v 1.5 1998-11-23 05:27:31 ivan Exp $
 #
 # ivan@sisd.com 97-dec-12
 #
@@ -15,7 +15,10 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: agent.cgi,v $
-# Revision 1.4  1998-11-20 08:50:36  ivan
+# Revision 1.5  1998-11-23 05:27:31  ivan
+# to eliminate warnings
+#
+# Revision 1.4  1998/11/20 08:50:36  ivan
 # s/CGI::Base/CGI.pm, visual fixes
 #
 # Revision 1.3  1998/11/08 10:11:02  ivan
@@ -31,6 +34,7 @@ use FS::UID qw(cgisuidsetup swapuid);
 use FS::Record qw(qsearch qsearchs);
 use FS::CGI qw(header menubar table popurl);
 use FS::agent;
+use FS::agent_type;
 
 my($cgi) = new CGI;
 
