@@ -107,9 +107,12 @@ while (1) {
       warn "child $pid spawned\n" if $Debug;
     } else { #kid time
 
-      #get new db handle
-      $FS::UID::dbh->{InactiveDestroy} = 1;
-      forksuidsetup($user);
+      ##get new db handle
+      #$FS::UID::dbh->{InactiveDestroy} = 1;
+      #forksuidsetup($user);
+
+      #get db handle
+      adminsuidsetup($user);
 
       my $type = $packet->{_packet};
       warn "calling $type handler\n" if $Debug; 
@@ -195,7 +198,7 @@ sub init {
   #eslaf
 
   $ENV{HOME} = (getpwuid($>))[7]; #for ssh
-  adminsuidsetup $user;
+  #adminsuidsetup $user;
 
   #$log_file = "/usr/local/etc/freeside/selfservice.". $FS::UID::datasrc; #MACHINE NAME
   $log_file = "/usr/local/etc/freeside/selfservice.$machine.log";
