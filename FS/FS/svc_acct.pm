@@ -5,7 +5,8 @@ use vars qw( @ISA $noexport_hack $conf
              $dir_prefix @shells $usernamemin
              $usernamemax $passwordmin $passwordmax
              $username_ampersand $username_letter $username_letterfirst
-             $username_noperiod $username_uppercase
+             $username_noperiod $username_nounderscore $username_nodash
+             $username_uppercase
              $mydomain
              $dirhash
              @saltset @pw_set );
@@ -40,6 +41,8 @@ $FS::UID::callback{'FS::svc_acct'} = sub {
   $username_letter = $conf->exists('username-letter');
   $username_letterfirst = $conf->exists('username-letterfirst');
   $username_noperiod = $conf->exists('username-noperiod');
+  $username_nounderscore = $conf->exists('username-nounderscore');
+  $username_nodash = $conf->exists('username-nodash');
   $username_uppercase = $conf->exists('username-uppercase');
   $username_ampersand = $conf->exists('username-ampersand');
   $mydomain = $conf->config('domain');
@@ -546,6 +549,12 @@ sub check {
   }
   if ( $username_noperiod ) {
     $recref->{username} =~ /\./ and return gettext('illegal_username');
+  }
+  if ( $username_nounderscore ) {
+    $recref->{username} =~ /_/ and return gettext('illegal_username');
+  }
+  if ( $username_nodash ) {
+    $recref->{username} =~ /\-/ and return gettext('illegal_username');
   }
   unless ( $username_ampersand ) {
     $recref->{username} =~ /\&/ and return gettext('illegal_username');

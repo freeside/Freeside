@@ -779,6 +779,20 @@ httemplate/docs/config.html
   },
 
   {
+    'key'         => 'username-nounderscore',
+    'section'     => 'username',
+    'description' => 'Disallow underscores in usernames',
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'username-nodash',
+    'section'     => 'username',
+    'description' => 'Disallow dashes in usernames',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'username-uppercase',
     'section'     => 'username',
     'description' => 'Allow uppercase characters in usernames',
