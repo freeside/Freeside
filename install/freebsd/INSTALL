@@ -1,9 +1,21 @@
 #!/bin/sh
 
+cd /usr/ports/sysutils/portupgrade
+make install
+
+pkgdb -u
+
+portinstall -PR cvsup-without-gui
+
+cp /usr/share/examples/cvsup/ports-supfile /root
+perl -pi -e 's/CHANGE_THIS/cvsup1/;' /root/ports-supfile
+cvsup /root/ports-supfile
+
 for port in `grep -v '^ *#' ports`; do
-  cd /usr/ports/$port
-  make install || exit
+  #cd /usr/ports/$port
+  #make install || exit
+  portinstall -P -R $port || exit
 done
 
-perl -MCPAN -e"install DBIx::DBSchema HTML::Widgets::SelectLayers Time::Duration"
+perl -MCPAN -e"install Net::SSH DBIx::DBSchema HTML::Widgets::SelectLayers Time::Duration Business::CreditCard"
 
