@@ -511,15 +511,17 @@ sub delete {
   }
   if ( $icradius_dbh ) {
 
-    my $queue = new FS::queue { 'job' => 'FS::svc_acct::icradius_rc_delete' };
-    $error = $queue->insert( $self->username );
+    my $radcheck_queue =
+      new FS::queue { 'job' => 'FS::svc_acct::icradius_rc_delete' };
+    $error = $radcheck_queue->insert( $self->username );
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return "queueing job (transaction rolled back): $error";
     }
 
-    my $queue = new FS::queue { 'job' => 'FS::svc_acct::icradius_rr_delete' };
-    $error = $queue->insert( $self->username );
+    my $radreply_queue =
+      new FS::queue { 'job' => 'FS::svc_acct::icradius_rr_delete' };
+    $error = $radreply_queue->insert( $self->username );
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return "queueing job (transaction rolled back): $error";
@@ -931,7 +933,7 @@ sub radius_reply {
       ( $FS::raddb::attrib{lc($attrib)}, $self->getfield($column) );
     } grep { /^radius_/ && $self->getfield($_) } fields( $self->table );
   if ( $self->ip && $self->ip ne '0e0' ) {
-    $reply{Framed-IP-Address} = $self->ip;
+    $reply{'Framed-IP-Address'} = $self->ip;
   }
   %reply;
 }
@@ -1031,7 +1033,7 @@ sub ssh {
 
 =head1 VERSION
 
-$Id: svc_acct.pm,v 1.62 2002-01-16 15:37:42 ivan Exp $
+$Id: svc_acct.pm,v 1.63 2002-01-22 14:53:26 ivan Exp $
 
 =head1 BUGS
 
