@@ -28,7 +28,8 @@ my $pkgpart = $agent->pkgpart_hashref;
 
 my $refnum = shift or die &usage;
 
-$SIG{CHLD} = sub { wait() };
+#causing trouble for some folks
+#$SIG{CHLD} = sub { wait() };
 
 my($fs_signupd)="/usr/local/sbin/fs_signupd";
 

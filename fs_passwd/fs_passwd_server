@@ -22,7 +22,8 @@ adminsuidsetup $user;
 
 my($shellmachine)=shift or die &usage;
 
-$SIG{CHLD} = sub { wait() };
+#causing trouble for some folks
+#$SIG{CHLD} = sub { wait() };
 
 my($fs_passwdd)="/usr/local/sbin/fs_passwdd";
 
