@@ -10,10 +10,10 @@ sub rebless { shift; }
 sub _export_insert {
   my( $self, $svc_acct ) = (shift, shift);
   $self->cp_queue( $svc_acct->svcnum, 'create_mailbox',
-    Mailbox   => $svc_acct->username,
-    Password  => $svc_acct->_password,
-    Workgroup => $self->option('workgroup'),
-    Domain    => $svc_acct->domain,
+    'Mailbox'   => $svc_acct->username,
+    'Password'  => $svc_acct->_password,
+    'Workgroup' => $self->option('workgroup'),
+    'Domain'    => $svc_acct->domain,
   );
 }
 
@@ -30,8 +30,30 @@ sub _export_replace {
 sub _export_delete {
   my( $self, $svc_acct ) = (shift, shift);
   $self->cp_queue( $svc_acct->svcnum, 'delete_mailbox',
-    Mailbox   => $svc_acct->username,
-    Domain    => $svc_acct->domain,
+    'Mailbox'   => $svc_acct->username,
+    'Domain'    => $svc_acct->domain,
+  );
+}
+
+sub _export_suspend {
+  my( $self, $svc_acct ) = (shift, shift);
+  $self->cp_queue( $svc_acct->svcnum, 'set_mailbox_status',
+    'Mailbox'       => $svc_acct->username,
+    'Domain'        => $svc_acct->domain,
+    'OTHER'         => 'T',
+    'OTHER_SUSPEND' => 'T',
+  );
+}
+
+sub _export_unsuspend {
+  my( $self, $svc_acct ) = (shift, shift);
+  $self->cp_queue( $svc_acct->svcnum, 'set_mailbox_status',
+    'Mailbox'       => $svc_acct->username,
+    'Domain'        => $svc_acct->domain,
+    'PAYMENT'       => 'F',
+    'OTHER'         => 'F',
+    'OTHER_SUSPEND' => 'F',
+    'OTHER_BOUNCE'  => 'F',
   );
 }
 
