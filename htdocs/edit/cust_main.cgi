@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main.cgi,v 1.21 1999-08-23 07:40:38 ivan Exp $
+# $Id: cust_main.cgi,v 1.22 1999-12-17 02:33:23 ivan Exp $
 #
 # Usage: cust_main.cgi custnum
 #        http://server.name/path/cust_main.cgi?custnum
@@ -38,7 +38,10 @@
 # fixed one missed day->daytime ivan@sisd.com 98-jul-13
 #
 # $Log: cust_main.cgi,v $
-# Revision 1.21  1999-08-23 07:40:38  ivan
+# Revision 1.22  1999-12-17 02:33:23  ivan
+# argh
+#
+# Revision 1.21  1999/08/23 07:40:38  ivan
 # missing </TD> flag
 #
 # Revision 1.20  1999/08/23 07:08:11  ivan
@@ -185,7 +188,7 @@ $r = qq!<font color="#ff0000">*</font>!;
 
 @agents = qsearch( 'agent', {} );
 #die "No agents created!" unless @agents;
-die "You have not created any agents.  You must create at least one agent before adding a customer.  <a href=\"". popurl(2). "browse/agent.cgi\">Create at least one agent here.</a>" unless @agents;
+die "You have not created any agents.  You must create at least one agent before adding a customer.  Go to ". popurl(2). "browse/agent.cgi and create one or more agents." unless @agents;
 $agentnum = $cust_main->agentnum || $agents[0]->agentnum; #default to first
 if ( scalar(@agents) == 1 ) {
   print qq!<INPUT TYPE="hidden" NAME="agentnum" VALUE="$agentnum">!;
