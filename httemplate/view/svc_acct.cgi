@@ -86,33 +86,55 @@ if (    $part_svc->part_export('sqlradius')
     $last_bill, time, 'AcctOutputOctets'
   ) / 1048576;
 
-  if ( $seconds ) {
-    print "Online <B>$hour</B>h <B>$min</B>m <B>$sec</B>s";
-  } else {
-    print 'Has not logged on';
-  }
-
-  if ( $cust_pkg ) {
-    print ' since last bill ('. time2str("%C", $last_bill). ')'.
-    print ' - '. $plandata{recur_included_hours}. ' total hours in plan<BR>'
-      if length($plandata{recur_included_hours});
-  } else {
-    print ' (no billing cycle available for unaudited account)<BR>';
-  }
-
-  print 'Input: <B>'. sprintf("%.3f", $input). '</B> megabytes<BR>';
-  print 'Output: <B>'. sprintf("%.3f", $output). '</B> megabytes<BR>';
-
-  my $href = qq!<A HREF="${p}search/sqlradius.cgi?svcnum=$svcnum!;
-  print qq!View sessions: this billing cycle | $href">all sessions</A>!;
-
-  print '<BR>';
-
-}
-
-#print qq!<BR><A HREF="../misc/sendconfig.cgi?$svcnum">Send account information</A>!;
-
 %>
+
+  RADIUS session information<BR>
+  <%= ntable('#cccccc',2) %>
+  <TR><TD BGCOLOR="#ffffff">
+
+  <% if ( $seconds ) { %>
+    Online <B><%= $hour %></B>h <B><%= $min %></B>m <B><%= $sec %></B>s
+  <% } else { %>
+    Has not logged on
+  <% } %>
+
+  <% if ( $cust_pkg ) { %>
+    since last bill (<%= time2str('%a %b %o %Y', $last_bill) %>)
+    <% if ( length($plandata{recur_included_hours}) ) { %>
+    - <%= $plandata{recur_included_hours} %> total hours in plan
+    <% } %>
+    <BR>
+  <% } else { %>
+    (no billing cycle available for unaudited account)<BR>
+  <% } %>
+
+  Upload: <B><%= sprintf("%.3f", $input) %></B> megabytes<BR>
+  Download: <B><%= sprintf("%.3f", $output) %></B> megabytes<BR>
+
+  <% my $href = qq!<A HREF="${p}search/sqlradius.cgi?svcnum=$svcnum!; %>
+  View session detail:
+      <%= $href %>;begin=<%= $last_bill %>">this billing cycle</A>
+    | <%= $href %>;begin=<%= time-15552000 %>">past six months</A>
+    | <%= $href %>">all sessions</A>
+
+  </TD></TR></TABLE><BR>
+
+<% } %>
+
+<SCRIPT TYPE="text/javascript">
+function enable_change () {
+  if ( document.OneTrueForm.svcpart.selectedIndex > 1 ) {
+    document.OneTrueForm.submit.disabled = false;
+  } else {
+    document.OneTrueForm.submit.disabled = true;
+  }
+}
+</SCRIPT>
+<FORM NAME="OneTrueForm" ACTION="<%=$p%>edit/process/cust_svc.cgi">
+<INPUT TYPE="hidden" NAME="svcnum" VALUE="<%= $svcnum %>">
+<INPUT TYPE="hidden" NAME="pkgnum" VALUE="<%= $pkgnum %>">
+
+<% #print qq!<BR><A HREF="../misc/sendconfig.cgi?$svcnum">Send account information</A>!; %>
 
 <% 
   my @part_svc = ();
@@ -127,21 +149,13 @@ if (    $part_svc->part_export('sqlradius')
       svcpart  => { op=>'!=', value=>$part_svc->svcpart },
     } );
   }
-  if ( @part_svc ) {
 %>
-  <SCRIPT TYPE="text/javascript">
-  function enable_change () {
-    if ( document.OneTrueForm.svcpart.selectedIndex > 1 ) {
-      document.OneTrueForm.submit.disabled = false;
-    } else {
-      document.OneTrueForm.submit.disabled = true;
-    }
-  }
-  </SCRIPT>
-  <FORM NAME="OneTrueForm" ACTION="<%=$p%>edit/process/cust_svc.cgi">
-  <INPUT TYPE="hidden" NAME="svcnum" VALUE="<%= $svcnum %>">
-  <INPUT TYPE="hidden" NAME="pkgnum" VALUE="<%= $pkgnum %>">
-  <SELECT NAME="svcpart" onChange="enable_change()">
+
+Service Information
+| <A HREF="${p}edit/svc_acct.cgi?$svcnum">Edit this information</A>
+
+<% if ( @part_svc ) { %>
+| <SELECT NAME="svcpart" onChange="enable_change()">
     <OPTION VALUE="">Change service</OPTION>
     <OPTION VALUE="">--------------</OPTION>
     <% foreach my $part_svc ( @part_svc ) { %>
@@ -149,25 +163,21 @@ if (    $part_svc->part_export('sqlradius')
     <% } %>
   </SELECT>
   <INPUT NAME="submit" TYPE="submit" VALUE="Change" disabled>
-  </FORM>
 <% } %>
 
-<%
+<%= &ntable("#cccccc") %><TR><TD><%= &ntable("#cccccc",2) %>
+<TR><TD ALIGN="right">Service number</TD>
+  <TD BGCOLOR="#ffffff"><%= $svcnum %></TD></TR>
+<TR><TD ALIGN="right">Service</TD>
+  <TD BGCOLOR="#ffffff"><%= $part_svc->svc %></TD></TR>
+<TR><TD ALIGN="right">Username</TD>
+  <TD BGCOLOR="#ffffff"><%= $svc_acct->username %></TD></TR>
+<TR><TD ALIGN="right">Domain</TD>
+  <TD BGCOLOR="#ffffff"><%= $domain %></TD></TR>
 
-print qq!<A HREF="${p}edit/svc_acct.cgi?$svcnum">Edit this information</A><BR>!.
-      &ntable("#cccccc"). '<TR><TD>'. &ntable("#cccccc",2).
-      "<TR><TD ALIGN=\"right\">Service number</TD>".
-        "<TD BGCOLOR=\"#ffffff\">$svcnum</TD></TR>".
-      "<TR><TD ALIGN=\"right\">Service</TD>".
-        "<TD BGCOLOR=\"#ffffff\">". $part_svc->svc. "</TD></TR>".
-      "<TR><TD ALIGN=\"right\">Username</TD>".
-        "<TD BGCOLOR=\"#ffffff\">". $svc_acct->username. "</TD></TR>"
-;
+<TR><TD ALIGN="right">Password</TD>
+  <TD BGCOLOR="#ffffff"><% 
 
-print "<TR><TD ALIGN=\"right\">Domain</TD>".
-        "<TD BGCOLOR=\"#ffffff\">". $domain, "</TD></TR>";
-
-print "<TR><TD ALIGN=\"right\">Password</TD><TD BGCOLOR=\"#ffffff\">";
 my $password = $svc_acct->_password;
 if ( $password =~ /^\*\w+\* (.*)$/ ) {
   $password = $1;
@@ -251,7 +261,7 @@ foreach (sort { $a cmp $b } $svc_acct->virtual_fields) {
       "\n";
 }
 %>
-</TABLE></TD></TR></TABLE>
+</TABLE></TD></TR></TABLE></FORM>
 <%
 
 print '<BR><BR>';
