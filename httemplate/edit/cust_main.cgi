@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: cust_main.cgi,v 1.15 2001-12-12 19:42:21 ivan Exp $ -->
+#<!-- $Id: cust_main.cgi,v 1.16 2001-12-15 22:47:24 ivan Exp $ -->
 
 use vars qw( $cgi $custnum $action $cust_main $p1 @agents $agentnum 
              $last $first $ss $company $address1 $address2 $city $zip 
@@ -133,19 +133,21 @@ if ( $custnum && ! $conf->exists('editreferrals') ) {
 
 #referring customer
 
-print qq!<BR><BR>Referring Customer: !;
+#print qq!<BR><BR>Referring Customer: !;
 if ( $cust_main->referral_custnum ) {
   my $referring_cust_main =
     qsearchs('cust_main', { custnum => $cust_main->referral_custnum } );
-  print '<A HREF="'. popurl(1). '/cust_main.cgi?'.
+  print '<BR><BR>Referring Customer: <A HREF="'. popurl(1). '/cust_main.cgi?'.
         $cust_main->referral_custnum. '">'.
         $cust_main->referral_custnum. ': '.
         ( $referring_cust_main->company
           || $referring_cust_main->last. ', '. $referring_cust_main->first ).
         '</A><INPUT TYPE="hidden" NAME="referral_custnum" VALUE="'.
         $cust_main->referral_custnum. '">';
+} elsif ( ! $conf->exists('disable_customer_referrals') ) {
+  print '<BR><BR>Referring customer number: <INPUT TYPE="text" NAME="referral_custnum" VALUE="">';
 } else {
-  print '(none)<INPUT TYPE="hidden" NAME="referral_custnum" VALUE="">';
+  print '<INPUT TYPE="hidden" NAME="referral_custnum" VALUE="">';
 }
 
 # contact info
