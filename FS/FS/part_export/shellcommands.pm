@@ -40,6 +40,13 @@ sub _export_command {
   {
     no strict 'refs';
     ${$_} = $svc_acct->getfield($_) foreach $svc_acct->fields;
+
+    my $count = 1;
+    foreach my $acct_snarf ( $svc_acct->acct_snarf ) {
+      ${"snarf_$_$count"} = shell_quote( $acct_snarf->get($_) )
+        foreach qw( machine username _password );
+      $count++;
+    }
   }
 
   my $cust_pkg = $svc_acct->cust_svc->cust_pkg;

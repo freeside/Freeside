@@ -16,7 +16,7 @@ use Carp;
 use Fcntl qw(:flock);
 use FS::UID qw( datasrc );
 use FS::Conf;
-use FS::Record qw( qsearch qsearchs fields dbh );
+use FS::Record qw( qsearch qsearchs fields dbh dbdef );
 use FS::svc_Common;
 use FS::cust_svc;
 use FS::part_svc;
@@ -949,6 +949,22 @@ Returns an email address associated with the account.
 sub email {
   my $self = shift;
   $self->username. '@'. $self->domain;
+}
+
+=item acct_snarf
+
+Returns an array of FS::acct_snarf records associated with the account.
+If the acct_snarf table does not exist or there are no associated records,
+an empty list is returned
+
+=cut
+
+sub acct_snarf {
+  my $self = shift;
+  return () unless dbdef->table('acct_snarf');
+  eval "use FS::acct_snarf;";
+  die $@ if $@;
+  qsearch('acct_snarf', { 'svcnum' => $self->svcnum } );
 }
 
 =item seconds_since TIMESTAMP
