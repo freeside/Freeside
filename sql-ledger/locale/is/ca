@@ -7,6 +7,7 @@ $self{texts} = {
   'Balance'                     => 'Afstemming',
   'Chart of Accounts'           => 'Listi yfir lykkla/reikninga',
   'Credit'                      => 'Kredit',
+  'Current'                     => 'Núvirði',
   'Date'                        => 'Dagsetning',
   'Debit'                       => 'Debit',
   'Dec'                         => 'des',
@@ -36,7 +37,7 @@ $self{texts} = {
   'Sep'                         => 'sep',
   'September'                   => 'september',
   'Subtotal'                    => 'Samtala',
-  'to'                          => 'til',
+  'To'                          => 'til',
 };
 
 $self{subs} = {

@@ -226,7 +226,7 @@ INSERT INTO gifi (accno,description) VALUES ('0221300', 'Anrechb.Solidaritätszus
 INSERT INTO gifi (accno,description) VALUES ('0221500', 'Zinsabschlagsteuer');
 INSERT INTO gifi (accno,description) VALUES ('0221800', 'Anrechb.Solidari.zuschlag a.Zinsabs');
 INSERT INTO gifi (accno,description) VALUES ('0228000', 'Stnachzahl.Vorj.v.Einkomm u.Ertrag');
-INSERT INTO gifi (accno,description) VALUES ('0228200', 'Sterstat.Vorj.Steuer v.Eink.u.Ertra');
+INSERT INTO gifi (accno,description) VALUES ('0228200', 'Sterstat.Vorj.Steuer v.Eink.u.Ertrag');
 INSERT INTO gifi (accno,description) VALUES ('0228400', 'Ertr.a.d.Aufl.v.Rücks.f.St.v.Ein.Er');
 INSERT INTO gifi (accno,description) VALUES ('0228500', 'Steuernachzahlung Vorj.f.sons.Steue');
 INSERT INTO gifi (accno,description) VALUES ('0228700', 'Steuererstattung Vorj.f.sons.Steuer');
@@ -256,7 +256,7 @@ INSERT INTO gifi (accno,description) VALUES ('0260000', 'Erträge aus Beteiligten
 INSERT INTO gifi (accno,description) VALUES ('0261700', 'Gewinn a.Anteila.nicht stbef.Kapita');
 INSERT INTO gifi (accno,description) VALUES ('0261900', 'Erträge a.Beteil.a.verb.Untérnehmer');
 INSERT INTO gifi (accno,description) VALUES ('0262000', 'Erträge a.anderen Wertp u.Ausl.Fina');
-INSERT INTO gifi (accno,description) VALUES ('0265000', 'Sonstige Zinsen und ähnliche Erträg');
+INSERT INTO gifi (accno,description) VALUES ('0265000', 'Sonstige Zinsen und ähnliche Erträge');
 INSERT INTO gifi (accno,description) VALUES ('0265700', 'Zinserträge-betriebliche Steuern');
 INSERT INTO gifi (accno,description) VALUES ('0265800', 'Zinserträge-Körperschaftssteuer');
 INSERT INTO gifi (accno,description) VALUES ('0265900', 'Sons.Zinsen u.ähl.Ertr.a.verb.Unter');
@@ -268,7 +268,7 @@ INSERT INTO gifi (accno,description) VALUES ('0270500', 'Sons.Erträge betrieb. u
 INSERT INTO gifi (accno,description) VALUES ('0271000', 'Ertrag a.d.Zuschreib.d.Anlagevermög');
 INSERT INTO gifi (accno,description) VALUES ('0271500', 'Ertr.a.Zuschreib.d.Umlaufvermögens');
 INSERT INTO gifi (accno,description) VALUES ('0272000', 'Ertr.a.d.Abgang v.Gegens.d.Anlageve');
-INSERT INTO gifi (accno,description) VALUES ('0272500', 'Ertä.a.d.Abg.v.Gegenst.d.Umlaufverm');
+INSERT INTO gifi (accno,description) VALUES ('0272500', 'Ertr.a.d.Abg.v.Gegenst.d.Umlaufverm');
 INSERT INTO gifi (accno,description) VALUES ('0273000', 'Ertr.a.Herab.d.Pauschal.z.Forderung');
 INSERT INTO gifi (accno,description) VALUES ('0273100', 'Ertr.a.Herab.d.Einzelw.z.Forderunge');
 INSERT INTO gifi (accno,description) VALUES ('0273200', 'Ertr. aus abgeschriebenen Forderung');

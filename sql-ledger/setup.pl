@@ -4,7 +4,6 @@
 # SQL-Ledger, Accounting Software Installer
 # Copyright (c) 2002, Dieter Simader
 #
-#   Email: dsimader@sql-ledger.org
 #     Web: http://www.sql-ledger.org
 #
 #######################################################################
@@ -23,9 +22,10 @@ $gzip = `gzip -V 2>&1`;            # gz decompression utility
 $tar = `tar --version 2>&1`;       # tar archiver
 $latex = `latex -version`;
 
-@source = ( "http://unc.dl.sourceforge.net/sourceforge/sql-ledger",
-            "http://www.sql-ledger.org/source",
-	    "http://abacus.sql-ledger.org/source" );
+@source = ( "http://www.sql-ledger.org/source",
+            "http://www.sql-ledger.com/source",
+            "http://abacus.sql-ledger.org/source",
+	    "http://pluto.sql-ledger.org/source" );
 
 $userspath = "users";         # default for new installation
 
@@ -38,9 +38,8 @@ eval { require LWP::Simple; };
 $lwp = !($@);
 
 unless ($lwp || $lynx || $filename) {
-  die "You must have either lynx or LWP installed
-or specify a filename.
-perl $0 filename\n";
+  die "You must have either lynx or LWP installed or specify a filename.
+perl $0 <filename>\n";
 }
 
 if ($filename) {
@@ -67,6 +66,10 @@ if (!$filename && -f "VERSION") {
 }
 
 
+# is this windows? only used for downloading the right code
+$windows = ($^O =~ /MS/) ? '/windows' : '';
+
+
 $webowner = $<;
 $webgroup = $(;
 
@@ -74,18 +77,13 @@ if ($httpd = `find /etc /usr/local/etc -type f -name 'httpd.conf'`) {
   chomp $httpd;
   $webowner = `grep "^User " $httpd`;
   $webgroup = `grep "^Group " $httpd`;
-  $serverroot = `grep "^ServerRoot " $httpd`;
 
   chomp $webowner;
   chomp $webgroup;
-  chomp $serverroot;
   
   ($null, $webowner) = split / /, $webowner;
   ($null, $webgroup) = split / /, $webgroup;
-  ($null, $serverroot) = split / /, $serverroot;
 
-  $serverroot =~ s/"//g;
-  
 }
 
 system("tput clear");
@@ -104,7 +102,7 @@ if (!$newinstall) {
 }
 
 if ($version && $latest_version) {
-  if (!$filename && $version ne $latest_version) {
+  if (!$filename && $version le $latest_version) {
     if (substr($version, 0, rindex($version, ".")) eq substr($latest_version, 0, rindex($latest_version, "."))) {
       $install .= "\n(u)pgrade to $latest_version\n";
     }
@@ -119,7 +117,7 @@ $install .= "\n(d)ownload $latest_version (no installation)" unless $filename;
   print qq|
 
 
-               SQL-Ledger Accounting Software Installation
+               SQL-Ledger Accounting Installation
 
 
 
@@ -134,34 +132,30 @@ chomp $a;
 exit unless $a;
 $a = lc $a;
 
-  if ($newinstall && ($a =~ /(i|r|f)/)) {
+if ($a !~ /d/) {
 
-    print qq|\nEnter httpd owner [$webowner] : |;
-    $web = <STDIN>;
-    chomp $web;
-    $webowner = $web if $web;
+  print qq|\nEnter httpd owner [$webowner] : |;
+  $web = <STDIN>;
+  chomp $web;
+  $webowner = $web if $web;
 
-    print qq|\nEnter httpd group [$webgroup] : |;
-    $web = <STDIN>;
-    chomp $web;
-    $webgroup = $web if $web;
-    
-  }
+  print qq|\nEnter httpd group [$webgroup] : |;
+  $web = <STDIN>;
+  chomp $web;
+  $webgroup = $web if $web;
+  
+}
 
 if ($a eq 'd') {
   &download;
 }
-if ($a eq 'i') {
+if ($a =~ /(i|u)/) {
   &install;
 }
 if ($a eq 'r') {
   $latest_version = $version;
   &install;
 }
-if ($a eq 'u') {
-  &upgrade;
-}
-
 if ($a eq 'f') {
   &install;
 }
@@ -251,14 +245,14 @@ sub get_source_code {
       print "\nTrying $host .... ";
     
       if ($lwp) {
-	$err = LWP::Simple::getstore("$source/$latest_version", "$latest_version");
+	$err = LWP::Simple::getstore("$source$windows/$latest_version", "$latest_version");
 	$err -= 200;
       } else {
-	$ok = `lynx -dump -head $source/$latest_version`;
+	$ok = `lynx -dump -head $source$windows/$latest_version`;
 	$err = !($ok =~ s/HTTP.*?200 OK//);
 
 	if (!$err) {
-	  $err = system("lynx -dump $source/$latest_version > $latest_version");
+	  $err = system("lynx -dump $source$windows/$latest_version > $latest_version");
 	}
       }
 
@@ -291,27 +285,7 @@ sub install {
 
   &decompress;
 
-  if ($upgrade) {
-    print qq|
-
-Don't forget to upgrade the datasets!
-
-Load the admin panel in your web browser
-|;
-  }
-
   if ($newinstall) {
-    # if this is not root, check if user is part of $webgroup
-    if ($>) {
-      if ($permset = ($) =~ getgrnam $webgroup)) {
-	`chown -R :$webgroup *`;
-      }
-    } else {
-      `chown -R $webowner:$webgroup *`;
-    }
-    
-    chmod 0771, 'users', 'templates';
-
     open(FH, "sql-ledger.conf.default");
     @f = <FH>;
     close(FH);
@@ -367,10 +341,8 @@ Webserver directives were written to $filename
 Copy $filename to $httpddir and add
 |;
 
-      # strip serverroot off httpddir
-      $httpddir =~ s/$serverroot\///;
-
       print qq|
+# SQL-Ledger
 Include $httpddir/$filename
 
 to $httpd
@@ -380,11 +352,11 @@ Don't forget to restart your webserver!
 
       if (!$permset) {
 	print qq|
-WARNING: permissions for templates and users directory
+WARNING: permissions for templates, users, css and spool directory
 could not be set. Login as root and set permissions
 
-# chown $webowner:$webgroup users templates
-# chmod 771 users templates
+# chown -hR :$webgroup users templates css spool
+# chmod 771 users templates css spool
 
 |;
       }
@@ -392,8 +364,6 @@ could not be set. Login as root and set permissions
     } else {
       
       if (!(`grep "^# SQL-Ledger" $httpd`)) {
-	# append Include directive
-	$httpddir =~ s/$serverroot\///;
 
 	open(FH, ">>$httpd");
 
@@ -414,12 +384,29 @@ Webserver directives were written to
 
     if (!$>) {
       # send SIGHUP to httpd
-      $pid = `cat /var/run/httpd.pid`;
-      chomp $pid;
-      system("kill -s HUP $pid") if $pid;
+      if ($f = `find /var -type f -name 'httpd.pid'`) {
+	$pid = `cat $f`;
+	chomp $pid;
+	if ($pid) {
+	  system("kill -s HUP $pid");
+	}
+      }
     }
   }
-
+  
+  # if this is not root, check if user is part of $webgroup
+  if ($>) {
+    if ($permset = ($) =~ getgrnam $webgroup)) {
+      `chown -hR :$webgroup users templates css spool`;
+      chmod 0771, 'users', 'templates', 'css', 'spool';
+    }
+  } else {
+    # root
+    `chown -hR 0:0 *`;
+    `chown -hR $webowner:$webgroup users templates css spool`;
+    chmod 0771, 'users', 'templates', 'css', 'spool';
+  }
+  
   unlink "sql-ledger.conf.default";
 
   &cleanup;
@@ -482,6 +469,10 @@ sub decompress {
         print "cleaning up ... ";
         `rm -rf sql-ledger`;
         print "done\n";
+
+        # replace shebang if this is windows
+        &shebang if $windows;
+	
       }
     }
   }
@@ -493,7 +484,6 @@ sub create_lockfile {
   if (-d "$userspath") {
     open(FH, ">$userspath/nologin");
     close(FH);
-    $upgrade = 1;
   }
   
 }
@@ -512,83 +502,28 @@ sub cleanup {
 sub remove_lockfile { unlink "$userspath/nologin" if (-f "$userspath/nologin") };
 
 
-sub upgrade {
+sub shebang {
 
-  $latest_version = &get_patch;
+  opendir DIR, ".";
+  @perlfiles = grep /\.pl/, readdir DIR;
+  closedir DIR;
 
-  &decompress;
- 
-  &cleanup;
-  
-  # if this is not root, check if user is part of $webgroup
-  if ($>) {
-    if ($permset = ($) =~ getgrnam $webgroup)) {
-      `chown -R :$webgroup *`;
-    }
-  } else {
-    `chown -R $webowner:$webgroup *`;
+  foreach $file (@perlfiles) {
+    open FH, "+<$file";
+    
+    @file = <FH>;
+
+    seek(FH, 0, 0);
+    truncate(FH, 0);
+
+    $line = shift @file;
+
+    print FH "#!c:\\perl\\bin\\perl\n";
+    print FH @file;
+
+    close(FH);
+
   }
-  
-  chmod 0771, 'users', 'templates';
-
-
-  print qq|
-
-Don't forget to upgrade your datasets and read
-the upgrade file in the doc directory.
-
-|;
-
-}
-
-
-
-sub get_patch {
-
-  $err = 0;
- 
-  if ($version) {
-    # download the patch
-    $patchfile = "patch-${latest_version}.tar.gz";
-    
-    print "Status\n";
-    print "Downloading $patchfile .... ";
-    
-    foreach $source (@source) {
-      $host = $source;
-      $host =~ s/(\w\/).*/$1/g;
-      chop $host;
-      print "\nTrying $host .... ";
-    
-      if ($lwp) {
-	$err = LWP::Simple::getstore("$source/$patchfile", "$patchfile");
-	$err -= 200;
-      } else {
-	$ok = `lynx -dump -head $source/$patchfile`;
-	$err = !($ok =~ /HTTP.*?200 OK/);
-	
-	if (!$err) {
-	  $err = system("lynx -dump $source/$patchfile > $patchfile");
-	}
-      }
-
-      last unless $err;
-      
-    }
-    
-  } else {
-    $err = -1;
-  }
-  
-  if ($err) {
-    print "Cannot get $patchfile\n";
-    exit;
-  } else {
-    print "ok\n";
-  }
-
-  $patchfile;
-
 }
 
 

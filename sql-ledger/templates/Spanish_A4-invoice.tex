@@ -39,15 +39,15 @@
 \textbf{F A C T U R A} 
 \vspace{1cm}
 
-<%shiptoname%>
+<%name%>
 
-<%shiptoaddr1%>
+<%address1%>
 
-<%shiptoaddr2%>
+<%address2%>
 
-<%shiptoaddr3%>
+<%city%> <%state%> <%zipcode%>
 
-<%shiptoaddr4%>
+<%country%>
 \end{minipage}
 
 }
@@ -59,7 +59,7 @@
 %\markboth{\usebox{\hdr}}{\usebox{\hdr}}
 %\thispagestyle{empty}     %use this with letterhead paper
 
-<%pagebreak 90 27 48%>
+<%pagebreak 90 27 37%>
 \end{tabular*}
 \newpage
 \usebox{\hdr}
@@ -93,12 +93,12 @@
 
 \begin{flushright}
 \begin{tabularx}{10cm}{Xr@{}}
-  \textbf{Base imponible} & \textbf{<%subtotal%>} \EUR \\
+  \textbf{Base imponible} & \textbf{<%subtotal%>} \\
 <%foreach tax%>
-  IVA (<%taxrate%>\%) sobre <%taxbase%> & <%tax%> \EUR\\
+  IVA (<%taxrate%>\%) sobre <%taxbase%> & <%tax%> \\
 <%end tax%>
   \hline
-  \textbf{Total} & \textbf{<%invtotal%>} \EUR\\
+  \textbf{Total} & \textbf{<%invtotal%>} \\
 \end{tabularx}
 \end{flushright}
 

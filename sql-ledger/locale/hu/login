@@ -1,26 +1,23 @@
 $self{texts} = {
-  'About'                       => ' ',
-  'Database Host'               => 'Adatbázis helye',
-  'Dataset'                     => 'Cégadatbázis',
+  'Company'                     => 'Társaság',
+  'Continue'                    => 'Folytatás',
+  'Dataset is newer than version!' => 'A Cégadatbázis verziója újabb, mint a programé!',
   'Incorrect Dataset version!'  => 'Érvénytelen adatbázisverzió!',
   'Incorrect Password!'         => 'Érvénytelen jelszó!',
-  'Licensed to'                 => 'Cég:',
   'Login'                       => 'Belépés',
   'Name'                        => 'Név',
   'Password'                    => 'Jelszó',
-  'User'                        => 'Felhasználó',
   'Version'                     => 'Verzió',
-  'You are logged out!'         => 'Már kijelentkezett!',
   'You did not enter a name!'   => 'Nem írt be nevet!',
+  'done'                        => 'elvégezve',
   'is not a member!'            => 'nem tag!',
-  'localhost'                   => 'localhost',
 };
 
 $self{subs} = {
-  'company_logo'                => 'company_logo',
   'login'                       => 'login',
   'login_screen'                => 'login_screen',
   'logout'                      => 'logout',
+  'selectdataset'               => 'selectdataset',
   'belépés'                     => 'login',
 };
 

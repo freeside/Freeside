@@ -1,13 +1,17 @@
 
-<body bgcolor=ffffff>
+<body>
 
 <h2 align=center>
 <%company%>
 <br><%address%>
 
 <p>BALANS
-<br><%period%>
+<br>per <%this_period%>
 </h2>
+
+<%if department%>
+<h4>Afdeling: <%department%></h4>
+<%end department%>
 
 <table border=0>
 <tr>
@@ -32,7 +36,7 @@
 </tr>
 
 <tr valign=top>
-  <th align=left colspan=2>Totaal Activa</th>
+  <th align=left colspan=2>TOTAAL ACTIVA</th>
   <td align=right><%total_assets_this_period%><hr noshade size=2></td>
   <td align=right><%total_assets_last_period%><hr noshade size=2></td>
 </tr>
@@ -64,7 +68,7 @@
 </tr>
 
 <tr>
-  <th align=left colspan=4>ONVERDEELD RESULTAAT<br><hr align=left width=250 size=5 noshade></th>
+  <th align=left colspan=4>EIGEN VERMOGEN<br><hr align=left width=250 size=5 noshade></th>
 </tr>
 
 <%foreach equity_account%>
@@ -84,17 +88,19 @@
 
 <tr valign=top>
   <td></td>
-  <th align=left>Totaal Opbrengst</th>
+  <th align=left>Totaal Eigen Vermogen</th>
   <td align=right><%total_equity_this_period%><br><hr noshade size=2</td>
   <td align=right><%total_equity_last_period%><br><hr noshade size=2</td>
 </tr>
 
 <tr valign=top>
-  <th align=left colspan=2>TOTAAL PASSIVA & RESULTAAT</th>
+  <th align=left colspan=2>TOTAAL PASSIVA & EIGEN VERMOGEN</th>
   <td align=right><%total_this_period%><br><hr noshade size=2></td>
   <td align=right><%total_last_period%><br><hr noshade size=2></td>
 </tr>
 </table>
+
+
 
 
 

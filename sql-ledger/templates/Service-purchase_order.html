@@ -65,10 +65,14 @@
 
     <tr>
       <td><%name%>
-      <br><%addr1%>
-      <br><%addr2%>
-      <br><%addr3%>
-      <br><%addr4%>
+      <br><%address1%>
+      <%if address2%>
+<br><%address2%>
+<%end address2%>
+      <br><%city%> <%state%> <%zipcode%>
+      <%if country%>
+<%country%>
+<%end country%>
       </td>
     </tr>
     </table>
@@ -130,7 +134,7 @@ adjust the colspan if you include this to shift subtotal one to the right
     <tr>
       <td colspan=2>Terms Net <b><%terms%></b> days</td>
       <th colspan=2 align=right>Total</th>
-      <th colspan=2 align=right><%total%></th>
+      <th colspan=2 align=right><%ordtotal%></th>
     </tr>
 
     <tr>

@@ -30,12 +30,13 @@
 #
 #######################################################################
 
-# setup defaults, these are overidden by sql-ledger.conf
-# DO NOT CHANGE
+# setup defaults, DO NOT CHANGE
 $userspath = "users";
+$spool = "spool";
 $templates = "templates";
 $memberfile = "users/members";
 $sendmail = "| /usr/sbin/sendmail -t";
+%printer = ( Printer => 'lpr' );
 ########## end ###########################################
 
 
@@ -48,7 +49,6 @@ eval { require "sql-ledger.conf"; };
 
 $form = new Form;
 
-
 # name of this script
 $0 =~ tr/\\/\//;
 $pos = rindex $0, '/';
@@ -60,7 +60,8 @@ $form->{script} = $script;
 $script =~ s/\.pl//;
 
 # pull in DBI
-use DBI;
+use DBI qw(:sql_types);
+
 
 # check for user config file, could be missing or ???
 eval { require("$userspath/$form->{login}.conf"); };
@@ -74,17 +75,15 @@ if ($@) {
 }
 
 
-$myconfig{dbpasswd} = unpack 'u', $myconfig{dbpasswd};
-map { $form->{$_} = $myconfig{$_} } qw(stylesheet charset) unless (($form->{action} eq "save") && ($form->{type} eq 'preferences'));
+# send warnings and errors to browser
+$SIG{__WARN__} = sub { $form->info($_[0]) };
+$SIG{__DIE__} = sub { $form->error($_[0]) };
 
+$myconfig{dbpasswd} = unpack 'u', $myconfig{dbpasswd};
+map { $form->{$_} = $myconfig{$_} } qw(stylesheet charset timeout) unless ($form->{type} eq 'preferences');
 
 # locale messages
 $locale = new Locale "$myconfig{countrycode}", "$script";
-
-
-# check password
-$form->error($locale->text('Incorrect Password!')) if ($form->{password} ne $myconfig{password});
- 
 
 $form->{path} =~ s/\.\.\///g;
 if ($form->{path} !~ /^bin\//) {
@@ -92,10 +91,9 @@ if ($form->{path} !~ /^bin\//) {
 }
 
 # did sysadmin lock us out
-if (-e "$userspath/nologin") {
+if (-f "$userspath/nologin") {
   $form->error($locale->text('System currently down for maintenance!'));
 }
-
 
 # pull in the main code
 require "$form->{path}/$form->{script}";
@@ -103,24 +101,58 @@ require "$form->{path}/$form->{script}";
 # customized scripts
 if (-f "$form->{path}/custom_$form->{script}") {
   eval { require "$form->{path}/custom_$form->{script}"; };
-  $form->error($@) if ($@);
 }
 
 # customized scripts for login
 if (-f "$form->{path}/$form->{login}_$form->{script}") {
   eval { require "$form->{path}/$form->{login}_$form->{script}"; };
-  $form->error($@) if ($@);
 }
 
+  
 if ($form->{action}) {
   # window title bar, user info
   $form->{titlebar} = "SQL-Ledger ".$locale->text('Version'). " $form->{version} - $myconfig{name} - $myconfig{dbname}";
 
-  &{ $locale->findsub($form->{action}) };
+  &check_password;
+  
+  if (substr($form->{action}, 0, 1) =~ /( |\.)/) {
+    &{ $form->{nextsub} };
+  } else {
+    &{ $locale->findsub($form->{action}) };
+  }
 } else {
   $form->error($locale->text('action= not defined!'));
 }
 
-
+1;
 # end
+
+
+sub check_password {
+  
+  if ($myconfig{password}) {
+
+    require "$form->{path}/pw.pl";
+
+    if ($form->{password}) {
+      if ((crypt $form->{password}, substr($form->{login}, 0, 2)) ne $myconfig{password}) {
+	&getpassword;
+	exit;
+      }
+    } else {
+      if ($ENV{HTTP_USER_AGENT}) {
+	$ENV{HTTP_COOKIE} =~ s/;\s*/;/g;
+	%cookie = split /[=;]/, $ENV{HTTP_COOKIE};
+	
+	if ($form->{action} ne 'display') {
+	  if ((! $cookie{"SQL-Ledger-$form->{login}"}) || $cookie{"SQL-Ledger-$form->{login}"} ne $form->{sessionid}) {
+	    &getpassword(1);
+	    exit;
+	  }
+	}
+      }
+    }
+  }
+}
+
 

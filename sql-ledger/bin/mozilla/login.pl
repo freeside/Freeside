@@ -1,6 +1,6 @@
 ######################################################################
 # SQL-Ledger Accounting
-# Copyright (c) 1998-2002
+# Copyright (c) 2000
 #
 #  Author: Dieter Simader
 #   Email: dsimader@sql-ledger.org
@@ -19,6 +19,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+######################################################################
+#
+# login frontend
+#
 #######################################################################
 
 
@@ -58,15 +62,45 @@ if ($form->{action}) {
 
 
 sub login_screen {
-  
-  if (-f "css/sql-ledger.css") {
-    $form->{stylesheet} = "sql-ledger.css";
+
+  $form->{stylesheet} = "sql-ledger.css";
+  $form->{favicon} = "sql-ledger.ico";
+
+  $form->{endsession} = 1;
+  $form->header(1);
+
+  if ($form->{login}) {
+   $sf = qq|function sf() { document.login.password.focus(); }|;
+  } else {
+   $sf = qq|function sf() { document.login.login.focus(); }|;
   }
 
-  $form->header;
+  if ($form->{jsc} && -d 'bin/js') {
+  print qq|
+<script language="JavaScript" type="text/javascript">
+<!--
+var agt = navigator.userAgent.toLowerCase();
+var is_major = parseInt(navigator.appVersion);
+var is_nav = ((agt.indexOf('mozilla') != -1) && (agt.indexOf('spoofer') == -1)
+           && (agt.indexOf('compatible') == -1) && (agt.indexOf('opera') == -1)
+	   && (agt.indexOf('webtv') == -1));
+var is_nav4lo = (is_nav && (is_major <= 4));
+
+function jsp() {
+  if (is_nav4lo)
+    document.login.path.value = "bin/mozilla"
+  else
+    document.login.path.value = "bin/js"
+}
+$sf
+// End -->
+</script>
+|;
+  }
 
   print qq|
-<body class=login>
+
+<body class=login onload="jsp(); sf()">
 
 <pre>
 
@@ -75,13 +109,13 @@ sub login_screen {
 <center>
 <table class=login border=3 cellpadding=20>
   <tr>
-    <td class=login align=center><a href="http://www.sql-ledger.org" target=_top><img src=sql-ledger.png border=0></a>
+    <td class=login align=center><a href="http://www.sql-ledger.org" target=_top><img src=sql-ledger.gif border=0></a>
 <h1 class=login align=center>|.$locale->text('Version').qq| $form->{version}
 </h1>
 
 <p>
 
-<form method=post action=$form->{script}>
+<form method=post action=$form->{script} name=login>
 
       <table width=100%>
 	<tr>
@@ -89,7 +123,7 @@ sub login_screen {
 	    <table>
 	      <tr>
 		<th align=right>|.$locale->text('Name').qq|</th>
-		<td><input class=login name=login size=30></td>
+		<td><input class=login name=login size=30 value=$form->{login}></td>
 	      </tr> 
 	      <tr>
 		<th align=right>|.$locale->text('Password').qq|</th>
@@ -100,7 +134,6 @@ sub login_screen {
 
 	    <br>
 	    <input type=submit name=action value="|.$locale->text('Login').qq|">
-
 	  </td>
 	</tr>
       </table>
@@ -118,100 +151,175 @@ sub login_screen {
 }
 
 
+sub selectdataset {
+  my ($login) = @_;
+  
+  if (-f "css/sql-ledger.css") {
+    $form->{stylesheet} = "sql-ledger.css";
+  }
+
+  $form->header;
+
+  print qq|
+<body class=login>
+
+<pre>
+
+</pre>
+
+<center>
+<table class=login border=3 cellpadding=20>
+  <tr>
+    <td class=login align=center><a href="http://www.sql-ledger.org" target=_top><img src=sql-ledger.gif border=0></a>
+<h1 class=login align=center>|.$locale->text('Version').qq| $form->{version}
+</h1>
+
+<p>
+
+<form method=post action=$form->{script}>
+
+<input type=hidden name=beenthere value=1>
+
+      <table width=100%>
+	<tr>
+	  <td align=center>
+	    <table>
+	      <tr>
+		<th align=right>|.$locale->text('Name').qq|</th>
+		<td>$form->{login}</td>
+	      </tr> 
+	      <tr>
+		<th align=right>|.$locale->text('Password').qq|</th>
+		<td><input class=login type=password name=password size=30 value=$form->{password}></td>
+	      </tr>
+	      <input type=hidden name=path value=$form->{path}>
+	      <tr>
+		<th align=right>|.$locale->text('Company').qq|</th>
+		<td>|;
+		
+		$checked = "checked";
+		foreach $login (sort { $login{$a} cmp $login{$b} } keys %{ $login }) {
+		  print qq|
+		  <br><input class=login type=radio name=login value=$login $checked>$login{$login}
+		  |;
+		  $checked = "";
+		}
+
+		print qq|
+		  </td>
+	      </tr>
+	    </table>
+	    <br>
+	    <input type=submit name=action value="|.$locale->text('Login').qq|">
+	  </td>
+	</tr>
+      </table>
+
+</form>
+
+    </td>
+  </tr>
+</table>
+  
+</body>
+</html>
+|;
+
+
+}
+
+
 sub login {
 
+  $form->{stylesheet} = "sql-ledger.css";
+  $form->{favicon} = "sql-ledger.ico";
+  
   $form->error($locale->text('You did not enter a name!')) unless ($form->{login});
+
+  if (! $form->{beenthere}) {
+    open(FH, "$memberfile") or $form->error("$memberfile : $!");
+    @a = <FH>;
+    close(FH);
+
+    @login = grep { s/\[(.*)\]/$1/ } @a;
+    @company = grep { s/company=(.*)/$1/ } @a;
+    shift @login;
+
+    for ($i = 0; $i <= $#login; $i++) {
+      chop $login[$i];
+      if (($form->{login} eq $login[$i]) || ($login[$i] =~ /$form->{login}@/)) {
+	chop $company[$i];
+	$login{$login[$i]} = $company[$i];
+      }
+    }
+
+    if (keys %login > 1) {
+      &selectdataset(\%login);
+      exit;
+    }
+  }
+
 
   $user = new User $memberfile, $form->{login};
 
   # if we get an error back, bale out
   if (($errno = $user->login(\%$form, $userspath)) <= -1) {
+
     $errno *= -1;
     $err[1] = $locale->text('Incorrect Password!');
     $err[2] = $locale->text('Incorrect Dataset version!');
     $err[3] = qq|$form->{login} |.$locale->text('is not a member!');
+    $err[4] = $locale->text('Dataset is newer than version!');
+    
+    if ($errno == 5) {
+      # upgrade dataset and log in again
+      open FH, ">$userspath/nologin" or $form->error($!);
+
+      map { $form->{$_} = $user->{$_} } qw(dbname dbhost dbport dbdriver dbuser dbpasswd);
+
+      $form->{dbpasswd} = unpack 'u', $form->{dbpasswd};
+      
+      $form->{dbupdate} = "db$user->{dbname}";
+      $form->{$form->{dbupdate}} = 1;
+
+      $form->header;
+      print $locale->text('Upgrading to Version')." $form->{version} ... ";
+
+      # required for Oracle
+      $form->{dbdefault} = $sid;
+
+      $user->dbupdate(\%$form);
+
+      # remove lock file
+      unlink "$userspath/nologin";
+
+      print $locale->text('done');
+
+      print "<p><a href=menu.pl?login=$form->{login}&sessionid=$form->{sessionid}&path=$form->{path}&action=display>".$locale->text('Continue')."</a>";
+
+      exit;
+    }
     
     $form->error($err[$errno]);
   }
-  
+
+
   # made it this far, execute the menu
-  $argv = "login=$form->{login}&password=$form->{password}&path=$form->{path}&action=display";
+  $form->{callback} = "menu.pl?login=$form->{login}&path=$form->{path}&action=display";
 
-  exec ("perl", "menu.pl", $argv);
-
+  $form->redirect;
+  
 }
 
 
 
 sub logout {
 
-  unlink "$userspath/$form->{login}.conf";
+  $jsc = $form->{path} =~ /js/;
+  $form->{callback} = "$form->{script}?path=$form->{path}&login=$form->{login}&jsc=$jsc";
   
-  # remove the callback to display the message
-  $form->{callback} = "login.pl?path=$form->{path}&action=&login=";
-  $form->redirect($locale->text('You are logged out!'));
+  $form->redirect;
 
 }
-
-
-    
-sub company_logo {
-  
-  require "$userspath/$form->{login}.conf";
-  $locale = new Locale $myconfig{countrycode}, "login" unless ($language eq $myconfig{countrycode});
-
-  $myconfig{address} =~ s/\\n/<br>/g;
-  $myconfig{dbhost} = $locale->text('localhost') unless $myconfig{dbhost};
-
-  map { $form->{$_} = $myconfig{$_} } qw(charset stylesheet);
-  
-  $form->{title} = $locale->text('About');
-  
- 
-  # create the logo screen
-  $form->header unless $form->{noheader};
-
-  print qq|
-<body>
-
-<pre>
-
-</pre>
-<center>
-<a href="http://www.sql-ledger.org" target=_top><img src=sql-ledger.png border=0></a>
-<h1 class=login>|.$locale->text('Version').qq| $form->{version}</h1>
-
-<p>
-|.$locale->text('Licensed to').qq|
-<p>
-<b>
-$myconfig{company}
-<br>$myconfig{address}
-</b>
-
-<p>
-<table>
-  <tr>
-    <th align=right>|.$locale->text('User').qq|</th>
-    <td>$myconfig{name}</td>
-  </tr>
-  <tr>
-    <th align=right>|.$locale->text('Dataset').qq|</th>
-    <td>$myconfig{dbname}</td>
-  </tr>
-  <tr>
-    <th align=right>|.$locale->text('Database Host').qq|</th>
-    <td>$myconfig{dbhost}</td>
-  </tr>
-</table>
-
-</center>
-
-</body>
-</html>
-|;
-
-}
-
 
 

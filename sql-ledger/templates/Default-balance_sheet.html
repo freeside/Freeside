@@ -1,13 +1,17 @@
 
-<body bgcolor=ffffff>
+<body>
 
 <h2 align=center>
 <%company%>
 <br><%address%>
 
 <p>BALANCE SHEET
-<br><%period%>
+<br>as at <%this_period%>
 </h2>
+
+<%if department%>
+<h4>Department: <%department%></h4>
+<%end department%>
 
 <table border=0>
 <tr>
@@ -58,7 +62,7 @@
 
 <tr valign=top>
   <td></td>
-  <th align=left>Total Liabilities</th>
+  <th align=left>TOTAL LIABILITIES</th>
   <td align=right><%total_liabilities_this_period%><br><hr noshade size=2</td>
   <td align=right><%total_liabilities_last_period%><br><hr noshade size=2</td>
 </tr>
@@ -84,7 +88,7 @@
 
 <tr valign=top>
   <td></td>
-  <th align=left>Total Equity</th>
+  <th align=left>TOTAL EQUITY</th>
   <td align=right><%total_equity_this_period%><br><hr noshade size=2</td>
   <td align=right><%total_equity_last_period%><br><hr noshade size=2</td>
 </tr>
@@ -95,6 +99,12 @@
   <td align=right><%total_last_period%><br><hr noshade size=2></td>
 </tr>
 </table>
+
+
+
+
+
+
 
 
 

@@ -7,6 +7,7 @@ $self{texts} = {
   'Balance'                     => 'Egyenleg',
   'Chart of Accounts'           => 'Számlatükör',
   'Credit'                      => 'Követel',
+  'Current'                     => '0-30',
   'Date'                        => 'Dátum',
   'Debit'                       => 'Tartozik',
   'Dec'                         => 'Dec.',
@@ -32,11 +33,13 @@ $self{texts} = {
   'November'                    => 'November',
   'Oct'                         => 'Okt.',
   'October'                     => 'Október',
+  'Project Number'              => 'Munkaszám',
+  'R'                           => 'E',
   'Reference'                   => 'Hivatkozás',
   'Sep'                         => 'Szept.',
   'September'                   => 'Szeptember',
   'Subtotal'                    => 'Részösszeg',
-  'to'                          => 'Meddig:',
+  'To'                          => 'Meddig:',
 };
 
 $self{subs} = {

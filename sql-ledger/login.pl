@@ -31,26 +31,19 @@
 #######################################################################
 
 
-# setup defaults, these are overidden by sql-ledger.conf
-# DO NOT CHANGE
+# setup defaults, DO NOT CHANGE
 $userspath = "users";
+$spool = "spool";
 $templates = "templates";
 $memberfile = "users/members";
 $sendmail = "| /usr/sbin/sendmail -t";
+%printer = ( Printer => 'lpr' );
 ########## end ###########################################
 
 
 $| = 1;
 
 eval { require "sql-ledger.conf"; };
-
-if (-e "$userspath/nologin") {
-  print "
-Login disabled!\n";
-
-  exit;
-}
-
 
 if ($ENV{CONTENT_LENGTH}) {
   read(STDIN, $_, $ENV{CONTENT_LENGTH});
@@ -67,7 +60,7 @@ if ($ARGV[0]) {
 
 %form = split /[&=]/;
 
-# fix for apache 2.0
+# fix for apache 2.0 bug
 map { $form{$_} =~ s/\\$// } keys %form;
 
 # name of this script
@@ -76,14 +69,21 @@ $pos = rindex $0, '/';
 $script = substr($0, $pos + 1);
 
 
+if (-e "$userspath/nologin" && $script ne 'admin.pl') {
+  print "Content-Type: text/html\n\n" if $ENV{HTTP_USER_AGENT};
+  print "\nLogin disabled!\n";
+  exit;
+}
+
+
 if ($form{path}) {
-  $form{path} =~ s/%2[fF]/\//g;
+  $form{path} =~ s/%2f/\//gi;
   $form{path} =~ s/\.\.\///g;
 
   if ($form{path} !~ /^bin\//) {
-    print "
-Invalid path!\n";
-    die;
+    print "Content-Type: text/html\n\n" if $ENV{HTTP_USER_AGENT};
+    print "\nInvalid path!\n";
+    exit;
   }
 
 
@@ -94,12 +94,10 @@ Invalid path!\n";
   if (!$form{terminal}) {
     if ($ENV{HTTP_USER_AGENT}) {
       # web browser
-      if ($ENV{HTTP_USER_AGENT} =~ /(mozilla|links|opera|w3m)/i) {
+      $form{terminal} = "lynx";
+      if ($ENV{HTTP_USER_AGENT} !~ /lynx/i) {
 	$form{terminal} = "mozilla";
-      }
-
-      if ($ENV{HTTP_USER_AGENT} =~ /lynx/i) {
-	$form{terminal} = "lynx";
+	$form{jsc} = 1;
       }
     } else {
       if ($ENV{TERM} =~ /xterm/) {
@@ -121,9 +119,8 @@ Invalid path!\n";
     
   } else {
 
-    print qq|
-  Unknown terminal
-  |;
+    print "Content-Type: text/html\n\n" if $ENV{HTTP_USER_AGENT};
+    print qq|\nUnknown terminal\n|;
   }
 
 }

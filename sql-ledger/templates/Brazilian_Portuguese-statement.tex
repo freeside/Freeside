@@ -44,48 +44,24 @@
 \pagestyle{myheadings}
 %\thispagestyle{empty}     use this with letterhead paper
 
-<%pagebreak 90 27 48%>
-\end{tabular*}
-
-  \rule{\textwidth}{2pt}
-
-  \hfill
-  \begin{tabularx}{7cm}{Xr@{}}
-  \textbf{Subtotal} & \textbf{<%sumcarriedforward%>} \\
-  \end{tabularx}
-
-\newpage
-
-\markright{<%company%>\hfill <%statementdate%>}
-
-\vspace*{-12pt}
-
-\begin{tabular*}{\textwidth}{@{}l@{\extracolsep\fill}ccrrrr@{}}
-  \textbf{Invoice \#} & \textbf{Date} & \textbf{Due} &
-  \textbf{Current} & \textbf{30} & \textbf{60} & \textbf{90+} \\
-  carried forward from <%lastpage%> & & & & & & <%sumcarriedforward%> \\
-<%end pagebreak%>
-
-
 \fontfamily{cmss}\fontsize{10pt}{12pt}\selectfont
 
 \vspace*{1.5cm}
 
 \parbox[t]{1cm}{\hfill}
-\parbox[t]{10.5cm}{
-  
-<%name%>
-
-<%addr1%>
-
-<%addr2%>
-
-<%addr3%>
-
-<%addr4%>
+\parbox[t]{.5\textwidth}{
+<%name%>\\
+<%address1%>\\
+<%if address2%>
+<%address2%>
+<%end address2%>\\
+<%city%> <%state%> <%zipcode%>\\
+<%if country%>
+<%country%>
+<%end country%>\\
 
 }
-\parbox[t]{7.5cm}{
+\parbox[t]{.4\textwidth}{
 <%if customerphone%>
 Tel: <%customerphone%>
 <%end customerphone%>
@@ -100,38 +76,35 @@ Fax: <%customerfax%>
 
 \vspace{1cm}
 
-\textbf{RELATÓRIO} \hfill
-
-\hfill <%statementdate%>
+\textbf{RELATÓRIO} \hfill \textbf{<%statementdate%>}
 
 \vspace{2cm}
 
-\begin{tabular*}{\textwidth}{@{}l@{\extracolsep\fill}ccrrrr@{}}
+\begin{tabular*}{\textwidth}{|l@{\extracolsep\fill}ccrrrr|}
+  \hline
   \textbf{Número da Fatura \#} & \textbf{Data} & \textbf{Prazo} &
   \textbf{Atual} & \textbf{30} & \textbf{60} & \textbf{90+} \\
+  \hline
 <%foreach invnumber%>
   <%invnumber%> & <%invdate%> & <%duedate%> &
   <%c0%> & <%c30%> & <%c60%> & <%c90%> \\
 <%end invnumber%>
-\textbf{Subtotal} & & & <%c0total%> & <%c30total%> & <%c60total%> & <%c90total%>
+  \multicolumn{7}{|l|}{\mbox{}} \\
+  \hline
+  \textbf{Subtotal} & & & <%c0total%> & <%c30total%> & <%c60total%> & <%c90total%> \\
+  \hline
 \end{tabular*}
-\rule{\textwidth}{1pt}
 
-\vspace{1cm}
+\vspace{0.5cm}
 
 \hfill
 \begin{tabularx}{7cm}{Xr@{}}
-  \textbf{Totais} & <%total%>
+  \textbf{Totais} & \textbf{<%total%>}
 \end{tabularx}
 
 \vfill
 
 Favor pagar com <%company%>
-
-\renewcommand{\thefootnote}{\fnsymbol{footnote}}
-
-\footnotetext[1]{\tiny
-}
 
 \end{document}
 

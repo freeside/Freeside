@@ -1,19 +1,18 @@
 -- Default chart of accounts
 -- sample only
 insert into chart (accno,description,charttype,gifi_accno,category,link) values ('1000','CURRENT ASSETS','H','','A','');
-insert into chart (accno,description,charttype,gifi_accno,category,link) values ('1060','Chequing Account','A','','A','AR_paid:AP_paid');
+insert into chart (accno,description,charttype,gifi_accno,category,link) values ('1060','Checking Account','A','','A','AR_paid:AP_paid');
 insert into chart (accno,description,charttype,gifi_accno,category,link) values ('1065','Petty Cash','A','','A','AR_paid:AP_paid');
 insert into chart (accno,description,charttype,gifi_accno,category,link) values ('1200','Accounts Receivables','A','','A','AR');
 insert into chart (accno,description,charttype,gifi_accno,category,link) values ('1205','Allowance for doubtful accounts','A','','A','');
 insert into chart (accno,description,charttype,gifi_accno,category,link) values ('1500','INVENTORY ASSETS','H','','A','');
-insert into chart (accno,description,charttype,gifi_accno,category,link) values ('1520','Inventory / Computer Parts','A','','A','IC');
-insert into chart (accno,description,charttype,gifi_accno,category,link) values ('1530','Inventory / Software','A','','A','IC');
-insert into chart (accno,description,charttype,gifi_accno,category,link) values ('1540','Inventory / Aftermarket Parts','A','','A','IC');
+insert into chart (accno,description,charttype,gifi_accno,category,link) values ('1520','Inventory / General','A','','A','IC');
+insert into chart (accno,description,charttype,gifi_accno,category,link) values ('1530','Inventory / Aftermarket Parts','A','','A','IC');
 insert into chart (accno,description,charttype,gifi_accno,category,link) values ('1800','CAPITAL ASSETS','H','','A','');
 insert into chart (accno,description,charttype,gifi_accno,category,link) values ('1820','Office Furniture & Equipment','A','','A','');
-insert into chart (accno,description,charttype,gifi_accno,category,link) values ('1825','Accum. Amort. -Furn. & Equip.','A','','A','');
+insert into chart (accno,description,charttype,gifi_accno,category,link) values ('1825','Accum. Amort. -Furn. & Equip.','A','','C','');
 insert into chart (accno,description,charttype,gifi_accno,category,link) values ('1840','Vehicle','A','','A','');
-insert into chart (accno,description,charttype,gifi_accno,category,link) values ('1845','Accum. Amort. -Vehicle','A','','A','');
+insert into chart (accno,description,charttype,gifi_accno,category,link) values ('1845','Accum. Amort. -Vehicle','A','','C','');
 insert into chart (accno,description,charttype,gifi_accno,category,link) values ('2000','CURRENT LIABILITIES','H','','L','');
 insert into chart (accno,description,charttype,gifi_accno,category,link) values ('2100','Accounts Payable','A','','L','AP');
 insert into chart (accno,description,charttype,gifi_accno,category,link) values ('2160','Corporate Taxes Payable','A','','L','');
@@ -32,21 +31,18 @@ insert into chart (accno,description,charttype,gifi_accno,category,link) values 
 insert into chart (accno,description,charttype,gifi_accno,category,link) values ('3300','SHARE CAPITAL','H','','Q','');
 insert into chart (accno,description,charttype,gifi_accno,category,link) values ('3350','Common Shares','A','','Q','');
 insert into chart (accno,description,charttype,gifi_accno,category,link) values ('4000','SALES REVENUE','H','','I','');
-insert into chart (accno,description,charttype,gifi_accno,category,link) values ('4020','Sales / Hardware','A','','I','AR_amount:IC_sale');
-insert into chart (accno,description,charttype,gifi_accno,category,link) values ('4030','Sales / Software','A','','I','AR_amount:IC_sale');
-insert into chart (accno,description,charttype,gifi_accno,category,link) values ('4040','Sales / Aftermarket Parts','A','','I','AR_amount:IC_sale');
+insert into chart (accno,description,charttype,gifi_accno,category,link) values ('4020','Sales / General','A','','I','AR_amount:IC_sale');
+insert into chart (accno,description,charttype,gifi_accno,category,link) values ('4030','Sales / Aftermarket Parts','A','','I','AR_amount:IC_sale');
 insert into chart (accno,description,charttype,gifi_accno,category,link) values ('4300','CONSULTING REVENUE','H','','I','');
 insert into chart (accno,description,charttype,gifi_accno,category,link) values ('4320','Consulting','A','','I','AR_amount:IC_income');
-insert into chart (accno,description,charttype,gifi_accno,category,link) values ('4330','Programming','A','','I','AR_amount:IC_income');
 insert into chart (accno,description,charttype,gifi_accno,category,link) values ('4400','OTHER REVENUE','H','','I','');
 insert into chart (accno,description,charttype,gifi_accno,category,link) values ('4430','Shipping & Handling','A','','I','IC_income');
 insert into chart (accno,description,charttype,gifi_accno,category,link) values ('4440','Interest','A','','I','');
 insert into chart (accno,description,charttype,gifi_accno,category,link) values ('4450','Foreign Exchange Gain','A','','I','');
 insert into chart (accno,description,charttype,gifi_accno,category,link) values ('5000','COST OF GOODS SOLD','H','','E','');
 insert into chart (accno,description,charttype,gifi_accno,category,link) values ('5010','Purchases','A','','E','AP_amount:IC_cogs:IC_expense');
-insert into chart (accno,description,charttype,gifi_accno,category,link) values ('5020','COGS / Hardware','A','','E','AP_amount:IC_cogs');
-insert into chart (accno,description,charttype,gifi_accno,category,link) values ('5030','COGS / Software','A','','E','AP_amount:IC_cogs');
-insert into chart (accno,description,charttype,gifi_accno,category,link) values ('5040','COGS / Aftermarket Parts','A','','E','AP_amount:IC_cogs');
+insert into chart (accno,description,charttype,gifi_accno,category,link) values ('5020','COGS / General','A','','E','AP_amount:IC_cogs');
+insert into chart (accno,description,charttype,gifi_accno,category,link) values ('5030','COGS / Aftermarket Parts','A','','E','AP_amount:IC_cogs');
 insert into chart (accno,description,charttype,gifi_accno,category,link) values ('5100','Freight','A','','E','AP_amount:IC_expense');
 insert into chart (accno,description,charttype,gifi_accno,category,link) values ('5400','PAYROLL EXPENSES','H','','E','');
 insert into chart (accno,description,charttype,gifi_accno,category,link) values ('5410','Wages & Salaries','A','','E','');
@@ -77,5 +73,5 @@ insert into tax (chart_id,rate) values ((select id from chart where accno = '231
 insert into tax (chart_id,rate) values ((select id from chart where accno = '2320'),0.14);
 insert into tax (chart_id,rate) values ((select id from chart where accno = '2330'),0.3);
 --
-update defaults set inventory_accno_id = (select id from chart where accno = '1520'), income_accno_id = (select id from chart where accno = '4020'), expense_accno_id = (select id from chart where accno = '5010'), fxgain_accno_id = (select id from chart where accno = '4450'), fxloss_accno_id = (select id from chart where accno = '5810'), invnumber = '1000', sonumber = '1000', ponumber = '1000', curr = 'USD:CAD:EUR', weightunit = 'kg';
+update defaults set inventory_accno_id = (select id from chart where accno = '1520'), income_accno_id = (select id from chart where accno = '4020'), expense_accno_id = (select id from chart where accno = '5010'), fxgain_accno_id = (select id from chart where accno = '4450'), fxloss_accno_id = (select id from chart where accno = '5810'), curr = 'USD:CAD:EUR', weightunit = 'kg';
 --

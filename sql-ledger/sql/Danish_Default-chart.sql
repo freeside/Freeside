@@ -13,9 +13,9 @@ insert into chart (accno,description,charttype,gifi_accno,category,link) values 
 insert into chart (accno,description,charttype,gifi_accno,category,link) values ('1550','Lager / arrangementer','A','','A','IC');
 insert into chart (accno,description,charttype,gifi_accno,category,link) values ('1800','AKTIVER','H','','A','');
 insert into chart (accno,description,charttype,gifi_accno,category,link) values ('1820','Kontorinventar og -udstyr','A','','A','AP_amount');
-insert into chart (accno,description,charttype,gifi_accno,category,link) values ('1825','Samlede afskrivninger, inventar, udstyr','A','','A','');
+insert into chart (accno,description,charttype,gifi_accno,category,link) values ('1825','Samlede afskrivninger, inventar, udstyr','A','','C','');
 insert into chart (accno,description,charttype,gifi_accno,category,link) values ('1840','Køretøjer','A','','A','AP_amount');
-insert into chart (accno,description,charttype,gifi_accno,category,link) values ('1845','Samlede afskrivninger, køretøjer','A','','A','');
+insert into chart (accno,description,charttype,gifi_accno,category,link) values ('1845','Samlede afskrivninger, køretøjer','A','','C','');
 insert into chart (accno,description,charttype,gifi_accno,category,link) values ('2000','KORTFRISTET GÆLD','H','','L','');
 insert into chart (accno,description,charttype,gifi_accno,category,link) values ('2100','Udbetalinger','A','','L','AP');
 insert into chart (accno,description,charttype,gifi_accno,category,link) values ('2160','Selskabsskat','A','','L','');
@@ -71,5 +71,5 @@ insert into chart (accno,description,charttype,gifi_accno,category,link) values 
 insert into tax (chart_id,rate) values ((select id from chart where accno = '1210'),0.25);
 insert into tax (chart_id,rate) values ((select id from chart where accno = '2311'),0.25);
 --
-update defaults set inventory_accno_id = (select id from chart where accno = '1520'), income_accno_id = (select id from chart where accno = '4020'), expense_accno_id = (select id from chart where accno = '5010'), fxgain_accno_id = (select id from chart where accno = '4450'), fxloss_accno_id = (select id from chart where accno = '5810'), invnumber = '1000', sonumber = '1000', ponumber = '1000', curr = 'DKK', weightunit = 'kg';
+update defaults set inventory_accno_id = (select id from chart where accno = '1520'), income_accno_id = (select id from chart where accno = '4020'), expense_accno_id = (select id from chart where accno = '5010'), fxgain_accno_id = (select id from chart where accno = '4450'), fxloss_accno_id = (select id from chart where accno = '5810'), curr = 'DKK', weightunit = 'kg';
 --

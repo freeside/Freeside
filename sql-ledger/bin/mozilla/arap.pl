@@ -1,6 +1,6 @@
 #=====================================================================
 # SQL-Ledger Accounting
-# Copyright (c) 2002
+# Copyright (c) 2003
 #
 #  Author: Dieter Simader
 #   Email: dsimader@sql-ledger.org
@@ -38,7 +38,7 @@ if (-f "$form->{path}/$form->{login}_arap.pl") {
 
 
 sub check_name {
-  my ($name) = @_;
+  my ($name, $msg) = @_;
 
   my ($new_name, $new_id) = split /--/, $form->{$name};
   my $i = 0;
@@ -48,16 +48,20 @@ sub check_name {
     if ($form->{"old$name"} ne $form->{$name}) {
       # this is needed for is, ir and oe
       map { delete $form->{"${_}_rate"} } (split / /, $form->{taxaccounts});
-      
+
       # for credit calculations
       $form->{oldinvtotal} = 0;
       $form->{oldtotalpaid} = 0;
+      $form->{calctax} = 1;
       
       $form->{"${name}_id"} = $new_id;
-      $form->{"old$name"} = "$new_name--$new_id";
-
       IS->get_customer(\%myconfig, \%$form) if ($name eq 'customer');
       IR->get_vendor(\%myconfig, \%$form) if ($name eq 'vendor');
+
+      $form->{$name} = $form->{"old$name"} = "$new_name--$new_id";
+
+      # put employee together if there is a new employee_id
+      $form->{employee} = "$form->{employee}--$form->{employee_id}" if $form->{employee_id};
 
       $i = 1;
     }
@@ -71,6 +75,7 @@ sub check_name {
       # for credit calculations
       $form->{oldinvtotal} = 0;
       $form->{oldtotalpaid} = 0;
+      $form->{calctax} = 1;
 
       # return one name or a list of names in $form->{name_list}
       if (($i = $form->get_name(\%myconfig, $name)) > 1) {
@@ -87,9 +92,12 @@ sub check_name {
 	IS->get_customer(\%myconfig, \%$form) if ($name eq 'customer');
 	IR->get_vendor(\%myconfig, \%$form) if ($name eq 'vendor');
 	
+	# put employee together if there is a new employee_id
+	$form->{employee} = "$form->{employee}--$form->{employee_id}" if $form->{employee_id};
+
       } else {
-	# name is not on file
-	$msg = ucfirst $name . " not on file!";
+	# name is not on file or no outstanding invoice
+	$msg = ucfirst $name . " not on file!" unless $msg;
 	$form->error($locale->text($msg));
       }
     }
@@ -111,8 +119,8 @@ sub select_name {
 
   $label = ucfirst $table;
   $column_data{ndx} = qq|<th>&nbsp;</th>|;
-  $column_data{name} = qq|<th>|.$locale->text($label).qq|</th>|;
-  $column_data{address} = qq|<th>|.$locale->text('Address').qq|</th>|;
+  $column_data{name} = qq|<th class=listheading>|.$locale->text($label).qq|</th>|;
+  $column_data{address} = qq|<th class=listheading>|.$locale->text('Address').qq|</th>|;
   
   # list items with radio button on a form
   $form->header;
@@ -144,11 +152,11 @@ sub select_name {
   foreach $ref (@{ $form->{name_list} }) {
     $checked = ($i++) ? "" : "checked";
 
-    $ref->{name} =~ s/"/&quot;/g;
+    $ref->{name} = $form->quote($ref->{name});
     
    $column_data{ndx} = qq|<td><input name=ndx class=radio type=radio value=$i $checked></td>|;
    $column_data{name} = qq|<td><input name="new_name_$i" type=hidden value="$ref->{name}">$ref->{name}</td>|;
-   $column_data{address} = qq|<td>$ref->{address}</td>|;
+   $column_data{address} = qq|<td>$ref->{address1} $ref->{address2} $ref->{city} $ref->{state} $ref->{zipcode} $ref->{country}</td>|;
     
     $j++; $j %= 2;
     print qq|
@@ -178,15 +186,10 @@ sub select_name {
 
 |;
 
-  # delete action variable
-  delete $form->{action};
-  delete $form->{name_list};
-    
-  # save all other form variables
-  foreach $key (keys %${form}) {
-    $form->{$key} =~ s/"/&quot;/g;
-    print qq|<input name=$key type=hidden value="$form->{$key}">\n|;
-  }
+  # delete variables
+  map { delete $form->{$_} } qw(action name_list header);
+  
+  $form->hide_form();
 
   print qq|
 <input type=hidden name=nextsub value=name_selected>
@@ -225,6 +228,9 @@ sub name_selected {
   IS->get_customer(\%myconfig, \%$form) if ($form->{vc} eq 'customer');
   IR->get_vendor(\%myconfig, \%$form) if ($form->{vc} eq 'vendor');
 
+  # put employee together if there is a new employee_id
+  $form->{employee} = "$form->{employee}--$form->{employee_id}" if $form->{employee_id};
+
   &update(1);
 
 }
@@ -240,8 +246,10 @@ sub add_transaction {
   $form->{callback} = $form->escape($form->{callback},1);
   map { $argv .= "$_=$form->{$_}&" } keys %$form;
 
-  exec ("perl", "$module.pl", $argv);
+  $form->{callback} = "$module.pl?$argv";
 
+  $form->redirect;
+  
 }
 
 
@@ -269,6 +277,8 @@ sub check_project {
 	  # not on file
 	  $form->error($locale->text('Project not on file!'));
 	}
+      } else {
+	$form->{"oldprojectnumber_$i"} = "";
       }
     }
   }
@@ -316,7 +326,7 @@ sub select_project {
   foreach $ref (@{ $form->{project_list} }) {
     $checked = ($i++) ? "" : "checked";
 
-    $ref->{name} =~ s/"/&quot;/g;
+    $ref->{name} = $form->quote($ref->{name});
     
    $column_data{ndx} = qq|<td><input name=ndx class=radio type=radio value=$i $checked></td>|;
    $column_data{projectnumber} = qq|<td><input name="new_projectnumber_$i" type=hidden value="$ref->{projectnumber}">$ref->{projectnumber}</td>|;
@@ -351,14 +361,9 @@ sub select_project {
 |;
 
   # delete action variable
-  delete $form->{action};
-  delete $form->{project_list};
-    
-  # save all other form variables
-  foreach $key (keys %${form}) {
-    $form->{$key} =~ s/"/&quot;/g;
-    print qq|<input name=$key type=hidden value="$form->{$key}">\n|;
-  }
+  map { delete $form->{$_} } qw(action project_list header);
+  
+  $form->hide_form();
 
   print qq|
 <input type=hidden name=nextsub value=project_selected>
@@ -392,7 +397,11 @@ sub project_selected {
   
   map { delete $form->{$_} } qw(ndx lastndx nextsub);
 
-  &update;
+  if ($form->{update}) {
+    &{ $form->{update} };
+  } else {
+    &update;
+  }
 
 }
 
@@ -401,6 +410,6 @@ sub continue { &{ $form->{nextsub} } };
 sub gl_transaction { &add };
 sub ar_transaction { &add_transaction(ar) };
 sub ap_transaction { &add_transaction(ap) };
-sub sales_invoice { &add_transaction(is) };
-sub vendor_invoice { &add_transaction(ir) };
+sub sales_invoice_ { &add_transaction(is) };
+sub vendor_invoice_ { &add_transaction(ir) };
 

@@ -45,7 +45,7 @@
 \pagestyle{myheadings}
 %\thispagestyle{empty}     use this with letterhead paper
 
-<%pagebreak 90 27 48%>
+<%pagebreak 90 27 37%>
 \end{tabular*}
 
   \rule{\textwidth}{2pt}
@@ -74,13 +74,17 @@
 
 <%name%>
 
-<%addr1%>
+<%address1%>
 
-<%addr2%>
+<%if address2%>
+<%address2%>
+<%end address2%>
 
-<%addr3%>
+<%city%> <%state%> <%zipcode%>
 
-<%addr4%>
+<%if country%>
+<%country%>
+<%end country%>
 
 \vspace{3.5cm}
 

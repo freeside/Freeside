@@ -41,13 +41,13 @@
 
 <%shiptoname%>
 
-<%shiptoaddr1%>
+<%shiptoaddress1%>
 
-<%shiptoaddr2%>
+<%shiptoaddress2%>
 
-<%shiptoaddr3%>
+<%shiptocity%> <%shiptostate%> <%shiptozipcode%>
 
-<%shiptoaddr4%>
+<%shiptocountry%>
 \end{minipage}
 
 }
@@ -59,7 +59,7 @@
 %\markboth{\usebox{\hdr}}{\usebox{\hdr}}
 %\thispagestyle{empty}     %use this with letterhead paper
 
-<%pagebreak 90 27 48%>
+<%pagebreak 90 27 37%>
 \end{tabular*}
 \newpage
 \usebox{\hdr}
@@ -93,12 +93,12 @@
 
 \begin{flushright}
 \begin{tabularx}{10cm}{Xr@{}}
-  \textbf{Base imponible} & \textbf{<%subtotal%>} \EUR \\
+  \textbf{Base imponible} & \textbf{<%subtotal%>} \\
 <%foreach tax%>
-  IVA (<%taxrate%>\%) sobre <%taxbase%> & <%tax%> \EUR\\
+  IVA (<%taxrate%>\%) sobre <%taxbase%> & <%tax%> \\
 <%end tax%>
   \hline
-  \textbf{Total} & \textbf{<%invtotal%>} \EUR\\
+  \textbf{Total} & \textbf{<%invtotal%>} \\
 \end{tabularx}
 \end{flushright}
 
