@@ -1,17 +1,5 @@
 <%
-#
-# $Id: svc_forward.cgi,v 1.1 2001-08-19 15:53:36 jeff Exp $
-#
-# Usage: svc_forward.cgi svcnum
-#        http://server.name/path/svc_forward.cgi?svcnum
-#
-# based on view/svc_acct.cgi
-# 
-# $Log: svc_forward.cgi,v $
-# Revision 1.1  2001-08-19 15:53:36  jeff
-# added user interface for svc_forward and vpopmail support
-#
-#
+# <!-- $Id: svc_forward.cgi,v 1.2 2001-08-21 02:31:57 ivan Exp $ -->
 
 use strict;
 use vars qw($conf $cgi $query $svcnum $svc_forward $cust_svc

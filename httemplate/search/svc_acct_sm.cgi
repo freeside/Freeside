@@ -1,51 +1,5 @@
 <%
-#
-# $Id: svc_acct_sm.cgi,v 1.1 2001-07-30 07:36:04 ivan Exp $
-#
-# Usage: post form to:
-#        http://server.name/path/svc_domain.cgi
-#
-# ivan@voicenet.com 96-mar-5
-#
-# need to look at table in results to make it more readable
-#
-# ivan@voicenet.com
-#
-# rewrite ivan@sisd.com 98-mar-15
-#
-# Changes to allow page to work at a relative position in server
-#       bmccane@maxbaud.net     98-apr-3
-#
-# $Log: svc_acct_sm.cgi,v $
-# Revision 1.1  2001-07-30 07:36:04  ivan
-# templates!!!
-#
-# Revision 1.10  1999/07/20 06:03:36  ivan
-# s/CGI::Request/CGI/; (how'd i miss that before?)
-#
-# Revision 1.9  1999/04/09 04:22:34  ivan
-# also table()
-#
-# Revision 1.8  1999/04/09 03:52:55  ivan
-# explicit & for table/itable/ntable
-#
-# Revision 1.7  1999/02/28 00:03:56  ivan
-# removed misleading comments
-#
-# Revision 1.6  1999/02/09 09:22:58  ivan
-# visual and bugfixes
-#
-# Revision 1.5  1999/01/19 05:14:16  ivan
-# for mod_perl: no more top-level my() variables; use vars instead
-# also the last s/create/new/;
-#
-# Revision 1.4  1999/01/18 09:41:40  ivan
-# all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
-# (good idea anyway)
-#
-# Revision 1.3  1998/12/17 09:41:11  ivan
-# s/CGI::(Base|Request)/CGI.pm/;
-#
+#<!-- $Id: svc_acct_sm.cgi,v 1.2 2001-08-21 02:31:57 ivan Exp $ -->
 
 use strict;
 use vars qw( $conf $cgi $mydomain $domuser $svc_domain $domsvc @svc_acct_sm );

@@ -1,48 +1,5 @@
 <%
-#
-# $Id: svc_acct.cgi,v 1.1 2001-07-30 07:36:04 ivan Exp $
-#
-# Usage: post form to:
-#        http://server.name/path/svc_acct.cgi
-#
-# ivan@voicenet.com 96-dec-18
-#
-# Changed /u to /u2
-# ivan@voicenet.com 97-may-6
-#
-# rewrote for new API
-# ivan@voicenet.com 97-jul-17 - 21
-#
-# no FS::Search, FS::svc_acct creates FS::cust_svc record, used for adding
-# and editing ivan@sisd.com 98-mar-8
-#
-# Changes to allow page to work at a relative position in server
-# Changed 'password' to '_password' because Pg6.3 reserves the password word
-#       bmccane@maxbaud.net     98-apr-3
-#
-# $Log: svc_acct.cgi,v $
-# Revision 1.1  2001-07-30 07:36:04  ivan
-# templates!!!
-#
-# Revision 1.7  1999/08/27 00:26:33  ivan
-# better error messages
-#
-# Revision 1.6  1999/02/28 00:03:45  ivan
-# removed misleading comments
-#
-# Revision 1.5  1999/02/07 09:59:30  ivan
-# more mod_perl fixes, and bugfixes Peter Wemm sent via email
-#
-# Revision 1.4  1999/01/19 05:13:58  ivan
-# for mod_perl: no more top-level my() variables; use vars instead
-# also the last s/create/new/;
-#
-# Revision 1.3  1999/01/18 22:47:59  ivan
-# s/create/new/g; and use fields('table_name')
-#
-# Revision 1.2  1998/12/17 08:40:27  ivan
-# s/CGI::Request/CGI.pm/; etc
-#
+#<!-- $Id: svc_acct.cgi,v 1.2 2001-08-21 02:31:56 ivan Exp $ -->
 
 use strict;
 use vars qw( $cgi $svcnum $old $new $error );

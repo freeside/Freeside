@@ -1,15 +1,5 @@
 <%
-#
-# $Id: svc_forward.cgi,v 1.1 2001-08-19 15:53:35 jeff Exp $
-#
-# Usage: post form to:
-#        http://server.name/path/svc_forward.cgi
-#
-# $Log: svc_forward.cgi,v $
-# Revision 1.1  2001-08-19 15:53:35  jeff
-# added user interface for svc_forward and vpopmail support
-#
-#
+#<!-- $Id: svc_forward.cgi,v 1.2 2001-08-21 02:31:56 ivan Exp $ -->
 
 use strict;
 use vars qw( $cgi $svcnum $old $new $error );

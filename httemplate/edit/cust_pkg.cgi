@@ -1,56 +1,5 @@
 <%
-#
-# $Id: cust_pkg.cgi,v 1.1 2001-07-30 07:36:04 ivan Exp $
-#
-# this is for changing packages around, not editing things within the package
-#
-# Usage: cust_pkg.cgi custnum
-#        http://server.name/path/cust_pkg.cgi?custnum
-#
-# started with /sales/add/cust_pkg.cgi, which added packages
-# ivan@voicenet.com 97-jan-5, 97-mar-21
-#
-# Rewrote for new API
-# ivan@voicenet.com 97-jul-7
-#
-# FS::Search is no more, &cgisuidsetup needs $cgi, ivan@sisd.com 98-mar-7 
-#
-# Changes to allow page to work at a relative position in server
-# Changed to display packages 2-wide in a table
-#       bmccane@maxbaud.net     98-apr-3
-#
-# fixed a pretty cool bug from above which caused a visual glitch ivan@sisd.com
-# 98-jun-1
-#
-# $Log: cust_pkg.cgi,v $
-# Revision 1.1  2001-07-30 07:36:04  ivan
-# templates!!!
-#
-# Revision 1.8  1999/07/21 07:34:13  ivan
-# links to package browse and agent type edit if there aren't any packages to
-# order.  thanks to "Tech Account" <techy@orac.hq.org>
-#
-# Revision 1.7  1999/04/14 01:03:01  ivan
-# oops, in 1.2 tree, can't do searches until [cgi|admin]suidsetup,
-# bug is hidden by mod_perl persistance
-#
-# Revision 1.6  1999/02/28 00:03:36  ivan
-# removed misleading comments
-#
-# Revision 1.5  1999/02/07 09:59:18  ivan
-# more mod_perl fixes, and bugfixes Peter Wemm sent via email
-#
-# Revision 1.4  1999/01/19 05:13:38  ivan
-# for mod_perl: no more top-level my() variables; use vars instead
-# also the last s/create/new/;
-#
-# Revision 1.3  1999/01/18 09:41:28  ivan
-# all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
-# (good idea anyway)
-#
-# Revision 1.2  1998/12/17 06:17:04  ivan
-# fix double // in relative URLs, s/CGI::Base/CGI/;
-#
+#<!-- $Id: cust_pkg.cgi,v 1.2 2001-08-21 02:31:56 ivan Exp $ -->
 
 use strict;
 use vars qw( $cgi %pkg %comment $custnum $p1 @cust_pkg 

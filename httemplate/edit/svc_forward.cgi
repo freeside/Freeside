@@ -1,19 +1,5 @@
 <%
-#
-# $Id: svc_forward.cgi,v 1.1 2001-08-19 15:53:35 jeff Exp $
-#
-# Usage: svc_forward.cgi {svcnum} | pkgnum{pkgnum}-svcpart{svcpart}
-#        http://server.name/path/svc_forward.cgi? {svcnum} | pkgnum{pkgnum}-svcpart{svcpart}
-#
-# use {svcnum} for edit, pkgnum{pkgnum}-svcpart{svcpart} for add
-#
-# should error out in a more CGI-friendly way, and should have more error checking (sigh).
-#
-# $Log: svc_forward.cgi,v $
-# Revision 1.1  2001-08-19 15:53:35  jeff
-# added user interface for svc_forward and vpopmail support
-#
-#
+# <!-- $Id: svc_forward.cgi,v 1.2 2001-08-21 02:31:56 ivan Exp $ -->
 
 use strict;
 use vars qw( $conf $cgi $mydomain $action $svcnum $svc_forward $pkgnum $svcpart

@@ -1,54 +1,5 @@
 <%
-#
-# $Id: agent_type.cgi,v 1.1 2001-07-30 07:36:04 ivan Exp $
-#
-# agent_type.cgi: Add/Edit agent type (output form)
-#
-# ivan@sisd.com 97-dec-10
-#
-# Changes to allow page to work at a relative position in server
-# Changed 'type' to 'atype' because Pg6.3 reserves the type word
-#	bmccane@maxbaud.net	98-apr-3
-#
-# use FS::CGI, added inline documentation ivan@sisd.com 98-jul-12
-#
-# $Log: agent_type.cgi,v $
-# Revision 1.1  2001-07-30 07:36:04  ivan
-# templates!!!
-#
-# Revision 1.11  1999/04/07 11:19:21  ivan
-# silly HTML typo
-#
-# Revision 1.10  1999/01/25 12:09:51  ivan
-# yet more mod_perl stuff
-#
-# Revision 1.9  1999/01/19 05:13:32  ivan
-# for mod_perl: no more top-level my() variables; use vars instead
-# also the last s/create/new/;
-#
-# Revision 1.8  1999/01/18 09:41:22  ivan
-# all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
-# (good idea anyway)
-#
-# Revision 1.7  1999/01/18 09:22:29  ivan
-# changes to track email addresses for email invoicing
-#
-# Revision 1.6  1998/12/17 06:16:58  ivan
-# fix double // in relative URLs, s/CGI::Base/CGI/;
-#
-# Revision 1.5  1998/11/21 07:58:27  ivan
-# package names link to them
-#
-# Revision 1.4  1998/11/21 07:45:19  ivan
-# visual, use FS::table_name when doing qsearch('table_name')
-#
-# Revision 1.3  1998/11/15 11:20:12  ivan
-# s/CGI-Base/CGI.pm/ causes s/QUERY_STRING/keywords/;
-#
-# Revision 1.2  1998/11/13 09:56:46  ivan
-# change configuration file layout to support multiple distinct databases (with
-# own set of config files, export, etc.)
-#
+#<!-- $Id: agent_type.cgi,v 1.2 2001-08-21 02:31:56 ivan Exp $ -->
 
 use strict;
 use vars qw( $cgi $agent_type $action $hashref $p $part_pkg );

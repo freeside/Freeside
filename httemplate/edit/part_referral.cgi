@@ -1,37 +1,5 @@
 <%
-#
-# $Id: part_referral.cgi,v 1.1 2001-07-30 07:36:04 ivan Exp $
-#
-# ivan@sisd.com 98-feb-23
-#
-# Changes to allow page to work at a relative position in server
-#       bmccane@maxbaud.net     98-apr-3
-#
-# confisuing typo on submit button ivan@sisd.com 98-jun-14
-#
-# lose background, FS::CGI ivan@sisd.com 98-sep-2
-#
-# $Log: part_referral.cgi,v $
-# Revision 1.1  2001-07-30 07:36:04  ivan
-# templates!!!
-#
-# Revision 1.6  1999/04/07 11:43:23  ivan
-# pick up errors right away, leave input
-#
-# Revision 1.5  1999/02/07 09:59:20  ivan
-# more mod_perl fixes, and bugfixes Peter Wemm sent via email
-#
-# Revision 1.4  1999/01/19 05:13:41  ivan
-# for mod_perl: no more top-level my() variables; use vars instead
-# also the last s/create/new/;
-#
-# Revision 1.3  1999/01/18 09:41:30  ivan
-# all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
-# (good idea anyway)
-#
-# Revision 1.2  1998/12/17 06:17:06  ivan
-# fix double // in relative URLs, s/CGI::Base/CGI/;
-#
+#<!-- $Id: part_referral.cgi,v 1.2 2001-08-21 02:31:56 ivan Exp $ -->
 
 use strict;
 use vars qw( $cgi $part_referral $action $hashref $p1 $query );

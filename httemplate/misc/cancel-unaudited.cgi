@@ -1,46 +1,5 @@
 <%
-#
-# $Id: cancel-unaudited.cgi,v 1.1 2001-07-30 07:36:04 ivan Exp $
-#
-# Usage: cancel-unaudited.cgi svcnum
-#        http://server.name/path/cancel-unaudited.cgi pkgnum
-#
-# ivan@voicenet.com 97-apr-23
-#
-# rewrote for new API
-# ivan@voicenet.com 97-jul-21
-#
-# Search->Record, cgisuidsetup($cgi) ivan@sids.com 98-mar-19
-#
-# Changes to allow page to work at a relative position in server
-#       bmccane@maxbaud.net     98-apr-3
-#
-# $Log: cancel-unaudited.cgi,v $
-# Revision 1.1  2001-07-30 07:36:04  ivan
-# templates!!!
-#
-# Revision 1.8  2001/04/09 23:05:16  ivan
-# Transactions Part I!!!
-#
-# Revision 1.7  2000/06/15 12:30:37  ivan
-# bugfix from Jeff Finucane, thanks!
-#
-# Revision 1.6  1999/02/28 00:03:48  ivan
-# removed misleading comments
-#
-# Revision 1.5  1999/02/07 09:59:34  ivan
-# more mod_perl fixes, and bugfixes Peter Wemm sent via email
-#
-# Revision 1.4  1999/01/19 05:14:03  ivan
-# for mod_perl: no more top-level my() variables; use vars instead
-# also the last s/create/new/;
-#
-# Revision 1.3  1998/12/23 03:02:05  ivan
-# $cgi->keywords instead of $cgi->query_string
-#
-# Revision 1.2  1998/12/17 09:12:42  ivan
-# s/CGI::(Request|Base)/CGI.pm/;
-#
+#<!-- $Id: cancel-unaudited.cgi,v 1.2 2001-08-21 02:31:56 ivan Exp $ -->
 
 use strict;
 use vars qw( $cgi $query $svcnum $svc_acct $cust_svc $error $dbh );

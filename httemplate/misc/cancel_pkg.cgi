@@ -1,51 +1,5 @@
 <%
-#
-# $Id: cancel_pkg.cgi,v 1.1 2001-07-30 07:36:04 ivan Exp $
-#
-# Usage: cancel_pkg.cgi pkgnum
-#        http://server.name/path/cancel_pkg.cgi pkgnum
-#
-# IT DOESN'T RUN THE APPROPRIATE PROGRAMS YET!!!!
-#
-# probably should generalize this to do cancels, suspensions, unsuspensions, etc.
-#
-# ivan@voicenet.com 97-jan-2
-#
-# still kludgy, but now runs /dbin/cancel $pkgnum
-# ivan@voicenet.com 97-feb-27
-#
-# doesn't run if pkgnum doesn't match regex
-# ivan@voicenet.com 97-mar-6
-#
-# now redirects to enter comments
-# ivan@voicenet.com 97-may-8
-#
-# rewrote for new API
-# ivan@voicenet.com 97-jul-21
-#
-# Changes to allow page to work at a relative position in server
-#       bmccane@maxbaud.net     98-apr-3
-#
-# $Log: cancel_pkg.cgi,v $
-# Revision 1.1  2001-07-30 07:36:04  ivan
-# templates!!!
-#
-# Revision 1.6  1999/04/08 10:35:02  ivan
-# import necessary subroutines from FS::CGI
-#
-# Revision 1.5  1999/02/28 00:03:49  ivan
-# removed misleading comments
-#
-# Revision 1.4  1999/01/19 05:14:04  ivan
-# for mod_perl: no more top-level my() variables; use vars instead
-# also the last s/create/new/;
-#
-# Revision 1.3  1998/12/23 03:02:54  ivan
-# $cgi->keywords instead of $cgi->query_string
-#
-# Revision 1.2  1998/12/17 09:12:43  ivan
-# s/CGI::(Request|Base)/CGI.pm/;
-#
+#<!-- $Id: cancel_pkg.cgi,v 1.2 2001-08-21 02:31:56 ivan Exp $ -->
 
 use strict;
 use vars qw ( $cgi $query $pkgnum $cust_pkg $error );

@@ -1,58 +1,5 @@
 <%
-#
-# $Id: svc_domain.cgi,v 1.2 2001-08-19 15:53:36 jeff Exp $
-#
-# Usage: post form to:
-#        http://server.name/path/svc_domain.cgi
-#
-# ivan@voicenet.com 97-mar-5
-#
-# rewrite ivan@sisd.com 98-mar-14
-#
-# Changes to allow page to work at a relative position in server
-#       bmccane@maxbaud.net     98-apr-3
-#
-# display total, use FS::CGI now does browsing too ivan@sisd.com 98-jul-17
-#
-# $Log: svc_domain.cgi,v $
-# Revision 1.2  2001-08-19 15:53:36  jeff
-# added user interface for svc_forward and vpopmail support
-#
-# Revision 1.1  2001/07/30 07:36:04  ivan
-# templates!!!
-#
-# Revision 1.11  2000/03/03 18:22:44  ivan
-# changes from 1.2.3 release, fixes from webdemo
-#
-# Revision 1.10  1999/07/17 10:38:52  ivan
-# scott nelson <scott@ultimanet.com> noticed this mod_perl-triggered bug and
-# gave me a great bugreport at the last rhythmethod
-#
-# Revision 1.9  1999/04/15 13:39:16  ivan
-# $cgi->header( '-expires' => 'now' )
-#
-# Revision 1.8  1999/02/28 00:03:57  ivan
-# removed misleading comments
-#
-# Revision 1.7  1999/02/23 08:09:24  ivan
-# beginnings of one-screen new customer entry and some other miscellania
-#
-# Revision 1.6  1999/02/09 09:22:59  ivan
-# visual and bugfixes
-#
-# Revision 1.5  1999/02/07 09:59:39  ivan
-# more mod_perl fixes, and bugfixes Peter Wemm sent via email
-#
-# Revision 1.4  1999/01/19 05:14:17  ivan
-# for mod_perl: no more top-level my() variables; use vars instead
-# also the last s/create/new/;
-#
-# Revision 1.3  1998/12/23 03:06:50  ivan
-# $cgi->keywords instead of $cgi->query_string
-#
-# Revision 1.2  1998/12/17 09:41:12  ivan
-# s/CGI::(Base|Request)/CGI.pm/;
-#
+# <!-- $Id: svc_domain.cgi,v 1.3 2001-08-21 02:31:57 ivan Exp $ -->
 
 use strict;
 use vars qw ( $cgi @svc_domain $sortby $query $conf $mydomain );

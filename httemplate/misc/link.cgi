@@ -1,37 +1,5 @@
 <%
-#
-# $Id: link.cgi,v 1.1 2001-07-30 07:36:04 ivan Exp $
-#
-# ivan@voicenet.com 97-feb-5
-#
-# rewrite ivan@sisd.com 98-mar-17
-#
-# can also link on some other fields now (about time) ivan@sisd.com 98-jun-24
-#
-# $Log: link.cgi,v $
-# Revision 1.1  2001-07-30 07:36:04  ivan
-# templates!!!
-#
-# Revision 1.7  1999/04/08 11:31:40  ivan
-# *** empty log message ***
-#
-# Revision 1.6  1999/02/28 00:03:51  ivan
-# removed misleading comments
-#
-# Revision 1.5  1999/01/19 05:14:06  ivan
-# for mod_perl: no more top-level my() variables; use vars instead
-# also the last s/create/new/;
-#
-# Revision 1.4  1999/01/18 09:41:36  ivan
-# all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
-# (good idea anyway)
-#
-# Revision 1.3  1998/12/23 03:03:39  ivan
-# $cgi->keywords instead of $cgi->query_string
-#
-# Revision 1.2  1998/12/17 09:12:45  ivan
-# s/CGI::(Request|Base)/CGI.pm/;
-#
+#<!-- $Id: link.cgi,v 1.2 2001-08-21 02:31:56 ivan Exp $ -->
 
 use strict;
 use vars qw ( %link_field $cgi $pkgnum $svcpart $query $part_svc $svc $svcdb 

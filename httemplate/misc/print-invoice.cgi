@@ -1,24 +1,5 @@
 <%
-#
-# $Id: print-invoice.cgi,v 1.1 2001-07-30 07:36:04 ivan Exp $
-#
-# just a kludge for now, since this duplicates in a way it shouldn't stuff from
-# Bill.pm (like $lpr) ivan@sisd.com 98-jun-16
-#
-# $Log: print-invoice.cgi,v $
-# Revision 1.1  2001-07-30 07:36:04  ivan
-# templates!!!
-#
-# Revision 1.4  1999/01/19 05:14:07  ivan
-# for mod_perl: no more top-level my() variables; use vars instead
-# also the last s/create/new/;
-#
-# Revision 1.3  1998/12/23 03:04:24  ivan
-# $cgi->keywords instead of $cgi->query_string
-#
-# Revision 1.2  1998/12/17 09:12:47  ivan
-# s/CGI::(Request|Base)/CGI.pm/;
-#
+#<!-- $Id: print-invoice.cgi,v 1.2 2001-08-21 02:31:56 ivan Exp $ -->
 
 use strict;
 use vars qw($conf $cgi $lpr $query $invnum $cust_bill $custnum );

@@ -1,45 +1,5 @@
 <%
-#
-# $Id: svc_acct_pop.cgi,v 1.1 2001-07-30 07:36:04 ivan Exp $
-#
-# ivan@sisd.com 98-mar-8 
-#
-# Changes to allow page to work at a relative position in server
-#       bmccane@maxbaud.net     98-apr-3
-#
-# lose background, FS::CGI ivan@sisd.com 98-sep-2
-#
-# $Log: svc_acct_pop.cgi,v $
-# Revision 1.1  2001-07-30 07:36:04  ivan
-# templates!!!
-#
-# Revision 1.9  2000/01/28 23:02:48  ivan
-# track full phone number
-#
-# Revision 1.8  1999/02/23 08:09:23  ivan
-# beginnings of one-screen new customer entry and some other miscellania
-#
-# Revision 1.7  1999/02/07 09:59:23  ivan
-# more mod_perl fixes, and bugfixes Peter Wemm sent via email
-#
-# Revision 1.6  1999/01/19 05:13:44  ivan
-# for mod_perl: no more top-level my() variables; use vars instead
-# also the last s/create/new/;
-#
-# Revision 1.5  1999/01/18 09:41:33  ivan
-# all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
-# (good idea anyway)
-#
-# Revision 1.4  1998/12/23 02:57:45  ivan
-# $cgi->keywords instead of $cgi->query_string
-#
-# Revision 1.3  1998/12/17 06:17:10  ivan
-# fix double // in relative URLs, s/CGI::Base/CGI/;
-#
-# Revision 1.2  1998/11/13 09:56:47  ivan
-# change configuration file layout to support multiple distinct databases (with
-# own set of config files, export, etc.)
-#
+#<!-- $Id: svc_acct_pop.cgi,v 1.2 2001-08-21 02:31:56 ivan Exp $ -->
 
 use strict;
 use vars qw( $cgi $svc_acct_pop $action $query $hashref $p1 );

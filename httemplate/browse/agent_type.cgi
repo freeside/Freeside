@@ -1,42 +1,5 @@
 <%
-#
-# $Id: agent_type.cgi,v 1.1 2001-07-30 07:36:03 ivan Exp $
-#
-# ivan@sisd.com 97-dec-10
-#
-# Changes to allow page to work at a relative position in server
-# Changes to make "Packages" display 2-wide in table (old way was too vertical)
-#	bmccane@maxbaud.net 98-apr-3
-#
-# lose background, FS::CGI ivan@sisd.com 98-sep-2
-#
-# $Log: agent_type.cgi,v $
-# Revision 1.1  2001-07-30 07:36:03  ivan
-# templates!!!
-#
-# Revision 1.8  1999/04/09 04:22:34  ivan
-# also table()
-#
-# Revision 1.7  1999/04/09 03:52:55  ivan
-# explicit & for table/itable/ntable
-#
-# Revision 1.6  1999/04/07 11:10:46  ivan
-# harmless typo
-#
-# Revision 1.5  1999/01/19 05:13:25  ivan
-# for mod_perl: no more top-level my() variables; use vars instead
-# also the last s/create/new/;
-#
-# Revision 1.4  1999/01/18 09:41:15  ivan
-# all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
-# (good idea anyway)
-#
-# Revision 1.3  1998/12/17 05:25:17  ivan
-# fix visual and other bugs
-#
-# Revision 1.2  1998/11/21 07:39:52  ivan
-# visual
-#
+#<!-- $Id: agent_type.cgi,v 1.2 2001-08-21 02:31:56 ivan Exp $ -->
 
 use strict;
 use vars qw( $cgi $p $agent_type );

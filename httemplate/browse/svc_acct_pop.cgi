@@ -1,41 +1,5 @@
 <%
-#
-# $Id: svc_acct_pop.cgi,v 1.1 2001-07-30 07:36:03 ivan Exp $
-#
-# ivan@sisd.com 98-mar-8
-#
-# Changes to allow page to work at a relative position in server
-#	bmccane@maxbaud.net	98-apr-3
-#
-# lose background, FS::CGI ivan@sisd.com 98-sep-2
-#
-# $Log: svc_acct_pop.cgi,v $
-# Revision 1.1  2001-07-30 07:36:03  ivan
-# templates!!!
-#
-# Revision 1.8  2000/01/28 22:56:13  ivan
-# track full phone number
-#
-# Revision 1.7  1999/04/09 04:22:34  ivan
-# also table()
-#
-# Revision 1.6  1999/04/09 03:52:55  ivan
-# explicit & for table/itable/ntable
-#
-# Revision 1.5  1999/01/19 05:13:30  ivan
-# for mod_perl: no more top-level my() variables; use vars instead
-# also the last s/create/new/;
-#
-# Revision 1.4  1999/01/18 09:41:20  ivan
-# all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
-# (good idea anyway)
-#
-# Revision 1.3  1998/12/17 05:25:22  ivan
-# fix visual and other bugs
-#
-# Revision 1.2  1998/12/17 04:36:59  ivan
-# use CGI;, use CGI::Carp, visual changes, relative URLs
-#
+#<!-- $Id: svc_acct_pop.cgi,v 1.2 2001-08-21 02:31:56 ivan Exp $ -->
 
 use strict;
 use vars qw( $cgi $p $svc_acct_pop );

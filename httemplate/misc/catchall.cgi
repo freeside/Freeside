@@ -1,15 +1,5 @@
 <%
-#
-# $Id: catchall.cgi,v 1.1 2001-08-19 15:53:35 jeff Exp $
-#
-# Usage: catchall.cgi {svcnum}
-#        http://server.name/path/catchall.cgi? {svcnum}
-#
-# $Log: catchall.cgi,v $
-# Revision 1.1  2001-08-19 15:53:35  jeff
-# added user interface for svc_forward and vpopmail support
-#
-#
+#<!-- $Id: catchall.cgi,v 1.2 2001-08-21 02:31:56 ivan Exp $ -->
 
 use strict;
 use vars qw( $conf $cgi $action $svcnum $svc_domain $pkgnum $svcpart

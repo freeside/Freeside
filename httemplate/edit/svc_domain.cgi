@@ -1,54 +1,5 @@
 <%
-#
-# $Id: svc_domain.cgi,v 1.1 2001-07-30 07:36:04 ivan Exp $
-#
-# Usage: svc_domain.cgi pkgnum{pkgnum}-svcpart{svcpart}
-#        http://server.name/path/svc_domain.cgi?pkgnum{pkgnum}-svcpart{svcpart}
-#
-# ivan@voicenet.com 97-jan-5 -> 97-jan-6
-#
-# changes for domain template 3.5
-# ivan@voicenet.com 97-jul-24
-#
-# rewrite ivan@sisd.com 98-mar-14
-#
-# no GOV in instructions ivan@sisd.com 98-jul-17
-#
-# $Log: svc_domain.cgi,v $
-# Revision 1.1  2001-07-30 07:36:04  ivan
-# templates!!!
-#
-# Revision 1.10  2001/04/23 07:12:44  ivan
-# better error message (if kludgy) for no referral
-# remove outdated NSI foo from domain ordering.  also, fuck NSI.
-#
-# Revision 1.9  1999/02/28 00:03:39  ivan
-# removed misleading comments
-#
-# Revision 1.8  1999/02/07 09:59:25  ivan
-# more mod_perl fixes, and bugfixes Peter Wemm sent via email
-#
-# Revision 1.7  1999/01/19 05:13:46  ivan
-# for mod_perl: no more top-level my() variables; use vars instead
-# also the last s/create/new/;
-#
-# Revision 1.6  1999/01/18 09:41:35  ivan
-# all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
-# (good idea anyway)
-#
-# Revision 1.5  1998/12/30 23:03:25  ivan
-# bugfixes; fields isn't exported by derived classes
-#
-# Revision 1.4  1998/12/23 03:00:16  ivan
-# $cgi->keywords instead of $cgi->query_string
-#
-# Revision 1.3  1998/12/17 06:17:12  ivan
-# fix double // in relative URLs, s/CGI::Base/CGI/;
-#
-# Revision 1.2  1998/11/13 09:56:48  ivan
-# change configuration file layout to support multiple distinct databases (with
-# own set of config files, export, etc.)
-#
+#<!-- $Id: svc_domain.cgi,v 1.2 2001-08-21 02:31:56 ivan Exp $ -->
 
 use strict;
 use vars qw( $cgi $action $svcnum $svc_domain $pkgnum $svcpart $part_svc

@@ -1,17 +1,5 @@
 <%
-#
-# $Id: delete-customer.cgi,v 1.2 2001-08-11 04:15:14 ivan Exp $
-#
-# $Log: delete-customer.cgi,v $
-# Revision 1.2  2001-08-11 04:15:14  ivan
-# better docs
-#
-# Revision 1.1  2001/07/30 07:36:04  ivan
-# templates!!!
-#
-# Revision 1.1  1999/04/15 16:44:36  ivan
-# delete customers
-#
+#<!-- $Id: delete-customer.cgi,v 1.3 2001-08-21 02:31:56 ivan Exp $ -->
 
 use strict;
 use vars qw( $cgi $conf $query $custnum $new_custnum $cust_main );

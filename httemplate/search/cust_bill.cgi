@@ -1,37 +1,5 @@
 <%
-#
-# $Id: cust_bill.cgi,v 1.1 2001-07-30 07:36:04 ivan Exp $
-#
-# Usage: post form to:
-#        http://server.name/path/cust_bill.cgi
-#
-# ivan@voicenet.com 97-apr-4
-#
-# Changes to allow page to work at a relative position in server
-#       bmccane@maxbaud.net     98-apr-3
-#
-# $Log: cust_bill.cgi,v $
-# Revision 1.1  2001-07-30 07:36:04  ivan
-# templates!!!
-#
-# Revision 1.6  2001/04/22 01:38:39  ivan
-# svc_domain needs to import dbh sub from Record
-# view/cust_main.cgi needs to use ->owed method, not check (depriciated) owed field
-# search/cust_bill.cgi redirect error when there's only one invoice
-#
-# Revision 1.5  2000/07/17 16:45:41  ivan
-# first shot at invoice browsing and some other cleanups
-#
-# Revision 1.4  1999/02/28 00:03:54  ivan
-# removed misleading comments
-#
-# Revision 1.3  1999/01/19 05:14:11  ivan
-# for mod_perl: no more top-level my() variables; use vars instead
-# also the last s/create/new/;
-#
-# Revision 1.2  1998/12/17 09:41:07  ivan
-# s/CGI::(Base|Request)/CGI.pm/;
-#
+#<!-- $Id: cust_bill.cgi,v 1.2 2001-08-21 02:31:56 ivan Exp $ -->
 
 use strict;
 use vars qw ( $cgi $invnum $query $sortby @cust_bill );
