@@ -5,16 +5,17 @@ use Date::Parse;
 use Time::Local;
 use Getopt::Std;
 use Text::Template;
+use Net::SMTP;
+use Mail::Header;
+use Mail::Internet;
 use FS::Conf;
 use FS::UID qw(adminsuidsetup);
 use FS::Record qw(qsearch);
 use FS::cust_main;
 
-# Set the mail program
-my $mail_program = "/usr/sbin/sendmail -t -n"; 
 
 &untaint_argv;	#what it sounds like  (eww)
-use vars qw($opt_v $opt_p $opt_m $opt_e $opt_t $report_lines $report_template @buf);
+use vars qw($opt_v $opt_p $opt_m $opt_e $opt_t $report_lines $report_template @buf $header);
 getopts("vpmet:");	#switches
 
 #we're at now now (and later).
@@ -34,6 +35,9 @@ adminsuidsetup $user;
 my $conf = new FS::Conf;
 my $lpr = $conf->config('lpr');
 my $email = $conf->config('email');
+my $smtpmachine = $conf->config('smtpmachine');
+my $mail_sender = $conf->exists('invoice_from') ? $conf->config('invoice_from') :
+  'postmaster';
 my @report_template = $conf->config('report_template')
   or die "cannot load config file report_template";
 $report_lines = 0;
@@ -65,14 +69,14 @@ if ($lpr && $opt_p)
 
 if ($email && $opt_m)
 {
-	open (MAIL, "|$mail_program");
-	print MAIL <<END
-To: $email
-From: Account Processor
-Subject: Receivables
-
-
-END
+  $ENV{MAILADDRESS} = $mail_sender;
+  $header = new Mail::Header ( [
+    "From: Account Processor",
+    "To: $email",
+    "Sender: $mail_sender",
+    "Reply-To: $mail_sender",
+    "Subject: Receivables",
+  ] );
 }
 
 my $total = 0;
@@ -139,8 +143,13 @@ if($lpr && $opt_p)
 }
 if($email && $opt_m)
 {
-  print MAIL map "$_\n", @report;
-  close MAIL || die "Could not close printer: $email\n";
+  my $message = new Mail::Internet (
+    'Header' => $header,
+    'Body' => [ (@report) ],
+  );
+  $!=0;
+  $message->smtpsend( Host => "$smtpmachine" )
+    or die "can't send report to $email via $smtpmachine: $!";
 }
 
 
@@ -183,7 +192,7 @@ user: From the mapsecrets file - see config.html from the base documentation
 
 =head1 VERSION
 
-$Id: freeside-receivables-report,v 1.4 2002-03-06 00:17:32 ivan Exp $
+$Id: freeside-receivables-report,v 1.5 2002-03-07 19:50:24 jeff Exp $
 
 =head1 BUGS
 

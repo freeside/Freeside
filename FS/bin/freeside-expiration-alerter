@@ -5,12 +5,15 @@ use Date::Format;
 use Time::Local;
 use Text::Template;
 use Getopt::Std;
+use Net::SMTP;
+use Mail::Header;
+use Mail::Internet;
 use FS::Conf;
 use FS::UID qw(adminsuidsetup);
 use FS::Record qw(qsearch);
 use FS::cust_main;
 
-use vars qw($smtpmachine);
+use vars qw($smtpmachine @body);
 
 #hush, perl!
 $FS::alerter::_template::first = "";
@@ -20,9 +23,8 @@ $FS::alerter::_template::payby = "";
 $FS::alerter::_template::expdate = "";
 
 # Set the mail program  and other variables
-my $mail_program = "/usr/sbin/sendmail -t -n"; 
-my $mail_sender = "billing\@mydomain.tld"; 
-my $default_mail_recipient = "postmaster";
+my $mail_sender = "billing\@mydomain.tld";  # or invoice_from if available
+my $failure_recipient = "postmaster";       # or invoice_from if available
 my $warning_time = 30 * 24 * 60 * 60;
 my $urgent_time = 15 * 24 * 60 * 60;
 my $panic_time = 5 * 24 * 60 * 60;
@@ -45,6 +47,11 @@ adminsuidsetup $user;
 # Get the needed configuration files
 my $conf = new FS::Conf;
 $smtpmachine = $conf->config('smtpmachine');
+$mail_sender = $conf->config('invoice_from')
+  if $conf->exists('invoice_from');
+$failure_recipient = $conf->config('invoice_from')
+  if $conf->exists('invoice_from');
+
 
 my(@customers)=qsearch('cust_main',{});
 if (scalar(@customers) == 0)
@@ -52,18 +59,16 @@ if (scalar(@customers) == 0)
   exit 1;
 }
 
-# Open email pipe
+# Prepare for sending email
 
-open (MAIL, "|$mail_program");
-print MAIL <<END
-To: $default_mail_recipient
-From: Account Processor
-Subject: Unnotified Billing Arrangement Expirations
-
-
-END
-
-;
+$ENV{MAILADDRESS} = $mail_sender;
+my $header = new Mail::Header ( [
+  "From: Account Processor",
+  "To: $failure_recipient",
+  "Sender: $mail_sender",
+  "Reply-To: $mail_sender",
+  "Subject: Unnotified Billing Arrangement Expirations",
+] );
 
 my @alerter_template = $conf->config('alerter_template')
   or die "cannot load config file alerter_template";
@@ -109,8 +114,6 @@ foreach my $customer (@customers)
     if (scalar(@packages) != 0) {
       my @invoicing_list = $customer->invoicing_list;
       if ( grep { $_ ne 'POST' } @invoicing_list ) { 
-        $ENV{SMTPHOSTS} = $smtpmachine;
-        $ENV{MAILADDRESS} = $mail_sender;
         my $header = new Mail::Header ( [
           "From: $mail_sender",
           "To: ". join(', ', grep { $_ ne 'POST' } @invoicing_list ),
@@ -137,10 +140,12 @@ foreach my $customer (@customers)
           'Header' => $header,
           'Body' => [ $alerter->fill_in( PACKAGE => 'FS::alerter::_template' ) ],
         );
-        $message->smtpsend or die "Can't send invoice email!: $!"; #die?  warn?
+        $!=0;
+        $message->smtpsend( Host => $smtpmachine )
+          or die "Can't send expiration email!: $!"; #die?  warn?
 
       } elsif ( ! @invoicing_list || grep { $_ eq 'POST' } @invoicing_list ) { 
-        printf(MAIL qq{%5d %-32.32s %4s %10s %12s %12s\n},
+        push @body, sprintf(qq{%5d %-32.32s %4s %10s %12s %12s},
           $custnum,
           $first . " " . $last . "   " . $company,
           $payby,
@@ -152,9 +157,18 @@ foreach my $customer (@customers)
   }
 }
 
-# Now I need to close EMAIL
-close MAIL || die "Could not close printer: $default_mail_recipient\n";
-
+# Now I need to send EMAIL
+if (scalar(@body)) {
+  my $message = new Mail::Internet (
+    'Header' => $header,
+    'Body' => [ (@body) ],
+  );
+  $!=0;
+  $message->smtpsend( Host => $smtpmachine )
+    or $message->smtpsend( Host => $smtpmachine, Debug => 1 )
+      or return "can't send alerter failure email to $failure_recipient".
+              " via server $smtpmachine with SMTP: $!";
+}
 
 # subroutines
 sub untaint_argv {
@@ -185,7 +199,7 @@ user: From the mapsecrets file - see config.html from the base documentation
 
 =head1 VERSION
 
-$Id: freeside-expiration-alerter,v 1.1 2002-03-06 22:44:13 jeff Exp $
+$Id: freeside-expiration-alerter,v 1.2 2002-03-07 19:50:24 jeff Exp $
 
 =head1 BUGS
 
