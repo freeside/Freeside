@@ -2,6 +2,7 @@ package FS::cust_main;
 
 use strict;
 use vars qw( @ISA $conf $Debug $import );
+use vars qw( $realtime_bop_decline_quiet ); #ugh
 use Safe;
 use Carp;
 BEGIN {
@@ -37,6 +38,8 @@ use FS::type_pkgs;
 use FS::Msgcat qw(gettext);
 
 @ISA = qw( FS::Record );
+
+$realtime_bop_decline_quiet = 0;
 
 $Debug = 1;
 #$Debug = 1;
@@ -1377,7 +1380,12 @@ sub collect {
       warn "calling invoice event (". $part_bill_event->eventcode. ")\n"
         if $Debug;
       my $cust_main = $self; #for callback
-      my $error = eval $part_bill_event->eventcode;
+
+      my $error;
+      {
+        local $realtime_bop_decline_quiet = 1 if $options{'quiet'};
+        $error = eval $part_bill_event->eventcode;
+      }
 
       my $status = '';
       my $statustext = '';
@@ -1682,7 +1690,8 @@ sub realtime_bop {
 
     my $perror = "$processor error: ". $transaction->error_message;
 
-    if ( !$options{'quiet'} && $conf->exists('emaildecline')
+    if ( !$options{'quiet'} && !$realtime_bop_decline_quiet
+         && $conf->exists('emaildecline')
          && grep { $_ ne 'POST' } $self->invoicing_list
     ) {
       my @templ = $conf->config('declinetemplate');
