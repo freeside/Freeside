@@ -45,7 +45,6 @@ foreach $cust_main (
   # and bill them
 
   print "Billing customer #" . $cust_main->getfield('custnum') . "\n";
-  next;
 
   my($error);
 
@@ -110,7 +109,7 @@ customers.  Otherwise, bills all customers.
 
 =head1 VERSION
 
-$Id: freeside-bill,v 1.1 1999-08-11 20:41:27 ivan Exp $
+$Id: freeside-bill,v 1.2 1999-08-11 20:51:54 ivan Exp $
 
 =head1 BUGS
 
