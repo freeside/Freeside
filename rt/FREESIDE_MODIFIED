@@ -1,20 +1,20 @@
-sbin/rt-setup-database
-sbin/rt-setup-database.in
+ sbin/rt-setup-database.in
 config.layout
 config.layout.in
-etc/RT_SiteConfig.pm
+ etc/RT_SiteConfig.pm
 lib/RT/Interface/Web_Vendor.pm
 lib/RT/URI/freeside.pm
-html/Elements/Header
-html/Elements/PageLayout
-html/Elements/SimpleSearch
-html/Elements/Tabs
-html/Elements/Footer
+ html/Elements/Header
+ html/Elements/PageLayout
+ html/Elements/SimpleSearch
+ html/Elements/Tabs
+ html/Elements/Footer
+ html/Elements/CollectionAsTable/Row #backport from 3.3-TESTING
 html/Ticket/Elements/AddCustomers
 html/Ticket/Elements/EditCustomers
 html/Ticket/Elements/ShowCustomers
-html/Ticket/Elements/ShowSummary
-html/Ticket/Elements/Tabs
+ html/Ticket/Elements/ShowSummary
+ html/Ticket/Elements/Tabs
 html/Ticket/ModifyCustomers.html
 html/NoAuth/images/small-logo.png
-html/NoAuth/webrt.css
+ html/NoAuth/webrt.css
