@@ -176,7 +176,7 @@ sub check {
     or return "Illegal zip: ". $self->zip;
   $self->zip($1);
 
-  $self->country =~ /^(\w\w)$/ or return "Illegal \w\wy";
+  $self->country =~ /^(\w\w)$/ or return "Illegal country: ". $self->country;
   $self->country($1);
 
   #check invnum, custnum, ?
@@ -188,7 +188,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: cust_pay_batch.pm,v 1.1 1999-08-04 09:03:53 ivan Exp $
+$Id: cust_pay_batch.pm,v 1.2 2000-06-17 21:48:05 ivan Exp $
 
 =head1 BUGS
 
