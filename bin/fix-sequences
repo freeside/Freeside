@@ -28,6 +28,7 @@ foreach my $table ( @tables ) {
 
   my $col = $tableobj->column($primary_key);
 
+
   next unless uc($col->type) eq 'SERIAL'
               || ( driver_name eq 'Pg'
                      && defined($col->default)
@@ -38,9 +39,17 @@ foreach my $table ( @tables ) {
                      && $col->local =~ /AUTO_INCREMENT/i
                  );
 
+  my $seq = "${table}_${primary_key}_seq";
+  if ( driver_name eq 'Pg'
+       && defined($col->default) 
+       && $col->default =~ /^nextval\('"(\w+_seq)"'::text\)$/
+     ) {
+    $seq = $1;
+  }
+
   warn "fixing sequence for $table\n";
 
-  $dbh->do( "SELECT setval( '${table}_${primary_key}_seq',
+  $dbh->do( "SELECT setval( '$seq',
                             ( SELECT max($primary_key) FROM $table ) );" )
     or die $dbh->errstr;
 
