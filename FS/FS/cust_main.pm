@@ -512,7 +512,7 @@ and repalce methods.
 sub check {
   my $self = shift;
 
-  warn "BEFORE: \n". $self->_dump;
+  #warn "BEFORE: \n". $self->_dump;
 
   my $error =
     $self->ut_numbern('custnum')
@@ -698,7 +698,7 @@ sub check {
 
   $self->otaker(getotaker);
 
-  warn "AFTER: \n". $self->_dump;
+  #warn "AFTER: \n". $self->_dump;
 
   ''; #no error
 }

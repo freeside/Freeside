@@ -575,12 +575,6 @@ sub replace {
   my ( $new, $old ) = ( shift, shift );
   warn "[debug]$me $new ->replace $old\n" if $DEBUG;
 
-  my @diff = grep $new->getfield($_) ne $old->getfield($_), $old->fields;
-  unless ( @diff ) {
-    carp "[warning]$me $new -> replace $old: records identical";
-    return '';
-  }
-
   return "Records not in same table!" unless $new->table eq $old->table;
 
   my $primary_key = $old->dbdef_table->primary_key;
@@ -590,6 +584,12 @@ sub replace {
 
   my $error = $new->check;
   return $error if $error;
+
+  my @diff = grep $new->getfield($_) ne $old->getfield($_), $old->fields;
+  unless ( @diff ) {
+    carp "[warning]$me $new -> replace $old: records identical";
+    return '';
+  }
 
   my $statement = "UPDATE ". $old->table. " SET ". join(', ',
     map {
