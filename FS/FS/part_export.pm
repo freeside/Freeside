@@ -636,6 +636,37 @@ tie my %bind_slave_options, 'Tie::IxHash',
                      default => '/etc/bind/named.conf' },
 ;
 
+tie my %http_options, 'Tie::IxHash',
+  'method' => { label   =>'Method',
+                type    =>'select',
+                #options =>[qw(POST GET)],
+                options =>[qw(POST)],
+                default =>'POST' },
+  'url'    => { label   => 'URL', default => 'http://', },
+  'insert_data' => {
+    label   => 'Insert data',
+    type    => 'textarea',
+    default => join("\n",
+      'DomainName $svc_x->domain',
+      'Email ( grep { $_ ne "POST" } $svc_x->cust_svc->cust_pkg->cust_main->invoicing_list)[0]',
+      'test 1',
+      'reseller $svc_x->cust_svc->cust_pkg->part_pkg->pkg =~ /reseller/i',
+    ),
+  },
+  'delete_data' => {
+    label   => 'Delete data',
+    type    => 'textarea',
+    default => join("\n",
+    ),
+  },
+  'replace_data' => {
+    label   => 'Replace data',
+    type    => 'textarea',
+    default => join("\n",
+    ),
+  },
+;
+
 tie my %sqlmail_options, 'Tie::IxHash',
   'datasrc'  => { label=>'DBI data source' },
   'username' => { label=>'Database username' },
@@ -738,6 +769,12 @@ tie my %sqlmail_options, 'Tie::IxHash',
       'desc' =>'Batch export to slave BIND named',
       'options' => \%bind_slave_options,
       'notes' => 'Batch export of BIND configuration file to a secondary nameserver.  Zones are slaved from the listed masters.  <a href="http://search.cpan.org/search?dist=File-Rsync">File::Rsync</a> must be installed.  Run bin/bind.export to export the files.',
+    },
+
+    'http' => {
+      'desc' => 'Send an HTTP or HTTPS GET or POST request',
+      'options' => \%http_options,
+      'notes' => 'Send an HTTP or HTTPS GET or POST to the specified URL.  <a href="http://search.cpan.org/search?dist=libwww-perl">libwww-perl</a> must be installed.  For HTTPS support, <a href="http://search.cpan.org/search?dist=Crypt-SSLeay">Crypt::SSLeay</a> or <a href="http://search.cpan.org/search?dist=IO-Socket-SSL">IO::Socket::SSL</a> is required.',
     },
 
     'sqlmail' => {
