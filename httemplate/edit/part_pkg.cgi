@@ -110,7 +110,9 @@ my $thead =  "\n\n". ntable('#cccccc', 2). <<END;
 <TR><TH BGCOLOR="#dcdcdc"><FONT SIZE=-1>Quan.</FONT></TH><TH BGCOLOR="#dcdcdc">Service</TH></TR>
 END
 
-unless ( $cgi->param('clone') ) {
+#unless ( $cgi->param('clone') ) {
+#dunno why...
+unless ( 0 ) {
   #print <<END, $thead;
   print <<END, itable(), '<TR><TD VALIGN="top">', $thead;
 <BR><BR>Enter the quantity of each service this package includes.<BR><BR>
@@ -135,7 +137,9 @@ foreach my $part_svc ( @part_svc ) {
 
   push @fixups, "pkg_svc$svcpart";
 
-  unless ( defined ($cgi->param('clone')) && $cgi->param('clone') ) {
+  #unless ( defined ($cgi->param('clone')) && $cgi->param('clone') ) {
+  #dunno why...
+  unless ( 0 ) {
     print '<TR>'; # if $count == 0 ;
     print qq!<TD><INPUT TYPE="text" NAME="pkg_svc$svcpart" SIZE=4 MAXLENGTH=3 VALUE="!,
           $cgi->param("pkg_svc$svcpart") || $pkg_svc->quantity || 0,
@@ -153,7 +157,9 @@ foreach my $part_svc ( @part_svc ) {
   }
 }
 
-unless ( $cgi->param('clone') ) {
+#unless ( $cgi->param('clone') ) {
+#dunno why...
+unless ( 0 ) {
   print "</TR></TABLE></TD></TR></TABLE>";
   #print "</TR></TABLE>";
 }

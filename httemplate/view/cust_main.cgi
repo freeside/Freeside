@@ -302,7 +302,7 @@ foreach my $package (@packages) {
         qq!<TD ROWSPAN=$rowspan><FONT SIZE=-1>!,
         #qq!<A HREF="$pkgview">$pkg - $comment</A>!,
         qq!$pkg - $comment!,
-        qq! ( <A HREF="$pkgview">Edit</A> | <A HREF="$button_url">Customize pricing</A> )</FONT></TD>!,
+        qq! (&nbsp;<A HREF="$pkgview">Edit</A>&nbsp;|&nbsp;<A HREF="$button_url">Customize</A>&nbsp;)</FONT></TD>!,
   ;
   for ( qw( setup bill susp expire cancel ) ) {
     print "<TD ROWSPAN=$rowspan><FONT SIZE=-1>", ( $package->getfield($_)
