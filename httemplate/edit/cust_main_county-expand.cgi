@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: cust_main_county-expand.cgi,v 1.2 2001-08-21 02:31:56 ivan Exp $ -->
+#<!-- $Id: cust_main_county-expand.cgi,v 1.3 2001-08-31 07:28:00 ivan Exp $ -->
 
 use strict;
 use vars qw( $cgi $taxnum $cust_main_county $p1 $delim $expansion );
@@ -27,7 +27,8 @@ if ( $cgi->param('error') ) {
   $expansion = '';
 }
 
-$cust_main_county = qsearchs('cust_main_county',{'taxnum'=>$taxnum});
+$cust_main_county = qsearchs('cust_main_county',{'taxnum'=>$taxnum})
+  or die "cust_main_county.taxnum $taxnum not found";
 die "Can't expand entry!" if $cust_main_county->getfield('county');
 
 $p1 = popurl(1);
