@@ -125,7 +125,7 @@
     my $time = shift;
     return '&nbsp;' if $time == 0;
     my $pretty = time2str('%T%P %a&nbsp;%b&nbsp;%o&nbsp;%Y', $time );
-    $pretty =~ s/ (\d)(st|dn|rd|th)/&nbsp;$1$2/;
+    $pretty =~ s/ (\d)(st|dn|rd|th)/$1$2/;
     $pretty;
   };
 
@@ -161,15 +161,18 @@
                              name    => 'User',
                              attrib  => 'UserName',
                              fmt     => $user_format,
+                             align   => 'left',
                            },
     'realm'             => {
                              name    => 'Realm',
                              attrib  => 'Realm',
+                             align   => 'left',
                            },
     'dummy'             => {
                              name    => 'Customer',
                              attrib  => '',
                              fmt     => $customer_format,
+                             align   => 'left',
                            },
     'framedipaddress'   => {
                              name    => 'IP&nbsp;Address',
@@ -177,31 +180,37 @@
                              fmt     => sub { my $ip = shift;
                                               length($ip) ? $ip : '&nbsp';
                                             },
+                             align   => 'right',
                            },
     'acctstarttime'     => {
                              name    => 'Start&nbsp;time',
                              attrib  => 'Acct-Start-Time',
                              fmt     => $time_format,
+                             align   => 'left',
                            },
     'acctstoptime'      => {
                              name    => 'End&nbsp;time',
                              attrib  => 'Acct-Stop-Time',
                              fmt     => $time_format,
+                             align   => 'left',
                            },
     'acctsessiontime'   => {
                              name    => 'Duration',
                              attrib  => 'Acct-Session-Time',
                              fmt     => $duration_format,
+                             align   => 'right',
                            },
     'acctinputoctets'   => {
                              name    => 'Upload', # (from user)',
                              attrib  => 'Acct-Input-Octets',
                              fmt     => $octets_format,
+                             align   => 'right',
                            },
     'acctoutputoctets'  => {
                              name    => 'Download', # (to user)',
                              attrib  => 'Acct-Output-Octets',
                              fmt     => $octets_format,
+                             align   => 'right',
                            },
   ;
   $fields{$_}->{fmt} ||= sub { length($_[0]) ? shift : '&nbsp'; }
