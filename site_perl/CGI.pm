@@ -88,7 +88,7 @@ Sends headers and an HTML error message.
 sub idiot {
   #warn "idiot depriciated";
   my($error)=@_;
-  my($cgi)=FS::UID::cgi;
+  my $cgi = &FS::UID::cgi();
   if ( $cgi->isa('CGI::Base') ) {
     no strict 'subs';
     &CGI::Base::SendHeaders;
@@ -216,7 +216,10 @@ lose the background, eidiot ivan@sisd.com 98-sep-2
 pod ivan@sisd.com 98-sep-12
 
 $Log: CGI.pm,v $
-Revision 1.17  1999-02-07 09:59:43  ivan
+Revision 1.18  1999-04-15 15:22:12  ivan
+make &idiot() work, yuck.
+
+Revision 1.17  1999/02/07 09:59:43  ivan
 more mod_perl fixes, and bugfixes Peter Wemm sent via email
 
 Revision 1.16  1999/01/25 12:26:05  ivan
