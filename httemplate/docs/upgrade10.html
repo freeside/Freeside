@@ -188,12 +188,12 @@ UPDATE pg_attribute SET attnotnull = FALSE WHERE ( attname = 'srcsvc' OR attname
 
 If you created your database with a version before 1.4.2, dump database, edit:
 - cust_main and h_cust_main: increase otaker from 8 to 32
-- cust_main and h_cust_main: change ss from char(11) to varchar(11)
+- cust_main and h_cust_main: change ss from char(11) to varchar(11) ( "character(11)" to "character varying(11)" )
 - cust_credit and h_cust_credit: increase otaker from 8 to 32
 - cust_pkg and h_cust_pkg: increase otaker from 8 to 32
 - cust_refund and h_cust_refund: increase otaker from 8 to 32
 - domain_record and h_domain_record: increase reczone from 80 to 255
-- domain_record and h_domain_record: change rectype from char to varchar
+- domain_record and h_domain_record: change rectype from char to varchar ( "character(5)" to "character varying(5)" )
 - domain_record and h_domain_record: increase recdata from 80 to 255
 then reload
 
