@@ -1,0 +1,81 @@
+digraph g {
+graph [
+rankdir = "LR",
+concentrate = true,
+ratio = auto
+];
+node [
+fontsize = "18",
+shape = record, fontsize = 18
+];
+edge [
+];
+
+"ACL" [shape = record, fontsize = 18, label = "<col0> \N " ];
+"ACL" -> "Principals" [label="PrincipalId -> Id"];
+"ACL" -> "Principals" [label="DelegatedBy -> Id"];
+"ACL" -> "ACL" [label="DelegatedFrom -> Id"];
+
+"Attachments" [shape = record, fontsize = 18, label = "<col0> \N " ];
+"Attachments" -> "Transactions" [label="TransactionId -> id"];
+"Attachments" -> "Attachments" [label="Parent -> id"];
+
+"CachedGroupMemers" [shape = record, fontsize = 18, label = "<col0> \N " ];
+"CachedGroupMemers" -> "Groups" [label="GroupId -> Groups.id"];
+"CachedGroupMemers" -> "Principals" [label="MemberId -> Id"];
+"CachedGroupMemers" -> "CachedGroupMemers" [label="Via -> id"];
+"CachedGroupMemers" -> "Groups" [label="ImmediateParentId -> Groups.id"];
+
+"CustomFields" [shape = record, fontsize = 18, label = "<col0> \N " ];
+"CustomFields" -> "Queues" [label="Queue -> id"];
+
+"CustomFieldValues" [shape = record, fontsize = 18, label = "<col0> \N " ];
+"CustomFieldValues" -> "CustomFields" [label="CustomField -> id"];
+
+"GroupMembers" [shape = record, fontsize = 18, label = "<col0> \N " ];
+"GroupMembers" -> "Groups" [label="GroupId => Groups.Id"];
+"GroupMembers" -> "Principals" [label="MemberId => Id"];
+
+"Groups" [shape = record, fontsize = 18, label = "<col0> \N " ];
+"Groups" -> "Principals" [label="Groups.id -> id"];
+
+"Links" [shape = record, fontsize = 18, label = "<col0> \N " ];
+"Links" -> "Tickets" [label="LocalBase => id (usually)"];
+"Links" -> "Tickets" [label="LocalTarget => id (usually)"];
+
+"Principals" [shape = record, fontsize = 18, label = "<col0> \N " ];
+
+
+"Queues" [shape = record, fontsize = 18, label = "<col0> \N " ];
+
+"ScripActions" [shape = record, fontsize = 18, label = "<col0> \N " ];
+
+"ScripConditions" [shape = record, fontsize = 18, label = "<col0> \N " ];
+
+"Scrips" [shape = record, fontsize = 18, label = "<col0> \N " ];
+"Scrips" -> "ScripConditions" [label="ScripCondition -> id"];
+"Scrips" -> "ScripActions" [label="ScripAction -> id"];
+"Scrips" -> "Templates" [label="Template -> id"];
+"Scrips" -> "Queues" [label="Queue -> id"];
+
+"Templates" [shape = record, fontsize = 18, label = "<col0> \N " ];
+"Templates" -> "Queues" [label ="Queue -> id" ];
+
+"TicketCustomFieldValues" [shape = record, fontsize = 18, label = "<col0> \N " ];
+"TicketCustomFieldValues" -> "Tickets" [label="Ticket -> id"];
+"TicketCustomFieldValues" -> "CustomFields" [label="CustomField -> id"];
+
+"Tickets" [shape = record, fontsize = 18, label = "<col0> \N " ];
+"Tickets" -> "Tickets" [label="EffectiveId -> id"];
+"Tickets" -> "Queues" [label="Queue -> id"];
+"Tickets" -> "Principals" [label="Owner -> id"];
+
+"Transactions" [shape = record, fontsize = 18, label = "<col0> \N " ];
+"Transactions" -> "Tickets" [label="Ticket -> Id"];
+
+"Users" [shape = record, fontsize = 18, label = "<col0> \N " ];
+
+"Users" -> "Principals" [label="id -> id"];
+
+
+}

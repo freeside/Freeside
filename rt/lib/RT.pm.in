@@ -117,13 +117,10 @@ sub LoadConfig {
 =cut
 
 sub Init {
-    require RT::Handle;
+
     #Get a database connection
-        unless ($Handle && $Handle->dbh->ping) {
-    $Handle = RT::Handle->new();
-        } 
-    $Handle->Connect();
-    
+    ConnectToDatabase();
+
     #RT's system user is a genuine database user. its id lives here
     $SystemUser = new RT::CurrentUser();
     $SystemUser->LoadByName('RT_System');
@@ -137,6 +134,21 @@ sub Init {
    InitLogging(); 
 }
 
+  
+=head2 ConnectToDatabase
+
+Get a database connection
+
+=cut
+ 
+sub ConnectToDatabase {
+    require RT::Handle;
+    unless ($Handle && $Handle->dbh && $Handle->dbh->ping) {
+        $Handle = RT::Handle->new();
+    } 
+    $Handle->Connect();
+}
+    
 =head2 InitLogging
 
 Create the RT::Logger object. 
@@ -282,7 +294,14 @@ sub DropSetGIDPermissions {
 
 =head1 BUGS
 
+Please report them to rt-3.0-bugs@fsck.com, if you know what's broken and have at least some idea of what needs to be fixed.
+If you're not sure what's going on, report them rt-devel@lists.fsck.com.
+
 =head1 SEE ALSO
+
+L<RT::StyleGuide>
+L<DBIx::SearchBuilder>
+
 
 
 =begin testing

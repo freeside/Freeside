@@ -112,8 +112,8 @@ sub Create {
     #For ease of reference
     my $Attachment = $args{'Attachment'};
 
-    #if we didn't specify a ticket, we need to bail
-    if ( $args{'TransactionId'} == 0 ) {
+	    #if we didn't specify a ticket, we need to bail
+	    if ( $args{'TransactionId'} == 0 ) {
         $RT::Logger->crit( "RT::Attachment->Create couldn't, as you didn't specify a transaction\n" );
         return (0);
 
@@ -133,7 +133,9 @@ sub Create {
 	    =~ /^.*\bfilename="(.*)"$/ ? $1 : ''
     };
 
-    if ( $Attachment->parts ) {
+    # If a message has no bodyhandle, that means that it has subparts (or appears to)
+    # and we should act accordingly.  
+    unless ( defined $Attachment->bodyhandle ) {
         $id = $self->SUPER::Create(
             TransactionId => $args{'TransactionId'},
             Parent        => 0,
@@ -241,6 +243,9 @@ Create an attachment exactly as specified in the named parameters.
 
 sub Import {
     my $self = shift;
+    my %args = ( ContentEncoding => 'none',
+
+		 @_ );
     return($self->SUPER::Create(@_));
 }
 
@@ -309,11 +314,15 @@ sub OriginalContent {
   }
 
   # Encode::_utf8_on($content);
-  if (!$enc or $enc eq 'utf8' or $enc eq 'utf-8') {
+  if (!$enc || $enc eq '' ||  $enc eq 'utf8' || $enc eq 'utf-8') {
     # If we somehow fail to do the decode, at least push out the raw bits
     eval {return( Encode::decode_utf8($content))} || return ($content);
   }
-  Encode::from_to($content, 'utf8' => $enc);
+  
+  eval { Encode::from_to($content, 'utf8' => $enc);};
+  if ($@) {
+	$RT::Logger->error("Could not convert attachment from assumed utf8 to '$enc' :".$@);
+  }
   return $content;
 }
 
@@ -423,10 +432,13 @@ properly unfolded.
 =cut
 
 sub NiceHeaders {
-    my $self=shift;
-    my $hdrs="";
-    for (split(/\n/,$self->Headers)) {
-	    $hdrs.="$_\n" if /^(To|From|RT-Send-Cc|Cc|Date|Subject): /i
+    my $self = shift;
+    my $hdrs = "";
+    my @hdrs = split(/\n/,$self->Headers);
+    while (my $str = shift @hdrs) {
+	    next unless $str =~ /^(To|From|RT-Send-Cc|Cc|Date|Subject): /i;
+	    $hdrs .= $str . "\n";
+	    $hdrs .= shift( @hdrs ) . "\n" while ($hdrs[0] =~ /^[ \t]+/);
     }
     return $hdrs;
 }
@@ -567,5 +579,14 @@ sub ContentLength {
 }
 
 # }}}
+
+# Transactions don't change. by adding this cache congif directiove, we don't lose pathalogically on long tickets.
+sub _CacheConfig {
+    {
+        'cache_p'         => 1,
+          'fast_update_p' => 1,
+          'cache_for_sec' => 180,
+    }
+}
 
 1;

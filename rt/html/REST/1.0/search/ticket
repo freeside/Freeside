@@ -1,0 +1,119 @@
+%# BEGIN LICENSE BLOCK
+%# 
+%# Copyright (c) 1996-2003 Jesse Vincent <jesse@bestpractical.com>
+%# 
+%# (Except where explictly superceded by other copyright notices)
+%# 
+%# This work is made available to you under the terms of Version 2 of
+%# the GNU General Public License. A copy of that license should have
+%# been provided with this software, but in any event can be snarfed
+%# from www.gnu.org.
+%# 
+%# This work is distributed in the hope that it will be useful, but
+%# WITHOUT ANY WARRANTY; without even the implied warranty of
+%# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+%# General Public License for more details.
+%# 
+%# Unless otherwise specified, all modifications, corrections or
+%# extensions to this work which alter its source code become the
+%# property of Best Practical Solutions, LLC when submitted for
+%# inclusion in the work.
+%# 
+%# 
+%# END LICENSE BLOCK
+%# REST/1.0/search/ticket
+%#
+<%ARGS>
+$query
+$format => undef
+$orderby => undef
+$fields => undef
+</%ARGS>
+<%INIT>
+my $output = "";
+my $status = "200 Ok";
+my $tickets = new RT::Tickets $session{CurrentUser};
+
+# Parse and validate any field specifications.
+my $field  = '[a-zA-Z][a-zA-Z0-9_-]*';
+my (%fields, @fields);
+if ($fields) {
+    $format = "l";
+    unless ($fields =~ /^(?:$field,)*$field$/) {
+        $status = "400 Bad Request";
+        $output = "Invalid field specification: $fields";
+        goto OUTPUT;
+    }
+    @fields = map lc, split /,/, $fields;
+    @fields{@fields} = ();
+    unless (exists $fields{id}) {
+        unshift @fields, "id";
+        $fields{id} = ();
+    }
+}
+
+$format ||= "s";
+if ($format !~ /^[isl]$/) {
+    $status = "400 Bad request";
+    $output = "Unknown listing format: $format. (Use i, s, or l.)\n";
+    goto OUTPUT;
+}
+
+my ($n, $s);
+eval {
+    ($n, $s) = $tickets->FromSQL($query);
+};
+my $sortstring = "";
+if ($orderby) {
+    $sortstring = 'FIELD => ';
+    my $order = substr($orderby, 0, 1);
+    if ($order eq '+' || $order eq '-') {
+	$sortstring .= 'substr($orderby, 1)';
+	if ($order eq '+') {
+	    $sortstring .= ", ORDER => 'ASC'";
+	} elsif ($order eq '-') {
+	    $sortstring .= ", ORDER => 'DESC'";
+	}
+    } else {
+	$sortstring .= '$orderby';
+    }
+    my $foo = 'FIELD => ';
+    $foo .= '$orderby';
+    $tickets->OrderBy(eval $sortstring);
+}
+if ($@ || $n == 0) {
+    $s ||= $@;
+    $status = "400 Bad request";
+    $output = "Invalid query: '$s'.\n";
+    goto OUTPUT;
+}
+
+$n = 0;
+my @output;
+while (my $ticket = $tickets->Next) {
+    $n++;
+
+    if ($format eq "i") {
+        $output .= "ticket/" . $ticket->Id . "\n";
+    }
+    elsif ($format eq "s") {
+        $output .= $ticket->Id . ": ". $ticket->Subject . "\n";
+    }
+    else {
+	my $id = $ticket->Id;
+        my $d = $m->comp("$RT::WebPath/REST/1.0/Forms/ticket/default", id => $id, format => $format, fields => \%fields);
+        my ($c, $o, $k, $e) = @$d;
+	push @output, [ $c, $o, $k ];
+    }
+}
+if ($n == 0 && $format ne "i") {
+    $output = "No matching results.\n";
+}
+
+$output = form_compose(\@output) if @output;
+
+OUTPUT:
+</%INIT>
+RT/<% $RT::VERSION %> <% $status %>
+
+<% $output |n %>

@@ -47,7 +47,7 @@ Set($Timezone , 'US/Eastern');
 # {{{ Database Configuration
 
 # Database driver beeing used. Case matters
-# Valid types are "mysql" and "Pg"
+# Valid types are "mysql", "Oracle" and "Pg"
 
 Set($DatabaseType , '@DB_TYPE@');
 
@@ -164,9 +164,9 @@ Set($SenderMustExistInExternalDatabase , undef);
 # and comment mail tracked by RT, unless overridden by a queue-specific
 # address.
 
-Set($CorrespondAddress , 'RT::CorrespondAddress.not.set');
+Set($CorrespondAddress , 'RT_CorrespondAddressNotSet');
 
-Set($CommentAddress , 'RT::CommentAddress.not.set');
+Set($CommentAddress , 'RT_CommentAddressNotSet');
 
 #Sendmail Configuration
 
@@ -268,15 +268,21 @@ Set($WebBaseURL , "http://RT::WebBaseURL.not.configured:80");
 Set($WebURL , $WebBaseURL . $WebPath . "/");
 
 # $WebImagesURL points to the base URL where RT can find its images.
-# If you're running the FastCGI version of the RT web interface,
-# you should make RT's WebRT/html/NoAuth/images directory available on
-# a static web server and supply that URL as $WebImagesURL.
 
 Set($WebImagesURL , $WebURL . "NoAuth/images/");
 
 # $RTLogoURL points to the URL of the RT logo displayed in the web UI
 
 Set($LogoURL , $WebImagesURL . "rt.jpg");
+
+# For message boxes, set the entry box width and what type of wrapping
+# to use.
+#
+# Default width: 72
+Set($MessageBoxWidth , 72);
+
+# Default wrapping: "HARD"  (choices "SOFT", "HARD")
+Set($MessageBoxWrap, "HARD");
 
 # if TrustHTMLAttachments is not defined, we will display them
 # as text. This prevents malicious HTML and javascript from being
@@ -309,6 +315,25 @@ Set($WebExternalAuto , undef);
 # RT_SiteConfig.pm will prevent session corruption.
 
 # Set($WebSessionClass , 'Apache::Session::File');
+
+# $MaxInlineBody is the maximum attachment size that we want to see
+# inline when viewing a transaction. 13456 is a random sane-sounding
+# default.
+
+Set($MaxInlineBody, 13456);
+
+# $MyTicketsLength is the length of the table on the front page.
+# For some people, the default of 10 isn't big enough to get a feel for
+# how much work needs to be done before you get some time off.
+
+Set($MyTicketsLength, 10);
+
+# @MasonParameters is the list of parameters for the constructor of
+# HTML::Mason's Apache or CGI Handler.  This is normally only useful
+# for debugging, eg. profiling individual components with
+#     (preamble => 'my $p = MasonX::Profiler->new($m, $r);');
+
+@MasonParameters = () unless (@MasonParameters);
 
 # }}}
 

@@ -2,11 +2,11 @@ dnl
 dnl Process this file with autoconf to produce a configure script
 dnl
 dnl Embed in generated ./configure script the following CVS info:
-AC_REVISION($Revision: 1.1 $)dnl
+AC_REVISION($Revision: 1.1.1.2 $)dnl
 
 dnl Setup autoconf
 AC_PREREQ(2.53)
-AC_INIT(RT, [3.0.4], [rt-3.0-bugs@fsck.com])
+AC_INIT(RT, [3.0.9], [rt-3.0-bugs@fsck.com])
 AC_CONFIG_SRCDIR([lib/RT.pm.in])
 
 dnl Extract RT version number components
@@ -75,13 +75,20 @@ AC_SUBST(LIBS_GROUP)
 dnl DB_TYPE
 AC_ARG_WITH(db-type,
 	    AC_HELP_STRING([--with-db-type=TYPE],
-	    		   [sort of database RT will use (default: mysql) (mysql and Pg are valid)]), 
+	    		   [sort of database RT will use (default: mysql) (mysql, Pg, Oracle and Informix are valid)]), 
             DB_TYPE=$withval,
             DB_TYPE=mysql)
-if test "$DB_TYPE" != 'mysql' -a "$DB_TYPE" != 'Pg' -a "$DB_TYPE" != 'SQLite'; then
-	AC_MSG_ERROR([Only Pg and mysql are valid db types])
+if test "$DB_TYPE" != 'mysql' -a "$DB_TYPE" != 'Pg' -a "$DB_TYPE" != 'SQLite' -a "$DB_TYPE" != 'Oracle' -a "$DB_TYPE" != 'Informix' ; then
+	AC_MSG_ERROR([Only Oracle, Informix, Pg and mysql are valid db types])
 fi
 AC_SUBST(DB_TYPE)
+
+dnl ORACLE_ENV_PREF
+if test "$DB_TYPE" = 'Oracle'; then
+	test "x$ORACLE_HOME" = 'x' && AC_MSG_ERROR([Please declare the ORACLE_HOME environment variable])
+	ORACLE_ENV_PREF="\$ENV{'ORACLE_HOME'} = '$ORACLE_HOME';"
+fi
+AC_SUBST(ORACLE_ENV_PREF)
 
 dnl DB_HOST
 AC_ARG_WITH(db-host,
@@ -155,6 +162,18 @@ AC_ARG_WITH(web-group,
             WEB_GROUP=www)
 AC_SUBST(WEB_GROUP)
 
+dnl INSTALL AS ME
+my_group=$(groups|cut -f1 -d' ')
+AC_ARG_WITH(my-user-group,
+            AC_HELP_STRING([--with-my-user-group],
+                           [set all users and groups to current user/group]),
+            RTGROUP=$my_group
+            BIN_OWNER=$USER
+            LIBS_OWNER=$USER
+            LIBS_GROUP=$my_group
+            WEB_USER=$USER
+            WEB_GROUP=$my_group)
+
 dnl This section maps the variable names this script 'natively' generates
 dnl to their existing names. They should be removed from here as the .in
 dnl files are changed to use the new names.
@@ -204,6 +223,7 @@ AC_CONFIG_FILES([
  		 bin/rt-commit-handler
  		 bin/rt-crontool
  		 bin/rt-mailgate
+		 bin/rt
  		 bin/webmux.pl]
                 )
 AC_OUTPUT

@@ -327,7 +327,7 @@ sub Load {
         $self->SUPER::LoadById($identifier);
     }
     else {
-        $self->LoadByCol( "Name", $identifier );
+        $self->LoadByCols( Name => $identifier );
     }
 
     return ( $self->Id );
@@ -866,8 +866,11 @@ sub IsWatcher {
 
     my $principal = RT::Principal->new($self->CurrentUser);
     $principal->Load($args{'PrincipalId'});
+    unless ($principal->Id) {
+        return (undef);
+    }
 
-    return ($group->HasMember($principal));
+    return ($group->HasMemberRecursively($principal));
 }
 
 # }}}

@@ -203,13 +203,15 @@ sub Create {
         @_    # get the real argumentlist
     );
 
-
-    $args{'EmailAddress'} = $self->CanonicalizeEmailAddress($args{'EmailAddress'});
-
     #Check the ACL
     unless ( $self->CurrentUser->HasRight(Right => 'AdminUsers', Object => $RT::System) ) {
         return ( 0, $self->loc('No permission to create users') );
     }
+
+    $args{'EmailAddress'} = $self->CanonicalizeEmailAddress($args{'EmailAddress'});
+    # if the user doesn't have a name defined, set it to the email address
+    $args{'Name'} = $args{'EmailAddress'} unless ($args{'Name'});
+
 
 
     # Privileged is no longer a column in users
@@ -234,7 +236,9 @@ sub Create {
 
     #TODO Specify some sensible defaults.
 
-    unless ( defined( $args{'Name'} ) ) {
+    unless ( $args{'Name'} ) {
+	use Data::Dumper;
+	$RT::Logger->crit(Dumper \%args);
         return ( 0, $self->loc("Must specify 'Name' attribute") );
     }
 
@@ -274,6 +278,7 @@ sub Create {
 
     #If the create failed.
     unless ($id) {
+        $RT::Handle->Rollback();
         $RT::Logger->error("Could not create a new user - " .join('-'. %args));
 
         return ( 0, $self->loc('Could not create user') );
@@ -729,7 +734,7 @@ sub ResetPassword {
 
     my $template = RT::Template->new( $self->CurrentUser );
 
-    if ( $self->IsPrivileged ) {
+    if ( $self->Privileged ) {
         $template->LoadGlobalTemplate('RT_PasswordChange_Privileged');
     }
     else {
@@ -929,7 +934,7 @@ sub GenerateRandomPassword {
 
     my $length = $min_length + int( rand( $max_length - $min_length ) );
 
-    my $char = $self->GenerateRandomNextChar( $total_sum, $start_freq );
+    my $char = $self->_GenerateRandomNextChar( $total_sum, $start_freq );
     my @word = ( $char + $a );
     for ( 2 .. $length ) {
         $char =

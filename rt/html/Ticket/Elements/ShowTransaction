@@ -38,8 +38,6 @@
 unless ($Collapsed) {
  $attachments->GotoFirstItem;
  while (my $message=$attachments->Next) {
-     #we don't want to show any empty transactions, unless they have kids
-     next unless ($message->ContentLength || $message->Children->Count);
 
   my ($headers, $quoted);
       if ($ShowHeaders && ($ShowHeaders == $Ticket->Id)) {
@@ -53,11 +51,18 @@ unless ($Collapsed) {
 	   eval {$headers =~ s/^([^:]+)(?=:)/loc($1)/em; } # we eval here to catch errors when 5.6 panics
       }
      # 13456 is a random # of about the biggest size we want to see inline text
-     my $MAX_INLINE_BODY = 13456;
+     # It's here to catch anyone who hasn't updated RT_Config.pm since this
+     # constant was moved out there.
+     my $MAX_INLINE_BODY = $RT::MaxInlineBody || 13456;
      if ($message->ContentType =~ m{^(text/plain|message|text$)}i && 
 				    $message->ContentLength < $MAX_INLINE_BODY ) {
+         eval {
          require Text::Quoted;
-	 $quoted = Text::Quoted::extract($message->Content); 
+	     $quoted = Text::Quoted::extract($message->Content); 
+        }; 
+        if ($@) {
+            $quoted = $message->Content;
+        }
      }
         
 </%PERL>
@@ -69,7 +74,12 @@ unless ($Collapsed) {
 	<PRE>
 <& ShowMessageHeaders, Headers => $headers, Transaction => $Transaction &>
 </PRE>
+% if (!length($quoted) && $message->ContentType =~ m#^text/#) {
+<blockquote><i><&|/l&>Message body not shown because it is too large or is not plain text.</&><br>
+<&|/l&>You can access it with the Download button on the right.</&></i></blockquote>
+% } else {
 <& ShowMessageStanza, Depth => 0, Message => $quoted, Transaction => $Transaction &>
+% }
 </span>
       </TD>
       <TD VALIGN=TOP ALIGN=RIGHT>
@@ -78,7 +88,7 @@ unless ($Collapsed) {
 <BR>
 % }
 <%PERL>
-my $size = $message->ContentLength;
+my $size = $message->ContentLength or next;
 
 if ($size) {
     if ($size > 1024) {
@@ -88,7 +98,7 @@ if ($size) {
 	$size = loc("[_1]b", $size);
     }
 </%PERL>
-<font size=-1><A HREF="<%$RT::WebPath%>/Ticket/Attachment/<%$Transaction->Id%>/<%$message->Id%>/<%$message->Filename%>"><&|/l&>Download</&> <% $message->Filename|| loc('(untitled)') %></a> <% $size %></font>
+<font size=-1><A HREF="<%$AttachPath%>/<%$Transaction->Id%>/<%$message->Id%>/<%$message->Filename | u%>"><&|/l&>Download</&> <% $message->Filename|| loc('(untitled)') %></a> <% $size %></font>
 % }
 </TD>
 </TR>
@@ -104,6 +114,7 @@ $ShowHeaders => 0
 $Collapsed => undef
 $ShowTitleBarCommands => 1
 $RowNum => 1
+$AttachPath => $RT::WebPath."/Ticket/Attachment"
 </%ARGS>
 
 <%INIT>
@@ -147,6 +158,7 @@ if ($Transaction->TimeTaken > 0) {
 	$TimeTaken = $Transaction->TimeTaken." min"
 }
 my $attachments = $Transaction->Attachments;
+$attachments->Columns( qw( Id Filename ContentType Headers Subject Parent ContentEncoding ContentType TransactionId) );
 
 my $titlebar_commands='&nbsp;';
 

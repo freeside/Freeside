@@ -29,6 +29,10 @@ use warnings;
 
 my %FIELDS = %{FIELDS()};
 my %dispatch = %{dispatch()};
+my %can_bundle = %{can_bundle()};
+
+# Lower Case version of FIELDS, for case insensitivity
+my %lcfields = map { ( lc($_) => $_ ) } (keys %FIELDS);
 
 sub _InitSQL {
   my $self = shift;
@@ -119,20 +123,57 @@ my $re_keyword = qr[$RE{delimited}{-delim=>qq{\'\"}}|(?:\{|\}|\w|\.)+];
 my $re_op     = qr[=|!=|>=|<=|>|<|(?i:IS NOT)|(?i:IS)|(?i:NOT LIKE)|(?i:LIKE)]; # long to short
 my $re_paren  = qr'\(|\)';
 
+sub _close_bundle
+{
+  my ($self, @bundle) = @_;
+  return unless @bundle;
+  if (@bundle == 1) {
+    $bundle[0]->{dispatch}->(
+                         $self,
+                         $bundle[0]->{key},
+                         $bundle[0]->{op},
+                         $bundle[0]->{val},
+                         SUBCLAUSE =>  "",
+                         ENTRYAGGREGATOR => $bundle[0]->{ea},
+                         SUBKEY => $bundle[0]->{subkey},
+                        );
+  } else {
+    my @args;
+    for my $chunk (@bundle) {
+      push @args, [
+          $chunk->{key},
+          $chunk->{op},
+          $chunk->{val},
+          SUBCLAUSE =>  "",
+          ENTRYAGGREGATOR => $chunk->{ea},
+          SUBKEY => $chunk->{subkey},
+      ];
+    }
+    $bundle[0]->{dispatch}->(
+        $self, \@args,
+    );
+  }
+}
+
 sub _parser {
   my ($self,$string) = @_;
   my $want = KEYWORD | PAREN;
   my $last = undef;
 
   my $depth = 0;
+  my @bundle;
 
   my ($ea,$key,$op,$value) = ("","","","");
 
+  # order of matches in the RE is important.. op should come early,
+  # because it has spaces in it.  otherwise "NOT LIKE" might be parsed
+  # as a keyword or value.
+
   while ($string =~ /(
                       $re_aggreg
+                      |$re_op
                       |$re_keyword
                       |$re_value
-                      |$re_op
                       |$re_paren
                      )/igx ) {
     my $val = $1;
@@ -156,10 +197,12 @@ sub _parser {
     # Parens are highest priority
     if ($current & PAREN) {
       if ($val eq "(") {
+        $self->_close_bundle(@bundle);  @bundle = ();
         $depth++;
         $self->_OpenParen;
 
       } else {
+        $self->_close_bundle(@bundle);  @bundle = ();
         $depth--;
         $self->_CloseParen;
       }
@@ -204,10 +247,9 @@ sub _parser {
    }
 
       my $class;
-      my ($stdkey) = grep { /^$key$/i } (keys %FIELDS);
-      if ($stdkey && exists $FIELDS{$stdkey}) {
+      if (exists $lcfields{lc $key}) {
+        $key = $lcfields{lc $key};
         $class = $FIELDS{$key}->[0];
-        $key = $stdkey;
       }
    # no longer have a default, since CF's are now a real class, not fallthrough
    # fixme: "default class" is not Generic.
@@ -219,20 +261,37 @@ sub _parser {
       die "No such dispatch method: $class"
         unless exists $dispatch{$class};
       my $sub = $dispatch{$class} || die;;
-      $sub->(
-             $self,
-             $key,
-             $op,
-             $val,
-             SUBCLAUSE =>  "",  # don't need anymore
-             ENTRYAGGREGATOR => $ea || "",
-             SUBKEY => $subkey,
-            );
+      if ($can_bundle{$class} &&
+          (!@bundle ||
+            ($bundle[-1]->{dispatch} == $sub &&
+             $bundle[-1]->{key} eq $key &&
+             $bundle[-1]->{subkey} eq $subkey)))
+      {
+          push @bundle, {
+              dispatch => $sub,
+              key      => $key,
+              op       => $op,
+              val      => $val,
+              ea       => $ea || "",
+              subkey   => $subkey,
+          };
+      } else {
+        $self->_close_bundle(@bundle);  @bundle = ();
+        $sub->(
+               $self,
+               $key,
+               $op,
+               $val,
+               SUBCLAUSE =>  "",  # don't need anymore
+               ENTRYAGGREGATOR => $ea || "",
+               SUBKEY => $subkey,
+              );
+      }
 
       $self->{_sql_looking_at}{lc $key} = 1;
-
+  
       ($ea,$key,$op,$value) = ("","","","");
-
+  
       $want = PAREN | AGGREG;
     } else {
       die "I'm lost";
@@ -240,6 +299,8 @@ sub _parser {
 
     $last = $current;
   } # while
+
+  $self->_close_bundle(@bundle);  @bundle = ();
 
   die "Incomplete query"
     unless (($want | PAREN) || ($want | KEYWORD));
@@ -329,6 +390,10 @@ sub FromSQL {
                          OPERATOR => '=',
                          VALUE => 'ticket');
   }
+
+  # We never ever want to show deleted tickets
+  $self->SUPER::Limit(FIELD => 'Status' , OPERATOR => '!=', VALUE => 'deleted');
+
 
   # set SB's dirty flag
   $self->{'must_redo_search'} = 1;

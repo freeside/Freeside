@@ -1,19 +1,18 @@
 # BEGIN LICENSE BLOCK
 # 
-# Copyright (c) 1996-2002 Jesse Vincent <jesse@bestpractical.com>
+# Copyright (c) 1996-2003 Jesse Vincent <jesse@bestpractical.com>
 # 
 # (Except where explictly superceded by other copyright notices)
 # 
 # This work is made available to you under the terms of Version 2 of
 # the GNU General Public License. A copy of that license should have
 # been provided with this software, but in any event can be snarfed
-# from www.gnu.org
+# from www.gnu.org.
 # 
 # This work is distributed in the hope that it will be useful, but
 # WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 # General Public License for more details.
-# 
 # 
 # Unless otherwise specified, all modifications, corrections or
 # extensions to this work which alter its source code become the
@@ -76,6 +75,20 @@ sub _Init {
 }
 
 # }}}
+
+=head2 PrincipalsAlias
+
+Returns the string that represents this Users object's primary "Principals" alias.
+
+
+=cut
+
+sub PrincipalsAlias {
+    my $self = shift;
+    return($self->{'princalias'});
+
+}
+
 
 # {{{ sub _DoSearch 
 
@@ -233,8 +246,15 @@ sub WhoHaveRight {
                 push @privgroups, $Group->Id();
         }
 
+
+    if (@privgroups) {
         $self->WhoBelongToGroups(Groups => \@privgroups,
                                  IncludeSubgroupMembers => $args{'IncludeSubgroupMembers'});
+    }
+    else {
+	# We don't have any group that matches -- make it impossible.
+	$self->Limit( FIELD => 'Id', VALUE => 'IS', OPERATOR => 'NULL' );
+    }
 }
 
 # }}}

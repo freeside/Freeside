@@ -58,6 +58,7 @@ CREATE TABLE Links (
   
 ) ;
 CREATE UNIQUE INDEX Links1 ON Links (Base, Target, Type) ;
+CREATE INDEX Links4 ON Links(Type,LocalBase);
 
 --- }}}
 
@@ -81,7 +82,7 @@ CREATE TABLE Groups (
   Description varchar(255) NULL  ,
   Domain varchar(64),
   Type varchar(64),
-  Instance varchar(64)
+  Instance integer
   
 ) ;
 
@@ -118,7 +119,7 @@ CREATE TABLE Transactions (
   Field varchar(40) NULL  ,
   OldValue varchar(255) NULL  ,
   NewValue varchar(255) NULL  ,
-  Data varchar(100) NULL  ,
+  Data varchar(255) NULL  ,
 
   Creator integer NULL  ,
   Created DATETIME NULL  
@@ -343,6 +344,9 @@ CREATE TABLE TicketCustomFieldValues (
   
 ) ;
 
+CREATE INDEX TicketCustomFieldValues1 ON TicketCustomFieldValues (CustomField,Ticket,Content); 
+CREATE INDEX TicketCustomFieldValues2 ON TicketCustomFieldValues (CustomField,Ticket); 
+
 --- }}}
 
 --- {{{ CustomFields
@@ -380,5 +384,7 @@ CREATE TABLE CustomFieldValues (
   LastUpdated DATETIME NULL 
   
 ) ;
+
+CREATE INDEX CustomFieldValues1 ON CustomFieldValues (CustomField);
 
 --- }}}
