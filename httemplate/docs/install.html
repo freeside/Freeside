@@ -57,7 +57,12 @@ Install the Freeside distribution:
       <li> with <a href="http://www.postgresql.org/users-lounge/docs/7.1/postgres/user-manag.html#DATABASE-USERS">PostgreSQL</a>:
         <pre>
 $ su postgres
-$ createuser -P freeside</pre>
+$ createuser -P freeside
+Enter password for user "freeside": 
+Enter it again: 
+Shall the new user be allowed to create databases? (y/n) y
+Shall the new user be allowed to create more new users? (y/n) n
+CREATE USER</pre>
       <li> with <a href="http://www.mysql.com/documentation/mysql/bychapter/manual_MySQL_Database_Administration.html#User_Account_Management">MySQL</a>:
         <pre>
 $ mysqladmin -u root password '<i>set_a_root_database_password</i>'

@@ -48,6 +48,10 @@ docs:
 	make ${TEMPLATE}docs
 
 htmlman:
+	[ -e ./httemplate/docs/man ] || mkdir httemplate/docs/man
+	[ -e ./httemplate/docs/man/bin ] || mkdir httemplate/docs/man/bin
+	[ -e ./httemplate/docs/man/FS ] || mkdir httemplate/docs/man/FS
+	[ -e ./httemplate/docs/man/FS/UI ] || mkdir httemplate/docs/man/FS/UI
 	bin/pod2x
 
 upload-docs:
