@@ -10,10 +10,9 @@
     <FORM ACTION="cust_main.cgi" METHOD="post">
       Search for <B>Order taker</B>: 
       <INPUT TYPE="hidden" NAME="otaker_on" VALUE="TRUE">
-      <% my $dbh = dbh;
-         my $sth = $dbh->prepare("SELECT DISTINCT otaker FROM cust_main")
-           or eidiot $dbh->errstr;
-         $sth->execute() or eidiot $sth->errstr;
+      <% my $sth = dbh->prepare("SELECT DISTINCT otaker FROM cust_main")
+           or die dbh->errstr;
+         $sth->execute() or die $sth->errstr;
 #         my @otakers = map { $_->[0] } @{$sth->selectall_arrayref};
       %>
       <SELECT NAME="otaker">

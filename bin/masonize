@@ -6,11 +6,10 @@ foreach $file ( split(/\n/, `find . -depth -print`) ) {
   @file = <F>;
   #print "$file ". scalar(@file). "\n";
   close $file;
-  system("chmod u+w $file");
-  open(W,">$file") or die "can't open $file for writing: $!";
-  select W; $| = 1; select STDOUT;
   $newline = ''; #avoid prepending extraneous newlines
   $all = join('',@file);
+
+  $w = '';
 
   $mode = 'html';
   while ( length($all) ) {
@@ -18,22 +17,27 @@ foreach $file ( split(/\n/, `find . -depth -print`) ) {
     if ( $mode eq 'html' ) {
 
       if ( $all =~ /^(.+?)(<%=?.*)$/s && $1 !~ /<%/s ) {
-        print W $1;
+        $w .= $1;
         $all = $2;
         next;
       } elsif ( $all =~ /^<%=(.*)$/s ) {
-        print W '<%';
+        $w .= '<%';
         $all = $1;
         $mode = 'perlv';
         #die;
         next;
       } elsif ( $all =~ /^<%(.*)$/s ) {
-        print W $newline; $newline = "\n";
+        $w .= $newline; $newline = "\n";
         $all = $1;
         $mode = 'perlc';
+
+        #avoid newline prepend fix from borking indented first <%
+        $w =~ s/\n\s+\z/\n/;
+        $w .= "\n" if $w =~ /.+\z/;
+
         next;
       } elsif ( $all !~ /<%/s ) {
-        print W $all;
+        $w .= $all;
         last;
       } else {
         warn length($all); die;
@@ -43,7 +47,7 @@ foreach $file ( split(/\n/, `find . -depth -print`) ) {
     } elsif ( $mode eq 'perlv' ) {
 
       if ( $all =~ /^(.*?%>)(.*)$/s ) {
-        print W $1;
+        $w .= $1;
         $all=$2;
         $mode = 'html';
         next;
@@ -53,13 +57,13 @@ foreach $file ( split(/\n/, `find . -depth -print`) ) {
     } elsif ( $mode eq 'perlc' ) {
 
       if ( $all =~ /^([^\n]*?)%>(.*)$/s ) {
-        print W "%$1\n";
+        $w .= "%$1\n";
         $all=$2;
         $mode='html';
         next;
       }
       if ( $all =~ /^([^\n]*)\n(.*)$/s ) {
-        print W "%$1\n";
+        $w .= "%$1\n";
         $all=$2;
         next;
       }
@@ -68,5 +72,9 @@ foreach $file ( split(/\n/, `find . -depth -print`) ) {
 
   }
 
+  system("chmod u+w $file");
+  select W; $| = 1; select STDOUT;
+  open(W,">$file") or die "can't open $file for writing: $!";
+  print W $w;
   close W;
 }
