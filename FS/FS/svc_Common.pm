@@ -49,7 +49,9 @@ sub virtual_fields {
 
   if ($self->svcpart) { # Case 1
     $svcpart = $self->svcpart;
-  } elsif ( $self->svcnum ) { #Case 2
+  } elsif ( $self->svcnum
+            && qsearchs('cust_svc',{'svcnum'=>$self->svcnum} )
+          ) { #Case 2
     $svcpart = $self->cust_svc->svcpart;
   } else { # Case 3
     $svcpart = '';
