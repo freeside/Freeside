@@ -533,9 +533,7 @@ sub export_info {
 #}
 
 foreach my $INC ( @INC ) {
-  $INC =~ /^(.*)$/;
-  my $untainted_INC = $1;
-  foreach my $file ( glob("$untainted_INC/FS/part_export/*.pm") ) {
+  foreach my $file ( glob("$INC/FS/part_export/*.pm") ) {
     warn "attempting to load export info from $file\n" if $DEBUG;
     $file =~ /\/(\w+)\.pm$/ or do {
       warn "unrecognized file in $INC/FS/part_export/: $file\n";
