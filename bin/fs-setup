@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: fs-setup,v 1.20 2000-01-28 22:53:33 ivan Exp $
+# $Id: fs-setup,v 1.21 2000-01-30 06:03:26 ivan Exp $
 #
 # ivan@sisd.com 97-nov-8,9
 #
@@ -32,7 +32,10 @@
 # fix radius attributes ivan@sisd.com 98-sep-27
 #
 # $Log: fs-setup,v $
-# Revision 1.20  2000-01-28 22:53:33  ivan
+# Revision 1.21  2000-01-30 06:03:26  ivan
+# postgres 6.5 finally supports decimal(10,2)
+#
+# Revision 1.20  2000/01/28 22:53:33  ivan
 # track full phone number
 #
 # Revision 1.19  1999/07/29 08:50:35  ivan
@@ -131,12 +134,7 @@ my($char_d) = 80; #default maxlength for text fields
 #my(@date_type)  = ( 'timestamp', '', ''     );
 my(@date_type)  = ( 'int', 'NULL', ''     );
 my(@perl_type) = ( 'varchar', 'NULL', 255  ); 
-my(@money_type);
-if (datasrc =~ m/Pg/) { #Pg can't do decimal(10,2)
-  @money_type = ( 'money',   '', '' );
-} else {
-  @money_type = ( 'decimal',   '', '10,2' );
-}
+my @money_type = ( 'decimal',   '', '10,2' );
 
 ###
 # create a dbdef object from the old data structure
