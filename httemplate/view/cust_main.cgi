@@ -849,7 +849,7 @@ sub svc_label_link {
 sub svc_provision_link {
   my ($pkg, $svcpart) = (shift,shift) or return '';
   ( my $svc_nbsp = $svcpart->{svc} ) =~ s/\s+/&nbsp;/g;
-  return qq!<A CLASS="provision" HREF="${p1}/edit/$svcpart->{svcdb}.cgi?! .
+  return qq!<A CLASS="provision" HREF="${p}edit/$svcpart->{svcdb}.cgi?! .
          qq!pkgnum$pkg->{pkgnum}-svcpart$svcpart->{svcpart}">! .
          "Provision&nbsp;$svc_nbsp&nbsp;(".
          ($svcpart->{quantity} - $svcpart->{count}).
