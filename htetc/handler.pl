@@ -62,7 +62,7 @@ sub handler
     { package HTML::Mason::Commands;
       use strict;
       use vars qw( $cgi $p );
-      use CGI;
+      use CGI 2.47;
       #use CGI::Carp qw(fatalsToBrowser);
       use Date::Format;
       use Date::Parse;
