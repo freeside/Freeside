@@ -131,10 +131,10 @@ sub href_customer_tickets {
     '%27%20%20AND%20%28%20Status%20%3D%20%27open%27%20%20OR%20Status%20%3D%20%27new%27%20%20OR%20Status%20%3D%20%27stalled%27%20%29%20'
   ;
 
-  if ( $priority && $field && $priority_field_queue ) {
+  if ( defined($priority) && $field && $priority_field_queue ) {
     $href .= 'AND%20Queue%20%3D%20%27'. $priority_field_queue. '%27%20';
   }
-  if ( $priority && $field ) {
+  if ( defined($priority) && $field ) {
     $href .= '%20AND%20%27CF.'. $field. '%27%20%3D%20%27'. $priority. '%27%20';
   }
 
@@ -142,13 +142,13 @@ sub href_customer_tickets {
            '&OrderBy=id&Page=1'.
            '&Format=%27%20%20%20%3Cb%3E%3Ca%20href%3D%22%2Ffreeside%2Frt%2FTicket%2FDisplay.html%3Fid%3D__id__%22%3E__id__%3C%2Fa%3E%3C%2Fb%3E%2FTITLE%3A%23%27%2C%20%0A%27%3Cb%3E%3Ca%20href%3D%22%2Ffreeside%2Frt%2FTicket%2FDisplay.html%3Fid%3D__id__%22%3E__Subject__%3C%2Fa%3E%3C%2Fb%3E%2FTITLE%3ASubject%27%2C%20%0A%27__Status__%27%2C%20';
 
-  if ( $priority && $field ) {
+  if ( defined($priority) && $field ) {
     $href .= '%0A%27__CustomField.'. $field. '__%2FTITLE%3ASeverity%27%2C%20';
   }
 
   $href .= '%0A%27__QueueName__%27%2C%20%0A%27__OwnerName__%27%2C%20%0A%27__Priority__%27%2C%20%0A%27__NEWLINE__%27%2C%20%0A%27%27%2C%20%0A%27%3Csmall%3E__Requestors__%3C%2Fsmall%3E%27%2C%20%0A%27%3Csmall%3E__CreatedRelative__%3C%2Fsmall%3E%27%2C';
 
-  if ( $priority && $field ) {
+  if ( defined($priority) && $field ) {
     $href .=   '%20%0A%27__-__%27%2C';
   }
 
