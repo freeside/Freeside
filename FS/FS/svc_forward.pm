@@ -91,16 +91,16 @@ the error, otherwise returns false.
 The additional fields pkgnum and svcpart (see L<FS::cust_svc>) should be 
 defined.  An FS::cust_svc record will be created and inserted.
 
-If the configuration values (see L<FS::Conf>) vpopmailmachines exist, then
+If the configuration value (see L<FS::Conf>) vpopmailmachines exists, then
 the command:
 
-  [ -d /home/vpopmail/$vdomain/$source ] || {
-    echo "$destination" >> /home/vpopmail/$vdomain/$source/.$qmail
-    chown $vpopuid:$vpopgid /home/vpopmail/$vdomain/$source/.$qmail
+  [ -d $vpopdir/$domain/$source ] || {
+    echo "$destination" >> $vpopdir/$domain/$username/.$qmail
+    chown $vpopuid:$vpopgid $vpopdir/$domain/$username/.$qmail
   }
 
-is executed on each vpopmailmachine via ssh (see L<dot-qmail/"EXTENSION ADDRESSES">).
-This behaviour can be surpressed by setting $FS::svc_forward::nossh_hack true.
+is executed on each vpopmailmachine via ssh (see the vpopmail documentation).
+This behaviour can be supressed by setting $FS::svc_forward::nossh_hack true.
 
 =cut
 
@@ -115,31 +115,27 @@ sub insert {
   local $SIG{TSTP} = 'IGNORE';
   local $SIG{PIPE} = 'IGNORE';
 
-  $error=$self->check;
+  $error = $self->check;
   return $error if $error;
 
   $error = $self->SUPER::insert;
   return $error if $error;
 
   my $svc_acct = qsearchs( 'svc_acct', { 'svcnum' => $self->srcsvc } );
-  my $svc_domain = qsearchs( 'svc_domain', { 'svcnum' => $svc_acct->domsvc } );
-  my $source = $svc_acct->username . $svc_domain->domain;
+  my $username = $svc_acct->username;
+  my $domain = $svc_acct->domain;
   my $destination;
-  if ($self->dstdvc) {
-    my $svc_acct = qsearchs( 'svc_acct', { 'svcnum' => $self->dstsvc } );
-    my $svc_domain = qsearchs( 'svc_domain', { 'svcnum' => $svc_acct->domsvc } );
-    $destination = $svc_acct->username . $svc_domain->domain;
+  if ($self->dstsvc) {
+    my $dst_svc_acct = qsearchs( 'svc_acct', { 'svcnum' => $self->dstsvc } );
+    $destination = $dst_svc_acct->email;
   } else {
     $destination = $self->dst;
   }
     
-  my $vdomain = $svc_acct->domain;
-
   foreach my $vpopmailmachine ( @vpopmailmachines ) {
-    my ($machine, $vpopdir, $vpopuid, $vpopgid) = split (/\s+/, $vpopmailmachine);
-
-    ssh("root\@$machine","[ -d $vpopdir/$vdomain/$source ] || { echo $destination >> $vpopdir/$vdomain/$source/.qmail; chown $vpopuid:$vpopgid $vpopdir/$vdomain/$source/.qmail; }")  
-      if ( ! $nossh_hack && $machine);
+    my($machine, $vpopdir, $vpopuid, $vpopgid) = split(/\s+/, $vpopmailmachine);
+    ssh("root\@$machine","[ -d $vpopdir/$domain/$username ] || { echo \"$destination\" >> $vpopdir/$domain/$username/.qmail; chown $vpopuid:$vpopgid $vpopdir/$domain/$username/.qmail; }") 
+      unless $nossh_hack;
   }
 
   ''; #no error
@@ -158,14 +154,80 @@ The corresponding FS::cust_svc record will be deleted as well.
 Replaces OLD_RECORD with this one in the database.  If there is an error,
 returns the error, otherwise returns false.
 
+If srcsvc changes, and the configuration value vpopmailmachines exists, then
+the command:
+
+  rm $vpopdir/$domain/$username/.qmail
+
+is executed on each vpopmailmachine via ssh.  This behaviour can be supressed
+by setting $FS::svc_forward_nossh_hack true.
+
+If dstsvc changes (or dstsvc is 0 and dst changes), and the configuration value
+vpopmailmachines exists, then the command:
+
+  [ -d $vpopdir/$domain/$source ] || {
+    echo "$destination" >> $vpopdir/$domain/$username/.$qmail
+    chown $vpopuid:$vpopgid $vpopdir/$domain/$username/.$qmail
+  }
+
+is executed on each vpopmailmachine via ssh.  This behaviour can be supressed
+by setting $FS::svc_forward_nossh_hack true.
+
 =cut
 
 sub replace {
   my ( $new, $old ) = ( shift, shift );
-  my $error;
 
- $new->SUPER::replace($old);
+  if ( $new->srcsvc != $old->srcsvc
+       && ( $new->dstsvc != $old->dstsvc
+            || ! $new->dstsvc && $new->dst ne $old->dst 
+          )
+      ) {
+    return "Can't change both source and destination of a mail forward!"
+  }
 
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $error = $new->SUPER::replace($old);
+  return $error if $error;
+
+  if ( $new->srcsvc != $old->srcsvc ) {
+    my $old_svc_acct = qsearchs( 'svc_acct', { 'svcnum' => $old->srcsvc } );
+    my $old_username = $old_svc_acct->username;
+    my $old_domain = $old_svc_acct->domain;
+    foreach my $vpopmailmachine ( @vpopmailmachines ) {
+      my($machine, $vpopdir, $vpopuid, $vpopgid) =
+        split(/\s+/, $vpopmailmachine);
+      ssh("root\@$machine","rm $vpopdir/$old_domain/$old_username/.qmail")
+        unless $nossh_hack;
+    }
+  }
+
+  #false laziness with stuff in insert, should subroutine
+  my $svc_acct = qsearchs( 'svc_acct', { 'svcnum' => $new->srcsvc } );
+  my $username = $svc_acct->username;
+  my $domain = $svc_acct->domain;
+  my $destination;
+  if ($new->dstsvc) {
+    my $dst_svc_acct = qsearchs( 'svc_acct', { 'svcnum' => $new->dstsvc } );
+    $destination = $dst_svc_acct->email;
+  } else {
+    $destination = $new->dst;
+  }
+  
+  foreach my $vpopmailmachine ( @vpopmailmachines ) {
+    my($machine, $vpopdir, $vpopuid, $vpopgid) = split(/\s+/, $vpopmailmachine);
+    ssh("root\@$machine","[ -d $vpopdir/$domain/$username ] || { echo \"$destination\" >> $vpopdir/$domain/$username/.qmail; chown $vpopuid:$vpopgid $vpopdir/$domain/$username/.qmail; }") 
+      unless $nossh_hack;
+  }
+  #end subroutinable bits
+  }
+  '';
 }
 
 =item suspend
@@ -198,38 +260,36 @@ Sets any fixed values; see L<FS::part_svc>.
 
 sub check {
   my $self = shift;
-  my $error;
 
   my $x = $self->setfixed;
   return $x unless ref($x);
   my $part_svc = $x;
 
-  my($recref) = $self->hashref;
+  my $error = $self->ut_numbern('svcnum')
+              || $self->ut_number('srcsvc')
+              || $self->ut_numbern('dstsvc')
+  ;
+  return $error if $error;
 
-  $recref->{srcsvc} =~ /^(\d+)$/ or return "Illegal srcsvc";
-  $recref->{srcsvc} = $1;
-  my($svc_acct);
-  return "Unknown srcsvc" unless
-    $svc_acct=qsearchs('svc_acct',{'svcnum'=> $recref->{srcsvc} } );
+  return "Unknown srcsvc"
+    unless qsearchs('svc_acct', { 'svcnum' => $self->srcsvc } );
 
-  return "Illegal use of dstsvc and dst" if
-    ($recref->{dstsvc} && $recref->{dst});
+  return "Both dstsvc and dst were defined; one one can be specified"
+    if $self->dstsvc && $self->dst;
 
-  return "Illegal use of dstsvc and dst" if
-    (! $recref->{dstsvc} && ! $recref->{dst});
+  return "one of dstsvc or dst is required"
+    unless $self->dstsvc || $self->dst;
 
-  $recref->{dstsvc} =~ /^(\d+)$/ or return "Illegal dstsvc";
-  $recref->{dstsvc} = $1;
+  return "Unknown dstsvc"
+    unless qsearchs('svc_acct', { 'svcnum' => $self->dstsvc } )
+           || ! $self->dstsvc;
 
-  if ($recref->{dstsvc}) {
-    my($svc_acct);
-    return "Unknown dstsvc" unless
-      my $svc_domain=qsearchs('svc_acct',{'svcnum'=> $recref->{dstsvc} } );
-  }
-
-  if ($recref->{dst}) {
-    $recref->{dst} =~ /^([\w\.\-]+)\@(([\w\.\-]+\.)+\w+)$/
-       or return "Illegal dst";
+  if ( $self->dst ) {
+    $self->dst =~ /^([\w\.\-]+)\@(([\w\-]+\.)+\w+)$/
+       or return "Illegal dst: ". $self->dst;
+    $self->dst("$1\@$2");
+  } else {
+    $self->dst('');
   }
 
   ''; #no error
@@ -239,13 +299,11 @@ sub check {
 
 =head1 VERSION
 
-$Id: svc_forward.pm,v 1.4 2001-08-20 09:41:52 ivan Exp $
+$Id: svc_forward.pm,v 1.5 2001-08-20 11:04:38 ivan Exp $
 
 =head1 BUGS
 
 The remote commands should be configurable.
-
-The $recref stuff in sub check should be cleaned up.
 
 =head1 SEE ALSO
 

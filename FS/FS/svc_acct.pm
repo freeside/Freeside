@@ -434,7 +434,9 @@ sub check {
   return $x unless ref($x);
   my $part_svc = $x;
 
-  my $error = $self->ut_number('domsvc');
+  my $error = $self->ut_numbern('svcnum')
+              || $self->ut_number('domsvc')
+  ;
   return $error if $error;
 
   my $ulen = $usernamemax || $self->dbdef_table->column('username')->length;
@@ -598,6 +600,19 @@ sub radius_check {
   } grep { /^rc_/ && $self->getfield($_) } fields( $self->table );
 }
 
+=item domain
+
+Returns the domain associated with this account.
+
+-cut
+
+sub domain {
+  my $self = shift;
+  my $svc_domain = qsearchs( 'svc_domain', { 'svcnum' => $self->domsvc } )
+    or die "svc_acct.domsvc ". $self->domsvc." not found in svc_domain.svcnum";
+  $svc_domain->domain;
+}
+
 =item email
 
 Returns an email address associated with the account.
@@ -606,22 +621,14 @@ Returns an email address associated with the account.
 
 sub email {
   my $self = shift;
-  my $domain;
-  my $svc_domain = qsearchs( 'svc_domain', { 'svcnum' => $self->domsvc } );
-  if ($svc_domain) {
-    $domain=$svc_domain->domain;
-  }else{
-    warn "couldn't find svc_acct.domsvc " . $self->domsvc . "!";
-    $domain="unknown";
-  }
-  return $self->username . "@" . $domain;
+  $self->username. '@'. $self->domain;
 }
 
 =back
 
 =head1 VERSION
 
-$Id: svc_acct.pm,v 1.25 2001-08-20 09:41:52 ivan Exp $
+$Id: svc_acct.pm,v 1.26 2001-08-20 11:04:38 ivan Exp $
 
 =head1 BUGS
 

@@ -340,7 +340,9 @@ sub check {
   return $x unless ref($x);
   my $part_svc = $x;
 
-  my $error = $self->ut_numbern('catchall');
+  my $error = $self->ut_numbern('svcnum')
+              || $self->ut_numbern('catchall')
+  ;
   return $error if $error;
 
   #hmm
@@ -531,7 +533,7 @@ sub submit_internic {
 
 =head1 VERSION
 
-$Id: svc_domain.pm,v 1.16 2001-08-20 09:41:52 ivan Exp $
+$Id: svc_domain.pm,v 1.17 2001-08-20 11:04:38 ivan Exp $
 
 =head1 BUGS
 
