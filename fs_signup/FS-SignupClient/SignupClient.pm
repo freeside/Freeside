@@ -7,7 +7,7 @@ use Socket;
 use FileHandle;
 use IO::Handle;
 
-$VERSION = '0.01';
+$VERSION = '0.02';
 
 @ISA = qw( Exporter );
 @EXPORT_OK = qw( signup_info new_customer );
@@ -35,29 +35,30 @@ FS::SignupClient - Freeside signup client API
   ( $locales, $packages, $pops ) = signup_info;
 
   $error = new_customer ( {
-    'first'          => $first,
-    'last'           => $last,
-    'ss'             => $ss,
-    'comapny'        => $company,
-    'address1'       => $address1,
-    'address2'       => $address2,
-    'city'           => $city,
-    'county'         => $county,
-    'state'          => $state,
-    'zip'            => $zip,
-    'country'        => $country,
-    'daytime'        => $daytime,
-    'night'          => $night,
-    'fax'            => $fax,
-    'payby'          => $payby,
-    'payinfo'        => $payinfo,
-    'paydate'        => $paydate,
-    'payname'        => $payname,
-    'invoicing_list' => $invoicing_list,
-    'pkgpart'        => $pkgpart,
-    'username'       => $username,
-    '_password'       => $password,
-    'popnum'         => $popnum,
+    'first'            => $first,
+    'last'             => $last,
+    'ss'               => $ss,
+    'comapny'          => $company,
+    'address1'         => $address1,
+    'address2'         => $address2,
+    'city'             => $city,
+    'county'           => $county,
+    'state'            => $state,
+    'zip'              => $zip,
+    'country'          => $country,
+    'daytime'          => $daytime,
+    'night'            => $night,
+    'fax'              => $fax,
+    'payby'            => $payby,
+    'payinfo'          => $payinfo,
+    'paydate'          => $paydate,
+    'payname'          => $payname,
+    'invoicing_list'   => $invoicing_list,
+    'referral_custnum' => $referral_custnum,
+    'pkgpart'          => $pkgpart,
+    'username'         => $username,
+    '_password'        => $password,
+    'popnum'           => $popnum,
   } );
 
 =head1 DESCRIPTION
@@ -173,6 +174,7 @@ a paramater with the following keys:
   paydate
   payname
   invoicing_list
+  referral_custnum
   pkgpart
   username
   _password
@@ -185,6 +187,10 @@ Returns a scalar error message, or the empty string for success.
 sub new_customer {
   my $hashref = shift;
 
+  #things that aren't necessary in base class, but are for signup server
+  return "Empty password" unless $hashref->{'_password'};
+  return "No POP selected" unless $hashref->{'popnum'};
+
   socket(SOCK, PF_UNIX, SOCK_STREAM, 0) or die "socket: $!";
   connect(SOCK, sockaddr_un($fs_signupd_socket)) or die "connect: $!";
   print SOCK "new_customer\n";
@@ -192,7 +198,7 @@ sub new_customer {
   print SOCK join("\n", map { $hashref->{$_} } qw(
     first last ss company address1 address2 city county state zip country
     daytime night fax payby payinfo paydate payname invoicing_list
-    pkgpart username _password popnum
+    referral_custnum pkgpart username _password popnum
   ) ), "\n";
   SOCK->flush;
 
@@ -201,10 +207,6 @@ sub new_customer {
 }
 
 =back
-
-=head1 VERSION
-
-$Id: SignupClient.pm,v 1.3 2000-02-02 07:44:00 ivan Exp $
 
 =head1 BUGS
 

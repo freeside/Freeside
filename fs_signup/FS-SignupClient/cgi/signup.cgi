@@ -1,12 +1,13 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: signup.cgi,v 1.9 2000-12-03 14:29:15 ivan Exp $
+# $Id: signup.cgi,v 1.10 2001-08-28 16:58:08 ivan Exp $
 
 use strict;
 use vars qw( @payby $cgi $locales $packages $pops $r $error
              $last $first $ss $company $address1 $address2 $city $state $county
              $country $zip $daytime $night $fax $invoicing_list $payby $payinfo
-             $paydate $payname $pkgpart $username $password $popnum
+             $paydate $payname $referral_custnum
+             $pkgpart $username $password $popnum
              $ieak_file $ieak_template $cck_file $cck_template
              $ac $exch $loc
            );
@@ -15,7 +16,7 @@ use subs qw( print_form print_okay expselect );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use HTTP::Headers::UserAgent 2.00;
-use FS::SignupClient qw( signup_info new_customer );
+use FS::SignupClient 0.02 qw( signup_info new_customer );
 use Text::Template;
 
 #acceptable payment methods
@@ -75,29 +76,30 @@ if ( defined $cgi->param('magic') ) {
     }
 
     ( $error = new_customer ( {
-      'last'           => $last            = $cgi->param('last'),
-      'first'          => $first           = $cgi->param('first'),
-      'ss'             => $ss              = $cgi->param('ss'),
-      'company'        => $company         = $cgi->param('company'),
-      'address1'       => $address1        = $cgi->param('address1'),
-      'address2'       => $address2        = $cgi->param('address2'),
-      'city'           => $city            = $cgi->param('city'),
-      'county'         => $county,
-      'state'          => $state,
-      'zip'            => $zip             = $cgi->param('zip'),
-      'country'        => $country,
-      'daytime'        => $daytime         = $cgi->param('daytime'),
-      'night'          => $night           = $cgi->param('night'),
-      'fax'            => $fax             = $cgi->param('fax'),
-      'payby'          => $payby,
-      'payinfo'        => $payinfo,
-      'paydate'        => $paydate,
-      'payname'        => $payname,
-      'invoicing_list' => $invoicing_list,
-      'pkgpart'        => $pkgpart         = $cgi->param('pkgpart'),
-      'username'       => $username        = $cgi->param('username'),
-      '_password'      => $password        = $cgi->param('_password'),
-      'popnum'         => $popnum          = $cgi->param('popnum'),
+      'last'             => $last             = $cgi->param('last'),
+      'first'            => $first            = $cgi->param('first'),
+      'ss'               => $ss               = $cgi->param('ss'),
+      'company'          => $company          = $cgi->param('company'),
+      'address1'         => $address1         = $cgi->param('address1'),
+      'address2'         => $address2         = $cgi->param('address2'),
+      'city'             => $city             = $cgi->param('city'),
+      'county'           => $county,
+      'state'            => $state,
+      'zip'              => $zip              = $cgi->param('zip'),
+      'country'          => $country,
+      'daytime'          => $daytime          = $cgi->param('daytime'),
+      'night'            => $night            = $cgi->param('night'),
+      'fax'              => $fax              = $cgi->param('fax'),
+      'payby'            => $payby,
+      'payinfo'          => $payinfo,
+      'paydate'          => $paydate,
+      'payname'          => $payname,
+      'invoicing_list'   => $invoicing_list,
+      'referral_custnum' => $referral_custnum = $cgi->param('ref'),
+      'pkgpart'          => $pkgpart          = $cgi->param('pkgpart'),
+      'username'         => $username         = $cgi->param('username'),
+      '_password'        => $password         = $cgi->param('_password'),
+      'popnum'           => $popnum           = $cgi->param('popnum'),
     } ) )
       ? print_form()
       : print_okay();
@@ -129,13 +131,14 @@ if ( defined $cgi->param('magic') ) {
   $username = '';
   $password = '';
   $popnum = '';
-
+  $referral_custnum = $cgi->param('ref') || '';
   print_form;
 }
 
 sub print_form {
 
   my $r = qq!<font color="#ff0000">*</font>!;
+  $cgi->delete('ref');
   my $self_url = $cgi->self_url;
 
   print $cgi->header( '-expires' => 'now' ), <<END;
@@ -148,6 +151,7 @@ END
   print <<END;
 <FORM ACTION="$self_url" METHOD=POST>
 <INPUT TYPE="hidden" NAME="magic" VALUE="process">
+<INPUT TYPE="hidden" NAME="ref" VALUE="$referral_custnum">
 Contact Information
 <TABLE BGCOLOR="#c0c0c0" BORDER=0 CELLSPACING=0 WIDTH="100%">
 <TR>

@@ -18,6 +18,7 @@ Then:
 <ul>
   <li>Add the user `freeside' to the the external machine.
   <li>Copy or symlink fs_signup/FS-SignupClient/cgi/signup.cgi into the web server's document space.
+  <li>When linking to signup.cgi, you can include a referring custnum in the URL as follows: <code>http://public.web.server/path/signup.cgi?ref=1542</code>
   <li>Enable CGI execution for files with the `.cgi' extension.  (with <a href="http://www.apache.org/docs/mod/mod_mime.html#addhandler">Apache</a>)
   <li>Create the /usr/local/freeside directory on the external machine (owned by the freeside user).
   <li>touch /usr/local/freeside/fs_signupd_socket; chown freeside /usr/local/freeside/fs_signupd_socket; chmod 600 /usr/local/freeside/fs_signupd_socket

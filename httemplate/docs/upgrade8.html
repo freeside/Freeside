@@ -138,6 +138,7 @@ CREATE INDEX cust_main2 ON cust_main ( ship_company );
 <pre>
 ALTER TABLE cust_main ADD COLUMN comments varchar NULL;
 </pre>
+  <li>If you are using the signup server, reinstall it according to the <a href="signup.html">instructions</a>.  The 1.3.x signup server is not compatible with 1.4.x.
   <li>Run bin/dbdef-create.
   <li>create a service based on svc_forward
   <li>Run bin/fs-migrate-svc_acct_sm

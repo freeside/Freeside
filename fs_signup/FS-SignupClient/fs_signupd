@@ -116,16 +116,16 @@ for ( ; $paddr = accept(Client,Server); close Client) {
     my(
       $first, $last, $ss, $company, $address1, $address2, $city, $county,
       $state, $zip, $country, $daytime, $night, $fax, $payby, $payinfo,
-      $paydate, $payname, $invoicing_list, $pkgpart, $username, $password,
-      $popnum,
-    ) = map { scalar(<Client>) } ( 1 .. 23 );
+      $paydate, $payname, $invoicing_list, $referral_custnum,
+      $pkgpart, $username, $password, $popnum,
+    ) = map { scalar(<Client>) } ( 1 .. 24 );
 
     warn "[fs_signupd] sending customer data to remote server...\n" if $Debug;
     print 
       $first, $last, $ss, $company, $address1, $address2, $city, $county,
       $state, $zip, $country, $daytime, $night, $fax, $payby, $payinfo,
-      $paydate, $payname, $invoicing_list, $pkgpart, $username, $password,
-      $popnum,
+      $paydate, $payname, $invoicing_list, $referral_custnum,
+      $pkgpart, $username, $password, $popnum,
     ;
 
     warn "[fs_signupd] reading error from remote server...\n" if $Debug;

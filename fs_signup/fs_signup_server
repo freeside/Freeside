@@ -88,9 +88,9 @@ while (1) {
     chop( my(
       $first, $last, $ss, $company, $address1, $address2, $city, $county,
       $state, $zip, $country, $daytime, $night, $fax, $payby, $payinfo,
-      $paydate, $payname, $invoicing_list, $pkgpart, $username, $password,
-      $popnum,
-    ) = map { scalar(<$reader>) } ( 1 .. 23 ) );
+      $paydate, $payname, $invoicing_list, $referral_custnum,
+      $pkgpart, $username, $password, $popnum,
+    ) = map { scalar(<$reader>) } ( 1 .. 24 ) );
 
     warn "[fs_signup_server] Processing signup...\n" if $Debug;
 
@@ -99,27 +99,28 @@ while (1) {
     #shares some stuff with htdocs/edit/process/cust_main.cgi... take any
     # common that are still here and library them.
     my $cust_main = new FS::cust_main ( {
-      'custnum'  => '',
-      'agentnum' => $agentnum,
-      'refnum'   => $refnum,
-      'last'     => $last,
-      'first'    => $first,
-      'ss'       => $ss,
-      'company'  => $company,
-      'address1' => $address1,
-      'address2' => $address2,
-      'city'     => $city,
-      'county'   => $county,
-      'state'    => $state,
-      'zip'      => $zip,
-      'country'  => $country,
-      'daytime'  => $daytime,
-      'night'    => $night,
-      'fax'      => $fax,
-      'payby'    => $payby,
-      'payinfo'  => $payinfo,
-      'paydate'  => $paydate,
-      'payname'  => $payname,
+      'custnum'          => '',
+      'agentnum'         => $agentnum,
+      'refnum'           => $refnum,
+      'last'             => $last,
+      'first'            => $first,
+      'ss'               => $ss,
+      'company'          => $company,
+      'address1'         => $address1,
+      'address2'         => $address2,
+      'city'             => $city,
+      'county'           => $county,
+      'state'            => $state,
+      'zip'              => $zip,
+      'country'          => $country,
+      'daytime'          => $daytime,
+      'night'            => $night,
+      'fax'              => $fax,
+      'payby'            => $payby,
+      'payinfo'          => $payinfo,
+      'paydate'          => $paydate,
+      'payname'          => $payname,
+      'referral_custnum' => $referral_custnum,
     } );
 
     $error = "Illegal payment type" unless grep { $_ eq $payby } @payby;

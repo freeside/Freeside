@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: cust_main.cgi,v 1.3 2001-08-28 14:34:14 ivan Exp $ -->
+#<!-- $Id: cust_main.cgi,v 1.4 2001-08-28 16:58:08 ivan Exp $ -->
 
 use strict;
 #use vars qw( $conf %ncancelled_pkgs %all_pkgs $cgi @cust_main $sortby );
@@ -81,7 +81,7 @@ if ( scalar(@cust_main) == 1 && ! $cgi->param('referral_custnum') ) {
 END
     print ' <SELECT NAME="referral_depth" SIZE="1" onChange="changed(this)">';
     my $max = 8; #config file
-    $cgi->param('referral_depth') =~ /^(\d+)$/
+    $cgi->param('referral_depth') =~ /^(\d*)$/ 
       or eidiot "Illegal referral_depth";
     my $referral_depth = $1;
 
