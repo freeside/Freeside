@@ -2,6 +2,7 @@ package FS::h_Common;
 
 use strict;
 use FS::Record qw(dbdef);
+use Carp qw(confess);
 
 =head1 NAME
 
@@ -41,6 +42,10 @@ sub sql_h_search {
   my $table = $self->table;
   my $pkey = dbdef->table($table)->primary_key
     or die "can't (yet) search history table $table without a primary key";
+
+  unless ($end) {
+    confess 'Called sql_h_search without END_TIMESTAMP';
+  }
 
   my $notcancelled = '';
   if ( scalar(@_) && $_[0] ) {
