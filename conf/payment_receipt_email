@@ -1,0 +1,26 @@
+
+{ $date }
+
+Dear { $name },
+
+This message is to inform you that your payment of ${ $amount } has been
+received.
+
+Payment ID: { $paynum }
+Date:       { $date }
+Amount:     { $paid } 
+Type:       { $payby } # { $payinfo }
+
+{
+  if ( $balance > 0 ) {
+    $OUT .= "Your current balance is now \$$balance.\n\n";
+  } elsif ( $balance < 0 ) {
+    $OUT .= 'You have a credit balance of $'. sprintf("%.2f",0-$balance).
+              ".\n".
+            "Future charges will be deducted from this balance before billing ".
+              "you again.\n\n";
+            
+  }
+}
+Thank you for your business.
+

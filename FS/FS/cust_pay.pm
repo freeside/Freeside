@@ -4,6 +4,7 @@ use strict;
 use vars qw( @ISA $conf $unsuspendauto );
 use Date::Format;
 use Business::CreditCard;
+use Text::Template;
 use FS::UID qw( dbh );
 use FS::Record qw( dbh qsearch qsearchs dbh );
 use FS::Misc qw(send_email);
@@ -112,7 +113,7 @@ sub insert {
     $self->custnum($cust_bill->custnum );
   }
 
-  my $cust_main = qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
+  my $cust_main = $self->cust_main;
   my $old_balance = $cust_main->balance;
 
   my $error = $self->check;
@@ -162,63 +163,43 @@ sub insert {
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
-  '';
+  #my $cust_main = $self->cust_main;
+  if ( $conf->exists('payment_receipt_email')
+       && grep { $_ ne 'POST' } $cust_main->invoicing_list
+  ) {
 
-}
-
-sub upgrade_replace { #1.3.x->1.4.x
-  my $self = shift;
-
-  local $SIG{HUP} = 'IGNORE';
-  local $SIG{INT} = 'IGNORE';
-  local $SIG{QUIT} = 'IGNORE';
-  local $SIG{TERM} = 'IGNORE';
-  local $SIG{TSTP} = 'IGNORE';
-  local $SIG{PIPE} = 'IGNORE';
-
-  my $oldAutoCommit = $FS::UID::AutoCommit;
-  local $FS::UID::AutoCommit = 0;
-  my $dbh = dbh;
-
-  my $error = $self->check;
-  return $error if $error;
-
-  my %new = $self->hash;
-  my $new = FS::cust_pay->new(\%new);
-
-  if ( $self->invnum ) {
-    my $cust_bill_pay = new FS::cust_bill_pay {
-      'invnum' => $self->invnum,
-      'paynum' => $self->paynum,
-      'amount' => $self->paid,
-      '_date'  => $self->_date,
+    my $receipt_template = new Text::Template (
+      TYPE   => 'ARRAY',
+      SOURCE => [ map "$_\n", $conf->config('payment_receipt_email') ],
+    ) or do {
+      warn "can't create payment receipt template: $Text::Template::ERROR";
+      return '';
     };
-    $error = $cust_bill_pay->insert;
-    if ( $error =~ 
-           /total cust_bill_pay.amount and cust_credit_bill.amount .* for invnum .* greater than cust_bill.charged/ ) {
-      #warn $error;
-      my $cust_bill = qsearchs( 'cust_bill', { 'invnum' => $self->invnum } );
-      $new->custnum($cust_bill->custnum);
-    } elsif ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return $error;
-    } else {
-      $new->custnum($cust_bill_pay->cust_bill->custnum);
+
+    my @invoicing_list = grep { $_ ne 'POST' } $cust_main->invoicing_list;
+
+    my $error = send_email(
+      'from'    => $conf->config('invoice_from'), #??? well as good as any
+      'to'      => \@invoicing_list,
+      'subject' => 'Payment receipt',
+      'body'    => $receipt_template->fill_in( HASH => {
+                     'date'    => str2time("%a %B %o, %Y", $self->_date),
+                     'paynum'  => $self->paynum,
+                     'paid'    => $self->paid,
+                     'payby'   => ucfirst(lc($self->payby)),
+                     'payinfo' => ( $self->payby eq 'CARD'
+                                      ? $self->payinfo_masked
+                                      : $self->payinfo        ),
+                     'balance' => $cust_main->balance,
+                   } ),
+    );
+    if ( $error ) {
+      warn "can't send payment receipt: $error";
     }
-  } else {
-    die;
-  }
 
-  $error = $new->SUPER::replace($self);
-  if ( $error ) {
-    $dbh->rollback if $oldAutoCommit;
-    return $error;
   }
-
-  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
   '';
-
 
 }
 
@@ -260,7 +241,7 @@ sub delete {
 
   if ( $conf->config('deletepayments') ne '' ) {
 
-    my $cust_main = qsearchs('cust_main',{ 'custnum' => $self->custnum });
+    my $cust_main = $self->cust_main;
 
     my $error = send_email(
       'from'    => $conf->config('invoice_from'), #??? well as good as any

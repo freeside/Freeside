@@ -542,9 +542,16 @@ httemplate/docs/config.html
 
   {
     'key'         => 'invoice_send_receipts',
-    'section'     => 'billing',
-    'description' => 'Send receipts for payments and credits.',
+    'section'     => 'deprecated',q
+    'description' => '<b>DEPRECATED</b>, this used to send an invoice copy on payments and credits.  See the payment_receipt_email and  instead.',
     'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'payment_receipt_email',
+    'section'     => 'billing',
+    'description' => 'Template file for payment receipts.',
+    'type'        => 'textarea',
   },
 
   {

@@ -73,16 +73,6 @@ sub table { 'cust_pay_refund'; }
 Adds this cust_pay_refund to the database.  If there is an error, returns the
 error, otherwise returns false.
 
-=cut
-
-sub insert {
-  my $self = shift;
-  my $error = $self->SUPER::insert(@_);
-  return $error if $error;
-
-  '';
-}
-
 =item delete
 
 =cut

@@ -70,21 +70,6 @@ sub table { 'cust_bill_pay'; }
 Adds this record to the database.  If there is an error, returns the error,
 otherwise returns false.
 
-=cut
-
-sub insert {
-  my $self = shift;
-  my $error = $self->SUPER::insert;
-  return $error if $error;
-
- if ( $conf->exists('invoice_send_receipts') ) {
-    my $send_error = $self->cust_bill->send;
-    warn "Error sending receipt: $send_error\n" if $send_error;
-  }
-
-  '';
-}
-
 =item delete
 
 Deletes this payment application, unless the closed flag for the parent payment
