@@ -263,7 +263,7 @@ sub check {
   $self->zip =~ /^\s*(\w[\w\-\s]{3,8}\w)\s*$/ or return "Illegal zip";
   $self->zip($1);
 
-  $self->payby =~ /^(CARD|BILL|COMP)$/ or return "Illegal payby";
+  $self->payby =~ /^(CARD|BILL|COMP)$/ or return "Illegal payby: ". $self->payby;
   $self->payby($1);
 
   if ( $self->payby eq 'CARD' ) {
@@ -880,7 +880,7 @@ sub check_invoicing_list {
 
 =head1 VERSION
 
-$Id: cust_main.pm,v 1.16 1999-04-07 14:32:19 ivan Exp $
+$Id: cust_main.pm,v 1.17 1999-04-10 05:27:38 ivan Exp $
 
 =head1 BUGS
 
@@ -936,7 +936,10 @@ enable cybercash, cybercash v3 support, don't need to import
 FS::UID::{datasrc,checkruid} ivan@sisd.com 98-sep-19-21
 
 $Log: cust_main.pm,v $
-Revision 1.16  1999-04-07 14:32:19  ivan
+Revision 1.17  1999-04-10 05:27:38  ivan
+display an illegal payby, to assist importing
+
+Revision 1.16  1999/04/07 14:32:19  ivan
 more &invoicing_list logic to skip searches when there is no custnum
 
 Revision 1.15  1999/04/07 13:41:54  ivan
