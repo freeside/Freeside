@@ -2,7 +2,7 @@ package FS::part_svc;
 
 use strict;
 use vars qw( @ISA );
-use FS::Record qw( qsearchs fields dbh );
+use FS::Record qw( qsearch qsearchs fields dbh );
 use FS::part_svc_column;
 
 @ISA = qw(FS::Record);
@@ -295,7 +295,7 @@ sub all_part_svc_column {
 
 =head1 VERSION
 
-$Id: part_svc.pm,v 1.5 2001-09-11 23:44:01 ivan Exp $
+$Id: part_svc.pm,v 1.6 2001-09-12 15:45:01 ivan Exp $
 
 =head1 BUGS
 
