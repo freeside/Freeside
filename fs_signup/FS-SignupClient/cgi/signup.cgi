@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: signup.cgi,v 1.49 2003-12-10 23:53:34 ivan Exp $
+# $Id: signup.cgi,v 1.50 2004-01-04 03:52:54 ivan Exp $
 
 use strict;
 use vars qw( @payby $cgi $locales $packages
@@ -11,7 +11,7 @@ use vars qw( @payby $cgi $locales $packages
              $paycvv $paydate $payname $referral_custnum $init_popstate
              $pkgpart $username $password $password2 $sec_phrase $popnum
              $agentnum $refnum
-             $ieak_file $ieak_template $cck_file $cck_template
+             $ieak_file $ieak_template
              $signup_html $signup_template
              $success_html $success_template
              $decline_html $decline_template
@@ -26,7 +26,7 @@ use CGI;
 #use CGI::Carp qw(fatalsToBrowser);
 use Text::Template;
 use Business::CreditCard;
-use HTTP::Headers::UserAgent 2.00;
+use HTTP::BrowserDetect;
 use FS::SignupClient 0.03 qw( signup_info new_customer );
 
 #acceptable payment methods
@@ -37,7 +37,6 @@ use FS::SignupClient 0.03 qw( signup_info new_customer );
 @payby = qw( CARD PREPAY );
 
 $ieak_file = '/usr/local/freeside/ieak.template';
-$cck_file = '/usr/local/freeside/cck.template';
 $signup_html = -e 'signup.html'
                  ? 'signup.html'
                  : '/usr/local/freeside/signup.html';
@@ -60,17 +59,6 @@ if ( -e $ieak_file ) {
     or die $Text::Template::ERROR;
 } else {
   $ieak_template = '';
-}
-
-if ( -e $cck_file ) {
-  my $cck_txt = Text::Template::_load_text($cck_file)
-    or die $Text::Template::ERROR;
-  $cck_txt =~ /^(.*)$/s; #untaint the template source - it's trusted
-  $cck_txt = $1;
-  $cck_template = new Text::Template ( TYPE => 'STRING', SOURCE => $cck_txt )
-    or die $Text::Template::ERROR;
-} else {
-  $cck_template = '';
 }
 
 $agentnum = '';
@@ -339,7 +327,7 @@ sub print_decline {
 }
 
 sub print_okay {
-  my $user_agent = new HTTP::Headers::UserAgent $ENV{HTTP_USER_AGENT};
+  my $user_agent = new HTTP::BrowserDetect $ENV{HTTP_USER_AGENT};
 
   $cgi->param('username') =~ /^(.+)$/
     or die "fatal: invalid username got past FS::SignupClient::new_customer";
@@ -362,27 +350,10 @@ sub print_okay {
   #global for template
   $pkg = ( grep { $_->{'pkgpart'} eq $pkgpart } @$packages )[0]->{'pkg'};
 
-  if ( $ieak_template
-       && $user_agent->platform eq 'ia32'
-       && $user_agent->os =~ /^win/
-       && ($user_agent->browser)[0] eq 'IE'
-     )
-  { #send an IEAK config
+  if ( $ieak_template && $user_agent->windows && $user_agent->ie ) {
+    #send an IEAK config
     print $cgi->header('application/x-Internet-signup'),
           $ieak_template->fill_in();
-  } elsif ( $cck_template
-            && $user_agent->platform eq 'ia32'
-            && $user_agent->os =~ /^win/
-            && ($user_agent->browser)[0] eq 'Netscape'
-          )
-  { #send a Netscape config
-    my $cck_data = $cck_template->fill_in();
-    print $cgi->header('application/x-netscape-autoconfigure-dialer-v2'),
-          map {
-            m/(.*)\s+(.*)$/;
-            pack("N", length($1)). $1. pack("N", length($2)). $2;
-          } split(/\n/, $cck_data);
-
   } else { #send a simple confirmation
     print $cgi->header( '-expires' => 'now' ),
           $success_template->fill_in();
