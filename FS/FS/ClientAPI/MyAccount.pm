@@ -136,7 +136,7 @@ sub customer_info {
 
     my $conf = new FS::Conf;
     $return{small_custview} =
-      small_custview( $cust_main, $conf->config('defaultcountry') );
+      small_custview( $cust_main, $conf->config('countrydefault') );
 
     $return{name} = $cust_main->first. ' '. $cust_main->get('last');
 
@@ -221,7 +221,7 @@ sub payment_info {
   my $conf = new FS::Conf;
   my %states = map { $_->state => 1 }
                  qsearch('cust_main_county', {
-                   'country' => $conf->config('defaultcountry') || 'US'
+                   'country' => $conf->config('countrydefault') || 'US'
                  } );
 
   use vars qw($payment_info); #cache for performance
@@ -474,7 +474,7 @@ sub list_pkgs {
                         } $cust_main->ncancelled_pkgs
                   ],
     'small_custview' =>
-      small_custview( $cust_main, $conf->config('defaultcountry') ),
+      small_custview( $cust_main, $conf->config('countrydefault') ),
   };
 
 }
@@ -717,7 +717,7 @@ sub part_svc_info {
     'acstate'         => '',
 
     'small_custview' =>
-      small_custview( $cust_main, $conf->config('defaultcountry') ),
+      small_custview( $cust_main, $conf->config('countrydefault') ),
 
   };
 
@@ -747,7 +747,7 @@ sub unprovision_svc {
   return { 'svc'   => $cust_svc->part_svc->svc,
            'error' => $cust_svc->cancel,
            'small_custview' =>
-             small_custview( $cust_main, $conf->config('defaultcountry') ),
+             small_custview( $cust_main, $conf->config('countrydefault') ),
          };
 
 }

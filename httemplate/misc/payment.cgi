@@ -22,7 +22,7 @@
    my $conf = new FS::Conf;
    my %states = map { $_->state => 1 }
                   qsearch('cust_main_county', {
-                    'country' => $conf->config('defaultcountry') || 'US'
+                    'country' => $conf->config('countrydefault') || 'US'
                   } );
    my @states = sort { $a cmp $b } keys %states;
 
