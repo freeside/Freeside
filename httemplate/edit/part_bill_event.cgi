@@ -1,11 +1,11 @@
-<!-- $Id: part_bill_event.cgi,v 1.2 2002-01-30 14:18:08 ivan Exp $ -->
+<!-- $Id: part_bill_event.cgi,v 1.3 2002-01-30 18:22:54 ivan Exp $ -->
 
 <%
 
-if ( $cgi->param('eventnum') && $cgi->param('eventnum') =~ /^(\d+)$/ ) {
-  $cgi->param('eventnum', $1);
+if ( $cgi->param('eventpart') && $cgi->param('eventpart') =~ /^(\d+)$/ ) {
+  $cgi->param('eventpart', $1);
 } else {
-  $cgi->param('eventnum', '');
+  $cgi->param('eventpart', '');
 }
 
 my ($query) = $cgi->keywords;
@@ -33,8 +33,9 @@ print qq!<FONT SIZE="+1" COLOR="#ff0000">Error: !, $cgi->param('error'),
       "</FONT>"
   if $cgi->param('error');
 
-print '<FORM ACTION="', popurl(1), 'process/part_bill_event.cgi" METHOD=POST>';
-
+print '<FORM ACTION="', popurl(1), 'process/part_bill_event.cgi" METHOD=POST>'.
+      '<INPUT TYPE="hidden" NAME="eventpart" VALUE="'.
+      $part_bill_event->eventpart  .'">';
 print "Invoice Event #", $hashref->{eventpart} ? $hashref->{eventpart} : "(NEW)";
 
 print ntable("#cccccc",2), <<END;
@@ -50,7 +51,7 @@ for (qw(CARD BILL COMP)) {
   }
 }
 
-my $days = $hashref->{seconds}/3600;
+my $days = $hashref->{seconds}/86400;
 
 print <<END;
 </SELECT></TD></TR>
@@ -74,8 +75,9 @@ tie my %events, 'Tie::IxHash',
   'fee' => {
     'name'   => 'Late fee',
     'code'   => '$cust_main->charge( %%%charge%%%, \'%%%reason%%%\' );',
-    'html'   => 'Amount <INPUT TYPE="text" SIZE="7" NAME="charge"><BR>'.
-              'Reason <INPUT TYPE="text" NAME="reason">',
+    'html'   => 
+      'Amount <INPUT TYPE="text" SIZE="7" NAME="charge" VALUE="%%%charge%%%">'.
+      '<BR>Reason <INPUT TYPE="text" NAME="reason" VALUE="%%%reason%%%">',
     'weight' => 10,
   },
   'suspend' => {
@@ -101,29 +103,42 @@ tie my %events, 'Tie::IxHash',
     'weight' => 30
   },
 
-  'Generate invoices' => {
+  'bill' => {
+    'name' => 'Generate invoices',
     'code' => '$cust_main->bill();',
-    'pad'  => 40,
+    'weight'  => 40,
   },
 
-  'Apply unapplied payments and credits' => {
+  'apply' => {
+    'name' => 'Apply unapplied payments and credits',
     'code' => '$cust_main->apply_payments; $cust_main->apply_credits;',
-    'pad'  => 50,
+    'weight'  => 50,
   },
 
-  'Collect on invoices' => {
+  'collect' => {
+    'name' => 'Collect on invoices',
     'code' => '$cust_main->collect();',
-    'pad'  => 60,
+    'weight'  => 60,
   },
 
 ;
 
 foreach my $event ( keys %events ) {
+  my %plandata = map { /^(\w+) (.*)$/; ($1, $2); }
+                   split(/\n/, $part_bill_event->plandata);
+  my $html = $events{$event}{html};
+  while ( $html =~ /%%%(\w+)%%%/ ) {
+    my $field = $1;
+    $html =~ s/%%%$field%%%/$plandata{$field}/;
+  }
+
   print ntable( "#cccccc", 2).
-        qq!<TR><TD><INPUT TYPE="radio" NAME="eventcode" VALUE="!.
-        $events{$event}{weight}. ":".
-        encode_entities($events{$event}{code}). qq!">$event</TD>!;
-  print '<TD>'. $events{$event}{html}. '</TD>' if exists $events{$event}{html};
+        qq!<TR><TD><INPUT TYPE="radio" NAME="plan_weight_eventcode" !;
+  print "CHECKED " if $event eq $part_bill_event->plan;
+  print qq!VALUE="!.  $event. ":". $events{$event}{weight}. ":".
+        encode_entities($events{$event}{code}).
+        qq!">$events{$event}{name}</TD>!;
+  print '<TD>'. $html. '</TD>' if $html;
   print qq!</TR>!;
   print '</TABLE>';
 }

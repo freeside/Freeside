@@ -1,4 +1,4 @@
-<!-- $Id: part_bill_event.cgi,v 1.2 2002-01-30 14:18:08 ivan Exp $ -->
+<!-- $Id: part_bill_event.cgi,v 1.3 2002-01-30 18:22:54 ivan Exp $ -->
 <% 
 
 my %search;
@@ -27,6 +27,8 @@ my $total = scalar(@part_bill_event);
     <TH COLSPAN=<%= $cgi->param('showdisabled') ? 2 : 3 %>>Event</TH>
     <TH>Payby</TH>
     <TH>After</TH>
+    <TH>Action</TH>
+    <TH>Options</TH>
     <TH>Code</TH>
   </TR>
 
@@ -38,6 +40,8 @@ my $total = scalar(@part_bill_event);
      my $url = "${p}edit/part_bill_event.cgi?". $part_bill_event->eventpart;
      use Time::Duration;
      my $delay = duration_exact($part_bill_event->seconds);
+     my $plandata = $part_bill_event->plandata;
+     $plandata =~ s/\n/<BR>/go;
 %>
   <TR>
     <TD><A HREF="<%= $url %>">
@@ -53,12 +57,16 @@ my $total = scalar(@part_bill_event);
     <TD>
       <%= $delay %></TD>
     <TD>
-      <%= $part_bill_event->eventcode %></TD>
+      <%= $part_bill_event->plan %></TD>
+    <TD>
+      <%= $plandata %></TD>
+    <TD><FONT SIZE="-1">
+      <%= $part_bill_event->eventcode %></FONT></TD>
   </TR>
 <% } %>
 
   <TR>
-    <TD COLSPAN=6><A HREF="<%= $p %>edit/part_bill_event.cgi"><I>Add a new billing event</I></A></TD>
+    <TD COLSPAN=8><A HREF="<%= $p %>edit/part_bill_event.cgi"><I>Add a new billing event</I></A></TD>
   </TR>
 </TABLE>
 </BODY>
