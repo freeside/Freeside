@@ -9,14 +9,17 @@ Configuration file layout has changed in 1.2.x.
 in this file contains a username and filename, separated by whitespace.  Note
 that these are not local usernames - they are passed from Apache (you _did_
 setup <a href="http://www.apache.org/docs/misc/FAQ.html#user-authentication">
-user authetication</a>, correct?).  The default path for the filename is
+user authetication</a>, correct?).  Filenames are located in 
 `/usr/local/etc/freeside/'.  The specified filename is parsed exactly
 the same as the pre-1.2.x `secrets' file:
-  <li>Three lines: Database engine datasource (for example, `DBI:mysql:freeside' or `DBI:Pg:dbname=freeside'), username, and password.  This file should not be world readable.
+  <li>Three lines: Database engine datasource (for example,
+  `DBI:mysql:freeside' or `DBI:Pg:dbname=freeside'), username, and password.
+  This file should not be world readable.  See the DBI manpage and the manpage
+  for your DBD for the exact syntax.
 </ul>
 All further configuration files and directories are located in
-`/usr/local/freeside/conf.<i>datasource</i>', for example, 
-`/usr/local/freeside/conf.DBI:Pg:dbname=freeside'
+`/usr/local/etc/freeside/conf.<i>datasource</i>', for example, 
+`/usr/local/etc/freeside/conf.DBI:Pg:dbname=freeside'
 <ul>
   <li>address - Your company name and address, four lines.
   <li>bsdshellmachines - Your BSD flavored shell (and mail) machines, one per line.  This enables export of `/etc/passwd' and `/etc/master.passwd'.
