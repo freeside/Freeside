@@ -1,5 +1,4 @@
 #!/usr/bin/perl -Tw
-# $Id: passwd.import,v 1.9 2004-12-24 23:27:34 ivan Exp $
 
 use strict;
 use vars qw(%part_svc);
