@@ -74,6 +74,8 @@ sub table { 'cust_credit_bill'; }
 Adds this cust_credit_bill to the database ("Posts" all or part of a credit).
 If there is an error, returns the error, otherwise returns false.
 
+=cut
+
 sub insert {
   my $self = shift;
   my $error = $self->SUPER::insert(@_);
