@@ -32,11 +32,16 @@ sub _export_insert {
     return $error if $error;
   }
 
-  $self->infostreet_queue( $svc_acct->svcnum,
-    'setContactField', $accountID, 'email', $cust_main->invoicing_list )
+  my @emails = grep { $_ ne 'POST' } $cust_main->invoicing_list;
+  if ( @emails ) {
+    my $error = $self->infostreet_queue( $svc_acct->svcnum,
+      'setContactField', $accountID, 'email', $emails[0] );
+    return $error if $error;
+  }
+
   #this one is kinda noment-specific
-  || $self->infostreet_queue( $svc_acct->svcnum,
-         'setContactField', $accountID, 'title', $cust_main->agent->agent );
+  $self->infostreet_queue( $svc_acct->svcnum,
+    'setContactField', $accountID, 'title', $cust_main->agent->agent );
 
 }
 
