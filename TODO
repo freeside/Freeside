@@ -1,13 +1,17 @@
-$Id: TODO,v 1.18 1998-12-30 23:03:19 ivan Exp $
+$Id: TODO,v 1.19 1999-01-18 23:05:00 ivan Exp $
 
 If you are interested in helping with any of these, please join the mailing
 list (send a blank message to ivan-freeside-subscribe@sisd.com) to avoid 
 duplication of effort.
 
--- 1.1.x --
+-- before 1.2b1 --
 
-check all .pm's for numeric comparisons done as `eq' - works fine now because
-only used with integers that aren't space-padded.
+Lay out the forms a bit better.
+
+view/cust_main.cgi should show country
+
+add doc on mod_perl: upgrade to current CGI.pm
+doc Apache::AuthDBI as well
 
 FS::cust_pkg _require_'s FS::$svc, but this won't work with %FS::UID::callback
 loading of configuration.  (pry need same idea, but will run immediately if
@@ -15,41 +19,9 @@ context allows).  Looks like error is masked by 'use FS::cust_svc' which in
 turn 'use's FS::{svc_acct, svc_acct_sm, svc_domain}' which is now explicit
 w/comments in source
 
-int'l stuff in web interface (not on david's time)
-
-admin web interface for titles (Dr., Mrs.) and default in fs-setup
-(not on david's time)
-
-test and document libapache-dbi-logger (woo!)
-
-remove whois_hack set to 1 for svc_domain.pm?  add all known registries and
-whois accordingly.
-
-get rid of all relative URL's (have to make them on the fly) - see doc for
-->redirect in CGI.pm
-
-radius logfile parsing and perl expression check.
-
-faq
-
-(test cust_main.pm with cybercash v2 and v3, especially with the callback
- stuff)
-
-Fix in cust_bill BUGS: 
-There is an off-by-one error in print_text which causes a visual error (Page 1
-of 2 printed on some single-page invoices).
-
-FIX It doesn't properly inherit/override FS::Record yet, so no more replace vs
-rep silliness!
-
-fields should be a method against a FS::Record or derived object, as well as
-being something you can call as FS::Record::fields('tablename').  Might
-even be able to handle both in the same routine (that would be neato).
-
-Override FS::Record new, add, rep and del (create, insert, replace and
-delete) in all derived classes.
-IE create, insert, delete and replace from derived classes should override new, 
-add, del and rep (respectively) from FS::Record.  Depriciate old names.
+libwww regression test - since it will create sample data, can also use this
+for the web demo
+make fs-setup option to add sample data so you can click on "New Customer" right away?  so people understand what this stuff is?
 
 Allow a cancelled/suspended/active status from packages to bubble up to
 the customer lists.  Put active, then suspended, then cancelled accounts.
@@ -61,6 +33,56 @@ on username or domain name, etc.
 
 You can't delete the stuff under administration yet.  Add this,
 _including_ making sure the thing you are deleting is not in use!
+
+(Test this)
+one-time/per-customer/? changes in rates and descriptions ('remembered
+invoices'): implement by creating a new package on the fly... but it isn't 
+associated with any agent types so it won't show up for other customers to buy.
+(but also... make sure they go away when the customer does! - need this? :
+ one-off package edits! : need a cust_pkgs or cust_part_pkgs or something table,
+ with custnum and partpkg (like type_pkgs)
+
+update site_perl/table_template* (pry out of date)
+
+-- before or after ---
+
+svc_domain.pm mail sending uses Date::Format which doesn't seem to pick up 
+correct timezone.
+
+view/svc_domain.cgi needs to know the domain might be unaudited (cosmetic)
+
+remove whois_hack set to 1 for svc_domain.pm?  add all known registries and
+whois accordingly.
+.us domains and others!
+site_perl/svc_domain.cgi (hmm... or maybe should have a button?  or maybe svc_domain.pm should handle this) should set $whois_hack for non-internic domains, so you can add them...
+
+(test cust_main.pm with cybercash v2 and v3, especially with the callback
+ stuff AND with mod_perl w/cybercash v2 kludge in package main)
+(callback stuff should be eliminated by now)
+
+-- after --
+
+faq
+
+cust_bill.pm uses '==' comparison on dates because they're currently ints
+
+config file for allowed card types
+
+write instructions for adding new services w/svc_Common.pm.  Get rid of all
+places where svc_* tables are hardcoded (rename svc_acct_pop to part_pop so
+we can do that)
+
+test and document libapache-dbi-logger (woo!)
+
+radius logfile parsing and perl expression check.
+
+Fix in cust_bill BUGS: 
+There is an off-by-one error in print_text which causes a visual error (Page 1
+of 2 printed on some single-page invoices).
+
+fields should be a method against a FS::Record or derived object, as well as
+being something you can call as FS::Record::fields('tablename').  Might
+even be able to handle both in the same routine (that would be neato).
 
 Immediate removal of incorrectly entered check payments (can't take too
 long to do this, or accounting is fubared).
@@ -85,13 +107,12 @@ name or first+last from cust_main.
 move all phone number logic out of Freeside - let HylaFAX or whatever
 handle it.
 
-soundex searches for customer name and company?  where are free soundex tools? (standard Text::Soundex duh)
+soundex searches for customer name and company?  where are free soundex tools? (standard Text::Soundex duh) - I could have sworn I saw Text::Soundex on CPAN?!
 
-should be able to link on (username, domain name, some field in email alias) instead of svcnum only. (username done, what else?)
+should be able to link on some field in email alias (right now you can link
+on username or domain with a fallback to svcnum)
 
-(done but clean up) change svc_domain.pm mail sending from a pipe to "/usr/lib/sendmail" to Mail::Mailer or Net::SMTP or something.  also is the complete text of the registration agreement needed in there (it used to be)?
-
-generalize and make configurable new invoice printing scheme in FS::Bill::collect (past due)
+generalize and make configurable new invoice printing scheme in FS::cust_main::collect (past due)
 
 deleting an svc_domain should delete all associated svc_acct_sm records.
 same with a svc_acct.
@@ -105,34 +126,18 @@ expire cron job
 ...
 Allow for a future setup date on accounts.
 
-one-time/per-customer/? changes in rates and descriptions ('remembered
-invoices'): implement by creating a new package on the fly... but it isn't 
-associated with any agent types so it won't show up for other customers to buy.
-
-if CGI::Base will not have redirect fixed (cgifix.html), should migrate to
-CGI.pm insetead?  It is >1 year newer.
-
-library repetitve stuff from Bill.pm Invoice.pm and friends (calculating
-previous balances etc etc)
-
-
 sub AUTOLOAD in FS::Record should warn? die? if used with a non-existant column
 name?
 
 edit (not just import, export and allow default/fixed) arbitrary radius stuff
 in svc_acct
-
 edit/svc_acct.cgi and edit/process/svc_acct.cgi should deal with arbitrary radius stuff
 
 radius import should take DEFAULT entry and put it in /var/spool/freeside/conf/radius-default ; svc_acct.export should use it (and doc)
 
-FS::Invoice and FS::Bill should merge with the classes they're derived from
-
 in UI, s/State/State\/Provence/go and s/County/County\/Locality/go
 
-.us domains and others!
-
-what else (besides l10n) for i18n?
+what else (besides l10n) for i18n? (money!)
 
 audit htdocs/* for things that should be libraried and things that should be
 new methods on the objects (need to do this before implementing a new UI)
@@ -142,10 +147,7 @@ some places we die() where we should &FS::CGI::idiot (and perhaps vice-versa).
 Decide based on whether or not the "error" should show up in logs.
 
 all .cgi's should use standard header/footer and idiot() subroutines.  maybe HTML:: perl modules
-for HTML creation.  CGI.pm instead.
-
-library the conf reading stuff; bin/svc_acct.export version with missing-filename checking is good
-library conf stuff -> check all the conf stuff to make sure they close filehandles.
+for HTML creation.  Maybe Embperl or something along those lines.  ?
 
 When running bin/bill, Fix this (Annoying but harmless):
 Use of uninitialized value at /usr/local/lib/site_perl/FS/cust_pkg.pm line 99, <ADDRESS> chunk 4.
@@ -161,48 +163,8 @@ should FS::Record use Tie::Hash?  That would be very clean, but where do we
 store the other information?  Maybe you could ask any FS::Record object for a
 tied hash?
 
-change all htdocs/edit/process/* loops to look like: (library this sort of thing!!!!)
-
-my($new) = create FS::svc_acct_sm ( {
-  map {
-    ($_, scalar($req->param($_)));
-  } qw(svcnum pkgnum svcpart domuser domuid domsvc)
-} );
-
-to avoid form errors causing too much silliness
-
-add this code to all svc_*.pm (already in acct and acct_sm and domain): (library!)
-
-  #get part_svc
-  my($svcpart);
-  my($svcnum)=$self->getfield('svcnum');
-  if ($svcnum) {
-    my($cust_svc)=qsearchs('cust_svc',{'svcnum'=>$svcnum});
-    return "Unknown svcnum" unless $cust_svc; 
-    $svcpart=$cust_svc->svcpart;
-  } else {
-    $svcpart=$self->getfield('svcpart');
-  }
-  my($part_svc)=qsearchs('part_svc',{'svcpart'=>$svcpart});
-  return "Unkonwn svcpart" unless $part_svc;
-
-  #set fixed fields from part_svc
-  my($field);
-  foreach $field ( fields('svc_acct') ) {
-    if ( $part_svc->getfield('svc_acct__'. $field. '_flag') eq 'F' ) {
-      $self->setfield($field,$part_svc->getfield('svc_acct__'. $field) );
-    }
-  }
-
 change all file access from regular open(FILE,) stuff to OO, because of 
 problems scoping and passing filehandles like that.
-
-svc_domain.pm mail sending uses Date::Format which doesn't seem to pick up 
-correct timezone.
-
-view/svc_domain.cgi needs to know the domain might be unaudited (cosmetic)
-
---- 1.1.x or 1.2 or later
 
 the web interface should create a new object and use it instead of a blank
 form for new records.  the create method of svc_ objects should set defaults
@@ -227,8 +189,6 @@ will need to cancel the old and create a new like when we move services
 between packages). 
 
 Auto-increment expired cards one year, and try again?
-
-Lay out the forms a bit better.
 
 More non-US stuff - zip codes, country codes, foreign currencies, etc.
 
@@ -256,7 +216,6 @@ Add more registries (not just InterNIC's com org net edu)
 
 Nice postscript paper invoices, rather than current ASCII invoices.
 
-
 think about race-condititions in FS::Record and derived ->check ->insert
 and so on, uid and username checks in svc_acct, etc.
 
@@ -278,13 +237,13 @@ write a generic batch senders and batch parsers.
 
 need a way to override svc_acct export on a per-machine basis; just use config files based on machine name i suppose; document that. (no, import desync_hosts
 type stuff from cerkit)
+...
+add a table with column of export services (passwd, shadow, master.passwd, .qmail file update, dns update, etc.) and rows machine groups and whether or not to export that (and any necessary parameters).  wasn't matt (vunderkid, not matt@michweb) working on this?  find him?  each machine goes in a group of its own as well as a group based on function.  add a table with only svcpart and machine group.  now, when you import from each machine, it can get its own accounts with one svcpart and universal accounts with another svcpart.  (though that does make the username duplicate checking more interesting)
 
 you should be able to get column types as a method against an FS::Record object
 as well as dbdef->table($table)->column($column)->type
 
 move to perl module for fuzzy and soundex searching.
-
-make fs-setup option to add sample data so you can click on "New Customer" right away?  so people understand what this stuff is?
 
 package view needs to list extraneous services; we need to prevent the
 creation of them so this never happens (and mark it as such in the source)
@@ -304,11 +263,6 @@ something to automate making a release and updating the web demo
 
 export a debian-style (also redhat and?) /etc/group file aswell!
 
-seems to be an off-by-one error in the ascii invoice formatting which is saying
-"1 of 2" pages when there is only one.
-
-site_perl/svc_domain.cgi (hmm... or maybe should have a button?  or maybe svc_domain.pm should handle this) should set $whois_hack for non-internic domains, so you can add them...
-
 svc_acct_sm.import qmail import should pull in recipientmap people too.
 
 .pm's like svc_acct.pm which need to do time-consuming things like ssh remotely
@@ -323,12 +277,7 @@ additional interfaces (perltk?  java?)
 
 Put the GPL notice in all files.
 
--- 1.2 or later --
-
 integrate w/IDEA's signup server
-
-one-off package edits! : need a cust_pkgs or cust_part_pkgs or something table,
-with custnum and partpkg (like type_pkgs)
 
 $cust_bill->owed database field to be eliminated, replaced by a method call
 that calculates on the fly.  make sure to grep for ->(get|set)field('owed') 
@@ -385,8 +334,6 @@ edit/svc_wo.cgi
 edit/process/svc_wo.cgi
 Call tracking and trouble tickets.
 
-use mod_perl and Apache::AuthDBI instead of mod_auth_mysql when we do local 
-users
 More accoutability for complimentary accounts: approval, expiration, term
 (no more than x months in advance) and notification.
 Flag particular users (or all users, for that matter) as having their
@@ -397,14 +344,11 @@ Better Freeside-level configurable access, for those ISP's who have
 employees they can't trust.  Right now you're "stuck" with setting up
 .htaccess stuff yourself.  This should really just be integrated. 
 
-update site_perl/table_template* (pry out of date)
-
-/var/spool/freeside/conf (and whatever else /var/spool/freeside we can)
-in database (except secrets), then web interface, 
-make /var/spool/freeside a configurable directory (probably as part of 
-some automated installation process?)
-
-add a table with column of export services (passwd, shadow, master.passwd, .qmail file update, dns update, etc.) and rows machine groups and whether or not to export that (and any necessary parameters).  wasn't matt (vunderkid, not matt@michweb) working on this?  find him?  each machine goes in a group of its own as well as a group based on function.  add a table with only svcpart and machine group.  now, when you import from each machine, it can get its own accounts with one svcpart and universal accounts with another svcpart.  (though that does make the username duplicate checking more interesting)
+configuration/setup should get web interface
+...
+/usr/local/etc/freeside should be configurable
+...
+(probably as part of some automated installation process?)
 
 password and slipip stuff in svc_acct.pm store need to be split into two fields or something, so the silliness in svc_acct.pm and svc_acct.export with looking at the data to decide what to do with it can be fixed (1.2)
 
