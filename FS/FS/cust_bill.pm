@@ -1032,9 +1032,9 @@ sub print_text {
   or die "cannot load config file $templatefile";
   $invoice_lines = 0;
   my $wasfunc = 0;
-  foreach ( grep /invoice_lines\(\d+\)/, @invoice_template ) { #kludgy
-    /invoice_lines\((\d+)\)/;
-    $invoice_lines += $1;
+  foreach ( grep /invoice_lines\(\d*\)/, @invoice_template ) { #kludgy
+    /invoice_lines\((\d*)\)/;
+    $invoice_lines += $1 || scalar(@buf);
     $wasfunc=1;
   }
   die "no invoice_lines() functions in template?" unless $wasfunc;
@@ -1119,7 +1119,7 @@ sub print_text {
 
 =head1 VERSION
 
-$Id: cust_bill.pm,v 1.56 2002-12-04 12:31:49 ivan Exp $
+$Id: cust_bill.pm,v 1.57 2002-12-17 21:31:20 ivan Exp $
 
 =head1 BUGS
 
