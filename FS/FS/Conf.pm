@@ -1080,6 +1080,22 @@ httemplate/docs/config.html
     'type'        => 'textarea',
   },
 
+  {
+    'key'         => 'cvv-save',
+    'section'     => 'billing',
+    'description' => 'Save CVV2 information after the initial transaction for the selected credit card types.  Enabling this option may be in violation of your merchant agreement(s), so please check them carefully before enabling this option for any credit card types.',
+    'type'        => 'selectmultiple',
+    'select_enum' => [ "VISA card",
+                       "MasterCard",
+                       "Discover card",
+                       "American Express card",
+                       "Diner's Club/Carte Blanche",
+                       "enRoute",
+                       "JCB",
+                       "BankCard",
+                     ],
+  },
+
 );
 
 1;
