@@ -801,7 +801,7 @@ httemplate/docs/config.html
 
   {
     'key'         => 'username_policy',
-    'section'     => '',
+    'section'     => 'deprecated',
     'description' => 'This file controls the mechanism for preventing duplicate usernames in passwd/radius files exported from svc_accts.  This should be one of \'prepend domsvc\' \'append domsvc\' \'append domain\' or \'append @domain\'',
     'type'        => 'select',
     'select_enum' => [ 'prepend domsvc', 'append domsvc', 'append domain', 'append @domain' ],
