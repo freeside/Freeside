@@ -17,6 +17,8 @@ MASONDATA = /usr/local/etc/freeside/masondata
 FREESIDE_DOCUMENT_ROOT = /var/www/freeside
 #freebsd
 #FREESIDE_DOCUMENT_ROOT = /usr/local/www/data/freeside
+#openbsd
+#FREESIDE_DOCUMENT_ROOT = /var/www/htdocs/freeside
 
 #deb, others?
 INIT_FILE = /etc/init.d/freeside
@@ -27,12 +29,14 @@ INIT_FILE = /etc/init.d/freeside
 HTTPD_RESTART = /etc/init.d/apache restart
 #freebsd
 #HTTPD_RESTART = /usr/local/etc/rc.d/apache.sh stop; sleep 1; /usr/local/etc/rc.d/apache.sh start
+#openbsd
+#HTTPD_RESTART = kill -TERM `cat /var/www/logs/httpd.pid`; sleep 1; /usr/sbin/httpd -u -DSSL
 
 FREESIDE_RESTART = ${INIT_FILE} restart
 
 #deb, others?
 INSTALLGROUP = root
-#freebsd
+#freebsd,openbsd
 #INSTALLGROUP = wheel
 
 #edit the stuff below to have the daemons start
@@ -58,8 +62,8 @@ SELFSERVICE_MACHINE = localhost
 #not changable yet
 FREESIDE_CONF = /usr/local/etc/freeside
 
-VERSION=1.5.0pre3
-TAG=freeside_1_5_0pre3
+VERSION=1.5.0pre4
+TAG=freeside_1_5_0pre4
 
 help:
 	@echo "supported targets: aspdocs masondocs alldocs docs install-docs"
