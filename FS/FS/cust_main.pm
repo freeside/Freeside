@@ -1556,6 +1556,10 @@ sub realtime_bop {
     ( $content{account_number}, $content{routing_code} ) =
       split('@', $self->payinfo);
     $content{bank_name} = $self->payname;
+    $content{account_type} = 'CHECKING';
+    $content{account_name} = $payname;
+    $content{customer_org} = $self->company ? 'B' : 'I';
+    $content{customer_ssn} = $self->ss;
   } elsif ( $method eq 'LEC' ) {
     $content{phone} = $self->payinfo;
   }
