@@ -352,9 +352,7 @@ END
 
     my $args;
     if ( $dangerous || $queue->job !~ /^FS::part_export::/ || !$noactions ) {
-      $args = encode_entities( join(' ',
-        map { length($_)<54 ? $_ : substr($_,0,32)."..."  } $queue->args #1&g
-      ) );
+      $args = encode_entities( join(' ', $queue->args) );
     } else {
       $args = '';
     }
@@ -424,7 +422,7 @@ END
 
 =head1 VERSION
 
-$Id: queue.pm,v 1.17 2004-03-03 13:42:08 ivan Exp $
+$Id: queue.pm,v 1.18 2004-05-04 18:44:48 ivan Exp $
 
 =head1 BUGS
 
