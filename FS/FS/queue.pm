@@ -1,8 +1,10 @@
 package FS::queue;
 
 use strict;
-use vars qw( @ISA @EXPORT_OK );
+use vars qw( @ISA @EXPORT_OK $conf );
 use Exporter;
+use FS::UID;
+use FS::Conf;
 use FS::Record qw( qsearch qsearchs dbh );
 #use FS::queue;
 use FS::queue_arg;
@@ -10,6 +12,10 @@ use FS::cust_svc;
 
 @ISA = qw(FS::Record);
 @EXPORT_OK = qw( joblisting );
+
+$FS::UID::callback{'FS::queue'} = sub {
+  $conf = new FS::Conf;
+};
 
 =head1 NAME
 
@@ -255,7 +261,8 @@ END
     my $date = time2str( "%a %b %e %T %Y", $queue->_date );
     my $status = $queue->status;
     $status .= ': '. $queue->statustext if $queue->statustext;
-    if ( ! $noactions && $status =~ /^failed/ || $status =~ /^locked/ ) {
+    if ( $conf->exists('queue_dangerous_controls')
+         || ( ! $noactions && $status =~ /^failed/ || $status =~ /^locked/ ) ) {
       $status .=
         qq! (&nbsp;<A HREF="$p/misc/queue.cgi?jobnum=$jobnum&action=new">retry</A>&nbsp;|!.
         qq!&nbsp;<A HREF="$p/misc/queue.cgi?jobnum=$jobnum&action=del">remove</A>&nbsp;)!;
@@ -298,7 +305,7 @@ END
 
 =head1 VERSION
 
-$Id: queue.pm,v 1.8 2002-03-23 16:16:00 ivan Exp $
+$Id: queue.pm,v 1.9 2002-03-24 14:29:00 ivan Exp $
 
 =head1 BUGS
 

@@ -61,12 +61,14 @@ if ( $cgi->param('error') ) {
     foreach my $part_svc_column (
       grep { $_->columnflag } $part_svc->all_part_svc_column
     ) {
-      $svc_acct->setfield( $part_svc_column->columnname,
-                           $part_svc_column->columnvalue,
-                         );
+      if ( $part_svc_column->columnname eq 'usergroup' ) {
+        @groups = split(',', $part_svc_column->columnvalue);
+      } else {
+        $svc_acct->setfield( $part_svc_column->columnname,
+                             $part_svc_column->columnvalue,
+                           );
+      }
     }
-
-    #SET DEFAULT GROUP(S) FROM PART_SVC!!!!
 
   }
 }
@@ -244,9 +246,13 @@ foreach my $r ( grep { /^r(adius|[cr])_/ } fields('svc_acct') ) {
   }
 }
 
-print '<TR><TD ALIGN="right">RADIUS groups</TD><TD>'.
-      &FS::svc_acct::radius_usergroup_selector( \@groups ).
-      '</TD></TR>';
+print '<TR><TD ALIGN="right">RADIUS groups</TD>';
+if ( $part_svc->part_svc_column('usergroup')->columnflag eq "F" ) {
+  print '<TD BGCOLOR="#ffffff">'. join('<BR>', @groups);
+} else {
+  print '<TD>'. &FS::svc_acct::radius_usergroup_selector( \@groups );
+}
+print '</TD></TR>';
 
 #submit
 print qq!</TABLE><BR><INPUT TYPE="submit" VALUE="Submit">!; 

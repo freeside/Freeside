@@ -383,6 +383,22 @@ sub export_delete {
   $self->_export_delete(@_);
 }
 
+#fallbacks providing useful error messages intead of infinite loops
+sub _export_insert {
+  my $self = shift;
+  return "_export_insert: unknown export type ". $self->exporttype;
+}
+
+sub _export_replace {
+  my $self = shift;
+  return "_export_replace: unknown export type ". $self->exporttype;
+}
+
+sub _export_delete {
+  my $self = shift;
+  return "_export_delete: unknown export type ". $self->exporttype;
+}
+
 =back
 
 =cut
@@ -474,10 +490,22 @@ use vars qw(@ISA);
 
 sub _export_insert {
   my($self, $svc_acct) = (shift, shift);
-  $self->sqlradius_queue( $svc_acct->svcnum, 'insert',
-    'reply', $svc_acct->username, $svc_acct->radius_reply );
-  $self->sqlradius_queue( $svc_acct->svcnum, 'insert',
-    'check', $svc_acct->username, $svc_acct->radius_check );
+
+  foreach my $table (qw(reply check)) {
+    my $method = "radius_$table";
+    my %attrib = $svc_acct->$method;
+    next unless keys %attrib;
+    my $error = $self->sqlradius_queue( $svc_acct->svcnum, 'insert',
+      $table, $svc_acct->username, %attrib );
+    return $error if $error;
+  }
+  my @groups = $svc_acct->radius_groups;
+  if ( @groups ) {
+    my $error = $self->sqlradius_queue( $svc_acct->svcnum, 'usergroup_insert',
+      $svc_acct->username, @groups );
+    return $error if $error;
+  }
+  '';
 }
 
 sub _export_replace {
@@ -512,6 +540,30 @@ sub _export_replace {
     }
   }
 
+  # (sorta) false laziness with FS::svc_acct::replace
+  my @oldgroups = @{$old->usergroup}; #uuuh
+  my @newgroups = $new->radius_groups;
+  my @delgroups = ();
+  foreach my $oldgroup ( @oldgroups ) {
+    if ( grep { $oldgroup eq $_ } @newgroups ) {
+      @newgroups = grep { $oldgroup ne $_ } @newgroups;
+      next;
+    }
+    push @delgroups, $oldgroup;
+  }
+
+  if ( @delgroups ) {
+    my $error = $self->sqlradius_queue( $new->svcnum, 'usergroup_delete',
+      $new->username, @delgroups );
+    return $error if $error;
+  }
+
+  if ( @newgroups ) {
+    my $error = $self->sqlradius_queue( $new->svcnum, 'usergroup_insert',
+      $new->username, @newgroups );
+    return $error if $error;
+  }
+
   '';
 }
 
@@ -544,8 +596,8 @@ sub sqlradius_insert { #subroutine, not method
       "UPDATE rad$replycheck SET Value = ? WHERE UserName = ? AND Attribute = ?"    ) or die $dbh->errstr;
     my $i_sth = $dbh->prepare(
       "INSERT INTO rad$replycheck ( id, UserName, Attribute, Value ) ".
-        "VALUES ( ?, ?, ?, ? )" )
-      or die $dbh->errstr;
+        "VALUES ( ?, ?, ?, ? )"
+    ) or die $dbh->errstr;
     $u_sth->execute($attributes{$attribute}, $username, $attribute) > 0
       or $i_sth->execute( '', $username, $attribute, $attributes{$attribute} )
         or die "can't insert into rad$replycheck table: ". $i_sth->errstr;
@@ -553,10 +605,38 @@ sub sqlradius_insert { #subroutine, not method
   $dbh->disconnect;
 }
 
+sub sqlradius_usergroup_insert { #subroutine, not method
+  my $dbh = sqlradius_connect(shift, shift, shift);
+  my( $username, @groups ) = @_;
+
+  my $sth = $dbh->prepare( 
+    "INSERT INTO usergroup ( id, UserName, GroupName ) VALUES ( ?, ?, ? )"
+  ) or die $dbh->errstr;
+  foreach my $group ( @groups ) {
+    $sth->execute( '', $username, $group )
+      or die "can't insert into groupname table: ". $sth->errstr;
+  }
+  $dbh->disconnect;
+}
+
+sub sqlradius_usergroup_delete { #subroutine, not method
+  my $dbh = sqlradius_connect(shift, shift, shift);
+  my( $username, @groups ) = @_;
+
+  my $sth = $dbh->prepare( 
+    "DELETE FROM usergroup ( id, UserName, GroupName ) VALUES ( ?, ?, ? )"
+  ) or die $dbh->errstr;
+  foreach my $group ( @groups ) {
+    $sth->execute( '', $username, $group )
+      or die "can't delete from groupname table: ". $sth->errstr;
+  }
+  $dbh->disconnect;
+}
+
 sub sqlradius_rename { #subroutine, not method
   my $dbh = sqlradius_connect(shift, shift, shift);
   my($new_username, $old_username) = @_;
-  foreach my $table (qw(radreply radcheck)) {
+  foreach my $table (qw(radreply radcheck usergroup )) {
     my $sth = $dbh->prepare("UPDATE $table SET Username = ? WHERE UserName = ?")
       or die $dbh->errstr;
     $sth->execute($new_username, $old_username)
@@ -583,7 +663,7 @@ sub sqlradius_delete { #subroutine, not method
   my $dbh = sqlradius_connect(shift, shift, shift);
   my $username = shift;
 
-  foreach my $table (qw( radcheck radreply )) {
+  foreach my $table (qw( radcheck radreply usergroup )) {
     my $sth = $dbh->prepare( "DELETE FROM $table WHERE UserName = ?" );
     $sth->execute($username)
       or die "can't delete from $table table: ". $sth->errstr;

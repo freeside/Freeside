@@ -836,6 +836,13 @@ httemplate/docs/config.html
     'type'        => 'checkbox',
   },
 
+  {
+    'key'         => 'queue_dangerous_controls',
+    'section'     => 'UI',
+    'description' => 'Enable queue modification controls on account pages and for new jobs.  Unless you are a developer working on new export code, you should probably leave this off to avoid causing provisioning problems.',
+    'type'        => 'checkbox',
+  },
+
 );
 
 1;

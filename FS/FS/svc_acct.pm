@@ -257,8 +257,6 @@ sub insert {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  my $amount = 0;
-
   $error = $self->check;
   return $error if $error;
 
@@ -587,6 +585,8 @@ sub delete {
     }
   }
 
+  my $part_svc = $self->cust_svc->part_svc;
+
   my $error = $self->SUPER::delete;
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
@@ -595,7 +595,7 @@ sub delete {
 
   #new-style exports!
   unless ( $noexport_hack ) {
-    foreach my $part_export ( $self->cust_svc->part_svc->part_export ) {
+    foreach my $part_export ( $part_svc->part_export ) {
       my $error = $part_export->export_delete($self);
       if ( $error ) {
         $dbh->rollback if $oldAutoCommit;
@@ -791,34 +791,34 @@ sub replace {
   }
 
   $old->usergroup( [ $old->radius_groups ] );
-
   if ( $new->usergroup ) {
-
-    foreach my $groupname ( @{$old->usergroup} ) {
-      if ( grep { $groupname eq $_ } @{$new->usergroup} ) {
-        $new->usergroup( [ grep { $groupname ne $_ } @{$new->usergroup} ] );
+    #(sorta) false laziness with FS::part_export::sqlradius::_export_replace
+    my @newgroups = @{$new->usergroup};
+    foreach my $oldgroup ( @{$old->usergroup} ) {
+      if ( grep { $oldgroup eq $_ } @newgroups ) {
+        @newgroups = grep { $oldgroup ne $_ } @newgroups;
         next;
       }
       my $radius_usergroup = qsearchs('radius_usergroup', {
         svcnum    => $old->svcnum,
-        groupname => $groupname,
+        groupname => $oldgroup,
       } );
       my $error = $radius_usergroup->delete;
       if ( $error ) {
         $dbh->rollback if $oldAutoCommit;
-        return "error deleting radius_usergroup $groupname: $error";
+        return "error deleting radius_usergroup $oldgroup: $error";
       }
     }
 
-    foreach my $groupname ( @{$new->usergroup} ) {
+    foreach my $newgroup ( @newgroups ) {
       my $radius_usergroup = new FS::radius_usergroup ( {
         svcnum    => $new->svcnum,
-        groupname => $groupname,
+        groupname => $newgroup,
       } );
       my $error = $radius_usergroup->insert;
       if ( $error ) {
         $dbh->rollback if $oldAutoCommit;
-        return "error adding radius_usergroup $groupname: $error";
+        return "error adding radius_usergroup $newgroup: $error";
       }
     }
 
@@ -1071,6 +1071,11 @@ sub check {
   my $x = $self->setfixed;
   return $x unless ref($x);
   my $part_svc = $x;
+
+  if ( $part_svc->part_svc_column('usergroup')->columnflag eq "F" ) {
+    $self->usergroup(
+      [ split(',', $part_svc->part_svc_column('usergroup')->columnvalue) ] );
+  }
 
   my $error = $self->ut_numbern('svcnum')
               || $self->ut_number('domsvc')
