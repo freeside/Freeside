@@ -194,6 +194,8 @@ sub replace {
 
   #some logic for bill, susp, cancel?
 
+  local($disable_agentcheck) = 1 if $old->pkgpart == $new->pkgpart;
+
   $new->SUPER::replace($old);
 }
 
