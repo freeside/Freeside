@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main.cgi,v 1.11 1999-03-25 13:55:10 ivan Exp $
+# $Id: cust_main.cgi,v 1.12 1999-04-06 11:16:16 ivan Exp $
 #
 # Usage: cust_main.cgi custnum
 #        http://server.name/path/cust_main.cgi?custnum
@@ -38,7 +38,11 @@
 # fixed one missed day->daytime ivan@sisd.com 98-jul-13
 #
 # $Log: cust_main.cgi,v $
-# Revision 1.11  1999-03-25 13:55:10  ivan
+# Revision 1.12  1999-04-06 11:16:16  ivan
+# give a meaningful error message if you try to create a customer before you've
+# created an agent
+#
+# Revision 1.11  1999/03/25 13:55:10  ivan
 # one-screen new customer entry (including package and service) for simple
 # packages with one svc_acct service
 #
@@ -152,6 +156,7 @@ print qq!<FORM ACTION="${p1}process/cust_main.cgi" METHOD=POST>!,
 $r = qq!<font color="#ff0000">*</font>!;
 
 @agents = qsearch( 'agent', {} );
+die "No agents created!" unless @agents;
 $agentnum = $cust_main->agentnum || $agents[0]->agentnum; #default to first
 if ( scalar(@agents) == 1 ) {
   print qq!<INPUT TYPE="hidden" NAME="agentnum" VALUE="$agentnum">!;
