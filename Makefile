@@ -58,8 +58,8 @@ SELFSERVICE_MACHINE = localhost
 #not changable yet
 FREESIDE_CONF = /usr/local/etc/freeside
 
-VERSION=1.5.0pre2
-TAG=freeside_1_5_0pre2
+VERSION=1.5.0pre3
+TAG=freeside_1_5_0pre3
 
 help:
 	@echo "supported targets: aspdocs masondocs alldocs docs install-docs"
