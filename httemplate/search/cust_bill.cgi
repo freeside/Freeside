@@ -1,44 +1,83 @@
 <%
 
+my $conf = new FS::Conf;
+my $maxrecords = $conf->config('maxsearchrecordsperpage');
+
+my $orderby = ''; #removeme
+
+my $limit = '';
+$limit .= "LIMIT $maxrecords" if $maxrecords;
+
+my $offset = $cgi->param('offset') || 0;
+$limit .= " OFFSET $offset" if $offset;
+
+my $total;
+
 my(@cust_bill, $sortby);
 if ( $cgi->keywords ) {
   my($query) = $cgi->keywords;
+  my $open_sql =
+    "having 0 != charged - coalesce(sum(cust_bill_pay.amount),0)
+                         - coalesce(sum(cust_credit_bill.amount),0)";
+  my $having = '';
+  my $where = '';
   if ( $query eq 'invnum' ) {
     $sortby = \*invnum_sort;
-    @cust_bill = qsearch('cust_bill', {} );
+    #@cust_bill = qsearch('cust_bill', {} );
   } elsif ( $query eq 'date' ) {
     $sortby = \*date_sort;
-    @cust_bill = qsearch('cust_bill', {} );
+    #@cust_bill = qsearch('cust_bill', {} );
   } elsif ( $query eq 'custnum' ) {
     $sortby = \*custnum_sort;
-    @cust_bill = qsearch('cust_bill', {} );
+    #@cust_bill = qsearch('cust_bill', {} );
   } elsif ( $query eq 'OPEN_invnum' ) {
     $sortby = \*invnum_sort;
-    @cust_bill = grep $_->owed != 0, qsearch('cust_bill', {} );
+    #@cust_bill = grep $_->owed != 0, qsearch('cust_bill', {} );
+    $having = $open_sql;
   } elsif ( $query eq 'OPEN_date' ) {
     $sortby = \*date_sort;
-    @cust_bill = grep $_->owed != 0, qsearch('cust_bill', {} );
+    #@cust_bill = grep $_->owed != 0, qsearch('cust_bill', {} );
+    $having = $open_sql;
   } elsif ( $query eq 'OPEN_custnum' ) {
     $sortby = \*custnum_sort;
-    @cust_bill = grep $_->owed != 0, qsearch('cust_bill', {} );
+    #@cust_bill = grep $_->owed != 0, qsearch('cust_bill', {} );
+    $having = $open_sql;
   } elsif ( $query =~ /^OPEN(\d+)_invnum$/ ) {
     my $open = $1 * 86400;
     $sortby = \*invnum_sort;
-    @cust_bill =
-      grep $_->owed != 0 && $_->_date < time - $open, qsearch('cust_bill', {} );
+    #@cust_bill =
+    #  grep $_->owed != 0 && $_->_date < time - $open, qsearch('cust_bill', {} );
+    $having = $open_sql;
+    $where = "where cust_bill._date < ". (time-$open);
   } elsif ( $query =~ /^OPEN(\d+)_date$/ ) {
     my $open = $1 * 86400;
     $sortby = \*date_sort;
-    @cust_bill =
-      grep $_->owed != 0 && $_->_date < time - $open, qsearch('cust_bill', {} );
+    #@cust_bill =
+    #  grep $_->owed != 0 && $_->_date < time - $open, qsearch('cust_bill', {} );
+    $having = $open_sql;
+    $where = "where cust_bill._date < ". (time-$open);
   } elsif ( $query =~ /^OPEN(\d+)_custnum$/ ) {
     my $open = $1 * 86400;
     $sortby = \*custnum_sort;
-    @cust_bill =
-      grep $_->owed != 0 && $_->_date < time - $open, qsearch('cust_bill', {} );
+    #@cust_bill =
+    #  grep $_->owed != 0 && $_->_date < time - $open, qsearch('cust_bill', {} );
+    $having = $open_sql;
+    $where = "where cust_bill._date < ". (time-$open);
   } else {
     die "unknown query string $query";
   }
+  @cust_bill = qsearch(
+    'cust_bill',
+    {},
+    'cust_bill.*,
+     charged - coalesce(sum(cust_bill_pay.amount),0)
+              - coalesce(sum(cust_credit_bill.amount),0) as owed',
+    "left outer join cust_bill_pay using ( invnum )
+     left outer join cust_credit_bill using ( invnum )
+     $where
+     group by ". join(', ', map "cust_bill.$_", fields('cust_bill') ). ' '.
+     $having
+  );
 } else {
   $cgi->param('invnum') =~ /^\s*(FS-)?(\d+)\s*$/;
   my $invnum = $2;
@@ -58,7 +97,7 @@ if ( scalar(@cust_bill) == 1 ) {
 %>
 <!-- mason kludge -->
 <%
-  my $total = scalar(@cust_bill);
+  $total = scalar(@cust_bill);
   print header("Invoice Search Results", menubar(
           'Main Menu', popurl(2)
         )), "$total matching invoices found<BR>", &table(), <<END;
