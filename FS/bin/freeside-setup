@@ -669,7 +669,7 @@ sub tables_hash_hack {
       ],
       'primary_key' => 'pkgpart',
       'unique' => [],
-      'index' => [ [ disabled ], ],
+      'index' => [ [ 'disabled' ], ],
     },
 
 #    'part_title' => {
