@@ -3,14 +3,13 @@ package FS::svc_domain;
 use strict;
 use vars qw( @ISA $whois_hack $conf $smtpmachine
   @defaultrecords $soadefaultttl $soaemail $soaexpire $soamachine
-  $soarefresh $soaretry $qshellmachine $nossh_hack 
+  $soarefresh $soaretry
 );
 use Carp;
 use Mail::Internet 1.44;
 use Mail::Header;
 use Date::Format;
 use Net::Whois 1.0;
-use Net::SSH;
 use FS::Record qw(fields qsearch qsearchs dbh);
 use FS::Conf;
 use FS::svc_Common;
@@ -37,9 +36,6 @@ $FS::UID::callback{'FS::domain'} = sub {
   $soarefresh    = $conf->config('soarefresh');
   $soaretry      = $conf->config('soaretry');
 
-  $qshellmachine = $conf->exists('qmailmachines')
-                   ? $conf->config('shellmachine')
-                   : '';
 };
 
 =head1 NAME
@@ -120,21 +116,6 @@ If any records are defined in the I<defaultrecords> configuration file,
 appropriate records are added to the domain_record table (see
 L<FS::domain_record>).
 
-If a machine is defined in the I<shellmachine> configuration value, the
-I<qmailmachines> configuration file exists, and the I<catchall> field points
-to an an account with a home directory (see L<FS::svc_acct>), the command:
-
-  [ -e $dir/.qmail-$qdomain-defualt ] || {
-    touch $dir/.qmail-$qdomain-default;
-    chown $uid:$gid $dir/.qmail-$qdomain-default;
-  }
-
-is executed on shellmachine via ssh (see L<dot-qmail/"EXTENSION ADDRESSES">).
-This behaviour can be supressed by setting $FS::svc_domain::nossh_hack true.
-
-a machine is defined
-in the 
-
 =cut
 
 sub insert {
@@ -210,28 +191,6 @@ sub insert {
   }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
-
-  if ( $qshellmachine && $self->catchall && ! $nossh_hack ) {
-
-    my $svc_acct = qsearchs( 'svc_acct', { 'svcnum' => $self->catchall } )
-      or warn "WARNING: inserted unknown catchall: ". $self->catchall;
-    if ( $svc_acct && $svc_acct->dir ) {
-      my $qdomain = $self->domain;
-      $qdomain =~ s/\./:/g; #see manpage for 'dot-qmail': EXTENSION ADDRESSES
-      my ( $uid, $gid, $dir ) = (
-        $svc_acct->uid,
-        $svc_acct->gid,
-        $svc_acct->dir,
-      );
-  
-    my $queue = new FS::queue {
-      'svcnum' => $self->svcnum,
-      'job'    => 'Net::SSH::ssh_cmd',
-    };
-    $error = $queue->insert("root\@$qshellmachine", "[ -e $dir/.qmail-$qdomain-default ] || { touch $dir/.qmail-$qdomain-default; chown $uid:$gid $dir/.qmail-$qdomain-default; }" );
-
-    }
-  }
 
   ''; #no error
 }
@@ -411,6 +370,15 @@ sub domain_record {
 
 }
 
+sub catchall_svc_acct {
+  my $self = shift;
+  if ( $self->catchall ) {
+    qsearchs( 'svc_acct', { 'svcnum' => $self->catchall } );
+  } else {
+    '';
+  }
+}
+
 =item whois
 
 Returns the Net::Whois::Domain object (see L<Net::Whois>) for this domain, or
@@ -449,8 +417,6 @@ sub submit_internic {
 
 =head1 BUGS
 
-All BIND/DNS fields should be included (and exported).
-
 Delete doesn't send a registration template.
 
 All registries should be supported.
@@ -462,9 +428,8 @@ The $recref stuff in sub check should be cleaned up.
 =head1 SEE ALSO
 
 L<FS::svc_Common>, L<FS::Record>, L<FS::Conf>, L<FS::cust_svc>,
-L<FS::part_svc>, L<FS::cust_pkg>, L<Net::Whois>, L<ssh>,
-L<dot-qmail>, schema.html from the base documentation, config.html from the
-base documentation.
+L<FS::part_svc>, L<FS::cust_pkg>, L<Net::Whois>, schema.html from the base
+documentation, config.html from the base documentation.
 
 =cut
 

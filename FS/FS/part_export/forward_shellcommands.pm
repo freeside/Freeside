@@ -1,4 +1,4 @@
-package FS::part_export::domain_shellcommands;
+package FS::part_export::forward_shellcommands;
 
 use strict;
 use vars qw(@ISA);
@@ -19,28 +19,28 @@ sub _export_delete {
 }
 
 sub _export_command {
-  my ( $self, $action, $svc_domain) = (shift, shift, shift);
+  my ( $self, $action, $svc_forward ) = (shift, shift, shift);
   my $command = $self->option($action);
 
   #set variable for the command
   no strict 'vars';
   {
     no strict 'refs';
-    ${$_} = $svc_domain->getfield($_) foreach $svc_domain->fields;
+    ${$_} = $svc_forward->getfield($_) foreach $svc_forward->fields;
   }
-  ( $qdomain = $domain ) =~ s/\./:/g; #see dot-qmail(5): EXTENSION ADDRESSES
 
-  if ( $svc_domain->catchall ) {
-    no strict 'refs';
-    my $svc_acct = $svc_domain->catchall_svc_acct;
-    ${$_} = $svc_acct->getfield($_) foreach qw(uid gid dir);
+  my $svc_acct = qsearchs( 'svc_acct', { 'svcnum' => $self->srcsvc } );
+  $username = $svc_acct->username;
+  $domain = $svc_acct->domain;
+  if ($self->dstsvc) {
+    $destination = $self->dstsvc_acct->email;
   } else {
-    ${$_} = '' foreach qw(uid gid dir);
+    $destination = $self->dst;
   }
 
   #done setting variables for the command
 
-  $self->shellcommands_queue( $svc_domain->svcnum,
+  $self->shellcommands_queue( $svc_forward->svcnum,
     user         => $self->option('user')||'root',
     host         => $self->machine,
     command      => eval(qq("$command")),
@@ -48,7 +48,7 @@ sub _export_command {
 }
 
 sub _export_replace {
-  my($self, $new, $old ) = (shift, shift, shift);
+  my( $self, $new, $old ) = (shift, shift, shift);
   my $command = $self->option('usermod');
   
   #set variable for the command
@@ -58,27 +58,24 @@ sub _export_replace {
     ${"old_$_"} = $old->getfield($_) foreach $old->fields;
     ${"new_$_"} = $new->getfield($_) foreach $new->fields;
   }
-#  my $old_domain_record = $old->domain_record; # or die ?
-#  my $old_zone = $old_domain_record->reczone; # or die ?
-#  unless ( $old_zone =~ /\.$/ ) {
-#    my $old_svc_domain = $old_domain_record->svc_domain; # or die ?
-#    $old_zone .= '.'. $old_svc_domain->domain;
-#  }
-#
-#  my $old_svc_acct = $old->svc_acct; # or die ?
-#  my $old_username = $old_svc_acct->username;
-#  my $old_homedir = $old_svc_acct->dir; # or die ?
-#
-#  my $new_domain_record = $new->domain_record; # or die ?
-#  my $new_zone = $new_domain_record->reczone; # or die ?
-#  unless ( $new_zone =~ /\.$/ ) {
-#    my $new_svc_domain = $new_domain_record->svc_domain; # or die ?
-#    $new_zone .= '.'. $new_svc_domain->domain;
-#  }
 
-#  my $new_svc_acct = $new->svc_acct; # or die ?
-#  my $new_username = $new_svc_acct->username;
-#  my $new_homedir = $new_svc_acct->dir; # or die ?
+  my $old_svc_acct = qsearchs( 'svc_acct', { 'svcnum' => $self->srcsvc } );
+  $old_username = $old_svc_acct->username;
+  $old_domain = $old_svc_acct->domain;
+  if ($self->dstsvc) {
+    $old_destination = $self->dstsvc_acct->email;
+  } else {
+    $old_destination = $self->dst;
+  }
+
+  my $new_svc_acct = qsearchs( 'svc_acct', { 'svcnum' => $self->srcsvc } );
+  $new_username = $new_svc_acct->username;
+  $new_domain = $new_svc_acct->domain;
+  if ($self->dstsvc) {
+    $new_destination = $self->dstsvc_acct->email;
+  } else {
+    $new_destination = $self->dst;
+  }
 
   #done setting variables for the command
 
@@ -94,7 +91,7 @@ sub shellcommands_queue {
   my( $self, $svcnum ) = (shift, shift);
   my $queue = new FS::queue {
     'svcnum' => $svcnum,
-    'job'    => "FS::part_export::domain_shellcommands::ssh_cmd",
+    'job'    => "FS::part_export::forward_shellcommands::ssh_cmd",
   };
   $queue->insert( @_ );
 }

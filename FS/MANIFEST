@@ -73,6 +73,7 @@ FS/part_export/bsdshell.pm
 FS/part_export/cp.pm
 FS/part_export/cyrus.pm
 FS/part_export/domain_shellcommands.pm
+FS/part_export/forward_shellcommands.pm
 FS/part_export/http.pm
 FS/part_export/infostreet.pm
 FS/part_export/ldap.pm
@@ -155,6 +156,7 @@ t/part_export-bsdshell.t
 t/part_export-cp.t
 t/part_export-cyrus.t
 t/part_export-domain_shellcommands.t
+t/part_export-forward_shellcommands.t
 t/part_export-http.t
 t/part_export-infostreet.t
 t/part_export-ldap.t
