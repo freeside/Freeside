@@ -301,7 +301,7 @@ sub all_part_svc_column {
 
 =head1 VERSION
 
-$Id: part_svc.pm,v 1.7 2001-12-27 09:26:13 ivan Exp $
+$Id: part_svc.pm,v 1.8 2002-01-22 14:55:25 ivan Exp $
 
 =head1 BUGS
 
@@ -312,7 +312,7 @@ should be fixed.
 
 =head1 SEE ALSO
 
-L<FS::Record>, L<FS::part_svc_column, L<FS::part_pkg>, L<FS::pkg_svc>,
+L<FS::Record>, L<FS::part_svc_column>, L<FS::part_pkg>, L<FS::pkg_svc>,
 L<FS::cust_svc>, L<FS::svc_acct>, L<FS::svc_forward>, L<FS::svc_domain>,
 schema.html from the base documentation.
 
