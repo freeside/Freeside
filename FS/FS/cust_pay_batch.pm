@@ -37,8 +37,6 @@ following fields are currently supported:
 
 =item paybatchnum - primary key (automatically assigned)
 
-=item trancode - 77 for charges
-
 =item cardnum
 
 =item exp - card expiration 
@@ -120,7 +118,7 @@ sub check {
 
   my $error = 
       $self->ut_numbern('paybatchnum')
-    || $self->ut_numbern('trancode')
+    || $self->ut_numbern('trancode') #depriciated
     || $self->ut_number('cardnum') 
     || $self->ut_money('amount')
     || $self->ut_number('invnum')
@@ -191,7 +189,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: cust_pay_batch.pm,v 1.3 2001-10-02 16:00:30 jeff Exp $
+$Id: cust_pay_batch.pm,v 1.4 2001-10-30 19:05:27 ivan Exp $
 
 =head1 BUGS
 
