@@ -229,7 +229,8 @@ sub check {
   return "Unknown referral"
     unless qsearchs( 'part_referral', { 'refnum' => $self->refnum } );
 
-  $self->getfield('last') =~ /^([\w \,\.\-\']+)$/ or return "Illegal last name";
+  $self->getfield('last') =~ /^([\w \,\.\-\']+)$/
+    or return "Illegal last name: ". $self->getfield('last');
   $self->setfield('last',$1);
 
   $self->first =~ /^([\w \,\.\-\']+)$/ or return "Illegal first name";
@@ -880,7 +881,7 @@ sub check_invoicing_list {
 
 =head1 VERSION
 
-$Id: cust_main.pm,v 1.17 1999-04-10 05:27:38 ivan Exp $
+$Id: cust_main.pm,v 1.18 1999-04-10 06:54:11 ivan Exp $
 
 =head1 BUGS
 
@@ -936,7 +937,10 @@ enable cybercash, cybercash v3 support, don't need to import
 FS::UID::{datasrc,checkruid} ivan@sisd.com 98-sep-19-21
 
 $Log: cust_main.pm,v $
-Revision 1.17  1999-04-10 05:27:38  ivan
+Revision 1.18  1999-04-10 06:54:11  ivan
+ditto
+
+Revision 1.17  1999/04/10 05:27:38  ivan
 display an illegal payby, to assist importing
 
 Revision 1.16  1999/04/07 14:32:19  ivan
