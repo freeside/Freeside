@@ -176,7 +176,7 @@ Returns the credit (see L<FS::cust_credit>)
 
 =cut
 
-sub cust_refund {
+sub cust_credit {
   my $self = shift;
   qsearchs( 'cust_credit', { 'crednum' => $self->crednum } );
 }
@@ -185,7 +185,7 @@ sub cust_refund {
 
 =head1 VERSION
 
-$Id: cust_credit_refund.pm,v 1.8 2002-01-24 16:58:47 ivan Exp $
+$Id: cust_credit_refund.pm,v 1.9 2002-01-26 01:52:31 ivan Exp $
 
 =head1 BUGS
 
