@@ -862,8 +862,7 @@ sub _check_duplicate {
     or die dbh->errstr;
   warn "$me acquired svc_acct table lock for duplicate search" if $DEBUG;
 
-  my $svcpart = $self->svcpart;
-  my $part_svc = qsearchs('part_svc', { 'svcpart' => $svcpart } );
+  my $part_svc = qsearchs('part_svc', { 'svcpart' => $self->svcpart } );
   unless ( $part_svc ) {
     return 'unknown svcpart '. $self->svcpart;
   }
@@ -884,7 +883,7 @@ sub _check_duplicate {
   my @dup_uid;
   if ( $part_svc->part_svc_column('uid')->columnflag ne 'F'
        && $self->username !~ /^(toor|(hyla)?fax)$/          ) {
-    @dup_uid = grep { $svcpart != $_->svcpart }
+    @dup_uid = grep { !$self->svcnum || $_->svcnum != $self->svcnum }
                qsearch( 'svc_acct', { 'uid' => $self->uid } );
   } else {
     @dup_uid = ();
@@ -945,8 +944,8 @@ sub _check_duplicate {
       my $dup_svcpart = $dup_uid->cust_svc->svcpart;
       if ( exists($conflict_user_svcpart{$dup_svcpart})
            || exists($conflict_userdomain_svcpart{$dup_svcpart}) ) {
-        return "duplicate uid: conflicts with svcnum". $dup_uid->svcnum.
-               "via exportnum ". $conflict_user_svcpart{$dup_svcpart}
+        return "duplicate uid: conflicts with svcnum ". $dup_uid->svcnum.
+               " via exportnum ". $conflict_user_svcpart{$dup_svcpart}
                                  || $conflict_userdomain_svcpart{$dup_svcpart};
       }
     }
