@@ -1,7 +1,7 @@
 <pre>
 this is incomplete
 
-install DBD::Pg 1.32
+install DBD::Pg 1.32 (or, if you're using a Perl version before 5.6, you could try installing DBD::Pg 1.22 with <a href="http://420.am/~ivan/DBD-Pg-1.22-fixvercmp.patch">this patch</a> and commenting out the "use DBD::Pg 1.32" at the top of DBIx/DBSchema/DBD/Pg.pm)
 install DBIx::DBSchema 0.23
 install Net::SSH 0.08
 - If using Apache::ASP, add PerlSetVar RequestBinaryRead Off to your Apache configuration and make sure you are using Apache::ASP minimum version 2.55. 
@@ -187,14 +187,14 @@ Or on Pg versions that don't support DROP NOT NULL (tested on 7.1 and 7.2 so far
 UPDATE pg_attribute SET attnotnull = FALSE WHERE ( attname = 'srcsvc' OR attname = 'dstsvc' ) AND ( attrelid = ( SELECT oid FROM pg_class WHERE relname = 'svc_forward' ) OR attrelid = ( SELECT oid FROM pg_class WHERE relname = 'h_svc_forward' ) );
 
 If you created your database with a version before 1.4.2, dump database, edit:
-- cust_main: increase otaker from 8 to 32
-- cust_main: change ss from char(11) to varchar(11)
-- cust_credit: increase otaker from 8 to 32
-- cust_pkg: increase otaker from 8 to 32
-- cust_refund: increase otaker from 8 to 32
-- domain_record: increase reczone from 80 to 255
-- domain_record: change rectype from char to varchar
-- domain_record: increase recdata from 80 to 255
+- cust_main and h_cust_main: increase otaker from 8 to 32
+- cust_main and h_cust_main: change ss from char(11) to varchar(11)
+- cust_credit and h_cust_credit: increase otaker from 8 to 32
+- cust_pkg and h_cust_pkg: increase otaker from 8 to 32
+- cust_refund and h_cust_refund: increase otaker from 8 to 32
+- domain_record and h_domain_record: increase reczone from 80 to 255
+- domain_record and h_domain_record: change rectype from char to varchar
+- domain_record and h_domain_record: increase recdata from 80 to 255
 then reload
 
 optionally:
@@ -207,6 +207,7 @@ optionally:
   CREATE INDEX cust_main11 ON cust_main ( ship_fax );
   CREATE INDEX agent2 ON agent ( disabled );
   CREATE INDEX part_bill_event2 ON part_bill_event ( disabled );
+  CREATE INDEX cust_pay4 ON cust_pay (_date);
 
   serial columns
 
