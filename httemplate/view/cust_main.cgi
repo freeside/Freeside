@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: cust_main.cgi,v 1.15 2001-12-21 21:40:24 ivan Exp $ -->
+#<!-- $Id: cust_main.cgi,v 1.16 2001-12-26 09:18:18 ivan Exp $ -->
 
 use strict;
 use vars qw ( $cgi $query $custnum $cust_main $hashref $agent $referral 
@@ -361,6 +361,8 @@ print qq!<BR><BR><A NAME="history">Payment History!.
 
 @history = (); #needed for mod_perl :)
 
+my %target = ();
+
 @bills = qsearch('cust_bill',{'custnum'=>$custnum});
 foreach $bill (@bills) {
   my($bref)=$bill->hashref;
@@ -386,9 +388,13 @@ foreach $bill (@bills) {
                                              $payment->payinfo,
                                              $cust_bill_pay->amount,
                       );
-    $payinfo = substr($payinfo,0,4). 'x'x(length($payinfo)-4) if $payby eq 'CARD';
+    $payinfo = substr($payinfo,0,4). 'x'x(length($payinfo)-4)
+      if $payby eq 'CARD';
+    my $target = "$payby$payinfo";
+    $payby =~ s/^BILL$/Check #/ if $payinfo;
+    $payby =~ s/^(CARD|COMP)$/$1 /;
     push @history,
-      "$date\tPayment, Invoice #$invnum ($payby $payinfo)\t\t$paid\t\t";
+      "$date\tPayment, Invoice #$invnum ($payby$payinfo)\t\t$paid\t\t\t$target";
   }
 
   my(@cust_credit_bill)=
@@ -438,12 +444,20 @@ foreach my $refund (@refunds) {
 my @unapplied_payments =
   grep { $_->unapplied > 0 } qsearch('cust_pay', { 'custnum' => $custnum } );
 foreach my $payment (@unapplied_payments) {
+  my $payby = $payment->payby;
+  my $payinfo = $payment->payinfo;
+  #false laziness w/above
+  $payinfo = substr($payinfo,0,4). 'x'x(length($payinfo)-4)
+    if $payby eq 'CARD';
+  my $target = "$payby$payinfo";
+  $payby =~ s/^BILL$/Check #/ if $payinfo;
+  $payby =~ s/^(CARD|COMP)$/$1 /;
   push @history,
     $payment->_date. "\t".
     '<A HREF="'. popurl(2). 'edit/cust_bill_pay.cgi?'. $payment->paynum. '">'.
     '<b><font size="+1" color="#ff0000">Unapplied payment #' .
-    $payment->paynum . "</font></b></A>".
-    "\t\t" . $payment->unapplied . "\t\t";
+    $payment->paynum . " ($payby$payinfo)</font></b></A>".
+    "\t\t" . $payment->unapplied . "\t\t\t$target";
 }
 
         #formatting
@@ -463,7 +477,7 @@ END
 
 $balance = 0;
 foreach $item (sort keyfield_numerically @history) {
-  my($date,$desc,$charge,$payment,$credit,$refund)=split(/\t/,$item);
+  my($date,$desc,$charge,$payment,$credit,$refund,$target)=split(/\t/,$item);
   $charge ||= 0;
   $payment ||= 0;
   $credit ||= 0;
@@ -473,7 +487,11 @@ foreach $item (sort keyfield_numerically @history) {
   $balance = sprintf("%.2f", $balance);
   $balance =~ s/^\-0\.00$/0.00/; #yay ieee fp
 
-  print "<TR><TD><FONT SIZE=-1>",time2str("%D",$date),"</FONT></TD>",
+  print "<TR><TD><FONT SIZE=-1>";
+  print qq!<A NAME="$target">! unless $target{$target}++;
+  print time2str("%D",$date);
+  print '</A>' if $target{$target} == 1;
+  print "</FONT></TD>",
 	"<TD><FONT SIZE=-1>$desc</FONT></TD>",
 	"<TD><FONT SIZE=-1>",
         ( $charge ? "\$".sprintf("%.2f",$charge) : '' ),
