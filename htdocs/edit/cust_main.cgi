@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main.cgi,v 1.22 1999-12-17 02:33:23 ivan Exp $
+# $Id: cust_main.cgi,v 1.23 2000-01-27 00:53:14 ivan Exp $
 #
 # Usage: cust_main.cgi custnum
 #        http://server.name/path/cust_main.cgi?custnum
@@ -38,7 +38,10 @@
 # fixed one missed day->daytime ivan@sisd.com 98-jul-13
 #
 # $Log: cust_main.cgi,v $
-# Revision 1.22  1999-12-17 02:33:23  ivan
+# Revision 1.23  2000-01-27 00:53:14  ivan
+# 5.004_04 workaround
+#
+# Revision 1.22  1999/12/17 02:33:23  ivan
 # argh
 #
 # Revision 1.21  1999/08/23 07:40:38  ivan
@@ -363,8 +366,8 @@ unless ( $custnum ) {
     my %typenum;
     foreach my $agent ( @agents ) {
       next if $typenum{$agent->typenum}++;
-      #5.004_04 barfs (5.004_05 okay?)# $pkgpart->{$_}++ foreach keys %{ $agent->pkgpart_hashref }
-      foreach ( keys %{ $agent->pkgpart_hashref } ) { $pkgpart->{$_}++; }
+      #fixed in 5.004_05 #$pkgpart->{$_}++ foreach keys %{ $agent->pkgpart_hashref }
+      foreach ( keys %{ $agent->pkgpart_hashref } ) { $pkgpart->{$_}++; } #5.004_04 workaround
     }
   }
   #eslaf
