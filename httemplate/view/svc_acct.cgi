@@ -86,7 +86,7 @@ if ( $part_svc->part_export('sqlradius') ) {
     print ' this billing cycle (since '. time2str(%C, $last_bill). ') - '. 
           $plandata{recur_included_hours}. ' total hours in plan<BR><BR>';
   } else {
-    print ' (no billing cycle available for unaudited package)<BR><BR>';
+    print ' (no billing cycle available for unaudited account)<BR><BR>';
   }
 
 }
