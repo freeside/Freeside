@@ -240,7 +240,8 @@ sub qsearch {
           }
         } elsif ( $op eq '!=' ) {
           if ( driver_name eq 'Pg' ) {
-            if ( $dbdef->table($table)->column($column)->type =~ /(int)/i ) {
+            my $type = $dbdef->table($table)->column($column)->type;
+            if ( $type =~ /(int|serial)/i ) {
               qq-( $column IS NOT NULL )-;
             } else {
               qq-( $column IS NOT NULL AND $column != '' )-;
