@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: fs-setup,v 1.23 2000-02-03 05:16:52 ivan Exp $
+# $Id: fs-setup,v 1.24 2000-03-02 07:44:07 ivan Exp $
 #
 # ivan@sisd.com 97-nov-8,9
 #
@@ -32,7 +32,10 @@
 # fix radius attributes ivan@sisd.com 98-sep-27
 #
 # $Log: fs-setup,v $
-# Revision 1.23  2000-02-03 05:16:52  ivan
+# Revision 1.24  2000-03-02 07:44:07  ivan
+# typo forgot closing '
+#
+# Revision 1.23  2000/02/03 05:16:52  ivan
 # beginning of DNS and Apache support
 #
 # Revision 1.22  2000/01/31 05:22:23  ivan
@@ -702,7 +705,7 @@ sub tables_hash_hack {
       ],
       'primary_key' => 'prepaynum',
       'unique'      => [ ['identifier'] ],
-      'index        => [ [] ],
+      'index'       => [ [] ],
     },
 
   );
