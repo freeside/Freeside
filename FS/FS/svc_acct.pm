@@ -253,7 +253,7 @@ sub insert {
 }
 
 sub cyrus_insert {
-  my( $username, $quota ) = 
+  my( $username, $quota ) = @_;
 
   my $client = Cyrus::IMAP::Admin->new($cyrus_server);
   $client->authenticate(
@@ -396,7 +396,7 @@ sub delete {
 }
 
 sub cyrus_delete {
-  my( $username ) = shift; 
+  my $username = shift; 
 
   my $client = Cyrus::IMAP::Admin->new($cyrus_server);
   $client->authenticate(
@@ -763,7 +763,7 @@ sub email {
 
 =head1 VERSION
 
-$Id: svc_acct.pm,v 1.35 2001-09-11 04:17:47 ivan Exp $
+$Id: svc_acct.pm,v 1.36 2001-09-11 12:00:19 ivan Exp $
 
 =head1 BUGS
 
