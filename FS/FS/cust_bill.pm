@@ -812,7 +812,7 @@ sub realtime_bop {
        'invnum'   => $self->invnum,
        'paid'     => $amount,
        '_date'     => '',
-       'payby'    => method2payby{$method},
+       'payby'    => $method2payby{$method},
        'payinfo'  => $cust_main->payinfo,
        'paybatch' => "$processor:". $transaction->authorization,
     } );
