@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: fs-setup,v 1.15 1999-02-27 21:06:21 ivan Exp $
+# $Id: fs-setup,v 1.16 1999-02-28 19:44:16 ivan Exp $
 #
 # ivan@sisd.com 97-nov-8,9
 #
@@ -32,7 +32,10 @@
 # fix radius attributes ivan@sisd.com 98-sep-27
 #
 # $Log: fs-setup,v $
-# Revision 1.15  1999-02-27 21:06:21  ivan
+# Revision 1.16  1999-02-28 19:44:16  ivan
+# constructors s/create/new/ pointed out by "Bao C. Ha" <bao@hacom.net>
+#
+# Revision 1.15  1999/02/27 21:06:21  ivan
 # cust_main.paydate should be varchar(10), not @date_type ; problem reported
 # by Ben Leibig <leibig@colorado.edu>
 #
@@ -228,7 +231,7 @@ AL AK AS AZ AR CA CO CT DC DE FM FL GA GU HI ID IL IN IA KS KY LA
 ME MH MD MA MI MN MS MO MT NC ND NE NH NJ NM NV NY MP OH OK OR PA PW PR RI 
 SC SD TN TX TT UT VT VI VA WA WV WI WY AE AA AP
 ) ) {
-  my($cust_main_county)=create FS::cust_main_county({
+  my($cust_main_county)=new FS::cust_main_county({
     'state' => $_,
     'tax'   => 0,
     'country' => 'US',
@@ -242,7 +245,7 @@ SC SD TN TX TT UT VT VI VA WA WV WI WY AE AA AP
 foreach ( qw(
 VIC NSW NT QLD TAS ACT WA SA
 ) ) {
-  my($cust_main_county)=create FS::cust_main_county({
+  my($cust_main_county)=new FS::cust_main_county({
     'state' => $_,
     'tax'   => 0,
     'country' => 'AU',
@@ -265,7 +268,7 @@ ST SA SN SC SL SG SK SI SB SO ZA GS ES LK SH PM SD SR SJ SZ SE CH SY TW TJ TZ
 TH TG TK TO TT TN TR TM TC TV UG UA AE GB UM UY UZ VU VA VE VN VG VI WF EH
 YE YU ZR ZM ZW
 ) ) {
-  my($cust_main_county)=create FS::cust_main_county({
+  my($cust_main_county)=new FS::cust_main_county({
     'tax'   => 0,
     'country' => $_,
   });  
