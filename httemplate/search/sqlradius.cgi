@@ -123,9 +123,9 @@
 
   my $time_format = sub {
     my $time = shift;
-    $time > 0
-      ? time2str('%T%P&nbsp;%a&nbsp;%b&nbsp;%o&nbsp;%Y', $time )
-      : '&nbsp;';
+    return '&nbsp;' if $time == 0;
+    my $pretty = time2str('%T%P %a&nbsp;%b&nbsp;%o&nbsp;%Y', $time );
+    $pretty =~ s/ (\d)(st|dn|rd|th)/&nbsp;$1$2/;
   };
 
   my $duration_format = sub {
@@ -223,7 +223,7 @@
   <% foreach my $field ( keys %fields ) { %>
     <TH>
       <%= $fields{$field}->{name} %><BR>
-      <FONT SIZE=-1><%= $fields{$field}->{attrib} %></FONT>
+      <FONT SIZE=-2><%= $fields{$field}->{attrib} %></FONT>
     </TH>
   <% } %>
 </TR>
