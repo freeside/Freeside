@@ -120,7 +120,7 @@ ENDOUT
         form_text => [qw( magic ref ss agentnum
                           last first company address1 address2
                           city zip daytime night fax
-                          username password sec_phrase )],
+                          username _password _password2 sec_phrase )],
         form_select => [qw( state popnum )], #county country
         layer_callback => sub {
           my $layer = shift;
