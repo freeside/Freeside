@@ -371,7 +371,7 @@ print qq!<BR><A NAME="cust_pkg">Packages</A> !,
 
 #get package info
 
-my $packages = get_packages();
+my $packages = get_packages($cust_main);
 
 if ( @$packages ) {
 %>
@@ -672,6 +672,8 @@ sub keyfield_numerically { (split(/\t/,$a))[0] <=> (split(/\t/,$b))[0]; }
 
 
 sub get_packages {
+
+my $cust_main = shift or return undef;
 
 my @packages = ();
 
