@@ -1155,7 +1155,7 @@ sub _quote {
   my($dbh)=dbh;
   if ( $value =~ /^\d+(\.\d+)?$/ && 
 #       ! ( datatype($table,$field) =~ /^char/ ) 
-       ! ( $dbdef->table($table)->column($field)->type =~ /(char|binary)$/i ) 
+       ! $dbdef->table($table)->column($field)->type =~ /(char|binary|text)$/i 
   ) {
     $value;
   } else {
