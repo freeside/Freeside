@@ -4,7 +4,7 @@
 my $conf = new FS::Conf;
 my @shells = $conf->config('shells');
 
-my($svcnum, $pkgnum, $svcpart, $part_svc, $svc_acct);
+my($svcnum, $pkgnum, $svcpart, $part_svc, $svc_acct, @groups);
 if ( $cgi->param('error') ) {
   $svc_acct = new FS::svc_acct ( {
     map { $_, scalar($cgi->param($_)) } fields('svc_acct')
@@ -14,6 +14,7 @@ if ( $cgi->param('error') ) {
   $svcpart = $cgi->param('svcpart');
   $part_svc=qsearchs('part_svc',{'svcpart'=>$svcpart});
   die "No part_svc entry!" unless $part_svc;
+  @groups = $cgi->param('radius_usergroup');
 } else {
   my($query) = $cgi->keywords;
   if ( $query =~ /^(\d+)$/ ) { #editing
@@ -29,6 +30,8 @@ if ( $cgi->param('error') ) {
 
     $part_svc=qsearchs('part_svc',{'svcpart'=>$svcpart});
     die "No part_svc entry!" unless $part_svc;
+
+    @groups = $svc_acct->radius_groups;
 
   } else { #adding
 
@@ -62,6 +65,8 @@ if ( $cgi->param('error') ) {
                            $part_svc_column->columnvalue,
                          );
     }
+
+    #SET DEFAULT GROUP(S) FROM PART_SVC!!!!
 
   }
 }
@@ -100,7 +105,7 @@ print qq!<FONT SIZE="+1" COLOR="#ff0000">Error: !, $cgi->param('error'),
 print 'Service # '. ( $svcnum ? "<B>$svcnum</B>" : " (NEW)" ). '<BR>'.
       'Service: <B>'. $part_svc->svc. '</B><BR><BR>'.
       <<END;
-    <FORM ACTION="${p1}process/svc_acct.cgi" METHOD=POST>
+    <FORM NAME="OneTrueForm" ACTION="${p1}process/svc_acct.cgi" METHOD=POST>
       <INPUT TYPE="hidden" NAME="svcnum" VALUE="$svcnum">
       <INPUT TYPE="hidden" NAME="pkgnum" VALUE="$pkgnum">
       <INPUT TYPE="hidden" NAME="svcpart" VALUE="$svcpart">
@@ -240,7 +245,7 @@ foreach my $r ( grep { /^r(adius|[cr])_/ } fields('svc_acct') ) {
 }
 
 print '<TR><TD ALIGN="right">RADIUS groups</TD><TD>'.
-      &FS::svc_acct::radius_usergroup_selector( [ $svc_acct->radius_groups ] ).
+      &FS::svc_acct::radius_usergroup_selector( \@groups ).
       '</TD></TR>';
 
 #submit

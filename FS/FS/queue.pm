@@ -222,7 +222,7 @@ sub cust_svc {
   qsearchs('cust_svc', { 'svcnum' => $self->svcnum } );
 }
 
-=item joblisting HASHREF
+=item joblisting HASHREF NOACTIONS
 
 =cut
 
@@ -232,21 +232,24 @@ sub joblisting {
   use Date::Format;
   use FS::CGI;
 
+  my @queue = qsearch( 'queue', $hashref );
+  return '' unless scalar(@queue);
+
   my $html = FS::CGI::table(). <<END;
       <TR>
         <TH COLSPAN=2>Job</TH>
         <TH>Args</TH>
         <TH>Date</TH>
         <TH>Status</TH>
-        <TH>Account</TH>
-      </TR>
 END
+  $html .= '<TH>Account</TH>' unless $hashref->{svcnum};
+  $html .= '</TR>';
 
   my $p = FS::CGI::popurl(2);
   foreach my $queue ( sort { 
     $a->getfield('jobnum') <=> $b->getfield('jobnum')
-  } qsearch( 'queue', $hashref ) ) {
-    my $hashref = $queue->hashref;
+  } @queue ) {
+    my $queue_hashref = $queue->hashref;
     my $jobnum = $queue->jobnum;
     my $args = join(' ', $queue->args);
     my $date = time2str( "%a %b %e %T %Y", $queue->_date );
@@ -258,25 +261,30 @@ END
         qq!&nbsp;<A HREF="$p/misc/queue.cgi?jobnum=$jobnum&action=del">remove</A>&nbsp;)!;
     }
     my $cust_svc = $queue->cust_svc;
-    my $account;
-    if ( $cust_svc ) {
-      my $table = $cust_svc->part_svc->svcdb;
-      my $label = ( $cust_svc->label )[1];
-      $account = qq!<A HREF="../view/$table.cgi?!. $queue->svcnum.
-                 qq!">$label</A>!;
-    } else {
-      $account = '';
-    }
+
     $html .= <<END;
       <TR>
         <TD>$jobnum</TD>
-        <TD>$hashref->{job}</TD>
+        <TD>$queue_hashref->{job}</TD>
         <TD>$args</TD>
         <TD>$date</TD>
         <TD>$status</TD>
-        <TD>$account</TD>
-      </TR>
 END
+
+    unless ( $hashref->{svcnum} ) {
+      my $account;
+      if ( $cust_svc ) {
+        my $table = $cust_svc->part_svc->svcdb;
+        my $label = ( $cust_svc->label )[1];
+        $account = qq!<A HREF="../view/$table.cgi?!. $queue->svcnum.
+                   qq!">$label</A>!;
+      } else {
+        $account = '';
+      }
+      $html .= "<TD>$account</TD>";
+    }
+
+    $html .= '</TR>';
 
 }
 
@@ -290,7 +298,7 @@ END
 
 =head1 VERSION
 
-$Id: queue.pm,v 1.7 2002-03-07 14:10:10 ivan Exp $
+$Id: queue.pm,v 1.8 2002-03-23 16:16:00 ivan Exp $
 
 =head1 BUGS
 

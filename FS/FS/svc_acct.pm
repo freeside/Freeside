@@ -192,8 +192,6 @@ FS::svc_Common.  The following fields are currently supported:
 
 =item radius_I<Radius_Attribute> - I<Radius-Attribute>
 
-=item domsvc - service number of svc_domain with which to associate
-
 =back
 
 =head1 METHODS
@@ -215,6 +213,10 @@ otherwise returns false.
 
 The additional fields pkgnum and svcpart (see L<FS::cust_svc>) should be 
 defined.  An FS::cust_svc record will be created and inserted.
+
+The additional field I<usergroup> can optionally be defined; if so it should
+contain an arrayref of group names.  See L<FS::radius_usergroup>.  (used in
+sqlradius export only)
 
 If the configuration value (see L<FS::Conf>) shellmachine exists, and the 
 username, uid, and dir fields are defined, the command(s) specified in
@@ -287,6 +289,20 @@ sub insert {
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
+  }
+
+  if ( $self->usergroup ) {
+    foreach my $groupname ( @{$self->usergroup} ) {
+      my $radius_usergroup = new FS::radius_usergroup ( {
+        svcnum    => $self->svcnum,
+        groupname => $groupname,
+      } );
+      my $error = $radius_usergroup->insert;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
+      }
+    }
   }
 
   #new-style exports!
@@ -561,6 +577,16 @@ sub delete {
     }
   }
 
+  foreach my $radius_usergroup (
+    qsearch('radius_usergroup', { 'svcnum' => $self->svcnum } )
+  ) {
+    my $error = $radius_usergroup->delete;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
   my $error = $self->SUPER::delete;
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
@@ -700,6 +726,10 @@ sub vpopmail_delete {
 Replaces OLD_RECORD with this one in the database.  If there is an error,
 returns the error, otherwise returns false.
 
+The additional field I<usergroup> can optionally be defined; if so it should
+contain an arrayref of group names.  See L<FS::radius_usergroup>.  (used in
+sqlradius export only)
+
 If the configuration value (see L<FS::Conf>) shellmachine exists, and the 
 dir field has changed, the command(s) specified in the shellmachine-usermod
 configuraiton file are added to the job queue (see L<FS::queue> and
@@ -758,6 +788,40 @@ sub replace {
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error if $error;
+  }
+
+  $old->usergroup( [ $old->radius_groups ] );
+
+  if ( $new->usergroup ) {
+
+    foreach my $groupname ( @{$old->usergroup} ) {
+      if ( grep { $groupname eq $_ } @{$new->usergroup} ) {
+        $new->usergroup( [ grep { $groupname ne $_ } @{$new->usergroup} ] );
+        next;
+      }
+      my $radius_usergroup = qsearch('radius_usergroup', {
+        svcnum    => $old->svcnum,
+        groupname => $groupname,
+      } );
+      my $error = $radius_usergroup->delete;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "error deleting radius_usergroup $groupname: $error";
+      }
+    }
+
+    foreach my $groupname ( @{$new->usergroup} ) {
+      my $radius_usergroup = new FS::radius_usergroup ( {
+        svcnum    => $new->svcnum,
+        groupname => $groupname,
+      } );
+      my $error = $radius_usergroup->insert;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "error adding radius_usergroup $groupname: $error";
+      }
+    }
+
   }
 
   #new-style exports!
@@ -1299,7 +1363,7 @@ sub radius_groups {
 
 =head1 SUBROUTINES
 
-=item radius_usergroup_selector GROUPS_ARRAYREF
+=item radius_usergroup_selector GROUPS_ARRAYREF [ SELECTNAME ]
 
 =cut
 
@@ -1323,6 +1387,7 @@ sub radius_usergroup_selector {
       var optionName = new Option(myvalue,myvalue,false,true);
       var length = object.$selectname.length;
       object.$selectname.options[length] = optionName;
+      object.${selectname}_add.value = "";
     }
     </SCRIPT>
     <SELECT MULTIPLE NAME="$selectname">
@@ -1330,9 +1395,12 @@ END
 
   foreach my $group ( @all_groups ) {
     $html .= '<OPTION';
-    $html .= ' SELECTED' if $sel_groups{$group};
+    $html .= ' SELECTED' if $sel_groups{$group}--;
     $html .= ">$group</OPTION>\n";
   }
+  foreach my $group ( grep { $sel_groups{$_} } keys %sel_groups ) {
+    $html .= "<OPTION SELECTED>$group</OPTION>\n";
+  };
   $html .= '</SELECT>';
 
   $html .= qq!<BR><INPUT TYPE="text" NAME="${selectname}_add">!.

@@ -505,9 +505,11 @@ sub _export_replace {
     }
 
     my @del = grep { !exists $new{$_} } keys %old;
-    my $error = $self->sqlradius_queue( $new->svcnum, 'sqlradius_attrib_delete',
-      $table, $new->username, @del );
-    return $error if $error;
+    if ( @del ) {
+      my $error = $self->sqlradius_queue( $new->svcnum, 'attrib_delete',
+        $table, $new->username, @del );
+      return $error if $error;
+    }
   }
 
   '';

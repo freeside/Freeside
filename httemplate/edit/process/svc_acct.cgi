@@ -20,12 +20,15 @@ if ( $cgi->param('_password') eq '*HIDDEN*' ) {
   $cgi->param('_password',$old->getfield('_password'));
 }
 
+#unmunge usergroup
+$cgi->param('usergroup', [ $cgi->param('radius_usergroup') ] );
+
 my $new = new FS::svc_acct ( {
   map {
     $_, scalar($cgi->param($_));
   #} qw(svcnum pkgnum svcpart username _password popnum uid gid finger dir
   #  shell quota slipip)
-  } ( fields('svc_acct'), qw( pkgnum svcpart ) )
+  } ( fields('svc_acct'), qw( pkgnum svcpart usergroup ) )
 } );
 
 my $error;
