@@ -279,7 +279,8 @@ sub delete {
     if qsearch( 'svc_acct', { 'domsvc' => $self->svcnum } );
 
   return "Can't delete a domain with (svc_acct_sm) mail aliases!"
-    if qsearch('svc_acct_sm', { 'domsvc' => $self->svcnum } );
+    if defined( $FS::Record::dbdef->table('svc_acct_sm') )
+       && qsearch('svc_acct_sm', { 'domsvc' => $self->svcnum } );
 
   return "Can't delete a domain with (domain_record) zone entries!"
     if qsearch('domain_record', { 'svcnum' => $self->svcnum } );
@@ -533,7 +534,7 @@ sub submit_internic {
 
 =head1 VERSION
 
-$Id: svc_domain.pm,v 1.20 2001-09-06 20:41:59 ivan Exp $
+$Id: svc_domain.pm,v 1.21 2001-10-22 12:22:03 ivan Exp $
 
 =head1 BUGS
 
