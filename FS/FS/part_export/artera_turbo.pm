@@ -34,7 +34,11 @@ tie my %options, 'Tie::IxHash',
 Real-time export to <a href="http://www.arteraturbo.com/">Artera Turbo</a>
 Reseller API.  Requires installation of
 <a href="http://search.cpan.org/dist/Net-Artera">Net::Artera</a>
-from CPAN.
+from CPAN.  You probably also want to:
+<UL>
+  <LI>In the configuraiton UI section: set the <B>svc_external-skip_manual</B> and <B>svc_external-display_type</B> configuration values.
+  <LI>In the message catalog: set <B>svc_external-id</B> to <I>Artera Serial Number</I> and set <B>svc_external-title</B> to <I>Artera Key Code</I>.
+</UL>
 END
 );
 
@@ -100,11 +104,10 @@ sub _export_insert {
 
 sub _export_replace {
   my( $self, $new, $old ) = (shift, shift, shift);
-  #except the first time, hehe..
-  #return "can't change serial number with Artera"
-  #  if $old->id != $new->id;
-  #return "can't change key code with Artera"
-  #  if $old->title ne $new->title;
+  return "can't change serial number with Artera"
+    if $old->id != $new->id && $old->id;
+  return "can't change key code with Artera"
+    if $old->title ne $new->title && $old->title;
   '';
 }
 

@@ -10,6 +10,9 @@ install Net::SSH 0.08
 
 install NetAddr::IP, Chart::Base, IPC::ShareLite and Locale::SubCountry
 
+INSERT INTO msgcat ( msgnum, msgcode, locale, msg ) VALUES ( 20, 'svc_external-id', 'en_US', 'External ID' );
+INSERT INTO msgcat ( msgnum, msgcode, locale, msg ) VALUES ( 21, 'svc_external-title', 'en_US', 'Title' );
+
 CREATE TABLE cust_bill_pkg_detail (
   detailnum serial,
   pkgnum int NOT NULL,

@@ -118,6 +118,14 @@ sub messages {
       'en_US' => 'Night Phone',
     },
 
+    'svc_external-id' => {
+      'en_US' => 'External ID',
+    },
+
+    'svc_external-title' => {
+      'en_US' => 'Title',
+    },
+
   );
 }
 

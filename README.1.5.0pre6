@@ -28,6 +28,9 @@ CREATE INDEX cust_pay_void1 ON cust_pay_void(custnum);
 alter table svc_external alter column id drop not null;
 alter table h_svc_external alter column id drop not null;
 
+INSERT INTO msgcat ( msgnum, msgcode, locale, msg ) VALUES ( 20, 'svc_external-id', 'en_US', 'External ID' );
+INSERT INTO msgcat ( msgnum, msgcode, locale, msg ) VALUES ( 21, 'svc_external-title', 'en_US', 'Title' );
+
 dbdef-create username
 create-history-tables username cust_pay_refund cust_pay_void
 dbdef-create username

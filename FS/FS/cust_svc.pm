@@ -3,6 +3,7 @@ package FS::cust_svc;
 use strict;
 use vars qw( @ISA $ignore_quantity );
 use Carp qw( cluck );
+use FS::Conf;
 use FS::Record qw( qsearch qsearchs dbh );
 use FS::cust_pkg;
 use FS::part_pkg;
@@ -303,7 +304,12 @@ sub label {
   } elsif ( $svcdb eq 'svc_broadband' ) {
     $tag = $svc_x->ip_addr;
   } elsif ( $svcdb eq 'svc_external' ) {
-    $tag = $svc_x->id. ': '. $svc_x->title;
+    my $conf = new FS::Conf;
+    if ( $conf->config('svc_external-display_type') eq 'artera_turbo' ) {
+      $tag = sprintf('%010d', $svc_x->id). '-'. $svc_x->title;
+    } else {
+      $tag = $svc_x->id. ': '. $svc_x->title;
+    }
   } else {
     cluck "warning: asked for label of unsupported svcdb; using svcnum";
     $tag = $svc_x->getfield('svcnum');

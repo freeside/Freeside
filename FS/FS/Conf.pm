@@ -1298,6 +1298,14 @@ httemplate/docs/config.html
     'type'        => 'checkbox',
   },
 
+  {
+    'key'         => 'svc_external-display_type',
+    'section'     => 'UI',
+    'description' => 'Select a specific svc_external type to enable some UI changes specific to that type (i.e. artera_turbo).',
+    'type'        => 'select',
+    'select_enum' => [ 'generic', 'artera_turbo', ],
+  },
+
 );
 
 1;
