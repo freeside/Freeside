@@ -48,10 +48,21 @@ if ( $cgi->param('magic') && $cgi->param('magic') eq 'bill' ) {
 } else {
 
   my $qual = '';
-  if ( $cgi->param('magic') && $cgi->param('magic') eq 'active' ) {
+  if ( $cgi->param('magic') &&
+       $cgi->param('magic') =~ /^(active|suspended|canceled)$/
+  ) {
 
-    $qual = 'WHERE ( susp IS NULL OR susp = 0 )'.
-            ' AND ( cancel IS NULL OR cancel = 0)';
+    if ( $cgi->param('magic') eq 'active' ) {
+      $qual = 'WHERE ( susp IS NULL OR susp = 0 )'.
+              ' AND ( cancel IS NULL OR cancel = 0)';
+    } elsif ( $cgi->param('magic') eq 'suspended' ) {
+      $qual = 'WHERE susp IS NOT NULL AND susp > 0'.
+              ' AND ( cancel IS NULL OR cancel = 0)';
+    } elsif ( $cgi->param('magic') eq 'canceled' ) {
+      $qual = 'WHERE cancel IS NOT NULL AND cancel > 0';
+    } else {
+      die "guru meditation #420";
+    }
 
     $sortby = \*pkgnum_sort;
 
