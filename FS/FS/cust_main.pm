@@ -1714,6 +1714,8 @@ sub append_fuzzyfiles {
   1;
 }
 
+=back
+
 =head1 BUGS
 
 The delete method.
