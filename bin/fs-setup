@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: fs-setup,v 1.34 2001-04-09 23:05:16 ivan Exp $
+# $Id: fs-setup,v 1.35 2001-04-15 09:36:43 ivan Exp $
 #
 # ivan@sisd.com 97-nov-8,9
 #
@@ -32,7 +32,10 @@
 # fix radius attributes ivan@sisd.com 98-sep-27
 #
 # $Log: fs-setup,v $
-# Revision 1.34  2001-04-09 23:05:16  ivan
+# Revision 1.35  2001-04-15 09:36:43  ivan
+# http://www.sisd.com/freeside/list-archive/msg01450.html
+#
+# Revision 1.34  2001/04/09 23:05:16  ivan
 # Transactions Part I!!!
 #
 # Revision 1.33  2001/02/03 14:03:50  ivan
@@ -570,7 +573,7 @@ sub tables_hash_hack {
     'cust_svc' => {
       'columns' => [
         'svcnum',    'int',    '',   '',
-        'pkgnum',    'int',    '',   '',
+        'pkgnum',    'int',    'NULL',   '',
         'svcpart',   'int',    '',   '',
       ],
       'primary_key' => 'svcnum',
