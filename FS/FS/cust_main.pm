@@ -1266,7 +1266,7 @@ sub apply_credits {
   foreach my $cust_bill ( @invoices ) {
     my $amount;
 
-    if (!(defined $credit) || $credit->credited == 0) {
+    if ( !defined($credit) || $credit->credited == 0) {
       $credit = pop @credits or last;
     }
 
@@ -1316,7 +1316,7 @@ sub apply_payments {
   foreach my $cust_bill ( @invoices ) {
     my $amount;
 
-    if ( !defined $payment || $payment->unapplied = 0 ) {
+    if ( !defined($payment) || $payment->unapplied == 0 ) {
       $payment = pop @payments or last;
     }
 
@@ -1501,7 +1501,7 @@ sub rebuild_fuzzyfiles {
 
 =head1 VERSION
 
-$Id: cust_main.pm,v 1.27 2001-09-02 02:46:55 ivan Exp $
+$Id: cust_main.pm,v 1.28 2001-09-02 04:25:55 ivan Exp $
 
 =head1 BUGS
 

@@ -103,7 +103,7 @@ sub insert {
       'amount'    => $self->refund,
       '_date'     => $self->_date,
     };
-    $error = $cust_bill_pay->insert;
+    $error = $cust_credit_refund->insert;
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return $error;
@@ -198,7 +198,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: cust_refund.pm,v 1.6 2001-09-02 02:46:55 ivan Exp $
+$Id: cust_refund.pm,v 1.7 2001-09-02 04:25:55 ivan Exp $
 
 =head1 BUGS
 

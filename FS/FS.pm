@@ -81,9 +81,15 @@ L<FS::cust_bill_pkg> - Invoice line item class
 
 L<FS::cust_pay> - Payment class
 
+L<FS::cust_bill_pay> - Payment application class
+
 L<FS::cust_credit> - Credit class
 
 L<FS::cust_refund> - Refund class
+
+L<FS::cust_credit_refund> - Refund application class
+
+L<FS::cust_credit_bill> - Refund invoice application class
 
 L<FS::cust_pay_batch> - Credit card transaction queue class
 
@@ -122,7 +128,7 @@ The main documentation is in htdocs/docs.
 
 =head1 VERSION
 
-$Id: FS.pm,v 1.5 2001-04-23 12:40:30 ivan Exp $
+$Id: FS.pm,v 1.6 2001-09-02 04:25:55 ivan Exp $
 
 =head1 SUPPORT
 
