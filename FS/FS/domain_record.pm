@@ -123,7 +123,7 @@ sub check {
     my $recdata = $self->recdata;
     $recdata =~ s/\s+/ /g;
     $recdata =~ /^([a-z0-9\.\-]+ [\w\-\+]+\.[a-z0-9\.\-]+ \( (\d+ ){5}\))$/
-      or return "Illegal data for SOA reocrd: $recdata";
+      or return "Illegal data for SOA record: $recdata";
     $self->recdata($1);
   } elsif ( $self->rectype eq 'NS' ) {
     $self->recdata =~ /^([a-z0-9\.\-]+)$/
@@ -156,7 +156,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: domain_record.pm,v 1.1 2000-02-03 05:16:52 ivan Exp $
+$Id: domain_record.pm,v 1.2 2001-05-18 14:08:55 ivan Exp $
 
 =head1 BUGS
 
@@ -172,7 +172,10 @@ L<FS::Record>, schema.html from the base documentation.
 =head1 HISTORY
 
 $Log: domain_record.pm,v $
-Revision 1.1  2000-02-03 05:16:52  ivan
+Revision 1.2  2001-05-18 14:08:55  ivan
+tyop
+
+Revision 1.1  2000/02/03 05:16:52  ivan
 beginning of DNS and Apache support
 
 
