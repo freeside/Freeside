@@ -69,6 +69,14 @@ sub insert {
       return $error;
     }
     $svcnum = $self->svcnum($cust_svc->svcnum);
+  } else {
+    $cust_svc = qsearchs('cust_svc',{'svcnum'=>$self->svcnum});
+    unless ( $cust_svc ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "no cust_svc record found for svcnum ". $self->svcnum;
+    }
+    $self->pkgnum($cust_svc->pkgnum);
+    $self->svcpart($cust_svc->svcpart);
   }
 
   $error = $self->SUPER::insert;
@@ -207,7 +215,7 @@ sub cancel { ''; }
 
 =head1 VERSION
 
-$Id: svc_Common.pm,v 1.7 2001-11-30 00:04:38 ivan Exp $
+$Id: svc_Common.pm,v 1.8 2002-03-18 16:05:35 ivan Exp $
 
 =head1 BUGS
 

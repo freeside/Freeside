@@ -273,6 +273,16 @@ sub insert {
                                'domsvc'   => $self->domsvc,
                              } );
 
+  if ( $self->svcnum ) {
+    my $cust_svc = qsearchs('cust_svc',{'svcnum'=>$self->svcnum});
+    unless ( $cust_svc ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "no cust_svc record found for svcnum ". $self->svcnum;
+    }
+    $self->pkgnum($cust_svc->pkgnum);
+    $self->svcpart($cust_svc->svcpart);
+  }
+
   my $part_svc = qsearchs( 'part_svc', { 'svcpart' => $self->svcpart } );
   return "Unknown svcpart" unless $part_svc;
   return "uid in use"
