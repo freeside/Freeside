@@ -153,7 +153,7 @@ sub calc_recur {
       }
 
       my $rate_region = $rate_prefix->rate_region;
-      warn "  (rate region $rate_region)" if $DEBUG;
+      warn "  (rate region $rate_region)\n" if $DEBUG;
 
       my @call_details = (
         #time2str("%Y %b %d - %r", $session->{'acctstarttime'}),
