@@ -20,6 +20,7 @@ use FS::ClientAPI; #hmm
 FS::ClientAPI->register_handlers(
   'MyAccount/login'            => \&login,
   'MyAccount/customer_info'    => \&customer_info,
+  'MyAccount/edit_info'        => \&edit_info,
   'MyAccount/invoice'          => \&invoice,
   'MyAccount/cancel'           => \&cancel,
   'MyAccount/payment_info'     => \&payment_info,
@@ -27,6 +28,14 @@ FS::ClientAPI->register_handlers(
   'MyAccount/list_pkgs'        => \&list_pkgs,
   'MyAccount/order_pkg'        => \&order_pkg,
   'MyAccount/cancel_pkg'       => \&cancel_pkg,
+);
+
+use vars qw( @cust_main_editable_fields );
+@cust_main_editable_fields = qw(
+  first last company address1 address2 city
+    county state zip country daytime night fax
+  ship_first ship_last ship_company ship_address1 ship_address2 ship_city
+    ship_state ship_zip ship_country ship_daytime ship_night ship_fax
 );
 
 #store in db?
@@ -104,6 +113,10 @@ sub customer_info {
 
     $return{name} = $cust_main->first. ' '. $cust_main->get('last');
 
+    for (@cust_main_editable_fields) {
+      $return{$_} = $cust_main->get($_);
+    }
+
   } else { #no customer record
 
     my $svc_acct = qsearchs('svc_acct', { 'svcnum' => $session->{'svcnum'} } )
@@ -117,6 +130,27 @@ sub customer_info {
            %return,
          };
 
+}
+
+sub edit_info {
+  my $p = shift;
+  my $session = $cache->get($p->{'session_id'})
+    or return { 'error' => "Can't resume session" }; #better error message
+
+  my $custnum = $session->{'custnum'}
+    or return { 'error' => "no customer record" };
+
+  my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
+    or return { 'error' => "unknown custnum $custnum" };
+
+  my $new = new FS::cust_main { $cust_main->hash };
+  $new->set( $_ => $p->{$_} )
+    foreach grep { exists $p->{$_} } @cust_main_editable_fields;
+  my $error = $new->replace($cust_main);
+  return { 'error' => $error } if $error;
+  #$cust_main = $new;
+  
+  return { 'error' => '' };
 }
 
 sub payment_info {

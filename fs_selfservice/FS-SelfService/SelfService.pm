@@ -23,6 +23,7 @@ $socket .= '.'.$tag if defined $tag && length($tag);
   'chsh'            => 'passwd/passwd',
   'login'           => 'MyAccount/login',
   'customer_info'   => 'MyAccount/customer_info',
+  'edit_info'       => 'MyAccount/edit_info',
   'invoice'         => 'MyAccount/invoice',
   'cancel'          => 'MyAccount/cancel',
   'payment_info'    => 'MyAccount/payment_info',
@@ -113,7 +114,7 @@ FS::SelfService - Freeside self-service API
   my $customer_info = customer_info( { 'session_id' => $session_id } );
 
   #payment_info and process_payment are available in 1.5+ only
-  my $payment_info = payment_info) { 'session_id' => $session_id } );
+  my $payment_info = payment_info( { 'session_id' => $session_id } );
 
   #!!! process_payment example
 
@@ -244,7 +245,22 @@ the following keys: invnum, date, owed
 
 An HTML fragment containing shipping and billing addresses.
 
+=item The following fields are also returned: first last company address1 address2 city county state zip country daytime night fax ship_first ship_last ship_company ship_address1 ship_address2 ship_city ship_state ship_zip ship_country ship_daytime ship_night ship_fax
+
 =back
+
+=item edit_info HASHREF
+
+Takes a hash reference as parameter with any of the following keys:
+
+first last company address1 address2 city county state zip country daytime night fax ship_first ship_last ship_company ship_address1 ship_address2 ship_city ship_state ship_zip ship_country ship_daytime ship_night ship_fax
+
+If a field exists, the customer record is updated with the new value of that
+field.  If a field does not exist, that field is not changed on the customer
+record.
+
+Returns a hash reference with a single key, B<error>, empty on success, or an
+error message on errors
 
 =item invoice HASHREF
 
