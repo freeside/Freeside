@@ -1151,6 +1151,13 @@ sub collect {
             $payname =  "$payfirst $paylast";
           }
 
+          my @invoicing_list = grep { $_ ne 'POST' } $self->invoicing_list;
+          if ( $conf->config('emailinvoiceonly') ) {
+            @invoicing_list = $self->default_invoicing_list
+              unless @invoicing_list;
+          }
+          my $email = $invoicing_list[0];
+
           my( $action1, $action2 ) = split(/\s*\,\s*/, $bop_action );
         
           my $transaction =
@@ -1175,6 +1182,7 @@ sub collect {
             'card_number'    => $self->payinfo,
             'expiration'     => $exp,
             'referer'        => 'http://cleanwhisker.420.am/',
+            'email'          => $email,
           );
           $transaction->submit();
 
@@ -1529,6 +1537,24 @@ sub check_invoicing_list {
   '';
 }
 
+=item default_invoicing_list
+
+=cut
+
+sub default_invoicing_list {
+  my $self = shift;
+  my @list = ();
+  foreach my $cust_pkg ( $self->all_pkgs ) {
+    my @cust_svc = qsearch('cust_svc', { 'pkgnum' => $cust_pkg->pkgnum } );
+    my @svc_acct =
+      map { qsearchs('svc_acct', { 'svcnum' => $_->svcnum } ) }
+        grep { qsearchs('svc_acct', { 'svcnum' => $_->svcnum } ) }
+          @cust_svc;
+    push @list, map { $_->email } @svc_acct;
+  }
+  $self->invoicing_list(\@list);
+}
+
 =item referral_cust_main [ DEPTH [ EXCLUDE_HASHREF ] ]
 
 Returns an array of customers referred by this customer (referral_custnum set
@@ -1698,7 +1724,7 @@ sub append_fuzzyfiles {
 
 =head1 VERSION
 
-$Id: cust_main.pm,v 1.35 2001-09-25 15:55:48 ivan Exp $
+$Id: cust_main.pm,v 1.36 2001-09-25 18:01:19 ivan Exp $
 
 =head1 BUGS
 
