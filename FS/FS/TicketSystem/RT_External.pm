@@ -50,7 +50,8 @@ sub num_customer_tickets {
   }
 
   my $sql = "
-    select count(*) from tickets 
+    select count(*) from tickets
+                    join links on ( tickets.id = links.localbase )
        where ( status = 'new' or status = 'open' or status = 'stalled' )
          and target = 'freeside://freeside/cust_main/$custnum'
          $priority_sql
