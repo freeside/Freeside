@@ -332,13 +332,6 @@ httemplate/docs/config.html
   },
 
   {
-    'key'         => 'domain',
-    'section'     => 'deprecated',
-    'description' => 'Your domain name.',
-    'type'        => 'text',
-  },
-
-  {
     'key'         => 'editreferrals',
     'section'     => 'UI',
     'description' => 'Enable advertising source modification for existing customers',

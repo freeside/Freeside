@@ -7,7 +7,6 @@ use vars qw( @ISA $noexport_hack $conf
              $username_ampersand $username_letter $username_letterfirst
              $username_noperiod $username_nounderscore $username_nodash
              $username_uppercase
-             $mydomain
              $welcome_template $welcome_from $welcome_subject $welcome_mimetype
              $smtpmachine
              $dirhash
@@ -48,7 +47,6 @@ $FS::UID::callback{'FS::svc_acct'} = sub {
   $username_nodash = $conf->exists('username-nodash');
   $username_uppercase = $conf->exists('username-uppercase');
   $username_ampersand = $conf->exists('username-ampersand');
-  $mydomain = $conf->config('domain');
   $dirhash = $conf->config('dirhash') || 0;
   if ( $conf->exists('welcome_email') ) {
     $welcome_template = new Text::Template (
@@ -875,14 +873,10 @@ Returns the domain associated with this account.
 
 sub domain {
   my $self = shift;
-  if ( $self->domsvc ) {
-    #$self->svc_domain->domain;
-    my $svc_domain = $self->svc_domain
-      or die "no svc_domain.svcnum for svc_acct.domsvc ". $self->domsvc;
-    $svc_domain->domain;
-  } else {
-    $mydomain or die "svc_acct.domsvc is null and no legacy domain config file";
-  }
+  die "svc_acct.domsvc is null for svcnum ". $self->svcnum unless $self->domsvc;
+  my $svc_domain = $self->svc_domain
+    or die "no svc_domain.svcnum for svc_acct.domsvc ". $self->domsvc;
+  $svc_domain->domain;
 }
 
 =item svc_domain

@@ -2,7 +2,6 @@
 <%
 
 my $conf = new FS::Conf;
-my $mydomain = $conf->config('domain');
 
 my($svcnum, $pkgnum, $svcpart, $part_svc, $svc_forward);
 if ( $cgi->param('error') ) {

@@ -1,7 +1,5 @@
 <%
 
-my $mydomain = '';
-
 my $conf = new FS::Conf;
 my $maxrecords = $conf->config('maxsearchrecordsperpage');
 
@@ -147,14 +145,8 @@ END
       $domain = "<A HREF=\"${p}view/svc_domain.cgi?". $svc_domain->svcnum.
                 "\">". $svc_domain->domain. "</A>";
     } else {
-      unless ( $mydomain ) {
-        my $conf = new FS::Conf;
-        unless ( $mydomain = $conf->config('domain') ) {
-          die "No legacy domain config file and no svc_domain.svcnum record ".
-              "for svc_acct.domsvc: ". $svc_acct->domsvc;
-        }
-      }
-      $domain = "<i>$mydomain</i><FONT COLOR=\"#FF0000\">*</FONT>";
+      die "No svc_domain.svcnum record for svc_acct.domsvc: ".'
+          $svc_acct->domsvc;
     }
     my($cust_pkg,$cust_main);
     if ( $cust_svc->pkgnum ) {
@@ -216,17 +208,8 @@ END
 
   }
  
-  print "</TABLE>$pager<BR>";
-
-  if ( $mydomain ) {
-    print "<BR><FONT COLOR=\"#FF0000\">*</FONT> The <I>$mydomain</I> domain ".
-          "is contained in your legacy <CODE>domain</CODE> ".
-          "<A HREF=\"${p}docs/config.html#domain\">configuration file</A>.  ".
-          "You should run the <CODE>bin/fs-migrate-svc_acct_sm</CODE> script ".
-          "to create a proper svc_domain record for this domain.";
-  }
-
-  print '</BODY></HTML>';
+  print "</TABLE>$pager<BR>".
+        '</BODY></HTML>';
 
 }
 

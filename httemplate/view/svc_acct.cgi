@@ -2,7 +2,6 @@
 <%
 
 my $conf = new FS::Conf;
-my $mydomain = $conf->config('domain');
 
 my($query) = $cgi->keywords;
 $query =~ /^(\d+)$/;
@@ -32,11 +31,7 @@ if ( $svc_acct->domsvc ) {
   die "Unknown domain" unless $svc_domain;
   $domain = $svc_domain->domain;
 } else {
-  unless ( $mydomain ) {
-    die "No legacy domain config file and no svc_domain.svcnum record ".
-        "for svc_acct.domsvc: ". $cust_svc->domsvc;
-  }
-  $domain = $mydomain;
+  die "No svc_domain.svcnum record for svc_acct.domsvc: ". $cust_svc->domsvc;
 }
 
 %>

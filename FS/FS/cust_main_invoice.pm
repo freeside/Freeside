@@ -134,13 +134,6 @@ sub checkdest {
       unless qsearchs( 'svc_acct', { 'svcnum' => $self->dest } );
   } elsif ( $self->dest =~ /^([\w\.\-\&\+]+)\@(([\w\.\-]+\.)+\w+)$/ ) {
     my($user, $domain) = ($1, $2);
-#    if ( $domain eq $mydomain ) {
-#      my $svc_acct = qsearchs( 'svc_acct', { 'username' => $user } );
-#      return "Unknown local account: $user\@$domain (specified literally)"
-#        unless $svc_acct;
-#      $svc_acct->svcnum =~ /^(\d+)$/ or die "Non-numeric svcnum?!";
-#      $self->dest($1);
-#    }
     $self->dest("$1\@$2");
   } else {
     return gettext("illegal_email_invoice_address");
@@ -170,7 +163,7 @@ sub address {
 
 =head1 VERSION
 
-$Id: cust_main_invoice.pm,v 1.12 2002-04-12 13:22:02 ivan Exp $
+$Id: cust_main_invoice.pm,v 1.13 2002-09-18 22:50:44 ivan Exp $
 
 =head1 BUGS
 

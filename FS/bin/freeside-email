@@ -12,11 +12,9 @@ my $user = shift or die &usage;
 adminsuidsetup $user;
 
 my $conf = new FS::Conf;
-my $domain = $conf->config('domain');
 
 my @svc_acct = qsearch('svc_acct', {});
-my @usernames = map $_->username, @svc_acct;
-my @emails = map "$_\@$domain", @usernames;
+my @emails = map $_->email, @svc_acct;
 
 print join("\n", @emails), "\n";
 
@@ -51,7 +49,7 @@ user: From the mapsecrets file - see config.html from the base documentation
 
 =head1 VERSION
 
-$Id: freeside-email,v 1.1 2001-05-15 07:52:34 ivan Exp $
+$Id: freeside-email,v 1.2 2002-09-18 22:50:44 ivan Exp $
 
 =head1 BUGS
 

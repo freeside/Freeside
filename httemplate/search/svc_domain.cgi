@@ -1,7 +1,6 @@
 <%
 
 my $conf = new FS::Conf;
-my $mydomain = $conf->config('domain');
 
 my($query)=$cgi->keywords;
 $query ||= ''; #to avoid use of unitialized value errors
