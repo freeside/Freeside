@@ -123,11 +123,11 @@ Action options:
 
 Example crontab entries:
 
-20 4,16 * * * freeside-overdue -e -s user
-20 4,16 * * * freeside-overdue -d 30 -p -q user
-20 4,16 * * * freeside-overdue -d 60 user
-20 4,16 * * * freeside-overdue -d 90 -s user
-20 4,16 * * * freeside-overdue -d 120 -c user
+20 4 * * * freeside-overdue -e -s user
+20 4 * * * freeside-overdue -d 30 -p -q user
+20 4 * * * freeside-overdue -d 60 user
+20 4 * * * freeside-overdue -d 90 -s user
+20 4 * * * freeside-overdue -d 120 -c user
 
 =head1 ORIGINAL AUTHORS
 
