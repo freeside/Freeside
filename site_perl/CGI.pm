@@ -127,7 +127,7 @@ Returns current URL with LEVEL levels of path removed from the end (default 0).
 
 =cut
 
-=item url {
+sub url {
   my($up)=@_;
   my($cgi)=FS::UID::cgi;
   my($url)=new URI::URL $cgi;
@@ -161,7 +161,10 @@ lose the background, eidiot ivan@sisd.com 98-sep-2
 pod ivan@sisd.com 98-sep-12
 
 $Log: CGI.pm,v $
-Revision 1.7  1998-11-09 06:10:59  ivan
+Revision 1.8  1998-11-09 08:36:05  ivan
+haha
+
+Revision 1.7  1998/11/09 06:10:59  ivan
 added sub url
 
 Revision 1.6  1998/11/09 05:44:20  ivan
