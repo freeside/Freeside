@@ -401,21 +401,26 @@ END
       print "<TD ROWSPAN=$rowspan ALIGN=right>";
       if ( $addl_col eq 'tickets' ) {
         if ( @custom_priorities ) {
+          print '<TABLE>';
           foreach my $priority ( @custom_priorities ) {
-            print '<A HREF="'.
-                    FS::TicketSystem->href_customer_tickets($custnum,$priority).
-                  '">'.
-                  FS::TicketSystem->num_customer_tickets($custnum,$priority).
-                  "&nbsp;$priority</A><BR>";
+            my $ahref =
+              '<A HREF="'.
+                FS::TicketSystem->href_customer_tickets($custnum,$priority).
+              '">';
+            print "<TR><TD ALIGN=right>$ahref".
+                    FS::TicketSystem->num_customer_tickets($custnum,$priority).
+                  "</A></TD>".
+                  "<TD ALIGN=left>$ahref$priority</A></TD></TR>";
           }
+          print "<TR><TD ALIGN=right>";
         }
-        print '<A HREF="'.
-              FS::TicketSystem->href_customer_tickets($cust_main->custnum, $p).
-              '">'.
-              $cust_main->get($addl_col);
-        print '&nbsp;total'
+        my $ahref =
+          '<A HREF="'.
+            FS::TicketSystem->href_customer_tickets($custnum).
+          '">';
+        print $ahref. $cust_main->get($addl_col). '</A>';
+        print '</TD><TD ALIGN=left>${ahref}total</A></TD></TR></TABLE>'
           if @custom_priorities;
-        print "</A>";
       } else {
         print $cust_main->get($addl_col);
       }
