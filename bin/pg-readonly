@@ -17,6 +17,8 @@ my $dbh = adminsuidsetup $user;
 foreach my $table ( dbdef->tables ) {
   $dbh->do("GRANT SELECT ON $table TO $rouser");
   $dbh->commit();
-  $dbh->do("GRANT SELECT ON ${table}_seq TO $rouser");
-  $dbh->commit();
+  if ( my $pkey = dbdef->table($table)->primary_key ) {
+    $dbh->do("GRANT SELECT ON ${table}_${pkey}_seq TO $rouser");
+    $dbh->commit();
+  }
 }
