@@ -468,6 +468,13 @@ httemplate/docs/config.html
 #  },
 
   {
+    'key'         => 'maxsearchrecordsperpage',
+    'section'     => 'UI',
+    'description' => 'If set, number of search records to return per page.',
+    'type'        => 'text',
+  },
+
+  {
     'key'         => 'sendmailconfigpath',
     'section'     => 'mail',
     'description' => 'Sendmail configuration file path.  Defaults to `/etc\'.  Many newer distributions use `/etc/mail\'.',

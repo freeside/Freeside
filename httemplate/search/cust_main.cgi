@@ -1,14 +1,15 @@
 <%
-#<!-- $Id: cust_main.cgi,v 1.14 2001-11-03 17:49:52 ivan Exp $ -->
+#<!-- $Id: cust_main.cgi,v 1.15 2001-12-03 08:41:43 ivan Exp $ -->
 
 use strict;
 #use vars qw( $conf %ncancelled_pkgs %all_pkgs $cgi @cust_main $sortby );
-use vars qw( $conf %all_pkgs $cgi @cust_main $sortby );
+#use vars qw( $conf %all_pkgs $cgi @cust_main $sortby );
+use vars qw( $conf %all_pkgs $cgi @cust_main $sortby $orderby $maxrecords $limit $offset );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use IO::Handle;
 use String::Approx qw(amatch);
-use FS::UID qw(cgisuidsetup);
+use FS::UID qw(dbh cgisuidsetup);
 use FS::Record qw(qsearch qsearchs dbdef jsearch);
 use FS::CGI qw(header menubar eidiot popurl table);
 use FS::cust_main;
@@ -18,6 +19,7 @@ $cgi = new CGI;
 cgisuidsetup($cgi);
 
 $conf = new FS::Conf;
+$maxrecords = $conf->config('maxsearchrecordsperpage');
 
 my $cache;
 
@@ -29,6 +31,26 @@ my $cache;
 #      (
 #        ( cust_svc left outer join part_svc using (svcpart)
 #        ) left outer join svc_acct using (svcnum)
+#      ) left outer join svc_domain using(svcnum)
+#    ) left outer join svc_forward using(svcnum)
+#  ) using (pkgnum)
+#) using (custnum)
+#END
+
+#my $monsterjoin = <<END;
+#cust_main left outer join (
+#  ( cust_pkg left outer join part_pkg using(pkgpart)
+#  ) left outer join (
+#    (
+#      (
+#        ( cust_svc left outer join part_svc using (svcpart)
+#        ) left outer join (
+#          svc_acct left outer join (
+#            select svcnum, domain, catchall from svc_domain
+#            ) as svc_acct_domsvc (
+#              svc_acct_svcnum, svc_acct_domain, svc_acct_catchall
+#          ) on svc_acct.domsvc = svc_acct_domsvc.svc_acct_svcnum
+#        ) using (svcnum)
 #      ) left outer join svc_domain using(svcnum)
 #    ) left outer join svc_forward using(svcnum)
 #  ) using (pkgnum)
@@ -55,38 +77,93 @@ cust_main left outer join (
 ) using (custnum)
 END
 
+$orderby = ''; #removeme
+
+$limit = '';
+$limit .= "LIMIT $maxrecords" if $maxrecords;
+
+$offset = $cgi->param('offset') || 0;
+$limit .= " OFFSET $offset" if $offset;
+
+my $total;
+
 if ( $cgi->param('browse') ) {
   my $query = $cgi->param('browse');
   if ( $query eq 'custnum' ) {
     $sortby=\*custnum_sort;
-#    @cust_main=qsearch('cust_main',{});  
-    ( $cache, @cust_main ) =
-      jsearch($monsterjoin, {}, '', '', 'cust_main', 'custnum' );  
+    $orderby = 'ORDER BY custnum';
   } elsif ( $query eq 'last' ) {
     $sortby=\*last_sort;
-#    @cust_main=qsearch('cust_main',{});  
-    ( $cache, @cust_main ) =
-      jsearch($monsterjoin, {}, '', '', 'cust_main', 'custnum' );  
+    $orderby = 'ORDER BY last';
   } elsif ( $query eq 'company' ) {
     $sortby=\*company_sort;
-#    @cust_main=qsearch('cust_main',{});
-    ( $cache, @cust_main ) =
-      jsearch($monsterjoin, {}, '', '', 'cust_main', 'custnum' );  
+    $orderby = 'ORDER BY company';
   } else {
     die "unknown browse field $query";
   }
+
+  my $ncancelled = '';
+
+  if (  $cgi->param('showcancelledcustomers') eq '0' #see if it was set by me
+       || ( $conf->exists('hidecancelledcustomers')
+             && ! $cgi->param('showcancelledcustomers') )
+     ) {
+    #grep { $_->ncancelled_pkgs || ! $_->all_pkgs }
+    #needed for MySQL???    OR cust_pkg.cancel = \"\"
+    $ncancelled = "
+      WHERE 0 < ( SELECT COUNT(*) FROM cust_pkg
+                    WHERE cust_pkg.custnum = cust_main.custnum
+                      AND ( cust_pkg.cancel IS NULL
+                            OR cust_pkg.cancel = 0
+                          )
+                )
+         OR 0 = ( SELECT COUNT(*) FROM cust_pkg
+                    WHERE cust_pkg.custnum = cust_main.custnum
+                )
+    ";
+  }
+
+  my $statement = "SELECT COUNT(*) FROM cust_main $ncancelled";
+  my $sth = dbh->prepare($statement)
+    or die dbh->errstr. " doing $statement";
+  $sth->execute or die "Error executing \"$statement\": ". $sth->errstr;
+
+  $total = @{$sth->fetchrow_arrayref}[0];
+
+  my @just_cust_main = qsearch('cust_main',{}, '',
+    "$ncancelled $orderby $limit"
+  );    
+
+  @cust_main = @just_cust_main;
+
+#  foreach my $cust_main ( @just_cust_main ) {
+#
+#    my @one_cust_main;
+#    $FS::Record::DEBUG=1;
+#    ( $cache, @one_cust_main ) = jsearch(
+#      "$monsterjoin",
+#      { 'custnum' => $cust_main->custnum },
+#      '',
+#      '',
+#      'cust_main',
+#      'custnum',
+#    );
+#    push @cust_main, @one_cust_main;
+#  }
+
 } else {
   @cust_main=();
   &cardsearch if $cgi->param('card_on') && $cgi->param('card');
   &lastsearch if $cgi->param('last_on') && $cgi->param('last_text');
   &companysearch if $cgi->param('company_on') && $cgi->param('company_text');
   &referralsearch if $cgi->param('referral_custnum');
+
+  @cust_main = grep { $_->ncancelled_pkgs || ! $_->all_pkgs } @cust_main
+    if $cgi->param('showcancelledcustomers') eq '0' #see if it was set by me
+       || ( $conf->exists('hidecancelledcustomers')
+             && ! $cgi->param('showcancelledcustomers') );
 }
 
-@cust_main = grep { $_->ncancelled_pkgs || ! $_->all_pkgs } @cust_main
-  if $cgi->param('showcancelledcustomers') eq '0' #see if it was set by me
-     || ( $conf->exists('hidecancelledcustomers')
-           && ! $cgi->param('showcancelledcustomers') );
 if ( $conf->exists('hidecancelledpackages' ) ) {
   %all_pkgs = map { $_->custnum => [ $_->ncancelled_pkgs ] } @cust_main;
 } else {
@@ -101,19 +178,47 @@ if ( scalar(@cust_main) == 1 && ! $cgi->param('referral_custnum') ) {
   eidiot "No matching customers found!\n";
 } else { 
 
-  my $total = scalar(@cust_main);
+  $total ||= scalar(@cust_main);
   print header("Customer Search Results",menubar(
     'Main Menu', popurl(2)
   )), "$total matching customers found ";
+
+  my $pager = '';
+  if ( $total != scalar(@cust_main) && $maxrecords ) {
+    unless ( $offset == 0 ) {
+      $cgi->param('offset', $offset - $maxrecords);
+      $pager .= '<A HREF="'. $cgi->self_url.
+                '"><B><FONT SIZE="+1">Previous</FONT></B></A> ';
+    }
+    my $poff;
+    my $page;
+    for ( $poff = 0; $poff < $total; $poff += $maxrecords ) {
+      $page++;
+      if ( $offset == $poff ) {
+        $pager .= qq!<FONT SIZE="+2">$page</FONT> !;
+      } else {
+        $cgi->param('offset', $poff);
+        $pager .= qq!<A HREF="!. $cgi->self_url. qq!">$page</A> !;
+      }
+    }
+    unless ( $offset + $maxrecords > $total ) {
+      $cgi->param('offset', $offset + $maxrecords);
+      $pager .= '<A HREF="'. $cgi->self_url.
+                '"><B><FONT SIZE="+1">Next</FONT></B></A> ';
+    }
+  }
+  
   if ( $cgi->param('showcancelledcustomers') eq '0' #see if it was set by me
        || ( $conf->exists('hidecancelledcustomers')
             && ! $cgi->param('showcancelledcustomers')
           )
      ) {
     $cgi->param('showcancelledcustomers', 1);
+    $cgi->param('offset', 0);
     print qq!( <a href="!. $cgi->self_url. qq!">show cancelled customers</a> )!;
   } else {
     $cgi->param('showcancelledcustomers', 0);
+    $cgi->param('offset', 0);
     print qq!( <a href="!. $cgi->self_url. qq!">hide cancelled customers</a> )!;
   }
   if ( $cgi->param('referral_custnum') ) {
@@ -150,7 +255,8 @@ END
           '<NOSCRIPT> <INPUT TYPE="submit" VALUE="change"></NOSCRIPT>'.
           '</FORM>';
   }
-  print "<BR>", &table(), <<END;
+
+  print "<BR><BR>". $pager. &table(). <<END;
       <TR>
         <TH></TH>
         <TH>(bill) name</TH>
@@ -240,13 +346,11 @@ END
     print "</TR>";
   }
  
-  print <<END;
-    </TABLE>
-  </BODY>
-</HTML>
-END
+  print "</TABLE>$pager</BODY></HTML>";
 
 }
+
+undef $cache; #does this help?
 
 #
 

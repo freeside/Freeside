@@ -227,7 +227,7 @@ sub qsearch {
 
   $sth->execute( map $record->{$_},
     grep defined( $record->{$_} ) && $record->{$_} ne '', @fields
-  ) or croak "Error executing \"$statement\": ". $dbh->errstr;
+  ) or croak "Error executing \"$statement\": ". $sth->errstr;
   $dbh->commit or croak $dbh->errstr if $FS::UID::AutoCommit;
 
   if ( eval 'scalar(@FS::'. $table. '::ISA);' ) {
@@ -257,12 +257,14 @@ sub qsearch {
 
 }
 
-=item jsearch
+=item jsearch TABLE, HASHREF, SELECT, EXTRA_SQL, PRIMARY_TABLE, PRIMARY_KEY
 
 Experimental JOINed search method.  Using this method, you can execute a
 single SELECT spanning multiple tables, and cache the results for subsequent
 method calls.  Interface will almost definately change in an incompatible
 fashion.
+
+Arguments: 
 
 =cut
 
