@@ -845,11 +845,9 @@ returns the error, otherwise returns false.
 
 sub replace {
   my $new = shift;
+  my $old = shift;  
 
-  my $old;
-  if ( @_ ) { 
-    $old = shift;
-  } else {
+  if (!defined($old)) { 
     warn "[debug]$me replace called with no arguments; autoloading old record\n"
      if $DEBUG;
     my $primary_key = $new->dbdef_table->primary_key;
