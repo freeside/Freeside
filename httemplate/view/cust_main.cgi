@@ -342,23 +342,29 @@ print qq!<BR><A NAME="cust_pkg">Packages</A> !,
 
 #display packages
 
-#formatting
-print qq!!, &table(), "\n",
-      qq!<TR><TH COLSPAN=2 ROWSPAN=2>Package</TH><TH COLSPAN=5>!,
-      qq!Dates</TH><TH COLSPAN=2 ROWSPAN=2>Services</TH></TR>\n!,
-      qq!<TR><TH><FONT SIZE=-1>Setup</FONT></TH><TH>!,
-      qq!<FONT SIZE=-1>Next bill</FONT>!,
-      qq!</TH><TH><FONT SIZE=-1>Susp.</FONT></TH><TH><FONT SIZE=-1>Expire!,
-      qq!</FONT></TH>!,
-      qq!<TH><FONT SIZE=-1>Cancel</FONT></TH>!,
-      qq!</TR>\n!;
-
 #get package info
 my @packages;
 if ( $conf->exists('hidecancelledpackages') ) {
   @packages = sort { $a->pkgnum <=> $b->pkgnum } ($cust_main->ncancelled_pkgs);
 } else {
   @packages = sort { $a->pkgnum <=> $b->pkgnum } ($cust_main->all_pkgs);
+}
+
+if ( @packages ) {
+  #formatting
+  print &table(), "\n",
+        qq!<TR><TH COLSPAN=2 ROWSPAN=2>Package</TH><TH COLSPAN=5>!,
+        qq!Dates</TH><TH COLSPAN=2 ROWSPAN=2>Services</TH></TR>\n<TR>!,
+        qq!<TH><FONT SIZE=-1>Setup</FONT></TH>!;
+
+  print qq!<TH><FONT SIZE=-1>Last bill</FONT></TH>!
+    if $packages[0]->dbdef_table->column('last_bill');
+
+  print qq!<TH><FONT SIZE=-1>Next bill</FONT></TH>!,
+        qq!<TH><FONT SIZE=-1>Susp.</FONT></TH>!,
+        qq!<TH><FONT SIZE=-1>Expire!</FONT></TH>!,
+        qq!<TH><FONT SIZE=-1>Cancel</FONT></TH>!,
+        qq!</TR>\n!;
 }
 
 my $n1 = '<TR>';
@@ -424,7 +430,11 @@ foreach my $package (@packages) {
   }
   print '</FONT></TD>';
 
-  for ( qw( setup bill susp expire cancel ) ) {
+  my @fields = qw( setup );
+  push @fields, qw( last_bill ) if $package->dbdef_table->column('last_bill');
+  push @fields, qw( bill susp expire cancel);
+
+  for ( @fields ) {
     print "<TD ROWSPAN=$rowspan><FONT SIZE=-1>", ( $package->getfield($_)
             ? time2str("%D</FONT><BR><FONT SIZE=-3>%l:%M:%S%P&nbsp;%z</FONT>",
               $package->getfield($_) )
@@ -470,6 +480,7 @@ print "</TR>";
 
 #formatting
 print "</TABLE>";
+
 
 print <<END;
 <SCRIPT>

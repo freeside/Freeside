@@ -194,6 +194,12 @@ if ( scalar(@cust_pkg) == 1 ) {
       <TR>
         <TH>Package</TH>
         <TH><FONT SIZE=-1>Setup</FONT></TH>
+END
+
+  print '<TH><FONT SIZE=-1>Next<BR>bill</FONT></TH>'
+    if defined dbdef->table('cust_pkg')->column('last_bill');
+
+  print <<END;
         <TH><FONT SIZE=-1>Next<BR>bill</FONT></TH>
         <TH><FONT SIZE=-1>Susp.</FONT></TH>
         <TH><FONT SIZE=-1>Expire</FONT></TH>
@@ -203,17 +209,10 @@ if ( scalar(@cust_pkg) == 1 ) {
         <TH>company</TH>
 END
 
-if ( defined dbdef->table('cust_main')->column('ship_last') ) {
-  print <<END;
-      <TH>(service) name</TH>
-      <TH>company</TH>
-END
-}
+  print '<TH>(service) name</TH><TH>company</TH>'
+    if defined dbdef->table('cust_main')->column('ship_last');
 
-print <<END;
-        <TH COLSPAN=2>Services</TH>
-      </TR>
-END
+  print '<TH COLSPAN=2>Services</TH></TR>';
 
   my $n1 = '<TR>';
   my(%saw,$cust_pkg);
@@ -244,6 +243,12 @@ END
       $cust_main ? $cust_main->first : '',
       $cust_main ? $cust_main->company : '',
     );
+
+    my $last_bill = $cust_pkg->getfield('last_bill')
+                      ? time2str("%D", $cust_pkg->getfield('last_bill') )
+                      : ''
+      if defined dbdef->table('cust_pkg')->column('last_bill');
+
     my($ship_last, $ship_first, $ship_company);
     if ( defined dbdef->table('cust_main')->column('ship_last') ) {
       ($ship_last, $ship_first, $ship_company) = (
@@ -270,6 +275,12 @@ END
     print $n1, <<END;
       <TD ROWSPAN=$rowspan><A HREF="${p}view/cust_pkg.cgi?$pkgnum"><FONT SIZE=-1>$pkgnum - $pkg</FONT></A></TD>
       <TD ROWSPAN=$rowspan>$setup</TD>
+END
+
+    print "<TD ROWSPAN=$rowspan>$last_bill</TD>"
+      if defined dbdef->table('cust_pkg')->column('last_bill');
+
+    print <<END;
       <TD ROWSPAN=$rowspan>$bill</TD>
       <TD ROWSPAN=$rowspan>$susp</TD>
       <TD ROWSPAN=$rowspan>$expire</TD>

@@ -1,6 +1,6 @@
 <!-- mason kludge -->
 <%
-# <!-- $Id: REAL_cust_pkg.cgi,v 1.4 2002-07-08 13:07:40 ivan Exp $ -->
+# <!-- $Id: REAL_cust_pkg.cgi,v 1.5 2003-04-01 01:22:24 ivan Exp $ -->
 
 my $error ='';
 my $pkgnum = '';
@@ -56,11 +56,19 @@ print ntable("#cccccc",2),
       $otaker,  '</TD></TR>',
       '<TR><TD ALIGN="right">Setup date</TD><TD>'.
       '<INPUT TYPE="text" NAME="setup" SIZE=32 VALUE="',
-      ( $setup ? time2str("%c %z (%Z)",$setup) : "" ), '"></TD></TR>',
-      '<TR><TD ALIGN="right">Next bill date</TD><TD>',
+      ( $setup ? time2str("%c %z (%Z)",$setup) : "" ), '"></TD></TR>';
+
+print '<TR><TD ALIGN="right">Last bill date</TD><TD>',
+      '<INPUT TYPE="text" NAME="last_bill" SIZE=32 VALUE="',
+      ( $cust_pkg->last_bill
+        ? time2str("%c %z (%Z)", $cust_pkg->last_bill)
+        : ""                                          ),
+      '"></TD></TR>'
+  if $cust_pkg->dbdef_table->column('last_bill');
+
+print '<TR><TD ALIGN="right">Next bill date</TD><TD>',
       '<INPUT TYPE="text" NAME="bill" SIZE=32 VALUE="',
-      ( $bill ? time2str("%c %z (%Z)",$bill) : "" ), '"></TD></TR>',
-;
+      ( $bill ? time2str("%c %z (%Z)",$bill) : "" ), '"></TD></TR>';
 
 print '<TR><TD ALIGN="right">Suspension date</TD><TD BGCOLOR="#ffffff">',
        time2str("%D",$susp), '</TD></TR>'

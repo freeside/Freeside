@@ -68,10 +68,16 @@ print &ntable("#cccccc"), '<TR><TD>', &ntable("#cccccc",2),
       '<TR><TD ALIGN="right">Comment</TD><TD BGCOLOR="#ffffff">',
       $comment,  '</TD></TR>',
       '<TR><TD ALIGN="right">Setup date</TD><TD BGCOLOR="#ffffff">',
-      ( $setup ? time2str("%D",$setup) : "(Not setup)" ), '</TD></TR>',
-      '<TR><TD ALIGN="right">Next bill date</TD><TD BGCOLOR="#ffffff">',
-      ( $bill ? time2str("%D",$bill) : "&nbsp;" ), '</TD></TR>',
-;
+      ( $setup ? time2str("%D",$setup) : "(Not setup)" ), '</TD></TR>';
+
+print '<TR><TD ALIGN="right">Last bill date</TD><TD BGCOLOR="#ffffff">',
+      ( $cust_pkg->last_bill ? time2str("%D",$cust_pkg->last_bill) : "&nbsp;" ),
+      '</TD></TR>'
+  if $cust_pkg->dbdef_table->column('last_bill');
+
+print '<TR><TD ALIGN="right">Next bill date</TD><TD BGCOLOR="#ffffff">',
+      ( $bill ? time2str("%D",$bill) : "&nbsp;" ), '</TD></TR>';
+      
 print '<TR><TD ALIGN="right">Suspension date</TD><TD BGCOLOR="#ffffff">',
        time2str("%D",$susp), '</TD></TR>' if $susp;
 print '<TR><TD ALIGN="right">Expiration date</TD><TD BGCOLOR="#ffffff">',
@@ -80,8 +86,7 @@ print '<TR><TD ALIGN="right">Cancellation date</TD><TD BGCOLOR="#ffffff">',
        time2str("%D",$cancel), '</TD></TR>' if $cancel;
 print  '<TR><TD ALIGN="right">Order taker</TD><TD BGCOLOR="#ffffff">',
       $otaker,  '</TD></TR>',
-      '</TABLE></TD></TR></TABLE>'
-;
+      '</TABLE></TD></TR></TABLE>';
 
 unless ($expire) {
   print <<END;

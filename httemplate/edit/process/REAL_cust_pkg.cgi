@@ -5,6 +5,8 @@ my $old = qsearchs('cust_pkg',{'pkgnum'=>$pkgnum});
 my %hash = $old->hash;
 $hash{'setup'} = $cgi->param('setup') ? str2time($cgi->param('setup')) : '';
 $hash{'bill'} = $cgi->param('bill') ? str2time($cgi->param('bill')) : '';
+$hash{'last_bill'} =
+  $cgi->param('last_bill') ? str2time($cgi->param('last_bill')) : '';
 $hash{'expire'} = $cgi->param('expire') ? str2time($cgi->param('expire')) : '';
 my $new = new FS::cust_pkg \%hash;
 

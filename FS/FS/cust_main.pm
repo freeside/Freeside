@@ -1011,6 +1011,8 @@ sub bill {
       # only for figuring next bill date, nothing else, so, reset $sdate again
       # here
       $sdate = $cust_pkg->bill || $cust_pkg->setup || $time;
+      $cust_pkg->last_bill($sdate)
+        if $cust_pkg->dbdef_table->column('last_bill');
 
       $mon += $part_pkg->freq;
       until ( $mon < 12 ) { $mon -= 12; $year++; }
