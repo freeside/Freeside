@@ -1,4 +1,3 @@
-<!-- $Id: agent_type.cgi,v 1.4 2002-02-09 18:24:01 ivan Exp $ -->
 <%
 
 my $typenum = $cgi->param('typenum');

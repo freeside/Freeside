@@ -1,5 +1,3 @@
-<!-- $Id: part_pkg.cgi,v 1.10 2002-02-10 02:16:47 ivan Exp $ -->
-
 <%
 
 if ( $cgi->param('clone') && $cgi->param('clone') =~ /^(\d+)$/ ) {
@@ -417,7 +415,7 @@ if ( $cgi->param('pkgnum') ) {
        <INPUT TYPE="text" NAME="<%= $field %>" VALUE="<%= exists($plandata{$field}) ? $plandata{$field} : $href->{$field}{'default'} %>" onChange="fchanged(this)">
   <% } elsif ( $href->{$field}{'type'} eq 'select_multiple' ) { %>
        <SELECT MULTIPLE NAME="<%= $field %>" onChange="fchanged(this)">
-       <% foreach $record ( qsearch( $href->{$field}{'select_table'}, $href->{$field}{'select_hash'} ) ) {
+       <% foreach my $record ( qsearch( $href->{$field}{'select_table'}, $href->{$field}{'select_hash'} ) ) {
           my $value = $record->getfield($href->{$field}{'select_key'}); %>
          <OPTION VALUE="<%= $value %>"<%= $plandata{$field} =~ /(^|, *)$value *(,|$)/ ? ' SELECTED' : '' %>><%= $record->getfield($href->{$field}{'select_label'}) %>
        <% } %>

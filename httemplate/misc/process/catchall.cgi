@@ -1,4 +1,3 @@
-<!--$Id: catchall.cgi,v 1.3 2002-01-30 14:18:09 ivan Exp $ -->
 <%
 
 $FS::svc_domain::whois_hack=1;

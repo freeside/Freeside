@@ -1,4 +1,3 @@
-<!-- $Id: link.cgi,v 1.5 2002-01-30 14:18:09 ivan Exp $ -->
 <%
 
 my %link_field = (

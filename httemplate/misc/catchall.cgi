@@ -1,4 +1,3 @@
-<!-- $Id: catchall.cgi,v 1.5 2002-01-30 14:18:09 ivan Exp $ -->
 <%
 
 my $conf = new FS::Conf;

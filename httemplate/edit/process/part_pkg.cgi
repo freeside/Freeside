@@ -1,4 +1,3 @@
-<!-- $Id: part_pkg.cgi,v 1.9 2002-02-10 02:16:47 ivan Exp $ -->
 <%
 
 my $dbh = dbh;
@@ -61,7 +60,7 @@ if ( $error ) {
   myexit();
 }
 
-foreach $part_svc (qsearch('part_svc',{})) {
+foreach my $part_svc (qsearch('part_svc',{})) {
   my $quantity = $cgi->param('pkg_svc'. $part_svc->svcpart) || 0;
   my $old_pkg_svc = qsearchs('pkg_svc', {
     'pkgpart' => $pkgpart,

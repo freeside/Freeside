@@ -1,4 +1,3 @@
-<!-- $Id: cust_bill_pay.cgi,v 1.5 2002-01-30 14:18:08 ivan Exp $ -->
 <%
 
 my($paynum, $amount, $invnum);

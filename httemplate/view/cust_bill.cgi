@@ -1,4 +1,3 @@
-<!-- $Id: cust_bill.cgi,v 1.8 2002-02-10 02:16:47 ivan Exp $ -->
 <%
 
 #untaint invnum

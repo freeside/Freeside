@@ -1,4 +1,3 @@
-<!-- $Id: svc_forward.cgi,v 1.3 2002-01-30 14:18:09 ivan Exp $ -->
 <%
 
 $cgi->param('svcnum') =~ /^(\d*)$/ or die "Illegal svcnum!";

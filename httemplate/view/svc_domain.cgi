@@ -1,4 +1,3 @@
-<!-- $Id: svc_domain.cgi,v 1.6 2002-01-30 14:18:09 ivan Exp $ -->
 <%
 
 my($query) = $cgi->keywords;

@@ -101,6 +101,24 @@ sub handler
       use FS::svc_www;
       use FS::type_pkgs;
 
+      *CGI::redirect = sub {
+        my( $self, $location ) = @_;
+
+        #http://www.masonhq.com/docs/faq/#how_do_i_do_an_external_redirect
+        $m->clear_buffer;
+        # The next two lines are necessary to stop Apache from re-reading
+        # POSTed data.
+        $r->method('GET');
+        $r->headers_in->unset('Content-length');
+        $r->content_type('text/html');
+        $r->err_header_out('Location' => $location);
+         $r->header_out('Content-Type' => 'text/html');
+         $m->abort(302);
+
+        '';
+    
+      };
+
       $cgi = new CGI;
       &cgisuidsetup($cgi);
       #&cgisuidsetup($r);
@@ -114,9 +132,8 @@ sub handler
     #$r->no_cache(1);
     $headers->{'Expires'} = '0';
     
-    my $status = $ah->handle_request($r);
-    
-    return $status;
+    $ah->handle_request($r);
+
 }
 
 1;

@@ -1,4 +1,3 @@
-<!-- $Id: susp_pkg.cgi,v 1.3 2002-01-30 14:18:09 ivan Exp $ -->
 <%
 
 #untaint pkgnum

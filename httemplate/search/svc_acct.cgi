@@ -1,4 +1,3 @@
-<!-- $Id: svc_acct.cgi,v 1.13 2002-01-30 14:18:09 ivan Exp $ -->
 <%
 
 my $mydomain = '';

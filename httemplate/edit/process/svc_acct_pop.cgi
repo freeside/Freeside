@@ -1,4 +1,3 @@
-<!-- $Id: svc_acct_pop.cgi,v 1.3 2002-01-30 14:18:09 ivan Exp $ -->
 <%
 
 my $popnum = $cgi->param('popnum');

@@ -1,4 +1,3 @@
-<!-- $Id: quick-cust_pkg.cgi,v 1.4 2002-01-30 14:18:09 ivan Exp $ -->
 <%
 
 #untaint custnum

@@ -1,5 +1,4 @@
 <%
-#<!-- $Id: REAL_cust_pkg.cgi,v 1.1 2001-10-15 14:58:03 ivan Exp $ -->
 
 my $pkgnum = $cgi->param('pkgnum') or die;
 my $old = qsearchs('cust_pkg',{'pkgnum'=>$pkgnum});

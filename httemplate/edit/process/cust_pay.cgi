@@ -1,4 +1,3 @@
-<!-- $Id: cust_pay.cgi,v 1.7 2002-02-09 18:24:01 ivan Exp $ -->
 <%
 
 $cgi->param('linknum') =~ /^(\d+)$/

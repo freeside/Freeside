@@ -1,4 +1,3 @@
-<!-- $Id: cust_pay_batch.cgi,v 1.2 2002-01-30 14:18:08 ivan Exp $ -->
 <%
 
 print header("Pending credit card batch", menubar(

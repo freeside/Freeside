@@ -1,4 +1,3 @@
-<!-- $Id: cust_main_county-expand.cgi,v 1.6 2002-01-30 14:18:08 ivan Exp $ -->
 <%
 
 my($taxnum, $delim, $expansion );

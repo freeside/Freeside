@@ -1,4 +1,3 @@
-<!-- $Id: link.cgi,v 1.4 2002-02-09 17:45:26 ivan Exp $ -->
 <%
 
 $cgi->param('pkgnum') =~ /^(\d+)$/;

@@ -1,5 +1,3 @@
-<!-- $Id: part_bill_event.cgi,v 1.5 2002-02-04 17:04:33 ivan Exp $ -->
-
 <%
 
 if ( $cgi->param('eventpart') && $cgi->param('eventpart') =~ /^(\d+)$/ ) {

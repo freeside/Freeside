@@ -1,4 +1,3 @@
-<!-- $Id: svc_domain.cgi,v 1.7 2002-02-09 18:24:02 ivan Exp $ -->
 <%
 
 my $conf = new FS::Conf;

@@ -1,4 +1,3 @@
-<!-- $Id: cust_pay.cgi,v 1.2 2002-01-30 14:18:09 ivan Exp $ -->
 <%
 
 $cgi->param('payinfo') =~ /^\s*(\d+)\s*$/ or die "illegal payinfo";

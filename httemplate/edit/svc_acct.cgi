@@ -1,4 +1,3 @@
-<!-- $Id: svc_acct.cgi,v 1.14 2002-01-30 14:18:08 ivan Exp $ -->
 <%
 
 my $conf = new FS::Conf;

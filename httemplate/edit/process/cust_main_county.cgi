@@ -1,4 +1,3 @@
-<!-- $Id: cust_main_county.cgi,v 1.4 2002-02-09 18:24:01 ivan Exp $ -->
 <%
 
 foreach ( $cgi->param ) {

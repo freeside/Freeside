@@ -1,4 +1,3 @@
-<!-- $Id: cust_main.cgi,v 1.20 2002-02-10 02:28:27 ivan Exp $ -->
 <%
 
   #for misplaced logic below

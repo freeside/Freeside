@@ -1,4 +1,3 @@
-<!-- $Id: agent_type.cgi,v 1.8 2002-02-07 22:29:34 ivan Exp $ -->
 <%
 
 print header("Agent Type Listing", menubar(

@@ -1,4 +1,3 @@
-<!-- $Id: part_bill_event.cgi,v 1.4 2002-02-10 02:16:46 ivan Exp $ -->
 <% 
 
 my %search;

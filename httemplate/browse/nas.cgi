@@ -1,4 +1,3 @@
-<!-- $Id -->
 <%
 
 print header('NAS ports', menubar(

@@ -1,4 +1,3 @@
-<!-- $Id: delete-customer.cgi,v 1.3 2002-01-30 14:18:09 ivan Exp $ -->
 <%
 
 my $conf = new FS::Conf;

@@ -1,4 +1,3 @@
-<!-- $Id: cust_pkg.cgi,v 1.14 2002-02-09 18:24:02 ivan Exp $ -->
 <%
 
 my $conf = new FS::Conf;

@@ -1,4 +1,3 @@
-<!-- $Id: cust_main_county-expand.cgi,v 1.5 2002-02-09 18:24:01 ivan Exp $ -->
 <%
 
 $cgi->param('taxnum') =~ /^(\d+)$/ or die "Illegal taxnum!";

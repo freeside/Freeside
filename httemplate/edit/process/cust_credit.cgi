@@ -1,4 +1,3 @@
-<!-- $Id: cust_credit.cgi,v 1.6 2002-01-30 14:18:08 ivan Exp $ -->
 <%
 
 $cgi->param('custnum') =~ /^(\d*)$/ or die "Illegal custnum!";

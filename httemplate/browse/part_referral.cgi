@@ -1,4 +1,3 @@
-<!-- $Id: part_referral.cgi,v 1.7 2002-01-30 14:18:08 ivan Exp $ -->
 <%
 
 print header("Referral Listing", menubar(

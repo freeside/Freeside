@@ -1,4 +1,3 @@
-<!-- $Id: delete-cust_pay.cgi,v 1.1 2002-02-07 22:29:35 ivan Exp $ -->
 <%
 
 #untaint paynum
