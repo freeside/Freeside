@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: part_pkg.cgi,v 1.4 1998-11-21 07:11:08 ivan Exp $
+# $Id: part_pkg.cgi,v 1.5 1998-11-21 07:12:26 ivan Exp $
 #
 # part_pkg.cgi: Add/Edit package (output form)
 #
@@ -13,7 +13,10 @@
 # use FS::CGI, added inline documentation ivan@sisd.com 98-jul-12
 #
 # $Log: part_pkg.cgi,v $
-# Revision 1.4  1998-11-21 07:11:08  ivan
+# Revision 1.5  1998-11-21 07:12:26  ivan
+# *** empty log message ***
+#
+# Revision 1.4  1998/11/21 07:11:08  ivan
 # *** empty log message ***
 #
 # Revision 1.3  1998/11/21 07:07:40  ivan
@@ -67,7 +70,7 @@ my($hashref)=$part_pkg->hashref;
 print $cgi->header, header("$action Package Definition", menubar(
   'Main Menu' => popurl(2),
   'View all packages' => popurl(2). '/browse/part_pkg.cgi',
-)), '<FORM ACTION="', popurl(1), 'process/part_pkg.cgi" METHOD=POST>';
+)), '<FORM ACTION="', popurl(1), '/process/part_pkg.cgi" METHOD=POST>';
 
 if ( $cgi->param('clone') ) {
   print qq!<INPUT TYPE="hidden" NAME="clone" VALUE="!, $cgi->param('clone'), qq!">!;
