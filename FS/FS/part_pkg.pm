@@ -198,6 +198,8 @@ sub check {
 
       or $r =~ /^my \$mnow = \$sdate; my \(\$sec,\$min,\$hour,\$mday,\$mon,\$year\) = \(localtime\(\$sdate\) \)\[0,1,2,3,4,5\]; my \$mstart = timelocal\(0,0,0,1,\$mon,\$year\); my \$mend = timelocal\(0,0,0,1, \$mon == 11 \? 0 : \$mon\+1, \$year\+\(\$mon==11\)\); \$sdate = \$mstart; \( \$part_pkg->freq \- 1 \) \* \d*\.?\d* \/ \$part_pkg\-\>freq \+ \d*\.?\d* \/ \$part_pkg\-\>freq \* \(\$mend\-\$mnow\) \/ \(\$mend\-\$mstart\) ;\s*$/
 
+      or $r =~ /^my \$mnow = \$sdate; my \(\$sec,\$min,\$hour,\$mday,\$mon,\$year\) = \(localtime\(\$sdate\) \)\[0,1,2,3,4,5\]; \$sdate = timelocal\(0,0,0,1,\$mon,\$year\); \s*\d*\.?\d*\s*;\s*$/
+
       or $r =~ /^my \$error = \$cust_pkg\->cust_main\->credit\( \s*\d*\.?\d*\s* \* scalar\(\$cust_pkg\->cust_main\->referral_cust_main_ncancelled\(\s*\d+\s*\)\), "commission" \); die \$error if \$error; \s*\d*\.?\d*\s*;\s*$/
 
       or $r =~ /^my \$error = \$cust_pkg\->cust_main\->credit\( \s*\d*\.?\d*\s* \* scalar\(\$cust_pkg\->cust_main->referral_cust_pkg\(\s*\d+\s*\)\), "commission" \); die \$error if \$error; \s*\d*\.?\d*\s*;\s*$/
@@ -264,7 +266,7 @@ sub svcpart {
 
 =head1 VERSION
 
-$Id: part_pkg.pm,v 1.8 2002-02-18 08:39:21 ivan Exp $
+$Id: part_pkg.pm,v 1.9 2002-03-24 17:42:58 ivan Exp $
 
 =head1 BUGS
 
