@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: part_svc.cgi,v 1.13 2000-06-15 11:10:31 ivan Exp $
+# $Id: part_svc.cgi,v 1.14 2001-05-30 14:42:11 ivan Exp $
 #
 # ivan@sisd.com 97-nov-14
 #
@@ -10,7 +10,11 @@
 # use FS::CGI, added inline documentation ivan@sisd.com 98-jul-12
 #
 # $Log: part_svc.cgi,v $
-# Revision 1.13  2000-06-15 11:10:31  ivan
+# Revision 1.14  2001-05-30 14:42:11  ivan
+# Adam Rose <adamr@eaze.net>: "In the /edit/part_svc.cgi is there a need to add
+# another section for svc_www?".  Yes.  Thanks Adam.
+#
+# Revision 1.13  2000/06/15 11:10:31  ivan
 # update to the inline documentation, hopefully will make things more clear
 #
 # Revision 1.12  1999/04/09 04:22:34  ivan
@@ -97,6 +101,7 @@ Services are items you offer to your customers.
 <UL><LI>svc_acct - Shell accounts, POP mailboxes, SLIP/PPP and ISDN accounts
     <LI>svc_domain - Virtual domains
     <LI>svc_acct_sm - Virtual domain mail aliasing
+    <LI>svc_www - Virtual domain website
 END
 #    <LI>svc_charge - One-time charges (Partially unimplemented)
 #    <LI>svc_wo - Work orders (Partially unimplemented)
@@ -111,7 +116,7 @@ blank <B>slipip</B> as well as a fixed shell something like <B>/bin/true</B> or
 END
 print &table(), '<TR><TH>Table<SELECT NAME="svcdb" SIZE=1>',
       map '<OPTION'. ' SELECTED'x($_ eq $hashref->{svcdb}). ">$_\n", qw(
-        svc_acct svc_domain svc_acct_sm
+        svc_acct svc_domain svc_acct_sm svc_www
       );
       print "</SELECT>";
 #  svc_acct svc_domain svc_acct_sm svc_charge svc_wo
@@ -151,11 +156,15 @@ END
     'worker'    => 'Worker',
     '_date'      => 'Date',
   },
+  'svc_www' => {
+    #'recnum' => '',
+    #'usersvc' => '',
+  },
 );
 
 #  svc_acct svc_domain svc_acct_sm svc_charge svc_wo
 foreach $svcdb ( qw(
-  svc_acct svc_domain svc_acct_sm
+  svc_acct svc_domain svc_acct_sm svc_www
 ) ) {
 
   my(@rows)=map { /^${svcdb}__(.*)$/; $1 }
