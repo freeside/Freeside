@@ -112,4 +112,9 @@ sub is_free_options {
       recur_input_charge recur_output_charge recur_total_charge );
 }
 
+sub base_recur {
+  my($self, $cust_pkg) = @_;
+  $self->option('recur_flat');
+}
+
 1;

@@ -44,4 +44,9 @@ sub is_free_options {
   qw( setup_fee recur_fee recur_hourly_charge );
 }
 
+sub base_recur {
+  my($self, $cust_pkg) = @_;
+  $self->option('recur_flat');
+}
+
 1;

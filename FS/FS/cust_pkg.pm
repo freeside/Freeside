@@ -141,7 +141,7 @@ Create a new billing item.  To add the item to the database, see L<"insert">.
 
 sub table { 'cust_pkg'; }
 
-=item insert
+=item insert [ OPTION => VALUE ... ]
 
 Adds this billing item to the database ("Orders" the item).  If there is an
 error, returns the error, otherwise returns false.
@@ -149,6 +149,73 @@ error, returns the error, otherwise returns false.
 If the additional field I<promo_code> is defined instead of I<pkgpart>, it
 will be used to look up the package definition and agent restrictions will be
 ignored.
+
+The following options are available: I<change>
+
+I<change>, if set true, supresses any referral credit to a referring customer.
+
+=cut
+
+sub insert {
+  my( $self, %options ) = @_;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $error = $self->SUPER::insert;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  my $conf = new FS::Conf;
+  my $cust_main = $self->cust_main;
+  my $part_pkg = $self->part_pkg;
+  if ( $conf->exists('referral_credit')
+       && $cust_main->referral_custnum
+       && ! $options{'change'}
+       && $part_pkg->freq !~ /^0\D?$/
+     )
+  {
+    my $referring_cust_main = $cust_main->referring_cust_main;
+    if ( $referring_cust_main->status ne 'cancelled' ) {
+      my $error;
+      if ( $part_pkg->freq !~ /^\d+$/ ) {
+        warn 'WARNING: Not crediting customer '. $cust_main->referral_custnum.
+             ' for package '. $self->pkgnum.
+             ' ( customer '. $self->custnum. ')'.
+             ' - One-time referral credits not (yet) available for '.
+             ' packages with '. $part_pkg->freq_pretty. ' frequency';
+      } else {
+
+        my $amount = sprintf( "%.2f", $part_pkg->base_recur / $part_pkg->freq );
+        my $error =
+          $referring_cust_main->credit( $amount,
+                                        'Referral credit for '. $cust_main->name
+                                      );
+        if ( $error ) {
+          $dbh->rollback if $oldAutoCommit;
+          return "Error crediting customer ". $cust_main->referral_custnum.
+               " for referral: $error";
+        }
+
+      }
+
+    }
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  '';
+
+}
 
 =item delete
 
@@ -982,12 +1049,13 @@ sub order {
   my $cust_main = qsearchs('cust_main', { custnum => $custnum });
   return "Customer not found: $custnum" unless $cust_main;
 
+  my $change = scalar(@$remove_pkgnum) != 0;
+
   # Create the new packages.
-  my $cust_pkg;
-  foreach (@$pkgparts) {
-    $cust_pkg = new FS::cust_pkg { custnum => $custnum,
-                                   pkgpart => $_ };
-    $error = $cust_pkg->insert;
+  foreach my $pkgpart (@$pkgparts) {
+    my $cust_pkg = new FS::cust_pkg { custnum => $custnum,
+                                      pkgpart => $pkgpart };
+    $error = $cust_pkg->insert( 'change' => $change );
     if ($error) {
       $dbh->rollback if $oldAutoCommit;
       return $error;

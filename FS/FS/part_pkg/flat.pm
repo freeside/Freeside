@@ -29,7 +29,12 @@ sub calc_setup {
 }
 
 sub calc_recur {
-  my($self, $cust_pkg ) = @_;
+  my $self = shift;
+  $self->base_recur(@_);
+}
+
+sub base_recur {
+  my($self, $cust_pkg) = @_;
   $self->option('recur_fee');
 }
 

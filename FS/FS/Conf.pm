@@ -1377,6 +1377,12 @@ httemplate/docs/config.html
     'type'        => 'checkbox',
   },
 
+  { 'key'         => 'referral_credit',
+    'section'     => 'billing',
+    'description' => "Enables one-time referral credits in the amount of one month <i>referred</i> customer's recurring fee (irregardless of frequency).",
+    'type'        => 'checkbox',
+  },
+
 );
 
 1;

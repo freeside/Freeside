@@ -2659,6 +2659,19 @@ sub referral_cust_pkg {
       $self->referral_cust_main($depth);
 }
 
+=item referring_cust_main
+
+Returns the single cust_main record for the customer who referred this customer
+(referral_custnum), or false.
+
+=cut
+
+sub referring_cust_main {
+  my $self = shift;
+  return '' unless $self->referral_custnum;
+  qsearchs('cust_main', { 'custnum' => $self->referral_custnum } );
+}
+
 =item credit AMOUNT, REASON
 
 Applies a credit to this customer.  If there is an error, returns the error,

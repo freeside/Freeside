@@ -64,4 +64,9 @@ sub is_free {
   0;
 }
 
+sub base_recur {
+  my($self, $cust_pkg) = @_;
+  $self->option('recur_flat');
+}
+
 1;
