@@ -40,27 +40,29 @@ foreach my $r (
     $label = $r->county." county, $label" if $r->county;
   }
 
-  #match taxclass too?
-
   my $fromwhere = "
     FROM cust_bill_pkg
       JOIN cust_bill USING ( invnum ) 
       JOIN cust_main USING ( custnum )
+      JOIN cust_pkg USING ( pkgnum )
+      JOIN part_pkg USING ( pkgpart )
     WHERE _date >= $beginning AND _date <= $ending
       AND ( county  = ? OR ? = '' )
       AND ( state   = ? OR ? = '' )
       AND ( country = ? )
+      AND ( taxclass = ? OR ? = '' )
       AND payby != 'COMP'
   ";
   my $nottax = 'pkgnum != 0';
 
   my $a = scalar_sql($r,
-    "SELECT SUM(setup+recur) $fromwhere AND $nottax"
+    "SELECT SUM(cust_bill_pkg.setup+cust_bill_pkg.recur) $fromwhere AND $nottax"
   );
   $total += $a;
   $regions{$label}->{'total'} += $a;
 
-  foreach my $e ( grep { $r->get($_.'tax') =~ /^Y/i } qw( setup recur ) ) {
+  foreach my $e ( grep { $r->get($_.'tax') =~ /^Y/i }
+                       qw( cust_bill_pkg.setup cust_bill_pkg.recur ) ) {
     my $x = scalar_sql($r,
       "SELECT SUM($e) $fromwhere AND $nottax"
     );
@@ -68,7 +70,8 @@ foreach my $r (
     $regions{$label}->{'exempt'} += $x;
   }
 
-  foreach my $e ( grep { $r->get($_.'tax') !~ /^Y/i } qw( setup recur ) ) {
+  foreach my $e ( grep { $r->get($_.'tax') !~ /^Y/i }
+                       qw( cust_bill_pkg.setup cust_bill_pkg.recur ) ) {
     my $t = scalar_sql($r,
       "SELECT SUM($e) $fromwhere AND $nottax AND ( tax != 'Y' OR tax IS NULL )"
     );
@@ -92,7 +95,8 @@ foreach my $r (
   #match itemdesc if necessary!
   my $named_tax = $r->taxname ? 'AND itemdesc = '. dbh->quote($r->taxname) : '';
   my $x = scalar_sql($r,
-    "SELECT SUM(setup+recur) $fromwhere AND pkgnum = 0 $named_tax",
+    "SELECT SUM(cust_bill_pkg.setup+cust_bill_pkg.recur) $fromwhere ".
+    "AND pkgnum = 0 $named_tax",
   );
   $tax += $x;
   $regions{$label}->{'tax'} += $x;
@@ -123,7 +127,8 @@ sub scalar_sql {
   my( $r, $sql ) = @_;
   #warn "$sql\n";
   my $sth = dbh->prepare($sql) or die dbh->errstr;
-  $sth->execute( map $r->$_(), qw( county county state state country ) )
+  $sth->execute( map $r->$_(),
+                     qw( county county state state country taxclass taxclass ) )
     or die "Unexpected error executing statement $sql: ". $sth->errstr;
   $sth->fetchrow_arrayref->[0] || 0;
 }
