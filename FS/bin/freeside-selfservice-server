@@ -43,11 +43,6 @@ open(LOCKFILE,">$lock_file") or die "can't open $lock_file: $!";
 
 my $conf = new FS::Conf;
 
-if ($conf->exists('selfservice_server-quiet')) {
-    $FS::cust_bill::quiet = 1;
-    $FS::cust_pkg::quiet = 1;
-}
-
 my $clientd = "/usr/local/sbin/freeside-selfservice-clientd"; #better name?
 
 my $warnkids=0;
