@@ -127,7 +127,9 @@ sub textradius_download {
     src  => "$user\@$host:$users",
     dest => $dest,
   } ) or die "error downloading $user\@$host:$users : ".
-             join(" / ", $rsync->err);
+             'exit status: '. $rsync->status. ', '.
+             'STDERR: '. join(" / ", $rsync->err). ', '.
+             'STDOUT: '. join(" / ", $rsync->out);
 
   $dest;
 }
@@ -147,7 +149,9 @@ sub textradius_upload {
     src  => "$dir/users",
     dest => "$user\@$host:$users",
   } ) or die "error uploading to $user\@$host:$users : ".
-             join(" / ", $rsync->err);
+             'exit status: '. $rsync->status. ', '.
+             'STDERR: '. join(" / ", $rsync->err). ', '.
+             'STDOUT: '. join(" / ", $rsync->out);
 
   flock(LOCK,LOCK_UN);
   close LOCK;
