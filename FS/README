@@ -1,0 +1,6 @@
+This is the Perl module section of Freeside.
+
+perl Makefile.PL
+make
+make test
+make install
