@@ -9,12 +9,12 @@ sub rebless { shift; }
 
 sub _export_insert {
   my($self) = shift;
-  $self->_export_command($self, 'useradd', @_);
+  $self->_export_command('useradd', @_);
 }
 
 sub _export_delete {
   my($self) = shift;
-  $self->_export_command($self, 'userdel', @_);
+  $self->_export_command('userdel', @_);
 }
 
 sub _export_command {
