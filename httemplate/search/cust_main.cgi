@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: cust_main.cgi,v 1.5 2001-09-11 00:08:18 ivan Exp $ -->
+#<!-- $Id: cust_main.cgi,v 1.6 2001-09-16 12:45:35 ivan Exp $ -->
 
 use strict;
 #use vars qw( $conf %ncancelled_pkgs %all_pkgs $cgi @cust_main $sortby );
@@ -19,8 +19,8 @@ cgisuidsetup($cgi);
 
 $conf = new FS::Conf;
 
-if ( $cgi->keywords ) {
-  my($query)=$cgi->keywords;
+if ( $cgi->param('browse') ) {
+  my $query = $cgi->param('browse');
   if ( $query eq 'custnum' ) {
     $sortby=\*custnum_sort;
     @cust_main=qsearch('cust_main',{});  
@@ -31,7 +31,7 @@ if ( $cgi->keywords ) {
     $sortby=\*company_sort;
     @cust_main=qsearch('cust_main',{});
   } else {
-    die "unknown query string $query";
+    die "unknown browse field $query";
   }
 } else {
   @cust_main=();
@@ -42,7 +42,9 @@ if ( $cgi->keywords ) {
 }
 
 @cust_main = grep { $_->ncancelled_pkgs || ! $_->all_pkgs } @cust_main
-  if $conf->exists('hidecancelledcustomers');
+  if $cgi->param('showcancelledcustomers') eq '0' #see if it was set by me
+     || ( $conf->exists('hidecancelledcustomers')
+           && ! $cgi->param('showcancelledcustomers') );
 if ( $conf->exists('hidecancelledpackages' ) ) {
   %all_pkgs = map { $_->custnum => [ $_->ncancelled_pkgs ] } @cust_main;
 } else {
@@ -59,7 +61,18 @@ if ( scalar(@cust_main) == 1 && ! $cgi->param('referral_custnum') ) {
   my($total)=scalar(@cust_main);
   print $cgi->header( '-expires' => 'now' ), header("Customer Search Results",menubar(
     'Main Menu', popurl(2)
-  )), "$total matching customers found";
+  )), "$total matching customers found ";
+  if ( $cgi->param('showcancelledcustomers') eq '0' #see if it was set by me
+       || ( $conf->exists('hidecancelledcustomers')
+            && ! $cgi->param('showcancelledcustomers')
+          )
+     ) {
+    $cgi->param('showcancelledcustomers', 1);
+    print qq!( <a href="!. $cgi->self_url. qq!">show cancelled customers</a> )!;
+  } else {
+    $cgi->param('showcancelledcustomers', 0);
+    print qq!( <a href="!. $cgi->self_url. qq!">hide cancelled customers</a> )!;
+  }
   if ( $cgi->param('referral_custnum') ) {
     $cgi->param('referral_custnum') =~ /^(\d+)$/
       or eidiot "Illegal referral_custnum\n";

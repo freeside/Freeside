@@ -1,10 +1,11 @@
 <%
-#<!-- $Id: cust_main.cgi,v 1.10 2001-09-11 09:56:27 ivan Exp $ -->
+#<!-- $Id: cust_main.cgi,v 1.11 2001-09-16 12:45:35 ivan Exp $ -->
 
 use strict;
 use vars qw ( $cgi $query $custnum $cust_main $hashref $agent $referral 
               @packages $package @history @bills $bill @credits $credit
-              $balance $item @agents @referrals @invoicing_list $n1 $conf ); 
+              $balance $item @agents @referrals @invoicing_list $n1 $conf
+              $signupurl ); 
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use Date::Format;
@@ -53,10 +54,17 @@ unless ( $conf->exists('disable_customer_referrals') ) {
 
   print qq! | <A HREF="!, popurl(2),
         qq!search/cust_main.cgi?referral_custnum=$custnum">!,
-        qq!View this customer's referrals<A>!;
+        qq!View this customer's referrals</A>!;
 }
 
 print '<BR><BR>';
+
+my $signupurl = $conf->config('signupurl');
+if ( $signupurl ) {
+print "This customer's signup URL: ".
+      "<a href=\"$signupurl?ref=$custnum\">$signupurl?ref=$custnum</a><BR><BR>";
+}
+
 print '<A NAME="cust_main"></A>';
 
 print &itable(), '<TR>';

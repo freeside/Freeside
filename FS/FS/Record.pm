@@ -472,10 +472,11 @@ returns the error, otherwise returns false.
 
 sub replace {
   my ( $new, $old ) = ( shift, shift );
+  warn "[debug][FS::Record] $new ->replace $old\n" if $DEBUG;
 
   my @diff = grep $new->getfield($_) ne $old->getfield($_), $old->fields;
   unless ( @diff ) {
-    carp "warning: records identical";
+    carp "[warning][FS::Record] $new -> replace $old: records identical";
     return '';
   }
 
@@ -993,7 +994,7 @@ sub DESTROY { return; }
 
 =head1 VERSION
 
-$Id: Record.pm,v 1.28 2001-09-14 18:05:16 ivan Exp $
+$Id: Record.pm,v 1.29 2001-09-16 12:45:35 ivan Exp $
 
 =head1 BUGS
 

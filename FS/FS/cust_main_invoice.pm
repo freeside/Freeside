@@ -88,7 +88,7 @@ sub replace {
 
   return "Can't change custnum!" unless $old->custnum == $new->custnum;
 
-  $new->SUPER::replace;
+  $new->SUPER::replace($old);
 }
 
 
@@ -172,7 +172,7 @@ sub address {
 
 =head1 VERSION
 
-$Id: cust_main_invoice.pm,v 1.6 2001-08-12 00:06:33 ivan Exp $
+$Id: cust_main_invoice.pm,v 1.7 2001-09-16 12:45:35 ivan Exp $
 
 =head1 BUGS
 
