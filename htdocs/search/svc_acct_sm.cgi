@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct_sm.cgi,v 1.9 1999-04-09 04:22:34 ivan Exp $
+# $Id: svc_acct_sm.cgi,v 1.10 1999-07-20 06:03:36 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/svc_domain.cgi
@@ -17,7 +17,10 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # $Log: svc_acct_sm.cgi,v $
-# Revision 1.9  1999-04-09 04:22:34  ivan
+# Revision 1.10  1999-07-20 06:03:36  ivan
+# s/CGI::Request/CGI/; (how'd i miss that before?)
+#
+# Revision 1.9  1999/04/09 04:22:34  ivan
 # also table()
 #
 # Revision 1.8  1999/04/09 03:52:55  ivan
@@ -43,7 +46,7 @@
 
 use strict;
 use vars qw( $conf $cgi $mydomain $domuser $svc_domain $domsvc @svc_acct_sm );
-use CGI::Request;
+use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
 use FS::CGI qw(popurl idiot header table);
