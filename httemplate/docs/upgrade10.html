@@ -74,6 +74,12 @@ ALTER TABLE cust_main_county ADD recurtax char(1) NULL;
 ALTER TABLE h_cust_main_county ADD recurtax char(1) NULL;
 ALTER TABLE cust_pkg ADD last_bill int NULL;
 ALTER TABLE h_cust_pkg ADD last_bill int NULL;
+ALTER TABLE agent ADD disabled char(1) NULL;
+ALTER TABLE h_agent ADD disabled char(1) NULL;
+ALTER TABLE agent ADD username varchar(80) NULL;
+ALTER TABLE h_agent ADD username varchar(80) NULL;
+ALTER TABLE agent ADD _password varchar(80) NULL;
+ALTER TABLE h_agent ADD _password varchar(80) NULL;
 
 dump database, edit:
 - cust_main: increase otaker from 8 to 32
