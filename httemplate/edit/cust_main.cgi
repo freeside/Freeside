@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: cust_main.cgi,v 1.5 2001-09-27 20:41:36 ivan Exp $ -->
+#<!-- $Id: cust_main.cgi,v 1.6 2001-09-27 21:12:15 ivan Exp $ -->
 
 use vars qw( $cgi $custnum $action $cust_main $p1 @agents $agentnum 
              $last $first $ss $company $address1 $address2 $city $zip 
@@ -434,7 +434,7 @@ unless ( $custnum ) {
 (blank to generate)</TD></TR>
 END
 
-    print '<TR><TD ALIGN="right">POP</TD><TD WIDTH="100%">'
+    print '<TR><TD ALIGN="right">Access number</TD><TD WIDTH="100%">'
           .
           &FS::svc_acct_pop::popselector($popnum).
           '</TD></TR></TABLE>'

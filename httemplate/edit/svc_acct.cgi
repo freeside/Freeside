@@ -1,11 +1,11 @@
 <%
-#<!-- $Id: svc_acct.cgi,v 1.8 2001-09-27 20:41:36 ivan Exp $ -->
+#<!-- $Id: svc_acct.cgi,v 1.9 2001-09-27 21:12:15 ivan Exp $ -->
 
 use strict;
 use vars qw( $conf $cgi @shells $action $svcnum $svc_acct $pkgnum $svcpart
              $part_svc $svc $otaker $username $password $ulen $ulen2 $p1
              $popnum $domsvc $uid $gid $finger $dir $shell $quota $slipip
-             @svc_domain );
+             %svc_domain );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup getotaker);
@@ -131,18 +131,29 @@ $domsvc = $svc_acct->domsvc || 0;
 if ( $part_svc->part_svc_column('domsvc')->columnflag eq 'F' ) {
   print qq!<INPUT TYPE="hidden" NAME="domsvc" VALUE="$domsvc">!;
 } else { 
-  my @svc_domain = ();
+  my %svc_domain = ();
+
+  if ( $domsvc ) {
+    my $svc_domain = qsearchs('svc_domain', { 'svcnum' => $domsvc, } );
+    if ( $svc_domain ) {
+      $svc_domain{$svc_domain->svcnum} = $svc_domain;
+    } else {
+      warn "unknown svc_domain.svcnum for svc_acct.domsvc: $domsvc";
+    }
+  }
+
   if ( $part_svc->part_svc_column('domsvc')->columnflag eq 'D' ) {
     my $svc_domain = qsearchs('svc_domain', {
       'svcnum' => $part_svc->part_svc_column('domsvc')->columnvalue,
     } );
     if ( $svc_domain ) {
-      push @svc_domain, $svc_domain;
+      $svc_domain{$svc_domain->svcnum} = $svc_domain;
     } else {
       warn "unknown svc_domain.svcnum for part_svc_column domsvc: ".
            $part_svc->part_svc_column('domsvc')->columnvalue;
     }
   }
+
   my $cust_pkg = qsearchs('cust_pkg', { 'pkgnum' => $pkgnum } );
   if ($cust_pkg) {
     my @cust_svc =
@@ -151,20 +162,23 @@ if ( $part_svc->part_svc_column('domsvc')->columnflag eq 'F' ) {
     foreach my $cust_svc ( @cust_svc ) {
       my $svc_domain =
         qsearchs('svc_domain', { 'svcnum' => $cust_svc->svcnum } );
-      push @svc_domain, $svc_domain if $svc_domain;
+     $svc_domain{$svc_domain->svcnum} = $svc_domain if $svc_domain;
     }
   } else {
-    @svc_domain = qsearch('svc_domain', {} );
+    %svc_domain = map { $_->svcnum => $_ } qsearch('svc_domain', {} );
   }
   print qq!<TR><TD ALIGN="right">Domain</TD>!.
         qq!<TD><SELECT NAME="domsvc" SIZE=1>\n!;
-  foreach my $svc_domain ( sort { $a->domain cmp $b->domain } @svc_domain ) {
-    print qq!<OPTION VALUE="!, $svc_domain->svcnum, qq!"!,
-          $svc_domain->svcnum == $domsvc ? ' SELECTED' : '',
-          ">", $svc_domain->domain, "\n"
-      ;
+  foreach my $svcnum (
+    sort { $svc_domain{$a}->domain cmp $svc_domain{$b}->domain }
+      keys %svc_domain
+  ) {
+    my $svc_domain = $svc_domain{$svcnum};
+    print qq!<OPTION VALUE="!. $svc_domain->svcnum. qq!"!.
+          ( $svc_domain->svcnum == $domsvc ? ' SELECTED' : '' ).
+          '>'. $svc_domain->domain. "\n" ;
   }
-  print "</SELECT></TD><TR>";
+  print "</SELECT></TD></TR>";
 }
 
 #pop
