@@ -470,6 +470,11 @@ function cust_pay_areyousure(href) {
  == true)
         window.location.href = href;
 }
+function cust_pay_unapply_areyousure(href) {
+    if (confirm("Are you sure you want to unapply this payment?")
+ == true)
+        window.location.href = href;
+}
 </SCRIPT>
 END
 
@@ -524,8 +529,12 @@ if ( $conf->config('payby-default') ne 'HIDE' ) {
       my $delete = $payment->closed !~ /^Y/i && $conf->exists('deletepayments')
                      ? qq! (<A HREF="javascript:cust_pay_areyousure('${p}misc/delete-cust_pay.cgi?!. $payment->paynum. qq!')">delete</A>)!
                      : '';
+      my $unapply =
+        $payment->closed !~ /^Y/i && $conf->exists('unapplypayments')
+          ? qq! (<A HREF="javascript:cust_pay_unapply_areyousure('${p}misc/unapply-cust_pay.cgi?!. $payment->paynum. qq!')">unapply</A>)!
+          : '';
       push @history,
-        "$date\tPayment, Invoice #$invnum ($payby$payinfo)$delete\t\t$paid\t\t\t$target";
+        "$date\tPayment, Invoice #$invnum ($payby$payinfo)$delete$unapply\t\t$paid\t\t\t$target";
     }
   
     my(@cust_credit_bill)=
