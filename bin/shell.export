@@ -54,6 +54,8 @@ foreach my $export ( @bsd_exports ) {
         grep { qsearch('cust_svc', { 'svcpart' => $_->svcpart } ) }
           $export->export_svc;
 
+  next unless @svc_acct;
+
   foreach my $svc_acct ( sort { $a->uid <=> $b->uid } @svc_acct ) {
 
     my $password = $svc_acct->_password;
