@@ -577,7 +577,8 @@ sub get_session_history {
   my @sessions = ();
 
   foreach my $part_export ( @part_export ) {
-    push @sessions, $part_export->usage_sessions( $start, $end, $self->svc_x );
+    push @sessions,
+      @{ $part_export->usage_sessions( $start, $end, $self->svc_x ) };
   }
 
   @sessions;
