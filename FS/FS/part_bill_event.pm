@@ -121,7 +121,7 @@ sub check {
     || $self->ut_number('seconds')
     || $self->ut_enum('disabled', [ '', 'Y' ] )
     || $self->ut_number('weight')
-    || $self->ut_alphan('plan')
+    || $self->ut_textn('plan')
     || $self->ut_anything('plandata')
   ;
 }
