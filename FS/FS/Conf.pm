@@ -184,7 +184,7 @@ httemplate/docs/config.html
   {
     'key'         => 'address',
     'section'     => 'depreciated',
-    'description' => 'This configuration file is no longer used.  See <a href="#invoice_template">invoice_template</a> instead.',
+    'description' => 'This configuration option is no longer used.  See <a href="#invoice_template">invoice_template</a> instead.',
     'type'        => 'text',
   },
 
@@ -232,7 +232,7 @@ httemplate/docs/config.html
 
   {
     'key'         => 'bsdshellmachines',
-    'section'     => '',
+    'section'     => 'shell',
     'description' => 'Your BSD flavored shell (and mail) machines, one per line.  This enables export of `/etc/passwd\' and `/etc/master.passwd\'.',
     'type'        => 'textarea',
   },
@@ -253,7 +253,7 @@ httemplate/docs/config.html
 
   {
     'key'         => 'cyrus',
-    'section'     => '',
+    'section'     => 'mail',
     'description' => 'Integration with <a href="http://asg.web.cmu.edu/cyrus/imapd/">Cyrus IMAP Server</a>, three lines: IMAP server, admin username, and admin password.  Cyrus::IMAP::Admin should be installed locally and the connection to the server secured.',
     'type'        => 'textarea',
   },
@@ -261,7 +261,7 @@ httemplate/docs/config.html
   {
     'key'         => 'deletecustomers',
     'section'     => 'UI',
-    'description' => 'The existance of this file will enable customer deletions.  Be very careful!  Deleting a customer will remove all traces that this customer ever existed!  It should probably only be used when auditing a legacy database.  Normally, you cancel all of a customers\' packages if they cancel service.',
+    'description' => 'Enable customer deletions.  Be very careful!  Deleting a customer will remove all traces that this customer ever existed!  It should probably only be used when auditing a legacy database.  Normally, you cancel all of a customers\' packages if they cancel service.',
     'type'        => 'checkbox',
   },
 
@@ -275,7 +275,7 @@ httemplate/docs/config.html
   {
     'key'         => 'disable_customer_referrals',
     'section'     => 'UI',
-    'description' => 'The existance of this file will disable new customer-to-customer referrals in the web interface.',
+    'description' => 'Disable new customer-to-customer referrals in the web interface',
     'type'        => 'checkbox',
   },
 
@@ -289,42 +289,42 @@ httemplate/docs/config.html
   {
     'key'         => 'editreferrals',
     'section'     => 'UI',
-    'description' => 'The existance of this file will allow you to change the referral of existing customers.',
+    'description' => 'Enable referral modification for existing customers',
     'type'       => 'checkbox',
   },
 
   {
     'key'         => 'emailinvoiceonly',
     'section'     => 'billing',
-    'description' => 'Disables postal mail invoices.',
+    'description' => 'Disables postal mail invoices',
     'type'       => 'checkbox',
   },
 
   {
     'key'         => 'emailinvoiceauto',
     'section'     => 'billing',
-    'description' => 'Automatically adds new accounts to the email invoice list upon customer creation.',
+    'description' => 'Automatically adds new accounts to the email invoice list upon customer creation',
     'type'       => 'checkbox',
   },
 
   {
     'key'         => 'erpcdmachines',
     'section'     => '',
-    'description' => 'Your ERPCD authenticaion machines, one per line.  This enables export of `/usr/annex/acp_passwd\' and `/usr/annex/acp_dialup\'.',
+    'description' => 'Your ERPCD authenticaion machines, one per line.  This enables export of `/usr/annex/acp_passwd\' and `/usr/annex/acp_dialup\'',
     'type'        => 'textarea',
   },
 
   {
     'key'         => 'hidecancelledpackages',
     'section'     => 'UI',
-    'description' => 'The existance of this file will prevent cancelled packages from showing up in listings (though they will still be in the database)',
+    'description' => 'Prevent cancelled packages from showing up in listings (though they will still be in the database)',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'hidecancelledcustomers',
     'section'     => 'UI',
-    'description' => 'The existance of this file will prevent customers with only cancelled packages from showing up in listings (though they will still be in the database)',
+    'description' => 'Prevent customers with only cancelled packages from showing up in listings (though they will still be in the database)',
     'type'        => 'checkbox',
   },
 
@@ -337,36 +337,36 @@ httemplate/docs/config.html
 
   {
     'key'         => 'icradiusmachines',
-    'section'     => '',
-    'description' => 'Your <a href="ftp://ftp.cheapnet.net/pub/icradius">ICRADIUS</a> machines, one per line.  The existance of this file (even if empty) turns on radcheck table creation (in the freeside database - the radcheck table needs to be created manually).  Machines listed in this file will have the radcheck table exported to them.  Each line of this file should contain four items, separted by whitespace: machine name, MySQL database name, MySQL username, and MySQL password.  For example: "<CODE>radius.isp.tld&nbsp;radius_db&nbsp;radius_user&nbsp;passw0rd</CODE>".  You do not need to use MySQL for your Freeside database to export to an ICRADIUS mysql database with this option.',
+    'section'     => 'radius',
+    'description' => 'Your <a href="ftp://ftp.cheapnet.net/pub/icradius">ICRADIUS</a> machines or <a href="http://www.freeradius.org/">FreeRADIUS</a> (with MySQL authentication) machines, one per line.  Turning this option on (even if empty) turns on radcheck table population (in the freeside database - the radcheck table needs to be created manually).  Machines listed in this file will have the radcheck table exported to them.  Each line should contain four items, separted by whitespace: machine name, MySQL database name, MySQL username, and MySQL password.  For example: "<CODE>radius.isp.tld&nbsp;radius_db&nbsp;radius_user&nbsp;passw0rd</CODE>".  You do not need to use MySQL for your Freeside database to export to an ICRADIUS/FreeRADIUS mysql database with this option.',
     'type'        => [qw( checkbox textarea )],
   },
 
   {
     'key'         => 'icradius_mysqldest',
-    'section'     => '',
-    'description' => 'Destination directory for the MySQL databases, on the ICRADIUS machines.  Defaults to "/usr/local/var/".',
+    'section'     => 'radius',
+    'description' => 'Destination directory for the MySQL databases, on the ICRADIUS/FreeRADIUS machines.  Defaults to "/usr/local/var/".',
     'type'        => 'text',
   },
 
   {
     'key'         => 'icradius_mysqlsource',
-    'section'     => '',
+    'section'     => 'radius',
     'description' => 'Source directory for for the MySQL radcheck table files, on the Freeside machine.  Defaults to "/usr/local/var/freeside".',
     'type'        => 'text',
   },
 
   {
     'key'         => 'icradius_secrets',
-    'section'     => '',
-    'description' => 'Optionally specifies a MySQL database for ICRADIUS export, if you\'re not running MySQL for your Freeside database.  The database should be on the Freeside machine and store data in the <a href="#icradius_mysqlsource">icradius_mysqlsource</a> directory.  Three lines: DBI data source, username and password.  This file should not be world readable.',
+    'section'     => 'radius',
+    'description' => 'Optionally specifies a MySQL database for ICRADIUS/FreeRADIUS export, if you\'re not running MySQL for your Freeside database.  The database should be on the Freeside machine and store data in the <a href="#icradius_mysqlsource">icradius_mysqlsource</a> directory.  Three lines: DBI data source, username and password.',
     'type'        => 'textarea',
   },
 
   {
     'key'         => 'invoice_from',
     'section'     => 'required',
-    'description' => 'Return address on email invoices.',
+    'description' => 'Return address on email invoices',
     'type'        => 'text',
   },
 
@@ -380,21 +380,21 @@ httemplate/docs/config.html
   {
     'key'         => 'lpr',
     'section'     => 'required',
-    'description' => 'Print command for paper invoices, for example `lpr -h\'.',
+    'description' => 'Print command for paper invoices, for example `lpr -h\'',
     'type'        => 'text',
   },
 
   {
     'key'         => 'maildisablecatchall',
     'section'     => 'depreciated',
-    'description' => '<b>DEPRECIATED</b>, now the default.  The existance of this file used to disable the requirement that each virtual domain have a catch-all mailbox.',
+    'description' => '<b>DEPRECIATED</b>, now the default.  Turning this option on used to disable the requirement that each virtual domain have a catch-all mailbox.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'money_char',
     'section'     => '',
-    'description' => 'Currency symbol - defaults to `$\'.',
+    'description' => 'Currency symbol - defaults to `$\'',
     'type'        => 'text',
   },
 
@@ -414,7 +414,7 @@ httemplate/docs/config.html
 
   {
     'key'         => 'nismachines',
-    'section'     => '',
+    'section'     => 'shell',
     'description' => 'Your NIS master (not slave master) machines, one per line.  This enables export of `/etc/global/passwd\' and `/etc/global/shadow\'.',
     'type'        => 'textarea',
   },
@@ -435,14 +435,14 @@ httemplate/docs/config.html
 
   {
     'key'         => 'qmailmachines',
-    'section'     => '',
-    'description' => 'Your qmail machines, one per line.  This enables export of `/var/qmail/control/virtualdomains\', `/var/qmail/control/recipientmap\', and `/var/qmail/control/rcpthosts\'.  The existance of this file (even if empty) also turns on user `.qmail-extension\' file maintenance in conjunction with `shellmachine\'.',
+    'section'     => 'mail',
+    'description' => 'Your qmail machines, one per line.  This enables export of `/var/qmail/control/virtualdomains\', `/var/qmail/control/recipientmap\', and `/var/qmail/control/rcpthosts\'.  Setting this option (even if empty) also turns on user `.qmail-extension\' file maintenance in conjunction with the <b>shellmachine</b> option.',
     'type'        => [qw( checkbox textarea )],
   },
 
   {
     'key'         => 'radiusmachines',
-    'section'     => '',
+    'section'     => 'radius',
     'description' => 'Your RADIUS authentication machines, one per line.  This enables export of `/etc/raddb/users\'.',
     'type'        => 'textarea',
   },
@@ -450,7 +450,7 @@ httemplate/docs/config.html
   {
     'key'         => 'referraldefault',
     'section'     => 'UI',
-    'description' => 'Default referral, specified by refnum.',
+    'description' => 'Default referral, specified by refnum',
     'type'        => 'text',
   },
 
@@ -462,21 +462,21 @@ httemplate/docs/config.html
 
   {
     'key'         => 'sendmailconfigpath',
-    'section'     => '',
-    'description' => 'Sendmail configuration file path - defaults to `/etc\'.  Many newer distributions use `/etc/mail\'.',
+    'section'     => 'mail',
+    'description' => 'Sendmail configuration file path.  Defaults to `/etc\'.  Many newer distributions use `/etc/mail\'.',
     'type'        => 'text',
   },
 
   {
     'key'         => 'sendmailmachines',
-    'section'     => '',
+    'section'     => 'mail',
     'description' => 'Your sendmail machines, one per line.  This enables export of `/etc/virtusertable\' and `/etc/sendmail.cw\'.',
     'type'        => 'textarea',
   },
 
   {
     'key'         => 'sendmailrestart',
-    'section'     => '',
+    'section'     => 'mail',
     'description' => 'If defined, the command which is run on sendmail machines after files are copied.',
     'type'        => 'text',
   },
@@ -505,22 +505,23 @@ httemplate/docs/config.html
   {
     'key'         => 'shellmachine-useradd',
     'section'     => 'shell',
-    'description' => 'The command(s) to run on shellmachine when an account is created.  If this file does not exist, <code>useradd -d $dir -m -s $shell -u $uid $username</code> is the default.  If the file exists but is empty, <code>cp -pr /etc/skel $dir; chown -R $uid.$gid $dir</code> is the default instead.  Otherwise the contents of the file are treated as a double-quoted perl string, with the following variables available: <code>$username</code>, <code>$uid</code>, <code>$gid</code>, <code>$dir</code>, and <code>$shell</code>.',
+    'description' => 'The command(s) to run on shellmachine when an account is created.  If the <b>shellmachine</b> option is set but this option is not, <code>useradd -d $dir -m -s $shell -u $uid $username</code> is the default.  If this option is set but empty, <code>cp -pr /etc/skel $dir; chown -R $uid.$gid $dir</code> is the default instead.  Otherwise the value is evaluated as a double-quoted perl string, with the following variables available: <code>$username</code>, <code>$uid</code>, <code>$gid</code>, <code>$dir</code>, and <code>$shell</code>.',
     'type'        => [qw( checkbox text )],
   },
 
   {
     'key'         => 'shellmachine-userdel',
     'section'     => 'shell',
-    'description' => 'The command(s) to run on shellmachine when an account is deleted.  If this file does not exist, <code>userdel $username</code> is the default.  If the file exists but is empty, <code>rm -rf $dir</code> is the default instead.  Otherwise the contents of the file are treated as a double-quoted perl string, with the following variables available: <code>$username</code> and <code>$dir</code>.',
+    'description' => 'The command(s) to run on shellmachine when an account is deleted.  If the <b>shellmachine</b> option is set but this option is not, <code>userdel $username</code> is the default.  If this option is set but empty, <code>rm -rf $dir</code> is the default instead.  Otherwise the value is evaluated as a double-quoted perl string, with the following variables available: <code>$username</code> and <code>$dir</code>.',
     'type'        => [qw( checkbox text )],
   },
 
   {
     'key'         => 'shellmachine-usermod',
     'section'     => 'shell',
-    'description' => 'The command(s) to run on shellmachine when an account is modified.  If this file does not exist or is empty, <code>[ -d $old_dir ] &amp;&amp; mv $old_dir $new_dir || ( chmod u+t $old_dir; mkdir $new_dir; cd $old_dir; find . -depth -print | cpio -pdm $new_dir; chmod u-t $new_dir; chown -R $uid.$gid $new_dir; rm -rf $old_dir )</code> is the default.  Otherwise the contents of the file are treated as a double-quoted perl string, with the following variables available: <code>$old_dir</code>, <code>$new_dir</code>, <code>$uid</code> and <code>$gid</code>.',
-    'type'        => [qw( checkbox text )],
+    'description' => 'The command(s) to run on shellmachine when an account is modified.  If the <b>shellmachine</b> option is set but this option is empty, <code>[ -d $old_dir ] &amp;&amp; mv $old_dir $new_dir || ( chmod u+t $old_dir; mkdir $new_dir; cd $old_dir; find . -depth -print | cpio -pdm $new_dir; chmod u-t $new_dir; chown -R $uid.$gid $new_dir; rm -rf $old_dir )</code> is the default.  Otherwise the contents of the file are treated as a double-quoted perl string, with the following variables available: <code>$old_dir</code>, <code>$new_dir</code>, <code>$uid</code> and <code>$gid</code>.',
+    #'type'        => [qw( checkbox text )],
+    'type'        => 'text',
   },
 
   {
@@ -540,21 +541,21 @@ httemplate/docs/config.html
   {
     'key'         => 'showpasswords',
     'section'     => 'UI',
-    'description' => 'The existance of this file will allow unencrypted user passwords to be displayed.',
+    'description' => 'Display unencrypted user passwords in the web interface',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'signupurl',
     'section'     => 'UI',
-    'description' => 'if you are using customer-to-customer referrals, and you enter the URL of your <a href="signup.html">signup server CGI</a>, the customer view screen will display a customized link to the signup server with the appropriate customer as referral.',
+    'description' => 'if you are using customer-to-customer referrals, and you enter the URL of your <a href="../docs/signup.html">signup server CGI</a>, the customer view screen will display a customized link to the signup server with the appropriate customer as referral',
     'type'        => 'text',
   },
 
   {
     'key'         => 'smtpmachine',
     'section'     => 'required',
-    'description' => 'SMTP relay for Freeside\'s outgoing mail.',
+    'description' => 'SMTP relay for Freeside\'s outgoing mail',
     'type'        => 'text',
   },
 
@@ -610,63 +611,63 @@ httemplate/docs/config.html
   {
     'key'         => 'textradiusprepend',
     'section'     => 'depreciated',
-    'description' => '<b>DEPRECIATED</b>, use RADIUS check attributes instead.  This option will be removed soon.  The contents of this file will be prepended to the first line of a user\'s RADIUS entry in text exports.',
+    'description' => '<b>DEPRECIATED</b>, use RADIUS check attributes instead.  This option will be removed soon.  The contents will be prepended to the first line of a user\'s RADIUS entry in text exports.',
     'type'        => 'text',
   },
 
   {
     'key'         => 'unsuspendauto',
     'section'     => 'billing',
-    'description' => 'The existance of this file will enable the automatic unsuspension of suspended packages when a customer\'s balance due changes from positive to zero or negative as the result of a payment or credit.',
+    'description' => 'Enables the automatic unsuspension of suspended packages when a customer\'s balance due changes from positive to zero or negative as the result of a payment or credit',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'usernamemin',
     'section'     => 'username',
-    'description' => 'Minimum username length (default 2);',
+    'description' => 'Minimum username length (default 2)',
     'type'        => 'text',
   },
 
   {
     'key'         => 'usernamemax',
     'section'     => 'username',
-    'description' => 'Maximum username length (default is the size of the SQL column, probably specified when fs-setup was run)',
+    'description' => 'Maximum username length',
     'type'        => 'text',
   },
 
   {
     'key'         => 'username-ampersand',
     'section'     => 'username',
-    'description' => 'The existance of this file will allow the ampersand character (&amp;) in usernames.  Be careful when using this option in conjunction with <a href="#shellmachine-useradd">shellmachine-useradd</a> and other configuration options which execute shell commands, as the ampersand will be interpreted by the shell if not quoted.',
+    'description' => 'Allow the ampersand character (&amp;) in usernames.  Be careful when using this option in conjunction with <a href="#shellmachine-useradd">shellmachine-useradd</a> and other configuration options which execute shell commands, as the ampersand will be interpreted by the shell if not quoted.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'username-letter',
     'section'     => 'username',
-    'description' => 'The existance of this file will turn on the requirement that usernames contain at least one letter.',
+    'description' => 'Usernames must contain at least one letter',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'username-letterfirst',
     'section'     => 'username',
-    'description' => 'The existance of this file will turn on the requirement that usernames start with a letter.',
+    'description' => 'Usernames must start with a letter',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'username-noperiod',
     'section'     => 'username',
-    'description' => 'The existance of this file will disallow periods in usernames.',
+    'description' => 'Disallow periods in usernames',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'username-uppercase',
     'section'     => 'username',
-    'description' => 'The existance of this file will allow uppercase characters in username.',
+    'description' => 'Allow uppercase characters in usernames',
     'type'        => 'checkbox',
   },
 
@@ -675,12 +676,12 @@ httemplate/docs/config.html
     'section'     => '',
     'description' => 'This file controls the mechanism for preventing duplicate usernames in passwd/radius files exported from svc_accts.  This should be one of \'prepend domsvc\' \'append domsvc\' or \'append domain\'',
 #    'type'        => 'select',
-    'type'        => '',
+    'type'        => 'text',
   },
 
   {
     'key'         => 'vpopmailmachines',
-    'section'     => '',
+    'section'     => 'mail',
     'description' => 'Your vpopmail pop toasters, one per line.  Each line is of the form "machinename vpopdir vpopuid vpopgid".  For example: <code>poptoaster.domain.tld /home/vpopmail 508 508</code>  Note: vpopuid and vpopgid are values taken from the vpopmail machine\'s /etc/passwd',
     'type'        => 'textarea',
   },

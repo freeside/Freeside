@@ -5,7 +5,7 @@
 <form action="config-process.cgi">
 
 <% foreach my $section ( qw(required billing username password UI session
-                            apache BIND shell
+                            shell mail radius apache BIND
                            ),
                          '', 'depreciated') { %>
   <%= table("#cccccc", 2) %>

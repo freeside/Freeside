@@ -4,7 +4,7 @@
 <% my $conf = new FS::Conf; my @config_items = $conf->config_items; %>
 
 <% foreach my $section ( qw(required billing username password UI session
-                            apache BIND shell
+                            shell mail radius apache BIND
                            ),
                          '', 'depreciated') { %>
   <%= table("#cccccc", 2) %>
