@@ -23,6 +23,7 @@ sub _export_command {
   my $command = $self->option($action);
 
   #set variable for the command
+  no strict 'vars';
   {
     no strict 'refs';
     ${$_} = $svc_domain->getfield($_) foreach $svc_domain->fields;
@@ -53,6 +54,7 @@ sub _export_replace {
   my $command = $self->option('usermod');
   
   #set variable for the command
+  no strict 'vars';
   {
     no strict 'refs';
     ${"old_$_"} = $old->getfield($_) foreach $old->fields;
@@ -100,7 +102,7 @@ sub shellcommands_queue {
 }
 
 sub ssh_cmd { #subroutine, not method
-  use Net::SSH '0.06';
+  use Net::SSH '0.07';
   &Net::SSH::ssh_cmd( { @_ } );
 }
 

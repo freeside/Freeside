@@ -24,6 +24,7 @@ sub _export_command {
   my ( $self, $action, $svc_acct) = (shift, shift, shift);
   my $command = $self->option($action);
   my $stdin = $self->option($action."_stdin");
+  no strict 'vars';
   {
     no strict 'refs';
     ${$_} = $svc_acct->getfield($_) foreach $svc_acct->fields;
@@ -44,6 +45,7 @@ sub _export_replace {
   my($self, $new, $old ) = (shift, shift, shift);
   my $command = $self->option('usermod');
   my $stdin = $self->option('usermod_stdin');
+  no strict 'vars';
   {
     no strict 'refs';
     ${"old_$_"} = $old->getfield($_) foreach $old->fields;
@@ -72,7 +74,7 @@ sub shellcommands_queue {
 }
 
 sub ssh_cmd { #subroutine, not method
-  use Net::SSH '0.06';
+  use Net::SSH '0.07';
   &Net::SSH::ssh_cmd( { @_ } );
 }
 
