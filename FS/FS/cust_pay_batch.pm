@@ -210,6 +210,8 @@ sub import_results {
   my $paybatch = $param->{'paybatch'};
 
   my @fields;
+  my $end_condition;
+  my $end_hook;
   my $condition;
   my $hook;
 
@@ -236,9 +238,23 @@ sub import_results {
       '',            # Terminal ID: Terminal ID used to process the transaction
     );
 
+    $end_condition = sub {
+      my $hash = shift;
+      $hash->{'type'} eq '0BC';
+    };
+
+    $end_hook = sub {
+      my( $hash, $total) = @_;
+      $total = sprintf("%.2f", $total);
+      my $batch_total = sprintf("%.2f", $hash->{'paybatchnum'} / 100 );
+      return "Our total $total does not match bank total $batch_total!"
+        if $total != $batch_total;
+      '';
+    };
+
     $condition = sub {
       my $hash = shift;
-      $hash->{'result'} == 3 && $hash->{'type'} == 0;
+      $hash->{'result'} == 3 && $hash->{'type'} eq '0';
     };
 
     $hook = sub {
@@ -269,8 +285,11 @@ sub import_results {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
+  my $total = 0;
   my $line;
   while ( defined($line=<$fh>) ) {
+
+    next if $line =~ /^\s*$/; #skip blank lines
 
     $csv->parse($line) or do {
       $dbh->rollback if $oldAutoCommit;
@@ -283,6 +302,15 @@ sub import_results {
       my $value = shift @values;
       next unless $field;
       $hash{$field} = $value;
+    }
+
+    if ( &{$end_condition}(\%hash) ) {
+      my $error = &{$end_hook}(\%hash, $total);
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
+      }
+      last;
     }
 
     my $cust_pay_batch =
@@ -314,6 +342,7 @@ sub import_results {
       $dbh->rollback if $oldAutoCommit;
       return "error adding payment paybatchnum $hash{'paybatchnum'}: $error\n";
     }
+    $total += $hash{'paid'};
 
     $cust_pay->cust_main->apply_payments;
 
