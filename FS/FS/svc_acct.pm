@@ -572,8 +572,31 @@ sub replace {
     }
   }
 
+  if ( $icradius_dbh ) {
+    my $queue = new FS::queue { 'job' => 'FS::svc_acct::icradius_rc_replace' };
+    $error = $queue->insert( $new->username,
+                             $new->_password,
+                           );
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "queueing job (transaction rolled back): $error";
+    }
+  }
+
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   ''; #no error
+}
+
+sub icradius_rc_replace {
+  my( $username, $new_password ) = @_;
+ 
+   my $sth = $icradius_dbh->prepare(
+     "UPDATE radcheck SET Value = ? WHERE UserName = ? and Attribute = ?"
+   );
+   $sth->execute($new_password, $username, 'Password' )
+     or die "can't update radcheck table: ". $sth->errstr;
+
+  1;
 }
 
 =item suspend
@@ -844,7 +867,7 @@ sub email {
 
 =head1 VERSION
 
-$Id: svc_acct.pm,v 1.40 2001-09-16 12:45:35 ivan Exp $
+$Id: svc_acct.pm,v 1.41 2001-09-19 00:24:27 ivan Exp $
 
 =head1 BUGS
 
