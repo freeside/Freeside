@@ -241,9 +241,10 @@ print '</TD></TR></TABLE>';
 if ( defined $cust_main->dbdef_table->column('comments')
      && $cust_main->comments )
 {
-  print "<BR>Comments", &ntable("#cccccc"), "<TR><TD>",
-        &ntable("#cccccc",2),
-        '<TR><TD BGCOLOR="#ffffff"><PRE>', $cust_main->comments,
+  print "<BR>Comments". &ntable("#cccccc"). "<TR><TD>".
+        &ntable("#cccccc",2).
+        '<TR><TD BGCOLOR="#ffffff"><PRE>'.
+        encode_entities($cust_main->comments).
         '</PRE></TD></TR></TABLE></TABLE>';
 }
 
