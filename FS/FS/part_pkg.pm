@@ -672,6 +672,11 @@ sub _calc_eval {
   $value;
 }
 
+#fallback that return 0 for old legacy packages with no plan
+
+sub calc_remain { 0; }
+sub calc_cancel { 0; }
+
 =back
 
 =head1 SUBROUTINES

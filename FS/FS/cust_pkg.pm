@@ -396,12 +396,16 @@ sub cancel {
   }
 
   # Add a credit for remaining service
-  my $remaining_value= $self->calc_remain();
-  if ($remaining_value > 0) {
-    my $error = $self->credit($remaining_value, 'Credit for service remaining');
+  my $remaining_value = $self->calc_remain();
+  if ( $remaining_value > 0 ) {
+    my $error = $self->cust_main->credit(
+      $remaining_value,
+      'Credit for unused time on'. $self->part_pkg->pkg,
+    );
     if ($error) {
       $dbh->rollback if $oldAutoCommit;
-      return "Error crediting customer for service remaining: $error";
+      return "Error crediting customer \$$remaining_value for unused time on".
+             $self->part_pkg->pkg. ": $error";
     }                                                                          
   }                                                                            
 
