@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct_sm.import,v 1.7 2000-06-29 10:51:52 ivan Exp $
+# $Id: svc_acct_sm.import,v 1.8 2000-12-03 15:14:00 ivan Exp $
 #
 # ivan@sisd.com 98-mar-9
 #
@@ -16,7 +16,10 @@
 # ivan@sisd.com 98-jul-13
 #
 # $Log: svc_acct_sm.import,v $
-# Revision 1.7  2000-06-29 10:51:52  ivan
+# Revision 1.8  2000-12-03 15:14:00  ivan
+# bugfixes from Jeff Finucane <jeff@cmh.net>, thanks!
+#
+# Revision 1.7  2000/06/29 10:51:52  ivan
 # oops, silly mistake
 #
 # Revision 1.6  2000/06/29 10:48:25  ivan
@@ -252,7 +255,7 @@ END
   while (<VIRTUSERTABLE>) {
     next if /^#/; #comments?
     next if /^\s*$/; #blank lines
-    /^([\w\-\.]+)?\@([\w\-\.]+)\t([\w\-\.]+)$/
+    /^([\w\-\.]+)?\@([\w\-\.]+)\t+([\w\-\.]+)$/
       #or do { warn "Strange virtusertable line: $_"; next; };
       or die "Strange virtusertable line: $_";
     my($domuser,$domain,$username)=($1,$2,$3);

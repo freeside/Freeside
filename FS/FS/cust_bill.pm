@@ -225,7 +225,7 @@ credits (FS::cust_credit objects).
 sub cust_credit {
   my $self = shift;
   my $total = 0;
-  my @cust_credit = sort { $a->_date <=> $b->date }
+  my @cust_credit = sort { $a->_date <=> $b->_date }
     grep { $_->credited != 0 && $_->_date < $self->_date }
       qsearch('cust_credit', { 'custnum' => $self->custnum } )
   ;
@@ -241,7 +241,7 @@ Returns all payments (see L<FS::cust_pay>) for this invoice.
 
 sub cust_pay {
   my $self = shift;
-  sort { $a->_date <=> $b->date }
+  sort { $a->_date <=> $b->_date }
     qsearch( 'cust_pay', { 'invnum' => $self->invnum } )
   ;
 }
@@ -424,7 +424,7 @@ sub print_text {
 
 =head1 VERSION
 
-$Id: cust_bill.pm,v 1.3 2000-09-20 10:35:21 ivan Exp $
+$Id: cust_bill.pm,v 1.4 2000-12-03 15:14:00 ivan Exp $
 
 =head1 BUGS
 

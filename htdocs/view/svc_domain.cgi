@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_domain.cgi,v 1.10 1999-08-27 22:18:44 ivan Exp $
+# $Id: svc_domain.cgi,v 1.11 2000-12-03 15:14:00 ivan Exp $
 #
 # Usage: svc_domain svcnum
 #        http://server.name/path/svc_domain.cgi?svcnum
@@ -13,7 +13,10 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # $Log: svc_domain.cgi,v $
-# Revision 1.10  1999-08-27 22:18:44  ivan
+# Revision 1.11  2000-12-03 15:14:00  ivan
+# bugfixes from Jeff Finucane <jeff@cmh.net>, thanks!
+#
+# Revision 1.10  1999/08/27 22:18:44  ivan
 # point to patrick instead of internic!
 #
 # Revision 1.9  1999/04/08 12:00:19  ivan
@@ -94,6 +97,6 @@ print $cgi->header( '-expires' => 'now' ), header('Domain View', menubar(
       "Service #$svcnum",
       "<BR>Service: <B>", $part_svc->svc, "</B>",
       "<BR>Domain name: <B>$domain</B>.",
-      qq!<BR><BR><A HREF="http://209.133.38.12/step1.cgi?query=$domain">View whois information.</A>!,
+      qq!<BR><BR><A HREF="http://www.geektools.com/cgi-bin/proxy.cgi?query=$domain;targetnic=auto">View whois information.</A>!,
       '</BODY></HTML>',
 ;

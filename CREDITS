@@ -53,7 +53,8 @@ autoconfiguration support for the signup server.
 
 Jeff Finucane <jeff@cmh.net> send in a bunch of bugfixes (for the sendmail
 export, cancel-unaudited.cgi), patches to support billing date modification,
-and probably other things too (sorry if I forgot them).
+and probably other things too (sorry if I forgot them).  And yet even more
+bug squashing, thanks!
 
 Kenny Elliott <kenny@neoserve.com> contributed ICRADIUS radreply table support,
 allowing attributes with ICRADIUS, helped fix many bugs, and some
@@ -61,6 +62,9 @@ other stuff I can't recall (sorry).
 
 Stephen Amadei <amadei@dandy.net> contribued portability cleanups for the
 low-level DBI stuff.
+
+Jason Spence <thalakan@frys.com> contributed admin.html, autocapnames
+javascript, bugfixes & other neat stuff I can't remember.
 
 Everything else is my (Ivan Kohler <ivan@420.am>) fault.
 
