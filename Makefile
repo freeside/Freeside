@@ -10,6 +10,8 @@ TEMPLATE = asp
 #TEMPLATE = mason
 
 ASP_GLOBAL = /usr/local/etc/freeside/asp-global
+MASON_HANDLER = /usr/local/etc/freeside/handler.pl
+MASONDATA = /usr/local/etc/freeside/masondata
 
 #deb, others?
 FREESIDE_DOCUMENT_ROOT = /var/www/freeside
@@ -115,6 +117,9 @@ install-docs: docs
 	[ "${TEMPLATE}" = "asp" -a ! -e ${ASP_GLOBAL} ] && mkdir ${ASP_GLOBAL} || true
 	[ "${TEMPLATE}" = "asp" ] && chown -R freeside ${ASP_GLOBAL} || true
 	[ "${TEMPLATE}" = "asp" ] && cp htetc/global.asa ${ASP_GLOBAL} || true
+	[ "${TEMPLATE}" = "mason" ] && cp htetc/handler.pl ${MASON_HANDLER} || true
+	[ "${TEMPLATE}" = "mason" -a ! -e ${MASONDATA} ] && mkdir ${MASONDATA} || true
+	[ "${TEMPLATE}" = "mason" ] && chown -R freeside ${MASONDATA} || true
 
 perl-modules:
 	cd FS; \
