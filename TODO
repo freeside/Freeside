@@ -1,10 +1,16 @@
-$Id: TODO,v 1.37 1999-08-03 07:43:33 ivan Exp $
+$Id: TODO,v 1.38 1999-08-27 06:25:56 ivan Exp $
 
 If you are interested in helping with any of these, please join the mailing
 list (send a blank message to ivan-freeside-subscribe@sisd.com) to avoid 
 duplication of effort.
 
 ---
+
+> So is there anyway it could be setup to allow you to select a "primary
+> service" from each package?  This service would be the one you were prompted
+> for.  Could the signup server then be expanded to allow users to go into
+> their package and "turn-on" the remaining non-primary services(using the
+> primary account.)
 
 take the GPL'ed whois proxy stuff at www.geektools.com and turn it into
 intelligence for Net::Whois.
