@@ -213,7 +213,7 @@ configure-rt:
 create-rt: configure-rt
 	cd rt; make install
 	echo -e "${DB_PASSWORD}\n\\d sessions"\
-	 | psql -UW ${DB_USER} freeside 2>&1\
+	 | psql -U ${DB_USER} -W freeside 2>&1\
 	 | grep '^Did not find'\
 	 && rt/sbin/rt-setup-database --dba '${DB_USER}' \
 	                             --dba-password '${DB_PASSWORD}' \
