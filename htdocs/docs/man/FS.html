@@ -1,246 +1,137 @@
 <HTML>
 <HEAD>
 <TITLE>FS - Freeside Perl modules</TITLE>
-<LINK REV="made" HREF="mailto:none">
+<LINK REV="made" HREF="mailto:perl@packages.debian.org">
 </HEAD>
 
 <BODY>
 
+<A NAME="__index__"></A>
 <!-- INDEX BEGIN -->
 
 <UL>
 
-	<LI><A HREF="#NAME">NAME</A>
-	<LI><A HREF="#SYNOPSIS">SYNOPSIS</A>
+	<LI><A HREF="#name">NAME</A></LI>
+	<LI><A HREF="#synopsis">SYNOPSIS</A></LI>
 	<UL>
 
-		<LI><A HREF="#Database_metadata_classes">Database metadata classes</A>
-		<LI><A HREF="#Utility_classes">Utility classes</A>
-		<LI><A HREF="#Database_record_classes">Database record classes</A>
-		<LI><A HREF="#User_Interface_classes_under_de">User Interface classes (under development; not yet usable)</A>
-		<LI><A HREF="#Notes">Notes</A>
+		<LI><A HREF="#utility classes">Utility classes</A></LI>
+		<LI><A HREF="#database record classes">Database record classes</A></LI>
+		<LI><A HREF="#user interface classes (under development; not yet usable)">User Interface classes (under development; not yet usable)</A></LI>
+		<LI><A HREF="#notes">Notes</A></LI>
 	</UL>
 
-	<LI><A HREF="#DESCRIPTION">DESCRIPTION</A>
-	<LI><A HREF="#VERSION">VERSION</A>
-	<LI><A HREF="#SUPPORT">SUPPORT</A>
-	<LI><A HREF="#AUTHOR">AUTHOR</A>
-	<LI><A HREF="#SEE_ALSO">SEE ALSO</A>
-	<LI><A HREF="#BUGS">BUGS</A>
+	<LI><A HREF="#description">DESCRIPTION</A></LI>
+	<LI><A HREF="#version">VERSION</A></LI>
+	<LI><A HREF="#support">SUPPORT</A></LI>
+	<LI><A HREF="#author">AUTHOR</A></LI>
+	<LI><A HREF="#see also">SEE ALSO</A></LI>
+	<LI><A HREF="#bugs">BUGS</A></LI>
 </UL>
 <!-- INDEX END -->
 
 <HR>
 <P>
-<H1><A NAME="NAME">NAME</A></H1>
-<P>
-FS - Freeside Perl modules
-
+<H1><A NAME="name">NAME</A></H1>
+<P>FS - Freeside Perl modules</P>
 <P>
 <HR>
-<H1><A NAME="SYNOPSIS">SYNOPSIS</A></H1>
+<H1><A NAME="synopsis">SYNOPSIS</A></H1>
+<P>FS is the unofficial (i.e. non-CPAN) prefix for the Perl module portion of the
+Freeside ISP billing software.  This includes:</P>
 <P>
-FS is the temporary prefix for many disparate modules written for the
-Freeside ISP billing software. This includes:
-
+<H2><A NAME="utility classes">Utility classes</A></H2>
+<P><A HREF="././FS/Conf.html">the FS::Conf manpage</A> - Freeside configuration values</P>
+<P><A HREF="././FS/UID.html">the FS::UID manpage</A> - User class (not yet OO)</P>
+<P><A HREF="././FS/CGI.html">the FS::CGI manpage</A> - Non OO-subroutines for the web interface.  This is
+depriciated.  Future development will be focused on the FS::UI user-interface
+classes (see below).</P>
 <P>
-<HR>
-<H2><A NAME="Database_metadata_classes">Database metadata classes</A></H2>
+<H2><A NAME="database record classes">Database record classes</A></H2>
+<P><A HREF="././FS/Record.html">the FS::Record manpage</A> - Database record base class</P>
+<P><A HREF="././FS/svc_acct_pop.html">the FS::svc_acct_pop manpage</A> - POP (Point of Presence, not Post
+Office Protocol) class</P>
+<P><A HREF="././FS/part_referral.html">the FS::part_referral manpage</A> - Referral class</P>
+<P><A HREF="././FS/cust_main_county.html">the FS::cust_main_county manpage</A> - Locale (tax rate) class</P>
+<P><A HREF="././FS/svc_Common.html">the FS::svc_Common manpage</A> - Service base class</P>
+<P><A HREF="././FS/svc_acct.html">the FS::svc_acct manpage</A> - Account (shell, RADIUS, POP3) class</P>
+<P><A HREF="././FS/svc_domain.html">the FS::svc_domain manpage</A> - Domain class</P>
+<P><A HREF="././FS/domain_record.html">the FS::domain_record manpage</A> - DNS zone entries</P>
+<P><A HREF="././FS/svc_acct_sm.html">the FS::svc_acct_sm manpage</A> - Vitual mail alias class</P>
+<P><A HREF="././FS/svc_www.html">the FS::svc_www manpage</A> - Web virtual host class.</P>
+<P><A HREF="././FS/part_svc.html">the FS::part_svc manpage</A> - Service definition class</P>
+<P><A HREF="././FS/part_pkg.html">the FS::part_pkg manpage</A> - Package (billing item) definition class</P>
+<P><A HREF="././FS/pkg_svc.html">the FS::pkg_svc manpage</A> - Class linking package (billing item)
+definitions (see <A HREF="././FS/part_pkg.html">the FS::part_pkg manpage</A>) with service definitions
+(see <A HREF="././FS/part_svc.html">the FS::part_svc manpage</A>)</P>
+<P><A HREF="././FS/agent.html">the FS::agent manpage</A> - Agent (reseller) class</P>
+<P><A HREF="././FS/agent_type.html">the FS::agent_type manpage</A> - Agent type class</P>
+<P><A HREF="././FS/type_pkgs.html">the FS::type_pkgs manpage</A> - Class linking agent types (see
+<A HREF="././FS/agent_type.html">the FS::agent_type manpage</A>) with package (billing item) definitions
+(see <A HREF="././FS/part_pkg.html">the FS::part_pkg manpage</A>)</P>
+<P><A HREF="././FS/cust_svc.html">the FS::cust_svc manpage</A> - Service class</P>
+<P><A HREF="././FS/cust_pkg.html">the FS::cust_pkg manpage</A> - Package (billing item) class</P>
+<P><A HREF="././FS/cust_main.html">the FS::cust_main manpage</A> - Customer class</P>
+<P><A HREF="././FS/cust_main_invoice.html">the FS::cust_main_invoice manpage</A> - Invoice destination
+class</P>
+<P><A HREF="././FS/cust_bill.html">the FS::cust_bill manpage</A> - Invoice class</P>
+<P><A HREF="././FS/cust_bill_pkg.html">the FS::cust_bill_pkg manpage</A> - Invoice line item class</P>
+<P><A HREF="././FS/cust_pay.html">the FS::cust_pay manpage</A> - Payment class</P>
+<P><A HREF="././FS/cust_credit.html">the FS::cust_credit manpage</A> - Credit class</P>
+<P><A HREF="././FS/cust_refund.html">the FS::cust_refund manpage</A> - Refund class</P>
+<P><A HREF="././FS/cust_pay_batch.html">the FS::cust_pay_batch manpage</A> - Credit card transaction queue class</P>
+<P><A HREF="././FS/prepay_credit.html">the FS::prepay_credit manpage</A> - Prepaid ``calling card'' credit class.</P>
+<P><A HREF="././FS/nas.html">the FS::nas manpage</A> - Network Access Server class</P>
+<P><A HREF="././FS/port.html">the FS::port manpage</A> - NAS port class</P>
+<P><A HREF="././FS/session.html">the FS::session manpage</A> - User login session class</P>
 <P>
-<A HREF="./FS/dbdef.html">FS::dbdef</A> - Database class
-
+<H2><A NAME="user interface classes (under development; not yet usable)">User Interface classes (under development; not yet usable)</A></H2>
+<P><A HREF="././FS/UI/Base.html">the FS::UI::Base manpage</A> - User-interface base class</P>
+<P><A HREF="././FS/UI/Gtk.html">the FS::UI::Gtk manpage</A> - Gtk user-interface class</P>
+<P><A HREF="././FS/UI/CGI.html">the FS::UI::CGI manpage</A> - CGI (HTML) user-interface class</P>
+<P><A HREF="././FS/UI/agent.html">the FS::UI::agent manpage</A> - agent table user-interface class</P>
 <P>
-<A HREF="./FS/dbdef_table.html">FS::dbdef_table</A> - Database table class
-
-<P>
-<A HREF="./FS/dbdef_column.html">FS::dbdef_column</A> - Database column class
-
-<P>
-<A HREF="./FS/dbdef_colgroup.html">FS::dbdef_colgroup</A> - Database column group class
-
-<P>
-<A HREF="./FS/dbdef_index.html">FS::dbdef_index</A> - Database index class
-
-<P>
-<A HREF="./FS/dbdef_unique.html">FS::dbdef_unique</A> - Database unique index class
-
-<P>
-<HR>
-<H2><A NAME="Utility_classes">Utility classes</A></H2>
-<P>
-<A HREF="./FS/SSH.html">FS::SSH</A> - Simple wrappers around ssh and scp commands.
-
-<P>
-<A HREF="./FS/Conf.html">FS::Conf</A> - Freeside configuration values
-
-<P>
-<A HREF="./FS/UID.html">FS::UID</A> - User class (not yet OO)
-
-<P>
-<A HREF="./FS/CGI.html">FS::CGI</A> - Non OO-subroutines for the web interface. This is depriciated. Future
-development will be focused on the FS::UI user-interface classes (see
-below).
-
-<P>
-<HR>
-<H2><A NAME="Database_record_classes">Database record classes</A></H2>
-<P>
-<A HREF="./FS/Record.html">FS::Record</A> - Database record base class
-
-<P>
-<A HREF="./FS/svc_acct_pop.html">FS::svc_acct_pop</A> - POP (Point of Presence, not Post Office Protocol) class
-
-<P>
-<A HREF="./FS/part_referral.html">FS::part_referral</A> - Referral class
-
-<P>
-<A HREF="./FS/cust_main_county.html">FS::cust_main_county</A> - Locale (tax rate) class
-
-<P>
-<A HREF="./FS/svc_Common.html">FS::svc_Common</A> - Service base class
-
-<P>
-<A HREF="./FS/svc_acct.html">FS::svc_acct</A> - Account (shell, RADIUS, POP3) class
-
-<P>
-<A HREF="./FS/svc_domain.html">FS::svc_domain</A> - Domain class
-
-<P>
-<A HREF="./FS/svc_acct_sm.html">FS::svc_acct_sm</A> - Vitual mail alias class
-
-<P>
-<A HREF="./FS/part_svc.html">FS::part_svc</A> - Service definition class
-
-<P>
-<A HREF="./FS/part_pkg.html">FS::part_pkg</A> - Package (billing item) definition class
-
-<P>
-<A HREF="./FS/pkg_svc.html">FS::pkg_svc</A> - Class linking package (billing item) definitions (see <A HREF="./FS/part_pkg.html">FS::part_pkg</A>) with service definitions (see <A HREF="./FS/part_svc.html">FS::part_svc</A>)
-
-<P>
-<A HREF="./FS/agent.html">FS::agent</A> - Agent (reseller) class
-
-<P>
-<A HREF="./FS/agent_type.html">FS::agent_type</A> - Agent type class
-
-<P>
-<A HREF="./FS/type_pkgs.html">FS::type_pkgs</A> - Class linking agent types (see
-<A HREF="./FS/agent_type.html">FS::agent_type</A>) with package (billing item) definitions (see <A HREF="./FS/part_pkg.html">FS::part_pkg</A>)
-
-<P>
-<A HREF="./FS/cust_svc.html">FS::cust_svc</A> - Service class
-
-<P>
-<A HREF="./FS/cust_pkg.html">FS::cust_pkg</A> - Package (billing item) class
-
-<P>
-<A HREF="./FS/cust_main.html">FS::cust_main</A> - Customer class
-
-<P>
-<A HREF="./FS/cust_main_invoice.html">FS::cust_main_invoice</A> - Invoice destination class
-
-<P>
-<A HREF="./FS/cust_bill.html">FS::cust_bill</A> - Invoice class
-
-<P>
-<A HREF="./FS/cust_bill_pkg.html">FS::cust_bill_pkg</A> - Invoice line item class
-
-<P>
-<A HREF="./FS/cust_pay.html">FS::cust_pay</A> - Payment class
-
-<P>
-<A HREF="./FS/cust_credit.html">FS::cust_credit</A> - Credit class
-
-<P>
-<A HREF="./FS/cust_refund.html">FS::cust_refund</A> - Refund class
-
-<P>
-<A HREF="./FS/cust_pay_batch.html">FS::cust_pay_batch</A> - Credit card transaction queue class
-
+<H2><A NAME="notes">Notes</A></H2>
+<P>To quote perl(1), ``If you're intending to read these straight through for the
+first time, the suggested order will tend to reduce the number of forward
+references.''</P>
 <P>
 <HR>
-<H2><A NAME="User_Interface_classes_under_de">User Interface classes (under development; not yet usable)</A></H2>
-<P>
-<A HREF="./FS/UI/Base.html">FS::UI::Base</A> - User-interface base class
-
-<P>
-<A HREF="./FS/UI/Gtk.html">FS::UI::Gtk</A> - Gtk user-interface class
-
-<P>
-<A HREF="./FS/UI/CGI.html">FS::UI::CGI</A> - CGI (HTML) user-interface class
-
-<P>
-<A HREF="./FS/UI/agent.html">FS::UI::agent</A> - agent table user-interface class
-
+<H1><A NAME="description">DESCRIPTION</A></H1>
+<P>Freeside is a billing and administration package for Internet Service
+Providers.</P>
+<P>The Freeside home page is at &lt;http://www.sisd.com/freeside&gt;.</P>
+<P>The main documentation is in htdocs/docs.</P>
 <P>
 <HR>
-<H2><A NAME="Notes">Notes</A></H2>
-<P>
-To quote <CODE>perl(1),</CODE> ``If you're intending to read these straight
-through for the first time, the suggested order will tend to reduce the
-number of forward references.''
-
+<H1><A NAME="version">VERSION</A></H1>
+<P>$Id: FS.html,v 1.3 2001-04-23 12:40:30 ivan Exp $</P>
 <P>
 <HR>
-<H1><A NAME="DESCRIPTION">DESCRIPTION</A></H1>
-<P>
-Freeside is a billing and administration package for Internet Service
-Providers.
-
-<P>
-The Freeside home page is at &lt;http://www.sisd.com/freeside&gt;.
-
-<P>
-The main documentation is in htdocs/docs.
-
+<H1><A NAME="support">SUPPORT</A></H1>
+<P>A mailing list for users and developers is available.  Send a blank message to
+&lt;<A HREF="mailto:ivan-freeside-subscribe@sisd.com">ivan-freeside-subscribe@sisd.com</A>&gt; to subscribe.</P>
+<P>Commercial support is available; see
+&lt;http://www.sisd.com/freeside/commercial.html&gt;.</P>
 <P>
 <HR>
-<H1><A NAME="VERSION">VERSION</A></H1>
-<P>
-$Id: FS.html,v 1.2 2000-03-03 18:22:42 ivan Exp $
-
-<P>
-<HR>
-<H1><A NAME="SUPPORT">SUPPORT</A></H1>
-<P>
-A mailing list for users and developers is available. Send a blank message
-to &lt;<A
-HREF="mailto:ivan-freeside-subscribe@sisd.com">ivan-freeside-subscribe@sisd.com</A>&gt;
-to subscribe.
-
-<P>
-Commercial support is available; see
-&lt;http://www.sisd.com/freeside/commercial.html&gt;.
-
+<H1><A NAME="author">AUTHOR</A></H1>
+<P>Primarily Ivan Kohler &lt;<A HREF="mailto:ivan@sisd.com">ivan@sisd.com</A>&gt;, with help from many kind folks.</P>
+<P>See the CREDITS file in the Freeside distribution for a (hopefully) complete
+list and the individal files for details.</P>
 <P>
 <HR>
-<H1><A NAME="AUTHOR">AUTHOR</A></H1>
-<P>
-Primarily Ivan Kohler &lt;<A
-HREF="mailto:ivan@sisd.com">ivan@sisd.com</A>&gt;, with help from many kind
-folks.
-
-<P>
-See the CREDITS file in the Freeside distribution for a (hopefully)
-complete list and the individal files for details.
-
+<H1><A NAME="see also">SEE ALSO</A></H1>
+<P>perl(1), main Freeside documentation in htdocs/docs/</P>
 <P>
 <HR>
-<H1><A NAME="SEE_ALSO">SEE ALSO</A></H1>
-<P>
-<CODE>perl(1),</CODE> main Freeside documentation in htdocs/docs/
-
-<P>
-<HR>
-<H1><A NAME="BUGS">BUGS</A></H1>
-<P>
-The version number of the FS Perl extension differs from the version of the
-Freeside distribution, which are both different from the CVS version tag
-for each file, which appears under the VERSION heading.
-
-<P>
-Those modules which would be useful separately should be pulled out,
-renamed appropriately and uploaded to CPAN.
+<H1><A NAME="bugs">BUGS</A></H1>
+<P>The version number of the FS Perl extension differs from the version of the
+Freeside distribution, which are both different from the CVS version tag for
+each file, which appears under the VERSION heading.</P>
+<P>Those modules which would be useful separately should be pulled out, 
+renamed appropriately and uploaded to CPAN.  So far: DBIx::DBSchema, Net::SSH
+and Net::SCP...</P>
 
 </BODY>
 

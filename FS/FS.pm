@@ -44,7 +44,11 @@ L<FS::svc_acct> - Account (shell, RADIUS, POP3) class
 
 L<FS::svc_domain> - Domain class
 
+L<FS::domain_record> - DNS zone entries
+
 L<FS::svc_acct_sm> - Vitual mail alias class
+
+L<FS::svc_www> - Web virtual host class.
 
 L<FS::part_svc> - Service definition class
 
@@ -81,8 +85,15 @@ L<FS::cust_credit> - Credit class
 
 L<FS::cust_refund> - Refund class
 
-L<FS::cust_pay_batch> - Credit card transaction queue
-class
+L<FS::cust_pay_batch> - Credit card transaction queue class
+
+L<FS::prepay_credit> - Prepaid "calling card" credit class.
+
+L<FS::nas> - Network Access Server class
+
+L<FS::port> - NAS port class
+
+L<FS::session> - User login session class
 
 =head2 User Interface classes (under development; not yet usable)
 
@@ -111,7 +122,7 @@ The main documentation is in htdocs/docs.
 
 =head1 VERSION
 
-$Id: FS.pm,v 1.4 2001-04-22 01:56:14 ivan Exp $
+$Id: FS.pm,v 1.5 2001-04-23 12:40:30 ivan Exp $
 
 =head1 SUPPORT
 
