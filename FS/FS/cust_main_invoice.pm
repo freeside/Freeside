@@ -1,7 +1,7 @@
 package FS::cust_main_invoice;
 
 use strict;
-use vars qw(@ISA $conf $mydomain);
+use vars qw(@ISA $conf);
 use Exporter;
 use FS::Record qw( qsearchs );
 use FS::Conf;
@@ -9,12 +9,6 @@ use FS::cust_main;
 use FS::svc_acct;
 
 @ISA = qw( FS::Record );
-
-#ask FS::UID to run this stuff for us later
-$FS::UID::callback{'FS::cust_main_invoice'} = sub { 
-  $conf = new FS::Conf;
-  $mydomain = $conf->config('domain');
-};
 
 =head1 NAME
 
@@ -137,13 +131,14 @@ sub checkdest {
       unless qsearchs( 'svc_acct', { 'svcnum' => $self->dest } );
   } elsif ( $self->dest =~ /^([\w\.\-\&]+)\@(([\w\.\-]+\.)+\w+)$/ ) {
     my($user, $domain) = ($1, $2);
-    if ( $domain eq $mydomain ) {
-      my $svc_acct = qsearchs( 'svc_acct', { 'username' => $user } );
-      return "Unknown local account: $user\@$domain (specified literally)"
-        unless $svc_acct;
-      $svc_acct->svcnum =~ /^(\d+)$/ or die "Non-numeric svcnum?!";
-      $self->dest($1);
-    }
+#    if ( $domain eq $mydomain ) {
+#      my $svc_acct = qsearchs( 'svc_acct', { 'username' => $user } );
+#      return "Unknown local account: $user\@$domain (specified literally)"
+#        unless $svc_acct;
+#      $svc_acct->svcnum =~ /^(\d+)$/ or die "Non-numeric svcnum?!";
+#      $self->dest($1);
+#    }
+    $self->dest("$1\@$2");
   } else {
     return "Illegal destination!";
   }
@@ -162,7 +157,7 @@ sub address {
   if ( $self->dest =~ /^(\d+)$/ ) {
     my $svc_acct = qsearchs( 'svc_acct', { 'svcnum' => $1 } )
       or return undef;
-    $svc_acct->username . '@' . $mydomain;
+    $svc_acct->email;
   } else {
     $self->dest;
   }
@@ -172,7 +167,7 @@ sub address {
 
 =head1 VERSION
 
-$Id: cust_main_invoice.pm,v 1.8 2001-10-25 16:13:10 ivan Exp $
+$Id: cust_main_invoice.pm,v 1.9 2002-02-10 16:49:50 ivan Exp $
 
 =head1 BUGS
 
