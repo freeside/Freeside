@@ -370,7 +370,8 @@ sub rebless {
   my $self = shift;
   my $exporttype = $self->exporttype;
   my $class = ref($self). "::$exporttype";
-  eval "use $class;" or die $@;
+#  eval "use $class;" or die $@;
+  eval "use $class;";
   bless($self, $class);
 }
 
@@ -465,6 +466,12 @@ Returns the applicable I<svcdb> for an I<exporttype>.
 
 =cut
 
+# This subroutine should be modified or removed.  In its present form, it
+# imposes the arbitrary restriction that no export type can be associated 
+# with more than one svcdb.  The only place it's used is in edit/part_svc.cgi
+# to generate the list of allowed exports, which can be done more cleanly by 
+# export_info anyway.
+
 sub exporttype2svcdb {
   my $exporttype = $_[0];
   foreach my $svcdb ( keys %exports ) {
@@ -545,6 +552,11 @@ tie my %bind_slave_options, 'Tie::IxHash',
                      default => '/etc/bind/named.conf' },
 ;
 
+tie my %sqlmail_options, 'Tie::IxHash',
+  'datasrc'  => { label=>'DBI data source' },
+  'username' => { label=>'Database username' },
+  'password' => { label=>'Database password' },
+;
 
 
 #export names cannot have dashes...
@@ -582,6 +594,14 @@ tie my %bind_slave_options, 'Tie::IxHash',
       'options' => \%sqlradius_options,
       'nodomain' => 'Y',
       'notes' => 'Real-time export of radcheck, radreply and usergroup tables to any SQL database for <a href="http://www.freeradius.org/">FreeRADIUS</a> or <a href="http://radius.innercite.com/">ICRADIUS</a>.  Use <a href="../docs/man/bin/freeside-sqlradius-reset">freeside-sqlradius-reset</a> to delete and repopulate the tables from the Freeside database.  See the <a href="http://search.cpan.org/doc/TIMB/DBI-1.23/DBI.pm">DBI documentation</a> and the <a href="http://search.cpan.org/search?mode=module&query=DBD%3A%3A">documentation for your DBD</a> for the exact syntax of a DBI data source.  If using <a href="http://www.freeradius.org/">FreeRADIUS</a> 0.5 or above, make sure your <b>op</b> fields are set to allow NULL values.',
+    },
+
+    'sqlmail' => {
+      'desc' => 'Real-time export to SQL-backed mail server',
+      'options' => \%sqlmail_options,
+      'nodomain' => 'Y',
+      'notes' => 'Database schema can be made to work with Courier IMAP and
+ Exim.  Others could work but are untested.',
     },
 
     'cyrus' => {
@@ -627,12 +647,28 @@ tie my %bind_slave_options, 'Tie::IxHash',
       'notes' => 'bind export notes (secondary munge) File::Rsync dependancy, run bind.export',
     },
 
+    'sqlmail' => {
+      'desc' => 'Real-time export to SQL-backed mail server',
+      'options' => \%sqlmail_options,
+      'nodomain' => 'Y',
+      'notes' => 'Database schema can be made to work with Courier IMAP and
+ Exim.  Others could work but are untested.',
+    },
+
 
   },
 
   'svc_acct_sm' => {},
 
-  'svc_forward' => {},
+  'svc_forward' => {
+    'sqlmail' => {
+      'desc' => 'Real-time export to SQL-backed mail server',
+      'options' => \%sqlmail_options,
+      'nodomain' => 'Y',
+      'notes' => 'Database schema can be made to work with Courier IMAP and
+ Exim.  Others could work but are untested.',
+    },
+  },
 
   'svc_www' => {},
 
