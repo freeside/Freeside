@@ -1,6 +1,7 @@
 <%
 
-http_header('Content-Type' => 'text/comma-separated-values' );
+#http_header('Content-Type' => 'text/comma-separated-values' ); #IE chokes
+http_header('Content-Type' => 'text/plain' );
 
 for my $cust_pay_batch ( sort { $a->paybatchnum <=> $b->paybatchnum }
                               qsearch('cust_pay_batch', {} )
