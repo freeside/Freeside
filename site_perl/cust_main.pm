@@ -762,7 +762,7 @@ sub collect {
 
       } else { #batch card
 
-       my $cust_pay_batch = new FS::Record ('cust_pay_batch', {
+       my $cust_pay_batch = new FS::cust_pay_batch ( {
          'invnum'   => $cust_bill->getfield('invnum'),
          'custnum'  => $self->getfield('custnum'),
          'last'     => $self->getfield('last'),
@@ -928,7 +928,7 @@ sub check_invoicing_list {
 
 =head1 VERSION
 
-$Id: cust_main.pm,v 1.22 1999-04-15 16:44:36 ivan Exp $
+$Id: cust_main.pm,v 1.23 1999-07-17 02:24:14 ivan Exp $
 
 =head1 BUGS
 
@@ -987,7 +987,10 @@ enable cybercash, cybercash v3 support, don't need to import
 FS::UID::{datasrc,checkruid} ivan@sisd.com 98-sep-19-21
 
 $Log: cust_main.pm,v $
-Revision 1.22  1999-04-15 16:44:36  ivan
+Revision 1.23  1999-07-17 02:24:14  ivan
+bug noticed by Steve Gertz <sglist@hollywood.mwis.net>
+
+Revision 1.22  1999/04/15 16:44:36  ivan
 delete customers
 
 Revision 1.21  1999/04/14 07:47:53  ivan
