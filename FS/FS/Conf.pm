@@ -1056,7 +1056,7 @@ httemplate/docs/config.html
   {
     'key'         => 'users-allow_comp',
     'section'     => '',
-    'description' => 'Usernames which can create complimentary customers, one per line.  If no usernames are entered, all users can create complimentary accounts.',
+    'description' => 'Usernames (Freeside users, created with <a href="../docs/man/bin/freeside-adduser.html">freeside-adduser</a>) which can create complimentary customers, one per line.  If no usernames are entered, all users can create complimentary accounts.',
     'type'        => 'textarea',
   },
 
