@@ -412,7 +412,7 @@ END
                   "</A></TD>".
                   "<TD ALIGN=left>$ahref".
                   ( $priority || '<i>(none)</i>' ).
-                  </A></TD></TR>";
+                  "</A></TD></TR>";
           }
           print '<TR><TD BGCOLOR="#000000" COLSPAN=2>&nbsp;</TD></TR>'.
                 '<TR><TD ALIGN=right>';
