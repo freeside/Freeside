@@ -209,7 +209,7 @@ sub handler
 
       };
       
-      unless ( $r->filename =~ /\/rt\/.*NoAuth/ ) { #RT
+      unless ( $HTML::Mason::r->filename =~ /\/rt\/.*NoAuth/ ) { #RT
         $cgi = new CGI;
         &cgisuidsetup($cgi);
         #&cgisuidsetup($r);
