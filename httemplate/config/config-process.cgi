@@ -10,7 +10,7 @@
     foreach my $type ( ref($i->type) ? @{$i->type} : $i->type ) {
       if ( $type eq '' ) {
       } elsif ( $type eq 'textarea' ) {
-        if ( $cgi->param($i->key. $n) ) {
+        if ( $cgi->param($i->key. $n) ne '' ) {
           my $value = $cgi->param($i->key. $n);
           $value =~ s/\r\n/\n/g; #browsers?
           $conf->set($i->key, $value);
@@ -27,7 +27,7 @@
           push @delete, $i->key;
         }
       } elsif ( $type eq 'text' )  {
-        if ( $cgi->param($i->key. $n) ) {
+        if ( $cgi->param($i->key. $n) ne '' ) {
           $conf->set($i->key, $cgi->param($i->key. $n));
         } else {
           $conf->delete($i->key);
