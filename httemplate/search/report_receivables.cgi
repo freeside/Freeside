@@ -172,10 +172,10 @@ END
   </TR>
 <% while ( my $row = $sth->fetchrow_hashref() ) { %>
   <TR>
-    <TD><%= $row->{'custnum'} %>:
+    <TD><A HREF="<% $p %>view/cust_main.cgi?<%= $row->{'custnum'} %>">
         <%= $row->{'company'} ? $row->{'company'}. ' (' : '' %>
         <%= $row->{'last'}. ', '. $row->{'first'} %>
-        <%= $row->{'company'} ? ')' : '' %>
+        <%= $row->{'company'} ? ')' : '' %></A>
     </TD>
     <TD ALIGN="right">$<%= sprintf("%.2f", $row->{'owed_0_30'} ) %></TD>
     <TD ALIGN="right">$<%= sprintf("%.2f", $row->{'owed_30_60'} ) %></TD>
