@@ -36,7 +36,37 @@ ALTER TABLE h_part_pkg ADD promo_code varchar(80) NULL;
 CREATE INDEX part_pkg2 ON part_pkg ( promo_code );
 CREATE INDEX h_part_pkg2 ON h_part_pkg ( promo_code );
 
+Installs w/integrated RT:
+  CREATE SEQUENCE attributes_id_seq;
+
+  CREATE TABLE Attributes (
+    id INTEGER DEFAULT nextval('attributes_id_seq'),
+    Name varchar(255) NOT NULL  ,
+    Description varchar(255) NULL  ,
+    Content text,
+    ContentType varchar(16),
+    ObjectType varchar(64),
+    ObjectId integer, -- foreign key to anything
+    Creator integer NOT NULL DEFAULT 0  ,
+    Created TIMESTAMP NULL  ,
+    LastUpdatedBy integer NOT NULL DEFAULT 0  ,
+    LastUpdated TIMESTAMP NULL  ,
+    PRIMARY KEY (id)
+  
+  );
+  
+  CREATE INDEX Attributes1 on Attributes(Name);
+  CREATE INDEX Attributes2 on Attributes(ObjectType, ObjectId);
+
+
 dbdef-create username
 create-history-tables username rate rate_detail rate_region rate_prefix
 dbdef-create username
+
+
+afterwords (for installs w/integrated RT):
+make configure-rt
+make deploy
+/opt/rt3/sbin/rt-setup-database --action insert --datadir etc/upgrade/3.1.15
+/opt/rt3/sbin/rt-setup-database --action insert --datadir etc/upgrade/3.1.17
 
