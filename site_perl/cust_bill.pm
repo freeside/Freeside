@@ -308,13 +308,19 @@ sub print_text {
       my($part_pkg)=qsearchs('part_pkg',{'pkgpart'=>$cust_pkg->pkgpart});
       my($pkg)=$part_pkg->pkg;
 
-      push @buf, ( "$pkg Setup",'$' . sprintf("%10.2f",$_->setup) )
-        if $_->setup != 0;
-      push @buf, (
-        "$pkg (" . time2str("%x",$_->sdate) . " - " .
-                              time2str("%x",$_->edate) . ")",
-        '$' . sprintf("%10.2f",$_->recur)
-      ) if $_->recur != 0;
+      if ( $_->setup != 0 ) {
+        push @buf, ( "$pkg Setup",'$' . sprintf("%10.2f",$_->setup) );
+        push @buf, map { "  ". $_->[0]. ": ". $_->[1], '' } $cust_pkg->labels;
+      }
+
+      if ( $_->recur != 0 ) {
+        push @buf, (
+          "$pkg (" . time2str("%x",$_->sdate) . " - " .
+                                time2str("%x",$_->edate) . ")",
+          '$' . sprintf("%10.2f",$_->recur)
+        );
+        push @buf, map { "  ". $_->[0]. ": ". $_->[1], '' } $cust_pkg->labels;
+      }
 
     } else { #pkgnum Tax
       push @buf,("Tax",'$' . sprintf("%10.2f",$_->setup) ) 
@@ -421,7 +427,7 @@ END
 
 =head1 VERSION
 
-$Id: cust_bill.pm,v 1.6 1999-01-25 12:26:07 ivan Exp $
+$Id: cust_bill.pm,v 1.7 1999-02-09 09:55:05 ivan Exp $
 
 =head1 BUGS
 
@@ -449,7 +455,11 @@ charges can be negative ivan@sisd.com 98-jul-13
 pod, ingegrate with FS::Invoice ivan@sisd.com 98-sep-20
 
 $Log: cust_bill.pm,v $
-Revision 1.6  1999-01-25 12:26:07  ivan
+Revision 1.7  1999-02-09 09:55:05  ivan
+invoices show line items for each service in a package (see the label method
+of FS::cust_svc)
+
+Revision 1.6  1999/01/25 12:26:07  ivan
 yet more mod_perl stuff
 
 Revision 1.5  1999/01/18 21:58:03  ivan

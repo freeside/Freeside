@@ -44,6 +44,8 @@ FS::cust_pkg - Object methods for cust_pkg objects
 
   $part_pkg = $record->part_pkg;
 
+  @labels = $record->labels;
+
   $error = FS::cust_pkg::order( $custnum, \@pkgparts );
   $error = FS::cust_pkg::order( $custnum, \@pkgparts, \@remove_pkgnums ] );
 
@@ -339,6 +341,18 @@ sub part_pkg {
   qsearchs( 'part_pkg', { 'pkgpart' => $self->pkgpart } );
 }
 
+=item labels
+
+Returns a list of lists, calling the label method for all services
+(see L<FS::cust_svc>) of this billing item.
+
+=cut
+
+sub labels {
+  my $self = shift;
+  map { [ $_->label ] } qsearch ( 'cust_svc', { 'pkgnum' => $self->pkgnum } );
+}
+
 =back
 
 =head1 SUBROUTINES
@@ -463,7 +477,7 @@ sub order {
 
 =head1 VERSION
 
-$Id: cust_pkg.pm,v 1.6 1999-01-25 12:26:12 ivan Exp $
+$Id: cust_pkg.pm,v 1.7 1999-02-09 09:55:06 ivan Exp $
 
 =head1 BUGS
 
@@ -494,7 +508,11 @@ fixed for new agent->agent_type->type_pkgs in &order ivan@sisd.com 98-mar-7
 pod ivan@sisd.com 98-sep-21
 
 $Log: cust_pkg.pm,v $
-Revision 1.6  1999-01-25 12:26:12  ivan
+Revision 1.7  1999-02-09 09:55:06  ivan
+invoices show line items for each service in a package (see the label method
+of FS::cust_svc)
+
+Revision 1.6  1999/01/25 12:26:12  ivan
 yet more mod_perl stuff
 
 Revision 1.5  1999/01/18 21:58:07  ivan
