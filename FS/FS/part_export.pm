@@ -102,6 +102,7 @@ created (see L<FS::part_export_option>).
 #false laziness w/queue.pm
 sub insert {
   my $self = shift;
+  my $options = shift;
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
   local $SIG{QUIT} = 'IGNORE';
@@ -119,7 +120,6 @@ sub insert {
     return $error;
   }
 
-  my $options = shift;
   foreach my $optionname ( keys %{$options} ) {
     my $part_export_option = new FS::part_export_option ( {
       'exportnum'   => $self->exportnum,
@@ -191,6 +191,8 @@ created or modified (see L<FS::part_export_option>).
 
 sub replace {
   my $self = shift;
+  my $old = shift;
+  my $options = shift;
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
   local $SIG{QUIT} = 'IGNORE';
@@ -202,13 +204,12 @@ sub replace {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  my $error = $self->SUPER::replace;
+  my $error = $self->SUPER::replace($old);
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
   }
 
-  my $options = shift;
   foreach my $optionname ( keys %{$options} ) {
     my $old = qsearchs( 'part_export_option', {
         'exportnum'   => $self->exportnum,
@@ -219,6 +220,7 @@ sub replace {
         'optionname'  => $optionname,
         'optionvalue' => $options->{$optionname},
     } );
+    $new->optionnum($old->optionnum) if $old;
     my $error = $old ? $new->replace($old) : $new->insert;
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
@@ -226,14 +228,16 @@ sub replace {
     }
   }
 
-  #remove extraneous old options?  not necessary now, but...
-  #foreach my $opt ( grep { !exist $options->{$_->optionname} } $old->part_export_option ) {
-  #  my $error = $opt->delete;
-  #  if ( $error ) {
-  #    $dbh->rollback if $oldAutoCommit;
-  #    return $error;
-  #  }
-  #}
+  #remove extraneous old options
+  foreach my $opt (
+    grep { !exists $options->{$_->optionname} } $old->part_export_option
+  ) {
+    my $error = $opt->delete;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
@@ -253,6 +257,7 @@ sub check {
   my $self = shift;
   my $error = 
     $self->ut_numbern('exportnum')
+    || $self->ut_domain('machine')
     || $self->ut_number('svcpart')
     || $self->ut_alpha('exporttype')
   ;
@@ -286,6 +291,9 @@ sub part_svc {
 
 =item part_export_option
 
+Returns all options as FS::part_export_option objects (see
+L<FS::part_export_option>).
+
 =cut
 
 sub part_export_option {
@@ -295,6 +303,8 @@ sub part_export_option {
 
 =item options 
 
+Returns a list of option names and values suitable for assigning to a hash.
+
 =cut
 
 sub options {
@@ -302,7 +312,9 @@ sub options {
   map { $_->optionname => $_->optionvalue } $self->part_export_option;
 }
 
-=item option
+=item option OPTIONNAME
+
+Returns the option value for the given name, or the empty string.
 
 =cut
 
@@ -317,6 +329,11 @@ sub option {
 }
 
 =item rebless
+
+Reblesses the object into the FS::part_export::EXPORTTYPE class, where
+EXPORTTYPE is the object's I<exporttype> field.  There should be better docs
+on how to create new exports (and they should live in their own files and be
+autoloaded-on-demand), but until then, see L</NEW EXPORT CLASSES>.
 
 =cut
 
@@ -346,7 +363,7 @@ sub export_insert {
 #  $self->$method(@_);
 #}
 
-=item export_replace
+=item export_replace NEW OLD
 
 =cut
 

@@ -947,7 +947,7 @@ Check/untaint host and domain names.
 sub ut_domain {
   my( $self, $field ) = @_;
   #$self->getfield($field) =~/^(\w+\.)*\w+$/
-  $self->getfield($field) =~/^(\w+\.)*\w+$/
+  $self->getfield($field) =~/^([\w\-]+\.)*\w+$/
     or return "Illegal (domain) $field: ". $self->getfield($field);
   $self->setfield($field,$1);
   '';

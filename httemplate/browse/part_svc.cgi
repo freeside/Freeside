@@ -14,6 +14,13 @@ my $total = scalar(@part_svc);
 %>
 <%= header('Service Definition Listing', menubar( 'Main Menu' => $p) ) %>
 
+<SCRIPT>
+function part_export_areyousure(href) {
+  if (confirm("Are you sure you want to delete this export?") == true)
+    window.location.href = href;
+}
+</SCRIPT>
+
     Services are items you offer to your customers.<BR><BR>
 <%= $total %> services
 <%= $cgi->param('showdisabled')
@@ -61,10 +68,17 @@ my $total = scalar(@part_svc);
   foreach my $part_export ( @part_export ) {
 %>
       <TR>
-        <TD><%= $part_export->exporttype %> to <%= $part_export->machine %></TD>
-        <TD>(options)</TD>
+        <TD><%= $part_export->exporttype %> to <%= $part_export->machine %> (<A HREF="<%= $p %>edit/part_export.cgi?<%= $part_export->exportnum %>">edit</A>&nbsp;|&nbsp;<A HREF="javascript:part_export_areyousure('<%= $p %>misc/delete-part_export.cgi?<%= $part_export->exportnum %>')">delete</A>)</TD>
+        <TD>
+          <%= itable() %>
+          <% my %opt = $part_export->options;
+             foreach my $opt ( keys %opt ) { %>
+               <TR><TD><%= $opt %></TD><TD><%= $opt{$opt} %></TD></TR>
+          <% } %>
+          </TABLE>
+        </TD>
 <%  } %>
-      </TR><TR><TD COLSPAN=2><A HREF="<%= $p %>edit/part_export.cgi?new_with_svcpart=<%= $part_svc->svcpart %>"><I>Add a new export</I><A></TD></TR>
+      </TR><TR><TD COLSPAN=2><A HREF="<%= $p %>edit/part_export.cgi?new_with_svcpart=<%= $part_svc->svcpart %>"><I>Add a new export</I></A></TD></TR>
 <% if (@part_export) { %>
       <TR><TD COLSPAN=2>
         <FORM METHOD="POST" ACTION="<%= $p %>edit/part_export.cgi">
@@ -75,6 +89,7 @@ my $total = scalar(@part_svc);
             <%= $part_export->exporttype %> to <%= $part_export->machine %>
           </OPTION>
 <%   } %>
+        </SELECT>
         <INPUT TYPE="submit" VALUE="clone existing export">
         </FORM></TD></TR>
 <% } %>

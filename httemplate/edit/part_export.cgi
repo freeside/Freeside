@@ -27,7 +27,7 @@ if ( $cgi->param('clone') && $cgi->param('clone') =~ /^(\d+)$/ ) {
   $action = 'Add';
   my $old_part_export = qsearchs('part_export', { 'exportnum' => $1 } );
   unless ( $part_export ) {
-    ($part_export, $options) = $old_part_export->clone;
+    ($part_export, $options) = $old_part_export->clone($cgi->param('svcpart'));
   }
 } elsif ( $cgi->param('new_with_svcpart') 
           && $cgi->param('new_with_svcpart') =~ /^(\d+)$/ ) {

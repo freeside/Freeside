@@ -5,7 +5,8 @@ my $exportnum = $cgi->param('exportnum');
 my $old = qsearchs('part_export', { 'exportnum'=>$exportnum } ) if $exportnum;
 
 #fixup options
-my %options = map { $_=>$cgi->param($_) } $cgi->param('options');
+warn join('-', split(',',$cgi->param('options')));
+my %options = map { $_=>$cgi->param($_) } split(',',$cgi->param('options'));
 
 my $new = new FS::part_export ( {
   map {
@@ -13,20 +14,13 @@ my $new = new FS::part_export ( {
   } fields('part_export')
 } );
 
-local $SIG{HUP} = 'IGNORE';
-local $SIG{INT} = 'IGNORE';
-local $SIG{QUIT} = 'IGNORE';
-local $SIG{TERM} = 'IGNORE';
-local $SIG{TSTP} = 'IGNORE';
-local $SIG{PIPE} = 'IGNORE';
-
-local $FS::UID::AutoCommit = 0;
-
 my $error;
 if ( $exportnum ) {
+  warn $old;
+  warn $exportnum;
   $error = $new->replace($old,\%options);
 } else {
-  $error = $new->insert,\%options);
+  $error = $new->insert(\%options);
 #  $exportnum = $new->exportnum;
 }
 
