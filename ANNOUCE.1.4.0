@@ -144,3 +144,9 @@ card retry changes (ticket 417)
 
 - one-time charges
 
+- found "must start freeside-queued as freeside" problem on freebsd.
+  freeside-queued now compatible with freebsd, old openssh, mysql...
+
+- shellcommands now works! has defaults for freebsd, linux, netbsd, just directories, etc.
+
+- real-time textradius export!
