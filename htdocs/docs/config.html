@@ -3,23 +3,33 @@
 </head>
 <body>
   <h1>Configuration files</h1>
-Configuration file layout has changed in 1.2.x.
 <ul>
-  <li>First, the file `/usr/local/etc/freeside/mapsecrets' is read.  Each line
-in this file contains a username and filename, separated by whitespace.  Note
-that these are not local usernames - they are passed from Apache (you _did_
-setup <a href="http://www.apache.org/docs/misc/FAQ.html#user-authentication">
-user authetication</a>, correct?).  Filenames are located in 
-`/usr/local/etc/freeside/'.  The specified filename is parsed exactly
-the same as the pre-1.2.x `secrets' file:
-  <li>Three lines: Database engine datasource (for example,
-  `DBI:mysql:freeside' or `DBI:Pg:dbname=freeside'), username, and password.
-  This file should not be world readable.  See the DBI manpage and the manpage
-  for your DBD for the exact syntax.
+  <li>Create the <b>/usr/local/etc/freeside</b> directory to hold your configuration.
+  <li>Setting up <a href="http://www.apache.org/docs/misc/FAQ.html#user-authentication">Apache user authetication</a> is mandatory.
+  <li>Create the <b>/usr/local/etc/freeside/mapsecrets</b> file, which maps Apache users to a secrets file which contains a DBI data source, username and password.  Every
+line in <b>/usr/local/etc/freeside/mapsecrets</b> should contain a username and
+filename, separated by whitespace.  Note that these are not local usernames -
+they are passed from Apache.  <a href="http://www.apache.org/docs/misc/FAQ.html#user-authentication">
+Apache user authetication</a> is mandatory.  For example, if you had the Apache users admin,
+john, and sam,  
+you mapsecrets file might look like:
+<pre>
+admin secretfile
+john secretfile
+sam secretfile
+</pre>
+  <li>Next, the filename(s) referenced in <b>/usr/local/etc/freeside/mapsecrets</b> file should be created in the <b>/usr/local/etc/freeside/</b> directory.  This file contains three lines: <a href="http://search.cpan.org/doc/TIMB/DBI-1.15/DBI.pm">DBI data source</a> (for example,
+  <tt>DBI:mysql:freeside</tt> or <tt>DBI:Pg:dbname=freeside</tt>), database username, and database password.
+  This file should not be world readable.  See the <a href="http://search.cpan.org/doc/TIMB/DBI-1.15/DBI.pm">DBI manpage</a> and the <a href="http://search.cpan.org/search?mode=module&query=DBD">manpage for your DBD</a> for the exact syntax of a DBI data source.  For example:
+<pre>
+DBI:Pg:dbname=freeside
+dbusername
+dbpassword
+</pre>
 </ul>
 All further configuration files and directories are located in
-`/usr/local/etc/freeside/conf.<i>datasource</i>', for example, 
-`/usr/local/etc/freeside/conf.DBI:Pg:dbname=freeside'
+<tt>/usr/local/etc/freeside/conf.<i>datasource</i></tt>, for example, 
+<tt>/usr/local/etc/freeside/conf.DBI:Pg:dbname=freeside</tt>
 <ul>
   <li><a name="address">address</a> - This configuration file is no longer used.  See <a href="#invoice_template">invoice_template</a> instead.
   <li><a name="apacheroot">apacheroot</a> - The directory containing Apache virtual hosts

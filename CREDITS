@@ -49,7 +49,10 @@ features:
   - Web site virtual host tracking and export to Apache configuration files
 
 Kristian Hoffmann <khoff@pc-intouch.com> contributed Netscape CCK
-autoconfiguration support for the signup server.
+autoconfiguration support for the signup server, lots of great mailing
+lists posts which I shamelessly made into documentation, fixes to get rid of
+the embarassing and non-database-normal "owed" field, and many other things
+I'm forgetting.
 
 Jeff Finucane <jeff@cmh.net> send in a bunch of bugfixes (for the sendmail
 export, cancel-unaudited.cgi), patches to support billing date modification,
