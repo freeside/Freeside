@@ -7,7 +7,7 @@ cp sources.list /etc/apt/
 apt-get update; apt-get update
 #apt-get install apache mod_ssl mod_perl perl-CGI perl-CPAN perl-DBD-MySQL perl-DBD-Pg perl-DBI perl-DateManip perl-Digest-MD5 perl-HTML-Parser perl-HTML-Tagset perl-MIME-Base64 perl-Storable perl-TimeDate perl-URI perl-libnet perl-libwww-perl perl-suidperl rsync postgresql postgresql-docs postgresql-libs postgresql-server screen zsh lftp cvs #openssh
 
-apt-get install perl-Devel-Symdump perl-BSD-Resource rpm-build gdbm-devel expat-devel openssl-devel krb5-devel
+apt-get install perl-Devel-Symdump perl-BSD-Resource rpm-build gdbm-devel expat-devel openssl-devel krb5-devel db4-devel
 
 wget --passive-ftp --continue http://reb00t.com/linux/RPMS/redhat-9/apache/apache-1.3.28-0.n0i.src.rpm http://reb00t.com/linux/RPMS/redhat-9/mm/mm-1.2.1-0.n0i.i686.rpm http://reb00t.com/linux/RPMS/redhat-9/mm/mm-devel-1.2.1-0.n0i.i686.rpm
 rpm -i mm-1.2.1-0.n0i.i686.rpm mm-devel-1.2.1-0.n0i.i686.rpm apache-1.3.28-0.n0i.src.rpm
@@ -22,17 +22,27 @@ rpmbuild -ba apache.spec
 cd /usr/src/redhat/RPMS/i386
 rpm -i apache-1.3.28-0.n0i.i386.rpm
 
-apt-get install perl-CGI perl-CPAN perl-DBD-MySQL perl-DBD-Pg perl-DBI perl-DateManip perl-HTML-Parser perl-HTML-Tagset perl-TimeDate perl-URI perl-libwww-perl perl-suidperl rsync postgresql postgresql-docs postgresql-libs postgresql-server screen zsh lftp cvs #openssh
+apt-get install perl-CGI perl-CPAN perl-DBD-MySQL perl-DBD-Pg perl-DBI perl-DateManip perl-HTML-Parser perl-HTML-Tagset perl-TimeDate perl-URI perl-libwww-perl perl-suidperl rsync postgresql postgresql-docs postgresql-libs postgresql-server screen zsh lftp cvs gcc gd #openssh
+
+wget --passive-ftp --continue http://atrpms.physik.fu-berlin.de/dist/rh9/perl-GD/perl-GD-2.11-7.rh9.at.i386.rpm http://atrpms.physik.fu-berlin.de/dist/rh9/atrpms/atrpms-45-1.rh9.at.noarch.rpm http://atrpms.physik.fu-berlin.de/dist/rh9/yum/yum-2.0.4-28.rh9.at.noarch.rpm http://atrpms.physik.fu-berlin.de/dist/rh9/gd/gd-2.0.15-1_6.rh9.at.i386.rpm http://atrpms.physik.fu-berlin.de/dist/rh9/atrpms/atrpms-package-config-45-1.rh9.at.noarch.rpm
+
+cp /etc/apt/apt.conf /etc/apt/apt.conf.real
+
+rpm -i --replacefiles atrpms-package-config-45-1.rh9.at.noarch.rpm yum-2.0.4-28.rh9.at.noarch.rpm atrpms-45-1.rh9.at.noarch.rpm gd-2.0.15-1_6.rh9.at.i386.rpm perl-GD-2.11-7.rh9.at.i386.rpm
+
+mv /etc/apt/apt.conf.real /etc/apt/apt.conf
 
 perl -MCPAN -e"install Locale::Country, Net::Whois, Business::CreditCard, \
                        Mail::Internet, File::CounterFile, FreezeThaw, \
                        String::Approx, Text::Template, DBIx::DataSource, \
                        DBIx::DBSchema, Net::SSH, String::ShellQuote, \
                        Net::SCP, Apache::ASP, Tie::IxHash, Time::Duration, \
-                       HTML::Widgets::SelectLayers, Apache::DBI, Cache::Cache"
+                       HTML::Widgets::SelectLayers, Apache::DBI, Cache::Cache \
+                       Test::Pod NetAddr::IP IPC::ShareLite Chart::LinesPoints"
 
-#edit /etc/init.d/httpd, add -DHAVE_PERL -DHAVE_SSL, then remove perl & ssl
-# module load bits from /etc/httpd/conf/httpd.conf
+echo 'OPTIONS="-DHAVE_PERL -DHAVE_SSL"' >>/etc/sysconfig/apache
+
+#remove perl & ssl module load bits from /etc/httpd/conf/httpd.conf
 
 /usr/sbin/useradd freeside
 
