@@ -262,7 +262,9 @@ definition (with non-zero quantity).
 
 sub pkg_svc {
   my $self = shift;
-  grep { $_->quantity } qsearch( 'pkg_svc', { 'pkgpart' => $self->pkgpart } );
+  #sort { $b->primary cmp $a->primary } 
+    grep { $_->quantity }
+      qsearch( 'pkg_svc', { 'pkgpart' => $self->pkgpart } );
 }
 
 =item svcpart [ SVCDB ]

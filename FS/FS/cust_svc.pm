@@ -11,7 +11,7 @@ use FS::pkg_svc;
 use FS::svc_acct;
 use FS::svc_domain;
 use FS::svc_forward;
-use FS::svc_broadband
+use FS::svc_broadband;
 use FS::svc_external;
 use FS::domain_record;
 use FS::part_export;

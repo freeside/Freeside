@@ -212,7 +212,41 @@ sub payment_info {
   my $session = $cache->get($p->{'session_id'})
     or return { 'error' => "Can't resume session" }; #better error message
 
-  my %return;
+  ##
+  #generic
+  ##
+
+  my $conf = new FS::Conf;
+  my %states = map { $_->state => 1 }
+                 qsearch('cust_main_county', {
+                   'country' => $conf->config('defaultcountry') || 'US'
+                 } );
+
+  use vars qw($payment_info); #cache for performance
+  $payment_info ||= {
+
+    #list all counties/states/countries
+    'cust_main_county' => 
+      [ map { $_->hashref } qsearch('cust_main_county', {}) ],
+
+    #shortcut for one-country folks
+    'states' =>
+      [ sort { $a cmp $b } keys %states ],
+
+    'card_types' => {
+      'VISA' => 'VISA card',
+      'MasterCard' => 'MasterCard',
+      'Discover' => 'Discover card',
+      'American Express' => 'American Express card',
+    },
+
+  };
+
+  ##
+  #customer-specific
+  ##
+
+  my %return = %$payment_info;
 
   my $custnum = $session->{'custnum'};
 
@@ -236,25 +270,7 @@ sub payment_info {
 
   }
 
-  #list all counties/states/countries
-  $return{'cust_main_county'} = 
-      [ map { $_->hashref } qsearch('cust_main_county', {}) ];
-
-  #shortcut for one-country folks
-  my $conf = new FS::Conf;
-  my %states = map { $_->state => 1 }
-                 qsearch('cust_main_county', {
-                   'country' => $conf->config('defaultcountry') || 'US'
-                 } );
-  $return{'states'} = [ sort { $a cmp $b } keys %states ];
-
-  $return{card_types} = {
-    'VISA' => 'VISA card',
-    'MasterCard' => 'MasterCard',
-    'Discover' => 'Discover card',
-    'American Express' => 'American Express card',
-  };
-
+  #doubleclick protection
   my $_date = time;
   $return{paybatch} = "webui-MyAccount-$_date-$$-". rand() * 2**32;
 
