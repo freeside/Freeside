@@ -111,7 +111,7 @@
   } elsif ( $type =~ /\.xls$/ ) {
 
     #http_header('Content-Type' => 'application/excel' ); #eww
-    http_header('Content-Type' => 'application/vnd.ms-excel' ); #alas
+    http_header('Content-Type' => 'application/vnd.ms-excel' );
     #http_header('Content-Type' => 'application/msexcel' ); #alas
 
     my $data = '';
@@ -206,8 +206,7 @@
         <TD ALIGN="right">
           <% $cgi->param('_type', "$xlsname.xls" ); %>
           Download full results<BR>
-          as <A HREF="<%= $cgi->self_url %>">Excel spreadsheet</A>
-          <BR>
+          as <A HREF="<%= $cgi->self_url %>">Excel spreadsheet</A><BR>
           <% $cgi->param('_type', 'csv'); %>
           as <A HREF="<%= $cgi->self_url %>">CSV file</A>
         </TD>
