@@ -5,6 +5,7 @@ use vars qw( @ISA $conf $money_char );
 use vars qw( $invoice_lines @buf ); #yuck
 use Date::Format;
 use Text::Template;
+use File::Temp;
 use FS::UID qw( datasrc );
 use FS::Record qw( qsearch qsearchs );
 use FS::Misc qw( send_email );
@@ -1108,17 +1109,17 @@ sub print_latex {
     $var;
   }
 
-  my $dir = '/tmp'; #! /usr/local/etc/freeside/invoices.datasrc/
-  my $unique = int(rand(2**31)); #UGH... use File::Temp or something
+  my $dir = $FS::UID::conf_dir. "cache.". $FS::UID::datasrc;
+  my $fh = new File::Temp( TEMPLATE => 'invoice.'. $self->invnum. '.XXXXXXXX',
+                           DIR      => $dir
+                           SUFFIX   => '.tex',
+                           UNLINK   => 0,
+                         ) or die "can't open temp file: $!\n";
+  print $fh join("\n", @filled_in ), "\n";
+  close $fh;
 
-  chdir($dir);
-  my $file = $self->invnum. ".$unique";
-
-  open(TEX,">$file.tex") or die "can't open $file.tex: $!\n";
-  print TEX join("\n", @filled_in ), "\n";
-  close TEX;
-
-  return $file;
+  $fh->filename =~ /^(.*).tex$/ or die "unparsable filename: ". $fh->filename;
+  return $1;
 
 }
 
@@ -1137,6 +1138,9 @@ sub print_ps {
   my $self = shift;
 
   my $file = $self->print_latex(@_);
+
+  my $dir = $FS::UID::conf_dir. "cache.". $FS::UID::datasrc;
+  chdir($dir);
 
   system("pslatex $file.tex >/dev/null 2>&1") == 0
     or die "pslatex failed: $!";
@@ -1177,6 +1181,9 @@ sub print_pdf {
   my $self = shift;
 
   my $file = $self->print_latex(@_);
+
+  my $dir = $FS::UID::conf_dir. "cache.". $FS::UID::datasrc;
+  chdir($dir);
 
   #system('pdflatex', "$file.tex");
   #system('pdflatex', "$file.tex");
