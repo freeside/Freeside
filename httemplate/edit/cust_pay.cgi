@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: cust_pay.cgi,v 1.9 2001-12-26 05:19:01 ivan Exp $ -->
+#<!-- $Id: cust_pay.cgi,v 1.10 2001-12-26 06:02:48 ivan Exp $ -->
 
 use strict;
 use vars qw( $cgi $link $linknum $p1 $_date $payby $payinfo $paid $quickpay );
@@ -96,7 +96,7 @@ if ( $link eq 'invnum' ) {
     }
 
   }
-  print '</TD></TR></TABLE>';
+  print '</TD></TR></TABLE><BR><BR>';
 
   $custnum = $cust_bill->custnum;
 
