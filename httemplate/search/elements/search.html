@@ -67,55 +67,60 @@
                            'maxrecords' => $maxrecords,
                        );
 %>
-<%= $total %> total <%= $opt{'name'} %><BR>
-<% if ( $opt{'count_addl'} ) { %>
-  <% my $n=0; foreach my $count ( @{$opt{'count_addl'}} ) { %>
-    <%= sprintf( $count, $count_arrayref->[++$n] ) %><BR>
+<% unless ( $total ) { %>
+  No matching <%= $opt{'name'} %> found.<BR>
+<% } else { %>
+  <%= $total %> total <%= $opt{'name'} %><BR>
+  <% if ( $opt{'count_addl'} ) { %>
+    <% my $n=0; foreach my $count ( @{$opt{'count_addl'}} ) { %>
+      <%= sprintf( $count, $count_arrayref->[++$n] ) %><BR>
+    <% } %>
   <% } %>
-<% } %>
-<BR><%= $pager %>
-<%= include( '/elements/table.html' ) %>
-  <TR>
-  <% foreach my $header ( @$header ) { %>
-       <TH><%= $header %></TH>
-  <% } %>
-  </TR>
-  <% foreach my $row ( @$rows ) { %>
-       <TR>
-       <% if ( $opt{'fields'} ) { %>
-         <% my $links = $opt{'links'} ? [ @{$opt{'links'}} ] : ''; %>
-         <% foreach my $field ( @{$opt{'fields'}} ) { %>
-           <% my $a = ''; %>
-           <% if ( $links ) {
-                my $link = shift @$links;
-                $link = &{$link}($row) if ref($link) eq 'CODE';
-                if ( $link ) {
-                  my( $url, $method ) = @{$link};
-                  if ( ref($method) eq 'CODE' ) {
-                    $a = $url. &{$method}($row);
-                  } else {
-                    $a = $url. $row->$method();
+  <BR><%= $pager %>
+  <%= include( '/elements/table.html' ) %>
+    <TR>
+    <% foreach my $header ( @$header ) { %>
+         <TH><%= $header %></TH>
+    <% } %>
+    </TR>
+    <% foreach my $row ( @$rows ) { %>
+         <TR>
+         <% if ( $opt{'fields'} ) { %>
+           <% my $links = $opt{'links'} ? [ @{$opt{'links'}} ] : ''; %>
+           <% foreach my $field ( @{$opt{'fields'}} ) { %>
+             <% my $a = ''; %>
+             <% if ( $links ) {
+                  my $link = shift @$links;
+                  $link = &{$link}($row) if ref($link) eq 'CODE';
+                  if ( $link ) {
+                    my( $url, $method ) = @{$link};
+                    if ( ref($method) eq 'CODE' ) {
+                      $a = $url. &{$method}($row);
+                    } else {
+                      $a = $url. $row->$method();
+                    }
+                    $a = qq(<A HREF="$a">);
                   }
-                  $a = qq(<A HREF="$a">);
                 }
-              }
-           %>
-           <% if ( ref($field) eq 'CODE' ) { %>
-             <TD><%= $a %><%= &{$field}($row) %><%= $a ? '</A>' : '' %></TD>
-           <% } else { %>
-             <TD><%= $a %><%= $row->$field() %><%= $a ? '</A>' : '' %></TD>
+             %>
+             <% if ( ref($field) eq 'CODE' ) { %>
+               <TD><%= $a %><%= &{$field}($row) %><%= $a ? '</A>' : '' %></TD>
+             <% } else { %>
+               <TD><%= $a %><%= $row->$field() %><%= $a ? '</A>' : '' %></TD>
+             <% } %>
+           <% } %>
+         <% } else { %>
+           <% foreach ( @$row ) { %>
+                <TD><%= $_ %></TD>
            <% } %>
          <% } %>
-       <% } else { %>
-         <% foreach ( @$row ) { %>
-              <TD><%= $_ %></TD>
-         <% } %>
-       <% } %>
-       </TR>
-  <% } %>
-
-</TABLE>
-<%= $pager %>
+         </TR>
+    <% } %>
+  
+  </TABLE>
+  <%= $pager %>
+<% } %>
 </BODY>
 </HTML>
 <% } %>
+
