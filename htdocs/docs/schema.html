@@ -1,0 +1,205 @@
+<head>
+  <title>Schema reference</title>
+</head>
+<body>
+  <h1>Schema reference</h1>
+  <ul>
+    <li><a name="agent">agent</a> - Agents are resellers of your service.  Agents may be limited to a subset of your full offerings (via their agent type).
+      <ul>
+        <li>agentnum - primary key
+        <li>agent - name of this agent
+        <li>typenum - <a href="#agent_type">agent type</a>
+        <li>prog - (unimplemented)
+        <li>freq - (unimplemented)
+      </ul>
+    <li><a name="agent_type">agent_type</a> - Agent types define groups of packages that you can then assign to particular agents.
+      <ul>
+        <li>typenum - primary key
+        <li>atype - name of this agent type
+      </ul>
+    <li><a name="cust_bill">cust_bill</a> - Invoices
+      <ul>
+        <li>invnum - primary key
+        <li>custnum - <a href="#cust_main">customer</a>
+        <li>_date
+        <li>charged - amount of this invoice
+        <li>owed - amount still outstanding on this invoice
+        <li>printed - how many times this invoice has been printed automatically
+      </ul>
+    <li><a name="cust_bill_pkg">cust_bill_pkg</a> - Invoice line items
+      <ul>
+        <li>invnum - (multiple) key
+        <li>pkgnum - <a href="#cust_pkg">package</a>
+        <li>setup - setup fee 
+        <li>recur - recurring fee
+        <li>sdate - starting date
+        <li>edate - ending date
+      </ul>
+    <li><a name="cust_credit">cust_credit</a> - Credits
+      <ul>
+        <li>crednum - primary key
+        <li>custnum - <a href="#cust_main">customer</a>
+        <li>amount - amount credited
+        <li>credited - amount still outstanding (not yet refunded) on this credit
+        <li>_date
+        <li>otaker - order taker
+        <li>reason
+      </ul>
+    <li><a name="cust_main">cust_main</a> - Customers
+      <ul>
+        <li>custnum - primary key
+        <li>agentnum - <a href="#agent">agent</a>
+        <li>refnum - <a href="#part_referral">referral</a>
+        <li>first - name
+        <li>last - name
+        <li>ss - social security number
+        <li>company
+        <li>address1
+        <li>address2
+        <li>city
+        <li>county
+        <li>state
+        <li>zip
+        <li>country
+        <li>daytime - phone
+        <li>night - phone
+        <li>payby - CARD, BILL, or COMP
+        <li>payinfo - card number, P.O.#, or comp issuer
+        <li>paydate - expiration date
+        <li>payname - billing name (name on card)
+        <li>tax - tax exempt, Y or null
+        <li>otaker - order taker
+      </ul>
+    <li><a name="cust_main_county">cust_main_county</a> - Tax rates
+      <ul>
+        <li>taxnum - primary key
+        <li>state
+        <li>county
+        <li>tax - % rate
+      </ul>
+    <li><a name="cust_pay">cust_pay</a> - Payments
+      <ul>
+        <li>paynum - primary key
+        <li>invnum - <a href="#cust_bill">invoice</a>
+        <li>paid - amount
+        <li>_date
+        <li>payby - CARD, BILL, or COMP
+        <li>payinfo - card number, P.O.#, or comp issuer
+        <li>paybatch - text field for tracking card processor batches
+      </ul>
+    <li><a name="cust_pay_batch">cust_pay_batch</a> - Pending batch
+      <ul>
+        <li>trancode - 77 for charges
+        <li>cardnum
+        <li>exp - card expiration
+        <li>amount
+        <li>invnum - <a href="#cust_bill">invoice</a>
+        <li>custnum - <a href="#cust_main">customer</a>
+        <li>payname - name on card
+        <li>first - name
+        <li>last - name
+        <li>address1
+        <li>address2
+        <li>city
+        <li>state
+        <li>zip
+        <li>country
+      </ul>
+    <li><a name="cust_pkg">cust_pkg</a> - Customer billing items
+      <ul>
+        <li>pkgnum - primary key
+        <li>custnum - <a href="#cust_main">customer</a>
+        <li>pkgpart - <a href="#part_pkg">Package definition</a>
+        <li>setup - date
+        <li>bill - next bill date
+        <li>susp - (past) suspension date
+        <li>expire - (future) cancellation date
+        <li>cancel - (past) cancellation date
+        <li>otaker - order taker
+      </ul>
+    <li><a name="cust_refund">cust_refund</a> - Refunds
+      <ul>
+        <li>refundnum - primary key
+        <li>crednum - <a href="#cust_credit">credit</a>
+        <li>refund - amount
+        <li>_date
+        <li>payby - CARD, BILL or COMP
+        <li>payinfo - card number, P.O.#, or comp issuer
+        <li>otaker - order taker
+      </ul>
+    <li><a name="cust_svc">cust_svc</a> - Customer services
+      <ul>
+        <li>svcnum - primary key
+        <li>pkgnum - <a href="#cust_pkg">package</a>
+        <li>svcpart - <a href="#part_svc">Service definition</a>
+      </ul>
+    <li><a name="part_pkg">part_pkg</a> - Package definitions
+      <ul>
+        <li>pkgpart - primary key
+        <li>pkg - package name
+        <li>comment - non-customer visable package comment
+        <li>setup - setup fee
+        <li>freq - recurring frequency (months)
+        <li>recur - recurring fee
+      </ul>
+    <li><a name="part_referral">part_referral</a> - Referral listing
+      <ul>
+        <li>refnum</li> - primary key
+        <li>referral</li> - referral
+      </ul>
+    <li><a name="part_svc">part_svc</a> - Service definitions
+      <ul>
+        <li>svcpart - primary key
+        <li>svc - name of this service
+        <li>svcdb - table used for this service: svc_acct, svc_acct_sm, svc_domain, svc_charge or svc_wo
+        <li><i>table</i>__<i>field</i> - Default or fixed value for <i>field</i> in <i>table</i>
+        <li><i>table</i>__<i>field</i>_flag - null, D or F
+      </ul>
+    <li><a name="pkg_svc">pkg_svc</a>
+      <ul>
+        <li>pkgpart - <a href="#part_pkg">Package definition</a>
+        <li>svcpart - <a href="#part_svc">Service definition</a>
+        <li>quantity - quantity of this service that this package includes
+      </ul>
+    <li><a name="svc_acct">svc_acct</a> - Accounts
+      <ul>
+        <li>svcnum - <a href="#cust_svc">primary key</a>
+        <li>username
+        <li>_password
+        <li>popnum - <a href="#svc_acct_pop">Point of Presence</a>
+        <li>uid
+        <li>gid
+        <li>finger - GECOS
+        <li>dir
+        <li>shell
+        <li>quota - (unimplementd)
+        <li>slipip - IP address
+        <li>radius_<i>Radius_Attribute</i> - Radius-Attribute
+      </ul>
+    <li><a name="svc_acct_pop">svc_acct_pop</a> - Points of Presence
+      <ul>
+        <li>popnum - primary key
+        <li>city
+        <li>state
+        <li>ac - area code
+        <li>exch - exchange
+      </ul>
+    <li><a name="svc_acct_sm">svc_acct_sm</a> - Domain mail aliases
+      <ul>
+        <li>svcnum - <a href="#cust_svc">primary key</a>
+        <li>domsvc - <a href="#svc_domain">Domain</a> (by svcnum)
+        <li>domuid - <a href="#svc_acct">Account</a> (by uid)
+        <li>domuser - domuser @ <a href="#svc_domain">Domain</a> forwards to <a href="#svc_acct">Account</a>
+      </ul>
+    <li><a name="svc_domain">svc_domain</a> - Domains
+      <ul>
+        <li>svcnum - <a href="#cust_svc">primary key</a>
+        <li>domain
+      </ul>
+    <li><a name="type_pkgs">type_pkgs</a>
+      <ul>
+        <li>typenum - <a href="#agent_type">agent type</a>
+        <li>pkgpart - <a href="#part_pkg">Package definition</a>
+      </ul>
+  </ul>
+</body>
