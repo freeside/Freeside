@@ -14,6 +14,7 @@ use FS::svc_domain;
 use FS::cust_main;
 use FS::cust_bill;
 use FS::cust_main_county;
+use FS::cust_pkg;
 
 use FS::ClientAPI; #hmm
 FS::ClientAPI->register_handlers(
@@ -23,6 +24,9 @@ FS::ClientAPI->register_handlers(
   'MyAccount/cancel'           => \&cancel,
   'MyAccount/payment_info'     => \&payment_info,
   'MyAccount/process_payment'  => \&process_payment,
+  'MyAccount/list_pkgs'        => \&list_pkgs,
+  'MyAccount/order_pkg'        => \&order_pkg,
+  'MyAccount/cancel_pkg'       => \&cancel_pkg,
 );
 
 #store in db?
@@ -249,6 +253,118 @@ sub cancel {
 
   my $error = scalar(@errors) ? join(' / ', @errors) : '';
 
+  return { 'error' => $error };
+
+}
+
+sub list_pkgs {
+  my $p = shift;
+  my $session = $cache->get($p->{'session_id'})
+    or return { 'error' => "Can't resume session" }; #better error message
+
+  my $custnum = $session->{'custnum'};
+
+  my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
+    or return { 'error' => "unknown custnum $custnum" };
+
+  return { 'cust_pkg' => [ map { $_->hashref } $cust_main->ncancelled_pkgs ] };
+
+}
+
+sub order_pkg {
+  my $p = shift;
+  my $session = $cache->get($p->{'session_id'})
+    or return { 'error' => "Can't resume session" }; #better error message
+
+  my $custnum = $session->{'custnum'};
+
+  my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
+    or return { 'error' => "unknown custnum $custnum" };
+
+  #false laziness w/ClientAPI/Signup.pm
+
+  my $cust_pkg = new FS::cust_pkg ( {
+    'custnum' => $custnum,
+    'pkgpart' => $p->{'pkgpart'},
+  } );
+  my $error = $cust_pkg->check;
+  return { 'error' => $error } if $error;
+
+  my $svc_acct = new FS::svc_acct ( {
+    'svcpart'   => $p->{'svcpart'} || $cust_pkg->part_pkg->svcpart('svc_acct'),
+    map { $_ => $p->{$_} }
+      qw( username _password sec_phrase popnum ),
+  } );
+
+  my @acct_snarf;
+  my $snarfnum = 1;
+  while ( length($p->{"snarf_machine$snarfnum"}) ) {
+    my $acct_snarf = new FS::acct_snarf ( {
+      'machine'   => $p->{"snarf_machine$snarfnum"},
+      'protocol'  => $p->{"snarf_protocol$snarfnum"},
+      'username'  => $p->{"snarf_username$snarfnum"},
+      '_password' => $p->{"snarf_password$snarfnum"},
+    } );
+    $snarfnum++;
+    push @acct_snarf, $acct_snarf;
+  }
+  $svc_acct->child_objects( \@acct_snarf );
+
+  my $y = $svc_acct->setdefault; # arguably should be in new method
+  return { 'error' => $y } if $y && !ref($y);
+
+  $error = $svc_acct->check;
+  return { 'error' => $error } if $error;
+
+  use Tie::RefHash;
+  tie my %hash, 'Tie::RefHash';
+  %hash = ( $cust_pkg => [ $svc_acct ] );
+  #msgcat
+  $error = $cust_main->order_pkgs( \%hash, '', 'noexport' => 1 );
+  return { 'error' => $error } if $error;
+
+  my $conf = new FS::Conf;
+  if ( $conf->exists('signup_server-realtime') ) {
+
+    my $old_balance = $cust_main->balance;
+
+    my $bill_error = $cust_main->bill;
+    $cust_main->apply_payments;
+    $cust_main->apply_credits;
+    $bill_error = $cust_main->collect;
+
+    if ( $cust_main->balance > $old_balance ) {
+      $cust_pkg->cancel('quiet'=>1);
+      return { 'error' => '_decline' };
+    } else {
+      $cust_pkg->reexport;
+    }
+
+  } else {
+    $cust_pkg->reexport;
+  }
+
+  return { error => '' };
+
+}
+
+sub cancel_pkg {
+  my $p = shift;
+  my $session = $cache->get($p->{'session_id'})
+    or return { 'error' => "Can't resume session" }; #better error message
+
+  my $custnum = $session->{'custnum'};
+
+  my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
+    or return { 'error' => "unknown custnum $custnum" };
+
+  my $pkgnum = $session->{'pkgnum'};
+
+  my $cust_pkg = qsearchs('cust_pkg', { 'custnum' => $custnum,
+                                        'pkgnum'  => $pkgnum,   } )
+    or return { 'error' => "unknown pkgnum $pkgnum" };
+
+  my $error = $cust_main->cancel( 'quiet'=>1 );
   return { 'error' => $error };
 
 }

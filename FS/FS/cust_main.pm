@@ -294,8 +294,8 @@ sub insert {
   }
 
   # packages
-  local $FS::svc_Common::noexport_hack = 1 if $options{'noexport'};
-  $error = $self->order_pkgs($cust_pkgs, \$seconds);
+  #local $FS::svc_Common::noexport_hack = 1 if $options{'noexport'};
+  $error = $self->order_pkgs($cust_pkgs, \$seconds, %options);
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
@@ -329,9 +329,27 @@ sub insert {
 
 }
 
-=item order_pkgs
+=item order_pkgs HASHREF, [ , OPTION => VALUE ... ] ]
 
-document me.  like ->insert(%cust_pkg) on an existing record
+Like the insert method on an existing record, this method orders a package
+and included services atomicaly.  Pass a Tie::RefHash data structure to this
+method containing FS::cust_pkg and FS::svc_I<tablename> objects.  There should
+be a better explanation of this, but until then, here's an example:
+
+  use Tie::RefHash;
+  tie %hash, 'Tie::RefHash'; #this part is important
+  %hash = (
+    $cust_pkg => [ $svc_acct ],
+    ...
+  );
+  $cust_main->order_pkgs( \%hash, 'noexport'=>1 );
+
+Currently available options are: I<noexport>
+
+If I<noexport> is set true, no provisioning jobs (exports) are scheduled.
+(You can schedule them later with the B<reexport> method for each
+cust_pkg object.  Using the B<reexport> method on the cust_main object is not
+recommended, as existing services will also be reexported.)
 
 =cut
 
@@ -339,6 +357,7 @@ sub order_pkgs {
   my $self = shift;
   my $cust_pkgs = shift;
   my $seconds = shift;
+  my %options = @_;
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -350,6 +369,8 @@ sub order_pkgs {
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
+
+  local $FS::svc_Common::noexport_hack = 1 if $options{'noexport'};
 
   foreach my $cust_pkg ( keys %$cust_pkgs ) {
     $cust_pkg->custnum( $self->custnum );
@@ -379,9 +400,9 @@ sub order_pkgs {
 
 =item reexport
 
-document me.  Re-schedules all exports by calling the B<reexport> method
-of all associated packages (see L<FS::cust_pkg>).  If there is an error,
-returns the error; otherwise returns false.
+Re-schedules all exports by calling the B<reexport> method of all associated
+packages (see L<FS::cust_pkg>).  If there is an error, returns the error;
+otherwise returns false.
 
 =cut
 
