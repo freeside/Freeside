@@ -1,0 +1,380 @@
+<HTML>
+<HEAD>
+<TITLE>FS::Record - Database record objects</TITLE>
+<LINK REV="made" HREF="mailto:ivan@rootwood.sisd.com">
+</HEAD>
+
+<BODY>
+
+<!-- INDEX BEGIN -->
+
+<UL>
+
+	<LI><A HREF="#NAME">NAME</A>
+	<LI><A HREF="#SYNOPSIS">SYNOPSIS</A>
+	<LI><A HREF="#DESCRIPTION">DESCRIPTION</A>
+	<LI><A HREF="#CONSTRUCTORS">CONSTRUCTORS</A>
+	<LI><A HREF="#METHODS">METHODS</A>
+	<LI><A HREF="#SUBROUTINES">SUBROUTINES</A>
+	<LI><A HREF="#VERSION">VERSION</A>
+	<LI><A HREF="#BUGS">BUGS</A>
+	<LI><A HREF="#SEE_ALSO">SEE ALSO</A>
+</UL>
+<!-- INDEX END -->
+
+<HR>
+<P>
+<H1><A NAME="NAME">NAME</A></H1>
+<P>
+FS::Record - Database record objects
+
+<P>
+<HR>
+<H1><A NAME="SYNOPSIS">SYNOPSIS</A></H1>
+<P>
+<PRE>    use FS::Record;
+    use FS::Record qw(dbh fields qsearch qsearchs dbdef);
+</PRE>
+<P>
+<PRE>    $record = new FS::Record 'table', \%hash;
+    $record = new FS::Record 'table', { 'column' =&gt; 'value', ... };
+</PRE>
+<P>
+<PRE>    $record  = qsearchs FS::Record 'table', \%hash;
+    $record  = qsearchs FS::Record 'table', { 'column' =&gt; 'value', ... };
+    @records = qsearch  FS::Record 'table', \%hash; 
+    @records = qsearch  FS::Record 'table', { 'column' =&gt; 'value', ... };
+</PRE>
+<P>
+<PRE>    $table = $record-&gt;table;
+    $dbdef_table = $record-&gt;dbdef_table;
+</PRE>
+<P>
+<PRE>    $value = $record-&gt;get('column');
+    $value = $record-&gt;getfield('column');
+    $value = $record-&gt;column;
+</PRE>
+<P>
+<PRE>    $record-&gt;set( 'column' =&gt; 'value' );
+    $record-&gt;setfield( 'column' =&gt; 'value' );
+    $record-&gt;column('value');
+</PRE>
+<P>
+<PRE>    %hash = $record-&gt;hash;
+</PRE>
+<P>
+<PRE>    $hashref = $record-&gt;hashref;
+</PRE>
+<P>
+<PRE>    $error = $record-&gt;insert;
+    #$error = $record-&gt;add; #depriciated
+</PRE>
+<P>
+<PRE>    $error = $record-&gt;delete;
+    #$error = $record-&gt;del; #depriciated
+</PRE>
+<P>
+<PRE>    $error = $new_record-&gt;replace($old_record);
+    #$error = $new_record-&gt;rep($old_record); #depriciated
+</PRE>
+<P>
+<PRE>    $value = $record-&gt;unique('column');
+</PRE>
+<P>
+<PRE>    $value = $record-&gt;ut_float('column');
+    $value = $record-&gt;ut_number('column');
+    $value = $record-&gt;ut_numbern('column');
+    $value = $record-&gt;ut_money('column');
+    $value = $record-&gt;ut_text('column');
+    $value = $record-&gt;ut_textn('column');
+    $value = $record-&gt;ut_alpha('column');
+    $value = $record-&gt;ut_alphan('column');
+    $value = $record-&gt;ut_phonen('column');
+    $value = $record-&gt;ut_anythingn('column');
+</PRE>
+<P>
+<PRE>    $dbdef = reload_dbdef;
+    $dbdef = reload_dbdef &quot;/non/standard/filename&quot;;
+    $dbdef = dbdef;
+</PRE>
+<P>
+<PRE>    $quoted_value = _quote($value,'table','field');
+</PRE>
+<P>
+<PRE>    #depriciated
+    $fields = hfields('table');
+    if ( $fields-&gt;{Field} ) { # etc.
+</PRE>
+<P>
+<PRE>    @fields = fields 'table'; #as a subroutine
+    @fields = $record-&gt;fields; #as a method call
+</PRE>
+<P>
+<HR>
+<H1><A NAME="DESCRIPTION">DESCRIPTION</A></H1>
+<P>
+(Mostly) object-oriented interface to database records. Records are
+currently implemented on top of DBI. FS::Record is intended as a base class
+for table-specific classes to inherit from, i.e. FS::cust_main.
+
+<P>
+<HR>
+<H1><A NAME="CONSTRUCTORS">CONSTRUCTORS</A></H1>
+<DL>
+<DT><STRONG><A NAME="item_new">new [ TABLE, ] HASHREF</A></STRONG><DD>
+<P>
+Creates a new record. It doesn't store it in the database, though. See
+<A HREF="#insert">insert</A> for that.
+
+<P>
+Note that the object stores this hash reference, not a distinct copy of the
+hash it points to. You can ask the object for a copy with the <EM>hash</EM> 
+method.
+
+<P>
+TABLE can only be omitted when a dervived class overrides the table method.
+
+<DT><STRONG><A NAME="item_qsearch">qsearch TABLE, HASHREF</A></STRONG><DD>
+<P>
+Searches the database for all records matching (at least) the key/value
+pairs in HASHREF. Returns all the records found as `FS::TABLE' objects if
+that module is loaded (i.e. via `use FS::cust_main;'), otherwise returns
+FS::Record objects.
+
+<DT><STRONG><A NAME="item_qsearchs">qsearchs TABLE, HASHREF</A></STRONG><DD>
+<P>
+Same as qsearch, except that if more than one record matches, it <STRONG>carp</STRONG>s but returns the first. If this happens, you either made a logic error in
+asking for a single item, or your data is corrupted.
+
+</DL>
+<P>
+<HR>
+<H1><A NAME="METHODS">METHODS</A></H1>
+<DL>
+<DT><STRONG><A NAME="item_table">table</A></STRONG><DD>
+<P>
+Returns the table name.
+
+<DT><STRONG><A NAME="item_dbdef_table">dbdef_table</A></STRONG><DD>
+<P>
+Returns the FS::dbdef_table object for the table.
+
+<DT><STRONG><A NAME="item_get">get, getfield COLUMN</A></STRONG><DD>
+<P>
+Returns the value of the column/field/key COLUMN.
+
+<DT><STRONG><A NAME="item_set">set, setfield COLUMN, VALUE</A></STRONG><DD>
+<P>
+Sets the value of the column/field/key COLUMN to VALUE. Returns VALUE.
+
+<DT><STRONG><A NAME="item_AUTLOADED">AUTLOADED METHODS</A></STRONG><DD>
+<P>
+$record-&gt;column is a synonym for $record-&gt;get('column');
+
+<P>
+$record-&gt;column('value') is a synonym for
+$record-&gt;set('column','value');
+
+<DT><STRONG><A NAME="item_hash">hash</A></STRONG><DD>
+<P>
+Returns a list of the column/value pairs, usually for assigning to a new
+hash.
+
+<P>
+To make a distinct duplicate of an FS::Record object, you can do:
+
+<P>
+<PRE>    $new = new FS::Record ( $old-&gt;table, { $old-&gt;hash } );
+</PRE>
+<DT><STRONG><A NAME="item_hashref">hashref</A></STRONG><DD>
+<P>
+Returns a reference to the column/value hash.
+
+<DT><STRONG><A NAME="item_insert">insert</A></STRONG><DD>
+<P>
+Inserts this record to the database. If there is an error, returns the
+error, otherwise returns false.
+
+<DT><STRONG><A NAME="item_add">add</A></STRONG><DD>
+<P>
+Depriciated (use insert instead).
+
+<DT><STRONG><A NAME="item_delete">delete</A></STRONG><DD>
+<P>
+Delete this record from the database. If there is an error, returns the
+error, otherwise returns false.
+
+<DT><STRONG><A NAME="item_del">del</A></STRONG><DD>
+<P>
+Depriciated (use delete instead).
+
+<DT><STRONG><A NAME="item_replace">replace OLD_RECORD</A></STRONG><DD>
+<P>
+Replace the OLD_RECORD with this one in the database. If there is an error,
+returns the error, otherwise returns false.
+
+<DT><STRONG><A NAME="item_rep">rep</A></STRONG><DD>
+<P>
+Depriciated (use replace instead).
+
+<DT><STRONG><A NAME="item_check">check</A></STRONG><DD>
+<P>
+Not yet implemented, croaks. Derived classes should provide a check method.
+
+<DT><STRONG><A NAME="item_unique">unique COLUMN</A></STRONG><DD>
+<P>
+Replaces COLUMN in record with a unique number. Called by the <STRONG>add</STRONG> method on primary keys and single-field unique columns (see <A HREF="../FS/dbdef_table.html">FS::dbdef_table</A>). Returns the new value.
+
+<DT><STRONG><A NAME="item_ut_float">ut_float COLUMN</A></STRONG><DD>
+<P>
+Check/untaint floating point numeric data: 1.1, 1, 1.1e10, 1e10. May not be
+null. If there is an error, returns the error, otherwise returns false.
+
+<DT><STRONG><A NAME="item_ut_number">ut_number COLUMN</A></STRONG><DD>
+<P>
+Check/untaint simple numeric data (whole numbers). May not be null. If
+there is an error, returns the error, otherwise returns false.
+
+<DT><STRONG><A NAME="item_ut_numbern">ut_numbern COLUMN</A></STRONG><DD>
+<P>
+Check/untaint simple numeric data (whole numbers). May be null. If there is
+an error, returns the error, otherwise returns false.
+
+<DT><STRONG><A NAME="item_ut_money">ut_money COLUMN</A></STRONG><DD>
+<P>
+Check/untaint monetary numbers. May be negative. Set to 0 if null. If there
+is an error, returns the error, otherwise returns false.
+
+<DT><STRONG><A NAME="item_ut_text">ut_text COLUMN</A></STRONG><DD>
+<P>
+Check/untaint text. Alphanumerics, spaces, and the following punctuation
+symbols are currently permitted: ! @ # $ % &amp; ( ) - + ; : ' `` , . ? /
+May not be null. If there is an error, returns the error, otherwise returns
+false.
+
+<DT><STRONG><A NAME="item_ut_textn">ut_textn COLUMN</A></STRONG><DD>
+<P>
+Check/untaint text. Alphanumerics, spaces, and the following punctuation
+symbols are currently permitted: ! @ # $ % &amp; ( ) - + ; : ' `` , . ? /
+May be null. If there is an error, returns the error, otherwise returns
+false.
+
+<DT><STRONG><A NAME="item_ut_alpha">ut_alpha COLUMN</A></STRONG><DD>
+<P>
+Check/untaint alphanumeric strings (no spaces). May not be null. If there
+is an error, returns the error, otherwise returns false.
+
+<DT><STRONG>ut_alpha COLUMN</STRONG><DD>
+<P>
+Check/untaint alphanumeric strings (no spaces). May be null. If there is an
+error, returns the error, otherwise returns false.
+
+<DT><STRONG><A NAME="item_ut_phonen">ut_phonen COLUMN</A></STRONG><DD>
+<P>
+Check/untaint phone numbers. May be null. If there is an error, returns the
+error, otherwise returns false.
+
+<DT><STRONG><A NAME="item_ut_anything">ut_anything COLUMN</A></STRONG><DD>
+<P>
+Untaints arbitrary data. Be careful.
+
+<DT><STRONG><A NAME="item_fields">fields [ TABLE ]</A></STRONG><DD>
+<P>
+This can be used as both a subroutine and a method call. It returns a list
+of the columns in this record's table, or an explicitly specified table.
+(See <A HREF="../FS/dbdef_table.html">FS::dbdef_table</A>).
+
+<H1><A NAME="SUBROUTINES">SUBROUTINES</A></H1>
+<DL>
+<DT><STRONG><A NAME="item_reload_dbdef">reload_dbdef([FILENAME])</A></STRONG><DD>
+<P>
+Load a database definition (see <A HREF="../FS/dbdef.html">FS::dbdef</A>), optionally from a non-default filename. This command is executed at
+startup unless
+<EM>$FS::Record::setup_hack</EM> is true. Returns a FS::dbdef object.
+
+<DT><STRONG><A NAME="item_dbdef">dbdef</A></STRONG><DD>
+<P>
+Returns the current database definition. See <A HREF="../FS/dbdef.html">FS::dbdef</A>.
+
+<DT><STRONG><A NAME="item__quote">_quote VALUE, TABLE, COLUMN</A></STRONG><DD>
+<P>
+This is an internal function used to construct SQL statements. It returns
+VALUE DBI-quoted (see <EM>DBI</EM>) unless VALUE is a number and the column type (see <A HREF="../FS/dbdef_column.html">FS::dbdef_column</A>) does not end in `char' or `binary'.
+
+<DT><STRONG><A NAME="item_hfields">hfields TABLE</A></STRONG><DD>
+<P>
+This is depriciated. Don't use it.
+
+<P>
+It returns a hash-type list with the fields of this record's table set
+true.
+
+</DL>
+<H1><A NAME="VERSION">VERSION</A></H1>
+<P>
+$Id: Record.html,v 1.1 1999-08-04 12:13:27 ivan Exp $
+
+<H1><A NAME="BUGS">BUGS</A></H1>
+<P>
+This module should probably be renamed, since much of the functionality is
+of general use. It is not completely unlike Adapter::DBI (see below).
+
+<P>
+Exported qsearch and qsearchs should be depriciated in favor of method
+calls (against an FS::Record object like the old search and searchs that
+qsearch and qsearchs were on top of.)
+
+<P>
+The whole fields / hfields mess should be removed.
+
+<P>
+The various WHERE clauses should be subroutined.
+
+<P>
+table string should be depriciated in favor of FS::dbdef_table.
+
+<P>
+No doubt we could benefit from a Tied hash. Documenting how exists /
+defined true maps to the database (and WHERE clauses) would also help.
+
+<P>
+The ut_ methods should ask the dbdef for a default length.
+
+<P>
+ut_sqltype (like ut_varchar) should all be defined
+
+<P>
+A fallback check method should be provided whith uses the dbdef.
+
+<P>
+The ut_money method assumes money has two decimal digits.
+
+<P>
+The Pg money kludge in the new method only strips `$'.
+
+<P>
+The ut_phonen method assumes US-style phone numbers.
+
+<P>
+The _quote function should probably use ut_float instead of a regex.
+
+<P>
+All the subroutines probably should be methods, here or elsewhere.
+
+<P>
+Probably should borrow/use some dbdef methods where appropriate (like sub
+fields)
+
+<H1><A NAME="SEE_ALSO">SEE ALSO</A></H1>
+<P>
+<A HREF="../FS/dbdef.html">FS::dbdef</A>, <A HREF="../FS/UID.html">FS::UID</A>, <EM>DBI</EM>
+
+
+
+<P>
+Adapter::DBI from Ch. 11 of Advanced Perl Programming by Sriram Srinivasan.
+
+</DL>
+</BODY>
+
+</HTML>

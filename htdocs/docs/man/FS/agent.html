@@ -1,0 +1,130 @@
+<HTML>
+<HEAD>
+<TITLE>FS::agent - Object methods for agent records</TITLE>
+<LINK REV="made" HREF="mailto:ivan@rootwood.sisd.com">
+</HEAD>
+
+<BODY>
+
+<!-- INDEX BEGIN -->
+
+<UL>
+
+	<LI><A HREF="#NAME">NAME</A>
+	<LI><A HREF="#SYNOPSIS">SYNOPSIS</A>
+	<LI><A HREF="#DESCRIPTION">DESCRIPTION</A>
+	<LI><A HREF="#METHODS">METHODS</A>
+	<LI><A HREF="#VERSION">VERSION</A>
+	<LI><A HREF="#BUGS">BUGS</A>
+	<LI><A HREF="#SEE_ALSO">SEE ALSO</A>
+</UL>
+<!-- INDEX END -->
+
+<HR>
+<P>
+<H1><A NAME="NAME">NAME</A></H1>
+<P>
+FS::agent - Object methods for agent records
+
+<P>
+<HR>
+<H1><A NAME="SYNOPSIS">SYNOPSIS</A></H1>
+<P>
+<PRE>  use FS::agent;
+</PRE>
+<P>
+<PRE>  $record = new FS::agent \%hash;
+  $record = new FS::agent { 'column' =&gt; 'value' };
+</PRE>
+<P>
+<PRE>  $error = $record-&gt;insert;
+</PRE>
+<P>
+<PRE>  $error = $new_record-&gt;replace($old_record);
+</PRE>
+<P>
+<PRE>  $error = $record-&gt;delete;
+</PRE>
+<P>
+<PRE>  $error = $record-&gt;check;
+</PRE>
+<P>
+<PRE>  $agent_type = $record-&gt;agent_type;
+</PRE>
+<P>
+<PRE>  $hashref = $record-&gt;pkgpart_hashref;
+  #may purchase $pkgpart if $hashref-&gt;{$pkgpart};
+</PRE>
+<P>
+<HR>
+<H1><A NAME="DESCRIPTION">DESCRIPTION</A></H1>
+<P>
+An FS::agent object represents an agent. Every customer has an agent.
+Agents can be used to track things like resellers or salespeople. FS::agent
+inherits from FS::Record. The following fields are currently supported:
+
+<DL>
+<DT><STRONG><A NAME="item_agemtnum">agemtnum - primary key (assigned automatically for new agents)</A></STRONG><DD>
+<DT><STRONG><A NAME="item_agent">agent - Text name of this agent</A></STRONG><DD>
+<DT><STRONG><A NAME="item_typenum">typenum - Agent type.  See FS::agent_type</A></STRONG><DD>
+<DT><STRONG><A NAME="item_prog">prog - For future use.</A></STRONG><DD>
+<DT><STRONG><A NAME="item_freq">freq - For future use.</A></STRONG><DD>
+</DL>
+<P>
+<HR>
+<H1><A NAME="METHODS">METHODS</A></H1>
+<DL>
+<DT><STRONG><A NAME="item_new">new HASHREF</A></STRONG><DD>
+<P>
+Creates a new agent. To add the agent to the database, see <A HREF="#insert">insert</A>.
+
+<DT><STRONG><A NAME="item_insert">insert</A></STRONG><DD>
+<P>
+Adds this agent to the database. If there is an error, returns the error,
+otherwise returns false.
+
+<DT><STRONG><A NAME="item_delete">delete</A></STRONG><DD>
+<P>
+Deletes this agent from the database. Only agents with no customers can be
+deleted. If there is an error, returns the error, otherwise returns false.
+
+<DT><STRONG><A NAME="item_replace">replace OLD_RECORD</A></STRONG><DD>
+<P>
+Replaces OLD_RECORD with this one in the database. If there is an error,
+returns the error, otherwise returns false.
+
+<DT><STRONG><A NAME="item_check">check</A></STRONG><DD>
+<P>
+Checks all fields to make sure this is a valid agent. If there is an error,
+returns the error, otherwise returns false. Called by the insert and
+replace methods.
+
+<DT><STRONG><A NAME="item_agent_type">agent_type</A></STRONG><DD>
+<P>
+Returns the FS::agent_type object (see <A HREF="../FS/agent_type.html">FS::agent_type</A>) for this agent.
+
+<DT><STRONG><A NAME="item_pkgpart_hashref">pkgpart_hashref</A></STRONG><DD>
+<P>
+Returns a hash reference. The keys of the hash are pkgparts. The value is
+true iff this agent may purchase the specified package definition. See
+<A HREF="../FS/part_pkg.html">FS::part_pkg</A>.
+
+</DL>
+<P>
+<HR>
+<H1><A NAME="VERSION">VERSION</A></H1>
+<P>
+$Id: agent.html,v 1.1 1999-08-04 12:13:27 ivan Exp $
+
+<P>
+<HR>
+<H1><A NAME="BUGS">BUGS</A></H1>
+<P>
+<HR>
+<H1><A NAME="SEE_ALSO">SEE ALSO</A></H1>
+<P>
+<A HREF="../FS/Record.html">FS::Record</A>, <A HREF="../FS/agent_type.html">FS::agent_type</A>, <A HREF="../FS/cust_main.html">FS::cust_main</A>, <A HREF="../FS/part_pkg.html">FS::part_pkg</A>, schema.html from the base documentation.
+
+</BODY>
+
+</HTML>

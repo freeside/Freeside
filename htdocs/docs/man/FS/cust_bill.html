@@ -1,0 +1,184 @@
+<HTML>
+<HEAD>
+<TITLE>FS::cust_bill - Object methods for cust_bill records</TITLE>
+<LINK REV="made" HREF="mailto:ivan@rootwood.sisd.com">
+</HEAD>
+
+<BODY>
+
+<!-- INDEX BEGIN -->
+
+<UL>
+
+	<LI><A HREF="#NAME">NAME</A>
+	<LI><A HREF="#SYNOPSIS">SYNOPSIS</A>
+	<LI><A HREF="#DESCRIPTION">DESCRIPTION</A>
+	<LI><A HREF="#METHODS">METHODS</A>
+	<LI><A HREF="#VERSION">VERSION</A>
+	<LI><A HREF="#BUGS">BUGS</A>
+	<LI><A HREF="#SEE_ALSO">SEE ALSO</A>
+</UL>
+<!-- INDEX END -->
+
+<HR>
+<P>
+<H1><A NAME="NAME">NAME</A></H1>
+<P>
+FS::cust_bill - Object methods for cust_bill records
+
+<P>
+<HR>
+<H1><A NAME="SYNOPSIS">SYNOPSIS</A></H1>
+<P>
+<PRE>  use FS::cust_bill;
+</PRE>
+<P>
+<PRE>  $record = new FS::cust_bill \%hash;
+  $record = new FS::cust_bill { 'column' =&gt; 'value' };
+</PRE>
+<P>
+<PRE>  $error = $record-&gt;insert;
+</PRE>
+<P>
+<PRE>  $error = $new_record-&gt;replace($old_record);
+</PRE>
+<P>
+<PRE>  $error = $record-&gt;delete;
+</PRE>
+<P>
+<PRE>  $error = $record-&gt;check;
+</PRE>
+<P>
+<PRE>  ( $total_previous_balance, @previous_cust_bill ) = $record-&gt;previous;
+</PRE>
+<P>
+<PRE>  @cust_bill_pkg_objects = $cust_bill-&gt;cust_bill_pkg;
+</PRE>
+<P>
+<PRE>  ( $total_previous_credits, @previous_cust_credit ) = $record-&gt;cust_credit;
+</PRE>
+<P>
+<PRE>  @cust_pay_objects = $cust_bill-&gt;cust_pay;
+</PRE>
+<P>
+<PRE>  @lines = $cust_bill-&gt;print_text;
+  @lines = $cust_bill-&gt;print_text $time;
+</PRE>
+<P>
+<HR>
+<H1><A NAME="DESCRIPTION">DESCRIPTION</A></H1>
+<P>
+An FS::cust_bill object represents an invoice. FS::cust_bill inherits from
+FS::Record. The following fields are currently supported:
+
+<DL>
+<DT><STRONG><A NAME="item_invnum">invnum - primary key (assigned automatically for new invoices)</A></STRONG><DD>
+<DT><STRONG><A NAME="item_custnum">custnum - customer (see FS::cust_main)</A></STRONG><DD>
+<DT><STRONG><A NAME="item__date">_date - specified as a UNIX timestamp; see perlfunc/&quot;time&quot;.  Also see
+Time::Local and Date::Parse for conversion functions.</A></STRONG><DD>
+<DT><STRONG><A NAME="item_charged">charged - amount of this invoice</A></STRONG><DD>
+<DT><STRONG><A NAME="item_owed">owed - amount still outstanding on this invoice, which is charged minus
+all payments (see FS::cust_pay).</A></STRONG><DD>
+<DT><STRONG><A NAME="item_printed">printed - how many times this invoice has been printed automatically
+(see FS::cust_main/&quot;collect&quot;).</A></STRONG><DD>
+</DL>
+<P>
+<HR>
+<H1><A NAME="METHODS">METHODS</A></H1>
+<DL>
+<DT><STRONG><A NAME="item_new">new HASHREF</A></STRONG><DD>
+<P>
+Creates a new invoice. To add the invoice to the database, see <A HREF="#insert">insert</A>. Invoices are normally created by calling the bill method of a customer
+object (see <A HREF="../FS/cust_main.html">FS::cust_main</A>).
+
+<DT><STRONG><A NAME="item_insert">insert</A></STRONG><DD>
+<P>
+Adds this invoice to the database (``Posts'' the invoice). If there is an
+error, returns the error, otherwise returns false.
+
+<P>
+When adding new invoices, owed must be charged (or null, in which case it
+is automatically set to charged).
+
+<DT><STRONG><A NAME="item_delete">delete</A></STRONG><DD>
+<P>
+Currently unimplemented. I don't remove invoices because there would then
+be no record you ever posted this invoice (which is bad, no?)
+
+<DT><STRONG><A NAME="item_replace">replace OLD_RECORD</A></STRONG><DD>
+<P>
+Replaces the OLD_RECORD with this one in the database. If there is an
+error, returns the error, otherwise returns false.
+
+<P>
+Only owed and printed may be changed. Owed is normally updated by creating
+and inserting a payment (see <A HREF="../FS/cust_pay.html">FS::cust_pay</A>). Printed is normally updated by calling the collect method of a customer
+object (see <A HREF="../FS/cust_main.html">FS::cust_main</A>).
+
+<DT><STRONG><A NAME="item_check">check</A></STRONG><DD>
+<P>
+Checks all fields to make sure this is a valid invoice. If there is an
+error, returns the error, otherwise returns false. Called by the insert and
+replace methods.
+
+<DT><STRONG><A NAME="item_previous">previous</A></STRONG><DD>
+<P>
+Returns a list consisting of the total previous balance for this customer,
+followed by the previous outstanding invoices (as FS::cust_bill objects
+also).
+
+<DT><STRONG><A NAME="item_cust_bill_pkg">cust_bill_pkg</A></STRONG><DD>
+<P>
+Returns the line items (see <A HREF="../FS/cust_bill_pkg.html">FS::cust_bill_pkg</A>) for this invoice.
+
+<DT><STRONG><A NAME="item_cust_credit">cust_credit</A></STRONG><DD>
+<P>
+Returns a list consisting of the total previous credited (see
+<A HREF="../FS/cust_credit.html">FS::cust_credit</A>) for this customer, followed by the previous outstanding credits
+(FS::cust_credit objects).
+
+<DT><STRONG><A NAME="item_cust_pay">cust_pay</A></STRONG><DD>
+<P>
+Returns all payments (see <A HREF="../FS/cust_pay.html">FS::cust_pay</A>) for this invoice.
+
+<DT><STRONG><A NAME="item_print_text">print_text [TIME];</A></STRONG><DD>
+<P>
+Returns an ASCII invoice, as a list of lines.
+
+<P>
+TIME an optional value used to control the printing of overdue messages.
+The default is now. It isn't the date of the invoice; that's the `_date'
+field. It is specified as a UNIX timestamp; see <EM>perlfunc</EM>. Also see
+<A HREF="../Time/Local.html">Time::Local</A> and <A HREF="../Date/Parse.html">Date::Parse</A> for conversion functions.
+
+</DL>
+<P>
+<HR>
+<H1><A NAME="VERSION">VERSION</A></H1>
+<P>
+$Id: cust_bill.html,v 1.1 1999-08-04 12:13:27 ivan Exp $
+
+<P>
+<HR>
+<H1><A NAME="BUGS">BUGS</A></H1>
+<P>
+The delete method.
+
+<P>
+print_text formatting (and some logic :/) is in source, but needs to be
+slurped in from a file. Also number of lines ($=).
+
+<P>
+missing print_ps for a nice postscript copy (maybe HylaFAX-cover-page-style
+or something similar so the look can be completely customized?)
+
+<P>
+<HR>
+<H1><A NAME="SEE_ALSO">SEE ALSO</A></H1>
+<P>
+<A HREF="../FS/Record.html">FS::Record</A>, <A HREF="../FS/cust_main.html">FS::cust_main</A>, <A HREF="../FS/cust_pay.html">FS::cust_pay</A>, <A HREF="../FS/cust_bill_pkg.html">FS::cust_bill_pkg</A>,
+<A HREF="../FS/cust_credit.html">FS::cust_credit</A>, schema.html from the base documentation.
+
+</BODY>
+
+</HTML>

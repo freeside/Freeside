@@ -1,0 +1,134 @@
+<HTML>
+<HEAD>
+<TITLE>FS::cust_svc - Object method for cust_svc objects</TITLE>
+<LINK REV="made" HREF="mailto:ivan@rootwood.sisd.com">
+</HEAD>
+
+<BODY>
+
+<!-- INDEX BEGIN -->
+
+<UL>
+
+	<LI><A HREF="#NAME">NAME</A>
+	<LI><A HREF="#SYNOPSIS">SYNOPSIS</A>
+	<LI><A HREF="#DESCRIPTION">DESCRIPTION</A>
+	<LI><A HREF="#METHODS">METHODS</A>
+	<LI><A HREF="#VERSION">VERSION</A>
+	<LI><A HREF="#BUGS">BUGS</A>
+	<LI><A HREF="#SEE_ALSO">SEE ALSO</A>
+</UL>
+<!-- INDEX END -->
+
+<HR>
+<P>
+<H1><A NAME="NAME">NAME</A></H1>
+<P>
+FS::cust_svc - Object method for cust_svc objects
+
+<P>
+<HR>
+<H1><A NAME="SYNOPSIS">SYNOPSIS</A></H1>
+<P>
+<PRE>  use FS::cust_svc;
+</PRE>
+<P>
+<PRE>  $record = new FS::cust_svc \%hash
+  $record = new FS::cust_svc { 'column' =&gt; 'value' };
+</PRE>
+<P>
+<PRE>  $error = $record-&gt;insert;
+</PRE>
+<P>
+<PRE>  $error = $new_record-&gt;replace($old_record);
+</PRE>
+<P>
+<PRE>  $error = $record-&gt;delete;
+</PRE>
+<P>
+<PRE>  $error = $record-&gt;check;
+</PRE>
+<P>
+<PRE>  ($label, $value) = $record-&gt;label;
+</PRE>
+<P>
+<HR>
+<H1><A NAME="DESCRIPTION">DESCRIPTION</A></H1>
+<P>
+An FS::cust_svc represents a service. FS::cust_svc inherits from
+FS::Record. The following fields are currently supported:
+
+<DL>
+<DT><STRONG><A NAME="item_svcnum">svcnum - primary key (assigned automatically for new services)</A></STRONG><DD>
+<DT><STRONG><A NAME="item_pkgnum">pkgnum - Package (see FS::cust_pkg)</A></STRONG><DD>
+<DT><STRONG><A NAME="item_svcpart">svcpart - Service definition (see FS::part_svc)</A></STRONG><DD>
+</DL>
+<P>
+<HR>
+<H1><A NAME="METHODS">METHODS</A></H1>
+<DL>
+<DT><STRONG><A NAME="item_new">new HASHREF</A></STRONG><DD>
+<P>
+Creates a new service. To add the refund to the database, see <A HREF="#insert">insert</A>. Services are normally created by creating FS::svc_ objects (see
+<A HREF="../FS/svc_acct.html">FS::svc_acct</A>, <A HREF="../FS/svc_domain.html">FS::svc_domain</A>, and <A HREF="../FS/svc_acct_sm.html">FS::svc_acct_sm</A>, among others).
+
+<DT><STRONG><A NAME="item_insert">insert</A></STRONG><DD>
+<P>
+Adds this service to the database. If there is an error, returns the error,
+otherwise returns false.
+
+<DT><STRONG><A NAME="item_delete">delete</A></STRONG><DD>
+<P>
+Deletes this service from the database. If there is an error, returns the
+error, otherwise returns false.
+
+<P>
+Called by the cancel method of the package (see <A HREF="../FS/cust_pkg.html">FS::cust_pkg</A>).
+
+<DT><STRONG><A NAME="item_replace">replace OLD_RECORD</A></STRONG><DD>
+<P>
+Replaces the OLD_RECORD with this one in the database. If there is an
+error, returns the error, otherwise returns false.
+
+<DT><STRONG><A NAME="item_check">check</A></STRONG><DD>
+<P>
+Checks all fields to make sure this is a valid service. If there is an
+error, returns the error, otehrwise returns false. Called by the insert and
+replace methods.
+
+<DT><STRONG><A NAME="item_label">label</A></STRONG><DD>
+<P>
+Returns a list consisting of: - The name of this service (from part_svc) -
+A meaningful identifier (username, domain, or mail alias) - The table name
+(i.e. svc_domain) for this service
+
+</DL>
+<P>
+<HR>
+<H1><A NAME="VERSION">VERSION</A></H1>
+<P>
+$Id: cust_svc.html,v 1.1 1999-08-04 12:13:27 ivan Exp $
+
+<P>
+<HR>
+<H1><A NAME="BUGS">BUGS</A></H1>
+<P>
+Behaviour of changing the svcpart of cust_svc records is undefined and
+should possibly be prohibited, and pkg_svc records are not checked.
+
+<P>
+pkg_svc records are not checked in general (here).
+
+<P>
+Deleting this record doesn't check or delete the svc_* record associated
+with this record.
+
+<P>
+<HR>
+<H1><A NAME="SEE_ALSO">SEE ALSO</A></H1>
+<P>
+<A HREF="../FS/Record.html">FS::Record</A>, <A HREF="../FS/cust_pkg.html">FS::cust_pkg</A>, <A HREF="../FS/part_svc.html">FS::part_svc</A>, <A HREF="../FS/pkg_svc.html">FS::pkg_svc</A>, schema.html from the base documentation
+
+</BODY>
+
+</HTML>

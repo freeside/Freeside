@@ -1,0 +1,109 @@
+<HTML>
+<HEAD>
+<TITLE>FS::svc_Common - Object method for all svc_ records</TITLE>
+<LINK REV="made" HREF="mailto:ivan@rootwood.sisd.com">
+</HEAD>
+
+<BODY>
+
+<!-- INDEX BEGIN -->
+
+<UL>
+
+	<LI><A HREF="#NAME">NAME</A>
+	<LI><A HREF="#SYNOPSIS">SYNOPSIS</A>
+	<LI><A HREF="#DESCRIPTION">DESCRIPTION</A>
+	<LI><A HREF="#METHODS">METHODS</A>
+	<LI><A HREF="#VERSION">VERSION</A>
+	<LI><A HREF="#BUGS">BUGS</A>
+	<LI><A HREF="#SEE_ALSO">SEE ALSO</A>
+</UL>
+<!-- INDEX END -->
+
+<HR>
+<P>
+<H1><A NAME="NAME">NAME</A></H1>
+<P>
+FS::svc_Common - Object method for all svc_ records
+
+<P>
+<HR>
+<H1><A NAME="SYNOPSIS">SYNOPSIS</A></H1>
+<P>
+use FS::svc_Common;
+
+<P>
+<CODE>@ISA</CODE> = <CODE>qw(</CODE> FS::svc_Common );
+
+<P>
+<HR>
+<H1><A NAME="DESCRIPTION">DESCRIPTION</A></H1>
+<P>
+FS::svc_Common is intended as a base class for table-specific classes to
+inherit from, i.e. FS::svc_acct. FS::svc_Common inherits from FS::Record.
+
+<P>
+<HR>
+<H1><A NAME="METHODS">METHODS</A></H1>
+<DL>
+<DT><STRONG><A NAME="item_insert">insert</A></STRONG><DD>
+<P>
+Adds this record to the database. If there is an error, returns the error,
+otherwise returns false.
+
+<P>
+The additional fields pkgnum and svcpart (see <A HREF="../FS/cust_svc.html">FS::cust_svc</A>) should be defined. An FS::cust_svc record will be created and inserted.
+
+<DT><STRONG><A NAME="item_delete">delete</A></STRONG><DD>
+<P>
+Deletes this account from the database. If there is an error, returns the
+error, otherwise returns false.
+
+<P>
+The corresponding FS::cust_svc record will be deleted as well.
+
+<DT><STRONG><A NAME="item_setfixed">setfixed</A></STRONG><DD>
+<P>
+Sets any fixed fields for this service (see <A HREF="../FS/part_svc.html">FS::part_svc</A>). If there is an error, returns the error, otherwise returns the
+FS::part_svc object (use <CODE>ref()</CODE> to test the return). Usually
+called by the check method.
+
+<DT><STRONG><A NAME="item_setdefault">setdefault</A></STRONG><DD>
+<P>
+Sets all fields to their defaults (see <A HREF="../FS/part_svc.html">FS::part_svc</A>), overriding their current values. If there is an error, returns the
+error, otherwise returns the FS::part_svc object (use <CODE>ref()</CODE> to
+test the return).
+
+<DT><STRONG><A NAME="item_suspend">suspend</A></STRONG><DD>
+<DT><STRONG><A NAME="item_unsuspend">unsuspend</A></STRONG><DD>
+<DT><STRONG><A NAME="item_cancel">cancel</A></STRONG><DD>
+<P>
+Stubs - return false (no error) so derived classes don't need to define
+these methods. Called by the cancel method of FS::cust_pkg (see <A HREF="../FS/cust_pkg.html">FS::cust_pkg</A>).
+
+</DL>
+<P>
+<HR>
+<H1><A NAME="VERSION">VERSION</A></H1>
+<P>
+$Id: svc_Common.html,v 1.1 1999-08-04 12:13:27 ivan Exp $
+
+<P>
+<HR>
+<H1><A NAME="BUGS">BUGS</A></H1>
+<P>
+The setfixed method return value.
+
+<P>
+The new method should set defaults from part_svc (like the check method
+sets fixed values)?
+
+<P>
+<HR>
+<H1><A NAME="SEE_ALSO">SEE ALSO</A></H1>
+<P>
+<A HREF="../FS/Record.html">FS::Record</A>, <A HREF="../FS/cust_svc.html">FS::cust_svc</A>, <A HREF="../FS/part_svc.html">FS::part_svc</A>, <A HREF="../FS/cust_pkg.html">FS::cust_pkg</A>, schema.html from the base documentation.
+
+</BODY>
+
+</HTML>

@@ -1,0 +1,119 @@
+<HTML>
+<HEAD>
+<TITLE>FS::cust_bill_pkg - Object methods for cust_bill_pkg records</TITLE>
+<LINK REV="made" HREF="mailto:ivan@rootwood.sisd.com">
+</HEAD>
+
+<BODY>
+
+<!-- INDEX BEGIN -->
+
+<UL>
+
+	<LI><A HREF="#NAME">NAME</A>
+	<LI><A HREF="#SYNOPSIS">SYNOPSIS</A>
+	<LI><A HREF="#DESCRIPTION">DESCRIPTION</A>
+	<LI><A HREF="#METHODS">METHODS</A>
+	<LI><A HREF="#VERSION">VERSION</A>
+	<LI><A HREF="#BUGS">BUGS</A>
+	<LI><A HREF="#SEE_ALSO">SEE ALSO</A>
+</UL>
+<!-- INDEX END -->
+
+<HR>
+<P>
+<H1><A NAME="NAME">NAME</A></H1>
+<P>
+FS::cust_bill_pkg - Object methods for cust_bill_pkg records
+
+<P>
+<HR>
+<H1><A NAME="SYNOPSIS">SYNOPSIS</A></H1>
+<P>
+<PRE>  use FS::cust_bill_pkg;
+</PRE>
+<P>
+<PRE>  $record = new FS::cust_bill_pkg \%hash;
+  $record = new FS::cust_bill_pkg { 'column' =&gt; 'value' };
+</PRE>
+<P>
+<PRE>  $error = $record-&gt;insert;
+</PRE>
+<P>
+<PRE>  $error = $new_record-&gt;replace($old_record);
+</PRE>
+<P>
+<PRE>  $error = $record-&gt;delete;
+</PRE>
+<P>
+<PRE>  $error = $record-&gt;check;
+</PRE>
+<P>
+<HR>
+<H1><A NAME="DESCRIPTION">DESCRIPTION</A></H1>
+<P>
+An FS::cust_bill_pkg object represents an invoice line item.
+FS::cust_bill_pkg inherits from FS::Record. The following fields are
+currently supported:
+
+<DL>
+<DT><STRONG><A NAME="item_invnum">invnum - invoice (see FS::cust_bill)</A></STRONG><DD>
+<DT><STRONG><A NAME="item_pkgnum">pkgnum - package (see FS::cust_pkg)</A></STRONG><DD>
+<DT><STRONG><A NAME="item_setup">setup - setup fee</A></STRONG><DD>
+<DT><STRONG><A NAME="item_recur">recur - recurring fee</A></STRONG><DD>
+<DT><STRONG><A NAME="item_sdate">sdate - starting date of recurring fee</A></STRONG><DD>
+<DT><STRONG><A NAME="item_edate">edate - ending date of recurring fee</A></STRONG><DD>
+</DL>
+<P>
+sdate and edate are specified as UNIX timestamps; see <EM>perlfunc</EM>. Also see <A HREF="../Time/Local.html">Time::Local</A> and <A HREF="../Date/Parse.html">Date::Parse</A> for conversion functions.
+
+<P>
+<HR>
+<H1><A NAME="METHODS">METHODS</A></H1>
+<DL>
+<DT><STRONG><A NAME="item_new">new HASHREF</A></STRONG><DD>
+<P>
+Creates a new line item. To add the line item to the database, see
+<A HREF="#insert">insert</A>. Line items are normally created by calling the bill method of a customer
+object (see <A HREF="../FS/cust_main.html">FS::cust_main</A>).
+
+<DT><STRONG><A NAME="item_insert">insert</A></STRONG><DD>
+<P>
+Adds this line item to the database. If there is an error, returns the
+error, otherwise returns false.
+
+<DT><STRONG><A NAME="item_delete">delete</A></STRONG><DD>
+<P>
+Currently unimplemented. I don't remove line items because there would then
+be no record the items ever existed (which is bad, no?)
+
+<DT><STRONG><A NAME="item_replace">replace OLD_RECORD</A></STRONG><DD>
+<P>
+Currently unimplemented. This would be even more of an accounting nightmare
+than deleteing the items. Just don't do it.
+
+<DT><STRONG><A NAME="item_check">check</A></STRONG><DD>
+<P>
+Checks all fields to make sure this is a valid line item. If there is an
+error, returns the error, otherwise returns false. Called by the insert
+method.
+
+</DL>
+<P>
+<HR>
+<H1><A NAME="VERSION">VERSION</A></H1>
+<P>
+$Id: cust_bill_pkg.html,v 1.1 1999-08-04 12:13:27 ivan Exp $
+
+<P>
+<HR>
+<H1><A NAME="BUGS">BUGS</A></H1>
+<P>
+<HR>
+<H1><A NAME="SEE_ALSO">SEE ALSO</A></H1>
+<P>
+<A HREF="../FS/Record.html">FS::Record</A>, <A HREF="../FS/cust_bill.html">FS::cust_bill</A>, <A HREF="../FS/cust_pkg.html">FS::cust_pkg</A>, <A HREF="../FS/cust_main.html">FS::cust_main</A>, schema.html from the base documentation.
+
+</BODY>
+
+</HTML>

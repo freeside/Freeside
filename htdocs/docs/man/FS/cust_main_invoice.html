@@ -1,0 +1,128 @@
+<HTML>
+<HEAD>
+<TITLE>FS::cust_main_invoice - Object methods for cust_main_invoice records</TITLE>
+<LINK REV="made" HREF="mailto:ivan@rootwood.sisd.com">
+</HEAD>
+
+<BODY>
+
+<!-- INDEX BEGIN -->
+
+<UL>
+
+	<LI><A HREF="#NAME">NAME</A>
+	<LI><A HREF="#SYNOPSIS">SYNOPSIS</A>
+	<LI><A HREF="#DESCRIPTION">DESCRIPTION</A>
+	<LI><A HREF="#METHODS">METHODS</A>
+	<LI><A HREF="#VERSION">VERSION</A>
+	<LI><A HREF="#BUGS">BUGS</A>
+	<LI><A HREF="#SEE_ALSO">SEE ALSO</A>
+</UL>
+<!-- INDEX END -->
+
+<HR>
+<P>
+<H1><A NAME="NAME">NAME</A></H1>
+<P>
+FS::cust_main_invoice - Object methods for cust_main_invoice records
+
+<P>
+<HR>
+<H1><A NAME="SYNOPSIS">SYNOPSIS</A></H1>
+<P>
+<PRE>  use FS::cust_main_invoice;
+</PRE>
+<P>
+<PRE>  $record = new FS::cust_main_invoice \%hash;
+  $record = new FS::cust_main_invoice { 'column' =&gt; 'value' };
+</PRE>
+<P>
+<PRE>  $error = $record-&gt;insert;
+</PRE>
+<P>
+<PRE>  $error = $new_record-&gt;replace($old_record);
+</PRE>
+<P>
+<PRE>  $error = $record-&gt;delete;
+</PRE>
+<P>
+<PRE>  $error = $record-&gt;check;
+</PRE>
+<P>
+<PRE>  $email_address = $record-&gt;address;
+</PRE>
+<P>
+<HR>
+<H1><A NAME="DESCRIPTION">DESCRIPTION</A></H1>
+<P>
+An FS::cust_main_invoice object represents an invoice destination.
+FS::cust_main_invoice inherits from FS::Record. The following fields are
+currently supported:
+
+<DL>
+<DT><STRONG><A NAME="item_destnum">destnum - primary key</A></STRONG><DD>
+<DT><STRONG><A NAME="item_custnum">custnum - customer (see FS::cust_main)</A></STRONG><DD>
+<DT><STRONG><A NAME="item_dest">dest - Invoice destination: If numeric, a &lt;a href=&quot;#svc_acct&quot;&gt;svcnum&lt;/a&gt;, if string, a literal email address, or `POST' to enable mailing (the default if no cust_main_invoice records exist)</A></STRONG><DD>
+</DL>
+<P>
+<HR>
+<H1><A NAME="METHODS">METHODS</A></H1>
+<DL>
+<DT><STRONG><A NAME="item_new">new HASHREF</A></STRONG><DD>
+<P>
+Creates a new invoice destination. To add the invoice destination to the
+database, see <A HREF="#insert">insert</A>.
+
+<P>
+Note that this stores the hash reference, not a distinct copy of the hash
+it points to. You can ask the object for a copy with the <EM>hash</EM> method.
+
+<DT><STRONG><A NAME="item_insert">insert</A></STRONG><DD>
+<P>
+Adds this record to the database. If there is an error, returns the error,
+otherwise returns false.
+
+<DT><STRONG><A NAME="item_delete">delete</A></STRONG><DD>
+<P>
+Delete this record from the database.
+
+<DT><STRONG><A NAME="item_replace">replace OLD_RECORD</A></STRONG><DD>
+<P>
+Replaces the OLD_RECORD with this one in the database. If there is an
+error, returns the error, otherwise returns false.
+
+<DT><STRONG><A NAME="item_check">check</A></STRONG><DD>
+<P>
+Checks all fields to make sure this is a valid invoice destination. If
+there is an error, returns the error, otherwise returns false. Called by
+the insert and repalce methods.
+
+<DT><STRONG><A NAME="item_checkdest">checkdest</A></STRONG><DD>
+<P>
+Checks the dest field only.
+
+<DT><STRONG><A NAME="item_address">address</A></STRONG><DD>
+<P>
+Returns the literal email address for this record (or `POST').
+
+</DL>
+<P>
+<HR>
+<H1><A NAME="VERSION">VERSION</A></H1>
+<P>
+$Id: cust_main_invoice.html,v 1.1 1999-08-04 12:13:27 ivan Exp $
+
+<P>
+<HR>
+<H1><A NAME="BUGS">BUGS</A></H1>
+<P>
+<HR>
+<H1><A NAME="SEE_ALSO">SEE ALSO</A></H1>
+<P>
+<A HREF="../FS/Record.html">FS::Record</A>, <A HREF="../FS/cust_main.html">FS::cust_main</A>
+
+
+
+</BODY>
+
+</HTML>

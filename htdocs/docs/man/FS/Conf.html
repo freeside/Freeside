@@ -1,0 +1,94 @@
+<HTML>
+<HEAD>
+<TITLE>FS::Conf - Read access to Freeside configuration values</TITLE>
+<LINK REV="made" HREF="mailto:ivan@rootwood.sisd.com">
+</HEAD>
+
+<BODY>
+
+<!-- INDEX BEGIN -->
+
+<UL>
+
+	<LI><A HREF="#NAME">NAME</A>
+	<LI><A HREF="#SYNOPSIS">SYNOPSIS</A>
+	<LI><A HREF="#DESCRIPTION">DESCRIPTION</A>
+	<LI><A HREF="#METHODS">METHODS</A>
+	<LI><A HREF="#BUGS">BUGS</A>
+	<LI><A HREF="#SEE_ALSO">SEE ALSO</A>
+</UL>
+<!-- INDEX END -->
+
+<HR>
+<P>
+<H1><A NAME="NAME">NAME</A></H1>
+<P>
+FS::Conf - Read access to Freeside configuration values
+
+<P>
+<HR>
+<H1><A NAME="SYNOPSIS">SYNOPSIS</A></H1>
+<P>
+<PRE>  use FS::Conf;
+</PRE>
+<P>
+<PRE>  $conf = new FS::Conf &quot;/config/directory&quot;;
+</PRE>
+<P>
+<PRE>  $FS::Conf::default_dir = &quot;/config/directory&quot;;
+  $conf = new FS::Conf;
+</PRE>
+<P>
+<PRE>  $dir = $conf-&gt;dir;
+</PRE>
+<P>
+<PRE>  $value = $conf-&gt;config('key');
+  @list  = $conf-&gt;config('key');
+  $bool  = $conf-&gt;exists('key');
+</PRE>
+<P>
+<HR>
+<H1><A NAME="DESCRIPTION">DESCRIPTION</A></H1>
+<P>
+Read access to Freeside configuration values. Keys currently map to
+filenames, but this may change in the future.
+
+<P>
+<HR>
+<H1><A NAME="METHODS">METHODS</A></H1>
+<DL>
+<DT><STRONG><A NAME="item_new">new [ DIRECTORY ]</A></STRONG><DD>
+<P>
+Create a new configuration object. A directory arguement is required if
+$FS::Conf::default_dir has not been set.
+
+<DT><STRONG><A NAME="item_dir">dir</A></STRONG><DD>
+<P>
+Returns the directory.
+
+<DT><STRONG><A NAME="item_config">config</A></STRONG><DD>
+<P>
+Returns the configuration value or values (depending on context) for key.
+
+<DT><STRONG><A NAME="item_exists">exists</A></STRONG><DD>
+<P>
+Returns true if the specified key exists, even if the corresponding value
+is undefined.
+
+</DL>
+<P>
+<HR>
+<H1><A NAME="BUGS">BUGS</A></H1>
+<P>
+Write access (with locking) should be implemented.
+
+<P>
+<HR>
+<H1><A NAME="SEE_ALSO">SEE ALSO</A></H1>
+<P>
+config.html from the base documentation contains a list of configuration
+files.
+
+</BODY>
+
+</HTML>

@@ -1,0 +1,126 @@
+<HTML>
+<HEAD>
+<TITLE>FS::cust_credit - Object methods for cust_credit records</TITLE>
+<LINK REV="made" HREF="mailto:ivan@rootwood.sisd.com">
+</HEAD>
+
+<BODY>
+
+<!-- INDEX BEGIN -->
+
+<UL>
+
+	<LI><A HREF="#NAME">NAME</A>
+	<LI><A HREF="#SYNOPSIS">SYNOPSIS</A>
+	<LI><A HREF="#DESCRIPTION">DESCRIPTION</A>
+	<LI><A HREF="#METHODS">METHODS</A>
+	<LI><A HREF="#VERSION">VERSION</A>
+	<LI><A HREF="#BUGS">BUGS</A>
+	<LI><A HREF="#SEE_ALSO">SEE ALSO</A>
+</UL>
+<!-- INDEX END -->
+
+<HR>
+<P>
+<H1><A NAME="NAME">NAME</A></H1>
+<P>
+FS::cust_credit - Object methods for cust_credit records
+
+<P>
+<HR>
+<H1><A NAME="SYNOPSIS">SYNOPSIS</A></H1>
+<P>
+<PRE>  use FS::cust_credit;
+</PRE>
+<P>
+<PRE>  $record = new FS::cust_credit \%hash;
+  $record = new FS::cust_credit { 'column' =&gt; 'value' };
+</PRE>
+<P>
+<PRE>  $error = $record-&gt;insert;
+</PRE>
+<P>
+<PRE>  $error = $new_record-&gt;replace($old_record);
+</PRE>
+<P>
+<PRE>  $error = $record-&gt;delete;
+</PRE>
+<P>
+<PRE>  $error = $record-&gt;check;
+</PRE>
+<P>
+<HR>
+<H1><A NAME="DESCRIPTION">DESCRIPTION</A></H1>
+<P>
+An FS::cust_credit object represents a credit. FS::cust_credit inherits
+from FS::Record. The following fields are currently supported:
+
+<DL>
+<DT><STRONG><A NAME="item_crednum">crednum - primary key (assigned automatically for new credits)</A></STRONG><DD>
+<DT><STRONG><A NAME="item_custnum">custnum - customer (see FS::cust_main)</A></STRONG><DD>
+<DT><STRONG><A NAME="item_amount">amount - amount of the credit</A></STRONG><DD>
+<DT><STRONG><A NAME="item_credited">credited - how much of this credit that is still outstanding, which is
+amount minus all refunds (see FS::cust_refund).</A></STRONG><DD>
+<DT><STRONG><A NAME="item__date">_date - specified as a UNIX timestamp; see perlfunc/&quot;time&quot;.  Also see
+Time::Local and Date::Parse for conversion functions.</A></STRONG><DD>
+<DT><STRONG><A NAME="item_otaker">otaker - order taker (assigned automatically, see FS::UID)</A></STRONG><DD>
+<DT><STRONG><A NAME="item_reason">reason - text</A></STRONG><DD>
+</DL>
+<P>
+<HR>
+<H1><A NAME="METHODS">METHODS</A></H1>
+<DL>
+<DT><STRONG><A NAME="item_new">new HASHREF</A></STRONG><DD>
+<P>
+Creates a new credit. To add the credit to the database, see <A HREF="#insert">insert</A>.
+
+<DT><STRONG><A NAME="item_insert">insert</A></STRONG><DD>
+<P>
+Adds this credit to the database (``Posts'' the credit). If there is an
+error, returns the error, otherwise returns false.
+
+<P>
+When adding new invoices, credited must be amount (or null, in which case
+it is automatically set to amount).
+
+<DT><STRONG><A NAME="item_delete">delete</A></STRONG><DD>
+<P>
+Currently unimplemented.
+
+<DT><STRONG><A NAME="item_replace">replace OLD_RECORD</A></STRONG><DD>
+<P>
+Replaces the OLD_RECORD with this one in the database. If there is an
+error, returns the error, otherwise returns false.
+
+<P>
+Only credited may be changed. Credited is normally updated by creating and
+inserting a refund (see <A HREF="../FS/cust_refund.html">FS::cust_refund</A>).
+
+<DT><STRONG><A NAME="item_check">check</A></STRONG><DD>
+<P>
+Checks all fields to make sure this is a valid credit. If there is an
+error, returns the error, otherwise returns false. Called by the insert and
+replace methods.
+
+</DL>
+<P>
+<HR>
+<H1><A NAME="VERSION">VERSION</A></H1>
+<P>
+$Id: cust_credit.html,v 1.1 1999-08-04 12:13:27 ivan Exp $
+
+<P>
+<HR>
+<H1><A NAME="BUGS">BUGS</A></H1>
+<P>
+The delete method.
+
+<P>
+<HR>
+<H1><A NAME="SEE_ALSO">SEE ALSO</A></H1>
+<P>
+<A HREF="../FS/Record.html">FS::Record</A>, <A HREF="../FS/cust_refund.html">FS::cust_refund</A>, <A HREF="../FS/cust_bill.html">FS::cust_bill</A>, schema.html from the base documentation.
+
+</BODY>
+
+</HTML>

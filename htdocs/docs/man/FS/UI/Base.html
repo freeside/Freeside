@@ -1,0 +1,117 @@
+<HTML>
+<HEAD>
+<TITLE>FS::UI::Base - Base class for all user-interface objects</TITLE>
+<LINK REV="made" HREF="mailto:ivan@rootwood.sisd.com">
+</HEAD>
+
+<BODY>
+
+<!-- INDEX BEGIN -->
+
+<UL>
+
+	<LI><A HREF="#NAME">NAME</A>
+	<LI><A HREF="#SYNOPSIS">SYNOPSIS</A>
+	<LI><A HREF="#DESCRIPTION">DESCRIPTION</A>
+	<LI><A HREF="#METHODS">METHODS</A>
+	<LI><A HREF="#VERSION">VERSION</A>
+	<LI><A HREF="#BUGS">BUGS</A>
+	<LI><A HREF="#SEE_ALSO">SEE ALSO</A>
+	<LI><A HREF="#HISTORY">HISTORY</A>
+</UL>
+<!-- INDEX END -->
+
+<HR>
+<P>
+<H1><A NAME="NAME">NAME</A></H1>
+<P>
+FS::UI::Base - Base class for all user-interface objects
+
+<P>
+<HR>
+<H1><A NAME="SYNOPSIS">SYNOPSIS</A></H1>
+<P>
+<PRE>  use FS::UI::SomeInterface;
+  use FS::UI::some_table;
+</PRE>
+<P>
+<PRE>  $interface = new FS::UI::some_table;
+</PRE>
+<P>
+<PRE>  $error = $interface-&gt;browse;
+  $error = $interface-&gt;search;
+  $error = $interface-&gt;view;
+  $error = $interface-&gt;edit;
+  $error = $interface-&gt;process;
+</PRE>
+<P>
+<HR>
+<H1><A NAME="DESCRIPTION">DESCRIPTION</A></H1>
+<P>
+An FS::UI::Base object represents a user interface object. FS::UI::Base is
+intended as a base class for table-specfic classes to inherit from, i.e.
+FS::UI::cust_main. The simplest case, which will provide a default UI for
+your new table, is as follows:
+
+<P>
+<PRE>  package FS::UI::table_name;
+  use vars qw ( @ISA );
+  use FS::UI::Base;
+  @ISA = qw( FS::UI::Base );
+  sub db_table { 'table_name'; }
+</PRE>
+<P>
+Currently available interfaces are: FS::UI::Gtk, an X-Windows UI
+implemented using the Gtk+ toolkit FS::UI::CGI, a web interface implemented
+using CGI.pm, etc.
+
+<P>
+<HR>
+<H1><A NAME="METHODS">METHODS</A></H1>
+<DL>
+<DT><STRONG><A NAME="item_new">new</A></STRONG><DD>
+<DT><STRONG><A NAME="item_browse">browse</A></STRONG><DD>
+<DT><STRONG><A NAME="item_title">title</A></STRONG><DD>
+<DT><STRONG><A NAME="item_addwidget">addwidget</A></STRONG><DD>
+</DL>
+<P>
+<HR>
+<H1><A NAME="VERSION">VERSION</A></H1>
+<P>
+$Id: Base.html,v 1.1 1999-08-04 12:13:27 ivan Exp $
+
+<P>
+<HR>
+<H1><A NAME="BUGS">BUGS</A></H1>
+<P>
+This documentation is incomplete.
+
+<P>
+There should be some sort of per-(freeside)-user preferences and the
+ability for specific FS::UI:: modules to put their own values there as
+well.
+
+<P>
+<HR>
+<H1><A NAME="SEE_ALSO">SEE ALSO</A></H1>
+<P>
+<A HREF="../../FS/UI/Gtk.html">FS::UI::Gtk</A>, <A HREF="../../FS/UI/CGI.html">FS::UI::CGI</A>
+
+
+
+<P>
+<HR>
+<H1><A NAME="HISTORY">HISTORY</A></H1>
+<P>
+$Log: Base.html,v $
+Revision 1.1  1999-08-04 12:13:27  ivan
+new HTML manpages
+ Revision 1.1 1999/08/04 09:03:53 ivan initial checkin of
+module files for proper perl installation
+
+<P>
+Revision 1.1 1999/01/20 09:30:36 ivan skeletal cross-UI UI code.
+
+</BODY>
+
+</HTML>

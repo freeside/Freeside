@@ -1,0 +1,115 @@
+<HTML>
+<HEAD>
+<TITLE>FS::UI::CGI - Base class for CGI user-interface objects</TITLE>
+<LINK REV="made" HREF="mailto:ivan@rootwood.sisd.com">
+</HEAD>
+
+<BODY>
+
+<!-- INDEX BEGIN -->
+
+<UL>
+
+	<LI><A HREF="#NAME">NAME</A>
+	<LI><A HREF="#SYNOPSIS">SYNOPSIS</A>
+	<LI><A HREF="#DESCRIPTION">DESCRIPTION</A>
+	<LI><A HREF="#METHODS">METHODS</A>
+	<LI><A HREF="#VERSION">VERSION</A>
+	<LI><A HREF="#BUGS">BUGS</A>
+	<LI><A HREF="#SEE_ALSO">SEE ALSO</A>
+	<LI><A HREF="#HISTORY">HISTORY</A>
+</UL>
+<!-- INDEX END -->
+
+<HR>
+<P>
+<H1><A NAME="NAME">NAME</A></H1>
+<P>
+FS::UI::CGI - Base class for CGI user-interface objects
+
+<P>
+<HR>
+<H1><A NAME="SYNOPSIS">SYNOPSIS</A></H1>
+<P>
+<PRE>  use FS::UI::CGI;
+  use FS::UI::some_table;
+</PRE>
+<P>
+<PRE>  $interface = new FS::UI::some_table;
+</PRE>
+<P>
+<PRE>  $error = $interface-&gt;browse;
+  $error = $interface-&gt;search;
+  $error = $interface-&gt;view;
+  $error = $interface-&gt;edit;
+  $error = $interface-&gt;process;
+</PRE>
+<P>
+<HR>
+<H1><A NAME="DESCRIPTION">DESCRIPTION</A></H1>
+<P>
+An FS::UI::CGI object represents a CGI interface object.
+
+<P>
+<HR>
+<H1><A NAME="METHODS">METHODS</A></H1>
+<DL>
+<DT><STRONG><A NAME="item_new">new</A></STRONG><DD>
+<DT><STRONG><A NAME="item__header">_header</A></STRONG><DD>
+<DT><STRONG><A NAME="item__footer">_footer</A></STRONG><DD>
+<DT><STRONG><A NAME="item_interface">interface</A></STRONG><DD>
+<P>
+Returns the string `CGI'. Useful for the author of a table-specific UI
+class to conditionally specify certain behaviour.
+
+</DL>
+<P>
+<HR>
+<H1><A NAME="VERSION">VERSION</A></H1>
+<P>
+$Id: CGI.html,v 1.1 1999-08-04 12:13:27 ivan Exp $
+
+<P>
+<HR>
+<H1><A NAME="BUGS">BUGS</A></H1>
+<P>
+This documentation is incomplete.
+
+<P>
+In _Tableborder, headers should be links that sort on their fields.
+
+<P>
+_Link uses a constant <CODE>$BASE_URL</CODE>
+
+<P>
+_Link passes the arguments as a manually-constructed GET string instead of
+POSTing, for compatability while the web interface is upgraded. Once this
+is done it should pass arguements properly (i.e. as a POST, 8-bit clean)
+
+<P>
+Still some small bits of widget code same as FS::UI::Gtk.
+
+<P>
+<HR>
+<H1><A NAME="SEE_ALSO">SEE ALSO</A></H1>
+<P>
+<A HREF="../../FS/UI/Base.html">FS::UI::Base</A>
+
+
+
+<P>
+<HR>
+<H1><A NAME="HISTORY">HISTORY</A></H1>
+<P>
+$Log: CGI.html,v $
+Revision 1.1  1999-08-04 12:13:27  ivan
+new HTML manpages
+ Revision 1.1 1999/08/04 09:03:53 ivan initial checkin of
+module files for proper perl installation
+
+<P>
+Revision 1.1 1999/01/20 09:30:36 ivan skeletal cross-UI UI code.
+
+</BODY>
+
+</HTML>

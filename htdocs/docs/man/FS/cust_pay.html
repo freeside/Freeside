@@ -1,0 +1,116 @@
+<HTML>
+<HEAD>
+<TITLE>FS::cust_pay - Object methods for cust_pay objects</TITLE>
+<LINK REV="made" HREF="mailto:ivan@rootwood.sisd.com">
+</HEAD>
+
+<BODY>
+
+<!-- INDEX BEGIN -->
+
+<UL>
+
+	<LI><A HREF="#NAME">NAME</A>
+	<LI><A HREF="#SYNOPSIS">SYNOPSIS</A>
+	<LI><A HREF="#DESCRIPTION">DESCRIPTION</A>
+	<LI><A HREF="#METHODS">METHODS</A>
+	<LI><A HREF="#VERSION">VERSION</A>
+	<LI><A HREF="#BUGS">BUGS</A>
+	<LI><A HREF="#SEE_ALSO">SEE ALSO</A>
+</UL>
+<!-- INDEX END -->
+
+<HR>
+<P>
+<H1><A NAME="NAME">NAME</A></H1>
+<P>
+FS::cust_pay - Object methods for cust_pay objects
+
+<P>
+<HR>
+<H1><A NAME="SYNOPSIS">SYNOPSIS</A></H1>
+<P>
+<PRE>  use FS::cust_pay;
+</PRE>
+<P>
+<PRE>  $record = new FS::cust_pay \%hash;
+  $record = new FS::cust_pay { 'column' =&gt; 'value' };
+</PRE>
+<P>
+<PRE>  $error = $record-&gt;insert;
+</PRE>
+<P>
+<PRE>  $error = $new_record-&gt;replace($old_record);
+</PRE>
+<P>
+<PRE>  $error = $record-&gt;delete;
+</PRE>
+<P>
+<PRE>  $error = $record-&gt;check;
+</PRE>
+<P>
+<HR>
+<H1><A NAME="DESCRIPTION">DESCRIPTION</A></H1>
+<P>
+An FS::cust_pay object represents a payment. FS::cust_pay inherits from
+FS::Record. The following fields are currently supported:
+
+<DL>
+<DT><STRONG><A NAME="item_paynum">paynum - primary key (assigned automatically for new payments)</A></STRONG><DD>
+<DT><STRONG><A NAME="item_invnum">invnum - Invoice (see FS::cust_bill)</A></STRONG><DD>
+<DT><STRONG><A NAME="item_paid">paid - Amount of this payment</A></STRONG><DD>
+<DT><STRONG><A NAME="item__date">_date - specified as a UNIX timestamp; see perlfunc/&quot;time&quot;.  Also see
+Time::Local and Date::Parse for conversion functions.</A></STRONG><DD>
+<DT><STRONG><A NAME="item_payby">payby - `CARD' (credit cards), `BILL' (billing), or `COMP' (free)</A></STRONG><DD>
+<DT><STRONG><A NAME="item_payinfo">payinfo - card number, P.O.#, or comp issuer (4-8 lowercase alphanumerics; think username)</A></STRONG><DD>
+<DT><STRONG><A NAME="item_paybatch">paybatch - text field for tracking card processing</A></STRONG><DD>
+</DL>
+<P>
+<HR>
+<H1><A NAME="METHODS">METHODS</A></H1>
+<DL>
+<DT><STRONG><A NAME="item_new">new HASHREF</A></STRONG><DD>
+<P>
+Creates a new payment. To add the payment to the databse, see <A HREF="#insert">insert</A>.
+
+<DT><STRONG><A NAME="item_insert">insert</A></STRONG><DD>
+<P>
+Adds this payment to the databse, and updates the invoice (see
+<A HREF="../FS/cust_bill.html">FS::cust_bill</A>).
+
+<DT><STRONG><A NAME="item_delete">delete</A></STRONG><DD>
+<P>
+Currently unimplemented (accounting reasons).
+
+<DT><STRONG><A NAME="item_replace">replace OLD_RECORD</A></STRONG><DD>
+<P>
+Currently unimplemented (accounting reasons).
+
+<DT><STRONG><A NAME="item_check">check</A></STRONG><DD>
+<P>
+Checks all fields to make sure this is a valid payment. If there is an
+error, returns the error, otherwise returns false. Called by the insert
+method.
+
+</DL>
+<P>
+<HR>
+<H1><A NAME="VERSION">VERSION</A></H1>
+<P>
+$Id: cust_pay.html,v 1.1 1999-08-04 12:13:27 ivan Exp $
+
+<P>
+<HR>
+<H1><A NAME="BUGS">BUGS</A></H1>
+<P>
+Delete and replace methods.
+
+<P>
+<HR>
+<H1><A NAME="SEE_ALSO">SEE ALSO</A></H1>
+<P>
+<A HREF="../FS/Record.html">FS::Record</A>, <A HREF="../FS/cust_bill.html">FS::cust_bill</A>, schema.html from the base documentation.
+
+</BODY>
+
+</HTML>

@@ -1,0 +1,196 @@
+<HTML>
+<HEAD>
+<TITLE>FS::svc_domain - Object methods for svc_domain records</TITLE>
+<LINK REV="made" HREF="mailto:ivan@rootwood.sisd.com">
+</HEAD>
+
+<BODY>
+
+<!-- INDEX BEGIN -->
+
+<UL>
+
+	<LI><A HREF="#NAME">NAME</A>
+	<LI><A HREF="#SYNOPSIS">SYNOPSIS</A>
+	<LI><A HREF="#DESCRIPTION">DESCRIPTION</A>
+	<LI><A HREF="#METHODS">METHODS</A>
+	<LI><A HREF="#VERSION">VERSION</A>
+	<LI><A HREF="#BUGS">BUGS</A>
+	<LI><A HREF="#SEE_ALSO">SEE ALSO</A>
+</UL>
+<!-- INDEX END -->
+
+<HR>
+<P>
+<H1><A NAME="NAME">NAME</A></H1>
+<P>
+FS::svc_domain - Object methods for svc_domain records
+
+<P>
+<HR>
+<H1><A NAME="SYNOPSIS">SYNOPSIS</A></H1>
+<P>
+<PRE>  use FS::svc_domain;
+</PRE>
+<P>
+<PRE>  $record = new FS::svc_domain \%hash;
+  $record = new FS::svc_domain { 'column' =&gt; 'value' };
+</PRE>
+<P>
+<PRE>  $error = $record-&gt;insert;
+</PRE>
+<P>
+<PRE>  $error = $new_record-&gt;replace($old_record);
+</PRE>
+<P>
+<PRE>  $error = $record-&gt;delete;
+</PRE>
+<P>
+<PRE>  $error = $record-&gt;check;
+</PRE>
+<P>
+<PRE>  $error = $record-&gt;suspend;
+</PRE>
+<P>
+<PRE>  $error = $record-&gt;unsuspend;
+</PRE>
+<P>
+<PRE>  $error = $record-&gt;cancel;
+</PRE>
+<P>
+<HR>
+<H1><A NAME="DESCRIPTION">DESCRIPTION</A></H1>
+<P>
+An FS::svc_domain object represents a domain. FS::svc_domain inherits from
+FS::svc_Common. The following fields are currently supported:
+
+<DL>
+<DT><STRONG><A NAME="item_svcnum">svcnum - primary key (assigned automatically for new accounts)</A></STRONG><DD>
+<DT><STRONG><A NAME="item_domain">domain</A></STRONG><DD>
+</DL>
+<P>
+<HR>
+<H1><A NAME="METHODS">METHODS</A></H1>
+<DL>
+<DT><STRONG><A NAME="item_new">new HASHREF</A></STRONG><DD>
+<P>
+Creates a new domain. To add the domain to the database, see <A HREF="#insert">insert</A>.
+
+<DT><STRONG><A NAME="item_insert">insert</A></STRONG><DD>
+<P>
+Adds this domain to the database. If there is an error, returns the error,
+otherwise returns false.
+
+<P>
+The additional fields <EM>pkgnum</EM> and <EM>svcpart</EM> (see <A HREF="../FS/cust_svc.html">FS::cust_svc</A>) should be defined. An FS::cust_svc record will be created and inserted.
+
+<P>
+The additional field <EM>action</EM> should be set to <EM>N</EM> for new domains or <EM>M</EM>
+for transfers.
+
+<P>
+A registration or transfer email will be submitted unless
+$FS::svc_domain::whois_hack is true.
+
+<P>
+The additional field <EM>email</EM> can be used to manually set the admin contact email address on this email.
+Otherwise, the svc_acct records for this package (see <A HREF="../FS/cust_pkg.html">FS::cust_pkg</A>) are searched. If there is exactly one svc_acct record in the same
+package, it is automatically used. Otherwise an error is returned.
+
+<DT><STRONG><A NAME="item_delete">delete</A></STRONG><DD>
+<P>
+Deletes this domain from the database. If there is an error, returns the
+error, otherwise returns false.
+
+<P>
+The corresponding FS::cust_svc record will be deleted as well.
+
+<DT><STRONG><A NAME="item_replace">replace OLD_RECORD</A></STRONG><DD>
+<P>
+Replaces OLD_RECORD with this one in the database. If there is an error,
+returns the error, otherwise returns false.
+
+<DT><STRONG><A NAME="item_suspend">suspend</A></STRONG><DD>
+<P>
+Just returns false (no error) for now.
+
+<P>
+Called by the suspend method of FS::cust_pkg (see <A HREF="../FS/cust_pkg.html">FS::cust_pkg</A>).
+
+<DT><STRONG><A NAME="item_unsuspend">unsuspend</A></STRONG><DD>
+<P>
+Just returns false (no error) for now.
+
+<P>
+Called by the unsuspend method of FS::cust_pkg (see <A HREF="../FS/cust_pkg.html">FS::cust_pkg</A>).
+
+<DT><STRONG><A NAME="item_cancel">cancel</A></STRONG><DD>
+<P>
+Just returns false (no error) for now.
+
+<P>
+Called by the cancel method of FS::cust_pkg (see <A HREF="../FS/cust_pkg.html">FS::cust_pkg</A>).
+
+<DT><STRONG><A NAME="item_check">check</A></STRONG><DD>
+<P>
+Checks all fields to make sure this is a valid domain. If there is an
+error, returns the error, otherwise returns false. Called by the insert and
+replace methods.
+
+<P>
+Sets any fixed values; see <A HREF="../FS/part_svc.html">FS::part_svc</A>.
+
+<DT><STRONG><A NAME="item_whois">whois</A></STRONG><DD>
+<P>
+Returns the Net::Whois object corresponding to this domain, or undef if the
+domain is not found in whois.
+
+<P>
+(If $FS::svc_domain::whois_hack is true, returns that in all cases
+instead.)
+
+<DT><STRONG><A NAME="item__whois">_whois</A></STRONG><DD>
+<P>
+Depriciated.
+
+<DT><STRONG><A NAME="item_submit_internic">submit_internic</A></STRONG><DD>
+<P>
+Submits a registration email for this domain.
+
+</DL>
+<P>
+<HR>
+<H1><A NAME="VERSION">VERSION</A></H1>
+<P>
+$Id: svc_domain.html,v 1.1 1999-08-04 12:13:27 ivan Exp $
+
+<P>
+<HR>
+<H1><A NAME="BUGS">BUGS</A></H1>
+<P>
+All BIND/DNS fields should be included (and exported).
+
+<P>
+Delete doesn't send a registration template.
+
+<P>
+All registries should be supported.
+
+<P>
+Should change action to a real field.
+
+<P>
+The <CODE>$recref</CODE> stuff in sub check should be cleaned up.
+
+<P>
+<HR>
+<H1><A NAME="SEE_ALSO">SEE ALSO</A></H1>
+<P>
+<A HREF="../FS/svc_Common.html">FS::svc_Common</A>, <A HREF="../FS/Record.html">FS::Record</A>, <A HREF="../FS/Conf.html">FS::Conf</A>, <A HREF="../FS/cust_svc.html">FS::cust_svc</A>,
+<A HREF="../FS/part_svc.html">FS::part_svc</A>, <A HREF="../FS/cust_pkg.html">FS::cust_pkg</A>, <A HREF="../FS/SSH.html">FS::SSH</A>, <A HREF="../Net/Whois.html">Net::Whois</A>, <EM>ssh</EM>,
+<EM>dot-qmail</EM>, schema.html from the base documentation, config.html from the base
+documentation.
+
+</BODY>
+
+</HTML>

@@ -1,0 +1,121 @@
+<HTML>
+<HEAD>
+<TITLE>FS::part_svc - Object methods for part_svc objects</TITLE>
+<LINK REV="made" HREF="mailto:ivan@rootwood.sisd.com">
+</HEAD>
+
+<BODY>
+
+<!-- INDEX BEGIN -->
+
+<UL>
+
+	<LI><A HREF="#NAME">NAME</A>
+	<LI><A HREF="#SYNOPSIS">SYNOPSIS</A>
+	<LI><A HREF="#DESCRIPTION">DESCRIPTION</A>
+	<LI><A HREF="#METHODS">METHODS</A>
+	<LI><A HREF="#VERSION">VERSION</A>
+	<LI><A HREF="#BUGS">BUGS</A>
+	<LI><A HREF="#SEE_ALSO">SEE ALSO</A>
+</UL>
+<!-- INDEX END -->
+
+<HR>
+<P>
+<H1><A NAME="NAME">NAME</A></H1>
+<P>
+FS::part_svc - Object methods for part_svc objects
+
+<P>
+<HR>
+<H1><A NAME="SYNOPSIS">SYNOPSIS</A></H1>
+<P>
+<PRE>  use FS::part_svc;
+</PRE>
+<P>
+<PRE>  $record = new FS::part_referral \%hash
+  $record = new FS::part_referral { 'column' =&gt; 'value' };
+</PRE>
+<P>
+<PRE>  $error = $record-&gt;insert;
+</PRE>
+<P>
+<PRE>  $error = $new_record-&gt;replace($old_record);
+</PRE>
+<P>
+<PRE>  $error = $record-&gt;delete;
+</PRE>
+<P>
+<PRE>  $error = $record-&gt;check;
+</PRE>
+<P>
+<HR>
+<H1><A NAME="DESCRIPTION">DESCRIPTION</A></H1>
+<P>
+An FS::part_svc represents a service definition. FS::part_svc inherits from
+FS::Record. The following fields are currently supported:
+
+<DL>
+<DT><STRONG><A NAME="item_svcpart">svcpart - primary key (assigned automatically for new service definitions)</A></STRONG><DD>
+<DT><STRONG><A NAME="item_svc">svc - text name of this service definition</A></STRONG><DD>
+<DT><STRONG><A NAME="item_svcdb">svcdb - table used for this service.  See FS::svc_acct,
+FS::svc_domain, and FS::svc_acct_sm, among others.</A></STRONG><DD>
+<DT><STRONG><A NAME="item_svcdb_field">svcdb__field - Default or fixed value for field in svcdb.</A></STRONG><DD>
+<DT><STRONG><A NAME="item_svcdb_field_flag">svcdb__field_flag - defines svcdb__field action: null, `D' for default, or `F' for fixed</A></STRONG><DD>
+</DL>
+<P>
+<HR>
+<H1><A NAME="METHODS">METHODS</A></H1>
+<DL>
+<DT><STRONG><A NAME="item_new">new HASHREF</A></STRONG><DD>
+<P>
+Creates a new service definition. To add the service definition to the
+database, see <A HREF="#insert">insert</A>.
+
+<DT><STRONG><A NAME="item_insert">insert</A></STRONG><DD>
+<P>
+Adds this service definition to the database. If there is an error, returns
+the error, otherwise returns false.
+
+<DT><STRONG><A NAME="item_delete">delete</A></STRONG><DD>
+<P>
+Currently unimplemented.
+
+<DT><STRONG><A NAME="item_replace">replace OLD_RECORD</A></STRONG><DD>
+<P>
+Replaces OLD_RECORD with this one in the database. If there is an error,
+returns the error, otherwise returns false.
+
+<DT><STRONG><A NAME="item_check">check</A></STRONG><DD>
+<P>
+Checks all fields to make sure this is a valid service definition. If there
+is an error, returns the error, otherwise returns false. Called by the
+insert and replace methods.
+
+</DL>
+<P>
+<HR>
+<H1><A NAME="VERSION">VERSION</A></H1>
+<P>
+$Id: part_svc.html,v 1.1 1999-08-04 12:13:27 ivan Exp $
+
+<P>
+<HR>
+<H1><A NAME="BUGS">BUGS</A></H1>
+<P>
+Delete is unimplemented.
+
+<P>
+The list of svc_* tables is hardcoded. When svc_acct_pop is renamed, this
+should be fixed.
+
+<P>
+<HR>
+<H1><A NAME="SEE_ALSO">SEE ALSO</A></H1>
+<P>
+<A HREF="../FS/Record.html">FS::Record</A>, <A HREF="../FS/part_pkg.html">FS::part_pkg</A>, <A HREF="../FS/pkg_svc.html">FS::pkg_svc</A>, <A HREF="../FS/cust_svc.html">FS::cust_svc</A>,
+<A HREF="../FS/svc_acct.html">FS::svc_acct</A>, <A HREF="../FS/svc_acct_sm.html">FS::svc_acct_sm</A>, <A HREF="../FS/svc_domain.html">FS::svc_domain</A>, schema.html from the base documentation.
+
+</BODY>
+
+</HTML>

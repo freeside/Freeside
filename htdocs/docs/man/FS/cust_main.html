@@ -1,0 +1,277 @@
+<HTML>
+<HEAD>
+<TITLE>FS::cust_main - Object methods for cust_main records</TITLE>
+<LINK REV="made" HREF="mailto:ivan@rootwood.sisd.com">
+</HEAD>
+
+<BODY>
+
+<!-- INDEX BEGIN -->
+
+<UL>
+
+	<LI><A HREF="#NAME">NAME</A>
+	<LI><A HREF="#SYNOPSIS">SYNOPSIS</A>
+	<LI><A HREF="#DESCRIPTION">DESCRIPTION</A>
+	<LI><A HREF="#METHODS">METHODS</A>
+	<LI><A HREF="#VERSION">VERSION</A>
+	<LI><A HREF="#BUGS">BUGS</A>
+	<LI><A HREF="#SEE_ALSO">SEE ALSO</A>
+</UL>
+<!-- INDEX END -->
+
+<HR>
+<P>
+<H1><A NAME="NAME">NAME</A></H1>
+<P>
+FS::cust_main - Object methods for cust_main records
+
+<P>
+<HR>
+<H1><A NAME="SYNOPSIS">SYNOPSIS</A></H1>
+<P>
+<PRE>  use FS::cust_main;
+</PRE>
+<P>
+<PRE>  $record = new FS::cust_main \%hash;
+  $record = new FS::cust_main { 'column' =&gt; 'value' };
+</PRE>
+<P>
+<PRE>  $error = $record-&gt;insert;
+</PRE>
+<P>
+<PRE>  $error = $new_record-&gt;replace($old_record);
+</PRE>
+<P>
+<PRE>  $error = $record-&gt;delete;
+</PRE>
+<P>
+<PRE>  $error = $record-&gt;check;
+</PRE>
+<P>
+<PRE>  @cust_pkg = $record-&gt;all_pkgs;
+</PRE>
+<P>
+<PRE>  @cust_pkg = $record-&gt;ncancelled_pkgs;
+</PRE>
+<P>
+<PRE>  $error = $record-&gt;bill;
+  $error = $record-&gt;bill %options;
+  $error = $record-&gt;bill 'time' =&gt; $time;
+</PRE>
+<P>
+<PRE>  $error = $record-&gt;collect;
+  $error = $record-&gt;collect %options;
+  $error = $record-&gt;collect 'invoice_time'   =&gt; $time,
+                            'batch_card'     =&gt; 'yes',
+                            'report_badcard' =&gt; 'yes',
+                          ;
+</PRE>
+<P>
+<HR>
+<H1><A NAME="DESCRIPTION">DESCRIPTION</A></H1>
+<P>
+An FS::cust_main object represents a customer. FS::cust_main inherits from
+FS::Record. The following fields are currently supported:
+
+<DL>
+<DT><STRONG><A NAME="item_custnum">custnum - primary key (assigned automatically for new customers)</A></STRONG><DD>
+<DT><STRONG><A NAME="item_agentnum">agentnum - agent (see FS::agent)</A></STRONG><DD>
+<DT><STRONG><A NAME="item_refnum">refnum - referral (see FS::part_referral)</A></STRONG><DD>
+<DT><STRONG><A NAME="item_first">first - name</A></STRONG><DD>
+<DT><STRONG><A NAME="item_last">last - name</A></STRONG><DD>
+<DT><STRONG><A NAME="item_ss">ss - social security number (optional)</A></STRONG><DD>
+<DT><STRONG><A NAME="item_company">company - (optional)</A></STRONG><DD>
+<DT><STRONG><A NAME="item_address1">address1</A></STRONG><DD>
+<DT><STRONG><A NAME="item_address2">address2 - (optional)</A></STRONG><DD>
+<DT><STRONG><A NAME="item_city">city</A></STRONG><DD>
+<DT><STRONG><A NAME="item_county">county - (optional, see FS::cust_main_county)</A></STRONG><DD>
+<DT><STRONG><A NAME="item_state">state - (see FS::cust_main_county)</A></STRONG><DD>
+<DT><STRONG><A NAME="item_zip">zip</A></STRONG><DD>
+<DT><STRONG><A NAME="item_country">country - (see FS::cust_main_county)</A></STRONG><DD>
+<DT><STRONG><A NAME="item_daytime">daytime - phone (optional)</A></STRONG><DD>
+<DT><STRONG><A NAME="item_night">night - phone (optional)</A></STRONG><DD>
+<DT><STRONG><A NAME="item_fax">fax - phone (optional)</A></STRONG><DD>
+<DT><STRONG><A NAME="item_payby">payby - `CARD' (credit cards), `BILL' (billing), or `COMP' (free)</A></STRONG><DD>
+<DT><STRONG><A NAME="item_payinfo">payinfo - card number, P.O.#, or comp issuer (4-8 lowercase alphanumerics; think username)</A></STRONG><DD>
+<DT><STRONG><A NAME="item_paydate">paydate - expiration date, mm/yyyy, m/yyyy, mm/yy or m/yy</A></STRONG><DD>
+<DT><STRONG><A NAME="item_payname">payname - name on card or billing name</A></STRONG><DD>
+<DT><STRONG><A NAME="item_tax">tax - tax exempt, empty or `Y'</A></STRONG><DD>
+<DT><STRONG><A NAME="item_otaker">otaker - order taker (assigned automatically, see FS::UID)</A></STRONG><DD>
+</DL>
+<P>
+<HR>
+<H1><A NAME="METHODS">METHODS</A></H1>
+<DL>
+<DT><STRONG><A NAME="item_new">new HASHREF</A></STRONG><DD>
+<P>
+Creates a new customer. To add the customer to the database, see <A HREF="#insert">insert</A>.
+
+<P>
+Note that this stores the hash reference, not a distinct copy of the hash
+it points to. You can ask the object for a copy with the <EM>hash</EM> method.
+
+<DT><STRONG><A NAME="item_insert">insert</A></STRONG><DD>
+<P>
+Adds this customer to the database. If there is an error, returns the
+error, otherwise returns false.
+
+<DT><STRONG><A NAME="item_delete">delete NEW_CUSTNUM</A></STRONG><DD>
+<P>
+This deletes the customer. If there is an error, returns the error,
+otherwise returns false.
+
+<P>
+This will completely remove all traces of the customer record. This is not
+what you want when a customer cancels service; for that, cancel all of the
+customer's packages (see <A HREF="../FS/cust_pkg.html#cancel">cancel</A>).
+
+<P>
+If the customer has any packages, you need to pass a new (valid) customer
+number for those packages to be transferred to.
+
+<P>
+You can't delete a customer with invoices (see <A HREF="../FS/cust_bill.html">FS::cust_bill</A>), or credits (see <A HREF="../FS/cust_credit.html">FS::cust_credit</A>).
+
+<DT><STRONG><A NAME="item_replace">replace OLD_RECORD</A></STRONG><DD>
+<P>
+Replaces the OLD_RECORD with this one in the database. If there is an
+error, returns the error, otherwise returns false.
+
+<DT><STRONG><A NAME="item_check">check</A></STRONG><DD>
+<P>
+Checks all fields to make sure this is a valid customer record. If there is
+an error, returns the error, otherwise returns false. Called by the insert
+and repalce methods.
+
+<DT><STRONG><A NAME="item_all_pkgs">all_pkgs</A></STRONG><DD>
+<P>
+Returns all packages (see <A HREF="../FS/cust_pkg.html">FS::cust_pkg</A>) for this customer.
+
+<DT><STRONG><A NAME="item_ncancelled_pkgs">ncancelled_pkgs</A></STRONG><DD>
+<P>
+Returns all non-cancelled packages (see <A HREF="../FS/cust_pkg.html">FS::cust_pkg</A>) for this customer.
+
+<DT><STRONG><A NAME="item_bill">bill OPTIONS</A></STRONG><DD>
+<P>
+Generates invoices (see <A HREF="../FS/cust_bill.html">FS::cust_bill</A>) for this customer. Usually used in conjunction with the collect method.
+
+<P>
+The only currently available option is `time', which bills the customer as
+if it were that time. It is specified as a UNIX timestamp; see
+<EM>perlfunc</EM>). Also see <A HREF="../Time/Local.html">Time::Local</A> and <A HREF="../Date/Parse.html">Date::Parse</A> for conversion functions.
+
+<P>
+If there is an error, returns the error, otherwise returns false.
+
+<DT><STRONG><A NAME="item_collect">collect OPTIONS</A></STRONG><DD>
+<P>
+(Attempt to) collect money for this customer's outstanding invoices (see
+<A HREF="../FS/cust_bill.html">FS::cust_bill</A>). Usually used after the bill method.
+
+<P>
+Depending on the value of `payby', this may print an invoice (`BILL'),
+charge a credit card (`CARD'), or just add any necessary (pseudo-)payment
+(`COMP').
+
+<P>
+If there is an error, returns the error, otherwise returns false.
+
+<P>
+Currently available options are:
+
+<P>
+invoice_time - Use this time when deciding when to print invoices and late
+notices on those invoices. The default is now. It is specified as a UNIX
+timestamp; see <EM>perlfunc</EM>). Also see <A HREF="../Time/Local.html">Time::Local</A> and <A HREF="../Date/Parse.html">Date::Parse</A>
+for conversion functions.
+
+<P>
+batch_card - Set this true to batch cards (see <A HREF=".././FS/cust_pay_batch.html#">the cust_pay_batch manpage</A>). By default, cards are processed immediately, which will generate an
+error if CyberCash is not installed.
+
+<P>
+report_badcard - Set this true if you want bad card transactions to return
+an error. By default, they don't.
+
+<DT><STRONG><A NAME="item_total_owed">total_owed</A></STRONG><DD>
+<P>
+Returns the total owed for this customer on all invoices (see <A HREF="../FS/cust_bill.html">FS::cust_bill</A>).
+
+<DT><STRONG><A NAME="item_total_credited">total_credited</A></STRONG><DD>
+<P>
+Returns the total credits (see <A HREF="../FS/cust_credit.html">FS::cust_credit</A>) for this customer.
+
+<DT><STRONG><A NAME="item_balance">balance</A></STRONG><DD>
+<P>
+Returns the balance for this customer (total owed minus total credited).
+
+<DT><STRONG><A NAME="item_invoicing_list">invoicing_list [ ARRAYREF ]</A></STRONG><DD>
+<P>
+If an arguement is given, sets these email addresses as invoice recipients
+(see <A HREF="../FS/cust_main_invoice.html">FS::cust_main_invoice</A>). Errors are not fatal and are not reported (except as warnings), so use
+check_invoicing_list first.
+
+<P>
+Returns a list of email addresses (with svcnum entries expanded).
+
+<P>
+Note: You can clear the invoicing list by passing an empty ARRAYREF. You
+can check it without disturbing anything by passing nothing.
+
+<P>
+This interface may change in the future.
+
+<DT><STRONG><A NAME="item_check_invoicing_list">check_invoicing_list ARRAYREF</A></STRONG><DD>
+<P>
+Checks these arguements as valid input for the invoicing_list method. If
+there is an error, returns the error, otherwise returns false.
+
+</DL>
+<P>
+<HR>
+<H1><A NAME="VERSION">VERSION</A></H1>
+<P>
+$Id: cust_main.html,v 1.1 1999-08-04 12:13:27 ivan Exp $
+
+<P>
+<HR>
+<H1><A NAME="BUGS">BUGS</A></H1>
+<P>
+The delete method.
+
+<P>
+The delete method should possibly take an FS::cust_main object reference
+instead of a scalar customer number.
+
+<P>
+Bill and collect options should probably be passed as references instead of
+a list.
+
+<P>
+CyberCash v2 forces us to define some variables in package main.
+
+<P>
+There should probably be a configuration file with a list of allowed credit
+card types.
+
+<P>
+CyberCash is the only processor.
+
+<P>
+No multiple currency support (probably a larger project than just this
+module).
+
+<P>
+<HR>
+<H1><A NAME="SEE_ALSO">SEE ALSO</A></H1>
+<P>
+<A HREF="../FS/Record.html">FS::Record</A>, <A HREF="../FS/cust_pkg.html">FS::cust_pkg</A>, <A HREF="../FS/cust_bill.html">FS::cust_bill</A>, <A HREF="../FS/cust_credit.html">FS::cust_credit</A>
+
+<A HREF="../FS/cust_pay_batch.html">FS::cust_pay_batch</A>, <A HREF="../FS/agent.html">FS::agent</A>, <A HREF="../FS/part_referral.html">FS::part_referral</A>,
+<A HREF="../FS/cust_main_county.html">FS::cust_main_county</A>, <A HREF="../FS/cust_main_invoice.html">FS::cust_main_invoice</A>,
+<A HREF="../FS/UID.html">FS::UID</A>, schema.html from the base documentation.
+
+</BODY>
+
+</HTML>

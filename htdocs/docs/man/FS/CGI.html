@@ -1,0 +1,115 @@
+<HTML>
+<HEAD>
+<TITLE>FS::CGI - Subroutines for the web interface</TITLE>
+<LINK REV="made" HREF="mailto:ivan@rootwood.sisd.com">
+</HEAD>
+
+<BODY>
+
+<!-- INDEX BEGIN -->
+
+<UL>
+
+	<LI><A HREF="#NAME">NAME</A>
+	<LI><A HREF="#SYNOPSIS">SYNOPSIS</A>
+	<LI><A HREF="#DESCRIPTION">DESCRIPTION</A>
+	<LI><A HREF="#SUBROUTINES">SUBROUTINES</A>
+	<LI><A HREF="#BUGS">BUGS</A>
+	<LI><A HREF="#SEE_ALSO">SEE ALSO</A>
+</UL>
+<!-- INDEX END -->
+
+<HR>
+<P>
+<H1><A NAME="NAME">NAME</A></H1>
+<P>
+FS::CGI - Subroutines for the web interface
+
+<P>
+<HR>
+<H1><A NAME="SYNOPSIS">SYNOPSIS</A></H1>
+<P>
+<PRE>  use FS::CGI qw(header menubar idiot eidiot popurl);
+</PRE>
+<P>
+<PRE>  print header( 'Title', '' );
+  print header( 'Title', menubar('item', 'URL', ... ) );
+</PRE>
+<P>
+<PRE>  idiot &quot;error message&quot;; 
+  eidiot &quot;error message&quot;;
+</PRE>
+<P>
+<PRE>  $url = popurl; #returns current url
+  $url = popurl(3); #three levels up
+</PRE>
+<P>
+<HR>
+<H1><A NAME="DESCRIPTION">DESCRIPTION</A></H1>
+<P>
+Provides a few common subroutines for the web interface.
+
+<P>
+<HR>
+<H1><A NAME="SUBROUTINES">SUBROUTINES</A></H1>
+<DL>
+<DT><STRONG><A NAME="item_header">header TITLE, MENUBAR</A></STRONG><DD>
+<P>
+Returns an HTML header.
+
+<DT><STRONG><A NAME="item_menubar">menubar ITEM, URL, ...</A></STRONG><DD>
+<P>
+Returns an HTML menubar.
+
+<DT><STRONG><A NAME="item_idiot">idiot ERROR</A></STRONG><DD>
+<P>
+This is depriciated. Don't use it.
+
+<P>
+Sends headers and an HTML error message.
+
+<DT><STRONG><A NAME="item_eidiot">eidiot ERROR</A></STRONG><DD>
+<P>
+This is depriciated. Don't use it.
+
+<P>
+Sends headers and an HTML error message, then exits.
+
+<DT><STRONG><A NAME="item_popurl">popurl LEVEL</A></STRONG><DD>
+<P>
+Returns current URL with LEVEL levels of path removed from the end (default
+0).
+
+<DT><STRONG><A NAME="item_table">table</A></STRONG><DD>
+<P>
+Returns HTML tag for beginning a table.
+
+<DT><STRONG><A NAME="item_itable">itable</A></STRONG><DD>
+<P>
+Returns HTML tag for beginning an (invisible) table.
+
+<DT><STRONG><A NAME="item_ntable">ntable</A></STRONG><DD>
+<P>
+This is getting silly.
+
+</DL>
+<P>
+<HR>
+<H1><A NAME="BUGS">BUGS</A></H1>
+<P>
+Not OO.
+
+<P>
+Not complete.
+
+<P>
+<HR>
+<H1><A NAME="SEE_ALSO">SEE ALSO</A></H1>
+<P>
+<A HREF=".././FS/CGI.html#">the CGI manpage</A>, <A HREF="../CGI/Base.html">CGI::Base</A>
+
+
+
+</BODY>
+
+</HTML>
