@@ -857,7 +857,9 @@ expected to change in the future.
 
 sub radius_check {
   my $self = shift;
-  ( 'Password' => $self->_password,
+  my $password = $self->_password;
+  my $pw_attrib = length($password) <= 12 ? 'Password' : 'Crypt-Password';
+  ( $pw_attrib => $password,
     map {
       /^(rc_(.*))$/;
       my($column, $attrib) = ($1, $2);
