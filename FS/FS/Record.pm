@@ -2,7 +2,7 @@ package FS::Record;
 
 use strict;
 use vars qw( $dbdef_file $dbdef $setup_hack $AUTOLOAD @ISA @EXPORT_OK $DEBUG
-             $me %dbdef_cache );
+             $me %dbdef_cache %virtual_fields_cache );
 use subs qw(reload_dbdef);
 use Exporter;
 use Carp qw(carp cluck croak confess);
@@ -1379,14 +1379,17 @@ sub virtual_fields {
 
   return () unless $self->dbdef->table('part_virtual_field');
 
-  # This should be smart enough to cache results.
+  unless ( $virtual_fields_cache{$table} ) {
+    my $query = 'SELECT name from part_virtual_field ' .
+                "WHERE dbtable = '$table'";
+    my $dbh = dbh;
+    my $result = $dbh->selectcol_arrayref($query);
+    confess $dbh->errstr if $dbh->err;
+    $virtual_fields_cache{$table} = $result;
+  }
 
-  my $query = 'SELECT name from part_virtual_field ' .
-              "WHERE dbtable = '$table'";
-  my $dbh = dbh;
-  my $result = $dbh->selectcol_arrayref($query);
-  confess $dbh->errstr if $dbh->err;
-  return @$result;
+  @{$virtual_fields_cache{$table}};
+
 }
 
 
