@@ -1117,6 +1117,7 @@ If there is an error, returns the error, otherwise returns false.
 
 sub bill {
   my( $self, %options ) = @_;
+  return '' if $self->payby eq 'COMP';
   warn "bill customer ". $self->custnum if $DEBUG;
 
   my $time = $options{'time'} || time;
