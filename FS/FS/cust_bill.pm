@@ -458,7 +458,7 @@ sub realtime_card {
   my($payname, $payfirst, $paylast);
   if ( $cust_main->payname ) {
     $payname = $cust_main->payname;
-    $payname =~ /^\s*([\w \,\.\-\']*)?\s+([\w\,\.\-\']+)$/
+    $payname =~ /^\s*([\w \,\.\-\']*)?\s+([\w\,\.\-\']+)\s*$/
       or do {
               #$dbh->rollback if $oldAutoCommit;
               return "Illegal payname $payname";
@@ -466,7 +466,7 @@ sub realtime_card {
     ($payfirst, $paylast) = ($1, $2);
   } else {
     $payfirst = $cust_main->getfield('first');
-    $paylast = $cust_main->getfield('first');
+    $paylast = $cust_main->getfield('last');
     $payname =  "$payfirst $paylast";
   }
 
@@ -948,7 +948,7 @@ sub print_text {
 
 =head1 VERSION
 
-$Id: cust_bill.pm,v 1.33 2002-04-19 14:27:34 ivan Exp $
+$Id: cust_bill.pm,v 1.34 2002-05-06 13:36:02 ivan Exp $
 
 =head1 BUGS
 
