@@ -312,7 +312,7 @@ sub setx {
 
   #get part_svc
   my $svcpart;
-  if ( $self->svcnum ) {
+  if ( $self->svcnum && qsearchs('cust_svc', {'svcnum'=>$self->svcnum}) ) {
     my $cust_svc = $self->cust_svc;
     return "Unknown svcnum" unless $cust_svc; 
     $svcpart = $cust_svc->svcpart;
