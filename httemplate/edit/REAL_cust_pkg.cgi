@@ -1,6 +1,6 @@
 <!-- mason kludge -->
 <%
-# <!-- $Id: REAL_cust_pkg.cgi,v 1.8 2004-12-22 14:06:45 ivan Exp $ -->
+# <!-- $Id: REAL_cust_pkg.cgi,v 1.9 2005-02-27 11:05:35 ivan Exp $ -->
 
 my $error ='';
 my $pkgnum = '';
@@ -29,6 +29,7 @@ if ( $error ) {
   #$cust_pkg->$_(str2time($cgi->param($_)) foreach qw(setup bill);
   $cust_pkg->setup(str2time($cgi->param('setup')));
   $cust_pkg->bill(str2time($cgi->param('bill')));
+  $cust_pkg->last_bill(str2time($cgi->param('last_bill')));
 }
 
 #my $custnum = $cust_pkg->getfield('custnum');
