@@ -8,7 +8,7 @@ $DEBUG = 0;
 
 =head1 NAME
 
-FS::Conf - Read access to Freeside configuration values
+FS::Conf - Freeside configuration values
 
 =head1 SYNOPSIS
 
@@ -29,7 +29,7 @@ FS::Conf - Read access to Freeside configuration values
 
 =head1 DESCRIPTION
 
-Read access to Freeside configuration values.  Keys currently map to filenames,
+Read and write Freeside configuration values.  Keys currently map to filenames,
 but this may change in the future.
 
 =head1 METHODS

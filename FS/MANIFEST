@@ -7,7 +7,8 @@ bin/freeside-bill
 bin/freeside-email
 bin/freeside-print-batch
 bin/freeside-queued
-fin/freeside-apply-credits
+bin/freeside-apply-credits
+bin/freeside-adduser
 FS.pm
 FS/CGI.pm
 FS/Conf.pm

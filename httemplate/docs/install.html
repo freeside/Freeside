@@ -38,6 +38,7 @@ Before installing, you need:
       <li><a href="http://search.cpan.org/search?dist=Text-Template">Text-Template</a>
       <li><a href="http://search.cpan.org/search?dist=DBI">DBI</a>
       <li><a href="http://search.cpan.org/search?mode=module&query=DBD">DBD for your database engine</a>
+      <li><a href="http://search.cpan.org/search?dist=DBIx-DataSource">DBIx-DataSource</a>
       <li><a href="http://search.cpan.org/search?dist=DBIx-DBSchema">DBIx-DBSchema</a>
       <li><a href="http://search.cpan.org/search?dist=Net-SSH">Net-SSH</a>
       <li><a href="http://search.cpan.org/search?dist=String-ShellQuote">String-ShellQuote</a>
@@ -112,7 +113,16 @@ require "/usr/local/apache/conf/handler.pl";
   </tr>
 </table>
 <ul>
-<li>Restrict access to this web interface.  (with <a href="http://httpd.apache.org/docs/misc/FAQ.html#user-authentication">Apache</a>)
+<li>Restrict access to this web interface.  (with <a href="http://httpd.apache.org/docs/misc/FAQ.html#user-authentication">Apache</a>).    For example, to configure user authentication with flat files:
+<font size="-1"><pre>
+&lt;Directory /usr/local/apache/htdocs/freeside-asp&gt;
+PerlSetVar Global /usr/local/etc/freeside/asp-global/
+AuthName Freeside
+AuthType Basic
+AuthUserFile /usr/local/etc/apache/htpasswd
+require valid-user
+&lt;/Directory&gt;
+</pre>
 <li>Create the necessary <a href="config.html">configuration files</a>.
 <li>Create the `/usr/local/etc/freeside/counters.<i>datasrc</i>', 
   `/usr/local/etc/freeside/cache.<i>datasrc</i>', and 
