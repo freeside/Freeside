@@ -245,7 +245,7 @@
     if ( $part_export->option('show_called_station') ) {
       $efields->Splice(1, 0,
         'calledstationid' => {
-                               'name'   => 
+                               'name'   => 'Destination',
                                'attrib' => 'Called-Station-ID',
                                'fmt'    =>
                                  sub { length($_[0]) ? shift : '&nbsp'; },
