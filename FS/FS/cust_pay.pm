@@ -6,6 +6,7 @@ use Business::CreditCard;
 use FS::Record qw( dbh );
 use FS::cust_bill;
 use FS::cust_bill_pay;
+use FS::cust_main;
 
 @ISA = qw( FS::Record );
 
@@ -38,6 +39,8 @@ currently supported:
 
 =item paynum - primary key (assigned automatically for new payments)
 
+=item custnum - customer (see L<FS::cust_main>)
+
 =item paid - Amount of this payment
 
 =item _date - specified as a UNIX timestamp; see L<perlfunc/"time">.  Also see
@@ -69,7 +72,7 @@ Adds this payment to the database.
 
 For backwards-compatibility and convenience, if the additional field invnum
 is defined, an FS::cust_bill_pay record for the full amount of the payment
-will be created.
+will be created.  In this case, custnum is optional.
 
 =cut
 
@@ -90,12 +93,6 @@ sub insert {
   my $error = $self->check;
   return $error if $error;
 
-  $error = $self->SUPER::insert;
-  if ( $error ) {
-    $dbh->rollback if $oldAutoCommit;
-    return $error;
-  }
-
   if ( $self->invnum ) {
     my $cust_bill_pay = new FS::cust_bill_pay {
       'invnum' => $self->invnum,
@@ -108,6 +105,13 @@ sub insert {
       $dbh->rollback if $oldAutoCommit;
       return $error;
     }
+    $self->custnum($cust_bill_pay->cust_bill->custnum);
+  }
+
+  $error = $self->SUPER::insert;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
   }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
@@ -148,11 +152,16 @@ sub check {
 
   my $error =
     $self->ut_numbern('paynum')
+    || $self->ut_number('custnum')
     || $self->ut_money('paid')
     || $self->ut_numbern('_date')
     || $self->ut_textn('paybatch')
   ;
   return $error if $error;
+
+  return "unknown cust_main.custnum: ". $self->custnum
+    unless $self->invnum
+           || qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
 
   $self->_date(time) unless $self->_date;
 
@@ -182,11 +191,39 @@ sub check {
 
 }
 
+=item cust_bill_pay
+
+Returns all applications to invoices (see L<FS::cust_bill_pay>) for this
+payment.
+
+=cut
+
+sub cust_bill_pay {
+  my $self = shift;
+  sort { $a->_date <=> $b->_date }
+    qsearch( 'cust_bill_pay', { 'paynum' => $self->paynum } )
+  ;
+}
+
+=item unapplied
+
+Returns the amount of this payment that is still unapplied; which is
+paid minus all payment applications (see L<FS::cust_bill_pay>).
+
+=cut
+
+sub unapplied {
+  my $self = shift;
+  my $amount = $self->paid;
+  $amount -= $_->amount foreach ( $self->cust_bill_pay );
+  sprintf("%.2f", $amount );
+}
+
 =back
 
 =head1 VERSION
 
-$Id: cust_pay.pm,v 1.4 2001-09-01 20:11:07 ivan Exp $
+$Id: cust_pay.pm,v 1.5 2001-09-02 02:46:55 ivan Exp $
 
 =head1 BUGS
 

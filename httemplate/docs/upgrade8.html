@@ -109,6 +109,8 @@ ALTER TABLE part_svc ADD svc_forward__dstsvc_flag char(1) NULL;
 ALTER TABLE part_svc ADD svc_forward__dst integer NULL;
 ALTER TABLE part_svc ADD svc_forward__dst_flag char(1) NULL;
 ALTER TABLE cust_main ADD referral_custnum integer NULL;
+ALTER TABLE cust_pay ADD custnum integer;
+ALTER TABLE cust_refund ADD custnum integer;
 CREATE INDEX cust_main3 ON cust_main ( referral_custnum );
 CREATE INDEX cust_credit_bill1 ON cust_credit_bill ( crednum );
 CREATE INDEX cust_credit_bill2 ON cust_credit_bill ( invnum );

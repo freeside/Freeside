@@ -28,7 +28,8 @@ use FS::part_referral;
 use FS::cust_main_county;
 use FS::agent;
 use FS::cust_main_invoice;
-#use FS::cust_credit_bill;
+use FS::cust_credit_bill;
+use FS::cust_bill_pay;
 use FS::prepay_credit;
 
 @ISA = qw( FS::Record );
@@ -1242,8 +1243,10 @@ sub total_owed {
 
 =item apply_credits
 
-Applies (see L<FS::cust_credit_bill>) unapplied credits (see L<FS::cust_credit>)to outstanding invoice balances in cronological order and returns the value
-of any remaining unapplied credits available for refund (see L<FS::cust_refund>).
+Applies (see L<FS::cust_credit_bill>) unapplied credits (see L<FS::cust_credit>)
+to outstanding invoice balances in chronological order and returns the value
+of any remaining unapplied credits available for refund
+(see L<FS::cust_refund>).
 
 =cut
 
@@ -1264,8 +1267,7 @@ sub apply_credits {
     my $amount;
 
     if (!(defined $credit) || $credit->credited == 0) {
-      $credit = pop @credits;
-      last unless defined $credit;
+      $credit = pop @credits or last;
     }
 
     if ($cust_bill->owed >= $credit->credited) {
@@ -1278,7 +1280,6 @@ sub apply_credits {
       'crednum' => $credit->crednum,
       'invnum'  => $cust_bill->invnum,
       'amount'  => $amount,
-      '_date'   => time,
     } );
     my $error = $cust_credit_bill->insert;
     die $error if $error;
@@ -1290,6 +1291,55 @@ sub apply_credits {
   return $self->total_credited;
 }
 
+=item apply_payments
+
+Applies (see L<FS::cust_bill_pay>) unapplied payments (see L<FS::cust_pay>)
+to outstanding invoice balances in chronological order.
+
+ #and returns the value of any remaining unapplied payments.
+
+=cut
+
+sub apply_payments {
+  my $self = shift;
+
+  #return 0 unless
+
+  my @payments = sort { $b->_date <=> $a->_date } ( grep { $_->unapplied > 0 }
+      qsearch('cust_pay', { 'custnum' => $self->custnum } ) );
+
+  my @invoices = sort { $a->_date <=> $b->_date} (grep { $_->owed > 0 }
+      qsearch('cust_bill', { 'custnum' => $self->custnum } ) );
+
+  my $payment;
+
+  foreach my $cust_bill ( @invoices ) {
+    my $amount;
+
+    if ( !defined $payment || $payment->unapplied = 0 ) {
+      $payment = pop @payments or last;
+    }
+
+    if ( $cust_bill->owed >= $payment->unapplied ) {
+      $amount = $payment->unapplied;
+    } else {
+      $amount = $payment->owed;
+    }
+
+    my $cust_bill_pay = new FS::cust_bill_pay ( {
+      'paynum' => $payment->paynum,
+      'invnum' => $cust_bill->invnum,
+      'amount' => $amount,
+    } );
+    my $error = $cust_bill_pay->insert;
+    die $error if $error;
+
+    redo if ( $cust_bill->owed > 0);
+
+  }
+
+  # return 0; 
+}
 
 =item total_credited
 
@@ -1451,7 +1501,7 @@ sub rebuild_fuzzyfiles {
 
 =head1 VERSION
 
-$Id: cust_main.pm,v 1.26 2001-09-02 01:27:11 ivan Exp $
+$Id: cust_main.pm,v 1.27 2001-09-02 02:46:55 ivan Exp $
 
 =head1 BUGS
 

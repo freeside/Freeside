@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: fs-setup,v 1.47 2001-09-01 22:18:38 ivan Exp $
+# $Id: fs-setup,v 1.48 2001-09-02 02:46:55 ivan Exp $
 
 #to delay loading dbdef until we're ready
 BEGIN { $FS::Record::setup_hack = 1; }
@@ -412,6 +412,7 @@ sub tables_hash_hack {
       'columns' => [
         'paynum',   'int',    '',   '',
         #now cust_bill_pay #'invnum',   'int',    '',   '',
+        'custnum',  'int',    '',   '',
         'paid',     @money_type,
         '_date',    @date_type,
         'payby',    'char',   '',     4, # CARD/BILL/COMP, should be index into
@@ -483,6 +484,7 @@ sub tables_hash_hack {
       'columns' => [
         'refundnum',    'int',    '',   '',
         #now cust_credit_refund #'crednum',      'int',    '',   '',
+        'custnum',  'int',    '',   '',
         '_date',        @date_type,
         'refund',       @money_type,
         'otaker',       'varchar',   '',   8,

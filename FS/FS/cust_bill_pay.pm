@@ -176,14 +176,25 @@ Returns the payment (see L<FS::cust_pay>)
 
 sub cust_pay {
   my $self = shift;
-  qsearchs( 'cust_pay', { 'invnum' => $self->invnum } );
+  qsearchs( 'cust_pay', { 'paynum' => $self->paynum } );
+}
+
+=item cust_bill 
+
+Returns the invoice (see L<FS::cust_bill>)
+
+=cut
+
+sub cust_bill {
+  my $self = shift;
+  qsearchs( 'cust_bill', { 'invnum' => $self->invnum } );
 }
 
 =back
 
 =head1 VERSION
 
-$Id: cust_bill_pay.pm,v 1.3 2001-09-02 01:27:11 ivan Exp $
+$Id: cust_bill_pay.pm,v 1.4 2001-09-02 02:46:55 ivan Exp $
 
 =head1 BUGS
 

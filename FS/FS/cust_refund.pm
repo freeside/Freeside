@@ -7,6 +7,7 @@ use FS::Record qw( dbh );
 use FS::UID qw(getotaker);
 use FS::cust_credit;
 use FS::cust_credit_refund;
+use FS::cust_main;
 
 @ISA = qw( FS::Record );
 
@@ -38,6 +39,8 @@ inherits from FS::Record.  The following fields are currently supported:
 =over 4
 
 =item refundnum - primary key (assigned automatically for new refunds)
+
+=item custnum - customer (see L<FS::cust_main>)
 
 =item refund - Amount of the refund
 
@@ -72,7 +75,7 @@ Adds this refund to the database.
 
 For backwards-compatibility and convenience, if the additional field crednum is
 defined, an FS::cust_credit_refund record for the full amount of the refund
-will be created.
+will be created.  In this case, custnum is optional.
 
 =cut
 
@@ -93,24 +96,25 @@ sub insert {
   my $error = $self->check;
   return $error if $error;
 
-  $error = $self->SUPER::insert;
-  if ( $error ) {
-    $dbh->rollback if $oldAutoCommit;
-    return $error;
-  }
-
   if ( $self->crednum ) {
     my $cust_credit_refund = new FS::cust_credit_refund {
-      'cred' => $self->cred,
+      'cred'      => $self->cred,
       'refundnum' => $self->refundnum,
-      'amount' => $self->refund,
-      '_date' => $self->_date,
+      'amount'    => $self->refund,
+      '_date'     => $self->_date,
     };
     $error = $cust_bill_pay->insert;
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return $error;
     }
+    $self->custnum($cust_credit_refund->cust_credit->custnum);
+  }
+
+  $error = $self->SUPER::insert;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
   }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
@@ -151,6 +155,7 @@ sub check {
 
   my $error =
     $self->ut_number('refundnum')
+    || $self->ut_number('custnum')
     || $self->ut_money('amount')
     || $self->ut_numbern('_date')
     || $self->ut_textn('paybatch')
@@ -158,6 +163,10 @@ sub check {
   return $error if $error;
 
   $self->_date(time) unless $self->_date;
+
+  return "unknown cust_main.custnum: ". $self->custnum
+    unless $self->invnum 
+           ||  qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
 
   $self->payby =~ /^(CARD|BILL|COMP)$/ or return "Illegal payby";
   $self->payby($1);
@@ -189,7 +198,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: cust_refund.pm,v 1.5 2001-09-02 01:27:11 ivan Exp $
+$Id: cust_refund.pm,v 1.6 2001-09-02 02:46:55 ivan Exp $
 
 =head1 BUGS
 

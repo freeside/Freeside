@@ -100,6 +100,7 @@
     <li><a name="cust_pay" href="man/FS/cust_pay.html">cust_pay</a> - Payments.  Money being transferred from a customer.
       <ul>
         <li>paynum - primary key
+        <li>custnum - <a href="#cust_main">customer</a>
         <li>paid - amount
         <li>_date
         <li>payby - CARD, BILL, or COMP
@@ -147,6 +148,7 @@
     <li><a name="cust_refund" href="man/FS/cust_refund.html">cust_refund</a> - Refunds.  The transfer of money to a customer; equivalent to a negative <a href="#cust_pay">cust_pay</a> record.
       <ul>
         <li>refundnum - primary key
+        <li>custnum - <a href="#cust_main">customer</a>
         <li>refund - amount
         <li>_date
         <li>payby - CARD, BILL or COMP
