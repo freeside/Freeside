@@ -1343,7 +1343,7 @@ sub bill {
                   || $tax->recurtax =~ /^Y$/i;
             next unless $taxable_charged;
 
-            if ( $tax->exempt_amount > 0 ) {
+            if ( $tax->exempt_amount && $tax->exempt_amount > 0 ) {
               my ($mon,$year) = (localtime($sdate) )[4,5];
               $mon++;
               my $freq = $part_pkg->freq || 1;
