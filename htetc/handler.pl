@@ -38,7 +38,7 @@ use strict;
 my $ah = new HTML::Mason::ApacheHandler (
   #interp => $interp,
   #auto_send_headers => 0,
-  comp_root=>'/var/www/freeside',
+  comp_root=>'%%%FREESIDE_DOCUMENT_ROOT%%%',
   data_dir=>'/usr/local/etc/freeside/masondata',
   #out_mode=>'stream',
 );
