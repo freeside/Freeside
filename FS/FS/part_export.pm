@@ -581,7 +581,7 @@ tie my %bind_slave_options, 'Tie::IxHash',
       'desc' => 'Real-time export to SQL-backed RADIUS (ICRADIUS, FreeRADIUS)',
       'options' => \%sqlradius_options,
       'nodomain' => 'Y',
-      'notes' => 'Real-time export of radcheck, radreply and usergroup tables to any SQL database for <a href="http://www.freeradius.org/">FreeRADIUS</a> or <a href="http://radius.innercite.com/">ICRADIUS</a>.  Use <a href="../docs/man/bin/freeside-sqlradius-reset">freeside-sqlradius-reset</a> to delete and repopulate the tables from the Freeside database.  See the <a href="http://search.cpan.org/doc/TIMB/DBI-1.23/DBI.pm">DBI documentation</a> and the <a href="http://search.cpan.org/search?mode=module&query=DBD%3A%3A">documentation for your DBD</a> for the exact syntax of a DBI data source.',
+      'notes' => 'Real-time export of radcheck, radreply and usergroup tables to any SQL database for <a href="http://www.freeradius.org/">FreeRADIUS</a> or <a href="http://radius.innercite.com/">ICRADIUS</a>.  Use <a href="../docs/man/bin/freeside-sqlradius-reset">freeside-sqlradius-reset</a> to delete and repopulate the tables from the Freeside database.  See the <a href="http://search.cpan.org/doc/TIMB/DBI-1.23/DBI.pm">DBI documentation</a> and the <a href="http://search.cpan.org/search?mode=module&query=DBD%3A%3A">documentation for your DBD</a> for the exact syntax of a DBI data source.  If using <a href="http://www.freeradius.org/">FreeRADIUS</a> 0.5 or above, make sure your <b>op</b> fields are set to allow NULL values.',
     },
 
     'cyrus' => {
