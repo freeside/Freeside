@@ -4,3 +4,10 @@ config.layout
 config.layout.in
 etc/RT_SiteConfig.pm
 lib/RT/URI/freeside.pm
+html/Elements/Header
+html/Elements/PageLayout
+html/Elements/SimpleSearch
+html/Elements/Tabs
+html/Elements/Footer
+html/NoAuth/images/small-logo.png
+html/NoAuth/webrt.css

@@ -106,6 +106,7 @@ sub handler
       use String::Approx qw(amatch);
       use Chart::LinesPoints;
       use HTML::Widgets::SelectLayers 0.03;
+      use FS;
       use FS::UID qw(cgisuidsetup dbh getotaker datasrc driver_name);
       use FS::Record qw(qsearch qsearchs fields dbdef);
       use FS::Conf;

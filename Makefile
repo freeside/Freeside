@@ -102,9 +102,6 @@ help:
 aspdocs: htmlman httemplate/* httemplate/*/* httemplate/*/*/* httemplate/*/*/*/* httemplate/*/*/*/*/*
 	rm -rf aspdocs
 	cp -pr httemplate aspdocs
-	perl -p -i -e "\
-	  s/%%%VERSION%%%/${VERSION}/g;\
-	" aspdocs/index.html
 	touch aspdocs
 
 
@@ -114,9 +111,6 @@ masondocs: htmlman httemplate/* httemplate/*/* httemplate/*/*/* httemplate/*/*/*
 	( cd masondocs; \
 	  ../bin/masonize; \
 	)
-	perl -p -i -e "\
-	  s/%%%VERSION%%%/${VERSION}/g;\
-	" masondocs/index.html
 	touch masondocs
 
 alldocs: aspdocs masondocs
@@ -163,7 +157,10 @@ install-docs: docs
 perl-modules:
 	cd FS; \
 	[ -e Makefile ] || perl Makefile.PL; \
-	make
+	make; \
+	perl -p -i -e "\
+	  s/%%%VERSION%%%/${VERSION}/g;\
+	" blib/lib/FS.pm
 
 install-perl-modules: perl-modules
 	cd FS; \

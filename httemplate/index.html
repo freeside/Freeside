@@ -1,3 +1,5 @@
+<!-- mason kludge -->
+<% my $conf = new FS::Conf; %>
 <HTML>
   <HEAD>
     <TITLE>
@@ -6,22 +8,57 @@
   </HEAD>
   <BODY BGCOLOR="#FFFFFF">
   <table width="100%">
-    <tr><td>
+    <tr>
+      <td rowspan=2>
         <IMG BORDER=0 ALT="freeside" SRC="images/small-logo.png">
-    </td><td valign="top">
-      <font color="#7f007b" size=7></font>
-    </td><td align=right valign=bottom>
-       version %%%VERSION%%%
-      <BR><A HREF="http://www.sisd.com/freeside">Freeside&nbsp;home&nbsp;page</A>
-      <BR><A HREF="docs/">Documentation</A>
-    </td></tr>
+      </td>
+      <td align=left rowspan=2> <!-- valign="top" -->
+        <font size=7>Billing</font>
+      </td>
+      <td align=right valign=top>Logged in as <b><%= getotaker %></b>
+      </td>
+    </tr>
+    <tr>
+      <td align=right valign=bottom>
+
+        <table>
+          <tr>
+            <td align=right>
+              <FONT SIZE="-2">
+               Freeside <%= $FS::VERSION %><BR>
+               <A HREF="http://www.sisd.com/freeside">Freeside&nbsp;home&nbsp;page</A><BR>
+               <A HREF="docs/">Documentation</A><BR>
+              </FONT>
+            </td>
+            <% if ( $conf->config('ticket_system') eq 'RT_Internal' ) { %>
+            <% eval "use RT;"; %>
+              <td bgcolor=#000000></td>
+              <td align=left>
+                <FONT SIZE="-2">
+                 RT <%= $RT::VERSION %><BR>
+                 <A HREF="http://www.bestpractical.com/rt">RT&nbsp;home&nbsp;page</A><BR>
+                 <A HREF="http://wiki.bestpractical.com/">Documentation</A><BR>
+                </FONT>
+              </td>
+            <% } %>
+
+          </tr>
+        </table>
+
+      </td>
+    </tr>
   </table>
 
-<BR>
-[<A NAME="customer_service" style="background-color: #cccccc"> Sales / Customer service </A>]
-[ <A HREF="#bookkeeping">Bookkeeping / Collections</A> ]
-[ <A HREF="#reports">Reports</A> ]
-[ <A HREF="#sysadmin">Sysadmin</A> ]
+  <BR>
+
+
+[<A NAME="customer_service" style="background-color: #cccccc">&nbsp;Sales&nbsp;/&nbsp;Customer&nbsp;service&nbsp;</A>]
+<% if ( $conf->config('ticket_system') ) { %>
+  [&nbsp;<A HREF="#ticketing">Support&nbsp;/&nbsp;Ticketing</A>&nbsp;]
+<% } %>
+[&nbsp;<A HREF="#bookkeeping">Bookkeeping&nbsp;/&nbsp;Collections</A>&nbsp;]
+[&nbsp;<A HREF="#reports">Reports</A>&nbsp;]
+[&nbsp;<A HREF="#sysadmin">Sysadmin</A>&nbsp;]
     <TABLE CELLSPACING=2 CELLPADDING=0 BORDER=0" WIDTH="100%" BGCOLOR="#eeeeee">
     <TR><TH BGCOLOR="#cccccc">Sales / Customer service</TH></TR>
     <TR><TD>
@@ -42,15 +79,35 @@
     </TD></TR>
     </TABLE>
 
+    <BR><BR><BR>
 
+<% if ( $conf->config('ticket_system') ) { %>
+
+[&nbsp;<A HREF="#customer_service">Sales&nbsp;/&nbsp;Customer&nbsp;service</A>&nbsp;]
+[<A NAME="ticketing" style="background-color: #cccccc">&nbsp;Support&nbsp;/&nbsp;Ticketing&nbsp;</A>]
+[&nbsp;<A HREF="#bookkeeping">Bookkeeping&nbsp;/&nbsp;Collections</A>&nbsp;]
+[&nbsp;<A HREF="#reports">Reports</A>&nbsp;]
+[&nbsp;<A HREF="#sysadmin">Sysadmin</A>&nbsp;]
+    <TABLE CELLSPACING=2 CELLPADDING=0 BORDER=0" WIDTH="100%" BGCOLOR="#eeeeee">
+    <TR><TH BGCOLOR="#cccccc">Support/Ticketing</TH></TR>
+    <TR><TD>
+        <BR><FONT SIZE="+1"><A HREF="rt/">Ticketing Main</A></FONT>
+        <BR>
+    </TD></TR>
+    </TABLE>
 
     <BR><BR><BR>
 
+<% } %>
 
-[ <A HREF="#customer_service">Sales / Customer service</A> ]
-[<A NAME="bookkeeping" style="background-color: #cccccc"> Bookkeeping / Collections </A>]
-[ <A HREF="#reports">Reports</A> ]
-[ <A HREF="#sysadmin">Sysadmin</A> ]
+
+[&nbsp;<A HREF="#customer_service">Sales&nbsp;/&nbsp;Customer&nbsp;service</A>&nbsp;]
+<% if ( $conf->config('ticket_system') ) { %>
+  [&nbsp;<A HREF="#ticketing">Support&nbsp;/&nbsp;Ticketing</A>&nbsp;]
+<% } %>
+[<A NAME="bookkeeping" style="background-color: #cccccc">&nbsp;Bookkeeping&nbsp;/&nbsp;Collections&nbsp;</A>]
+[&nbsp;<A HREF="#reports">Reports</A>&nbsp;]
+[&nbsp;<A HREF="#sysadmin">Sysadmin</A>&nbsp;]
     <TABLE CELLSPACING=2 CELLPADDING=0 BORDER=0 WIDTH="100%" BGCOLOR="#eeeeee">
     <TR><TH BGCOLOR="#cccccc">Bookkeeping / Collections</TH></TR>
     <TR><TD>
@@ -107,10 +164,13 @@
 
 
 
-[ <A HREF="#customer_service">Sales / Customer service</A> ]
-[ <A HREF="#bookkeeping">Bookkeeping / Collections</A> ]
-[<A NAME="reports" style="background-color: #cccccc"> Reports </A>]
-[ <A HREF="#sysadmin">Sysadmin</A> ]
+[&nbsp;<A HREF="#customer_service">Sales&nbsp;/&nbsp;Customer&nbsp;service</A>&nbsp;]
+<% if ( $conf->config('ticket_system') ) { %>
+  [&nbsp;<A HREF="#ticketing">Support&nbsp;/&nbsp;Ticketing</A>&nbsp;]
+<% } %>
+[&nbsp;<A HREF="#bookkeeping">Bookkeeping&nbsp;/&nbsp;Collections</A>&nbsp;]
+[<A NAME="reports" style="background-color: #cccccc">&nbsp;Reports&nbsp;</A>]
+[&nbsp;<A HREF="#sysadmin">Sysadmin</A>&nbsp;]
     <TABLE CELLSPACING=2 CELLPADDING=0 BORDER=0 WIDTH="100%" BGCOLOR="#eeeeee">
     <TR><TH BGCOLOR="#cccccc">Reports</TH></TR>
     <TR><TD>
@@ -147,10 +207,13 @@
     <BR><BR><BR>
 
 
-[ <A HREF="#customer_service">Sales / Customer service</A> ]
-[ <A HREF="#bookkeeping">Bookkeeping / Collections</A> ]
-[ <A HREF="#reports">Reports</A> ]
-[<A NAME="sysadmin" style="background-color: #cccccc"> Sysadmin </A>]
+[&nbsp;<A HREF="#customer_service">Sales&nbsp;/&nbsp;Customer&nbsp;service</A>&nbsp;]
+<% if ( $conf->config('ticket_system') ) { %>
+  [&nbsp;<A HREF="#ticketing">Support&nbsp;/&nbsp;Ticketing</A>&nbsp;]
+<% } %>
+[&nbsp;<A HREF="#bookkeeping">Bookkeeping&nbsp;/&nbsp;Collections</A>&nbsp;]
+[&nbsp;<A HREF="#reports">Reports</A>&nbsp;]
+[<A NAME="sysadmin" style="background-color: #cccccc">&nbsp;Sysadmin&nbsp;</A>]
     <TABLE CELLSPACING=2 CELLPADDING=0 BORDER=0 WIDTH="100%" BGCOLOR="#eeeeee">
     <TR><TH BGCOLOR="#cccccc">Sysadmin</TH></TR>
     <TR><TD>

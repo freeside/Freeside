@@ -1320,6 +1320,14 @@ httemplate/docs/config.html
     'select_enum' => [ 'generic', 'artera_turbo', ],
   },
 
+  {
+    'key'         => 'ticket_system',
+    'section'     => '',
+    'description' => 'Ticketing system integraiton.  <b>RT_Internal</b> uses the built-in RT ticketing system (use <code>make create-rt</code> to create the necessary tables).  <b>RT_Libs</b> uses the built-in RT libraries to access an RT installation in a separate database (local or remote).  <b>RT_External</b> uses RT\'s XML interface and RTx::Atom to access an RT installation in a separate database (local or remote).',
+    'type'        => 'select',
+    'select_enum' => [ '', qw(RT_Internal RT_Libs RT_External) ],
+  },
+
 );
 
 1;

@@ -23,4 +23,5 @@
 - update install documentation for 1.5 HTML::Mason or Apache::ASP install
 # - historical late notice viewing in web interface
 - VoIP billing for CDRs from RADIUS
-# - promotional codes for signup
+- promotional codes for signup
+- lots of RT integration

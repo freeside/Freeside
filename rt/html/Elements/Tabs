@@ -40,7 +40,12 @@ my $basetopactions = {
 	B => { html => $m->scomp('/Elements/SimpleSearch') 
 		}
 	};
-my $basetabs = {     A => { title => loc('Homepage'),
+my $basetabs = {
+                  ' A'=> { title => 'Billing Main',
+                           path  => '..',
+                         },
+                    A => { #title => loc('Homepage'),
+                           title => 'Ticketing Main',
                            path => '',
                          },
                     B => { title => loc('Tickets'),

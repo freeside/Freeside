@@ -3,7 +3,7 @@ package FS;
 use strict;
 use vars qw($VERSION);
 
-$VERSION = '0.01';
+$VERSION = '%%%VERSION%%%';
 
 #find missing entries in this file with:
 # for a in `ls *pm | cut -d. -f1`; do grep 'L<FS::'$a'>' ../FS.pm >/dev/null || echo "missing $a" ; done
