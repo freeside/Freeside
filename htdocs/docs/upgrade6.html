@@ -10,6 +10,8 @@
   <li>If migrating from less than 1.2.2, see these <a href="upgrade4.html">instructions</a> first.
   <li>If migrating from less than 1.2.3, see these <a href="upgrade5.html">instructions</a> first.
   <li>Back up your data and current Freeside installation.
+  <li>Copy the <i>invoice_template</i> file from the <i>conf/</i> directory in the distribution to your <a href="config.html">configuration directory</a>.
+  <li>Install the <a href="http://www.perl.com/CPAN/modules/by-module/Text/">Text-Template</a> Perl module.
   <li>Apply the following changes to your database:
 <pre>
 CREATE TABLE domain_record (
