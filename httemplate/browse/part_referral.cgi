@@ -53,7 +53,7 @@ foreach my $part_referral ( sort {
             or die $sth->errstr;
           my $number = $sth->fetchrow_arrayref->[0];
         %>
-          <TD><%= $number %></TD>
+          <TD ALIGN="right"><%= $number %></TD>
         <% } %>
       </TR>
 <% } %>
