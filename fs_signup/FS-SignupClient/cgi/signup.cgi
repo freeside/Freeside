@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: signup.cgi,v 1.41 2003-07-04 01:54:17 ivan Exp $
+# $Id: signup.cgi,v 1.42 2003-07-04 03:12:21 ivan Exp $
 
 use strict;
 use vars qw( @payby $cgi $locales $packages
@@ -8,7 +8,7 @@ use vars qw( @payby $cgi $locales $packages
              $init_data $error
              $last $first $ss $company $address1 $address2 $city $state $county
              $country $zip $daytime $night $fax $invoicing_list $payby $payinfo
-             $paydate $payname $referral_custnum
+             $paydate $payname $referral_custnum $init_popstate
              $pkgpart $username $password $password2 $sec_phrase $popnum
              $agentnum
              $ieak_file $ieak_template $cck_file $cck_template
@@ -213,6 +213,7 @@ if ( defined $cgi->param('magic') ) {
     $password         = $cgi->param('_password');
     $popnum           = $cgi->param('popnum');
     #$agentnum, #         = $cgi->param('agentnum'),
+    $init_popstate    = $cgi->param('init_popstate');
 
     if ( $cgi->param('_password') ne $cgi->param('_password2') ) {
       $error = $init_data->{msgcat}{passwords_dont_match}; #msgcat
@@ -303,12 +304,14 @@ if ( defined $cgi->param('magic') ) {
   $sec_phrase = '';
   $popnum = '';
   $referral_custnum = $cgi->param('ref') || '';
+  $init_popstate = $cgi->param('init_popstate') || '';
   print_form;
 }
 
 sub print_form {
 
   $cgi->delete('ref');
+  $cgi->delete('init_popstate');
   $self_url = $cgi->self_url;
 
   $error = "Error: $error" if $error;
@@ -399,15 +402,22 @@ sub popselector {
       var length = what.length;
       what.options[length] = optionName;
     }
-
-    function acstate_changed(what) {
-      state = what.options[what.selectedIndex].text;
-      what.form.popac.options.length = 0
-      what.form.popac.options[0] = new Option("Area code", "-1", false, true);
 END
 
-  foreach my $state ( sort { $a cmp $b } keys %pop ) {
-    $text .= "\nif ( state == \"$state\" ) {\n";
+  if ( $init_popstate ) {
+    $text .='<INPUT TYPE="hidden" NAME="init_popstate" VALUE="$init_popstate">';
+  } else {
+    $text .= <<END;
+      function acstate_changed(what) {
+        state = what.options[what.selectedIndex].text;
+        what.form.popac.options.length = 0
+        what.form.popac.options[0] = new Option("Area code", "-1", false, true);
+END
+  } 
+
+  my @states = $init_popstate ? ( $init_popstate ) : keys %pop;
+  foreach my $state ( sort { $a cmp $b } @states ) {
+    $text .= "\nif ( state == \"$state\" ) {\n" unless $init_popstate;
 
     foreach my $ac ( sort { $a cmp $b } keys %{ $pop{$state} }) {
       $text .= "opt(what.form.popac, \"$ac\", \"$ac\");\n";
@@ -415,7 +425,7 @@ END
         $text .= "what.form.popac.options[what.form.popac.length-1].selected = true;\n";
       }
     }
-    $text .= "}\n";
+    $text .= "}\n" unless $init_popstate;
   }
   $text .= "popac_changed(what.form.popac)}\n";
 
@@ -427,7 +437,7 @@ END
 
 END
 
-  foreach my $state ( keys %pop ) {
+  foreach my $state ( @states ) {
     foreach my $popac ( keys %{ $pop{$state} } ) {
       $text .= "\nif ( ac == \"$popac\" ) {\n";
 
@@ -452,7 +462,7 @@ END
     qq!<TABLE CELLPADDING="0"><TR><TD><SELECT NAME="acstate"! .
     qq!SIZE=1 onChange="acstate_changed(this)"><OPTION VALUE=-1>State!;
   $text .= "<OPTION" . ($_ eq $cgi->param('acstate') ? " SELECTED" : "") .
-           ">$_" foreach sort { $a cmp $b } keys %pop;
+           ">$_" foreach sort { $a cmp $b } @states;
   $text .= '</SELECT>'; #callback? return 3 html pieces?  #'</TD>';
 
   $text .=
