@@ -89,6 +89,7 @@ print '>';
 print '</TD></TR>';
 
 my $conf = new FS::Conf;
+#false laziness w/ view/cust_main.cgi quick order
 if ( $conf->exists('enable_taxclasses') ) {
   print '<TR><TD ALIGN="right">Tax class</TD><TD><SELECT NAME="taxclass">';
   my $sth = dbh->prepare('SELECT DISTINCT taxclass FROM cust_main_county')

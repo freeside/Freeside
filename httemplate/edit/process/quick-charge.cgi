@@ -12,7 +12,12 @@ my $amount = $1;
 my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
   or die "unknown custnum $custnum";
 
-my $error = $cust_main->charge( $amount, $cgi->param('pkg') );
+my $error = $cust_main->charge(
+  $amount,
+  $cgi->param('pkg'),
+  '$'. sprintf("%.2f",$amount),
+  $cgi->param('taxclass')
+);
 
 if ($error) {
 %>

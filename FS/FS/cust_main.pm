@@ -1734,7 +1734,7 @@ sub credit {
   $cust_credit->insert;
 }
 
-=item charge AMOUNT PKG COMMENT
+=item charge AMOUNT [ PKG [ COMMENT [ TAXCLASS ] ] ]
 
 Creates a one-time charge for this customer.  If there is an error, returns
 the error, otherwise returns false.
@@ -1742,7 +1742,10 @@ the error, otherwise returns false.
 =cut
 
 sub charge {
-  my ( $self, $amount, $pkg, $comment ) = @_;
+  my ( $self, $amount ) = @_;
+  my $pkg      = @_ ? shift : 'One-time charge';
+  my $comment  = @_ ? shift : '$'. sprintf("%.2f",$amount);
+  my $taxclass = @_ ? shift : '';
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -1756,12 +1759,13 @@ sub charge {
   my $dbh = dbh;
 
   my $part_pkg = new FS::part_pkg ( {
-    'pkg'      => $pkg || 'One-time charge',
-    'comment'  => $comment || '$'. sprintf("%.2f",$amount),
+    'pkg'      => $pkg,
+    'comment'  => $comment,
     'setup'    => $amount,
     'freq'     => 0,
     'recur'    => '0',
     'disabled' => 'Y',
+    'taxclass' => $taxclass,
   } );
 
   my $error = $part_pkg->insert;

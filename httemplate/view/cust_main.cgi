@@ -272,7 +272,25 @@ print '<BR>'.
   qq!<INPUT TYPE="hidden" NAME="custnum" VALUE="$custnum">!.
   qq!Description:<INPUT TYPE="text" NAME="pkg">!.
   qq! Amount:<INPUT TYPE="text" NAME="amount" SIZE=6>!.
-  qq!&nbsp;<INPUT TYPE="submit" VALUE="One-time charge"></FORM><BR>!;
+  qq!&nbsp;!;
+
+#false laziness w/ edit/part_pkg.cgi
+if ( $conf->exists('enable_taxclasses') ) {
+  print '<SELECT NAME="taxclass">';
+  my $sth = dbh->prepare('SELECT DISTINCT taxclass FROM cust_main_county')
+    or die dbh->errstr;
+  $sth->execute or die $sth->errstr;
+  foreach my $taxclass ( map $_->[0], @{$sth->fetchall_arrayref} ) {
+    print qq!<OPTION VALUE="$taxclass"!;
+    #print ' SELECTED' if $taxclass eq $hashref->{taxclass};
+    print qq!>$taxclass</OPTION>!;
+  }
+  print '</SELECT>';
+} else {
+  print '<INPUT TYPE="hidden" NAME="taxclass" VALUE="">';
+}
+
+print qq!<INPUT TYPE="submit" VALUE="One-time charge"></FORM><BR>!;
 
 print <<END;
 <SCRIPT>
