@@ -56,7 +56,7 @@ $ su
 # make install</pre>
   <li>Copy or link fs-x.y.z/htdocs to your web server's document space.  <pre>mkdir /usr/local/apache/htdocs/freeside
 cp -r fs-x.y.z/htdocs/* /usr/local/apache/htdocs/freeside</pre> or <pre>ln -s /full/path/to/fs-x.y.z/htdocs /usr/local/apache/htdocs/freeside</pre>
-  <li>Restrict access to this web interface.  (with <a href="http://www.apache.org/docs/misc/FAQ.html#user-authentication">Apache</a>)
+  <li>Restrict access to this web interface.  (with <a href="http://httpd.apache.org/docs/misc/FAQ.html#user-authentication">Apache</a>)
   <li>Enable CGI execution for files with the `.cgi' extension.  (with <a href="http://www.apache.org/docs/mod/mod_mime.html#addhandler">Apache</a>)
   <li>Set ownership and permissions for the web interface.  The web interface needs to run as the freeside user - there are several ways to do this.
     <ul>
