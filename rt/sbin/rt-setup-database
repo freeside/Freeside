@@ -110,6 +110,9 @@ elsif ( $args{'action'} eq 'drop' ) {
     }
     drop_db();
 }
+elsif ( $args{'action'} eq 'insert_initial' ) {
+    insert_initial_data();
+}
 elsif ( $args{'action'} eq 'insert' ) {
     insert_data( $args{'datafile'} );
 }
