@@ -711,9 +711,10 @@ httemplate/docs/config.html
   {
     'key'         => 'username_policy',
     'section'     => '',
-    'description' => 'This file controls the mechanism for preventing duplicate usernames in passwd/radius files exported from svc_accts.  This should be one of \'prepend domsvc\' \'append domsvc\' or \'append domain\'',
-#    'type'        => 'select',
-    'type'        => 'text',
+    'description' => 'This file controls the mechanism for preventing duplicate usernames in passwd/radius files exported from svc_accts.  This should be one of \'prepend domsvc\' \'append domsvc\' \'append domain\' or \'append @domain\'',
+    'type'        => 'select',
+    'select_enum' => [ 'prepend domsvc', 'append domsvc', 'append domain', 'append @domain' ],
+    #'type'        => 'text',
   },
 
   {
