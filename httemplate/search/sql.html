@@ -1,8 +1,12 @@
-<%= include( '/elements/header', 'Query Results',
-               include( '/elements/menubar', 'Main Menu' => $p )
+<%= include( '/elements/header.html', 'Query Results',
+               include( '/elements/menubar.html', 'Main Menu' => $p )
+    )
 %>
+
 <%= include( 'elements/search.html',
-               'name' => 'rows',
-             
+               'name'  => 'rows',
+               'query' => 'SELECT '. ( $cgi->param('sql')
+                                       || eidiot('Empty query') ),
+    )
 %>
 

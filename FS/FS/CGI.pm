@@ -44,8 +44,10 @@ Returns an HTML header.
 =cut
 
 sub header {
+  use Carp;
+  carp 'FS::CGI::header deprecated; include /elements/header.html instead';
+
   my($title,$menubar,$etc)=@_; #$etc is for things like onLoad= etc.
-  #use Carp;
   $etc = '' unless defined $etc;
 
   my $x =  <<END;
@@ -107,6 +109,9 @@ Returns an HTML menubar.
 =cut
 
 sub menubar { #$menubar=menubar('Main Menu', '../', 'Item', 'url', ... );
+  use Carp;
+  carp 'FS::CGI::menubar deprecated; include /elements/menubar.html instead';
+
   my($item,$url,@html);
   while (@_) {
     ($item,$url)=splice(@_,0,2);
@@ -225,6 +230,9 @@ Returns HTML tag for beginning a table.
 =cut
 
 sub table {
+  use Carp;
+  carp 'FS::CGI::table deprecated; include /elements/table.html instead';
+
   my $col = shift;
   if ( $col ) {
     qq!<TABLE BGCOLOR="$col" BORDER=1 WIDTH="100%" CELLSPACING=0 CELLPADDING=2 BORDERCOLOR="#999999">!;

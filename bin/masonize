@@ -1,6 +1,7 @@
 #!/usr/bin/perl
 
-foreach $file ( split(/\n/, `find . -depth -print | grep cgi\$`) ) {
+foreach $file ( split(/\n/, `find . -depth -print`) ) {
+  next unless $file =~ /(cgi|html)$/;
   open(F,$file) or die "can't open $file for reading: $!";
   @file = <F>;
   #print "$file ". scalar(@file). "\n";

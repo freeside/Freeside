@@ -1,8 +1,59 @@
 <%
 
-my $conf = new FS::Conf;
-my $maxrecords = $conf->config('maxsearchrecordsperpage');
+  my %opt = @_;
+  unless (exists($opt{'count_query'}) && length($opt{'count_query'})) {
+    ( $opt{'count_query'} = $opt{'query'} ) =~
+      s/^\s*SELECT\s*(.*)\s+FROM\s/SELECT COUNT(*) FROM /i;
+  }
 
-my $limit = $maxrecords ? "LIMIT $maxrecords" : '';
+  my $conf = new FS::Conf;
+  my $maxrecords = $conf->config('maxsearchrecordsperpage');
+
+  my $limit = $maxrecords ? "LIMIT $maxrecords" : '';
+
+  my $offset = $cgi->param('offset') || 0;
+  $limit .= " OFFSET $offset" if $offset;
+
+  my $count_sth = dbh->prepare($opt{'count_query'})
+    or die "Error preparing $opt{'count_query'}: ". dbh->errstr;
+  $count_sth->execute
+    or die "Error executing $opt{'count_query'}: ". $count_sth->errstr;
+  my $total = $count_sth->fetchrow_arrayref->[0];
+
+  my $sth = dbh->prepare("$opt{'query'} $limit")
+    or die "Error preparing $opt{'query'}: ". dbh->errstr;
+  $sth->execute
+    or die "Error executing $opt{'query'}: ". $sth->errstr;
+
+  #can get # of rows without fetching them all?
+  my $rows = $sth->fetchall_arrayref;
 
 %>
+<!-- mason kludge -->
+<% my $pager = include ( '/elements/pager.html',
+                           'offset'     => $offset,
+                           'num_rows'   => scalar(@$rows),
+                           'total'      => $total,
+                           'maxrecords' => $maxrecords,
+                       );
+%>
+
+<%= $total %> total <%= $opt{'name'} %><BR><BR><%= $pager %>
+<%= include( '/elements/table.html' ) %>
+  <TR>
+  <% foreach ( @{$sth->{NAME}} ) { %>
+       <TH><%= $_ %></TH>
+  <% } %>
+  </TR>
+  <% foreach my $row ( @$rows ) { %>
+       <TR>
+       <% foreach ( @$row ) { %>
+            <TD><%= $_ %></TD>
+       <% } %>
+       </TR>
+  <% } %>
+
+</TABLE>
+<%= $pager %>
+</BODY>
+</HTML>

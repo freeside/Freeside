@@ -1,0 +1,19 @@
+<%
+  my($title, $menubar) = @_;
+  my $etc = @_ ? shift : ''; #$etc is for things like onLoad= etc.
+%>
+    <HTML>
+      <HEAD>
+        <TITLE>
+          <%= $title %>
+        </TITLE>
+        <META HTTP-Equiv="Cache-Control" Content="no-cache">
+        <META HTTP-Equiv="Pragma" Content="no-cache">
+        <META HTTP-Equiv="Expires" Content="0"> 
+      </HEAD>
+      <BODY BGCOLOR="#e8e8e8"<%= $etc %>>
+          <FONT SIZE=7>
+            <%= $title %>
+          </FONT>
+          <BR><BR>
+          <%= $menubar ? "$menubar<BR><BR>" : '' %>

@@ -1,0 +1,42 @@
+<%
+
+  my %opt = @_;
+
+  my $pager = '';
+  if ( $opt{'total'} != $opt{'num_rows'} && $opt{'maxrecords'} ) {
+    unless ( $opt{'offset'} == 0 ) {
+      $cgi->param('offset', $opt{'offset'} - $opt{'maxrecords'});
+%>
+
+      <A HREF="<%= $cgi->self_url %>"><B><FONT SIZE="+1">Previous</FONT></B></A>
+
+<%
+    }
+    my $page = 0;
+    for ( my $poff = 0; $poff < $opt{'total'}; $poff += $opt{'maxrecords'} ) {
+      $page++;
+      if ( $opt{'offset'} == $poff ) {
+%>
+
+        <FONT SIZE="+2"><%= $page %></FONT>
+
+<%
+      } else {
+        $cgi->param('offset', $poff);
+%>
+
+        <A HREF="<%= $cgi->self_url %>">$page</A>
+
+<%
+      }
+    }
+    unless ( $opt{'offset'} + $opt{'maxrecords'} > $opt{'total'} ) {
+      $cgi->param('offset', $opt{'offset'} + $opt{'maxrecords'});
+%>
+
+      <A HREF="<%= $cgi->self_url %>"><B><FONT SIZE="+1">Next</FONT></B></A>
+
+<%
+    }
+  }
+%>
