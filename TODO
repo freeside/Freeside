@@ -1,10 +1,35 @@
-$Id: TODO,v 1.40 2000-01-27 00:27:50 ivan Exp $
+$Id: TODO,v 1.41 2000-01-30 06:11:09 ivan Exp $
 
 If you are interested in helping with any of these, please join the mailing
 list (send a blank message to ivan-freeside-subscribe@sisd.com) to avoid 
 duplication of effort.
 
 ---
+
+
+           CVS via SSH (Score:1)
+           by platinum (jedgar at fxp dot org) on Thursday September 30, @07:13PM EDT (#4)
+           (User Info) http://www.fxp.org/~jedgar
+           The links above are your best bet for basic cvs server configuration. Once you have a pserver set up, you
+           may consider using cvs via ssh. All you need to do is the following: 
+
+           1) Have ssh and sshd set up on the client and server machines 
+           2) Set CVSROOT="joe@example.com:/home/ncvs" 
+           3) Set CVS_RSH="/usr/local/bin/ssh" 
+           4) Use cvs normally 
+           (Obviously, insert the proper host/paths above) 
+
+           You can also set up cvs/ssh to not need a password every time (similiar to an initial 'cvs login'): 
+
+           1) run ssh-keygen on client machine using no passphrase. 
+           2) copy/add ~/.ssh/identity.pub on the client to ~/.ssh/authorized_keys on the server 
+           (man ssh for more details) 
+
+           The main reason I mentio
+           CVS via SSH (Score:1)
+           by platinum (jedgar at fxp dot org) on Thursday September 30, @07:13PM EDT (#4)
+           (User Info) http://www.fxp.org/~jedgar
+
 
 There's no way to do this currently, though it would be pretty
 straightforward to modify the source - specifically, the _collect_
@@ -291,20 +316,7 @@ that error because it didn't exist yet.  Sounds like a buglet to me.  I'll
 try to fix that soon; in the meantime you can add the invoicing email 
 address afterwords.
 
-Postgres `money' time sucks rocks anyway.  I'll probably just require 6.5
-and use the numeric types, which *finally* work right.
-On Sat, Apr 24, 1999 at 12:52:00PM -0700, Mr. Poet wrote:
-> Software error:
-> Error creating cust_bill record: ERROR: parser:
-> attribute 'charged' is of type 'money' but expression
-> is of type 'float8' You will need to rewrite or cast 
-> the expression ! Check updated but unbilled packages 
-> for customer1
-.
-Postgres `money' time sucks rocks anyway.  I'll probably just require 6.5
-and use the numeric types, which *finally* work right (well, according to 
-the web site, anyway).
-.
+(workaround for postgres before 6.5) (unlikely to ever be implemented)
 In the mean-time, this could probably be fixed with the reverse of        
 the kludge in FS::Record::new.  This removes `$' and `,' from money fields
 coming out of the database.  Something which fixed up the data so Postgres
