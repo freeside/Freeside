@@ -13,7 +13,7 @@
   http_header('Content-Type' => 'text/plain' );
 
   while (<DUMP>) {
-    chomp;
-%><%= $_ %><% }
-   close DUMP;
+    print $_;
+  }
+  close DUMP;
 %>
