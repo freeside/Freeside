@@ -504,7 +504,7 @@ Not yet implemented, croaks.  Derived classes should provide a check method.
 =cut
 
 sub check {
-  croak "FS::Record::check not implemented; supply one in subclass!";
+  confess "FS::Record::check not implemented; supply one in subclass!";
 }
 
 =item unique COLUMN
@@ -825,7 +825,7 @@ sub hfields {
 
 =head1 VERSION
 
-$Id: Record.pm,v 1.16 1999-04-10 07:03:38 ivan Exp $
+$Id: Record.pm,v 1.17 1999-07-17 01:34:25 ivan Exp $
 
 =head1 BUGS
 
@@ -947,7 +947,10 @@ added pod documentation ivan@sisd.com 98-sep-6
 ut_phonen got ''; at the end ivan@sisd.com 98-sep-27
 
 $Log: Record.pm,v $
-Revision 1.16  1999-04-10 07:03:38  ivan
+Revision 1.17  1999-07-17 01:34:25  ivan
+s/croak/confess/; in check method
+
+Revision 1.16  1999/04/10 07:03:38  ivan
 return the value with ut_* error messages, to assist in debugging
 
 Revision 1.15  1999/04/08 12:08:59  ivan
