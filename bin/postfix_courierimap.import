@@ -77,7 +77,7 @@ print "\n\n";
 my $dbh = DBI->connect( $datasrc, $db_user, $db_pass )
   or die $DBI::errstr;
 
-my $sth = $dbh->prepare('SELECT username, password, crypt name, domain FROM mailbox')
+my $sth = $dbh->prepare('SELECT username, password, crypt, name, domain FROM mailbox')
   or die $dbh->errstr;
 $sth->execute or die $sth->errstr;
 
