@@ -24,12 +24,14 @@ tie my %options, 'Tie::IxHash',
   'desc'    => 'Real-time export to vpopmail text files',
   'options' => \%options,
   'notes'   => <<'END'
+This export is currently unmaintained.  See shellcommands_withdomain for an
+export that uses vpopmail CLI commands instead.<BR>
+<BR>
 Real time export to <a href="http://inter7.com/vpopmail/">vpopmail</a> text
 files.  <a href="http://search.cpan.org/dist/File-Rsync">File::Rsync</a>
 must be installed, and you will need to
 <a href="../docs/ssh.html">setup SSH for unattended operation</a>
-to <b>vpopmail</b>@<i>export.host</i>.  See shellcommands_withdomain for an
-export that uses vpopmail commands instead.
+to <b>vpopmail</b>@<i>export.host</i>. 
 END
 );
 
