@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 #
-# $Id: svc_acct.export,v 1.12 2000-06-15 14:07:02 ivan Exp $
+# $Id: svc_acct.export,v 1.13 2000-06-28 12:37:28 ivan Exp $
 #
 # Create and export password files: passwd, passwd.adjunct, shadow,
 # acp_passwd, acp_userinfo, acp_dialup, users
@@ -38,7 +38,10 @@
 # ivan@sisd.com 98-sep-18
 # 
 # $Log: svc_acct.export,v $
-# Revision 1.12  2000-06-15 14:07:02  ivan
+# Revision 1.13  2000-06-28 12:37:28  ivan
+# add support for config option textradiusprepend
+#
+# Revision 1.12  2000/06/15 14:07:02  ivan
 # added ICRADIUS radreply table support, courtesy of Kenny Elliott
 #
 # Revision 1.11  2000/03/06 16:00:39  ivan
@@ -88,6 +91,8 @@ my $icradius_mysqlsource =
     if $icradiusmachines;
 my $icradius_dbh = dbh; #could eventually get it from a config file if you're
                         #not running MySQL for your Freeside database
+
+my $textradiusprepend = $conf->config('textradiusprepend');
 
 my(@saltset)= ( 'a'..'z' , 'A'..'Z' , '0'..'9' , '.' , '/' );
 require 5.004; #srand(time|$$);
@@ -237,7 +242,7 @@ foreach $svc_acct (@svc_acct) {
     ###
     # FORMAT OF THE USERS FILE HERE
     print USERS
-      $svc_acct->username, qq(\tPassword = "$rpassword"\n\t),
+      $svc_acct->username, qq(\t${textradiusprepend}Password = "$rpassword"\n\t),
       join ",\n\t", map { qq($_ = "$radius{$_}") } keys %radius;
     
     if ( $ip && $ip ne '0e0' ) {
