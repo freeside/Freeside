@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: fs-setup,v 1.63 2001-10-20 12:17:59 ivan Exp $
+# $Id: fs-setup,v 1.64 2001-10-23 18:15:06 ivan Exp $
 
 #to delay loading dbdef until we're ready
 BEGIN { $FS::Record::setup_hack = 1; }
@@ -73,7 +73,7 @@ my($char_d) = 80; #default maxlength for text fields
 
 #my(@date_type)  = ( 'timestamp', '', ''     );
 my(@date_type)  = ( 'int', 'NULL', ''     );
-my(@perl_type) = ( 'varchar', 'NULL', ''  ); 
+my(@perl_type) = ( 'text', 'NULL', ''  ); 
 my @money_type = ( 'decimal',   '', '10,2' );
 
 ###
@@ -316,7 +316,7 @@ sub tables_hash_hack {
         '_date',    @date_type,
         'amount',   @money_type,
         'otaker',   'varchar', '', 8,
-        'reason',   'varchar', 'NULL', 255,
+        'reason',   'text', 'NULL', '',
       ],
       'primary_key' => 'crednum',
       'unique' => [ [] ],
@@ -379,7 +379,7 @@ sub tables_hash_hack {
         'otaker',   'varchar', '',     8,
         'refnum',   'int',  '',     '',
         'referral_custnum', 'int',  'NULL', '',
-        'comments', 'varchar', 'NULL', '',
+        'comments', 'text', 'NULL', '',
       ],
       'primary_key' => 'custnum',
       'unique' => [ [] ],
@@ -542,8 +542,8 @@ sub tables_hash_hack {
         'recur',      @perl_type,
         'setuptax',  'char', 'NULL', 1,
         'recurtax',  'char', 'NULL', 1,
-        'plan',       'varchar', 'NULL', '',
-        'plandata',   'varchar', 'NULL', '',
+        'plan',       'varchar', 'NULL', $char_d,
+        'plandata',   'text', 'NULL', '',
       ],
       'primary_key' => 'pkgpart',
       'unique' => [ [] ],
@@ -791,7 +791,7 @@ sub tables_hash_hack {
     'queue' => {
       'columns' => [
         'jobnum', 'int', '', '',
-        'job', 'varchar', '', '',
+        'job', 'text', '', '',
         '_date', 'int', '', '',
         'status', 'varchar', '', $char_d,
       ],
@@ -804,7 +804,7 @@ sub tables_hash_hack {
       'columns' => [
         'argnum', 'int', '', '',
         'jobnum', 'int', '', '',
-        'arg', 'varchar', 'NULL', '',
+        'arg', 'text', 'NULL', '',
       ],
       'primary_key' => 'argnum',
       'unique'      => [],
