@@ -44,9 +44,9 @@ foreach my $part_referral ( sort {
 } qsearch('part_referral',{}) ) {
 %>
       <TR>
-        <TD><A HREF="<%= $p %>edit/part_referral.cgi?<%= $hashref->{refnum} %>">
+        <TD><A HREF="<%= $p %>edit/part_referral.cgi?<%= $part_referral->refnum %>">
           <%= $part_referral->refnum %></A></TD>
-        <TD><A HREF="<%= $p %>edit/part_referral.cgi?<%= $hashref->{refnum} %>">
+        <TD><A HREF="<%= $p %>edit/part_referral.cgi?<%= $part_referral->refnum %>">
           <%= $part_referral->referral %></A></TD>
         <% for my $period ( values %past ) {
           $sth->execute($part_referral->refnum, $today-$period)
