@@ -31,11 +31,32 @@ The export itself needs the following options:
 
 =cut
 
-use vars qw(@ISA @saltset);
+use vars qw(@ISA %info @saltset);
+use Tie::IxHash;
 use String::ShellQuote;
 use FS::part_export;
 
 @ISA = qw(FS::part_export);
+
+tie my %options, 'Tie::IxHash',
+  'protocol' => {
+	  label=>'Protocol',
+	  type =>'select',
+	  options => [qw(telnet ssh)],
+	  default => 'telnet'},
+  'insert' => {label=>'Insert command', default=>'' },
+  'delete' => {label=>'Delete command', default=>'' },
+  'replace' => {label=>'Replace command', default=>'' },
+  'Timeout' => {label=>'Time to wait for prompt', default=>'20' },
+  'Prompt' => {label=>'Prompt string', default=>'#' }
+;
+
+%info = (
+  'svc'     => 'svc_broadband',
+  'desc'    => 'Send a command to a router.',
+  'options' => \%options,
+  'notes'   => '( more detailed description from Kristian / fire2wire? )',
+);
 
 @saltset = ( 'a'..'z' , 'A'..'Z' , '0'..'9' , '.' , '/' );
 
@@ -163,4 +184,6 @@ sub telnet_cmd {
 #}
 #sub router_delete { #subroutine, not method
 #}
+
+1;
 
