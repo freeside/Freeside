@@ -1053,6 +1053,13 @@ httemplate/docs/config.html
     'type'        => 'text',
   },
 
+  {
+    'key'         => 'users-allow_comp',
+    'section'     => '',
+    'description' => 'Usernames which can create complimentary customers, one per line.  If no usernames are entered, all users can create complimentary accounts.'
+    'type'        => 'textarea',
+  },
+
 );
 
 1;

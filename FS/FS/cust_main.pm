@@ -372,7 +372,7 @@ returns false.
 
 This will completely remove all traces of the customer record.  This is not
 what you want when a customer cancels service; for that, cancel all of the
-customer's packages (see L<FS::cust_pkg/cancel>).
+customer's packages (see L</cancel>).
 
 If the customer has any uncancelled packages, you need to pass a new (valid)
 customer number for those packages to be transferred to.  Cancelled packages
@@ -490,6 +490,12 @@ sub replace {
   local $SIG{TSTP} = 'IGNORE';
   local $SIG{PIPE} = 'IGNORE';
 
+  if ( $self->payby eq 'COMP' && $self->payby ne $old->payby
+       && $conf->config('users-allow_comp')                  ) {
+    return "You are not permitted to create complimentary accounts."
+      unless grep { $_ eq getotaker } $conf->config('users-allow_comp');
+  }
+
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
@@ -603,7 +609,7 @@ sub check {
     || $self->ut_numbern('referral_custnum')
   ;
   #barf.  need message catalogs.  i18n.  etc.
-  $error .= "Please select a advertising source."
+  $error .= "Please select an advertising source."
     if $error =~ /^Illegal or empty \(numeric\) refnum: /;
   return $error if $error;
 
@@ -745,6 +751,11 @@ sub check {
     return "Illegal P.O. number: ". $self->payinfo if $error;
 
   } elsif ( $self->payby eq 'COMP' ) {
+
+    if ( !$self->custnum && $conf->config('users-allow_comp') ) {
+      return "You are not permitted to create complimentary accounts."
+        unless grep { $_ eq getotaker } $conf->config('users-allow_comp');
+    }
 
     $error = $self->ut_textn('payinfo');
     return "Illegal comp account issuer: ". $self->payinfo if $error;
