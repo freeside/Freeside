@@ -1,21 +1,9 @@
-CREATE TABLE KeywordSelects (
-  id INTEGER NOT NULL  AUTO_INCREMENT,
-  Name varchar(255) NULL  ,
-  Keyword integer NULL  ,
-  Single integer NULL  ,
-  Depth integer NOT NULL DEFAULT 0 ,
-  ObjectType varchar(32) NOT NULL  ,
-  ObjectField varchar(32) NULL  ,
-  ObjectValue varchar(255) NULL  ,
-  Disabled int2 NOT NULL DEFAULT 0 ,
-  PRIMARY KEY (id)
-);
-CREATE INDEX KeywordSelects1 ON KeywordSelects (Keyword);
-CREATE INDEX KeywordSelects2 ON KeywordSelects (ObjectType, ObjectField, ObjectValue);
+# {{{ Attachments
+
 CREATE TABLE Attachments (
   id INTEGER NOT NULL  AUTO_INCREMENT,
   TransactionId integer NOT NULL  ,
-  Parent integer NULL  ,
+  Parent integer NOT NULL DEFAULT 0  ,
   MessageId varchar(160) NULL  ,
   Subject varchar(255) NULL  ,
   Filename varchar(255) NULL  ,
@@ -23,161 +11,222 @@ CREATE TABLE Attachments (
   ContentEncoding varchar(80) NULL  ,
   Content LONGTEXT NULL  ,
   Headers LONGTEXT NULL  ,
-  Creator integer NULL  ,
+  Creator integer NOT NULL DEFAULT 0  ,
   Created DATETIME NULL  ,
   PRIMARY KEY (id)
-);
-CREATE INDEX Attachments1 ON Attachments (Parent);
-CREATE INDEX Attachments2 ON Attachments (TransactionId);
-CREATE INDEX Attachments3 ON Attachments (Parent, TransactionId);
+) TYPE=InnoDB;
+
+CREATE INDEX Attachments1 ON Attachments (Parent) ;
+CREATE INDEX Attachments2 ON Attachments (TransactionId) ;
+CREATE INDEX Attachments3 ON Attachments (Parent, TransactionId) ;
+# }}}
+
+# {{{ Queues
 CREATE TABLE Queues (
   id INTEGER NOT NULL  AUTO_INCREMENT,
-  Name varchar(120) NOT NULL  ,
-  Description varchar(120) NULL  ,
+  Name varchar(200) NOT NULL  ,
+  Description varchar(255) NULL  ,
   CorrespondAddress varchar(120) NULL  ,
   CommentAddress varchar(120) NULL  ,
-  InitialPriority integer NULL  ,
-  FinalPriority integer NULL  ,
-  DefaultDueIn integer NULL  ,
-  Creator integer NULL  ,
+  InitialPriority integer NOT NULL DEFAULT 0  ,
+  FinalPriority integer NOT NULL DEFAULT 0  ,
+  DefaultDueIn integer NOT NULL DEFAULT 0  ,
+  Creator integer NOT NULL DEFAULT 0  ,
   Created DATETIME NULL  ,
-  LastUpdatedBy integer NULL  ,
+  LastUpdatedBy integer NOT NULL DEFAULT 0  ,
   LastUpdated DATETIME NULL  ,
   Disabled int2 NOT NULL DEFAULT 0 ,
   PRIMARY KEY (id)
-);
-CREATE UNIQUE INDEX Queues1 ON Queues (Name);
+) TYPE=InnoDB;
+CREATE UNIQUE INDEX Queues1 ON Queues (Name) ;
+CREATE INDEX Queues2 ON Queues (Disabled) ;
+
+# }}}
+
+# {{{ Links
+
 CREATE TABLE Links (
   id INTEGER NOT NULL  AUTO_INCREMENT,
   Base varchar(240) NULL  ,
   Target varchar(240) NULL  ,
   Type varchar(20) NOT NULL  ,
-  LocalTarget integer NULL  ,
-  LocalBase integer NULL  ,
-  LastUpdatedBy integer NULL  ,
+  LocalTarget integer NOT NULL DEFAULT 0  ,
+  LocalBase integer NOT NULL DEFAULT 0  ,
+  LastUpdatedBy integer NOT NULL DEFAULT 0  ,
   LastUpdated DATETIME NULL  ,
-  Creator integer NULL  ,
+  Creator integer NOT NULL DEFAULT 0  ,
   Created DATETIME NULL  ,
   PRIMARY KEY (id)
-);
-CREATE UNIQUE INDEX Links1 ON Links (Base, Target, Type);
+) TYPE=InnoDB;
+
+CREATE UNIQUE INDEX Links1 ON Links (Base, Target, Type) ;
+CREATE INDEX Links2 ON Links (Base,  Type) ;
+CREATE INDEX Links3 ON Links (Target,  Type) ;
+
+# }}}
+
+# {{{ Principals
+
+CREATE TABLE Principals (
+        id INTEGER  AUTO_INCREMENT not null,
+        PrincipalType VARCHAR(16) not null,
+        ObjectId integer, # foreign key to Users or Groups, depending
+        Disabled int2 NOT NULL DEFAULT 0 ,
+        PRIMARY KEY (id)
+) TYPE=InnoDB;
+
+CREATE INDEX Principals2 ON Principals (ObjectId);
+
+# }}}
+
+# {{{ Groups
+
 CREATE TABLE Groups (
   id INTEGER NOT NULL  AUTO_INCREMENT,
-  Name varchar(16) NULL  ,
-  Description varchar(64) NULL  ,
-  Pseudo integer NOT NULL DEFAULT 0 ,
+  Name varchar(200) NULL  ,
+  Description varchar(255) NULL  ,
+  Domain varchar(64),
+  Type varchar(64),
+  Instance varchar(64),
   PRIMARY KEY (id)
-);
-CREATE UNIQUE INDEX Groups1 ON Groups (Name);
-CREATE TABLE Watchers (
-  id INTEGER NOT NULL  AUTO_INCREMENT,
-  Type varchar(16) NULL  ,
-  Scope varchar(16) NULL  ,
-  Value integer NULL  ,
-  Email varchar(255) NULL  ,
-  Quiet integer NULL  ,
-  Owner integer NULL  ,
-  Creator integer NULL  ,
-  Created DATETIME NULL  ,
-  LastUpdatedBy integer NULL  ,
-  LastUpdated DATETIME NULL  ,
-  PRIMARY KEY (id)
-);
-CREATE INDEX Watchers1 ON Watchers (Scope, Value, Type, Owner);
+) TYPE=InnoDB;
+
+CREATE INDEX Groups1 ON Groups (Domain,Instance,Type,id);
+CREATE INDEX Groups2 On Groups  (Type, Instance, Domain);   
+
+# }}}
+
+# {{{ ScripConditions
+
 CREATE TABLE ScripConditions (
   id INTEGER NOT NULL  AUTO_INCREMENT,
-  Name varchar(255) NULL  ,
+  Name varchar(200) NULL  ,
   Description varchar(255) NULL  ,
   ExecModule varchar(60) NULL  ,
   Argument varchar(255) NULL  ,
   ApplicableTransTypes varchar(60) NULL  ,
-  Creator integer NULL  ,
+
+  Creator integer NOT NULL DEFAULT 0  ,
   Created DATETIME NULL  ,
-  LastUpdatedBy integer NULL  ,
+  LastUpdatedBy integer NOT NULL DEFAULT 0  ,
   LastUpdated DATETIME NULL  ,
   PRIMARY KEY (id)
-);
+) TYPE=InnoDB;
+
+# }}}
+
+# {{{ Transactions
 CREATE TABLE Transactions (
   id INTEGER NOT NULL  AUTO_INCREMENT,
-  EffectiveTicket integer NULL  ,
-  Ticket integer NULL  ,
-  TimeTaken integer NULL  ,
+  EffectiveTicket integer NOT NULL DEFAULT 0  ,
+  Ticket integer NOT NULL DEFAULT 0  ,
+  TimeTaken integer NOT NULL DEFAULT 0  ,
   Type varchar(20) NULL  ,
   Field varchar(40) NULL  ,
   OldValue varchar(255) NULL  ,
   NewValue varchar(255) NULL  ,
   Data varchar(100) NULL  ,
-  Creator integer NULL  ,
+
+  Creator integer NOT NULL DEFAULT 0  ,
   Created DATETIME NULL  ,
   PRIMARY KEY (id)
-);
+) TYPE=InnoDB;
 CREATE INDEX Transactions1 ON Transactions (Ticket);
 CREATE INDEX Transactions2 ON Transactions (EffectiveTicket);
+
+# }}}
+
+# {{{ Scrips 
+
 CREATE TABLE Scrips (
   id INTEGER NOT NULL  AUTO_INCREMENT,
-  ScripCondition integer NULL  ,
-  ScripAction integer NULL  ,
+  Description varchar(255),
+  ScripCondition integer NOT NULL DEFAULT 0  ,
+  ScripAction integer NOT NULL DEFAULT 0  ,
+  ConditionRules text NULL  ,
+  ActionRules text NULL  ,
+  CustomIsApplicableCode text NULL  ,
+  CustomPrepareCode text NULL  ,
+  CustomCommitCode text NULL  ,
   Stage varchar(32) NULL  ,
-  Queue integer NULL  ,
-  Template integer NULL  ,
-  Creator integer NULL  ,
+  Queue integer NOT NULL DEFAULT 0  ,
+  Template integer NOT NULL DEFAULT 0  ,
+  Creator integer NOT NULL DEFAULT 0  ,
   Created DATETIME NULL  ,
-  LastUpdatedBy integer NULL  ,
+  LastUpdatedBy integer NOT NULL DEFAULT 0  ,
   LastUpdated DATETIME NULL  ,
   PRIMARY KEY (id)
-);
+) TYPE=InnoDB;
+
+# }}}
+
+# {{{ ACL
 CREATE TABLE ACL (
   id INTEGER NOT NULL  AUTO_INCREMENT,
-  PrincipalId integer NULL  ,
-  PrincipalType varchar(25) NULL  ,
-  RightName varchar(25) NULL  ,
-  RightScope varchar(25) NULL  ,
-  RightAppliesTo integer NULL  ,
+  PrincipalType varchar(25) NOT NULL, #"User" "Group", "Owner", "Cc" "AdminCc", "Requestor", "Requestor" 
+
+  PrincipalId integer NOT NULL  , #Foreign key to principals
+  RightName varchar(25) NOT NULL  ,
+  ObjectType varchar(25) NOT NULL  ,
+  ObjectId integer NOT NULL default 0,
+  DelegatedBy integer NOT NULL default 0, #foreign key to principals with a userid
+  DelegatedFrom integer NOT NULL default 0, #foreign key to ACL
   PRIMARY KEY (id)
-);
-CREATE INDEX ACL1 ON ACL (RightScope, PrincipalId);
-CREATE INDEX ACL2 ON ACL (RightScope, RightAppliesTo, RightName, PrincipalType, PrincipalId);
+) TYPE=InnoDB;
+
+CREATE INDEX  ACL1 on ACL(RightName, ObjectType, ObjectId,PrincipalType,PrincipalId);
+
+# }}}
+
+# {{{ GroupMembers 
+
 CREATE TABLE GroupMembers (
   id INTEGER NOT NULL  AUTO_INCREMENT,
-  GroupId integer NULL  ,
-  UserId integer NULL  ,
+  GroupId integer NOT NULL DEFAULT 0,
+  MemberId integer NOT NULL DEFAULT 0,  #Foreign key to Principals
   PRIMARY KEY (id)
-);
-CREATE UNIQUE INDEX GroupMembers1 ON GroupMembers (GroupId, UserId);
-CREATE TABLE ObjectKeywords (
-  id INTEGER NOT NULL  AUTO_INCREMENT,
-  Keyword integer NOT NULL  ,
-  KeywordSelect integer NOT NULL  ,
-  ObjectType varchar(32) NOT NULL  ,
-  ObjectId integer NOT NULL  ,
-  PRIMARY KEY (id)
-);
-CREATE UNIQUE INDEX ObjectKeywords1 ON ObjectKeywords (ObjectId, ObjectType, KeywordSelect, Keyword);
-CREATE INDEX ObjectKeywords2 ON ObjectKeywords (ObjectId, ObjectType);
-CREATE INDEX ObjectKeywords3 ON ObjectKeywords (Keyword);
-CREATE TABLE Keywords (
-  id INTEGER NOT NULL  AUTO_INCREMENT,
-  Name varchar(255) NOT NULL  ,
-  Description varchar(255) NULL  ,
-  Parent integer NULL  ,
-  Disabled int2 NOT NULL DEFAULT 0 ,
-  PRIMARY KEY (id)
-);
-CREATE UNIQUE INDEX Keywords1 ON Keywords (Name, Parent);
-CREATE INDEX Keywords2 ON Keywords (Name);
-CREATE INDEX Keywords3 ON Keywords (Parent);
+) TYPE=InnoDB;
+CREATE UNIQUE INDEX GroupMembers1 on GroupMembers (GroupId, MemberId);
+
+
+# }}}
+
+# {{{ GroupMembersCache
+
+create table CachedGroupMembers (
+        id int auto_increment,
+        GroupId int, # foreign key to Principals
+        MemberId int, # foreign key to Principals
+        Via int, #foreign key to CachedGroupMembers. (may point to $self->id)
+        ImmediateParentId int, #foreign key to prinicpals.         
+                               # this points to the group that the member is
+                               # a member of, for ease of deletes.
+        Disabled int2 NOT NULL DEFAULT 0 , # if this cached group member is a member of this group by way of a disabled
+                                           # group or this group is disabled, this will be set to 1
+                                           # this allows us to not find members of disabled subgroups when listing off
+                                           # group members recursively.
+                                           # Also, this allows us to have the ACL system elide members of disabled groups
+        PRIMARY KEY (id)
+) TYPE=InnoDB;
+
+CREATE INDEX DisGrouMem  on CachedGroupMembers (GroupId,MemberId,Disabled);
+CREATE INDEX GrouMem  on CachedGroupMembers (GroupId,MemberId);
+
+# }}}
+
+# {{{ Users
+
 CREATE TABLE Users (
   id INTEGER NOT NULL  AUTO_INCREMENT,
-  Name varchar(120) NOT NULL  ,
+  Name varchar(200) NOT NULL  ,
   Password varchar(40) NULL  ,
   Comments blob NULL  ,
   Signature blob NULL  ,
   EmailAddress varchar(120) NULL  ,
   FreeformContactInfo blob NULL  ,
   Organization varchar(200) NULL  ,
-  Privileged integer NULL  ,
   RealName varchar(120) NULL  ,
-  Nickname varchar(16) NULL  ,
+  NickName varchar(16) NULL  ,
   Lang varchar(16) NULL  ,
   EmailEncoding varchar(16) NULL  ,
   WebEncoding varchar(16) NULL  ,
@@ -196,72 +245,172 @@ CREATE TABLE Users (
   State varchar(100) NULL  ,
   Zip varchar(16) NULL  ,
   Country varchar(50) NULL  ,
-  Creator integer NULL  ,
+  Timezone varchar(50) NULL  ,
+  PGPKey text NULL,
+
+  Creator integer NOT NULL DEFAULT 0  ,
   Created DATETIME NULL  ,
-  LastUpdatedBy integer NULL  ,
+  LastUpdatedBy integer NOT NULL DEFAULT 0  ,
   LastUpdated DATETIME NULL  ,
-  Disabled int2 NOT NULL DEFAULT 0 ,
   PRIMARY KEY (id)
-);
-CREATE UNIQUE INDEX Users1 ON Users (Name);
+) TYPE=InnoDB;
+
+
+CREATE UNIQUE INDEX Users1 ON Users (Name) ;
+CREATE INDEX Users2 ON Users (Name);
 CREATE INDEX Users3 ON Users (id, EmailAddress);
 CREATE INDEX Users4 ON Users (EmailAddress);
+
+
+# }}}
+
+# {{{ Tickets
+
 CREATE TABLE Tickets (
   id INTEGER NOT NULL  AUTO_INCREMENT,
-  EffectiveId integer NULL  ,
-  Queue integer NULL  ,
+  EffectiveId integer NOT NULL DEFAULT 0  ,
+  Queue integer NOT NULL DEFAULT 0  ,
   Type varchar(16) NULL  ,
-  IssueStatement integer NULL  ,
-  Resolution integer NULL  ,
-  Owner integer NULL  ,
+  IssueStatement integer NOT NULL DEFAULT 0  ,
+  Resolution integer NOT NULL DEFAULT 0  ,
+  Owner integer NOT NULL DEFAULT 0  ,
   Subject varchar(200) NULL DEFAULT '[no subject]' ,
-  InitialPriority integer NULL  ,
-  FinalPriority integer NULL  ,
-  Priority integer NULL  ,
+  InitialPriority integer NOT NULL DEFAULT 0  ,
+  FinalPriority integer NOT NULL DEFAULT 0  ,
+  Priority integer NOT NULL DEFAULT 0  ,
+  TimeEstimated integer NOT NULL DEFAULT 0  ,
+  TimeWorked integer NOT NULL DEFAULT 0  ,
   Status varchar(10) NULL  ,
-  TimeWorked integer NULL  ,
-  TimeLeft integer NULL  ,
+  TimeLeft integer NOT NULL DEFAULT 0  ,
   Told DATETIME NULL  ,
   Starts DATETIME NULL  ,
   Started DATETIME NULL  ,
   Due DATETIME NULL  ,
   Resolved DATETIME NULL  ,
-  LastUpdatedBy integer NULL  ,
+
+
+  LastUpdatedBy integer NOT NULL DEFAULT 0  ,
   LastUpdated DATETIME NULL  ,
-  Creator integer NULL  ,
+  Creator integer NOT NULL DEFAULT 0  ,
   Created DATETIME NULL  ,
   Disabled int2 NOT NULL DEFAULT 0 ,
   PRIMARY KEY (id)
-);
-CREATE INDEX Tickets1 ON Tickets (Queue, Status);
-CREATE INDEX Tickets2 ON Tickets (Owner);
-CREATE INDEX Tickets3 ON Tickets (EffectiveId);
-CREATE INDEX Tickets4 ON Tickets (id, Status);
-CREATE INDEX Tickets5 ON Tickets (id, EffectiveId);
+) TYPE=InnoDB;
+
+CREATE INDEX Tickets1 ON Tickets (Queue, Status) ;
+CREATE INDEX Tickets2 ON Tickets (Owner) ;
+CREATE INDEX Tickets3 ON Tickets (EffectiveId) ;
+CREATE INDEX Tickets4 ON Tickets (id, Status) ;
+CREATE INDEX Tickets5 ON Tickets (id, EffectiveId) ;
+CREATE INDEX Tickets6 ON Tickets (EffectiveId, Type) ;
+
+# }}}
+
+# {{{ ScripActions
+
 CREATE TABLE ScripActions (
   id INTEGER NOT NULL  AUTO_INCREMENT,
-  Name varchar(255) NULL  ,
+  Name varchar(200) NULL  ,
   Description varchar(255) NULL  ,
   ExecModule varchar(60) NULL  ,
   Argument varchar(255) NULL  ,
-  Creator integer NULL  ,
+  Creator integer NOT NULL DEFAULT 0  ,
   Created DATETIME NULL  ,
-  LastUpdatedBy integer NULL  ,
+  LastUpdatedBy integer NOT NULL DEFAULT 0  ,
   LastUpdated DATETIME NULL  ,
   PRIMARY KEY (id)
-);
+) TYPE=InnoDB;
+
+# }}}
+
+# {{{ Templates
+
 CREATE TABLE Templates (
   id INTEGER NOT NULL  AUTO_INCREMENT,
   Queue integer NOT NULL DEFAULT 0 ,
-  Name varchar(40) NOT NULL  ,
-  Description varchar(120) NULL  ,
+  Name varchar(200) NOT NULL  ,
+  Description varchar(255) NULL  ,
   Type varchar(16) NULL  ,
   Language varchar(16) NULL  ,
-  TranslationOf integer NULL  ,
+  TranslationOf integer NOT NULL DEFAULT 0  ,
   Content blob NULL  ,
   LastUpdated DATETIME NULL  ,
-  LastUpdatedBy integer NULL  ,
-  Creator integer NULL  ,
+  LastUpdatedBy integer NOT NULL DEFAULT 0  ,
+  Creator integer NOT NULL DEFAULT 0  ,
   Created DATETIME NULL  ,
   PRIMARY KEY (id)
+) TYPE=InnoDB;
+
+# }}}
+
+# {{{ TicketCustomFieldValues 
+
+CREATE TABLE TicketCustomFieldValues (
+  id INTEGER NOT NULL  AUTO_INCREMENT,
+  Ticket int NOT NULL  ,
+  CustomField int NOT NULL  ,
+  Content varchar(255) NULL  ,
+
+  Creator integer NOT NULL DEFAULT 0  ,
+  Created DATETIME NULL  ,
+  LastUpdatedBy integer NOT NULL DEFAULT 0  ,
+  LastUpdated DATETIME NULL  ,
+  PRIMARY KEY (id)
+) TYPE=InnoDB;
+
+# }}}
+
+# {{{ CustomFields
+
+CREATE TABLE CustomFields (
+  id INTEGER NOT NULL  AUTO_INCREMENT,
+  Name varchar(200) NULL  ,
+  Type varchar(200) NULL  ,
+  Queue integer NOT NULL DEFAULT 0 ,
+  Description varchar(255) NULL  ,
+  SortOrder integer NOT NULL DEFAULT 0  ,
+
+  Creator integer NOT NULL DEFAULT 0  ,
+  Created DATETIME NULL  ,
+  LastUpdatedBy integer NOT NULL DEFAULT 0  ,
+  LastUpdated DATETIME NULL  ,
+  Disabled int2 NOT NULL DEFAULT 0 ,
+  PRIMARY KEY (id)
+) TYPE=InnoDB;
+
+CREATE INDEX CustomFields1 on CustomFields (Disabled, Queue);
+
+
+# }}}
+
+# {{{ CustomFieldValues 
+
+CREATE TABLE CustomFieldValues (
+  id INTEGER NOT NULL  AUTO_INCREMENT,
+  CustomField int NOT NULL  ,
+  Name varchar(200) NULL  ,
+  Description varchar(255) NULL  ,
+  SortOrder integer NOT NULL DEFAULT 0  ,
+
+  Creator integer NOT NULL DEFAULT 0  ,
+  Created DATETIME NULL  ,
+  LastUpdatedBy integer NOT NULL DEFAULT 0  ,
+  LastUpdated DATETIME NULL  ,
+  PRIMARY KEY (id)
+) TYPE=InnoDB;
+
+# }}}
+
+# {{{ Sessions
+
+# sessions is used by Apache::Session to keep sessions in the database.
+# We should have a reaper script somewhere.
+
+CREATE TABLE sessions (
+    id char(32) NOT NULL,
+    a_session LONGTEXT,
+    LastUpdated TIMESTAMP,
+    PRIMARY KEY (id)
 );
+
+# }}}

@@ -1,9 +1,31 @@
-# $Header: /home/cvs/cvsroot/freeside/rt/lib/RT/Interface/CLI.pm,v 1.1 2002-08-12 06:17:08 ivan Exp $
-# RT is (c) 1996-2001 Jesse Vincent <jesse@fsck.com>
+# BEGIN LICENSE BLOCK
+# 
+# Copyright (c) 1996-2003 Jesse Vincent <jesse@bestpractical.com>
+# 
+# (Except where explictly superceded by other copyright notices)
+# 
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+# 
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+# 
+# Unless otherwise specified, all modifications, corrections or
+# extensions to this work which alter its source code become the
+# property of Best Practical Solutions, LLC when submitted for
+# inclusion in the work.
+# 
+# 
+# END LICENSE BLOCK
+use strict;
 
+use RT;
 package RT::Interface::CLI;
 
-use strict;
 
 
 BEGIN {
@@ -11,14 +33,14 @@ BEGIN {
     use vars qw ($VERSION  @ISA @EXPORT @EXPORT_OK %EXPORT_TAGS);
     
     # set the version for version checking
-    $VERSION = do { my @r = (q$Revision: 1.1 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r }; # must be all one line, for MakeMaker
+    $VERSION = do { my @r = (q$Revision: 1.2 $ =~ /\d+/g); sprintf "%d."."%02d" x $#r, @r }; # must be all one line, for MakeMaker
     
     @ISA         = qw(Exporter);
     
     # your exported package globals go here,
     # as well as any optionally exported functions
-    @EXPORT_OK   = qw(&CleanEnv &LoadConfig &DBConnect 
-		      &GetCurrentUser &GetMessageContent &debug);
+    @EXPORT_OK   = qw(&CleanEnv 
+		      &GetCurrentUser &GetMessageContent &debug &loc);
 }
 
 =head1 NAME
@@ -27,24 +49,27 @@ BEGIN {
 
 =head1 SYNOPSIS
 
-  use lib "!!RT_LIB_PATH!!";
-  use lib "!!RT_ETC_PATH!!";
+  use lib "/path/to/rt/libraries/";
 
-  use RT::Interface::CLI  qw(CleanEnv LoadConfig DBConnect 
-	  		   GetCurrentUser GetMessageContent);
+  use RT::Interface::CLI  qw(CleanEnv 
+	  		   GetCurrentUser GetMessageContent loc);
 
   #Clean out all the nasties from the environment
   CleanEnv();
 
-  #Load etc/config.pm and drop privs
-  LoadConfig();
+  #let's talk to RT'
+  use RT;
 
-  #Connect to the database and get RT::SystemUser and RT::Nobody loaded
-  DBConnect();
+  #Load RT's config file
+  RT::LoadConfig();
 
+  # Connect to the database. set up loggign
+  RT::Init();
 
   #Get the current user all loaded
   my $CurrentUser = GetCurrentUser();
+
+  print loc('Hello!'); # Synonym of $CuurentUser->loc('Hello!');
 
 =head1 DESCRIPTION
 
@@ -53,7 +78,6 @@ BEGIN {
 
 =begin testing
 
-ok(require RT::TestHarness);
 ok(require RT::Interface::CLI);
 
 =end testing
@@ -77,35 +101,10 @@ sub CleanEnv {
 
 
 
-=head2 LoadConfig
 
-Loads RT's config file and then drops setgid privileges.
+{
 
-=cut
-
-sub LoadConfig {
-    
-    #This drags in  RT's config.pm
-    use config;
-    
-}	
-
-
-
-=head2 DBConnect
-
-  Calls RT::Init, which creates a database connection and then creates $RT::Nobody
-  and $RT::SystemUser
-
-=cut
-
-
-sub DBConnect {
-    use RT;
-    RT::Init();
-}
-
-
+    my $CurrentUser; # shared betwen GetCurrentUser and loc
 
 # {{{ sub GetCurrentUser 
 
@@ -115,15 +114,14 @@ sub DBConnect {
 loaded with that user.  if the current user isn't found, returns a copy of RT::Nobody.
 
 =cut
+
 sub GetCurrentUser  {
-    
-    my ($Gecos, $CurrentUser);
     
     require RT::CurrentUser;
     
     #Instantiate a user object
     
-    $Gecos=(getpwuid($<))[0];
+    my $Gecos= ($^O eq 'MSWin32') ? Win32::LoginName() : (getpwuid($<))[0];
 
     #If the current user is 0, then RT will assume that the User object
     #is that of the currentuser.
@@ -134,9 +132,28 @@ sub GetCurrentUser  {
     unless ($CurrentUser->Id) {
 	$RT::Logger->debug("No user with a unix login of '$Gecos' was found. ");
     }
+
     return($CurrentUser);
 }
 # }}}
+
+
+# {{{ sub loc 
+
+=head2 loc
+
+  Synonym of $CurrentUser->loc().
+
+=cut
+
+sub loc {
+    die "No current user yet" unless $CurrentUser ||= RT::CurrentUser->new;
+    return $CurrentUser->loc(@_);
+}
+# }}}
+
+}
+
 
 # {{{ sub GetMessageContent
 
@@ -220,5 +237,10 @@ sub debug {
 
 # }}}
 
+
+eval "require RT::Interface::CLI_Vendor";
+die $@ if ($@ && $@ !~ qr{^Can't locate RT/Interface/CLI_Vendor.pm});
+eval "require RT::Interface::CLI_Local";
+die $@ if ($@ && $@ !~ qr{^Can't locate RT/Interface/CLI_Local.pm});
 
 1;

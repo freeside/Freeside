@@ -1,5 +1,0 @@
-<& /Elements/Header, Title => $Title &>
-
-<%ARGS>
-$Title => undef
-</%ARGS>

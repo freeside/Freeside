@@ -1,7 +1,26 @@
-# $Header: /home/cvs/cvsroot/freeside/rt/lib/RT/CurrentUser.pm,v 1.1 2002-08-12 06:17:07 ivan Exp $
-# (c) 1996-1999 Jesse Vincent <jesse@fsck.com>
-# This software is redistributable under the terms of the GNU GPL
-
+# BEGIN LICENSE BLOCK
+# 
+# Copyright (c) 1996-2003 Jesse Vincent <jesse@bestpractical.com>
+# 
+# (Except where explictly superceded by other copyright notices)
+# 
+# This work is made available to you under the terms of Version 2 of
+# the GNU General Public License. A copy of that license should have
+# been provided with this software, but in any event can be snarfed
+# from www.gnu.org.
+# 
+# This work is distributed in the hope that it will be useful, but
+# WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+# General Public License for more details.
+# 
+# Unless otherwise specified, all modifications, corrections or
+# extensions to this work which alter its source code become the
+# property of Best Practical Solutions, LLC when submitted for
+# inclusion in the work.
+# 
+# 
+# END LICENSE BLOCK
 =head1 NAME
 
   RT::CurrentUser - an RT object representing the current user
@@ -19,7 +38,6 @@
 
 =begin testing
 
-ok (require RT::TestHarness);
 ok (require RT::CurrentUser);
 
 =end testing
@@ -28,9 +46,13 @@ ok (require RT::CurrentUser);
 
 
 package RT::CurrentUser;
-use RT::Record;
-@ISA= qw(RT::Record);
 
+use RT::Record;
+use RT::I18N;
+
+use strict;
+use vars qw/@ISA/;
+@ISA= qw(RT::Record);
 
 # {{{ sub _Init 
 
@@ -48,7 +70,7 @@ sub _Init  {
     $self->Load($Name);
   }
   
-  $self->_MyCurrentUser($self);
+  $self->CurrentUser($self);
 
 }
 # }}}
@@ -56,7 +78,8 @@ sub _Init  {
 # {{{ sub Create
 
 sub Create {
-    return (0, 'Permission Denied');
+    my $self = shift;
+    return (0, $self->loc('Permission Denied'));
 }
 
 # }}}
@@ -64,7 +87,8 @@ sub Create {
 # {{{ sub Delete
 
 sub Delete {
-    return (0, 'Permission Denied');
+    my $self = shift;
+    return (0, $self->loc('Permission Denied'));
 }
 
 # }}}
@@ -84,13 +108,49 @@ sub UserObj {
 	use RT::User;
 	$self->{'UserObj'} = RT::User->new($self);
 	unless ($self->{'UserObj'}->Load($self->Id)) {
-	    $RT::Logger->err("Couldn't load ".$self->Id. "from the users database.\n");
+	    $RT::Logger->err($self->loc("Couldn't load [_1] from the users database.\n", $self->Id));
 	}
 	
     }
     return ($self->{'UserObj'});
 }
 # }}}
+
+# {{{ sub PrincipalObj 
+
+=head2 PrincipalObj
+
+    Returns this user's principal object.  this is just a helper routine for
+    $self->UserObj->PrincipalObj
+
+=cut
+
+sub PrincipalObj {
+    my $self = shift;
+    return($self->UserObj->PrincipalObj);
+}
+
+
+# }}}
+
+
+# {{{ sub PrincipalId 
+
+=head2 PrincipalId
+
+    Returns this user's principal Id.  this is just a helper routine for
+    $self->UserObj->PrincipalId
+
+=cut
+
+sub PrincipalId {
+    my $self = shift;
+    return($self->UserObj->PrincipalId);
+}
+
+
+# }}}
+
 
 # {{{ sub _Accessible 
 sub _Accessible  {
@@ -120,6 +180,8 @@ Takes the email address of the user to load.
 sub LoadByEmail  {
     my $self = shift;
     my $identifier = shift;
+
+    $identifier = RT::User::CanonicalizeEmailAddress(undef, $identifier);
         
     $self->LoadByCol("EmailAddress",$identifier);
     
@@ -225,35 +287,10 @@ sub Privileged {
 
 # }}}
 
-# {{{ Convenient ACL methods
-
-=head2 HasQueueRight
-
-calls $self->UserObj->HasQueueRight with the arguments passed in
-
-=cut
-
-sub HasQueueRight {
-	my $self = shift;
-	return ($self->UserObj->HasQueueRight(@_));
-}
-
-=head2 HasSystemRight
-
-calls $self->UserObj->HasSystemRight with the arguments passed in
-
-=cut
-
-
-sub HasSystemRight {
-	my $self = shift;
-	return ($self->UserObj->HasSystemRight(@_));
-}
-# }}}
 
 # {{{ sub HasRight
 
-=head2 HasSystemRight
+=head2 HasRight
 
 calls $self->UserObj->HasRight with the arguments passed in
 
@@ -265,6 +302,73 @@ sub HasRight {
 }
 
 # }}}
+
+# {{{ Localization
+
+=head2 LanguageHandle
+
+Returns this current user's langauge handle. Should take a language
+specification. but currently doesn't
+
+=begin testing
+
+ok (my $cu = RT::CurrentUser->new('root'));
+ok (my $lh = $cu->LanguageHandle);
+ok ($lh != undef);
+ok ($lh->isa('Locale::Maketext'));
+ok ($cu->loc('TEST_STRING') eq "Concrete Mixer", "Localized TEST_STRING into English");
+ok ($lh = $cu->LanguageHandle('fr'));
+ok ($cu->loc('Before') eq "Avant", "Localized TEST_STRING into Frenc");
+
+=end testing
+
+=cut 
+
+sub LanguageHandle {
+    my $self = shift;
+    if  ((!defined $self->{'LangHandle'}) || 
+         (!UNIVERSAL::can($self->{'LangHandle'}, 'maketext')) || 
+         (@_))  {
+        $self->{'LangHandle'} = RT::I18N->get_handle(@_);
+    }
+    # Fall back to english.
+    unless ($self->{'LangHandle'}) {
+        die "We couldn't get a dictionary. Nye mogu naidti slovar. No puedo encontrar dictionario.";
+    }
+    return ($self->{'LangHandle'});
+}
+
+sub loc {
+    my $self = shift;
+    return '' if $_[0] eq '';
+
+    my $handle = $self->LanguageHandle;
+
+    if (@_ == 1) {
+	# pre-scan the lexicon hashes to return _AUTO keys verbatim,
+	# to keep locstrings containing '[' and '~' from tripping over Maketext
+	return $_[0] unless grep { exists $_->{$_[0]} } @{ $handle->_lex_refs };
+    }
+
+    return $handle->maketext(@_);
+}
+
+sub loc_fuzzy {
+    my $self = shift;
+    return '' if $_[0] eq '';
+
+    # XXX: work around perl's deficiency when matching utf8 data
+    return $_[0] if Encode::is_utf8($_[0]);
+    my $result = $self->LanguageHandle->maketext_fuzzy(@_);
+
+    return($result);
+}
+# }}}
+
+eval "require RT::CurrentUser_Vendor";
+die $@ if ($@ && $@ !~ qr{^Can't locate RT/CurrentUser_Vendor.pm});
+eval "require RT::CurrentUser_Local";
+die $@ if ($@ && $@ !~ qr{^Can't locate RT/CurrentUser_Local.pm});
 
 1;
  
