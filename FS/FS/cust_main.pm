@@ -11,7 +11,7 @@ use Safe;
 use Carp;
 use Time::Local;
 use Date::Format;
-use Date::Manip;
+#use Date::Manip;
 use Mail::Internet;
 use Mail::Header;
 use Business::CreditCard;
@@ -546,7 +546,8 @@ sub bill {
         warn "Error reval-ing part_pkg->recur pkgpart ",
              $part_pkg->pkgpart, ": $@";
       } else {
-        #change this bit to use Date::Manip?
+        #change this bit to use Date::Manip? CAREFUL with timezones (see
+        # mailing list archive)
         #$sdate=$cust_pkg->bill || time;
         #$sdate=$cust_pkg->bill || $time;
         $sdate = $cust_pkg->bill || $cust_pkg->setup || $time;
@@ -994,7 +995,7 @@ sub check_invoicing_list {
 
 =head1 VERSION
 
-$Id: cust_main.pm,v 1.5 2000-06-15 12:38:09 ivan Exp $
+$Id: cust_main.pm,v 1.6 2000-06-24 00:28:30 ivan Exp $
 
 =head1 BUGS
 

@@ -80,7 +80,7 @@ sub untaint_argv {
 }
 
 sub usage {
-  die "Usage:\n\n  bill [ -c [ i ] ] [ -d 'date' ] [ -b ] user\n";
+  die "Usage:\n\n  freeside-bill [ -c [ i ] ] [ -d 'date' ] [ -b ] user\n";
 }
 
 =head1 NAME
@@ -114,7 +114,7 @@ customers.  Otherwise, bills all customers.
 
 =head1 VERSION
 
-$Id: freeside-bill,v 1.5 2000-06-22 10:52:37 ivan Exp $
+$Id: freeside-bill,v 1.6 2000-06-24 00:28:30 ivan Exp $
 
 =head1 BUGS
 
