@@ -9,6 +9,7 @@
 - reseller interface
 
 1.5.0pre6:
-- cust_pay_refund and credit card refund w/supported processor
-- credit card refunds
+- cust_pay_refund and credit card/ACH refunds w/supported processor
 - proper payment receipts (not invoice copies)
+- expanded reseller interface
+- RADIUS session viewing
