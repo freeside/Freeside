@@ -704,7 +704,9 @@ sub print_text {
       my $pkg = $part_pkg->pkg;
 
       if ( $cust_bill_pkg->setup != 0 ) {
-        push @buf, [ "$pkg Setup",
+        my $description = $pkg;
+        $description .= ' Setup' if $cust_bill_pkg->recur != 0;
+        push @buf, [ $description,
                      $money_char. sprintf("%10.2f", $cust_bill_pkg->setup) ];
         push @buf,
           map { [ "  ". $_->[0]. ": ". $_->[1], '' ] } $cust_pkg->labels;
@@ -1123,10 +1125,12 @@ sub _items_cust_bill_pkg {
       my $pkg = $part_pkg->pkg;
 
       if ( $cust_bill_pkg->setup != 0 ) {
+        my $description = $pkg;
+        $description .= ' Setup' if $cust_bill_pkg->recur != 0;
         my @d = ();
         @d = $cust_bill_pkg->details if $cust_bill_pkg->recur == 0;
         push @b, {
-          'description'     => "$pkg Setup",
+          'description'     => $description,
           'pkgpart'         => $part_pkg->pkgpart,
           'pkgnum'          => $cust_pkg->pkgnum,
           'amount'          => sprintf("%10.2f", $cust_bill_pkg->setup),
