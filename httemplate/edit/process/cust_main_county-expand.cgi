@@ -1,5 +1,5 @@
 <%
-# <!-- $Id: cust_main_county-expand.cgi,v 1.2 2001-08-17 11:05:31 ivan Exp $ -->
+# <!-- $Id: cust_main_county-expand.cgi,v 1.3 2001-08-31 07:17:33 ivan Exp $ -->
 
 use strict;
 use vars qw ( $cgi $taxnum $cust_main_county @expansion $expansion );
@@ -53,11 +53,13 @@ foreach ( @expansion) {
   die $error if $error;
 }
 
-unless ( qsearch('cust_main',{
-  'state'  => $cust_main_county->getfield('state'),
-  'county' => $cust_main_county->getfield('county'),
-  'country' =>  $cust_main_county->getfield('country'),
-} ) ) {
+unless ( qsearch( 'cust_main', {
+                                 'state'  => $cust_main_county->state,
+                                 'county' => $cust_main_county->county,
+                                 'country' =>  $cust_main_county->country,
+                               } )
+         || ! @expansion
+) {
   my($error)=($cust_main_county->delete);
   die $error if $error;
 }
