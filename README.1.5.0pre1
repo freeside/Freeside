@@ -1,0 +1,12 @@
+preliminary upgrade instructions
+
+schema changes:
+  *** get svc_broadband changes from pc-intouch
+  *** otaker changes
+  *** optional: sequence changes
+
+install DBIx::DBSchema 0.21
+
+Run dbdef-create
+something about history tables
+Restart apache and freeside-queued
