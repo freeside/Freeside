@@ -148,6 +148,8 @@ old_ for replace operations):
   <LI><code>$uid</code>
   <LI><code>$gid</code>
   <LI><code>$finger</code> - GECOS, already quoted for the shell (do not add additional quotes)
+  <LI><code>$first</code> - First name of GECOS, already quoted for the shell (do not add additional quotes)
+  <LI><code>$last</code> - Last name of GECOS, already quoted for the shell (do not add additional quotes)
   <LI><code>$dir</code> - home directory
   <LI><code>$shell</code>
   <LI><code>$quota</code>
@@ -206,6 +208,10 @@ sub _export_command {
     $email = '';
   }
 
+  $finger =~ /^(.*)\s+(\S+)$/ or $finger =~ /^((.*))$/;
+  ($first, $last ) = ( $1, $2 );
+  $first = shell_quote $first;
+  $last = shell_quote $last;
   $finger = shell_quote $finger;
   $quoted_password = shell_quote $_password;
   $domain = $svc_acct->domain;
@@ -239,6 +245,10 @@ sub _export_replace {
     ${"old_$_"} = $old->getfield($_) foreach $old->fields;
     ${"new_$_"} = $new->getfield($_) foreach $new->fields;
   }
+  $new_finger =~ /^(.*)\s+(\S+)$/ or $finger =~ /^((.*))$/;
+  ($new_first, $new_last ) = ( $1, $2 );
+  $new_first = shell_quote $new_first;
+  $new_last = shell_quote $new_last;
   $new_finger = shell_quote $new_finger;
   $quoted_new__password = shell_quote $new__password; #old, wrong?
   $new_quoted_password = shell_quote $new__password; #new, better?

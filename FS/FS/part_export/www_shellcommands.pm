@@ -27,10 +27,28 @@ tie my %options, 'Tie::IxHash',
   'notes'   => <<'END'
 Run remote commands via SSH, for virtual web sites.  You will need to
 <a href="../docs/ssh.html">setup SSH for unattended operation</a>.
-<BR><BR>The following variables are available for interpolation (prefixed with
+<BR><BR>Use these buttons for some useful presets:
+<UL>
+  <LI>
+    <INPUT TYPE="button" VALUE="Maintain directories" onClick'
+      this.form.user.value = "root";
+      this.form.useradd.value = "mkdir /var/www/$zone; chown $username /var/www/$zone; ln -s /var/www/$zone $homedir/$zone";
+      this.form.userdel.value = "[ -n &quot;$zone&quot; ] && rm -rf /var/www/$zone; rm $homedir/$zone";
+      this.form.usermod.value = "[ -n &quot;$old_zone&quot; ] && rm $old_homedir/$old_zone; [ &quot;$old_zone&quot; != &quot;$new_zone&quot; -a -n &quot;$new_zone&quot; ] && mv /var/www/$old_zone /var/www/$new_zone; [ &quot;$old_username&quot; != &quot;$new_username&quot; ] && chown -R $new_username /var/www/$new_zone; ln -s /var/www/$new_zone $new_homedir/$new_zone";
+    '>
+  <LI>
+    <INPUT TYPE="button" VALUE="ISPMan CLI" onClick'
+      this.form.user.value = "root";
+      this.form.useradd.value = "/usr/local/ispman/ispman.addvhost -d $domain $zone";
+      this.form.userdel.value = "/usr/local/ispman/idpman.deletevhost -d $domain $zone";
+      this.form.usermod.value = "";
+    '>
+</UL>
+The following variables are available for interpolation (prefixed with
 <code>new_</code> or <code>old_</code> for replace operations):
 <UL>
-  <LI><code>$zone</code>
+  <LI><code>$zone</code> - fully-qualified zone of this virtual host
+  <LI><code>$domain</code> - base domain
   <LI><code>$username</code>
   <LI><code>$homedir</code>
   <LI>All other fields in <a href="../docs/schema.html#svc_www">svc_www</a>
@@ -64,6 +82,7 @@ sub _export_command {
   }
   my $domain_record = $svc_www->domain_record; # or die ?
   my $zone = $domain_record->zone; # or die ?
+  my $domain = $domain_record->svc_domain->domain;
   my $svc_acct = $svc_www->svc_acct; # or die ?
   my $username = $svc_acct->username;
   my $homedir = $svc_acct->dir; # or die ?
@@ -90,10 +109,8 @@ sub _export_replace {
   }
   my $old_domain_record = $old->domain_record; # or die ?
   my $old_zone = $old_domain_record->reczone; # or die ?
-  unless ( $old_zone =~ /\.$/ ) {
-    my $old_svc_domain = $old_domain_record->svc_domain; # or die ?
-    $old_zone .= '.'. $old_svc_domain->domain;
-  }
+  my $old_domain = $old_domain_record->svc_domain->domain;
+  $old_zone .= ".$old_domain" unless $old_zone =~ /\.$/;
 
   my $old_svc_acct = $old->svc_acct; # or die ?
   my $old_username = $old_svc_acct->username;
@@ -101,6 +118,7 @@ sub _export_replace {
 
   my $new_domain_record = $new->domain_record; # or die ?
   my $new_zone = $new_domain_record->reczone; # or die ?
+  my $new_domain = $new_domain_record->svc_domain->domain;
   unless ( $new_zone =~ /\.$/ ) {
     my $new_svc_domain = $new_domain_record->svc_domain; # or die ?
     $new_zone .= '.'. $new_svc_domain->domain;

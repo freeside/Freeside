@@ -35,6 +35,12 @@ Run remote commands via SSH, for forwards.  You will need to
       this.form.userdel.value = "rm /home/vpopmail/domains/$domain/$username/.qmail";
       this.form.usermod.value = "mv /home/vpopmail/domains/$old_domain/$old_username/.qmail /home/vpopmail/domains/$new_domain/$new_username; [ \"$old_destination\" != \"$new_destination\" ] && { echo \"$new_destination\" > /home/vpopmail/domains/$new_domain/$new_username/.qmail; chown vpopmail:vchkpw /home/vpopmail/domains/$new_domain/$new_username/.qmail; }";
     '>
+  <LI>
+    <INPUT TYPE="button" VALUE="ISPMan CLI" onClick='
+      this.form.useradd.value = "";
+      this.form.userdel.value = "";
+      this.form.usermod.value = "";
+    '>
 </UL>
 The following variables are available for interpolation (prefixed with
 <code>new_</code> or <code>old_</code> for replace operations):

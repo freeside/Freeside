@@ -22,7 +22,7 @@ tie my %options, 'Tie::IxHash',
 
 %info = (
   'svc'     => 'svc_domain',
-  'desc'    => 'Run remote commands via SSH, for domains.',
+  'desc'    => 'Run remote commands via SSH, for domains (qmail, ISPMan).',
   'options' => \%options,
   'notes'   => <<'END'
 Run remote commands via SSH, for domains.  You will need to
@@ -33,6 +33,11 @@ Run remote commands via SSH, for domains.  You will need to
     <INPUT TYPE="button" VALUE="qmail catchall .qmail-domain-default maintenance" onClick='
       this.form.useradd.value = "[ \"$uid\" -a \"$gid\" -a \"$dir\" -a \"$qdomain\" ] && [ -e $dir/.qmail-$qdomain-default ] || { touch $dir/.qmail-$qdomain-default; chown $uid:$gid $dir/.qmail-$qdomain-default; }";
       this.form.userdel.value = "";
+      this.form.usermod.value = "";
+  <LI>
+    <INPUT TYPE="button" VALUE="ISPMan CLI" onClick='
+      this.form.useradd.value = "/usr/local/ispman/bin/ispman.addDomain -d $domain changeme";
+      this.form.userdel.value = "/usr/local/ispman/bin/ispman.deleteDomain -d $domain";
       this.form.usermod.value = "";
     '>
 </UL>

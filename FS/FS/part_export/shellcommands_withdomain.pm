@@ -48,7 +48,7 @@ tie my %options, 'Tie::IxHash',
 
 %info = (
   'svc'     => 'svc_acct',
-  'desc'    => 'Real-time export via remote SSH (vpopmail, etc.)',
+  'desc'    => 'Real-time export via remote SSH (vpopmail, ISPMan)',
   'options' => \%options,
   'notes'   => <<'END'
 Run remote commands via SSH.  username@domain (rather than just usernames) are
@@ -62,8 +62,18 @@ the same username with different domains.  You will need to
   <LI><INPUT TYPE="button" VALUE="vpopmail" onClick='
     this.form.useradd.value = "/home/vpopmail/bin/vadduser $username\\\@$domain $quoted_password";
     this.form.useradd_stdin.value = "";
-    this.form.userdel.value = "/home/vpopmail/bin/vdeluser $username\\\@$domain"; this.form.userdel_stdin.value="";
+    this.form.userdel.value = "/home/vpopmail/bin/vdeluser $username\\\@$domain";
+    this.form.userdel_stdin.value="";
     this.form.usermod.value = "/home/vpopmail/bin/vpasswd $new_username\\\@$new_domain $new_quoted_password";
+    this.form.usermod_stdin.value = "";
+    this.form.usermod_pwonly.checked = true;
+  '>
+  <LI><INPUT TYPE="button" VALUE="ISPMan CLI" onClick='
+    this.form.useradd.value = "/usr/local/ispman/bin/ispman.addUser -d $domain -f $first -l $last -q $quota -p $quoted_password $username";
+    this.form.useradd_stdin.value = "";
+    this.form.userdel.value = "/usr/local/ispman/bin/ispman.delUser -d $domain $username";
+    this.form.userdel_stdin.value="";
+    this.form.usermod.value = "/usr/local/ispman/bin/ispman.passwd.user $username\\\@$domain $new_quoted_password";
     this.form.usermod_stdin.value = "";
     this.form.usermod_pwonly.checked = true;
   '>
@@ -80,6 +90,8 @@ The following variables are available for interpolation (prefixed with
   <LI><code>$uid</code>
   <LI><code>$gid</code>
   <LI><code>$finger</code> - GECOS, already quoted for the shell (do not add additional quotes)
+  <LI><code>$first</code> - First name of GECOS, already quoted for the shell (do not add additional quotes)
+  <LI><code>$last</code> - Last name of GECOS, already quoted for the shell (do not add additional quotes)
   <LI><code>$dir</code> - home directory
   <LI><code>$shell</code>
   <LI><code>$quota</code>
