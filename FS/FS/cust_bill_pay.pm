@@ -108,8 +108,8 @@ sub insert {
   my $bill_total = 0;
   $bill_total += foreach map { $_->amount }
     qsearch('cust_bill_pay', { 'invnum' => $self->invnum } );
-#  $bill_total += foreach map { $_->amount } 
-#    qsearch('cust_credit_bill', { 'invnum' => $self->invnum } );
+  $bill_total += foreach map { $_->amount } 
+    qsearch('cust_credit_bill', { 'invnum' => $self->invnum } );
   if ( $bill_total > $cust_bill->charged ) {
     $dbh->rollback if $oldAutoCommit;
     return "total cust_bill_pay.amount and cust_credit_bill.amount $bill_total".
@@ -171,7 +171,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: cust_bill_pay.pm,v 1.1 2001-09-01 20:11:07 ivan Exp $
+$Id: cust_bill_pay.pm,v 1.2 2001-09-01 21:55:06 jeff Exp $
 
 =head1 BUGS
 
