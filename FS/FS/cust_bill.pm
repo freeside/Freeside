@@ -251,7 +251,7 @@ Returns all payment applications (see L<FS::cust_bill_pay>) for this invoice.
 
 sub cust_bill_pay {
   my $self = shift;
-  sort { $a->_date <=> $b->date }
+  sort { $a->_date <=> $b->_date }
     qsearch( 'cust_bill_pay', { 'invnum' => $self->invnum } );
 }
 
@@ -493,7 +493,7 @@ sub print_text {
 
 =head1 VERSION
 
-$Id: cust_bill.pm,v 1.12 2001-10-15 12:16:41 ivan Exp $
+$Id: cust_bill.pm,v 1.13 2001-12-17 23:59:56 ivan Exp $
 
 =head1 BUGS
 
