@@ -25,6 +25,8 @@ use FS::svc_domain;
 use FS::raddb;
 use FS::queue;
 use FS::radius_usergroup;
+use FS::export_svc;
+use FS::part_export;
 use FS::Msgcat qw(gettext);
 
 @ISA = qw( FS::svc_Common );
@@ -191,10 +193,67 @@ sub insert {
   $error = $self->check;
   return $error if $error;
 
-  return gettext('username_in_use'). ": ". $self->username
-    if qsearchs( 'svc_acct', { 'username' => $self->username,
-                               'domsvc'   => $self->domsvc,
-                             } );
+  #no, duplicate checking just got a whole lot more complicated
+
+  #return gettext('username_in_use'). ": ". $self->username
+  #  if qsearchs( 'svc_acct', { 'username' => $self->username,
+  #                             'domsvc'   => $self->domsvc,
+  #                           } );
+
+  my @dup_user = qsearch( 'svc_acct', { 'username' => $self->username } );
+  my @dup_userdomain = qsearchs( 'svc_acct', { 'username' => $self->username,
+                                               'domsvc'   => $self->domsvc } );
+
+  if ( @dup_user || @dup_userdomain ) {
+    my $exports = FS::part_export::export_info('svc_acct');
+    my( %conflict_user_svcpart, %conflict_userdomain_svcpart );
+
+    foreach my $part_export ( $self->cust_svc->part_svc->part_export ) {
+
+      #this will catch to the same exact export
+      my @svcparts = map { $_->svcpart }
+        qsearch('export_svc', { 'exportnum' => $part_export->exportnum });
+
+      #this will catch exports w/same exporthost+type ???
+      #my @other_part_export = qsearch('part_export', {
+      #  'machine'    => $part_export->machine,
+      #  'exporttype' => $part_export->exporttype,
+      #} );
+      #foreach my $other_part_export ( @other_part_export ) {
+      #  push @svcparts, map { $_->svcpart }
+      #    qsearch('export_svc', { 'exportnum' => $part_export->exportnum });
+      #}
+
+      my $nodomain = $exports->{$part_export->exporttype}{'nodomain'};
+      if ( $nodomain =~ /^Y/i ) {
+        $conflict_user_svcpart{$_} = $part_export->exportnum
+          foreach @svcparts;
+      } else {
+        $conflict_userdomain_svcpart{$_} = $part_export->exportnum
+          foreach @svcparts;
+      }
+    }
+
+    foreach my $dup_user ( @dup_user ) {
+      my $dup_svcpart = $dup_user->cust_svc->svcpart;
+      if ( exists($conflict_user_svcpart{$dup_svcpart}) ) {
+        return "duplicate username: conflicts with svcnum ". $dup_user->svcnum.
+               " via exportnum ". $conflict_user_svcpart{$dup_svcpart};
+      }
+    }
+
+    foreach my $dup_userdomain ( @dup_userdomain ) {
+      my $dup_svcpart = $dup_userdomain->cust_svc->svcpart;
+      if ( exists($conflict_user_svcpart{$dup_svcpart}) ) {
+        return "duplicate username\@domain: conflicts with svcnum ".
+               $dup_userdomain->svcnum. " via exportnum ".
+               $conflict_user_svcpart{$dup_svcpart};
+      }
+    }
+
+  }
+
+  #see?  i told you it was more complicated
 
   if ( $self->svcnum ) {
     my $cust_svc = qsearchs('cust_svc',{'svcnum'=>$self->svcnum});
