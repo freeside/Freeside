@@ -396,7 +396,7 @@ sub cp_insert {
                         Domain   => $mydomain,
                         Timeout  => 60,
                         #Debug    => 1,
-                      ) or die $@;
+                      ) or die "$@\n";
 
   $app->create_mailbox(
                         Mailbox   => $username,
@@ -405,7 +405,7 @@ sub cp_insert {
                         Domain    => $mydomain,
                       );
 
-  die $app->message unless $app->ok;
+  die $app->message."\n" unless $app->ok;
 }
 
 sub icradius_rc_insert {
@@ -637,14 +637,14 @@ sub cp_delete {
                         Domain   => $mydomain,
                         Timeout  => 60,
                         #Debug    => 1,
-                      ) or die $@;
+                      ) or die "$@\n";
 
   $app->delete_mailbox(
                         Mailbox   => $username,
                         Domain    => $mydomain,
                       );
 
-  die $app->message unless $app->ok;
+  die $app->message."\n" unless $app->ok;
 }
 
 sub icradius_rc_delete {
@@ -817,7 +817,7 @@ sub cp_rename {
                         Domain   => $mydomain,
                         Timeout  => 60,
                         #Debug    => 1,
-                      ) or die $@;
+                      ) or die "$@\n";
 
   $app->rename_mailbox(
                         Domain        => $mydomain,
@@ -825,7 +825,7 @@ sub cp_rename {
                         New_Mailbox   => $new_username,
                       );
 
-  die $app->message unless $app->ok;
+  die $app->message."\n" unless $app->ok;
 
 }
 
@@ -838,7 +838,7 @@ sub cp_change {
                         Domain   => $mydomain,
                         Timeout  => 60,
                         #Debug    => 1,
-                      ) or die $@;
+                      ) or die "$@\n";
 
   $app->change_mailbox(
                         Domain    => $mydomain,
@@ -846,7 +846,7 @@ sub cp_change {
                         Password  => $password,
                       );
 
-  die $app->message unless $app->ok;
+  die $app->message."\n" unless $app->ok;
 
 }
 
