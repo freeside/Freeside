@@ -18,7 +18,7 @@ sub Script_OnStart {
 sub Script_OnFlush {
   my $ref = $Response->{BinaryRef};
   $$ref = $cgi->header( '-expires' => 'now' ) . $$ref;
-#  if ( dbh->can('sprintProfile') ) {
+  if ( dbh->can('sprintProfile') ) {
 
     $$ref =~ s/<\/BODY>[\s\n]*<\/HTML>[\s\n]*$//i
       or warn "can't remove";
@@ -28,5 +28,5 @@ sub Script_OnFlush {
     $$ref .= '</BODY></HTML>';
     
     dbh->{'private_profile'} = {};
-#  }
+  }
 }
