@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: agent_type.cgi,v 1.5 1999-01-19 05:13:25 ivan Exp $
+# $Id: agent_type.cgi,v 1.6 1999-04-07 11:10:46 ivan Exp $
 #
 # ivan@sisd.com 97-dec-10
 #
@@ -11,7 +11,10 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: agent_type.cgi,v $
-# Revision 1.5  1999-01-19 05:13:25  ivan
+# Revision 1.6  1999-04-07 11:10:46  ivan
+# harmless typo
+#
+# Revision 1.5  1999/01/19 05:13:25  ivan
 # for mod_perl: no more top-level my() variables; use vars instead
 # also the last s/create/new/;
 #
@@ -64,7 +67,7 @@ foreach $agent_type ( sort {
         <TD ROWSPAN=$rowspan><A HREF="${p}edit/agent_type.cgi?$hashref->{typenum}">
           $hashref->{typenum}
         </A></TD>
-        <TD ROWSPAN=$rowspan><A HREF="${p}/edit/agent_type.cgi?$hashref->{typenum}">$hashref->{atype}</A></TD>
+        <TD ROWSPAN=$rowspan><A HREF="${p}edit/agent_type.cgi?$hashref->{typenum}">$hashref->{atype}</A></TD>
 END
 
   my($type_pkgs);
