@@ -146,17 +146,21 @@ sub check {
   return "Unknown card type" if cardtype($cardnum) eq "Unknown";
 
   if ( $self->exp eq '' ) {
-    return "Expriation date required";
+    return "Expriation date required"; #unless 
     $self->exp('');
   } else {
-    $self->exp =~ /^(\d{1,2})[\/\-](\d{2}(\d{2})?)$/
-      or return "Illegal expiration date";
-    if ( length($2) == 4 ) {
-      $self->exp("$2-$1-01");
-    } elsif ( $2 > 98 ) { #should pry change to check for "this year"
-      $self->exp("19$2-$1-01");
+    if ( $self->exp =~ /^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/ ) {
+      $self->exp("$1-$2-$3");
+    } elsif ( $self->exp =~ /^(\d{1,2})[\/\-](\d{2}(\d{2})?)$/ ) {
+      if ( length($2) == 4 ) {
+        $self->exp("$2-$1-01");
+      } elsif ( $2 > 98 ) { #should pry change to check for "this year"
+        $self->exp("19$2-$1-01");
+      } else {
+        $self->exp("20$2-$1-01");
+      }
     } else {
-      $self->exp("20$2-$1-01");
+      return "Illegal expiration date";
     }
   }
 
@@ -168,7 +172,8 @@ sub check {
     $self->payname($1);
   }
 
-  $self->zip =~ /^([\w\-]{10})$/ or return "Illegal zip";
+  $self->zip =~ /^\s*(\w[\w\-\s]{3,8}\w)\s*$/
+    or return "Illegal zip: ". $self->zip;
   $self->zip($1);
 
   $self->country =~ /^(\w\w)$/ or return "Illegal \w\wy";
@@ -183,7 +188,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: cust_pay_batch.pm,v 1.4 1999-07-17 22:02:16 ivan Exp $
+$Id: cust_pay_batch.pm,v 1.5 1999-07-29 07:49:04 ivan Exp $
 
 =head1 BUGS
 
@@ -202,7 +207,10 @@ added hfields
 ivan@sisd.com 97-nov-13
 
 $Log: cust_pay_batch.pm,v $
-Revision 1.4  1999-07-17 22:02:16  ivan
+Revision 1.5  1999-07-29 07:49:04  ivan
+fixes for bugs noticed by Joel Griffiths <griff@aver-computer.com>
+
+Revision 1.4  1999/07/17 22:02:16  ivan
 another bug noticed by Steve Gertz <sglist@hollywood.mwis.net>
 
 Revision 1.3  1998/12/29 11:59:44  ivan
