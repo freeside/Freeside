@@ -67,7 +67,7 @@ sub vpopmail_queue {
   };
   $queue->insert(
     $exportdir,
-    $self->option('machine'),
+    $self->machine,
     $self->option('dir'),
     $self->option('uid'),
     $self->option('gid'),

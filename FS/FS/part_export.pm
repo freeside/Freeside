@@ -641,7 +641,7 @@ tie my %infostreet_options, 'Tie::IxHash',
 ;
 
 tie my %vpopmail_options, 'Tie::IxHash',
-  'machine' => { label=>'vpopmail machine', },
+  #'machine' => { label=>'vpopmail machine', },
   'dir'     => { label=>'directory', }, # ?more info? default?
   'uid'     => { label=>'vpopmail uid' },
   'gid'     => { label=>'vpopmail gid' },
