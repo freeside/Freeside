@@ -218,6 +218,8 @@ sub check {
 
       or $r =~ /^my \$min = \$cust_pkg\->seconds_since\(\$cust_pkg\->bill \|\| 0\) \/ 60 \- \s*\d*\.?\d*\s*; \$min = 0 if \$min < 0; \s*\d*\.?\d*\s* \+ \s*\d*\.?\d*\s* \* \$min;\s*$/
 
+      or $r =~ /^my \$last_bill = \$cust_pkg\->last_bill; my \$hours = \$cust_pkg\->seconds_since_sqlradacct\(\$last_bill, \$sdate \) \/ 3600 - \s*\d\.?\d*\s*; \$hours = 0 if \$hours < 0; my \$input = \$cust_pkg\->attribute_since_sqlradacct\(\$last_bill, \$sdate, "AcctInputOctets" \) \/ 1048576; my \$output = \$cust_pkg\->attribute_since_sqlradacct\(\$last_bill, \$sdate, "AcctOutputOctets" \) \/ 1048576; my \$total = \$input \+ \$output \- \s*\d\.?\d*\s*; \$total = 0 if \$total < 0; my \$input = \$input - \s*\d\.?\d*\s*; \$input = 0 if \$input < 0; my \$output = \$output - \s*\d\.?\d*\s*; \$output = 0 if \$output < 0; \s*\d\.?\d*\s* \+ \s*\d\.?\d*\s* \* \$hours \+ \s*\d\.?\d*\s* \* \$input \+ \s*\d\.?\d*\s* \* \$output \+ \s*\d\.?\d*\s* \* \$total *;\s*$/
+
       or do {
         #log!
         return "illegal recur: $r";
@@ -294,10 +296,6 @@ sub payby {
 }
 
 =back
-
-=head1 VERSION
-
-$Id: part_pkg.pm,v 1.16 2002-06-10 01:39:50 khoff Exp $
 
 =head1 BUGS
 
