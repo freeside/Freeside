@@ -1,0 +1,118 @@
+<HTML><HEAD><TITLE>MyAccount</TITLE></HEAD>
+<BODY BGCOLOR="#eeeeee"><FONT SIZE=5>MyAccount</FONT><BR><BR>
+<%= $url = "$selfurl?session=$session_id;action="; ''; %>
+<TABLE BORDER=0 CELLPADDING=4><TR><TD VALIGN="top" HEIGHT=384 BGCOLOR="#dddddd">
+<A HREF="<%= $url %>myaccount">MyAccount</A><BR>
+<!-- <A HREF="<%= $url %>other">SomethingElse</A><BR> -->
+</TD><TD VALIGN="top">
+<FONT SIZE=4>Make a payment</FONT><BR><BR>
+<FORM METHOD="POST" ACTION="<%=$selfurl%>">
+<INPUT TYPE="hidden" NAME="session" VALUE="<%=$session_id%>">
+<INPUT TYPE="hidden" NAME="action" VALUE="process_payment">
+<TABLE BGCOLOR="#cccccc">
+<TR>
+  <TD ALIGN="right">Amount&nbsp;Due</TD>
+  <TD>
+    <TABLE><TR><TD BGCOLOR="#ffffff">
+      $<%=sprintf("%.2f",$balance)%>
+    </TD></TR></TABLE>
+  </TD>
+</TR>
+<TR>
+  <TD ALIGN="right">Payment&nbsp;amount</TD>
+  <TD>
+    <TABLE><TR><TD BGCOLOR="#ffffff">
+      $<INPUT TYPE="text" NAME="amount" SIZE=8 VALUE="<%=sprintf("%.2f",$balance)%>">
+    </TD></TR></TABLE>
+  </TD>
+</TR><TR>
+  <TD ALIGN="right">Card&nbsp;type</TD>
+  <TD>
+    <SELECT NAME="card_type"><OPTION></OPTION>
+      <%= foreach ( keys %$card_types ) {
+            $selected = $card_type eq $card_types->{$_} ? ' SELECTED' : '';
+            $OUT .= qq(<OPTION$selected VALUE="). $card_types->{$_}. qq(">$_\n);
+      } %>
+    </SELECT>
+  </TD>
+</TD><TR>
+  <TD ALIGN="right">Card&nbsp;number</TD>
+  <TD>
+    <TABLE>
+      <TR>
+        <TD>
+          <INPUT TYPE="text" NAME="payinfo" SIZE=20 MAXLENGTH=19 VALUE="<%=$payinfo%>"> </TD>
+        <TD>Exp.</TD>
+        <TD>
+          <SELECT NAME="month">
+            <%= for ( ( map "0$_", 1 .. 9 ), 11, 12 ) {
+                  $OUT .= '<OPTION'. ($_ eq $month ? ' SELECTED' : ''). ">$_\n";
+            } %>
+          </SELECT>
+        </TD>
+        <TD> / </TD>
+        <TD>
+          <SELECT NAME="year">
+            <%= for ( 2003 .. 2012 ) {
+                  $OUT .= '<OPTION'. ($_ eq $year ? ' SELECTED' : ''). ">$_\n";
+            } %>
+          </SELECT>
+        </TD>
+      </TR>
+    </TABLE>
+  </TD>
+</TR><TR>
+  <TD ALIGN="right">Exact&nbsp;name&nbsp;on&nbsp;card</TD>
+  <TD><INPUT TYPE="text" SIZE=32 MAXLENGTH=80 NAME="payname" SVALUE="<%=$payname%>"></TD>
+</TR><TR>
+  <TD ALIGN="right">Card&nbsp;billing&nbsp;address</TD>
+  <TD>
+    <INPUT TYPE="text" SIZE=40 MAXLENGTH=80 NAME="address1" VALUE="<%=$address1%>">
+  </TD>
+</TR><TR>
+  <TD ALIGN="right">Address&nbsp;line&nbsp;2</TD>
+  <TD>
+    <INPUT TYPE="text" SIZE=40 MAXLENGTH=80 NAME="address2" VALUE="<%=$address2%>">
+  </TD>
+</TR><TR>
+  <TD ALIGN="right">City</TD>
+  <TD>
+    <TABLE>
+      <TR>
+        <TD>
+          <INPUT TYPE="text" NAME="city" SIZE="12" MAXLENGTH=80 VALUE="<%=$city%>">
+        </TD>
+        <TD>State</TD>
+        <TD>
+          <SELECT NAME="state">
+            <%= for ( @$states ) {
+              $OUT .= '<OPTION'. ($_ eq $state ? ' SELECTED' : '' ). ">$_\n";
+            } %>
+          </SELECT>
+        </TD>
+        <TD>Zip</TD>
+        <TD>
+          <INPUT TYPE="text" NAME="zip" SIZE=11 MAXLENGTH=10 VALUE="<%=$zip%>">
+        </TD>
+      </TR>
+    </TABLE>
+  </TD>
+</TR><TR>
+  <TD COLSPAN=2>
+    <INPUT TYPE="checkbox" CHECKED NAME="save">
+    Remember this information
+  </TD>
+</TR><TR>
+  <TD COLSPAN=2>
+    <INPUT TYPE="checkbox"<%= $payby eq 'CARD' ? ' CHECKED' : '' %> NAME="CARD">
+    Charge future payments to this card automatically
+  </TD>
+</TR>
+</TABLE>
+<INPUT TYPE="submit" VALUE="Process payment">
+</FORM>
+</TD></TR></TABLE>
+<HR>
+<FONT SIZE="-2">powered by <a href="http://www.sisd.com/freeside">freeside</a></FONT>
+</BODY></HTML>
+
