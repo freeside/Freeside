@@ -24,7 +24,7 @@ use FS::Conf;
 use FS::cust_bill;
 use FS::cust_pkg;
 
-$Debug = 2; # >= 2 will log packet contents, including potentially compromising
+$Debug = 1; # >= 2 will log packet contents, including potentially compromising
             # information
 
 $shutdown = 0;
