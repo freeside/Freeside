@@ -64,6 +64,8 @@ FS::cust_bill - Object methods for cust_bill records
 
   @cust_pay_objects = $cust_bill->cust_pay;
 
+  $tax_amount = $record->tax;
+
   @lines = $cust_bill->print_text;
   @lines = $cust_bill->print_text $time;
 
@@ -229,6 +231,21 @@ sub cust_pay {
   sort { $a->_date <=> $b->_date }
     qsearch( 'cust_pay', { 'invnum' => $self->invnum } )
   ;
+}
+
+=item tax
+
+Returns the tax amount (see L<FS::cust_bill_pkg>) for this invoice.
+
+=cut
+
+sub tax {
+  my $self = shift;
+  my $total = 0;
+  my @taxlines = qsearch( 'cust_bill_pkg', { 'invnum' => $self->invnum ,
+                                             'pkgnum' => 0 } );
+  foreach (@taxlines) { $total += $_->setup; }
+  $total;
 }
 
 =item owed
@@ -424,7 +441,7 @@ sub print_text {
 
 =head1 VERSION
 
-$Id: cust_bill.pm,v 1.7 2001-04-09 23:05:15 ivan Exp $
+$Id: cust_bill.pm,v 1.8 2001-08-03 20:34:28 jeff Exp $
 
 =head1 BUGS
 
