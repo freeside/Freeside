@@ -126,7 +126,7 @@ sub calc_recur {
       } );
 
       warn "  found rate for regionnum $regionnum ".
-           "and rate detail $rate_detail"
+           "and rate detail $rate_detail\n"
         if $DEBUG;
 
       ###
