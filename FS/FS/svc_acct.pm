@@ -10,7 +10,7 @@ use vars qw( @ISA $nossh_hack $conf $dir_prefix @shells $usernamemin
              $cp_server $cp_user $cp_pass $cp_workgroup
              $dirhash
              $icradius_dbh
-             @saltset @pw_set);
+             @saltset @pw_set
              $rsync $ssh);
 use Carp;
 use File::Path;
