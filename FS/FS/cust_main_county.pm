@@ -196,7 +196,7 @@ END
   foreach my $country ( sort keys %cust_main_county ) {
     $script_html .= "\nif ( country == \"$country\" ) {\n";
     foreach my $state ( sort keys %{$cust_main_county{$country}} ) {
-      ( my $dstate = $state ) =~ s/\n//g;
+      ( my $dstate = $state ) =~ s/[\n\r]//g;
       my $text = $dstate || '(n/a)';
       $script_html .= qq!opt(what.form.${prefix}state, "$dstate", "$text");\n!;
     }
