@@ -20,6 +20,16 @@ sub _export_delete {
   $self->_export_command('userdel', @_);
 }
 
+sub _export_suspend {
+  my($self) = shift;
+  $self->_export_command('suspend', @_);
+}
+
+sub _export_unsuspend {
+  my($self) = shift;
+  $self->_export_command('unsuspend', @_);
+}
+
 sub _export_command {
   my ( $self, $action, $svc_acct) = (shift, shift, shift);
   my $command = $self->option($action);
