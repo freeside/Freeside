@@ -1416,10 +1416,25 @@ Returns the total owed for this customer on all invoices
 
 sub total_owed {
   my $self = shift;
+  $self->total_owed_date(2145859200); #12/31/2037
+}
+
+=item total_owed_date TIME
+
+Returns the total owed for this customer on all invoices with date earlier than
+TIME.  TIME is specified as a UNIX timestamp; see L<perlfunc/"time">).  Also
+see L<Time::Local> and L<Date::Parse> for conversion functions.
+
+=cut
+
+sub total_owed_date {
+  my $self = shift;
+  my $time = shift;
   my $total_bill = 0;
-  foreach my $cust_bill ( qsearch('cust_bill', {
-    'custnum' => $self->custnum,
-  } ) ) {
+  foreach my $cust_bill (
+    grep { $_->_date <= $time }
+      qsearch('cust_bill', { 'custnum' => $self->custnum, } )
+  ) {
     $total_bill += $cust_bill->owed;
   }
   sprintf( "%.2f", $total_bill );
@@ -1572,6 +1587,26 @@ sub balance {
   my $self = shift;
   sprintf( "%.2f",
     $self->total_owed - $self->total_credited - $self->total_unapplied_payments
+  );
+}
+
+=item balance_date TIME
+
+Returns the balance for this customer, only considering invoices with date
+earlier than TIME (total_owed_date minus total_credited minus
+total_unapplied_payments).  TIME is specified as a UNIX timestamp; see
+L<perlfunc/"time">).  Also see L<Time::Local> and L<Date::Parse> for conversion
+functions.
+
+=cut
+
+sub balance_date {
+  my $self = shift;
+  my $time = shift;
+  sprintf( "%.2f",
+    $self->total_owed_date($time)
+      - $self->total_credited
+      - $self->total_unapplied_payments
   );
 }
 
@@ -1881,7 +1916,7 @@ sub append_fuzzyfiles {
 
 =head1 VERSION
 
-$Id: cust_main.pm,v 1.50 2001-12-16 23:50:10 ivan Exp $
+$Id: cust_main.pm,v 1.51 2001-12-26 11:17:49 ivan Exp $
 
 =head1 BUGS
 

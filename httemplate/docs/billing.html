@@ -22,12 +22,14 @@
         </ul>
     </ul>
     <li>You can bill individual customers by clicking on the <i>Bill now</i> link on the main customer view.
-    <li> The <b>freeside-bill</b> script can be run daily to bill all customers.  Usage:<pre>bill [ -c [ i ] ] [ -d <i>date</i> ] [ -b ] <i>user</i></pre>
+    <li> The <b>freeside-bill</b> script can be run daily to bill all customers. (link to manpage!)  Usage:<pre>freeside-bill [ -c [ -p ] [ -a ] [ -i ] ] [ -d <i>date</i> ] <i>user</i></pre>
       <ul>
         <li>-c: Turn on collecting (you probably want this).
+        <li>-p: Apply unapplied payments and credits before collecting (you probably want this too)
+        <li>-a: Call collect even if there isn't a new invoice (probably a bad idea for daily use)
         <li>-i: Real-time billing (as opposed to bacth billing).  Only relevant for credit cards.
         <li>-d: Pretend it is <i>date</i> (parsed by <a href="http://search.cpan.org/doc/GBARR/TimeDate-1.09/lib/Date/Parse.pm">Date::Parse</a>)
-        <li>-b: N/A
+        <li>user: as setup with freeside-adduser
       </ul>
       <br><br>Batch credit card processing
       <ul>
@@ -63,5 +65,6 @@ All fields except paybatch are contained in the cust_pay_batch table.  You can u
             <li>-d: Delete - Pays account and deletes record from cust_pay_batch.
           </ul>
       </ul>
+    <li>The <b>freeside-overdue</b> script can list, add postal invoicing, suspend or cancel overdue and/or expired accounts (link to manpage!).
   </ul>
 </body>

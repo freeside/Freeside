@@ -1,0 +1,139 @@
+#!/usr/bin/perl
+
+use strict;
+use vars qw( $days_to_pay $cust_main $cust_pkg 
+             $cust_svc $svc_acct );
+use Getopt::Std;
+use FS::cust_main;
+use FS::cust_pkg;
+use FS::cust_svc;
+use FS::svc_acct;
+use FS::Record qw(qsearch qsearchs);
+use FS::UID qw(adminsuidsetup);
+
+&untaint_argv;
+my %opt;
+getopts('ed:qpsc', \%opt);
+my $user = shift or die &usage;
+
+adminsuidsetup $user;
+
+my $now = time;
+my ($sec,$min,$hour,$mday,$mon,$year) =
+  (localtime($now) )[0,1,2,3,4,5];
+$mon++;
+$year += 1900;
+
+foreach $cust_main ( qsearch('cust_main',{} ) ) {
+
+  my ( $eyear, $emon, $eday ) = ( 2037, 12, 31 );
+  if ( $cust_main->paydate =~ /^(\d{4})\-(\d{1,2})\-(\d{1,2})$/
+       && $cust_main->payby eq 'BILL') {
+    ( $eyear, $emon, $eday ) = ( $1, $2, $3 );
+  }
+
+  if ( ( $opt{d}
+           && $cust_main->balance_date(time - $opt{d} * 86400) > 0
+           && qsearchs( 'cust_pkg', { 'custnum' => $cust_main->custnum,
+                                      'susp' => "" } ) )
+       || ( $opt{e}
+            && $cust_main->payby eq 'BILL'
+            && ( $eyear < $year
+                 || ( $eyear == $year && $emon < $mon ) ) )
+  ) { 
+
+    unless ( $opt{q} ) {
+      print $cust_main->custnum, "\t",
+            $cust_main->last, "\t", $cust_main->first, "\t",
+            $cust_main->balance_date(time-$opt{d} * 86400);
+    }
+
+    foreach $cust_pkg ( qsearch( 'cust_pkg', 
+                                 { 'custnum' => $cust_main->custnum } ) ) {
+
+      if ($opt{p} && ! grep { $_ eq 'POST' } $cust_main->invoicing_list ) {
+        print "\n\tAdding postal invoicing" unless $opt{q};
+        my @invoicing_list = $cust_main->invoicing_list;
+        push @invoicing_list, 'POST';
+        $cust_main->invoicing_list(\@invoicing_list);
+      }
+
+      if ($opt{s}) {
+        print "\n\tSuspending pkgnum " . $cust_pkg->pkgnum unless $opt{q};
+        $cust_pkg->suspend;
+      }
+
+      if ($opt{c}) {
+        print "\n\tCancelling pkgnum " . $cust_pkg->pkgnum unless $opt{q};
+        $cust_pkg->cancel;
+      }
+
+    }
+
+    print "\n" unless $opt{q};
+
+  }
+
+}
+
+sub untaint_argv {
+  foreach $_ ( $[ .. $#ARGV ) { 
+    $ARGV[$_] =~ /^([\w\-\/]*)$/ || die "Illegal arguement \"$ARGV[$_]\"";
+    $ARGV[$_]=$1;
+  }
+}
+
+sub usage {
+  die "Usage:\n\n  freeside-overdue [ -e ] [ -d days ] [ -q ] [ -p ] [ -s ] [ -c ] user\n";
+}
+
+
+=head1 NAME
+
+freeside-overdue - Perform actions on overdue and/or expired accounts.
+
+=head1 SYNOPSIS
+
+  freeside-overdue [ -e ] [ -d days ] [ -q ] [ -p ] [ -s ] [ -c ] user
+
+=head1 DESCRIPTION
+
+Performs actions on overdue and/or expired accounts.
+
+Selection options (at least one selection option is required):
+
+  -d:	Customers with a balance due on invoices older than the supplied number
+        of days.  Requires an integer argument.
+
+  -e:   Customers with a billing expiration date in the past.
+
+Action options: 
+
+  -q:   Be quiet (by default, suspended accounts are printed).
+
+  -p:   Add postal invoicing to the relevant customers.
+
+  -s:	Suspend accounts.
+
+  -c:   Cancel accounts.
+
+  user: From the mapsecrets file - see config.html from the base documentation
+
+=head1 CRONTAB
+
+Example crontab entries:
+
+20 4,16 * * * freeside-overdue -e -s user
+20 4,16 * * * freeside-overdue -d 30 -p -q user
+20 4,16 * * * freeside-overdue -d 60 user
+20 4,16 * * * freeside-overdue -d 90 -s user
+20 4,16 * * * freeside-overdue -d 120 -c user
+
+=head1 ORIGINAL AUTHORS
+
+Original disable-overdue version by mw/kwh: Mark W.? and Kristian Hoffmann ?
+
+=cut
+
+1;
+
