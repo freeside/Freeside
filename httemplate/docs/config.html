@@ -3,6 +3,7 @@
 </head>
 <body>
   <h1>Configuration files</h1>
+<font size="+1" color="#ff0000">Configuration is now done by the top-level Makefile and web interface.  The instructions below are no longer necessary.</font>
 <ul>
   <li>Create the <b>/usr/local/etc/freeside</b> directory to hold your configuration.
   <li>Setting up <a href="http://www.apache.org/docs/misc/FAQ.html#user-authentication">Apache user authetication</a> is mandatory.
@@ -18,9 +19,9 @@ admin secretfile
 john secretfile
 sam secretfile
 </pre>
-  <li>Next, the filename(s) referenced in <b>/usr/local/etc/freeside/mapsecrets</b> file should be created in the <b>/usr/local/etc/freeside/</b> directory.  Each file contains three lines: <a href="http://search.cpan.org/doc/TIMB/DBI-1.15/DBI.pm">DBI data source</a> (for example,
+  <li>Next, the filename(s) referenced in <b>/usr/local/etc/freeside/mapsecrets</b> file should be created in the <b>/usr/local/etc/freeside/</b> directory.  Each file contains three lines: <a href="http://search.cpan.org/doc/TIMB/DBI-1.20/DBI.pm">DBI data source</a> (for example,
   <tt>DBI:mysql:freeside</tt> or <tt>DBI:Pg:host=localhost;dbname=freeside</tt>), database username, and database password.
-  These files should not be world readable.  See the <a href="http://search.cpan.org/doc/TIMB/DBI-1.15/DBI.pm">DBI manpage</a> and the <a href="http://search.cpan.org/search?mode=module&query=DBD">manpage for your DBD</a> for the exact syntax of a DBI data source.  In a normal installation such as the example above, a single file <b>/usr/local/etc/freeside/secretfile</b> would be created - for example:
+  These files should not be world readable.  See the <a href="http://search.cpan.org/doc/TIMB/DBI-1.20/DBI.pm">DBI manpage</a> and the <a href="http://search.cpan.org/search?mode=module&query=DBD">manpage for your DBD</a> for the exact syntax of a DBI data source.  In a normal installation such as the example above, a single file <b>/usr/local/etc/freeside/secretfile</b> would be created - for example:
 <pre>
 DBI:Pg:host=localhost;dbname=freeside
 dbusername

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 #
-# $Id: freeside-adduser,v 1.1 2001-10-30 10:20:32 ivan Exp $
+# $Id: freeside-adduser,v 1.2 2001-10-30 11:47:54 ivan Exp $
 
 use strict;
 use vars qw($opt_h $opt_c);
@@ -33,9 +33,9 @@ freeside-adduser - Command line interface to add (freeside) users.
 
 =head1 SYNOPSIS
 
-  freeside-adduser [ -h htpasswd_file [ -c ] ] username
+  freeside-adduser [ -h htpasswd_file [ -c ] ] secretfile username
 
-=head DESCRIPTION
+=head1 DESCRIPTION
 
 Adds a user to the Freeside billing system.  This is for adding users (internal
 sales/tech folks) to the web interface, not for adding customer accounts.

@@ -1,15 +1,11 @@
 #!/usr/bin/make
 
-#Pg
 DATASOURCE = DBI:Pg:host=localhost;dbname=freeside
-#pgsql on some systems; check /etc/passwd
-DB_ADMIN_USER = postgres
-DB_ADMIN_PASSWORD=
-
-#mysql
 #DATASOURCE=DBI:mysql:freeside
-#DB_ADMIN_USER=mysql
-#DB_ADMIN_PASSWORD=
+#pgsql on some systems; check /etc/passwd
+
+DB_USER = freeside
+DB_PASSWORD=
 
 TEMPLATE = asp
 #mason's a bit dodgy stil
@@ -57,7 +53,7 @@ perl-modules:
 
 install-perl-modules: perl-modules
 	cd FS; \
-	make install
+	make install UNINST=1
 
 install: install-perl-modules install-docs
 
@@ -65,11 +61,13 @@ deploy: install
 	/etc/init.d/apache restart
 
 create-database:
-	perl -e 'use DBIx::DataSource qw( create_database ); create_database( \'${DATASOURCE}\', \'${DB_ADMIN_USER}\', \'${DB_ADMIN_PASSWORD}\' ) or die $DBIx::DataSource::errstr;'
+	perl -e 'use DBIx::DataSource qw( create_database ); create_database( \'${DATASOURCE}\', \'${DB_USER}\', \'${DB_PASSWORD}\' ) or die $DBIx::DataSource::errstr;'
 
 create-config: install-perl-modules
 	[ -d ${FREESIDE_CONF} ] || mkdir ${FREESIDE_CONF}
 	chown freeside ${FREESIDE_CONF}
+
+	echo -e "${DATASOURCE}\n${DB_USER}\n${DB_PASSWORD}" >${FREESIDE_CONF}/secrets
 
 	[ -d "${FREESIDE_CONF}/conf.${DATASOURCE}" ] \
 	  || mkdir "${FREESIDE_CONF}/conf.${DATASOURCE}"
