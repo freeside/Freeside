@@ -228,7 +228,7 @@ create-rt: configure-rt
 	" ${RT_PATH}/etc/RT_SiteConfig.pm
 
 install-rt:
-	[ ${RT_ENABLED} ] && cd rt; make install
+	[ ${RT_ENABLED} -eq 1 ] && cd rt; make install
 
 clean:
 	rm -rf aspdocs masondocs
