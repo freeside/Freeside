@@ -1248,6 +1248,15 @@ httemplate/docs/config.html
     'type'        => 'textarea',
   },
 
+  {
+    'key'         => 'selfservice_server-primary_only',
+    'section'     => '',
+    'description' => 'Only allow primary accounts to access self-service functionality.',
+    'type'        => 'checkbox',
+  },
+
+
+
 );
 
 1;

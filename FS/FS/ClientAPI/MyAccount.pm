@@ -60,6 +60,8 @@ sub login {
                                          'domsvc'    => $svc_domain->svcnum, }
                          );
   return { error => 'User not found.' } unless $svc_acct;
+
+
   return { error => 'Incorrect password.' }
     unless $svc_acct->check_password($p->{'password'});
 
@@ -72,6 +74,12 @@ sub login {
     my $cust_main = $cust_pkg->cust_main;
     $session->{'custnum'} = $cust_main->custnum;
   }
+
+  my $conf = new FS::Conf;
+  my $pkg_svc = $svc_acct->cust_svc->pkg_svc;
+  return { error => 'Only primary user may log in.' } 
+    if $conf->exists('selfservice_server-primary_only')
+       && ( ! $pkg_svc || $pkg_svc->primary ne 'Y' );
 
   my $session_id;
   do {

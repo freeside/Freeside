@@ -590,6 +590,23 @@ sub get_session_history {
 
 }
 
+=item pkg_svc
+
+Returns the pkg_svc record for for this service, if applicable.
+
+=cut
+
+sub pkg_svc {
+  my $self = shift;
+  my $cust_pkg = $self->cust_pkg;
+  return undef unless $cust_pkg;
+
+  qsearchs( 'pkg_svc', { 'svcpart' => $self->svcpart,
+                         'pkgpart' => $cust_pkg->pkgpart,
+                       }
+          );
+}
+
 =back
 
 =head1 BUGS
