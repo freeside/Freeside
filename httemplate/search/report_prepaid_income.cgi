@@ -5,7 +5,9 @@
 
   #needs to be re-written in sql for efficiency
 
-  my $now = time;
+  my $now = $cgi->param('date') && str2time($cgi->param('date')) || time;
+  $now =~ /^(\d+)$/ or die "unparsable date?";
+  $now = $1;
 
   my %prepaid;
 
@@ -39,7 +41,8 @@
 
 %>
 
-<%= header('Prepaid Income Report', menubar( 'Main Menu'=>$p, ) ) %>
+<%= header( 'Prepaid Income (Unearned Revenue) Report',
+            menubar( 'Main Menu'=>$p, ) )               %>
 <%= table() %>
 <%
 
@@ -54,7 +57,7 @@
     for my $mon ( ( $subseq++ ? 1 : $now_mon ) .. 12 ) {
       if ( $prepaid{"$year-$mon"} ) {
         $total += $prepaid{"$year-$mon"};
-        %> <TR><TD><%= $mon[$mon-1]. ' '. $year %></TD>
+        %> <TR><TD ALIGN="right"><%= $mon[$mon-1]. ' '. $year %></TD>
                <TD ALIGN="right">
                  <%= sprintf("%.2f", $prepaid{"$year-$mon"} ) %>
                </TD>
