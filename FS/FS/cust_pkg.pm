@@ -100,6 +100,8 @@ sub table { 'cust_pkg'; }
 Adds this billing item to the database ("Orders" the item).  If there is an
 error, returns the error, otherwise returns false.
 
+=cut
+
 sub insert {
   my $self = shift;
 
@@ -565,7 +567,7 @@ sub order {
 
 =head1 VERSION
 
-$Id: cust_pkg.pm,v 1.6 2001-09-04 14:44:06 ivan Exp $
+$Id: cust_pkg.pm,v 1.7 2001-10-01 10:31:08 ivan Exp $
 
 =head1 BUGS
 
