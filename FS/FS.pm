@@ -14,8 +14,7 @@ FS - Freeside Perl modules
 
 =head1 SYNOPSIS
 
-FS is the unofficial (i.e. non-CPAN) prefix for the Perl module portion of the
-Freeside ISP billing software.  This includes:
+Freeside perl modules and CLI utilities.
 
 =head2 Utility classes
 
@@ -25,9 +24,7 @@ L<FS::ConfItem> - Freeside configuration option meta-data.
 
 L<FS::UID> - User class (not yet OO)
 
-L<FS::CGI> - Non OO-subroutines for the web interface.  This is
-depriciated.  Future development will be focused on the FS::UI user-interface
-classes (see below).
+L<FS::CGI> - Non OO-subroutines for the web interface.
 
 =head2 Database record classes
 
@@ -60,6 +57,10 @@ L<FS::part_svc> - Service definition class
 
 L<FS::part_svc_column> - Column constraint class
 
+L<FS::part_export> - External provisioning export class
+
+L<FS::part_export_option> - Export option class
+
 L<FS::part_pkg> - Package (billing item) definition class
 
 L<FS::pkg_svc> - Class linking package (billing item)
@@ -87,6 +88,10 @@ L<FS::cust_bill> - Invoice class
 
 L<FS::cust_bill_pkg> - Invoice line item class
 
+L<FS::part_bill_event> - Invoice event definition class
+
+L<FS::cust_bill_event> - Completed invoice event class
+
 L<FS::cust_pay> - Payment class
 
 L<FS::cust_bill_pay> - Payment application class
@@ -113,7 +118,27 @@ L<FS::queue> - Job queue
 
 L<FS::queue_arg> - Job arguments
 
-=head2 User Interface classes (under development; not yet usable)
+=head1 Remote API modules
+
+L<FS::SignupClient>
+
+L<FS::SessionClient>
+
+L<FS::MailAdminServer>
+
+=head2 Command-line utilities
+
+L<freeside-email>
+
+L<freeside-queued>
+
+L<freeside-adduser>
+
+L<freeside-bill>
+
+L<freeside-overdue>
+
+=head2 User Interface classes (under (stalled) development; not yet usable)
 
 L<FS::UI::Base> - User-interface base class
 
@@ -139,16 +164,16 @@ Providers.
 
 The Freeside home page is at <http://www.sisd.com/freeside>.
 
-The main documentation is in htdocs/docs.
-
-=head1 VERSION
-
-$Id: FS.pm,v 1.10 2001-10-24 15:29:30 ivan Exp $
+The main documentation is in httemplate/docs.
 
 =head1 SUPPORT
 
-A mailing list for users and developers is available.  Send a blank message to
+A mailing list for users is available.  Send a blank message to
 <ivan-freeside-subscribe@sisd.com> to subscribe.
+
+A mailing list for developers is available.  It is intended to be lower volume
+and higher SNR than the users list.  Send a blank message to
+<ivan-freeside-devel-subscribe@sisd.com> to subscribe.
 
 Commercial support is available; see
 <http://www.sisd.com/freeside/commercial.html>.
@@ -165,10 +190,6 @@ list and the individal files for details.
 perl(1), main Freeside documentation in htdocs/docs/
 
 =head1 BUGS
-
-The version number of the FS Perl extension differs from the version of the
-Freeside distribution, which are both different from the CVS version tag for
-each file, which appears under the VERSION heading.
 
 Those modules which would be useful separately should be pulled out, 
 renamed appropriately and uploaded to CPAN.  So far: DBIx::DBSchema, Net::SSH

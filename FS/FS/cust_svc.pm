@@ -3,7 +3,7 @@ package FS::cust_svc;
 use strict;
 use vars qw( @ISA );
 use Carp qw( cluck );
-use FS::Record qw( qsearchs );
+use FS::Record qw( qsearchs dbh );
 use FS::cust_pkg;
 use FS::part_pkg;
 use FS::part_svc;
@@ -159,13 +159,8 @@ Returns a list consisting of:
 sub label {
   my $self = shift;
   my $svcdb = $self->part_svc->svcdb;
-  my $svc_x;
-  if ( $svcdb eq 'svc_acct' && $self->{'_svc_acct'} ) {
-    $svc_x = $self->{'_svc_acct'};
-  } else {
-    $svc_x = qsearchs( $svcdb, { 'svcnum' => $self->svcnum } )
-      or die "can't find $svcdb.svcnum ". $self->svcnum;
-  }
+  my $svc_x = $self->svc_x
+    or die "can't find $svcdb.svcnum ". $self->svcnum;
   my $tag;
   if ( $svcdb eq 'svc_acct' ) {
     $tag = $svc_x->email;
@@ -195,11 +190,49 @@ sub label {
   $self->part_svc->svc, $tag, $svcdb;
 }
 
+=item svc_x
+
+Returns the FS::svc_XXX object for this service (i.e. an FS::svc_acct object or
+FS::svc_domain object, etc.)
+
+=cut
+
+sub svc_x {
+  my $self = shift;
+  my $svcdb = $self->part_svc->svcdb;
+  if ( $svcdb eq 'svc_acct' && $self->{'_svc_acct'} ) {
+    $self->{'_svc_acct'};
+  } else {
+    qsearchs( $svcdb, { 'svcnum' => $self->svcnum } );
+  }
+}
+
+=item seconds_since TIMESTAMP
+
+See L<FS::svc_acct/seconds_since>.  Equivalent to
+$cust_svc->svc_x->seconds_since, but more efficient.  Meaningless for records
+where B<svcdb> is not "svc_acct".
+
+=cut
+
+#note: implementation here, POD in FS::svc_acct
+sub seconds_since {
+  my($self, $since) = @_;
+  my $dbh = dbh;
+  my $sth = $dbh->prepare(' SELECT SUM(logout-login) FROM session
+                              WHERE svcnum = ?
+                                AND login >= ?
+                                AND logout IS NOT NULL'
+  ) or die $dbh->errstr;
+  $sth->execute($self->svcnum, $since) or die $sth->errstr;
+  $sth->fetchrow_arrayref->[0];
+}
+
 =back
 
 =head1 VERSION
 
-$Id: cust_svc.pm,v 1.8 2001-12-15 22:58:33 ivan Exp $
+$Id: cust_svc.pm,v 1.9 2002-01-29 16:33:15 ivan Exp $
 
 =head1 BUGS
 

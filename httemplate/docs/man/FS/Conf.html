@@ -1,6 +1,6 @@
 <HTML>
 <HEAD>
-<TITLE>FS::Conf - Read access to Freeside configuration values</TITLE>
+<TITLE>FS::Conf - Freeside configuration values</TITLE>
 <LINK REV="made" HREF="mailto:perl@packages.debian.org">
 </HEAD>
 
@@ -23,7 +23,7 @@
 <HR>
 <P>
 <H1><A NAME="name">NAME</A></H1>
-<P>FS::Conf - Read access to Freeside configuration values</P>
+<P>FS::Conf - Freeside configuration values</P>
 <P>
 <HR>
 <H1><A NAME="synopsis">SYNOPSIS</A></H1>
@@ -40,10 +40,12 @@
   $value = $conf-&gt;config('key');
   @list  = $conf-&gt;config('key');
   $bool  = $conf-&gt;exists('key');</PRE>
+<PRE>
+  @config_items = $conf-&gt;config_items;</PRE>
 <P>
 <HR>
 <H1><A NAME="description">DESCRIPTION</A></H1>
-<P>Read access to Freeside configuration values.  Keys currently map to filenames,
+<P>Read and write Freeside configuration values.  Keys currently map to filenames,
 but this may change in the future.</P>
 <P>
 <HR>
@@ -66,15 +68,29 @@ Returns the configuration value or values (depending on context) for key.
 <DD>
 Returns true if the specified key exists, even if the corresponding value
 is undefined.
+<P></P>
+<DT><STRONG><A NAME="item_touch">touch</A></STRONG><BR>
+<DD>
+<DT><STRONG><A NAME="item_set">set</A></STRONG><BR>
+<DD>
+<DT><STRONG><A NAME="item_delete">delete</A></STRONG><BR>
+<DD>
+<DT><STRONG><A NAME="item_config_items">config_items</A></STRONG><BR>
+<DD>
+Returns all of the possible configuration items as FS::ConfItem objects.  See
+<A HREF=".././FS/ConfItem.html">the FS::ConfItem manpage</A>.
 <P></P></DL>
 <P>
 <HR>
 <H1><A NAME="bugs">BUGS</A></H1>
-<P>Write access (with locking) should be implemented.</P>
+<P>Write access (touch, set, delete) should be documented.</P>
+<P>If this was more than just crud that will never be useful outside Freeside I'd
+worry that config_items is freeside-specific and icky.</P>
 <P>
 <HR>
 <H1><A NAME="see also">SEE ALSO</A></H1>
-<P>config.html from the base documentation contains a list of configuration files.</P>
+<P>``Configuration'' in the web interface (config/config.cgi).</P>
+<P>httemplate/docs/config.html</P>
 
 </BODY>
 

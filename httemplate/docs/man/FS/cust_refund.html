@@ -50,7 +50,7 @@ inherits from FS::Record.  The following fields are currently supported:</P>
 <DL>
 <DT><STRONG><A NAME="item_key">refundnum - primary key (assigned automatically for new refunds)</A></STRONG><BR>
 <DD>
-<DT><STRONG><A NAME="item_Credit">crednum - Credit (see <A HREF=".././FS/cust_credit.html">the FS::cust_credit manpage</A>)</A></STRONG><BR>
+<DT><STRONG><A NAME="item_customer">custnum - customer (see <A HREF=".././FS/cust_main.html">the FS::cust_main manpage</A>)</A></STRONG><BR>
 <DD>
 <DT><STRONG><A NAME="item_refund_%2D_Amount_of_the_refund">refund - Amount of the refund</A></STRONG><BR>
 <DD>
@@ -61,7 +61,11 @@ inherits from FS::Record.  The following fields are currently supported:</P>
 <DD>
 <DT><STRONG><A NAME="item_issuer">payinfo - card number, P.O.#, or comp issuer (4-8 lowercase alphanumerics; think username)</A></STRONG><BR>
 <DD>
+<DT><STRONG><A NAME="item_paybatch_%2D_text_field_for_tracking_card_processi">paybatch - text field for tracking card processing</A></STRONG><BR>
+<DD>
 <DT><STRONG><A NAME="item_taker">otaker - order taker (assigned automatically, see <A HREF=".././FS/UID.html">the FS::UID manpage</A>)</A></STRONG><BR>
+<DD>
+<DT><STRONG><A NAME="item_closed_%2D_books_closed_flag%2C_empty_or_%60Y%27">closed - books closed flag, empty or `Y'</A></STRONG><BR>
 <DD>
 </DL>
 <P>
@@ -74,8 +78,10 @@ Creates a new refund.  To add the refund to the database, see <A HREF="#insert">
 <P></P>
 <DT><STRONG><A NAME="item_insert">insert</A></STRONG><BR>
 <DD>
-Adds this refund to the database, and updates the credit (see
-<A HREF=".././FS/cust_credit.html">the FS::cust_credit manpage</A>).
+Adds this refund to the database.
+<P>For backwards-compatibility and convenience, if the additional field crednum is
+defined, an FS::cust_credit_refund record for the full amount of the refund
+will be created.  In this case, custnum is optional.</P>
 <P></P>
 <DT><STRONG><A NAME="item_delete">delete</A></STRONG><BR>
 <DD>
@@ -93,7 +99,7 @@ returns the error, otherwise returns false.  Called by the insert method.
 <P>
 <HR>
 <H1><A NAME="version">VERSION</A></H1>
-<P>$Id: cust_refund.html,v 1.1 2001-07-30 07:36:03 ivan Exp $</P>
+<P>$Id: cust_refund.html,v 1.3 2002-01-29 17:42:46 ivan Exp $</P>
 <P>
 <HR>
 <H1><A NAME="bugs">BUGS</A></H1>

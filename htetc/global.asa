@@ -5,6 +5,7 @@ use CGI;
 use HTML::Entities;
 use Date::Format;
 use Date::Parse;
+use Tie::IxHash;
 use FS::UID qw(cgisuidsetup dbh);
 use FS::Record qw(qsearch qsearchs fields);
 use FS::part_svc;
@@ -12,6 +13,7 @@ use FS::part_pkg;
 use FS::pkg_svc;
 use FS::cust_pkg;
 use FS::cust_svc;
+use FS::part_bill_event;
 use FS::CGI qw(header menubar popurl table itable ntable);
 
 sub Script_OnStart {

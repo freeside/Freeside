@@ -31,8 +31,8 @@
 <PRE>
   use FS::part_svc;</PRE>
 <PRE>
-  $record = new FS::part_referral \%hash
-  $record = new FS::part_referral { 'column' =&gt; 'value' };</PRE>
+  $record = new FS::part_svc \%hash
+  $record = new FS::part_svc { 'column' =&gt; 'value' };</PRE>
 <PRE>
   $error = $record-&gt;insert;</PRE>
 <PRE>
@@ -52,11 +52,9 @@ FS::Record.  The following fields are currently supported:</P>
 <DT><STRONG><A NAME="item_svc_%2D_text_name_of_this_service_definition">svc - text name of this service definition</A></STRONG><BR>
 <DD>
 <DT><STRONG><A NAME="item_svcdb_%2D_table_used_for_this_service%2E_See_FS%3A">svcdb - table used for this service.  See <A HREF=".././FS/svc_acct.html">the FS::svc_acct manpage</A>,
-<A HREF=".././FS/svc_domain.html">the FS::svc_domain manpage</A>, and <A HREF=".././FS/svc_acct_sm.html">the FS::svc_acct_sm manpage</A>, among others.</A></STRONG><BR>
+<A HREF=".././FS/svc_domain.html">the FS::svc_domain manpage</A>, and <A HREF=".././FS/svc_forward.html">the FS::svc_forward manpage</A>, among others.</A></STRONG><BR>
 <DD>
-<DT><STRONG><A NAME="item_svcdb__field_%2D_Default_or_fixed_value_for_field_"><EM>svcdb</EM>__<EM>field</EM> - Default or fixed value for <EM>field</EM> in <EM>svcdb</EM>.</A></STRONG><BR>
-<DD>
-<DT><STRONG><A NAME="item_svcdb__field_flag_%2D_defines_svcdb__field_action%"><EM>svcdb</EM>__<EM>field</EM>_flag - defines <EM>svcdb</EM>__<EM>field</EM> action: null, `D' for default, or `F' for fixed</A></STRONG><BR>
+<DT><STRONG><A NAME="item_disabled_%2D_Disabled_flag%2C_empty_or_%60Y%27">disabled - Disabled flag, empty or `Y'</A></STRONG><BR>
 <DD>
 </DL>
 <P>
@@ -73,6 +71,10 @@ database, see <A HREF="#insert">insert</A>.
 Adds this service definition to the database.  If there is an error, returns
 the error, otherwise returns false.
 <P></P>
+<DT><STRONG><A NAME="item_svcdb__field_%2D_Default_or_fixed_value_for_field_"><EM>svcdb</EM>__<EM>field</EM> - Default or fixed value for <EM>field</EM> in <EM>svcdb</EM>.</A></STRONG><BR>
+<DD>
+<DT><STRONG><A NAME="item_svcdb__field_flag_%2D_defines_svcdb__field_action%"><EM>svcdb</EM>__<EM>field</EM>_flag - defines <EM>svcdb</EM>__<EM>field</EM> action: null, `D' for default, or `F' for fixed</A></STRONG><BR>
+<DD>
 <DT><STRONG><A NAME="item_delete">delete</A></STRONG><BR>
 <DD>
 Currently unimplemented.
@@ -87,11 +89,19 @@ returns the error, otherwise returns false.
 Checks all fields to make sure this is a valid service definition.  If there is
 an error, returns the error, otherwise returns false.  Called by the insert
 and replace methods.
-<P></P></DL>
+<P></P>
+<DT><STRONG><A NAME="item_part_svc_column_COLUMNNAME">part_svc_column COLUMNNAME</A></STRONG><BR>
+<DD>
+Returns the part_svc_column object (see <A HREF=".././FS/part_svc_column.html">the FS::part_svc_column manpage</A>) for the given
+COLUMNNAME, or a new part_svc_column object if none exists.
+<P></P>
+<DT><STRONG><A NAME="item_all_part_svc_column">all_part_svc_column</A></STRONG><BR>
+<DD>
+</DL>
 <P>
 <HR>
 <H1><A NAME="version">VERSION</A></H1>
-<P>$Id: part_svc.html,v 1.1 2001-07-30 07:36:03 ivan Exp $</P>
+<P>$Id: part_svc.html,v 1.3 2002-01-29 17:42:46 ivan Exp $</P>
 <P>
 <HR>
 <H1><A NAME="bugs">BUGS</A></H1>
@@ -101,9 +111,9 @@ should be fixed.</P>
 <P>
 <HR>
 <H1><A NAME="see also">SEE ALSO</A></H1>
-<P><A HREF=".././FS/Record.html">the FS::Record manpage</A>, <A HREF=".././FS/part_pkg.html">the FS::part_pkg manpage</A>, <A HREF=".././FS/pkg_svc.html">the FS::pkg_svc manpage</A>, <A HREF=".././FS/cust_svc.html">the FS::cust_svc manpage</A>,
-<A HREF=".././FS/svc_acct.html">the FS::svc_acct manpage</A>, <A HREF=".././FS/svc_acct_sm.html">the FS::svc_acct_sm manpage</A>, <A HREF=".././FS/svc_domain.html">the FS::svc_domain manpage</A>, schema.html from the
-base documentation.</P>
+<P><A HREF=".././FS/Record.html">the FS::Record manpage</A>, <A HREF=".././FS/part_svc_column.html">the FS::part_svc_column manpage</A>, <A HREF=".././FS/part_pkg.html">the FS::part_pkg manpage</A>, <A HREF=".././FS/pkg_svc.html">the FS::pkg_svc manpage</A>,
+<A HREF=".././FS/cust_svc.html">the FS::cust_svc manpage</A>, <A HREF=".././FS/svc_acct.html">the FS::svc_acct manpage</A>, <A HREF=".././FS/svc_forward.html">the FS::svc_forward manpage</A>, <A HREF=".././FS/svc_domain.html">the FS::svc_domain manpage</A>,
+schema.html from the base documentation.</P>
 
 </BODY>
 

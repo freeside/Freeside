@@ -49,6 +49,18 @@
   $error = $record-&gt;cancel;</PRE>
 <PRE>
   %hash = $record-&gt;radius;</PRE>
+<PRE>
+  %hash = $record-&gt;radius_reply;</PRE>
+<PRE>
+  %hash = $record-&gt;radius_check;</PRE>
+<PRE>
+  $domain = $record-&gt;domain;</PRE>
+<PRE>
+  $svc_domain = $record-&gt;svc_domain;</PRE>
+<PRE>
+  $email = $record-&gt;email;</PRE>
+<PRE>
+  $seconds_since = $record-&gt;seconds_since($timestamp);</PRE>
 <P>
 <HR>
 <H1><A NAME="description">DESCRIPTION</A></H1>
@@ -77,7 +89,13 @@ FS::svc_Common.  The following fields are currently supported:</P>
 <DD>
 <DT><STRONG><A NAME="item_slipip_%2D_IP_address">slipip - IP address</A></STRONG><BR>
 <DD>
+<DT><STRONG><A NAME="item_seconds_%2D">seconds -</A></STRONG><BR>
+<DD>
+<DT><STRONG><A NAME="item_domsvc_%2D_svcnum_from_svc_domain">domsvc - svcnum from svc_domain</A></STRONG><BR>
+<DD>
 <DT><STRONG><A NAME="item_radius_Radius_Attribute_%2D_Radius%2DAttribute">radius_<EM>Radius_Attribute</EM> - <EM>Radius-Attribute</EM></A></STRONG><BR>
+<DD>
+<DT><STRONG><A NAME="item_domsvc_%2D_service_number_of_svc_domain_with_which">domsvc - service number of svc_domain with which to associate</A></STRONG><BR>
 <DD>
 </DL>
 <P>
@@ -96,7 +114,8 @@ otherwise returns false.
 defined.  An FS::cust_svc record will be created and inserted.</P>
 <P>If the configuration value (see <A HREF=".././FS/Conf.html">the FS::Conf manpage</A>) shellmachine exists, and the 
 username, uid, and dir fields are defined, the <CODE>command(s)</CODE> specified in
-the shellmachine-useradd configuration are exectued on shellmachine via ssh.
+the shellmachine-useradd configuration are added to the job queue (see
+<A HREF=".././FS/queue.html">the FS::queue manpage</A> and <A HREF=".././bin/freeside-queued.html">the freeside-queued manpage</A>) to be exectued on shellmachine via ssh.
 This behaviour can be surpressed by setting $FS::svc_acct::nossh_hack true.
 If the shellmachine-useradd configuration file does not exist,</P>
 <PRE>
@@ -108,6 +127,7 @@ it empty,</P>
 <P>is the default instead.  Otherwise the contents of the file are treated as
 a double-quoted perl string, with the following variables available:
 $username, $uid, $gid, $dir, and $shell.</P>
+<P>(TODOC: cyrus config file, <A HREF=".././FS/queue.html">the FS::queue manpage</A> and <A HREF=".././bin/freeside-queued.html">the freeside-queued manpage</A>)</P>
 <P></P>
 <DT><STRONG><A NAME="item_delete">delete</A></STRONG><BR>
 <DD>
@@ -116,7 +136,8 @@ error, otherwise returns false.
 <P>The corresponding FS::cust_svc record will be deleted as well.</P>
 <P>If the configuration value (see <A HREF=".././FS/Conf.html">the FS::Conf manpage</A>) shellmachine exists, the
 <CODE>command(s)</CODE> specified in the shellmachine-userdel configuration file are
-executed on shellmachine via ssh.  This behavior can be surpressed by setting
+added to the job queue (see <A HREF=".././FS/queue.html">the FS::queue manpage</A> and <A HREF=".././bin/freeside-queued.html">the freeside-queued manpage</A>) to be executed
+on shellmachine via ssh.  This behavior can be surpressed by setting
 $FS::svc_acct::nossh_hack true.  If the shellmachine-userdel configuration
 file does not exist,</P>
 <PRE>
@@ -128,6 +149,7 @@ is empty,</P>
 <P>is the default instead.  Otherwise the contents of the file are treated as a
 double-quoted perl string, with the following variables available:
 $username and $dir.</P>
+<P>(TODOC: cyrus config file)</P>
 <P></P>
 <DT><STRONG><A NAME="item_replace_OLD_RECORD">replace OLD_RECORD</A></STRONG><BR>
 <DD>
@@ -135,9 +157,10 @@ Replaces OLD_RECORD with this one in the database.  If there is an error,
 returns the error, otherwise returns false.
 <P>If the configuration value (see <A HREF=".././FS/Conf.html">the FS::Conf manpage</A>) shellmachine exists, and the 
 dir field has changed, the <CODE>command(s)</CODE> specified in the shellmachine-usermod
-configuraiton file are executed on shellmachine via ssh.  This behavior can
+configuraiton file are added to the job queue (see <A HREF=".././FS/queue.html">the FS::queue manpage</A> and
+<A HREF=".././bin/freeside-queued.html">the freeside-queued manpage</A>) to be executed on shellmachine via ssh.  This behavior can
 be surpressed by setting $FS::svc-acct::nossh_hack true.  If the
-shellmachine-userdel configuration file does not exist or is empty, :</P>
+shellmachine-userdel configuration file does not exist or is empty,</P>
 <PRE>
   [ -d $old_dir ] &amp;&amp; mv $old_dir $new_dir || (
     chmod u+t $old_dir;
@@ -148,8 +171,8 @@ shellmachine-userdel configuration file does not exist or is empty, :</P>
     chown -R $uid.$gid $new_dir;
     rm -rf $old_dir
   )</PRE>
-<P>is executed on shellmachine via ssh.  This behaviour can be surpressed by
-setting $FS::svc_acct::nossh_hack true.</P>
+<P>is the default.  This behaviour can be surpressed by setting
+$FS::svc_acct::nossh_hack true.</P>
 <P></P>
 <DT><STRONG><A NAME="item_suspend">suspend</A></STRONG><BR>
 <DD>
@@ -193,11 +216,42 @@ Returns key/value pairs, suitable for assigning to a hash, for any RADIUS
 check attributes of this record.
 <P>Accessing RADIUS attributes directly is not supported and will break in the
 future.</P>
-<P></P></DL>
+<P></P>
+<DT><STRONG><A NAME="item_domain">domain</A></STRONG><BR>
+<DD>
+Returns the domain associated with this account.
+<P></P>
+<DT><STRONG><A NAME="item_svc_domain">svc_domain</A></STRONG><BR>
+<DD>
+Returns the FS::svc_domain record for this account's domain (see
+<A HREF=".././FS/svc_domain.html">the FS::svc_domain manpage</A>.
+<P></P>
+<DT><STRONG><A NAME="item_cust_svc">cust_svc</A></STRONG><BR>
+<DD>
+Returns the FS::cust_svc record for this account (see <A HREF=".././FS/cust_svc.html">the FS::cust_svc manpage</A>).
+<P>sub cust_svc {
+  my $self = shift;
+  qsearchs( 'cust_svc', { 'svcnum' =&gt; $self-&gt;svcnum } );
+}</P>
+<P></P>
+<DT><STRONG><A NAME="item_email">email</A></STRONG><BR>
+<DD>
+Returns an email address associated with the account.
+<P></P>
+<DT><STRONG><A NAME="item_seconds_since_TIMESTAMP">seconds_since TIMESTAMP</A></STRONG><BR>
+<DD>
+Returns the number of seconds this account has been online since TIMESTAMP.
+See <A HREF=".././FS/session.html">the FS::session manpage</A>
+<P>TIMESTAMP is specified as a UNIX timestamp; see <EM>perlfunc/``time''</EM>.  Also see
+<A HREF="../Time/Local.html">the Time::Local manpage</A> and <A HREF="../Date/Parse.html">the Date::Parse manpage</A> for conversion functions.</P>
+<P></P>
+<DT><STRONG><A NAME="item_ssh">ssh</A></STRONG><BR>
+<DD>
+</DL>
 <P>
 <HR>
 <H1><A NAME="version">VERSION</A></H1>
-<P>$Id: svc_acct.html,v 1.1 2001-07-30 07:36:03 ivan Exp $</P>
+<P>$Id: svc_acct.html,v 1.2 2002-01-29 16:33:16 ivan Exp $</P>
 <P>
 <HR>
 <H1><A NAME="bugs">BUGS</A></H1>
@@ -210,8 +264,10 @@ counterintuitive.</P>
 <P>
 <HR>
 <H1><A NAME="see also">SEE ALSO</A></H1>
-<P><A HREF=".././FS/svc_Common.html">the FS::svc_Common manpage</A>, <A HREF=".././FS/Record.html">the FS::Record manpage</A>, <A HREF=".././FS/Conf.html">the FS::Conf manpage</A>, <A HREF=".././FS/cust_svc.html">the FS::cust_svc manpage</A>,
-<A HREF=".././FS/part_svc.html">the FS::part_svc manpage</A>, <A HREF=".././FS/cust_pkg.html">the FS::cust_pkg manpage</A>, <A HREF="../Net/SSH.html">the Net::SSH manpage</A>, <EM>ssh</EM>, <A HREF=".././FS/svc_acct_pop.html">the FS::svc_acct_pop manpage</A>,
+<P><A HREF=".././FS/svc_Common.html">the FS::svc_Common manpage</A>, edit/part_svc.cgi from an installed web interface,
+export.html from the base documentation, <A HREF=".././FS/Record.html">the FS::Record manpage</A>, <A HREF=".././FS/Conf.html">the FS::Conf manpage</A>,
+<A HREF=".././FS/cust_svc.html">the FS::cust_svc manpage</A>, <A HREF=".././FS/part_svc.html">the FS::part_svc manpage</A>, <A HREF=".././FS/cust_pkg.html">the FS::cust_pkg manpage</A>, <A HREF=".././FS/queue.html">the FS::queue manpage</A>,
+<A HREF=".././bin/freeside-queued.html">the freeside-queued manpage</A>), <A HREF="../Net/SSH.html">the Net::SSH manpage</A>, <A HREF="#item_ssh">ssh</A>, <A HREF=".././FS/svc_acct_pop.html">the FS::svc_acct_pop manpage</A>,
 schema.html from the base documentation.</P>
 
 </BODY>

@@ -1,7 +1,8 @@
 package FS::Record;
 
 use strict;
-use vars qw($dbdef_file $dbdef $setup_hack $AUTOLOAD @ISA @EXPORT_OK $DEBUG);
+use vars qw( $dbdef_file $dbdef $setup_hack $AUTOLOAD @ISA @EXPORT_OK $DEBUG
+             $me );
 use subs qw(reload_dbdef);
 use Exporter;
 use Carp qw(carp cluck croak confess);
@@ -16,6 +17,7 @@ use FS::SearchCache;
 @EXPORT_OK = qw(dbh fields hfields qsearch qsearchs dbdef jsearch);
 
 $DEBUG = 0;
+$me = '[FS::Record]';
 
 #ask FS::UID to run this stuff for us later
 $FS::UID::callback{'FS::Record'} = sub { 
@@ -225,7 +227,7 @@ sub qsearch {
   }
   $statement .= " $extra_sql" if defined($extra_sql);
 
-  warn $statement if $DEBUG;
+  warn "[debug]$me $statement\n" if $DEBUG;
   my $sth = $dbh->prepare($statement)
     or croak "$dbh->errstr doing $statement";
 
@@ -474,6 +476,7 @@ sub insert {
       join(', ',map(_quote($self->getfield($_),$self->table,$_), @fields)).
     ")"
   ;
+  warn "[debug]$me $statement\n" if $DEBUG;
   my $sth = dbh->prepare($statement) or return dbh->errstr;
 
   local $SIG{HUP} = 'IGNORE';
@@ -523,6 +526,7 @@ sub delete {
           ? ( $self->dbdef_table->primary_key)
           : $self->fields
   );
+  warn "[debug]$me $statement\n" if $DEBUG;
   my $sth = dbh->prepare($statement) or return dbh->errstr;
 
   local $SIG{HUP} = 'IGNORE';
@@ -561,11 +565,11 @@ returns the error, otherwise returns false.
 
 sub replace {
   my ( $new, $old ) = ( shift, shift );
-  warn "[debug][FS::Record] $new ->replace $old\n" if $DEBUG;
+  warn "[debug]$me $new ->replace $old\n" if $DEBUG;
 
   my @diff = grep $new->getfield($_) ne $old->getfield($_), $old->fields;
   unless ( @diff ) {
-    carp "[warning][FS::Record] $new -> replace $old: records identical";
+    carp "[warning]$me $new -> replace $old: records identical";
     return '';
   }
 
@@ -596,6 +600,7 @@ sub replace {
       } ( $primary_key ? ( $primary_key ) : $old->fields )
     )
   ;
+  warn "[debug]$me $statement\n" if $DEBUG;
   my $sth = dbh->prepare($statement) or return dbh->errstr;
 
   local $SIG{HUP} = 'IGNORE';

@@ -15,6 +15,7 @@
 	<LI><A HREF="#synopsis">SYNOPSIS</A></LI>
 	<LI><A HREF="#description">DESCRIPTION</A></LI>
 	<LI><A HREF="#methods">METHODS</A></LI>
+	<LI><A HREF="#subroutines">SUBROUTINES</A></LI>
 	<LI><A HREF="#version">VERSION</A></LI>
 	<LI><A HREF="#bugs">BUGS</A></LI>
 	<LI><A HREF="#see also">SEE ALSO</A></LI>
@@ -45,6 +46,8 @@
   @cust_pkg = $record-&gt;all_pkgs;</PRE>
 <PRE>
   @cust_pkg = $record-&gt;ncancelled_pkgs;</PRE>
+<PRE>
+  @cust_pkg = $record-&gt;suspended_pkgs;</PRE>
 <PRE>
   $error = $record-&gt;bill;
   $error = $record-&gt;bill %options;
@@ -134,6 +137,8 @@ FS::Record.  The following fields are currently supported:</P>
 <DD>
 <DT><STRONG><A NAME="item_taker">otaker - order taker (assigned automatically, see <A HREF=".././FS/UID.html">the FS::UID manpage</A>)</A></STRONG><BR>
 <DD>
+<DT><STRONG><A NAME="item_comments">comments - comments (optional)</A></STRONG><BR>
+<DD>
 </DL>
 <P>
 <HR>
@@ -145,15 +150,15 @@ Creates a new customer.  To add the customer to the database, see <A HREF="#inse
 <P>Note that this stores the hash reference, not a distinct copy of the hash it
 points to.  You can ask the object for a copy with the <EM>hash</EM> method.</P>
 <P></P>
-<DT><STRONG><A NAME="item_insert">insert</A></STRONG><BR>
+<DT><STRONG><A NAME="item_insert_%5B_CUST_PKG_HASHREF_%5B_%2C_INVOICING_LIST">insert [ CUST_PKG_HASHREF [ , INVOICING_LIST_ARYREF ] ]</A></STRONG><BR>
 <DD>
 Adds this customer to the database.  If there is an error, returns the error,
 otherwise returns false.
-<P>There is a special insert mode in which you pass a data structure to the insert
-method containing FS::cust_pkg and FS::svc_<EM>tablename</EM> objects.  When
-running under a transactional database, all records are inserted atomicly, or
-the transaction is rolled back.  There should be a better explanation of this,
-but until then, here's an example:</P>
+<P>CUST_PKG_HASHREF: If you pass a Tie::RefHash data structure to the insert
+method containing FS::cust_pkg and FS::svc_<EM>tablename</EM> objects, all records
+are inserted atomicly, or the transaction is rolled back.  Passing an empty
+hash reference is equivalent to not supplying this parameter.  There should be
+a better explanation of this, but until then, here's an example:</P>
 <PRE>
   use Tie::RefHash;
   tie %hash, 'Tie::RefHash'; #this part is important
@@ -162,6 +167,14 @@ but until then, here's an example:</P>
     ...
   );
   $cust_main-&gt;insert( \%hash );</PRE>
+<P>INVOICING_LIST_ARYREF: If you pass an arrarref to the insert method, it will
+be set as the invoicing list (see <A HREF="#invoicing_list">invoicing_list</A>).  Errors return as
+expected and rollback the entire transaction; it is not necessary to call 
+check_invoicing_list first.  The invoicing_list is set after the records in the
+CUST_PKG_HASHREF above are inserted, so it is now possible to set an
+invoicing_list destination to the newly-created svc_acct.  Here's an example:</P>
+<PRE>
+  $cust_main-&gt;insert( {}, [ $email, 'POST' ] );</PRE>
 <P></P>
 <DT><STRONG><A NAME="item_delete_NEW_CUSTNUM">delete NEW_CUSTNUM</A></STRONG><BR>
 <DD>
@@ -170,15 +183,23 @@ returns false.
 <P>This will completely remove all traces of the customer record.  This is not
 what you want when a customer cancels service; for that, cancel all of the
 customer's packages (see <A HREF=".././FS/cust_pkg.html#cancel">cancel in the FS::cust_pkg manpage</A>).</P>
-<P>If the customer has any packages, you need to pass a new (valid) customer
-number for those packages to be transferred to.</P>
+<P>If the customer has any uncancelled packages, you need to pass a new (valid)
+customer number for those packages to be transferred to.  Cancelled packages
+will be deleted.  Did I mention that this is NOT what you want when a customer
+cancels service and that you really should be looking see <A HREF=".././FS/cust_pkg.html#cancel">cancel in the FS::cust_pkg manpage</A>?</P>
 <P>You can't delete a customer with invoices (see <A HREF=".././FS/cust_bill.html">the FS::cust_bill manpage</A>),
-or credits (see <A HREF=".././FS/cust_credit.html">the FS::cust_credit manpage</A>).</P>
+or credits (see <A HREF=".././FS/cust_credit.html">the FS::cust_credit manpage</A>) or payments (see <A HREF=".././FS/cust_pay.html">the FS::cust_pay manpage</A>).</P>
 <P></P>
-<DT><STRONG><A NAME="item_replace_OLD_RECORD">replace OLD_RECORD</A></STRONG><BR>
+<DT><STRONG><A NAME="item_replace_OLD_RECORD_%5B_INVOICING_LIST_ARYREF_%5D">replace OLD_RECORD [ INVOICING_LIST_ARYREF ]</A></STRONG><BR>
 <DD>
 Replaces the OLD_RECORD with this one in the database.  If there is an error,
 returns the error, otherwise returns false.
+<P>INVOICING_LIST_ARYREF: If you pass an arrarref to the insert method, it will
+be set as the invoicing list (see <A HREF="#invoicing_list">invoicing_list</A>).  Errors return as
+expected and rollback the entire transaction; it is not necessary to call 
+check_invoicing_list first.  Here's an example:</P>
+<PRE>
+  $new_cust_main-&gt;replace( $old_cust_main, [ $email, 'POST' ] );</PRE>
 <P></P>
 <DT><STRONG><A NAME="item_check">check</A></STRONG><BR>
 <DD>
@@ -194,14 +215,49 @@ Returns all packages (see <A HREF=".././FS/cust_pkg.html">the FS::cust_pkg manpa
 <DD>
 Returns all non-cancelled packages (see <A HREF=".././FS/cust_pkg.html">the FS::cust_pkg manpage</A>) for this customer.
 <P></P>
+<DT><STRONG><A NAME="item_suspended_pkgs">suspended_pkgs</A></STRONG><BR>
+<DD>
+Returns all suspended packages (see <A HREF=".././FS/cust_pkg.html">the FS::cust_pkg manpage</A>) for this customer.
+<P></P>
+<DT><STRONG><A NAME="item_unflagged_suspended_pkgs">unflagged_suspended_pkgs</A></STRONG><BR>
+<DD>
+Returns all unflagged suspended packages (see <A HREF=".././FS/cust_pkg.html">the FS::cust_pkg manpage</A>) for this
+customer (thouse packages without the `manual_flag' set).
+<P></P>
+<DT><STRONG><A NAME="item_unsuspended_pkgs">unsuspended_pkgs</A></STRONG><BR>
+<DD>
+Returns all unsuspended (and uncancelled) packages (see <A HREF=".././FS/cust_pkg.html">the FS::cust_pkg manpage</A>) for
+this customer.
+<P></P>
+<DT><STRONG><A NAME="item_unsuspend">unsuspend</A></STRONG><BR>
+<DD>
+Unsuspends all unflagged suspended packages (see <A HREF="#unflagged_suspended_pkgs">unflagged_suspended_pkgs</A>
+and <A HREF=".././FS/cust_pkg.html">the FS::cust_pkg manpage</A>) for this customer.  Always returns a list: an empty list
+on success or a list of errors.
+<P></P>
+<DT><STRONG><A NAME="item_suspend">suspend</A></STRONG><BR>
+<DD>
+Suspends all unsuspended packages (see <A HREF=".././FS/cust_pkg.html">the FS::cust_pkg manpage</A>) for this customer.
+Always returns a list: an empty list on success or a list of errors.
+<P></P>
+<DT><STRONG><A NAME="item_cancel">cancel</A></STRONG><BR>
+<DD>
+Cancels all uncancelled packages (see <A HREF=".././FS/cust_pkg.html">the FS::cust_pkg manpage</A>) for this customer.
+Always returns a list: an empty list on success or a list of errors.
+<P></P>
 <DT><STRONG><A NAME="item_bill">bill OPTIONS</A></STRONG><BR>
 <DD>
 Generates invoices (see <A HREF=".././FS/cust_bill.html">the FS::cust_bill manpage</A>) for this customer.  Usually used in
 conjunction with the collect method.
+<P>Options are passed as name-value pairs.</P>
 <P>The only currently available option is `time', which bills the customer as if
 it were that time.  It is specified as a UNIX timestamp; see
 <EM>perlfunc/``time''</EM>).  Also see <A HREF="../Time/Local.html">the Time::Local manpage</A> and <A HREF="../Date/Parse.html">the Date::Parse manpage</A> for conversion
-functions.</P>
+functions.  For example:</P>
+<PRE>
+ use Date::Parse;
+ ...
+ $cust_main-&gt;bill( 'time' =&gt; str2time('April 20th, 2001') );</PRE>
 <P>If there is an error, returns the error, otherwise returns false.</P>
 <P></P>
 <DT><STRONG><A NAME="item_collect">collect OPTIONS</A></STRONG><BR>
@@ -211,28 +267,66 @@ functions.</P>
 <P>Depending on the value of `payby', this may print an invoice (`BILL'), charge
 a credit card (`CARD'), or just add any necessary (pseudo-)payment (`COMP').</P>
 <P>If there is an error, returns the error, otherwise returns false.</P>
+<P>Options are passed as name-value pairs.</P>
 <P>Currently available options are:</P>
 <P>invoice_time - Use this time when deciding when to print invoices and
 late notices on those invoices.  The default is now.  It is specified as a UNIX timestamp; see <EM>perlfunc/``time''</EM>).  Also see <A HREF="../Time/Local.html">the Time::Local manpage</A> and <A HREF="../Date/Parse.html">the Date::Parse manpage</A>
 for conversion functions.</P>
-<P>batch_card - Set this true to batch cards (see <A HREF=".././FS/cust_pay_batch.html">the cust_pay_batch manpage</A>).  By
+<P>batch_card - Set this true to batch cards (see <A HREF=".././FS/cust_pay_batch.html">the FS::cust_pay_batch manpage</A>).  By
 default, cards are processed immediately, which will generate an error if
 CyberCash is not installed.</P>
 <P>report_badcard - Set this true if you want bad card transactions to
 return an error.  By default, they don't.</P>
+<P>force_print - force printing even if invoice has been printed more than once
+every 30 days, and don't increment the `printed' field.</P>
 <P></P>
 <DT><STRONG><A NAME="item_total_owed">total_owed</A></STRONG><BR>
 <DD>
 Returns the total owed for this customer on all invoices
-(see <A HREF=".././FS/cust_bill.html">the FS::cust_bill manpage</A>).
+(see <A HREF=".././FS/cust_bill.html#owed">owed in the FS::cust_bill manpage</A>).
+<P></P>
+<DT><STRONG><A NAME="item_total_owed_date_TIME">total_owed_date TIME</A></STRONG><BR>
+<DD>
+Returns the total owed for this customer on all invoices with date earlier than
+TIME.  TIME is specified as a UNIX timestamp; see <EM>perlfunc/``time''</EM>).  Also
+see <A HREF="../Time/Local.html">the Time::Local manpage</A> and <A HREF="../Date/Parse.html">the Date::Parse manpage</A> for conversion functions.
+<P></P>
+<DT><STRONG><A NAME="item_apply_credits">apply_credits</A></STRONG><BR>
+<DD>
+Applies (see <A HREF=".././FS/cust_credit_bill.html">the FS::cust_credit_bill manpage</A>) unapplied credits (see <A HREF=".././FS/cust_credit.html">the FS::cust_credit manpage</A>)
+to outstanding invoice balances in chronological order and returns the value
+of any remaining unapplied credits available for refund
+(see <A HREF=".././FS/cust_refund.html">the FS::cust_refund manpage</A>).
+<P></P>
+<DT><STRONG><A NAME="item_apply_payments">apply_payments</A></STRONG><BR>
+<DD>
+Applies (see <A HREF=".././FS/cust_bill_pay.html">the FS::cust_bill_pay manpage</A>) unapplied payments (see <A HREF=".././FS/cust_pay.html">the FS::cust_pay manpage</A>)
+to outstanding invoice balances in chronological order.
+<PRE>
+ #and returns the value of any remaining unapplied payments.</PRE>
 <P></P>
 <DT><STRONG><A NAME="item_total_credited">total_credited</A></STRONG><BR>
 <DD>
-Returns the total credits (see <A HREF=".././FS/cust_credit.html">the FS::cust_credit manpage</A>) for this customer.
+Returns the total outstanding credit (see <A HREF=".././FS/cust_credit.html">the FS::cust_credit manpage</A>) for this
+customer.  See <A HREF=".././FS/cust_credit.html#credited">credited in the FS::cust_credit manpage</A>.
+<P></P>
+<DT><STRONG><A NAME="item_total_unapplied_payments">total_unapplied_payments</A></STRONG><BR>
+<DD>
+Returns the total unapplied payments (see <A HREF=".././FS/cust_pay.html">the FS::cust_pay manpage</A>) for this customer.
+See <A HREF=".././FS/cust_pay.html#unapplied">unapplied in the FS::cust_pay manpage</A>.
 <P></P>
 <DT><STRONG><A NAME="item_balance">balance</A></STRONG><BR>
 <DD>
-Returns the balance for this customer (total owed minus total credited).
+Returns the balance for this customer (total_owed minus total_credited
+minus total_unapplied_payments).
+<P></P>
+<DT><STRONG><A NAME="item_balance_date_TIME">balance_date TIME</A></STRONG><BR>
+<DD>
+Returns the balance for this customer, only considering invoices with date
+earlier than TIME (total_owed_date minus total_credited minus
+total_unapplied_payments).  TIME is specified as a UNIX timestamp; see
+<EM>perlfunc/``time''</EM>).  Also see <A HREF="../Time/Local.html">the Time::Local manpage</A> and <A HREF="../Date/Parse.html">the Date::Parse manpage</A> for conversion
+functions.
 <P></P>
 <DT><STRONG><A NAME="item_invoicing_list_%5B_ARRAYREF_%5D">invoicing_list [ ARRAYREF ]</A></STRONG><BR>
 <DD>
@@ -248,11 +342,58 @@ check it without disturbing anything by passing nothing.</P>
 <DD>
 Checks these arguements as valid input for the invoicing_list method.  If there
 is an error, returns the error, otherwise returns false.
+<P></P>
+<DT><STRONG><A NAME="item_default_invoicing_list">default_invoicing_list</A></STRONG><BR>
+<DD>
+Sets the invoicing list to all accounts associated with this customer.
+<P></P>
+<DT><STRONG><A NAME="item_invoicing_list_addpost">invoicing_list_addpost</A></STRONG><BR>
+<DD>
+Adds postal invoicing to this customer.  If this customer is already configured
+to receive postal invoices, does nothing.
+<P></P>
+<DT><STRONG><A NAME="item_referral_cust_main_%5B_DEPTH_%5B_EXCLUDE_HASHREF_%">referral_cust_main [ DEPTH [ EXCLUDE_HASHREF ] ]</A></STRONG><BR>
+<DD>
+Returns an array of customers referred by this customer (referral_custnum set
+to this custnum).  If DEPTH is given, recurses up to the given depth, returning
+customers referred by customers referred by this customer and so on, inclusive.
+The default behavior is DEPTH 1 (no recursion).
+<P></P>
+<DT><STRONG><A NAME="item_referral_cust_pkg_%5B_DEPTH_%5D">referral_cust_pkg [ DEPTH ]</A></STRONG><BR>
+<DD>
+Like referral_cust_main, except returns a flat list of all unsuspended packages
+for each customer.  The number of items in this list may be useful for
+comission calculations (perhaps after a grep).
+<P></P>
+<DT><STRONG><A NAME="item_credit">credit AMOUNT, REASON</A></STRONG><BR>
+<DD>
+Applies a credit to this customer.  If there is an error, returns the error,
+otherwise returns false.
+<P></P>
+<DT><STRONG><A NAME="item_charge">charge AMOUNT PKG COMMENT</A></STRONG><BR>
+<DD>
+Creates a one-time charge for this customer.  If there is an error, returns
+the error, otherwise returns false.
 <P></P></DL>
 <P>
 <HR>
+<H1><A NAME="subroutines">SUBROUTINES</A></H1>
+<DL>
+<DT><STRONG><A NAME="item_check_and_rebuild_fuzzyfiles">check_and_rebuild_fuzzyfiles</A></STRONG><BR>
+<DD>
+<DT><STRONG><A NAME="item_rebuild_fuzzyfiles">rebuild_fuzzyfiles</A></STRONG><BR>
+<DD>
+<DT><STRONG><A NAME="item_all_last">all_last</A></STRONG><BR>
+<DD>
+<DT><STRONG><A NAME="item_all_company">all_company</A></STRONG><BR>
+<DD>
+<DT><STRONG><A NAME="item_append_fuzzyfiles_LASTNAME_COMPANY">append_fuzzyfiles LASTNAME COMPANY</A></STRONG><BR>
+<DD>
+</DL>
+<P>
+<HR>
 <H1><A NAME="version">VERSION</A></H1>
-<P>$Id: cust_main.html,v 1.1 2001-07-30 07:36:03 ivan Exp $</P>
+<P>$Id: cust_main.html,v 1.2 2002-01-29 16:33:15 ivan Exp $</P>
 <P>
 <HR>
 <H1><A NAME="bugs">BUGS</A></H1>
@@ -264,7 +405,6 @@ list.</P>
 <P>CyberCash v2 forces us to define some variables in package main.</P>
 <P>There should probably be a configuration file with a list of allowed credit
 card types.</P>
-<P>CyberCash is the only processor.</P>
 <P>No multiple currency support (probably a larger project than just this module).</P>
 <P>
 <HR>

@@ -59,6 +59,7 @@ sub handler
       #use CGI::Carp qw(fatalsToBrowser);
       use Date::Format;
       use Date::Parse;
+      use Tie::IxHash;
       use HTML::Entities;
       use FS::UID qw(cgisuidsetup);
       use FS::Record qw(qsearch qsearchs fields);
@@ -67,6 +68,7 @@ sub handler
       use FS::pkg_svc;
       use FS::cust_pkg;
       use FS::cust_svc;
+      use FS::part_bill_event;
       use FS::CGI qw(header menubar popurl table itable ntable);
 
       $cgi = new CGI;

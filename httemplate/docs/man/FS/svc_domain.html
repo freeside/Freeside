@@ -57,6 +57,8 @@ FS::svc_Common.  The following fields are currently supported:</P>
 <DD>
 <DT><STRONG><A NAME="item_domain">domain</A></STRONG><BR>
 <DD>
+<DT><STRONG><A NAME="item_catchall_%2D_optional_svcnum_of_an_svc_acct_record">catchall - optional svcnum of an svc_acct record, designating an email catchall account.</A></STRONG><BR>
+<DD>
 </DL>
 <P>
 <HR>
@@ -86,9 +88,18 @@ the domain_record table (see &lt;FS::domain_record&gt;).</P>
 records are added to the domain_record table (see <A HREF=".././FS/domain_record.html">the FS::domain_record manpage</A>).</P>
 <P>If any machines are defined in the <EM>mxmachines</EM> configuration file, MX
 records are added to the domain_record table (see <A HREF=".././FS/domain_record.html">the FS::domain_record manpage</A>).</P>
-<P>Any problems adding FS::domain_record records will emit warnings, but will
-not return errors from this method.  If your configuration files are correct
-you shouln't have any problems.</P>
+<P>If a machine is defined in the <EM>shellmachine</EM> configuration value, the
+<EM>qmailmachines</EM> configuration file exists, and the <EM>catchall</EM> field points
+to an an account with a home directory (see <A HREF=".././FS/svc_acct.html">the FS::svc_acct manpage</A>), the command:</P>
+<PRE>
+  [ -e $dir/.qmail-$qdomain-defualt ] || {
+    touch $dir/.qmail-$qdomain-default;
+    chown $uid:$gid $dir/.qmail-$qdomain-default;
+  }</PRE>
+<P>is executed on shellmachine via ssh (see <EM>dot-qmail/``EXTENSION ADDRESSES''</EM>).
+This behaviour can be supressed by setting $FS::svc_domain::nossh_hack true.</P>
+<P>a machine is defined
+in the</P>
 <P></P>
 <DT><STRONG><A NAME="item_delete">delete</A></STRONG><BR>
 <DD>
@@ -140,7 +151,7 @@ Submits a registration email for this domain.
 <P>
 <HR>
 <H1><A NAME="version">VERSION</A></H1>
-<P>$Id: svc_domain.html,v 1.1 2001-07-30 07:36:03 ivan Exp $</P>
+<P>$Id: svc_domain.html,v 1.3 2002-01-29 17:42:46 ivan Exp $</P>
 <P>
 <HR>
 <H1><A NAME="bugs">BUGS</A></H1>

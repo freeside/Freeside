@@ -1,4 +1,4 @@
-<!-- $Id: part_pkg.cgi,v 1.8 2001-12-28 14:40:35 ivan Exp $ -->
+<!-- $Id: part_pkg.cgi,v 1.9 2002-01-29 16:33:16 ivan Exp $ -->
 
 <%
 
@@ -158,8 +158,8 @@ unless ( $cgi->param('clone') ) {
 }
 
 # prolly should be in database
-my %plans = (
-
+use Tie::IxHash;
+tie my %plans, 'Tie::IxHash',
   'flat' => {
     'name' => 'Flat rate',
     'fields' => {
@@ -170,6 +170,7 @@ my %plans = (
                        'default' => 0,
                       },
     },
+    'fieldorder' => [ 'setup_fee', 'recur_fee' ],
     'setup' => 'what.setup_fee.value',
     'recur' => 'what.recur_fee.value',
   },
@@ -190,11 +191,55 @@ my %plans = (
                               'default' => 1,
                             },
     },
+    'fieldorder' => [ 'setup_fee', 'recur_fee', 'comission_depth', 'comission_amount' ],
     'setup' => 'what.setup_fee.value',
     'recur' => '\'my $error = $cust_pkg->cust_main->credit( \' + what.comission_amount.value + \' * scalar($cust_pkg->cust_main->referral_cust_pkg(\' + what.comission_depth.value+ \')), "commission" ); die $error if $error; \' + what.recur_fee.value + \';\'',
   },
 
-);
+  'sesmon_hour' => {
+    'name' => 'Base charge plus charge per-hour from the session monitor',
+    'fields' => {
+      'setup_fee' => { 'name' => 'Setup fee for this package',
+                       'default' => 0,
+                     },
+      'recur_flat' => { 'name' => 'Base monthly charge for this package',
+                        'default' => 0,
+                      },
+      'recur_included_hours' => { 'name' => 'Hours included',
+                                  'default' => 0,
+                                },
+      'recur_hourly_charge' => { 'name' => 'Additional charge per hour',
+                                 'default' => 0,
+                               },
+    },
+    'fieldorder' => [ 'setup_fee', 'recur_flat', 'recur_included_hours', 'recur_hourly_charge' ],
+    'setup' => 'what.setup_fee.value',
+    'recur' => '\'my $hours = $cust_pkg->seconds_since($cust_bkg->bill || 0) / 3600 - \' + what.recur_included_hours.value + \'; $hours = 0 if $hours < 0; \' + what.recur_flat.value + \' + \' + what.recur_hourly_charge.value + \' * $hours;\'',
+  },
+
+  'sesmon_minute' => {
+    'name' => 'Base charge plus charge per-minute from the session monitor',
+    'fields' => {
+      'setup_fee' => { 'name' => 'Setup fee for this package',
+                       'default' => 0,
+                     },
+      'recur_flat' => { 'name' => 'Base monthly charge for this package',
+                        'default' => 0,
+                      },
+      'recur_included_min' => { 'name' => 'Minutes included',
+                                'default' => 0,
+                                },
+      'recur_minly_charge' => { 'name' => 'Additional charge per minute',
+                                'default' => 0,
+                              },
+    },
+    'fieldorder' => [ 'setup_fee', 'recur_flat', 'recur_included_min', 'recur_minly_charge' ],
+    'setup' => 'what.setup_fee.value',
+    'recur' => '\'my $min = $cust_pkg->seconds_since($cust_bkg->bill || 0) / 60 - \' + what.recur_included_min.value + \'; $min = 0 if $min < 0; \' + what.recur_flat.value + \' + \' + what.recur_minly_charge.value + \' * $min;\'',
+
+  },
+
+;
 
 %>
 
@@ -295,23 +340,29 @@ if ( $cgi->param('pkgnum') ) {
 <%= ntable("#cccccc",2) %>
 
 <% my $href = $plans{$layer}->{'fields'};
-   foreach my $field ( keys %{ $href } ) { %>
+   foreach my $field ( exists($plans{$layer}->{'fieldorder'})
+                         ? @{$plans{$layer}->{'fieldorder'}}
+                         : keys %{ $href }
+                     ) {
+%>
 <TR><TD ALIGN="right"><%= $href->{$field}{'name'} %></TD>
 <TD><INPUT TYPE="text" NAME="<%= $field %>" VALUE="<%= exists($plandata{$field}) ? $plandata{$field} : $href->{$field}{'default'} %>" onChange="fchanged(this)"></TD></TR>
 <% } %>
 </TABLE>
 <INPUT TYPE="hidden" NAME="plandata" VALUE="<%= join(',', keys %{ $href } ) %>">
-<FONT SIZE="1">
 <BR><BR>
-Setup expression<BR><INPUT TYPE="text" NAME="setup" SIZE="160" VALUE="<%= $hashref->{setup} %>" onLoad="fchanged(this)"><BR>
-Recurring espression<BR><INPUT TYPE="text" NAME="recur" SIZE="160" VALUE="<%= $hashref->{recur} %>" onLoad="fchanged(this)"><BR>
-</FONT>
 
 <%
-print qq!<BR><INPUT TYPE="submit" VALUE="!,
+print qq!<INPUT TYPE="submit" VALUE="!,
       $hashref->{pkgpart} ? "Apply changes" : "Add package",
       qq!" onClick="fchanged(this)">!;
 %>
+
+<BR><BR>don't edit this unless you know what you're doing <INPUT TYPE="button" VALUE="refresh expressions" onClick="fchanged(this)"><%= ntable("#cccccc",2) %><TR><TD>
+<FONT SIZE="1">Setup expression<BR><INPUT TYPE="text" NAME="setup" SIZE="160" VALUE="<%= $hashref->{setup} %>" onLoad="fchanged(this)"></FONT><BR>
+<FONT SIZE="1">Recurring espression<BR><INPUT TYPE="text" NAME="recur" SIZE="160" VALUE="<%= $hashref->{recur} %>" onLoad="fchanged(this)"></FONT>
+</TR></TD>
+</TABLE>
 
 </FORM>
 

@@ -831,6 +831,18 @@ sub suspend {
   grep { $_->suspend } $self->unsuspended_pkgs;
 }
 
+=item cancel
+
+Cancels all uncancelled packages (see L<FS::cust_pkg>) for this customer.
+Always returns a list: an empty list on success or a list of errors.
+
+=cut
+
+sub cancel {
+  my $self = shift;
+  grep { $_->cancel } $self->ncancelled_pkgs;
+}
+
 =item bill OPTIONS
 
 Generates invoices (see L<FS::cust_bill>) for this customer.  Usually used in
@@ -1722,7 +1734,7 @@ sub check_invoicing_list {
 
 =item default_invoicing_list
 
-Returns the email addresses of any 
+Sets the invoicing list to all accounts associated with this customer.
 
 =cut
 
@@ -1738,6 +1750,21 @@ sub default_invoicing_list {
     push @list, map { $_->email } @svc_acct;
   }
   $self->invoicing_list(\@list);
+}
+
+=item invoicing_list_addpost
+
+Adds postal invoicing to this customer.  If this customer is already configured
+to receive postal invoices, does nothing.
+
+=cut
+
+sub invoicing_list_addpost {
+  my $self = shift;
+  return if grep { $_ eq 'POST' } $self->invoicing_list;
+  my @invoicing_list = $self->invoicing_list;
+  push @invoicing_list, 'POST';
+  $self->invoicing_list(\@invoicing_list);
 }
 
 =item referral_cust_main [ DEPTH [ EXCLUDE_HASHREF ] ]
@@ -1966,7 +1993,7 @@ sub append_fuzzyfiles {
 
 =head1 VERSION
 
-$Id: cust_main.pm,v 1.54 2002-01-09 13:29:33 ivan Exp $
+$Id: cust_main.pm,v 1.55 2002-01-29 16:33:15 ivan Exp $
 
 =head1 BUGS
 

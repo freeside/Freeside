@@ -134,6 +134,14 @@ FS::svc_acct - Object methods for svc_acct records
 
   %hash = $record->radius_check;
 
+  $domain = $record->domain;
+
+  $svc_domain = $record->svc_domain;
+
+  $email = $record->email;
+
+  $seconds_since = $record->seconds_since($timestamp);
+
 =head1 DESCRIPTION
 
 An FS::svc_acct object represents an account.  FS::svc_acct inherits from
@@ -990,6 +998,15 @@ sub svc_domain {
     : qsearchs( 'svc_domain', { 'svcnum' => $self->domsvc } );
 }
 
+=item cust_svc
+
+Returns the FS::cust_svc record for this account (see L<FS::cust_svc>).
+
+sub cust_svc {
+  my $self = shift;
+  qsearchs( 'cust_svc', { 'svcnum' => $self->svcnum } );
+}
+
 =item email
 
 Returns an email address associated with the account.
@@ -999,6 +1016,22 @@ Returns an email address associated with the account.
 sub email {
   my $self = shift;
   $self->username. '@'. $self->domain;
+}
+
+=item seconds_since TIMESTAMP
+
+Returns the number of seconds this account has been online since TIMESTAMP.
+See L<FS::session>
+
+TIMESTAMP is specified as a UNIX timestamp; see L<perlfunc/"time">.  Also see
+L<Time::Local> and L<Date::Parse> for conversion functions.
+
+=cut
+
+#note: POD here, implementation in FS::cust_svc
+sub seconds_since {
+  my $self = shift;
+  $self->cust_svc->seconds_since(@_);
 }
 
 =item ssh
@@ -1033,7 +1066,7 @@ sub ssh {
 
 =head1 VERSION
 
-$Id: svc_acct.pm,v 1.63 2002-01-22 14:53:26 ivan Exp $
+$Id: svc_acct.pm,v 1.64 2002-01-29 16:33:15 ivan Exp $
 
 =head1 BUGS
 

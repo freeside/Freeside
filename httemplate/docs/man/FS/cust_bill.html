@@ -50,6 +50,8 @@
 <PRE>
   @cust_pay_objects = $cust_bill-&gt;cust_pay;</PRE>
 <PRE>
+  $tax_amount = $record-&gt;tax;</PRE>
+<PRE>
   @lines = $cust_bill-&gt;print_text;
   @lines = $cust_bill-&gt;print_text $time;</PRE>
 <P>
@@ -71,6 +73,8 @@ following fields are currently supported:</P>
 <DD>
 <DT><STRONG><A NAME="item_automatically">printed - how many times this invoice has been printed automatically
 (see <A HREF=".././FS/cust_main.html#collect">collect in the FS::cust_main manpage</A>).</A></STRONG><BR>
+<DD>
+<DT><STRONG><A NAME="item_closed_%2D_books_closed_flag%2C_empty_or_%60Y%27">closed - books closed flag, empty or `Y'</A></STRONG><BR>
 <DD>
 </DL>
 <P>
@@ -117,18 +121,34 @@ Returns the line items (see <A HREF=".././FS/cust_bill_pkg.html">the FS::cust_bi
 <P></P>
 <DT><STRONG><A NAME="item_cust_credit">cust_credit</A></STRONG><BR>
 <DD>
-Returns a list consisting of the total previous credited (see
-<A HREF=".././FS/cust_credit.html">the FS::cust_credit manpage</A>) for this customer, followed by the previous outstanding
-credits (FS::cust_credit objects).
+Depreciated.  See the cust_credited method.
+<PRE>
+ #Returns a list consisting of the total previous credited (see
+ #L&lt;FS::cust_credit&gt;) and unapplied for this customer, followed by the previous
+ #outstanding credits (FS::cust_credit objects).</PRE>
 <P></P>
 <DT><STRONG><A NAME="item_cust_pay">cust_pay</A></STRONG><BR>
 <DD>
-Returns all payments (see <A HREF=".././FS/cust_pay.html">the FS::cust_pay manpage</A>) for this invoice.
+Depreciated.  See the cust_bill_pay method.
+<P>#Returns all payments (see <A HREF=".././FS/cust_pay.html">the FS::cust_pay manpage</A>) for this invoice.</P>
+<P></P>
+<DT><STRONG><A NAME="item_cust_bill_pay">cust_bill_pay</A></STRONG><BR>
+<DD>
+Returns all payment applications (see <A HREF=".././FS/cust_bill_pay.html">the FS::cust_bill_pay manpage</A>) for this invoice.
+<P></P>
+<DT><STRONG><A NAME="item_cust_credited">cust_credited</A></STRONG><BR>
+<DD>
+Returns all applied credits (see <A HREF=".././FS/cust_credit_bill.html">the FS::cust_credit_bill manpage</A>) for this invoice.
+<P></P>
+<DT><STRONG><A NAME="item_tax">tax</A></STRONG><BR>
+<DD>
+Returns the tax amount (see <A HREF=".././FS/cust_bill_pkg.html">the FS::cust_bill_pkg manpage</A>) for this invoice.
 <P></P>
 <DT><STRONG><A NAME="item_owed">owed</A></STRONG><BR>
 <DD>
 Returns the amount owed (still outstanding) on this invoice, which is charged
-minus all payments (see <A HREF=".././FS/cust_pay.html">the FS::cust_pay manpage</A>).
+minus all payment applications (see <A HREF=".././FS/cust_bill_pay.html">the FS::cust_bill_pay manpage</A>) and credit
+applications (see <A HREF=".././FS/cust_credit_bill.html">the FS::cust_credit_bill manpage</A>).
 <P></P>
 <DT><STRONG><A NAME="item_print_text_%5BTIME%5D%3B">print_text [TIME];</A></STRONG><BR>
 <DD>
@@ -141,7 +161,7 @@ It is specified as a UNIX timestamp; see <EM>perlfunc/``time''</EM>.  Also see
 <P>
 <HR>
 <H1><A NAME="version">VERSION</A></H1>
-<P>$Id: cust_bill.html,v 1.1 2001-07-30 07:36:03 ivan Exp $</P>
+<P>$Id: cust_bill.html,v 1.3 2002-01-29 17:42:46 ivan Exp $</P>
 <P>
 <HR>
 <H1><A NAME="bugs">BUGS</A></H1>
@@ -153,8 +173,9 @@ or something similar so the look can be completely customized?)</P>
 <P>
 <HR>
 <H1><A NAME="see also">SEE ALSO</A></H1>
-<P><A HREF=".././FS/Record.html">the FS::Record manpage</A>, <A HREF=".././FS/cust_main.html">the FS::cust_main manpage</A>, <A HREF=".././FS/cust_pay.html">the FS::cust_pay manpage</A>, <A HREF=".././FS/cust_bill_pkg.html">the FS::cust_bill_pkg manpage</A>,
-<A HREF=".././FS/cust_credit.html">the FS::cust_credit manpage</A>, schema.html from the base documentation.</P>
+<P><A HREF=".././FS/Record.html">the FS::Record manpage</A>, <A HREF=".././FS/cust_main.html">the FS::cust_main manpage</A>, <A HREF=".././FS/cust_bill_pay.html">the FS::cust_bill_pay manpage</A>, <EM>FS:;cust_pay</EM>,
+<A HREF=".././FS/cust_bill_pkg.html">the FS::cust_bill_pkg manpage</A>, <A HREF="../FS/cust_bill_credit.html">the FS::cust_bill_credit manpage</A>, schema.html from the base
+documentation.</P>
 
 </BODY>
 

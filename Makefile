@@ -24,17 +24,18 @@ FREESIDE_CONF = /usr/local/etc/freeside
 
 help:
 	@echo "supported targets: aspdocs masondocs alldocs docs install-docs"
+	@echo "                   htmlman"
 	@echo "                   perl-modules install-perl-modules"
 	@echo "                   install deploy"
 	@echo "                   create-database"
 	@echo "                   clean"
 
-aspdocs: httemplate/* httemplate/*/* httemplate/*/*/* httemplate/*/*/*/* httemplate/*/*/*/*/*
+aspdocs: htmlman httemplate/* httemplate/*/* httemplate/*/*/* httemplate/*/*/*/* httemplate/*/*/*/*/*
 	rm -rf aspdocs
 	cp -pr httemplate aspdocs
 	touch aspdocs
 
-masondocs: httemplate/* httemplate/*/* httemplate/*/*/* httemplate/*/*/*/* httemplate/*/*/*/*/*
+masondocs: htmlman httemplate/* httemplate/*/* httemplate/*/*/* httemplate/*/*/*/* httemplate/*/*/*/*/*
 	rm -rf masondocs
 	cp -pr httemplate masondocs
 	( cd masondocs; \
@@ -46,6 +47,13 @@ alldocs: aspdocs masondocs
 
 docs:
 	make ${TEMPLATE}docs
+
+htmlman:
+	bin/pod2x
+
+upload-docs:
+	ssh cleanwhisker.420.am rm -rf /var/www/www.sisd.com/freeside/devdocs
+	scp -pr httemplate/docs cleanwhisker.420.am:/var/www/www.sisd.com/freeside/devdocs
 
 install-docs: docs
 	[ -e ${FREESIDE_DOCUMENT_ROOT} ] && mv ${FREESIDE_DOCUMENT_ROOT} ${FREESIDE_DOCUMENT_ROOT}.`date +%Y%m%d%H%M%S` || true

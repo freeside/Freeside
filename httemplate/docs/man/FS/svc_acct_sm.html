@@ -13,6 +13,7 @@
 
 	<LI><A HREF="#name">NAME</A></LI>
 	<LI><A HREF="#synopsis">SYNOPSIS</A></LI>
+	<LI><A HREF="#warning">WARNING</A></LI>
 	<LI><A HREF="#description">DESCRIPTION</A></LI>
 	<LI><A HREF="#methods">METHODS</A></LI>
 	<LI><A HREF="#version">VERSION</A></LI>
@@ -49,9 +50,14 @@
   $error = $record-&gt;cancel;</PRE>
 <P>
 <HR>
+<H1><A NAME="warning">WARNING</A></H1>
+<P>FS::svc_acct_sm is <STRONG>depreciated</STRONG>.  This class is only included for migration
+purposes.  See <A HREF=".././FS/svc_forward.html">the FS::svc_forward manpage</A>.</P>
+<P>
+<HR>
 <H1><A NAME="description">DESCRIPTION</A></H1>
-<P>An FS::svc_acct object represents a virtual mail alias.  FS::svc_acct inherits
-from FS::Record.  The following fields are currently supported:</P>
+<P>An FS::svc_acct_sm object represents a virtual mail alias.  FS::svc_acct_sm
+inherits from FS::Record.  The following fields are currently supported:</P>
 <DL>
 <DT><STRONG><A NAME="item_key">svcnum - primary key (assigned automatcially for new accounts)</A></STRONG><BR>
 <DD>
@@ -77,15 +83,17 @@ Adds this virtual mail alias to the database.  If there is an error, returns
 the error, otherwise returns false.
 <P>The additional fields pkgnum and svcpart (see <A HREF=".././FS/cust_svc.html">the FS::cust_svc manpage</A>) should be 
 defined.  An FS::cust_svc record will be created and inserted.</P>
-<P>If the configuration values (see <A HREF=".././FS/Conf.html">the FS::Conf manpage</A>) shellmachine and qmailmachines
-exist, and domuser is `*' (meaning a catch-all mailbox), the command:</P>
 <PRE>
-  [ -e $dir/.qmail-$qdomain-default ] || {
-    touch $dir/.qmail-$qdomain-default;
-    chown $uid:$gid $dir/.qmail-$qdomain-default;
-  }</PRE>
-<P>is executed on shellmachine via ssh (see <EM>dot-qmail/``EXTENSION ADDRESSES''</EM>).
-This behaviour can be surpressed by setting $FS::svc_acct_sm::nossh_hack true.</P>
+ #If the configuration values (see L&lt;FS::Conf&gt;) shellmachine and qmailmachines
+ #exist, and domuser is `*' (meaning a catch-all mailbox), the command:
+ #
+ #  [ -e $dir/.qmail-$qdomain-default ] || {
+ #    touch $dir/.qmail-$qdomain-default;
+ #    chown $uid:$gid $dir/.qmail-$qdomain-default;
+ #  }
+ #
+ #is executed on shellmachine via ssh (see L&lt;dot-qmail/&quot;EXTENSION ADDRESSES&quot;&gt;).
+ #This behaviour can be surpressed by setting $FS::svc_acct_sm::nossh_hack true.</PRE>
 <P></P>
 <DT><STRONG><A NAME="item_delete">delete</A></STRONG><BR>
 <DD>
@@ -123,7 +131,7 @@ replace methods.
 <P>
 <HR>
 <H1><A NAME="version">VERSION</A></H1>
-<P>$Id: svc_acct_sm.html,v 1.1 2001-07-30 07:36:03 ivan Exp $</P>
+<P>$Id: svc_acct_sm.html,v 1.3 2002-01-29 17:42:46 ivan Exp $</P>
 <P>
 <HR>
 <H1><A NAME="bugs">BUGS</A></H1>
@@ -132,6 +140,7 @@ replace methods.
 <P>
 <HR>
 <H1><A NAME="see also">SEE ALSO</A></H1>
+<P><A HREF=".././FS/svc_forward.html">the FS::svc_forward manpage</A></P>
 <P><A HREF=".././FS/Record.html">the FS::Record manpage</A>, <A HREF=".././FS/Conf.html">the FS::Conf manpage</A>, <A HREF=".././FS/cust_svc.html">the FS::cust_svc manpage</A>, <A HREF=".././FS/part_svc.html">the FS::part_svc manpage</A>, <A HREF=".././FS/cust_pkg.html">the FS::cust_pkg manpage</A>,
 <A HREF=".././FS/svc_acct.html">the FS::svc_acct manpage</A>, <A HREF=".././FS/svc_domain.html">the FS::svc_domain manpage</A>, <A HREF="../Net/SSH.html">the Net::SSH manpage</A>, <EM>ssh</EM>, <EM>dot-qmail</EM>,
 schema.html from the base documentation.</P>

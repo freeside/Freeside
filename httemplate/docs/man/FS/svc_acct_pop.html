@@ -15,6 +15,7 @@
 	<LI><A HREF="#synopsis">SYNOPSIS</A></LI>
 	<LI><A HREF="#description">DESCRIPTION</A></LI>
 	<LI><A HREF="#methods">METHODS</A></LI>
+	<LI><A HREF="#subroutines">SUBROUTINES</A></LI>
 	<LI><A HREF="#version">VERSION</A></LI>
 	<LI><A HREF="#bugs">BUGS</A></LI>
 	<LI><A HREF="#see also">SEE ALSO</A></LI>
@@ -41,6 +42,8 @@
   $error = $record-&gt;delete;</PRE>
 <PRE>
   $error = $record-&gt;check;</PRE>
+<PRE>
+  $html = FS::svc_acct_pop::popselector( $popnum, $state );</PRE>
 <P>
 <HR>
 <H1><A NAME="description">DESCRIPTION</A></H1>
@@ -88,19 +91,34 @@ returns the error, otherwise returns false.
 Checks all fields to make sure this is a valid point of presence.  If there is
 an error, returns the error, otherwise returns false.  Called by the insert
 and replace methods.
+<P></P>
+<DT><STRONG><A NAME="item_text">text</A></STRONG><BR>
+<DD>
+Returns:
+<P>``$city, $state ($ac)/$exch''</P>
 <P></P></DL>
 <P>
 <HR>
+<H1><A NAME="subroutines">SUBROUTINES</A></H1>
+<DL>
+<DT><STRONG><A NAME="item_popselector_%5B_POPNUM_%5B_STATE_%5D_%5D">popselector [ POPNUM [ STATE ] ]</A></STRONG><BR>
+<DD>
+</DL>
+<P>
+<HR>
 <H1><A NAME="version">VERSION</A></H1>
-<P>$Id: svc_acct_pop.html,v 1.1 2001-07-30 07:36:03 ivan Exp $</P>
+<P>$Id: svc_acct_pop.html,v 1.3 2002-01-29 17:42:46 ivan Exp $</P>
 <P>
 <HR>
 <H1><A NAME="bugs">BUGS</A></H1>
 <P>It should be renamed to part_pop.</P>
+<P>popselector?  putting web ui components in here?  they should probably live
+somewhere else...</P>
 <P>
 <HR>
 <H1><A NAME="see also">SEE ALSO</A></H1>
-<P><A HREF=".././FS/Record.html">the FS::Record manpage</A>, <A HREF=".././FS/svc_acct.html">the svc_acct manpage</A>, schema.html from the base documentation.</P>
+<P><A HREF=".././FS/Record.html">the FS::Record manpage</A>, <A HREF=".././FS/svc_acct.html">the FS::svc_acct manpage</A>, <A HREF=".././FS/part_pop_local.html">the FS::part_pop_local manpage</A>, schema.html from the
+base documentation.</P>
 
 </BODY>
 

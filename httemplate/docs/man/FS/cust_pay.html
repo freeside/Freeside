@@ -50,7 +50,7 @@ currently supported:</P>
 <DL>
 <DT><STRONG><A NAME="item_key">paynum - primary key (assigned automatically for new payments)</A></STRONG><BR>
 <DD>
-<DT><STRONG><A NAME="item_Invoice">invnum - Invoice (see <A HREF=".././FS/cust_bill.html">the FS::cust_bill manpage</A>)</A></STRONG><BR>
+<DT><STRONG><A NAME="item_customer">custnum - customer (see <A HREF=".././FS/cust_main.html">the FS::cust_main manpage</A>)</A></STRONG><BR>
 <DD>
 <DT><STRONG><A NAME="item_paid_%2D_Amount_of_this_payment">paid - Amount of this payment</A></STRONG><BR>
 <DD>
@@ -59,9 +59,11 @@ currently supported:</P>
 <DD>
 <DT><STRONG><A NAME="item_payby_%2D_%60CARD%27_%28credit_cards%29%2C_%60BILL">payby - `CARD' (credit cards), `BILL' (billing), or `COMP' (free)</A></STRONG><BR>
 <DD>
-<DT><STRONG><A NAME="item_issuer">payinfo - card number, P.O.#, or comp issuer (4-8 lowercase alphanumerics; think username)</A></STRONG><BR>
+<DT><STRONG><A NAME="item_issuer">payinfo - card number, check #, or comp issuer (4-8 lowercase alphanumerics; think username), respectively</A></STRONG><BR>
 <DD>
 <DT><STRONG><A NAME="item_paybatch_%2D_text_field_for_tracking_card_processi">paybatch - text field for tracking card processing</A></STRONG><BR>
+<DD>
+<DT><STRONG><A NAME="item_closed_%2D_books_closed_flag%2C_empty_or_%60Y%27">closed - books closed flag, empty or `Y'</A></STRONG><BR>
 <DD>
 </DL>
 <P>
@@ -74,8 +76,10 @@ Creates a new payment.  To add the payment to the databse, see <A HREF="#insert"
 <P></P>
 <DT><STRONG><A NAME="item_insert">insert</A></STRONG><BR>
 <DD>
-Adds this payment to the databse, and updates the invoice (see
-<A HREF=".././FS/cust_bill.html">the FS::cust_bill manpage</A>).
+Adds this payment to the database.
+<P>For backwards-compatibility and convenience, if the additional field invnum
+is defined, an FS::cust_bill_pay record for the full amount of the payment
+will be created.  In this case, custnum is optional.</P>
 <P></P>
 <DT><STRONG><A NAME="item_delete">delete</A></STRONG><BR>
 <DD>
@@ -89,11 +93,21 @@ Currently unimplemented (accounting reasons).
 <DD>
 Checks all fields to make sure this is a valid payment.  If there is an error,
 returns the error, otherwise returns false.  Called by the insert method.
+<P></P>
+<DT><STRONG><A NAME="item_cust_bill_pay">cust_bill_pay</A></STRONG><BR>
+<DD>
+Returns all applications to invoices (see <A HREF=".././FS/cust_bill_pay.html">the FS::cust_bill_pay manpage</A>) for this
+payment.
+<P></P>
+<DT><STRONG><A NAME="item_unapplied">unapplied</A></STRONG><BR>
+<DD>
+Returns the amount of this payment that is still unapplied; which is
+paid minus all payment applications (see <A HREF=".././FS/cust_bill_pay.html">the FS::cust_bill_pay manpage</A>).
 <P></P></DL>
 <P>
 <HR>
 <H1><A NAME="version">VERSION</A></H1>
-<P>$Id: cust_pay.html,v 1.1 2001-07-30 07:36:03 ivan Exp $</P>
+<P>$Id: cust_pay.html,v 1.2 2002-01-29 16:33:15 ivan Exp $</P>
 <P>
 <HR>
 <H1><A NAME="bugs">BUGS</A></H1>
@@ -101,7 +115,8 @@ returns the error, otherwise returns false.  Called by the insert method.
 <P>
 <HR>
 <H1><A NAME="see also">SEE ALSO</A></H1>
-<P><A HREF=".././FS/Record.html">the FS::Record manpage</A>, <A HREF=".././FS/cust_bill.html">the FS::cust_bill manpage</A>, schema.html from the base documentation.</P>
+<P><A HREF=".././FS/cust_bill_pay.html">the FS::cust_bill_pay manpage</A>, <A HREF=".././FS/cust_bill.html">the FS::cust_bill manpage</A>, <A HREF=".././FS/Record.html">the FS::Record manpage</A>, schema.html from the
+base documentation.</P>
 
 </BODY>
 

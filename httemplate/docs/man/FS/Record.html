@@ -17,7 +17,6 @@
 	<LI><A HREF="#constructors">CONSTRUCTORS</A></LI>
 	<LI><A HREF="#methods">METHODS</A></LI>
 	<LI><A HREF="#subroutines">SUBROUTINES</A></LI>
-	<LI><A HREF="#version">VERSION</A></LI>
 	<LI><A HREF="#bugs">BUGS</A></LI>
 	<LI><A HREF="#see also">SEE ALSO</A></LI>
 </UL>
@@ -68,16 +67,17 @@
 <PRE>
     $value = $record-&gt;unique('column');</PRE>
 <PRE>
-    $value = $record-&gt;ut_float('column');
-    $value = $record-&gt;ut_number('column');
-    $value = $record-&gt;ut_numbern('column');
-    $value = $record-&gt;ut_money('column');
-    $value = $record-&gt;ut_text('column');
-    $value = $record-&gt;ut_textn('column');
-    $value = $record-&gt;ut_alpha('column');
-    $value = $record-&gt;ut_alphan('column');
-    $value = $record-&gt;ut_phonen('column');
-    $value = $record-&gt;ut_anythingn('column');</PRE>
+    $error = $record-&gt;ut_float('column');
+    $error = $record-&gt;ut_number('column');
+    $error = $record-&gt;ut_numbern('column');
+    $error = $record-&gt;ut_money('column');
+    $error = $record-&gt;ut_text('column');
+    $error = $record-&gt;ut_textn('column');
+    $error = $record-&gt;ut_alpha('column');
+    $error = $record-&gt;ut_alphan('column');
+    $error = $record-&gt;ut_phonen('column');
+    $error = $record-&gt;ut_anything('column');
+    $error = $record-&gt;ut_name('column');</PRE>
 <PRE>
     $dbdef = reload_dbdef;
     $dbdef = reload_dbdef &quot;/non/standard/filename&quot;;
@@ -124,6 +124,14 @@ objects.
 #fields you specify.  This might have unwanted results if you then go calling
 #regular FS::TABLE methods
 #on it.</P>
+<P></P>
+<DT><STRONG><A NAME="item_jsearch_TABLE%2C_HASHREF%2C_SELECT%2C_EXTRA_SQL%2C">jsearch TABLE, HASHREF, SELECT, EXTRA_SQL, PRIMARY_TABLE, PRIMARY_KEY</A></STRONG><BR>
+<DD>
+Experimental JOINed search method.  Using this method, you can execute a
+single SELECT spanning multiple tables, and cache the results for subsequent
+method calls.  Interface will almost definately change in an incompatible
+fashion.
+<P>Arguments:</P>
 <P></P>
 <DT><STRONG><A NAME="item_qsearchs">qsearchs TABLE, HASHREF</A></STRONG><BR>
 <DD>
@@ -266,9 +274,28 @@ Check/untaint ip addresses.  IPv4 only for now.  May be null.
 <DD>
 Check/untaint host and domain names.
 <P></P>
+<DT><STRONG><A NAME="item_ut_name_COLUMN">ut_name COLUMN</A></STRONG><BR>
+<DD>
+Check/untaint proper names; allows alphanumerics, spaces and the following
+punctuation: , . - '
+<P>May not be null.</P>
+<P></P>
+<DT><STRONG><A NAME="item_ut_zip_COLUMN">ut_zip COLUMN</A></STRONG><BR>
+<DD>
+Check/untaint zip codes.
+<P></P>
+<DT><STRONG><A NAME="item_ut_country_COLUMN">ut_country COLUMN</A></STRONG><BR>
+<DD>
+Check/untaint country codes.  Country names are changed to codes, if possible -
+see <A HREF="../Locale/Country.html">the Locale::Country manpage</A>.
+<P></P>
 <DT><STRONG><A NAME="item_ut_anything_COLUMN">ut_anything COLUMN</A></STRONG><BR>
 <DD>
 Untaints arbitrary data.  Be careful.
+<P></P>
+<DT><STRONG><A NAME="item_ut_enum_COLUMN_CHOICES_ARRAYREF">ut_enum COLUMN CHOICES_ARRAYREF</A></STRONG><BR>
+<DD>
+Check/untaint a column, supplying all possible choices, like the ``enum'' type.
 <P></P>
 <DT><STRONG><A NAME="item_fields_%5B_TABLE_%5D">fields [ TABLE ]</A></STRONG><BR>
 <DD>
@@ -303,10 +330,6 @@ This is depriciated.  Don't use it.
 <P></P></DL>
 <P>
 <HR>
-<H1><A NAME="version">VERSION</A></H1>
-<P>$Id: Record.html,v 1.1 2001-07-30 07:36:03 ivan Exp $</P>
-<P>
-<HR>
 <H1><A NAME="bugs">BUGS</A></H1>
 <P>This module should probably be renamed, since much of the functionality is
 of general use.  It is not completely unlike Adapter::DBI (see below).</P>
@@ -323,7 +346,7 @@ true maps to the database (and WHERE clauses) would also help.</P>
 <P>A fallback check method should be provided which uses the dbdef.</P>
 <P>The ut_money method assumes money has two decimal digits.</P>
 <P>The Pg money kludge in the new method only strips `$'.</P>
-<P>The ut_phonen method assumes US-style phone numbers.</P>
+<P>The ut_phonen method only checks US-style phone numbers.</P>
 <P>The _quote function should probably use ut_float instead of a regex.</P>
 <P>All the subroutines probably should be methods, here or elsewhere.</P>
 <P>Probably should borrow/use some dbdef methods where appropriate (like sub
@@ -331,6 +354,7 @@ fields)</P>
 <P>As of 1.14, DBI fetchall_hashref( {} ) doesn't set fetchrow_hashref NAME_lc,
 or allow it to be set.  Working around it is ugly any way around - DBI should
 be fixed.  (only affects RDBMS which return uppercase column names)</P>
+<P>ut_zip should take an optional country like ut_phone.</P>
 <P>
 <HR>
 <H1><A NAME="see also">SEE ALSO</A></H1>

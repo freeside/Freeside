@@ -71,6 +71,8 @@ FS::cust_pkg - Object methods for cust_pkg objects
 
   @labels = $record->labels;
 
+  $seconds = $record->seconds_since($timestamp);
+
   $error = FS::cust_pkg::order( $custnum, \@pkgparts );
   $error = FS::cust_pkg::order( $custnum, \@pkgparts, \@remove_pkgnums ] );
 
@@ -487,6 +489,30 @@ sub cust_main {
   qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
 }
 
+=item seconds_since TIMESTAMP
+
+Returns the number of seconds all accounts (see L<FS::svc_acct>) in this
+package have been online since TIMESTAMP.
+
+TIMESTAMP is specified as a UNIX timestamp; see L<perlfunc/"time">.  Also see
+L<Time::Local> and L<Date::Parse> for conversion functions.
+
+=cut
+
+sub seconds_since {
+  my($self, $since) = @_;
+  my $seconds = 0;
+
+  foreach my $cust_svc (
+    grep { $_->part_svc->svcdb eq 'svc_acct' } $self->cust_svc
+  ) {
+    $seconds += $cust_svc->seconds_since($since);
+  }
+
+  $seconds;
+
+}
+
 =back
 
 =head1 SUBROUTINES
@@ -630,7 +656,7 @@ sub order {
 
 =head1 VERSION
 
-$Id: cust_pkg.pm,v 1.15 2002-01-21 11:30:17 ivan Exp $
+$Id: cust_pkg.pm,v 1.16 2002-01-29 16:33:15 ivan Exp $
 
 =head1 BUGS
 

@@ -60,11 +60,21 @@ inherits from FS::Record.  The following fields are currently supported:</P>
 <DD>
 <DT><STRONG>comment - Text name of this billing item definition (non-customer-viewable)</STRONG><BR>
 <DD>
-<DT><STRONG><A NAME="item_setup_%2D_Setup_fee">setup - Setup fee</A></STRONG><BR>
+<DT><STRONG><A NAME="item_setup_%2D_Setup_fee_expression">setup - Setup fee expression</A></STRONG><BR>
 <DD>
 <DT><STRONG><A NAME="item_freq_%2D_Frequency_of_recurring_fee">freq - Frequency of recurring fee</A></STRONG><BR>
 <DD>
-<DT><STRONG><A NAME="item_recur_%2D_Recurring_fee">recur - Recurring fee</A></STRONG><BR>
+<DT><STRONG><A NAME="item_recur_%2D_Recurring_fee_expression">recur - Recurring fee expression</A></STRONG><BR>
+<DD>
+<DT><STRONG><A NAME="item_setuptax_%2D_Setup_fee_tax_exempt_flag%2C_empty_or">setuptax - Setup fee tax exempt flag, empty or `Y'</A></STRONG><BR>
+<DD>
+<DT><STRONG><A NAME="item_recurtax_%2D_Recurring_fee_tax_exempt_flag%2C_empt">recurtax - Recurring fee tax exempt flag, empty or `Y'</A></STRONG><BR>
+<DD>
+<DT><STRONG><A NAME="item_plan_%2D_Price_plan">plan - Price plan</A></STRONG><BR>
+<DD>
+<DT><STRONG><A NAME="item_plandata_%2D_Price_plan_data">plandata - Price plan data</A></STRONG><BR>
+<DD>
+<DT><STRONG><A NAME="item_disabled_%2D_Disabled_flag%2C_empty_or_%60Y%27">disabled - Disabled flag, empty or `Y'</A></STRONG><BR>
 <DD>
 </DL>
 <P>setup and recur are evaluated as Safe perl expressions.  You can use numbers
@@ -120,7 +130,7 @@ SVCDB is specified and does not match the svcdb of the service definition,
 <P>
 <HR>
 <H1><A NAME="version">VERSION</A></H1>
-<P>$Id: part_pkg.html,v 1.1 2001-07-30 07:36:03 ivan Exp $</P>
+<P>$Id: part_pkg.html,v 1.3 2002-01-29 17:42:46 ivan Exp $</P>
 <P>
 <HR>
 <H1><A NAME="bugs">BUGS</A></H1>

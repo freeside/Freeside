@@ -181,11 +181,17 @@ sub upgrade_replace { #1.3.x->1.4.x
       '_date'  => $self->_date,
     };
     $error = $cust_bill_pay->insert;
-    if ( $error ) {
+    if ( $error =~ 
+           /total cust_bill_pay.amount and cust_credit_bill.amount .* for invnum .* greater than cust_bill.charged/ ) {
+      #warn $error;
+      my $cust_bill = qsearchs( 'cust_bill', { 'invnum' => $self->invnum } );
+      $new->custnum($cust_bill->custnum);
+    } elsif ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return $error;
+    } else {
+      $new->custnum($cust_bill_pay->cust_bill->custnum);
     }
-    $new->custnum($cust_bill_pay->cust_bill->custnum);
   } else {
     die;
   }
@@ -312,7 +318,7 @@ sub unapplied {
 
 =head1 VERSION
 
-$Id: cust_pay.pm,v 1.14 2002-01-28 06:57:23 ivan Exp $
+$Id: cust_pay.pm,v 1.15 2002-01-29 16:33:15 ivan Exp $
 
 =head1 BUGS
 

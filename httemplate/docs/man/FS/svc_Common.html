@@ -64,6 +64,11 @@ Sets all fields to their defaults (see <A HREF=".././FS/part_svc.html">the FS::p
 current values.  If there is an error, returns the error, otherwise returns
 the FS::part_svc object (use <CODE>ref()</CODE> to test the return).
 <P></P>
+<DT><STRONG><A NAME="item_cust_svc">cust_svc</A></STRONG><BR>
+<DD>
+Returns the cust_svc record associated with this svc_ record, as a FS::cust_svc
+object (see <A HREF=".././FS/cust_svc.html">the FS::cust_svc manpage</A>).
+<P></P>
 <DT><STRONG><A NAME="item_suspend">suspend</A></STRONG><BR>
 <DD>
 <DT><STRONG><A NAME="item_unsuspend">unsuspend</A></STRONG><BR>
@@ -76,13 +81,11 @@ methods.  Called by the cancel method of FS::cust_pkg (see <A HREF=".././FS/cust
 <P>
 <HR>
 <H1><A NAME="version">VERSION</A></H1>
-<P>$Id: svc_Common.html,v 1.1 2001-07-30 07:36:03 ivan Exp $</P>
+<P>$Id: svc_Common.html,v 1.3 2002-01-29 17:42:46 ivan Exp $</P>
 <P>
 <HR>
 <H1><A NAME="bugs">BUGS</A></H1>
 <P>The setfixed method return value.</P>
-<P>The new method should set defaults from part_svc (like the check method
-sets fixed values)?</P>
 <P>
 <HR>
 <H1><A NAME="see also">SEE ALSO</A></H1>

@@ -64,7 +64,7 @@ The following fields are currently supported:</P>
 <DD>
 Creates a new service.  To add the refund to the database, see <A HREF="#insert">insert</A>.
 Services are normally created by creating FS::svc_ objects (see
-<A HREF=".././FS/svc_acct.html">the FS::svc_acct manpage</A>, <A HREF=".././FS/svc_domain.html">the FS::svc_domain manpage</A>, and <A HREF=".././FS/svc_acct_sm.html">the FS::svc_acct_sm manpage</A>, among others).
+<A HREF=".././FS/svc_acct.html">the FS::svc_acct manpage</A>, <A HREF=".././FS/svc_domain.html">the FS::svc_domain manpage</A>, and <A HREF=".././FS/svc_forward.html">the FS::svc_forward manpage</A>, among others).
 <P></P>
 <DT><STRONG><A NAME="item_insert">insert</A></STRONG><BR>
 <DD>
@@ -88,17 +88,38 @@ Checks all fields to make sure this is a valid service.  If there is an error,
 returns the error, otehrwise returns false.  Called by the insert and
 replace methods.
 <P></P>
+<DT><STRONG><A NAME="item_part_svc">part_svc</A></STRONG><BR>
+<DD>
+Returns the definition for this service, as a FS::part_svc object (see
+<A HREF=".././FS/part_svc.html">the FS::part_svc manpage</A>).
+<P></P>
+<DT><STRONG><A NAME="item_cust_pkg">cust_pkg</A></STRONG><BR>
+<DD>
+Returns the definition for this service, as a FS::part_svc object (see
+<A HREF=".././FS/part_svc.html">the FS::part_svc manpage</A>).
+<P></P>
 <DT><STRONG><A NAME="item_label">label</A></STRONG><BR>
 <DD>
 Returns a list consisting of:
 - The name of this service (from part_svc)
 - A meaningful identifier (username, domain, or mail alias)
 - The table name (i.e. svc_domain) for this service
+<P></P>
+<DT><STRONG><A NAME="item_svc_x">svc_x</A></STRONG><BR>
+<DD>
+Returns the FS::svc_XXX object for this service (i.e. an FS::svc_acct object or
+FS::svc_domain object, etc.)
+<P></P>
+<DT><STRONG><A NAME="item_seconds_since_TIMESTAMP">seconds_since TIMESTAMP</A></STRONG><BR>
+<DD>
+See <A HREF=".././FS/svc_acct.html#seconds_since">seconds_since in the FS::svc_acct manpage</A>.  Equivalent to
+$cust_svc-&gt;svc_x-&gt;seconds_since, but more efficient.  Meaningless for records
+where <STRONG>svcdb</STRONG> is not ``svc_acct''.
 <P></P></DL>
 <P>
 <HR>
 <H1><A NAME="version">VERSION</A></H1>
-<P>$Id: cust_svc.html,v 1.1 2001-07-30 07:36:03 ivan Exp $</P>
+<P>$Id: cust_svc.html,v 1.2 2002-01-29 16:33:16 ivan Exp $</P>
 <P>
 <HR>
 <H1><A NAME="bugs">BUGS</A></H1>
