@@ -4,6 +4,8 @@ use strict;
 use vars qw(@ISA @EXPORT_OK);
 use Exporter;
 use FS::Record qw(fields qsearch qsearchs);
+use FS::cust_main;
+use FS::agent_type;
 
 @ISA = qw(FS::Record Exporter);
 @EXPORT_OK = qw(fields);
