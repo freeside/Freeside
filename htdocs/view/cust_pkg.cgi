@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_pkg.cgi,v 1.4 1998-12-23 03:08:40 ivan Exp $
+# $Id: cust_pkg.cgi,v 1.5 1998-12-23 03:11:40 ivan Exp $
 #
 # Usage: cust_pkg.cgi pkgnum
 #        http://server.name/path/cust_pkg.cgi?pkgnum
@@ -26,8 +26,8 @@
 # no FS::Search ivan@sisd.com 98-mar-7
 # 
 # $Log: cust_pkg.cgi,v $
-# Revision 1.4  1998-12-23 03:08:40  ivan
-# $cgi->keywords instead of $cgi->query_string
+# Revision 1.5  1998-12-23 03:11:40  ivan
+# *** empty log message ***
 #
 # Revision 1.3  1998/12/17 09:57:22  ivan
 # s/CGI::(Base|Request)/CGI.pm/;
@@ -62,7 +62,8 @@ foreach $part_svc ( qsearch('part_svc',{}) ) {
 
 print $cgi->header, header('Package View', '');
 
-$cgi->query_string =~ /^(\d+)$/ or die $cgi->query_string;
+my($query) = $cgi->keywords;
+$query =~ /^(\d+)$/;
 my($pkgnum)=$1;
 
 #get package record
