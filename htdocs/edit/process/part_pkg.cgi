@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: part_pkg.cgi,v 1.2 1998-11-15 13:16:15 ivan Exp $
+# $Id: part_pkg.cgi,v 1.3 1998-11-21 07:17:58 ivan Exp $
 #
 # process/part_pkg.cgi: Edit package definitions (process form)
 #
@@ -17,7 +17,10 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: part_pkg.cgi,v $
-# Revision 1.2  1998-11-15 13:16:15  ivan
+# Revision 1.3  1998-11-21 07:17:58  ivan
+# bugfix to work for regular aswell as custom pricing
+#
+# Revision 1.2  1998/11/15 13:16:15  ivan
 # first pass as per-user custom pricing
 #
 
@@ -86,10 +89,10 @@ foreach $part_svc (qsearch('part_svc',{})) {
   }
 }
 
-unless ( $cgi->param('pkgnum') =~ /^(\d+)$/ ) {
+unless ( $cgi->param('pkgnum') && $cgi->param('pkgnum') =~ /^(\d+)$/ ) {
   #$req->cgi->redirect("../../view/part_pkg.cgi?$pkgpart");
   #$req->cgi->redirect("../../edit/part_pkg.cgi?$pkgpart");
-  $cgi->redirect("../../browse/part_pkg.cgi");
+  print $cgi->redirect(popurl(3). "/browse/part_pkg.cgi");
 } else {
   my($old_cust_pkg) = qsearchs( 'cust_pkg', { 'pkgnum' => $1 } );
   my %hash = $old_cust_pkg->hash;
