@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 #
-# $Id: bind.import,v 1.1 2002-05-23 13:00:08 ivan Exp $
+# $Id: bind.import,v 1.2 2002-06-21 09:13:16 ivan Exp $
 
 #need to manually put header in /usr/local/etc/freeside/export.<datasrc./bind/<machine>/named.conf.HEADER
 
@@ -23,6 +23,7 @@ use FS::domain_record;
 my $user = shift or die &usage;
 adminsuidsetup $user;
 
+$FS::svc_Common::noexport_hack = 1;
 $FS::domain_record::noserial_hack = 1;
 
 use vars qw($spooldir);
