@@ -1,0 +1,13 @@
+<head>
+  <title>MySQL notes</title>
+</head>
+<body>
+  <h1>MySQL notes</h1>
+<font size=+2><b>MySQL is NOT supported at this time.</b></font>
+<i>The following information is provided for developers who wish to contribute MySQL support.  Note that <b>ALL</b> of the items listed below need to be resolved to support MySQL.
+<ul>
+  <li>See ticket <a href="http://pouncequick.420.am/rt/Ticket/Display.html?id=300">#300</a> in the bug-tracking system.
+  <li><b>MySQL's default <a href="http://www.mysql.com/doc/M/y/MyISAM.html">My
+ISAM</a> and <a href="http://www.mysql.com/doc/I/S/ISAM.html">ISAM</a> table types are not supported</b>.  You need to use one of the new <a href="http://www.mysql.com/doc/T/a/Table_types.html">transaction-safe table types</a> such as <a href="http://www.mysql.com/doc/B/D/BDB.html">BDB</a>, and set it as the default table type using the <code>--default-table-type=BDB</code> <a href="http://www.mysql.com/documentation/mysql/bychapter/manual_MySQL_Database_Administration.html#Command-line_options">mysqld command-line option</a> or by setting <code>default-table-type=BDB</code> in the <a href="http://www.mysql.com/documentation/mysql/bychapter/manual_MySQL_Database_Administration.html#Option_files">my.cnf option file</a>.
+</ul>
+</body>

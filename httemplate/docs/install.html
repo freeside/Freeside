@@ -13,10 +13,9 @@ Before installing, you need:
   <li>A <b>transactional</b> database engine supported by Perl's <a href="http://www.hermetica.com/technologia/DBI/">DBI</a>.
     <ul>
       <li><a href="http://www.postgresql.org/">PostgreSQL</a> (v7 or higher) is recommended.
-      <li><b>MySQL does not work at this time.</b>
-        <i>The following information is provided for developers who wish to contribute MySQL support:</i> See ticket <a href="http://pouncequick.420.am/rt/Ticket/Display.html?id=300">#300</a> in the bug-tracking system.
+      <li><b>MySQL is NOT supported at this time.</b>  If you are a developer who wishes to contribute MySQL support, see the <a href="mysql.html">MySQL notes</a>.
       <!-- <li>MySQL has been reported to work.  -->
-        <b>MySQL's default <a href="http://www.mysql.com/doc/M/y/MyISAM.html">MyISAM</a> and <a href="http://www.mysql.com/doc/I/S/ISAM.html">ISAM</a> table types are not supported</b>.  If you really want to use MySQL, you need to use one of the new <a href="http://www.mysql.com/doc/T/a/Table_types.html">transaction-safe table types</a> such as <a href="http://www.mysql.com/doc/B/D/BDB.html">BDB</a>, and set it as the default table type using the <code>--default-table-type=BDB</code> <a href="http://www.mysql.com/documentation/mysql/bychapter/manual_MySQL_Database_Administration.html#Command-line_options">mysqld command-line option</a> or by setting <code>default-table-type=BDB</code> in the <a href="http://www.mysql.com/documentation/mysql/bychapter/manual_MySQL_Database_Administration.html#Option_files">my.cnf option file</a>.
+      <!--  <b>MySQL's default <a href="http://www.mysql.com/doc/M/y/MyISAM.html">MyISAM</a> and <a href="http://www.mysql.com/doc/I/S/ISAM.html">ISAM</a> table types are not supported</b>.  If you really want to use MySQL, you need to use one of the new <a href="http://www.mysql.com/doc/T/a/Table_types.html">transaction-safe table types</a> such as <a href="http://www.mysql.com/doc/B/D/BDB.html">BDB</a>, and set it as the default table type using the <code>--default-table-type=BDB</code> <a href="http://www.mysql.com/documentation/mysql/bychapter/manual_MySQL_Database_Administration.html#Command-line_options">mysqld command-line option</a> or by setting <code>default-table-type=BDB</code> in the <a href="http://www.mysql.com/documentation/mysql/bychapter/manual_MySQL_Database_Administration.html#Option_files">my.cnf option file</a>.-->
     </ul>
   <li>Perl modules (<a href="http://theoryx5.uwinnipeg.ca/CPAN/perl/CPAN.html">CPAN</a> will query, download and build perl modules automatically)
     <ul>
@@ -53,6 +52,7 @@ Before installing, you need:
       <li><a href="http://search.cpan.org/search?dist=Time-Duration">Time-Duration</a>
       <li><a href="http://search.cpan.org/search?dist=HTML-Widgets-SelectLayers">HTML-Widgets-SelectLayers</a>
       <li><a href="http://search.cpan.org/search?dist=Storable">Storable</a>
+      <li><a href="http://search.cpan.org/search?dist=Apache-DBI">Apache::DBI</a> <i>(optional but recommended for better webinterface performance)</i>
     </ul>
 </ul>
 Install the Freeside distribution:
