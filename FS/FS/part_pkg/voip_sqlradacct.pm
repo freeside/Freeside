@@ -155,27 +155,19 @@ sub calc_recur {
       my $rate_region = $rate_prefix->rate_region;
       warn "  (rate region $rate_region)" if $DEBUG;
 
+      my @call_details = (
+        time2str("%Y %b %d - %r", $session->{'acctstarttime'}),
+        "+$countrycode $dest",
+        $rate_region->regionname,
+        $minutes.'m',
+        '$'.$charge,
+      );
+
       warn "  adding details on charge to invoice: ".
-           join(' - ',
-             time2str("%Y %b %d - %r", $session->{'acctstarttime'}),
-             "+$countrycode $dest",
-             $rate_region->regionname,
-             $minutes.'m',
-             '$'.$charge,
-           )
+           join(' - ', @call_details )
         if $DEBUG;
 
-      push @$details, 
-        #[
-        join(' - ',
-          time2str("%Y %b %d - %r", $session->{'acctstarttime'}),
-          "+$countrycode $dest",
-          $rate_region->regionname,
-          $minutes.'m',
-          '$'.$charge,
-        #]
-        )
-      ;
+      push @$details, join(' - ', @call_details); #\@call_details,
 
     } # $session
 
