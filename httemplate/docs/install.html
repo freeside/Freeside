@@ -128,7 +128,7 @@ chown&nbsp;freeside&nbsp;/usr/local/etc/freeside/asp-global/
 <font size="-1"><pre>
 cp&nbsp;htetc/global.asa&nbsp;/usr/local/etc/freeside/asp-global/global.asa
 </pre></font>
-      <li>Configure Apache for the Global directory and to execute .cgi files using Apache::ASP.  For example:
+      <li>Configure Apache for the Global directory and to execute .cgi files using Apache::ASP.  For example, add something like the following to your Apache httpd.conf file, adjusting for your actual paths:
 <font size="-1"><pre>
 PerlModule Apache::ASP
 # your freeside document root
@@ -158,7 +158,7 @@ PerlSetVar&nbsp;IncludesDir&nbsp;/usr/local/apache/htdocs/freeside-asp
         <li> set an appropriate <tt>data_dir</tt>, such as <tt>/usr/local/etc/freeside/masondata</tt>
       </ul>
 
-      <li>Configure Apache to use the <tt>handler.pl</tt> file and to execute .cgi files using HTML::Mason.  For example:
+      <li>Configure Apache to use the <tt>handler.pl</tt> file and to execute .cgi files using HTML::Mason.  For example, add something like the following to your Apache httpd.conf file, adjusting for your actual paths:
 <font size="-1"><pre>
 PerlModule HTML::Mason
 &lt;Directory&nbsp;/usr/local/apache/htdocs/freeside-mason&gt;
@@ -175,7 +175,7 @@ require&nbsp;"/usr/local/etc/freeside/handler.pl";
   </tr>
 </table>
 <ul>
-<li>Restrict access to this web interface - see the <a href="http://httpd.apache.org/docs/misc/FAQ.html#user-authentication">Apache documentation on user authentication</a>.    For example, to configure user authentication with <a href="http://httpd.apache.org/docs/mod/mod_auth.html">mod_auth</a> (flat files):
+<li>Restrict access to this web interface - see the <a href="http://httpd.apache.org/docs/misc/FAQ.html#user-authentication">Apache documentation on user authentication</a>.    For example, to configure user authentication with <a href="http://httpd.apache.org/docs/mod/mod_auth.html">mod_auth</a> (flat files), add something like the following to your Apache httpd.conf file, adjusting for your actual paths:
 <pre>
 &lt;Directory /usr/local/apache/htdocs/freeside-asp&gt;
 AuthName Freeside
