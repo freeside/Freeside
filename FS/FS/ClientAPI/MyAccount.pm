@@ -44,24 +44,19 @@ my $cache = new Cache::SharedMemoryCache( {
    'namespace' => 'FS::ClientAPI::MyAccount',
 } );
 
-#false laziness w/FS::ClientAPI::passwd::passwd (needs to handle encrypted pw)
+#false laziness w/FS::ClientAPI::passwd::passwd
 sub login {
   my $p = shift;
 
   my $svc_domain = qsearchs('svc_domain', { 'domain' => $p->{'domain'} } )
-    or return { error => "Domain not found" };
+    or return { error => 'Domain '. $p->{'domain'}. ' not found' };
 
-  my $svc_acct =
-    ( length($p->{'password'}) < 13
-      && qsearchs( 'svc_acct', { 'username'  => $p->{'username'},
-                                 'domsvc'    => $svc_domain->svcnum,
-                                 '_password' => $p->{'password'}     } )
-    )
-    || qsearchs( 'svc_acct', { 'username'  => $p->{'username'},
-                               'domsvc'    => $svc_domain->svcnum,
-                               '_password' => $p->{'password'}     } );
-
-  unless ( $svc_acct ) { return { error => 'Incorrect password.' } }
+  my $svc_acct = qsearchs( 'svc_acct', { 'username'  => $p->{'username'},
+                                         'domsvc'    => $svc_domain->svcnum, }
+                         );
+  return { error => 'User not found.' } unless $svc_acct;
+  return { error => 'Incorrect password.' }
+    unless $svc_acct->check_password($p->{'password'});
 
   my $session = {
     'svcnum' => $svc_acct->svcnum,

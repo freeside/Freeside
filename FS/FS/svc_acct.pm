@@ -14,6 +14,7 @@ use vars qw( @ISA $DEBUG $me $conf
              @saltset @pw_set );
 use Carp;
 use Fcntl qw(:flock);
+use Crypt::PasswdMD5;
 use FS::UID qw( datasrc );
 use FS::Conf;
 use FS::Record qw( qsearch qsearchs fields dbh dbdef );
@@ -1114,6 +1115,36 @@ sub clone_kludge_unsuspend {
   my %hash = $self->hash;
   $hash{_password} = '';
   new FS::svc_acct \%hash;
+}
+
+=item check_password 
+
+Checks the supplied password against the (possibly encrypted) password in the
+database.  Returns true for a sucessful authentication, false for no match.
+
+Currently supported encryptions are: classic DES crypt() and MD5
+
+=cut
+
+sub check_password {
+  my($self, $check_password) = @_;
+  #eventually should check a "password-encoding" field
+  if ( length($self->_password) < 13 ) { #plaintext
+    $check_password eq $self->_password;
+  } elsif ( length($self->_password) == 13 ) { #traditional DES crypt
+    crypt($check_password, $self->_password) eq $self->_password;
+  } elsif ( $self->_password =~ /^\$1\$/ ) { #MD5 crypt
+    unix_md5_crypt($check_password, $self->_password) eq $self->_password;
+  } elsif ( $self->_password =~ /^\$2a?\$/ ) { #Blowfish
+    warn "Can't check password: Blowfish encryption not yet supported, svcnum".
+         $self->svcnum. "\n";
+    0;
+  } else {
+    warn "Can't check password: Unrecognized encryption for svcnum ".
+         $self->svcnum. "\n";
+    0;
+  }
+
 }
 
 =back

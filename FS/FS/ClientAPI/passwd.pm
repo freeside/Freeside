@@ -24,18 +24,14 @@ sub passwd {
   my $new_gecos = $packet->{'new_gecos'};
   my $new_shell = $packet->{'new_shell'};
 
-#false laziness w/FS::ClientAPI::MyAccount::login (needs to handle encrypted pw)
-  my $svc_acct =
-    ( length($old_password) < 13
-      && qsearchs( 'svc_acct', { 'username'  => $packet->{'username'},
-                                 'domsvc'    => $svc_domain->svcnum,
-                                 '_password' => $old_password } )
-    )
-    || qsearchs( 'svc_acct', { 'username'  => $packet->{'username'},
-                               'domsvc'    => $svc_domain->svcnum,
-                               '_password' => $old_password } );
+  #false laziness w/FS::ClientAPI::MyAccount::login
 
-  unless ( $svc_acct ) { return { error => 'Incorrect password.' } }
+  my $svc_acct = qsearchs( 'svc_acct', { 'username'  => $packet->{'username'},
+                                         'domsvc'    => $svc_domain->svcnum, }
+                         );
+  return { error => 'User not found.' } unless $svc_acct;
+  return { error => 'Incorrect password.' }
+    unless $svc_acct->check_password($old_password);
 
   my %hash = $svc_acct->hash;
   my $new_svc_acct = new FS::svc_acct ( \%hash );
