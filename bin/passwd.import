@@ -1,5 +1,5 @@
 #!/usr/bin/perl -Tw
-# $Id: passwd.import,v 1.8 2003-06-12 14:08:00 ivan Exp $
+# $Id: passwd.import,v 1.9 2004-12-24 23:27:34 ivan Exp $
 
 use strict;
 use vars qw(%part_svc);
@@ -76,6 +76,8 @@ while (<SHADOW>) {
   my($username,$password)=split(/:/);
   #$password =~ s/^\!$/\*/;
   #$password =~ s/\!+/\*SUSPENDED\* /;
+  $password =~ s/^NP$/\*/;
+  $password =~ s/^\*LK\*$/\*/;
   $password{$username}=$password;
 }
 
