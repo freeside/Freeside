@@ -123,15 +123,16 @@ sub insert {
 
 =item delete
 
-Currently unimplemented.  You don't want to delete billing items, because there
-would then be no record the customer ever purchased the item.  Instead, see
-the cancel method.
+This method now works but you probably shouldn't use it.
+
+You don't want to delete billing items, because there would then be no record
+the customer ever purchased the item.  Instead, see the cancel method.
 
 =cut
 
-sub delete {
-  return "Can't delete cust_pkg records!";
-}
+#sub delete {
+#  return "Can't delete cust_pkg records!";
+#}
 
 =item replace OLD_RECORD
 
@@ -588,7 +589,7 @@ sub order {
 
 =head1 VERSION
 
-$Id: cust_pkg.pm,v 1.11 2001-10-15 14:58:03 ivan Exp $
+$Id: cust_pkg.pm,v 1.12 2001-10-22 08:29:42 ivan Exp $
 
 =head1 BUGS
 

@@ -362,11 +362,13 @@ This will completely remove all traces of the customer record.  This is not
 what you want when a customer cancels service; for that, cancel all of the
 customer's packages (see L<FS::cust_pkg/cancel>).
 
-If the customer has any packages, you need to pass a new (valid) customer
-number for those packages to be transferred to.
+If the customer has any uncancelled packages, you need to pass a new (valid)
+customer number for those packages to be transferred to.  Cancelled packages
+will be deleted.  Did I mention that this is NOT what you want when a customer
+cancels service and that you really should be looking see L<FS::cust_pkg/cancel>?
 
 You can't delete a customer with invoices (see L<FS::cust_bill>),
-or credits (see L<FS::cust_credit>).
+or credits (see L<FS::cust_credit>) or payments (see L<FS::cust_pay>).
 
 =cut
 
@@ -392,8 +394,12 @@ sub delete {
     $dbh->rollback if $oldAutoCommit;
     return "Can't delete a customer with credits";
   }
+  if ( qsearch( 'cust_pay', { 'custnum' => $self->custnum } ) ) {
+    $dbh->rollback if $oldAutoCommit;
+    return "Can't delete a customer with payments";
+  }
 
-  my @cust_pkg = qsearch( 'cust_pkg', { 'custnum' => $self->custnum } );
+  my @cust_pkg = $self->ncancelled_pkgs;
   if ( @cust_pkg ) {
     my $new_custnum = shift;
     unless ( qsearchs( 'cust_main', { 'custnum' => $new_custnum } ) ) {
@@ -411,6 +417,15 @@ sub delete {
       }
     }
   }
+  my @cancelled_pkgs = $self->all_pkgs;
+  foreach my $cust_pkg ( @cancelled_cust_pkg ) {
+    my $error = $cust_pkg->delete;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
   foreach my $cust_main_invoice (
     qsearch( 'cust_main_invoice', { 'custnum' => $self->custnum } )
   ) {
@@ -1840,7 +1855,7 @@ sub append_fuzzyfiles {
 
 =head1 VERSION
 
-$Id: cust_main.pm,v 1.42 2001-10-20 12:17:59 ivan Exp $
+$Id: cust_main.pm,v 1.43 2001-10-22 08:29:42 ivan Exp $
 
 =head1 BUGS
 
