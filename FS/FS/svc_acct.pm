@@ -255,22 +255,30 @@ sub insert {
 sub cyrus_insert {
   my( $username, $quota ) = @_;
 
+  warn "cyrus_insert: starting for user $username, quota $quota\n";
+
+  warn "cyrus_insert: connecting to $cyrus_server\n";
   my $client = Cyrus::IMAP::Admin->new($cyrus_server);
+
+  warn "cyrus_insert: authentication as $cyrus_admin_user\n";
   $client->authenticate(
     -user      => $cyrus_admin_user,
     -mechanism => "login",       
     -password  => $cyrus_admin_pass
   );
 
+  warn "cyrus_insert: creating user.$username\n";
   my $rc = $client->create("user.$username");
   my $error = $client->error;
-  die $error if $error;
+  die "cyrus_insert: error creating user.$username: $error" if $error;
 
+  warn "cyrus_insert: setacl user.$username, $username => all\n";
   $rc = $client->setacl("user.$username", $username => 'all' );
   $error = $client->error;
   die $error if $error;
 
   if ( $quota ) {
+    warn "cyrus_insert: setquota user.$username, STORAGE => $quota\n";
     $rc = $client->setquota("user.$username", 'STORAGE' => $quota );
     $error = $client->error;
     die $error if $error;
@@ -763,7 +771,7 @@ sub email {
 
 =head1 VERSION
 
-$Id: svc_acct.pm,v 1.36 2001-09-11 12:00:19 ivan Exp $
+$Id: svc_acct.pm,v 1.37 2001-09-11 12:06:57 ivan Exp $
 
 =head1 BUGS
 
