@@ -1,4 +1,4 @@
-<!-- $Id: part_svc.cgi,v 1.10 2001-09-11 12:42:54 ivan Exp $ -->
+<!-- $Id: part_svc.cgi,v 1.11 2001-09-11 19:16:41 ivan Exp $ -->
 <% 
    my $part_svc;
    if ( $cgi->param('error') ) { #error
@@ -44,10 +44,9 @@ function visualize(what) {
 <FORM NAME="dummy">
 
       Service Part #<%= $part_svc->svcpart ? $part_svc->svcpart : "(NEW)" %>
-
-<PRE>
+<BR><BR>
 Service  <INPUT TYPE="text" NAME="svc" VALUE="<%= $hashref->{svc} %>">
-</PRE>
+<BR><BR>
 Services are items you offer to your customers.
 <UL><LI>svc_acct - Shell accounts, POP mailboxes, SLIP/PPP and ISDN accounts
     <LI>svc_domain - Domains
@@ -95,7 +94,7 @@ Table<SELECT NAME="svcdb" SIZE=1 onChange="changed(this)">
 <% foreach my $svcdb (@dbs) { %>
 <OPTION VALUE="<%= $svcdb %>" <%= ' SELECTED'x($svcdb eq $hashref->{svcdb}) %>><%= $svcdb %>
 <% } %>
-</SELECT>
+</SELECT></FORM>
 
 <%
 #these might belong somewhere else for other user interfaces 
