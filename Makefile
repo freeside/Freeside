@@ -13,20 +13,24 @@ ASP_GLOBAL = /usr/local/etc/freeside/asp-global
 MASON_HANDLER = /usr/local/etc/freeside/handler.pl
 MASONDATA = /usr/local/etc/freeside/masondata
 
-#deb, others?
+#deb
 FREESIDE_DOCUMENT_ROOT = /var/www/freeside
+#redhat
+#FREESIDE_DOCUMENT_ROOT = /var/www/html/freeside
 #freebsd
 #FREESIDE_DOCUMENT_ROOT = /usr/local/www/data/freeside
 #openbsd
 #FREESIDE_DOCUMENT_ROOT = /var/www/htdocs/freeside
 
-#deb, others?
+#deb, redhat, others?
 INIT_FILE = /etc/init.d/freeside
 #freebsd
 #INIT_FILE = /usr/local/etc/rc.d/011.freeside.sh
 
-#deb, others?
+#deb
 HTTPD_RESTART = /etc/init.d/apache restart
+#redhat
+#HTTPD_RESTART = /etc/init.d/httpd restart
 #freebsd
 #HTTPD_RESTART = /usr/local/etc/rc.d/apache.sh stop; sleep 1; /usr/local/etc/rc.d/apache.sh start
 #openbsd
@@ -34,7 +38,7 @@ HTTPD_RESTART = /etc/init.d/apache restart
 
 FREESIDE_RESTART = ${INIT_FILE} restart
 
-#deb, others?
+#deb, redhat, others?
 INSTALLGROUP = root
 #freebsd,openbsd
 #INSTALLGROUP = wheel
