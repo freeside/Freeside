@@ -7,6 +7,7 @@ use FS::Record qw( qsearchs dbh );
 use FS::cust_pkg;
 use FS::part_pkg;
 use FS::part_svc;
+use FS::pkg_svc;
 use FS::svc_acct;
 use FS::svc_acct_sm;
 use FS::svc_domain;
@@ -111,12 +112,24 @@ sub check {
   ;
   return $error if $error;
 
-  return "Unknown pkgnum"
-    unless ! $self->pkgnum
-      || qsearchs( 'cust_pkg', { 'pkgnum' => $self->pkgnum } );
+  my $part_svc = qsearchs( 'part_svc', { 'svcpart' => $self->svcpart } );
+  return "Unknown svcpart" unless $part_svc;
 
-  return "Unknown svcpart" unless
-    qsearchs( 'part_svc', { 'svcpart' => $self->svcpart } );
+  if ( $self->pkgnum ) {
+    my $cust_pkg = qsearchs( 'cust_pkg', { 'pkgnum' => $self->pkgnum } );
+    return "Unknown pkgnum" unless $cust_pkg;
+    my $pkg_svc = qsearchs( 'pkg_svc', {
+      'pkgpart' => $cust_pkg->pkgpart,
+      'svcpart' => $self->svcpart,
+    });
+    my @cust_svc = qsearch('cust_svc', {
+      'pkgnum'  => $self->pkgnum,
+      'svcpart' => $self->svcpart,
+    });
+    return "Already ". scalar(@cust_svc). " ". $part_svc->svc.
+           " services for pkgnum ". $self->pkgnum
+      if $pkg_svc->quantity >= scalar(@cust_svc);
+  }
 
   ''; #no error
 }
@@ -232,7 +245,7 @@ sub seconds_since {
 
 =head1 VERSION
 
-$Id: cust_svc.pm,v 1.9 2002-01-29 16:33:15 ivan Exp $
+$Id: cust_svc.pm,v 1.10 2002-02-09 17:45:26 ivan Exp $
 
 =head1 BUGS
 

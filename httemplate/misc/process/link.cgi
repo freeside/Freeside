@@ -1,4 +1,4 @@
-<!-- $Id: link.cgi,v 1.3 2002-01-30 14:18:09 ivan Exp $ -->
+<!-- $Id: link.cgi,v 1.4 2002-02-09 17:45:26 ivan Exp $ -->
 <%
 
 $cgi->param('pkgnum') =~ /^(\d+)$/;
@@ -12,13 +12,14 @@ unless ( $svcnum ) {
   my($part_svc) = qsearchs('part_svc',{'svcpart'=>$svcpart});
   my($svcdb) = $part_svc->getfield('svcdb');
   $cgi->param('link_field') =~ /^(\w+)$/; my($link_field)=$1;
-  my($svc_acct)=qsearchs($svcdb,{$link_field => $cgi->param('link_value') });
-  eidiot("$link_field not found!") unless $svc_acct;
-  $svcnum=$svc_acct->svcnum;
+  my($svc_x)=qsearchs($svcdb,{$link_field => $cgi->param('link_value') });
+  eidiot("$link_field not found!") unless $svc_x;
+  $svcnum=$svc_x->svcnum;
 }
 
 my $old = qsearchs('cust_svc',{'svcnum'=>$svcnum});
 die "svcnum not found!" unless $old;
+#die "svcnum $svcnum already linked to package ". $old->pkgnum if $old->pkgnum;
 my $new = new FS::cust_svc ({
   'svcnum' => $svcnum,
   'pkgnum' => $pkgnum,
