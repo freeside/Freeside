@@ -28,6 +28,9 @@ my($time)= $main::opt_d ? str2time($main::opt_d) : $^T;
 my($cust_main,%saw);
 foreach $cust_main (
   map {
+    unless ( exists $saw{ $_->custnum } && defined $saw{ $_->custnum} ) {
+      $saw{ $_->custnum } = 0; # to avoid 'use of uninitialized value' errors
+    }
     if (
       ( $main::opt_a || ( ( $_->getfield('bill') || 0 ) <= $time ) )
       && $bill_only{ $_->custnum }
@@ -109,7 +112,7 @@ customers.  Otherwise, bills all customers.
 
 =head1 VERSION
 
-$Id: freeside-bill,v 1.2 1999-08-11 20:51:54 ivan Exp $
+$Id: freeside-bill,v 1.3 1999-10-04 08:23:26 ivan Exp $
 
 =head1 BUGS
 
