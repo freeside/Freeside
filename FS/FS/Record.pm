@@ -664,7 +664,7 @@ sub insert {
   if (@virtual_fields) {
     my %v_values = map { $_, $self->getfield($_) } @virtual_fields;
 
-    my $vfieldpart = vfieldpart_hashref($table);
+    my $vfieldpart = $self->vfieldpart_hashref;
 
     my $v_statement = "INSERT INTO virtual_field(recnum, vfieldpart, value) ".
                     "VALUES (?, ?, ?)";
@@ -753,7 +753,7 @@ sub delete {
   my $primary_key = $self->dbdef_table->primary_key;
   my $v_sth;
   my @del_vfields;
-  my $vfp = vfieldpart_hashref($self->table);
+  my $vfp = $self->vfieldpart_hashref;
   foreach($self->virtual_fields) {
     next if $self->getfield($_) eq '';
     unless(@del_vfields) {
@@ -870,7 +870,7 @@ sub replace {
   my $v_rep_sth;
   my $v_del_sth;
   my (@add_vfields, @rep_vfields, @del_vfields);
-  my $vfp = vfieldpart_hashref($old->table);
+  my $vfp = $old->vfieldpart_hashref;
   foreach(grep { exists($diff{$_}) } $new->virtual_fields) {
     if($diff{$_} eq '') {
       # Delete
@@ -1511,9 +1511,11 @@ TABLE.
 =cut
 
 sub vfieldpart_hashref {
-  my ($table) = @_;
+  my $self = shift;
+  my $table = $self->table;
 
-  return () unless $table;
+  return {} unless $self->dbdef->table('part_virtual_field');
+
   my $dbh = dbh;
   my $statement = "SELECT vfieldpart, name FROM part_virtual_field WHERE ".
                   "dbtable = '$table'";
