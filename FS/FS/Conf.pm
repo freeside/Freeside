@@ -874,6 +874,14 @@ httemplate/docs/config.html
   },
 
   {
+    'key'         => 'signup_server-email',
+    'section'     => '',
+    'description' => 'Comma-separated list of email addresses to receive notification of signups via the signup server.',
+    'type'        => 'text',
+  },
+
+
+  {
     'key'         => 'show-msgcat-codes',
     'section'     => 'UI',
     'description' => 'Show msgcat codes in error messages.  Turn this option on before reporting errors to the mailing list.',

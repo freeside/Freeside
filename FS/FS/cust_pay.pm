@@ -264,8 +264,8 @@ sub delete {
   if ( $conf->config('deletepayments') ne '' ) {
 
     my $cust_main = qsearchs('cust_main',{ 'custnum' => $self->custnum });
-    #false laziness w/FS::cust_bill::send
-    $ENV{MAILADDRESS} = $conf->config('invoice_from'); #??? well as good as any
+    #false laziness w/FS::cust_bill::send & fs_signup_server
+    $ENV{MAILADDRESS} = $invoice_from; #??? well as good as any
     my $header = new Mail::Header ( [
       "From: $invoice_from",
       "To: ". $conf->config('deletepayments'),
@@ -405,7 +405,7 @@ sub unapplied {
 
 =head1 VERSION
 
-$Id: cust_pay.pm,v 1.18 2002-03-18 19:49:10 ivan Exp $
+$Id: cust_pay.pm,v 1.19 2002-04-07 06:23:29 ivan Exp $
 
 =head1 BUGS
 

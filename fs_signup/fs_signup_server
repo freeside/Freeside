@@ -26,6 +26,7 @@ my $conf = new FS::Conf;
 
 #my @payby = qw(CARD PREPAY);
 my @payby = $conf->config('signup_server-payby');
+my $smtpmachine = $conf->config('smtpmachine');
 
 my $machine = shift or die &usage;
 
@@ -153,6 +154,43 @@ while (1) {
 
     warn "[fs_signup_server] Sending results...\n" if $Debug;
     print $writer $error, "\n";
+
+    if ( $error && $conf->config('signup_server-email') ) {
+      warn "[fs_signup_server] Sending email...\n" if $Debug;
+
+      #false laziness w/FS::cust_bill::send & FS::cust_pay::delete
+      use Mail::Header;
+      use Mail::Internet;
+      my $from = $conf->config('invoice_from'); #??? as good as any
+      $ENV{MAILADDRESS} = $from;
+      my $header = new Mail::Header ( [
+        "From: $from",
+        "To: ". $conf->config('signup_server-email'),
+        "Sender: $from",
+        "Reply-To: $from",
+        "Date: ". time2str("%a, %d %b %Y %X %z", time),
+        "Subject: FREESIDE NOTIFICATION: Signup Server",
+      ] );
+      my $message = new Mail::Internet (
+        'Header' => $header,
+        'Body' => [ 
+          "This is an automatic message from your Freeside installation\n",
+          "informing you a customer has signed up via the signup server:\n",
+          "\n",
+          'custnum: '. $cust_main->custnum. "\n",
+          'Name   : '. $cust_main->last. ", ". $cust_main->first. "\n",
+          'Agent  : '. $cust_main->agent->agent. "\n",
+          "\n",
+        ],
+      );
+      $!=0;
+      $message->smtpsend( Host => $smtpmachine )
+        or $message->smtpsend( Host => $smtpmachine, Debug => 1 )
+          or warn "[fs_signup_server] can't send email to ".
+                   $conf->config('signup_server-email').
+                   " via server $smtpmachine with SMTP: $!";
+      #end-of-send mail
+    }
 
   }
   close $writer;
