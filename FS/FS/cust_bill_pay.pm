@@ -95,7 +95,7 @@ sub insert {
   $pay_total += $_ foreach map { $_->amount }
     qsearch('cust_bill_pay', { 'paynum' => $self->paynum } );
 
-  if ( $pay_total > $cust_pay->paid ) {
+  if ( sprintf("%.2f", $pay_total) > sprintf("%.2f", $cust_pay->paid) ) {
     $dbh->rollback if $oldAutoCommit;
     return "total cust_bill_pay.amount $pay_total for paynum ". $self->paynum.
            " greater than cust_pay.paid ". $cust_pay->paid;
@@ -195,7 +195,7 @@ sub cust_bill {
 
 =head1 VERSION
 
-$Id: cust_bill_pay.pm,v 1.8 2001-09-03 22:07:38 ivan Exp $
+$Id: cust_bill_pay.pm,v 1.9 2001-12-16 00:55:53 ivan Exp $
 
 =head1 BUGS
 
