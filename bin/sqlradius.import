@@ -1,0 +1,144 @@
+#!/usr/bin/perl -Tw
+
+use strict;
+use vars qw(%part_svc %domain_part_svc);
+#use Date::Parse;
+use DBI;
+use Term::Query qw(query);
+use FS::UID qw(adminsuidsetup); #datasrc
+use FS::Record qw(qsearch qsearchs);
+use FS::svc_acct;
+use FS::part_svc;
+use FS::svc_domain;
+
+my $user = shift or die &usage;
+adminsuidsetup $user;
+
+#push @FS::svc_acct::shells, qw(/bin/sync /sbin/shutdown /bin/halt /sbin/halt); #others?
+
+$FS::svc_Common::noexport_hack = 1;
+
+###
+
+%part_svc=map { $_->svcpart, $_ } qsearch('part_svc',{'svcdb'=>'svc_acct'});
+
+die "No services with svcdb svc_acct!\n" unless %part_svc;
+
+print "\n\n", &menu_svc, "\n", <<END;
+Enter part number to import.
+END
+my $sqlradius_svcpart = &getpart;
+
+%domain_part_svc = map { $_->svcpart, $_ }
+                       qsearch('part_svc', { 'svcdb' => 'svc_domain'} );
+
+die "No services with svcdb svc_domain!\n" unless %domain_part_svc;
+
+print "\n\n", &menu_svc, "\n", <<END;
+Enter part number for domains.
+END
+my $domain_svcpart = &getdomainpart;
+
+my $datasrc = &getvalue("\n\nEnter the DBI datasource:");
+my $db_user = &getvalue("\n\nEnter the database user:");
+my $db_pass = &getvalue("\n\nEnter the database password:");
+
+sub getpart {
+  $^W=0; # Term::Query isn't -w-safe
+  my $return = query "Enter part number:", 'irk', [ keys %part_svc ];
+  $^W=1;
+  $return;
+}
+sub getdomainpart {
+  $^W=0; # Term::Query isn't -w-safe
+  my $return = query "Enter part number:", 'irk', [ keys %domain_part_svc ];
+  $^W=1;
+  $return;
+}
+sub getvalue {
+  my $prompt = shift;
+  $^W=0; # Term::Query isn't -w-safe
+  my $return = query $prompt, '';
+  $^W=1;
+  $return;
+}
+
+print "\n\n";
+
+###
+
+my $dbh = DBI->connect( $datasrc, $db_user, $db_pass )
+  or die $DBI::errstr;
+
+my $sth = $dbh->prepare('SELECT DISTINCT UserName, Realm FROM radcheck')
+  or die $dbh->errstr;
+$sth->execute or die $sth->errstr;
+
+my $row;
+while ( $row = $sth->fetchrow_arrayref ) {
+  my( $r_username, $realm ) = @$row;
+
+  my( $username, $domain );
+  if ( $r_username =~ s/([^@]+)\@([^@]+)$// ) {
+    $username = $1;
+    $domain = $2;
+  } else {
+    $username = $r_username;
+    $domain = $realm;
+  }
+  my %svc_domain = ( 'svcpart' => $domain_svcpart,
+                     'domain'  => $domain,         );
+  my $svc_domain = qsearchs('svc_domain', \%svc_domain )
+                   || new FS::svc_domain \%svc_domain;
+  unless ( $svc_domain->domsvc ) {
+    my $error = $svc_domain->insert;
+    if ( $error ) {
+      die "can't insert domain $domain: $error\n";
+    }
+  }
+
+  my( $password, $finger, $group ) = ( '', '', '' );
+
+  my $rc_sth = $dbh->prepare(
+    'SELECT Attribute, Value, Name, GroupName'.
+    '  FROM radcheck'.
+    '  WHERE UserName = ? and Realm = ?'
+  ) or die $dbh->errstr;
+  $rc_sth->execute($r_username, $realm) or die $rc_sth->errstr;
+
+  foreach my $rc_row ( @{$rc_sth->fetchall_arrayref} ) {
+    my($attribute, $value, $name, $groupname) = @$row;
+    if ( $attribute =~ /^(Crypt-)?Password$/ ) {
+      $password = $value;
+      $finger = $name;
+      $group = $groupname;
+    } else {
+      #handle other params!
+    }
+  }
+
+  my $svc_acct = new FS::svc_acct (
+    'svcpart'   => $sqlradius_svcpart,
+    'username'  => $username,
+    'domsvc'    => $svc_domain->domsvc,
+    '_password' => $password,
+    'finger'    => $finger,
+  );
+
+  my($error);
+  #$error = $svc_acct->insert;
+  $error = $svc_acct->check;
+  if ( $error ) {
+    if ( $error =~ /duplicate/i ) {
+      warn "$r_username: $error";
+    } else {
+      die "$r_username: $error";
+    }
+  }
+
+}
+
+sub usage {
+  die "Usage:\n\n  sqlradius.import user\n";
+}
+
