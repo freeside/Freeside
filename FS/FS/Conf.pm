@@ -760,7 +760,7 @@ httemplate/docs/config.html
   {
     'key'         => 'username-ampersand',
     'section'     => 'username',
-    'description' => 'Allow the ampersand character (&amp;) in usernames.  Be careful when using this option in conjunction with <a href="#shellmachine-useradd">shellmachine-useradd</a> and other configuration options which execute shell commands, as the ampersand will be interpreted by the shell if not quoted.',
+    'description' => 'Allow the ampersand character (&amp;) in usernames.  Be careful when using this option in conjunction with <a href="../browse/part_export.cgi">exports</a> which execute shell commands, as the ampersand will be interpreted by the shell if not quoted.',
     'type'        => 'checkbox',
   },
 
