@@ -163,7 +163,7 @@ if ( $part_svc->part_svc_column('domsvc')->columnflag eq 'F' ) {
   }
 
   my $cust_pkg = qsearchs('cust_pkg', { 'pkgnum' => $pkgnum } );
-  if ($cust_pkg) {
+  if ($cust_pkg && !$conf->exists('svc_acct-alldomains') ) {
     my @cust_svc =
       map { qsearch('cust_svc', { 'pkgnum' => $_->pkgnum } ) }
           qsearch('cust_pkg', { 'custnum' => $cust_pkg->custnum } );

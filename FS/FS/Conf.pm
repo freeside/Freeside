@@ -975,6 +975,13 @@ httemplate/docs/config.html
     'select_enum' => [ 'Password', 'User-Password' ],
   },
 
+  {
+    'key'         => 'svc_acct-alldomains',
+    'section'     => '',
+    'description' => 'Allow accounts to select any domain in the database.  Normally accounts can only select from the domain set in the service definition and those purchased by the customer.',
+    'type'        => 'bool',
+  },
+
 );
 
 1;
