@@ -367,8 +367,8 @@ if ( $payby_default eq 'HIDE' ) {
       die "unrecognized expiration date format: $date";
     }
 
-    print qq!<INPUT TYPE="hidden" NAME="${payby}_month" VALUE="$m"!.
-          qq!<INPUT TYPE="hidden" NAME="${payby}_year"  VALUE="$y"!;
+    print qq!<INPUT TYPE="hidden" NAME="${payby}_month" VALUE="$m">!.
+          qq!<INPUT TYPE="hidden" NAME="${payby}_year"  VALUE="$y">!;
 
   }
 
