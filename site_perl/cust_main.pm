@@ -21,6 +21,9 @@ use FS::cust_bill_pkg;
 use FS::cust_pay;
 use FS::cust_credit;
 use FS::cust_pay_batch;
+use FS::part_referral;
+use FS::cust_main_county;
+use FS::agent;
 
 @ISA = qw(FS::Record Exporter);
 @EXPORT_OK = qw(hfields);
@@ -280,7 +283,8 @@ sub check {
     $self->ss("$1-$2-$3");
   }
 
-  return "Unknown state/county/country"
+  return "Unknown state/county/country, state ".
+      "\"". $self->state. "\" county \"". $self->county. "\""
     unless qsearchs('cust_main_county',{
       'state'  => $self->state,
       'county' => $self->county,
@@ -869,7 +873,11 @@ enable cybercash, cybercash v3 support, don't need to import
 FS::UID::{datasrc,checkruid} ivan@sisd.com 98-sep-19-21
 
 $Log: cust_main.pm,v $
-Revision 1.4  1998-11-15 05:30:48  ivan
+Revision 1.5  1998-11-15 11:23:14  ivan
+use FS::table_name for all searches to eliminate warnings,
+emit state/county when they don't match
+
+Revision 1.4  1998/11/15 05:30:48  ivan
 bugfix for new config layout
 
 Revision 1.3  1998/11/13 09:56:54  ivan
