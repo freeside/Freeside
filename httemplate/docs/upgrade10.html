@@ -1,5 +1,5 @@
 <pre>
-this is very incomplete
+this is incomplete
 
 install NetAddr::IP and Chart
 
@@ -12,6 +12,111 @@ CREATE TABLE cust_bill_pkg_detail (
 );
 CREATE INDEX cust_bill_pkg_detail1 ON cust_bill_pkg_detail ( pkgnum, invnum );
 
+CREATE TABLE router (
+  routernum serial,
+  routername varchar(80),
+  svcnum int,
+  PRIMARY KEY (routernum)
+);
+
+CREATE TABLE part_svc_router (
+  svcpart int NOT NULL,
+  routernum int NOT NULL
+);
+
+CREATE TABLE part_router_field (
+  routerfieldpart serial,
+  name varchar(80),
+  length int NOT NULL,
+  check_block text,
+  list_source text,
+  PRIMARY KEY (routerfieldpart)
+);
+
+CREATE TABLE router_field (
+  routerfieldpart int NOT NULL,
+  routernum int NOT NULL,
+  value varchar(128)
+);
+CREATE UNIQUE INDEX router_field1 ON router_field ( routerfieldpart, routernum );
+
+CREATE TABLE addr_block (
+  blocknum serial,
+  routernum int NOT NULL,
+  ip_gateway varchar(15) NOT NULL,
+  ip_netmask int NOT NULL,
+  PRIMARY KEY (blocknum)
+);
+CREATE UNIQUE INDEX addr_block1 ON addr_block ( blocknum, routernum );
+
+CREATE TABLE part_sb_field (
+  sbfieldpart serial,
+  svcpart int NOT NULL,
+  name varchar(80) NOT NULL,
+  length int NOT NULL,
+  check_block text NULL,
+  list_source text NULL,
+  PRIMARY key (sbfieldpart)
+);
+CREATE UNIQUE INDEX part_sb_field1 ON part_sb_field ( sbfieldpart, svcpart );
+
+CREATE TABLE sb_field (
+  sbfieldpart int NOT NULL,
+  svcnum int NOT NULL,
+  value varchar(128)
+)
+CREATE UNIQUE INDEX sb_field1 ON sb_field ( sbfieldpart, svcnum );
+
+CREATE TABLE svc_broadband (
+  svcnum int NOT NULL,
+  blocknum int NOT NULL,
+  speed_up int NOT NULL,
+  speed_down int NOT NULL,
+  ip_addr varchar(15),
+  PRIMARY KEY (svcnum)
+
+DELETE INDEX cust_bill_pkg1;
+
+ALTER TABLE cust_bill_pkg ADD itemdesc varchar(80) NULL;
+ALTER TABLE h_cust_bill_pkg ADD itemdesc varchar(80) NULL;
+ALTER TABLE cust_main_county ADD taxname varchar(80) NULL;
+ALTER TABLE h_cust_main_county ADD taxname varchar(80) NULL;
+ALTER TABLE cust_pkg ADD last_bill int NULL;
+ALTER TABLE h_cust_pkg ADD last_bill int NULL;
+
+DROP TABLE svc_acct_sm
+DROP TABLE h_svc_acct_sm
+
+dump database, edit:
+- cust_main: increase otaker from 8 to 32
+- cust_main: change ss from char(11) to varchar(11)
+- cust_credit: increase otaker from 8 to 32
+- cust_pkg: increase otaker from 8 to 32
+- cust_refund: increase otaker from 8 to 32
+- domain_record: increase reczone from 80 to 255
+- domain_record: change rectype from char to varchar
+- domain_record: increase recdata from 80 to 255
+then reload
+
 create all of the new broadband tables
+
+optionally:
+
+  CREATE INDEX cust_main6 ON cust_main ( daytime );
+  CREATE INDEX cust_main7 ON cust_main ( night );
+  CREATE INDEX cust_main8 ON cust_main ( fax );
+  CREATE INDEX cust_main9 ON cust_main ( ship_daytime );
+  CREATE INDEX cust_main10 ON cust_main ( ship_night );
+  CREATE INDEX cust_main11 ON cust_main ( ship_fax );
+
+  serial columns
+
+mandatory again:
+
+dbdef-create username
+create-history-tables username cust_bill_pkg_detail router part_svc_router part_router_field router_field addr_block part_sb_field sb_field svc_broadband
+dbdef-create username
+
+
 
 </pre>
