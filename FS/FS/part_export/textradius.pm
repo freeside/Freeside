@@ -126,7 +126,7 @@ sub textradius_download {
   $rsync->exec( {
     src  => "$user\@$host:$users",
     dest => $dest,
-  } );
+  } ) or die "error downloading $user\@$host:$users : ". $rsync->err;
 
   $dest;
 }
@@ -145,7 +145,7 @@ sub textradius_upload {
   $rsync->exec( {
     src  => "$dir/users",
     dest => "$user\@$host:$users",
-  } );
+  } ) or die "error uploading to $user\@$host:$users : ". $rsync->err;
 
   flock(LOCK,LOCK_UN);
   close LOCK;
