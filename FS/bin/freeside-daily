@@ -4,7 +4,7 @@ use strict;
 use Fcntl qw(:flock);
 use Date::Parse;
 use Getopt::Std;
-use FS::UID qw(adminsuidsetup);
+use FS::UID qw(adminsuidsetup driver_name dbh);
 use FS::Record qw(qsearch qsearchs);
 use FS::cust_main;
 
@@ -39,6 +39,13 @@ foreach $cust_main ( @cust_main ) {
   $error=$cust_main->collect( 'invoice_time' => $time );
   warn "Error collecting, custnum". $cust_main->custnum. ": $error" if $error;
 
+}
+
+if ( driver_name eq 'Pg' ) {
+  foreach my $statement ( 'vacuum', 'vacuum analyze' ) {
+    my $sth = dbh->prepare($statement) or die dbh->errstr;
+    $sth->execute or die $sth->errstr;
+  }
 }
 
 # subroutines
