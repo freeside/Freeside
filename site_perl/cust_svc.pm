@@ -151,8 +151,10 @@ sub check {
 
 =item label
 
-Returns a pretty-printed label and value for this service, i.e. `username' and
-`foobar' or `domain' and `foo.bar'.
+Returns a list consisting of:
+- The name of this service (from part_svc)
+- A meaningful identifier (username, domain, or mail alias)
+- The table name (i.e. svc_domain) for this service
 
 =cut
 
@@ -160,21 +162,23 @@ sub label {
   my($self)=@_;
   my($part_svc) = qsearchs( 'part_svc', { 'svcpart' => $self->svcpart } );
   my($svcdb) = $part_svc->svcdb;
-  my($svc) = qsearchs( $svcdb, { 'svcnum' => $self->svcnum } );
+  my($svc_x) = qsearchs( $svcdb, { 'svcnum' => $self->svcnum } );
+  my($svc) = $part_svc->svc;
+  my($tag);
   if ( $svcdb eq 'svc_acct' ) {
-    return 'username', $svc->getfield('username');
+    $tag = $svc_x->getfield('username');
   } elsif ( $svcdb eq 'svc_acct_sm' ) {
-    my $domuser = $svc->domuser eq '*' ? '(anything)' : $svc->domuser;
-    my $svc_domain = qsearchs ( 'svc_domain', { 'svcnum' => $svc->domsvc } );
+    my $domuser = $svc_x->domuser eq '*' ? '(anything)' : $svc_x->domuser;
+    my $svc_domain = qsearchs ( 'svc_domain', { 'svcnum' => $svc_x->domsvc } );
     my $domain = $svc_domain->domain;
-    return 'email', "$domuser\@$domain";
+    $tag = "$domuser\@$domain";
   } elsif ( $svcdb eq 'svc_domain' ) {
-    return 'domain', $svc->getfield('domain');
+    return $svc, $svc_x->getfield('domain');
   } else {
     carp "warning: asked for label of unsupported svcdb; using svcnum";
-    return 'svcnum', $svc->getfield('svcnum');
+    $tag = $svc_x->getfield('svcnum');
   }
-
+  $svc, $tag, $svcdb;
 }
 
 =back
@@ -200,7 +204,10 @@ no TableUtil, no FS::Lock ivan@sisd.com 98-mar-7
 pod ivan@sisd.com 98-sep-21
 
 $Log: cust_svc.pm,v $
-Revision 1.3  1998-11-12 03:45:38  ivan
+Revision 1.4  1998-11-12 07:58:15  ivan
+added svcdb to label
+
+Revision 1.3  1998/11/12 03:45:38  ivan
 use FS::table_name for all tables qsearch()'ed
 
 Revision 1.2  1998/11/12 03:32:46  ivan
