@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: signup.cgi,v 1.42 2003-07-04 03:12:21 ivan Exp $
+# $Id: signup.cgi,v 1.43 2003-07-04 03:21:42 ivan Exp $
 
 use strict;
 use vars qw( @payby $cgi $locales $packages
@@ -405,7 +405,8 @@ sub popselector {
 END
 
   if ( $init_popstate ) {
-    $text .='<INPUT TYPE="hidden" NAME="init_popstate" VALUE="$init_popstate">';
+    $text .= '<INPUT TYPE="hidden" NAME="init_popstate" VALUE="'.
+             $init_popstate. '">';
   } else {
     $text .= <<END;
       function acstate_changed(what) {
