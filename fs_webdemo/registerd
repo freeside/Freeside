@@ -1,16 +1,18 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: registerd,v 1.1 2000-03-01 08:15:10 ivan Exp $
+# $Id: registerd,v 1.2 2000-03-03 05:29:24 ivan Exp $
 
 use strict;
-use vars qw(# $freeside_bin $freeside_test 
-            $freeside_conf
-            $mysql_data
-            $datasrc $user $pass $x
+use vars qw(
+             $freeside_conf
+             $mysql_data
+             $datasrc $user $pass $x
+             $dbh $sth
              @pw_set @saltset
-            # $cgi $username $name $email $user_pw $crypt_pw $dbh $sth
-            # $header $msg
-             );
+             $header $msg
+           );
+            # $freeside_bin $freeside_test 
+            # $cgi $username $name $email $user_pw $crypt_pw 
 #use CGI;
 #use CGI::Carp qw(fatalsToBrowser);
 use DBI;
@@ -41,7 +43,7 @@ $pass = "maelcolm";
 @saltset = ( 'a'..'z' , 'A'..'Z' , '0'..'9' , '.' , '/' );
 
 die "not running as system user freeside"
-  unless $> == scalar(getpwnam('freeside'))
+  unless $> == scalar(getpwnam('freeside'));
 
 $dbh = DBI->connect( $datasrc, $user, $pass, {
 	'AutoCommit' => 'true',
@@ -79,10 +81,7 @@ while ( 1 ) {
   foreach my $row ( @{$pending} ) {
 
     my $username = $row->{'username'};
-
-    my $user_pw = join('',map($pw_set[ int(rand $#pw_set) ], (0..7) ) );
-    my $crypt_pw =
-      crypt($user_pw,$saltset[int(rand(64))].$saltset[int(rand(64))]);
+    my $email = $row->{'passwd'};
 
     system("/usr/bin/mysqladmin --user=$user --password=$pass ".
       "create demo_$username >/dev/null");
@@ -97,8 +96,30 @@ while ( 1 ) {
     system "cp ${freeside_conf}counters.DBI:mysql:demo_template/* ".
            "${freeside_conf}counters.DBI:mysql:demo_$username";
 
+    system "cp ${freeside_conf}dbdef.DBI:mysql:demo_template ".
+           "${freeside_conf}dbdef.DBI:mysql:demo_$username";
 
-    open(SECRETS, ">${freeside_conf}secrets.$username")
+    open(INVOICE_FROM, ">${freeside_conf}conf.DBI:mysql:demo_$username/invoice_from")
+      or die "Can\'t open ${freeside_conf}conf.DBI:mysql:demo_$username/invoice_from: $!";
+    print INVOICE_FROM "$email\n";
+    close INVOICE_FROM;
+
+    open(LPR, ">${freeside_conf}conf.DBI:mysql:demo_$username/lpr")
+      or die "Can\'t open ${freeside_conf}conf.DBI:mysql:demo_$username/lpr: $!";
+    print LPR "mail $email";
+    close LPR;
+
+    open(FROM, ">${freeside_conf}conf.DBI:mysql:demo_$username/registries/internic/from")
+      or die "Can\'t open ${freeside_conf}conf.DBI:mysql:demo_$username/registries/internic/from: $!";
+    print FROM "$email\n";
+    close FROM;
+
+    open(TO, ">${freeside_conf}conf.DBI:mysql:demo_$username/registries/internic/to")
+      or die "Can\'t open ${freeside_conf}conf.DBI:mysql:demo_$username/registries/internic/to: $!";
+    print TO "$email\n";
+    close TO;
+
+    open(SECRETS, ">${freeside_conf}secrets.demo_$username")
       or die "Can\'t open ${freeside_conf}secrets.demo_$username: $!";
     chmod 0600, "${freeside_conf}secrets.$username";
     print SECRETS "DBI:mysql:demo_$username\nfreeside\nmaelcolm\n";
@@ -109,11 +130,46 @@ while ( 1 ) {
     print MAPSECRETS "$username secrets.demo_$username\n";
     close MAPSECRETS;
 
+    my $user_pw = join('',map($pw_set[ int(rand $#pw_set) ], (0..7) ) );
+    my $crypt_pw =
+      crypt($user_pw,$saltset[int(rand(64))].$saltset[int(rand(64))]);
 
+    $sth = $dbh->prepare(
+      'UPDATE mysql_auth SET passwd = "$crypt_pw" WHERE username = "$username"'
+    );
+    $sth->execute or die $sth->errstr;
 
+    $ENV{SMTPHOSTS} = "localhost";
+    $ENV{MAILADDRESS} = 'ivan-fsreg@sisd.com';
+    $header = Mail::Header->new( [
+      'From: ivan-fsreg@sisd.com',
+      "To: $email",
+      'Bcc: ivan-fsreg_bcc@sisd.com',
+      'Sender: ivan-fsreg@sisd.com',
+      'Reply-To: ivan-fsreg@sisd.com',
+      'Date: '. time2str("%a, %d %b %Y %X %z", time),
+      'Subject: Freeside demo information',
+    ] );
+    $msg = Mail::Internet->new(
+      'Header' => $header,
+      'Body' => [
+    "Hello,\n",
+    "\n",
+    "Your sample Freeside database has been setup.\n",
+    "\n",
+    "Point your web browswer at http://freeside.sisd.com/ and use the following\n",
+    "authentication information:\n",
+    "\n",
+    "Username: $username\n",
+    "Password: $user_pw\n",
+    "\n",
+    "-- \n",
+    "ivan\n",
+                ]
+    );
+    $msg->smtpsend or die "Can\'t send registration email!";
 
   }
-
 
   $SIG{HUP} = 'DEFAULT';
   $SIG{INT} = 'DEFAULT';
@@ -126,160 +182,3 @@ while ( 1 ) {
 
 }
 
-$sth = $dbh->prepare("INSERT INTO mysql_auth VALUES (". join(", ",
-  $dbh->quote($username),
-  $dbh->quote($crypt_pw),
-  $dbh->quote('freeside'),
-). ")" );
-
-$sth->execute or &idiot("Username in use: ". $sth->errstr);
-
-$dbh->disconnect or die $dbh->errstr;
-
-###
-
-
-
-open(ADDRESS, ">${freeside_conf}conf.DBI:mysql:$username/address")
-  or die "Can\'t open ${freeside_conf}conf.DBI:mysql:$username/address: $!";
-print ADDRESS <<END;
-Internet Service Provider, Inc.
-1 Packet Blvd.
-Router, MN  10010  
-
-END
-close ADDRESS;
-
-open(DOMAIN, ">${freeside_conf}conf.DBI:mysql:$username/domain")
-  or die "Can\'t open ${freeside_conf}conf.DBI:mysql:$username/domain: $!";
-print DOMAIN "this-is-an-example-domain.tld\n";
-close DOMAIN;
-
-open(HOME, ">${freeside_conf}conf.DBI:mysql:$username/home")
-  or die "Can\'t open ${freeside_conf}conf.DBI:mysql:$username/home: $!";
-print HOME "/home\n";
-close HOME;
-
-open(INVOICE_FROM, ">${freeside_conf}conf.DBI:mysql:$username/invoice_from")
-  or die "Can\'t open ${freeside_conf}conf.DBI:mysql:$username/invoice_from: $!";
-print INVOICE_FROM "$email\n";
-close INVOICE_FROM;
-
-open(LPR, ">${freeside_conf}conf.DBI:mysql:$username/lpr")
-  or die "Can\'t open ${freeside_conf}conf.DBI:mysql:$username/lpr: $!";
-print LPR "cat >/dev/null\n";
-close LPR;
-
-mkdir "${freeside_conf}conf.DBI:mysql:$username/registries", 0755;
-mkdir "${freeside_conf}conf.DBI:mysql:$username/registries/internic", 0755;
-open(FROM, ">${freeside_conf}conf.DBI:mysql:$username/registries/internic/from")
-  or die "Can\'t open ${freeside_conf}conf.DBI:mysql:$username/registries/internic/from: $!";
-print FROM "$email\n";
-close FROM;
-open(NAMESERVERS, ">${freeside_conf}conf.DBI:mysql:$username/registries/internic/nameservers")
-  or die "Can\'t open ${freeside_conf}conf.DBI:mysql:$username/registries/internic/nameservers: $!";
-print NAMESERVERS <<END;
-10.0.0.1 ns1.this-is-an-example-domain.tld
-10.0.0.2 ns2.this-is-an-example-domain.tld
-10.0.0.3 ns3.this-is-an-example-domain.tld
-END
-close NAMESERVERS;
-open(TECH_CONTACT, ">${freeside_conf}conf.DBI:mysql:$username/registries/internic/tech_contact")
-  or die "Can\'t open ${freeside_conf}conf.DBI:mysql:$username/registries/internic/tech_contact: $!";
-print TECH_CONTACT "EXAMPLE-INTERNIC-HANDLE\n";
-close TECH_CONTACT;
-system ("cp", "${freeside_conf}.domain-template.txt",
-        "${freeside_conf}conf.DBI:mysql:$username/registries/internic/template"
-       );
-open(TO, ">${freeside_conf}conf.DBI:mysql:$username/registries/internic/to")
-  or die "Can\'t open ${freeside_conf}conf.DBI:mysql:$username/registries/internic/to: $!";
-print TO "$email\n";
-close TO;
-
-open(SHELLS, ">${freeside_conf}conf.DBI:mysql:$username/shells")
-  or die "Can\'t open ${freeside_conf}conf.DBI:mysql:$username/shells: $!";
-print SHELLS <<END;
-/bin/sh
-/bin/csh
-/bin/bash
-/bin/tcsh
-/bin/ksh
-/bin/passwd
-/bin/true
-/bin/false
-
-END
-close SHELLS;
-
-open(SMTPMACHINE, ">${freeside_conf}conf.DBI:mysql:$username/smtpmachine")
-  or die "Can\'t open ${freeside_conf}conf.DBI:mysql:$username/smtpmachine: $!";
-print SMTPMACHINE "localhost\n";
-close SMTPMACHINE;
-
-#make counter dir
-mkdir("/usr/local/etc/freeside/counters.DBI:mysql:$username",0755)
-  or die "Can't create counter spooldir: $!";
-
-system("${freeside_bin}fs-setup.webdemo", "$username");
-system("${freeside_test}cgi-test",
-       "http://freeside.sisd.com/", $username, $user_pw);
-
-###
-
-$ENV{SMTPHOSTS} = "localhost";
-$ENV{MAILADDRESS} = 'ivan@sisd.com';
-$header = Mail::Header->new( [
-  'From: ivan@sisd.com',
-  "To: $email",
-  'Cc: ivan-fsreg@sisd.com',
-  'Sender: ivan@sisd.com',
-  'Reply-To: ivan@sisd.com',
-  'Date: '. time2str("%a, %d %b %Y %X %z", time),
-  'Subject: Freeside demo information',
-] );
-$msg = Mail::Internet->new(
-  'Header' => $header,
-  'Body' => [
-"Hello $name <$email>,\n",
-"\n",
-"Your sample Freeside database has been setup.\n",
-"\n",
-"Point your web browswer at http://freeside.sisd.com/ and use the following\n",
-"authentication information:\n",
-"\n",
-"Username: $username\n",
-"Password: $user_pw\n",
-"\n",
-"You may wish to subscribe to the Freeside mailing list - send a blank\n",
-"message to ivan-freeside-subscribe\@sisd.com.\n",
-"\n",
-"-- \n",
-"Ivan Kohler <ivan\@sisd.com>\n",
-"20 4,16 \* \* \* saytime\n",
-            ]
-);
-$msg->smtpsend or die "Can\'t send registration email!";
-
-###
-
-sub idiot {
-  my($error)=@_;
-  print $cgi->header, <<END;
-<HTML>
-  <HEAD>
-    <TITLE>Registration error</TITLE>
-  </HEAD>
-  <BODY BGCOLOR="#FFFFFF">
-    <CENTER>
-    <H4>Registration error</H4>
-    </CENTER>
-    <P><B>$error</B>
-    <P>Hit the <I>Back</I> button in your web browser, correct this mistake,
-       and submit the form again.
-  </BODY>
-</HTML>
-END
-  
-  exit;
- 
-}

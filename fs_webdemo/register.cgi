@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: register.cgi,v 1.2 2000-03-01 08:15:10 ivan Exp $
+# $Id: register.cgi,v 1.3 2000-03-03 05:29:24 ivan Exp $
 
 use strict;
 use vars qw( #$freeside_bin $freeside_test $freeside_conf
@@ -75,8 +75,9 @@ $x = $DBI::errstr; #silly; to avoid "used only once" warning
 
 $sth = $dbh->prepare("INSERT INTO mysql_auth VALUES (". join(", ",
   $dbh->quote($username),
-  $dbh->quote("X"),
+#  $dbh->quote("X"),
 #  $dbh->quote($crypt_pw),
+  $dbh->quote($email);
   $dbh->quote('freeside'),
   $dbh->quote('unconfigured'),
 ). ")" );
