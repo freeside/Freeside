@@ -1239,6 +1239,16 @@ sub bill {
                                                                       } );
           }
 
+          #one more try at a whole-country tax rate
+          unless ( @taxes ) {
+            @taxes =  qsearch( 'cust_main_county', {
+                                  'state'    => '',
+                                  'county'   => '',
+                                  'country'  => $self->country,
+                                  'taxclass' => '',
+                                                                      } );
+          }
+
           # maybe eliminate this entirely, along with all the 0% records
           unless ( @taxes ) {
             $dbh->rollback if $oldAutoCommit;
