@@ -67,7 +67,7 @@ while (1) {
   eval $eval;
   if ( $@ ) {
     warn "job $eval failed";
-    my $hash = $ljob->hash;
+    my %hash = $ljob->hash;
     $hash{'status'} = 'failed';
     my $fjob = new FS::queue( \%hash );
     my $error = $fjob->replace($ljob);
