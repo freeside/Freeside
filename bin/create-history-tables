@@ -22,7 +22,7 @@ my @tables = scalar(@ARGV)
 foreach my $table ( @tables ) {
   warn "creating history table for $table\n";
   my $tableobj = $schema->table($table)
-    or die "unknown talble $table (did you run dbdef-create?)\n";
+    or die "unknown table $table (did you run dbdef-create?)\n";
   my $h_tableobj = DBIx::DBSchema::Table->new( {
     name        => "h_$table",
     primary_key => 'historynum',
