@@ -18,9 +18,10 @@
   tax classes, etc.
 - Documentation updates
 
-1.5.0pre7:
+1.5.7:
+- version numbering change, now even/odd like Perl or Linux
 - fix bug that could cause mis-billing on upgrades! (new installs ok)
-- update install documentation for 1.5 HTML::Mason or Apache::ASP install
+- updated install documentation
 - historical late notice viewing in web interface
 - VoIP billing for CDRs from RADIUS
 - promotional codes for signup
@@ -29,8 +30,10 @@
 - invoices now use history records (don't lose details)
 - option to credit for remaining service upon cancel (peter bowen)
 - one-time registration codes
+- "selfservice_server-session_module" config value can be set to
+  "Cache::FileCache" on FreeBSD or elsewhere IPC::ShareLite has trouble.
 
-notyet (1.5.0pre8?):
+notyet (1.5.8?):
 - account merging UI in exports (for example, to consolidate passwd files from
   multiple servers)
 
