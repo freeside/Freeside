@@ -226,19 +226,26 @@ sub insert {
 
   #new duplicate username checking
 
+  my $part_svc = qsearchs('part_svc', { 'svcpart' => $self->svcpart } );
+  unless ( $part_svc ) {
+    $dbh->rollback if $oldAutoCommit;
+    return 'unknown svcpart '. $self->svcpart;
+  }
+
   my @dup_user = qsearch( 'svc_acct', { 'username' => $self->username } );
   my @dup_userdomain = qsearchs( 'svc_acct', { 'username' => $self->username,
                                                'domsvc'   => $self->domsvc } );
+  my @dup_uid;
+  if ( $part_svc->part_svc_column('uid')->columnflag ne 'F'
+       && $self->username !~ /^(toor|(hyla)?fax)$/          ) {
+    @dup_uid = qsearch( 'svc_acct', { 'uid' => $self->uid } );
+  } else {
+    @dup_uid = ();
+  }
 
-  if ( @dup_user || @dup_userdomain ) {
+  if ( @dup_user || @dup_userdomain || @dup_uid ) {
     my $exports = FS::part_export::export_info('svc_acct');
     my( %conflict_user_svcpart, %conflict_userdomain_svcpart );
-
-    my $part_svc = qsearchs('part_svc', { 'svcpart' => $self->svcpart } );
-    unless ( $part_svc ) {
-      $dbh->rollback if $oldAutoCommit;
-      return 'unknown svcpart '. $self->svcpart;
-    }
 
     foreach my $part_export ( $part_svc->part_export ) {
 
@@ -276,25 +283,26 @@ sub insert {
 
     foreach my $dup_userdomain ( @dup_userdomain ) {
       my $dup_svcpart = $dup_userdomain->cust_svc->svcpart;
-      if ( exists($conflict_user_svcpart{$dup_svcpart}) ) {
+      if ( exists($conflict_userdomain_svcpart{$dup_svcpart}) ) {
         return "duplicate username\@domain: conflicts with svcnum ".
                $dup_userdomain->svcnum. " via exportnum ".
-               $conflict_user_svcpart{$dup_svcpart};
+               $conflict_userdomain_svcpart{$dup_svcpart};
+      }
+    }
+
+    foreach my $dup_uid ( @dup_uid ) {
+      my $dup_svcpart = $dup_uid->cust_svc->svcpart;
+      if ( exists($conflict_user_svcpart{$dup_svcpart})
+           || exists($conflict_userdomain_svcpart{$dup_svcpart}) ) {
+        return "duplicate uid: conflicts with svcnum". $dup_uid->svcnum.
+               "via exportnum ". $conflict_user_svcpart{$dup_svcpart}
+                                 || $conflict_userdomain_svcpart{$dup_svcpart};
       }
     }
 
   }
 
   #see?  i told you it was more complicated
-
-  my $part_svc = qsearchs( 'part_svc', { 'svcpart' => $self->svcpart } );
-  return "Unknown svcpart" unless $part_svc;
-  return "uid ". $self->uid. " in use"
-    if $part_svc->part_svc_column('uid')->columnflag ne 'F'
-      && qsearchs( 'svc_acct', { 'uid' => $self->uid } )
-      && $self->username !~ /^(hyla)?fax$/
-      && $self->username !~ /^toor$/ #FreeBSD
-    ;
 
   my @jobnums;
   $error = $self->SUPER::insert(\@jobnums);
