@@ -199,8 +199,11 @@ ALTER TABLE cust_main ADD COLUMN comments varchar NULL;
 </pre>
   <li>If you are using the signup server, reinstall it according to the <a href="signup.html">instructions</a>.  The 1.3.x signup server is not compatible with 1.4.x.
   <li>Run bin/dbdef-create.
-  <li>create a service based on svc_forward
-  <li>Run bin/fs-migrate-svc_acct_sm
+  <li>If you have svc_acct_sm records or service definitions:
+    <ul>
+      <li>Create a service definition with table svc_forward
+      <li>Run bin/fs-migrate-svc_acct_sm
+    </ul>
   <li>Run bin/fs-migrate-payref
   <li>Run bin/fs-migrate-part_svc
   <li><b>After running bin/fs-migrate-payref</b>, apply the following changes to your database:
