@@ -12,6 +12,15 @@
 <pre>
 ALTER TABLE cust_pay_batch CHANGE exp exp VARCHAR(11);
 </pre>
+  <li>Copy or symlink htdocs to the new copy.
+  <li>Remove the symlink or directory <i>(your_site_perl_directory)</i>/FS.
+  <li>Change to the FS directory in the new tarball, and build and install the
+      Perl modules:
+    <pre>
+$ cd FS/
+$ perl Makefile.PL
+$ make
+$ su
+# make install</pre>
   <li>Run bin/dbdef-create.  This file uses MySQL-specific syntax.  If you are running a different database engine you will need to modify it slightly.
-  <li>Copy or symlink htdocs and site_perl to the new copies.
 </body>
