@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: cust_main.cgi,v 1.17 2001-12-03 10:59:25 ivan Exp $ -->
+#<!-- $Id: cust_main.cgi,v 1.18 2001-12-03 11:33:19 ivan Exp $ -->
 
 use strict;
 #use vars qw( $conf %ncancelled_pkgs %all_pkgs $cgi @cust_main $sortby );
@@ -110,7 +110,7 @@ if ( $cgi->param('browse') ) {
     or die dbh->errstr. " doing $statement";
   $sth->execute or die "Error executing \"$statement\": ". $sth->errstr;
 
-  $total = @{$sth->fetchrow_arrayref}[0];
+  $total = $sth->fetchrow_arrayref->[0];
 
   my @just_cust_main = qsearch('cust_main',{}, '',
     "$ncancelled $orderby $limit"

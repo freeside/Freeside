@@ -1,5 +1,5 @@
 <%
-# <!-- $Id: cust_pkg.cgi,v 1.7 2001-12-03 10:59:25 ivan Exp $ -->
+# <!-- $Id: cust_pkg.cgi,v 1.8 2001-12-03 11:33:19 ivan Exp $ -->
 
 use strict;
 use vars qw ( $cgi @cust_pkg $sortby $query %part_pkg
@@ -31,12 +31,10 @@ $limit .= " OFFSET $offset" if $offset;
 
 my $total;
 
-($query) = $cgi->keywords;
 my $unconf = '';
-#this tree is a little bit redundant
+($query) = $cgi->keywords;
 if ( $query eq 'pkgnum' ) {
   $sortby=\*pkgnum_sort;
-
 
 } elsif ( $query eq 'APKG_pkgnum' ) {
 
@@ -86,7 +84,7 @@ my $sth = dbh->prepare($statement)
   or die dbh->errstr. " doing $statement";
 $sth->execute or die "Error executing \"$statement\": ". $sth->errstr;
 
-$total = @{$sth->fetchrow_arrayref}[0];
+$total = $sth->fetchrow_arrayref->[0];
 
 @cust_pkg = qsearch('cust_pkg',{}, '', "$unconf ORDER BY pkgnum $limit" );
 
@@ -100,6 +98,7 @@ if ( scalar(@cust_pkg) == 1 ) {
 } else {
   $total ||= scalar(@cust_pkg);
 
+  #begin pager
   my $pager = '';
   if ( $total != scalar(@cust_pkg) && $maxrecords ) {
     unless ( $offset == 0 ) {
@@ -124,6 +123,7 @@ if ( scalar(@cust_pkg) == 1 ) {
                 '"><B><FONT SIZE="+1">Next</FONT></B></A> ';
     }
   }
+  #end pager
   
   print header('Package Search Results',''),
         "$total matching packages found<BR><BR>$pager", &table(), <<END;

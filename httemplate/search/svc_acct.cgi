@@ -1,8 +1,9 @@
 <%
-# <!-- $Id: svc_acct.cgi,v 1.8 2001-10-30 14:54:07 ivan Exp $ -->
+# <!-- $Id: svc_acct.cgi,v 1.9 2001-12-03 11:33:19 ivan Exp $ -->
 
 use strict;
-use vars qw( $cgi @svc_acct $sortby $query $mydomain );
+use vars qw( $cgi @svc_acct $sortby $query $mydomain
+             $conf $maxrecords $limit $offset );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
@@ -16,39 +17,59 @@ $mydomain = '';
 $cgi = new CGI;
 &cgisuidsetup($cgi);
 
+$conf = new FS::Conf;
+$maxrecords = $conf->config('maxsearchrecordsperpage');
+
+my $orderby = ''; #removeme
+
+$limit = '';
+$limit .= "LIMIT $maxrecords" if $maxrecords;
+
+$offset = $cgi->param('offset') || 0;
+$limit .= " OFFSET $offset" if $offset;
+
+my $total;
+
 ($query)=$cgi->keywords;
 $query ||= ''; #to avoid use of unitialized value errors
-#this tree is a little bit redundant
+
+my $unlinked = '';
+if ( $query =~ /^UN_(.*)$/ ) {
+  $query = $1;
+  $unlinked = '
+    WHERE 0 <
+      ( SELECT count(*) FROM cust_svc
+          WHERE cust_svc.svcnum = svc_acct.svcnum
+            AND pkgnum IS NULL
+      )
+  ';
+}
+
 if ( $query eq 'svcnum' ) {
   $sortby=\*svcnum_sort;
-  @svc_acct=qsearch('svc_acct',{});
+  $orderby = 'ORDER BY svcnum';
 } elsif ( $query eq 'username' ) {
   $sortby=\*username_sort;
-  @svc_acct=qsearch('svc_acct',{});
+  $orderby = 'ORDER BY username';
 } elsif ( $query eq 'uid' ) {
   $sortby=\*uid_sort;
-  @svc_acct=grep $_->uid ne '', qsearch('svc_acct',{});
-} elsif ( $query eq 'UN_svcnum' ) {
-  $sortby=\*svcnum_sort;
-  @svc_acct = grep qsearchs('cust_svc',{
-      'svcnum' => $_->svcnum,
-      'pkgnum' => '',
-    }), qsearch('svc_acct',{});
-} elsif ( $query eq 'UN_username' ) {
-  $sortby=\*username_sort;
-  @svc_acct = grep qsearchs('cust_svc',{
-      'svcnum' => $_->svcnum,
-      'pkgnum' => '',
-    }), qsearch('svc_acct',{});
-} elsif ( $query eq 'UN_uid' ) {
-  $sortby=\*uid_sort;
-  @svc_acct = grep qsearchs('cust_svc',{
-      'svcnum' => $_->svcnum,
-      'pkgnum' => '',
-    }), qsearch('svc_acct',{});
+  $orderby = ( $unlinked ? 'AND' : 'WHERE' ). 'uid IS NOT NULL ORDER BY uid';
 } else {
   $sortby=\*uid_sort;
   &usernamesearch;
+}
+
+if ( $query eq 'svcnum' || $query eq 'username' || $query eq 'uid' ) {
+
+  my $statement = "SELECT COUNT(*) FROM svc_acct $unlinked";
+  my $sth = dbh->prepare($statement)
+    or die dbh->errstr. " doing $statement";
+  $sth->execute or die "Error executing \"$statement\": ". $sth->errstr;
+
+  $total = $sth->fetchrow_arrayref->[0];
+
+  @svc_acct = qsearch('svc_acct', {}, '', "$unlinked $orderby $limit");
+
 }
 
 if ( scalar(@svc_acct) == 1 ) {
@@ -58,9 +79,37 @@ if ( scalar(@svc_acct) == 1 ) {
 } elsif ( scalar(@svc_acct) == 0 ) { #error
   idiot("Account not found");
 } else {
-  my($total)=scalar(@svc_acct);
+  $total ||= scalar(@svc_acct);
+
+  #begin pager
+  my $pager = '';
+  if ( $total != scalar(@svc_acct) && $maxrecords ) {
+    unless ( $offset == 0 ) {
+      $cgi->param('offset', $offset - $maxrecords);
+      $pager .= '<A HREF="'. $cgi->self_url.
+                '"><B><FONT SIZE="+1">Previous</FONT></B></A> ';
+    }
+    my $poff;
+    my $page;
+    for ( $poff = 0; $poff < $total; $poff += $maxrecords ) {
+      $page++;
+      if ( $offset == $poff ) {
+        $pager .= qq!<FONT SIZE="+2">$page</FONT> !;
+      } else {
+        $cgi->param('offset', $poff);
+        $pager .= qq!<A HREF="!. $cgi->self_url. qq!">$page</A> !;
+      }
+    }
+    unless ( $offset + $maxrecords > $total ) {
+      $cgi->param('offset', $offset + $maxrecords);
+      $pager .= '<A HREF="'. $cgi->self_url.
+                '"><B><FONT SIZE="+1">Next</FONT></B></A> ';
+    }
+  }
+  #end pager
+
   print header("Account Search Results",''),
-        "$total matching accounts found",
+        "$total matching accounts found<BR><BR>$pager",
         &table(), <<END;
       <TR>
         <TH><FONT SIZE=-1>#</FONT></TH>
@@ -165,7 +214,7 @@ END
 
   }
  
-  print '</TABLE>';
+  print '</TABLE>$pager<BR>';
 
   if ( $mydomain ) {
     print "<BR><FONT COLOR=\"#FF0000\">*</FONT> The <I>$mydomain</I> domain ".
