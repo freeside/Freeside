@@ -605,6 +605,61 @@ sub attribute_since_sqlradacct {
 
 }
 
+=item transfer DEST_PKGNUM
+
+Transfers as many services as possible from this package to another package.
+The destination package must already exist.  Services are moved only if 
+the destination allows services with the correct I<svcnum> (not svcdb).  
+Any services that can't be moved remain in the original package.
+
+Returns an error, if there is one; otherwise, returns the number of services 
+that couldn't be moved.
+
+=cut
+
+sub transfer {
+  my ($self, $dest_pkgnum) = @_;
+
+  my $remaining = 0;
+  my $dest;
+  my %target;
+  my $pkg_svc;
+
+  if (ref ($dest_pkgnum) eq 'FS::cust_pkg') {
+    $dest = $dest_pkgnum;
+    $dest_pkgnum = $dest->pkgnum;
+  } else {
+    $dest = qsearchs('cust_pkg', { pkgnum => $dest_pkgnum });
+  }
+
+  return ('Package does not exist: '.$dest_pkgnum) unless $dest;
+
+  foreach $pkg_svc (qsearch('pkg_svc', { pkgpart => $dest->pkgpart })) {
+    $target{$pkg_svc->svcpart} = $pkg_svc->quantity;
+  }
+
+  my $cust_svc;
+
+  foreach $cust_svc ($dest->cust_svc) {
+    $target{$cust_svc->svcpart}--;
+  }
+
+  foreach $cust_svc ($self->cust_svc) {
+    if($target{$cust_svc->svcpart} > 0) {
+      $target{$cust_svc->svcpart}--;
+      my $new = new FS::cust_svc {
+          svcnum  => $cust_svc->svcnum,
+          svcpart => $cust_svc->svcpart,
+          pkgnum  => $dest_pkgnum };
+      my $error = $new->replace($cust_svc);
+      return $error if $error;
+    } else {
+      $remaining++
+    }
+  }
+  return $remaining;
+}
+
 =back
 
 =head1 SUBROUTINES
@@ -631,156 +686,62 @@ newly-created cust_pkg objects.
 =cut
 
 sub order {
-  my($custnum, $pkgparts, $remove_pkgnums, $return_cust_pkg) = @_;
-  $remove_pkgnums = [] unless defined($remove_pkgnums);
 
+  # Rewritten to make use of the transfer() method, and in general 
+  # to not suck so badly.
+
+  my ($custnum, $pkgparts, $remove_pkgnum, $return_cust_pkg) = @_;
+
+  # Transactionize this whole mess
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  # generate %part_pkg
-  # $part_pkg{$pkgpart} is true iff $custnum may purchase $pkgpart
-  #
-  my($cust_main)=qsearchs('cust_main',{'custnum'=>$custnum});
-  my($agent)=qsearchs('agent',{'agentnum'=> $cust_main->agentnum });
-  my %part_pkg = %{ $agent->pkgpart_hashref };
+  my $error;
+  my $cust_main = qsearchs('cust_main', { custnum => $custnum });
+  return "Customer not found: $custnum" unless $cust_main;
 
-  my(%svcnum);
-  # generate %svcnum
-  # for those packages being removed:
-  #@{ $svcnum{$svcpart} } goes from a svcpart to a list of FS::cust_svc objects
-  my($pkgnum);
-  foreach $pkgnum ( @{$remove_pkgnums} ) {
-    foreach my $cust_svc (qsearch('cust_svc',{'pkgnum'=>$pkgnum})) {
-      push @{ $svcnum{$cust_svc->getfield('svcpart')} }, $cust_svc;
-    }
-  }
-  
-  my @cust_svc;
-  #generate @cust_svc
-  # for those packages the customer is purchasing:
-  # @{$pkgparts} is a list of said packages, by pkgpart
-  # @cust_svc is a corresponding list of lists of FS::Record objects
-  foreach my $pkgpart ( @{$pkgparts} ) {
-    unless ( $part_pkg{$pkgpart} ) {
+  # Create the new packages.
+  my $cust_pkg;
+  foreach (@$pkgparts) {
+    $cust_pkg = new FS::cust_pkg { custnum => $custnum,
+                                   pkgpart => $_ };
+    $error = $cust_pkg->insert;
+    if ($error) {
       $dbh->rollback if $oldAutoCommit;
-      return "Customer not permitted to purchase pkgpart $pkgpart!";
+      return $error;
     }
-    push @cust_svc, [
-      map {
-        ( $svcnum{$_} && @{ $svcnum{$_} } ) ? shift @{ $svcnum{$_} } : ();
-      } map { $_->svcpart }
-          qsearch('pkg_svc', { pkgpart  => $pkgpart,
-                               quantity => { op=>'>', value=>'0', } } )
-    ];
+    push @$return_cust_pkg, $cust_pkg;
   }
+  # $return_cust_pkg now contains refs to all of the newly 
+  # created packages.
 
-  #special-case until this can be handled better
-  # move services to new svcparts - even if the svcparts don't match (svcdb
-  # needs to...)
-  # looks like they're moved in no particular order, ewwwwwwww
-  # and looks like just one of each svcpart can be moved... o well
-
-  #start with still-leftover services
-  #foreach my $svcpart ( grep { scalar(@{ $svcnum{$_} }) } keys %svcnum ) {
-  foreach my $svcpart ( keys %svcnum ) {
-    next unless @{ $svcnum{$svcpart} };
-
-    my $svcdb = $svcnum{$svcpart}->[0]->part_svc->svcdb;
-
-    #find an empty place to put one
-    my $i = 0;
-    foreach my $pkgpart ( @{$pkgparts} ) {
-      my @pkg_svc =
-        qsearch('pkg_svc', { pkgpart  => $pkgpart,
-                             quantity => { op=>'>', value=>'0', } } );
-      #my @pkg_svc =
-      #  grep { $_->quantity > 0 } qsearch('pkg_svc', { pkgpart=>$pkgpart } );
-      if ( ! @{$cust_svc[$i]} #find an empty place to put them with 
-           && grep { $svcdb eq $_->part_svc->svcdb } #with appropriate svcdb
-                @pkg_svc
-      ) {
-        my $new_svcpart =
-          ( grep { $svcdb eq $_->part_svc->svcdb } @pkg_svc )[0]->svcpart; 
-        my $cust_svc = shift @{$svcnum{$svcpart}};
-        $cust_svc->svcpart($new_svcpart);
-        #warn "changing from $svcpart to $new_svcpart!!!\n";
-        $cust_svc[$i] = [ $cust_svc ];
-      }
-      $i++;
-    }
-
-  }
-  
-  #check for leftover services
-  foreach (keys %svcnum) {
-    next unless @{ $svcnum{$_} };
-    $dbh->rollback if $oldAutoCommit;
-    return "Leftover services, svcpart $_: svcnum ".
-           join(', ', map { $_->svcnum } @{ $svcnum{$_} } );
-  }
-
-  #no leftover services, let's make changes.
- 
-  local $SIG{HUP} = 'IGNORE';
-  local $SIG{INT} = 'IGNORE'; 
-  local $SIG{QUIT} = 'IGNORE';
-  local $SIG{TERM} = 'IGNORE';
-  local $SIG{TSTP} = 'IGNORE'; 
-  local $SIG{PIPE} = 'IGNORE'; 
-
-  #first cancel old packages
-  foreach my $pkgnum ( @{$remove_pkgnums} ) {
-    my($old) = qsearchs('cust_pkg',{'pkgnum'=>$pkgnum});
-    unless ( $old ) {
-      $dbh->rollback if $oldAutoCommit;
-      return "Package $pkgnum not found to remove!";
-    }
-    my(%hash) = $old->hash;
-    $hash{'cancel'}=time;   
-    my($new) = new FS::cust_pkg ( \%hash );
-    my($error)=$new->replace($old);
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return "Couldn't update package $pkgnum: $error";
-    }
-  }
-
-  #now add new packages, changing cust_svc records if necessary
-  my $pkgpart;
-  while ($pkgpart=shift @{$pkgparts} ) {
- 
-    my $new = new FS::cust_pkg {
-                                 'custnum' => $custnum,
-                                 'pkgpart' => $pkgpart,
-                               };
-    my $error = $new->insert;
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return "Couldn't insert new cust_pkg record: $error";
-    }
-    push @{$return_cust_pkg}, $new if $return_cust_pkg;
-    my $pkgnum = $new->pkgnum;
- 
-    foreach my $cust_svc ( @{ shift @cust_svc } ) {
-      my(%hash) = $cust_svc->hash;
-      $hash{'pkgnum'}=$pkgnum;
-      my $new = new FS::cust_svc ( \%hash );
-
-      #avoid Record diffing missing changed svcpart field from above.
-      my $old = qsearchs('cust_svc', { 'svcnum' => $cust_svc->svcnum } );
-
-      my $error = $new->replace($old);
-      if ( $error ) {
-        $dbh->rollback if $oldAutoCommit;
-        return "Couldn't link old service to new package: $error";
+  # Transfer services and cancel old packages.
+  foreach my $old_pkgnum (@$remove_pkgnum) {
+    my $old_pkg = qsearchs ('cust_pkg', { pkgnum => $old_pkgnum });
+    foreach my $new_pkg (@$return_cust_pkg) {
+      $error = $old_pkg->transfer($new_pkg);
+      if ($error and $error == 0) {
+        # $old_pkg->transfer failed.
+	$dbh->rollback if $oldAutoCommit;
+	return $error;
       }
     }
-  }  
-
+    if ($error > 0) {
+      # Transfers were successful, but we went through all of the 
+      # new packages and still had services left on the old package.
+      # We can't cancel the package under the circumstances, so abort.
+      $dbh->rollback if $oldAutoCommit;
+      return "Unable to transfer all services from package ".$old_pkg->pkgnum;
+    }
+    $error = $old_pkg->cancel;
+    if ($error) {
+      $dbh->rollback;
+      return $error;
+    }
+  }
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
-
-  ''; #no errors
+  '';
 }
 
 =back
