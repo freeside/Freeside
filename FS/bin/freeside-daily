@@ -16,7 +16,7 @@ my $user = shift or die &usage;
 
 adminsuidsetup $user;
 
-$FS::cust_main::Debug = 1 if $opt_v;
+$FS::cust_main::DEBUG = 1 if $opt_v;
 
 my %search;
 $search{'payby'} = $opt_p if $opt_p;
