@@ -113,4 +113,3 @@ sub usage {
   die "Usage:\n\n  populate-msgcat user\n";
 }
 
-
