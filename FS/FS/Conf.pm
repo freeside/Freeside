@@ -129,7 +129,9 @@ sub set {
     warn "[FS::Conf] SET $file\n" if $DEBUG;
 #    warn "$dir" if is_tainted($dir);
 #    warn "$dir" if is_tainted($file);
+    chmod 0644, "$dir/$file";
     my $fh = new IO::File ">$dir/$file" or return;
+    chmod 0644, "$dir/$file";
     print $fh "$value\n";
   }
 }
@@ -620,6 +622,13 @@ httemplate/docs/config.html
     'section'     => 'UI',
     'description' => 'Default state or province (if not supplied, the default is `CA\')',
     'type'        => 'text',
+  },
+
+  {
+    'key'         => 'radiusprepend',
+    'section'     => 'radius',
+    'description' => 'The contents will be prepended to the top of the RADIUS users file (text exports only).',
+    'type'        => 'textarea',
   },
 
   {
