@@ -61,6 +61,34 @@ $ perl Makefile.PL
 $ make
 $ su
 # make install UNINST=1</pre>
+  <li>If you are using PostgreSQL, apply the following changes to your database:
+<pre>
+CREATE UNIQUE INDEX agent_pkey ON agent ( agentnum );
+CREATE UNIQUE INDEX agent_type_pkey agent_type ( typenum );
+CREATE UNIQUE INDEX cust_bill_pkey ON cust_bill ( invnum );
+CREATE UNIQUE INDEX cust_credit_pkey ON cust_credit ( crednum );
+CREATE UNIQUE INDEX cust_main_pkey ON cust_main ( custnum );
+CREATE UNIQUE INDEX cust_main_county_pkey ON cust_main_county ( taxnum );
+CREATE UNIQUE INDEX cust_main_invoice_pkey ON cust_main_invoice ( destnum );
+CREATE UNIQUE INDEX cust_pay_pkey ON cust_pay ( paynum );
+CREATE UNIQUE INDEX cust_pkg_pkey ON cust_pkg ( pkgnum );
+CREATE UNIQUE INDEX cust_refund_pkey ON cust_refund ( refundnum );
+CREATE UNIQUE INDEX cust_svc_pkey ON cust_svc ( svcnum );
+CREATE UNIQUE INDEX domain_record_pkey ON domain_record ( recnum );
+CREATE UNIQUE INDEX nas_pkey ON nas ( nasnum );
+CREATE UNIQUE INDEX part_pkg_pkey ON part_pkg ( pkgpart );
+CREATE UNIQUE INDEX part_referral_pkey ON part_referral ( refnum );
+CREATE UNIQUE INDEX part_svc_pkey ON part_svc ( svcpart );
+CREATE UNIQUE INDEX port_pkey ON port ( portnum );
+CREATE UNIQUE INDEX prepay_credit_pkey ON prepay_credit ( prepaynum );
+CREATE UNIQUE INDEX session_pkey ON session ( sessionnum );
+CREATE UNIQUE INDEX svc_acct_pkey ON svc_acct ( svcnum );
+CREATE UNIQUE INDEX svc_acct_pop_pkey ON svc_acct_pop ( popnum );
+CREATE UNIQUE INDEX svc_acct_sm_pkey ON svc_acct_sm ( svcnum );
+CREATE UNIQUE INDEX svc_domain_pkey ON svc_domain ( svcnum );
+CREATE UNIQUE INDEX svc_www_pkey ON svc_www ( svcnum );
+CREATE UNIQUE INDEX type_pkgs_pkey ON type_pkgs ( typenum );
+</pre>
   <li>If you wish to enable service/shipping addresses, apply the following
       changes to your database:
 <pre>
