@@ -98,7 +98,7 @@ $ su
 $ su
 # make create-config
 </pre>
-    <li>You should run a separate iteration of Apache[-SSL] with mod_perl enabled as the freeside user.
+    <li>Run a <b>separate</b> iteration of Apache[-SSL] with mod_perl enabled <b>as the freeside user</b>.
 </ul>
 <table>
   <tr>
@@ -108,7 +108,11 @@ $ su
     <td><ul>
       <li>Run <tt>make aspdocs</tt>
       <li>Copy <tt>aspdocs/</tt> to your web server's document space.
-      <li>Create a <a href="http://www.apache-asp.org/config.html#Global">Global</a> directory, such as <tt>/usr/local/etc/freeside/asp-global/</tt>
+      <li>Create a <a href="http://www.apache-asp.org/config.html#Global">Global</a> directory, such as <tt>/usr/local/etc/freeside/asp-global/</tt>:
+<font size="-1"><pre>
+mkdir&nbsp;/usr/local/etc/freeside/asp-global/
+chown&nbsp;freeside&nbsp;/usr/local/etc/freeside/asp-global/
+</pre></font>
       <li>Copy <tt>htetc/global.asa</tt> to the Global directory:
 <font size="-1"><pre>
 cp&nbsp;htetc/global.asa&nbsp;/usr/local/etc/freeside/asp-global/global.asa
