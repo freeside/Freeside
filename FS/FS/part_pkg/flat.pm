@@ -33,4 +33,8 @@ sub calc_recur {
   $self->option('recur_fee');
 }
 
+sub is_free_options {
+  qw( setup_fee recur_fee );
+}
+
 1;

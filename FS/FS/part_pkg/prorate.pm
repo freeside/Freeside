@@ -6,7 +6,7 @@ use Time::Local qw(timelocal);
 #use FS::Record qw(qsearch qsearchs);
 use FS::part_pkg;
 
-@ISA = qw(FS::part_pkg);
+@ISA = qw(FS::part_pkg::flat);
 
 %info = (
     'name' => 'First partial month pro-rated, then flat-rate (1st of month billing)',
@@ -24,11 +24,6 @@ use FS::part_pkg;
     'freq' => 'm',
     'weight' => 20,
 );
-
-sub calc_setup {
-  my($self, $cust_pkg ) = @_;
-  $self->option('setup_fee');
-}
 
 sub calc_recur {
   my($self, $cust_pkg, $sdate ) = @_;

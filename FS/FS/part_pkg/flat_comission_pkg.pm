@@ -5,7 +5,7 @@ use vars qw(@ISA %info);
 #use FS::Record qw(qsearch qsearchs);
 use FS::part_pkg;
 
-@ISA = qw(FS::part_pkg);
+@ISA = qw(FS::part_pkg::flat);
 
 %info = (
     'name' => 'Flat rate with recurring commission per (selected) active package',
@@ -37,11 +37,7 @@ use FS::part_pkg;
     'weight' => '64',
 );
 
-sub calc_setup {
-  my($self, $cust_pkg ) = @_;
-  $self->option('setup_fee');
-}
-
+# XXX this needs to be fixed!!!
 sub calc_recur {
   my($self, $cust_pkg ) = @_;
   $self->option('recur_fee');

@@ -5,7 +5,7 @@ use vars qw(@ISA %info);
 #use FS::Record qw(qsearch qsearchs);
 use FS::part_pkg;
 
-@ISA = qw(FS::part_pkg);
+@ISA = qw(FS::part_pkg::flat);
 
 %info = (
     'name' => 'Base charge plus charge per-hour from the session monitor',
@@ -29,11 +29,6 @@ use FS::part_pkg;
     'weight' => 80,
 );
 
-sub calc_setup {
-  my($self, $cust_pkg ) = @_;
-  $self->option('setup_fee');
-}
-
 sub calc_recur {
   my($self, $cust_pkg ) = @_;
 
@@ -43,6 +38,10 @@ sub calc_recur {
 
   $self->option('recur_flat') + $hours * $self->option('recur_hourly_charge');
 
+}
+
+sub is_free_options {
+  qw( setup_fee recur_fee recur_hourly_charge );
 }
 
 1;

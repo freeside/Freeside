@@ -5,7 +5,7 @@ use vars qw(@ISA %info);
 #use FS::Record qw(qsearch qsearchs);
 use FS::part_pkg;
 
-@ISA = qw(FS::part_pkg);
+@ISA = qw(FS::part_pkg::flat);
 
 %info = (
     'name' => 'Free (or setup fee) for X days, then flat rate'.
@@ -35,11 +35,6 @@ sub calc_setup {
   $cust_pkg->bill($d);
   
   $self->option('setup_fee');
-}
-
-sub calc_recur {
-  my($self, $cust_pkg ) = @_;
-  $self->option('recur_fee');
 }
 
 1;

@@ -6,7 +6,7 @@ use DBI;
 #use FS::Record qw(qsearch qsearchs);
 use FS::part_pkg;
 
-@ISA = qw(FS::part_pkg);
+@ISA = qw(FS::part_pkg::flat);
 
 %info = (
     'name' => 'Base charge plus a per-domain metered rate from a configurable SQL query',
@@ -44,11 +44,6 @@ use FS::part_pkg;
     'weight' => '70',
 );
 
-sub calc_setup {
-  my($self, $cust_pkg ) = @_;
-  $self->option('setup_fee');
-}
-
 sub calc_recur {
   my($self, $cust_pkg ) = @_;
 
@@ -74,6 +69,10 @@ sub calc_recur {
   $units = 0 if $units < 0;
 
   $self->option('recur_flat') + $units * $self->option('recur_unit_charge');
+}
+
+sub is_free_options {
+  qw( setup_fee recur_flat recur_unit_charge );
 }
 
 1;

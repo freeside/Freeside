@@ -5,7 +5,7 @@ use vars qw(@ISA %info);
 #use FS::Record qw(qsearch qsearchs);
 use FS::part_pkg;
 
-@ISA = qw(FS::part_pkg);
+@ISA = qw(FS::part_pkg::flat);
 
 %info = (
     'name' => 'Flat rate with recurring commission per active customer',
@@ -28,11 +28,6 @@ use FS::part_pkg;
     #'recur' => '\'my $error = $cust_pkg->cust_main->credit( \' + what.comission_amount.value + \' * scalar($cust_pkg->cust_main->referral_cust_main_ncancelled(\' + what.comission_depth.value+ \')), "commission" ); die $error if $error; \' + what.recur_fee.value + \';\'',
     'weight' => '60',
 );
-
-sub calc_setup {
-  my($self, $cust_pkg ) = @_;
-  $self->option('setup_fee');
-}
 
 sub calc_recur {
   my($self, $cust_pkg ) = @_;

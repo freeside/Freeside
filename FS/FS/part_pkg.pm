@@ -453,9 +453,9 @@ sub svcpart {
 
 Returns a list of the acceptable payment types for this package.  Eventually
 this should come out of a database table and be editable, but currently has the
-following logic instead;
+following logic instead:
 
-If the package has B<0> setup and B<0> recur, the single item B<BILL> is
+If the package is free, the single item B<BILL> is
 returned, otherwise, the single item B<CARD> is returned.
 
 (CHEK?  LEC?  Probably shouldn't accept those by default, prone to abuse)
@@ -464,12 +464,32 @@ returned, otherwise, the single item B<CARD> is returned.
 
 sub payby {
   my $self = shift;
-  #if ( $self->setup == 0 && $self->recur == 0 ) {
-  if (    $self->setup =~ /^\s*0+(\.0*)?\s*$/
-       && $self->recur =~ /^\s*0+(\.0*)?\s*$/ ) {
+  if ( $self->is_free ) {
     ( 'BILL' );
   } else {
     ( 'CARD' );
+  }
+}
+
+=item is_free
+
+Returns true if this package is free.  
+
+=cut
+
+sub is_free {
+  my $self = shift;
+  unless ( $self->plan ) {
+    $self->setup =~ /^\s*0+(\.0*)?\s*$/
+      && $self->recur =~ /^\s*0+(\.0*)?\s*$/;
+  } elsif ( $self->can('is_free_options') ) {
+    not grep { $_ !~ /^\s*0*(\.0*)?\s*$/ }
+         map { $self->option($_) } 
+             $self->is_free_options;
+  } else {
+    warn "FS::part_pkg::is_free: FS::part_pkg::". $self->plan. " subclass ".
+         "provides neither is_free_options nor is_free method; returning false";
+    0;
   }
 }
 

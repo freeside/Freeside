@@ -149,5 +149,9 @@ sub calc_recur {
 
 }
 
+sub is_free {
+  0;
+}
+
 1;
 

@@ -6,7 +6,7 @@ use DBI;
 #use FS::Record qw(qsearch qsearchs);
 use FS::part_pkg;
 
-@ISA = qw(FS::part_pkg);
+@ISA = qw(FS::part_pkg::flat);
 
 %info = (
     'name' => 'Base charge plus additional fees for external services from a configurable SQL query',
@@ -36,11 +36,6 @@ use FS::part_pkg;
     'weight' => '72',
 );
 
-sub calc_setup {
-  my($self, $cust_pkg ) = @_;
-  $self->option('setup_fee');
-}
-
 sub calc_recur {
   my($self, $cust_pkg ) = @_;
 
@@ -63,6 +58,10 @@ sub calc_recur {
   }
 
   $price;
+}
+
+sub is_free {
+  0;
 }
 
 1;
