@@ -180,7 +180,7 @@
       <ul>
         <li>svcpart - primary key
         <li>svc - name of this service
-        <li>svcdb - table used for this service: svc_acct, svc_acct_sm, svc_domain, svc_charge or svc_wo
+        <li>svcdb - table used for this service: svc_acct, svc_acct_sm, svc_forward, svc_domain, svc_charge or svc_wo
         <li><i>table</i>__<i>field</i> - Default or fixed value for <i>field</i> in <i>table</i>
         <li><i>table</i>__<i>field</i>_flag - null, D or F
       </ul>
@@ -241,7 +241,7 @@
         <li>exch - exchange
         <li>loc - rest of number
       </ul>
-    <li><a name="svc_acct_sm">svc_acct_sm</a> - Domain mail aliases
+    <li><a name="svc_acct_sm">svc_acct_sm</a> - <b>DEPRICIATED</b> Domain mail aliases
       <ul>
         <li>svcnum - <a href="#cust_svc">primary key</a>
         <li>domsvc - <a href="#svc_domain">Domain</a> (by svcnum)
@@ -252,6 +252,13 @@
       <ul>
         <li>svcnum - <a href="#cust_svc">primary key</a>
         <li>domain
+      </ul>
+    <li><a name="svc_forward>svc_forward</a> - Mail forwarding aliases
+      <ul>
+        <li>svcnum - <a href="#cust_svc">primary key</a>
+        <li>srcsvc - <a href="#svc_acct">svcnum of the source of this forward
+        <li>dstsvc - <a href="#svc_acct">svcnum of the destination of this forward
+        <li>dst - foreign destination (email address) - forward not local to freeside
       </ul>
     <li><a name="domain_record">domain_record</a> - Domain zone detail
       <ul>
