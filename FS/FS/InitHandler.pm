@@ -69,6 +69,7 @@ sub handler {
 
   my %seen;
   while (<MAPSECRETS>) {
+    next if /^\s*(#|$)/;
     /^([\w\-\.]+)\s(.*)$/
       or do { warn "strange line in mapsecrets: $_"; next; };
     my($user, $datasrc) = ($1, $2);
