@@ -36,6 +36,9 @@ ALTER TABLE h_part_pkg ADD promo_code varchar(80) NULL;
 CREATE INDEX part_pkg2 ON part_pkg ( promo_code );
 CREATE INDEX h_part_pkg2 ON h_part_pkg ( promo_code );
 
+ALTER TABLE cust_main ALTER COLUMN zip DROP NOT NULL;
+ALTER TABLE h_cust_main ALTER COLUMN zip DROP NOT NULL;
+
 Installs w/integrated RT:
   CREATE SEQUENCE attributes_id_seq;
 
