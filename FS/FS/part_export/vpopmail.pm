@@ -106,8 +106,8 @@ sub vpopmail_insert { #subroutine, not method
   close(VPASSWD);
 
   for my $mkdir (
-    map { "$exportdir/domains/$domain/$username$_" }
-      ( '', qw( /Maildir /Maildir/cur /Maildir/new /Maildir/tmp ) )
+    grep { ! -d $_ } map { "$exportdir/domains/$domain/$username$_" }
+        ( '', qw( /Maildir /Maildir/cur /Maildir/new /Maildir/tmp ) )
   ) {
     mkdir $mkdir, 0700 or die "can't mkdir $mkdir: $!";
   }
