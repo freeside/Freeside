@@ -15,7 +15,7 @@ my $user = shift or die &usage;
 adminsuidsetup $user;
 
 my $spooldir = "/usr/local/etc/freeside/export.". datasrc. "/bind";
-mkdir $spooldir unless -d $spooldir;
+mkdir $spooldir, 0700 unless -d $spooldir;
 
 my @exports = qsearch('part_export', { 'exporttype' => 'bind' } );
 my @sexports = qsearch('part_export', { 'exporttype' => 'bind_slave' } );
@@ -33,7 +33,7 @@ foreach my $export ( @exports ) {
   #prevent old domain files from piling up
   #rmtree "$prefix" or die "can't rmtree $prefix.db: $!";
 
-  mkdir $prefix unless -d $prefix;
+  mkdir $prefix, 0700 unless -d $prefix;
 
   open(NAMED_CONF,">$prefix/named.conf")
     or die "can't open $prefix/named.conf: $!";
@@ -132,7 +132,7 @@ foreach my $sexport ( @sexports ) { #false laziness with above
   #prevent old domain files from piling up
   #rmtree "$prefix" or die "can't rmtree $prefix.db: $!";
 
-  mkdir $prefix unless -d $prefix;
+  mkdir $prefix, 0700 unless -d $prefix;
 
   open(NAMED_CONF,">$prefix/named.conf")
     or die "can't open $prefix/named.conf: $!";
