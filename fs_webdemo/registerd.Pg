@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 #
-# $Id: registerd.Pg,v 1.6 2001-04-26 02:20:41 ivan Exp $
+# $Id: registerd.Pg,v 1.7 2001-04-26 02:21:19 ivan Exp $
 
 use strict;
 use vars qw(
@@ -89,9 +89,9 @@ while ( 1 ) {
       or do { &myerr("$username: ". $DBI::errstr); next; };
 
     my $psth = $pdbh->prepare("CREATE DATABASE demo_$username")
-      or do { &myerr("$username: ". $pdbh->errstr;); next; };
+      or do { &myerr("$username: ". $pdbh->errstr); next; };
     $psth->execute()
-      or do { &myerr("$username: ". $psth->errstr;); next; };
+      or do { &myerr("$username: ". $psth->errstr); next; };
 
     $pdbh->disconnect
       or do { &myerr("fatal: $DBI:errstr"); die; };
