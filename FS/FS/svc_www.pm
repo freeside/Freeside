@@ -154,7 +154,7 @@ sub insert {
     my $dom_svcnum = $domain_record->svcnum;
     my $svc_domain = qsearchs('svc_domain', { 'svcnum' => $dom_svcnum } );
       # or die ?
-    $zone .= $svc_domain->domain;
+    $zone .= '.'. $svc_domain->domain;
   }
 
   my $svc_acct = qsearchs('svc_acct', { 'svcnum' => $self->usersvc } );
