@@ -223,13 +223,21 @@ sub qsearch {
       if ( ! defined( $record->{$_} ) || $record->{$_} eq '' ) {
         if ( $op eq '=' ) {
           if ( driver_name eq 'Pg' ) {
-            qq-( $column IS NULL OR $column = '' )-;
+            if ( $dbdef->table($table)->column($column)->type =~ /(int)/i ) {
+              qq-( $column IS NULL )-;
+            } else {
+              qq-( $column IS NULL OR $column = '' )-;
+            }
           } else {
             qq-( $column IS NULL OR $column = "" )-;
           }
         } elsif ( $op eq '!=' ) {
           if ( driver_name eq 'Pg' ) {
-            qq-( $column IS NOT NULL AND $column != '' )-;
+            if ( $dbdef->table($table)->column($column)->type =~ /(int)/i ) {
+              qq-( $column IS NOT NULL )-;
+            } else {
+              qq-( $column IS NOT NULL AND $column != '' )-;
+            }
           } else {
             qq-( $column IS NOT NULL AND $column != "" )-;
           }

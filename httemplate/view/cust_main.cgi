@@ -365,8 +365,11 @@ if ( $conf->exists('hidecancelledpackages') ) {
 
 if ( @packages ) {
   #formatting
+
+  my $colspan = $packages[0]->dbdef_table->column('last_bill') ? 6 : 5;
+  
   print &table(), "\n",
-        qq!<TR><TH COLSPAN=2 ROWSPAN=2>Package</TH><TH COLSPAN=5>!,
+        qq!<TR><TH COLSPAN=2 ROWSPAN=2>Package</TH><TH COLSPAN=$colspan>!,
         qq!Dates</TH><TH COLSPAN=2 ROWSPAN=2>Services</TH></TR>\n<TR>!,
         qq!<TH><FONT SIZE=-1>Setup</FONT></TH>!;
 
@@ -375,7 +378,7 @@ if ( @packages ) {
 
   print qq!<TH><FONT SIZE=-1>Next bill</FONT></TH>!,
         qq!<TH><FONT SIZE=-1>Susp.</FONT></TH>!,
-        qq!<TH><FONT SIZE=-1>Expire!</FONT></TH>!,
+        qq!<TH><FONT SIZE=-1>Expire</FONT></TH>!,
         qq!<TH><FONT SIZE=-1>Cancel</FONT></TH>!,
         qq!</TR>\n!;
 }
