@@ -34,9 +34,10 @@ $FS::svc_Common::noexport_hack = 1;
 die "No services with svcdb svc_acct!\n" unless %part_svc;
 
 print "\n\n", &menu_svc, "\n", <<END;
-Enter part number to import.
+Enter part number or part numbers to import.
 END
 my($shell_svcpart)=&getpart;
+my @shell_svcpart = split(/[,\s]+/, $shell_svcpart);
 
 print "\n\n", <<END;
 Enter the location and name of your _user_ shadow file, for example
@@ -74,8 +75,12 @@ while (<SHADOW>) {
   chop;
   my($username,$password)=split(/:/);
 
-  my @svc_acct = grep { $_->cust_svc->svcpart == $shell_svcpart } 
-                 qsearch('svc_acct', { 'username' => $username } );
+#  my @svc_acct = grep { $_->cust_svc->svcpart == $shell_svcpart } 
+#                 qsearch('svc_acct', { 'username' => $username } );
+  my @svc_acct = grep {
+                   my $svcpart = $_->cust_svc->svcpart;
+                   grep { $_ == $svcpart } @shell_svcpart;
+                 } qsearch('svc_acct', { 'username' => $username } );
 
   next unless @svc_acct;
 
