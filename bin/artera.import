@@ -1,0 +1,67 @@
+#!/usr/bin/perl -w
+
+use strict;
+
+use Text::CSV_XS;
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw(qsearchs);
+use FS::svc_external;
+use FS::svc_domain;
+use FS::svc_acct;
+
+$FS::svc_Common::noexport_hack = 1;
+
+my $svcpart = 30;
+
+my $user = shift
+  or die 'Usage:\n\n  artera.import user <artera_active_orders.csv';
+adminsuidsetup $user;
+
+##
+
+my $csv = new Text::CSV_XS;
+
+my $header = scalar(<>);
+
+my( $num, $linked ) = ( 0, 0 );
+
+while (<>) {
+  my $status = $csv->parse($_)
+    or die $csv->error_input;
+  my($serial, $keycode, $name, $ordernum, $email) = $csv->fields();
+  #warn join(" - ", $serial, $keycode, $name, $ordernum, $email ). "\n";
+
+  $email =~ /^([^@]+)\@([^@]+)$/
+    or die $email;
+  my($username, $domain) = ( $1, $2 );
+  my $svc_domain = qsearchs('svc_domain', { 'domain'  => $domain } );
+  my $cust_svc = '';
+  if ( $svc_domain ) {
+    my $svc_acct = qsearchs('svc_acct', {
+      'username' => $username,
+      'domsvc'   => $svc_domain->svcnum,
+    } );
+    $cust_svc = $svc_acct->cust_svc
+      if $svc_acct;
+  #} else {
+  #  warn "can't find domain $domain\n";
+  }
+
+  my $svc_external = new FS::svc_external { 
+    'svcpart' => $svcpart,
+    'pkgnum'  => ( $cust_svc ? $cust_svc->pkgnum : '' ),
+    'id'      => $serial,
+    'title'   => $keycode,
+  };
+  #my $error = $svc_external->check;
+  my $error = $svc_external->insert;
+  die $error if $error;
+
+  $num++;
+  $linked++ if $cust_svc;
+  #print "$num imported, $linked linked\n";
+
+}
+
+print "$num imported, $linked linked\n";
+
