@@ -4,6 +4,7 @@ use strict;
 use vars qw($VERSION @ISA @EXPORT_OK $fs_signupd_socket);
 use Exporter;
 use Socket;
+use FileHandle;
 use IO::Handle;
 
 $VERSION = '0.01';
@@ -203,7 +204,7 @@ sub new_customer {
 
 =head1 VERSION
 
-$Id: SignupClient.pm,v 1.2 2000-01-28 22:49:28 ivan Exp $
+$Id: SignupClient.pm,v 1.3 2000-02-02 07:44:00 ivan Exp $
 
 =head1 BUGS
 

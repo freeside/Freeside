@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: signup.cgi,v 1.4 2000-01-31 05:22:23 ivan Exp $
+# $Id: signup.cgi,v 1.5 2000-02-02 07:44:00 ivan Exp $
 
 use strict;
 use vars qw( @payby $cgi $locales $packages $pops $r $error
@@ -292,7 +292,7 @@ END
 }
 
 sub print_okay {
-  my $user_agent = new HTTP::Headers::UserAgnet $ENV{HTTP_USER_AGENT};
+  my $user_agent = new HTTP::Headers::UserAgent $ENV{HTTP_USER_AGENT};
   if ( $ieak_template
        && $user_agent->platform eq 'ia32'
        && $user_agent->os =~ /^win/
