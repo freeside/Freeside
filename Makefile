@@ -20,6 +20,21 @@ FREESIDE_RESTART = /etc/init.d/freeside restart
 
 INSTALLGROUP = root
 
+#edit the stuff below to have the daemons start
+
+QUEUED_USER=ivan
+
+#eventually this shouldn't be needed
+FREESIDE_PATH = `pwd`
+
+PASSWD_USER = ivan
+PASSWD_MACHINE = localhost
+
+SIGNUP_USER = ivan
+SIGNUP_MACHINE = localhost
+SIGNUP_AGENTNUM = 2
+SIGNUP_REFNUM = 2
+
 #---
 
 #not changable yet
@@ -83,6 +98,16 @@ install-perl-modules: perl-modules
 install-init:
 	#[ -e ${INIT_FILE} ] || install -o root -g ${INSTALLGROUP} -m 711 init.d/freeside-init ${INIT_FILE}
 	install -o root -g ${INSTALLGROUP} -m 711 init.d/freeside-init ${INIT_FILE}
+	perl -p -i -e "\
+	  s/%%%QUEUED_USER%%%/${QUEUED_USER}/g;\
+	  s'%%%FREESIDE_PATH%%%'${FREESIDE_PATH}'g;\
+	  s/%%%PASSWD_USER%%%/${PASSWD_USER}/g;\
+	  s/%%%PASSWD_MACHINE%%%/${PASSWD_MACHINE}/g;\
+	  s/%%%SIGNUP_USER%%%/${SIGNUP_USER}/g;\
+	  s/%%%SIGNUP_MACHINE%%%/${SIGNUP_MACHINE}/g;\
+	  s/%%%SIGNUP_AGENTNUM%%%/${SIGNUP_AGENTNUM}/g;\
+	  s/%%%SIGNUP_REFNUM%%%/${SIGNUP_REFNUM}/g;\
+	" ${INIT_FILE}
 
 install: install-perl-modules install-docs install-init
 
