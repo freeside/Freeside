@@ -13,7 +13,7 @@ $limit .= " OFFSET $offset" if $offset;
 
 my $total;
 
-my(@cust_bill, $sortby);
+my(@cust_bill);
 if ( $cgi->keywords ) {
   my($query) = $cgi->keywords;
   my $owed = "charged - ( select coalesce(sum(amount),0) from cust_bill_pay
@@ -27,58 +27,6 @@ if ( $cgi->keywords ) {
     $orderby = "ORDER BY cust_bill.$field";
     push @where, "0 != $owed" if $open;
     push @where, "cust_bill._date < ". (time-86400*$days) if $days;
-#  if ( $query eq 'invnum' ) {
-#    $sortby = \*invnum_sort;
-#    $orderby = "ORDER BY cust_bill.invnum";
-#    #@cust_bill = qsearch('cust_bill', {} );
-#  } elsif ( $query eq 'date' ) {
-#    $sortby = \*date_sort;
-#    $orderby = "ORDER BY cust_bill._date";
-#    #@cust_bill = qsearch('cust_bill', {} );
-#  } elsif ( $query eq 'custnum' ) {
-#    $sortby = \*custnum_sort;
-#    $orderby = "ORDER BY cust_bill.custnum";
-#    #@cust_bill = qsearch('cust_bill', {} );
-#  } elsif ( $query eq 'OPEN_invnum' ) {
-#    $sortby = \*invnum_sort;
-#    $orderby = "ORDER BY cust_bill.invnum";
-#    #@cust_bill = grep $_->owed != 0, qsearch('cust_bill', {} );
-#    push @where, "0 != $owed";
-#  } elsif ( $query eq 'OPEN_date' ) {
-#    $sortby = \*date_sort;
-#    $orderby = "ORDER BY cust_bill._date";
-#    #@cust_bill = grep $_->owed != 0, qsearch('cust_bill', {} );
-#    push @where, "0 != $owed";
-#  } elsif ( $query eq 'OPEN_custnum' ) {
-#    $sortby = \*custnum_sort;
-#    $orderby = "ORDER BY cust_bill.custnum";
-#    #@cust_bill = grep $_->owed != 0, qsearch('cust_bill', {} );
-#    push @where, "0 != $owed";
-#  } elsif ( $query =~ /^OPEN(\d+)_invnum$/ ) {
-#    my $open = $1 * 86400;
-#    $sortby = \*invnum_sort;
-#    $orderby = "ORDER BY cust_bill.invnum";
-#    #@cust_bill =
-#    #  grep $_->owed != 0 && $_->_date < time - $open, qsearch('cust_bill', {} );
-#    push @where, "0 != $owed",
-#                 "cust_bill._date < ". (time-$open);
-#  } elsif ( $query =~ /^OPEN(\d+)_date$/ ) {
-#    my $open = $1 * 86400;
-#    $sortby = \*date_sort;
-#    $orderby = "ORDER BY cust_bill._date";
-#    #@cust_bill =
-#    #  grep $_->owed != 0 && $_->_date < time - $open, qsearch('cust_bill', {} );
-#    push @where, "0 != $owed",
-#                 "cust_bill._date < ". (time-$open);
-#
-#  } elsif ( $query =~ /^OPEN(\d+)_custnum$/ ) {
-#    my $open = $1 * 86400;
-#    $sortby = \*custnum_sort;
-#    $orderby = "ORDER BY cust_bill.custnum";
-#    #@cust_bill =
-#    #  grep $_->owed != 0 && $_->_date < time - $open, qsearch('cust_bill', {} );
-#    push @where, "0 != $owed",
-#                 "cust_bill._date < ". (time-$open);
   } else {
     die "unknown query string $query";
   }
@@ -90,7 +38,6 @@ if ( $cgi->keywords ) {
   my $sth = dbh->prepare($statement) or die dbh->errstr. " doing $statement";
   $sth->execute or die "Error executing \"$statement\": ". $sth->errstr;
 
-  #$total = $sth->fetchrow_arrayref->[0];
   ( $total, $tot_amount, $tot_balance ) = @{$sth->fetchrow_arrayref};
 
   @cust_bill = qsearch(
@@ -103,7 +50,6 @@ if ( $cgi->keywords ) {
   $cgi->param('invnum') =~ /^\s*(FS-)?(\d+)\s*$/;
   my $invnum = $2;
   @cust_bill = qsearchs('cust_bill', { 'invnum' => $invnum } );
-#  $sortby = \*invnum_sort;
   $total = scalar(@cust_bill);
 }
 
@@ -120,7 +66,6 @@ if ( $total == 1 ) {
 %>
 <!-- mason kludge -->
 <%
-  #$total = scalar(@cust_bill);
 
   #begin pager
   my $pager = '';
@@ -166,10 +111,6 @@ if ( $total == 1 ) {
       </TR>
 END
 
-#  my(%saw, $cust_bill);
-#  foreach $cust_bill (
-#    sort $sortby grep(!$saw{$_->invnum}++, @cust_bill)
-#  ) {
   foreach my $cust_bill ( @cust_bill ) {
     my($invnum, $owed, $charged, $date ) = (
       $cust_bill->invnum,
