@@ -720,9 +720,10 @@ sub check {
         or return "Illegal finger: ". $self->getfield('finger');
     $self->setfield('finger', $1);
 
-    $recref->{dir} =~ /^([\/\w\-]*)$/
+    $recref->{dir} =~ /^([\/\w\-\.]*)$/
       or return "Illegal directory";
     $recref->{dir} = $1;
+    return "Illegal directory" if $recref->{dir} =~ /\.\./; #no ..
     unless ( $recref->{dir} ) {
       $recref->{dir} = $dir_prefix . '/';
       if ( $dirhash > 0 ) {
@@ -920,7 +921,7 @@ sub ssh {
 
 =head1 VERSION
 
-$Id: svc_acct.pm,v 1.50 2001-10-02 11:10:19 ivan Exp $
+$Id: svc_acct.pm,v 1.51 2001-10-22 14:48:28 ivan Exp $
 
 =head1 BUGS
 
