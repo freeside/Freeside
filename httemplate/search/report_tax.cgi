@@ -21,7 +21,7 @@ $ending = $1;
 print $cgi->header( '-expires' => '-2m' ),
   header('Tax Report Results');
 
-open (REPORT, "/usr/bin/freeside-tax-report -v -s $beginning -d $ending $user |");
+open (REPORT, "freeside-tax-report -v -s $beginning -d $ending $user |");
 
 print '<PRE>';
 while(<REPORT>) {

@@ -14,7 +14,7 @@ $user = getotaker;
 print $cgi->header( '-expires' => '-2m' ),
   header('Current Receivables Report Results');
 
-open (REPORT, "/usr/bin/freeside-receivables-report -v $user |");
+open (REPORT, "freeside-receivables-report -v $user |");
 
 print '<PRE>';
 while(<REPORT>) {

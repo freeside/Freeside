@@ -21,7 +21,7 @@ $ending = $1;
 print $cgi->header( '-expires' => '-2m' ),
   header('In House Credit Report Results');
 
-open (REPORT, "/usr/bin/freeside-credit-report -v -s $beginning -d $ending $user |");
+open (REPORT, "freeside-credit-report -v -s $beginning -d $ending $user |");
 
 print '<PRE>';
 while(<REPORT>) {
