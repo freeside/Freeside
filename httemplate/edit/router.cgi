@@ -32,6 +32,10 @@ if($cgi->param('error')) {
     Router #<%=$routernum or "(NEW)"%>
 
 <BR><BR>Name <INPUT TYPE="text" NAME="routername" SIZE=32 VALUE="<%=$hashref->{routername}%>">
+
+<BR><BR>
+Custom fields:
+<BR>
 <%=table() %>
 
 <%
