@@ -131,14 +131,18 @@ sub new {
     $self->{'Table'} = shift;
     carp "warning: FS::Record::new called with table name ". $self->{'Table'};
   }
+  
+  $self->{'Hash'} = shift;
 
-  my $hashref = $self->{'Hash'} = shift;
-
-  foreach my $field ( grep !defined($hashref->{$_}), $self->fields ) { 
-    $hashref->{$field}='';
+  foreach my $field ( grep !defined($self->{'Hash'}{$_}), $self->fields ) { 
+    $self->{'Hash'}{$field}='';
   }
 
-  $self->_cache($hashref, shift) if $self->can('_cache') && @_;
+  $self->_rebless if $self->can('_rebless');
+
+  $self->{'modified'} = 0;
+
+  $self->_cache($self->{'Hash'}, shift) if $self->can('_cache') && @_;
 
   $self;
 }
@@ -498,6 +502,7 @@ Sets the value of the column/field/key COLUMN to VALUE.  Returns VALUE.
 
 sub set { 
   my($self,$field,$value) = @_;
+  $self->{'modified'} = 1;
   $self->{'Hash'}->{$field} = $value;
 }
 sub setfield {
@@ -559,13 +564,28 @@ sub hash {
 
 =item hashref
 
-Returns a reference to the column/value hash.
+Returns a reference to the column/value hash.  This may be deprecated in the
+future; if there's a reason you can't just use the autoloaded or get/set
+methods, speak up.
 
 =cut
 
 sub hashref {
   my($self) = @_;
   $self->{'Hash'};
+}
+
+=item modified
+
+Returns true if any of this object's values have been modified with set (or via
+an autoloaded method).  Doesn't yet recognize when you retreive a hashref and
+modify that.
+
+=cut
+
+sub modified {
+  my $self = shift;
+  $self->{'modified'};
 }
 
 =item insert
@@ -1680,6 +1700,8 @@ ut_zip should take an optional country like ut_phone.
 L<DBIx::DBSchema>, L<FS::UID>, L<DBI>
 
 Adapter::DBI from Ch. 11 of Advanced Perl Programming by Sriram Srinivasan.
+
+http://poop.sf.net/
 
 =cut
 

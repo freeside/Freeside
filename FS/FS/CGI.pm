@@ -252,10 +252,11 @@ Returns HTML tag for beginning an (invisible) table.
 sub itable {
   my $col = shift;
   my $cellspacing = shift || 0;
+  my $width = ( scalar(@_) && shift ) ? '' : 'WIDTH="100%"';  #bah
   if ( $col ) {
-    qq!<TABLE BGCOLOR="$col" BORDER=0 CELLSPACING=$cellspacing WIDTH="100%">!;
+    qq!<TABLE BGCOLOR="$col" BORDER=0 CELLSPACING=$cellspacing $width>!;
   } else {
-    qq!<TABLE BORDER=0 CELLSPACING=$cellspacing WIDTH="100%">!;
+    qq!<TABLE BORDER=0 CELLSPACING=$cellspacing $width>!;
   }
 }
 

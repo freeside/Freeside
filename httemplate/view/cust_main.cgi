@@ -411,26 +411,12 @@ foreach my $pkg (sort pkgsort_pkgnum_cancel @$packages) {
   #}
   print "<TD ROWSPAN=$rowspan>". &itable('');
 
-  sub freq {
-
-    #false laziness w/edit/part_pkg.cgi
-    my %freq = ( #move this
-      '1d' => 'daily',
-      '1w' => 'weekly',
-      '2w' => 'biweekly (every 2 weeks)',
-      '1'  => 'monthly',
-      '2'  => 'bimonthly (every 2 months)',
-      '3'  => 'quarterly (every 3 months)',
-      '6'  => 'semiannually (every 6 months)',
-      '12' => 'annually',
-      '24' => 'biannually (every 2 years)',
-    );
-
-    my $freq = shift;
-    exists $freq{$freq} ? $freq{$freq} : "every&nbsp;$freq&nbsp;months";
+  sub myfreq {
+    my $part_pkg = shift;
+    my $freq = $part_pkg->freq_pretty;
+    $freq =~ s/ /&nbsp;/g;
+    $freq;
   }
-
-  #eomove
 
   if ( $pkg->{cancel} ) { #status: cancelled
 
@@ -480,7 +466,7 @@ foreach my $pkg (sort pkgsort_pkgnum_cancel @$packages) {
           print '<TR><TD COLSPAN=2>(&nbsp;'. pkg_cancel_link($pkg).
                 '&nbsp;)</TD</TR>';
         } else {
-          print 'billed&nbsp;'. freq($pkg->{freq}). ')</TD></TR>';
+          print 'billed&nbsp;'. myfreq($pkg->{part_pkg}). ')</TD></TR>';
         }
 
       } else { #setup
@@ -491,7 +477,7 @@ foreach my $pkg (sort pkgsort_pkgnum_cancel @$packages) {
                 pkg_datestr($pkg,'setup',$conf). '</TD></TR>';
         } else {
           print '<TR><TD COLSPAN=2><FONT COLOR="#00CC00"><B>Active</B></FONT>'.
-                ',&nbsp;billed&nbsp;'. freq($pkg->{freq}). '</TD></TR>'.
+                ',&nbsp;billed&nbsp;'. myfreq($pkg->{part_pkg}). '</TD></TR>'.
                 '<TR><TD>Setup&nbsp;</TD><TD>'.
                 pkg_datestr($pkg, 'setup',$conf). '</TD></TR>';
         }
@@ -900,8 +886,13 @@ sub get_packages {
   ) { 
   
     my $part_pkg = $cust_pkg->part_pkg;
-  
+
     my %pkg = ();
+
+    #to get back to the original object... should use it in the first place!!
+    $pkg{cust_pkg} = $cust_pkg;
+    $pkg{part_pkg} = $part_pkg;
+
     $pkg{pkgnum} = $cust_pkg->pkgnum;
     $pkg{pkg} = $part_pkg->pkg;
     $pkg{pkgpart} = $part_pkg->pkgpart;
@@ -913,6 +904,7 @@ sub get_packages {
     $pkg{susp} = $cust_pkg->getfield('susp');
     $pkg{expire} = $cust_pkg->getfield('expire');
     $pkg{cancel} = $cust_pkg->getfield('cancel');
+
   
     my %svcparts = map {
       $_->svcpart => {

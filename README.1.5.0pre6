@@ -31,7 +31,16 @@ alter table h_svc_external alter column id drop not null;
 INSERT INTO msgcat ( msgnum, msgcode, locale, msg ) VALUES ( 20, 'svc_external-id', 'en_US', 'External ID' );
 INSERT INTO msgcat ( msgnum, msgcode, locale, msg ) VALUES ( 21, 'svc_external-title', 'en_US', 'Title' );
 
+CREATE TABLE part_pkg_option (
+  optionnum int primary key,
+  pkgpart int not null,
+  optionname varchar(80) not null,
+  optionvalue text NULL
+);
+CREATE INDEX part_pkg_option1 ON part_pkg_option ( pkgpart );
+CREATE INDEX part_pkg_option2 ON part_pkg_option ( optionname );
+
 dbdef-create username
-create-history-tables username cust_pay_refund cust_pay_void
+create-history-tables username cust_pay_refund cust_pay_void part_pkg_option
 dbdef-create username
 

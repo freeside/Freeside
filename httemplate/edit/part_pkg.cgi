@@ -42,20 +42,24 @@ unless ( $part_pkg->plan ) { #backwards-compat
 $action ||= $part_pkg->pkgpart ? 'Edit' : 'Add';
 my $hashref = $part_pkg->hashref;
 
+%>
 
-print header("$action Package Definition", menubar(
+<%= header("$action Package Definition", menubar(
   'Main Menu' => popurl(2),
   'View all packages' => popurl(2). 'browse/part_pkg.cgi',
-));
-#), ' onLoad="visualize()"');
+)) %>
 
-print qq!<FONT SIZE="+1" COLOR="#ff0000">Error: !, $cgi->param('error'),
-      "</FONT>"
-  if $cgi->param('error');
+<% #), ' onLoad="visualize()"'); %>
 
-#print '<FORM ACTION="', popurl(1), 'process/part_pkg.cgi" METHOD=POST>';
-print '<FORM NAME="dummy">';
+<% if ( $cgi->param('error') ) { %>
+  <FONT SIZE="+1" COLOR="#ff0000">Error: <%= $cgi->param('error') %></FONT>
+<% } %>
 
+<% #print '<FORM ACTION="', popurl(1), 'process/part_pkg.cgi" METHOD=POST>'; %>
+
+<FORM NAME="dummy">
+
+<%
 #if ( $cgi->param('clone') ) {
 #  print qq!<INPUT TYPE="hidden" NAME="clone" VALUE="!, $cgi->param('clone'), qq!">!;
 #}
@@ -64,28 +68,19 @@ print '<FORM NAME="dummy">';
 #}
 #
 #print qq!<INPUT TYPE="hidden" NAME="pkgpart" VALUE="$hashref->{pkgpart}">!,
-print "Package Part #", $hashref->{pkgpart} ? $hashref->{pkgpart} : "(NEW)";
-
-#false laziness w/view/cust_main.cgi
-my %freq;
-tie %freq, 'Tie::IxHash', 
-  '0'  => '(no recurring fee)',
-  '1d' => 'daily',
-  '1w' => 'weekly',
-  '2w' => 'biweekly (every 2 weeks)',
-  '1'  => 'monthly',
-  '2'  => 'bimonthly (every 2 months)',
-  '3'  => 'quarterly (every 3 months)',
-  '6'  => 'semiannually (every 6 months)',
-  '12' => 'annually',
-  '24' => 'biannually (every 2 years)',
-;
-if ( $part_pkg->dbdef_table->column('freq')->type =~ /(int)/i ) {
-  delete $freq{$_} foreach grep { ! /^\d+$/ } keys %freq;
-}
-
 %>
+
+<%= itable('',8,1) %><TR><TD VALIGN="top">
+
+Package information
+
 <%= ntable("#cccccc",2) %>
+  <TR>
+    <TD ALIGN="right">Package Definition #</TD>
+    <TD BGCOLOR="#ffffff">
+      <%= $hashref->{pkgpart} ? $hashref->{pkgpart} : "(NEW)" %>
+    </TD>
+  </TR>
   <TR>
     <TD ALIGN="right">Package (customer-visible)</TD>
     <TD>
@@ -98,16 +93,20 @@ if ( $part_pkg->dbdef_table->column('freq')->type =~ /(int)/i ) {
       <INPUT TYPE="text" NAME="comment" SIZE=32 VALUE="<%=$part_pkg->comment%>">
     </TD>
   </TR>
+
   <TR>
-    <TD ALIGN="right">Recurring fee frequency </TD>
+    <TD ALIGN="right">Disable new orders</TD>
     <TD>
-      <SELECT NAME="freq">
-        <% foreach my $freq ( keys %freq ) { %>
-          <OPTION VALUE="<%= $freq %>"<%= $freq eq $part_pkg->freq ? ' SELECTED' : '' %>><%= $freq{$freq} %>
-        <% } %>
-      </SELECT>
+      <INPUT TYPE="checkbox" NAME="disabled" VALUE="Y"<%= $hashref->{disabled} eq 'Y' ? ' CHECKED' : '' %>
     </TD>
   </TR>
+
+</TABLE>
+
+</TD><TD VALIGN="top">
+
+Tax information
+<%= ntable("#cccccc", 2) %>
   <TR>
     <TD ALIGN="right">Setup fee tax exempt</TD>
     <TD>
@@ -146,11 +145,13 @@ if ( $conf->exists('enable_taxclasses') ) {
     '<INPUT TYPE="hidden" NAME="taxclass" VALUE="'. $hashref->{taxclass}. '">';
 }
 
-print '<TR><TD ALIGN="right">Disable new orders</TD><TD>';
-print '<INPUT TYPE="checkbox" NAME="disabled" VALUE="Y"';
-print ' CHECKED' if $hashref->{disabled} eq "Y";
-print '>';
-print '</TD></TR></TABLE>';
+%>
+
+</TABLE>
+
+</TD></TR></TABLE>
+
+<%
 
 my $thead =  "\n\n". ntable('#cccccc', 2).
              '<TR><TH BGCOLOR="#dcdcdc"><FONT SIZE=-1>Quan.</FONT></TH>';
@@ -162,8 +163,8 @@ $thead .= '<TH BGCOLOR="#dcdcdc">Service</TH></TR>';
 #dunno why...
 unless ( 0 ) {
   #print <<END, $thead;
-  print <<END, itable(), '<TR><TD VALIGN="top">', $thead;
-<BR><BR>Enter the quantity of each service this package includes.<BR><BR>
+  print <<END, itable('', 4, 1), '<TR><TD VALIGN="top">', $thead;
+<BR><BR>Services included
 END
 }
 
@@ -226,294 +227,7 @@ foreach my $f ( qw( clone pkgnum ) ) {
 print '<INPUT TYPE="hidden" NAME="pkgpart" VALUE="'. $part_pkg->pkgpart. '">';
 
 # prolly should be in database
-tie my %plans, 'Tie::IxHash',
-  'flat' => {
-    'name' => 'Flat rate (anniversary billing)',
-    'fields' => {
-      'setup_fee' => { 'name' => 'Setup fee for this package',
-                       'default' => 0,
-                     },
-      'recur_fee' => { 'name' => 'Recurring fee for this package',
-                       'default' => 0,
-                      },
-    },
-    'fieldorder' => [ 'setup_fee', 'recur_fee' ],
-    'setup' => 'what.setup_fee.value',
-    'recur' => 'what.recur_fee.value',
-  },
-
-  'flat_delayed' => {
-    'name' => 'Free for X days, then flat rate (anniversary billing)',
-    'fields' =>  {
-      'free_days' => { 'name' => 'Initial free days',
-                       'default' => 0,
-                     },
-      'setup_fee' => { 'name' => 'Setup fee for this package',
-                       'default' => 0,
-                     },
-      'recur_fee' => { 'name' => 'Recurring fee for this package',
-                       'default' => 0,
-                      },
-    },
-    'fieldorder' => [ 'free_days', 'setup_fee', 'recur_fee' ],
-    'setup' => '\'my $d = $cust_pkg->bill || $time; $d += 86400 * \' + what.free_days.value + \'; $cust_pkg->bill($d); $cust_pkg_mod_flag=1; \' + what.setup_fee.value',
-    'recur' => 'what.recur_fee.value',
-  },
-
-  'prorate' => {
-    'name' => 'First partial month pro-rated, then flat-rate (1st of month billing)',
-    'fields' =>  {
-      'setup_fee' => { 'name' => 'Setup fee for this package',
-                       'default' => 0,
-                     },
-      'recur_fee' => { 'name' => 'Recurring fee for this package',
-                       'default' => 0,
-                      },
-    },
-    'fieldorder' => [ 'setup_fee', 'recur_fee' ],
-    'setup' => 'what.setup_fee.value',
-    'recur' => '\'my $mnow = $sdate; my ($sec,$min,$hour,$mday,$mon,$year) = (localtime($sdate) )[0,1,2,3,4,5]; my $mstart = timelocal(0,0,0,1,$mon,$year); my $mend = timelocal(0,0,0,1, $mon == 11 ? 0 : $mon+1, $year+($mon==11)); $sdate = $mstart; ( $part_pkg->freq - 1 ) * \' + what.recur_fee.value + \' / $part_pkg->freq + \' + what.recur_fee.value + \' / $part_pkg->freq * ($mend-$mnow) / ($mend-$mstart) ; \'',
-  },
-
-  'subscription' => {
-    'name' => 'First partial month full charge, then flat-rate (1st of month billing)',
-    'fields' => {
-      'setup_fee' => { 'name' => 'Setup fee for this package',
-                       'default' => 0,
-                     },
-      'recur_fee' => { 'name' => 'Recurring fee for this package',
-                       'default' => 0,
-                      },
-    },
-    'fieldorder' => [ 'setup_fee', 'recur_fee' ],
-    'setup' => 'what.setup_fee.value',
-    'recur' => '\'my $mnow = $sdate; my ($sec,$min,$hour,$mday,$mon,$year) = (localtime($sdate) )[0,1,2,3,4,5]; $sdate = timelocal(0,0,0,1,$mon,$year); \' + what.recur_fee.value',
-  },
-
-  'flat_comission_cust' => {
-    'name' => 'Flat rate with recurring commission per active customer',
-    'fields' => {
-      'setup_fee' => { 'name' => 'Setup fee for this package',
-                       'default' => 0,
-                     },
-      'recur_fee' => { 'name' => 'Recurring fee for this package',
-                       'default' => 0,
-                     },
-      'comission_amount' => { 'name' => 'Commission amount per month (per active customer)',
-                              'default' => 0,
-                            },
-      'comission_depth'  => { 'name' => 'Number of layers',
-                              'default' => 1,
-                            },
-    },
-    'fieldorder' => [ 'setup_fee', 'recur_fee', 'comission_depth', 'comission_amount' ],
-    'setup' => 'what.setup_fee.value',
-    'recur' => '\'my $error = $cust_pkg->cust_main->credit( \' + what.comission_amount.value + \' * scalar($cust_pkg->cust_main->referral_cust_main_ncancelled(\' + what.comission_depth.value+ \')), "commission" ); die $error if $error; \' + what.recur_fee.value + \';\'',
-  },
-
-  'flat_comission' => {
-    'name' => 'Flat rate with recurring commission per (any) active package',
-    'fields' => {
-      'setup_fee' => { 'name' => 'Setup fee for this package',
-                       'default' => 0,
-                     },
-      'recur_fee' => { 'name' => 'Recurring fee for this package',
-                       'default' => 0,
-                     },
-      'comission_amount' => { 'name' => 'Commission amount per month (per active package)',
-                              'default' => 0,
-                            },
-      'comission_depth'  => { 'name' => 'Number of layers',
-                              'default' => 1,
-                            },
-    },
-    'fieldorder' => [ 'setup_fee', 'recur_fee', 'comission_depth', 'comission_amount' ],
-    'setup' => 'what.setup_fee.value',
-    'recur' => '\'my $error = $cust_pkg->cust_main->credit( \' + what.comission_amount.value + \' * scalar($cust_pkg->cust_main->referral_cust_pkg(\' + what.comission_depth.value+ \')), "commission" ); die $error if $error; \' + what.recur_fee.value + \';\'',
-  },
-
-  'flat_comission_pkg' => {
-    'name' => 'Flat rate with recurring commission per (selected) active package',
-    'fields' => {
-      'setup_fee' => { 'name' => 'Setup fee for this package',
-                       'default' => 0,
-                     },
-      'recur_fee' => { 'name' => 'Recurring fee for this package',
-                       'default' => 0,
-                     },
-      'comission_amount' => { 'name' => 'Commission amount per month (per uncancelled package)',
-                              'default' => 0,
-                            },
-      'comission_depth'  => { 'name' => 'Number of layers',
-                              'default' => 1,
-                            },
-      'comission_pkgpart' => { 'name' => 'Applicable packages<BR><FONT SIZE="-1">(hold <b>ctrl</b> to select multiple packages)</FONT>',
-                               'type' => 'select_multiple',
-                               'select_table' => 'part_pkg',
-                               'select_hash'  => { 'disabled' => '' } ,
-                               'select_key'   => 'pkgpart',
-                               'select_label' => 'pkg',
-                             },
-    },
-    'fieldorder' => [ 'setup_fee', 'recur_fee', 'comission_depth', 'comission_amount', 'comission_pkgpart' ],
-    'setup' => 'what.setup_fee.value',
-    'recur' => '""; var pkgparts = ""; for ( var c=0; c < document.flat_comission_pkg.comission_pkgpart.options.length; c++ ) { if (document.flat_comission_pkg.comission_pkgpart.options[c].selected) { pkgparts = pkgparts + document.flat_comission_pkg.comission_pkgpart.options[c].value + \', \'; } } what.recur.value = \'my $error = $cust_pkg->cust_main->credit( \' + what.comission_amount.value + \' * scalar( grep { my $pkgpart = $_->pkgpart; grep { $_ == $pkgpart } ( \' + pkgparts + \'  ) } $cust_pkg->cust_main->referral_cust_pkg(\' + what.comission_depth.value+ \')), "commission" ); die $error if $error; \' + what.recur_fee.value + \';\'',
-  },
-
-
-
-  'sesmon_hour' => {
-    'name' => 'Base charge plus charge per-hour from the session monitor',
-    'fields' => {
-      'setup_fee' => { 'name' => 'Setup fee for this package',
-                       'default' => 0,
-                     },
-      'recur_flat' => { 'name' => 'Base monthly charge for this package',
-                        'default' => 0,
-                      },
-      'recur_included_hours' => { 'name' => 'Hours included',
-                                  'default' => 0,
-                                },
-      'recur_hourly_charge' => { 'name' => 'Additional charge per hour',
-                                 'default' => 0,
-                               },
-    },
-    'fieldorder' => [ 'setup_fee', 'recur_flat', 'recur_included_hours', 'recur_hourly_charge' ],
-    'setup' => 'what.setup_fee.value',
-    'recur' => '\'my $hours = $cust_pkg->seconds_since($cust_pkg->bill || 0) / 3600 - \' + what.recur_included_hours.value + \'; $hours = 0 if $hours < 0; \' + what.recur_flat.value + \' + \' + what.recur_hourly_charge.value + \' * $hours;\'',
-  },
-
-  'sesmon_minute' => {
-    'name' => 'Base charge plus charge per-minute from the session monitor',
-    'fields' => {
-      'setup_fee' => { 'name' => 'Setup fee for this package',
-                       'default' => 0,
-                     },
-      'recur_flat' => { 'name' => 'Base monthly charge for this package',
-                        'default' => 0,
-                      },
-      'recur_included_min' => { 'name' => 'Minutes included',
-                                'default' => 0,
-                                },
-      'recur_minly_charge' => { 'name' => 'Additional charge per minute',
-                                'default' => 0,
-                              },
-    },
-    'fieldorder' => [ 'setup_fee', 'recur_flat', 'recur_included_min', 'recur_minly_charge' ],
-    'setup' => 'what.setup_fee.value',
-    'recur' => '\'my $min = $cust_pkg->seconds_since($cust_pkg->bill || 0) / 60 - \' + what.recur_included_min.value + \'; $min = 0 if $min < 0; \' + what.recur_flat.value + \' + \' + what.recur_minly_charge.value + \' * $min;\'',
-
-  },
-
-  'sqlradacct_hour' => {
-    'name' => 'Base charge plus charge per-hour (and for data) from an external sqlradius radacct table',
-    'fields' => {
-      'setup_fee' => { 'name' => 'Setup fee for this package',
-                       'default' => 0,
-                     },
-      'recur_flat' => { 'name' => 'Base monthly charge for this package',
-                        'default' => 0,
-                      },
-      'recur_included_hours' => { 'name' => 'Hours included',
-                                  'default' => 0,
-                                },
-      'recur_hourly_charge' => { 'name' => 'Additional charge per hour',
-                                 'default' => 0,
-                               },
-      'recur_included_input' => { 'name' => 'Input megabytes included',
-                                  'default' => 0,
-                                },
-      'recur_input_charge' => { 'name' =>
-                                        'Additional charge per input megabyte',
-                                'default' => 0,
-                              },
-      'recur_included_output' => { 'name' => 'Output megabytes included',
-                                   'default' => 0,
-                                },
-      'recur_output_charge' => { 'name' =>
-                                       'Additional charge per output megabyte',
-                                'default' => 0,
-                              },
-      'recur_included_total' => { 'name' =>
-                                       'Total input+output megabytes included',
-                                  'default' => 0,
-                                },
-      'recur_total_charge' => { 'name' =>
-                                 'Additional charge per input+output megabyte',
-                                'default' => 0,
-                              },
-    },
-    'fieldorder' => [qw( setup_fee recur_flat recur_included_hours recur_hourly_charge recur_included_input recur_input_charge recur_included_output recur_output_charge recur_included_total recur_total_charge )],
-    'setup' => 'what.setup_fee.value',
-    'recur' => '\'my $last_bill = $cust_pkg->last_bill; my $hours = $cust_pkg->seconds_since_sqlradacct($last_bill, $sdate ) / 3600 - \' + what.recur_included_hours.value + \'; $hours = 0 if $hours < 0; my $input = $cust_pkg->attribute_since_sqlradacct($last_bill, $sdate, \"AcctInputOctets\" ) / 1048576; my $output = $cust_pkg->attribute_since_sqlradacct($last_bill, $sdate, \"AcctOutputOctets\" ) / 1048576; my $total = $input + $output - \' + what.recur_included_total.value + \'; $total = 0 if $total < 0; my $input = $input - \' + what.recur_included_input.value + \'; $input = 0 if $input < 0; my $output = $output - \' + what.recur_included_output.value + \'; $output = 0 if $output < 0; my $totalcharge = sprintf(\"%.2f\", \' + what.recur_total_charge.value + \' * $total); my $inputcharge = sprintf(\"%.2f\", \' + what.recur_input_charge.value + \' * $input); my $outputcharge = sprintf(\"%.2f\", \' + what.recur_output_charge.value + \' * $output); my $hourscharge = sprintf(\"%.2f\", \' + what.recur_hourly_charge.value + \' * $hours); if ( \' + what.recur_total_charge.value + \' > 0 ) { push @details, \"Last month\\\'s data \". sprintf(\"%.1f\", $total). \" megs: \\\$$totalcharge\" } if ( \' + what.recur_input_charge.value + \' > 0 ) { push @details, \"Last month\\\'s download \". sprintf(\"%.1f\", $input). \" megs: \\\$$inputcharge\" } if ( \' + what.recur_output_charge.value + \' > 0 ) { push @details, \"Last month\\\'s upload \". sprintf(\"%.1f\", $output). \" megs: \\\$$outputcharge\" } if ( \' + what.recur_hourly_charge.value + \' > 0 ) { push @details, \"Last month\\\'s time \". sprintf(\"%.1f\", $hours). \" hours: \\\$$hourscharge\"; } \' + what.recur_flat.value + \' + $hourscharge + $inputcharge + $outputcharge + $totalcharge ;\'',
-  },
-
-  'sql_generic' => {
-    'name' => 'Base charge plus a metered rate from a configurable SQL query',
-    'fields' => {
-      'setup_fee' => { 'name' => 'Setup fee for this package',
-                       'default' => 0,
-                     },
-      'recur_flat' => { 'name' => 'Base monthly charge for this package',
-                        'default' => 0,
-                      },
-      'recur_included' => { 'name' => 'Units included',
-                            'default' => 0,
-                          },
-      'recur_unit_charge' => { 'name' => 'Additional charge per unit',
-                               'default' => 0,
-                             },
-      'datasrc' => { 'name' => 'DBI data source',
-                     'default' => '',
-                   },
-      'db_username' => { 'name' => 'Database username',
-                         'default' => '',
-                       },
-      'db_password' => { 'name' => 'Database username',
-                         'default' => '',
-                       },
-      'query' => { 'name' => 'SQL query',
-                   'default' => '',
-                 },
-    },
-    'fieldorder' => [qw( setup_fee recur_flat recur_included recur_unit_charge datasrc db_username db_password query )],
-    'setup' => 'what.setup_fee.value',
-   # 'recur' => '\'my $dbh = DBI->connect(\"\' + what.datasrc.value + \'\", \"\' + what.db_username.value + \'\") or die $DBI::errstr; \'',
-   'recur' => '\'my $dbh = DBI->connect(\"\' + what.datasrc.value + \'\", \"\' + what.db_username.value + \'\", \"\' + what.db_password.value + \'\" ) or die $DBI::errstr; my $sth = $dbh->prepare(\"\' + what.query.value + \'\") or die $dbh->errstr; my $units = 0; foreach my $cust_svc ( grep { $_->part_svc->svcdb eq \"svc_domain\" } $cust_pkg->cust_svc ) { my $domain = $cust_svc->svc_x->domain; $sth->execute($domain) or die $sth->errstr; $units += $sth->fetchrow_arrayref->[0]; } $units -= \' + what.recur_included.value + \'; $units = 0 if $units < 0; \' + what.recur_flat.value + \' + $units * \' + what.recur_unit_charge.value + \';\'',
-    #'recur' => '\'my $dbh = DBI->connect("\' + what.datasrc.value + \'", "\' + what.db_username.value + \'", "\' what.db_password.value + \'" ) or die $DBI::errstr; my $sth = $dbh->prepare("\' + what.query.value + \'") or die $dbh->errstr; my $units = 0; foreach my $cust_svc ( grep { $_->part_svc->svcdb eq "svc_domain" } $cust_pkg->cust_svc ) { my $domain = $cust_svc->svc_x->domain; $sth->execute($domain) or die $sth->errstr; $units += $sth->fetchrow_arrayref->[0]; } $units -= \' + what.recur_included.value + \'; $units = 0 if $units < 0; \' + what.recur_flat.value + \' + $units * \' + what.recur_unit_charge + \';\'',
-  },
-
-
-
-  'sql_external' => {
-    'name' => 'Base charge plus additional fees for external services from a configurable SQL query',
-    'fields' => {
-      'setup_fee' => { 'name' => 'Setup fee for this package',
-                       'default' => 0,
-                     },
-      'recur_flat' => { 'name' => 'Base monthly charge for this package',
-                        'default' => 0,
-                      },
-      'datasrc' => { 'name' => 'DBI data source',
-                     'default' => '',
-                   },
-      'db_username' => { 'name' => 'Database username',
-                         'default' => '',
-                       },
-      'db_password' => { 'name' => 'Database password',
-                         'default' => '',
-                       },
-      'query' => { 'name' => 'SQL query',
-                   'default' => '',
-                 },
-    },
-    'fieldorder' => [qw( setup_fee recur_flat datasrc db_username db_password query )],
-    'setup' => 'what.setup_fee.value',
-    'recur' => q!'my $dbh = DBI->connect("' + what.datasrc.value + '", "' + what.db_username.value + '", "' + what.db_password.value + '" ) or die $DBI::errstr; my $sth = $dbh->prepare("' + what.query.value + '") or die $dbh->errstr; my $price = ' + what.recur_flat.value + '; foreach my $cust_svc ( grep { $_->part_svc->svcdb eq "svc_external" } $cust_pkg->cust_svc ){ my $id = $cust_svc->svc_x->id; $sth->execute($id) or die $sth->errstr; $price += $sth->fetchrow_arrayref->[0]; } $price;'!,
-
-  },
-
-;
+tie my %plans, 'Tie::IxHash', %{ FS::part_pkg::plan_info() };
 
 my %plandata = map { /^(\w+)=(.*)$/; ( $1 => $2 ); }
                     split("\n", $part_pkg->plandata );
@@ -532,30 +246,40 @@ if ( dbdef->table('pkg_svc')->column('primary_svc') ) {
   push @form_radio, 'pkg_svc_primary';
 }
 
+tie my %freq, 'Tie::IxHash', %FS::part_pkg::freq;
+if ( $part_pkg->dbdef_table->column('freq')->type =~ /(int)/i ) {
+  delete $freq{$_} foreach grep { ! /^\d+$/ } keys %freq;
+}
+
 my $widget = new HTML::Widgets::SelectLayers(
   'selected_layer' => $part_pkg->plan,
   'options'        => \%options,
   'form_name'      => 'dummy',
   'form_action'    => 'process/part_pkg.cgi',
-  'form_text'      => [ qw(pkg comment freq clone pkgnum pkgpart), @fixups ],
+  'form_text'      => [ qw(pkg comment clone pkgnum pkgpart), @fixups ],
   'form_checkbox'  => [ qw(setuptax recurtax disabled) ],
   'form_radio'     => \@form_radio,
   'form_select'    => \@form_select,
-  'fixup_callback' => sub {
-                        #my $ = @_;
-                        my $html = '';
-                        for my $p ( keys %plans ) {
-                          $html .= "if ( what.plan.value == \"$p\" ) {
-                                      what.setup.value = $plans{$p}->{setup} ;
-                                      what.recur.value = $plans{$p}->{recur} ;
-                                    }\n";
-                        }
-                        $html;
-                      },
   'layer_callback' => sub {
     my $layer = shift;
     my $html = qq!<INPUT TYPE="hidden" NAME="plan" VALUE="$layer">!.
                ntable("#cccccc",2);
+    $html .= '
+      <TR>
+        <TD ALIGN="right">Recurring fee frequency </TD>
+        <TD><SELECT NAME="freq">
+    ';
+
+    my @freq = keys %freq;
+    @freq = grep { /^\d+$/ } @freq
+      if exists($plans{$layer}->{'freq'}) && $plans{$layer}->{'freq'} eq 'm';
+    foreach my $freq ( @freq ) {
+      $html .= qq(<OPTION VALUE="$freq");
+      $html .= ' SELECTED' if $freq eq $part_pkg->freq;
+      $html .= ">$freq{$freq}";
+    }
+    $html .= '</SELECT></TD></TR>';
+
     my $href = $plans{$layer}->{'fields'};
     foreach my $field ( exists($plans{$layer}->{'fieldorder'})
                           ? @{$plans{$layer}->{'fieldorder'}}
@@ -598,22 +322,6 @@ my $widget = new HTML::Widgets::SelectLayers(
              ( $hashref->{pkgpart} ? "Apply changes" : "Add package" ).
              '" onClick="fchanged(this)">';
 
-    $html .= '<BR><BR>don\'t edit this unless you know what you\'re doing '.
-             '<INPUT TYPE="button" VALUE="refresh expressions" '.
-               'onClick="fchanged(this)">'.
-             ntable("#cccccc",2).
-             '<TR><TD>'.
-             '<FONT SIZE="1">Setup expression<BR>'.
-             '<INPUT TYPE="text" NAME="setup" SIZE="160" VALUE="'.
-               encode_entities($hashref->{setup}). '" onLoad="fchanged(this)">'.
-             '</FONT><BR>'.
-             '<FONT SIZE="1">Recurring espression<BR>'.
-             '<INPUT TYPE="text" NAME="recur" SIZE="160" VALUE="'.
-               encode_entities($hashref->{recur}). '" onLoad="fchanged(this)">'.
-             '</FONT>'.
-             '</TR></TD>'.
-             '</TABLE>';
-
     $html;
 
   },
@@ -621,7 +329,6 @@ my $widget = new HTML::Widgets::SelectLayers(
 
 %>
 
-<BR>
-Price plan <%= $widget->html %>
+<BR><BR>Price plan <%= $widget->html %>
   </BODY>
 </HTML>

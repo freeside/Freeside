@@ -502,6 +502,30 @@ sub part_pkg {
     : qsearchs( 'part_pkg', { 'pkgpart' => $self->pkgpart } );
 }
 
+=item calc_setup
+
+Calls the I<calc_setup> of the FS::part_pkg object associated with this billing
+item.
+
+=cut
+
+sub calc_setup {
+  my $self = shift;
+  $self->part_pkg->calc_setup($self, @_);
+}
+
+=item calc_recur
+
+Calls the I<calc_recur> of the FS::part_pkg object associated with this billing
+item.
+
+=cut
+
+sub calc_recur {
+  my $self = shift;
+  $self->part_pkg->calc_recur($self, @_);
+}
+
 =item cust_svc [ SVCPART ]
 
 Returns the services for this package, as FS::cust_svc objects (see

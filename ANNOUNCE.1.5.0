@@ -13,3 +13,10 @@
 - proper payment receipts (not invoice copies)
 - expanded reseller interface
 - RADIUS session viewing
+- modular price plans, rewrote package add/edit page
+- fixed up tax report - should be correct for all edge cases with named taxes,
+  tax classes, etc.
+
+1.5.0pre7:
+- historical late notice viewing in web interface
+

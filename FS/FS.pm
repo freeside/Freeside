@@ -81,23 +81,23 @@ L<FS::part_export> - External provisioning export class
 
 L<FS::part_export_option> - Export option class
 
-L<FS::part_pkg> - Package (billing item) definition class
+L<FS::part_pkg> - Package definition class
 
-L<FS::pkg_svc> - Class linking package (billing item)
-definitions (see L<FS::part_pkg>) with service definitions
-(see L<FS::part_svc>)
+L<FS::part_pkg_option> - Package definition option class
+
+L<FS::pkg_svc> - Class linking package definitions (see L<FS::part_pkg>) with
+service definitions (see L<FS::part_svc>)
 
 L<FS::agent> - Agent (reseller) class
 
 L<FS::agent_type> - Agent type class
 
-L<FS::type_pkgs> - Class linking agent types (see
-L<FS::agent_type>) with package (billing item) definitions
-(see L<FS::part_pkg>)
+L<FS::type_pkgs> - Class linking agent types (see L<FS::agent_type>) with
+package definitions (see L<FS::part_pkg>)
 
 L<FS::cust_svc> - Service class
 
-L<FS::cust_pkg> - Package (billing item) class
+L<FS::cust_pkg> - Customer package class
 
 L<FS::cust_main> - Customer class
 

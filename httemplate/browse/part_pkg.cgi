@@ -89,60 +89,59 @@ my $taxclasses = $conf->exists('enable_taxclasses');
 
 <%
 foreach my $part_pkg ( sort $sortby @part_pkg ) {
-  my($hashref)=$part_pkg->hashref;
   my(@pkg_svc)=grep $_->getfield('quantity'),
-    qsearch('pkg_svc',{'pkgpart'=> $hashref->{pkgpart} });
+    qsearch( 'pkg_svc', { 'pkgpart' => $part_pkg->pkgpart } );
   my($rowspan)=scalar(@pkg_svc);
   my $plandata;
-  if ( $hashref->{plan} ) {
-    $plandata = $hashref->{plandata};
+  if ( $part_pkg->plan ) {
+    $plandata = $part_pkg->plandata;
     $plandata =~ s/^(\w+)=/$1&nbsp;/mg;
     $plandata =~ s/\n/<BR>/g;
   } else {
-    $hashref->{plan} = "(legacy)";
-    $plandata = "Setup&nbsp;". $hashref->{setup}.
-                "<BR>Recur&nbsp;". $hashref->{recur};
+    $part_pkg->plan('(legacy)');
+    $plandata = "Setup&nbsp;". $part_pkg->setup.
+                "<BR>Recur&nbsp;". $part_pkg->recur;
   }
 %>
       <TR>
-        <TD ROWSPAN=<%= $rowspan %>><A HREF="<%=$p%>edit/part_pkg.cgi?<%= $hashref->{pkgpart} %>"><%= $hashref->{pkgpart} %></A></TD>
+        <TD ROWSPAN=<%= $rowspan %>><A HREF="<%=$p%>edit/part_pkg.cgi?<%= $part_pkg->pkgpart %>"><%= $part_pkg->pkgpart %></A></TD>
 
 <% unless ( $cgi->param('showdisabled') ) { %>
         <TD ROWSPAN=<%= $rowspan %>>
-   <% if ( $hashref->{disabled} ) { %>
+   <% if ( $part_pkg->disabled ) { %>
           DISABLED
    <% } %>
         </TD>
 <% } %>
 
-        <TD ROWSPAN=<%= $rowspan %>><A HREF="<%=$p%>edit/part_pkg.cgi?<%= $hashref->{pkgpart} %>"><%= $hashref->{pkg} %></A></TD>
-        <TD ROWSPAN=<%= $rowspan %>><%= $hashref->{comment} %></TD>
+        <TD ROWSPAN=<%= $rowspan %>><A HREF="<%=$p%>edit/part_pkg.cgi?<%= $part_pkg->pkgpart %>"><%= $part_pkg->pkg %></A></TD>
+        <TD ROWSPAN=<%= $rowspan %>><%= $part_pkg->comment %></TD>
 
 <% if ( $cgi->param('active') ) { %>
         <TD ROWSPAN=<%= $rowspan %>>
-          <FONT COLOR="#00CC00"><B><%= $num_active_cust_pkg{$hashref->{'pkgpart'}} %></B></FONT>&nbsp;<A HREF="<%=$p%>search/cust_pkg.cgi?magic=active;pkgpart=<%= $hashref->{pkgpart} %>">active</A><BR>
+          <FONT COLOR="#00CC00"><B><%= $num_active_cust_pkg{$part_pkg->pkgpart} %></B></FONT>&nbsp;<A HREF="<%=$p%>search/cust_pkg.cgi?magic=active;pkgpart=<%= $part_pkg->pkgpart %>">active</A><BR>
 
    <% $suspended_sth->execute( $part_pkg->pkgpart )
         or die $suspended_sth->errstr;
       my $num_suspended = $suspended_sth->fetchrow_arrayref->[0];
    %>
-          <FONT COLOR="#FF9900"><B><%= $num_suspended %></B></FONT>&nbsp;<A HREF="<%=$p%>search/cust_pkg.cgi?magic=suspended;pkgpart=<%= $hashref->{pkgpart} %>">suspended</A><BR>
+          <FONT COLOR="#FF9900"><B><%= $num_suspended %></B></FONT>&nbsp;<A HREF="<%=$p%>search/cust_pkg.cgi?magic=suspended;pkgpart=<%= $part_pkg->pkgpart %>">suspended</A><BR>
 
    <% $canceled_sth->execute( $part_pkg->pkgpart )
         or die $canceled_sth->errstr;
       my $num_canceled = $canceled_sth->fetchrow_arrayref->[0];
    %>
-          <FONT COLOR="#FF0000"><B><%= $num_canceled %></B></FONT>&nbsp;<A HREF="<%=$p%>search/cust_pkg.cgi?magic=canceled;pkgpart=<%= $hashref->{pkgpart} %>">canceled</A>
+          <FONT COLOR="#FF0000"><B><%= $num_canceled %></B></FONT>&nbsp;<A HREF="<%=$p%>search/cust_pkg.cgi?magic=canceled;pkgpart=<%= $part_pkg->pkgpart %>">canceled</A>
         </TD>
 <% } %>
 
-        <TD ROWSPAN=<%= $rowspan %>><%= $hashref->{freq} %></TD>
+        <TD ROWSPAN=<%= $rowspan %>><%= $part_pkg->freq_pretty %></TD>
 
 <% if ( $taxclasses ) { %>
-	<TD ROWSPAN=<%= $rowspan %>><%= $hashref->{taxclass} || '&nbsp;' %></TD>
+	<TD ROWSPAN=<%= $rowspan %>><%= $part_pkg->taxclass || '&nbsp;' %></TD>
 <% } %>
 
-        <TD ROWSPAN=<%= $rowspan %>><%= $hashref->{plan} %></TD>
+        <TD ROWSPAN=<%= $rowspan %>><%= $part_pkg->plan %></TD>
         <TD ROWSPAN=<%= $rowspan %>><%= $plandata %></TD>
 
 <%

@@ -377,16 +377,15 @@ sub option {
   $part_export_option ? $part_export_option->optionvalue : '';
 }
 
-=item rebless
+=item _rebless
 
 Reblesses the object into the FS::part_export::EXPORTTYPE class, where
 EXPORTTYPE is the object's I<exporttype> field.  There should be better docs
-on how to create new exports (and they should live in their own files and be
-autoloaded-on-demand), but until then, see L</NEW EXPORT CLASSES>.
+on how to create new exports, but until then, see L</NEW EXPORT CLASSES>.
 
 =cut
 
-sub rebless {
+sub _rebless {
   my $self = shift;
   my $exporttype = $self->exporttype;
   my $class = ref($self). "::$exporttype";
@@ -395,13 +394,15 @@ sub rebless {
   bless($self, $class);
 }
 
+#these should probably all go away, just let the subclasses define em
+
 =item export_insert SVC_OBJECT
 
 =cut
 
 sub export_insert {
   my $self = shift;
-  $self->rebless;
+  #$self->rebless;
   $self->_export_insert(@_);
 }
 
@@ -420,7 +421,7 @@ sub export_insert {
 
 sub export_replace {
   my $self = shift;
-  $self->rebless;
+  #$self->rebless;
   $self->_export_replace(@_);
 }
 
@@ -430,7 +431,7 @@ sub export_replace {
 
 sub export_delete {
   my $self = shift;
-  $self->rebless;
+  #$self->rebless;
   $self->_export_delete(@_);
 }
 
@@ -440,7 +441,7 @@ sub export_delete {
 
 sub export_suspend {
   my $self = shift;
-  $self->rebless;
+  #$self->rebless;
   $self->_export_suspend(@_);
 }
 
@@ -450,7 +451,7 @@ sub export_suspend {
 
 sub export_unsuspend {
   my $self = shift;
-  $self->rebless;
+  #$self->rebless;
   $self->_export_unsuspend(@_);
 }
 

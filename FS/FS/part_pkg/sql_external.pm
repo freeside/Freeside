@@ -1,0 +1,68 @@
+package FS::part_pkg::sql_external;
+
+use strict;
+use vars qw(@ISA %info);
+use DBI;
+#use FS::Record qw(qsearch qsearchs);
+use FS::part_pkg;
+
+@ISA = qw(FS::part_pkg);
+
+%info = (
+    'name' => 'Base charge plus additional fees for external services from a configurable SQL query',
+    'fields' => {
+      'setup_fee' => { 'name' => 'Setup fee for this package',
+                       'default' => 0,
+                     },
+      'recur_flat' => { 'name' => 'Base monthly charge for this package',
+                        'default' => 0,
+                      },
+      'datasrc' => { 'name' => 'DBI data source',
+                     'default' => '',
+                   },
+      'db_username' => { 'name' => 'Database username',
+                         'default' => '',
+                       },
+      'db_password' => { 'name' => 'Database password',
+                         'default' => '',
+                       },
+      'query' => { 'name' => 'SQL query',
+                   'default' => '',
+                 },
+    },
+    'fieldorder' => [qw( setup_fee recur_flat datasrc db_username db_password query )],
+    #'setup' => 'what.setup_fee.value',
+    #'recur' => q!'my $dbh = DBI->connect("' + what.datasrc.value + '", "' + what.db_username.value + '", "' + what.db_password.value + '" ) or die $DBI::errstr; my $sth = $dbh->prepare("' + what.query.value + '") or die $dbh->errstr; my $price = ' + what.recur_flat.value + '; foreach my $cust_svc ( grep { $_->part_svc->svcdb eq "svc_external" } $cust_pkg->cust_svc ){ my $id = $cust_svc->svc_x->id; $sth->execute($id) or die $sth->errstr; $price += $sth->fetchrow_arrayref->[0]; } $price;'!,
+    'weight' => '72',
+);
+
+sub calc_setup {
+  my($self, $cust_pkg ) = @_;
+  $self->option('setup_fee');
+}
+
+sub calc_recur {
+  my($self, $cust_pkg ) = @_;
+
+  my $dbh = DBI->connect( map { $self->option($_) }
+                              qw( datasrc db_username db_password )
+                        )
+    or die $DBI::errstr;
+
+  my $sth = $dbh->prepare( $self->option('query') )
+    or die $dbh->errstr;
+
+  my $price = $self->option('recur_flat');
+
+  foreach my $cust_svc (
+    grep { $_->part_svc->svcdb eq "svc_external" } $cust_pkg->cust_svc
+  ) {
+    my $id = $cust_svc->svc_x->id;
+    $sth->execute($id) or die $sth->errstr;
+    $price += $sth->fetchrow_arrayref->[0];
+  }
+
+  $price;
+}
+
+1;

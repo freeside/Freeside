@@ -1148,7 +1148,17 @@ sub tables_hash_hack {
       'index' => [ ['paynum'], ['refundnum'] ],
     },
 
-
+    'part_pkg_option' => {
+      'columns' => [
+        'optionnum', 'serial', '', '',
+        'pkgpart', 'int', '', '',
+        'optionname', 'varchar', '', $char_d,
+        'optionvalue', 'text', 'NULL', '',
+      ],
+      'primary_key' => 'optionnum',
+      'unique'      => [],
+      'index'       => [ [ 'pkgpart' ], [ 'optionname' ] ],
+    },
 
   );
 

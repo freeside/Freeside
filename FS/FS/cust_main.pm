@@ -9,7 +9,8 @@ BEGIN {
   eval "use Time::Local;";
   die "Time::Local minimum version 1.05 required with Perl versions before 5.6"
     if $] < 5.006 && !defined($Time::Local::VERSION);
-  eval "use Time::Local qw(timelocal timelocal_nocheck);";
+  #eval "use Time::Local qw(timelocal timelocal_nocheck);";
+  eval "use Time::Local qw(timelocal_nocheck);";
 }
 use Date::Format;
 #use Date::Manip;
@@ -1116,6 +1117,8 @@ If there is an error, returns the error, otherwise returns false.
 
 sub bill {
   my( $self, %options ) = @_;
+  warn "bill customer ". $self->custnum if $DEBUG;
+
   my $time = $options{'time'} || time;
 
   my $error;
@@ -1153,14 +1156,14 @@ sub bill {
     #NO!! next if $cust_pkg->cancel;  
     next if $cust_pkg->getfield('cancel');  
 
+    warn "  bill package ". $cust_pkg->pkgnum if $DEBUG;
+
     #? to avoid use of uninitialized value errors... ?
     $cust_pkg->setfield('bill', '')
       unless defined($cust_pkg->bill);
  
     my $part_pkg = $cust_pkg->part_pkg;
 
-    #so we don't modify cust_pkg record unnecessarily
-    my $cust_pkg_mod_flag = 0;
     my %hash = $cust_pkg->hash;
     my $old_cust_pkg = new FS::cust_pkg \%hash;
 
@@ -1169,27 +1172,16 @@ sub bill {
     # bill setup
     my $setup = 0;
     if ( !$cust_pkg->setup || $options{'resetup'} ) {
-      my $setup_prog = $part_pkg->getfield('setup');
-      $setup_prog =~ /^(.*)$/ or do {
-        $dbh->rollback if $oldAutoCommit;
-        return "Illegal setup for pkgpart ". $part_pkg->pkgpart.
-               ": $setup_prog";
-      };
-      $setup_prog = $1;
-      $setup_prog = '0' if $setup_prog =~ /^\s*$/;
+    
+      warn "    bill setup" if $DEBUG;
 
-        #my $cpt = new Safe;
-        ##$cpt->permit(); #what is necessary?
-        #$cpt->share(qw( $cust_pkg )); #can $cpt now use $cust_pkg methods?
-        #$setup = $cpt->reval($setup_prog);
-      $setup = eval $setup_prog;
-      unless ( defined($setup) ) {
+      $setup = eval { $cust_pkg->calc_setup( $time ) };
+      if ( $@ ) {
         $dbh->rollback if $oldAutoCommit;
-        return "Error eval-ing part_pkg->setup pkgpart ". $part_pkg->pkgpart.
-               "(expression $setup_prog): $@";
+        return $@;
       }
+
       $cust_pkg->setfield('setup', $time) unless $cust_pkg->setup;
-      $cust_pkg_mod_flag=1; 
     }
 
     #bill recurring fee
@@ -1199,28 +1191,18 @@ sub bill {
          ! $cust_pkg->getfield('susp') &&
          ( $cust_pkg->getfield('bill') || 0 ) <= $time
     ) {
-      my $recur_prog = $part_pkg->getfield('recur');
-      $recur_prog =~ /^(.*)$/ or do {
-        $dbh->rollback if $oldAutoCommit;
-        return "Illegal recur for pkgpart ". $part_pkg->pkgpart.
-               ": $recur_prog";
-      };
-      $recur_prog = $1;
-      $recur_prog = '0' if $recur_prog =~ /^\s*$/;
 
-      # shared with $recur_prog
+      warn "    bill recur" if $DEBUG;
+
+      # XXX shared with $recur_prog
       $sdate = $cust_pkg->bill || $cust_pkg->setup || $time;
 
-        #my $cpt = new Safe;
-        ##$cpt->permit(); #what is necessary?
-        #$cpt->share(qw( $cust_pkg )); #can $cpt now use $cust_pkg methods?
-        #$recur = $cpt->reval($recur_prog);
-      $recur = eval $recur_prog;
-      unless ( defined($recur) ) {
+      $recur = eval { $cust_pkg->calc_recur( \$sdate, \@details ) };
+      if ( $@ ) {
         $dbh->rollback if $oldAutoCommit;
-        return "Error eval-ing part_pkg->recur pkgpart ".  $part_pkg->pkgpart.
-               "(expression $recur_prog): $@";
+        return $@;
       }
+
       #change this bit to use Date::Manip? CAREFUL with timezones (see
       # mailing list archive)
       my ($sec,$min,$hour,$mday,$mon,$year) =
@@ -1248,19 +1230,22 @@ sub bill {
       }
       $cust_pkg->setfield('bill',
         timelocal_nocheck($sec,$min,$hour,$mday,$mon,$year));
-      $cust_pkg_mod_flag = 1; 
     }
 
     warn "\$setup is undefined" unless defined($setup);
     warn "\$recur is undefined" unless defined($recur);
     warn "\$cust_pkg->bill is undefined" unless defined($cust_pkg->bill);
 
-    if ( $cust_pkg_mod_flag ) {
+    if ( $cust_pkg->modified ) {
+
+      warn "  package ". $cust_pkg->pkgnum. " modified; updating\n" if $DEBUG;
+
       $error=$cust_pkg->replace($old_cust_pkg);
       if ( $error ) { #just in case
         $dbh->rollback if $oldAutoCommit;
         return "Error modifying pkgnum ". $cust_pkg->pkgnum. ": $error";
       }
+
       $setup = sprintf( "%.2f", $setup );
       $recur = sprintf( "%.2f", $recur );
       if ( $setup < 0 && ! $conf->exists('allow_negative_charges') ) {
@@ -1272,6 +1257,8 @@ sub bill {
         return "negative recur $recur for pkgnum ". $cust_pkg->pkgnum;
       }
       if ( $setup != 0 || $recur != 0 ) {
+        warn "    charges (setup=$setup, recur=$recur); queueing line items\n"
+          if $DEBUG;
         my $cust_bill_pkg = new FS::cust_bill_pkg ({
           'pkgnum'  => $cust_pkg->pkgnum,
           'setup'   => $setup,
@@ -1391,7 +1378,7 @@ sub bill {
 
       } #if $setup != 0 || $recur != 0
       
-    } #if $cust_pkg_mod_flag
+    } #if $cust_pkg->modified
 
   } #foreach my $cust_pkg
 
@@ -1538,7 +1525,7 @@ sub collect {
   $self->select_for_update; #mutex
 
   my $balance = $self->balance;
-  warn "collect customer". $self->custnum. ": balance $balance" if $DEBUG;
+  warn "collect customer ". $self->custnum. ": balance $balance" if $DEBUG;
   unless ( $balance > 0 ) { #redundant?????
     $dbh->rollback if $oldAutoCommit; #hmm
     return '';
@@ -2690,9 +2677,11 @@ sub charge {
   my $part_pkg = new FS::part_pkg ( {
     'pkg'      => $pkg,
     'comment'  => $comment,
-    'setup'    => $amount,
+    #'setup'    => $amount,
+    #'recur'    => '0',
+    'plan'     => 'flat',
+    'plandata' => "setup_fee=$amount",
     'freq'     => 0,
-    'recur'    => '0',
     'disabled' => 'Y',
     'taxclass' => $taxclass,
   } );

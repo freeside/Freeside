@@ -181,6 +181,15 @@ CREATE TABLE cust_pay_void (
 );
 CREATE INDEX cust_pay_void1 ON cust_pay_void(custnum);
 
+CREATE TABLE part_pkg_option (
+  optionnum int primary key,
+  pkgpart int not null,
+  optionname varchar(80) not null,
+  optionvalue text NULL
+);
+CREATE INDEX part_pkg_option1 ON part_export_option ( pkgpart );
+CREATE INDEX part_pkg_option2 ON part_export_option ( optionname );
+
 DROP INDEX cust_bill_pkg1;
 
 ALTER TABLE cust_bill_pkg ADD itemdesc varchar(80) NULL;

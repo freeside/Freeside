@@ -1,14 +1,19 @@
 package FS::part_pkg;
 
 use strict;
-use vars qw( @ISA );
-use FS::Record qw( qsearch dbh dbdef );
+use vars qw( @ISA %freq %plans $DEBUG );
+use Carp;
+use Tie::IxHash;
+use FS::Conf;
+use FS::Record qw( qsearch qsearchs dbh dbdef );
 use FS::pkg_svc;
 use FS::agent_type;
 use FS::type_pkgs;
-use FS::Conf;
+use FS::part_pkg_option;
 
 @ISA = qw( FS::Record );
+
+$DEBUG = 0;
 
 =head1 NAME
 
@@ -38,39 +43,36 @@ FS::part_pkg - Object methods for part_pkg objects
 
 =head1 DESCRIPTION
 
-An FS::part_pkg object represents a billing item definition.  FS::part_pkg
+An FS::part_pkg object represents a package definition.  FS::part_pkg
 inherits from FS::Record.  The following fields are currently supported:
 
 =over 4
 
-=item pkgpart - primary key (assigned automatically for new billing item definitions)
+=item pkgpart - primary key (assigned automatically for new package definitions)
 
-=item pkg - Text name of this billing item definition (customer-viewable)
+=item pkg - Text name of this package definition (customer-viewable)
 
-=item comment - Text name of this billing item definition (non-customer-viewable)
+=item comment - Text name of this package definition (non-customer-viewable)
 
-=item setup - Setup fee expression
+=item setup - Setup fee expression (deprecated)
 
 =item freq - Frequency of recurring fee
 
-=item recur - Recurring fee expression
+=item recur - Recurring fee expression (deprecated)
 
 =item setuptax - Setup fee tax exempt flag, empty or `Y'
 
 =item recurtax - Recurring fee tax exempt flag, empty or `Y'
 
-=item taxclass - Tax class flag
+=item taxclass - Tax class 
 
 =item plan - Price plan
 
-=item plandata - Price plan data
+=item plandata - Price plan data (deprecated - see L<FS::part_pkg_option> instead)
 
 =item disabled - Disabled flag, empty or `Y'
 
 =back
-
-setup and recur are evaluated as Safe perl expressions.  You can use numbers
-just as you would normally.  More advanced semantics are not yet defined.
 
 =head1 METHODS
 
@@ -78,7 +80,7 @@ just as you would normally.  More advanced semantics are not yet defined.
 
 =item new HASHREF
 
-Creates a new billing item definition.  To add the billing item definition to
+Creates a new package definition.  To add the package definition to
 the database, see L<"insert">.
 
 =cut
@@ -87,9 +89,9 @@ sub table { 'part_pkg'; }
 
 =item clone
 
-An alternate constructor.  Creates a new billing item definition by duplicating
+An alternate constructor.  Creates a new package definition by duplicating
 an existing definition.  A new pkgpart is assigned and `(CUSTOM) ' is prepended
-to the comment field.  To add the billing item definition to the database, see
+to the comment field.  To add the package definition to the database, see
 L<"insert">.
 
 =cut
@@ -107,13 +109,14 @@ sub clone {
 
 =item insert
 
-Adds this billing item definition to the database.  If there is an error,
+Adds this package definition to the database.  If there is an error,
 returns the error, otherwise returns false.
 
 =cut
 
 sub insert {
   my $self = shift;
+  warn "FS::part_pkg::insert called on $self" if $DEBUG;
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -126,15 +129,43 @@ sub insert {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
+  warn "  saving legacy plandata" if $DEBUG;
+  my $plandata = $self->get('plandata');
+  $self->set('plandata', '');
+
+  warn "  inserting part_pkg record" if $DEBUG;
   my $error = $self->SUPER::insert;
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
   }
 
-  my $conf = new FS::Conf;
+  if ( $plandata ) {
+  warn "  inserting part_pkg_option records for plandata" if $DEBUG;
+    foreach my $part_pkg_option ( 
+      map { /^(\w+)=(.*)$/ or do { $dbh->rollback if $oldAutoCommit;
+                                   return "illegal plandata: $plandata";
+                                 };
+            new FS::part_pkg_option {
+              'pkgpart'     => $self->pkgpart,
+              'optionname'  => $1,
+              'optionvalue' => $2,
+            };
+          }
+      split("\n", $plandata)
+    ) {
+      my $error = $part_pkg_option->insert;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
+      }
+    }
+  }
 
+  my $conf = new FS::Conf;
   if ( $conf->exists('agent_defaultpkg') ) {
+    warn "  agent_defaultpkg set; allowing all agents to purchase package"
+      if $DEBUG;
     foreach my $agent_type ( qsearch('agent_type', {} ) ) {
       my $type_pkgs = new FS::type_pkgs({
         'typenum' => $agent_type->typenum,
@@ -148,6 +179,7 @@ sub insert {
     }
   }
 
+  warn "  commiting transaction" if $DEBUG;
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
   '';
@@ -169,9 +201,65 @@ sub delete {
 Replaces OLD_RECORD with this one in the database.  If there is an error,
 returns the error, otherwise returns false.
 
+=cut
+
+sub replace {
+  my( $new, $old ) = ( shift, shift );
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $plandata = $new->get('plandata');
+  $new->set('plandata', '');
+
+  foreach my $part_pkg_option ( $old->part_pkg_option ) {
+    my $error = $part_pkg_option->delete;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
+  my $error = $new->SUPER::replace($old);
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  foreach my $part_pkg_option ( 
+    map { /^(\w+)=(.*)$/ or do { $dbh->rollback if $oldAutoCommit;
+                                 return "illegal plandata: $plandata";
+                               };
+          new FS::part_pkg_option {
+            'pkgpart'     => $new->pkgpart,
+            'optionname'  => $1,
+            'optionvalue' => $2,
+          };
+        }
+    split("\n", $plandata)
+  ) {
+    my $error = $part_pkg_option->insert;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  '';
+}
+
 =item check
 
-Checks all fields to make sure this is a valid billing item definition.  If
+Checks all fields to make sure this is a valid package definition.  If
 there is an error, returns the error, otherwise returns false.  Called by the
 insert and replace methods.
 
@@ -179,54 +267,13 @@ insert and replace methods.
 
 sub check {
   my $self = shift;
+  warn "FS::part_pkg::check called on $self" if $DEBUG;
 
-  for (qw(setup recur)) { $self->set($_=>0) if $self->get($_) =~ /^\s*$/; }
-
-  my $conf = new FS::Conf;
-  if ( $conf->exists('safe-part_pkg') ) {
-
-    my $error = $self->ut_anything('setup')
-                || $self->ut_anything('recur');
-    return $error if $error;
-
-    my $s = $self->setup;
-
-    $s =~ /^\s*\d*\.?\d*\s*$/
-
-      or $s =~ /^my \$d = \$cust_pkg->bill || \$time; \$d += 86400 \* \s*\d+\s*; \$cust_pkg->bill\(\$d\); \$cust_pkg_mod_flag=1; \s*\d*\.?\d*\s*$/
-
-      or do {
-        #log!
-        return "illegal setup: $s";
-      };
-
-    my $r = $self->recur;
-
-    $r =~ /^\s*\d*\.?\d*\s*$/
-
-      #or $r =~ /^\$sdate += 86400 \* \s*\d+\s*; \s*\d*\.?\d*\s*$/
-
-      or $r =~ /^my \$mnow = \$sdate; my \(\$sec,\$min,\$hour,\$mday,\$mon,\$year\) = \(localtime\(\$sdate\) \)\[0,1,2,3,4,5\]; my \$mstart = timelocal\(0,0,0,1,\$mon,\$year\); my \$mend = timelocal\(0,0,0,1, \$mon == 11 \? 0 : \$mon\+1, \$year\+\(\$mon==11\)\); \$sdate = \$mstart; \( \$part_pkg->freq \- 1 \) \* \d*\.?\d* \/ \$part_pkg\-\>freq \+ \d*\.?\d* \/ \$part_pkg\-\>freq \* \(\$mend\-\$mnow\) \/ \(\$mend\-\$mstart\) ;\s*$/
-
-      or $r =~ /^my \$mnow = \$sdate; my \(\$sec,\$min,\$hour,\$mday,\$mon,\$year\) = \(localtime\(\$sdate\) \)\[0,1,2,3,4,5\]; \$sdate = timelocal\(0,0,0,1,\$mon,\$year\); \s*\d*\.?\d*\s*;\s*$/
-
-      or $r =~ /^my \$error = \$cust_pkg\->cust_main\->credit\( \s*\d*\.?\d*\s* \* scalar\(\$cust_pkg\->cust_main\->referral_cust_main_ncancelled\(\s*\d+\s*\)\), "commission" \); die \$error if \$error; \s*\d*\.?\d*\s*;\s*$/
-
-      or $r =~ /^my \$error = \$cust_pkg\->cust_main\->credit\( \s*\d*\.?\d*\s* \* scalar\(\$cust_pkg\->cust_main->referral_cust_pkg\(\s*\d+\s*\)\), "commission" \); die \$error if \$error; \s*\d*\.?\d*\s*;\s*$/
-
-      or $r =~ /^my \$error = \$cust_pkg\->cust_main\->credit\( \s*\d*\.?\d*\s* \* scalar\( grep \{ my \$pkgpart = \$_\->pkgpart; grep \{ \$_ == \$pkgpart \} \(\s*(\s*\d+,\s*)*\s*\) \} \$cust_pkg\->cust_main->referral_cust_pkg\(\s*\d+\s*\)\), "commission" \); die \$error if \$error; \s*\d*\.?\d*\s*;\s*$/
-
-      or $r =~ /^my \$hours = \$cust_pkg\->seconds_since\(\$cust_pkg\->bill \|\| 0\) \/ 3600 \- \s*\d*\.?\d*\s*; \$hours = 0 if \$hours < 0; \s*\d*\.?\d*\s* \+ \s*\d*\.?\d*\s* \* \$hours;\s*$/
-
-      or $r =~ /^my \$min = \$cust_pkg\->seconds_since\(\$cust_pkg\->bill \|\| 0\) \/ 60 \- \s*\d*\.?\d*\s*; \$min = 0 if \$min < 0; \s*\d*\.?\d*\s* \+ \s*\d*\.?\d*\s* \* \$min;\s*$/
-
-      or $r =~ /^my \$last_bill = \$cust_pkg\->last_bill; my \$hours = \$cust_pkg\->seconds_since_sqlradacct\(\$last_bill, \$sdate \) \/ 3600 - \s*\d\.?\d*\s*; \$hours = 0 if \$hours < 0; my \$input = \$cust_pkg\->attribute_since_sqlradacct\(\$last_bill, \$sdate, "AcctInputOctets" \) \/ 1048576; my \$output = \$cust_pkg\->attribute_since_sqlradacct\(\$last_bill, \$sdate, "AcctOutputOctets" \) \/ 1048576; my \$total = \$input \+ \$output \- \s*\d\.?\d*\s*; \$total = 0 if \$total < 0; my \$input = \$input - \s*\d\.?\d*\s*; \$input = 0 if \$input < 0; my \$output = \$output - \s*\d\.?\d*\s*; \$output = 0 if \$output < 0; \s*\d\.?\d*\s* \+ \s*\d\.?\d*\s* \* \$hours \+ \s*\d\.?\d*\s* \* \$input \+ \s*\d\.?\d*\s* \* \$output \+ \s*\d\.?\d*\s* \* \$total *;\s*$/
-
-      or do {
-        #log!
-        return "illegal recur: $r";
-      };
-
+  for (qw(setup recur plandata)) {
+    #$self->set($_=>0) if $self->get($_) =~ /^\s*$/; }
+    return "Use of $_ field is deprecated; set a plan and options"
+      if length($self->get($_));
+    $self->set($_, '');
   }
 
   if ( $self->dbdef_table->column('freq')->type =~ /(int)/i ) {
@@ -238,19 +285,22 @@ sub check {
     $self->freq($1);
   }
 
-    $self->ut_numbern('pkgpart')
-      || $self->ut_text('pkg')
-      || $self->ut_text('comment')
-      || $self->ut_anything('setup')
-      || $self->ut_anything('recur')
-      || $self->ut_alphan('plan')
-      || $self->ut_anything('plandata')
-      || $self->ut_enum('setuptax', [ '', 'Y' ] )
-      || $self->ut_enum('recurtax', [ '', 'Y' ] )
-      || $self->ut_textn('taxclass')
-      || $self->ut_enum('disabled', [ '', 'Y' ] )
-      || $self->SUPER::check
-    ;
+  my $error = $self->ut_numbern('pkgpart')
+    || $self->ut_text('pkg')
+    || $self->ut_text('comment')
+    || $self->ut_alphan('plan')
+    || $self->ut_enum('setuptax', [ '', 'Y' ] )
+    || $self->ut_enum('recurtax', [ '', 'Y' ] )
+    || $self->ut_textn('taxclass')
+    || $self->ut_enum('disabled', [ '', 'Y' ] )
+    || $self->SUPER::check
+  ;
+  return $error if $error;
+
+  return 'Unknown plan '. $self->plan
+    unless exists($plans{$self->plan});
+
+  '';
 }
 
 =item pkg_svc
@@ -270,7 +320,7 @@ sub pkg_svc {
 =item svcpart [ SVCDB ]
 
 Returns the svcpart of the primary service definition (see L<FS::part_svc>)
-associated with this billing item definition (see L<FS::pkg_svc>).  Returns
+associated with this package definition (see L<FS::pkg_svc>).  Returns
 false if there not a primary service definition or exactly one service
 definition with quantity 1, or if SVCDB is specified and does not match the
 svcdb of the service definition, 
@@ -315,7 +365,206 @@ sub payby {
   }
 }
 
+=item freq_pretty
+
+Returns an english representation of the I<freq> field, such as "monthly",
+"weekly", "semi-annually", etc.
+
+=cut
+
+tie %freq, 'Tie::IxHash', 
+  '0'  => '(no recurring fee)',
+  '1d' => 'daily',
+  '1w' => 'weekly',
+  '2w' => 'biweekly (every 2 weeks)',
+  '1'  => 'monthly',
+  '2'  => 'bimonthly (every 2 months)',
+  '3'  => 'quarterly (every 3 months)',
+  '6'  => 'semiannually (every 6 months)',
+  '12' => 'annually',
+  '24' => 'biannually (every 2 years)',
+;
+
+sub freq_pretty {
+  my $self = shift;
+  my $freq = $self->freq;
+  if ( exists($freq{$freq}) ) {
+    $freq{$freq};
+  } else {
+    my $interval = 'month';
+    if ( $freq =~ /^(\d+)([dw])$/ ) {
+      my %interval = ( 'd'=>'day', 'w'=>'week' );
+      $interval = $interval{$2};
+    }
+    if ( $1 == 1 ) {
+      "every $interval";
+    } else {
+      "every $freq ${interval}s";
+    }
+  }
+}
+
+=item plandata
+
+For backwards compatibility, returns the plandata field as well as all options
+from FS::part_pkg_option.
+
+=cut
+
+sub plandata {
+  my $self = shift;
+  carp "plandata is deprecated";
+  if ( @_ ) {
+    $self->SUPER::plandata(@_);
+  } else {
+    my $plandata = $self->get('plandata');
+    my %options = $self->options;
+    $plandata .= join('', map { "$_=$options{$_}\n" } keys %options );
+    $plandata;
+  }
+}
+
+=item part_pkg_option
+
+Returns all options as FS::part_pkg_option objects (see
+L<FS::part_pkg_option>).
+
+=cut
+
+sub part_pkg_option {
+  my $self = shift;
+  qsearch('part_pkg_option', { 'pkgpart' => $self->pkgpart } );
+}
+
+=item options 
+
+Returns a list of option names and values suitable for assigning to a hash.
+
+=cut
+
+sub options {
+  my $self = shift;
+  map { $_->optionname => $_->optionvalue } $self->part_pkg_option;
+}
+
+=item option OPTIONNAME
+
+Returns the option value for the given name, or the empty string.
+
+=cut
+
+sub option {
+  my $self = shift;
+  my $part_pkg_option =
+    qsearchs('part_pkg_option', {
+      pkgpart    => $self->pkgpart,
+      optionname => shift,
+  } );
+  $part_pkg_option ? $part_pkg_option->optionvalue : '';
+}
+
+=item _rebless
+
+Reblesses the object into the FS::part_pkg::PLAN class (if available), where
+PLAN is the object's I<plan> field.  There should be better docs
+on how to create new price plans, but until then, see L</NEW PLAN CLASSES>.
+
+=cut
+
+sub _rebless {
+  my $self = shift;
+  my $plan = $self->plan;
+  my $class = ref($self). "::$plan";
+  eval "use $class;";
+  #die $@ if $@;
+  bless($self, $class) unless $@;
+  $self;
+}
+
+#fallbacks that eval the setup and recur fields, for backwards compat
+
+sub calc_setup {
+  my $self = shift;
+  warn 'no price plan class for '. $self->plan. ", eval-ing setup\n";
+  $self->_calc_eval('setup', @_);
+}
+
+sub calc_recur {
+  my $self = shift;
+  warn 'no price plan class for '. $self->plan. ", eval-ing recur\n";
+  $self->_calc_eval('recur', @_);
+}
+
+use vars qw( $sdate @details );
+sub _calc_eval {
+  #my( $self, $field, $cust_pkg ) = @_;
+  my( $self, $field, $cust_pkg, $sdateref, $detailsref ) = @_;
+  *sdate = $sdateref;
+  *details = $detailsref;
+  $self->$field() =~ /^(.*)$/
+    or die "Illegal $field (pkgpart ". $self->pkgpart. '): '.
+            $self->$field(). "\n";
+  my $prog = $1;
+  return 0 if $prog =~ /^\s*$/;
+  my $value = eval $prog;
+  die $@ if $@;
+  $value;
+}
+
 =back
+
+=head1 SUBROUTINES
+
+=over 4
+
+=item plan_info
+
+=cut
+
+my %info;
+foreach my $INC ( @INC ) {
+  foreach my $file ( glob("$INC/FS/part_pkg/*.pm") ) {
+    warn "attempting to load plan info from $file\n" if $DEBUG;
+    $file =~ /\/(\w+)\.pm$/ or do {
+      warn "unrecognized file in $INC/FS/part_pkg/: $file\n";
+      next;
+    };
+    my $mod = $1;
+    my $info = eval "use FS::part_pkg::$mod; ".
+                    "\\%FS::part_pkg::$mod\::info;";
+    if ( $@ ) {
+      die "error using FS::part_pkg::$mod (skipping): $@\n" if $@;
+      next;
+    }
+    unless ( keys %$info ) {
+      warn "no %info hash found in FS::part_pkg::$mod, skipping\n"
+        unless $mod =~ /^(passwdfile|null)$/; #hack but what the heck
+      next;
+    }
+    warn "got plan info from FS::part_pkg::$mod: $info\n" if $DEBUG;
+    if ( exists($info->{'disabled'}) && $info->{'disabled'} ) {
+      warn "skipping disabled plan FS::part_pkg::$mod" if $DEBUG;
+      next;
+    }
+    $info{$mod} = $info;
+  }
+}
+
+tie %plans, 'Tie::IxHash',
+  map { $_ => $info{$_} }
+  sort { $info{$a}->{'weight'} <=> $info{$b}->{'weight'} }
+  keys %info;
+
+sub plan_info {
+  \%plans;
+}
+
+=back
+
+=head1 NEW PLAN CLASSES
+
+A module should be added in FS/FS/part_pkg/ (an example may be found in
+eg/plan_template.pm)
 
 =head1 BUGS
 
