@@ -1,12 +1,12 @@
 <%
-#<!-- $Id: agent.cgi,v 1.2 2001-08-21 02:31:56 ivan Exp $ -->
+#<!-- $Id: agent.cgi,v 1.3 2001-08-29 09:11:30 ivan Exp $ -->
 
 use strict;
 use vars qw ( $cgi $agent $action $hashref $p $agent_type );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
-use FS::CGI qw(header menubar popurl);
+use FS::CGI qw(header menubar popurl ntable);
 use FS::Record qw(qsearch qsearchs fields);
 use FS::agent;
 use FS::agent_type;
@@ -44,10 +44,14 @@ print '<FORM ACTION="', popurl(1), 'process/agent.cgi" METHOD=POST>',
       qq!<INPUT TYPE="hidden" NAME="agentnum" VALUE="$hashref->{agentnum}">!,
       "Agent #", $hashref->{agentnum} ? $hashref->{agentnum} : "(NEW)";
 
-print <<END;
-<PRE>
-Agent                     <INPUT TYPE="text" NAME="agent" SIZE=32 VALUE="$hashref->{agent}">
-Agent type                <SELECT NAME="typenum" SIZE=1>
+print &ntable("#cccccc", 2, ''), <<END;
+<TR>
+  <TH ALIGN="right">Agent</TH>
+  <TD><INPUT TYPE="text" NAME="agent" SIZE=32 VALUE="$hashref->{agent}"></TD>
+</TR>
+<TR>
+  <TH ALIGN="right">Agent type</TH>
+  <TD><SELECT NAME="typenum" SIZE=1>
 END
 
 foreach $agent_type (qsearch('agent_type',{})) {
@@ -59,10 +63,17 @@ foreach $agent_type (qsearch('agent_type',{})) {
 }
 
 print <<END;
-</SELECT>
-Frequency (unimplemented) <INPUT TYPE="text" NAME="freq" VALUE="$hashref->{freq}">
-Program (unimplemented)   <INPUT TYPE="text" NAME="prog" VALUE="$hashref->{prog}">
-</PRE>
+</SELECT></TD>
+</TR>
+<TR>
+  <TD ALIGN="right">Frequency (unimplemented)</TD>
+  <TD><INPUT TYPE="text" NAME="freq" VALUE="$hashref->{freq}"></TD>
+</TR>
+<TR>
+  <TD ALIGN="right">Program (unimplemented)</TD>
+  <TD><INPUT TYPE="text" NAME="prog" VALUE="$hashref->{prog}"></TD>
+</TR>
+</TABLE>
 END
 
 print qq!<BR><INPUT TYPE="submit" VALUE="!,
