@@ -202,7 +202,7 @@ sub ldap_queue {
 }
 
 sub ldap_insert { #subroutine, not method
-  my $dn = ldap_connect(shift, shift, shift);
+  my $ldap = ldap_connect(shift, (my $dn = shift), shift);
   my %attrib = @_;
 
   my $status = $ldap->add( $dn, attrs => [ %attrib ] );
@@ -235,6 +235,6 @@ sub ldap_connect {
   my $status = $ldap->bind( $dn, %bind_options );
   die $status->error if $status->is_error;
 
-  $dn;
+  $ldap;
 }
 
