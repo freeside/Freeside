@@ -343,6 +343,10 @@ sub send {
 
   }
 
+  if ( $conf->config('invoice_latex') ) {
+    @print_text = $self->print_ps('', $template);
+  }
+
   if ( grep { $_ eq 'POST' } @invoicing_list ) { #postal
     my $lpr = $conf->config('lpr');
     open(LPR, "|$lpr")
