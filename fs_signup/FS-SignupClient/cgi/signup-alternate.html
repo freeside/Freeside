@@ -62,6 +62,44 @@ Contact Information
 </TR>
 </TABLE><font color="#ff0000">*</font> required fields<BR>
 
+<BR><BR>
+<TABLE BGCOLOR="#c0c0c0" BORDER=0 CELLSPACING=0>
+<TR>
+  <TH ALIGN="right"><font color="#ff0000">*</font>Username</TH>
+  <TD><INPUT TYPE="text" NAME="username" VALUE="<%= $username %>"></TD>
+</TR>
+<TR>
+  <TH ALIGN="right"><font color="#ff0000">*</font>Password</TH>
+  <TD><INPUT TYPE="password" NAME="_password" VALUE="<%= $password %>"></TD>
+</TR>
+<TR>
+  <TH ALIGN="right"><font color="#ff0000">*</font>Re-enter Password</TH>
+  <TD><INPUT TYPE="password" NAME="_password2" VALUE="<%= $password2 %>"></TD>
+</TR>
+
+<%= if ( $init_data->{'security_phrase'} ) {
+      <<ENDOUT;
+<TR>
+  <TD ALIGN="right">Security Phrase</TD>
+  <TD><INPUT TYPE="text" NAME="sec_phrase" VALUE="$sec_phrase">
+  </TD>
+</TR>
+ENDOUT
+    } else {
+      '<INPUT TYPE="hidden" NAME="sec_phrase" VALUE="">';
+    }
+%>
+
+<%= if ( scalar(@$pops) ) {
+      '<TR><TD ALIGN="right">Access number</TD><TD>'.
+           popselector($popnum). '</TD></TR>';
+    } else {
+      popselector($popnum);
+    }
+%>
+
+</TABLE><font color="#ff0000">*</font> required fields';
+
 <BR><BR>First package
 
   <%= use Tie::IxHash;
@@ -85,40 +123,6 @@ Contact Information
           my $layer = shift;
           my $html = <<ENDOUT;
 <INPUT TYPE="hidden" NAME="pkgpart" VALUE="$layer">
-<TABLE BGCOLOR="#c0c0c0" BORDER=0 CELLSPACING=0>
-<TR>
-  <TH ALIGN="right"><font color="#ff0000">*</font>Username</TH>
-  <TD><INPUT TYPE="text" NAME="username" VALUE="$username"></TD>
-</TR>
-<TR>
-  <TH ALIGN="right"><font color="#ff0000">*</font>Password</TH>
-  <TD><INPUT TYPE="password" NAME="_password" VALUE="$password"></TD>
-</TR>
-<TR>
-  <TH ALIGN="right"><font color="#ff0000">*</font>Re-enter Password</TH>
-  <TD><INPUT TYPE="password" NAME="_password2" VALUE="$password2"></TD>
-</TR>
-ENDOUT
-          if ( $init_data->{'security_phrase'} ) {
-            $html .= <<ENDOUT;
-<TR>
-  <TD ALIGN="right">Security Phrase</TD>
-  <TD><INPUT TYPE="text" NAME="sec_phrase" VALUE="$sec_phrase">
-  </TD>
-</TR>
-ENDOUT
-          } else {
-            $html .= '<INPUT TYPE="hidden" NAME="sec_phrase" VALUE="">';
-          }
-
-          if ( scalar(@$pops) ) {
-            $html .= '<TR><TD ALIGN="right">Access number</TD><TD>'.
-                     popselector($popnum). '</TD></TR>';
-          } else {
-            $html .= popselector($popnum);
-          }
-
-          $html .= '</TABLE><font color="#ff0000">*</font> required fields';
 
           if ( $pkgpart2payby{$layer} eq 'BILL' ) {
             $html .= <<ENDOUT;
