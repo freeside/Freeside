@@ -1,38 +1,5 @@
 <%
-#
-# $Id: cust_main_county.cgi,v 1.1 2001-07-30 07:36:03 ivan Exp $
-#
-# ivan@sisd.com 97-dec-13
-#
-# Changes to allow page to work at a relative position in server
-#	bmccane@maxbaud.net	98-apr-3
-#
-# lose background, FS::CGI ivan@sisd.com 98-sep-2
-#
-# $Log: cust_main_county.cgi,v $
-# Revision 1.1  2001-07-30 07:36:03  ivan
-# templates!!!
-#
-# Revision 1.7  1999/04/09 04:22:34  ivan
-# also table()
-#
-# Revision 1.6  1999/04/09 03:52:55  ivan
-# explicit & for table/itable/ntable
-#
-# Revision 1.5  1999/01/19 05:13:26  ivan
-# for mod_perl: no more top-level my() variables; use vars instead
-# also the last s/create/new/;
-#
-# Revision 1.4  1999/01/18 09:41:16  ivan
-# all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
-# (good idea anyway)
-#
-# Revision 1.3  1998/12/17 05:25:18  ivan
-# fix visual and other bugs
-#
-# Revision 1.2  1998/11/18 09:01:34  ivan
-# i18n! i18n!
-#
+#<!-- $Id: cust_main_county.cgi,v 1.2 2001-08-17 11:05:31 ivan Exp $ -->
 
 use strict;
 use vars qw( $cgi $p $cust_main_county );
@@ -66,18 +33,61 @@ print &table(), <<END;
       </TR>
 END
 
-foreach $cust_main_county ( qsearch('cust_main_county',{}) ) {
-  my($hashref)=$cust_main_county->hashref;
+my @regions = sort {    $a->country cmp $b->country
+                     or $a->state   cmp $b->state
+                     or $a->county  cmp $b->county
+                   } qsearch('cust_main_county',{});
+
+my $sup=0;
+#foreach $cust_main_county ( @regions ) {
+for ( my $i=0; $i<@regions; $i++ ) { 
+  my $cust_main_county = $regions[$i];
+  my $hashref = $cust_main_county->hashref;
   print <<END;
       <TR>
         <TD>$hashref->{country}</TD>
 END
-  print "<TD>", $hashref->{state}
-      ? $hashref->{state}
-      : qq!(ALL) <FONT SIZE=-1>!.
-        qq!<A HREF="${p}edit/cust_main_county-expand.cgi?!. $hashref->{taxnum}.
-        qq!">expand country</A></FONT>!
-    , "</TD>";
+
+  my $j;
+  if ( $sup ) {
+    $sup--;
+  } else {
+
+    #lookahead
+    for ( $j=1; $i+$j<@regions; $j++ ) {
+      last if $hashref->{country} ne $regions[$i+$j]->country
+           || $hashref->{state} ne $regions[$i+$j]->state
+           || $hashref->{tax} != $regions[$i+$j]->tax;
+    }
+
+    my $newsup=0;
+    if ( $j>1 && $i+$j+1 < @regions
+         && ( $hashref->{state} ne $regions[$i+$j+1]->state 
+              || $hashref->{country} ne $regions[$i+$j+1]->country
+              )
+         && ( ! $i
+              || $hashref->{state} ne $regions[$i-1]->state 
+              || $hashref->{country} ne $regions[$i-1]->country
+              )
+       ) {
+       $sup = $j-1;
+    } else {
+      $j = 1;
+    }
+
+    print "<TD ROWSPAN=$j>", $hashref->{state}
+        ? $hashref->{state}
+        : qq!(ALL) <FONT SIZE=-1>!.
+          qq!<A HREF="${p}edit/cust_main_county-expand.cgi?!. $hashref->{taxnum}.
+          qq!">expand country</A></FONT>!;
+
+    print qq! <FONT SIZE=-1><A HREF="${p}edit/process/cust_main_county-collapse.cgi?!. $hashref->{taxnum}. qq!">collapse state</A></FONT>! if $j>1;
+
+    print "</TD>";
+  }
+
+#  $sup=$newsup;
+
   print "<TD>";
   if ( $hashref->{county} ) {
     print $hashref->{county};

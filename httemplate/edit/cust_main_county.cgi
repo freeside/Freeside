@@ -1,6 +1,6 @@
 <%
 #
-# $Id: cust_main_county.cgi,v 1.1 2001-07-30 07:36:04 ivan Exp $
+# $Id: cust_main_county.cgi,v 1.2 2001-08-17 11:05:31 ivan Exp $
 #
 # ivan@sisd.com 97-dec-13-16
 #
@@ -11,7 +11,13 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 # 
 # $Log: cust_main_county.cgi,v $
-# Revision 1.1  2001-07-30 07:36:04  ivan
+# Revision 1.2  2001-08-17 11:05:31  ivan
+# clean up tax rate editing:
+#   sort by country->state->county,
+#   add "collapse state" if the tax rates are the same statewide,
+#   redirect "expand state" to the browse, not edit screen
+#
+# Revision 1.1  2001/07/30 07:36:04  ivan
 # templates!!!
 #
 # Revision 1.8  1999/04/09 04:22:34  ivan
@@ -69,7 +75,10 @@ print qq!<FORM ACTION="!, popurl(1),
       </TR>
 END
 
-foreach $cust_main_county ( qsearch('cust_main_county',{}) ) {
+foreach $cust_main_county ( sort {    $a->country cmp $b->country
+                                   or $a->state   cmp $b->state
+                                   or $a->county  cmp $b->county
+                                 } qsearch('cust_main_county',{}) ) {
   my($hashref)=$cust_main_county->hashref;
   print <<END;
       <TR>

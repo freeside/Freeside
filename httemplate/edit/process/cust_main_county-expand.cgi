@@ -1,42 +1,5 @@
 <%
-#
-# $Id: cust_main_county-expand.cgi,v 1.1 2001-07-30 07:36:04 ivan Exp $
-#
-# ivan@sisd.com 97-dec-16
-#
-# Changes to allow page to work at a relative position in server
-# Added import of datasrc from UID.pm for Pg6.3
-# Default tax to 0.0 if using Pg6.3
-#       bmccane@maxbaud.net     98-apr-3
-#
-# lose background, FS::CGI
-# undo default tax to 0.0 if using Pg6.3: comes from pre-expanded record
-# for that state
-# ivan@sisd.com 98-sep-2
-#
-# $Log: cust_main_county-expand.cgi,v $
-# Revision 1.1  2001-07-30 07:36:04  ivan
-# templates!!!
-#
-# Revision 1.7  2000/12/21 05:22:30  ivan
-# perldoc -f split
-#
-# Revision 1.6  1999/01/25 12:19:07  ivan
-# yet more mod_perl stuff
-#
-# Revision 1.5  1999/01/19 05:13:51  ivan
-# for mod_perl: no more top-level my() variables; use vars instead
-# also the last s/create/new/;
-#
-# Revision 1.4  1999/01/18 22:47:52  ivan
-# s/create/new/g; and use fields('table_name')
-#
-# Revision 1.3  1998/12/17 08:40:20  ivan
-# s/CGI::Request/CGI.pm/; etc
-#
-# Revision 1.2  1998/11/18 09:01:40  ivan
-# i18n! i18n!
-#
+# <!-- $Id: cust_main_county-expand.cgi,v 1.2 2001-08-17 11:05:31 ivan Exp $ -->
 
 use strict;
 use vars qw ( $cgi $taxnum $cust_main_county @expansion $expansion );
@@ -99,6 +62,6 @@ unless ( qsearch('cust_main',{
   die $error if $error;
 }
 
-print $cgi->redirect(popurl(3). "edit/cust_main_county.cgi");
+print $cgi->redirect(popurl(3). "browse/cust_main_county.cgi");
 
 %>
