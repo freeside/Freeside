@@ -56,8 +56,8 @@ SELFSERVICE_USER = fs_selfservice
 SELFSERVICE_MACHINES = localhost
 # SELFSERVICE_MACHINES = web1.example.com web2.example.com
 
-#RT_ENABLED = 0
-RT_ENABLED = 1
+RT_ENABLED = 0
+#RT_ENABLED = 1
 RT_DOMAIN = example.com
 RT_TIMEZONE = 'US/Pacific';
 #RT_TIMEZONE = 'US/Eastern';
