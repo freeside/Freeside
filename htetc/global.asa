@@ -48,7 +48,6 @@ use FS::raddb;
 use FS::session;
 use FS::svc_acct;
 use FS::svc_acct_pop qw(popselector);
-use FS::svc_acct_sm;
 use FS::svc_domain;
 use FS::svc_forward;
 use FS::svc_www;
