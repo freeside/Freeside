@@ -79,10 +79,10 @@ if ( $part_svc->part_export('sqlradius') ) {
   my $s = $seconds%60;
 
   my $input = $svc_acct->attribute_since_sqlradacct(
-    $last_bill, time, 'Acct-Input-Octets'
+    $last_bill, time, 'AcctInputOctets'
   ) / 1048576;
   my $output = $svc_acct->attribute_since_sqlradacct(
-    $last_bill, time, 'Acct-Output-Octets'
+    $last_bill, time, 'AcctOutputOctets'
   ) / 1048576;
 
   if ( $seconds ) {
