@@ -187,7 +187,7 @@ $ su freeside
 $ cd <b>/path/to/freeside-1.4.0/</b>
 $ bin/populate-msgcat <b>username</b>
 </pre>
-  <li><tt>freeside-queued</tt> was installed with the Perl modules.  Start it now and ensure that is run upon system startup (Do this manually, or edit the top-level Makefile, replacing INIT_FILE with the appropriate location on your system, and run <tt>make install-init</tt>)
+  <li><tt>freeside-queued</tt> was installed with the Perl modules.  Start it now and ensure that is run upon system startup (Do this manually, or edit the top-level Makefile, replacing INIT_FILE with the appropriate location on your systemand QUEUED_USER with the username of a Freeside user you created above, and run <tt>make install-init</tt>)
   <li>Now proceed to the initial <a href="admin.html">administration</a> of your installation.
 </ul>
 </body>
