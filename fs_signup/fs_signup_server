@@ -196,7 +196,7 @@ while (1) {
       warn "[fs_signup_server] error collecting from new customer: $bill_error"
         if $bill_error;
 
-      if ( $cust_main->balance ) {
+      if ( $cust_main->balance > 0 ) {
         #should check list for errors...
         $cust_main->suspend;
       }
