@@ -212,7 +212,7 @@ sub new_customer {
 
 =head1 SEE ALSO
 
-L<fs_signupd>, L<FS::SignupServer>, L<FS::cust_main>
+L<fs_signupd>, L<FS::cust_main>
 
 =cut
 
