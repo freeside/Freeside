@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main.cgi,v 1.4 1998-12-17 09:57:21 ivan Exp $
+# $Id: cust_main.cgi,v 1.5 1998-12-23 02:36:28 ivan Exp $
 #
 # Usage: cust_main.cgi custnum
 #        http://server.name/path/cust_main.cgi?custnum
@@ -33,7 +33,10 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: cust_main.cgi,v $
-# Revision 1.4  1998-12-17 09:57:21  ivan
+# Revision 1.5  1998-12-23 02:36:28  ivan
+# use FS::cust_refund; to eliminate warning
+#
+# Revision 1.4  1998/12/17 09:57:21  ivan
 # s/CGI::(Base|Request)/CGI.pm/;
 #
 # Revision 1.3  1998/11/15 13:14:20  ivan
@@ -58,6 +61,7 @@ use FS::cust_pkg;
 use FS::part_referral;
 use FS::agent;
 use FS::cust_main;
+use FS::cust_refund;
 
 my($cgi) = new CGI;
 &cgisuidsetup($cgi);
