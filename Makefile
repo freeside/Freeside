@@ -127,13 +127,14 @@ upload-docs:
 
 release: upload-docs
 	cd /home/ivan/freeside_current
-	cvs tag ${TAG}
+	#cvs tag ${TAG}
+	cvs tag -F ${TAG}
 
 	cd /home/ivan
 	cvs export -r ${TAG} -d freeside-${VERSION} freeside
 	tar czvf freeside-${VERSION}.tar.gz freeside-${VERSION}
 
-	scp freeside-${VERSION} ivan@cleanwhisker.420.am:/var/www/sisd.420.am/freeside/
+	scp freeside-${VERSION}.tar.gz ivan@cleanwhisker.420.am:/var/www/sisd.420.am/freeside/
 
 update-webdemo:
 	ssh ivan@pouncequick.420.am '( cd freeside; cvs update -d -P )'
