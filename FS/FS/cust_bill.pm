@@ -720,14 +720,16 @@ L<Time::Local> and L<Date::Parse> for conversion functions.
 
 =cut
 
+#still some false laziness w/print_text
 sub print_text {
 
   my( $self, $today, $template ) = @_;
   $today ||= time;
+
 #  my $invnum = $self->invnum;
-  my $cust_main = qsearchs('cust_main', { 'custnum', $self->custnum } );
+  my $cust_main = $self->cust_main;
   $cust_main->payname( $cust_main->first. ' '. $cust_main->getfield('last') )
-    unless $cust_main->payname && $cust_main->payby ne 'CHEK';
+    unless $cust_main->payname && $cust_main->payby !~ /^(CHEK|DCHK)$/;
 
   my( $pr_total, @pr_cust_bill ) = $self->previous; #previous balance
 #  my( $cr_total, @cr_cust_credit ) = $self->cust_credit; #credits
@@ -967,7 +969,7 @@ sub print_latex {
 #  my $invnum = $self->invnum;
   my $cust_main = $self->cust_main;
   $cust_main->payname( $cust_main->first. ' '. $cust_main->getfield('last') )
-    unless $cust_main->payname && $cust_main->payby ne 'CHEK';
+    unless $cust_main->payname && $cust_main->payby !~ /^(CHEK|DCHK)$/;
 
   my( $pr_total, @pr_cust_bill ) = $self->previous; #previous balance
 #  my( $cr_total, @cr_cust_credit ) = $self->cust_credit; #credits
