@@ -178,6 +178,11 @@ sub insert {
 
     my @invoicing_list = grep { $_ ne 'POST' } $cust_main->invoicing_list;
 
+    my $payby = $self->payby;
+    my $payinfo = $self->payinfo;
+    $payby =~ s/^BILL$/Check/ if $payinfo;
+    $payinfo = $self->payinfo_masked if $payby eq 'CARD';
+
     my $error = send_email(
       'from'    => $conf->config('invoice_from'), #??? well as good as any
       'to'      => \@invoicing_list,
@@ -186,11 +191,9 @@ sub insert {
                        'date'    => time2str("%a %B %o, %Y", $self->_date),
                        'name'    => $cust_main->name,
                        'paynum'  => $self->paynum,
-                       'paid'    => $self->paid,
-                       'payby'   => ucfirst(lc($self->payby)),
-                       'payinfo' => ( $self->payby eq 'CARD'
-                                        ? $self->payinfo_masked
-                                        : $self->payinfo        ),
+                       'paid'    => sprintf("%.2f", $self->paid),
+                       'payby'   => ucfirst(lc($payby)),
+                       'payinfo' => $payinfo,
                        'balance' => $cust_main->balance,
                    } ) ],
     );

@@ -3,7 +3,7 @@
 
 Dear { $name },
 
-This message is to inform you that your payment of ${ $amount } has been
+This message is to inform you that your payment of ${ $paid } has been
 received.
 
 Payment ID: { $paynum }
