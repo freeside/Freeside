@@ -554,6 +554,11 @@ function cust_pay_unapply_areyousure(href) {
  == true)
         window.location.href = href;
 }
+function cust_credit_unapply_areyousure(href) {
+    if (confirm("Are you sure you want to unapply this credit?")
+ == true)
+        window.location.href = href;
+}
 function cust_credit_areyousure(href) {
     if (confirm("Are you sure you want to delete this credit?")
  == true)
@@ -637,9 +642,13 @@ if ( $conf->config('payby-default') ne 'HIDE' ) {
         $cust_credit->closed !~ /^Y/i && $conf->exists('deletecredits')
           ? qq! (<A HREF="javascript:cust_credit_areyousure('${p}misc/delete-cust_credit.cgi?!. $cust_credit->crednum. qq!')">delete</A>)!
           : '';
+      my $unapply =
+        $cust_credit->closed !~ /^Y/i && $conf->exists('unapplycredits')
+          ? qq! (<A HREF="javascript:cust_credit_unapply_areyousure('${p}misc/unapply-cust_credit.cgi?!. $cust_credit->crednum. qq!')">unapply</A>)!
+          : '';
       push @history,
         "$date\tCredit #$crednum: $reason<BR>".
-        "(applied to invoice #$invnum on $app_date)$delete\t\t\t$amount\t";
+        "(applied to invoice #$invnum on $app_date)$delete$unapply\t\t\t$amount\t";
     }
   }
   
