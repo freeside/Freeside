@@ -129,15 +129,19 @@ Service: <B><%= $part_svc->svc %></B><BR><BR>
 function srcchanged(what) {
   if ( what.options[what.selectedIndex].value == 0 ) {
     what.form.src.disabled = false;
+    what.form.src.style.backgroundColor = "white";
   } else {
     what.form.src.disabled = true;
+    what.form.src.style.backgroundColor = "lightgrey";
   }
 }
 function dstchanged(what) {
   if ( what.options[what.selectedIndex].value == 0 ) {
     what.form.dst.disabled = false;
+    what.form.dst.style.backgroundColor = "white";
   } else {
     what.form.dst.disabled = true;
+    what.form.dst.style.backgroundColor = "lightgrey";
   }
 }
 </SCRIPT>
@@ -153,7 +157,7 @@ function dstchanged(what) {
 <% } %>
 </SELECT>
 <% if ( $svc_forward->dbdef_table->column('src') ) { %>
-<INPUT TYPE="text" NAME="src" VALUE="<%= $src %>" <%= ( $src || !scalar(%email) ) ? '' : 'DISABLED' %>>
+<INPUT TYPE="text" NAME="src" VALUE="<%= $src %>" <%= ( $src || !scalar(%email) ) ? '' : 'DISABLED STYLE="background-color: lightgrey"' %>>
 <% } %>
 </TD></TR>
 
@@ -164,7 +168,7 @@ function dstchanged(what) {
 <% } %>
 <OPTION <%= $dst ? 'SELECTED' : '' %> VALUE="0">(other email address)</OPTION>
 </SELECT>
-<INPUT TYPE="text" NAME="dst" VALUE="<%= $dst %>" <%= ( $dst || !scalar(%email) ) ? '' : 'DISABLED' %>>
+<INPUT TYPE="text" NAME="dst" VALUE="<%= $dst %>" <%= ( $dst || !scalar(%email) ) ? '' : 'DISABLED STYLE="background-color: lightgrey"' %>>
 </TD></TR>
     </TABLE>
 <BR><INPUT TYPE="submit" VALUE="Submit">
