@@ -217,7 +217,7 @@ sub check {
   my $self = shift;
 
   my $error =
-    $self->ut_number('refundnum')
+    $self->ut_numbern('refundnum')
     || $self->ut_numbern('custnum')
     || $self->ut_money('refund')
     || $self->ut_numbern('_date')
@@ -266,7 +266,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: cust_refund.pm,v 1.16 2002-02-19 03:06:23 ivan Exp $
+$Id: cust_refund.pm,v 1.17 2002-02-19 03:15:11 ivan Exp $
 
 =head1 BUGS
 
