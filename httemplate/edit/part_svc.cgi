@@ -223,7 +223,7 @@ function fixup(what) {
                 $record->getfield($def->{select_label});
         }
       } else {
-        print 'UNKNOWN TYPE '. $def->{type};
+        print '<font color="#ff0000">unknown type'. $def->{type};
       }
     } else {
       print qq!<INPUT TYPE="text" NAME="${svcdb}__${field}" VALUE="$value">!;
