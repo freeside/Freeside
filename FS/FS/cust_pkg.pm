@@ -626,11 +626,21 @@ sub attribute_since_sqlradacct {
 
 }
 
-=item transfer DEST_PKGNUM
+=item transfer DEST_PKGNUM | DEST_CUST_PKG, [ OPTION => VALUE ... ]
 
 Transfers as many services as possible from this package to another package.
-The destination package must already exist.  Services are moved only if 
-the destination allows services with the correct I<svcpart> (not svcdb).  
+
+The destination package can be specified by pkgnum by passing an FS::cust_pkg
+object.  The destination package must already exist.
+
+Services are moved only if the destination allows services with the correct
+I<svcpart> (not svcdb), unless the B<change_svcpart> option is set true.  Use
+this option with caution!  No provision is made for export differences
+between the old and new service definitions.  Probably only should be used
+when your exports for all service definitions of a given svcdb are identical.
+(attempt a transfer without it first, to move all possible svcpart-matching
+services)
+
 Any services that can't be moved remain in the original package.
 
 Returns an error, if there is one; otherwise, returns the number of services 
@@ -639,7 +649,7 @@ that couldn't be moved.
 =cut
 
 sub transfer {
-  my ($self, $dest_pkgnum) = @_;
+  my ($self, $dest_pkgnum, %opt) = @_;
 
   my $remaining = 0;
   my $dest;
@@ -665,15 +675,59 @@ sub transfer {
     $target{$cust_svc->svcpart}--;
   }
 
+  my %svcpart2svcparts = ();
+  if ( exists $opt{'change_svcpart'} && $opt{'change_svcpart'} ) {
+    warn "change_svcpart option received, creating alternates list\n" if $DEBUG;
+    foreach my $svcpart ( map { $_->svcpart } $self->cust_svc ) {
+      next if exists $svcpart2svcparts{$svcpart};
+      my $part_svc = qsearchs('part_svc', { 'svcpart' => $svcpart } );
+      $svcpart2svcparts{$svcpart} = [
+        grep { $_ != $svcpart }
+          map { $_->svcpart }
+            qsearch('part_svc', { 'svcdb' => $part_svc->svcdb } )
+      ];
+      warn "alternates for svcpart $svcpart: ".
+           join(', ', @{$svcpart2svcparts{$svcpart}}). "\n"
+        if $DEBUG;
+    }
+  }
+
   foreach $cust_svc ($self->cust_svc) {
     if($target{$cust_svc->svcpart} > 0) {
       $target{$cust_svc->svcpart}--;
       my $new = new FS::cust_svc {
-          svcnum  => $cust_svc->svcnum,
-          svcpart => $cust_svc->svcpart,
-          pkgnum  => $dest_pkgnum };
+        svcnum  => $cust_svc->svcnum,
+        svcpart => $cust_svc->svcpart,
+        pkgnum  => $dest_pkgnum,
+      };
       my $error = $new->replace($cust_svc);
       return $error if $error;
+    } elsif ( exists $opt{'change_svcpart'} && $opt{'change_svcpart'} ) {
+      if ( $DEBUG ) {
+        warn "looking for alternates for svcpart ". $cust_svc->svcpart. "\n";
+        warn "alternates to consider: ".
+             join(', ', @{$svcpart2svcparts{$cust_svc->svcpart}}). "\n";
+      }
+      my @alternate = grep {
+                             warn "considering alternate svcpart $_: ".
+                                  "$target{$_} available in new package\n"
+                               if $DEBUG;
+                             $target{$_} > 0;
+                           } @{$svcpart2svcparts{$cust_svc->svcpart}};
+      if ( @alternate ) {
+        warn "alternate(s) found\n" if $DEBUG;
+        my $change_svcpart = $alternate[0]; #arbitrary.
+        $target{$change_svcpart}--;
+        my $new = new FS::cust_svc {
+          svcnum  => $cust_svc->svcnum,
+          svcpart => $change_svcpart,
+          pkgnum  => $dest_pkgnum,
+        };
+        my $error = $new->replace($cust_svc);
+        return $error if $error;
+      } else {
+        $remaining++;
+      }
     } else {
       $remaining++
     }
@@ -747,6 +801,8 @@ newly-created cust_pkg objects.
 sub order {
   my ($custnum, $pkgparts, $remove_pkgnum, $return_cust_pkg) = @_;
 
+  my $conf = new FS::Conf;
+
   # Transactionize this whole mess
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE'; 
@@ -781,6 +837,7 @@ sub order {
   # Transfer services and cancel old packages.
   foreach my $old_pkgnum (@$remove_pkgnum) {
     my $old_pkg = qsearchs ('cust_pkg', { pkgnum => $old_pkgnum });
+
     foreach my $new_pkg (@$return_cust_pkg) {
       $error = $old_pkg->transfer($new_pkg);
       if ($error and $error == 0) {
@@ -789,6 +846,19 @@ sub order {
 	return $error;
       }
     }
+
+    if ( $error > 0 && $conf->exists('cust_pkg-change_svcpart') ) {
+      warn "trying transfer again with change_svcpart option\n" if $DEBUG;
+      foreach my $new_pkg (@$return_cust_pkg) {
+        $error = $old_pkg->transfer($new_pkg, 'change_svcpart'=>1 );
+        if ($error and $error == 0) {
+          # $old_pkg->transfer failed.
+  	$dbh->rollback if $oldAutoCommit;
+  	return $error;
+        }
+      }
+    }
+
     if ($error > 0) {
       # Transfers were successful, but we went through all of the 
       # new packages and still had services left on the old package.
