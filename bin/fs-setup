@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: fs-setup,v 1.39 2001-07-30 07:42:39 ivan Exp $
+# $Id: fs-setup,v 1.40 2001-08-11 05:53:42 ivan Exp $
 #
 # ivan@sisd.com 97-nov-8,9
 #
@@ -32,7 +32,10 @@
 # fix radius attributes ivan@sisd.com 98-sep-27
 #
 # $Log: fs-setup,v $
-# Revision 1.39  2001-07-30 07:42:39  ivan
+# Revision 1.40  2001-08-11 05:53:42  ivan
+# add comments field
+#
+# Revision 1.39  2001/07/30 07:42:39  ivan
 # need an DBIx::DBSchema with delcolumn
 #
 # Revision 1.38  2001/07/30 07:36:04  ivan
@@ -498,6 +501,7 @@ sub tables_hash_hack {
         'tax',      'char', 'NULL', 1,
         'otaker',   'varchar', '',     8,
         'refnum',   'int',  '',     '',
+        'comments', 'varchar', 'NULL', '',
       ],
       'primary_key' => 'custnum',
       'unique' => [ [] ],

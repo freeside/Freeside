@@ -106,5 +106,10 @@ ALTER TABLE cust_main ADD COLUMN ship_daytime varchar(20) NULL;
 ALTER TABLE cust_main ADD COLUMN ship_night varchar(20) NULL;
 ALTER TABLE cust_main ADD COLUMN ship_fax varchar(12) NULL;
 </pre>
+  <li>If you wish to enable customer comments, apply the following change to
+      your database:
+<pre>
+ALTER TABLE cust_main ADD COLUMN comments varchar NULL;
+</pre>
   <li>Run bin/dbdef-create.
 </body>
