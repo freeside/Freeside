@@ -1,0 +1,47 @@
+NAME
+    FS::Conf - Read access to Freeside configuration values
+
+SYNOPSIS
+      use FS::Conf;
+
+      $conf = new FS::Conf;
+      $conf = new FS::Conf "/non/standard/config/directory";
+
+      $dir = $conf->dir;
+
+      $value = $conf->config('key');
+      @list  = $conf->config('key');
+      $bool  = $conf->exists('key');
+
+DESCRIPTION
+    Read access to Freeside configuration values. Keys currently map
+    to filenames, but this may change in the future.
+
+METHODS
+    new [ DIRECTORY ]
+        Create a new configuration object. Optionally, a non-default
+        directory may be specified.
+
+    dir Returns the directory.
+
+    config
+        Returns the configuration value or values (depending on
+        context) for key.
+
+    exists
+        Returns true if the specified key exists, even if the
+        corresponding value is undefined.
+
+BUGS
+    The option to specify a non-default directory should probably be
+    removed.
+
+    Write access (with locking) should be implemented.
+
+SEE ALSO
+    config.html from the base documentation contains a list of
+    configuration files.
+
+HISTORY
+    Ivan Kohler <ivan@sisd.com> 98-sep-6
+

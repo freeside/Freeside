@@ -1,0 +1,168 @@
+NAME
+    FS::svc_acct - Object methods for svc_acct records
+
+SYNOPSIS
+      use FS::svc_acct;
+
+      $record = create FS::svc_acct \%hash;
+      $record = create FS::svc_acct { 'column' => 'value' };
+
+      $error = $record->insert;
+
+      $error = $new_record->replace($old_record);
+
+      $error = $record->delete;
+
+      $error = $record->check;
+
+      $error = $record->suspend;
+
+      $error = $record->unsuspend;
+
+      $error = $record->cancel;
+
+DESCRIPTION
+    An FS::svc_acct object represents an account. FS::svc_acct
+    inherits from FS::Record. The following fields are currently
+    supported:
+
+    svcnum - primary key (assigned automatcially for new accounts)
+    username
+    _password - generated if blank
+    popnum - Point of presence (see the FS::svc_acct_pop manpage)
+    uid
+    gid
+    finger - GECOS
+    dir - set automatically if blank (and uid is not)
+    shell
+    quota - (unimplementd)
+    slipip - IP address
+    radius_*Radius_Attribute* - *Radius-Attribute*
+METHODS
+    create HASHREF
+        Creates a new account. To add the account to the database,
+        see the section on "insert".
+
+    insert
+        Adds this account to the database. If there is an error,
+        returns the error, otherwise returns false.
+
+        The additional fields pkgnum and svcpart (see the
+        FS::cust_svc manpage) should be defined. An FS::cust_svc
+        record will be created and inserted.
+
+        If the configuration value (see the FS::Conf manpage)
+        shellmachine exists, and the username, uid, and dir fields
+        are defined, the command
+
+          useradd -d $dir -m -s $shell -u $uid $username
+
+        is executed on shellmachine via ssh. This behaviour can be
+        surpressed by setting $FS::svc_acct::nossh_hack true.
+
+    delete
+        Deletes this account from the database. If there is an
+        error, returns the error, otherwise returns false.
+
+        The corresponding FS::cust_svc record will be deleted as
+        well.
+
+        If the configuration value (see the FS::Conf manpage)
+        shellmachine exists, the command:
+
+          userdel $username
+
+        is executed on shellmachine via ssh. This behaviour can be
+        surpressed by setting $FS::svc_acct::nossh_hack true.
+
+    replace OLD_RECORD
+        Replaces OLD_RECORD with this one in the database. If there
+        is an error, returns the error, otherwise returns false.
+
+        If the configuration value (see the FS::Conf manpage)
+        shellmachine exists, and the dir field has changed, the
+        command:
+
+          [ -d $old_dir ] && (
+            chmod u+t $old_dir;
+            umask 022;
+            mkdir $new_dir;
+            cd $old_dir;
+            find . -depth -print | cpio -pdm $new_dir;
+            chmod u-t $new_dir;
+            chown -R $uid.$gid $new_dir;
+            rm -rf $old_dir
+          )
+
+        is executed on shellmachine via ssh. This behaviour can be
+        surpressed by setting $FS::svc_acct::nossh_hack true.
+
+    suspend
+        Suspends this account by prefixing *SUSPENDED* to the
+        password. If there is an error, returns the error, otherwise
+        returns false.
+
+        Called by the suspend method of FS::cust_pkg (see the
+        FS::cust_pkg manpage).
+
+    unsuspend
+        Unsuspends this account by removing *SUSPENDED* from the
+        password. If there is an error, returns the error, otherwise
+        returns false.
+
+        Called by the unsuspend method of FS::cust_pkg (see the
+        FS::cust_pkg manpage).
+
+    cancel
+        Just returns false (no error) for now.
+
+        Called by the cancel method of FS::cust_pkg (see the
+        FS::cust_pkg manpage).
+
+    check
+        Checks all fields to make sure this is a valid service. If
+        there is an error, returns the error, otherwise returns
+        false. Called by the insert and replace methods.
+
+        Sets any fixed values; see the FS::part_svc manpage.
+
+BUGS
+    It doesn't properly override FS::Record yet.
+
+    The remote commands should be configurable.
+
+    The create method should set defaults from part_svc (like the
+    check method sets fixed values).
+
+SEE ALSO
+    the FS::Record manpage, the FS::Conf manpage, the FS::cust_svc
+    manpage, the FS::part_svc manpage, the FS::cust_pkg manpage, the
+    FS::SSH manpage, the ssh manpage, the FS::svc_acct_pop manpage,
+    schema.html from the base documentation.
+
+HISTORY
+    ivan@voicenet.com 97-jul-16 - 21
+
+    rewrite (among other things, now know about part_svc)
+    ivan@sisd.com 98-mar-8
+
+    Changed 'password' to '_password' because Pg6.3 reserves the
+    password word bmccane@maxbaud.net 98-apr-3
+
+    username length and shell no longer hardcoded ivan@sisd.com 98-
+    jun-28
+
+    eww but needed: ignore uid duplicates for 'fax' and 'hylafax'
+    ivan@sisd.com 98-jun-29
+
+    $nossh_hack ivan@sisd.com 98-jul-13
+
+    protections against UID/GID of 0 for incorrectly-setup RDBMSs
+    (also in bin/svc_acct.export) ivan@sisd.com 98-jul-13
+
+    arbitrary radius attributes ivan@sisd.com 98-aug-13
+
+    /var/spool/freeside/conf/shellmachine ivan@sisd.com 98-aug-13
+
+    pod and FS::conf ivan@sisd.com 98-sep-22
+

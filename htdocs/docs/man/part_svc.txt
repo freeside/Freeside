@@ -1,0 +1,69 @@
+NAME
+    FS::part_svc - Object methods for part_svc objects
+
+SYNOPSIS
+      use FS::part_svc;
+
+      $record = create FS::part_referral \%hash
+      $record = create FS::part_referral { 'column' => 'value' };
+
+      $error = $record->insert;
+
+      $error = $new_record->replace($old_record);
+
+      $error = $record->delete;
+
+      $error = $record->check;
+
+DESCRIPTION
+    An FS::part_svc represents a service definition. FS::part_svc
+    inherits from FS::Record. The following fields are currently
+    supported:
+
+    svcpart - primary key (assigned automatically for new service definitions)
+    svc - text name of this service definition
+    svcdb - table used for this service.  See the FS::svc_acct manpage,
+    the FS::svc_domain manpage, and the FS::svc_acct_sm manpage, among others.
+    *svcdb*__*field* - Default or fixed value for *field* in *svcdb*.
+    *svcdb*__*field*_flag - defines *svcdb*__*field* action: null, `D' for default, or `F' for fixed
+METHODS
+    create HASHREF
+        Creates a new service definition. To add the service
+        definition to the database, see the section on "insert".
+
+    insert
+        Adds this service definition to the database. If there is an
+        error, returns the error, otherwise returns false.
+
+    delete
+        Currently unimplemented.
+
+    replace OLD_RECORD
+        Replaces OLD_RECORD with this one in the database. If there
+        is an error, returns the error, otherwise returns false.
+
+    check
+        Checks all fields to make sure this is a valid service
+        definition. If there is an error, returns the error,
+        otherwise returns false. Called by the insert and replace
+        methods.
+
+BUGS
+    It doesn't properly override FS::Record yet.
+
+    Delete is unimplemented.
+
+SEE ALSO
+    the FS::Record manpage, the FS::part_pkg manpage, the
+    FS::pkg_svc manpage, the FS::cust_svc manpage, the FS::svc_acct
+    manpage, the FS::svc_acct_sm manpage, the FS::svc_domain
+    manpage, schema.html from the base documentation.
+
+HISTORY
+    ivan@sisd.com 97-nov-14
+
+    data checking/untainting calls into FS::Record added
+    ivan@sisd.com 97-dec-6
+
+    pod ivan@sisd.com 98-sep-21
+

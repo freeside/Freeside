@@ -1,0 +1,200 @@
+NAME
+    FS::cust_main - Object methods for cust_main records
+
+SYNOPSIS
+      use FS::cust_main;
+
+      $record = create FS::cust_main \%hash;
+      $record = create FS::cust_main { 'column' => 'value' };
+
+      $error = $record->insert;
+
+      $error = $new_record->replace($old_record);
+
+      $error = $record->delete;
+
+      $error = $record->check;
+
+      @cust_pkg = $record->all_pkgs;
+
+      @cust_pkg = $record->ncancelled_pkgs;
+
+      $error = $record->bill;
+      $error = $record->bill %options;
+      $error = $record->bill 'time' => $time;
+
+      $error = $record->collect;
+      $error = $record->collect %options;
+      $error = $record->collect 'invoice_time'   => $time,
+                                'batch_card'     => 'yes',
+                                'report_badcard' => 'yes',
+                              ;
+
+DESCRIPTION
+    An FS::cust_main object represents a customer. FS::cust_main
+    inherits from FS::Record. The following fields are currently
+    supported:
+
+    custnum - primary key (assigned automatically for new customers)
+    agentnum - agent (see the FS::agent manpage)
+    refnum - referral (see the FS::part_referral manpage)
+    first - name
+    last - name
+    ss - social security number (optional)
+    company - (optional)
+    address1
+    address2 - (optional)
+    city
+    county - (optional, see the FS::cust_main_county manpage)
+    state - (see the FS::cust_main_county manpage)
+    zip
+    country - (see the FS::cust_main_county manpage)
+    daytime - phone (optional)
+    night - phone (optional)
+    payby - `CARD' (credit cards), `BILL' (billing), or `COMP' (free)
+    payinfo - card number, P.O.#, or comp issuer (4-8 lowercase alphanumerics; think username)
+    paydate - expiration date, mm/yyyy, m/yyyy, mm/yy or m/yy
+    payname - name on card or billing name
+    tax - tax exempt, empty or `Y'
+    otaker - order taker (assigned automatically, see the FS::UID manpage)
+METHODS
+    create HASHREF
+        Creates a new customer. To add the customer to the database,
+        see the section on "insert".
+
+        Note that this stores the hash reference, not a distinct
+        copy of the hash it points to. You can ask the object for a
+        copy with the *hash* method.
+
+    insert
+        Adds this customer to the database. If there is an error,
+        returns the error, otherwise returns false.
+
+    delete
+        Currently unimplemented. Maybe cancel all of this customer's
+        packages (cust_pkg)?
+
+        I don't remove the customer record in the database because
+        there would then be no record the customer ever existed
+        (which is bad, no?)
+
+    replace OLD_RECORD
+        Replaces the OLD_RECORD with this one in the database. If
+        there is an error, returns the error, otherwise returns
+        false.
+
+    check
+        Checks all fields to make sure this is a valid customer
+        record. If there is an error, returns the error, otherwise
+        returns false. Called by the insert and repalce methods.
+
+    all_pkgs
+        Returns all packages (see the FS::cust_pkg manpage) for this
+        customer.
+
+    ncancelled_pkgs
+        Returns all non-cancelled packages (see the FS::cust_pkg
+        manpage) for this customer.
+
+    bill OPTIONS
+        Generates invoices (see the FS::cust_bill manpage) for this
+        customer. Usually used in conjunction with the collect
+        method.
+
+        The only currently available option is `time', which bills
+        the customer as if it were that time. It is specified as a
+        UNIX timestamp; see the section on "time" in the perlfunc
+        manpage). Also see the Time::Local manpage and the
+        Date::Parse manpage for conversion functions.
+
+        If there is an error, returns the error, otherwise returns
+        false.
+
+    collect OPTIONS
+        (Attempt to) collect money for this customer's outstanding
+        invoices (see the FS::cust_bill manpage). Usually used after
+        the bill method.
+
+        Depending on the value of `payby', this may print an invoice
+        (`BILL'), charge a credit card (`CARD'), or just add any
+        necessary (pseudo-)payment (`COMP').
+
+        If there is an error, returns the error, otherwise returns
+        false.
+
+        Currently available options are:
+
+        invoice_time - Use this time when deciding when to print
+        invoices and late notices on those invoices. The default is
+        now. It is specified as a UNIX timestamp; see the section on
+        "time" in the perlfunc manpage). Also see the Time::Local
+        manpage and the Date::Parse manpage for conversion
+        functions.
+
+        batch_card - Set this true to batch cards (see the
+        cust_pay_batch manpage). By default, cards are processed
+        immediately, which will generate an error if CyberCash is
+        not installed.
+
+        report_badcard - Set this true if you want bad card
+        transactions to return an error. By default, they don't.
+
+    total_owed
+        Returns the total owed for this customer on all invoices
+        (see the FS::cust_bill manpage).
+
+    total_credited
+        Returns the total credits (see the FS::cust_credit manpage)
+        for this customer.
+
+    balance
+        Returns the balance for this customer (total owed minus
+        total credited).
+
+BUGS
+    The delete method.
+
+    It doesn't properly override FS::Record yet.
+
+    hfields should be removed.
+
+    Bill and collect options should probably be passed as references
+    instead of a list.
+
+    CyberCash v2 forces us to define some variables in package main.
+
+SEE ALSO
+    the FS::Record manpage, the FS::cust_pkg manpage, the
+    FS::cust_bill manpage, the FS::cust_credit manpage the
+    FS::cust_pay_batch manpage, the FS::agent manpage, the
+    FS::part_referral manpage, the FS::cust_main_county manpage, the
+    FS::UID manpage, schema.html from the base documentation.
+
+HISTORY
+    ivan@voicenet.com 97-jul-28
+
+    Changed to standard Business::CreditCard no more TableUtil
+    EXPORT_OK FS::Record's hfields removed unique calls and locking
+    (not needed here now) wrapped the (now) optional fields in if
+    statements in sub check (notyetdone!) ivan@sisd.com 97-nov-12
+
+    updated paydate with SQL-type date info ivan@sisd.com 98-mar-5
+
+    Added export of datasrc from UID.pm for Pg6.3 changed 'day' to
+    'daytime' because Pg6.3 reserves the day word
+    bmccane@maxbaud.net 98-apr-3
+
+    in ->create, s/svc_acct/cust_main/, now it should actually
+    eliminate the warnings it was meant to ivan@sisd.com 98-jul-16
+
+    don't require a phone number and allow '/' in company names
+    ivan@sisd.com 98-jul-18
+
+    use ut_ and rewrite &check, &*_pkgs ivan@sisd.com 98-sep-5
+
+    pod, merge with FS::Bill (about time!), total_owed,
+    total_credited and balance methods, cleaned collect method,
+    source modifications no longer necessary to enable cybercash,
+    cybercash v3 support, don't need to import
+    FS::UID::{datasrc,checkruid} ivan@sisd.com 98-sep-19-21
+

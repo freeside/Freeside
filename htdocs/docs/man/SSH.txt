@@ -1,0 +1,63 @@
+NAME
+    FS::SSH - Subroutines to call ssh and scp
+
+SYNOPSIS
+      use FS::SSH qw(ssh scp issh iscp sshopen2 sshopen3);
+
+      ssh($host, $command);
+
+      issh($host, $command);
+
+      scp($source, $destination);
+
+      iscp($source, $destination);
+
+      sshopen2($host, $reader, $writer, $command);
+
+      sshopen3($host, $reader, $writer, $error, $command);
+
+DESCRIPTION
+      Simple wrappers around ssh and scp commands.
+
+SUBROUTINES
+    ssh HOST, COMMAND
+        Calls ssh in batch mode.
+
+    issh HOST, COMMAND
+        Prints the ssh command to be executed, waits for the user to
+        confirm, and (optionally) executes the command.
+
+    scp SOURCE, DESTINATION
+        Calls scp in batch mode.
+
+    iscp SOURCE, DESTINATION
+        Prints the scp command to be executed, waits for the user to
+        confirm, and (optionally) executes the command.
+
+    sshopen2 HOST, READER, WRITER, COMMAND
+        Connects the supplied filehandles to the ssh process (in
+        batch mode).
+
+    sshopen3 HOST, WRITER, READER, ERROR, COMMAND
+        Connects the supplied filehandles to the ssh process (in
+        batch mode).
+
+BUGS
+        Not OO.
+
+        scp stuff should transparantly use rsync-over-ssh instead.
+
+SEE ALSO
+        the ssh manpage, the scp manpage, the IPC::Open2 manpage,
+        the IPC::Open3 manpage
+
+HISTORY
+        ivan@voicenet.com 97-jul-17
+
+        added sshopen2 and sshopen3 ivan@sisd.com 98-mar-9
+
+        added iscp ivan@sisd.com 98-jul-25 now iscp asks y/n, issh
+        and took out path ivan@sisd.com 98-jul-30
+
+        pod ivan@sisd.com 98-sep-21
+

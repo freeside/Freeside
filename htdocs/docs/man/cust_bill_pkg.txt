@@ -1,0 +1,72 @@
+NAME
+    FS::cust_bill_pkg - Object methods for cust_bill_pkg records
+
+SYNOPSIS
+      use FS::cust_bill_pkg;
+
+      $record = create FS::cust_bill_pkg \%hash;
+      $record = create FS::cust_bill_pkg { 'column' => 'value' };
+
+      $error = $record->insert;
+
+      $error = $new_record->replace($old_record);
+
+      $error = $record->delete;
+
+      $error = $record->check;
+
+DESCRIPTION
+    An FS::cust_bill_pkg object represents an invoice line item.
+    FS::cust_bill_pkg inherits from FS::Record. The following fields
+    are currently supported:
+
+    invnum - invoice (see the FS::cust_bill manpage)
+    pkgnum - package (see the FS::cust_pkg manpage)
+    setup - setup fee
+    recur - recurring fee
+    sdate - starting date of recurring fee
+    edate - ending date of recurring fee
+    sdate and edate are specified as UNIX timestamps; see the
+    section on "time" in the perlfunc manpage. Also see the
+    Time::Local manpage and the Date::Parse manpage for conversion
+    functions.
+
+METHODS
+    create HASHREF
+        Creates a new line item. To add the line item to the
+        database, see the section on "insert". Line items are
+        normally created by calling the bill method of a customer
+        object (see the FS::cust_main manpage).
+
+    insert
+        Adds this line item to the database. If there is an error,
+        returns the error, otherwise returns false.
+
+    delete
+        Currently unimplemented. I don't remove line items because
+        there would then be no record the items ever existed (which
+        is bad, no?)
+
+    replace OLD_RECORD
+        Currently unimplemented. This would be even more of an
+        accounting nightmare than deleteing the items. Just don't do
+        it.
+
+    check
+        Checks all fields to make sure this is a valid line item. If
+        there is an error, returns the error, otherwise returns
+        false. Called by the insert method.
+
+BUGS
+    It doesn't properly override FS::Record yet.
+
+SEE ALSO
+    the FS::Record manpage, the FS::cust_bill manpage, the
+    FS::cust_pkg manpage, the FS::cust_main manpage, schema.html
+    from the base documentation.
+
+HISTORY
+    ivan@sisd.com 98-mar-13
+
+    pod ivan@sisd.com 98-sep-21
+

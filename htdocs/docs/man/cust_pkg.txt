@@ -1,0 +1,150 @@
+NAME
+    FS::cust_pkg - Object methods for cust_pkg objects
+
+SYNOPSIS
+      use FS::cust_pkg;
+
+      $record = create FS::cust_pkg \%hash;
+      $record = create FS::cust_pkg { 'column' => 'value' };
+
+      $error = $record->insert;
+
+      $error = $new_record->replace($old_record);
+
+      $error = $record->delete;
+
+      $error = $record->check;
+
+      $error = $record->cancel;
+
+      $error = $record->suspend;
+
+      $error = $record->unsuspend;
+
+      $error = FS::cust_pkg::order( $custnum, \@pkgparts );
+      $error = FS::cust_pkg::order( $custnum, \@pkgparts, \@remove_pkgnums ] );
+
+DESCRIPTION
+    An FS::cust_pkg object represents a customer billing item.
+    FS::cust_pkg inherits from FS::Record. The following fields are
+    currently supported:
+
+    pkgnum - primary key (assigned automatically for new billing items)
+    custnum - Customer (see the FS::cust_main manpage)
+    pkgpart - Billing item definition (see the FS::part_pkg manpage)
+    setup - date
+    bill - date
+    susp - date
+    expire - date
+    cancel - date
+    otaker - order taker (assigned automatically if null, see the FS::UID manpage)
+    Note: setup, bill, susp, expire and cancel are specified as UNIX
+    timestamps; see the section on "time" in the perlfunc manpage.
+    Also see the Time::Local manpage and the Date::Parse manpage for
+    conversion functions.
+
+METHODS
+    create HASHREF
+        Create a new billing item. To add the item to the database,
+        see the section on "insert".
+
+    insert
+        Adds this billing item to the database ("Orders" the item).
+        If there is an error, returns the error, otherwise returns
+        false.
+
+    delete
+        Currently unimplemented. You don't want to delete billing
+        items, because there would then be no record the customer
+        ever purchased the item. Instead, see the cancel method.
+
+        sub delete { return "Can't delete cust_pkg records!"; }
+
+    replace OLD_RECORD
+        Replaces the OLD_RECORD with this one in the database. If
+        there is an error, returns the error, otherwise returns
+        false.
+
+        Currently, custnum, setup, bill, susp, expire, and cancel
+        may be changed.
+
+        pkgpart may not be changed, but see the order subroutine.
+
+        setup and bill are normally updated by calling the bill
+        method of a customer object (see the FS::cust_main manpage).
+
+        suspend is normally updated by the suspend and unsuspend
+        methods.
+
+        cancel is normally updated by the cancel method (and also
+        the order subroutine in some cases).
+
+    check
+        Checks all fields to make sure this is a valid billing item.
+        If there is an error, returns the error, otherwise returns
+        false. Called by the insert and replace methods.
+
+    cancel
+        Cancels and removes all services (see the FS::cust_svc
+        manpage and the FS::part_svc manpage) in this package, then
+        cancels the package itself (sets the cancel field to now).
+
+        If there is an error, returns the error, otherwise returns
+        false.
+
+    suspend
+        Suspends all services (see the FS::cust_svc manpage and the
+        FS::part_svc manpage) in this package, then suspends the
+        package itself (sets the susp field to now).
+
+        If there is an error, returns the error, otherwise returns
+        false.
+
+    unsuspend
+        Unsuspends all services (see the FS::cust_svc manpage and
+        the FS::part_svc manpage) in this package, then unsuspends
+        the package itself (clears the susp field).
+
+        If there is an error, returns the error, otherwise returns
+        false.
+
+SUBROUTINES
+    order CUSTNUM, PKGPARTS_ARYREF, [ REMOVE_PKGNUMS_ARYREF ]
+        CUSTNUM is a customer (see the FS::cust_main manpage)
+
+        PKGPARTS is a list of pkgparts specifying the the billing
+        item definitions (see the FS::part_pkg manpage) to order for
+        this customer. Duplicates are of course permitted.
+
+        REMOVE_PKGNUMS is an optional list of pkgnums specifying the
+        billing items to remove for this customer. The services (see
+        the FS::cust_svc manpage) are moved to the new billing
+        items. An error is returned if this is not possible (see the
+        FS::pkg_svc manpage).
+
+BUGS
+    It doesn't properly override FS::Record yet.
+
+    sub order is not OO. Perhaps it should be moved to FS::cust_main
+    and made so?
+
+    In sub order, the @pkgparts array (passed by reference) is
+    clobbered.
+
+    Also in sub order, no money is adjusted. Once FS::part_pkg
+    defines a standard method to pass dates to the recur_prog
+    expression, it should do so.
+
+SEE ALSO
+    the FS::Record manpage, the FS::cust_main manpage, the
+    FS::part_pkg manpage, the FS::cust_svc manpage , the FS::pkg_svc
+    manpage, schema.html from the base documentation
+
+HISTORY
+    ivan@voicenet.com 97-jul-1 - 21
+
+    fixed for new agent->agent_type->type_pkgs in &order
+    ivan@sisd.com 98-mar-7
+
+    pod ivan@sisd.com 98-sep-21
+

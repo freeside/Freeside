@@ -1,0 +1,79 @@
+NAME
+    FS::UID - Subroutines for database login and assorted other
+    stuff
+
+SYNOPSIS
+      use FS::UID qw(adminsuidsetup cgisuidsetup dbh datasrc getotaker
+      checkeuid checkruid swapuid);
+
+      adminsuidsetup;
+
+      $cgi = new CGI::Base;
+      $cgi->get;
+      $dbh = cgisuidsetup($cgi);
+
+      $dbh = dbh;
+
+      $datasrc = datasrc;
+
+DESCRIPTION
+    Provides a hodgepodge of subroutines.
+
+SUBROUTINES
+    adminsuidsetup
+        Cleans the environment. Make sure the script is running as
+        freeside, or setuid freeside. Opens a connection to the
+        database. Swaps real and effective UIDs. Returns the DBI
+        database handle (usually you don't need this).
+
+    dbh Returns the DBI database handle.
+
+    datasrc
+        Returns the DBI data source.
+
+    getotaker
+        Returns the current Freeside user. Currently that means the
+        CGI REMOTE_USER, or 'freeside'.
+
+    checkeuid
+        Returns true if effective UID is that of the freeside user.
+
+    checkruid
+        Returns true if the real UID is that of the freeside user.
+
+    swapuid
+        Swaps real and effective UIDs.
+
+BUGS
+    Not OO.
+
+    No capabilities yet. When mod_perl and Authen::DBI are
+    implemented, cgisuidsetup will go away as well.
+
+SEE ALSO
+    the FS::Record manpage, the CGI::Base manpage, the DBI manpage
+
+HISTORY
+    ivan@voicenet.com 97-jun-4 - 9 untaint otaker ivan@voicenet.com
+    97-jul-7
+
+    generalize and auto-get uid (getotaker still needs to be db'ed)
+    ivan@sisd.com 97-nov-10
+
+    &cgisuidsetup logs into database. other cleaning. ivan@sisd.com
+    97-nov-22,23
+
+    &adminsuidsetup logs into database with otaker='freeside' (for
+    automated tasks like billing) ivan@sisd.com 97-dec-13
+
+    added sub datasrc for fs-setup ivan@sisd.com 98-feb-21
+
+    datasrc, user and pass now come from conf/secrets ivan@sisd.com
+    98-jun-28
+
+    added ChopBlanks to DBI call (see man DBI) ivan@sisd.com 98-aug-
+    16
+
+    pod, use FS::Conf, implemented cgisuidsetup as adminsuidsetup,
+    inlined suidsetup ivan@sisd.com 98-sep-12
+

@@ -1,0 +1,69 @@
+NAME
+    FS::dbdef_column - Column object
+
+SYNOPSIS
+      use FS::dbdef_column;
+
+      $column_object = new FS::dbdef_column ( $name, $sql_type, '' );
+      $column_object = new FS::dbdef_column ( $name, $sql_type, 'NULL' );
+      $column_object = new FS::dbdef_column ( $name, $sql_type, '', $length );
+      $column_object = new FS::dbdef_column ( $name, $sql_type, 'NULL', $length );
+
+      $name = $column_object->name;
+      $column_object->name ( 'name' );
+
+      $name = $column_object->type;
+      $column_object->name ( 'sql_type' );
+
+      $name = $column_object->null;
+      $column_object->name ( 'NOT NULL' );
+
+      $name = $column_object->length;
+      $column_object->name ( $length );
+
+      $sql_line = $column->line;
+      $sql_line = $column->line $datasrc;
+
+DESCRIPTION
+    FS::dbdef::column objects represend columns in tables (see the
+    FS::dbdef_table manpage).
+
+METHODS
+    new Creates a new FS::dbdef_column object.
+
+    name
+        Returns or sets the column name.
+
+    type
+        Returns or sets the column type.
+
+    null
+        Returns or sets the column null flag.
+
+    type
+        Returns or sets the column length.
+
+    line [ $datasrc ]
+        Returns an SQL column definition.
+
+        If passed a DBI $datasrc specifying the DBD::mysql manpage,
+        will use MySQL-specific syntax. Non-standard syntax for
+        other engines (if applicable) may also be supported in the
+        future.
+
+BUGS
+SEE ALSO
+    the FS::dbdef_table manpage, the FS::dbdef manpage, the DBI
+    manpage
+
+HISTORY
+    class for dealing with column definitions
+
+    ivan@sisd.com 98-apr-17
+
+    now methods can be used to get or set data ivan@sisd.com 98-may-
+    11
+
+    mySQL-specific hack for null (what should be default?)
+    ivan@sisd.com 98-jun-2
+

@@ -1,0 +1,140 @@
+NAME
+    FS::cust_bill - Object methods for cust_bill records
+
+SYNOPSIS
+      use FS::cust_bill;
+
+      $record = create FS::cust_bill \%hash;
+      $record = create FS::cust_bill { 'column' => 'value' };
+
+      $error = $record->insert;
+
+      $error = $new_record->replace($old_record);
+
+      $error = $record->delete;
+
+      $error = $record->check;
+
+      ( $total_previous_balance, @previous_cust_bill ) = $record->previous;
+
+      @cust_bill_pkg_objects = $cust_bill->cust_bill_pkg;
+
+      ( $total_previous_credits, @previous_cust_credit ) = $record->cust_credit;
+
+      @cust_pay_objects = $cust_bill->cust_pay;
+
+      @lines = $cust_bill->print_text;
+      @lines = $cust_bill->print_text $time;
+
+DESCRIPTION
+    An FS::cust_bill object represents an invoice. FS::cust_bill
+    inherits from FS::Record. The following fields are currently
+    supported:
+
+    invnum - primary key (assigned automatically for new invoices)
+    custnum - customer (see the FS::cust_main manpage)
+    _date - specified as a UNIX timestamp; see the section on "time" in the perlfunc manpage.  Also see
+    the Time::Local manpage and the Date::Parse manpage for conversion functions.
+    charged - amount of this invoice
+    owed - amount still outstanding on this invoice, which is charged minus
+    all payments (see the FS::cust_pay manpage).
+    printed - how many times this invoice has been printed automatically
+    (see the section on "collect" in the FS::cust_main manpage).
+METHODS
+    create HASHREF
+        Creates a new invoice. To add the invoice to the database,
+        see the section on "insert". Invoices are normally created
+        by calling the bill method of a customer object (see the
+        FS::cust_main manpage).
+
+    insert
+        Adds this invoice to the database ("Posts" the invoice). If
+        there is an error, returns the error, otherwise returns
+        false.
+
+        When adding new invoices, owed must be charged (or null, in
+        which case it is automatically set to charged).
+
+    delete
+        Currently unimplemented. I don't remove invoices because
+        there would then be no record you ever posted this invoice
+        (which is bad, no?)
+
+    replace OLD_RECORD
+        Replaces the OLD_RECORD with this one in the database. If
+        there is an error, returns the error, otherwise returns
+        false.
+
+        Only owed and printed may be changed. Owed is normally
+        updated by creating and inserting a payment (see the
+        FS::cust_pay manpage). Printed is normally updated by
+        calling the collect method of a customer object (see the
+        FS::cust_main manpage).
+
+    check
+        Checks all fields to make sure this is a valid invoice. If
+        there is an error, returns the error, otherwise returns
+        false. Called by the insert and replace methods.
+
+    previous
+        Returns a list consisting of the total previous balance for
+        this customer, followed by the previous outstanding invoices
+        (as FS::cust_bill objects also).
+
+    cust_bill_pkg
+        Returns the line items (see the FS::cust_bill_pkg manpage)
+        for this invoice.
+
+    cust_credit
+        Returns a list consisting of the total previous credited
+        (see the FS::cust_credit manpage) for this customer,
+        followed by the previous outstanding credits
+        (FS::cust_credit objects).
+
+    cust_pay
+        Returns all payments (see the FS::cust_pay manpage) for this
+        invoice.
+
+    print_text [TIME];
+        Returns an ASCII invoice, as a list of lines.
+
+        TIME an optional value used to control the printing of
+        overdue messages. The default is now. It isn't the date of
+        the invoice; that's the `_date' field. It is specified as a
+        UNIX timestamp; see the section on "time" in the perlfunc
+        manpage. Also see the Time::Local manpage and the
+        Date::Parse manpage for conversion functions.
+
+BUGS
+    The delete method.
+
+    It doesn't properly override FS::Record yet.
+
+    print_text formatting (and some logic :/) is in source as a
+    format declaration, which needs to be slurped in from a file.
+    the fork is rather kludgy as well. It could be cleaned with
+    swrite from man perlform, and the picture could be put in a
+    /var/spool/freeside/conf file. Also number of lines ($=).
+
+    missing print_ps for a nice postscript copy (maybe HylaFAX-
+    cover-page-style or something similar so the look can be
+    completely customized?)
+
+    There is an off-by-one error in print_text which causes a visual
+    error: "Page 1 of 2" printed on some single-page invoices?
+
+SEE ALSO
+    the FS::Record manpage, the FS::cust_main manpage, the
+    FS::cust_pay manpage, the FS::cust_bill_pkg manpage, the
+    FS::cust_credit manpage, schema.html from the base
+    documentation.
+
+HISTORY
+    ivan@voicenet.com 97-jul-1
+
+    small fix for new API ivan@sisd.com 98-mar-14
+
+    charges can be negative ivan@sisd.com 98-jul-13
+
+    pod, ingegrate with FS::Invoice ivan@sisd.com 98-sep-20
+
