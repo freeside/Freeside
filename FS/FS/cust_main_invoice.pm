@@ -117,7 +117,9 @@ sub check {
 
 =item checkdest
 
-Checks the dest field only.
+Checks the dest field only.  If it finds that the account ends in the
+same domain configured in the configuration files, it will change the
+invoice destination from an email address to a service number instead.
 
 =cut
 
@@ -167,7 +169,7 @@ sub address {
 
 =head1 VERSION
 
-$Id: cust_main_invoice.pm,v 1.2 2000-06-20 07:13:03 ivan Exp $
+$Id: cust_main_invoice.pm,v 1.3 2001-07-27 06:17:46 thalakan Exp $
 
 =head1 BUGS
 
