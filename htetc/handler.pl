@@ -40,7 +40,7 @@ use vars qw($r);
 
 if ( %%%RT_ENABLED%%% ) {
  eval '
-   use lib ("/opt/rt3/local/lib", "/opt/rt3/lib");
+   use lib ( "/opt/rt3/local/lib", "/opt/rt3/lib" );
    use RT;
    use vars qw($Nobody $SystemUser);
    RT::LoadConfig();
@@ -176,12 +176,14 @@ sub handler
           use RT::CustomFields;
           use RT::CustomFieldValues;
           use RT::TicketCustomFieldValues;
-      
+
           use RT::Interface::Web;
           use MIME::Entity;
           use Text::Wrapper;
           use CGI::Cookie;
           use Time::ParseDate;
+          use HTML::Scrubber;
+          use Text::Quoted;
         ';
         die $@ if $@;
       }
@@ -284,8 +286,8 @@ sub handler
 
       RT::Init();
 
-      # We don't need to handle non-text items
-      return -1 if defined( $r->content_type ) && $r->content_type !~ m|^text/|io;
+      # We don't need to handle non-text, non-xml items
+      return -1 if defined( $r->content_type ) && $r->content_type !~ m!(^text/|\bxml\b)!io;
 
     } else {
       $ah->interp->set_escape( 'h' => sub { ${$_[0]}; } );
@@ -304,7 +306,9 @@ sub handler
 #!!
 #    if ($RT::Handle->TransactionDepth) {
 #	$RT::Handle->ForceRollback;
-#    	$RT::Logger->crit("Transaction not committed. Usually indicates a software fault. Data loss may have occurred") ;
+#    	$RT::Logger->crit(
+#"Transaction not committed. Usually indicates a software fault. Data loss may have occurred"
+#       );
 #    }
 
     $status;
