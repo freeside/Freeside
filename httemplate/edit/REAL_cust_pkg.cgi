@@ -1,6 +1,6 @@
 <!-- mason kludge -->
 <%
-# <!-- $Id: REAL_cust_pkg.cgi,v 1.3 2002-04-23 07:32:49 ivan Exp $ -->
+# <!-- $Id: REAL_cust_pkg.cgi,v 1.4 2002-07-08 13:07:40 ivan Exp $ -->
 
 my $error ='';
 my $pkgnum = '';
@@ -45,7 +45,7 @@ print '<FORM NAME="formname" ACTION="process/REAL_cust_pkg.cgi" METHOD="POST">',
 print qq!<FONT SIZE="+1" COLOR="#ff0000">Error: $error</FONT>!
   if $error;
 
-print &ntable("#cccccc"), '<TR><TD>', &ntable("#cccccc",2),
+print ntable("#cccccc",2),
       '<TR><TD ALIGN="right">Package number</TD><TD BGCOLOR="#ffffff">',
       $pkgnum, '</TD></TR>',
       '<TR><TD ALIGN="right">Package</TD><TD BGCOLOR="#ffffff">',
@@ -66,16 +66,23 @@ print '<TR><TD ALIGN="right">Suspension date</TD><TD BGCOLOR="#ffffff">',
        time2str("%D",$susp), '</TD></TR>'
   if $susp;
 
-print '<TR><TD ALIGN="right">Expiration date</TD><TD BGCOLOR="#ffffff">',
-       time2str("%D",$expire), '</TD></TR>'
-  if $expire;
+#print '<TR><TD ALIGN="right">Expiration date</TD><TD BGCOLOR="#ffffff">',
+#       time2str("%D",$expire), '</TD></TR>'
+#  if $expire;
+print '<TR><TD ALIGN="right">Expiration date'.
+      '</TD><TD>',
+      '<INPUT TYPE="text" NAME="expire" SIZE=32 VALUE="',
+      ( $expire ? time2str("%c %z (%Z)",$expire) : "" ), '">'.
+      '<BR><FONT SIZE=-1>(will <b>cancel</b> this package'.
+      ' when the date is reached)</FONT>'.
+      '</TD></TR>';
 
 print '<TR><TD ALIGN="right">Cancellation date</TD><TD BGCOLOR="#ffffff">',
        time2str("%D",$cancel), '</TD></TR>'
   if $cancel;
 
 %>
-</TABLE></TD></TR></TABLE>
+</TABLE>
 <BR><INPUT TYPE="submit" VALUE="Apply Changes">
 </FORM>
 </BODY>
