@@ -60,7 +60,7 @@ chmod 755 browse/*.cgi edit/*.cgi edit/process/*.cgi misc/*.cgi misc/process/*.c
     </ul>
 <li>Create the necessary <a href="config.html">configuration files</a>.
 <li>Create the `/usr/local/etc/freeside/counters.<i>datasrc</i>', and 
-  `/usr/local/etc/freeside/export.<i>datasrc</i>' directories for each <i>datasrc</i>.
+  `/usr/local/etc/freeside/export.<i>datasrc</i>' directories for each <i>datasrc</i> (owned by the freeside user).
   <li>As the freeside user, run bin/fs-setup to create the database tables.
 </ul>
 </body>
