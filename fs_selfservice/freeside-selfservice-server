@@ -19,6 +19,10 @@ use Net::SSH qw(sshopen2);
 use FS::UID qw(adminsuidsetup forksuidsetup);
 use FS::ClientAPI;
 
+use FS::Conf;
+use FS::cust_bill;
+use FS::cust_pkg;
+
 $Debug = 2; # >= 2 will log packet contents, including potentially compromising
             # information
 
@@ -32,6 +36,13 @@ my $pid_file = "/var/run/freeside-selfservice-server.$user.pid";
 #my $pid_file = "/var/run/freeside-selfservice-server.$user.pid"; $FS::UID::datasrc not posible, but should include machine name at least, hmm
 
 &init($user);
+
+my $conf = new FS::Conf;
+
+if ($conf->exists('selfservice_server-quiet')) {
+    $FS::cust_bill::quiet = 1;
+    $FS::cust_pkg::quiet = 1;
+}
 
 my $clientd = "/usr/local/sbin/freeside-selfservice-clientd"; #better name?
 
