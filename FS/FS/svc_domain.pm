@@ -11,7 +11,7 @@ use Mail::Internet;
 use Mail::Header;
 use Date::Format;
 use Net::Whois 1.0;
-use FS::Record qw(fields qsearch qsearchs);
+use FS::Record qw(fields qsearch qsearchs dbh);
 use FS::Conf;
 use FS::svc_Common;
 use FS::cust_svc;
@@ -478,7 +478,7 @@ sub submit_internic {
 
 =head1 VERSION
 
-$Id: svc_domain.pm,v 1.8 2001-04-15 13:35:12 ivan Exp $
+$Id: svc_domain.pm,v 1.9 2001-04-22 01:38:39 ivan Exp $
 
 =head1 BUGS
 

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_bill.cgi,v 1.5 2000-07-17 16:45:41 ivan Exp $
+# $Id: cust_bill.cgi,v 1.6 2001-04-22 01:38:39 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/cust_bill.cgi
@@ -11,7 +11,12 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # $Log: cust_bill.cgi,v $
-# Revision 1.5  2000-07-17 16:45:41  ivan
+# Revision 1.6  2001-04-22 01:38:39  ivan
+# svc_domain needs to import dbh sub from Record
+# view/cust_main.cgi needs to use ->owed method, not check (depriciated) owed field
+# search/cust_bill.cgi redirect error when there's only one invoice
+#
+# Revision 1.5  2000/07/17 16:45:41  ivan
 # first shot at invoice browsing and some other cleanups
 #
 # Revision 1.4  1999/02/28 00:03:54  ivan
@@ -85,6 +90,7 @@ if ( $cgi->keywords ) {
 }
 
 if ( scalar(@cust_bill) == 1 ) {
+  my $invnum = $cust_bill[0]->invnum;
   print $cgi->redirect(popurl(2). "view/cust_bill.cgi?$invnum");  #redirect
 } elsif ( scalar(@cust_bill) == 0 ) {
   eidiot("Invoice not found.");

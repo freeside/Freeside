@@ -1,10 +1,15 @@
-$Id: TODO,v 1.62 2001-04-15 13:56:54 ivan Exp $
+$Id: TODO,v 1.63 2001-04-22 01:38:38 ivan Exp $
 
 If you are interested in helping with any of these, please join the
 *development* mailing list (send a blank message to
 ivan-freeside-devel-subscribe@sisd.com) to avoid duplication of effort.
 
 ---
+
+Things that would be nice but probably won't happen: testing with 
+MySQL+Sleepycat, a fix for the long-RADIUS-attributes-with Pg problem,    
+passive session monitoring with RADIUS (tailing a log file or monitoring a
+database, as opposed to using a RADIUS with proper callbacks).
 
 anything doing transactions in the web interface should likely move into *.pm.
 (transactions are here woo!)
