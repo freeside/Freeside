@@ -79,7 +79,7 @@ sub messages {
       'en_US' => 'Illegal password (',
     },
 
-    'illeggal_password_characters' => {
+    'illegal_password_characters' => {
       'en_US' => ' characters)',
     },
 

@@ -787,7 +787,7 @@ sub check {
     $recref->{_password} = '!!';
   } else {
     #return "Illegal password";
-    return gettext('illegal_password'). "$passwordmin-$passwordmax".
+    return gettext('illegal_password'). " $passwordmin-$passwordmax ".
            FS::Msgcat::_gettext('illegal_password_characters').
            ": ". $recref->{_password};
   }
