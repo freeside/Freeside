@@ -891,6 +891,8 @@ sub hfields {
 #  } (fields($self->table)) );
 #}
 
+sub DESTROY { return; }
+
 #sub DESTROY {
 #  my $self = shift;
 #  #use Carp qw(cluck);
@@ -906,7 +908,7 @@ sub hfields {
 
 =head1 VERSION
 
-$Id: Record.pm,v 1.10 2000-12-03 20:25:20 ivan Exp $
+$Id: Record.pm,v 1.11 2000-12-06 10:21:13 ivan Exp $
 
 =head1 BUGS
 
