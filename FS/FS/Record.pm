@@ -169,6 +169,8 @@ objects.
 
 sub qsearch {
   my($table, $record, $select, $extra_sql ) = @_;
+  $table =~ /^([\w\_])+$/ or die "Illegal table: $table";
+  $table = $1;
   $select ||= '*';
   my $dbh = dbh;
 
@@ -913,7 +915,7 @@ sub DESTROY { return; }
 
 =head1 VERSION
 
-$Id: Record.pm,v 1.14 2001-04-15 12:56:30 ivan Exp $
+$Id: Record.pm,v 1.15 2001-05-07 15:36:04 ivan Exp $
 
 =head1 BUGS
 
