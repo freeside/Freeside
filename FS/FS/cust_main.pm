@@ -1239,6 +1239,57 @@ sub total_owed {
   sprintf( "%.2f", $total_bill );
 }
 
+=item apply_credits
+
+Applies (see L<FS::cust_credit_bill>) unapplied credits (see L<FS::cust_credit>)to outstanding invoice balances in cronological order and returns the value
+of any remaining unapplied credits available for refund (see L<FS::cust_refund>).
+
+=cut
+
+sub apply_credits {
+  my $self = shift;
+
+  return 0 unless $self->total_credited;
+
+  my @credits = sort { $b->_date <=> $a->_date} (grep { $_->credited > 0 }
+      qsearch('cust_credit', { 'custnum' => $self->custnum } ) );
+
+  my @invoices = sort { $a->_date <=> $b->_date} (grep { $_->owed > 0 }
+      qsearch('cust_bill', { 'custnum' => $self->custnum } ) );
+
+  my $credit;
+
+  foreach my $cust_bill ( @invoices ) {
+    my $amount;
+
+    if (!(defined $credit) || $credit->credited == 0) {
+      $credit = pop @credits;
+      last unless defined $credit;
+    }
+
+    if ($cust_bill->owed >= $credit->credited) {
+      $amount=$credit->credited;
+    }else{
+      $amount=$cust_bill->owed;
+    }
+    
+    my $cust_credit_bill = new FS::cust_credit_bill ( {
+      'crednum' => $credit->crednum,
+      'invnum'  => $cust_bill->invnum,
+      'amount'  => $amount,
+      '_date'   => time,
+    } );
+    my $error = $cust_credit_bill->insert;
+    die $error if $error;
+    
+    redo if ($cust_bill->owed > 0);
+
+  }
+
+  return $self->total_credited;
+}
+
+
 =item total_credited
 
 Returns the total credits (see L<FS::cust_credit>) for this customer.
@@ -1399,7 +1450,7 @@ sub rebuild_fuzzyfiles {
 
 =head1 VERSION
 
-$Id: cust_main.pm,v 1.24 2001-09-01 21:52:20 jeff Exp $
+$Id: cust_main.pm,v 1.25 2001-09-01 22:28:51 jeff Exp $
 
 =head1 BUGS
 
