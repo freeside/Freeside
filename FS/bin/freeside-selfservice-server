@@ -9,6 +9,7 @@
 
 use strict;
 use vars qw( $Debug %kids $kids $max_kids $shutdown $log_file $ssh_pid );
+use subs qw( lock_write unlock_write );
 use Fcntl qw(:flock);
 use POSIX qw(:sys_wait_h setsid);
 use IO::Handle;
@@ -34,6 +35,9 @@ my $user = shift or die &usage;
 my $machine = shift or die &usage;
 my $pid_file = "/var/run/freeside-selfservice-server.$user.pid";
 #my $pid_file = "/var/run/freeside-selfservice-server.$user.pid"; $FS::UID::datasrc not posible, but should include machine name at least, hmm
+
+my $lock_file = "/usr/local/etc/freeside/selfservice.$machine.writelock";
+open(LOCKFILE,">$lock_file") or die "can't open $lock_file: $!";
 
 &init($user);
 
@@ -109,10 +113,10 @@ while (1) {
       $rv->{_token} = $packet->{_token}; #identifier
 
       warn "sending response\n" if $Debug;
-      flock($writer, LOCK_EX) or die "FATAL: can't lock write stream: $!";
+      lock_write;
       nstore_fd($rv, $writer) or die "FATAL: can't send response: $!";
       $writer->flush or die "FATAL: can't flush: $!";
-      flock($writer, LOCK_UN) or die "WARNING: can't release write lock: $!";
+      unlock_write;
 
       warn "child exiting\n" if $Debug;
       exit; #end-of-kid
@@ -229,7 +233,23 @@ sub _do_logmsg {
   close $log;
 }
 
+sub lock_write {
+  #broken on freebsd?
+  #flock($writer, LOCK_EX) or die "FATAL: can't lock write stream: $!";
+
+  flock(LOCKFILE, LOCK_EX) or die "FATAL: can't lock $lock_file: $!";
+
+}
+
+sub unlock_write {
+  #broken on freebsd?
+  #flock($writer, LOCK_UN) or die "WARNING: can't release write lock: $!";
+
+  flock(LOCKFILE, LOCK_UN) or die "FATAL: can't unlock $lock_file: $!";
+
+}
+
 sub usage {
-  die "Usage:\n\n  fs_signup_server user machine\n";
+  die "Usage:\n\n  freeside-selfservice-server user machine\n";
 }
 
