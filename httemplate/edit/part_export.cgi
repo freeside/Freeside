@@ -46,6 +46,8 @@ my $widget = new HTML::Widgets::SelectLayers(
 
     foreach my $option ( keys %{$exports->{$layer}{options}} ) {
       my $optinfo = $exports->{$layer}{options}{$option};
+      die "Retreived non-ref export info option from $layer export: $optinfo"
+        unless ref($optinfo);
       my $label = $optinfo->{label};
       my $type = defined($optinfo->{type}) ? $optinfo->{type} : 'text';
       my $value = $cgi->param($option)
