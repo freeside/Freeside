@@ -1,7 +1,7 @@
 package FS::CGI;
 
 use strict;
-use vars qw(@EXPORT_OK @ISA @header);
+use vars qw(@EXPORT_OK @ISA);
 use Exporter;
 use CGI;
 use URI::URL;
