@@ -40,6 +40,16 @@ sub signup_info {
                  )
       ],
 
+    'part_referral' =>
+      [
+        map { $_->hashref }
+          qsearch('part_referral',
+                    dbdef->table('part_referral')->column('disabled')
+                      ? { 'disabled' => '' }
+                      : {}
+                 )
+      ],
+
     'agentnum2part_pkg' =>
       {
         map {
@@ -71,6 +81,8 @@ sub signup_info {
     'statedefault' => $conf->config('statedefault') || 'CA',
 
     'countrydefault' => $conf->config('countrydefault') || 'US',
+
+    'refnum' => $conf->config('signup_server-default_refnum'),
 
   };
 

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: signup.cgi,v 1.48 2003-10-25 02:05:44 ivan Exp $
+# $Id: signup.cgi,v 1.49 2003-12-10 23:53:34 ivan Exp $
 
 use strict;
 use vars qw( @payby $cgi $locales $packages
@@ -10,7 +10,7 @@ use vars qw( @payby $cgi $locales $packages
              $country $zip $daytime $night $fax $invoicing_list $payby $payinfo
              $paycvv $paydate $payname $referral_custnum $init_popstate
              $pkgpart $username $password $password2 $sec_phrase $popnum
-             $agentnum
+             $agentnum $refnum
              $ieak_file $ieak_template $cck_file $cck_template
              $signup_html $signup_template
              $success_html $success_template
@@ -218,6 +218,7 @@ if ( defined $cgi->param('magic') ) {
     #$agentnum, #         = $cgi->param('agentnum'),
     $agentnum         ||= $cgi->param('agentnum');
     $init_popstate    = $cgi->param('init_popstate');
+    $refnum           = $cgi->param('refnum');
 
     if ( $cgi->param('_password') ne $cgi->param('_password2') ) {
       $error = $init_data->{msgcat}{passwords_dont_match}; #msgcat
@@ -266,6 +267,7 @@ if ( defined $cgi->param('magic') ) {
         '_password'        => $password,
         'popnum'           => $popnum,
         'agentnum'         => $agentnum,
+        'refnum'           => $refnum,
         map { $_ => $cgi->param($_) } grep { /^snarf_/ } $cgi->param
       } );
 
@@ -314,6 +316,7 @@ if ( defined $cgi->param('magic') ) {
   $popnum = '';
   $referral_custnum = $cgi->param('ref') || '';
   $init_popstate = $cgi->param('init_popstate') || '';
+  $refnum = $init_data->{'refnum'};
   print_form;
 }
 

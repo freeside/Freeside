@@ -18,6 +18,16 @@
 <INPUT TYPE="hidden" NAME="magic" VALUE="process">
 <INPUT TYPE="hidden" NAME="ref" VALUE="<%= $referral_custnum %>">
 <INPUT TYPE="hidden" NAME="ss" VALUE="">
+Where did you hear about our service? <SELECT NAME="refnum">
+<%=
+  $OUT .= '<OPTION VALUE="">' unless $refnum;
+  foreach my $part_referral ( @{$init_data->{'part_referral'}} ) {
+    $OUT .= '<OPTION VALUE="'. $part_referral->{'refnum'}. '"';
+    $OUT .= ' SELECTED' if $part_referral->{'refnum'} eq $refnum;
+    $OUT .= '>'. $part_referral->{'referral'};
+  }
+%>
+</SELECT><BR><BR>
 Contact Information
 <TABLE BGCOLOR="#c0c0c0" BORDER=0 CELLSPACING=0 WIDTH="100%">
 <TR>
