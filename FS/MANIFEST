@@ -19,6 +19,7 @@ bin/freeside-expiration-alerter
 bin/freeside-reexport
 FS.pm
 FS/CGI.pm
+FS/InitHandler.pm
 FS/Conf.pm
 FS/ConfItem.pm
 FS/Record.pm
@@ -94,6 +95,7 @@ FS/cust_tax_exempt.pm
 t/agent.t
 t/agent_type.t
 t/CGI.t
+t/InitHandler.t
 t/Conf.t
 t/ConfItem.t
 t/Record.t
