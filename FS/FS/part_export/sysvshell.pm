@@ -1,4 +1,4 @@
-package FS::part_export::bsdshell;
+package FS::part_export::sysvshell;
 
 use vars qw(@ISA);
 use FS::part_export::null;
