@@ -500,6 +500,7 @@ sub check {
     || $self->ut_text('city')
     || $self->ut_textn('county')
     || $self->ut_textn('state')
+    || $self->ut_country('country')
     || $self->ut_anything('comments')
   ;
   #barf.  need message catalogs.  i18n.  etc.
@@ -523,8 +524,6 @@ sub check {
     $self->ss("$1-$2-$3");
   }
 
-  $self->country =~ /^(\w\w)$/ or return "Illegal country: ". $self->country;
-  $self->country($1);
   unless ( qsearchs('cust_main_county', {
     'country' => $self->country,
     'state'   => '',
@@ -565,13 +564,11 @@ sub check {
         || $self->ut_text('ship_city')
         || $self->ut_textn('ship_county')
         || $self->ut_textn('ship_state')
+        || $self->ut_country('ship_country')
       ;
       return $error if $error;
 
       #false laziness with above
-      $self->ship_country =~ /^(\w\w)$/
-        or return "Illegal ship_country: ". $self->ship_country;
-      $self->ship_country($1);
       unless ( qsearchs('cust_main_county', {
         'country' => $self->ship_country,
         'state'   => '',
@@ -1351,7 +1348,7 @@ sub check_invoicing_list {
 
 =head1 VERSION
 
-$Id: cust_main.pm,v 1.18 2001-08-17 10:55:04 ivan Exp $
+$Id: cust_main.pm,v 1.19 2001-08-19 00:48:49 ivan Exp $
 
 =head1 BUGS
 

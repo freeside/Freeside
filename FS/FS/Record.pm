@@ -6,6 +6,7 @@ use subs qw(reload_dbdef);
 use Exporter;
 use Carp qw(carp cluck croak confess);
 use File::CounterFile;
+use Locale::Country;
 use DBIx::DBSchema;
 use FS::UID qw(dbh checkruid swapuid getotaker datasrc driver_name);
 
@@ -821,6 +822,27 @@ sub ut_zip {
   '';
 }
 
+=item ut_country COLUMN
+
+Check/untaint country codes.  Country names are changed to codes, if possible -
+see L<Locale::Country>.
+
+=cut
+
+sub ut_country {
+  my( $self, $field ) = @_;
+  unless ( $self->getfield($field) =~ /^(\w\w)$/ ) {
+    if ( $self->getfield($field) =~ /^([\w \,\.\(\)\']+)$/ 
+         && country2code($1) ) {
+      $self->setfield($field,uc(country2code($1)));
+    }
+  }
+  $self->getfield($field) =~ /^(\w\w)$/
+    or return "Illegal (country) $field: ". $self->getfield($field);
+  $self->setfield($field,uc($1));
+  '';
+}
+
 =item ut_anything COLUMN
 
 Untaints arbitrary data.  Be careful.
@@ -949,7 +971,7 @@ sub DESTROY { return; }
 
 =head1 VERSION
 
-$Id: Record.pm,v 1.23 2001-08-17 11:33:17 ivan Exp $
+$Id: Record.pm,v 1.24 2001-08-19 00:48:49 ivan Exp $
 
 =head1 BUGS
 
