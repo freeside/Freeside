@@ -1,5 +1,5 @@
 <%
-<!-- $Id: svc_acct.cgi,v 1.3 2001-08-20 12:13:09 ivan Exp $ -->
+#<!-- $Id: svc_acct.cgi,v 1.4 2001-08-20 12:15:05 ivan Exp $ -->
 
 use strict;
 use vars qw( $conf $cgi @shells $action $svcnum $svc_acct $pkgnum $svcpart
