@@ -44,9 +44,6 @@ FS/UI/Gtk.pm
 FS/UI/agent.pm
 FS/UID.pm
 FS/Msgcat.pm
-FS/ac.pm
-FS/ac_block.pm
-FS/ac_type.pm
 FS/agent.pm
 FS/agent_type.pm
 FS/cust_bill.pm
@@ -66,7 +63,6 @@ FS/cust_refund.pm
 FS/cust_credit_refund.pm
 FS/cust_svc.pm
 FS/part_bill_event.pm
-FS/part_ac_field.pm
 FS/export_svc.pm
 FS/part_export.pm
 FS/part_export_option.pm
@@ -93,12 +89,17 @@ FS/part_pop_local.pm
 FS/part_referral.pm
 FS/part_svc.pm
 FS/part_svc_column.pm
+FS/part_router_field.pm
+FS/part_sb_field.pm
+FS/part_svc_router.pm
 FS/pkg_svc.pm
 FS/svc_Common.pm
 FS/svc_acct.pm
 FS/svc_acct_pop.pm
 FS/svc_broadband.pm
 FS/svc_domain.pm
+FS/router.pm
+FS/router_field.pm
 FS/type_pkgs.pm
 FS/nas.pm
 FS/port.pm
@@ -107,6 +108,7 @@ FS/domain_record.pm
 FS/prepay_credit.pm
 FS/svc_www.pm
 FS/svc_forward.pm
+FS/sb_field.pm
 FS/raddb.pm
 FS/radius_usergroup.pm
 FS/queue.pm
