@@ -647,7 +647,7 @@ sub batch_card {
   '';
 }
 
-=item print_text [ TIME [ , TEMPLATE ] ]
+=item print_text [TIME];
 
 Returns an text invoice, as a list of lines.
 
@@ -666,7 +666,6 @@ sub print_text {
   my $cust_main = qsearchs('cust_main', { 'custnum', $self->custnum } );
   $cust_main->payname( $cust_main->first. ' '. $cust_main->getfield('last') )
     unless $cust_main->payname && $cust_main->payby ne 'CHEK';
-
 
   my( $pr_total, @pr_cust_bill ) = $self->previous; #previous balance
 #  my( $cr_total, @cr_cust_credit ) = $self->cust_credit; #credits
@@ -750,6 +749,28 @@ sub print_text {
              $money_char. sprintf("%10.2f",$self->charged + $pr_total) ];
   push @buf,['',''];
 
+  #credits
+  foreach ( $self->cust_credited ) {
+
+    #something more elaborate if $_->amount ne $_->cust_credit->credited ?
+
+    my $reason = substr($_->cust_credit->reason,0,32);
+    $reason .= '...' if length($reason) < length($_->cust_credit->reason);
+    $reason = " ($reason) " if $reason;
+    push @buf,[
+      "Credit #". $_->crednum. " (". time2str("%x",$_->cust_credit->_date) .")".
+        $reason,
+      $money_char. sprintf("%10.2f",$_->amount)
+    ];
+  }
+  #foreach ( @cr_cust_credit ) {
+  #  push @buf,[
+  #    "Credit #". $_->crednum. " (" . time2str("%x",$_->_date) .")",
+  #    $money_char. sprintf("%10.2f",$_->credited)
+  #  ];
+  #}
+
+  #get & print payments
   foreach ( $self->cust_bill_pay ) {
 
     #something more elaborate if $_->amount ne ->cust_pay->paid ?
@@ -853,348 +874,6 @@ sub print_text {
   }
 
   map "$_\n", @collect;
-
-}
-
-=item print_ps [ TIME [ , TEMPLATE ] ]
-
-Returns an postscript invoice, as a scalar.
-
-TIME an optional value used to control the printing of overdue messages.  The
-default is now.  It isn't the date of the invoice; that's the `_date' field.
-It is specified as a UNIX timestamp; see L<perlfunc/"time">.  Also see
-L<Time::Local> and L<Date::Parse> for conversion functions.
-
-=cut
-
-#still some false laziness w/print_text
-sub print_ps {
-
-  my( $self, $today, $template ) = @_;
-  $today ||= time;
-
-#  my $invnum = $self->invnum;
-  my $cust_main = $self->cust_main;
-  $cust_main->payname( $cust_main->first. ' '. $cust_main->getfield('last') )
-    unless $cust_main->payname && $cust_main->payby ne 'CHEK';
-
-  my( $pr_total, @pr_cust_bill ) = $self->previous; #previous balance
-#  my( $cr_total, @cr_cust_credit ) = $self->cust_credit; #credits
-  #my $balance_due = $self->owed + $pr_total - $cr_total;
-  my $balance_due = $self->owed + $pr_total;
-
-  #my @collect = ();
-  #my($description,$amount);
-  @buf = ();
-
-  #create the template
-  my $templatefile = 'invoice_template_latex';
-  $templatefile .= "_$template" if $template;
-  my @invoice_template = $conf->config($templatefile)
-    or die "cannot load config file $templatefile";
-
-  my %invoice_data = (
-    'invnum'   => $self->invnum,
-    'date'     => time2str('%b %o, %Y', $self->_date),
-    'agent'    => $cust_main->agent->agent,
-    'payname'  => $cust_main->payname,
-    'company'  => $cust_main->company,
-    'address1' => $cust_main->address1,
-    'address2' => $cust_main->address2,
-    'city'     => $cust_main->city,
-    'state'    => $cust_main->state,
-    'zip'      => $cust_main->zip,
-    'country'  => $cust_main->country,
-    'footer'   => <<'END', #should come from config value
-Ivan Kohler\\
-1339 Hayes St.\\
-San Francisco, CA~~94117\\
-ivan@sisd.com~~~~+1 415 462 1624\\
-Freeside - open-source billing - http://www.sisd.com/freeside\\
-END
-
-    'quantity'     => 1,
-
-  );
-
-  #$invoice_data{'footer'} =~ s/\n+$//;
-
-  my $countrydefault = $conf->config('countrydefault') || 'US';
-  $invoice_data{'country'} = '' if $invoice_data{'country'} eq $countrydefault;
-
-  $invoice_data{'po_line'} =
-    (  $cust_main->payby eq 'BILL' && $cust_main->payinfo )
-      ? "Purchase Order #". $cust_main->payinfo
-      : '~';
-
-  my @line_item = ();
-  my @total_item = ();
-  my @filled_in = ();
-  while ( @invoice_template ) {
-    my $line = shift @invoice_template;
-
-    if ( $line =~ /^%%Detail\s*$/ ) {
-
-      while ( ( my $line_item_line = shift @invoice_template )
-              !~ /^%%EndDetail\s*$/                            ) {
-        push @line_item, $line_item_line;
-      }
-      #foreach my $line_item ( $self->_items ) {
-      foreach my $line_item ( $self->_items_pkg ) {
-        $invoice_data{'ref'} = $line_item->{'pkgnum'};
-        $invoice_data{'description'} = $line_item->{'description'};
-        if ( exists $line_item->{'ext_description'} ) {
-          $invoice_data{'description'} .=
-            "\\tabularnewline\n~~".
-            join("\\tabularnewline\n~~", @{$line_item->{'ext_description'}} );
-        }
-        $invoice_data{'amount'} = $line_item->{'amount'};
-        $invoice_data{'product_code'} = $line_item->{'pkgpart'} || 'N/A';
-        push @filled_in,
-          map { my $b=$_; $b =~ s/\$(\w+)/$invoice_data{$1}/eg; $b } @line_item;
-      }
-
-    } elsif ( $line =~ /^%%TotalDetails\s*$/ ) {
-
-      while ( ( my $total_item_line = shift @invoice_template )
-              !~ /^%%EndTotalDetails\s*$/                      ) {
-        push @total_item, $total_item_line;
-      }
-
-      my @total_fill = ();
-
-      my $taxtotal = 0;
-      foreach my $tax ( $self->_items_tax ) {
-        $invoice_data{'total_item'} = $tax->{'description'};
-        $taxtotal += ( $invoice_data{'total_amount'} = $tax->{'amount'} );
-        push @total_fill,
-          map { my $b=$_; $b =~ s/\$(\w+)/$invoice_data{$1}/eg; $b }
-              @total_item;
-      }
-
-      $invoice_data{'total_item'} = '\textbf{Total}';
-      $invoice_data{'total_amount'} =
-        '\textbf{\dollar '. sprintf('%.2f', $self->owed ). '}';
-      push @total_fill,
-        map { my $b=$_; $b =~ s/\$(\w+)/$invoice_data{$1}/eg; $b }
-            @total_item;
-
-      if ( $taxtotal ) {
-        $invoice_data{'total_item'} = 'Sub-total';
-        $invoice_data{'total_amount'} =
-          '\dollar '. sprintf('%.2f', $self->owed - $taxtotal );
-        unshift @total_fill,
-          map { my $b=$_; $b =~ s/\$(\w+)/$invoice_data{$1}/eg; $b }
-              @total_item;
-      }
-
-      push @filled_in, @total_fill;
-
-    } else {
-      #$line =~ s/\$(\w+)/$invoice_data{$1}/eg;
-      $line =~ s/\$(\w+)/exists($invoice_data{$1}) ? $invoice_data{$1} : nounder($1)/eg;
-      push @filled_in, $line;
-    }
-
-  }
-
-  sub nounder {
-    my $var = $1;
-    $var =~ s/_/\-/g;
-    $var;
-  }
-
-  my $dir = '/tmp'; #! /usr/local/etc/freeside/invoices.datasrc/
-  my $unique = int(rand(2**31)); #UGH... use File::Temp or something
-
-  chdir($dir);
-  my $file = $self->invnum. ".$unique";
-
-  open(TEX,">$file.tex") or die "can't open $file.tex: $!\n";
-  print TEX join("\n", @filled_in ), "\n";
-  close TEX;
-
-  #error checking!!
-  system('pslatex', "$file.tex");
-  system('pslatex', "$file.tex");
-  #system('dvips', '-t', 'letter', "$file.dvi", "$file.ps");
-  system('dvips', '-t', 'letter', "$file.dvi" );
-
-  open(POSTSCRIPT, "<$file.ps") or die "can't open $file.ps: $!\n";
-
-  #rm $file.dvi $file.log $file.aux
-  #unlink("$file.dvi", "$file.log", "$file.aux", "$file.ps");
-  unlink("$file.dvi", "$file.log", "$file.aux");
-
-  my $ps = '';
-  while (<POSTSCRIPT>) {
-    $ps .= $_;
-  }
-
-  close POSTSCRIPT;
-
-  return $ps;
-
-}
-
-#utility methods for print_*
-
-sub _items {
-  my $self = shift;
-  my @display = scalar(@_)
-                ? @_
-                : qw( _items_pkg );
-                #: qw( _items_previous _items_pkg _items_tax _items_credits _items_payments );
-  my @b = ();
-  foreach my $display ( @display ) {
-    push @b, $self->$display(@_);
-  }
-  @b;
-}
-
-sub _items_previous {
-  my $self = shift;
-  my $cust_main = $self->cust_main;
-  my( $pr_total, @pr_cust_bill ) = $self->previous; #previous balance
-  my @b = ();
-  foreach ( @pr_cust_bill ) {
-    push @b, [
-      "Previous Balance, Invoice #". $_->invnum. 
-                 " (". time2str("%x",$_->_date). ")",
-      $money_char. sprintf("%10.2f",$_->owed)
-    ];
-  }
-  @b;
-}
-
-sub _items_pkg {
-  my $self = shift;
-  my @cust_bill_pkg = grep { $_->pkgnum } $self->cust_bill_pkg;
-  $self->_items_cust_bill_pkg(\@cust_bill_pkg, @_);
-}
-
-sub _items_tax {
-  my $self = shift;
-  my @cust_bill_pkg = grep { ! $_->pkgnum } $self->cust_bill_pkg;
-  $self->_items_cust_bill_pkg(\@cust_bill_pkg, @_);
-}
-
-sub _items_cust_bill_pkg {
-  my $self = shift;
-  my $cust_bill_pkg = shift;
-
-  my @b = ();
-  foreach my $cust_bill_pkg ( @$cust_bill_pkg ) {
-
-    if ( $cust_bill_pkg->pkgnum ) {
-
-      my $cust_pkg = qsearchs('cust_pkg', { pkgnum =>$cust_bill_pkg->pkgnum } );
-      my $part_pkg = qsearchs('part_pkg', { pkgpart=>$cust_pkg->pkgpart } );
-      my $pkg = $part_pkg->pkg;
-
-      if ( $cust_bill_pkg->setup != 0 ) {
-        my @d = ();
-        @d = $cust_bill_pkg->details if $cust_bill_pkg->recur == 0;
-        push @b, {
-          'description'     => "$pkg Setup",
-          'pkgpart'         => $part_pkg->pkgpart,
-          'pkgnum'          => $cust_pkg->pkgnum,
-          'amount'          => sprintf("%10.2f", $cust_bill_pkg->setup),
-          'ext_description' => [ ( map { $_->[0]. ": ". $_->[1] }
-                                         $cust_pkg->labels        ),
-                                 @d,
-                               ],
-        };
-      }
-
-      if ( $cust_bill_pkg->recur != 0 ) {
-        push @b, {
-          'description'     => "$pkg (" .
-                               time2str('%x', $cust_bill_pkg->sdate). ' - '.
-                               time2str('%x', $cust_bill_pkg->edate). ')',
-          'pkgpart'         => $part_pkg->pkgpart,
-          'pkgnum'          => $cust_pkg->pkgnum,
-          'amount'          => sprintf("%10.2f", $cust_bill_pkg->recur),
-          'ext_description' => [ ( map { $_->[0]. ": ". $_->[1] }
-                                       $cust_pkg->labels          ),
-                                 $cust_bill_pkg->details,
-                               ],
-        };
-      }
-
-    } else { #pkgnum tax or one-shot line item (??)
-
-      my $itemdesc = defined $cust_bill_pkg->dbdef_table->column('itemdesc')
-                     ? ( $cust_bill_pkg->itemdesc || 'Tax' )
-                     : 'Tax';
-      if ( $cust_bill_pkg->setup != 0 ) {
-        push @b, {
-          'description' => $itemdesc,
-          'amount'      => sprintf("%10.2f", $cust_bill_pkg->setup),
-        };
-      }
-      if ( $cust_bill_pkg->recur != 0 ) {
-        push @b, {
-          'description' => "$itemdesc (".
-                           time2str("%x", $cust_bill_pkg->sdate). ' - '.
-                           time2str("%x", $cust_bill_pkg->edate). ')',
-          'amount'      => sprintf("%10.2f", $cust_bill_pkg->recur),
-        };
-      }
-
-    }
-
-  }
-
-  @b;
-
-}
-
-sub _items_credits {
-  my $self = shift;
-
-  my @b;
-  #credits
-  foreach ( $self->cust_credited ) {
-
-    #something more elaborate if $_->amount ne $_->cust_credit->credited ?
-
-    my $reason = substr($_->cust_credit->reason,0,32);
-    $reason .= '...' if length($reason) < length($_->cust_credit->reason);
-    $reason = " ($reason) " if $reason;
-    push @b,[
-      "Credit #". $_->crednum. " (". time2str("%x",$_->cust_credit->_date) .")".
-        $reason,
-      $money_char. sprintf("%10.2f",$_->amount)
-    ];
-  }
-  #foreach ( @cr_cust_credit ) {
-  #  push @buf,[
-  #    "Credit #". $_->crednum. " (" . time2str("%x",$_->_date) .")",
-  #    $money_char. sprintf("%10.2f",$_->credited)
-  #  ];
-  #}
-
-  @b;
-
-}
-
-sub _items_payments {
-  my $self = shift;
-
-  my @b;
-  #get & print payments
-  foreach ( $self->cust_bill_pay ) {
-
-    #something more elaborate if $_->amount ne ->cust_pay->paid ?
-
-    push @b,[
-      "Payment received ". time2str("%x",$_->cust_pay->_date ),
-      $money_char. sprintf("%10.2f",$_->amount )
-    ];
-  }
-
-  @b;
 
 }
 
