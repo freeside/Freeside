@@ -393,7 +393,7 @@ sub seconds_since_sqlradacct {
                 FROM radacct
                 WHERE UserName = ?
                   AND $str2time AcctStartTime ) >= ?
-                  AND ( ? - $str2time AcctStartTime ) < 86400
+                  AND ( ? - $str2time AcctStartTime ) ) < 86400
                   AND (    $str2time AcctStopTime ) = 0
                                     OR AcctStopTime IS NULL )";
     $sth = $dbh->prepare($query) or die $dbh->errstr;
