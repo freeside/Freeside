@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main.cgi,v 1.13 1999-08-12 04:32:21 ivan Exp $
+# $Id: cust_main.cgi,v 1.14 1999-08-12 04:45:21 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/cust_main.cgi
@@ -17,7 +17,10 @@
 # display total, use FS::CGI ivan@sisd.com 98-jul-17
 #
 # $Log: cust_main.cgi,v $
-# Revision 1.13  1999-08-12 04:32:21  ivan
+# Revision 1.14  1999-08-12 04:45:21  ivan
+# typo - missed a paren
+#
+# Revision 1.13  1999/08/12 04:32:21  ivan
 # hidecancelledcustomers
 #
 # Revision 1.12  1999/07/17 10:38:52  ivan
@@ -99,7 +102,7 @@ if ( $cgi->keywords ) {
 
 @cust_main = grep { $_->ncancelled_pkgs || ! $_->all_pkgs } @cust_main
   if $conf->exists('hidecancelledcustomers');
-if ( $conf->exists('hidecancelledpackages' ) {
+if ( $conf->exists('hidecancelledpackages' ) ) {
   %all_pkgs = map { $_->custnum => [ $_->ncancelled_pkgs ] } @cust_main;
 } else {
   %all_pkgs = map { $_->custnum => [ $_->all_pkgs ] } @cust_main;
