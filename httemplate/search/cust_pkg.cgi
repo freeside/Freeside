@@ -196,7 +196,7 @@ if ( scalar(@cust_pkg) == 1 ) {
         <TH><FONT SIZE=-1>Setup</FONT></TH>
 END
 
-  print '<TH><FONT SIZE=-1>Next<BR>bill</FONT></TH>'
+  print '<TH><FONT SIZE=-1>Last<BR>bill</FONT></TH>'
     if defined dbdef->table('cust_pkg')->column('last_bill');
 
   print <<END;
