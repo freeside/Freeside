@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: signup.cgi,v 1.21 2002-04-16 00:02:26 ivan Exp $
+# $Id: signup.cgi,v 1.22 2002-04-17 11:43:37 ivan Exp $
 
 use strict;
 use vars qw( @payby $cgi $locales $packages $pops $init_data $error
@@ -235,9 +235,13 @@ sub print_okay {
     or die "fatal: invalid email_name got past FS::SignupClient::new_customer";
   my $email_name = $1;
 
-  my $pop = pop_info($cgi->param('popnum'))
-    or die "fatal: invalid popnum got past FS::SignupClient::new_customer";
-  ( $ac, $exch, $loc ) = ( $pop->{'ac'}, $pop->{'exch'}, $pop->{'loc'} );
+  my $pop = pop_info($cgi->param('popnum'));
+    #or die "fatal: invalid popnum got past FS::SignupClient::new_customer";
+  if ( $pop ) {
+    ( $ac, $exch, $loc ) = ( $pop->{'ac'}, $pop->{'exch'}, $pop->{'loc'} );
+  } else {
+    ( $ac, $exch, $loc ) = ( '', '', ''); #presumably you're not using them.
+  }
 
   my $pkg = ( grep { $_->{'pkgpart'} eq $pkgpart } @$packages )[0]->{'pkg'};
 
