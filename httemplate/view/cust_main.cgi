@@ -793,8 +793,8 @@ sub get_packages {
     $pkg{expire} = $cust_pkg->getfield('expire');
     $pkg{cancel} = $cust_pkg->getfield('cancel');
   
-    $pkg{svcparts} = []; 
-  
+    my %svcparts = ();
+
     foreach my $pkg_svc (
       qsearch('pkg_svc', { 'pkgpart' => $part_pkg->pkgpart })
     ) {
@@ -811,29 +811,44 @@ sub get_packages {
       $svcpart->{count} = 0;
   
       $svcpart->{services} = [];
-  
-      foreach my $cust_svc (
-        qsearch( 'cust_svc', {
-                               'pkgnum' => $cust_pkg->pkgnum,
-                               'svcpart' => $part_svc->svcpart,
-                             }
-        )
-      ) {
-  
-        my $svc = {};
-        $svc->{svcnum} = $cust_svc->svcnum;
-        $svc->{label} = ($cust_svc->label)[1];
-  
-        push @{$svcpart->{services}}, $svc;
-  
-        $svcpart->{count}++;
-  
-      }
-  
-      push @{$pkg{svcparts}}, $svcpart;
-  
+
+      $svcparts{$svcpart->{svcpart}} = $svcpart;
+
     }
-  
+
+    foreach my $cust_svc (
+      qsearch( 'cust_svc', {
+                             'pkgnum' => $cust_pkg->pkgnum,
+                             #'svcpart' => $part_svc->svcpart,
+                           }
+      )
+    ) {
+
+      warn "svcnum ". $cust_svc->svcnum. " / svcpart ". $cust_svc->svcpart. "\n";
+      my $svc = {
+        'svcnum' => $cust_svc->svcnum,
+        'label'  => ($cust_svc->label)[1],
+      };
+
+      #false laziness with above, to catch extraneous services.  whole
+      #damn thing should be OO...
+      my $svcpart = ( $svcparts{$cust_svc->svcpart} ||= {
+        'svcpart'  => $cust_svc->svcpart,
+        'svc'      => $cust_svc->part_svc->svc,
+        'svcdb'    => $cust_svc->part_svc->svcdb,
+        'quantity' => 0,
+        'count'    => 0,
+        'services' => [],
+      } );
+
+      push @{$svcpart->{services}}, $svc;
+
+      $svcpart->{count}++;
+
+    }
+
+    $pkg{svcparts} = [ values %svcparts ];
+
     push @packages, \%pkg;
   
   }
