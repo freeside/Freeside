@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main.cgi,v 1.26 2000-06-27 12:15:50 ivan Exp $
+# $Id: cust_main.cgi,v 1.27 2000-12-03 13:45:15 ivan Exp $
 #
 # Usage: cust_main.cgi custnum
 #        http://server.name/path/cust_main.cgi?custnum
@@ -38,7 +38,10 @@
 # fixed one missed day->daytime ivan@sisd.com 98-jul-13
 #
 # $Log: cust_main.cgi,v $
-# Revision 1.26  2000-06-27 12:15:50  ivan
+# Revision 1.27  2000-12-03 13:45:15  ivan
+# patch from Jason Spence <thalakan@frys.com>: admin.html doc, autocapgen
+#
+# Revision 1.26  2000/06/27 12:15:50  ivan
 # i18n
 #
 # Revision 1.25  2000/03/02 08:09:38  ivan
@@ -188,7 +191,54 @@ print $cgi->header( '-expires' => 'now' ), header("Customer $action", '');
 print qq!<FONT SIZE="+1" COLOR="#ff0000">Error: !, $cgi->param('error'),
       "</FONT>"
   if $cgi->param('error');
-print qq!<FORM ACTION="${p1}process/cust_main.cgi" METHOD=POST>!,
+
+# JRS: Javascript to set up the form for us
+    if ( $conf->exists('autocapnames') ) {
+      print <<END;
+<SCRIPT language="Javascript"><!--
+    
+function capName(name) {
+    var temp = new String();
+    var n = name.toString();
+    
+// Handle "Mc", "Mac", "Von", "Van", etc...
+ 
+    if(n.substr(0,2).toLowerCase() == "mc") {
+     temp += "Mc";
+     temp += n.charAt(2).toUpperCase();
+     temp += n.substr(3).toLowerCase();
+     return temp;
+    }
+     
+    if(n.substr(0,3).toLowerCase() == "mac") {
+     temp += "Mac";
+     temp += n.charAt(3).toUpperCase();
+     temp += n.substr(4).toLowerCase();
+     return temp;
+    }
+    if(n.substr(0,3).toLowerCase() == "von") {
+     temp += "Von";
+     temp += n.charAt(3).toUpperCase();
+     temp += n.substr(4).toLowerCase();
+     return temp;
+    }
+    if(n.substr(0,3).toLowerCase() == "van") {
+     temp += "Van";
+     temp += n.charAt(3).toUpperCase();
+     temp += n.substr(4).toLowerCase();
+     return temp;
+    }
+    temp += n.charAt(0).toUpperCase();
+    temp += n.substr(1).toLowerCase();
+    return temp;
+}
+   
+//-->
+</SCRIPT>
+END
+}
+
+print qq!<FORM ACTION="${p1}process/cust_main.cgi" METHOD=POST NAME="form1">!,
       qq!<INPUT TYPE="hidden" NAME="custnum" VALUE="$custnum">!,
       qq!Customer # !, ( $custnum ? $custnum : " (NEW)" ),
       
@@ -256,7 +306,23 @@ if ( $custnum && ! $conf->exists('editreferrals') ) {
 );
 
 print "<BR><BR>Contact information", &itable("#c0c0c0"), <<END;
-<TR><TH ALIGN="right">${r}Contact name<BR>(last, first)</TH><TD COLSPAN=3><INPUT TYPE="text" NAME="last" VALUE="$last">, <INPUT TYPE="text" NAME="first" VALUE="$first"></TD><TD ALIGN="right">SS#</TD><TD><INPUT TYPE="text" NAME="ss" VALUE="$ss" SIZE=11></TD></TR>
+<TR><TH ALIGN="right">${r}Contact name<BR>(last, first)</TH><TD COLSPAN=3>
+END
+
+if ( $conf->exists('autocapnames') ) {
+  print <<END;
+<INPUT TYPE="text" NAME="last" VALUE="$last" onChange="updateUsername();">, 
+<INPUT TYPE="text" NAME="first" VALUE="$first" onChange="updateUsername();">
+END
+} else {
+  print <<END;
+<INPUT TYPE="text" NAME="last" VALUE="$last">, 
+<INPUT TYPE="text" NAME="first" VALUE="$first">
+END
+}
+
+print <<END;
+</TD><TD ALIGN="right">SS#</TD><TD><INPUT TYPE="text" NAME="ss" VALUE="$ss" SIZE=11></TD></TR>
 <TR><TD ALIGN="right">Company</TD><TD COLSPAN=5><INPUT TYPE="text" NAME="company" VALUE="$company" SIZE=70></TD></TR>
 <TR><TH ALIGN="right">${r}Address</TH><TD COLSPAN=5><INPUT TYPE="text" NAME="address1" VALUE="$address1" SIZE=70></TD></TR>
 <TR><TD ALIGN="right">&nbsp;</TD><TD COLSPAN=5><INPUT TYPE="text" NAME="address2" VALUE="$address2" SIZE=70></TD></TR>

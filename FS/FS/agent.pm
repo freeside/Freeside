@@ -131,7 +131,7 @@ sub agent_type {
 =item pkgpart_hashref
 
 Returns a hash reference.  The keys of the hash are pkgparts.  The value is
-true iff this agent may purchase the specified package definition.  See
+true if this agent may purchase the specified package definition.  See
 L<FS::part_pkg>.
 
 =cut
@@ -145,7 +145,7 @@ sub pkgpart_hashref {
 
 =head1 VERSION
 
-$Id: agent.pm,v 1.1 1999-08-04 09:03:53 ivan Exp $
+$Id: agent.pm,v 1.2 2000-12-03 13:45:15 ivan Exp $
 
 =head1 BUGS
 

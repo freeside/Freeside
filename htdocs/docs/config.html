@@ -25,6 +25,7 @@ All further configuration files and directories are located in
   <li><a name="apacheroot">apacheroot</a> - The directory containing Apache virtual hosts
   <li><a name="apachemachine">apachemachine</a> - A machine with the apacheroot directory and user home directories.  The existance of this file enables setup of virtual host directories, and, in conjunction with the `home' configuration file, symlinks into user home directories.
   <li><a name="apachemachines">apachemachines</a> - Your Apache machines, one per line.  This enables export of `/etc/apache/vhosts.conf', which can be included in your Apache configuration via the <a href="http://www.apache.org/docs/mod/core.html#include">Include</a> directive.
+  <li><a name="autocapnames">autocapnames</a> - The presence of this file will cause Freeside to use Javascript in /htdocs/edit/cust_main.cgi to automatically capitalize the first and last names of customers.
   <li><a name="bindprimary">bindprimary</a> - Your BIND primary nameserver.  This enables export of /var/named/named.conf and zone files into /var/named
   <li><a name="bindsecondaries">bindsecondaries</a> - Your BIND secondary nameservers, one per line.  This enables export of /var/named/named.conf
   <li><a name="bsdshellmachines">bsdshellmachines</a> - Your BSD flavored shell (and mail) machines, one per line.  This enables export of `/etc/passwd' and `/etc/master.passwd'.
