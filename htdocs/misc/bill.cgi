@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: bill.cgi,v 1.4 1999-01-19 05:14:02 ivan Exp $
+# $Id: bill.cgi,v 1.5 1999-08-12 04:32:21 ivan Exp $
 #
 # s/FS:Search/FS::Record/ and cgisuidsetup($cgi) ivan@sisd.com 98-mar-13
 #
@@ -8,7 +8,10 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # $Log: bill.cgi,v $
-# Revision 1.4  1999-01-19 05:14:02  ivan
+# Revision 1.5  1999-08-12 04:32:21  ivan
+# hidecancelledcustomers
+#
+# Revision 1.4  1999/01/19 05:14:02  ivan
 # for mod_perl: no more top-level my() variables; use vars instead
 # also the last s/create/new/;
 #
@@ -51,5 +54,5 @@ $error = $cust_main->collect(
                             );
 &eidiot($error) if $error;
 
-print $cgi->redirect(popurl(2). "view/cust_main.cgi?$custnum#history");
+print $cgi->redirect(popurl(2). "view/cust_main.cgi?$custnum");
 
