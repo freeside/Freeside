@@ -23,7 +23,8 @@ Where a customer heard about your service. Tracked for informational purposes.
   ;
 
   my $sth = dbh->prepare("SELECT COUNT(*) FROM h_cust_main
-                            WHERE refnum = ?
+                            WHERE history_action = 'insert'
+                              AND refnum = ?
                               AND history_date > ?         ")
     or die dbh->errstr;
 %>
