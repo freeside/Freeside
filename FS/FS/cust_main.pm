@@ -667,7 +667,7 @@ sub check {
     }
   }
 
-  $self->payby =~ /^(CARD|CHEK|BILL|COMP|PREPAY)$/
+  $self->payby =~ /^(CARD|CHEK|LECB|BILL|COMP|PREPAY)$/
     or return "Illegal payby: ". $self->payby;
   $self->payby($1);
 
