@@ -1,0 +1,19 @@
+the following is necessary to upgrade from 1.4.0pre11 to 1.4.0pre12
+
+if you're upgrading from before 1.4.0pre12 see README.1.4.0pre11 first!
+
+if you're upgrading from 1.3.1 follow the instructions in
+httemplate/docs/upgrade8.html instead
+
+----
+
+install the FS perl modules and httemplate as per install.html or upgrade8.html
+
+ALTER TABLE cust_bill_event ADD status varchar(80);
+ALTER TABLE cust_bill_event ADD statustext text NULL;
+UPDATE cust_bill_event SET status = 'done';
+
+Run bin/dbdef-create
+
+Restart Apache and freeside-queued
+

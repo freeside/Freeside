@@ -188,6 +188,8 @@ ALTER TABLE cust_bill ADD closed char(1) NULL;
 ALTER TABLE cust_pay ADD closed char(1) NULL;
 ALTER TABLE cust_credit ADD closed char(1) NULL;
 ALTER TABLE cust_refund ADD closed char(1) NULL;
+ALTER TABLE cust_bill_event ADD status varchar(80);
+ALTER TABLE cust_bill_event ADD statustext text NULL;
 CREATE INDEX cust_main3 ON cust_main ( referral_custnum );
 CREATE INDEX cust_credit_bill1 ON cust_credit_bill ( crednum );
 CREATE INDEX cust_credit_bill2 ON cust_credit_bill ( invnum );

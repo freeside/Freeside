@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: fs-setup,v 1.81 2002-02-22 07:50:19 ivan Exp $
+# $Id: fs-setup,v 1.82 2002-02-27 22:39:14 ivan Exp $
 
 #to delay loading dbdef until we're ready
 BEGIN { $FS::Record::setup_hack = 1; }
@@ -329,10 +329,12 @@ sub tables_hash_hack {
         'invnum',   'int',  '', '',
         'eventpart',   'int',  '', '',
         '_date',     @date_type,
+        'status', 'varchar', '', $char_d,
+        'statustext', 'text', 'NULL', '',
       ],
       'primary_key' => 'eventnum',
       'unique' => [ [ 'eventpart', 'invnum' ] ],
-      'index' => [ ['invnum'] ],
+      'index' => [ ['invnum'], ['status'] ],
     },
 
     'part_bill_event' => {
