@@ -30,8 +30,8 @@ use strict;
 #
 my $parser = new HTML::Mason::Parser;
 my $interp = new HTML::Mason::Interp (parser=>$parser,
-                                      comp_root=>'/var/www/masondocs',
-                                      data_dir=>'/home/ivan/freeside_current/masondata',
+                                      comp_root=>'/var/www/freeside',
+                                      data_dir=>'/usr/local/etc/freeside/masondata',
                                       out_mode=>'stream',
                                      );
 my $ah = new HTML::Mason::ApacheHandler ( interp => $interp,
