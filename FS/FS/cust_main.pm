@@ -1167,7 +1167,7 @@ sub collect {
         'status'     => $status,
         'statustext' => $statustext,
       };
-      $cust_bill_event->insert;
+      $error = $cust_bill_event->insert;
       if ( $error ) {
         #$dbh->rollback if $oldAutoCommit;
         #return "error: $error";
