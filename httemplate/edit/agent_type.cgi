@@ -46,7 +46,7 @@ foreach my $part_pkg ( qsearch('part_pkg',{ 'disabled' => '' }) ) {
           : '',
         qq!VALUE="ON"> !,
     qq!<A HREF="${p}edit/part_pkg.cgi?!, $part_pkg->pkgpart, 
-    '">', $part_pkg->getfield('pkg'), '</A>',
+    '">', $part_pkg->pkgpart. ": ". $part_pkg->getfield('pkg'), '</A>',
   ;
 }
 
