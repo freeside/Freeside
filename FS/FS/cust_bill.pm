@@ -1153,7 +1153,7 @@ sub print_pdf {
   open(PDF, "<$file.pdf")
     or die "can't open $file.pdf (probably error in LaTeX tempalte: $!\n";
 
-#  unlink("$file.dvi", "$file.log", "$file.aux", "$file.pdf", "$file.tex");
+  unlink("$file.dvi", "$file.log", "$file.aux", "$file.pdf", "$file.tex");
 
   my $pdf = '';
   while (<PDF>) {
