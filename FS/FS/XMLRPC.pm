@@ -3,8 +3,12 @@ package FS::XMLRPC;
 use strict;
 use vars qw( @ISA $DEBUG );
 use Frontier::RPC2;
-use FS::Record qw( qsearch qsearchs );
-use FS::cust_main qw( smart_search );
+
+# Instead of 'use'ing freeside modules on the fly below, just preload them now.
+use FS;
+use FS::CGI;
+use FS::Record;
+use FS::cust_main;
 
 @ISA = qw( );
 
@@ -84,39 +88,48 @@ sub _serve { #Subroutine, not method
   #die 'Called _serve without parameters' unless ref($params) eq 'ARRAY';
   $params = [] unless (ref($params) eq 'ARRAY');
 
-  my ($class, $sub) = split(/\./, $method_name);
-  my $fssub = "FS::${class}::${sub}";
-  warn "fssub: ${fssub}" if $DEBUG;
-  warn "params: " . Dumper($params) if $DEBUG;
+  if ($method_name =~ /^(\w+)\.(\w+)/) {
 
-  unless (UNIVERSAL::can("FS::${class}", $sub)) {
-    warn "FS::XMLRPC: Can't call undefined subroutine '${fssub}'";
-    # Should we encode an error in the response,
-    # or just break silently to the remote caller and complain locally?
-    return [];
-  }
-
-  my @result;
-  eval { 
-    no strict 'refs';
+    #my ($class, $sub) = split(/\./, $method_name);
+    my ($class, $sub) = ($1, $2);
     my $fssub = "FS::${class}::${sub}";
-    @result = (&$fssub(@$params));
-  };
+    warn "fssub: ${fssub}" if $DEBUG;
+    warn "params: " . Dumper($params) if $DEBUG;
 
-  if ($@) {
-    warn "FS::XMLRPC: Error while calling '${fssub}': $@";
-    return [];
-  }
+    unless (UNIVERSAL::can("FS::${class}", $sub)) {
+      warn "FS::XMLRPC: Can't call undefined subroutine '${fssub}'";
+      # Should we encode an error in the response,
+      # or just break silently to the remote caller and complain locally?
+      return [];
+    }
 
-  warn Dumper(@result);
+    my @result;
+    eval { 
+      no strict 'refs';
+      my $fssub = "FS::${class}::${sub}";
+      @result = (&$fssub(@$params));
+    };
 
-  if (grep { UNIVERSAL::can($_, 'hashref') ? 0 : 1 } @result) {
-    warn "FS::XMLRPC: One or more objects returned from '${fssub}' doesn't " .
-         "support the 'hashref' method.";
-    return [];
-  } else {
-    return [ map { $_->hashref } @result ];
-  }
+    if ($@) {
+      warn "FS::XMLRPC: Error while calling '${fssub}': $@";
+      return [];
+    }
+
+    warn Dumper(@result);
+
+    if (grep { UNIVERSAL::can($_, 'hashref') ? 0 : 1 } @result) {
+      warn "FS::XMLRPC: One or more objects returned from '${fssub}' doesn't " .
+           "support the 'hashref' method.";
+      return [];
+    } else {
+      return [ map { $_->hashref } @result ];
+    }
+  } elsif ($method_name eq 'version') {
+    return [ $FS::VERSION ];
+  } # else...
+
+  warn "Unhandle XMLRPC request '${method_name}'";
+  return [];
 
 }
 
