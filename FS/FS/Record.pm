@@ -191,7 +191,7 @@ sub qsearch {
   $statement .= " $extra_sql" if defined($extra_sql);
 
   warn $statement if $DEBUG;
-  my $sth = $dbh->prepare_cached($statement)
+  my $sth = $dbh->prepare($statement)
     or croak "$dbh->errstr doing $statement";
 
   $sth->execute( map $record->{$_},
@@ -913,7 +913,7 @@ sub DESTROY { return; }
 
 =head1 VERSION
 
-$Id: Record.pm,v 1.12 2001-02-03 14:03:49 ivan Exp $
+$Id: Record.pm,v 1.13 2001-02-20 16:31:06 ivan Exp $
 
 =head1 BUGS
 
