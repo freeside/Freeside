@@ -1,10 +1,15 @@
-$Id: TODO,v 1.14 1998-11-18 09:01:30 ivan Exp $
+$Id: TODO,v 1.15 1998-12-02 01:23:47 ivan Exp $
 
 If you are interested in helping with any of these, please join the mailing
 list (send a blank message to ivan-freeside-subscribe@sisd.com) to avoid 
 duplication of effort.
 
 -- 1.1.x --
+
+int'l stuff in web interface (not on david's time)
+
+admin web interface for titles (Dr., Mrs.) and default in fs-setup
+(not on david's time)
 
 test and document libapache-dbi-logger (woo!)
 
