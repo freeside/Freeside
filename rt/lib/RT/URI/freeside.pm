@@ -82,10 +82,11 @@ sub FreesideURILabel {
         $label = "Freeside service ${svc}: ${tag}";
       }
     } elsif ($table eq 'cust_main') {
-      my ($last, $first, $company) = map { $rec->getfield($_) }
-                                         qw(last first company);
-      $label = "Freeside customer ${last}, ${first}";
-      $label .= ($company ne '') ? " with ${company}" : '';
+      #my ($last, $first, $company) = map { $rec->getfield($_) }
+      #                                   qw(last first company);
+      #$label = "Freeside customer ${last}, ${first}";
+      #$label .= ($company ne '') ? " with ${company}" : '';
+      $label = "$pkey: ". $rec->name;
     } else {
       $label = "Freeside ${table}, ${pkeyfield} == ${pkey}";
     }
@@ -97,6 +98,61 @@ sub FreesideURILabel {
   if ($label and !$@) {
     return($label);
   } else {
+    return(undef);
+  }
+      
+
+}
+
+sub FreesideURILabelLong {
+
+  my $self = shift;
+
+  return(undef) unless (exists($self->{'fstable'}) and
+                        exists($self->{'fspkey'}));
+
+  my $label;
+  my ($table, $pkey) = ($self->{'fstable'}, $self->{'fspkey'});
+
+  eval {
+    use FS::UID qw(dbh);
+    use FS::Record qw(qsearchs qsearch dbdef);
+    eval "use FS::$table;";
+    use FS::cust_svc;
+
+    my $dbdef = dbdef or die "No dbdef";
+    my $pkeyfield = $dbdef->table($table)->primary_key
+      or die "No primary key for table $table";
+
+    my $rec = qsearchs($table, { $pkeyfield => $pkey })
+      or die "Record with $pkeyfield == $pkey does not exist in table $table";
+
+    if ($table =~ /^svc_/) {
+      #if ($rec->can('cust_svc')) {
+      #  my $cust_svc = $rec->cust_svc or die '$rec->cust_svc failed';
+      #  my ($svc, $tag, $svcdb) = $cust_svc->label;
+      #  $label = "Freeside service ${svc}: ${tag}";
+      #}
+      $label = '';
+    } elsif ($table eq 'cust_main') {
+      use FS::CGI qw(small_custview);
+      $label = small_custview( $rec,
+                               scalar(FS::Conf->new->config('countrydefault')),
+                               1 #nobalance
+                             );
+    } else {
+      #$label = "Freeside ${table}, ${pkeyfield} == ${pkey}";
+      $label = '';
+    }
+
+    #... other cases
+
+  };
+
+  if ($label and !$@) {
+    return($label);
+  } else {
+    warn $@;
     return(undef);
   }
       
@@ -174,6 +230,22 @@ sub AsString {
     my $self = shift;
     my $prettystring;
     if ($prettystring = $self->FreesideURILabel) {
+      return $prettystring;
+    } else {
+      return $self->URI;
+    }
+}
+
+=head2 AsStringLong
+
+Return a longer (HTML) string representing the URI object.
+
+=cut
+
+sub AsStringLong {
+    my $self = shift;
+    my $prettystring;
+    if ($prettystring = $self->FreesideURILabelLong || $self->FreesideURILabel){
       return $prettystring;
     } else {
       return $self->URI;

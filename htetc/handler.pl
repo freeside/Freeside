@@ -115,6 +115,7 @@ sub handler
       use FS::Msgcat qw(gettext geterror);
       use FS::Misc qw( send_email );
       use FS::Report::Table::Monthly;
+      use FS::TicketSystem;
 
       use FS::agent;
       use FS::agent_type;
@@ -123,7 +124,7 @@ sub handler
       use FS::cust_bill_pay;
       use FS::cust_credit;
       use FS::cust_credit_bill;
-      use FS::cust_main;
+      use FS::cust_main qw(smart_search);
       use FS::cust_main_county;
       use FS::cust_pay;
       use FS::cust_pkg;

@@ -47,6 +47,15 @@
 		color => "#333399" &>
 	  <& /Ticket/Elements/ShowPeople, Ticket => $Ticket &>
 	  <& /Elements/TitleBoxEnd &>
+	  <br>
+
+	  <& /Elements/TitleBoxStart, title => loc('Customers'),
+	        title_href =>"$RT::WebPath/Ticket/ModifyCustomers.html?id=".$Ticket->Id,
+	        title_class=> 'inverse',
+	        color => "#7f007b" &>
+          <& /Ticket/Elements/ShowCustomers, Ticket => $Ticket &>
+          <& /Elements/TitleBoxEnd &>
+
 	<BR>
 	</TD>
 	<TD VALIGN=TOP WIDTH="50%">

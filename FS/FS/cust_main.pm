@@ -1,10 +1,11 @@
 package FS::cust_main;
 
 use strict;
-use vars qw( @ISA $conf $DEBUG $import );
+use vars qw( @ISA @EXPORT_OK $conf $DEBUG $import );
 use vars qw( $realtime_bop_decline_quiet ); #ugh
 use Safe;
 use Carp;
+use Exporter;
 BEGIN {
   eval "use Time::Local;";
   die "Time::Local minimum version 1.05 required with Perl versions before 5.6"
@@ -42,6 +43,8 @@ use FS::type_pkgs;
 use FS::Msgcat qw(gettext);
 
 @ISA = qw( FS::Record );
+
+@EXPORT_OK = qw( smart_search );
 
 $realtime_bop_decline_quiet = 0;
 
@@ -2976,6 +2979,94 @@ sub fuzzy_search {
 =head1 SUBROUTINES
 
 =over 4
+
+=item smart_search OPTION => VALUE ...
+
+Accepts the following options: I<search>, the string to search for.  The string
+will be searched for as a customer number, last name or company name, first
+searching for an exact match then fuzzy and substring matches.
+
+Any additional options treated as an additional qualifier on the search
+(i.e. I<agentnum>).
+
+Returns a (possibly empty) array of FS::cust_main objects.
+
+=cut
+
+sub smart_search {
+  my %options = @_;
+  my $search = delete $options{'search'};
+  my @cust_main = ();
+
+  if ( $search =~ /^\s*(\d+)\s*$/ ) { # customer # search
+
+    push @cust_main, qsearch('cust_main', { 'custnum' => $1, %options } );
+
+  } elsif ( $search =~ /^\s*(\S.*\S)\s*$/ ) { #value search
+
+    my $value = lc($1);
+    my $q_value = dbh->quote($value);
+
+    #exact
+    my $sql = scalar(keys %options) ? ' AND ' : ' WHERE ';
+    $sql .= " ( LOWER(last) = $q_value OR LOWER(company) = $q_value";
+    $sql .= " OR LOWER(ship_last) = $q_value OR LOWER(ship_company) = $q_value"
+      if defined dbdef->table('cust_main')->column('ship_last');
+    $sql .= ' )';
+
+    push @cust_main, qsearch( 'cust_main', \%options, '', $sql );
+
+    unless ( @cust_main ) {  #no exact match, trying substring/fuzzy
+
+      #still some false laziness w/ search/cust_main.cgi
+
+      #substring
+      push @cust_main, qsearch( 'cust_main',
+                                { 'last'     => { 'op'    => 'ILIKE',
+                                                  'value' => "%$q_value%" },
+                                  %options,
+                                }
+                              );
+      push @cust_main, qsearch( 'cust_main',
+                                { 'ship_last' => { 'op'    => 'ILIKE',
+                                                   'value' => "%$q_value%" },
+                                  %options,
+
+                                }
+                              )
+        if defined dbdef->table('cust_main')->column('ship_last');
+
+      push @cust_main, qsearch( 'cust_main',
+                                { 'company'  => { 'op'    => 'ILIKE',
+                                                  'value' => "%$q_value%" },
+                                  %options,
+                                }
+                              );
+      push @cust_main, qsearch( 'cust_main',
+                                { 'ship_company' => { 'op' => 'ILIKE',
+                                                   'value' => "%$q_value%" },
+                                  %options,
+                                }
+                              )
+        if defined dbdef->table('cust_main')->column('ship_last');
+
+      #fuzzy
+      push @cust_main, FS::cust_main->fuzzy_search(
+        { 'last'     => $value },
+        \%options,
+      );
+      push @cust_main, FS::cust_main->fuzzy_search(
+        { 'company'  => $value },
+        \%options,
+      );
+
+    }
+
+  }
+
+  @cust_main;
+
+}
 
 =item check_and_rebuild_fuzzyfiles
 

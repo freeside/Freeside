@@ -1328,6 +1328,20 @@ httemplate/docs/config.html
     'select_enum' => [ '', qw(RT_Internal RT_Libs RT_External) ],
   },
 
+  {
+    'key'         => 'ticket_system-custom_priority_field',
+    'section'     => '',
+    'description' => 'Custom field from the ticketing system to use as a custom priority classification.',
+    'type'        => 'text',
+  },
+
+  {
+    'key'         => 'company_name',
+    'section'     => 'required',
+    'description' => 'Your company name',
+    'type'        => 'text',
+  },
+
 );
 
 1;

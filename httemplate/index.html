@@ -13,7 +13,7 @@
         <IMG BORDER=0 ALT="freeside" SRC="images/small-logo.png">
       </td>
       <td align=left rowspan=2> <!-- valign="top" -->
-        <font size=7>Billing</font>
+        <font size=6><%= $conf->config('company_name') %> Billing</font>
       </td>
       <td align=right valign=top>Logged in as <b><%= getotaker %></b>
       </td>
@@ -25,8 +25,7 @@
           <tr>
             <td align=right>
               <FONT SIZE="-2">
-               Freeside <%= $FS::VERSION %><BR>
-               <A HREF="http://www.sisd.com/freeside">Freeside&nbsp;home&nbsp;page</A><BR>
+               <A HREF="http://www.sisd.com/freeside">Freeside</A>&nbsp;v<%= $FS::VERSION %><BR>
                <A HREF="docs/">Documentation</A><BR>
               </FONT>
             </td>
@@ -35,8 +34,7 @@
               <td bgcolor=#000000></td>
               <td align=left>
                 <FONT SIZE="-2">
-                 RT <%= $RT::VERSION %><BR>
-                 <A HREF="http://www.bestpractical.com/rt">RT&nbsp;home&nbsp;page</A><BR>
+                 <A HREF="http://www.bestpractical.com/rt">RT<A>&nbsp;v<%= $RT::VERSION %><BR>
                  <A HREF="http://wiki.bestpractical.com/">Documentation</A><BR>
                 </FONT>
               </td>
@@ -93,6 +91,10 @@
     <TR><TD>
         <BR><FONT SIZE="+1"><A HREF="rt/">Ticketing Main</A></FONT>
         <BR>
+        <UL>
+          <LI><A HREF="search/cust_main.cgi?browse=tickets">Customers sorted by active tickets</A>
+          <LI><A HREF="">Active tickets not assigned to a customer</A>
+          <LI>
     </TD></TR>
     </TABLE>
 

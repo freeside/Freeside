@@ -32,6 +32,7 @@ use FS::CGI qw(header menubar popurl table itable ntable idiot eidiot
 use FS::Msgcat qw(gettext geterror);
 use FS::Misc qw( send_email );
 use FS::Report::Table::Monthly;
+use FS::TicketSystem;
 
 use FS::agent;
 use FS::agent_type;

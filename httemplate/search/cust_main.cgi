@@ -48,6 +48,9 @@ $limit .= " OFFSET $offset" if $offset;
 my $total = 0;
 
 my(@cust_main, $sortby, $orderby);
+my @select = ();
+my @addl_headers = ();
+my @addl_cols = ();
 if ( $cgi->param('browse')
      || $cgi->param('otaker_on')
      || $cgi->param('agentnum_on')
@@ -65,6 +68,12 @@ if ( $cgi->param('browse')
     } elsif ( $query eq 'company' ) {
       $sortby=\*company_sort;
       $orderby = "ORDER BY LOWER(company || ' ' || last || ' ' || first )";
+    } elsif ( $query eq 'tickets' ) {
+      $sortby = \*tickets_sort;
+      $orderby = "ORDER BY tickets DESC";
+      push @select, FS::TicketSystem->sql_customer_tickets. " as tickets";
+      push @addl_headers, 'Tickets';
+      push @addl_cols, 'tickets';
     } else {
       die "unknown browse field $query";
     }
@@ -136,7 +145,14 @@ if ( $cgi->param('browse')
     }
   }
 
-  @cust_main = qsearch('cust_main', \%search, '',   
+  my $select;
+  if ( @select ) {
+    $select = 'cust_main.*, '. join (', ', @select);
+  } else {
+    $select = '*';
+  }
+
+  @cust_main = qsearch('cust_main', \%search, $select,   
                          "$addl_qual $orderby $limit" );
 
 #  foreach my $cust_main ( @just_cust_main ) {
@@ -312,6 +328,10 @@ if ( defined dbdef->table('cust_main')->column('ship_last') ) {
 END
 }
 
+foreach my $addl_header ( @addl_headers ) {
+  print "<TH>$addl_header</TH>";
+}
+
 print <<END;
         <TH>Packages</TH>
         <TH COLSPAN=2>Services</TH>
@@ -370,6 +390,12 @@ END
 END
     }
 
+    foreach my $addl_col ( @addl_cols ) {
+      print qq!<TD ROWSPAN=$rowspan><A HREF="XXXnotyetXXX">!.
+              $cust_main->get($addl_col).
+            "</A></TD>";
+    }
+
     my($n1)='';
     foreach ( @{$all_pkgs{$custnum}} ) {
       my $pkgnum = $_->pkgnum;
@@ -422,6 +448,10 @@ sub company_sort {
 
 sub custnum_sort {
   $a->getfield('custnum') <=> $b->getfield('custnum');
+}
+
+sub tickets_sort {
+  $a->getfield('tickets') <=> $b->getfield('tickets');
 }
 
 sub custnumsearch {

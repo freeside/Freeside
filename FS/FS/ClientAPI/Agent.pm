@@ -6,9 +6,9 @@ use strict;
 use vars qw($cache);
 use Digest::MD5 qw(md5_hex);
 use Cache::SharedMemoryCache; #store in db?
-use FS::Record qw(qsearchs qsearch dbdef dbh);
+use FS::Record qw(qsearchs); # qsearch dbdef dbh);
 use FS::agent;
-use FS::cust_main;
+use FS::cust_main qw(smart_search);
 
 use FS::ClientAPI;
 FS::ClientAPI->register_handlers(
@@ -102,68 +102,9 @@ sub agent_list_customers {
   my $agent = qsearchs( 'agent', { 'agentnum' => $agentnum } )
     or return { 'error' => "unknown agentnum $agentnum" };
 
-  my @cust_main = ();
-
-  #warn $p->{'search'};
-  if ( $p->{'search'} =~ /^\s*(\d+)\s*$/ ) { # customer # search
-    push @cust_main, qsearch('cust_main', { 'agentnum' => $agentnum,
-                                            'custnum'  => $1         } );
-  } elsif ( $p->{'search'} =~ /^\s*(\S.*\S)\s*$/ ) { #value search
-    my $value = lc($1);
-    my $q_value = dbh->quote($value);
-
-    #exact
-    my $sql = " AND ( LOWER(last) = $q_value OR LOWER(company) = $q_value";
-    $sql .= " OR LOWER(ship_last) = $q_value OR LOWER(ship_company) = $q_value"
-      if defined dbdef->table('cust_main')->column('ship_last');
-    $sql .= ' )';
-
-    push @cust_main, qsearch( 'cust_main',
-                              { 'agentnum' => $agentnum },
-                              '',
-                              $sql
-                            );
-
-    unless ( @cust_main ) {
-      warn "no exact match, trying substring/fuzzy\n";
-
-      #still some false laziness w/ search/cust_main.cgi
-
-      #substring
-      push @cust_main, qsearch( 'cust_main',
-                                { 'agentnum' => $agentnum,
-                                  'last'     => { 'op'    => 'ILIKE',
-                                                  'value' => "%$q_value%" } } );
-
-      push @cust_main, qsearch( 'cust_main',
-                                { 'agentnum'  => $agentnum,
-                                  'ship_last' => { 'op'    => 'ILIKE',
-                                                   'value' => "%$q_value%" } } )
-        if defined dbdef->table('cust_main')->column('ship_last');
-
-      push @cust_main, qsearch( 'cust_main',
-                                { 'agentnum' => $agentnum,
-                                  'company'  => { 'op'    => 'ILIKE',
-                                                  'value' => "%$q_value%" } } );
-
-      push @cust_main, qsearch( 'cust_main',
-                                { 'agentnum'     => $agentnum,
-                                  'ship_company' => { 'op' => 'ILIKE',
-                                                   'value' => "%$q_value%" } } )
-        if defined dbdef->table('cust_main')->column('ship_last');
-
-      #fuzzy
-      push @cust_main, FS::cust_main->fuzzy_search(
-        { 'last'     => $value },
-        { 'agentnum' => $agentnum }
-      );
-      push @cust_main, FS::cust_main->fuzzy_search(
-        { 'company'  => $value },
-        { 'agentnum' => $agentnum }
-      );
-
-    }
-  }
+  my @cust_main = smart_search( 'search'   => $p->{'search'},
+                                'agentnum' => $agentnum,
+                              );
 
   #aggregate searches
   push @cust_main,

@@ -1,0 +1,49 @@
+%# Copyright (c) 2004 Ivan Kohler <ivan-rt@420.am>
+%#
+%# This work is made available to you under the terms of Version 2 of
+%# the GNU General Public License. A copy of that license should have
+%# been provided with this software, but in any event can be snarfed
+%# from www.gnu.org.
+%# 
+%# This work is distributed in the hope that it will be useful, but
+%# WITHOUT ANY WARRANTY; without even the implied warranty of
+%# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+%# General Public License for more details.
+<& /Elements/Header, Title => loc("Customers for ticket #[_1]", $Ticket->Id) &>
+<& /Ticket/Elements/Tabs, 
+    Ticket => $Ticket, 
+    current_tab => "Ticket/ModifyCustomers.html?id=".$Ticket->Id, 
+    Title => loc("Customers for ticket #[_1]", $Ticket->Id) &>
+
+<& /Elements/ListActions, actions => \@results &>
+
+<form action="ModifyCustomers.html" method="post">
+<input type="hidden" name="id" value="<%$Ticket->id%>">
+
+<& /Elements/TitleBoxStart, title => loc('Edit Customer Links'), color => "#7f007b"&>
+<& Elements/EditCustomers, Ticket => $Ticket, CustomerString => $CustomerString, ServiceString => $ServiceString &>
+<& /Elements/TitleBoxEnd &>
+<& /Elements/Submit, color => "#7f007b", Label => loc('Save Changes') &>
+</form>
+
+
+<%INIT>
+
+my @results = ();
+my $Ticket = LoadTicket($id);
+
+# if we're trying to search for customers/services and nothing else
+unless ( $OnlySearchForCustomers || $OnlySearchForServices) {
+   @results = ProcessTicketCustomers( TicketObj => $Ticket, ARGSRef => \%ARGS);
+}
+    
+</%INIT>
+
+
+<%ARGS>
+$OnlySearchForCustomers => undef
+$OnlySearchForServices => undef
+$CustomerString => undef
+$ServiceString => undef
+$id => undef
+</%ARGS>

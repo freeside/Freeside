@@ -46,7 +46,7 @@
 </td>
 </tr>
 <tr>
-<td class="whiteright" valign="top">
+<td class="mediumgrayright" valign="top">
     <span class="nav"> 
 % if ($actions) {
 % my @actions;
