@@ -1,5 +1,7 @@
 #!/usr/bin/perl -Tw
 #
+# $Id: svc_acct.import,v 1.2 1998-10-13 12:07:51 ivan Exp $
+#
 # ivan@sisd.com 98-mar-9
 #
 # changed 'password' field to '_password' because PgSQL 6.3 reserves this word
@@ -13,6 +15,11 @@
 # arbitrary radius attributes ivan@sisd.com 98-aug-9
 #
 # don't import /var/spool/freeside/conf/shells!  ivan@sisd.com 98-aug-13
+#
+# $Log: svc_acct.import,v $
+# Revision 1.2  1998-10-13 12:07:51  ivan
+# Assigns password from the shadow file for RADIUS password "UNIX"
+#
 
 use strict;
 use vars qw(%part_svc);
@@ -122,6 +129,7 @@ while (<USERS>) {
       or die "1Unexpected line in users.import: $_";
     my($password,$expiration);
     ($username,$password,$expiration)=(lc($1),$2,$4);
+    $password = '' if $password eq 'UNIX';
     $upassword{$username}=$password;
     undef %param;
   } else {
