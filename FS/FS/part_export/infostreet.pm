@@ -143,9 +143,9 @@ sub infostreet_setContact {
   my($url, $is_username, $is_password, $groupID, $username, %contact_info) = @_;
   my $accountID = infostreet_command($url, $is_username, $is_password, $groupID,
     'getAccountID', $username);
-  foreach my $field ( %contact_info ) {
+  foreach my $field ( keys %contact_info ) {
     infostreet_command($url, $is_username, $is_password, $groupID,
-      'setContactField', $field, $contact_info{$field} );
+      'setContactField', $accountID, $field, $contact_info{$field} );
   }
 
 }
