@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# expire_pkg.cgi: Expire a package
+# $Id: expire_pkg.cgi,v 1.2 1998-12-17 09:12:44 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/expire_pkg.cgi
@@ -14,29 +14,35 @@
 #
 # Changes to allow page to work at a relative position in server
 #       bmccane@maxbaud.net     98-apr-3
+# 
+# $Log: expire_pkg.cgi,v $
+# Revision 1.2  1998-12-17 09:12:44  ivan
+# s/CGI::(Request|Base)/CGI.pm/;
+#
 
 use strict;
 use Date::Parse;
-use CGI::Request;
+use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
+use FS::CGI qw(popurl eidiot);
 use FS::Record qw(qsearchs);
 use FS::cust_pkg;
 
-my($req) = new CGI::Request;
-&cgisuidsetup($req->cgi);
+my($cgi) = new CGI;
+&cgisuidsetup($cgi);
 
 #untaint date & pkgnum
 
 my($date);
-if ( $req->param('date') ) {
-  str2time($req->param('date')) =~ /^(\d+)$/ or die "Illegal date";
+if ( $cgi->param('date') ) {
+  str2time($cgi->param('date')) =~ /^(\d+)$/ or die "Illegal date";
   $date=$1;
 } else {
   $date='';
 }
 
-$req->param('pkgnum') =~ /^(\d+)$/ or die "Illegal pkgnum";
+$cgi->param('pkgnum') =~ /^(\d+)$/ or die "Illegal pkgnum";
 my($pkgnum)=$1;
 
 my($cust_pkg) = qsearchs('cust_pkg',{'pkgnum'=>$pkgnum});
@@ -44,28 +50,7 @@ my(%hash)=$cust_pkg->hash;
 $hash{expire}=$date;
 my($new)=create FS::cust_pkg ( \%hash );
 my($error) = $new->replace($cust_pkg);
-&idiot($error) if $error;
+&eidiot($error) if $error;
 
-$req->cgi->redirect("../view/cust_main.cgi?".$cust_pkg->getfield('custnum'));
-
-sub idiot {
-  my($error)=@_;
-  SendHeaders();
-  print <<END;
-<HTML>
-  <HEAD>
-    <TITLE>Error expiring package</TITLE>
-  </HEAD>
-  <BODY>
-    <CENTER>
-    <H1>Error expiring package</H1>
-    </CENTER>
-    <HR>
-    There has been an error expiring this package:  $error
-  </BODY>
-  </HEAD>
-</HTML>
-END
-  exit;
-}
+print $cgi->redirect(popurl(2). "view/cust_main.cgi?".$cust_pkg->getfield('custnum'));
 

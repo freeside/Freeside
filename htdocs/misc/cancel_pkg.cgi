@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# cancel_pkg.cgi: Cancel a package
+# $Id: cancel_pkg.cgi,v 1.2 1998-12-17 09:12:43 ivan Exp $
 #
 # Usage: cancel_pkg.cgi pkgnum
 #        http://server.name/path/cancel_pkg.cgi pkgnum
@@ -27,28 +27,31 @@
 #
 # Changes to allow page to work at a relative position in server
 #       bmccane@maxbaud.net     98-apr-3
+#
+# $Log: cancel_pkg.cgi,v $
+# Revision 1.2  1998-12-17 09:12:43  ivan
+# s/CGI::(Request|Base)/CGI.pm/;
+#
 
 use strict;
-use CGI::Base qw(:DEFAULT :CGI); # CGI module
+use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
+use FS::CGI qw(eidiot popurl);
 use FS::Record qw(qsearchs);
 use FS::cust_pkg;
-use FS::CGI qw(idiot);
 
-my($cgi) = new CGI::Base;
-$cgi->get;
+my($cgi) = new CGI;
 &cgisuidsetup($cgi);
  
 #untaint pkgnum
-$QUERY_STRING =~ /^(\d+)$/ || die "Illegal pkgnum";
+$cgi->query_string =~ /^(\d+)$/ || die "Illegal pkgnum";
 my($pkgnum)=$1;
 
 my($cust_pkg) = qsearchs('cust_pkg',{'pkgnum'=>$pkgnum});
 
-bless($cust_pkg,'FS::cust_pkg');
 my($error)=$cust_pkg->cancel;
-idiot($error) if $error;
+eidiot($error) if $error;
 
-$cgi->redirect("../view/cust_main.cgi?".$cust_pkg->getfield('custnum'));
+print $cgi->redirect(popurl(2). "view/cust_main.cgi?".$cust_pkg->getfield('custnum'));
 

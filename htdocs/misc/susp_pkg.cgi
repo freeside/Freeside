@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# susp_pkg.cgi: Suspend a package
+# $Id: susp_pkg.cgi,v 1.2 1998-12-17 09:12:48 ivan Exp $
 #
 # Usage: susp_pkg.cgi pkgnum
 #        http://server.name/path/susp_pkg.cgi pkgnum
@@ -21,48 +21,30 @@
 #
 # Changes to allow page to work at a relative position in server
 #       bmccane@maxbaud.net     98-apr-3
+#
+# $Log: susp_pkg.cgi,v $
+# Revision 1.2  1998-12-17 09:12:48  ivan
+# s/CGI::(Request|Base)/CGI.pm/;
+#
 
 use strict;
-use CGI::Base qw(:DEFAULT :CGI); # CGI module
+use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
 use FS::Record qw(qsearchs);
 use FS::cust_pkg;
 
-my($cgi) = new CGI::Base;
-$cgi->get;
+my($cgi) = new CGI;
 &cgisuidsetup($cgi);
  
 #untaint pkgnum
-$QUERY_STRING =~ /^(\d+)$/ || die "Illegal pkgnum";
+$cgi->query_string =~ /^(\d+)$/ || die "Illegal pkgnum";
 my($pkgnum)=$1;
 
 my($cust_pkg) = qsearchs('cust_pkg',{'pkgnum'=>$pkgnum});
 
-bless($cust_pkg,'FS::cust_pkg');
 my($error)=$cust_pkg->suspend;
-&idiot($error) if $error;
+&eidiot($error) if $error;
 
-$cgi->redirect("../view/cust_main.cgi?".$cust_pkg->getfield('custnum'));
-
-sub idiot {
-  my($error)=@_;
-  SendHeaders();
-  print <<END;
-<HTML>
-  <HEAD>
-    <TITLE>Error suspending package</TITLE>
-  </HEAD>
-  <BODY>
-    <CENTER>
-    <H1>Error suspending package</H1>
-    </CENTER>
-    <HR>
-    There has been an error suspending this package:  $error
-  </BODY>
-  </HEAD>
-</HTML>
-END
-  exit;
-}
+print $cgi->redirect(popurl(2). "view/cust_main.cgi?".$cust_pkg->getfield('custnum'));
 

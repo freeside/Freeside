@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# cancel-unaudited.cgi: Cancel an unaudited account
+# $Id: cancel-unaudited.cgi,v 1.2 1998-12-17 09:12:42 ivan Exp $
 #
 # Usage: cancel-unaudited.cgi svcnum
 #        http://server.name/path/cancel-unaudited.cgi pkgnum
@@ -16,29 +16,34 @@
 #
 # Changes to allow page to work at a relative position in server
 #       bmccane@maxbaud.net     98-apr-3
+#
+# $Log: cancel-unaudited.cgi,v $
+# Revision 1.2  1998-12-17 09:12:42  ivan
+# s/CGI::(Request|Base)/CGI.pm/;
+#
 
 use strict;
-use CGI::Base qw(:DEFAULT :CGI); # CGI module
+use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
+use FS::CGI qw(popurl eidiot);
 use FS::Record qw(qsearchs);
 use FS::cust_svc;
 use FS::svc_acct;
 
-my($cgi) = new CGI::Base;
-$cgi->get;
+my($cgi) = new CGI;
 &cgisuidsetup($cgi);
  
 #untaint svcnum
-$QUERY_STRING =~ /^(\d+)$/;
+$cgi->query_string =~ /^(\d+)$/;
 my($svcnum)=$1;
 
 my($svc_acct) = qsearchs('svc_acct',{'svcnum'=>$svcnum});
-&idiot("Unknown svcnum!") unless $svc_acct;
+&eidiot("Unknown svcnum!") unless $svc_acct;
 
 my($cust_svc) = qsearchs('cust_svc',{'svcnum'=>$svcnum});
-&idiot(qq!This account has already been audited.  Cancel the 
-    <A HREF="../view/cust_pkg.cgi?! . $cust_svc->getfield('pkgnum') .
+&eidiot(qq!This account has already been audited.  Cancel the 
+    <A HREF="!. popurl(2). qq!view/cust_pkg.cgi?! . $cust_svc->getfield('pkgnum') .
     qq!pkgnum"> package</A> instead.!) 
   if $cust_svc->getfield('pkgnum') ne '';
 
@@ -50,36 +55,13 @@ local $SIG{TSTP} = 'IGNORE';
 
 my($error);
 
-bless($svc_acct,"FS::svc_acct");
 $error = $svc_acct->cancel;
-&idiot($error) if $error;
+&eidiot($error) if $error;
 $error = $svc_acct->delete;
-&idiot($error) if $error;
+&eidiot($error) if $error;
 
-bless($cust_svc,"FS::cust_svc");
 $error = $cust_svc->delete;
-&idiot($error) if $error;
+&eidiot($error) if $error;
 
-$cgi->redirect("../");
-
-sub idiot {
-  my($error)=@_;
-  SendHeaders();
-  print <<END;
-<HTML>
-  <HEAD>
-    <TITLE>Error cancelling account</TITLE>
-  </HEAD>
-  <BODY>
-    <CENTER>
-    <H1>Error cancelling account</H1>
-    </CENTER>
-    <HR>
-    There has been an error cancelling this acocunt:  $error
-  </BODY>
-  </HEAD>
-</HTML>
-END
-  exit;
-}
+$cgi->redirect(popurl(2));
 
