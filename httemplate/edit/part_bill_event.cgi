@@ -1,4 +1,4 @@
-<!-- $Id: part_bill_event.cgi,v 1.4 2002-02-04 16:44:47 ivan Exp $ -->
+<!-- $Id: part_bill_event.cgi,v 1.5 2002-02-04 17:04:33 ivan Exp $ -->
 
 <%
 
@@ -45,7 +45,7 @@ END
 for (qw(CARD BILL COMP)) {
   print qq!<OPTION VALUE="$_"!;
   if ($part_bill_event->payby eq $_) {
-    print " SELECTED> $_</OPTION>";
+    print " SELECTED>$_</OPTION>";
   } else {
     print ">$_</OPTION>";
   }
@@ -93,7 +93,7 @@ tie my %events, 'Tie::IxHash',
 
   'addpost' => {
     'name' => 'Add postal invoicing',
-    'code' => '$cust_main->invoicing_list_addpost(); '';',
+    'code' => '$cust_main->invoicing_list_addpost(); "";',
     'pad'  => 20,
   },
 
@@ -112,7 +112,7 @@ tie my %events, 'Tie::IxHash',
   'realtime-card-cybercash' => {
     'name' => '(<b>deprecated</b>) Run card with <a href="http://www.cybercash.com/cashregister">CyberCash CashRegister</a> realtime gateway',
     'code' => '$cust_bill->realtime_card_cybercash();',
-    'weight => 30,
+    'weight' => 30,
   },
 
   'batch-card' => {
@@ -135,7 +135,7 @@ tie my %events, 'Tie::IxHash',
 
   'apply' => {
     'name' => 'Apply unapplied payments and credits',
-    'code' => '$cust_main->apply_payments; $cust_main->apply_credits; '';',
+    'code' => '$cust_main->apply_payments; $cust_main->apply_credits; "";',
     'weight'  => 70,
   },
 

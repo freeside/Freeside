@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: fs-setup,v 1.73 2002-01-29 17:42:46 ivan Exp $
+# $Id: fs-setup,v 1.74 2002-02-04 17:04:33 ivan Exp $
 
 #to delay loading dbdef until we're ready
 BEGIN { $FS::Record::setup_hack = 1; }
@@ -16,6 +16,7 @@ use FS::UID qw(adminsuidsetup datasrc checkeuid getsecrets);
 use FS::Record;
 use FS::cust_main_county;
 use FS::raddb;
+use FS::part_bill_invoice;
 
 die "Not running uid freeside!" unless checkeuid();
 
@@ -233,6 +234,28 @@ YE YU ZR ZM ZW
   $error=$cust_main_county->insert;
   die $error if $error;
 }
+
+#billing events
+foreach my $aref ( 
+  [ 'COMP', 'Comp invoice', '$cust_bill->comp();', 30, 'comp' ],
+  [ 'CARD', 'Batch card', '$cust_bill->batch_card();', 40, 'batch-card' ],
+  [ 'BILL', 'Send invoice', '$cust_bill->send();', 50, 'send' ],
+) {
+
+  my $part_bill_event = new FS::part_bill_event({
+    'payby' => $aref->[0],
+    'event' => $aref->[1],
+    'eventcode' => $aref->[2],
+    'seconds' => 0,
+    'weight' => $aref->[3],
+    'plan' => $aref->[4],
+  });
+  my($error);
+  $error=$part_bill_event->insert;
+  die $error if $error;
+
+}
+
 
 $dbh->disconnect or die $dbh->errstr;
 
