@@ -9,7 +9,8 @@ if ( $action eq 'new' || $action eq 'del' ) {
   $cgi->param('jobnum') =~ /^(\d+)$/ or die "Illegal jobnum";
   my $jobnum = $1;
   $job = qsearchs('queue', { 'jobnum' => $1 })
-    or die "unknown jobnum $jobnum";
+    or die "unknown jobnum $jobnum - ".
+           "it probably completed normally or was removed by another user";
 }
 
 if ( $action eq 'new' ) {
