@@ -968,7 +968,7 @@ httemplate/docs/config.html
   },
 
   {
-    'key'         => 'raidus-password',
+    'key'         => 'radius-password',
     'section'     => '',
     'description' => 'RADIUS attribute for plain-text passwords.',
     'type'        => 'select',
