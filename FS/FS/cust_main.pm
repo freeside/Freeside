@@ -591,13 +591,13 @@ sub check {
 
 # bad idea to disable, causes billing to fail because of no tax rates later
 #  unless ( $import ) {
-    unless ( qsearchs('cust_main_county', {
+    unless ( qsearch('cust_main_county', {
       'country' => $self->country,
       'state'   => '',
      } ) ) {
       return "Unknown state/county/country: ".
         $self->state. "/". $self->county. "/". $self->country
-        unless qsearchs('cust_main_county',{
+        unless qsearch('cust_main_county',{
           'state'   => $self->state,
           'county'  => $self->county,
           'country' => $self->country,
