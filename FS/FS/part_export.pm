@@ -494,25 +494,19 @@ sub export_info {
   my $r = { map { %{$exports{$_}} } keys %exports };
 }
 
-=item exporttype2svcdb EXPORTTYPE
-
-Returns the applicable I<svcdb> for an I<exporttype>.
-
-=cut
-
-# This subroutine should be modified or removed.  In its present form, it
-# imposes the arbitrary restriction that no export type can be associated 
-# with more than one svcdb.  The only place it's used is in edit/part_svc.cgi
-# to generate the list of allowed exports, which can be done more cleanly by 
-# export_info anyway.
-
-sub exporttype2svcdb {
-  my $exporttype = $_[0];
-  foreach my $svcdb ( keys %exports ) {
-    return $svcdb if grep { $exporttype eq $_ } keys %{$exports{$svcdb}};
-  }
-  '';
-}
+#=item exporttype2svcdb EXPORTTYPE
+#
+#Returns the applicable I<svcdb> for an I<exporttype>.
+#
+#=cut
+#
+#sub exporttype2svcdb {
+#  my $exporttype = $_[0];
+#  foreach my $svcdb ( keys %exports ) {
+#    return $svcdb if grep { $exporttype eq $_ } keys %{$exports{$svcdb}};
+#  }
+#  '';
+#}
 
 tie my %sysvshell_options, 'Tie::IxHash',
   'crypt' => { label=>'Password encryption',

@@ -144,10 +144,8 @@ my %defs = (
       my $columns = 3;
       my $count = 0;
       my @part_export =
-#        grep { $layer eq FS::part_export::exporttype2svcdb($_->exporttype) }
-#          qsearch( 'part_export', {} );
-         map { qsearch( 'part_export', {exporttype => $_ } ) }
-           keys(%{FS::part_export::export_info($layer)});
+        map { qsearch( 'part_export', {exporttype => $_ } ) }
+          keys %{FS::part_export::export_info($layer)};
      $html .= '<BR><BR>'. table().
                table(). "<TR><TH COLSPAN=$columns>Exports</TH></TR><TR>";
       foreach my $part_export ( @part_export ) {
