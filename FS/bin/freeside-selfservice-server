@@ -138,6 +138,7 @@ while (1) {
       }
       $rv->{_token} = $packet->{_token}; #identifier
 
+      open(LOCKFILE,">$lock_file") or die "can't open $lock_file: $!";
       lock_write;
       warn "sending response\n" if $Debug;
       nstore_fd($rv, $writer) or die "FATAL: can't send response: $!";
