@@ -2,6 +2,7 @@ package FS::cust_svc;
 
 use strict;
 use vars qw(@ISA);
+use Carp;
 use Exporter;
 use FS::Record qw(fields qsearchs);
 
@@ -25,6 +26,8 @@ FS::cust_svc - Object method for cust_svc objects
   $error = $record->delete;
 
   $error = $record->check;
+
+  ($label, $value) = $record->label;
 
 =head1 DESCRIPTION
 
@@ -140,6 +143,34 @@ sub check {
   ''; #no error
 }
 
+=item label
+
+Returns a pretty-printed label and value for this service, i.e. `username' and
+`foobar' or `domain' and `foo.bar'.
+
+=cut
+
+sub label {
+  my($self)=@_;
+  my($part_svc) = qsearchs( 'part_svc', { 'svcpart' => $self->svcpart } );
+  my($svcdb) = $part_svc->svcdb;
+  my($svc) = qsearchs( $svcdb, { 'svcnum' => $self->svcnum } );
+  if ( $svcdb eq 'svc_acct' ) {
+    return 'username', $svc->getfield('username');
+  } elsif ( $svcdb eq 'svc_acct_sm' ) {
+    my $domuser = $svc->domuser eq '*' ? '(anything)' : $svc->domuser;
+    my $svc_domain = qsearchs ( 'svc_domain', { 'svcnum' => $svc->domsvc } );
+    my $domain = $svc_domain->domain;
+    return 'email', "$domuser\@$domain";
+  } elsif ( $svcdb eq 'svc_domain' ) {
+    return 'domain', $svc->getfield('domain');
+  } else {
+    carp "warning: asked for label of unsupported svcdb; using svcnum";
+    return 'svcnum', $svc->getfield('svcnum');
+  }
+
+}
+
 =back
 
 =head1 BUGS
@@ -147,7 +178,7 @@ sub check {
 Behaviour of changing the svcpart of cust_svc records is undefined and should
 possibly be prohibited, and pkg_svc records are not checked.
 
-pkg_svc records are not checket in general (here).
+pkg_svc records are not checked in general (here).
 
 =head1 SEE ALSO
 
@@ -161,6 +192,11 @@ ivan@voicenet.com 97-jul-10,14
 no TableUtil, no FS::Lock ivan@sisd.com 98-mar-7
 
 pod ivan@sisd.com 98-sep-21
+
+$Log: cust_svc.pm,v $
+Revision 1.2  1998-11-12 03:32:46  ivan
+added label method
+
 
 =cut
 
