@@ -245,7 +245,7 @@ sub cancel {
   my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
     or return { 'error' => "unknown custnum $custnum" };
 
-  my @errors = $cust_main->cancel;
+  my @errors = $cust_main->cancel( 'quiet'=>1 );
 
   my $error = scalar(@errors) ? join(' / ', @errors) : '';
 
