@@ -45,7 +45,7 @@ foreach my $export ( @exports ) {
   my $zonepath = $export->option('zonepath');
   $zonepath =~ s/\/$//;
 
-  #false laziness with  freeside-sqlradius-reset 
+  #false laziness with  freeside-sqlradius-reset and shell.export
   my @svc_domain =
     map { qsearchs('svc_domain', { 'svcnum' => $_->svcnum } ) }
       map { qsearch('cust_svc', { 'svcpart' => $_->svcpart } ) }

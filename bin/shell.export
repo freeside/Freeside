@@ -1,0 +1,116 @@
+#!/usr/bin/perl -w
+
+# sysvshell and bsdshell export
+
+use strict;
+use File::Rsync;
+use Net::SSH qw(ssh);
+use FS::UID qw(adminsuidsetup datasrc);
+use FS::Record qw(qsearch qsearchs);
+use FS::part_export;
+
+my @saltset = ( 'a'..'z' , 'A'..'Z' , '0'..'9' , '.' , '/' );
+
+my $user = shift or die &usage;
+adminsuidsetup $user;
+
+my $spooldir = "/usr/local/etc/freeside/export.". datasrc;
+#my $spooldir = "/usr/local/etc/freeside/export.". datasrc. "/shell";
+
+my @sysv_exports = qsearch('part_export', { 'exporttype' => 'sysvshell' } );
+my @bsd_exports = qsearch('part_export', { 'exporttype' => 'bsdshell' } );
+
+my $rsync = File::Rsync->new({
+  rsh     => 'ssh',
+#  dry_run => 1,
+});
+
+foreach my $export ( @sysv_exports ) {
+  my $machine = $export->machine;
+  my $prefix = "$spooldir/$machine";
+  mkdir $prefix unless -d $prefix;
+
+  #LOCKING!!!
+
+  ( open(MASTER,">$prefix/master.passwd")
+    #!!!  and flock(MASTER,LOCK_EX|LOCK_NB)
+  ) or die "Can't open $prefix/master.passwd: $!";
+  ( open(PASSWD,">$prefix/passwd")
+    #!!!  and flock(MASTER,LOCK_EX|LOCK_NB)
+  ) or die "Can't open $prefix/passwd: $!";
+
+  chmod 0644, "$spooldir/passwd";
+  chmod 0600, "$prefix/master.passwd";
+
+  #false laziness with  freeside-sqlradius-reset and bind.export
+  my @svc_acct = 
+    map { qsearchs('svc_acct', { 'svcnum' => $_->svcnum } ) }
+      map { qsearch('cust_svc', { 'svcpart' => $_->svcpart } ) }
+        grep { qsearch('cust_svc', { 'svcpart' => $_->svcpart } ) }
+          $export->export_svc;
+
+  foreach my $svc_acct ( sort { $a->uid <=> $b->uid } @svc_acct ) {
+
+    my $password = $svc_acct->_password;
+    my $cpassword;
+    #if ( ( length($password) <= 8 )
+    if ( ( length($password) <= 12 )
+         && ( $password ne '*' )
+         && ( $password ne '!!' )
+         && ( $password ne '' )
+    ) {
+      $cpassword=crypt($password,
+                       $saltset[int(rand(64))].$saltset[int(rand(64))]
+      );
+      # MD5 !!!!
+    } else {
+      $cpassword=$password;
+    }
+
+    ###
+    # FORMAT OF THE PASSWD FILE HERE
+    print PASSWD join(":",
+      $svc_acct->username,
+      'x', # "##". $username,
+      $svc_acct->uid,
+      $svc_acct->gid,
+      $svc_acct->finger,
+      $svc_acct->dir,
+      $svc_acct->shell,
+    ), "\n";
+
+    ###
+    # FORMAT OF FreeBSD MASTER PASSWD FILE HERE
+    print MASTER join(":",
+      $svc_acct->username,              # User name
+      $cpassword,                       # Encrypted password
+      $svc_acct->uid,                   # User ID
+      $svc_acct->gid,                   # Group ID
+      "",                               # Login Class
+      "0",                              # Password Change Time
+      "0",                              # Password Expiration Time
+      $svc_acct->finger,                # Users name
+      $svc_acct->dir,                   # Users home directory
+      $svc_acct->shell,                 # shell
+    ), "\n" ;
+  
+  }
+
+  #!!! flock(MASTER,LOCK_UN);
+  #!!! flock(PASSWD,LOCK_UN);
+  close MASTER;
+  close PASSWD;
+
+  $rsync->exec( {
+    src  => "$prefix/passwd",
+    dest => "root\@$machine:/etc/passwd"
+  } ) or die "rsync to $machine failed: ". join(" / ", $rsync->err);
+
+  $rsync->exec( {
+    src  => "$prefix/master.passwd",
+    dest => "root\@$machine:/etc/master.passwd.new"
+  } ) or die "rsync to $machine failed: ". join(" / ", $rsync->err);
+  ssh("root\@$machine", "pwd_mkdb /etc/master.passwd.new");
+
+  # UNLOCK!!
+}
