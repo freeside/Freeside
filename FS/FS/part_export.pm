@@ -1076,6 +1076,10 @@ tie my %forward_shellcommands_options, 'Tie::IxHash',
       'notes' => '',
     },
   },
+
+  'svc_external' => {
+  },
+
 );
 
 =back

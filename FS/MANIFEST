@@ -102,6 +102,7 @@ FS/svc_acct.pm
 FS/svc_acct_pop.pm
 FS/svc_broadband.pm
 FS/svc_domain.pm
+FS/svc_external.pm
 FS/router.pm
 FS/type_pkgs.pm
 FS/nas.pm
@@ -184,8 +185,10 @@ t/radius_usergroup.t
 t/session.t
 t/svc_acct.t
 t/svc_acct_pop.t
+t/svc_broadband.t
 t/svc_Common.t
 t/svc_domain.t
+t/svc_external.t
 t/svc_forward.t
 t/svc_www.t
 t/type_pkgs.t

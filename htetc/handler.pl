@@ -114,6 +114,7 @@ sub handler
       use FS::router;
       use FS::addr_block;
       use FS::svc_broadband;
+      use FS::svc_external;
       use FS::type_pkgs;
       use FS::part_export;
       use FS::part_export_option;

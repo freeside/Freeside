@@ -53,6 +53,7 @@ Services are items you offer to your customers.
     <LI>svc_forward - mail forwarding
     <LI>svc_www - Virtual domain website
     <LI>svc_broadband - Broadband/High-speed Internet service
+    <LI>svc_external - Externally-tracked service
 <!--   <LI>svc_charge - One-time charges (Partially unimplemented)
        <LI>svc_wo - Work orders (Partially unimplemented)
 -->
@@ -129,6 +130,10 @@ my %defs = (
     'ip_addr' => 'IP address.  Leave blank for automatic assignment.',
     'blocknum' => 'Address block.',
   },
+  'svc_external' => {
+    #'id' => '',
+    #'title' => '',
+  },
 );
 
   foreach my $svcdb (grep dbdef->table($_), keys %defs ) {
@@ -151,7 +156,7 @@ my %defs = (
   
   my @dbs = $hashref->{svcdb}
              ? ( $hashref->{svcdb} )
-             : qw( svc_acct svc_domain svc_forward svc_www svc_broadband );
+             : qw( svc_acct svc_domain svc_forward svc_www svc_broadband svc_external );
 
   tie my %svcdb, 'Tie::IxHash', map { $_=>$_ } grep dbdef->table($_), @dbs;
   my $widget = new HTML::Widgets::SelectLayers(
