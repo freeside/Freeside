@@ -92,3 +92,5 @@ sub get_new_query {
   FS::UID::cgi();
 }
 
+1;
+
