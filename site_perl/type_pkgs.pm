@@ -1,12 +1,12 @@
 package FS::type_pkgs;
 
 use strict;
-use vars qw(@ISA @EXPORT_OK);
-use Exporter;
-use FS::Record qw(fields qsearchs);
+use vars qw( @ISA );
+use FS::Record qw( qsearchs );
+use FS::agent_type;
+use FS::part_pkg;
 
-@ISA = qw(FS::Record Exporter);
-@EXPORT_OK = qw(fields);
+@ISA = qw( FS::Record );
 
 =head1 NAME
 
@@ -16,8 +16,8 @@ FS::type_pkgs - Object methods for type_pkgs records
 
   use FS::type_pkgs;
 
-  $record = create FS::type_pkgs \%hash;
-  $record = create FS::type_pkgs { 'column' => 'value' };
+  $record = new FS::type_pkgs \%hash;
+  $record = new FS::type_pkgs { 'column' => 'value' };
 
   $error = $record->insert;
 
@@ -45,66 +45,28 @@ FS::Record.  The following fields are currently supported:
 
 =over 4
 
-=item create HASHREF
+=item new HASHREF
 
 Create a new record.  To add the record to the database, see L<"insert">.
 
 =cut
 
-sub create {
-  my($proto,$hashref)=@_;
-
-  #now in FS::Record::new
-  #my($field);
-  #foreach $field (fields('type_pkgs')) {
-  #  $hashref->{$field}='' unless defined $hashref->{$field};
-  #}
-
-  $proto->new('type_pkgs',$hashref);
-
-}
+sub table { 'type_pkgs'; }
 
 =item insert
 
 Adds this record to the database.  If there is an error, returns the error,
 otherwise returns false.
 
-=cut
-
-sub insert {
-  my($self)=@_;
-
-  $self->check or
-  $self->add;
-}
-
 =item delete
 
 Deletes this record from the database.  If there is an error, returns the
 error, otherwise returns false.
 
-=cut
-
-sub delete {
-  my($self)=@_;
-
-  $self->del;
-}
-
 =item replace OLD_RECORD
 
 Replaces OLD_RECORD with this one in the database.  If there is an error,
 returns the error, otherwise returns false.
-
-=cut
-
-sub replace {
-  my($new,$old)=@_;
-  return "(Old) Not a type_pkgs record!" unless $old->table eq "type_pkgs";
-
-  $new->check or
-  $new->rep($old);
-}
 
 =item check
 
@@ -115,24 +77,35 @@ methods.
 =cut
 
 sub check {
-  my($self)=@_;
-  return "Not a type_pkgs record!" unless $self->table eq "type_pkgs";
-  my($recref) = $self->hashref;
+  my $self = shift;
 
-  $recref->{typenum} =~ /^(\d+)$/ or return "Illegal typenum";
-  $recref->{typenum} = $1;
+  my $error = 
+    $self->ut_number('typenum')
+    || $self->ut_number('pkgpart')
+  ;
+  return $error if $error;
+
   return "Unknown typenum"
-    unless qsearchs('agent_type',{'typenum'=>$recref->{typenum}});
+    unless qsearchs( 'agent_type', { 'typenum' => $self->typenum } );
 
-  $recref->{pkgpart} =~ /^(\d+)$/ or return "Illegal pkgpart";
-  $recref->{pkgpart} = $1;
   return "Unknown pkgpart"
-    unless qsearchs('part_pkg',{'pkgpart'=>$recref->{pkgpart}});
+    unless qsearchs( 'part_pkg', { 'pkgpart' => $self->pkgpart } );
 
   ''; #no error
 }
 
 =back
+
+=head1 VERSION
+
+$Id: type_pkgs.pm,v 1.2 1998-12-29 11:59:58 ivan Exp $
+
+=head1 BUGS
+
+=head1 SEE ALSO
+
+L<FS::Record>, L<FS::agent_type>, L<FS::part_pkgs>, schema.html from the base
+documentation.
 
 =head1 HISTORY
 
@@ -143,6 +116,11 @@ ivan@sisd.com 97-nov-13
 
 change to ut_ FS::Record, fixed bugs
 ivan@sisd.com 97-dec-10
+
+$Log: type_pkgs.pm,v $
+Revision 1.2  1998-12-29 11:59:58  ivan
+mostly properly OO, some work still to be done with svc_ stuff
+
 
 =cut
 

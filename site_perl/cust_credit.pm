@@ -1,13 +1,12 @@
 package FS::cust_credit;
 
 use strict;
-use vars qw(@ISA @EXPORT_OK);
-use Exporter;
-use FS::UID qw(getotaker);
-use FS::Record qw(fields qsearchs);
+use vars qw( @ISA );
+use FS::UID qw( getotaker );
+use FS::Record qw( qsearchs );
+use FS::cust_main;
 
-@ISA = qw(FS::Record Exporter);
-@EXPORT_OK = qw(fields);
+@ISA = qw( FS::Record );
 
 =head1 NAME
 
@@ -17,8 +16,8 @@ FS::cust_credit - Object methods for cust_credit records
 
   use FS::cust_credit;
 
-  $record = create FS::cust_credit \%hash;
-  $record = create FS::cust_credit { 'column' => 'value' };
+  $record = new FS::cust_credit \%hash;
+  $record = new FS::cust_credit { 'column' => 'value' };
 
   $error = $record->insert;
 
@@ -57,23 +56,13 @@ L<Time::Local> and L<Date::Parse> for conversion functions.
 
 =over 4
 
-=item create HASHREF
+=item new HASHREF
 
 Creates a new credit.  To add the credit to the database, see L<"insert">.
 
 =cut
 
-sub create {
-  my($proto,$hashref)=@_;
-
-  #now in FS::Record::new
-  #my($field);
-  #foreach $field (fields('cust_credit')) {
-  #  $hashref->{$field}='' unless defined $hashref->{$field};
-  #}
-
-  $proto->new('cust_credit',$hashref);
-}
+sub table { 'cust_credit'; }
 
 =item insert
 
@@ -86,14 +75,13 @@ automatically set to amount).
 =cut
 
 sub insert {
-  my($self)=@_;
+  my $self = shift;
 
-  $self->setfield('credited',$self->amount) if $self->credited eq '';
+  $self->credited($self->amount) if $self->credited eq '';
   return "credited != amount!"
     unless $self->credited == $self->amount;
 
-  $self->check or
-  $self->add;
+  $self->SUPER::insert;
 }
 
 =item delete
@@ -104,8 +92,6 @@ Currently unimplemented.
 
 sub delete {
   return "Can't remove credit!"
-  #my($self)=@_;
-  #$self->del;
 }
 
 =item replace OLD_RECORD
@@ -119,21 +105,15 @@ inserting a refund (see L<FS::cust_refund>).
 =cut
 
 sub replace {
-  my($new,$old)=@_;
-  return "(Old) Not a cust_credit record!" unless $old->table eq "cust_credit";
-  return "Can't change crednum!"
-    unless $old->getfield('crednum') eq $new->getfield('crednum');
-  return "Can't change custnum!"
-    unless $old->getfield('custnum') eq $new->getfield('custnum');
-  return "Can't change date!"
-    unless $old->getfield('_date') eq $new->getfield('_date');
-  return "Can't change amount!"
-    unless $old->getfield('amount') eq $new->getfield('amount');
-  return "(New) credited can't be > (new) amount!"
-    if $new->getfield('credited') > $new->getfield('amount');
+  my ( $new, $old ) = ( shift, shift );
 
-  $new->check or
-  $new->rep($old);
+  return "Can't change custnum!" unless $old->custnum eq $new->custnum;
+  return "Can't change date!" unless $old->_date eq $new->_date;
+  return "Can't change amount!" unless $old->amount eq $new->amount;
+  return "(New) credited can't be > (new) amount!"
+    if $new->credited > $new->amount;
+
+  $new->SUPER::replace($old);
 }
 
 =item check
@@ -145,42 +125,37 @@ methods.
 =cut
 
 sub check {
-  my($self)=@_;
-  return "Not a cust_credit record!" unless $self->table eq "cust_credit";
-  my($recref) = $self->hashref;
+  my $self = shift;
 
-  $recref->{crednum} =~ /^(\d*)$/ or return "Illegal crednum";
-  $recref->{crednum} = $1;
+  my $error =
+    $self->ut_numbern('crednum')
+    || $self->ut_number('custnum')
+    || $self->ut_numbern('_date')
+    || $self->ut_money('amount')
+    || $self->ut_money('credited')
+    || $self->ut_textn('reason');
+  ;
+  return $error if $error;
 
-  $recref->{custnum} =~ /^(\d+)$/ or return "Illegal custnum";
-  $recref->{custnum} = $1;
   return "Unknown customer"
-    unless qsearchs('cust_main',{'custnum'=>$recref->{custnum}});
+    unless qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
 
-  $recref->{_date} =~ /^(\d*)$/ or return "Illegal date";
-  $recref->{_date} = $recref->{_date} ? $1 : time;
+  $self->_date(time) unless $self->_date;
 
-  $recref->{amount} =~ /^(\d+(\.\d\d)?)$/ or return "Illegal amount";
-  $recref->{amount} = $1;
-
-  $recref->{credited} =~ /^(\-?\d+(\.\d\d)?)$/ or return "Illegal credited";
-  $recref->{credited} = $1;
-
-  #$recref->{otaker} =~ /^(\w+)$/ or return "Illegal otaker";
-  #$recref->{otaker} = $1;
   $self->otaker(getotaker);
 
-  $self->ut_textn('reason');
-
+  ''; #no error
 }
 
 =back
 
+=head1 VERSION
+
+$Id: cust_credit.pm,v 1.2 1998-12-29 11:59:38 ivan Exp $
+
 =head1 BUGS
 
 The delete method.
-
-It doesn't properly override FS::Record yet.
 
 =head1 SEE ALSO
 
@@ -192,6 +167,11 @@ documentation.
 ivan@sisd.com 98-mar-17
 
 pod, otaker from FS::UID ivan@sisd.com 98-sep-21
+
+$Log: cust_credit.pm,v $
+Revision 1.2  1998-12-29 11:59:38  ivan
+mostly properly OO, some work still to be done with svc_ stuff
+
 
 =cut
 

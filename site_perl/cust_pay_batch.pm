@@ -1,24 +1,22 @@
 package FS::cust_pay_batch;
 
 use strict;
-use vars qw (@ISA);
-use Exporter;
-#use FS::UID qw(getotaker);
-use FS::Record qw(hfields qsearch qsearchs);
+use vars qw( @ISA );
+use FS::Record;
 use Business::CreditCard;
 
-@ISA = qw(FS::Record);
+@ISA = qw( FS::Record );
 
 =head1 NAME
 
-FS::cust_pay_batdh - Object methods for batch cards
+FS::cust_pay_batch - Object methods for batch cards
 
 =head1 SYNOPSIS
 
   use FS::cust_pay_batch;
 
-  $record = create FS::cust_pay_batch \%hash;
-  $record = create FS::cust_pay_batch { 'column' => 'value' };
+  $record = new FS::cust_pay_batch \%hash;
+  $record = new FS::cust_pay_batch { 'column' => 'value' };
 
   $error = $record->insert;
 
@@ -73,7 +71,7 @@ following fields are currently supported:
 
 =over 4
 
-=item create HASHREF
+=item new HASHREF
 
 Creates a new record.  To add the record to the database, see L<"insert">.
 
@@ -82,48 +80,17 @@ points to.  You can ask the object for a copy with the I<hash> method.
 
 =cut
 
-sub create {
-  my($proto,$hashref)=@_;
-
-  $proto->new('cust_pay_batch',$hashref);
-
-}
+sub table { 'cust_pay_batch'; }
 
 =item insert
 
 Adds this record to the database.  If there is an error, returns the error,
 otherwise returns false.
 
-=cut
-
-sub insert {
-  my($self)=@_;
-
-  #local $SIG{HUP} = 'IGNORE';
-  #local $SIG{INT} = 'IGNORE';
-  #local $SIG{QUIT} = 'IGNORE';
-  #local $SIG{TERM} = 'IGNORE';
-  #local $SIG{TSTP} = 'IGNORE';
-
-  $self->check or
-  $self->add;
-}
-
 =item delete
 
-#inactive
-#
-#Delete this record from the database.
-
-=cut
-
-sub delete {
-  my($self)=@_;
-
-  #$self->del;
-
-  return "Can't (yet?) delete batched transactions!";
-}
+Delete this record from the database.  If there is an error, returns the error,
+otherwise returns false.
 
 =item replace OLD_RECORD
 
@@ -135,40 +102,30 @@ sub delete {
 =cut
 
 sub replace {
-  my($new,$old)=@_;
-  #return "(Old) Not a table_name record!" unless $old->table eq "table_name";
-  #
-  #return "Can't change keyfield!"
-  #   unless $old->getfield('keyfield') eq $new->getfield('keyfield');
-  #
-  #$new->check or
-  #$new->rep($old);
-
   return "Can't (yet?) replace batched transactions!";
 }
 
 =item check
 
-Checks all fields to make sure this is a valid example.  If there is
+Checks all fields to make sure this is a valid transaction.  If there is
 an error, returns the error, otherwise returns false.  Called by the insert
 and repalce methods.
 
 =cut
 
 sub check {
-  my($self)=@_;
-  return "Not a cust_pay_batch record!" unless $self->table eq "cust_pay_batch";
+  my $self = shift;
 
   my $error = 
       $self->ut_numbern('trancode')
-    or $self->ut_number('cardnum') 
-    or $self->ut_money('amount')
-    or $self->ut_number('invnum')
-    or $self->ut_number('custnum')
-    or $self->ut_text('address1')
-    or $self->ut_textn('address2')
-    or $self->ut_text('city')
-    or $self->ut_text('state')
+    || $self->ut_number('cardnum') 
+    || $self->ut_money('amount')
+    || $self->ut_number('invnum')
+    || $self->ut_number('custnum')
+    || $self->ut_text('address1')
+    || $self->ut_textn('address2')
+    || $self->ut_text('city')
+    || $self->ut_text('state')
   ;
 
   return $error if $error;
@@ -186,12 +143,7 @@ sub check {
   $cardnum = $1;
   $self->cardnum($cardnum);
   validate($cardnum) or return "Illegal credit card number";
-  my $type = cardtype($cardnum);
-  return "Unknown credit card type"
-    unless ( $type =~ /^VISA/ ||
-             $type =~ /^MasterCard/ ||
-             $type =~ /^American Express/ ||
-             $type =~ /^Discover/ );
+  return "Unknown card type" if cardtype($self->payinfo) eq "Unknown";
 
   if ( $self->exp eq '' ) {
     return "Expriation date required";
@@ -231,9 +183,12 @@ sub check {
 
 =head1 VERSION
 
-$Id: cust_pay_batch.pm,v 1.2 1998-11-18 09:01:44 ivan Exp $
+$Id: cust_pay_batch.pm,v 1.3 1998-12-29 11:59:44 ivan Exp $
 
 =head1 BUGS
+
+There should probably be a configuration file with a list of allowed credit
+card types.
 
 =head1 SEE ALSO
 
@@ -247,7 +202,10 @@ added hfields
 ivan@sisd.com 97-nov-13
 
 $Log: cust_pay_batch.pm,v $
-Revision 1.2  1998-11-18 09:01:44  ivan
+Revision 1.3  1998-12-29 11:59:44  ivan
+mostly properly OO, some work still to be done with svc_ stuff
+
+Revision 1.2  1998/11/18 09:01:44  ivan
 i18n! i18n!
 
 Revision 1.1  1998/11/15 05:19:58  ivan

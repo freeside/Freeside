@@ -1,16 +1,14 @@
 package FS::svc_acct;
 
 use strict;
-use vars qw(@ISA @EXPORT_OK $nossh_hack $conf $dir_prefix @shells
+use vars qw(@ISA $nossh_hack $conf $dir_prefix @shells
             $shellmachine @saltset @pw_set);
-use Exporter;
 use FS::Conf;
-use FS::Record qw(fields qsearchs);
+use FS::Record qw( qsearchs fields );
 use FS::SSH qw(ssh);
 use FS::cust_svc;
 
-@ISA = qw(FS::Record Exporter);
-@EXPORT_OK = qw(fields);
+@ISA = qw( FS::Record );
 
 #ask FS::UID to run this stuff for us later
 $FS::UID::callback{'FS::svc_acct'} = sub { 
@@ -33,8 +31,8 @@ FS::svc_acct - Object methods for svc_acct records
 
   use FS::svc_acct;
 
-  $record = create FS::svc_acct \%hash;
-  $record = create FS::svc_acct { 'column' => 'value' };
+  $record = new FS::svc_acct \%hash;
+  $record = new FS::svc_acct { 'column' => 'value' };
 
   $error = $record->insert;
 
@@ -87,24 +85,13 @@ FS::Record.  The following fields are currently supported:
 
 =over 4
 
-=item create HASHREF
+=item new HASHREF
 
 Creates a new account.  To add the account to the database, see L<"insert">.
 
 =cut
 
-sub create {
-  my($proto,$hashref)=@_;
-
-  #now in FS::Record::new
-  #my($field);
-  #foreach $field (fields('svc_acct')) {
-  #  $hashref->{$field}='' unless defined $hashref->{$field};
-  #}
-
-  $proto->new('svc_acct',$hashref);
-
-}
+sub table { 'svc_acct'; }
 
 =item insert
 
@@ -125,8 +112,8 @@ setting $FS::svc_acct::nossh_hack true.
 =cut
 
 sub insert {
-  my($self)=@_;
-  my($error);
+  my $self = shift;
+  my $error;
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -134,41 +121,40 @@ sub insert {
   local $SIG{TERM} = 'IGNORE';
   local $SIG{TSTP} = 'IGNORE';
 
-  $error=$self->check;
+  $error = $self->check;
   return $error if $error;
 
   return "Username ". $self->username. " in use"
-    if qsearchs('svc_acct',{'username'=> $self->username } );
+    if qsearchs( 'svc_acct', { 'username' => $self->username } );
 
-  my($part_svc) = qsearchs('part_svc',{ 'svcpart' => $self->svcpart });
+  my $part_svc = qsearchs( 'part_svc', { 'svcpart' => $self->svcpart } );
   return "Unkonwn svcpart" unless $part_svc;
   return "uid in use"
     if $part_svc->svc_acct__uid_flag ne 'F'
-      && qsearchs('svc_acct',{'uid'=> $self->uid } )
+      && qsearchs( 'svc_acct', { 'uid' => $self->uid } )
       && $self->username !~ /^(hyla)?fax$/
     ;
 
-  my($svcnum)=$self->svcnum;
-  my($cust_svc);
+  my $svcnum = $self->svcnum;
+  my $cust_svc;
   unless ( $svcnum ) {
-    $cust_svc=create FS::cust_svc ( {
+    $cust_svc = new FS::cust_svc ( {
       'svcnum'  => $svcnum,
       'pkgnum'  => $self->pkgnum,
       'svcpart' => $self->svcpart,
     } );
-    my($error) = $cust_svc->insert;
+    my $error = $cust_svc->insert;
     return $error if $error;
     $svcnum = $self->svcnum($cust_svc->svcnum);
   }
 
-  $error = $self->add;
+  $error = $self->SUPER::insert;
   if ($error) {
-    #$cust_svc->del if $cust_svc;
     $cust_svc->delete if $cust_svc;
     return $error;
   }
 
-  my($username,$uid,$dir,$shell) = (
+  my ( $username, $uid, $dir, $shell ) = (
     $self->username,
     $self->uid,
     $self->dir,
@@ -210,8 +196,8 @@ setting $FS::svc_acct::nossh_hack true.
 =cut
 
 sub delete {
-  my($self)=@_;
-  my($error);
+  my $self = shift;
+  my $error;
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -219,16 +205,16 @@ sub delete {
   local $SIG{TERM} = 'IGNORE';
   local $SIG{TSTP} = 'IGNORE';
 
-  my($svcnum)=$self->getfield('svcnum');
+  my $svcnum = $self->getfield('svcnum');
 
-  $error = $self->del;
+  $error = $self->SUPER::delete;
   return $error if $error;
 
-  my($cust_svc)=qsearchs('cust_svc',{'svcnum'=>$svcnum});  
-  $error = $cust_svc->del;
+  my $cust_svc = qsearchs( 'cust_svc' , { 'svcnum' => $svcnum } );  
+  $error = $cust_svc->delete;
   return $error if $error;
 
-  my($username) = $self->getfield('username');
+  my $username = $self->username;
   if ( $username && $shellmachine && ! $nossh_hack ) {
     ssh("root\@$shellmachine","userdel $username");
   }
@@ -261,27 +247,17 @@ setting $FS::svc_acct::nossh_hack true.
 =cut
 
 sub replace {
-  my($new,$old)=@_;
-  my($error);
-
-  return "(Old) Not a svc_acct record!" unless $old->table eq "svc_acct";
-  return "Can't change svcnum!"
-    unless $old->getfield('svcnum') eq $new->getfield('svcnum');
+  my ( $new, $old ) = @_;
+  my $error;
 
   return "Username in use"
-    if $old->getfield('username') ne $new->getfield('username') &&
-      qsearchs('svc_acct',{'username'=> $new->getfield('username') } );
+    if $old->username ne $new->username &&
+      qsearchs( 'svc_acct', { 'username' => $new->username } );
 
-  return "Can't change uid!"
-    if $old->getfield('uid') ne $new->getfield('uid');
+  return "Can't change uid!" if $old->uid ne $new->uid;
 
   #change homdir when we change username
-  if ( $old->getfield('username') ne $new->getfield('username') ) {
-    $new->setfield('dir','');
-  }
-
-  $error=$new->check;
-  return $error if $error;
+  $new->setfield('dir', '') if $old->username ne $new->username;
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -289,11 +265,11 @@ sub replace {
   local $SIG{TERM} = 'IGNORE';
   local $SIG{TSTP} = 'IGNORE';
 
-  $error = $new->rep($old);
+  $error = $new->SUPER::replace($old);
   return $error if $error;
 
-  my($old_dir,$new_dir)=( $old->getfield('dir'),$new->getfield('dir') );
-  my($uid,$gid)=( $new->getfield('uid'), $new->getfield('gid') );
+  my ( $old_dir, $new_dir ) = ( $old->getfield('dir'), $new->getfield('dir') );
+  my ( $uid, $gid) = ( $new->getfield('uid'), $new->getfield('gid') );
   if ( $old_dir
        && $new_dir
        && $old_dir ne $new_dir
@@ -322,17 +298,15 @@ Called by the suspend method of FS::cust_pkg (see L<FS::cust_pkg>).
 =cut
 
 sub suspend {
-  my($old) = @_;
-  my(%hash) = $old->hash;
+  my $self = shift;
+  my %hash = $self->hash;
   unless ( $hash{_password} =~ /^\*SUSPENDED\* / ) {
     $hash{_password} = '*SUSPENDED* '.$hash{_password};
-    my($new) = create FS::svc_acct ( \%hash );
-#    $new->replace($old);
-    $new->rep($old); #to avoid password checking :)
+    my $new = new FS::svc_acct ( \%hash );
+    $new->replace($self);
   } else {
     ''; #no error (already suspended)
   }
-
 }
 
 =item unsuspend
@@ -345,13 +319,12 @@ Called by the unsuspend method of FS::cust_pkg (see L<FS::cust_pkg>).
 =cut
 
 sub unsuspend {
-  my($old) = @_;
-  my(%hash) = $old->hash;
+  my $self = shift;
+  my %hash = $self->hash;
   if ( $hash{_password} =~ /^\*SUSPENDED\* (.*)$/ ) {
     $hash{_password} = $1;
-    my($new) = create FS::svc_acct ( \%hash );
-#    $new->replace($old);
-    $new->rep($old); #to avoid password checking :)
+    my $new = new FS::svc_acct ( \%hash );
+    $new->replace($self);
   } else {
     ''; #no error (already unsuspended)
   }
@@ -365,7 +338,6 @@ Called by the cancel method of FS::cust_pkg (see L<FS::cust_pkg>).
 
 =cut
 
-# Usage: $error = $record -> cancel;
 sub cancel {
   ''; #stub (no error) - taken care of in delete
 }
@@ -381,8 +353,8 @@ Sets any fixed values; see L<FS::part_svc>.
 =cut
 
 sub check {
-  my($self)=@_;
-  return "Not a svc_acct record!" unless $self->table eq "svc_acct";
+  my $self = shift;
+
   my($recref) = $self->hashref;
 
   $recref->{svcnum} =~ /^(\d*)$/ or return "Illegal svcnum";
@@ -514,14 +486,20 @@ sub check {
 
 =back
 
-=head1 BUGS
+=head1 VERSION
 
-It doesn't properly override FS::Record yet.
+$Id: svc_acct.pm,v 1.3 1998-12-29 11:59:52 ivan Exp $
+
+=head1 BUGS
 
 The remote commands should be configurable.
 
-The create method should set defaults from part_svc (like the check method
+The new method should set defaults from part_svc (like the check method
 sets fixed values).
+
+The bits which ssh should fork before doing so.
+
+The $recref stuff in sub check should be cleaned up.
 
 =head1 SEE ALSO
 
@@ -555,7 +533,10 @@ arbitrary radius attributes ivan@sisd.com 98-aug-13
 pod and FS::conf ivan@sisd.com 98-sep-22
 
 $Log: svc_acct.pm,v $
-Revision 1.2  1998-11-13 09:56:55  ivan
+Revision 1.3  1998-12-29 11:59:52  ivan
+mostly properly OO, some work still to be done with svc_ stuff
+
+Revision 1.2  1998/11/13 09:56:55  ivan
 change configuration file layout to support multiple distinct databases (with
 own set of config files, export, etc.)
 

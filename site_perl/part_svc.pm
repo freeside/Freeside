@@ -1,12 +1,10 @@
 package FS::part_svc;
 
 use strict;
-use vars qw(@ISA @EXPORT_OK);
-use Exporter;
-use FS::Record qw(fields hfields);
+use vars qw( @ISA );
+use FS::Record qw( fields );
 
-@ISA = qw(FS::Record Exporter);
-@EXPORT_OK = qw(hfields fields);
+@ISA = qw(FS::Record);
 
 =head1 NAME
 
@@ -16,8 +14,8 @@ FS::part_svc - Object methods for part_svc objects
 
   use FS::part_svc;
 
-  $record = create FS::part_referral \%hash
-  $record = create FS::part_referral { 'column' => 'value' };
+  $record = new FS::part_referral \%hash
+  $record = new FS::part_referral { 'column' => 'value' };
 
   $error = $record->insert;
 
@@ -51,38 +49,19 @@ L<FS::svc_domain>, and L<FS::svc_acct_sm>, among others.
 
 =over 4
 
-=item create HASHREF
+=item new HASHREF
 
 Creates a new service definition.  To add the service definition to the
 database, see L<"insert">.
 
 =cut
 
-sub create {
-  my($proto,$hashref)=@_;
-
-  #now in FS::Record::new
-  #my($field);
-  #foreach $field (fields('part_svc')) {
-  #  $hashref->{$field}='' unless defined $hashref->{$field};
-  #}
-
-  $proto->new('part_svc',$hashref);
-}
+sub table { 'part_svc'; }
 
 =item insert
 
 Adds this service definition to the database.  If there is an error, returns
 the error, otherwise returns false.
-
-=cut
-
-sub insert {
-  my($self)=@_;
-
-  $self->check or
-  $self->add;
-}
 
 =item delete
 
@@ -92,10 +71,7 @@ Currently unimplemented.
 
 sub delete {
   return "Can't (yet?) delete service definitions.";
-# maybe check & make sure the svcpart isn't in cust_svc or (in any packages)?
-#  my($self)=@_;
-#
-#  $self->del;
+# check & make sure the svcpart isn't in cust_svc or pkg_svc (in any packages)?
 }
 
 =item replace OLD_RECORD
@@ -106,14 +82,12 @@ returns the error, otherwise returns false.
 =cut
 
 sub replace {
-  my($new,$old)=@_;
-  return "(Old) Not a part_svc record!" unless $old->table eq "part_svc";
-  return "Can't change svcpart!"
-    unless $old->getfield('svcpart') eq $new->getfield('svcpart');
+  my ( $new, $old ) = shift, shift;
+
   return "Can't change svcdb!"
-    unless $old->getfield('svcdb') eq $new->getfield('svcdb');
-  $new->check or
-  $new->rep($old);
+    unless $old->svcdb eq $new->svcdb;
+
+  $new->SUPER::replace( $old );
 }
 
 =item check
@@ -125,30 +99,29 @@ and replace methods.
 =cut
 
 sub check {
-  my($self)=@_;
-  return "Not a part_svc record!" unless $self->table eq "part_svc";
-  my($recref) = $self->hashref;
+  my $self = shift;
+  my $recref = $self->hashref;
 
-  my($error);
-  return $error if $error=
+  my $error;
+  $error=
     $self->ut_numbern('svcpart')
     || $self->ut_text('svc')
     || $self->ut_alpha('svcdb')
   ;
+  return $error if $error;
 
-  my(@fields) = eval { fields($recref->{svcdb}) }; #might die
+  my @fields = eval { fields( $recref->{svcdb} ) }; #might die
   return "Unknown svcdb!" unless @fields;
 
-  my($svcdb);
+  my $svcdb;
   foreach $svcdb ( qw(
-    svc_acct svc_acct_sm svc_charge svc_domain svc_wo
+    svc_acct svc_acct_sm svc_domain
   ) ) {
-    my(@rows)=map { /^${svcdb}__(.*)$/; $1 }
+    my @rows = map { /^${svcdb}__(.*)$/; $1 }
       grep ! /_flag$/,
         grep /^${svcdb}__/,
           fields('part_svc');
-    my($row);
-    foreach $row (@rows) {
+    foreach my $row (@rows) {
       unless ( $svcdb eq $recref->{svcdb} ) {
         $recref->{$svcdb.'__'.$row}='';
         $recref->{$svcdb.'__'.$row.'_flag'}='';
@@ -158,11 +131,8 @@ sub check {
         or return "Illegal flag for $svcdb $row";
       $recref->{$svcdb.'__'.$row.'_flag'} = $1;
 
-#      $recref->{$svcdb.'__'.$row} =~ /^(.*)$/ #not restrictive enough?
-#        or return "Illegal value for $svcdb $row";
-#      $recref->{$svcdb.'__'.$row} = $1;
-      my($error);
-      return $error if $error=$self->ut_anything($svcdb.'__'.$row);
+      my $error = $self->ut_anything($svcdb.'__'.$row);
+      return $error if $error;
 
     }
   }
@@ -172,11 +142,16 @@ sub check {
 
 =back
 
+=head1 VERSION
+
+$Id: part_svc.pm,v 1.2 1998-12-29 11:59:50 ivan Exp $
+
 =head1 BUGS
 
-It doesn't properly override FS::Record yet.
-
 Delete is unimplemented.
+
+The list of svc_* tables is hardcoded.  When svc_acct_pop is renamed, this
+should be fixed.
 
 =head1 SEE ALSO
 
@@ -192,6 +167,11 @@ data checking/untainting calls into FS::Record added
 ivan@sisd.com 97-dec-6
 
 pod ivan@sisd.com 98-sep-21
+
+$Log: part_svc.pm,v $
+Revision 1.2  1998-12-29 11:59:50  ivan
+mostly properly OO, some work still to be done with svc_ stuff
+
 
 =cut
 

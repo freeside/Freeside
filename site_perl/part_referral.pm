@@ -1,12 +1,10 @@
 package FS::part_referral;
 
 use strict;
-use vars qw(@ISA @EXPORT_OK);
-use Exporter;
-use FS::Record qw(fields qsearchs);
+use vars qw( @ISA );
+use FS::Record;
 
-@ISA = qw(FS::Record Exporter);
-@EXPORT_OK = qw(fields);
+@ISA = qw( FS::Record );
 
 =head1 NAME
 
@@ -16,8 +14,8 @@ FS::part_referral - Object methods for part_referral objects
 
   use FS::part_referral;
 
-  $record = create FS::part_referral \%hash
-  $record = create FS::part_referral { 'column' => 'value' };
+  $record = new FS::part_referral \%hash
+  $record = new FS::part_referral { 'column' => 'value' };
 
   $error = $record->insert;
 
@@ -46,37 +44,18 @@ following fields are currently supported:
 
 =over 4
 
-=item create HASHREF
+=item new HASHREF
 
 Creates a new referral.  To add the referral to the database, see L<"insert">.
 
 =cut
 
-sub create {
-  my($proto,$hashref)=@_;
-
-  #now in FS::Record::new
-  #my($field);
-  #foreach $field (fields('part_referral')) {
-  #  $hashref->{$field}='' unless defined $hashref->{$field};
-  #}
-
-  $proto->new('part_referral',$hashref);
-}
+sub table { 'part_referral'; }
 
 =item insert
 
 Adds this referral to the database.  If there is an error, returns the error,
 otherwise returns false.
-
-=cut
-
-sub insert {
-  my($self)=@_;
-
-  $self->check or
-  $self->add;
-}
 
 =item delete
 
@@ -85,27 +64,15 @@ Currently unimplemented.
 =cut
 
 sub delete {
-  my($self)=@_;
+  my $self = shift;
   return "Can't (yet?) delete part_referral records";
-  #$self->del;
+  #need to make sure no customers have this referral!
 }
 
 =item replace OLD_RECORD
 
 Replaces OLD_RECORD with this one in the database.  If there is an error,
 returns the error, otherwise returns false.
-
-=cut
-
-sub replace {
-  my($new,$old)=@_;
-  return "(Old) Not an part_referral record!" 
-    unless $old->table eq "part_referral";
-  return "Can't change refnum!"
-    unless $old->getfield('refnum') eq $new->getfield('refnum');
-  $new->check or
-  $new->rep($old);
-}
 
 =item check
 
@@ -116,24 +83,20 @@ methods.
 =cut
 
 sub check {
-  my($self)=@_;
-  return "Not a part_referral record!" unless $self->table eq "part_referral";
+  my $self = shift;
 
-  my($error)=
-    $self->ut_numbern('refnum')
-      or $self->ut_text('referral')
+  $self->ut_numbern('refnum')
+    || $self->ut_text('referral')
   ;
-  return $error if $error;
-
-  '';
-
 }
 
 =back
 
-=head1 BUGS
+=head1 VERSION
 
-It doesn't properly override FS::Record yet.
+$Id: part_referral.pm,v 1.2 1998-12-29 11:59:49 ivan Exp $
+
+=head1 BUGS
 
 The delete method is unimplemented.
 
@@ -148,6 +111,11 @@ Class dealing with referrals
 ivan@sisd.com 98-feb-23
 
 pod ivan@sisd.com 98-sep-21
+
+$Log: part_referral.pm,v $
+Revision 1.2  1998-12-29 11:59:49  ivan
+mostly properly OO, some work still to be done with svc_ stuff
+
 
 =cut
 

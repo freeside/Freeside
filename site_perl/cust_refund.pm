@@ -1,15 +1,13 @@
 package FS::cust_refund;
 
 use strict;
-use vars qw(@ISA @EXPORT_OK);
-use Exporter;
+use vars qw( @ISA );
 use Business::CreditCard;
-use FS::Record qw(fields qsearchs);
+use FS::Record qw( qsearchs );
 use FS::UID qw(getotaker);
 use FS::cust_credit;
 
-@ISA = qw(FS::Record Exporter);
-@EXPORT_OK = qw(fields);
+@ISA = qw( FS::Record );
 
 =head1 NAME
 
@@ -19,8 +17,8 @@ FS::cust_refund - Object method for cust_refund objects
 
   use FS::cust_refund;
 
-  $record = create FS::cust_refund \%hash;
-  $record = create FS::cust_refund { 'column' => 'value' };
+  $record = new FS::cust_refund \%hash;
+  $record = new FS::cust_refund { 'column' => 'value' };
 
   $error = $record->insert;
 
@@ -58,24 +56,13 @@ L<Time::Local> and L<Date::Parse> for conversion functions.
 
 =over 4
 
-=item create HASHREF
+=item new HASHREF
 
 Creates a new refund.  To add the refund to the database, see L<"insert">.
 
 =cut
 
-sub create {
-  my($proto,$hashref)=@_;
-
-  #now in FS::Record::new
-  #my($field);
-  #foreach $field (fields('cust_refund')) {
-  #  $hashref->{$field}='' unless defined $hashref->{$field};
-  #}
-
-  $proto->new('cust_refund',$hashref);
-
-}
+sub table { 'cust_refund'; }
 
 =item insert
 
@@ -85,20 +72,19 @@ L<FS::cust_credit>).
 =cut
 
 sub insert {
-  my($self)=@_;
+  my $self = shift;
 
-  my($error);
+  my $error;
 
   $error=$self->check;
   return $error if $error;
 
-  my($old_cust_credit) = qsearchs('cust_credit', {
-                                'crednum' => $self->getfield('crednum')
-                               } );
+  my $old_cust_credit =
+    qsearchs( 'cust_credit', { 'crednum' => $self->crednum } );
   return "Unknown crednum" unless $old_cust_credit;
-  my(%hash)=$old_cust_credit->hash;
-  $hash{credited} = sprintf("%.2f",$hash{credited} - $self->getfield('refund') );
-  my($new_cust_credit) = create FS::cust_credit ( \%hash );
+  my %hash = $old_cust_credit->hash;
+  $hash{credited} = sprintf("%.2f", $hash{credited} - $self->refund );
+  my($new_cust_credit) = new FS::cust_credit ( \%hash );
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -106,10 +92,10 @@ sub insert {
   local $SIG{TERM} = 'IGNORE';
   local $SIG{TSTP} = 'IGNORE';
 
-  $error=$new_cust_credit -> replace($old_cust_credit);
+  $error = $new_cust_credit->replace($old_cust_credit);
   return "Error modifying cust_credit: $error" if $error;
 
-  $self->add;
+  $self->SUPER::insert;
 }
 
 =item delete
@@ -120,10 +106,6 @@ Currently unimplemented (accounting reasons).
 
 sub delete {
   return "Can't (yet?) delete cust_refund records!";
-#template code below
-#  my($self)=@_;
-#
-#  $self->del;
 }
 
 =item replace OLD_RECORD
@@ -134,12 +116,6 @@ Currently unimplemented (accounting reasons).
 
 sub replace {
    return "Can't (yet?) modify cust_refund records!";
-#template code below
-#  my($new,$old)=@_;
-#  return "(Old) Not a cust_refund record!" unless $old->table eq "cust_refund";
-#
-#  $new->check or
-#  $new->rep($old);
 }
 
 =item check
@@ -150,10 +126,11 @@ returns the error, otherwise returns false.  Called by the insert method.
 =cut
 
 sub check {
-  my($self)=@_;
-  return "Not a cust_refund record!" unless $self->table eq "cust_refund";
+  my $self = shift;
 
-  my $error =
+  my $error;
+
+  $error =
     $self->ut_number('refundnum')
     || $self->ut_number('crednum')
     || $self->ut_money('amount')
@@ -161,44 +138,27 @@ sub check {
   ;
   return $error if $error;
 
-  my($recref) = $self->hashref;
+  $self->_date(time) unless $self->_date;
 
-  $recref->{_date} ||= time;
+  $self->payby =~ /^(CARD|BILL|COMP)$/ or return "Illegal payby";
+  $self->payby($1);
 
-  $recref->{payby} =~ /^(CARD|BILL|COMP)$/ or return "Illegal payby";
-  $recref->{payby} = $1;
-
-  if ( $recref->{payby} eq 'CARD' ) {
-
-    $recref->{payinfo} =~ s/\D//g;
-    if ( $recref->{payinfo} ) {
-      $recref->{payinfo} =~ /^(\d{13,16})$/
+  if ( $self->payby eq 'CARD' ) {
+    my $payinfo = $self->payinfo;
+    $self->payinfo($payinfo =~ s/\D//g);
+    if ( $self->payinfo ) {
+      $self->payinfo =~ /^(\d{13,16})$/
         or return "Illegal (mistyped?) credit card number (payinfo)";
-      $recref->{payinfo} = $1;
-      #validate($recref->{payinfo})
-      #  or return "Illegal (checksum) credit card number (payinfo)";
-      my($type)=cardtype($recref->{payinfo});
-      return "Unknown credit card type"
-        unless ( $type =~ /^VISA/ ||
-                 $type =~ /^MasterCard/ ||
-                 $type =~ /^American Express/ ||
-                 $type =~ /^Discover/ );
+      $self->payinfo($1);
+      validate($self->payinfo) or return "Illegal credit card number";
+      return "Unknown card type" if cardtype($self->payinfo) eq "Unknown";
     } else {
-      $recref->{payinfo}='N/A';
+      $self->payinfo('N/A');
     }
 
-  } elsif ( $recref->{payby} eq 'BILL' ) {
-
-    $recref->{payinfo} =~ /^([\w \-]*)$/
-      or return "Illegal P.O. number (payinfo)";
-    $recref->{payinfo} = $1;
-
-  } elsif ( $recref->{payby} eq 'COMP' ) {
-
-    $recref->{payinfo} =~ /^([\w]{2,8})$/
-      or return "Illegal comp account issuer (payinfo)";
-    $recref->{payinfo} = $1;
-
+  } else {
+    $error = $self->ut_textn('payinfo');
+    return $error if $error;
   }
 
   $self->otaker(getotaker);
@@ -208,9 +168,11 @@ sub check {
 
 =back
 
-=head1 BUGS
+=head1 VERSION
 
-It doesn't properly override FS::Record yet.
+$Id: cust_refund.pm,v 1.2 1998-12-29 11:59:46 ivan Exp $
+
+=head1 BUGS
 
 Delete and replace methods.
 
@@ -226,6 +188,11 @@ ivan@sisd.com 98-mar-18
 (finish me!)
 
 pod and finish up ivan@sisd.com 98-sep-21
+
+$Log: cust_refund.pm,v $
+Revision 1.2  1998-12-29 11:59:46  ivan
+mostly properly OO, some work still to be done with svc_ stuff
+
 
 =cut
 

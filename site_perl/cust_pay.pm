@@ -1,14 +1,12 @@
 package FS::cust_pay;
 
 use strict;
-use vars qw(@ISA @EXPORT_OK);
-use Exporter;
+use vars qw( @ISA );
 use Business::CreditCard;
-use FS::Record qw(fields qsearchs);
+use FS::Record qw( qsearchs );
 use FS::cust_bill;
 
-@ISA = qw(FS::Record Exporter);
-@EXPORT_OK = qw(fields);
+@ISA = qw( FS::Record );
 
 =head1 NAME
 
@@ -18,8 +16,8 @@ FS::cust_pay - Object methods for cust_pay objects
 
   use FS::cust_pay;
 
-  $record = create FS::cust_pay \%hash;
-  $record = create FS::cust_pay { 'column' => 'value' };
+  $record = new FS::cust_pay \%hash;
+  $record = new FS::cust_pay { 'column' => 'value' };
 
   $error = $record->insert;
 
@@ -57,24 +55,13 @@ L<Time::Local> and L<Date::Parse> for conversion functions.
 
 =over 4 
 
-=item create HASHREF
+=item new HASHREF
 
 Creates a new payment.  To add the payment to the databse, see L<"insert">.
 
 =cut
 
-sub create {
-  my($proto,$hashref)=@_;
-
-  #now in FS::Record::new
-  #my($field);
-  #foreach $field (fields('cust_pay')) {
-  #  $hashref->{$field}='' unless defined $hashref->{$field};
-  #}
-
-  $proto->new('cust_pay',$hashref);
-
-}
+sub table { 'cust_pay'; }
 
 =item insert
 
@@ -84,20 +71,18 @@ L<FS::cust_bill>).
 =cut
 
 sub insert {
-  my($self)=@_;
+  my $self = shift;
 
-  my($error);
+  my $error;
 
-  $error=$self->check;
+  $error = $self->check;
   return $error if $error;
 
-  my($old_cust_bill) = qsearchs('cust_bill', {
-                                'invnum' => $self->getfield('invnum')
-                               } );
+  my $old_cust_bill = qsearchs( 'cust_bill', { 'invnum' => $self->invnum } );
   return "Unknown invnum" unless $old_cust_bill;
-  my(%hash)=$old_cust_bill->hash;
-  $hash{owed} = sprintf("%.2f",$hash{owed} - $self->getfield('paid') );
-  my($new_cust_bill) = create FS::cust_bill ( \%hash );
+  my %hash = $old_cust_bill->hash;
+  $hash{'owed'} = sprintf("%.2f", $hash{owed} - $self->paid );
+  my $new_cust_bill = new FS::cust_bill ( \%hash );
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -105,10 +90,10 @@ sub insert {
   local $SIG{TERM} = 'IGNORE';
   local $SIG{TSTP} = 'IGNORE';
 
-  $error=$new_cust_bill -> replace($old_cust_bill);
+  $error = $new_cust_bill->replace($old_cust_bill);
   return "Error modifying cust_bill: $error" if $error;
 
-  $self->add;
+  $self->SUPER::insert;
 }
 
 =item delete
@@ -119,10 +104,6 @@ Currently unimplemented (accounting reasons).
 
 sub delete {
   return "Can't (yet?) delete cust_pay records!";
-#template code below
-#  my($self)=@_;
-#
-#  $self->del;
 }
 
 =item replace OLD_RECORD
@@ -133,12 +114,6 @@ Currently unimplemented (accounting reasons).
 
 sub replace {
    return "Can't (yet?) modify cust_pay records!";
-#template code below
-#  my($new,$old)=@_;
-#  return "(Old) Not a cust_pay record!" unless $old->table eq "cust_pay";
-#
-#  $new->check or
-#  $new->rep($old);
 }
 
 =item check
@@ -149,61 +124,43 @@ returns the error, otherwise returns false.  Called by the insert method.
 =cut
 
 sub check {
-  my($self)=@_;
-  return "Not a cust_pay record!" unless $self->table eq "cust_pay";
-  my($recref) = $self->hashref;
+  my $self = shift;
 
-  $recref->{paynum} =~ /^(\d*)$/ or return "Illegal paynum";
-  $recref->{paynum} = $1;
+  my $error;
 
-  $recref->{invnum} =~ /^(\d+)$/ or return "Illegal invnum";
-  $recref->{invnum} = $1;
+  $error =
+    $self->ut_numbern('paynum')
+    || $self->ut_number('invnum')
+    || $self->ut_money('paid')
+    || $self->ut_numbern('_date')
+  ;
+  return $error if $error;
 
-  $recref->{paid} =~ /^(\d+(\.\d\d)?)$/ or return "Illegal paid";
-  $recref->{paid} = $1;
+  $self->_date(time) unless $self->_date;
 
-  $recref->{_date} =~ /^(\d*)$/ or return "Illegal date";
-  $recref->{_date} = $recref->{_date} ? $1 : time;
+  $self->payby =~ /^(CARD|BILL|COMP)$/ or return "Illegal payby";
+  $self->payby($1);
 
-  $recref->{payby} =~ /^(CARD|BILL|COMP)$/ or return "Illegal payby";
-  $recref->{payby} = $1;
-
-  if ( $recref->{payby} eq 'CARD' ) {
-
-    $recref->{payinfo} =~ s/\D//g;
-    if ( $recref->{payinfo} ) {
-      $recref->{payinfo} =~ /^(\d{13,16})$/
+  if ( $self->payby eq 'CARD' ) {
+    my $payinfo = $self->payinfo;
+    $self->payinfo($payinfo =~ s/\D//g);
+    if ( $self->payinfo ) {
+      $self->payinfo =~ /^(\d{13,16})$/
         or return "Illegal (mistyped?) credit card number (payinfo)";
-      $recref->{payinfo} = $1;
-      #validate($recref->{payinfo})
-      #  or return "Illegal credit card number";
-      my($type)=cardtype($recref->{payinfo});
-      return "Unknown credit card type"
-        unless ( $type =~ /^VISA/ ||
-                 $type =~ /^MasterCard/ ||
-                 $type =~ /^American Express/ ||
-                 $type =~ /^Discover/ );
+      $self->payinfo($1);
+      validate($self->payinfo) or return "Illegal credit card number";
+      return "Unknown card type" if cardtype($self->payinfo) eq "Unknown";
     } else {
-      $recref->{payinfo}='N/A';
+      $self->payinfo('N/A');
     }
 
-  } elsif ( $recref->{payby} eq 'BILL' ) {
-
-    $recref->{payinfo} =~ /^([\w \-]*)$/
-      or return "Illegal P.O. number (payinfo)";
-    $recref->{payinfo} = $1;
-
-  } elsif ( $recref->{payby} eq 'COMP' ) {
-
-    $recref->{payinfo} =~ /^([\w]{2,8})$/
-      or return "Illegal comp account issuer (payinfo)";
-    $recref->{payinfo} = $1;
-
+  } else {
+    $error = $self->ut_textn('payinfo');
+    return $error if $error;
   }
 
-  $recref->{paybatch} =~ /^([\w\-\:]*)$/
-    or return "Illegal paybatch";
-  $recref->{paybatch} = $1;
+  $error = $self->ut_textn('paybatch');
+  return $error if $error;
 
   ''; #no error
 
@@ -211,9 +168,11 @@ sub check {
 
 =back
 
-=head1 BUGS
+=head1 VERSION
 
-It doesn't properly override FS::Record yet.
+$Id: cust_pay.pm,v 1.2 1998-12-29 11:59:43 ivan Exp $
+
+=head1 BUGS
 
 Delete and replace methods.
 
@@ -228,6 +187,11 @@ ivan@voicenet.com 97-jul-1 - 25 - 29
 new api ivan@sisd.com 98-mar-13
 
 pod ivan@sisd.com 98-sep-21
+
+$Log: cust_pay.pm,v $
+Revision 1.2  1998-12-29 11:59:43  ivan
+mostly properly OO, some work still to be done with svc_ stuff
+
 
 =cut
 

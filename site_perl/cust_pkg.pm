@@ -2,14 +2,20 @@ package FS::cust_pkg;
 
 use strict;
 use vars qw(@ISA);
-use Exporter;
-use FS::UID qw(getotaker);
-use FS::Record qw(fields qsearch qsearchs);
+use FS::UID qw( getotaker );
+use FS::Record qw( qsearch qsearchs );
 use FS::cust_svc;
 use FS::part_pkg;
 use FS::cust_main;
 
-@ISA = qw(FS::Record Exporter);
+# need to 'use' these instead of 'require' in sub { cancel, suspend, unsuspend,
+# setup }
+# because they load configuraion by setting FS::UID::callback (see TODO)
+use FS::svc_acct;
+use FS::svc_acct_sm;
+use FS::svc_domain;
+
+@ISA = qw( FS::Record );
 
 =head1 NAME
 
@@ -19,8 +25,8 @@ FS::cust_pkg - Object methods for cust_pkg objects
 
   use FS::cust_pkg;
 
-  $record = create FS::cust_pkg \%hash;
-  $record = create FS::cust_pkg { 'column' => 'value' };
+  $record = new FS::cust_pkg \%hash;
+  $record = new FS::cust_pkg { 'column' => 'value' };
 
   $error = $record->insert;
 
@@ -76,43 +82,26 @@ conversion functions.
 
 =over 4
 
-=item create HASHREF
+=item new HASHREF
 
 Create a new billing item.  To add the item to the database, see L<"insert">.
 
 =cut
 
-sub create {
-  my($proto,$hashref)=@_;
-
-  #now in FS::Record::new
-  #my($field);
-  #foreach $field (fields('cust_pkg')) {
-  #  $hashref->{$field}='' unless defined $hashref->{$field};
-  #}
-
-  $proto->new('cust_pkg',$hashref);
-}
+sub table { 'cust_pkg'; }
 
 =item insert
 
 Adds this billing item to the database ("Orders" the item).  If there is an
 error, returns the error, otherwise returns false.
 
-=cut
-
-sub insert {
-  my($self)=@_;
-
-  $self->check or
-  $self->add;
-}
-
 =item delete
 
 Currently unimplemented.  You don't want to delete billing items, because there
 would then be no record the customer ever purchased the item.  Instead, see
 the cancel method.
+
+=cut
 
 sub delete {
   return "Can't delete cust_pkg records!";
@@ -138,21 +127,16 @@ in some cases).
 =cut
 
 sub replace {
-  my($new,$old)=@_;
-  return "(Old) Not a cust_pkg record!" if $old->table ne "cust_pkg";
-  return "Can't change pkgnum!"
-    if $old->getfield('pkgnum') ne $new->getfield('pkgnum');
-  #return "Can't (yet?) change pkgpart!"
-  #  if $old->getfield('pkgpart') ne $new->getfield('pkgpart');
-  return "Can't change otaker!"
-    if $old->getfield('otaker') ne $new->getfield('otaker');
+  my( $new, $old ) = ( shift, shift );
+
+  #return "Can't (yet?) change pkgpart!" if $old->pkgpart ne $new->pkgpart;
+  return "Can't change otaker!" if $old->otaker ne $new->otaker;
   return "Can't change setup once it exists!"
     if $old->getfield('setup') &&
        $old->getfield('setup') != $new->getfield('setup');
   #some logic for bill, susp, cancel?
 
-  $new->check or
-  $new->rep($old);
+  $new->SUPER::replace($old);
 }
 
 =item check
@@ -164,38 +148,28 @@ replace methods.
 =cut
 
 sub check {
-  my($self)=@_;
-  return "Not a cust_pkg record!" if $self->table ne "cust_pkg";
-  my($recref) = $self->hashref;
+  my $self = shift;
 
-  $recref->{pkgnum} =~ /^(\d*)$/ or return "Illegal pkgnum";
-  $recref->{pkgnum}=$1;
+  my $error = 
+    $self->ut_numbern('pkgnum')
+    || $self->ut_number('custnum')
+    || $self->ut_number('pkgpart')
+    || $self->ut_numbern('setup')
+    || $self->ut_numbern('bill')
+    || $self->ut_numbern('susp')
+    || $self->ut_numbern('cancel')
+  ;
+  return $error if $error;
 
-  $recref->{custnum} =~ /^(\d+)$/ or return "Illegal custnum";
-  $recref->{custnum}=$1;
   return "Unknown customer"
-    unless qsearchs('cust_main',{'custnum'=>$recref->{custnum}});
+    unless qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
 
-  $recref->{pkgpart} =~ /^(\d+)$/ or return "Illegal pkgpart";
-  $recref->{pkgpart}=$1;
   return "Unknown pkgpart"
-    unless qsearchs('part_pkg',{'pkgpart'=>$recref->{pkgpart}});
+    unless qsearchs( 'part_pkg', { 'pkgpart' => $self->pkgpart } );
 
-  $recref->{otaker} ||= &getotaker;
-  $recref->{otaker} =~ /^(\w{0,8})$/ or return "Illegal otaker";
-  $recref->{otaker}=$1;
-
-  $recref->{setup} =~ /^(\d*)$/ or return "Illegal setup date";
-  $recref->{setup}=$1;
-
-  $recref->{bill} =~ /^(\d*)$/ or return "Illegal bill date";
-  $recref->{bill}=$1;
-
-  $recref->{susp} =~ /^(\d*)$/ or return "Illegal susp date";
-  $recref->{susp}=$1;
-
-  $recref->{cancel} =~ /^(\d*)$/ or return "Illegal cancel date";
-  $recref->{cancel}=$1;
+  $self->otaker(getotaker) unless $self->otaker;
+  $self->otaker =~ /^(\w{0,16})$/ or return "Illegal otaker";
+  $self->otaker($1);
 
   ''; #no error
 }
@@ -211,8 +185,8 @@ If there is an error, returns the error, otherwise returns false.
 =cut
 
 sub cancel {
-  my($self)=@_;
-  my($error);
+  my $self = shift;
+  my $error;
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -220,38 +194,34 @@ sub cancel {
   local $SIG{TERM} = 'IGNORE';
   local $SIG{TSTP} = 'IGNORE';
 
-  my($cust_svc);
-  foreach $cust_svc (
-    qsearch('cust_svc',{'pkgnum'=> $self->pkgnum } )
+  foreach my $cust_svc (
+    qsearch( 'cust_svc', { 'pkgnum' => $self->pkgnum } )
   ) {
-    my($part_svc)=
-      qsearchs('part_svc',{'svcpart'=> $cust_svc->svcpart } );
+    my $part_svc = qsearchs( 'part_svc', { 'svcpart' => $cust_svc->svcpart } );
 
-    $part_svc->getfield('svcdb') =~ /^([\w\-]+)$/
+    $part_svc->svcdb =~ /^([\w\-]+)$/
       or return "Illegal svcdb value in part_svc!";
-    my($svcdb) = $1;
+    my $svcdb = $1;
     require "FS/$svcdb.pm";
 
-    my($svc) = qsearchs($svcdb,{'svcnum' => $cust_svc->svcnum } );
+    my $svc = qsearchs( $svcdb, { 'svcnum' => $cust_svc->svcnum } );
     if ($svc) {
-      bless($svc,"FS::$svcdb");
       $error = $svc->cancel;
       return "Error cancelling service: $error" if $error;
       $error = $svc->delete;
       return "Error deleting service: $error" if $error;
     }
 
-    bless($cust_svc,"FS::cust_svc");
     $error = $cust_svc->delete;
     return "Error deleting cust_svc: $error" if $error;
 
   }
 
   unless ( $self->getfield('cancel') ) {
-    my(%hash) = $self->hash;
-    $hash{'cancel'}=$^T;
-    my($new) = create FS::cust_pkg ( \%hash );
-    $error=$new->replace($self);
+    my %hash = $self->hash;
+    $hash{'cancel'} = $^T;
+    my $new = new FS::cust_pkg ( \%hash );
+    $error = $new->replace($self);
     return $error if $error;
   }
 
@@ -268,30 +238,27 @@ If there is an error, returns the error, otherwise returns false.
 =cut
 
 sub suspend {
-  my($self)=@_;
-  my($error);
+  my $self = shift;
+  my $error ;
+
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
   local $SIG{QUIT} = 'IGNORE'; 
   local $SIG{TERM} = 'IGNORE';
   local $SIG{TSTP} = 'IGNORE';
 
-  my($cust_svc);
-  foreach $cust_svc (
-    qsearch('cust_svc',{'pkgnum'=> $self->getfield('pkgnum') } )
+  foreach my $cust_svc (
+    qsearch( 'cust_svc', { 'pkgnum' => $self->pkgnum } )
   ) {
-    my($part_svc)=
-      qsearchs('part_svc',{'svcpart'=> $cust_svc->getfield('svcpart') } );
+    my $part_svc = qsearchs( 'part_svc', { 'svcpart' => $cust_svc->svcpart } );
 
-    $part_svc->getfield('svcdb') =~ /^([\w\-]+)$/
+    $part_svc->svcdb =~ /^([\w\-]+)$/
       or return "Illegal svcdb value in part_svc!";
-    my($svcdb) = $1;
+    my $svcdb = $1;
     require "FS/$svcdb.pm";
 
-    my($svc) = qsearchs($svcdb,{'svcnum' => $cust_svc->getfield('svcnum') } );
-
+    my $svc = qsearchs( $svcdb, { 'svcnum' => $cust_svc->svcnum } );
     if ($svc) {
-      bless($svc,"FS::$svcdb");
       $error = $svc->suspend;
       return $error if $error;
     }
@@ -299,10 +266,10 @@ sub suspend {
   }
 
   unless ( $self->getfield('susp') ) {
-    my(%hash) = $self->hash;
-    $hash{'susp'}=$^T;
-    my($new) = create FS::cust_pkg ( \%hash );
-    $error=$new->replace($self);
+    my %hash = $self->hash;
+    $hash{'susp'} = $^T;
+    my $new = new FS::cust_pkg ( \%hash );
+    $error = $new->replace($self);
     return $error if $error;
   }
 
@@ -319,7 +286,7 @@ If there is an error, returns the error, otherwise returns false.
 =cut
 
 sub unsuspend {
-  my($self)=@_;
+  my $self = shift;
   my($error);
 
   local $SIG{HUP} = 'IGNORE';
@@ -328,21 +295,18 @@ sub unsuspend {
   local $SIG{TERM} = 'IGNORE';
   local $SIG{TSTP} = 'IGNORE';
 
-  my($cust_svc);
-  foreach $cust_svc (
-    qsearch('cust_svc',{'pkgnum'=> $self->getfield('pkgnum') } )
+  foreach my $cust_svc (
+    qsearch('cust_svc',{'pkgnum'=> $self->pkgnum } )
   ) {
-    my($part_svc)=
-      qsearchs('part_svc',{'svcpart'=> $cust_svc->getfield('svcpart') } );
+    my $part_svc = qsearchs( 'part_svc', { 'svcpart' => $cust_svc->svcpart } );
 
-    $part_svc->getfield('svcdb') =~ /^([\w\-]+)$/
+    $part_svc->svcdb =~ /^([\w\-]+)$/
       or return "Illegal svcdb value in part_svc!";
-    my($svcdb) = $1;
+    my $svcdb = $1;
     require "FS/$svcdb.pm";
 
-    my($svc) = qsearchs($svcdb,{'svcnum' => $cust_svc->getfield('svcnum') } );
+    my $svc = qsearchs( $svcdb, { 'svcnum' => $cust_svc->svcnum } );
     if ($svc) {
-      bless($svc,"FS::$svcdb");
       $error = $svc->unsuspend;
       return $error if $error;
     }
@@ -350,10 +314,10 @@ sub unsuspend {
   }
 
   unless ( ! $self->getfield('susp') ) {
-    my(%hash) = $self->hash;
-    $hash{'susp'}='';
-    my($new) = create FS::cust_pkg ( \%hash );
-    $error=$new->replace($self);
+    my %hash = $self->hash;
+    $hash{'susp'} = '';
+    my $new = new FS::cust_pkg ( \%hash );
+    $error = $new->replace($self);
     return $error if $error;
   }
 
@@ -368,8 +332,8 @@ L<FS::part_pkg).
 =cut
 
 sub part_pkg {
-  my($self)=@_;
-  qsearchs('part_pkg', { 'pkgpart' => $self->pkgpart });
+  my $self = shift;
+  qsearchs( 'part_pkg', { 'pkgpart' => $self->pkgpart } );
 }
 
 =back
@@ -495,11 +459,9 @@ sub order {
 
 =head1 VERSION
 
-$Id: cust_pkg.pm,v 1.3 1998-11-15 13:01:35 ivan Exp $
+$Id: cust_pkg.pm,v 1.4 1998-12-29 11:59:45 ivan Exp $
 
 =head1 BUGS
-
-It doesn't properly override FS::Record yet.
 
 sub order is not OO.  Perhaps it should be moved to FS::cust_main and made so?
 
@@ -507,6 +469,12 @@ In sub order, the @pkgparts array (passed by reference) is clobbered.
 
 Also in sub order, no money is adjusted.  Once FS::part_pkg defines a standard
 method to pass dates to the recur_prog expression, it should do so.
+
+FS::svc_acct, FS::svc_acct_sm, and FS::svc_domain are loaded via 'use' at 
+compile time, rather than via 'require' in sub { setup, suspend, unsuspend,
+cancel } because they use %FS::UID::callback to load configuration values.
+Probably need a subroutine which decides what to do based on whether or not
+we've fetched the user yet, rather than a hash.  See FS::UID and the TODO.
 
 =head1 SEE ALSO
 
@@ -522,7 +490,10 @@ fixed for new agent->agent_type->type_pkgs in &order ivan@sisd.com 98-mar-7
 pod ivan@sisd.com 98-sep-21
 
 $Log: cust_pkg.pm,v $
-Revision 1.3  1998-11-15 13:01:35  ivan
+Revision 1.4  1998-12-29 11:59:45  ivan
+mostly properly OO, some work still to be done with svc_ stuff
+
+Revision 1.3  1998/11/15 13:01:35  ivan
 allow pkgpart changing (for per-customer custom pricing).  warn about it in doc
 
 Revision 1.2  1998/11/12 03:42:45  ivan

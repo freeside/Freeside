@@ -5,16 +5,15 @@ use vars qw($paymentserversecret $paymentserverport $paymentserverhost);
 package FS::cust_main;
 
 use strict;
-use vars qw(@ISA @EXPORT_OK $conf $lpr $processor $xaction $E_NoErr);
+use vars qw(@ISA $conf $lpr $processor $xaction $E_NoErr);
 use Safe;
-use Exporter;
 use Carp;
 use Time::Local;
 use Date::Format;
 use Date::Manip;
 use Business::CreditCard;
-use FS::UID qw(getotaker);
-use FS::Record qw(fields hfields qsearchs qsearch);
+use FS::UID qw( getotaker );
+use FS::Record qw( qsearchs qsearch );
 use FS::cust_pkg;
 use FS::cust_bill;
 use FS::cust_bill_pkg;
@@ -26,8 +25,7 @@ use FS::cust_main_county;
 use FS::agent;
 use FS::cust_main_invoice;
 
-@ISA = qw(FS::Record Exporter);
-@EXPORT_OK = qw(hfields);
+@ISA = qw( FS::Record );
 
 #ask FS::UID to run this stuff for us later
 $FS::UID::callback{'FS::cust_main'} = sub { 
@@ -75,8 +73,8 @@ FS::cust_main - Object methods for cust_main records
 
   use FS::cust_main;
 
-  $record = create FS::cust_main \%hash;
-  $record = create FS::cust_main { 'column' => 'value' };
+  $record = new FS::cust_main \%hash;
+  $record = new FS::cust_main { 'column' => 'value' };
 
   $error = $record->insert;
 
@@ -158,7 +156,7 @@ FS::Record.  The following fields are currently supported:
 
 =over 4
 
-=item create HASHREF
+=item new HASHREF
 
 Creates a new customer.  To add the customer to the database, see L<"insert">.
 
@@ -167,38 +165,12 @@ points to.  You can ask the object for a copy with the I<hash> method.
 
 =cut
 
-sub create {
-  my($proto,$hashref)=@_;
-
-  #now in FS::Record::new
-  #my $field;
-  #foreach $field (fields('cust_main')) {
-  #  $hashref->{$field}='' unless defined $hashref->{$field};
-  #}
-
-  $proto->new('cust_main',$hashref);
-}
+sub table { 'cust_main'; }
 
 =item insert
 
 Adds this customer to the database.  If there is an error, returns the error,
 otherwise returns false.
-
-=cut
-
-sub insert {
-  my($self)=@_;
-
-  #no callbacks in check, only data checks
-  #local $SIG{HUP} = 'IGNORE';
-  #local $SIG{INT} = 'IGNORE';
-  #local $SIG{QUIT} = 'IGNORE';
-  #local $SIG{TERM} = 'IGNORE';
-  #local $SIG{TSTP} = 'IGNORE';
-
-  $self->check or
-  $self->add;
-}
 
 =item delete
 
@@ -210,29 +182,14 @@ be no record the customer ever existed (which is bad, no?)
 
 =cut
 
-# Usage: $error = $record -> delete;
 sub delete {
    return "Can't (yet?) delete customers.";
-#  my($self)=@_;
-#
-#  $self->del;
 }
 
 =item replace OLD_RECORD
 
 Replaces the OLD_RECORD with this one in the database.  If there is an error,
 returns the error, otherwise returns false.
-
-=cut
-
-sub replace {
-  my($new,$old)=@_;
-  return "(Old) Not a cust_main record!" unless $old->table eq "cust_main";
-  return "Can't change custnum!"
-    unless $old->getfield('custnum') eq $new->getfield('custnum');
-  $new->check or
-  $new->rep($old);
-}
 
 =item check
 
@@ -243,9 +200,7 @@ and repalce methods.
 =cut
 
 sub check {
-  my($self)=@_;
-
-  return "Not a cust_main record!" unless $self->table eq "cust_main";
+  my $self = shift;
 
   my $error =
     $self->ut_number('agentnum')
@@ -263,10 +218,10 @@ sub check {
   return $error if $error;
 
   return "Unknown agent"
-    unless qsearchs('agent',{'agentnum'=>$self->agentnum});
+    unless qsearchs( 'agent', { 'agentnum' => $self->agentnum } );
 
   return "Unknown referral"
-    unless qsearchs('part_referral',{'refnum'=>$self->refnum});
+    unless qsearchs( 'part_referral', { 'refnum' => $self->refnum } );
 
   $self->getfield('last') =~ /^([\w \,\.\-\']+)$/ or return "Illegal last name";
   $self->setfield('last',$1);
@@ -314,22 +269,17 @@ sub check {
     $payinfo = $1;
     $self->payinfo($payinfo);
     validate($payinfo) or return "Illegal credit card number";
-    my $type = cardtype($payinfo);
-    return "Unknown credit card type"
-      unless ( $type =~ /^VISA/ ||
-               $type =~ /^MasterCard/ ||
-               $type =~ /^American Express/ ||
-               $type =~ /^Discover/ );
+    return "Unknown card type" if cardtype($self->payinfo) eq "Unknown";
 
   } elsif ( $self->payby eq 'BILL' ) {
 
-    $self->payinfo =~ /^([\w \-]*)$/ or return "Illegal P.O. number";
-    $self->payinfo($1);
+    $error = $self->ut_textn('payinfo');
+    return "Illegal P.O. number" if $error;
 
   } elsif ( $self->payby eq 'COMP' ) {
 
-    $self->payinfo =~ /^(\w{2,8})$/ or return "Illegal comp account issuer";
-    $self->payinfo($1);
+    $error = $self->ut_textn('payinfo');
+    return "Illegal comp account issuer" if $error;
 
   }
 
@@ -371,7 +321,7 @@ Returns all packages (see L<FS::cust_pkg>) for this customer.
 =cut
 
 sub all_pkgs {
-  my($self)=@_;
+  my $self = shift;
   qsearch( 'cust_pkg', { 'custnum' => $self->custnum });
 }
 
@@ -382,7 +332,7 @@ Returns all non-cancelled packages (see L<FS::cust_pkg>) for this customer.
 =cut
 
 sub ncancelled_pkgs {
-  my($self)=@_;
+  my $self = shift;
   qsearch( 'cust_pkg', {
     'custnum' => $self->custnum,
     'cancel'  => '',
@@ -404,10 +354,10 @@ If there is an error, returns the error, otherwise returns false.
 =cut
 
 sub bill {
-  my($self,%options)=@_;
-  my($time) = $options{'time'} || $^T;
+  my( $self, %options ) = @_;
+  my $time = $options{'time'} || $^T;
 
-  my($error);
+  my $error;
 
   #put below somehow?
   local $SIG{HUP} = 'IGNORE';
@@ -419,38 +369,33 @@ sub bill {
   # find the packages which are due for billing, find out how much they are
   # & generate invoice database.
  
-  my($total_setup,$total_recur)=(0,0);
+  my( $total_setup, $total_recur ) = ( 0, 0 );
+  my @cust_bill_pkg;
 
-  my(@cust_bill_pkg);
-
-  my($cust_pkg);
-  foreach $cust_pkg (
+  foreach my $cust_pkg (
     qsearch('cust_pkg',{'custnum'=> $self->getfield('custnum') } )
   ) {
 
-    bless($cust_pkg,"FS::cust_pkg");
- 
-    next if ( $cust_pkg->getfield('cancel') );  
+    next if $cust_pkg->getfield('cancel');  
 
     #? to avoid use of uninitialized value errors... ?
     $cust_pkg->setfield('bill', '')
       unless defined($cust_pkg->bill);
  
-    my($part_pkg)=
-      qsearchs('part_pkg',{'pkgpart'=> $cust_pkg->pkgpart } );
+    my $part_pkg = qsearchs( 'part_pkg', { 'pkgpart' => $cust_pkg->pkgpart } );
 
     #so we don't modify cust_pkg record unnecessarily
-    my($cust_pkg_mod_flag)=0;
-    my(%hash)=$cust_pkg->hash;
-    my($old_cust_pkg)=create FS::cust_pkg(\%hash);
+    my $cust_pkg_mod_flag = 0;
+    my %hash = $cust_pkg->hash;
+    my $old_cust_pkg = new FS::cust_pkg \%hash;
 
     # bill setup
-    my($setup)=0;
+    my $setup = 0;
     unless ( $cust_pkg->setup ) {
-      my($setup_prog)=$part_pkg->getfield('setup');
-      my($cpt) = new Safe;
+      my $setup_prog = $part_pkg->getfield('setup');
+      my $cpt = new Safe;
       #$cpt->permit(); #what is necessary?
-      $cpt->share(qw($cust_pkg)); #can $cpt now use $cust_pkg methods?
+      $cpt->share(qw( $cust_pkg )); #can $cpt now use $cust_pkg methods?
       $setup = $cpt->reval($setup_prog);
       unless ( defined($setup) ) {
         warn "Error reval-ing part_pkg->setup pkgpart ", 
@@ -462,16 +407,16 @@ sub bill {
     }
 
     #bill recurring fee
-    my($recur)=0;
-    my($sdate);
+    my $recur = 0;
+    my $sdate;
     if ( $part_pkg->getfield('freq') > 0 &&
          ! $cust_pkg->getfield('susp') &&
          ( $cust_pkg->getfield('bill') || 0 ) < $time
     ) {
-      my($recur_prog)=$part_pkg->getfield('recur');
-      my($cpt) = new Safe;
+      my $recur_prog = $part_pkg->getfield('recur');
+      my $cpt = new Safe;
       #$cpt->permit(); #what is necessary?
-      $cpt->share(qw($cust_pkg)); #can $cpt now use $cust_pkg methods?
+      $cpt->share(qw( $cust_pkg )); #can $cpt now use $cust_pkg methods?
       $recur = $cpt->reval($recur_prog);
       unless ( defined($recur) ) {
         warn "Error reval-ing part_pkg->recur pkgpart ",
@@ -480,13 +425,14 @@ sub bill {
         #change this bit to use Date::Manip?
         #$sdate=$cust_pkg->bill || time;
         #$sdate=$cust_pkg->bill || $time;
-        $sdate=$cust_pkg->bill || $cust_pkg->setup || $time;
-        my($sec,$min,$hour,$mday,$mon,$year)=
+        $sdate = $cust_pkg->bill || $cust_pkg->setup || $time;
+        my ($sec,$min,$hour,$mday,$mon,$year) =
           (localtime($sdate) )[0,1,2,3,4,5];
         $mon += $part_pkg->getfield('freq');
         until ( $mon < 12 ) { $mon -= 12; $year++; }
-        $cust_pkg->setfield('bill',timelocal($sec,$min,$hour,$mday,$mon,$year));
-        $cust_pkg_mod_flag=1; 
+        $cust_pkg->setfield('bill',
+          timelocal($sec,$min,$hour,$mday,$mon,$year));
+        $cust_pkg_mod_flag = 1; 
       }
     }
 
@@ -494,15 +440,14 @@ sub bill {
     warn "recur is undefinded" unless defined($recur);
     warn "cust_pkg bill is undefinded" unless defined($cust_pkg->bill);
 
-    if ($cust_pkg_mod_flag) {
+    if ( $cust_pkg_mod_flag ) {
       $error=$cust_pkg->replace($old_cust_pkg);
-      if ( $error ) {
+      if ( $error ) { #just in case
         warn "Error modifying pkgnum ", $cust_pkg->pkgnum, ": $error";
       } else {
-        #just in case
-        $setup=sprintf("%.2f",$setup);
-        $recur=sprintf("%.2f",$recur);
-        my($cust_bill_pkg)=create FS::cust_bill_pkg ({
+        $setup = sprintf( "%.2f", $setup );
+        $recur = sprintf( "%.2f", $recur );
+        my $cust_bill_pkg = new FS::cust_bill_pkg ({
           'pkgnum' => $cust_pkg->pkgnum,
           'setup'  => $setup,
           'recur'  => $recur,
@@ -517,24 +462,24 @@ sub bill {
 
   }
 
-  my($charged)=sprintf("%.2f",$total_setup + $total_recur);
+  my $charged = sprintf( "%.2f", $total_setup + $total_recur );
 
   return '' if scalar(@cust_bill_pkg) == 0;
 
-  unless ( $self->getfield('tax') eq 'Y' ||
-           $self->getfield('tax') eq 'y' ||
-           $self->getfield('payby') eq 'COMP'
+  unless ( $self->getfield('tax') =~ /Y/i
+           || $self->getfield('payby') eq 'COMP'
   ) {
-    my($cust_main_county) = qsearchs('cust_main_county',{
-      'county' => $self->getfield('county'),
-      'state'  => $self->getfield('state'),
+    my $cust_main_county = qsearchs('cust_main_county',{
+        'state'   => $self->state,
+        'county'  => $self->county,
+        'country' => $self->country,
     } );
-    my($tax) = sprintf("%.2f",
+    my $tax = sprintf( "%.2f",
       $charged * ( $cust_main_county->getfield('tax') / 100 )
     );
-    $charged = sprintf("%.2f",$charged+$tax);
+    $charged = sprintf( "%.2f", $charged+$tax );
 
-    my($cust_bill_pkg)=create FS::cust_bill_pkg ({
+    my $cust_bill_pkg = new FS::cust_bill_pkg ({
       'pkgnum' => 0,
       'setup'  => $tax,
       'recur'  => 0,
@@ -544,23 +489,23 @@ sub bill {
     push @cust_bill_pkg, $cust_bill_pkg;
   }
 
-  my($cust_bill) = create FS::cust_bill ( {
+  my $cust_bill = new FS::cust_bill ( {
     'custnum' => $self->getfield('custnum'),
     '_date' => $time,
     'charged' => $charged,
   } );
-  $error=$cust_bill->insert;
+  $error = $cust_bill->insert;
   #shouldn't happen, but how else to handle this? (wrap me in eval, to catch 
   # fatal errors)
   die "Error creating cust_bill record: $error!\n",
       "Check updated but unbilled packages for customer", $self->custnum, "\n"
     if $error;
 
-  my($invnum)=$cust_bill->invnum;
-  my($cust_bill_pkg);
+  my $invnum = $cust_bill->invnum;
+  my $cust_bill_pkg;
   foreach $cust_bill_pkg ( @cust_bill_pkg ) {
-    $cust_bill_pkg->setfield('invnum',$invnum);
-    $error=$cust_bill_pkg->insert;
+    $cust_bill_pkg->setfield( 'invnum', $invnum );
+    $error = $cust_bill_pkg->insert;
     #shouldn't happen, but how else tohandle this?
     die "Error creating cust_bill_pkg record: $error!\n",
         "Check incomplete invoice ", $invnum, "\n"
@@ -596,10 +541,10 @@ return an error.  By default, they don't.
 =cut
 
 sub collect {
-  my($self,%options)=@_;
-  my($invoice_time) = $options{'invoice_time'} || $^T;
+  my( $self, %options ) = @_;
+  my $invoice_time = $options{'invoice_time'} || $^T;
 
-  my($total_owed) = $self->balance;
+  my $total_owed = $self->balance;
   return '' unless $total_owed > 0; #redundant?????
 
   #put below somehow?
@@ -609,90 +554,84 @@ sub collect {
   local $SIG{TERM} = 'IGNORE';
   local $SIG{TSTP} = 'IGNORE';
 
-  foreach my $cust_bill ( qsearch('cust_bill', {
-    'custnum' => $self->getfield('custnum'),
-  } ) ) {
-
-    bless($cust_bill,"FS::cust_bill");
+  foreach my $cust_bill (
+    qsearch('cust_bill', { 'custnum' => $self->custnum, } )
+  ) {
 
     #this has to be before next's
-    my($amount) = sprintf("%.2f", $total_owed < $cust_bill->owed
+    my $amount = sprintf( "%.2f", $total_owed < $cust_bill->owed
                                   ? $total_owed
                                   : $cust_bill->owed
     );
-    $total_owed = sprintf("%.2f",$total_owed-$amount);
+    $total_owed = sprintf( "%.2f", $total_owed - $amount );
 
     next unless $cust_bill->owed > 0;
 
-    next if qsearchs('cust_pay_batch',{'invnum'=> $cust_bill->invnum });
+    next if qsearchs( 'cust_pay_batch', { 'invnum' => $cust_bill->invnum } );
 
     #warn "invnum ". $cust_bill->invnum. " (owed ". $cust_bill->owed. ", amount $amount, total_owed $total_owed)";
 
     next unless $amount > 0;
 
-    if ( $self->getfield('payby') eq 'BILL' ) {
+    if ( $self->payby eq 'BILL' ) {
 
       #30 days 2592000
-      my($since)=$invoice_time - ( $cust_bill->_date || 0 );
+      my $since = $invoice_time - ( $cust_bill->_date || 0 );
       #warn "$invoice_time ", $cust_bill->_date, " $since";
       if ( $since >= 0 #don't print future invoices
            && ( $cust_bill->printed * 2592000 ) <= $since
       ) {
 
-        open(LPR,"|$lpr") or die "Can't open $lpr: $!";
+        open(LPR, "|$lpr") or die "Can't open pipe to $lpr: $!";
         print LPR $cust_bill->print_text; #( date )
         close LPR
           or die $! ? "Error closing $lpr: $!"
                        : "Exit status $? from $lpr";
 
-        my(%hash)=$cust_bill->hash;
+        my %hash = $cust_bill->hash;
         $hash{'printed'}++;
-        my($new_cust_bill)=create FS::cust_bill(\%hash);
-        my($error)=$new_cust_bill->replace($cust_bill);
-        if ( $error ) {
-          warn "Error updating $cust_bill->printed: $error";
-        }
+        my $new_cust_bill = new FS::cust_bill(\%hash);
+        my $error = $new_cust_bill->replace($cust_bill);
+        warn "Error updating $cust_bill->printed: $error" if $error;
 
       }
 
-    } elsif ( $self->getfield('payby') eq 'COMP' ) {
-      my($cust_pay) = create FS::cust_pay ( {
-         'invnum' => $cust_bill->getfield('invnum'),
+    } elsif ( $self->payby eq 'COMP' ) {
+      my $cust_pay = new FS::cust_pay ( {
+         'invnum' => $cust_bill->invnum,
          'paid' => $amount,
          '_date' => '',
          'payby' => 'COMP',
-         'payinfo' => $self->getfield('payinfo'),
+         'payinfo' => $self->payinfo,
          'paybatch' => ''
       } );
-      my($error)=$cust_pay->insert;
-      return 'Error COMPing invnum #' . $cust_bill->getfield('invnum') .
+      my $error = $cust_pay->insert;
+      return 'Error COMPing invnum #' . $cust_bill->invnum .
              ':' . $error if $error;
-    } elsif ( $self->getfield('payby') eq 'CARD' ) {
+    } elsif ( $self->payby eq 'CARD' ) {
 
       if ( $options{'batch_card'} ne 'yes' ) {
 
         return "Real time card processing not enabled!" unless $processor;
 
-        if ( $processor =~ /cybercash/ ) {
+        if ( $processor =~ /^cybercash/ ) {
 
           #fix exp. date for cybercash
-          $self->getfield('paydate') =~ /^(\d+)\/\d*(\d{2})$/;
-          my($exp)="$1/$2";
+          $self->paydate =~ /^(\d+)\/\d*(\d{2})$/;
+          my $exp = "$1/$2";
 
-          my($paybatch)= $cust_bill->getfield('invnum') . 
-                         '-' . time2str("%y%m%d%H%M%S",time);
+          my $paybatch = $cust_bill->invnum. 
+                         '-' . time2str("%y%m%d%H%M%S", time);
 
-          my($payname)= $self->getfield('payname') ||
-                        $self->getfield('first') . ' ' .$self->getfield('last');
+          my $payname = $self->payname ||
+                        $self->getfield('first'). ' '. $self->getfield('last');
 
-          my($address)= $self->getfield('address1');
-          $address .= ", " . $self->getfield('address2')
-            if $self->getfield('address2');
+          my $address = $self->address1;
+          $address .= ", ". $self->address2 if $self->address2;
 
-          my($country) = $self->getfield('country') eq 'US' ?
-                         'USA' : $self->getfield('country');
+          my $country = 'USA' if $self->country eq 'US';
 
-          my(@full_xaction)=($xaction,
+          my @full_xaction = ( $xaction,
             'Order-ID'     => $paybatch,
             'Amount'       => "usd $amount",
             'Card-Number'  => $self->getfield('payinfo'),
@@ -705,7 +644,7 @@ sub collect {
             'Card-Exp'     => $exp,
           );
 
-          my(%result);
+          my %result;
           if ( $processor eq 'cybercash2' ) {
             $^W=0; #CCLib isn't -w safe, ugh!
             %result = &CCLib::sendmserver(@full_xaction);
@@ -719,21 +658,21 @@ sub collect {
           #if ( $result{'MActionCode'} == 7 ) { #cybercash smps v.1.1.3
           #if ( $result{'action-code'} == 7 ) { #cybercash smps v.2.1
           if ( $result{'MStatus'} eq 'success' ) { #cybercash smps v.2 or 3
-            my($cust_pay) = create FS::cust_pay ( {
-               'invnum'   => $cust_bill->getfield('invnum'),
+            my $cust_pay = new FS::cust_pay ( {
+               'invnum'   => $cust_bill->invnum,
                'paid'     => $amount,
                '_date'     => '',
                'payby'    => 'CARD',
-               'payinfo'  => $self->getfield('payinfo'),
+               'payinfo'  => $self->payinfo,
                'paybatch' => "$processor:$paybatch",
             } );
-            my($error)=$cust_pay->insert;
+            my $error = $cust_pay->insert;
             return 'Error applying payment, invnum #' . 
-              $cust_bill->getfield('invnum') . ':' . $error if $error;
+              $cust_bill->invnum. ':'. $error if $error;
           } elsif ( $result{'Mstatus'} ne 'failure-bad-money'
                  || $options{'report_badcard'} ) {
              return 'Cybercash error, invnum #' . 
-               $cust_bill->getfield('invnum') . ':' . $result{'MErrMsg'};
+               $cust_bill->invnum. ':'. $result{'MErrMsg'};
           } else {
             return '';
           }
@@ -744,8 +683,7 @@ sub collect {
 
       } else { #batch card
 
-#       my($cust_pay_batch) = create FS::cust_pay_batch ( {
-       my($cust_pay_batch) = new FS::Record ('cust_pay_batch', {
+       my $cust_pay_batch = new FS::Record ('cust_pay_batch', {
          'invnum'   => $cust_bill->getfield('invnum'),
          'custnum'  => $self->getfield('custnum'),
          'last'     => $self->getfield('last'),
@@ -762,14 +700,13 @@ sub collect {
          'payname'  => $self->getfield('payname'),
          'amount'   => $amount,
        } );
-#       my($error)=$cust_pay_batch->insert;
-       my($error)=$cust_pay_batch->add;
+       my $error = $cust_pay_batch->insert;
        return "Error adding to cust_pay_batch: $error" if $error;
 
       }
 
     } else {
-      return "Unknown payment type ".$self->getfield('payby');
+      return "Unknown payment type ". $self->payby;
     }
 
   }
@@ -785,15 +722,14 @@ Returns the total owed for this customer on all invoices
 =cut
 
 sub total_owed {
-  my($self) = @_;
-  my($total_bill) = 0;
-  my($cust_bill);
-  foreach $cust_bill ( qsearch('cust_bill', {
-    'custnum' => $self->getfield('custnum'),
+  my $self = shift;
+  my $total_bill = 0;
+  foreach my $cust_bill ( qsearch('cust_bill', {
+    'custnum' => $self->custnum,
   } ) ) {
-    $total_bill += $cust_bill->getfield('owed');
+    $total_bill += $cust_bill->owed;
   }
-  sprintf("%.2f",$total_bill);
+  sprintf( "%.2f", $total_bill );
 }
 
 =item total_credited
@@ -803,15 +739,14 @@ Returns the total credits (see L<FS::cust_credit>) for this customer.
 =cut
 
 sub total_credited {
-  my($self) = @_;
-  my($total_credit) = 0;
-  my($cust_credit);
-  foreach $cust_credit ( qsearch('cust_credit', {
-    'custnum' => $self->getfield('custnum'),
+  my $self = shift;
+  my $total_credit = 0;
+  foreach my $cust_credit ( qsearch('cust_credit', {
+    'custnum' => $self->custnum,
   } ) ) {
-    $total_credit += $cust_credit->getfield('credited');
+    $total_credit += $cust_credit->credited;
   }
-  sprintf("%.2f",$total_credit);
+  sprintf( "%.2f", $total_credit );
 }
 
 =item balance
@@ -821,8 +756,8 @@ Returns the balance for this customer (total owed minus total credited).
 =cut
 
 sub balance {
-  my($self) = @_;
-  sprintf("%.2f",$self->total_owed - $self->total_credited);
+  my $self = shift;
+  sprintf( "%.2f", $self->total_owed - $self->total_credited );
 }
 
 =item invoicing_list [ ITEM, ITEM, ... ]
@@ -836,20 +771,20 @@ Returns a list of email addresses (with svcnum entries expanded).
 =cut
 
 sub invoicing_list {
-  my($self, @addresses) = @_;
+  my( $self, @addresses ) = @_;
   if ( @addresses ) {
     my @cust_main_invoice = 
-      qsearch('cust_main_invoice', { 'custnum' => $self->custnum } );
+      qsearch( 'cust_main_invoice', { 'custnum' => $self->custnum } );
     foreach my $cust_main_invoice ( @cust_main_invoice ) {
       unless ( grep { $cust_main_invoice->address eq $_ } @addresses ) {
         $cust_main_invoice->delete;
       }
     }
     @cust_main_invoice =
-      qsearch('cust_main_invoice', { 'custnum' => $self->custnum } );
+      qsearch( 'cust_main_invoice', { 'custnum' => $self->custnum } );
     foreach my $address ( @addresses ) {
       unless ( grep { $address eq $_->address } @cust_main_invoice ) {
-        my $cust_main_invoice = create FS::cust_main_invoice (
+        my $cust_main_invoice = new FS::cust_main_invoice (
           'custnum' => $self->custnum,
           'dest'    => $address,
         );
@@ -859,7 +794,7 @@ sub invoicing_list {
     }
   }
   map { $_->address }
-    qsearch('cust_main_invoice', { 'custnum' => $self->custnum } );
+    qsearch( 'cust_main_invoice', { 'custnum' => $self->custnum } );
 }
 
 =item check_invoicing_list ITEM, ITEM
@@ -870,9 +805,9 @@ is an error, returns the error, otherwise returns false.
 =cut
 
 sub check_invoicing_list {
-  my($self, @addresses) = @_;
+  my( $self, @addresses ) = @_;
   foreach my $address ( @addresses ) {
-    my $cust_main_invoice = create FS::cust_main_invoice (
+    my $cust_main_invoice = new FS::cust_main_invoice (
       'custnum' => $self->custnum,
       'dest'    => $address,
     );
@@ -884,18 +819,25 @@ sub check_invoicing_list {
 
 =back
 
+=head1 VERSION
+
+$Id: cust_main.pm,v 1.8 1998-12-29 11:59:39 ivan Exp $
+
 =head1 BUGS
 
 The delete method.
-
-It doesn't properly override FS::Record yet.
-
-hfields should be removed.
 
 Bill and collect options should probably be passed as references instead of a
 list.
 
 CyberCash v2 forces us to define some variables in package main.
+
+There should probably be a configuration file with a list of allowed credit
+card types.
+
+CyberCash is the only processor.
+
+No multiple currency support (probably a larger project than just this module).
 
 =head1 SEE ALSO
 
@@ -935,7 +877,10 @@ enable cybercash, cybercash v3 support, don't need to import
 FS::UID::{datasrc,checkruid} ivan@sisd.com 98-sep-19-21
 
 $Log: cust_main.pm,v $
-Revision 1.7  1998-12-16 09:58:52  ivan
+Revision 1.8  1998-12-29 11:59:39  ivan
+mostly properly OO, some work still to be done with svc_ stuff
+
+Revision 1.7  1998/12/16 09:58:52  ivan
 library support for editing email invoice destinations (not in sub collect yet)
 
 Revision 1.6  1998/11/18 09:01:42  ivan

@@ -1,12 +1,10 @@
 package FS::pkg_svc;
 
 use strict;
-use vars qw(@ISA @EXPORT_OK);
-use Exporter;
-use FS::Record qw(fields hfields qsearchs);
+use vars qw( @ISA );
+use FS::Record qw( qsearchs );
 
-@ISA = qw(FS::Record Exporter);
-@EXPORT_OK = qw(hfields);
+@ISA = qw( FS::Record );
 
 =head1 NAME
 
@@ -16,8 +14,8 @@ FS::pkg_svc - Object methods for pkg_svc records
 
   use FS::pkg_svc;
 
-  $record = create FS::pkg_svc \%hash;
-  $record = create FS::pkg_svc { 'column' => 'value' };
+  $record = new FS::pkg_svc \%hash;
+  $record = new FS::pkg_svc { 'column' => 'value' };
 
   $error = $record->insert;
 
@@ -48,51 +46,23 @@ definition includes
 
 =over 4
 
-=item create HASHREF
+=item new HASHREF
 
 Create a new record.  To add the record to the database, see L<"insert">.
 
 =cut
 
-sub create {
-  my($proto,$hashref)=@_;
-
-  #now in FS::Record::new
-  #my($field);
-  #foreach $field (fields('pkg_svc')) {
-  #  $hashref->{$field}='' unless defined $hashref->{$field};
-  #}
-
-  $proto->new('pkg_svc',$hashref);
-
-}
+sub table { 'pkg_svc'; }
 
 =item insert
 
 Adds this record to the database.  If there is an error, returns the error,
 otherwise returns false.
 
-=cut
-
-sub insert {
-  my($self)=@_;
-
-  $self->check or
-  $self->add;
-}
-
 =item delete
 
 Deletes this record from the database.  If there is an error, returns the
 error, otherwise returns false.
-
-=cut
-
-sub delete {
-  my($self)=@_;
-
-  $self->del;
-}
 
 =item replace OLD_RECORD
 
@@ -102,15 +72,12 @@ returns the error, otherwise returns false.
 =cut
 
 sub replace {
-  my($new,$old)=@_;
-  return "(Old) Not a pkg_svc record!" unless $old->table eq "pkg_svc";
-  return "Can't change pkgpart!"
-    if $old->getfield('pkgpart') ne $new->getfield('pkgpart');
-  return "Can't change svcpart!"
-    if $old->getfield('svcpart') ne $new->getfield('svcpart');
+  my ( $new, $old ) = ( shift, shift );
 
-  $new->check or
-  $new->rep($old);
+  return "Can't change pkgpart!" if $old->pkgpart ne $new->pkgpart;
+  return "Can't change svcpart!" if $old->svcpart ne $new->svcpart;
+
+  $new->SUPER::replace($old);
 }
 
 =item check
@@ -122,31 +89,32 @@ methods.
 =cut
 
 sub check {
-  my($self)=@_;
-  return "Not a pkg_svc record!" unless $self->table eq "pkg_svc";
-  my($recref) = $self->hashref;
+  my $self = shift;
 
-  my($error);
-  return $error if $error =
+  my $error;
+  $error =
     $self->ut_number('pkgpart')
     || $self->ut_number('svcpart')
     || $self->ut_number('quantity')
   ;
+  return $error if $error;
 
   return "Unknown pkgpart!"
-    unless qsearchs('part_pkg',{'pkgpart'=> $self->getfield('pkgpart')});
+    unless qsearchs( 'part_pkg', { 'pkgpart' => $self->pkgpart } );
 
   return "Unknown svcpart!"
-    unless qsearchs('part_svc',{'svcpart'=> $self->getfield('svcpart')});
+    unless qsearchs('part_svc', { 'svcpart' => $self->svcpart } );
 
   ''; #no error
 }
 
 =back
 
-=head1 BUGS
+=head1 VERSION
 
-It doesn't properly override FS::Record yet.
+$Id: pkg_svc.pm,v 1.2 1998-12-29 11:59:51 ivan Exp $
+
+=head1 BUGS
 
 =head1 SEE ALSO
 
@@ -161,6 +129,11 @@ added hfields
 ivan@sisd.com 97-nov-13
 
 pod ivan@sisd.com 98-sep-22
+
+$Log: pkg_svc.pm,v $
+Revision 1.2  1998-12-29 11:59:51  ivan
+mostly properly OO, some work still to be done with svc_ stuff
+
 
 =cut
 

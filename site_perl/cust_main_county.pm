@@ -1,12 +1,10 @@
 package FS::cust_main_county;
 
 use strict;
-use vars qw(@ISA @EXPORT_OK);
-use Exporter;
-use FS::Record qw(fields hfields qsearch qsearchs);
+use vars qw( @ISA );
+use FS::Record;
 
-@ISA = qw(FS::Record Exporter);
-@EXPORT_OK = qw(hfields);
+@ISA = qw( FS::Record );
 
 =head1 NAME
 
@@ -16,8 +14,8 @@ FS::cust_main_county - Object methods for cust_main_county objects
 
   use FS::cust_main_county;
 
-  $record = create FS::cust_main_county \%hash;
-  $record = create FS::cust_main_county { 'column' => 'value' };
+  $record = new FS::cust_main_county \%hash;
+  $record = new FS::cust_main_county { 'column' => 'value' };
 
   $error = $record->insert;
 
@@ -51,67 +49,28 @@ currently supported:
 
 =over 4
 
-=item create HASHREF
+=item new HASHREF
 
 Creates a new tax rate.  To add the tax rate to the database, see L<"insert">.
 
 =cut
 
-sub create {
-  my($proto,$hashref)=@_;
-
-  #now in FS::Record::new
-  #my($field);
-  #foreach $field (fields('cust_main_county')) {
-  #  $hashref->{$field}='' unless defined $hashref->{$field};
-  #}
-
-  $proto->new('cust_main_county',$hashref);
-}
+sub table { 'cust_main_county'; }
 
 =item insert
 
 Adds this tax rate to the database.  If there is an error, returns the error,
 otherwise returns false.
 
-=cut
-
-sub insert {
-  my($self)=@_;
-
-  $self->check or
-  $self->add;
-}
-
 =item delete
 
 Deletes this tax rate from the database.  If there is an error, returns the
 error, otherwise returns false.
 
-=cut
-
-sub delete {
-  my($self)=@_;
-
-  $self->del;
-}
-
 =item replace OLD_RECORD
 
 Replaces the OLD_RECORD with this one in the database.  If there is an error,
 returns the error, otherwise returns false.
-
-=cut
-
-sub replace {
-  my($new,$old)=@_;
-  return "(Old) Not a cust_main_county record!"
-    unless $old->table eq "cust_main_county";
-  return "Can't change taxnum!"
-    unless $old->getfield('taxnum') eq $new->getfield('taxnum');
-  $new->check or
-  $new->rep($old);
-}
 
 =item check
 
@@ -122,15 +81,12 @@ methods.
 =cut
 
 sub check {
-  my($self)=@_;
-  return "Not a cust_main_county record!"
-    unless $self->table eq "cust_main_county";
-  my($recref) = $self->hashref;
+  my $self = shift;
 
   $self->ut_numbern('taxnum')
-    or $self->ut_textn('state')
-    or $self->ut_textn('county')
-    or $self->ut_float('tax')
+    || $self->ut_textn('state')
+    || $self->ut_textn('county')
+    || $self->ut_float('tax')
   ;
 
 }
@@ -139,11 +95,9 @@ sub check {
 
 =head1 VERSION
 
-$Id: cust_main_county.pm,v 1.2 1998-11-18 09:01:43 ivan Exp $
+$Id: cust_main_county.pm,v 1.3 1998-12-29 11:59:41 ivan Exp $
 
 =head1 BUGS
-
-It doesn't properly override FS::Record yet.
 
 =head1 SEE ALSO
 
@@ -160,7 +114,10 @@ Changed check for 'tax' to use the new ut_float subroutine
 pod ivan@sisd.com 98-sep-21
 
 $Log: cust_main_county.pm,v $
-Revision 1.2  1998-11-18 09:01:43  ivan
+Revision 1.3  1998-12-29 11:59:41  ivan
+mostly properly OO, some work still to be done with svc_ stuff
+
+Revision 1.2  1998/11/18 09:01:43  ivan
 i18n! i18n!
 
 

@@ -1,15 +1,13 @@
 package FS::svc_acct_sm;
 
 use strict;
-use vars qw(@ISA @EXPORT_OK $nossh_hack $conf $shellmachine @qmailmachines);
-use Exporter;
-use FS::Record qw(fields qsearch qsearchs);
+use vars qw( @ISA $nossh_hack $conf $shellmachine @qmailmachines );
+use FS::Record qw( fields qsearch qsearchs );
 use FS::cust_svc;
 use FS::SSH qw(ssh);
 use FS::Conf;
 
-@ISA = qw(FS::Record Exporter);
-@EXPORT_OK = qw(fields);
+@ISA = qw( FS::Record );
 
 #ask FS::UID to run this stuff for us later
 $FS::UID::callback{'FS::svc_acct_sm'} = sub { 
@@ -27,8 +25,8 @@ FS::svc_acct_sm - Object methods for svc_acct_sm records
 
   use FS::svc_acct_sm;
 
-  $record = create FS::svc_acct_sm \%hash;
-  $record = create FS::svc_acct_sm { 'column' => 'value' };
+  $record = new FS::svc_acct_sm \%hash;
+  $record = new FS::svc_acct_sm { 'column' => 'value' };
 
   $error = $record->insert;
 
@@ -65,25 +63,14 @@ from FS::Record.  The following fields are currently supported:
 
 =over 4
 
-=item create HASHREF
+=item new HASHREF
 
 Creates a new virtual mail alias.  To add the virtual mail alias to the
 database, see L<"insert">.
 
 =cut
 
-sub create {
-  my($proto,$hashref)=@_;
-
-  #now in FS::Record::new
-  #my($field);
-  #foreach $field (fields('svc_acct_sm')) {
-  #  $hashref->{$field}='' unless defined $hashref->{$field};
-  #}
-
-  $proto->new('svc_acct_sm',$hashref);
-
-}
+sub table { 'svc_acct_sm'; }
 
 =item insert
 
@@ -320,9 +307,11 @@ sub check {
 
 =back
 
-=head1 BUGS
+=head1 VERSION
 
-It doesn't properly override FS::Record yet.
+$Id: svc_acct_sm.pm,v 1.3 1998-12-29 11:59:54 ivan Exp $
+
+=head1 BUGS
 
 The remote commands should be configurable.
 

@@ -1,12 +1,16 @@
 package FS::cust_bill;
 
 use strict;
-use vars qw(@ISA $conf $add1 $add2 $add3 $add4);
-use Exporter;
+use vars qw( @ISA $conf $add1 $add2 $add3 $add4 );
 use Date::Format;
-use FS::Record qw(fields qsearch qsearchs);
+use FS::Record qw( qsearch qsearchs );
+use FS::cust_main;
+use FS::cust_bill_pkg;
+use FS::cust_credit;
+use FS::cust_pay;
+use FS::cust_pkg;
 
-@ISA = qw(FS::Record Exporter);
+@ISA = qw( FS::Record );
 
 #ask FS::UID to run this stuff for us later
 $FS::UID::callback{'FS::cust_bill'} = sub { 
@@ -22,8 +26,8 @@ FS::cust_bill - Object methods for cust_bill records
 
   use FS::cust_bill;
 
-  $record = create FS::cust_bill \%hash;
-  $record = create FS::cust_bill { 'column' => 'value' };
+  $record = new FS::cust_bill \%hash;
+  $record = new FS::cust_bill { 'column' => 'value' };
 
   $error = $record->insert;
 
@@ -72,7 +76,7 @@ all payments (see L<FS::cust_pay>).
 
 =over 4
 
-=item create HASHREF
+=item new HASHREF
 
 Creates a new invoice.  To add the invoice to the database, see L<"insert">.
 Invoices are normally created by calling the bill method of a customer object
@@ -80,17 +84,7 @@ Invoices are normally created by calling the bill method of a customer object
 
 =cut
 
-sub create {
-  my($proto,$hashref)=@_;
-
-  #now in FS::Record::new
-  #my($field);
-  #foreach $field (fields('cust_bill')) {
-  #  $hashref->{$field}='' unless defined $hashref->{$field};
-  #}
-
-  $proto->new('cust_bill',$hashref);
-}
+sub table { 'cust_bill'; }
 
 =item insert
 
@@ -103,14 +97,13 @@ automatically set to charged).
 =cut
 
 sub insert {
-  my($self)=@_;
+  my $self = shift;
 
-  $self->setfield('owed',$self->charged) if $self->owed eq '';
+  $self->owed( $self->charged ) if $self->owed eq '';
   return "owed != charged!"
     unless $self->owed == $self->charged;
 
-  $self->check or
-  $self->add;
+  $self->SUPER::insert;
 }
 
 =item delete
@@ -122,8 +115,6 @@ no record you ever posted this invoice (which is bad, no?)
 
 sub delete {
   return "Can't remove invoice!"
-  #my($self)=@_;
-  #$self->del;
 }
 
 =item replace OLD_RECORD
@@ -138,21 +129,13 @@ calling the collect method of a customer object (see L<FS::cust_main>).
 =cut
 
 sub replace {
-  my($new,$old)=@_;
-  return "(Old) Not a cust_bill record!" unless $old->table eq "cust_bill";
-  return "Can't change invnum!"
-    unless $old->getfield('invnum') eq $new->getfield('invnum');
-  return "Can't change custnum!"
-    unless $old->getfield('custnum') eq $new->getfield('custnum');
-  return "Can't change _date!"
-    unless $old->getfield('_date') eq $new->getfield('_date');
-  return "Can't change charged!"
-    unless $old->getfield('charged') eq $new->getfield('charged');
-  return "(New) owed can't be > (new) charged!"
-    if $new->getfield('owed') > $new->getfield('charged');
+  my( $new, $old ) = ( shift, shift );
+  return "Can't change custnum!" unless $old->custnum eq $new->custnum;
+  return "Can't change _date!" unless $old->_date eq $new->_date;
+  return "Can't change charged!" unless $old->charged eq $new->charged;
+  return "(New) owed can't be > (new) charged!" if $new->owed > $new->charged;
 
-  $new->check or
-  $new->rep($old);
+  $new->SUPER::replace($old);
 }
 
 =item check
@@ -164,30 +147,24 @@ methods.
 =cut
 
 sub check {
-  my($self)=@_;
-  return "Not a cust_bill record!" unless $self->table eq "cust_bill";
-  my($recref) = $self->hashref;
+  my $self = shift;
 
-  $recref->{invnum} =~ /^(\d*)$/ or return "Illegal invnum";
-  $recref->{invnum} = $1;
+  my $error =
+    $self->ut_numbern('invnum')
+    || $self->ut_number('custnum')
+    || $self->ut_numbern('_date')
+    || $self->ut_money('charged')
+    || $self->ut_money('owed')
+    || $self->ut_numbern('printed')
+  ;
+  return $error if $error;
 
-  $recref->{custnum} =~ /^(\d+)$/ or return "Illegal custnum";
-  $recref->{custnum} = $1;
   return "Unknown customer"
-    unless qsearchs('cust_main',{'custnum'=>$recref->{custnum}});
+    unless qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
 
-  $recref->{_date} =~ /^(\d*)$/ or return "Illegal date";
-  $recref->{_date} = $recref->{_date} ? $1 : time;
+  $self->_date(time) unless $self->_date;
 
-  #$recref->{charged} =~ /^(\d+(\.\d\d)?)$/ or return "Illegal charged";
-  $recref->{charged} =~ /^(\-?\d+(\.\d\d)?)$/ or return "Illegal charged";
-  $recref->{charged} = $1;
-
-  $recref->{owed} =~ /^(\-?\d+(\.\d\d)?)$/ or return "Illegal owed";
-  $recref->{owed} = $1;
-
-  $recref->{printed} =~ /^(\d*)$/ or return "Illegal printed";
-  $recref->{printed} = $1 || '0';
+  $self->printed(0) if $self->printed eq '';
 
   ''; #no error
 }
@@ -200,13 +177,13 @@ followed by the previous outstanding invoices (as FS::cust_bill objects also).
 =cut
 
 sub previous {
-  my($self)=@_;
-  my($total)=0;
-  my(@cust_bill) = sort { $a->_date <=> $b->_date }
+  my $self = shift;
+  my $total = 0;
+  my @cust_bill = sort { $a->_date <=> $b->_date }
     grep { $_->owed != 0 && $_->_date < $self->_date }
-      qsearch('cust_bill',{ 'custnum' => $self->custnum } ) 
+      qsearch( 'cust_bill', { 'custnum' => $self->custnum } ) 
   ;
-  foreach (@cust_bill) { $total += $_->owed; }
+  foreach ( @cust_bill ) { $total += $_->owed; }
   $total, @cust_bill;
 }
 
@@ -217,7 +194,7 @@ Returns the line items (see L<FS::cust_bill_pkg>) for this invoice.
 =cut
 
 sub cust_bill_pkg {
-  my($self)=@_;
+  my $self = shift;
   qsearch( 'cust_bill_pkg', { 'invnum' => $self->invnum } );
 }
 
@@ -230,9 +207,9 @@ credits (FS::cust_credit objects).
 =cut
 
 sub cust_credit {
-  my($self)=@_;
-  my($total)=0;
-  my(@cust_credit) = sort { $a->_date <=> $b->date }
+  my $self = shift;
+  my $total = 0;
+  my @cust_credit = sort { $a->_date <=> $b->date }
     grep { $_->credited != 0 && $_->_date < $self->_date }
       qsearch('cust_credit', { 'custnum' => $self->custnum } )
   ;
@@ -247,7 +224,7 @@ Returns all payments (see L<FS::cust_pay>) for this invoice.
 =cut
 
 sub cust_pay {
-  my($self)=@_;
+  my $self = shift;
   sort { $a->_date <=> $b->date }
     qsearch( 'cust_pay', { 'invnum' => $self->invnum } )
   ;
@@ -266,27 +243,25 @@ L<Time::Local> and L<Date::Parse> for conversion functions.
 
 sub print_text {
 
-  my($self,$today)=@_;
+  my( $self, $today ) = ( shift, shift );
   $today ||= time;
-  my($invnum)=$self->invnum;
-  my($cust_main) = qsearchs('cust_main', 
-                            { 'custnum', $self->custnum } );
-  $cust_main->setfield('payname',
-    $cust_main->first. ' '. $cust_main->getfield('last')
-  ) unless $cust_main->payname;
+  my $invnum = $self->invnum;
+  my $cust_main = qsearchs('cust_main', { 'custnum', $self->custnum } );
+  $cust_main->payname( $cust_main->first. ' '. $cust_main->getfield('last') )
+    unless $cust_main->payname;
 
-  my($pr_total,@pr_cust_bill) = $self->previous; #previous balance
-  my($cr_total,@cr_cust_credit) = $self->cust_credit; #credits
-  my($balance_due) = $self->owed + $pr_total - $cr_total;
+  my( $pr_total, @pr_cust_bill ) = $self->previous; #previous balance
+  my( $cr_total, @cr_cust_credit ) = $self->cust_credit; #credits
+  my $balance_due = $self->owed + $pr_total - $cr_total;
 
   #overdue?
-  my($overdue) = ( 
+  my $overdue = ( 
     $balance_due > 0
     && $today > $self->_date 
     && $self->printed > 1
   );
 
-  #printing bits here
+  #printing bits here (yuck!)
 
   local($SIG{CHLD}) = sub { wait() };
   $|=1;
@@ -459,11 +434,13 @@ $address[4],''
 
 =back
 
+=head1 VERSION
+
+$Id: cust_bill.pm,v 1.4 1998-12-29 11:59:36 ivan Exp $
+
 =head1 BUGS
 
 The delete method.
-
-It doesn't properly override FS::Record yet.
 
 print_text formatting (and some logic :/) is in source as a format declaration,
 which needs to be slurped in from a file.  the fork is rather kludgy as well.
@@ -492,7 +469,10 @@ charges can be negative ivan@sisd.com 98-jul-13
 pod, ingegrate with FS::Invoice ivan@sisd.com 98-sep-20
 
 $Log: cust_bill.pm,v $
-Revision 1.3  1998-11-13 09:56:53  ivan
+Revision 1.4  1998-12-29 11:59:36  ivan
+mostly properly OO, some work still to be done with svc_ stuff
+
+Revision 1.3  1998/11/13 09:56:53  ivan
 change configuration file layout to support multiple distinct databases (with
 own set of config files, export, etc.)
 

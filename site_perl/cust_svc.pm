@@ -1,10 +1,9 @@
 package FS::cust_svc;
 
 use strict;
-use vars qw(@ISA);
-use Carp;
-use Exporter;
-use FS::Record qw(fields qsearchs);
+use vars qw( @ISA );
+use Carp qw( cluck );
+use FS::Record qw( qsearchs );
 use FS::cust_pkg;
 use FS::part_pkg;
 use FS::part_svc;
@@ -12,7 +11,7 @@ use FS::svc_acct;
 use FS::svc_acct_sm;
 use FS::svc_domain;
 
-@ISA = qw(FS::Record Exporter);
+@ISA = qw( FS::Record );
 
 =head1 NAME
 
@@ -22,8 +21,8 @@ FS::cust_svc - Object method for cust_svc objects
 
   use FS::cust_svc;
 
-  $record = create FS::cust_svc \%hash
-  $record = create FS::cust_svc { 'column' => 'value' };
+  $record = new FS::cust_svc \%hash
+  $record = new FS::cust_svc { 'column' => 'value' };
 
   $error = $record->insert;
 
@@ -54,7 +53,7 @@ The following fields are currently supported:
 
 =over 4
 
-=item create HASHREF
+=item new HASHREF
 
 Creates a new service.  To add the refund to the database, see L<"insert">.
 Services are normally created by creating FS::svc_ objects (see
@@ -62,31 +61,12 @@ L<FS::svc_acct>, L<FS::svc_domain>, and L<FS::svc_acct_sm>, among others).
 
 =cut
 
-sub create {
-  my($proto,$hashref)=@_; 
-
-  #now in FS::Record::new
-  #my($field);
-  #foreach $field (fields('cust_svc')) {
-  #  $hashref->{$field}='' unless defined $hashref->{$field};
-  #}
-
-  $proto->new('cust_svc',$hashref);
-}
+sub table { 'cust_svc'; }
 
 =item insert
 
 Adds this service to the database.  If there is an error, returns the error,
 otherwise returns false.
-
-=cut
-
-sub insert {
-  my($self)=@_;
-
-  $self->check or
-  $self->add;
-}
 
 =item delete
 
@@ -95,29 +75,10 @@ error, otherwise returns false.
 
 Called by the cancel method of the package (see L<FS::cust_pkg>).
 
-=cut
-
-sub delete {
-  my($self)=@_;
-  # anything else here?
-  $self->del;
-}
-
 =item replace OLD_RECORD
 
 Replaces the OLD_RECORD with this one in the database.  If there is an error,
 returns the error, otherwise returns false.
-
-=cut
-
-sub replace {
-  my($new,$old)=@_;
-  return "(Old) Not a cust_svc record!" unless $old->table eq "cust_svc";
-  return "Can't change svcnum!"
-    unless $old->getfield('svcnum') eq $new->getfield('svcnum');
-  $new->check or
-  $new->rep($old);
-}
 
 =item check
 
@@ -128,23 +89,21 @@ replace methods.
 =cut
 
 sub check {
-  my($self)=@_;
-  return "Not a cust_svc record!" unless $self->table eq "cust_svc";
-  my($recref) = $self->hashref;
+  my $self = shift;
 
-  $recref->{svcnum} =~ /^(\d*)$/ or return "Illegal svcnum";
-  $recref->{svcnum}=$1;
+  my $error =
+    $self->ut_numbern('svcnum')
+    || $self->ut_numbern('pkgnum')
+    || $self->ut_number('svcpart')
+  ;
+  return $error if $error;
 
-  $recref->{pkgnum} =~ /^(\d*)$/ or return "Illegal pkgnum";
-  $recref->{pkgnum}=$1;
-  return "Unknown pkgnum" unless
-    ! $recref->{pkgnum} ||
-    qsearchs('cust_pkg',{'pkgnum'=>$recref->{pkgnum}});
+  return "Unknown pkgnum"
+    unless ! $self->pkgnum
+      || qsearchs( 'cust_pkg', { 'pkgnum' => $self->pkgnum } );
 
-  $recref->{svcpart} =~ /^(\d+)$/ or return "Illegal svcpart";
-  $recref->{svcpart}=$1;
   return "Unknown svcpart" unless
-    qsearchs('part_svc',{'svcpart'=>$recref->{svcpart}});
+    qsearchs( 'part_svc', { 'svcpart' => $self->svcpart } );
 
   ''; #no error
 }
@@ -159,12 +118,12 @@ Returns a list consisting of:
 =cut
 
 sub label {
-  my($self)=@_;
-  my($part_svc) = qsearchs( 'part_svc', { 'svcpart' => $self->svcpart } );
-  my($svcdb) = $part_svc->svcdb;
-  my($svc_x) = qsearchs( $svcdb, { 'svcnum' => $self->svcnum } );
-  my($svc) = $part_svc->svc;
-  my($tag);
+  my $self = shift;
+  my $part_svc = qsearchs( 'part_svc', { 'svcpart' => $self->svcpart } );
+  my $svcdb = $part_svc->svcdb;
+  my $svc_x = qsearchs( $svcdb, { 'svcnum' => $self->svcnum } );
+  my $svc = $part_svc->svc;
+  my $tag;
   if ( $svcdb eq 'svc_acct' ) {
     $tag = $svc_x->getfield('username');
   } elsif ( $svcdb eq 'svc_acct_sm' ) {
@@ -173,9 +132,9 @@ sub label {
     my $domain = $svc_domain->domain;
     $tag = "$domuser\@$domain";
   } elsif ( $svcdb eq 'svc_domain' ) {
-    return $svc, $svc_x->getfield('domain');
+    $tag = $svc_x->getfield('domain');
   } else {
-    carp "warning: asked for label of unsupported svcdb; using svcnum";
+    cluck "warning: asked for label of unsupported svcdb; using svcnum";
     $tag = $svc_x->getfield('svcnum');
   }
   $svc, $tag, $svcdb;
@@ -183,12 +142,19 @@ sub label {
 
 =back
 
+=head1 VERSION
+
+$Id: cust_svc.pm,v 1.5 1998-12-29 11:59:47 ivan Exp $
+
 =head1 BUGS
 
 Behaviour of changing the svcpart of cust_svc records is undefined and should
 possibly be prohibited, and pkg_svc records are not checked.
 
 pkg_svc records are not checked in general (here).
+
+Deleting this record doesn't check or delete the svc_* record associated
+with this record.
 
 =head1 SEE ALSO
 
@@ -204,7 +170,10 @@ no TableUtil, no FS::Lock ivan@sisd.com 98-mar-7
 pod ivan@sisd.com 98-sep-21
 
 $Log: cust_svc.pm,v $
-Revision 1.4  1998-11-12 07:58:15  ivan
+Revision 1.5  1998-12-29 11:59:47  ivan
+mostly properly OO, some work still to be done with svc_ stuff
+
+Revision 1.4  1998/11/12 07:58:15  ivan
 added svcdb to label
 
 Revision 1.3  1998/11/12 03:45:38  ivan

@@ -1,12 +1,10 @@
 package FS::agent_type;
 
 use strict;
-use vars qw(@ISA @EXPORT_OK);
-use Exporter;
-use FS::Record qw(qsearch fields);
+use vars qw( @ISA );
+use FS::Record qw( qsearch );
 
-@ISA = qw(FS::Record Exporter);
-@EXPORT_OK = qw(fields);
+@ISA = qw( FS::Record );
 
 =head1 NAME
 
@@ -16,8 +14,8 @@ FS::agent_type - Object methods for agent_type records
 
   use FS::agent_type;
 
-  $record = create FS::agent_type \%hash;
-  $record = create FS::agent_type { 'column' => 'value' };
+  $record = new FS::agent_type \%hash;
+  $record = new FS::agent_type { 'column' => 'value' };
 
   $error = $record->insert;
 
@@ -47,39 +45,19 @@ FS::Record.  The following fields are currently supported:
 
 =over 4
 
-=item create HASHREF
+=item new HASHREF
 
 Creates a new agent type.  To add the agent type to the database, see
 L<"insert">.
 
 =cut
 
-sub create {
-  my($proto,$hashref)=@_;
-
-  #now in FS::Record::new
-  #my($field);
-  #foreach $field (fields('agent_type')) {
-  #  $hashref->{$field}='' unless defined $hashref->{$field};
-  #}
-
-  $proto->new('agent_type',$hashref);
-
-}
+sub table { 'agent_type'; }
 
 =item insert
 
 Adds this agent type to the database.  If there is an error, returns the error,
 otherwise returns false.
-
-=cut
-
-sub insert {
-  my($self)=@_;
-
-  $self->check or
-  $self->add;
-}
 
 =item delete
 
@@ -90,27 +68,18 @@ false.
 =cut
 
 sub delete {
-  my($self)=@_;
+  my $self = shift;
+
   return "Can't delete an agent_type with agents!"
-    if qsearch('agent',{'typenum' => $self->typenum});
-  $self->del;
+    if qsearch( 'agent', { 'typenum' => $self->typenum } );
+
+  $self->SUPER::delete;
 }
 
 =item replace OLD_RECORD
 
 Replaces OLD_RECORD with this one in the database.  If there is an error,
 returns the error, otherwise returns false.
-
-=cut
-
-sub replace {
-  my($new,$old)=@_;
-  return "(Old) Not a agent_type record!" unless $old->table eq "agent_type";
-  return "Can't change typenum!"   
-    unless $old->getfield('typenum') eq $new->getfield('typenum');
-  $new->check or
-  $new->rep($old);
-}
 
 =item check
 
@@ -121,8 +90,7 @@ replace methods.
 =cut
 
 sub check {
-  my($self)=@_;
-  return "Not a agent_type record!" unless $self->table eq "agent_type";
+  my $self = shift;
 
   $self->ut_numbern('typenum')
   or $self->ut_text('atype');
@@ -131,9 +99,11 @@ sub check {
 
 =back
 
-=head1 BUGS
+=head1 VERSION
 
-It doesn't properly override FS::Record yet.
+$Id: agent_type.pm,v 1.2 1998-12-29 11:59:35 ivan Exp $
+
+=head1 BUGS
 
 =head1 SEE ALSO
 
@@ -154,6 +124,11 @@ Changed 'type' to 'atype' because Pg6.3 reserves the type word
 	bmccane@maxbaud.net	98-apr-3
 
 pod, added check in delete ivan@sisd.com 98-sep-21
+
+$Log: agent_type.pm,v $
+Revision 1.2  1998-12-29 11:59:35  ivan
+mostly properly OO, some work still to be done with svc_ stuff
+
 
 =cut
 

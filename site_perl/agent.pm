@@ -1,14 +1,12 @@
 package FS::agent;
 
 use strict;
-use vars qw(@ISA @EXPORT_OK);
-use Exporter;
-use FS::Record qw(fields qsearch qsearchs);
+use vars qw( @ISA );
+use FS::Record qw( qsearch qsearchs);
 use FS::cust_main;
 use FS::agent_type;
 
-@ISA = qw(FS::Record Exporter);
-@EXPORT_OK = qw(fields);
+@ISA = qw( FS::Record );
 
 =head1 NAME
 
@@ -18,8 +16,8 @@ FS::agent - Object methods for agent records
 
   use FS::agent;
 
-  $record = create FS::agent \%hash;
-  $record = create FS::agent { 'column' => 'value' };
+  $record = new FS::agent \%hash;
+  $record = new FS::agent { 'column' => 'value' };
 
   $error = $record->insert;
 
@@ -53,37 +51,18 @@ from FS::Record.  The following fields are currently supported:
 
 =over 4
 
-=item create HASHREF
+=item new HASHREF
 
 Creates a new agent.  To add the agent to the database, see L<"insert">.
 
 =cut
 
-sub create {
-  my($proto,$hashref)=@_;
-
-  #now in FS::Record::new
-  #my($field);
-  #foreach $field (fields('agent')) {
-  #  $hashref->{$field}='' unless defined $hashref->{$field};
-  #}
-
-  $proto->new('agent',$hashref);
-}
+sub table { 'agent'; }
 
 =item insert
 
 Adds this agent to the database.  If there is an error, returns the error,
 otherwise returns false.
-
-=cut
-
-sub insert {
-  my($self)=@_;
-
-  $self->check or
-  $self->add;
-}
 
 =item delete
 
@@ -93,27 +72,18 @@ deleted.  If there is an error, returns the error, otherwise returns false.
 =cut
 
 sub delete {
-  my($self)=@_;
+  my $self = shift;
+
   return "Can't delete an agent with customers!"
-    if qsearch('cust_main',{'agentnum' => $self->agentnum});
-  $self->del;
+    if qsearch( 'cust_main', { 'agentnum' => $self->agentnum } );
+
+  $self->SUPER::delete;
 }
 
 =item replace OLD_RECORD
 
 Replaces OLD_RECORD with this one in the database.  If there is an error,
 returns the error, otherwise returns false.
-
-=cut
-
-sub replace {
-  my($new,$old)=@_;
-  return "(Old) Not an agent record!" unless $old->table eq "agent";
-  return "Can't change agentnum!"
-    unless $old->getfield('agentnum') eq $new->getfield('agentnum');
-  $new->check or
-  $new->rep($old);
-}
 
 =item check
 
@@ -124,20 +94,19 @@ methods.
 =cut
 
 sub check {
-  my($self)=@_;
-  return "Not a agent record!" unless $self->table eq "agent";
+  my $self = shift;
 
-  my($error)=
+  my $error =
     $self->ut_numbern('agentnum')
-      or $self->ut_text('agent')
-      or $self->ut_number('typenum')
-      or $self->ut_numbern('freq')
-      or $self->ut_textn('prog')
+      || $self->ut_text('agent')
+      || $self->ut_number('typenum')
+      || $self->ut_numbern('freq')
+      || $self->ut_textn('prog')
   ;
   return $error if $error;
 
   return "Unknown typenum!"
-    unless qsearchs('agent_type',{'typenum'=> $self->getfield('typenum') });
+    unless qsearchs( 'agent_type', { 'typenum' => $self->typenum } );
 
   '';
 
@@ -145,9 +114,11 @@ sub check {
 
 =back
 
-=head1 BUGS
+=head1 VERSION
 
-It doesn't properly override FS::Record yet.
+$Id: agent.pm,v 1.3 1998-12-29 11:59:34 ivan Exp $
+
+=head1 BUGS
 
 =head1 SEE ALSO
 

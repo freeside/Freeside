@@ -1,12 +1,10 @@
 package FS::svc_acct_pop;
 
 use strict;
-use vars qw(@ISA @EXPORT_OK);
-use Exporter;
-use FS::Record qw(fields qsearchs);
+use vars qw( @ISA );
+use FS::Record qw( qsearchs );
 
-@ISA = qw(FS::Record Exporter);
-@EXPORT_OK = qw(fields);
+@ISA = qw( FS::Record );
 
 =head1 NAME
 
@@ -16,8 +14,8 @@ FS::svc_acct_pop - Object methods for svc_acct_pop records
 
   use FS::svc_acct_pop;
 
-  $record = create FS::svc_acct_pop \%hash;
-  $record = create FS::svc_acct_pop { 'column' => 'value' };
+  $record = new FS::svc_acct_pop \%hash;
+  $record = new FS::svc_acct_pop { 'column' => 'value' };
 
   $error = $record->insert;
 
@@ -50,67 +48,28 @@ inherits from FS::Record.  The following fields are currently supported:
 
 =over 4
 
-=item create HASHREF
+=item new HASHREF
 
 Creates a new point of presence (if only it were that easy!).  To add the 
 point of presence to the database, see L<"insert">.
 
 =cut
 
-sub create {
-  my($proto,$hashref)=@_;
-
-  #now in FS::Record::new
-  #my($field);
-  #foreach $field (fields('svc_acct_pop')) {
-  #  $hashref->{$field}='' unless defined $hashref->{$field};
-  #}
-
-  $proto->new('svc_acct_pop',$hashref);
-}
+sub table { 'svc_acct_pop'; }
 
 =item insert
 
-Adds this point of presence to the databaes.  If there is an error, returns the
+Adds this point of presence to the database.  If there is an error, returns the
 error, otherwise returns false.
-
-=cut
-
-sub insert {
-  my($self)=@_;
-
-  $self->check or
-  $self->add;
-}
 
 =item delete
 
-Currently unimplemented.
-
-=cut
-
-sub delete {
-  my($self)=@_;
-  return "Can't (yet) delete POPs!";
-  #$self->del;
-}
+Removes this point of presence from the database.
 
 =item replace OLD_RECORD
 
 Replaces OLD_RECORD with this one in the database.  If there is an error,
 returns the error, otherwise returns false.
-
-=cut
-
-sub replace {
-  my($new,$old)=@_;
-  return "(Old) Not an svc_acct_pop record!"
-    unless $old->table eq "svc_acct_pop";
-  return "Can't change popnum!"
-    unless $old->getfield('popnum') eq $new->getfield('popnum');
-  $new->check or
-  $new->rep($old);
-}
 
 =item check
 
@@ -121,27 +80,24 @@ and replace methods.
 =cut
 
 sub check {
-  my($self)=@_;
-  return "Not a svc_acct_pop record!" unless $self->table eq "svc_acct_pop";
+  my $self = shift;
 
-  my($error)=
     $self->ut_numbern('popnum')
       or $self->ut_text('city')
       or $self->ut_text('state')
       or $self->ut_number('ac')
       or $self->ut_number('exch')
   ;
-  return $error if $error;
-
-  '';
 
 }
 
 =back
 
-=head1 BUGS
+=head1 VERSION
 
-It doesn't properly override FS::Record yet.
+$Id: svc_acct_pop.pm,v 1.2 1998-12-29 11:59:53 ivan Exp $
+
+=head1 BUGS
 
 It should be renamed to part_pop.
 
@@ -156,6 +112,11 @@ Class dealing with pops
 ivan@sisd.com 98-mar-8 
 
 pod ivan@sisd.com 98-sep-23
+
+$Log: svc_acct_pop.pm,v $
+Revision 1.2  1998-12-29 11:59:53  ivan
+mostly properly OO, some work still to be done with svc_ stuff
+
 
 =cut
 

@@ -1,12 +1,10 @@
 package FS::part_pkg;
 
 use strict;
-use vars qw(@ISA @EXPORT_OK);
-use Exporter;
-use FS::Record qw(fields hfields);
+use vars qw( @ISA );
+use FS::Record;
 
-@ISA = qw(FS::Record Exporter);
-@EXPORT_OK = qw(hfields fields);
+@ISA = qw( FS::Record );
 
 =head1 NAME
 
@@ -16,8 +14,8 @@ FS::part_pkg - Object methods for part_pkg objects
 
   use FS::part_pkg;
 
-  $record = create FS::part_pkg \%hash
-  $record = create FS::part_pkg { 'column' => 'value' };
+  $record = new FS::part_pkg \%hash
+  $record = new FS::part_pkg { 'column' => 'value' };
 
   $custom_record = $template_record->clone;
 
@@ -57,55 +55,39 @@ just as you would normally.  More advanced semantics are not yet defined.
 
 =over 4 
 
-=item create HASHREF
+=item new HASHREF
 
 Creates a new billing item definition.  To add the billing item definition to
 the database, see L<"insert">.
 
 =cut
 
-sub create {
-  my($proto,$hashref)=@_;
-
-  #now in FS::Record::new
-  #my($field);
-  #foreach $field (fields('part_pkg')) {
-  #  $hashref->{$field}='' unless defined $hashref->{$field};
-  #}
-
-  $proto->new('part_pkg',$hashref);
-}
+sub table { 'part_pkg'; }
 
 =item clone
 
-Creates a new billing item definition by duplicating an existing definition.
-A new pkgpart is assigned and "(CUSTOM) " is prepended to the comment field.
-To add the billing item definition to the database, see L<"insert">.
+An alternate constructor.  Creates a new billing item definition by duplicating
+an existing definition.  A new pkgpart is assigned and `(CUSTOM) ' is prepended
+to the comment field.  To add the billing item definition to the database, see
+L<"insert">.
 
 =cut
 
 sub clone {
   my $self = shift;
+  my $class = ref($self);
   my %hash = $self->hash;
   $hash{'pkgpart'} = '';
   $hash{'comment'} = "(CUSTOM) ". $hash{'comment'}
     unless $hash{'comment'} =~ /^\(CUSTOM\) /;
-  create FS::part_pkg ( \%hash ); # ?
+  #new FS::part_pkg ( \%hash ); # ?
+  new $class ( \%hash ); # ?
 }
 
 =item insert
 
 Adds this billing item definition to the database.  If there is an error,
 returns the error, otherwise returns false.
-
-=cut
-
-sub insert {
-  my($self)=@_;
-
-  $self->check or
-  $self->add;
-}
 
 =item delete
 
@@ -115,27 +97,13 @@ Currently unimplemented.
 
 sub delete {
   return "Can't (yet?) delete package definitions.";
-# maybe check & make sure the pkgpart isn't in cust_pkg or type_pkgs?
-#  my($self)=@_;
-#
-#  $self->del;
+# check & make sure the pkgpart isn't in cust_pkg or type_pkgs?
 }
 
 =item replace OLD_RECORD
 
 Replaces OLD_RECORD with this one in the database.  If there is an error,
 returns the error, otherwise returns false.
-
-=cut
-
-sub replace {
-  my($new,$old)=@_;
-  return "(Old) Not a part_pkg record!" unless $old->table eq "part_pkg";
-  return "Can't change pkgpart!"
-    unless $old->getfield('pkgpart') eq $new->getfield('pkgpart');
-  $new->check or
-  $new->rep($old);
-}
 
 =item check
 
@@ -146,28 +114,24 @@ insert and replace methods.
 =cut
 
 sub check {
-  my($self)=@_;
-  return "Not a part_pkg record!" unless $self->table eq "part_pkg";
+  my $self = shift;
 
   $self->ut_numbern('pkgpart')
-    or $self->ut_text('pkg')
-    or $self->ut_text('comment')
-    or $self->ut_anything('setup')
-    or $self->ut_number('freq')
-    or $self->ut_anything('recur')
+    || $self->ut_text('pkg')
+    || $self->ut_text('comment')
+    || $self->ut_anything('setup')
+    || $self->ut_number('freq')
+    || $self->ut_anything('recur')
   ;
-
 }
 
 =back
 
 =head1 VERSION
 
-$Id: part_pkg.pm,v 1.3 1998-11-15 13:00:15 ivan Exp $
+$Id: part_pkg.pm,v 1.4 1998-12-29 11:59:48 ivan Exp $
 
 =head1 BUGS
-
-It doesn't properly override FS::Record yet.
 
 The delete method is unimplemented.
 
@@ -186,7 +150,10 @@ ivan@sisd.com 97-dec-5
 pod ivan@sisd.com 98-sep-21
 
 $Log: part_pkg.pm,v $
-Revision 1.3  1998-11-15 13:00:15  ivan
+Revision 1.4  1998-12-29 11:59:48  ivan
+mostly properly OO, some work still to be done with svc_ stuff
+
+Revision 1.3  1998/11/15 13:00:15  ivan
 bugfix in clone method, clone method doc clarification
 
 

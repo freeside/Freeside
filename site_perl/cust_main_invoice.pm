@@ -3,10 +3,12 @@ package FS::cust_main_invoice;
 use strict;
 use vars qw(@ISA $conf $mydomain);
 use Exporter;
-use FS::Record; # qw(qsearch qsearchs);
+use FS::Record qw( qsearchs );
 use FS::Conf;
+use FS::cust_main;
+use FS::svc_acct;
 
-@ISA = qw(FS::Record);
+@ISA = qw( FS::Record );
 
 #ask FS::UID to run this stuff for us later
 $FS::UID::callback{'FS::cust_main_invoice'} = sub { 
@@ -22,8 +24,8 @@ FS::cust_main_invoice - Object methods for cust_main_invoice records
 
   use FS::cust_main_invoice;
 
-  $record = create FS::cust_main_invoice \%hash;
-  $record = create FS::cust_main_invoice { 'column' => 'value' };
+  $record = new FS::cust_main_invoice \%hash;
+  $record = new FS::cust_main_invoice { 'column' => 'value' };
 
   $error = $record->insert;
 
@@ -54,7 +56,7 @@ FS::Record.  The following fields are currently supported:
 
 =over 4
 
-=item create HASHREF
+=item new HASHREF
 
 Creates a new invoice destination.  To add the invoice destination to the database, see L<"insert">.
 
@@ -63,44 +65,16 @@ points to.  You can ask the object for a copy with the I<hash> method.
 
 =cut
 
-sub create {
-  my($proto,$hashref)=@_;
-
-  $proto->new('cust_main_invoice',$hashref);
-
-}
+sub table { 'cust_main_invoice'; }
 
 =item insert
 
 Adds this record to the database.  If there is an error, returns the error,
 otherwise returns false.
 
-=cut
-
-sub insert {
-  my($self)=@_;
-
-  #local $SIG{HUP} = 'IGNORE';
-  #local $SIG{INT} = 'IGNORE';
-  #local $SIG{QUIT} = 'IGNORE';
-  #local $SIG{TERM} = 'IGNORE';
-  #local $SIG{TSTP} = 'IGNORE';
-
-  $self->check or
-  $self->add;
-}
-
 =item delete
 
 Delete this record from the database.
-
-=cut
-
-sub delete {
-  my($self)=@_;
-
-  $self->del;
-}
 
 =item replace OLD_RECORD
 
@@ -110,16 +84,11 @@ returns the error, otherwise returns false.
 =cut
 
 sub replace {
-  my($new,$old)=@_;
-  return "(Old) Not a cust_main_invoice record!" unless $old->table eq "cust_main_invoice";
+  my ( $new, $old ) = ( shift, shift );
 
-  return "Can't change destnum!"
-     unless $old->getfield('destnum') eq $new->getfield('destnum');
-  return "Can't change custnum!"
-     unless $old->getfield('custnum') eq $new->getfield('custnum');
+  return "Can't change custnum!" unless $old->custnum eq $new->custnum;
 
-  $new->check or
-  $new->rep($old);
+  $new->SUPER::replace;
 }
 
 
@@ -132,8 +101,7 @@ and repalce methods.
 =cut
 
 sub check {
-  my($self)=@_;
-  return "Not a cust_main_invoice record!" unless $self->table eq "cust_main_invoice";
+  my $self = shift;
 
   my $error = $self->ut_number('destnum')
         or $self->ut_number('custnum')
@@ -148,11 +116,11 @@ sub check {
     #contemplate our navel
   } elsif ( $self->dest =~ /^(\d+)$/ ) {
     return "Unknown local account (specified by svcnum)"
-      unless qsearchs('svc_acct', { 'svcnum' => $self->dest } );
+      unless qsearchs( 'svc_acct', { 'svcnum' => $self->dest } );
   } elsif ( $self->dest =~ /^([\w\.\-]+)\@(([\w\.\-]\.)+\w+)$/ ) {
     my($user, $domain) = ($1, $2);
     if ( $domain eq $mydomain ) {
-      my $svc_acct = qsearchs('svc_acct', { 'username' => $user } );
+      my $svc_acct = qsearchs( 'svc_acct', { 'username' => $user } );
       return "Unknown local account (specified literally)" unless $svc_acct;
       $svc_acct->svcnum =~ /^(\d+)$/ or die "Non-numeric svcnum?!";
       $self->dest($1);
@@ -173,7 +141,7 @@ Returns the literal email address for this record (or `POST').
 sub address {
   my $self = shift;
   if ( $self->dest =~ /(\d+)$/ ) {
-    my $svc_acct = qsearchs('svc_acct', { 'svcnum' => $1 } );
+    my $svc_acct = qsearchs( 'svc_acct', { 'svcnum' => $1 } );
     $svc_acct->username . '@' . $mydomain;
   } else {
     $self->dest;
@@ -184,7 +152,7 @@ sub address {
 
 =head1 VERSION
 
-$Id: cust_main_invoice.pm,v 1.2 1998-12-16 09:58:53 ivan Exp $
+$Id: cust_main_invoice.pm,v 1.3 1998-12-29 11:59:42 ivan Exp $
 
 =head1 BUGS
 
@@ -200,7 +168,10 @@ added hfields
 ivan@sisd.com 97-nov-13
 
 $Log: cust_main_invoice.pm,v $
-Revision 1.2  1998-12-16 09:58:53  ivan
+Revision 1.3  1998-12-29 11:59:42  ivan
+mostly properly OO, some work still to be done with svc_ stuff
+
+Revision 1.2  1998/12/16 09:58:53  ivan
 library support for editing email invoice destinations (not in sub collect yet)
 
 Revision 1.1  1998/12/16 07:40:02  ivan

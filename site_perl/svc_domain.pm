@@ -1,10 +1,9 @@
 package FS::svc_domain;
 
 use strict;
-use vars qw(@ISA @EXPORT_OK $whois_hack $conf $mydomain $smtpmachine
+use vars qw( @ISA $whois_hack $conf $mydomain $smtpmachine
   $tech_contact $from $to @nameservers @nameserver_ips @template
 );
-use Exporter;
 use Carp;
 use Mail::Internet;
 use Mail::Header;
@@ -14,7 +13,6 @@ use FS::cust_svc;
 use FS::Conf;
 
 @ISA = qw(FS::Record Exporter);
-@EXPORT_OK = qw(fields);
 
 #ask FS::UID to run this stuff for us later
 $FS::UID::callback{'FS::domain'} = sub { 
@@ -50,8 +48,8 @@ FS::svc_domain - Object methods for svc_domain records
 
   use FS::svc_domain;
 
-  $record = create FS::svc_domain \%hash;
-  $record = create FS::svc_domain { 'column' => 'value' };
+  $record = new FS::svc_domain \%hash;
+  $record = new FS::svc_domain { 'column' => 'value' };
 
   $error = $record->insert;
 
@@ -84,24 +82,13 @@ FS::Record.  The following fields are currently supported:
 
 =over 4
 
-=item create HASHREF
+=item new HASHREF
 
 Creates a new domain.  To add the domain to the database, see L<"insert">.
 
 =cut
 
-sub create {
-  my($proto,$hashref)=@_;
-
-  #now in FS::Record::new
-  #my($field);
-  #foreach $field (fields('svc_domain')) {
-  #  $hashref->{$field}='' unless defined $hashref->{$field};
-  #}
-
-  $proto->new('svc_domain',$hashref);
-
-}
+sub table { 'svc_domain'; }
 
 =item insert
 
@@ -125,8 +112,8 @@ in the same package, it is automatically used.  Otherwise an error is returned.
 =cut
 
 sub insert {
-  my($self)=@_;
-  my($error);
+  my $self = shift;
+  my $error;
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -134,34 +121,34 @@ sub insert {
   local $SIG{TERM} = 'IGNORE';
   local $SIG{TSTP} = 'IGNORE';
 
-  $error=$self->check;
+  $error = $self->check;
   return $error if $error;
 
   return "Domain in use (here)"
-    if qsearchs('svc_domain',{'domain'=> $self->domain } );
+    if qsearchs( 'svc_domain', { 'domain' => $self->domain } );
 
-  my($whois)=(($self->_whois)[0]);
+  my $whois = ($self->_whois)[0];
   return "Domain in use (see whois)"
     if ( $self->action eq "N" && $whois !~ /^No match for/ );
   return "Domain not found (see whois)"
     if ( $self->action eq "M" && $whois =~ /^No match for/ );
 
-  my($svcnum)=$self->getfield('svcnum');
-  my($cust_svc);
+  my $svcnum = $self->svcnum;
+  my $cust_svc;
   unless ( $svcnum ) {
-    $cust_svc=create FS::cust_svc ( {
+    $cust_svc = new FS::cust_svc ( {
       'svcnum'  => $svcnum,
-      'pkgnum'  => $self->getfield('pkgnum'),
-      'svcpart' => $self->getfield('svcpart'),
+      'pkgnum'  => $self->pkgnum,
+      'svcpart' => $self->svcpart,
     } );
-    my($error) = $cust_svc->insert;
+    my $error = $cust_svc->insert;
     return $error if $error;
-    $svcnum = $self->setfield('svcnum',$cust_svc->getfield('svcnum'));
+    $svcnum = $self->setfield( 'svcnum', $cust_svc->svcnum );
   }
 
-  $error = $self->add;
-  if ($error) {
-    $cust_svc->del if $cust_svc;
+  $error = $self->SUPER::insert;
+  if ( $error ) {
+    $cust_svc->delete if $cust_svc;
     return $error;
   }
 
@@ -180,16 +167,16 @@ The corresponding FS::cust_svc record will be deleted as well.
 =cut
 
 sub delete {
-  my($self)=@_;
-  my($error);
+  my $self = shift;
+  my $error;
 
-  my($svcnum)=$self->getfield('svcnum');
+  my $svcnum = $self->svcnum;
   
-  $error = $self->del;
+  $error = $self->delete;
   return $error if $error;
 
-  my($cust_svc)=qsearchs('cust_svc',{'svcnum'=>$svcnum});  
-  $error = $cust_svc->del;
+  my $cust_svc = qsearchs( 'cust_svc', { 'svcnum' => $svcnum } );  
+  $error = $cust_svc->delete;
   return $error if $error;
 
   '';
@@ -203,29 +190,13 @@ returns the error, otherwise returns false.
 =cut
 
 sub replace {
-  my($new,$old)=@_;
-  my($error);
-
-  return "(Old) Not a svc_domain record!" unless $old->table eq "svc_domain";
-  return "Can't change svcnum!"
-    unless $old->getfield('svcnum') eq $new->getfield('svcnum');
+  my ( $new, $old ) = ( shift, shift );
+  my $error;
 
   return "Can't change domain - reorder."
     if $old->getfield('domain') ne $new->getfield('domain'); 
 
-  $error=$new->check;
-  return $error if $error;
-
-  local $SIG{HUP} = 'IGNORE';
-  local $SIG{INT} = 'IGNORE';
-  local $SIG{QUIT} = 'IGNORE';
-  local $SIG{TERM} = 'IGNORE';
-  local $SIG{TSTP} = 'IGNORE';
-
-  $error = $new->rep($old);
-  return $error if $error;
-
-  '';
+  $new->SUPER::replace($old);
 
 }
 
@@ -276,12 +247,16 @@ Sets any fixed values; see L<FS::part_svc>.
 =cut
 
 sub check {
-  my($self)=@_;
-  return "Not a svc_domain record!" unless $self->table eq "svc_domain";
+  my $self = shift;
+
   my($recref) = $self->hashref;
 
-  $recref->{svcnum} =~ /^(\d*)$/ or return "Illegal svcnum";
-  $recref->{svcnum} = $1;
+  my $error;
+
+  $error =
+    $self->ut_numbern('svcnum')
+  ;
+  return $error if $error;
 
   #get part_svc (and pkgnum)
   my($svcpart,$pkgnum);
@@ -356,10 +331,10 @@ $FS::svc_domain::whois_hack is set true.)
 =cut
 
 sub _whois {
-  my($self)=@_;
-  my($domain)=$self->domain;
+  my $self = shift;
+  my $domain = $self->domain;
   return ( "No match for domain \"$domain\"." ) if $whois_hack;
-  open(WHOIS,"whois do $domain |");
+  open(WHOIS, "whois do $domain |");
   return <WHOIS>;
 }
 
@@ -370,14 +345,14 @@ Submits a registration email for this domain.
 =cut
 
 sub submit_internic {
-  my($self)=@_;
+  my $self = shift;
 
-  my($cust_pkg)=qsearchs('cust_pkg',{'pkgnum'=>$self->pkgnum});
+  my $cust_pkg = qsearchs( 'cust_pkg', { 'pkgnum' => $self->pkgnum } );
   return unless $cust_pkg;
-  my($cust_main)=qsearchs('cust_main',{'custnum'=>$cust_pkg->custnum});
+  my cust_main) = qsearchs( 'cust_main', { 'custnum' => $cust_pkg->custnum } );
   return unless $cust_main;
 
-  my(%subs)=(
+  my %subs = (
     'action'       => $self->action,
     'purpose'      => $self->purpose,
     'domain'       => $self->domain,
@@ -400,18 +375,18 @@ sub submit_internic {
   );
 
   #yuck
-  my(@xtemplate)=@template;
-  my(@body);
-  my($line);
-  OLOOP: while ( defined($line = shift @xtemplate) ) {
+  my @xtemplate = @template;
+  my @body;
+  my $line;
+  OLOOP: while ( defined( $line = shift @xtemplate ) ) {
 
     if ( $line =~ /^###LOOP###$/ ) {
       my(@buffer);
-      LOADBUF: while ( defined($line = shift @xtemplate) ) {
+      LOADBUF: while ( defined( $line = shift @xtemplate ) ) {
         last LOADBUF if ( $line =~ /^###ENDLOOP###$/ );
         push @buffer, $line;
       }
-      my(%lubs)=(
+      my %lubs = (
         'address'      => $cust_main->address2 
                             ? [ $cust_main->address1, $cust_main->address2 ]
                             : [ $cust_main->address1 ]
@@ -420,8 +395,8 @@ sub submit_internic {
         'secondary_ip' => [ @nameserver_ips ],
       );
       LOOP: while (1) {
-        my(@xbuffer)=@buffer;
-        SUBLOOP: while ( defined($line = shift @xbuffer) ) {
+        my @xbuffer = @buffer;
+        SUBLOOP: while ( defined( $line = shift @xbuffer ) ) {
           if ( $line =~ /###(\w+)###/ ) {
             #last LOOP unless my($lub)=shift@{$lubs{$1}};
             next OLOOP unless my $lub = shift @{$lubs{$1}};
@@ -445,23 +420,23 @@ sub submit_internic {
 
   } #OLOOP
 
-  my($subject);
+  my $subject;
   if ( $self->action eq "M" ) {
     $subject = "MODIFY DOMAIN ". $self->domain;
-  } elsif ($self->action eq "N" ) { 
+  } elsif ( $self->action eq "N" ) { 
     $subject = "NEW DOMAIN ". $self->domain;
   } else {
     croak "submit_internic called with action ". $self->action;
   }
 
-  $ENV{SMTPHOSTS}=$smtpmachine;
-  $ENV{MAILADDRESS}=$from;
-  my($header)=Mail::Header->new( [
+  $ENV{SMTPHOSTS} = $smtpmachine;
+  $ENV{MAILADDRESS} = $from;
+  my $header = Mail::Header->new( [
     "From: $from",
     "To: $to",
     "Sender: $from",
     "Reply-To: $from",
-    "Date: ". time2str("%a, %d %b %Y %X %z",time),
+    "Date: ". time2str("%a, %d %b %Y %X %z", time),
     "Subject: $subject",
   ] );
 
@@ -476,15 +451,17 @@ sub submit_internic {
 
 =back
 
-=head1 BUGS
+=head1 VERSION
 
-It doesn't properly override FS::Record yet.
+$Id: svc_domain.pm,v 1.4 1998-12-29 11:59:55 ivan Exp $
+
+=head1 BUGS
 
 All BIND/DNS fields should be included (and exported).
 
-All registries should be supported.
+Delete doesn't send a registration template.
 
-Not all configuration access is through FS::Conf!
+All registries should be supported.
 
 Should change action to a real field.
 
@@ -493,10 +470,6 @@ Should change action to a real field.
 L<FS::Record>, L<FS::Conf>, L<FS::cust_svc>, L<FS::part_svc>, L<FS::cust_pkg>,
 L<FS::SSH>, L<ssh>, L<dot-qmail>, schema.html from the base documentation,
 config.html from the base documentation.
-
-=head1 VERSION
-
-$Id: svc_domain.pm,v 1.3 1998-11-13 09:56:57 ivan Exp $
 
 =head1 HISTORY
 
@@ -515,7 +488,10 @@ ivan@sisd.com 98-jul-17-19
 pod, some FS::Conf (not complete) ivan@sisd.com 98-sep-23
 
 $Log: svc_domain.pm,v $
-Revision 1.3  1998-11-13 09:56:57  ivan
+Revision 1.4  1998-12-29 11:59:55  ivan
+mostly properly OO, some work still to be done with svc_ stuff
+
+Revision 1.3  1998/11/13 09:56:57  ivan
 change configuration file layout to support multiple distinct databases (with
 own set of config files, export, etc.)
 

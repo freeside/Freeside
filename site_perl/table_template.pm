@@ -1,10 +1,8 @@
 package FS::table_name;
 
 use strict;
-use vars qw (@ISA);
-use Exporter;
-#use FS::UID qw(getotaker);
-use FS::Record qw(hfields qsearch qsearchs);
+use vars qw( @ISA );
+use FS::Record qw( qsearch qsearchs );
 
 @ISA = qw(FS::Record);
 
@@ -16,8 +14,8 @@ FS::table_name - Object methods for table_name records
 
   use FS::table_name;
 
-  $record = create FS::table_name \%hash;
-  $record = create FS::table_name { 'column' => 'value' };
+  $record = new FS::table_name \%hash;
+  $record = new FS::table_name { 'column' => 'value' };
 
   $error = $record->insert;
 
@@ -42,7 +40,7 @@ FS::Record.  The following fields are currently supported:
 
 =over 4
 
-=item create HASHREF
+=item new HASHREF
 
 Creates a new example.  To add the example to the database, see L<"insert">.
 
@@ -51,12 +49,9 @@ points to.  You can ask the object for a copy with the I<hash> method.
 
 =cut
 
-sub create {
-  my($proto,$hashref)=@_;
+# the new method can be inherited from FS::Record, if a table method is defined
 
-  $proto->new('table_name',$hashref);
-
-}
+sub table { 'table_name'; }
 
 =item insert
 
@@ -65,18 +60,7 @@ otherwise returns false.
 
 =cut
 
-sub insert {
-  my($self)=@_;
-
-  #local $SIG{HUP} = 'IGNORE';
-  #local $SIG{INT} = 'IGNORE';
-  #local $SIG{QUIT} = 'IGNORE';
-  #local $SIG{TERM} = 'IGNORE';
-  #local $SIG{TSTP} = 'IGNORE';
-
-  $self->check or
-  $self->add;
-}
+# the insert method can be inherited from FS::Record
 
 =item delete
 
@@ -84,11 +68,7 @@ Delete this record from the database.
 
 =cut
 
-sub delete {
-  my($self)=@_;
-
-  $self->del;
-}
+# the delete method can be inherited from FS::Record
 
 =item replace OLD_RECORD
 
@@ -97,30 +77,21 @@ returns the error, otherwise returns false.
 
 =cut
 
-sub replace {
-  my($new,$old)=@_;
-  return "(Old) Not a table_name record!" unless $old->table eq "table_name";
-
-  return "Can't change keyfield!"
-     unless $old->getfield('keyfield') eq $new->getfield('keyfield');
-
-  $new->check or
-  $new->rep($old);
-}
-
+# the replace method can be inherited from FS::Record
 
 =item check
 
 Checks all fields to make sure this is a valid example.  If there is
 an error, returns the error, otherwise returns false.  Called by the insert
-and repalce methods.
+and replace methods.
 
 =cut
 
-sub check {
-  my($self)=@_;
-  return "Not a table_name record!" unless $self->table eq "table_name";
+# the check method should currently be supplied - FS::Record contains some
+# data checking routines
 
+sub check {
+  my $self = shift;
 
   ''; #no error
 }
@@ -129,7 +100,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: table_template.pm,v 1.3 1998-11-15 04:33:00 ivan Exp $
+$Id: table_template.pm,v 1.4 1998-12-29 11:59:57 ivan Exp $
 
 =head1 BUGS
 
@@ -137,7 +108,7 @@ The author forgot to customize this manpage.
 
 =head1 SEE ALSO
 
-L<FS::Record>
+L<FS::Record>, schema.html from the base documentation.
 
 =head1 HISTORY
 
@@ -147,7 +118,10 @@ added hfields
 ivan@sisd.com 97-nov-13
 
 $Log: table_template.pm,v $
-Revision 1.3  1998-11-15 04:33:00  ivan
+Revision 1.4  1998-12-29 11:59:57  ivan
+mostly properly OO, some work still to be done with svc_ stuff
+
+Revision 1.3  1998/11/15 04:33:00  ivan
 updates for newest versoin
 
 Revision 1.2  1998/11/15 03:48:49  ivan

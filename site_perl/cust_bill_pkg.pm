@@ -1,12 +1,12 @@
 package FS::cust_bill_pkg;
 
 use strict;
-use vars qw(@ISA @EXPORT_OK);
-use Exporter;
-use FS::Record qw(fields qsearchs);
+use vars qw( @ISA );
+use FS::Record qw( qsearchs );
+use FS::cust_pkg;
+use FS::cust_bill;
 
-@ISA = qw(FS::Record Exporter);
-@EXPORT_OK = qw(fields);
+@ISA = qw(FS::Record );
 
 =head1 NAME
 
@@ -16,8 +16,8 @@ FS::cust_bill_pkg - Object methods for cust_bill_pkg records
 
   use FS::cust_bill_pkg;
 
-  $record = create FS::cust_bill_pkg \%hash;
-  $record = create FS::cust_bill_pkg { 'column' => 'value' };
+  $record = new FS::cust_bill_pkg \%hash;
+  $record = new FS::cust_bill_pkg { 'column' => 'value' };
 
   $error = $record->insert;
 
@@ -56,7 +56,7 @@ see L<Time::Local> and L<Date::Parse> for conversion functions.
 
 =over 4
 
-=item create HASHREF
+=item new HASHREF
 
 Creates a new line item.  To add the line item to the database, see
 L<"insert">.  Line items are normally created by calling the bill method of a
@@ -64,32 +64,12 @@ customer object (see L<FS::cust_main>).
 
 =cut
 
-sub create {
-  my($proto,$hashref)=@_;
-
-  #now in FS::Record::new
-  #my($field);
-  #foreach $field (fields('cust_bill_pkg')) {
-  #  $hashref->{$field}='' unless defined $hashref->{$field};
-  #}
-
-  $proto->new('cust_bill_pkg',$hashref);
-
-}
+sub table { 'cust_bill_pkg'; }
 
 =item insert
 
 Adds this line item to the database.  If there is an error, returns the error,
 otherwise returns false.
-
-=cut
-
-sub insert {
-  my($self)=@_;
-
-  $self->check or
-  $self->add;
-}
 
 =item delete
 
@@ -100,8 +80,6 @@ no record the items ever existed (which is bad, no?)
 
 sub delete {
   return "Can't delete cust_bill_pkg records!";
-  #my($self)=@_;
-  #$self->del;
 }
 
 =item replace OLD_RECORD
@@ -113,12 +91,6 @@ than deleteing the items.  Just don't do it.
 
 sub replace {
   return "Can't modify cust_bill_pkg records!";
-  #my($new,$old)=@_;
-  #return "(Old) Not a cust_bill_pkg record!" 
-  #  unless $old->table eq "cust_bill_pkg";
-  #
-  #$new->check or
-  #$new->rep($old);
 }
 
 =item check
@@ -130,35 +102,36 @@ method.
 =cut
 
 sub check {
-  my($self)=@_;
-  return "Not a cust_bill_pkg record!" unless $self->table eq "cust_bill_pkg";
+  my $self = shift;
 
-  my($error)=
+  my $error =
     $self->ut_number('pkgnum')
-      or $self->ut_number('invnum')
-      or $self->ut_money('setup')
-      or $self->ut_money('recur')
-      or $self->ut_numbern('sdate')
-      or $self->ut_numbern('edate')
+      || $self->ut_number('invnum')
+      || $self->ut_money('setup')
+      || $self->ut_money('recur')
+      || $self->ut_numbern('sdate')
+      || $self->ut_numbern('edate')
   ;
   return $error if $error;
 
   if ( $self->pkgnum != 0 ) { #allow unchecked pkgnum 0 for tax! (add to part_pkg?)
-    return "Unknown pkgnum ".$self->pkgnum
-    unless qsearchs('cust_pkg',{'pkgnum'=> $self->pkgnum });
+    return "Unknown pkgnum ". $self->pkgnum
+      unless qsearchs( 'cust_pkg', { 'pkgnum' => $self->pkgnum } );
   }
 
   return "Unknown invnum"
-    unless qsearchs('cust_bill',{'invnum'=> $self->invnum });
+    unless qsearchs( 'cust_bill' ,{ 'invnum' => $self->invnum } );
 
   ''; #no error
 }
 
 =back
 
-=head1 BUGS
+=head1 VERSION
 
-It doesn't properly override FS::Record yet.
+$Id: cust_bill_pkg.pm,v 1.2 1998-12-29 11:59:37 ivan Exp $
+
+=head1 BUGS
 
 =head1 SEE ALSO
 

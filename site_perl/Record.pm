@@ -26,7 +26,7 @@ FS::Record - Database record objects
 =head1 SYNOPSIS
 
     use FS::Record;
-    use FS::Record qw(dbh fields hfields qsearch qsearchs dbdef);
+    use FS::Record qw(dbh fields qsearch qsearchs dbdef);
 
     $record = new FS::Record 'table', \%hash;
     $record = new FS::Record 'table', { 'column' => 'value', ... };
@@ -51,11 +51,14 @@ FS::Record - Database record objects
 
     $hashref = $record->hashref;
 
-    $error = $record->add;
+    $error = $record->insert;
+    #$error = $record->add; #depriciated
 
-    $error = $record->del;
+    $error = $record->delete;
+    #$error = $record->del; #depriciated
 
-    $error = $new_record->rep($old_record);
+    $error = $new_record->replace($old_record);
+    #$error = $new_record->rep($old_record); #depriciated
 
     $value = $record->unique('column');
 
@@ -80,7 +83,8 @@ FS::Record - Database record objects
     $fields = hfields('table');
     if ( $fields->{Field} ) { # etc.
 
-    @fields = fields 'table';
+    @fields = fields 'table'; #as a subroutine
+    @fields = $record->fields; #as a method call
 
 
 =head1 DESCRIPTION
@@ -89,64 +93,57 @@ FS::Record - Database record objects
 implemented on top of DBI.  FS::Record is intended as a base class for
 table-specific classes to inherit from, i.e. FS::cust_main.
 
-=head1 METHODS
+=head1 CONSTRUCTORS
 
 =over 4
 
-=item new TABLE, HASHREF
+=item new [ TABLE, ] HASHREF
 
 Creates a new record.  It doesn't store it in the database, though.  See
-L<"add"> for that.
+L<"insert"> for that.
 
 Note that the object stores this hash reference, not a distinct copy of the
 hash it points to.  You can ask the object for a copy with the I<hash> 
 method.
 
+TABLE can only be omitted when a dervived class overrides the table method.
+
 =cut
 
 sub new { 
-  my($proto,$table,$hashref) = @_;
-  confess "Second arguement to FS::Record->new is not a HASH ref: ",
-          ref($hashref), " ", $hashref, "\n"
-    unless ref($hashref) eq 'HASH'; #bad practice?
-
-  #check to make sure $table exists? (ask dbdef)
-
-  foreach my $field ( FS::Record::fields $table ) { 
-     $hashref->{$field}='' unless defined $hashref->{$field};
-  }
-
-  # mySQL must rtrim the inbound text strings or store them z-terminated
-  # I simulate this for Postgres below
-  # Turned off in favor of ChopBlanks in UID.pm (see man DBI)
-  #if (datasrc =~ m/Pg/)
-  #{
-  #  foreach my $index (keys %$hashref)
-  #  {
-  #    $$hashref{$index} = unpack("A255", $$hashref{$index})
-  #	if ($$hashref{$index} =~ m/ $/) ;
-  #  }
-  #}
-
-  foreach my $column ( FS::Record::fields $table ) { 
-    #trim the '$' from money fields for Pg (beong HERE?)
-    #(what about Pg i18n?)
-    if ( datasrc =~ m/Pg/ 
-         && $dbdef->table($table)->column($column)->type eq 'money' ) {
-      ${$hashref}{$column} =~ s/^\$//;
-    }
-    #foreach my $column ( grep $dbdef->table($table)->column($_)->type eq 'money', keys %{$hashref} ) {
-    #  ${$hashref}{$column} =~ s/^\$//;
-    #}
-  }
-
+  my $proto = shift;
   my $class = ref($proto) || $proto;
-  my $self = { 'Table' => $table,
-               'Hash' => $hashref,
-             };
-
+  my $self = {};
   bless ($self, $class);
 
+  $self->{'Table'} = shift unless defined ( $self->table );
+
+  my $hashref = $self->{'Hash'} = shift;
+
+  foreach my $field ( $self->fields ) { 
+    $hashref->{$field}='' unless defined $hashref->{$field};
+    #trim the '$' from money fields for Pg (belong HERE?)
+    #(what about Pg i18n?)
+    if ( datasrc =~ m/Pg/ 
+         && $self->dbdef_table->column($field)->type eq 'money' ) {
+      ${$hashref}{$field} =~ s/^\$//;
+    }
+  }
+
+  $self;
+}
+
+sub create {
+  my $proto = shift;
+  my $class = ref($proto) || $proto;
+  my $self = {};
+  bless ($self, $class);
+  if ( defined $self->table ) {
+    cluck "create constructor is depriciated, use new!";
+    $self->new(@_);
+  } else {
+    croak "FS::Record::create called (not from a subclass)!";
+  }
 }
 
 =item qsearch TABLE, HASHREF
@@ -158,8 +155,6 @@ objects.
 
 =cut
 
-# Usage: @records = &FS::Search::qsearch($table,\%hash);
-# Each element of @records is a FS::Record object.
 sub qsearch {
   my($table,$record) = @_;
   my($dbh) = dbh;
@@ -181,7 +176,7 @@ sub qsearch {
 
   if ( eval ' scalar(@FS::'. $table. '::ISA);' ) {
     map {
-      eval 'create FS::'. $table. ' ( $sth->fetchrow_hashref );';
+      eval 'new FS::'. $table. ' ( $sth->fetchrow_hashref );';
     } ( 1 .. $sth->execute );
   } else {
     cluck "qsearch: warning: FS::$table not loaded; returning generic FS::Record objects";
@@ -202,10 +197,16 @@ for a single item, or your data is corrupted.
 
 sub qsearchs { # $result_record = &FS::Record:qsearchs('table',\%hash);
   my(@result) = qsearch(@_);
-  carp "Multiple records in scalar search!" if scalar(@result) > 1;
+  carp "warning: Multiple records in scalar search!" if scalar(@result) > 1;
     #should warn more vehemently if the search was on a primary key?
   $result[0];
 }
+
+=back
+
+=head1 METHODS
+
+=over 4
 
 =item table
 
@@ -214,7 +215,8 @@ Returns the table name.
 =cut
 
 sub table {
-  my($self) = @_;
+#  cluck "warning: FS::Record::table depriciated; supply one in subclass!";
+  my $self = shift;
   $self -> {'Table'};
 }
 
@@ -246,7 +248,8 @@ sub get {
   }
 }
 sub getfield {
-  get(@_);
+  my $self = shift;
+  $self->get(@_);
 }
 
 =item set, setfield COLUMN, VALUE
@@ -260,7 +263,8 @@ sub set {
   $self->{'Hash'}->{$field} = $value;
 }
 sub setfield {
-  set(@_);
+  my $self = shift;
+  $self->set(@_);
 }
 
 =item AUTLOADED METHODS
@@ -308,41 +312,41 @@ sub hashref {
   $self->{'Hash'};
 }
 
-=item add
+=item insert
 
-Adds this record to the database.  If there is an error, returns the error,
+Inserts this record to the database.  If there is an error, returns the error,
 otherwise returns false.
 
 =cut
 
-sub add {
-  my($self) = @_;
-  my($dbh)=dbh;
-  my($table)=$self->table;
+sub insert {
+  my $self = shift;
+
+  my $error = $self->check;
+  return $error if $error;
 
   #single-field unique keys are given a value if false
   #(like MySQL's AUTO_INCREMENT)
-  foreach ( $dbdef->table($table)->unique->singles ) {
+  foreach ( $self->dbdef_table->unique->singles ) {
     $self->unique($_) unless $self->getfield($_);
   }
   #and also the primary key
-  my($primary_key)=$dbdef->table($table)->primary_key;
+  my $primary_key = $self->dbdef_table->primary_key;
   $self->unique($primary_key) 
     if $primary_key && ! $self->getfield($primary_key);
 
-  my (@fields) =
+  my @fields =
     grep defined($self->getfield($_)) && $self->getfield($_) ne "",
-    fields($table)
+    $self->fields
   ;
 
-  my($sth);
-  my($statement)="INSERT INTO $table ( ".
+  my $statement = "INSERT INTO ". $self->table. " ( ".
       join(', ',@fields ).
     ") VALUES (".
-      join(', ',map(_quote($self->getfield($_),$table,$_), @fields)).
+      join(', ',map(_quote($self->getfield($_),$self->table,$_), @fields)).
     ")"
   ;
-  $sth = $dbh->prepare($statement) or return $dbh->errstr;
+  my $sth = dbh->prepare($statement) or return dbh->errstr;
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -355,29 +359,37 @@ sub add {
   '';
 }
 
-=item del
+=item add
+
+Depriciated (use insert instead).
+
+=cut
+
+sub add {
+  cluck "warning: FS::Record::add depriciated!";
+  insert @_; #call method in this scope
+}
+
+=item delete
 
 Delete this record from the database.  If there is an error, returns the error,
 otherwise returns false.
 
 =cut
 
-sub del {
-  my($self) = @_;
-  my($dbh)=dbh;
-  my($table)=$self->table;
+sub delete {
+  my $self = shift;
 
-  my($sth);
-  my($statement)="DELETE FROM $table WHERE ". join(' AND ',
+  my($statement)="DELETE FROM ". $self->table. " WHERE ". join(' AND ',
     map {
       $self->getfield($_) eq ''
         ? "$_ IS NULL"
-        : "$_ = ". _quote($self->getfield($_),$table,$_)
-    } ( $dbdef->table($table)->primary_key )
-          ? ($dbdef->table($table)->primary_key)
-          : fields($table)
+        : "$_ = ". _quote($self->getfield($_),$self->table,$_)
+    } ( $self->dbdef_table->primary_key )
+          ? ( $self->dbdef_table->primary_key)
+          : $self->fields
   );
-  $sth = $dbh->prepare($statement) or return $dbh->errstr;
+  my $sth = dbh->prepare($statement) or return dbh->errstr;
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -385,8 +397,7 @@ sub del {
   local $SIG{TERM} = 'IGNORE';
   local $SIG{TSTP} = 'IGNORE';
 
-  my($rc);
-  $rc=$sth->execute or return $sth->errstr;
+  my $rc = $sth->execute or return $sth->errstr;
   #not portable #return "Record not found, statement:\n$statement" if $rc eq "0E0";
 
   undef $self; #no need to keep object!
@@ -394,48 +405,57 @@ sub del {
   '';
 }
 
-=item rep OLD_RECORD
+=item del
+
+Depriciated (use delete instead).
+
+=cut
+
+sub del {
+  cluck "warning: FS::Record::del depriciated!";
+  &delete(@_); #call method in this scope
+}
+
+=item replace OLD_RECORD
 
 Replace the OLD_RECORD with this one in the database.  If there is an error,
 returns the error, otherwise returns false.
 
 =cut
 
-sub rep {
-  my($new,$old)=@_;
-  my($dbh)=dbh;
-  my($table)=$old->table;
-  my(@fields)=fields($table);
-  my(@diff)=grep $new->getfield($_) ne $old->getfield($_), @fields;
+sub replace {
+  my ( $new, $old ) = ( shift, shift );
 
-  if ( scalar(@diff) == 0 ) {
+  my @diff = grep $new->getfield($_) ne $old->getfield($_), $old->fields;
+  unless ( @diff ) {
     carp "warning: records identical";
     return '';
   }
 
-  return "Records not in same table!" unless $new->table eq $table;
+  return "Records not in same table!" unless $new->table eq $old->table;
 
-  my($sth);
-  my($statement)="UPDATE $table SET ". join(', ',
+  my $primary_key = $old->dbdef_table->primary_key;
+  return "Can't change $primary_key"
+    if $primary_key
+       && ( $old->getfield($primary_key) ne $new->getfield($primary_key) );
+
+  my $error = $new->check;
+  return $error if $error;
+
+  my $statement = "UPDATE ". $old->table. " SET ". join(', ',
     map {
-      "$_ = ". _quote($new->getfield($_),$table,$_) 
+      "$_ = ". _quote($new->getfield($_),$old->table,$_) 
     } @diff
   ). ' WHERE '.
     join(' AND ',
       map {
         $old->getfield($_) eq ''
           ? "$_ IS NULL"
-          : "$_ = ". _quote($old->getfield($_),$table,$_)
-#      } @fields
-#      } ( primary_key($table) ? (primary_key($table)) : @fields )
-      } ( $dbdef->table($table)->primary_key 
-            ? ($dbdef->table($table)->primary_key)
-            : @fields
-        )
+          : "$_ = ". _quote($old->getfield($_),$old->table,$_)
+      } ( $primary_key ? ( $primary_key ) : $old->fields )
     )
   ;
-  #warn $statement;
-  $sth = $dbh->prepare($statement) or return $dbh->errstr;
+  my $sth = dbh->prepare($statement) or return dbh->errstr;
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -443,12 +463,32 @@ sub rep {
   local $SIG{TERM} = 'IGNORE';
   local $SIG{TSTP} = 'IGNORE';
 
-  my($rc);
-  $rc=$sth->execute or return $sth->errstr;
+  my $rc = $sth->execute or return $sth->errstr;
   #not portable #return "Record not found (or records identical)." if $rc eq "0E0";
 
   '';
 
+}
+
+=item rep
+
+Depriciated (use replace instead).
+
+=cut
+
+sub rep {
+  cluck "warning: FS::Record::rep depriciated!";
+  replace @_; #call method in this scope
+}
+
+=item check
+
+Not yet implemented, croaks.  Derived classes should provide a check method.
+
+=cut
+
+sub check {
+  croak "FS::Record::check not implemented; supply one in subclass!";
 }
 
 =item unique COLUMN
@@ -655,6 +695,29 @@ sub ut_anything {
   '';
 }
 
+=item fields [ TABLE ]
+
+This can be used as both a subroutine and a method call.  It returns a list
+of the columns in this record's table, or an explicitly specified table.
+(See L<dbdef_table>).
+
+=cut
+
+# Usage: @fields = fields($table);
+#        @fields = $record->fields;
+sub fields {
+  my $something = shift;
+  my $table;
+  if ( ref($something) ) {
+    $table = $something->table;
+  } else {
+    $table = $something;
+  }
+  #croak "Usage: \@fields = fields(\$table)\n   or: \@fields = \$record->fields" unless $table;
+  my($table_obj) = $dbdef->table($table);
+  croak "Unknown table $table" unless $table_obj;
+  $table_obj->columns;
+}
 
 =head1 SUBROUTINES
 
@@ -711,30 +774,13 @@ It returns a hash-type list with the fields of this record's table set true.
 =cut
 
 sub hfields {
-  carp "hfields is depriciated";
+  carp "warning: hfields is depriciated";
   my($table)=@_;
   my(%hash);
   foreach (fields($table)) {
     $hash{$_}=1;
   }
   \%hash;
-}
-
-=item fields TABLE
-
-This returns a list of the columns in this record's table
-(See L<dbdef_table>).
-
-=cut
-
-# Usage: @fields = fields($table);
-sub fields {
-  my($table) = @_;
-  #my(@fields) = $dbdef->table($table)->columns;
-  croak "Usage: \@fields = fields(\$table)" unless $table;
-  my($table_obj) = $dbdef->table($table);
-  croak "Unknown table $table" unless $table_obj;
-  $table_obj->columns;
 }
 
 #sub _dump {
@@ -759,7 +805,7 @@ sub fields {
 
 =head1 VERSION
 
-$Id: Record.pm,v 1.9 1998-11-21 07:26:45 ivan Exp $
+$Id: Record.pm,v 1.10 1998-12-29 11:59:33 ivan Exp $
 
 =head1 BUGS
 
@@ -794,6 +840,9 @@ The ut_phonen method assumes US-style phone numbers.
 The _quote function should probably use ut_float instead of a regex.
 
 All the subroutines probably should be methods, here or elsewhere.
+
+Probably should borrow/use some dbdef methods where appropriate (like sub
+fields)
 
 =head1 SEE ALSO
 
@@ -878,7 +927,10 @@ added pod documentation ivan@sisd.com 98-sep-6
 ut_phonen got ''; at the end ivan@sisd.com 98-sep-27
 
 $Log: Record.pm,v $
-Revision 1.9  1998-11-21 07:26:45  ivan
+Revision 1.10  1998-12-29 11:59:33  ivan
+mostly properly OO, some work still to be done with svc_ stuff
+
+Revision 1.9  1998/11/21 07:26:45  ivan
 "Records identical" carp tells us it is just a warning.
 
 Revision 1.8  1998/11/15 11:02:04  ivan

@@ -2,7 +2,6 @@ package FS::svc_table;
 
 use strict;
 use vars qw(@ISA);
-use Exporter;
 use FS::Record qw(fields qsearch qsearchs);
 use FS::cust_svc;
 
@@ -16,8 +15,8 @@ FS::table_name - Object methods for table_name records
 
   use FS::table_name;
 
-  $record = create FS::table_name \%hash;
-  $record = create FS::table_name { 'column' => 'value' };
+  $record = new FS::table_name \%hash;
+  $record = new FS::table_name { 'column' => 'value' };
 
   $error = $record->insert;
 
@@ -48,7 +47,7 @@ FS::Record.  The following fields are currently supported:
 
 =over 4
 
-=item create HASHREF
+=item new HASHREF
 
 Creates a new example.  To add the example to the database, see L<"insert">.
 
@@ -57,12 +56,7 @@ points to.  You can ask the object for a copy with the I<hash> method.
 
 =cut
 
-sub create {
-  my($proto,$hashref)=@_;
-
-  $proto->new('svc_table',$hashref);
-
-}
+sub table { 'table_name'; }
 
 =item insert
 
@@ -226,7 +220,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: table_template-svc.pm,v 1.2 1998-11-15 04:33:01 ivan Exp $
+$Id: table_template-svc.pm,v 1.3 1998-12-29 11:59:56 ivan Exp $
 
 =head1 BUGS
 
@@ -242,7 +236,10 @@ froom the base documentation.
 ivan@voicenet.com 97-jul-21
 
 $Log: table_template-svc.pm,v $
-Revision 1.2  1998-11-15 04:33:01  ivan
+Revision 1.3  1998-12-29 11:59:56  ivan
+mostly properly OO, some work still to be done with svc_ stuff
+
+Revision 1.2  1998/11/15 04:33:01  ivan
 updates for newest versoin
 
 
