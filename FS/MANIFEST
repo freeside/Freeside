@@ -36,6 +36,9 @@ FS/UI/Gtk.pm
 FS/UI/agent.pm
 FS/UID.pm
 FS/Msgcat.pm
+FS/ac.pm
+FS/ac_block.pm
+FS/ac_type.pm
 FS/agent.pm
 FS/agent_type.pm
 FS/cust_bill.pm
@@ -54,6 +57,7 @@ FS/cust_refund.pm
 FS/cust_credit_refund.pm
 FS/cust_svc.pm
 FS/part_bill_event.pm
+FS/part_ac_field.pm
 FS/export_svc.pm
 FS/part_export.pm
 FS/part_export_option.pm
@@ -84,6 +88,7 @@ FS/svc_Common.pm
 FS/svc_acct.pm
 FS/svc_acct_pop.pm
 FS/svc_acct_sm.pm
+FS/svc_broadband.pm
 FS/svc_domain.pm
 FS/type_pkgs.pm
 FS/nas.pm
