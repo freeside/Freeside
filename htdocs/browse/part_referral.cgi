@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: part_referral.cgi,v 1.3 1998-12-17 04:31:36 ivan Exp $
+# $Id: part_referral.cgi,v 1.4 1998-12-17 04:32:55 ivan Exp $
 #
 # ivan@sisd.com 98-feb-23 
 #
@@ -10,7 +10,10 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: part_referral.cgi,v $
-# Revision 1.3  1998-12-17 04:31:36  ivan
+# Revision 1.4  1998-12-17 04:32:55  ivan
+# print $cgi->header
+#
+# Revision 1.3  1998/12/17 04:31:36  ivan
 # use CGI::Carp
 #
 # Revision 1.2  1998/12/17 04:26:04  ivan
@@ -28,8 +31,7 @@ my $cgi = new CGI;
 
 &cgisuidsetup($cgi);
 
-SendHeaders(); # one guess.
-print header("Referral Listing", menubar(
+print $cgi->header, header("Referral Listing", menubar(
   'Main Menu' => popurl(2),
 #  'Add new referral' => "../edit/part_referral.cgi",
 )), table, <<END;
