@@ -83,6 +83,7 @@ RT_ENABLED = 0
 RT_DOMAIN = example.com
 RT_TIMEZONE = US/Pacific;
 #RT_TIMEZONE = US/Eastern;
+FREESIDE_URL = "http://localhost/freeside/"
 
 #for now, same db as specified in DATASOURCE... eventually, otherwise?
 RT_DB_DATABASE = freeside
@@ -273,6 +274,7 @@ create-rt: configure-rt
 	perl -p -i -e "\
 	  s'%%%RT_DOMAIN%%%'${RT_DOMAIN}'g;\
 	  s'%%%RT_TIMEZONE%%%'${RT_TIMEZONE}'g;\
+	  s'%%%FREESIDE_URL%%%'${FREESIDE_URL}'g;\
 	" ${RT_PATH}/etc/RT_SiteConfig.pm
 
 install-rt:

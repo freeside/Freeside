@@ -86,12 +86,6 @@ sub _FreesideGetRecord {
 
 }
 
-sub FreesideURL {
-
-  return popurl(3);
-
-}
-
 sub FreesideVersion {
 
   return $FS::VERSION;

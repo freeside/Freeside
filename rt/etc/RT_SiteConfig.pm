@@ -11,6 +11,7 @@ $RT::WebFallbackToInternal = 1; #no
 $RT::WebExternalAuto = 1;
 
 $RT::URI::freeside::IntegrationType = 'Internal';
+$RT::URI::freeside::URL = '%%%FREESIDE_URL%%%';
 
 Set($DatabaseHost   , '');
 

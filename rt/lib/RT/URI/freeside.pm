@@ -28,7 +28,7 @@ package RT::URI::freeside;
 
 use RT::URI::base;
 use strict;
-use vars qw(@ISA $IntegrationType);
+use vars qw(@ISA $IntegrationType $URL);
 @ISA = qw/RT::URI::base/;
 
 
@@ -62,7 +62,7 @@ Returns the URL for freeside's web interface.
 
 =cut
 
-sub FreesideURL { return undef; }
+sub FreesideURL { return $URL; }
 
 
 =item FreesideVersion

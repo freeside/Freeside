@@ -28,7 +28,7 @@
 use strict;
 no warnings qw(redefine);
 
-use vars qw($URL $XMLRPC_URL $_FS_VERSION);
+use vars qw($XMLRPC_URL $_FS_VERSION);
 
 use Frontier::Client;
 
@@ -94,12 +94,6 @@ sub FreesideGetConfig {
 
 }
 
-
-sub FreesideURL {
-
-  return $URL;
-
-}
 
 sub FreesideVersion {
 
