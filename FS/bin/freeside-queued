@@ -30,6 +30,7 @@ $SIG{INT} = sub { warn "SIGINT received; shutting down\n"; $sigint++; };
 $SIG{TERM} = sub { warn "SIGTERM received; shutting down\n"; $sigterm++; };
 
 $> = $FS::UID::freeside_uid unless $>;
+$< = $>;
 $ENV{HOME} = (getpwuid($>))[7]; #for ssh
 adminsuidsetup $user;
 
