@@ -1,9 +1,11 @@
 #!/bin/sh
 
 ( cd /usr/ports/sysutils/portupgrade
+  #??? setenv WITH_OPENSSL_PORT "yes"
   make install
 )
 
+#rehash
 pkgdb -u
 
 portinstall -PR cvsup-without-gui
@@ -14,7 +16,7 @@ cvsup /root/ports-supfile
 
 portsdb -Uu
 
-portinstall -P -R portupgrade
+portinstall -PR portupgrade
 
 for port in `grep -v '^ *#' ports`; do
   #cd /usr/ports/$port
