@@ -7,6 +7,8 @@ use Tie::IxHash;
 use FS::Conf;
 use FS::Record qw( qsearch qsearchs dbh dbdef );
 use FS::pkg_svc;
+use FS::part_svc;
+use FS::cust_pkg;
 use FS::agent_type;
 use FS::type_pkgs;
 use FS::part_pkg_option;
@@ -109,16 +111,32 @@ sub clone {
   new $class ( \%hash ); # ?
 }
 
-=item insert
+=item insert [ , OPTION => VALUE ... ]
 
 Adds this package definition to the database.  If there is an error,
 returns the error, otherwise returns false.
+
+Currently available options are: I<pkg_svc>, I<primary_svc>, I<cust_pkg> and
+I<custnum_ref>.
+
+If I<pkg_svc> is set to a hashref with svcparts as keys and quantities as
+values, appropriate FS::pkg_svc records will be inserted.
+
+If I<primary_svc> is set to the svcpart of the primary service, the appropriate
+FS::pkg_svc record will be updated.
+
+If I<cust_pkg> is set to a pkgnum of a FS::cust_pkg record (or the FS::cust_pkg
+record itself), the object will be updated to point to this package definition.
+
+In conjunction with I<cust_pkg>, if I<custnum_ref> is set to a scalar reference,
+the scalar will be updated with the custnum value from the cust_pkg record.
 
 =cut
 
 sub insert {
   my $self = shift;
-  warn "FS::part_pkg::insert called on $self" if $DEBUG;
+  my %options = @_;
+  warn "FS::part_pkg::insert called on $self with options %options" if $DEBUG;
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -181,6 +199,44 @@ sub insert {
     }
   }
 
+  warn "  inserting pkg_svc records" if $DEBUG;
+  my $pkg_svc = $options{'pkg_svc'} || {};
+  foreach my $part_svc ( qsearch('part_svc', {} ) ) {
+    my $quantity = $pkg_svc->{$part_svc->svcpart} || 0;
+    my $primary_svc = $options{'primary_svc'} == $part_svc->svcpart ? 'Y' : '';
+
+    my $pkg_svc = new FS::pkg_svc( {
+      'pkgpart'     => $self->pkgpart,
+      'svcpart'     => $part_svc->svcpart,
+      'quantity'    => $quantity, 
+      'primary_svc' => $primary_svc,
+    } );
+    my $error = $pkg_svc->insert;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
+  if ( $options{'cust_pkg'} ) {
+    warn "  updating cust_pkg record " if $DEBUG;
+    my $old_cust_pkg =
+      ref($options{'cust_pkg'})
+        ? $options{'cust_pkg'}
+        : qsearchs('cust_pkg', { pkgnum => $options{'cust_pkg'} } );
+    ${ $options{'custnum_ref'} } = $old_cust_pkg->custnum
+      if $options{'custnum_ref'};
+    my %hash = $old_cust_pkg->hash;
+    $hash{'pkgpart'} = $self->pkgpart,
+    my $new_cust_pkg = new FS::cust_pkg \%hash;
+    local($FS::cust_pkg::disable_agentcheck) = 1;
+    my $error = $new_cust_pkg->replace($old_cust_pkg);
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "Error modifying cust_pkg record: $error";
+    }
+  }
+
   warn "  commiting transaction" if $DEBUG;
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
@@ -198,15 +254,27 @@ sub delete {
 # check & make sure the pkgpart isn't in cust_pkg or type_pkgs?
 }
 
-=item replace OLD_RECORD
+=item replace OLD_RECORD [ , OPTION => VALUE ... ]
 
 Replaces OLD_RECORD with this one in the database.  If there is an error,
 returns the error, otherwise returns false.
+
+Currently available options are: I<pkg_svc> and I<primary_svc>
+
+If I<pkg_svc> is set to a hashref with svcparts as keys and quantities as
+values, the appropriate FS::pkg_svc records will be replace.
+
+If I<primary_svc> is set to the svcpart of the primary service, the appropriate
+FS::pkg_svc record will be updated.
 
 =cut
 
 sub replace {
   my( $new, $old ) = ( shift, shift );
+  my %options = @_;
+  warn "FS::part_pkg::replace called on $new to replace $old ".
+       "with options %options"
+    if $DEBUG;
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -219,9 +287,11 @@ sub replace {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
+  warn "  saving legacy plandata" if $DEBUG;
   my $plandata = $new->get('plandata');
   $new->set('plandata', '');
 
+  warn "  deleting old part_pkg_option records" if $DEBUG;
   foreach my $part_pkg_option ( $old->part_pkg_option ) {
     my $error = $part_pkg_option->delete;
     if ( $error ) {
@@ -230,12 +300,14 @@ sub replace {
     }
   }
 
+  warn "  replacing part_pkg record" if $DEBUG;
   my $error = $new->SUPER::replace($old);
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
   }
 
+  warn "  inserting part_pkg_option records for plandata" if $DEBUG;
   foreach my $part_pkg_option ( 
     map { /^(\w+)=(.*)$/ or do { $dbh->rollback if $oldAutoCommit;
                                  return "illegal plandata: $plandata";
@@ -255,6 +327,39 @@ sub replace {
     }
   }
 
+  warn "  replacing pkg_svc records" if $DEBUG;
+  my $pkg_svc = $options{'pkg_svc'} || {};
+  foreach my $part_svc ( qsearch('part_svc', {} ) ) {
+    my $quantity = $pkg_svc->{$part_svc->svcpart} || 0;
+    my $primary_svc = $options{'primary_svc'} == $part_svc->svcpart ? 'Y' : '';
+
+    my $old_pkg_svc = qsearchs('pkg_svc', {
+      'pkgpart' => $old->pkgpart,
+      'svcpart' => $part_svc->svcpart,
+    } );
+    my $old_quantity = $old_pkg_svc ? $old_pkg_svc->quantity : 0;
+    my $old_primary_svc =
+      ( $old_pkg_svc && $old_pkg_svc->dbdef_table->column('primary_svc') )
+        ? $old_pkg_svc->primary_svc
+        : '';
+    next unless $old_quantity != $quantity || $old_primary_svc ne $primary_svc;
+  
+    my $new_pkg_svc = new FS::pkg_svc( {
+      'pkgpart'     => $new->pkgpart,
+      'svcpart'     => $part_svc->svcpart,
+      'quantity'    => $quantity, 
+      'primary_svc' => $primary_svc,
+    } );
+    my $error = $old_pkg_svc
+                  ? $new_pkg_svc->replace($old_pkg_svc)
+                  : $new_pkg_svc->insert;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
+  warn "  commiting transaction" if $DEBUG;
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
 }
