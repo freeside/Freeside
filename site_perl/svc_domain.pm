@@ -9,10 +9,11 @@ use Mail::Internet;
 use Mail::Header;
 use Date::Format;
 use FS::Record qw(fields qsearch qsearchs);
+use FS::svc_Common;
 use FS::cust_svc;
 use FS::Conf;
 
-@ISA = qw(FS::Record Exporter);
+@ISA = qw( FS::svc_Common );
 
 #ask FS::UID to run this stuff for us later
 $FS::UID::callback{'FS::domain'} = sub { 
@@ -68,7 +69,7 @@ FS::svc_domain - Object methods for svc_domain records
 =head1 DESCRIPTION
 
 An FS::svc_domain object represents a domain.  FS::svc_domain inherits from
-FS::Record.  The following fields are currently supported:
+FS::svc_Common.  The following fields are currently supported:
 
 =over 4
 
@@ -133,24 +134,8 @@ sub insert {
   return "Domain not found (see whois)"
     if ( $self->action eq "M" && $whois =~ /^No match for/ );
 
-  my $svcnum = $self->svcnum;
-  my $cust_svc;
-  unless ( $svcnum ) {
-    $cust_svc = new FS::cust_svc ( {
-      'svcnum'  => $svcnum,
-      'pkgnum'  => $self->pkgnum,
-      'svcpart' => $self->svcpart,
-    } );
-    my $error = $cust_svc->insert;
-    return $error if $error;
-    $svcnum = $self->setfield( 'svcnum', $cust_svc->svcnum );
-  }
-
   $error = $self->SUPER::insert;
-  if ( $error ) {
-    $cust_svc->delete if $cust_svc;
-    return $error;
-  }
+  return $error if $error;
 
   $self->submit_internic unless $whois_hack;
 
@@ -163,24 +148,6 @@ Deletes this domain from the database.  If there is an error, returns the
 error, otherwise returns false.
 
 The corresponding FS::cust_svc record will be deleted as well.
-
-=cut
-
-sub delete {
-  my $self = shift;
-  my $error;
-
-  my $svcnum = $self->svcnum;
-  
-  $error = $self->delete;
-  return $error if $error;
-
-  my $cust_svc = qsearchs( 'cust_svc', { 'svcnum' => $svcnum } );  
-  $error = $cust_svc->delete;
-  return $error if $error;
-
-  '';
-}
 
 =item replace OLD_RECORD
 
@@ -206,35 +173,17 @@ Just returns false (no error) for now.
 
 Called by the suspend method of FS::cust_pkg (see L<FS::cust_pkg>).
 
-=cut
-
-sub suspend {
-  ''; #no error (stub)
-}
-
 =item unsuspend
 
 Just returns false (no error) for now.
 
 Called by the unsuspend method of FS::cust_pkg (see L<FS::cust_pkg>).
 
-=cut
-
-sub unsuspend {
-  ''; #no error (stub)
-}
-
 =item cancel
 
 Just returns false (no error) for now.
 
 Called by the cancel method of FS::cust_pkg (see L<FS::cust_pkg>).
-
-=cut
-
-sub cancel {
-  ''; #no error (stub)
-}
 
 =item check
 
@@ -248,44 +197,28 @@ Sets any fixed values; see L<FS::part_svc>.
 
 sub check {
   my $self = shift;
+  my $error;
+
+  my $x = $self->setfixed;
+  return $x unless ref($x);
+  my $part_svc = $x;
+
+  #hmm
+  my $pkgnum;
+  if ( $self->svcnum ) {
+    my $cust_svc = qsearchs( 'cust_svc', { 'svcnum' => $self->svcnum } );
+    $pkgnum = $cust_svc->pkgnum;
+  } else {
+    $pkgnum = $self->pkgnum;
+  }
 
   my($recref) = $self->hashref;
 
-  my $error;
-
-  $error =
-    $self->ut_numbern('svcnum')
-  ;
-  return $error if $error;
-
-  #get part_svc (and pkgnum)
-  my($svcpart,$pkgnum);
-  my($svcnum)=$self->getfield('svcnum');
-  if ($svcnum) {
-    my($cust_svc)=qsearchs('cust_svc',{'svcnum'=>$svcnum});
-    return "Unknown svcnum" unless $cust_svc; 
-    $svcpart=$cust_svc->svcpart;
-    $pkgnum=$cust_svc->pkgnum;
-  } else {
-    $svcpart=$self->svcpart;
-    $pkgnum=$self->pkgnum;
-  }
-  my($part_svc)=qsearchs('part_svc',{'svcpart'=>$svcpart});
-  return "Unkonwn svcpart" unless $part_svc;
-
-  #set fixed fields from part_svc
-  my($field);
-  foreach $field ( fields('svc_acct') ) {
-    if ( $part_svc->getfield('svc_domain__'. $field. '_flag') eq 'F' ) {
-      $self->setfield($field,$part_svc->getfield('svc_domain__'. $field) );
-    }
-  }
-
   unless ( $whois_hack ) {
     unless ( $self->email ) { #find out an email address
-      my(@svc_acct);
-      foreach ( qsearch('cust_svc',{'pkgnum'=>$pkgnum}) ) {
-        my($svc_acct)=qsearchs('svc_acct',{'svcnum'=>$_->svcnum});
+      my @svc_acct;
+      foreach ( qsearch( 'cust_svc', { 'pkgnum' => $pkgnum } ) ) {
+        my $svc_acct = qsearchs( 'svc_acct', { 'svcnum' => $_->svcnum } );
         push @svc_acct, $svc_acct if $svc_acct;
       }
 
@@ -349,7 +282,7 @@ sub submit_internic {
 
   my $cust_pkg = qsearchs( 'cust_pkg', { 'pkgnum' => $self->pkgnum } );
   return unless $cust_pkg;
-  my cust_main) = qsearchs( 'cust_main', { 'custnum' => $cust_pkg->custnum } );
+  my $cust_main = qsearchs( 'cust_main', { 'custnum' => $cust_pkg->custnum } );
   return unless $cust_main;
 
   my %subs = (
@@ -453,7 +386,7 @@ sub submit_internic {
 
 =head1 VERSION
 
-$Id: svc_domain.pm,v 1.4 1998-12-29 11:59:55 ivan Exp $
+$Id: svc_domain.pm,v 1.5 1998-12-30 00:30:47 ivan Exp $
 
 =head1 BUGS
 
@@ -465,11 +398,12 @@ All registries should be supported.
 
 Should change action to a real field.
 
+The $recref stuff in sub check should be cleaned up.
+
 =head1 SEE ALSO
 
-L<FS::Record>, L<FS::Conf>, L<FS::cust_svc>, L<FS::part_svc>, L<FS::cust_pkg>,
-L<FS::SSH>, L<ssh>, L<dot-qmail>, schema.html from the base documentation,
-config.html from the base documentation.
+L<FS::svc_Common>, L<FS::Record>, L<FS::Conf>, L<FS::cust_svc>,
+L<FS::part_svc>, L<FS::cust_pkg>, L<FS::SSH>, L<ssh>, L<dot-qmail>, schema.html from the base documentation, config.html from the base documentation.
 
 =head1 HISTORY
 
@@ -488,8 +422,8 @@ ivan@sisd.com 98-jul-17-19
 pod, some FS::Conf (not complete) ivan@sisd.com 98-sep-23
 
 $Log: svc_domain.pm,v $
-Revision 1.4  1998-12-29 11:59:55  ivan
-mostly properly OO, some work still to be done with svc_ stuff
+Revision 1.5  1998-12-30 00:30:47  ivan
+svc_ stuff is more properly OO - has a common superclass FS::svc_Common
 
 Revision 1.3  1998/11/13 09:56:57  ivan
 change configuration file layout to support multiple distinct databases (with

@@ -6,7 +6,7 @@ use FS::cust_bill;
 
 @ISA = qw(FS::cust_bill);
 
-#warn "FS::Invoice depriciated\n";
+warn "FS::Invoice depriciated\n";
 
 =head1 NAME
 

@@ -3,11 +3,12 @@ package FS::svc_acct_sm;
 use strict;
 use vars qw( @ISA $nossh_hack $conf $shellmachine @qmailmachines );
 use FS::Record qw( fields qsearch qsearchs );
+use FS::svc_Common;
 use FS::cust_svc;
 use FS::SSH qw(ssh);
 use FS::Conf;
 
-@ISA = qw( FS::Record );
+@ISA = qw( FS::svc_Common );
 
 #ask FS::UID to run this stuff for us later
 $FS::UID::callback{'FS::svc_acct_sm'} = sub { 
@@ -94,8 +95,8 @@ This behaviour can be surpressed by setting $FS::svc_acct_sm::nossh_hack true.
 =cut
 
 sub insert {
-  my($self)=@_;
-  my($error);
+  my $self = shift;
+  my $error;
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -116,34 +117,18 @@ sub insert {
     if $self->domuser ne '*' &&
        ! qsearch('svc_acct_sm',{ 'domsvc' => $self->domsvc } );
 
-  my($svcnum)=$self->getfield('svcnum');
-  my($cust_svc);
-  unless ( $svcnum ) {
-    $cust_svc=create FS::cust_svc ( {
-      'svcnum'  => $svcnum,
-      'pkgnum'  => $self->getfield('pkgnum'),
-      'svcpart' => $self->getfield('svcpart'),
-    } );
-    my($error) = $cust_svc->insert;
-    return $error if $error;
-    $svcnum = $self->setfield('svcnum',$cust_svc->getfield('svcnum'));
-  }
+  $error = $self->SUPER::insert;
+  return $error if $error;
 
-  $error = $self->add;
-  if ($error) {
-    $cust_svc->del if $cust_svc;
-    return $error;
-  }
-
-  my $svc_domain = qsearchs('svc_domain',{'svcnum'=> $self->domsvc } );
-  my $svc_acct = qsearchs('svc_acct',{'uid'=> $self->domuid } );
-  my($uid,$gid,$dir,$domain)=(
-    $svc_acct->getfield('uid'),
-    $svc_acct->getfield('gid'),
-    $svc_acct->getfield('dir'),
-    $svc_domain->getfield('domain')
+  my $svc_domain = qsearchs( 'svc_domain', { 'svcnum' => $self->domsvc } );
+  my $svc_acct = qsearchs( 'svc_acct', { 'uid' => $self->domuid } );
+  my ( $uid, $gid, $dir, $domain ) = (
+    $svc_acct->uid,
+    $svc_acct->gid,
+    $svc_acct->dir,
+    $svc_domain->domain,
   );
-  my($qdomain)=$domain;
+  my $qdomain = $domain;
   $qdomain =~ s/\./:/g; #see manpage for 'dot-qmail': EXTENSION ADDRESSES
   ssh("root\@$shellmachine","[ -e $dir/.qmail-$qdomain-default ] || { touch $dir/.qmail-$qdomain-default; chown $uid:$gid $dir/.qmail-$qdomain-default; }")  
     if ( ! $nossh_hack && $shellmachine && $dir && $self->domuser eq '*' );
@@ -159,25 +144,6 @@ returns the error, otherwise returns false.
 
 The corresponding FS::cust_svc record will be deleted as well.
 
-=cut
-
-sub delete {
-  my($self)=@_;
-  my($error);
-
-  my($svcnum)=$self->getfield('svcnum');
-
-  $error = $self->del;
-  return $error if $error;
-
-  my($cust_svc)=qsearchs('cust_svc',{'svcnum'=>$svcnum});
-  $error = $cust_svc->del;
-  return $error if $error;
-
-  '';
-  
-}
-
 =item replace OLD_RECORD
 
 Replaces OLD_RECORD with this one in the database.  If there is an error,
@@ -186,12 +152,8 @@ returns the error, otherwise returns false.
 =cut
 
 sub replace {
-  my($new,$old)=@_;
-  my($error);
-
-  return "(Old) Not a svc_acct_sm record!" unless $old->table eq "svc_acct_sm";
-  return "Can't change svcnum!"
-    unless $old->getfield('svcnum') eq $new->getfield('svcnum');
+  my ( $new, $old ) = ( shift, shift );
+  my $error;
 
   return "Domain username (domuser) in use for this domain (domsvc)"
     if ( $old->domuser ne $new->domuser
@@ -202,13 +164,8 @@ sub replace {
        } )
      ;
 
-  $error=$new->check;
-  return $error if $error;
+ $new->SUPER::replace($old);
 
-  $error = $new->rep($old);
-  return $error if $error;
-
-  ''; #no error
 }
 
 =item suspend
@@ -217,35 +174,17 @@ Just returns false (no error) for now.
 
 Called by the suspend method of FS::cust_pkg (see L<FS::cust_pkg>).
 
-=cut
-
-sub suspend {
-  ''; #no error (stub)
-}
-
 =item unsuspend
 
 Just returns false (no error) for now.
 
 Called by the unsuspend method of FS::cust_pkg (see L<FS::cust_pkg>).
 
-=cut
-
-sub unsuspend {
-  ''; #no error (stub)
-}
-
 =item cancel
 
 Just returns false (no error) for now.
 
 Called by the cancel method of FS::cust_pkg (see L<FS::cust_pkg>).
-
-=cut
-
-sub cancel {
-  ''; #no error (stub)
-}
 
 =item check
 
@@ -258,33 +197,14 @@ Sets any fixed values; see L<FS::part_svc>.
 =cut
 
 sub check {
-  my($self)=@_;
-  return "Not a svc_acct_sm record!" unless $self->table eq "svc_acct_sm";
+  my $self = shift;
+  my $error;
+
+  my $x = $self->setfixed;
+  return $x unless ref($x);
+  my $part_svc = $x;
+
   my($recref) = $self->hashref;
-
-  $recref->{svcnum} =~ /^(\d*)$/ or return "Illegal svcnum";
-  $recref->{svcnum} = $1;
-
-  #get part_svc
-  my($svcpart);
-  my($svcnum)=$self->getfield('svcnum');
-  if ($svcnum) {
-    my($cust_svc)=qsearchs('cust_svc',{'svcnum'=>$svcnum});
-    return "Unknown svcnum" unless $cust_svc; 
-    $svcpart=$cust_svc->svcpart;
-  } else {
-    $svcpart=$self->getfield('svcpart');
-  }
-  my($part_svc)=qsearchs('part_svc',{'svcpart'=>$svcpart});
-  return "Unkonwn svcpart" unless $part_svc;
-
-  #set fixed fields from part_svc
-  my($field);
-  foreach $field ( fields('svc_acct_sm') ) {
-    if ( $part_svc->getfield('svc_acct_sm__'. $field. '_flag') eq 'F' ) {
-      $self->setfield($field,$part_svc->getfield('svc_acct_sm__'. $field) );
-    }
-  }
 
   $recref->{domuser} =~ /^(\*|[a-z0-9_\-]{2,32})$/
     or return "Illegal domain username (domuser)";
@@ -309,11 +229,13 @@ sub check {
 
 =head1 VERSION
 
-$Id: svc_acct_sm.pm,v 1.3 1998-12-29 11:59:54 ivan Exp $
+$Id: svc_acct_sm.pm,v 1.4 1998-12-30 00:30:46 ivan Exp $
 
 =head1 BUGS
 
 The remote commands should be configurable.
+
+The $recref stuff in sub check should be cleaned up.
 
 =head1 SEE ALSO
 

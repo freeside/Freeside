@@ -2,7 +2,7 @@ package FS::agent;
 
 use strict;
 use vars qw( @ISA );
-use FS::Record qw( qsearch qsearchs);
+use FS::Record qw( qsearch qsearchs );
 use FS::cust_main;
 use FS::agent_type;
 
@@ -116,7 +116,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: agent.pm,v 1.3 1998-12-29 11:59:34 ivan Exp $
+$Id: agent.pm,v 1.4 1998-12-30 00:30:44 ivan Exp $
 
 =head1 BUGS
 

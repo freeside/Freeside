@@ -5,10 +5,10 @@ use vars qw(@ISA $nossh_hack $conf $dir_prefix @shells
             $shellmachine @saltset @pw_set);
 use FS::Conf;
 use FS::Record qw( qsearchs fields );
+use FS::svc_Common;
 use FS::SSH qw(ssh);
-use FS::cust_svc;
 
-@ISA = qw( FS::Record );
+@ISA = qw( FS::svc_Common );
 
 #ask FS::UID to run this stuff for us later
 $FS::UID::callback{'FS::svc_acct'} = sub { 
@@ -51,7 +51,7 @@ FS::svc_acct - Object methods for svc_acct records
 =head1 DESCRIPTION
 
 An FS::svc_acct object represents an account.  FS::svc_acct inherits from
-FS::Record.  The following fields are currently supported:
+FS::svc_Common.  The following fields are currently supported:
 
 =over 4
 
@@ -135,24 +135,8 @@ sub insert {
       && $self->username !~ /^(hyla)?fax$/
     ;
 
-  my $svcnum = $self->svcnum;
-  my $cust_svc;
-  unless ( $svcnum ) {
-    $cust_svc = new FS::cust_svc ( {
-      'svcnum'  => $svcnum,
-      'pkgnum'  => $self->pkgnum,
-      'svcpart' => $self->svcpart,
-    } );
-    my $error = $cust_svc->insert;
-    return $error if $error;
-    $svcnum = $self->svcnum($cust_svc->svcnum);
-  }
-
   $error = $self->SUPER::insert;
-  if ($error) {
-    $cust_svc->delete if $cust_svc;
-    return $error;
-  }
+  return $error if $error;
 
   my ( $username, $uid, $dir, $shell ) = (
     $self->username,
@@ -205,13 +189,7 @@ sub delete {
   local $SIG{TERM} = 'IGNORE';
   local $SIG{TSTP} = 'IGNORE';
 
-  my $svcnum = $self->getfield('svcnum');
-
   $error = $self->SUPER::delete;
-  return $error if $error;
-
-  my $cust_svc = qsearchs( 'cust_svc' , { 'svcnum' => $svcnum } );  
-  $error = $cust_svc->delete;
   return $error if $error;
 
   my $username = $self->username;
@@ -247,7 +225,7 @@ setting $FS::svc_acct::nossh_hack true.
 =cut
 
 sub replace {
-  my ( $new, $old ) = @_;
+  my ( $new, $old ) = ( shift, shift );
   my $error;
 
   return "Username in use"
@@ -336,12 +314,6 @@ Just returns false (no error) for now.
 
 Called by the cancel method of FS::cust_pkg (see L<FS::cust_pkg>).
 
-=cut
-
-sub cancel {
-  ''; #stub (no error) - taken care of in delete
-}
-
 =item check
 
 Checks all fields to make sure this is a valid service.  If there is an error,
@@ -357,31 +329,11 @@ sub check {
 
   my($recref) = $self->hashref;
 
-  $recref->{svcnum} =~ /^(\d*)$/ or return "Illegal svcnum";
-  $recref->{svcnum} = $1;
+  my $x = $self->setfixed;
+  return $x unless ref($x);
+  my $part_svc = $x;
 
-  #get part_svc
-  my($svcpart);
-  my($svcnum)=$self->getfield('svcnum');
-  if ($svcnum) {
-    my($cust_svc)=qsearchs('cust_svc',{'svcnum'=>$svcnum});
-    return "Unknown svcnum" unless $cust_svc; 
-    $svcpart=$cust_svc->svcpart;
-  } else {
-    $svcpart=$self->getfield('svcpart');
-  }
-  my($part_svc)=qsearchs('part_svc',{'svcpart'=>$svcpart});
-  return "Unkonwn svcpart" unless $part_svc;
-
-  #set fixed fields from part_svc
-  my($field);
-  foreach $field ( fields('svc_acct') ) {
-    if ( $part_svc->getfield('svc_acct__'. $field. '_flag') eq 'F' ) {
-      $self->setfield($field,$part_svc->getfield('svc_acct__'. $field) );
-    }
-  }
-
-  my($ulen)=$self->dbdef_table->column('username')->length;
+  my $ulen =$self->dbdef_table->column('username')->length;
   $recref->{username} =~ /^([a-z0-9_\-]{2,$ulen})$/
     or return "Illegal username";
   $recref->{username} = $1;
@@ -488,14 +440,11 @@ sub check {
 
 =head1 VERSION
 
-$Id: svc_acct.pm,v 1.3 1998-12-29 11:59:52 ivan Exp $
+$Id: svc_acct.pm,v 1.4 1998-12-30 00:30:45 ivan Exp $
 
 =head1 BUGS
 
 The remote commands should be configurable.
-
-The new method should set defaults from part_svc (like the check method
-sets fixed values).
 
 The bits which ssh should fork before doing so.
 
@@ -503,9 +452,9 @@ The $recref stuff in sub check should be cleaned up.
 
 =head1 SEE ALSO
 
-L<FS::Record>, L<FS::Conf>, L<FS::cust_svc>, L<FS::part_svc>, L<FS::cust_pkg>,
-L<FS::SSH>, L<ssh>, L<FS::svc_acct_pop>, schema.html from the base
-documentation.
+L<FS::svc_Common>, L<FS::Record>, L<FS::Conf>, L<FS::cust_svc>,
+L<FS::part_svc>, L<FS::cust_pkg>, L<FS::SSH>, L<ssh>, L<FS::svc_acct_pop>,
+schema.html from the base documentation.
 
 =head1 HISTORY
 
@@ -533,8 +482,8 @@ arbitrary radius attributes ivan@sisd.com 98-aug-13
 pod and FS::conf ivan@sisd.com 98-sep-22
 
 $Log: svc_acct.pm,v $
-Revision 1.3  1998-12-29 11:59:52  ivan
-mostly properly OO, some work still to be done with svc_ stuff
+Revision 1.4  1998-12-30 00:30:45  ivan
+svc_ stuff is more properly OO - has a common superclass FS::svc_Common
 
 Revision 1.2  1998/11/13 09:56:55  ivan
 change configuration file layout to support multiple distinct databases (with

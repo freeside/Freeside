@@ -2,10 +2,11 @@ package FS::svc_table;
 
 use strict;
 use vars qw(@ISA);
-use FS::Record qw(fields qsearch qsearchs);
+#use FS::Record qw( qsearch qsearchs );
+use FS::svc_Common;
 use FS::cust_svc;
 
-@ISA = qw(FS::Record);
+@ISA = qw(svc_Common);
 
 =head1 NAME
 
@@ -35,7 +36,7 @@ FS::table_name - Object methods for table_name records
 =head1 DESCRIPTION
 
 An FS::table_name object represents an example.  FS::table_name inherits from
-FS::Record.  The following fields are currently supported:
+FS::svc_Common.  The following fields are currently supported:
 
 =over 4
 
@@ -69,38 +70,13 @@ defined.  An FS::cust_svc record will be created and inserted.
 =cut
 
 sub insert {
-  my($self)=@_;
-  my($error);
+  my $self = shift;
+  my $error;
 
-  local $SIG{HUP} = 'IGNORE';
-  local $SIG{INT} = 'IGNORE';
-  local $SIG{QUIT} = 'IGNORE';
-  local $SIG{TERM} = 'IGNORE';
-  local $SIG{TSTP} = 'IGNORE';
-
-  $error=$self->check;
+  $error = $self->SUPER::insert;
   return $error if $error;
 
-  my($svcnum)=$self->svcnum;
-  my($cust_svc);
-  unless ( $svcnum ) {
-    $cust_svc=create FS::cust_svc ( {
-      'svcnum'  => $svcnum,
-      'pkgnum'  => $self->pkgnum,
-      'svcpart' => $self->svcpart,
-    } );
-    my($error) = $cust_svc->insert;
-    return $error if $error;
-    $svcnum = $self->svcnum($cust_svc->svcnum);
-  }
-
-  $error = $self->add;
-  if ($error) {
-    #$cust_svc->del if $cust_svc;
-    $cust_svc->delete if $cust_svc;
-    return $error;
-
-  ''; #no error
+  '';
 }
 
 =item delete
@@ -110,12 +86,13 @@ Delete this record from the database.
 =cut
 
 sub delete {
-  my($self)=@_;
-  my($error);
+  my $self = shift;
+  my $error;
 
-  $error = $self->del;
+  $error = $self->SUPER::delete;
   return $error if $error;
 
+  '';
 }
 
 
@@ -127,54 +104,26 @@ returns the error, otherwise returns false.
 =cut
 
 sub replace {
-  my($new,$old)=@_;
-  my($error);
+  my ( $new, $old ) = ( shift, shift );
+  my $error;
 
-  return "(Old) Not a svc_table record!" unless $old->table eq "svc_table";
-  return "Can't change svcnum!"
-    unless $old->getfield('svcnum') eq $new->getfield('svcnum');
-
-  $error=$new->check;
+  $error = $new->SUPER::replace($old);
   return $error if $error;
 
-  $error = $new->rep($old);
-  return $error if $error;
-
-  ''; #no error
+  '';
 }
 
 =item suspend
 
 Called by the suspend method of FS::cust_pkg (see L<FS::cust_pkg>).
 
-=cut
-
-sub suspend {
-  ''; #no error (stub)
-}
-
 =item unsuspend
 
 Called by the unsuspend method of FS::cust_pkg (see L<FS::cust_pkg>).
 
-=cut
-
-sub unsuspend {
-  ''; #no error (stub)
-}
-
-
 =item cancel
 
-Just returns false (no error) for now.
-
 Called by the cancel method of FS::cust_pkg (see L<FS::cust_pkg>).
-
-=cut
-
-sub cancel {
-  ''; #no error (stub)
-}
 
 =item check
 
@@ -185,33 +134,12 @@ and repalce methods.
 =cut
 
 sub check {
-  my($self)=@_;
-  return "Not a svc_table record!" unless $self->table eq "svc_table";
-  my($recref) = $self->hashref;
+  my $self = shift;
 
-  $recref->{svcnum} =~ /^(\d+)$/ or return "Illegal svcnum";
-  $recref->{svcnum} = $1;
+  my $x = $self->setfixed;
+  return $x unless ref($x);
+  my $part_svc = $x;
 
-  #get part_svc
-  my($svcpart);
-  my($svcnum)=$self->getfield('svcnum');
-  if ($svcnum) {
-    my($cust_svc)=qsearchs('cust_svc',{'svcnum'=>$svcnum});
-    return "Unknown svcnum" unless $cust_svc; 
-    $svcpart=$cust_svc->svcpart;
-  } else {
-    $svcpart=$self->getfield('svcpart');
-  }
-  my($part_svc)=qsearchs('part_svc',{'svcpart'=>$svcpart});
-  return "Unkonwn svcpart" unless $part_svc;
-
-  #set fixed fields from part_svc
-  my($field);
-  foreach $field ( fields('svc_acct') ) {
-    if ( $part_svc->getfield('svc_acct__'. $field. '_flag') eq 'F' ) {
-      $self->setfield($field,$part_svc->getfield('svc_acct__'. $field) );
-    }
-  }
 
   ''; #no error
 }
@@ -220,7 +148,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: table_template-svc.pm,v 1.3 1998-12-29 11:59:56 ivan Exp $
+$Id: table_template-svc.pm,v 1.4 1998-12-30 00:30:48 ivan Exp $
 
 =head1 BUGS
 
@@ -228,16 +156,16 @@ The author forgot to customize this manpage.
 
 =head1 SEE ALSO
 
-L<FS::Record>, L<FS::cust_svc>, L<FS::part_svc>, L<FS::cust_pkg>, schema.html
-froom the base documentation.
+L<FS::svc_Common>, L<FS::Record>, L<FS::cust_svc>, L<FS::part_svc>,
+L<FS::cust_pkg>, schema.html from the base documentation.
 
 =head1 HISTORY
 
 ivan@voicenet.com 97-jul-21
 
 $Log: table_template-svc.pm,v $
-Revision 1.3  1998-12-29 11:59:56  ivan
-mostly properly OO, some work still to be done with svc_ stuff
+Revision 1.4  1998-12-30 00:30:48  ivan
+svc_ stuff is more properly OO - has a common superclass FS::svc_Common
 
 Revision 1.2  1998/11/15 04:33:01  ivan
 updates for newest versoin
