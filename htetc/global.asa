@@ -207,15 +207,15 @@ sub sprintAutoProfile {
 
 sub include {
   my $file = shift;
-  my $pop = 0;
+  my $shift = 0;
   if ( $file =~ m(^([^/].*)/[^/]+) ) {
-    push @{$Response->{asp}{includes_dir}}, "./$1";
-    $pop = 1;
+    unshift @{$Response->{asp}{includes_dir}}, "./$1";
+    $shift = 1;
   }
   $file =~ s(^/)(%%%FREESIDE_DOCUMENT_ROOT%%%/);
   #broken in 5.005# ${$Response->TrapInclude($file, @_)};
   my $ref = $Response->TrapInclude($file, @_);
-  pop @{$Response->{asp}{includes_dir}} if $pop;
+  shift @{$Response->{asp}{includes_dir}} if $shift;
   $$ref;
 }
 
