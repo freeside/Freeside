@@ -3,7 +3,7 @@ package FS::queue;
 use strict;
 use vars qw( @ISA @EXPORT_OK $DEBUG $conf $jobnums);
 use Exporter;
-use FS::UID;
+use FS::UID qw(myconnect);
 use FS::Conf;
 use FS::Record qw( qsearch qsearchs dbh );
 #use FS::queue;
@@ -15,7 +15,6 @@ use FS::cust_svc;
 @EXPORT_OK = qw( joblisting );
 
 $DEBUG = 0;
-#$DEBUG = 1;
 
 $FS::UID::callback{'FS::queue'} = sub {
   $conf = new FS::Conf;
@@ -305,6 +304,38 @@ sub depended_delete {
     $error = $job->delete;
     return $error if $error
   }
+}
+
+=item update_statustext VALUE
+
+Updates the statustext value of this job to supplied value, in the database.
+If there is an error, returns the error, otherwise returns false.
+
+=cut
+
+use vars qw($_update_statustext_dbh);
+sub update_statustext {
+  my( $self, $statustext ) = @_;
+  return '' if $statustext eq $self->statustext;
+  warn "updating statustext for $self to $statustext" if $DEBUG;
+
+  $_update_statustext_dbh ||= myconnect;
+
+  my $sth = $_update_statustext_dbh->prepare(
+    'UPDATE queue set statustext = ? WHERE jobnum = ?'
+  ) or return $_update_statustext_dbh->errstr;
+
+  $sth->execute($statustext, $self->jobnum) or return $sth->errstr;
+  $_update_statustext_dbh->commit or die $_update_statustext_dbh->errstr;
+  $self->statustext($statustext);
+  '';
+
+  #my $new = new FS::queue { $self->hash };
+  #$new->statustext($statustext);
+  #my $error = $new->replace($self);
+  #return $error if $error;
+  #$self->statustext($statustext);
+  #'';
 }
 
 =back

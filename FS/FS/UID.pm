@@ -98,7 +98,7 @@ sub forksuidsetup {
 }
 
 sub myconnect {
-  $dbh = DBI->connect( getsecrets, {'AutoCommit' => 0, 'ChopBlanks' => 1, } )
+  DBI->connect( getsecrets, {'AutoCommit' => 0, 'ChopBlanks' => 1, } )
     or die "DBI->connect error: $DBI::errstr\n";
 }
 

@@ -1,52 +1,7 @@
 <%
 
-my($rate, $error);
-
-if ( $cgi->param('magic') eq 'process' ) {
-
-  my $ratenum = $cgi->param('ratenum');
-  
-  my $old = qsearchs('rate', { 'ratenum' => $ratenum } ) if $ratenum;
-  
-  my @rate_detail = map {
-    my $regionnum = $_->regionnum;
-    if ( $cgi->param("sec_granularity$regionnum") ) {
-      new FS::rate_detail {
-        'dest_regionnum'  => $regionnum,
-        map { $_ => scalar($cgi->param("$_$regionnum")) }
-            qw( min_included min_charge sec_granularity )
-      };
-    } else {
-      new FS::rate_detail {
-        'dest_regionnum'  => $regionnum,
-        'min_included'    => 0,
-        'min_charge'      => 0,
-        'sec_granularity' => '60'
-      };
-    }
-  } qsearch('rate_region', {} );
-  
-  $rate = new FS::rate ( {
-    map {
-      $_, scalar($cgi->param($_));
-    } fields('rate')
-  } );
-  
-  if ( $ratenum ) {
-    warn "$rate replacing $old ($ratenum)\n";
-    $error = $rate->replace($old, 'rate_detail' => \@rate_detail );
-  } else {
-    warn "inserting $rate\n";
-    $error = $rate->insert( 'rate_detail' => \@rate_detail );
-    $ratenum = $rate->getfield('ratenum');
-  }
-
-  unless ( $error ) {
-    print $cgi->redirect("${p}browse/rate.cgi");
-    myexit;
-  }
-  
-} elsif ( $cgi->keywords ) {
+my $rate;
+if ( $cgi->keywords ) {
   my($query) = $cgi->keywords;
   $query =~ /^(\d+)$/;
   $rate = qsearchs( 'rate', { 'ratenum' => $1 } );
@@ -77,12 +32,41 @@ END
     ))
 %>
 
-<% if ( $error ) { %>
-<FONT SIZE="+1" COLOR="#ff0000">Error: <%= $error %></FONT><BR>
-<% } %>
+<!-- <FORM ACTION="<%=$p1%>rate.cgi" NAME="OneTrueForm" METHOD=POST onSubmit="document.OneTrueForm.submit.disabled=true"> -->
 
-<FORM ACTION="<%=$p1%>rate.cgi" NAME="OneTrueForm" METHOD=POST onSubmit="document.OneTrueForm.submit.disabled=true">
-<INPUT TYPE="hidden" NAME="magic" VALUE="process">
+<SCRIPT TYPE="text/javascript" SRC="../elements/jsrsClient.js"></SCRIPT>
+<SCRIPT TYPE="text/javascript">
+function process () {
+  document.OneTrueForm.submit.disabled=true;
+
+  var Hash = new Array();
+  var x = 0;
+  var fieldName;
+  for (var i = 0; i<document.OneTrueForm.elements.length; i++) {
+    fieldName = document.OneTrueForm.elements[i].name;
+    if (    (fieldName.indexOf('rate') > -1)
+         || (fieldName.indexOf('min_') > -1) 
+         || (fieldName.indexOf('sec_') > -1) 
+       )
+    {
+        Hash[x++] = fieldName;
+        Hash[x++] = document.OneTrueForm.elements[i].value;
+    }
+  }
+
+  jsrsPOST = true;
+  jsrsExecute( 'process/rate.cgi', myCallback, 'process_rate', Hash );
+
+  function myCallback( jobnum ) {
+    var progressWindow = window.open('../../misc/progress.html?jobnum=' + jobnum + ';url=<%=$p%>browse/rate.cgi', 'progressWindow', 'toolbar=no,location=no,directories=no,scrollbars=no,menubar=no,status=no,width=420,height=128');
+    progressWindow.opener = self;
+    //progressWindow.opener = document;
+  }
+
+}
+</SCRIPT>
+
+<FORM NAME="OneTrueForm">
 <INPUT TYPE="hidden" NAME="ratenum" VALUE="<%= $rate->ratenum %>">
 
 Rate plan
@@ -135,11 +119,12 @@ Rate plan
 
 </TABLE>
 
-<BR><INPUT NAME="submit" TYPE="submit" VALUE="<%= 
+<BR><INPUT NAME="submit" TYPE="button" VALUE="<%= 
   $rate->ratenum ? "Apply changes" : "Add rate plan"
-%>">
-Please be patient, <%= $rate->ratenum ? 'editing' : 'adding' %>
-a rate plan can take a few minutes...
+%>" onClick="document.OneTrueForm.submit.disabled=true; process();">
+Please make sure to allow popups from this site in order to view the progress window.
+<!-- Please be patient, <%= $rate->ratenum ? 'editing' : 'adding' %>
+a rate plan can take a few minutes... -->
 
     </FORM>
   </BODY>

@@ -113,7 +113,7 @@ Infostreet export.
 Richard Siddall <richard.siddall@elirion.net> sent in Mason fixes and other
 things I'm probably forgetting.
 
-Contains "JS Calendar" v0.9.3 <http://dynarch.com/mishoo/calendar.epl>
+Contains "JS Calendar" <http://dynarch.com/mishoo/calendar.epl>
 by Mihai Bazon <mishoo@infoiasi.ro> licensed under the terms of the GNU LGPL.
 
 Latex invoice template based on a template from eBills
@@ -136,6 +136,14 @@ released with 1.4.2beta1 and 1.5.0pre6.
 
 Troy Hammonds <troyh@netsignia.net> sent in RADIUS session history viewing
 code and other things I'm probably forgetting.
+
+Contains the "Javascript Remote Scripting (JSRS)" client library
+<http://www.ashleyit.com/rs/main.htm> by Brent Ashley <brent@ashleyit.com>
+licensed under the "No Nonsense Copyright and License" (see the included
+JSRS-LICENSE file).
+
+Contains the QLIB JavaScript library <http://qlib.quazzle.com/> by 
+Quazzle.com, Serge Dolgov, licensed under the terms of the GNU GPL.
 
 Everything else is my (Ivan Kohler <ivan@420.am>) fault.
 

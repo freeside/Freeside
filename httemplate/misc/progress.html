@@ -1,0 +1,88 @@
+<%
+  my( $jobnum ) = $cgi->param('jobnum');
+  my( $url ) = $cgi->param('url');
+  my $job = '';
+  if ( $jobnum =~ /^(\d+)$/ ) {
+    $job = qsearchs('queue', { 'jobnum' => $jobnum } );
+  }
+  if ( $job && $job->status ne 'failed' ) {
+%>
+
+<HTML>
+  <HEAD>
+    <TITLE>
+      Please wait...
+    </TITLE>
+    <META HTTP-Equiv="Cache-Control" Content="no-cache">
+    <META HTTP-Equiv="Pragma" Content="no-cache">
+    <META HTTP-Equiv="Expires" Content="0"> 
+
+    <!-- could do more JSRS magic and avoid refreshing... but works for now -->
+    <META HTTP-Equiv="Refresh" Content="5">
+  </HEAD>
+  <BODY BGCOLOR="#e8e8e8">
+    <P ALIGN="center">Please wait...
+    <script TYPE="text/javascript" src="../elements/qlib/control.js"></script>
+    <script TYPE="text/javascript" src="../elements/qlib/imagelist.js"></script>
+    <script TYPE="text/javascript" src="../elements/qlib/progress.js"></script>
+    <P ALIGN="center">
+    <script TYPE="text/javascript">
+      // Create imagelist
+      SEGS = new QImageList(4, 23, "../images/progressbar-empty.png", "../images/progressbar-full.png");
+
+      // Create bars
+      bar1 = new QProgress(null, "bar1", SEGS, 100);
+      bar1.set(<%= $job->statustext %>);
+      // bar1.update;
+    </script>
+    <BR><%= $job->statustext %>%
+    <P ALIGN="center">(progress of job #<%= $jobnum %>)
+  </BODY>
+</HTML>
+
+<%
+  } elsif ( !$job ) { #handle job gone case : job sucessful
+                      # so close popup, redirect parent window...
+    #eidiot("write success handler (jobnum $jobnum)");
+%>
+
+<HTML>
+  <HEAD>
+    <TITLE>
+      Operation successful
+    </TITLE>
+    <META HTTP-Equiv="Cache-Control" Content="no-cache">
+    <META HTTP-Equiv="Pragma" Content="no-cache">
+    <META HTTP-Equiv="Expires" Content="0"> 
+
+  </HEAD>
+  <BODY BGCOLOR="#e8e8e8">
+    <SCRIPT TYPE="text/javascript">
+      top.opener.window.location.href = '<%= $cgi->param('url') %>';
+      window.close();
+    </SCRIPT>
+  </BODY>
+</HTML>
+
+<%
+  } else {
+%>
+
+  <HEAD>
+    <TITLE>
+      Error
+    </TITLE>
+    <META HTTP-Equiv="Cache-Control" Content="no-cache">
+    <META HTTP-Equiv="Pragma" Content="no-cache">
+    <META HTTP-Equiv="Expires" Content="0"> 
+  </HEAD>
+  <BODY BGCOLOR="#e8e8e8">
+    <P ALIGN="center"><FONT COLOR="#ff0000">Error: <%= $job ? $job->statustext : $jobnum %></FONT>
+    <P ALIGN="center"><INPUT TYPE="button" onClick="top.opener.document.OneTrueForm.submit.disabled=false; window.close();" VALUE="OK">
+  </BODY>
+</HTML>
+
+<% } %>
+
+
+

@@ -87,7 +87,7 @@ while (1) {
   unless ( dbh && dbh->ping ) {
     warn "WARNING: connection to database lost, reconnecting...\n";
 
-    eval { myconnect; };
+    eval { $FS::UID::dbh = myconnect; };
 
     unless ( !$@ && dbh && dbh->ping ) {
       warn "WARNING: still no connection to database, sleeping for retry...\n";
@@ -162,6 +162,7 @@ while (1) {
   #} 
 
   my @args = $ljob->args;
+  splice @args, 0, 1, $ljob if $args[0] eq '_JOB';
 
   defined( my $pid = fork ) or do {
     warn "WARNING: can't fork: $!\n";
@@ -184,8 +185,12 @@ while (1) {
 
     forksuidsetup($user);
 
-    #auto-use export classes...
-    if ( $ljob->job =~ /(FS::part_export::\w+)::/ ) {
+    #auto-use classes...
+    #if ( $ljob->job =~ /(FS::part_export::\w+)::/ ) {
+    if (    $ljob->job =~ /(FS::part_export::\w+)::/
+         || $ljob->job =~ /(FS::\w+)::/
+       )
+    {
       my $class = $1;
       eval "use $class;";
       if ( $@ ) {

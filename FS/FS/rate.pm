@@ -1,11 +1,13 @@
 package FS::rate;
 
 use strict;
-use vars qw( @ISA );
-use FS::Record qw( qsearch qsearchs dbh );
+use vars qw( @ISA $DEBUG );
+use FS::Record qw( qsearch qsearchs dbh fields );
 use FS::rate_detail;
 
 @ISA = qw(FS::Record);
+
+$DEBUG = 1;
 
 =head1 NAME
 
@@ -94,13 +96,32 @@ sub insert {
   }
 
   if ( $options{'rate_detail'} ) {
+
+    my( $num, $last, $min_sec ) = (0, time, 5); #progressbar foo
+
     foreach my $rate_detail ( @{$options{'rate_detail'}} ) {
+
       $rate_detail->ratenum($self->ratenum);
       $error = $rate_detail->insert;
       if ( $error ) {
         $dbh->rollback if $oldAutoCommit;
         return $error;
       }
+
+      if ( $options{'job'} ) {
+        $num++;
+        if ( time - $min_sec > $last ) {
+          my $error = $options{'job'}->update_statustext(
+            int( 100 * $num / scalar( @{$options{'rate_detail'}} ) )
+          );
+          if ( $error ) {
+            $dbh->rollback if $oldAutoCommit;
+            return $error;
+          }
+          $last = time;
+        }
+      }
+
     }
   }
 
@@ -148,8 +169,8 @@ sub replace {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  my @old_rate_detail = ();
-  @old_rate_detail = $old->rate_detail if $options{'rate_detail'};
+#  my @old_rate_detail = ();
+#  @old_rate_detail = $old->rate_detail if $options{'rate_detail'};
 
   my $error = $new->SUPER::replace($old);
   if ($error) {
@@ -157,21 +178,67 @@ sub replace {
     return $error;
   }
 
-  foreach my $old_rate_detail ( @old_rate_detail ) {
-    my $error = $old_rate_detail->delete;
-    if ($error) {
+#  foreach my $old_rate_detail ( @old_rate_detail ) {
+#
+#    my $error = $old_rate_detail->delete;
+#    if ($error) {
+#      $dbh->rollback if $oldAutoCommit;
+#      return $error;
+#    }
+#
+#    if ( $options{'job'} ) {
+#      $num++;
+#      if ( time - $min_sec > $last ) {
+#        my $error = $options{'job'}->update_statustext(
+#          int( 50 * $num / scalar( @old_rate_detail ) )
+#        );
+#        if ( $error ) {
+#          $dbh->rollback if $oldAutoCommit;
+#          return $error;
+#        }
+#        $last = time;
+#      }
+#    }
+#
+#  }
+  if ( $options{'rate_detail'} ) {
+    my $sth = $dbh->prepare('DELETE FROM rate_detail WHERE ratenum = ?') or do {
       $dbh->rollback if $oldAutoCommit;
-      return $error;
-    }
-  }
+      return $dbh->errstr;
+    };
+  
+    $sth->execute($old->ratenum) or do {
+      $dbh->rollback if $oldAutoCommit;
+      return $sth->errstr;
+    };
 
-  foreach my $rate_detail ( @{$options{'rate_detail'}} ) {
-    $rate_detail->ratenum($new->ratenum);
-    $error = $rate_detail->insert;
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return $error;
+    my( $num, $last, $min_sec ) = (0, time, 5); #progresbar foo
+#  $num = 0;
+    foreach my $rate_detail ( @{$options{'rate_detail'}} ) {
+  
+      $rate_detail->ratenum($new->ratenum);
+      $error = $rate_detail->insert;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
+      }
+  
+      if ( $options{'job'} ) {
+        $num++;
+        if ( time - $min_sec > $last ) {
+          my $error = $options{'job'}->update_statustext(
+            int( 100 * $num / scalar( @{$options{'rate_detail'}} ) )
+          );
+          if ( $error ) {
+            $dbh->rollback if $oldAutoCommit;
+            return $error;
+          }
+          $last = time;
+        }
+      }
+  
     }
+
   }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
@@ -229,6 +296,120 @@ sub rate_detail {
 
 
 =back
+
+=head1 SUBROUTINES
+
+=over 4
+
+=item process
+
+Experimental job-queue processor for web interface adds/edits
+
+=cut
+
+sub process {
+  my $job = shift;
+
+  #my %param = @_;
+
+  my $param = shift;
+  my %param = split(/[;=]/, $param);
+
+  my $old = qsearchs('rate', { 'ratenum' => $param{'ratenum'} } )
+    if $param{'ratenum'};
+
+  my @rate_detail = map {
+
+    my $regionnum = $_->regionnum;
+    if ( $param{"sec_granularity$regionnum"} ) {
+
+      new FS::rate_detail {
+        'dest_regionnum'  => $regionnum,
+        map { $_ => $param{"$_$regionnum"} }
+            qw( min_included min_charge sec_granularity )
+      };
+
+    } else {
+
+      new FS::rate_detail {
+        'dest_regionnum'  => $regionnum,
+        'min_included'    => 0,
+        'min_charge'      => 0,
+        'sec_granularity' => '60'
+      };
+
+    }
+    
+  } qsearch('rate_region', {} );
+  
+  my $rate = new FS::rate {
+    map { $_ => $param{$_} }
+        fields('rate')
+  };
+
+  my $error = '';
+  if ( $param{'ratenum'} ) {
+    warn "$rate replacing $old ($param{'ratenum'})\n" if $DEBUG;
+    $error = $rate->replace( $old,
+                             'rate_detail' => \@rate_detail,
+                             'job'         => $job,
+                           );
+  } else {
+    warn "inserting $rate\n" if $DEBUG;
+    $error = $rate->insert( 'rate_detail' => \@rate_detail,
+                            'job'         => $job,
+                          );
+    #$ratenum = $rate->getfield('ratenum');
+  }
+
+  die $error if $error;
+
+}
+
+# begin JSRPC code...
+
+package FS::rate::JSRPC;
+use vars qw(@ISA $DEBUG);
+use JavaScript::RPC::Server::CGI;
+use FS::UID;
+@ISA = qw( JavaScript::RPC::Server::CGI );
+$DEBUG = 1;
+
+sub process_rate {
+  my $self = shift;
+
+  my %param = @_;
+  warn "FS::rate::JSRPC::process_rate\n".
+       join('', map "  $_ => $param{$_}\n", keys %param )
+    if $DEBUG;
+
+  #progressbar prototype code...  should be generalized
+  
+  #first get the CGI params shipped off to a job ASAP so an id can be returned
+  #to the caller
+  
+  my $job = new FS::queue { 'job' => 'FS::rate::process' };
+  
+  #too slow to insert all the cgi params as individual args..,?
+  #my $error = $queue->insert('_JOB', $cgi->Vars);
+  
+  #my $bigstring = join(';', map { "$_=". scalar($cgi->param($_)) } $cgi->param );
+  my $bigstring = join(';', map { "$_=". $param{$_} } keys %param );
+  my $error = $job->insert('_JOB', $bigstring);
+
+  if ( $error ) {
+    $error;
+  } else {
+    $job->jobnum;
+  }
+  
+}
+
+sub get_new_query {
+  FS::UID::cgi();
+}
+
+# end JSRPC code...
 
 =head1 BUGS
 
