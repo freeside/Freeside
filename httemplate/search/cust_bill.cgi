@@ -162,17 +162,4 @@ END
 
 }
 
-#
-
-sub invnum_sort {
-  $a->invnum <=> $b->invnum;
-}
-
-sub custnum_sort {
-  $a->custnum <=> $b->custnum || $a->invnum <=> $b->invnum;
-}
-
-sub date_sort {
-  $a->_date <=> $b->_date || $a->invnum <=> $b->invnum;
-}
 %>
