@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: signup.cgi,v 1.14 2001-09-27 21:32:36 ivan Exp $
+# $Id: signup.cgi,v 1.15 2001-09-27 21:37:57 ivan Exp $
 
 use strict;
 use vars qw( @payby $cgi $locales $packages $pops $error
@@ -314,7 +314,7 @@ sub expselect {
     $return .= ">$_";
   }
   $return .= qq!</SELECT>/<SELECT NAME="$prefix!. qq!_year" SIZE="1">!;
-  for ( 1999 .. 2037 ) {
+  for ( 2001 .. 2037 ) {
     $return .= "<OPTION";
     $return .= " SELECTED" if $_ == $y;
     $return .= ">$_";
