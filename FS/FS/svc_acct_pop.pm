@@ -42,6 +42,8 @@ inherits from FS::Record.  The following fields are currently supported:
 
 =item exch - exchange
 
+=item loc - rest of number
+
 =back
 
 =head1 METHODS
@@ -87,6 +89,7 @@ sub check {
       or $self->ut_text('state')
       or $self->ut_number('ac')
       or $self->ut_number('exch')
+      or $self->ut_numbern('loc')
   ;
 
 }
@@ -95,7 +98,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: svc_acct_pop.pm,v 1.1 1999-08-04 09:03:53 ivan Exp $
+$Id: svc_acct_pop.pm,v 1.2 2000-01-28 22:55:06 ivan Exp $
 
 =head1 BUGS
 

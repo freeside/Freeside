@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct_pop.cgi,v 1.7 1999-04-09 04:22:34 ivan Exp $
+# $Id: svc_acct_pop.cgi,v 1.8 2000-01-28 22:56:13 ivan Exp $
 #
 # ivan@sisd.com 98-mar-8
 #
@@ -10,7 +10,10 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: svc_acct_pop.cgi,v $
-# Revision 1.7  1999-04-09 04:22:34  ivan
+# Revision 1.8  2000-01-28 22:56:13  ivan
+# track full phone number
+#
+# Revision 1.7  1999/04/09 04:22:34  ivan
 # also table()
 #
 # Revision 1.6  1999/04/09 03:52:55  ivan
@@ -55,6 +58,7 @@ print $cgi->header( '-expires' => 'now' ), header('POP Listing', menubar(
         <TH>State</TH>
         <TH>Area code</TH>
         <TH>Exchange</TH>
+        <TH>Local</TH>
       </TR>
 END
 
@@ -74,6 +78,8 @@ foreach $svc_acct_pop ( sort {
           $hashref->{ac}</A></TD>
         <TD><A HREF="${p}edit/svc_acct_pop.cgi?$hashref->{popnum}">
           $hashref->{exch}</A></TD>
+        <TD><A HREF="${p}edit/svc_acct_pop.cgi?$hashref->{popnum}">
+          $hashref->{loc}</A></TD>
       </TR>
 END
 

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: fs-setup,v 1.19 1999-07-29 08:50:35 ivan Exp $
+# $Id: fs-setup,v 1.20 2000-01-28 22:53:33 ivan Exp $
 #
 # ivan@sisd.com 97-nov-8,9
 #
@@ -32,7 +32,10 @@
 # fix radius attributes ivan@sisd.com 98-sep-27
 #
 # $Log: fs-setup,v $
-# Revision 1.19  1999-07-29 08:50:35  ivan
+# Revision 1.20  2000-01-28 22:53:33  ivan
+# track full phone number
+#
+# Revision 1.19  1999/07/29 08:50:35  ivan
 # wrong type for cust_pay_batch.exp
 #
 # Revision 1.18  1999/04/15 22:46:30  ivan
@@ -591,7 +594,7 @@ sub tables_hash_hack {
         'state',     'varchar',   '',   $char_d,
         'ac',        'char',   '',   3,
         'exch',      'char',   '',   3,
-        #rest o' number?
+        'loc',       'char',   'NULL',   4, #NULL for legacy purposes
       ],
       'primary_key' => 'popnum',
       'unique' => [ [] ],
