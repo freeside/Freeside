@@ -330,9 +330,11 @@ for a single item, or your data is corrupted.
 =cut
 
 sub qsearchs { # $result_record = &FS::Record:qsearchs('table',\%hash);
+  my $table = $_[0];
   my(@result) = qsearch(@_);
-  carp "warning: Multiple records in scalar search!" if scalar(@result) > 1;
-    #should warn more vehemently if the search was on a primary key?
+  carp "warning: Multiple records in scalar search ($table)"
+    if scalar(@result) > 1;
+  #should warn more vehemently if the search was on a primary key?
   scalar(@result) ? ($result[0]) : ();
 }
 
