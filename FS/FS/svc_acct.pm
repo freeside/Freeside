@@ -366,7 +366,6 @@ sub insert {
           'svcnum' => $self->svcnum,
           'job'    => 'FS::svc_acct::send_email'
         };
-        warn "attempting to queue email to $to";
         my $error = $wqueue->insert(
           'to'       => $to,
           'from'     => $welcome_from,
@@ -383,14 +382,14 @@ sub insert {
         );
         if ( $error ) {
           $dbh->rollback if $oldAutoCommit;
-          return "queuing welcome email: $error";
+          return "error queuing welcome email: $error";
         }
 
         foreach my $jobnum ( @jobnums ) {
           my $error = $wqueue->depend_insert($jobnum);
           if ( $error ) {
             $dbh->rollback if $oldAutoCommit;
-            return "queuing welcome email job dependancy: $error";
+            return "error queuing welcome email job dependancy: $error";
           }
         }
 
