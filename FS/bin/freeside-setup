@@ -692,8 +692,8 @@ sub tables_hash_hack {
         'taxclass',   'varchar', 'NULL', $char_d,
       ],
       'primary_key' => 'pkgpart',
-      'unique' => [ [ 'promo_code' ] ],
-      'index' => [ [ 'disabled' ] ],
+      'unique' => [],
+      'index' => [ [ 'promo_code' ], [ 'disabled' ] ],
     },
 
 #    'part_title' => {
