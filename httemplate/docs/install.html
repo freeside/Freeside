@@ -5,10 +5,11 @@
 <h1>Installation</h1>
 Before installing, you need:
 <ul>
-  <li>A web server, such as <a href="http://www.apache-ssl.org">Apache-SSL</a> or <a href="http://www.apache.org">Apache</a>
-  <li><a href="http://perl.apache.org/">mod_perl</a>
-  <li><a href="http://www.openssh.com//">SSH</a> (<a href="http://www.openssh.com//">OpenSSH</a> is recommended.  SSH Communications Security <a href="http://www.ssh.com/products/ssh/download.cfm">commercial SSH version 3</a> has been reported incompatible with Freeside.)
   <li><a href="http://www.perl.com/">Perl</a>  Don't enable experimental features like threads or the PerlIO abstraction layer.
+  <li><a href="http://www.apache.org">Apache</a> (<a href="http://www.modssl.org/">mod_ssl</a> or <a href="http://www.apache-ssl.org">Apache-SSL</a> highly recommended)
+  <li><a href="http://perl.apache.org/">mod_perl</a>
+  <li><a href="http://www.openssh.com/">SSH</a> (<a href="http://www.openssh.com//">OpenSSH</a> is recommended.  SSH Communications Security <a href="http://www.ssh.com/products/ssh/download.cfm">commercial SSH version 3</a> has been reported incompatible with Freeside.)
+  <li><a href="http://rsync.samba.org/">rsync</a>
   <li>A <b>transactional</b> database engine supported by Perl's <a href="http://www.hermetica.com/technologia/DBI/">DBI</a>.
     <ul>
       <li><a href="http://www.postgresql.org/">PostgreSQL</a> (v7 or higher) is recommended.
@@ -72,7 +73,7 @@ $ mysqladmin -u root password '<i>set_a_root_database_password</i>'
 $ mysql -u root -p
 mysql> GRANT SELECT,INSERT,UPDATE,DELETE,INDEX,ALTER,CREATE,DROP on freeside.* TO freeside@localhost IDENTIFIED BY '<i>set_a_freeside_database_password</i>';</pre>
     </ul>
-  <li>Unpack the tarball: <pre>gunzip -c fs-x.y.z.tar.gz | tar xvf -</pre>
+<!--  <li>Unpack the tarball: <pre>gunzip -c fs-x.y.z.tar.gz | tar xvf -</pre>-->
   <li>Edit the top-level Makefile:
     <ul>
       <li>Set <tt>DATASOURCE</tt> to your <a href="http://search.cpan.org/doc/TIMB/DBI-1.20/DBI.pm">DBI data source</a>, for example, <tt>DBI:Pg:host=localhost;dbname=freeside</tt> for PostgresSQL or <tt>DBI:mysql:freeside</tt> for MySQL.  See the <a href="http://search.cpan.org/doc/TIMB/DBI-1.20/DBI.pm">DBI manpage</a> and the <a href="http://search.cpan.org/search?mode=module&query=DBD">manpage for your DBD</a> for the exact syntax of a DBI data source.
