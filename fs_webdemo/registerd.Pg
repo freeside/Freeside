@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 #
-# $Id: registerd.Pg,v 1.1 2001-04-23 12:40:30 ivan Exp $
+# $Id: registerd.Pg,v 1.2 2001-04-23 16:25:05 ivan Exp $
 
 use strict;
 use vars qw(
@@ -65,13 +65,13 @@ while ( 1 ) {
   $sth->execute or die $sth->errstr;
 
   $sth = $dbh->prepare(
-    'SELECT * FROM mysql_auth WHERE status = "unconfigured" OR status = "reconfigure"'
+    'SELECT * FROM mysql_auth WHERE status = "unconfigured"'
   );
   $sth->execute or die $sth->errstr;
   my $pending = $sth->fetchall_arrayref( {} );
 
   $sth = $dbh->prepare(
-    'UPDATE mysql_auth SET status = "locked" WHERE status = "unconfigured" OR status = "reconfigure"'
+    'UPDATE mysql_auth SET status = "locked" WHERE status = "unconfigured"'
   );
   $sth->execute or die $sth->errstr;
 
@@ -84,7 +84,6 @@ while ( 1 ) {
 
     my $username = $row->{'username'};
     my $email = $row->{'passwd'};
-    my $status = $row->{'status'};
 
     system("/usr/bin/createdb --username freeside demo_$username >/dev/null");
 
@@ -145,41 +144,38 @@ while ( 1 ) {
     );
     $sth->execute or die $sth->errstr;
 
-    if ( $status eq "unconfigured" ) {
-
-      #$ENV{SMTPHOSTS} = "localhost";
-      $ENV{SMTPHOSTS} = "192.168.1.1";
-      $ENV{MAILADDRESS} = 'ivan-fsreg@sisd.com';
-      $ENV{TZ} = "PST8PDT";
-      $header = Mail::Header->new( [
-        'From: ivan-fsreg@sisd.com',
-        "To: $email",
-        'Bcc: ivan-fsreg_bcc@sisd.com',
-        'Sender: ivan-fsreg@sisd.com',
-        'Reply-To: ivan-fsreg@sisd.com',
-        #'Date: '. time2str("%a, %d %b %Y %X %z", time ),
-        'Date: '. time2str("%a, %d %b %Y %X ", time ). "-0800",
-        'Subject: Freeside demo information',
-      ] );
-      $msg = Mail::Internet->new(
-        'Header' => $header,
-        'Body' => [
-      "Hello,\n",
-      "\n",
-      "Your sample Freeside database has been setup.\n",
-      "\n",
-      "Point your web browswer at http://freeside.sisd.com/ and use the following\n",
-      "authentication information:\n",
-      "\n",
-      "Username: $username\n",
-      "Password: $user_pw\n",
-      "\n",
-      "-- \n",
-      "ivan\n",
-                  ]
-      );
-      $msg->smtpsend or die "Can\'t send registration email!";
-    }
+    #$ENV{SMTPHOSTS} = "localhost";
+    $ENV{SMTPHOSTS} = "192.168.1.1";
+    $ENV{MAILADDRESS} = 'ivan-fsreg@sisd.com';
+    $ENV{TZ} = "PST8PDT";
+    $header = Mail::Header->new( [
+      'From: ivan-fsreg@sisd.com',
+      "To: $email",
+      'Bcc: ivan-fsreg_bcc@sisd.com',
+      'Sender: ivan-fsreg@sisd.com',
+      'Reply-To: ivan-fsreg@sisd.com',
+      #'Date: '. time2str("%a, %d %b %Y %X %z", time ),
+      'Date: '. time2str("%a, %d %b %Y %X ", time ). "-0800",
+      'Subject: Freeside demo information',
+    ] );
+    $msg = Mail::Internet->new(
+      'Header' => $header,
+      'Body' => [
+    "Hello,\n",
+    "\n",
+    "Your sample Freeside database has been setup.\n",
+    "\n",
+    "Point your web browswer at http://freeside.sisd.com/ and use the following\n",
+    "authentication information:\n",
+    "\n",
+    "Username: $username\n",
+    "Password: $user_pw\n",
+    "\n",
+    "-- \n",
+    "ivan\n",
+                ]
+    );
+    $msg->smtpsend or die "Can\'t send registration email!";
 
   }
 
