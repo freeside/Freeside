@@ -37,5 +37,6 @@ As mentioned in the <a href="install.html">New Installation</a> section of the d
 <pre>cd /usr/local/apache/htdocs/freeside
 chown -R freeside .
 chmod 4755 browse/*.cgi edit/*.cgi edit/process/*.cgi misc/*.cgi misc/process/*.cgi search/*.cgi view/*.cgi</pre>
+  <li>If you receive `can not connect to server' errors using MySQL on a system that doesn't support native threading, you may need to specify the full hostname in your DBI datasource.  See the <a href="http://www.mysql.com/Manual_chapter/manual_Problems.html#Can_not_connect_to_server">MySQL documentation</a>, DBI manpage and the DBD::mysql manpage for details.
   </ul>
 </body>
