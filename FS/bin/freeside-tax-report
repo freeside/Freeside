@@ -228,7 +228,7 @@ if($email && $opt_m)
 # subroutines
 sub untaint_argv {
   foreach $_ ( $[ .. $#ARGV ) { #untaint @ARGV
-    $ARGV[$_] =~ /^([\w\-\/ :]*)$/ || die "Illegal argument \"$ARGV[$_]\"";
+    $ARGV[$_] =~ /^([\w\-\/ :\.]*)$/ || die "Illegal argument \"$ARGV[$_]\"";
     $ARGV[$_]=$1;
   }
 }
@@ -267,7 +267,7 @@ user: From the mapsecrets file - see config.html from the base documentation
 
 =head1 VERSION
 
-$Id: freeside-tax-report,v 1.4 2002-03-07 19:50:24 jeff Exp $
+$Id: freeside-tax-report,v 1.5 2002-09-09 22:57:34 ivan Exp $
 
 =head1 BUGS
 
