@@ -20,7 +20,7 @@ print <<END;
 .package TH { font-size: medium }
 .package TR { font-size: smaller }
 .package .pkgnum { font-size: medium }
-.package .provision { font-size: larger; font-weight: bold }
+.package .provision { font-weight: bold }
 </STYLE>
 END
 
@@ -430,7 +430,7 @@ foreach my $pkg (sort pkgsort_pkgnum_cancel @$packages) {
 
   if ( $pkg->{cancel} ) { #status: cancelled
 
-    print '<TR><TD><FONT COLOR="#ff0000"><B>Cancelled</B>&nbsp;</FONT></TD>'.
+    print '<TR><TD><FONT COLOR="#ff0000"><B>Cancelled&nbsp;</B></FONT></TD>'.
           '<TD>'. pkg_datestr($pkg,'cancel'). '</TD></TR>';
     unless ( $pkg->{setup} ) {
       print '<TR><TD COLSPAN=2>Never billed</TD></TR>';
@@ -848,9 +848,12 @@ sub svc_label_link {
 
 sub svc_provision_link {
   my ($pkg, $svcpart) = (shift,shift) or return '';
+  ( my $svc_nbsp = $svcpart->{svc} ) =~ s/\s+/&nbsp;/g;
   return qq!<A CLASS="provision" HREF="${p1}/edit/$svcpart->{svcdb}.cgi?! .
          qq!pkgnum$pkg->{pkgnum}-svcpart$svcpart->{svcpart}">! .
-         qq!Provision $svcpart->{svc} (! . ($svcpart->{quantity} - $svcpart->{count}) . qq!)</A>!;
+         "Provision&nbsp;$svc_nbsp&nbsp;(".
+         ($svcpart->{quantity} - $svcpart->{count}).
+         ')</A>';
 }
 
 sub svc_unprovision_link {
