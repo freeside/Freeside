@@ -123,7 +123,7 @@ install-docs: docs
 	[ "${TEMPLATE}" = "mason" ] && cp htetc/handler.pl ${MASON_HANDLER} || true
 	[ "${TEMPLATE}" = "mason" ] &&
 	  perl -p -i -e "\
-	    s/%%%FREESIDE_DOCUMENT_ROOT%%%/${FREESIDE_DOCUMENT_ROOT}/g;
+	    s/%%%FREESIDE_DOCUMENT_ROOT%%%/${FREESIDE_DOCUMENT_ROOT}/g; \
 	  " ${MASON_HANDLER}
 	[ "${TEMPLATE}" = "mason" -a ! -e ${MASONDATA} ] && mkdir ${MASONDATA} || true
 	[ "${TEMPLATE}" = "mason" ] && chown -R freeside ${MASONDATA} || true
