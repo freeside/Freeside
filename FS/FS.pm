@@ -62,8 +62,6 @@ L<FS::domain_record> - DNS zone entries
 
 L<FS::svc_forward> - Mail forwarding class
 
-L<FS::svc_acct_sm> - (Depreciated) Vitual mail alias class
-
 L<FS::svc_www> - Web virtual host class.
 
 L<FS::part_svc> - Service definition class

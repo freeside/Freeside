@@ -254,31 +254,6 @@ sub check {
   my @fields = eval { fields( $recref->{svcdb} ) }; #might die
   return "Unknown svcdb!" unless @fields;
 
-##REPLACED BY part_svc_column
-#  my $svcdb;
-#  foreach $svcdb ( qw(
-#    svc_acct svc_acct_sm svc_domain
-#  ) ) {
-#    my @rows = map { /^${svcdb}__(.*)$/; $1 }
-#      grep ! /_flag$/,
-#        grep /^${svcdb}__/,
-#          fields('part_svc');
-#    foreach my $row (@rows) {
-#      unless ( $svcdb eq $recref->{svcdb} ) {
-#        $recref->{$svcdb.'__'.$row}='';
-#        $recref->{$svcdb.'__'.$row.'_flag'}='';
-#        next;
-#      }
-#      $recref->{$svcdb.'__'.$row.'_flag'} =~ /^([DF]?)$/
-#        or return "Illegal flag for $svcdb $row";
-#      $recref->{$svcdb.'__'.$row.'_flag'} = $1;
-#
-#      my $error = $self->ut_anything($svcdb.'__'.$row);
-#      return $error if $error;
-#
-#    }
-#  }
-
   ''; #no error
 }
 
@@ -325,7 +300,7 @@ sub part_export {
 
 =head1 VERSION
 
-$Id: part_svc.pm,v 1.13 2002-04-11 22:05:31 ivan Exp $
+$Id: part_svc.pm,v 1.14 2002-09-17 09:19:06 ivan Exp $
 
 =head1 BUGS
 

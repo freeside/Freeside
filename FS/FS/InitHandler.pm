@@ -52,7 +52,6 @@ sub handler {
   use FS::session;
   use FS::svc_acct;
   use FS::svc_acct_pop;
-  use FS::svc_acct_sm;
   use FS::svc_domain;
   use FS::svc_forward;
   use FS::svc_www;

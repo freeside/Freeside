@@ -819,8 +819,6 @@ tie my %sqlmail_options, 'Tie::IxHash',
 
   },
 
-  'svc_acct_sm' => {},
-
   'svc_forward' => {
     'sqlmail' => {
       'desc' => 'Real-time export to SQL-backed mail server',

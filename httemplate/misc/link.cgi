@@ -4,7 +4,6 @@
 my %link_field = (
   'svc_acct'    => 'username',
   'svc_domain'  => 'domain',
-  'svc_acct_sm' => '',
   'svc_charge'  => '',
   'svc_wo'      => '',
 );

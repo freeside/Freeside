@@ -18,11 +18,9 @@ use FS::UID qw( datasrc );
 use FS::Conf;
 use FS::Record qw( qsearch qsearchs fields dbh );
 use FS::svc_Common;
-use Net::SSH;
 use FS::cust_svc;
 use FS::part_svc;
 use FS::svc_acct_pop;
-use FS::svc_acct_sm;
 use FS::cust_main_invoice;
 use FS::svc_domain;
 use FS::raddb;
@@ -409,11 +407,6 @@ The corresponding FS::cust_svc record will be deleted as well.
 
 sub delete {
   my $self = shift;
-
-  if ( defined( $FS::Record::dbdef->table('svc_acct_sm') ) ) {
-    return "Can't delete an account which has (svc_acct_sm) mail aliases!"
-      if $self->uid && qsearch( 'svc_acct_sm', { 'domuid' => $self->uid } );
-  }
 
   return "Can't delete an account which is a (svc_forward) source!"
     if qsearch( 'svc_forward', { 'srcsvc' => $self->svcnum } );
@@ -1148,7 +1141,7 @@ probably live somewhere else...
 L<FS::svc_Common>, edit/part_svc.cgi from an installed web interface,
 export.html from the base documentation, L<FS::Record>, L<FS::Conf>,
 L<FS::cust_svc>, L<FS::part_svc>, L<FS::cust_pkg>, L<FS::queue>,
-L<freeside-queued>), L<Net::SSH>, L<ssh>, L<FS::svc_acct_pop>,
+L<freeside-queued>), L<FS::svc_acct_pop>,
 schema.html from the base documentation.
 
 =cut

@@ -87,7 +87,6 @@ FS/pkg_svc.pm
 FS/svc_Common.pm
 FS/svc_acct.pm
 FS/svc_acct_pop.pm
-FS/svc_acct_sm.pm
 FS/svc_broadband.pm
 FS/svc_domain.pm
 FS/type_pkgs.pm
@@ -165,7 +164,6 @@ t/radius_usergroup.t
 t/session.t
 t/svc_acct.t
 t/svc_acct_pop.t
-t/svc_acct_sm.t
 t/svc_Common.t
 t/svc_domain.t
 t/svc_forward.t

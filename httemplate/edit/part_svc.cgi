@@ -50,7 +50,6 @@ Disable new orders <INPUT TYPE="checkbox" NAME="disabled" VALUE="Y"<%= $hashref-
 Services are items you offer to your customers.
 <UL><LI>svc_acct - Shell accounts, POP mailboxes, SLIP/PPP and ISDN accounts
     <LI>svc_domain - Domains
-    <LI>svc_acct_sm - <B>deprecated</B> (use svc_forward for new installations) Virtual domain mail aliasing.
     <LI>svc_forward - mail forwarding
     <LI>svc_www - Virtual domain website
     <LI>svc_broadband - Broadband/High-speed Internet service
@@ -102,11 +101,6 @@ my %defs = (
   'svc_domain' => {
     'domain'    => 'Domain',
   },
-  'svc_acct_sm' => {
-    'domuser'   => 'domuser@virtualdomain.com',
-    'domuid'    => 'UID where domuser@virtualdomain.com mail is forwarded',
-    'domsvc'    => 'svcnum from svc_domain for virtualdomain.com',
-  },
   'svc_forward' => {
     'srcsvc'    => 'service from which mail is to be forwarded',
     'dstsvc'    => 'service to which mail is to be forwarded',
@@ -137,7 +131,7 @@ my %defs = (
 
   my @dbs = $hashref->{svcdb}
              ? ( $hashref->{svcdb} )
-             : qw( svc_acct svc_domain svc_acct_sm svc_forward svc_www svc_broadband );
+             : qw( svc_acct svc_domain svc_forward svc_www svc_broadband );
 
   tie my %svcdb, 'Tie::IxHash', map { $_=>$_ } @dbs;
   my $widget = new HTML::Widgets::SelectLayers(

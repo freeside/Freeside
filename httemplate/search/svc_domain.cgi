@@ -67,18 +67,6 @@ END
       $svc_domain->svcnum,
       $svc_domain->domain,
     );
-    #my($malias);
-    #if ( qsearch('svc_acct_sm',{'domsvc'=>$svcnum}) ) {
-    #  $malias=(
-    #    qq|<FORM ACTION="svc_acct_sm.cgi" METHOD="post">|.
-    #      qq|<INPUT TYPE="hidden" NAME="domuser" VALUE="">|.
-    #      qq|<INPUT TYPE="hidden" NAME="domain" VALUE="$domain">|.
-    #      qq|<INPUT TYPE="submit" VALUE="(mail aliases)">|.
-    #      qq|</FORM>|
-    #  );
-    #} else {
-    #  $malias='';
-    #}
 
     my @svc_acct=qsearch('svc_acct',{'domsvc' => $svcnum});
     my $rowspan = 0;

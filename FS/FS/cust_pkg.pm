@@ -14,7 +14,6 @@ use FS::pkg_svc;
 # setup }
 # because they load configuraion by setting FS::UID::callback (see TODO)
 use FS::svc_acct;
-use FS::svc_acct_sm;
 use FS::svc_domain;
 use FS::svc_www;
 use FS::svc_forward;
@@ -679,7 +678,7 @@ sub order {
 
 =head1 VERSION
 
-$Id: cust_pkg.pm,v 1.23 2002-08-26 20:40:55 ivan Exp $
+$Id: cust_pkg.pm,v 1.24 2002-09-17 09:19:06 ivan Exp $
 
 =head1 BUGS
 
@@ -690,11 +689,12 @@ In sub order, the @pkgparts array (passed by reference) is clobbered.
 Also in sub order, no money is adjusted.  Once FS::part_pkg defines a standard
 method to pass dates to the recur_prog expression, it should do so.
 
-FS::svc_acct, FS::svc_acct_sm, and FS::svc_domain are loaded via 'use' at 
-compile time, rather than via 'require' in sub { setup, suspend, unsuspend,
-cancel } because they use %FS::UID::callback to load configuration values.
-Probably need a subroutine which decides what to do based on whether or not
-we've fetched the user yet, rather than a hash.  See FS::UID and the TODO.
+FS::svc_acct, FS::svc_domain, FS::svc_www and FS::svc_forward are loaded via
+'use' at compile time, rather than via 'require' in sub
+{ setup, suspend, unsuspend, cancel } because they use %FS::UID::callback to
+load configuration values.  Probably need a subroutine which decides what to
+do based on whether or not we've fetched the user yet, rather than a hash.
+See FS::UID and the TODO.
 
 Now that things are transactional should the check in the insert method be
 moved to check ?
