@@ -30,6 +30,8 @@ use FS::radius_usergroup;
 use FS::export_svc;
 use FS::part_export;
 use FS::Msgcat qw(gettext);
+use FS::svc_forward;
+use FS::svc_www;
 
 @ISA = qw( FS::svc_Common );
 
