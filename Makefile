@@ -189,7 +189,7 @@ configure-rt:
 	cp config.layout.in config.layout; \
 	perl -p -i -e "\
 	  s'%%%FREESIDE_DOCUMENT_ROOT%%%'${FREESIDE_DOCUMENT_ROOT}'g;\
-	" config.layout
+	" config.layout; \
 	./configure --with-layout=Freeside\
 	            --masonstatedir=${MASONDATA} \
 	            --with-db-type=Pg \
