@@ -61,6 +61,7 @@ All further configuration files and directories are located in
           <li>registries/internic/to - Email address to which InterNIC domain registrations are sent.
         </ul>
     </ul>
+  <li>sendmailconfigpath - Sendmail configuration file path - defaults to `/etc'.  Many newer distributions use `/etc/mail'.
   <li>sendmailmachines - Your sendmail machines, one per line.  This enables export of `/etc/virtusertable' and `/etc/sendmail.cw'.
   <li>sendmailrestart - If defined, the command which is run on sendmail machines after files are copied.
   <li>shellmachine - A single machine with user home directories mounted.  This enables home directory creation, renaming and archiving/deletion.  In conjunction with `qmailmachines', it also enables `.qmail-extension' file maintenance.

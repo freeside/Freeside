@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct_sm.export,v 1.4 2000-06-29 14:02:29 ivan Exp $
+# $Id: svc_acct_sm.export,v 1.5 2000-07-03 09:03:14 ivan Exp $
 # 
 # Create and export config files for sendmail, qmail
 #
@@ -42,7 +42,10 @@
 # /var/spool/freeside/conf and sendmail updates ivan@sisd.com 98-aug-14
 #
 # $Log: svc_acct_sm.export,v $
-# Revision 1.4  2000-06-29 14:02:29  ivan
+# Revision 1.5  2000-07-03 09:03:14  ivan
+# added sendmailrestart and sendmailconfigpath config files
+#
+# Revision 1.4  2000/06/29 14:02:29  ivan
 # add sendmailrestart configuration file
 #
 # Revision 1.3  2000/06/12 08:37:56  ivan
@@ -67,15 +70,18 @@ adminsuidsetup $user;
 
 $conf = new FS::Conf;
 
-my($shellmachine);
-my(@qmailmachines);
+my($shellmachine, @qmailmachines);
 if ( $conf->exists('qmailmachines') ) {
   $shellmachine = $conf->config('shellmachine');
   @qmailmachines = $conf->config('qmailmachines');
 }
 
-my @sendmailmachines = $conf->config('sendmailmachines')
-  if $conf->exists('sendmailmachines');
+my(@sendmailmachines, $sendmailconfigpath, $sendmailrestart);
+if $conf->exists('sendmailmachines') {
+  @sendmailmachines = $conf->config('sendmailmachines');
+  $sendmailconfigpath = $conf->config('sendmailconfigpath') || '/etc';
+  $sendmailrestart = $conf->config('sendmailrestart');
+}
 
 my $mydomain = $conf->config('domain');
 
@@ -186,15 +192,15 @@ close VIRTUALDOMAINS;
 
 my($sendmailmachine);
 foreach $sendmailmachine (@sendmailmachines) {
-  scp("$spooldir/sendmail.cw","root\@$sendmailmachine:/etc/sendmail.cw.new")
+  scp("$spooldir/sendmail.cw","root\@$sendmailmachine:$sendmailconfigpath/sendmail.cw.new")
     == 0 or die "scp error: $!";
-  scp("$spooldir/virtusertable","root\@$sendmailmachine:/etc/virtusertable.new")
+  scp("$spooldir/virtusertable","root\@$sendmailmachine:$sendmailconfigpath/virtusertable.new")
     == 0 or die "scp error: $!";
   ssh("root\@$sendmailmachine",
     "( ".
-      "mv /etc/sendmail.cw.new /etc/sendmail.cw; ".
-      "mv /etc/virtusertable.new /etc/virtusertable; ".
-      #"/etc/init.d/sendmail restart; ".
+      "mv $sendmailconfigpath/sendmail.cw.new $sendmailconfigpath/sendmail.cw; ".
+      "mv $sendmailconfigpath/virtusertable.new $sendmailconfigpath/virtusertable; ".
+      $sendmailrestart.
     " )"
   )
     == 0 or die "ssh error: $!";
