@@ -10,8 +10,8 @@ install Net::SSH 0.08
 
 install NetAddr::IP, Chart::Base, Locale::SubCountry, 
 JavaScript::RPC (JavaScript::RPC::Server::CGI), Text::CSV_XS, 
-Spreadsheet::WriteExcel, IO-stringy (IO::Scalar) and Frontier::RPC
-(Frontier::RPC2)
+Spreadsheet::WriteExcel, IO-stringy (IO::Scalar), Frontier::RPC
+(Frontier::RPC2) and MIME::Entity (MIME-tools)
 <!-- and Crypt::YAPassGen-->
 
 INSERT INTO msgcat ( msgnum, msgcode, locale, msg ) VALUES ( 20, 'svc_external-id', 'en_US', 'External ID' );
@@ -191,8 +191,8 @@ CREATE TABLE part_pkg_option (
   optionname varchar(80) not null,
   optionvalue text NULL
 );
-CREATE INDEX part_pkg_option1 ON part_export_option ( pkgpart );
-CREATE INDEX part_pkg_option2 ON part_export_option ( optionname );
+CREATE INDEX part_pkg_option1 ON part_pkg_option ( pkgpart );
+CREATE INDEX part_pkg_option2 ON part_pkg_option ( optionname );
 
 CREATE TABLE rate (
     ratenum serial NOT NULL,
