@@ -59,6 +59,7 @@ sub handler
       #use CGI::Carp qw(fatalsToBrowser);
       use Date::Format;
       use Date::Parse;
+      use HTML::Entities;
       use FS::UID qw(cgisuidsetup);
       use FS::Record qw(qsearch qsearchs fields);
       use FS::part_svc;

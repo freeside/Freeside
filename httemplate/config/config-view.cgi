@@ -25,7 +25,9 @@
             <tr><td><font color="#ff0000">no type</font></td></tr>
           <% } elsif ( $type eq 'textarea' ) { %>
             <tr><td bgcolor="#ffffff">
-              <pre><%= join("\n", $conf->config($i->key) ) %></pre>
+<pre>
+<%= encode_entities(join("\n", $conf->config($i->key) ) ) %>
+</pre>
             </td></tr>
           <% } elsif ( $type eq 'checkbox' ) { %>
             <tr><td bgcolor="#<%= $conf->exists($i->key) ? '00ff00">YES' : 'ff0000">NO' %></td></tr>
