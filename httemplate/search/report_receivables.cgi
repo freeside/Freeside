@@ -123,7 +123,7 @@ END
      if ( $row->{uncancelled_pkgs} ) {
        $status = 'Suspended';
        $statuscol = 'FF9900';
-       if ( $row->{active_pkgs} > $row->{uncancelled_pkgs} ) {
+       if ( $row->{active_pkgs} ) {
          $status = 'Active';
          $statuscol = '00CC00';
        }
