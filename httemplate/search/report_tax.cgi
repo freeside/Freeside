@@ -42,6 +42,7 @@ my $gotcust = "
             )
 ";
 
+my $monthly_exempt_warning = 0;
 my($total, $exempt, $taxable, $owed, $tax) = ( 0, 0, 0, 0, 0 );
 my $out = 'Out of taxable region(s)';
 my %regions;
@@ -81,16 +82,37 @@ foreach my $r (qsearch('cust_main_county', {}, '', $gotcust) ) {
     my $t = scalar_sql($r, \@param, 
       "SELECT SUM($e) $fromwhere AND $nottax AND ( tax != 'Y' OR tax IS NULL )"
     );
-    $taxable += $t;
-    $regions{$label}->{'taxable'} += $t;
-    $owed += $t * ($r->tax/100);
-    $regions{$label}->{'owed'} += $t * ($r->tax/100);
 
     my $x = scalar_sql($r, \@param, 
       "SELECT SUM($e) $fromwhere AND $nottax AND tax = 'Y'"
     );
+
+    my($sday,$smon,$syear) = (localtime($beginning) )[ 3, 4, 5 ];
+    $monthly_exempt_warning=1 if $sday != 1 && $beginning;
+    $smon++; $syear+=1900;
+
+    my($eday,$emon,$eyear) = (localtime($ending) )[ 3, 4, 5 ];
+    $emon++; $eyear+=1900;
+
+    my $monthly_exemption = scalar_sql($r, [ 'taxnum' ],
+      "SELECT SUM(amount) FROM cust_tax_exempt where taxnum = ? ".
+      "  AND ( year > $syear OR ( year = $syear and month >= $smon ) )".
+      "  AND ( year < $eyear OR ( year = $eyear and month <= $emon ) )"
+    );
+    if ( $monthly_exemption ) {
+      $t -= $monthly_exemption;
+      $x += $monthly_exemption;
+    }
+
+    $taxable += $t;
+    $regions{$label}->{'taxable'} += $t;
+
     $exempt += $x;
     $regions{$label}->{'exempt'} += $x;
+
+    $owed += $t * ($r->tax/100);
+    $regions{$label}->{'owed'} += $t * ($r->tax/100);
+
   }
 
   if ( defined($regions{$label}->{'rate'})
@@ -213,6 +235,14 @@ sub scalar_sql {
   <% } %>
 
 </TABLE>
+
+<% if ( $monthly_exempt_warning ) { %>
+  <BR>
+  Partial-month tax reports (except for current month) may not be correct due
+  to month-granularity tax exemption (usually "texas tax").  For an accurate
+  report, start on the first of a month and end on the last day of a month (or
+  leave blank for to now).
+<% } %>
 
 </BODY>
 </HTML>
