@@ -8,7 +8,7 @@ mkdir /usr/local/etc/freeside/conf.DBI:Pg:host=localhost\;dbname=$domain && \
 \
 chown freeside /usr/local/etc/freeside/conf.DBI:Pg:host=localhost\;dbname=$domain && \
 \
-cp /home/ivan/freeside/conf[a-z]* /usr/local/etc/freeside/conf.DBI:Pg:host=localhost\;dbname=$domain && \
+cp /home/ivan/freeside/conf/[a-z]* /usr/local/etc/freeside/conf.DBI:Pg:host=localhost\;dbname=$domain && \
 \
 touch /usr/local/etc/freeside/conf.DBI:Pg:host=localhost\;dbname=$domain/secrets && \
 \
