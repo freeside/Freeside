@@ -140,6 +140,9 @@ while (1) {
     $error ||= "Illegal payment type"
       unless grep { $_ eq $signup_data->{'payby'} } @payby;
 
+    $cust_main->payinfo = $cust_main->daytime
+      if $cust_main->payby eq 'LECB' && ! $cust_main->payinfo;
+
     my @invoicing_list = split( /\s*\,\s*/, $signup_data->{'invoicing_list'} );
 
     $signup_data->{'pkgpart'} =~ /^(\d+)$/ or '' =~ /^()$/;
