@@ -15,7 +15,7 @@ use DBI;
 use FS::Conf;
 
 @ISA = qw(Exporter);
-@EXPORT_OK = qw(checkeuid checkruid swapuid cgisuidsetup
+@EXPORT_OK = qw(checkeuid checkruid cgisuidsetup
                 adminsuidsetup getotaker dbh datasrc getsecrets driver_name );
 
 $freeside_uid = scalar(getpwnam('freeside'));
@@ -31,7 +31,7 @@ FS::UID - Subroutines for database login and assorted other stuff
 =head1 SYNOPSIS
 
   use FS::UID qw(adminsuidsetup cgisuidsetup dbh datasrc getotaker
-  checkeuid checkruid swapuid);
+  checkeuid checkruid);
 
   adminsuidsetup $user;
 
@@ -83,8 +83,6 @@ sub adminsuidsetup {
                           'AutoCommit' => 0,
                           'ChopBlanks' => 1,
   } ) or die "DBI->connect error: $DBI::errstr\n";
-
-  swapuid(); #go to non-privledged user if running setuid freeside
 
   foreach ( keys %callback ) {
     &{$callback{$_}};
@@ -212,16 +210,6 @@ sub checkruid {
   ( $< == $freeside_uid );
 }
 
-=item swapuid
-
-Swaps real and effective UIDs.
-
-=cut
-
-sub swapuid {
-  ($<,$>) = ($>,$<) if $< != $>;
-}
-
 =item getsecrets [ USER ]
 
 Sets the user to USER, if supplied.
@@ -261,7 +249,7 @@ coderef into the hash %FS::UID::callback :
 
 =head1 VERSION
 
-$Id: UID.pm,v 1.7 2001-06-21 16:27:52 ivan Exp $
+$Id: UID.pm,v 1.8 2001-08-21 09:34:13 ivan Exp $
 
 =head1 BUGS
 

@@ -1,11 +1,11 @@
 <%
-#<!-- $Id: agent.cgi,v 1.2 2001-08-21 02:31:56 ivan Exp $ -->
+#<!-- $Id: agent.cgi,v 1.3 2001-08-21 09:34:13 ivan Exp $ -->
 
 use strict;
 use vars qw( $ui $cgi $p $agent );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
-use FS::UID qw(cgisuidsetup swapuid);
+use FS::UID qw(cgisuidsetup);
 use FS::Record qw(qsearch qsearchs);
 use FS::CGI qw(header menubar table popurl);
 use FS::agent;

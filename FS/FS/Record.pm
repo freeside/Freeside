@@ -8,7 +8,7 @@ use Carp qw(carp cluck croak confess);
 use File::CounterFile;
 use Locale::Country;
 use DBIx::DBSchema;
-use FS::UID qw(dbh checkruid swapuid getotaker datasrc driver_name);
+use FS::UID qw(dbh checkruid getotaker datasrc driver_name);
 
 @ISA = qw(Exporter);
 @EXPORT_OK = qw(dbh fields hfields qsearch qsearchs dbdef);
@@ -566,7 +566,6 @@ sub unique {
   #warn "table $table is tainted" if is_tainted($table);
   #warn "field $field is tainted" if is_tainted($field);
 
-  &swapuid;
   my($counter) = new File::CounterFile "$table.$field",0;
 # hack for web demo
 #  getotaker() =~ /^([\w\-]{1,16})$/ or die "Illegal CGI REMOTE_USER!";
@@ -577,7 +576,6 @@ sub unique {
   my($index)=$counter->inc;
   $index=$counter->inc
     while qsearchs($table,{$field=>$index}); #just in case
-  &swapuid;
 
   $index =~ /^(\d*)$/;
   $index=$1;
@@ -971,7 +969,7 @@ sub DESTROY { return; }
 
 =head1 VERSION
 
-$Id: Record.pm,v 1.24 2001-08-19 00:48:49 ivan Exp $
+$Id: Record.pm,v 1.25 2001-08-21 09:34:13 ivan Exp $
 
 =head1 BUGS
 

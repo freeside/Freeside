@@ -1,11 +1,11 @@
 <%
-#<!-- $Id: svc_acct_pop.cgi,v 1.2 2001-08-21 02:31:56 ivan Exp $ -->
+#<!-- $Id: svc_acct_pop.cgi,v 1.3 2001-08-21 09:34:13 ivan Exp $ -->
 
 use strict;
 use vars qw( $cgi $p $svc_acct_pop );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
-use FS::UID qw(cgisuidsetup swapuid);
+use FS::UID qw(cgisuidsetup);
 use FS::Record qw(qsearch qsearchs);
 use FS::CGI qw(header menubar table popurl);
 use FS::svc_acct_pop;

@@ -1,11 +1,11 @@
 <%
-#<!-- $Id: cust_main_county.cgi,v 1.2 2001-08-17 11:05:31 ivan Exp $ -->
+#<!-- $Id: cust_main_county.cgi,v 1.3 2001-08-21 09:34:13 ivan Exp $ -->
 
 use strict;
 use vars qw( $cgi $p $cust_main_county );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
-use FS::UID qw(cgisuidsetup swapuid);
+use FS::UID qw(cgisuidsetup);
 use FS::Record qw(qsearch qsearchs);
 use FS::CGI qw(header menubar popurl table);
 use FS::cust_main_county;

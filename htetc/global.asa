@@ -2,7 +2,8 @@ use strict;
 use vars qw( $cgi $p );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
-use FS::UID qw(cgisuidsetup);
+use HTML::Entities;
+use FS::UID qw(cgisuidsetup dbh);
 use FS::Record qw(qsearch qsearchs fields);
 use FS::part_svc;
 use FS::CGI qw(header menubar popurl table);
@@ -16,5 +17,16 @@ sub Script_OnStart {
 
 sub Script_OnFlush {
   my $ref = $Response->{BinaryRef};
-  $$ref = $cgi->header( '-expires' => 'now' ) .$$ref;
+  $$ref = $cgi->header( '-expires' => 'now' ) . $$ref;
+#  if ( dbh->can('sprintProfile') ) {
+
+    $$ref =~ s/<\/BODY>[\s\n]*<\/HTML>[\s\n]*$//i
+      or warn "can't remove";
+  
+    $$ref .= '<PRE>'. encode_entities(dbh->sprintProfile()). '</PRE>';
+
+    $$ref .= '</BODY></HTML>';
+    
+    dbh->{'private_profile'} = {};
+#  }
 }
