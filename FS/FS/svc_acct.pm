@@ -868,15 +868,33 @@ sub email {
 =cut
 
 sub ssh {
-  my @args = @_;
-  &Net::SSH::ssh(@args,">>/usr/local/etc/freeside/sshoutput 2>&1");
+  my ( $host, @cmd_and_args ) = @_;
+
+  use IO::File;
+  my $reader = IO::File->new();
+  my $writer = IO::File->new();
+  my $error = IO::file->new();
+
+  &Net::SSH::sshopen3( $host, $reader, $writer, $error, @cmd_and_args) or die $!;
+
+  local $/ = undef;
+  my $output_stream = <$writer>;
+  my $error_stream = <$error>;
+  if ( length $error_stream ) {
+    warn "[FS::svc_acct::ssh] STDERR $error_stream";
+  }
+  if ( length $output_stream ) {
+    warn "[FS::svc_acct::ssh] STDOUT $output_stream";
+  }
+
+#  &Net::SSH::ssh(@args,">>/usr/local/etc/freeside/sshoutput 2>&1");
 }
 
 =back
 
 =head1 VERSION
 
-$Id: svc_acct.pm,v 1.43 2001-09-19 19:28:17 ivan Exp $
+$Id: svc_acct.pm,v 1.44 2001-09-19 19:39:24 ivan Exp $
 
 =head1 BUGS
 
