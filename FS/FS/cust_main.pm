@@ -713,7 +713,8 @@ sub check {
     my $y = length($2) == 4 ? $2 : "20$2";
     $self->paydate("$y-$1-01");
     my($nowm,$nowy)=(localtime(time))[4,5]; $nowm++; $nowy+=1900;
-    return gettext('expired_card') if $y<$nowy || ( $y==$nowy && $1<$nowm );
+    return gettext('expired_card')
+      if !$import && ( $y<$nowy || ( $y==$nowy && $1<$nowm ) );
   }
 
   if ( $self->payname eq '' &&
@@ -1962,6 +1963,94 @@ sub append_fuzzyfiles {
   }
 
   1;
+}
+
+=item batch_import
+
+=cut
+
+sub batch_import {
+  my $param = shift;
+  #warn join('-',keys %$param);
+  my $fh = $param->{filehandle};
+  my $agentnum = $param->{agentnum};
+  my $refnum = $param->{refnum};
+  my $pkgpart = $param->{pkgpart};
+  my @fields = @{$param->{fields}};
+
+  eval "use Date::Parse;";
+  die $@ if $@;
+  eval "use Text::CSV_XS;";
+  die $@ if $@;
+
+  my $csv = new Text::CSV_XS;
+  #warn $csv;
+  #warn $fh;
+
+  my $imported = 0;
+  #my $columns;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+  
+  #while ( $columns = $csv->getline($fh) ) {
+  my $line;
+  while ( defined($line=<$fh>) ) {
+
+    $csv->parse($line) or do {
+      $dbh->rollback if $oldAutoCommit;
+      return "can't parse: ". $csv->error_input();
+    };
+
+    my @columns = $csv->fields();
+    #warn join('-',@columns);
+
+    my %cust_main = (
+      agentnum => $agentnum,
+      refnum   => $refnum,
+      country  => 'US', #default
+      payby    => 'BILL', #default
+      paydate  => '12/2037', #default
+    );
+    my %cust_pkg = ( pkgpart => $pkgpart );
+    foreach my $field ( @fields ) {
+      if ( $field =~ /^cust_pkg\.(setup|bill|susp|expire|cancel)$/ ) {
+        #$cust_pkg{$1} = str2time( shift @$columns );
+        $cust_pkg{$1} = str2time( shift @columns );
+      } else {
+        #$cust_main{$field} = shift @$columns; 
+        $cust_main{$field} = shift @columns; 
+      }
+    }
+
+    my $cust_pkg = new FS::cust_pkg ( \%cust_pkg ) if $pkgpart;
+    my $cust_main = new FS::cust_main ( \%cust_main );
+    use Tie::RefHash;
+    tie my %hash, 'Tie::RefHash'; #this part is important
+    $hash{$cust_pkg} = [] if $pkgpart;
+    my $error = $cust_main->insert( \%hash );
+
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "can't insert customer for $line: $error";
+    }
+    $imported++;
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+  return "Empty file!" unless $imported;
+
+  ''; #no error
+
 }
 
 =back
