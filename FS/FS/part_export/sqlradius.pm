@@ -143,10 +143,10 @@ sub sqlradius_usergroup_delete { #subroutine, not method
   my( $username, @groups ) = @_;
 
   my $sth = $dbh->prepare( 
-    "DELETE FROM usergroup ( id, UserName, GroupName ) VALUES ( ?, ?, ? )"
+    "DELETE FROM usergroup WHERE UserName = ? AND GroupName = ?"
   ) or die $dbh->errstr;
   foreach my $group ( @groups ) {
-    $sth->execute( '', $username, $group )
+    $sth->execute( $username, $group )
       or die "can't delete from groupname table: ". $sth->errstr;
   }
   $dbh->disconnect;
