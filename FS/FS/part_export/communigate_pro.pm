@@ -88,10 +88,11 @@ sub CreateAccount {
   my $accountType  = delete $args{'accountType'};
   my $externalFlag = delete $args{'externalFlag'};
   $args{'AccessModes'} = [ split(' ', $args{'AccessModes'}) ];
-  @args = ( accountName => $accountName, [
-                                           settings     => \%args,
-                                           accountType  => $accountType,
-                                           externalFlag => $externalFlag, ] );
+  @args = ( accountName => $accountName,
+            accountType  => $accountType,
+            externalFlag => $externalFlag,
+            settings     => \%args,
+          );
 
   communigate_pro_command( $machine, $port, $login, $password, $method, @args );
 
