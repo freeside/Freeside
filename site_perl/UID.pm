@@ -164,13 +164,13 @@ object.  Support for CGI::Base and derived classes is depriciated.
 sub cgisetotaker {
   if ( $cgi && $cgi->isa('CGI::Base') && defined $cgi->var('REMOTE_USER')) {
     carp "Use of CGI::Base is depriciated";
-    $user = $cgi->var('REMOTE_USER');
+    $user = lc ( $cgi->var('REMOTE_USER') );
   } elsif ( $cgi && $cgi->isa('CGI') && defined $cgi->remote_user ) {
-    $user = $cgi->remote_user;
+    $user = lc ( $cgi->remote_user );
   } else {
     die "fatal: Can't get REMOTE_USER!";
   }
-  lc($user);
+  $user;
 }
 
 =item checkeuid
@@ -241,7 +241,7 @@ coderef into the hash %FS::UID::callback :
 
 =head1 VERSION
 
-$Id: UID.pm,v 1.9 1999-04-12 21:09:39 ivan Exp $
+$Id: UID.pm,v 1.10 1999-04-12 22:41:09 ivan Exp $
 
 =head1 BUGS
 
@@ -287,7 +287,10 @@ inlined suidsetup
 ivan@sisd.com 98-sep-12
 
 $Log: UID.pm,v $
-Revision 1.9  1999-04-12 21:09:39  ivan
+Revision 1.10  1999-04-12 22:41:09  ivan
+bugfix; $user is a global (yuck)
+
+Revision 1.9  1999/04/12 21:09:39  ivan
 force username to lowercase
 
 Revision 1.8  1999/02/23 07:23:23  ivan
