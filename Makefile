@@ -81,8 +81,8 @@ FREESIDE_CONF = /usr/local/etc/freeside
 #rt/config.layout.in
 RT_PATH = /opt/rt3
 
-VERSION=1.5.0pre4
-TAG=freeside_1_5_0pre4
+VERSION=1.5.0pre5
+TAG=freeside_1_5_0pre5
 
 help:
 	@echo "supported targets: aspdocs masondocs alldocs docs install-docs"
