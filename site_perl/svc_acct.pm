@@ -378,7 +378,8 @@ sub check {
       if ( $shell = (grep $_ eq $recref->{shell}, @shells)[0] ) {
         $recref->{shell} = $shell;
       } else {
-        return "Illegal shell ". $self->shell;
+        return "Illegal shell \`". $self->shell. "\'; ".
+               $conf->dir. "/shells contains: @shells";
       }
     } else {
       $recref->{shell} = '/bin/sync';
@@ -445,7 +446,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: svc_acct.pm,v 1.7 1999-04-07 14:37:37 ivan Exp $
+$Id: svc_acct.pm,v 1.8 1999-07-29 08:47:26 ivan Exp $
 
 =head1 BUGS
 
@@ -487,7 +488,10 @@ arbitrary radius attributes ivan@sisd.com 98-aug-13
 pod and FS::conf ivan@sisd.com 98-sep-22
 
 $Log: svc_acct.pm,v $
-Revision 1.7  1999-04-07 14:37:37  ivan
+Revision 1.8  1999-07-29 08:47:26  ivan
+more informative illegal shells error.
+
+Revision 1.7  1999/04/07 14:37:37  ivan
 use FS::part_svc and FS::svc_acct_pop to avoid warnings
 
 Revision 1.6  1999/01/25 12:26:15  ivan
