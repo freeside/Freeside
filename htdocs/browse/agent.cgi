@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: agent.cgi,v 1.6 1998-11-23 05:29:46 ivan Exp $
+# $Id: agent.cgi,v 1.7 1998-12-17 05:25:16 ivan Exp $
 #
 # ivan@sisd.com 97-dec-12
 #
@@ -15,7 +15,10 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: agent.cgi,v $
-# Revision 1.6  1998-11-23 05:29:46  ivan
+# Revision 1.7  1998-12-17 05:25:16  ivan
+# fix visual and other bugs
+#
+# Revision 1.6  1998/11/23 05:29:46  ivan
 # use CGI::Carp
 #
 # Revision 1.5  1998/11/23 05:27:31  ivan
@@ -44,9 +47,11 @@ my($cgi) = new CGI;
 
 &cgisuidsetup($cgi);
 
+my($p)=popurl(2);
+
 print $cgi->header, header('Agent Listing', menubar(
-  'Main Menu'   => popurl(2),
-  'Agent Types' => 'agent_type.cgi',
+  'Main Menu'   => $p,
+  'Agent Types' => $p. 'browse/agent_type.cgi',
 #  'Add new agent' => '../edit/agent.cgi'
 )), <<END;
 Agents are resellers of your service. Agents may be limited to a subset of your
@@ -64,7 +69,6 @@ END
 #        <TH>Agent</TH>
 
 my($agent);
-my($p)=popurl(2);
 foreach $agent ( sort { 
   $a->getfield('agentnum') <=> $b->getfield('agentnum')
 } qsearch('agent',{}) ) {
@@ -74,11 +78,11 @@ foreach $agent ( sort {
   my($atype)=$agent_type->getfield('atype');
   print <<END;
       <TR>
-        <TD><A HREF="$p/edit/agent.cgi?$hashref->{agentnum}">
+        <TD><A HREF="${p}edit/agent.cgi?$hashref->{agentnum}">
           $hashref->{agentnum}</A></TD>
-        <TD><A HREF="$p/edit/agent.cgi?$hashref->{agentnum}">
+        <TD><A HREF="${p}edit/agent.cgi?$hashref->{agentnum}">
           $hashref->{agent}</A></TD>
-        <TD><A HREF="$p/edit/agent_type.cgi?$typenum">$atype</A></TD>
+        <TD><A HREF="${p}edit/agent_type.cgi?$typenum">$atype</A></TD>
         <TD>$hashref->{freq}</TD>
         <TD>$hashref->{prog}</TD>
       </TR>
@@ -88,8 +92,8 @@ END
 
 print <<END;
       <TR>
-        <TD COLSPAN=2><A HREF="$p/edit/agent.cgi"><I>Add new agent</I></A></TD>
-        <TD><A HREF="$p/edit/agent_type.cgi"><I>Add new agent type</I></A></TD>
+        <TD COLSPAN=2><A HREF="${p}edit/agent.cgi"><I>Add new agent</I></A></TD>
+        <TD><A HREF="${p}edit/agent_type.cgi"><I>Add new agent type</I></A></TD>
       </TR>
     </TABLE>
 

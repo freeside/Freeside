@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main_county.cgi,v 1.2 1998-11-18 09:01:34 ivan Exp $
+# $Id: cust_main_county.cgi,v 1.3 1998-12-17 05:25:18 ivan Exp $
 #
 # ivan@sisd.com 97-dec-13
 #
@@ -10,7 +10,10 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: cust_main_county.cgi,v $
-# Revision 1.2  1998-11-18 09:01:34  ivan
+# Revision 1.3  1998-12-17 05:25:18  ivan
+# fix visual and other bugs
+#
+# Revision 1.2  1998/11/18 09:01:34  ivan
 # i18n! i18n!
 #
 
@@ -26,9 +29,11 @@ my($cgi) = new CGI;
 
 &cgisuidsetup($cgi);
 
+my($p) = popurl(2);
+
 print $cgi->header, header("Tax Rate Listing", menubar(
-  'Main Menu' => popurl(2),
-  'Edit tax rates' => popurl(2). "/edit/cust_main_county.cgi",
+  'Main Menu' => $p,
+  'Edit tax rates' => $p. "edit/cust_main_county.cgi",
 )),<<END;
     Click on <u>expand country</u> to specify a country's tax rates by state.
     <BR>Click on <u>expand state</u> to specify a state's tax rates by county.
@@ -53,7 +58,7 @@ END
   print "<TD>", $hashref->{state}
       ? $hashref->{state}
       : qq!(ALL) <FONT SIZE=-1>!.
-        qq!<A HREF="!. popurl(2). qq!/edit/cust_main_county-expand.cgi?!. $hashref->{taxnum}.
+        qq!<A HREF="${p}edit/cust_main_county-expand.cgi?!. $hashref->{taxnum}.
         qq!">expand country</A></FONT>!
     , "</TD>";
   print "<TD>";
@@ -63,7 +68,7 @@ END
     print "(ALL)";
     if ( $hashref->{state} ) {
       print qq!<FONT SIZE=-1>!.
-          qq!<A HREF="!. popurl(2). qq!/edit/cust_main_county-expand.cgi?!. $hashref->{taxnum}.
+          qq!<A HREF="${p}edit/cust_main_county-expand.cgi?!. $hashref->{taxnum}.
           qq!">expand state</A></FONT>!;
     }
   }

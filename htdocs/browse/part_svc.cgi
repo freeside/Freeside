@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: part_svc.cgi,v 1.4 1998-11-21 02:26:22 ivan Exp $
+# $Id: part_svc.cgi,v 1.5 1998-12-17 05:25:21 ivan Exp $
 #
 # ivan@sisd.com 97-nov-14, 97-dec-9
 #
@@ -10,7 +10,10 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: part_svc.cgi,v $
-# Revision 1.4  1998-11-21 02:26:22  ivan
+# Revision 1.5  1998-12-17 05:25:21  ivan
+# fix visual and other bugs
+#
+# Revision 1.4  1998/11/21 02:26:22  ivan
 # visual
 #
 # Revision 1.3  1998/11/20 23:10:57  ivan
@@ -32,8 +35,10 @@ my($cgi) = new CGI;
 
 &cgisuidsetup($cgi);
 
+my $p = popurl(2);
+
 print $cgi->header, header('Service Part Listing', menubar(
-  'Main Menu' => popurl(2),
+  'Main Menu' => $p,
 )),<<END;
     Services are items you offer to your customers.<BR><BR>
 END
@@ -47,7 +52,6 @@ print table, <<END;
 END
 
 my($part_svc);
-my($p)=popurl(2);
 foreach $part_svc ( sort {
   $a->getfield('svcpart') <=> $b->getfield('svcpart')
 } qsearch('part_svc',{}) ) {
@@ -63,9 +67,9 @@ foreach $part_svc ( sort {
   my($rowspan)=scalar(@rows) || 1;
   print <<END;
       <TR>
-        <TD ROWSPAN=$rowspan><A HREF="$p/edit/part_svc.cgi?$hashref->{svcpart}">
+        <TD ROWSPAN=$rowspan><A HREF="${p}edit/part_svc.cgi?$hashref->{svcpart}">
           $hashref->{svcpart}</A></TD>
-        <TD ROWSPAN=$rowspan><A HREF="$p/edit/part_svc.cgi?$hashref->{svcpart}">          $hashref->{svc}</A></TD>
+        <TD ROWSPAN=$rowspan><A HREF="${p}edit/part_svc.cgi?$hashref->{svcpart}">          $hashref->{svc}</A></TD>
         <TD ROWSPAN=$rowspan>$hashref->{svcdb}</TD>
 END
 
@@ -85,7 +89,7 @@ print "</TR>";
 
 print <<END;
       <TR>
-        <TD COLSPAN=2><A HREF="$p/edit/part_svc.cgi"><I>Add new service</I></A></TD>
+        <TD COLSPAN=2><A HREF="${p}edit/part_svc.cgi"><I>Add new service</I></A></TD>
       </TR>
     </TABLE>
   </BODY>

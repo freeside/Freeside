@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: agent_type.cgi,v 1.2 1998-11-21 07:39:52 ivan Exp $
+# $Id: agent_type.cgi,v 1.3 1998-12-17 05:25:17 ivan Exp $
 #
 # ivan@sisd.com 97-dec-10
 #
@@ -11,7 +11,10 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: agent_type.cgi,v $
-# Revision 1.2  1998-11-21 07:39:52  ivan
+# Revision 1.3  1998-12-17 05:25:17  ivan
+# fix visual and other bugs
+#
+# Revision 1.2  1998/11/21 07:39:52  ivan
 # visual
 #
 
@@ -50,10 +53,10 @@ foreach $agent_type ( sort {
   $rowspan = int($rowspan/2+0.5) ;
   print <<END;
       <TR>
-        <TD ROWSPAN=$rowspan><A HREF="$p/edit/agent_type.cgi?$hashref->{typenum}">
+        <TD ROWSPAN=$rowspan><A HREF="${p}edit/agent_type.cgi?$hashref->{typenum}">
           $hashref->{typenum}
         </A></TD>
-        <TD ROWSPAN=$rowspan><A HREF="$p/edit/agent_type.cgi?$hashref->{typenum}">$hashref->{atype}</A></TD>
+        <TD ROWSPAN=$rowspan><A HREF="${p}/edit/agent_type.cgi?$hashref->{typenum}">$hashref->{atype}</A></TD>
 END
 
   my($type_pkgs);
@@ -63,7 +66,7 @@ END
     my($part_pkg) = qsearchs('part_pkg',{'pkgpart'=> $pkgpart });
     print qq!<TR>! if ($tdcount == 0) ;
     $tdcount = 0 if ($tdcount == -1) ;
-    print qq!<TD><A HREF="$p/edit/part_pkg.cgi?$pkgpart">!,
+    print qq!<TD><A HREF="${p}edit/part_pkg.cgi?$pkgpart">!,
           $part_pkg->getfield('pkg'),"</A></TD>";
     $tdcount ++ ;
     if ($tdcount == 2)
@@ -77,7 +80,7 @@ END
 }
 
 print <<END;
-  <TR><TD COLSPAN=2><I><A HREF="$p/edit/agent_type.cgi">Add new agent type</A></I></TD></TR>
+  <TR><TD COLSPAN=2><I><A HREF="${p}edit/agent_type.cgi">Add new agent type</A></I></TD></TR>
     </TABLE>
   </BODY>
 </HTML>
