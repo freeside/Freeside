@@ -6,6 +6,7 @@ use subs qw(do_template);
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use Text::Template;
+use HTML::Entities;
 use FS::SelfService qw( login customer_info invoice
                         payment_info process_payment 
                         list_pkgs
@@ -176,7 +177,9 @@ sub logout {
 }
 
 sub provision {
-  list_pkgs( 'session_id' => $session_id );
+  my $result = list_pkgs( 'session_id' => $session_id );
+  die $result->{'error'} if exists $result->{'error'} && $result->{'error'};
+  $result;
 }
 
 sub provision_svc {
@@ -204,7 +207,7 @@ sub process_svc_acct {
   );
 
   if ( exists $result->{'error'} && $result->{'error'} ) { 
-    warn "$result $result->{'error'}"; 
+    #warn "$result $result->{'error'}"; 
     $action = 'provision_svc_acct';
     return {
       $cgi->Vars,
@@ -215,7 +218,7 @@ sub process_svc_acct {
       'error' => $result->{'error'},
     };
   } else {
-    warn "$result $result->{'error'}"; 
+    #warn "$result $result->{'error'}"; 
     return $result;
   }
 
@@ -255,8 +258,10 @@ sub do_template {
 package FS::SelfService::_selfservicecgi;
 
 #use FS::SelfService qw(regionselector expselect popselector);
+use HTML::Entities;
 use FS::SelfService qw(popselector);
 
+#false laziness w/agent.cgi
 sub include {
   my $name = shift;
   my $template = new Text::Template( TYPE   => 'FILE',
@@ -266,7 +271,9 @@ sub include {
                                    )
     or die $Text::Template::ERROR;
 
-  $template->fill_in();
+  $template->fill_in( PACKAGE => 'FS::SelfService::_selfservicecgi',
+                      #HASH    => $fill_in
+                    );
 
 }
 

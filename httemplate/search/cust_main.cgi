@@ -498,27 +498,11 @@ sub lastsearch {
   }
 
   if ( $last_type{'Fuzzy'} || $last_type{'All'} ) {
-
-    &FS::cust_main::check_and_rebuild_fuzzyfiles;
-    my $all_last = &FS::cust_main::all_last;
-
-    my %last;
-    if ( $last_type{'Fuzzy'} || $last_type{'All'} ) { 
-      foreach ( amatch($last, [ qw(i) ], @$all_last) ) {
-        $last{$_}++; 
-      }
-    }
-
-    #if ($last_type{'Sound-alike'}) {
-    #}
-
-    foreach ( keys %last ) {
-      push @cust_main, qsearch('cust_main',{'last'=>$_});
-      push @cust_main, qsearch('cust_main',{'ship_last'=>$_})
-        if defined dbdef->table('cust_main')->column('ship_last');
-    }
-
+    push @cust_main, FS::cust_main->fuzzy_search( { 'last' => $last } );
   }
+
+  #if ($last_type{'Sound-alike'}) {
+  #}
 
   \@cust_main;
 }
@@ -561,26 +545,10 @@ sub companysearch {
   }
 
   if ( $company_type{'Fuzzy'} || $company_type{'All'} ) {
+    push @cust_main, FS::cust_main->fuzzy_search( { 'company' => $company } );
+  }
 
-    &FS::cust_main::check_and_rebuild_fuzzyfiles;
-    my $all_company = &FS::cust_main::all_company;
-
-    my %company;
-    if ( $company_type{'Fuzzy'} || $company_type{'All'} ) { 
-      foreach ( amatch($company, [ qw(i) ], @$all_company ) ) {
-        $company{$_}++;
-      }
-    }
-
-    #if ($company_type{'Sound-alike'}) {
-    #}
-
-    foreach ( keys %company ) {
-      push @cust_main, qsearch('cust_main',{'company'=>$_});
-      push @cust_main, qsearch('cust_main',{'ship_company'=>$_})
-        if defined dbdef->table('cust_main')->column('ship_last');
-    }
-
+  if ($company_type{'Sound-alike'}) {
   }
 
   \@cust_main;

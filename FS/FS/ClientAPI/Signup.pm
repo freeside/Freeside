@@ -76,7 +76,7 @@ sub signup_info {
     'cvv_enabled' => defined dbdef->table('cust_main')->column('paycvv'),
 
     'msgcat' => { map { $_=>gettext($_) } qw(
-      passwords_dont_match invalid_card unknown_card_type not_a
+      passwords_dont_match invalid_card unknown_card_type not_a empty_password
     ) },
 
     'statedefault' => $conf->config('statedefault') || 'CA',

@@ -4,8 +4,17 @@
 <TABLE BORDER=0 CELLPADDING=4><TR>
 <%= include('myaccount_menu') %>
 <TD VALIGN="top">
-<%= include('provision_list') %>
+<%= $small_custview %>
+<BR>
+<%= if ( $error ) {
+
+  $OUT .= qq!<FONT SIZE="+1" COLOR="#ff0000">Error: $error</FONT>!;
+} else {
+  $OUT .= "<FONT SIZE=4>$svc removed.</FONT>";
+} %>
+
 </TD></TR></TABLE>
 <HR>
 <FONT SIZE="-2">powered by <a href="http://www.sisd.com/freeside">freeside</a></FONT>
 </BODY></HTML>
+

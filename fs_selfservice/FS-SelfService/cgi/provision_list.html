@@ -1,0 +1,74 @@
+<FONT SIZE=4>Setup services</FONT><BR><BR>
+
+<SCRIPT>
+function areyousure(href, message) {
+    if (confirm(message) == true)
+        window.location.href = href;
+}
+</SCRIPT>
+
+<TABLE BORDER=0 CELLSPACING=0 CELLPADDING=2 BGCOLOR="#ffffff">
+
+<%= foreach my $pkg (
+      grep {    scalar(@{$_->{part_svc}})
+             || scalar(@{$_->{cust_svc}})
+           } @cust_pkg
+    ) {
+
+  $OUT .= #'<TABLE BORDER=0 CELLSPACING=0 CELLPADDING=2 BGCOLOR="#ffffff">'.
+          '<TR><TH BGCOLOR="#6666ff" COLSPAN=3>'.
+          $pkg->{'pkg'}.
+          '</TH></TR>';
+
+  my $col1 = "ffffff";
+  my $col2 = "dddddd";
+  my $col = $col1;
+
+  foreach my $cust_svc ( @{ $pkg->{cust_svc} } ) {
+    my $td = qq!<TD BGCOLOR="#$col"!;
+
+    $OUT .= '<TR>'.
+              "$td ALIGN=right>". $cust_svc->{label}[0]. ': </TD>'.
+              "$td><B>". $cust_svc->{label}[1]. '</B>';
+    $OUT .= '<BR><I>password: '. encode_entities($cust_svc->{_password}). '</I>'
+      if exists($cust_svc->{_password});
+    $OUT .= '</TD>'.
+              "$td><FONT SIZE=-1>";
+              
+    #if ( $cust_svc->{label}[2] eq 'svc_acct' ) {
+    #  $OUT .= qq!(<A HREF="${url}changepw;svcnum=$cust_svc->{'svcnum'}">!.
+    #          'change&nbsp;pw) ';
+    #}
+
+    unless ( $cust_svc->{'svcnum'} == $svcnum ) {
+      $OUT .= qq!(<A HREF="javascript:areyousure('${url}delete_svc;svcnum=$cust_svc->{svcnum}', 'This will perminantly delete the $cust_svc->{label}[1] $cust_svc->{label}[0].  Are you sure?')">!.
+              'delete</A>)';
+
+    }
+    $OUT .= '</FONT></TD></TR>';
+    $col = $col eq $col1 ? $col2 : $col1;
+  }
+
+  $OUT .= '<TR><TD COLSPAN=3 BGCOLOR="#000000"></TD></TR>'
+    if scalar(@{$pkg->{part_svc}}) && scalar(@{$pkg->{cust_svc}});
+
+  $col = $col1;
+
+  foreach my $part_svc ( @{ $pkg->{part_svc} } ) {
+
+    my $td = qq!<TD BGCOLOR="#$col"!;
+
+    $OUT .= "<TR>$td COLSPAN=3 ALIGN=center>".
+            qq!<A HREF="${url}provision_svc;pkgnum=$pkg->{'pkgnum'};svcpart=$part_svc->{'svcpart'}">!.
+            'Setup '. $part_svc->{'svc'}. '</A> '.
+            '('. $part_svc->{'num_avail'}. ' available)'.
+            '</TD></TR>';
+    $col = $col eq $col1 ? $col2 : $col1;
+  }
+
+  #$OUT .= '</TABLE><BR>';
+  $OUT .= '<TR><TD BGCOLOR="#eeeeee" COLSPAN=3>&nbsp;</TD></TR>';
+
+} %>
+
+</TABLE>

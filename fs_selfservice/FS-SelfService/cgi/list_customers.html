@@ -1,10 +1,9 @@
-<HTML><HEAD><TITLE>Reseller Main</TITLE></HEAD>
-<BODY BGCOLOR="#eeeeee"><FONT SIZE=5>Reseller Main</FONT><BR><BR>
+<HTML><HEAD><TITLE>Reseller</TITLE></HEAD>
+<BODY BGCOLOR="#eeeeee"><FONT SIZE=5>Reseller</FONT><BR><BR>
 <%= $url = "$selfurl?session=$session_id;action="; ''; %>
-<TABLE BORDER=0 CELLPADDING=4><TR><TD VALIGN="top" HEIGHT=384 BGCOLOR="#dddddd">
-<A HREF="<%= $url %>agent_main">Reseller Main</A><BR>
-<!-- <A HREF="<%= $url %>other">SomethingElse</A><BR> -->
-</TD><TD VALIGN="top">
+<TABLE BORDER=0 CELLPADDING=4><TR>
+<%= include('agent_menu') %>
+<TD VALIGN="top">
 
 <%=
   if ( @customers ) {
@@ -37,5 +36,4 @@
 <HR>
 <FONT SIZE="-2">powered by <a href="http://www.sisd.com/freeside">freeside</a></FONT>
 </BODY></HTML>
-
 

@@ -109,23 +109,8 @@ sub logout {
 sub customer_info {
   my $p = shift;
 
-  my($session, $custnum, $context);
-  if ( $p->{'session_id'} ) {
-    $context = 'customer';
-    $session = $cache->get($p->{'session_id'})
-      or return { 'error' => "Can't resume session" }; #better error message
-    $custnum = $session->{'custnum'};
-  } elsif ( $p->{'agent_session_id'} ) {
-    $context = 'agent';
-    my $agent_cache = new Cache::SharedMemoryCache( {
-      'namespace' => 'FS::ClientAPI::Agent',
-    } );
-    $session = $agent_cache->get($p->{'agent_session_id'})
-      or return { 'error' => "Can't resume session" }; #better error message
-    $custnum = $p->{'custnum'};
-  } else {
-    return { 'error' => "Can't resume session" }; #better error message
-  }
+  my($context, $session, $custnum) = _custoragent_session_custnum($p);
+  return { 'error' => $session } if $context eq 'error';
 
   my %return;
   if ( $custnum ) { #customer record
@@ -451,31 +436,42 @@ sub cancel {
 
 sub list_pkgs {
   my $p = shift;
-  my $session = $cache->get($p->{'session_id'})
-    or return { 'error' => "Can't resume session" }; #better error message
 
-  my $custnum = $session->{'custnum'};
+  my($context, $session, $custnum) = _custoragent_session_custnum($p);
+  return { 'error' => $session } if $context eq 'error';
 
-  my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
+  my $search = { 'custnum' => $custnum };
+  $search->{'agentnum'} = $session->{'agentnum'} if $context eq 'agent';
+  my $cust_main = qsearchs('cust_main', $search )
     or return { 'error' => "unknown custnum $custnum" };
 
   #return { 'cust_pkg' => [ map { $_->hashref } $cust_main->ncancelled_pkgs ] };
 
+  my $conf = new FS::Conf;
+
   { 'svcnum'   => $session->{'svcnum'},
+    'custnum'  => $custnum,
     'cust_pkg' => [ map {
                           { $_->hash,
                             $_->part_pkg->hash,
                             part_svc =>
                               [ map $_->hashref, $_->available_part_svc ],
                             cust_svc => 
-                              [ map { { $_->hash,
-                                        label => [ $_->label ],
-                                      }
+                              [ map { my $ref = { $_->hash,
+                                                  label => [ $_->label ],
+                                                };
+                                      $ref->{_password} = $_->svc_x->_password
+                                        if $context eq 'agent'
+                                        && $conf->exists('agent-showpasswords')
+                                        && $_->part_svc->svcdb eq 'svc_acct';
+                                      $ref;
                                     } $_->cust_svc
                               ],
                           };
                         } $cust_main->ncancelled_pkgs
                   ],
+    'small_custview' =>
+      small_custview( $cust_main, $conf->config('defaultcountry') ),
   };
 
 }
@@ -483,28 +479,11 @@ sub list_pkgs {
 sub order_pkg {
   my $p = shift;
 
-  my($session, $custnum, $context);
-
-  if ( $p->{'session_id'} ) {
-    $context = 'customer';
-    $session = $cache->get($p->{'session_id'})
-      or return { 'error' => "Can't resume session" }; #better error message
-    $custnum = $session->{'custnum'};
-  } elsif ( $p->{'agent_session_id'} ) {
-    $context = 'agent';
-    my $agent_cache = new Cache::SharedMemoryCache( {
-      'namespace' => 'FS::ClientAPI::Agent',
-    } );
-    $session = $agent_cache->get($p->{'agent_session_id'})
-      or return { 'error' => "Can't resume session" }; #better error message
-    $custnum = $p->{'custnum'};
-  } else {
-    return { 'error' => "Can't resume session" }; #better error message
-  }
+  my($context, $session, $custnum) = _custoragent_session_custnum($p);
+  return { 'error' => $session } if $context eq 'error';
 
   my $search = { 'custnum' => $custnum };
   $search->{'agentnum'} = $session->{'agentnum'} if $context eq 'agent';
-
   my $cust_main = qsearchs('cust_main', $search )
     or return { 'error' => "unknown custnum $custnum" };
 
@@ -632,12 +611,12 @@ sub cancel_pkg {
 sub provision_acct {
   my $p = shift;
 
-  my $session = $cache->get($p->{'session_id'})
-    or return { 'error' => "Can't resume session" }; #better error message
+  my($context, $session, $custnum) = _custoragent_session_custnum($p);
+  return { 'error' => $session } if $context eq 'error';
 
-  my $custnum = $session->{'custnum'};
-
-  my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
+  my $search = { 'custnum' => $custnum };
+  $search->{'agentnum'} = $session->{'agentnum'} if $context eq 'agent';
+  my $cust_main = qsearchs('cust_main', $search )
     or return { 'error' => "unknown custnum $custnum" };
 
   my $pkgnum = $p->{'pkgnum'};
@@ -671,12 +650,12 @@ sub provision_acct {
 sub part_svc_info {
   my $p = shift;
 
-  my $session = $cache->get($p->{'session_id'})
-    or return { 'error' => "Can't resume session" }; #better error message
+  my($context, $session, $custnum) = _custoragent_session_custnum($p);
+  return { 'error' => $session } if $context eq 'error';
 
-  my $custnum = $session->{'custnum'};
-
-  my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
+  my $search = { 'custnum' => $custnum };
+  $search->{'agentnum'} = $session->{'agentnum'} if $context eq 'agent';
+  my $cust_main = qsearchs('cust_main', $search )
     or return { 'error' => "unknown custnum $custnum" };
 
   my $pkgnum = $p->{'pkgnum'};
@@ -693,11 +672,14 @@ sub part_svc_info {
     or return { 'error' => "unknown svcpart $svcpart for pkgnum $pkgnum" };
   my $part_svc = $pkg_svc->part_svc;
 
+  my $conf = new FS::Conf;
+
   return {
     'svc'     => $part_svc->svc,
     'svcdb'   => $part_svc->svcdb,
     'pkgnum'  => $pkgnum,
     'svcpart' => $svcpart,
+    'custnum' => $custnum,
 
     'security_phrase' => 0, #XXX !
     'svc_acct_pop'    => [], #XXX !
@@ -705,6 +687,10 @@ sub part_svc_info {
     'init_popstate'   => '',
     'popac'           => '',
     'acstate'         => '',
+
+    'small_custview' =>
+      small_custview( $cust_main, $conf->config('defaultcountry') ),
+
   };
 
 }
@@ -712,12 +698,12 @@ sub part_svc_info {
 sub unprovision_svc {
   my $p = shift;
 
-  my $session = $cache->get($p->{'session_id'})
-    or return { 'error' => "Can't resume session" }; #better error message
+  my($context, $session, $custnum) = _custoragent_session_custnum($p);
+  return { 'error' => $session } if $context eq 'error';
 
-  my $custnum = $session->{'custnum'};
-
-  my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
+  my $search = { 'custnum' => $custnum };
+  $search->{'agentnum'} = $session->{'agentnum'} if $context eq 'agent';
+  my $cust_main = qsearchs('cust_main', $search )
     or return { 'error' => "unknown custnum $custnum" };
 
   my $svcnum = $p->{'svcnum'};
@@ -728,11 +714,47 @@ sub unprovision_svc {
   return { 'error' => "Service $svcnum does not belong to customer $custnum" }
     unless $cust_svc->cust_pkg->custnum == $custnum;
 
+  my $conf = new FS::Conf;
+
   return { 'svc'   => $cust_svc->part_svc->svc,
-           'error' => $cust_svc->cancel
+           'error' => $cust_svc->cancel,
+           'small_custview' =>
+             small_custview( $cust_main, $conf->config('defaultcountry') ),
          };
 
 }
+
+#--
+
+sub _custoragent_session_custnum {
+  my $p = shift;
+
+  my($context, $session, $custnum);
+  if ( $p->{'session_id'} ) {
+
+    $context = 'customer';
+    $session = $cache->get($p->{'session_id'})
+      or return { 'error' => "Can't resume session" }; #better error message
+    $custnum = $session->{'custnum'};
+
+  } elsif ( $p->{'agent_session_id'} ) {
+
+    $context = 'agent';
+    my $agent_cache = new Cache::SharedMemoryCache( {
+      'namespace' => 'FS::ClientAPI::Agent',
+    } );
+    $session = $agent_cache->get($p->{'agent_session_id'})
+      or return { 'error' => "Can't resume session" }; #better error message
+    $custnum = $p->{'custnum'};
+
+  } else {
+    return { 'error' => "Can't resume session" }; #better error message
+  }
+
+  ($context, $session, $custnum);
+
+}
+
 
 1;
 

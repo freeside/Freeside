@@ -13,6 +13,7 @@ BEGIN {
 }
 use Date::Format;
 #use Date::Manip;
+use String::Approx qw(amatch);
 use Business::CreditCard;
 use FS::UID qw( getotaker dbh );
 use FS::Record qw( qsearchs qsearch dbdef );
@@ -2948,6 +2949,42 @@ sub cancel_sql { "
                 AND ( cust_pkg.cancel IS NULL OR cust_pkg.cancel = 0 )
           )
 "; }
+
+=item fuzzy_search FUZZY_HASHREF [ HASHREF, SELECT, EXTRA_SQL, CACHE_OBJ ]
+
+Performs a fuzzy (approximate) search and returns the matching FS::cust_main
+records.  Currently, only I<last> or I<company> may be specified (the
+appropriate ship_ field is also searched if applicable).
+
+Additional options are the same as FS::Record::qsearch
+
+=cut
+
+sub fuzzy_search {
+  my( $self, $fuzzy, $hash, @opt) = @_;
+  #$self
+  $hash ||= {};
+  my @cust_main = ();
+
+  check_and_rebuild_fuzzyfiles();
+  foreach my $field ( keys %$fuzzy ) {
+    my $sub = \&{"all_$field"};
+    my %match = ();
+    $match{$_}=1 foreach ( amatch($fuzzy->{$field}, ['i'], @{ &$sub() } ) );
+
+    foreach ( keys %match ) {
+      push @cust_main, qsearch('cust_main', { %$hash, $field=>$_}, @opt);
+      push @cust_main, qsearch('cust_main', { %$hash, "ship_$field"=>$_}, @opt)
+        if defined dbdef->table('cust_main')->column('ship_last');
+    }
+  }
+
+  my %saw = ();
+  @cust_main = grep { !$saw{$_->custnum}++ } @cust_main;
+
+  @cust_main;
+
+}
 
 =back
 

@@ -1,0 +1,75 @@
+<SCRIPT TYPE="text/javascript">
+function enable_order_pkg () {
+  if ( document.OrderPkgForm.pkgpart.selectedIndex > 0 ) {
+    document.OrderPkgForm.submit.disabled = false;
+  } else {
+    document.OrderPkgForm.submit.disabled = true;
+  }
+}
+</SCRIPT>
+<FONT SIZE=4>Purchase additional package</FONT><BR><BR>
+<%= if ( $error ) {
+  $OUT .= qq!<FONT SIZE="+1" COLOR="#ff0000">$error</FONT><BR><BR>!;
+} ''; %>
+<FORM NAME="OrderPkgForm" ACTION="<%= $selfurl %>" METHOD=POST>
+<INPUT TYPE="hidden" NAME="session" VALUE="<%= $session_id %>">
+<INPUT TYPE="hidden" NAME="action" VALUE="process_order_pkg">
+<INPUT TYPE="hidden" NAME="custnum" VALUE="<%= $custnum %>">
+<TABLE BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0>
+<TR>
+  <TD COLSPAN=2><SELECT NAME="pkgpart" onChange="enable_order_pkg()">
+  <OPTION VALUE="">
+
+  <%=
+    foreach my $part_pkg ( @part_pkg ) {
+      $OUT .= '<OPTION VALUE="'. $part_pkg->{'pkgpart'}. '"';
+      $OUT .= ' SELECTED' if $pkgpart && $part_pkg->{'pkgpart'} == $pkgpart;
+      $OUT .= '>'. $part_pkg->{'pkg'};
+    }
+  %>
+
+  </SELECT></TD>
+</TR>
+<TR>
+  <TD ALIGN="right">Username</TD>
+  <TD><INPUT TYPE="text" NAME="username" VALUE="<%= $username %>"></TD>
+</TR>
+<TR>
+  <TD ALIGN="right">Password</TD>
+  <TD><INPUT TYPE="password" NAME="_password" VALUE="<%= $_password %>"></TD>
+</TR>
+<TR>
+  <TD ALIGN="right">Re-enter Password</TD>
+  <TD><INPUT TYPE="password" NAME="_password2" VALUE="<%= $_password2 %>"></TD>
+</TR>
+<%=
+  if ( $security_phrase ) {
+    $OUT .= <<ENDOUT;
+<TR>
+  <TD ALIGN="right">Security Phrase</TD>
+  <TD><INPUT TYPE="text" NAME="sec_phrase" VALUE="$sec_phrase">
+  </TD>
+</TR>
+ENDOUT
+  } else {
+    $OUT .= '<INPUT TYPE="hidden" NAME="sec_phrase" VALUE="">';
+  }
+%>
+<%=
+  if ( @svc_acct_pop ) {
+    $OUT .= '<TR><TD ALIGN="right">Access number</TD><TD>'.
+            popselector( 'popnum'        => $popnum,
+                         'pops'          => \@svc_acct_pop,
+                         'init_popstate' => $init_popstate,
+                         'popac'         => $popac,
+                         'acstate'       => $acstate,
+                       ).
+            '</TD></TR>';
+  } else {
+    $OUT .= popselector(popnum=>$popnum, pops=>\@svc_acct_pop);
+  }
+%>
+</TABLE>
+<INPUT NAME="submit" TYPE="submit" VALUE="Purchase" disabled>
+</FORM>
+

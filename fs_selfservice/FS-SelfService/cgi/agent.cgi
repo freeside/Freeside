@@ -9,10 +9,12 @@ use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use Business::CreditCard;
 use Text::Template;
-use FS::SelfService qw( agent_login agent_info
+#use HTML::Entities;
+use FS::SelfService qw( agent_login agent_logout agent_info
                         agent_list_customers
                         signup_info new_customer
-                        customer_info order_pkg
+                        customer_info list_pkgs order_pkg
+                        part_svc_info provision_acct unprovision_svc
                       );
 
 $DEBUG = 0;
@@ -65,7 +67,7 @@ $session_id = $cgi->param('session');
 
 warn "$me checking action\n" if $DEBUG;
 $cgi->param('action') =~
-   /^(agent_main|signup|process_signup|list_customers|view_customer|process_order_pkg)$/
+   /^(agent_main|signup|process_signup|list_customers|view_customer|agent_provision|provision_svc|process_svc_acct|delete_svc|agent_order_pkg|process_order_pkg|logout)$/
   or die "unknown action ". $cgi->param('action');
 my $action = $1;
 
@@ -86,6 +88,11 @@ do_template($action, {
 warn "$me done processing template $action\n" if $DEBUG;
 
 #-- 
+
+sub logout {
+  $action = 'agent_logout';
+  agent_logout( 'session_id' => $session_id );
+}
 
 sub agent_main { agent_info( 'session_id' => $session_id ); }
 
@@ -184,14 +191,54 @@ sub process_signup {
 }
 
 sub list_customers {
-  agent_list_customers( 'session_id' => $session_id,
-                        map { $_ => $cgi->param($_) }
-                          grep defined($cgi->param($_)),
-                               qw(prospect active susp cancel)
-                      );
+
+  my $results = 
+    agent_list_customers( 'session_id' => $session_id,
+                          map { $_ => $cgi->param($_) }
+                            grep defined($cgi->param($_)),
+                                 qw(prospect active susp cancel),
+                                 'search',
+                        );
+
+  if ( scalar( @{$results->{'customers'}} ) == 1 ) {
+    $action = 'view_customer';
+    customer_info (
+      'agent_session_id' => $session_id,
+      'custnum'          => $results->{'customers'}[0]{'custnum'},
+    );
+  } else {
+    $results;
+  }
+
 }
 
 sub view_customer {
+
+  #my $init_data = signup_info( 'session_id' => $session_id );
+  #if ( $init_data->{'error'} ) {
+  #  if ( $init_data->{'error'} eq "Can't resume session" ) { #ick
+  #    do_template('agent_login',{});
+  #    exit;
+  #  } else { #?
+  #    die $init_data->{'error'};
+  #  }
+  #}
+  #
+  #my $customer_info =
+  customer_info (
+    'agent_session_id' => $session_id,
+    'custnum'          => $cgi->param('custnum'),
+  );
+  #
+  #return {
+  #  ( map { $_ => $init_data->{$_} }
+  #        qw( part_pkg security_phrase svc_acct_pop ),
+  #  ),
+  #  %$customer_info,
+  #};
+}
+
+sub agent_order_pkg {
 
   my $init_data = signup_info( 'session_id' => $session_id );
   if ( $init_data->{'error'} ) {
@@ -205,9 +252,8 @@ sub view_customer {
 
   my $customer_info = customer_info (
     'agent_session_id' => $session_id,
-    'custnum'          => $cgi->param('custnum')
+    'custnum'          => $cgi->param('custnum'),
   );
-
 
   return {
     ( map { $_ => $init_data->{$_} }
@@ -215,6 +261,82 @@ sub view_customer {
     ),
     %$customer_info,
   };
+
+}
+
+sub agent_provision {
+  my $result = list_pkgs(
+    'agent_session_id' => $session_id,
+    'custnum'          => $cgi->param('custnum'),
+  );
+  die $result->{'error'} if exists $result->{'error'} && $result->{'error'};
+  $result;
+}
+
+sub provision_svc {
+
+  my $result = part_svc_info(
+    'agent_session_id' => $session_id,
+    map { $_ => $cgi->param($_) } qw( pkgnum svcpart custnum ),
+  );
+  die $result->{'error'} if exists $result->{'error'} && $result->{'error'};
+
+  $result->{'svcdb'} =~ /^svc_(.*)$/
+    #or return { 'error' => 'Unknown svcdb '. $result->{'svcdb'} };
+    or die 'Unknown svcdb '. $result->{'svcdb'};
+  $action .= "_$1";
+  $action = "agent_$action";
+
+  $result;
+}
+
+sub process_svc_acct {
+
+  my $result = provision_acct (
+    'agent_session_id' => $session_id,
+    map { $_ => $cgi->param($_) } qw(
+      custnum pkgnum svcpart username _password _password2 sec_phrase popnum )
+  );
+
+  if ( exists $result->{'error'} && $result->{'error'} ) { 
+    #warn "$result $result->{'error'}"; 
+    $action = 'provision_svc_acct';
+    $action = "agent_$action";
+    return {
+      $cgi->Vars,
+      %{ part_svc_info( 'agent_session_id' => $session_id,
+                        map { $_ => $cgi->param($_) } qw(pkgnum svcpart custnum)
+                      )
+      },
+      'error' => $result->{'error'},
+    };
+  } else {
+    #warn "$result $result->{'error'}"; 
+    $action = 'agent_provision';
+    return {
+      %{agent_provision()},
+      'message' => $result->{'svc'}. ' setup sucessfully.',
+    };
+  }
+
+}
+
+sub delete_svc {
+  my $result = unprovision_svc(
+    'agent_session_id' => $session_id,
+    'custnum'          => $cgi->param('custnum'),
+    'svcnum'           => $cgi->param('svcnum'),
+  );
+
+  $action = 'agent_provision';
+
+  return {
+    %{agent_provision()},
+    'message' => $result->{'error'}
+                   ? '<FONT COLOR="#FF0000">'. $result->{'error'}. '</FONT>'
+                   : $result->{'svc'}. ' removed.'
+  };
+
 }
 
 sub process_order_pkg {
@@ -223,11 +345,12 @@ sub process_order_pkg {
 
   unless ( length($cgi->param('_password')) ) {
     my $init_data = signup_info( 'session_id' => $session_id );
-    $results = { 'error' => $init_data->{msgcat}{empty_password} }
+    #die $init_data->{'error'} if $init_data->{'error'};
+    $results = { 'error' => $init_data->{msgcat}{empty_password} };
   }
   if ( $cgi->param('_password') ne $cgi->param('_password2') ) {
     my $init_data = signup_info( 'session_id' => $session_id );
-    $results = { error => $init_data->{msgcat}{passwords_dont_match} };
+    $results = { 'error' => $init_data->{msgcat}{passwords_dont_match} };
     $cgi->param('_password', '');
     $cgi->param('_password2', '');
   }
@@ -238,17 +361,22 @@ sub process_order_pkg {
         qw( custnum pkgpart username _password _password2 sec_phrase popnum )
   );
 
-  $action = 'view_customer';
-  $cgi->delete( grep { $_ ne 'custnum' } $cgi->param )
-    unless $results->{'error'};
-
-  return {
-    $cgi->Vars,
-    %{view_customer()},
-    'message' => $results->{'error'}
-                   ? '<FONT COLOR="#FF0000">'. $results->{'error'}. '</FONT>'
-                   : 'Package order sucessful.'
-  };
+  if ( $results->{'error'} ) {
+    $action = 'agent_order_pkg';
+    return {
+      $cgi->Vars,
+      %{agent_order_pkg()},
+      #'message' => '<FONT COLOR="#FF0000">'. $results->{'error'}. '</FONT>',
+      'error' => '<FONT COLOR="#FF0000">'. $results->{'error'}. '</FONT>',
+    };
+  } else {
+    $action = 'view_customer';
+    #$cgi->delete( grep { $_ ne 'custnum' } $cgi->param );
+    return {
+      %{view_customer()},
+      'message' => 'Package order sucessful.',
+    };
+  }
 
 }
 
@@ -277,5 +405,23 @@ sub do_template {
 }
 
 package FS::SelfService::_agentcgi;
+
+use HTML::Entities;
 use FS::SelfService qw(regionselector expselect popselector);
+
+#false laziness w/selfservice.cgi
+sub include {
+  my $name = shift;
+  my $template = new Text::Template( TYPE   => 'FILE',
+                                     SOURCE => "$main::template_dir/$name.html",
+                                     DELIMITERS => [ '<%=', '%>' ],
+                                     UNTAINT => 1,                   
+                                   )
+    or die $Text::Template::ERROR;
+
+  $template->fill_in( PACKAGE => 'FS::SelfService::_agentcgi',
+                      #HASH    => $fill_in
+                    );
+
+}
 

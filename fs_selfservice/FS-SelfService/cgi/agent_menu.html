@@ -1,0 +1,15 @@
+<%= $url = "$selfurl?session=$session_id;action="; ''; %>
+<TD VALIGN="top" HEIGHT=384 BGCOLOR="#dddddd">
+
+<A HREF="<%= $url %>agent_main">Overview</A><BR><BR>
+<A HREF="<%= $url %>signup">New customer<!--/prospect--></A><BR><BR>
+<FORM ACTION="<%= $selfurl %>">
+<INPUT TYPE="hidden" NAME="session" VALUE="<%= $session_id %>">
+<INPUT TYPE="hidden" NAME="action" VALUE="list_customers">
+<INPUT TYPE="text" NAME="search" SIZE=20><BR>
+<SMALL><I>cust&nbsp;#,&nbsp;last&nbsp;name,&nbsp;or&nbsp;company</I></SMALL><BR>
+<INPUT TYPE="submit" VALUE="Search customers"><BR>
+</FORM>
+<A HREF="<%= $url %>logout">Logout</A><BR><BR>
+
+</TD>

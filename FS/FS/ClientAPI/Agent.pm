@@ -6,12 +6,14 @@ use strict;
 use vars qw($cache);
 use Digest::MD5 qw(md5_hex);
 use Cache::SharedMemoryCache; #store in db?
-use FS::Record qw(qsearchs); # qsearch);
+use FS::Record qw(qsearchs qsearch dbdef dbh);
 use FS::agent;
+use FS::cust_main;
 
 use FS::ClientAPI;
 FS::ClientAPI->register_handlers(
   'Agent/agent_login'          => \&agent_login,
+  'Agent/agent_logout'         => \&agent_logout,
   'Agent/agent_info'           => \&agent_info,
   'Agent/agent_list_customers' => \&agent_list_customers,
 );
@@ -50,6 +52,16 @@ sub agent_login {
   { 'error'      => '',
     'session_id' => $session_id,
   };
+}
+
+sub agent_logout {
+  my $p = shift;
+  if ( $p->{'session_id'} ) {
+    $cache->remove($p->{'session_id'});
+    return { 'error' => '' };
+  } else {
+    return { 'error' => "Can't resume session" }; #better error message
+  }
 }
 
 sub agent_info {
@@ -92,11 +104,75 @@ sub agent_list_customers {
 
   my @cust_main = ();
 
-  warn $p->{'susp'};
+  #warn $p->{'search'};
+  if ( $p->{'search'} =~ /^\s*(\d+)\s*$/ ) { # customer # search
+    push @cust_main, qsearch('cust_main', { 'agentnum' => $agentnum,
+                                            'custnum'  => $1         } );
+  } elsif ( $p->{'search'} =~ /^\s*(\S.*\S)\s*$/ ) { #value search
+    my $value = lc($1);
+    my $q_value = dbh->quote($value);
 
+    #exact
+    my $sql = " AND ( LOWER(last) = $q_value OR LOWER(company) = $q_value";
+    $sql .= " OR LOWER(ship_last) = $q_value OR LOWER(ship_company) = $q_value"
+      if defined dbdef->table('cust_main')->column('ship_last');
+    $sql .= ' )';
+
+    push @cust_main, qsearch( 'cust_main',
+                              { 'agentnum' => $agentnum },
+                              '',
+                              $sql
+                            );
+
+    unless ( @cust_main ) {
+      warn "no exact match, trying substring/fuzzy\n";
+
+      #still some false laziness w/ search/cust_main.cgi
+
+      #substring
+      push @cust_main, qsearch( 'cust_main',
+                                { 'agentnum' => $agentnum,
+                                  'last'     => { 'op'    => 'ILIKE',
+                                                  'value' => "%$q_value%" } } );
+
+      push @cust_main, qsearch( 'cust_main',
+                                { 'agentnum'  => $agentnum,
+                                  'ship_last' => { 'op'    => 'ILIKE',
+                                                   'value' => "%$q_value%" } } )
+        if defined dbdef->table('cust_main')->column('ship_last');
+
+      push @cust_main, qsearch( 'cust_main',
+                                { 'agentnum' => $agentnum,
+                                  'company'  => { 'op'    => 'ILIKE',
+                                                  'value' => "%$q_value%" } } );
+
+      push @cust_main, qsearch( 'cust_main',
+                                { 'agentnum'     => $agentnum,
+                                  'ship_company' => { 'op' => 'ILIKE',
+                                                   'value' => "%$q_value%" } } )
+        if defined dbdef->table('cust_main')->column('ship_last');
+
+      #fuzzy
+      push @cust_main, FS::cust_main->fuzzy_search(
+        { 'last'     => $value },
+        { 'agentnum' => $agentnum }
+      );
+      push @cust_main, FS::cust_main->fuzzy_search(
+        { 'company'  => $value },
+        { 'agentnum' => $agentnum }
+      );
+
+    }
+  }
+
+  #aggregate searches
   push @cust_main,
     map $agent->$_(), map $_.'_cust_main',
       grep $p->{$_}, qw( prospect active susp cancel );
+
+  #eliminate dups?
+  my %saw = ();
+  @cust_main = grep { !$saw{$_->custnum}++ } @cust_main;
 
   { customers => [ map {
                          my $cust_main = $_;

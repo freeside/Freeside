@@ -1,10 +1,9 @@
-<HTML><HEAD><TITLE>Reseller Main</TITLE></HEAD>
-<BODY BGCOLOR="#eeeeee"><FONT SIZE=5>Reseller Main</FONT><BR><BR>
+<HTML><HEAD><TITLE>Reseller</TITLE></HEAD>
+<BODY BGCOLOR="#eeeeee"><FONT SIZE=5>Reseller</FONT><BR><BR>
 <%= $url = "$selfurl?session=$session_id;action="; ''; %>
-<TABLE BORDER=0 CELLPADDING=4><TR><TD VALIGN="top" HEIGHT=384 BGCOLOR="#dddddd">
-<A HREF="<%= $url %>agent_main">Reseller Main</A><BR>
-<!-- <A HREF="<%= $url %>other">SomethingElse</A><BR> -->
-</TD><TD VALIGN="top">
+<TABLE BORDER=0 CELLPADDING=4><TR>
+<%= include('agent_menu') %>
+<TD VALIGN="top">
 
 <%= $message
       ? "<FONT SIZE=\"+2\"><B>$message</B></FONT>"
@@ -16,20 +15,18 @@
 <TR><TD BGCOLOR="#dddddd">
 
   <B><%= $num_prospect %></B>
-  <A HREF="<%= $url %>list_customers;prospect=1">prospects</A>
+  <%= $num_prospect ? qq!<A HREF="${url}list_customers;prospect=1">! : '' %>prospects</A>
 
   <BR><FONT COLOR="#00CC00"><B><%= $num_active %></B></FONT>
-  <A HREF="<%= $url %>list_customers;active=1">active</A>
+  <%= $num_active ? qq!<A HREF="${url}list_customers;active=1">! : '' %>active</A>
 
   <BR><FONT COLOR="#FF9900"><B><%= $num_susp %></B></FONT>
-  <A HREF="<%= $url %>list_customers;susp=1">suspended</A>
+  <%= $num_susp ? qq!<A HREF="${url}list_customers;susp=1">! : '' %>suspended</A>
 
   <BR><FONT COLOR="#FF0000"><B><%= $num_cancel %></B></FONT>
-  <A HREF="<%= $url %>list_customers;cancel=1">cancelled</A>
+  <%= $num_cancel ? qq!<A HREF="${url}list_customers;cancel=1">! : '' %>cancelled</A>
 
 </TD></TR></TABLE>
-
-<BR><A HREF="<%= $url %>signup">New customer<!--/prospect--></A>
 
 </TD></TR></TABLE>
 <HR>

@@ -40,6 +40,7 @@ $socket .= '.'.$tag if defined $tag && length($tag);
   'signup_info'          => 'Signup/signup_info',
   'new_customer'         => 'Signup/new_customer',
   'agent_login'          => 'Agent/agent_login',
+  'agent_logout'         => 'Agent/agent_logout',
   'agent_info'           => 'Agent/agent_info',
   'agent_list_customers' => 'Agent/agent_list_customers',
 );

@@ -759,7 +759,7 @@ httemplate/docs/config.html
   {
     'key'         => 'showpasswords',
     'section'     => 'UI',
-    'description' => 'Display unencrypted user passwords in the web interface',
+    'description' => 'Display unencrypted user passwords in the backend (employee) web interface',
     'type'        => 'checkbox',
   },
 
@@ -1274,6 +1274,13 @@ httemplate/docs/config.html
     'section'     => 'billing',
     'description' => 'After a payment, the number of days a refund link will be available for that payment.  Defaults to 120.',
     'type'        => 'text',
+  },
+
+  {
+    'key'         => 'agent-showpasswords',
+    'section'     => '',
+    'description' => 'Display unencrypted user passwords in the agent (reseller) interface',
+    'type'        => 'checkbox',
   },
 
 );
