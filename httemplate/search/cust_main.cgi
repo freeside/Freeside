@@ -82,22 +82,22 @@ if ( $cgi->param('browse')
 
   if ( driver_name eq 'mysql' ) {
 
-       my $query = "CREATE TEMPORARY TABLE temp1_$$ TYPE=MYISAM
-                      SELECT cust_pkg.custnum,COUNT(*) as count
-                        FROM cust_pkg,cust_main
-                          WHERE cust_pkg.custnum = cust_main.custnum
-                                AND ( cust_pkg.cancel IS NULL
-                                      OR cust_pkg.cancel = 0 )
-                          GROUP BY cust_pkg.custnum";
-       my $sth = dbh->prepare($query) or die dbh->errstr. " preparing $query";
-       $sth->execute or die "Error executing \"$query\": ". $sth->errstr;
-       $query = "CREATE TEMPORARY TABLE temp2_$$ TYPE=MYISAM
-                   SELECT cust_pkg.custnum,COUNT(*) as count
-                     FROM cust_pkg,cust_main
-                       WHERE cust_pkg.custnum = cust_main.custnum
-                       GROUP BY cust_pkg.custnum";
-       my $sth = dbh->prepare($query) or die dbh->errstr. " preparing $query";
-       $sth->execute or die "Error executing \"$query\": ". $sth->errstr;
+       my $sql = "CREATE TEMPORARY TABLE temp1_$$ TYPE=MYISAM
+                    SELECT cust_pkg.custnum,COUNT(*) as count
+                      FROM cust_pkg,cust_main
+                        WHERE cust_pkg.custnum = cust_main.custnum
+                              AND ( cust_pkg.cancel IS NULL
+                                    OR cust_pkg.cancel = 0 )
+                        GROUP BY cust_pkg.custnum";
+       my $sth = dbh->prepare($sql) or die dbh->errstr. " preparing $sql";
+       $sth->execute or die "Error executing \"$sql\": ". $sth->errstr;
+       $sql = "CREATE TEMPORARY TABLE temp2_$$ TYPE=MYISAM
+                 SELECT cust_pkg.custnum,COUNT(*) as count
+                   FROM cust_pkg,cust_main
+                     WHERE cust_pkg.custnum = cust_main.custnum
+                     GROUP BY cust_pkg.custnum";
+       $sth = dbh->prepare($sql) or die dbh->errstr. " preparing $sql";
+       $sth->execute or die "Error executing \"$sql\": ". $sth->errstr;
   }
 
   if (  $cgi->param('showcancelledcustomers') eq '0' #see if it was set by me
@@ -167,9 +167,9 @@ if ( $cgi->param('browse')
                               "$ncancelled $orderby $limit" );
   }
   if ( driver_name eq 'mysql' ) {
-    $query = "DROP TABLE temp1_$$,temp2_$$;";
-    my $sth = dbh->prepare($query) or die dbh->errstr. " preparing $query";
-    $sth->execute or die "Error executing \"$query\": ". $sth->errstr;
+    my $sql = "DROP TABLE temp1_$$,temp2_$$;";
+    my $sth = dbh->prepare($sql) or die dbh->errstr. " preparing $sql";
+    $sth->execute or die "Error executing \"$sql\": ". $sth->errstr;
   }
   @cust_main = @just_cust_main;
 
@@ -457,7 +457,7 @@ sub custnumsearch {
   my $custnum = $cgi->param('custnum_text');
   $custnum =~ s/\D//g;
   $custnum =~ /^(\d{1,23})$/ or eidiot "Illegal customer number\n";
-  my $custnum = $1;
+  $custnum = $1;
   
   [ qsearchs('cust_main', { 'custnum' => $custnum } ) ];
 }
