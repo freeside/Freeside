@@ -1,6 +1,6 @@
 <!-- mason kludge -->
 <%
-# <!-- $Id: REAL_cust_pkg.cgi,v 1.2 2002-02-10 16:05:22 ivan Exp $ -->
+# <!-- $Id: REAL_cust_pkg.cgi,v 1.3 2002-04-23 07:32:49 ivan Exp $ -->
 
 my $error ='';
 my $pkgnum = '';
@@ -75,7 +75,7 @@ print '<TR><TD ALIGN="right">Cancellation date</TD><TD BGCOLOR="#ffffff">',
   if $cancel;
 
 %>
-</TABLE></TD></TR></TABLE>'.
+</TABLE></TD></TR></TABLE>
 <BR><INPUT TYPE="submit" VALUE="Apply Changes">
 </FORM>
 </BODY>
