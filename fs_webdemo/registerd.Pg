@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 #
-# $Id: registerd.Pg,v 1.4 2001-04-26 00:18:36 ivan Exp $
+# $Id: registerd.Pg,v 1.5 2001-04-26 02:18:15 ivan Exp $
 
 use strict;
 use vars qw(
@@ -50,7 +50,7 @@ die "not running as root user"
 $dbh = DBI->connect( $datasrc, $user, $pass, {
 	'AutoCommit' => 'true',
 } ) or die "DBI->connect error: $DBI::errstr\n";
-$x = $DBI::errstr; #silly; to avoid "used only once" warning
+#$x = $DBI::errstr; #silly; to avoid "used only once" warning
 
 while ( 1 ) {
 
@@ -85,9 +85,25 @@ while ( 1 ) {
     my $username = $row->{'username'};
     my $email = $row->{'passwd'};
 
-    system("/usr/bin/createdb --username freeside demo_$username | mail ivan-createdb\@420.am");
+    $pdbh = DBI->connect( 'DBI:Pg:host=localhost;database=demo_template', 'freeside', 'maelcolm' )
+      or do { &myerr("$username: ". $DBI::errstr); next; };
 
-    system "psql -U freeside demo_$username </usr/local/etc/freeside/demo_template.Pg | mail ivan-psql\@420.am";
+    $psth = $pdbh->prepare("CREATE DATABASE demo_$username")
+      or do { &myerr("$username: ". $pdbh->errstr;); next; };
+    $psth->execute()
+      or do { &myerr("$username: ". $psth->errstr;); next; };
+
+    open(PSQL,"|psql -U freeside demo_$username")
+      or do { &myerr("|psql -U freeside demo_$username: $!"); next; };
+    open(PSQLDATA, "</usr/local/etc/freeside/demo_template.Pg")
+      or do { &myerr("/usr/local/etc/freeside/demo_template.Pg: $!"); next; };
+    while(<PSQLDATA>) {
+      print PSQL $_;
+    }
+    close PSQLDATA
+      or do { &myerr("/usr/local/etc/freeside/demo_template.Pg: $!"); next; };
+    close PSQL
+      or do { &myerr("|psql -U freeside demo_$username: $!"); next; };
 
     mkdir "${freeside_conf}conf.DBI:Pg:host=localhost;dbname=demo_$username", 0755;    
     system "cp -pr ${freeside_conf}conf.DBI:Pg:host=localhost\\;dbname=demo_template/* ".
@@ -189,4 +205,12 @@ while ( 1 ) {
   sleep 5;
 
 }
+
+sub myerr {
+  my $msg = shift;
+  open(MAIL,"|mail ivan-fsdemoerr@420.am");
+  print MAIL $msg, "\n\n";
+  print MAIL $msg, "\n\n";
+  close MAIL;
+};
 
