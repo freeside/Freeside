@@ -130,7 +130,7 @@ END
      }
 %>
   <TR>
-    <TD><A HREF="<%= $p %>view/cust_main.cgi?<%= $row->{'custnum'} %>">
+    <TD><A HREF="<%= $p %>view/cust_main.cgi?<%= $row->{'custnum'} %>"><%= $row->{'custnum'} %>:
         <%= $row->{'company'} ? $row->{'company'}. ' (' : '' %><%= $row->{'last'}. ', '. $row->{'first'} %><%= $row->{'company'} ? ')' : '' %></A>
     </TD>
     <TD><B><FONT SIZE=-1 COLOR="#<%= $statuscol %>"><%= $status %></FONT></B></TD>
