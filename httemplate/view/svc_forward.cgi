@@ -39,16 +39,25 @@ my($srcsvc,$dstsvc,$dst) = (
   $svc_forward->dstsvc,
   $svc_forward->dst,
 );
+my $src = $svc_forward->dbdef_table->column('src') ? $svc_forward->src : '';
+
 my $svc = $part_svc->svc;
-my $svc_acct = qsearchs('svc_acct',{'svcnum'=>$srcsvc})
-  or die "Corrupted database: no svc_acct.svcnum matching srcsvc $srcsvc";
-my $source = $svc_acct->email;
+
+my $source;
+if ($srcsvc) {
+  my $svc_acct = qsearchs('svc_acct',{'svcnum'=>$srcsvc})
+    or die "Corrupted database: no svc_acct.svcnum matching srcsvc $srcsvc";
+  $source = $svc_acct->email;
+} else {
+  $source = $src;
+}
+
 my $destination;
 if ($dstsvc) {
   my $svc_acct = qsearchs('svc_acct',{'svcnum'=>$dstsvc})
     or die "Corrupted database: no svc_acct.svcnum matching dstsvc $dstsvc";
   $destination = $svc_acct->email;
-}else{
+} else {
   $destination = $dst;
 }
 
