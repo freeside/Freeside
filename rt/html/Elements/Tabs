@@ -64,7 +64,7 @@ my $basetopactions = {
 	};
 my $basetabs = {
                   ' A'=> { title => 'Billing Main',
-                           path  => '..',
+                           path  => '../',
                          },
                     A => { #title => loc('Homepage'),
                            title => 'Ticketing Main',
