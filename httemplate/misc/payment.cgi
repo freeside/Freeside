@@ -183,7 +183,7 @@ function achclose() {
   <TR>
     <TD ALIGN="right">
       Account&nbsp;holder<BR>
-      Social&nbsp;security&nbsp;or&nbsp;tax&nbspID&nbsp;#
+      Social&nbsp;security&nbsp;or&nbsp;tax&nbsp;ID&nbsp;#
     </TD>
     <TD><INPUT TYPE="text" NAME="ss" VALUE="<%=$ss%>"></TD>
   </TR>
