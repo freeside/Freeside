@@ -31,7 +31,7 @@ FREESIDE_RESTART = $INIT_FILE restart
 #deb, others?
 INSTALLGROUP = root
 #freebsd
-INSTALLGROUP = wheel
+#INSTALLGROUP = wheel
 
 #edit the stuff below to have the daemons start
 
