@@ -23,7 +23,7 @@ foreach (qsearch('part_virtual_field', {})) {
 
 <%=table()%>
 <TH><TD>Field name</TD><TD>Description</TD></TH>
-<% foreach $pvf (sort {$a->name cmp $b->name} @{ $pvfs{$dbtable} }) { %>
+<% foreach my $pvf (sort {$a->name cmp $b->name} @{ $pvfs{$dbtable} }) { %>
   <TR>
     <TD></TD>
     <TD>
