@@ -154,7 +154,7 @@ my %defs = (
       my @part_export =
         map { qsearch( 'part_export', {exporttype => $_ } ) }
           keys %{FS::part_export::export_info($layer)};
-     $html .= '<BR><BR>'. table().
+      $html .= '<BR><BR>'. table().
                table(). "<TR><TH COLSPAN=$columns>Exports</TH></TR><TR>";
       foreach my $part_export ( @part_export ) {
         $html .= '<TD><INPUT TYPE="checkbox"'.
@@ -163,8 +163,8 @@ my %defs = (
           if qsearchs( 'export_svc', {
                                    exportnum => $part_export->exportnum,
                                    svcpart   => $clone || $part_svc->svcpart });
-        $html .= '> '. $part_export->exporttype. ' to '. $part_export->machine.
-                 '</TD>';
+        $html .= '>'. $part_export->exportnum. ': '.  $part_export->exporttype.
+                 ' to '. $part_export->machine. '</TD>';
         $count++;
         $html .= '</TR><TR>' unless $count % $columns;
       }
