@@ -265,12 +265,12 @@ COLUMNNAME, or a new part_svc_column object if none exists.
 =cut
 
 sub part_svc_column {
-  my $self = shift;
-  my $columnname = shift;
-  qsearchs('part_svc_column',  {
-                                 'svcpart'    => $self->svcpart,
-                                 'columnname' => $columnname,
-                               }
+  my( $self, $columnname) = @_;
+  $self->svcpart &&
+    qsearchs('part_svc_column',  {
+                                   'svcpart'    => $self->svcpart,
+                                   'columnname' => $columnname,
+                                 }
   ) or new FS::part_svc_column {
                                  'svcpart'    => $self->svcpart,
                                  'columnname' => $columnname,

@@ -160,7 +160,8 @@ my %defs = (
         $html .= '<TD><INPUT TYPE="checkbox"'.
                  ' NAME="exportnum'. $part_export->exportnum. '"  VALUE="1" ';
         $html .= 'CHECKED'
-          if qsearchs( 'export_svc', {
+          if ( $clone || $part_svc->svcpart ) #null svcpart search causing error
+              && qsearchs( 'export_svc', {
                                    exportnum => $part_export->exportnum,
                                    svcpart   => $clone || $part_svc->svcpart });
         $html .= '>'. $part_export->exportnum. ': '.  $part_export->exporttype.
