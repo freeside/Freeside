@@ -108,11 +108,46 @@ sub insert {
 
 =item delete
 
-Delete this record from the database.
+Delete this record from the database.  Any corresponding queue_arg records are
+deleted as well
 
 =cut
 
-# the delete method can be inherited from FS::Record
+sub delete {
+  my $self = shift;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my @args = $self->args;
+
+  my $error = $self->SUPER::delete;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  foreach my $arg ( @args ) {
+    $error = $arg->delete;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+  '';
+
+}
 
 =item replace OLD_RECORD
 
@@ -153,14 +188,18 @@ sub check {
 
 sub args {
   my $self = shift;
-  map $_->arg, qsearch( 'queue_arg', { 'jobnum' => $self->jobnum } );
+  map $_->arg, qsearch( 'queue_arg',
+                        { 'jobnum' => $self->jobnum },
+                        '',
+                        'ORDER BY argnum'
+                      );
 }
 
 =back
 
 =head1 VERSION
 
-$Id: queue.pm,v 1.1 2001-09-11 00:08:18 ivan Exp $
+$Id: queue.pm,v 1.2 2001-09-11 12:24:13 ivan Exp $
 
 =head1 BUGS
 
