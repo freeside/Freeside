@@ -895,7 +895,19 @@ httemplate/docs/config.html
     'type'        => 'checkbox',
   },
 
+  {
+    'key'         => 'declinetemplate'
+    'section'     => 'billing',
+    'description' => 'Template file for credit card decline emails.',
+    'type'        => 'textarea',
+  },
 
+  {
+    'key'         => 'emaildecline'
+    'section'     => 'billing',
+    'description' => 'Enable emailing of credit card decline notices.',
+    'type'        => 'checkbox',
+  },
 
 );
 

@@ -373,7 +373,7 @@ sub send {
   #my @print_text = $cust_bill->print_text; #( date )
   my @invoicing_list = $self->cust_main->invoicing_list;
   if ( grep { $_ ne 'POST' } @invoicing_list ) { #email invoice
-    #false laziness w/FS::cust_pay::delete & fs_signup_server
+    #false laziness w/FS::cust_pay::delete & fs_signup_server && ::realtime_card
     #$ENV{SMTPHOSTS} = $smtpmachine;
     $ENV{MAILADDRESS} = $invoice_from;
     my $header = new Mail::Header ( [
@@ -571,8 +571,47 @@ sub realtime_card {
     }
   #} elsif ( $options{'report_badcard'} ) {
   } else {
-    return "$processor error, invnum #". $self->invnum. ': '.
-           $transaction->result_code. ": ". $transaction->error_message;
+
+    my $perror = "$processor error, invnum #". $self->invnum. ': '.
+                 $transaction->result_code. ": ". $transaction->error_message;
+
+    if ( $conf->exists('emaildecline')
+         && grep { $_ ne 'POST' } $cust_main->invoicing_list
+    ) {
+      my @templ = $conf->config('declinetemplate');
+      my $template = new Text::Template (
+        TYPE   => 'ARRAY',
+        SOURCE => [ map "$_\n", @templ ],
+      ) or die "($perror) can't create template: $Text::Template::ERROR";
+      $template->compile()
+        or die "($perror) can't compile template: $Text::Template::ERROR";
+
+      my $error = $transaction->error_message;
+
+      #false laziness w/FS::cust_pay::delete & fs_signup_server && ::send
+      $ENV{MAILADDRESS} = $invoice_from;
+      my $header = new Mail::Header ( [
+        "From: $invoice_from",
+        "To: ". join(', ', grep { $_ ne 'POST' } $cust_main->invoicing_list ),
+        "Sender: $invoice_from",
+        "Reply-To: $invoice_from",
+        "Date: ". time2str("%a, %d %b %Y %X %z", time),
+        "Subject: Your credit card could not be processed",
+      ] );
+      my $message = new Mail::Internet (
+        'Header' => $header,
+        'Body' => [ $template->fill_in() ],
+      );
+      $!=0;
+      $message->smtpsend( Host => $smtpmachine )
+        or $message->smtpsend( Host => $smtpmachine, Debug => 1 )
+          or die "($perror) (customer # ". $self->custnum.
+            ") can't send card decline email to ".
+            join(', ', grep { $_ ne 'POST' } $cust_main->invoicing_list ).
+            " via server $smtpmachine with SMTP: $!";
+    }
+  
+    return $perror;
   }
 
 }
@@ -905,7 +944,7 @@ sub print_text {
 
 =head1 VERSION
 
-$Id: cust_bill.pm,v 1.27 2002-04-13 09:14:07 ivan Exp $
+$Id: cust_bill.pm,v 1.28 2002-04-16 09:38:19 ivan Exp $
 
 =head1 BUGS
 

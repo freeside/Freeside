@@ -142,7 +142,8 @@ foreach my $customer (@customers)
         );
         $!=0;
         $message->smtpsend( Host => $smtpmachine )
-          or die "Can't send expiration email!: $!"; #die?  warn?
+          or $message->smtpsend( Host => $smtpmachine, Debug => 1 )
+            or die "Can't send expiration email: $!";
 
       } elsif ( ! @invoicing_list || grep { $_ eq 'POST' } @invoicing_list ) { 
         push @body, sprintf(qq{%5d %-32.32s %4s %10s %12s %12s},
@@ -166,8 +167,8 @@ if (scalar(@body)) {
   $!=0;
   $message->smtpsend( Host => $smtpmachine )
     or $message->smtpsend( Host => $smtpmachine, Debug => 1 )
-      or return "can't send alerter failure email to $failure_recipient".
-              " via server $smtpmachine with SMTP: $!";
+      or die "can't send alerter failure email to $failure_recipient".
+             " via server $smtpmachine with SMTP: $!";
 }
 
 # subroutines
@@ -199,7 +200,7 @@ user: From the mapsecrets file - see config.html from the base documentation
 
 =head1 VERSION
 
-$Id: freeside-expiration-alerter,v 1.2 2002-03-07 19:50:24 jeff Exp $
+$Id: freeside-expiration-alerter,v 1.3 2002-04-16 09:38:19 ivan Exp $
 
 =head1 BUGS
 

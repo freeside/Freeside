@@ -7,6 +7,8 @@
     <li>You can bill individual customers by clicking on the <i>Bill now</i> link on the main customer view.
     <li>The <a href="man/bin/freeside-daily.html"><b>freeside-daily</b></a> script should be run daily to bill customers and run invoice collection events.
     <li>Real-time credit card processing: Install the <a href="http://search.cpan.org/search?mode=module&query=Business%3A%3AOnlinePayment">Business::OnlinePayment</a> module for your processor.  Configure the <a href="../config/config-view.cgi#business-onlinepayment">business-onlinepayment</a> configuration option.  Disable the default <b>Batch card</b> <a href="../browse/part_bill_event.cgi">invoice event</a> and add one for Business::OnlinePayment.
+    <li>Optional: Credit card expiration alerts: Customize <a href="../config/config.cgi#alerter_template">alerter_template</a> configuration option and run <a href="man/bin/freeside-expiration-alerter.html">freeside-expiration-alerter</a> daily.
+    <li>Credit card decline alerts: Customize the <a href="../config/config.cgi#declinetemplate">declinetemplate</a> configuration option and set the <a href="../config/config.cgi#emaildecline">emaildecline</a> configuration option.
     <li>Optional: Invoice template customization
       <ul>
         <li>See the <a href="http://search.cpan.org/doc/MJD/Text-Template-1.42/Template.pm">Text::Template</a> documentation for details on the substitution language.
