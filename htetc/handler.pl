@@ -208,10 +208,13 @@ sub handler
         }
 
       };
+      
+      unless ( $r->filename =~ /\/rt\/.*NoAuth/ ) { #RT
+        $cgi = new CGI;
+        &cgisuidsetup($cgi);
+        #&cgisuidsetup($r);
+      }
 
-      $cgi = new CGI;
-      &cgisuidsetup($cgi);
-      #&cgisuidsetup($r);
       $p = popurl(2);
 
       sub include {
