@@ -899,7 +899,7 @@ sub get_packages {
       )
     ) {
 
-      warn "svcnum ". $cust_svc->svcnum. " / svcpart ". $cust_svc->svcpart. "\n";
+      #warn "svcnum ". $cust_svc->svcnum. " / svcpart ". $cust_svc->svcpart. "\n";
       my $svc = {
         'svcnum' => $cust_svc->svcnum,
         'label'  => ($cust_svc->label)[1],
