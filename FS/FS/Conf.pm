@@ -730,6 +730,13 @@ httemplate/docs/config.html
     'type'        => 'checkbox',
   },
 
+  { 
+    'key'         => 'agent_defaultpkg',
+    'section'     => 'UI',
+    'description' => 'Setting this option will cause new packages to be available to all agent types by default.',
+    'type'        => 'checkbox',
+  },
+
 );
 
 1;

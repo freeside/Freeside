@@ -2,8 +2,11 @@ package FS::part_pkg;
 
 use strict;
 use vars qw( @ISA );
-use FS::Record qw( qsearch );
+use FS::Record qw( qsearch dbh );
 use FS::pkg_svc;
+use FS::agent_type;
+use FS::type_pkgs;
+use FS::Conf;
 
 @ISA = qw( FS::Record );
 
@@ -105,6 +108,49 @@ sub clone {
 Adds this billing item definition to the database.  If there is an error,
 returns the error, otherwise returns false.
 
+=cut
+
+sub insert {
+  my $self = shift;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $error = $self->SUPER::insert;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  my $conf = new FS::Conf;
+
+  if ( $conf->exists('agent_defaultpkg') ) {
+    foreach my $agent_type ( qsearch('agent_type', {} ) ) {
+      my $type_pkgs = new FS::type_pkgs({
+        'typenum' => $agent_type->typenum,
+        'pkgpart' => $self->pkgpart,
+      });
+      my $error = $type_pkgs->insert;
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
+      }
+    }
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+  '';
+}
+
 =item delete
 
 Currently unimplemented.
@@ -182,7 +228,7 @@ sub svcpart {
 
 =head1 VERSION
 
-$Id: part_pkg.pm,v 1.6 2002-01-28 06:57:23 ivan Exp $
+$Id: part_pkg.pm,v 1.7 2002-02-10 21:30:05 ivan Exp $
 
 =head1 BUGS
 
