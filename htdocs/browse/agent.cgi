@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: agent.cgi,v 1.10 1999-01-19 05:13:24 ivan Exp $
+# $Id: agent.cgi,v 1.11 1999-01-20 09:43:16 ivan Exp $
 #
 # ivan@sisd.com 97-dec-12
 #
@@ -15,7 +15,10 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: agent.cgi,v $
-# Revision 1.10  1999-01-19 05:13:24  ivan
+# Revision 1.11  1999-01-20 09:43:16  ivan
+# comment out future UI code (but look at it, it's neat!)
+#
+# Revision 1.10  1999/01/19 05:13:24  ivan
 # for mod_perl: no more top-level my() variables; use vars instead
 # also the last s/create/new/;
 #
@@ -56,17 +59,15 @@ use FS::agent;
 use FS::agent_type;
 
 #Begin silliness
-
-use FS::UI::CGI;
-use FS::UI::agent;
-
-$ui = new FS::UI::agent;
-$ui->browse;
-exit;
-
+#
+#use FS::UI::CGI;
+#use FS::UI::agent;
+#
+#$ui = new FS::UI::agent;
+#$ui->browse;
+#exit;
+#__END__
 #End silliness
-
-__END__
 
 $cgi = new CGI;
 
