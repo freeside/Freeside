@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 #
-# $Id: bind.import,v 1.2 2002-06-21 09:13:16 ivan Exp $
+# $Id: bind.import,v 1.3 2002-07-15 01:44:23 ivan Exp $
 
 #need to manually put header in /usr/local/etc/freeside/export.<datasrc./bind/<machine>/named.conf.HEADER
 
@@ -8,7 +8,7 @@ use strict;
 use vars qw( %d_part_svc );
 use Term::Query qw(query);
 #use BIND::Conf_Parser;
-#use DNS::ZoneParse;
+#use DNS::ZoneParse 0.81;
 
 #use Net::SCP qw(iscp);
 use Net::SCP qw(scp);
@@ -140,7 +140,7 @@ BEGIN {
       scp("root\@$main::named_machine:$sourcefile",
           "$main::prefix/$basefile.import");
     
-      use DNS::ZoneParse;
+      use DNS::ZoneParse 0.81;
       my $zone = DNS::ZoneParse->new("$main::prefix/$basefile.import");
     
       my $dump = $zone->Dump;
