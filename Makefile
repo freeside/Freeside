@@ -40,8 +40,8 @@ SIGNUP_REFNUM = 2
 #not changable yet
 FREESIDE_CONF = /usr/local/etc/freeside
 
-VERSION=1.4.0
-TAG=freeside_1_4_0
+VERSION=1.4.1beta1
+TAG=freeside_1_4_1beta1
 
 help:
 	@echo "supported targets: aspdocs masondocs alldocs docs install-docs"
@@ -54,7 +54,11 @@ help:
 aspdocs: htmlman httemplate/* httemplate/*/* httemplate/*/*/* httemplate/*/*/*/* httemplate/*/*/*/*/*
 	rm -rf aspdocs
 	cp -pr httemplate aspdocs
+	perl -p -i -e "\
+	  s/%%%VERSION%%%/${VERSION}/g;\
+	" aspdocs/index.html
 	touch aspdocs
+
 
 masondocs: htmlman httemplate/* httemplate/*/* httemplate/*/*/* httemplate/*/*/*/* httemplate/*/*/*/*/*
 	rm -rf masondocs
@@ -62,6 +66,9 @@ masondocs: htmlman httemplate/* httemplate/*/* httemplate/*/*/* httemplate/*/*/*
 	( cd masondocs; \
 	  ../bin/masonize; \
 	)
+	perl -p -i -e "\
+	  s/%%%VERSION%%%/${VERSION}/g;\
+	" masondocs/index.html
 	touch masondocs
 
 alldocs: aspdocs masondocs
