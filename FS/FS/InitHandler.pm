@@ -64,6 +64,9 @@ sub handler {
 
   warn "[FS::InitHandler] handler called\n" if $DEBUG;
 
+  #this is sure to be broken on freebsd
+  $> = $FS::UID::freeside_uid;
+
   open(MAPSECRETS,"<$FS::UID::conf_dir/mapsecrets")
     or die "can't read $FS::UID::conf_dir/mapsecrets: $!";
 
@@ -79,6 +82,10 @@ sub handler {
   }
 
   close MAPSECRETS;
+
+  #lalala probably broken on freebsd
+  ($<, $>) = ($>, $<);
+  $< = 0;
 
 }
 

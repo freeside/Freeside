@@ -83,7 +83,7 @@ sub forksuidsetup {
   $ENV{'ENV'} = '';
   $ENV{'BASH_ENV'} = '';
 
-  croak "Not running uid freeside!" unless checkeuid() || !$>;
+  croak "Not running uid freeside!" unless checkeuid();
   getsecrets;
   $dbh = DBI->connect($datasrc,$db_user,$db_pass, {
                           'AutoCommit' => 0,
@@ -256,7 +256,7 @@ coderef into the hash %FS::UID::callback :
 
 =head1 VERSION
 
-$Id: UID.pm,v 1.17 2002-07-03 11:10:12 ivan Exp $
+$Id: UID.pm,v 1.18 2002-07-03 11:23:25 ivan Exp $
 
 =head1 BUGS
 
