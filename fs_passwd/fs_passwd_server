@@ -57,7 +57,7 @@ while (1) {
     unless ( $svc_acct ) { print $writer "Incorrect password.\n"; next; }
 
     my(%hash)=$svc_acct->hash;
-    my($new_svc_acct) = create FS::svc_acct ( \%hash );
+    my($new_svc_acct) = new FS::svc_acct ( \%hash );
     $new_svc_acct->setfield('_password',$new_password) 
       if $new_password && $new_password ne $old_password;
     $new_svc_acct->setfield('finger',$new_gecos) if $new_gecos;
