@@ -23,8 +23,6 @@ if ( $payby ) {
     if defined $cgi->param( $payby. '_paycvv' );
 }
 
-$cgi->param('otaker', &getotaker );
-
 my @invoicing_list = split( /\s*\,\s*/, $cgi->param('invoicing_list') );
 push @invoicing_list, 'POST' if $cgi->param('invoicing_list_POST');
 $cgi->param('invoicing_list', join(',', @invoicing_list) );
