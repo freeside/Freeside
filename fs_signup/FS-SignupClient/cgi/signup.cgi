@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: signup.cgi,v 1.17 2002-04-06 21:39:22 ivan Exp $
+# $Id: signup.cgi,v 1.18 2002-04-07 00:00:40 ivan Exp $
 
 use strict;
 use vars qw( @payby $cgi $locales $packages $pops $init_data $error
@@ -16,9 +16,10 @@ use vars qw( @payby $cgi $locales $packages $pops $init_data $error
 use subs qw( print_form print_okay expselect signup_default success_default );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
+use Text::Template;
+use Business::CreditCard;
 use HTTP::Headers::UserAgent 2.00;
 use FS::SignupClient 0.03 qw( signup_info new_customer );
-use Text::Template;
 
 #acceptable payment methods
 #
@@ -91,6 +92,7 @@ if ( -e $success_html ) {
 }
 
 ( $locales, $packages, $pops, $init_data ) = signup_info();
+@payby = @{$init_data->{'payby'}} if @{$init_data->{'payby'}};
 
 $cgi = new CGI;
 
@@ -118,13 +120,18 @@ if ( defined $cgi->param('magic') ) {
     $error = '';
 
     if ( $cgi->param('_password') ne $cgi->param('_password2') ) {
-      $error = "Passwords don't match";
+      $error = "Passwords don't match"; #msgcat
       $password  = '';
       $password2 = '';
     } else {
       $password2 = $cgi->param('_password2');
 
-      $error = new_customer ( {
+      if ( $payby eq 'CARD' && $cgi->param('CARD_type')
+           && cardtype($payinfo) ne $cgi->param('CARD_type') ) {
+        $error = 'Not an '. $cgi->param('CARD_type'). '| - is: |'. cardtype($payinfo). '|'; #msgcat
+      }
+
+      $error ||= new_customer ( {
         'last'             => $last             = $cgi->param('last'),
         'first'            => $first            = $cgi->param('first'),
         'ss'               => $ss               = $cgi->param('ss'),
@@ -428,31 +435,53 @@ Contact Information
 </TD></TR>
 <TR><TD>Email invoice <INPUT TYPE="text" NAME="invoicing_list" VALUE="<%= join(', ', grep { $_ ne 'POST' } split(', ', $invoicing_list ) ) %>">
 </TD></TR>
-<TR><TD>Billing type</TD></TR></TABLE>
+<%= scalar(@payby) > 1 ? '<TR><TD>Billing type</TD></TR>' : '' %>
+</TABLE>
 <TABLE BGCOLOR="#c0c0c0" BORDER=1 WIDTH="100%">
 <TR>
 
   <%=
+
+    my $cardselect = '<SELECT NAME="CARD_type"><OPTION></OPTION>';
+    my %types = (
+                  'VISA' => 'VISA card',
+                  'MasterCard' => 'MasterCard',
+                  'Discover' => 'Discover card',
+                  'American Express' => 'American Express card',
+                );
+    foreach ( keys %types ) {
+      $selected = $cgi->param('CARD_type') eq $types{$_} ? 'SELECTED' : '';
+      $cardselect .= qq!<OPTION $selected VALUE="$types{$_}">$_</OPTION>!;
+    }
+    $cardselect .= '</SELECT>';
+  
     my %payby = (
-      'CARD' => qq!Credit card<BR><font color="#ff0000">*</font><INPUT TYPE="text" NAME="CARD_payinfo" VALUE="" MAXLENGTH=19><BR><font color="#ff0000">*</font>Exp !. expselect("CARD"). qq!<BR><font color="#ff0000">*</font>Name on card<BR><INPUT TYPE="text" NAME="CARD_payname" VALUE="">!,
+      'CARD' => qq!Credit card<BR><font color="#ff0000">*</font>$cardselect<INPUT TYPE="text" NAME="CARD_payinfo" VALUE="" MAXLENGTH=19><BR><font color="#ff0000">*</font>Exp !. expselect("CARD"). qq!<BR><font color="#ff0000">*</font>Name on card<BR><INPUT TYPE="text" NAME="CARD_payname" VALUE="">!,
       'BILL' => qq!Billing<BR>P.O. <INPUT TYPE="text" NAME="BILL_payinfo" VALUE=""><BR><font color="#ff0000">*</font>Exp !. expselect("BILL", "12-2037"). qq!<BR><font color="#ff0000">*</font>Attention<BR><INPUT TYPE="text" NAME="BILL_payname" VALUE="Accounts Payable">!,
       'COMP' => qq!Complimentary<BR><font color="#ff0000">*</font>Approved by<INPUT TYPE="text" NAME="COMP_payinfo" VALUE=""><BR><font color="#ff0000">*</font>Exp !. expselect("COMP"),
       'PREPAY' => qq!Prepaid card<BR><font color="#ff0000">*</font><INPUT TYPE="text" NAME="PREPAY_payinfo" VALUE="" MAXLENGTH=80>!,
     );
 
     my %paybychecked = (
-      'CARD' => qq!Credit card<BR><font color="#ff0000">*</font><INPUT TYPE="text" NAME="CARD_payinfo" VALUE="$payinfo" MAXLENGTH=19><BR><font color="#ff0000">*</font>Exp !. expselect("CARD", $paydate). qq!<BR><font color="#ff0000">*</font>Name on card<BR><INPUT TYPE="text" NAME="CARD_payname" VALUE="$payname">!,
+      'CARD' => qq!Credit card<BR><font color="#ff0000">*</font>$cardselect<INPUT TYPE="text" NAME="CARD_payinfo" VALUE="$payinfo" MAXLENGTH=19><BR><font color="#ff0000">*</font>Exp !. expselect("CARD", $paydate). qq!<BR><font color="#ff0000">*</font>Name on card<BR><INPUT TYPE="text" NAME="CARD_payname" VALUE="$payname">!,
       'BILL' => qq!Billing<BR>P.O. <INPUT TYPE="text" NAME="BILL_payinfo" VALUE="$payinfo"><BR><font color="#ff0000">*</font>Exp !. expselect("BILL", $paydate). qq!<BR><font color="#ff0000">*</font>Attention<BR><INPUT TYPE="text" NAME="BILL_payname" VALUE="$payname">!,
       'COMP' => qq!Complimentary<BR><font color="#ff0000">*</font>Approved by<INPUT TYPE="text" NAME="COMP_payinfo" VALUE="$payinfo"><BR><font color="#ff0000">*</font>Exp !. expselect("COMP", $paydate),
       'PREPAY' => qq!Prepaid card<BR><font color="#ff0000">*</font><INPUT TYPE="text" NAME="PREPAY_payinfo" VALUE="$payinfo" MAXLENGTH=80>!,
     );
 
     for (@payby) {
-      $OUT .= qq!<TD VALIGN=TOP><INPUT TYPE="radio" NAME="payby" VALUE="$_"!;
-      if ($payby eq $_) {
-        $OUT .= qq! CHECKED> $paybychecked{$_}</TD>!;
+      if ( scalar(@payby) == 1) {
+        $OUT .= '<TD VALIGN=TOP>'.
+                qq!<INPUT TYPE="hidden" NAME="payby" VALUE="$_">!.
+                "$paybychecked{$_}</TD>";
       } else {
-        $OUT .= qq!> $payby{$_}</TD>!;
+        $OUT .= qq!<TD VALIGN=TOP><INPUT TYPE="radio" NAME="payby" VALUE="$_"!;
+        if ($payby eq $_) {
+          $OUT .= qq! CHECKED> $paybychecked{$_}</TD>!;
+        } else {
+          $OUT .= qq!> $payby{$_}</TD>!;
+        }
+
       }
     }
   %>

@@ -134,7 +134,7 @@ sub set {
   my $dir = $self->dir;
   $value =~ /^(.*)$/s;
   $value = $1;
-  unless ( $self->config($file) eq $value ) {
+  unless ( join("\n", @{[ $self->config($file) ]}) eq $value ) {
     warn "[FS::Conf] SET $file\n" if $DEBUG;
 #    warn "$dir" if is_tainted($dir);
 #    warn "$dir" if is_tainted($file);
@@ -864,6 +864,15 @@ httemplate/docs/config.html
     'type'        => 'select',
     'select_enum' => [ qw(en_US) ],
   },
+
+  {
+    'key'         => 'signup_server-payby',
+    'section'     => '',
+    'description' => 'Acceptable payment types for the signup server',
+    'type'        => 'selectmultiple',
+    'select_enum' => [ qw(CARD PREPAY BILL COMP) ],
+  },
+
 
 );
 

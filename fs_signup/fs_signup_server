@@ -18,12 +18,13 @@ use vars qw( $opt $Debug );
 
 $Debug = 2;
 
-my @payby = qw(CARD PREPAY);
-
 my $user = shift or die &usage;
 &adminsuidsetup( $user ); 
 
 my $conf = new FS::Conf;
+
+#my @payby = qw(CARD PREPAY);
+my @payby = $conf->config('signup_server-payby');
 
 my $machine = shift or die &usage;
 
@@ -63,6 +64,8 @@ while (1) {
     'svc_acct_pop' => [ map { $_->hashref } qsearch ('svc_acct_pop',{} ) ],
 
     'security_phrase' => $conf->exists('security_phrase'),
+
+    'payby' => [ $conf->config('signup_server-payby') ],
 
   };
 

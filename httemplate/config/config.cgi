@@ -62,12 +62,12 @@ function SafeOnsubmit() {
             <input name="<%= $i->key. $n %>" type="checkbox" value="1"<%= $conf->exists($i->key) ? ' CHECKED' : '' %>>
           <% } elsif ( $type eq 'text' )  { %>
             <input name="<%= $i->key. $n %>" type="<%= $type %>" value="<%= $conf->exists($i->key) ? $conf->config($i->key) : '' %>">
-          <% } elsif ( $type eq 'select' )  { %>
-            <select name="<%= $i->key. $n %>">
+          <% } elsif ( $type eq 'select' || $type eq 'selectmultiple' )  { %>
+            <select name="<%= $i->key. $n %>" <%= $type eq 'selectmultiple' ? 'MULTIPLE' : '' %>>
               <% my %saw;
                  foreach my $value ( "", @{$i->select_enum} ) {
                     local($^W)=0; next if $saw{$value}++; %>
-                <option value="<%= $value %>"<%= $value eq $conf->config($i->key) ? ' SELECTED' : '' %>><%= $value %>
+                <option value="<%= $value %>"<%= $value eq $conf->config($i->key) || ( $type eq 'selectmultiple' && grep { $_ eq $value } $conf->config($i->key) ) ? ' SELECTED' : '' %>><%= $value %>
               <% } %>
               <% if ( $conf->exists($i->key) && $conf->config($i->key) && ! grep { $conf->config($i->key) eq $_ } @{$i->select_enum}) { %>
                 <option value=<%= $conf->config($i->key) %> SELECTED><%= conf->config($i->key) %>
