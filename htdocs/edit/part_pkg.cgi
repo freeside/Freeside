@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: part_pkg.cgi,v 1.2 1998-11-15 13:14:55 ivan Exp $
+# $Id: part_pkg.cgi,v 1.3 1998-11-21 07:07:40 ivan Exp $
 #
 # part_pkg.cgi: Add/Edit package (output form)
 #
@@ -13,7 +13,10 @@
 # use FS::CGI, added inline documentation ivan@sisd.com 98-jul-12
 #
 # $Log: part_pkg.cgi,v $
-# Revision 1.2  1998-11-15 13:14:55  ivan
+# Revision 1.3  1998-11-21 07:07:40  ivan
+# popurl, bugfix
+#
+# Revision 1.2  1998/11/15 13:14:55  ivan
 # first pass as per-user custom pricing
 #
 
@@ -31,24 +34,25 @@ my($cgi) = new CGI;
 
 &cgisuidsetup($cgi);
 
-if ( $cgi->param('clone') =~ /^(\d+)$/ ) {
+if ( $cgi->param('clone') && $cgi->param('clone') =~ /^(\d+)$/ ) {
   $cgi->param('clone', $1);
 } else {
   $cgi->param('clone', '');
 }
-if ( $cgi->param('pkgnum') =~ /^(\d+)$/ ) {
+if ( $cgi->param('pkgnum') && $cgi->param('pkgnum') =~ /^(\d+)$/ ) {
   $cgi->param('pkgnum', $1);
 } else {
   $cgi->param('pkgnum', '');
 }
 
 my($part_pkg,$action);
+my($query) = $cgi->keywords;
 if ( $cgi->param('clone') ) {
   $action='Custom Pricing';
   my $old_part_pkg =
     qsearchs('part_pkg', { 'pkgpart' => $cgi->param('clone') } );
   $part_pkg = $old_part_pkg->clone;
-} elsif ( $cgi->keywords =~ /^(\d+)$/ ) {
+} elsif ( $query =~ /^(\d+)$/ ) {
   $action='Edit';
   $part_pkg=qsearchs('part_pkg',{'pkgpart'=>$1});
 } else {
@@ -58,9 +62,9 @@ if ( $cgi->param('clone') ) {
 my($hashref)=$part_pkg->hashref;
 
 print $cgi->header, header("$action Package Definition", menubar(
-  'Main Menu' => '../',
-  'View all packages' => '../browse/part_pkg.cgi',
-)), '<FORM ACTION="process/part_pkg.cgi" METHOD=POST>';
+  'Main Menu' => popurl(2),
+  'View all packages' => popurl(2). '/browse/part_pkg.cgi',
+)), '<FORM ACTION="', popurl(1), 'process/part_pkg.cgi" METHOD=POST>';
 
 if ( $cgi->param('clone') ) {
   print qq!<INPUT TYPE="hidden" NAME="clone" VALUE="!, $cgi->param('clone'), qq!">!;
