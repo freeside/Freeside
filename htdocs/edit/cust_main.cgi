@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main.cgi,v 1.19 1999-08-21 02:14:25 ivan Exp $
+# $Id: cust_main.cgi,v 1.20 1999-08-23 07:08:11 ivan Exp $
 #
 # Usage: cust_main.cgi custnum
 #        http://server.name/path/cust_main.cgi?custnum
@@ -38,7 +38,10 @@
 # fixed one missed day->daytime ivan@sisd.com 98-jul-13
 #
 # $Log: cust_main.cgi,v $
-# Revision 1.19  1999-08-21 02:14:25  ivan
+# Revision 1.20  1999-08-23 07:08:11  ivan
+# no CGI::Switch for now
+#
+# Revision 1.19  1999/08/21 02:14:25  ivan
 # better error message for no agents
 #
 # Revision 1.18  1999/08/11 15:38:33  ivan
@@ -97,7 +100,8 @@ use vars qw( $cgi $custnum $action $cust_main $p1 @agents $agentnum
              $daytime $night $fax @invoicing_list $invoicing_list $payinfo
              $payname %payby %paybychecked $refnum $otaker $r );
 use vars qw ( $conf $pkgpart $username $password $popnum $ulen $ulen2 );
-use CGI::Switch;
+#use CGI::Switch;
+use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup getotaker);
 #use FS::Record qw(qsearch qsearchs fields);
