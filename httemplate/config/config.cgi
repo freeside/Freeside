@@ -42,6 +42,9 @@
   </table><br><br>
 <% } %>
 
+You may need to restart Apache and/or freeside-queued for configuration
+changes to take effect.<BR>
+
 <input type="submit" value="Apply changes">
 </form>
 
