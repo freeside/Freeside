@@ -301,7 +301,7 @@ httemplate/docs/config.html
   },
 
   {
-    'key'         => 'postalinvoicedefault',
+    'key'         => 'disablepostalinvoicedefault',
     'section'     => 'billing',
     'description' => 'Disables postal mail invoices as the default option in the UI.  Be careful not to setup customers which are not sent invoices.  See <a href ="#emailinvoiceauto">emailinvoiceauto</a>.',
     'type'       => 'checkbox',
