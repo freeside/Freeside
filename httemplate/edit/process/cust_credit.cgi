@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: cust_credit.cgi,v 1.3 2001-12-26 04:25:04 ivan Exp $ -->
+#<!-- $Id: cust_credit.cgi,v 1.4 2001-12-26 15:07:06 ivan Exp $ -->
 
 use strict;
 use vars qw( $cgi $custnum $new $error );
@@ -9,6 +9,7 @@ use FS::UID qw(cgisuidsetup getotaker);
 use FS::CGI qw(popurl);
 use FS::Record qw(fields);
 use FS::cust_credit;
+use FS::cust_main;
 
 $cgi = new CGI;
 cgisuidsetup($cgi);
@@ -33,7 +34,7 @@ if ( $error ) {
 } else {
   if ( $cgi->param('apply') eq 'yes' ) {
     my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum })
-      or die "unknown custnum $linknum";
+      or die "unknown custnum $custnum";
     $cust_main->apply_payments;
   }
   print $cgi->redirect(popurl(3). "view/cust_main.cgi?$custnum");

@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: cust_credit.cgi,v 1.6 2001-12-26 04:25:04 ivan Exp $ -->
+#<!-- $Id: cust_credit.cgi,v 1.7 2001-12-26 15:07:06 ivan Exp $ -->
 
 use strict;
 use vars qw( $cgi $query $custnum $otaker $p1 $_date $amount $reason );
@@ -45,6 +45,7 @@ print qq!<FONT SIZE="+1" COLOR="#ff0000">Error: !, $cgi->param('error'),
 print <<END, small_custview($custnum, $conf->config('countrydefault'));
     <FORM ACTION="${p1}process/cust_credit.cgi" METHOD=POST>
     <INPUT TYPE="hidden" NAME="crednum" VALUE="">
+    <INPUT TYPE="hidden" NAME="custnum" VALUE="$custnum">
     <INPUT TYPE="hidden" NAME="paybatch" VALUE="">
     <INPUT TYPE="hidden" NAME="_date" VALUE="$_date">
     <INPUT TYPE="hidden" NAME="credited" VALUE="">
