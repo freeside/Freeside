@@ -44,6 +44,10 @@ currently supported:
 =item _date - specified as a UNIX timestamp; see L<perlfunc/"time">.  Also see
 L<Time::Local> and L<Date::Parse> for conversion functions.
 
+=item status - event status: B<done> or B<failed>
+
+=item statustext - additional status detail (i.e. error message)
+
 =back
 
 =head1 METHODS
