@@ -295,7 +295,7 @@ print qq!<INPUT TYPE="submit" VALUE="One-time charge"></FORM><BR>!;
 print <<END;
 <SCRIPT>
 function cust_pkg_areyousure(href) {
-    if (confirm("Permanantly delete included services and cancel this package?") == true)
+    if (confirm("Permanently delete included services and cancel this package?") == true)
         window.location.href = href;
 }
 </SCRIPT>

@@ -38,7 +38,7 @@ my $otaker = $cust_pkg->getfield('otaker');
 print <<END;
 <SCRIPT>
 function areyousure(href) {
-    if (confirm("Permanantly delete included services and cancel this package?") == true)
+    if (confirm("Permanently delete included services and cancel this package?") == true)
         window.location.href = href;
 }
 </SCRIPT>
