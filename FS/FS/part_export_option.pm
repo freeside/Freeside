@@ -106,7 +106,7 @@ sub check {
     $self->ut_numbern('optionnum')
     || $self->ut_number('exportnum')
     || $self->ut_alpha('optionname')
-    || $self->ut_textn('optionvalue')
+    || $self->ut_anything('optionvalue')
   ;
   return $error if $error;
 
