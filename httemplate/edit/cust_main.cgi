@@ -195,8 +195,8 @@ my($daytime,$night,$fax)=(
   $cust_main->fax,
 );
 
-my $daytime_label = gettext('daytime') || 'Day Phone';
-my $night_label = gettext('night') || 'Night Phone';
+my $daytime_label = FS::Msgcat::_gettext('daytime') || 'Day Phone';
+my $night_label = FS::Msgcat::_gettext('night') || 'Night Phone';
 
 print <<END;
 <TR><TH ALIGN="right">${r}Country</TH><TD>$country_html</TD></TR>

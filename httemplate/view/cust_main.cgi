@@ -83,11 +83,13 @@ print '</TR>',
           $cust_main->country,
           '</TD></TR>',
   ;
-  my $daytime_label = gettext('daytime') || 'Day Phone';
-  my $night_label = gettext('night') || 'Night Phone';
-  print '<TR><TD ALIGN="right">$daytime_label</TD><TD COLSPAN=5 BGCOLOR="#ffffff">',
+  my $daytime_label = FS::Msgcat::_gettext('daytime') || 'Day Phone';
+  my $night_label = FS::Msgcat::_gettext('night') || 'Night Phone';
+  print '<TR><TD ALIGN="right">'. $daytime_label.
+          '</TD><TD COLSPAN=5 BGCOLOR="#ffffff">',
           $cust_main->daytime || '&nbsp', '</TD></TR>',
-       '<TR><TD ALIGN="right">$night_label</TD><TD COLSPAN=5 BGCOLOR="#ffffff">',
+        '<TR><TD ALIGN="right">'. $night_label. 
+          '</TD><TD COLSPAN=5 BGCOLOR="#ffffff">',
           $cust_main->night || '&nbsp', '</TD></TR>',
         '<TR><TD ALIGN="right">Fax</TD><TD COLSPAN=5 BGCOLOR="#ffffff">',
           $cust_main->fax || '&nbsp', '</TD></TR>',
@@ -124,10 +126,10 @@ print '</TR>',
             $cust_main->get("${pre}country"),
             '</TD></TR>',
     ;
-    print '<TR><TD ALIGN="right">$daytime_label</TD>',
+    print '<TR><TD ALIGN="right">'. $daytime_label. '</TD>',
           '<TD COLSPAN=5 BGCOLOR="#ffffff">',
             $cust_main->get("${pre}daytime") || '&nbsp', '</TD></TR>',
-          '<TR><TD ALIGN="right">$night_label</TD>'.
+          '<TR><TD ALIGN="right">'. $night_label. '</TD>'.
           '<TD COLSPAN=5 BGCOLOR="#ffffff">',
             $cust_main->get("${pre}night") || '&nbsp', '</TD></TR>',
           '<TR><TD ALIGN="right">Fax</TD><TD COLSPAN=5 BGCOLOR="#ffffff">',
