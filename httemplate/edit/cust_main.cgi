@@ -124,9 +124,11 @@ if ( $custnum && ! $conf->exists('editreferrals') ) {
 #referring customer
 
 #print qq!<BR><BR>Referring Customer: !;
-if ( $cust_main->referral_custnum ) {
-  my $referring_cust_main =
-    qsearchs('cust_main', { custnum => $cust_main->referral_custnum } );
+my $referring_cust_main = '';
+if ( $cust_main->referral_custnum
+     and $referring_cust_main =
+           qsearchs('cust_main', { custnum => $cust_main->referral_custnum } )
+) {
   print '<BR><BR>Referring Customer: <A HREF="'. popurl(1). '/cust_main.cgi?'.
         $cust_main->referral_custnum. '">'.
         $cust_main->referral_custnum. ': '.
