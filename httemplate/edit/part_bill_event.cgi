@@ -108,6 +108,12 @@ tie my %events, 'Tie::IxHash',
     'weight' => 30,
   },
 
+  'realtime-check' => {
+    'name' => 'Run check with a <a href="http://search.cpan.org/search?mode=module&query=Business%3A%3AOnlinePayment">Business::OnlinePayment</a> realtime gateway',
+    'code' => '$cust_bill->realtime_ach();',
+    'weight' => 30,
+  },
+
   'batch-card' => {
     'name' => 'Add card to the pending credit card batch',
     'code' => '$cust_bill->batch_card();',
