@@ -1,0 +1,218 @@
+#!/usr/bin/perl -Tw
+
+use strict;
+use Date::Parse;
+use Time::Local;
+use Getopt::Std;
+use Text::Template;
+use FS::Conf;
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw(qsearch);
+use FS::cust_main;
+
+# Set the mail program
+my $mail_program = "/usr/sbin/sendmail -t -n"; 
+
+&untaint_argv;	#what it sounds like  (eww)
+use vars qw($opt_v $opt_p $opt_m $opt_e $opt_t $report_lines $report_template @buf);
+getopts("vpmet:");	#switches
+
+#we're at now now (and later).
+my($_date)= $^T;
+
+# Get the current month
+my ($sec,$min,$hour,$mday,$mon,$year) =
+	(localtime($_date) )[0,1,2,3,4,5]; 
+$mon++;
+$year += 1900;
+
+# Login to the database
+my $user = shift or die &usage;
+adminsuidsetup $user;
+
+# Get the needed configuration files
+my $conf = new FS::Conf;
+my $lpr = $conf->config('lpr');
+my $email = $conf->config('email');
+my @report_template = $conf->config('report_template')
+  or die "cannot load config file report_template";
+$report_lines = 0;
+  foreach ( grep /report_lines\(\d+\)/, @report_template ) { #kludgy :/
+  /report_lines\((\d+)\)/;
+  $report_lines += $1;
+}
+die "no report_lines() functions in template?" unless $report_lines;
+$report_template = new Text::Template (
+  TYPE   => 'ARRAY',
+  SOURCE => [ map "$_\n", @report_template ],
+) or die "can't create new Text::Template object: $Text::Template::ERROR";
+
+
+my(@customers)=qsearch('cust_main',{});
+if (scalar(@customers) == 0)
+{
+	exit 1;
+}
+
+# Open print and email pipes
+# $lpr and opt_p for printing
+# $email and opt_m for email
+
+if ($lpr && $opt_p)
+{
+        open(LPR, "|$lpr");
+}
+
+if ($email && $opt_m)
+{
+	open (MAIL, "|$mail_program");
+	print MAIL <<END
+To: $email
+From: Account Processor
+Subject: Receivables
+
+
+END
+}
+
+my $total = 0;
+
+
+# Now I can start looping
+foreach my $customer (@customers)
+{
+  my $custnum = $customer->getfield('custnum');
+  my $first = $customer->getfield('first');
+  my $last = $customer->getfield('last');
+  my $company = $customer->getfield('company');
+  my $daytime = $customer->getfield('daytime');
+  my $balance = $customer->balance;
+
+
+  if ($balance != 0) {
+    $total += $balance;
+    push @buf, sprintf(qq{%5d %-32.32s %12s %9.2f},
+      $custnum,
+      $first . " " . $last . "   " . $company,
+      $daytime,
+      $balance);
+
+  }
+
+}
+
+push @buf, ('', sprintf(qq{%61s}, "========="), sprintf(qq{%61.2f}, $total));
+
+sub FS::receivables_report::_template::report_lines {
+  my $lines = shift;
+  map {
+    scalar(@buf) ? shift @buf : '' ;
+  }
+  ( 1 .. $lines );
+}
+
+$FS::receivables_report::_template::title = " R E C E I V A B L E S ";
+$FS::receivables_report::_template::title = $opt_t if $opt_t;
+$FS::receivables_report::_template::page = 1;
+$FS::receivables_report::_template::date = $_date;
+$FS::receivables_report::_template::date = $_date;
+$FS::receivables_report::_template::total_pages = 
+  int( scalar(@buf) / $report_lines);
+$FS::receivables_report::_template::total_pages++ if scalar(@buf) % $report_lines;
+
+my @report;
+while (@buf) {
+  push @report, split("\n", 
+    $report_template->fill_in( PACKAGE => 'FS::receivables_report::_template' )
+  );
+  $FS::receivables_report::_template::page++;
+}
+
+if ($opt_v) {
+  print map "$_\n", @report;
+}
+if($lpr && $opt_p)
+{
+  print LPR map "$_\n", @report;
+  print LPR "\f" if $opt_e;
+  close LPR || die "Could not close printer: $lpr\n";
+}
+if($email && $opt_m)
+{
+  print MAIL map "$_\n", @report;
+  close MAIL || die "Could not close printer: $email\n";
+}
+
+
+# subroutines
+
+sub untaint_argv {
+  foreach $_ ( $[ .. $#ARGV ) { #untaint @ARGV
+    $ARGV[$_] =~ /^([\w\-\/ ]*)$/ || die "Illegal argument \"$ARGV[$_]\"";
+    $ARGV[$_]=$1;
+  }
+}
+
+sub usage {
+  die "Usage:\n\n  freeside-receivables-report [-v] [-p] [-e] user\n";
+}
+
+=head1 NAME
+
+freeside-receivables-report - Prints or emails outstanding receivables.
+
+=head1 SYNOPSIS
+
+  freeside-receivables-report [-v] [-p] [-m] [-e] [-t "title"] user
+
+=head1 DESCRIPTION
+
+Prints or emails outstanding receivables
+
+-v: Verbose - Prints records to STDOUT.
+
+-p: Print to printer lpr as found in the conf directory.
+
+-m: Mail output to user found in the Conf email file.
+
+-e: Print a final form feed to the printer.
+
+-t: supply a title for the top of each page.
+
+user: From the mapsecrets file - see config.html from the base documentation
+
+=head1 VERSION
+
+$Id: freeside-receivables-report,v 1.1 2002-02-22 23:18:32 jeff Exp $
+
+=head1 BUGS
+
+Yes..... Use at your own risk. No guarantees or warrantees of any
+kind apply to this program. Parts of this program are hacked from
+other GNU licensed software created mainly by Ivan Kohler.
+
+This is released under the GNU Public License. See www.gnu.org
+for more information regarding this license.
+
+=head1 SEE ALSO
+
+L<FS::cust_main>, config.html from the base documentation
+
+=head1 HISTORY
+
+griff@aver-computer.com July 99
+
+$Log: freeside-receivables-report,v $
+Revision 1.1  2002-02-22 23:18:32  jeff
+add some reporting features
+
+Revision 1.1  2000/09/20 19:25:19  jeff
+local modifications
+
+Revision 1.1  2000/05/13 21:57:56  ivan
+add print_batch script from Joel Griffiths
+
+
+=cut
+
+
