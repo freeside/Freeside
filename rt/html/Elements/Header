@@ -78,7 +78,7 @@ ONLOAD="
 <table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#FFFFFF">
   <tr> 
     <td rowspan=2><img border=0 alt="freeside" src="<%$RT::WebImagesURL%>/small-logo.png" width="92" height="62"></td>
-    <td align="left" rowspan=2><font size=6><% FS::Conf->new->config('company_name') %> Ticketing</font></td>
+    <td align="left" rowspan=2><font size=6><% &RT::URI::freeside::FreesideGetConfig('company_name') %> Ticketing</font></td>
     <td align="right" valign="top">
 % if ($session{'CurrentUser'} && $session{'CurrentUser'}->Id && $LoggedIn) {
 <SPAN STYLE="display: none"><A HREF="#skipnav"><&|/l&>Skip Menu</&></A> |</SPAN>
@@ -102,7 +102,7 @@ ONLOAD="
         <tr>
           <td align=right>
             <FONT SIZE="-3">
-              <A HREF="http://www.sisd.com/freeside">Freeside</A>&nbsp;v<% $FS::VERSION %><BR>
+              <A HREF="http://www.sisd.com/freeside">Freeside</A>&nbsp;v<% &RT::URI::freeside::FreesideVersion() %><BR>
              <A HREF="../docs/">Documentation</A><BR>
             </FONT>
           </td>
@@ -124,6 +124,7 @@ ONLOAD="
 
 $r->headers_out->{'Pragma'} = 'no-cache';
 $r->headers_out->{'Cache-control'} = 'no-cache';
+require RT::URI::freeside;
 </%INIT>
 
 <%ARGS>

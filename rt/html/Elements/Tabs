@@ -64,7 +64,7 @@ my $basetopactions = {
 	};
 my $basetabs = {
                   ' A'=> { title => 'Billing Main',
-                           path  => '../',
+                           path  => &RT::URI::freeside::FreesideURL(),
                          },
                     A => { #title => loc('Homepage'),
                            title => 'Ticketing Main',
@@ -93,6 +93,8 @@ if (!defined $toptabs) {
 if (!defined $topactions) {
    $topactions = $basetopactions;
 }
+
+  require RT::URI::freeside;
                     
   # Now let callbacks add their extra tabs
   $m->comp('/Elements/Callback', 

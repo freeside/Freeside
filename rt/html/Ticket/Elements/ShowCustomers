@@ -21,7 +21,7 @@
 %   my $cust_main = '';
   <tr>
     <td class="value">
-      <A HREF="<% $customerURI->Resolver->HREF %>"><% $customerURI->Resolver->AsStringLong |n %>
+      <A HREF="<% $customerURI->Resolver->HREF %>"><% $customerURI->Resolver->AsStringLong |n %></A>
     </td>
   </tr>
 % }

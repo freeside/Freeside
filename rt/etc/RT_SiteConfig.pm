@@ -10,4 +10,6 @@ $RT::WebExternalAuth = 1;
 $RT::WebFallbackToInternal = 1; #no
 $RT::WebExternalAuto = 1;
 
+$RT::URI::freeside::IntegrationType = 'Internal';
+
 1;

@@ -19,9 +19,8 @@
 % foreach my $customer (@Customers) {
 <tr>
   <td>
-    <input type="checkbox" name="Ticket-AddCustomer-<% $customer->custnum %>" VALUE="1" <% scalar(@Customers) == 1 ? 'CHECKED' : '' %>>
-%#    <% $customer->name %>
-    <A HREF="<% $p %>view/cust_main.cgi?<% $customer->custnum %>"><% small_custview( $customer, scalar(FS::Conf->new->config('countrydefault')), 1 ) |n %>
+    <input type="checkbox" name="Ticket-AddCustomer-<% $customer->{'custnum'} %>" VALUE="1" <% scalar(@Customers) == 1 ? 'CHECKED' : '' %>>
+    <A HREF="<%$freeside_url%>/view/cust_main.cgi?<% $customer->{'custnum'} %>"><% &RT::URI::freeside::small_custview($customer->{'custnum'}, &RT::URI::freeside::FreesideGetConfig('countrydefault'), 1) |n %>
   </td>
 </tr>
 % }
@@ -31,9 +30,11 @@
 <%INIT>
 my ($msg);
 
+my $freeside_url = &RT::URI::freeside::FreesideURL();
+
 my @Customers = ();
 if ( $CustomerString ) {
-    @Customers = smart_search( 'search' => $CustomerString );
+    @Customers = &RT::URI::freeside::smart_search( 'search' => $CustomerString );
     warn scalar(@Customers);
 }
 
@@ -41,9 +42,6 @@ my @Services = ();
 if ($ServiceString) {
     @Services = (); #service_search();
 }
-
-eval { use FS::CGI qw( popurl small_custview ); };
-my $p = eval { popurl(3); };
 
 </%INIT>
 
