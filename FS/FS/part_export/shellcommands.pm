@@ -1,6 +1,7 @@
 package FS::part_export::shellcommands;
 
 use vars qw(@ISA @saltset);
+use String::ShellQuote;
 use FS::part_export;
 
 @ISA = qw(FS::part_export);
@@ -27,6 +28,7 @@ sub _export_command {
     no strict 'refs';
     ${$_} = $svc_acct->getfield($_) foreach $svc_acct->fields;
   }
+  $finger = shell_quote $finger;
   $crypt_password = ''; #surpress "used only once" warnings
   $crypt_password = crypt( $svc_acct->_password,
                              $saltset[int(rand(64))].$saltset[int(rand(64))] );
@@ -47,6 +49,7 @@ sub _export_replace {
     ${"old_$_"} = $old->getfield($_) foreach $old->fields;
     ${"new_$_"} = $new->getfield($_) foreach $new->fields;
   }
+  $new_finger = shell_quote $new_finger;
   $new_crypt_password = ''; #surpress "used only once" warnings
   $new_crypt_password = crypt( $new->_password,
                                $saltset[int(rand(64))].$saltset[int(rand(64))]);
