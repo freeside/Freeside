@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 #
-# $Id: svc_acct.export,v 1.30 2002-02-12 18:37:43 ivan Exp $
+# $Id: svc_acct.export,v 1.31 2002-02-14 22:37:38 jeff Exp $
 #
 # Create and export password, radius and vpopmail password files:
 # passwd, passwd.adjunct, shadow, acp_passwd, acp_userinfo, acp_dialup
@@ -71,7 +71,7 @@ warn "using depriciated textradiusprepend file" if $textradiusprepend;
 
 my $radiusprepend =
   $conf->exists('radiusprepend')
-    ? $conf->config('radiusprepend')
+    ? join("\n", $conf->config('radiusprepend'))
     : '';
 
 my @vpopmailmachines = $conf->config('vpopmailmachines')
