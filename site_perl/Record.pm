@@ -166,7 +166,7 @@ sub qsearch {
     ? " WHERE ". join(' AND ',
       map {
         $record->{$_} eq ''
-          ? "$_ IS NULL"
+          ? "( $_ IS NULL OR $_ = \"\" )"
           : "$_ = ". _quote($record->{$_},$table,$_)
       } @fields
     ) : ''
@@ -383,7 +383,7 @@ sub delete {
   my($statement)="DELETE FROM ". $self->table. " WHERE ". join(' AND ',
     map {
       $self->getfield($_) eq ''
-        ? "$_ IS NULL"
+        ? "( $_ IS NULL OR $_ = \"\" )"
         : "$_ = ". _quote($self->getfield($_),$self->table,$_)
     } ( $self->dbdef_table->primary_key )
           ? ( $self->dbdef_table->primary_key)
@@ -450,7 +450,7 @@ sub replace {
     join(' AND ',
       map {
         $old->getfield($_) eq ''
-          ? "$_ IS NULL"
+          ? "( $_ IS NULL OR $_ = \"\" )"
           : "$_ = ". _quote($old->getfield($_),$old->table,$_)
       } ( $primary_key ? ( $primary_key ) : $old->fields )
     )
@@ -805,7 +805,7 @@ sub hfields {
 
 =head1 VERSION
 
-$Id: Record.pm,v 1.10 1998-12-29 11:59:33 ivan Exp $
+$Id: Record.pm,v 1.11 1999-01-18 09:22:38 ivan Exp $
 
 =head1 BUGS
 
@@ -927,7 +927,10 @@ added pod documentation ivan@sisd.com 98-sep-6
 ut_phonen got ''; at the end ivan@sisd.com 98-sep-27
 
 $Log: Record.pm,v $
-Revision 1.10  1998-12-29 11:59:33  ivan
+Revision 1.11  1999-01-18 09:22:38  ivan
+changes to track email addresses for email invoicing
+
+Revision 1.10  1998/12/29 11:59:33  ivan
 mostly properly OO, some work still to be done with svc_ stuff
 
 Revision 1.9  1998/11/21 07:26:45  ivan

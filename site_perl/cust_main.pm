@@ -203,7 +203,8 @@ sub check {
   my $self = shift;
 
   my $error =
-    $self->ut_number('agentnum')
+    $self->ut_numbern('custnum')
+    || $self->ut_number('agentnum')
     || $self->ut_number('refnum')
     || $self->ut_textn('company')
     || $self->ut_text('address1')
@@ -254,7 +255,7 @@ sub check {
       } );
   }
 
-  $self->zip =~ /^([\w\-]{10})$/ or return "Illegal zip";
+  $self->zip =~ /^([\w\-]{5,10})$/ or return "Illegal zip";
   $self->zip($1);
 
   $self->payby =~ /^(CARD|BILL|COMP)$/ or return "Illegal payby";
@@ -760,34 +761,42 @@ sub balance {
   sprintf( "%.2f", $self->total_owed - $self->total_credited );
 }
 
-=item invoicing_list [ ITEM, ITEM, ... ]
+=item invoicing_list [ ARRAYREF ]
 
-If arguements are given, sets these email addresses as invoice recipients
+If an arguement is given, sets these email addresses as invoice recipients
 (see L<FS::cust_main_invoice>).  Errors are not fatal and are not reported
 (except as warnings), so use check_invoicing_list first.
 
 Returns a list of email addresses (with svcnum entries expanded).
 
+Note: You can clear the invoicing list by passing an empty ARRAYREF.  You can
+check it without disturbing anything by passing nothing.
+
+This interface may change in the future.
+
 =cut
 
 sub invoicing_list {
-  my( $self, @addresses ) = @_;
-  if ( @addresses ) {
+  my( $self, $arrayref ) = @_;
+  if ( $arrayref ) {
     my @cust_main_invoice = 
       qsearch( 'cust_main_invoice', { 'custnum' => $self->custnum } );
     foreach my $cust_main_invoice ( @cust_main_invoice ) {
-      unless ( grep { $cust_main_invoice->address eq $_ } @addresses ) {
-        $cust_main_invoice->delete;
+      #warn $cust_main_invoice->destnum;
+      unless ( grep { $cust_main_invoice->address eq $_ } @{$arrayref} ) {
+        #warn $cust_main_invoice->destnum;
+        my $error = $cust_main_invoice->delete;
+        warn $error if $error;
       }
     }
     @cust_main_invoice =
       qsearch( 'cust_main_invoice', { 'custnum' => $self->custnum } );
-    foreach my $address ( @addresses ) {
+    foreach my $address ( @{$arrayref} ) {
       unless ( grep { $address eq $_->address } @cust_main_invoice ) {
-        my $cust_main_invoice = new FS::cust_main_invoice (
+        my $cust_main_invoice = new FS::cust_main_invoice ( {
           'custnum' => $self->custnum,
           'dest'    => $address,
-        );
+        } );
         my $error = $cust_main_invoice->insert;
         warn $error if $error;
       } 
@@ -797,7 +806,7 @@ sub invoicing_list {
     qsearch( 'cust_main_invoice', { 'custnum' => $self->custnum } );
 }
 
-=item check_invoicing_list ITEM, ITEM
+=item check_invoicing_list ARRAYREF
 
 Checks these arguements as valid input for the invoicing_list method.  If there
 is an error, returns the error, otherwise returns false.
@@ -805,12 +814,12 @@ is an error, returns the error, otherwise returns false.
 =cut
 
 sub check_invoicing_list {
-  my( $self, @addresses ) = @_;
-  foreach my $address ( @addresses ) {
-    my $cust_main_invoice = new FS::cust_main_invoice (
+  my( $self, $arrayref ) = @_;
+  foreach my $address ( @{$arrayref} ) {
+    my $cust_main_invoice = new FS::cust_main_invoice ( {
       'custnum' => $self->custnum,
       'dest'    => $address,
-    );
+    } );
     my $error = $cust_main_invoice->check;
     return $error if $error;
   }
@@ -821,7 +830,7 @@ sub check_invoicing_list {
 
 =head1 VERSION
 
-$Id: cust_main.pm,v 1.8 1998-12-29 11:59:39 ivan Exp $
+$Id: cust_main.pm,v 1.9 1999-01-18 09:22:41 ivan Exp $
 
 =head1 BUGS
 
@@ -877,7 +886,10 @@ enable cybercash, cybercash v3 support, don't need to import
 FS::UID::{datasrc,checkruid} ivan@sisd.com 98-sep-19-21
 
 $Log: cust_main.pm,v $
-Revision 1.8  1998-12-29 11:59:39  ivan
+Revision 1.9  1999-01-18 09:22:41  ivan
+changes to track email addresses for email invoicing
+
+Revision 1.8  1998/12/29 11:59:39  ivan
 mostly properly OO, some work still to be done with svc_ stuff
 
 Revision 1.7  1998/12/16 09:58:52  ivan

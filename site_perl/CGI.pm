@@ -9,7 +9,7 @@ use CGI::Carp qw(fatalsToBrowser);
 use FS::UID;
 
 @ISA = qw(Exporter);
-@EXPORT_OK = qw(header menubar idiot eidiot popurl table);
+@EXPORT_OK = qw(header menubar idiot eidiot popurl table itable);
 
 =head1 NAME
 
@@ -45,21 +45,21 @@ Returns an HTML header.
 sub header {
   my($title,$menubar)=@_;
 
-  <<END;
+  my $x =  <<END;
     <HTML>
       <HEAD>
         <TITLE>
           $title
         </TITLE>
       </HEAD>
-      <BODY BGCOLOR="#ffffff">
+      <BODY BGCOLOR="#e8e8e8">
           <FONT COLOR="#FF0000" SIZE=7>
             $title
           </FONT>
           <BR><BR>
-          $menubar
-      <BR><BR>
 END
+  $x .=  $menubar. "<BR><BR>" if $menubar;
+  $x;
 }
 
 =item menubar ITEM, URL, ...
@@ -146,7 +146,12 @@ Returns HTML tag for beginning a table.
 =cut
 
 sub table {
-  "<TABLE BORDER=1>";
+  my $col = shift;
+  if ( $col ) {
+    "<TABLE BGCOLOR=$col BORDER=1 WIDTH=\"100%\">";
+  } else { 
+    "<TABLE BORDER=1>";
+  }
 }
 
 =item itable
@@ -156,7 +161,12 @@ Returns HTML tag for beginning an (invisible) table.
 =cut
 
 sub itable {
-  "<TABLE>";
+  my $col = shift;
+  if ( $col ) {
+    qq!<TABLE BGCOLOR=$col BORDER=0 CELLSPACING=0 WIDTH=\"100%\">!;
+  } else {
+    "<TABLE>";
+  }
 }
 
 =back
@@ -183,8 +193,8 @@ lose the background, eidiot ivan@sisd.com 98-sep-2
 pod ivan@sisd.com 98-sep-12
 
 $Log: CGI.pm,v $
-Revision 1.13  1999-01-17 04:04:13  ivan
-itable
+Revision 1.14  1999-01-18 09:22:37  ivan
+changes to track email addresses for email invoicing
 
 Revision 1.12  1998/12/23 02:23:16  ivan
 popurl always has trailing slash

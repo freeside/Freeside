@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: agent_type.cgi,v 1.6 1998-12-17 06:16:58 ivan Exp $
+# $Id: agent_type.cgi,v 1.7 1999-01-18 09:22:29 ivan Exp $
 #
 # agent_type.cgi: Add/Edit agent type (output form)
 #
@@ -13,7 +13,10 @@
 # use FS::CGI, added inline documentation ivan@sisd.com 98-jul-12
 #
 # $Log: agent_type.cgi,v $
-# Revision 1.6  1998-12-17 06:16:58  ivan
+# Revision 1.7  1999-01-18 09:22:29  ivan
+# changes to track email addresses for email invoicing
+#
+# Revision 1.6  1998/12/17 06:16:58  ivan
 # fix double // in relative URLs, s/CGI::Base/CGI/;
 #
 # Revision 1.5  1998/11/21 07:58:27  ivan
@@ -46,7 +49,9 @@ my($cgi) = new CGI;
 &cgisuidsetup($cgi);
 
 my($agent_type,$action);
-if ( $cgi->keywords =~ /^(\d+)$/ ) { #editing
+if ( $cgi->keywords ) { #editing
+  my( $query ) = $cgi->keywords;
+  $query =~ /^(\d+)$/;
   $agent_type=qsearchs('agent_type',{'typenum'=>$1});
   $action='Edit';
 } else { #adding

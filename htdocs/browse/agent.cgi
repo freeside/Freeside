@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: agent.cgi,v 1.7 1998-12-17 05:25:16 ivan Exp $
+# $Id: agent.cgi,v 1.8 1999-01-18 09:22:26 ivan Exp $
 #
 # ivan@sisd.com 97-dec-12
 #
@@ -15,7 +15,10 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: agent.cgi,v $
-# Revision 1.7  1998-12-17 05:25:16  ivan
+# Revision 1.8  1999-01-18 09:22:26  ivan
+# changes to track email addresses for email invoicing
+#
+# Revision 1.7  1998/12/17 05:25:16  ivan
 # fix visual and other bugs
 #
 # Revision 1.6  1998/11/23 05:29:46  ivan
@@ -42,6 +45,19 @@ use FS::Record qw(qsearch qsearchs);
 use FS::CGI qw(header menubar table popurl);
 use FS::agent;
 use FS::agent_type;
+
+#Begin silliness
+
+use FS::UI::CGI;
+use FS::UI::agent;
+
+my $ui = new FS::UI::agent;
+$ui->browse;
+exit;
+
+#End silliness
+
+__END__
 
 my($cgi) = new CGI;
 

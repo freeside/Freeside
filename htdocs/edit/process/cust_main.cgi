@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main.cgi,v 1.3 1998-12-17 08:40:19 ivan Exp $
+# $Id: cust_main.cgi,v 1.4 1999-01-18 09:22:32 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/cust_main.cgi
@@ -22,7 +22,10 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # $Log: cust_main.cgi,v $
-# Revision 1.3  1998-12-17 08:40:19  ivan
+# Revision 1.4  1999-01-18 09:22:32  ivan
+# changes to track email addresses for email invoicing
+#
+# Revision 1.3  1998/12/17 08:40:19  ivan
 # s/CGI::Request/CGI.pm/; etc
 #
 # Revision 1.2  1998/11/18 08:57:36  ivan
@@ -30,60 +33,71 @@
 #
 
 use strict;
+#use CGI;
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
-use FS::UID qw(cgisuidsetup);
+use FS::UID qw(cgisuidsetup getotaker);
 use FS::CGI qw(eidiot popurl);
-use FS::Record qw(qsearchs);
+use FS::Record qw(qsearchs fields);
 use FS::cust_main;
 
 my($cgi)=new CGI;
-
 &cgisuidsetup($cgi);
 
-#create new record object
+#unmunge stuff
 
-#unmunge agentnum
-$cgi->param('agentnum', 
-  (split(/:/, ($cgi->param('agentnum'))[0] ))[0]
-);
+$cgi->param('agentnum', (split(/:/, ($cgi->param('agentnum'))[0] ))[0] );
 
-#unmunge tax
 $cgi->param('tax','') unless defined($cgi->param('tax'));
 
-#unmunge refnum
-$cgi->param('refnum',
-  (split(/:/, ($cgi->param('refnum'))[0] ))[0]
-);
+$cgi->param('refnum', (split(/:/, ($cgi->param('refnum'))[0] ))[0] );
 
-#unmunge state/county/country
 $cgi->param('state') =~ /^(\w+)( \((\w+)\))? \/ (\w+)$/;
 $cgi->param('state', $1);
 $cgi->param('county', $3 || '');
 $cgi->param('country', $4);
 
-my($new) = create FS::cust_main ( {
+my $payby = $cgi->param('payby');
+$cgi->param('payinfo', $cgi->param( $payby. '_payinfo' ) );
+$cgi->param('paydate',
+  $cgi->param( $payby. '_month' ). '-'. $cgi->param( $payby. '_year' ) );
+$cgi->param('payname', $cgi->param( $payby. '_payname' ) );
+
+$cgi->param('otaker', &getotaker );
+
+my @invoicing_list = split( /\s*\,\s*/, $cgi->param('invoicing_list') );
+push @invoicing_list, 'POST' if $cgi->param('invoicing_list_POST');
+
+#create new record object
+
+my($new) = new FS::cust_main ( {
   map {
     $_, scalar($cgi->param($_))
-  } qw(custnum agentnum last first ss company address1 address2 city county
-       state zip daytime night fax payby payinfo paydate payname tax
-       otaker refnum)
+#  } qw(custnum agentnum last first ss company address1 address2 city county
+#       state zip daytime night fax payby payinfo paydate payname tax
+#       otaker refnum)
+  } fields('cust_main')
 } );
 
+#perhaps the invocing_list magic should move to cust_main.pm?
 if ( $new->custnum eq '' ) {
-
-  my($error)=$new->insert;
+  my $error;
+  $error = $new->check_invoicing_list( \@invoicing_list );
+  &ediot($error) if $error;
+  $error = $new->insert;
   &eidiot($error) if $error;
-
+  $new->invoicing_list( \@invoicing_list );
 } else { #create old record object
-
-  my($old) = qsearchs( 'cust_main', { 'custnum', $new->custnum } ); 
+  my $error;
+  my $old = qsearchs( 'cust_main', { 'custnum' => $new->custnum } ); 
   &eidiot("Old record not found!") unless $old;
-  my($error)=$new->replace($old);
+  $error = $new->check_invoicing_list( \@invoicing_list );
   &eidiot($error) if $error;
-
+  $error = $new->replace($old);
+  &eidiot($error) if $error;
+  $new->invoicing_list( \@invoicing_list );
 }
 
-my($custnum)=$new->custnum;
+my $custnum = $new->custnum;
 print $cgi->redirect(popurl(3). "view/cust_main.cgi?$custnum#cust_main");
 

@@ -1,11 +1,14 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_pkg.cgi,v 1.3 1998-12-23 03:05:59 ivan Exp $
+# $Id: cust_pkg.cgi,v 1.4 1999-01-18 09:22:33 ivan Exp $
 #
 # based on search/svc_acct.cgi ivan@sisd.com 98-jul-17
 #
 # $Log: cust_pkg.cgi,v $
-# Revision 1.3  1998-12-23 03:05:59  ivan
+# Revision 1.4  1999-01-18 09:22:33  ivan
+# changes to track email addresses for email invoicing
+#
+# Revision 1.3  1998/12/23 03:05:59  ivan
 # $cgi->keywords instead of $cgi->query_string
 #
 # Revision 1.2  1998/12/17 09:41:09  ivan
@@ -65,8 +68,7 @@ if ( scalar(@cust_pkg) == 1 ) {
   exit;
 } else {
   my($total)=scalar(@cust_pkg);
-  CGI::Base::SendHeaders(); # one guess
-  print header('Package Search Results',''), <<END;
+  print $cgi->header, header('Package Search Results',''), <<END;
     $total matching packages found
     <TABLE BORDER=4 CELLSPACING=0 CELLPADDING=0>
       <TR>
@@ -77,8 +79,6 @@ if ( scalar(@cust_pkg) == 1 ) {
       </TR>
 END
 
-  my($lines)=16;
-  my($lcount)=$lines;
   my(%saw,$cust_pkg);
   foreach $cust_pkg (
     sort $sortby grep(!$saw{$_->pkgnum}++, @cust_pkg)
@@ -98,20 +98,7 @@ END
       <TD><FONT SIZE=-1>$company</FONT></TD>
     </TR>
 END
-    if ($lcount-- == 0) { # lots of little tables instead of one big one
-      $lcount=$lines;
-      print <<END;   
-  </TABLE>
-  <TABLE BORDER=4 CELLSPACING=0 CELLPADDING=0>
-    <TR>
-        <TH>Package #</TH>
-        <TH>Customer #</TH>
-        <TH>Name</TH>
-        <TH>Company</TH>
-      <TH>
-    </TR>
-END
-    }
+
   }
  
   print <<END;

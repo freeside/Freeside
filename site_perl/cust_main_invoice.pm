@@ -103,9 +103,9 @@ and repalce methods.
 sub check {
   my $self = shift;
 
-  my $error = $self->ut_number('destnum')
-        or $self->ut_number('custnum')
-        or $self->ut_text('dest')
+  my $error = $self->ut_numbern('destnum')
+           || $self->ut_number('custnum')
+           || $self->ut_text('dest')
   ;
   return $error if $error;
 
@@ -117,7 +117,7 @@ sub check {
   } elsif ( $self->dest =~ /^(\d+)$/ ) {
     return "Unknown local account (specified by svcnum)"
       unless qsearchs( 'svc_acct', { 'svcnum' => $self->dest } );
-  } elsif ( $self->dest =~ /^([\w\.\-]+)\@(([\w\.\-]\.)+\w+)$/ ) {
+  } elsif ( $self->dest =~ /^([\w\.\-]+)\@(([\w\.\-]+\.)+\w+)$/ ) {
     my($user, $domain) = ($1, $2);
     if ( $domain eq $mydomain ) {
       my $svc_acct = qsearchs( 'svc_acct', { 'username' => $user } );
@@ -152,7 +152,7 @@ sub address {
 
 =head1 VERSION
 
-$Id: cust_main_invoice.pm,v 1.3 1998-12-29 11:59:42 ivan Exp $
+$Id: cust_main_invoice.pm,v 1.4 1999-01-18 09:22:42 ivan Exp $
 
 =head1 BUGS
 
@@ -168,7 +168,10 @@ added hfields
 ivan@sisd.com 97-nov-13
 
 $Log: cust_main_invoice.pm,v $
-Revision 1.3  1998-12-29 11:59:42  ivan
+Revision 1.4  1999-01-18 09:22:42  ivan
+changes to track email addresses for email invoicing
+
+Revision 1.3  1998/12/29 11:59:42  ivan
 mostly properly OO, some work still to be done with svc_ stuff
 
 Revision 1.2  1998/12/16 09:58:53  ivan

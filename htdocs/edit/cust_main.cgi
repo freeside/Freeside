@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main.cgi,v 1.4 1998-12-23 08:08:15 ivan Exp $
+# $Id: cust_main.cgi,v 1.5 1999-01-18 09:22:30 ivan Exp $
 #
 # Usage: cust_main.cgi custnum
 #        http://server.name/path/cust_main.cgi?custnum
@@ -40,7 +40,10 @@
 # fixed one missed day->daytime ivan@sisd.com 98-jul-13
 #
 # $Log: cust_main.cgi,v $
-# Revision 1.4  1998-12-23 08:08:15  ivan
+# Revision 1.5  1999-01-18 09:22:30  ivan
+# changes to track email addresses for email invoicing
+#
+# Revision 1.4  1998/12/23 08:08:15  ivan
 # fix typo
 #
 # Revision 1.3  1998/12/17 06:17:00  ivan
@@ -48,71 +51,63 @@
 #
 
 use strict;
-use CGI;
+use CGI::Switch;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup getotaker);
 use FS::Record qw(qsearch qsearchs);
-use FS::CGI qw(header popurl);
+use FS::CGI qw(header popurl itable table);
 use FS::cust_main;
 
-my($cgi) = new CGI;
-
+my $cgi = new CGI;
 cgisuidsetup($cgi);
 
 #get record
-my($custnum,$action,$cust_main);
-my($query) = $cgi->keywords;
-if ( $query =~ /^(\d+)$/ ) { #editing
+
+my ( $custnum, $action, $cust_main );
+if ( $cgi->keywords ) { #editing
+  my( $query ) = $cgi->keywords;
+  $query =~ /^(\d+)$/;
   $custnum=$1;
-  $cust_main = qsearchs('cust_main',{'custnum'=>$custnum});
+  $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } );
   $action='Edit';
 } else {
   $custnum='';
-  $cust_main = create FS::cust_main ( {} );
+  $cust_main = new FS::cust_main ( {} );
   $cust_main->setfield('otaker',&getotaker);
   $action='Add';
 }
 
+# top
+
 my $p1 = popurl(1);
-print $cgi->header, header("Customer $action", ''), <<END;
-    <FORM ACTION="${p1}process/cust_main.cgi" METHOD=POST>
-    <PRE>
-END
+print $cgi->header, header("Customer $action", ''),
+      qq!<FORM ACTION="${p1}process/cust_main.cgi" METHOD=POST>!,
+      qq!<INPUT TYPE="hidden" NAME="custnum" VALUE="$custnum">!,
+      qq!Customer # !, ( $custnum ? $custnum : " (NEW)" ),
+      
+;
 
-print qq!<INPUT TYPE="hidden" NAME="custnum" VALUE="$custnum">!,
-      qq!Customer #<FONT SIZE="+1"><B>!;
-print $custnum ? $custnum : " (NEW)" , "</B></FONT>";
+# agent
 
-#agentnum
-my($agentnum)=$cust_main->agentnum || 1; #set to first agent by default
 my @agents = qsearch( 'agent', {} );
-print qq!\n\nAgent # <SELECT NAME="agentnum" SIZE="1">!;
-my($agent);
-foreach $agent (sort {
-  $a->agent cmp $b->agent;
-} @agents) {
-    print "<OPTION" . " SELECTED"x($agent->agentnum==$agentnum),
-    ">", $agent->agentnum,": ", $agent->agent, "\n";
-}
-print "</SELECT>";
-
-#referral
-#unless ($custnum) {
-  my($refnum)=$cust_main->refnum || 0; #to avoid "arguement not numeric" error
-  my(@referrals) = qsearch('part_referral',{});
-  print qq!\nReferral <SELECT NAME="refnum" SIZE="1">!;
-  print "<OPTION> \n";
-  my($referral);
-  foreach $referral (sort {
-    $a->refnum <=> $b->refnum;
-  } @referrals) {
-    print "<OPTION" . " SELECTED"x($referral->refnum==$refnum),
-    ">", $referral->refnum, ": ", $referral->referral,"\n";
+my $agentnum = $cust_main->agentnum || $agents[0]->agentnum; #default to first
+if ( scalar(@agents) == 1 ) {
+  print qq!<INPUT TYPE="hidden" NAME="agentnum" VALUE="$agentnum">!;
+} else {
+  print qq!<BR><BR>Agent <SELECT NAME="agentnum" SIZE="1">!;
+  my $agent;
+  foreach $agent (sort {
+    $a->agent cmp $b->agent;
+  } @agents) {
+      print "<OPTION" . " SELECTED"x($agent->agentnum==$agentnum),
+      ">", $agent->agentnum,": ", $agent->agent;
   }
   print "</SELECT>";
-#}
+}
 
-my($last,$first,$ss,$company,$address1,$address2,$city)=(
+# contact info
+
+my($last,$first,$ss,$company,$address1,$address2,$city,$zip)=(
   $cust_main->last,
   $cust_main->first,
   $cust_main->ss,
@@ -120,18 +115,18 @@ my($last,$first,$ss,$company,$address1,$address2,$city)=(
   $cust_main->address1,
   $cust_main->address2,
   $cust_main->city,
+  $cust_main->zip,
 );
 
-print <<END;
-
-
-Name (last)<INPUT TYPE="text" NAME="last" VALUE="$last"> (first)<INPUT TYPE="text" NAME="first" VALUE="$first">  SS# <INPUT TYPE="text" NAME="ss" VALUE="$ss" SIZE=11 MAXLENGTH=11>
-Company <INPUT TYPE="text" NAME="company" VALUE="$company">
-Address <INPUT TYPE="text" NAME="address1" VALUE="$address1" SIZE=40 MAXLENGTH=40>
-        <INPUT TYPE="text" NAME="address2" VALUE="$address2" SIZE=40 MAXLENGTH=40>
-City <INPUT TYPE="text" NAME="city" VALUE="$city">  State (county) / Country<SELECT NAME="state" SIZE="1">
+print "<BR><BR>Contact information", itable("#c0c0c0"), <<END;
+<TR><TH ALIGN="right">Contact name<BR>(last, first)</TH><TD COLSPAN=3><INPUT TYPE="text" NAME="last" VALUE="$last">, <INPUT TYPE="text" NAME="first" VALUE="$first"></TD><TD ALIGN="right">SS#</TD><TD><INPUT TYPE="text" NAME="ss" VALUE="$ss" SIZE=11></TD></TR>
+<TR><TD ALIGN="right">Company</TD><TD COLSPAN=5><INPUT TYPE="text" NAME="company" VALUE="$company" SIZE=70></TD></TR>
+<TR><TH ALIGN="right">Address</TH><TD COLSPAN=5><INPUT TYPE="text" NAME="address1" VALUE="$address1" SIZE=70></TH></TR>
+<TR><TD ALIGN="right">&nbsp;</TD><TD COLSPAN=5><INPUT TYPE="text" NAME="address2" VALUE="$address2" SIZE=70></TD></TR>
+<TR><TH ALIGN="right">City</TH><TD><INPUT TYPE="text" NAME="city" VALUE="$city"><TH ALIGN="right">State/Country</TH><TD><SELECT NAME="state" SIZE="1">
 END
 
+$cust_main->country('US') unless $cust_main->country; #eww
 foreach ( qsearch('cust_main_county',{}) ) {
   print "<OPTION";
   print " SELECTED" if ( $cust_main->state eq $_->state
@@ -142,73 +137,115 @@ foreach ( qsearch('cust_main_county',{}) ) {
   print " (",$_->county,")" if $_->county;
   print " / ", $_->country;
 }
-print "</SELECT>";
+print qq!</SELECT></TD><TH>Zip</TH><TD><INPUT TYPE="text" NAME="zip" VALUE="$zip" SIZE=10></TD></TR>!;
 
-my($zip,$daytime,$night,$fax)=(
-  $cust_main->zip,
+my($daytime,$night,$fax)=(
   $cust_main->daytime,
   $cust_main->night,
   $cust_main->fax,
 );
 
 print <<END;
-  Zip <INPUT TYPE="text" NAME="zip" VALUE="$zip" SIZE=10 MAXLENGTH=10>
-
-Phone (daytime)<INPUT TYPE="text" NAME="daytime" VALUE="$daytime" SIZE=18 MAXLENGTH=20>  (night)<INPUT TYPE="text" NAME="night" VALUE="$night" SIZE=18 MAXLENGTH=20>  (fax)<INPUT TYPE="text" NAME="fax" VALUE="$fax" SIZE=12 MAXLENGTH=12>
-
+<TR><TD ALIGN="right">Day Phone</TD><TD COLSPAN=5><INPUT TYPE="text" NAME="daytime" VALUE="$daytime" SIZE=18></TD></TR>
+<TR><TD ALIGN="right">Night Phone</TD><TD COLSPAN=5><INPUT TYPE="text" NAME="night" VALUE="$night" SIZE=18></TD></TR>
+<TR><TD ALIGN="right">Fax</TD><TD COLSPAN=5><INPUT TYPE="text" NAME="fax" VALUE="$fax" SIZE=12></TD></TR>
 END
 
-my(%payby)=(
-  'CARD' => "Credit card    ",
-  'BILL' => "Billing    ",
-  'COMP' => "Complimentary",
-);
-for (qw(CARD BILL COMP)) {
-  print qq!<INPUT TYPE="radio" NAME="payby" VALUE="$_"!;
-  print qq! CHECKED! if ($cust_main->payby eq "$_");
-  print qq!>$payby{$_}!;
+print "</TABLE>";
+
+# billing info
+
+sub expselect {
+  my $prefix = shift;
+  my $date = shift || '';
+  my( $m, $y ) = ( 0, 0 );
+  if ( $date  =~ /^(\d{4})-(\d{2})-\d{2}$/ ) { #PostgreSQL date format
+    ( $m, $y ) = ( $2, $1 );
+  } elsif ( $date =~ /^(\d{1,2})-(\d{1,2}-)?(\d{4}$)/ ) {
+    ( $m, $y ) = ( $1, $3 );
+  }
+  my $return = qq!<SELECT NAME="$prefix!. qq!_month" SIZE="1">!;
+  for ( 1 .. 12 ) {
+    $return .= "<OPTION";
+    $return .= " SELECTED" if $_ == $m;
+    $return .= ">$_";
+  }
+  $return .= qq!</SELECT>/<SELECT NAME="$prefix!. qq!_year" SIZE="1">!;
+  for ( 1999 .. 2037 ) {
+    $return .= "<OPTION";
+    $return .= " SELECTED" if $_ == $y;
+    $return .= ">$_";
+  }
+  $return .= "</SELECT>";
+
+  $return;
 }
 
+print "<BR>Billing information", itable("#c0c0c0"),
+      qq!<TR><TD><INPUT TYPE="checkbox" NAME="tax" VALUE="Y"!;
+print qq! CHECKED! if $cust_main->tax eq "Y";
+print qq!>Tax Exempt!;
+print qq!</TD></TR><TR><TD><INPUT TYPE="checkbox" NAME="invoicing_list_POST" VALUE="POST"!;
+my @invoicing_list = $cust_main->invoicing_list;
+print qq! CHECKED!
+  if ! @invoicing_list || grep { $_ eq 'POST' } @invoicing_list;
+print qq!> Postal mail invoice!;
+my $invoicing_list = join(', ', grep { $_ ne 'POST' } @invoicing_list );
+print qq!</TD></TR><TR><TD>Email invoice <INPUT TYPE="text" NAME="invoicing_list" VALUE="$invoicing_list"></TD>!;
 
-my($payinfo,$payname,$otaker)=(
+print "</TD></TR></TABLE>";
+
+print table("#c0c0c0"), "<TR>";
+
+my($payinfo, $payname)=(
   $cust_main->payinfo,
   $cust_main->payname,
-  $cust_main->otaker,
 );
 
-my($paydate);
-if ( $cust_main->paydate =~ /^(\d{4})-(\d{2})-\d{2}$/ ) {
-  $paydate="$2/$1"
-} elsif ( $cust_main->paydate =~ /^(\d{2})-\d{2}-(\d{4}$)/ ) {
-  $paydate="$1/$2"
+my %payby = (
+  'CARD' => qq!Credit card<BR><INPUT TYPE="text" NAME="CARD_payinfo" VALUE="" MAXLENGTH=19><BR>Exp !. expselect("CARD"). qq!<BR>Name on card<BR><INPUT TYPE="text" NAME="CARD_payname" VALUE="">!,
+  'BILL' => qq!Billing<BR>P.O. <INPUT TYPE="text" NAME="BILL_payinfo" VALUE=""><BR>Exp !. expselect("BILL", "12-2037"). qq!<BR>Attention<BR><INPUT TYPE="text" NAME="BILL_payname" VALUE="Accounts Payable">!,
+  'COMP' => qq!Complimentary<BR>Approved by<INPUT TYPE="text" NAME="COMP_payinfo" VALUE=""><BR>Exp !. expselect("COMP"),
+);
+my %paybychecked = (
+  'CARD' => qq!Credit card<BR><INPUT TYPE="text" NAME="CARD_payinfo" VALUE="$payinfo" MAXLENGTH=19><BR>Exp !. expselect("CARD", $cust_main->paydate). qq!<BR>Name on card<BR><INPUT TYPE="text" NAME="CARD_payname" VALUE="$payname">!,
+  'BILL' => qq!Billing<BR>P.O. <INPUT TYPE="text" NAME="BILL_payinfo" VALUE="$payinfo"><BR>Exp !. expselect("BILL", $cust_main->paydate). qq!<BR>Attention<BR><INPUT TYPE="text" NAME="BILL_payname" VALUE="$payname">!,
+  'COMP' => qq!Complimentary<BR>Approved by<INPUT TYPE="text" NAME="COMP_payinfo" VALUE="$payinfo"><BR>Exp !. expselect("COMP", $cust_main->paydate),
+);
+for (qw(CARD BILL COMP)) {
+  print qq!<TD VALIGN=TOP><INPUT TYPE="radio" NAME="payby" VALUE="$_"!;
+  if ($cust_main->payby eq "$_") {
+    print qq! CHECKED> $paybychecked{$_}</TD>!;
+  } else {
+    print qq!> $payby{$_}</TD>!;
+  }
 }
-else {
-  $paydate='';
+
+print "</TR></TABLE>";
+
+#referral
+
+my $refnum = $cust_main->refnum || 0;
+if ( $custnum ) {
+  print qq!<INPUT TYPE="hidden" NAME="refnum" VALUE="$refnum">!;
+} else {
+  my(@referrals) = qsearch('part_referral',{});
+  print qq!<BR>Referral <SELECT NAME="refnum" SIZE="1">!;
+  print "<OPTION> ";
+  my($referral);
+  foreach $referral (sort {
+    $a->refnum <=> $b->refnum;
+  } @referrals) {
+    print "<OPTION" . " SELECTED"x($referral->refnum==$refnum),
+    ">", $referral->refnum, ": ", $referral->referral;
+  }
+  print "</SELECT>";
 }
 
-print <<END;
-
-  Card number ,   P.O. #   or   Authorization    <INPUT TYPE="text" NAME="payinfo" VALUE="$payinfo" SIZE=19 MAXLENGTH=19>
-END
-
-print qq!Exp. date (MM/YY or MM/YYYY)<INPUT TYPE="text" NAME="paydate" VALUE="$paydate" SIZE=8 MAXLENGTH=7>    Billing name <INPUT TYPE="text" NAME="payname" VALUE="$payname">\n<INPUT TYPE="checkbox" NAME="tax" VALUE="Y"!;
-print qq! CHECKED! if $cust_main->tax eq "Y";
-print qq!> Tax Exempt!;
-
-print <<END;
-
-
-Order taken by: <FONT SIZE="+1"><B>$otaker</B></FONT><INPUT TYPE="hidden" NAME="otaker" VALUE="$otaker">
-</PRE>
-END
-
-print qq!<CENTER><INPUT TYPE="submit" VALUE="!,
-      $custnum ?  "Apply Changes" : "Add Customer", qq!"></CENTER>!;
-
-print <<END;
-
-    </FORM>
-  </BODY>
-</HTML>
-END
+my $otaker = $cust_main->otaker;
+print qq!<INPUT TYPE="hidden" NAME="otaker" VALUE="$otaker">!,
+      qq!<BR><BR><INPUT TYPE="submit" VALUE="!,
+      $custnum ?  "Apply Changes" : "Add Customer", qq!">!,
+      "</FORM></BODY></HTML>",
+;
 

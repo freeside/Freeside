@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct.cgi,v 1.4 1998-12-23 03:09:19 ivan Exp $
+# $Id: svc_acct.cgi,v 1.5 1999-01-18 09:22:36 ivan Exp $
 #
 # Usage: svc_acct.cgi svcnum
 #        http://server.name/path/svc_acct.cgi?svcnum
@@ -35,7 +35,10 @@
 # displays arbitrary radius attributes ivan@sisd.com 98-aug-16
 #
 # $Log: svc_acct.cgi,v $
-# Revision 1.4  1998-12-23 03:09:19  ivan
+# Revision 1.5  1999-01-18 09:22:36  ivan
+# changes to track email addresses for email invoicing
+#
+# Revision 1.4  1998/12/23 03:09:19  ivan
 # $cgi->keywords instead of $cgi->query_string
 #
 # Revision 1.3  1998/12/17 09:57:23  ivan
@@ -46,12 +49,18 @@
 #
 
 use strict;
-use vars qw($conf);
+use vars qw( $conf );
 use CGI;
-use CGI::Carp qw(fatalsToBrowser);
-use FS::UID qw(cgisuidsetup);
-use FS::Record qw(qsearchs fields);
+use CGI::Carp qw( fatalsToBrowser );
+use FS::UID qw( cgisuidsetup );
+use FS::CGI qw( header popurl );
+use FS::Record qw( qsearchs fields );
 use FS::Conf;
+use FS::svc_acct;
+use FS::cust_svc;
+use FS::cust_pkg;
+use FS::part_svc;
+use FS::svc_acct_pop;
 
 my($cgi) = new CGI;
 &cgisuidsetup($cgi);

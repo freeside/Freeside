@@ -14,18 +14,19 @@
   <li>Move /var/spool/freeside/export to /usr/local/etc/freeside/export.<i>datasrc</i>.
   <li>Apply the following changes to your database:
 <pre>
-ALTER TABLE cust_main ADD middle varchar(80) NULL;
+<!-- ALTER TABLE cust_main ADD middle varchar(80) NULL;
 ALTER TABLE cust_main ADD titlenum int NULL;
-ALTER TABLE cust_main CHANGE state state varchar(80) NULL;
+-->ALTER TABLE cust_main CHANGE state state varchar(80) NULL;
 ALTER TABLE cust_main_county CHANGE state state varchar(80) NULL;
 ALTER TABLE cust_main_county ADD country char(2);
-UPDATE cust_main_county SET country = "US" where country IS NULL;
-CREATE TABLE part_title (
+UPDATE cust_main SET country = "US" where country IS NULL OR country = '';
+UPDATE cust_main_county SET country = "US" where country IS NULL OR country = "";
+<!--CREATE TABLE part_title (
    titlenum int NOT NULL,
    title varchar(80) NOT NULL,
    PRIMARY KEY (titlenum)
 );
-CREATE TABLE cust_main_invoice (
+-->CREATE TABLE cust_main_invoice (
    destnum int NOT NULL,
    custnum int NOT NULL,
    dest varchar(80) NOT NULL,

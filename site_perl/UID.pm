@@ -78,7 +78,7 @@ sub adminsuidsetup {
                           'ChopBlanks' => 'true',
   } ) or die "DBI->connect error: $DBI::errstr\n";
 
-  swapuid(); #go to non-privledged user if running setuid freeside
+  #swapuid(); #go to non-privledged user if running setuid freeside
 
   foreach ( keys %callback ) {
     &{$callback{$_}};
@@ -200,7 +200,7 @@ Swaps real and effective UIDs.
 =cut
 
 sub swapuid {
-  ($<,$>) = ($>,$<);
+  ($<,$>) = ($>,$<) if $< != $>;
 }
 
 =item getsecrets [ USER ]
@@ -241,7 +241,7 @@ coderef into the hash %FS::UID::callback :
 
 =head1 VERSION
 
-$Id: UID.pm,v 1.6 1998-11-15 05:27:48 ivan Exp $
+$Id: UID.pm,v 1.7 1999-01-18 09:22:40 ivan Exp $
 
 =head1 BUGS
 
@@ -287,7 +287,10 @@ inlined suidsetup
 ivan@sisd.com 98-sep-12
 
 $Log: UID.pm,v $
-Revision 1.6  1998-11-15 05:27:48  ivan
+Revision 1.7  1999-01-18 09:22:40  ivan
+changes to track email addresses for email invoicing
+
+Revision 1.6  1998/11/15 05:27:48  ivan
 bugfix for new configuration layout
 
 Revision 1.5  1998/11/15 00:51:51  ivan

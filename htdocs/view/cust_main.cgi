@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main.cgi,v 1.7 1998-12-30 23:03:34 ivan Exp $
+# $Id: cust_main.cgi,v 1.8 1999-01-18 09:22:35 ivan Exp $
 #
 # Usage: cust_main.cgi custnum
 #        http://server.name/path/cust_main.cgi?custnum
@@ -33,7 +33,10 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: cust_main.cgi,v $
-# Revision 1.7  1998-12-30 23:03:34  ivan
+# Revision 1.8  1999-01-18 09:22:35  ivan
+# changes to track email addresses for email invoicing
+#
+# Revision 1.7  1998/12/30 23:03:34  ivan
 # bugfixes; fields isn't exported by derived classes
 #
 # Revision 1.6  1998/12/23 02:42:33  ivan
@@ -100,7 +103,7 @@ print qq!<HR><CENTER><A HREF="!, popurl(2), qq!/misc/bill.cgi?$custnum">!,
 #formatting
 print qq!<HR><A NAME="cust_main"><CENTER><FONT SIZE=+1>Customer Information!,
       qq!</FONT>!,
-      qq!<BR><A HREF="!, popurl(2), qq!/edit/cust_main.cgi?$custnum!,
+      qq!<BR><A HREF="!, popurl(2), qq!edit/cust_main.cgi?$custnum!,
       qq!">Edit this information</A></CENTER><FONT SIZE=-1>!;
 
 #agentnum

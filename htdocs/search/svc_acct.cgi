@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct.cgi,v 1.3 1998-12-23 03:06:28 ivan Exp $
+# $Id: svc_acct.cgi,v 1.4 1999-01-18 09:22:34 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/svc_acct.cgi
@@ -23,7 +23,10 @@
 # give service and customer info too ivan@sisd.com 98-aug-16
 #
 # $Log: svc_acct.cgi,v $
-# Revision 1.3  1998-12-23 03:06:28  ivan
+# Revision 1.4  1999-01-18 09:22:34  ivan
+# changes to track email addresses for email invoicing
+#
+# Revision 1.3  1998/12/23 03:06:28  ivan
 # $cgi->keywords instead of $cgi->query_string
 #
 # Revision 1.2  1998/12/17 09:41:10  ivan
@@ -36,6 +39,8 @@ use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
 use FS::Record qw(qsearch qsearchs);
 use FS::CGI qw(header idiot popurl);
+use FS::svc_acct;
+use FS::cust_main;
 
 my($cgi)=new CGI;
 &cgisuidsetup($cgi);
@@ -43,6 +48,7 @@ my($cgi)=new CGI;
 my(@svc_acct,$sortby);
 
 my($query)=$cgi->keywords;
+$query ||= ''; #to avoid use of unitialized value errors
 #this tree is a little bit redundant
 if ( $query eq 'svcnum' ) {
   $sortby=\*svcnum_sort;
@@ -84,7 +90,7 @@ if ( scalar(@svc_acct) == 1 ) {
   exit;
 } else {
   my($total)=scalar(@svc_acct);
-  print $cgi->header("Account Search Results",''), <<END;
+  print $cgi->header, header("Account Search Results",''), <<END;
     $total matching accounts found
     <TABLE BORDER=4 CELLSPACING=0 CELLPADDING=0>
       <TR>
@@ -128,7 +134,8 @@ END
       ? "<A HREF=\"${p}view/cust_main.cgi?$custnum\"><FONT SIZE=-1>$custnum</FONT></A>"
       : "<I>(unlinked)</I>"
     ;
-    my($pname) = $custnum ? "$last, $first" : '';
+    my($pname) = $custnum ? "<A HREF=\"${p}view/cust_main.cgi?$custnum\">$last, $first</A>" : '';
+    my $pcompany = $custnum ? "<A HREF=\"${p}view/cust_main.cgi?$custnum\">$company</A>" : '';
     print <<END;
     <TR>
       <TD><A HREF="${p}view/svc_acct.cgi?$svcnum"><FONT SIZE=-1>$svcnum</FONT></A></TD>
@@ -137,7 +144,7 @@ END
       <TD><FONT SIZE=-1>$svc</FONT></TH>
       <TD><FONT SIZE=-1>$pcustnum</FONT></TH>
       <TD><FONT SIZE=-1>$pname<FONT></TH>
-      <TD><FONT SIZE=-1>$company</FONT></TH>
+      <TD><FONT SIZE=-1>$pcompany</FONT></TH>
     </TR>
 END
 
