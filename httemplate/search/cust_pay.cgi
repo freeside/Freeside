@@ -3,7 +3,6 @@
    my( $count_query, $sql_query );
    if ( $cgi->param('magic') && $cgi->param('magic') eq '_date' ) {
    
-     my %search = ();
      my @search = ();
 
      if ( $cgi->param('agentnum') && $cgi->param('agentnum') =~ /^(\d+)$/ ) {
@@ -16,7 +15,7 @@
      if ( $cgi->param('payby') ) {
        $cgi->param('payby') =~ /^(CARD|CHEK|BILL)(-(VisaMC|Amex|Discover))?$/
          or die "illegal payby ". $cgi->param('payby');
-       $search{'payby'} = $1;
+       push @search, "cust_pay.payby = '$1'";
        if ( $3 ) {
          if ( $3 eq 'VisaMC' ) {
            #avoid posix regexes for portability
@@ -60,22 +59,19 @@
        push @search, " _date < $1 ";
      }
    
-     my $search;
+     my $search = '';
      if ( @search ) {
-       $search = ( scalar(keys %search) ? ' AND ' : ' WHERE ' ).
-                 join(' AND ', @search);
+       $search = ' WHERE '. join(' AND ', @search);
      }
 
-     my $hsearch = join(' AND ', map { "$_ = '$search{$_}'" } keys %search );
      $count_query = "SELECT COUNT(*), SUM(paid) ".
                     "FROM cust_pay LEFT JOIN cust_main USING ( custnum )".
-                    ( $hsearch ? " WHERE $hsearch " : '' ).
                     $search;
    
-     warn join('-', keys %search);
      $sql_query = {
        'table'     => 'cust_pay',
-       'hashref'   => \%search,
+       'select'    => 'cust_pay.*, cust_main.last, cust_main.first, cust_main.company',
+       'hashref'   => {},
        'extra_sql' => "$search ORDER BY _date",
        'addl_from' => 'LEFT JOIN cust_main USING ( custnum )',
      };

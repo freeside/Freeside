@@ -9,7 +9,7 @@
    }
 
    if ( $cgi->param('agentnum') && $cgi->param('agentnum') =~ /^(\d+)$/ ) {
-     push @search, "agentnum = $1"; # $search{'agentnum'} = $1;
+     push @search, "agentnum = $1";
      my $agent = qsearchs('agent', { 'agentnum' => $1 } );
      die "unknown agentnum $1" unless $agent;
      $title = $agent->agent. " $title";
@@ -46,6 +46,7 @@
 
    my $sql_query   = {
      'table'     => 'cust_credit',
+     'select'    => 'cust_credit.*, cust_main.last, cust_main.first, cust_main.company',
      'hashref'   => {},
      'extra_sql' => $where,
      'addl_from' => 'LEFT JOIN cust_main USING ( custnum )',
