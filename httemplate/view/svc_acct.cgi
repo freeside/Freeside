@@ -74,9 +74,9 @@ if ( $part_svc->part_export('sqlradius') ) {
   }
 
   my $seconds = $svc_acct->seconds_since_sqlradacct( $last_bill, time );
-  my $h = int($seconds/3600);
-  my $m = int( ($seconds%3600) / 60 );
-  my $s = $seconds%60;
+  my $hour = int($seconds/3600);
+  my $min = int( ($seconds%3600) / 60 );
+  my $sec = $seconds%60;
 
   my $input = $svc_acct->attribute_since_sqlradacct(
     $last_bill, time, 'AcctInputOctets'
@@ -86,7 +86,7 @@ if ( $part_svc->part_export('sqlradius') ) {
   ) / 1048576;
 
   if ( $seconds ) {
-    print "Online <B>$h</B>h <B>$m</B>m <B>$s</B>s";
+    print "Online <B>$hour</B>h <B>$min</B>m <B>$sec</B>s";
   } else {
     print 'Has not logged on';
   }
