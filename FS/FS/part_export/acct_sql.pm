@@ -12,7 +12,36 @@ tie my %options, 'Tie::IxHash',
   'datasrc'            => { label => 'DBI data source' },
   'username'           => { label => 'Database username' },
   'password'           => { label => 'Database password' },
+  'table'              => { label => 'Database table' },
+  'schema'             => { label =>
+                              'Database schema mapping to Freeside methods.',
+                            type  => 'textarea',
+                          },
+  'primary_key'        => { label => 'Database primary key' },
 ;
+
+tie my %postfix_courierimap_mailbox_map, 'Tie::IxHash',
+  'username' => 'email',
+  'password' => '_password',
+  'crypt'    => 'crypt_password',
+  'name'     => 'finger',
+  'maildir'  => 'virtual_maildir',
+  'domain'   => 'domain',
+  'svcnum'   => 'svcnum',
+;
+my $postfix_courierimap_mailbox_map =
+  join('\n', map "$_ $postfix_courierimap_mailbox_map{$_}",
+                 keys %postfix_courierimap_mailbox_map      );
+
+tie my %postfix_courierimap_alias_map, 'Tie::IxHash',
+  'address' => 'email',
+  'goto'    => 'email',
+  'domain'  => 'domain',
+  'svcnum'  => 'svcnum',
+;
+my $postfix_courierimap_alias_map =
+  join('\n', map "$_ $postfix_courierimap_alias_map{$_}",
+                 keys %postfix_courierimap_alias_map      );
 
 %info = (
   'svc'      => 'svc_acct',
@@ -23,63 +52,54 @@ tie my %options, 'Tie::IxHash',
   'notes'    => <<END
 Export accounts (svc_acct records) to SQL databases.  Written for
 Postfix+Courier IMAP but intended to be generally useful for generic SQL
-exports eventually.
+exports, eventually.
 
-In contrast to sqlmail, this is newer and less well tested, and currently less
-flexible.  It is intended to export just svc_acct records only, rather than a
-single export for svc_acct, svc_forward and svc_domain records, and to 
-be configured for different mail server setups through some subclassing
-rather than options.
+<BR><BR>In contrast to sqlmail, this is newer and less well tested, and
+currently less flexible.  It is intended to export just svc_acct records only,
+rather than a single export for svc_acct, svc_forward and svc_domain records,
+to export in "default" formats rather than configure the MTA or POP/IMAP server
+for a Freeside-specific schema, and possibly to be configured for different
+mail server setups through some subclassing rather than options.
+
+<BR><BR>Use these buttons for some useful presets:
+<UL>
+  <LI><INPUT TYPE="button" VALUE="postfix_courierimap_mailbox" onClick='
+    this.form.table.value = "mailbox";
+    this.form.schema.value = "$postfix_courierimap_mailbox_map";
+    this.form.primary_key.value = "username";
+  '>
+  <LI><INPUT TYPE="button" VALUE="postfix_courierimap_alias" onClick='
+    this.form.table.value = "mailbox";
+    this.form.schema.value = "$postfix_courierimap_alias_map";
+    this.form.primary_key.value = "address";
+  '>
+</UL>
 END
 );
 
-@saltset = ( 'a'..'z' , 'A'..'Z' , '0'..'9' , '.' , '/' );
-
-#mapping needs to be configurable...
-# export col => freeside col/method or callback
-my %map = (
-  'username' => 'email',
-  'password' => '_password',
-  'crypt'    => sub {
-                  my $svc_acct = shift;
-                  #false laziness w/shellcommands.pm
-                  #eventually should check a "password-encoding" field
-                  if ( length($svc_acct->_password) == 13
-                       || $svc_acct->_password =~ /^\$(1|2a?)\$/ ) {
-                    $svc_acct->_password;
-                  } else {
-                    crypt(
-                      $svc_acct->_password,
-                      $saltset[int(rand(64))].$saltset[int(rand(64))]
-                    );
-                  }
-
-                },
-  'name'     => 'finger',
-  'maildir'  => sub { $_[0]->domain. '/maildirs/'. $_[0]->username. '/' },
-  'domain'   => sub { shift->domain },
-  'svcnum'   => 'svcnum',
-);
-
-my $table = 'mailbox'; #also needs to be configurable...
-
-my $primary_key = 'username';
+sub _map {
+  my $self = shift;
+  map { /^\s*(\S+)\s*(\S+)\s*$/ } split("\n", $self->option('schema') );
+}
 
 sub rebless { shift; }
 
 sub _export_insert {
   my($self, $svc_acct) = (shift, shift);
 
+  my %map = $self->_map;
 
   my %record = map { my $value = $map{$_};
-                     $_ => ( ref($value)
-                               ? &{$value}($svc_acct)
-                               : $svc_acct->$value()
-                           );
+                     $_ => $svc_acct->$value();
                    } keys %map;
 
   my $err_or_queue =
-    $self->acct_sql_queue( $svc_acct->svcnum, 'insert', $table, %record );
+    $self->acct_sql_queue(
+      $svc_acct->svcnum,
+      'insert',
+      $self->option('table'),
+      %record
+    );
   return $err_or_queue unless ref($err_or_queue);
 
   '';
@@ -91,12 +111,13 @@ sub _export_replace {
 
 sub _export_delete {
   my ( $self, $svc_acct ) = (shift, shift);
-  my $keymap = $map{$primary_key};
+  my %map = $self->_map;
+  my $keymap = $map{$self->option('primary_key')};
   my $err_or_queue = $self->acct_sql_queue(
     $svc_acct->svcnum,
     'delete',
-    $table,
-    $primary_key => ref($keymap) ? &{$keymap}($svc_acct) : $svc_acct->$keymap()
+    $self->option('table'),
+    $self->option('primary_key') => $svc_acct->$keymap(),
   );
   return $err_or_queue unless ref($err_or_queue);
   '';

@@ -1190,6 +1190,39 @@ sub check_password {
 
 }
 
+=item crypt_password
+
+Returns an encrypted password, either by passing through an encrypted password
+in the database or by encrypting a plaintext password from the database.
+
+=cut
+
+sub crypt_password {
+  my $self = shift;
+  #false laziness w/shellcommands.pm
+  #eventually should check a "password-encoding" field
+  if ( length($self->_password) == 13
+       || $self->_password =~ /^\$(1|2a?)\$/ ) {
+    $self->_password;
+  } else {
+    crypt(
+      $self->_password,
+      $saltset[int(rand(64))].$saltset[int(rand(64))]
+    );
+  }
+}
+
+=item virtual_maildir
+
+Returns $domain/maildirs/$username/
+
+=cut
+
+sub virtual_maildir {
+  my $self = shift;
+  $self->domain. '/maildirs/'. $self->username. '/';
+}
+
 =back
 
 =head1 SUBROUTINES
