@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: agent_type.cgi,v 1.2 2001-08-21 02:31:56 ivan Exp $ -->
+#<!-- $Id: agent_type.cgi,v 1.3 2001-09-04 15:06:03 ivan Exp $ -->
 
 use strict;
 use vars qw( $cgi $agent_type $action $hashref $p $part_pkg );
@@ -66,7 +66,7 @@ foreach $part_pkg ( qsearch('part_pkg',{}) ) {
   ;
 }
 
-print qq!<BR><INPUT TYPE="submit" VALUE="!,
+print qq!<BR><BR><INPUT TYPE="submit" VALUE="!,
       $hashref->{typenum} ? "Apply changes" : "Add agent type",
       qq!">!;
 
