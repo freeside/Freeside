@@ -370,7 +370,8 @@ sub rebless {
   my $self = shift;
   my $exporttype = $self->exporttype;
   my $class = ref($self). "::$exporttype";
-  eval "use $class;" or die $@;
+  eval "use $class;";
+  die $@ if $@;
   bless($self, $class);
 }
 
