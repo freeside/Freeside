@@ -1,0 +1,21 @@
+#!/bin/sh
+
+apt-get update
+apt-get install screen zsh libapache-mod-ssl libapache-mod-perl rsync \
+        postgresql cvs fsh \
+        liburi-perl libhtml-tagset-perl libnet-perl liblocale-codes-perl \
+        libnet-whois-perl libwww-perl libbusiness-creditcard-perl \
+        libmailtools-perl libtimedate-perl libdate-manip-perl \
+        libfile-counterfile-perl libfreezethaw-perl libstring-approx-perl \
+        libtext-template-perl libdbi-perl libdbd-pg-perl \
+        libdbix-datasource-perl libdbix-dbschema-perl libnet-ssh-perl \
+        libstring-shellquote-perl libnet-scp-perl libapache-asp-perl \
+        libtie-ixhash-perl libtime-duration-perl \
+        libhtml-widgets-selectlayers-perl libstorable-perl \
+        libapache-dbi-perl libdbd-mysql-perl
+
+useradd freeside
+su postgres -c "createuser -P freeside"
+
+su freeside -c "createdb freeside"
+
