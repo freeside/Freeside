@@ -1,8 +1,8 @@
 <%
-#<!-- $Id: cust_bill_pay.cgi,v 1.1 2001-12-18 19:30:31 ivan Exp $ -->
+#<!-- $Id: cust_bill_pay.cgi,v 1.2 2001-12-18 19:32:56 ivan Exp $ -->
 
 use strict;
-use vars qw( $cgi $query $custnum $paynum $amount $invnum $p1 $otaker ); # $reason $cust_credit );
+use vars qw( $cgi $query $custnum $paynum $amount $invnum $p1 $otaker $cust_pay );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use Date::Format;
