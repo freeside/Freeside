@@ -1,0 +1,96 @@
+<HTML>
+  <HEAD>
+    <TITLE>
+      Freeside Main Menu
+    </TITLE>
+  </HEAD>
+  <BODY BGCOLOR="#FFFFFF">
+  <table>
+    <tr><td>
+    <P ALIGN=CENTER>
+        <IMG BORDER=0 ALT="Silicon Interactive Software Design" SRC="images/small-logo.gif">
+    </td><td>
+      <center><font color="#ff0000" size=7>freeside main menu</font></center>
+    </td></tr>
+  </table>
+      <A HREF="http://www.sisd.com/freeside">
+        Information
+      </A>
+      <BR><A HREF="docs/">
+        Documentation
+      </A>
+    </P>
+    <HR>
+      <H3><A HREF="edit/cust_main.cgi">New Customer</A></H3>
+        <A NAME="search"><H3>Search</H3></A>
+        <MENU>
+        <LI><A HREF="search/cust_main.html">
+            customers (by last name and/or company)
+        </A>
+        <LI><A HREF="search/cust_main-payinfo.html">customers (by credit card number)</A>
+        <LI><A HREF="search/svc_acct.html">accounts (by username)</A>
+        <LI><A HREF="search/svc_domain.html">domains (by domain)</A>
+        <LI><A HREF="search/svc_acct_sm.html">mail aliases (by domain, and optionally username)</A>
+        <LI><A HREF="search/cust_bill.html">invoices (by invoice number)</A>
+        </MENU>
+        <A NAME="browse"><H3>Browse</H3></A>
+        <MENU>
+          <LI><A HREF="search/cust_main.cgi?custnum">customers (by customer number)</A>
+          <LI><A HREF="search/cust_main.cgi?last">customers (by last name)</A>
+          <LI><A HREF="search/cust_main.cgi?company">customers (by company)</A>
+          <LI><A HREF="search/cust_pkg.cgi?pkgnum">packages (by package number)</A>
+          <LI><A HREF="search/cust_pkg.cgi?APKG_pkgnum">packages with unconfigured services (by package number)</A>
+        <LI><A HREF="search/svc_acct.cgi?svcnum">accounts (by service number)</A>
+          <LI><A HREF="search/svc_acct.cgi?username">accounts (by username)</A>
+          <LI><A HREF="search/svc_acct.cgi?uid">accounts (by uid)</A>
+          <LI><A HREF="search/svc_acct.cgi?UN_svcnum">unlinked accounts (by service number)</A>
+          <LI><A HREF="search/svc_acct.cgi?UN_username">unlinked accounts (by username)</A>
+          <LI><A HREF="search/svc_acct.cgi?UN_uid">unlinked accounts (by uid)</A>
+          <LI><A HREF="search/svc_domain.cgi?svcnum">domains (by service number)</A>
+          <LI><A HREF="search/svc_domain.cgi?domain">domains (by domain)</A>
+          <LI><A HREF="search/svc_domain.cgi?UN_svcnum">unlinked domains (by service number)</A>
+          <LI><A HREF="search/svc_domain.cgi?UN_domain">unlinked domains (by domain)</A>
+      </MENU>
+          <A NAME="admin"><H3>Administration</H3></a>
+        <MENU>
+          <LI><A HREF="browse/part_svc.cgi">
+            View/Edit services
+          </A>
+            - Services are items you offer to your customers.
+          <LI><A HREF="browse/part_pkg.cgi">
+            View/Edit packages
+          </A>
+            - One or more services are grouped together into a package and
+              given pricing information.  Customers purchase packages, not
+              services.
+          <LI><A HREF="browse/agent_type.cgi">
+            View/Edit agent types
+          </A>
+            - Agent types define groups of packages that you can then assign
+              to particular agents.
+          <LI><A HREF="browse/agent.cgi">
+            View/Edit agents
+          </A>
+            - Agents are resellers of your service.  Agents may be limited
+              to a subset of your full offerings (via their agent type).
+          <BR>
+          <LI><A HREF="browse/part_referral.cgi">
+            View/Edit referrals
+          </A>
+            - Where a customer heard about your service.  Tracked for
+              informational purposes.
+          <BR>
+          <LI><A HREF="browse/cust_main_county.cgi">
+            View/Edit locales and tax rates
+          </A>
+            - Change tax rates by state, or break down a state into counties
+              and assign different tax rates to each county.
+          <BR>
+          <LI><A HREF="browse/svc_acct_pop.cgi">
+            View/Edit POPs 
+          </A>
+            - Points of Presence 
+    </MENU>
+    </FONT>
+  </BODY>
+</HTML>
