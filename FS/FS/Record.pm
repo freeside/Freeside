@@ -490,9 +490,14 @@ sub insert {
   warn "[debug]$me $statement\n" if $DEBUG;
   my $sth = dbh->prepare($statement) or return dbh->errstr;
 
-  my $h_statement = $self->_h_statement('insert');
-  warn "[debug]$me $h_statement\n" if $DEBUG;
-  my $h_sth = dbh->prepare($h_statement) or return dbh->errstr;
+  my $h_sth;
+  if ( defined $dbdef->table('h_'. $self->table) ) {
+    my $h_statement = $self->_h_statement('insert');
+    warn "[debug]$me $h_statement\n" if $DEBUG;
+    $h_sth = dbh->prepare($h_statement) or return dbh->errstr;
+  } else {
+    $h_sth = '';
+  }
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -502,7 +507,7 @@ sub insert {
   local $SIG{PIPE} = 'IGNORE';
 
   $sth->execute or return $sth->errstr;
-  $h_sth->execute or return $h_sth->errstr;
+  $h_sth->execute or return $h_sth->errstr if $h_sth;
   dbh->commit or croak dbh->errstr if $FS::UID::AutoCommit;
 
   '';
@@ -545,9 +550,14 @@ sub delete {
   warn "[debug]$me $statement\n" if $DEBUG;
   my $sth = dbh->prepare($statement) or return dbh->errstr;
 
-  my $h_statement = $self->_h_statement('delete');
-  warn "[debug]$me $h_statement\n" if $DEBUG;
-  my $h_sth = dbh->prepare($h_statement) or return dbh->errstr;
+  my $h_sth;
+  if ( defined $dbdef->table('h_'. $self->table) ) {
+    my $h_statement = $self->_h_statement('delete');
+    warn "[debug]$me $h_statement\n" if $DEBUG;
+    $h_sth = dbh->prepare($h_statement) or return dbh->errstr;
+  } else {
+    $h_sth = '';
+  }
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -558,7 +568,7 @@ sub delete {
 
   my $rc = $sth->execute or return $sth->errstr;
   #not portable #return "Record not found, statement:\n$statement" if $rc eq "0E0";
-  $h_sth->execute or return $h_sth->errstr;
+  $h_sth->execute or return $h_sth->errstr if $h_sth;
   dbh->commit or croak dbh->errstr if $FS::UID::AutoCommit;
 
   undef $self; #no need to keep object!
@@ -624,13 +634,23 @@ sub replace {
   warn "[debug]$me $statement\n" if $DEBUG;
   my $sth = dbh->prepare($statement) or return dbh->errstr;
 
-  my $h_old_statement = $old->_h_statement('replace_old');
-  warn "[debug]$me $h_old_statement\n" if $DEBUG;
-  my $h_old_sth = dbh->prepare($h_old_statement) or return dbh->errstr;
+  my $h_old_sth;
+  if ( defined $dbdef->table('h_'. $old->table) ) {
+    my $h_old_statement = $old->_h_statement('replace_old');
+    warn "[debug]$me $h_old_statement\n" if $DEBUG;
+    $h_old_sth = dbh->prepare($h_old_statement) or return dbh->errstr;
+  } else {
+    $h_old_sth = '';
+  }
 
-  my $h_new_statement = $new->_h_statement('replace_new');
-  warn "[debug]$me $h_new_statement\n" if $DEBUG;
-  my $h_new_sth = dbh->prepare($h_new_statement) or return dbh->errstr;
+  my $h_new_sth;
+  if ( defined $dbdef->table('h_'. $new->table) ) {
+    my $h_new_statement = $new->_h_statement('replace_new');
+    warn "[debug]$me $h_new_statement\n" if $DEBUG;
+    $h_new_sth = dbh->prepare($h_new_statement) or return dbh->errstr;
+  } else {
+    $h_new_sth = '';
+  }
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -641,8 +661,8 @@ sub replace {
 
   my $rc = $sth->execute or return $sth->errstr;
   #not portable #return "Record not found (or records identical)." if $rc eq "0E0";
-  $h_old_sth->execute or return $h_old_sth->errstr;
-  $h_new_sth->execute or return $h_new_sth->errstr;
+  $h_old_sth->execute or return $h_old_sth->errstr if $h_old_sth;
+  $h_new_sth->execute or return $h_new_sth->errstr if $h_new_sth;
   dbh->commit or croak dbh->errstr if $FS::UID::AutoCommit;
 
   '';
