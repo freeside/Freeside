@@ -513,7 +513,7 @@ on the export:
 
 sub export_info {
   #warn $_[0];
-  return $exports{$_[0]} if @_;
+  return $exports{$_[0]} || {} if @_;
   #{ map { %{$exports{$_}} } keys %exports };
   my $r = { map { %{$exports{$_}} } keys %exports };
 }
