@@ -26,7 +26,7 @@ function part_export_areyousure(href) {
       <%= itable() %>
       <% my %opt = $part_export->options;
          foreach my $opt ( keys %opt ) { %>
-           <TR><TD><%= $opt %></TD><TD><%= $opt{$opt} %></TD></TR>
+           <TR><TD><%= $opt %></TD><TD><%= encode_entities($opt{$opt}) %></TD></TR>
       <% } %>
       </TABLE>
     </TD>
