@@ -5,7 +5,7 @@
 # This is run REMOTELY over ssh by freeside-selfservice-server
 
 use strict;
-use subs qw(spawn logmsg);
+use subs qw(spawn logmsg lock_write unlock_write);
 use Fcntl qw(:flock);
 use POSIX qw(:sys_wait_h);
 use Socket;
@@ -25,6 +25,8 @@ my $pid_file = "$socket.pid";
 
 my $log_file = "/usr/local/freeside/selfservice.log";
 
+my $lock_file = "/usr/local/freeside/selfservice.writelock";
+
 #my $me = '[client]';
 
 $|=1;
@@ -34,6 +36,9 @@ $SIG{__WARN__} = \&_logmsg;
 #read data to be cached or something
 #warn "$me Reading init data\n" if $Debug;
 #my $signup_init = 
+
+warn "Creating $lock_file\n" if $Debug;
+open(LOCKFILE,">$lock_file") or die "can't open $lock_file: $!";
 
 warn "Creating $socket\n" if $Debug;
 my $uaddr = sockaddr_un($socket);
@@ -138,11 +143,19 @@ while (1) {
         #handle some commands weirdly?
         $packet->{_token}=$$;
 
+        warn "[child-$$] locking write stream" if $Debug > 1;
+        lock_write;
+
         warn "[child-$$] sending packet to remote server" if $Debug > 1;
-        flock(STDOUT, LOCK_EX) or die "FATAL: can't lock write stream: $!";
         nstore_fd($packet, \*STDOUT) or die "FATAL: can't send response: $!";
+        
+        warn "[child-$$] flushing write stream" if $Debug > 1;
         STDOUT->flush or die "FATAL: can't flush: $!";
-        flock(STDOUT, LOCK_UN) or die "FATAL: can't release write lock: $!";
+        
+        warn "[child-$$] releasing write lock" if $Debug > 1;
+        unlock_write;
+
+        warn "[child-$$] closing write stream" if $Debug > 1;
         close STDOUT or die "FATAL: can't close write stream: $!"; #??!
 
         warn "[child-$$] waiting for response from parent" if $Debug > 1;
@@ -223,4 +236,18 @@ sub _logmsg {
   print $log "[client] [". scalar(localtime). "] [$$] $msg\n";
   flock($log, LOCK_UN);
   close $log;
+}
+
+sub lock_write {
+  #broken on freebsd?
+  #flock(STDOUT, LOCK_EX) or die "FATAL: can't lock write stream: $!";
+
+  flock(LOCKFILE, LOCK_EX) or die "FATAL: can't lock $lock_file: $!";
+}
+
+sub unlock_write {
+  #broken on freebsd?
+  #flock(STDOUT, LOCK_UN) or die "FATAL: can't release write lock: $!";
+
+  flock(LOCKFILE, LOCK_UN) or die "FATAL: can't unlock $lock_file: $!";
 }
