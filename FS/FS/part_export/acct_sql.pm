@@ -107,6 +107,24 @@ sub _export_insert {
 }
 
 sub _export_replace {
+  my($self, $new, $old) = (shift, shift, shift);
+
+  my %map = $self->_map;
+  my $keymap = $map{$self->option('primary_key')};
+
+  my %record = map { my $value = $map{$_};
+                     $_ => $new->$value();
+                   } keys %map;
+
+  my $err_or_queue = $self->acct_sql_queue(
+    $new->svcnum,
+    'replace',
+    $self->option('table'),
+    $self->option('primary_key') => $old->$keymap(),
+    %record,
+  );
+  return $err_or_queue unless ref($err_or_queue);
+  '';
 }
 
 sub _export_delete {
@@ -146,7 +164,7 @@ sub acct_sql_insert { #subroutine, not method
     " ) VALUES ( ". join(", ", map '?', keys %record ). " )"
   ) or die $dbh->errstr;
 
-  $sth->execute( map $record{$_}, keys %record )
+  $sth->execute( values(%record) )
     or die "can't insert into $table table: ". $sth->errstr;
 
   $dbh->disconnect;
@@ -157,11 +175,25 @@ sub acct_sql_delete { #subroutine, not method
   my( $table, %record ) = @_;
 
   my $sth = $dbh->prepare(
-    "DELETE FROM  $table WHERE ". join(' AND ', map "$_ = ? ", keys %record )
+    "DELETE FROM $table WHERE ". join(' AND ', map "$_ = ? ", keys %record )
   ) or die $dbh->errstr;
 
   $sth->execute( map $record{$_}, keys %record )
     or die "can't delete from $table table: ". $sth->errstr;
+
+  $dbh->disconnect;
+}
+
+sub acct_sql_replace { #subroutine, not method
+  my $dbh = acct_sql_connect(shift, shift, shift);
+  my( $table, $pkey, $old_pkey, %record ) = @_;
+
+  my $sth = $dbh->prepare(
+    "UPDATE $table SET ". join(', ', map "$_ = ?", keys %record ).
+    "WHERE $pkey = ?"
+  ) or die $dbh->errstr;
+
+  $sth->execute( values(%record), $old_pkey );
 
   $dbh->disconnect;
 }
@@ -173,5 +205,4 @@ sub acct_sql_connect {
 }
 
 1;
-
 
