@@ -180,6 +180,8 @@ insert and replace methods.
 sub check {
   my $self = shift;
 
+  for (qw(setup recur)) { $self->set($_=>0) if $self->get($_) =~ /^\s*$/; }
+
   my $conf = new FS::Conf;
   if ( $conf->exists('safe-part_pkg') ) {
 

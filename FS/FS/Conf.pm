@@ -527,8 +527,8 @@ httemplate/docs/config.html
 
   {
     'key'         => 'qmailmachines',
-    'section'     => 'mail',
-    'description' => 'Your qmail machines, one per line.  This enables export of `/var/qmail/control/virtualdomains\', `/var/qmail/control/recipientmap\', and `/var/qmail/control/rcpthosts\'.  Setting this option (even if empty) also turns on user `.qmail-extension\' file maintenance in conjunction with the <b>shellmachine</b> option.',
+    'section'     => 'deprecated',
+    'description' => '<b>DEPRECATED</b>, add <i>qmail</i> and <i>shellcommands</i> <a href="../browse/part_export.cgi">exports</a> instead.  This option used to export `/var/qmail/control/virtualdomains\', `/var/qmail/control/recipientmap\', and `/var/qmail/control/rcpthosts\'.  Setting this option (even if empty) also turns on user `.qmail-extension\' file maintenance in conjunction with the <b>shellmachine</b> option.',
     'type'        => [qw( checkbox textarea )],
   },
 
