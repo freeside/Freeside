@@ -44,8 +44,8 @@ foreach my $table ( dbdef->tables ) {
 
 print <<END;
 store node (id=2, comment = 'Slave node');
-store path (server = 1, client = 2, conninfo='dbname=freeside host=$MASTERHOST user=freeside');
-store path (server = 2, client = 1, conninfo='dbname=freeside host=$SLAVEHOST user=freeside');
+store path (server = 1, client = 2, conninfo='dbname=freeside host=$MASTERHOST user=$REPLICATIONUSER');
+store path (server = 2, client = 1, conninfo='dbname=freeside host=$SLAVEHOST user=$REPLICATIONUSER');
 store listen (origin=1, provider = 1, receiver =2);
 store listen (origin=2, provider = 2, receiver =1);
 END
