@@ -6,7 +6,7 @@ documentation.)
 
 Steve Cleff <cleff@yahoo.com> did the default background image in 1.0.x and
 is also the creator of Freeside's elusive mascot, Snakeman, who we hope will
-make an appearance in a later 1.2.x version.
+make an appearance in an upcoming version.
 
 Jerry St. Pierre <jstpi@city.timmins.on.ca> did the "SISD" graphic used in
 1.0.x and most of 1.1.x.
@@ -18,11 +18,10 @@ Brian McCane? <bmccane@maxbaud.net> contributed PostgreSQL support, HTML
 style enhancements and many, many bugfixes.
 
 Cerkit <cerkit@alfheim.net> contributed rsync support and desynced hosts.
-His changes will hopefully be included in a later 1.2.x version.
+His changes will hopefully be included in an upcoming version.
 
 CompleteHOST, Inc. (http://www.completehost.com) funded the development of the
-following Freeside features by contracting me for a custom billing system
-based on Freeside:
+following features:
   - Multiple, separate databases and configurations on one box.
   - Per-customer pricing (custom packages)
   - Internationalization wrt addresses (cust_main, cust_main_county)
@@ -39,5 +38,15 @@ Greg Kuhnert <gregk@no1.com.au> sent some documentation updates.
 Joel Griffiths <griff@aver-computer.com> contribued many bugfixes, and offers
 invaluable help to users on the mailing list.
 
-Everything else is my (Ivan Kohler <ivan@sisd.com>) fault.
+NetLoud <http://www.netloud.com/> funded the development of the following
+features:
+  - IEAK support for the signup server
+  - Pre-payment support
+
+NetAcces.Net (not netaccess.net) funded the development of the following
+features:
+  - DNS tracking and export to BIND configuration files
+  - Web site virtual host tracking and export to Apache configuration files
+
+Everything else is my (Ivan Kohler <ivan@420.am>) fault.
 
