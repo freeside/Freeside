@@ -1,0 +1,77 @@
+#!/usr/bin/perl -Tw
+#
+# fs_passwd_server
+#
+# portions of this script are copied from the `passwd' script in the original
+# (perl 4) camel book, now archived at 
+# http://www.perl.com/CPAN/scripts/nutshell/ch6/passwd
+#
+# ivan@sisd.com 98-mar-9
+#
+# crypt-aware, s/password/_password/; ivan@sisd.com 98-aug-23
+
+use strict;
+use IO::Handle;
+use FS::SSH qw(sshopen2);
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw(qsearchs);
+use FS::svc_acct;
+
+my $user = shift or die &usage;
+adminsuidsetup $user; 
+
+my($shellmachine)=shift or die &usage;
+
+$SIG{CHLD} = sub { wait() };
+
+my($fs_passwdd)="/usr/local/sbin/fs_passwdd";
+
+while (1) {
+  my($reader,$writer)=(new IO::Handle, new IO::Handle);
+  $writer->autoflush(1);
+  sshopen2($shellmachine,$reader,$writer,$fs_passwdd);
+  while (1) {
+    my($username,$old_password,$new_password,$new_gecos,$new_shell);
+    defined($username=<$reader>) or last;
+    defined($old_password=<$reader>) or last; 
+    defined($new_password=<$reader>) or last; 
+    defined($new_gecos=<$reader>) or last; 
+    defined($new_shell=<$reader>) or last; 
+    chop($username);
+    chop($old_password);
+    chop($new_password);
+    chop($new_gecos);
+    chop($new_shell);
+    my($svc_acct);
+
+    #need to try both $old_password and encrypted $old_password
+    #maybe the crypt function in svc_acct.export needs to be a library?
+    my $salt = substr($old_password,0,2);
+    my $cold_password = crypt($old_password,$salt);
+    $svc_acct=qsearchs('svc_acct',{'username'=>$username,
+                                   '_password'=>$old_password,
+    } )
+           || qsearchs('svc_acct',{'username'=>$username,
+                                   '_password'=>$cold_password,
+    } );
+    unless ( $svc_acct ) { print $writer "Incorrect password.\n"; next; }
+
+    my(%hash)=$svc_acct->hash;
+    my($new_svc_acct) = new FS::svc_acct ( \%hash );
+    $new_svc_acct->setfield('_password',$new_password) 
+      if $new_password && $new_password ne $old_password;
+    $new_svc_acct->setfield('finger',$new_gecos) if $new_gecos;
+    $new_svc_acct->setfield('shell',$new_shell) if $new_shell;
+    my($error)=$new_svc_acct->replace($svc_acct);
+    print $writer $error,"\n";
+  }
+  close $writer;
+  close $reader;
+  sleep 60;
+  warn "Connection to $shellmachine lost!  Reconnecting...\n";
+}
+
+sub usage {
+  die "Usage:\n\n  fs_passwd_server user shellmachine\n";
+}
+

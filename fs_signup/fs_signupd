@@ -1,0 +1,49 @@
+#!/usr/bin/perl -Tw
+#
+# fs_passwdd
+#
+# This is run REMOTELY over ssh by fs_passwd_server.
+#
+# ivan@sisd.com 98-mar-9
+
+use strict;
+use Socket;
+
+my($fs_passwdd_socket)="/usr/local/freeside/fs_passwdd_socket";
+
+$ENV{'PATH'} ='/usr/bin:/usr/ucb:/bin';
+$ENV{'SHELL'} = '/bin/sh';
+$ENV{'IFS'} = " \t\n";
+$ENV{'CDPATH'} = '';
+$ENV{'ENV'} = '';
+$ENV{'BASH_ENV'} = '';
+
+$|=1;
+
+my $uaddr = sockaddr_un($fs_passwdd_socket);
+my $proto = getprotobyname('tcp');
+
+socket(Server,PF_UNIX,SOCK_STREAM,0) or die "socket: $!";
+unlink($fs_passwdd_socket);
+bind(Server, $uaddr) or die "bind: $!";
+listen(Server,SOMAXCONN) or die "listen: $!";
+
+my($paddr);
+for ( ; $paddr = accept(Client,Server); close Client) {
+  my($me,$old_password,$new_password,$new_gecos,$new_shell);
+
+  $me=<Client>;
+  $old_password=<Client>;
+  $new_password=<Client>;
+  $new_gecos=<Client>;
+  $new_shell=<Client>;
+
+  print $me,$old_password,$new_password,$new_gecos,$new_shell;
+  my($error);
+
+  $error=<STDIN>;
+  
+  print Client $error;
+  close Client;
+}
+
