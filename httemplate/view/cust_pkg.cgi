@@ -1,5 +1,5 @@
 <%
-# <!-- $Id: cust_pkg.cgi,v 1.2 2001-08-21 02:31:57 ivan Exp $ -->
+# <!-- $Id: cust_pkg.cgi,v 1.3 2001-10-15 14:58:03 ivan Exp $ -->
 
 use strict;
 use vars qw ( $cgi %uiview %uiadd $part_svc $query $pkgnum $cust_pkg $part_pkg
@@ -50,13 +50,30 @@ print $cgi->header( '-expires' => 'now' ), header('Package View', menubar(
 ($setup,$bill)=($cust_pkg->getfield('setup'),$cust_pkg->getfield('bill'));
 $otaker = $cust_pkg->getfield('otaker');
 
+print <<END;
+<SCRIPT>
+function areyousure(href) {
+    if (confirm("Permanantly delete included services and cancel this package?") == true)
+        window.location.href = href;
+}
+</SCRIPT>
+END
+
 print "Package information";
 print ' (<A HREF="'. popurl(2). 'misc/unsusp_pkg.cgi?'. $pkgnum.
-      '">unsuspend</A>)' if ( $susp && ! $cancel );
+      '">unsuspend</A>)'
+  if ( $susp && ! $cancel );
+
 print ' (<A HREF="'. popurl(2). 'misc/susp_pkg.cgi?'. $pkgnum.
-      '">suspend</A>)' unless ( $susp || $cancel );
-print ' (<A HREF="'. popurl(2). 'misc/cancel_pkg.cgi?'. $pkgnum.
-      '">cancel</A>)' unless $cancel;
+      '">suspend</A>)'
+  unless ( $susp || $cancel );
+
+print ' (<A HREF="javascript:areyousure(\''. popurl(2). 'misc/cancel_pkg.cgi?'.
+      $pkgnum.  '\')">cancel</A>)'
+  unless $cancel;
+
+print ' (<A HREF="'. popurl(2). 'edit/REAL_cust_pkg.cgi?'. $pkgnum.
+      '">edit dates</A>)';
 
 print &ntable("#cccccc"), '<TR><TD>', &ntable("#cccccc",2),
       '<TR><TD ALIGN="right">Package number</TD><TD BGCOLOR="#ffffff">',

@@ -57,12 +57,16 @@ sub handler
       use vars qw( $cgi $p );
       use CGI;
       #use CGI::Carp qw(fatalsToBrowser);
+      use Date::Format;
+      use Date::Parse;
       use FS::UID qw(cgisuidsetup);
       use FS::Record qw(qsearch qsearchs fields);
       use FS::part_svc;
       use FS::part_pkg;
       use FS::pkg_svc;
-      use FS::CGI qw(header menubar popurl table);
+      use FS::cust_pkg;
+      use FS::cust_svc;
+      use FS::CGI qw(header menubar popurl table ntable);
 
       $cgi = new CGI;
       &cgisuidsetup($cgi);

@@ -157,9 +157,12 @@ sub replace {
 
   #return "Can't (yet?) change pkgpart!" if $old->pkgpart != $new->pkgpart;
   return "Can't change otaker!" if $old->otaker ne $new->otaker;
-  return "Can't change setup once it exists!"
-    if $old->getfield('setup') &&
-       $old->getfield('setup') != $new->getfield('setup');
+
+  #allow this *sigh*
+  #return "Can't change setup once it exists!"
+  #  if $old->getfield('setup') &&
+  #     $old->getfield('setup') != $new->getfield('setup');
+
   #some logic for bill, susp, cancel?
 
   $new->SUPER::replace($old);
@@ -585,7 +588,7 @@ sub order {
 
 =head1 VERSION
 
-$Id: cust_pkg.pm,v 1.10 2001-10-15 12:16:42 ivan Exp $
+$Id: cust_pkg.pm,v 1.11 2001-10-15 14:58:03 ivan Exp $
 
 =head1 BUGS
 
