@@ -80,15 +80,17 @@ sub create {
 
 Creates a new billing item definition by duplicating an existing definition.
 A new pkgpart is assigned and "(CUSTOM) " is prepended to the comment field.
+To add the billing item definition to the database, see L<"insert">.
 
 =cut
 
 sub clone {
   my $self = shift;
   my %hash = $self->hash;
+  $hash{'pkgpart'} = '';
   $hash{'comment'} = "(CUSTOM) ". $hash{'comment'}
     unless $hash{'comment'} =~ /^\(CUSTOM\) /;
-  create ( { $self->hash } );
+  create FS::part_pkg ( \%hash ); # ?
 }
 
 =item insert
@@ -161,7 +163,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: part_pkg.pm,v 1.2 1998-11-15 09:08:15 ivan Exp $
+$Id: part_pkg.pm,v 1.3 1998-11-15 13:00:15 ivan Exp $
 
 =head1 BUGS
 
@@ -184,8 +186,8 @@ ivan@sisd.com 97-dec-5
 pod ivan@sisd.com 98-sep-21
 
 $Log: part_pkg.pm,v $
-Revision 1.2  1998-11-15 09:08:15  ivan
-added clone method to support per-customer pricing
+Revision 1.3  1998-11-15 13:00:15  ivan
+bugfix in clone method, clone method doc clarification
 
 
 =cut
