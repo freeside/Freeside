@@ -291,8 +291,9 @@ END
   #false laziness with regular state
   $cust_main->ship_country( $countrydefault ) unless $cust_main->ship_country;
 
-  $cust_main->ship_state( $conf->config('statedefault') || 'CA' )
-    unless $cust_main->ship_state || $cust_main->ship_country ne 'US';
+  $cust_main->ship_state( $statedefault )
+    unless $cust_main->ship_state
+           || $cust_main->ship_country ne $countrydefault;
 
   my($ship_county_html, $ship_state_html, $ship_country_html) =
     FS::cust_main_county::regionselector( $cust_main->ship_county,
