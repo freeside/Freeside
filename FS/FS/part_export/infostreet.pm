@@ -50,7 +50,7 @@ sub _export_insert {
   $contact_info{'email'} = $emails[0] if @emails;
 
   #this one is kinda noment-specific
-  $contact_info{'title'} = $cust_main->agent->agent;
+  $contact_info{'organization'} = $cust_main->agent->agent;
 
   $err_or_queue = $self->infostreet_queueContact( $svc_acct->svcnum,
     $svc_acct->username, %contact_info );
