@@ -73,7 +73,7 @@ the same username with different domains.  You will need to
     this.form.useradd_stdin.value = "";
     this.form.userdel.value = "/usr/local/ispman/bin/ispman.delUser -d $domain $username";
     this.form.userdel_stdin.value="";
-    this.form.usermod.value = "/usr/local/ispman/bin/ispman.passwd.user $username\\\@$domain $new_quoted_password";
+    this.form.usermod.value = "/usr/local/ispman/bin/ispman.passwd.user $new_username\\\@$new_domain $new_quoted_password";
     this.form.usermod_stdin.value = "";
     this.form.usermod_pwonly.checked = true;
   '>
