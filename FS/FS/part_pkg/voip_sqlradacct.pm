@@ -30,7 +30,7 @@ $DEBUG = 0;
                                'type' => 'checkbox',
                              },
     },
-    'fieldorder' => [qw( setup_fee recur_flat ratenum )],
+    'fieldorder' => [qw( setup_fee recur_flat ratenum ignore_unrateable )],
     'weight' => 40,
 );
 
@@ -103,8 +103,14 @@ sub calc_recur {
         'countrycode' => $countrycode,
         'npa'         => '',
       });
-      die "Can't find rate for call to countrycode $countrycode number $dest\n"
-        unless $rate_prefix;
+
+      unless ( $rate_prefix ) {
+        if ( $self->option('ignore_unrateable') ) {
+          next;
+        } else {
+          die "Can't find rate for call to +$countrycode $dest\n"
+        }
+      }
 
       my $regionnum = $rate_prefix->regionnum;
 
