@@ -14,7 +14,7 @@ FS::Invoice - Legacy stub
 
 =head1 SYNOPSIS
 
-The functioanlity of FS::invoice has been integrated in FS::cust_bill.
+The functionality of FS::Invoice has been integrated in FS::cust_bill.
 
 =head1 HISTORY
 
