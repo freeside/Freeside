@@ -43,6 +43,7 @@ $SIG{__WARN__} = \&_logmsg;
 
 warn "Creating $lock_file\n" if $Debug;
 open(LOCKFILE,">$lock_file") or die "can't open $lock_file: $!";
+close LOCKFILE;
 
 warn "Creating $socket\n" if $Debug;
 my $uaddr = sockaddr_un($socket);
@@ -255,6 +256,9 @@ sub _logmsg {
 sub lock_write {
   #broken on freebsd?
   #flock(STDOUT, LOCK_EX) or die "FATAL: can't lock write stream: $!";
+
+  #open a new one for each kid to get a unique lock
+  open(LOCKFILE,">$lock_file") or die "can't open $lock_file: $!";
 
   flock(LOCKFILE, LOCK_EX) or die "FATAL: can't lock $lock_file: $!";
 }
