@@ -55,7 +55,7 @@ sub textradius_insert { #subroutine, not method
 
   #silly arg processing
   my($att, @check);
-  push @check, $att while ($att=shift @attributes) ne '-';
+  push @check, $att while @attributes && ($att=shift @attributes) ne '-';
   my %check = @check;
   my %reply = @attributes;
 
