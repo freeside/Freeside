@@ -361,8 +361,7 @@ sub option {
 
 Reblesses the object into the FS::part_export::EXPORTTYPE class, where
 EXPORTTYPE is the object's I<exporttype> field.  There should be better docs
-on how to create new exports (and they should live in their own files and be
-autoloaded-on-demand), but until then, see L</NEW EXPORT CLASSES>.
+on how to create new exports, but until then, see L</NEW EXPORT CLASSES>.
 
 =cut
 
@@ -370,7 +369,7 @@ sub rebless {
   my $self = shift;
   my $exporttype = $self->exporttype;
   my $class = ref($self). "::$exporttype";
-  eval "use $class;";
+  eval "use $class;" or die $@;
   bless($self, $class);
 }
 
