@@ -1,11 +1,14 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_pkg.cgi,v 1.9 1999-07-17 10:38:52 ivan Exp $
+# $Id: cust_pkg.cgi,v 1.10 2000-07-17 12:49:29 ivan Exp $
 #
 # based on search/svc_acct.cgi ivan@sisd.com 98-jul-17
 #
 # $Log: cust_pkg.cgi,v $
-# Revision 1.9  1999-07-17 10:38:52  ivan
+# Revision 1.10  2000-07-17 12:49:29  ivan
+# better error message if a package isn't linked to a customer (that shouldn't happen)
+#
+# Revision 1.9  1999/07/17 10:38:52  ivan
 # scott nelson <scott@ultimanet.com> noticed this mod_perl-triggered bug and
 # gave me a great bugreport at the last rhythmethod
 #
@@ -106,20 +109,28 @@ END
     my($cust_main)=qsearchs('cust_main',{'custnum'=>$cust_pkg->custnum});
     my($pkgnum,$custnum,$name,$company)=(
       $cust_pkg->pkgnum,
-      $cust_main->custnum,
-      $cust_main->last. ', '. $cust_main->first,
-      $cust_main->company,
+      $cust_pkg->custnum,
+      $cust_main ? $cust_main->last. ', '. $cust_main->first : '',
+      $cust_main ? $cust_main->company : '',
     );
     my $p = popurl(2);
     print <<END;
     <TR>
       <TD><A HREF="${p}view/cust_pkg.cgi?$pkgnum"><FONT SIZE=-1>$pkgnum</FONT></A></TD>
+END
+    if ( $cust_main ) {
+      print <<END;
       <TD><FONT SIZE=-1><A HREF="${p}view/cust_main.cgi?$custnum">$custnum</A></FONT></TD>
       <TD><FONT SIZE=-1><A HREF="${p}view/cust_main.cgi?$custnum">$name</A></FONT></TD>
       <TD><FONT SIZE=-1><A HREF="${p}view/cust_main.cgi?$custnum">$company</A></FONT></TD>
     </TR>
 END
-
+    } else {
+      print <<END;
+      <TD COLSPAN=3><FONT SIZE=-1>WARNING: couldn't find cust_main.custnum $custnum (cust_pkg.pkgnum $pkgnum)</TD>
+    </TR>
+END
+    }
   }
  
   print <<END;
