@@ -25,6 +25,16 @@
         </TD>
       </TR>
       <TR>
+        <TD ALIGN="right">for agent: </TD>
+        <TD><SELECT NAME="agentnum">
+              <OPTION VALUE="">all</OPTION>
+              <% foreach my $agent ( qsearch('agent', { disabled=>'' } ) ) { %>
+                <OPTION VALUE="<%= $agent->agentnum %>"<%= $cgi->param('agentnum') == $agent->agentnum ? ' SELECTED' : '' %>><%= $agent->agent %>
+              <% } %>
+            </SELECT>
+        </TD>
+      </TR>
+      <TR>
         <TD ALIGN="right">From: </TD>
         <TD><INPUT TYPE="text" NAME="beginning" ID="beginning_text" VALUE="" SIZE=11 MAXLENGTH=10> <IMG SRC="../images/calendar.png" ID="beginning_button" STYLE="cursor: pointer" TITLE="Select date"><BR><i>m/d/y</i></TD>
 <SCRIPT TYPE="text/javascript">

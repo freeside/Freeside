@@ -64,7 +64,7 @@ sub sql_h_search {
 
      '',
 
-     'maintable',
+     'AS maintable',
   );
 
 }

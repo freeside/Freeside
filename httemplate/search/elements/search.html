@@ -12,9 +12,9 @@
   $opt{align} = [ map $align{$_}, split(//, $opt{align}) ],
     unless !$opt{align} || ref($opt{align});
 
-  if ( ref($opt{'query'}) ) {
-
-  }
+  #if ( ref($opt{'query'}) ) {
+  #
+  #}
 
   unless (exists($opt{'count_query'}) && length($opt{'count_query'})) {
     ( $opt{'count_query'} = $opt{'query'} ) =~
@@ -47,6 +47,8 @@
       $opt{'query'}->{'hashref'} || {}, 
       $opt{'query'}->{'select'},
       $opt{'query'}->{'extra_sql'}. " $limit",
+      '',
+      (exists($opt{'query'}->{'addl_from'}) ? $opt{'query'}->{'addl_from'} : '')
     ) ];
   } else {
     my $sth = dbh->prepare("$opt{'query'} $limit")

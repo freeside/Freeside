@@ -1,10 +1,18 @@
 <%
+   my $title = 'Credit Search Results';
    #my( $count_query, $sql_query );
 
    my @search = ();
 
    if ( $cgi->param('otaker') && $cgi->param('otaker') =~ /^([\w\.\-]+)$/ ) {
      push @search, "otaker = '$1'";
+   }
+
+   if ( $cgi->param('agentnum') && $cgi->param('agentnum') =~ /^(\d+)$/ ) {
+     push @search, "agentnum = $1"; # $search{'agentnum'} = $1;
+     my $agent = qsearchs('agent', { 'agentnum' => $1 } );
+     die "unknown agentnum $1" unless $agent;
+     $title = $agent->agent. " $title";
    }
 
    #false laziness with cust_pkg.cgi and cust_pay.cgi
@@ -32,18 +40,22 @@
                  ? 'WHERE '. join(' AND ', @search)
                  : '';
 
-   my $count_query = "SELECT COUNT(*), SUM(amount) FROM cust_credit $where";
+   my $count_query = 'SELECT COUNT(*), SUM(amount) '.
+                     'FROM cust_credit JOIN cust_main USING ( custnum ) '.
+                     $where;
+
    my $sql_query   = {
      'table'     => 'cust_credit',
      'hashref'   => {},
      'extra_sql' => $where,
+     'addl_from' => 'JOIN cust_main USING ( custnum )',
    };
 
    my $clink = [ "${p}view/cust_main.cgi?", 'custnum' ];
 
 %>
 <%= include( 'elements/search.html',
-               'title'       => 'Credit Search Results',
+               'title'       => $title,
                'name'        => 'credits',
                'query'       => $sql_query,
                'count_query' => $count_query,
@@ -57,12 +69,8 @@
                  sub { sprintf('$%.2f', shift->amount ) },
                  sub { time2str('%b %d %Y', shift->_date ) },
                  'custnum',
-                 sub { my $cust_main = shift->cust_main;
-                       $cust_main->get('last'). ', '. $cust_main->first;
-                     },
-                 sub { my $cust_main = shift->cust_main;
-                       $cust_main->company;
-                     },
+                 sub { $_[0]->get('last'). ', '. $_[0]->first; },
+                 'company',
                  'otaker',
                  'reason',
                ],

@@ -35,6 +35,7 @@ full offerings (via their type).<BR><BR>
   <TH COLSPAN=<%= ( $cgi->param('showdisabled') || !dbdef->table('agent')->column('disabled') ) ? 2 : 3 %>>Agent</TH>
   <TH>Type</TH>
   <TH>Customers</TH>
+  <TH>Reports</TH>
   <TH>Registration Codes</TH>
   <TH><FONT SIZE=-1>Freq.</FONT></TH>
   <TH><FONT SIZE=-1>Prog.</FONT></TH>
@@ -64,6 +65,7 @@ foreach my $agent ( sort {
         <TD><A HREF="<%=$p%>edit/agent.cgi?<%= $agent->agentnum %>">
           <%= $agent->agent %></A></TD>
         <TD><A HREF="<%=$p%>edit/agent_type.cgi?<%= $agent->typenum %>"><%= $agent->agent_type->atype %></A></TD>
+
         <TD>
 
           <B>
@@ -90,14 +92,23 @@ foreach my $agent ( sort {
           <% if ( $num_cancel ) { %>
             <A HREF="<%= $cust_main_link %>&showcancelledcustomers=1&cancelled=1"><% } %>cancelled<% if ( $num_cancel ) { %></A><% } %>
         </TD>
+
+        <TD>
+          <A HREF="<%= $p %>search/report_cust_pay.html?agentnum=<%= $agent->agentnum %>">Payments</A>
+          <BR><A HREF="<%= $p %>search/report_cust_credit.html?agentnum=<%= $agent->agentnum %>">Credits</A>
+
+        </TD>
+
         <TD>
           <%= my $num_reg_code = $agent->num_reg_code %>
           <% if ( $num_reg_code ) { %>
             <A HREF="<%=$p%>search/reg_code.html?agentnum=<%= $agent->agentnum %>"><% } %>Unused<% if ( $num_reg_code ) { %></A><% } %>
           <BR><A HREF="<%=$p%>edit/reg_code.cgi?agentnum=<%= $agent->agentnum %>">Generate codes</A>
         </TD>
+
         <TD><%= $agent->freq %></TD>
         <TD><%= $agent->prog %></TD>
+
       </TR>
 
 <% } %>

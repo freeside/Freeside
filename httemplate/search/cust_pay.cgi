@@ -1,9 +1,17 @@
 <%
+   my $title = 'Payment Search Results';
    my( $count_query, $sql_query );
    if ( $cgi->param('magic') && $cgi->param('magic') eq '_date' ) {
    
-     my %search;
-     my @search;
+     my %search = ();
+     my @search = ();
+
+     if ( $cgi->param('agentnum') && $cgi->param('agentnum') =~ /^(\d+)$/ ) {
+       push @search, "agentnum = $1"; # $search{'agentnum'} = $1;
+       my $agent = qsearchs('agent', { 'agentnum' => $1 } );
+       die "unknown agentnum $1" unless $agent;
+       $title = $agent->agent. " $title";
+     }
    
      if ( $cgi->param('payby') ) {
        $cgi->param('payby') =~ /^(CARD|CHEK|BILL)(-(VisaMC|Amex|Discover))?$/
@@ -59,14 +67,17 @@
      }
 
      my $hsearch = join(' AND ', map { "$_ = '$search{$_}'" } keys %search );
-     $count_query = "SELECT COUNT(*), SUM(paid) FROM cust_pay ".
+     $count_query = "SELECT COUNT(*), SUM(paid) ".
+                    "FROM cust_pay JOIN cust_main USING ( custnum )".
                     ( $hsearch ? " WHERE $hsearch " : '' ).
                     $search;
    
+     warn join('-', keys %search);
      $sql_query = {
        'table'     => 'cust_pay',
        'hashref'   => \%search,
        'extra_sql' => "$search ORDER BY _date",
+       'addl_from' => 'JOIN cust_main USING ( custnum )',
      };
    
    } else {
@@ -93,7 +104,7 @@
 
 %>
 <%= include( 'elements/search.html',
-               'title'       => 'Payment Search Results',
+               'title'       => $title,
                'name'        => 'payments',
                'query'       => $sql_query,
                'count_query' => $count_query,
@@ -117,12 +128,8 @@
                  sub { sprintf('$%.2f', shift->paid ) },
                  sub { time2str('%b %d %Y', shift->_date ) },
                  'custnum',
-                 sub { my $cust_main = shift->cust_main;
-                       $cust_main->get('last'). ', '. $cust_main->first;
-                     },
-                 sub { my $cust_main = shift->cust_main;
-                       $cust_main->company;
-                     },
+                 sub { $_[0]->get('last'). ', '. $_[0]->first; },
+                 'company',
                ],
                'align' => 'lrrrll',
                'links' => [
