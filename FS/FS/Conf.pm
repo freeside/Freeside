@@ -348,7 +348,7 @@ httemplate/docs/config.html
   {
     'key'         => 'editreferrals',
     'section'     => 'UI',
-    'description' => 'Enable referral modification for existing customers',
+    'description' => 'Enable advertising source modification for existing customers',
     'type'       => 'checkbox',
   },
 
@@ -404,28 +404,28 @@ httemplate/docs/config.html
   {
     'key'         => 'icradiusmachines',
     'section'     => 'deprecated',
-    'description' => '<b>DEPRECATED</b>, add a <i>sqlradius</i> <a href="../browse/part_export.cgi">export</a> instead.  This option used to enable radcheck and radreply table population - by default in the Freeside database, or in the database specified by the <a href="http://rootwood.haze.st/aspside/config/config-view.cgi#icradius_secrets">icradius_secrets</a> config option (the radcheck and radreply tables needs to be created manually).  You do not need to use MySQL for your Freeside database to export to an ICRADIUS/FreeRADIUS MySQL database with this option.  <blockquote><b>ADDITIONAL DEPRECATED FUNCTIONALITY</b> (instead use <a href="http://www.mysql.com/documentation/mysql/bychapter/manual_MySQL_Database_Administration.html#Replication">MySQL replication</a> or point icradius_secrets to the external database) - your <a href="ftp://ftp.cheapnet.net/pub/icradius">ICRADIUS</a> machines or <a href="http://www.freeradius.org/">FreeRADIUS</a> (with MySQL authentication) machines, one per line.  Machines listed in this file will have the radcheck table exported to them.  Each line should contain four items, separted by whitespace: machine name, MySQL database name, MySQL username, and MySQL password.  For example: <CODE>"radius.isp.tld&nbsp;radius_db&nbsp;radius_user&nbsp;passw0rd"</CODE></blockquote>',
+    'description' => '<b>DEPRECATED</b>, add an <i>sqlradius</i> <a href="../browse/part_export.cgi">export</a> instead.  This option used to enable radcheck and radreply table population - by default in the Freeside database, or in the database specified by the <a href="http://rootwood.haze.st/aspside/config/config-view.cgi#icradius_secrets">icradius_secrets</a> config option (the radcheck and radreply tables needs to be created manually).  You do not need to use MySQL for your Freeside database to export to an ICRADIUS/FreeRADIUS MySQL database with this option.  <blockquote><b>ADDITIONAL DEPRECATED FUNCTIONALITY</b> (instead use <a href="http://www.mysql.com/documentation/mysql/bychapter/manual_MySQL_Database_Administration.html#Replication">MySQL replication</a> or point icradius_secrets to the external database) - your <a href="ftp://ftp.cheapnet.net/pub/icradius">ICRADIUS</a> machines or <a href="http://www.freeradius.org/">FreeRADIUS</a> (with MySQL authentication) machines, one per line.  Machines listed in this file will have the radcheck table exported to them.  Each line should contain four items, separted by whitespace: machine name, MySQL database name, MySQL username, and MySQL password.  For example: <CODE>"radius.isp.tld&nbsp;radius_db&nbsp;radius_user&nbsp;passw0rd"</CODE></blockquote>',
     'type'        => [qw( checkbox textarea )],
   },
 
   {
     'key'         => 'icradius_mysqldest',
     'section'     => 'deprecated',
-    'description' => '<b>DEPRECATED</b> (instead use <a href="http://www.mysql.com/documentation/mysql/bychapter/manual_MySQL_Database_Administration.html#Replication">MySQL replication</a> or point icradius_secrets to the external database) - Destination directory for the MySQL databases, on the ICRADIUS/FreeRADIUS machines.  Defaults to "/usr/local/var/".',
+    'description' => '<b>DEPRECATED</b>, add an <i>sqlradius</i> https://billing.crosswind.net/freeside/browse/part_export.cgi">export</a> instead.  Used to be the destination directory for the MySQL databases, on the ICRADIUS/FreeRADIUS machines.  Defaults to "/usr/local/var/".',
     'type'        => 'text',
   },
 
   {
     'key'         => 'icradius_mysqlsource',
     'section'     => 'deprecated',
-    'description' => '<b>DEPRECATED</b> (instead use <a href="http://www.mysql.com/documentation/mysql/bychapter/manual_MySQL_Database_Administration.html#Replication">MySQL replication</a> or point icradius_secrets to the external database) - Source directory for for the MySQL radcheck table files, on the Freeside machine.  Defaults to "/usr/local/var/freeside".',
+    'description' => '<b>DEPRECATED</b>, add an <i>sqlradius</i> https://billing.crosswind.net/freeside/browse/part_export.cgi">export</a> instead.  Used to be the source directory for for the MySQL radcheck table files, on the Freeside machine.  Defaults to "/usr/local/var/freeside".',
     'type'        => 'text',
   },
 
   {
     'key'         => 'icradius_secrets',
     'section'     => 'deprecated',
-    'description' => '<b>DEPRECATED</b>, add <i>sqlradius</i> exports to <a href="../browse/part_svc">Service definitions</a> instead.  This option used to specify a database for ICRADIUS/FreeRADIUS export.  Three lines: DBI data source, username and password.',
+    'description' => '<b>DEPRECATED</b>, add an <i>sqlradius</i> https://billing.crosswind.net/freeside/browse/part_export.cgi">export</a> instead.  This option used to specify a database for ICRADIUS/FreeRADIUS export.  Three lines: DBI data source, username and password.',
     'type'        => 'textarea',
   },
 
@@ -534,8 +534,8 @@ httemplate/docs/config.html
 
   {
     'key'         => 'radiusmachines',
-    'section'     => 'radius',
-    'description' => 'Your RADIUS authentication machines, one per line.  This enables export of `/etc/raddb/users\'.',
+    'section'     => 'deprecated',
+    'description' => '<b>DEPRECATED</b>, add an <i>sqlradius</i> <a href="../browse/part_export.cgi">export</a> instead.  This option used to export to be: your RADIUS authentication machines, one per line.  This enables export of `/etc/raddb/users\'.',
     'type'        => 'textarea',
   },
 
@@ -717,15 +717,15 @@ httemplate/docs/config.html
 
   {
     'key'         => 'radiusprepend',
-    'section'     => 'radius',
-    'description' => 'The contents will be prepended to the top of the RADIUS users file (text exports only).',
+    'section'     => 'deprecated',
+    'description' => '<b>DEPRECATED</b>, real-time text radius now edits an existing file in place - just (turn off freeside-queued and) edit your RADIUS users file directly.  The contents used to be be prepended to the top of the RADIUS users file (text exports only).',
     'type'        => 'textarea',
   },
 
   {
     'key'         => 'textradiusprepend',
     'section'     => 'deprecated',
-    'description' => '<b>DEPRECATED</b>, use RADIUS check attributes instead.  This option will be removed soon.  The contents will be prepended to the first line of a user\'s RADIUS entry in text exports.',
+    'description' => '<b>DEPRECATED</b>, use RADIUS check attributes instead.  The contents used to be prepended to the first line of a user\'s RADIUS entry in text exports.',
     'type'        => 'text',
   },
 

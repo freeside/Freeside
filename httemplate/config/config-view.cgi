@@ -5,13 +5,13 @@
 <% my $conf = new FS::Conf; my @config_items = $conf->config_items; %>
 
 <% foreach my $section ( qw(required billing username password UI session
-                            shell mail radius apache BIND
+                            shell mail apache BIND
                            ),
                          '', 'deprecated') { %>
   <A NAME="<%= $section || 'unclassified' %>"></A>
   <FONT SIZE="-2">
   <% foreach my $nav_section ( qw(required billing username password UI session
-                                  shell mail radius apache BIND
+                                  shell mail apache BIND
                                  ),
                                '', 'deprecated') { %>
     <% if ( $section eq $nav_section ) { %>
