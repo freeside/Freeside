@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: queue.cgi,v 1.5 2001-10-30 14:54:07 ivan Exp $ -->
+#<!-- $Id: queue.cgi,v 1.6 2001-10-31 16:52:42 ivan Exp $ -->
 
 use strict;
 use vars qw( $cgi $p ); # $part_referral );
@@ -33,6 +33,7 @@ foreach my $queue ( sort {
   $a->getfield('jobnum') <=> $b->getfield('jobnum')
 } qsearch('queue',{}) ) {
   my($hashref)=$queue->hashref;
+  my $jobnum = $hashref->{jobnum};
   my $args = join(' ', $queue->args);
   my $date = time2str( "%a %b %e %T %Y", $queue->_date );
   my $status = $hashref->{status};
@@ -43,7 +44,7 @@ foreach my $queue ( sort {
   }
   print <<END;
       <TR>
-        <TD>$hashref->{jobnum}</TD>
+        <TD>$jobnum</TD>
         <TD>$hashref->{job}</TD>
         <TD>$args</TD>
         <TD>$date</TD>
