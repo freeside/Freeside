@@ -669,7 +669,7 @@ sub realtime_bop {
     $cust_main->paydate =~ /^\d{2}(\d{2})[\/\-](\d+)[\/\-]\d+$/;
     $content{expiration} = "$2/$1";
   } elsif ( $method eq 'ECHECK' ) {
-    my($account_number,$routing_code) = $cust_main->payinfo
+    my($account_number,$routing_code) = $cust_main->payinfo;
     ( $content{account_number}, $content{routing_code} ) =
       split('@', $cust_main->payinfo);
     $content{bank_name} = $cust_main->payname;
@@ -1074,7 +1074,7 @@ sub print_text {
 
 =head1 VERSION
 
-$Id: cust_bill.pm,v 1.48 2002-10-12 10:15:55 ivan Exp $
+$Id: cust_bill.pm,v 1.49 2002-10-13 01:05:29 ivan Exp $
 
 =head1 BUGS
 
