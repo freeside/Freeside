@@ -107,7 +107,7 @@ sub check {
   return "Unknown svcnum (in svc_domain)"
     unless qsearchs('svc_domain', { 'svcnum' => $self->svcnum } );
 
-  $self->reczone =~ /^(@|[a-z0-9\.\-]+)$/i
+  $self->reczone =~ /^(@|[a-z0-9\.\-\*]+)$/i
     or return "Illegal reczone: ". $self->reczone;
   $self->reczone($1);
 
@@ -118,6 +118,9 @@ sub check {
     or return "Illegal rectype (only SOA NS MX A PTR CNAME recognized): ".
               $self->rectype;
   $self->rectype($1);
+
+  return "Illegal reczone for ". $self->rectype. ": ". $self->reczone
+    if $self->rectype !~ /^MX$/i && $self->reczone =~ /\*/;
 
   if ( $self->rectype eq 'SOA' ) {
     my $recdata = $self->recdata;
@@ -156,7 +159,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: domain_record.pm,v 1.5 2002-04-20 10:12:26 ivan Exp $
+$Id: domain_record.pm,v 1.6 2002-04-20 10:49:33 ivan Exp $
 
 =head1 BUGS
 
