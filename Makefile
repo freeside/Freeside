@@ -46,14 +46,6 @@ QUEUED_USER=fs_queue
 #eventually this shouldn't be needed
 FREESIDE_PATH = `pwd`
 
-PASSWD_USER = nostart
-PASSWD_MACHINE = localhost
-
-SIGNUP_USER = nostart
-SIGNUP_MACHINE = localhost
-SIGNUP_AGENTNUM = 2
-SIGNUP_REFNUM = 2
-
 SELFSERVICE_USER = fs_selfservice
 SELFSERVICE_MACHINE = localhost
 
@@ -140,12 +132,6 @@ install-init:
 	perl -p -i -e "\
 	  s/%%%QUEUED_USER%%%/${QUEUED_USER}/g;\
 	  s'%%%FREESIDE_PATH%%%'${FREESIDE_PATH}'g;\
-	  s/%%%PASSWD_USER%%%/${PASSWD_USER}/g;\
-	  s/%%%PASSWD_MACHINE%%%/${PASSWD_MACHINE}/g;\
-	  s/%%%SIGNUP_USER%%%/${SIGNUP_USER}/g;\
-	  s/%%%SIGNUP_MACHINE%%%/${SIGNUP_MACHINE}/g;\
-	  s/%%%SIGNUP_AGENTNUM%%%/${SIGNUP_AGENTNUM}/g;\
-	  s/%%%SIGNUP_REFNUM%%%/${SIGNUP_REFNUM}/g;\
 	  s/%%%SELFSERVICE_USER%%%/${SELFSERVICE_USER}/g;\
 	  s/%%%SELFSERVICE_MACHINE%%%/${SELFSERVICE_MACHINE}/g;\
 	" ${INIT_FILE}

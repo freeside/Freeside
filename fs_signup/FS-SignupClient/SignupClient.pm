@@ -1,29 +1,18 @@
 package FS::SignupClient;
 
 use strict;
-use vars qw($VERSION @ISA @EXPORT_OK $fs_signupd_socket);
+use vars qw($VERSION @ISA @EXPORT_OK); # $fs_signupd_socket);
 use Exporter;
-use Socket;
-use FileHandle;
-use IO::Handle;
-use Storable qw(nstore_fd fd_retrieve);
+#use Socket;
+#use FileHandle;
+#use IO::Handle;
+#use Storable qw(nstore_fd fd_retrieve);
+use FS::SelfService qw( new_customer ); #qw( signup_info );
 
-$VERSION = '0.03';
+$VERSION = '0.04';
 
 @ISA = qw( Exporter );
 @EXPORT_OK = qw( signup_info new_customer );
-
-$fs_signupd_socket = "/usr/local/freeside/fs_signupd_socket";
-
-$ENV{'PATH'} ='/usr/bin:/usr/ucb:/bin';
-$ENV{'SHELL'} = '/bin/sh';
-$ENV{'IFS'} = " \t\n";
-$ENV{'CDPATH'} = '';
-$ENV{'ENV'} = '';
-$ENV{'BASH_ENV'} = '';
-
-my $freeside_uid = scalar(getpwnam('freeside'));
-die "not running as the freeside user\n" if $> != $freeside_uid;
 
 =head1 NAME
 
@@ -33,8 +22,10 @@ FS::SignupClient - Freeside signup client API
 
   use FS::SignupClient qw( signup_info new_customer );
 
-  ( $locales, $packages, $pops ) = signup_info;
+  #this is the backwards-compatibility bit
+  ( $locales, $packages, $pops, $real_signup_info ) = signup_info;
 
+  #this is compatible with FS::SelfService::new_customer
   $error = new_customer ( {
     'first'            => $first,
     'last'             => $last,
@@ -104,14 +95,10 @@ Each hash reference has the following keys:
 
 =cut
 
+#compatibility bit
 sub signup_info {
-  socket(SOCK, PF_UNIX, SOCK_STREAM, 0) or die "socket: $!";
-  connect(SOCK, sockaddr_un($fs_signupd_socket)) or die "connect: $!";
-  print SOCK "signup_info\n";
-  SOCK->flush;
 
-  my $init_data = fd_retrieve(\*SOCK);
-  close SOCK;
+  my $init_data = FS::SelfService::signup_info();
 
   (map { $init_data->{$_} } qw( cust_main_county part_pkg svc_acct_pop ) ),
   $init_data;
@@ -150,30 +137,6 @@ a paramater with the following keys:
   popnum
 
 Returns a scalar error message, or the empty string for success.
-
-=cut
-
-sub new_customer {
-  my $hashref = shift;
-
-  socket(SOCK, PF_UNIX, SOCK_STREAM, 0) or die "socket: $!";
-  connect(SOCK, sockaddr_un($fs_signupd_socket)) or die "connect: $!";
-  print SOCK "new_customer\n";
-
-  my $signup_data = { map { $_ => $hashref->{$_} } qw(
-    first last ss company address1 address2 city county state zip country
-    daytime night fax payby payinfo paydate payname invoicing_list
-    referral_custnum comments pkgpart username _password sec_phrase popnum
-  ) };
-
-  $signup_data->{agentnum} = $hashref->{agentnum} if $hashref->{agentnum};
-
-  nstore_fd($signup_data, \*SOCK) or die "can't send customer signup: $!";
-  SOCK->flush;
-
-  chop( my $error = <SOCK> );
-  $error;
-}
 
 =back
 

@@ -7,7 +7,7 @@ use Safe;
 use Carp;
 BEGIN {
   eval "use Time::Local;";
-  die "Time::Local version 1.05 required with Perl versions before 5.6"
+  die "Time::Local minimum version 1.05 required with Perl versions before 5.6"
     if $] < 5.006 && !defined($Time::Local::VERSION);
   eval "use Time::Local qw(timelocal timelocal_nocheck);";
 }
@@ -201,7 +201,7 @@ points to.  You can ask the object for a copy with the I<hash> method.
 
 sub table { 'cust_main'; }
 
-=item insert [ CUST_PKG_HASHREF [ , INVOICING_LIST_ARYREF ] ]
+=item insert [ CUST_PKG_HASHREF [ , INVOICING_LIST_ARYREF ] [ , OPTION => VALUE ... ] ]
 
 Adds this customer to the database.  If there is an error, returns the error,
 otherwise returns false.
@@ -229,12 +229,18 @@ invoicing_list destination to the newly-created svc_acct.  Here's an example:
 
   $cust_main->insert( {}, [ $email, 'POST' ] );
 
+Currently available options are: I<noexport>
+
+If I<noexport> is set true, no provisioning jobs (exports) are scheduled.
+(You can schedule them later with the B<reexport> method.)
+
 =cut
 
 sub insert {
   my $self = shift;
   my $cust_pkgs = @_ ? shift : {};
   my $invoicing_list = @_ ? shift : '';
+  my %options = @_;
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -286,6 +292,7 @@ sub insert {
   }
 
   # packages
+  local $FS::svc_Common::noexport_hack = 1 if $options{'noexport'};
   $error = $self->order_pkgs($cust_pkgs, \$seconds);
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
@@ -366,6 +373,41 @@ sub order_pkgs {
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   ''; #no error
+}
+
+=item reexport
+
+document me.  Re-schedules all exports by calling the B<reexport> method
+of all associated packages (see L<FS::cust_pkg>).  If there is an error,
+returns the error; otherwise returns false.
+
+=cut
+
+sub reexport {
+  my $self = shift;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  foreach my $cust_pkg ( $self->ncancelled_pkgs ) {
+    my $error = $cust_pkg->reexport;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  '';
+
 }
 
 =item delete NEW_CUSTNUM

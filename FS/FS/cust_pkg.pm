@@ -663,6 +663,41 @@ sub transfer {
   return $remaining;
 }
 
+=item reexport
+
+=cut
+
+sub reexport {
+  my $self = shift;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  foreach my $cust_svc ( $self->cust_svc ) {
+    #false laziness w/svc_Common::insert
+    my $svc_x = $cust_svc->svc_x;
+    foreach my $part_export ( $cust_svc->part_svc->part_export ) {
+      my $error = $part_export->export_insert($svc_x);
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return $error;
+      }
+    }
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  '';
+
+}
+
 =back
 
 =head1 SUBROUTINES
