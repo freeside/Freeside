@@ -188,7 +188,7 @@ configure-rt:
 	cd rt; \
 	cp config.layout.in config.layout; \
 	perl -p -i -e "\
-	  s/%%%FREESIDE_DOCUMENT_ROOT%%%/${FREESIDE_DOCUMENT_ROOT}/g;\
+	  s'%%%FREESIDE_DOCUMENT_ROOT%%%'${FREESIDE_DOCUMENT_ROOT}'g;\
 	" config.layout
 	./configure --with-layout=Freeside\
 	            --masonstatedir=${MASONDATA} \
