@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/perl -w
 
 use strict;
 use vars qw( $days_to_pay $cust_main $cust_pkg 
@@ -13,12 +13,12 @@ use FS::UID qw(adminsuidsetup);
 
 &untaint_argv;
 my %opt;
-getopts('ed:qplsc', \%opt);
+getopts('ed:qplscbyoi', \%opt);
 my $user = shift or die &usage;
 
 adminsuidsetup $user;
 
-my $now = time;
+my $now = time; #eventually take a time option like freeside-bill
 my ($sec,$min,$hour,$mday,$mon,$year) =
   (localtime($now) )[0,1,2,3,4,5];
 $mon++;
@@ -48,20 +48,22 @@ foreach $cust_main ( qsearch('cust_main',{} ) ) {
             $cust_main->balance_date(time-$opt{d} * 86400);
     }
 
-#    if ( $opt{l} ) {
-#      print "\n\tCharging late fee of \$$opt{l}" unless $opt{q};
-#
-#    }
+    if ( $opt{p} && ! grep { $_ eq 'POST' } $cust_main->invoicing_list ) {
+      print "\n\tAdding postal invoicing" unless $opt{q};
+      my @invoicing_list = $cust_main->invoicing_list;
+      push @invoicing_list, 'POST';
+      $cust_main->invoicing_list(\@invoicing_list);
+    }
+
+    if ( $opt{l} ) {
+      print "\n\tCharging late fee of \$$opt{l}" unless $opt{q};
+      my $error = $cust_main->charge($opt{l}, 'Late fee');
+      # comment or plandata with info so we don't redo the same late fee every
+      # day
+    }
 
     foreach $cust_pkg ( qsearch( 'cust_pkg', 
                                  { 'custnum' => $cust_main->custnum } ) ) {
-
-      if ( $opt{p} && ! grep { $_ eq 'POST' } $cust_main->invoicing_list ) {
-        print "\n\tAdding postal invoicing" unless $opt{q};
-        my @invoicing_list = $cust_main->invoicing_list;
-        push @invoicing_list, 'POST';
-        $cust_main->invoicing_list(\@invoicing_list);
-      }
 
       if ($opt{s}) {
         print "\n\tSuspending pkgnum " . $cust_pkg->pkgnum unless $opt{q};
@@ -72,7 +74,29 @@ foreach $cust_main ( qsearch('cust_main',{} ) ) {
         print "\n\tCancelling pkgnum " . $cust_pkg->pkgnum unless $opt{q};
         $cust_pkg->cancel;
       }
+      
+    }
 
+    if ( $opt{b} ) {
+      print "\n\tBilling" unless $opt{q};
+      my $error = $cust_main->bill('time'=>$now);
+      warn "Error billing,  customer #" . $cust_main->custnum . 
+        ":" . $error if $error;
+    }
+
+    if ( $opt{y} ) {
+      print "\n\tApplying outstanding payments and credits" unless $opt{q};
+      $cust_main->apply_payments;
+      $cust_main->apply_credits;
+    }
+
+    if ( $opt{o} ) {
+      print "\n\tCollecting" unless $opt{q};
+      my $error = $cust_main->collect( 'invoice_time'=>$now,
+                                       'batch_card' => $opt{i} ? 'no' : 'yes',
+                                     );
+      warn "Error collecting from customer #" . $cust_main->custnum.  ":$error"
+        if $error;
     }
 
     print "\n" unless $opt{q};
@@ -99,7 +123,7 @@ freeside-overdue - Perform actions on overdue and/or expired accounts.
 
 =head1 SYNOPSIS
 
-  freeside-overdue [ -e ] [ -d days ] [ -q ] [ -p ] [ -l amount ] [ -s ] [ -c ] user
+  freeside-overdue [ -e ] [ -d days ] [ -q ] [ -p ] [ -l amount ] [ -s ] [ -c ] [ -b ] [ -y ] [ -o [ -i ] ] user
 
 =head1 DESCRIPTION
 
@@ -107,22 +131,31 @@ Performs actions on overdue and/or expired accounts.
 
 Selection options (at least one selection option is required):
 
-  -d:	Customers with a balance due on invoices older than the supplied number
-        of days.  Requires an integer argument.
+  -d:  Customers with a balance due on invoices older than the supplied number
+       of days.  Requires an integer argument.
 
-  -e:   Customers with a billing expiration date in the past.
+  -e:  Customers with a billing expiration date in the past.
 
 Action options: 
 
-  -q:   Be quiet (by default, selected accounts are printed).
+  -q:  Be quiet (by default, selected accounts are printed).
 
-  -p:   Add postal invoicing to the relevant customers.
+  -p:  Add postal invoicing to the relevant customers.
 
-  -l:   Add a charge of the given amount to the relevant customers.
+  -l:  Add a charge of the given amount to the relevant customers.
 
-  -s:	Suspend accounts.
+  -s:  Suspend accounts.
 
-  -c:   Cancel accounts.
+  -c:  Cancel accounts.
+
+  -b:  Bill customers (create invoices)
+
+  -y:  Apply unapplied payments and credits
+
+  -o:  Collect from customers (charge cards, print invoices)
+
+    -i:  real-time billing (as opposed to batch billing).  only relevant
+         for credit cards.
 
   user: From the mapsecrets file - see config.html from the base documentation
 
@@ -145,6 +178,12 @@ Example crontab entries:
 =head1 ORIGINAL AUTHORS
 
 Original disable-overdue version by mw/kwh: Mark W.? and Kristian Hoffmann ?
+
+Ivan seems to be turning it into the "do-everything" CLI.
+
+=head1 BUGS
+
+Hell now that this is the do-everything CLI it should have --longoptions
 
 =cut
 

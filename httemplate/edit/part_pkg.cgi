@@ -1,4 +1,4 @@
-<!-- $Id: part_pkg.cgi,v 1.7 2001-12-27 09:26:14 ivan Exp $ -->
+<!-- $Id: part_pkg.cgi,v 1.8 2001-12-28 14:40:35 ivan Exp $ -->
 
 <%
 
@@ -26,6 +26,7 @@ if ( $cgi->param('clone') ) {
   my $old_part_pkg =
     qsearchs('part_pkg', { 'pkgpart' => $cgi->param('clone') } );
   $part_pkg ||= $old_part_pkg->clone;
+  $part_pkg->disabled('Y');
 } elsif ( $query && $query =~ /^(\d+)$/ ) {
   $part_pkg ||= qsearchs('part_pkg',{'pkgpart'=>$1});
 } else {

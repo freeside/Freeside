@@ -28,6 +28,7 @@ use FS::cust_credit_bill;
 use FS::cust_bill_pay;
 use FS::prepay_credit;
 use FS::queue;
+use FS::part_pkg;
 
 @ISA = qw( FS::Record );
 
@@ -1775,6 +1776,29 @@ sub credit {
   $cust_credit->insert;
 }
 
+=item charge AMOUNT PKG COMMENT
+
+Creates a one-time charge for this customer.  If there is an error, returns
+the error, otherwise returns false.
+
+=cut
+
+sub charge {
+  my ( $self, $amount, $pkg, $comment ) = @_;
+
+  my $part_pkg = new FS::part_pkg ( {
+    'pkg'      => $pkg || 'One-time charge',
+    'comment'  => $comment,
+    'setup'    => $amount,
+    'freq'     => 0,
+    'recur'    => '0',
+    'disabled' => 'Y',
+  } );
+
+  $part_pkg->insert;
+
+}
+
 =back
 
 =head1 SUBROUTINES
@@ -1916,7 +1940,7 @@ sub append_fuzzyfiles {
 
 =head1 VERSION
 
-$Id: cust_main.pm,v 1.51 2001-12-26 11:17:49 ivan Exp $
+$Id: cust_main.pm,v 1.52 2001-12-28 14:40:35 ivan Exp $
 
 =head1 BUGS
 
