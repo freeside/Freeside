@@ -60,6 +60,6 @@ close HTTPD_CONF;
 # -----
 
 sub usage {
-  die "Usage:\n  export.export user\n"; 
+  die "Usage:\n  apache.export user\n"; 
 }
 
