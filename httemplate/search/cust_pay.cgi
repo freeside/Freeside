@@ -23,8 +23,9 @@ if ( $cgi->param('magic') && $cgi->param('magic') eq '_date' ) {
     my $ending = str2time($1) + 86400;
     $range .= ( $range ? ' AND ' : ' WHERE ' ). " _date <= $ending ";
   }
+  $range =~ s/^\s*WHERE/ AND/ if scalar(keys %search) ;
 
-  @cust_pay = qsearch('cust_pay', \%search, '', " $range" );
+  @cust_pay = qsearch('cust_pay', \%search, '', $range );
 
   $sortby = \*date_sort;
 
