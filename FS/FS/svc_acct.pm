@@ -1028,7 +1028,7 @@ Returns the domain associated with this account.
 sub domain {
   my $self = shift;
   die "svc_acct.domsvc is null for svcnum ". $self->svcnum unless $self->domsvc;
-  my $svc_domain = $self->svc_domain
+  my $svc_domain = $self->svc_domain(@_)
     or die "no svc_domain.svcnum for svc_acct.domsvc ". $self->domsvc;
   $svc_domain->domain;
 }
@@ -1066,7 +1066,7 @@ Returns an email address associated with the account.
 
 sub email {
   my $self = shift;
-  $self->username. '@'. $self->domain;
+  $self->username. '@'. $self->domain(@_);
 }
 
 =item acct_snarf

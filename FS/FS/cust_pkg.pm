@@ -11,6 +11,7 @@ use FS::cust_main;
 use FS::type_pkgs;
 use FS::pkg_svc;
 use FS::cust_bill_pkg;
+use FS::h_cust_svc;
 
 # need to 'use' these instead of 'require' in sub { cancel, suspend, unsuspend,
 # setup }
@@ -543,18 +544,47 @@ sub cust_svc {
   #if ( $self->{'_svcnum'} ) {
   #  values %{ $self->{'_svcnum'}->cache };
   #} else {
-    map  { $_->[0] }
-    sort { $b->[1] cmp $a->[1]  or  $a->[2] <=> $b->[2] } 
-    map {
-          my $pkg_svc = qsearchs( 'pkg_svc', { 'pkgpart' => $self->pkgpart,
-                                               'svcpart' => $_->svcpart     } );
-          [ $_,
-            $pkg_svc ? $pkg_svc->primary_svc : '',
-            $pkg_svc ? $pkg_svc->quantity : 0,
-          ];
-        }
-    qsearch( 'cust_svc', { 'pkgnum' => $self->pkgnum } );
+    $self->_sort_cust_svc(
+      [ qsearch( 'cust_svc', { 'pkgnum' => $self->pkgnum } ) ]
+    );
   #}
+
+}
+
+=item h_cust_svc END_TIMESTAMP [ START_TIMESTAMP ] 
+
+Returns historical services for this package created before END TIMESTAMP and
+(optionally) not cancelled before START_TIMESTAMP, as FS::h_cust_svc objects
+(see L<FS::h_cust_svc>).
+
+=cut
+
+sub h_cust_svc {
+  my $self = shift;
+
+  $self->_sort_cust_svc(
+    [ qsearch( 'h_cust_svc',
+               { 'pkgnum' => $self->pkgnum, },
+               FS::h_cust_svc->sql_h_search(@_),
+             )
+    ]
+  );
+}
+
+sub _sort_cust_svc {
+  my( $self, $arrayref ) = @_;
+
+  map  { $_->[0] }
+  sort { $b->[1] cmp $a->[1]  or  $a->[2] <=> $b->[2] } 
+  map {
+        my $pkg_svc = qsearchs( 'pkg_svc', { 'pkgpart' => $self->pkgpart,
+                                             'svcpart' => $_->svcpart     } );
+        [ $_,
+          $pkg_svc ? $pkg_svc->primary_svc : '',
+          $pkg_svc ? $pkg_svc->quantity : 0,
+        ];
+      }
+  @$arrayref;
 
 }
 
@@ -604,6 +634,52 @@ Returns a list of lists, calling the label method for all services
 sub labels {
   my $self = shift;
   map { [ $_->label ] } $self->cust_svc;
+}
+
+=item h_labels END_TIMESTAMP [ START_TIMESTAMP ] 
+
+Like the labels method, but returns historical information on services that
+were active as of END_TIMESTAMP and (optionally) not cancelled before
+START_TIMESTAMP.
+
+Returns a list of lists, calling the label method for all (historical) services
+(see L<FS::h_cust_svc>) of this billing item.
+
+=cut
+
+sub h_labels {
+  my $self = shift;
+  map { [ $_->label(@_) ] } $self->h_cust_svc(@_);
+}
+
+=item h_labels_short END_TIMESTAMP [ START_TIMESTAMP ]
+
+Like h_labels, except returns a simple flat list, and shortens long 
+(currently >5) lists of identical services to one line that lists the service
+label and the number of individual services rather than individual items.
+
+=cut
+
+sub h_labels_short {
+  my $self = shift;
+
+  my %labels;
+  #tie %labels, 'Tie::IxHash';
+  push @{ $labels{$_->[0]} }, $_->[1]
+    foreach $self->h_labels(@_);
+  my @labels;
+  foreach my $label ( keys %labels ) {
+    my @values = @{ $labels{$label} };
+    my $num = scalar(@values);
+    if ( $num > 5 ) {
+      push @labels, "$label ($num)";
+    } else {
+      push @labels, map { "$label: $_" } @values;
+    }
+  }
+
+ @labels;
+
 }
 
 =item cust_main

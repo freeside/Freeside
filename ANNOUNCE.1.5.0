@@ -21,7 +21,7 @@
 1.5.0pre7:
 - fix bug that could cause mis-billing on upgrades! (new installs ok)
 - update install documentation for 1.5 HTML::Mason or Apache::ASP install
-# - historical late notice viewing in web interface
+- historical late notice viewing in web interface
 - VoIP billing for CDRs from RADIUS
 - promotional codes for signup
 - lots of RT integration, integrated RT upgraded to 3.2.2

@@ -1,8 +1,8 @@
 package FS::cust_svc;
 
 use strict;
-use vars qw( @ISA $ignore_quantity );
-use Carp qw( cluck );
+use vars qw( @ISA $DEBUG $ignore_quantity );
+use Carp qw( carp cluck );
 use FS::Conf;
 use FS::Record qw( qsearch qsearchs dbh );
 use FS::cust_pkg;
@@ -18,6 +18,8 @@ use FS::domain_record;
 use FS::part_export;
 
 @ISA = qw( FS::Record );
+
+$DEBUG = 1;
 
 $ignore_quantity = 0;
 
@@ -276,37 +278,44 @@ Returns a list consisting of:
 
 sub label {
   my $self = shift;
-  my $svcdb = $self->part_svc->svcdb;
+  carp "FS::cust_svc::label called on $self" if $DEBUG;
   my $svc_x = $self->svc_x
-    or die "can't find $svcdb.svcnum ". $self->svcnum;
+    or die "can't find ". $self->part_svc->svcdb. '.svcnum '. $self->svcnum;
+  $self->_svc_label($svc_x);
+}
+
+sub _svc_label {
+  my( $self, $svc_x ) = ( shift, shift );
+  my $svcdb = $self->part_svc->svcdb;
+
   my $tag;
   if ( $svcdb eq 'svc_acct' ) {
-    $tag = $svc_x->email;
+    $tag = $svc_x->email(@_);
   } elsif ( $svcdb eq 'svc_forward' ) {
     if ( $svc_x->srcsvc ) {
-      my $svc_acct = $svc_x->srcsvc_acct;
-      $tag = $svc_acct->email;
+      my $svc_acct = $svc_x->srcsvc_acct(@_);
+      $tag = $svc_acct->email(@_);
     } else {
       $tag = $svc_x->src;
     }
     $tag .= '->';
     if ( $svc_x->dstsvc ) {
-      my $svc_acct = $svc_x->dstsvc_acct;
-      $tag .= $svc_acct->email;
+      my $svc_acct = $svc_x->dstsvc_acct(@_);
+      $tag .= $svc_acct->email(@_);
     } else {
       $tag .= $svc_x->dst;
     }
   } elsif ( $svcdb eq 'svc_domain' ) {
     $tag = $svc_x->getfield('domain');
   } elsif ( $svcdb eq 'svc_www' ) {
-    my $domain = qsearchs( 'domain_record', { 'recnum' => $svc_x->recnum } );
-    $tag = $domain->zone;
+    my $domain_record = $svc_x->domain_record;
+    $tag = $domain_record->zone;
   } elsif ( $svcdb eq 'svc_broadband' ) {
     $tag = $svc_x->ip_addr;
   } elsif ( $svcdb eq 'svc_external' ) {
     my $conf = new FS::Conf;
     if ( $conf->config('svc_external-display_type') eq 'artera_turbo' ) {
-      $tag = sprintf('%010d', $svc_x->id). '-'. $svc_x->title;
+      $tag = sprintf('%010d', $svc_x->id). '-'. sprintf('%010d', $svc_x->title);
     } else {
       $tag = $svc_x->id. ': '. $svc_x->title;
     }
@@ -314,7 +323,9 @@ sub label {
     cluck "warning: asked for label of unsupported svcdb; using svcnum";
     $tag = $svc_x->getfield('svcnum');
   }
+
   $self->part_svc->svc, $tag, $svcdb;
+
 }
 
 =item svc_x
@@ -566,7 +577,7 @@ sub get_session_history {
   my @sessions = ();
 
   foreach my $part_export ( @part_export ) {
-    push @sessions, $part_export->usage_sessions( $self->svc_x, $start, $end );
+    push @sessions, $part_export->usage_sessions( $start, $end, $self->svc_x );
   }
 
   \@sessions;

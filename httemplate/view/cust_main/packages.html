@@ -5,8 +5,38 @@
   my $packages = get_packages($cust_main, $conf);
 %>
 
-<A NAME="cust_pkg">Packages</A>
-( <A HREF="<%= $p %>edit/cust_pkg.cgi?<%= $cust_main->custnum %>">Bulk order and cancel packages</A> (preserves services) )
+<A NAME="cust_pkg"><FONT SIZE="+2">Packages</FONT></A>
+
+<%= include('order_pkg.html', $cust_main ) %>
+
+<% if ( $conf->config('payby-default') ne 'HIDE' ) { %>
+  <%= include('quick-charge.html', $cust_main ) %>
+<% } %>
+
+<A HREF="<%= $p %>edit/cust_pkg.cgi?<%= $cust_main->custnum %>">Bulk order and cancel packages</A> (preserves services)
+<BR><BR>
+
+<% if ( @$packages ) { %>
+Current packages
+<% } %>
+
+<% if ( $cust_main->num_cancelled_pkgs ) {
+     if ( $cgi->param('showcancelledpackages') eq '0' #see if it was set by me
+          || ( $conf->exists('hidecancelledpackages')
+               && ! $cgi->param('showcancelledpackages')
+             )
+        )
+     {
+       $cgi->param('showcancelledpackages', 1);
+%>
+  ( <a href="<%= $cgi->self_url %>">show
+<%   } else {
+       $cgi->param('showcancelledpackages', 0);
+%>
+  ( <a href="<%= $cgi->self_url %>">hide
+<%   } %>
+ cancelled packages</a> )
+<% } %>
 
 <% if ( @$packages ) { %>
 
@@ -159,11 +189,13 @@ foreach my $pkg (sort pkgsort_pkgnum_cancel @$packages) {
     }
   }
 }
-print '</TABLE>';
-}
-
 #end display packages
 %>
+
+</TABLE>
+<% } else { %>
+<BR>
+<% } %>
 
 <%
 #subroutines
@@ -173,12 +205,18 @@ sub get_packages {
   my $conf = shift;
   
   my @packages = ();
+  my $method;
+  if (  $cgi->param('showcancelledpackages') eq '0' #see if it was set by me
+     || ( $conf->exists('hidecancelledpackages')
+           && ! $cgi->param('showcancelledpackages') )
+     )
+  {
+    $method = 'ncancelled_pkgs';
+  } else {
+    $method = 'all_pkgs';
+  }
   
-  foreach my $cust_pkg (
-    $conf->exists('hidecancelledpackages')
-      ? $cust_main->ncancelled_pkgs
-      : $cust_main->all_pkgs
-  ) { 
+  foreach my $cust_pkg ( $cust_main->$method() ) {
   
     my $part_pkg = $cust_pkg->part_pkg;
 

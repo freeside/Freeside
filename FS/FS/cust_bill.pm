@@ -356,14 +356,13 @@ sub send {
       'body'    => \@print_text,
     );
     die "can't email invoice: $error\n" if $error;
+    #die "$error\n" if $error;
 
-  }
-
-  if ( $conf->config('invoice_latex') ) {
-    @print_text = $self->print_ps('', $template);
   }
 
   if ( grep { $_ eq 'POST' } @invoicing_list ) { #postal
+    @print_text = $self->print_ps('', $template)
+      if $conf->config('invoice_latex');
     my $lpr = $conf->config('lpr');
     open(LPR, "|$lpr")
       or die "Can't open pipe to $lpr: $!\n";
@@ -796,7 +795,8 @@ sub print_text {
         push @buf, [ $description,
                      $money_char. sprintf("%10.2f", $cust_bill_pkg->setup) ];
         push @buf,
-          map { [ "  ". $_->[0]. ": ". $_->[1], '' ] } $cust_pkg->labels;
+          map { [ "  ". $_->[0]. ": ". $_->[1], '' ] }
+              $cust_pkg->h_labels($self->_date);
       }
 
       if ( $cust_bill_pkg->recur != 0 ) {
@@ -806,7 +806,8 @@ sub print_text {
           $money_char. sprintf("%10.2f", $cust_bill_pkg->recur)
         ];
         push @buf,
-          map { [ "  ". $_->[0]. ": ". $_->[1], '' ] } $cust_pkg->labels;
+          map { [ "  ". $_->[0]. ": ". $_->[1], '' ] }
+              $cust_pkg->h_labels($cust_bill_pkg->edate, $cust_bill_pkg->sdate);
       }
 
       push @buf, map { [ "  $_", '' ] } $cust_bill_pkg->details;
@@ -1366,45 +1367,32 @@ sub _items_cust_bill_pkg {
       my $part_pkg = qsearchs('part_pkg', { pkgpart=>$cust_pkg->pkgpart } );
       my $pkg = $part_pkg->pkg;
 
-      my %labels;
-      #tie %labels, 'Tie::IxHash';
-      push @{ $labels{$_->[0]} }, $_->[1] foreach $cust_pkg->labels;
-      my @ext_description;
-      foreach my $label ( keys %labels ) {
-        my @values = @{ $labels{$label} };
-        my $num = scalar(@values);
-        if ( $num > 5 ) {
-          push @ext_description, "$label ($num)";
-        } else {
-          push @ext_description, map { "$label: $_" } @values;
-        }
-      }
-
       if ( $cust_bill_pkg->setup != 0 ) {
         my $description = $pkg;
         $description .= ' Setup' if $cust_bill_pkg->recur != 0;
-        my @d = @ext_description;
+        my @d = $cust_pkg->h_labels_short($self->_date);
         push @d, $cust_bill_pkg->details if $cust_bill_pkg->recur == 0;
         push @b, {
-          'description'     => $description,
-          #'pkgpart'         => $part_pkg->pkgpart,
-          'pkgnum'          => $cust_pkg->pkgnum,
-          'amount'          => sprintf("%10.2f", $cust_bill_pkg->setup),
-          'ext_description' => \@d,
+          description     => $description,
+          #pkgpart         => $part_pkg->pkgpart,
+          pkgnum          => $cust_pkg->pkgnum,
+          amount          => sprintf("%10.2f", $cust_bill_pkg->setup),
+          ext_description => \@d,
         };
       }
 
       if ( $cust_bill_pkg->recur != 0 ) {
         push @b, {
-          'description'     => "$pkg (" .
+          description     => "$pkg (" .
                                time2str('%x', $cust_bill_pkg->sdate). ' - '.
                                time2str('%x', $cust_bill_pkg->edate). ')',
-          #'pkgpart'         => $part_pkg->pkgpart,
-          'pkgnum'          => $cust_pkg->pkgnum,
-          'amount'          => sprintf("%10.2f", $cust_bill_pkg->recur),
-          'ext_description' => [ @ext_description,
-                                 $cust_bill_pkg->details,
-                               ],
+          #pkgpart         => $part_pkg->pkgpart,
+          pkgnum          => $cust_pkg->pkgnum,
+          amount          => sprintf("%10.2f", $cust_bill_pkg->recur),
+          ext_description => [ $cust_pkg->h_labels_short($cust_bill_pkg->edate,
+                                                         $cust_bill_pkg->sdate),
+                               $cust_bill_pkg->details,
+                             ],
         };
       }
 

@@ -1009,6 +1009,27 @@ sub unsuspended_pkgs {
   grep { ! $_->susp } $self->ncancelled_pkgs;
 }
 
+=item num_cancelled_pkgs
+
+Returns the number of cancelled packages (see L<FS::cust_pkg>) for this
+customer.
+
+=cut
+
+sub num_cancelled_pkgs {
+  my $self = shift;
+  $self->num_pkgs("cancel IS NOT NULL AND cust_pkg.cancel != 0");
+}
+
+sub num_pkgs {
+  my( $self, $sql ) = @_;
+  my $sth = dbh->prepare(
+    "SELECT COUNT(*) FROM cust_pkg WHERE custnum = ? AND $sql"
+  ) or die dbh->errstr;
+  $sth->execute($self->custnum) or die $sth->errstr;
+  $sth->fetchrow_arrayref->[0];
+}
+
 =item unsuspend
 
 Unsuspends all unflagged suspended packages (see L</unflagged_suspended_pkgs>

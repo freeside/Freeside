@@ -109,13 +109,6 @@ Comments
 <% } %>
 
 <BR><BR>
-<%= include('cust_main/order_pkg.html', $cust_main ) %>
-
-<% if ( $conf->config('payby-default') ne 'HIDE' ) { %>
-  <%= include('cust_main/quick-charge.html', $cust_main ) %>
-  <BR>
-<% } %>
-
 <%= include('cust_main/packages.html', $cust_main ) %>
 
 <% if ( $conf->config('payby-default') ne 'HIDE' ) { %>

@@ -180,7 +180,7 @@ sub create {
   }
 }
 
-=item qsearch TABLE, HASHREF, SELECT, EXTRA_SQL, CACHE_OBJ
+=item qsearch TABLE, HASHREF, SELECT, EXTRA_SQL, CACHE_OBJ, AS
 
 Searches the database for all records matching (at least) the key/value pairs
 in HASHREF.  Returns all the records found as `FS::TABLE' objects if that
@@ -199,7 +199,7 @@ objects.
 =cut
 
 sub qsearch {
-  my($stable, $record, $select, $extra_sql, $cache ) = @_;
+  my($stable, $record, $select, $extra_sql, $cache, $as ) = @_;
   #$stable =~ /^([\w\_]+)$/ or die "Illegal table: $table";
   #for jsearch
   $stable =~ /^([\w\s\(\)\.\,\=]+)$/ or die "Illegal table: $stable";
@@ -223,6 +223,7 @@ sub qsearch {
   }
 
   my $statement = "SELECT $select FROM $stable";
+  $statement .= " AS $as" if $as;
   if ( @real_fields or @virtual_fields ) {
     $statement .= ' WHERE '. join(' AND ',
       ( map {
