@@ -24,6 +24,7 @@ ServerName $zone
 ServerAlias *.$zone
 #BandWidthModule On
 #LargeFileLimit 4096 12288
+#FrontpageEnable on
 </VirtualHost>
 
 END

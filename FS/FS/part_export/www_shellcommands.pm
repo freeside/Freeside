@@ -22,7 +22,7 @@ tie my %options, 'Tie::IxHash',
 
 %info = (
   'svc'     => 'svc_www',
-  'desc'    => 'Run remote commands via SSH, for virtual web sites.',
+  'desc'    => 'Run remote commands via SSH, for virtual web sites (directory maintenance, FrontPage, ISPMan)',
   'options' => \%options,
   'notes'   => <<'END'
 Run remote commands via SSH, for virtual web sites.  You will need to
@@ -37,13 +37,19 @@ Run remote commands via SSH, for virtual web sites.  You will need to
       this.form.usermod.value = "[ -n \"$old_zone\" ] && rm /var/www/$old_zone; [ \"$old_zone\" != \"$new_zone\" -a -n \"$new_zone\" ] && ( mv $old_homedir/$old_zone $new_homedir/$new_zone; ln -sf $new_homedir/$new_zone /var/www/$new_zone ); [ \"$old_username\" != \"$new_username\" ] && chown -R $new_username $new_homedir/$new_zone; ln -sf $new_homedir/$new_zone /var/www/$new_zone";
     '>
   <LI>
+    <INPUT TYPE="button" VALUE="FrontPage extensions" onClick='
+      this.form.user.value = "root";
+      this.form.useradd.value = "/usr/local/frontpage/version5.0/bin/owsadm.exe -o install -p 80 -m $zone -xu $username -xg www-data -s /etc/apache/httpd.conf -u $username -pw $_password";
+      this.form.userdel.value = "/usr/local/frontpage/version5.0/bin/owsadm.exe -o uninstall -p 80 -m $zone -s /etc/apache/httpd.conf";
+      this.form.usermod.value = "";
+    '>
+  <LI>
     <INPUT TYPE="button" VALUE="ISPMan CLI" onClick='
       this.form.user.value = "root";
       this.form.useradd.value = "/usr/local/ispman/bin/ispman.addvhost -d $domain $bare_zone";
       this.form.userdel.value = "/usr/local/ispman/bin/ispman.deletevhost -d $domain $bare_zone";
       this.form.usermod.value = "";
-    '>
-</UL>
+    '></UL>
 The following variables are available for interpolation (prefixed with
 <code>new_</code> or <code>old_</code> for replace operations):
 <UL>
@@ -87,6 +93,7 @@ sub _export_command {
   ( my $bare_zone = $zone ) =~ s/\.$domain$//;
   my $svc_acct = $svc_www->svc_acct; # or die ?
   my $username = $svc_acct->username;
+  my $_password = $svc_acct->_password;
   my $homedir = $svc_acct->dir; # or die ?
 
   #done setting variables for the command
@@ -123,6 +130,7 @@ sub _export_replace {
   ( my $new_bare_zone = $new_zone ) =~ s/\.$new_domain$//;
   my $new_svc_acct = $new->svc_acct; # or die ?
   my $new_username = $new_svc_acct->username;
+  #my $new__password = $new_svc_acct->_password;
   my $new_homedir = $new_svc_acct->dir; # or die ?
 
   #done setting variables for the command
