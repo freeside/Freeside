@@ -1,8 +1,5 @@
 <%
 
-use FS::UID qw(dbh);
-
-my $dbh = dbh;
 local $FS::UID::AutoCommit=0;
 
 sub check {
@@ -10,7 +7,7 @@ sub check {
   if($error) {
     $cgi->param('error', $error);
     print $cgi->redirect(popurl(3) . "edit/router.cgi?". $cgi->query_string);
-    $dbh->rollback;
+    dbh->rollback;
     exit;
   }
 }
@@ -38,7 +35,7 @@ check($error);
 
 if ($old) {
   @old_psr = $old->part_svc_router;
-  foreach $psr (@old_psr) {
+  foreach my $psr (@old_psr) {
     if($cgi->param('svcpart_'.$psr->svcpart) eq 'ON') {
       # do nothing
     } else {
@@ -64,7 +61,7 @@ foreach($cgi->param) {
 
 
 # Yay, everything worked!
-$dbh->commit or die $dbh->errstr;
+dbh->commit or die dbh->errstr;
 print $cgi->redirect(popurl(3). "browse/router.cgi");
 
 %>
