@@ -353,6 +353,7 @@ sub insert {
   local $SIG{QUIT} = 'IGNORE'; 
   local $SIG{TERM} = 'IGNORE';
   local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
 
   $sth->execute or return $sth->errstr;
 
@@ -396,6 +397,7 @@ sub delete {
   local $SIG{QUIT} = 'IGNORE'; 
   local $SIG{TERM} = 'IGNORE';
   local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
 
   my $rc = $sth->execute or return $sth->errstr;
   #not portable #return "Record not found, statement:\n$statement" if $rc eq "0E0";
@@ -462,6 +464,7 @@ sub replace {
   local $SIG{QUIT} = 'IGNORE'; 
   local $SIG{TERM} = 'IGNORE';
   local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
 
   my $rc = $sth->execute or return $sth->errstr;
   #not portable #return "Record not found (or records identical)." if $rc eq "0E0";
@@ -590,9 +593,10 @@ is an error, returns the error, otherwise returns false.
 
 sub ut_money {
   my($self,$field)=@_;
+  $self->setfield($field, 0) if $self->getfield($field) eq '';
   $self->getfield($field) =~ /^(\-)? ?(\d*)(\.\d{2})?$/
     or return "Illegal (money) $field!";
-  $self->setfield($field,"$1$2$3" || 0);
+  $self->setfield($field, "$1$2$3" || 0);
   '';
 }
 
@@ -805,7 +809,7 @@ sub hfields {
 
 =head1 VERSION
 
-$Id: Record.pm,v 1.11 1999-01-18 09:22:38 ivan Exp $
+$Id: Record.pm,v 1.12 1999-01-25 12:26:06 ivan Exp $
 
 =head1 BUGS
 
@@ -927,7 +931,10 @@ added pod documentation ivan@sisd.com 98-sep-6
 ut_phonen got ''; at the end ivan@sisd.com 98-sep-27
 
 $Log: Record.pm,v $
-Revision 1.11  1999-01-18 09:22:38  ivan
+Revision 1.12  1999-01-25 12:26:06  ivan
+yet more mod_perl stuff
+
+Revision 1.11  1999/01/18 09:22:38  ivan
 changes to track email addresses for email invoicing
 
 Revision 1.10  1998/12/29 11:59:33  ivan

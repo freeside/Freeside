@@ -9,7 +9,7 @@ use CGI::Carp qw(fatalsToBrowser);
 use FS::UID;
 
 @ISA = qw(Exporter);
-@EXPORT_OK = qw(header menubar idiot eidiot popurl table itable);
+@EXPORT_OK = qw(header menubar idiot eidiot popurl table itable ntable);
 
 =head1 NAME
 
@@ -53,7 +53,7 @@ sub header {
         </TITLE>
       </HEAD>
       <BODY BGCOLOR="#e8e8e8">
-          <FONT COLOR="#FF0000" SIZE=7>
+          <FONT SIZE=7>
             $title
           </FONT>
           <BR><BR>
@@ -79,11 +79,14 @@ sub menubar { #$menubar=menubar('Main Menu', '../', 'Item', 'url', ... );
 
 =item idiot ERROR
 
+This is depriciated.  Don't use it.
+
 Sends headers and an HTML error message.
 
 =cut
 
 sub idiot {
+  #warn "idiot depriciated";
   my($error)=@_;
   my($cgi)=FS::UID::cgi;
   if ( $cgi->isa('CGI::Base') ) {
@@ -103,7 +106,6 @@ sub idiot {
     </CENTER>
     Your request could not be processed because of the following error:
     <P><B>$error</B>
-    <P>Hit the <I>Back</I> button in your web browser, correct this mistake, and try again.
   </BODY>
 </HTML>
 END
@@ -112,11 +114,14 @@ END
 
 =item eidiot ERROR
 
+This is depriciated.  Don't use it.
+
 Sends headers and an HTML error message, then exits.
 
 =cut
 
 sub eidiot {
+  #warn "eidiot depriciated";
   idiot(@_);
   exit;
 }
@@ -148,7 +153,7 @@ Returns HTML tag for beginning a table.
 sub table {
   my $col = shift;
   if ( $col ) {
-    "<TABLE BGCOLOR=$col BORDER=1 WIDTH=\"100%\">";
+    qq!<TABLE BGCOLOR="$col" BORDER=1 WIDTH="100%">!;
   } else { 
     "<TABLE BORDER=1>";
   }
@@ -162,11 +167,29 @@ Returns HTML tag for beginning an (invisible) table.
 
 sub itable {
   my $col = shift;
+  my $cellspacing = shift || 0;
   if ( $col ) {
-    qq!<TABLE BGCOLOR=$col BORDER=0 CELLSPACING=0 WIDTH=\"100%\">!;
+    qq!<TABLE BGCOLOR="$col" BORDER=0 CELLSPACING=$cellspacing WIDTH="100%">!;
   } else {
-    "<TABLE>";
+    qq!<TABLE BORDER=0 $cellspacing=$cellspacing WIDTH="100%">!;
   }
+}
+
+=item ntable
+
+This is getting silly.
+
+=cut
+
+sub ntable {
+  my $col = shift;
+  my $cellspacing = shift || 0;
+  if ( $col ) {
+    qq!<TABLE BGCOLOR="$col" BORDER=0 CELLSPACING=$cellspacing>!;
+  } else {
+    "<TABLE BORDER>";
+  }
+
 }
 
 =back
@@ -193,7 +216,10 @@ lose the background, eidiot ivan@sisd.com 98-sep-2
 pod ivan@sisd.com 98-sep-12
 
 $Log: CGI.pm,v $
-Revision 1.15  1999-01-18 09:41:48  ivan
+Revision 1.16  1999-01-25 12:26:05  ivan
+yet more mod_perl stuff
+
+Revision 1.15  1999/01/18 09:41:48  ivan
 all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
 (good idea anyway)
 

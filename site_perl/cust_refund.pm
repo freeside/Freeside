@@ -91,6 +91,7 @@ sub insert {
   local $SIG{QUIT} = 'IGNORE';
   local $SIG{TERM} = 'IGNORE';
   local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
 
   $error = $new_cust_credit->replace($old_cust_credit);
   return "Error modifying cust_credit: $error" if $error;
@@ -170,7 +171,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: cust_refund.pm,v 1.2 1998-12-29 11:59:46 ivan Exp $
+$Id: cust_refund.pm,v 1.3 1999-01-25 12:26:13 ivan Exp $
 
 =head1 BUGS
 
@@ -190,7 +191,10 @@ ivan@sisd.com 98-mar-18
 pod and finish up ivan@sisd.com 98-sep-21
 
 $Log: cust_refund.pm,v $
-Revision 1.2  1998-12-29 11:59:46  ivan
+Revision 1.3  1999-01-25 12:26:13  ivan
+yet more mod_perl stuff
+
+Revision 1.2  1998/12/29 11:59:46  ivan
 mostly properly OO, some work still to be done with svc_ stuff
 
 

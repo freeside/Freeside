@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_bill.cgi,v 1.6 1999-01-19 05:14:18 ivan Exp $
+# $Id: cust_bill.cgi,v 1.7 1999-01-25 12:26:03 ivan Exp $
 #
 # Note: Should be run setuid freeside as user nobody.
 #
@@ -25,7 +25,10 @@
 # also print 'printed' field ivan@sisd.com 98-jul-10
 #
 # $Log: cust_bill.cgi,v $
-# Revision 1.6  1999-01-19 05:14:18  ivan
+# Revision 1.7  1999-01-25 12:26:03  ivan
+# yet more mod_perl stuff
+#
+# Revision 1.6  1999/01/19 05:14:18  ivan
 # for mod_perl: no more top-level my() variables; use vars instead
 # also the last s/create/new/;
 #
@@ -75,7 +78,7 @@ print $cgi->header( '-expires' => 'now' ), header('Invoice View', menubar(
       <A HREF="${p}edit/cust_pay.cgi?$invnum">Enter payments (check/cash) against this invoice</A>
       <BR><A HREF="${p}misc/print-invoice.cgi?$invnum">Reprint this invoice</A>
       <BR><BR>(Printed $printed times)
-    <FONT SIZE=-1><PRE>
+    <PRE>
 END
 
 print $cust_bill->print_text;

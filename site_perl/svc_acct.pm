@@ -120,6 +120,7 @@ sub insert {
   local $SIG{QUIT} = 'IGNORE';
   local $SIG{TERM} = 'IGNORE';
   local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
 
   $error = $self->check;
   return $error if $error;
@@ -188,6 +189,7 @@ sub delete {
   local $SIG{QUIT} = 'IGNORE';
   local $SIG{TERM} = 'IGNORE';
   local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
 
   $error = $self->SUPER::delete;
   return $error if $error;
@@ -242,6 +244,7 @@ sub replace {
   local $SIG{QUIT} = 'IGNORE';
   local $SIG{TERM} = 'IGNORE';
   local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
 
   $error = $new->SUPER::replace($old);
   return $error if $error;
@@ -440,7 +443,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: svc_acct.pm,v 1.5 1999-01-18 21:58:09 ivan Exp $
+$Id: svc_acct.pm,v 1.6 1999-01-25 12:26:15 ivan Exp $
 
 =head1 BUGS
 
@@ -482,7 +485,10 @@ arbitrary radius attributes ivan@sisd.com 98-aug-13
 pod and FS::conf ivan@sisd.com 98-sep-22
 
 $Log: svc_acct.pm,v $
-Revision 1.5  1999-01-18 21:58:09  ivan
+Revision 1.6  1999-01-25 12:26:15  ivan
+yet more mod_perl stuff
+
+Revision 1.5  1999/01/18 21:58:09  ivan
 esthetic: eq and ne were used in a few places instead of == and !=
 
 Revision 1.4  1998/12/30 00:30:45  ivan

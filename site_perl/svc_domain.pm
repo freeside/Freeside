@@ -121,6 +121,7 @@ sub insert {
   local $SIG{QUIT} = 'IGNORE';
   local $SIG{TERM} = 'IGNORE';
   local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
 
   $error = $self->check;
   return $error if $error;
@@ -386,7 +387,7 @@ sub submit_internic {
 
 =head1 VERSION
 
-$Id: svc_domain.pm,v 1.5 1998-12-30 00:30:47 ivan Exp $
+$Id: svc_domain.pm,v 1.6 1999-01-25 12:26:17 ivan Exp $
 
 =head1 BUGS
 
@@ -422,7 +423,10 @@ ivan@sisd.com 98-jul-17-19
 pod, some FS::Conf (not complete) ivan@sisd.com 98-sep-23
 
 $Log: svc_domain.pm,v $
-Revision 1.5  1998-12-30 00:30:47  ivan
+Revision 1.6  1999-01-25 12:26:17  ivan
+yet more mod_perl stuff
+
+Revision 1.5  1998/12/30 00:30:47  ivan
 svc_ stuff is more properly OO - has a common superclass FS::svc_Common
 
 Revision 1.3  1998/11/13 09:56:57  ivan

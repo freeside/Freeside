@@ -89,6 +89,7 @@ sub insert {
   local $SIG{QUIT} = 'IGNORE';
   local $SIG{TERM} = 'IGNORE';
   local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
 
   $error = $new_cust_bill->replace($old_cust_bill);
   return "Error modifying cust_bill: $error" if $error;
@@ -170,7 +171,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: cust_pay.pm,v 1.2 1998-12-29 11:59:43 ivan Exp $
+$Id: cust_pay.pm,v 1.3 1999-01-25 12:26:11 ivan Exp $
 
 =head1 BUGS
 
@@ -189,7 +190,10 @@ new api ivan@sisd.com 98-mar-13
 pod ivan@sisd.com 98-sep-21
 
 $Log: cust_pay.pm,v $
-Revision 1.2  1998-12-29 11:59:43  ivan
+Revision 1.3  1999-01-25 12:26:11  ivan
+yet more mod_perl stuff
+
+Revision 1.2  1998/12/29 11:59:43  ivan
 mostly properly OO, some work still to be done with svc_ stuff
 
 

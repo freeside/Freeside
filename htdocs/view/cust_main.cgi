@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main.cgi,v 1.10 1999-01-19 05:14:19 ivan Exp $
+# $Id: cust_main.cgi,v 1.11 1999-01-25 12:26:04 ivan Exp $
 #
 # Usage: cust_main.cgi custnum
 #        http://server.name/path/cust_main.cgi?custnum
@@ -33,7 +33,10 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: cust_main.cgi,v $
-# Revision 1.10  1999-01-19 05:14:19  ivan
+# Revision 1.11  1999-01-25 12:26:04  ivan
+# yet more mod_perl stuff
+#
+# Revision 1.10  1999/01/19 05:14:19  ivan
 # for mod_perl: no more top-level my() variables; use vars instead
 # also the last s/create/new/;
 #
@@ -66,13 +69,13 @@
 use strict;
 use vars qw ( $cgi $query $custnum $cust_main $hashref $agent $referral 
               @packages $package @history @bills $bill @credits $credit
-              $balance $item ); 
+              $balance $item @agents @referrals @invoicing_list $n1 ); 
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use Date::Format;
 use FS::UID qw(cgisuidsetup);
 use FS::Record qw(qsearchs qsearch);
-use FS::CGI qw(header menubar popurl table);
+use FS::CGI qw(header menubar popurl table itable ntable);
 use FS::cust_credit;
 use FS::cust_pay;
 use FS::cust_bill;
@@ -88,9 +91,7 @@ $cgi = new CGI;
 
 print $cgi->header( '-expires' => 'now' ), header("Customer View", menubar(
   'Main Menu' => popurl(2)
-)),<<END;
-    <BASEFONT SIZE=3>
-END
+));
 
 die "No customer specified (bad URL)!" unless $cgi->keywords;
 ($query) = $cgi->keywords; # needs parens with my, ->keywords returns array
@@ -100,120 +101,133 @@ $cust_main = qsearchs('cust_main',{'custnum'=>$custnum});
 die "Customer not found!" unless $cust_main;
 $hashref = $cust_main->hashref;
 
-#custnum
-print "<FONT SIZE=+1><CENTER>Customer #<B>$custnum</B></CENTER></FONT>",
-      qq!<CENTER><A HREF="#cust_main">Customer Information</A> | !,
-      qq!<A HREF="#cust_comments">Comments</A> | !,
-      qq!<A HREF="#cust_pkg">Packages</A> | !,
-      qq!<A HREF="#history">Payment History</A> </CENTER>!;
+print itable(), '<TR><TD><A NAME="cust_main"></A>';
 
-#bill now linke
-print qq!<HR><CENTER><A HREF="!, popurl(2), qq!/misc/bill.cgi?$custnum">!,
-      qq!Bill this customer now</A></CENTER>!;
+print qq!<A HREF="!, popurl(2), 
+      qq!edit/cust_main.cgi?$custnum">Edit this customer</A>!,
+      ntable("#c0c0c0"), "<TR><TD>", ntable("#c0c0c0",2),
+      '<TR><TD ALIGN="right">Customer number</TD><TD BGCOLOR="#ffffff">',
+      $custnum, '</TD></TR>',
+;
 
-#formatting
-print qq!<HR><A NAME="cust_main"><CENTER><FONT SIZE=+1>Customer Information!,
-      qq!</FONT>!,
-      qq!<BR><A HREF="!, popurl(2), qq!edit/cust_main.cgi?$custnum!,
-      qq!">Edit this information</A></CENTER><FONT SIZE=-1>!;
+@agents = qsearch( 'agent', {} );
+unless ( scalar(@agents) == 1 ) {
+  $agent = qsearchs('agent',{
+    'agentnum' => $cust_main->agentnum
+  } );
+  print '<TR><TD ALIGN="right">Agent</TD><TD BGCOLOR="#ffffff">',
+        $agent->agentnum, ": ", $agent->agent, '</TD></TR>';
+}
+@referrals = qsearch( 'part_referral', {} );
+unless ( scalar(@referrals) == 1 ) {
+  my $referral = qsearchs('part_referral', {
+    'refnum' => $cust_main->refnum
+  } );
+  print '<TR><TD ALIGN="right">Referral</TD><TD BGCOLOR="#ffffff">',
+        $referral->refnum, ": ", $referral->referral, '</TD></TR>';
+}
+print '<TR><TD ALIGN="right">Order taker</TD><TD BGCOLOR="#ffffff">',
+  $cust_main->otaker, '</TD></TR>';
 
-#agentnum
-$agent = qsearchs('agent',{
-  'agentnum' => $cust_main->getfield('agentnum')
-} );
-die "Agent not found!" unless $agent;
-print "<BR>Agent #<B>" , $agent->getfield('agentnum') , ": " ,
-                         $agent->getfield('agent') , "</B>";
+print '</TABLE></TD></TR></TABLE>';
 
-#refnum
-$referral = qsearchs('part_referral',{'refnum' => $cust_main->refnum});
-die "Referral not found!" unless $referral;
-print "<BR>Referral #<B>", $referral->refnum, ": ",
-      $referral->referral, "<\B>"; 
+print '</TD><TD ROWSPAN=2>';
 
-#last, first
-print "<P><B>", $hashref->{'last'}, ", ", $hashref->{first}, "</B>";
+print "Contact information", ntable("#c0c0c0"), "<TR><TD>",
+      ntable("#c0c0c0",2),
+  '<TR><TD ALIGN="right">Contact name<BR>(last, first)</TD>',
+    '<TD COLSPAN=3 BGCOLOR="#ffffff">',
+    $cust_main->last, ', ', $cust_main->first,
+    '</TD><TD ALIGN="right">SS#</TD><TD BGCOLOR="#ffffff">',
+    $cust_main->ss || '&nbsp', '</TD></TR>',
+  '<TR><TD ALIGN="right">Company</TD><TD COLSPAN=5 BGCOLOR="#ffffff">',
+    $cust_main->company,
+    '</TD></TR>',
+  '<TR><TD ALIGN="right">Address</TD><TD COLSPAN=5 BGCOLOR="#ffffff">',
+    $cust_main->address1,
+    '</TD></TR>',
+;
+print '<TR><TD ALIGN="right">&nbsp;</TD><TD COLSPAN=5 BGCOLOR="#ffffff">',
+      $cust_main->address2, '</TD></TR>'
+  if $cust_main->address2;
+print '<TR><TD ALIGN="right">City</TD><TD BGCOLOR="#ffffff">',
+        $cust_main->city,
+        '</TD><TD ALIGN="right">State</TD><TD BGCOLOR="#ffffff">',
+        $cust_main->state,
+        '</TD><TD ALIGN="right">Zip</TD><TD BGCOLOR="#ffffff">',
+        $cust_main->zip, '</TD></TR>',
+      '<TR><TD ALIGN="right">Country</TD><TD BGCOLOR="#ffffff">',
+        $cust_main->country,
+        '</TD></TR>',
+;
+print '<TR><TD ALIGN="right">Day Phone</TD><TD COLSPAN=5 BGCOLOR="#ffffff">',
+        $cust_main->daytime || '&nbsp', '</TD></TR>',
+      '<TR><TD ALIGN="right">Night Phone</TD><TD COLSPAN=5 BGCOLOR="#ffffff">',
+        $cust_main->night || '&nbsp', '</TD></TR>',
+      '<TR><TD ALIGN="right">Fax</TD><TD COLSPAN=5 BGCOLOR="#ffffff">',
+        $cust_main->fax || '&nbsp', '</TD></TR>',
+      '</TABLE>', "</TD></TR></TABLE>"
+;
 
-#ss
-print " (SS# <B>", $hashref->{ss}, "</B>)" if $hashref->{ss};
+print '</TD></TR><TR><TD>';
 
-#company
-print "<BR><B>", $hashref->{company}, "</B>" if $hashref->{company};
+@invoicing_list = $cust_main->invoicing_list;
+print "Billing information (",
+      qq!<A HREF="!, popurl(2), qq!/misc/bill.cgi?$custnum">!, "Bill now</A>)",
+      ntable("#c0c0c0"), "<TR><TD>", ntable("#c0c0c0",2),
+      '<TR><TD ALIGN="right">Tax exempt</TD><TD BGCOLOR="#ffffff">',
+      $cust_main->tax ? 'yes' : 'no',
+      '</TD></TR>',
+      '<TR><TD ALIGN="right">Postal invoices</TD><TD BGCOLOR="#ffffff">',
+      ( grep { $_ eq 'POST' } @invoicing_list ) ? 'yes' : 'no',
+      '</TD></TR>',
+      '<TR><TD ALIGN="right">Email invoices</TD><TD BGCOLOR="#ffffff">',
+      join(', ', grep { $_ ne 'POST' } @invoicing_list ),
+      '</TD></TR>',
+      '<TR><TD ALIGN="right">Billing type</TD><TD BGCOLOR="#ffffff">',
+;
 
-#address1
-print "<BR><B>", $hashref->{address1}, "</B>";
-
-#address2
-print "<BR><B>", $hashref->{address2}, "</B>" if $hashref->{address2};
-
-#city
-print "<BR><B>", $hashref->{city}, "</B>";
-
-#county
-print " (<B>", $hashref->{county}, "</B> county)" if $hashref->{county};
-
-#state
-print ",<B>", $hashref->{state}, "</B>";
-
-#zip
-print "  <B>", $hashref->{zip}, "</B>";
-
-#country
-print "<BR><B>", $hashref->{country}, "</B>"
-  unless $hashref->{country} eq "US";
-
-#daytime
-print "<P><B>", $hashref->{daytime}, "</B>" if $hashref->{daytime};
-print " (Day)" if $hashref->{daytime} && $hashref->{night};
-
-#night
-print "<BR><B>", $hashref->{night}, "</B>" if $hashref->{night};
-print " (Night)" if $hashref->{daytime} && $hashref->{night};
-
-#fax
-print "<BR><B>", $hashref->{fax}, "</B> (Fax)" if $hashref->{fax};
-
-#payby/payinfo/paydate/payname
-if ($hashref->{payby} eq "CARD") {
-  print "<P>Card #<B>", $hashref->{payinfo}, "</B> Exp. <B>",
-    $hashref->{paydate}, "</B>";
-  print " (<B>", $hashref->{payname}, "</B>)" if $hashref->{payname};
-} elsif ($hashref->{payby} eq "BILL") {
-  print "<P>Bill";
-  print " on P.O. #<B>", $hashref->{payinfo}, "</B>"
-    if $hashref->{payinfo};
-  print " until <B>", $hashref->{paydate}, "</B>"
-    if $hashref->{paydate};
-  print " to <B>", $hashref->{payname}, "</B> at above address"
-    if $hashref->{payname};
-} elsif ($hashref->{payby} eq "COMP") {
-  print "<P>Access complimentary";
-  print " courtesy of <B>", $hashref->{payinfo}, "</B>"
-    if $hashref->{payinfo};
-  print " until <B>", $hashref->{paydate}, "</B>"
-    if $hashref->{paydate};
-} else {
-  print "Unknown payment type ", $hashref->{payby}, "!";
+if ( $cust_main->payby eq 'CARD' ) {
+  print 'Credit card</TD></TR>',
+        '<TR><TD ALIGN="right">Card number</TD><TD BGCOLOR="#ffffff">',
+        $cust_main->payinfo, '</TD></TR>',
+        '<TR><TD ALIGN="right">Expiration</TD><TD BGCOLOR="#ffffff">',
+        $cust_main->paydate, '</TD></TR>',
+        '<TR><TD ALIGN="right">Name on card</TD><TD BGCOLOR="#ffffff">',
+        $cust_main->payname, '</TD></TR>'
+  ;
+} elsif ( $cust_main->payby eq 'BILL' ) {
+  print 'Billing</TD></TR>';
+  print '<TR><TD ALIGN="right">P.O. </TD><TD BGCOLOR="#ffffff">',
+        $cust_main->payinfo, '</TD></TR>',
+    if $cust_main->payinfo;
+  print '<TR><TD ALIGN="right">Expiration</TD><TD BGCOLOR="#ffffff">',
+        $cust_main->paydate, '</TD></TR>',
+        '<TR><TD ALIGN="right">Attention</TD><TD BGCOLOR="#ffffff">',
+        $cust_main->payname, '</TD></TR>',
+  ;
+} elsif ( $cust_main->payby eq 'COMP' ) {
+  print 'Complimentary</TD></TR>',
+        '<TR><TD ALIGN="right">Authorized by</TD><TD BGCOLOR="#ffffff">',
+        $cust_main->payinfo, '</TD></TR>',
+        '<TR><TD ALIGN="right">Expiration</TD><TD BGCOLOR="#ffffff">',
+        $cust_main->paydate, '</TD></TR>',
+  ;
 }
 
-#tax
-print "<BR>(Tax exempt)" if $hashref->{tax};
+print "</TABLE></TD></TR></TABLE></TD></TR></TABLE>";
 
-#otaker
-print "<P>Order taken by <B>", $hashref->{otaker}, "</B>";
-
-#formatting	
-print qq!<HR><FONT SIZE=+1><A NAME="cust_pkg"><CENTER>Packages</A></FONT>!,
-      qq!<BR>Click on package number to view/edit package.!,
-      qq!<BR><A HREF="!, popurl(2), qq!/edit/cust_pkg.cgi?$custnum">Add/Edit packages</A>!,
-      qq!</CENTER><BR>!;
+print qq!<BR><BR><A NAME="cust_pkg">Packages</A> !,
+#      qq!<BR>Click on package number to view/edit package.!,
+      qq!( <A HREF="!, popurl(2), qq!/edit/cust_pkg.cgi?$custnum">Order and cancel packages</A> )!,
+;
 
 #display packages
 
 #formatting
-print qq!<CENTER>!, table, "\n",
-      qq!<TR><TH ROWSPAN=2>#</TH><TH ROWSPAN=2>Package</TH><TH COLSPAN=5>!,
-      qq!Dates</TH></TR>\n!,
+print qq!!, table, "\n",
+      qq!<TR><TH COLSPAN=2 ROWSPAN=2>Package</TH><TH COLSPAN=5>!,
+      qq!Dates</TH><TH COLSPAN=2 ROWSPAN=2>Services</TH></TR>\n!,
       qq!<TR><TH><FONT SIZE=-1>Setup</FONT></TH><TH>!,
       qq!<FONT SIZE=-1>Next bill</FONT>!,
       qq!</TH><TH><FONT SIZE=-1>Susp.</FONT></TH><TH><FONT SIZE=-1>Expire!,
@@ -222,54 +236,67 @@ print qq!<CENTER>!, table, "\n",
       qq!</TR>\n!;
 
 #get package info
-@packages = qsearch('cust_pkg',{'custnum'=>$custnum});
+@packages = $cust_main->all_pkgs;
+#@packages = $cust_main->ncancelled_pkgs;
+
+$n1 = '';
 foreach $package (@packages) {
-  my($pref)=$package->hashref;
-  my($part_pkg)=qsearchs('part_pkg',{
-    'pkgpart' => $pref->{pkgpart}
-  } );
-  print qq!<TR><TD><FONT SIZE=-1><A HREF="!, popurl(2), qq!view/cust_pkg.cgi?!,
-        $pref->{pkgnum}, qq!">!, 
-        $pref->{pkgnum}, qq!</A></FONT></TD>!,
-        "<TD><FONT SIZE=-1>", $part_pkg->getfield('pkg'), " - ",
-        $part_pkg->getfield('comment'), 
-          qq!<FORM ACTION="!, popurl(2), qq!edit/part_pkg.cgi" METHOD=POST>!,
-          qq!<INPUT TYPE="hidden" NAME="clone" VALUE="!, $part_pkg->pkgpart, qq!">!,
-          qq!<INPUT TYPE="hidden" NAME="pkgnum" VALUE="!, $package->pkgnum, qq!">!,
-          qq!<INPUT TYPE="submit" VALUE="Customize Pricing">!,
-          "</FORM></FONT></TD>",
-        "<TD><FONT SIZE=-1>", 
-        $pref->{setup} ? time2str("%D",$pref->{setup} ) : "" ,
-        "</FONT></TD>",
-        "<TD><FONT SIZE=-1>", 
-        $pref->{bill} ? time2str("%D",$pref->{bill} ) : "" ,
-        "</FONT></TD>",
-        "<TD><FONT SIZE=-1>",
-        $pref->{susp} ? time2str("%D",$pref->{susp} ) : "" ,
-        "</FONT></TD>",
-        "<TD><FONT SIZE=-1>",
-        $pref->{expire} ? time2str("%D",$pref->{expire} ) : "" ,
-        "</FONT></TD>",
-        "<TD><FONT SIZE=-1>",
-        $pref->{cancel} ? time2str("%D",$pref->{cancel} ) : "" ,
-        "</FONT></TD>",
-        "</TR>";
-}
+  my $pkgnum = $package->pkgnum;
+  my $pkg = $package->part_pkg->pkg;
+  my $comment = $package->part_pkg->comment;
+  my $pkgview = popurl(2). "view/cust_pkg.cgi?$pkgnum";
+  my @cust_svc = qsearch( 'cust_svc', { 'pkgnum' => $pkgnum } );
+  my $rowspan = scalar(@cust_svc) || 1;
+
+  my $button_cgi = new CGI;
+  $button_cgi->param('clone', $package->part_pkg->pkgpart);
+  $button_cgi->param('pkgnum', $package->pkgnum);
+  my $button_url = popurl(2). "edit/part_pkg.cgi?". $button_cgi->query_string;
+
+  #print $n1, qq!<TD ROWSPAN=$rowspan><A HREF="$pkgview">$pkgnum</A></TD>!,
+  print $n1, qq!<TD ROWSPAN=$rowspan>$pkgnum</TD>!,
+        qq!<TD ROWSPAN=$rowspan><FONT SIZE=-1>!,
+        #qq!<A HREF="$pkgview">$pkg - $comment</A>!,
+        qq!$pkg - $comment!,
+        qq! ( <A HREF="$pkgview">Edit</A> | <A HREF="$button_url">Customize pricing</A>)</FONT></TD>!,
+  ;
+  for ( qw( setup bill susp expire cancel ) ) {
+    print "<TD ROWSPAN=$rowspan><FONT SIZE=-1>", ( $package->getfield($_)
+            ? time2str("%D", $package->getfield($_) )
+            :  '&nbsp'
+          ), '</FONT></TD>',
+    ;
+  }
+
+  my $n2 = '';
+  foreach my $cust_svc ( @cust_svc ) {
+     my($label, $value, $svcdb) = $cust_svc->label;
+     my($svcnum) = $cust_svc->svcnum;
+     my($sview) = popurl(2). "/view";
+     print $n2,qq!<TD><A HREF="$sview/$svcdb.cgi?$svcnum"><FONT SIZE=-1>$label</FONT></A></TD>!,
+           qq!<TD><A HREF="$sview/$svcdb.cgi?$svcnum"><FONT SIZE=-1>$value</FONT></A></TD>!;
+     $n2="</TR><TR>";
+  }
+  $n1="</TR><TR>";
+}  
+print "</TR>";
 
 #formatting
-print "</TABLE></CENTER>";
+print "</TABLE>";
 
 #formatting
-print qq!<CENTER><HR><A NAME="history"><FONT SIZE=+1>Payment History!,
-      qq!</FONT></A><BR>!,
-      qq!Click on invoice to view invoice/enter payment.<BR>!,
+print qq!<BR><BR><A NAME="history">Payment History!,
+      qq!</A>!,
+      qq! ( Click on invoice to view invoice/enter payment. | !,
       qq!<A HREF="!, popurl(2), qq!edit/cust_credit.cgi?$custnum">!,
-      qq!Post Credit / Refund</A></CENTER><BR>!;
+      qq!Post credit / refund</A> )!;
 
 #get payment history
 #
 # major problem: this whole thing is way too sloppy.
 # minor problem: the description lines need better formatting.
+
+@history = (); #needed for mod_perl :)
 
 @bills = qsearch('cust_bill',{'custnum'=>$custnum});
 foreach $bill (@bills) {
@@ -283,7 +310,6 @@ foreach $bill (@bills) {
   my(@payments)=qsearch('cust_pay',{'invnum'=> $bref->{invnum} } );
   my($payment);
   foreach $payment (@payments) {
-#    my($pref)=$payment->hashref;
     my($date,$invnum,$payby,$payinfo,$paid)=($payment->getfield('_date'),
                                              $payment->getfield('invnum'),
                                              $payment->getfield('payby'),
@@ -316,7 +342,7 @@ foreach $credit (@credits) {
 }
 
         #formatting
-        print "<CENTER>", table, <<END;
+        print table(), <<END;
 <TR>
   <TH>Date</TH>
   <TH>Description</TH>
@@ -360,7 +386,7 @@ foreach $item (sort keyfield_numerically @history) {
 }
 
 #formatting
-print "</TABLE></CENTER>";
+print "</TABLE>";
 
 #end
 

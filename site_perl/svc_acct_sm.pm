@@ -103,6 +103,7 @@ sub insert {
   local $SIG{QUIT} = 'IGNORE';
   local $SIG{TERM} = 'IGNORE';
   local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
 
   $error=$self->check;
   return $error if $error;
@@ -229,7 +230,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: svc_acct_sm.pm,v 1.5 1999-01-18 21:58:10 ivan Exp $
+$Id: svc_acct_sm.pm,v 1.6 1999-01-25 12:26:16 ivan Exp $
 
 =head1 BUGS
 

@@ -77,7 +77,12 @@ automatically set to amount).
 sub insert {
   my $self = shift;
 
-  $self->credited($self->amount) if $self->credited eq '';
+  my $error;
+  return $error if $error = $self->ut_money('credited')
+                         || $self->ut_money('amount');
+
+  $self->credited($self->amount) if $self->credited == 0
+                                 || $self->credited eq '';
   return "credited != amount!"
     unless $self->credited == $self->amount;
 
@@ -152,7 +157,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: cust_credit.pm,v 1.3 1999-01-18 21:58:04 ivan Exp $
+$Id: cust_credit.pm,v 1.4 1999-01-25 12:26:08 ivan Exp $
 
 =head1 BUGS
 
@@ -170,7 +175,10 @@ ivan@sisd.com 98-mar-17
 pod, otaker from FS::UID ivan@sisd.com 98-sep-21
 
 $Log: cust_credit.pm,v $
-Revision 1.3  1999-01-18 21:58:04  ivan
+Revision 1.4  1999-01-25 12:26:08  ivan
+yet more mod_perl stuff
+
+Revision 1.3  1999/01/18 21:58:04  ivan
 esthetic: eq and ne were used in a few places instead of == and !=
 
 Revision 1.2  1998/12/29 11:59:38  ivan

@@ -46,6 +46,7 @@ sub insert {
   local $SIG{QUIT} = 'IGNORE';
   local $SIG{TERM} = 'IGNORE';
   local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
 
   $error = $self->check;
   return $error if $error;
@@ -90,6 +91,7 @@ sub delete {
   local $SIG{QUIT} = 'IGNORE';
   local $SIG{TERM} = 'IGNORE';
   local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
 
   my $svcnum = $self->svcnum;
 
@@ -163,7 +165,7 @@ sub cancel { ''; }
 
 =head1 VERSION
 
-$Id: svc_Common.pm,v 1.1 1998-12-30 00:30:45 ivan Exp $
+$Id: svc_Common.pm,v 1.2 1999-01-25 12:26:14 ivan Exp $
 
 =head1 BUGS
 
@@ -180,7 +182,10 @@ from the base documentation.
 =head1 HISTORY
 
 $Log: svc_Common.pm,v $
-Revision 1.1  1998-12-30 00:30:45  ivan
+Revision 1.2  1999-01-25 12:26:14  ivan
+yet more mod_perl stuff
+
+Revision 1.1  1998/12/30 00:30:45  ivan
 svc_ stuff is more properly OO - has a common superclass FS::svc_Common
 
 

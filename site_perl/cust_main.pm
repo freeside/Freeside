@@ -356,7 +356,7 @@ If there is an error, returns the error, otherwise returns false.
 
 sub bill {
   my( $self, %options ) = @_;
-  my $time = $options{'time'} || $^T;
+  my $time = $options{'time'} || time;
 
   my $error;
 
@@ -366,6 +366,7 @@ sub bill {
   local $SIG{QUIT} = 'IGNORE';
   local $SIG{TERM} = 'IGNORE';
   local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
 
   # find the packages which are due for billing, find out how much they are
   # & generate invoice database.
@@ -543,7 +544,7 @@ return an error.  By default, they don't.
 
 sub collect {
   my( $self, %options ) = @_;
-  my $invoice_time = $options{'invoice_time'} || $^T;
+  my $invoice_time = $options{'invoice_time'} || time;
 
   my $total_owed = $self->balance;
   return '' unless $total_owed > 0; #redundant?????
@@ -554,6 +555,7 @@ sub collect {
   local $SIG{QUIT} = 'IGNORE';
   local $SIG{TERM} = 'IGNORE';
   local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
 
   foreach my $cust_bill (
     qsearch('cust_bill', { 'custnum' => $self->custnum, } )
@@ -820,7 +822,10 @@ sub check_invoicing_list {
       'custnum' => $self->custnum,
       'dest'    => $address,
     } );
-    my $error = $cust_main_invoice->check;
+    my $error = $self->custnum
+                ? $cust_main_invoice->check
+                : $cust_main_invoice->checkdest
+    ;
     return $error if $error;
   }
   '';
@@ -830,7 +835,7 @@ sub check_invoicing_list {
 
 =head1 VERSION
 
-$Id: cust_main.pm,v 1.9 1999-01-18 09:22:41 ivan Exp $
+$Id: cust_main.pm,v 1.10 1999-01-25 12:26:09 ivan Exp $
 
 =head1 BUGS
 
@@ -886,7 +891,10 @@ enable cybercash, cybercash v3 support, don't need to import
 FS::UID::{datasrc,checkruid} ivan@sisd.com 98-sep-19-21
 
 $Log: cust_main.pm,v $
-Revision 1.9  1999-01-18 09:22:41  ivan
+Revision 1.10  1999-01-25 12:26:09  ivan
+yet more mod_perl stuff
+
+Revision 1.9  1999/01/18 09:22:41  ivan
 changes to track email addresses for email invoicing
 
 Revision 1.8  1998/12/29 11:59:39  ivan

@@ -105,12 +105,27 @@ sub check {
 
   my $error = $self->ut_numbern('destnum')
            || $self->ut_number('custnum')
-           || $self->ut_text('dest')
+           || $self->checkdest;
   ;
   return $error if $error;
 
   return "Unknown customer"
     unless qsearchs('cust_main',{ 'custnum' => $self->custnum });
+
+  ''; #noerror
+}
+
+=item checkdest
+
+Checks the dest field only.
+
+=cut
+
+sub checkdest { 
+  my $self = shift;
+
+  my $error = $self->ut_text('dest');
+  return $error if $error;
 
   if ( $self->dest eq 'POST' ) {
     #contemplate our navel
@@ -152,7 +167,7 @@ sub address {
 
 =head1 VERSION
 
-$Id: cust_main_invoice.pm,v 1.5 1999-01-18 21:58:05 ivan Exp $
+$Id: cust_main_invoice.pm,v 1.6 1999-01-25 12:26:10 ivan Exp $
 
 =head1 BUGS
 
@@ -168,7 +183,10 @@ added hfields
 ivan@sisd.com 97-nov-13
 
 $Log: cust_main_invoice.pm,v $
-Revision 1.5  1999-01-18 21:58:05  ivan
+Revision 1.6  1999-01-25 12:26:10  ivan
+yet more mod_perl stuff
+
+Revision 1.5  1999/01/18 21:58:05  ivan
 esthetic: eq and ne were used in a few places instead of == and !=
 
 Revision 1.4  1999/01/18 09:22:42  ivan

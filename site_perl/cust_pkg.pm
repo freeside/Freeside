@@ -193,6 +193,7 @@ sub cancel {
   local $SIG{QUIT} = 'IGNORE'; 
   local $SIG{TERM} = 'IGNORE';
   local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
 
   foreach my $cust_svc (
     qsearch( 'cust_svc', { 'pkgnum' => $self->pkgnum } )
@@ -219,7 +220,7 @@ sub cancel {
 
   unless ( $self->getfield('cancel') ) {
     my %hash = $self->hash;
-    $hash{'cancel'} = $^T;
+    $hash{'cancel'} = time;
     my $new = new FS::cust_pkg ( \%hash );
     $error = $new->replace($self);
     return $error if $error;
@@ -246,6 +247,7 @@ sub suspend {
   local $SIG{QUIT} = 'IGNORE'; 
   local $SIG{TERM} = 'IGNORE';
   local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
 
   foreach my $cust_svc (
     qsearch( 'cust_svc', { 'pkgnum' => $self->pkgnum } )
@@ -267,7 +269,7 @@ sub suspend {
 
   unless ( $self->getfield('susp') ) {
     my %hash = $self->hash;
-    $hash{'susp'} = $^T;
+    $hash{'susp'} = time;
     my $new = new FS::cust_pkg ( \%hash );
     $error = $new->replace($self);
     return $error if $error;
@@ -294,6 +296,7 @@ sub unsuspend {
   local $SIG{QUIT} = 'IGNORE'; 
   local $SIG{TERM} = 'IGNORE';
   local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
 
   foreach my $cust_svc (
     qsearch('cust_svc',{'pkgnum'=> $self->pkgnum } )
@@ -417,38 +420,39 @@ sub order {
   local $SIG{QUIT} = 'IGNORE';
   local $SIG{TERM} = 'IGNORE';
   local $SIG{TSTP} = 'IGNORE'; 
+  local $SIG{PIPE} = 'IGNORE'; 
 
   #first cancel old packages
 #  my($pkgnum);
   foreach $pkgnum ( @{$remove_pkgnums} ) {
     my($old) = qsearchs('cust_pkg',{'pkgnum'=>$pkgnum});
-    return "Package $pkgnum not found to remove!" unless $old;
+    die "Package $pkgnum not found to remove!" unless $old;
     my(%hash) = $old->hash;
-    $hash{'cancel'}=$^T;   
-    my($new) = create FS::cust_pkg ( \%hash );
+    $hash{'cancel'}=time;   
+    my($new) = new FS::cust_pkg ( \%hash );
     my($error)=$new->replace($old);
-    return $error if $error;
+    die "Couldn't update package $pkgnum: $error" if $error;
   }
 
   #now add new packages, changing cust_svc records if necessary
 #  my($pkgpart);
   while ($pkgpart=shift @{$pkgparts} ) {
  
-    my($new) = create FS::cust_pkg ( {
+    my($new) = new FS::cust_pkg ( {
                                        'custnum' => $custnum,
                                        'pkgpart' => $pkgpart,
                                     } );
     my($error) = $new->insert;
-    return $error if $error; 
+    die "Couldn't insert new cust_pkg record: $error" if $error; 
     my($pkgnum)=$new->getfield('pkgnum');
  
     my($cust_svc);
     foreach $cust_svc ( @{ shift @cust_svc } ) {
       my(%hash) = $cust_svc->hash;
       $hash{'pkgnum'}=$pkgnum;
-      my($new) = create FS::cust_svc ( \%hash );
+      my($new) = new FS::cust_svc ( \%hash );
       my($error)=$new->replace($cust_svc);
-      return $error if $error;
+      die "Couldn't link old service to new package: $error" if $error;
     }
   }  
 
@@ -459,7 +463,7 @@ sub order {
 
 =head1 VERSION
 
-$Id: cust_pkg.pm,v 1.5 1999-01-18 21:58:07 ivan Exp $
+$Id: cust_pkg.pm,v 1.6 1999-01-25 12:26:12 ivan Exp $
 
 =head1 BUGS
 
@@ -490,7 +494,10 @@ fixed for new agent->agent_type->type_pkgs in &order ivan@sisd.com 98-mar-7
 pod ivan@sisd.com 98-sep-21
 
 $Log: cust_pkg.pm,v $
-Revision 1.5  1999-01-18 21:58:07  ivan
+Revision 1.6  1999-01-25 12:26:12  ivan
+yet more mod_perl stuff
+
+Revision 1.5  1999/01/18 21:58:07  ivan
 esthetic: eq and ne were used in a few places instead of == and !=
 
 Revision 1.4  1998/12/29 11:59:45  ivan
