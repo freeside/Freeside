@@ -33,6 +33,8 @@ if ( $cgi->param('magic') && $cgi->param('magic') eq 'bill' ) {
     $range .= ( $range ? ' AND ' : ' WHERE ' ). " bill <= $ending ";
   }
 
+  $range .= ( $range ? 'AND ' : ' WHERE ' ). '( cancel IS NULL OR cancel = 0 )';
+
   #false laziness with below
   my $statement = "SELECT COUNT(*) FROM cust_pkg $range";
   warn $statement;
