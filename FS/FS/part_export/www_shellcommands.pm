@@ -13,10 +13,10 @@ tie my %options, 'Tie::IxHash',
                  default=>'mkdir /var/www/$zone; chown $username /var/www/$zone; ln -s /var/www/$zone $homedir/$zone',
                },
   'userdel'  => { label=>'Delete command',
-                  default=>'[ -n &quot;$zone&quot; ] && rm -rf /var/www/$zone; rm $homedir/$zone',
+                  default=>'[ -n "$zone" ] && rm -rf /var/www/$zone; rm $homedir/$zone',
                 },
   'usermod'  => { label=>'Modify command',
-                  default=>'[ -n &quot;$old_zone&quot; ] && rm $old_homedir/$old_zone; [ &quot;$old_zone&quot; != &quot;$new_zone&quot; -a -n &quot;$new_zone&quot; ] && mv /var/www/$old_zone /var/www/$new_zone; [ &quot;$old_username&quot; != &quot;$new_username&quot; ] && chown -R $new_username /var/www/$new_zone; ln -s /var/www/$new_zone $new_homedir/$new_zone',
+                  default=>'[ -n "$old_zone" ] && rm $old_homedir/$old_zone; [ "$old_zone" != "$new_zone" -a -n "$new_zone" ] && mv /var/www/$old_zone /var/www/$new_zone; [ "$old_username" != "$new_username" ] && chown -R $new_username /var/www/$new_zone; ln -s /var/www/$new_zone $new_homedir/$new_zone',
                 },
 ;
 
@@ -33,8 +33,8 @@ Run remote commands via SSH, for virtual web sites.  You will need to
     <INPUT TYPE="button" VALUE="Maintain directories" onClick='
       this.form.user.value = "root";
       this.form.useradd.value = "mkdir /var/www/$zone; chown $username /var/www/$zone; ln -s /var/www/$zone $homedir/$zone";
-      this.form.userdel.value = "[ -n &quot;$zone&quot; ] && rm -rf /var/www/$zone; rm $homedir/$zone";
-      this.form.usermod.value = "[ -n &quot;$old_zone&quot; ] && rm $old_homedir/$old_zone; [ &quot;$old_zone&quot; != &quot;$new_zone&quot; -a -n &quot;$new_zone&quot; ] && mv /var/www/$old_zone /var/www/$new_zone; [ &quot;$old_username&quot; != &quot;$new_username&quot; ] && chown -R $new_username /var/www/$new_zone; ln -s /var/www/$new_zone $new_homedir/$new_zone";
+      this.form.userdel.value = "[ -n "$zone" ] && rm -rf /var/www/$zone; rm $homedir/$zone";
+      this.form.usermod.value = "[ -n "$old_zone" ] && rm $old_homedir/$old_zone; [ "$old_zone" != "$new_zone" -a -n "$new_zone" ] && mv /var/www/$old_zone /var/www/$new_zone; [ "$old_username" != "$new_username" ] && chown -R $new_username /var/www/$new_zone; ln -s /var/www/$new_zone $new_homedir/$new_zone";
     '>
   <LI>
     <INPUT TYPE="button" VALUE="ISPMan CLI" onClick='
