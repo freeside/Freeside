@@ -1,0 +1,121 @@
+#!/usr/bin/perl -w
+
+use strict;
+#use File::Path;
+use File::Rsync;
+use Net::SSH qw(ssh);
+use FS::UID qw(adminsuidsetup datasrc);
+use FS::Record qw(qsearch); # qsearchs);
+use FS::part_export;
+#use FS::cust_pkg;
+use FS::cust_svc;
+#use FS::svc_domain;
+
+my $user = shift or die &usage;
+adminsuidsetup $user;
+
+my $spooldir = "/usr/local/etc/freeside/export.". datasrc. "/postfix";
+mkdir $spooldir, 0700 unless -d $spooldir;
+
+my @exports = qsearch('part_export', { 'exporttype' => 'postfix' } );
+
+my $rsync = File::Rsync->new({
+  rsh     => 'ssh',
+#  dry_run => 1,
+});
+
+foreach my $export ( @exports ) {
+
+  my $machine = $export->machine;
+  my $prefix = "$spooldir/$machine";
+  mkdir $prefix, 0700 unless -d $prefix;
+
+  #construct %domain hash
+
+  my $mydomain = $export->option('mydomain');
+  my %domain;
+  foreach my $svc_forward ( $export->svc_x ) {
+
+    my( $username, $domain );
+    my $srcsvc_acct = $svc_forward->srcsvc_acct;
+    if ( $srcsvc_acct ) {
+      ( $username, $domain ) = ( $srcsvc_acct->username, $srcsvc_acct->domain );
+    } elsif ( $svc_forward->src =~ /([^@]*)\@([^@]+)$/ ) {
+      ( $username, $domain ) = ( $1, $2 );
+    } else {
+      die "bad svc_forward record?  svcnum ". $svc_forward->svcnum. "\n";
+    }
+
+    my( $dusername, $ddomain );
+    my $dstsvc_acct = $svc_forward->dstsvc_acct;
+    if ( $dstsvc_acct ) {
+      $dusername = $dstsvc_acct->username;
+      $ddomain = $dstsvc_acct->domain;
+    } elsif ( $svc_forward->dst =~ /([^@]+)\@([^@]+)$/ ) {
+      ( $dusername, $ddomain ) = ( $1, $2 );
+    } else {
+      die "bad svc_forward record?  svcnum ". $svc_forward->svcnum. "\n";
+    }
+    my $dest;
+    if ( $ddomain eq $mydomain ) {
+      $dest = $dusername;
+    } else {
+      $dest = "$dusername\@$ddomain";
+    }
+
+    push @{$domain{$domain}{$username}}, $dest;
+
+  }
+
+  #write aliases
+
+  my $aliases = delete $domain{$mydomain};
+  open(ALIASES, ">$prefix/aliases") or die "can't open $prefix/aliases: $!";
+  foreach my $alias ( keys %$aliases ) {
+    print ALIASES "$alias: ". join(',', @{ $aliases->{$alias} } ). "\n";
+  }
+  close ALIASES;
+
+  #write virtual
+
+  open(VIRTUAL, ">$prefix/virtual") or die "can't open $prefix/virtual: $!";
+  foreach my $domain ( keys %domain ) {
+    print VIRTUAL "$domain DOMAIN\n";
+    #foreach my $virtual ( sort { $a ne '' <=> $b ne '' } keys %{$domain{$domain}} ) {
+    foreach my $virtual ( sort { ( ($b ne '') <=> ($a ne '') ) || $a cmp $b } keys %{$domain{$domain}} ) {
+      print VIRTUAL "$virtual\@$domain ".
+                    join(',', @{ $domain{$domain}{$virtual} } ). "\n";
+    }
+    print VIRTUAL "\n";
+  }
+  close VIRTUAL;
+
+  #rsync
+
+  my $user = $export->option('user');
+  $rsync->exec( {
+    src     => "$prefix/aliases",
+    dest    => "$user\@$machine:". $export->option('aliases'),
+  } ) or die "rsync to $machine failed: ". join(" / ", $rsync->err);
+#  warn $rsync->out;
+
+  ssh("$user\@$machine", "newaliases");
+#  ssh("$user\@$machine", "postfix reload");
+
+  $rsync->exec( {
+    src     => "$prefix/virtual",
+    dest    => "$user\@$machine:". $export->option('virtual'),
+  } ) or die "rsync to $machine failed: ". join(" / ", $rsync->err);
+#  warn $rsync->out;
+
+  ssh("$user\@$machine", "postfix reload");
+
+}
+
+# -----
+
+sub usage {
+  die "Usage:\n  postfix.export user\n"; 
+}
+
+

@@ -903,6 +903,13 @@ tie my %forward_shellcommands_options, 'Tie::IxHash',
                 },
 ;
 
+tie my %postfix_options, 'Tie::IxHash',
+  'user' => { label=>'Remote username', default=>'root' },
+  'aliases' => { label=>'aliases file location', default=>'/etc/aliases' },
+  'virtual' => { label=>'virtual file location', default=>'/etc/postfix/virtual' },
+  'mydomain' => { label=>'local domain', default=>'' },
+;
+
 #export names cannot have dashes...
 %exports = (
   'svc_acct' => {
@@ -1053,7 +1060,7 @@ tie my %forward_shellcommands_options, 'Tie::IxHash',
       'desc' => 'Real-time export to SQL-backed mail server',
       'options' => \%sqlmail_options,
       #'nodomain' => 'Y',
-      'notes' => 'Database schema can be made to work with Courier IMAP and Exim.  Others could work but are untested. (...extended description from pc-intouch?...)',
+      'notes' => 'Database schema can be made to work with Courier IMAP and Exim.  Others could work but are untested. (...extended description from fire2wire?...)',
     },
 
     'forward_shellcommands' => {
@@ -1061,6 +1068,14 @@ tie my %forward_shellcommands_options, 'Tie::IxHash',
       'options' => \%forward_shellcommands_options,
       'notes' => 'Run remote commands via SSH, for forwards.  You will need to <a href="../docs/ssh.html">setup SSH for unattended operation</a>.<BR><BR>Use these buttons for some useful presets:<UL><LI><INPUT TYPE="button" VALUE="text vpopmail maintenance" onClick=\'this.form.useradd.value = "[ -d /home/vpopmail/domains/$domain/$username ] && { echo \"$destination\" > /home/vpopmail/domains/$domain/$username/.qmail; chown vpopmail:vchkpw /home/vpopmail/domains/$domain/$username/.qmail; }"; this.form.userdel.value = "rm /home/vpopmail/domains/$domain/$username/.qmail"; this.form.usermod.value = "mv /home/vpopmail/domains/$old_domain/$old_username/.qmail /home/vpopmail/domains/$new_domain/$new_username; [ \"$old_destination\" != \"$new_destination\" ] && { echo \"$new_destination\" > /home/vpopmail/domains/$new_domain/$new_username/.qmail; chown vpopmail:vchkpw /home/vpopmail/domains/$new_domain/$new_username/.qmail; }";\'></UL>The following variables are available for interpolation (prefixed with <code>new_</code> or <code>old_</code> for replace operations): <UL><LI><code>$username</code><LI><code>$domain</code><LI><code>$destination</code> - forward destination<LI>All other fields in <a href="../docs/schema.html#svc_forward">svc_forward</a> are also available.</UL>',
     },
+
+    'postfix' => {
+      'desc' => 'Real-time export to Postfix text files',
+      'options' => \%postfix_options,
+      #'nodomain' => 'Y',
+      'notes' => 'Batch export of Postfix aliases and virtual files.  <a href="http://search.cpan.org/search?dist=File-Rsync">File::Rsync</a> must be installed.  Run bin/postfix.export to export the files.',
+    },
+
   },
 
   'svc_www' => {
