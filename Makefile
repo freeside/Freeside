@@ -10,6 +10,8 @@ TEMPLATE = asp
 #mason's a bit dodgy still
 #TEMPLATE = mason
 
+ASP_GLOBAL = /usr/local/etc/freeside/asp-global
+
 FREESIDE_DOCUMENT_ROOT = /var/www/freeside
 
 HTTPD_RESTART = /etc/init.d/apache restart
@@ -48,6 +50,9 @@ docs:
 install-docs: docs
 	[ -e ${FREESIDE_DOCUMENT_ROOT} ] && mv ${FREESIDE_DOCUMENT_ROOT} ${FREESIDE_DOCUMENT_ROOT}.`date +%Y%m%d%H%M%S` || true
 	cp -r ${TEMPLATE}docs ${FREESIDE_DOCUMENT_ROOT}
+	[ ${TEMPLATE} eq asp -a ! -e ${ASP_GLOBAL} ] && mkdir ${ASP_GLOBAL}
+	[ ${TEMPLATE} eq asp ] && chown -R freeside ${ASP_GLOBAL}
+	[ ${TEMPLATE} eq asp ] && cp htetc/global.asa ${ASP_GLOBAL}
 
 perl-modules:
 	cd FS; \
