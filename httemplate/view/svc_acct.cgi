@@ -1,4 +1,4 @@
-<!-- mason kludge -->
+<-- mason kludge -->
 <%
 
 my $conf = new FS::Conf;
@@ -140,7 +140,9 @@ if ( $conf->exists('security_phrase') ) {
         $svc_acct->sec_phrase. '</TD></TR>';
 }
 
-my $svc_acct_pop = qsearchs('svc_acct_pop',{'popnum'=>$svc_acct->popnum});
+my $svc_acct_pop = $svc_acct->popnum
+                     ? qsearchs('svc_acct_pop',{'popnum'=>$svc_acct->popnum})
+                     : '';
 print "<TR><TD ALIGN=\"right\">Access number</TD>".
       "<TD BGCOLOR=\"#ffffff\">". $svc_acct_pop->text. '</TD></TR>'
   if $svc_acct_pop;
