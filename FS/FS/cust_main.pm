@@ -26,6 +26,7 @@ use FS::queue;
 use FS::part_pkg;
 use FS::part_bill_event;
 use FS::cust_bill_event;
+use FS::msgcat qw(gettext);
 
 @ISA = qw( FS::Record );
 
@@ -643,12 +644,13 @@ sub check {
     my $payinfo = $self->payinfo;
     $payinfo =~ s/\D//g;
     $payinfo =~ /^(\d{13,16})$/
-      or return "Illegal credit card number: ". $self->payinfo;
+      or return gettext('invalid_catd'); # . ": ". $self->payinfo;
     $payinfo = $1;
     $self->payinfo($payinfo);
     validate($payinfo)
-      or return "Illegal credit card number: ". $self->payinfo;
-    return "Unknown card type" if cardtype($self->payinfo) eq "Unknown";
+      or return gettext('invalid_catd'); # . ": ". $self->payinfo;
+    return gettext('unknown_card_type')
+      if cardtype($self->payinfo) eq "Unknown";
 
   } elsif ( $self->payby eq 'BILL' ) {
 
@@ -690,7 +692,7 @@ sub check {
     $self->payname( $self->first. " ". $self->getfield('last') );
   } else {
     $self->payname =~ /^([\w \,\.\-\']+)$/
-      or return "Illegal billing name: ". $self->payname;
+      or return gettext('illegal_name'). " payname: ". $self->payname;
     $self->payname($1);
   }
 
@@ -1153,6 +1155,9 @@ sub collect {
           qsearch('part_bill_event', { 'payby'    => $self->payby,
                                        'disabled' => '',           } )
     ) {
+
+      last unless $cust_bill->owed > 0; #don't run subsequent events if owed=0
+
       warn "calling invoice event (". $part_bill_event->eventcode. ")\n"
         if $Debug;
       my $cust_main = $self; #for callback

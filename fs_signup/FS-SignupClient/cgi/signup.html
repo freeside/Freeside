@@ -148,13 +148,11 @@ Contact Information
 </TR>
 <TR>
   <TD ALIGN="right">Password</TD>
-  <TD><INPUT TYPE="password" NAME="_password" VALUE="<%= $password %>">
-  (blank to generate)</TD>
+  <TD><INPUT TYPE="password" NAME="_password" VALUE="<%= $password %>"></TD>
 </TR>
 <TR>
   <TD ALIGN="right">Re-enter Password</TD>
-  <TD><INPUT TYPE="password" NAME="_password2" VALUE="<%= $password2 %>">
-  </TD>
+  <TD><INPUT TYPE="password" NAME="_password2" VALUE="<%= $password2 %>"></TD>
 </TR>
 <%=
   if ( $init_data->{'security_phrase'} ) {
@@ -169,10 +167,14 @@ ENDOUT
     $OUT .= '<INPUT TYPE="hidden" NAME="sec_phrase" VALUE="">';
   }
 %>
-<TR>
-  <TD ALIGN="right">Access number</TD>
-  <TD><%= popselector($popnum) %></TD>
-</TR>
+<%=
+  if ( scalar(@$pops) ) {
+    $OUT .= '<TR><TD ALIGN="right">Access number</TD><TD>'.
+            popselector($popnum). '</TD></TR>';
+  } else {
+    $OUT .= popselector($popnum);
+  }
+%>
 </TABLE>
 <BR><BR><INPUT TYPE="submit" VALUE="Signup">
 </FORM></BODY></HTML>

@@ -272,7 +272,7 @@ httemplate/docs/config.html
     'key'         => 'business-onlinepayment-description',
     'section'     => 'billing',
     'description' => 'String passed as the description field to <a href="http://search.cpan.org/search?mode=module&query=Business%3A%3AOnlinePayment">Business::OnlinePayment</a>.  Evaluated as a double-quoted perl string, with the following variables available: <code>$agent</code> (the agent name), and <code>$pkgs</code> (a comma-separated list of packages to which the invoiced being charged applies)',
-    'type'        => 'textarea',
+    'type'        => 'text',
   },
 
   {
@@ -887,6 +887,15 @@ httemplate/docs/config.html
     'description' => 'Show msgcat codes in error messages.  Turn this option on before reporting errors to the mailing list.',
     'type'        => 'checkbox',
   },
+
+  {
+    'key'         => 'signup_server-realtime',
+    'section'     => '',
+    'description' => 'Run billing for signup server signups immediately, and suspend accounts which subsequently have a balance.',
+    'type'        => 'checkbox',
+  },
+
+
 
 );
 

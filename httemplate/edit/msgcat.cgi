@@ -1,11 +1,12 @@
 <!-- mason kludge -->
 <%
 
-print header("Message catalog", menubar(
+print header("Edit Message catalog", menubar(
 #  'Main Menu' => $p,
 )), '<BR>';
 
-print qq!<FONT SIZE="+1" COLOR="#ff0000">Error: !. $cgi->param('error')
+print qq!<FONT SIZE="+1" COLOR="#ff0000">Error: !. $cgi->param('error').
+      '</FONT><BR><BR>'
   if $cgi->param('error');
 
 my $widget = new HTML::Widgets::SelectLayers(
@@ -28,7 +29,7 @@ my $widget = new HTML::Widgets::SelectLayers(
         '<TR><TD>'. $msgcat->msgnum. '</TD><TD>'. $msgcat->msgcode. '</TD>'.
         '<TD><INPUT TYPE="text" SIZE=32 '.
         qq! NAME="!. $msgcat->msgnum. '" '.
-        qq!VALUE="!. $msgcat->msg. qq!"></TD>!;
+        qq!VALUE="!. ($cgi->param($msgcat->msgnum)||$msgcat->msg). qq!"></TD>!;
       unless ( $layer eq 'en_US' ) {
         my $en_msgcat = qsearchs('msgcat', {
           'locale'  => 'en_US',

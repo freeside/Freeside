@@ -1,7 +1,7 @@
 <!-- mason kludge -->
 <%
 
-print header("Message catalog", menubar(
+print header("View Message catalog", menubar(
   'Main Menu' => $p,
   'Edit message catalog' => $p. "edit/msgcat.cgi",
 )), '<BR>';

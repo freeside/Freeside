@@ -7,6 +7,7 @@ use FS::Record qw( qsearchs );
 use FS::Conf;
 use FS::cust_main;
 use FS::svc_acct;
+use FS::msgcat qw(gettext);
 
 @ISA = qw( FS::Record );
 
@@ -111,10 +112,12 @@ sub check {
 
 =item checkdest
 
-Checks the dest field only.  If it finds that the account ends in the
-same domain configured as the B<domain> configuration file, it will change the
-invoice destination from an email address to a service number (see
-L<FS::svc_acct>).
+Checks the dest field only.
+
+#If it finds that the account ends in the
+#same domain configured as the B<domain> configuration file, it will change the
+#invoice destination from an email address to a service number (see
+#L<FS::svc_acct>).
 
 =cut
 
@@ -140,7 +143,7 @@ sub checkdest {
 #    }
     $self->dest("$1\@$2");
   } else {
-    return "Illegal destination!";
+    return gettext("illegal_email_invoice_address");
   }
 
   ''; #no error
@@ -167,7 +170,7 @@ sub address {
 
 =head1 VERSION
 
-$Id: cust_main_invoice.pm,v 1.10 2002-02-10 17:02:37 ivan Exp $
+$Id: cust_main_invoice.pm,v 1.11 2002-04-10 13:42:48 ivan Exp $
 
 =head1 BUGS
 

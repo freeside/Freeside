@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: signup.cgi,v 1.19 2002-04-07 05:56:08 ivan Exp $
+# $Id: signup.cgi,v 1.20 2002-04-10 13:42:48 ivan Exp $
 
 use strict;
 use vars qw( @payby $cgi $locales $packages $pops $init_data $error
@@ -15,7 +15,7 @@ use vars qw( @payby $cgi $locales $packages $pops $init_data $error
            );
 use subs qw( print_form print_okay expselect signup_default success_default );
 use CGI;
-use CGI::Carp qw(fatalsToBrowser);
+#use CGI::Carp qw(fatalsToBrowser);
 use Text::Template;
 use Business::CreditCard;
 use HTTP::Headers::UserAgent 2.00;
@@ -230,12 +230,14 @@ sub print_okay {
     or die "fatal: invalid password got past FS::SignupClient::new_customer";
   my $password = $1;
   ( $cgi->param('first'). ' '. $cgi->param('last') ) =~ /^(.*)$/
-    or die "fatal: invalid email_name got past FS::SignupCLient::new_customer";
+    or die "fatal: invalid email_name got past FS::SignupClient::new_customer";
   my $email_name = $1;
 
   my $pop = pop_info($cgi->param('popnum'))
     or die "fatal: invalid popnum got past FS::SignupClient::new_customer";
   ( $ac, $exch, $loc ) = ( $pop->{'ac'}, $pop->{'exch'}, $pop->{'loc'} );
+
+  my $pkg = ( grep { $_->{'pkgpart'} eq $pkgpart } @$packages )[0]->{'pkg'};
 
   if ( $ieak_template
        && $user_agent->platform eq 'ia32'
@@ -276,6 +278,12 @@ sub pop_info {
 #horrible false laziness with FS/FS/svc_acct_pop.pm::popselector
 sub popselector {
   my( $popnum, $state ) = @_;
+
+  return '<INPUT TYPE="hidden" NAME="popnum" VALUE="">' unless @$pops;
+  return $pops->[0]{city}. ', '. $pops->[0]{state}.
+         ' ('. $pops->[0]{ac}. ')/'. $pops->[0]{exch}.
+         '<INPUT TYPE="hidden" NAME="popnum" VALUE="'. $pops->[0]{popnum}. '">'
+    if scalar(@$pops) == 1;
 
   my %pop = ();
   push @{ $pop{$_->{state}} }, $_ foreach @$pops;
@@ -359,6 +367,13 @@ sub success_default { #html to use if you don't specify a success file
 <HTML><HEAD><TITLE>Signup successful</TITLE></HEAD>
 <BODY BGCOLOR="#e8e8e8"><FONT SIZE=7>Signup successful</FONT><BR><BR>
 Thanks for signing up!
+<BR><BR>
+Signup information for <%= $email_name %>:
+<BR><BR>
+Username: <%= $username %><BR>
+Password: <%= $password %><BR>
+Access number: (<%= $ac %>) / $exch - $local<BR>
+Package: <%= $pkg %><BR>
 </BODY></HTML>
 END
 }
@@ -515,13 +530,11 @@ Contact Information
 </TR>
 <TR>
   <TD ALIGN="right">Password</TD>
-  <TD><INPUT TYPE="password" NAME="_password" VALUE="<%= $password %>">
-  (blank to generate)</TD>
+  <TD><INPUT TYPE="password" NAME="_password" VALUE="<%= $password %>"></TD>
 </TR>
 <TR>
   <TD ALIGN="right">Re-enter Password</TD>
-  <TD><INPUT TYPE="password" NAME="_password2" VALUE="<%= $password2 %>">
-  </TD>
+  <TD><INPUT TYPE="password" NAME="_password2" VALUE="<%= $password2 %>"></TD>
 </TR>
 <%=
   if ( $init_data->{'security_phrase'} ) {
@@ -536,10 +549,14 @@ ENDOUT
     $OUT .= '<INPUT TYPE="hidden" NAME="sec_phrase" VALUE="">';
   }
 %>
-<TR>
-  <TD ALIGN="right">Access number</TD>
-  <TD><%= popselector($popnum) %></TD>
-</TR>
+<%=
+  if ( scalar(@$pops) ) {
+    $OUT .= '<TR><TD ALIGN="right">Access number</TD><TD>'.
+            popselector($popnum). '</TD></TR>';
+  } else {
+    $OUT .= popselector($popnum);
+  }
+%>
 </TABLE>
 <BR><BR><INPUT TYPE="submit" VALUE="Signup">
 </FORM></BODY></HTML>

@@ -121,6 +121,8 @@ sub text {
 
 =cut
 
+#horrible false laziness with signup.cgi (pull special-case for 0 & 1
+# pop code out from signup.cgi??)
 sub popselector {
   my( $popnum, $state ) = @_;
 
@@ -180,14 +182,16 @@ END
 
 =head1 VERSION
 
-$Id: svc_acct_pop.pm,v 1.6 2001-12-18 06:29:30 ivan Exp $
+$Id: svc_acct_pop.pm,v 1.7 2002-04-10 13:42:48 ivan Exp $
 
 =head1 BUGS
 
 It should be renamed to part_pop.
 
 popselector?  putting web ui components in here?  they should probably live
-somewhere else...
+somewhere else...  
+
+popselector: pull special-case for 0 & 1 pop code out from signup.cgi
 
 =head1 SEE ALSO
 

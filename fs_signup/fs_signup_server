@@ -47,6 +47,7 @@ while (1) {
   warn "[fs_signup_server] Connecting to $machine...\n" if $Debug;
   sshopen2($machine,$reader,$writer,$fs_signupd);
 
+  my @pops = qsearch('svc_acct_pop',{} );
   my $init_data = {
 
     #'_protocol' => 'signup',
@@ -63,7 +64,7 @@ while (1) {
             qsearch( 'part_pkg', { 'disabled' => '' } )
       ],
 
-    'svc_acct_pop' => [ map { $_->hashref } qsearch ('svc_acct_pop',{} ) ],
+    'svc_acct_pop' => [ map { $_->hashref } @pops ],
 
     'security_phrase' => $conf->exists('security_phrase'),
 
@@ -96,8 +97,9 @@ while (1) {
     #things that aren't necessary in base class, but are for signup server
       #return "Passwords don't match"
       #  if $hashref->{'_password'} ne $hashref->{'_password2'}
-    $error ||= "Empty password" unless $signup_data->{'_password'};
-    $error ||= "No POP selected" unless $signup_data->{'popnum'};
+    $error ||= gettext('empty_password') unless $signup_data->{'_password'};
+    $error ||= gettext('no_access_number_selected')
+      unless $signup_data->{'popnum'} || !scalar(@pops);
 
     #shares some stuff with htdocs/edit/process/cust_main.cgi... take any
     # common that are still here and library them.
@@ -150,10 +152,29 @@ while (1) {
     use Tie::RefHash;
     tie my %hash, 'Tie::RefHash';
     %hash = ( $cust_pkg => [ $svc_acct ] );
-    $error ||= $cust_main->insert( \%hash, \@invoicing_list );
+    $error ||= $cust_main->insert( \%hash, \@invoicing_list ); #msgcat
 
     warn "[fs_signup_server] Sending results...\n" if $Debug;
     print $writer $error, "\n";
+
+    if ( $conf->config('signup_server-realtime') ) {
+      
+      my $bill_error = $cust_main->bill;
+      warn "[fs_signup_server] error billing new customer: $bill_error"
+        if $bill_error;
+
+      $cust_main->apply_payments;
+      $cust_main->apply_credits;
+
+      $bill_error = $cust_main->collect;
+      warn "[fs_signup_server] error collecting from new customer: $bill_error"
+        if $bill_error;
+
+      if ( $cust_main->balance ) {
+        #should check list for errors...
+        $cust_main->suspend;
+      }
+    }
 
     if ( $error && $conf->config('signup_server-email') ) {
       warn "[fs_signup_server] Sending email...\n" if $Debug;
@@ -171,18 +192,20 @@ while (1) {
         "Date: ". time2str("%a, %d %b %Y %X %z", time),
         "Subject: FREESIDE NOTIFICATION: Signup Server",
       ] );
-      my $message = new Mail::Internet (
-        'Header' => $header,
-        'Body' => [ 
-          "This is an automatic message from your Freeside installation\n",
-          "informing you a customer has signed up via the signup server:\n",
-          "\n",
-          'custnum: '. $cust_main->custnum. "\n",
-          'Name   : '. $cust_main->last. ", ". $cust_main->first. "\n",
-          'Agent  : '. $cust_main->agent->agent. "\n",
-          "\n",
-        ],
-      );
+      my $body = [
+        "This is an automatic message from your Freeside installation\n",
+        "informing you a customer has signed up via the signup server:\n",
+        "\n",
+        'custnum: '. $cust_main->custnum. "\n",
+        'Name   : '. $cust_main->last. ", ". $cust_main->first. "\n",
+        'Agent  : '. $cust_main->agent->agent. "\n",
+        "\n",
+      ];
+      if ( $cust_main->balance ) {
+        push @$body,
+          "This customer has an outstanding balance and has been suspended.\n";
+      }
+      my $message = new Mail::Internet ( 'Header' => $header, 'Body' => $body );
       $!=0;
       $message->smtpsend( Host => $smtpmachine )
         or $message->smtpsend( Host => $smtpmachine, Debug => 1 )

@@ -12,6 +12,7 @@ use DBI qw(:sql_types);
 use DBIx::DBSchema 0.19;
 use FS::UID qw(dbh checkruid getotaker datasrc driver_name);
 use FS::SearchCache;
+use FS::msgcat qw(gettext);
 
 @ISA = qw(Exporter);
 @EXPORT_OK = qw(dbh fields hfields qsearch qsearchs dbdef jsearch);
@@ -825,7 +826,8 @@ false.
 sub ut_text {
   my($self,$field)=@_;
   $self->getfield($field) =~ /^([\w \!\@\#\$\%\&\(\)\-\+\;\:\'\"\,\.\?\/]+)$/
-    or return "Illegal or empty (text) $field: ". $self->getfield($field);
+    or return gettext('illegal_or_empty_text'). " $field: ".
+              $self->getfield($field);
   $self->setfield($field,$1);
   '';
 }
@@ -841,7 +843,7 @@ May be null.  If there is an error, returns the error, otherwise returns false.
 sub ut_textn {
   my($self,$field)=@_;
   $self->getfield($field) =~ /^([\w \!\@\#\$\%\&\(\)\-\+\;\:\'\"\,\.\?\/]*)$/
-    or return "Illegal (text) $field: ". $self->getfield($field);
+    or return gettext('illegal_text'). " $field: ". $self->getfield($field);
   $self->setfield($field,$1);
   '';
 }
@@ -896,7 +898,7 @@ sub ut_phonen {
   } elsif ( $country eq 'US' || $country eq 'CA' ) {
     $phonen =~ s/\D//g;
     $phonen =~ /^(\d{3})(\d{3})(\d{4})(\d*)$/
-      or return "Illegal (phone) $field: ". $self->getfield($field);
+      or return gettext('illegal_phone'). " $field: ". $self->getfield($field);
     $phonen = "$1-$2-$3";
     $phonen .= " x$4" if $4;
     $self->setfield($field,$phonen);
@@ -965,7 +967,7 @@ May not be null.
 sub ut_name {
   my( $self, $field ) = @_;
   $self->getfield($field) =~ /^([\w \,\.\-\']+)$/
-    or return "Illegal (name) $field: ". $self->getfield($field);
+    or return gettext('illegal_name'). " $field: ". $self->getfield($field);
   $self->setfield($field,$1);
   '';
 }
@@ -980,12 +982,12 @@ sub ut_zip {
   my( $self, $field, $country ) = @_;
   if ( $country eq 'US' ) {
     $self->getfield($field) =~ /\s*(\d{5}(\-\d{4})?)\s*$/
-      or return "Illegal (zip) $field for country $country: ".
+      or return gettext('illegal_zip'). " $field for country $country: ".
                 $self->getfield($field);
     $self->setfield($field,$1);
   } else {
     $self->getfield($field) =~ /^\s*(\w[\w\-\s]{2,8}\w)\s*$/
-      or return "Illegal (zip) $field: ". $self->getfield($field);
+      or return gettext('illegal_zip'). " $field: ". $self->getfield($field);
     $self->setfield($field,$1);
   }
   '';

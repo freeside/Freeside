@@ -28,6 +28,7 @@ use FS::svc_domain;
 use FS::raddb;
 use FS::queue;
 use FS::radius_usergroup;
+use FS::msgcat qw(gettext);
 
 @ISA = qw( FS::svc_Common );
 
@@ -262,7 +263,7 @@ sub insert {
   $error = $self->check;
   return $error if $error;
 
-  return "Username ". $self->username. " in use"
+  return gettext('username_in_use'). ": ". $self->username
     if qsearchs( 'svc_acct', { 'username' => $self->username,
                                'domsvc'   => $self->domsvc,
                              } );
@@ -1088,24 +1089,24 @@ sub check {
   my $ulen = $usernamemax || $self->dbdef_table->column('username')->length;
   if ( $username_uppercase ) {
     $recref->{username} =~ /^([a-z0-9_\-\.\&]{$usernamemin,$ulen})$/i
-      or return "Illegal username: ". $recref->{username};
+      or return gettext('illegal_username'). ": ". $recref->{username};
     $recref->{username} = $1;
   } else {
     $recref->{username} =~ /^([a-z0-9_\-\.\&]{$usernamemin,$ulen})$/
-      or return "Illegal username: ". $recref->{username};
+      or return gettext('illegal_username'). ": ". $recref->{username};
     $recref->{username} = $1;
   }
 
   if ( $username_letterfirst ) {
-    $recref->{username} =~ /^[a-z]/ or return "Illegal username";
+    $recref->{username} =~ /^[a-z]/ or return gettext('illegal_username');
   } elsif ( $username_letter ) {
-    $recref->{username} =~ /[a-z]/ or return "Illegal username";
+    $recref->{username} =~ /[a-z]/ or return gettext('illegal_username');
   }
   if ( $username_noperiod ) {
-    $recref->{username} =~ /\./ and return "Illegal username";
+    $recref->{username} =~ /\./ and return gettext('illegal_username');
   }
   unless ( $username_ampersand ) {
-    $recref->{username} =~ /\&/ and return "Illegal username";
+    $recref->{username} =~ /\&/ and return gettext('illegal_username');
   }
 
   $recref->{popnum} =~ /^(\d*)$/ or return "Illegal popnum: ".$recref->{popnum};
@@ -1221,7 +1222,7 @@ sub check {
     $recref->{_password} = '!!';
   } else {
     #return "Illegal password";
-    return "Illegal password: ". $recref->{_password};
+    return gettext('illegal_password'). ": ". $recref->{_password};
   }
 
   ''; #no error
