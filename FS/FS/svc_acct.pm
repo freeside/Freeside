@@ -247,6 +247,13 @@ sub insert {
 
   #new duplicate username/username@domain/uid checking
 
+  #this is Pg-specific.  what to do for mysql etc?
+  # ( mysql LOCK TABLES certainly isn't equivalent or useful here :/ )
+  warn "$me locking svc_acct table for duplicate search" if $DEBUG;
+  dbh->do("LOCK TABLE svc_acct IN SHARE ROW EXCLUSIVE MODE")
+    or die dbh->errstr;
+  warn "$me acquired svc_acct table lock for duplicate search" if $DEBUG;
+
   my $part_svc = qsearchs('part_svc', { 'svcpart' => $self->svcpart } );
   unless ( $part_svc ) {
     $dbh->rollback if $oldAutoCommit;
