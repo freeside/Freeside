@@ -17,3 +17,7 @@ Run bin/dbdef-create
 
 Restart Apache and freeside-queued
 
+Use freeside-daily instead of freeside-bill.
+
+Use invoice events instead of freeside-overdue.
+

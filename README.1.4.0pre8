@@ -21,8 +21,8 @@ CREATE TABLE cust_bill_event (
   eventpart int not null,
   _date int not null
 );
-CREATE UNIQUE INDEX cust_bill_events1 ON cust_bill_events ( eventpart, invnum );
-CREATE INDEX cust_bill_events2 ON cust_bill_events ( invnum );
+CREATE UNIQUE INDEX cust_bill_event1 ON cust_bill_event ( eventpart, invnum );
+CREATE INDEX cust_bill_event2 ON cust_bill_event ( invnum );
 
 CREATE TABLE part_bill_event (
   eventpart int primary key,
@@ -35,7 +35,7 @@ CREATE TABLE part_bill_event (
   plandata text null,
   disabled char(1) null
 );
-CREATE INDEX part_bill_events1 ON part_bill_events ( payby );
+CREATE INDEX part_bill_event1 ON part_bill_event ( payby );
 
 CREATE TABLE part_export (
   exportnum int primary key,
@@ -47,7 +47,7 @@ CREATE TABLE part_export (
 CREATE INDEX part_export1 ON part_export ( machine );
 CREATE INDEX part_export2 ON part_export ( exporttype );
 
-CREATE INDEX part_export_option (
+CREATE TABLE part_export_option (
   optionnum int primary key,
   exportnum int not null,
   option varchar(80) not null,
@@ -66,7 +66,7 @@ Run bin/dbdef-create
 Restart Apache and freeside-queued
 
 Go to the new "View/Edit Invoice events" in the web interface and add the
-appropriate events.  t the very least, you'll want to set some invoice events
+appropriate events.  At the very least, you'll want to set some invoice events
 "After 0 days": a BILL invoice event to print invoices, a CARD invoice event to
 batch or run cards real-time, and a COMP invoice event to "pay" complimentary
 customers.  If you were using the -i option to freeside-bill it should be
