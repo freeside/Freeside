@@ -1,11 +1,13 @@
 <%
-# <!-- $Id: cust_pkg.cgi,v 1.6 2001-10-30 14:54:07 ivan Exp $ -->
+# <!-- $Id: cust_pkg.cgi,v 1.7 2001-12-03 10:59:25 ivan Exp $ -->
 
 use strict;
-use vars qw ( $cgi @cust_pkg $sortby $query %part_pkg );
+use vars qw ( $cgi @cust_pkg $sortby $query %part_pkg
+              $conf $maxrecords $limit $offset );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
-use FS::UID qw(cgisuidsetup);
+use FS::UID qw(dbh cgisuidsetup);
+use FS::Conf;
 use FS::Record qw(qsearch qsearchs dbdef);
 use FS::CGI qw(header eidiot popurl table);
 use FS::cust_pkg;
@@ -16,39 +18,78 @@ use FS::cust_main;
 $cgi = new CGI;
 &cgisuidsetup($cgi);
 
+$conf = new FS::Conf;
+$maxrecords = $conf->config('maxsearchrecordsperpage');
+
 my %part_pkg = map { $_->pkgpart => $_ } qsearch('part_pkg', {});
 
+$limit = '';
+$limit .= "LIMIT $maxrecords" if $maxrecords;
+
+$offset = $cgi->param('offset') || 0;
+$limit .= " OFFSET $offset" if $offset;
+
+my $total;
+
 ($query) = $cgi->keywords;
+my $unconf = '';
 #this tree is a little bit redundant
 if ( $query eq 'pkgnum' ) {
   $sortby=\*pkgnum_sort;
-  @cust_pkg=qsearch('cust_pkg',{});
+
+
 } elsif ( $query eq 'APKG_pkgnum' ) {
+
   $sortby=\*pkgnum_sort;
-  @cust_pkg=();
-  #perhaps this should go in cust_pkg as a qsearch-like constructor?
-  my($cust_pkg);
-  foreach $cust_pkg (qsearch('cust_pkg',{})) {
-    my($flag)=0;
-    my($pkg_svc);
-    PKG_SVC: 
-    foreach $pkg_svc (qsearch('pkg_svc',{ 'pkgpart' => $cust_pkg->pkgpart })) {
-      if ( $pkg_svc->quantity 
-           > scalar(qsearch('cust_svc',{
-               'pkgnum' => $cust_pkg->pkgnum,
-               'svcpart' => $pkg_svc->svcpart,
-             }))
-         )
-      {
-        $flag=1;
-        last PKG_SVC;
-      }
-    }
-    push @cust_pkg, $cust_pkg if $flag;
-  }
+
+  $unconf = "
+    WHERE 0 <
+      ( SELECT count(*) FROM pkg_svc
+          WHERE pkg_svc.pkgpart = cust_pkg.pkgpart
+            AND pkg_svc.quantity > ( SELECT count(*) FROM cust_svc
+                                       WHERE cust_svc.pkgnum = cust_pkg.pkgnum
+                                         AND cust_svc.svcpart = pkg_svc.svcpart
+                                   )
+      )
+  ";
+
+  #@cust_pkg=();
+  ##perhaps this should go in cust_pkg as a qsearch-like constructor?
+  #my($cust_pkg);
+  #foreach $cust_pkg (
+  #  qsearch('cust_pkg',{}, '', "ORDER BY pkgnum $limit" )
+  #) {
+  #  my($flag)=0;
+  #  my($pkg_svc);
+  #  PKG_SVC: 
+  #  foreach $pkg_svc (qsearch('pkg_svc',{ 'pkgpart' => $cust_pkg->pkgpart })) {
+  #    if ( $pkg_svc->quantity 
+  #         > scalar(qsearch('cust_svc',{
+  #             'pkgnum' => $cust_pkg->pkgnum,
+  #             'svcpart' => $pkg_svc->svcpart,
+  #           }))
+  #       )
+  #    {
+  #      $flag=1;
+  #      last PKG_SVC;
+  #    }
+  #  }
+  #  push @cust_pkg, $cust_pkg if $flag;
+  #}
+  
 } else {
   die "Empty QUERY_STRING!";
 }
+
+my $statement = "SELECT COUNT(*) FROM cust_pkg $unconf";
+my $sth = dbh->prepare($statement)
+  or die dbh->errstr. " doing $statement";
+$sth->execute or die "Error executing \"$statement\": ". $sth->errstr;
+
+$total = @{$sth->fetchrow_arrayref}[0];
+
+@cust_pkg = qsearch('cust_pkg',{}, '', "$unconf ORDER BY pkgnum $limit" );
+
 
 if ( scalar(@cust_pkg) == 1 ) {
   my($pkgnum)=$cust_pkg[0]->pkgnum;
@@ -57,9 +98,35 @@ if ( scalar(@cust_pkg) == 1 ) {
 } elsif ( scalar(@cust_pkg) == 0 ) { #error
   eidiot("No packages found");
 } else {
-  my($total)=scalar(@cust_pkg);
+  $total ||= scalar(@cust_pkg);
+
+  my $pager = '';
+  if ( $total != scalar(@cust_pkg) && $maxrecords ) {
+    unless ( $offset == 0 ) {
+      $cgi->param('offset', $offset - $maxrecords);
+      $pager .= '<A HREF="'. $cgi->self_url.
+                '"><B><FONT SIZE="+1">Previous</FONT></B></A> ';
+    }
+    my $poff;
+    my $page;
+    for ( $poff = 0; $poff < $total; $poff += $maxrecords ) {
+      $page++;
+      if ( $offset == $poff ) {
+        $pager .= qq!<FONT SIZE="+2">$page</FONT> !;
+      } else {
+        $cgi->param('offset', $poff);
+        $pager .= qq!<A HREF="!. $cgi->self_url. qq!">$page</A> !;
+      }
+    }
+    unless ( $offset + $maxrecords > $total ) {
+      $cgi->param('offset', $offset + $maxrecords);
+      $pager .= '<A HREF="'. $cgi->self_url.
+                '"><B><FONT SIZE="+1">Next</FONT></B></A> ';
+    }
+  }
+  
   print header('Package Search Results',''),
-        "$total matching packages found<BR>", &table(), <<END;
+        "$total matching packages found<BR><BR>$pager", &table(), <<END;
       <TR>
         <TH>Package</TH>
         <TH><FONT SIZE=-1>Cust#</FONT></TH>
@@ -153,11 +220,7 @@ END
   }
     print '</TR>';
  
-  print <<END;
-    </TABLE>
-  </BODY>
-</HTML>
-END
+  print "</TABLE>$pager</BODY></HTML>";
 
 }
 

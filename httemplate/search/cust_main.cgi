@@ -1,15 +1,17 @@
 <%
-#<!-- $Id: cust_main.cgi,v 1.16 2001-12-03 08:43:46 ivan Exp $ -->
+#<!-- $Id: cust_main.cgi,v 1.17 2001-12-03 10:59:25 ivan Exp $ -->
 
 use strict;
 #use vars qw( $conf %ncancelled_pkgs %all_pkgs $cgi @cust_main $sortby );
 #use vars qw( $conf %all_pkgs $cgi @cust_main $sortby );
-use vars qw( $conf %all_pkgs $cgi @cust_main $sortby $orderby $maxrecords $limit $offset );
+use vars qw( $conf %all_pkgs $cgi @cust_main $sortby
+             $orderby $maxrecords $limit $offset );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use IO::Handle;
 use String::Approx qw(amatch);
 use FS::UID qw(dbh cgisuidsetup);
+use FS::Conf;
 use FS::Record qw(qsearch qsearchs dbdef jsearch);
 use FS::CGI qw(header menubar eidiot popurl table);
 use FS::cust_main;
@@ -163,6 +165,7 @@ if ( scalar(@cust_main) == 1 && ! $cgi->param('referral_custnum') ) {
     'Main Menu', popurl(2)
   )), "$total matching customers found ";
 
+  #begin pager
   my $pager = '';
   if ( $total != scalar(@cust_main) && $maxrecords ) {
     unless ( $offset == 0 ) {
@@ -187,6 +190,7 @@ if ( scalar(@cust_main) == 1 && ! $cgi->param('referral_custnum') ) {
                 '"><B><FONT SIZE="+1">Next</FONT></B></A> ';
     }
   }
+  #end pager
   
   if ( $cgi->param('showcancelledcustomers') eq '0' #see if it was set by me
        || ( $conf->exists('hidecancelledcustomers')
