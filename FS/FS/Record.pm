@@ -813,10 +813,17 @@ Check/untaint zip codes.
 =cut
 
 sub ut_zip {
-  my( $self, $field ) = @_;
-  $self->getfield($field) =~ /^\s*(\w[\w\-\s]{2,8}\w)\s*$/
-    or return "Illegal (zip) $field: ". $self->getfield($field);
-  $self->setfield($field,$1);
+  my( $self, $field, $country ) = @_;
+  if ( $country eq 'US' ) {
+    $self->getfield($field) =~ /\s*(\d{5}(\-\d{4})?)\s*$/
+      or return "Illegal (zip) $field for country $country: ".
+                $self->getfield($field);
+    $self->setfield($field,$1);
+  } else {
+    $self->getfield($field) =~ /^\s*(\w[\w\-\s]{2,8}\w)\s*$/
+      or return "Illegal (zip) $field: ". $self->getfield($field);
+    $self->setfield($field,$1);
+  }
   '';
 }
 
@@ -969,7 +976,7 @@ sub DESTROY { return; }
 
 =head1 VERSION
 
-$Id: Record.pm,v 1.25 2001-08-21 09:34:13 ivan Exp $
+$Id: Record.pm,v 1.26 2001-08-31 09:20:35 ivan Exp $
 
 =head1 BUGS
 
