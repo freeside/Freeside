@@ -1,9 +1,10 @@
 <%
-# <!-- $Id: svc_acct.cgi,v 1.4 2001-09-11 23:44:01 ivan Exp $ -->
+# <!-- $Id: svc_acct.cgi,v 1.5 2001-09-27 18:33:18 ivan Exp $ -->
 
 use strict;
-use vars qw( $conf $cgi $svc_domain $query $svcnum $svc_acct $cust_svc $pkgnum
-             $cust_pkg $custnum $part_svc $p $svc_acct_pop $password );
+use vars qw( $conf $cgi $domain $query $svcnum $svc_acct $cust_svc $pkgnum
+             $cust_pkg $custnum $part_svc $p $svc_acct_pop $password
+             $mydomain );
 use CGI;
 use CGI::Carp qw( fatalsToBrowser );
 use FS::UID qw( cgisuidsetup );
@@ -41,8 +42,17 @@ if ($pkgnum) {
 $part_svc = qsearchs('part_svc',{'svcpart'=> $cust_svc->svcpart } );
 die "Unknown svcpart" unless $part_svc;
 
-$svc_domain = qsearchs('svc_domain', { 'svcnum' => $svc_acct->domsvc } );
-die "Unknown domain" unless $svc_domain;
+if ( $svc_acct->domsvc ) {
+  $svc_domain = qsearchs('svc_domain', { 'svcnum' => $svc_acct->domsvc } );
+  die "Unknown domain" unless $svc_domain;
+  $domain = $svc_domain->domain;
+} else {
+  unless ( $mydomain = $conf->config('domain') ) {
+    die "No legacy domain config file and no svc_domain.svcnum record ".
+        "for svc_acct.domsvc: ". $cust_svc->domsvc;
+  }
+  $domain = $mydomain;
+}
 
 $p = popurl(2);
 print $cgi->header( '-expires' => 'now' ), header('Account View', menubar(
@@ -64,7 +74,7 @@ print qq!<A HREF="${p}edit/svc_acct.cgi?$svcnum">Edit this information</A>!,
       "<BR><BR>Username: <B>", $svc_acct->username, "</B>"
 ;
 
-print "<BR>Domain: <B>", $svc_domain->domain, "</B>";
+print "<BR>Domain: <B>", $domain, "</B>";
 
 print "<BR>Password: ";
 $password = $svc_acct->_password;
