@@ -58,19 +58,16 @@ if ( $cgi->param('error') ) {
 my $action = $svc_forward->svcnum ? 'Edit' : 'Add';
 
 my %email;
+
+#starting with those currently attached
+foreach my $method (qw( srcsvc_acct dstsvc_acct )) {
+  my $svc_acct = $svc_forward->$method();
+  $email{$svc_acct->svcnum} = $svc_acct->email if $svc_acct;
+}
+
 if ($pkgnum) {
 
   #find all possible user svcnums (and emails)
-
-  #starting with those currently attached
-  if ( $svc_forward->srcsvc ) {
-    my $svc_acct = qsearchs( 'svc_acct', { 'svcnum' => $svc_forward->srcsvc } );
-    $email{$svc_forward->srcsvc} = $svc_acct->email;
-  }
-  if ( $svc_forward->dstsvc ) {
-    my $svc_acct = qsearchs( 'svc_acct', { 'svcnum' => $svc_forward->dstsvc } );
-    $email{$svc_forward->dstsvc} = $svc_acct->email;
-  }
 
   #and including the rest for this customer
   my($u_part_svc,@u_acct_svcparts);
@@ -98,15 +95,7 @@ if ($pkgnum) {
     }
   }
 
-} elsif ( $action eq 'Edit' ) {
-
-  my($svc_acct)=qsearchs('svc_acct',{'svcnum'=>$svc_forward->srcsvc});
-  $email{$svc_forward->srcsvc} = $svc_acct->email;
-
-  $svc_acct=qsearchs('svc_acct',{'svcnum'=>$svc_forward->dstsvc});
-  $email{$svc_forward->dstsvc} = $svc_acct->email;
-
-} else {
+} elsif ( $action eq 'Add' ) {
   die "\$action eq Add, but \$pkgnum is null!\n";
 }
 
@@ -115,6 +104,7 @@ my($srcsvc,$dstsvc,$dst)=(
   $svc_forward->dstsvc,
   $svc_forward->dst,
 );
+my $src = $svc_forward->dbdef_table->column('src') ? $svc_forward->src : '';
 
 #display
 
@@ -130,46 +120,54 @@ my($srcsvc,$dstsvc,$dst)=(
 Service #<%= $svcnum ? "<B>$svcnum</B>" : " (NEW)" %><BR>
 Service: <B><%= $part_svc->svc %></B><BR><BR>
 
-<FORM NAME="dummy">
+<FORM ACTION="process/svc_forward.cgi" METHOD="POST">
+<INPUT TYPE="hidden" NAME="svcnum" VALUE="$svcnum">
+<INPUT TYPE="hidden" NAME="pkgnum" VALUE="$pkgnum">
+<INPUT TYPE="hidden" NAME="svcpart" VALUE="$svcpart">
+
+<SCRIPT TYPE="text/javascript">
+function srcchanged(what) {
+  if ( what.options[what.selectedIndex].value == 0 ) {
+    what.form.src.disabled = false;
+  } else {
+    what.form.src.disabled = true;
+  }
+}
+function dstchanged(what) {
+  if ( what.options[what.selectedIndex].value == 0 ) {
+    what.form.dst.disabled = false;
+  } else {
+    what.form.dst.disabled = true;
+  }
+}
+</SCRIPT>
 
 <%= ntable("#cccccc",2) %>
-<TR><TD ALIGN="right">Email to</TD><TD><SELECT NAME="srcsvc" SIZE=1>
+<TR><TD ALIGN="right">Email to</TD>
+<TD><SELECT NAME="srcsvc" SIZE=1 onChange="srcchanged(this)">
 <% foreach $_ (keys %email) { %>
   <OPTION<%= $_ eq $srcsvc ? " SELECTED" : "" %> VALUE="<%= $_ %>"><%= $email{$_} %></OPTION>
 <% } %>
-</SELECT></TD></TR>
-
-<%
-  tie my %tied_email, 'Tie::IxHash',
-    ''  => 'SELECT DESTINATION',
-    %email,
-    '0' => '(other email address)';
-  my $widget = new HTML::Widgets::SelectLayers(
-    'selected_layer' => $dstsvc,
-    'options'        => \%tied_email,
-    'form_name'      => 'dummy',
-    'form_action'    => 'process/svc_forward.cgi',
-    'form_select'    => ['srcsvc'],
-    'html_between'   => '</TD></TR></TABLE>',
-    'layer_callback' => sub {
-      my $layer = shift;
-      my $html = qq!<INPUT TYPE="hidden" NAME="svcnum" VALUE="$svcnum">!.
-                 qq!<INPUT TYPE="hidden" NAME="pkgnum" VALUE="$pkgnum">!.
-                 qq!<INPUT TYPE="hidden" NAME="svcpart" VALUE="$svcpart">!.
-                 qq!<INPUT TYPE="hidden" NAME="dstsvc" VALUE="$layer">!;
-      if ( $layer eq '0' ) {
-        $html .= ntable("#cccccc",2).
-                 '<TR><TD ALIGN="right">Destination email</TD>'.
-                 qq!<TD><INPUT TYPE="text" NAME="dst" VALUE="$dst"></TD>!.
-                 '</TR></TABLE>';
-      }
-      $html .= '<BR><INPUT TYPE="submit" VALUE="Submit">';
-      $html;
-    },
-  );
-%>
+<% if ( $svc_forward->dbdef_table->column('src') ) { %>
+  <OPTION <%= $src ? 'SELECTED' : '' %> VALUE="0">(other email address)</OPTION>
+<% } %>
+</SELECT>
+<% if ( $svc_forward->dbdef_table->column('src') ) { %>
+<INPUT TYPE="text" NAME="src" VALUE="<%= $src %>" <%= ( $src || !scalar(%email) ) ? '' : 'DISABLED' %>>
+<% } %>
+</TD></TR>
 
 <TR><TD ALIGN="right">Forwards to</TD>
-<TD><%= $widget->html %>
+<TD><SELECT NAME="dstsvc" SIZE=1 onChange="dstchanged(this)">
+<% foreach $_ (keys %email) { %>
+  <OPTION<%= $_ eq $dstsvc ? " SELECTED" : "" %> VALUE="<%= $_ %>"><%= $email{$_} %></OPTION>
+<% } %>
+<OPTION <%= $dst ? 'SELECTED' : '' %> VALUE="0">(other email address)</OPTION>
+</SELECT>
+<INPUT TYPE="text" NAME="dst" VALUE="<%= $dst %>" <%= ( $dst || !scalar(%email) ) ? '' : 'DISABLED' %>>
+</TD></TR>
+    </TABLE>
+<BR><INPUT TYPE="submit" VALUE="Submit">
+</FORM>
   </BODY>
 </HTML>
