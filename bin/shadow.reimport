@@ -93,6 +93,10 @@ while (<SHADOW>) {
 
   next unless $svc_acct->_password eq '*' || $opt_r;
 
+  next if $svc_acct->username eq 'root';
+
+  next if $password eq 'NP' || $password eq '*LK*';
+
   next if $svc_acct->_password eq $password;
   next if $svc_acct->_password =~ /^\*SUSPENDED\*/;
 
