@@ -13,7 +13,11 @@ foreach my $table ( dbdef->tables ) {
   ##next unless $default =~ /nextval/;
   #print "$local\n";
 
-  my $statement = "select setval('${table}_${primary_key}_seq', ( select max($primary_key) from $table ) )\n";
+  my $statement = "select setval('${table}_${primary_key}_seq', ( select max($primary_key) from $table ) )";
+
+  print "$statement;\n";
+  next;
+  
   my $sth = dbh->prepare($statement) or do {
     warn dbh->errstr. " preparing $statement\n";
     next;
