@@ -74,8 +74,6 @@ HTML manpages now up-to-date and generated on install
 
 schema changes for more configurable export
 
-no mysql support :(
-
 invoice events work & show up on invoice view
 
 - Pro-rating price plan
