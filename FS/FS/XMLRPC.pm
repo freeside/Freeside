@@ -118,9 +118,12 @@ sub _serve { #Subroutine, not method
     warn Dumper(@result);
 
     if (grep { UNIVERSAL::can($_, 'hashref') ? 0 : 1 } @result) {
-      warn "FS::XMLRPC: One or more objects returned from '${fssub}' doesn't " .
-           "support the 'hashref' method.";
-      return [];
+      #warn "FS::XMLRPC: One or more objects returned from '${fssub}' doesn't " .
+      #     "support the 'hashref' method.";
+      
+      # If they're not FS::Record decendants, just return the results unmap'd?
+      # This is more flexible, but possibly more error-prone.
+      return [ @result ];
     } else {
       return [ map { $_->hashref } @result ];
     }
