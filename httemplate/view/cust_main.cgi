@@ -271,7 +271,7 @@ print '<BR>'.
   qq!<FORM ACTION="${p}edit/process/quick-charge.cgi" METHOD="POST">!.
   qq!<INPUT TYPE="hidden" NAME="custnum" VALUE="$custnum">!.
   qq!Description:<INPUT TYPE="text" NAME="pkg">!.
-  qq! Amount:<INPUT TYPE="text" NAME="amount" SIZE=6>!.
+  qq!&nbsp;Amount:<INPUT TYPE="text" NAME="amount" SIZE=6>!.
   qq!&nbsp;!;
 
 #false laziness w/ edit/part_pkg.cgi
