@@ -17,5 +17,5 @@ for port in `grep -v '^ *#' ports`; do
   portinstall -P -R $port || exit
 done
 
-perl -MCPAN -e"install Net::SSH DBIx::DBSchema HTML::Widgets::SelectLayers Time::Duration Business::CreditCard"
+for a in Net::SSH DBIx::DBSchema HTML::Widgets::SelectLayers Time::Duration Business::CreditCard; do perl -MCPAN -e"install $a"; done
 
