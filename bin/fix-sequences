@@ -42,16 +42,19 @@ foreach my $table ( @tables ) {
   my $seq = "${table}_${primary_key}_seq";
   if ( driver_name eq 'Pg'
        && defined($col->default) 
-       && $col->default =~ /^nextval\('"(\w+_seq)"'::text\)$/
+       && $col->default =~ /^nextval\('"(public\.)?(\w+_seq)"'::text\)$/
      ) {
-    $seq = $1;
+    $seq = $2;
   }
 
   warn "fixing sequence for $table\n";
 
-  $dbh->do( "SELECT setval( '$seq',
-                            ( SELECT max($primary_key) FROM $table ) );" )
-    or die $dbh->errstr;
+
+  my $sql = "SELECT setval( '$seq',
+                            ( SELECT max($primary_key) FROM $table ) );" );
+
+  warn $col->default. " $seq\n$sql\n";
+  $dbh->do( $sql ) or die $dbh->errstr;
 
 }
 
