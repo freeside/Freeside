@@ -1,15 +1,5 @@
+<!-- $Id: agent.cgi,v 1.7 2002-01-30 14:18:08 ivan Exp $ -->
 <%
-#<!-- $Id: agent.cgi,v 1.6 2001-10-30 14:54:07 ivan Exp $ -->
-
-use strict;
-use vars qw( $ui $cgi $p $agent );
-use CGI;
-use CGI::Carp qw(fatalsToBrowser);
-use FS::UID qw(cgisuidsetup);
-use FS::Record qw(qsearch qsearchs);
-use FS::CGI qw(header menubar table popurl);
-use FS::agent;
-use FS::agent_type;
 
 #Begin silliness
 #
@@ -21,12 +11,6 @@ use FS::agent_type;
 #exit;
 #__END__
 #End silliness
-
-$cgi = new CGI;
-
-&cgisuidsetup($cgi);
-
-$p = popurl(2);
 
 print header('Agent Listing', menubar(
   'Main Menu'   => $p,
@@ -47,7 +31,7 @@ END
 #        <TH><FONT SIZE=-1>Agent #</FONT></TH>
 #        <TH>Agent</TH>
 
-foreach $agent ( sort { 
+foreach my $agent ( sort { 
   $a->getfield('agentnum') <=> $b->getfield('agentnum')
 } qsearch('agent',{}) ) {
   my($hashref)=$agent->hashref;

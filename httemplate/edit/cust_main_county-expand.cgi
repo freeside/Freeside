@@ -1,19 +1,7 @@
+<!-- $Id: cust_main_county-expand.cgi,v 1.6 2002-01-30 14:18:08 ivan Exp $ -->
 <%
-#<!-- $Id: cust_main_county-expand.cgi,v 1.5 2001-10-30 14:54:07 ivan Exp $ -->
 
-use strict;
-use vars qw( $cgi $taxnum $cust_main_county $p1 $delim $expansion );
-use CGI;
-use CGI::Carp qw(fatalsToBrowser);
-use FS::UID qw(cgisuidsetup);
-use FS::Record qw(qsearch qsearchs);
-use FS::CGI qw(header menubar popurl);
-use FS::cust_main_county;
-
-$cgi = new CGI;
-
-&cgisuidsetup($cgi);
-
+my($taxnum, $delim, $expansion );
 if ( $cgi->param('error') ) {
   $taxnum = $cgi->param('taxnum');
   $delim = $cgi->param('delim');
@@ -27,11 +15,11 @@ if ( $cgi->param('error') ) {
   $expansion = '';
 }
 
-$cust_main_county = qsearchs('cust_main_county',{'taxnum'=>$taxnum})
+my $cust_main_county = qsearchs('cust_main_county',{'taxnum'=>$taxnum})
   or die "cust_main_county.taxnum $taxnum not found";
 die "Can't expand entry!" if $cust_main_county->getfield('county');
 
-$p1 = popurl(1);
+my $p1 = popurl(1);
 print header("Tax Rate (expand)", menubar(
   'Main Menu' => popurl(2),
 ));

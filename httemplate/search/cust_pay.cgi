@@ -1,27 +1,13 @@
+<!-- $Id: cust_pay.cgi,v 1.2 2002-01-30 14:18:09 ivan Exp $ -->
 <%
-#<!-- $Id: cust_pay.cgi,v 1.1 2001-12-26 09:18:18 ivan Exp $ -->
-
-use strict;
-use vars qw( $cgi $sortby @cust_pay );
-use CGI;
-use CGI::Carp qw(fatalsToBrowser);
-use Date::Format;
-use FS::UID qw(cgisuidsetup);
-use FS::CGI qw(popurl header menubar idiot table );
-use FS::Record qw(qsearch );
-use FS::cust_pay;
-use FS::cust_main;
-
-$cgi = new CGI;
-cgisuidsetup($cgi);
 
 $cgi->param('payinfo') =~ /^\s*(\d+)\s*$/ or die "illegal payinfo";
 my $payinfo = $1;
 $cgi->param('payby') =~ /^(\w+)$/ or die "illegal payby";
 my $payby = $1;
-@cust_pay = qsearch('cust_pay', { 'payinfo' => $payinfo,
-                                  'payby'   => $payby    } );
-$sortby = \*date_sort;
+my @cust_pay = qsearch('cust_pay', { 'payinfo' => $payinfo,
+                                     'payby'   => $payby    } );
+my $sortby = \*date_sort;
 
 if (0) {
 #if ( scalar(@cust_pay) == 1 ) {

@@ -168,9 +168,9 @@ Returns HTML tag for beginning a table.
 sub table {
   my $col = shift;
   if ( $col ) {
-    qq!<TABLE BGCOLOR="$col" BORDER=1 WIDTH="100%">!;
+    qq!<TABLE BGCOLOR="$col" BORDER=1 WIDTH="100%" CELLSPACING=0 CELLPADDING=2 BORDERCOLOR="#999999">!;
   } else { 
-    "<TABLE BORDER=1>";
+    '<TABLE BORDER=1 CELLSPACING=0 CELLPADDING=2 BORDERCOLOR="#999999">';
   }
 }
 
@@ -202,7 +202,7 @@ sub ntable {
   if ( $col ) {
     qq!<TABLE BGCOLOR="$col" BORDER=0 CELLSPACING=$cellspacing>!;
   } else {
-    "<TABLE BORDER>";
+    '<TABLE BORDER CELLSPACING=0 CELLPADDING=2 BORDERCOLOR="#999999">';
   }
 
 }

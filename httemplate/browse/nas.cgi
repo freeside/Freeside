@@ -1,21 +1,5 @@
+<!-- $Id -->
 <%
-
-use strict;
-use vars qw( $cgi $p );
-use CGI;
-use CGI::Carp qw(fatalsToBrowser);
-use Date::Format;
-use FS::UID qw(cgisuidsetup);
-use FS::Record qw(qsearch); # qsearchs);
-use FS::CGI qw(header menubar table popurl);
-use FS::nas;
-use FS::port;
-use FS::session;
-
-$cgi = new CGI;
-&cgisuidsetup($cgi);
-
-$p=popurl(2);
 
 print header('NAS ports', menubar(
   'Main Menu' => $p,

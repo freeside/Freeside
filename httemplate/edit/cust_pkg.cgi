@@ -1,27 +1,14 @@
+<!-- $Id: cust_pkg.cgi,v 1.6 2002-01-30 14:18:08 ivan Exp $ -->
 <%
-#<!-- $Id: cust_pkg.cgi,v 1.5 2001-12-27 09:26:14 ivan Exp $ -->
 
-use strict;
-use vars qw( $cgi %pkg %comment $custnum $p1 @cust_pkg 
-             $cust_main $agent $type_pkgs $count %remove_pkg $pkgparts );
-use CGI;
-use CGI::Carp qw(fatalsToBrowser);
-use FS::UID qw(cgisuidsetup);
-use FS::Record qw(qsearch qsearchs);
-use FS::CGI qw(header popurl);
-use FS::part_pkg;
-use FS::type_pkgs;
-
-$cgi = new CGI;
-&cgisuidsetup($cgi);
-
-%pkg = ();
-%comment = ();
+my %pkg = ();
+my %comment = ();
 foreach (qsearch('part_pkg', { 'disabled' => '' })) {
   $pkg{ $_ -> getfield('pkgpart') } = $_->getfield('pkg');
   $comment{ $_ -> getfield('pkgpart') } = $_->getfield('comment');
 }
 
+my($custnum, %remove_pkg);
 if ( $cgi->param('error') ) {
   $custnum = $cgi->param('custnum');
   %remove_pkg = map { $_ => 1 } $cgi->param('remove_pkg');
@@ -29,10 +16,10 @@ if ( $cgi->param('error') ) {
   my($query) = $cgi->keywords;
   $query =~ /^(\d+)$/;
   $custnum = $1;
-  undef %remove_pkg;
+  %remove_pkg = ();
 }
 
-$p1 = popurl(1);
+my $p1 = popurl(1);
 print header("Add/Edit Packages", '');
 
 print qq!<FONT SIZE="+1" COLOR="#ff0000">Error: !, $cgi->param('error'),
@@ -44,7 +31,7 @@ print qq!<FORM ACTION="${p1}process/cust_pkg.cgi" METHOD=POST>!;
 print qq!<INPUT TYPE="hidden" NAME="custnum" VALUE="$custnum">!;
 
 #current packages
-@cust_pkg = qsearch('cust_pkg',{ 'custnum' => $custnum, 'cancel' => '' } );
+my @cust_pkg = qsearch('cust_pkg',{ 'custnum' => $custnum, 'cancel' => '' } );
 
 if (@cust_pkg) {
   print <<END;
@@ -52,7 +39,7 @@ Current packages - select to remove (services are moved to a new package below)
 <BR><BR>
 END
 
-  my ($count) = 0 ;
+  my $count = 0 ;
   print qq!<TABLE>! ;
   foreach (@cust_pkg) {
     print '<TR>' if $count == 0;
@@ -74,13 +61,13 @@ print <<END;
 Order new packages<BR><BR>
 END
 
-$cust_main = qsearchs('cust_main',{'custnum'=>$custnum});
-$agent = qsearchs('agent',{'agentnum'=> $cust_main->agentnum });
+my $cust_main = qsearchs('cust_main',{'custnum'=>$custnum});
+my $agent = qsearchs('agent',{'agentnum'=> $cust_main->agentnum });
 
-$count = 0;
-$pkgparts = 0;
+my $count = 0;
+my $pkgparts = 0;
 print qq!<TABLE>!;
-foreach $type_pkgs ( qsearch('type_pkgs',{'typenum'=> $agent->typenum }) ) {
+foreach my $type_pkgs ( qsearch('type_pkgs',{'typenum'=> $agent->typenum }) ) {
   $pkgparts++;
   my($pkgpart)=$type_pkgs->pkgpart;
   next unless exists $pkg{$pkgpart}; #skip disabled ones

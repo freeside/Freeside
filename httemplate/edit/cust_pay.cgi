@@ -1,20 +1,9 @@
+<!-- $Id: cust_pay.cgi,v 1.11 2002-01-30 14:18:08 ivan Exp $ -->
 <%
-#<!-- $Id: cust_pay.cgi,v 1.10 2001-12-26 06:02:48 ivan Exp $ -->
-
-use strict;
-use vars qw( $cgi $link $linknum $p1 $_date $payby $payinfo $paid $quickpay );
-use Date::Format;
-use CGI;
-use CGI::Carp qw(fatalsToBrowser);
-use FS::Conf;
-use FS::UID qw(cgisuidsetup);
-use FS::CGI qw(header popurl ntable small_custview);
 
 my $conf = new FS::Conf;
 
-$cgi = new CGI;
-cgisuidsetup($cgi);
-
+my($link, $linknum, $paid, $payby, $payinfo, $quickpay); 
 if ( $cgi->param('error') ) {
   $link = $cgi->param('link');
   $linknum = $cgi->param('linknum');
@@ -41,9 +30,9 @@ if ( $cgi->param('error') ) {
 } else {
   die "illegal query ". $cgi->keywords;
 }
-$_date = time;
+my $_date = time;
 
-$p1 = popurl(1);
+my $p1 = popurl(1);
 print header("Post payment", '');
 
 print qq!<FONT SIZE="+1" COLOR="#ff0000">Error: !, $cgi->param('error'),

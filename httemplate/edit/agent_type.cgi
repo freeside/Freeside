@@ -1,22 +1,7 @@
+<!-- $Id: agent_type.cgi,v 1.7 2002-01-30 14:18:08 ivan Exp $ -->
 <%
-#<!-- $Id: agent_type.cgi,v 1.6 2001-12-27 09:26:14 ivan Exp $ -->
 
-use strict;
-use vars qw( $cgi $agent_type $action $hashref $p $part_pkg );
-use CGI;
-use CGI::Carp qw(fatalsToBrowser);
-use FS::UID qw(cgisuidsetup);
-use FS::Record qw(qsearch qsearchs fields);
-use FS::agent_type;
-use FS::CGI qw(header menubar popurl);
-use FS::agent_type;
-use FS::part_pkg;
-use FS::type_pkgs;
-
-$cgi = new CGI;
-
-&cgisuidsetup($cgi);
-
+my($agent_type);
 if ( $cgi->param('error') ) {
   $agent_type = new FS::agent_type ( {
     map { $_, scalar($cgi->param($_)) } fields('agent')
@@ -28,10 +13,9 @@ if ( $cgi->param('error') ) {
 } else { #adding
   $agent_type = new FS::agent_type {};
 }
-$action = $agent_type->typenum ? 'Edit' : 'Add';
-$hashref = $agent_type->hashref;
+my $action = $agent_type->typenum ? 'Edit' : 'Add';
+my $hashref = $agent_type->hashref;
 
-$p = popurl(2);
 print header("$action Agent Type", menubar(
   'Main Menu' => "$p",
   'View all agent types' => "${p}browse/agent_type.cgi",
@@ -50,7 +34,7 @@ print <<END;
 <BR><BR>Select which packages agents of this type may sell to customers<BR>
 END
 
-foreach $part_pkg ( qsearch('part_pkg',{ 'disabled' => '' }) ) {
+foreach my $part_pkg ( qsearch('part_pkg',{ 'disabled' => '' }) ) {
   print qq!<BR><INPUT TYPE="checkbox" NAME="pkgpart!,
         $part_pkg->getfield('pkgpart'), qq!" !,
        # ( 'CHECKED 'x scalar(

@@ -1,45 +1,18 @@
+<!-- $Id: cust_main.cgi,v 1.19 2002-01-30 14:18:09 ivan Exp $ -->
 <%
-#<!-- $Id: cust_main.cgi,v 1.18 2001-12-27 09:26:14 ivan Exp $ -->
 
-use strict;
-use vars qw ( $cgi $query $custnum $cust_main $hashref $agent $referral 
-              @packages $package @history @bills $bill @credits $credit
-              $balance $item @agents @referrals @invoicing_list $n1 $conf
-              $signupurl ); 
-use CGI;
-use CGI::Carp qw(fatalsToBrowser);
-use Date::Format;
-use FS::UID qw(cgisuidsetup);
-use FS::Record qw(qsearchs qsearch);
-use FS::CGI qw(header menubar popurl table itable ntable);
-use FS::cust_credit;
-use FS::cust_pay;
-use FS::cust_bill;
-use FS::part_pkg;
-use FS::cust_pkg;
-use FS::part_referral;
-use FS::agent;
-use FS::cust_main;
-use FS::cust_refund;
-use FS::cust_bill_pay;
-use FS::cust_credit_bill;
-
-$cgi = new CGI;
-&cgisuidsetup($cgi);
-
-$conf = new FS::Conf;
+my $conf = new FS::Conf;
 
 print header("Customer View", menubar(
   'Main Menu' => popurl(2)
 ));
 
 die "No customer specified (bad URL)!" unless $cgi->keywords;
-($query) = $cgi->keywords; # needs parens with my, ->keywords returns array
+my($query) = $cgi->keywords; # needs parens with my, ->keywords returns array
 $query =~ /^(\d+)$/;
-$custnum = $1;
-$cust_main = qsearchs('cust_main',{'custnum'=>$custnum});
+my $custnum = $1;
+my $cust_main = qsearchs('cust_main',{'custnum'=>$custnum});
 die "Customer not found!" unless $cust_main;
-$hashref = $cust_main->hashref;
 
 print qq!<A HREF="!, popurl(2), 
       qq!edit/cust_main.cgi?$custnum">Edit this customer</A>!;
@@ -159,7 +132,8 @@ print '<TD VALIGN="top">';
         $custnum, '</TD></TR>',
   ;
 
-  @agents = qsearch( 'agent', {} );
+  my @agents = qsearch( 'agent', {} );
+  my $agent;
   unless ( scalar(@agents) == 1 ) {
     $agent = qsearchs('agent',{ 'agentnum' => $cust_main->agentnum } );
     print '<TR><TD ALIGN="right">Agent</TD><TD BGCOLOR="#ffffff">',
@@ -167,7 +141,7 @@ print '<TD VALIGN="top">';
   } else {
     $agent = $agents[0];
   }
-  @referrals = qsearch( 'part_referral', {} );
+  my @referrals = qsearch( 'part_referral', {} );
   unless ( scalar(@referrals) == 1 ) {
     my $referral = qsearchs('part_referral', {
       'refnum' => $cust_main->refnum
@@ -202,7 +176,7 @@ print '<TD VALIGN="top">';
 
 print '<BR>';
 
-  @invoicing_list = $cust_main->invoicing_list;
+  my @invoicing_list = $cust_main->invoicing_list;
   print "Billing information (",
        qq!<A HREF="!, popurl(2), qq!misc/bill.cgi?$custnum">!, "Bill now</A>)",
         &ntable("#cccccc"), "<TR><TD>", &ntable("#cccccc",2),
@@ -298,14 +272,15 @@ print qq!!, &table(), "\n",
       qq!</TR>\n!;
 
 #get package info
+my @packages;
 if ( $conf->exists('hidecancelledpackages') ) {
   @packages = sort { $a->pkgnum <=> $b->pkgnum } ($cust_main->ncancelled_pkgs);
 } else {
   @packages = sort { $a->pkgnum <=> $b->pkgnum } ($cust_main->all_pkgs);
 }
 
-$n1 = '<TR>';
-foreach $package (@packages) {
+my $n1 = '<TR>';
+foreach my $package (@packages) {
   my $pkgnum = $package->pkgnum;
   my $pkg = $package->part_pkg->pkg;
   my $comment = $package->part_pkg->comment;
@@ -362,12 +337,12 @@ print qq!<BR><BR><A NAME="history">Payment History!.
 # major problem: this whole thing is way too sloppy.
 # minor problem: the description lines need better formatting.
 
-@history = (); #needed for mod_perl :)
+my @history = (); #needed for mod_perl :)
 
 my %target = ();
 
-@bills = qsearch('cust_bill',{'custnum'=>$custnum});
-foreach $bill (@bills) {
+my @bills = qsearch('cust_bill',{'custnum'=>$custnum});
+foreach my $bill (@bills) {
   my($bref)=$bill->hashref;
   my $bpre = ( $bill->owed > 0 )
                ? '<b><font size="+1" color="#ff0000"> Open '
@@ -418,9 +393,9 @@ foreach $bill (@bills) {
   }
 }
 
-@credits = grep { $_->credited > 0 }
+my @credits = grep { $_->credited > 0 }
            qsearch('cust_credit',{'custnum'=>$custnum});
-foreach $credit (@credits) {
+foreach my $credit (@credits) {
   my($cref)=$credit->hashref;
   push @history,
     $cref->{_date} . "\t" .
@@ -478,8 +453,8 @@ END
 
 #display payment history
 
-$balance = 0;
-foreach $item (sort keyfield_numerically @history) {
+my $balance = 0;
+foreach my $item (sort keyfield_numerically @history) {
   my($date,$desc,$charge,$payment,$credit,$refund,$target)=split(/\t/,$item);
   $charge ||= 0;
   $payment ||= 0;

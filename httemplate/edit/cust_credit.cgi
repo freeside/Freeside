@@ -1,21 +1,8 @@
+<!-- $Id: cust_credit.cgi,v 1.8 2002-01-30 14:18:08 ivan Exp $ -->
 <%
-#<!-- $Id: cust_credit.cgi,v 1.7 2001-12-26 15:07:06 ivan Exp $ -->
-
-use strict;
-use vars qw( $cgi $query $custnum $otaker $p1 $_date $amount $reason );
-use Date::Format;
-use CGI;
-use CGI::Carp qw(fatalsToBrowser);
-use FS::UID qw(cgisuidsetup getotaker);
-use FS::CGI qw(header popurl small_custview);
-use FS::Record qw(fields);
-#use FS::cust_credit;
 
 my $conf = new FS::Conf;
-
-$cgi = new CGI;
-cgisuidsetup($cgi);
-
+my($custnum, $amount, $reason);
 if ( $cgi->param('error') ) {
   #$cust_credit = new FS::cust_credit ( {
   #  map { $_, scalar($cgi->param($_)) } fields('cust_credit')
@@ -25,18 +12,18 @@ if ( $cgi->param('error') ) {
   #$refund = $cgi->param('refund');
   $reason = $cgi->param('reason');
 } else {
-  ($query) = $cgi->keywords;
+  my($query) = $cgi->keywords;
   $query =~ /^(\d+)$/;
   $custnum = $1;
   $amount = '';
   #$refund = 'yes';
   $reason = '';
 }
-$_date = time;
+my $_date = time;
 
-$otaker = getotaker;
+my $otaker = getotaker;
 
-$p1 = popurl(1);
+my $p1 = popurl(1);
 
 print header("Post Credit", '');
 print qq!<FONT SIZE="+1" COLOR="#ff0000">Error: !, $cgi->param('error'),

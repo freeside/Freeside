@@ -1,29 +1,17 @@
+<!-- $Id: agent.cgi,v 1.3 2002-01-30 14:18:08 ivan Exp $ -->
 <%
-#<!-- $Id: agent.cgi,v 1.2 2001-08-21 02:31:56 ivan Exp $ -->
 
-use strict;
-use vars qw ( $cgi $agentnum $old $new $error );
-use CGI;
-use CGI::Carp qw(fatalsToBrowser);
-use FS::UID qw(cgisuidsetup);
-use FS::Record qw(qsearch qsearchs fields);
-use FS::agent;
-use FS::CGI qw(popurl);
+my $agentnum = $cgi->param('agentnum');
 
-$cgi = new CGI;
+my $old = qsearchs('agent',{'agentnum'=>$agentnum}) if $agentnum;
 
-&cgisuidsetup($cgi);
-
-$agentnum = $cgi->param('agentnum');
-
-$old = qsearchs('agent',{'agentnum'=>$agentnum}) if $agentnum;
-
-$new = new FS::agent ( {
+my $new = new FS::agent ( {
   map {
     $_, scalar($cgi->param($_));
   } fields('agent')
 } );
 
+my $error;
 if ( $agentnum ) {
   $error=$new->replace($old);
 } else {

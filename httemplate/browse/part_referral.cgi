@@ -1,20 +1,5 @@
+<!-- $Id: part_referral.cgi,v 1.7 2002-01-30 14:18:08 ivan Exp $ -->
 <%
-#<!-- $Id: part_referral.cgi,v 1.6 2001-10-30 14:54:07 ivan Exp $ -->
-
-use strict;
-use vars qw( $cgi $p $part_referral );
-use CGI;
-use CGI::Carp qw(fatalsToBrowser);
-use FS::UID qw(cgisuidsetup);
-use FS::Record qw(qsearch);
-use FS::CGI qw(header menubar popurl table);
-use FS::part_referral;
-
-$cgi = new CGI;
-
-&cgisuidsetup($cgi);
-
-$p = popurl(2);
 
 print header("Referral Listing", menubar(
   'Main Menu' => $p,
@@ -25,7 +10,7 @@ print header("Referral Listing", menubar(
       </TR>
 END
 
-foreach $part_referral ( sort { 
+foreach my $part_referral ( sort { 
   $a->getfield('refnum') <=> $b->getfield('refnum')
 } qsearch('part_referral',{}) ) {
   my($hashref)=$part_referral->hashref;

@@ -1,20 +1,5 @@
+<!-- $Id: svc_acct_pop.cgi,v 1.7 2002-01-30 14:18:08 ivan Exp $ -->
 <%
-#<!-- $Id: svc_acct_pop.cgi,v 1.6 2001-10-30 14:54:07 ivan Exp $ -->
-
-use strict;
-use vars qw( $cgi $p $svc_acct_pop );
-use CGI;
-use CGI::Carp qw(fatalsToBrowser);
-use FS::UID qw(cgisuidsetup);
-use FS::Record qw(qsearch qsearchs);
-use FS::CGI qw(header menubar table popurl);
-use FS::svc_acct_pop;
-
-$cgi = new CGI;
-
-&cgisuidsetup($cgi);
-
-$p = popurl(2);
 
 print header('POP Listing', menubar(
   'Main Menu' => $p,
@@ -29,7 +14,7 @@ print header('POP Listing', menubar(
       </TR>
 END
 
-foreach $svc_acct_pop ( sort { 
+foreach my $svc_acct_pop ( sort { 
   #$a->getfield('popnum') <=> $b->getfield('popnum')
   $a->state cmp $b->state || $a->city cmp $b->city
     || $a->ac <=> $b->ac || $a->exch <=> $b->exch || $a->loc <=> $b->loc

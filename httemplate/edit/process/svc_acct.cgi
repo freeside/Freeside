@@ -1,21 +1,10 @@
+<!-- $Id: svc_acct.cgi,v 1.3 2002-01-30 14:18:09 ivan Exp $ -->
 <%
-#<!-- $Id: svc_acct.cgi,v 1.2 2001-08-21 02:31:56 ivan Exp $ -->
-
-use strict;
-use vars qw( $cgi $svcnum $old $new $error );
-use CGI;
-use CGI::Carp qw(fatalsToBrowser);
-use FS::UID qw(cgisuidsetup);
-use FS::CGI qw(popurl);
-use FS::Record qw(qsearchs fields);
-use FS::svc_acct;
-
-$cgi = new CGI;
-&cgisuidsetup($cgi);
 
 $cgi->param('svcnum') =~ /^(\d*)$/ or die "Illegal svcnum!";
-$svcnum = $1;
+my $svcnum = $1;
 
+my $old;
 if ( $svcnum ) {
   $old = qsearchs('svc_acct', { 'svcnum' => $svcnum } )
     or die "fatal: can't find account (svcnum $svcnum)!";
@@ -32,7 +21,7 @@ if ( $cgi->param('_password') eq '*HIDDEN*' ) {
   $cgi->param('_password',$old->getfield('_password'));
 }
 
-$new = new FS::svc_acct ( {
+my $new = new FS::svc_acct ( {
   map {
     $_, scalar($cgi->param($_));
   #} qw(svcnum pkgnum svcpart username _password popnum uid gid finger dir
@@ -40,6 +29,7 @@ $new = new FS::svc_acct ( {
   } ( fields('svc_acct'), qw( pkgnum svcpart ) )
 } );
 
+my $error;
 if ( $svcnum ) {
   $error = $new->replace($old);
 } else {

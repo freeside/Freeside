@@ -1,36 +1,22 @@
+<!-- $Id: svc_acct.cgi,v 1.13 2002-01-30 14:18:09 ivan Exp $ -->
 <%
-# <!-- $Id: svc_acct.cgi,v 1.12 2001-12-11 21:26:58 ivan Exp $ -->
 
-use strict;
-use vars qw( $cgi @svc_acct $sortby $query $mydomain
-             $conf $maxrecords $limit $offset );
-use CGI;
-use CGI::Carp qw(fatalsToBrowser);
-use FS::UID qw(cgisuidsetup);
-use FS::Record qw(qsearch qsearchs dbdef);
-use FS::CGI qw(header idiot popurl table);
-use FS::svc_acct;
-use FS::cust_main;
+my $mydomain = '';
 
-$mydomain = '';
-
-$cgi = new CGI;
-&cgisuidsetup($cgi);
-
-$conf = new FS::Conf;
-$maxrecords = $conf->config('maxsearchrecordsperpage');
+my $conf = new FS::Conf;
+my $maxrecords = $conf->config('maxsearchrecordsperpage');
 
 my $orderby = ''; #removeme
 
-$limit = '';
+my $limit = '';
 $limit .= "LIMIT $maxrecords" if $maxrecords;
 
-$offset = $cgi->param('offset') || 0;
+my $offset = $cgi->param('offset') || 0;
 $limit .= " OFFSET $offset" if $offset;
 
 my $total;
 
-($query)=$cgi->keywords;
+my($query)=$cgi->keywords;
 $query ||= ''; #to avoid use of unitialized value errors
 
 my $unlinked = '';
@@ -45,6 +31,7 @@ if ( $query =~ /^UN_(.*)$/ ) {
   ';
 }
 
+my(@svc_acct, $sortby);
 if ( $query eq 'svcnum' ) {
   $sortby=\*svcnum_sort;
   $orderby = 'ORDER BY svcnum';
@@ -56,7 +43,7 @@ if ( $query eq 'svcnum' ) {
   $orderby = ( $unlinked ? 'AND' : 'WHERE' ). ' uid IS NOT NULL ORDER BY uid';
 } else {
   $sortby=\*uid_sort;
-  &usernamesearch;
+  @svc_acct = @{&usernamesearch};
 }
 
 if ( $query eq 'svcnum' || $query eq 'username' || $query eq 'uid' ) {
@@ -245,9 +232,8 @@ sub usernamesearch {
   $cgi->param('username') =~ /^([\w\d\-]+)$/; #untaint username_text
   my($username)=$1;
 
-  @svc_acct=qsearch('svc_acct',{'username'=>$username});
+  [ qsearch('svc_acct',{'username'=>$username}) ];
 
 }
-
 
 %>

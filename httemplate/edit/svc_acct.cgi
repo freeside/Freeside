@@ -1,28 +1,10 @@
+<!-- $Id: svc_acct.cgi,v 1.14 2002-01-30 14:18:08 ivan Exp $ -->
 <%
-#<!-- $Id: svc_acct.cgi,v 1.13 2001-12-12 19:42:21 ivan Exp $ -->
 
-use strict;
-use vars qw( $conf $cgi @shells $action $svcnum $svc_acct $pkgnum $svcpart
-             $part_svc $svc $otaker $username $password $ulen $ulen2 
-             $pmax $pmax2 $p1
-             $popnum $domsvc $uid $gid $finger $dir $shell $quota $slipip
-             %svc_domain );
-use CGI;
-use CGI::Carp qw(fatalsToBrowser);
-use FS::UID qw(cgisuidsetup getotaker);
-use FS::CGI qw(header popurl itable);
-use FS::Record qw(qsearch qsearchs fields);
-use FS::svc_acct;
-use FS::svc_acct_pop qw(popselector);
-use FS::Conf;
-use FS::raddb;
+my $conf = new FS::Conf;
+my @shells = $conf->config('shells');
 
-$cgi = new CGI;
-&cgisuidsetup($cgi);
-
-$conf = new FS::Conf;
-@shells = $conf->config('shells');
-
+my($svcnum, $pkgnum, $svcpart, $part_svc, $svc_acct);
 if ( $cgi->param('error') ) {
   $svc_acct = new FS::svc_acct ( {
     map { $_, scalar($cgi->param($_)) } fields('svc_acct')
@@ -81,13 +63,14 @@ if ( $cgi->param('error') ) {
 
   }
 }
-$action = $svcnum ? 'Edit' : 'Add';
+my $action = $svcnum ? 'Edit' : 'Add';
 
-$svc = $part_svc->getfield('svc');
+my $svc = $part_svc->getfield('svc');
 
-$otaker = getotaker;
+my $otaker = getotaker;
 
-$username = $svc_acct->username;
+my $username = $svc_acct->username;
+my $password;
 if ( $svc_acct->_password ) {
   if ( $conf->exists('showpasswords') ) {
     $password = $svc_acct->_password;
@@ -98,13 +81,13 @@ if ( $svc_acct->_password ) {
   $password = '';
 }
 
-$ulen = $svc_acct->dbdef_table->column('username')->length;
-$ulen2 = $ulen+2;
+my $ulen = $svc_acct->dbdef_table->column('username')->length;
+my $ulen2 = $ulen+2;
 
-$pmax = $conf->config('passwordmax') || 8;
-$pmax2 = $pmax+2;
+my $pmax = $conf->config('passwordmax') || 8;
+my $pmax2 = $pmax+2;
 
-$p1 = popurl(1);
+my $p1 = popurl(1);
 print header("$action $svc account");
 
 print qq!<FONT SIZE="+1" COLOR="#ff0000">Error: !, $cgi->param('error'),
@@ -131,7 +114,7 @@ print &itable("#cccccc",2), <<END;
 END
 
 #domain
-$domsvc = $svc_acct->domsvc || 0;
+my $domsvc = $svc_acct->domsvc || 0;
 if ( $part_svc->part_svc_column('domsvc')->columnflag eq 'F' ) {
   print qq!<INPUT TYPE="hidden" NAME="domsvc" VALUE="$domsvc">!;
 } else { 
@@ -186,7 +169,7 @@ if ( $part_svc->part_svc_column('domsvc')->columnflag eq 'F' ) {
 }
 
 #pop
-$popnum = $svc_acct->popnum || 0;
+my $popnum = $svc_acct->popnum || 0;
 if ( $part_svc->part_svc_column('popnum')->columnflag eq "F" ) {
   print qq!<INPUT TYPE="hidden" NAME="popnum" VALUE="$popnum">!;
 } else { 
@@ -194,7 +177,7 @@ if ( $part_svc->part_svc_column('popnum')->columnflag eq "F" ) {
         qq!<TD>!. FS::svc_acct_pop::popselector($popnum). '</TD></TR>';
 }
 
-($uid,$gid,$finger,$dir)=(
+my($uid,$gid,$finger,$dir)=(
   $svc_acct->uid,
   $svc_acct->gid,
   $svc_acct->finger,
@@ -208,7 +191,7 @@ print <<END;
 <INPUT TYPE="hidden" NAME="dir" VALUE="$dir">
 END
 
-$shell = $svc_acct->shell;
+my $shell = $svc_acct->shell;
 if ( $part_svc->part_svc_column('shell')->columnflag eq "F" ) {
   print qq!<INPUT TYPE="hidden" NAME="shell" VALUE="$shell">!;
 } else {
@@ -221,7 +204,7 @@ if ( $part_svc->part_svc_column('shell')->columnflag eq "F" ) {
   print "</SELECT></TD></TR>";
 }
 
-($quota,$slipip)=(
+my($quota,$slipip)=(
   $svc_acct->quota,
   $svc_acct->slipip,
 );

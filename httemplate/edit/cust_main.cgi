@@ -1,39 +1,22 @@
+<!-- $Id: cust_main.cgi,v 1.19 2002-01-30 14:18:08 ivan Exp $ -->
 <%
-#<!-- $Id: cust_main.cgi,v 1.18 2001-12-28 14:40:35 ivan Exp $ -->
-
-use vars qw( $cgi $custnum $action $cust_main $p1 @agents $agentnum 
-             $last $first $ss $company $address1 $address2 $city $zip 
-             $daytime $night $fax @invoicing_list $invoicing_list $payinfo
-             $payname %payby %paybychecked $refnum $otaker $r );
-use vars qw ( $conf $saved_pkgpart $username $password $popnum $ulen $ulen2 );
-use vars qw ( $error );
-#use CGI::Switch;
-use CGI;
-use CGI::Carp qw(fatalsToBrowser);
-use FS::UID qw(cgisuidsetup getotaker);
-#use FS::Record qw(qsearch qsearchs fields);
-use FS::Record qw(qsearch qsearchs fields dbdef);
-use FS::CGI qw(header popurl itable table);
-use FS::cust_main;
-use FS::agent;
-use FS::part_referral;
-use FS::cust_main_county;
 
   #for misplaced logic below
-  use FS::part_pkg;
+  #use FS::part_pkg;
 
   #for false laziness below (now more properly lazy)
-  use FS::svc_acct_pop;
+  #use FS::svc_acct_pop;
 
   #for (other) false laziness below
-  use FS::agent;
-  use FS::type_pkgs;
+  #use FS::agent;
+  #use FS::type_pkgs;
 
-$conf = new FS::Conf;
+my $conf = new FS::Conf;
 
 #get record
 
-$error = '';
+my $error = '';
+my($custnum, $username, $password, $popnum, $cust_main, $saved_pkgpart);
 if ( $cgi->param('error') ) {
   $error = $cgi->param('error');
   $cust_main = new FS::cust_main ( {
@@ -69,11 +52,11 @@ if ( $cgi->param('error') ) {
   $popnum = 0;
 }
 $cgi->delete_all();
-$action = $custnum ? 'Edit' : 'Add';
+my $action = $custnum ? 'Edit' : 'Add';
 
 # top
 
-$p1 = popurl(1);
+my $p1 = popurl(1);
 print header("Customer $action", '');
 print qq!<FONT SIZE="+1" COLOR="#ff0000">Error: !, $error, "</FONT>"
   if $error;
@@ -86,12 +69,12 @@ print qq!<FORM ACTION="${p1}process/cust_main.cgi" METHOD=POST NAME="form1">!,
 
 # agent
 
-$r = qq!<font color="#ff0000">*</font>!;
+my $r = qq!<font color="#ff0000">*</font>!;
 
-@agents = qsearch( 'agent', {} );
+my @agents = qsearch( 'agent', {} );
 #die "No agents created!" unless @agents;
 die "You have not created any agents.  You must create at least one agent before adding a customer.  Go to ". popurl(2). "browse/agent.cgi and create one or more agents." unless @agents;
-$agentnum = $cust_main->agentnum || $agents[0]->agentnum; #default to first
+my $agentnum = $cust_main->agentnum || $agents[0]->agentnum; #default to first
 if ( scalar(@agents) == 1 ) {
   print qq!<INPUT TYPE="hidden" NAME="agentnum" VALUE="$agentnum">!;
 } else {
@@ -109,7 +92,7 @@ if ( scalar(@agents) == 1 ) {
 
 #referral
 
-$refnum = $cust_main->refnum || $conf->config('referraldefault') || 0;
+my $refnum = $cust_main->refnum || $conf->config('referraldefault') || 0;
 if ( $custnum && ! $conf->exists('editreferrals') ) {
   print qq!<INPUT TYPE="hidden" NAME="refnum" VALUE="$refnum">!;
 } else {
@@ -152,7 +135,7 @@ if ( $cust_main->referral_custnum ) {
 
 # contact info
 
-($last,$first,$ss,$company,$address1,$address2,$city,$zip)=(
+my($last,$first,$ss,$company,$address1,$address2,$city,$zip)=(
   $cust_main->last,
   $cust_main->first,
   $cust_main->ss,
@@ -201,7 +184,7 @@ foreach ( sort {
 }
 print qq!</SELECT></TD><TH>${r}Zip</TH><TD><INPUT TYPE="text" NAME="zip" VALUE="$zip" SIZE=10></TD></TR>!;
 
-($daytime,$night,$fax)=(
+my($daytime,$night,$fax)=(
   $cust_main->daytime,
   $cust_main->night,
   $cust_main->fax,
@@ -345,29 +328,29 @@ print "<BR>Billing information", &itable("#cccccc"),
 print qq! CHECKED! if $cust_main->tax eq "Y";
 print qq!>Tax Exempt</TD></TR>!;
 print qq!<TR><TD><INPUT TYPE="checkbox" NAME="invoicing_list_POST" VALUE="POST"!;
-@invoicing_list = $cust_main->invoicing_list;
+my @invoicing_list = $cust_main->invoicing_list;
 print qq! CHECKED!
   if ( ! @invoicing_list && ! $conf->exists('disablepostalinvoicedefault') )
      || grep { $_ eq 'POST' } @invoicing_list;
 print qq!>Postal mail invoice</TD></TR>!;
-$invoicing_list = join(', ', grep { $_ ne 'POST' } @invoicing_list );
+my $invoicing_list = join(', ', grep { $_ ne 'POST' } @invoicing_list );
 print qq!<TR><TD>Email invoice <INPUT TYPE="text" NAME="invoicing_list" VALUE="$invoicing_list"></TD></TR>!;
 
 print "<TR><TD>Billing type</TD></TR>",
       "</TABLE>",
       &table("#cccccc"), "<TR>";
 
-($payinfo, $payname)=(
+my($payinfo, $payname)=(
   $cust_main->payinfo,
   $cust_main->payname,
 );
 
-%payby = (
+my %payby = (
   'CARD' => qq!Credit card<BR>${r}<INPUT TYPE="text" NAME="CARD_payinfo" VALUE="" MAXLENGTH=19><BR>${r}Exp !. expselect("CARD"). qq!<BR>${r}Name on card<BR><INPUT TYPE="text" NAME="CARD_payname" VALUE="">!,
   'BILL' => qq!Billing<BR>P.O. <INPUT TYPE="text" NAME="BILL_payinfo" VALUE=""><BR>${r}Exp !. expselect("BILL", "12-2037"). qq!<BR>Attention<BR><INPUT TYPE="text" NAME="BILL_payname" VALUE="">!,
   'COMP' => qq!Complimentary<BR>${r}Approved by<INPUT TYPE="text" NAME="COMP_payinfo" VALUE=""><BR>${r}Exp !. expselect("COMP"),
 );
-%paybychecked = (
+my %paybychecked = (
   'CARD' => qq!Credit card<BR>${r}<INPUT TYPE="text" NAME="CARD_payinfo" VALUE="$payinfo" MAXLENGTH=19><BR>${r}Exp !. expselect("CARD", $cust_main->paydate). qq!<BR>${r}Name on card<BR><INPUT TYPE="text" NAME="CARD_payname" VALUE="$payname">!,
   'BILL' => qq!Billing<BR>P.O. <INPUT TYPE="text" NAME="BILL_payinfo" VALUE="$payinfo"><BR>${r}Exp !. expselect("BILL", $cust_main->paydate). qq!<BR>Attention<BR><INPUT TYPE="text" NAME="BILL_payname" VALUE="$payname">!,
   'COMP' => qq!Complimentary<BR>${r}Approved by<INPUT TYPE="text" NAME="COMP_payinfo" VALUE="$payinfo"><BR>${r}Exp !. expselect("COMP", $cust_main->paydate),
@@ -434,8 +417,8 @@ unless ( $custnum ) {
 
     #false laziness: (mostly) copied from edit/svc_acct.cgi
     #$ulen = $svc_acct->dbdef_table->column('username')->length;
-    $ulen = dbdef->table('svc_acct')->column('username')->length;
-    $ulen2 = $ulen+2;
+    my $ulen = dbdef->table('svc_acct')->column('username')->length;
+    my $ulen2 = $ulen+2;
     my $passwordmax = $conf->config('passwordmax') || 8;
     my $pmax2 = $passwordmax + 2;
     print <<END;
@@ -454,7 +437,7 @@ END
   }
 }
 
-$otaker = $cust_main->otaker;
+my $otaker = $cust_main->otaker;
 print qq!<INPUT TYPE="hidden" NAME="otaker" VALUE="$otaker">!,
       qq!<BR><INPUT TYPE="submit" VALUE="!,
       $custnum ?  "Apply Changes" : "Add Customer", qq!">!,

@@ -1,26 +1,14 @@
+<!--$Id: catchall.cgi,v 1.3 2002-01-30 14:18:09 ivan Exp $ -->
 <%
-#<!--$Id: catchall.cgi,v 1.2 2001-08-21 02:31:56 ivan Exp $ -->
-
-use strict;
-use vars qw( $cgi $svcnum $old $new $error );
-use CGI;
-use CGI::Carp qw(fatalsToBrowser);
-use FS::UID qw(cgisuidsetup);
-use FS::Record qw(qsearchs fields);
-use FS::svc_domain;
-use FS::CGI qw(popurl);
 
 $FS::svc_domain::whois_hack=1;
 
-$cgi = new CGI;
-cgisuidsetup($cgi);
-
 $cgi->param('svcnum') =~ /^(\d*)$/ or die "Illegal svcnum!";
-$svcnum =$1;
+my $svcnum =$1;
 
-$old = qsearchs('svc_domain',{'svcnum'=>$svcnum}) if $svcnum;
+my $old = qsearchs('svc_domain',{'svcnum'=>$svcnum}) if $svcnum;
 
-$new = new FS::svc_domain ( {
+my $new = new FS::svc_domain ( {
   map {
     ($_, scalar($cgi->param($_)));
   } ( fields('svc_domain'), qw( pkgnum svcpart ) )
@@ -28,6 +16,7 @@ $new = new FS::svc_domain ( {
 
 $new->setfield('action' => 'M');
 
+my $error;
 if ( $svcnum ) {
   $error = $new->replace($old);
 } else {

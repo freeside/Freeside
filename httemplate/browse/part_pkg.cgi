@@ -1,22 +1,5 @@
+<!-- $Id: part_pkg.cgi,v 1.10 2002-01-30 14:18:08 ivan Exp $ -->
 <%
-#<!-- $Id: part_pkg.cgi,v 1.9 2001-12-27 09:26:14 ivan Exp $ -->
-
-use strict;
-use vars qw( $cgi $p $part_pkg );
-use CGI;
-use CGI::Carp qw(fatalsToBrowser);
-use FS::UID qw(cgisuidsetup);
-use FS::Record qw(qsearch qsearchs);
-use FS::CGI qw(header menubar popurl table);
-use FS::part_pkg;
-use FS::pkg_svc;
-use FS::part_svc;
-
-$cgi = new CGI;
-
-&cgisuidsetup($cgi);
-
-$p = popurl(2);
 
 my %search;
 if ( $cgi->param('showdisabled') ) {
@@ -56,7 +39,7 @@ print &table(), <<END;
       </TR>
 END
 
-foreach $part_pkg ( sort { 
+foreach my $part_pkg ( sort { 
   $a->getfield('pkgpart') <=> $b->getfield('pkgpart')
 } @part_pkg ) {
   my($hashref)=$part_pkg->hashref;

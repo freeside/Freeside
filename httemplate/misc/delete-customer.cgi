@@ -1,31 +1,20 @@
+<!-- $Id: delete-customer.cgi,v 1.6 2002-01-30 14:18:09 ivan Exp $ -->
 <%
-#<!-- $Id: delete-customer.cgi,v 1.5 2001-10-30 14:54:07 ivan Exp $ -->
 
-use strict;
-use vars qw( $cgi $conf $query $custnum $new_custnum $cust_main );
-use CGI;
-use CGI::Carp qw(fatalsToBrowser);
-use FS::UID qw(cgisuidsetup);
-use FS::CGI qw(header popurl);
-use FS::Record qw(qsearch qsearchs);
-use FS::cust_main;
-
-$cgi = new CGI;
-cgisuidsetup($cgi);
-
-$conf = new FS::Conf;
+my $conf = new FS::Conf;
 die "Customer deletions not enabled" unless $conf->exists('deletecustomers');
 
+my($custnum, $new_custnum);
 if ( $cgi->param('error') ) {
   $custnum = $cgi->param('custnum');
   $new_custnum = $cgi->param('new_custnum');
 } else {
-  ($query) = $cgi->keywords;
+  my($query) = $cgi->keywords;
   $query =~ /^(\d+)$/ or die "Illegal query: $query";
   $custnum = $1;
   $new_custnum = '';
 }
-$cust_main = qsearchs( 'cust_main', { 'custnum' => $custnum } )
+my $cust_main = qsearchs( 'cust_main', { 'custnum' => $custnum } )
   or die "Customer not found: $custnum";
 
 print header('Delete customer');

@@ -1,22 +1,7 @@
+<!-- $Id: cust_main.cgi,v 1.6 2002-01-30 14:18:09 ivan Exp $ -->
 <%
-# $Id: cust_main.cgi,v 1.5 2001-10-20 12:18:00 ivan Exp $
 
-use strict;
-use vars qw( $cgi $payby @invoicing_list $new $custnum $error );
-use vars qw( $cust_pkg $cust_svc $svc_acct );
-use CGI;
-use CGI::Carp qw(fatalsToBrowser);
-use FS::UID qw(cgisuidsetup getotaker);
-use FS::CGI qw( popurl );
-use FS::Record qw( qsearch qsearchs fields );
-use FS::cust_main;
-use FS::type_pkgs;
-use FS::agent;
-
-$cgi = new CGI;
-&cgisuidsetup($cgi);
-
-$error = '';
+my $error = '';
 
 #unmunge stuff
 
@@ -37,7 +22,8 @@ $cgi->param('ship_state', $1);
 $cgi->param('ship_county', $3 || '');
 $cgi->param('ship_country', $4);
 
-if ( $payby = $cgi->param('payby') ) {
+my $payby = $cgi->param('payby');
+if ( $payby ) {
   $cgi->param('payinfo', $cgi->param( $payby. '_payinfo' ) );
   $cgi->param('paydate',
   $cgi->param( $payby. '_month' ). '-'. $cgi->param( $payby. '_year' ) );
@@ -46,12 +32,12 @@ if ( $payby = $cgi->param('payby') ) {
 
 $cgi->param('otaker', &getotaker );
 
-@invoicing_list = split( /\s*\,\s*/, $cgi->param('invoicing_list') );
+my @invoicing_list = split( /\s*\,\s*/, $cgi->param('invoicing_list') );
 push @invoicing_list, 'POST' if $cgi->param('invoicing_list_POST');
 
 #create new record object
 
-$new = new FS::cust_main ( {
+my $new = new FS::cust_main ( {
   map {
     $_, scalar($cgi->param($_))
 #  } qw(custnum agentnum last first ss company address1 address2 city county
@@ -68,8 +54,8 @@ if ( defined($cgi->param('same')) && $cgi->param('same') eq "Y" ) {
 }
 
 #perhaps this stuff should go to cust_main.pm
-$cust_pkg = '';
-$svc_acct = '';
+my $cust_pkg = '';
+my $svc_acct = '';
 if ( $new->custnum eq '' ) {
 
   if ( $cgi->param('pkgpart_svcpart') ) {
@@ -142,7 +128,6 @@ if ( $error ) {
   $cgi->param('error', $error);
   print $cgi->redirect(popurl(2). "cust_main.cgi?". $cgi->query_string );
 } else { 
-  $custnum = $new->custnum;
-  print $cgi->redirect(popurl(3). "view/cust_main.cgi?$custnum");
+  print $cgi->redirect(popurl(3). "view/cust_main.cgi?". $new->custnum);
 } 
 %>

@@ -1,54 +1,37 @@
+<!-- $Id: cust_pkg.cgi,v 1.6 2002-01-30 14:18:09 ivan Exp $ -->
 <%
-# <!-- $Id: cust_pkg.cgi,v 1.5 2001-10-30 14:54:07 ivan Exp $ -->
 
-use strict;
-use vars qw ( $cgi %uiview %uiadd $part_svc $query $pkgnum $cust_pkg $part_pkg
-              $custnum $susp $cancel $expire $pkg $comment $setup $bill
-              $otaker );
-use Date::Format;
-use CGI;
-use CGI::Carp qw(fatalsToBrowser);
-use FS::UID qw(cgisuidsetup);
-use FS::CGI qw(popurl header menubar ntable table);
-use FS::Record qw(qsearch qsearchs);
-use FS::part_svc;
-use FS::cust_pkg;
-use FS::part_pkg;
-use FS::pkg_svc;
-use FS::cust_svc;
-
-$cgi = new CGI;
-cgisuidsetup($cgi);
-
-foreach $part_svc ( qsearch('part_svc',{}) ) {
+my %uiview = ();
+my %uiadd = ();
+foreach my $part_svc ( qsearch('part_svc',{}) ) {
   $uiview{$part_svc->svcpart} = popurl(2). "view/". $part_svc->svcdb . ".cgi";
   $uiadd{$part_svc->svcpart}= popurl(2). "edit/". $part_svc->svcdb . ".cgi";
 }
 
-($query) = $cgi->keywords;
+my ($query) = $cgi->keywords;
 $query =~ /^(\d+)$/;
-$pkgnum = $1;
+my $pkgnum = $1;
 
 #get package record
-$cust_pkg = qsearchs('cust_pkg',{'pkgnum'=>$pkgnum});
+my $cust_pkg = qsearchs('cust_pkg',{'pkgnum'=>$pkgnum});
 die "No package!" unless $cust_pkg;
-$part_pkg = qsearchs('part_pkg',{'pkgpart'=>$cust_pkg->getfield('pkgpart')});
+my $part_pkg = qsearchs('part_pkg',{'pkgpart'=>$cust_pkg->getfield('pkgpart')});
 
-$custnum = $cust_pkg->getfield('custnum');
+my $custnum = $cust_pkg->getfield('custnum');
 print header('Package View', menubar(
   "View this customer (#$custnum)" => popurl(2). "view/cust_main.cgi?$custnum",
   'Main Menu' => popurl(2)
 ));
 
 #print info
-($susp,$cancel,$expire)=(
+my ($susp,$cancel,$expire)=(
   $cust_pkg->getfield('susp'),
   $cust_pkg->getfield('cancel'),
   $cust_pkg->getfield('expire'),
 );
-($pkg,$comment)=($part_pkg->getfield('pkg'),$part_pkg->getfield('comment'));
-($setup,$bill)=($cust_pkg->getfield('setup'),$cust_pkg->getfield('bill'));
-$otaker = $cust_pkg->getfield('otaker');
+my($pkg,$comment)=($part_pkg->getfield('pkg'),$part_pkg->getfield('comment'));
+my($setup,$bill)=($cust_pkg->getfield('setup'),$cust_pkg->getfield('bill'));
+my $otaker = $cust_pkg->getfield('otaker');
 
 print <<END;
 <SCRIPT>

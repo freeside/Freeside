@@ -1,27 +1,15 @@
+<!-- $Id: cust_pay.cgi,v 1.6 2002-01-30 14:18:09 ivan Exp $ -->
 <%
-#<!-- $Id: cust_pay.cgi,v 1.5 2001-12-26 05:19:01 ivan Exp $ -->
-
-use strict;
-use vars qw( $cgi $link $linknum $new $error );
-use CGI;
-use CGI::Carp qw(fatalsToBrowser);
-use FS::UID qw(cgisuidsetup);
-use FS::CGI qw(popurl);
-use FS::Record qw(fields);
-use FS::cust_pay;
-
-$cgi = new CGI;
-&cgisuidsetup($cgi);
 
 $cgi->param('linknum') =~ /^(\d+)$/
   or die "Illegal linknum: ". $cgi->param('linknum');
-$linknum = $1;
+my $linknum = $1;
 
 $cgi->param('link') =~ /^(custnum|invnum)$/
   or die "Illegal link: ". $cgi->param('link');
-$link = $1;
+my $link = $1;
 
-$new = new FS::cust_pay ( {
+my $new = new FS::cust_pay ( {
   $link => $linknum,
   map {
     $_, scalar($cgi->param($_));
@@ -29,7 +17,7 @@ $new = new FS::cust_pay ( {
   #} fields('cust_pay')
 } );
 
-$error = $new->insert;
+my $error = $new->insert;
 
 if ($error) {
   $cgi->param('error', $error);

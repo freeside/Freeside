@@ -1,23 +1,8 @@
+<!-- $Id: cust_credit_bill.cgi,v 1.3 2002-01-30 14:18:08 ivan Exp $ -->
 <%
-#<!-- $Id: cust_credit_bill.cgi,v 1.2 2001-12-18 19:30:31 ivan Exp $ -->
-
-use strict;
-use vars qw( $cgi $custnum $crednum $new $error );
-use CGI;
-use CGI::Carp qw(fatalsToBrowser);
-use FS::UID qw(cgisuidsetup getotaker);
-use FS::CGI qw(popurl);
-use FS::Record qw(qsearchs fields);
-use FS::cust_credit;
-use FS::cust_credit_bill;
-use FS::cust_refund;
-use FS::cust_main;
-
-$cgi = new CGI;
-cgisuidsetup($cgi);
 
 $cgi->param('crednum') =~ /^(\d*)$/ or die "Illegal crednum!";
-$crednum = $1;
+my $crednum = $1;
 
 my $cust_credit = qsearchs('cust_credit', { 'crednum' => $crednum } )
   or die "No such crednum";
@@ -27,6 +12,7 @@ my $cust_main = qsearchs('cust_main', { 'custnum' => $cust_credit->custnum } )
 
 my $custnum = $cust_main->custnum;
 
+my $new;
 if ($cgi->param('invnum') =~ /^Refund$/) {
   $new = new FS::cust_refund ( {
     'reason'  => $cust_credit->reason,
@@ -45,7 +31,7 @@ if ($cgi->param('invnum') =~ /^Refund$/) {
   } );
 }
 
-$error=$new->insert;
+my $error = $new->insert;
 
 if ( $error ) {
   $cgi->param('error', $error);

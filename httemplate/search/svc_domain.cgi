@@ -1,26 +1,12 @@
+<!-- $Id: svc_domain.cgi,v 1.6 2002-01-30 14:18:09 ivan Exp $ -->
 <%
-# <!-- $Id: svc_domain.cgi,v 1.5 2001-10-30 14:54:07 ivan Exp $ -->
 
-use strict;
-use vars qw ( $cgi @svc_domain $sortby $query $conf $mydomain );
-use CGI;
-use CGI::Carp qw(fatalsToBrowser);
-use FS::UID qw(cgisuidsetup);
-use FS::Record qw(qsearch qsearchs);
-use FS::CGI qw(header eidiot popurl);
-use FS::svc_domain;
-use FS::cust_svc;
-use FS::svc_acct;
-use FS::svc_forward;
+my $conf = new FS::Conf;
+my $mydomain = $conf->config('domain');
 
-$cgi = new CGI;
-&cgisuidsetup($cgi);
-
-$conf = new FS::Conf;
-$mydomain = $conf->config('domain');
-
-($query)=$cgi->keywords;
+my($query)=$cgi->keywords;
 $query ||= ''; #to avoid use of unitialized value errors
+my(@svc_domain,$sortby);
 if ( $query eq 'svcnum' ) {
   $sortby=\*svcnum_sort;
   @svc_domain=qsearch('svc_domain',{});
@@ -69,9 +55,7 @@ END
 #  my(%saw);                 # if we've multiple domains with the same
                              # svcnum, then we've a corrupt database
 
-  my($svc_domain);
-  my $p = popurl(2);
-  foreach $svc_domain (
+  foreach my $svc_domain (
 #    sort $sortby grep(!$saw{$_->svcnum}++, @svc_domain)
     sort $sortby (@svc_domain)
   ) {

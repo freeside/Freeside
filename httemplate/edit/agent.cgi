@@ -1,20 +1,7 @@
+<!-- $Id: agent.cgi,v 1.6 2002-01-30 14:18:08 ivan Exp $ -->
 <%
-#<!-- $Id: agent.cgi,v 1.5 2001-10-30 14:54:07 ivan Exp $ -->
 
-use strict;
-use vars qw ( $cgi $agent $action $hashref $p $agent_type );
-use CGI;
-use CGI::Carp qw(fatalsToBrowser);
-use FS::UID qw(cgisuidsetup);
-use FS::CGI qw(header menubar popurl ntable);
-use FS::Record qw(qsearch qsearchs fields);
-use FS::agent;
-use FS::agent_type;
-
-$cgi = new CGI;
-
-&cgisuidsetup($cgi);
-
+my $agent;
 if ( $cgi->param('error') ) {
   $agent = new FS::agent ( {
     map { $_, scalar($cgi->param($_)) } fields('agent')
@@ -26,10 +13,8 @@ if ( $cgi->param('error') ) {
 } else { #adding
   $agent = new FS::agent {};
 }
-$action = $agent->agentnum ? 'Edit' : 'Add';
-$hashref = $agent->hashref;
-
-$p = popurl(2);
+my $action = $agent->agentnum ? 'Edit' : 'Add';
+my $hashref = $agent->hashref;
 
 print header("$action Agent", menubar(
   'Main Menu' => $p,
@@ -54,7 +39,7 @@ print &ntable("#cccccc", 2, ''), <<END;
   <TD><SELECT NAME="typenum" SIZE=1>
 END
 
-foreach $agent_type (qsearch('agent_type',{})) {
+foreach my $agent_type (qsearch('agent_type',{})) {
   print "<OPTION VALUE=". $agent_type->typenum;
   print " SELECTED"
     if $hashref->{typenum} && ( $hashref->{typenum} == $agent_type->typenum );

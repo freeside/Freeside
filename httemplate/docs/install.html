@@ -68,7 +68,7 @@ mysql> GRANT SELECT,INSERT,UPDATE,DELETE,INDEX,ALTER,CREATE,DROP on freeside.* T
   <li>Edit the top-level Makefile:
     <ul>
       <li>Set <tt>DATASOURCE</tt> to your <a href="http://search.cpan.org/doc/TIMB/DBI-1.20/DBI.pm">DBI data source</a>, for example, <tt>DBI:Pg:host=localhost;dbname=freeside</tt> for PostgresSQL or <tt>DBI:mysql:freeside</tt> for MySQL.  See the <a href="http://search.cpan.org/doc/TIMB/DBI-1.20/DBI.pm">DBI manpage</a> and the <a href="http://search.cpan.org/search?mode=module&query=DBD">manpage for your DBD</a> for the exact syntax of a DBI data source.
-      <li>Set <tt>DB_ADMIN_PASSWORD</tt> to the freeside database user's password.
+      <li>Set <tt>DB_PASSWORD</tt> to the freeside database user's password.
     </ul>
   <li>Add the freeside database to your database engine:
     <pre>

@@ -1,23 +1,10 @@
+<!-- $Id: svc_forward.cgi,v 1.8 2002-01-30 14:18:08 ivan Exp $ -->
 <%
-# <!-- $Id: svc_forward.cgi,v 1.7 2001-12-04 13:10:16 ivan Exp $ -->
 
-use strict;
-use vars qw( $conf $cgi $mydomain $action $svcnum $svc_forward $pkgnum $svcpart
-             $part_svc $query %email $p1 $srcsvc $dstsvc $dst );
-use CGI;
-use CGI::Carp qw(fatalsToBrowser);
-use FS::UID qw(cgisuidsetup);
-use FS::CGI qw(header popurl);
-use FS::Record qw(qsearch qsearchs fields);
-use FS::svc_forward;
-use FS::Conf;
+my $conf = new FS::Conf;
+my $mydomain = $conf->config('domain');
 
-$cgi = new CGI;
-&cgisuidsetup($cgi);
-
-$conf = new FS::Conf;
-$mydomain = $conf->config('domain');
-
+my($svcnum, $pkgnum, $svcpart, $part_svc, $svc_forward);
 if ( $cgi->param('error') ) {
   $svc_forward = new FS::svc_forward ( {
     map { $_, scalar($cgi->param($_)) } fields('svc_forward')
@@ -28,7 +15,9 @@ if ( $cgi->param('error') ) {
   $part_svc=qsearchs('part_svc',{'svcpart'=>$svcpart});
   die "No part_svc entry!" unless $part_svc;
 } else {
+
   my($query) = $cgi->keywords;
+
   if ( $query =~ /^(\d+)$/ ) { #editing
     $svcnum=$1;
     $svc_forward=qsearchs('svc_forward',{'svcnum'=>$svcnum})
@@ -64,12 +53,12 @@ if ( $cgi->param('error') ) {
                               $part_svc_column->columnvalue,
                             );
     }
-
-
   }
-}
-$action = $svc_forward->svcnum ? 'Edit' : 'Add';
 
+}
+my $action = $svc_forward->svcnum ? 'Edit' : 'Add';
+
+my %email;
 if ($pkgnum) {
 
   #find all possible user svcnums (and emails)
@@ -122,7 +111,7 @@ if ($pkgnum) {
   die "\$action eq Add, but \$pkgnum is null!\n";
 }
 
-($srcsvc,$dstsvc,$dst)=(
+my($srcsvc,$dstsvc,$dst)=(
   $svc_forward->srcsvc,
   $svc_forward->dstsvc,
   $svc_forward->dst,
@@ -130,7 +119,7 @@ if ($pkgnum) {
 
 #display
 
-$p1 = popurl(1);
+my $p1 = popurl(1);
 print header("Mail Forward $action", '',
       " onLoad=\"visualize()\"");
 

@@ -1,29 +1,17 @@
+<!-- $Id: svc_acct_pop.cgi,v 1.3 2002-01-30 14:18:09 ivan Exp $ -->
 <%
-#<!-- $Id: svc_acct_pop.cgi,v 1.2 2001-08-21 02:31:56 ivan Exp $ -->
 
-use strict;
-use vars qw( $cgi $popnum $old $new $error );
-use CGI;
-use CGI::Carp qw(fatalsToBrowser);
-use FS::UID qw(cgisuidsetup);
-use FS::Record qw(qsearch qsearchs fields);
-use FS::svc_acct_pop;
-use FS::CGI qw(popurl);
+my $popnum = $cgi->param('popnum');
 
-$cgi = new CGI; # create form object
+my $old = qsearchs('svc_acct_pop',{'popnum'=>$popnum}) if $popnum;
 
-&cgisuidsetup($cgi);
-
-$popnum = $cgi->param('popnum');
-
-$old = qsearchs('svc_acct_pop',{'popnum'=>$popnum}) if $popnum;
-
-$new = new FS::svc_acct_pop ( {
+my $new = new FS::svc_acct_pop ( {
   map {
     $_, scalar($cgi->param($_));
   } fields('svc_acct_pop')
 } );
 
+my $error = '';
 if ( $popnum ) {
   $error = $new->replace($old);
 } else {

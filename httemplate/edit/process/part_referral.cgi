@@ -1,26 +1,15 @@
+<!-- $Id: part_referral.cgi,v 1.3 2002-01-30 14:18:09 ivan Exp $ -->
 <%
-#<!-- $Id: part_referral.cgi,v 1.2 2001-08-21 02:31:56 ivan Exp $ -->
 
-use strict;
-use vars qw( $cgi $refnum $new $error );
-use CGI;
-use CGI::Carp qw(fatalsToBrowser);
-use FS::UID qw(cgisuidsetup);
-use FS::Record qw(qsearchs fields);
-use FS::part_referral;
-use FS::CGI qw(popurl);
+my $refnum = $cgi->param('refnum');
 
-$cgi = new CGI;
-&cgisuidsetup($cgi);
-
-$refnum = $cgi->param('refnum');
-
-$new = new FS::part_referral ( {
+my $new = new FS::part_referral ( {
   map {
     $_, scalar($cgi->param($_));
   } fields('part_referral')
 } );
 
+my $error;
 if ( $refnum ) {
   my $old = qsearchs( 'part_referral', { 'refnum' =>$ refnum } );
   die "(Old) Record not found!" unless $old;

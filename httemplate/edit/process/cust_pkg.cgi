@@ -1,28 +1,19 @@
+<!-- $Id: cust_pkg.cgi,v 1.3 2002-01-30 14:18:09 ivan Exp $ -->
 <%
-#<!-- $Id: cust_pkg.cgi,v 1.2 2001-08-21 02:31:56 ivan Exp $ -->
 
-use strict;
-use vars qw( $cgi $custnum @remove_pkgnums @pkgparts $pkgpart $error );
-use CGI;
-use CGI::Carp qw(fatalsToBrowser);
-use FS::UID qw(cgisuidsetup);
-use FS::CGI qw(popurl);
-use FS::cust_pkg;
-
-$cgi = new CGI; # create form object
-&cgisuidsetup($cgi);
-$error = '';
+my $error = '';
 
 #untaint custnum
 $cgi->param('custnum') =~ /^(\d+)$/;
-$custnum = $1;
+my $custnum = $1;
 
-@remove_pkgnums = map {
+my @remove_pkgnums = map {
   /^(\d+)$/ or die "Illegal remove_pkg value!";
   $1;
 } $cgi->param('remove_pkg');
 
-foreach $pkgpart ( map /^pkg(\d+)$/ ? $1 : (), $cgi->param ) {
+my @pkgparts;
+foreach my $pkgpart ( map /^pkg(\d+)$/ ? $1 : (), $cgi->param ) {
   if ( $cgi->param("pkg$pkgpart") =~ /^(\d+)$/ ) {
     my $num_pkgs = $1;
     while ( $num_pkgs-- ) {

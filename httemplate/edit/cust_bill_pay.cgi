@@ -1,36 +1,22 @@
+<!-- $Id: cust_bill_pay.cgi,v 1.5 2002-01-30 14:18:08 ivan Exp $ -->
 <%
-#<!-- $Id: cust_bill_pay.cgi,v 1.4 2001-12-18 19:36:21 ivan Exp $ -->
 
-use strict;
-use vars qw( $cgi $query $custnum $paynum $amount $invnum $p1 $otaker $cust_pay );
-use CGI;
-use CGI::Carp qw(fatalsToBrowser);
-use Date::Format;
-use FS::UID qw(cgisuidsetup getotaker);
-use FS::CGI qw(header popurl);
-use FS::Record qw(qsearch fields);
-use FS::cust_pay;
-use FS::cust_bill;
-
-
-$cgi = new CGI;
-cgisuidsetup($cgi);
-
+my($paynum, $amount, $invnum);
 if ( $cgi->param('error') ) {
   $paynum = $cgi->param('paynum');
   $amount = $cgi->param('amount');
   $invnum = $cgi->param('invnum');
 } else {
-  ($query) = $cgi->keywords;
+  my($query) = $cgi->keywords;
   $query =~ /^(\d+)$/;
   $paynum = $1;
   $amount = '';
   $invnum = '';
 }
 
-$otaker = getotaker;
+my $otaker = getotaker;
 
-$p1 = popurl(1);
+my $p1 = popurl(1);
 
 print header("Apply Payment", '');
 print qq!<FONT SIZE="+1" COLOR="#ff0000">Error: !, $cgi->param('error'),
@@ -40,7 +26,8 @@ print <<END;
     <FORM ACTION="${p1}process/cust_bill_pay.cgi" METHOD=POST>
 END
 
-die unless $cust_pay = qsearchs('cust_pay', { 'paynum' => $paynum } );
+my $cust_pay = qsearchs('cust_pay', { 'paynum' => $paynum } );
+die "payment $paynum not found!" unless $cust_pay;
 
 my $unapplied = $cust_pay->unapplied;
 

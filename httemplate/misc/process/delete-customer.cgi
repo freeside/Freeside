@@ -1,23 +1,12 @@
+<!-- $Id: delete-customer.cgi,v 1.3 2002-01-30 14:18:09 ivan Exp $ -->
 <%
-#<!-- $Id: delete-customer.cgi,v 1.2 2001-08-21 02:31:56 ivan Exp $ -->
 
-use strict;
-use vars qw ( $cgi $conf $custnum $new_custnum $cust_main $error );
-use CGI;
-use CGI::Carp qw(fatalsToBrowser);
-use FS::UID qw(cgisuidsetup);
-use FS::Record qw(qsearchs);
-use FS::CGI qw(popurl);
-use FS::cust_main;
-
-$cgi = new CGI;
-cgisuidsetup($cgi);
-
-$conf = new FS::Conf;
+my $conf = new FS::Conf;
 die "Customer deletions not enabled" unless $conf->exists('deletecustomers');
 
 $cgi->param('custnum') =~ /^(\d+)$/;
-$custnum = $1;
+my $custnum = $1;
+my $new_custnum;
 if ( $cgi->param('new_custnum') ) {
   $cgi->param('new_custnum') =~ /^(\d+)$/
     or die "Illegal new customer number: ". $cgi->param('new_custnum');
@@ -25,10 +14,10 @@ if ( $cgi->param('new_custnum') ) {
 } else {
   $new_custnum = '';
 }
-$cust_main = qsearchs( 'cust_main', { 'custnum' => $custnum } )
+my $cust_main = qsearchs( 'cust_main', { 'custnum' => $custnum } )
   or die "Customer not found: $custnum";
 
-$error = $cust_main->delete($new_custnum);
+my $error = $cust_main->delete($new_custnum);
 
 if ( $error ) {
   $cgi->param('error', $error);

@@ -1,24 +1,9 @@
+<!-- $Id: catchall.cgi,v 1.5 2002-01-30 14:18:09 ivan Exp $ -->
 <%
-#<!-- $Id: catchall.cgi,v 1.4 2001-10-30 14:54:07 ivan Exp $ -->
 
-use strict;
-use vars qw( $conf $cgi $action $svcnum $svc_domain $pkgnum $svcpart
-             $part_svc $query %email $p1 $domain $catchall );
-use CGI;
-use CGI::Carp qw(fatalsToBrowser);
-use FS::UID qw(cgisuidsetup);
-use FS::CGI qw(header popurl);
-use FS::Record qw(qsearch qsearchs fields);
-use FS::svc_acct;
-use FS::svc_domain;
-use FS::svc_forward;
-use FS::Conf;
+my $conf = new FS::Conf;
 
-$cgi = new CGI;
-&cgisuidsetup($cgi);
-
-$conf = new FS::Conf;
-
+my($svc_domain, $svcnum, $pkgnum, $svcpart, $part_svc);
 if ( $cgi->param('error') ) {
   $svc_domain = new FS::svc_domain ( {
     map { $_, scalar($cgi->param($_)) } fields('svc_domain')
@@ -51,6 +36,7 @@ if ( $cgi->param('error') ) {
   }
 }
 
+my %email;
 if ($pkgnum) {
 
   #find all possible user svcnums (and emails)
@@ -93,7 +79,7 @@ if ($pkgnum) {
 # add an absence of a catchall
 $email{0} = "(none)";
 
-$p1 = popurl(1);
+my $p1 = popurl(1);
 print header("Domain Catchall Edit", '');
 
 print qq!<FONT SIZE="+1" COLOR="#ff0000">Error: !, $cgi->param('error'),
@@ -117,7 +103,7 @@ print qq!<INPUT TYPE="hidden" NAME="pkgnum" VALUE="$pkgnum">!;
 #svcpart
 print qq!<INPUT TYPE="hidden" NAME="svcpart" VALUE="$svcpart">!;
 
-($domain,$catchall)=(
+my($domain,$catchall)=(
   $svc_domain->domain,
   $svc_domain->catchall,
 );

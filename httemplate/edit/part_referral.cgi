@@ -1,19 +1,7 @@
+<!-- $Id: part_referral.cgi,v 1.5 2002-01-30 14:18:08 ivan Exp $ -->
 <%
-#<!-- $Id: part_referral.cgi,v 1.4 2001-10-30 14:54:07 ivan Exp $ -->
 
-use strict;
-use vars qw( $cgi $part_referral $action $hashref $p1 $query );
-use CGI;
-use CGI::Carp qw(fatalsToBrowser);
-use FS::UID qw(cgisuidsetup);
-use FS::Record qw(qsearch qsearchs fields);
-use FS::part_referral;
-use FS::CGI qw(header menubar popurl);
-
-$cgi = new CGI;
-
-&cgisuidsetup($cgi);
-
+my $part_referral;
 if ( $cgi->param('error') ) {
   $part_referral = new FS::part_referral ( {
     map { $_, scalar($cgi->param($_)) } fields('part_referral')
@@ -25,10 +13,10 @@ if ( $cgi->param('error') ) {
 } else { #adding
   $part_referral = new FS::part_referral {};
 }
-$action = $part_referral->refnum ? 'Edit' : 'Add';
-$hashref = $part_referral->hashref;
+my $action = $part_referral->refnum ? 'Edit' : 'Add';
+my $hashref = $part_referral->hashref;
 
-$p1 = popurl(1);
+my $p1 = popurl(1);
 print header("$action Referral", menubar(
   'Main Menu' => popurl(2),
   'View all referrals' => popurl(2). "browse/part_referral.cgi",

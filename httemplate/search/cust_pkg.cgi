@@ -1,38 +1,22 @@
+<!-- $Id: cust_pkg.cgi,v 1.13 2002-01-30 14:18:09 ivan Exp $ -->
 <%
-# <!-- $Id: cust_pkg.cgi,v 1.12 2001-12-18 07:12:00 ivan Exp $ -->
 
-use strict;
-use vars qw ( $cgi @cust_pkg $sortby $query %part_pkg
-              $conf $maxrecords $limit $offset );
-use CGI;
-use CGI::Carp qw(fatalsToBrowser);
-use FS::UID qw(dbh cgisuidsetup);
-use FS::Conf;
-use FS::Record qw(qsearch qsearchs dbdef);
-use FS::CGI qw(header eidiot popurl table);
-use FS::cust_pkg;
-use FS::pkg_svc;
-use FS::cust_svc;
-use FS::cust_main;
-
-$cgi = new CGI;
-&cgisuidsetup($cgi);
-
-$conf = new FS::Conf;
-$maxrecords = $conf->config('maxsearchrecordsperpage');
+my $conf = new FS::Conf;
+my $maxrecords = $conf->config('maxsearchrecordsperpage');
 
 my %part_pkg = map { $_->pkgpart => $_ } qsearch('part_pkg', {});
 
-$limit = '';
+my $limit = '';
 $limit .= "LIMIT $maxrecords" if $maxrecords;
 
-$offset = $cgi->param('offset') || 0;
+my $offset = $cgi->param('offset') || 0;
 $limit .= " OFFSET $offset" if $offset;
 
 my $total;
 
 my $unconf = '';
-($query) = $cgi->keywords;
+my($query) = $cgi->keywords;
+my $sortby;
 if ( $query eq 'pkgnum' ) {
   $sortby=\*pkgnum_sort;
 
@@ -86,7 +70,7 @@ $sth->execute or die "Error executing \"$statement\": ". $sth->errstr;
 
 $total = $sth->fetchrow_arrayref->[0];
 
-@cust_pkg = qsearch('cust_pkg',{}, '', "$unconf ORDER BY pkgnum $limit" );
+my @cust_pkg = qsearch('cust_pkg',{}, '', "$unconf ORDER BY pkgnum $limit" );
 
 
 if ( scalar(@cust_pkg) == 1 ) {

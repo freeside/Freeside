@@ -1,21 +1,5 @@
+<!-- $Id: queue.cgi,v 1.7 2002-01-30 14:18:08 ivan Exp $ -->
 <%
-#<!-- $Id: queue.cgi,v 1.6 2001-10-31 16:52:42 ivan Exp $ -->
-
-use strict;
-use vars qw( $cgi $p ); # $part_referral );
-use CGI;
-use CGI::Carp qw(fatalsToBrowser);
-use Date::Format;
-use FS::UID qw(cgisuidsetup);
-use FS::Record qw(qsearch);
-use FS::CGI qw(header menubar popurl table);
-use FS::queue;
-
-$cgi = new CGI;
-
-&cgisuidsetup($cgi);
-
-$p = popurl(2);
 
 print header("Job Queue", menubar(
   'Main Menu' => $p,

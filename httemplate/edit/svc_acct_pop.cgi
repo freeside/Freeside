@@ -1,17 +1,7 @@
+<!-- $Id: svc_acct_pop.cgi,v 1.5 2002-01-30 14:18:08 ivan Exp $ -->
 <%
-#<!-- $Id: svc_acct_pop.cgi,v 1.4 2001-10-30 14:54:07 ivan Exp $ -->
 
-use strict;
-use vars qw( $cgi $svc_acct_pop $action $query $hashref $p1 );
-use CGI;
-use CGI::Carp qw(fatalsToBrowser);
-use FS::UID qw(cgisuidsetup);
-use FS::Record qw(qsearch qsearchs fields);
-use FS::CGI qw(header menubar popurl);
-use FS::svc_acct_pop;
-$cgi = new CGI;
-&cgisuidsetup($cgi);
-
+my $svc_acct_pop;
 if ( $cgi->param('error') ) {
   $svc_acct_pop = new FS::svc_acct_pop ( {
     map { $_, scalar($cgi->param($_)) } fields('svc_acct_pop')
@@ -23,10 +13,10 @@ if ( $cgi->param('error') ) {
 } else { #adding
   $svc_acct_pop = new FS::svc_acct_pop {};
 }
-$action = $svc_acct_pop->popnum ? 'Edit' : 'Add';
-$hashref = $svc_acct_pop->hashref;
+my $action = $svc_acct_pop->popnum ? 'Edit' : 'Add';
+my $hashref = $svc_acct_pop->hashref;
 
-$p1 = popurl(1);
+my $p1 = popurl(1);
 print header("$action POP", menubar(
   'Main Menu' => popurl(2),
   'View all POPs' => popurl(2). "browse/svc_acct_pop.cgi",

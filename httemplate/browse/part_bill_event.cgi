@@ -1,4 +1,4 @@
-<!-- $Id: part_bill_event.cgi,v 1.1 2002-01-29 16:33:15 ivan Exp $ -->
+<!-- $Id: part_bill_event.cgi,v 1.2 2002-01-30 14:18:08 ivan Exp $ -->
 <% 
 
 my %search;
@@ -22,7 +22,7 @@ my $total = scalar(@part_bill_event);
       : do { $cgi->param('showdisabled', 1);
              '( <a href="'. $cgi->self_url. '">show disabled events</a> )'; }
 %>
-<TABLE BORDER=1>
+<%= table() %>
   <TR>
     <TH COLSPAN=<%= $cgi->param('showdisabled') ? 2 : 3 %>>Event</TH>
     <TH>Payby</TH>
@@ -32,11 +32,12 @@ my $total = scalar(@part_bill_event);
 
 <% foreach my $part_bill_event ( sort {    $a->payby     cmp $b->payby
                                         || $a->seconds   <=> $b->seconds
+                                        || $a->weight    <=> $b->weight
                                         || $a->eventpart <=> $b->eventpart
                                       } @part_bill_event ) {
      my $url = "${p}edit/part_bill_event.cgi?". $part_bill_event->eventpart;
      use Time::Duration;
-     my $delay = duration_exact($hashref->{seconds});
+     my $delay = duration_exact($part_bill_event->seconds);
 %>
   <TR>
     <TD><A HREF="<%= $url %>">

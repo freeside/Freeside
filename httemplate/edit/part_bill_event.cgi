@@ -1,4 +1,4 @@
-<!-- $Id: part_bill_event.cgi,v 1.1 2002-01-29 16:33:16 ivan Exp $ -->
+<!-- $Id: part_bill_event.cgi,v 1.2 2002-01-30 14:18:08 ivan Exp $ -->
 
 <%
 
@@ -71,42 +71,57 @@ print '<TR><TD ALIGN="right">Action</TD><TD>';
 #this is pretty kludgy right here.
 tie my %events, 'Tie::IxHash',
 
-  'Charge a fee' => {
-    'code' => '$cust_main->charge( %%%charge%%%, \'%%%reason%%%\' );',
-    'html' => 'Amount <INPUT TYPE="text" SIZE="7" NAME="charge"><BR>'.
+  'fee' => {
+    'name'   => 'Late fee',
+    'code'   => '$cust_main->charge( %%%charge%%%, \'%%%reason%%%\' );',
+    'html'   => 'Amount <INPUT TYPE="text" SIZE="7" NAME="charge"><BR>'.
               'Reason <INPUT TYPE="text" NAME="reason">',
+    'weight' => 10,
   },
-  'Suspend accounts' => {
-    'code' => '$cust_main->suspend();',
+  'suspend' => {
+    'name'   => 'Suspend',
+    'code'   => '$cust_main->suspend();',
+    'weight' => 10,
   },
-  'Cancel accounts' => {
-    'code' => '$cust_main->cancel();',
+  'cancel' => {
+    'name'   => 'Cancel',
+    'code'   => '$cust_main->cancel();',
+    'weight' => 10,
   },
 
-  'Add postal invoicing' => {
+  'addpost' => {
+    'name' => 'Add postal invoicing',
     'code' => '$cust_main->invoicing_list_addpost();',
-    'pad'  => 10,
+    'pad'  => 20,
+  },
+
+  'send' => {
+    'name' => 'Send invoice (email/print)',
+    'code' => '',
+    'weight' => 30
   },
 
   'Generate invoices' => {
     'code' => '$cust_main->bill();',
-    'pad'  => 20,
+    'pad'  => 40,
   },
 
   'Apply unapplied payments and credits' => {
     'code' => '$cust_main->apply_payments; $cust_main->apply_credits;',
-    'pad'  => 30,
+    'pad'  => 50,
   },
 
   'Collect on invoices' => {
     'code' => '$cust_main->collect();',
-    'pad'  => 40,
+    'pad'  => 60,
   },
 
 ;
 
 foreach my $event ( keys %events ) {
-  print ntable( "#cccccc", 2). qq!<TR><TD><INPUT TYPE="radio" NAME="eventcode" VALUE="!.
+  print ntable( "#cccccc", 2).
+        qq!<TR><TD><INPUT TYPE="radio" NAME="eventcode" VALUE="!.
+        $events{$event}{weight}. ":".
         encode_entities($events{$event}{code}). qq!">$event</TD>!;
   print '<TD>'. $events{$event}{html}. '</TD>' if exists $events{$event}{html};
   print qq!</TR>!;
@@ -121,7 +136,7 @@ print <<END;
 END
 
 print qq!<INPUT TYPE="submit" VALUE="!,
-      $hashref->{pkgpart} ? "Apply changes" : "Add invoice event",
+      $hashref->{eventpart} ? "Apply changes" : "Add invoice event",
       qq!">!;
 %>
 

@@ -1,18 +1,5 @@
+<!-- $Id: cust_main_county.cgi,v 1.6 2002-01-30 14:18:08 ivan Exp $ -->
 <%
-#<!-- $Id: cust_main_county.cgi,v 1.5 2001-10-30 14:54:07 ivan Exp $ -->
-
-use strict;
-use vars qw( $cgi $cust_main_county );
-use CGI;
-use CGI::Carp qw(fatalsToBrowser);
-use FS::UID qw(cgisuidsetup);
-use FS::Record qw(qsearch qsearchs);
-use FS::CGI qw(header menubar popurl table);
-use FS::cust_main_county;
-
-$cgi = new CGI;
-
-&cgisuidsetup($cgi);
 
 print header("Edit tax rates", menubar(
   'Main Menu' => popurl(2),
@@ -32,10 +19,10 @@ print qq!<FORM ACTION="!, popurl(1),
       </TR>
 END
 
-foreach $cust_main_county ( sort {    $a->country cmp $b->country
-                                   or $a->state   cmp $b->state
-                                   or $a->county  cmp $b->county
-                                 } qsearch('cust_main_county',{}) ) {
+foreach my $cust_main_county ( sort {    $a->country cmp $b->country
+                                      or $a->state   cmp $b->state
+                                      or $a->county  cmp $b->county
+                                    } qsearch('cust_main_county',{}) ) {
   my($hashref)=$cust_main_county->hashref;
   print <<END;
       <TR>

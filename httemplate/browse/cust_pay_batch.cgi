@@ -1,21 +1,5 @@
+<!-- $Id: cust_pay_batch.cgi,v 1.2 2002-01-30 14:18:08 ivan Exp $ -->
 <%
-#<!-- $Id: cust_pay_batch.cgi,v 1.1 2001-10-30 19:05:27 ivan Exp $ -->
-
-use strict;
-use vars qw( $cgi $p ); # $part_referral );
-use CGI;
-use CGI::Carp qw(fatalsToBrowser);
-use Date::Format;
-use FS::UID qw(cgisuidsetup);
-use FS::Record qw(qsearch);
-use FS::CGI qw(header menubar popurl table);
-use FS::queue;
-
-$cgi = new CGI;
-
-&cgisuidsetup($cgi);
-
-$p = popurl(2);
 
 print header("Pending credit card batch", menubar(
   'Main Menu' => $p,

@@ -1,32 +1,18 @@
+<!-- $Id: svc_acct_sm.cgi,v 1.5 2002-01-30 14:18:09 ivan Exp $ -->
 <%
-#<!-- $Id: svc_acct_sm.cgi,v 1.4 2001-10-30 14:54:07 ivan Exp $ -->
 
-use strict;
-use vars qw( $conf $cgi $mydomain $domuser $svc_domain $domsvc @svc_acct_sm );
-use CGI;
-use CGI::Carp qw(fatalsToBrowser);
-use FS::UID qw(cgisuidsetup);
-use FS::CGI qw(popurl idiot header table);
-use FS::Record qw(qsearch qsearchs);
-use FS::Conf;
-use FS::svc_domain;
-use FS::svc_acct_sm;
-use FS::svc_acct;
-
-$cgi = new CGI;
-&cgisuidsetup($cgi);
-
-$conf = new FS::Conf;
-$mydomain = $conf->config('domain');
+my $conf = new FS::Conf;
+my $mydomain = $conf->config('domain');
 
 $cgi->param('domuser') =~ /^([a-z0-9_\-]{0,32})$/;
-$domuser = $1;
+my $domuser = $1;
 
 $cgi->param('domain') =~ /^([\w\-\.]+)$/ or die "Illegal domain";
-$svc_domain = qsearchs('svc_domain',{'domain'=>$1})
+my $svc_domain = qsearchs('svc_domain',{'domain'=>$1})
   or die "Unknown domain";
-$domsvc = $svc_domain->svcnum;
+my $domsvc = $svc_domain->svcnum;
 
+my @svc_acct_sm;
 if ($domuser) {
   @svc_acct_sm=qsearch('svc_acct_sm',{
     'domuser' => $domuser,

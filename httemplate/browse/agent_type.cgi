@@ -1,22 +1,6 @@
+<!-- $Id: agent_type.cgi,v 1.7 2002-01-30 14:18:08 ivan Exp $ -->
 <%
-#<!-- $Id: agent_type.cgi,v 1.6 2001-10-30 14:54:07 ivan Exp $ -->
 
-use strict;
-use vars qw( $cgi $p $agent_type );
-use CGI;
-use CGI::Carp qw(fatalsToBrowser);
-use FS::UID qw(cgisuidsetup);
-use FS::Record qw(qsearch qsearchs);
-use FS::CGI qw(header menubar popurl table);
-use FS::agent_type;
-use FS::type_pkgs;
-use FS::part_pkg;
-
-$cgi = new CGI;
-
-&cgisuidsetup($cgi);
-
-$p = popurl(2);
 print header("Agent Type Listing", menubar(
   'Main Menu' => $p,
 )), "Agent types define groups of packages that you can then assign to".
@@ -27,7 +11,7 @@ print header("Agent Type Listing", menubar(
       </TR>
 END
 
-foreach $agent_type ( sort { 
+foreach my $agent_type ( sort { 
   $a->getfield('typenum') <=> $b->getfield('typenum')
 } qsearch('agent_type',{}) ) {
   my($hashref)=$agent_type->hashref;

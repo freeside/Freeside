@@ -1,4 +1,4 @@
-<!-- $Id: part_svc.cgi,v 1.13 2001-12-27 09:26:14 ivan Exp $ -->
+<!-- $Id: part_svc.cgi,v 1.14 2002-01-30 14:18:08 ivan Exp $ -->
 <% 
    my $part_svc;
    if ( $cgi->param('error') ) { #error
@@ -51,7 +51,7 @@ Disable new orders <INPUT TYPE="checkbox" NAME="disabled" VALUE="Y"<%= $hashref-
 Services are items you offer to your customers.
 <UL><LI>svc_acct - Shell accounts, POP mailboxes, SLIP/PPP and ISDN accounts
     <LI>svc_domain - Domains
-    <LI>svc_acct_sm - <B>depreciated</B> (use svc_forward for new installations) Virtual domain mail aliasing.
+    <LI>svc_acct_sm - <B>deprecated</B> (use svc_forward for new installations) Virtual domain mail aliasing.
     <LI>svc_forward - mail forwarding
     <LI>svc_www - Virtual domain website
 <!--   <LI>svc_charge - One-time charges (Partially unimplemented)
@@ -181,8 +181,8 @@ function fixup(what) {
 <INPUT TYPE="hidden" NAME="disabled" VALUE="<%= $hashref->{disabled} %>">
 <INPUT TYPE="hidden" NAME="svcdb" VALUE="<%= $svcdb %>">
 <%
-  print "$svcdb" unless $svcdb eq 'konq_kludge';
-  print "<BR><TABLE BORDER=1><TH>Field</TH><TH COLSPAN=2>Modifier</TH>" unless $svcdb eq 'konq_kludge';
+  #print "$svcdb<BR>" unless $svcdb eq 'konq_kludge';
+  print table(). "<TH>Field</TH><TH COLSPAN=2>Modifier</TH>" unless $svcdb eq 'konq_kludge';
 
   foreach my $field (@fields) {
     my $part_svc_column = $part_svc->part_svc_column($field);

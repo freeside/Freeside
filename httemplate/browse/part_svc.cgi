@@ -1,4 +1,4 @@
-<!-- $Id: part_svc.cgi,v 1.6 2001-12-27 09:26:14 ivan Exp $ -->
+<!-- $Id: part_svc.cgi,v 1.7 2002-01-30 14:18:08 ivan Exp $ -->
 <% 
 
 my %search;
@@ -22,7 +22,7 @@ my $total = scalar(@part_svc);
       : do { $cgi->param('showdisabled', 1);
              '( <a href="'. $cgi->self_url. '">show disabled services</a> )'; }
 %>
-<TABLE BORDER=1>
+<%= table() %>
   <TR>
     <TH COLSPAN=<%= $cgi->param('showdisabled') ? 2 : 3 %>>Service</TH>
     <TH>Table</TH>

@@ -1,20 +1,5 @@
+<!-- $Id: cust_main_county.cgi,v 1.6 2002-01-30 14:18:08 ivan Exp $ -->
 <%
-#<!-- $Id: cust_main_county.cgi,v 1.5 2001-10-30 14:54:07 ivan Exp $ -->
-
-use strict;
-use vars qw( $cgi $p $cust_main_county );
-use CGI;
-use CGI::Carp qw(fatalsToBrowser);
-use FS::UID qw(cgisuidsetup);
-use FS::Record qw(qsearch qsearchs);
-use FS::CGI qw(header menubar popurl table);
-use FS::cust_main_county;
-
-$cgi = new CGI;
-
-&cgisuidsetup($cgi);
-
-$p = popurl(2);
 
 print header("Tax Rate Listing", menubar(
   'Main Menu' => $p,

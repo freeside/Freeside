@@ -1,19 +1,8 @@
+<!-- $Id: svc_domain.cgi,v 1.7 2002-01-30 14:18:08 ivan Exp $ -->
 <%
-#<!-- $Id: svc_domain.cgi,v 1.6 2001-10-30 14:54:07 ivan Exp $ -->
 
-use strict;
-use vars qw( $cgi $action $svcnum $svc_domain $pkgnum $svcpart $part_svc
-             $svc $otaker $domain $p1 $kludge_action $purpose );
-use CGI;
-use CGI::Carp qw(fatalsToBrowser);
-use FS::UID qw(cgisuidsetup getotaker);
-use FS::CGI qw(header popurl);
-use FS::Record qw(qsearch qsearchs fields);
-use FS::svc_domain;
-
-$cgi = new CGI;
-&cgisuidsetup($cgi);
-
+my($svcnum, $pkgnum, $svcpart, $kludge_action, $purpose, $part_svc,
+   $svc_domain);
 if ( $cgi->param('error') ) {
   $svc_domain = new FS::svc_domain ( {
     map { $_, scalar($cgi->param($_)) } fields('svc_domain')
@@ -65,18 +54,18 @@ if ( $cgi->param('error') ) {
                            );
     }
 
-
   }
+
 }
-$action = $svcnum ? 'Edit' : 'Add';
+my $action = $svcnum ? 'Edit' : 'Add';
 
-$svc = $part_svc->getfield('svc');
+my $svc = $part_svc->getfield('svc');
 
-$otaker = getotaker;
+my $otaker = getotaker;
 
-$domain = $svc_domain->domain;
+my $domain = $svc_domain->domain;
 
-$p1 = popurl(1);
+my $p1 = popurl(1);
 print header("$action $svc", '');
 
 print qq!<FONT SIZE="+1" COLOR="#ff0000">Error: !, $cgi->param('error'),

@@ -1,17 +1,5 @@
+<!-- $Id: cust_main_county.cgi,v 1.3 2002-01-30 14:18:09 ivan Exp $ -->
 <%
-#<!-- $Id: cust_main_county.cgi,v 1.2 2001-08-21 02:31:56 ivan Exp $ -->
-
-use strict;
-use vars qw( $cgi );
-use CGI;
-use CGI::Carp qw(fatalsToBrowser);
-use FS::UID qw(cgisuidsetup);
-use FS::CGI qw(popurl);
-use FS::Record qw(qsearch qsearchs);
-use FS::cust_main_county;
-
-$cgi = new CGI;
-&cgisuidsetup($cgi);
 
 foreach ( $cgi->param ) {
   /^tax(\d+)$/ or die "Illegal form $_!";

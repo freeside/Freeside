@@ -1,21 +1,7 @@
+<!-- $Id: cust_credit_bill.cgi,v 1.7 2002-01-30 14:18:08 ivan Exp $ -->
 <%
-#<!-- $Id: cust_credit_bill.cgi,v 1.6 2001-12-18 19:30:31 ivan Exp $ -->
 
-use strict;
-use vars qw( $cgi $query $custnum $invnum $otaker $p1 $crednum $amount $reason $cust_credit );
-use CGI;
-use CGI::Carp qw(fatalsToBrowser);
-use Date::Format;
-use FS::UID qw(cgisuidsetup getotaker);
-use FS::CGI qw(header popurl);
-use FS::Record qw(qsearch fields);
-use FS::cust_credit;
-use FS::cust_bill;
-
-
-$cgi = new CGI;
-cgisuidsetup($cgi);
-
+my($crednum, $amount, $invnum);
 if ( $cgi->param('error') ) {
   #$cust_credit_bill = new FS::cust_credit_bill ( {
   #  map { $_, scalar($cgi->param($_)) } fields('cust_credit_bill')
@@ -25,7 +11,7 @@ if ( $cgi->param('error') ) {
   #$refund = $cgi->param('refund');
   $invnum = $cgi->param('invnum');
 } else {
-  ($query) = $cgi->keywords;
+  my($query) = $cgi->keywords;
   $query =~ /^(\d+)$/;
   $crednum = $1;
   $amount = '';
@@ -33,9 +19,9 @@ if ( $cgi->param('error') ) {
   $invnum = '';
 }
 
-$otaker = getotaker;
+my $otaker = getotaker;
 
-$p1 = popurl(1);
+my $p1 = popurl(1);
 
 print header("Apply Credit", '');
 print qq!<FONT SIZE="+1" COLOR="#ff0000">Error: !, $cgi->param('error'),
@@ -45,7 +31,8 @@ print <<END;
     <FORM ACTION="${p1}process/cust_credit_bill.cgi" METHOD=POST>
 END
 
-die unless $cust_credit = qsearchs('cust_credit', { 'crednum' => $crednum } );
+my $cust_credit = qsearchs('cust_credit', { 'crednum' => $crednum } );
+die "credit $crednum not found!" unless $cust_credit;
 
 my $credited = $cust_credit->credited;
 

@@ -1,20 +1,7 @@
+<!-- $Id: cust_bill.cgi,v 1.6 2002-01-30 14:18:09 ivan Exp $ -->
 <%
-#<!-- $Id: cust_bill.cgi,v 1.5 2001-10-30 14:54:07 ivan Exp $ -->
 
-use strict;
-use vars qw ( $cgi $invnum $query $sortby @cust_bill );
-use CGI;
-use CGI::Carp qw(fatalsToBrowser);
-use Date::Format;
-use FS::UID qw(cgisuidsetup);
-use FS::CGI qw(popurl header menubar eidiot table );
-use FS::Record qw(qsearch qsearchs);
-use FS::cust_bill;
-use FS::cust_main;
-
-$cgi = new CGI;
-cgisuidsetup($cgi);
-
+my(@cust_bill, $sortby);
 if ( $cgi->keywords ) {
   my($query) = $cgi->keywords;
   if ( $query eq 'invnum' ) {
@@ -55,7 +42,7 @@ if ( $cgi->keywords ) {
   }
 } else {
   $cgi->param('invnum') =~ /^\s*(FS-)?(\d+)\s*$/;
-  $invnum = $2;
+  my $invnum = $2;
   @cust_bill = qsearchs('cust_bill', { 'invnum' => $invnum } );
   $sortby = \*invnum_sort;
 }

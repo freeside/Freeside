@@ -1,23 +1,11 @@
+<!-- $Id: part_pkg.cgi,v 1.7 2002-01-30 14:18:09 ivan Exp $ -->
 <%
-#<!-- $Id: part_pkg.cgi,v 1.6 2001-12-27 09:26:14 ivan Exp $ -->
 
-use strict;
-use vars qw( $cgi $pkgpart $old $new $part_svc $error $dbh );
-use CGI;
-use CGI::Carp qw(fatalsToBrowser);
-use FS::UID qw(cgisuidsetup);
-use FS::CGI qw(popurl);
-use FS::Record qw(qsearch qsearchs fields);
-use FS::part_pkg;
-use FS::pkg_svc;
-use FS::cust_pkg;
+my $dbh = dbh;
 
-$cgi = new CGI;
-$dbh = &cgisuidsetup($cgi);
+my $pkgpart = $cgi->param('pkgpart');
 
-$pkgpart = $cgi->param('pkgpart');
-
-$old = qsearchs('part_pkg',{'pkgpart'=>$pkgpart}) if $pkgpart;
+my $old = qsearchs('part_pkg',{'pkgpart'=>$pkgpart}) if $pkgpart;
 
 #fixup plandata
 my $plandata = $cgi->param('plandata');
@@ -30,7 +18,7 @@ foreach (qw( setuptax recurtax disabled )) {
   $cgi->param($_, '') unless defined $cgi->param($_);
 }
 
-$new = new FS::part_pkg ( {
+my $new = new FS::part_pkg ( {
   map {
     $_, scalar($cgi->param($_));
   } fields('part_pkg')
@@ -41,7 +29,7 @@ $new = new FS::part_pkg ( {
 
 #most of the stuff below should move to part_pkg.pm
 
-foreach $part_svc ( qsearch('part_svc', {} ) ) {
+foreach my $part_svc ( qsearch('part_svc', {} ) ) {
   my $quantity = $cgi->param('pkg_svc'. $part_svc->svcpart) || 0;
   unless ( $quantity =~ /^(\d+)$/ ) {
     $cgi->param('error', "Illegal quantity" );
@@ -59,6 +47,7 @@ local $SIG{PIPE} = 'IGNORE';
 
 local $FS::UID::AutoCommit = 0;
 
+my $error;
 if ( $pkgpart ) {
   $error = $new->replace($old);
 } else {

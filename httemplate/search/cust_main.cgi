@@ -1,27 +1,7 @@
 <%
-#<!-- $Id: cust_main.cgi,v 1.20 2002-01-09 13:29:34 ivan Exp $ -->
 
-use strict;
-#use vars qw( $conf %ncancelled_pkgs %all_pkgs $cgi @cust_main $sortby );
-#use vars qw( $conf %all_pkgs $cgi @cust_main $sortby );
-use vars qw( $conf %all_pkgs $cgi @cust_main $sortby
-             $orderby $maxrecords $limit $offset );
-use CGI;
-use CGI::Carp qw(fatalsToBrowser);
-use IO::Handle;
-use String::Approx qw(amatch);
-use FS::UID qw(dbh cgisuidsetup);
-use FS::Conf;
-use FS::Record qw(qsearch qsearchs dbdef jsearch);
-use FS::CGI qw(header menubar eidiot popurl table);
-use FS::cust_main;
-use FS::cust_svc;
-
-$cgi = new CGI;
-cgisuidsetup($cgi);
-
-$conf = new FS::Conf;
-$maxrecords = $conf->config('maxsearchrecordsperpage');
+my $conf = new FS::Conf;
+my $maxrecords = $conf->config('maxsearchrecordsperpage');
 
 #my $cache;
 
@@ -59,16 +39,15 @@ $maxrecords = $conf->config('maxsearchrecordsperpage');
 #) using (custnum)
 #END
 
-$orderby = ''; #removeme
-
-$limit = '';
+my $limit = '';
 $limit .= "LIMIT $maxrecords" if $maxrecords;
 
-$offset = $cgi->param('offset') || 0;
+my $offset = $cgi->param('offset') || 0;
 $limit .= " OFFSET $offset" if $offset;
 
 my $total;
 
+my(@cust_main, $sortby, $orderby);
 if ( $cgi->param('browse') ) {
   my $query = $cgi->param('browse');
   if ( $query eq 'custnum' ) {
@@ -135,10 +114,21 @@ if ( $cgi->param('browse') ) {
 
 } else {
   @cust_main=();
-  &cardsearch if $cgi->param('card_on') && $cgi->param('card');
-  &lastsearch if $cgi->param('last_on') && $cgi->param('last_text');
-  &companysearch if $cgi->param('company_on') && $cgi->param('company_text');
-  &referralsearch if $cgi->param('referral_custnum');
+  $sortby = \*last_sort;
+
+  push @cust_main, @{&cardsearch}
+    if $cgi->param('card_on') && $cgi->param('card');
+  push @cust_main, @{&lastsearch}
+    if $cgi->param('last_on') && $cgi->param('last_text');
+  push @cust_main, @{&companysearch}
+    if $cgi->param('company_on') && $cgi->param('company_text');
+  push @cust_main, @{&referralsearch}
+    if $cgi->param('referral_custnum');
+
+  if ( $cgi->param('company_on') && $cgi->param('company_text') ) {
+    $sortby = \*company_sort;
+    push @cust_main, @{&companysearch};
+  }
 
   @cust_main = grep { $_->ncancelled_pkgs || ! $_->all_pkgs } @cust_main
     if $cgi->param('showcancelledcustomers') eq '0' #see if it was set by me
@@ -146,6 +136,7 @@ if ( $cgi->param('browse') ) {
              && ! $cgi->param('showcancelledcustomers') );
 }
 
+my %all_pkgs;
 if ( $conf->exists('hidecancelledpackages' ) ) {
   %all_pkgs = map { $_->custnum => [ $_->ncancelled_pkgs ] } @cust_main;
 } else {
@@ -368,8 +359,7 @@ sub cardsearch {
   $card =~ /^(\d{13,16})$/ or eidiot "Illegal card number\n";
   my($payinfo)=$1;
 
-  push @cust_main, qsearch('cust_main',{'payinfo'=>$payinfo, 'payby'=>'CARD'});
-  $sortby=\*last_sort;
+  [ qsearch('cust_main',{'payinfo'=>$payinfo, 'payby'=>'CARD'}) ];
 }
 
 sub referralsearch {
@@ -385,12 +375,12 @@ sub referralsearch {
   } else {
     $depth = 1;
   }
-  push @cust_main, $cust_main->referral_cust_main($depth);
-  $sortby=\*last_sort;
+  [ $cust_main->referral_cust_main($depth) ];
 }
 
 sub lastsearch {
   my(%last_type);
+  my @cust_main;
   foreach ( $cgi->param('last_type') ) {
     $last_type{$_}++;
   }
@@ -432,12 +422,13 @@ sub lastsearch {
     }
 
   }
-  $sortby=\*last_sort;
+  \@cust_main;
 }
 
 sub companysearch {
 
   my(%company_type);
+  my @cust_main;
   foreach ( $cgi->param('company_type') ) {
     $company_type{$_}++ 
   };
@@ -479,7 +470,7 @@ sub companysearch {
     }
 
   }
-  $sortby=\*company_sort;
 
+  \@cust_main;
 }
 %>

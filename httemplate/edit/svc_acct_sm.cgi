@@ -1,23 +1,10 @@
+<!-- $Id: svc_acct_sm.cgi,v 1.7 2002-01-30 14:18:08 ivan Exp $ -->
 <%
-#<!-- $Id: svc_acct_sm.cgi,v 1.6 2001-10-30 14:54:07 ivan Exp $ -->
 
-use strict;
-use vars qw( $conf $cgi $mydomain $action $svcnum $svc_acct_sm $pkgnum $svcpart
-             $part_svc $query %username %domain $p1 $domuser $domsvc $domuid );
-use CGI;
-use CGI::Carp qw(fatalsToBrowser);
-use FS::UID qw(cgisuidsetup);
-use FS::CGI qw(header popurl);
-use FS::Record qw(qsearch qsearchs fields);
-use FS::svc_acct_sm;
-use FS::Conf;
+my $conf = new FS::Conf;
+my $mydomain = $conf->config('domain');
 
-$cgi = new CGI;
-&cgisuidsetup($cgi);
-
-$conf = new FS::Conf;
-$mydomain = $conf->config('domain');
-
+my($svcnum, $pkgnum, $svcpart, $part_svc, $svc_acct_sm );
 if ( $cgi->param('error') ) {
   $svc_acct_sm = new FS::svc_acct_sm ( {
     map { $_, scalar($cgi->param($_)) } fields('svc_acct_sm')
@@ -25,8 +12,8 @@ if ( $cgi->param('error') ) {
   $svcnum = $svc_acct_sm->svcnum;
   $pkgnum = $cgi->param('pkgnum');
   $svcpart = $cgi->param('svcpart');
-  $part_svc=qsearchs('part_svc',{'svcpart'=>$svcpart});
-  die "No part_svc entry!" unless $part_svc;
+  #$part_svc=qsearchs('part_svc',{'svcpart'=>$svcpart});
+  #die "No part_svc entry!" unless $part_svc;
 } else {
   my($query) = $cgi->keywords;
   if ( $query =~ /^(\d+)$/ ) { #editing
@@ -40,8 +27,8 @@ if ( $cgi->param('error') ) {
     $pkgnum=$cust_svc->pkgnum;
     $svcpart=$cust_svc->svcpart;
   
-    $part_svc=qsearchs('part_svc',{'svcpart'=>$svcpart});
-    die "No part_svc entry!" unless $part_svc;
+    #$part_svc=qsearchs('part_svc',{'svcpart'=>$svcpart});
+    #die "No part_svc entry!" unless $part_svc;
 
   } else { #adding
 
@@ -51,7 +38,7 @@ if ( $cgi->param('error') ) {
       $pkgnum=$1 if /^pkgnum(\d+)$/;
       $svcpart=$1 if /^svcpart(\d+)$/;
     }
-    $part_svc=qsearchs('part_svc',{'svcpart'=>$svcpart});
+    my $part_svc=qsearchs('part_svc',{'svcpart'=>$svcpart});
     die "No part_svc entry!" unless $part_svc;
 
     $svcnum='';
@@ -67,8 +54,10 @@ if ( $cgi->param('error') ) {
 
   }
 }
-$action = $svc_acct_sm->svcnum ? 'Edit' : 'Add';
+my $action = $svc_acct_sm->svcnum ? 'Edit' : 'Add';
 
+my %username = ();
+my %domain = ();
 if ($pkgnum) {
 
   #find all possible uids (and usernames)
@@ -80,7 +69,6 @@ if ($pkgnum) {
 
   my($cust_pkg)=qsearchs('cust_pkg',{'pkgnum'=>$pkgnum});
   my($custnum)=$cust_pkg->getfield('custnum');
-  %username = ();
   foreach my $i_cust_pkg ( qsearch('cust_pkg',{'custnum'=>$custnum}) ) {
     my($cust_pkgnum)=$i_cust_pkg->getfield('pkgnum');
     my($acct_svcpart);
@@ -102,7 +90,6 @@ if ($pkgnum) {
     push @d_acct_svcparts,$d_part_svc->getfield('svcpart');
   }
 
-  %domain = ();
   foreach $i_cust_pkg ( qsearch('cust_pkg',{'custnum'=>$custnum}) ) {
     my($cust_pkgnum)=$i_cust_pkg->getfield('pkgnum');
     my($acct_svcpart);
@@ -127,7 +114,7 @@ if ($pkgnum) {
   die "\$action eq Add, but \$pkgnum is null!\n";
 }
 
-$p1 = popurl(1);
+my $p1 = popurl(1);
 print header("Mail Alias $action", '');
 
 print qq!<FONT SIZE="+1" COLOR="#ff0000">Error: !, $cgi->param('error'),
@@ -151,7 +138,7 @@ print qq!<INPUT TYPE="hidden" NAME="pkgnum" VALUE="$pkgnum">!;
 #svcpart
 print qq!<INPUT TYPE="hidden" NAME="svcpart" VALUE="$svcpart">!;
 
-($domuser,$domsvc,$domuid)=(
+my($domuser,$domsvc,$domuid)=(
   $svc_acct_sm->domuser,
   $svc_acct_sm->domsvc,
   $svc_acct_sm->domuid,

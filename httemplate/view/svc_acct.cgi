@@ -1,37 +1,19 @@
+<!-- $Id: svc_acct.cgi,v 1.10 2002-01-30 14:18:09 ivan Exp $ -->
 <%
-# <!-- $Id: svc_acct.cgi,v 1.9 2001-12-15 22:59:35 ivan Exp $ -->
 
-use strict;
-use vars qw( $conf $cgi $domain $query $svcnum $svc_acct $cust_svc $pkgnum
-             $cust_pkg $custnum $part_svc $p $svc_acct_pop $password
-             $mydomain $svc_domain );
-use CGI;
-use CGI::Carp qw( fatalsToBrowser );
-use FS::UID qw( cgisuidsetup );
-use FS::CGI qw( header popurl menubar ntable);
-use FS::Record qw( qsearchs fields );
-use FS::Conf;
-use FS::svc_acct;
-use FS::cust_svc;
-use FS::cust_pkg;
-use FS::part_svc;
-use FS::svc_acct_pop;
-use FS::raddb;
+my $conf = new FS::Conf;
+my $mydomain = $conf->config('domain');
 
-$cgi = new CGI;
-&cgisuidsetup($cgi);
-
-$conf = new FS::Conf;
-
-($query) = $cgi->keywords;
+my($query) = $cgi->keywords;
 $query =~ /^(\d+)$/;
-$svcnum = $1;
-$svc_acct = qsearchs('svc_acct',{'svcnum'=>$svcnum});
+my $svcnum = $1;
+my $svc_acct = qsearchs('svc_acct',{'svcnum'=>$svcnum});
 die "Unknown svcnum" unless $svc_acct;
 
 #false laziness w/all svc_*.cgi
-$cust_svc = qsearchs( 'cust_svc' , { 'svcnum' => $svcnum } );
-$pkgnum = $cust_svc->getfield('pkgnum');
+my $cust_svc = qsearchs( 'cust_svc' , { 'svcnum' => $svcnum } );
+my $pkgnum = $cust_svc->getfield('pkgnum');
+my($cust_pkg, $custnum);
 if ($pkgnum) {
   $cust_pkg = qsearchs( 'cust_pkg', { 'pkgnum' => $pkgnum } );
   $custnum = $cust_pkg->custnum;
@@ -41,22 +23,22 @@ if ($pkgnum) {
 }
 #eofalse
 
-$part_svc = qsearchs('part_svc',{'svcpart'=> $cust_svc->svcpart } );
+my $part_svc = qsearchs('part_svc',{'svcpart'=> $cust_svc->svcpart } );
 die "Unknown svcpart" unless $part_svc;
 
+my $domain;
 if ( $svc_acct->domsvc ) {
-  $svc_domain = qsearchs('svc_domain', { 'svcnum' => $svc_acct->domsvc } );
+  my $svc_domain = qsearchs('svc_domain', { 'svcnum' => $svc_acct->domsvc } );
   die "Unknown domain" unless $svc_domain;
   $domain = $svc_domain->domain;
 } else {
-  unless ( $mydomain = $conf->config('domain') ) {
+  unless ( $mydomain ) {
     die "No legacy domain config file and no svc_domain.svcnum record ".
         "for svc_acct.domsvc: ". $cust_svc->domsvc;
   }
   $domain = $mydomain;
 }
 
-$p = popurl(2);
 print header('Account View', menubar(
   ( ( $pkgnum || $custnum )
     ? ( "View this package (#$pkgnum)" => "${p}view/cust_pkg.cgi?$pkgnum",
@@ -84,7 +66,7 @@ print "<TR><TD ALIGN=\"right\">Domain</TD>".
         "<TD BGCOLOR=\"#ffffff\">". $domain, "</TD></TR>";
 
 print "<TR><TD ALIGN=\"right\">Password</TD><TD BGCOLOR=\"#ffffff\">";
-$password = $svc_acct->_password;
+my $password = $svc_acct->_password;
 if ( $password =~ /^\*\w+\* (.*)$/ ) {
   $password = $1;
   print "<I>(login disabled)</I> ";
@@ -97,7 +79,7 @@ if ( $conf->exists('showpasswords') ) {
 print "</TR></TD>";
 $password = '';
 
-$svc_acct_pop = qsearchs('svc_acct_pop',{'popnum'=>$svc_acct->popnum});
+my $svc_acct_pop = qsearchs('svc_acct_pop',{'popnum'=>$svc_acct->popnum});
 print "<TR><TD ALIGN=\"right\">Access number</TD>".
       "<TD BGCOLOR=\"#ffffff\">". $svc_acct_pop->text. '</TD></TR>'
   if $svc_acct_pop;
