@@ -27,7 +27,7 @@ if ( $svcpart ) {
 
 if ( $error ) {
   $cgi->param('error', $error);
-  print $cgi->redirect(popurl(2), "part_svc.cgi?". $cgi->query_string );
+  print $cgi->redirect(popurl(2). "part_svc.cgi?". $cgi->query_string );
 } else {
   print $cgi->redirect(popurl(3)."browse/part_svc.cgi");
 }
