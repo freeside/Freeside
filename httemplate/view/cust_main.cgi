@@ -668,12 +668,16 @@ if ( $conf->config('payby-default') ne 'HIDE' ) {
              qsearch('cust_credit',{'custnum'=>$custnum});
   foreach my $credit (@credits) {
     my($cref)=$credit->hashref;
+    my $delete =
+      $credit->closed !~ /^Y/i && $conf->exists('deletecredits')
+        ? qq! (<A HREF="javascript:cust_credit_areyousure('${p}misc/delete-cust_credit.cgi?!. $credit->crednum. qq!')">delete</A>)!
+        : '';
     push @history,
       $cref->{_date} . "\t" .
       qq!<A HREF="! . popurl(2). qq!edit/cust_credit_bill.cgi?!. $cref->{crednum} . qq!">!.
       '<b><font size="+1" color="#ff0000">Unapplied credit #' .
       $cref->{crednum} . "</font></b></A>: ".
-      $cref->{reason} . "\t\t\t" . $credit->credited . "\t";
+      $cref->{reason} . "$delete\t\t\t" . $credit->credited . "\t";
   }
   
   my(@refunds)=qsearch('cust_refund',{'custnum'=> $custnum } );

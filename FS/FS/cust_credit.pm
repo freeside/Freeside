@@ -2,8 +2,10 @@ package FS::cust_credit;
 
 use strict;
 use vars qw( @ISA $conf $unsuspendauto );
+use Date::Format;
 use FS::UID qw( dbh getotaker );
 use FS::Record qw( qsearch qsearchs );
+use FS::Misc qw(send_email);
 use FS::cust_main;
 use FS::cust_refund;
 use FS::cust_credit_bill;
