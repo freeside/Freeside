@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_credit.cgi,v 1.3 1998-12-23 02:26:06 ivan Exp $
+# $Id: cust_credit.cgi,v 1.4 1999-01-18 09:41:23 ivan Exp $
 #
 # Usage: cust_credit.cgi custnum [ -paybatch ]
 #        http://server.name/path/cust_credit?custnum [ -paybatch ]
@@ -25,7 +25,11 @@
 # rewrite ivan@sisd.com 98-mar-16
 #
 # $Log: cust_credit.cgi,v $
-# Revision 1.3  1998-12-23 02:26:06  ivan
+# Revision 1.4  1999-01-18 09:41:23  ivan
+# all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
+# (good idea anyway)
+#
+# Revision 1.3  1998/12/23 02:26:06  ivan
 # *** empty log message ***
 #
 # Revision 1.2  1998/12/17 06:16:59  ivan
@@ -51,7 +55,7 @@ my($otaker)=getotaker;
 
 my $p1 = popurl(1);
 
-print $cgi->header, header("Post Credit", ''), <<END;
+print $cgi->header( '-expires' => 'now' ), header("Post Credit", ''), <<END;
     <FORM ACTION="${p1}process/cust_credit.cgi" METHOD=POST>
     <HR><PRE>
 END

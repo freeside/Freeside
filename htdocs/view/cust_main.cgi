@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main.cgi,v 1.8 1999-01-18 09:22:35 ivan Exp $
+# $Id: cust_main.cgi,v 1.9 1999-01-18 09:41:43 ivan Exp $
 #
 # Usage: cust_main.cgi custnum
 #        http://server.name/path/cust_main.cgi?custnum
@@ -33,7 +33,11 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: cust_main.cgi,v $
-# Revision 1.8  1999-01-18 09:22:35  ivan
+# Revision 1.9  1999-01-18 09:41:43  ivan
+# all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
+# (good idea anyway)
+#
+# Revision 1.8  1999/01/18 09:22:35  ivan
 # changes to track email addresses for email invoicing
 #
 # Revision 1.7  1998/12/30 23:03:34  ivan
@@ -75,7 +79,7 @@ use FS::cust_refund;
 my($cgi) = new CGI;
 &cgisuidsetup($cgi);
 
-print $cgi->header, header("Customer View", menubar(
+print $cgi->header( '-expires' => 'now' ), header("Customer View", menubar(
   'Main Menu' => popurl(2)
 )),<<END;
     <BASEFONT SIZE=3>

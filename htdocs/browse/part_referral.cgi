@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: part_referral.cgi,v 1.5 1998-12-17 05:25:20 ivan Exp $
+# $Id: part_referral.cgi,v 1.6 1999-01-18 09:41:18 ivan Exp $
 #
 # ivan@sisd.com 98-feb-23 
 #
@@ -10,7 +10,11 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: part_referral.cgi,v $
-# Revision 1.5  1998-12-17 05:25:20  ivan
+# Revision 1.6  1999-01-18 09:41:18  ivan
+# all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
+# (good idea anyway)
+#
+# Revision 1.5  1998/12/17 05:25:20  ivan
 # fix visual and other bugs
 #
 # Revision 1.4  1998/12/17 04:32:55  ivan
@@ -37,7 +41,7 @@ my $cgi = new CGI;
 
 my $p = popurl(2);
 
-print $cgi->header, header("Referral Listing", menubar(
+print $cgi->header( '-expires' => 'now' ), header("Referral Listing", menubar(
   'Main Menu' => $p,
 #  'Add new referral' => "../edit/part_referral.cgi",
 )), "Where a customer heard about your service. Tracked for informational purposes.<BR><BR>", table, <<END;

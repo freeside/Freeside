@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct_sm.cgi,v 1.4 1998-12-23 03:09:52 ivan Exp $
+# $Id: svc_acct_sm.cgi,v 1.5 1999-01-18 09:41:46 ivan Exp $
 #
 # Usage: svc_acct_sm.cgi svcnum
 #        http://server.name/path/svc_acct_sm.cgi?svcnum
@@ -22,7 +22,11 @@
 # /var/spool/freeside/conf/domain ivan@sisd.com 98-jul-17
 #
 # $Log: svc_acct_sm.cgi,v $
-# Revision 1.4  1998-12-23 03:09:52  ivan
+# Revision 1.5  1999-01-18 09:41:46  ivan
+# all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
+# (good idea anyway)
+#
+# Revision 1.4  1998/12/23 03:09:52  ivan
 # $cgi->keywords instead of $cgi->query_string
 #
 # Revision 1.3  1998/12/17 09:57:24  ivan
@@ -64,7 +68,7 @@ if ($pkgnum) {
 my($part_svc)=qsearchs('part_svc',{'svcpart'=> $cust_svc->svcpart } );
 die "Unkonwn svcpart" unless $part_svc;
 
-print $cgi->header, header('Mail Alias View');
+print $cgi->header( '-expires' => 'now' ), header('Mail Alias View');
 
 my $p = popurl(2);
 if ($pkgnum || $custnum) {

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: part_svc.cgi,v 1.7 1998-12-30 23:06:22 ivan Exp $
+# $Id: part_svc.cgi,v 1.8 1999-01-18 09:41:19 ivan Exp $
 #
 # ivan@sisd.com 97-nov-14, 97-dec-9
 #
@@ -10,7 +10,11 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: part_svc.cgi,v $
-# Revision 1.7  1998-12-30 23:06:22  ivan
+# Revision 1.8  1999-01-18 09:41:19  ivan
+# all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
+# (good idea anyway)
+#
+# Revision 1.7  1998/12/30 23:06:22  ivan
 # typo
 #
 # Revision 1.6  1998/12/30 23:03:20  ivan
@@ -43,7 +47,7 @@ my($cgi) = new CGI;
 
 my $p = popurl(2);
 
-print $cgi->header, header('Service Part Listing', menubar(
+print $cgi->header( '-expires' => 'now' ), header('Service Part Listing', menubar(
   'Main Menu' => $p,
 )),<<END;
     Services are items you offer to your customers.<BR><BR>

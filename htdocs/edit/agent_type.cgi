@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: agent_type.cgi,v 1.7 1999-01-18 09:22:29 ivan Exp $
+# $Id: agent_type.cgi,v 1.8 1999-01-18 09:41:22 ivan Exp $
 #
 # agent_type.cgi: Add/Edit agent type (output form)
 #
@@ -13,7 +13,11 @@
 # use FS::CGI, added inline documentation ivan@sisd.com 98-jul-12
 #
 # $Log: agent_type.cgi,v $
-# Revision 1.7  1999-01-18 09:22:29  ivan
+# Revision 1.8  1999-01-18 09:41:22  ivan
+# all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
+# (good idea anyway)
+#
+# Revision 1.7  1999/01/18 09:22:29  ivan
 # changes to track email addresses for email invoicing
 #
 # Revision 1.6  1998/12/17 06:16:58  ivan
@@ -61,7 +65,7 @@ if ( $cgi->keywords ) { #editing
 my($hashref)=$agent_type->hashref;
 
 my($p)=popurl(2);
-print $cgi->header, header("$action Agent Type", menubar(
+print $cgi->header( '-expires' => 'now' ), header("$action Agent Type", menubar(
   'Main Menu' => "$p",
   'View all agent types' => "${p}browse/agent_type.cgi",
 )), '<FORM ACTION="', popurl(1), 'process/agent_type.cgi" METHOD=POST>';

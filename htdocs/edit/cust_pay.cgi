@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_pay.cgi,v 1.2 1998-12-17 06:17:03 ivan Exp $
+# $Id: cust_pay.cgi,v 1.3 1999-01-18 09:41:27 ivan Exp $
 #
 # Usage: cust_pay.cgi invnum
 #        http://server.name/path/cust_pay.cgi?invnum
@@ -14,7 +14,11 @@
 # rewrite ivan@sisd.com 98-mar-16
 #
 # $Log: cust_pay.cgi,v $
-# Revision 1.2  1998-12-17 06:17:03  ivan
+# Revision 1.3  1999-01-18 09:41:27  ivan
+# all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
+# (good idea anyway)
+#
+# Revision 1.2  1998/12/17 06:17:03  ivan
 # fix double // in relative URLs, s/CGI::Base/CGI/;
 #
 
@@ -33,7 +37,7 @@ $query =~ /^(\d+)$/;
 my($invnum)=$1;
 
 my $p1 = popurl(1);
-print $cgi->header, header("Enter payment", ''), <<END;
+print $cgi->header( '-expires' => 'now' ), header("Enter payment", ''), <<END;
     <FORM ACTION="${p1}process/cust_pay.cgi" METHOD=POST>
     <HR><PRE>
 END

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: part_pkg.cgi,v 1.6 1998-12-17 06:17:05 ivan Exp $
+# $Id: part_pkg.cgi,v 1.7 1999-01-18 09:41:29 ivan Exp $
 #
 # part_pkg.cgi: Add/Edit package (output form)
 #
@@ -13,7 +13,11 @@
 # use FS::CGI, added inline documentation ivan@sisd.com 98-jul-12
 #
 # $Log: part_pkg.cgi,v $
-# Revision 1.6  1998-12-17 06:17:05  ivan
+# Revision 1.7  1999-01-18 09:41:29  ivan
+# all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
+# (good idea anyway)
+#
+# Revision 1.6  1998/12/17 06:17:05  ivan
 # fix double // in relative URLs, s/CGI::Base/CGI/;
 #
 # Revision 1.5  1998/11/21 07:12:26  ivan
@@ -70,7 +74,7 @@ if ( $cgi->param('clone') ) {
 }
 my($hashref)=$part_pkg->hashref;
 
-print $cgi->header, header("$action Package Definition", menubar(
+print $cgi->header( '-expires' => 'now' ), header("$action Package Definition", menubar(
   'Main Menu' => popurl(2),
   'View all packages' => popurl(2). 'browse/part_pkg.cgi',
 )), '<FORM ACTION="', popurl(1), 'process/part_pkg.cgi" METHOD=POST>';

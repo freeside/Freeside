@@ -1,11 +1,15 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_pkg.cgi,v 1.4 1999-01-18 09:22:33 ivan Exp $
+# $Id: cust_pkg.cgi,v 1.5 1999-01-18 09:41:38 ivan Exp $
 #
 # based on search/svc_acct.cgi ivan@sisd.com 98-jul-17
 #
 # $Log: cust_pkg.cgi,v $
-# Revision 1.4  1999-01-18 09:22:33  ivan
+# Revision 1.5  1999-01-18 09:41:38  ivan
+# all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
+# (good idea anyway)
+#
+# Revision 1.4  1999/01/18 09:22:33  ivan
 # changes to track email addresses for email invoicing
 #
 # Revision 1.3  1998/12/23 03:05:59  ivan
@@ -68,7 +72,7 @@ if ( scalar(@cust_pkg) == 1 ) {
   exit;
 } else {
   my($total)=scalar(@cust_pkg);
-  print $cgi->header, header('Package Search Results',''), <<END;
+  print $cgi->header( '-expires' => 'now' ), header('Package Search Results',''), <<END;
     $total matching packages found
     <TABLE BORDER=4 CELLSPACING=0 CELLPADDING=0>
       <TR>

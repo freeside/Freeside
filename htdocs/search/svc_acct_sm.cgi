@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct_sm.cgi,v 1.3 1998-12-17 09:41:11 ivan Exp $
+# $Id: svc_acct_sm.cgi,v 1.4 1999-01-18 09:41:40 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/svc_domain.cgi
@@ -19,7 +19,11 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # $Log: svc_acct_sm.cgi,v $
-# Revision 1.3  1998-12-17 09:41:11  ivan
+# Revision 1.4  1999-01-18 09:41:40  ivan
+# all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
+# (good idea anyway)
+#
+# Revision 1.3  1998/12/17 09:41:11  ivan
 # s/CGI::(Base|Request)/CGI.pm/;
 #
 
@@ -61,7 +65,7 @@ if ( scalar(@svc_acct_sm) == 1 ) {
   print $cgi->redirect(popurl(2). "view/svc_acct_sm.cgi?$svcnum");  #redirect
 } elsif ( scalar(@svc_acct_sm) > 1 ) {
   CGI::Base::SendHeaders();
-  print $cgi->header, header('Mail Alias Search Results'), table, <<END;
+  print $cgi->header( '-expires' => 'now' ), header('Mail Alias Search Results'), table, <<END;
       <TR>
         <TH>Mail to<BR><FONT SIZE=-2>(click here to view mail alias)</FONT></TH>
         <TH>Forwards to<BR><FONT SIZE=-2>(click here to view account)</FONT></TH>

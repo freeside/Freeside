@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main.cgi,v 1.4 1998-12-30 00:57:50 ivan Exp $
+# $Id: cust_main.cgi,v 1.5 1999-01-18 09:41:37 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/cust_main.cgi
@@ -19,7 +19,11 @@
 # display total, use FS::CGI ivan@sisd.com 98-jul-17
 #
 # $Log: cust_main.cgi,v $
-# Revision 1.4  1998-12-30 00:57:50  ivan
+# Revision 1.5  1999-01-18 09:41:37  ivan
+# all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
+# (good idea anyway)
+#
+# Revision 1.4  1998/12/30 00:57:50  ivan
 # bug
 #
 # Revision 1.3  1998/12/17 09:41:08  ivan
@@ -82,7 +86,7 @@ if ( scalar(@cust_main) == 1 ) {
 } else { 
 
   my($total)=scalar(@cust_main);
-  print $cgi->header, header("Customer Search Results",menubar(
+  print $cgi->header( '-expires' => 'now' ), header("Customer Search Results",menubar(
     'Main Menu', popurl(2)
   )), "$total matching customers found<BR>", table, <<END;
       <TR>

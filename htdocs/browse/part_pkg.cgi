@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: part_pkg.cgi,v 1.4 1998-12-17 05:25:19 ivan Exp $
+# $Id: part_pkg.cgi,v 1.5 1999-01-18 09:41:17 ivan Exp $
 #
 # ivan@sisd.com 97-dec-5,9
 #
@@ -10,7 +10,11 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: part_pkg.cgi,v $
-# Revision 1.4  1998-12-17 05:25:19  ivan
+# Revision 1.5  1999-01-18 09:41:17  ivan
+# all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
+# (good idea anyway)
+#
+# Revision 1.4  1998/12/17 05:25:19  ivan
 # fix visual and other bugs
 #
 # Revision 1.3  1998/11/21 07:23:45  ivan
@@ -36,7 +40,7 @@ my($cgi) = new CGI;
 
 my $p = popurl(2);
 
-print $cgi->header, header("Package Part Listing",menubar(
+print $cgi->header( '-expires' => 'now' ), header("Package Part Listing",menubar(
   'Main Menu' => $p,
 )), "One or more services are grouped together into a package and given",
   " pricing information. Customers purchase packages, not services.<BR><BR>", 

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: agent_type.cgi,v 1.3 1998-12-17 05:25:17 ivan Exp $
+# $Id: agent_type.cgi,v 1.4 1999-01-18 09:41:15 ivan Exp $
 #
 # ivan@sisd.com 97-dec-10
 #
@@ -11,7 +11,11 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: agent_type.cgi,v $
-# Revision 1.3  1998-12-17 05:25:17  ivan
+# Revision 1.4  1999-01-18 09:41:15  ivan
+# all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
+# (good idea anyway)
+#
+# Revision 1.3  1998/12/17 05:25:17  ivan
 # fix visual and other bugs
 #
 # Revision 1.2  1998/11/21 07:39:52  ivan
@@ -33,7 +37,7 @@ my($cgi) = new CGI;
 &cgisuidsetup($cgi);
 
 my($p)=popurl(2);
-print $cgi->header, header("Agent Type Listing", menubar(
+print $cgi->header( '-expires' => 'now' ), header("Agent Type Listing", menubar(
   'Main Menu' => $p,
 )), "Agent types define groups of packages that you can then assign to".
     " particular agents.<BR><BR>", table, <<END;

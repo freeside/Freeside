@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_pkg.cgi,v 1.5 1998-12-23 03:11:40 ivan Exp $
+# $Id: cust_pkg.cgi,v 1.6 1999-01-18 09:41:44 ivan Exp $
 #
 # Usage: cust_pkg.cgi pkgnum
 #        http://server.name/path/cust_pkg.cgi?pkgnum
@@ -26,7 +26,11 @@
 # no FS::Search ivan@sisd.com 98-mar-7
 # 
 # $Log: cust_pkg.cgi,v $
-# Revision 1.5  1998-12-23 03:11:40  ivan
+# Revision 1.6  1999-01-18 09:41:44  ivan
+# all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
+# (good idea anyway)
+#
+# Revision 1.5  1998/12/23 03:11:40  ivan
 # *** empty log message ***
 #
 # Revision 1.3  1998/12/17 09:57:22  ivan
@@ -60,7 +64,7 @@ foreach $part_svc ( qsearch('part_svc',{}) ) {
   $uiadd{$part_svc->svcpart}= popurl(2). "edit/". $part_svc->svcdb . ".cgi";
 }
 
-print $cgi->header, header('Package View', '');
+print $cgi->header( '-expires' => 'now' ), header('Package View', '');
 
 my($query) = $cgi->keywords;
 $query =~ /^(\d+)$/;

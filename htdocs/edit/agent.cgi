@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: agent.cgi,v 1.3 1998-12-17 06:16:57 ivan Exp $
+# $Id: agent.cgi,v 1.4 1999-01-18 09:41:21 ivan Exp $
 #
 # ivan@sisd.com 97-dec-12
 #
@@ -11,7 +11,11 @@
 # use FS::CGI, added inline documentation ivan@sisd.com 98-jul-12
 #
 # $Log: agent.cgi,v $
-# Revision 1.3  1998-12-17 06:16:57  ivan
+# Revision 1.4  1999-01-18 09:41:21  ivan
+# all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
+# (good idea anyway)
+#
+# Revision 1.3  1998/12/17 06:16:57  ivan
 # fix double // in relative URLs, s/CGI::Base/CGI/;
 #
 # Revision 1.2  1998/11/23 07:52:08  ivan
@@ -44,7 +48,7 @@ my($hashref)=$agent->hashref;
 
 my $p = popurl(2);
 
-print $cgi->header, header("$action Agent", menubar(
+print $cgi->header( '-expires' => 'now' ), header("$action Agent", menubar(
   'Main Menu' => $p,
   'View all agents' => $p. 'browse/agent.cgi',
 )), '<FORM ACTION="', popurl(1), 'process/agent.cgi" METHOD=POST>';

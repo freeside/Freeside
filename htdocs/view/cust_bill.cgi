@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_bill.cgi,v 1.4 1998-12-30 23:03:33 ivan Exp $
+# $Id: cust_bill.cgi,v 1.5 1999-01-18 09:41:42 ivan Exp $
 #
 # Note: Should be run setuid freeside as user nobody.
 #
@@ -25,7 +25,11 @@
 # also print 'printed' field ivan@sisd.com 98-jul-10
 #
 # $Log: cust_bill.cgi,v $
-# Revision 1.4  1998-12-30 23:03:33  ivan
+# Revision 1.5  1999-01-18 09:41:42  ivan
+# all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
+# (good idea anyway)
+#
+# Revision 1.4  1998/12/30 23:03:33  ivan
 # bugfixes; fields isn't exported by derived classes
 #
 # Revision 1.3  1998/12/23 03:07:49  ivan
@@ -59,7 +63,7 @@ my($custnum) = $cust_bill->getfield('custnum');
 my($printed) = $cust_bill->printed;
 
 my $p = popurl(2);
-print $cgi->header, header('Invoice View', menubar(
+print $cgi->header( '-expires' => 'now' ), header('Invoice View', menubar(
   "Main Menu" => $p,
   "View this customer (#$custnum)" => "${p}view/cust_main.cgi?$custnum",
 )), <<END;

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_domain.cgi,v 1.4 1998-12-23 03:10:19 ivan Exp $
+# $Id: svc_domain.cgi,v 1.5 1999-01-18 09:41:47 ivan Exp $
 #
 # Usage: svc_domain svcnum
 #        http://server.name/path/svc_domain.cgi?svcnum
@@ -15,7 +15,11 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # $Log: svc_domain.cgi,v $
-# Revision 1.4  1998-12-23 03:10:19  ivan
+# Revision 1.5  1999-01-18 09:41:47  ivan
+# all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
+# (good idea anyway)
+#
+# Revision 1.4  1998/12/23 03:10:19  ivan
 # $cgi->keywords instead of $cgi->query_string
 #
 # Revision 1.3  1998/12/17 09:57:25  ivan
@@ -55,7 +59,7 @@ my($part_svc)=qsearchs('part_svc',{'svcpart'=> $cust_svc->svcpart } );
 die "Unkonwn svcpart" unless $part_svc;
 
 my $p = popurl(2);
-print $cgi->header, header('Domain View', menubar(
+print $cgi->header( '-expires' => 'now' ), header('Domain View', menubar(
   "Main menu" => $p,
   "View this package (#$pkgnum)" => "${p}view/cust_pkg.cgi?$pkgnum",
   "View this customer (#$custnum)" => "${p}view/cust_main.cgi?$custnum",

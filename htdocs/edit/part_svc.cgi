@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: part_svc.cgi,v 1.5 1998-12-30 23:03:21 ivan Exp $
+# $Id: part_svc.cgi,v 1.6 1999-01-18 09:41:31 ivan Exp $
 #
 # ivan@sisd.com 97-nov-14
 #
@@ -10,7 +10,11 @@
 # use FS::CGI, added inline documentation ivan@sisd.com 98-jul-12
 #
 # $Log: part_svc.cgi,v $
-# Revision 1.5  1998-12-30 23:03:21  ivan
+# Revision 1.6  1999-01-18 09:41:31  ivan
+# all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
+# (good idea anyway)
+#
+# Revision 1.5  1998/12/30 23:03:21  ivan
 # bugfixes; fields isn't exported by derived classes
 #
 # Revision 1.4  1998/12/17 06:17:07  ivan
@@ -44,7 +48,7 @@ if ( $query && $query =~ /^(\d+)$/ ) { #editing
 my($hashref)=$part_svc->hashref;
 
 my $p = popurl(2);
-print $cgi->header, header("$action Service Definition", menubar(
+print $cgi->header( '-expires' => 'now' ), header("$action Service Definition", menubar(
   'Main Menu' => $p,
   'View all services' => "${p}browse/part_svc.cgi",
 )), '<FORM ACTION="', popurl(1), 'process/part_svc.cgi" METHOD=POST>';

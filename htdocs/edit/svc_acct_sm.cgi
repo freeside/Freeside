@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct_sm.cgi,v 1.5 1998-12-30 23:03:24 ivan Exp $
+# $Id: svc_acct_sm.cgi,v 1.6 1999-01-18 09:41:34 ivan Exp $
 #
 # Usage: svc_acct_sm.cgi {svcnum} | pkgnum{pkgnum}-svcpart{svcpart}
 #        http://server.name/path/svc_acct_sm.cgi? {svcnum} | pkgnum{pkgnum}-svcpart{svcpart}
@@ -35,7 +35,11 @@
 # /var/spool/freeside/conf/domain ivan@sisd.com 98-jul-26
 #
 # $Log: svc_acct_sm.cgi,v $
-# Revision 1.5  1998-12-30 23:03:24  ivan
+# Revision 1.6  1999-01-18 09:41:34  ivan
+# all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
+# (good idea anyway)
+#
+# Revision 1.5  1998/12/30 23:03:24  ivan
 # bugfixes; fields isn't exported by derived classes
 #
 # Revision 1.4  1998/12/23 02:58:45  ivan
@@ -168,7 +172,7 @@ if ($pkgnum) {
 }
 
 my $p1 = popurl(1);
-print $cgi->header, header("Mail Alias $action", ''), <<END;
+print $cgi->header( '-expires' => 'now' ), header("Mail Alias $action", ''), <<END;
     <FORM ACTION="${p1}process/svc_acct_sm.cgi" METHOD=POST>
 END
 

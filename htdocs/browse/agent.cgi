@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: agent.cgi,v 1.8 1999-01-18 09:22:26 ivan Exp $
+# $Id: agent.cgi,v 1.9 1999-01-18 09:41:14 ivan Exp $
 #
 # ivan@sisd.com 97-dec-12
 #
@@ -15,7 +15,11 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: agent.cgi,v $
-# Revision 1.8  1999-01-18 09:22:26  ivan
+# Revision 1.9  1999-01-18 09:41:14  ivan
+# all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
+# (good idea anyway)
+#
+# Revision 1.8  1999/01/18 09:22:26  ivan
 # changes to track email addresses for email invoicing
 #
 # Revision 1.7  1998/12/17 05:25:16  ivan
@@ -65,7 +69,7 @@ my($cgi) = new CGI;
 
 my($p)=popurl(2);
 
-print $cgi->header, header('Agent Listing', menubar(
+print $cgi->header( '-expires' => 'now' ), header('Agent Listing', menubar(
   'Main Menu'   => $p,
   'Agent Types' => $p. 'browse/agent_type.cgi',
 #  'Add new agent' => '../edit/agent.cgi'

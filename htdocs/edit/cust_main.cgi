@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main.cgi,v 1.5 1999-01-18 09:22:30 ivan Exp $
+# $Id: cust_main.cgi,v 1.6 1999-01-18 09:41:24 ivan Exp $
 #
 # Usage: cust_main.cgi custnum
 #        http://server.name/path/cust_main.cgi?custnum
@@ -40,7 +40,11 @@
 # fixed one missed day->daytime ivan@sisd.com 98-jul-13
 #
 # $Log: cust_main.cgi,v $
-# Revision 1.5  1999-01-18 09:22:30  ivan
+# Revision 1.6  1999-01-18 09:41:24  ivan
+# all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
+# (good idea anyway)
+#
+# Revision 1.5  1999/01/18 09:22:30  ivan
 # changes to track email addresses for email invoicing
 #
 # Revision 1.4  1998/12/23 08:08:15  ivan
@@ -80,7 +84,7 @@ if ( $cgi->keywords ) { #editing
 # top
 
 my $p1 = popurl(1);
-print $cgi->header, header("Customer $action", ''),
+print $cgi->header( '-expires' => 'now' ), header("Customer $action", ''),
       qq!<FORM ACTION="${p1}process/cust_main.cgi" METHOD=POST>!,
       qq!<INPUT TYPE="hidden" NAME="custnum" VALUE="$custnum">!,
       qq!Customer # !, ( $custnum ? $custnum : " (NEW)" ),

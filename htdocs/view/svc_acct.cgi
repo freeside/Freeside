@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct.cgi,v 1.5 1999-01-18 09:22:36 ivan Exp $
+# $Id: svc_acct.cgi,v 1.6 1999-01-18 09:41:45 ivan Exp $
 #
 # Usage: svc_acct.cgi svcnum
 #        http://server.name/path/svc_acct.cgi?svcnum
@@ -35,7 +35,11 @@
 # displays arbitrary radius attributes ivan@sisd.com 98-aug-16
 #
 # $Log: svc_acct.cgi,v $
-# Revision 1.5  1999-01-18 09:22:36  ivan
+# Revision 1.6  1999-01-18 09:41:45  ivan
+# all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
+# (good idea anyway)
+#
+# Revision 1.5  1999/01/18 09:22:36  ivan
 # changes to track email addresses for email invoicing
 #
 # Revision 1.4  1998/12/23 03:09:19  ivan
@@ -86,7 +90,7 @@ if ($pkgnum) {
 my($part_svc)=qsearchs('part_svc',{'svcpart'=> $cust_svc->svcpart } );
 die "Unkonwn svcpart" unless $part_svc;
 
-print $cgi->header, header('Account View', '');
+print $cgi->header( '-expires' => 'now' ), header('Account View', '');
 
 my $p = popurl(2);
 if ($pkgnum || $custnum) {

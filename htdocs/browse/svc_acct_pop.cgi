@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct_pop.cgi,v 1.3 1998-12-17 05:25:22 ivan Exp $
+# $Id: svc_acct_pop.cgi,v 1.4 1999-01-18 09:41:20 ivan Exp $
 #
 # ivan@sisd.com 98-mar-8
 #
@@ -10,7 +10,11 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: svc_acct_pop.cgi,v $
-# Revision 1.3  1998-12-17 05:25:22  ivan
+# Revision 1.4  1999-01-18 09:41:20  ivan
+# all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
+# (good idea anyway)
+#
+# Revision 1.3  1998/12/17 05:25:22  ivan
 # fix visual and other bugs
 #
 # Revision 1.2  1998/12/17 04:36:59  ivan
@@ -31,7 +35,7 @@ my($cgi) = new CGI;
 
 my $p = popurl(2);
 
-print $cgi->header, header('POP Listing', menubar(
+print $cgi->header( '-expires' => 'now' ), header('POP Listing', menubar(
   'Main Menu' => $p,
 )), "Points of Presence<BR><BR>", table, <<END;
       <TR>

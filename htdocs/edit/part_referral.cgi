@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: part_referral.cgi,v 1.2 1998-12-17 06:17:06 ivan Exp $
+# $Id: part_referral.cgi,v 1.3 1999-01-18 09:41:30 ivan Exp $
 #
 # ivan@sisd.com 98-feb-23
 #
@@ -12,7 +12,11 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: part_referral.cgi,v $
-# Revision 1.2  1998-12-17 06:17:06  ivan
+# Revision 1.3  1999-01-18 09:41:30  ivan
+# all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
+# (good idea anyway)
+#
+# Revision 1.2  1998/12/17 06:17:06  ivan
 # fix double // in relative URLs, s/CGI::Base/CGI/;
 #
 
@@ -39,7 +43,7 @@ if ( $cgi->var('QUERY_STRING') =~ /^(\d+)$/ ) { #editing
 my($hashref)=$part_referral->hashref;
 
 my $p1 = popurl(1);
-print $cgi->header, header("$action Referral", menubar(
+print $cgi->header( '-expires' => 'now' ), header("$action Referral", menubar(
   'Main Menu' => popurl(2),
   'View all referrals' => popurl(2). "browse/part_referral.cgi",
 )), <<END;

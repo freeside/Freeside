@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_pkg.cgi,v 1.2 1998-12-17 06:17:04 ivan Exp $
+# $Id: cust_pkg.cgi,v 1.3 1999-01-18 09:41:28 ivan Exp $
 #
 # this is for changing packages around, not editing things within the package
 #
@@ -25,7 +25,11 @@
 # 98-jun-1
 #
 # $Log: cust_pkg.cgi,v $
-# Revision 1.2  1998-12-17 06:17:04  ivan
+# Revision 1.3  1999-01-18 09:41:28  ivan
+# all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
+# (good idea anyway)
+#
+# Revision 1.2  1998/12/17 06:17:04  ivan
 # fix double // in relative URLs, s/CGI::Base/CGI/;
 #
 
@@ -55,7 +59,7 @@ my($custnum)=$1;
 my($otaker)=&getotaker;
 
 my $p1 = popurl(1);
-print $cgi->header, header("Add/Edit Packages", ''), <<END;
+print $cgi->header( '-expires' => 'now' ), header("Add/Edit Packages", ''), <<END;
     <FORM ACTION="${p1}process/cust_pkg.cgi" METHOD=POST>
     <HR>
 END

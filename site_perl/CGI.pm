@@ -90,7 +90,7 @@ sub idiot {
     no strict 'subs';
     &CGI::Base::SendHeaders;
   } else {
-    print $cgi->header;
+    print $cgi->header( '-expires' => 'now' );
   }
   print <<END;
 <HTML>
@@ -193,7 +193,11 @@ lose the background, eidiot ivan@sisd.com 98-sep-2
 pod ivan@sisd.com 98-sep-12
 
 $Log: CGI.pm,v $
-Revision 1.14  1999-01-18 09:22:37  ivan
+Revision 1.15  1999-01-18 09:41:48  ivan
+all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
+(good idea anyway)
+
+Revision 1.14  1999/01/18 09:22:37  ivan
 changes to track email addresses for email invoicing
 
 Revision 1.12  1998/12/23 02:23:16  ivan

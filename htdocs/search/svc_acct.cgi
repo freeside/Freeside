@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct.cgi,v 1.4 1999-01-18 09:22:34 ivan Exp $
+# $Id: svc_acct.cgi,v 1.5 1999-01-18 09:41:39 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/svc_acct.cgi
@@ -23,7 +23,11 @@
 # give service and customer info too ivan@sisd.com 98-aug-16
 #
 # $Log: svc_acct.cgi,v $
-# Revision 1.4  1999-01-18 09:22:34  ivan
+# Revision 1.5  1999-01-18 09:41:39  ivan
+# all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
+# (good idea anyway)
+#
+# Revision 1.4  1999/01/18 09:22:34  ivan
 # changes to track email addresses for email invoicing
 #
 # Revision 1.3  1998/12/23 03:06:28  ivan
@@ -90,7 +94,7 @@ if ( scalar(@svc_acct) == 1 ) {
   exit;
 } else {
   my($total)=scalar(@svc_acct);
-  print $cgi->header, header("Account Search Results",''), <<END;
+  print $cgi->header( '-expires' => 'now' ), header("Account Search Results",''), <<END;
     $total matching accounts found
     <TABLE BORDER=4 CELLSPACING=0 CELLPADDING=0>
       <TR>

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: link.cgi,v 1.3 1998-12-23 03:03:39 ivan Exp $
+# $Id: link.cgi,v 1.4 1999-01-18 09:41:36 ivan Exp $
 #
 # Note: Should be run setuid freeside as user nobody
 #
@@ -11,7 +11,11 @@
 # can also link on some other fields now (about time) ivan@sisd.com 98-jun-24
 #
 # $Log: link.cgi,v $
-# Revision 1.3  1998-12-23 03:03:39  ivan
+# Revision 1.4  1999-01-18 09:41:36  ivan
+# all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
+# (good idea anyway)
+#
+# Revision 1.3  1998/12/23 03:03:39  ivan
 # $cgi->keywords instead of $cgi->query_string
 #
 # Revision 1.2  1998/12/17 09:12:45  ivan
@@ -48,7 +52,7 @@ my($svc) = $part_svc->getfield('svc');
 my($svcdb) = $part_svc->getfield('svcdb');
 my($link_field) = $link_field{$svcdb};
 
-print $cgi->header, header("Link to existing $svc account"),
+print $cgi->header( '-expires' => 'now' ), header("Link to existing $svc account"),
       qq!<FORM ACTION="!, popurl(1), qq!process/link.cgi" METHOD=POST>!;
 
 if ( $link_field ) { 

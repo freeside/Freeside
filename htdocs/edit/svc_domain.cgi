@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_domain.cgi,v 1.5 1998-12-30 23:03:25 ivan Exp $
+# $Id: svc_domain.cgi,v 1.6 1999-01-18 09:41:35 ivan Exp $
 #
 # Usage: svc_domain.cgi pkgnum{pkgnum}-svcpart{svcpart}
 #        http://server.name/path/svc_domain.cgi?pkgnum{pkgnum}-svcpart{svcpart}
@@ -17,7 +17,11 @@
 # no GOV in instructions ivan@sisd.com 98-jul-17
 #
 # $Log: svc_domain.cgi,v $
-# Revision 1.5  1998-12-30 23:03:25  ivan
+# Revision 1.6  1999-01-18 09:41:35  ivan
+# all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
+# (good idea anyway)
+#
+# Revision 1.5  1998/12/30 23:03:25  ivan
 # bugfixes; fields isn't exported by derived classes
 #
 # Revision 1.4  1998/12/23 03:00:16  ivan
@@ -96,7 +100,7 @@ my($domain)=(
 );
 
 my $p1 = popurl(1);
-print $cgi->header, header("$action $svc", ''), <<END;
+print $cgi->header( '-expires' => 'now' ), header("$action $svc", ''), <<END;
     <FORM ACTION="${p1}process/svc_domain.cgi" METHOD=POST>
       <INPUT TYPE="hidden" NAME="svcnum" VALUE="$svcnum">
       <INPUT TYPE="hidden" NAME="pkgnum" VALUE="$pkgnum">
