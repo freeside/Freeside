@@ -1064,7 +1064,7 @@ httemplate/docs/config.html
   {
     'key'         => 'signup_server-realtime',
     'section'     => '',
-    'description' => 'Run billing for signup server signups immediately, and suspend accounts which subsequently have a balance.',
+    'description' => 'Run billing for signup server signups immediately, and do not provision accounts which subsequently have a balance.',
     'type'        => 'checkbox',
   },
 
