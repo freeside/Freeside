@@ -969,7 +969,7 @@ httemplate/docs/config.html
 
   {
     'key'         => 'raidus-password',
-    'section'     => 'unclassified',
+    'section'     => '',
     'description' => 'RADIUS attribute for plain-text passwords.',
     'type'        => 'select',
     'select_enum' => [ 'Password', 'User-Password' ],
