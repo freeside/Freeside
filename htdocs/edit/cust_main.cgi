@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main.cgi,v 1.18 1999-08-11 15:38:33 ivan Exp $
+# $Id: cust_main.cgi,v 1.19 1999-08-21 02:14:25 ivan Exp $
 #
 # Usage: cust_main.cgi custnum
 #        http://server.name/path/cust_main.cgi?custnum
@@ -38,7 +38,10 @@
 # fixed one missed day->daytime ivan@sisd.com 98-jul-13
 #
 # $Log: cust_main.cgi,v $
-# Revision 1.18  1999-08-11 15:38:33  ivan
+# Revision 1.19  1999-08-21 02:14:25  ivan
+# better error message for no agents
+#
+# Revision 1.18  1999/08/11 15:38:33  ivan
 # fix for perl 5.004_04
 #
 # Revision 1.17  1999/08/10 11:15:45  ivan
@@ -174,7 +177,8 @@ print qq!<FORM ACTION="${p1}process/cust_main.cgi" METHOD=POST>!,
 $r = qq!<font color="#ff0000">*</font>!;
 
 @agents = qsearch( 'agent', {} );
-die "No agents created!" unless @agents;
+#die "No agents created!" unless @agents;
+die "You have not created any agents.  You must create at least one agent before adding a customer.  <a href=\"". popurl(2). "browse/agent.cgi\">Create at least one agent here.</a>" unless @agents;
 $agentnum = $cust_main->agentnum || $agents[0]->agentnum; #default to first
 if ( scalar(@agents) == 1 ) {
   print qq!<INPUT TYPE="hidden" NAME="agentnum" VALUE="$agentnum">!;
