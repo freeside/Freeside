@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# svc_acct_sm.cgi: Add/edit a mail alias (output form)
+# $Id: svc_acct_sm.cgi,v 1.2 1998-12-16 05:19:15 ivan Exp $
 #
 # Usage: svc_acct_sm.cgi {svcnum} | pkgnum{pkgnum}-svcpart{svcpart}
 #        http://server.name/path/svc_acct_sm.cgi? {svcnum} | pkgnum{pkgnum}-svcpart{svcpart}
@@ -33,20 +33,22 @@
 # rewrite ivan@sisd.com 98-mar-15
 #
 # /var/spool/freeside/conf/domain ivan@sisd.com 98-jul-26
+#
+# $Log: svc_acct_sm.cgi,v $
+# Revision 1.2  1998-12-16 05:19:15  ivan
+# use FS::Conf
+#
 
 use strict;
+use vars qw($conf);
 use CGI::Base qw(:DEFAULT :CGI);
 use FS::UID qw(cgisuidsetup);
 use FS::Record qw(qsearch qsearchs);
 use FS::svc_acct_sm qw(fields);
+use FS::Conf;
 
-my($conf_domain)="/var/spool/freeside/conf/domain";
-open(DOMAIN,$conf_domain) or die "Can't open $conf_domain: $!";
-my($mydomain)=map {
-  /^(.*)$/ or die "Illegal line in $conf_domain!"; #yes, we trust the file
-  $1
-} grep $_ !~ /^(#|$)/, <DOMAIN>;
-close DOMAIN;
+$conf = new FS::Conf;
+my $mydomain = $conf->config('domain');
 
 my($cgi) = new CGI::Base;
 $cgi->get;

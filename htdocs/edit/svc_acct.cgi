@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# svc_acct.cgi: Add/edit account (output form)
+# $Id: svc_acct.cgi,v 1.2 1998-12-16 05:17:28 ivan Exp $
 #
 # Usage: svc_acct.cgi {svcnum} | pkgnum{pkgnum}-svcpart{svcpart}
 #        http://server.name/path/svc_acct.cgi? {svcnum} | pkgnum{pkgnum}-svcpart{svcpart}
@@ -18,17 +18,15 @@
 # use conf/shells and dbdef username length ivan@sisd.com 98-jul-13
 
 use strict;
+use vars qw($conf);
 use CGI::Base qw(:DEFAULT :CGI);
 use FS::UID qw(cgisuidsetup getotaker);
 use FS::Record qw(qsearch qsearchs);
 use FS::svc_acct qw(fields);
+use FS::Conf;
 
-my($shells)="/var/spool/freeside/conf/shells";
-open(SHELLS,$shells) or die "Can't open $shells: $!";
-my(@shells)=map {
-  /^([\/\w]*)$/ or die "Illegal shell in conf/shells!";
-  $1;
-} grep $_ !~ /^#/, <SHELLS>;
+$conf = new FS::Conf;
+my @shells = $conf->config('shells');
 
 my($cgi) = new CGI::Base;
 $cgi->get;
