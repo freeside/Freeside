@@ -3,7 +3,7 @@ package FS::ClientAPI::passwd;
 use strict;
 use FS::Record qw(qsearchs);
 use FS::svc_acct;
-#use FS::svc_domain;
+use FS::svc_domain;
 
 use FS::ClientAPI; #hmm
 FS::ClientAPI->register_handlers(
