@@ -238,7 +238,7 @@ sub insert {
     $self->shell,
   );
   if ( $username && $uid && $dir && $shellmachine && ! $nossh_hack ) {
-    my $queue = new FS::queue { 'job' => 'Net::SSH::ssh' };
+    my $queue = new FS::queue { 'job' => 'FS::svc_acct::ssh' };
     $error = $queue->insert("root\@$shellmachine", eval qq("$useradd") );
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
@@ -434,7 +434,7 @@ sub delete {
     $self->dir,
   );
   if ( $username && $shellmachine && ! $nossh_hack ) {
-    my $queue = new FS::queue { 'job' => 'Net::SSH::ssh' };
+    my $queue = new FS::queue { 'job' => 'FS::svc_acct::ssh' };
     $error = $queue->insert("root\@$shellmachine", eval qq("$userdel") );
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
@@ -564,7 +564,7 @@ sub replace {
     $new->getfield('gid'),
   );
   if ( $old_dir && $new_dir && $old_dir ne $new_dir && ! $nossh_hack ) {
-    my $queue = new FS::queue { 'job' => 'Net::SSH::ssh' };
+    my $queue = new FS::queue { 'job' => 'FS::svc_acct::ssh' };
     $error = $queue->insert("root\@$shellmachine", eval qq("$usermod") );
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
@@ -863,11 +863,20 @@ sub email {
   $self->username. '@'. $self->domain;
 }
 
+=item ssh
+
+=cut
+
+sub ssh {
+  my @args = @_;
+  ssh(@args,">>/usr/local/etc/freeside/sshoutput 2>&1");
+}
+
 =back
 
 =head1 VERSION
 
-$Id: svc_acct.pm,v 1.41 2001-09-19 00:24:27 ivan Exp $
+$Id: svc_acct.pm,v 1.42 2001-09-19 19:19:00 ivan Exp $
 
 =head1 BUGS
 
