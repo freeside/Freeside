@@ -55,7 +55,7 @@ if ( $cgi->param('session') eq 'login' ) {
 $session_id = $cgi->param('session');
 
 $cgi->param('action') =~
-    /^(myaccount|view_invoice|make_payment|do_payment)$/
+    /^(myaccount|view_invoice|make_payment|payment_results)$/
   or die "unknown action ". $cgi->param('action');
 my $action = $1;
 
@@ -95,7 +95,7 @@ sub make_payment {
   payment_info( 'session_id' => $session_id );
 }
 
-sub do_payment {
+sub payment_results {
 
   use Business::CreditCard;
 

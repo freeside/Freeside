@@ -33,7 +33,7 @@ use FS::Msgcat qw(gettext);
 
 @ISA = qw( FS::Record );
 
-$Debug = 0;
+$Debug = 1;
 #$Debug = 1;
 
 $import = 0;
@@ -761,10 +761,15 @@ sub check {
       unless $self->payby =~ /^(BILL|PREPAY|CHEK|LECB)$/;
     $self->paydate('');
   } else {
-    $self->paydate =~ /^(\d{1,2})[\/\-](\d{2}(\d{2})?)$/
-      or return "Illegal expiration date: ". $self->paydate;
-    my $y = length($2) == 4 ? $2 : "20$2";
-    $self->paydate("$y-$1-01");
+    my( $m, $y );
+    if ( $self->paydate =~ /^(\d{1,2})[\/\-](\d{2}(\d{2})?)$/ ) {
+      ( $m, $y ) = ( $1, length($2) == 4 ? $2 : "20$2" );
+    } elsif ( $self->paydate =~ /^(20)?(\d{2})[\/\-](\d{2})[\/\-]\d+$/ ) {
+      ( $m, $y ) = ( $3, "20$2" );
+    } else {
+      return "Illegal expiration date: ". $self->paydate;
+    }
+    $self->paydate("$y-$m-01");
     my($nowm,$nowy)=(localtime(time))[4,5]; $nowm++; $nowy+=1900;
     return gettext('expired_card')
       if !$import && ( $y<$nowy || ( $y==$nowy && $1<$nowm ) );
@@ -1438,6 +1443,11 @@ I<quiet> can be set true to surpress email decline notices.
 
 sub realtime_bop {
   my( $self, $method, $amount, %options ) = @_;
+  if ( $Debug ) {
+    warn "$self $method $amount\n";
+    warn "  $_ => $options{$_}\n" foreach keys %options;
+  }
+
   $options{'description'} ||= 'Internet services';
 
   #pre-requisites
