@@ -5,6 +5,12 @@ use vars qw(@ISA);
 use Carp;
 use Exporter;
 use FS::Record qw(fields qsearchs);
+use FS::cust_pkg;
+use FS::part_pkg;
+use FS::part_svc;
+use FS::svc_acct;
+use FS::svc_acct_sm;
+use FS::svc_domain;
 
 @ISA = qw(FS::Record Exporter);
 
@@ -194,7 +200,10 @@ no TableUtil, no FS::Lock ivan@sisd.com 98-mar-7
 pod ivan@sisd.com 98-sep-21
 
 $Log: cust_svc.pm,v $
-Revision 1.2  1998-11-12 03:32:46  ivan
+Revision 1.3  1998-11-12 03:45:38  ivan
+use FS::table_name for all tables qsearch()'ed
+
+Revision 1.2  1998/11/12 03:32:46  ivan
 added label method
 
 
