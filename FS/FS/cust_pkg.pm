@@ -452,7 +452,10 @@ sub unsuspend {
 
   unless ( ! $self->getfield('susp') ) {
     my %hash = $self->hash;
+    my $inactive = time - $hash{'susp'};
     $hash{'susp'} = '';
+    $hash{'bill'} = ( $hash{'bill'} || $hash{'setup'} ) + $inactive
+      if $inactive > 0 && ( $hash{'bill'} || $hash{'setup'} );
     my $new = new FS::cust_pkg ( \%hash );
     $error = $new->replace($self);
     if ( $error ) {
