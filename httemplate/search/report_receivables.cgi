@@ -71,7 +71,7 @@ where 0 <
            ,0
          )
 
-order by company, last
+order by lower(company), lower(last)
 
 END
 
