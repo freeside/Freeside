@@ -735,7 +735,7 @@ sub unique {
   my($self,$field) = @_;
   my($table)=$self->table;
 
-  croak("&FS::UID::checkruid failed") unless &checkruid;
+  #croak("&FS::UID::checkruid failed") unless &checkruid;
 
   croak "Unique called on field $field, but it is ",
         $self->getfield($field),
