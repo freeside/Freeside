@@ -31,7 +31,7 @@ listen(Server,SOMAXCONN) or die "listen: $!";
 
 if ( -e $pid_file ) {
   open(PIDFILE,"<$pid_file");
-  chomp( my $old_pid = <$pid_file> );
+  chomp( my $old_pid = <PIDFILE> );
   close PIDFILE;
   kill 'TERM', $pid_file;
 }
