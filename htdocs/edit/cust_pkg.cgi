@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_pkg.cgi,v 1.7 1999-04-14 01:03:01 ivan Exp $
+# $Id: cust_pkg.cgi,v 1.8 1999-07-21 07:34:13 ivan Exp $
 #
 # this is for changing packages around, not editing things within the package
 #
@@ -23,7 +23,11 @@
 # 98-jun-1
 #
 # $Log: cust_pkg.cgi,v $
-# Revision 1.7  1999-04-14 01:03:01  ivan
+# Revision 1.8  1999-07-21 07:34:13  ivan
+# links to package browse and agent type edit if there aren't any packages to
+# order.  thanks to "Tech Account" <techy@orac.hq.org>
+#
+# Revision 1.7  1999/04/14 01:03:01  ivan
 # oops, in 1.2 tree, can't do searches until [cgi|admin]suidsetup,
 # bug is hidden by mod_perl persistance
 #
@@ -47,7 +51,7 @@
 
 use strict;
 use vars qw( $cgi %pkg %comment $custnum $p1 @cust_pkg 
-             $cust_main $agent $type_pkgs $count %remove_pkg );
+             $cust_main $agent $type_pkgs $count %remove_pkg $pkgparts );
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
@@ -121,11 +125,13 @@ END
 $cust_main = qsearchs('cust_main',{'custnum'=>$custnum});
 $agent = qsearchs('agent',{'agentnum'=> $cust_main->agentnum });
 
-$count = 0 ;
-print qq!<TABLE>! ;
+$count = 0;
+$pkgparts = 0;
+print qq!<TABLE>!;
 foreach $type_pkgs ( qsearch('type_pkgs',{'typenum'=> $agent->typenum }) ) {
+  $pkgparts++;
   my($pkgpart)=$type_pkgs->pkgpart;
-  print qq!<TR>! if ($count == 0) ;
+  print qq!<TR>! if ( $count == 0 );
   my $value = $cgi->param("pkg$pkgpart") || 0;
   print <<END;
   <TD>
@@ -133,18 +139,28 @@ foreach $type_pkgs ( qsearch('type_pkgs',{'typenum'=> $agent->typenum }) ) {
   $pkgpart: $pkg{$pkgpart} - $comment{$pkgpart}</TD>\n
 END
   $count ++ ;
-  if ($count == 2)
-  {
+  if ( $count == 2 ) {
     print qq!</TR>\n! ;
-    $count = 0 ;
+    $count = 0;
   }
 }
-print qq!</TABLE>! ;
+print qq!</TABLE>!;
+
+unless ( $pkgparts ) {
+  my $p2 = popurl(2);
+  my $typenum = $agent->typenum;
+  my $agent_type = qsearchs( 'agent_type', { 'typenum' => $typenum } );
+  my $atype = $agent_type->atype;
+  print <<END;
+(No <a href="${p2}browse/part_pkg.cgi">package definitions</a>, or agent type
+<a href="${p2}edit/agent_type.cgi?$typenum">$atype</a> not allowed to purchase
+any packages.)
+END
+}
 
 #submit
-print qq!<P><INPUT TYPE="submit" VALUE="Order">\n!;
-
 print <<END;
+<P><INPUT TYPE="submit" VALUE="Order">
     </FORM>
   </BODY>
 </HTML>
