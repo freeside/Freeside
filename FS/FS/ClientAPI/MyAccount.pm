@@ -203,7 +203,7 @@ sub process_payment {
   my $error = $cust_main->realtime_bop( 'CC', $p->{'amount'}, quiet=>1,
     'paydate' => $p->{'year'}. '-'. $p->{'month'}. '-01',
     map { $_ => $p->{$_} }
-      qw( payname address1 address2 city state zip payinfo )
+      qw( payname address1 address2 city state zip payinfo paybatch )
   );
   return { 'error' => $error } if $error;
 
