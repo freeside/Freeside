@@ -602,7 +602,7 @@ sub radius_check {
     /^(rc_(.*))$/;
     my($column, $attrib) = ($1, $2);
     #$attrib =~ s/_/\-/g;
-    ( $FS::raddb:attrib{lc($attrib)}, $self->getfield($column) );
+    ( $FS::raddb::attrib{lc($attrib)}, $self->getfield($column) );
   } grep { /^rc_/ && $self->getfield($_) } fields( $self->table );
 }
 
@@ -638,7 +638,7 @@ sub email {
 
 =head1 VERSION
 
-$Id: svc_acct.pm,v 1.32 2001-09-07 20:17:49 ivan Exp $
+$Id: svc_acct.pm,v 1.33 2001-09-07 20:26:33 ivan Exp $
 
 =head1 BUGS
 

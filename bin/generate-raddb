@@ -26,10 +26,12 @@ foreach ( keys %hash ) {
 #  print substr($_,0,24),"\n" if length($_)>24; 
 #  $max = length($_) if length($_)>$max;
 #everything >24 is still unique, at least with freeradius comprehensive dataset
-  print "  '". substr($_,0,24). "' => '$hash{$_}'\n";
+  print "  '". substr($_,0,24). "' => '$hash{$_}',\n";
 }
 
 print <<END;
+);
+
 1;
 END
 
