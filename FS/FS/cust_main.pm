@@ -709,10 +709,16 @@ sub ncancelled_pkgs {
 Generates invoices (see L<FS::cust_bill>) for this customer.  Usually used in
 conjunction with the collect method.
 
+Options are passed as name-value pairs.
+
 The only currently available option is `time', which bills the customer as if
 it were that time.  It is specified as a UNIX timestamp; see
 L<perlfunc/"time">).  Also see L<Time::Local> and L<Date::Parse> for conversion
-functions.
+functions.  For example:
+
+ use Date::Parse;
+ ...
+ $cust_main->bill( 'time' => str2time('April 20th, 2001') );
 
 If there is an error, returns the error, otherwise returns false.
 
@@ -740,7 +746,7 @@ sub bill {
   # & generate invoice database.
  
   my( $total_setup, $total_recur ) = ( 0, 0 );
-  my @cust_bill_pkg;
+  my @cust_bill_pkg = ();
 
   foreach my $cust_pkg (
     qsearch('cust_pkg',{'custnum'=> $self->getfield('custnum') } )
@@ -763,20 +769,24 @@ sub bill {
     my $setup = 0;
     unless ( $cust_pkg->setup ) {
       my $setup_prog = $part_pkg->getfield('setup');
-      $setup_prog =~ /^(.*)$/ #presumably trusted
-        or die "Illegal setup for package ". $cust_pkg->pkgnum. ": $setup_prog";
+      $setup_prog =~ /^(.*)$/ or do {
+        $dbh->rollback if $oldAutoCommit;
+        return "Illegal setup for pkgpart ". $part_pkg->pkgpart.
+               ": $setup_prog";
+      };
       $setup_prog = $1;
+
       my $cpt = new Safe;
       #$cpt->permit(); #what is necessary?
       $cpt->share(qw( $cust_pkg )); #can $cpt now use $cust_pkg methods?
       $setup = $cpt->reval($setup_prog);
       unless ( defined($setup) ) {
-        warn "Error reval-ing part_pkg->setup pkgpart ", 
-             $part_pkg->pkgpart, ": $@";
-      } else {
-        $cust_pkg->setfield('setup',$time);
-        $cust_pkg_mod_flag=1; 
+        $dbh->rollback if $oldAutoCommit;
+        return "Error reval-ing part_pkg->setup pkgpart ". $part_pkg->pkgpart.
+               ": $@";
       }
+      $cust_pkg->setfield('setup',$time);
+      $cust_pkg_mod_flag=1; 
     }
 
     #bill recurring fee
@@ -787,43 +797,57 @@ sub bill {
          ( $cust_pkg->getfield('bill') || 0 ) < $time
     ) {
       my $recur_prog = $part_pkg->getfield('recur');
-      $recur_prog =~ /^(.*)$/ #presumably trusted
-        or die "Illegal recur for package ". $cust_pkg->pkgnum. ": $recur_prog";
+      $recur_prog =~ /^(.*)$/ or do {
+        $dbh->rollback if $oldAutoCommit;
+        return "Illegal recur for pkgpart ". $part_pkg->pkgpart.
+               ": $recur_prog";
+      };
       $recur_prog = $1;
+
       my $cpt = new Safe;
       #$cpt->permit(); #what is necessary?
       $cpt->share(qw( $cust_pkg )); #can $cpt now use $cust_pkg methods?
       $recur = $cpt->reval($recur_prog);
       unless ( defined($recur) ) {
-        warn "Error reval-ing part_pkg->recur pkgpart ",
-             $part_pkg->pkgpart, ": $@";
-      } else {
-        #change this bit to use Date::Manip? CAREFUL with timezones (see
-        # mailing list archive)
-        #$sdate=$cust_pkg->bill || time;
-        #$sdate=$cust_pkg->bill || $time;
-        $sdate = $cust_pkg->bill || $cust_pkg->setup || $time;
-        my ($sec,$min,$hour,$mday,$mon,$year) =
-          (localtime($sdate) )[0,1,2,3,4,5];
-        $mon += $part_pkg->getfield('freq');
-        until ( $mon < 12 ) { $mon -= 12; $year++; }
-        $cust_pkg->setfield('bill',
-          timelocal($sec,$min,$hour,$mday,$mon,$year));
-        $cust_pkg_mod_flag = 1; 
+        $dbh->rollback if $oldAutoCommit;
+        return "Error reval-ing part_pkg->recur pkgpart ".
+               $part_pkg->pkgpart. ": $@";
       }
+      #change this bit to use Date::Manip? CAREFUL with timezones (see
+      # mailing list archive)
+      #$sdate=$cust_pkg->bill || time;
+      #$sdate=$cust_pkg->bill || $time;
+      $sdate = $cust_pkg->bill || $cust_pkg->setup || $time;
+      my ($sec,$min,$hour,$mday,$mon,$year) =
+        (localtime($sdate) )[0,1,2,3,4,5];
+      $mon += $part_pkg->getfield('freq');
+      until ( $mon < 12 ) { $mon -= 12; $year++; }
+      $cust_pkg->setfield('bill',
+        timelocal($sec,$min,$hour,$mday,$mon,$year));
+      $cust_pkg_mod_flag = 1; 
     }
 
-    warn "setup is undefined" unless defined($setup);
-    warn "recur is undefined" unless defined($recur);
-    warn "cust_pkg bill is undefined" unless defined($cust_pkg->bill);
+    warn "\$setup is undefined" unless defined($setup);
+    warn "\$recur is undefined" unless defined($recur);
+    warn "\$cust_pkg->bill is undefined" unless defined($cust_pkg->bill);
 
     if ( $cust_pkg_mod_flag ) {
       $error=$cust_pkg->replace($old_cust_pkg);
       if ( $error ) { #just in case
-        warn "Error modifying pkgnum ", $cust_pkg->pkgnum, ": $error";
-      } else {
-        $setup = sprintf( "%.2f", $setup );
-        $recur = sprintf( "%.2f", $recur );
+        $dbh->rollback if $oldAutoCommit;
+        return "Error modifying pkgnum ". $cust_pkg->pkgnum. ": $error";
+      }
+      $setup = sprintf( "%.2f", $setup );
+      $recur = sprintf( "%.2f", $recur );
+      if ( $setup < 0 ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "negative setup $setup for pkgnum ". $cust_pkg->pkgnum;
+      }
+      if ( $recur < 0 ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "negative recur $recur for pkgnum ". $cust_pkg->pkgnum;
+      }
+      if ( $setup > 0 || $recur > 0 ) {
         my $cust_bill_pkg = new FS::cust_bill_pkg ({
           'pkgnum' => $cust_pkg->pkgnum,
           'setup'  => $setup,
@@ -844,11 +868,9 @@ sub bill {
   unless ( @cust_bill_pkg ) {
     $dbh->commit or die $dbh->errstr if $oldAutoCommit;
     return '';
-  }
+  } 
 
-  unless ( $self->getfield('tax') =~ /Y/i
-           || $self->getfield('payby') eq 'COMP'
-  ) {
+  unless ( $self->tax =~ /Y/i || $self->payby eq 'COMP' ) {
     my $cust_main_county = qsearchs('cust_main_county',{
         'state'   => $self->state,
         'county'  => $self->county,
@@ -870,25 +892,25 @@ sub bill {
   }
 
   my $cust_bill = new FS::cust_bill ( {
-    'custnum' => $self->getfield('custnum'),
-    '_date' => $time,
+    'custnum' => $self->custnum,
+    '_date'   => $time,
     'charged' => $charged,
   } );
   $error = $cust_bill->insert;
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
-    return "$error for customer #". $self->custnum;
+    return "can't create invoice for customer #". $self->custnum. ": $error";
   }
 
   my $invnum = $cust_bill->invnum;
   my $cust_bill_pkg;
   foreach $cust_bill_pkg ( @cust_bill_pkg ) {
-    $cust_bill_pkg->setfield( 'invnum', $invnum );
+    warn $cust_bill_pkg->invnum($invnum);
     $error = $cust_bill_pkg->insert;
-    #shouldn't happen, but how else tohandle this?
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
-      return "$error for customer #". $self->custnum;
+      return "can't create invoice line item for customer #". $self->custnum.
+             ": $error";
     }
   }
   
@@ -905,6 +927,8 @@ Depending on the value of `payby', this may print an invoice (`BILL'), charge
 a credit card (`CARD'), or just add any necessary (pseudo-)payment (`COMP').
 
 If there is an error, returns the error, otherwise returns false.
+
+Options are passed as name-value pairs.
 
 Currently available options are:
 
@@ -937,10 +961,10 @@ sub collect {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  my $total_owed = $self->balance;
-  warn "collect: total owed $total_owed " if $Debug;
-  unless ( $total_owed > 0 ) { #redundant?????
-    $dbh->rollback if $oldAutoCommit;
+  my $balance = $self->balance;
+  warn "collect: balance $balance" if $Debug;
+  unless ( $balance > 0 ) { #redundant?????
+    $dbh->rollback if $oldAutoCommit; #hmm
     return '';
   }
 
@@ -949,18 +973,18 @@ sub collect {
   ) {
 
     #this has to be before next's
-    my $amount = sprintf( "%.2f", $total_owed < $cust_bill->owed
-                                  ? $total_owed
+    my $amount = sprintf( "%.2f", $balance < $cust_bill->owed
+                                  ? $balance
                                   : $cust_bill->owed
     );
-    $total_owed = sprintf( "%.2f", $total_owed - $amount );
+    $balance = sprintf( "%.2f", $balance - $amount );
 
     next unless $cust_bill->owed > 0;
 
-    # ??????????
+    # don't try to charge for the same invoice if it's already in a batch
     next if qsearchs( 'cust_pay_batch', { 'invnum' => $cust_bill->invnum } );
 
-    warn "invnum ". $cust_bill->invnum. " (owed ". $cust_bill->owed. ", amount $amount, total_owed $total_owed)" if $Debug;
+    warn "invnum ". $cust_bill->invnum. " (owed ". $cust_bill->owed. ", amount $amount, balance $balance)" if $Debug;
 
     next unless $amount > 0;
 
@@ -1115,6 +1139,8 @@ sub collect {
 
         } elsif ( $processor =~ /^Business::OnlinePayment::(.*)$/ ) {
 
+          my $bop_processor = $1;
+
           my($payname, $payfirst, $paylast);
           if ( $self->payname ) {
             $payname = $self->payname;
@@ -1130,7 +1156,8 @@ sub collect {
             $payname =  "$payfirst $paylast";
           }
         
-          my $transaction = new Business::OnlinePayment( $1, @bop_options );
+          my $transaction =
+            new Business::OnlinePayment( $bop_processor, @bop_options );
           $transaction->content(
             'type'           => 'CC',
             'login'          => $bop_login,
@@ -1177,7 +1204,7 @@ sub collect {
                    $transaction->result_code. ": ". $transaction->error_message;
           } else {
             $dbh->commit or die $dbh->errstr if $oldAutoCommit;
-            return ''
+            #return '';
           }
 
         } else {
@@ -1226,7 +1253,7 @@ sub collect {
 =item total_owed
 
 Returns the total owed for this customer on all invoices
-(see L<FS::cust_bill>).
+(see L<FS::cust_bill/owed>).
 
 =cut
 
@@ -1323,7 +1350,7 @@ sub apply_payments {
     if ( $cust_bill->owed >= $payment->unapplied ) {
       $amount = $payment->unapplied;
     } else {
-      $amount = $payment->owed;
+      $amount = $cust_bill->owed;
     }
 
     my $cust_bill_pay = new FS::cust_bill_pay ( {
@@ -1343,7 +1370,8 @@ sub apply_payments {
 
 =item total_credited
 
-Returns the total credits (see L<FS::cust_credit>) for this customer.
+Returns the total outstanding credit (see L<FS::cust_credit>) for this
+customer.  See L<FS::cust_credit/credited>.
 
 =cut
 
@@ -1358,15 +1386,36 @@ sub total_credited {
   sprintf( "%.2f", $total_credit );
 }
 
+=item total_unapplied_payments
+
+Returns the total unapplied payments (see L<FS::cust_pay>) for this customer.
+See L<FS::cust_pay/unapplied>.
+
+=cut
+
+sub total_unapplied_payments {
+  my $self = shift;
+  my $total_unapplied = 0;
+  foreach my $cust_pay ( qsearch('cust_pay', {
+    'custnum' => $self->custnum,
+  } ) ) {
+    $total_unapplied += $cust_pay->unapplied;
+  }
+  sprintf( "%.2f", $total_unapplied );
+}
+
 =item balance
 
-Returns the balance for this customer (total owed minus total credited).
+Returns the balance for this customer (total_owed minus total_credited
+minus total_unapplied_payments).
 
 =cut
 
 sub balance {
   my $self = shift;
-  sprintf( "%.2f", $self->total_owed - $self->total_credited );
+  sprintf( "%.2f",
+    $self->total_owed - $self->total_credited - $self->total_unapplied_payments
+  );
 }
 
 =item invoicing_list [ ARRAYREF ]
@@ -1501,7 +1550,7 @@ sub rebuild_fuzzyfiles {
 
 =head1 VERSION
 
-$Id: cust_main.pm,v 1.28 2001-09-02 04:25:55 ivan Exp $
+$Id: cust_main.pm,v 1.29 2001-09-03 22:07:38 ivan Exp $
 
 =head1 BUGS
 

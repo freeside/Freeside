@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: cust_main.cgi,v 1.7 2001-09-02 07:49:52 ivan Exp $ -->
+#<!-- $Id: cust_main.cgi,v 1.8 2001-09-03 22:07:39 ivan Exp $ -->
 
 use strict;
 use vars qw ( $cgi $query $custnum $cust_main $hashref $agent $referral 
@@ -192,7 +192,7 @@ print '<BR>';
 
   @invoicing_list = $cust_main->invoicing_list;
   print "Billing information (",
-       qq!<A HREF="!, popurl(2), qq!/misc/bill.cgi?$custnum">!, "Bill now</A>)",
+       qq!<A HREF="!, popurl(2), qq!misc/bill.cgi?$custnum">!, "Bill now</A>)",
         &ntable("#cccccc"), "<TR><TD>", &ntable("#cccccc",2),
         '<TR><TD ALIGN="right">Tax exempt</TD><TD BGCOLOR="#ffffff">',
         $cust_main->tax ? 'yes' : 'no',
@@ -269,9 +269,9 @@ print qq!!, &table(), "\n",
 
 #get package info
 if ( $conf->exists('hidecancelledpackages') ) {
-  @packages = $cust_main->ncancelled_pkgs;
+  @packages = sort { $a->pkgnum <=> $b->pkgnum } ($cust_main->ncancelled_pkgs);
 } else {
-  @packages = $cust_main->all_pkgs;
+  @packages = sort { $a->pkgnum <=> $b->pkgnum } ($cust_main->all_pkgs);
 }
 
 $n1 = '<TR>';
@@ -320,28 +320,31 @@ print "</TR>";
 print "</TABLE>";
 
 #formatting
-print qq!<BR><BR><A NAME="history">Payment History!,
-      qq!</A>!,
-      qq! ( Click on invoice to view invoice/enter payment. | !,
-      qq!<A HREF="!, popurl(2), qq!edit/cust_credit.cgi?$custnum">!,
-      qq!Post credit / refund</A> )!;
+print qq!<BR><BR><A NAME="history">Payment History!.
+      qq!</A> ( !.
+      qq!<A HREF="!. popurl(2). qq!edit/cust_pay.cgi?custnum=$custnum">!.
+      qq!Post payment</A> | !.
+      qq!<A HREF="!. popurl(2). qq!edit/cust_credit.cgi?$custnum">!.
+      qq!Post credit</A> )!;
 
 #get payment history
 #
 # major problem: this whole thing is way too sloppy.
 # minor problem: the description lines need better formatting.
 
-# SHOULD SHOW UNAPPLIED PAYMENTS (now show unapplied credits)
-
 @history = (); #needed for mod_perl :)
 
 @bills = qsearch('cust_bill',{'custnum'=>$custnum});
 foreach $bill (@bills) {
   my($bref)=$bill->hashref;
+  my $bpre = ( $bill->owed > 0 )
+               ? '<b><font size="+1" color="#ff0000"> Open '
+               : '';
+  my $bpost = ( $bill->owed > 0 ) ? '</font></b>' : '';
   push @history,
     $bref->{_date} . qq!\t<A HREF="!. popurl(2). qq!view/cust_bill.cgi?! .
-    $bref->{invnum} . qq!">Invoice #! . $bref->{invnum} .
-    qq! (Balance \$! . $bill->owed . qq!)</A>\t! .
+    $bref->{invnum} . qq!">${bpre}Invoice #! . $bref->{invnum} .
+    qq! (Balance \$! . $bill->owed . qq!)$bpost</A>\t! .
     $bref->{charged} . qq!\t\t\t!;
 
   my(@cust_bill_pay)=qsearch('cust_bill_pay',{'invnum'=> $bref->{invnum} } );
@@ -356,6 +359,7 @@ foreach $bill (@bills) {
                                              $payment->payinfo,
                                              $cust_bill_pay->amount,
                       );
+    $payinfo = substr($payinfo,0,4). 'x'x(length($payinfo)-4) if $payby eq 'CARD';
     push @history,
       "$date\tPayment, Invoice #$invnum ($payby $payinfo)\t\t$paid\t\t";
   }
@@ -364,33 +368,34 @@ foreach $bill (@bills) {
     qsearch('cust_credit_bill', { 'invnum'=> $bref->{invnum} } );
   foreach my $cust_credit_bill (@cust_credit_bill) {
     my $cust_credit = $cust_credit_bill->cust_credit;
-    my($date, $invnum, $crednum, $amount, $reason ) = (
+    my($date, $invnum, $crednum, $amount, $reason, $app_date ) = (
       $cust_credit->_date,
       $cust_credit_bill->invnum,
       $cust_credit_bill->crednum,
       $cust_credit_bill->amount,
       $cust_credit->reason,
+      time2str("%D", $cust_credit_bill->_date),
     );
     push @history,
-      "$date\tCredit #$crednum, Invoice #$invnum $reason\t\t\t$amount\t";
+      "$date\tCredit #$crednum: $reason<BR>".
+      "(applied to invoice #$invnum on $app_date)\t\t\t$amount\t";
   }
 }
 
-@credits = grep $_->credited, qsearch('cust_credit',{'custnum'=>$custnum});
+@credits = grep { $_->credited > 0 }
+           qsearch('cust_credit',{'custnum'=>$custnum});
 foreach $credit (@credits) {
   my($cref)=$credit->hashref;
   push @history,
     $cref->{_date} . "\t" .
     qq!<A HREF="! . popurl(2). qq!edit/cust_credit_bill.cgi?!. $cref->{crednum} . qq!">!.
-    '<font color="#ff0000">Unapplied credit #' .
-    $cref->{crednum} . ", (Balance \$" .
-    $credit->credited . ")</font></A> ".
-    $cref->{reason} . "\t\t\t" . $cref->{amount} . "\t";
+    '<b><font size="+1" color="#ff0000">Unapplied credit #' .
+    $cref->{crednum} . "</font></b></A>: ".
+    $cref->{reason} . "\t\t\t" . $credit->credited . "\t";
 }
 
 my(@refunds)=qsearch('cust_refund',{'custnum'=> $custnum } );
-my($refund);
-foreach $refund (@refunds) {
+foreach my $refund (@refunds) {
   my($rref)=$refund->hashref;
   my($refundnum) = (
     $refund->refundnum,
@@ -403,6 +408,16 @@ foreach $refund (@refunds) {
     $rref->{refund};
 }
 
+my @unapplied_payments =
+  grep { $_->unapplied > 0 } qsearch('cust_pay', { 'custnum' => $custnum } );
+foreach my $payment (@unapplied_payments) {
+  push @history,
+    $payment->_date. "\t".
+    '<A HREF="'. popurl(2). 'edit/cust_bill_pay.cgi?'. $payment->paynum. '">'.
+    '<b><font size="+1" color="#ff0000">Unapplied payment #' .
+    $payment->paynum . "</font></b></A>".
+    "\t\t" . $payment->unapplied . "\t\t";
+}
 
         #formatting
         print &table(), <<END;

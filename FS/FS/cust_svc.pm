@@ -58,7 +58,7 @@ The following fields are currently supported:
 
 Creates a new service.  To add the refund to the database, see L<"insert">.
 Services are normally created by creating FS::svc_ objects (see
-L<FS::svc_acct>, L<FS::svc_domain>, and L<FS::svc_acct_sm>, among others).
+L<FS::svc_acct>, L<FS::svc_domain>, and L<FS::svc_forward>, among others).
 
 =cut
 
@@ -155,7 +155,7 @@ sub label {
 
 =head1 VERSION
 
-$Id: cust_svc.pm,v 1.4 2001-09-02 04:51:11 ivan Exp $
+$Id: cust_svc.pm,v 1.5 2001-09-03 22:07:38 ivan Exp $
 
 =head1 BUGS
 

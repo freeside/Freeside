@@ -408,7 +408,7 @@ sub print_text {
 
     push @buf,[
       "Payment received ". time2str("%x",$_->cust_pay->_date ),
-      $money_char. sprintf("%10.2f",$_->paid )
+      $money_char. sprintf("%10.2f",$_->amount )
     ];
   }
 
@@ -489,7 +489,7 @@ sub print_text {
 
 =head1 VERSION
 
-$Id: cust_bill.pm,v 1.10 2001-09-02 01:27:10 ivan Exp $
+$Id: cust_bill.pm,v 1.11 2001-09-03 22:07:38 ivan Exp $
 
 =head1 BUGS
 

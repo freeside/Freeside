@@ -3,7 +3,7 @@ package FS::cust_pay;
 use strict;
 use vars qw( @ISA );
 use Business::CreditCard;
-use FS::Record qw( dbh );
+use FS::Record qw( dbh qsearch qsearchs );
 use FS::cust_bill;
 use FS::cust_bill_pay;
 use FS::cust_main;
@@ -94,6 +94,21 @@ sub insert {
   return $error if $error;
 
   if ( $self->invnum ) {
+    my $cust_bill = qsearchs('cust_bill', { 'invnum' => $self->invnum } )
+      or do {
+        $dbh->rollback if $oldAutoCommit;
+        return "Unknown cust_bill.invnum: ". $self->invnum;
+      };
+    $self->custnum($cust_bill->custnum );
+  }
+
+  $error = $self->SUPER::insert;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return "error inserting $self: $error";
+  }
+
+  if ( $self->invnum ) {
     my $cust_bill_pay = new FS::cust_bill_pay {
       'invnum' => $self->invnum,
       'paynum' => $self->paynum,
@@ -103,18 +118,8 @@ sub insert {
     $error = $cust_bill_pay->insert;
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
-      return $error;
+      return "error inserting $cust_bill_pay: $error";
     }
-    warn $cust_bill_pay;
-    warn $cust_bill_pay->cust_bill;
-    warn $cust_bill_pay->cust_bill->custnum;
-    $self->custnum($cust_bill_pay->cust_bill->custnum);
-  }
-
-  $error = $self->SUPER::insert;
-  if ( $error ) {
-    $dbh->rollback if $oldAutoCommit;
-    return $error;
   }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
@@ -276,7 +281,7 @@ sub unapplied {
 
 =head1 VERSION
 
-$Id: cust_pay.pm,v 1.6 2001-09-02 05:38:13 ivan Exp $
+$Id: cust_pay.pm,v 1.7 2001-09-03 22:07:38 ivan Exp $
 
 =head1 BUGS
 

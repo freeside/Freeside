@@ -181,8 +181,34 @@ ALTER TABLE cust_main ADD COLUMN comments varchar NULL;
   <table border><tr><th>PostgreSQL</th><th>MySQL, others</th></tr>
 <tr><td>
 <font size=-1><pre>
-ALTER TABLE cust_pay RENAME COLUMN invnum TO depreciated;
-ALTER TABLE cust_refund RENAME COLUMN crednum TO depreciated;
+CREATE TABLE cust_pay_temp (
+  paynum int primary key,
+  custnum int not null,
+  paid decimal(10,2) not null,
+  _date int null,
+  payby char(4) not null,
+  payinfo varchar(16) null,
+  paybatch varchar(80) null
+);
+INSERT INTO cust_pay_temp SELECT * from cust_pay;
+DROP TABLE cust_pay;
+ALTER TABLE cust_pay_temp RENAME TO cust_pay;
+CREATE UNIQUE INDEX cust_pay1 ON cust_pay paynum;
+CREATE TABLE cust_refund_temp (
+  refundnum int primary key,
+  custnum int not null,
+  _date int null,
+  refund decimal(10,2) not null,
+  otaker varchar(8) not null,
+  reason varchar(80) not null,
+  payby char(4) not null,
+  payinfo varchar(16) null,
+  paybatch varchar(80) null
+);
+INSERT INTO cust_refund_temp SELECT * from cust_refund;
+DROP TABLE cust_refund;
+ALTER TABLE cust_refund_temp RENAME TO cust_refund;
+CREATE UNIQUE INDEX cust_refund1 ON cust_refund refundnum;
 </pre></font>
 </td><td>
 <font size=-1><pre>

@@ -1,8 +1,8 @@
 <%
-#<!-- $Id: cust_pay.cgi,v 1.2 2001-08-21 02:31:56 ivan Exp $ -->
+#<!-- $Id: cust_pay.cgi,v 1.3 2001-09-03 22:07:39 ivan Exp $ -->
 
 use strict;
-use vars qw( $cgi $invnum $p1 $_date $payby $payinfo $paid );
+use vars qw( $cgi $link $linknum $p1 $_date $payby $payinfo $paid );
 use Date::Format;
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
@@ -13,17 +13,27 @@ $cgi = new CGI;
 cgisuidsetup($cgi);
 
 if ( $cgi->param('error') ) {
-  $invnum = $cgi->param('invnum');
+  $link = $cgi->param('link');
+  $linknum = $cgi->param('linknum');
   $paid = $cgi->param('paid');
   $payby = $cgi->param('payby');
   $payinfo = $cgi->param('payinfo');
-} else {
-  my ($query) = $cgi->keywords;
+} elsif ($cgi->keywords) {
+  my($query) = $cgi->keywords;
   $query =~ /^(\d+)$/;
-  $invnum = $1;
+  $link = 'invnum';
+  $linknum = $1;
   $paid = '';
-  $payby = "BILL";
+  $payby = 'BILL';
   $payinfo = "";
+} elsif ( $cgi->param('custnum')  =~ /^(\d+)$/ ) {
+  $link = 'custnum';
+  $linknum = $1;
+  $paid = '';
+  $payby = 'BILL';
+  $payinfo = '';
+} else {
+  die "illegal query ". $cgi->keywords;
 }
 $_date = time;
 
@@ -36,10 +46,15 @@ print qq!<FONT SIZE="+1" COLOR="#ff0000">Error: !, $cgi->param('error'),
 
 print <<END;
     <FORM ACTION="${p1}process/cust_pay.cgi" METHOD=POST>
-    <HR><PRE>
+    <INPUT TYPE="hidden" NAME="link" VALUE="$link">
+    <INPUT TYPE="hidden" NAME="linknum" VALUE="$linknum">
 END
 
-print qq!Invoice #<B>$invnum</B><INPUT TYPE="hidden" NAME="invnum" VALUE="$invnum">!;
+if ( $link eq 'invnum' ) {
+  print "Invoice #<B>$linknum</B>";
+} elsif ( $link eq 'custnum' ) {
+  print "Customer #<B>$linknum</B>";
+}
 
 print qq!<BR>Date: <B>!, time2str("%D",$_date), qq!</B><INPUT TYPE="hidden" NAME="_date" VALUE="$_date">!;
 

@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: bill.cgi,v 1.2 2001-08-21 02:31:56 ivan Exp $ -->
+#<!-- $Id: bill.cgi,v 1.3 2001-09-03 22:07:39 ivan Exp $ -->
 
 use strict;
 use vars qw( $cgi $query $custnum $cust_main $error );
@@ -24,6 +24,9 @@ $error = $cust_main->bill(
 #                          'time'=>$time
                          );
 &eidiot($error) if $error;
+
+$cust_main->apply_payments;
+$cust_main->apply_credits;
 
 $error = $cust_main->collect(
 #                             'invoice-time'=>$time,

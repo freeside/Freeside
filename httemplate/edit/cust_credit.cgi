@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: cust_credit.cgi,v 1.2 2001-08-21 02:31:56 ivan Exp $ -->
+#<!-- $Id: cust_credit.cgi,v 1.3 2001-09-03 22:07:39 ivan Exp $ -->
 
 use strict;
 use vars qw( $cgi $query $custnum $otaker $p1 $crednum $_date $amount $reason );
@@ -42,31 +42,29 @@ print qq!<FONT SIZE="+1" COLOR="#ff0000">Error: !, $cgi->param('error'),
   if $cgi->param('error');
 print <<END;
     <FORM ACTION="${p1}process/cust_credit.cgi" METHOD=POST>
-    <PRE>
 END
 
 $crednum = "";
 print qq!Credit #<B>!, $crednum ? $crednum : " <I>(NEW)</I>", qq!</B><INPUT TYPE="hidden" NAME="crednum" VALUE="$crednum">!;
 
-print qq!\nCustomer #<B>$custnum</B><INPUT TYPE="hidden" NAME="custnum" VALUE="$custnum">!;
+print qq!<BR>Customer #<B>$custnum</B><INPUT TYPE="hidden" NAME="custnum" VALUE="$custnum">!;
 
 print qq!<INPUT TYPE="hidden" NAME="paybatch" VALUE="">!;
 
-print qq!\nDate: <B>!, time2str("%D",$_date), qq!</B><INPUT TYPE="hidden" NAME="_date" VALUE="">!;
+print qq!<BR>Date: <B>!, time2str("%D",$_date), qq!</B><INPUT TYPE="hidden" NAME="_date" VALUE="">!;
 
-print qq!\nAmount \$<INPUT TYPE="text" NAME="amount" VALUE="$amount" SIZE=8 MAXLENGTH=8>!;
+print qq!<BR>Amount \$<INPUT TYPE="text" NAME="amount" VALUE="$amount" SIZE=8 MAXLENGTH=8>!;
 print qq!<INPUT TYPE="hidden" NAME="credited" VALUE="">!;
 
 #print qq! <INPUT TYPE="checkbox" NAME="refund" VALUE="$refund">Also post refund!;
 
 print qq!<INPUT TYPE="hidden" NAME="otaker" VALUE="$otaker">!;
 
-print qq!\nReason <INPUT TYPE="text" NAME="reason" VALUE="$reason" SIZE=72>!;
+print qq!<BR>Reason <INPUT TYPE="text" NAME="reason" VALUE="$reason">!;
 
 print <<END;
-</PRE>
 <BR>
-<CENTER><INPUT TYPE="submit" VALUE="Post"></CENTER>
+<INPUT TYPE="submit" VALUE="Post">
 END
 
 print <<END;

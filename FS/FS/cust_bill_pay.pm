@@ -114,7 +114,7 @@ sub insert {
   if ( $bill_total > $cust_bill->charged ) {
     $dbh->rollback if $oldAutoCommit;
     return "total cust_bill_pay.amount and cust_credit_bill.amount $bill_total".
-           "for invnum ". $self->invnum.
+           " for invnum ". $self->invnum.
            " greater than cust_bill.charged ". $cust_bill->charged;
   }
 
@@ -195,7 +195,7 @@ sub cust_bill {
 
 =head1 VERSION
 
-$Id: cust_bill_pay.pm,v 1.7 2001-09-02 07:49:52 ivan Exp $
+$Id: cust_bill_pay.pm,v 1.8 2001-09-03 22:07:38 ivan Exp $
 
 =head1 BUGS
 
