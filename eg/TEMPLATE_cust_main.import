@@ -2,21 +2,27 @@
 
 # Template for importing legacy customer data
 #
-# $Id: TEMPLATE_cust_main.import,v 1.2 1998-12-16 05:29:45 ivan Exp $
+# $Id: TEMPLATE_cust_main.import,v 1.3 1999-03-26 13:15:56 ivan Exp $
 #
 # ivan@sisd.com 98-aug-17 - 20
 #
 # $Log: TEMPLATE_cust_main.import,v $
-# Revision 1.2  1998-12-16 05:29:45  ivan
+# Revision 1.3  1999-03-26 13:15:56  ivan
+# s/create/new/, use all necessary FS::table_names to avoid warnings
+#
+# Revision 1.2  1998/12/16 05:29:45  ivan
 # adminsuidsetup now need user
 #
 
 use strict;
+use Date::Parse;
 use FS::UID qw(adminsuidsetup datasrc);
 use FS::Record qw(fields qsearch qsearchs);
 use FS::cust_main;
 use FS::cust_pkg;
-use Date::Parse;
+use FS::cust_svc;
+use FS::svc_acct;
+use FS::pkg_svc;
 
 my $user = shift or die &usage;
 adminsuidsetup $user;
@@ -98,7 +104,7 @@ while (<CLIENT>) {
   $svc{'First'} =~ s/&/and/go; 
   $svc{'Zip'} =~ s/\s+$//go;
 
-  my($cust_main) = create FS::cust_main ( {
+  my($cust_main) = new FS::cust_main ( {
     'custnum'  => $svc{'custnum'},
     'agentnum' => $agentnum,
     'last'     => $svc{'last'},
@@ -129,7 +135,7 @@ while (<CLIENT>) {
     die $error;
   }
 
-  my($cust_pkg)=create FS::cust_pkg ( {
+  my($cust_pkg)=new FS::cust_pkg ( {
     'custnum' => $svc{'custnum'},
     'pkgpart' => $pkgpart{$svc{'LegacyBillingData'}},
     'setup'   => '', 
@@ -176,7 +182,7 @@ while (<CLIENT>) {
         } else {
 
           #create new cust_svc record linked to cust_pkg record 
-          my($n_cust_svc) = create FS::cust_svc ({
+          my($n_cust_svc) = new FS::cust_svc ({
             'svcnum'  => $o_cust_svc->svcnum,
             'pkgnum'  => $cust_pkg->pkgnum,
             'svcpart' => $pkg_svc->svcpart,
