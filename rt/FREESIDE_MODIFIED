@@ -4,7 +4,10 @@ config.layout.in
  etc/RT_SiteConfig.pm
 lib/RT/Interface/Web_Vendor.pm
 lib/RT/URI/freeside.pm
+lib/RT/URI/freeside/Internal.pm
+lib/RT/URI/freeside/XMLRPC.pm
  html/Elements/Header
+ html/Elements/Menu
  html/Elements/PageLayout
  html/Elements/SimpleSearch
  html/Elements/Tabs
