@@ -50,6 +50,10 @@ chmod 4755 browse/*.cgi edit/*.cgi edit/process/*.cgi misc/*.cgi misc/process/*.
 <pre>cd /usr/local/apache/htdocs/freeside
 chown -R freeside .
 chmod 755 browse/*.cgi edit/*.cgi edit/process/*.cgi misc/*.cgi misc/process/*.cgi search/*.cgi view/*.cgi</pre>
+      <li>Use <a href="http://perl.apache.org/">mod_perl</a>.  You should run a separate iteration of Apache[-SSL] as the freeside user.  (Warning:  The redirect method of CGI.pm 2.36 [as distributed with Perl 5.004_04] is broken under mod_perl.  Downlaod the current version from <a href="http://www.perl.com/CPAN/modules/by-module/CGI">CPAN</a>.)
+<pre>cd /usr/local/apache/htdocs/freeside
+chown -R root .
+chmod 755 browse/*.cgi edit/*.cgi edit/process/*.cgi misc/*.cgi misc/process/*.cgi search/*.cgi view/*.cgi</pre>
     </ul>
 <li>Create the necessary <a href="config.html">configuration files</a>.
 <li>Create the `/usr/local/etc/freeside/counters.<i>datasrc</i>', and 
