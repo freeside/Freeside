@@ -9,11 +9,13 @@ use FS::Record qw(qsearch qsearchs);
 use FS::cust_main;
 
 &untaint_argv;	#what it sounds like  (eww)
-use vars qw($opt_d);
-getopts("d:");
+use vars qw($opt_d $opt_v);
+getopts("d:v");
 my $user = shift or die &usage;
 
 adminsuidsetup $user;
+
+$FS::cust_main::Debug = 1 if $opt_v;
 
 my @cust_main = @ARGV
   ? map { qsearchs('cust_main', { custnum => $_ } ) } @ARGV

@@ -1102,7 +1102,7 @@ sub collect {
   my $dbh = dbh;
 
   my $balance = $self->balance;
-  warn "collect: balance $balance" if $Debug;
+  warn "collect customer". $self->custnum. ": balance $balance" if $Debug;
   unless ( $balance > 0 ) { #redundant?????
     $dbh->rollback if $oldAutoCommit; #hmm
     return '';
@@ -1140,9 +1140,15 @@ sub collect {
           qsearch('part_bill_event', { 'payby'    => $self->payby,
                                        'disabled' => '',           } )
     ) {
-      #run callback
+      warn "calling invoice event (". $part_bill_event->eventcode. ")\n"
+        if $Debug;
       my $cust_main = $self; #for callback
       my $error = eval $part_bill_event->eventcode;
+
+      if ( $@ ) {
+        warn "fatal error running invoice event (". part_bill_event->eventcode.
+             "): $@";
+      }
 
       if ( $error ) {
 
