@@ -1,8 +1,11 @@
 package FS::InitHandler;
 
 use strict;
+use vars qw($DEBUG);
 use FS::UID qw(adminsuidsetup);
 use FS::Record;
+
+$DEBUG = 1;
 
 sub handler {
 
@@ -59,12 +62,18 @@ sub handler {
 
 =cut
 
+  warn "[FS::InitHandler] handler called\n" if $DEBUG;
+
   open(MAPSECRETS,"<$FS::UID::conf_dir/mapsecrets")
     or die "can't read $FS::UID::conf_dir/mapsecrets: $!";
 
+  my %seen;
   while (<MAPSECRETS>) {
-    /^([\w\-\.]+)\s/ or do { warn "strange line in mapsecrets: $_"; next; };
-    my $user = $1;
+    /^([\w\-\.]+)\s(.*)$/
+      or do { warn "strange line in mapsecrets: $_"; next; };
+    my($user, $datasrc) = ($1, $2);
+    next if $seen{$datasrc}++;
+    warn "[FS::InitHandler] preloading $datasrc for $user\n" if $DEBUG;
     adminsuidsetup($user);
   }
 
