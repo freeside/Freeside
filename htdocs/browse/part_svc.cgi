@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: part_svc.cgi,v 1.3 1998-11-20 23:10:57 ivan Exp $
+# $Id: part_svc.cgi,v 1.4 1998-11-21 02:26:22 ivan Exp $
 #
 # ivan@sisd.com 97-nov-14, 97-dec-9
 #
@@ -10,7 +10,10 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: part_svc.cgi,v $
-# Revision 1.3  1998-11-20 23:10:57  ivan
+# Revision 1.4  1998-11-21 02:26:22  ivan
+# visual
+#
+# Revision 1.3  1998/11/20 23:10:57  ivan
 # visual
 #
 # Revision 1.2  1998/11/20 08:50:37  ivan
@@ -57,7 +60,7 @@ foreach $part_svc ( sort {
           grep /^${svcdb}__/,
             fields('part_svc')
   ;
-  my($rowspan)=scalar(@rows);
+  my($rowspan)=scalar(@rows) || 1;
   print <<END;
       <TR>
         <TD ROWSPAN=$rowspan><A HREF="$p/edit/part_svc.cgi?$hashref->{svcpart}">
@@ -65,14 +68,17 @@ foreach $part_svc ( sort {
         <TD ROWSPAN=$rowspan><A HREF="$p/edit/part_svc.cgi?$hashref->{svcpart}">          $hashref->{svc}</A></TD>
         <TD ROWSPAN=$rowspan>$hashref->{svcdb}</TD>
 END
+
+  my($n1)='';
   my($row);
   foreach $row ( @rows ) {
     my($flag)=$part_svc->getfield($svcdb.'__'.$row.'_flag');
-    print "<TD>$row</TD><TD>";
+    print $n1,"<TD>$row</TD><TD>";
     if ( $flag eq "D" ) { print "Default"; }
       elsif ( $flag eq "F" ) { print "Fixed"; }
       else { print "(Unknown!)"; }
-    print "</TD><TD>",$part_svc->getfield($svcdb."__".$row),"</TD></TR><TR>";
+    print "</TD><TD>",$part_svc->getfield($svcdb."__".$row),"</TD>";
+    $n1="</TR><TR>";
   }
 print "</TR>";
 }
@@ -82,7 +88,6 @@ print <<END;
         <TD COLSPAN=2><A HREF="$p/edit/part_svc.cgi"><I>Add new service</I></A></TD>
       </TR>
     </TABLE>
-    </CENTER>
   </BODY>
 </HTML>
 END
