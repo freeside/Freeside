@@ -208,6 +208,13 @@ sub view_customer {
 
 sub process_order_pkg {
 
+  if ( $cgi->param('_password') ne $cgi->param('_password2') ) {
+    my $init_data = signup_info( 'session_id' => $session_id );
+    $error = $init_data->{msgcat}{passwords_dont_match}; #msgcat
+    $cgi->param('_password', '');
+    $cgi->param('_password2', '');
+  }
+
   my $results = order_pkg (
     'agent_session_id' => $session_id,
     map { $_ => $cgi->param($_) }
