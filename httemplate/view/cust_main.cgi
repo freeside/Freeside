@@ -401,6 +401,7 @@ foreach my $package (@packages) {
   #foreach my $cust_svc ( @cust_svc ) {
   foreach my $svcpart ( sort { $a<=>$b } keys %pkg_svc ) {
     my $svc = qsearchs('part_svc',{'svcpart'=>$svcpart})->getfield('svc');
+    $svc =~ s/ /&nbsp;/g;
     my(@cust_svc)=qsearch('cust_svc',{'pkgnum'=>$pkgnum, 
                                       'svcpart'=>$svcpart,
                                     });
@@ -414,10 +415,10 @@ foreach my $package (@packages) {
               qq!<TD><A HREF="$sview/$svcdb.cgi?$svcnum"><FONT SIZE=-1>$value</FONT></A></TD>!;
       } else {
         print $n2, qq!<TD COLSPAN=2><A HREF="$uiadd{$svcpart}?pkgnum$pkgnum-svcpart$svcpart"><b><font size="+1" color="#ff0000">!.
-              qq!Provision $svc</A></b></font>!;
+              qq!Provision&nbsp;$svc</A></b></font>!;
 
         print qq!<BR><A HREF="../misc/link.cgi?pkgnum$pkgnum-svcpart$svcpart">!.
-              qq!<b><font size="+1" color="#ff0000">Link to legacy $svc</A></b></font>!
+              qq!<b><font size="+1" color="#ff0000">Link&nbsp;to&nbsp;legacy&nbsp;$svc</A></b></font>!
           if $conf->exists('legacy_link');
 
         print '</TD>';
