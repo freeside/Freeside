@@ -409,7 +409,7 @@ END
             my $ahref = '';
             $ahref= '<A HREF="'.
                     FS::TicketSystem->href_customer_tickets($custnum,$priority).
-                    '">';
+                    '">'
               if $num;
 
             print '<TR>'.
@@ -426,7 +426,7 @@ END
         my $ahref = '';
         my $ahref = '<A HREF="'.
                     FS::TicketSystem->href_customer_tickets($custnum).
-                    '">';
+                    '">'
           if $cust_main->get($addl_col);
 
         print $ahref. $cust_main->get($addl_col). '</A>';
