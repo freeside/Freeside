@@ -419,7 +419,7 @@ END
             FS::TicketSystem->href_customer_tickets($custnum).
           '">';
         print $ahref. $cust_main->get($addl_col). '</A>';
-        print '</TD><TD ALIGN=left>${ahref}total</A></TD></TR></TABLE>'
+        print "</TD><TD ALIGN=left>${ahref}total</A></TD></TR></TABLE>"
           if @custom_priorities;
       } else {
         print $cust_main->get($addl_col);
