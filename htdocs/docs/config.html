@@ -18,18 +18,18 @@ admin secretfile
 john secretfile
 sam secretfile
 </pre>
-  <li>Next, the filename(s) referenced in <b>/usr/local/etc/freeside/mapsecrets</b> file should be created in the <b>/usr/local/etc/freeside/</b> directory.  This file contains three lines: <a href="http://search.cpan.org/doc/TIMB/DBI-1.15/DBI.pm">DBI data source</a> (for example,
-  <tt>DBI:mysql:freeside</tt> or <tt>DBI:Pg:dbname=freeside</tt>), database username, and database password.
-  This file should not be world readable.  See the <a href="http://search.cpan.org/doc/TIMB/DBI-1.15/DBI.pm">DBI manpage</a> and the <a href="http://search.cpan.org/search?mode=module&query=DBD">manpage for your DBD</a> for the exact syntax of a DBI data source.  For example:
+  <li>Next, the filename(s) referenced in <b>/usr/local/etc/freeside/mapsecrets</b> file should be created in the <b>/usr/local/etc/freeside/</b> directory.  Each file contains three lines: <a href="http://search.cpan.org/doc/TIMB/DBI-1.15/DBI.pm">DBI data source</a> (for example,
+  <tt>DBI:mysql:freeside</tt> or <tt>DBI:Pg:host=localhost;dbname=freeside</tt>), database username, and database password.
+  These files should not be world readable.  See the <a href="http://search.cpan.org/doc/TIMB/DBI-1.15/DBI.pm">DBI manpage</a> and the <a href="http://search.cpan.org/search?mode=module&query=DBD">manpage for your DBD</a> for the exact syntax of a DBI data source.  In a normal installation such as the example above, a single file <b>/usr/local/etc/freeside/secretfile</b> would be created - for example:
 <pre>
-DBI:Pg:dbname=freeside
+DBI:Pg:host=localhost;dbname=freeside
 dbusername
 dbpassword
 </pre>
 </ul>
 All further configuration files and directories are located in
 <tt>/usr/local/etc/freeside/conf.<i>datasource</i></tt>, for example, 
-<tt>/usr/local/etc/freeside/conf.DBI:Pg:dbname=freeside</tt>
+<tt>/usr/local/etc/freeside/conf.DBI:Pg:host=localhost;dbname=freeside</tt> (remember to backslash-escape the ; character when creating directories in the shell: <tt>mkdir&nbsp;/usr/local/etc/freeside/conf.DBI:Pg:host=localhost\;dbname=freeside</tt>).
 <ul>
   <li><a name="address">address</a> - This configuration file is no longer used.  See <a href="#invoice_template">invoice_template</a> instead.
   <li><a name="apacheroot">apacheroot</a> - The directory containing Apache virtual hosts
