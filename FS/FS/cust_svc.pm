@@ -380,7 +380,7 @@ sub seconds_since_sqlradacct {
                                WHERE UserName = ?
                                  AND $str2time AcctStartTime) >= ?
                                  AND $str2time AcctStopTime ) <  ?
-                                 AND AcctStopTime =! 0
+                                 AND $str2time AcctStopTime ) =! 0
                                  AND AcctStopTime IS NOT NULL"
     ) or die $dbh->errstr;
     $sth->execute($username, $start, $end) or die $sth->errstr;
@@ -393,7 +393,7 @@ sub seconds_since_sqlradacct {
                             WHERE UserName = ?
                               AND $str2time AcctStartTime ) >= ?
                               AND ( ? - $str2time AcctStartTime ) < 86400
-                              AND (    AcctStopTime = 0
+                              AND (    $str2time AcctStopTime ) = 0
                                     OR AcctStopTime IS NULL )"
     ) or die $dbh->errstr;
     $sth->execute($end, $username, $start, $end) or die $sth->errstr;
@@ -407,7 +407,7 @@ sub seconds_since_sqlradacct {
                               AND $str2time AcctStartTime ) < ?
                               AND $str2time AcctStopTime  ) >= ?
                               AND $str2time AcctStopTime  ) <  ?
-                              AND AcctStopTime != 0
+                              AND $str2time AcctStopTime ) != 0
                               AND AcctStopTime IS NOT NULL"
     ) or die $dbh->errstr;
     $sth->execute($start, $username, $start, $start, $end ) or die $sth->errstr;
@@ -437,10 +437,6 @@ sub seconds_since_sqlradacct {
 }
 
 =back
-
-=head1 VERSION
-
-$Id: cust_svc.pm,v 1.19 2002-10-17 14:16:17 ivan Exp $
 
 =head1 BUGS
 
