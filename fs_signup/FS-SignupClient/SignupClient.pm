@@ -12,7 +12,7 @@ use FS::SelfService; # qw( new_customer signup_info );
 $VERSION = '0.04';
 
 @ISA = qw( Exporter );
-@EXPORT_OK = qw( signup_info new_customer regionselector );
+@EXPORT_OK = qw( signup_info new_customer regionselector expselect popselector);
 
 =head1 NAME
 
