@@ -176,12 +176,12 @@ sub insert {
       'recaf'   => 'IN',
       'rectype' => 'SOA',
       'recdata' => "$soamachine $soaemail ( ". time2str("%Y%m%e", time). "00 ".
-                   "$soarefresh $soarety $soaexpire $soadefaultttl )"
+                   "$soarefresh $soaretry $soaexpire $soadefaultttl )"
     };
     $error = $soa->insert;
     warn "WARNING: couldn't insert SOA record for new domain: $error" if $error;
 
-    foreach $nsmachine ( @nsmachines ) {
+    foreach my $nsmachine ( @nsmachines ) {
       my $ns = new FS::domain_record {
         'svcnum'  => $self->svcnum,
         'reczone' => '@',
@@ -194,7 +194,7 @@ sub insert {
         if $error;
     }
 
-    foreach $mxmachine ( @mxmachines ) {
+    foreach my $mxmachine ( @mxmachines ) {
       my $mx = new FS::domain_record {
         'svcnum'  => $self->svcnum,
         'reczone' => '@',
@@ -459,7 +459,7 @@ sub submit_internic {
 
 =head1 VERSION
 
-$Id: svc_domain.pm,v 1.5 2000-02-03 05:16:52 ivan Exp $
+$Id: svc_domain.pm,v 1.6 2000-03-01 08:13:59 ivan Exp $
 
 =head1 BUGS
 

@@ -46,3 +46,6 @@ Makefile.PL
 test.pl
 README
 bin/freeside-bill
+FS/domain_record.pm
+FS/prepay_credit.pm
+FS/svc_www.pm

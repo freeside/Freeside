@@ -10,7 +10,7 @@ use FS::domain_record;
 use FS::svc_acct;
 use FS::SSH qw(ssh);
 
-@ISA = qw(svc_Common);
+@ISA = qw( FS::svc_Common );
 
 #ask FS::UID to run this stuff for us later
 $FS::UID::callback{'FS::svc_www'} = sub { 
@@ -220,7 +220,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: svc_www.pm,v 1.1 2000-02-03 05:16:52 ivan Exp $
+$Id: svc_www.pm,v 1.2 2000-03-01 08:13:59 ivan Exp $
 
 =head1 BUGS
 
@@ -232,7 +232,10 @@ L<FS::part_svc>, L<FS::cust_pkg>, schema.html from the base documentation.
 =head1 HISTORY
 
 $Log: svc_www.pm,v $
-Revision 1.1  2000-02-03 05:16:52  ivan
+Revision 1.2  2000-03-01 08:13:59  ivan
+compilation bugfixes
+
+Revision 1.1  2000/02/03 05:16:52  ivan
 beginning of DNS and Apache support
 
 
