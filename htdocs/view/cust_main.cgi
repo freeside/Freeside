@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main.cgi,v 1.14 1999-04-08 04:04:37 ivan Exp $
+# $Id: cust_main.cgi,v 1.15 1999-04-09 03:52:55 ivan Exp $
 #
 # Usage: cust_main.cgi custnum
 #        http://server.name/path/cust_main.cgi?custnum
@@ -31,7 +31,10 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: cust_main.cgi,v $
-# Revision 1.14  1999-04-08 04:04:37  ivan
+# Revision 1.15  1999-04-09 03:52:55  ivan
+# explicit & for table/itable/ntable
+#
+# Revision 1.14  1999/04/08 04:04:37  ivan
 # eliminate double // in links
 #
 # Revision 1.13  1999/02/28 00:04:00  ivan
@@ -108,11 +111,11 @@ $cust_main = qsearchs('cust_main',{'custnum'=>$custnum});
 die "Customer not found!" unless $cust_main;
 $hashref = $cust_main->hashref;
 
-print itable(), '<TR><TD><A NAME="cust_main"></A>';
+print &itable(), '<TR><TD><A NAME="cust_main"></A>';
 
 print qq!<A HREF="!, popurl(2), 
       qq!edit/cust_main.cgi?$custnum">Edit this customer</A>!,
-      ntable("#c0c0c0"), "<TR><TD>", ntable("#c0c0c0",2),
+      &ntable("#c0c0c0"), "<TR><TD>", &ntable("#c0c0c0",2),
       '<TR><TD ALIGN="right">Customer number</TD><TD BGCOLOR="#ffffff">',
       $custnum, '</TD></TR>',
 ;
@@ -140,8 +143,8 @@ print '</TABLE></TD></TR></TABLE>';
 
 print '</TD><TD ROWSPAN=2>';
 
-print "Contact information", ntable("#c0c0c0"), "<TR><TD>",
-      ntable("#c0c0c0",2),
+print "Contact information", &ntable("#c0c0c0"), "<TR><TD>",
+      &ntable("#c0c0c0",2),
   '<TR><TD ALIGN="right">Contact name<BR>(last, first)</TD>',
     '<TD COLSPAN=3 BGCOLOR="#ffffff">',
     $cust_main->last, ', ', $cust_main->first,
@@ -181,7 +184,7 @@ print '</TD></TR><TR><TD>';
 @invoicing_list = $cust_main->invoicing_list;
 print "Billing information (",
       qq!<A HREF="!, popurl(2), qq!/misc/bill.cgi?$custnum">!, "Bill now</A>)",
-      ntable("#c0c0c0"), "<TR><TD>", ntable("#c0c0c0",2),
+      &ntable("#c0c0c0"), "<TR><TD>", &ntable("#c0c0c0",2),
       '<TR><TD ALIGN="right">Tax exempt</TD><TD BGCOLOR="#ffffff">',
       $cust_main->tax ? 'yes' : 'no',
       '</TD></TR>',
@@ -232,7 +235,7 @@ print qq!<BR><BR><A NAME="cust_pkg">Packages</A> !,
 #display packages
 
 #formatting
-print qq!!, table, "\n",
+print qq!!, &table, "\n",
       qq!<TR><TH COLSPAN=2 ROWSPAN=2>Package</TH><TH COLSPAN=5>!,
       qq!Dates</TH><TH COLSPAN=2 ROWSPAN=2>Services</TH></TR>\n!,
       qq!<TR><TH><FONT SIZE=-1>Setup</FONT></TH><TH>!,
@@ -349,7 +352,7 @@ foreach $credit (@credits) {
 }
 
         #formatting
-        print table(), <<END;
+        print &table(), <<END;
 <TR>
   <TH>Date</TH>
   <TH>Description</TH>

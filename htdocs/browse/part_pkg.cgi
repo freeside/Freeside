@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: part_pkg.cgi,v 1.6 1999-01-19 05:13:27 ivan Exp $
+# $Id: part_pkg.cgi,v 1.7 1999-04-09 03:52:55 ivan Exp $
 #
 # ivan@sisd.com 97-dec-5,9
 #
@@ -10,7 +10,10 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: part_pkg.cgi,v $
-# Revision 1.6  1999-01-19 05:13:27  ivan
+# Revision 1.7  1999-04-09 03:52:55  ivan
+# explicit & for table/itable/ntable
+#
+# Revision 1.6  1999/01/19 05:13:27  ivan
 # for mod_perl: no more top-level my() variables; use vars instead
 # also the last s/create/new/;
 #
@@ -49,7 +52,7 @@ print $cgi->header( '-expires' => 'now' ), header("Package Part Listing",menubar
   'Main Menu' => $p,
 )), "One or more services are grouped together into a package and given",
   " pricing information. Customers purchase packages, not services.<BR><BR>", 
-  table, <<END;
+  &table, <<END;
     <TABLE BORDER>
       <TR>
         <TH COLSPAN=2>Package</TH>

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main_county.cgi,v 1.5 1999-01-19 05:13:26 ivan Exp $
+# $Id: cust_main_county.cgi,v 1.6 1999-04-09 03:52:55 ivan Exp $
 #
 # ivan@sisd.com 97-dec-13
 #
@@ -10,7 +10,10 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: cust_main_county.cgi,v $
-# Revision 1.5  1999-01-19 05:13:26  ivan
+# Revision 1.6  1999-04-09 03:52:55  ivan
+# explicit & for table/itable/ntable
+#
+# Revision 1.5  1999/01/19 05:13:26  ivan
 # for mod_perl: no more top-level my() variables; use vars instead
 # also the last s/create/new/;
 #
@@ -48,7 +51,7 @@ print $cgi->header( '-expires' => 'now' ), header("Tax Rate Listing", menubar(
     <BR>Click on <u>expand state</u> to specify a state's tax rates by county.
     <BR><BR>
 END
-print table, <<END;
+print &table, <<END;
       <TR>
         <TH><FONT SIZE=-1>Country</FONT></TH>
         <TH><FONT SIZE=-1>State</FONT></TH>

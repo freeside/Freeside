@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: part_referral.cgi,v 1.7 1999-01-19 05:13:28 ivan Exp $
+# $Id: part_referral.cgi,v 1.8 1999-04-09 03:52:55 ivan Exp $
 #
 # ivan@sisd.com 98-feb-23 
 #
@@ -10,7 +10,10 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: part_referral.cgi,v $
-# Revision 1.7  1999-01-19 05:13:28  ivan
+# Revision 1.8  1999-04-09 03:52:55  ivan
+# explicit & for table/itable/ntable
+#
+# Revision 1.7  1999/01/19 05:13:28  ivan
 # for mod_perl: no more top-level my() variables; use vars instead
 # also the last s/create/new/;
 #
@@ -49,7 +52,7 @@ $p = popurl(2);
 print $cgi->header( '-expires' => 'now' ), header("Referral Listing", menubar(
   'Main Menu' => $p,
 #  'Add new referral' => "../edit/part_referral.cgi",
-)), "Where a customer heard about your service. Tracked for informational purposes.<BR><BR>", table, <<END;
+)), "Where a customer heard about your service. Tracked for informational purposes.<BR><BR>", &table, <<END;
       <TR>
         <TH COLSPAN=2>Referral</TH>
       </TR>

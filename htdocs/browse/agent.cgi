@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: agent.cgi,v 1.11 1999-01-20 09:43:16 ivan Exp $
+# $Id: agent.cgi,v 1.12 1999-04-09 03:52:55 ivan Exp $
 #
 # ivan@sisd.com 97-dec-12
 #
@@ -15,7 +15,10 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: agent.cgi,v $
-# Revision 1.11  1999-01-20 09:43:16  ivan
+# Revision 1.12  1999-04-09 03:52:55  ivan
+# explicit & for table/itable/ntable
+#
+# Revision 1.11  1999/01/20 09:43:16  ivan
 # comment out future UI code (but look at it, it's neat!)
 #
 # Revision 1.10  1999/01/19 05:13:24  ivan
@@ -83,7 +86,7 @@ print $cgi->header( '-expires' => 'now' ), header('Agent Listing', menubar(
 Agents are resellers of your service. Agents may be limited to a subset of your
 full offerings (via their type).<BR><BR>
 END
-print table, <<END;
+print &table, <<END;
       <TR>
         <TH COLSPAN=2>Agent</TH>
         <TH>Type</TH>

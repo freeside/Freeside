@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main.cgi,v 1.12 1999-04-06 11:16:16 ivan Exp $
+# $Id: cust_main.cgi,v 1.13 1999-04-09 03:52:55 ivan Exp $
 #
 # Usage: cust_main.cgi custnum
 #        http://server.name/path/cust_main.cgi?custnum
@@ -38,7 +38,10 @@
 # fixed one missed day->daytime ivan@sisd.com 98-jul-13
 #
 # $Log: cust_main.cgi,v $
-# Revision 1.12  1999-04-06 11:16:16  ivan
+# Revision 1.13  1999-04-09 03:52:55  ivan
+# explicit & for table/itable/ntable
+#
+# Revision 1.12  1999/04/06 11:16:16  ivan
 # give a meaningful error message if you try to create a customer before you've
 # created an agent
 #
@@ -211,7 +214,7 @@ if ( $custnum ) {
   $cust_main->zip,
 );
 
-print "<BR><BR>Contact information", itable("#c0c0c0"), <<END;
+print "<BR><BR>Contact information", &itable("#c0c0c0"), <<END;
 <TR><TH ALIGN="right">${r}Contact name<BR>(last, first)</TH><TD COLSPAN=3><INPUT TYPE="text" NAME="last" VALUE="$last">, <INPUT TYPE="text" NAME="first" VALUE="$first"></TD><TD ALIGN="right">SS#</TD><TD><INPUT TYPE="text" NAME="ss" VALUE="$ss" SIZE=11></TD></TR>
 <TR><TD ALIGN="right">Company</TD><TD COLSPAN=5><INPUT TYPE="text" NAME="company" VALUE="$company" SIZE=70></TD></TR>
 <TR><TH ALIGN="right">${r}Address</TH><TD COLSPAN=5><INPUT TYPE="text" NAME="address1" VALUE="$address1" SIZE=70></TD></TR>
@@ -274,7 +277,7 @@ sub expselect {
   $return;
 }
 
-print "<BR>Billing information", itable("#c0c0c0"),
+print "<BR>Billing information", &itable("#c0c0c0"),
       qq!<TR><TD><INPUT TYPE="checkbox" NAME="tax" VALUE="Y"!;
 print qq! CHECKED! if $cust_main->tax eq "Y";
 print qq!>Tax Exempt</TD></TR>!;
@@ -288,7 +291,7 @@ print qq!<TR><TD>Email invoice <INPUT TYPE="text" NAME="invoicing_list" VALUE="$
 
 print "<TR><TD>Billing type</TD></TR>",
       "</TABLE>",
-      table("#c0c0c0"), "<TR>";
+      &table("#c0c0c0"), "<TR>";
 
 ($payinfo, $payname)=(
   $cust_main->payinfo,
@@ -375,7 +378,7 @@ unless ( $custnum ) {
 
   if ( @part_pkg ) {
 
-    print "<BR><BR>First package", itable("#c0c0c0"),
+    print "<BR><BR>First package", &itable("#c0c0c0"),
           qq!<TR><TD COLSPAN=2><SELECT NAME="pkgpart_svcpart">!;
 
     print qq!<OPTION VALUE="">(none)!;
