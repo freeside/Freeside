@@ -1,0 +1,39 @@
+<%
+  my( $cust_main ) = @_;
+%>
+
+<SCRIPT TYPE="text/javascript">
+function enable_order_pkg () {
+  if ( document.OrderPkgForm.pkgpart.selectedIndex > 0 ) {
+    document.OrderPkgForm.submit.disabled = false;
+  } else {
+    document.OrderPkgForm.submit.disabled = true;
+  }
+}
+</SCRIPT>
+
+<FORM NAME="OrderPkgForm" ACTION="<%= $p %>edit/process/quick-cust_pkg.cgi" METHOD="POST">
+
+<INPUT TYPE="hidden" NAME="custnum" VALUE="<%= $cust_main->custnum %>">
+
+<SELECT NAME="pkgpart" onChange="enable_order_pkg()"><OPTION>Order additional package
+
+<%
+foreach my $part_pkg (
+  qsearch( 'part_pkg', { 'disabled' => '' }, '',
+           ' AND 0 < ( SELECT COUNT(*) FROM type_pkgs '.
+           '             WHERE typenum = '. $cust_main->agent->typenum.
+           '             AND type_pkgs.pkgpart = part_pkg.pkgpart )'
+         )
+) {
+%>
+
+  <OPTION VALUE="<%= $part_pkg->pkgpart %>"><%= $part_pkg->pkg %> - <%= $part_pkg->comment %>
+
+<% } %>
+
+</SELECT>
+
+<INPUT NAME="submit" TYPE="submit" VALUE="Order Package" disabled>
+
+</FORM>

@@ -1363,6 +1363,13 @@ httemplate/docs/config.html
     'type'        => 'text',
   },
 
+  {
+    'key'         => 'echeck-void',
+    'section'     => 'billing',
+    'description' => 'Enable local-only voiding of echeck payments in addition to refunds against the payment gateway',
+    'type'        => 'checkbox',
+  },
+
 );
 
 1;
