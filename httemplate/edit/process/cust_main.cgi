@@ -80,7 +80,7 @@ if ( $new->custnum eq '' ) {
       #later         'custnum' => $custnum,
       'pkgpart' => $pkgpart,
     } );
-    $error ||= $cust_pkg->check;
+    #$error ||= $cust_pkg->check;
 
     #$cust_svc = new FS::cust_svc ( { 'svcpart' => $svcpart } );
 
@@ -101,7 +101,7 @@ if ( $new->custnum eq '' ) {
     $svc_acct->_password($cgi->param('_password'));
     $svc_acct->popnum($cgi->param('popnum'));
 
-    $error ||= $svc_acct->check;
+    #$error ||= $svc_acct->check;
 
   } elsif ( $cgi->param('username') ) { #good thing to catch
     $error = "Can't assign username without a package!";
