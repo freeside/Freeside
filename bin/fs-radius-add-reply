@@ -35,7 +35,6 @@ my($char_d) = 80; #default maxlength for text fields
 foreach my $attribute ( @attributes ) {
   foreach my $statement ( 
     "ALTER TABLE svc_acct ADD radius_$attribute varchar($char_d) NULL",
-    "ALTER TABLE svc_acct ADD radius_$attribute varchar($char_d) NULL",
     "ALTER TABLE part_svc ADD svc_acct__radius_$attribute varchar($char_d) NULL;",
     "ALTER TABLE part_svc ADD svc_acct__radius_${attribute}_flag char(1) NULL;",
   ) {
