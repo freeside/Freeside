@@ -73,7 +73,7 @@
                  sub { my $cust_main = shift->cust_main;
                        $cust_main
                          ? $cust_main->get('last'). ', '. $cust_main->first
-                         : 'WARNING: can't find cust_main.custnum '.
+                         : "WARNING: can't find cust_main.custnum ".
                            shift->custnum. ' (cust_bill.invnum '.
                            shift->invnum. ')';
                      },
