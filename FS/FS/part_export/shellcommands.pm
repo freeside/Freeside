@@ -65,8 +65,10 @@ sub _export_command {
        || $svc_acct->_password =~ /^\$(1|2a?)\$/ ) {
     $crypt_password = $svc_acct->_password;
   } else {
-    $crypt_password = crypt( $svc_acct->_password,
-                             $saltset[int(rand(64))].$saltset[int(rand(64))] );
+    $crypt_password = crypt(
+      $svc_acct->_password,
+      $saltset[int(rand(64))].$saltset[int(rand(64))]
+    );
   }
 
   $self->shellcommands_queue( $svc_acct->svcnum,
@@ -92,9 +94,17 @@ sub _export_replace {
   $new_quoted_password = shell_quote $new__password; #new, better?
   $old_domain = $old->domain;
   $new_domain = $new->domain;
-  $new_crypt_password = ''; #surpress "used only once" warnings
-  $new_crypt_password = crypt( $new->_password,
-                               $saltset[int(rand(64))].$saltset[int(rand(64))]);
+
+  #eventuall should check a "password-encoding" field
+  if ( length($new->_password) == 13
+       || $new->_password =~ /^\$(1|2a?)\$/ ) {
+    $new_crypt_password = $new->_password;
+  } else {
+    $new_crypt_password =
+      crypt( $new->_password, $saltset[int(rand(64))].$saltset[int(rand(64))]
+    );
+  }
+
   if ( $self->option('usermod_pwonly') ) {
     my $error = '';
     if ( $old_username ne $new_username ) {
