@@ -2208,7 +2208,7 @@ sub realtime_refund_bop {
     'payby'    => $method2payby{$method},
     'payinfo'  => $self->payinfo,
     'paybatch' => $paybatch,
-    'reason'   => $options{'reason'} || 'card refund',
+    'reason'   => $options{'reason'} || 'card or ACH refund',
   } );
   my $error = $cust_refund->insert;
   if ( $error ) {

@@ -639,17 +639,17 @@ print '</TABLE>';
     my $refund = '';
     my $refund_days = $conf->config('card_refund-days') || 120;
     if (    $cust_pay->closed !~ /^Y/i
-         && $cust_pay->payby eq 'CARD' 
+         && $cust_pay->payby =~ /^(CARD|CHEK)$/
          && time-$cust_pay->_date < $refund_days*86400
          && $cust_pay->unrefunded > 0
     ) {
-      $refund = qq! (<A HREF="!. qq!${p}edit/cust_refund.cgi?payby=CARD;!.
+      $refund = qq! (<A HREF="!. qq!${p}edit/cust_refund.cgi?payby=$1;!.
                 qq!paynum=!. $cust_pay->paynum. qq!">refund</A>)!;
     }
 
     my $void = '';
     if (    $cust_pay->closed !~ /^Y/i
-         && $cust_pay->payby ne 'CARD'
+         && $cust_pay->payby !~  /^(CARD|CHEK)$/
        ) {
       $void = qq! (<A HREF="javascript:areyousure('!.
               qq!${p}misc/void-cust_pay.cgi?!. $cust_pay->paynum.

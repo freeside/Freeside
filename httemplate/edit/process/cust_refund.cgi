@@ -6,14 +6,19 @@ my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
   or die "unknown custnum $custnum";
 
 my $error = '';
-if ( $cgi->param('payby') eq 'CARD' ) { 
+if ( $cgi->param('payby') =~ /^(CARD|CHEK)$/ ) { 
+  my %payby2bop = (
+  'CARD' => 'CC',
+  'CHEK' => 'ECHECK',
+  );
+  my $bop = $payby2bop{$1};
   $cgi->param('refund') =~ /^(\d*)(\.\d{2})?$/
     or die "illegal refund amount ". $cgi->param('refund');
   my $refund = "$1$2";
   $cgi->param('paynum') =~ /^(\d*)$/ or die "Illegal paynum!";
   my $paynum = $1;
   my $reason = $cgi->param('reason');
-  $error = $cust_main->realtime_refund_bop( 'CC', 'amount' => $refund,
+  $error = $cust_main->realtime_refund_bop( $bop, 'amount' => $refund,
                                                   'paynum' => $paynum,
                                                   'reason' => $reason, );
 } else {

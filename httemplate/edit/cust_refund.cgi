@@ -49,6 +49,7 @@ if ( $cust_pay ) {
   my $payby = $cust_pay->payby;
   my $payinfo = $cust_pay->payinfo;
   $payby =~ s/^BILL$/Check/ if $payinfo;
+  $payby =~ s/^CHEK$/Electronic check/;
   $payinfo = $cust_pay->payinfo_masked if $payby eq 'CARD';
 
   print '<BR>Payment'. ntable("#cccccc", 2).
