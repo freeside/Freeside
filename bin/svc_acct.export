@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 #
-# $Id: svc_acct.export,v 1.16 2000-07-06 13:23:29 ivan Exp $
+# $Id: svc_acct.export,v 1.17 2001-02-21 23:48:19 ivan Exp $
 #
 # Create and export password files: passwd, passwd.adjunct, shadow,
 # acp_passwd, acp_userinfo, acp_dialup, users
@@ -38,7 +38,11 @@
 # ivan@sisd.com 98-sep-18
 # 
 # $Log: svc_acct.export,v $
-# Revision 1.16  2000-07-06 13:23:29  ivan
+# Revision 1.17  2001-02-21 23:48:19  ivan
+# add icradius_secrets config file to export to a non-Freeside MySQL database for
+# ICRADIUS
+#
+# Revision 1.16  2000/07/06 13:23:29  ivan
 # tyop
 #
 # Revision 1.15  2000/07/06 08:57:28  ivan
@@ -64,6 +68,7 @@ use strict;
 use vars qw($conf);
 use Fcntl qw(:flock);
 use IO::Handle;
+use DBI;
 use FS::Conf;
 use FS::SSH qw(scp ssh);
 use FS::UID qw(adminsuidsetup datasrc dbh);
@@ -98,8 +103,13 @@ my $icradius_mysqldest =
 my $icradius_mysqlsource =
   $conf->config('icradius_mysqlsource') || "/usr/local/var/freeside"
     if $icradiusmachines;
-my $icradius_dbh = dbh; #could eventually get it from a config file if you're
-                        #not running MySQL for your Freeside database
+my $icradius_dbh;
+if ( $icradiusmachines && $conf->exists('icradius_secrets') ) {
+  $icradius_dbh = DBI->connect($conf->config('icradius_secrets'))
+    or die $DBI::errstr;;
+} else {
+  $icradius_dbh = dbh;
+}
 
 my $textradiusprepend = $conf->config('textradiusprepend');
 
