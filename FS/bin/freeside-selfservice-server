@@ -79,6 +79,11 @@ while (1) {
       warn "Storable error receiving packet from client".
            " (assuming lost connection): $@\n"
         if $Debug;
+      if ( $ssh_pid ) {
+        warn "sending TERM signal to ssh process $ssh_pid\n" if $Debug;
+        kill 'TERM', $ssh_pid;
+        $ssh_pid = 0;
+      }
       last;
     }
     warn "packet received\n".
