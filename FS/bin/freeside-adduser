@@ -1,9 +1,10 @@
 #!/usr/bin/perl -w
 #
-# $Id: freeside-adduser,v 1.7 2002-08-25 01:16:30 ivan Exp $
+# $Id: freeside-adduser,v 1.8 2002-09-27 05:36:29 ivan Exp $
 
 use strict;
 use vars qw($opt_h $opt_b $opt_c $opt_s);
+use Fcntl qw(:flock);
 use Getopt::Std;
 
 my $FREESIDE_CONF = "/usr/local/etc/freeside";
@@ -24,7 +25,8 @@ if ( $opt_h ) {
 my $secretfile = $opt_s || 'secrets';
 
 open(MAPSECRETS,">>$FREESIDE_CONF/mapsecrets")
-  or die "can't open $FREESIDE_CONF/mapsecrets: $!";
+  and flock(MAPSECRETS,LOCK_EX)
+    or die "can't open $FREESIDE_CONF/mapsecrets: $!";
 print MAPSECRETS "$user $secretfile\n";
 close MAPSECRETS or die "can't close $FREESIDE_CONF/mapsecrets: $!";
 
