@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main.cgi,v 1.16 1999-04-09 04:22:34 ivan Exp $
+# $Id: cust_main.cgi,v 1.17 1999-04-15 16:44:36 ivan Exp $
 #
 # Usage: cust_main.cgi custnum
 #        http://server.name/path/cust_main.cgi?custnum
@@ -31,7 +31,10 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: cust_main.cgi,v $
-# Revision 1.16  1999-04-09 04:22:34  ivan
+# Revision 1.17  1999-04-15 16:44:36  ivan
+# delete customers
+#
+# Revision 1.16  1999/04/09 04:22:34  ivan
 # also table()
 #
 # Revision 1.15  1999/04/09 03:52:55  ivan
@@ -82,7 +85,7 @@
 use strict;
 use vars qw ( $cgi $query $custnum $cust_main $hashref $agent $referral 
               @packages $package @history @bills $bill @credits $credit
-              $balance $item @agents @referrals @invoicing_list $n1 ); 
+              $balance $item @agents @referrals @invoicing_list $n1 $conf ); 
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use Date::Format;
@@ -102,6 +105,8 @@ use FS::cust_refund;
 $cgi = new CGI;
 &cgisuidsetup($cgi);
 
+$conf = new FS::Conf;
+
 print $cgi->header( '-expires' => 'now' ), header("Customer View", menubar(
   'Main Menu' => popurl(2)
 ));
@@ -117,8 +122,11 @@ $hashref = $cust_main->hashref;
 print &itable(), '<TR><TD><A NAME="cust_main"></A>';
 
 print qq!<A HREF="!, popurl(2), 
-      qq!edit/cust_main.cgi?$custnum">Edit this customer</A>!,
-      &ntable("#c0c0c0"), "<TR><TD>", &ntable("#c0c0c0",2),
+      qq!edit/cust_main.cgi?$custnum">Edit this customer</A>!;
+print qq! | <A HREF="!, popurl(2), 
+      qq!misc/delete-customer.cgi?$custnum"> Delete this customer</A>!
+  if $conf->exists('deletecustomers');
+print &ntable("#c0c0c0"), "<TR><TD>", &ntable("#c0c0c0",2),
       '<TR><TD ALIGN="right">Customer number</TD><TD BGCOLOR="#ffffff">',
       $custnum, '</TD></TR>',
 ;

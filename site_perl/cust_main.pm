@@ -177,18 +177,61 @@ sub table { 'cust_main'; }
 Adds this customer to the database.  If there is an error, returns the error,
 otherwise returns false.
 
-=item delete
+=item delete NEW_CUSTNUM
 
-Currently unimplemented.  Maybe cancel all of this customer's
-packages (cust_pkg)?
+This deletes the customer.  If there is an error, returns the error, otherwise
+returns false.
 
-I don't remove the customer record in the database because there would then
-be no record the customer ever existed (which is bad, no?)
+This will completely remove all traces of the customer record.  This is not
+what you want when a customer cancels service; for that, cancel all of the
+customer's packages (see L<FS::cust_pkg/cancel>).
+
+If the customer has any packages, you need to pass a new (valid) customer
+number for those packages to be transferred to.
+
+You can't delete a customer with invoices (see L<FS::cust_bill>),
+or credits (see L<FS::cust_credit>).
 
 =cut
 
 sub delete {
-   return "Can't (yet?) delete customers.";
+  my $self = shift;
+
+  if ( qsearch( 'cust_bill', { 'custnum' => $self->custnum } ) ) {
+    return "Can't delete a customer with invoices";
+  }
+  if ( qsearch( 'cust_credit', { 'custnum' => $self->custnum } ) ) {
+    return "Can't delete a customer with credits";
+  }
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my @cust_pkg = qsearch( 'cust_pkg', { 'custnum' => $self->custnum } );
+  if ( @cust_pkg ) {
+    my $new_custnum = shift;
+    return "Invalid new customer number: $new_custnum"
+      unless qsearchs( 'cust_main', { 'custnum' => $new_custnum } );
+    foreach my $cust_pkg ( @cust_pkg ) {
+      my %hash = $cust_pkg->hash;
+      $hash{'custnum'} = $new_custnum;
+      my $new_cust_pkg = new FS::cust_pkg ( \%hash );
+      my $error = $new_cust_pkg->replace($cust_pkg);
+      return $error if $error;
+    }
+  }
+  foreach my $cust_main_invoice (
+    qsearch( 'cust_main_invoice', { 'custnum' => $self->custnum } )
+  ) {
+    my $error = $cust_main_invoice->delete;
+    return $error if $error;
+  }
+
+  $self->SUPER::delete;
 }
 
 =item replace OLD_RECORD
@@ -885,11 +928,14 @@ sub check_invoicing_list {
 
 =head1 VERSION
 
-$Id: cust_main.pm,v 1.21 1999-04-14 07:47:53 ivan Exp $
+$Id: cust_main.pm,v 1.22 1999-04-15 16:44:36 ivan Exp $
 
 =head1 BUGS
 
 The delete method.
+
+The delete method should possibly take an FS::cust_main object reference
+instead of a scalar customer number.
 
 Bill and collect options should probably be passed as references instead of a
 list.
@@ -941,7 +987,10 @@ enable cybercash, cybercash v3 support, don't need to import
 FS::UID::{datasrc,checkruid} ivan@sisd.com 98-sep-19-21
 
 $Log: cust_main.pm,v $
-Revision 1.21  1999-04-14 07:47:53  ivan
+Revision 1.22  1999-04-15 16:44:36  ivan
+delete customers
+
+Revision 1.21  1999/04/14 07:47:53  ivan
 i18n fixes
 
 Revision 1.20  1999/04/10 08:35:14  ivan
