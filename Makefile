@@ -1,7 +1,7 @@
 #!/usr/bin/make
 
 default:
-	@echo "supported targets: aspdocs masondocs clean"
+	@echo "supported targets: aspdocs masondocs alldocs clean"
 
 aspdocs: httemplate/* httemplate/*/* httemplate/*/*/* httemplate/*/*/*/* httemplate/*/*/*/*/*
 	rm -rf aspdocs
