@@ -39,6 +39,6 @@ deploy: install
 
 clean:
 	rm -rf aspdocs masondocs
-	cd FS
+	cd FS; \
 	make clean
 
