@@ -451,7 +451,7 @@ sub custnum_sort {
 }
 
 sub tickets_sort {
-  $a->getfield('tickets') <=> $b->getfield('tickets');
+  $b->getfield('tickets') <=> $a->getfield('tickets');
 }
 
 sub custnumsearch {
