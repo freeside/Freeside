@@ -16,6 +16,7 @@
 - modular price plans, rewrote package add/edit page
 - fixed up tax report - should be correct for all edge cases with named taxes,
   tax classes, etc.
+- some documentation updates
 
 1.5.0pre7:
 - historical late notice viewing in web interface
