@@ -450,6 +450,14 @@ httemplate/docs/config.html
     'type'        => 'textarea',
   },
 
+  { 
+    'key'         => 'invoice_default_terms',
+    'section'     => 'billing',
+    'description' => 'Optional default invoice term, used to calculate a due date printed on invoices.',
+    'type'        => 'select',
+    'select_enum' => [ '', 'Payable upon receipt', 'Net 10', 'Net 15', 'Net 30', 'Net 45', 'Net 60' ],
+  },
+
   {
     'key'         => 'lpr',
     'section'     => 'required',
