@@ -74,13 +74,20 @@ points to.  You can ask the object for a copy with the I<hash> method.
 
 sub table { 'svc_www'; }
 
-=item insert
+=item insert [ , OPTION => VALUE ... ]
 
 Adds this record to the database.  If there is an error, returns the error,
 otherwise returns false.
 
 The additional fields pkgnum and svcpart (see L<FS::cust_svc>) should be 
 defined.  An FS::cust_svc record will be created and inserted.
+
+Currently available options are: I<depend_jobnum>
+
+If I<depend_jobnum> is set (to a scalar jobnum or an array reference of
+jobnums), all provisioning jobs will have a dependancy on the supplied
+jobnum(s) (they will not run until the specific job(s) complete(s)).
+
 
 =cut
 
@@ -124,7 +131,7 @@ sub insert {
     $self->recnum($domain_record->recnum);
   }
 
-  $error = $self->SUPER::insert;
+  $error = $self->SUPER::insert(@_);
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;

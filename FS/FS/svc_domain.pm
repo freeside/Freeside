@@ -86,7 +86,7 @@ Creates a new domain.  To add the domain to the database, see L<"insert">.
 
 sub table { 'svc_domain'; }
 
-=item insert
+=item insert [ , OPTION => VALUE ... ]
 
 Adds this domain to the database.  If there is an error, returns the error,
 otherwise returns false.
@@ -111,6 +111,12 @@ the domain_record table (see <FS::domain_record>).
 If any records are defined in the I<defaultrecords> configuration file,
 appropriate records are added to the domain_record table (see
 L<FS::domain_record>).
+
+Currently available options are: I<depend_jobnum>
+
+If I<depend_jobnum> is set (to a scalar jobnum or an array reference of
+jobnums), all provisioning jobs will have a dependancy on the supplied
+jobnum(s) (they will not run until the specific job(s) complete(s)).
 
 =cut
 
@@ -145,7 +151,7 @@ sub insert {
     return "Domain not found (see whois)";
   }
 
-  $error = $self->SUPER::insert;
+  $error = $self->SUPER::insert(@_);
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;

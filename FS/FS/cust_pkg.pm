@@ -669,6 +669,9 @@ sub transfer {
 
 =item reexport
 
+This method is deprecated.  See the I<depend_jobnum> option to the insert and
+order_pkgs methods in FS::cust_main for a better way to defer provisioning.
+
 =cut
 
 sub reexport {

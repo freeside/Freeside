@@ -1,13 +1,16 @@
 package FS::svc_Common;
 
 use strict;
-use vars qw( @ISA $noexport_hack );
+use vars qw( @ISA $noexport_hack $DEBUG );
 use FS::Record qw( qsearch qsearchs fields dbh );
 use FS::cust_svc;
 use FS::part_svc;
 use FS::queue;
 
 @ISA = qw( FS::Record );
+
+$DEBUG = 0;
+#$DEBUG = 1;
 
 =head1 NAME
 
@@ -82,7 +85,7 @@ sub check {
   $self->SUPER::check;
 }
 
-=item insert [ JOBNUM_ARRAYREF [ OBJECTS_ARRAYREF ] ]
+=item insert [ , OPTION => VALUE ... ]
 
 Adds this record to the database.  If there is an error, returns the error,
 otherwise returns false.
@@ -90,19 +93,36 @@ otherwise returns false.
 The additional fields pkgnum and svcpart (see L<FS::cust_svc>) should be 
 defined.  An FS::cust_svc record will be created and inserted.
 
-If an arrayref is passed as parameter, the B<jobnum>s of any export jobs will
-be added to the array.
+Currently available options are: I<jobnums>, I<child_objects> and
+I<depend_jobnum>.
 
-If an arrayref of FS::tablename objects (for example, FS::acct_snarf objects)
-is passed as the optional second parameter, they will have their svcnum fields
-set and will be inserted after this record, but before any exports are run.
+If I<jobnum> is set to an array reference, the jobnums of any export jobs will
+be added to the referenced array.
+
+If I<child_objects> is set to an array reference of FS::tablename objects (for
+example, FS::acct_snarf objects), they will have their svcnum fieldsset and
+will be inserted after this record, but before any exports are run.
+
+If I<depend_jobnum> is set (to a scalar jobnum or an array reference of
+jobnums), all provisioning jobs will have a dependancy on the supplied
+jobnum(s) (they will not run until the specific job(s) complete(s)).
 
 =cut
 
 sub insert {
   my $self = shift;
-  local $FS::queue::jobnums = shift if @_;
-  my $objects = scalar(@_) ? shift : [];
+  my %options = @_;
+  warn "FS::svc_Common::insert called with options ".
+     join(', ', map { "$_: $options{$_}" } keys %options ). "\n"
+  if $DEBUG;
+
+  my @jobnums = ();
+  local $FS::queue::jobnums = \@jobnums;
+  warn "FS::svc_Common::insert: set \$FS::queue::jobnums to $FS::queue::jobnums"
+    if $DEBUG;
+  my $objects = $options{'child_objects'} || [];
+  my $depend_jobnums = $options{'depend_jobnum'} || [];
+  $depend_jobnums = [ $depend_jobnums ] unless ref($depend_jobnums);
   my $error;
 
   local $SIG{HUP} = 'IGNORE';
@@ -162,6 +182,10 @@ sub insert {
 
   #new-style exports!
   unless ( $noexport_hack ) {
+
+    warn "FS::svc_Common::insert: \$FS::queue::jobnums is $FS::queue::jobnums"
+      if $DEBUG;
+
     foreach my $part_export ( $self->cust_svc->part_svc->part_export ) {
       my $error = $part_export->export_insert($self);
       if ( $error ) {
@@ -170,6 +194,26 @@ sub insert {
                " (transaction rolled back): $error";
       }
     }
+
+    foreach my $depend_jobnum ( @$depend_jobnums ) {
+      warn "inserting dependancies on supplied job $depend_jobnum\n"
+        if $DEBUG;
+      foreach my $jobnum ( @jobnums ) {
+        my $queue = qsearchs('queue', { 'jobnum' => $jobnum } );
+        warn "inserting dependancy for job $jobnum on $depend_jobnum\n"
+          if $DEBUG;
+        my $error = $queue->depend_insert($depend_jobnum);
+        if ( $error ) {
+          $dbh->rollback if $oldAutoCommit;
+          return "error queuing job dependancy: $error";
+        }
+      }
+    }
+
+  }
+
+  if ( exists $options{'jobnums'} ) {
+    push @{ $options{'jobnums'} }, @jobnums;
   }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;

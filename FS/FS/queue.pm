@@ -1,7 +1,7 @@
 package FS::queue;
 
 use strict;
-use vars qw( @ISA @EXPORT_OK $conf $jobnums);
+use vars qw( @ISA @EXPORT_OK $DEBUG $conf $jobnums);
 use Exporter;
 use FS::UID;
 use FS::Conf;
@@ -13,6 +13,9 @@ use FS::cust_svc;
 
 @ISA = qw(FS::Record);
 @EXPORT_OK = qw( joblisting );
+
+$DEBUG = 0;
+#$DEBUG = 1;
 
 $FS::UID::callback{'FS::queue'} = sub {
   $conf = new FS::Conf;
@@ -120,7 +123,10 @@ sub insert {
     }
   }
 
-  push @$jobnums, $self->jobnum if $jobnums;
+  if ( $jobnums ) {
+    warn "jobnums global is active: $jobnums\n" if $DEBUG;
+    push @$jobnums, $self->jobnum;
+  }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
@@ -239,6 +245,7 @@ sub cust_svc {
 =item queue_depend
 
 Returns the FS::queue_depend objects associated with this job, if any.
+(Dependancies that must complete before this job can be run).
 
 =cut
 
@@ -246,7 +253,6 @@ sub queue_depend {
   my $self = shift;
   qsearch('queue_depend', { 'jobnum' => $self->jobnum } );
 }
-
 
 =item depend_insert OTHER_JOBNUM
 
@@ -266,6 +272,39 @@ sub depend_insert {
     'depend_jobnum' => $other_jobnum,
   } );
   $queue_depend->insert;
+}
+
+=item queue_depended
+
+Returns the FS::queue_depend objects that associate other jobs with this job,
+if any.  (The jobs that are waiting for this job to complete before they can
+run).
+
+=cut
+
+sub queue_depended {
+  my $self = shift;
+  qsearch('queue_depend', { 'depend_jobnum' => $self->jobnum } );
+}
+
+=item depended_delete
+
+Deletes the other queued jobs (FS::queue objects) that are waiting for this
+job, if any.  If there is an error, returns the error, otherwise returns false.
+
+=cut
+
+sub depended_delete {
+  my $self = shift;
+  my $error;
+  foreach my $job (
+    map { qsearchs('queue', { 'jobnum' => $_->jobnum } ) } $self->queue_depended
+  ) {
+    $error = $job->depended_delete;
+    return $error if $error;
+    $error = $job->delete;
+    return $error if $error
+  }
 }
 
 =back
@@ -385,7 +424,7 @@ END
 
 =head1 VERSION
 
-$Id: queue.pm,v 1.16 2003-08-05 00:20:46 khoff Exp $
+$Id: queue.pm,v 1.17 2004-03-03 13:42:08 ivan Exp $
 
 =head1 BUGS
 

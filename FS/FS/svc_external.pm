@@ -69,7 +69,7 @@ points to.  You can ask the object for a copy with the I<hash> method.
 
 sub table { 'svc_external'; }
 
-=item insert
+=item insert [ , OPTION => VALUE ... ]
 
 Adds this external service to the database.  If there is an error, returns the
 error, otherwise returns false.
@@ -77,17 +77,23 @@ error, otherwise returns false.
 The additional fields pkgnum and svcpart (see L<FS::cust_svc>) should be 
 defined.  An FS::cust_svc record will be created and inserted.
 
+Currently available options are: I<depend_jobnum>
+
+If I<depend_jobnum> is set (to a scalar jobnum or an array reference of
+jobnums), all provisioning jobs will have a dependancy on the supplied
+jobnum(s) (they will not run until the specific job(s) complete(s)).
+
 =cut
 
-sub insert {
-  my $self = shift;
-  my $error;
-
-  $error = $self->SUPER::insert;
-  return $error if $error;
-
-  '';
-}
+#sub insert {
+#  my $self = shift;
+#  my $error;
+#
+#  $error = $self->SUPER::insert(@_);
+#  return $error if $error;
+#
+#  '';
+#}
 
 =item delete
 
@@ -95,15 +101,15 @@ Delete this record from the database.
 
 =cut
 
-sub delete {
-  my $self = shift;
-  my $error;
-
-  $error = $self->SUPER::delete;
-  return $error if $error;
-
-  '';
-}
+#sub delete {
+#  my $self = shift;
+#  my $error;
+#
+#  $error = $self->SUPER::delete;
+#  return $error if $error;
+#
+#  '';
+#}
 
 
 =item replace OLD_RECORD
@@ -113,15 +119,15 @@ returns the error, otherwise returns false.
 
 =cut
 
-sub replace {
-  my ( $new, $old ) = ( shift, shift );
-  my $error;
-
-  $error = $new->SUPER::replace($old);
-  return $error if $error;
-
-  '';
-}
+#sub replace {
+#  my ( $new, $old ) = ( shift, shift );
+#  my $error;
+#
+#  $error = $new->SUPER::replace($old);
+#  return $error if $error;
+#
+#  '';
+#}
 
 =item suspend
 

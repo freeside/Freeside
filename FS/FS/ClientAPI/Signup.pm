@@ -4,6 +4,7 @@ use strict;
 use Tie::RefHash;
 use FS::Conf;
 use FS::Record qw(qsearch qsearchs dbdef);
+use FS::Msgcat qw(gettext);
 use FS::agent;
 use FS::cust_main_county;
 use FS::part_pkg;
@@ -12,7 +13,7 @@ use FS::cust_main;
 use FS::cust_pkg;
 use FS::svc_acct;
 use FS::acct_snarf;
-use FS::Msgcat qw(gettext);
+use FS::queue;
 
 use FS::ClientAPI; #hmm
 FS::ClientAPI->register_handlers(
@@ -171,7 +172,8 @@ sub new_customer {
 
   my @acct_snarf;
   my $snarfnum = 1;
-  while ( length($packet->{"snarf_machine$snarfnum"}) ) {
+  while (    exists($packet->{"snarf_machine$snarfnum"})
+          && length($packet->{"snarf_machine$snarfnum"}) ) {
     my $acct_snarf = new FS::acct_snarf ( {
       'machine'   => $packet->{"snarf_machine$snarfnum"},
       'protocol'  => $packet->{"snarf_protocol$snarfnum"},
@@ -189,12 +191,28 @@ sub new_customer {
   $error = $svc_acct->check;
   return { 'error' => $error } if $error;
 
+  #setup a job dependancy to delay provisioning
+  my $placeholder = new FS::queue ( {
+    'job'    => 'FS::ClientAPI::Signup::__placeholder',
+    'status' => 'locked',
+  } );
+  $error = $placeholder->insert;
+  return { 'error' => $error } if $error;
+
   use Tie::RefHash;
   tie my %hash, 'Tie::RefHash';
   %hash = ( $cust_pkg => [ $svc_acct ] );
   #msgcat
-  $error = $cust_main->insert( \%hash, \@invoicing_list, 'noexport' => 1 );
-  return { 'error' => $error } if $error;
+  $error = $cust_main->insert(
+    \%hash,
+    \@invoicing_list,
+    'depend_jobnum' => $placeholder->jobnum,
+  );
+  if ( $error ) {
+    my $perror = $placeholder->delete;
+    $error .= " (Additionally, error removing placeholder: $perror)" if $perror;
+    return { 'error' => $error };
+  }
 
   if ( $conf->exists('signup_server-realtime') ) {
 
@@ -222,11 +240,20 @@ sub new_customer {
       local $FS::svc_Common::noexport_hack = 1;
       $cust_main->cancel('quiet'=>1);
 
+      my $perror = $placeholder->depended_delete;
+      warn "error removing provisioning jobs after decline: $perror" if $perror;
+      unless ( $perror ) {
+        $perror = $placeholder->delete;
+        warn "error removing placeholder after decline: $perror" if $perror;
+      }
+
       return { 'error' => '_decline' };
     }
 
   }
-  $cust_main->reexport;
+
+  $error = $placeholder->delete;
+  return { 'error' => $error } if $error;
 
   return { error => '' };
 
