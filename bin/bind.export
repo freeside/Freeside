@@ -139,7 +139,7 @@ foreach my $sexport ( @sexports ) { #false laziness with above
     or die "can't open $prefix/named.conf: $!";
 
   open(CONF_HEADER,"<$prefix/named.conf.HEADER")
-    or die "can't open $prefix/named.conf.HEADER: $!"
+    or die "can't open $prefix/named.conf.HEADER: $!";
   while (<CONF_HEADER>) { print NAMED_CONF $_; }
   close CONF_HEADER;
 
