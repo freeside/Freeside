@@ -38,21 +38,14 @@ sub start_job {
        join('', map "  $_ => $param{$_}\n", keys %param )
     if $DEBUG;
 
-  #progressbar prototype code...  should be generalized
-  
   #first get the CGI params shipped off to a job ASAP so an id can be returned
   #to the caller
   
-  #my $job = new FS::queue { 'job' => 'FS::rate::process' };
   my $job = new FS::queue { 'job' => $self->{'job'} };
   
   #too slow to insert all the cgi params as individual args..,?
   #my $error = $queue->insert('_JOB', $cgi->Vars);
   
-  #my $bigstring = join(';', map { "$_=". scalar($cgi->param($_)) } $cgi->param );
-#  my $bigstring = join(';', map { "$_=". $param{$_} } keys %param );
-#  my $error = $job->insert('_JOB', $bigstring);
-
   #warn 'froze string of size '. length(nfreeze(\%param)). " for job args\n"
   #  if $DEBUG;
 
@@ -65,3 +58,8 @@ sub start_job {
   }
   
 }
+
+sub get_new_query {
+  FS::UID::cgi();
+}
+

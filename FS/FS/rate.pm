@@ -313,11 +313,6 @@ use MIME::Base64;
 sub process {
   my $job = shift;
 
-  #my %param = @_;
-
-  #my $param = shift;
-  #my %param = split(/[;=]/, $param);
-
   my $param = thaw(decode_base64(shift));
   warn Dumper($param) if $DEBUG;
 
@@ -371,51 +366,6 @@ sub process {
   die $error if $error;
 
 }
-
-# begin JSRPC code...
-
-package FS::rate::JSRPC;
-use vars qw(@ISA $DEBUG);
-use JavaScript::RPC::Server::CGI;
-use FS::UID;
-@ISA = qw( JavaScript::RPC::Server::CGI );
-$DEBUG = 1;
-
-sub process_rate {
-  my $self = shift;
-
-  my %param = @_;
-  warn "FS::rate::JSRPC::process_rate\n".
-       join('', map "  $_ => $param{$_}\n", keys %param )
-    if $DEBUG;
-
-  #progressbar prototype code...  should be generalized
-  
-  #first get the CGI params shipped off to a job ASAP so an id can be returned
-  #to the caller
-  
-  my $job = new FS::queue { 'job' => 'FS::rate::process' };
-  
-  #too slow to insert all the cgi params as individual args..,?
-  #my $error = $queue->insert('_JOB', $cgi->Vars);
-  
-  #my $bigstring = join(';', map { "$_=". scalar($cgi->param($_)) } $cgi->param );
-  my $bigstring = join(';', map { "$_=". $param{$_} } keys %param );
-  my $error = $job->insert('_JOB', $bigstring);
-
-  if ( $error ) {
-    $error;
-  } else {
-    $job->jobnum;
-  }
-  
-}
-
-sub get_new_query {
-  FS::UID::cgi();
-}
-
-# end JSRPC code...
 
 =head1 BUGS
 
