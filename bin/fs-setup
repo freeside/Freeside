@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: fs-setup,v 1.14 1999-02-07 09:59:14 ivan Exp $
+# $Id: fs-setup,v 1.15 1999-02-27 21:06:21 ivan Exp $
 #
 # ivan@sisd.com 97-nov-8,9
 #
@@ -32,7 +32,11 @@
 # fix radius attributes ivan@sisd.com 98-sep-27
 #
 # $Log: fs-setup,v $
-# Revision 1.14  1999-02-07 09:59:14  ivan
+# Revision 1.15  1999-02-27 21:06:21  ivan
+# cust_main.paydate should be varchar(10), not @date_type ; problem reported
+# by Ben Leibig <leibig@colorado.edu>
+#
+# Revision 1.14  1999/02/07 09:59:14  ivan
 # more mod_perl fixes, and bugfixes Peter Wemm sent via email
 #
 # Revision 1.13  1999/02/04 06:09:23  ivan
@@ -385,7 +389,8 @@ sub tables_hash_hack {
         'fax',      'varchar', 'NULL', 12,
         'payby',    'char', '',     4,
         'payinfo',  'varchar', 'NULL', 16,
-        'paydate',  @date_type,
+        #'paydate',  @date_type,
+        'paydate',  'varchar', 'NULL', 10,
         'payname',  'varchar', 'NULL', $char_d,
         'tax',      'char', 'NULL', 1,
         'otaker',   'varchar', '',     8,

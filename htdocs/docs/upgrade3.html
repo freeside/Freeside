@@ -19,6 +19,7 @@ ALTER TABLE cust_main ADD titlenum int NULL;
 -->ALTER TABLE cust_main CHANGE state state varchar(80) NULL;
 ALTER TABLE cust_main_county CHANGE state state varchar(80) NULL;
 ALTER TABLE cust_main_county ADD country char(2);
+ALTER TABLE cust_main CHANGE paydate paydate varchar(10);
 UPDATE cust_main SET country = "US" where country IS NULL OR country = '';
 UPDATE cust_main_county SET country = "US" where country IS NULL OR country = "";
 <!--CREATE TABLE part_title (
