@@ -2,25 +2,33 @@
 <%= header('Edit Configuration', menubar( 'Main Menu' => $p ) ) %>
 <SCRIPT>
 var gSafeOnload = new Array();
+var gSafeOnsubmit = new Array();
 window.onload = SafeOnload;
 function SafeAddOnLoad(f) {
   gSafeOnload[gSafeOnload.length] = f;
 }
-function SafeOnload()
-{
+function SafeOnload() {
   for (var i=0;i<gSafeOnload.length;i++)
     gSafeOnload[i]();
+}
+function SafeAddOnSubmit(f) {
+  gSafeOnsubmit[gSafeOnsubmit.length] = f;
+}
+function SafeOnsubmit() {
+  for (var i=0;i<gSafeOnsubmit.length;i++)
+    gSafeOnsubmit[i]();
 }
 </SCRIPT>
 
 <% my $conf = new FS::Conf; my @config_items = $conf->config_items; %>
 
-<form name="OneTrueForm" action="config-process.cgi" METHOD="POST">
+<form name="OneTrueForm" action="config-process.cgi" METHOD="POST" onSubmit="SafeOnsubmit()">
 
 <% foreach my $section ( qw(required billing username password UI session
                             shell mail radius apache BIND
                            ),
                          '', 'deprecated') { %>
+  <A NAME="<%= $section || 'unclassified' %>"></A>
   <FONT SIZE="-2">
   <% foreach my $nav_section ( qw(required billing username password UI session
                                   shell mail radius apache BIND
@@ -29,11 +37,10 @@ function SafeOnload()
     <% if ( $section eq $nav_section ) { %>
       [<A NAME="not<%= $nav_section || 'unclassified' %>" style="background-color: #cccccc"><%= ucfirst($nav_section || 'unclassified') %></A>]
     <% } else { %>
-      [<A HREF="#<%= $nav_section %>"><%= ucfirst($nav_section || 'unclassified') %></A>]
+      [<A HREF="#<%= $nav_section || 'unclassified' %>"><%= ucfirst($nav_section || 'unclassified') %></A>]
     <% } %>
   <% } %>
   </FONT><BR>
-  <A NAME="<%= $section || 'unclassified' %>"></A>
   <%= table("#cccccc", 2) %>
   <tr>
     <th colspan="2" bgcolor="#dcdcdc">
@@ -65,6 +72,7 @@ function SafeOnload()
               <% if ( $conf->exists($i->key) && $conf->config($i->key) && ! grep { $conf->config($i->key) eq $_ } @{$i->select_enum}) { %>
                 <option value=<%= $conf->config($i->key) %> SELECTED><%= conf->config($i->key) %>
               <% } %>
+            </select>
           <% } elsif ( $type eq 'editlist' )  { %>
             <script>
               function doremove<%= $i->key. $n %>() {
@@ -76,6 +84,12 @@ function SafeOnload()
               }
               function deleteOption<%= $i->key. $n %>(object,index) {
                 object.options[index] = null;
+              }
+              function selectall<%= $i->key. $n %>() {
+                fromObject = document.OneTrueForm.<%= $i->key. $n %>;
+                for (var i=fromObject.options.length-1;i>-1;i--) {
+                  fromObject.options[i].selected = true;
+                }
               }
               function doadd<%= $i->key. $n %>(object) {
                 var myvalue = "";
@@ -105,16 +119,19 @@ function SafeOnload()
               }
             </script>
             <select multiple size=5 name="<%= $i->key. $n %>">
-            <option selected>--------------------------------</option>
+            <option selected>----------------------------------------------------------------</option>
             <% foreach my $line ( $conf->config($i->key) ) { %>
-              <option value="$line">$line</option>
+              <option value="<%= $line %>"><%= $line %></option>
             <% } %>
             </select><br>
             <input type="button" value="remove selected" onClick="doremove<%= $i->key. $n %>()">
-            <script>SafeAddOnLoad(doremove<%= $i->key. $n %>)</script>
+            <script>SafeAddOnLoad(doremove<%= $i->key. $n %>);
+                    SafeAddOnSubmit(selectall<%= $i->key. $n %>);</script>
             <br>
+            <%= itable() %><tr>
             <% if ( defined $i->editlist_parts ) { %>
               <% my $pnum=0; foreach my $part ( @{$i->editlist_parts} ) { %>
+                <td>
                 <% if ( $part->{type} eq 'text' ) { %>
                   <input type="text" name="add<%= $i->key. $n."_$pnum" %>">
                 <% } elsif ( $part->{type} eq 'immutable' ) { %>
@@ -128,11 +145,13 @@ function SafeOnload()
                 <% } else { %>
                   <font color="#ff0000">unknown type <%= $part->type %></font>
                 <% } %>
+                </td>
               <% $pnum++; } %>
             <% } else { %>
-              <input type="text" name="add<%= $i->key. $n %>_0">
+              <td><input type="text" name="add<%= $i->key. $n %>_0"></td>
             <% } %>
-            <input type="button" value="add" onClick="doadd<%= $i->key. $n %>(this.form)">
+            <td><input type="button" value="add" onClick="doadd<%= $i->key. $n %>(this.form)"></td>
+            </tr></table>
           <% } else { %>
             <font color="#ff0000">unknown type <%= $type %></font>
           <% } %>
@@ -143,13 +162,15 @@ function SafeOnload()
       </a></td>
     </tr>
   <% } %>
-  </table><br><br>
+  </table><br>
+
+  You may need to restart Apache and/or freeside-queued for configuration
+  changes to take effect.<br>
+
+  <input type="submit" value="Apply changes"><br><br>
+
 <% } %>
 
-You may need to restart Apache and/or freeside-queued for configuration
-changes to take effect.<BR>
-
-<input type="submit" value="Apply changes">
 </form>
 
 </body></html>

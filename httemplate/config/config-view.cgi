@@ -8,6 +8,7 @@
                             shell mail radius apache BIND
                            ),
                          '', 'deprecated') { %>
+  <A NAME="<%= $section || 'unclassified' %>"></A>
   <FONT SIZE="-2">
   <% foreach my $nav_section ( qw(required billing username password UI session
                                   shell mail radius apache BIND
@@ -16,11 +17,10 @@
     <% if ( $section eq $nav_section ) { %>
       [<A NAME="not<%= $nav_section || 'unclassified' %>" style="background-color: #cccccc"><%= ucfirst($nav_section || 'unclassified') %></A>]
     <% } else { %>
-      [<A HREF="#<%= $nav_section %>"><%= ucfirst($nav_section || 'unclassified') %></A>]
+      [<A HREF="#<%= $nav_section || 'unclassified' %>"><%= ucfirst($nav_section || 'unclassified') %></A>]
     <% } %>
   <% } %>
   </FONT><BR>
-  <A NAME="<%= $section || 'unclassified' %>"></A>
   <%= table("#cccccc", 2) %>
   <tr>
     <th colspan="2" bgcolor="#dcdcdc">

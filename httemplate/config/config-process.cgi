@@ -32,6 +32,12 @@
         } else {
           $conf->delete($i->key);
         }
+      } elsif ( $type eq 'editlist' || $type eq 'selectmultiple' )  {
+        if ( scalar(@{[ $cgi->param($i->key. $n) ]}) ) {
+          $conf->set($i->key, join("\n", $cgi->param($i->key. $n) ));
+        } else {
+          $conf->delete($i->key);
+        }
       } else {
       }
       $n++;

@@ -437,28 +437,40 @@ httemplate/docs/config.html
 
   {
     'key'         => 'mxmachines',
-    'section'     => 'BIND',
+    'section'     => 'deprecated',
     'description' => 'MX entries for new domains, weight and machine, one per line, with trailing `.\'',
     'type'        => 'textarea',
   },
 
   {
     'key'         => 'nsmachines',
-    'section'     => 'BIND',
+    'section'     => 'deprecated',
     'description' => 'NS nameservers for new domains, one per line, with trailing `.\'',
     'type'        => 'textarea',
   },
 
   {
-    'key'         => 'arecords',
+    'key'         => 'defaultrecords',
     'section'     => 'BIND',
-    'description' => 'A list of tab seperated A records to add automatically when creating a domain',
+    'description' => 'DNS entries add automatically when creating a domain',
+    'type'        => 'editlist',
+    'editlist_parts' => [ { type=>'text' },
+                          { type=>'immutable', value=>'IN' },
+                          { type=>'select',
+                            select_enum=>{ map { $_=>$_ } qw(A CNAME MX NS)} },
+                          { type=> 'text' }, ],
+  },
+
+  {
+    'key'         => 'arecords',
+    'section'     => 'deprecated',
+    'description' => 'A list of tab seperated CNAME records to add automatically when creating a domain',
     'type'        => 'textarea',
   },
 
   {
     'key'         => 'cnamerecords',
-    'section'     => 'BIND',
+    'section'     => 'deprecated',
     'description' => 'A list of tab seperated CNAME records to add automatically when creating a domain',
     'type'        => 'textarea',
   },

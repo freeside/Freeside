@@ -308,8 +308,9 @@ ALTER TABLE cust_refund DROP COLUMN crednum;
   <li><b>IMPORTANT</b>: run bin/create-history-tables
   <li><b>IMPORTANT: After running bin/create-history-tables</b>, run bin/dbdef-create again.
   <li>set the <a href="../config/config.cgi#username_policy">user_policy configuration value</a> as appropriate for your site.
+  <li>the mxmachines, nsmachines, arecords and cnamerecords configuration values have been deprecated.  Set the <a href="../config/config.cgi#defaultrecords">defaultrecords configuration value</a> instead.
   <li>Create the `/usr/local/etc/freeside/cache.<i>datasrc</i>' directory
-      (ownded by the freeside user).
+      (owned by the freeside user).
   <li>freeside-queued was installed with the Perl modules.  Start it now and ensure that is run upon system startup.
   <li>Set appropriate <a href="../browse/part_bill_event.cgi">invoice events</a> for your site.  At the very least, you'll want to set some invoice events "<i>After 0 days</i>": a <i>BILL</i> invoice event to print invoices, a <i>CARD</i> invoice event to batch or run cards real-time, and a <i>COMP</i> invoice event to "pay" complimentary customers.  If you were using the <i>-i</i> option to <a href="man/bin/freeside-bill.html">freeside-bill</a> it should be removed.
   <li>Use <a href="man/bin/freeside-daily.html">freeside-daily</a> instead of <a href="man/bin/freeside-bill.html">freeside-bill</a>.

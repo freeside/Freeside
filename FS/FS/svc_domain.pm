@@ -2,8 +2,8 @@ package FS::svc_domain;
 
 use strict;
 use vars qw( @ISA $whois_hack $conf $smtpmachine
-  @mxmachines @nsmachines $soadefaultttl $soaemail $soaexpire $soamachine
-  $soarefresh $soaretry $qshellmachine $nossh_hack %arecords %cnamerecords
+  @defaultrecords $soadefaultttl $soaemail $soaexpire $soamachine
+  $soarefresh $soaretry $qshellmachine $nossh_hack 
 );
 use Carp;
 use Mail::Internet;
@@ -29,10 +29,7 @@ $FS::UID::callback{'FS::domain'} = sub {
 
   $smtpmachine = $conf->config('smtpmachine');
 
-  %arecords      = map { split /\t/ } $conf->config('arecords');
-  %cnamerecords  = map { split /\t/ } $conf->config('cnamerecords');
-  @mxmachines    = $conf->config('mxmachines');
-  @nsmachines    = $conf->config('nsmachines');
+  @defaultrecords = $conf->config('defaultrecords');
   $soadefaultttl = $conf->config('soadefaultttl');
   $soaemail      = $conf->config('soaemail');
   $soaexpire     = $conf->config('soaexpire');
@@ -119,15 +116,9 @@ in the same package, it is automatically used.  Otherwise an error is returned.
 If any I<soamachine> configuration file exists, an SOA record is added to
 the domain_record table (see <FS::domain_record>).
 
-If any machines are defined in the I<nsmachines> configuration file, NS
-records are added to the domain_record table (see L<FS::domain_record>).
-
-If any machines are defined in the I<mxmachines> configuration file, MX
-records are added to the domain_record table (see L<FS::domain_record>).
-
-If the I<arecords> configuration file exits, A records are added to the
-domain_record table.  The I<cnamerecords> file does the same thing for
-CNAME records.
+If any records are defined in the I<defaultrecords> configuration file,
+appropriate records are added to the domain_record table (see
+L<FS::domain_record>).
 
 If a machine is defined in the I<shellmachine> configuration value, the
 I<qmailmachines> configuration file exists, and the I<catchall> field points
@@ -200,63 +191,19 @@ sub insert {
       return "couldn't insert SOA record for new domain: $error";
     }
 
-    foreach my $nsmachine ( @nsmachines ) {
-      my $ns = new FS::domain_record {
+    foreach my $record ( @defaultrecords ) {
+      my($zone,$af,$type,$data) = split(/\s+/,$record,4);
+      my $record = new FS::domain_record {
         'svcnum'  => $self->svcnum,
-        'reczone' => '@',
-        'recaf'   => 'IN',
-        'rectype' => 'NS',
-        'recdata' => $nsmachine,
+        'reczone' => $zone,
+        'recaf'   => $af,
+        'rectype' => $type,
+        'recdata' => $data,
       };
-      my $error = $ns->insert;
+      my $error = $record->insert;
       if ( $error ) {
         $dbh->rollback if $oldAutoCommit;
-        return "couldn't insert NS record for new domain: $error";
-      }
-    }
-
-    foreach my $mxmachine ( @mxmachines ) {
-      my $mx = new FS::domain_record {
-        'svcnum'  => $self->svcnum,
-        'reczone' => '@',
-        'recaf'   => 'IN',
-        'rectype' => 'MX',
-        'recdata' => $mxmachine,
-      };
-      my $error = $mx->insert;
-      if ( $error ) {
-        $dbh->rollback if $oldAutoCommit;
-        return "couldn't insert MX record for new domain: $error";
-      }
-    }
-
-    foreach my $arecord ( keys %arecords ) {
-      my $arec = new FS::domain_record {
-        'svcnum'  => $self->svcnum,
-        'reczone' => $arecord,
-        'recaf'   => 'IN',
-        'rectype' => 'A',
-        'recdata' => $arecords{$arecord},
-      };
-      my $error = $arec->insert;
-      if ( $error ) {
-        $dbh->rollback if $oldAutoCommit;
-        return "WARNING: couldn't insert A record for new domain: $error";
-      }
-    }
-
-    foreach my $cnamerecord ( keys %cnamerecords ) {
-      my $cnamerec = new FS::domain_record {
-        'svcnum'  => $self->svcnum,
-        'reczone' => $cnamerecord,
-        'recaf'   => 'IN',
-        'rectype' => 'CNAME',
-        'recdata' => $cnamerecords{$cnamerecord},
-      };
-      my $error = $cnamerec->insert;
-      if ( $error ) {
-        $dbh->rollback if $oldAutoCommit;
-        return "WARNING: couldn't insert CNAME record for new domain: $error";
+        return "couldn't insert record for new domain: $error";
       }
     }
 
@@ -460,7 +407,7 @@ sub submit_internic {
 
 =head1 VERSION
 
-$Id: svc_domain.pm,v 1.25 2002-03-09 10:19:38 khoff Exp $
+$Id: svc_domain.pm,v 1.26 2002-03-18 09:10:12 ivan Exp $
 
 =head1 BUGS
 
