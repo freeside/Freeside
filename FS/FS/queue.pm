@@ -127,7 +127,7 @@ sub delete {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  my @args = $self->args;
+  my @args = qsearch( 'queue_arg', { 'jobnum' => $self->jobnum } );
 
   my $error = $self->SUPER::delete;
   if ( $error ) {
@@ -199,7 +199,7 @@ sub args {
 
 =head1 VERSION
 
-$Id: queue.pm,v 1.2 2001-09-11 12:24:13 ivan Exp $
+$Id: queue.pm,v 1.3 2001-09-11 12:25:55 ivan Exp $
 
 =head1 BUGS
 
