@@ -1,0 +1,44 @@
+<head>
+  <title>Session monitor</title>
+</head>
+<body>
+<h1>Session monitor</h1>
+<h2>Installation</h2>
+For security reasons, the client portion of the session montior may run on an
+external public machine.  On this machine, install:
+<ul>
+  <li><a href="http://www.perl.com/CPAN/doc/relinfo/INSTALL.html">Perl</a> (at l
+east 5.004_05 for the 5.004 series or 5.005_03 for the 5.005 series.  Don't enab
+le experimental features like threads or the PerlIO abstraction layer.)
+  <li><a href="man/FS/SessionClient.html">FS::SessionClient</a> (copy the fs_session/FS-SessionClient directory to the external machine, then: perl Makefile.PL; make; make install)
+</ul>
+Then:
+<ul>
+  <li>Add the user `freeside' to the the external machine.
+  <li>Create the /usr/local/freeside directory on the external machine (owned by the freeside user).
+  <li>touch /usr/local/freeside/fs_sessiond_socket; chown freeside /usr/local/freeside/fs_sessiond_socket; chmod 600 /usr/local/freeside/fs_sessiond_socket
+    <li>Append the identity.pub from the freeside user on your freeside machine to the authorized_keys file of the newly created freeside user on the external machine(s).
+  <li>Run <pre>fs_session_server <i>user</i> <i>machine</i></pre> on the Freeside machine.
+  <ul>
+    <li><i>user</i> is a user from the mapsecrets file.
+    <li><i>machine</i> is the name of the external machine.
+  </ul>
+</ul>
+<h2>Usage</h2>
+<ul>
+  <li>RADIUS
+  <li>Web
+  <li>Command-line
+    <br><pre>freeside-login username ( portnum | ip | nasnum nasport )</pre>
+    <ul>
+      <li><i>username</i> is a customer username from the svc_acct table
+      <li><i>portnum</i>, <i>ip</i> or <i>nasport</i> and <i>nasnum</i> uniquely identify a port in the <a href="schema.html#port">port</a> database table.
+    </ul>
+</ul>
+</body>
+
+
+
+
+
+
