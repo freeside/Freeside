@@ -581,6 +581,11 @@ tie my %shellcommands_withdomain_options, 'Tie::IxHash',
                      },
 ;
 
+tie my %textradius_options, 'Tie::IxHash',
+  'user' => { label=>'Remote username', default=>'root' },
+  'users' => { label=>'users file location', default=>'/etc/raddb/users' },
+;
+
 tie my %sqlradius_options, 'Tie::IxHash',
   'datasrc'  => { label=>'DBI data source ' },
   'username' => { label=>'Database username' },
@@ -661,22 +666,22 @@ tie my %sqlmail_options, 'Tie::IxHash',
 #      'options' => {},
 #    },
     'textradius' => {
-      'desc' => 'Batch export of a text /etc/raddb/users file (Livingston, Cistron)',
-      'options' => {},
-      'notes' => 'unfinished',
+      'desc' => 'Real-time export to a text /etc/raddb/users file (Livingston, Cistron)',
+      'options' => \%textradius_options,
+      'notes' => 'This will edit a text RADIUS users file in place on a remote server.  Requires installation of <a href="http://search.cpan.org/search?dist=RADIUS-UserFile">RADIUS::UserFile</a> from CPAN.  If using RADIUS::UserFile 1.01, make sure to apply <a href="http://rt.cpan.org/NoAuth/Bug.html?id=1210">this patch</a>.  Also make sure <a href="http://rsync.samba.org/">rsync</a> is installed on the remote machine, and <a href="../docs/ssh.html">SSH is setup for unattended operation</a>.',
     },
 
     'shellcommands' => {
       'desc' => 'Real-time export via remote SSH (i.e. useradd, userdel, etc.)',
       'options' => \%shellcommands_options,
       'nodomain' => 'Y',
-      'notes' => 'Run remote commands via SSH.  Usernames are considered unique (also see shellcommands_withdomain).',
+      'notes' => 'Run remote commands via SSH.  Usernames are considered unique (also see shellcommands_withdomain).  You probably want this if the commands you are running will not accept a domain as a parameter.  You will need to <a href="../docs/ssh.html">setup SSH for unattended operation</a>.',
     },
 
     'shellcommands_withdomain' => {
       'desc' => 'Real-time export via remote SSH.',
       'options' => \%shellcommands_withdomain_options,
-      'notes' => 'Run remote commands via SSH.  username@domain (rather than just usernames) are considered unique (also see shellcommands)',
+      'notes' => 'Run remote commands via SSH.  username@domain (rather than just usernames) are considered unique (also see shellcommands).  You probably want this if the commands you are running will accept a domain as a parameter, and will allow the same username with different domains.  You will need to <a href="../docs/ssh.html">setup SSH for unattended operation</a>.',
     },
 
     'sqlradius' => {
