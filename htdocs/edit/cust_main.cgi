@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main.cgi,v 1.23 2000-01-27 00:53:14 ivan Exp $
+# $Id: cust_main.cgi,v 1.24 2000-01-30 06:54:50 ivan Exp $
 #
 # Usage: cust_main.cgi custnum
 #        http://server.name/path/cust_main.cgi?custnum
@@ -38,7 +38,10 @@
 # fixed one missed day->daytime ivan@sisd.com 98-jul-13
 #
 # $Log: cust_main.cgi,v $
-# Revision 1.23  2000-01-27 00:53:14  ivan
+# Revision 1.24  2000-01-30 06:54:50  ivan
+# credit card expiration dates not sticky bug fixed?
+#
+# Revision 1.23  2000/01/27 00:53:14  ivan
 # 5.004_04 workaround
 #
 # Revision 1.22  1999/12/17 02:33:23  ivan
@@ -285,13 +288,18 @@ print "</TABLE>$r required fields<BR>";
 
 sub expselect {
   my $prefix = shift;
-  my $date = shift || '';
-  my( $m, $y ) = ( 0, 0 );
-  if ( $date  =~ /^(\d{4})-(\d{2})-\d{2}$/ ) { #PostgreSQL date format
-    ( $m, $y ) = ( $2, $1 );
-  } elsif ( $date =~ /^(\d{1,2})-(\d{1,2}-)?(\d{4}$)/ ) {
-    ( $m, $y ) = ( $1, $3 );
+  my( $m, $y ) = (0, 0);
+  if ( scalar(@_) ) {
+    my $date = shift;
+    if ( $date  =~ /^(\d{4})-(\d{1,2})-\d{1,2}$/ ) { #PostgreSQL date format
+      ( $m, $y ) = ( $2, $1 );
+    } elsif ( $date =~ /^(\d{1,2})-(\d{1,2}-)?(\d{4}$)/ ) {
+      ( $m, $y ) = ( $1, $3 );
+    } else {
+      die "unrecognized expiration date format: $date";
+    }
   }
+
   my $return = qq!<SELECT NAME="$prefix!. qq!_month" SIZE="1">!;
   for ( 1 .. 12 ) {
     $return .= "<OPTION";
