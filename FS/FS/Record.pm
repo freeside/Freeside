@@ -210,7 +210,13 @@ sub qsearch {
   my $pkey = $dbdef_table->primary_key;
 
   my @real_fields = grep exists($record->{$_}), real_fields($table);
-  my @virtual_fields = grep exists($record->{$_}), "FS::$table"->virtual_fields;
+  my @virtual_fields;
+  if ( eval 'scalar(@FS::'. $table. '::ISA);' ) {
+    @virtual_fields = grep exists($record->{$_}), "FS::$table"->virtual_fields;
+  } else {
+    cluck "warning: FS::$table not loaded; virtual fields not searchable";
+    @virtual_fields = ();
+  }
 
   my $statement = "SELECT $select FROM $stable";
   if ( @real_fields or @virtual_fields ) {
@@ -328,10 +334,15 @@ sub qsearch {
 
   $sth->execute or croak "Error executing \"$statement\": ". $sth->errstr;
 
+  if ( eval 'scalar(@FS::'. $table. '::ISA);' ) {
+    @virtual_fields = "FS::$table"->virtual_fields;
+  } else {
+    cluck "warning: FS::$table not loaded; virtual fields not returned either";
+    @virtual_fields = ();
+  }
+
   my %result;
   tie %result, "Tie::IxHash";
-  @virtual_fields = "FS::$table"->virtual_fields;
-
   my @stuff = @{ $sth->fetchall_arrayref( {} ) };
   if($pkey) {
     %result = map { $_->{$pkey}, $_ } @stuff;
@@ -340,6 +351,7 @@ sub qsearch {
   }
 
   $sth->finish;
+
   if ( keys(%result) and @virtual_fields ) {
     $statement =
       "SELECT virtual_field.recnum, part_virtual_field.name, ".
