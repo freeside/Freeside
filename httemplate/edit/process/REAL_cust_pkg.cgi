@@ -8,9 +8,19 @@ $hash{'bill'} = $cgi->param('bill') ? str2time($cgi->param('bill')) : '';
 $hash{'last_bill'} =
   $cgi->param('last_bill') ? str2time($cgi->param('last_bill')) : '';
 $hash{'expire'} = $cgi->param('expire') ? str2time($cgi->param('expire')) : '';
-my $new = new FS::cust_pkg \%hash;
 
-my $error = $new->replace($old);
+my $new;
+my $error;
+if ( $hash{'bill'} != $old->bill        # if the next bill date was changed
+     && $hash{'bill'} < time            # to a date in the past
+     && ! $cgi->param('bill_areyousure') # and it wasn't confirmed
+   )
+{
+  $error = '_bill_areyousure';
+} else {
+  $new = new FS::cust_pkg \%hash;
+  $error = $new->replace($old);
+}
 
 if ( $error ) {
   $cgi->param('error', $error);

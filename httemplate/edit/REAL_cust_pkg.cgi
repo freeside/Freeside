@@ -1,12 +1,19 @@
 <!-- mason kludge -->
 <%
-# <!-- $Id: REAL_cust_pkg.cgi,v 1.7 2003-11-19 12:21:09 ivan Exp $ -->
+# <!-- $Id: REAL_cust_pkg.cgi,v 1.8 2004-12-22 14:06:45 ivan Exp $ -->
 
 my $error ='';
 my $pkgnum = '';
 if ( $cgi->param('error') ) {
   $error = $cgi->param('error');
   $pkgnum = $cgi->param('pkgnum');
+  if ( $error eq '_bill_areyousure' ) {
+    my $bill = $cgi->param('bill');
+    $error = "You are attempting to set the next bill date to $bill, which is
+              in the past.  This will charge the customer for the interval
+              from $bill until now.  Are you sure you want to do this? ".
+           '<INPUT TYPE="checkbox" NAME="bill_areyousure" VALUE="1">';
+  }
 } else {
   my($query) = $cgi->keywords;
   $query =~ /^(\d+)$/ or die "no pkgnum";
