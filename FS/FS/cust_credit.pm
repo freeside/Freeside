@@ -104,8 +104,6 @@ sub insert {
     return "error inserting $self: $error";
   }
 
-  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
-
   #false laziness w/ cust_credit::insert
   if ( $unsuspendauto && $old_balance && $cust_main->balance <= 0 ) {
     my @errors = $cust_main->unsuspend;
@@ -116,6 +114,8 @@ sub insert {
       if @errors;
   }
   #eslaf
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
   '';
 
@@ -242,7 +242,7 @@ sub credited {
 
 =head1 VERSION
 
-$Id: cust_credit.pm,v 1.15 2002-01-28 06:57:23 ivan Exp $
+$Id: cust_credit.pm,v 1.16 2002-06-04 14:35:52 ivan Exp $
 
 =head1 BUGS
 
