@@ -11,6 +11,11 @@ tie my %options, 'Tie::IxHash',
   'aliases' => { label=>'aliases file location', default=>'/etc/aliases' },
   'virtual' => { label=>'virtual file location', default=>'/etc/postfix/virtual' },
   'mydomain' => { label=>'local domain', default=>'' },
+  'newaliases' => { label=>'newaliases command', default=>'newaliases' },
+  'postmap'    => { label=>'postmap command',
+                    default=>'postmap hash:/etc/postfix/virtual', },
+  'reload'     => { label=>'reload command',
+                    default=>'postfix reload' },
 ;
 
 %info = (

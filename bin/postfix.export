@@ -99,7 +99,7 @@ foreach my $export ( @exports ) {
   } ) or die "rsync to $machine failed: ". join(" / ", $rsync->err);
 #  warn $rsync->out;
 
-  ssh("$user\@$machine", "newaliases");
+  ssh("$user\@$machine", $export->option('newaliases') || 'newaliases');
 #  ssh("$user\@$machine", "postfix reload");
 
   $rsync->exec( {
@@ -107,8 +107,9 @@ foreach my $export ( @exports ) {
     dest    => "$user\@$machine:". $export->option('virtual'),
   } ) or die "rsync to $machine failed: ". join(" / ", $rsync->err);
 #  warn $rsync->out;
-  ssh("$user\@$machine", "postmap hash:/etc/postfix/virtual");
-  ssh("$user\@$machine", "postfix reload");
+  ssh("$user\@$machine", $export->option('postmap')
+                         || 'postmap hash:/etc/postfix/virtual');
+  ssh("$user\@$machine", $export->option('reload') || 'postfix reload');
 
 }
 
