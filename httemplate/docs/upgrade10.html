@@ -144,6 +144,9 @@ ALTER TABLE agent ADD _password varchar(80) NULL;
 ALTER TABLE h_agent ADD _password varchar(80) NULL;
 ALTER TABLE cust_main ADD paycvv varchar(4) NULL;
 ALTER TABLE h_cust_main ADD paycvv varchar(4) NULL;
+ALTER TABLE part_referral ADD disabled char(1) NULL;
+ALTER TABLE h_part_referral ADD disabled char(1) NULL;
+CREATE INDEX part_referral1 ON part_referral ( disabled );
 
 dump database, edit:
 - cust_main: increase otaker from 8 to 32
@@ -164,6 +167,8 @@ optionally:
   CREATE INDEX cust_main9 ON cust_main ( ship_daytime );
   CREATE INDEX cust_main10 ON cust_main ( ship_night );
   CREATE INDEX cust_main11 ON cust_main ( ship_fax );
+  CREATE INDEX agent2 ON agent ( disabled );
+  CREATE INDEX part_bill_event2 ON part_bill_event ( disabled );
 
   serial columns
 

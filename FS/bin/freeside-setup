@@ -342,7 +342,7 @@ sub tables_hash_hack {
       ],
       'primary_key' => 'agentnum',
       'unique' => [],
-      'index' => [ ['typenum'] ],
+      'index' => [ ['typenum'], ['diabled'] ],
     },
 
     'agent_type' => {
@@ -408,7 +408,7 @@ sub tables_hash_hack {
       ],
       'primary_key' => 'eventpart',
       'unique' => [],
-      'index' => [ ['payby'] ],
+      'index' => [ ['payby'], ['disabled'], ],
     },
 
     'cust_bill_pkg' => {
@@ -567,7 +567,7 @@ sub tables_hash_hack {
       ],
       'primary_key' => 'paynum',
       'unique' => [],
-      'index' => [ [ 'custnum' ], [ 'paybatch' ] ],
+      'index' => [ [ 'custnum' ], [ 'paybatch' ], [ 'payby' ], [ '_date' ] ],
     },
 
     'cust_bill_pay' => {
@@ -718,10 +718,11 @@ sub tables_hash_hack {
       'columns' => [
         'refnum',   'serial',    '',   '',
         'referral', 'varchar',   '',   $char_d,
+        'disabled',     'char', 'NULL', 1,
       ],
       'primary_key' => 'refnum',
       'unique' => [],
-      'index' => [],
+      'index' => [ ['disabled'] ],
     },
 
     'part_svc' => {
