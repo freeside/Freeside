@@ -33,7 +33,7 @@ if ( -e $pid_file ) {
   open(PIDFILE,"<$pid_file");
   chomp( my $old_pid = <PIDFILE> );
   close PIDFILE;
-  kill 'TERM', $pid_file;
+  kill 'TERM', $old_pid;
 }
 open(PIDFILE,">$pid_file");
 print PIDFILE "$$\n";
