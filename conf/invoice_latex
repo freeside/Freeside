@@ -23,7 +23,7 @@
 \usepackage{graphicx}			% required for logo graphic
 
 \addtolength{\voffset}{-0.0in}	% top margin to top of header
-\addtolength{\hoffset}{-0.55in}	%left margin on page
+\addtolength{\hoffset}{-0.60in}	%left margin on page
 \addtolength{\topmargin}{-0.6in}	% top margin to top of header
 \setlength{\headheight}{1in} 		% height of header
 \setlength{\headsep}{0.5in}    	% between header and text
