@@ -80,23 +80,52 @@ if ( $cgi->param('browse')
 
   my $ncancelled = '';
 
+  if ( driver_name eq 'mysql' ) {
+
+       my $query = "CREATE TEMPORARY TABLE temp1_$$ TYPE=MYISAM
+                      SELECT cust_pkg.custnum,COUNT(*) as count
+                        FROM cust_pkg,cust_main
+                          WHERE cust_pkg.custnum = cust_main.custnum
+                                AND ( cust_pkg.cancel IS NULL
+                                      OR cust_pkg.cancel = 0 )
+                          GROUP BY cust_pkg.custnum";
+       my $sth = dbh->prepare($query) or die dbh->errstr. " preparing $query";
+       $sth->execute or die "Error executing \"$query\": ". $sth->errstr;
+       $query = "CREATE TEMPORARY TABLE temp2_$$ TYPE=MYISAM
+                   SELECT cust_pkg.custnum,COUNT(*) as count
+                     FROM cust_pkg,cust_main
+                       WHERE cust_pkg.custnum = cust_main.custnum
+                       GROUP BY cust_pkg.custnum";
+       my $sth = dbh->prepare($query) or die dbh->errstr. " preparing $query";
+       $sth->execute or die "Error executing \"$query\": ". $sth->errstr;
+  }
+
   if (  $cgi->param('showcancelledcustomers') eq '0' #see if it was set by me
        || ( $conf->exists('hidecancelledcustomers')
              && ! $cgi->param('showcancelledcustomers') )
      ) {
     #grep { $_->ncancelled_pkgs || ! $_->all_pkgs }
-    #needed for MySQL???    OR cust_pkg.cancel = \"\"
-    $ncancelled = "
-       0 < ( SELECT COUNT(*) FROM cust_pkg
-                    WHERE cust_pkg.custnum = cust_main.custnum
-                      AND ( cust_pkg.cancel IS NULL
-                            OR cust_pkg.cancel = 0
-                          )
-                )
-         OR 0 = ( SELECT COUNT(*) FROM cust_pkg
-                    WHERE cust_pkg.custnum = cust_main.custnum
-                )
-    ";
+    if ( driver_name eq 'mysql' ) {
+       $ncancelled = "
+          temp1_$$.custnum = cust_main.custnum
+               AND temp2_$$.custnum = cust_main.custnum
+               AND (temp1_$$.count > 0
+                       OR temp2_$$.count = 0 )
+       ";
+    } else {
+       $ncancelled = "
+          0 < ( SELECT COUNT(*) FROM cust_pkg
+                       WHERE cust_pkg.custnum = cust_main.custnum
+                         AND ( cust_pkg.cancel IS NULL
+                               OR cust_pkg.cancel = 0
+                             )
+                   )
+            OR 0 = ( SELECT COUNT(*) FROM cust_pkg
+                       WHERE cust_pkg.custnum = cust_main.custnum
+                   )
+       ";
+    }
+
   }
 
   #EWWWWWW
@@ -109,10 +138,14 @@ if ( $cgi->param('browse')
   }
     
   $qual = " WHERE $qual" if $qual;
-
-  my $statement = "SELECT COUNT(*) FROM cust_main $qual";
-  my $sth = dbh->prepare($statement)
-    or die dbh->errstr. " doing $statement";
+  my $statement;
+  if ( driver_name eq 'mysql' ) {
+    $statement = "SELECT COUNT(*) FROM cust_main";
+    $statement .= ", temp1_$$, temp2_$$ $qual" if $qual;
+  } else {
+    $statement = "SELECT COUNT(*) FROM cust_main $qual";
+  }
+  my $sth = dbh->prepare($statement) or die dbh->errstr." preparing $statement";
   $sth->execute or die "Error executing \"$statement\": ". $sth->errstr;
 
   $total = $sth->fetchrow_arrayref->[0];
@@ -124,10 +157,20 @@ if ( $cgi->param('browse')
       $ncancelled = " WHERE $ncancelled";
     }
   }
-  my @just_cust_main = qsearch('cust_main', \%search, '',
-    "$ncancelled $orderby $limit"
-  );    
 
+  my @just_cust_main;
+  if ( driver_name eq /mysql/ ) {
+    @just_cust_main = qsearch('cust_main', \%search, 'cust_main.*',
+                              ",temp1_$$,temp2_$$ $ncancelled $orderby $limit");
+  } else {
+    @just_cust_main = qsearch('cust_main', \%search, '',   
+                              "$ncancelled $orderby $limit" );
+  }
+  if ( driver_name eq 'mysql' ) {
+    $query = "DROP TABLE temp1_$$,temp2_$$;";
+    my $sth = dbh->prepare($query) or die dbh->errstr. " preparing $query";
+    $sth->execute or die "Error executing \"$query\": ". $sth->errstr;
+  }
   @cust_main = @just_cust_main;
 
 #  foreach my $cust_main ( @just_cust_main ) {

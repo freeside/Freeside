@@ -34,8 +34,7 @@ if ( $cgi->param('magic') && $cgi->param('magic') eq 'bill' ) {
   #false laziness with below
   my $statement = "SELECT COUNT(*) FROM cust_pkg $range";
   warn $statement;
-  my $sth = dbh->prepare($statement)
-    or die dbh->errstr. " doing $statement";
+  my $sth = dbh->prepare($statement) or die dbh->errstr." preparing $statement";
   $sth->execute or die "Error executing \"$statement\": ". $sth->errstr;
   
   $total = $sth->fetchrow_arrayref->[0];
@@ -51,17 +50,6 @@ if ( $cgi->param('magic') && $cgi->param('magic') eq 'bill' ) {
   } elsif ( $query eq 'APKG_pkgnum' ) {
   
     $sortby=\*pkgnum_sort;
-  
-    $unconf = "
-      WHERE 0 <
-        ( SELECT count(*) FROM pkg_svc
-            WHERE pkg_svc.pkgpart = cust_pkg.pkgpart
-              AND pkg_svc.quantity > ( SELECT count(*) FROM cust_svc
-                                         WHERE cust_svc.pkgnum = cust_pkg.pkgnum
-                                           AND cust_svc.svcpart = pkg_svc.svcpart
-                                     )
-        )
-    ";
   
     #@cust_pkg=();
     ##perhaps this should go in cust_pkg as a qsearch-like constructor?
@@ -86,20 +74,74 @@ if ( $cgi->param('magic') && $cgi->param('magic') eq 'bill' ) {
     #  }
     #  push @cust_pkg, $cust_pkg if $flag;
     #}
+
+    if ( driver_name eq 'mysql' ) {
+      #$query = "DROP TABLE temp1_$$,temp2_$$;";
+      #my $sth = dbh->prepare($query);
+      #$sth->execute;
+
+      $query = "CREATE TEMPORARY TABLE temp1_$$ TYPE=MYISAM
+                  SELECT cust_svc.pkgnum,cust_svc.svcpart,COUNT(*) as count
+                    FROM cust_pkg,cust_svc,pkg_svc
+                      WHERE cust_pkg.pkgnum = cust_svc.pkgnum
+                      AND cust_svc.svcpart = pkg_svc.svcpart
+                      AND cust_pkg.pkgpart = pkg_svc.pkgpart
+                      GROUP BY cust_svc.pkgnum,cust_svc.svcnum";
+      $sth = dbh->prepare($query) or die dbh->errstr. " preparing $query";
+         
+      $sth->execute or die "Error executing \"$query\": ". $sth->errstr;
+  
+      $query = "CREATE TEMPORARY TABLE temp2_$$ TYPE=MYISAM
+                  SELECT cust_pkg.pkgnum FROM cust_pkg
+                    LEFT JOIN pkg_svc ON (cust_pkg.pkgpart=pkg_svc.pkgpart)
+                    LEFT JOIN temp1_$$ ON (cust_pkg.pkgnum = temp1_$$.pkgnum
+                                           AND pkg_svc.svcpart=temp1_$$.svcpart)
+                    WHERE ( pkg_svc.quantity > temp1_$$.count
+                            OR temp1_$$.pkgnum IS NULL )
+                          AND pkg_svc.quantity != 0;";
+      $sth = dbh->prepare($query) or die dbh->errstr. " preparing $query";   
+      $sth->execute or die "Error executing \"$query\": ". $sth->errstr;
+      $unconf = " LEFT JOIN temp2_$$ ON cust_pkg.pkgnum = temp2_$$.pkgnum
+                    WHERE temp2_$$.pkgnum IS NOT NULL";
+
+    } else {
+
+     $unconf = "
+       WHERE 0 <
+         ( SELECT count(*) FROM pkg_svc
+             WHERE pkg_svc.pkgpart = cust_pkg.pkgpart
+               AND pkg_svc.quantity > ( SELECT count(*) FROM cust_svc
+                                        WHERE cust_svc.pkgnum = cust_pkg.pkgnum
+                                          AND cust_svc.svcpart = pkg_svc.svcpart
+                                      )
+         )
+     ";
+
+    }
     
   } else {
     die "Empty QUERY_STRING!";
   }
   
   my $statement = "SELECT COUNT(*) FROM cust_pkg $unconf";
-  my $sth = dbh->prepare($statement)
-    or die dbh->errstr. " doing $statement";
+  my $sth = dbh->prepare($statement) or die dbh->errstr." preparing $statement";
   $sth->execute or die "Error executing \"$statement\": ". $sth->errstr;
   
   $total = $sth->fetchrow_arrayref->[0];
-  
+
+  #if ( driver_name eq 'mysql' ) { #remove ORDER BY for mysql?  hua?
+  #  @cust_pkg = qsearch('cust_pkg',{}, '', "$unconf $limit" );
+  #} else {
+  #  @cust_pkg = qsearch('cust_pkg',{}, '', "$unconf ORDER BY pkgnum $limit" );
+  #}                                            
   @cust_pkg = qsearch('cust_pkg',{}, '', "$unconf ORDER BY pkgnum $limit" );
 
+  if ( driver_name eq 'mysql' ) {
+    $query = "DROP TABLE temp1_$$,temp2_$$;";
+    my $sth = dbh->prepare($query) or die dbh->errstr. " doing $query";
+    $sth->execute; # or die "Error executing \"$query\": ". $sth->errstr;
+  }
+  
 }
 
 if ( scalar(@cust_pkg) == 1 ) {

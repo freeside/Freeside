@@ -21,26 +21,35 @@ $query ||= ''; #to avoid use of unitialized value errors
 my $unlinked = '';
 if ( $query =~ /^UN_(.*)$/ ) {
   $query = $1;
-  my $empty = driver_name =~ /^Pg$/i ? qq('') : qq("");
-  $unlinked = "
-    WHERE 0 <
-      ( SELECT count(*) FROM cust_svc
-          WHERE cust_svc.svcnum = svc_acct.svcnum
-            AND ( pkgnum IS NULL OR pkgnum = 0 OR pkgnum = $empty )
-      )
-  ";
+  my $empty = driver_name eq 'Pg' ? qq('') : qq("");
+  if ( driver_name eq 'mysql' ) {
+    $unlinked = "LEFT JOIN cust_svc ON cust_svc.svcnum = svc_acct.svcnum
+                 WHERE cust_svc.pkgnum IS NULL
+                    OR cust_svc.pkgnum = 0
+                    OR cust_svc.pkgnum = $empty";
+  } else {
+    $unlinked = "
+      WHERE 0 <
+        ( SELECT count(*) FROM cust_svc
+            WHERE cust_svc.svcnum = svc_acct.svcnum
+              AND ( pkgnum IS NULL OR pkgnum = 0 OR pkgnum = $empty )
+        )
+    ";
+  }
 }
 
+my $tblname = driver_name eq 'mysql' ? 'svc_acct.' : '';
 my(@svc_acct, $sortby);
 if ( $query eq 'svcnum' ) {
   $sortby=\*svcnum_sort;
-  $orderby = 'ORDER BY svcnum';
+  $orderby = "ORDER BY ${tblname}svcnum";
 } elsif ( $query eq 'username' ) {
   $sortby=\*username_sort;
-  $orderby = 'ORDER BY username';
+  $orderby = "ORDER BY ${tblname}username";
 } elsif ( $query eq 'uid' ) {
   $sortby=\*uid_sort;
-  $orderby = ( $unlinked ? 'AND' : 'WHERE' ). ' uid IS NOT NULL ORDER BY uid';
+  $orderby = ( $unlinked ? 'AND' : 'WHERE' ).
+             " ${tblname}uid IS NOT NULL ORDER BY ${tblname}uid";
 } else {
   $sortby=\*uid_sort;
   @svc_acct = @{&usernamesearch};
@@ -55,6 +64,11 @@ if ( $query eq 'svcnum' || $query eq 'username' || $query eq 'uid' ) {
 
   $total = $sth->fetchrow_arrayref->[0];
 
+  #if ( driver_name eq 'mysql' ) { #remove ORDER BY for mysql?  hua?
+  #  @svc_acct = qsearch('svc_acct', {}, '', "$unlinked $limit");
+  #} else {
+  #  @svc_acct = qsearch('svc_acct', {}, '', "$unlinked $orderby $limit");
+  #}
   @svc_acct = qsearch('svc_acct', {}, '', "$unlinked $orderby $limit");
 
 }
