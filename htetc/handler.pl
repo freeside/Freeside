@@ -67,7 +67,7 @@ sub handler
       use IO::File;
       use String::Approx qw(amatch);
       use HTML::Widgets::SelectLayers;
-      use FS::UID qw(cgisuidsetup dbh getotaker datasrc);
+      use FS::UID qw(cgisuidsetup dbh getotaker datasrc driver_name);
       use FS::Record qw(qsearch qsearchs fields dbdef);
       use FS::Conf;
       use FS::CGI qw(header menubar popurl table itable ntable idiot eidiot
