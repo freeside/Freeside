@@ -16,7 +16,7 @@ my $emonth = $cgi->param('emonth') || $curmon+1;
 
 <HTML>
   <HEAD>
-    <TITLE>Graphing monetary values over time</TITLE>
+    <TITLE>Sales, Credits and Receipts Summary</TITLE>
   </HEAD>
 <BODY BGCOLOR="#e8e8e8">
 <IMG SRC="money_time-graph.cgi?<%= $cgi->query_string %>" WIDTH="976" HEIGHT="384">
