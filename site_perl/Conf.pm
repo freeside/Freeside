@@ -3,8 +3,6 @@ package FS::Conf;
 use vars qw($default_dir);
 use IO::File;
 
-$default_dir='/var/spool/freeside/conf';
-
 =head1 NAME
 
 FS::Conf - Read access to Freeside configuration values
@@ -13,8 +11,10 @@ FS::Conf - Read access to Freeside configuration values
 
   use FS::Conf;
 
+  $conf = new FS::Conf "/config/directory";
+
+  $FS::Conf::default_dir = "/config/directory";
   $conf = new FS::Conf;
-  $conf = new FS::Conf "/non/standard/config/directory";
 
   $dir = $conf->dir;
 
@@ -33,8 +33,8 @@ but this may change in the future.
 
 =item new [ DIRECTORY ]
 
-Create a new configuration object.  Optionally, a non-default directory may
-be specified.
+Create a new configuration object.  A directory arguement is required if
+$FS::Conf::default_dir has not been set.
 
 =cut
 
@@ -94,8 +94,6 @@ sub exists {
 
 =head1 BUGS
 
-The option to specify a non-default directory should probably be removed.
-
 Write access (with locking) should be implemented.
 
 =head1 SEE ALSO
@@ -107,6 +105,11 @@ config.html from the base documentation contains a list of configuration files.
 Ivan Kohler <ivan@sisd.com> 98-sep-6
 
 sub exists forgot to fetch $dir ivan@sisd.com 98-sep-27
+
+$Log: Conf.pm,v $
+Revision 1.2  1998-11-13 04:08:44  ivan
+no default default_dir (ironic)
+
 
 =cut
 
