@@ -290,7 +290,7 @@ if ( $conf->config('payby-default') ne 'HIDE' ) {
 print '</TD></TR></TABLE>';
 
 if ( defined $cust_main->dbdef_table->column('comments')
-     && $cust_main->comments )
+     && $cust_main->comments =~ /[^\s\n\r]/ )
 {
   print "<BR>Comments". &ntable("#cccccc"). "<TR><TD>".
         &ntable("#cccccc",2).
