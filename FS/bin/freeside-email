@@ -1,0 +1,61 @@
+#!/usr/bin/perl -Tw
+
+use strict;
+use FS::UID qw(adminsuidsetup);
+use FS::Conf;
+use FS::Record qw(qsearch);
+use FS::svc_acct;
+
+&untaint_argv;	#what it sounds like  (eww)
+my $user = shift or die &usage;
+
+adminsuidsetup $user;
+
+my $conf = new FS::Conf;
+my $domain = $conf->config('domain');
+
+my @svc_acct = qsearch('svc_acct', {});
+my @usernames = map $_->username, @svc_acct;
+my @emails = map "$_\@$domain", @usernames;
+
+print join("\n", @emails), "\n";
+
+# subroutines
+
+sub untaint_argv {
+  foreach $_ ( $[ .. $#ARGV ) { #untaint @ARGV
+    #$ARGV[$_] =~ /^([\w\-\/]*)$/ || die "Illegal arguement \"$ARGV[$_]\"";
+    # Date::Parse
+    $ARGV[$_] =~ /^(.*)$/ || die "Illegal arguement \"$ARGV[$_]\"";
+    $ARGV[$_]=$1;
+  }
+}
+
+sub usage {
+  die "Usage:\n\n  freeside-email user\n";
+}
+
+=head1 NAME
+
+freeside-email - Prints email addresses of all users on STDOUT
+
+=head1 SYNOPSIS
+
+  freeside-email user
+
+=head1 DESCRIPTION
+
+Prints the email addresses of all customers on STDOUT, separated by newlines.
+
+user: From the mapsecrets file - see config.html from the base documentation
+
+=head1 VERSION
+
+$Id: freeside-email,v 1.1 2001-05-15 07:52:34 ivan Exp $
+
+=head1 BUGS
+
+=head1 SEE ALSO
+
+=cut
+
