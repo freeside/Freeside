@@ -3,7 +3,7 @@ package FS::cust_main;
 use strict;
 use vars qw( @ISA $conf $lpr $processor $xaction $E_NoErr $invoice_from
              $smtpmachine $Debug $bop_processor $bop_login $bop_password
-             $bop_action @bop_options);
+             $bop_action @bop_options $import );
 use Safe;
 use Carp;
 use Time::Local;
@@ -33,6 +33,8 @@ use FS::queue;
 
 $Debug = 0;
 #$Debug = 1;
+
+$import = 0;
 
 #ask FS::UID to run this stuff for us later
 $FS::UID::callback{'FS::cust_main'} = sub { 
@@ -563,17 +565,19 @@ sub check {
     $self->ss("$1-$2-$3");
   }
 
-  unless ( qsearchs('cust_main_county', {
-    'country' => $self->country,
-    'state'   => '',
-   } ) ) {
-    return "Unknown state/county/country: ".
-      $self->state. "/". $self->county. "/". $self->country
-      unless qsearchs('cust_main_county',{
-        'state'   => $self->state,
-        'county'  => $self->county,
-        'country' => $self->country,
-      } );
+  unless ( $import ) {
+    unless ( qsearchs('cust_main_county', {
+      'country' => $self->country,
+      'state'   => '',
+     } ) ) {
+      return "Unknown state/county/country: ".
+        $self->state. "/". $self->county. "/". $self->country
+        unless qsearchs('cust_main_county',{
+          'state'   => $self->state,
+          'county'  => $self->county,
+          'country' => $self->country,
+        } );
+    }
   }
 
   $error =
@@ -1875,7 +1879,7 @@ sub append_fuzzyfiles {
 
 =head1 VERSION
 
-$Id: cust_main.pm,v 1.46 2001-11-05 11:55:04 ivan Exp $
+$Id: cust_main.pm,v 1.47 2001-11-12 13:19:52 ivan Exp $
 
 =head1 BUGS
 
