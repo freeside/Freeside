@@ -1451,7 +1451,7 @@ sub retry_realtime {
                  && $_->status eq 'done'
                  && $_->statustext
              }
-          $_->cust_bill_event;
+          $cust_bill->cust_bill_event;
     next unless @cust_bill_event;
     my $error = $cust_bill_event[0]->retry;
     if ( $error ) {
