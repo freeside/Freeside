@@ -22,6 +22,7 @@ use FS::cust_bill;
 use FS::cust_bill_pkg;
 use FS::cust_pay;
 use FS::cust_credit;
+use FS::cust_refund;
 use FS::part_referral;
 use FS::cust_main_county;
 use FS::agent;
@@ -467,19 +468,19 @@ sub delete {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  if ( qsearch( 'cust_bill', { 'custnum' => $self->custnum } ) ) {
+  if ( $self->cust_bill ) {
     $dbh->rollback if $oldAutoCommit;
     return "Can't delete a customer with invoices";
   }
-  if ( qsearch( 'cust_credit', { 'custnum' => $self->custnum } ) ) {
+  if ( $self->cust_credit ) {
     $dbh->rollback if $oldAutoCommit;
     return "Can't delete a customer with credits";
   }
-  if ( qsearch( 'cust_pay', { 'custnum' => $self->custnum } ) ) {
+  if ( $self->cust_pay ) {
     $dbh->rollback if $oldAutoCommit;
     return "Can't delete a customer with payments";
   }
-  if ( qsearch( 'cust_refund', { 'custnum' => $self->custnum } ) ) {
+  if ( $self->cust_refund ) {
     $dbh->rollback if $oldAutoCommit;
     return "Can't delete a customer with refunds";
   }
@@ -2376,6 +2377,42 @@ customer.
 sub open_cust_bill {
   my $self = shift;
   grep { $_->owed > 0 } $self->cust_bill;
+}
+
+=item cust_credit
+
+Returns all the credits (see L<FS::cust_credit>) for this customer.
+
+=cut
+
+sub cust_credit {
+  my $self = shift;
+  sort { $a->_date <=> $b->_date }
+    qsearch( 'cust_credit', { 'custnum' => $self->custnum } )
+}
+
+=item cust_pay
+
+Returns all the payments (see L<FS::cust_pay>) for this customer.
+
+=cut
+
+sub cust_pay {
+  my $self = shift;
+  sort { $a->_date <=> $b->_date }
+    qsearch( 'cust_pay', { 'custnum' => $self->custnum } )
+}
+
+=item cust_refund
+
+Returns all the refunds (see L<FS::cust_refund>) for this customer.
+
+=cut
+
+sub cust_refund {
+  my $self = shift;
+  sort { $a->_date <=> $b->_date }
+    qsearch( 'cust_refund', { 'custnum' => $self->custnum } )
 }
 
 =back
