@@ -71,6 +71,7 @@ my %vfields;
 
 #these might belong somewhere else for other user interfaces 
 #pry need to eventually create stuff that's shared amount UIs
+my $conf = new FS::Conf;
 my %defs = (
   'svc_acct' => {
     'dir'       => 'Home directory',
@@ -91,7 +92,11 @@ my %defs = (
     'quota'     => '',
     '_password' => 'Password',
     'gid'       => 'GID (when blank, defaults to UID)',
-    'shell'     => 'Shell (all service definitions should have a default or fixed shell that is present in the <b>shells</b> configuration file)',
+    'shell'     => {
+                     desc =>'Shell (all service definitions should have a default or fixed shell that is present in the <b>shells</b> configuration file)',
+                     type =>'select',
+                     select_list => [ $conf->config('shells') ],
+                   },
     'finger'    => 'GECOS',
     'domsvc'    => {
                      desc =>'svcnum from svc_domain',
