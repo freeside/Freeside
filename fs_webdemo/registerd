@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 #
-# $Id: registerd,v 1.6 2000-03-03 06:28:50 ivan Exp $
+# $Id: registerd,v 1.7 2000-03-03 06:36:49 ivan Exp $
 
 use strict;
 use vars qw(
@@ -97,6 +97,8 @@ while ( 1 ) {
     mkdir "${freeside_conf}counters.DBI:mysql:demo_$username", 0755;    
     system "cp -p ${freeside_conf}counters.DBI:mysql:demo_template/* ".
            "${freeside_conf}counters.DBI:mysql:demo_$username";
+    chown scalar(getpwnam('freeside')), scalar(getgrnam('freeside')),
+           "${freeside_conf}counters.demo_$username";
 
     system "cp -p ${freeside_conf}dbdef.DBI:mysql:demo_template ".
            "${freeside_conf}dbdef.DBI:mysql:demo_$username";
