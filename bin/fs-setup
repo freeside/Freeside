@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: fs-setup,v 1.57 2001-09-11 00:07:30 ivan Exp $
+# $Id: fs-setup,v 1.58 2001-09-11 22:20:28 ivan Exp $
 
 #to delay loading dbdef until we're ready
 BEGIN { $FS::Record::setup_hack = 1; }
@@ -20,7 +20,7 @@ use FS::raddb;
 die "Not running uid freeside!" unless checkeuid();
 
 my %attrib2db =
-  map { $FS::raddb::attrib{lc($_)} => $_ } keys %FS::raddb::attrib;
+  map { lc($FS::raddb::attrib{$_}) => $_ } keys %FS::raddb::attrib;
 
 my $user = shift or die &usage;
 getsecrets($user);

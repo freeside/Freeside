@@ -195,14 +195,11 @@ sub cancel { ''; }
 
 =head1 VERSION
 
-$Id: svc_Common.pm,v 1.5 2001-09-06 20:41:59 ivan Exp $
+$Id: svc_Common.pm,v 1.6 2001-09-11 22:20:28 ivan Exp $
 
 =head1 BUGS
 
 The setfixed method return value.
-
-The new method should set defaults from part_svc (like the check method
-sets fixed values)?
 
 =head1 SEE ALSO
 

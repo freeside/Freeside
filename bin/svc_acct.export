@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 #
-# $Id: svc_acct.export,v 1.23 2001-08-17 10:57:40 ivan Exp $
+# $Id: svc_acct.export,v 1.24 2001-09-11 22:20:28 ivan Exp $
 #
 # Create and export password, radius and vpopmail password files:
 # passwd, passwd.adjunct, shadow, acp_passwd, acp_userinfo, acp_dialup
@@ -56,7 +56,7 @@ my $icradius_mysqlsource =
 my $icradius_dbh;
 if ( $icradiusmachines && $conf->exists('icradius_secrets') ) {
   $icradius_dbh = DBI->connect($conf->config('icradius_secrets'))
-    or die $DBI::errstr;;
+    or die $DBI::errstr;
 } else {
   $icradius_dbh = dbh;
 }

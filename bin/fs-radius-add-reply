@@ -10,7 +10,7 @@ use FS::raddb;
 die "Not running uid freeside!" unless checkeuid();
 
 my %attrib2db =
-  map { $FS::raddb::attrib{lc($_)} => $_ } keys %FS::raddb::attrib;
+  map { lc($FS::raddb::attrib{$_}) => $_ } keys %FS::raddb::attrib;
 
 my $user = shift or die &usage;
 getsecrets($user);
@@ -39,13 +39,15 @@ my($char_d) = 80; #default maxlength for text fields
 ###
 
 foreach my $attribute ( @attributes ) {
-  foreach my $statement ( 
-    "ALTER TABLE svc_acct ADD radius_$attribute varchar($char_d) NULL",
-#    "ALTER TABLE part_svc ADD svc_acct__radius_$attribute varchar($char_d) NULL;",
-#    "ALTER TABLE part_svc ADD svc_acct__radius_${attribute}_flag char(1) NULL;",
-  ) {
-    $dbh->do( $statement ) or warn "Error executing $statement: ". $dbh->errstr;  }
+  my $statement =
+    "ALTER TABLE svc_acct ADD COLUMN radius_$attribute varchar($char_d) NULL";
+  my $sth = $dbh->prepare( $statement )
+    or warn "Error preparing $statement: ". $dbh->errstr;
+  $sth->execute
+    or warn "Error executing $statement: ". $sth->errstr;
 }
+
+$dbh->commit or die $dbh->errstr;
 
 $dbh->disconnect or die $dbh->errstr;
 
