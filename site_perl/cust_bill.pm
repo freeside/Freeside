@@ -130,9 +130,10 @@ calling the collect method of a customer object (see L<FS::cust_main>).
 
 sub replace {
   my( $new, $old ) = ( shift, shift );
-  return "Can't change custnum!" unless $old->custnum eq $new->custnum;
-  return "Can't change _date!" unless $old->_date eq $new->_date;
-  return "Can't change charged!" unless $old->charged eq $new->charged;
+  return "Can't change custnum!" unless $old->custnum == $new->custnum;
+  #return "Can't change _date!" unless $old->_date eq $new->_date;
+  return "Can't change _date!" unless $old->_date == $new->_date;
+  return "Can't change charged!" unless $old->charged == $new->charged;
   return "(New) owed can't be > (new) charged!" if $new->owed > $new->charged;
 
   $new->SUPER::replace($old);
@@ -436,7 +437,7 @@ $address[4],''
 
 =head1 VERSION
 
-$Id: cust_bill.pm,v 1.4 1998-12-29 11:59:36 ivan Exp $
+$Id: cust_bill.pm,v 1.5 1999-01-18 21:58:03 ivan Exp $
 
 =head1 BUGS
 
@@ -469,7 +470,10 @@ charges can be negative ivan@sisd.com 98-jul-13
 pod, ingegrate with FS::Invoice ivan@sisd.com 98-sep-20
 
 $Log: cust_bill.pm,v $
-Revision 1.4  1998-12-29 11:59:36  ivan
+Revision 1.5  1999-01-18 21:58:03  ivan
+esthetic: eq and ne were used in a few places instead of == and !=
+
+Revision 1.4  1998/12/29 11:59:36  ivan
 mostly properly OO, some work still to be done with svc_ stuff
 
 Revision 1.3  1998/11/13 09:56:53  ivan

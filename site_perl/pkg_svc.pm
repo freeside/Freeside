@@ -74,8 +74,8 @@ returns the error, otherwise returns false.
 sub replace {
   my ( $new, $old ) = ( shift, shift );
 
-  return "Can't change pkgpart!" if $old->pkgpart ne $new->pkgpart;
-  return "Can't change svcpart!" if $old->svcpart ne $new->svcpart;
+  return "Can't change pkgpart!" if $old->pkgpart != $new->pkgpart;
+  return "Can't change svcpart!" if $old->svcpart != $new->svcpart;
 
   $new->SUPER::replace($old);
 }
@@ -112,7 +112,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: pkg_svc.pm,v 1.2 1998-12-29 11:59:51 ivan Exp $
+$Id: pkg_svc.pm,v 1.3 1999-01-18 21:58:08 ivan Exp $
 
 =head1 BUGS
 
@@ -131,7 +131,10 @@ ivan@sisd.com 97-nov-13
 pod ivan@sisd.com 98-sep-22
 
 $Log: pkg_svc.pm,v $
-Revision 1.2  1998-12-29 11:59:51  ivan
+Revision 1.3  1999-01-18 21:58:08  ivan
+esthetic: eq and ne were used in a few places instead of == and !=
+
+Revision 1.2  1998/12/29 11:59:51  ivan
 mostly properly OO, some work still to be done with svc_ stuff
 
 

@@ -107,9 +107,10 @@ inserting a refund (see L<FS::cust_refund>).
 sub replace {
   my ( $new, $old ) = ( shift, shift );
 
-  return "Can't change custnum!" unless $old->custnum eq $new->custnum;
-  return "Can't change date!" unless $old->_date eq $new->_date;
-  return "Can't change amount!" unless $old->amount eq $new->amount;
+  return "Can't change custnum!" unless $old->custnum == $new->custnum;
+  #return "Can't change date!" unless $old->_date eq $new->_date;
+  return "Can't change date!" unless $old->_date == $new->_date;
+  return "Can't change amount!" unless $old->amount == $new->amount;
   return "(New) credited can't be > (new) amount!"
     if $new->credited > $new->amount;
 
@@ -151,7 +152,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: cust_credit.pm,v 1.2 1998-12-29 11:59:38 ivan Exp $
+$Id: cust_credit.pm,v 1.3 1999-01-18 21:58:04 ivan Exp $
 
 =head1 BUGS
 
@@ -169,7 +170,10 @@ ivan@sisd.com 98-mar-17
 pod, otaker from FS::UID ivan@sisd.com 98-sep-21
 
 $Log: cust_credit.pm,v $
-Revision 1.2  1998-12-29 11:59:38  ivan
+Revision 1.3  1999-01-18 21:58:04  ivan
+esthetic: eq and ne were used in a few places instead of == and !=
+
+Revision 1.2  1998/12/29 11:59:38  ivan
 mostly properly OO, some work still to be done with svc_ stuff
 
 

@@ -86,7 +86,7 @@ returns the error, otherwise returns false.
 sub replace {
   my ( $new, $old ) = ( shift, shift );
 
-  return "Can't change custnum!" unless $old->custnum eq $new->custnum;
+  return "Can't change custnum!" unless $old->custnum == $new->custnum;
 
   $new->SUPER::replace;
 }
@@ -152,7 +152,7 @@ sub address {
 
 =head1 VERSION
 
-$Id: cust_main_invoice.pm,v 1.4 1999-01-18 09:22:42 ivan Exp $
+$Id: cust_main_invoice.pm,v 1.5 1999-01-18 21:58:05 ivan Exp $
 
 =head1 BUGS
 
@@ -168,7 +168,10 @@ added hfields
 ivan@sisd.com 97-nov-13
 
 $Log: cust_main_invoice.pm,v $
-Revision 1.4  1999-01-18 09:22:42  ivan
+Revision 1.5  1999-01-18 21:58:05  ivan
+esthetic: eq and ne were used in a few places instead of == and !=
+
+Revision 1.4  1999/01/18 09:22:42  ivan
 changes to track email addresses for email invoicing
 
 Revision 1.3  1998/12/29 11:59:42  ivan

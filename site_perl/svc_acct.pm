@@ -232,7 +232,7 @@ sub replace {
     if $old->username ne $new->username &&
       qsearchs( 'svc_acct', { 'username' => $new->username } );
 
-  return "Can't change uid!" if $old->uid ne $new->uid;
+  return "Can't change uid!" if $old->uid != $new->uid;
 
   #change homdir when we change username
   $new->setfield('dir', '') if $old->username ne $new->username;
@@ -440,7 +440,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: svc_acct.pm,v 1.4 1998-12-30 00:30:45 ivan Exp $
+$Id: svc_acct.pm,v 1.5 1999-01-18 21:58:09 ivan Exp $
 
 =head1 BUGS
 
@@ -482,7 +482,10 @@ arbitrary radius attributes ivan@sisd.com 98-aug-13
 pod and FS::conf ivan@sisd.com 98-sep-22
 
 $Log: svc_acct.pm,v $
-Revision 1.4  1998-12-30 00:30:45  ivan
+Revision 1.5  1999-01-18 21:58:09  ivan
+esthetic: eq and ne were used in a few places instead of == and !=
+
+Revision 1.4  1998/12/30 00:30:45  ivan
 svc_ stuff is more properly OO - has a common superclass FS::svc_Common
 
 Revision 1.2  1998/11/13 09:56:55  ivan

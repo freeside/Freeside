@@ -157,7 +157,7 @@ sub replace {
 
   return "Domain username (domuser) in use for this domain (domsvc)"
     if ( $old->domuser ne $new->domuser
-         || $old->domsvc  ne $new->domsvc
+         || $old->domsvc != $new->domsvc
        )  && qsearchs('svc_acct_sm',{
          'domuser'=> $new->domuser,
          'domsvc' => $new->domsvc,
@@ -229,7 +229,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: svc_acct_sm.pm,v 1.4 1998-12-30 00:30:46 ivan Exp $
+$Id: svc_acct_sm.pm,v 1.5 1999-01-18 21:58:10 ivan Exp $
 
 =head1 BUGS
 

@@ -129,7 +129,7 @@ in some cases).
 sub replace {
   my( $new, $old ) = ( shift, shift );
 
-  #return "Can't (yet?) change pkgpart!" if $old->pkgpart ne $new->pkgpart;
+  #return "Can't (yet?) change pkgpart!" if $old->pkgpart != $new->pkgpart;
   return "Can't change otaker!" if $old->otaker ne $new->otaker;
   return "Can't change setup once it exists!"
     if $old->getfield('setup') &&
@@ -459,7 +459,7 @@ sub order {
 
 =head1 VERSION
 
-$Id: cust_pkg.pm,v 1.4 1998-12-29 11:59:45 ivan Exp $
+$Id: cust_pkg.pm,v 1.5 1999-01-18 21:58:07 ivan Exp $
 
 =head1 BUGS
 
@@ -490,7 +490,10 @@ fixed for new agent->agent_type->type_pkgs in &order ivan@sisd.com 98-mar-7
 pod ivan@sisd.com 98-sep-21
 
 $Log: cust_pkg.pm,v $
-Revision 1.4  1998-12-29 11:59:45  ivan
+Revision 1.5  1999-01-18 21:58:07  ivan
+esthetic: eq and ne were used in a few places instead of == and !=
+
+Revision 1.4  1998/12/29 11:59:45  ivan
 mostly properly OO, some work still to be done with svc_ stuff
 
 Revision 1.3  1998/11/15 13:01:35  ivan
