@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: cust_main.cgi,v 1.7 2001-10-10 05:33:43 thalakan Exp $ -->
+#<!-- $Id: cust_main.cgi,v 1.8 2001-10-10 05:42:19 ivan Exp $ -->
 
 use strict;
 #use vars qw( $conf %ncancelled_pkgs %all_pkgs $cgi @cust_main $sortby );
@@ -9,7 +9,7 @@ use CGI::Carp qw(fatalsToBrowser);
 use IO::Handle;
 use String::Approx qw(amatch);
 use FS::UID qw(cgisuidsetup);
-use FS::Record qw(qsearch qsearchs dbdef ut_name);
+use FS::Record qw(qsearch qsearchs dbdef);
 use FS::CGI qw(header menubar eidiot popurl table);
 use FS::cust_main;
 use FS::cust_svc;
@@ -250,8 +250,9 @@ sub lastsearch {
     $last_type{$_}++;
   }
 
-  my $error = ut_name($cgi->param('last_text'));
-  eidiot "Illegal last name" if $error;
+  $cgi->param('last_text') =~ /^([\w \,\.\-\']*)$/
+    or eidiot "Illegal last name";
+  my($last)=$1;
 
   if ( $last_type{'Exact'}
        && ! $last_type{'Fuzzy'} 
