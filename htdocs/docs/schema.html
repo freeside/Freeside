@@ -71,11 +71,11 @@
         <li>tax - tax exempt, Y or null
         <li>otaker - order taker
       </ul>
-    <li><a name="cust_main_invoice">cust_main_invoice</a> - Invoice destinations for email invoices
+    <li><a name="cust_main_invoice">cust_main_invoice</a> - Invoice destinations for email invoices.  Note that a customer can have many email destinations for their invoice (either literal or via svcnum), but only one postal destination.
       <ul>
         <li>destnum - primary key
         <li>custnum - <a href="#cust_main">customer</a>
-        <li>dest - Invoice destination: If numeric, a <a href="#svc_acct">svcnum</a>, if string, a literal email address, or `POST' to enable mailing (the default if no cust_main_invoice records exist)
+        <li>dest - Invoice destination.  Freeside supports three types of invoice delivery: send directly to a service defined in Freeside, send to an arbitrary email address, or print the invoice to a printer and have someone send it out via snail mail.  Freeside determines which method to use based on the contents of the dest field.  If the contents are numeric, a <a href="#svc_acct">svcnum</a> pointing to a valid service is expected in the field.  If the contents are a string, a literal email address is expected to be in the field.  If the special keyword `POST' is present, the snail mail method is used (which is the default if no cust_main_invoice records exist).  Snail mail invoices get their address information from <A name="#cust_main">cust_main</A> and are printed with the printer defined in the configuration files.
       </ul>
     <li><a name="cust_main_county">cust_main_county</a> - Tax rates
       <ul>
