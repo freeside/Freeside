@@ -1623,6 +1623,8 @@ sub all_company {
 sub append_fuzzyfiles {
   my( $last, $company ) = @_;
 
+  &check_and_rebuild_fuzzyfiles;
+
   use Fcntl qw(:flock);
 
   my $dir = $FS::UID::conf_dir. "cache.". $FS::UID::datasrc;
@@ -1661,7 +1663,7 @@ sub append_fuzzyfiles {
 
 =head1 VERSION
 
-$Id: cust_main.pm,v 1.31 2001-09-11 03:15:58 ivan Exp $
+$Id: cust_main.pm,v 1.32 2001-09-11 12:10:56 ivan Exp $
 
 =head1 BUGS
 
