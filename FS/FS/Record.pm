@@ -74,6 +74,7 @@ FS::Record - Database record objects
     $value = $record->ut_alphan('column');
     $value = $record->ut_phonen('column');
     $value = $record->ut_anythingn('column');
+    $value = $record->ut_name('column');
 
     $dbdef = reload_dbdef;
     $dbdef = reload_dbdef "/non/standard/filename";
@@ -789,7 +790,36 @@ sub ut_domain {
   '';
 }
 
+=item ut_name COLUMN
+
+Check/untaint proper names; allows alphanumerics, spaces and the following
+punctuation: , . - '
+
+May not be null.
+
 =cut
+
+sub ut_name {
+  my( $self, $field ) = @_;
+  $self->getfield($field) =~ /^([\w \,\.\-\']+)$/
+    or return "Illegal (name) $field: ". $self->getfield($field);
+  $self->setfield($field,$1);
+  '';
+}
+
+=item ut_zip COLUMN
+
+Check/untaint zip codes.
+
+=cut
+
+sub ut_zip {
+  my( $self, $field ) = @_;
+  $self->getfield($field) =~ /^\s*(\w[\w\-\s]{2,8}\w)\s*$/
+    or return "Illegal (zip) $field: ". $self->getfield($field);
+  $self->setfield($field,$1);
+  '';
+}
 
 =item ut_anything COLUMN
 
@@ -919,7 +949,7 @@ sub DESTROY { return; }
 
 =head1 VERSION
 
-$Id: Record.pm,v 1.18 2001-07-30 07:33:08 ivan Exp $
+$Id: Record.pm,v 1.19 2001-07-30 10:41:44 ivan Exp $
 
 =head1 BUGS
 
@@ -949,7 +979,7 @@ The ut_money method assumes money has two decimal digits.
 
 The Pg money kludge in the new method only strips `$'.
 
-The ut_phonen method assumes US-style phone numbers.
+The ut_phonen method only checks US-style phone numbers.
 
 The _quote function should probably use ut_float instead of a regex.
 
@@ -961,6 +991,8 @@ fields)
 As of 1.14, DBI fetchall_hashref( {} ) doesn't set fetchrow_hashref NAME_lc,
 or allow it to be set.  Working around it is ugly any way around - DBI should
 be fixed.  (only affects RDBMS which return uppercase column names)
+
+ut_zip should take an optional country like ut_phone.
 
 =head1 SEE ALSO
 

@@ -149,6 +149,32 @@ FS::Record.  The following fields are currently supported:
 
 =item fax - phone (optional)
 
+=item ship_first - name
+
+=item ship_last - name
+
+=item ship_company - (optional)
+
+=item ship_address1
+
+=item ship_address2 - (optional)
+
+=item ship_city
+
+=item ship_county - (optional, see L<FS::cust_main_county>)
+
+=item ship_state - (see L<FS::cust_main_county>)
+
+=item ship_zip
+
+=item ship_country - (see L<FS::cust_main_county>)
+
+=item ship_daytime - phone (optional)
+
+=item ship_night - phone (optional)
+
+=item ship_fax - phone (optional)
+
 =item payby - `CARD' (credit cards), `BILL' (billing), `COMP' (free), or `PREPAY' (special billing type: applies a credit - see L<FS::prepay_credit> and sets billing type to BILL)
 
 =item payinfo - card number, P.O., comp issuer (4-8 lowercase alphanumerics; think username) or prepayment identifier (see L<FS::prepay_credit>)
@@ -386,6 +412,8 @@ sub check {
     $self->ut_numbern('custnum')
     || $self->ut_number('agentnum')
     || $self->ut_number('refnum')
+    || $self->ut_name('last')
+    || $self->ut_name('first')
     || $self->ut_textn('company')
     || $self->ut_text('address1')
     || $self->ut_textn('address2')
@@ -403,14 +431,6 @@ sub check {
 
   return "Unknown referral"
     unless qsearchs( 'part_referral', { 'refnum' => $self->refnum } );
-
-  $self->getfield('last') =~ /^([\w \,\.\-\']+)$/
-    or return "Illegal last name: ". $self->getfield('last');
-  $self->setfield('last',$1);
-
-  $self->first =~ /^([\w \,\.\-\']+)$/
-    or return "Illegal first name: ". $self->first;
-  $self->first($1);
 
   if ( $self->ss eq '' ) {
     $self->ss('');
@@ -441,12 +461,60 @@ sub check {
     $self->ut_phonen('daytime', $self->country)
     || $self->ut_phonen('night', $self->country)
     || $self->ut_phonen('fax', $self->country)
+    || $self->ut_zip('zip', $self->country)
   ;
   return $error if $error;
 
-  $self->zip =~ /^\s*(\w[\w\-\s]{2,8}\w)\s*$/
-    or return "Illegal zip: ". $self->zip;
-  $self->zip($1);
+  if ( defined $self->dbdef_table->column('ship_last') ) {
+    if ( grep { $self->getfield($_) ne $self->getfield("ship_$_") }
+              qw( last first company address1 address2 city county state zip
+                  country daytime night fax )
+       ) # if any address fields differ
+    {
+      my $error =
+        $self->ut_name('ship_last')
+        || $self->ut_name('ship_first')
+        || $self->ut_textn('ship_company')
+        || $self->ut_text('ship_address1')
+        || $self->ut_textn('ship_address2')
+        || $self->ut_text('ship_city')
+        || $self->ut_textn('ship_county')
+        || $self->ut_textn('ship_state')
+      ;
+      return $error if $error;
+
+      #false laziness with above
+      $self->ship_country =~ /^(\w\w)$/
+        or return "Illegal ship_country: ". $self->ship_country;
+      $self->ship_country($1);
+      unless ( qsearchs('cust_main_county', {
+        'country' => $self->ship_country,
+        'state'   => '',
+       } ) ) {
+        return "Unknown ship_state/ship_county/ship_country: ".
+          $self->ship_state. "/". $self->ship_county. "/". $self->ship_country
+          unless qsearchs('cust_main_county',{
+            'state'   => $self->ship_state,
+            'county'  => $self->ship_county,
+            'country' => $self->ship_country,
+          } );
+      }
+      #eofalse
+
+      $error =
+        $self->ut_phonen('ship_daytime', $self->ship_country)
+        || $self->ut_phonen('ship_night', $self->ship_country)
+        || $self->ut_phonen('ship_fax', $self->ship_country)
+        || $self->ut_zip('ship_zip', $self->ship_country)
+      ;
+      return $error if $error;
+
+    } else { # ship_ info eq billing info, so don't store dup info in database
+      $self->setfield("ship_$_", '')
+        foreach qw( last first company address1 address2 city county state zip
+                    country daytime night fax );
+    }
+  }
 
   $self->payby =~ /^(CARD|BILL|COMP|PREPAY)$/
     or return "Illegal payby: ". $self->payby;
@@ -1125,7 +1193,7 @@ sub check_invoicing_list {
 
 =head1 VERSION
 
-$Id: cust_main.pm,v 1.14 2001-06-03 10:51:54 ivan Exp $
+$Id: cust_main.pm,v 1.15 2001-07-30 10:41:44 ivan Exp $
 
 =head1 BUGS
 

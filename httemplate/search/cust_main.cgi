@@ -1,81 +1,5 @@
 <%
-#
-# $Id: cust_main.cgi,v 1.1 2001-07-30 07:36:04 ivan Exp $
-#
-# Usage: post form to:
-#        http://server.name/path/cust_main.cgi
-#
-# ivan@voicenet.com 96-dec-12
-#
-# rewrite ivan@sisd.com 98-mar-4
-#
-# now does browsing too ivan@sisd.com 98-mar-6
-#
-# Changes to allow page to work at a relative position in server
-#       bmccane@maxbaud.net     98-apr-3
-#
-# display total, use FS::CGI ivan@sisd.com 98-jul-17
-#
-# $Log: cust_main.cgi,v $
-# Revision 1.1  2001-07-30 07:36:04  ivan
-# templates!!!
-#
-# Revision 1.17  2001/04/23 16:07:54  ivan
-# fix
-# Insecure dependency in eval while running with -T switch at /usr/local/lib/site_perl/FS/Record.pm line 202.
-#
-# Revision 1.16  2001/02/07 19:45:45  ivan
-# tyop
-#
-# Revision 1.15  2000/07/17 16:45:41  ivan
-# first shot at invoice browsing and some other cleanups
-#
-# Revision 1.14  1999/08/12 04:45:21  ivan
-# typo - missed a paren
-#
-# Revision 1.13  1999/08/12 04:32:21  ivan
-# hidecancelledcustomers
-#
-# Revision 1.12  1999/07/17 10:38:52  ivan
-# scott nelson <scott@ultimanet.com> noticed this mod_perl-triggered bug and
-# gave me a great bugreport at the last rhythmethod
-#
-# Revision 1.11  1999/04/09 04:22:34  ivan
-# also table()
-#
-# Revision 1.10  1999/04/09 03:52:55  ivan
-# explicit & for table/itable/ntable
-#
-# Revision 1.9  1999/02/28 00:03:55  ivan
-# removed misleading comments
-#
-# Revision 1.8  1999/02/07 09:59:36  ivan
-# more mod_perl fixes, and bugfixes Peter Wemm sent via email
-#
-# Revision 1.7  1999/01/25 12:19:11  ivan
-# yet more mod_perl stuff
-#
-# Revision 1.6  1999/01/19 05:14:12  ivan
-# for mod_perl: no more top-level my() variables; use vars instead
-# also the last s/create/new/;
-#
-# Revision 1.5  1999/01/18 09:41:37  ivan
-# all $cgi->header calls now include ( '-expires' => 'now' ) for mod_perl
-# (good idea anyway)
-#
-# Revision 1.4  1998/12/30 00:57:50  ivan
-# bug
-#
-# Revision 1.3  1998/12/17 09:41:08  ivan
-# s/CGI::(Base|Request)/CGI.pm/;
-#
-# Revision 1.2  1998/11/12 08:10:22  ivan
-# CGI.pm instead of CGI-modules
-# relative URLs using popurl
-# got rid of lots of little tables
-# s/agrep/String::Approx/;
-# bubble up packages and services and link (slow)
-#
+#<!-- $Id: cust_main.cgi,v 1.2 2001-07-30 10:41:44 ivan Exp $ -->
 
 use strict;
 #use vars qw( $conf %ncancelled_pkgs %all_pkgs $cgi @cust_main $sortby );
@@ -85,7 +9,7 @@ use CGI::Carp qw(fatalsToBrowser);
 use IO::Handle;
 use String::Approx qw(amatch);
 use FS::UID qw(cgisuidsetup);
-use FS::Record qw(qsearch qsearchs);
+use FS::Record qw(qsearch qsearchs dbdef);
 use FS::CGI qw(header menubar eidiot popurl table);
 use FS::cust_main;
 use FS::cust_svc;
@@ -137,8 +61,18 @@ if ( scalar(@cust_main) == 1 ) {
   )), "$total matching customers found<BR>", &table(), <<END;
       <TR>
         <TH></TH>
-        <TH>Contact name</TH>
-        <TH>Company</TH>
+        <TH>(bill) name</TH>
+        <TH>company</TH>
+END
+
+if ( defined dbdef->table('cust_main')->column('ship_last') ) {
+  print <<END;
+      <TH>(service) name</TH>
+      <TH>company</TH>
+END
+}
+
+print <<END;
         <TH>Packages</TH>
         <TH COLSPAN=2>Services</TH>
       </TR>
@@ -171,6 +105,17 @@ END
       <TD ROWSPAN=$rowspan><A HREF="$view"><FONT SIZE=-1>$last, $first</FONT></A></TD>
       <TD ROWSPAN=$rowspan><A HREF="$view"><FONT SIZE=-1>$company</FONT></A></TD>
 END
+    if ( defined dbdef->table('cust_main')->column('ship_last') ) {
+      my($ship_last,$ship_first,$ship_company)=(
+        $cust_main->ship_last || $cust_main->getfield('last'),
+        $cust_main->ship_last ? $cust_main->ship_first : $cust_main->first,
+        $cust_main->ship_last ? $cust_main->ship_company : $cust_main->company,
+      );
+print <<END;
+      <TD ROWSPAN=$rowspan><A HREF="$view"><FONT SIZE=-1>$ship_last, $ship_first</FONT></A></TD>
+      <TD ROWSPAN=$rowspan><A HREF="$view"><FONT SIZE=-1>$ship_company</FONT></A></TD>
+END
+    }
 
     my($n1)='';
     foreach ( @{$all_pkgs{$custnum}} ) {
@@ -250,11 +195,16 @@ sub lastsearch {
 
     push @cust_main, qsearch('cust_main',{'last'=>$last});
 
+    push @cust_main, qsearch('cust_main',{'ship_last'=>$last})
+      if defined dbdef->table('cust_main')->column('ship_last');
+
   } else {
 
     my(%last);
 
     my(@all_last)=map $_->getfield('last'), qsearch('cust_main',{});
+    push @all_last, grep $_, map $_->getfield('ship_last'), qsearch('cust_main',{})
+      if defined dbdef->table('cust_main')->column('ship_last');
     if ($last_type{'Fuzzy'}) { 
       foreach ( amatch($last, [ qw(i) ], @all_last) ) {
         $last{$_}++; 
@@ -266,6 +216,8 @@ sub lastsearch {
 
     foreach ( keys %last ) {
       push @cust_main, qsearch('cust_main',{'last'=>$_});
+      push @cust_main, qsearch('cust_main',{'ship_last'=>$_})
+        if defined dbdef->table('cust_main')->column('ship_last');
     }
 
   }
@@ -290,10 +242,15 @@ sub companysearch {
 
     push @cust_main, qsearch('cust_main',{'company'=>$company});
 
+    push @cust_main, qsearch('cust_main',{'ship_company'=>$company})
+      if defined dbdef->table('cust_main')->column('ship_last');
+
   } else {
 
     my(%company);
     my(@all_company)=map $_->company, qsearch('cust_main',{});
+    push @all_company, grep $_, map $_->getfield('ship_company'), qsearch('cust_main',{})
+      if defined dbdef->table('cust_main')->column('ship_last');
 
     if ($company_type{'Fuzzy'}) { 
       foreach ( amatch($company, [ qw(i) ], @all_company ) ) {
@@ -306,6 +263,8 @@ sub companysearch {
 
     foreach ( keys %company ) {
       push @cust_main, qsearch('cust_main',{'company'=>$_});
+      push @cust_main, qsearch('cust_main',{'ship_company'=>$_})
+        if defined dbdef->table('cust_main')->column('ship_last');
     }
 
   }

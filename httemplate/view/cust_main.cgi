@@ -1,6 +1,7 @@
-<!-- $Id: cust_main.cgi,v 1.1 2001-07-30 07:36:04 ivan Exp $ -->
 <%
+#<!-- $Id: cust_main.cgi,v 1.2 2001-07-30 10:41:44 ivan Exp $ -->
 
+use strict;
 use vars qw ( $cgi $query $custnum $cust_main $hashref $agent $referral 
               @packages $package @history @bills $bill @credits $credit
               $balance $item @agents @referrals @invoicing_list $n1 $conf ); 
@@ -94,36 +95,36 @@ print '<TD VALIGN="top">';
           &ntable("#cccccc",2),
       '<TR><TD ALIGN="right">Contact name</TD>',
         '<TD COLSPAN=5 BGCOLOR="#ffffff">',
-        $cust_main->get("${$pre}last"), ', ', $cust_main->get("${$pre}first"),
+        $cust_main->get("${pre}last"), ', ', $cust_main->get("${pre}first"),
         '</TD></TR>',
       '<TR><TD ALIGN="right">Company</TD><TD COLSPAN=5 BGCOLOR="#ffffff">',
-        $cust_main->get("${$pre}company"),
+        $cust_main->get("${pre}company"),
         '</TD></TR>',
       '<TR><TD ALIGN="right">Address</TD><TD COLSPAN=5 BGCOLOR="#ffffff">',
-        $cust_main->get("${$pre}address1"),
+        $cust_main->get("${pre}address1"),
         '</TD></TR>',
     ;
     print '<TR><TD ALIGN="right">&nbsp;</TD><TD COLSPAN=5 BGCOLOR="#ffffff">',
-          $cust_main->get("${$pre}address2"), '</TD></TR>'
-      if $cust_main->get("${$pre}address2");
+          $cust_main->get("${pre}address2"), '</TD></TR>'
+      if $cust_main->get("${pre}address2");
     print '<TR><TD ALIGN="right">City</TD><TD BGCOLOR="#ffffff">',
-            $cust_main->get("${$pre}city"),
+            $cust_main->get("${pre}city"),
             '</TD><TD ALIGN="right">State</TD><TD BGCOLOR="#ffffff">',
-            $cust_main->get("${$pre}state"),
+            $cust_main->get("${pre}state"),
             '</TD><TD ALIGN="right">Zip</TD><TD BGCOLOR="#ffffff">',
-            $cust_main->get("${$pre}zip"), '</TD></TR>',
+            $cust_main->get("${pre}zip"), '</TD></TR>',
           '<TR><TD ALIGN="right">Country</TD><TD BGCOLOR="#ffffff">',
-            $cust_main->get("${$pre}country"),
+            $cust_main->get("${pre}country"),
             '</TD></TR>',
     ;
     print '<TR><TD ALIGN="right">Day Phone</TD>',
           '<TD COLSPAN=5 BGCOLOR="#ffffff">',
-            $cust_main->get("${$pre}daytime") || '&nbsp', '</TD></TR>',
+            $cust_main->get("${pre}daytime") || '&nbsp', '</TD></TR>',
           '<TR><TD ALIGN="right">Night Phone</TD>'.
           '<TD COLSPAN=5 BGCOLOR="#ffffff">',
-            $cust_main->get("${$pre}night") || '&nbsp', '</TD></TR>',
+            $cust_main->get("${pre}night") || '&nbsp', '</TD></TR>',
           '<TR><TD ALIGN="right">Fax</TD><TD COLSPAN=5 BGCOLOR="#ffffff">',
-            $cust_main->get("${$pre}fax") || '&nbsp', '</TD></TR>',
+            $cust_main->get("${pre}fax") || '&nbsp', '</TD></TR>',
           '</TABLE>', "</TD></TR></TABLE>"
     ;
 
