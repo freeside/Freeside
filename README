@@ -34,12 +34,16 @@ The Freeside home page is at `http://www.sisd.com/freeside'.
 
 The documentation is in `htdocs/docs'.
 
-A mailing list for users and developers is available.  Send a blank message to
+A mailing list for users is available.  Send a blank message to
 <ivan-freeside-subscribe@sisd.com> to subscribe.
+
+A mailing list for developers is available.  It is intended to be lower volume
+and higher SNR than the users list.  Send a blank message to
+<ivan-freeside-devel-subscribe@sisd.com> to subscribe.
 
 Commercial support is available from Ivan Kohler <ivan@sisd.com>.  Requests for
 free support sent to me directly will be ignored.  Please subscribe to the the
-mailing list to request free support!
+user mailing list to request free support!
 
 Ivan Kohler <ivan-freeside_readme@420.am>
 
