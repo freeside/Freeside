@@ -928,15 +928,15 @@ sub print_ps {
   my %invoice_data = (
     'invnum'       => $self->invnum,
     'date'         => time2str('%b %o, %Y', $self->_date),
-    'agent'        => $cust_main->agent->agent,
-    'payname'      => $cust_main->payname,
-    'company'      => $cust_main->company,
-    'address1'     => $cust_main->address1,
-    'address2'     => $cust_main->address2,
-    'city'         => $cust_main->city,
-    'state'        => $cust_main->state,
-    'zip'          => $cust_main->zip,
-    'country'      => $cust_main->country,
+    'agent'        => _latex_escape($cust_main->agent->agent),
+    'payname'      => _latex_escape($cust_main->payname),
+    'company'      => _latex_escape($cust_main->company),
+    'address1'     => _latex_escape($cust_main->address1),
+    'address2'     => _latex_escape($cust_main->address2),
+    'city'         => _latex_escape($cust_main->city),
+    'state'        => _latex_escape($cust_main->state),
+    'zip'          => _latex_escape($cust_main->zip),
+    'country'      => _latex_escape($cust_main->country),
     'footer'       => join("\n", $conf->config('invoice_latexfooter') ),
     'quantity'     => 1,
     'terms'        => $conf->config('invoice_default_terms') || 'Payable upon receipt',
@@ -951,7 +951,7 @@ sub print_ps {
 
   $invoice_data{'po_line'} =
     (  $cust_main->payby eq 'BILL' && $cust_main->payinfo )
-      ? "Purchase Order #". $cust_main->payinfo
+      ? _latex_escape("Purchase Order #". $cust_main->payinfo)
       : '~';
 
   my @line_item = ();
@@ -969,11 +969,11 @@ sub print_ps {
       foreach my $line_item ( $self->_items ) {
       #foreach my $line_item ( $self->_items_pkg ) {
         $invoice_data{'ref'} = $line_item->{'pkgnum'};
-        $invoice_data{'description'} = $line_item->{'description'};
+        $invoice_data{'description'} = _latex_escape($line_item->{'description'});
         if ( exists $line_item->{'ext_description'} ) {
           $invoice_data{'description'} .=
             "\\tabularnewline\n~~".
-            join("\\tabularnewline\n~~", @{$line_item->{'ext_description'}} );
+            join("\\tabularnewline\n~~", map { _latex_escape($_) } @{$line_item->{'ext_description'}} );
         }
         $invoice_data{'amount'} = $line_item->{'amount'};
         $invoice_data{'product_code'} = $line_item->{'pkgpart'} || 'N/A';
@@ -992,7 +992,7 @@ sub print_ps {
 
       my $taxtotal = 0;
       foreach my $tax ( $self->_items_tax ) {
-        $invoice_data{'total_item'} = $tax->{'description'};
+        $invoice_data{'total_item'} = _latex_escape($tax->{'description'});
         $taxtotal += ( $invoice_data{'total_amount'} = $tax->{'amount'} );
         push @total_fill,
           map { my $b=$_; $b =~ s/\$(\w+)/$invoice_data{$1}/eg; $b }
@@ -1019,7 +1019,7 @@ sub print_ps {
 
       # credits
       foreach my $credit ( $self->_items_credits ) {
-        $invoice_data{'total_item'} = $credit->{'description'};
+        $invoice_data{'total_item'} = _latex_escape($credit->{'description'});
         #$credittotal
         $invoice_data{'total_amount'} = '-\dollar '. $credit->{'amount'};
         push @total_fill, 
@@ -1029,7 +1029,7 @@ sub print_ps {
 
       # payments
       foreach my $payment ( $self->_items_payments ) {
-        $invoice_data{'total_item'} = $payment->{'description'};
+        $invoice_data{'total_item'} = _latex_escape($payment->{'description'});
         #$paymenttotal
         $invoice_data{'total_amount'} = '-\dollar '. $payment->{'amount'};
         push @total_fill, 
@@ -1143,7 +1143,7 @@ sub _items_previous {
   my @b = ();
   foreach ( @pr_cust_bill ) {
     push @b, {
-      'description' => 'Previous Balance, Invoice \#'. $_->invnum. 
+      'description' => 'Previous Balance, Invoice #'. $_->invnum. 
                        ' ('. time2str('%x',$_->_date). ')',
       #'pkgpart'     => 'N/A',
       'pkgnum'      => 'N/A',
