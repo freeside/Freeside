@@ -52,6 +52,7 @@ All further configuration files and directories are located in
   <li><a name="passwordmin">passwordmin</a> - Minimum password length (default 6);
   <li><a name="qmailmachines">qmailmachines</a> - Your qmail machines, one per line.  This enables export of `/var/qmail/control/virtualdomains', `/var/qmail/control/recipientmap', and `/var/qmail/control/rcpthosts'.  The existance of this file (even if empty) also turns on user `.qmail-extension' file maintenance in conjunction with `shellmachine'.
   <li><a name="radiusmachines">radiusmachines</a> - Your RADIUS authentication machines, one per line.  This enables export of `/etc/raddb/users'.
+  <li><a name="referraldefault">referraldefault</a> - Default referral, specified by refnum.
   <li><a name="registries">registries</a> - Directory which contains domain registry information.  Each registry is a directory.
     <ul>
       <li>registries/internic - Currently the only supported registry
@@ -82,6 +83,7 @@ All further configuration files and directories are located in
   <li><a name="soamachine">soamachine</a> - SOA machine for new domains, with trailing `.'
   <li><a name="soarefresh">soarefresh</a> - SOA refresh for new domains
   <li><a name="soaretry">soaretry</a> - SOA retry for new domains
+  <li><a name="statedefault">statedefault</a> - Default state or province (if not supplied, the default is `CA')
   <li><a name="textradiusprepend">textradiusprepend</a> - The contents of this file will be prepended to the first line of a user's RADIUS entry in text exports.  If necessary, usually `Auth-Type = Local, '.
   <li><a name="usernamemin">usernamemin</a> - Minimum username length (default 2);
   <li><a name="usernamemax">usernamemax</a> - Maximum username length (default is the size of the SQL column, probably specified when fs-setup was run)

@@ -66,5 +66,8 @@ low-level DBI stuff.
 Jason Spence <thalakan@frys.com> contributed admin.html, autocapnames
 javascript, bugfixes & other neat stuff I can't remember.
 
+Brad Dameron <bdameron@tscnet.com> contributed code to do configurable state
+and referral defaults.
+
 Everything else is my (Ivan Kohler <ivan@420.am>) fault.
 

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main.cgi,v 1.27 2000-12-03 13:45:15 ivan Exp $
+# $Id: cust_main.cgi,v 1.28 2000-12-26 23:51:40 ivan Exp $
 #
 # Usage: cust_main.cgi custnum
 #        http://server.name/path/cust_main.cgi?custnum
@@ -38,7 +38,10 @@
 # fixed one missed day->daytime ivan@sisd.com 98-jul-13
 #
 # $Log: cust_main.cgi,v $
-# Revision 1.27  2000-12-03 13:45:15  ivan
+# Revision 1.28  2000-12-26 23:51:40  ivan
+# statedefault & referraldefault config files
+#
+# Revision 1.27  2000/12/03 13:45:15  ivan
 # patch from Jason Spence <thalakan@frys.com>: admin.html doc, autocapgen
 #
 # Revision 1.26  2000/06/27 12:15:50  ivan
@@ -269,7 +272,7 @@ if ( scalar(@agents) == 1 ) {
 
 #referral
 
-$refnum = $cust_main->refnum || 0;
+$refnum = $cust_main->refnum || $conf->config('referraldefault') || 0;
 if ( $custnum && ! $conf->exists('editreferrals') ) {
   print qq!<INPUT TYPE="hidden" NAME="refnum" VALUE="$refnum">!;
 } else {
@@ -331,6 +334,8 @@ END
 
 $cust_main->country( $conf->config('countrydefault') || 'US' )
   unless $cust_main->country;
+$cust_main->state( $conf->config('statedefault') || 'CA' )
+  unless $cust_main->state;
 foreach ( qsearch('cust_main_county',{}) ) {
   print "<OPTION";
   print " SELECTED" if ( $cust_main->state eq $_->state
@@ -380,7 +385,7 @@ sub expselect {
     $return .= ">$_";
   }
   $return .= qq!</SELECT>/<SELECT NAME="$prefix!. qq!_year" SIZE="1">!;
-  for ( 1999 .. 2037 ) {
+  for ( 2001 .. 2037 ) {
     $return .= "<OPTION";
     $return .= " SELECTED" if $_ == $y;
     $return .= ">$_";
