@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: part_svc.cgi,v 1.9 1999-02-23 08:09:21 ivan Exp $
+# $Id: part_svc.cgi,v 1.10 1999-04-08 13:01:50 ivan Exp $
 #
 # ivan@sisd.com 97-nov-14
 #
@@ -10,7 +10,11 @@
 # use FS::CGI, added inline documentation ivan@sisd.com 98-jul-12
 #
 # $Log: part_svc.cgi,v $
-# Revision 1.9  1999-02-23 08:09:21  ivan
+# Revision 1.10  1999-04-08 13:01:50  ivan
+#  [ AND DOCUMENT! ] all svc_acct services should have a default
+#  or fixed shell
+#
+# Revision 1.9  1999/02/23 08:09:21  ivan
 # beginnings of one-screen new customer entry and some other miscellania
 #
 # Revision 1.8  1999/02/07 09:59:21  ivan
@@ -120,7 +124,7 @@ END
     'quota'     => '(unimplemented)',
     '_password' => 'Password',
     'gid'       => 'GID (when blank, defaults to UID)',
-    'shell'     => 'Shell',
+    'shell'     => 'Shell (all service definitions should have a default or fixed shell that is present in the <b>shells</b> configuration file)',
     'finger'    => 'GECOS',
   },
   'svc_domain' => {
