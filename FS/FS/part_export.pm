@@ -681,7 +681,7 @@ tie my %router_options, 'Tie::IxHash',
 ;
 
 tie my %domain_shellcommands_options, 'Tie::IxHash',
-  'user' => { lable=>'Remote username', default=>'root' },
+  'user' => { label=>'Remote username', default=>'root' },
   'useradd' => { label=>'Insert command',
                  default=>'',
                },
@@ -869,7 +869,7 @@ tie my %ldap_options, 'Tie::IxHash',
 ;
 
 tie my %forward_shellcommands_options, 'Tie::IxHash',
-  'user' => { lable=>'Remote username', default=>'root' },
+  'user' => { label=>'Remote username', default=>'root' },
   'useradd' => { label=>'Insert command',
                  default=>'',
                },
