@@ -324,7 +324,7 @@ sub check {
   }
 
   #if ( $recref->{domain} =~ /^([\w\-\.]{1,22})\.(com|net|org|edu)$/ ) {
-  if ( $recref->{domain} =~ /^([\w\-]{1,22})\.(com|net|org|edu)$/ ) {
+  if ( $recref->{domain} =~ /^([\w\-]{1,63})\.(com|net|org|edu)$/ ) {
     $recref->{domain} = "$1.$2";
   # hmmmmmmmm.
   } elsif ( $whois_hack && $recref->{domain} =~ /^([\w\-\.]+)$/ ) {
