@@ -9,8 +9,9 @@ sub rebless { shift; }
 
 sub _export_insert {
   my($self, $svc_something) = (shift, shift);
-  $self->myexport_queue( $svc_acct->svcnum, 'insert',
+  $err_or_queue = $self->myexport_queue( $svc_acct->svcnum, 'insert',
     $svc_something->username, $svc_something->_password );
+  ref($err_or_queue) ? '' : $err_or_queue;
 }
 
 sub _export_replace {
@@ -18,14 +19,16 @@ sub _export_replace {
   #return "can't change username with myexport"
   #  if $old->username ne $new->username;
   #return '' unless $old->_password ne $new->_password;
-  $self->myexport_queue( $new->svcnum,
+  $err_or_queue = $self->myexport_queue( $new->svcnum,
     'replace', $new->username, $new->_password );
+  ref($err_or_queue) ? '' : $err_or_queue;
 }
 
 sub _export_delete {
   my( $self, $svc_something ) = (shift, shift);
-  $self->myexport_queue( $svc_acct->svcnum,
+  $err_or_queue = $self->myexport_queue( $svc_acct->svcnum,
     'delete', $svc_something->username );
+  ref($err_or_queue) ? '' : $err_or_queue;
 }
 
 #a good idea to queue anything that could fail or take any time
@@ -35,7 +38,7 @@ sub myexport_queue {
     'svcnum' => $svcnum,
     'job'    => "FS::part_export::myexport::myexport_$method",
   };
-  $queue->insert( @_ );
+  $queue->insert( @_ ) or $queue;
 }
 
 sub myexport_insert { #subroutine, not method

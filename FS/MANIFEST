@@ -78,6 +78,7 @@ FS/raddb.pm
 FS/radius_usergroup.pm
 FS/queue.pm
 FS/queue_arg.pm
+FS/queue_depend.pm
 FS/msgcat.pm
 FS/cust_tax_exempt.pm
 t/agent.t

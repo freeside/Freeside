@@ -25,8 +25,6 @@ INSTALLGROUP = root
 #not changable yet
 FREESIDE_CONF = /usr/local/etc/freeside
 
-#VERSION=1.4.0pre12
-#TAG=freeside_1_4_0_pre12
 VERSION=1.4.0pre13
 TAG=freeside_1_4_0_pre13
 #VERSION=1.4.0beta1

@@ -59,13 +59,16 @@ while (1) {
   }
   $warnkids=0;
 
+  my $nodepend = 'AND 0 = ( SELECT COUNT(*) FROM queue_depend'.
+                          ' WHERE queue_depend.jobnum = queue.jobnum ) ';
+
   my $job = qsearchs(
     'queue',
     { 'status' => 'new' },
     '',
     driver_name =~ /^mysql$/i
-      ? 'ORDER BY jobnum LIMIT 1 FOR UPDATE'
-      : 'ORDER BY jobnum FOR UPDATE LIMIT 1'
+      ? "$nodepend ORDER BY jobnum LIMIT 1 FOR UPDATE"
+      : "$nodepend ORDER BY jobnum FOR UPDATE LIMIT 1"
   ) or do {
     sleep 5; #connecting to db is expensive
     next;
@@ -94,10 +97,9 @@ while (1) {
     $kids++;
   } else { #kid time
 
-    #get new db handles
+    #get new db handle
     $FS::UID::dbh->{InactiveDestroy} = 1;
-    $FS::svc_acct::icradius_dbh->{InactiveDestroy} = 1
-      if $FS::svc_acct::icradius_dbh;
+
     forksuidsetup($user);
 
     #auto-use export classes...

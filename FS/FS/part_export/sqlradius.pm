@@ -14,15 +14,16 @@ sub _export_insert {
     my $method = "radius_$table";
     my %attrib = $svc_acct->$method;
     next unless keys %attrib;
-    my $error = $self->sqlradius_queue( $svc_acct->svcnum, 'insert',
+    my $err_or_queue = $self->sqlradius_queue( $svc_acct->svcnum, 'insert',
       $table, $svc_acct->username, %attrib );
-    return $error if $error;
+    return $err_or_queue unless ref($err_or_queue);
   }
   my @groups = $svc_acct->radius_groups;
   if ( @groups ) {
-    my $error = $self->sqlradius_queue( $svc_acct->svcnum, 'usergroup_insert',
+    my $err_or_queue = $self->sqlradius_queue(
+      $svc_acct->svcnum, 'usergroup_insert',
       $svc_acct->username, @groups );
-    return $error if $error;
+    return $err_or_queue unless ref($err_or_queue);
   }
   '';
 }
@@ -33,9 +34,9 @@ sub _export_replace {
   #return "can't (yet) change username with sqlradius"
   #  if $old->username ne $new->username;
   if ( $old->username ne $new->username ) {
-    my $error = $self->sqlradius_queue( $new->svcnum, 'rename',
+    my $err_or_queue = $self->sqlradius_queue( $new->svcnum, 'rename',
       $new->username, $old->username );
-    return $error if $error;
+    return $err_or_queue unless ref($err_or_queue);
   }
 
   foreach my $table (qw(reply check)) {
@@ -46,16 +47,16 @@ sub _export_replace {
                 || $new{$_} ne $old{$_} #changed
               } keys %new
     ) {
-      my $error = $self->sqlradius_queue( $new->svcnum, 'insert',
+      my $err_or_queue = $self->sqlradius_queue( $new->svcnum, 'insert',
         $table, $new->username, %new );
-      return $error if $error;
+      return $err_or_queue unless ref($err_or_queue);
     }
 
     my @del = grep { !exists $new{$_} } keys %old;
     if ( @del ) {
-      my $error = $self->sqlradius_queue( $new->svcnum, 'attrib_delete',
+      my $err_or_queue = $self->sqlradius_queue( $new->svcnum, 'attrib_delete',
         $table, $new->username, @del );
-      return $error if $error;
+      return $err_or_queue unless ref($err_or_queue);
     }
   }
 
@@ -72,15 +73,15 @@ sub _export_replace {
   }
 
   if ( @delgroups ) {
-    my $error = $self->sqlradius_queue( $new->svcnum, 'usergroup_delete',
+    my $err_or_queue = $self->sqlradius_queue( $new->svcnum, 'usergroup_delete',
       $new->username, @delgroups );
-    return $error if $error;
+    return $err_or_queue unless ref($err_or_queue);
   }
 
   if ( @newgroups ) {
-    my $error = $self->sqlradius_queue( $new->svcnum, 'usergroup_insert',
+    my $err_or_queue = $self->sqlradius_queue( $new->svcnum, 'usergroup_insert',
       $new->username, @newgroups );
-    return $error if $error;
+    return $err_or_queue unless ref($err_or_queue);
   }
 
   '';
@@ -88,8 +89,9 @@ sub _export_replace {
 
 sub _export_delete {
   my( $self, $svc_acct ) = (shift, shift);
-  $self->sqlradius_queue( $svc_acct->svcnum, 'delete',
+  my $err_or_queue = $self->sqlradius_queue( $svc_acct->svcnum, 'delete',
     $svc_acct->username );
+  ref($err_or_queue) ? '' : $err_or_queue;
 }
 
 sub sqlradius_queue {
@@ -103,7 +105,7 @@ sub sqlradius_queue {
     $self->option('username'),
     $self->option('password'),
     @_,
-  );
+  ) or $queue;
 }
 
 sub sqlradius_insert { #subroutine, not method

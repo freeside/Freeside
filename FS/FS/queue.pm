@@ -8,6 +8,7 @@ use FS::Conf;
 use FS::Record qw( qsearch qsearchs dbh );
 #use FS::queue;
 use FS::queue_arg;
+use FS::queue_depend;
 use FS::cust_svc;
 
 @ISA = qw(FS::Record);
@@ -144,7 +145,8 @@ sub delete {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  my @args = qsearch( 'queue_arg', { 'jobnum' => $self->jobnum } );
+  my @del = qsearch( 'queue_arg', { 'jobnum' => $self->jobnum } );
+  push @del, qsearch( 'queue_depend', { 'depend_jobnum' => $self->jobnum } );
 
   my $error = $self->SUPER::delete;
   if ( $error ) {
@@ -152,8 +154,8 @@ sub delete {
     return $error;
   }
 
-  foreach my $arg ( @args ) {
-    $error = $arg->delete;
+  foreach my $del ( @del ) {
+    $error = $del->delete;
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return $error;
@@ -206,6 +208,8 @@ sub check {
 
 =item args
 
+Returns a list of the arguments associated with this job.
+
 =cut
 
 sub args {
@@ -227,6 +231,31 @@ sub cust_svc {
   my $self = shift;
   qsearchs('cust_svc', { 'svcnum' => $self->svcnum } );
 }
+
+=item depend_insert OTHER_JOBNUM
+
+Inserts a dependancy for this job.  If there is an error, returns the error,
+otherwise returns false.
+
+When using job dependancies, you should wrap the insertion of jobs in a
+database transaction.  
+
+=cut
+
+sub depend_insert {
+  my($self, $other_jobnum) = @_;
+  my $queue_depend = new FS::queue_depend (
+    'jobnum'        => $self->jobnum,
+    'depend_jobnum' => $other_jobnum,
+  );
+  $queue_depend->insert;
+}
+
+=back
+
+=head1 SUBROUTINES
+
+=over 4
 
 =item joblisting HASHREF NOACTIONS
 
@@ -331,7 +360,7 @@ END
 
 =head1 VERSION
 
-$Id: queue.pm,v 1.11 2002-04-13 08:51:54 ivan Exp $
+$Id: queue.pm,v 1.12 2002-05-15 13:24:24 ivan Exp $
 
 =head1 BUGS
 

@@ -186,7 +186,7 @@ $ bin/fs-setup <b>username</b>
 $ su freeside
 $ bin/populate-msgcat <b>username</b>
 </pre>
-  <li><tt>freeside-queued</tt> was installed with the Perl modules.  Start it now and ensure that is run upon system startup.
+  <li><tt>freeside-queued</tt> was installed with the Perl modules.  Start it now and ensure that is run upon system startup (Do this manually, or, edit the top-level Makefile, replacing INIT_FILE with the appropriate location on your system, and run <tt>make install-init</tt>.
   <li>Now proceed to the initial <a href="admin.html">administration</a> of your installation.
 </ul>
 </body>

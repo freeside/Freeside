@@ -120,6 +120,14 @@ CREATE TABLE queue_arg (
 );
 CREATE INDEX queue_arg1 ON queue_arg ( jobnum );
 
+CREATE TABLE queue_depend (
+  dependnum int primary key,
+  jobnum int not null,
+  depend_jobnum int not null
+);
+CREATE INDEX queue_depend1 ON queue_depend ( jobnum );
+CREATE INDEX queue_depend2 ON queue_depend ( depend_jobnum );
+
 CREATE TABLE part_pop_local (
   localnum int primary key,
   popnum int not null,

@@ -107,22 +107,24 @@ and suspension/unsuspension.
 
 -- 
 
-added case-insensitive and substring to default search
+- New export code!
+- Name and company searches:
+  - now case-insensative
+  - pulldown for search type
+- Email notification for deleted payments
+- History tables - complete history of all database changes
+- Alternate invoice templates for things like late noitces
+- ICRADIUS groups (usergroup table if not radgroupreply & radgroupcheck)
+- Signup server
+  - Error messages in message catalog
+  - Agent is now selectable (multiple signup servers for different agents
+    can now run on the same machine)
+  - signup_server-realtime configuration option to run cards immediately
+  - signup-alternate.html example for free and pay packages on the same
+    signup page
+- Texas tax
 
-full history tables (notification for deleted payments)
+schema diagram
 
-alternate templates (late invoices!)
-
-new export! (well, almost)
-
-icradius groups (usergroup table if not radgroupreply & radgroupcheck)
-
-message catalogs (infrastructure, anyway) & anything which gets sent to a
-customer from the signup server should use message catalog
-
-multi-agent signup server
-
-signup_server-realtime to run cards immediately
-
-and signup-alternate.html for free/paid packages on same signup
+--
 

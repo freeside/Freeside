@@ -31,7 +31,7 @@ L<FS::CGI> - Non OO-subroutines for the web interface.
 
 L<FS::Msgcat> - Message catalog
 
-L<FS::SearchCache> - Message catalog
+L<FS::SearchCache> - Search cache
 
 L<FS::raddb> - RADIUS dictionary
 
@@ -133,6 +133,8 @@ L<FS::session> - User login session class
 L<FS::queue> - Job queue
 
 L<FS::queue_arg> - Job arguments
+
+L<FS::queue_depend> - Job dependencies
 
 L<FS::msgcat> - Message catalogs
 
