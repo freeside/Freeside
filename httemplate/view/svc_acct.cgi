@@ -78,6 +78,13 @@ if ( $part_svc->part_export('sqlradius') ) {
   my $m = int( ($seconds%3600) / 60 );
   my $s = $seconds%60;
 
+  my $input = $svc_acct->attribute_since_sqlradacct(
+    $last_bill, time, 'Acct-Input-Octets'
+  ) / 1048576;
+  my $output = $svc_acct->attribute_since_sqlradacct(
+    $last_bill, time, 'Acct-Output-Octets'
+  ) / 1048576;
+
   if ( $seconds ) {
     print "Online <B>$h</B>h <B>$m</B>m <B>$s</B>s";
   } else {
@@ -86,10 +93,15 @@ if ( $part_svc->part_export('sqlradius') ) {
 
   if ( $cust_pkg ) {
     print ' this billing cycle (since '. time2str("%C", $last_bill). ') - '. 
-          $plandata{recur_included_hours}. ' total hours in plan<BR><BR>';
+          $plandata{recur_included_hours}. ' total hours in plan<BR>';
   } else {
-    print ' (no billing cycle available for unaudited account)<BR><BR>';
+    print ' (no billing cycle available for unaudited account)<BR>';
   }
+
+  print 'Input: <B>'. sprintf("%.3f", $input). ' megabytes<BR>';
+  print 'Output: <B>'. sprintf("%.3f", $output). ' megabytes<BR>';
+
+  print '<BR>';
 
 }
 
@@ -183,7 +195,7 @@ print '<TR><TD ALIGN="right">RADIUS groups</TD><TD BGCOLOR="#ffffff">'.
 
 print '</TABLE></TD></TR></TABLE><BR><BR>';
 
-print join("\n", $conf->config('svc_acct-notes') ).  '<BR><BR>'.
+print join("\n", $conf->config('svc_acct-notes') ). '<BR><BR>'.
       joblisting({'svcnum'=>$svcnum}, 1). '</BODY></HTML>';
 
 %>

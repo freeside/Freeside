@@ -530,12 +530,48 @@ sub seconds_since_sqlradacct {
   my $seconds = 0;
 
   foreach my $cust_svc (
-    grep { $_->part_svc->svcdb eq 'svc_acct' } $self->cust_svc
+    grep {
+      my $part_svc = $_->part_svc;
+      $part_svc->svcdb eq 'svc_acct'
+        && scalar($part_svc->part_export('sqlradius'));
+    } $self->cust_svc
   ) {
     $seconds += $cust_svc->seconds_since_sqlradacct($start, $end);
   }
 
   $seconds;
+
+}
+
+=item attribute_since_sqlradacct TIMESTAMP_START TIMESTAMP_END ATTRIBUTE
+
+Returns the sum of the given attribute for all accounts (see L<FS::svc_acct>)
+in this package for sessions ending between TIMESTAMP_START (inclusive) and
+TIMESTAMP_END
+(exclusive).
+
+TIMESTAMP_START and TIMESTAMP_END are specified as UNIX timestamps; see
+L<perlfunc/"time">.  Also see L<Time::Local> and L<Date::Parse> for conversion
+functions.
+
+=cut
+
+sub attribute_since_sqlradacct {
+  my($self, $start, $end, $attrib) = @_;
+
+  my $sum = 0;
+
+  foreach my $cust_svc (
+    grep {
+      my $part_svc = $_->part_svc;
+      $part_svc->svcdb eq 'svc_acct'
+        && scalar($part_svc->part_export('sqlradius'));
+    } $self->cust_svc
+  ) {
+    $sum += $cust_svc->attribute_since_sqlradacct($start, $end, $attrib);
+  }
+
+  $sum;
 
 }
 
@@ -719,10 +755,6 @@ sub order {
 
 =back
 
-=head1 VERSION
-
-$Id: cust_pkg.pm,v 1.27 2002-10-17 14:16:17 ivan Exp $
-
 =head1 BUGS
 
 sub order is not OO.  Perhaps it should be moved to FS::cust_main and made so?
@@ -732,12 +764,12 @@ In sub order, the @pkgparts array (passed by reference) is clobbered.
 Also in sub order, no money is adjusted.  Once FS::part_pkg defines a standard
 method to pass dates to the recur_prog expression, it should do so.
 
-FS::svc_acct, FS::svc_domain, FS::svc_www and FS::svc_forward are loaded via
-'use' at compile time, rather than via 'require' in sub
-{ setup, suspend, unsuspend, cancel } because they use %FS::UID::callback to
-load configuration values.  Probably need a subroutine which decides what to
-do based on whether or not we've fetched the user yet, rather than a hash.
-See FS::UID and the TODO.
+FS::svc_acct, FS::svc_domain, FS::svc_www, FS::svc_ip and FS::svc_forward are
+loaded via 'use' at compile time, rather than via 'require' in sub { setup,
+suspend, unsuspend, cancel } because they use %FS::UID::callback to load
+configuration values.  Probably need a subroutine which decides what to do
+based on whether or not we've fetched the user yet, rather than a hash.  See
+FS::UID and the TODO.
 
 Now that things are transactional should the check in the insert method be
 moved to check ?

@@ -356,7 +356,7 @@ tie my %plans, 'Tie::IxHash',
   },
 
   'sqlradacct_hour' => {
-    'name' => 'Base charge plus charge per-hour from an external sqlradius radacct table',
+    'name' => 'Base charge plus charge per-hour (and for data) from an external sqlradius radacct table',
     'fields' => {
       'setup_fee' => { 'name' => 'Setup fee for this package',
                        'default' => 0,
@@ -370,12 +370,33 @@ tie my %plans, 'Tie::IxHash',
       'recur_hourly_charge' => { 'name' => 'Additional charge per hour',
                                  'default' => 0,
                                },
+      'recur_included_input' => { 'name' => 'Input megabytes included',
+                                  'default' => 0,
+                                },
+      'recur_input_charge' => { 'name' =>
+                                        'Additional charge per input megabyte',
+                                'default' => 0,
+                              },
+      'recur_included_output' => { 'name' => 'Output megabytes included',
+                                   'default' => 0,
+                                },
+      'recur_output_charge' => { 'name' =>
+                                       'Additional charge per output megabyte',
+                                'default' => 0,
+                              },
+      'recur_included_total' => { 'name' =>
+                                       'Total input+output megabytes included',
+                                  'default' => 0,
+                                },
+      'recur_total_charge' => { 'name' =>
+                                 'Additional charge per input+output megabyte',
+                                'default' => 0,
+                              },
     },
-    'fieldorder' => [ 'setup_fee', 'recur_flat', 'recur_included_hours', 'recur_hourly_charge' ],
+    'fieldorder' => [qw( setup_fee recur_flat recur_included_hours recur_hourly_charge recur_included_input recur_input_charge recur_included_input recur_output_charge recur_included_total recur_total_charge )],
     'setup' => 'what.setup_fee.value',
-    'recur' => '\'my $hours = $cust_pkg->seconds_since_sqlradacct($cust_pkg->last_bill, $sdate ) / 3600 - \' + what.recur_included_hours.value + \'; $hours = 0 if $hours < 0; \' + what.recur_flat.value + \' + \' + what.recur_hourly_charge.value + \' * $hours;\'',
+    'recur' => '\'my $last_bill = $cust_pkg->last_bill; my $hours = $cust_pkg->seconds_since_sqlradacct($last_bill, $sdate ) / 3600 - \' + what.recur_included_hours.value + \'; $hours = 0 if $hours < 0; my $input = $cust_pkg->attribute_since_sqlradacct($last_bill, $sdate, "Acct-Input-Octets" ) / 1048576; my $output = $cust_pkg->attribute_since_sqlradacct($last_bill, $sdate, "Acct-Output-Octets" ) / 1048576; my $total = $input + $output - \' + what.recur_included_total.value + \'; $total = 0 if $total < 0; my $input = $input - \' + what.recur_included_input.value + \'; $input = 0 if $input < 0; my $output = $output - \' + what.recur_included_output.value + \'; $output = 0 if $output < 0; \' + what.recur_flat.value + \' + \' + what.recur_hourly_charge.value + \' * $hours + \' + what.recur_input_charge + \' * $input + \' + what.recur_output_charge + \' * $output + \' + what.recur_total_charge + \' * $total ;\'',
   },
-
 
 ;
 

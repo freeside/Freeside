@@ -337,11 +337,11 @@ sub seconds_since {
   $sth->fetchrow_arrayref->[0];
 }
 
-=item seconds_since_sqlradacct TIMESTAMP_START TIMESTAMP_END 
+=item seconds_since_sqlradacct TIMESTAMP_START TIMESTAMP_END
 
 See L<FS::svc_acct/seconds_since_sqlradacct>.  Equivalent to
-$cust_svc->svc_x->seconds_since, but more efficient.  Meaningless for records
-where B<svcdb> is not "svc_acct".
+$cust_svc->svc_x->seconds_since_sqlradacct, but more efficient.  Meaningless
+for records where B<svcdb> is not "svc_acct".
 
 =cut
 
@@ -361,7 +361,7 @@ sub seconds_since_sqlradacct {
     my $dbh = DBI->connect( map { $part_export->option($_) }
                             qw(datasrc username password)    )
       or die "can't connect to sqlradius database: ". $DBI::errstr;
-  
+
     #select a unix time conversion function based on database type
     my $str2time;
     if ( $dbh->{Driver}->{Name} eq 'mysql' ) {
@@ -416,25 +416,81 @@ sub seconds_since_sqlradacct {
     my $end_during = $sth->fetchrow_arrayref->[0];
   
     #find closed (not anymore - or open) sessions which start before the range
-    # but stop # after, or are still open, count range start->range end
+    # but stop after, or are still open, count range start->range end
     # don't count open sessions (probably missing stop record)
     $sth = $dbh->prepare("SELECT COUNT(*)
                             FROM radacct
                             WHERE UserName = ?
                               AND $str2time AcctStartTime ) < ?
                               AND ( $str2time AcctStopTime ) >= ?
-                                                            )"
+                                                                  )"
                               #      OR AcctStopTime =  0
-                              #      OR AcctStopTime IS NULL )"
+                              #      OR AcctStopTime IS NULL       )"
     ) or die $dbh->errstr;
     $sth->execute($username, $start, $end ) or die $sth->errstr;
     my $entire_range = ($end-$start) * $sth->fetchrow_arrayref->[0];
-  
+
     $seconds += $regular + $end_during + $start_during + $entire_range;
 
   }
 
   $seconds;
+
+}
+
+=item attribute_since_sqlradacct TIMESTAMP_START TIMESTAMP_END ATTRIBUTE
+
+See L<FS::svc_acct/attribute_since_sqlradacct>.  Equivalent to
+$cust_svc->svc_x->attribute_since_sqlradacct, but more efficient.  Meaningless
+for records where B<svcdb> is not "svc_acct".
+
+=cut
+
+#note: implementation here, POD in FS::svc_acct
+#(false laziness w/seconds_since_sqlradacct above)
+sub attribute_since_sqlradacct {
+  my($self, $start, $end, $attrib) = @_;
+
+  my $username = $self->svc_x->username;
+
+  my @part_export = $self->part_svc->part_export('sqlradius')
+    or die "no sqlradius export configured for this service type";
+    #or return undef;
+
+  my $sum = 0;
+
+  foreach my $part_export ( @part_export ) {
+
+    my $dbh = DBI->connect( map { $part_export->option($_) }
+                            qw(datasrc username password)    )
+      or die "can't connect to sqlradius database: ". $DBI::errstr;
+
+    #select a unix time conversion function based on database type
+    my $str2time;
+    if ( $dbh->{Driver}->{Name} eq 'mysql' ) {
+      $str2time = 'UNIX_TIMESTAMP(';
+    } elsif ( $dbh->{Driver}->{Name} eq 'Pg' ) {
+      $str2time = 'EXTRACT( EPOCH FROM ';
+    } else {
+      warn "warning: unknown database type ". $dbh->{Driver}->{Name}.
+           "; guessing how to convert to UNIX timestamps";
+      $str2time = 'extract(epoch from ';
+    }
+
+    my $sth = $dbh->prepare("SELECT SUM(?)
+                               FROM radacct
+                               WHERE UserName = ?
+                                 AND $str2time AcctStopTime ) >= ?
+                                 AND $str2time AcctStopTime ) <  ?
+                                 AND AcctStopTime IS NOT NULL"
+    ) or die $dbh->errstr;
+    $sth->execute($attrib, $username, $start, $end) or die $sth->errstr;
+
+    $sum += $sth->fetchrow_arrayref->[0];
+
+  }
+
+  $sum;
 
 }
 
