@@ -14,8 +14,24 @@ Format <SELECT NAME="format">
 <OPTION VALUE="csv-td_canada_trust-merchant_pc_batch">CSV results from TD Canada Trust Merchant PC Batch</OPTION>
 </SELECT><BR>
 <INPUT TYPE="submit" VALUE="Upload"></FORM>
-<BR><BR>
+<BR>
 
+<%
+  my $statement = "SELECT SUM(amount) from cust_pay_batch";
+  my $sth = dbh->prepare($statement) or die dbh->errstr. "doing $statement";
+  $sth->execute or die "Error executing \"$statement\": ". $sth->errstr;
+  my $total = $sth->fetchrow_arrayref->[0];
+
+  my $c_statement = "SELECT COUNT(*) from cust_pay_batch";
+  my $c_sth = dbh->prepare($c_statement)
+    or die dbh->errstr. "doing $c_statement";
+  $c_sth->execute or die "Error executing \"$c_statement\": ". $c_sth->errstr;
+  my $cards = $c_sth->fetchrow_arrayref->[0];
+%>
+<%= $cards %> credit card payments batched<BR>
+$<%= sprintf("%.2f", $total) %> total in pending batch<BR>
+
+<BR>
 <%= &table() %>
       <TR>
         <TH>#</TH>
