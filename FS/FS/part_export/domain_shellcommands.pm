@@ -58,27 +58,23 @@ sub _export_replace {
     ${"old_$_"} = $old->getfield($_) foreach $old->fields;
     ${"new_$_"} = $new->getfield($_) foreach $new->fields;
   }
-#  my $old_domain_record = $old->domain_record; # or die ?
-#  my $old_zone = $old_domain_record->reczone; # or die ?
-#  unless ( $old_zone =~ /\.$/ ) {
-#    my $old_svc_domain = $old_domain_record->svc_domain; # or die ?
-#    $old_zone .= '.'. $old_svc_domain->domain;
-#  }
-#
-#  my $old_svc_acct = $old->svc_acct; # or die ?
-#  my $old_username = $old_svc_acct->username;
-#  my $old_homedir = $old_svc_acct->dir; # or die ?
-#
-#  my $new_domain_record = $new->domain_record; # or die ?
-#  my $new_zone = $new_domain_record->reczone; # or die ?
-#  unless ( $new_zone =~ /\.$/ ) {
-#    my $new_svc_domain = $new_domain_record->svc_domain; # or die ?
-#    $new_zone .= '.'. $new_svc_domain->domain;
-#  }
+  ( $old_qdomain = $old_domain ) =~ s/\./:/g; #see dot-qmail(5): EXTENSION ADDRESSES
+  ( $new_qdomain = $new_domain ) =~ s/\./:/g; #see dot-qmail(5): EXTENSION ADDRESSES
 
-#  my $new_svc_acct = $new->svc_acct; # or die ?
-#  my $new_username = $new_svc_acct->username;
-#  my $new_homedir = $new_svc_acct->dir; # or die ?
+  if ( $old->catchall ) {
+    no strict 'refs';
+    my $svc_acct = $old->catchall_svc_acct;
+    ${"old_$_"} = $svc_acct->getfield($_) foreach qw(uid gid dir);
+  } else {
+    ${"old_$_"} = '' foreach qw(uid gid dir);
+  }
+  if ( $new->catchall ) {
+    no strict 'refs';
+    my $svc_acct = $new->catchall_svc_acct;
+    ${"new_$_"} = $svc_acct->getfield($_) foreach qw(uid gid dir);
+  } else {
+    ${"new_$_"} = '' foreach qw(uid gid dir);
+  }
 
   #done setting variables for the command
 
