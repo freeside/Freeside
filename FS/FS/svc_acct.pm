@@ -676,13 +676,14 @@ sub check {
 
   my $ulen = $usernamemax || $self->dbdef_table->column('username')->length;
   if ( $username_uppercase ) {
-    $recref->{username} =~ /^([a-z0-9_\-\.]{$usernamemin,$ulen})$/i
-      or return "Illegal username";
+    $recref->{username} =~ /^([a-z0-9_\-\.]{$usernamemin,$ulen})$/
+      or return "Illegal username: ". $recref->{username};
+    $recref->{username} = $1;
   } else {
     $recref->{username} =~ /^([a-z0-9_\-\.]{$usernamemin,$ulen})$/
-      or return "Illegal username";
+      or return "Illegal username: ". $recref->{username};
+    $recref->{username} = $1;
   }
-  $recref->{username} = $1;
 
   if ( $username_letterfirst ) {
     $recref->{username} =~ /^[a-z]/ or return "Illegal username";
@@ -919,7 +920,7 @@ sub ssh {
 
 =head1 VERSION
 
-$Id: svc_acct.pm,v 1.47 2001-09-30 20:30:09 ivan Exp $
+$Id: svc_acct.pm,v 1.48 2001-09-30 22:19:34 ivan Exp $
 
 =head1 BUGS
 
