@@ -3,7 +3,7 @@ package FS::svc_acct;
 use strict;
 use vars qw( @ISA $nossh_hack $conf $dir_prefix @shells $usernamemin
              $usernamemax $passwordmin $username_letter $username_letterfirst
-             $username_noperiod
+             $username_noperiod $username_uppercase
              $shellmachine $useradd $usermod $userdel $mydomain
              $cyrus_server $cyrus_admin_user $cyrus_admin_pass
              $dirhash
@@ -57,6 +57,7 @@ $FS::UID::callback{'FS::svc_acct'} = sub {
   $username_letter = $conf->exists('username-letter');
   $username_letterfirst = $conf->exists('username-letterfirst');
   $username_noperiod = $conf->exists('username-noperiod');
+  $username_uppercase = $conf->exists('username-uppercase');
   $mydomain = $conf->config('domain');
   if ( $conf->exists('cyrus') ) {
     ($cyrus_server, $cyrus_admin_user, $cyrus_admin_pass) =
@@ -674,9 +675,15 @@ sub check {
   return $error if $error;
 
   my $ulen = $usernamemax || $self->dbdef_table->column('username')->length;
-  $recref->{username} =~ /^([a-z0-9_\-\.]{$usernamemin,$ulen})$/
-    or return "Illegal username";
+  if ( $username_uppercase ) {
+    $recref->{username} =~ /^([a-z0-9_\-\.]{$usernamemin,$ulen})$/i
+      or return "Illegal username";
+  } else {
+    $recref->{username} =~ /^([a-z0-9_\-\.]{$usernamemin,$ulen})$/
+      or return "Illegal username";
+  }
   $recref->{username} = $1;
+
   if ( $username_letterfirst ) {
     $recref->{username} =~ /^[a-z]/ or return "Illegal username";
   } elsif ( $username_letter ) {
@@ -705,8 +712,12 @@ sub check {
     return "Only root can have uid 0"
       if $recref->{uid} == 0 && $recref->{username} ne 'root';
 
-    $error = $self->ut_textn('finger');
-    return $error if $error;
+#    $error = $self->ut_textn('finger');
+#    return $error if $error;
+    $self->getfield('finger') =~
+      /^([\w \t\!\@\#\$\%\&\(\)\-\+\;\:\'\"\,\.\?\/\*]*)$/
+        or return "Illegal finger: ". $self->getfield('finger');
+    $self->setfield('finger', $1);
 
     $recref->{dir} =~ /^([\/\w\-]*)$/
       or return "Illegal directory";
@@ -908,7 +919,7 @@ sub ssh {
 
 =head1 VERSION
 
-$Id: svc_acct.pm,v 1.46 2001-09-19 21:06:17 ivan Exp $
+$Id: svc_acct.pm,v 1.47 2001-09-30 20:30:09 ivan Exp $
 
 =head1 BUGS
 
