@@ -374,6 +374,13 @@ httemplate/docs/config.html
   },
 
   {
+    'key'         => 'excludeaddr',
+    'section'     => 'deprecated',
+    'description' => 'Addresses to exclude from assignment, one per line.',
+    'type'        => 'textarea',
+  },
+  
+  {
     'key'         => 'erpcdmachines',
     'section'     => '',
     'description' => 'Your ERPCD authenticaion machines, one per line.  This enables export of `/usr/annex/acp_passwd\' and `/usr/annex/acp_dialup\'',

@@ -5,6 +5,7 @@ use vars qw( @ISA );
 use FS::Record qw( qsearchs qsearch dbh );
 use FS::router;
 use FS::svc_broadband;
+use FS::Conf;
 use NetAddr::IP;
 
 @ISA = qw( FS::Record );
@@ -172,9 +173,14 @@ there are no free addresses, returns false.
 sub next_free_addr {
   my $self = shift;
 
-  my @used = map { $_->NetAddr->addr } 
+  my $conf = new FS::Conf;
+  my @excludeaddr = $conf->config('excludeaddr');
+  
+  my @used = (
+    map { $_->NetAddr->addr } 
       ($self, 
-       qsearch('svc_broadband', { blocknum => $self->blocknum }) );
+       qsearch('svc_broadband', { blocknum => $self->blocknum }) ),
+     @excludeaddr );
 
   my @free = $self->NetAddr->hostenum;
   while (my $ip = shift @free) {
