@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: signup.cgi,v 1.37 2003-06-24 15:34:45 ivan Exp $
+# $Id: signup.cgi,v 1.38 2003-07-04 00:51:29 ivan Exp $
 
 use strict;
 use vars qw( @payby $cgi $locales $packages $pops $init_data $error
@@ -401,8 +401,7 @@ sub popselector {
 
     function acstate_changed(what) {
       state = what.options[what.selectedIndex].text;
-      for (var i = what.form.popac.length;i > 0;i--)
-                what.form.popac.options[i] = null;
+      what.form.popac.options.length = 0
       what.form.popac.options[0] = new Option("Area code", "-1", false, true);
 END
 
@@ -422,8 +421,7 @@ END
   $text .= <<END;
   function popac_changed(what) {
     ac = what.options[what.selectedIndex].text;
-    for (var i = what.form.popnum.length;i > 0;i--)
-        what.form.popnum.options[i] = null;
+    what.form.popnum.options.length = 0;
     what.form.popnum.options[0] = new Option("City", "-1", false, true);
 
 END

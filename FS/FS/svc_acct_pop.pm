@@ -142,8 +142,7 @@ sub popselector {
     
     function popstate_changed(what) {
       state = what.options[what.selectedIndex].text;
-      for (var i = what.form.popnum.length;i > 0;i--)
-                what.form.popnum.options[i] = null;
+      what.form.popnum.options.length = 0
       what.form.popnum.options[0] = new Option("", "", false, true);
 END
 
@@ -182,7 +181,7 @@ END
 
 =head1 VERSION
 
-$Id: svc_acct_pop.pm,v 1.7 2002-04-10 13:42:48 ivan Exp $
+$Id: svc_acct_pop.pm,v 1.8 2003-07-04 00:51:29 ivan Exp $
 
 =head1 BUGS
 
