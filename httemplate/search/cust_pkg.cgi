@@ -1,5 +1,5 @@
 <%
-# <!-- $Id: cust_pkg.cgi,v 1.3 2001-08-19 08:32:43 ivan Exp $ -->
+# <!-- $Id: cust_pkg.cgi,v 1.4 2001-08-21 02:03:32 ivan Exp $ -->
 
 use strict;
 use vars qw ( $cgi @cust_pkg $sortby $query %part_pkg );
@@ -86,27 +86,31 @@ END
     sort $sortby grep(!$saw{$_->pkgnum}++, @cust_pkg)
   ) {
     my($cust_main)=qsearchs('cust_main',{'custnum'=>$cust_pkg->custnum});
-    my($pkgnum, $custnum, $last, $first, $company,
-       $ship_last, $ship_first, $ship_company)=(
+    my($pkgnum, $custnum, $last, $first, $company) = (
       $cust_pkg->pkgnum,
       $cust_pkg->custnum,
       $cust_main ? $cust_main->last : '',
       $cust_main ? $cust_main->first : '',
       $cust_main ? $cust_main->company : '',
-      $cust_main
-        ? ( $cust_main->ship_last || $cust_main->getfield('last') )
-        : '',
-      $cust_main 
-        ? ( $cust_main->ship_last
-            ? $cust_main->ship_first
-            : $cust_main->first )
-        : '',
-      $cust_main 
-        ? ( $cust_main->ship_last
-            ? $cust_main->ship_company
-            : $cust_main->company )
-        : '',
     );
+    my($ship_last, $ship_first, $ship_company);
+    if ( defined dbdef->table('cust_main')->column('ship_last') ) {
+      ($ship_last, $ship_first, $ship_company) = (
+        $cust_main
+          ? ( $cust_main->ship_last || $cust_main->getfield('last') )
+          : '',
+        $cust_main 
+          ? ( $cust_main->ship_last
+              ? $cust_main->ship_first
+              : $cust_main->first )
+          : '',
+        $cust_main 
+          ? ( $cust_main->ship_last
+              ? $cust_main->ship_company
+              : $cust_main->company )
+          : '',
+      );
+    }
     my $pkg = $part_pkg{$cust_pkg->pkgpart}->pkg;
     #$pkg .= ' - '. $part_pkg{$cust_pkg->pkgpart}->comment;
     my @cust_svc = qsearch( 'cust_svc', { 'pkgnum' => $pkgnum } );
