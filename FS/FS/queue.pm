@@ -1,11 +1,15 @@
 package FS::queue;
 
 use strict;
-use vars qw( @ISA );
+use vars qw( @ISA @EXPORT_OK );
+use Exporter;
 use FS::Record qw( qsearch qsearchs dbh );
+#use FS::queue;
 use FS::queue_arg;
+use FS::cust_svc;
 
 @ISA = qw(FS::Record);
+@EXPORT_OK = qw( joblisting );
 
 =head1 NAME
 
@@ -38,6 +42,12 @@ FS::Record.  The following fields are currently supported:
 =item job - fully-qualified subroutine name
 
 =item status - job status
+
+=item statustext - freeform text status message
+
+=item _date - UNIX timestamp
+
+=item svcnum - optional link to service (see L<FS::cust_svc>)
 
 =back
 
@@ -173,6 +183,9 @@ sub check {
     || $self->ut_anything('job')
     || $self->ut_numbern('_date')
     || $self->ut_enum('status',['', qw( new locked failed )])
+    || $self->ut_textn('statustext')
+    || $self->ut_numbern('svcnum')
+    || $self->ut_foreign_keyn('svcnum', 'cust_svc', 'svcnum')
   ;
   return $error if $error;
 
@@ -195,11 +208,86 @@ sub args {
                       );
 }
 
+=item cust_svc
+
+Returns the FS::cust_svc object associated with this job, if any.
+
+=cut
+
+sub cust_svc {
+  my $self = shift;
+  qsearchs('cust_svc', { 'svcnum' => $self->svcnum } );
+}
+
+=item joblisting HASHREF
+
+=cut
+
+sub joblisting {
+  my($hashref, $noactions) = @_;
+
+  use Date::Format;
+  use FS::CGI;
+
+  my $html = FS::CGI::table(). <<END;
+      <TR>
+        <TH COLSPAN=2>Job</TH>
+        <TH>Args</TH>
+        <TH>Date</TH>
+        <TH>Status</TH>
+        <TH>Account</TH>
+      </TR>
+END
+
+  my $p = FS::CGI::popurl(2);
+  foreach my $queue ( sort { 
+    $a->getfield('jobnum') <=> $b->getfield('jobnum')
+  } qsearch( 'queue', $hashref ) ) {
+    my $hashref = $queue->hashref;
+    my $jobnum = $queue->jobnum;
+    my $args = join(' ', $queue->args);
+    my $date = time2str( "%a %b %e %T %Y", $queue->_date );
+    my $status = $queue->status;
+    $status .= ': '. $queue->statustext if $queue->statustext;
+    if ( ! $noactions && $status =~ /^failed/ || $status =~ /^locked/ ) {
+      $status .=
+        qq! ( <A HREF="$p/misc/queue.cgi?jobnum=$jobnum&action=new">retry</A> |!.
+        qq! <A HREF="$p/misc/queue.cgi?jobnum=$jobnum&action=del">remove </A> )!;
+    }
+    my $cust_svc = $queue->cust_svc;
+    my $account;
+    if ( $cust_svc ) {
+      my $table = $cust_svc->part_svc->svcdb;
+      my $label = ( $cust_svc->label )[1];
+      $account = qq!<A HREF="../view/$table.cgi?!. $queue->svcnum.
+                 qq!">$label</A>!;
+    } else {
+      $account = '';
+    }
+    $html .= <<END;
+      <TR>
+        <TD>$jobnum</TD>
+        <TD>$hashref->{job}</TD>
+        <TD>$args</TD>
+        <TD>$date</TD>
+        <TD>$status</TD>
+        <TD>$account</TD>
+      </TR>
+END
+
+}
+
+  $html .= '</TABLE>';
+
+  $html;
+
+}
+
 =back
 
 =head1 VERSION
 
-$Id: queue.pm,v 1.3 2001-09-11 12:25:55 ivan Exp $
+$Id: queue.pm,v 1.4 2002-02-20 01:03:09 ivan Exp $
 
 =head1 BUGS
 

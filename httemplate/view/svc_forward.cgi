@@ -52,10 +52,11 @@ if ($dstsvc) {
   $destination = $dst;
 }
 
-print qq!<A HREF="${p}edit/svc_forward.cgi?$svcnum">Edit this information</A>!,
-      "<BR>Service #$svcnum",
-      "<BR>Service: <B>$svc</B>",
-      qq!<BR>Mail to <B>$source</B> forwards to <B>$destination</B> mailbox.!,
+print qq!<A HREF="${p}edit/svc_forward.cgi?$svcnum">Edit this information</A>!.
+      "<BR>Service #$svcnum".
+      "<BR>Service: <B>$svc</B>".
+      qq!<BR>Mail to <B>$source</B> forwards to <B>$destination</B> mailbox.!.
+      '<BR>'. joblisting({'svcnum'=>$svcnum}, 1).
       '</BODY></HTML>'
 ;
 

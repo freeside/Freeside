@@ -50,11 +50,11 @@ CREATE INDEX part_export2 ON part_export ( exporttype );
 CREATE TABLE part_export_option (
   optionnum int primary key,
   exportnum int not null,
-  option varchar(80) not null,
+  optionname varchar(80) not null,
   optionvalue text NULL
 );
 CREATE INDEX part_export_option1 ON part_export_option ( exportnum );
-CREATE INDEX part_export_option2 ON part_export_option ( option );
+CREATE INDEX part_export_option2 ON part_export_option ( optionname );
 
 ALTER TABLE cust_bill ADD closed char(1) NULL;
 ALTER TABLE cust_pay ADD closed char(1) NULL;

@@ -140,7 +140,11 @@ sub insert {
     
   foreach my $vpopmailmachine ( @vpopmailmachines ) {
     my($machine, $vpopdir, $vpopuid, $vpopgid) = split(/\s+/, $vpopmailmachine);
-    my $queue = new FS::queue { 'job' => 'Net::SSH::ssh_cmd' };  # should be neater
+    my $queue = new FS::queue {
+      'svcnum' => $self->svcnum,
+      'job'    => 'Net::SSH::ssh_cmd',
+    };
+    # should be neater
     my $error = $queue->insert("root\@$machine","[ -d $vpopdir/domains/$domain/$username ] && { echo \"$destination\" >> $vpopdir/domains/$domain/$username/.qmail; chown $vpopuid:$vpopgid $vpopdir/domains/$domain/$username/.qmail; }") 
       unless $nossh_hack;
     if ( $error ) {
@@ -209,7 +213,8 @@ sub delete {
   foreach my $vpopmailmachine ( @vpopmailmachines ) {
     my($machine, $vpopdir, $vpopuid, $vpopgid) =
       split(/\s+/, $vpopmailmachine);
-    my $queue = new FS::queue { 'job' => 'Net::SSH::ssh_cmd' };  # should be neater
+    my $queue = new FS::queue { 'job' => 'Net::SSH::ssh_cmd' };
+    # should be neater
     my $error = $queue->insert("root\@$machine",
       "sed -e '/^$destination/d' " .
         "< $vpopdir/domains/$domain/$username/.qmail" .
@@ -302,7 +307,11 @@ sub replace {
   foreach my $vpopmailmachine ( @vpopmailmachines ) {
     my($machine, $vpopdir, $vpopuid, $vpopgid) =
       split(/\s+/, $vpopmailmachine);
-    my $queue = new FS::queue { 'job' => 'Net::SSH::ssh_cmd' };  # should be neater
+    my $queue = new FS::queue {
+      'svcnum' => $new->svcnum,
+      'job'    => 'Net::SSH::ssh_cmd',
+    };
+    # should be neater
     my $error = $queue->insert("root\@$machine",
       "sed -e '/^$destination/d' " .
         "< $vpopdir/domains/$old_domain/$old_username/.qmail" .
@@ -332,7 +341,11 @@ sub replace {
   
   foreach my $vpopmailmachine ( @vpopmailmachines ) {
     my($machine, $vpopdir, $vpopuid, $vpopgid) = split(/\s+/, $vpopmailmachine);
-    my $queue = new FS::queue { 'job' => 'Net::SSH::ssh_cmd' };  # should be neater
+    my $queue = new FS::queue {
+      'svcnum' => $new->svcnum,
+      'job'    => 'Net::SSH::ssh_cmd',
+    };
+    # should be neater
     my $error = $queue->insert("root\@$machine","[ -d $vpopdir/domains/$domain/$username ] && { echo \"$destination\" >> $vpopdir/domains/$domain/$username/.qmail; chown $vpopuid:$vpopgid $vpopdir/domains/$domain/$username/.qmail; }") 
       unless $nossh_hack;
     if ( $error ) {
@@ -439,7 +452,7 @@ sub dstsvc_acct {
 
 =head1 VERSION
 
-$Id: svc_forward.pm,v 1.10 2002-02-17 19:07:32 jeff Exp $
+$Id: svc_forward.pm,v 1.11 2002-02-20 01:03:09 ivan Exp $
 
 =head1 BUGS
 

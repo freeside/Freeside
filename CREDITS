@@ -58,7 +58,8 @@ Jeff Finucane <jeff@cmh.net> send in a bunch of bugfixes (for the sendmail
 export, cancel-unaudited.cgi), patches to support billing date modification,
 and probably other things too (sorry if I forgot them).  And yet even more
 bug squashing, thanks!  *and* he single-handedly implemented all the necessary
-work to get rid of svc_acct_sm and the "default domain"  thanks!!
+work to get rid of svc_acct_sm and the "default domain"  thanks!!  and rewrote
+the financials!  wow, thanks jeff!
 
 Kenny Elliott <kenny@neoserve.com> contributed ICRADIUS radreply table support,
 allowing attributes with ICRADIUS, helped fix many bugs, and some
@@ -80,7 +81,7 @@ Matt Peterson <matt@peterson.org> and Mack ? <mackn@mackn.net> tested
 the new features and contributed many bugfixes.
 
 Landel Telecom <http://www.landel.com/> sponsored shipping addresses and
-customer notes.
+customer notes, as well as an update of the CP provisioning.
 
 nikotel, Inc. <http://www.nikojet.com> sponsored the inclusion of
 customer-to-customer referrals in the web interface and signup server.

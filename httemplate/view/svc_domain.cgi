@@ -55,8 +55,8 @@ foreach my $domain_record ( qsearch('domain_record', { svcnum => $svcnum } ) ) {
         '<td>'. $domain_record->recaf. ' '. $domain_record->rectype. '</td>'.
         '<td>'. $domain_record->recdata. '</td></tr>';
 }
-print '</table>';
-
-print '</BODY></HTML>';
+print '</table>'.
+      '<BR>'. joblisting({'svcnum'=>$svcnum}, 1).
+      '</BODY></HTML>';
 
 %>

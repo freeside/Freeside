@@ -129,6 +129,8 @@ if ($svc_acct->slipip) {
   print "<TR><TH COLSPAN=2>(No SLIP/PPP account)</TH></TR>";
 }
 
-print "</TABLE></TD></TR></TABLE></BODY></HTML>";
+print "</TABLE></TD></TR></TABLE>".
+      '<BR>'. joblisting({'svcnum'=>$svcnum}, 1).
+      "</BODY></HTML>";
 
 %>

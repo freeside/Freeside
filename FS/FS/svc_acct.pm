@@ -281,7 +281,10 @@ sub insert {
     $self->shell,
   );
   if ( $username && $uid && $dir && $shellmachine && ! $nossh_hack ) {
-    my $queue = new FS::queue { 'job' => 'FS::svc_acct::ssh' };
+    my $queue = new FS::queue {
+      'svcnum' => $self->svcnum,
+      'job' => 'Net::SSH::ssh_cmd',
+    };
     $error = $queue->insert("root\@$shellmachine", eval qq("$useradd") );
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
@@ -290,7 +293,10 @@ sub insert {
   }
 
   if ( $cyrus_server ) {
-    my $queue = new FS::queue { 'job' => 'FS::svc_acct::cyrus_insert' };
+    my $queue = new FS::queue {
+      'svcnum' => $self->svcnum,
+      'job'    => 'FS::svc_acct::cyrus_insert',
+    };
     $error = $queue->insert($self->username, $self->quota);
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
@@ -299,7 +305,10 @@ sub insert {
   }
 
   if ( $cp_server ) {
-    my $queue = new FS::queue { 'job' => 'FS::svc_acct::cp_insert' };
+    my $queue = new FS::queue {
+      'svcnum' => $self->svcnum,
+      'job'    => 'FS::svc_acct::cp_insert'
+    };
     $error = $queue->insert($self->username, $self->_password);
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
@@ -310,7 +319,10 @@ sub insert {
   if ( $icradius_dbh ) {
 
     my $radcheck_queue =
-      new FS::queue { 'job' => 'FS::svc_acct::icradius_rc_insert' };
+      new FS::queue {
+      'svcnum' => $self->svcnum,
+      'job' => 'FS::svc_acct::icradius_rc_insert'
+    };
     $error = $radcheck_queue->insert( $self->username,
                                       $self->_password,
                                       $self->radius_check
@@ -321,7 +333,10 @@ sub insert {
     }
 
     my $radreply_queue =
-      new FS::queue { 'job' => 'FS::svc_acct::icradius_rr_insert' };
+      new FS::queue { 
+      'svcnum' => $self->svcnum,
+      'job' => 'FS::svc_acct::icradius_rr_insert'
+    };
     $error = $radreply_queue->insert( $self->username,
                                       $self->_password,
                                       $self->radius_reply
@@ -542,7 +557,7 @@ sub delete {
     $self->dir,
   );
   if ( $username && $shellmachine && ! $nossh_hack ) {
-    my $queue = new FS::queue { 'job' => 'FS::svc_acct::ssh' };
+    my $queue = new FS::queue { 'job' => 'Net::SSH::ssh_cmd' };
     $error = $queue->insert("root\@$shellmachine", eval qq("$userdel") );
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
@@ -728,7 +743,10 @@ sub replace {
     $new->getfield('gid'),
   );
   if ( $old_dir && $new_dir && $old_dir ne $new_dir && ! $nossh_hack ) {
-    my $queue = new FS::queue { 'job' => 'FS::svc_acct::ssh' };
+    my $queue = new FS::queue { 
+      'svcnum' => $new->svcnum,
+      'job' => 'Net::SSH::ssh_cmd'
+    };
     $error = $queue->insert("root\@$shellmachine", eval qq("$usermod") );
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
@@ -737,7 +755,10 @@ sub replace {
   }
 
   if ( $cp_server && $old->username ne $new->username ) {
-    my $queue = new FS::queue { 'job' => 'FS::svc_acct::cp_rename' };
+    my $queue = new FS::queue { 
+      'svcnum' => $new->svcnum,
+      'job' => 'FS::svc_acct::cp_rename'
+    };
     $error = $queue->insert( $old->username, $new->username );
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
@@ -746,7 +767,10 @@ sub replace {
   }
 
   if ( $cp_server && $old->_password ne $new->_password ) {
-    my $queue = new FS::queue { 'job' => 'FS::svc_acct::cp_change' };
+    my $queue = new FS::queue {  
+      'svcnum' => $new->svcnum,
+      'job' => 'FS::svc_acct::cp_change'
+    };
     $error = $queue->insert( $new->username, $new->_password );
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
@@ -755,7 +779,10 @@ sub replace {
   }
 
   if ( $icradius_dbh ) {
-    my $queue = new FS::queue { 'job' => 'FS::svc_acct::icradius_rc_replace' };
+    my $queue = new FS::queue {  
+      'svcnum' => $new->svcnum,
+      'job' => 'FS::svc_acct::icradius_rc_replace'
+    };
     $error = $queue->insert( $new->username,
                              $new->_password,
                            );
@@ -1162,34 +1189,6 @@ L<Time::Local> and L<Date::Parse> for conversion functions.
 sub seconds_since {
   my $self = shift;
   $self->cust_svc->seconds_since(@_);
-}
-
-=item ssh
-
-=cut
-
-sub ssh {
-  my ( $host, @cmd_and_args ) = @_;
-
-  use IO::File;
-  my $reader = IO::File->new();
-  my $writer = IO::File->new();
-  my $error = IO::File->new();
-
-  &Net::SSH::sshopen3( $host, $reader, $writer, $error, @cmd_and_args) or die $!;
-
-  local $/ = undef;
-  my $output_stream = <$writer>;
-  my $error_stream = <$error>;
-  if ( length $error_stream ) {
-    #warn "[FS::svc_acct::ssh] STDERR $error_stream";
-    die "[FS::svc_acct::ssh] STDERR $error_stream";
-  }
-  if ( length $output_stream ) {
-    warn "[FS::svc_acct::ssh] STDOUT $output_stream";
-  }
-
-#  &Net::SSH::ssh(@args,">>/usr/local/etc/freeside/sshoutput 2>&1");
 }
 
 =back

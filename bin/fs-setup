@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: fs-setup,v 1.77 2002-02-12 05:58:42 ivan Exp $
+# $Id: fs-setup,v 1.78 2002-02-20 01:03:09 ivan Exp $
 
 #to delay loading dbdef until we're ready
 BEGIN { $FS::Record::setup_hack = 1; }
@@ -856,10 +856,12 @@ sub tables_hash_hack {
         'job', 'text', '', '',
         '_date', 'int', '', '',
         'status', 'varchar', '', $char_d,
+        'statustext', 'text', '', '',
+        'svcnum', 'int', '', '',
       ],
       'primary_key' => 'jobnum',
       'unique'      => [],
-      'index'       => [],
+      'index'       => [ [ 'svcnum' ], [ 'status' ] ],
     },
 
     'queue_arg' => {
@@ -890,12 +892,12 @@ sub tables_hash_hack {
       'columns' => [
         'optionnum', 'int', '', '',
         'exportnum', 'int', '', '',
-        'option', 'varchar', '', $char_d,
+        'optionname', 'varchar', '', $char_d,
         'optionvalue', 'text', 'NULL', '',
       ],
       'primary_key' => 'optionnum',
       'unique'      => [],
-      'index'       => [ [ 'exportnum' ], [ 'option' ] ],
+      'index'       => [ [ 'exportnum' ], [ 'optionname' ] ],
     },
 
   );

@@ -92,7 +92,7 @@ sub handler
       use FS::part_svc;
       use FS::pkg_svc;
       use FS::port;
-      use FS::queue;
+      use FS::queue qw(joblisting);
       use FS::raddb;
       use FS::session;
       use FS::svc_acct;

@@ -14,7 +14,7 @@ use FS::queue;
 # no autoloading just yet
 use FS::cust_main;
 use FS::svc_acct;
-use Net::SSH;
+use Net::SSH 0.05;
 
 my $pid_file = '/var/run/freeside-queued.pid';
 
@@ -69,6 +69,7 @@ while (1) {
     warn "WARNING: can't fork: $!\n";
     my %hash = $job->hash;
     $hash{'status'} = 'failed';
+    $hash{'statustext'} = "[freeside-queued] can't fork: $!";
     my $ljob = new FS::queue ( \%hash );
     my $error = $ljob->replace($job);
     die $error if $error;
@@ -89,6 +90,7 @@ while (1) {
       warn "job $eval failed";
       my %hash = $ljob->hash;
       $hash{'status'} = 'failed';
+      $hash{'statustext'} = $@;
       my $fjob = new FS::queue( \%hash );
       my $error = $fjob->replace($ljob);
       die $error if $error;

@@ -5,7 +5,7 @@ use vars qw(@EXPORT_OK @ISA @header);
 use Exporter;
 use CGI;
 use URI::URL;
-use CGI::Carp qw(fatalsToBrowser);
+#use CGI::Carp qw(fatalsToBrowser);
 use FS::UID;
 
 @ISA = qw(Exporter);
@@ -45,7 +45,7 @@ Returns an HTML header.
 
 sub header {
   my($title,$menubar,$etc)=@_; #$etc is for things like onLoad= etc.
-  use Carp;
+  #use Carp;
   $etc = '' unless defined $etc;
 
   my $x =  <<END;

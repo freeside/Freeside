@@ -59,13 +59,13 @@ FS::Record - Database record objects
     $hashref = $record->hashref;
 
     $error = $record->insert;
-    #$error = $record->add; #depriciated
+    #$error = $record->add; #deprecated
 
     $error = $record->delete;
-    #$error = $record->del; #depriciated
+    #$error = $record->del; #deprecated
 
     $error = $new_record->replace($old_record);
-    #$error = $new_record->rep($old_record); #depriciated
+    #$error = $new_record->rep($old_record); #deprecated
 
     $value = $record->unique('column');
 
@@ -972,6 +972,34 @@ sub ut_enum {
     }
   }
   return "Illegal (enum) field $field: ". $self->getfield($field);
+}
+
+=item ut_foreign_key COLUMN FOREIGN_TABLE FOREIGN_COLUMN
+
+Check/untaint a foreign column key.  Call a regular ut_ method (like ut_number)
+on the column first.
+
+=cut
+
+sub ut_foreign_key {
+  my( $self, $field, $table, $foreign ) = @_;
+  qsearchs($table, { $foreign => $self->getfield($field) })
+    or return "Can't find $field ". $self->getfield($field).
+              " in $table.$foreign";
+  '';
+}
+
+=item ut_foreign_keyn COLUMN FOREIGN_TABLE FOREIGN_COLUMN
+
+Like ut_foreign_key, except the null value is also allowed.
+
+=cut
+
+sub ut_foreign_keyn {
+  my( $self, $field, $table, $foreign ) = @_;
+  $self->getfield($field)
+    ? $self->ut_foreign_key($field, $table, $foreign)
+    : '';
 }
 
 =item fields [ TABLE ]

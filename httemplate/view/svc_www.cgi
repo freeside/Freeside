@@ -38,9 +38,10 @@ print header('Website View', menubar(
           "${p}misc/cancel-unaudited.cgi?$svcnum" )
   ),
   "Main menu" => $p,
-)),
-      "Service #$svcnum",
-      qq!<BR>Website name: <B><A HREF="http://$www">$www</A></B>!,
-      '</BODY></HTML>',                
+)).
+      "Service #$svcnum".
+      qq!<BR>Website name: <B><A HREF="http://$www">$www</A></B>!.
+      '<BR>'. joblisting({'svcnum'=>$svcnum}, 1).
+      '</BODY></HTML>'
 ;
 %>
