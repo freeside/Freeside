@@ -1,0 +1,45 @@
+<% my( $formname, $fields, $action, $success_url ) = @_; %>
+
+<SCRIPT TYPE="text/javascript" SRC="../elements/jsrsClient.js"></SCRIPT>
+<SCRIPT TYPE="text/javascript" SRC="../elements/overlibmws.js"></SCRIPT>
+<SCRIPT TYPE="text/javascript">
+function OLiframeContent(src, width, height, name) {
+  return ('<iframe src="'+src+'" width="'+width+'" height="'+height+'"'
+   +(name?' name="'+name+'" id="'+name+'"':'')+' scrolling="no">'
+   +'<div>[iframe not supported]</div></iframe>');
+}
+
+function process () {
+
+  document.OneTrueForm.submit.disabled=true;
+
+  overlib( 'Submitting job to server...', WIDTH, 420, HEIGHT, 128, CAPTION, 'Please wait...', STICKY, AUTOSTATUSCAP, CLOSETEXT, '', CLOSECLICK, MIDX, 0, MIDY, 0 );
+
+  var Hash = new Array();
+  var x = 0;
+  var fieldName;
+  for (var i = 0; i<document.OneTrueForm.elements.length; i++) {
+    fieldName = document.OneTrueForm.elements[i].name;
+//            (fieldName.indexOf('rate') > -1)
+//         || (fieldName.indexOf('min_') > -1) 
+//        || (fieldName.indexOf('sec_') > -1) 
+    if ( <%= join(' || ', map { "(fieldName.indexOf('$_') > -1)" } @$fields ) %>
+       )
+    {
+        Hash[x++] = fieldName;
+        Hash[x++] = document.OneTrueForm.elements[i].value;
+    }
+  }
+
+  jsrsPOST = true;
+  jsrsExecute( '<%= $action %>', myCallback, 'start_job', Hash );
+
+}
+
+function myCallback( jobnum ) {
+
+  overlib( OLiframeContent('<%=$p%>elements/progress-popup.html?jobnum=' + jobnum + ';url=<%=$success_url%>' , 420, 128, 'progress_popup'), CAPTION, 'Please wait...', STICKY, AUTOSTATUSCAP, CLOSETEXT, '', CLOSECLICK, MIDX, 0, MIDY, 0 );
+
+}
+
+</SCRIPT>

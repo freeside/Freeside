@@ -1,0 +1,74 @@
+<%
+  my( $jobnum ) = $cgi->param('jobnum');
+  my( $url ) = $cgi->param('url');
+%>
+<HTML>
+  <HEAD>
+    <TITLE></TITLE>
+  </HEAD>
+  <BODY BGCOLOR="#ccccff" onLoad="refreshStatus()">
+
+<SCRIPT TYPE="text/javascript" SRC="../elements/jsrsClient.js"></SCRIPT>
+<SCRIPT TYPE="text/javascript" src="../elements/qlib/control.js"></SCRIPT>
+<SCRIPT TYPE="text/javascript" src="../elements/qlib/imagelist.js"></SCRIPT>
+<SCRIPT TYPE="text/javascript" src="../elements/qlib/progress.js"></SCRIPT>
+<SCRIPT TYPE="text/javascript">
+function refreshStatus () {
+  jsrsExecute( '<%=$p%>elements/jsrsServer.html', updateStatus, 'job_status', '<%= $jobnum %>' );
+}
+function updateStatus( status_statustext ) {
+  var Array = status_statustext.split("\n");
+  var status = Array[0];
+  var statustext = Array[1];
+  //if ( status == 'progress' ) {
+  //IE workaround, no i have no idea why
+  if ( status.indexOf('progress') > -1 ) {
+    document.getElementById("progress_percent").innerHTML = statustext + '%';
+    bar1.set(statustext);
+    bar1.update;
+    jsrsExecute( '<%=$p%>elements/jsrsServer.html', updateStatus, 'job_status', '<%= $jobnum %>' );
+  } else if ( status.indexOf('complete') > -1 ) {
+    window.top.location.href = '<%= $url %>';
+  } else if ( status.indexOf('error') > -1 ) {
+    document.getElementById("progress_message").innerHTML = '<FONT SIZE="+1" COLOR="#FF0000">Error: ' + statustext + '</FONT>';
+    document.getElementById("progress_bar").innerHTML = '';
+    document.getElementById("progress_percent").innerHTML = '<INPUT TYPE="button" VALUE="OK" onClick="parent.nd(1);">';
+    document.getElementById("progress_jobnum").innerHTML = '';
+    parent.document.OneTrueForm.submit.disabled=false;
+  } else {
+    alert('XXX unknown status returned from server: ' + status);
+  }
+  
+}
+</SCRIPT>
+
+    <TABLE>
+      <TR>
+        <TD ALIGN="center" ID="progress_message">
+          Server processing job...
+        </TD>
+      </TR><TR>
+        <TD ALIGN="center" ID="progress_bar">
+          <SCRIPT TYPE="text/javascript">
+            // Create imagelist
+            SEGS = new QImageList(4, 23, "../images/progressbar-empty.png", "../images/progressbar-full.png");
+            // Create bars
+            bar1 = new QProgress(null, "bar1", SEGS, 100);
+            // bar1.set(0);
+            // bar1.update;
+          </SCRIPT>
+        </TD>
+      </TR><TR>
+        <TD ALIGN="center">
+          <DIV ID="progress_percent">%</DIV>
+        </TD>
+      </TR><TR>
+        <TD ALIGN="center" ID="progress_jobnum">
+          (progress of job #<%= $jobnum %>)
+        </TD>
+      </TR>
+    </TABLE>
+
+  </BODY>
+</HTML>
+

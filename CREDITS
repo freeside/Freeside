@@ -145,5 +145,10 @@ JSRS-LICENSE file).
 Contains the QLIB JavaScript library <http://qlib.quazzle.com/> by 
 Quazzle.com, Serge Dolgov, licensed under the terms of the GNU GPL.
 
+Contains the overlibmws DHTML Popup Library <http://www.macridesweb.com/oltest/>
+by Foteos Macrides (derived from overLIB <http://www.bosrup.com/web/overlib/>
+by Erik Bosrup), licensed under the terms of the Artistic license
+<http://www.macridesweb.com/oltest/license.html>.
+
 Everything else is my (Ivan Kohler <ivan@420.am>) fault.
 

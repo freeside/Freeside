@@ -32,42 +32,13 @@ END
     ))
 %>
 
-<!-- <FORM ACTION="<%=$p1%>rate.cgi" NAME="OneTrueForm" METHOD=POST onSubmit="document.OneTrueForm.submit.disabled=true"> -->
-
-<SCRIPT TYPE="text/javascript" SRC="../elements/jsrsClient.js"></SCRIPT>
-<SCRIPT TYPE="text/javascript">
-function process () {
-  document.OneTrueForm.submit.disabled=true;
-
-  var Hash = new Array();
-  var x = 0;
-  var fieldName;
-  for (var i = 0; i<document.OneTrueForm.elements.length; i++) {
-    fieldName = document.OneTrueForm.elements[i].name;
-    if (    (fieldName.indexOf('rate') > -1)
-         || (fieldName.indexOf('min_') > -1) 
-         || (fieldName.indexOf('sec_') > -1) 
-       )
-    {
-        Hash[x++] = fieldName;
-        Hash[x++] = document.OneTrueForm.elements[i].value;
-    }
-  }
-
-  jsrsPOST = true;
-  //jsrsExecute( 'process/rate.cgi', myCallback, 'process_rate', Hash );
-  jsrsExecute( 'process/rate.cgi', myCallback, 'start_job', Hash );
-
-}
-
-function myCallback( jobnum ) {
-  var progressWindow = window.open('../../misc/progress.html?jobnum=' + jobnum + ';url=<%=$p%>browse/rate.cgi', 'progressWindow', 'toolbar=no,location=no,directories=no,scrollbars=no,menubar=no,status=no,width=420,height=128');
-  progressWindow.opener = self;
-  //progressWindow.opener = document;
-}
-
-</SCRIPT>
-
+<%= include('/elements/progress-init.html',
+              'OneTrueForm',
+              [ 'rate', 'min_', 'sec_' ],
+              'process/rate.cgi',
+              $p.'browse/rate.cgi',
+           )
+%>
 <FORM NAME="OneTrueForm">
 <INPUT TYPE="hidden" NAME="ratenum" VALUE="<%= $rate->ratenum %>">
 
@@ -124,9 +95,6 @@ Rate plan
 <BR><INPUT NAME="submit" TYPE="button" VALUE="<%= 
   $rate->ratenum ? "Apply changes" : "Add rate plan"
 %>" onClick="document.OneTrueForm.submit.disabled=true; process();">
-Please make sure to allow popups from this site in order to view the progress window.
-<!-- Please be patient, <%= $rate->ratenum ? 'editing' : 'adding' %>
-a rate plan can take a few minutes... -->
 
     </FORM>
   </BODY>
