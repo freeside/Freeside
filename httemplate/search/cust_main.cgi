@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: cust_main.cgi,v 1.12 2001-10-30 14:54:07 ivan Exp $ -->
+#<!-- $Id: cust_main.cgi,v 1.13 2001-11-01 00:16:24 ivan Exp $ -->
 
 use strict;
 #use vars qw( $conf %ncancelled_pkgs %all_pkgs $cgi @cust_main $sortby );
@@ -172,9 +172,9 @@ END
       my($pkg) = $_->part_pkg->pkg;
       my $comment = $_->part_pkg->comment;
       my($pkgview) = popurl(2). "/view/cust_pkg.cgi?$pkgnum";
-      #my(@cust_svc) = shift @lol_cust_svc;
-      my(@cust_svc) = qsearch( 'cust_svc', { 'pkgnum' => $_->pkgnum } );
-      my($rowspan) = scalar(@cust_svc) || 1;
+      my @cust_svc = @{shift @lol_cust_svc};
+      #my(@cust_svc) = qsearch( 'cust_svc', { 'pkgnum' => $_->pkgnum } );
+      my $rowspan = scalar(@cust_svc) || 1;
 
       print $n1, qq!<TD ROWSPAN=$rowspan><A HREF="$pkgview"><FONT SIZE=-1>$pkg - $comment</FONT></A></TD>!;
       my($n2)='';
