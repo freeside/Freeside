@@ -36,10 +36,17 @@ $sigint = 0;
 $SIG{INT} = sub { warn "SIGINT received; shutting down\n"; $sigint++; };
 $SIG{TERM} = sub { warn "SIGTERM received; shutting down\n"; $sigterm++; };
 
-$< = $FS::UID::freeside_uid;
+my $freeside_gid = scalar(getgrnam('freeside'))
+  or die "can't setgid to freeside group\n";
+$) = $freeside_gid;
+$( = $freeside_gid;
+#if freebsd can't setuid(), presumably it can't setgid() either.  grr fleabsd
+($<,$>) = ($>,$<);
+$> = $freeside_gid;
 
-#freebsd is sofa king broken, won't setuid()
 $> = $FS::UID::freeside_uid;
+$< = $FS::UID::freeside_uid;
+#freebsd is sofa king broken, won't setuid()
 ($<,$>) = ($>,$<);
 $> = $FS::UID::freeside_uid;
 
