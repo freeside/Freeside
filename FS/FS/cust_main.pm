@@ -417,7 +417,7 @@ sub delete {
       }
     }
   }
-  my @cancelled_pkgs = $self->all_pkgs;
+  my @cancelled_cust_pkg = $self->all_pkgs;
   foreach my $cust_pkg ( @cancelled_cust_pkg ) {
     my $error = $cust_pkg->delete;
     if ( $error ) {
@@ -1855,7 +1855,7 @@ sub append_fuzzyfiles {
 
 =head1 VERSION
 
-$Id: cust_main.pm,v 1.43 2001-10-22 08:29:42 ivan Exp $
+$Id: cust_main.pm,v 1.44 2001-10-22 08:31:25 ivan Exp $
 
 =head1 BUGS
 
