@@ -1,9 +1,7 @@
 <!-- mason kludge -->
 <%= header('Import') %>
 <FORM ACTION="process/meta-import.cgi" METHOD="post" ENCTYPE="multipart/form-data">
-Import a CSV file containing customer records (zip tar etc).<BR><BR>
-
-##no##Default file format is CSV, with the following field order: <i>cust_pkg.setup, dayphone, first, last, address1, address2, city, state, zip, comments</i><BR><BR>
+Import data from a DBI data source<BR><BR>
 
 <%
   #false laziness with edit/cust_main.cgi
@@ -44,9 +42,23 @@ Import a CSV file containing customer records (zip tar etc).<BR><BR>
 <% } %>
 </SELECT><BR><BR>
 
-    CSV (zip, tar etc) Filename: <INPUT TYPE="file" NAME="csvfile"><BR><BR>
-    <INPUT TYPE="submit" VALUE="Import">
-    </FORM>
+  <table>
+    <tr>
+      <td align="right">DBI data source: </td>
+      <td><INPUT TYPE="text" NAME="data_source"></td>
+    </tr>
+    <tr>
+      <td align="right">DBI username: </td>
+      <td><INPUT TYPE="text" NAME="username"></td>
+    </tr>
+    <tr>
+      <td align="right">DBI password: </td>
+      <td><INPUT TYPE="text" NAME="password"></td>
+    </tr>
+  </table>
+  <INPUT TYPE="submit" VALUE="Import">
+
+  </FORM>
   </BODY>
 <HTML>
 

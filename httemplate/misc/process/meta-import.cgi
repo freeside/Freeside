@@ -1,5 +1,6 @@
 <!-- mason kludge -->
 <%= header('Map tables') %>
+
 <SCRIPT>
 var gSafeOnload = new Array();
 var gSafeOnsubmit = new Array();
@@ -19,65 +20,51 @@ function SafeOnsubmit() {
     gSafeOnsubmit[i]();
 }
 </SCRIPT>
+
 <FORM NAME="OneTrueForm" METHOD="POST" ACTION="meta-import.cgi">
+
 <%
-  #one
-  unless ( $cgi->param('magic') ) {
+  #use DBIx::DBSchema;
+  my $schema = new_native DBIx::DBSchema
+                 map { $cgi->param($_) } qw( data_source username password );
+  foreach my $field (qw( data_source username password )) { %>
+    <INPUT TYPE="hidden" NAME=<%= $field %> VALUE="<%= $cgi->param($field) %>">
+  <% }
 
-    #oops, silly
-    #my $fh = $cgi->upload('csvfile');
-    ##warn $cgi;
-    ##warn $fh;
-    #
-    #use Archive::Tar;
-    #$tar = Archive::Tar->new();
-    #$tar->create_archive($fh); #or die $tar->error;
+  my %schema = ();
+  if ( $cgi->param('schema') ) {
+    my $schema_string = $cgi->param('schema');
+    %> <INPUT TYPE="hidden" NAME="schema" VALUE="<%=$schema_string%>"> <%
+    %schema = map { /^\s*(\w+)\s*=>\s*(\w+)\s*$/
+                      or die "guru meditation #420: $_";
+                    ( $1 => $2 );
+                  }
+              split( /\n/, $schema_string );
+  }
 
-    #haha for now
-    my @files = qw(
-authserv  credtype  dunprev  invoice  pmtdet    product   taxplan
-ccdet     customer  genlog   ledger   pops      pubvars   
-cchist    discplan  glacct   origco   prodcat   recur     users
-credcode  dundet    invline  payment  prodclas  repforms  webserv
-    );
+  #first page
+  unless ( $cgi->param('magic') ) { %>
 
-    %>
     <INPUT TYPE="hidden" NAME="magic" VALUE="process">
-    <%= hashmaker('schema', \@files, [ grep { ! /^h_/ } dbdef->tables ] ) %>
+    <%= hashmaker('schema', [ $schema->tables ],
+                            [ grep !/^h_/, dbdef->tables ],  ) %>
     <br><INPUT TYPE="submit" VALUE="done">
     <%
 
-  } elsif ( $cgi->param('magic') eq 'process' ) {
+  #second page
+  } elsif ( $cgi->param('magic') eq 'process' ) { %>
 
-    %>
     <INPUT TYPE="hidden" NAME="magic" VALUE="process2">
     <%
 
-    my $schema_string = $cgi->param('schema');
-    %><INPUT TYPE="hidden" NAME="schema" VALUE="<%=$schema_string%>"><%
-    my %schema = map { /^\s*(\w+)\s*=>\s*(\w+)\s*$/
-                         or die "guru meditation #420: $_";
-                       ( $1 => $2 );
-                     }
-                 split( /\n/, $schema_string );
-
-    #*** should be in global.asa/handler.pl like the rest
-    eval 'use Text::CSV_XS;';
-
     foreach my $table ( keys %schema ) {
 
-      my $csv = Text::CSV_XS->new({ 'binary'=>1 });
-      open(FILE,"</home/ivan/intergate/legacy/csvdir/$table")
-        or die "can't /home/ivan/intergate/legacy/csvdir/$table: $!";
-      my $header = lc(<FILE>);
-      close FILE;
-      $csv->parse($header) or die;
-      my @from_columns = $csv->fields;
-
+      my @from_columns = $schema->table($table)->columns;
       my @fs_columns = dbdef->table($schema{$table})->columns;
 
       %>
-      <%= hashmaker($table, \@from_columns, \@fs_columns, $table, $schema{$table} ) %>
+      <%= hashmaker($table, \@from_columns => \@fs_columns,
+                            $table         =>  $schema{$table}, ) %>
       <br><hr><br>
       <%
 
@@ -87,16 +74,11 @@ credcode  dundet    invline  payment  prodclas  repforms  webserv
     <br><INPUT TYPE="submit" VALUE="done">
     <%
 
+  #third (results)
   } elsif ( $cgi->param('magic') eq 'process2' ) {
 
     print "<pre>\n";
-    #false laziness with above
-    my $schema_string = $cgi->param('schema');
-    my %schema = map { /^\s*(\w+)\s*=>\s*(\w+)\s*$/
-                         or die "guru meditation #420: $_";
-                       ( $1 => $2 );
-                     }
-                 split( /\n/, $schema_string );
+
     foreach my $table ( keys %schema ) {
       ( my $spaces = $table ) =~ s/./ /g;
       print "'$table' => { 'table' => '$schema{$table}',\n".
