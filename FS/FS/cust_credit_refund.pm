@@ -57,6 +57,8 @@ L<Time::Local> and L<Date::Parse> for conversion functions.
 
 Creates a new record.  To add the record to the database, see L<"insert">.
 
+=cut
+
 sub table { 'cust_credit_refund'; }
 
 =item insert
@@ -183,7 +185,7 @@ sub cust_refund {
 
 =head1 VERSION
 
-$Id: cust_credit_refund.pm,v 1.6 2002-01-24 11:52:02 ivan Exp $
+$Id: cust_credit_refund.pm,v 1.7 2002-01-24 16:54:53 ivan Exp $
 
 =head1 BUGS
 
