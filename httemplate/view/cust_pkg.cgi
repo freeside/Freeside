@@ -1,6 +1,8 @@
 <!-- mason kludge -->
 <%
 
+my $conf = new FS::Conf;
+
 my %uiview = ();
 my %uiadd = ();
 foreach my $part_svc ( qsearch('part_svc',{}) ) {
@@ -118,18 +120,18 @@ unless ($cancel) {
         my($svcnum)=$cust_svc->svcnum;
         my($label, $value, $svcdb) = $cust_svc->label;
         print <<END;
-<TR><TD><A HREF="$uiview{$svcpart}?$svcnum">(View) $svc: $value<A></TD></TR>
+<TR><TD><A HREF="$uiview{$svcpart}?$svcnum">(View/Edit) $svc: $value<A></TD></TR>
 END
       } else {
-        print <<END;
-<TR>
-  <TD><A HREF="$uiadd{$svcpart}?pkgnum$pkgnum-svcpart$svcpart">
-      (Add) $svc</A>
-   or <A HREF="../misc/link.cgi?pkgnum$pkgnum-svcpart$svcpart">
-      (Link to existing) $svc</A>
-  </TD>
-</TR>
-END
+        print qq!<TR><TD>!.
+              qq!<A HREF="$uiadd{$svcpart}?pkgnum$pkgnum-svcpart$svcpart">!.
+              qq!(Provision) $svc</A>!;
+
+        print qq! or <A HREF="../misc/link.cgi?pkgnum$pkgnum-svcpart$svcpart">!.
+              qq!(Link to legacy) $svc</A>!
+          if $conf->exists('legacy_link');
+
+        print '</TD></TR>';
       }
 
     }
@@ -137,11 +139,13 @@ END
   }
 
   print "</TABLE><FONT SIZE=-1>",
-        "Choose (View) to view or edit an existing service<BR>",
-        "Choose (Add) to setup a new service<BR>",
-        "Choose (Link to existing) to link to a legacy (pre-Freeside) service",
-        "</FONT>"
-  ;
+        "Choose (View/Edit) to view or edit an existing service<BR>",
+        "Choose (Provision) to setup a new service<BR>";
+
+  print "Choose (Link to legacy) to link to a legacy (pre-Freeside) service"
+    if $conf->exists('legacy_link');
+
+  print "</FONT>";
 }
 
 #formatting

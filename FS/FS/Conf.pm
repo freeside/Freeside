@@ -766,6 +766,13 @@ httemplate/docs/config.html
     'type'        => 'checkbox',
   },
 
+  {
+    'key'         => 'legacy_link',
+    'section'     => 'UI',
+    'description' => 'Display options in the web interface to link legacy pre-Freeside services.',
+    'type'        => 'checkbox',
+  },
+
 );
 
 1;
