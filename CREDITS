@@ -101,5 +101,10 @@ Donald Greer <dgreer@austintx.com> provided the SQL to work around MySQL's lack
 of subqueries, and Dale Hege <fhege@lumenexus.net> provided the patches.
 Thanks!
 
+<baloo@gimpgirl.com> sent in several documentation patches.
+
+"Stephen Bechard" <steve@destek.net> sent in patches for svc_www services and
+other fixes.
+
 Everything else is my (Ivan Kohler <ivan@420.am>) fault.
 

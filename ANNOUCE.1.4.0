@@ -126,12 +126,21 @@ schema diagram
 
 --
 
-complete bind import and export and edit of dns zone files
+- MySQL is now supported
+
+- BIND import and export and web UI support for editing the zone files.
+  (apply the patch at http://rt.cpan.org/NoAuth/Bug.html?id=508 if 
+   importing zones until upstream release DNS::ZoneParse 0.9)
+
+- Welcome emails
+
+- Working company searches and job queue dependancies
 
 card retry changes (ticket 417)
 
-working company search and job dependancies
+--
 
-welcome emails
+- real-time text radius export
 
-MySQL!
+- one-time charges
+
