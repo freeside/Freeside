@@ -813,8 +813,13 @@ This interface may change in the future.
 sub invoicing_list {
   my( $self, $arrayref ) = @_;
   if ( $arrayref ) {
-    my @cust_main_invoice = 
-      qsearch( 'cust_main_invoice', { 'custnum' => $self->custnum } );
+    my @cust_main_invoice;
+    if ( $self->custnum ) {
+      @cust_main_invoice = 
+        qsearch( 'cust_main_invoice', { 'custnum' => $self->custnum } );
+    } else {
+      @cust_main_invoice = ();
+    }
     foreach my $cust_main_invoice ( @cust_main_invoice ) {
       #warn $cust_main_invoice->destnum;
       unless ( grep { $cust_main_invoice->address eq $_ } @{$arrayref} ) {
@@ -823,8 +828,12 @@ sub invoicing_list {
         warn $error if $error;
       }
     }
-    @cust_main_invoice =
-      qsearch( 'cust_main_invoice', { 'custnum' => $self->custnum } );
+    if ( $self->custnum ) {
+      @cust_main_invoice = 
+        qsearch( 'cust_main_invoice', { 'custnum' => $self->custnum } );
+    } else {
+      @cust_main_invoice = ();
+    }
     foreach my $address ( @{$arrayref} ) {
       unless ( grep { $address eq $_->address } @cust_main_invoice ) {
         my $cust_main_invoice = new FS::cust_main_invoice ( {
@@ -871,7 +880,7 @@ sub check_invoicing_list {
 
 =head1 VERSION
 
-$Id: cust_main.pm,v 1.15 1999-04-07 13:41:54 ivan Exp $
+$Id: cust_main.pm,v 1.16 1999-04-07 14:32:19 ivan Exp $
 
 =head1 BUGS
 
@@ -927,7 +936,10 @@ enable cybercash, cybercash v3 support, don't need to import
 FS::UID::{datasrc,checkruid} ivan@sisd.com 98-sep-19-21
 
 $Log: cust_main.pm,v $
-Revision 1.15  1999-04-07 13:41:54  ivan
+Revision 1.16  1999-04-07 14:32:19  ivan
+more &invoicing_list logic to skip searches when there is no custnum
+
+Revision 1.15  1999/04/07 13:41:54  ivan
 in &invoicing_list, don't search if there's no custnum yet
 
 Revision 1.14  1999/03/29 12:06:15  ivan
