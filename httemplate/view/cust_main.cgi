@@ -266,14 +266,14 @@ foreach my $type_pkgs ( qsearch('type_pkgs',{'typenum'=> $agent->typenum }) ) {
         $part_pkg->comment;
 }
 
-print '</SELECT><INPUT TYPE="submit" VALUE="Order Package"><BR>';
+print '</SELECT><INPUT TYPE="submit" VALUE="Order Package"></FORM><BR>';
 
 print '<BR>'.
   qq!<FORM ACTION="${p}edit/process/quick-charge.cgi" METHOD="POST">!.
   qq!<INPUT TYPE="hidden" NAME="custnum" VALUE="$custnum">!.
   qq!Description:<INPUT TYPE="text" NAME="pkg">!.
   qq! Amount:<INPUT TYPE="text" NAME="amount" SIZE=6>!.
-  qq!&nbsp;<INPUT TYPE="submit" VALUE="One-time charge"><BR>!;
+  qq!&nbsp;<INPUT TYPE="submit" VALUE="One-time charge"></FORM><BR>!;
 
 print <<END;
 <SCRIPT>
