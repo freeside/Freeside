@@ -41,14 +41,14 @@
                  : '';
 
    my $count_query = 'SELECT COUNT(*), SUM(amount) '.
-                     'FROM cust_credit JOIN cust_main USING ( custnum ) '.
+                     'FROM cust_credit LEFT JOIN cust_main USING ( custnum ) '.
                      $where;
 
    my $sql_query   = {
      'table'     => 'cust_credit',
      'hashref'   => {},
      'extra_sql' => $where,
-     'addl_from' => 'JOIN cust_main USING ( custnum )',
+     'addl_from' => 'LEFT JOIN cust_main USING ( custnum )',
    };
 
    my $clink = [ "${p}view/cust_main.cgi?", 'custnum' ];

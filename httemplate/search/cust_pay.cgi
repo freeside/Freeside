@@ -68,7 +68,7 @@
 
      my $hsearch = join(' AND ', map { "$_ = '$search{$_}'" } keys %search );
      $count_query = "SELECT COUNT(*), SUM(paid) ".
-                    "FROM cust_pay JOIN cust_main USING ( custnum )".
+                    "FROM cust_pay LEFT JOIN cust_main USING ( custnum )".
                     ( $hsearch ? " WHERE $hsearch " : '' ).
                     $search;
    
@@ -77,7 +77,7 @@
        'table'     => 'cust_pay',
        'hashref'   => \%search,
        'extra_sql' => "$search ORDER BY _date",
-       'addl_from' => 'JOIN cust_main USING ( custnum )',
+       'addl_from' => 'LEFT JOIN cust_main USING ( custnum )',
      };
    
    } else {
