@@ -164,6 +164,7 @@ sub infostreet_command { #subroutine, not method
   }
 
   eval "use Frontier::Client;";
+  die $@ if $@;
 
   eval 'sub Frontier::RPC2::String::repr {
     my $self = shift
@@ -171,6 +172,7 @@ sub infostreet_command { #subroutine, not method
     $value =~ s/([&<>\"])/$Frontier::RPC2::char_entities{$1}/ge;
     $value;
   }';
+  die $@ if $@;
 
   my $conn = Frontier::Client->new( url => $url );
   my $key_result = $conn->call( 'authenticate', $username, $password, $groupID);
