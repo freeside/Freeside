@@ -992,14 +992,14 @@ tie my %forward_shellcommands_options, 'Tie::IxHash',
     'communigate_pro' => {
       'desc' => 'Real-time export to a CommuniGate Pro mail server',
       'options' => \%communigate_pro_options,
-      'notes' => 'Real time export to a <a href="http://www.stalker.com/CommuniGatePro/"> mail server.  The <a href="http://www.stalker.com/CGPerl/">CommuniGate Pro Perl Interface</a> must be installed as CGP::CLI.',
+      'notes' => 'Real time export to a <a href="http://www.stalker.com/CommuniGatePro/">CommuniGate Pro</a> mail server.  The <a href="http://www.stalker.com/CGPerl/">CommuniGate Pro Perl Interface</a> must be installed as CGP::CLI.',
     },
 
     'communigate_pro_singledomain' => {
       'desc' => 'Real-time export to a CommuniGate Pro mail server, one domain only',
       'options' => \%communigate_pro_singledomain_options,
       'nodomain' => 'Y',
-      'notes' => 'Real time export to a <a href="http://www.stalker.com/CommuniGatePro/"> mail server.  This is an unusual export to CommuniGate Pro that forces all accounts into a single domain.  As CommuniGate Pro supports multiple domains, unless you have a specific reason for using this export, you probably want to use the communigate_pro export instead.  The <a href="http://www.stalker.com/CGPerl/">CommuniGate Pro Perl Interface</a> must be installed as CGP::CLI.',
+      'notes' => 'Real time export to a <a href="http://www.stalker.com/CommuniGatePro/">CommuniGate Pro</a> mail server.  This is an unusual export to CommuniGate Pro that forces all accounts into a single domain.  As CommuniGate Pro supports multiple domains, unless you have a specific reason for using this export, you probably want to use the communigate_pro export instead.  The <a href="http://www.stalker.com/CGPerl/">CommuniGate Pro Perl Interface</a> must be installed as CGP::CLI.',
     },
 
   },
