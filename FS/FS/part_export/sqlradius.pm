@@ -108,18 +108,34 @@ sub sqlradius_queue {
 
 sub sqlradius_insert { #subroutine, not method
   my $dbh = sqlradius_connect(shift, shift, shift);
-  my( $replycheck, $username, %attributes ) = @_;
+  my( $table, $username, %attributes ) = @_;
 
   foreach my $attribute ( keys %attributes ) {
-    my $u_sth = $dbh->prepare(
-      "UPDATE rad$replycheck SET Value = ? WHERE UserName = ? AND Attribute = ?"    ) or die $dbh->errstr;
-    my $i_sth = $dbh->prepare(
-      "INSERT INTO rad$replycheck ( id, UserName, Attribute, Value ) ".
-        "VALUES ( ?, ?, ?, ? )"
+  
+    my $s_sth = $dbh->prepare(
+      "SELECT COUNT(*) FROM rad$table WHERE UserName = ? AND Attribute = ?"
     ) or die $dbh->errstr;
-    $u_sth->execute($attributes{$attribute}, $username, $attribute) > 0
-      or $i_sth->execute( '', $username, $attribute, $attributes{$attribute} )
-        or die "can't insert into rad$replycheck table: ". $i_sth->errstr;
+    $s_sth->execute( $username, $attribute ) or die $s_sth->errstr;
+
+    if ( $s_sth->fetchrow_arrayref->[0] ) {
+
+      my $u_sth = $dbh->prepare(
+        "UPDATE rad$table SET Value = ? WHERE UserName = ? AND Attribute = ?"
+      ) or die $dbh->errstr;
+      $u_sth->execute($attributes{$attribute}, $username, $attribute)
+        or die $u_sth->errstr;
+
+    } else {
+
+      my $i_sth = $dbh->prepare(
+        "INSERT INTO rad$table ( id, UserName, Attribute, Value ) ".
+          "VALUES ( ?, ?, ?, ? )"
+      ) or die $dbh->errstr;
+      $i_sth->execute( '', $username, $attribute, $attributes{$attribute} )
+        or die $i_sth->errstr;
+
+    }
+
   }
   $dbh->disconnect;
 }
@@ -166,14 +182,14 @@ sub sqlradius_rename { #subroutine, not method
 
 sub sqlradius_attrib_delete { #subroutine, not method
   my $dbh = sqlradius_connect(shift, shift, shift);
-  my( $replycheck, $username, @attrib ) = @_;
+  my( $table, $username, @attrib ) = @_;
 
   foreach my $attribute ( @attrib ) {
     my $sth = $dbh->prepare(
-        "DELETE FROM rad$replycheck WHERE UserName = ? AND Attribute = ?" )
+        "DELETE FROM rad$table WHERE UserName = ? AND Attribute = ?" )
       or die $dbh->errstr;
     $sth->execute($username,$attribute)
-      or die "can't delete from rad$replycheck table: ". $sth->errstr;
+      or die "can't delete from rad$table table: ". $sth->errstr;
   }
   $dbh->disconnect;
 }
