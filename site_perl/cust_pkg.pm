@@ -6,6 +6,7 @@ use Exporter;
 use FS::UID qw(getotaker);
 use FS::Record qw(fields qsearch qsearchs);
 use FS::cust_svc;
+use FS::part_pkg;
 
 @ISA = qw(FS::Record Exporter);
 
@@ -33,6 +34,8 @@ FS::cust_pkg - Object methods for cust_pkg objects
   $error = $record->suspend;
 
   $error = $record->unsuspend;
+
+  $part_pkg = $record->part_pkg;
 
   $error = FS::cust_pkg::order( $custnum, \@pkgparts );
   $error = FS::cust_pkg::order( $custnum, \@pkgparts, \@remove_pkgnums ] );
@@ -356,6 +359,18 @@ sub unsuspend {
   ''; #no errors
 }
 
+=item part_pkg
+
+Returns the definition for this billing item, as an FS::part_pkg object (see
+L<FS::part_pkg).
+
+=cut
+
+sub part_pkg {
+  my($self)=@_;
+  qsearchs('part_pkg', { 'pkgpart' => $self->pkgpart });
+}
+
 =back
 
 =head1 SUBROUTINES
@@ -500,6 +515,11 @@ ivan@voicenet.com 97-jul-1 - 21
 fixed for new agent->agent_type->type_pkgs in &order ivan@sisd.com 98-mar-7
 
 pod ivan@sisd.com 98-sep-21
+
+$Log: cust_pkg.pm,v $
+Revision 1.2  1998-11-12 03:42:45  ivan
+added label method
+
 
 =cut
 
