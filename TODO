@@ -1,4 +1,4 @@
-$Id: TODO,v 1.22 1999-02-07 09:59:12 ivan Exp $
+$Id: TODO,v 1.23 1999-02-09 09:56:34 ivan Exp $
 
 If you are interested in helping with any of these, please join the mailing
 list (send a blank message to ivan-freeside-subscribe@sisd.com) to avoid 
@@ -6,25 +6,15 @@ duplication of effort.
 
 -- before 1.2b1 --
 
-missed popurl in (at least) search/cust_pkg.cgi
-
 one-screen new customer entry
 
-clean up view/cust_pkg and view/svc_* yuck!
+clean up view/cust_pkg and view/svc_* yuck (popurl and visual)!
 
 Lay out the forms a bit better.
 
 libwww regression test - since it will create sample data, can also use this
 for the web demo
 make fs-setup option to add sample data so you can click on "New Customer" right away?  so people understand what this stuff is?
-
-Allow a cancelled/suspended/active status from packages to bubble up to
-the customer lists.  Put active, then suspended, then cancelled accounts.
-Similar ordering on the package listing inside a single customer.
-
-Add the ability for services to filter information up to the package level
-for invoices and web screens, so you can select a particlar package based
-on username or domain name, etc.
 
 (Test this)
 one-time/per-customer/? changes in rates and descriptions ('remembered
@@ -40,6 +30,23 @@ update site_perl/table_template* (pry out of date)
 update web demo
 
 -- release 1.2b1 ---
+
+(is this missing on any web screens?  (easy with $cust_svc->label)
+Add the ability for services to filter information up to the package level
+for web screens, so you can select a particlar package based
+on username or domain name, etc.
+
+Allow a cancelled/suspended/active status from packages to bubble up to
+the customer lists.  Put active, then suspended, then cancelled accounts.
+Similar ordering on the package listing inside a single customer.
+
+false laziness: some of search/svc_acct_sm.cgi was copied to search/svc_domain.cgi.  but web interface in general needs to be rewritten in a mucho cleaner way.
+
+Portability: in FS::Record, $sth->execute does not return a number of rows for all DBD's.  see man DBI
+
+subroutine the where clause (eventually all SQL) as OO perhaps (has anyone done this?)
+
+add a select method to 
 
 You can't delete the stuff under administration yet.  Add this,
 _including_ making sure the thing you are deleting is not in use!
