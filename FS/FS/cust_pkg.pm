@@ -77,6 +77,9 @@ inherits from FS::Record.  The following fields are currently supported:
 
 =item otaker - order taker (assigned automatically if null, see L<FS::UID>)
 
+=item manual_flag - If this field is set to 1, disables the automatic
+unsuspensiond of this package when using the B<unsuspendauto> config file.
+
 =back
 
 Note: setup, bill, susp, expire and cancel are specified as UNIX timestamps;
@@ -196,6 +199,11 @@ sub check {
   $self->otaker(getotaker) unless $self->otaker;
   $self->otaker =~ /^(\w{0,16})$/ or return "Illegal otaker";
   $self->otaker($1);
+
+  if ( $self->dbdef_table->column('manual_flag') ) {
+    $self->manual_flag =~ /^([01]?)$/ or return "Illegal manual_flag";
+    $self->manual_flag($1);
+  }
 
   ''; #no error
 }
@@ -568,7 +576,7 @@ sub order {
 
 =head1 VERSION
 
-$Id: cust_pkg.pm,v 1.8 2001-10-09 03:11:50 ivan Exp $
+$Id: cust_pkg.pm,v 1.9 2001-10-09 23:10:16 ivan Exp $
 
 =head1 BUGS
 

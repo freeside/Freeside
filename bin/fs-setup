@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: fs-setup,v 1.60 2001-10-02 16:00:30 jeff Exp $
+# $Id: fs-setup,v 1.61 2001-10-09 23:10:17 ivan Exp $
 
 #to delay loading dbdef until we're ready
 BEGIN { $FS::Record::setup_hack = 1; }
@@ -481,6 +481,7 @@ sub tables_hash_hack {
         'susp',      @date_type,
         'cancel',    @date_type,
         'expire',    @date_type,
+        'manual_flag', 'char', 'NULL', 1,
       ],
       'primary_key' => 'pkgnum',
       'unique' => [ [] ],

@@ -1,14 +1,23 @@
 package FS::cust_pay;
 
 use strict;
-use vars qw( @ISA );
+use vars qw( @ISA $conf $unsuspendauto );
 use Business::CreditCard;
-use FS::Record qw( dbh qsearch qsearchs );
+use FS::UID qw( dbh );
+use FS::Record qw( dbh qsearch qsearchs dbh );
 use FS::cust_bill;
 use FS::cust_bill_pay;
 use FS::cust_main;
 
 @ISA = qw( FS::Record );
+
+#ask FS::UID to run this stuff for us later
+$FS::UID::callback{'FS::cust_pay'} = sub { 
+
+  $conf = new FS::Conf;
+  $unsuspendauto = $conf->exists('unsuspendauto');
+
+};
 
 =head1 NAME
 
@@ -90,6 +99,9 @@ sub insert {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
+  my $cust_main = qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
+  my $old_balance = $cust_main->balance;
+
   my $error = $self->check;
   return $error if $error;
 
@@ -123,6 +135,17 @@ sub insert {
   }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+  #false laziness w/ cust_credit::insert
+  if ( $unsuspendauto && $old_balance && $cust_main->balance <= 0 ) {
+    my @errors = $cust_main->unsuspend;
+    #return 
+    # side-fx with nested transactions?  upstack rolls back?
+    warn "WARNING:Errors unsuspending customer ". $cust_main->custnum. ": ".
+         join(' / ', @errors)
+      if @errors;
+  }
+  #eslaf
 
   '';
 
@@ -281,7 +304,7 @@ sub unapplied {
 
 =head1 VERSION
 
-$Id: cust_pay.pm,v 1.7 2001-09-03 22:07:38 ivan Exp $
+$Id: cust_pay.pm,v 1.8 2001-10-09 23:10:16 ivan Exp $
 
 =head1 BUGS
 

@@ -1,14 +1,22 @@
 package FS::cust_credit;
 
 use strict;
-use vars qw( @ISA );
-use FS::UID qw( getotaker );
+use vars qw( @ISA $conf $unsuspendauto );
+use FS::UID qw( dbh getotaker );
 use FS::Record qw( qsearch qsearchs );
 use FS::cust_main;
 use FS::cust_refund;
 use FS::cust_credit_bill;
 
 @ISA = qw( FS::Record );
+
+#ask FS::UID to run this stuff for us later
+$FS::UID::callback{'FS::cust_credit'} = sub { 
+
+  $conf = new FS::Conf;
+  $unsuspendauto = $conf->exists('unsuspendauto');
+
+};
 
 =head1 NAME
 
@@ -68,6 +76,48 @@ sub table { 'cust_credit'; }
 
 Adds this credit to the database ("Posts" the credit).  If there is an error,
 returns the error, otherwise returns false.
+
+=cut
+
+sub insert {
+  my $self = shift;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $cust_main = qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
+  my $old_balance = $cust_main->balance;
+
+  my $error = $self->SUPER::insert;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return "error inserting $self: $error";
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+  #false laziness w/ cust_credit::insert
+  if ( $unsuspendauto && $old_balance && $cust_main->balance <= 0 ) {
+    my @errors = $cust_main->unsuspend;
+    #return 
+    # side-fx with nested transactions?  upstack rolls back?
+    warn "WARNING:Errors unsuspending customer ". $cust_main->custnum. ": ".
+         join(' / ', @errors)
+      if @errors;
+  }
+  #eslaf
+
+  '';
+
+}
 
 =item delete
 
@@ -185,7 +235,7 @@ sub credited {
 
 =head1 VERSION
 
-$Id: cust_credit.pm,v 1.11 2001-09-02 07:49:52 ivan Exp $
+$Id: cust_credit.pm,v 1.12 2001-10-09 23:10:16 ivan Exp $
 
 =head1 BUGS
 

@@ -98,6 +98,8 @@ FS::cust_main - Object methods for cust_main records
 
   @cust_pkg = $record->ncancelled_pkgs;
 
+  @cust_pkg = $record->suspended_pkgs;
+
   $error = $record->bill;
   $error = $record->bill %options;
   $error = $record->bill 'time' => $time;
@@ -706,6 +708,68 @@ sub ncancelled_pkgs {
       'cancel'  => 0,
     }),
   ] };
+}
+
+=item suspended_pkgs
+
+Returns all suspended packages (see L<FS::cust_pkg>) for this customer.
+
+=cut
+
+sub suspended_pkgs {
+  my $self = shift;
+  grep { $_->susp } $self->ncancelled_pkgs;
+}
+
+=item unflagged_suspended_pkgs
+
+Returns all unflagged suspended packages (see L<FS::cust_pkg>) for this
+customer (thouse packages without the `manual_flag' set).
+
+=cut
+
+sub unflagged_suspended_pkgs {
+  my $self = shift;
+  return $self->suspended_pkgs
+    unless dbdef->table('cust_pkg')->column('manual_flag');
+  grep { ! $_->manual_flag } $self->suspended_pkgs;
+}
+
+=item unsuspended_pkgs
+
+Returns all unsuspended (and uncancelled) packages (see L<FS::cust_pkg>) for
+this customer.
+
+=cut
+
+sub unsuspended_pkgs {
+  my $self = shift;
+  grep { ! $_->susp } $self->ncancelled_pkgs;
+}
+
+=item unsuspend
+
+Unsuspends all unflagged suspended packages (see L</unflagged_suspended_pkgs>
+and L<FS::cust_pkg>) for this customer.  Always returns a list: an empty list
+on success or a list of errors.
+
+=cut
+
+sub unsuspend {
+  my $self = shift;
+  grep { $_->unsuspend } $self->suspended_pkgs;
+}
+
+=item suspend
+
+Suspends all unsuspended packages (see L<FS::cust_pkg>) for this customer.
+Always returns a list: an empty list on success or a list of errors.
+
+=cut
+
+sub suspend {
+  my $self = shift;
+  grep { $_->suspend } $self->unsuspended_pkgs;
 }
 
 =item bill OPTIONS
@@ -1724,7 +1788,7 @@ sub append_fuzzyfiles {
 
 =head1 VERSION
 
-$Id: cust_main.pm,v 1.38 2001-09-26 09:17:06 ivan Exp $
+$Id: cust_main.pm,v 1.39 2001-10-09 23:10:16 ivan Exp $
 
 =head1 BUGS
 
