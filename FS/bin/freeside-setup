@@ -138,33 +138,6 @@ foreach $attribute (@check_attributes) {
   ));
 }
 
-##make part_svc table (but now as object)
-#
-#my($part_svc)=$dbdef->table('part_svc');
-#
-##because of svc_acct_pop
-##foreach (grep /^svc_/, $dbdef->tables) { 
-##foreach (qw(svc_acct svc_acct_sm svc_charge svc_domain svc_wo)) {
-#foreach (qw(svc_acct svc_domain svc_forward svc_www)) {
-#  my($table)=$dbdef->table($_);
-#  my($col);
-#  foreach $col ( $table->columns ) {
-#    next if $col =~ /^svcnum$/;
-#    $part_svc->addcolumn( new DBIx::DBSchema::Column (
-#      $table->name. '__' . $table->column($col)->name,
-#      'varchar', #$table->column($col)->type, 
-#      'NULL',
-#      $char_d, #$table->column($col)->length,
-#    ));
-#    $part_svc->addcolumn ( new DBIx::DBSchema::Column (
-#      $table->name. '__'. $table->column($col)->name . "_flag",
-#      'char',
-#      'NULL',
-#      1,
-#    ));
-#  }
-#}
-
 #create history tables (false laziness w/create-history-tables)
 foreach my $table ( grep { ! /^h_/ } $dbdef->tables ) {
   my $tableobj = $dbdef->table($table)
@@ -339,7 +312,7 @@ sub tables_hash_hack {
 
     'agent' => {
       'columns' => [
-        'agentnum', 'int',            '',     '',
+        'agentnum', 'serial',            '',     '',
         'agent',    'varchar',           '',     $char_d,
         'typenum',  'int',            '',     '',
         'freq',     'int',       'NULL', '',
@@ -352,7 +325,7 @@ sub tables_hash_hack {
 
     'agent_type' => {
       'columns' => [
-        'typenum',   'int',  '', '',
+        'typenum',   'serial',  '', '',
         'atype',     'varchar', '', $char_d,
       ],
       'primary_key' => 'typenum',
@@ -372,7 +345,7 @@ sub tables_hash_hack {
 
     'cust_bill' => {
       'columns' => [
-        'invnum',    'int',  '', '',
+        'invnum',    'serial',  '', '',
         'custnum',   'int',  '', '',
         '_date',     @date_type,
         'charged',   @money_type,
@@ -386,7 +359,7 @@ sub tables_hash_hack {
 
     'cust_bill_event' => {
       'columns' => [
-        'eventnum',    'int',  '', '',
+        'eventnum',    'serial',  '', '',
         'invnum',   'int',  '', '',
         'eventpart',   'int',  '', '',
         '_date',     @date_type,
@@ -401,7 +374,7 @@ sub tables_hash_hack {
 
     'part_bill_event' => {
       'columns' => [
-        'eventpart',    'int',  '', '',
+        'eventpart',    'serial',  '', '',
         'payby',       'char',  '', 4,
         'event',       'varchar',           '',     $char_d,
         'eventcode',    @perl_type,
@@ -432,11 +405,11 @@ sub tables_hash_hack {
 
     'cust_credit' => {
       'columns' => [
-        'crednum',  'int', '', '',
+        'crednum',  'serial', '', '',
         'custnum',  'int', '', '',
         '_date',    @date_type,
         'amount',   @money_type,
-        'otaker',   'varchar', '', 8,
+        'otaker',   'varchar', '', 32,
         'reason',   'text', 'NULL', '',
         'closed',    'char', 'NULL', 1,
       ],
@@ -447,7 +420,7 @@ sub tables_hash_hack {
 
     'cust_credit_bill' => {
       'columns' => [
-        'creditbillnum', 'int', '', '',
+        'creditbillnum', 'serial', '', '',
         'crednum',  'int', '', '',
         'invnum',  'int', '', '',
         '_date',    @date_type,
@@ -460,7 +433,7 @@ sub tables_hash_hack {
 
     'cust_main' => {
       'columns' => [
-        'custnum',  'int',  '',     '',
+        'custnum',  'serial',  '',     '',
         'agentnum', 'int',  '',     '',
 #        'titlenum', 'int',  'NULL',   '',
         'last',     'varchar', '',     $char_d,
@@ -498,7 +471,7 @@ sub tables_hash_hack {
         'paydate',  'varchar', 'NULL', 10,
         'payname',  'varchar', 'NULL', $char_d,
         'tax',      'char', 'NULL', 1,
-        'otaker',   'varchar', '',     8,
+        'otaker',   'varchar', '',    32,
         'refnum',   'int',  '',     '',
         'referral_custnum', 'int',  'NULL', '',
         'comments', 'text', 'NULL', '',
@@ -511,7 +484,7 @@ sub tables_hash_hack {
 
     'cust_main_invoice' => {
       'columns' => [
-        'destnum',  'int',  '',     '',
+        'destnum',  'serial',  '',     '',
         'custnum',  'int',  '',     '',
         'dest',     'varchar', '',  $char_d,
       ],
@@ -524,7 +497,7 @@ sub tables_hash_hack {
                             #cust_main_county for validation and to provide
                             # a tax rate.
       'columns' => [
-        'taxnum',   'int',   '',    '',
+        'taxnum',   'serial',   '',    '',
         'state',    'varchar',  'NULL',    $char_d,
         'county',   'varchar',  'NULL',    $char_d,
         'country',  'char',  '', 2, 
@@ -540,7 +513,7 @@ sub tables_hash_hack {
 
     'cust_pay' => {
       'columns' => [
-        'paynum',   'int',    '',   '',
+        'paynum',   'serial',    '',   '',
         #now cust_bill_pay #'invnum',   'int',    '',   '',
         'custnum',  'int',    '',   '',
         'paid',     @money_type,
@@ -558,7 +531,7 @@ sub tables_hash_hack {
 
     'cust_bill_pay' => {
       'columns' => [
-        'billpaynum', 'int',     '',   '',
+        'billpaynum', 'serial',     '',   '',
         'invnum',  'int',     '',   '',
         'paynum',  'int',     '',   '',
         'amount',  @money_type,
@@ -572,7 +545,7 @@ sub tables_hash_hack {
     'cust_pay_batch' => { #what's this used for again?  list of customers
                           #in current CARD batch? (necessarily CARD?)
       'columns' => [
-        'paybatchnum',   'int',    '',   '',
+        'paybatchnum',   'serial',    '',   '',
         'invnum',   'int',    '',   '',
         'custnum',   'int',    '',   '',
         'last',     'varchar', '',     $char_d,
@@ -597,10 +570,10 @@ sub tables_hash_hack {
 
     'cust_pkg' => {
       'columns' => [
-        'pkgnum',    'int',    '',   '',
+        'pkgnum',    'serial',    '',   '',
         'custnum',   'int',    '',   '',
         'pkgpart',   'int',    '',   '',
-        'otaker',    'varchar', '', 8,
+        'otaker',    'varchar', '', 32,
         'setup',     @date_type,
         'bill',      @date_type,
         'susp',      @date_type,
@@ -615,12 +588,12 @@ sub tables_hash_hack {
 
     'cust_refund' => {
       'columns' => [
-        'refundnum',    'int',    '',   '',
+        'refundnum',    'serial',    '',   '',
         #now cust_credit_refund #'crednum',      'int',    '',   '',
         'custnum',  'int',    '',   '',
         '_date',        @date_type,
         'refund',       @money_type,
-        'otaker',       'varchar',   '',   8,
+        'otaker',       'varchar',   '',   32,
         'reason',       'varchar',   '',   $char_d,
         'payby',        'char',   '',     4, # CARD/BILL/COMP, should be index
                                              # into payment type table.
@@ -635,7 +608,7 @@ sub tables_hash_hack {
 
     'cust_credit_refund' => {
       'columns' => [
-        'creditrefundnum', 'int',     '',   '',
+        'creditrefundnum', 'serial',     '',   '',
         'crednum',  'int',     '',   '',
         'refundnum',  'int',     '',   '',
         'amount',  @money_type,
@@ -649,7 +622,7 @@ sub tables_hash_hack {
 
     'cust_svc' => {
       'columns' => [
-        'svcnum',    'int',    '',   '',
+        'svcnum',    'serial',    '',   '',
         'pkgnum',    'int',    'NULL',   '',
         'svcpart',   'int',    '',   '',
       ],
@@ -660,7 +633,7 @@ sub tables_hash_hack {
 
     'part_pkg' => {
       'columns' => [
-        'pkgpart',    'int',    '',   '',
+        'pkgpart',    'serial',    '',   '',
         'pkg',        'varchar',   '',   $char_d,
         'comment',    'varchar',   '',   $char_d,
         'setup',      @perl_type,
@@ -701,7 +674,7 @@ sub tables_hash_hack {
 
     'part_referral' => {
       'columns' => [
-        'refnum',   'int',    '',   '',
+        'refnum',   'serial',    '',   '',
         'referral', 'varchar',   '',   $char_d,
       ],
       'primary_key' => 'refnum',
@@ -711,7 +684,7 @@ sub tables_hash_hack {
 
     'part_svc' => {
       'columns' => [
-        'svcpart',    'int',    '',   '',
+        'svcpart',    'serial',    '',   '',
         'svc',        'varchar',   '',   $char_d,
         'svcdb',      'varchar',   '',   $char_d,
         'disabled',   'char',  'NULL',   1,
@@ -723,7 +696,7 @@ sub tables_hash_hack {
 
     'part_svc_column' => {
       'columns' => [
-        'columnnum',   'int',         '', '',
+        'columnnum',   'serial',         '', '',
         'svcpart',     'int',         '', '',
         'columnname',  'varchar',     '', 64,
         'columnvalue', 'varchar', 'NULL', $char_d,
@@ -737,7 +710,7 @@ sub tables_hash_hack {
     #(this should be renamed to part_pop)
     'svc_acct_pop' => {
       'columns' => [
-        'popnum',    'int',    '',   '',
+        'popnum',    'serial',    '',   '',
         'city',      'varchar',   '',   $char_d,
         'state',     'varchar',   '',   $char_d,
         'ac',        'char',   '',   3,
@@ -751,7 +724,7 @@ sub tables_hash_hack {
 
     'part_pop_local' => {
       'columns' => [
-        'localnum',  'int',     '',     '',
+        'localnum',  'serial',     '',     '',
         'popnum',    'int',     '',     '',
         'city',      'varchar', 'NULL', $char_d,
         'state',     'char',    'NULL', 2,
@@ -786,18 +759,6 @@ sub tables_hash_hack {
       'index' => [ ['username'], ['domsvc'] ],
     },
 
-#    'svc_acct_sm' => {
-#      'columns' => [
-#        'svcnum',    'int',    '',   '',
-#        'domsvc',    'int',    '',   '',
-#        'domuid',    'int', '',   '',
-#        'domuser',   'varchar',   '',   $char_d,
-#      ],
-#      'primary_key' => 'svcnum',
-#      'unique' => [ [] ],
-#      'index' => [ ['domsvc'], ['domuid'] ], 
-#    },
-
     #'svc_charge' => {
     #  'columns' => [
     #    'svcnum',    'int',    '',   '',
@@ -821,7 +782,7 @@ sub tables_hash_hack {
 
     'domain_record' => {
       'columns' => [
-        'recnum',    'int',     '',  '',
+        'recnum',    'serial',     '',  '',
         'svcnum',    'int',     '',  '',
         'reczone',   'varchar', '',  $char_d,
         'recaf',     'char',    '',  2,
@@ -871,7 +832,7 @@ sub tables_hash_hack {
 
     'prepay_credit' => {
       'columns' => [
-        'prepaynum',   'int',     '',   '',
+        'prepaynum',   'serial',     '',   '',
         'identifier',  'varchar', '', $char_d,
         'amount',      @money_type,
         'seconds',     'int',     'NULL', '',
@@ -883,7 +844,7 @@ sub tables_hash_hack {
 
     'port' => {
       'columns' => [
-        'portnum',  'int',     '',   '',
+        'portnum',  'serial',     '',   '',
         'ip',       'varchar', 'NULL', 15,
         'nasport',  'int',     'NULL', '',
         'nasnum',   'int',     '',   '',
@@ -895,7 +856,7 @@ sub tables_hash_hack {
 
     'nas' => {
       'columns' => [
-        'nasnum',   'int',     '',    '',
+        'nasnum',   'serial',     '',    '',
         'nas',      'varchar', '',    $char_d,
         'nasip',    'varchar', '',    15,
         'nasfqdn',  'varchar', '',    $char_d,
@@ -908,7 +869,7 @@ sub tables_hash_hack {
 
     'session' => {
       'columns' => [
-        'sessionnum', 'int',       '',   '',
+        'sessionnum', 'serial',       '',   '',
         'portnum',    'int',       '',   '',
         'svcnum',     'int',       '',   '',
         'login',      @date_type,
@@ -921,7 +882,7 @@ sub tables_hash_hack {
 
     'queue' => {
       'columns' => [
-        'jobnum', 'int', '', '',
+        'jobnum', 'serial', '', '',
         'job', 'text', '', '',
         '_date', 'int', '', '',
         'status', 'varchar', '', $char_d,
@@ -935,7 +896,7 @@ sub tables_hash_hack {
 
     'queue_arg' => {
       'columns' => [
-        'argnum', 'int', '', '',
+        'argnum', 'serial', '', '',
         'jobnum', 'int', '', '',
         'arg', 'text', 'NULL', '',
       ],
@@ -946,7 +907,7 @@ sub tables_hash_hack {
 
     'queue_depend' => {
       'columns' => [
-        'dependnum', 'int', '', '',
+        'dependnum', 'serial', '', '',
         'jobnum', 'int', '', '',
         'depend_jobnum', 'int', '', '',
       ],
@@ -957,7 +918,7 @@ sub tables_hash_hack {
 
     'export_svc' => {
       'columns' => [
-        'exportsvcnum' => 'int', '', '',
+        'exportsvcnum' => 'serial', '', '',
         'exportnum'    => 'int', '', '',
         'svcpart'      => 'int', '', '',
       ],
@@ -968,7 +929,7 @@ sub tables_hash_hack {
 
     'part_export' => {
       'columns' => [
-        'exportnum', 'int', '', '',
+        'exportnum', 'serial', '', '',
         #'svcpart',   'int', '', '',
         'machine', 'varchar', '', $char_d,
         'exporttype', 'varchar', '', $char_d,
@@ -981,7 +942,7 @@ sub tables_hash_hack {
 
     'part_export_option' => {
       'columns' => [
-        'optionnum', 'int', '', '',
+        'optionnum', 'serial', '', '',
         'exportnum', 'int', '', '',
         'optionname', 'varchar', '', $char_d,
         'optionvalue', 'text', 'NULL', '',
@@ -993,7 +954,7 @@ sub tables_hash_hack {
 
     'radius_usergroup' => {
       'columns' => [
-        'usergroupnum', 'int', '', '',
+        'usergroupnum', 'serial', '', '',
         'svcnum',       'int', '', '',
         'groupname',    'varchar', '', $char_d,
       ],
@@ -1004,7 +965,7 @@ sub tables_hash_hack {
 
     'msgcat' => {
       'columns' => [
-        'msgnum', 'int', '', '',
+        'msgnum', 'serial', '', '',
         'msgcode', 'varchar', '', $char_d,
         'locale', 'varchar', '', 16,
         'msg', 'text', '', '',
@@ -1016,7 +977,7 @@ sub tables_hash_hack {
 
     'cust_tax_exempt' => {
       'columns' => [
-        'exemptnum', 'int', '', '',
+        'exemptnum', 'serial', '', '',
         'custnum',   'int', '', '',
         'taxnum',    'int', '', '',
         'year',      'int', '', '',
@@ -1028,7 +989,77 @@ sub tables_hash_hack {
       'index'       => [],
     },
 
+    'ac_type' => {
+      'columns' => [
+        'actypenum', 'serial', '', '',
+        'actypename', 'varchar', '', $char_d,
+      ],
+      'primary_key' => 'actypenum',
+      'unique'      => [],
+      'index'       => [],
+    },
 
+    'ac' => {
+      'columns' => [
+        'acnum', 'serial', '', '',
+        'actypenum', 'int', '', '',
+        'acname', 'varchar', '', $char_d,
+      ],
+      'primary_key' => 'acnum',
+      'unique'      => [],
+      'index'       => [ [ 'actypenum' ] ],
+    },
+
+    'part_ac_field' => {
+      'columns' => [
+        'acfieldpart', 'serial', '', '',
+        'actypenum', 'int', '', '',
+        'name', 'varchar', '', $char_d,
+        'ut_type', 'varchar', '', $char_d,
+      ],
+      'primary_key' => 'acfieldpart',
+      'unique'      => [],
+      'index'       => [ [ 'actypenum' ] ],
+    },
+
+    'ac_field' => {
+      'columns' => [
+        'acfieldpart', 'int', '', '',
+        'acnum', 'int', '', '',
+        'value', 'text', '', '',
+      ],
+      'primary_key' => '',
+      'unique'      => [ [ 'acfieldpart', 'acnum' ] ],
+      'index'       => [ [ 'acnum' ] ],
+    },
+
+    'ac_block' => {
+      'columns' => [
+        'acnum', 'int', '', '',
+        'ip_gateway', 'varchar', '', 15,
+        'ip_netmask', 'int', '', '',
+      ],
+      'primary_key' => '',
+      'unique'      => [],
+      'index'       => [ [ 'acnum' ] ],
+    },
+
+    'svc_broadband' => {
+      'columns' => [
+        'svcnum', 'int', '', '',
+        'actypenum', 'int', '', '',
+        'speed_up', 'int', '', '',
+        'speed_down', 'int', '', '',
+        'acnum', 'int', '', '',
+        'ip_addr', 'varchar', '', 15,
+        'ip_netmask', 'int', '', '',
+        'mac_addr', 'char', '', 17,
+        'location', 'varchar', '', $char_d,
+      ],
+      'primary_key' => 'svcnum',
+      'unique'      => [],
+      'index'       => [ [ 'actypenum' ] ],
+    },
 
   );
 
