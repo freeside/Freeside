@@ -133,13 +133,14 @@ sub checkdest {
   if ( $self->dest eq 'POST' ) {
     #contemplate our navel
   } elsif ( $self->dest =~ /^(\d+)$/ ) {
-    return "Unknown local account (specified by svcnum)"
+    return "Unknown local account (specified by svcnum: ". $self->dest. ")"
       unless qsearchs( 'svc_acct', { 'svcnum' => $self->dest } );
   } elsif ( $self->dest =~ /^([\w\.\-]+)\@(([\w\.\-]+\.)+\w+)$/ ) {
     my($user, $domain) = ($1, $2);
     if ( $domain eq $mydomain ) {
       my $svc_acct = qsearchs( 'svc_acct', { 'username' => $user } );
-      return "Unknown local account (specified literally)" unless $svc_acct;
+      return "Unknown local account: $user\@$domain (specified literally)"
+        unless $svc_acct;
       $svc_acct->svcnum =~ /^(\d+)$/ or die "Non-numeric svcnum?!";
       $self->dest($1);
     }
@@ -171,7 +172,7 @@ sub address {
 
 =head1 VERSION
 
-$Id: cust_main_invoice.pm,v 1.5 2001-08-11 00:01:39 ivan Exp $
+$Id: cust_main_invoice.pm,v 1.6 2001-08-12 00:06:33 ivan Exp $
 
 =head1 BUGS
 
