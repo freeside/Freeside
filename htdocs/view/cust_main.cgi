@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main.cgi,v 1.13 1999-02-28 00:04:00 ivan Exp $
+# $Id: cust_main.cgi,v 1.14 1999-04-08 04:04:37 ivan Exp $
 #
 # Usage: cust_main.cgi custnum
 #        http://server.name/path/cust_main.cgi?custnum
@@ -31,7 +31,10 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: cust_main.cgi,v $
-# Revision 1.13  1999-02-28 00:04:00  ivan
+# Revision 1.14  1999-04-08 04:04:37  ivan
+# eliminate double // in links
+#
+# Revision 1.13  1999/02/28 00:04:00  ivan
 # removed misleading comments
 #
 # Revision 1.12  1999/02/07 09:59:40  ivan
@@ -276,7 +279,7 @@ foreach $package (@packages) {
   foreach my $cust_svc ( @cust_svc ) {
      my($label, $value, $svcdb) = $cust_svc->label;
      my($svcnum) = $cust_svc->svcnum;
-     my($sview) = popurl(2). "/view";
+     my($sview) = popurl(2). "view";
      print $n2,qq!<TD><A HREF="$sview/$svcdb.cgi?$svcnum"><FONT SIZE=-1>$label</FONT></A></TD>!,
            qq!<TD><A HREF="$sview/$svcdb.cgi?$svcnum"><FONT SIZE=-1>$value</FONT></A></TD>!;
      $n2="</TR><TR>";
