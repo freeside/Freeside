@@ -407,7 +407,7 @@ END
             my $num =
               FS::TicketSystem->num_customer_tickets($custnum,$priority);
             my $ahref = '';
-            $aref = '<A HREF="'.
+            $ahref= '<A HREF="'.
                     FS::TicketSystem->href_customer_tickets($custnum,$priority).
                     '">';
               if $num;
