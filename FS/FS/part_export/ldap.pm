@@ -27,7 +27,10 @@ sub _export_insert {
                              $saltset[int(rand(64))].$saltset[int(rand(64))] );
 
 
-  my %attrib = map    { /^\s*(\w+)\s+(.*\S)\s*$/; ( $1 => eval(qq("$2")) ); }
+  my $username_attrib;
+  my %attrib = map    { /^\s*(\w+)\s+(.*\S)\s*$/;
+                        $username_attrib = $1 if $2 eq '$username';
+                        ( $1 => eval(qq("$2")) );                   }
                  grep { /^\s*(\w+)\s+(.*\S)\s*$/ }
                    split("\n", $self->option('attributes'));
 
@@ -44,6 +47,7 @@ sub _export_insert {
 
   my $err_or_queue = $self->ldap_queue( $svc_acct->svcnum, 'insert',
     #$svc_acct->username,
+    $username_attrib,
     %attrib );
   return $err_or_queue unless ref($err_or_queue);
 
@@ -203,7 +207,8 @@ sub ldap_queue {
 
 sub ldap_insert { #subroutine, not method
   my $ldap = ldap_connect(shift, (my $dn = shift), shift);
-  my %attrib = @_;
+  my( $username_attrib, %attrib ) = @_;
+  $dn = "$username_attrib=$attrib{$username_attrib}, $dn" if $username_attrib;
 
   my $status = $ldap->add( $dn, attrs => [ %attrib ] );
   die $status->error if $status->is_error;
