@@ -23,8 +23,8 @@ FREESIDE_RESTART = /etc/init.d/freeside restart
 #not changable yet
 FREESIDE_CONF = /usr/local/etc/freeside
 
-VERSION="1.4.0pre12"
-TAG="1_4_0_PRE12"
+VERSION=1.4.0pre12
+TAG=freeside_1_4_0_pre12
 
 help:
 	@echo "supported targets: aspdocs masondocs alldocs docs install-docs"
@@ -130,7 +130,7 @@ release: upload-docs
 	cvs tag ${TAG}
 
 	cd /home/ivan
-	cvs export -r $TAG -d freeside-${VERSION} freeside
+	cvs export -r ${TAG} -d freeside-${VERSION} freeside
 	tar czvf freeside-${VERSION}.tar.gz freeside-${VERSION}
 
 	scp freeside-${VERSION} ivan@cleanwhisker.420.am:/var/www/sisd.420.am/freeside/
