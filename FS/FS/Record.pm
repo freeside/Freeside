@@ -930,7 +930,7 @@ sub ut_ip {
   $self->getfield($field) =~ /^(\d+)\.(\d+)\.(\d+)\.(\d+)$/
     or return "Illegal (IP address) $field: ". $self->getfield($field);
   for ( $1, $2, $3, $4 ) { return "Illegal (IP address) $field" if $_ > 255; }
-  $self->setfield($field, "$1.$2.$3.$3");
+  $self->setfield($field, "$1.$2.$3.$4");
   '';
 }
 
