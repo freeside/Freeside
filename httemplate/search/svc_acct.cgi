@@ -145,7 +145,7 @@ END
       $domain = "<A HREF=\"${p}view/svc_domain.cgi?". $svc_domain->svcnum.
                 "\">". $svc_domain->domain. "</A>";
     } else {
-      die "No svc_domain.svcnum record for svc_acct.domsvc: ".'
+      die "No svc_domain.svcnum record for svc_acct.domsvc: ".
           $svc_acct->domsvc;
     }
     my($cust_pkg,$cust_main);
