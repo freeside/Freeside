@@ -43,7 +43,7 @@ chomp $error;
 if ($error) {
   die $error;
 } else {
-  print <<END;
+  print $cgi->header(), <<END;
 <html>
   <head>
     <title>Password changed</title>
