@@ -1,11 +1,14 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_pkg.cgi,v 1.7 1999-02-07 09:59:37 ivan Exp $
+# $Id: cust_pkg.cgi,v 1.8 1999-02-09 09:22:57 ivan Exp $
 #
 # based on search/svc_acct.cgi ivan@sisd.com 98-jul-17
 #
 # $Log: cust_pkg.cgi,v $
-# Revision 1.7  1999-02-07 09:59:37  ivan
+# Revision 1.8  1999-02-09 09:22:57  ivan
+# visual and bugfixes
+#
+# Revision 1.7  1999/02/07 09:59:37  ivan
 # more mod_perl fixes, and bugfixes Peter Wemm sent via email
 #
 # Revision 1.6  1999/01/19 05:14:13  ivan
@@ -87,7 +90,7 @@ if ( scalar(@cust_pkg) == 1 ) {
       <TR>
         <TH>Package #</TH>
         <TH>Customer #</TH>
-        <TH>Name</TH>
+        <TH>Contact name</TH>
         <TH>Company</TH>
       </TR>
 END
@@ -103,12 +106,13 @@ END
       $cust_main->last. ', '. $cust_main->first,
       $cust_main->company,
     );
+    my $p = popurl(2);
     print <<END;
     <TR>
-      <TD><A HREF="../view/cust_pkg.cgi?$pkgnum"><FONT SIZE=-1>$pkgnum</FONT></A></TD>
-      <TD><FONT SIZE=-1>$custnum</FONT></TD>
-      <TD><FONT SIZE=-1>$name</FONT></TD>
-      <TD><FONT SIZE=-1>$company</FONT></TD>
+      <TD><A HREF="${p}view/cust_pkg.cgi?$pkgnum"><FONT SIZE=-1>$pkgnum</FONT></A></TD>
+      <TD><FONT SIZE=-1><A HREF="${p}view/cust_main.cgi?$custnum">$custnum</A></FONT></TD>
+      <TD><FONT SIZE=-1><A HREF="${p}view/cust_main.cgi?$custnum">$name</A></FONT></TD>
+      <TD><FONT SIZE=-1><A HREF="${p}view/cust_main.cgi?$custnum">$company</A></FONT></TD>
     </TR>
 END
 

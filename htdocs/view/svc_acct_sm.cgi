@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct_sm.cgi,v 1.7 1999-02-07 09:59:42 ivan Exp $
+# $Id: svc_acct_sm.cgi,v 1.8 1999-02-09 09:23:00 ivan Exp $
 #
 # Usage: svc_acct_sm.cgi svcnum
 #        http://server.name/path/svc_acct_sm.cgi?svcnum
@@ -22,7 +22,10 @@
 # /var/spool/freeside/conf/domain ivan@sisd.com 98-jul-17
 #
 # $Log: svc_acct_sm.cgi,v $
-# Revision 1.7  1999-02-07 09:59:42  ivan
+# Revision 1.8  1999-02-09 09:23:00  ivan
+# visual and bugfixes
+#
+# Revision 1.7  1999/02/07 09:59:42  ivan
 # more mod_perl fixes, and bugfixes Peter Wemm sent via email
 #
 # Revision 1.6  1999/01/19 05:14:22  ivan
@@ -52,6 +55,12 @@ use FS::UID qw(cgisuidsetup);
 use FS::CGI qw(header popurl);
 use FS::Record qw(qsearchs);
 use FS::Conf;
+use FS::svc_acct_sm;
+use FS::cust_svc;
+use FS::cust_pkg;
+use FS::part_svc;
+use FS::svc_domain;
+use FS::svc_acct;
 
 $cgi = new CGI;
 cgisuidsetup($cgi);

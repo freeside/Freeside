@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct_sm.cgi,v 1.5 1999-01-19 05:14:16 ivan Exp $
+# $Id: svc_acct_sm.cgi,v 1.6 1999-02-09 09:22:58 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/svc_domain.cgi
@@ -19,7 +19,10 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # $Log: svc_acct_sm.cgi,v $
-# Revision 1.5  1999-01-19 05:14:16  ivan
+# Revision 1.6  1999-02-09 09:22:58  ivan
+# visual and bugfixes
+#
+# Revision 1.5  1999/01/19 05:14:16  ivan
 # for mod_perl: no more top-level my() variables; use vars instead
 # also the last s/create/new/;
 #
@@ -39,6 +42,9 @@ use FS::UID qw(cgisuidsetup);
 use FS::CGI qw(popurl idiot header table);
 use FS::Record qw(qsearch qsearchs);
 use FS::Conf;
+use FS::svc_domain;
+use FS::svc_acct_sm;
+use FS::svc_acct;
 
 $cgi = new CGI;
 &cgisuidsetup($cgi);
@@ -65,13 +71,14 @@ if ($domuser) {
 
 if ( scalar(@svc_acct_sm) == 1 ) {
   my($svcnum)=$svc_acct_sm[0]->svcnum;
-  print $cgi->redirect(popurl(2). "view/svc_acct_sm.cgi?$svcnum");  #redirect
+  print $cgi->redirect(popurl(2). "view/svc_acct_sm.cgi?$svcnum");
 } elsif ( scalar(@svc_acct_sm) > 1 ) {
-  CGI::Base::SendHeaders();
-  print $cgi->header( '-expires' => 'now' ), header('Mail Alias Search Results'), table, <<END;
+  print $cgi->header( '-expires' => 'now' ),
+        header('Mail Alias Search Results'),
+        table, <<END;
       <TR>
-        <TH>Mail to<BR><FONT SIZE=-2>(click here to view mail alias)</FONT></TH>
-        <TH>Forwards to<BR><FONT SIZE=-2>(click here to view account)</FONT></TH>
+        <TH>Mail to<BR><FONT SIZE=-1>(click to view mail alias)</FONT></TH>
+        <TH>Forwards to<BR><FONT SIZE=-1>(click to view account)</FONT></TH>
       </TR>
 END
 
@@ -83,29 +90,39 @@ END
       $svc_acct_sm->domuid,
       $svc_acct_sm->domsvc,
     );
-    my($svc_domain)=qsearchs('svc_domain',{'svcnum'=>$domsvc});
-    my($domain)=$svc_domain->domain;
-    my($svc_acct)=qsearchs('svc_acct',{'uid'=>$domuid});
-    my($username)=$svc_acct->username;
-    my($svc_acct_svcnum)=$svc_acct->svcnum;
 
-    print qq!<TR>\n        <TD> <A HREF="!. popurl(2). qq!view/svc_acct_sm.cgi?$svcnum">!;
+    my $svc_domain = qsearchs( 'svc_domain', { 'svcnum' => $domsvc } );
+    if ( $svc_domain ) {
+      my $domain = $svc_domain->domain;
 
-    print '', ( ($domuser eq '*') ? "<I>(anything)</I>" : $domuser );
+      print qq!<TR><TD><A HREF="!. popurl(2). qq!view/svc_acct_sm.cgi?$svcnum">!,
+      #print '', ( ($domuser eq '*') ? "<I>(anything)</I>" : $domuser );
+            ( ($domuser eq '*') ? "<I>(anything)</I>" : $domuser ),
+            qq!\@$domain</A> </TD>!,
+      ;
+    } else {
+      my $warning = "couldn't find svc_domain.svcnum $svcnum ( svc_acct_sm.svcnum $svcnum";
+      warn $warning;
+      print "<TR><TD>WARNING: $warning</TD>";
+    }
 
-    print <<END;
-\@$domain</A> </TD>\n
-<TD> <A HREF="../view/svc_acct.cgi?$svc_acct_svcnum">$username\@$mydomain</A> </TD>\n      </TR>\n
-END
+    my $svc_acct = qsearchs( 'svc_acct', { 'uid' => $domuid } );
+    if ( $svc_acct ) {
+      my $username = $svc_acct->username;
+      my $svc_acct_svcnum =$svc_acct->svcnum;
+      print qq!<TD><A HREF="!, popurl(2),
+            qq!view/svc_acct.cgi?$svc_acct_svcnum">$username\@$mydomain</A>!,
+            qq!</TD></TR>!
+      ;
+    } else {
+      my $warning = "couldn't find svc_acct.uid $domuid (svc_acct_sm.svcnum $svcnum)!";
+      warn $warning;
+      print "<TD>WARNING: $warning</TD></TR>";
+    }
 
   }
 
-  print <<END;
-      </TABLE>
-    </CENTER>
-  </BODY>
-</HTML>
-END
+  print '</TABLE></BODY></HTML>';
 
 } else { #error
   idiot("Mail Alias not found");
