@@ -971,7 +971,7 @@ external SQL radacct table, specified via sqlradius export.  Sessions which
 started in the specified range but are still open are counted from session
 start to the end of the range (unless they are over 1 day old, in which case
 they are presumed missing their stop record and not counted).  Also, sessions
-which end in therange but started earlier are counted from the start of the
+which end in the range but started earlier are counted from the start of the
 range to session end.  Finally, sessions which start before the range but end
 after are counted for the entire range.
 
