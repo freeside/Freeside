@@ -562,17 +562,18 @@ sub replace {
     return $error if $error;
   }
 
-  #false laziness with sub insert (and cust_main)
-  my $queue = new FS::queue {
-    'svcnum' => $new->svcnum,
-    'job'    => 'FS::svc_acct::append_fuzzyfiles'
-  };
-  $error = $queue->insert($new->username);
-  if ( $error ) {
-    $dbh->rollback if $oldAutoCommit;
-    return "queueing job (transaction rolled back): $error";
+  if ( $new->username ne $old->username ) {
+    #false laziness with sub insert (and cust_main)
+    my $queue = new FS::queue {
+      'svcnum' => $new->svcnum,
+      'job'    => 'FS::svc_acct::append_fuzzyfiles'
+    };
+    $error = $queue->insert($new->username);
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "queueing job (transaction rolled back): $error";
+    }
   }
-
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   ''; #no error
