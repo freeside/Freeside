@@ -76,7 +76,7 @@
       <ul>
         <li>destnum - primary key
         <li>custnum - <a href="#cust_main">customer</a>
-        <li>dest - Invoice destination: <a href="#svc_acct">svcnum</a> if numeric, literal email address if string
+        <li>dest - Invoice destination: If numeric, a <a href="#svc_acct">svcnum</a>, if string, a literal email address, or `POST' to enable mailing (the default if no cust_main_invoice records exist)
     <li><a name="cust_main_county">cust_main_county</a> - Tax rates
       <ul>
         <li>taxnum - primary key
