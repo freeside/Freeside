@@ -1,5 +1,5 @@
 <%
-# <!-- $Id: cust_pkg.cgi,v 1.3 2001-10-15 14:58:03 ivan Exp $ -->
+# <!-- $Id: cust_pkg.cgi,v 1.4 2001-10-26 10:24:56 ivan Exp $ -->
 
 use strict;
 use vars qw ( $cgi %uiview %uiadd $part_svc $query $pkgnum $cust_pkg $part_pkg
@@ -35,7 +35,7 @@ die "No package!" unless $cust_pkg;
 $part_pkg = qsearchs('part_pkg',{'pkgpart'=>$cust_pkg->getfield('pkgpart')});
 
 $custnum = $cust_pkg->getfield('custnum');
-print $cgi->header( '-expires' => 'now' ), header('Package View', menubar(
+print $cgi->header( @FS::CGI::header ), header('Package View', menubar(
   "View this customer (#$custnum)" => popurl(2). "view/cust_main.cgi?$custnum",
   'Main Menu' => popurl(2)
 ));

@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: cust_main_county-expand.cgi,v 1.3 2001-08-31 07:28:00 ivan Exp $ -->
+#<!-- $Id: cust_main_county-expand.cgi,v 1.4 2001-10-26 10:24:56 ivan Exp $ -->
 
 use strict;
 use vars qw( $cgi $taxnum $cust_main_county $p1 $delim $expansion );
@@ -32,7 +32,7 @@ $cust_main_county = qsearchs('cust_main_county',{'taxnum'=>$taxnum})
 die "Can't expand entry!" if $cust_main_county->getfield('county');
 
 $p1 = popurl(1);
-print $cgi->header( '-expires' => 'now' ), header("Tax Rate (expand)", menubar(
+print $cgi->header( @FS::CGI::header ), header("Tax Rate (expand)", menubar(
   'Main Menu' => popurl(2),
 ));
 

@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: cust_main.cgi,v 1.10 2001-10-10 06:22:22 thalakan Exp $ -->
+#<!-- $Id: cust_main.cgi,v 1.11 2001-10-26 10:24:56 ivan Exp $ -->
 
 use strict;
 #use vars qw( $conf %ncancelled_pkgs %all_pkgs $cgi @cust_main $sortby );
@@ -59,7 +59,7 @@ if ( scalar(@cust_main) == 1 && ! $cgi->param('referral_custnum') ) {
 } else { 
 
   my($total)=scalar(@cust_main);
-  print $cgi->header( '-expires' => 'now' ), header("Customer Search Results",menubar(
+  print $cgi->header( @FS::CGI::header ), header("Customer Search Results",menubar(
     'Main Menu', popurl(2)
   )), "$total matching customers found ";
   if ( $cgi->param('showcancelledcustomers') eq '0' #see if it was set by me

@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: delete-customer.cgi,v 1.3 2001-08-21 02:31:56 ivan Exp $ -->
+#<!-- $Id: delete-customer.cgi,v 1.4 2001-10-26 10:24:56 ivan Exp $ -->
 
 use strict;
 use vars qw( $cgi $conf $query $custnum $new_custnum $cust_main );
@@ -28,7 +28,7 @@ if ( $cgi->param('error') ) {
 $cust_main = qsearchs( 'cust_main', { 'custnum' => $custnum } )
   or die "Customer not found: $custnum";
 
-print $cgi->header ( '-expires' => 'now' ), header('Delete customer');
+print $cgi->header ( @FS::CGI::header ), header('Delete customer');
 
 print qq!<FONT SIZE="+1" COLOR="#ff0000">Error: !, $cgi->param('error'),
       "</FONT>"

@@ -1,5 +1,5 @@
 <%
-# <!-- $Id: cust_pkg.cgi,v 1.4 2001-08-21 02:03:32 ivan Exp $ -->
+# <!-- $Id: cust_pkg.cgi,v 1.5 2001-10-26 10:24:56 ivan Exp $ -->
 
 use strict;
 use vars qw ( $cgi @cust_pkg $sortby $query %part_pkg );
@@ -58,7 +58,7 @@ if ( scalar(@cust_pkg) == 1 ) {
   eidiot("No packages found");
 } else {
   my($total)=scalar(@cust_pkg);
-  print $cgi->header( '-expires' => 'now' ),
+  print $cgi->header( @FS::CGI::header ),
         header('Package Search Results',''),
         "$total matching packages found<BR>", &table(), <<END;
       <TR>

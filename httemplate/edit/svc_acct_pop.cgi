@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: svc_acct_pop.cgi,v 1.2 2001-08-21 02:31:56 ivan Exp $ -->
+#<!-- $Id: svc_acct_pop.cgi,v 1.3 2001-10-26 10:24:56 ivan Exp $ -->
 
 use strict;
 use vars qw( $cgi $svc_acct_pop $action $query $hashref $p1 );
@@ -27,7 +27,7 @@ $action = $svc_acct_pop->popnum ? 'Edit' : 'Add';
 $hashref = $svc_acct_pop->hashref;
 
 $p1 = popurl(1);
-print $cgi->header( '-expires' => 'now' ), header("$action POP", menubar(
+print $cgi->header( @FS::CGI::header ), header("$action POP", menubar(
   'Main Menu' => popurl(2),
   'View all POPs' => popurl(2). "browse/svc_acct_pop.cgi",
 ));

@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: agent_type.cgi,v 1.4 2001-09-04 14:44:06 ivan Exp $ -->
+#<!-- $Id: agent_type.cgi,v 1.5 2001-10-26 10:24:56 ivan Exp $ -->
 
 use strict;
 use vars qw( $cgi $p $agent_type );
@@ -17,7 +17,7 @@ $cgi = new CGI;
 &cgisuidsetup($cgi);
 
 $p = popurl(2);
-print $cgi->header( '-expires' => 'now' ), header("Agent Type Listing", menubar(
+print $cgi->header( @FS::CGI::header ), header("Agent Type Listing", menubar(
   'Main Menu' => $p,
 )), "Agent types define groups of packages that you can then assign to".
     " particular agents.<BR><BR>", &table(), <<END;

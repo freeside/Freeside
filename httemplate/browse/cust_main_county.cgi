@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: cust_main_county.cgi,v 1.3 2001-08-21 09:34:13 ivan Exp $ -->
+#<!-- $Id: cust_main_county.cgi,v 1.4 2001-10-26 10:24:56 ivan Exp $ -->
 
 use strict;
 use vars qw( $cgi $p $cust_main_county );
@@ -16,7 +16,7 @@ $cgi = new CGI;
 
 $p = popurl(2);
 
-print $cgi->header( '-expires' => 'now' ), header("Tax Rate Listing", menubar(
+print $cgi->header( @FS::CGI::header ), header("Tax Rate Listing", menubar(
   'Main Menu' => $p,
   'Edit tax rates' => $p. "edit/cust_main_county.cgi",
 )),<<END;

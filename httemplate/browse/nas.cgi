@@ -17,7 +17,7 @@ $cgi = new CGI;
 
 $p=popurl(2);
 
-print $cgi->header( '-expires' => 'now' ), header('NAS ports', menubar(
+print $cgi->header( @FS::CGI::header ), header('NAS ports', menubar(
   'Main Menu' => $p,
 ));
 

@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: part_pkg.cgi,v 1.6 2001-10-20 12:17:59 ivan Exp $ -->
+#<!-- $Id: part_pkg.cgi,v 1.7 2001-10-26 10:24:56 ivan Exp $ -->
 
 use strict;
 use vars qw( $cgi $p $part_pkg );
@@ -18,7 +18,7 @@ $cgi = new CGI;
 
 $p = popurl(2);
 
-print $cgi->header( '-expires' => 'now' ), header("Package Definition Listing",menubar(
+print $cgi->header( @FS::CGI::header ), header("Package Definition Listing",menubar(
   'Main Menu' => $p,
 )), "One or more services are grouped together into a package and given",
   " pricing information. Customers purchase packages",

@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: cust_bill.cgi,v 1.3 2001-09-01 12:35:39 ivan Exp $ -->
+#<!-- $Id: cust_bill.cgi,v 1.4 2001-10-26 10:24:56 ivan Exp $ -->
 
 use strict;
 use vars qw ( $cgi $invnum $query $sortby @cust_bill );
@@ -67,7 +67,7 @@ if ( scalar(@cust_bill) == 1 ) {
   eidiot("Invoice not found.");
 } else {
   my $total = scalar(@cust_bill);
-  print $cgi->header( '-expires' => 'now' ),
+  print $cgi->header( @FS::CGI::header ),
         &header("Invoice Search Results", menubar(
           'Main Menu', popurl(2)
         )), "$total matching invoices found<BR>", &table(), <<END;

@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: cust_credit.cgi,v 1.3 2001-09-03 22:07:39 ivan Exp $ -->
+#<!-- $Id: cust_credit.cgi,v 1.4 2001-10-26 10:24:56 ivan Exp $ -->
 
 use strict;
 use vars qw( $cgi $query $custnum $otaker $p1 $crednum $_date $amount $reason );
@@ -36,7 +36,7 @@ $otaker = getotaker;
 
 $p1 = popurl(1);
 
-print $cgi->header( '-expires' => 'now' ), header("Post Credit", '');
+print $cgi->header( @FS::CGI::header ), header("Post Credit", '');
 print qq!<FONT SIZE="+1" COLOR="#ff0000">Error: !, $cgi->param('error'),
       "</FONT>"
   if $cgi->param('error');

@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: agent.cgi,v 1.4 2001-09-04 14:44:06 ivan Exp $ -->
+#<!-- $Id: agent.cgi,v 1.5 2001-10-26 10:24:56 ivan Exp $ -->
 
 use strict;
 use vars qw( $ui $cgi $p $agent );
@@ -28,7 +28,7 @@ $cgi = new CGI;
 
 $p = popurl(2);
 
-print $cgi->header( '-expires' => 'now' ), header('Agent Listing', menubar(
+print $cgi->header( @FS::CGI::header ), header('Agent Listing', menubar(
   'Main Menu'   => $p,
   'Agent Types' => $p. 'browse/agent_type.cgi',
 #  'Add new agent' => '../edit/agent.cgi'

@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: cust_pkg.cgi,v 1.2 2001-08-21 02:31:56 ivan Exp $ -->
+#<!-- $Id: cust_pkg.cgi,v 1.3 2001-10-26 10:24:56 ivan Exp $ -->
 
 use strict;
 use vars qw( $cgi %pkg %comment $custnum $p1 @cust_pkg 
@@ -33,7 +33,7 @@ if ( $cgi->param('error') ) {
 }
 
 $p1 = popurl(1);
-print $cgi->header( '-expires' => 'now' ), header("Add/Edit Packages", '');
+print $cgi->header( @FS::CGI::header ), header("Add/Edit Packages", '');
 
 print qq!<FONT SIZE="+1" COLOR="#ff0000">Error: !, $cgi->param('error'),
       "</FONT>"

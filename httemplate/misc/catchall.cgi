@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: catchall.cgi,v 1.2 2001-08-21 02:31:56 ivan Exp $ -->
+#<!-- $Id: catchall.cgi,v 1.3 2001-10-26 10:24:56 ivan Exp $ -->
 
 use strict;
 use vars qw( $conf $cgi $action $svcnum $svc_domain $pkgnum $svcpart
@@ -94,7 +94,7 @@ if ($pkgnum) {
 $email{0} = "(none)";
 
 $p1 = popurl(1);
-print $cgi->header( '-expires' => 'now' ), header("Domain Catchall Edit", '');
+print $cgi->header( @FS::CGI::header ), header("Domain Catchall Edit", '');
 
 print qq!<FONT SIZE="+1" COLOR="#ff0000">Error: !, $cgi->param('error'),
       "</FONT>"

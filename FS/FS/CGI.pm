@@ -1,7 +1,7 @@
 package FS::CGI;
 
 use strict;
-use vars qw(@EXPORT_OK @ISA);
+use vars qw(@EXPORT_OK @ISA @header);
 use Exporter;
 use CGI;
 use URI::URL;
@@ -10,6 +10,10 @@ use FS::UID;
 
 @ISA = qw(Exporter);
 @EXPORT_OK = qw(header menubar idiot eidiot popurl table itable ntable);
+
+@header = ( '-Expires' => '-1',
+            '-Pragma' => 'no-cache',
+            '-Cache-Control' => 'no-cache' );
 
 =head1 NAME
 
@@ -91,12 +95,12 @@ sub idiot {
   #warn "idiot depriciated";
   my($error)=@_;
   my $cgi = &FS::UID::cgi();
-  if ( $cgi->isa('CGI::Base') ) {
-    no strict 'subs';
-    &CGI::Base::SendHeaders;
-  } else {
-    print $cgi->header( '-expires' => 'now' );
-  }
+#  if ( $cgi->isa('CGI::Base') ) {
+#    no strict 'subs';
+#    &CGI::Base::SendHeaders;
+#  } else {
+    print $cgi->header( @FS::CGI::header );
+#  }
   print <<END;
 <HTML>
   <HEAD>

@@ -1,5 +1,5 @@
 <%
-# <!-- $Id: svc_acct.cgi,v 1.6 2001-09-27 20:41:37 ivan Exp $ -->
+# <!-- $Id: svc_acct.cgi,v 1.7 2001-10-26 10:24:56 ivan Exp $ -->
 
 use strict;
 use vars qw( $conf $cgi $domain $query $svcnum $svc_acct $cust_svc $pkgnum
@@ -55,7 +55,7 @@ if ( $svc_acct->domsvc ) {
 }
 
 $p = popurl(2);
-print $cgi->header( '-expires' => 'now' ), header('Account View', menubar(
+print $cgi->header( @FS::CGI::header ), header('Account View', menubar(
   ( ( $pkgnum || $custnum )
     ? ( "View this package (#$pkgnum)" => "${p}view/cust_pkg.cgi?$pkgnum",
         "View this customer (#$custnum)" => "${p}view/cust_main.cgi?$custnum",

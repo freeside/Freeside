@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: svc_acct_sm.cgi,v 1.2 2001-08-21 02:31:57 ivan Exp $ -->
+#<!-- $Id: svc_acct_sm.cgi,v 1.3 2001-10-26 10:24:56 ivan Exp $ -->
 
 use strict;
 use vars qw( $conf $cgi $mydomain $domuser $svc_domain $domsvc @svc_acct_sm );
@@ -40,7 +40,7 @@ if ( scalar(@svc_acct_sm) == 1 ) {
   my($svcnum)=$svc_acct_sm[0]->svcnum;
   print $cgi->redirect(popurl(2). "view/svc_acct_sm.cgi?$svcnum");
 } elsif ( scalar(@svc_acct_sm) > 1 ) {
-  print $cgi->header( '-expires' => 'now' ),
+  print $cgi->header( @FS::CGI::header ),
         header('Mail Alias Search Results'),
         &table(), <<END;
       <TR>

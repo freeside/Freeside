@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: svc_domain.cgi,v 1.4 2001-10-25 21:24:12 ivan Exp $ -->
+#<!-- $Id: svc_domain.cgi,v 1.5 2001-10-26 10:24:56 ivan Exp $ -->
 
 use strict;
 use vars qw( $cgi $action $svcnum $svc_domain $pkgnum $svcpart $part_svc
@@ -77,7 +77,7 @@ $otaker = getotaker;
 $domain = $svc_domain->domain;
 
 $p1 = popurl(1);
-print $cgi->header( '-expires' => 'now' ), header("$action $svc", '');
+print $cgi->header( @FS::CGI::header ), header("$action $svc", '');
 
 print qq!<FONT SIZE="+1" COLOR="#ff0000">Error: !, $cgi->param('error'),
       "</FONT>"

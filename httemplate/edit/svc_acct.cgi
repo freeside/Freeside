@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: svc_acct.cgi,v 1.10 2001-10-20 12:18:00 ivan Exp $ -->
+#<!-- $Id: svc_acct.cgi,v 1.11 2001-10-26 10:24:56 ivan Exp $ -->
 
 use strict;
 use vars qw( $conf $cgi @shells $action $svcnum $svc_acct $pkgnum $svcpart
@@ -101,7 +101,7 @@ $ulen = $svc_acct->dbdef_table->column('username')->length;
 $ulen2 = $ulen+2;
 
 $p1 = popurl(1);
-print $cgi->header( '-expires' => 'now' ), header("$action $svc account");
+print $cgi->header( @FS::CGI::header ), header("$action $svc account");
 
 print qq!<FONT SIZE="+1" COLOR="#ff0000">Error: !, $cgi->param('error'),
       "</FONT><BR><BR>"

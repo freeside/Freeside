@@ -1,5 +1,5 @@
 <%
-#<!-- $Id: link.cgi,v 1.2 2001-08-21 02:31:56 ivan Exp $ -->
+#<!-- $Id: link.cgi,v 1.3 2001-10-26 10:24:56 ivan Exp $ -->
 
 use strict;
 use vars qw ( %link_field $cgi $pkgnum $svcpart $query $part_svc $svc $svcdb 
@@ -32,7 +32,7 @@ $svc = $part_svc->getfield('svc');
 $svcdb = $part_svc->getfield('svcdb');
 $link_field = $link_field{$svcdb};
 
-print $cgi->header( '-expires' => 'now' ), header("Link to existing $svc"),
+print $cgi->header( @FS::CGI::header ), header("Link to existing $svc"),
       qq!<FORM ACTION="!, popurl(1), qq!process/link.cgi" METHOD=POST>!;
 
 if ( $link_field ) { 
