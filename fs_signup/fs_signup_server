@@ -163,7 +163,7 @@ while (1) {
 
     use Tie::RefHash;
     tie my %hash, 'Tie::RefHash';
-    %hash = { $cust_pkg => [ $svc_acct ] };
+    %hash = ( $cust_pkg => [ $svc_acct ] );
     $error ||= $cust_main->insert( \%hash );
     #if ( $cust_pkg && ! $error ) { #in this case, $cust_pkg should always
     #                               #be definied, but....

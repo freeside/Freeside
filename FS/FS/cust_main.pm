@@ -191,15 +191,17 @@ but until then, here's an example:
 
   use Tie::RefHash;
   tie %hash, 'Tie::RefHash'; #this part is important
-  %hash = {
+  %hash = (
     $cust_pkg => [ $svc_acct ],
-  };
+    ...
+  );
   $cust_main->insert( \%hash );
 
 =cut
 
 sub insert {
   my $self = shift;
+  my @param = @_;
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -239,8 +241,8 @@ sub insert {
     return $error;
   }
 
-  if ( @_ ) {
-    my $cust_pkgs = shift;
+  if ( @param ) {
+    my $cust_pkgs = shift @param;
     foreach my $cust_pkg ( keys %$cust_pkgs ) {
       $cust_pkg->custnum( $self->custnum );
       $error = $cust_pkg->insert;
@@ -1117,7 +1119,7 @@ sub check_invoicing_list {
 
 =head1 VERSION
 
-$Id: cust_main.pm,v 1.12 2001-04-23 07:12:44 ivan Exp $
+$Id: cust_main.pm,v 1.13 2001-05-07 02:07:38 ivan Exp $
 
 =head1 BUGS
 
