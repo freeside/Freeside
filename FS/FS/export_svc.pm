@@ -86,6 +86,13 @@ sub insert {
   return $error if $error;
 
   #check for duplicates!
+#TODO:
+#- XXX here
+#
+#- have edit/process/part_svc.cgi redirect with error back to 
+#edit/part_svc.cgi rather than eidiot out
+#
+#- rewrite in SQL for efficiency
 
   my $label = '';
   my $method = '';
@@ -105,11 +112,14 @@ sub insert {
     warn "WARNING: XXX fill in this warning";
   }
 
+  #warn "$method\n";
   if ( $method ) {
     my @current_svc = $self->part_export->svc_x;
+    #warn "current: ". scalar(@current_svc). " $current_svc[0]\n";
     my @new_svc = $self->part_svc->svc_x;
+    #warn "new: ". scalar(@new_svc). " $new_svc[0]\n";
     my %cur_svc = map { $_->$method() => 1 } @current_svc;
-    my @dup_svc = grep { $cur_svc{$_->method()} } @new_svc;
+    my @dup_svc = grep { $cur_svc{$_->$method()} } @new_svc;
 
     if ( @dup_svc ) { #aye, that's the rub
       #error out for now, eventually accept different options of adjustments
@@ -117,10 +127,10 @@ sub insert {
       $dbh->rollback if $oldAutoCommit;
       return "Can't export ".
              $self->part_svc->svcpart.':'.$self->part_svc->svc. " service to ".
-             $self->part_export->exportnum.':'.$self->exporttype.
-               ' on '. $self->machine.
-             " : Duplicate $label: ".
-               join(', ', sort map { $_->method() } @dup_svc );
+             $self->part_export->exportnum.':'.$self->part_export->exporttype.
+               ' on '. $self->part_export->machine.
+             ' : '. scalar(@dup_svc). " duplicate $label: ".
+               join(', ', sort map { $_->$method() } @dup_svc );
              #XXX eventually a sort sub so usernames and domains are default alpha, username@domain is domain first then username, and uid is numeric
     }
   }
