@@ -36,7 +36,7 @@ die "No services with svcdb svc_acct!\n" unless %part_svc;
 print "\n\n", &menu_svc, "\n", <<END;
 Enter part number or part numbers to import.
 END
-my($shell_svcpart)=&getpart;
+my($shell_svcpart)=&getvalue;
 my @shell_svcpart = split(/[,\s]+/, $shell_svcpart);
 
 print "\n\n", <<END;
