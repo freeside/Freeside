@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: fs-setup,v 1.51 2001-09-04 11:14:13 ivan Exp $
+# $Id: fs-setup,v 1.52 2001-09-04 11:15:15 ivan Exp $
 
 #to delay loading dbdef until we're ready
 BEGIN { $FS::Record::setup_hack = 1; }
@@ -79,7 +79,6 @@ my(%tables)=&tables_hash_hack;
 #turn it into objects
 my($dbdef) = new DBIx::DBSchema ( map {  
   my(@columns);
-  warn $_;
   warn $tables{$_}{'columns'};
   while (@{$tables{$_}{'columns'}}) {
     my($name,$type,$null,$length)=splice @{$tables{$_}{'columns'}}, 0, 4;
