@@ -25,6 +25,9 @@ tie my %options, 'Tie::IxHash',
   'debug'      => { 'label' => 'Enable debug logging',
                     'type'  => 'checkbox',
                   },
+  'enable_edit' => { 'label' => 'Enable local editing of Artera serial numbers and key codes (note that the changes will NOT be exported to Artera)',
+                     'type'  => 'checkbox',
+                   },
 ;
 
 %info = (
@@ -110,6 +113,7 @@ sub _export_insert {
 
 sub _export_replace {
   my( $self, $new, $old ) = (shift, shift, shift);
+  return '' if $self->option('enable_edit');
   return "can't change serial number with Artera"
     if $old->id != $new->id && $old->id;
   return "can't change key code with Artera"
