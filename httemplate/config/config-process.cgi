@@ -26,7 +26,7 @@
           #$conf->delete($i->key);
           push @delete, $i->key;
         }
-      } elsif ( $type eq 'text' )  {
+      } elsif ( $type eq 'text' || $type eq 'select' )  {
         if ( $cgi->param($i->key. $n) ne '' ) {
           $conf->set($i->key, $cgi->param($i->key. $n));
         } else {

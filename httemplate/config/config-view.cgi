@@ -32,7 +32,7 @@
             </td></tr>
           <% } elsif ( $type eq 'checkbox' ) { %>
             <tr><td bgcolor="#<%= $conf->exists($i->key) ? '00ff00">YES' : 'ff0000">NO' %></td></tr>
-          <% } elsif ( $type eq 'text' )  { %>
+          <% } elsif ( $type eq 'text' || $type eq 'select' )  { %>
             <tr><td bgcolor="#ffffff"><%=  $conf->exists($i->key) ? $conf->config($i->key) : '' %></td></tr>
           <% } else { %>
             <tr><td>
