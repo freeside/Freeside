@@ -71,11 +71,14 @@ SELFSERVICE_INSTALL_USER = ivan
 SELFSERVICE_INSTALL_USERADD = /usr/sbin/useradd
 #SELFSERVICE_INSTALL_USERADD = "/usr/sbin/pw useradd"
 
-RT_ENABLED = 0
-#RT_ENABLED = 1
+#RT_ENABLED = 0
+RT_ENABLED = 1
 RT_DOMAIN = example.com
 RT_TIMEZONE = US/Pacific;
 #RT_TIMEZONE = US/Eastern;
+
+#for now, same db as specified in DATASOURCE... eventually, otherwise?
+RT_DB_DATABASE = freeside
 
 #---
 
@@ -240,7 +243,7 @@ configure-rt:
 	./configure --enable-layout=Freeside\
 	            --with-db-type=Pg \
 	            --with-db-dba=${DB_USER} \
-	            --with-db-database=freeside \
+	            --with-db-database=${RT_DB_DATABASE} \
 	            --with-db-rt-user=${DB_USER} \
 	            --with-db-rt-pass=${DB_PASSWORD} \
 	            --with-web-user=freeside \
@@ -248,9 +251,12 @@ configure-rt:
 	            --with-rt-group=freeside
 
 create-rt: configure-rt
+	[ -d /opt           ] || mkdir /opt           #doh
+	[ -d /opt/rt3       ] || mkdir /opt/rt3       #
+	[ -d /opt/rt3/share ] || mkdir /opt/rt3/share #
 	cd rt; make install
 	echo -e "${DB_PASSWORD}\n\\d sessions"\
-	 | psql -U ${DB_USER} -W freeside 2>&1\
+	 | psql -U ${DB_USER} -W ${RT_DB_DATABASE} 2>&1\
 	 | grep '^Did not find'\
 	 && rt/sbin/rt-setup-database --dba '${DB_USER}' \
 	                             --dba-password '${DB_PASSWORD}' \
@@ -275,8 +281,8 @@ clean:
 #these are probably only useful if you're me...
 
 upload-docs: forcehtmlman
-	ssh pouncequick.420.am rm -rf /var/www/www.sisd.com/freeside/devdocs
-	scp -pr httemplate/docs pouncequick.420.am:/var/www/www.sisd.com/freeside/devdocs
+	ssh pouncequick.420.am rm -rf /var/www/www.sisd.com/freeside/docs
+	scp -pr httemplate/docs pouncequick.420.am:/var/www/www.sisd.com/freeside/docs
 
 release: upload-docs
 	cd /home/ivan/freeside
