@@ -231,6 +231,7 @@ sub check {
     $self->ut_numbern('svcpart')
     || $self->ut_text('svc')
     || $self->ut_alpha('svcdb')
+    || $self->ut_enum('disabled', [ '', 'Y' ] )
   ;
   return $error if $error;
 
@@ -261,9 +262,6 @@ sub check {
 #
 #    }
 #  }
-
-  $self->disabled =~ /^(Y?)$/ or return "Illegal disabled: ". $self->disabled;
-  $self->disabled($1);
 
   ''; #no error
 }
@@ -301,7 +299,7 @@ sub all_part_svc_column {
 
 =head1 VERSION
 
-$Id: part_svc.pm,v 1.8 2002-01-22 14:55:25 ivan Exp $
+$Id: part_svc.pm,v 1.9 2002-01-28 06:57:23 ivan Exp $
 
 =head1 BUGS
 

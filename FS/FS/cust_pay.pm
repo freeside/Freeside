@@ -61,6 +61,8 @@ L<Time::Local> and L<Date::Parse> for conversion functions.
 
 =item paybatch - text field for tracking card processing
 
+=item closed - books closed flag, empty or `Y'
+
 =back
 
 =head1 METHODS
@@ -208,7 +210,9 @@ Currently unimplemented (accounting reasons).
 =cut
 
 sub delete {
-  return "Can't (yet?) delete cust_pay records!";
+  my $self = shift;
+  return "Can't delete closed payment" if $self->closed =~ /^Y/i;
+  $self->SUPER::delete(@_);
 }
 
 =item replace OLD_RECORD
@@ -237,6 +241,7 @@ sub check {
     || $self->ut_money('paid')
     || $self->ut_numbern('_date')
     || $self->ut_textn('paybatch')
+    || $self->ut_enum('closed', [ '', 'Y' ])
   ;
   return $error if $error;
 
@@ -307,7 +312,7 @@ sub unapplied {
 
 =head1 VERSION
 
-$Id: cust_pay.pm,v 1.13 2002-01-24 16:58:47 ivan Exp $
+$Id: cust_pay.pm,v 1.14 2002-01-28 06:57:23 ivan Exp $
 
 =head1 BUGS
 

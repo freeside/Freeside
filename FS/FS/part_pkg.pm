@@ -132,7 +132,7 @@ insert and replace methods.
 sub check {
   my $self = shift;
 
-  my $error = $self->ut_numbern('pkgpart')
+  $self->ut_numbern('pkgpart')
     || $self->ut_text('pkg')
     || $self->ut_text('comment')
     || $self->ut_anything('setup')
@@ -140,19 +140,11 @@ sub check {
     || $self->ut_anything('recur')
     || $self->ut_alphan('plan')
     || $self->ut_anything('plandata')
+    || $self->ut_enum('setuptax', [ '', 'Y' ] )
+    || $self->ut_enum('recurtax', [ '', 'Y' ] )
+    || $self->ut_enum('disabled', [ '', 'Y' ] )
   ;
-  return $error if $error;
 
-  $self->setuptax =~ /^(Y?)$/ or return "Illegal setuptax: ". $self->setuptax;
-  $self->setuptax($1);
-
-  $self->recurtax =~ /^(Y?)$/ or return "Illegal recrutax: ". $self->recurtax;
-  $self->recurtax($1);
-
-  $self->disabled =~ /^(Y?)$/ or return "Illegal disabled: ". $self->disabled;
-  $self->disabled($1);
-
-  '';
 }
 
 =item pkg_svc
@@ -190,7 +182,7 @@ sub svcpart {
 
 =head1 VERSION
 
-$Id: part_pkg.pm,v 1.5 2001-12-27 09:26:13 ivan Exp $
+$Id: part_pkg.pm,v 1.6 2002-01-28 06:57:23 ivan Exp $
 
 =head1 BUGS
 

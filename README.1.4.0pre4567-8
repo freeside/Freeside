@@ -51,6 +51,11 @@ CREATE INDEX part_export_option (
 CREATE INDEX part_export_option1 ON part_export ( exportnum );
 CREATE INDEX part_export_option2 ON part_export ( option );
 
+ALTER TABLE cust_bill ADD closed char(1) NULL;
+ALTER TABLE cust_pay ADD closed char(1) NULL;
+ALTER TABLE cust_credit ADD closed char(1) NULL;
+ALTER TABLE cust_refund ADD closed char(1) NULL;
+
 Run bin/dbdef-create
 
 Restart Apache and freeside-queued

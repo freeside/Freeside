@@ -55,6 +55,8 @@ L<Time::Local> and L<Date::Parse> for conversion functions.
 
 =item otaker - order taker (assigned automatically, see L<FS::UID>)
 
+=item closed - books closed flag, empty or `Y'
+
 =back
 
 =head1 METHODS
@@ -189,7 +191,9 @@ Currently unimplemented (accounting reasons).
 =cut
 
 sub delete {
-  return "Can't (yet?) delete cust_refund records!";
+  my $self = shift;
+  return "Can't delete closed refund" if $self->closed =~ /^Y/i;
+  $self->SUPER::delete(@_);
 }
 
 =item replace OLD_RECORD
@@ -218,6 +222,7 @@ sub check {
     || $self->ut_money('refund')
     || $self->ut_numbern('_date')
     || $self->ut_textn('paybatch')
+    || $self->ut_enum('closed', [ '', 'Y' ])
   ;
   return $error if $error;
 
@@ -261,7 +266,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: cust_refund.pm,v 1.14 2002-01-24 16:58:47 ivan Exp $
+$Id: cust_refund.pm,v 1.15 2002-01-28 06:57:23 ivan Exp $
 
 =head1 BUGS
 

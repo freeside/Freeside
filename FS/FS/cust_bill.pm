@@ -91,6 +91,8 @@ L<Time::Local> and L<Date::Parse> for conversion functions.
 =item printed - how many times this invoice has been printed automatically
 (see L<FS::cust_main/"collect">).
 
+=item closed - books closed flag, empty or `Y'
+
 =back
 
 =head1 METHODS
@@ -120,7 +122,9 @@ no record you ever posted this invoice (which is bad, no?)
 =cut
 
 sub delete {
-  return "Can't remove invoice!"
+  my $self = shift;
+  return "Can't delete closed invoice" if $self->closed =~ /^Y/i;
+  $self->SUPER::delete(@_);
 }
 
 =item replace OLD_RECORD
@@ -160,6 +164,7 @@ sub check {
     || $self->ut_numbern('_date')
     || $self->ut_money('charged')
     || $self->ut_numbern('printed')
+    || $self->ut_enum('closed', [ '', 'Y' ])
   ;
   return $error if $error;
 
@@ -495,7 +500,7 @@ sub print_text {
 
 =head1 VERSION
 
-$Id: cust_bill.pm,v 1.14 2001-12-21 21:40:24 ivan Exp $
+$Id: cust_bill.pm,v 1.15 2002-01-28 06:57:23 ivan Exp $
 
 =head1 BUGS
 

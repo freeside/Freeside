@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: fs-setup,v 1.70 2002-01-28 05:15:28 ivan Exp $
+# $Id: fs-setup,v 1.71 2002-01-28 06:57:23 ivan Exp $
 
 #to delay loading dbdef until we're ready
 BEGIN { $FS::Record::setup_hack = 1; }
@@ -293,6 +293,7 @@ sub tables_hash_hack {
         '_date',     @date_type,
         'charged',   @money_type,
         'printed',   'int',  '', '',
+        'closed',    'char', 'NULL', 1,
       ],
       'primary_key' => 'invnum',
       'unique' => [ [] ],
@@ -347,6 +348,7 @@ sub tables_hash_hack {
         'amount',   @money_type,
         'otaker',   'varchar', '', 8,
         'reason',   'text', 'NULL', '',
+        'closed',    'char', 'NULL', 1,
       ],
       'primary_key' => 'crednum',
       'unique' => [ [] ],
@@ -455,6 +457,7 @@ sub tables_hash_hack {
                                          # payment type table.
         'payinfo',  'varchar',   'NULL', 16,  #see cust_main above
         'paybatch', 'varchar',   'NULL', $char_d, #for auditing purposes.
+        'closed',    'char', 'NULL', 1,
       ],
       'primary_key' => 'paynum',
       'unique' => [ [] ],
@@ -531,6 +534,7 @@ sub tables_hash_hack {
                                              # into payment type table.
         'payinfo',      'varchar',   'NULL', 16,  #see cust_main above
         'paybatch',     'varchar',   'NULL', $char_d,
+        'closed',    'char', 'NULL', 1,
       ],
       'primary_key' => 'refundnum',
       'unique' => [ [] ],
