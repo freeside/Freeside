@@ -1135,7 +1135,9 @@ sub collect {
         grep { $_->seconds <= ( $invoice_time - $cust_bill->_date )
                && ! qsearchs( 'cust_bill_event', {
                                 'invnum'    => $cust_bill->invnum,
-                                'eventpart' => $_->eventpart       } )
+                                'eventpart' => $_->eventpart,
+                                'status'    => 'done',
+                                                                   } )
              }
           qsearch('part_bill_event', { 'payby'    => $self->payby,
                                        'disabled' => '',           } )
@@ -1145,40 +1147,41 @@ sub collect {
       my $cust_main = $self; #for callback
       my $error = eval $part_bill_event->eventcode;
 
+      my $status = '';
+      my $statustext = '';
       if ( $@ ) {
-        warn "fatal error running invoice event (". $part_bill_event->eventcode.
-             "): $@";
-      }
-
-      if ( $error ) {
-
-        warn "Error running invoice event (". $part_bill_event->eventcode.
-             "): $error";
-
+        $status = 'failed';
+        $statustext = $@;
+      } elsif ( $error ) {
+        $status = 'done';
+        $statustext = $error;
       } else {
-
-        #add cust_bill_event
-        my $cust_bill_event = new FS::cust_bill_event {
-          'invnum'    => $cust_bill->invnum,
-          'eventpart' => $part_bill_event->eventpart,
-          '_date'     => $invoice_time,
-        };
-        $cust_bill_event->insert;
-        if ( $error ) {
-          #$dbh->rollback if $oldAutoCommit;
-          #return "error: $error";
-
-          # gah, even with transactions.
-          $dbh->commit if $oldAutoCommit; #well.
-          my $e = 'WARNING: Event run but database not updated - '.
-                  'error inserting cust_bill_event, invnum #'. $cust_bill->invnum.
-                  ', eventpart '. $part_bill_event->eventpart.
-                  ": $error";
-          warn $e;
-          return $e;
-        }
-
+        $status = 'done'
       }
+
+      #add cust_bill_event
+      my $cust_bill_event = new FS::cust_bill_event {
+        'invnum'     => $cust_bill->invnum,
+        'eventpart'  => $part_bill_event->eventpart,
+        '_date'      => $invoice_time,
+        'status'     => $status,
+        'statustext' => $statustext,
+      };
+      $cust_bill_event->insert;
+      if ( $error ) {
+        #$dbh->rollback if $oldAutoCommit;
+        #return "error: $error";
+
+        # gah, even with transactions.
+        $dbh->commit if $oldAutoCommit; #well.
+        my $e = 'WARNING: Event run but database not updated - '.
+                'error inserting cust_bill_event, invnum #'. $cust_bill->invnum.
+                ', eventpart '. $part_bill_event->eventpart.
+                ": $error";
+        warn $e;
+        return $e;
+      }
+
 
     }
 
