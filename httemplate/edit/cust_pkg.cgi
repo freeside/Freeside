@@ -45,23 +45,24 @@ my @cust_pkg = qsearch('cust_pkg',{ 'custnum' => $custnum, 'cancel' => '' } );
 if (@cust_pkg) {
   print <<END;
 Current packages - select to remove (services are moved to a new package below)
+<TABLE>
+  <TR STYLE="background-color: #cccccc;">
+    <TH COLSPAN="2">Pkg #</TH>
+    <TH>Package description</TH>
+  </TR>
 <BR><BR>
 END
 
-  my $count = 0 ;
-  print qq!<TABLE>! ;
-  foreach (@cust_pkg) {
-    print '<TR>' if $count == 0;
+  foreach (sort { $all_pkg{$a->getfield('pkgpart')} cmp $all_pkg{$b->getfield('pkgpart')} } @cust_pkg) {
     my($pkgnum,$pkgpart)=( $_->getfield('pkgnum'), $_->getfield('pkgpart') );
-    print qq!<TD><INPUT TYPE="checkbox" NAME="remove_pkg" VALUE="$pkgnum"!;
-    print " CHECKED" if $remove_pkg{$pkgnum};
-    print qq!>$pkgnum: $all_pkg{$pkgpart} - $all_comment{$pkgpart}</TD>\n!;
-    $count ++ ;
-    if ($count == 2)
-    {
-      $count = 0 ;
-      print qq!</TR>\n! ;
-    }
+    my $checked = $remove_pkg{$pkgnum} ? ' CHECKED' : '';
+    print <<END;
+  <TR>
+    <TD><INPUT TYPE="checkbox" NAME="remove_pkg" VALUE="$pkgnum"${checked}></TD>
+    <TD ALIGN="right">$pkgnum:</TD>\n
+    <TD>$all_pkg{$pkgpart} - $all_comment{$pkgpart}</TD>
+  </TR>
+END
   }
   print qq!</TABLE><BR><BR>!;
 }
@@ -73,25 +74,37 @@ END
 my $cust_main = qsearchs('cust_main',{'custnum'=>$custnum});
 my $agent = qsearchs('agent',{'agentnum'=> $cust_main->agentnum });
 
+my %agent_pkgs = map { ( $_->pkgpart , $all_pkg{$_->pkgpart} ) }
+                     qsearch('type_pkgs',{'typenum'=> $agent->typenum });
+
 my $count = 0;
 my $pkgparts = 0;
-print qq!<TABLE>!;
-foreach my $type_pkgs ( qsearch('type_pkgs',{'typenum'=> $agent->typenum }) ) {
+print <<END;
+<TABLE>
+  <TR STYLE="background-color: #cccccc;">
+    <TH>Qty.</TH>
+    <TH COLSPAN="2">Package Description</TH>
+  </TR>
+END
+#foreach my $type_pkgs ( qsearch('type_pkgs',{'typenum'=> $agent->typenum }) ) {
+foreach my $pkgpart ( sort { $agent_pkgs{$a} cmp $agent_pkgs{$b} }
+                             keys(%agent_pkgs) ) {
   $pkgparts++;
-  my($pkgpart)=$type_pkgs->pkgpart;
   next unless exists $pkg{$pkgpart}; #skip disabled ones
-  print qq!<TR>! if ( $count == 0 );
+  #print qq!<TR>! if ( $count == 0 );
   my $value = $cgi->param("pkg$pkgpart") || 0;
   print <<END;
-  <TD>
-  <INPUT TYPE="text" NAME="pkg$pkgpart" VALUE="$value" SIZE="2" MAXLENGTH="2">
-  $pkgpart: $pkg{$pkgpart} - $comment{$pkgpart}</TD>\n
+  <TR>
+    <TD><INPUT TYPE="text" NAME="pkg$pkgpart" VALUE="$value" SIZE="2" MAXLENGTH="2"></TD>
+    <TD ALIGN="right">$pkgpart:</TD>
+    <TD>$pkg{$pkgpart} - $comment{$pkgpart}</TD>
+  </TR>
 END
   $count ++ ;
-  if ( $count == 2 ) {
-    print qq!</TR>\n! ;
-    $count = 0;
-  }
+  #if ( $count == 2 ) {
+  #  print qq!</TR>\n! ;
+  #  $count = 0;
+  #}
 }
 print qq!</TABLE>!;
 
