@@ -2,7 +2,7 @@ package FS::export_svc;
 
 use strict;
 use vars qw( @ISA );
-use FS::Record qw( qsearch qsearchs );
+use FS::Record qw( qsearch qsearchs dbh );
 use FS::part_export;
 use FS::part_svc;
 
@@ -67,7 +67,102 @@ otherwise returns false.
 
 =cut
 
-# the insert method can be inherited from FS::Record
+sub insert {
+  my $self = shift;
+  my $error;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  $error = $self->check;
+  return $error if $error;
+
+  #check for duplicates!
+
+  my $label = '';
+  my $method = '';
+  my $svcdb = $self->part_svc->svcdb;
+  if ( $svcdb eq 'svc_acct' ) { #XXX AND UID!  sheesh @method or %method not $method
+    if ( $self->part_export->nodomain =~ /^Y/i ) {
+      $label = 'usernames';
+      $method = 'username';
+    } else {
+      $label = 'username@domain';
+      $method = 'email';
+    }
+  } elsif ( $svcdb eq 'domain' ) {
+    $label = 'domains';
+    $method = 'domain';
+  } else {
+    warn "WARNING: XXX fill in this warning";
+  }
+
+  if ( $method ) {
+    my @current_svc = $self->part_export->svc_x;
+    my @new_svc = $self->part_svc->svc_x;
+    my %cur_svc = map { $_->$method() => 1 } @current_svc;
+    my @dup_svc = grep { $cur_svc{$_->method()} } @new_svc;
+
+    if ( @dup_svc ) { #aye, that's the rub
+      #error out for now, eventually accept different options of adjustments
+      # to make to allow us to continue forward
+      $dbh->rollback if $oldAutoCommit;
+      return "Can't export ".
+             $self->part_svc->svcpart.':'.$self->part_svc->svc. " service to ".
+             $self->part_export->exportnum.':'.$self->exporttype.
+               ' on '. $self->machine.
+             " : Duplicate $label: ".
+               join(', ', sort map { $_->method() } @dup_svc );
+             #XXX eventually a sort sub so usernames and domains are default alpha, username@domain is domain first then username, and uid is numeric
+    }
+  }
+
+  #end of duplicate check, whew
+
+  $error = $self->SUPER::insert;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+#  if ( $self->part_svc->svcdb eq 'svc_acct' ) {
+#
+#    if ( $self->part_export->nodomain =~ /^Y/i ) {
+#
+#      select username from svc_acct where svcpart = $svcpart
+#        group by username having count(*) > 1;
+#
+#    } else {
+#
+#      select username, domain
+#        from   svc_acct
+#          join svc_domain on ( svc_acct.domsvc = svc_domain.svcnum )
+#        group by username, domain having count(*) > 1;
+#
+#    }
+#
+#  } elsif ( $self->part_svc->svcdb eq 'svc_domain' ) {
+#
+#    #similar but easier domain checking one
+#
+#  } #etc.?
+#
+#  my @services =
+#    map  { $_->part_svc }
+#    grep { $_->svcpart != $self->svcpart }
+#         $self->part_export->export_svc;
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  ''; #no error
+}
 
 =item delete
 
@@ -107,6 +202,28 @@ sub check {
     || $self->ut_foreign_key('svcpart', 'part_svc', 'svcpart')
     || $self->SUPER::check
   ;
+}
+
+=item part_export
+
+Returns the FS::part_export object (see L<FS::part_export>).
+
+=cut
+
+sub part_export {
+  my $self = shift;
+  qsearchs( 'part_export', { 'exportnum' => $self->exportnum } );
+}
+
+=item part_svc
+
+Returns the FS::part_svc object (see L<FS::part_svc>).
+
+=cut
+
+sub part_svc {
+  my $self = shift;
+  qsearchs( 'part_svc', { 'svcpart' => $self->svcpart } );
 }
 
 =back

@@ -6,6 +6,7 @@ use FS::Record qw( qsearch qsearchs fields dbh );
 use FS::part_svc_column;
 use FS::part_export;
 use FS::export_svc;
+use FS::cust_svc;
 
 @ISA = qw(FS::Record);
 
@@ -299,6 +300,28 @@ sub part_export {
   $search{'exporttype'} = shift if @_;
   map { qsearchs('part_export', { 'exportnum' => $_->exportnum, %search } ) }
     qsearch('export_svc', { 'svcpart' => $self->svcpart } );
+}
+
+=item cust_svc
+
+Returns a list of associated FS::cust_svc records.
+
+=cut
+
+sub cust_svc {
+  my $self = shift;
+  qsearch('cust_svc', { 'svcpart' => $self->svcpart } );
+}
+
+=item svc_x
+
+Returns a list of associated FS::svc_* records.
+
+=cut
+
+sub svc_x {
+  my $self = shift;
+  map { $_->svc_x } $self->cust_svc;
 }
 
 =back

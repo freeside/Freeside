@@ -245,7 +245,7 @@ sub insert {
     $self->svcpart($cust_svc->svcpart);
   }
 
-  #new duplicate username checking
+  #new duplicate username/username@domain/uid checking
 
   my $part_svc = qsearchs('part_svc', { 'svcpart' => $self->svcpart } );
   unless ( $part_svc ) {
@@ -272,8 +272,7 @@ sub insert {
     foreach my $part_export ( $part_svc->part_export ) {
 
       #this will catch to the same exact export
-      my @svcparts = map { $_->svcpart }
-        qsearch('export_svc', { 'exportnum' => $part_export->exportnum });
+      my @svcparts = map { $_->svcpart } $part_export->export_svc;
 
       #this will catch to exports w/same exporthost+type ???
       #my @other_part_export = qsearch('part_export', {
