@@ -52,7 +52,8 @@ Kristian Hoffmann <khoff@pc-intouch.com> contributed Netscape CCK
 autoconfiguration support for the signup server, lots of great mailing
 lists posts which I shamelessly made into documentation, fixes to get rid of
 the embarassing and non-database-normal "owed" field, and many other things
-I'm forgetting.
+I'm forgetting.  Most recently Kristian and Mark (last name?) contributed
+the IP address tracking and svc_broadband in 1.5.
 
 Jeff Finucane <jeff@cmh.net> send in a bunch of bugfixes (for the sendmail
 export, cancel-unaudited.cgi), patches to support billing date modification,
@@ -105,6 +106,9 @@ Thanks!
 
 "Stephen Bechard" <steve@destek.net> sent in patches for svc_www services and
 other fixes.
+
+Charles A Beasley <cbeasley@noment.net> contributed quota editing for the
+Infostreet export.
 
 Everything else is my (Ivan Kohler <ivan@420.am>) fault.
 
