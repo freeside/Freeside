@@ -880,7 +880,7 @@ sub check {
       if !$import && ( $y<$nowy || ( $y==$nowy && $1<$nowm ) );
   }
 
-  if ( $self->payname eq '' && $self->payby ne 'CHEK' &&
+  if ( $self->payname eq '' && $self->payby !~ /^(CHEK|DCHK)$/ &&
        ( ! $conf->exists('require_cardname')
          || $self->payby !~ /^(CARD|DCRD)$/  ) 
   ) {
