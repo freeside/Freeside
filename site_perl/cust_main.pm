@@ -600,6 +600,8 @@ sub collect {
     'custnum' => $self->getfield('custnum'),
   } ) ) {
 
+    bless($cust_bill,"FS::cust_bill");
+
     #this has to be before next's
     my($amount) = sprintf("%.2f", $total_owed < $cust_bill->owed
                                   ? $total_owed
@@ -624,7 +626,7 @@ sub collect {
            && ( $cust_bill->printed * 2592000 ) <= $since
       ) {
 
-        open(LPR,$lpr) or die "Can't open $lpr: $!";
+        open(LPR,"|$lpr") or die "Can't open $lpr: $!";
         print LPR $cust_bill->print_text; #( date )
         close LPR
           or die $! ? "Error closing $lpr: $!"
@@ -807,7 +809,7 @@ Returns the balance for this customer (total owed minus total credited).
 
 sub balance {
   my($self) = @_;
-  sprintf("%.2f",$self->total_bill - $self->total_credit);
+  sprintf("%.2f",$self->total_owed - $self->total_credited);
 }
 
 =back
@@ -860,6 +862,11 @@ pod, merge with FS::Bill (about time!), total_owed, total_credited and balance
 methods, cleaned collect method, source modifications no longer necessary to
 enable cybercash, cybercash v3 support, don't need to import
 FS::UID::{datasrc,checkruid} ivan@sisd.com 98-sep-19-21
+
+$Log: cust_main.pm,v $
+Revision 1.2  1998-11-07 10:24:25  ivan
+don't use depriciated FS::Bill and FS::Invoice, other miscellania
+
 
 =cut
 

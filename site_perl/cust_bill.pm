@@ -489,6 +489,11 @@ charges can be negative ivan@sisd.com 98-jul-13
 
 pod, ingegrate with FS::Invoice ivan@sisd.com 98-sep-20
 
+$Log: cust_bill.pm,v $
+Revision 1.2  1998-11-07 10:24:24  ivan
+don't use depriciated FS::Bill and FS::Invoice, other miscellania
+
+
 =cut
 
 1;

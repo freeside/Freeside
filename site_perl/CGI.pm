@@ -47,14 +47,13 @@ sub header {
           $title
         </TITLE>
       </HEAD>
-      <BODY>
-        <CENTER>
-          <H1>
+      <BODY BGCOLOR="#ffffff">
+          <FONT COLOR="#FF0000" SIZE=7>
             $title
-          </H1>
+          </FONT>
+          <BR><BR>
           $menubar
-        </CENTER>
-      <HR>
+      <BR><BR>
 END
 }
 
@@ -135,6 +134,11 @@ ivan@sisd.com 98-jun-22
 lose the background, eidiot ivan@sisd.com 98-sep-2
 
 pod ivan@sisd.com 98-sep-12
+
+$Log: CGI.pm,v $
+Revision 1.2  1998-11-07 10:24:23  ivan
+don't use depriciated FS::Bill and FS::Invoice, other miscellania
+
 
 =cut
 
