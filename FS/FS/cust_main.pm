@@ -895,7 +895,7 @@ sub check {
     my( $m, $y );
     if ( $self->paydate =~ /^(\d{1,2})[\/\-](\d{2}(\d{2})?)$/ ) {
       ( $m, $y ) = ( $1, length($2) == 4 ? $2 : "20$2" );
-    } elsif ( $self->paydate =~ /^(20)?(\d{2})[\/\-](\d{2})[\/\-]\d+$/ ) {
+    } elsif ( $self->paydate =~ /^(20)?(\d{2})[\/\-](\d{1,2})[\/\-]\d+$/ ) {
       ( $m, $y ) = ( $3, "20$2" );
     } else {
       return "Illegal expiration date: ". $self->paydate;
