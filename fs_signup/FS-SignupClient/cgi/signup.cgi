@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: signup.cgi,v 1.28 2002-05-30 22:36:38 khoff Exp $
+# $Id: signup.cgi,v 1.29 2002-05-30 22:45:20 ivan Exp $
 
 use strict;
 use vars qw( @payby $cgi $locales $packages $pops $init_data $error
@@ -52,6 +52,7 @@ if ( -e $ieak_file ) {
     or die $Text::Template::ERROR;
   $ieak_txt =~ /^(.*)$/s; #untaint the template source - it's trusted
   $ieak_txt = $1;
+  $ieak_txt =~ s/\r//g; # don't double \r on old templates
   $ieak_txt =~ s/\n/\r\n/g;
   $ieak_template = new Text::Template ( TYPE => 'STRING', SOURCE => $ieak_txt )
     or die $Text::Template::ERROR;
