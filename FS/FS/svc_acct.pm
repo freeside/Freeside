@@ -338,53 +338,57 @@ sub insert {
   }
 
   my $cust_pkg = $self->cust_svc->cust_pkg;
-  my $cust_main = $cust_pkg->cust_main;
 
-  if ( $conf->exists('emailinvoiceauto') ) {
-    my @invoicing_list = $cust_main->invoicing_list;
-    push @invoicing_list, $self->email;
-    $cust_main->invoicing_list(@invoicing_list);
-  }
+  if ( $cust_pkg ) {
+    my $cust_main = $cust_pkg->cust_main;
 
-  #welcome email
-  my $to = '';
-  if ( $welcome_template && $cust_pkg ) {
-    my $to = join(', ', grep { $_ ne 'POST' } $cust_main->invoicing_list );
-    if ( $to ) {
-      my $wqueue = new FS::queue {
-        'svcnum' => $self->svcnum,
-        'job'    => 'FS::svc_acct::send_email'
-      };
-      warn "attempting to queue email to $to";
-      my $error = $wqueue->insert(
-        'to'       => $to,
-        'from'     => $welcome_from,
-        'subject'  => $welcome_subject,
-        'mimetype' => $welcome_mimetype,
-        'body'     => $welcome_template->fill_in( HASH => {
-                        'username' => $self->username,
-                        'password' => $self->_password,
-                        'first'    => $cust_main->first,
-                        'last'     => $cust_main->getfield('last'),
-                        'pkg'      => $cust_pkg->part_pkg->pkg,
-                      } ),
-      );
-      if ( $error ) {
-        $dbh->rollback if $oldAutoCommit;
-        return "queuing welcome email: $error";
-      }
-  
-      foreach my $jobnum ( @jobnums ) {
-        my $error = $wqueue->depend_insert($jobnum);
+    if ( $conf->exists('emailinvoiceauto') ) {
+      my @invoicing_list = $cust_main->invoicing_list;
+      push @invoicing_list, $self->email;
+      $cust_main->invoicing_list(\@invoicing_list);
+    }
+
+    #welcome email
+    my $to = '';
+    if ( $welcome_template && $cust_pkg ) {
+      my $to = join(', ', grep { $_ ne 'POST' } $cust_main->invoicing_list );
+      if ( $to ) {
+        my $wqueue = new FS::queue {
+          'svcnum' => $self->svcnum,
+          'job'    => 'FS::svc_acct::send_email'
+        };
+        warn "attempting to queue email to $to";
+        my $error = $wqueue->insert(
+          'to'       => $to,
+          'from'     => $welcome_from,
+          'subject'  => $welcome_subject,
+          'mimetype' => $welcome_mimetype,
+          'body'     => $welcome_template->fill_in( HASH => {
+                          'username' => $self->username,
+                          'password' => $self->_password,
+                          'first'    => $cust_main->first,
+                          'last'     => $cust_main->getfield('last'),
+                          'pkg'      => $cust_pkg->part_pkg->pkg,
+                        } ),
+        );
         if ( $error ) {
           $dbh->rollback if $oldAutoCommit;
-          return "queuing welcome email job dependancy: $error";
+          return "queuing welcome email: $error";
         }
+
+        foreach my $jobnum ( @jobnums ) {
+          my $error = $wqueue->depend_insert($jobnum);
+          if ( $error ) {
+            $dbh->rollback if $oldAutoCommit;
+            return "queuing welcome email job dependancy: $error";
+          }
+        }
+
       }
 
     }
-  
-  }
+
+  } # if ( $cust_pkg )
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   ''; #no error
@@ -760,7 +764,7 @@ sub check {
   unless ( $part_svc->part_svc_column('slipip')->columnflag eq 'F' ) {
     unless ( $recref->{slipip} eq '0e0' ) {
       $recref->{slipip} =~ /^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/
-        or return "Illegal slipip". $self->slipip;
+        or return "Illegal slipip: ". $self->slipip;
       $recref->{slipip} = $1;
     } else {
       $recref->{slipip} = '0e0';
