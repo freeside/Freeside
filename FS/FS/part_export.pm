@@ -741,6 +741,23 @@ tie my %vpopmail_options, 'Tie::IxHash',
                },
 ;
 
+tie my %communigate_pro_options, 'Tie::IxHash',
+  'port'     => { label=>'Port number', default=>'106', },
+  'login'    => { label=>'The administrator account name.  The name can contain a domain part.', },
+  'password' => { label=>'The administrator account password.', },
+  'accountType' => { label=>'Type for newly-created accounts',
+                     type=>'select',
+                     options=>[qw( MultiMailbox TextMailbox MailDirMailbox )],
+                     default=>'MultiMailbox',
+                   },
+  'externalFlag' => { label=> 'Create accounts with an external (visible for legacy mailers) INBOX.',
+                      type=>'checkbox',
+                    },
+  'AccessModes' => { label=>'Access modes',
+                     default=>'Mail POP IMAP PWD WebMail WebSite',
+                   },
+;
+
 tie my %bind_options, 'Tie::IxHash',
   #'machine'     => { label=>'named machine' },
   'named_conf'   => { label  => 'named.conf location',
@@ -956,6 +973,12 @@ tie my %forward_shellcommands_options, 'Tie::IxHash',
       'desc' => 'Real-time export to vpopmail text files',
       'options' => \%vpopmail_options,
       'notes' => 'Real time export to <a href="http://inter7.com/vpopmail/">vpopmail</a> text files.  <a href="http://search.cpan.org/search?dist=File-Rsync">File::Rsync</a> must be installed, and you will need to <a href="../docs/ssh.html">setup SSH for unattended operation</a> to <b>vpopmail</b>@<i>export.host</i>.',
+    },
+
+    'communigate_pro' => {
+      'desc' => 'Real-time export to a CommuniGate Pro mail server',
+      'options' => \%communigate_pro_options,
+      'notes' => 'Real time export to a <a href="http://www.stalker.com/CommuniGatePro/"> mail server.  The <a href="http://www.stalker.com/CGPerl/">CommuniGate Pro Perl Interface</a> must be installed as CGP::CLI.',
     },
 
   },
