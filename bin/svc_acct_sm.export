@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct_sm.export,v 1.7 2000-07-03 09:13:10 ivan Exp $
+# $Id: svc_acct_sm.export,v 1.8 2000-07-06 03:37:24 ivan Exp $
 # 
 # Create and export config files for sendmail, qmail
 #
@@ -42,7 +42,11 @@
 # /var/spool/freeside/conf and sendmail updates ivan@sisd.com 98-aug-14
 #
 # $Log: svc_acct_sm.export,v $
-# Revision 1.7  2000-07-03 09:13:10  ivan
+# Revision 1.8  2000-07-06 03:37:24  ivan
+# don't error out on invalid svc_acct_sm.domuid's that can't be matched in
+# svc_acct.uid - just warn.
+#
+# Revision 1.7  2000/07/03 09:13:10  ivan
 # get rid of double sendmailrestart invocation; no need for multiple sessions
 #
 # Revision 1.6  2000/07/03 09:09:14  ivan
@@ -145,6 +149,11 @@ foreach $svc_acct_sm ( qsearch('svc_acct_sm') ) {
   );
   my($domain)=$domain{$domsvc};
   my($svc_acct)=qsearchs('svc_acct',{'uid'=>$domuid});
+  unless ( $svc_acct ) {
+    warn "WARNING: couldn't find svc_acct.uid $domuid (svc_acct_sm.svcnum ".
+         $svc_acct_sm->svcnum. ") - corruped database?\n";
+    next;
+  }
   my($username,$dir,$uid,$gid)=(
     $svc_acct->username,
     $svc_acct->dir,
