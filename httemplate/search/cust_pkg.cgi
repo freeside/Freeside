@@ -28,7 +28,7 @@ if ( $cgi->param('magic') && $cgi->param('magic') eq 'bill' ) {
   } elsif ( $cgi->param('ending')
             && $cgi->param('ending') =~ /^([ 0-9\-\/]{0,10})$/ ) {
     $ending = str2time($1) + 86400;
-    $range = ( $range ? ' AND ' : ' WHERE ' ). " bill <= $ending ";
+    $range .= ( $range ? ' AND ' : ' WHERE ' ). " bill <= $ending ";
   }
 
   #false laziness with below
