@@ -174,7 +174,7 @@ sub next_free_addr {
   my $self = shift;
 
   my $conf = new FS::Conf;
-  my @excludeaddr = $conf->config('excludeaddr');
+  my @excludeaddr = $conf->config('exclude_ip_addr');
   
   my @used = (
     map { $_->NetAddr->addr } 
