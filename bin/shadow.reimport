@@ -1,0 +1,98 @@
+#!/usr/bin/perl -Tw
+# $Id: shadow.reimport,v 1.1 2004-02-03 00:19:45 ivan Exp $
+
+use strict;
+use vars qw(%part_svc);
+use Term::Query qw(query);
+use Net::SCP qw(iscp);
+use FS::UID qw(adminsuidsetup datasrc);
+use FS::Record qw(qsearch qsearchs);
+use FS::svc_acct;
+use FS::part_svc;
+
+my $user = shift or die &usage;
+adminsuidsetup $user;
+
+push @FS::svc_acct::shells, qw(/bin/sync /sbin/shutdown /bin/halt /sbin/halt); #others?
+
+my($spooldir)="/usr/local/etc/freeside/export.". datasrc;
+
+#$FS::svc_acct::nossh_hack = 1;
+$FS::svc_Common::noexport_hack = 1;
+
+###
+
+%part_svc=map { $_->svcpart, $_ } qsearch('part_svc',{'svcdb'=>'svc_acct'});
+
+die "No services with svcdb svc_acct!\n" unless %part_svc;
+
+print "\n\n", &menu_svc, "\n", <<END;
+Enter part number to import.
+END
+my($shell_svcpart)=&getpart;
+
+print "\n\n", <<END;
+Enter the location and name of your _user_ shadow file, for example
+"mail.isp.com:/etc/shadow" or "bsd.isp.com:/etc/master.passwd"
+END
+my($loc_shadow)=&getvalue(":");
+iscp("root\@$loc_shadow", "$spooldir/shadow.import");
+
+sub menu_svc {
+  ( join "\n", map "$_: ".$part_svc{$_}->svc, sort keys %part_svc ). "\n";
+}
+sub getpart {
+  $^W=0; # Term::Query isn't -w-safe
+  my $return = query "Enter part number:", 'irk', [ keys %part_svc ];
+  $^W=1;
+  $return;
+}
+sub getvalue {
+  my $prompt = shift;
+  $^W=0; # Term::Query isn't -w-safe
+  my $return = query $prompt, '';
+  $^W=1;
+  $return;
+}
+
+print "\n\n";
+
+###
+
+open(SHADOW,"<$spooldir/shadow.import");
+
+my($line, $updated);
+while (<SHADOW>) {
+  $line++;
+  chop;
+  my($username,$password)=split(/:/);
+
+  my @svc_acct = grep { $_->cust_svc->svcpart == $shell_svcpart } 
+                 qsearch('svc_acct', { 'username' => $username } );
+
+  next unless @svc_acct;
+
+  if ( scalar(@svc_acct) > 1 ) {
+    warn "more than one $username found!\n";
+    next;
+  }
+
+  my $svc_acct = shift @svc_acct;
+
+  next if $svc_acct->_password eq $password;
+
+  my $new_svc_acct = new FS::svc_acct( { $svc_acct->hash } );
+  $new_svc_acct->_password($password);
+  #my $error = $new_svc_acct->replace($svc_acct);
+  #die "$username: $error" if $error;
+
+  $updated++;
+
+}
+
+warn "$updated of $line passwords changed\n";
+
+sub usage {
+  die "Usage:\n\n  shadow.reimport user\n";
+}
+
