@@ -11,8 +11,8 @@ use FS::Record qw(qsearch qsearchs);
 use FS::cust_main;
 
 &untaint_argv;	#what it sounds like  (eww)
-use vars qw($opt_a $opt_c $opt_i $opt_d);
-getopts("acid:");
+use vars qw($opt_a $opt_c $opt_i $opt_d $opt_p);
+getopts("acid:p");
 my $user = shift or die &usage;
 
 adminsuidsetup $user;
@@ -22,7 +22,7 @@ my %bill_only = map { $_ => 1 } (
 );
 
 #we're at now now (and later).
-my($time)= $main::opt_d ? str2time($main::opt_d) : $^T;
+my($time)= $opt_d ? str2time($opt_d) : $^T;
 
 # find packages w/ bill < time && cancel != '', and create corresponding
 # customer objects
@@ -34,7 +34,7 @@ foreach $cust_main (
       $saw{ $_->custnum } = 0; # to avoid 'use of uninitialized value' errors
     }
     if (
-      ( $main::opt_a || ( ( $_->getfield('bill') || 0 ) <= $time ) )
+      ( $opt_a || ( ( $_->getfield('bill') || 0 ) <= $time ) )
       && $bill_only{ $_->custnum }
       && !$saw{ $_->custnum }++
     ) {
@@ -57,14 +57,14 @@ foreach $cust_main (
   warn "Error billing,  customer #" . $cust_main->getfield('custnum') . 
     ":" . $error if $error;
 
-  if ($main::opt_p) {
+  if ($opt_p) {
     $cust_main->apply_payments;
     $error=$cust_main->apply_credits;
   }
 
-  if ($main::opt_c) {
+  if ($opt_c) {
     $error=$cust_main->collect('invoice_time'=>$time,
-                               'batch_card' => $main::opt_i ? 'no' : 'yes',
+                               'batch_card' => $opt_i ? 'no' : 'yes',
                               );
     warn "Error collecting from customer #" . $cust_main->gcustnum.  ":$error"
       if $error;
@@ -123,7 +123,7 @@ customers.  Otherwise, bills all customers.
 
 =head1 VERSION
 
-$Id: freeside-bill,v 1.9 2001-09-11 00:08:18 ivan Exp $
+$Id: freeside-bill,v 1.10 2001-11-05 14:04:56 ivan Exp $
 
 =head1 BUGS
 
