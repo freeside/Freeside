@@ -72,6 +72,12 @@ if ( $cgi->param('error') ) {
 
   }
 }
+
+#fixed radius groups always override & display
+if ( $part_svc->part_svc_column('usergroup')->columnflag eq "F" ) {
+  @groups = split(',', $part_svc->part_svc_column('usergroup')->columnvalue);
+}
+
 my $action = $svcnum ? 'Edit' : 'Add';
 
 my $svc = $part_svc->getfield('svc');

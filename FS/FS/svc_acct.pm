@@ -1,7 +1,7 @@
 package FS::svc_acct;
 
 use strict;
-use vars qw( @ISA $noexport_hack $conf
+use vars qw( @ISA $DEBUG $me $noexport_hack $conf
              $dir_prefix @shells $usernamemin
              $usernamemax $passwordmin $passwordmax
              $username_ampersand $username_letter $username_letterfirst
@@ -31,6 +31,9 @@ use FS::part_export;
 use FS::Msgcat qw(gettext);
 
 @ISA = qw( FS::svc_Common );
+
+$DEBUG = 0;
+$me = '[FS::svc_acct]';
 
 #ask FS::UID to run this stuff for us later
 $FS::UID::callback{'FS::svc_acct'} = sub { 
@@ -496,6 +499,7 @@ sqlradius export only)
 sub replace {
   my ( $new, $old ) = ( shift, shift );
   my $error;
+  warn "$me replacing $old with $new\n" if $DEBUG;
 
   return "Username in use"
     if $old->username ne $new->username &&
@@ -522,7 +526,13 @@ sub replace {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
+  # redundant, but so $new->usergroup gets set
+  my $error = $new->check;
+  return $error if $error;
+
   $old->usergroup( [ $old->radius_groups ] );
+  warn "old groups: ". join(' ',@{$old->usergroup}). "\n" if $DEBUG;
+  warn "new groups: ". join(' ',@{$new->usergroup}). "\n" if $DEBUG;
   if ( $new->usergroup ) {
     #(sorta) false laziness with FS::part_export::sqlradius::_export_replace
     my @newgroups = @{$new->usergroup};
