@@ -197,7 +197,7 @@ function achclose() {
   </TD>
 </TR><TR>
   <TD COLSPAN=2>
-    <INPUT TYPE="checkbox"<%= $payby eq 'CARD' ? ' CHECKED' : '' %> NAME="auto" VALUE="1" onClick="if (this.checked) { document.OneTrueForm.save.checked=true; }">
+    <INPUT TYPE="checkbox"<%= ( ( $payby eq 'CARD' && $cust_main->payby ne 'DCRD' ) || ( $payby eq 'CHEK' && $cust_main->payby eq 'CHEK' ) ) ? ' CHECKED' : '' %> NAME="auto" VALUE="1" onClick="if (this.checked) { document.OneTrueForm.save.checked=true; }">
     Charge future payments to this <%= $type{$payby} %> automatically
   </TD>
 </TR>
