@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 #
-# $Id: svc_acct.export,v 1.32 2002-02-15 20:21:56 jeff Exp $
+# $Id: svc_acct.export,v 1.33 2002-02-18 00:13:57 jeff Exp $
 #
 # Create and export password, radius and vpopmail password files:
 # passwd, passwd.adjunct, shadow, acp_passwd, acp_userinfo, acp_dialup
@@ -21,6 +21,9 @@ use FS::Record qw(qsearch qsearchs fields);
 use FS::svc_acct;
 use FS::svc_domain;
 use FS::svc_forward;
+
+my $ssh='ssh';
+my $rsync='rsync';
 
 my $user = shift or die &usage;
 adminsuidsetup $user;
@@ -648,26 +651,32 @@ foreach my $icradiusmachine ( @icradiusmachines ) {
   close WRITER;
 }
 
-my @args = ("/bin/tar", "c", "--force-local", "-C", "$spooldir", "-f", "$spooldir/vpoptarball", "domains");
+#my @args = ("/bin/tar", "c", "--force-local", "-C", "$spooldir", "-f", "$spooldir/vpoptarball", "domains");
 
-system {$args[0]} @args;
+#system {$args[0]} @args;
 
 my($vpopmailmachine);
 foreach $vpopmailmachine (@vpopmailmachines) {
   my ($machine, $vpopdir, $vpopuid, $vpopgid) = split (/\s+/, $vpopmailmachine);
   my $scp = new Net::SCP;
-  $scp->scp("$spooldir/vpoptarball","root\@$machine:vpoptarball")
-    or die "scp error: ". $scp->{errstr};
-  ssh("root\@$machine",
-    "( ".
-      "tar xf vpoptarball; ".
-      "chown -R $vpopuid:$vpopgid domains; ".
-      "tar cf vpoptarball domains; ".
-      "cd $vpopdir; ".
-      "tar xf ~/vpoptarball; ".
-    " )"
-  )
-    == 0 or die "ssh error: $!";
+#  $scp->scp("$spooldir/vpoptarball","root\@$machine:vpoptarball")
+#    or die "scp error: ". $scp->{errstr};
+#  ssh("root\@$machine",
+#    "( ".
+#      "rm -rf domains; ".
+#      "tar xf vpoptarball; ".
+#      "chown -R $vpopuid:$vpopgid domains; ".
+#      "tar cf vpoptarball domains; ".
+#      "cd $vpopdir; ".
+#      "tar xf ~/vpoptarball; ".
+#    " )"
+#  )
+#    == 0 or die "ssh error: $!";
+
+  chdir $spooldir;
+  my @args = ("$rsync", "-rlpt", "-e", "$ssh", "domains/", "vpopmail\@$machine:$vpopdir/domains/");
+
+  system {$args[0]} @args;
 
   $scp->scp("$spooldir/assign","root\@$machine:/var/qmail/users/assign")
     or die "scp error: ". $scp->{errstr};

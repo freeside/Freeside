@@ -6,8 +6,14 @@ DATASOURCE = DBI:Pg:host=localhost;dbname=freeside
 DB_USER = freeside
 DB_PASSWORD=
 
+<<<<<<< Makefile
+#TEMPLATE = asp
+#mason's a bit dodgy still
+TEMPLATE = mason
+=======
 TEMPLATE = asp
 #TEMPLATE = mason
+>>>>>>> 1.27
 
 ASP_GLOBAL = /usr/local/etc/freeside/asp-global
 
