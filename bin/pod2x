@@ -3,21 +3,27 @@
 #use Pod::Text;
 #$Pod::Text::termcap=1;
 
-my $site_perl = "./site_perl";
+my $site_perl = "./FS";
 #my $catman = "./catman";
-my $catman = "./htdocs/docs/man";
-#my $html = "./htdocs/docs/man";
+#my $catman = "./htdocs/docs/man";
+my $html = "./htdocs/docs/man";
 
 $|=1;
 
 die "Can't find $site_perl and $catman"
   unless [ -d $site_perl ] && [ -d $catman ] && [ -d $html ];
 
-foreach my $file (glob("$site_perl/*.pm")) {
-  $file =~ /\/([\w\-]+)\.pm$/ or die "oops file $file";
+foreach my $file (
+  glob("$site_perl/*.pm"),
+  glob("$site_perl/*/*.pm"),
+  glob("$site_perl/*/*/*.pm")
+) {
+  #$file =~ /\/([\w\-]+)\.pm$/ or die "oops file $file";
+  $file =~ /$site_perl\/(.*)\.pm$/ or die "oops file $file";
   my $name = $1;
-  print "$name\n"; 
-  system "pod2text $file >$catman/$name.txt"; 
-#  system "pod2html --podpath=$site_perl $file >$html/$name.html";
+  print "$name\n";
+  my $htmlroot = join('/', map '..',1..(scalar($file =~ tr/\///)-2)) || '.';
+#  system "pod2text $file >$catman/$name.txt"; 
+  system "pod2html --podroot=$site_perl --podpath=./FS:./FS/UI:. --norecurse --htmlroot=$htmlroot $file >$html/$name.html";
 #  system "pod2html $file >$html/$name.html";
 }
