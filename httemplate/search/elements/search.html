@@ -77,7 +77,7 @@
     http_header('Content-Type' => 'text/plain' );
 
     my $csv = new Text::CSV_XS { 'always_quote' => 1,
-                                 #'eol'          => "\015\012", #"\012"
+                                 'eol'          => "\n", #"\015\012", #"\012"
                                };
 
     $csv->combine(@$header); #or die $csv->status;
