@@ -22,7 +22,7 @@ FS::part_export - Object methods for part_export records
   ($new_record, $options) = $template_recored->clone( $svcpart );
 
   $error = $record->insert( { 'option' => 'value' } );
-  $error = $record->insert( \$options );
+  $error = $record->insert( \%options );
 
   $error = $new_record->replace($old_record);
 
@@ -226,6 +226,15 @@ sub replace {
     }
   }
 
+  #remove extraneous old options?  not necessary now, but...
+  #foreach my $opt ( grep { !exist $options->{$_->optionname} } $old->part_export_option ) {
+  #  my $error = $opt->delete;
+  #  if ( $error ) {
+  #    $dbh->rollback if $oldAutoCommit;
+  #    return $error;
+  #  }
+  #}
+
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
   '';
@@ -320,8 +329,6 @@ sub rebless {
 
 =item export_insert SVC_OBJECT
 
-Calls the appropriate export_I<exporttype> for this object's exporttype.
-
 =cut
 
 sub export_insert {
@@ -360,6 +367,8 @@ sub export_delete {
 }
 
 =back
+
+=cut
 
 #infostreet
 
@@ -423,7 +432,7 @@ sub infostreet_command { #subroutine, not method
   die $key_result{error} unless $key_result{success};
   my $key = $key_result{data};
 
-  my $result = $conn->call($opt{method}, $key, @{$opt{args}});
+  my $result = $conn->call($method, $key, @args);
   my %result = _infostreet_parse($result);
   die $result{error} unless $result{success};
 
@@ -470,10 +479,10 @@ sub _export_replace {
     my %new = $new->$method;
     my %old = $old->$method;
     if ( grep { !exists $old{$_} #new attributes
-                || $new{$n} ne $old{$n} #changed
+                || $new{$_} ne $old{$_} #changed
               } keys %new
     ) {
-      my $error = $self->sqlradius_queue( $new->svcnum, 'insert'
+      my $error = $self->sqlradius_queue( $new->svcnum, 'insert',
         $table, $new->username, %new );
       return $error if $error;
     }
@@ -488,9 +497,9 @@ sub _export_replace {
 }
 
 sub _export_delete {
-  my( $self, $svc_something ) = (shift, shift);
+  my( $self, $svc_acct ) = (shift, shift);
   $self->sqlradius_queue( $svc_acct->svcnum, 'delete',
-    $svc_something->username );
+    $svc_acct->username );
 }
 
 sub sqlradius_queue {
@@ -543,10 +552,10 @@ sub sqlradius_attrib_delete { #subroutine, not method
 
   foreach my $attribute ( @attrib ) {
     my $sth = $dbh->prepare(
-        "DELETE FROM $table WHERE UserName = ? AND Attribute = ?" )
+        "DELETE FROM rad$replycheck WHERE UserName = ? AND Attribute = ?" )
       or die $dbh->errstr;
     $sth->execute($username,$attribute)
-      or die "can't delete from $table table: ". $sth->errstr;
+      or die "can't delete from rad$replycheck table: ". $sth->errstr;
   }
   $dbh->disconnect;
 }
@@ -569,53 +578,51 @@ sub sqlradius_connect {
   DBI->connect(@_) or die $DBI::errstr;
 }
 
-=head1 NOTES
+=head1 NEW EXPORT CLASSES
 
-Writing a new export class:
-
-#myexport
-
-package FS::part_export::myexport;
-use vars qw(@ISA);
-@ISA = qw(FS::part_export);
-
-sub _export_insert {
-  my($self, $svc_something) = (shift, shift);
-  $self->myexport_queue( $svc_acct->svcnum, 'insert',
-    $svc_something->username, $svc_something->password );
-}
-
-sub _export_replace {
-  my( $self, $new, $old ) = (shift, shift, shift);
-  #return "can't change username with myexport"
-  #  if $old->username ne $new->username;
-  #return '' unless $old->_password ne $new->_password;
-  $self->myexport_queue( $new->svcnum,
-    'replace', $new->username, $new->password );
-}
-
-sub _export_delete {
-  my( $self, $svc_something ) = (shift, shift);
-  $self->myexport_queue( $svc_acct->svcnum,
-    'delete', $svc_something->username );
-}
-
-#a good idea to queue anything that could fail or take any time
-sub myexport_queue {
-  my( $self, $svcnum, $method ) = (shift, shift, shift);
-  my $queue = new FS::queue {
-    'svcnum' => $svcnum,
-    'job'    => "FS::part_export::myexport::myexport_$method",
-  };
-  $queue->insert( @_ );
-}
-
-sub myexport_insert { #subroutine, not method
-}
-sub myexport_replace { #subroutine, not method
-}
-sub myexport_delete { #subroutine, not method
-}
+  #myexport
+  
+  package FS::part_export::myexport;
+  use vars qw(@ISA);
+  @ISA = qw(FS::part_export);
+  
+  sub _export_insert {
+    my($self, $svc_something) = (shift, shift);
+    $self->myexport_queue( $svc_acct->svcnum, 'insert',
+      $svc_something->username, $svc_something->password );
+  }
+  
+  sub _export_replace {
+    my( $self, $new, $old ) = (shift, shift, shift);
+    #return "can't change username with myexport"
+    #  if $old->username ne $new->username;
+    #return '' unless $old->_password ne $new->_password;
+    $self->myexport_queue( $new->svcnum,
+      'replace', $new->username, $new->password );
+  }
+  
+  sub _export_delete {
+    my( $self, $svc_something ) = (shift, shift);
+    $self->myexport_queue( $svc_acct->svcnum,
+      'delete', $svc_something->username );
+  }
+  
+  #a good idea to queue anything that could fail or take any time
+  sub myexport_queue {
+    my( $self, $svcnum, $method ) = (shift, shift, shift);
+    my $queue = new FS::queue {
+      'svcnum' => $svcnum,
+      'job'    => "FS::part_export::myexport::myexport_$method",
+    };
+    $queue->insert( @_ );
+  }
+  
+  sub myexport_insert { #subroutine, not method
+  }
+  sub myexport_replace { #subroutine, not method
+  }
+  sub myexport_delete { #subroutine, not method
+  }
 
 =head1 BUGS
 

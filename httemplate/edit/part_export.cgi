@@ -70,7 +70,7 @@ my %exports = (
         'password' => { label=>'Database password' },
       },
       'nodomain' => 'Y',
-      'notes' => 'Not specifying datasrc will export to the freeside database? (no...  notes on MySQL replication, etc., from Conf.pm && export.html etc.',
+      'notes' => 'Not specifying datasrc will export to the freeside database? (no...  notes on MySQL replication, DBI::Proxy, etc., from Conf.pm && export.html etc.',
     },
     'cyrus' => {
       'desc' => 'Real-time export to Cyrus IMAP server',

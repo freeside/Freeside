@@ -1,7 +1,5 @@
 <%
 
-my $dbh = dbh;
-
 my $exportnum = $cgi->param('exportnum');
 
 my $old = qsearchs('part_export', { 'exportnum'=>$exportnum } ) if $exportnum;
@@ -26,21 +24,17 @@ local $FS::UID::AutoCommit = 0;
 
 my $error;
 if ( $exportnum ) {
-  $error = $new->replace($old);
+  $error = $new->replace($old,\%options);
 } else {
-  $error = $new->insert;
-  $exportnum = $new->exportnum;
+  $error = $new->insert,\%options);
+#  $exportnum = $new->exportnum;
 }
+
 if ( $error ) {
-  $dbh->rollback;
   $cgi->param('error', $error );
   print $cgi->redirect(popurl(2). "part_export.cgi?". $cgi->query_string );
-  myexit();
+} else {
+  print $cgi->redirect(popurl(3). "browse/part_svc.cgi");
 }
-
-#options
-
-$dbh->commit or die $dbh->errstr;
-print $cgi->redirect(popurl(3). "browse/part_svc.cgi");
 
 %>
