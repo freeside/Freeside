@@ -160,6 +160,12 @@ sub check {
           join("\n", $conf->config('invoice_template') )
       );
     }
+    unless ( $conf->exists("invoice_latex_$name") ) {
+      $conf->set(
+        "invoice_latex_$name" =>
+          join("\n", $conf->config('invoice_latex') )
+      );
+    }
   }
 
   $self->SUPER::check;
