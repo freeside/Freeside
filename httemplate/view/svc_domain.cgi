@@ -47,7 +47,7 @@ Service #<%= $svcnum %>
 <BR>Domain name: <B><%= $domain %></B>
 <BR>Catch all email <A HREF="<%= ${p} %>misc/catchall.cgi?<%= $svcnum %>">(change)</A>:
 <%= $email ? "<B>$email</B>" : "<I>(none)<I>" %>
-<BR><BR><A HREF="http://www.geektools.com/cgi-bin/proxy.cgi?query=<%=$domain%>;targetnic=auto">View whois information.</A>
+<BR><BR><A HREF="<%= ${p} %>misc/whois.cgi?custnum=<%=$custnum%>;svcnum=<%=$svcnum%>;domain=<%=$domain%>">View whois information.</A>
 <BR><BR>
 <SCRIPT>
   function areyousure(href) {
