@@ -1016,7 +1016,7 @@ Always returns a list: an empty list on success or a list of errors.
 
 sub cancel {
   my $self = shift;
-  grep { $_->cancel(@_) } $self->ncancelled_pkgs;
+  grep { $_ } map { $_->cancel(@_) } $self->ncancelled_pkgs;
 }
 
 =item agent
