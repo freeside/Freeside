@@ -134,6 +134,30 @@ tie my %events, 'Tie::IxHash',
     'weight' => 50,
   },
 
+  'send_csv_ftp' => {
+    'name' => 'Upload CSV invoice data to an FTP server',
+    'code' => '$cust_bill->send_csv( protocol => \'ftp\',
+                                     server   => \'%%%ftpserver%%%\',
+                                     username => \'%%%ftpusername%%%\',
+                                     password => \'%%%ftppassword%%%\',
+                                     dir      => \'%%%ftpdir%%%\'       );',
+    'html' =>
+        '<TABLE BORDER=0><TR><TD ALIGN="right">FTP server: </TD>'.
+          '<TD><INPUT TYPE="text" NAME="ftpserver" VALUE="%%%ftpserver%%%">'.
+          '</TD></TR>'.
+        '<TR><TD ALIGN="right">FTP username: </TD><TD>'.
+          '<INPUT TYPE="text" NAME="ftpusername" VALUE="%%%ftpusername%%%">'.
+          '</TD></TR>'.
+        '<TR><TD ALIGN="right">FTP password: </TD><TD>'.
+          '<INPUT TYPE="text" NAME="ftppassword" VALUE="%%%ftppassword%%%">'.
+          '</TD></TR>'.
+        '<TR><TD ALIGN="right">FTP directory: </TD>'.
+          '<TD><INPUT TYPE="text" NAME="ftpdir" VALUE="%%%ftpdir%%%">'.
+          '</TD></TR>'.
+        '</TABLE>',
+    'weight' => 50,
+  },
+
   'bill' => {
     'name' => 'Generate invoices (normally only used with a <i>Late Fee</i> event)',
     'code' => '$cust_main->bill();',

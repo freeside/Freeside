@@ -12,7 +12,7 @@ if ( ! $cgi->param('plan_weight_eventcode') ) {
   $error = "Must select an action";
 } else {
 
-  $cgi->param('plan_weight_eventcode') =~ /^([\w\-]+):(\d+):(.*)$/
+  $cgi->param('plan_weight_eventcode') =~ /^([\w\-]+):(\d+):(.*)$/s
     or die "illegal plan_weight_eventcode:".
            $cgi->param('plan_weight_eventcode');
   $cgi->param('plan', $1);

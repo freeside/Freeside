@@ -11,6 +11,7 @@ use Date::Format;
 use Mail::Internet 1.44;
 use Mail::Header;
 use Text::Template;
+use FS::UID qw( datasrc );
 use FS::Record qw( qsearch qsearchs );
 use FS::cust_main;
 use FS::cust_bill_pkg;
@@ -407,6 +408,153 @@ sub send {
   }
 
   '';
+
+}
+
+=item send_csv OPTIONS
+
+Sends invoice as a CSV data-file to a remote host with the specified protocol.
+
+Options are:
+
+protocol - currently only "ftp"
+server
+username
+password
+dir
+
+The file will be named "N-YYYYMMDDHHMMSS.csv" where N is the invoice number
+and YYMMDDHHMMSS is a timestamp.
+
+The fields of the CSV file is as follows:
+
+record_type, invnum, custnum, _date, charged, first, last, company, address1, address2, city, state, zip, country, pkg, setup, recur, sdate, edate
+
+=over 4
+
+=item record type - B<record_type> is either C<cust_bill> or C<cust_bill_pkg>
+
+If B<record_type> is C<cust_bill>, this is a primary invoice record.  The
+last five fields (B<pkg> through B<edate>) are irrelevant, and all other
+fields are filled in.
+
+If B<record_type> is C<cust_bill_pkg>, this is a line item record.  Only the
+first two fields (B<record_type> and B<invnum>) and the last five fields
+(B<pkg> through B<edate>) are filled in.
+
+=item invnum - invoice number
+=item custnum - customer number
+=item _date - invoice date
+=item charged - total invoice amount
+=item first - customer first name
+=item last - customer first name
+=item company - company name
+=item address1 - address line 1
+=item address2 - address line 1
+=item city
+=item state
+=item zip
+=item country
+
+=item pkg - line item description
+=item setup - line item setup fee (only or both of B<setup> and B<recur> will be defined)
+=item recur - line item recurring fee (only or both of B<setup> and B<recur> will be defined)
+=item sdate - start date for recurring fee
+=item edate - end date for recurring fee
+
+=back
+
+=cut
+
+sub send_csv {
+  my($self, %opt) = @_;
+
+  #part one: create file
+
+  my $spooldir = "/usr/local/etc/freeside/export.". datasrc. "/cust_bill";
+  mkdir $spooldir, 0700 unless -d $spooldir;
+
+  my $file = $spooldir. '/'. $self->invnum. time2str('-%Y%m%d%H%M%S.csv', time);
+
+  open(CSV, ">$file") or die "can't open $file: $!";
+
+  eval "use Text::CSV_XS";
+  die $@ if $@;
+
+  my $csv = Text::CSV_XS->new({'always_quote'=>1});
+
+  my $cust_main = $self->cust_main;
+
+  $csv->combine(
+    'cust_bill',
+    $self->invnum,
+    $self->custnum,
+    time2str("%x", $self->_date),
+    ( map { $cust_main->getfield($_) }
+        qw( first last company address1 address2 city state zip country ) ),
+    map { '' } (1..5),
+  ) or die "can't create csv";
+  print CSV $csv->string. "\n";
+
+  #new charges (false laziness w/print_text)
+  foreach my $cust_bill_pkg ( $self->cust_bill_pkg ) {
+
+    my($pkg, $setup, $recur, $sdate, $edate);
+    if ( $cust_bill_pkg->pkgnum ) {
+    
+      ($pkg, $setup, $recur, $sdate, $edate) = (
+        $cust_bill_pkg->cust_pkg->part_pkg->pkg,
+        ( $cust_bill_pkg->setup != 0
+          ? sprintf("%.2f", $cust_bill_pkg->setup )
+          : '' ),
+        ( $cust_bill_pkg->recur != 0
+          ? sprintf("%.2f", $cust_bill_pkg->recur )
+          : '' ),
+        time2str("%x", $cust_bill_pkg->sdate),
+        time2str("%x", $cust_bill_pkg->edate),
+      );
+
+    } else { #pkgnum Tax
+      next unless $cust_bill_pkg->setup != 0;
+      ($pkg, $setup, $recur, $sdate, $edate) =
+        ( 'Tax', sprintf("%10.2f",$cust_bill_pkg->setup), '', '', '' );
+    }
+
+    $csv->combine(
+      'cust_bill_pkg',
+      $self->invnum,
+      ( map { '' } (1..11) ),
+      ($pkg, $setup, $recur, $sdate, $edate)
+    ) or die "can't create csv";
+    print CSV $csv->string. "\n";
+
+  }
+
+  close CSV or die "can't close CSV: $!";
+
+  #part two: upload it
+
+  my $net;
+  if ( $opt{protocol} eq 'ftp' ) {
+    eval "use Net::FTP;";
+    die $@ if $@;
+    $net = Net::FTP->new($opt{server}) or die @$;
+  } else {
+    die "unknown protocol: $opt{protocol}";
+  }
+
+  $net->login( $opt{username}, $opt{password} )
+    or die "can't FTP to $opt{username}\@$opt{server}: login error: $@";
+
+  $net->binary or die "can't set binary mode";
+
+  $net->cwd($opt{dir}) or die "can't cwd to $opt{dir}";
+
+  $net->put($file) or die "can't put $file: $!";
+
+  $net->quit;
+
+  unlink $file;
 
 }
 
@@ -952,7 +1100,7 @@ sub print_text {
 
 =head1 VERSION
 
-$Id: cust_bill.pm,v 1.38 2002-06-26 02:37:48 ivan Exp $
+$Id: cust_bill.pm,v 1.39 2002-08-30 23:42:47 ivan Exp $
 
 =head1 BUGS
 
