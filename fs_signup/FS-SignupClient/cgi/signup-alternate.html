@@ -119,8 +119,9 @@ ENDOUT
         form_action => $self_url,
         form_text => [qw( magic ref ss agentnum
                           last first company address1 address2
-                          city zip daytime night fax )],
-        form_select => [qw( state )], #county country
+                          city zip daytime night fax
+                          username password sec_phrase )],
+        form_select => [qw( state popnum )], #county country
         layer_callback => sub {
           my $layer = shift;
           my $html = qq( <INPUT TYPE="hidden" NAME="pkgpart" VALUE="$layer">);
