@@ -132,7 +132,7 @@ sub new {
 
   my $hashref = $self->{'Hash'} = shift;
 
-  foreach my $field ( grep defined($hashref->{$_}), $self->fields ) { 
+  foreach my $field ( grep !defined($hashref->{$_}), $self->fields ) { 
     $hashref->{$field}='';
   }
 
