@@ -39,7 +39,7 @@ my($aliases)=&getvalue(":");
 use vars qw($aliases_machine $aliases_prefix);
 $aliases_machine = (split(/:/, $aliases))[0];
 $aliases_prefix = "$spooldir/$aliases_machine";
-mkdir $aliases_prefix unless -d $aliases_prefix;
+mkdir($aliases_prefix, 0755) unless -d $aliases_prefix;
 
 #iscp("root\@$aliases","$aliases_prefix/aliases.import");
 iscp("ivan\@$aliases","$aliases_prefix/aliases.import");
@@ -53,8 +53,8 @@ my($virtusertable)=&getvalue(":");
 use vars qw($virtusertable_machine $virtusertable_prefix);
 $virtusertable_machine = (split(/:/, $virtusertable))[0];
 $virtusertable_prefix = "$spooldir/$virtusertable_machine";
-mkdir $virtusertable_prefix unless -d $virtusertable_prefix;
-mkdir "$virtusertable_prefix/virtusertable.import"
+mkdir($virtusertable_prefix, 0755) unless -d $virtusertable_prefix;
+mkdir("$virtusertable_prefix/virtusertable.import", 0755)
   unless -d "$virtusertable_prefix/virtusertable.import";
 
 #iscp("root\@$virtusertable/*","$aliases_prefix/virtusertable.import/");
