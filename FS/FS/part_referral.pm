@@ -27,18 +27,23 @@ FS::part_referral - Object methods for part_referral objects
 
 =head1 DESCRIPTION
 
-An FS::part_referral represents a referral - where a customer heard of your
-services.  This can be used to track the effectiveness of a particular piece of
-advertising, for example.  FS::part_referral inherits from FS::Record.  The
-following fields are currently supported:
+An FS::part_referral represents a advertising source - where a customer heard
+of your services.  This can be used to track the effectiveness of a particular
+piece of advertising, for example.  FS::part_referral inherits from FS::Record.
+The following fields are currently supported:
 
 =over 4
 
 =item refnum - primary key (assigned automatically for new referrals)
 
-=item referral - Text name of this referral
+=item referral - Text name of this advertising source
 
 =back
+
+=head1 NOTE
+
+These were called B<referrals> before version 1.4.0 - the name was changed
+so as not to be confused with the new customer-to-customer referrals.
 
 =head1 METHODS
 
@@ -46,7 +51,8 @@ following fields are currently supported:
 
 =item new HASHREF
 
-Creates a new referral.  To add the referral to the database, see L<"insert">.
+Creates a new advertising source.  To add the referral to the database, see
+L<"insert">.
 
 =cut
 
@@ -54,8 +60,8 @@ sub table { 'part_referral'; }
 
 =item insert
 
-Adds this referral to the database.  If there is an error, returns the error,
-otherwise returns false.
+Adds this advertising source to the database.  If there is an error, returns
+the error, otherwise returns false.
 
 =item delete
 
@@ -76,9 +82,9 @@ returns the error, otherwise returns false.
 
 =item check
 
-Checks all fields to make sure this is a valid referral.  If there is an error,
-returns the error, otherwise returns false.  Called by the insert and replace
-methods.
+Checks all fields to make sure this is a valid advertising source.  If there is
+an error, returns the error, otherwise returns false.  Called by the insert and
+replace methods.
 
 =cut
 
@@ -92,13 +98,13 @@ sub check {
 
 =back
 
-=head1 VERSION
-
-$Id: part_referral.pm,v 1.1 1999-08-04 09:03:53 ivan Exp $
-
 =head1 BUGS
 
 The delete method is unimplemented.
+
+`Advertising source'.  Yes, it's a sucky name.  The only other ones I could
+come up with were "Marketing channel" and "Heard Abouts" and those are
+definately both worse.
 
 =head1 SEE ALSO
 

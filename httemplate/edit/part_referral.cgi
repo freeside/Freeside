@@ -17,9 +17,9 @@ my $action = $part_referral->refnum ? 'Edit' : 'Add';
 my $hashref = $part_referral->hashref;
 
 my $p1 = popurl(1);
-print header("$action Referral", menubar(
+print header("$action Advertising source", menubar(
   'Main Menu' => popurl(2),
-  'View all referrals' => popurl(2). "browse/part_referral.cgi",
+  'View all advertising sources' => popurl(2). "browse/part_referral.cgi",
 ));
 
 print qq!<FONT SIZE="+1" COLOR="#ff0000">Error: !, $cgi->param('error'),
@@ -32,13 +32,11 @@ print qq!<INPUT TYPE="hidden" NAME="refnum" VALUE="$hashref->{refnum}">!,
       "Referral #", $hashref->{refnum} ? $hashref->{refnum} : "(NEW)";
 
 print <<END;
-<PRE>
-Referral   <INPUT TYPE="text" NAME="referral" SIZE=32 VALUE="$hashref->{referral}">
-</PRE>
+Advertising source <INPUT TYPE="text" NAME="referral" SIZE=32 VALUE="$hashref->{referral}">
 END
 
 print qq!<BR><INPUT TYPE="submit" VALUE="!,
-      $hashref->{refnum} ? "Apply changes" : "Add referral",
+      $hashref->{refnum} ? "Apply changes" : "Add advertising source",
       qq!">!;
 
 print <<END;

@@ -99,7 +99,7 @@ FS::Record.  The following fields are currently supported:
 
 =item agentnum - agent (see L<FS::agent>)
 
-=item refnum - referral (see L<FS::part_referral>)
+=item refnum - Advertising source (see L<FS::part_referral>)
 
 =item first - name
 
@@ -531,14 +531,14 @@ sub check {
     || $self->ut_numbern('referral_custnum')
   ;
   #barf.  need message catalogs.  i18n.  etc.
-  $error .= "Please select a referral."
+  $error .= "Please select a advertising source."
     if $error =~ /^Illegal or empty \(numeric\) refnum: /;
   return $error if $error;
 
   return "Unknown agent"
     unless qsearchs( 'agent', { 'agentnum' => $self->agentnum } );
 
-  return "Unknown referral"
+  return "Unknown refnum"
     unless qsearchs( 'part_referral', { 'refnum' => $self->refnum } );
 
   return "Unknown referring custnum ". $self->referral_custnum

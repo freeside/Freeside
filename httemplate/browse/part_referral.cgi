@@ -1,12 +1,12 @@
 <!-- mason kludge -->
 <%
 
-print header("Referral Listing", menubar(
+print header("Advertising source Listing", menubar(
   'Main Menu' => $p,
 #  'Add new referral' => "../edit/part_referral.cgi",
 )), "Where a customer heard about your service. Tracked for informational purposes.<BR><BR>", &table(), <<END;
       <TR>
-        <TH COLSPAN=2>Referral</TH>
+        <TH COLSPAN=2>Advertising source</TH>
       </TR>
 END
 
@@ -27,7 +27,7 @@ END
 
 print <<END;
       <TR>
-        <TD COLSPAN=2><A HREF="${p}edit/part_referral.cgi"><I>Add a new referral</I></A></TD>
+        <TD COLSPAN=2><A HREF="${p}edit/part_referral.cgi"><I>Add a new advertising source</I></A></TD>
       </TR>
     </TABLE>
     </CENTER>
