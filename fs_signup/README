@@ -1,0 +1,18 @@
+this should become better docs soon
+
+on client machine (public webserver):
+
+install perl, ssh, CGI.pm
+cd FS-SignupClient; perl Makefile.PL; make; su; make install
+copy or symlink FS-SignupClient/cgi/signup.cgi into the web server's view
+use suExec or setuid to run cgi/signup.cgi as the freeside user
+(chmod /usr/local/freeside/fs_signupd_socket 600, chown freeside)
+
+on server machine (Freeside machine):
+
+run fs_signup_server user machine agentnum refnum
+
+  user is a freeside user from mapsecrets
+  machine is the client machine
+  agentnum and refnum are the fixed values for this signup server
+

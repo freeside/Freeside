@@ -8,7 +8,11 @@
 use strict;
 use Socket;
 
-my($fs_passwdd_socket)="/usr/local/freeside/fs_signupd_socket";
+use vars qw( $Debug );
+
+$Debug = 0;
+
+my($fs_signupd_socket)="/usr/local/freeside/fs_signupd_socket";
 
 $ENV{'PATH'} ='/usr/local/bin:/usr/bin:/usr/ucb:/bin';
 $ENV{'SHELL'} = '/bin/sh';
@@ -19,6 +23,7 @@ $ENV{'BASH_ENV'} = '';
 
 $|=1;
 
+warn "[fs_signupd] Reading locales...\n" if $Debug;
 chomp( my $n_cust_main_county = <STDIN> );
 my @cust_main_county = map {
   chomp( my $taxnum = <STDIN> );
@@ -33,6 +38,7 @@ my @cust_main_county = map {
   };
 } ( 1 .. $n_cust_main_county );
 
+warn "[fs_signupd] Reading package definitions...\n" if $Debug;
 chomp( my $n_part_pkg = <STDIN> );
 my @part_pkg = map {
   chomp( my $pkgpart = <STDIN> );
@@ -43,6 +49,7 @@ my @part_pkg = map {
   };
 } ( 1 .. $n_part_pkg );
 
+warn "[fs_signupd] Reading POPs...\n" if $Debug;
 chomp( my $n_svc_acct_pop = <STDIN> );
 my @svc_acct_pop = map {
   chomp( my $popnum = <STDIN> );
@@ -59,22 +66,22 @@ my @svc_acct_pop = map {
   };
 } ( 1 .. $n_svc_acct_pop );
 
-my $uaddr = sockaddr_un($fs_passwdd_socket);
+warn "[fs_signupd] Creating $fs_signupd_socket\n" if $Debug;
+my $uaddr = sockaddr_un($fs_signupd_socket);
 my $proto = getprotobyname('tcp');
-
 socket(Server,PF_UNIX,SOCK_STREAM,0) or die "socket: $!";
-unlink($fs_passwdd_socket);
+unlink($fs_signupd_socket);
 bind(Server, $uaddr) or die "bind: $!";
 listen(Server,SOMAXCONN) or die "listen: $!";
 
+warn "[fs_signupd] Entering main loop...\n" if $Debug;
 my $paddr;
-
 for ( ; $paddr = accept(Client,Server); close Client) {
 
   chop( my $command = <Client> );
 
   if ( $command eq "signup_info" ) {
-
+    warn "[fs_signupd] sending signup info...\n" if $Debug; 
     print Client join("\n", $n_cust_main_county,
       map {
         $_->{taxnum},
@@ -101,15 +108,16 @@ for ( ; $paddr = accept(Client,Server); close Client) {
       } @svc_acct_pop
     ), "\n";
 
-  } elsif ( $operation eq "new_customer" ) {
-
+  } elsif ( $command eq "new_customer" ) {
+    warn "[fs_signupd] reading customer signup...\n" if $Debug;
     my(
       $first, $last, $ss, $company, $address1, $address2, $city, $county,
       $state, $zip, $country, $daytime, $night, $fax, $payby, $payinfo,
       $paydate, $payname, $invoicing_list, $pkgpart, $username, $password,
       $popnum,
-    ) = <Client>;
+    ) = map { scalar(<Client>) } ( 1 .. 23 );
 
+    warn "[fs_signupd] sending customer data to remote server...\n" if $Debug;
     print 
       $first, $last, $ss, $company, $address1, $address2, $city, $county,
       $state, $zip, $country, $daytime, $night, $fax, $payby, $payinfo,
@@ -117,8 +125,10 @@ for ( ; $paddr = accept(Client,Server); close Client) {
       $popnum,
     ;
 
+    warn "[fs_signupd] reading error from remote server...\n" if $Debug;
     my $error = <STDIN>;
 
+    warn "[fs_signupd] sending error to local client...\n" if $Debug;
     print Client $error;
 
   } else {

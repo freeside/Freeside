@@ -1,0 +1,8 @@
+Changes
+MANIFEST
+MANIFEST.SKIP
+Makefile.PL
+SignupClient.pm
+test.pl
+fs_signupd
+cgi/signup.cgi
