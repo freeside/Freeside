@@ -14,6 +14,7 @@ install the FS perl modules and httemplate as per install.html or upgrade8.html
 ALTER TABLE cust_bill_event ADD status varchar(80);
 ALTER TABLE cust_bill_event ADD statustext text NULL;
 UPDATE cust_bill_event SET status = 'done';
+DROP INDEX cust_bill_event1;
 
 CREATE TABLE radius_usergroup (
   usergroupnum int primary key,

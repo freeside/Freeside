@@ -481,7 +481,7 @@ httemplate/docs/config.html
   {
     'key'         => 'defaultrecords',
     'section'     => 'BIND',
-    'description' => 'DNS entries add automatically when creating a domain',
+    'description' => 'DNS entries to add automatically when creating a domain',
     'type'        => 'editlist',
     'editlist_parts' => [ { type=>'text' },
                           { type=>'immutable', value=>'IN' },

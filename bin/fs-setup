@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: fs-setup,v 1.87 2002-04-11 22:05:31 ivan Exp $
+# $Id: fs-setup,v 1.88 2002-04-16 22:52:14 ivan Exp $
 
 #to delay loading dbdef until we're ready
 BEGIN { $FS::Record::setup_hack = 1; }
@@ -382,7 +382,7 @@ sub tables_hash_hack {
         'statustext', 'text', 'NULL', '',
       ],
       'primary_key' => 'eventnum',
-      'unique' => [ [ 'eventpart', 'invnum' ] ],
+      #no... there are retries now #'unique' => [ [ 'eventpart', 'invnum' ] ],
       'index' => [ ['invnum'], ['status'] ],
     },
 
