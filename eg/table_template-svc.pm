@@ -6,7 +6,7 @@ use vars qw(@ISA);
 use FS::svc_Common;
 use FS::cust_svc;
 
-@ISA = qw(svc_Common);
+@ISA = qw(FS::svc_Common);
 
 =head1 NAME
 
