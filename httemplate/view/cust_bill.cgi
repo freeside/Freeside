@@ -20,7 +20,13 @@ print header('Invoice View', menubar(
 print qq!<A HREF="${p}edit/cust_pay.cgi?$invnum">Enter payments (check/cash) against this invoice</A> | !
   if $cust_bill->owed > 0;
 
-print qq!<A HREF="${p}misc/print-invoice.cgi?$invnum">Reprint this invoice</A>!.      '<BR><BR>';
+print qq!<A HREF="${p}misc/print-invoice.cgi?$invnum">Reprint this invoice</A>!;
+if ( grep { $_ ne 'POST' } $cust_bill->cust_main->invoicing_list ) {
+  print qq! | <A HREF="${p}misc/email-invoice.cgi?$invnum">!.
+        qq!Re-email this invoice</A>!;
+}
+
+print '<BR><BR>';
 
 my $conf = new FS::Conf;
 if ( $conf->exists('invoice_latex') ) {

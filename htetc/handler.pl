@@ -80,6 +80,7 @@ sub handler
       use FS::CGI qw(header menubar popurl table itable ntable idiot eidiot
                      small_custview myexit http_header);
       use FS::Msgcat qw(gettext geterror);
+      use FS::Misc qw( send_email );
 
       use FS::agent;
       use FS::agent_type;

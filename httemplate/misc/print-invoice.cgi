@@ -24,6 +24,6 @@ die "Can't find invoice!\n" unless $cust_bill;
 
 my $custnum = $cust_bill->getfield('custnum');
 
-print $cgi->redirect(popurl(2). "view/cust_main.cgi?$custnum#history");
+print $cgi->redirect("${p}view/cust_main.cgi?$custnum");
 
 %>
