@@ -1,6 +1,0 @@
-#!/bin/sh
-/etc/init.d/apache stop
-/etc/init.d/mysql stop
-tar czvf var-lib-mysql-`date +%y%m%d%H%M%S`.tar.gz /var/lib/mysql
-/etc/init.d/mysql start
-/etc/init.d/apache start
