@@ -64,7 +64,7 @@
       $svc_acct = $user2svc_acct{$user};
     } else {
       my %search = ();
-      if ( $part_export->exporrtype eq 'sqlradius_withdomain' ) {
+      if ( $part_export->exporttype eq 'sqlradius_withdomain' ) {
         my $domain;
         if ( $user =~ /^([^@]+)\@([^@]+)$/ ) {
          $search{'username'} = $1;
@@ -82,7 +82,8 @@
       } elsif ( $part_export->exporttype eq 'sqlradius' ) {
         $search{'username'} = $user;
       } else {
-        die "guru meditation #420";
+        die 'unknown export type '. $part_export->exporttype.
+            " for $part_export\n";
       }
       if ( keys %search ) {
         my @svc_acct =
