@@ -1,8 +1,14 @@
-# BEGIN LICENSE BLOCK
+# {{{ BEGIN BPS TAGGED BLOCK
 # 
-# Copyright (c) 1996-2003 Jesse Vincent <jesse@bestpractical.com>
+# COPYRIGHT:
+#  
+# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+#                                          <jesse@bestpractical.com>
 # 
-# (Except where explictly superceded by other copyright notices)
+# (Except where explicitly superseded by other copyright notices)
+# 
+# 
+# LICENSE:
 # 
 # This work is made available to you under the terms of Version 2 of
 # the GNU General Public License. A copy of that license should have
@@ -14,13 +20,29 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 # General Public License for more details.
 # 
-# Unless otherwise specified, all modifications, corrections or
-# extensions to this work which alter its source code become the
-# property of Best Practical Solutions, LLC when submitted for
-# inclusion in the work.
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 # 
 # 
-# END LICENSE BLOCK
+# CONTRIBUTION SUBMISSION POLICY:
+# 
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+# 
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+# 
+# }}} END BPS TAGGED BLOCK
 # Major Changes:
 
 # - Decimated ProcessRestrictions and broke it into multiple
@@ -58,6 +80,7 @@ ok (require RT::Tickets);
 use strict;
 no warnings qw(redefine);
 use vars qw(@SORTFIELDS);
+use RT::CustomFields;
 
 
 # Configuration Tables:
@@ -84,6 +107,7 @@ my %FIELDS =
     RefersTo        => ['LINK' => To => 'RefersTo',],
     HasMember	    => ['LINK' => From => 'MemberOf',],
     DependentOn     => ['LINK' => From => 'DependsOn',],
+    DependedOnBy     => ['LINK' => From => 'DependsOn',],
     ReferredToBy    => ['LINK' => From => 'RefersTo',],
 #   HasDepender	    => ['LINK',],
 #   RelatedTo	    => ['LINK',],
@@ -95,12 +119,12 @@ my %FIELDS =
     LastUpdated	    => ['DATE' => 'LastUpdated',],
     Created	    => ['DATE' => 'Created',],
     Subject	    => ['STRING',],
-    Type	    => ['STRING',],
     Content	    => ['TRANSFIELD',],
     ContentType	    => ['TRANSFIELD',],
     Filename        => ['TRANSFIELD',],
     TransactionDate => ['TRANSDATE',],
     Requestor       => ['WATCHERFIELD' => 'Requestor',],
+    Requestors       => ['WATCHERFIELD' => 'Requestor',],
     Cc              => ['WATCHERFIELD' => 'Cc',],
     AdminCc         => ['WATCHERFIELD' => 'AdminCC',],
     Watcher	    => ['WATCHERFIELD'],
@@ -279,7 +303,7 @@ Handle fields which deal with links between tickets.  (MemberOf, DependsOn)
 
 Meta Data:
   1: Direction (From,To)
-  2: Relationship Type (MemberOf, DependsOn,RefersTo)
+  2: Link Type (MemberOf, DependsOn,RefersTo)
 
 =cut
 
@@ -349,7 +373,7 @@ sub _LinkLimit {
 Handle date fields.  (Created, LastTold..)
 
 Meta Data:
-  1: type of relationship.  (Probably not necessary.)
+  1: type of link.  (Probably not necessary.)
 
 =cut
 
@@ -565,79 +589,162 @@ Handle watcher limits.  (Requestor, CC, etc..)
 Meta Data:
   1: Field to query on
 
+
+=begin testing
+
+# Test to make sure that you can search for tickets by requestor address and
+# by requestor name.
+
+my ($id,$msg);
+my $u1 = RT::User->new($RT::SystemUser);
+($id, $msg) = $u1->Create( Name => 'RequestorTestOne', EmailAddress => 'rqtest1@example.com');
+ok ($id,$msg);
+my $u2 = RT::User->new($RT::SystemUser);
+($id, $msg) = $u2->Create( Name => 'RequestorTestTwo', EmailAddress => 'rqtest2@example.com');
+ok ($id,$msg);
+
+my $t1 = RT::Ticket->new($RT::SystemUser);
+my ($trans);
+($id,$trans,$msg) =$t1->Create (Queue => 'general', Subject => 'Requestor test one', Requestor => [$u1->EmailAddress]);
+ok ($id, $msg);
+
+my $t2 = RT::Ticket->new($RT::SystemUser);
+($id,$trans,$msg) =$t2->Create (Queue => 'general', Subject => 'Requestor test one', Requestor => [$u2->EmailAddress]);
+ok ($id, $msg);
+
+
+my $t3 = RT::Ticket->new($RT::SystemUser);
+($id,$trans,$msg) =$t3->Create (Queue => 'general', Subject => 'Requestor test one', Requestor => [$u2->EmailAddress, $u1->EmailAddress]);
+ok ($id, $msg);
+
+
+my $tix1 = RT::Tickets->new($RT::SystemUser);
+$tix1->FromSQL('Requestor.EmailAddress LIKE "rqtest1" OR Requestor.EmailAddress LIKE "rqtest2"');
+
+is ($tix1->Count, 3);
+
+my $tix2 = RT::Tickets->new($RT::SystemUser);
+$tix2->FromSQL('Requestor.Name LIKE "TestOne" OR Requestor.Name LIKE "TestTwo"');
+
+is ($tix2->Count, 3);
+
+
+my $tix3 = RT::Tickets->new($RT::SystemUser);
+$tix3->FromSQL('Requestor.EmailAddress LIKE "rqtest1"');
+
+is ($tix3->Count, 2);
+
+my $tix4 = RT::Tickets->new($RT::SystemUser);
+$tix4->FromSQL('Requestor.Name LIKE "TestOne" ');
+
+is ($tix4->Count, 2);
+
+# Searching for tickets that have two requestors isn't supported
+# There's no way to differentiate "one requestor name that matches foo and bar"
+# and "two requestors, one matching foo and one matching bar"
+
+# my $tix5 = RT::Tickets->new($RT::SystemUser);
+# $tix5->FromSQL('Requestor.Name LIKE "TestOne" AND Requestor.Name LIKE "TestTwo"');
+# 
+# is ($tix5->Count, 1);
+# 
+# my $tix6 = RT::Tickets->new($RT::SystemUser);
+# $tix6->FromSQL('Requestor.EmailAddress LIKE "rqtest1" AND Requestor.EmailAddress LIKE "rqtest2"');
+# 
+# is ($tix6->Count, 1);
+
+
+=end testing
+
 =cut
 
 sub _WatcherLimit {
-  my ($self,$field,$op,$value,@rest) = @_;
-  my %rest = @rest;
+    my $self  = shift;
+    my $field = shift;
+    my $op    = shift;
+    my $value = shift;
+    my %rest  = (@_);
 
-  $self->_OpenParen;
-
-  my $groups	    = $self->NewAlias('Groups');
-  my $groupmembers  = $self->NewAlias('CachedGroupMembers');
-  my $users	    = $self->NewAlias('Users');
-
-
-  #Find user watchers
-#  my $subclause = undef;
-#  my $aggregator = 'OR';
-#  if ($restriction->{'OPERATOR'} =~ /!|NOT/i ){
-#    $subclause = 'AndEmailIsNot';
-#    $aggregator = 'AND';
-#  }
-
-  if (ref $field) { # gross hack
-    my @bundle = @$field;
     $self->_OpenParen;
-    for my $chunk (@bundle) {
-      ($field,$op,$value,@rest) = @$chunk;
-      $self->_SQLLimit(ALIAS => $users,
-   		   FIELD => $rest{SUBKEY} || 'EmailAddress',
-   		   VALUE           => $value,
-   		   OPERATOR        => $op,
-   		   CASESENSITIVE   => 0,
-   		   @rest,
-   		  );
+
+    my $groups       = $self->NewAlias('Groups');
+    my $groupmembers = $self->NewAlias('CachedGroupMembers');
+    my $users        = $self->NewAlias('Users');
+
+    # If we're looking for multiple watchers of a given type,
+    # TicketSQL will be handing it to us as an array of cluases in
+    # $field
+    if ( ref $field ) {    # gross hack
+        $self->_OpenParen;
+        for my $chunk (@$field) {
+            ( $field, $op, $value, %rest ) = @$chunk;
+            $self->_SQLLimit(
+                ALIAS         => $users,
+                FIELD         => $rest{SUBKEY} || 'EmailAddress',
+                VALUE         => $value,
+                OPERATOR      => $op,
+                CASESENSITIVE => 0,
+                %rest
+            );
+        }
+        $self->_CloseParen;
     }
+    else {
+        $self->_SQLLimit(
+            ALIAS         => $users,
+            FIELD         => $rest{SUBKEY} || 'EmailAddress',
+            VALUE         => $value,
+            OPERATOR      => $op,
+            CASESENSITIVE => 0,
+            %rest,
+        );
+    }
+
+    # {{{ Tie to groups for tickets we care about
+    $self->_SQLLimit(
+        ALIAS           => $groups,
+        FIELD           => 'Domain',
+        VALUE           => 'RT::Ticket-Role',
+        ENTRYAGGREGATOR => 'AND'
+    );
+
+    $self->_SQLJoin(
+        ALIAS1 => $groups,
+        FIELD1 => 'Instance',
+        ALIAS2 => 'main',
+        FIELD2 => 'id'
+    );
+
+    # }}}
+
+    # If we care about which sort of watcher
+    my $meta = $FIELDS{$field};
+    my $type = ( defined $meta->[1] ? $meta->[1] : undef );
+
+    if ($type) {
+        $self->_SQLLimit(
+            ALIAS           => $groups,
+            FIELD           => 'Type',
+            VALUE           => $type,
+            ENTRYAGGREGATOR => 'AND'
+        );
+    }
+
+    $self->_SQLJoin(
+        ALIAS1 => $groups,
+        FIELD1 => 'id',
+        ALIAS2 => $groupmembers,
+        FIELD2 => 'GroupId'
+    );
+
+    $self->_SQLJoin(
+        ALIAS1 => $groupmembers,
+        FIELD1 => 'MemberId',
+        ALIAS2 => $users,
+        FIELD2 => 'id'
+    );
+
     $self->_CloseParen;
-  } else {
-     $self->_SQLLimit(ALIAS => $users,
-   		   FIELD => $rest{SUBKEY} || 'EmailAddress',
-   		   VALUE           => $value,
-   		   OPERATOR        => $op,
-   		   CASESENSITIVE   => 0,
-   		   @rest,
-   		  );
-  }
-
-  # {{{ Tie to groups for tickets we care about
-  $self->_SQLLimit(ALIAS => $groups,
-		   FIELD => 'Domain',
-		   VALUE => 'RT::Ticket-Role',
-		   ENTRYAGGREGATOR => 'AND');
-
-  $self->_SQLJoin(ALIAS1 => $groups, FIELD1 => 'Instance',
-	      ALIAS2 => 'main',   FIELD2 => 'id');
-  # }}}
-
-  # If we care about which sort of watcher
-  my $meta = $FIELDS{$field};
-  my $type = ( defined $meta->[1] ? $meta->[1] : undef );
-
-  if ( $type ) {
-    $self->_SQLLimit(ALIAS => $groups,
-		     FIELD => 'Type',
-		     VALUE => $type,
-		     ENTRYAGGREGATOR => 'AND');
-  }
-
-  $self->_SQLJoin (ALIAS1 => $groups,  FIELD1 => 'id',
-	       ALIAS2 => $groupmembers, FIELD2 => 'GroupId');
-
-  $self->_SQLJoin( ALIAS1 => $groupmembers, FIELD1 => 'MemberId',
-	       ALIAS2 => $users, FIELD2 => 'id');
-
- $self->_CloseParen;
 
 }
 
@@ -715,41 +822,35 @@ sub _CustomFieldLimit {
   my $field = $rest{SUBKEY} || die "No field specified";
 
   # For our sanity, we can only limit on one queue at a time
-  my $queue = undef;
-  # Ugh.    This will not do well for things with underscores in them
+  my $queue = 0;
 
-  use RT::CustomFields;
-  my $CF = RT::CustomFields->new( $self->CurrentUser );
-  #$CF->Load( $cfid} );
 
-  my $q;
   if ($field =~ /^(.+?)\.{(.+)}$/) {
-    my $q = RT::Queue->new($self->CurrentUser);
-    $q->Load($1);
+    $queue =  $1;
     $field = $2;
-    $CF->LimitToQueue( $q->Id );
-    $queue = $q->Id;
-  } else {
+   }
     $field = $1 if $field =~ /^{(.+)}$/; # trim { }
-    $CF->LimitToGlobal;
-  }
-  $CF->FindAllRows;
 
-  my $cfid = 0;
+    my $q = RT::Queue->new($self->CurrentUser);
+    $q->Load($queue) if ($queue);
 
-  # this is pretty inefficient for huge numbers of CFs...
-  while ( my $CustomField = $CF->Next ) {
-    if (lc $CustomField->Name eq lc $field) {
-      $cfid = $CustomField->Id;
-      last;
+    my $cf;
+    if ($q->id) {
+        $cf = $q->CustomField($field);
     }
-  }
-  die "No custom field named $field found\n"
-    unless $cfid;
+    else { 
+        $cf = RT::CustomField->new($self->CurrentUser);
+        $cf->LoadByNameAndQueue(Queue => '0', Name => $field);
+    }
 
-#   use RT::CustomFields;
-#   my $CF = RT::CustomField->new( $self->CurrentUser );
-#   $CF->Load( $cfid );
+
+
+
+
+  my $cfid = $cf->id;
+
+  die "No custom field named $field found\n" unless $cfid;
+
 
 
   my $null_columns_ok;
@@ -776,15 +877,16 @@ sub _CustomFieldLimit {
 		    QUOTEVALUE => 1,
 		    @rest );
 
-  if (   $op =~ /^IS$/i
-	 or ( $op eq '!=' ) ) {
+
+   # If we're trying to find custom fields that don't match something, we want tickets
+   # where the custom field has no value at all
+
+  if (   ($op =~ /^IS$/i) || ($op =~ /^NOT LIKE$/i) || ( $op eq '!=' ) ) {
     $null_columns_ok = 1;
   }
+    
 
-  #If we're trying to find tickets where the keyword isn't somethng,
-  #also check ones where it _IS_ null
-
-  if ( $op eq '!=' ) {
+  if ( $null_columns_ok && $op !~ /IS/i && uc $value ne "NULL") {
     $self->_SQLLimit( ALIAS           => $TicketCFs,
 		      FIELD           => 'Content',
 		      OPERATOR        => 'IS',
@@ -1387,7 +1489,7 @@ sub LimitRequestor {
 =head2 LimitLinkedTo
 
 LimitLinkedTo takes a paramhash with two fields: TYPE and TARGET
-TYPE limits the sort of relationship we want to search on
+TYPE limits the sort of link we want to search on
 
 TYPE = { RefersTo, MemberOf, DependsOn }
 
@@ -1423,7 +1525,7 @@ sub LimitLinkedTo {
 =head2 LimitLinkedFrom
 
 LimitLinkedFrom takes a paramhash with two fields: TYPE and BASE
-TYPE limits the sort of relationship we want to search on
+TYPE limits the sort of link we want to search on
 
 
 BASE is the id or URI of the BASE of the link
@@ -1675,7 +1777,6 @@ sub LimitCustomField {
                  QUOTEVALUE    => 1,
                  @_ );
 
-    use RT::CustomFields;
     my $CF = RT::CustomField->new( $self->CurrentUser );
     if ( $args{CUSTOMFIELD} =~ /^\d+$/) {
 	$CF->Load( $args{CUSTOMFIELD} );
@@ -1801,6 +1902,7 @@ sub ItemsArrayRef {
             push ( @{ $self->{'items_array'} }, $item );
         }
         $self->GotoItem($placeholder);
+        $self->{'items_array'} = $self->ItemsOrderBy($self->{'items_array'});
     }
     return ( $self->{'items_array'} );
 }
@@ -2088,15 +2190,15 @@ sub _BuildItemMap {
 
     delete $self->{'item_map'};
     if ($items->[0]) {
-    $self->{'item_map'}->{'first'} = $items->[0]->EffectiveId;
-    while (my $item = shift @$items ) {
-        my $id = $item->EffectiveId;
-        $self->{'item_map'}->{$id}->{'defined'} = 1;
-        $self->{'item_map'}->{$id}->{prev}  = $prev;
-        $self->{'item_map'}->{$id}->{next}  = $items->[0]->EffectiveId if ($items->[0]);
-        $prev = $id;
-    }
-    $self->{'item_map'}->{'last'} = $prev;
+        $self->{'item_map'}->{'first'} = $items->[0]->EffectiveId;
+        while (my $item = shift @$items ) {
+            my $id = $item->EffectiveId;
+            $self->{'item_map'}->{$id}->{'defined'} = 1;
+            $self->{'item_map'}->{$id}->{prev}  = $prev;
+            $self->{'item_map'}->{$id}->{next}  = $items->[0]->EffectiveId if ($items->[0]);
+            $prev = $id;
+        }
+        $self->{'item_map'}->{'last'} = $prev;
     }
 } 
 
@@ -2107,14 +2209,14 @@ Returns an a map of all items found by this search. The map is of the form
 
 $ItemMap->{'first'} = first ticketid found
 $ItemMap->{'last'} = last ticketid found
-$ItemMap->{$id}->{prev} = the tikcet id found before $id
-$ItemMap->{$id}->{next} = the tikcet id found after $id
+$ItemMap->{$id}->{prev} = the ticket id found before $id
+$ItemMap->{$id}->{next} = the ticket id found after $id
 
 =cut
 
 sub ItemMap {
     my $self = shift;
-    $self->_BuildItemMap() unless ($self->{'item_map'});
+    $self->_BuildItemMap() unless ($self->{'items_array'} and $self->{'item_map'});
     return ($self->{'item_map'});
 }
 

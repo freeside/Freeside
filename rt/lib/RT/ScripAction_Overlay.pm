@@ -1,8 +1,14 @@
-# BEGIN LICENSE BLOCK
+# {{{ BEGIN BPS TAGGED BLOCK
 # 
-# Copyright (c) 1996-2003 Jesse Vincent <jesse@bestpractical.com>
+# COPYRIGHT:
+#  
+# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+#                                          <jesse@bestpractical.com>
 # 
-# (Except where explictly superceded by other copyright notices)
+# (Except where explicitly superseded by other copyright notices)
+# 
+# 
+# LICENSE:
 # 
 # This work is made available to you under the terms of Version 2 of
 # the GNU General Public License. A copy of that license should have
@@ -14,13 +20,29 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 # General Public License for more details.
 # 
-# Unless otherwise specified, all modifications, corrections or
-# extensions to this work which alter its source code become the
-# property of Best Practical Solutions, LLC when submitted for
-# inclusion in the work.
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 # 
 # 
-# END LICENSE BLOCK
+# CONTRIBUTION SUBMISSION POLICY:
+# 
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+# 
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+# 
+# }}} END BPS TAGGED BLOCK
 =head1 NAME
 
   RT::ScripAction - RT Action object
@@ -49,14 +71,6 @@ ok (require RT::ScripAction);
 use strict;
 no warnings qw(redefine);
 use RT::Template;
-
-# {{{  sub _Init 
-sub _Init  {
-    my $self = shift; 
-    $self->{'table'} = "ScripActions";
-    return ($self->SUPER::_Init(@_));
-}
-# }}}
 
 # {{{ sub _Accessible 
 sub _Accessible  {
@@ -146,12 +160,13 @@ sub LoadAction  {
  
     eval "require $type" || die "Require of $type failed.\n$@\n";
     
-    $self->{'Action'}  = $type->new ( 'ScripActionObj' => $self, 
-				      'TicketObj' => $args{'TicketObj'},
-				      'ScripObj' => $args{'ScripObj'},
-				      'TransactionObj' => $args{'TransactionObj'},
-				      'TemplateObj' => $self->TemplateObj,
-				      'Argument' => $self->Argument,
+    $self->{'Action'}  = $type->new ( ScripActionObj => $self, 
+				      TicketObj => $args{'TicketObj'},
+				      ScripObj => $args{'ScripObj'},
+				      TransactionObj => $args{'TransactionObj'},
+				      TemplateObj => $self->TemplateObj,
+				      Argument => $self->Argument,
+                      CurrentUser => $self->CurrentUser
 				    );
 }
 # }}}
@@ -160,7 +175,10 @@ sub LoadAction  {
 
 =head2 TemplateObj
 
-Return this action\'s template object
+Return this action's template object
+
+TODO: Why are we not using the Scrip's template object?
+
 
 =cut
 
@@ -196,7 +214,7 @@ sub TemplateObj {
 
 sub Prepare  {
     my $self = shift;
-    return ($self->{'Action'}->Prepare());
+    return ($self->Action->Prepare());
   
 }
 # }}}
@@ -204,7 +222,7 @@ sub Prepare  {
 # {{{ sub Commit 
 sub Commit  {
     my $self = shift;
-    return($self->{'Action'}->Commit());
+    return($self->Action->Commit());
     
     
 }
@@ -213,10 +231,21 @@ sub Commit  {
 # {{{ sub Describe 
 sub Describe  {
     my $self = shift;
-    return ($self->{'Action'}->Describe());
+    return ($self->Action->Describe());
     
 }
 # }}}
+
+=head2 Action
+
+Return the actual RT::Action object for this scrip.
+
+=cut
+
+sub Action {
+    my $self = shift;
+    return ($self->{'Action'});
+}
 
 # {{{ sub DESTROY
 sub DESTROY {
@@ -227,6 +256,12 @@ sub DESTROY {
 }
 # }}}
 
+=head2 TODO
+
+Between this, RT::Scrip and RT::Action::*, we need to be able to get rid of a 
+class. This just reeks of too much complexity -- jesse
+
+=cut
 
 1;
 

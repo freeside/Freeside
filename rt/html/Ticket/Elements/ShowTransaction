@@ -1,8 +1,14 @@
-%# BEGIN LICENSE BLOCK
+%# {{{ BEGIN BPS TAGGED BLOCK
 %# 
-%# Copyright (c) 1996-2003 Jesse Vincent <jesse@bestpractical.com>
+%# COPYRIGHT:
+%#  
+%# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+%#                                          <jesse@bestpractical.com>
 %# 
-%# (Except where explictly superceded by other copyright notices)
+%# (Except where explicitly superseded by other copyright notices)
+%# 
+%# 
+%# LICENSE:
 %# 
 %# This work is made available to you under the terms of Version 2 of
 %# the GNU General Public License. A copy of that license should have
@@ -14,15 +20,31 @@
 %# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 %# General Public License for more details.
 %# 
-%# Unless otherwise specified, all modifications, corrections or
-%# extensions to this work which alter its source code become the
-%# property of Best Practical Solutions, LLC when submitted for
-%# inclusion in the work.
+%# You should have received a copy of the GNU General Public License
+%# along with this program; if not, write to the Free Software
+%# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 %# 
 %# 
-%# END LICENSE BLOCK
+%# CONTRIBUTION SUBMISSION POLICY:
+%# 
+%# (The following paragraph is not intended to limit the rights granted
+%# to you to modify and distribute this software under the terms of
+%# the GNU General Public License and is only of importance to you if
+%# you choose to contribute your changes and enhancements to the
+%# community by submitting them to Best Practical Solutions, LLC.)
+%# 
+%# By intentionally submitting any modifications, corrections or
+%# derivatives to this work, or any other work intended for use with
+%# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+%# you are the copyright holder for those contributions and you grant
+%# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+%# royalty-free, perpetual, license to use, copy, create derivative
+%# works based on those contributions, and sublicense and distribute
+%# those contributions and any derivatives thereof.
+%# 
+%# }}} END BPS TAGGED BLOCK
 <TR class="<% $RowNum%2 ? 'oddline' : 'evenline'%>" >
-<TD bgcolor="<%$bgcolor%>"><A NAME="txn-<%$Transaction->Id%>" href="#txn-<%$Transaction->Id%>">#</A>&nbsp;</TD>
+<TD rowspan="2" valign="top" bgcolor="<%$bgcolor%>"><A NAME="txn-<%$Transaction->Id%>" href="#txn-<%$Transaction->Id%>">#</A><% $LastTransaction ? '<a name="lasttrans">&nbsp;</a>' : '&nbsp;' |n %></TD>
 <TD>&nbsp&nbsp;</TD>
 <TD><font size=-2><% $transdate|n %></font>&nbsp;</TD>
 % my $desc = $Transaction->BriefDescription;
@@ -33,89 +55,10 @@
 <TD><%$TimeTaken%>&nbsp;</TD>
 <TD ALIGN="RIGHT"><font size=-1><%$titlebar_commands|n%></font></TD>
 </TR>
-<%PERL>
-
-unless ($Collapsed) {
- foreach my $message (@$Attachments) { 
-
-  my ($headers, $quoted);
-      if ($ShowHeaders && ($ShowHeaders == $Ticket->Id)) {
-	  $headers = $message->Headers;
-      } else {
-	  $headers = $message->NiceHeaders;
-      }
-      chomp $headers;
-      if ($headers) {
-	   # localize the common headers (like 'Subject:'), too.
-	   eval {$headers =~ s/^([^:]+)(?=:)/loc($1)/em; } # we eval here to catch errors when 5.6 panics
-      }
-     
-
-     my $MAX_INLINE_BODY = $RT::MaxInlineBody || 13456;
-    if (    $message->ContentType =~ m{^(text/plain|message|text$)}i
-         && $message->ContentLength < $MAX_INLINE_BODY ) {
-
-        my $content;
-        # If we've preloaded all the content, let's pull from there
-        # if we haven't, load it now
-        if ($AttachmentContent->{$message->id}) {
-            $content = $AttachmentContent->{$message->id}->Content;
-        } else {
-            $content = $message->Content;
-        } 
-
-
-
-        eval {
-            require Text::Quoted;
-            $quoted = Text::Quoted::extract( $content );
-        };
-        if ($@) {
-            $quoted = $content;
-        }
-    }
-        
-</%PERL>
-<TR class="<% $RowNum%2 ? 'oddline' : 'evenline'%>" >                                
-      <TD BGCOLOR="<%$bgcolor%>">&nbsp;&nbsp;</TD>
-      <TD>&nbsp;&nbsp;</TD>
-      <TD COLSPAN=3 VALIGN=TOP>
-<span class="message">
-	<PRE>
-<& ShowMessageHeaders, Headers => $headers, Transaction => $Transaction &>
-</PRE>
-% if ($message->ContentLength && !length($quoted) && $message->ContentType =~ m#^text/#) {
-<blockquote><i><&|/l&>Message body not shown because it is too large or is not plain text.</&><br>
-<&|/l&>You can access it with the Download button on the right.</&></i></blockquote>
-% } else {
-<& ShowMessageStanza, Depth => 0, Message => $quoted, Transaction => $Transaction &>
-% }
-</span>
-      </TD>
-      <TD VALIGN=TOP ALIGN=RIGHT>
-	
-% if ($message->Parent == 0  ) {
-<BR>
-% }
-<%PERL>
-my $size = $message->ContentLength or next;
-
-if ($size) {
-    if ($size > 1024) {
-	$size = loc("[_1]k", int($size/102.4)/10);
-    }
-    else {
-	$size = loc("[_1]b", $size);
-    }
-</%PERL>
-<font size=-1><A HREF="<%$AttachPath%>/<%$Transaction->Id%>/<%$message->Id%>/<%$message->Filename | u%>"><&|/l&>Download</&> <% $message->Filename|| loc('(untitled)') %></a> <% $size %></font>
-% }
+<TR class="<% $RowNum%2 ? 'oddline' : 'evenline'%>"><TD colspan=5>
+% $m->comp('ShowTransactionAttachments', %ARGS, Parent => 0) unless ($Collapsed ||!$ShowBody);
 </TD>
 </TR>
-% }
-% }
-
-
 
 <%ARGS>
 $Ticket => undef
@@ -126,44 +69,56 @@ $ShowTitleBarCommands => 1
 $RowNum => 1
 $AttachPath => $RT::WebPath."/Ticket/Attachment"
 $UpdatePath => $RT::WebPath."/Ticket/Update.html"
+$EmailRecordPath => $RT::WebPath."/Ticket/ShowEmailRecord.html"
 $Attachments => undef
 $AttachmentContent => undef
+$ShowBody => 1
+$LastTransaction => 0
 </%ARGS>
 
 <%INIT>
 
-
-my ($TimeTaken, $TicketString, $bgcolor);
+my ( $TimeTaken, $TicketString, $bgcolor );
 
 my $transdate = $Transaction->CreatedAsString();
 $transdate =~ s/\s/&nbsp;/g;
 
-if ($Transaction->Type =~ /^(Create|Correspond|Comment$)/) {
-		$bgcolor="#336699";
-} elsif (($Transaction->Field =~ /^Owner$/) or 
-	 ($Transaction->Type =~ /^(AddWatcher|DelWatcher)$/)) {
-	$bgcolor="#333399";
+if ( $Transaction->Type =~ /^(Create|Correspond|Comment$)/ ) {
+    if ( $Transaction->IsInbound ) {
+        $bgcolor = "#336699";
+    }
+    else {
+        $bgcolor = "#339999";
+    }
+}
+elsif (    ( $Transaction->Field =~ /^Owner$/ )
+        or ( $Transaction->Type =~ /^(AddWatcher|DelWatcher)$/ ) ) {
+    $bgcolor = "#333399";
 
-} elsif ($Transaction->Type =~ /^(AddLink|DeleteLink)$/) {
-	$bgcolor="#336633";
-} elsif ($Transaction->Type =~ /^(Status|Set|Told)$/) {
-	if ($Transaction->Field =~ /^(Told|Starts|Started|Due)$/) {
-		$bgcolor="#663366";	
-	}
-	else {
-		$bgcolor="#993333";
-	}
+}
+elsif ( $Transaction->Type =~ /^(AddLink|DeleteLink)$/ ) {
+    $bgcolor = "#336633";
+}
+elsif ( $Transaction->Type =~ /^(Status|Set|Told)$/ ) {
+    if ( $Transaction->Field =~ /^(Told|Starts|Started|Due)$/ ) {
+        $bgcolor = "#663366";
+    }
+    else {
+        $bgcolor = "#993333";
+    }
 }
 else {
-	$bgcolor="#cccccc";
+    $bgcolor = "#cccccc";
 }
 
-if ($Ticket->Id != $Transaction->Ticket) {
-	$TicketString = "Ticket ".$Transaction->Ticket .": ";
+if ( $Ticket->Id != $Transaction->Ticket ) {
+    $TicketString = "Ticket " . $Transaction->Ticket . ": ";
 }
 
-if ($Transaction->TimeTaken != 0) {
-	$TimeTaken = $Transaction->TimeTaken." min"
+if ( $Transaction->TimeTaken != 0 ) {
+    $TimeTaken = $Transaction->TimeTaken . " min";
+} else {
+    $TimeTaken = '';
 }
 
 unless ($Attachments) { 
@@ -171,24 +126,56 @@ unless ($Attachments) {
     $attachments->Columns( qw( Id Filename ContentType Headers Subject Parent ContentEncoding ContentType TransactionId) );
     $Attachments = $attachments->ItemsArrayRef();
 }
+my $titlebar_commands = '&nbsp;';
 
+my @DisplayHeaders=qw ( _all);
 
-my $titlebar_commands='&nbsp;';
+if ( $Transaction->Type =~ /EmailRecord$/ ) {
+    @DisplayHeaders = qw(To Cc Bcc);
 
-# If the transaction has anything attached to it at all
-if ($Attachments->[0] && $ShowTitleBarCommands) {
-	if ($Ticket->CurrentUserHasRight('ReplyToTicket')) {
-		$titlebar_commands .= 
-	  	  "[<a href=\"".$UpdatePath."?id=".
-		  $Transaction->Ticket . "&QuoteTransaction=".$Transaction->Id.
-		  "&Action=Respond\">". loc('Reply') ."</a>]&nbsp;";
-	}
-	if ($Ticket->CurrentUserHasRight('CommentOnTicket')) {
-	     $titlebar_commands .= 
-	     "[<a href=\"".$UpdatePath."?id=".$Transaction->Ticket. 
-	     "&QuoteTransaction=".$Transaction->Id.
-	     "&Action=Comment\">". loc('Comment') ."</a>]";
-	}
+    $titlebar_commands .=
+        "[<a target=\"_blank\" href=\"$EmailRecordPath?id="
+      . $Transaction->Ticket
+      . "&Transaction="
+      . $Transaction->Id
+      . "&Attachment="
+      . (    $Transaction->Attachments->First
+          && $Transaction->Attachments->First->Id )
+
+      . '">' . loc('Show') . "</a>]&nbsp;";
+    $ShowBody = 0;
 }
 
+
+# If the transaction has anything attached to it at all
+else {
+
+    unless ( $ShowHeaders ) {
+        @DisplayHeaders = qw(To From RT-Send-Cc Cc Bcc Date Subject);
+    }
+
+    if ( $Attachments->[0] && $ShowTitleBarCommands ) {
+        if ( $Transaction->TicketObj->CurrentUserHasRight('ReplyToTicket')
+             or $Transaction->TicketObj->CurrentUserHasRight('ModifyTicket')) {
+            $titlebar_commands .=
+                "[<a href=\"".$UpdatePath."?id="
+              . $Transaction->Ticket
+              . "&QuoteTransaction="
+              . $Transaction->Id
+              . "&Action=Respond\">"
+              . loc('Reply')
+              . "</a>]&nbsp;";
+        }
+        if ( $Transaction->TicketObj->CurrentUserHasRight('CommentOnTicket')
+             or $Transaction->TicketObj->CurrentUserHasRight('ModifyTicket')) {
+            $titlebar_commands .=
+                "[<a href=\"".$UpdatePath."?id="
+              . $Transaction->Ticket
+              . "&QuoteTransaction="
+              . $Transaction->Id
+              . "&Action=Comment\">"
+              . loc('Comment') . "</a>]";
+        }
+    }
+}
 </%INIT>

@@ -1,8 +1,14 @@
-# BEGIN LICENSE BLOCK
+# {{{ BEGIN BPS TAGGED BLOCK
 # 
-# Copyright (c) 1996-2003 Jesse Vincent <jesse@bestpractical.com>
+# COPYRIGHT:
+#  
+# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+#                                          <jesse@bestpractical.com>
 # 
-# (Except where explictly superceded by other copyright notices)
+# (Except where explicitly superseded by other copyright notices)
+# 
+# 
+# LICENSE:
 # 
 # This work is made available to you under the terms of Version 2 of
 # the GNU General Public License. A copy of that license should have
@@ -14,13 +20,29 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 # General Public License for more details.
 # 
-# Unless otherwise specified, all modifications, corrections or
-# extensions to this work which alter its source code become the
-# property of Best Practical Solutions, LLC when submitted for
-# inclusion in the work.
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 # 
 # 
-# END LICENSE BLOCK
+# CONTRIBUTION SUBMISSION POLICY:
+# 
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+# 
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+# 
+# }}} END BPS TAGGED BLOCK
 =head1 SYNOPSIS
 
   use RT::Attachment;
@@ -50,18 +72,19 @@ no warnings qw(redefine);
 use MIME::Base64;
 use MIME::QuotedPrint;
 
-# {{{ sub _ClassAccessible 
-sub _ClassAccessible {
+
+# {{{ sub _OverlayAccessible 
+sub _OverlayAccessible {
     {
-    TransactionId   => { 'read'=>1, 'public'=>1, },
-    MessageId       => { 'read'=>1, },
-    Parent          => { 'read'=>1, },
-    ContentType     => { 'read'=>1, },
-    Subject         => { 'read'=>1, },
-    Content         => { 'read'=>1, },
-    ContentEncoding => { 'read'=>1, },
-    Headers         => { 'read'=>1, },
-    Filename        => { 'read'=>1, },
+    TransactionId   => { 'read'=>1, 'public'=>1, 'write' => 0 },
+    MessageId       => { 'read'=>1, 'write' => 0 },
+    Parent          => { 'read'=>1, 'write' => 0 },
+    ContentType     => { 'read'=>1, 'write' => 0 },
+    Subject         => { 'read'=>1, 'write' => 0 },
+    Content         => { 'read'=>1, 'write' => 0 },
+    ContentEncoding => { 'read'=>1, 'write' => 0 },
+    Headers         => { 'read'=>1, 'write' => 0 },
+    Filename        => { 'read'=>1, 'write' => 0 },
     Creator         => { 'read'=>1, 'auto'=>1, },
     Created         => { 'read'=>1, 'auto'=>1, },
   };
@@ -82,6 +105,9 @@ sub TransactionObj {
     unless (exists $self->{_TransactionObj}) {
 	$self->{_TransactionObj}=RT::Transaction->new($self->CurrentUser);
 	$self->{_TransactionObj}->Load($self->TransactionId);
+    }
+    unless ($self->{_TransactionObj}->Id) {
+        $RT::Logger->crit("Attachment ".$self->id." can't find transaction ".$self->TransactionId." which it is ostensibly part of. That's bad");
     }
     return $self->{_TransactionObj};
 }
@@ -160,63 +186,11 @@ sub Create {
     #If it's not multipart
     else {
 
-        my $ContentEncoding = 'none';
 
         my $Body = $Attachment->bodyhandle->as_string;
 
-        #get the max attachment length from RT
-        my $MaxSize = $RT::MaxAttachmentSize;
 
-        #if the current attachment contains nulls and the 
-        #database doesn't support embedded nulls
-
-        if ( $RT::AlwaysUseBase64 or
-	     ( !$RT::Handle->BinarySafeBLOBs ) && ( $Body =~ /\x00/ ) ) {
-
-            # set a flag telling us to mimencode the attachment
-            $ContentEncoding = 'base64';
-
-            #cut the max attchment size by 25% (for mime-encoding overhead.
-            $RT::Logger->debug("Max size is $MaxSize\n");
-            $MaxSize = $MaxSize * 3 / 4;
-        # Some databases (postgres) can't handle non-utf8 data 
-        } elsif (    !$RT::Handle->BinarySafeBLOBs
-                  && $Attachment->mime_type !~ /text\/plain/gi
-                  && !Encode::is_utf8( $Body, 1 ) ) {
-              $ContentEncoding = 'quoted-printable';
-        }
-
-        #if the attachment is larger than the maximum size
-        if ( ($MaxSize) and ( $MaxSize < length($Body) ) ) {
-
-            # if we're supposed to truncate large attachments
-            if ($RT::TruncateLongAttachments) {
-
-                # truncate the attachment to that length.
-                $Body = substr( $Body, 0, $MaxSize );
-
-            }
-
-            # elsif we're supposed to drop large attachments on the floor,
-            elsif ($RT::DropLongAttachments) {
-
-                # drop the attachment on the floor
-                $RT::Logger->info( "$self: Dropped an attachment of size " . length($Body) . "\n" . "It started: " . substr( $Body, 0, 60 ) . "\n" );
-                return (undef);
-            }
-        }
-
-        # if we need to mimencode the attachment
-        if ( $ContentEncoding eq 'base64' ) {
-
-            # base64 encode the attachment
-            Encode::_utf8_off($Body);
-            $Body = MIME::Base64::encode_base64($Body);
-
-        } elsif ($ContentEncoding eq 'quoted-printable') {
-       	    Encode::_utf8_off($Body);
-            $Body = MIME::QuotedPrint::encode($Body);
-        }
+	my ($ContentEncoding, $Body) = $self->_EncodeLOB($Attachment->bodyhandle->as_string, $Attachment->mime_type);
 
 
         my $id = $self->SUPER::Create( TransactionId => $args{'TransactionId'},
@@ -260,7 +234,7 @@ before returning it.
 
 sub Content {
   my $self = shift;
-  my $decode_utf8 = (($self->ContentType eq 'text/plain') ? 1 : 0);
+  my $decode_utf8 = (($self->ContentType =~ qr{^text/plain}i) ? 1 : 0);
 
   if ( $self->ContentEncoding eq 'none' || ! $self->ContentEncoding ) {
       return $self->_Value(
@@ -436,7 +410,7 @@ sub NiceHeaders {
     my $hdrs = "";
     my @hdrs = split(/\n/,$self->Headers);
     while (my $str = shift @hdrs) {
-	    next unless $str =~ /^(To|From|RT-Send-Cc|Cc|Date|Subject): /i;
+	    next unless $str =~ /^(To|From|RT-Send-Cc|Cc|Bcc:Date|Subject): /i;
 	    $hdrs .= $str . "\n";
 	    $hdrs .= shift( @hdrs ) . "\n" while ($hdrs[0] =~ /^[ \t]+/);
     }
@@ -528,31 +502,32 @@ Returns its value as a string, if the user passes an ACL check
 
 =cut
 
-sub _Value  {
+sub _Value {
 
-    my $self = shift;
+    my $self  = shift;
     my $field = shift;
-    
-    
+
     #if the field is public, return it.
-    if ($self->_Accessible($field, 'public')) {
-	#$RT::Logger->debug("Skipping ACL check for $field\n");
-	return($self->__Value($field, @_));
-	
+    if ( $self->_Accessible( $field, 'public' ) ) {
+        return ( $self->__Value( $field, @_ ) );
     }
-    
+
     #If it's a comment, we need to be extra special careful
-    elsif ( (($self->TransactionObj->CurrentUserHasRight('ShowTicketComments')) and
-	     ($self->TransactionObj->Type eq 'Comment') )  or
-	    ($self->TransactionObj->CurrentUserHasRight('ShowTicket'))) {
-		return($self->__Value($field, @_));
+    elsif ( $self->TransactionObj->Type =~ /^Comment/ ) {
+        if ( $self->TransactionObj->CurrentUserHasRight('ShowTicketComments') )
+        {
+            return ( $self->__Value( $field, @_ ) );
+        }
     }
+    elsif ( $self->TransactionObj->CurrentUserHasRight('ShowTicket') ) {
+        return ( $self->__Value( $field, @_ ) );
+    }
+
     #if they ain't got rights to see, don't let em
     else {
-	    return(undef);
-	}
-    	
-    
+        return (undef);
+    }
+
 }
 
 # }}}

@@ -1,0 +1,121 @@
+%# BEGIN LICENSE BLOCK;
+%# 
+%# Copyright (c) 1996-2003 Jesse Vincent <jesse@bestpractical.com>
+%# 
+%# (Except where explictly superceded by other copyright notices)
+%# 
+%# This work is made available to you under the terms of Version 2 of
+%# the GNU General Public License. A copy of that license should have
+%# been provided with this software, but in any event can be snarfed
+%# from www.gnu.org.
+%# 
+%# This work is distributed in the hope that it will be useful, but
+%# WITHOUT ANY WARRANTY; without even the implied warranty of
+%# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+%# General Public License for more details.
+%# 
+%# Unless otherwise specified, all modifications, corrections or
+%# extensions to this work which alter its source code become the
+%# property of Best Practical Solutions, LLC when submitted for
+%# inclusion in the work.
+%# 
+%# 
+%# END LICENSE BLOCK
+
+%# If you're having TicketList display a single record, you need
+%# to wrap the calls in your own table(s).
+% unless (defined $SingleRecord) {
+<TABLE BORDER=0 cellspacing=0 cellpadding=1 WIDTH=100%>
+% }
+
+% if ($ShowHeader) {
+<& /Elements/CollectionAsTable/Header, 
+    Format => \@Format, 
+    AllowSorting => $AllowSorting, 
+    Order => $Order, 
+    Query => $Query,
+    Rows => $Rows,
+    Page => $Page,
+    OrderBy => $OrderBy , 
+    BaseURL => $BaseURL,
+    maxitems => \$maxitems &> 
+% }
+
+% if (defined $SingleRecord) {
+<&   /Elements/CollectionAsTable/Row, Format => \@Format, i => 0, record => $SingleRecord, maxitems => $maxitems &>
+% } else {
+%   my $i;
+%   while (my $record = $Collection->Next) {
+%   $i++;
+<&   /Elements/CollectionAsTable/Row, Format => \@Format, i => $i, record => $record, maxitems => $maxitems &>
+%   }
+% }
+
+% unless (defined $SingleRecord) {
+</TABLE>
+% }
+
+% if ($ShowNavigation) {
+<hr>
+<&|/l, $Page, int($TotalFound/$Rows)+1&>Page [_1] of [_2]</&>
+
+<%perl>
+my $prev =  $m->comp('/Elements/QueryString',
+                     Query => $Query,
+                     Format => $Format,
+                     Rows => $Rows,
+                     OrderBy => $OrderBy,
+                     Order => $Order,
+                     Page => ($Page-1));
+my $next =  $m->comp('/Elements/QueryString',
+                     Query => $Query,
+                     Format => $Format,
+                     Rows => $Rows,
+                     OrderBy => $OrderBy,
+                     Order => $Order,
+                     Page => ($Page+1));
+</%perl>
+% if ($Page > 1) {
+<A href="<%$BaseURL%><%$prev%>"><&|/l&>Previous Page</&></a>
+% }
+% if (($Page * $Rows) < $TotalFound) {
+<A href="<%$BaseURL%><%$next%>"><&|/l&>Next Page</&></a>
+% }
+% }
+<%INIT>
+my $maxitems;
+
+$Format ||= $RT::DefaultSearchResultFormat;
+# Scrub the html of the format string to remove any potential nasties.
+$Format = $m->comp('/Elements/ScrubHTML', Content => $Format);
+
+$Rows ||= '25'; # we need a positive value
+
+unless ($Collection) {
+        $Collection = RT::Tickets->new($session{'CurrentUser'});
+        $Collection->FromSQL($Query);
+}
+
+my (@Format) = $m->comp('/Elements/CollectionAsTable/ParseFormat', Format => $Format);
+
+$Collection->OrderBy(FIELD => $OrderBy, ORDER => $Order); 
+$Collection->RowsPerPage($Rows);
+$Collection->GotoPage($Page-1); # SB uses page 0 as the first page
+my $TotalFound =  $Collection->CountAll();
+
+</%INIT>
+<%ARGS>
+$Query => undef
+$Rows => 10
+$Page => 1
+$Title => 'Ticket Search'
+$Collection => undef
+$SingleRecord => undef
+$AllowSorting => undef
+$Order => undef
+$OrderBy => undef
+$BaseURL => undef
+$Format => $RT::DefaultSearchResultFormat
+$ShowNavigation => 1
+$ShowHeader => 1
+</%ARGS>

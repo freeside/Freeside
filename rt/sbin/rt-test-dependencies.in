@@ -1,9 +1,15 @@
 #!@PERL@
-# BEGIN LICENSE BLOCK
+# {{{ BEGIN BPS TAGGED BLOCK
 # 
-# Copyright (c) 1996-2003 Jesse Vincent <jesse@bestpractical.com>
+# COPYRIGHT:
+#  
+# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+#                                          <jesse@bestpractical.com>
 # 
-# (Except where explictly superceded by other copyright notices)
+# (Except where explicitly superseded by other copyright notices)
+# 
+# 
+# LICENSE:
 # 
 # This work is made available to you under the terms of Version 2 of
 # the GNU General Public License. A copy of that license should have
@@ -15,14 +21,29 @@
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 # General Public License for more details.
 # 
-# Unless otherwise specified, all modifications, corrections or
-# extensions to this work which alter its source code become the
-# property of Best Practical Solutions, LLC when submitted for
-# inclusion in the work.
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 # 
 # 
-# END LICENSE BLOCK
-
+# CONTRIBUTION SUBMISSION POLICY:
+# 
+# (The following paragraph is not intended to limit the rights granted
+# to you to modify and distribute this software under the terms of
+# the GNU General Public License and is only of importance to you if
+# you choose to contribute your changes and enhancements to the
+# community by submitting them to Best Practical Solutions, LLC.)
+# 
+# By intentionally submitting any modifications, corrections or
+# derivatives to this work, or any other work intended for use with
+# Request Tracker, to Best Practical Solutions, LLC, you confirm that
+# you are the copyright holder for those contributions and you grant
+# Best Practical Solutions,  LLC a nonexclusive, worldwide, irrevocable,
+# royalty-free, perpetual, license to use, copy, create derivative
+# works based on those contributions, and sublicense and distribute
+# those contributions and any derivatives thereof.
+# 
+# }}} END BPS TAGGED BLOCK
 #
 # This is just a basic script that checks to make sure that all
 # the modules needed by RT before you can install it.
@@ -34,7 +55,7 @@ use Getopt::Long;
 use CPAN;
 my %args;
 my %deps;
-GetOptions(\%args,'install', 'with-MYSQL', 'with-POSTGRESQL|with-pg|with-pgsql', 'with-SQLITE', 'with-ORACLE', 'with-FASTCGI', 'with-SPEEDYCGI', 'with-MODPERL1', 'with-MODPERL2' ,'with-DEV');
+GetOptions(\%args, 'v|verbose', 'install', 'with-MYSQL', 'with-POSTGRESQL|with-pg|with-pgsql', 'with-SQLITE', 'with-ORACLE', 'with-FASTCGI', 'with-SPEEDYCGI', 'with-MODPERL1', 'with-MODPERL2' ,'with-DEV', 'download=s');
 
 if (!keys %args) {
     help();
@@ -49,9 +70,6 @@ $args{'with-CORE'} = 1;
 $args{'with-DEV'} =1; 
 $args{'with-CLI'} =1; 
 $args{'with-MAILGATE'} =1; 
-if ($] < 5.007) {
-$args{'with-I18N-COMPAT'} = 1;
-}
 
 sub warn_modperl2 {
     print <<'.';
@@ -86,6 +104,9 @@ The following switches will tell the tool to check for specific dependencies
 	--with-modperl2		Libraries needed to support the modperl 2 handler
 
 	--with-dev		Tools needed for RT development
+
+You can also specify -v or --verbose to list the status of all dependencies,
+rather than just the missing ones.
 .
 }
 
@@ -95,6 +116,7 @@ sub _ {
 }
 
 $deps{'CORE'} = [ _( << '.') ];
+Digest::base
 Digest::MD5 2.27
 DBI 1.37
 Test::Inline
@@ -103,6 +125,7 @@ DBIx::SearchBuilder 1.01
 Text::Template
 File::Spec 0.8
 HTML::Entities 
+HTML::Scrubber 0.08
 Net::Domain
 Log::Dispatch 2.0
 Locale::Maketext 1.06
@@ -117,14 +140,16 @@ File::Temp
 Term::ReadKey
 Text::Autoformat
 Text::Quoted 1.3
+Tree::Simple 1.04
 Scalar::Util
+Module::Versions::Report
 .
 
 $deps{'MASON'} = [ _( << '.') ];
 Params::Validate 0.02
 Cache::Cache
-Exception::Class
-HTML::Mason 1.16
+Exception::Class 1.14
+HTML::Mason 1.23
 MLDBM
 Errno
 FreezeThaw
@@ -132,6 +157,7 @@ Digest::MD5 2.27
 CGI::Cookie 1.20
 Storable 2.08
 Apache::Session 1.53
+XML::RSS
 .
 
 $deps{'MAILGATE'} = [ _( << '.') ];
@@ -149,6 +175,9 @@ $deps{'DEV'} = [ _( << '.') ];
 Regexp::Common
 Time::HiRes 
 Test::Inline 
+Apache::Test
+HTML::Form
+HTML::TokeParser
 WWW::Mechanize
 .
 
@@ -175,11 +204,6 @@ CGI 2.92
 Apache::DBI
 .
 
-$deps{'I18N-COMPAT'} = [ _( << '.') ];
-Text::Iconv
-Encode::compat 0.04
-.
-
 $deps{'MYSQL'} = [ _( << '.') ];
 DBD::mysql 2.1018
 .
@@ -190,67 +214,115 @@ $deps{'POSTGRESQL'} = [ _( << '.') ];
 DBD::Pg
 .
 
+$deps{'SQLITE'} = [ _( << '.') ];
+DBD::SQLite
+.
+
+if ($args{'download'}) {
+
+    my %modules;
+
+    foreach my $key (keys %deps) {
+        my @deps = (@{$deps{$key}});
+        while (@deps) {
+            my $mod = shift @deps;
+            my $ver = shift @deps;
+            next if ($mod =~ /^(DBD-|Apache-Request)/);
+            $modules{$mod} = $ver;
+        }
+    }
+    my @mods = keys %modules;
+    CPAN::get();
+    my $moddir = $args{'download'};
+    foreach my $mod (@mods) {
+        $CPAN::Config->{'build_dir'} = $moddir;
+        CPAN::get($mod);
+    }
+
+    opendir(DIR, $moddir);
+    while ( my $dir = readdir(DIR)) {
+        print "Dir is $dir\n";
+        next if ( $dir =~ /^\.\.?$/);
+
+        if ($dir =~ /^(.*)-(.*?)$/) {
+            print "$1  --  $2\n";
+            `svn_load_dirs.pl file:///Users/jesse/mod-repo $1 $moddir/$dir`;
+            `rm -rf $moddir/$dir`;
+
+        }
+
+    }
+    closedir(DIR);
+    exit;
+}
+
+
 print "perl:\n";
 print "\t5.8.3";
 eval {require 5.008003};
 if ($@) {
-print "...MISSING.\n";
-        eval {require 5.008000};
-        if ($@) {
-            print "\nRT is known to be non-functional on versions of perl older than 5.8.3.\nPlease upgrade to 5.8.3 or newer\n\n";
-            die;
-        } 
+    print "...MISSING.\n";
+    eval {require 5.008000};
+    if ($@) {
+        print "\nRT is known to be non-functional on versions of perl older than 5.8.3.\nPlease upgrade to 5.8.3 or newer\n\n";
+        die;
+    } 
 
-        eval {require 5.008003};
-        if ($@) {
-            print "\nRT is known to be non-functional on versions of perl older than 5.8.3.\nPlease upgrade to 5.8.3 or newer\n\n";
-        }
+    eval {require 5.008003};
+    if ($@) {
+        print "\nRT is known to be non-functional on versions of perl older than 5.8.3.\nPlease upgrade to 5.8.3 or newer\n\n";
+    }
 } else {
-        print "...found\n";
-
+    print "...found\n" if $args{'v'};
 }
 
+print "users:\n";
+print "\trt group (@RTGROUP@)...",      (defined getgrnam("@RTGROUP@")    ? "found" : "MISSING"), "\n";
+print "\tbin owner (@BIN_OWNER@)...",   (defined getpwnam("@BIN_OWNER@")  ? "found" : "MISSING"), "\n";
+print "\tlibs owner (@LIBS_OWNER@)...", (defined getpwnam("@LIBS_OWNER@") ? "found" : "MISSING"), "\n";
+print "\tlibs group (@LIBS_GROUP@)...", (defined getgrnam("@LIBS_GROUP@") ? "found" : "MISSING"), "\n";
+print "\tweb owner (@WEB_USER@)...",    (defined getpwnam("@WEB_USER@")   ? "found" : "MISSING"), "\n";
+print "\tweb group (@WEB_GROUP@)...",   (defined getgrnam("@WEB_GROUP@")  ? "found" : "MISSING"), "\n";
 
-foreach my $type (keys %args)  {
-next unless ($type =~ /^with-(.*?)$/);
-my $type = $1;
-print "$type dependencies:\n";
-	my @deps = (@{$deps{$type}});
-	while (@deps) {
-		my $module = shift @deps;
-		my $version = shift @deps;
-my $ret;
-	$ret =test_dep($module, $version);	
+foreach my $type (keys %args) {
+    next unless ($type =~ /^with-(.*?)$/);
+    my $type = $1;
+    print "$type dependencies:\n";
+    my @deps = (@{$deps{$type}});
+    while (@deps) {
+        my $module = shift @deps;
+        my $version = shift @deps;
+        my $ret = test_dep($module, $version);	
 
-if ($args{'install'} && !$ret) {
-	resolve_dep($module);		
+        if ($args{'install'} && !$ret) {
+            resolve_dep($module);		
+        }
+    }
 }
-}
-}
+
 sub test_dep {
-	my $module = shift;
-	my $version = shift;
+    my $module = shift;
+    my $version = shift;
 
-	print "\t$module $version";
-	eval "use $module $version" ;
-	if ($@) {
-		my $error = $@;
-		$error =~ s/\n(.*)$//s;
-		print "...MISSING\n";
-			print "\t\t$error\n" if $error =~ /this is only/;
+    eval "use $module $version ()";
+    if ($@) {
+        my $error = $@;
+        $error =~ s/\n(.*)$//s;
+        print "\t$module $version";
+        print "...MISSING\n";
+        print "\t\t$error\n" if $error =~ /this is only/;
 
-		return undef;
-	} else {
-		print "...found\n";
-return 1;
-	}
+        return undef;
+    } else {
+        print "\t$module $version...found\n" if $args{'v'};
+        return 1;
+    }
 }
 
 sub resolve_dep {
-	my $module = shift;
-	use CPAN;
-	CPAN::Shell->install($module);		
-	
+    my $module = shift;
+    use CPAN;
+    CPAN::Shell->install($module);		
 }
 
 
