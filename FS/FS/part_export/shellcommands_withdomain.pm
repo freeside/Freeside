@@ -95,6 +95,7 @@ The following variables are available for interpolation (prefixed with
   <LI><code>$dir</code> - home directory
   <LI><code>$shell</code>
   <LI><code>$quota</code>
+  <LI><code>@radius_groups</code>
   <LI>All other fields in <a href="../docs/schema.html#svc_acct">svc_acct</a> are also available.
 </UL>
 END

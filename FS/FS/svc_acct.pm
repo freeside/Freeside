@@ -187,8 +187,7 @@ The additional fields pkgnum and svcpart (see L<FS::cust_svc>) should be
 defined.  An FS::cust_svc record will be created and inserted.
 
 The additional field I<usergroup> can optionally be defined; if so it should
-contain an arrayref of group names.  See L<FS::radius_usergroup>.  (used in
-sqlradius export only)
+contain an arrayref of group names.  See L<FS::radius_usergroup>.
 
 The additional field I<child_objects> can optionally be defined; if so it
 should contain an arrayref of FS::tablename objects.  They will have their
@@ -535,8 +534,8 @@ Replaces OLD_RECORD with this one in the database.  If there is an error,
 returns the error, otherwise returns false.
 
 The additional field I<usergroup> can optionally be defined; if so it should
-contain an arrayref of group names.  See L<FS::radius_usergroup>.  (used in
-sqlradius export only)
+contain an arrayref of group names.  See L<FS::radius_usergroup>.
+
 
 =cut
 

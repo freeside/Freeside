@@ -154,6 +154,7 @@ old_ for replace operations):
   <LI><code>$dir</code> - home directory
   <LI><code>$shell</code>
   <LI><code>$quota</code>
+  <LI><code>@radius_groups</code>
   <LI>All other fields in <a href="../docs/schema.html#svc_acct">svc_acct</a> are also available.
 </UL>
 END
@@ -228,6 +229,8 @@ sub _export_command {
     );
   }
 
+  @radius_groups = $svc_acct->radius_groups;
+
   $self->shellcommands_queue( $svc_acct->svcnum,
     user         => $self->option('user')||'root',
     host         => $self->machine,
@@ -266,6 +269,9 @@ sub _export_replace {
     );
   }
 
+  @old_radius_groups = $old->radius_groups;
+  @new_radius_groups = $new->radius_groups;
+
   if ( $self->option('usermod_pwonly') ) {
     my $error = '';
     if ( $old_username ne $new_username ) {
@@ -279,6 +285,10 @@ sub _export_replace {
     }
     if ( $old_dir ne $new_dir ) {
       $error ||= "can't change dir";
+    }
+    if ( join("\n", sort @old_radius_groups) ne
+         join("\n", sort @new_radius_groups)    ) {
+      $error ||= "can't change RADIUS groups";
     }
     return $error. ' ('. $self->exporttype. ' to '. $self->machine. ')'
       if $error;
