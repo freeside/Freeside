@@ -229,7 +229,7 @@ sub check {
     unless qsearchs( 'part_pkg', { 'pkgpart' => $self->pkgpart } );
 
   $self->otaker(getotaker) unless $self->otaker;
-  $self->otaker =~ /^(\w{0,16})$/ or return "Illegal otaker";
+  $self->otaker =~ /^([\w\.\-]{0,16})$/ or return "Illegal otaker";
   $self->otaker($1);
 
   if ( $self->dbdef_table->column('manual_flag') ) {
@@ -679,7 +679,7 @@ sub order {
 
 =head1 VERSION
 
-$Id: cust_pkg.pm,v 1.22 2002-05-22 12:17:06 ivan Exp $
+$Id: cust_pkg.pm,v 1.23 2002-08-26 20:40:55 ivan Exp $
 
 =head1 BUGS
 
