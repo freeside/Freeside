@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: signup.cgi,v 1.33 2002-11-28 10:54:13 ivan Exp $
+# $Id: signup.cgi,v 1.34 2002-11-29 05:14:21 ivan Exp $
 
 use strict;
 use vars qw( @payby $cgi $locales $packages $pops $init_data $error
@@ -143,11 +143,21 @@ $cgi = new CGI;
 if ( defined $cgi->param('magic') ) {
   if ( $cgi->param('magic') eq 'process' ) {
 
-    $cgi->param('state') =~ /^(\w*)( \(([\w ]+)\))? ?\/ ?(\w+)$/
-      or die "Oops, illegal \"state\" param: ". $cgi->param('state');
-    $state = $1;
-    $county = $3 || '';
-    $country = $4;
+    if ( $cgi->param('state') =~ /^(\w*)( \(([\w ]+)\))? ?\/ ?(\w+)$/ ) {
+      $state = $1;
+      $county = $3 || '';
+      $country = $4;
+    } elsif ( $cgi->param('state') =~ /^(\w*)$/ ) {
+      $state = $1;
+      $cgi->param('county') =~ /^([\w ]*)$/
+        or die "illegal county: ". $cgi->param('county');
+      $county = $1;
+      $cgi->param('country') =~ /^(\w+)$/
+        or die "illegal country: ". $cgi->param('country');
+      $country = $1;
+    } else {
+      die "illegal state: ". $cgi->param('state');
+    }
 
     $payby = $cgi->param('payby');
     $payinfo = $cgi->param( $payby. '_payinfo' );
