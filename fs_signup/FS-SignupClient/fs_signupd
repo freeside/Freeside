@@ -57,12 +57,14 @@ my @svc_acct_pop = map {
   chomp( my $state = <STDIN> );
   chomp( my $ac = <STDIN> );
   chomp( my $exch = <STDIN> );
+  chomp( my $loc = <STDIN> );
   {
     'popnum' => $popnum,
     'city'   => $city,
     'state'  => $state,
     'ac'     => $ac,
     'exch'   => $exch,
+    'loc'    => $loc,
   };
 } ( 1 .. $n_svc_acct_pop );
 
@@ -105,6 +107,7 @@ for ( ; $paddr = accept(Client,Server); close Client) {
         $_->{state},
         $_->{ac},
         $_->{exch},
+        $_->{loc},
       } @svc_acct_pop
     ), "\n";
 

@@ -75,6 +75,7 @@ while (1) {
       $_->state,
       $_->ac,
       $_->exch,
+      $_->loc,
     } @svc_acct_pop
   ), "\n";
   warn "[fs_signup_server] $data\n" if $Debug > 2;

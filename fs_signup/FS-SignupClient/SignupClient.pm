@@ -133,12 +133,14 @@ sub signup_info {
     chop ( my $state  = <SOCK> ); 
     chop ( my $ac     = <SOCK> );
     chop ( my $exch   = <SOCK> );
+    chop ( my $loc    = <SOCK> );
     {
       'popnum' => $popnum,
       'city'   => $city,
       'state'  => $state,
       'ac'     => $ac,
       'exch'   => $exch,
+      'loc'    => $loc,
     };
   } 1 .. $n_svc_acct_pop;
 
@@ -201,7 +203,7 @@ sub new_customer {
 
 =head1 VERSION
 
-$Id: SignupClient.pm,v 1.1 1999-08-24 07:56:38 ivan Exp $
+$Id: SignupClient.pm,v 1.2 2000-01-28 22:49:28 ivan Exp $
 
 =head1 BUGS
 
