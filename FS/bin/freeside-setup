@@ -1012,76 +1012,99 @@ sub tables_hash_hack {
       'index'       => [],
     },
 
-    'ac_type' => {
+    'router' => {
       'columns' => [
-        'actypenum', 'serial', '', '',
-        'actypename', 'varchar', '', $char_d,
+        'routernum', 'serial', '', '',
+        'routername', 'varchar', '', $char_d,
+        'svcnum', 'int', '0', '',
       ],
-      'primary_key' => 'actypenum',
+      'primary_key' => 'routernum',
       'unique'      => [],
       'index'       => [],
     },
 
-    'ac' => {
+    'part_svc_router' => {
       'columns' => [
-        'acnum', 'serial', '', '',
-        'actypenum', 'int', '', '',
-        'acname', 'varchar', '', $char_d,
-      ],
-      'primary_key' => 'acnum',
+        'svcpart', 'int', '', '',
+	'routernum', 'int', '', '',
+      ];
+      'primary_key' => '',
       'unique'      => [],
-      'index'       => [ [ 'actypenum' ] ],
+      'index'       => [],
     },
 
-    'part_ac_field' => {
+    'part_router_field' => {
       'columns' => [
-        'acfieldpart', 'serial', '', '',
-        'actypenum', 'int', '', '',
+        'routerfieldpart', 'serial', '', '',
         'name', 'varchar', '', $char_d,
-        'ut_type', 'varchar', '', $char_d,
+	'length', 'int', '', '',
+	'check_block', 'text', 'NULL', '',
+	'list_source', 'text', 'NULL', '',
       ],
-      'primary_key' => 'acfieldpart',
+      'primary_key' => 'routerfieldpart',
       'unique'      => [],
-      'index'       => [ [ 'actypenum' ] ],
+      'index'       => [],
     },
 
-    'ac_field' => {
+    'router_field' => {
       'columns' => [
-        'acfieldpart', 'int', '', '',
-        'acnum', 'int', '', '',
-        'value', 'text', '', '',
+        'routerfieldpart', 'int', '', '',
+        'routernum', 'int', '', '',
+        'value', 'varchar', '', 128,
       ],
       'primary_key' => '',
-      'unique'      => [ [ 'acfieldpart', 'acnum' ] ],
-      'index'       => [ [ 'acnum' ] ],
+      'unique'      => [ [ 'routerfieldpart', 'routernum' ] ],
+      'index'       => [],
     },
 
-    'ac_block' => {
+    'addr_block' => {
       'columns' => [
-        'acnum', 'int', '', '',
+        'blocknum', 'int', '', '',
+	'routernum', 'int', '', '',
         'ip_gateway', 'varchar', '', 15,
         'ip_netmask', 'int', '', '',
       ],
+      'primary_key' => 'blocknum',
+      'unique'      => [ [ 'blocknum', 'routernum' ] ],
+      'index'       => [],
+    },
+
+    'part_sb_field' => {
+      'columns' => [
+        'sbfieldpart', 'int', '', '',
+	'svcpart', 'int', '', '',
+	'name', 'varchar', '', $char_d,
+	'length', 'int', '', '',
+	'check_block', 'text', 'NULL', '',
+	'list_source', 'text', 'NULL', '',
+      ],
+      'primary_key' => 'sbfieldpart',
+      'unique'      => [ [ 'sbfieldpart', 'svcpart' ] ],
+      'index'       => [],
+    },
+
+    'sb_field' => {
+      'columns' => [
+        'sbfieldpart', 'int', '', '',
+	'svcnum', 'int', '', '',
+	'value', 'varchar', '', 128,
+      ],
       'primary_key' => '',
-      'unique'      => [],
-      'index'       => [ [ 'acnum' ] ],
+      'unique'      => [ [ 'sbfieldpart', 'svcnum' ] ],
+      'index'       => [],
     },
 
     'svc_broadband' => {
       'columns' => [
         'svcnum', 'int', '', '',
-        'actypenum', 'int', '', '',
+        'blocknum', 'int', '', '',
         'speed_up', 'int', '', '',
         'speed_down', 'int', '', '',
-        'acnum', 'int', '', '',
         'ip_addr', 'varchar', '', 15,
-        'ip_netmask', 'int', '', '',
-        'mac_addr', 'char', '', 17,
-        'location', 'varchar', '', $char_d,
       ],
       'primary_key' => 'svcnum',
       'unique'      => [],
-      'index'       => [ [ 'actypenum' ] ],
+      'index'       => [],
     },
 
   );

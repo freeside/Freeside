@@ -94,6 +94,7 @@ sub handler
       use FS::part_pkg;
       use FS::part_referral;
       use FS::part_svc;
+      use FS::part_svc_router;
       use FS::pkg_svc;
       use FS::port;
       use FS::queue qw(joblisting);
@@ -105,6 +106,13 @@ sub handler
       use FS::svc_domain;
       use FS::svc_forward;
       use FS::svc_www;
+      use FS::router;
+      use FS::part_router_field;
+      use FS::router_field;
+      use FS::addr_block;
+      use FS::part_sb_field;
+      use FS::sb_field;
+      use FS::svc_broadband;
       use FS::type_pkgs;
       use FS::part_export;
       use FS::part_export_option;
