@@ -99,6 +99,7 @@ sub _export_delete {
     $primary_key => ref($keymap) ? &{$keymap}($svc_acct) : $svc_acct->$keymap()
   );
   return $err_or_queue unless ref($err_or_queue);
+  '';
 }
 
 sub acct_sql_queue {
