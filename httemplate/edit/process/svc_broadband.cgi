@@ -1,11 +1,5 @@
 <%
 
-# If it's stupid but it works, it's not stupid.
-# -- U.S. Army
-
-local $FS::UID::AutoCommit = 0;
-my $dbh = FS::UID::dbh;
-
 $cgi->param('svcnum') =~ /^(\d*)$/ or die "Illegal svcnum!";
 my $svcnum = $1;
 
@@ -31,14 +25,11 @@ if ( $svcnum ) {
   $svcnum = $new->svcnum;
 }
 
-
 if ( $error ) {
   $cgi->param('error', $error);
   $cgi->param('ip_addr', $new->ip_addr);
-  $dbh->rollback;
   print $cgi->redirect(popurl(2). "svc_broadband.cgi?". $cgi->query_string );
 } else {
-  $dbh->commit or die $dbh->errstr;
   print $cgi->redirect(popurl(3). "view/svc_broadband.cgi?" . $svcnum );
 }
 
