@@ -130,7 +130,7 @@ if ($pkgnum) {
                       } )
                    || qsearchs( 'domain_record', {
                                   svcnum  => $svc_domain->svcnum,
-                                  reczone => 'www.'.$svc-domain->domain.'.',
+                                  reczone => 'www.'.$svc_domain->domain.'.',
                     } );
         }
 
