@@ -59,6 +59,7 @@ FS/cust_pay.pm
 FS/cust_bill_event.pm
 FS/cust_bill_pay.pm
 FS/cust_pay_batch.pm
+FS/cust_pay_refund.pm
 FS/cust_pkg.pm
 FS/cust_refund.pm
 FS/cust_credit_refund.pm
@@ -148,6 +149,7 @@ t/cust_main_county.t
 t/cust_main_invoice.t
 t/cust_pay.t
 t/cust_pay_batch.t
+t/cust_pay_refund.t
 t/cust_pkg.t
 t/cust_refund.t
 t/cust_svc.t

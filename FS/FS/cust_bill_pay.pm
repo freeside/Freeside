@@ -74,60 +74,11 @@ otherwise returns false.
 
 sub insert {
   my $self = shift;
-
-  local $SIG{HUP} = 'IGNORE';
-  local $SIG{INT} = 'IGNORE';
-  local $SIG{QUIT} = 'IGNORE';
-  local $SIG{TERM} = 'IGNORE';
-  local $SIG{TSTP} = 'IGNORE';
-  local $SIG{PIPE} = 'IGNORE';
-
-  my $oldAutoCommit = $FS::UID::AutoCommit;
-  local $FS::UID::AutoCommit = 0;
-  my $dbh = dbh;
-
-  my $error = $self->check;
+  my $error = $self->SUPER::insert;
   return $error if $error;
 
-  $error = $self->SUPER::insert;
-
-  my $cust_pay = qsearchs('cust_pay', { 'paynum' => $self->paynum } ) or do {
-    $dbh->rollback if $oldAutoCommit;
-    return "unknown cust_pay.paynum: ". $self->paynum;
-  };
-
-  my $pay_total = 0;
-  $pay_total += $_ foreach map { $_->amount }
-    qsearch('cust_bill_pay', { 'paynum' => $self->paynum } );
-
-  if ( sprintf("%.2f", $pay_total) > sprintf("%.2f", $cust_pay->paid) ) {
-    $dbh->rollback if $oldAutoCommit;
-    return "total cust_bill_pay.amount $pay_total for paynum ". $self->paynum.
-           " greater than cust_pay.paid ". $cust_pay->paid;
-  }
-
-  my $cust_bill = $self->cust_bill;
-  unless ( $cust_bill ) {
-    $dbh->rollback if $oldAutoCommit;
-    return "unknown cust_bill.invnum: ". $self->invnum;
-  };
-
-  my $bill_total = 0;
-  $bill_total += $_ foreach map { $_->amount }
-    qsearch('cust_bill_pay', { 'invnum' => $self->invnum } );
-  $bill_total += $_ foreach map { $_->amount } 
-    qsearch('cust_credit_bill', { 'invnum' => $self->invnum } );
-  if ( sprintf("%.2f", $bill_total) > sprintf("%.2f", $cust_bill->charged) ) {
-    $dbh->rollback if $oldAutoCommit;
-    return "total cust_bill_pay.amount and cust_credit_bill.amount $bill_total".
-           " for invnum ". $self->invnum.
-           " greater than cust_bill.charged ". $cust_bill->charged;
-  }
-
-  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
-
-  if ( $conf->exists('invoice_send_receipts') ) {
-    my $send_error = $cust_bill->send;
+ if ( $conf->exists('invoice_send_receipts') ) {
+    my $send_error = $self->cust_bill->send;
     warn "Error sending receipt: $send_error\n" if $send_error;
   }
 
@@ -178,8 +129,22 @@ sub check {
   return $error if $error;
 
   return "amount must be > 0" if $self->amount <= 0;
+  
+  return "Unknown invoice"
+    unless my $cust_bill =
+      qsearchs( 'cust_bill', { 'invnum' => $self->invnum } );
+
+  return "Unknown payment"
+    unless my $cust_pay = 
+      qsearchs( 'cust_pay', { 'paynum' => $self->paynum } );
 
   $self->_date(time) unless $self->_date;
+
+  return "Cannot apply more than remaining value of invoice"
+    unless $self->amount <= $cust_bill->owed;
+
+  return "Cannot apply more than remaining value of payment"
+    unless $self->amount <= $cust_pay->unapplied;
 
   $self->SUPER::check;
 }

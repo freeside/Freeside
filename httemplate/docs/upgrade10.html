@@ -113,8 +113,8 @@ select setval('public.part_pkg_temp_pkgpart_seq', ( select max(pkgpart) from par
 Or on Pg versions that don't support DROP CONSTRAINT and ADD PRIMARY KEY (tested on 7.1 and 7.2 so far):
 DROP INDEX part_pkg_temp_pkey;
 CREATE UNIQUE INDEX part_pkg_pkey ON part_pkg (pkgpart);
-7.1?: select setval('part_pkg_temp_pkgpart_seq', ( select max(pkgpart) from part_pkg) );
-7.2: select setval('part_pkg_pkgpart_seq', ( select max(pkgpart) from part_pkg) );
+probably this one?: select setval('part_pkg_temp_pkgpart_seq', ( select max(pkgpart) from part_pkg) );
+probably not this one?: select setval('part_pkg_pkgpart_seq', ( select max(pkgpart) from part_pkg) );
 
 CREATE TABLE h_part_pkg_temp (
     historynum serial NOT NULL,
@@ -148,9 +148,19 @@ select setval('public.h_part_pkg_temp_historynum_seq', ( select max(historynum) 
 Or on Pg versions that don't support DROP CONSTRAINT and ADD PRIMARY KEY (tested on 7.1 and 7.2 so far):
 DROP INDEX h_part_pkg_temp_pkey;
 CREATE UNIQUE INDEX h_part_pkg_pkey ON h_part_pkg (historynum);
-7.1?: select setval('h_part_pkg_temp_historynum_seq', ( select max(historynum) from h_part_pkg) );
-7.2: select setval('h_part_pkg_historynum_seq', ( select max(historynum) from h_part_pkg) );
+probably this one?: select setval('h_part_pkg_temp_historynum_seq', ( select max(historynum) from h_part_pkg) );
+probably not this one?: select setval('h_part_pkg_historynum_seq', ( select max(historynum) from h_part_pkg) );
 
+CREATE TABLE cust_pay_refund (
+    payrefundnum serial NOT NULL,
+    paynum int NOT NULL,
+    refundnum int NOT NULL,
+    _date int NOT NULL,
+    amount decimal(10,2) NOT NULL,
+    PRIMARY KEY (payrefundnum)
+);
+CREATE INDEX cust_pay_refund1 ON cust_pay_refund(paynum);
+CREATE INDEX cust_pay_refund2 ON cust_pay_refund(refundnum);
 
 DROP INDEX cust_bill_pkg1;
 

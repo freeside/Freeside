@@ -3,10 +3,11 @@ package FS::cust_refund;
 use strict;
 use vars qw( @ISA );
 use Business::CreditCard;
-use FS::Record qw( qsearchs dbh );
+use FS::Record qw( qsearch qsearchs dbh );
 use FS::UID qw(getotaker);
 use FS::cust_credit;
 use FS::cust_credit_refund;
+use FS::cust_pay_refund;
 use FS::cust_main;
 
 @ISA = qw( FS::Record );
@@ -78,7 +79,9 @@ Adds this refund to the database.
 
 For backwards-compatibility and convenience, if the additional field crednum is
 defined, an FS::cust_credit_refund record for the full amount of the refund
-will be created.  In this case, custnum is optional.
+will be created.  Or (this time for convenience and consistancy), if the
+additional field paynum is defined, an FS::cust_pay_refund record for the full
+amount of the refund will be created.  In both cases, custnum is optional.
 
 =cut
 
@@ -103,6 +106,13 @@ sub insert {
         return "Unknown cust_credit.crednum: ". $self->crednum;
       };
     $self->custnum($cust_credit->custnum);
+  } elsif ( $self->paynum ) {
+    my $cust_pay = qsearchs('cust_pay', { 'paynum' => $self->paynum } )
+      or do {
+        $dbh->rollback if $oldAutoCommit;
+        return "Unknown cust_pay.paynum: ". $self->paynum;
+      };
+    $self->custnum($cust_pay->custnum);
   }
 
   my $error = $self->check;
@@ -127,57 +137,20 @@ sub insert {
       return $error;
     }
     #$self->custnum($cust_credit_refund->cust_credit->custnum);
-  }
-
-
-  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
-
-  '';
-
-}
-
-sub upgrade_replace { #1.3.x->1.4.x
-  my $self = shift;
-
-  local $SIG{HUP} = 'IGNORE';
-  local $SIG{INT} = 'IGNORE';
-  local $SIG{QUIT} = 'IGNORE';
-  local $SIG{TERM} = 'IGNORE';
-  local $SIG{TSTP} = 'IGNORE';
-  local $SIG{PIPE} = 'IGNORE';
-
-  my $oldAutoCommit = $FS::UID::AutoCommit;
-  local $FS::UID::AutoCommit = 0;
-  my $dbh = dbh;
-
-  my $error = $self->check;
-  return $error if $error;
-
-  my %new = $self->hash;
-  my $new = FS::cust_refund->new(\%new);
-
-  if ( $self->crednum ) {
-    my $cust_credit_refund = new FS::cust_credit_refund {
-      'crednum'   => $self->crednum,
+  } elsif ( $self->paynum ) {
+    my $cust_pay_refund = new FS::cust_pay_refund {
+      'paynum'    => $self->paynum,
       'refundnum' => $self->refundnum,
       'amount'    => $self->refund,
       '_date'     => $self->_date,
     };
-    $error = $cust_credit_refund->insert;
+    $error = $cust_pay_refund->insert;
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return $error;
     }
-    $new->custnum($cust_credit_refund->cust_credit->custnum);
-  } else {
-    die;
   }
 
-  $error = $new->SUPER::replace($self);
-  if ( $error ) {
-    $dbh->rollback if $oldAutoCommit;
-    return $error;
-  }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
@@ -262,6 +235,52 @@ sub check {
 
   $self->SUPER::check;
 }
+
+=item cust_credit_refund
+
+Returns all applications to credits (see L<FS::cust_credit_refund>) for this
+refund.
+
+=cut
+
+sub cust_credit_refund {
+  my $self = shift;
+  sort { $a->_date <=> $b->_date }
+    qsearch( 'cust_credit_refund', { 'refundnum' => $self->refundnum } )
+  ;
+}
+
+=item cust_pay_refund
+
+Returns all applications to payments (see L<FS::cust_pay_refund>) for this
+refund.
+
+=cut
+
+sub cust_pay_refund {
+  my $self = shift;
+  sort { $a->_date <=> $b->_date }
+    qsearch( 'cust_pay_refund', { 'refundnum' => $self->refundnum } )
+  ;
+}
+
+=item unapplied
+
+Returns the amount of this refund that is still unapplied; which is
+amount minus all credit applications (see L<FS::cust_credit_refund>) and
+payment applications (see L<FS::cust_pay_refund>).
+
+=cut
+
+sub unapplied {
+  my $self = shift;
+  my $amount = $self->refund;
+  $amount -= $_->amount foreach ( $self->cust_credit_refund );
+  $amount -= $_->amount foreach ( $self->cust_pay_refund );
+  sprintf("%.2f", $amount );
+}
+
+
 
 =item payinfo_masked
 

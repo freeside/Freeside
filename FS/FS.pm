@@ -122,9 +122,11 @@ L<FS::cust_credit> - Credit class
 
 L<FS::cust_refund> - Refund class
 
-L<FS::cust_credit_refund> - Refund application class
+L<FS::cust_credit_refund> - Refund application to credit class
 
-L<FS::cust_credit_bill> - Credit invoice application class
+L<FS::cust_credit_bill> - Credit application to invoice class
+
+L<FS::cust_pay_refund> - Refund application to payment class
 
 L<FS::cust_pay_batch> - Credit card transaction queue class
 

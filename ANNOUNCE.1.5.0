@@ -1,0 +1,10 @@
+- broadband (dsl/wireless) tracking, etc etc
+- Extended description on invoice for time/data charges
+- Multiple, named taxes
+- */*FIX
+- extended reported and graphing
+- integrated RT ticketing system
+- one-time payments (in signup server too).  DCRD and DCHK on-demand payment types
+- credit report
+- reseller interface
+- cust_pay_refund and credit card refund w/supported processor

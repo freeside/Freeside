@@ -9,6 +9,7 @@ use FS::Record qw( dbh qsearch qsearchs dbh );
 use FS::Misc qw(send_email);
 use FS::cust_bill;
 use FS::cust_bill_pay;
+use FS::cust_pay_refund;
 use FS::cust_main;
 
 @ISA = qw( FS::Record );
@@ -371,10 +372,26 @@ sub cust_bill_pay {
   ;
 }
 
+=item cust_pay_refund
+
+Returns all applications of refunds (see L<FS::cust_pay_refund>) to this
+payment.
+
+=cut
+
+sub cust_pay_refund {
+  my $self = shift;
+  sort { $a->_date <=> $b->_date }
+    qsearch( 'cust_pay_refund', { 'paynum' => $self->paynum } )
+  ;
+}
+
+
 =item unapplied
 
 Returns the amount of this payment that is still unapplied; which is
-paid minus all payment applications (see L<FS::cust_bill_pay>).
+paid minus all payment applications (see L<FS::cust_bill_pay>) and refund
+applications (see L<FS::cust_pay_refund>).
 
 =cut
 
@@ -382,6 +399,7 @@ sub unapplied {
   my $self = shift;
   my $amount = $self->paid;
   $amount -= $_->amount foreach ( $self->cust_bill_pay );
+  $amount -= $_->amount foreach ( $self->cust_pay_refund );
   sprintf("%.2f", $amount );
 }
 

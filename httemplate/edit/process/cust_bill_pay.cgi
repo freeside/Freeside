@@ -11,12 +11,24 @@ my $cust_main = qsearchs('cust_main', { 'custnum' => $cust_pay->custnum } )
 
 my $custnum = $cust_main->custnum;
 
-my $new = new FS::cust_bill_pay ( {
-  map {
-    $_, scalar($cgi->param($_));
-  #} qw(custnum _date amount invnum)
-  } fields('cust_bill_pay')
-} );
+my $new;
+if ($cgi->param('invnum') =~ /^Refund$/) {
+  $new = new FS::cust_refund ( {
+    'reason'  => 'Refunding payment', #enter reason in UI
+    'refund'  => $cgi->param('amount'),
+    'payby'   => 'BILL',
+    #'_date'   => $cgi->param('_date'),
+    'payinfo' => 'Cash', #enter payinfo in UI
+    'paynum' => $paynum,
+  } );
+} else {
+  $new = new FS::cust_bill_pay ( {
+    map {
+      $_, scalar($cgi->param($_));
+    #} qw(custnum _date amount invnum)
+    } fields('cust_bill_pay')
+  } );
+}
 
 my $error = $new->insert;
 

@@ -1,0 +1,15 @@
+CREATE TABLE cust_pay_refund (
+    payrefundnum serial NOT NULL,
+    paynum int NOT NULL,
+    refundnum int NOT NULL,
+    _date int NOT NULL,
+    amount decimal(10,2) NOT NULL,
+    PRIMARY KEY (payrefundnum)
+);
+CREATE INDEX cust_pay_refund1 ON cust_pay_refund(paynum);
+CREATE INDEX cust_pay_refund2 ON cust_pay_refund(refundnum);
+
+dbdef-create username
+create-history-tables username cust_pay_refund
+dbdef-create username
+

@@ -604,6 +604,7 @@ function cust_credit_areyousure(href) {
                     ? $cust_pay->payinfo_masked
                     : $cust_pay->payinfo;
     my @cust_bill_pay = $cust_pay->cust_bill_pay;
+    my @cust_pay_refund = $cust_pay->cust_pay_refund;
 
     my $target = "$payby$payinfo";
     $payby =~ s/^BILL$/Check #/ if $payinfo;
@@ -612,25 +613,42 @@ function cust_credit_areyousure(href) {
     my $info = $payby ? " ($payby$payinfo)" : '';
 
     my( $pre, $post, $desc, $apply, $ext ) = ( '', '', '', '', '' );
-    if ( scalar(@cust_bill_pay) == 0 ) {
+    if (    scalar(@cust_bill_pay)   == 0
+         && scalar(@cust_pay_refund) == 0 ) {
       #completely unapplied
       $pre = '<B><FONT COLOR="#FF0000">Unapplied ';
       $post = '</FONT></B>';
       $apply = qq! (<A HREF="${p}edit/cust_bill_pay.cgi?!.
                $cust_pay->paynum. '">apply</A>)';
-    } elsif ( scalar(@cust_bill_pay) == 1 && $cust_pay->unapplied == 0 ) {
-      #applied to one invoice
+    } elsif (    scalar(@cust_bill_pay)   == 1
+              && scalar(@cust_pay_refund) == 0
+              && $cust_pay->unapplied == 0     ) {
+      #applied to one invoice, the usual situation
       $desc = ' applied to Invoice #'. $cust_bill_pay[0]->invnum;
+    } elsif (    scalar(@cust_bill_pay)   == 0
+              && scalar(@cust_pay_refund) == 1
+              && $cust_pay->unapplied == 0     ) {
+      #applied to one refund
+      $desc = ' refunded on '. time2str("%D", $cust_pay_refund[0]->_date);
     } else {
       #complicated
       $desc = '<BR>';
-      foreach my $cust_bill_pay (@cust_bill_pay) {
-        $desc .= '&nbsp;&nbsp;'.
-                 '$'. $cust_bill_pay->amount.
-                 ' applied to Invoice #'. $cust_bill_pay->invnum.
-                 '<BR>';
-                 #' on '. time2str("%D", $cust_bill_pay->_date).
-
+      foreach my $app ( sort { $a->_date <=> $b->_date }
+                             ( @cust_bill_pay, @cust_pay_refund ) ) {
+        if ( $app->isa('FS::cust_bill_pay') ) {
+          $desc .= '&nbsp;&nbsp;'.
+                   '$'. $app->amount.
+                   ' applied to Invoice #'. $app->invnum.
+                   '<BR>';
+                   #' on '. time2str("%D", $cust_bill_pay->_date).
+        } elsif ( $app->isa('FS::cust_pay_refund') ) {
+          $desc .= '&nbsp;&nbsp;'.
+                   '$'. $app->amount.
+                   ' refunded on'. time2str("%D", $app->_date).
+                   '<BR>';
+        } else {
+          die "$app is not a FS::cust_bill_pay or FS::cust_pay_refund";
+        }
       }
       if ( $cust_pay->unapplied > 0 ) {
         $desc .= '&nbsp;&nbsp;'.
@@ -684,7 +702,7 @@ function cust_credit_areyousure(href) {
     } elsif (    scalar(@cust_credit_bill)   == 1
               && scalar(@cust_credit_refund) == 0
               && $cust_credit->credited == 0      ) {
-      #applied to one invoice
+      #applied to one invoice, the usual situation
       $desc = ' applied to Invoice #'. $cust_credit_bill[0]->invnum;
     } elsif (    scalar(@cust_credit_bill)   == 0
               && scalar(@cust_credit_refund) == 1

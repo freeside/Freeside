@@ -59,10 +59,10 @@ foreach my $cust_bill ( @cust_bill ) {
 END
 }
 
-#  if ( cust_bill == "Refund" ) {
-#    what.form.amount.value = "$credited";
-#  }
 print <<END;
+  if ( cust_bill == "Refund" ) {
+    what.form.amount.value = "$unapplied";
+  }
 }
 </SCRIPT>
 END
@@ -75,7 +75,7 @@ foreach my $cust_bill ( @cust_bill ) {
         ' -  '. time2str("%D",$cust_bill->_date).
         ' - $'. $cust_bill->owed;
 }
-#print qq!<OPTION VALUE="Refund">Refund!;
+print qq!<OPTION VALUE="Refund">Refund!;
 print "</SELECT>";
 
 print qq!<BR>Amount \$<INPUT TYPE="text" NAME="amount" VALUE="$amount" SIZE=8 MAXLENGTH=8>!;

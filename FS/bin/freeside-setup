@@ -1115,6 +1115,21 @@ sub tables_hash_hack {
       'index'       => [],
     },
 
+    'cust_pay_refund' => {
+      'columns' => [
+        'payrefundnum', 'serial', '', '',
+        'paynum',  'int', '', '',
+        'refundnum',  'int', '', '',
+        '_date',    @date_type,
+        'amount',   @money_type,
+      ],
+      'primary_key' => 'payrefundnum',
+      'unique' => [],
+      'index' => [ ['paynum'], ['refundnum'] ],
+    },
+
+
+
   );
 
   %tables;

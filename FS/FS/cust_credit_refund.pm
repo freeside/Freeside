@@ -70,42 +70,8 @@ otherwise returns false.
 
 sub insert {
   my $self = shift;
-
-  local $SIG{HUP} = 'IGNORE';
-  local $SIG{INT} = 'IGNORE';
-  local $SIG{QUIT} = 'IGNORE';
-  local $SIG{TERM} = 'IGNORE';
-  local $SIG{TSTP} = 'IGNORE';
-  local $SIG{PIPE} = 'IGNORE';
-
-  my $oldAutoCommit = $FS::UID::AutoCommit;
-  local $FS::UID::AutoCommit = 0;
-  my $dbh = dbh;
-
-  my $error = $self->check;
+  my $error = $self->SUPER::insert;
   return $error if $error;
-
-  $error = $self->SUPER::insert;
-
-  my $cust_refund =
-    qsearchs('cust_refund', { 'refundnum' => $self->refundnum } )
-  or do {
-    $dbh->rollback if $oldAutoCommit;
-    return "unknown cust_refund.refundnum: ". $self->refundnum
-  };
-
-  my $refund_total = 0;
-  $refund_total += $_ foreach map { $_->amount }
-    qsearch('cust_credit_refund', { 'refundnum' => $self->refundnum } );
-
-  if ( $refund_total > $cust_refund->refund ) {
-    $dbh->rollback if $oldAutoCommit;
-    return "total cust_credit_refund.amount $refund_total for refundnum ".
-           $self->refundnum.
-           " greater than cust_refund.refund ". $cust_refund->refund;
-  }
-
-  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
   '';
 }
@@ -132,8 +98,9 @@ sub replace {
 
 =item check
 
-Checks all fields to make sure this is a valid payment.  If there is an error,
-returns the error, otherwise returns false.  Called by the insert method.
+Checks all fields to make sure this is a valid refund application.  If there is
+an error, returns the error, otherwise returns false.  Called by the insert
+method.
 
 =cut
 
@@ -151,10 +118,21 @@ sub check {
 
   return "amount must be > 0" if $self->amount <= 0;
 
+  return "unknown cust_credit.crednum: ". $self->crednum
+    unless my $cust_credit =
+      qsearchs( 'cust_credit', { 'crednum' => $self->crednum } );
+
+  return "Unknown refund"
+    unless my $cust_refund =
+      qsearchs( 'cust_refund', { 'refundnum' => $self->refundnum } );
+
   $self->_date(time) unless $self->_date;
 
-  return "unknown cust_credit.crednum: ". $self->crednum
-    unless qsearchs( 'cust_credit', { 'crednum' => $self->crednum } );
+  return "Cannot apply more than remaining value of credit"
+    unless $self->amount <= $cust_credit->credited;
+
+  return "Cannot apply more than remaining value of refund"
+    unless $self->amount <= $cust_refund->unapplied;
 
   $self->SUPER::check;
 }
@@ -185,7 +163,7 @@ sub cust_credit {
 
 =head1 VERSION
 
-$Id: cust_credit_refund.pm,v 1.10 2003-08-05 00:20:41 khoff Exp $
+$Id: cust_credit_refund.pm,v 1.11 2004-06-29 04:02:44 ivan Exp $
 
 =head1 BUGS
 

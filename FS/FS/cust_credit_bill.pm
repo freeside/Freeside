@@ -38,7 +38,7 @@ FS::cust_credit_bill - Object methods for cust_credit_bill records
 =head1 DESCRIPTION
 
 An FS::cust_credit_bill object represents application of a credit (see
-L<FS::cust_credit>) to an invoice (see L<FS::cust_bill>).  FS::cust_credit
+L<FS::cust_credit>) to an invoice (see L<FS::cust_bill>).  FS::cust_credit_bill
 inherits from FS::Record.  The following fields are currently supported:
 
 =over 4
