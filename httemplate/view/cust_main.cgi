@@ -22,10 +22,23 @@ my $custnum = $1;
 my $cust_main = qsearchs('cust_main',{'custnum'=>$custnum});
 die "Customer not found!" unless $cust_main;
 
-print qq!<A HREF="!, popurl(2), 
-      qq!edit/cust_main.cgi?$custnum">Edit this customer</A>!;
-print qq! | <A HREF="!, popurl(2), 
-      qq!misc/delete-customer.cgi?$custnum"> Delete this customer</A>!
+print qq!<A HREF="${p}edit/cust_main.cgi?$custnum">Edit this customer</A>!;
+
+print <<END;
+<SCRIPT>
+function cancel_areyousure(href) {
+    if (confirm("Perminantly delete all services and cancel this customer?") == true)
+        window.location.href = href;
+}
+</SCRIPT>
+END
+
+print qq! | <A HREF="javascript:cancel_areyousure('${p}misc/cust_main-cancel.cgi?$custnum')">!.
+      'Cancel this customer</A>'
+  if $cust_main->ncancelled_pkgs;
+
+print qq! | <A HREF="${p}misc/delete-customer.cgi?$custnum">!.
+      'Delete this customer</A>'
   if $conf->exists('deletecustomers');
 
 unless ( $conf->exists('disable_customer_referrals') ) {
