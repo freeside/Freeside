@@ -127,15 +127,15 @@ sub set {
   $value = $1;
   unless ( $self->config($file) eq $value ) {
     warn "[FS::Conf] SET $file\n" if $DEBUG;
-    warn "$dir" if is_tainted($dir);
-    warn "$dir" if is_tainted($file);
+#    warn "$dir" if is_tainted($dir);
+#    warn "$dir" if is_tainted($file);
     my $fh = new IO::File ">$dir/$file" or return;
     print $fh "$value\n";
   }
 }
-sub is_tainted {
-             return ! eval { join('',@_), kill 0; 1; };
-         }
+#sub is_tainted {
+#             return ! eval { join('',@_), kill 0; 1; };
+#         }
 
 =item delete
 
