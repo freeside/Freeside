@@ -21,58 +21,64 @@ if ( $cgi->keywords ) {
                       - ( select coalesce(sum(amount),0) from cust_credit_bill
                           where cust_credit_bill.invnum = cust_bill.invnum )";
   my @where;
-  if ( $query eq 'invnum' ) {
-    $sortby = \*invnum_sort;
-    $orderby = "ORDER BY cust_bill.invnum";
-    #@cust_bill = qsearch('cust_bill', {} );
-  } elsif ( $query eq 'date' ) {
-    $sortby = \*date_sort;
-    $orderby = "ORDER BY cust_bill._date";
-    #@cust_bill = qsearch('cust_bill', {} );
-  } elsif ( $query eq 'custnum' ) {
-    $sortby = \*custnum_sort;
-    $orderby = "ORDER BY cust_bill.custnum";
-    #@cust_bill = qsearch('cust_bill', {} );
-  } elsif ( $query eq 'OPEN_invnum' ) {
-    $sortby = \*invnum_sort;
-    $orderby = "ORDER BY cust_bill.invnum";
-    #@cust_bill = grep $_->owed != 0, qsearch('cust_bill', {} );
-    push @where, "0 != $owed";
-  } elsif ( $query eq 'OPEN_date' ) {
-    $sortby = \*date_sort;
-    $orderby = "ORDER BY cust_bill._date";
-    #@cust_bill = grep $_->owed != 0, qsearch('cust_bill', {} );
-    push @where, "0 != $owed";
-  } elsif ( $query eq 'OPEN_custnum' ) {
-    $sortby = \*custnum_sort;
-    $orderby = "ORDER BY cust_bill.custnum";
-    #@cust_bill = grep $_->owed != 0, qsearch('cust_bill', {} );
-    push @where, "0 != $owed";
-  } elsif ( $query =~ /^OPEN(\d+)_invnum$/ ) {
-    my $open = $1 * 86400;
-    $sortby = \*invnum_sort;
-    $orderby = "ORDER BY cust_bill.invnum";
-    #@cust_bill =
-    #  grep $_->owed != 0 && $_->_date < time - $open, qsearch('cust_bill', {} );
-    push @where, "0 != $owed",
-                 "cust_bill._date < ". (time-$open);
-  } elsif ( $query =~ /^OPEN(\d+)_date$/ ) {
-    my $open = $1 * 86400;
-    $sortby = \*date_sort;
-    $orderby = "ORDER BY cust_bill._date";
-    #@cust_bill =
-    #  grep $_->owed != 0 && $_->_date < time - $open, qsearch('cust_bill', {} );
-    push @where, "0 != $owed",
-                 "cust_bill._date < ". (time-$open);
-
-  } elsif ( $query =~ /^OPEN(\d+)_custnum$/ ) {
-    my $open = $1 * 86400;
-    $sortby = \*custnum_sort;
-    $orderby = "ORDER BY cust_bill.custnum";
-    #@cust_bill =
-    #  grep $_->owed != 0 && $_->_date < time - $open, qsearch('cust_bill', {} );
-    push @where, "0 != $owed",
-                 "cust_bill._date < ". (time-$open);
+  if ( $query =~ /^(OPEN(\d*)_)?(invnum|date|custnum)$/ ) {
+    my($open, $days, $field) = ($1, $2, $3);
+    $field = "_date" if $field eq 'date';
+    $orderby = "ORDER BY cust_bill.$field";
+    push @where, "0 != $owed" if $open;
+    push @where, "cust_bill._date < ". (time-86400*days) if $days;
+#  if ( $query eq 'invnum' ) {
+#    $sortby = \*invnum_sort;
+#    $orderby = "ORDER BY cust_bill.invnum";
+#    #@cust_bill = qsearch('cust_bill', {} );
+#  } elsif ( $query eq 'date' ) {
+#    $sortby = \*date_sort;
+#    $orderby = "ORDER BY cust_bill._date";
+#    #@cust_bill = qsearch('cust_bill', {} );
+#  } elsif ( $query eq 'custnum' ) {
+#    $sortby = \*custnum_sort;
+#    $orderby = "ORDER BY cust_bill.custnum";
+#    #@cust_bill = qsearch('cust_bill', {} );
+#  } elsif ( $query eq 'OPEN_invnum' ) {
+#    $sortby = \*invnum_sort;
+#    $orderby = "ORDER BY cust_bill.invnum";
+#    #@cust_bill = grep $_->owed != 0, qsearch('cust_bill', {} );
+#    push @where, "0 != $owed";
+#  } elsif ( $query eq 'OPEN_date' ) {
+#    $sortby = \*date_sort;
+#    $orderby = "ORDER BY cust_bill._date";
+#    #@cust_bill = grep $_->owed != 0, qsearch('cust_bill', {} );
+#    push @where, "0 != $owed";
+#  } elsif ( $query eq 'OPEN_custnum' ) {
+#    $sortby = \*custnum_sort;
+#    $orderby = "ORDER BY cust_bill.custnum";
+#    #@cust_bill = grep $_->owed != 0, qsearch('cust_bill', {} );
+#    push @where, "0 != $owed";
+#  } elsif ( $query =~ /^OPEN(\d+)_invnum$/ ) {
+#    my $open = $1 * 86400;
+#    $sortby = \*invnum_sort;
+#    $orderby = "ORDER BY cust_bill.invnum";
+#    #@cust_bill =
+#    #  grep $_->owed != 0 && $_->_date < time - $open, qsearch('cust_bill', {} );
+#    push @where, "0 != $owed",
+#                 "cust_bill._date < ". (time-$open);
+#  } elsif ( $query =~ /^OPEN(\d+)_date$/ ) {
+#    my $open = $1 * 86400;
+#    $sortby = \*date_sort;
+#    $orderby = "ORDER BY cust_bill._date";
+#    #@cust_bill =
+#    #  grep $_->owed != 0 && $_->_date < time - $open, qsearch('cust_bill', {} );
+#    push @where, "0 != $owed",
+#                 "cust_bill._date < ". (time-$open);
+#
+#  } elsif ( $query =~ /^OPEN(\d+)_custnum$/ ) {
+#    my $open = $1 * 86400;
+#    $sortby = \*custnum_sort;
+#    $orderby = "ORDER BY cust_bill.custnum";
+#    #@cust_bill =
+#    #  grep $_->owed != 0 && $_->_date < time - $open, qsearch('cust_bill', {} );
+#    push @where, "0 != $owed",
+#                 "cust_bill._date < ". (time-$open);
   } else {
     die "unknown query string $query";
   }
