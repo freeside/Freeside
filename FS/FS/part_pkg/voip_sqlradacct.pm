@@ -1,13 +1,15 @@
 package FS::part_pkg::voip_sqlradacct;
 
 use strict;
-use vars qw(@ISA %info);
+use vars qw(@ISA $DEBUG %info);
 use FS::Record qw(qsearchs qsearch);
 use FS::part_pkg;
 #use FS::rate;
 use FS::rate_prefix;
 
 @ISA = qw(FS::part_pkg);
+
+$DEBUG = 0;
 
 %info = (
     'name' => 'VoIP rating by plan of CDR records in an SQL RADIUS radacct table',
@@ -52,6 +54,7 @@ sub calc_recur {
     foreach my $session (
       $cust_svc->get_session_history( $last_bill, $$sdate )
     ) {
+      warn "rating session $session" if $DEBUG;
 
       ###
       # look up rate details based on called station id

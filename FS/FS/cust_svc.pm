@@ -553,11 +553,11 @@ sub attribute_since_sqlradacct {
 
 }
 
-=item get_session_history_sqlradacct TIMESTAMP_START TIMESTAMP_END
+=item get_session_history TIMESTAMP_START TIMESTAMP_END
 
-See L<FS::svc_acct/get_session_history_sqlradacct>.  Equivalent to
-$cust_svc->svc_x->get_session_history_sqlradacct, but more efficient.
-Meaningless for records where B<svcdb> is not "svc_acct".
+See L<FS::svc_acct/get_session_history>.  Equivalent to
+$cust_svc->svc_x->get_session_history, but more efficient.  Meaningless for
+records where B<svcdb> is not "svc_acct".
 
 =cut
 
@@ -580,7 +580,7 @@ sub get_session_history {
     push @sessions, $part_export->usage_sessions( $start, $end, $self->svc_x );
   }
 
-  \@sessions;
+  @sessions;
 
 }
 
