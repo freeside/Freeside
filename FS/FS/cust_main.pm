@@ -1742,7 +1742,7 @@ the error, otherwise returns false.
 =cut
 
 sub charge {
-  my ( $self, $amount ) = @_;
+  my ( $self, $amount ) = ( shift, shift );
   my $pkg      = @_ ? shift : 'One-time charge';
   my $comment  = @_ ? shift : '$'. sprintf("%.2f",$amount);
   my $taxclass = @_ ? shift : '';
