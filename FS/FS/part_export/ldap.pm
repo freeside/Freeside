@@ -225,12 +225,14 @@ sub ldap_insert { #subroutine, not method
 
 sub ldap_connect {
   my( $machine, $dn, $password ) = @_;
+  my %bind_options;
+  $bind_options{password} = $password if length($password);
 
   eval "use Net::LDAP";
   die $@ if $@;
 
   my $ldap = Net::LDAP->new($machine) or die $@;
-  my $status = $ldap->bind( $dn, password=>$password );
+  my $status = $ldap->bind( $dn, %bind_options );
   die $status->error if $status->is_error;
 
   $dn;
