@@ -531,7 +531,7 @@ tie my %shellcommands_options, 'Tie::IxHash',
                },
   'useradd_stdin' => { label=>'Insert command STDIN',
                        type =>'textarea',
-                       default=>'$_password\n$_password\n',
+                       default=>"\$_password\n\$_password\n",
                      },
   'userdel' => { label=>'Delete command',
                  default=>'userdel $username',
@@ -549,11 +549,36 @@ tie my %shellcommands_options, 'Tie::IxHash',
                  #  'chmod u-t $new_dir; chown -R $uid.$gid $new_dir; '.
                  #  'rm -rf $old_dir'.
                  #')'
+               },
   'usermod_stdin' => { label=>'Modify command STDIN',
                        type =>'textarea',
-                       default=>'$_password\n$_password\n',
+                       default=>"\$_password\n\$_password\n",
                      },
+;
+
+tie my %shellcommands_withdomain_options, 'Tie::IxHash',
+  'user' => { label=>'Remote username', default=>'root' },
+  'useradd' => { label=>'Insert command',
+                 #default=>''
                },
+  'useradd_stdin' => { label=>'Insert command STDIN',
+                       type =>'textarea',
+                       #default=>"$_password\n$_password\n",
+                     },
+  'userdel' => { label=>'Delete command',
+                 #default=>'',
+               },
+  'userdel_stdin' => { label=>'Delete command STDIN',
+                       type =>'textarea',
+                       #default=>'',
+                     },
+  'usermod' => { label=>'Modify command',
+                 default=>'',
+               },
+  'usermod_stdin' => { label=>'Modify command STDIN',
+                       type =>'textarea',
+                       #default=>"$_password\n$_password\n",
+                     },
 ;
 
 tie my %sqlradius_options, 'Tie::IxHash',
@@ -618,17 +643,17 @@ tie my %sqlmail_options, 'Tie::IxHash',
   'svc_acct' => {
     'sysvshell' => {
       'desc' =>
-        'Batch export of /etc/passwd and /etc/shadow files (Linux/SysV)',
+        'Batch export of /etc/passwd and /etc/shadow files (Linux/SysV).',
       'options' => \%sysvshell_options,
       'nodomain' => 'Y',
-      'notes' => 'MD5 crypt requires installation of <a href="http://search.cpan.org/search?dist=Crypt-PasswdMD5">Crypt::PasswdMD5</a> from CPAN.  Run shell.export, etc.',
+      'notes' => 'MD5 crypt requires installation of <a href="http://search.cpan.org/search?dist=Crypt-PasswdMD5">Crypt::PasswdMD5</a> from CPAN.    Run bin/sysvshell.export to export the files.',
     },
     'bsdshell' => {
       'desc' =>
-        'Batch export of /etc/passwd and /etc/master.passwd files (BSD)',
+        'Batch export of /etc/passwd and /etc/master.passwd files (BSD).',
       'options' => \%bsdshell_options,
       'nodomain' => 'Y',
-      'notes' => 'MD5 crypt requires installation of <a href="http://search.cpan.org/search?dist=Crypt-PasswdMD5">Crypt::PasswdMD5</a> from CPAN.  Run shell.export, etc.',
+      'notes' => 'MD5 crypt requires installation of <a href="http://search.cpan.org/search?dist=Crypt-PasswdMD5">Crypt::PasswdMD5</a> from CPAN.  Run bin/bsdshell.export to export the files.',
     },
 #    'nis' => {
 #      'desc' =>
@@ -638,28 +663,35 @@ tie my %sqlmail_options, 'Tie::IxHash',
     'textradius' => {
       'desc' => 'Batch export of a text /etc/raddb/users file (Livingston, Cistron)',
       'options' => {},
-      'notes' => 'unfinished...',
+      'notes' => 'unfinished',
     },
 
     'shellcommands' => {
       'desc' => 'Real-time export via remote SSH (i.e. useradd, userdel, etc.)',
       'options' => \%shellcommands_options,
       'nodomain' => 'Y',
-      'notes' => 'shellcommandsnotes... (this one is the nodomain one)',
+      'notes' => 'Run remote commands via SSH.  Usernames are considered unique (also see shellcommands_withdomain).',
+    },
+
+    'shellcommands_withdomain' => {
+      'desc' => 'Real-time export via remote SSH,',
+      'options' => \%shellcommands_withdomain_options,
+      'nodomain' => 'Y',
+      'notes' => 'Run remote commands via SSH.  username@domain (rather than just usernames) are considered unique (also see shellcommands)',
     },
 
     'sqlradius' => {
       'desc' => 'Real-time export to SQL-backed RADIUS (ICRADIUS, FreeRADIUS)',
       'options' => \%sqlradius_options,
       'nodomain' => 'Y',
-      'notes' => 'Real-time export of radcheck, radreply and usergroup tables to any SQL database for <a href="http://www.freeradius.org/">FreeRADIUS</a> or <a href="http://radius.innercite.com/">ICRADIUS</a>.  Use <a href="../docs/man/bin/freeside-sqlradius-reset">freeside-sqlradius-reset</a> to delete and repopulate the tables from the Freeside database.  See the <a href="http://search.cpan.org/doc/TIMB/DBI-1.23/DBI.pm">DBI documentation</a> and the <a href="http://search.cpan.org/search?mode=module&query=DBD%3A%3A">documentation for your DBD</a> for the exact syntax of a DBI data source.  If using <a href="http://www.freeradius.org/">FreeRADIUS</a> 0.5 or above, make sure your <b>op</b> fields are set to allow NULL values.',
+      'notes' => 'Real-time export of radcheck, radreply and usergroup tables to any SQL database for <a href="http://www.freeradius.org/">FreeRADIUS</a> or <a href="http://radius.innercite.com/">ICRADIUS</a>.  An existing RADIUS database will be updated in realtime, but you can use <a href="../docs/man/bin/freeside-sqlradius-reset">freeside-sqlradius-reset</a> to delete the entire RADIUS database and repopulate the tables from the Freeside database.  See the <a href="http://search.cpan.org/doc/TIMB/DBI-1.23/DBI.pm">DBI documentation</a> and the <a href="http://search.cpan.org/search?mode=module&query=DBD%3A%3A">documentation for your DBD</a> for the exact syntax of a DBI data source.  If using <a href="http://www.freeradius.org/">FreeRADIUS</a> 0.5 or above, make sure your <b>op</b> fields are set to allow NULL values.',
     },
 
     'sqlmail' => {
       'desc' => 'Real-time export to SQL-backed mail server',
       'options' => \%sqlmail_options,
       'nodomain' => 'Y',
-      'notes' => 'Database schema can be made to work with Courier IMAP and Exim.  Others could work but are untested.',
+      'notes' => 'Database schema can be made to work with Courier IMAP and Exim.  Others could work but are untested. (...extended description from pc-intouch?...)',
     },
 
     'cyrus' => {
@@ -685,7 +717,6 @@ tie my %sqlmail_options, 'Tie::IxHash',
     'vpopmail' => {
       'desc' => 'Real-time export to vpopmail text files',
       'options' => \%vpopmail_options,
-
       'notes' => 'Real time export to <a href="http://inter7.com/vpopmail/">vpopmail</a> text files (...extended description from jeff?...)',
     },
 
@@ -696,21 +727,20 @@ tie my %sqlmail_options, 'Tie::IxHash',
     'bind' => {
       'desc' =>'Batch export to BIND named',
       'options' => \%bind_options,
-      'notes' => 'bind export notes File::Rsync dependancy, run bind.export',
+      'notes' => 'Batch export of BIND zone and configuration files to primary nameserver.  <a href="http://search.cpan.org/search?dist=File-Rsync">File::Rsync</a> must be installed.  Run bin/bind.export to export the files.',
     },
 
     'bind_slave' => {
       'desc' =>'Batch export to slave BIND named',
       'options' => \%bind_slave_options,
-      'notes' => 'bind export notes (secondary munge) File::Rsync dependancy, run bind.export',
+      'notes' => 'Batch export of BIND configuration file to a secondary nameserver.  Zones are slaved from the listed masters.  <a href="http://search.cpan.org/search?dist=File-Rsync">File::Rsync</a> must be installed.  Run bin/bind.export to export the files.',
     },
 
     'sqlmail' => {
       'desc' => 'Real-time export to SQL-backed mail server',
       'options' => \%sqlmail_options,
-      'nodomain' => 'Y',
-      'notes' => 'Database schema can be made to work with Courier IMAP and
- Exim.  Others could work but are untested.',
+      #'nodomain' => 'Y',
+      'notes' => 'Database schema can be made to work with Courier IMAP and Exim.  Others could work but are untested. (...extended description from pc-intouch?...)',
     },
 
 
@@ -722,13 +752,19 @@ tie my %sqlmail_options, 'Tie::IxHash',
     'sqlmail' => {
       'desc' => 'Real-time export to SQL-backed mail server',
       'options' => \%sqlmail_options,
-      'nodomain' => 'Y',
-      'notes' => 'Database schema can be made to work with Courier IMAP and
- Exim.  Others could work but are untested.',
+      #'nodomain' => 'Y',
+      'notes' => 'Database schema can be made to work with Courier IMAP and Exim.  Others could work but are untested. (...extended description from pc-intouch?...)',
     },
   },
 
-  'svc_www' => {},
+  'svc_www' => {
+    'www_shellcommands' => {
+      'desc'    => 'www_shellcommands',
+      'options' => {}, # \%www_shellcommands_options,
+      'notes'   => 'svc_www commands',
+    },
+
+  },
 
 );
 
@@ -741,7 +777,8 @@ FS/FS/part_export/ (an example may be found in eg/export_template.pm)
 
 =head1 BUGS
 
-Probably.
+All the stuff in the %exports hash should be generated from the specific
+export modules.
 
 Hmm... cust_export class (not necessarily a database table...) ... ?
 
