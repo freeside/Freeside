@@ -1128,14 +1128,21 @@ Currently supported encryptions are: classic DES crypt() and MD5
 
 sub check_password {
   my($self, $check_password) = @_;
+
+  #remove old-style SUSPENDED kludge, they should be allowed to login to
+  #self-service and pay up
+  ( my $password = $self->_password ) =~ s/^\*SUSPENDED\* //;
+
   #eventually should check a "password-encoding" field
-  if ( length($self->_password) < 13 ) { #plaintext
-    $check_password eq $self->_password;
-  } elsif ( length($self->_password) == 13 ) { #traditional DES crypt
-    crypt($check_password, $self->_password) eq $self->_password;
-  } elsif ( $self->_password =~ /^\$1\$/ ) { #MD5 crypt
-    unix_md5_crypt($check_password, $self->_password) eq $self->_password;
-  } elsif ( $self->_password =~ /^\$2a?\$/ ) { #Blowfish
+  if ( $password =~ /^(\*|!!?)$/ ) { #no self-service login
+    return 0;
+  } elsif ( length($password) < 13 ) { #plaintext
+    $check_password eq $password;
+  } elsif ( length($password) == 13 ) { #traditional DES crypt
+    crypt($check_password, $password) eq $password;
+  } elsif ( $password =~ /^\$1\$/ ) { #MD5 crypt
+    unix_md5_crypt($check_password, $password) eq $password;
+  } elsif ( $password =~ /^\$2a?\$/ ) { #Blowfish
     warn "Can't check password: Blowfish encryption not yet supported, svcnum".
          $self->svcnum. "\n";
     0;
