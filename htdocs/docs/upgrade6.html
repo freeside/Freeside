@@ -12,7 +12,7 @@
   <li>Back up your data and current Freeside installation.
   <li>As 1.3.0 requires transactions, <b>MySQL's default <a href="http://www.mysql.com/doc/M/y/MyISAM.html">MyISAM</a> and <a href="http://www.mysql.com/doc/I/S/ISAM.html">ISAM</a> table types are no longer supported</b>.  Converting to <a href="http://www.postgresql.org/">PostgreSQL</a> is recommended.  If you really want to use MySQL, convert your tables to one of the <a href="http://www.mysql.com/doc/T/a/Table_types.html">transaction-safe table types</a> such as <a href="http://www.mysql.com/doc/B/D/BDB.html">BDB</a>.
   <li>Copy the <i>invoice_template</i> file from the <i>conf/</i> directory in the distribution to your <a href="config.html">configuration directory</a>.
-  <li>Install the <a href="http://www.perl.com/CPAN/modules/by-module/Text/">Text-Template</a> Perl module.
+  <li>Install the <a href="http://search.cpan.org/search?dist=Text-Template">Text-Template</a>, <a href="http://search.cpan.org/search?dist=DBIx-DBSchema">DBIx-DBSchema</a>, <a href="http://search.cpan.org/search?dist=Net-SSH">Net-SSH</a> and <a href="http://search.cpan.org/search?dist=Net-SCP">Net-SCP</a> Perl modules.
   <li>Apply the following changes to your database:
 <pre>
 CREATE TABLE domain_record (
