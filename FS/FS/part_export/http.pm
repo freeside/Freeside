@@ -1,9 +1,53 @@
 package FS::part_export::http;
 
-use vars qw(@ISA);
+use vars qw(@ISA %info);
+use Tie::IxHash;
 use FS::part_export;
 
 @ISA = qw(FS::part_export);
+
+tie my %options, 'Tie::IxHash',
+  'method' => { label   =>'Method',
+                type    =>'select',
+                #options =>[qw(POST GET)],
+                options =>[qw(POST)],
+                default =>'POST' },
+  'url'    => { label   => 'URL', default => 'http://', },
+  'insert_data' => {
+    label   => 'Insert data',
+    type    => 'textarea',
+    default => join("\n",
+      'DomainName $svc_x->domain',
+      'Email ( grep { $_ ne "POST" } $svc_x->cust_svc->cust_pkg->cust_main->invoicing_list)[0]',
+      'test 1',
+      'reseller $svc_x->cust_svc->cust_pkg->part_pkg->pkg =~ /reseller/i',
+    ),
+  },
+  'delete_data' => {
+    label   => 'Delete data',
+    type    => 'textarea',
+    default => join("\n",
+    ),
+  },
+  'replace_data' => {
+    label   => 'Replace data',
+    type    => 'textarea',
+    default => join("\n",
+    ),
+  },
+;
+
+%info = (
+  'svc'     => 'svc_domain',
+  'desc'    => 'Send an HTTP or HTTPS GET or POST request',
+  'options' => \%options,
+  'notes'   => <<'END'
+Send an HTTP or HTTPS GET or POST to the specified URL.  For HTTPS support,
+<a href="http://search.cpan.org/dist/Crypt-SSLeay">Crypt::SSLeay</a>
+or <a href="http://search.cpan.org/dist/IO-Socket-SSL">IO::Socket::SSL</a>
+is required.
+END
+);
 
 sub rebless { shift; }
 
@@ -85,4 +129,6 @@ sub http {
   die $response->error_as_HTML if $response->is_error;
 
 }
+
+1;
 

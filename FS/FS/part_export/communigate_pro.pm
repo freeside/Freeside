@@ -1,10 +1,41 @@
 package FS::part_export::communigate_pro;
 
-use vars qw(@ISA);
+use vars qw(@ISA %info %options);
+use Tie::IxHash;
 use FS::part_export;
 use FS::queue;
 
 @ISA = qw(FS::part_export);
+
+tie %options, 'Tie::IxHash',
+  'port'     => { label=>'Port number', default=>'106', },
+  'login'    => { label=>'The administrator account name.  The name can contain a domain part.', },
+  'password' => { label=>'The administrator account password.', },
+  'accountType' => { label=>'Type for newly-created accounts',
+                     type=>'select',
+                     options=>[qw( MultiMailbox TextMailbox MailDirMailbox )],
+                     default=>'MultiMailbox',
+                   },
+  'externalFlag' => { label=> 'Create accounts with an external (visible for legacy mailers) INBOX.',
+                      type=>'checkbox',
+                    },
+  'AccessModes' => { label=>'Access modes',
+                     default=>'Mail POP IMAP PWD WebMail WebSite',
+                   },
+;
+
+%info = (
+  'svc'     => 'svc_acct',
+  'desc'    => 'Real-time export to a CommuniGate Pro mail server',
+  'options' => \%options,
+  'notes'   => <<'END'
+Real time export to a
+<a href="http://www.stalker.com/CommuniGatePro/">CommuniGate Pro</a>
+mail server.  The
+<a href="http://www.stalker.com/CGPerl/">CommuniGate Pro Perl Interface</a>
+must be installed as CGP::CLI.
+END
+);
 
 sub rebless { shift; }
 
@@ -142,3 +173,6 @@ sub communigate_pro_command { #subroutine, not method
   $cli->Logout or die "Can't logout of CGPro: $CGP::ERR_STRING\n";
 
 }
+
+1;
+

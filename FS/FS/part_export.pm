@@ -1,7 +1,7 @@
 package FS::part_export;
 
 use strict;
-use vars qw( @ISA @EXPORT_OK %exports );
+use vars qw( @ISA @EXPORT_OK $DEBUG %exports );
 use Exporter;
 use Tie::IxHash;
 use FS::Record qw( qsearch qsearchs dbh );
@@ -11,6 +11,8 @@ use FS::export_svc;
 
 @ISA = qw(FS::Record);
 @EXPORT_OK = qw(export_info);
+
+$DEBUG = 0;
 
 =head1 NAME
 
@@ -530,596 +532,47 @@ sub export_info {
 #  '';
 #}
 
-tie my %sysvshell_options, 'Tie::IxHash',
-  'crypt' => { label=>'Password encryption',
-               type=>'select', options=>[qw(crypt md5)],
-               default=>'crypt',
-             },
-;
-
-tie my %bsdshell_options, 'Tie::IxHash', 
-  'crypt' => { label=>'Password encryption',
-               type=>'select', options=>[qw(crypt md5)],
-               default=>'crypt',
-             },
-;
-
-tie my %shellcommands_options, 'Tie::IxHash',
-  #'machine' => { label=>'Remote machine' },
-  'user' => { label=>'Remote username', default=>'root' },
-  'useradd' => { label=>'Insert command',
-                 default=>'useradd -c $finger -d $dir -m -s $shell -u $uid -p $crypt_password $username'
-                #default=>'cp -pr /etc/skel $dir; chown -R $uid.$gid $dir'
-               },
-  'useradd_stdin' => { label=>'Insert command STDIN',
-                       type =>'textarea',
-                       default=>'',
-                     },
-  'userdel' => { label=>'Delete command',
-                 default=>'userdel -r $username',
-                 #default=>'rm -rf $dir',
-               },
-  'userdel_stdin' => { label=>'Delete command STDIN',
-                       type =>'textarea',
-                       default=>'',
-                     },
-  'usermod' => { label=>'Modify command',
-                 default=>'usermod -c $new_finger -d $new_dir -m -l $new_username -s $new_shell -u $new_uid -p $new_crypt_password $old_username',
-                #default=>'[ -d $old_dir ] && mv $old_dir $new_dir || ( '.
-                 #  'chmod u+t $old_dir; mkdir $new_dir; cd $old_dir; '.
-                 #  'find . -depth -print | cpio -pdm $new_dir; '.
-                 #  'chmod u-t $new_dir; chown -R $uid.$gid $new_dir; '.
-                 #  'rm -rf $old_dir'.
-                 #')'
-               },
-  'usermod_stdin' => { label=>'Modify command STDIN',
-                       type =>'textarea',
-                       default=>'',
-                     },
-  'usermod_pwonly' => { label=>'Disallow username changes',
-                        type =>'checkbox',
-                      },
-  'suspend' => { label=>'Suspension command',
-                 default=>'usermod -L $username',
-               },
-  'suspend_stdin' => { label=>'Suspension command STDIN',
-                       default=>'',
-                     },
-  'unsuspend' => { label=>'Unsuspension command',
-                   default=>'usermod -U $username',
-                 },
-  'unsuspend_stdin' => { label=>'Unsuspension command STDIN',
-                         default=>'',
-                       },
-;
-
-tie my %shellcommands_withdomain_options, 'Tie::IxHash',
-  'user' => { label=>'Remote username', default=>'root' },
-  'useradd' => { label=>'Insert command',
-                 #default=>''
-               },
-  'useradd_stdin' => { label=>'Insert command STDIN',
-                       type =>'textarea',
-                       #default=>"$_password\n$_password\n",
-                     },
-  'userdel' => { label=>'Delete command',
-                 #default=>'',
-               },
-  'userdel_stdin' => { label=>'Delete command STDIN',
-                       type =>'textarea',
-                       #default=>'',
-                     },
-  'usermod' => { label=>'Modify command',
-                 default=>'',
-               },
-  'usermod_stdin' => { label=>'Modify command STDIN',
-                       type =>'textarea',
-                       #default=>"$_password\n$_password\n",
-                     },
-  'usermod_pwonly' => { label=>'Disallow username changes',
-                        type =>'checkbox',
-                      },
-  'suspend' => { label=>'Suspension command',
-                 default=>'',
-               },
-  'suspend_stdin' => { label=>'Suspension command STDIN',
-                       default=>'',
-                     },
-  'unsuspend' => { label=>'Unsuspension command',
-                   default=>'',
-                 },
-  'unsuspend_stdin' => { label=>'Unsuspension command STDIN',
-                         default=>'',
-                       },
-;
-
-tie my %www_shellcommands_options, 'Tie::IxHash',
-  'user' => { label=>'Remote username', default=>'root' },
-  'useradd' => { label=>'Insert command',
-                 default=>'mkdir /var/www/$zone; chown $username /var/www/$zone; ln -s /var/www/$zone $homedir/$zone',
-               },
-  'userdel'  => { label=>'Delete command',
-                  default=>'[ -n &quot;$zone&quot; ] && rm -rf /var/www/$zone; rm $homedir/$zone',
-                },
-  'usermod'  => { label=>'Modify command',
-                  default=>'[ -n &quot;$old_zone&quot; ] && rm $old_homedir/$old_zone; [ &quot;$old_zone&quot; != &quot;$new_zone&quot; -a -n &quot;$new_zone&quot; ] && mv /var/www/$old_zone /var/www/$new_zone; [ &quot;$old_username&quot; != &quot;$new_username&quot; ] && chown -R $new_username /var/www/$new_zone; ln -s /var/www/$new_zone $new_homedir/$new_zone',
-                },
-;
-
-tie my %apache_options, 'Tie::IxHash',
-  'user'       => { label=>'Remote username', default=>'root' },
-  'httpd_conf' => { label=>'httpd.conf snippet location',
-                    default=>'/etc/apache/httpd-freeside.conf', },
-  'template'   => {
-    label   => 'Template',
-    type    => 'textarea',
-    default => <<'END',
-<VirtualHost $domain> #generic
-#<VirtualHost ip.addr> #preferred, http://httpd.apache.org/docs/dns-caveats.html
-DocumentRoot /var/www/$zone
-ServerName $zone
-ServerAlias *.$zone
-#BandWidthModule On
-#LargeFileLimit 4096 12288
-</VirtualHost>
-
-END
-  },
-;
-
-tie my %router_options, 'Tie::IxHash',
-  'protocol' => {
-	  label=>'Protocol',
-	  type =>'select',
-	  options => [qw(telnet ssh)],
-	  default => 'telnet'},
-  'insert' => {label=>'Insert command', default=>'' },
-  'delete' => {label=>'Delete command', default=>'' },
-  'replace' => {label=>'Replace command', default=>'' },
-  'Timeout' => {label=>'Time to wait for prompt', default=>'20' },
-  'Prompt' => {label=>'Prompt string', default=>'#' }
-;
-
-tie my %domain_shellcommands_options, 'Tie::IxHash',
-  'user' => { label=>'Remote username', default=>'root' },
-  'useradd' => { label=>'Insert command',
-                 default=>'',
-               },
-  'userdel'  => { label=>'Delete command',
-                  default=>'',
-                },
-  'usermod'  => { label=>'Modify command',
-                  default=>'',
-                },
-;
-
-tie my %textradius_options, 'Tie::IxHash',
-  'user' => { label=>'Remote username', default=>'root' },
-  'users' => { label=>'users file location', default=>'/etc/raddb/users' },
-;
-
-tie my %sqlradius_options, 'Tie::IxHash',
-  'datasrc'  => { label=>'DBI data source ' },
-  'username' => { label=>'Database username' },
-  'password' => { label=>'Database password' },
-  'ignore_accounting' => {
-     type => 'checkbox',
-     label=>'Ignore accounting records from this database'
-  },
-;
-
-tie my %sqlradius_withdomain_options, 'Tie::IxHash',
-  'datasrc'  => { label=>'DBI data source ' },
-  'username' => { label=>'Database username' },
-  'password' => { label=>'Database password' },
-  'ignore_accounting' => {
-     type => 'checkbox',
-     label=>'Ignore accounting records from this database'
-  },
-;
-
-tie my %cyrus_options, 'Tie::IxHash',
-  'server' => { label=>'IMAP server' },
-  'username' => { label=>'Admin username' },
-  'password' => { label=>'Admin password' },
-;
-
-tie my %cp_options, 'Tie::IxHash',
-  'port'      => { label=>'Port number' },
-  'username'  => { label=>'Username' },
-  'password'  => { label=>'Password' },
-  'domain'    => { label=>'Domain' },
-  'workgroup' => { label=>'Default Workgroup' },
-;
-
-tie my %infostreet_options, 'Tie::IxHash',
-  'url'      => { label=>'XML-RPC Access URL', },
-  'login'    => { label=>'InfoStreet login', },
-  'password' => { label=>'InfoStreet password', },
-  'groupID'  => { label=>'InfoStreet groupID', },
-;
-
-tie my %vpopmail_options, 'Tie::IxHash',
-  #'machine' => { label=>'vpopmail machine', },
-  'dir'     => { label=>'directory', }, # ?more info? default?
-  'uid'     => { label=>'vpopmail uid' },
-  'gid'     => { label=>'vpopmail gid' },
-  'restart' => { label=> 'vpopmail restart command',
-                 default=> 'cd /home/vpopmail/domains; for domain in *; do /home/vpopmail/bin/vmkpasswd $domain; done; /var/qmail/bin/qmail-newu; killall -HUP qmail-send',
-               },
-;
-
-tie my %communigate_pro_options, 'Tie::IxHash',
-  'port'     => { label=>'Port number', default=>'106', },
-  'login'    => { label=>'The administrator account name.  The name can contain a domain part.', },
-  'password' => { label=>'The administrator account password.', },
-  'accountType' => { label=>'Type for newly-created accounts',
-                     type=>'select',
-                     options=>[qw( MultiMailbox TextMailbox MailDirMailbox )],
-                     default=>'MultiMailbox',
-                   },
-  'externalFlag' => { label=> 'Create accounts with an external (visible for legacy mailers) INBOX.',
-                      type=>'checkbox',
-                    },
-  'AccessModes' => { label=>'Access modes',
-                     default=>'Mail POP IMAP PWD WebMail WebSite',
-                   },
-;
-
-tie my %communigate_pro_singledomain_options, 'Tie::IxHash',
-  'port'     => { label=>'Port number', default=>'106', },
-  'login'    => { label=>'The administrator account name.  The name can contain a domain part.', },
-  'password' => { label=>'The administrator account password.', },
-  'domain'   => { label=>'Domain', },
-  'accountType' => { label=>'Type for newly-created accounts',
-                     type=>'select',
-                     options=>[qw( MultiMailbox TextMailbox MailDirMailbox )],
-                     default=>'MultiMailbox',
-                   },
-  'externalFlag' => { label=> 'Create accounts with an external (visible for legacy mailers) INBOX.',
-                      type=>'checkbox',
-                    },
-  'AccessModes' => { label=>'Access modes',
-                     default=>'Mail POP IMAP PWD WebMail WebSite',
-                   },
-;
-
-tie my %bind_options, 'Tie::IxHash',
-  #'machine'     => { label=>'named machine' },
-  'named_conf'   => { label  => 'named.conf location',
-                      default=> '/etc/bind/named.conf' },
-  'zonepath'     => { label => 'path to zone files',
-                      default=> '/etc/bind/', },
-  'bind_release' => { label => 'ISC BIND Release',
-                      type  => 'select',
-                      options => [qw(BIND8 BIND9)],
-                      default => 'BIND8' },
-  'bind9_minttl' => { label => 'The minttl required by bind9 and RFC1035.',
-                      default => '1D' },
-;
-
-tie my %bind_slave_options, 'Tie::IxHash',
-  #'machine'     => { label=> 'Slave machine' },
-  'master'       => { label=> 'Master IP address(s) (semicolon-separated)' },
-  'named_conf'   => { label   => 'named.conf location',
-                      default => '/etc/bind/named.conf' },
-  'bind_release' => { label => 'ISC BIND Release',
-                      type  => 'select',
-                      options => [qw(BIND8 BIND9)],
-                      default => 'BIND8' },
-  'bind9_minttl' => { label => 'The minttl required by bind9 and RFC1035.',
-                      default => '1D' },
-;
-
-tie my %http_options, 'Tie::IxHash',
-  'method' => { label   =>'Method',
-                type    =>'select',
-                #options =>[qw(POST GET)],
-                options =>[qw(POST)],
-                default =>'POST' },
-  'url'    => { label   => 'URL', default => 'http://', },
-  'insert_data' => {
-    label   => 'Insert data',
-    type    => 'textarea',
-    default => join("\n",
-      'DomainName $svc_x->domain',
-      'Email ( grep { $_ ne "POST" } $svc_x->cust_svc->cust_pkg->cust_main->invoicing_list)[0]',
-      'test 1',
-      'reseller $svc_x->cust_svc->cust_pkg->part_pkg->pkg =~ /reseller/i',
-    ),
-  },
-  'delete_data' => {
-    label   => 'Delete data',
-    type    => 'textarea',
-    default => join("\n",
-    ),
-  },
-  'replace_data' => {
-    label   => 'Replace data',
-    type    => 'textarea',
-    default => join("\n",
-    ),
-  },
-;
-
-tie my %sqlmail_options, 'Tie::IxHash',
-  'datasrc'            => { label => 'DBI data source' },
-  'username'           => { label => 'Database username' },
-  'password'           => { label => 'Database password' },
-  'server_type'        => {
-    label   => 'Server type',
-    type    => 'select',
-    options => [qw(dovecot_plain dovecot_crypt dovecot_digest_md5 courier_plain
-                   courier_crypt)],
-    default => ['dovecot_plain'], },
-  'svc_acct_table'     => { label => 'User Table', default => 'user_acct' },
-  'svc_forward_table'  => { label => 'Forward Table', default => 'forward' },
-  'svc_domain_table'   => { label => 'Domain Table', default => 'domain' },
-  'svc_acct_fields'    => { label => 'svc_acct Export Fields',
-                            default => 'username _password domsvc svcnum' },
-  'svc_forward_fields' => { label => 'svc_forward Export Fields',
-                            default => 'domain svcnum catchall' },
-  'svc_domain_fields'  => { label => 'svc_domain Export Fields',
-                            default => 'srcsvc dstsvc dst' },
-  'resolve_dstsvc'     => { label => q{Resolve svc_forward.dstsvc to an email address and store it in dst. (Doesn't require that you also export dstsvc.)},
-                            type => 'checkbox' },
-
-;
-
-tie my %ldap_options, 'Tie::IxHash',
-  'dn'         => { label=>'Root DN' },
-  'password'   => { label=>'Root DN password' },
-  'userdn'     => { label=>'User DN' },
-  'attributes' => { label=>'Attributes',
-                    type=>'textarea',
-                    default=>join("\n",
-                      'uid $username',
-                      'mail $username\@$domain',
-                      'uidno $uid',
-                      'gidno $gid',
-                      'cn $first',
-                      'sn $last',
-                      'mailquota $quota',
-                      'vmail',
-                      'location',
-                      'mailtag',
-                      'mailhost',
-                      'mailmessagestore $dir',
-                      'userpassword $crypt_password',
-                      'hint',
-                      'answer $sec_phrase',
-                      'objectclass top,person,inetOrgPerson',
-                    ),
-                  },
-  'radius'     => { label=>'Export RADIUS attributes', type=>'checkbox', },
-;
-
-tie my %forward_shellcommands_options, 'Tie::IxHash',
-  'user' => { label=>'Remote username', default=>'root' },
-  'useradd' => { label=>'Insert command',
-                 default=>'',
-               },
-  'userdel'  => { label=>'Delete command',
-                  default=>'',
-                },
-  'usermod'  => { label=>'Modify command',
-                  default=>'',
-                },
-;
-
-tie my %postfix_options, 'Tie::IxHash',
-  'user' => { label=>'Remote username', default=>'root' },
-  'aliases' => { label=>'aliases file location', default=>'/etc/aliases' },
-  'virtual' => { label=>'virtual file location', default=>'/etc/postfix/virtual' },
-  'mydomain' => { label=>'local domain', default=>'' },
-;
-
-#export names cannot have dashes...
-%exports = (
-  'svc_acct' => {
-    'sysvshell' => {
-      'desc' =>
-        'Batch export of /etc/passwd and /etc/shadow files (Linux/SysV).',
-      'options' => \%sysvshell_options,
-      'nodomain' => 'Y',
-      'notes' => 'MD5 crypt requires installation of <a href="http://search.cpan.org/search?dist=Crypt-PasswdMD5">Crypt::PasswdMD5</a> from CPAN.    Run bin/sysvshell.export to export the files.',
-    },
-    'bsdshell' => {
-      'desc' =>
-        'Batch export of /etc/passwd and /etc/master.passwd files (BSD).',
-      'options' => \%bsdshell_options,
-      'nodomain' => 'Y',
-      'notes' => 'MD5 crypt requires installation of <a href="http://search.cpan.org/search?dist=Crypt-PasswdMD5">Crypt::PasswdMD5</a> from CPAN.  Run bin/bsdshell.export to export the files.',
-    },
-#    'nis' => {
-#      'desc' =>
-#        'Batch export of /etc/global/passwd and /etc/global/shadow for NIS ',
-#      'options' => {},
-#    },
-    'textradius' => {
-      'desc' => 'Real-time export to a text /etc/raddb/users file (Livingston, Cistron)',
-      'options' => \%textradius_options,
-      'notes' => 'This will edit a text RADIUS users file in place on a remote server.  Requires installation of <a href="http://search.cpan.org/search?dist=RADIUS-UserFile">RADIUS::UserFile</a> from CPAN.  If using RADIUS::UserFile 1.01, make sure to apply <a href="http://rt.cpan.org/NoAuth/Bug.html?id=1210">this patch</a>.  Also make sure <a href="http://rsync.samba.org/">rsync</a> is installed on the remote machine, and <a href="../docs/ssh.html">SSH is setup for unattended operation</a>.',
-    },
-
-    'shellcommands' => {
-      'desc' => 'Real-time export via remote SSH (i.e. useradd, userdel, etc.)',
-      'options' => \%shellcommands_options,
-      'nodomain' => 'Y',
-      'notes' => 'Run remote commands via SSH.  Usernames are considered unique (also see shellcommands_withdomain).  You probably want this if the commands you are running will not accept a domain as a parameter.  You will need to <a href="../docs/ssh.html">setup SSH for unattended operation</a>.<BR><BR>Use these buttons for some useful presets:<UL><LI><INPUT TYPE="button" VALUE="Linux" onClick=\'this.form.useradd.value = "useradd -c $finger -d $dir -m -s $shell -u $uid -p $crypt_password $username"; this.form.useradd_stdin.value = ""; this.form.userdel.value = "userdel -r $username"; this.form.userdel_stdin.value=""; this.form.usermod.value = "usermod -c $new_finger -d $new_dir -m -l $new_username -s $new_shell -u $new_uid -p $new_crypt_password $old_username"; this.form.usermod_stdin.value = ""; this.form.suspend.value = "usermod -L $username"; this.form.suspend_stdin.value=""; this.form.unsuspend.value = "usermod -U $username"; this.form.unsuspend_stdin.value="";\'><LI><INPUT TYPE="button" VALUE="FreeBSD" onClick=\'this.form.useradd.value = "lockf /etc/passwd.lock pw useradd $username -d $dir -m -s $shell -u $uid -g $gid -c $finger -h 0"; this.form.useradd_stdin.value = "$_password\n"; this.form.userdel.value = "lockf /etc/passwd.lock pw userdel $username -r"; this.form.userdel_stdin.value=""; this.form.usermod.value = "lockf /etc/passwd.lock pw usermod $old_username -d $new_dir -m -l $new_username -s $new_shell -u $new_uid -c $new_finger -h 0"; this.form.usermod_stdin.value = "$new__password\n"; this.form.suspend.value = "lockf /etc/passwd.lock pw lock $username"; this.form.suspend_stdin.value=""; this.form.unsuspend.value = "lockf /etc/passwd.lock pw unlock $username"; this.form.unsuspend_stdin.value="";\'> Note: On FreeBSD, due to deficient locking in pw(1), you must disable the chpass(1), chsh(1), chfn(1), passwd(1), and vipw(1) commands, or replace them with wrappers that prepend "lockf /etc/passwd.lock".  Alternatively, apply the patch in <A HREF="http://www.freebsd.org/cgi/query-pr.cgi?pr=23501">FreeBSD PR#23501</A> and remove the "lockf /etc/passwd.lock" from these default commands.<LI><INPUT TYPE="button" VALUE="NetBSD/OpenBSD" onClick=\'this.form.useradd.value = "useradd -c $finger -d $dir -m -s $shell -u $uid -p $crypt_password $username"; this.form.useradd_stdin.value = ""; this.form.userdel.value = "userdel -r $username"; this.form.userdel_stdin.value=""; this.form.usermod.value = "usermod -c $new_finger -d $new_dir -m -l $new_username -s $new_shell -u $new_uid -p $new_crypt_password $old_username"; this.form.usermod_stdin.value = ""; this.form.suspend.value = ""; this.form.suspend_stdin.value=""; this.form.unsuspend.value = ""; this.form.unsuspend_stdin.value="";\'><LI><INPUT TYPE="button" VALUE="Just maintain directories (use with sysvshell or bsdshell)" onClick=\'this.form.useradd.value = "cp -pr /etc/skel $dir; chown -R $uid.$gid $dir"; this.form.useradd_stdin.value = ""; this.form.usermod.value = "[ -d $old_dir ] && mv $old_dir $new_dir || ( chmod u+t $old_dir; mkdir $new_dir; cd $old_dir; find . -depth -print | cpio -pdm $new_dir; chmod u-t $new_dir; chown -R $new_uid.$new_gid $new_dir; rm -rf $old_dir )"; this.form.usermod_stdin.value = ""; this.form.userdel.value = "rm -rf $dir"; this.form.userdel_stdin.value=""; this.form.suspend.value = ""; this.form.suspend_stdin.value=""; this.form.unsuspend.value = ""; this.form.unsuspend_stdin.value="";\'></UL>The following variables are available for interpolation (prefixed with new_ or old_ for replace operations): <UL><LI><code>$username</code><LI><code>$_password</code><LI><code>$quoted_password</code> - unencrypted password quoted for the shell<LI><code>$crypt_password</code> - encrypted password<LI><code>$uid</code><LI><code>$gid</code><LI><code>$finger</code> - GECOS, already quoted for the shell (do not add additional quotes)<LI><code>$dir</code> - home directory<LI><code>$shell</code><LI><code>$quota</code><LI>All other fields in <a href="../docs/schema.html#svc_acct">svc_acct</a> are also available.</UL>',
-    },
-
-    'shellcommands_withdomain' => {
-      'desc' => 'Real-time export via remote SSH (vpopmail, etc.).',
-      'options' => \%shellcommands_withdomain_options,
-      'notes' => 'Run remote commands via SSH.  username@domain (rather than just usernames) are considered unique (also see shellcommands).  You probably want this if the commands you are running will accept a domain as a parameter, and will allow the same username with different domains.  You will need to <a href="../docs/ssh.html">setup SSH for unattended operation</a>.<BR><BR>Use these buttons for some useful presets:<UL><LI><INPUT TYPE="button" VALUE="vpopmail" onClick=\'this.form.useradd.value = "/home/vpopmail/bin/vadduser $username\\\@$domain $quoted_password"; this.form.useradd_stdin.value = ""; this.form.userdel.value = "/home/vpopmail/bin/vdeluser $username\\\@$domain"; this.form.userdel_stdin.value=""; this.form.usermod.value = "/home/vpopmail/bin/vpasswd $new_username\\\@$new_domain $new_quoted_password"; this.form.usermod_stdin.value = ""; this.form.usermod_pwonly.checked = true;\'></UL>The following variables are available for interpolation (prefixed with <code>new_</code> or <code>old_</code> for replace operations): <UL><LI><code>$username</code><LI><code>$domain</code><LI><code>$_password</code><LI><code>$quoted_password</code> - unencrypted password quoted for the shell<LI><code>$crypt_password</code> - encrypted password<LI><code>$uid</code><LI><code>$gid</code><LI><code>$finger</code> - GECOS, already quoted for the shell (do not add additional quotes)<LI><code>$dir</code> - home directory<LI><code>$shell</code><LI><code>$quota</code><LI>All other fields in <a href="../docs/schema.html#svc_acct">svc_acct</a> are also available.</UL>',
-    },
-
-    'ldap' => {
-      'desc' => 'Real-time export to LDAP',
-      'options' => \%ldap_options,
-      'notes' => 'Real-time export to arbitrary LDAP attributes.  Requires installation of <a href="http://search.cpan.org/search?dist=Net-LDAP">Net::LDAP</a> from CPAN.',
-    },
-
-    'sqlradius' => {
-      'desc' => 'Real-time export to SQL-backed RADIUS (FreeRADIUS, ICRADIUS, Radiator)',
-      'options' => \%sqlradius_options,
-      'nodomain' => 'Y',
-      'notes' => 'Real-time export of radcheck, radreply and usergroup tables to any SQL database for <a href="http://www.freeradius.org/">FreeRADIUS</a>, <a href="http://radius.innercite.com/">ICRADIUS</a> or <a href="http://www.open.com.au/radiator/">Radiator</a>.  This export does not export RADIUS realms (see also sqlradius_withdomain).  An existing RADIUS database will be updated in realtime, but you can use <a href="../docs/man/bin/freeside-sqlradius-reset">freeside-sqlradius-reset</a> to delete the entire RADIUS database and repopulate the tables from the Freeside database.  See the <a href="http://search.cpan.org/doc/TIMB/DBI/DBI.pm#connect">DBI documentation</a> and the <a href="http://search.cpan.org/search?mode=module&query=DBD%3A%3A">documentation for your DBD</a> for the exact syntax of a DBI data source.<ul><li>Using FreeRADIUS 0.9.0 with the PostgreSQL backend, the db_postgresql.sql schema and postgresql.conf queries contain incompatible changes.  This is fixed in 0.9.1.  Only new installs with 0.9.0 and PostgreSQL are affected - upgrades and other database backends and versions are unaffected.<li>Using ICRADIUS, add a dummy "op" column to your database: <blockquote><code>ALTER&nbsp;TABLE&nbsp;radcheck&nbsp;ADD&nbsp;COLUMN&nbsp;op&nbsp;VARCHAR(2)&nbsp;NOT&nbsp;NULL&nbsp;DEFAULT&nbsp;\'==\'<br>ALTER&nbsp;TABLE&nbsp;radreply&nbsp;ADD&nbsp;COLUMN&nbsp;op&nbsp;VARCHAR(2)&nbsp;NOT&nbsp;NULL&nbsp;DEFAULT&nbsp;\'==\'<br>ALTER&nbsp;TABLE&nbsp;radgroupcheck&nbsp;ADD&nbsp;COLUMN&nbsp;op&nbsp;VARCHAR(2)&nbsp;NOT&nbsp;NULL&nbsp;DEFAULT&nbsp;\'==\'<br>ALTER&nbsp;TABLE&nbsp;radgroupreply&nbsp;ADD&nbsp;COLUMN&nbsp;op&nbsp;VARCHAR(2)&nbsp;NOT&nbsp;NULL&nbsp;DEFAULT&nbsp;\'==\'</code></blockquote><li>Using Radiator, see the <a href="http://www.open.com.au/radiator/faq.html#38">Radiator FAQ</a> for configuration information.</ul>',
-    },
-
-    'sqlradius_withdomain' => {
-      'desc' => 'Real-time export to SQL-backed RADIUS (FreeRADIUS, ICRADIUS, Radiator) with realms',
-      'options' => \%sqlradius_withdomain_options,
-      'nodomain' => '',
-      'notes' => 'Real-time export of radcheck, radreply and usergroup tables to any SQL database for <a href="http://www.freeradius.org/">FreeRADIUS</a>, <a href="http://radius.innercite.com/">ICRADIUS</a> or <a href="http://www.open.com.au/radiator/">Radiator</a>.  This export exports domains to RADIUS realms (see also sqlradius).  An existing RADIUS database will be updated in realtime, but you can use <a href="../docs/man/bin/freeside-sqlradius-reset">freeside-sqlradius-reset</a> to delete the entire RADIUS database and repopulate the tables from the Freeside database.  See the <a href="http://search.cpan.org/doc/TIMB/DBI/DBI.pm#connect">DBI documentation</a> and the <a href="http://search.cpan.org/search?mode=module&query=DBD%3A%3A">documentation for your DBD</a> for the exact syntax of a DBI data source.<ul><li>Using FreeRADIUS 0.9.0 with the PostgreSQL backend, the db_postgresql.sql schema and postgresql.conf queries contain incompatible changes.  This is fixed in 0.9.1.  Only new installs with 0.9.0 and PostgreSQL are affected - upgrades and other database backends and versions are unaffected.<li>Using ICRADIUS, add a dummy "op" column to your database: <blockquote><code>ALTER&nbsp;TABLE&nbsp;radcheck&nbsp;ADD&nbsp;COLUMN&nbsp;op&nbsp;VARCHAR(2)&nbsp;NOT&nbsp;NULL&nbsp;DEFAULT&nbsp;\'==\'<br>ALTER&nbsp;TABLE&nbsp;radreply&nbsp;ADD&nbsp;COLUMN&nbsp;op&nbsp;VARCHAR(2)&nbsp;NOT&nbsp;NULL&nbsp;DEFAULT&nbsp;\'==\'<br>ALTER&nbsp;TABLE&nbsp;radgroupcheck&nbsp;ADD&nbsp;COLUMN&nbsp;op&nbsp;VARCHAR(2)&nbsp;NOT&nbsp;NULL&nbsp;DEFAULT&nbsp;\'==\'<br>ALTER&nbsp;TABLE&nbsp;radgroupreply&nbsp;ADD&nbsp;COLUMN&nbsp;op&nbsp;VARCHAR(2)&nbsp;NOT&nbsp;NULL&nbsp;DEFAULT&nbsp;\'==\'</code></blockquote><li>Using Radiator, see the <a href="http://www.open.com.au/radiator/faq.html#38">Radiator FAQ</a> for configuration information.</ul>',
-    },
-
-    'sqlmail' => {
-      'desc' => 'Real-time export to SQL-backed mail server',
-      'options' => \%sqlmail_options,
-      'nodomain' => '',
-      'notes' => 'Database schema can be made to work with Courier IMAP and Exim.  Others could work but are untested. (...extended description from pc-intouch?...)',
-    },
-
-    'cyrus' => {
-      'desc' => 'Real-time export to Cyrus IMAP server',
-      'options' => \%cyrus_options,
-      'nodomain' => 'Y',
-      'notes' => 'Integration with <a href="http://asg.web.cmu.edu/cyrus/imapd/">Cyrus IMAP Server</a>.  Cyrus::IMAP::Admin should be installed locally and the connection to the server secured.  <B>svc_acct.quota</B>, if available, is used to set the Cyrus quota. '
-    },
-
-    'cp' => {
-      'desc' => 'Real-time export to Critical Path Account Provisioning Protocol',
-      'options' => \%cp_options,
-      'notes' => 'Real-time export to <a href="http://www.cp.net/">Critial Path Account Provisioning Protocol</a>.  Requires installation of <a href="http://search.cpan.org/search?dist=Net-APP">Net::APP</a> from CPAN.',
-    },
-    
-    'infostreet' => {
-      'desc' => 'Real-time export to InfoStreet streetSmartAPI',
-      'options' => \%infostreet_options,
-      'nodomain' => 'Y',
-      'notes' => 'Real-time export to <a href="http://www.infostreet.com/">InfoStreet</a> streetSmartAPI.  Requires installation of <a href="http://search.cpan.org/search?dist=Frontier-Client">Frontier::Client</a> from CPAN.',
-    },
-
-    'vpopmail' => {
-      'desc' => 'Real-time export to vpopmail text files',
-      'options' => \%vpopmail_options,
-      'notes' => 'Real time export to <a href="http://inter7.com/vpopmail/">vpopmail</a> text files.  <a href="http://search.cpan.org/search?dist=File-Rsync">File::Rsync</a> must be installed, and you will need to <a href="../docs/ssh.html">setup SSH for unattended operation</a> to <b>vpopmail</b>@<i>export.host</i>.',
-    },
-
-    'communigate_pro' => {
-      'desc' => 'Real-time export to a CommuniGate Pro mail server',
-      'options' => \%communigate_pro_options,
-      'notes' => 'Real time export to a <a href="http://www.stalker.com/CommuniGatePro/">CommuniGate Pro</a> mail server.  The <a href="http://www.stalker.com/CGPerl/">CommuniGate Pro Perl Interface</a> must be installed as CGP::CLI.',
-    },
-
-    'communigate_pro_singledomain' => {
-      'desc' => 'Real-time export to a CommuniGate Pro mail server, one domain only',
-      'options' => \%communigate_pro_singledomain_options,
-      'nodomain' => 'Y',
-      'notes' => 'Real time export to a <a href="http://www.stalker.com/CommuniGatePro/">CommuniGate Pro</a> mail server.  This is an unusual export to CommuniGate Pro that forces all accounts into a single domain.  As CommuniGate Pro supports multiple domains, unless you have a specific reason for using this export, you probably want to use the communigate_pro export instead.  The <a href="http://www.stalker.com/CGPerl/">CommuniGate Pro Perl Interface</a> must be installed as CGP::CLI.',
-    },
-
-  },
-
-  'svc_domain' => {
-
-    'bind' => {
-      'desc' =>'Batch export to BIND named',
-      'options' => \%bind_options,
-      'notes' => 'Batch export of BIND zone and configuration files to primary nameserver.  <a href="http://search.cpan.org/search?dist=File-Rsync">File::Rsync</a> must be installed.  Run bin/bind.export to export the files.',
-    },
-
-    'bind_slave' => {
-      'desc' =>'Batch export to slave BIND named',
-      'options' => \%bind_slave_options,
-      'notes' => 'Batch export of BIND configuration file to a secondary nameserver.  Zones are slaved from the listed masters.  <a href="http://search.cpan.org/search?dist=File-Rsync">File::Rsync</a> must be installed.  Run bin/bind.export to export the files.',
-    },
-
-    'http' => {
-      'desc' => 'Send an HTTP or HTTPS GET or POST request',
-      'options' => \%http_options,
-      'notes' => 'Send an HTTP or HTTPS GET or POST to the specified URL.  <a href="http://search.cpan.org/search?dist=libwww-perl">libwww-perl</a> must be installed.  For HTTPS support, <a href="http://search.cpan.org/search?dist=Crypt-SSLeay">Crypt::SSLeay</a> or <a href="http://search.cpan.org/search?dist=IO-Socket-SSL">IO::Socket::SSL</a> is required.',
-    },
-
-    'sqlmail' => {
-      'desc' => 'Real-time export to SQL-backed mail server',
-      'options' => \%sqlmail_options,
-      #'nodomain' => 'Y',
-      'notes' => 'Database schema can be made to work with Courier IMAP and Exim.  Others could work but are untested. (...extended description from pc-intouch?...)',
-    },
-
-    'domain_shellcommands' => {
-      'desc' => 'Run remote commands via SSH, for domains.',
-      'options' => \%domain_shellcommands_options,
-      'notes'    => 'Run remote commands via SSH, for domains.  You will need to <a href="../docs/ssh.html">setup SSH for unattended operation</a>.<BR><BR>Use these buttons for some useful presets:<UL><LI><INPUT TYPE="button" VALUE="qmail catchall .qmail-domain-default maintenance" onClick=\'this.form.useradd.value = "[ \"$uid\" -a \"$gid\" -a \"$dir\" -a \"$qdomain\" ] && [ -e $dir/.qmail-$qdomain-default ] || { touch $dir/.qmail-$qdomain-default; chown $uid:$gid $dir/.qmail-$qdomain-default; }"; this.form.userdel.value = ""; this.form.usermod.value = "";\'></UL>The following variables are available for interpolation (prefixed with <code>new_</code> or <code>old_</code> for replace operations): <UL><LI><code>$domain</code><LI><code>$qdomain</code> - domain with periods replaced by colons<LI><code>$uid</code> - of catchall account<LI><code>$gid</code> - of catchall account<LI><code>$dir</code> - home directory of catchall account<LI>All other fields in <a href="../docs/schema.html#svc_domain">svc_domain</a> are also available.</UL>',
-    },
-
-
-  },
-
-  'svc_forward' => {
-    'sqlmail' => {
-      'desc' => 'Real-time export to SQL-backed mail server',
-      'options' => \%sqlmail_options,
-      #'nodomain' => 'Y',
-      'notes' => 'Database schema can be made to work with Courier IMAP and Exim.  Others could work but are untested. (...extended description from fire2wire?...)',
-    },
-
-    'forward_shellcommands' => {
-      'desc' => 'Run remote commands via SSH, for forwards',
-      'options' => \%forward_shellcommands_options,
-      'notes' => 'Run remote commands via SSH, for forwards.  You will need to <a href="../docs/ssh.html">setup SSH for unattended operation</a>.<BR><BR>Use these buttons for some useful presets:<UL><LI><INPUT TYPE="button" VALUE="text vpopmail maintenance" onClick=\'this.form.useradd.value = "[ -d /home/vpopmail/domains/$domain/$username ] && { echo \"$destination\" > /home/vpopmail/domains/$domain/$username/.qmail; chown vpopmail:vchkpw /home/vpopmail/domains/$domain/$username/.qmail; }"; this.form.userdel.value = "rm /home/vpopmail/domains/$domain/$username/.qmail"; this.form.usermod.value = "mv /home/vpopmail/domains/$old_domain/$old_username/.qmail /home/vpopmail/domains/$new_domain/$new_username; [ \"$old_destination\" != \"$new_destination\" ] && { echo \"$new_destination\" > /home/vpopmail/domains/$new_domain/$new_username/.qmail; chown vpopmail:vchkpw /home/vpopmail/domains/$new_domain/$new_username/.qmail; }";\'></UL>The following variables are available for interpolation (prefixed with <code>new_</code> or <code>old_</code> for replace operations): <UL><LI><code>$username</code><LI><code>$domain</code><LI><code>$destination</code> - forward destination<LI>All other fields in <a href="../docs/schema.html#svc_forward">svc_forward</a> are also available.</UL>',
-    },
-
-    'postfix' => {
-      'desc' => 'Real-time export to Postfix text files',
-      'options' => \%postfix_options,
-      #'nodomain' => 'Y',
-      'notes' => 'Batch export of Postfix aliases and virtual files.  <a href="http://search.cpan.org/search?dist=File-Rsync">File::Rsync</a> must be installed.  Run bin/postfix.export to export the files.',
-    },
-
-  },
-
-  'svc_www' => {
-    'www_shellcommands' => {
-      'desc' => 'Run remote commands via SSH, for virtual web sites.',
-      'options' => \%www_shellcommands_options,
-      'notes'    => 'Run remote commands via SSH, for virtual web sites.  You will need to <a href="../docs/ssh.html">setup SSH for unattended operation</a>.<BR><BR>The following variables are available for interpolation (prefixed with <code>new_</code> or <code>old_</code> for replace operations): <UL><LI><code>$zone</code><LI><code>$username</code><LI><code>$homedir</code><LI>All other fields in <a href="../docs/schema.html#svc_www">svc_www</a> are also available.</UL>',
-    },
-
-    'apache' => {
-      'desc' => 'Export an Apache httpd.conf file snippet.',
-      'options' => \%apache_options,
-      'notes' => 'Batch export of an httpd.conf snippet from a template.  Typically used with something like <code>Include /etc/apache/httpd-freeside.conf</code> in httpd.conf.  <a href="http://search.cpan.org/search?dist=File-Rsync">File::Rsync</a> must be installed.  Run bin/apache.export to export the files.',
-    },
-  },
-
-  'svc_broadband' => {
-    'router' => {
-      'desc' => 'Send a command to a router.',
-      'options' => \%router_options,
-      'notes' => '',
-    },
-  },
-
-  'svc_external' => {
-  },
-
-);
+foreach my $INC ( @INC ) {
+  foreach my $file ( glob("$INC/FS/part_export/*.pm") ) {
+    warn "attempting to load export info from $file\n" if $DEBUG;
+    $file =~ /\/(\w+)\.pm$/ or do {
+      warn "unrecognized file in $INC/FS/part_export/: $file\n";
+      next;
+    };
+    my $mod = $1;
+    my $info = eval "use FS::part_export::$mod; ".
+                    "\\%FS::part_export::$mod\::info;";
+    if ( $@ ) {
+      die "error using FS::part_export::$mod (skipping): $@\n" if $@;
+      next;
+    }
+    unless ( keys %$info ) {
+      warn "no %info hash found in FS::part_export::$mod, skipping\n"
+        unless $mod =~ /^(passwdfile|null)$/; #hack but what the heck
+      next;
+    }
+    warn "got export info from FS::part_export::$mod: $info\n" if $DEBUG;
+    no strict 'refs';
+    foreach my $svc (
+      ref($info->{'svc'}) ? @{$info->{'svc'}} : $info->{'svc'}
+    ) {
+      unless ( $svc ) {
+        warn "blank svc for FS::part_export::$mod (skipping)\n";
+        next;
+      }
+      $exports{$svc}->{$mod} = $info;
+    }
+  }
+}
 
 =back
 
 =head1 NEW EXPORT CLASSES
 
-Should be added to the %export hash here, and a module should be added in
-FS/FS/part_export/ (an example may be found in eg/export_template.pm)
+A module should be added in FS/FS/part_export/ (an example may be found in
+eg/export_template.pm)
 
 =head1 BUGS
-
-All the stuff in the %exports hash should be generated from the specific
-export modules.
 
 Hmm... cust_export class (not necessarily a database table...) ... ?
 

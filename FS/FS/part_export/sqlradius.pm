@@ -1,10 +1,63 @@
 package FS::part_export::sqlradius;
 
-use vars qw(@ISA);
+use vars qw(@ISA %info %options $notes1 $notes2);
+use Tie::IxHash;
 use FS::Record qw( dbh );
 use FS::part_export;
 
 @ISA = qw(FS::part_export);
+
+tie %options, 'Tie::IxHash',
+  'datasrc'  => { label=>'DBI data source ' },
+  'username' => { label=>'Database username' },
+  'password' => { label=>'Database password' },
+  'ignore_accounting' => {
+     type => 'checkbox',
+     label=>'Ignore accounting records from this database'
+  },
+;
+
+$notes1 = <<'END';
+Real-time export of radcheck, radreply and usergroup tables to any SQL database
+for <a href="http://www.freeradius.org/">FreeRADIUS</a>,
+<a href="http://radius.innercite.com/">ICRADIUS</a>
+or <a href="http://www.open.com.au/radiator/">Radiator</a>.  
+END
+
+$notes2 = <<'END';
+An existing RADIUS database will be updated in realtime, but you can use
+<a href="../docs/man/bin/freeside-sqlradius-reset">freeside-sqlradius-reset</a>
+to delete the entire RADIUS database and repopulate the tables from the
+Freeside database.  See the
+<a href="http://search.cpan.org/dist/DBI/DBI.pm#connect">DBI documentation</a>
+and the
+<a href="http://search.cpan.org/search?mode=module&query=DBD%3A%3A">documentation for your DBD</a>
+for the exact syntax of a DBI data source.
+<ul>
+  <li>Using FreeRADIUS 0.9.0 with the PostgreSQL backend, the db_postgresql.sql schema and postgresql.conf queries contain incompatible changes.  This is fixed in 0.9.1.  Only new installs with 0.9.0 and PostgreSQL are affected - upgrades and other database backends and versions are unaffected.
+  <li>Using ICRADIUS, add a dummy "op" column to your database:
+    <blockquote><code>
+      ALTER&nbsp;TABLE&nbsp;radcheck&nbsp;ADD&nbsp;COLUMN&nbsp;op&nbsp;VARCHAR(2)&nbsp;NOT&nbsp;NULL&nbsp;DEFAULT&nbsp;'=='<br>
+      ALTER&nbsp;TABLE&nbsp;radreply&nbsp;ADD&nbsp;COLUMN&nbsp;op&nbsp;VARCHAR(2)&nbsp;NOT&nbsp;NULL&nbsp;DEFAULT&nbsp;'=='<br>
+      ALTER&nbsp;TABLE&nbsp;radgroupcheck&nbsp;ADD&nbsp;COLUMN&nbsp;op&nbsp;VARCHAR(2)&nbsp;NOT&nbsp;NULL&nbsp;DEFAULT&nbsp;'=='<br>
+      ALTER&nbsp;TABLE&nbsp;radgroupreply&nbsp;ADD&nbsp;COLUMN&nbsp;op&nbsp;VARCHAR(2)&nbsp;NOT&nbsp;NULL&nbsp;DEFAULT&nbsp;'=='
+    </code></blockquote>
+  <li>Using Radiator, see the
+    <a href="http://www.open.com.au/radiator/faq.html#38">Radiator FAQ</a>
+    for configuration information.
+</ul>
+END
+
+%info = (
+  'svc'      => 'svc_acct',
+  'desc'     => 'Real-time export to SQL-backed RADIUS (FreeRADIUS, ICRADIUS, Radiator)',
+  'options'  => \%options,
+  'nodomain' => 'Y',
+  'notes'    => $notes1.
+                'This export does not export RADIUS realms (see also '.
+                'sqlradius_withdomain).  '.
+                $notes2
+);
 
 sub rebless { shift; }
 
@@ -279,4 +332,6 @@ sub sqlradius_connect {
   #DBI->connect($datasrc, $username, $password) or die $DBI::errstr;
   DBI->connect(@_) or die $DBI::errstr;
 }
+
+1;
 

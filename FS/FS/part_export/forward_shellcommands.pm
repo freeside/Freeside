@@ -1,10 +1,51 @@
 package FS::part_export::forward_shellcommands;
 
 use strict;
-use vars qw(@ISA);
+use vars qw(@ISA %info);
+use Tie::IxHash;
 use FS::part_export;
 
 @ISA = qw(FS::part_export);
+
+tie my %options, 'Tie::IxHash',
+  'user' => { label=>'Remote username', default=>'root' },
+  'useradd' => { label=>'Insert command',
+                 default=>'',
+               },
+  'userdel'  => { label=>'Delete command',
+                  default=>'',
+                },
+  'usermod'  => { label=>'Modify command',
+                  default=>'',
+                },
+;
+
+%info = (
+  'svc'     => 'svc_forward',
+  'desc'    => 'Run remote commands via SSH, for forwards',
+  'options' => \%options,
+  'notes'   => <<'END'
+Run remote commands via SSH, for forwards.  You will need to
+<a href="../docs/ssh.html">setup SSH for unattended operation</a>.
+<BR><BR>Use these buttons for some useful presets:
+<UL>
+  <LI>
+    <INPUT TYPE="button" VALUE="text vpopmail maintenance" onClick='
+      this.form.useradd.value = "[ -d /home/vpopmail/domains/$domain/$username ] && { echo \"$destination\" > /home/vpopmail/domains/$domain/$username/.qmail; chown vpopmail:vchkpw /home/vpopmail/domains/$domain/$username/.qmail; }";
+      this.form.userdel.value = "rm /home/vpopmail/domains/$domain/$username/.qmail";
+      this.form.usermod.value = "mv /home/vpopmail/domains/$old_domain/$old_username/.qmail /home/vpopmail/domains/$new_domain/$new_username; [ \"$old_destination\" != \"$new_destination\" ] && { echo \"$new_destination\" > /home/vpopmail/domains/$new_domain/$new_username/.qmail; chown vpopmail:vchkpw /home/vpopmail/domains/$new_domain/$new_username/.qmail; }";
+    '>
+</UL>
+The following variables are available for interpolation (prefixed with
+<code>new_</code> or <code>old_</code> for replace operations):
+<UL>
+  <LI><code>$username</code>
+  <LI><code>$domain</code>
+  <LI><code>$destination</code> - forward destination
+  <LI>All other fields in <a href="../docs/schema.html#svc_forward">svc_forward</a> are also available.
+</UL>
+END
+);
 
 sub rebless { shift; }
 
@@ -107,4 +148,6 @@ sub ssh_cmd { #subroutine, not method
 #}
 #sub shellcommands_delete { #subroutine, not method
 #}
+
+1;
 

@@ -1,12 +1,48 @@
 package FS::part_export::sqlmail;
 
-use vars qw(@ISA);
+use vars qw(@ISA %info);
+use Tie::IxHash;
 use Digest::MD5 qw(md5_hex);
 use FS::Record qw(qsearchs);
 use FS::part_export;
 use FS::svc_domain;
 
 @ISA = qw(FS::part_export);
+
+tie my %options, 'Tie::IxHash',
+  'datasrc'            => { label => 'DBI data source' },
+  'username'           => { label => 'Database username' },
+  'password'           => { label => 'Database password' },
+  'server_type'        => {
+    label   => 'Server type',
+    type    => 'select',
+    options => [qw(dovecot_plain dovecot_crypt dovecot_digest_md5 courier_plain
+                   courier_crypt)],
+    default => ['dovecot_plain'], },
+  'svc_acct_table'     => { label => 'User Table', default => 'user_acct' },
+  'svc_forward_table'  => { label => 'Forward Table', default => 'forward' },
+  'svc_domain_table'   => { label => 'Domain Table', default => 'domain' },
+  'svc_acct_fields'    => { label => 'svc_acct Export Fields',
+                            default => 'username _password domsvc svcnum' },
+  'svc_forward_fields' => { label => 'svc_forward Export Fields',
+                            default => 'domain svcnum catchall' },
+  'svc_domain_fields'  => { label => 'svc_domain Export Fields',
+                            default => 'srcsvc dstsvc dst' },
+  'resolve_dstsvc'     => { label => q{Resolve svc_forward.dstsvc to an email address and store it in dst. (Doesn't require that you also export dstsvc.)},
+                            type => 'checkbox' },
+;
+
+%info = (
+  'svc'      => [qw( svc_acct svc_domain svc_forward )],
+  'desc'     => 'Real-time export to SQL-backed mail server',
+  'options'  => \%options,
+  'nodomain' => '',
+  'notes'    => <<'END'
+Database schema can be made to work with Courier IMAP, Exim and Dovecot.
+Others could work but are untested.  (more detailed description from
+Kristian / fire2wire? )
+END
+);
 
 sub rebless { shift; }
 
@@ -179,4 +215,6 @@ sub update_values {
   return($svchash);
 
 }
+
+1;
 

@@ -1,10 +1,31 @@
 package FS::part_export::infostreet;
 
-use vars qw(@ISA %infostreet2cust_main $DEBUG);
+use vars qw(@ISA %info %infostreet2cust_main $DEBUG);
+use Tie::IxHash;
 use FS::UID qw(dbh);
 use FS::part_export;
 
 @ISA = qw(FS::part_export);
+
+tie my %options, 'Tie::IxHash',
+  'url'      => { label=>'XML-RPC Access URL', },
+  'login'    => { label=>'InfoStreet login', },
+  'password' => { label=>'InfoStreet password', },
+  'groupID'  => { label=>'InfoStreet groupID', },
+;
+
+%info = (
+  'svc'      => 'svc_acct',
+  'desc'     => 'Real-time export to InfoStreet streetSmartAPI',
+  'options'  => \%options,
+  'nodomain' => 'Y',
+  'notes'    => <<'END'
+Real-time export to
+<a href="http://www.infostreet.com/">InfoStreet</a> streetSmartAPI.
+Requires installation of
+<a href="http://search.cpan.org/dist/Frontier-Client">Frontier::Client</a> from CPAN.
+END
+);
 
 $DEBUG = 0;
 
@@ -252,4 +273,5 @@ sub _infostreet_parse { #subroutine, not method
   } keys %$arg;
 }
 
+1;
 

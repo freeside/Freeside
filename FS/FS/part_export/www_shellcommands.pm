@@ -1,10 +1,44 @@
 package FS::part_export::www_shellcommands;
 
 use strict;
-use vars qw(@ISA);
+use vars qw(@ISA %info);
+use Tie::IxHash;
 use FS::part_export;
 
 @ISA = qw(FS::part_export);
+
+tie my %options, 'Tie::IxHash',
+  'user' => { label=>'Remote username', default=>'root' },
+  'useradd' => { label=>'Insert command',
+                 default=>'mkdir /var/www/$zone; chown $username /var/www/$zone; ln -s /var/www/$zone $homedir/$zone',
+               },
+  'userdel'  => { label=>'Delete command',
+                  default=>'[ -n &quot;$zone&quot; ] && rm -rf /var/www/$zone; rm $homedir/$zone',
+                },
+  'usermod'  => { label=>'Modify command',
+                  default=>'[ -n &quot;$old_zone&quot; ] && rm $old_homedir/$old_zone; [ &quot;$old_zone&quot; != &quot;$new_zone&quot; -a -n &quot;$new_zone&quot; ] && mv /var/www/$old_zone /var/www/$new_zone; [ &quot;$old_username&quot; != &quot;$new_username&quot; ] && chown -R $new_username /var/www/$new_zone; ln -s /var/www/$new_zone $new_homedir/$new_zone',
+                },
+;
+
+%info = (
+  'svc'     => 'svc_www',
+  'desc'    => 'Run remote commands via SSH, for virtual web sites.',
+  'options' => \%options,
+  'notes'   => <<'END'
+Run remote commands via SSH, for virtual web sites.  You will need to
+<a href="../docs/ssh.html">setup SSH for unattended operation</a>.
+<BR><BR>The following variables are available for interpolation (prefixed with
+<code>new_</code> or <code>old_</code> for replace operations):
+<UL>
+  <LI><code>$zone</code>
+  <LI><code>$username</code>
+  <LI><code>$homedir</code>
+  <LI>All other fields in <a href="../docs/schema.html#svc_www">svc_www</a>
+    are also available.
+</UL>
+END
+);
+
 
 sub rebless { shift; }
 

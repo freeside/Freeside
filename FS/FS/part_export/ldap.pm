@@ -1,10 +1,49 @@
 package FS::part_export::ldap;
 
-use vars qw(@ISA @saltset);
+use vars qw(@ISA %info @saltset);
+use Tie::IxHash;
 use FS::Record qw( dbh );
 use FS::part_export;
 
 @ISA = qw(FS::part_export);
+
+tie my %options, 'Tie::IxHash',
+  'dn'         => { label=>'Root DN' },
+  'password'   => { label=>'Root DN password' },
+  'userdn'     => { label=>'User DN' },
+  'attributes' => { label=>'Attributes',
+                    type=>'textarea',
+                    default=>join("\n",
+                      'uid $username',
+                      'mail $username\@$domain',
+                      'uidno $uid',
+                      'gidno $gid',
+                      'cn $first',
+                      'sn $last',
+                      'mailquota $quota',
+                      'vmail',
+                      'location',
+                      'mailtag',
+                      'mailhost',
+                      'mailmessagestore $dir',
+                      'userpassword $crypt_password',
+                      'hint',
+                      'answer $sec_phrase',
+                      'objectclass top,person,inetOrgPerson',
+                    ),
+                  },
+  'radius'     => { label=>'Export RADIUS attributes', type=>'checkbox', },
+;
+
+%info = (
+  'svc'     => 'svc_acct',
+  'desc'    => 'Real-time export to LDAP',
+  'options' => \%options,
+  'notes'   => <<'END'
+Real-time export to arbitrary LDAP attributes.  Requires installation of
+<a href="http://search.cpan.org/dist/Net-LDAP">Net::LDAP</a> from CPAN.
+END
+);
 
 @saltset = ( 'a'..'z' , 'A'..'Z' , '0'..'9' , '.' , '/' );
 
@@ -250,4 +289,6 @@ sub ldap_connect {
 
   $ldap;
 }
+
+1;
 

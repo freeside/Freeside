@@ -1,12 +1,37 @@
 package FS::part_export::vpopmail;
 
-use vars qw(@ISA @saltset $exportdir);
+use vars qw(@ISA %info @saltset $exportdir);
 use Fcntl qw(:flock);
+use Tie::IxHash;
 use File::Path;
 use FS::UID qw( datasrc );
 use FS::part_export;
 
 @ISA = qw(FS::part_export);
+
+tie my %options, 'Tie::IxHash',
+  #'machine' => { label=>'vpopmail machine', },
+  'dir'     => { label=>'directory', }, # ?more info? default?
+  'uid'     => { label=>'vpopmail uid' },
+  'gid'     => { label=>'vpopmail gid' },
+  'restart' => { label=> 'vpopmail restart command',
+                 default=> 'cd /home/vpopmail/domains; for domain in *; do /home/vpopmail/bin/vmkpasswd $domain; done; /var/qmail/bin/qmail-newu; killall -HUP qmail-send',
+               },
+;
+
+%info = (
+  'svc'     => 'svc_acct',
+  'desc'    => 'Real-time export to vpopmail text files',
+  'options' => \%options,
+  'notes'   => <<'END'
+Real time export to <a href="http://inter7.com/vpopmail/">vpopmail</a> text
+files.  <a href="http://search.cpan.org/dist/File-Rsync">File::Rsync</a>
+must be installed, and you will need to
+<a href="../docs/ssh.html">setup SSH for unattended operation</a>
+to <b>vpopmail</b>@<i>export.host</i>.  See shellcommands_withdomain for an
+export that uses vpopmail commands instead.
+END
+);
 
 @saltset = ( 'a'..'z' , 'A'..'Z' , '0'..'9' , '.' , '/' );
 
@@ -223,4 +248,5 @@ sub vpopmail_sync {
   ssh("vpopmail\@$machine", $restart) if $restart;
 }
 
+1;
 

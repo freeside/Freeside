@@ -1,9 +1,31 @@
 package FS::part_export::cp;
 
-use vars qw(@ISA);
+use vars qw(@ISA %info);
+use Tie::IxHash;
 use FS::part_export;
 
 @ISA = qw(FS::part_export);
+
+tie my %options, 'Tie::IxHash',
+  'port'      => { label=>'Port number' },
+  'username'  => { label=>'Username' },
+  'password'  => { label=>'Password' },
+  'domain'    => { label=>'Domain' },
+  'workgroup' => { label=>'Default Workgroup' },
+;
+
+%info = (
+  'svc'    => 'svc_acct',
+  'desc'   => 'Real-time export to Critical Path Account Provisioning Protocol',
+  'options'=> \%options,
+  'notes'  => <<'END'
+Real-time export to
+<a href="http://www.cp.net/">Critial Path Account Provisioning Protocol</a>.
+Requires installation of
+<a href="http://search.cpan.org/dist/Net-APP">Net::APP</a>
+from CPAN.
+END
+);
 
 sub rebless { shift; }
 
@@ -133,4 +155,6 @@ sub cp_command { #subroutine, not method
   die $app->message."\n" unless $app->ok;
 
 }
+
+1;
 

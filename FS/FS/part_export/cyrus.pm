@@ -1,9 +1,30 @@
 package FS::part_export::cyrus;
 
-use vars qw(@ISA);
+use vars qw(@ISA %info);
+use Tie::IxHash;
 use FS::part_export;
 
 @ISA = qw(FS::part_export);
+
+tie my %options, 'Tie::IxHash',
+  'server'   => { label=>'IMAP server' },
+  'username' => { label=>'Admin username' },
+  'password' => { label=>'Admin password' },
+;
+
+%info = ( 
+  'svc'      => 'svc_acct',
+  'desc'     => 'Real-time export to Cyrus IMAP server',
+  'options'  => \%options,
+  'nodomain' => 'Y',
+  'notes'    => <<'END'
+Integration with
+<a href="http://asg.web.cmu.edu/cyrus/imapd/">Cyrus IMAP Server</a>.
+Cyrus::IMAP::Admin should be installed locally and the connection to the
+server secured.  <B>svc_acct.quota</B>, if available, is used to set the
+Cyrus quota.
+END
+);
 
 sub rebless { shift; }
 
@@ -95,4 +116,5 @@ sub cyrus_connect {
 #sub cyrus_replace { #subroutine, not method
 #}
 
+1;
 

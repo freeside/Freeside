@@ -1,10 +1,53 @@
 package FS::part_export::domain_shellcommands;
 
 use strict;
-use vars qw(@ISA);
+use vars qw(@ISA %info);
+use Tie::IxHash;
 use FS::part_export;
 
 @ISA = qw(FS::part_export);
+
+tie my %options, 'Tie::IxHash',
+  'user' => { label=>'Remote username', default=>'root' },
+  'useradd' => { label=>'Insert command',
+                 default=>'',
+               },
+  'userdel'  => { label=>'Delete command',
+                  default=>'',
+                },
+  'usermod'  => { label=>'Modify command',
+                  default=>'',
+                },
+;
+
+%info = (
+  'svc'     => 'svc_domain',
+  'desc'    => 'Run remote commands via SSH, for domains.',
+  'options' => \%options,
+  'notes'   => <<'END'
+Run remote commands via SSH, for domains.  You will need to
+<a href="../docs/ssh.html">setup SSH for unattended operation</a>.
+<BR><BR>Use these buttons for some useful presets:
+<UL>
+  <LI>
+    <INPUT TYPE="button" VALUE="qmail catchall .qmail-domain-default maintenance" onClick='
+      this.form.useradd.value = "[ \"$uid\" -a \"$gid\" -a \"$dir\" -a \"$qdomain\" ] && [ -e $dir/.qmail-$qdomain-default ] || { touch $dir/.qmail-$qdomain-default; chown $uid:$gid $dir/.qmail-$qdomain-default; }";
+      this.form.userdel.value = "";
+      this.form.usermod.value = "";
+    '>
+</UL>
+The following variables are available for interpolation (prefixed with <code>new_</code> or <code>old_</code> for replace operations):
+<UL>
+  <LI><code>$domain</code>
+  <LI><code>$qdomain</code> - domain with periods replaced by colons
+  <LI><code>$uid</code> - of catchall account
+  <LI><code>$gid</code> - of catchall account
+  <LI><code>$dir</code> - home directory of catchall account
+  <LI>All other fields in
+    <a href="../docs/schema.html#svc_domain">svc_domain</a> are also available.
+</UL>
+END
+);
 
 sub rebless { shift; }
 
@@ -107,4 +150,6 @@ sub ssh_cmd { #subroutine, not method
 #}
 #sub shellcommands_delete { #subroutine, not method
 #}
+
+1;
 

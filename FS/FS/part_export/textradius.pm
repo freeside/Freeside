@@ -1,11 +1,34 @@
 package FS::part_export::textradius;
 
-use vars qw(@ISA $prefix);
+use vars qw(@ISA %info $prefix);
 use Fcntl qw(:flock);
+use Tie::IxHash;
 use FS::UID qw(datasrc);
 use FS::part_export;
 
 @ISA = qw(FS::part_export);
+
+tie my %options, 'Tie::IxHash',
+  'user' => { label=>'Remote username', default=>'root' },
+  'users' => { label=>'users file location', default=>'/etc/raddb/users' },
+;
+
+%info = (
+  'svc'     => 'svc_acct',
+  'desc'    =>
+    'Real-time export to a text /etc/raddb/users file (Livingston, Cistron)',
+  'options' => \%options,
+  'notes'   => <<'END'
+This will edit a text RADIUS users file in place on a remote server.
+Requires installation of
+<a href="http://search.cpan.org/dist/RADIUS-UserFile">RADIUS::UserFile</a>
+from CPAN.  If using RADIUS::UserFile 1.01, make sure to apply
+<a href="http://rt.cpan.org/NoAuth/Bug.html?id=1210">this patch</a>.  Also
+make sure <a href="http://rsync.samba.org/">rsync</a> is installed on the
+remote machine, and <a href="../docs/ssh.html">SSH is setup for unattended
+operation</a>.
+END
+);
 
 $prefix = "/usr/local/etc/freeside/export.";
 
@@ -163,4 +186,6 @@ sub textradius_upload {
   close LOCK;
 
 }
+
+1;
 
