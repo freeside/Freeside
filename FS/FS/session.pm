@@ -245,10 +245,6 @@ sub svc_acct {
 
 =back
 
-=head1 VERSION
-
-$Id: session.pm,v 1.8 2003-08-05 00:20:46 khoff Exp $
-
 =head1 BUGS
 
 Maybe you shouldn't be able to insert a session if there's currently an open

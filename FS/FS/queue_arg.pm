@@ -105,10 +105,6 @@ sub check {
 
 =back
 
-=head1 VERSION
-
-$Id: queue_arg.pm,v 1.2 2003-08-05 00:20:46 khoff Exp $
-
 =head1 BUGS
 
 =head1 SEE ALSO

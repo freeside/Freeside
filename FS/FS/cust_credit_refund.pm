@@ -161,10 +161,6 @@ sub cust_credit {
 
 =back
 
-=head1 VERSION
-
-$Id: cust_credit_refund.pm,v 1.11 2004-06-29 04:02:44 ivan Exp $
-
 =head1 BUGS
 
 Delete and replace methods.

@@ -131,13 +131,7 @@ sub session {
 
 =back
 
-=head1 VERSION
-
-$Id: port.pm,v 1.6 2003-08-05 00:20:45 khoff Exp $
-
 =head1 BUGS
-
-The author forgot to customize this manpage.
 
 The session method won't deal well if you have multiple open sessions on a
 port, for example if your RADIUS server drops B<stop> records.  Suggestions for

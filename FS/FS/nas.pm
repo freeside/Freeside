@@ -136,10 +136,6 @@ sub heartbeat {
 
 =back
 
-=head1 VERSION
-
-$Id: nas.pm,v 1.7 2003-08-05 00:20:43 khoff Exp $
-
 =head1 BUGS
 
 heartbeat method uses SQL directly and doesn't update history tables.

@@ -109,10 +109,6 @@ sub part_pkg {
 
 =back
 
-=head1 VERSION
-
-$Id: type_pkgs.pm,v 1.3 2003-08-05 00:20:48 khoff Exp $
-
 =head1 BUGS
 
 =head1 SEE ALSO

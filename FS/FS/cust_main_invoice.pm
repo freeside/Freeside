@@ -161,10 +161,6 @@ sub address {
 
 =back
 
-=head1 VERSION
-
-$Id: cust_main_invoice.pm,v 1.14 2003-08-05 00:20:42 khoff Exp $
-
 =head1 BUGS
 
 =head1 SEE ALSO

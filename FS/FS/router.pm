@@ -127,10 +127,6 @@ sub part_svc {
 
 =back
 
-=head1 VERSION
-
-$Id:
-
 =head1 BUGS
 
 =head1 SEE ALSO

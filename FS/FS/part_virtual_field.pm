@@ -259,10 +259,6 @@ sub widget {
   return $text;
 }
 
-=head1 VERSION
-
-$Id: part_virtual_field.pm,v 1.2 2003-08-05 00:20:45 khoff Exp $
-
 =head1 NOTES
 
 =head2 Semantics of check_block:
