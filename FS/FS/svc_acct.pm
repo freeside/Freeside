@@ -12,6 +12,7 @@ use FS::svc_Common;
 use FS::SSH qw(ssh);
 use FS::part_svc;
 use FS::svc_acct_pop;
+use FS::svc_acct_sm;
 
 @ISA = qw( FS::svc_Common );
 
@@ -222,6 +223,9 @@ $username and $dir.
 sub delete {
   my $self = shift;
   my $error;
+
+  return "Can't delete an account which has mail aliases pointed to it!"
+    if $self->uid && qsearch( 'svc_acct_sm', { 'domuid' => $self->uid } );
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -532,7 +536,7 @@ sub radius_check {
 
 =head1 VERSION
 
-$Id: svc_acct.pm,v 1.11 2000-07-17 10:37:27 ivan Exp $
+$Id: svc_acct.pm,v 1.12 2000-07-17 10:53:42 ivan Exp $
 
 =head1 BUGS
 
