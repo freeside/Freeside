@@ -57,7 +57,7 @@ L<Time::Local> and L<Date::Parse> for conversion functions.
 
 =item payby - `CARD' (credit cards), `BILL' (billing), or `COMP' (free)
 
-=item payinfo - card number, P.O.#, or comp issuer (4-8 lowercase alphanumerics; think username)
+=item payinfo - card number, check #, or comp issuer (4-8 lowercase alphanumerics; think username), respectively
 
 =item paybatch - text field for tracking card processing
 
@@ -304,7 +304,7 @@ sub unapplied {
 
 =head1 VERSION
 
-$Id: cust_pay.pm,v 1.9 2001-12-08 10:07:27 ivan Exp $
+$Id: cust_pay.pm,v 1.10 2001-12-26 07:53:21 ivan Exp $
 
 =head1 BUGS
 
