@@ -19,6 +19,7 @@ function SafeOnsubmit() {
     gSafeOnsubmit[i]();
 }
 </SCRIPT>
+<FORM NAME="OneTrueForm" METHOD="POST" ACTION="meta-import.cgi">
 <%
   #one
   unless ( $cgi->param('magic') ) {
@@ -41,23 +42,19 @@ credcode  dundet    invline  payment  prodclas  repforms  webserv
     );
 
     %>
-    <FORM NAME="OneTrueForm" METHOD="POST" ACTION="meta-import.cgi">
     <INPUT TYPE="hidden" NAME="magic" VALUE="process">
     <%= hashmaker('schema', \@files, [ grep { ! /^h_/ } dbdef->tables ] ) %>
     <br><INPUT TYPE="submit" VALUE="done">
-    </FORM>
-    </BODY>
-    </HTML>
     <%
 
   } elsif ( $cgi->param('magic') eq 'process' ) {
 
     %>
-    <FORM NAME="OneTrueForm" METHOD="POST" ACTION="meta-import.cgi">
     <INPUT TYPE="hidden" NAME="magic" VALUE="process2">
     <%
 
     my $schema_string = $cgi->param('schema');
+    %><INPUT TYPE="hidden" NAME="schema" VALUE="<%=$schema_string%>"><%
     my %schema = map { /^\s*(\w+)\s*=>\s*(\w+)\s*$/
                          or die "guru meditation #420: $_";
                        ( $1 => $2 );
@@ -88,18 +85,47 @@ credcode  dundet    invline  payment  prodclas  repforms  webserv
 
     %>
     <br><INPUT TYPE="submit" VALUE="done">
-    </FORM>
-    </BODY>
-    </HTML>
     <%
 
-  } elsif ( $cgi->param('magic') eq 'process' ) {
+  } elsif ( $cgi->param('magic') eq 'process2' ) {
 
-    %>
-    print results!!
-    <%
+    print "<pre>\n";
+    #false laziness with above
+    my $schema_string = $cgi->param('schema');
+    my %schema = map { /^\s*(\w+)\s*=>\s*(\w+)\s*$/
+                         or die "guru meditation #420: $_";
+                       ( $1 => $2 );
+                     }
+                 split( /\n/, $schema_string );
+    foreach my $table ( keys %schema ) {
+      ( my $spaces = $table ) =~ s/./ /g;
+      print "'$table' => { 'table' => '$schema{$table}',\n".
+            #(length($table) x ' '). "         'map'   => {\n";
+            "$spaces        'map'   => {\n";
+      my %map = map { /^\s*(\w+)\s*=>\s*(\w+)\s*$/
+                         or die "guru meditation #420: $_";
+                       ( $1 => $2 );
+                     }
+                 split( /\n/, $cgi->param($table) );
+      foreach ( keys %map ) {
+        print "$spaces                     '$_' => '$map{$_}',\n";
+      }
+      print "$spaces                   },\n";
+      print "$spaces      },\n";
+
+    }
+    print "\n</pre>";
+
+  } else {
+    warn "unrecognized magic: ". $cgi->param('magic');
   }
 
+  %>
+</FORM>
+</BODY>
+</HTML>
+
+  <%
   #hashmaker widget
   sub hashmaker {
     my($name, $from, $to, $labelfrom, $labelto) = @_;

@@ -1058,26 +1058,25 @@ sub bill {
                  || $self->payby eq 'COMP'
                  || $taxable_charged == 0 ) {
 
-          my $cust_main_county =
-            qsearchs('cust_main_county',{
+          my $cust_main_county = qsearchs('cust_main_county',{
               'state'    => $self->state,
               'county'   => $self->county,
               'country'  => $self->country,
               'taxclass' => $part_pkg->taxclass,
-            } )
-            or qsearchs('cust_main_county',{
+          } );
+          $cust_main_county ||= qsearchs('cust_main_county',{
               'state'    => $self->state,
               'county'   => $self->county,
               'country'  => $self->country,
               'taxclass' => '',
-            } )
-            or do {
-              $dbh->rollback if $oldAutoCommit;
-              return
-                "fatal: can't find tax rate for state/county/country/taxclass ".
-                join('/', ( map $self->$_(), qw(state county country) ),
-                          $part_pkg->taxclass ).  "\n";
-            };
+          } );
+          unless ( $cust_main_county ) {
+            $dbh->rollback if $oldAutoCommit;
+            return
+              "fatal: can't find tax rate for state/county/country/taxclass ".
+              join('/', ( map $self->$_(), qw(state county country) ),
+                        $part_pkg->taxclass ).  "\n";
+          }
 
           if ( $cust_main_county->exempt_amount ) {
             my ($mon,$year) = (localtime($sdate) )[4,5];
