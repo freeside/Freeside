@@ -778,7 +778,7 @@ tie my %sqlmail_options, 'Tie::IxHash',
     'vpopmail' => {
       'desc' => 'Real-time export to vpopmail text files',
       'options' => \%vpopmail_options,
-      'notes' => 'Real time export to <a href="http://inter7.com/vpopmail/">vpopmail</a> text files.  <a href="http://search.cpan.org/search?dist=File-Rsync">File::Rsync</a> must be installed, and you will need to <a href="../docs/ssh.html">setup SSH for unattended operation</a>',
+      'notes' => 'Real time export to <a href="http://inter7.com/vpopmail/">vpopmail</a> text files.  <a href="http://search.cpan.org/search?dist=File-Rsync">File::Rsync</a> must be installed, and you will need to <a href="../docs/ssh.html">setup SSH for unattended operation</a> to <b>vpopmail</b>@<i>export.host</i>.',
     },
 
   },
