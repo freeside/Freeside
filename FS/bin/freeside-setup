@@ -4,6 +4,8 @@
 BEGIN { $FS::Record::setup_hack = 1; }
 
 use strict;
+use vars qw($opt_s);
+use Getopt::Std;
 use DBI;
 use DBIx::DBSchema 0.20;
 use DBIx::DBSchema::Table;
@@ -21,6 +23,7 @@ die "Not running uid freeside!" unless checkeuid();
 my %attrib2db =
   map { lc($FS::raddb::attrib{$_}) => $_ } keys %FS::raddb::attrib;
 
+getopts("s");
 my $user = shift or die &usage;
 getsecrets($user);
 
@@ -33,42 +36,46 @@ my($dbdef_file) = "/usr/local/etc/freeside/dbdef.". datasrc;
 #my($username_len)=&getvalue;
 my $username_len = 32; #usernamemax config file
 
-print "\n\n", <<END, ":";
-Freeside tracks the RADIUS User-Name, check attribute Password and
-reply attribute Framed-IP-Address for each user.  You can specify additional
-check and reply attributes (or you can add them later with the
-fs-radius-add-check and fs-radius-add-reply programs).
+#print "\n\n", <<END, ":";
+#Freeside tracks the RADIUS User-Name, check attribute Password and
+#reply attribute Framed-IP-Address for each user.  You can specify additional
+#check and reply attributes (or you can add them later with the
+#fs-radius-add-check and fs-radius-add-reply programs).
+#
+#First enter any additional RADIUS check attributes you need to track for each 
+#user, separated by whitespace.
+#END
+#my @check_attributes = map { $attrib2db{lc($_)} or die "unknown attribute $_"; }
+#                         split(" ",&getvalue);
+#
+#print "\n\n", <<END, ":";
+#Now enter any additional reply attributes you need to track for each user,
+#separated by whitespace.
+#END
+#my @attributes = map { $attrib2db{lc($_)} or die "unknown attribute $_"; }
+#                   split(" ",&getvalue);
+#
+#print "\n\n", <<END, ":";
+#Do you wish to enable the tracking of a second, separate shipping/service
+#address?
+#END
+#my $ship = &_yesno;
+#
+#sub getvalue {
+#  my($x)=scalar(<STDIN>);
+#  chop $x;
+#  $x;
+#}
+#
+#sub _yesno {
+#  print " [y/N]:";
+#  my $x = scalar(<STDIN>);
+#  $x =~ /^y/i;
+#}
 
-First enter any additional RADIUS check attributes you need to track for each 
-user, separated by whitespace.
-END
-my @check_attributes = map { $attrib2db{lc($_)} or die "unknown attribute $_"; }
-                         split(" ",&getvalue);
-
-print "\n\n", <<END, ":";
-Now enter any additional reply attributes you need to track for each user,
-separated by whitespace.
-END
-my @attributes = map { $attrib2db{lc($_)} or die "unknown attribute $_"; }
-                   split(" ",&getvalue);
-
-print "\n\n", <<END, ":";
-Do you wish to enable the tracking of a second, separate shipping/service
-address?
-END
-my $ship = &_yesno;
-
-sub getvalue {
-  my($x)=scalar(<STDIN>);
-  chop $x;
-  $x;
-}
-
-sub _yesno {
-  print " [y/N]:";
-  my $x = scalar(<STDIN>);
-  $x =~ /^y/i;
-}
+my @check_attributes = (); #add later
+my @attributes = (); #add later
+my $ship = $opt_s;
 
 ###
 
