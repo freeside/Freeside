@@ -64,18 +64,18 @@ foreach my $r (
 
   my @taxparam = my @param = qw( county county state state country );
 
-  my $num_others = 
-    scalar_sql( $r, [qw( country state state county county taxname taxname )], 
-      "SELECT COUNT(*) FROM cust_main_county
-         WHERE country = ?
-         AND ( state = ? OR ( state IS NULL AND ? = '' ) )
-         AND ( county = ? OR ( county IS NULL AND ? = '' ) )
-         AND ( taxname = ? OR ( taxname IS NULL AND ? = '' ) ) "
-    );
+#  my $num_others = 
+#    scalar_sql( $r, [qw( country state state county county taxname taxname )], 
+#      "SELECT COUNT(*) FROM cust_main_county
+#         WHERE country = ?
+#         AND ( state = ? OR ( state IS NULL AND ? = '' ) )
+#         AND ( county = ? OR ( county IS NULL AND ? = '' ) )
+#         AND ( taxname = ? OR ( taxname IS NULL AND ? = '' ) ) "
+#    );
+#
+#  die "didn't even find self?" unless $num_others;
 
-  die "didn't even find self?" unless $num_others;
-
-  if ( $num_others > 1 ) {
+  if ( $r->taxclass ) {
     $fromwhere .= " AND ( taxclass = ?  ) ";
     push @param, 'taxclass';
   }
