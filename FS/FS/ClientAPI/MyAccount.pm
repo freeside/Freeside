@@ -185,7 +185,30 @@ sub make_payment{
 
   my $custnum = $session->{'custnum'};
 
+  my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
+    or return { 'error' => "unknown custnum $custnum" };
 
+  if ( $p->{'save'} ) {
+    my $new = new FS::cust_main { $cust_main->hash };
+    $new->set( $_ => $p->{$_} )
+      foreach qw( payname address1 address2 city state zip payinfo );
+    $new->set( 'paydate' => $p->{'month'}. '-'. $p->{'year'} );
+    $new->set( 'payby' => $p->{'auto'} ? 'CARD' : 'DCRD' );
+    my $error = $new->replace($cust_main);
+    return { 'error' => $error } if $error;
+    $cust_main = $new;
+  }
+
+  my $error = $cust_main->realtime_bop( 'CC', $p->{'amount'}, quiet=>1,
+    'paydate' => $p->{'month'}. '-'. $p->{'year'},
+    map { $_ => $p->{$_} }
+      qw( payname address1 address2 city state zip payinfo )
+  );
+  return { 'error' => $error } if $error;
+
+  $cust_main->apply_payments;
+
+  return { 'error' => '' };
 
 }
 

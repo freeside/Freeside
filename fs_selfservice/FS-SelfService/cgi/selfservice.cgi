@@ -96,6 +96,8 @@ sub make_payment {
 
 sub process_payment {
 
+  use Business::CreditCard;
+
   $cgi->param('amount') =~ /^\s*(\d+(\.\d{2})?)\s*$/
     or die "illegal amount"; #!!!
   my $amount = $1;
@@ -143,7 +145,7 @@ sub process_payment {
   $auto = 1 if $cgi->param('auto');
 
   $cgi->param('paybatch') =~ /^([\w\-\.]+)$/ or die "illegal paybatch";
-  my $patbatch = $1;
+  my $paybatch = $1;
 
   process_payment(
     'session_id' => $session_id,

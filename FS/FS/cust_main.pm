@@ -1411,7 +1411,6 @@ sub collect {
 
 =item realtime_bop METHOD AMOUNT [ OPTION => VALUE ... ]
 
-
 Runs a realtime credit card, ACH (electronic check) or phone bill transaction
 via a Business::OnlinePayment realtime gateway.  See
 L<http://420.am/business-onlinepayment> for supported gateways.
@@ -1419,6 +1418,10 @@ L<http://420.am/business-onlinepayment> for supported gateways.
 Available methods are: I<CC>, I<ECHECK> and I<LEC>
 
 Available options are: I<description>, I<invnum>, I<quiet>
+
+The additional options I<payname>, I<address1>, I<address2>, I<city>, I<state>,
+I<zip>, I<payinfo> and I<paydate> are also available.  Any of these options,
+if set, will override the value from the customer record.
 
 I<description> is a free-text field passed to the gateway.  It defaults to
 "Internet services".
@@ -1442,6 +1445,11 @@ sub realtime_bop {
     unless $conf->exists('business-onlinepayment');
   eval "use Business::OnlinePayment";  
   die $@ if $@;
+
+  #overrides
+  $self->set( $_ => $options{$_} )
+    foreach grep { exists($options{$_}) }
+            qw( payname address1 address2 city state zip payinfo paydate );
 
   #load up config
   my $bop_config = 'business-onlinepayment';
@@ -1571,7 +1579,8 @@ sub realtime_bop {
     );
 
     my $cust_pay = new FS::cust_pay ( {
-       'invnum'   => $self->invnum, #!!!!!!!!
+       'custnum'  => $self->custnum,
+       'invnum'   => $options{'invnum'},
        'paid'     => $amount,
        '_date'     => '',
        'payby'    => $method2payby{$method},

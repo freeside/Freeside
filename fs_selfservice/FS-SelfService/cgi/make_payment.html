@@ -31,7 +31,7 @@
     <SELECT NAME="card_type"><OPTION></OPTION>
       <%= foreach ( keys %card_types ) {
             $selected = $card_type eq $card_types{$_} ? ' SELECTED' : '';
-            $OUT .= qq(<OPTION$selected VALUE="). $card_types->{$_}. qq(">$_\n);
+            $OUT .= qq(<OPTION$selected VALUE="). $card_types{$_}. qq(">$_\n);
       } %>
     </SELECT>
   </TD>
@@ -104,7 +104,7 @@
   </TD>
 </TR><TR>
   <TD COLSPAN=2>
-    <INPUT TYPE="checkbox"<%= $payby eq 'CARD' ? ' CHECKED' : '' %> NAME="auto" VALUE="1">
+    <INPUT TYPE="checkbox"<%= $payby eq 'CARD' ? ' CHECKED' : '' %> NAME="auto" VALUE="1" onClick="if (this.checked) { document.OneTrueForm.save.checked=true; }">
     Charge future payments to this card automatically
   </TD>
 </TR>

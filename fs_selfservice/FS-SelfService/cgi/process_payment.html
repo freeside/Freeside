@@ -1,0 +1,18 @@
+<HTML><HEAD><TITLE>MyAccount</TITLE></HEAD>
+<BODY BGCOLOR="#eeeeee"><FONT SIZE=5>MyAccount</FONT><BR><BR>
+<%= $url = "$selfurl?session=$session_id;action="; ''; %>
+<TABLE BORDER=0 CELLPADDING=4><TR><TD VALIGN="top" HEIGHT=384 BGCOLOR="#dddddd">
+<A HREF="<%= $url %>myaccount">MyAccount</A><BR>
+<!-- <A HREF="<%= $url %>other">SomethingElse</A><BR> -->
+</TD><TD VALIGN="top">
+<FONT SIZE=4>Payment results</FONT><BR><BR>
+<%= if ( $error ) {
+  $OUT .= qq!<FONT SIZE="+1" COLOR="#ff0000">Error processing your payment: $error</FONT!;
+} else {
+  $OUT .= 'Your payment was processed sucessfully.  Thank you.';
+} %>
+</TD></TR></TABLE>
+<HR>
+<FONT SIZE="-2">powered by <a href="http://www.sisd.com/freeside">freeside</a></FONT>
+</BODY></HTML>
+
