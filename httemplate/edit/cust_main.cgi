@@ -1,4 +1,4 @@
-<!-- $Id: cust_main.cgi,v 1.19 2002-01-30 14:18:08 ivan Exp $ -->
+<!-- $Id: cust_main.cgi,v 1.20 2002-02-10 02:28:27 ivan Exp $ -->
 <%
 
   #for misplaced logic below
@@ -153,10 +153,17 @@ END
 print <<END;
 <INPUT TYPE="text" NAME="last" VALUE="$last"> , 
 <INPUT TYPE="text" NAME="first" VALUE="$first">
+</TD>
 END
 
+if ( $conf->exists('show_ss') ) {
+  print qq!<TD ALIGN="right">SS#</TD><TD><INPUT TYPE="text" NAME="ss" VALUE="$ss" SIZE=11></TD>!;
+} else {
+  print qq!<TD><INPUT TYPE="hidden" NAME="ss" VALUE="$ss"></TD>!;
+}
+
 print <<END;
-</TD><TD ALIGN="right">SS#</TD><TD><INPUT TYPE="text" NAME="ss" VALUE="$ss" SIZE=11></TD></TR>
+</TR>
 <TR><TD ALIGN="right">Company</TD><TD COLSPAN=5><INPUT TYPE="text" NAME="company" VALUE="$company" SIZE=70></TD></TR>
 <TR><TH ALIGN="right">${r}Address</TH><TD COLSPAN=5><INPUT TYPE="text" NAME="address1" VALUE="$address1" SIZE=70></TD></TR>
 <TR><TD ALIGN="right">&nbsp;</TD><TD COLSPAN=5><INPUT TYPE="text" NAME="address2" VALUE="$address2" SIZE=70></TD></TR>

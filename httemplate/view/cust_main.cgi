@@ -1,4 +1,4 @@
-<!-- $Id: cust_main.cgi,v 1.20 2002-02-07 22:29:35 ivan Exp $ -->
+<!-- $Id: cust_main.cgi,v 1.21 2002-02-10 02:28:28 ivan Exp $ -->
 <%
 
 my $conf = new FS::Conf;
@@ -49,8 +49,12 @@ print '<TD VALIGN="top">';
     '<TR><TD ALIGN="right">Contact name</TD>',
       '<TD COLSPAN=3 BGCOLOR="#ffffff">',
       $cust_main->last, ', ', $cust_main->first,
-      '</TD><TD ALIGN="right">SS#</TD><TD BGCOLOR="#ffffff">',
-      $cust_main->ss || '&nbsp', '</TD></TR>',
+      '</TD>';
+print '<TD ALIGN="right">SS#</TD><TD BGCOLOR="#ffffff">',
+      $cust_main->ss || '&nbsp', '</TD>'
+  if $conf->exists('show_ss');
+
+print '</TR>',
     '<TR><TD ALIGN="right">Company</TD><TD COLSPAN=5 BGCOLOR="#ffffff">',
       $cust_main->company,
       '</TD></TR>',

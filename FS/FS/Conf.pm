@@ -723,6 +723,13 @@ httemplate/docs/config.html
     'type'        => 'checkbox',
   },
 
+  {
+    'key'         => 'show_ss',
+    'section'     => 'UI',
+    'description' => 'Turns on display/collection of SS# in the web interface.',
+    'type'        => 'checkbox',
+  },
+
 );
 
 1;
