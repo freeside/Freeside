@@ -25,7 +25,7 @@ sub _export_insert {
     }
   }
   $crypt_password = ''; #surpress "used only once" warnings
-  $crypt_password = crypt( $svc_acct->_password,
+  $crypt_password = '{crypt}'. crypt( $svc_acct->_password,
                              $saltset[int(rand(64))].$saltset[int(rand(64))] );
 
   my $username_attrib;
