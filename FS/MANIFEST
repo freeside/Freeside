@@ -131,9 +131,9 @@ t/Conf.t
 t/ConfItem.t
 t/Misc.t
 t/Record.t
-t/Report.pm
-t/Report-Table.pm
-t/Report-Table-Monthly.pm
+t/Report.t
+t/Report-Table.t
+t/Report-Table-Monthly.t
 t/UID.t
 t/Msgcat.t
 t/SearchCache.t
