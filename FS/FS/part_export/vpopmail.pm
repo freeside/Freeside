@@ -1,6 +1,7 @@
 package FS::part_export::vpopmail;
 
 use vars qw(@ISA @saltset $exportdir);
+use Fcntl qw(:flock);
 use File::Path;
 use FS::UID qw( datasrc );
 use FS::part_export;
