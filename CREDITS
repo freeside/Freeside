@@ -51,5 +51,12 @@ features:
 Kristian Hoffmann <khoff@pc-intouch.com> contributed Netscape CCK
 autoconfiguration support for the signup server.
 
+Jeff Finucane <jeff@cmh.net> send in a bunch of bugfixes (for the sendmail
+export, cancel-unaudited.cgi), patches to support billing date modification,
+and probably other things too (sorry if I forgot them).
+
+Kenny Elliott <kenny@neoserve.com> contributed ICRADIUS radreply table support,
+allowing attributes with ICRADIUS.
+
 Everything else is my (Ivan Kohler <ivan@420.am>) fault.
 
