@@ -786,7 +786,7 @@ sub check {
       or return "Illegal finger: ". $self->getfield('finger');
   $self->setfield('finger', $1);
 
-  $recref->{quota} =~ /^(\d*)$/ or return "Illegal quota";
+  $recref->{quota} =~ /^(\w*)$/ or return "Illegal quota";
   $recref->{quota} = $1;
 
   unless ( $part_svc->part_svc_column('slipip')->columnflag eq 'F' ) {
