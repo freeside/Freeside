@@ -10,6 +10,6 @@ freeside-adduser -h /usr/local/etc/freeside/htpasswd \
                  $username $password 2>/dev/null
 
 [ -e /usr/local/etc/freeside/dbdef.DBI:Pg:host=localhost\;dbname=$domain ] \
- || ( freeside-setup $username 2>/dev/null; \
-      /home/ivan/freeside/bin/populate-msgcat $username )
+ || ( freeside-setup -s $username 2>/dev/null; \
+      /home/ivan/freeside/bin/populate-msgcat $username 2>/dev/null )
 
