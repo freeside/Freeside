@@ -1,7 +1,7 @@
 package FS::cust_bill;
 
 use strict;
-use vars qw( @ISA $conf $invoice_template );
+use vars qw( @ISA $conf $invoice_template $money_char );
 use vars qw( $invoice_lines @buf ); #yuck
 use Date::Format;
 use Text::Template;
@@ -16,7 +16,11 @@ use FS::cust_pkg;
 
 #ask FS::UID to run this stuff for us later
 $FS::UID::callback{'FS::cust_bill'} = sub { 
+
   $conf = new FS::Conf;
+
+  $money_char = $conf->config('money_char') || '$';  
+
   my @invoice_template = $conf->config('invoice_template')
     or die "cannot load config file invoice_template";
   $invoice_lines = 0;
@@ -283,12 +287,13 @@ sub print_text {
     push @buf, [
       "Previous Balance, Invoice #". $_->invnum. 
                  " (". time2str("%x",$_->_date). ")",
-      '$'. sprintf("%10.2f",$_->owed)
+      $money_char. sprintf("%10.2f",$_->owed)
     ];
   }
   if (@pr_cust_bill) {
     push @buf,['','-----------'];
-    push @buf,['Total Previous Balance','$' . sprintf("%10.2f",$pr_total ) ];
+    push @buf,[ 'Total Previous Balance',
+                $money_char. sprintf("%10.2f",$pr_total ) ];
     push @buf,['',''];
   }
 
@@ -302,7 +307,7 @@ sub print_text {
       my($pkg)=$part_pkg->pkg;
 
       if ( $_->setup != 0 ) {
-        push @buf, [ "$pkg Setup",'$' . sprintf("%10.2f",$_->setup) ];
+        push @buf, [ "$pkg Setup", $money_char. sprintf("%10.2f",$_->setup) ];
         push @buf,
           map { [ "  ". $_->[0]. ": ". $_->[1], '' ] } $cust_pkg->labels;
       }
@@ -311,33 +316,33 @@ sub print_text {
         push @buf, [
           "$pkg (" . time2str("%x",$_->sdate) . " - " .
                                 time2str("%x",$_->edate) . ")",
-          '$' . sprintf("%10.2f",$_->recur)
+          $money_char. sprintf("%10.2f",$_->recur)
         ];
         push @buf,
           map { [ "  ". $_->[0]. ": ". $_->[1], '' ] } $cust_pkg->labels;
       }
 
     } else { #pkgnum Tax
-      push @buf,["Tax",'$' . sprintf("%10.2f",$_->setup) ] 
+      push @buf,["Tax", $money_char. sprintf("%10.2f",$_->setup) ] 
         if $_->setup != 0;
     }
   }
 
   push @buf,['','-----------'];
   push @buf,['Total New Charges',
-             '$' . sprintf("%10.2f",$self->charged) ];
+             $money_char. sprintf("%10.2f",$self->charged) ];
   push @buf,['',''];
 
   push @buf,['','-----------'];
   push @buf,['Total Charges',
-             '$' . sprintf("%10.2f",$self->charged + $pr_total) ];
+             $money_char. sprintf("%10.2f",$self->charged + $pr_total) ];
   push @buf,['',''];
 
   #credits
   foreach ( @cr_cust_credit ) {
     push @buf,[
       "Credit #". $_->crednum. " (" . time2str("%x",$_->_date) .")",
-      '$' . sprintf("%10.2f",$_->credited)
+      $money_char. sprintf("%10.2f",$_->credited)
     ];
   }
 
@@ -345,13 +350,13 @@ sub print_text {
   foreach ( $self->cust_pay ) {
     push @buf,[
       "Payment received ". time2str("%x",$_->_date ),
-      '$' . sprintf("%10.2f",$_->paid )
+      $money_char. sprintf("%10.2f",$_->paid )
     ];
   }
 
   #balance due
   push @buf,['','-----------'];
-  push @buf,['Balance Due','$' . 
+  push @buf,['Balance Due', $money_char. 
     sprintf("%10.2f",$self->owed + $pr_total - $cr_total ) ];
 
   #setup template variables
@@ -426,7 +431,7 @@ sub print_text {
 
 =head1 VERSION
 
-$Id: cust_bill.pm,v 1.5 2001-02-11 17:17:39 ivan Exp $
+$Id: cust_bill.pm,v 1.6 2001-03-30 17:33:52 ivan Exp $
 
 =head1 BUGS
 
