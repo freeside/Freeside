@@ -170,7 +170,7 @@ sub cgisetotaker {
   } else {
     die "fatal: Can't get REMOTE_USER!";
   }
-  return $user;
+  lc($user);
 }
 
 =item checkeuid
@@ -241,7 +241,7 @@ coderef into the hash %FS::UID::callback :
 
 =head1 VERSION
 
-$Id: UID.pm,v 1.8 1999-02-23 07:23:23 ivan Exp $
+$Id: UID.pm,v 1.9 1999-04-12 21:09:39 ivan Exp $
 
 =head1 BUGS
 
@@ -287,7 +287,10 @@ inlined suidsetup
 ivan@sisd.com 98-sep-12
 
 $Log: UID.pm,v $
-Revision 1.8  1999-02-23 07:23:23  ivan
+Revision 1.9  1999-04-12 21:09:39  ivan
+force username to lowercase
+
+Revision 1.8  1999/02/23 07:23:23  ivan
 oops, don't comment out &swapuid in &adminsuidsetup!
 
 Revision 1.7  1999/01/18 09:22:40  ivan
