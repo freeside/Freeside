@@ -215,6 +215,7 @@ sub popurl {
   my($up)=@_;
   my $cgi = &FS::UID::cgi;
   my $url = new URI::URL ( $cgi->isa('Apache') ? $cgi->uri : $cgi->url );
+  $url->query('');
   my(@path)=$url->path_components;
   splice @path, 0-$up;
   $url->path_components(@path);
