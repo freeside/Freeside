@@ -490,6 +490,13 @@ httemplate/docs/config.html
     'type'        => 'textarea',
   },
 
+  {
+    'key'         => 'invoice_latexsmallfooter',
+    'section'     => 'billing',
+    'description' => 'Optional small footer for multi-page LaTeX typeset PostScript invoices.',
+    'type'        => 'textarea',
+  },
+
   { 
     'key'         => 'invoice_default_terms',
     'section'     => 'billing',

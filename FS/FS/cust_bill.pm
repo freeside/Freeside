@@ -941,6 +941,7 @@ sub print_latex {
     'zip'          => _latex_escape($cust_main->zip),
     'country'      => _latex_escape($cust_main->country),
     'footer'       => join("\n", $conf->config('invoice_latexfooter') ),
+    'smallfooter'  => $conf->config('invoice_latexsmallfooter'),
     'quantity'     => 1,
     'terms'        => $conf->config('invoice_default_terms') || 'Payable upon receipt',
     #'notes'        => join("\n", $conf->config('invoice_latexnotes') ),

@@ -85,12 +85,12 @@ Invoice date & & Invoice number \\
 %%	Header & footer changes for subsequent pages
 %
 \afterpage{ \fancyfoot[RO,RE]{\small{\thepage\ of \pageref{LastPage}}} }
-\afterpage{ \fancyfoot[CO,CE]{\small{$org_company}} }
+\afterpage{ \fancyfoot[CO,CE]{\small{$smallfooter}} }
 \afterpage{ \fancyhead[LO,LE]{\small{}} }
 \afterpage{ \fancyhead[RO,RE]{\small{
 \begin{tabular}{ll}
-Date & Account number\\
-\textbf{ $date_of_bill} & \textbf{ $customer_ref}\\
+Invoice date & Invoice number\\
+\textbf{$date} & \textbf{$invnum}\\
 \end{tabular}}} }
 %
 %
