@@ -37,7 +37,7 @@ supported:
 
 =item invnum - invoice (see L<FS::cust_bill>)
 
-=item pkgnum - package (see L<FS::cust_pkg>)
+=item pkgnum - package (see L<FS::cust_pkg>) or 0 for the special virtual sales tax package
 
 =item setup - setup fee
 
@@ -129,7 +129,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: cust_bill_pkg.pm,v 1.1 1999-08-04 09:03:53 ivan Exp $
+$Id: cust_bill_pkg.pm,v 1.2 2001-02-11 17:34:44 ivan Exp $
 
 =head1 BUGS
 
