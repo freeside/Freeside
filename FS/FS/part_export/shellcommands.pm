@@ -24,8 +24,8 @@ sub _export_command {
   no strict 'refs';
   ${$_} = $svc_acct->getfield($_) foreach $svc_acct->fields;
   $self->shellcommands_queue( $svc_acct->svcnum,
-    user         => $self->options('user')||'root',
-    host         => $self->options('machine'),
+    user         => $self->option('user')||'root',
+    host         => $self->machine,
     command      => eval(qq("$command")),
     stdin_string => eval(qq("$stdin")),
   );
@@ -39,8 +39,8 @@ sub _export_replace {
   ${"old_$_"} = $old->getfield($_) foreach $old->fields;
   ${"new_$_"} = $new->getfield($_) foreach $new->fields;
   $self->shellcommands_queue( $new->svcnum,
-    user         => $self->options('user')||'root',
-    host         => $self->options('machine'),
+    user         => $self->option('user')||'root',
+    host         => $self->machine,
     command      => eval(qq("$command")),
     stdin_string => eval(qq("$stdin")),
   );
