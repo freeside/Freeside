@@ -231,7 +231,7 @@ END
 
   print '<BR>Service address ',
         '(<INPUT TYPE="checkbox" NAME="same" VALUE="Y" onClick="samechanged(this)"';
-  unless ( $cust_main->ship_last ) {
+  unless ( $cust_main->ship_last && $cgi->param('same') ne 'Y' ) {
     print ' CHECKED';
     foreach (
       qw( last first company address1 address2 city county state zip country
