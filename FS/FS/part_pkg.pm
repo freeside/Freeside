@@ -2,7 +2,7 @@ package FS::part_pkg;
 
 use strict;
 use vars qw( @ISA %freq %plans $DEBUG );
-use Carp qw(cluck);
+use Carp qw(carp cluck);
 use Tie::IxHash;
 use FS::Conf;
 use FS::Record qw( qsearch qsearchs dbh dbdef );
@@ -462,7 +462,7 @@ sub option {
   } );
   return $part_pkg_option->optionvalue if $part_pkg_option;
   my %plandata = map { /^(\w+)=(.*)$/; ( $1 => $2 ); }
-                     split("\n", $self->plandata );
+                     split("\n", $self->get('plandata') );
   return $plandata{$opt} if exists $plandata{$opt};
   cluck "Package definition option $opt not found in options or plandata!\n";
   '';
