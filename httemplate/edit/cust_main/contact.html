@@ -1,0 +1,113 @@
+<%
+
+my( $cust_main, $pre, $onchange, $disabled ) = @_;
+my $conf = new FS::Conf;
+
+#false laziness with ship state
+my $countrydefault = $conf->config('countrydefault') || 'US';
+$cust_main->set($pre.'country', $countrydefault )
+  unless $cust_main->get($pre.'country');
+
+my $statedefault = $conf->config('statedefault')
+                   || ($countrydefault eq 'US' ? 'CA' : '');
+$cust_main->set($pre.'state', $statedefault )
+  unless $cust_main->get($pre.'state')
+         || $cust_main->get($pre.'country') ne $countrydefault;
+
+my($county_html, $state_html, $country_html) =
+  FS::cust_main_county::regionselector( $cust_main->get($pre.'county'),
+                                        $cust_main->get($pre.'state'),
+                                        $cust_main->get($pre.'country'),
+                                        $pre,
+                                        $onchange,
+                                        $disabled,
+                                      );
+
+my $daytime_label = FS::Msgcat::_gettext('daytime') || 'Day Phone';
+my $night_label = FS::Msgcat::_gettext('night') || 'Night Phone';
+
+my $r = qq!<font color="#ff0000">*</font>&nbsp;!;
+
+%>
+
+<%= &itable("#cccccc") %>
+
+<TR>
+  <TH ALIGN="right"><%=$r%>Contact&nbsp;name<BR>(last,&nbsp;first)</TH>
+  <TD COLSPAN=3>
+    <INPUT TYPE="text" NAME="<%=$pre%>last" VALUE="<%= $cust_main->get($pre.'last') %>" onChange="<%= $onchange %>" <%=$disabled%>> , 
+    <INPUT TYPE="text" NAME="<%=$pre%>first" VALUE="<%= $cust_main->get($pre.'first') %>" onChange="<%= $onchange %>" <%=$disabled%>>
+  </TD>
+
+<% if ( $conf->exists('show_ss') && !$pre ) { %>
+  <TD ALIGN="right">SS#</TD>
+  <TD><INPUT TYPE="text" NAME="ss" VALUE="<%= $cust_main->ss %>" SIZE=11></TD>
+<% } else { %>
+  <TD><INPUT TYPE="hidden" NAME="ss" VALUE="<%= $cust_main->ss %>"></TD>
+<% } %>
+
+</TR>
+
+<TR>
+  <TD ALIGN="right">Company</TD>
+  <TD COLSPAN=5>
+    <INPUT TYPE="text" NAME="<%=$pre%>company" VALUE="<%= $cust_main->get($pre.'company') %>" SIZE=70 onChange="<%= $onchange %>" <%=$disabled%>>
+  </TD>
+</TR>
+
+<TR>
+  <TH ALIGN="right"><%=$r%>Address</TH>
+  <TD COLSPAN=5>
+    <INPUT TYPE="text" NAME="<%=$pre%>address1" VALUE="<%= $cust_main->get($pre.'address1') %>" SIZE=70 onChange="<%= $onchange %>" <%=$disabled%>>
+  </TD>
+</TR>
+
+<TR>
+  <TD ALIGN="right">&nbsp;</TD>
+  <TD COLSPAN=5>
+    <INPUT TYPE="text" NAME="<%=$pre%>address2" VALUE="<%= $cust_main->get($pre.'address2') %>" SIZE=70 onChange="<%= $onchange %>" <%=$disabled%>>
+  </TD>
+</TR>
+
+<TR>
+  <TH ALIGN="right"><%=$r%>City</TH>
+  <TD>
+    <INPUT TYPE="text" NAME="<%=$pre%>city" VALUE="<%= $cust_main->get($pre.'city') %>" onChange="<%= $onchange %>" <%=$disabled%>>
+  </TD>
+  <TH ALIGN="right"><%=$r%>State</TH>
+  <TD><%= $county_html. $state_html %></TD>
+  <TH><%=$r%>Zip</TH>
+  <TD>
+    <INPUT TYPE="text" NAME="<%=$pre%>zip" VALUE="<%= $cust_main->get($pre.'zip') %>" SIZE=10 onChange="<%= $onchange %>" <%=$disabled%>>
+  </TD>
+</TR>
+
+<TR>
+  <TH ALIGN="right"><%=$r%>Country</TH>
+  <TD><%= $country_html %></TD>
+</TR>
+
+<TR>
+  <TD ALIGN="right"><%= $daytime_label %></TD>
+  <TD COLSPAN=5>
+    <INPUT TYPE="text" NAME="<%=$pre%>daytime" VALUE="<%= $cust_main->get($pre.'daytime') %>" SIZE=18 onChange="<%= $onchange %>" <%=$disabled%>>
+  </TD>
+</TR>
+
+<TR>
+  <TD ALIGN="right"><%= $night_label %></TD>
+  <TD COLSPAN=5>
+    <INPUT TYPE="text" NAME="<%=$pre%>night" VALUE="<%= $cust_main->get($pre.'night') %>" SIZE=18 onChange="<%= $onchange %>" <%=$disabled%>>
+  </TD>
+</TR>
+
+<TR>
+  <TD ALIGN="right">Fax</TD>
+  <TD COLSPAN=5>
+    <INPUT TYPE="text" NAME="<%=$pre%>fax" VALUE="<%= $cust_main->get($pre.'fax') %>" SIZE=12 onChange="<%= $onchange %>" <%=$disabled%>>
+  </TD>
+</TR>
+
+</TABLE>
+<%=$r%>required fields<BR>
+

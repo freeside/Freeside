@@ -64,20 +64,23 @@ if ( $cgi->param('error') ) {
 $cgi->delete_all();
 my $action = $custnum ? 'Edit' : 'Add';
 
-# top
+%>
 
-my $p1 = popurl(1);
-print header("Customer $action", '', ' onUnload="myclose()"');
-print qq!<FONT SIZE="+1" COLOR="#ff0000">Error: !, $error, "</FONT>"
-  if $error;
+<!-- top -->
 
-print qq!<FORM ACTION="${p1}process/cust_main.cgi" METHOD=POST NAME="form1" onSubmit="document.form1.submit.disabled=true">!,
-      qq!<INPUT TYPE="hidden" NAME="custnum" VALUE="$custnum">!,
-      qq!Customer # !, ( $custnum ? "<B>$custnum</B>" : " (NEW)" ),
-      
-;
+<%= header("Customer $action", '', ' onUnload="myclose()"') %>
 
-# agent
+<% if ( $error ) { %>
+<FONT SIZE="+1" COLOR="#ff0000">Error: <%= $error %></FONT>
+<% } %>
+
+<FORM ACTION="<%= popurl(1) %>process/cust_main.cgi" METHOD=POST NAME="form1" onSubmit="document.form1.submit.disabled=true">
+<INPUT TYPE="hidden" NAME="custnum" VALUE="<%= $custnum %>">
+ustomer # <%= $custnum ? "<B>$custnum</B>" : " (NEW)" %>
+
+<!-- agent -->
+
+<%
 
 my $r = qq!<font color="#ff0000">*</font>&nbsp;!;
 
@@ -87,21 +90,22 @@ my @agents = qsearch( 'agent', \%agent_search );
 #die "No agents created!" unless @agents;
 eidiot "You have not created any agents (or all agents are disabled).  You must create at least one agent before adding a customer.  Go to ". popurl(2). "browse/agent.cgi and create one or more agents." unless @agents;
 my $agentnum = $cust_main->agentnum || $agents[0]->agentnum; #default to first
-if ( scalar(@agents) == 1 ) {
-  print qq!<INPUT TYPE="hidden" NAME="agentnum" VALUE="$agentnum">!;
-} else {
-  print qq!<BR><BR>${r}Agent <SELECT NAME="agentnum" SIZE="1">!;
-  my $agent;
-  foreach $agent (sort {
-    $a->agent cmp $b->agent;
-  } @agents) {
-      print '<OPTION VALUE="', $agent->agentnum, '"',
-      " SELECTED"x($agent->agentnum==$agentnum),
-      ">". $agent->agent;
-      #">", $agent->agentnum,": ", $agent->agent;
-  }
-  print "</SELECT>";
-}
+
+%>
+
+<% if ( scalar(@agents) == 1 ) { %>
+  <INPUT TYPE="hidden" NAME="agentnum" VALUE="<%= $agentnum %>">
+<% } else { %>
+  <BR><BR><%=$r%>Agent <SELECT NAME="agentnum" SIZE="1">
+  <% foreach my $agent (sort { $a->agent cmp $b->agent; } @agents) { %>
+    <OPTION VALUE="<%= $agent->agentnum %>"<%= " SELECTED"x($agent->agentnum==$agentnum) %>><%= $agent->agent %>
+  <% } %>
+  </SELECT>
+<% } %>
+
+<%
+
+# (referral and referring customer still need to be "template"ized)
 
 #referral
 
@@ -150,110 +154,54 @@ if ( $cust_main->referral_custnum
   print '<INPUT TYPE="hidden" NAME="referral_custnum" VALUE="">';
 }
 
-# contact info
+%>
 
-my($last,$first,$ss,$company,$address1,$address2,$city,$zip)=(
-  $cust_main->last,
-  $cust_main->first,
-  $cust_main->ss,
-  $cust_main->company,
-  $cust_main->address1,
-  $cust_main->address2,
-  $cust_main->city,
-  $cust_main->zip,
-);
+<!-- contact info -->
 
-print "<BR><BR>Billing address", &itable("#cccccc"), <<END;
-<TR><TH ALIGN="right">${r}Contact&nbsp;name<BR>(last,&nbsp;first)</TH><TD COLSPAN=3>
-END
+<BR><BR>
+Billing address
+<%= include('cust_main/contact.html', $cust_main, '', 'bill_changed(this)', '' ) %>
 
-print <<END;
-<INPUT TYPE="text" NAME="last" VALUE="$last" onChange="changed(this)"> , 
-<INPUT TYPE="text" NAME="first" VALUE="$first" onChange="changed(this)">
-</TD>
-END
+<!-- service address -->
 
-if ( $conf->exists('show_ss') ) {
-  print qq!<TD ALIGN="right">SS#</TD><TD><INPUT TYPE="text" NAME="ss" VALUE="$ss" SIZE=11></TD>!;
-} else {
-  print qq!<TD><INPUT TYPE="hidden" NAME="ss" VALUE="$ss"></TD>!;
+<% if ( defined $cust_main->dbdef_table->column('ship_last') ) { %>
+
+<SCRIPT>
+function bill_changed(what) {
+  if ( what.form.same.checked ) {
+<% for (qw( last first company address1 address2 city zip daytime night fax )) { %>
+    what.form.ship_<%=$_%>.value = what.form.<%=$_%>.value;
+<% } %>
+    what.form.ship_country.selectedIndex = what.form.country.selectedIndex;
+    ship_country_changed(what.form.ship_country);
+    what.form.ship_state.selectedIndex = what.form.state.selectedIndex;
+    ship_state_changed(what.form.ship_state);
+    what.form.ship_county.selectedIndex = what.form.county.selectedIndex;
+  }
 }
-
-print <<END;
-</TR>
-<TR><TD ALIGN="right">Company</TD><TD COLSPAN=5><INPUT TYPE="text" NAME="company" VALUE="$company" SIZE=70 onChange="changed(this)"></TD></TR>
-<TR><TH ALIGN="right">${r}Address</TH><TD COLSPAN=5><INPUT TYPE="text" NAME="address1" VALUE="$address1" SIZE=70 onChange="changed(this)"></TD></TR>
-<TR><TD ALIGN="right">&nbsp;</TD><TD COLSPAN=5><INPUT TYPE="text" NAME="address2" VALUE="$address2" SIZE=70 onChange="changed(this)"></TD></TR>
-<TR><TH ALIGN="right">${r}City</TH><TD><INPUT TYPE="text" NAME="city" VALUE="$city" onChange="changed(this)"></TD><TH ALIGN="right">${r}State</TH><TD>
-END
-
-#false laziness with ship state
-my $countrydefault = $conf->config('countrydefault') || 'US';
-$cust_main->country( $countrydefault ) unless $cust_main->country;
-
-my $statedefault = $conf->config('statedefault')
-                   || ($countrydefault eq 'US' ? 'CA' : '');
-$cust_main->state( $statedefault )
-  unless $cust_main->state || $cust_main->country ne $countrydefault;
-
-my($county_html, $state_html, $country_html) =
-  FS::cust_main_county::regionselector( $cust_main->county,
-                                        $cust_main->state,
-                                        $cust_main->country );
-
-print "$county_html $state_html";
-
-print qq!</TD><TH>${r}Zip</TH><TD><INPUT TYPE="text" NAME="zip" VALUE="$zip" SIZE=10 onChange="changed(this)"></TD></TR>!;
-
-my($daytime,$night,$fax)=(
-  $cust_main->daytime,
-  $cust_main->night,
-  $cust_main->fax,
-  '',
-  'changed(this)',
-);
-
-my $daytime_label = FS::Msgcat::_gettext('daytime') || 'Day Phone';
-my $night_label = FS::Msgcat::_gettext('night') || 'Night Phone';
-
-print <<END;
-<TR><TH ALIGN="right">${r}Country</TH><TD>$country_html</TD></TR>
-<TR><TD ALIGN="right">$daytime_label</TD><TD COLSPAN=5><INPUT TYPE="text" NAME="daytime" VALUE="$daytime" SIZE=18 onChange="changed(this)"></TD></TR>
-<TR><TD ALIGN="right">$night_label</TD><TD COLSPAN=5><INPUT TYPE="text" NAME="night" VALUE="$night" SIZE=18 onChange="changed(this)"></TD></TR>
-<TR><TD ALIGN="right">Fax</TD><TD COLSPAN=5><INPUT TYPE="text" NAME="fax" VALUE="$fax" SIZE=12 onChange="changed(this)"></TD></TR>
-END
-
-print "</TABLE>${r}required fields<BR>";
-
-# service address
-
-if ( defined $cust_main->dbdef_table->column('ship_last') ) {
-
-  print "\n", <<END;
-  <SCRIPT>
-  function changed(what) {
-    what.form.same.checked = false;
+function samechanged(what) {
+  if ( what.checked ) {
+    bill_changed(what);
+<% for (qw( last first company address1 address2 city county state zip country daytime night fax )) { %>
+    what.form.ship_<%=$_%>.disabled = true;
+    what.form.ship_<%=$_%>.style.backgroundColor = '#dddddd';
+<% } %>
+  } else {
+<% for (qw( last first company address1 address2 city county state zip country daytime night fax )) { %>
+    what.form.ship_<%=$_%>.disabled = false;
+    what.form.ship_<%=$_%>.style.backgroundColor = '#ffffff';
+<% } %>
   }
-  function samechanged(what) {
-    if ( what.checked ) {
-END
-print "      what.form.ship_$_.value = what.form.$_.value;\n"
-  for (qw( last first company address1 address2 city zip daytime night fax ));
-print <<END;
-      what.form.ship_country.selectedIndex = what.form.country.selectedIndex;
-      ship_country_changed(what.form.ship_country);
-      what.form.ship_state.selectedIndex = what.form.state.selectedIndex;
-      ship_state_changed(what.form.ship_state);
-      what.form.ship_county.selectedIndex = what.form.county.selectedIndex;
-    }
-  }
-  </SCRIPT>
-END
+}
+</SCRIPT>
 
-  print '<BR>Service address ',
-        '(<INPUT TYPE="checkbox" NAME="same" VALUE="Y" onClick="samechanged(this)"';
+<%
+  my $checked = '';
+  my $disabled = '';
+  my $disabledselect = '';
   unless ( $cust_main->ship_last && $cgi->param('same') ne 'Y' ) {
-    print ' CHECKED';
+    $checked = 'CHECKED';
+    $disabled = 'DISABLED style="background-color: #dddddd"';
     foreach (
       qw( last first company address1 address2 city county state zip country
           daytime night fax )
@@ -261,70 +209,16 @@ END
       $cust_main->set("ship_$_", $cust_main->get($_) );
     }
   }
-  print '>same as billing address)<BR>';
+%>
 
-  my($ship_last,$ship_first,$ship_company,$ship_address1,$ship_address2,$ship_city,$ship_zip)=(
-    $cust_main->ship_last,
-    $cust_main->ship_first,
-    $cust_main->ship_company,
-    $cust_main->ship_address1,
-    $cust_main->ship_address2,
-    $cust_main->ship_city,
-    $cust_main->ship_zip,
-  );
+<BR>
+Service address 
+(<INPUT TYPE="checkbox" NAME="same" VALUE="Y" onClick="samechanged(this)" <%=$checked%>>same as billing address)
+<%= include('cust_main/contact.html', $cust_main, 'ship_', '', $disabled ) %>
 
-  print &itable("#cccccc"), <<END;
-  <TR><TH ALIGN="right">${r}Contact&nbsp;name<BR>(last,&nbsp;first)</TH><TD COLSPAN=5>
-END
+<% } %>
 
-  print <<END;
-  <INPUT TYPE="text" NAME="ship_last" VALUE="$ship_last" onChange="changed(this)"> , 
-  <INPUT TYPE="text" NAME="ship_first" VALUE="$ship_first" onChange="changed(this)">
-END
-
-  print <<END;
-  </TD></TR>
-  <TR><TD ALIGN="right">Company</TD><TD COLSPAN=5><INPUT TYPE="text" NAME="ship_company" VALUE="$ship_company" SIZE=70 onChange="changed(this)"></TD></TR>
-  <TR><TH ALIGN="right">${r}Address</TH><TD COLSPAN=5><INPUT TYPE="text" NAME="ship_address1" VALUE="$ship_address1" SIZE=70 onChange="changed(this)"></TD></TR>
-  <TR><TD ALIGN="right">&nbsp;</TD><TD COLSPAN=5><INPUT TYPE="text" NAME="ship_address2" VALUE="$ship_address2" SIZE=70 onChange="changed(this)"></TD></TR>
-  <TR><TH ALIGN="right">${r}City</TH><TD><INPUT TYPE="text" NAME="ship_city" VALUE="$ship_city" onChange="changed(this)"></TD><TH ALIGN="right">${r}State</TH><TD>
-END
-
-  #false laziness with regular state
-  $cust_main->ship_country( $countrydefault ) unless $cust_main->ship_country;
-
-  $cust_main->ship_state( $statedefault )
-    unless $cust_main->ship_state
-           || $cust_main->ship_country ne $countrydefault;
-
-  my($ship_county_html, $ship_state_html, $ship_country_html) =
-    FS::cust_main_county::regionselector( $cust_main->ship_county,
-                                          $cust_main->ship_state,
-                                          $cust_main->ship_country,
-                                          'ship_',
-                                          'changed(this)', );
-
-  print "$ship_county_html $ship_state_html";
-
-  print qq!</TD><TH>${r}Zip</TH><TD><INPUT TYPE="text" NAME="ship_zip" VALUE="$ship_zip" SIZE=10 onChange="changed(this)"></TD></TR>!;
-
-  my($ship_daytime,$ship_night,$ship_fax)=(
-    $cust_main->ship_daytime,
-    $cust_main->ship_night,
-    $cust_main->ship_fax,
-  );
-
-  print <<END;
-  <TR><TH ALIGN="right">${r}Country</TH><TD>$ship_country_html</TD></TR>
-  <TR><TD ALIGN="right">$daytime_label</TD><TD COLSPAN=5><INPUT TYPE="text" NAME="ship_daytime" VALUE="$ship_daytime" SIZE=18 onChange="changed(this)"></TD></TR>
-  <TR><TD ALIGN="right">$night_label</TD><TD COLSPAN=5><INPUT TYPE="text" NAME="ship_night" VALUE="$ship_night" SIZE=18 onChange="changed(this)"></TD></TR>
-  <TR><TD ALIGN="right">Fax</TD><TD COLSPAN=5><INPUT TYPE="text" NAME="ship_fax" VALUE="$ship_fax" SIZE=12 onChange="changed(this)"></TD></TR>
-END
-
-  print "</TABLE>${r}required fields<BR>";
-
-}
-
+<%
 # billing info
 
 sub expselect {

@@ -157,13 +157,13 @@ sub recurtax {
 
 =over 4
 
-=item regionselector [ COUNTY STATE COUNTRY [ PREFIX [ ONCHANGE ] ] ]
+=item regionselector [ COUNTY STATE COUNTRY [ PREFIX [ ONCHANGE [ DISABLED ] ] ] ]
 
 =cut
 
 sub regionselector {
   my ( $selected_county, $selected_state, $selected_country,
-       $prefix, $onchange ) = @_;
+       $prefix, $onchange, $disabled ) = @_;
 
   $prefix = '' unless defined $prefix;
 
@@ -238,7 +238,7 @@ END
 
   my $county_html = $script_html;
   if ( $countyflag ) {
-    $county_html .= qq!<SELECT NAME="${prefix}county" onChange="$onchange">!;
+    $county_html .= qq!<SELECT NAME="${prefix}county" onChange="$onchange" $disabled>!;
     $county_html .= '</SELECT>';
   } else {
     $county_html .=
@@ -246,7 +246,7 @@ END
   }
 
   my $state_html = qq!<SELECT NAME="${prefix}state" !.
-                   qq!onChange="${prefix}state_changed(this); $onchange">!;
+                   qq!onChange="${prefix}state_changed(this); $onchange" $disabled>!;
   foreach my $state ( sort keys %{ $cust_main_county{$selected_country} } ) {
     my $text = $state || '(n/a)';
     my $selected = $state eq $selected_state ? 'SELECTED' : '';
@@ -257,7 +257,7 @@ END
   $state_html .= '</SELECT>';
 
   my $country_html = qq!<SELECT NAME="${prefix}country" !.
-                     qq!onChange="${prefix}country_changed(this); $onchange">!;
+                     qq!onChange="${prefix}country_changed(this); $onchange" $disabled>!;
   my $countrydefault = $conf->config('countrydefault') || 'US';
   foreach my $country (
     sort { ($b eq $countrydefault) <=> ($a eq $countrydefault) or $a cmp $b }
