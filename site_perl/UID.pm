@@ -95,6 +95,16 @@ sub cgisuidsetup {
   adminsuidsetup;
 }
 
+=item cgi
+
+Returns the CGI (see L<CGI>) object.
+
+=cut
+
+sub cgi {
+  $cgi;
+}
+
 =item dbh
 
 Returns the DBI database handle.
@@ -212,7 +222,10 @@ inlined suidsetup
 ivan@sisd.com 98-sep-12
 
 $Log: UID.pm,v $
-Revision 1.2  1998-11-08 09:38:43  ivan
+Revision 1.3  1998-11-08 10:45:42  ivan
+got sub cgi for FS::CGI
+
+Revision 1.2  1998/11/08 09:38:43  ivan
 cgisuidsetup complains if you pass it a isa CGI::Base instead of an isa CGI
 (first step in migrating from CGI-modules to CGI.pm)
 
