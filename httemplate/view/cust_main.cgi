@@ -300,13 +300,25 @@ if ( defined $cust_main->dbdef_table->column('comments')
         '</PRE></TD></TR></TABLE></TABLE>';
 }
 
-print '</TD></TR></TABLE>';
+%>
 
-print '<BR>'.
-  '<FORM ACTION="'.popurl(2).'edit/process/quick-cust_pkg.cgi" METHOD="POST">'.
-  qq!<INPUT TYPE="hidden" NAME="custnum" VALUE="$custnum">!.
-  '<SELECT NAME="pkgpart"><OPTION> ';
+</TD></TR></TABLE>
 
+<BR>
+<SCRIPT TYPE="text/javascript">
+function enable_order_pkg () {
+  if ( document.OrderPkgForm.pkgpart.selectedIndex > 0 ) {
+    document.OrderPkgForm.submit.disabled = false;
+  } else {
+    document.OrderPkgForm.submit.disabled = true;
+  }
+}
+</SCRIPT>
+<FORM NAME="OrderPkgForm" ACTION="<%= $p %>edit/process/quick-cust_pkg.cgi" METHOD="POST">
+<INPUT TYPE="hidden" NAME="custnum" VALUE="<%= $custnum %>">
+<SELECT NAME="pkgpart" onChange="enable_order_pkg()"><OPTION>Order additional package
+
+<%
 foreach my $part_pkg (
   qsearch( 'part_pkg', { 'disabled' => '' }, '',
            ' AND 0 < ( SELECT COUNT(*) FROM type_pkgs '.
@@ -314,11 +326,13 @@ foreach my $part_pkg (
            '             AND type_pkgs.pkgpart = part_pkg.pkgpart )'
          )
 ) {
-  print '<OPTION VALUE="'. $part_pkg->pkgpart. '">'. $part_pkg->pkg. ' - '.
-        $part_pkg->comment;
-}
+%>
+<OPTION VALUE="<%= $part_pkg->pkgpart %>"><%= $part_pkg->pkg %> - <%= $part_pkg->comment %>
+<% } %>
 
-print '</SELECT><INPUT TYPE="submit" VALUE="Order Package"></FORM><BR>';
+</SELECT><INPUT NAME="submit" TYPE="submit" VALUE="Order Package" disabled></FORM><BR>
+
+<%
 
 if ( $conf->config('payby-default') ne 'HIDE' ) {
 
