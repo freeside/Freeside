@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# process/part_svc.cgi: Edit service definitions (process form)
+# $Id: part_svc.cgi,v 1.2 1998-11-21 06:43:08 ivan Exp $
 #
 # ivan@sisd.com 97-nov-14
 #
@@ -8,26 +8,31 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
+#
+# $Log: part_svc.cgi,v $
+# Revision 1.2  1998-11-21 06:43:08  ivan
+# s/CGI::Request/CGI.pm/
+#
 
 use strict;
-use CGI::Request;
+use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use FS::UID qw(cgisuidsetup);
 use FS::Record qw(qsearchs);
 use FS::part_svc qw(fields);
-use FS::CGI qw(eidiot);
+use FS::CGI qw(eidiot popurl);
 
-my($req)=new CGI::Request; # create form object
+my($cgi)=new CGI; # create form object
 
-&cgisuidsetup($req->cgi);
+&cgisuidsetup($cgi);
 
-my($svcpart)=$req->param('svcpart');
+my($svcpart)=$cgi->param('svcpart');
 
 my($old)=qsearchs('part_svc',{'svcpart'=>$svcpart}) if $svcpart;
 
 my($new)=create FS::part_svc ( {
   map {
-    $_, $req->param($_);
+    $_, scalar($cgi->param($_));
 #  } qw(svcpart svc svcdb)
   } fields('part_svc')
 } );
@@ -43,5 +48,5 @@ if ( $svcpart ) {
 
 #$req->cgi->redirect("../../view/part_svc.cgi?$svcpart");
 #$req->cgi->redirect("../../edit/part_svc.cgi?$svcpart");
-$req->cgi->redirect("../../browse/part_svc.cgi");
+print $cgi->redirect(popurl(3)."/browse/part_svc.cgi");
 
