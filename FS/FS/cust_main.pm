@@ -1000,7 +1000,8 @@ sub bill {
         'state'   => $self->state,
         'county'  => $self->county,
         'country' => $self->country,
-    } );
+    } ) or die "fatal: can't find tax rate for state/county/country ".
+               $self->state. "/". $self->county. "/". $self->country. "\n";
     my $tax = sprintf( "%.2f",
       $taxable_charged * ( $cust_main_county->getfield('tax') / 100 )
     );
