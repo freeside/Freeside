@@ -1,0 +1,6 @@
+the following is necessary to upgrade from 1.4.0pre3 to pre4 or later.
+
+install the perl modules and httemplate as per install.html or upgrade8.html
+
+Run bin/dbdef-create
+

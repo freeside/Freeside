@@ -43,6 +43,13 @@ All further configuration files and directories are located in
   <li>cybercash3.2 - <a href="http://www.cybercash.com/cybercash/services/technology.html">CyberCash v3.2</a> support.  Two lines: the full path and name of your merchant_conf file, and the transaction type (`mauthonly' or `mauthcapture').  CCMckLib3_2.pm, CCMckDirectLib3_2.pm and CCMckErrno3_2 are required.
   <li>cyrus</li> - Integration with <a href="http://asg.web.cmu.edu/cyrus/imapd/">Cyrus IMAP Server</a>, three lines: IMAP server, admin username, and admin password.  Cyrus::IMAP::Admin should be installed locally and the connection to the server secured.
   <li><a name="deletecustomers">deletecustomers</a> - The existance of this file will enable customer deletions.  Be very careful!  Deleting a customer will remove all traces that this customer ever existed!  It should probably only be used when auditing a legacy database.  Normally, you cancel all of a customers' packages if they cancel service.
+  <li><a name="dirhash">dirhash</a> - Optional numeric value to control director hashing.  If positive, hashes directories for the specified number of levels from the front of the username.  If negative, hashes directories for the specified number of levels from the end of the username.  Some examples:
+    <ul>
+      <li>1: user -> <a href="#home">/home</a>/u/user
+      <li>2: user -> <a href="#home">/home</a>/u/s/user
+      <li>-1: user -> <a href="#home">/home</a>/r/user
+      <li>-2: user -> <a href="#home">home</a>/r/e/user
+    </ul>
   <li><a name="disable_customer_referrals">disable_customer_referrals</a> - The existance of this file will disable new customer-to-customer referrals in the web interface.
   <li><a name="domain"><font color="#ff0000">domain</font></a> - Your domain name.
   <li><a name="editreferrals">editreferrals</a> - The existance of this file will allow you to change the referral of existing customers.

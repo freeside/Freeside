@@ -1,7 +1,6 @@
 #!/usr/bin/perl -Tw
 
 use strict;
-use lib "/usr/lib/perl5/site_perl/5.005/FSTest2";
 use vars qw( $user $cust_main @customers );
 use FS::UID qw(adminsuidsetup);
 use FS::Record qw(qsearch);

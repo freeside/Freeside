@@ -6,6 +6,7 @@ use vars qw( @ISA $nossh_hack $conf $dir_prefix @shells $usernamemin
              $username_noperiod
              $shellmachine $useradd $usermod $userdel $mydomain
              $cyrus_server $cyrus_admin_user $cyrus_admin_pass
+             $dirhash
              $icradius_dbh
              @saltset @pw_set);
 use Carp;
@@ -72,6 +73,7 @@ $FS::UID::callback{'FS::svc_acct'} = sub {
   } else {
     $icradius_dbh = '';
   }
+  $dirhash = $conf->config('dirhash') || 0;
 };
 
 @saltset = ( 'a'..'z' , 'A'..'Z' , '0'..'9' , '.' , '/' );
@@ -708,10 +710,21 @@ sub check {
 
     $recref->{dir} =~ /^([\/\w\-]*)$/
       or return "Illegal directory";
-    $recref->{dir} = $1 || 
-      $dir_prefix . '/' . $recref->{username}
-      #$dir_prefix . '/' . substr($recref->{username},0,1). '/' . $recref->{username}
+    $recref->{dir} = $1;
+    unless ( $recref->{dir} ) {
+      $recref->{dir} = $dir_prefix . '/';
+      if ( $dirhash > 0 ) {
+        for my $h ( 1 .. $dirhash ) {
+          $recref->{dir} .= substr($recref->{username}, $h-1, 1). '/';
+        }
+      } elsif ( $dirhash < 0 ) {
+        for my $h ( reverse $dirhash .. -1 ) {
+          $recref->{dir} .= substr($recref->{username}, $h, 1). '/';
+        }
+      }
+      $recref->{dir} .= $recref->{username};
     ;
+    }
 
     unless ( $recref->{username} eq 'sync' ) {
       if ( grep $_ eq $recref->{shell}, @shells ) {
@@ -881,7 +894,8 @@ sub ssh {
   my $output_stream = <$writer>;
   my $error_stream = <$error>;
   if ( length $error_stream ) {
-    warn "[FS::svc_acct::ssh] STDERR $error_stream";
+    #warn "[FS::svc_acct::ssh] STDERR $error_stream";
+    die "[FS::svc_acct::ssh] STDERR $error_stream";
   }
   if ( length $output_stream ) {
     warn "[FS::svc_acct::ssh] STDOUT $output_stream";
@@ -894,7 +908,7 @@ sub ssh {
 
 =head1 VERSION
 
-$Id: svc_acct.pm,v 1.45 2001-09-19 19:41:28 ivan Exp $
+$Id: svc_acct.pm,v 1.46 2001-09-19 21:06:17 ivan Exp $
 
 =head1 BUGS
 
