@@ -584,6 +584,7 @@ print '</TABLE>';
 
     my $target = "$payby$payinfo";
     $payby =~ s/^BILL$/Check #/ if $payinfo;
+    $payby =~ s/^CHEK$/Electronic check /;
     $payby =~ s/^BILL$//;
     $payby =~ s/^(CARD|COMP)$/$1 /;
     my $info = $payby ? " ($payby$payinfo)" : '';
@@ -693,6 +694,7 @@ print '</TABLE>';
                     : $cust_pay_void->payinfo;
 
     $payby =~ s/^BILL$/Check #/ if $payinfo;
+    $payby =~ s/^CHEK$/Electronic check /;
     $payby =~ s/^BILL$//;
     $payby =~ s/^(CARD|COMP)$/$1 /;
     my $info = $payby ? " ($payby$payinfo)" : '';
@@ -797,6 +799,7 @@ print '</TABLE>';
                     : $cust_refund->payinfo;
 
     $payby =~ s/^BILL$/Check #/ if $payinfo;
+    $payby =~ s/^CHEK$/Electronic check/;
     $payby =~ s/^(CARD|COMP)$/$1 /;
 
     push @history, {
