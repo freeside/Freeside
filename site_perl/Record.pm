@@ -151,9 +151,9 @@ sub new {
 =item qsearch TABLE, HASHREF
 
 Searches the database for all records matching (at least) the key/value pairs
-in HASHREF.  Returns all the records found as objects blessed into 
-`FS::TABLE' if that module is loaded (i.e. via `use FS::cust_main;'), otherwise
-returns an FS::Record object;
+in HASHREF.  Returns all the records found as `FS::TABLE' objects if that
+module is loaded (i.e. via `use FS::cust_main;'), otherwise returns FS::Record
+objects.
 
 =cut
 
@@ -870,9 +870,8 @@ added pod documentation ivan@sisd.com 98-sep-6
 ut_phonen got ''; at the end ivan@sisd.com 98-sep-27
 
 $Log: Record.pm,v $
-Revision 1.3  1998-11-10 07:44:08  ivan
-qsearch returns `FS::TABLE' objects if that module is loaded (i.e. via
-`use FS::cust_main;') instead of always an FS::Record object
+Revision 1.4  1998-11-10 07:45:25  ivan
+doc clarification
 
 Revision 1.2  1998/11/07 05:17:18  ivan
 In sub new, Pg wrapper for money fields from dbdef (FS::Record::fields $table),
