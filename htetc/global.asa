@@ -1,0 +1,20 @@
+use strict;
+use vars qw( $cgi $p );
+use CGI;
+use CGI::Carp qw(fatalsToBrowser);
+use FS::UID qw(cgisuidsetup);
+use FS::Record qw(qsearch qsearchs fields);
+use FS::part_svc;
+use FS::CGI qw(header menubar popurl table);
+
+sub Script_OnStart {
+  $cgi = new CGI;
+  &cgisuidsetup($cgi);
+  $p = popurl(2);
+  #print $cgi->header( '-expires' => 'now' );
+}
+
+sub Script_OnFlush {
+  my $ref = $Response->{BinaryRef};
+  $$ref = $cgi->header( '-expires' => 'now' ) .$$ref;
+}
