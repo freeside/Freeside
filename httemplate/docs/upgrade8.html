@@ -177,5 +177,19 @@ ALTER TABLE cust_main ADD COLUMN comments varchar NULL;
   <li>create a service based on svc_forward
   <li>Run bin/fs-migrate-svc_acct_sm
   <li>Run bin/fs-migrate-payref
+  <li><b>After running bin/fs-migrate-payref</b>, apply the following changes to your database:
+  <table border><tr><th>PostgreSQL</th><th>MySQL, others</th></tr>
+<tr><td>
+<font size=-1><pre>
+ALTER TABLE cust_pay RENAME COLUMN invnum TO depreciated;
+ALTER TABLE cust_refund RENAME COLUMN crednum TO depreciated;
+</pre></font>
+</td><td>
+<font size=-1><pre>
+ALTER TABLE cust_pay DROP COLUMN invnum;
+ALTER TABLE cust_refund DROP COLUMN crednum;
+</pre></font>
+</td></tr></table>
+  <li><b>IMPORTANT: After applying the second set of database changes</b>, run bin/dbdef-create again.
   <li>create the conf.dbsrc/user_policy as appropriate for your site
 </body>
