@@ -1,0 +1,49 @@
+#!/bin/sh
+
+up2date cvs perl-DBD-MySQL perl-DBI perl-DateManip perl-HTML-Parser \
+        perl-HTML-Tagset perl-URI perl-libwww-perl perl-CPAN \
+        rsync screen zsh lftp cvs autoconf \
+        gcc gd rh-postgresql rh-postgresql-docs rh-postgresql-libs \
+        rh-postgresql-server rh-postgresql-devel
+
+perl -MCPAN -e"install Net::Whois::Raw, Business::CreditCard, \
+                       File::CounterFile, String::Approx, Text::Template, \
+                       DBIx::DataSource, FreezeThaw, DBIx::DBSchema, \
+                       Net::SSH, String::ShellQuote, Net::SCP, Apache::ASP, \
+                       HTML::Mason, Tie::IxHash, Time::Duration, \
+                       HTML::Widgets::SelectLayers, Apache::DBI, \
+                       Cache::Cache, IPC::ShareLite, Locale::SubCountry, \
+                       Crypt::PasswdMD5, \
+                       Locale::SubCountry, DBI, DBD::Pg, \
+                       File::Temp"
+
+lftpget http://dag.wieers.com/packages/apt/apt-0.5.15cnc6-3.1.el3.dag.i386.rpm
+rpm -i apt-0.5.15cnc6-3.1.el3.dag.i386.rpm 
+apt-get update
+apt-get install perl-GD perl-MailTools perl-TimeDate perl-NetAddr-IP
+
+perl -MCPAN -e"install Chart::Base"
+
+#apachetoolbox
+#lftpget http://umn.dl.sourceforge.net/sourceforge/apachetoolbox/Apachetoolbox-install-1.5.70.tar.gz
+cp httpd-init /etc/init.d/httpd-freeside
+/sbin/chkconfig httpd-freeside on
+
+/usr/sbin/useradd freeside
+
+/sbin/chkconfig rhdb on
+/etc/init.d/rhdb start
+
+su postgres -c "createuser -P freeside"
+
+su freeside -c "createdb freeside"
+
+#?
+cd ../../..
+make install-perl-modules
+make create-config
+freeside-adduser -c -h /usr/local/etc/freeside/htpasswd ivan
+su freeside -c 'freeside-setup ivan'
+su freeside -c '/home/ivan/freeside/bin/populate-msgcat ivan'
+make deploy
+
