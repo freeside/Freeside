@@ -34,6 +34,13 @@ INIT_FILE = /etc/init.d/freeside
 #freebsd
 #INIT_FILE = /usr/local/etc/rc.d/011.freeside.sh
 
+#deb
+INIT_INSTALL = "/usr/sbin/update-rc.d freeside defaults 21 20"
+#redhat, fedora
+#INIT_INSTALL = "/sbin/chkconfig freeside"
+#not necessary (freebsd)
+#INIT_INSTALL = "/bin/true"
+
 #deb, suse
 HTTPD_RESTART = /etc/init.d/apache restart
 #redhat, fedora, mandrake
@@ -175,6 +182,7 @@ install-init:
 	  s/%%%SELFSERVICE_USER%%%/${SELFSERVICE_USER}/g;\
 	  s/%%%SELFSERVICE_MACHINES%%%/${SELFSERVICE_MACHINES}/g;\
 	" ${INIT_FILE}
+	${INIT_INSTALL}
 
 install-selfservice:
 	[ -e ~freeside/.ssh/id_dsa.pub ] || su -c 'ssh-keygen -t dsa' - freeside
