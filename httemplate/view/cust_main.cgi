@@ -76,7 +76,7 @@ print '<TD VALIGN="top">';
 
   print "Billing address", &ntable("#cccccc"), "<TR><TD>",
         &ntable("#cccccc",2),
-    '<TR><TD ALIGN="right">Contact name</TD>',
+    '<TR><TD ALIGN="right">Contact&nbsp;name</TD>',
       '<TD COLSPAN=3 BGCOLOR="#ffffff">',
       $cust_main->last, ', ', $cust_main->first,
       '</TD>';
@@ -105,8 +105,8 @@ print '</TR>',
           $cust_main->country,
           '</TD></TR>',
   ;
-  my $daytime_label = FS::Msgcat::_gettext('daytime') || 'Day Phone';
-  my $night_label = FS::Msgcat::_gettext('night') || 'Night Phone';
+  my $daytime_label = FS::Msgcat::_gettext('daytime') || 'Day&nbsp;Phone';
+  my $night_label = FS::Msgcat::_gettext('night') || 'Night&nbsp;Phone';
   print '<TR><TD ALIGN="right">'. $daytime_label.
           '</TD><TD COLSPAN=5 BGCOLOR="#ffffff">',
           $cust_main->daytime || '&nbsp', '</TD></TR>',
@@ -166,7 +166,7 @@ print '</TD>';
 print '<TD VALIGN="top">';
 
   print &ntable("#cccccc"), "<TR><TD>", &ntable("#cccccc",2),
-        '<TR><TD ALIGN="right">Customer number</TD><TD BGCOLOR="#ffffff">',
+        '<TR><TD ALIGN="right">Customer&nbsp;number</TD><TD BGCOLOR="#ffffff">',
         $custnum, '</TD></TR>',
   ;
 
@@ -184,13 +184,13 @@ print '<TD VALIGN="top">';
     my $referral = qsearchs('part_referral', {
       'refnum' => $cust_main->refnum
     } );
-    print '<TR><TD ALIGN="right">Advertising source</TD><TD BGCOLOR="#ffffff">',
+    print '<TR><TD ALIGN="right">Advertising&nbsp;source</TD><TD BGCOLOR="#ffffff">',
           $referral->refnum, ": ", $referral->referral, '</TD></TR>';
   }
   print '<TR><TD ALIGN="right">Order taker</TD><TD BGCOLOR="#ffffff">',
     $cust_main->otaker, '</TD></TR>';
 
-  print '<TR><TD ALIGN="right">Referring Customer</TD><TD BGCOLOR="#ffffff">';
+  print '<TR><TD ALIGN="right">Referring&nbsp;Customer</TD><TD BGCOLOR="#ffffff">';
   my $referring_cust_main = '';
   if ( $cust_main->referral_custnum
        && ( $referring_cust_main =
@@ -220,22 +220,22 @@ if ( $conf->config('payby-default') ne 'HIDE' ) {
   print "Billing information (",
        qq!<A HREF="!, popurl(2), qq!misc/bill.cgi?$custnum">!, "Bill now</A>)",
         &ntable("#cccccc"), "<TR><TD>", &ntable("#cccccc",2),
-        '<TR><TD ALIGN="right">Tax exempt</TD><TD BGCOLOR="#ffffff">',
+        '<TR><TD ALIGN="right">Tax&nbsp;exempt</TD><TD BGCOLOR="#ffffff">',
         $cust_main->tax ? 'yes' : 'no',
         '</TD></TR>',
-        '<TR><TD ALIGN="right">Postal invoices</TD><TD BGCOLOR="#ffffff">',
+        '<TR><TD ALIGN="right">Postal&nbsp;invoices</TD><TD BGCOLOR="#ffffff">',
         ( grep { $_ eq 'POST' } @invoicing_list ) ? 'yes' : 'no',
         '</TD></TR>',
-        '<TR><TD ALIGN="right">Email invoices</TD><TD BGCOLOR="#ffffff">',
+        '<TR><TD ALIGN="right">Email&nbsp;invoices</TD><TD BGCOLOR="#ffffff">',
         join(', ', grep { $_ ne 'POST' } @invoicing_list ) || 'no',
         '</TD></TR>',
-        '<TR><TD ALIGN="right">Billing type</TD><TD BGCOLOR="#ffffff">',
+        '<TR><TD ALIGN="right">Billing&nbsp;type</TD><TD BGCOLOR="#ffffff">',
   ;
 
   if ( $cust_main->payby eq 'CARD' || $cust_main->payby eq 'DCRD' ) {
     my $payinfo = $cust_main->payinfo;
     $payinfo = 'x'x(length($payinfo)-4). substr($payinfo,(length($payinfo)-4));
-    print 'Credit card ',
+    print 'Credit&nbsp;card&nbsp;',
           ( $cust_main->payby eq 'CARD' ? '(automatic)' : '(on-demand)' ),
           '</TD></TR>',
           '<TR><TD ALIGN="right">Card number</TD><TD BGCOLOR="#ffffff">',
@@ -247,7 +247,7 @@ if ( $conf->config('payby-default') ne 'HIDE' ) {
     ;
   } elsif ( $cust_main->payby eq 'CHEK' || $cust_main->payby eq 'DCHK') {
     my( $account, $aba ) = split('@', $cust_main->payinfo );
-    print 'Electronic check',
+    print 'Electronic&nbsp;check&nbsp;',
           ( $cust_main->payby eq 'CHEK' ? '(automatic)' : '(on-demand)' ),
           '</TD></TR>',
           '<TR><TD ALIGN="right">Account number</TD><TD BGCOLOR="#ffffff">',
@@ -260,7 +260,7 @@ if ( $conf->config('payby-default') ne 'HIDE' ) {
   } elsif ( $cust_main->payby eq 'LECB' ) {
     $cust_main->payinfo =~ /^(\d{3})(\d{3})(\d{4})$/;
     my $payinfo = "$1-$2-$3";
-    print 'Phone bill billing</TD></TR>',
+    print 'Phone&nbsp;bill&nbsp;billing</TD></TR>',
           '<TR><TD ALIGN="right">Phone number</TD><TD BGCOLOR="#ffffff">',
           $payinfo, '</TD></TR>',
     ;
@@ -276,7 +276,7 @@ if ( $conf->config('payby-default') ne 'HIDE' ) {
     ;
   } elsif ( $cust_main->payby eq 'COMP' ) {
     print 'Complimentary</TD></TR>',
-          '<TR><TD ALIGN="right">Authorized by</TD><TD BGCOLOR="#ffffff">',
+          '<TR><TD ALIGN="right">Authorized&nbsp;by</TD><TD BGCOLOR="#ffffff">',
           $cust_main->payinfo, '</TD></TR>',
           '<TR><TD ALIGN="right">Expiration</TD><TD BGCOLOR="#ffffff">',
           $cust_main->paydate, '</TD></TR>',
