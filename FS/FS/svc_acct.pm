@@ -11,7 +11,7 @@ use vars qw( @ISA $nossh_hack $conf $dir_prefix @shells $usernamemin
              $dirhash
              $icradius_dbh
              @saltset @pw_set
-             $rsync $ssh);
+             $rsync $ssh $exportdir $vpopdir);
 use Carp;
 use File::Path;
 use Fcntl qw(:flock);
@@ -495,7 +495,7 @@ sub vpopmail_insert {
   my( $username, $password, $domain, $vpopdir ) = @_;
   
   (open(VPASSWD, ">>$exportdir/domains/$domain/vpasswd")
-    and flock(VPASSWD,LOCK_EX|LOCK_NB)
+    and flock(VPASSWD,LOCK_EX)
   ) or die "can't open vpasswd file for $username\@$domain: $exportdir/domains/$domain/vpasswd";
   print VPASSWD join(":",
     $username,
@@ -517,7 +517,8 @@ sub vpopmail_insert {
   mkdir "$exportdir/domains/$domain/$username/Maildir/tmp", 0700 or die "can't create Maildir";
  
   my $queue = new FS::queue { 'job' => 'FS::svc_acct::vpopmail_sync' };
-  $error = $queue->insert;
+  my $error = $queue->insert;
+  die $error if $error;
 
   1;
 }
@@ -528,7 +529,7 @@ sub vpopmail_sync {
   my ($machine, $dir, $uid, $gid) = split (/\s+/, $vpopmailmachines[0]);
   
   chdir $exportdir;
-  my @args = ("$rsync", "-rlpt", "-e", "$ssh", "domains/", "vpopmail\@$machine:$pdir/domains/")
+  my @args = ("$rsync", "-rlpt", "-e", "$ssh", "domains/", "vpopmail\@$machine:$vpoppdir/domains/");
   system {$args[0]} @args;
 
 }
@@ -759,7 +760,7 @@ sub vpopmail_delete {
   my( $username, $domain ) = @_;
   
   (open(VPASSWD, "$exportdir/domains/$domain/vpasswd")
-    and flock(VPASSWD,LOCK_EX|LOCK_NB)
+    and flock(VPASSWD,LOCK_EX)
   ) or die "can't open $exportdir/domains/$domain/vpasswd: $!";
 
   open(VPASSWDTMP, ">$exportdir/domains/$domain/vpasswd.tmp")
@@ -1007,7 +1008,7 @@ sub vpopmail_replace_password {
   my( $username, $password, $domain ) = @_;
   
   (open(VPASSWD, "$exportdir/domains/$domain/vpasswd")
-    and flock(VPASSWD,LOCK_EX|LOCK_NB)
+    and flock(VPASSWD,LOCK_EX)
   ) or die "can't open $exportdir/domains/$domain/vpasswd: $!";
 
   open(VPASSWDTMP, ">$exportdir/domains/$domain/vpasswd.tmp")
