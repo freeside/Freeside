@@ -53,7 +53,7 @@ if ( $cgi->param('error') ) {
 }
 my $action = $svc_www->svcnum ? 'Edit' : 'Add';
 
-my( %username, %arec );
+my( %svc_acct, %arec );
 if ($pkgnum) {
 
   my($u_part_svc,@u_acct_svcparts);
@@ -73,7 +73,8 @@ if ($pkgnum) {
       my($i_cust_svc);
       foreach $i_cust_svc ( qsearch('cust_svc',{'pkgnum'=>$cust_pkgnum,'svcpart'=>$acct_svcpart}) ) {
         my($svc_acct)=qsearchs('svc_acct',{'svcnum'=>$i_cust_svc->getfield('svcnum')});
-        $username{$svc_acct->getfield('svcnum')}=$svc_acct->getfield('username');
+        $svc_acct{$svc_acct->getfield('svcnum')}=
+          $svc_acct->part-svc->svc. ': '. $svc_acct->email;
       }  
     }
   }
@@ -161,9 +162,9 @@ foreach $_ (keys %arec) {
 print "</SELECT></TD></TR>";
 
 print '<TR><TD ALIGN="right">Username</TD><TD><SELECT NAME="usersvc" SIZE=1>';
-foreach $_ (keys %username) {
+foreach $_ (keys %svc_acct) {
   print "<OPTION", ($_ eq $usersvc) ? " SELECTED" : "",
-        qq! VALUE="$_">$username{$_}!;
+        qq! VALUE="$_">$svc_acct{$_}!;
 }
 print "</SELECT></TD></TR>";
 
