@@ -6,7 +6,7 @@ my $smonth = 8;
 
 #find last month
 my $eyear = 2002;
-my $emonth = 11;
+my $emonth = 12;
 
 my @labels;
 my %data;
