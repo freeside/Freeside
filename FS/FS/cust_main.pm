@@ -450,15 +450,16 @@ Returns all non-cancelled packages (see L<FS::cust_pkg>) for this customer.
 
 sub ncancelled_pkgs {
   my $self = shift;
-  qsearch( 'cust_pkg', {
-    'custnum' => $self->custnum,
-    'cancel'  => '',
-  }),
-  qsearch( 'cust_pkg', {
-    'custnum' => $self->custnum,
-    'cancel'  => 0,
-  }),
-  ;
+  @{ [ # force list context
+    qsearch( 'cust_pkg', {
+      'custnum' => $self->custnum,
+      'cancel'  => '',
+    }),
+    qsearch( 'cust_pkg', {
+      'custnum' => $self->custnum,
+      'cancel'  => 0,
+    }),
+  ] };
 }
 
 =item bill OPTIONS
@@ -993,7 +994,7 @@ sub check_invoicing_list {
 
 =head1 VERSION
 
-$Id: cust_main.pm,v 1.4 2000-02-02 20:22:18 ivan Exp $
+$Id: cust_main.pm,v 1.5 2000-06-15 12:38:09 ivan Exp $
 
 =head1 BUGS
 
