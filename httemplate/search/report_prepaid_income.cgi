@@ -30,6 +30,7 @@
     foreach my $which_month ( 2 .. $freq ) {
       until ( $mon < 13 ) { $mon -= 12; $year++; }
       $prepaid{"$year-$mon"} += $per_month;
+      $mon++;
     }
 
   }
