@@ -47,7 +47,7 @@ Field #<B><%=$vfieldpart or "(NEW)"%></B><BR><BR>
     <TD><% if ($action eq 'Add') { %>
       <SELECT SIZE=1 NAME="dbtable"><%
         my $dbdef = dbdef;  # ick
-        foreach my $dbtable ($dbdef->tables) {
+        foreach my $dbtable (sort { $a cmp $b } $dbdef->tables) {
           if ($dbtable !~ /^h_/
           and $dbdef->table($dbtable)->primary_key) { %>
             <OPTION VALUE="<%=$dbtable%>"><%=$dbtable%></OPTION><%
