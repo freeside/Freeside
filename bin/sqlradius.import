@@ -117,7 +117,7 @@ while ( defined ( $row = $sth->fetchrow_arrayref ) ) {
 
   foreach my $rc_row ( @{$rc_sth->fetchall_arrayref} ) {
     my($attribute, $value, $name, $groupname) = @$row;
-    if ( $attribute =~ /^(Crypt-)?Password$/ ) {
+    if ( $attribute =~ /^((User|Crypt)-)?Password$/ ) {
       $password = $value;
       $finger = $name;
       $group = $groupname;
