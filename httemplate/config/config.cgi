@@ -2,7 +2,7 @@
 
 <% my $conf = new FS::Conf; my @config_items = $conf->config_items; %>
 
-<form action="config-process.cgi">
+<form action="config-process.cgi" METHOD="POST">
 
 <% foreach my $section ( qw(required billing username password UI session
                             shell mail radius apache BIND
