@@ -25,10 +25,12 @@ All further configuration files and directories are located in
   <li>bsdshellmachines - Your BSD flavored shell (and mail) machines, one per line.  This enables export of `/etc/passwd' and `/etc/master.passwd'.
   <li>cybercash2 - <a href="http://www.cybercash.com/cybercash/services/cashreg214.html">CyberCash v2</a> support, four lines: paymentserverhost, paymentserverport, paymentserversecret, and transaction type (`mauthonly' or `mauthcapture').  CCLib.pm is required.
   <li>cybercash3.2 - <a href="http://www.cybercash.com/cybercash/services/technology.html">CyberCash v3.2</a> support.  Two lines: the full path and name of your merchant_conf file, and the transaction type (`mauthonly' or `mauthcapture').  CCMckLib3_2.pm, CCMckDirectLib3_2.pm and CCMckErrno3_2 are required.
-  <li>deletecustomers - The existance of this file will enable customer deletions.
+  <li>deletecustomers - The existance of this file will enable customer deletions.  Be very careful!  Deleting a customer will remove all traces that this customer ever existed!  It should probably only be used when auditing a legacy database.  Normally, you cancel all of a customers' packages if they cancel service.
   <li>domain - Your domain name.
   <li>editreferrals - The existance of this file will allow you to change the referral of existing customers.
   <li>erpcdmachines - Your ERPCD authenticaion machines, one per line.  This enables export of `/usr/annex/acp_passwd' and `/usr/annex/acp_dialup'.
+  <li>hidecancelledpackages - The existance of this file will prevent cancelled packages from showing up in listings (though they will still be in the database)
+  <li>hidecancelledcustomers - The existance of this file will prevent customers with only cancelled packages from showing up in listings (though they will still be in the database)
   <li>home - For new users, prefixed to usrename to create a directory name.  Should have a leading but not a trailing slash.
   <li>invoice_from - Return address on email invoices.
   <li>lpr - Print command for paper invoices, for example `lpr -h'.

@@ -6,7 +6,7 @@ package FS::cust_main;
 
 use strict;
 use vars qw( @ISA $conf $lpr $processor $xaction $E_NoErr $invoice_from
-             $smtpmachine );
+             $smtpmachine $Debug );
 use Safe;
 use Carp;
 use Time::Local;
@@ -29,6 +29,9 @@ use FS::agent;
 use FS::cust_main_invoice;
 
 @ISA = qw( FS::Record );
+
+$Debug = 0;
+#$Debug = 1;
 
 #ask FS::UID to run this stuff for us later
 $FS::UID::callback{'FS::cust_main'} = sub { 
@@ -392,7 +395,12 @@ sub ncancelled_pkgs {
   qsearch( 'cust_pkg', {
     'custnum' => $self->custnum,
     'cancel'  => '',
-  });
+  }),
+  qsearch( 'cust_pkg', {
+    'custnum' => $self->custnum,
+    'cancel'  => 0,
+  }),
+  ;
 }
 
 =item bill OPTIONS
@@ -602,6 +610,7 @@ sub collect {
   my $invoice_time = $options{'invoice_time'} || time;
 
   my $total_owed = $self->balance;
+  warn "collect: total owed $total_owed " if $Debug;
   return '' unless $total_owed > 0; #redundant?????
 
   #put below somehow?
@@ -627,7 +636,7 @@ sub collect {
 
     next if qsearchs( 'cust_pay_batch', { 'invnum' => $cust_bill->invnum } );
 
-    #warn "invnum ". $cust_bill->invnum. " (owed ". $cust_bill->owed. ", amount $amount, total_owed $total_owed)";
+    warn "invnum ". $cust_bill->invnum. " (owed ". $cust_bill->owed. ", amount $amount, total_owed $total_owed)" if $Debug;
 
     next unless $amount > 0;
 
@@ -930,7 +939,7 @@ sub check_invoicing_list {
 
 =head1 VERSION
 
-$Id: cust_main.pm,v 1.1 1999-08-04 09:03:53 ivan Exp $
+$Id: cust_main.pm,v 1.2 1999-08-12 04:16:01 ivan Exp $
 
 =head1 BUGS
 

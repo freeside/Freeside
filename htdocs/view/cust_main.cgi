@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main.cgi,v 1.17 1999-04-15 16:44:36 ivan Exp $
+# $Id: cust_main.cgi,v 1.18 1999-08-12 04:16:01 ivan Exp $
 #
 # Usage: cust_main.cgi custnum
 #        http://server.name/path/cust_main.cgi?custnum
@@ -31,7 +31,10 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: cust_main.cgi,v $
-# Revision 1.17  1999-04-15 16:44:36  ivan
+# Revision 1.18  1999-08-12 04:16:01  ivan
+# hidecancelledpackages config option
+#
+# Revision 1.17  1999/04/15 16:44:36  ivan
 # delete customers
 #
 # Revision 1.16  1999/04/09 04:22:34  ivan
@@ -257,8 +260,11 @@ print qq!!, &table(), "\n",
       qq!</TR>\n!;
 
 #get package info
-@packages = $cust_main->all_pkgs;
-#@packages = $cust_main->ncancelled_pkgs;
+if ( $conf->exists('hidecancelledpackages') ) {
+  @packages = $cust_main->ncancelled_pkgs;
+} else {
+  @packages = $cust_main->all_pkgs;
+}
 
 $n1 = '<TR>';
 foreach $package (@packages) {
