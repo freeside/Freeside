@@ -443,23 +443,39 @@ first two fields (B<record_type> and B<invnum>) and the last five fields
 (B<pkg> through B<edate>) are filled in.
 
 =item invnum - invoice number
+
 =item custnum - customer number
+
 =item _date - invoice date
+
 =item charged - total invoice amount
+
 =item first - customer first name
+
 =item last - customer first name
+
 =item company - company name
+
 =item address1 - address line 1
+
 =item address2 - address line 1
+
 =item city
+
 =item state
+
 =item zip
+
 =item country
 
 =item pkg - line item description
-=item setup - line item setup fee (only or both of B<setup> and B<recur> will be defined)
-=item recur - line item recurring fee (only or both of B<setup> and B<recur> will be defined)
+
+=item setup - line item setup fee (one or both of B<setup> and B<recur> will be defined)
+
+=item recur - line item recurring fee (one or both of B<setup> and B<recur> will be defined)
+
 =item sdate - start date for recurring fee
+
 =item edate - end date for recurring fee
 
 =back
@@ -1114,7 +1130,7 @@ sub print_text {
 
 =head1 VERSION
 
-$Id: cust_bill.pm,v 1.43 2002-09-17 00:33:17 ivan Exp $
+$Id: cust_bill.pm,v 1.44 2002-09-17 00:40:07 ivan Exp $
 
 =head1 BUGS
 
