@@ -118,6 +118,10 @@ FS::svc_Common.  The following fields are currently supported:
 
 =item slipip - IP address
 
+=item seconds - 
+
+=item domsvc - svcnum from svc_domain
+
 =item radius_I<Radius_Attribute> - I<Radius-Attribute>
 
 =item domsvc - service number of svc_domain with which to associate
@@ -633,7 +637,7 @@ sub email {
 
 =head1 VERSION
 
-$Id: svc_acct.pm,v 1.30 2001-09-06 20:41:59 ivan Exp $
+$Id: svc_acct.pm,v 1.31 2001-09-06 21:20:58 ivan Exp $
 
 =head1 BUGS
 
