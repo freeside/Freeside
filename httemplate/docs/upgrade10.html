@@ -62,6 +62,68 @@ CREATE TABLE svc_broadband (
   PRIMARY KEY (svcnum)
 );
 
+CREATE TABLE acct_snarf (
+  snarfnum serial,
+  svcnum int NOT NULL,
+  machine varchar(255) NULL,
+  protocol varchar(80) NULL,
+  username varchar(80) NULL,
+  _password varchar(80) NULL,
+  PRIMARY KEY (snarfnum)
+);
+CREATE INDEX acct_snarf1 ON acct_snarf ( svcnum );
+
+CREATE TABLE part_pkg_temp (
+    pkgpart serial NOT NULL,
+    pkg varchar(80) NOT NULL,
+    "comment" varchar(80) NOT NULL,
+    setup text NULL,
+    freq varchar(80) NOT NULL,
+    recur text NULL,
+    setuptax char(1) NULL,
+    recurtax char(1) NULL,
+    plan varchar(80) NULL,
+    plandata text NULL,
+    disabled char(1) NULL,
+    taxclass varchar(80) NULL,
+    PRIMARY KEY (pkgpart),
+);
+INSERT INTO part_pkg_temp SELECT * from part_pkg;
+DROP TABLE part_pkg;
+ALTER TABLE part_pkg_temp RENAME TO part_pkg;
+ALTER TABLE part_pkg DROP CONSTRAINT part_pkg_temp_pkey;
+ALTER TABLE part_pkg ADD PRIMARY KEY (pkgpart);
+CREATE INDEX part_pkg1 ON part_pkg(disabled);
+select setval('public.part_pkg_temp_pkgpart_seq', ( select max(pkgpart) from part_pkg) ); #?
+
+CREATE TABLE h_part_pkg_temp (
+    historynum serial NOT NULL,
+    history_date int,
+    history_user varchar(80) NOT NULL,
+    history_action varchar(80) NOT NULL,
+    pkgpart int NOT NULL,
+    pkg varchar(80) NOT NULL,
+    "comment" varchar(80) NOT NULL,
+    setup text NULL,
+    freq varchar(80) NOT NULL,
+    recur text NULL,
+    setuptax char(1) NULL,
+    recurtax char(1) NULL,
+    plan varchar(80) NULL,
+    plandata text NULL,
+    disabled char(1) NULL,
+    taxclass varchar(80) NULL,
+    PRIMARY KEY (historynum)
+);
+INSERT INTO h_part_pkg_temp SELECT * from h_part_pkg;
+DROP TABLE h_part_pkg;
+ALTER TABLE h_part_pkg_temp RENAME TO h_part_pkg;
+ALTER TABLE h_part_pkg DROP CONSTRAINT h_part_pkg_temp_pkey;
+ALTER TABLE h_part_pkg ADD PRIMARY KEY (historynum);
+CREATE INDEX h_part_pkg1 ON h_part_pkg(disabled);
+select setval('public.h_part_pkg_temp_historynum_seq', ( select max(historynum) from h_part_pkg) );
+
+
 DROP INDEX cust_bill_pkg1;
 
 ALTER TABLE cust_bill_pkg ADD itemdesc varchar(80) NULL;
@@ -106,7 +168,7 @@ optionally:
 mandatory again:
 
 dbdef-create username
-create-history-tables username cust_bill_pkg_detail router part_svc_router addr_block svc_broadband
+create-history-tables username cust_bill_pkg_detail router part_svc_router addr_block svc_broadband acct_snarf
 dbdef-create username
 
 apache - fix <Files> sections to include .html also

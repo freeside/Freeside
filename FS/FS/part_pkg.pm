@@ -229,11 +229,19 @@ sub check {
 
   }
 
+  if ( $self->dbdef_table->column('freq')->type =~ /(int)/i ) {
+    my $error = $self->ut_number('freq');
+    return $error if $error;
+  } else {
+    $self->freq =~ /^(\d+[dw]?)$/
+      or return "Illegal or empty freq: ". $self->freq;
+    $self->freq($1);
+  }
+
     $self->ut_numbern('pkgpart')
       || $self->ut_text('pkg')
       || $self->ut_text('comment')
       || $self->ut_anything('setup')
-      || $self->ut_number('freq')
       || $self->ut_anything('recur')
       || $self->ut_alphan('plan')
       || $self->ut_anything('plandata')

@@ -678,7 +678,7 @@ sub tables_hash_hack {
         'pkg',        'varchar',   '',   $char_d,
         'comment',    'varchar',   '',   $char_d,
         'setup',      @perl_type,
-        'freq',       'int', '', '',  #billing frequency (months)
+        'freq',       'varchar',   '',   $char_d,  #billing frequency
         'recur',      @perl_type,
         'setuptax',  'char', 'NULL', 1,
         'recurtax',  'char', 'NULL', 1,

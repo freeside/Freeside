@@ -66,12 +66,51 @@ print '<FORM NAME="dummy">';
 #print qq!<INPUT TYPE="hidden" NAME="pkgpart" VALUE="$hashref->{pkgpart}">!,
 print "Package Part #", $hashref->{pkgpart} ? $hashref->{pkgpart} : "(NEW)";
 
-print ntable("#cccccc",2), <<END;
-<TR><TD ALIGN="right">Package (customer-visible)</TD><TD><INPUT TYPE="text" NAME="pkg" SIZE=32 VALUE="$hashref->{pkg}"></TD></TR>
-<TR><TD ALIGN="right">Comment (customer-hidden)</TD><TD><INPUT TYPE="text" NAME="comment" SIZE=32 VALUE="$hashref->{comment}"></TD></TR>
-<TR><TD ALIGN="right">Frequency (months) of recurring fee</TD><TD><INPUT TYPE="text" NAME="freq" VALUE="$hashref->{freq}" SIZE=3>&nbsp;&nbsp;<I>0=no recurring fee, 1=monthly, 3=quarterly, 12=yearly</TD></TR>
-<TR><TD ALIGN="right">Setup fee tax exempt</TD><TD>
-END
+my %freq;
+tie %freq, 'Tie::IxHash', 
+  '0'  => '(no recurring fee)',
+  '1d' => 'daily',
+  '1w' => 'weekly',
+  '2w' => 'biweekly (every 2 weeks)',
+  '1'  => 'monthly',
+  '2'  => 'bimonthly (every 2 months)',
+  '3'  => 'quarterly (every 3 months)',
+  '6'  => 'semiannually (every 6 months)',
+  '12' => 'annually',
+  '24' => 'biannually (every 2 years)',
+;
+if ( $part_pkg->dbdef_table->column('freq')->type =~ /(int)/i ) {
+  delete $freq{$_} foreach grep { ! /^\d+$/ } keys %freq;
+}
+
+%>
+<%= ntable("#cccccc",2) %>
+  <TR>
+    <TD ALIGN="right">Package (customer-visible)</TD>
+    <TD>
+      <INPUT TYPE="text" NAME="pkg" SIZE=32 VALUE="<%= $part_pkg->pkg %>">
+    </TD>
+  </TR>
+  <TR>
+    <TD ALIGN="right">Comment (customer-hidden)</TD>
+    <TD>
+      <INPUT TYPE="text" NAME="comment" SIZE=32 VALUE="<%=$part_pkg->comment%>">
+    </TD>
+  </TR>
+  <TR>
+    <TD ALIGN="right">Recurring fee frequency </TD>
+    <TD>
+      <SELECT NAME="freq">
+        <% foreach my $freq ( keys %freq ) { %>
+          <OPTION VALUE="<%= $freq %>"<%= $freq eq $part_pkg->freq ? ' SELECTED' : '' %>><%= $freq{$freq} %>
+        <% } %>
+      </SELECT>
+    </TD>
+  </TR>
+  <TR>
+    <TD ALIGN="right">Setup fee tax exempt</TD>
+    <TD>
+<%
 
 print '<INPUT TYPE="checkbox" NAME="setuptax" VALUE="Y"';
 print ' CHECKED' if $hashref->{setuptax} eq "Y";

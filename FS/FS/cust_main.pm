@@ -1089,7 +1089,7 @@ sub bill {
     #bill recurring fee
     my $recur = 0;
     my $sdate;
-    if ( $part_pkg->getfield('freq') > 0 &&
+    if ( $part_pkg->getfield('freq') ne '0' &&
          ! $cust_pkg->getfield('susp') &&
          ( $cust_pkg->getfield('bill') || 0 ) <= $time
     ) {
@@ -1127,8 +1127,19 @@ sub bill {
       $cust_pkg->last_bill($sdate)
         if $cust_pkg->dbdef_table->column('last_bill');
 
-      $mon += $part_pkg->freq;
-      until ( $mon < 12 ) { $mon -= 12; $year++; }
+      if ( $part_pkg->freq =~ /^\d+$/ ) {
+        $mon += $part_pkg->freq;
+        until ( $mon < 12 ) { $mon -= 12; $year++; }
+      } elsif ( $part_pkg->freq =~ /^(\d+)w$/ ) {
+        my $weeks = $1;
+        $mday += $weeks * 7;
+      } elsif ( $part_pkg->freq =~ /^(\d+)d$/ ) {
+        my $days = $1;
+        $mday += $days;
+      } else {
+        $dbh->rollback if $oldAutoCommit;
+        return "unparsable frequency: ". $part_pkg->freq;
+      }
       $cust_pkg->setfield('bill',
         timelocal_nocheck($sec,$min,$hour,$mday,$mon,$year));
       $cust_pkg_mod_flag = 1; 
@@ -1208,6 +1219,11 @@ sub bill {
               my ($mon,$year) = (localtime($sdate) )[4,5];
               $mon++;
               my $freq = $part_pkg->freq || 1;
+              if ( $freq !~ /(\d+)$/ ) {
+                $dbh->rollback if $oldAutoCommit;
+                return "daily/weekly package definitions not (yet?)".
+                       " compatible with monthly tax exemptions";
+              }
               my $taxable_per_month = sprintf("%.2f", $taxable_charged / $freq );
               foreach my $which_month ( 1 .. $freq ) {
                 my %hash = (
