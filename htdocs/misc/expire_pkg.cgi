@@ -1,11 +1,9 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: expire_pkg.cgi,v 1.3 1999-01-19 05:14:05 ivan Exp $
+# $Id: expire_pkg.cgi,v 1.4 1999-02-28 00:03:50 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/expire_pkg.cgi
-#
-# Note: Should be run setuid freeside as user nobody
 #
 # based on susp_pkg
 # ivan@voicenet.com 97-jul-29
@@ -16,7 +14,10 @@
 #       bmccane@maxbaud.net     98-apr-3
 # 
 # $Log: expire_pkg.cgi,v $
-# Revision 1.3  1999-01-19 05:14:05  ivan
+# Revision 1.4  1999-02-28 00:03:50  ivan
+# removed misleading comments
+#
+# Revision 1.3  1999/01/19 05:14:05  ivan
 # for mod_perl: no more top-level my() variables; use vars instead
 # also the last s/create/new/;
 #

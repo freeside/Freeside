@@ -1,11 +1,9 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_domain.cgi,v 1.5 1999-02-07 09:59:33 ivan Exp $
+# $Id: svc_domain.cgi,v 1.6 1999-02-28 00:03:47 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/svc_domain.cgi
-#
-# Note: Should br run setuid root as user nobody.
 #
 # lots of yucky stuff in this one... bleachlkjhui!
 #
@@ -20,7 +18,10 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # $Log: svc_domain.cgi,v $
-# Revision 1.5  1999-02-07 09:59:33  ivan
+# Revision 1.6  1999-02-28 00:03:47  ivan
+# removed misleading comments
+#
+# Revision 1.5  1999/02/07 09:59:33  ivan
 # more mod_perl fixes, and bugfixes Peter Wemm sent via email
 #
 # Revision 1.4  1999/01/19 05:14:01  ivan

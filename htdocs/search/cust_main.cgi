@@ -1,11 +1,9 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main.cgi,v 1.8 1999-02-07 09:59:36 ivan Exp $
+# $Id: cust_main.cgi,v 1.9 1999-02-28 00:03:55 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/cust_main.cgi
-#
-# Note: Should be run setuid freeside as user nobody.
 #
 # ivan@voicenet.com 96-dec-12
 #
@@ -19,7 +17,10 @@
 # display total, use FS::CGI ivan@sisd.com 98-jul-17
 #
 # $Log: cust_main.cgi,v $
-# Revision 1.8  1999-02-07 09:59:36  ivan
+# Revision 1.9  1999-02-28 00:03:55  ivan
+# removed misleading comments
+#
+# Revision 1.8  1999/02/07 09:59:36  ivan
 # more mod_perl fixes, and bugfixes Peter Wemm sent via email
 #
 # Revision 1.7  1999/01/25 12:19:11  ivan

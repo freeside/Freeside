@@ -1,11 +1,9 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct.cgi,v 1.7 1999-01-19 05:14:21 ivan Exp $
+# $Id: svc_acct.cgi,v 1.8 1999-02-28 00:04:02 ivan Exp $
 #
 # Usage: svc_acct.cgi svcnum
 #        http://server.name/path/svc_acct.cgi?svcnum
-#
-# Note: Should be run setuid freeside as user nobody.
 #
 # ivan@voicenet.com 96-dec-17
 #
@@ -35,7 +33,10 @@
 # displays arbitrary radius attributes ivan@sisd.com 98-aug-16
 #
 # $Log: svc_acct.cgi,v $
-# Revision 1.7  1999-01-19 05:14:21  ivan
+# Revision 1.8  1999-02-28 00:04:02  ivan
+# removed misleading comments
+#
+# Revision 1.7  1999/01/19 05:14:21  ivan
 # for mod_perl: no more top-level my() variables; use vars instead
 # also the last s/create/new/;
 #

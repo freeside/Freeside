@@ -1,8 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_bill.cgi,v 1.7 1999-01-25 12:26:03 ivan Exp $
-#
-# Note: Should be run setuid freeside as user nobody.
+# $Id: cust_bill.cgi,v 1.8 1999-02-28 00:03:58 ivan Exp $
 #
 # this is a quick & ugly hack which does little more than add some formatting to the ascii output from /dbin/print-invoice
 #
@@ -25,7 +23,10 @@
 # also print 'printed' field ivan@sisd.com 98-jul-10
 #
 # $Log: cust_bill.cgi,v $
-# Revision 1.7  1999-01-25 12:26:03  ivan
+# Revision 1.8  1999-02-28 00:03:58  ivan
+# removed misleading comments
+#
+# Revision 1.7  1999/01/25 12:26:03  ivan
 # yet more mod_perl stuff
 #
 # Revision 1.6  1999/01/19 05:14:18  ivan

@@ -1,11 +1,9 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main.cgi,v 1.6 1999-01-25 12:10:00 ivan Exp $
+# $Id: cust_main.cgi,v 1.7 1999-02-28 00:03:42 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/cust_main.cgi
-#
-# Note: Should be run setuid root as user nobody.
 #
 # ivan@voicenet.com 96-dec-04
 #
@@ -22,7 +20,10 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # $Log: cust_main.cgi,v $
-# Revision 1.6  1999-01-25 12:10:00  ivan
+# Revision 1.7  1999-02-28 00:03:42  ivan
+# removed misleading comments
+#
+# Revision 1.6  1999/01/25 12:10:00  ivan
 # yet more mod_perl stuff
 #
 # Revision 1.5  1999/01/19 05:13:50  ivan
@@ -89,6 +90,9 @@ $error = $new->check_invoicing_list( \@invoicing_list );
 
 #perhaps the invocing_list magic should move to cust_main.pm?
 if ( $new->custnum eq '' ) {
+  #false laziness: copied from cust_pkg.pm
+  HERE!
+  #
   $error ||= $new->insert;
 } else { #create old record object
   my $old = qsearchs( 'cust_main', { 'custnum' => $new->custnum } ); 

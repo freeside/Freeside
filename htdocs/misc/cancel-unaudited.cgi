@@ -1,11 +1,9 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cancel-unaudited.cgi,v 1.5 1999-02-07 09:59:34 ivan Exp $
+# $Id: cancel-unaudited.cgi,v 1.6 1999-02-28 00:03:48 ivan Exp $
 #
 # Usage: cancel-unaudited.cgi svcnum
 #        http://server.name/path/cancel-unaudited.cgi pkgnum
-#
-# Note: Should be run setuid freeside as user nobody
 #
 # ivan@voicenet.com 97-apr-23
 #
@@ -18,7 +16,10 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # $Log: cancel-unaudited.cgi,v $
-# Revision 1.5  1999-02-07 09:59:34  ivan
+# Revision 1.6  1999-02-28 00:03:48  ivan
+# removed misleading comments
+#
+# Revision 1.5  1999/02/07 09:59:34  ivan
 # more mod_perl fixes, and bugfixes Peter Wemm sent via email
 #
 # Revision 1.4  1999/01/19 05:14:03  ivan

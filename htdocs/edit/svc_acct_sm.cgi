@@ -1,13 +1,11 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct_sm.cgi,v 1.8 1999-02-07 09:59:24 ivan Exp $
+# $Id: svc_acct_sm.cgi,v 1.9 1999-02-28 00:03:38 ivan Exp $
 #
 # Usage: svc_acct_sm.cgi {svcnum} | pkgnum{pkgnum}-svcpart{svcpart}
 #        http://server.name/path/svc_acct_sm.cgi? {svcnum} | pkgnum{pkgnum}-svcpart{svcpart}
 #
 # use {svcnum} for edit, pkgnum{pkgnum}-svcpart{svcpart} for add
-#
-# Note: Should be run setuid freeside as user nobody.
 #
 # should error out in a more CGI-friendly way, and should have more error checking (sigh).
 #
@@ -35,7 +33,10 @@
 # /var/spool/freeside/conf/domain ivan@sisd.com 98-jul-26
 #
 # $Log: svc_acct_sm.cgi,v $
-# Revision 1.8  1999-02-07 09:59:24  ivan
+# Revision 1.9  1999-02-28 00:03:38  ivan
+# removed misleading comments
+#
+# Revision 1.8  1999/02/07 09:59:24  ivan
 # more mod_perl fixes, and bugfixes Peter Wemm sent via email
 #
 # Revision 1.7  1999/01/19 05:13:45  ivan

@@ -1,14 +1,12 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_pkg.cgi,v 1.5 1999-02-07 09:59:26 ivan Exp $
+# $Id: cust_pkg.cgi,v 1.6 1999-02-28 00:03:44 ivan Exp $
 #
 # this is for changing packages around, not for editing things within the
 # package
 #
 # Usage: post form to:
 #        http://server.name/path/cust_pkg.cgi
-#
-# Note: Should be run setuid root as user nobody.
 #
 # ivan@voicenet.com 97-mar-21 - 97-mar-24
 #
@@ -21,7 +19,10 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # $Log: cust_pkg.cgi,v $
-# Revision 1.5  1999-02-07 09:59:26  ivan
+# Revision 1.6  1999-02-28 00:03:44  ivan
+# removed misleading comments
+#
+# Revision 1.5  1999/02/07 09:59:26  ivan
 # more mod_perl fixes, and bugfixes Peter Wemm sent via email
 #
 # Revision 1.3  1999/01/19 05:13:54  ivan

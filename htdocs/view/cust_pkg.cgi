@@ -1,11 +1,9 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_pkg.cgi,v 1.7 1999-01-19 05:14:20 ivan Exp $
+# $Id: cust_pkg.cgi,v 1.8 1999-02-28 00:04:01 ivan Exp $
 #
 # Usage: cust_pkg.cgi pkgnum
 #        http://server.name/path/cust_pkg.cgi?pkgnum
-#
-# Note: Should be run setuid freeside as user nobody.
 #
 # ivan@voicenet.com 96-dec-15
 #
@@ -26,7 +24,10 @@
 # no FS::Search ivan@sisd.com 98-mar-7
 # 
 # $Log: cust_pkg.cgi,v $
-# Revision 1.7  1999-01-19 05:14:20  ivan
+# Revision 1.8  1999-02-28 00:04:01  ivan
+# removed misleading comments
+#
+# Revision 1.7  1999/01/19 05:14:20  ivan
 # for mod_perl: no more top-level my() variables; use vars instead
 # also the last s/create/new/;
 #

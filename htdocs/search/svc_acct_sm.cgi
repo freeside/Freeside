@@ -1,11 +1,9 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct_sm.cgi,v 1.6 1999-02-09 09:22:58 ivan Exp $
+# $Id: svc_acct_sm.cgi,v 1.7 1999-02-28 00:03:56 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/svc_domain.cgi
-#
-# Note: Should be run setuid freeside as user nobody.
 #
 # ivan@voicenet.com 96-mar-5
 #
@@ -19,7 +17,10 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # $Log: svc_acct_sm.cgi,v $
-# Revision 1.6  1999-02-09 09:22:58  ivan
+# Revision 1.7  1999-02-28 00:03:56  ivan
+# removed misleading comments
+#
+# Revision 1.6  1999/02/09 09:22:58  ivan
 # visual and bugfixes
 #
 # Revision 1.5  1999/01/19 05:14:16  ivan

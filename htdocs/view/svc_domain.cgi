@@ -1,11 +1,9 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_domain.cgi,v 1.7 1999-02-23 08:09:25 ivan Exp $
+# $Id: svc_domain.cgi,v 1.8 1999-02-28 00:04:04 ivan Exp $
 #
 # Usage: svc_domain svcnum
 #        http://server.name/path/svc_domain.cgi?svcnum
-#
-# Note: Should be run setuid freeside as user nobody.
 #
 # ivan@voicenet.com 97-jan-6
 #
@@ -15,7 +13,10 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # $Log: svc_domain.cgi,v $
-# Revision 1.7  1999-02-23 08:09:25  ivan
+# Revision 1.8  1999-02-28 00:04:04  ivan
+# removed misleading comments
+#
+# Revision 1.7  1999/02/23 08:09:25  ivan
 # beginnings of one-screen new customer entry and some other miscellania
 #
 # Revision 1.6  1999/01/19 05:14:23  ivan

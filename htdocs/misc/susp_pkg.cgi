@@ -1,11 +1,9 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: susp_pkg.cgi,v 1.4 1999-01-19 05:14:08 ivan Exp $
+# $Id: susp_pkg.cgi,v 1.5 1999-02-28 00:03:52 ivan Exp $
 #
 # Usage: susp_pkg.cgi pkgnum
 #        http://server.name/path/susp_pkg.cgi pkgnum
-#
-# Note: Should be run setuid freeside as user nobody
 #
 # probably should generalize this to do cancels, suspensions, unsuspensions, etc.
 #
@@ -23,7 +21,10 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # $Log: susp_pkg.cgi,v $
-# Revision 1.4  1999-01-19 05:14:08  ivan
+# Revision 1.5  1999-02-28 00:03:52  ivan
+# removed misleading comments
+#
+# Revision 1.4  1999/01/19 05:14:08  ivan
 # for mod_perl: no more top-level my() variables; use vars instead
 # also the last s/create/new/;
 #

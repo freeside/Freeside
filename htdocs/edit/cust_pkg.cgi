@@ -1,13 +1,11 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_pkg.cgi,v 1.5 1999-02-07 09:59:18 ivan Exp $
+# $Id: cust_pkg.cgi,v 1.6 1999-02-28 00:03:36 ivan Exp $
 #
 # this is for changing packages around, not editing things within the package
 #
 # Usage: cust_pkg.cgi custnum
 #        http://server.name/path/cust_pkg.cgi?custnum
-#
-# Note: Should be run setuid freeside as user nobody
 #
 # started with /sales/add/cust_pkg.cgi, which added packages
 # ivan@voicenet.com 97-jan-5, 97-mar-21
@@ -25,7 +23,10 @@
 # 98-jun-1
 #
 # $Log: cust_pkg.cgi,v $
-# Revision 1.5  1999-02-07 09:59:18  ivan
+# Revision 1.6  1999-02-28 00:03:36  ivan
+# removed misleading comments
+#
+# Revision 1.5  1999/02/07 09:59:18  ivan
 # more mod_perl fixes, and bugfixes Peter Wemm sent via email
 #
 # Revision 1.4  1999/01/19 05:13:38  ivan

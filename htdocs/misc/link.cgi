@@ -1,8 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: link.cgi,v 1.5 1999-01-19 05:14:06 ivan Exp $
-#
-# Note: Should be run setuid freeside as user nobody
+# $Id: link.cgi,v 1.6 1999-02-28 00:03:51 ivan Exp $
 #
 # ivan@voicenet.com 97-feb-5
 #
@@ -11,7 +9,10 @@
 # can also link on some other fields now (about time) ivan@sisd.com 98-jun-24
 #
 # $Log: link.cgi,v $
-# Revision 1.5  1999-01-19 05:14:06  ivan
+# Revision 1.6  1999-02-28 00:03:51  ivan
+# removed misleading comments
+#
+# Revision 1.5  1999/01/19 05:14:06  ivan
 # for mod_perl: no more top-level my() variables; use vars instead
 # also the last s/create/new/;
 #

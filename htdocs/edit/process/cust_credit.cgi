@@ -1,11 +1,9 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_credit.cgi,v 1.5 1999-01-25 12:09:59 ivan Exp $
+# $Id: cust_credit.cgi,v 1.6 1999-02-28 00:03:41 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/cust_credit.cgi
-#
-# Note: Should be run setuid root as user nobody.
 #
 # ivan@voicenet.com 96-dec-05 -> 96-dec-08
 #
@@ -22,7 +20,10 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # $Log: cust_credit.cgi,v $
-# Revision 1.5  1999-01-25 12:09:59  ivan
+# Revision 1.6  1999-02-28 00:03:41  ivan
+# removed misleading comments
+#
+# Revision 1.5  1999/01/25 12:09:59  ivan
 # yet more mod_perl stuff
 #
 # Revision 1.4  1999/01/19 05:13:49  ivan

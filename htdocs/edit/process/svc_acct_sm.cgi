@@ -1,11 +1,9 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct_sm.cgi,v 1.5 1999-02-07 09:59:32 ivan Exp $
+# $Id: svc_acct_sm.cgi,v 1.6 1999-02-28 00:03:46 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/svc_acct_sm.cgi
-#
-# Note: Should br run setuid root as user nobody.
 #
 # lots of crufty stuff from svc_acct still in here, and modifications are (unelegantly) disabled.
 #
@@ -24,7 +22,10 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # $Log: svc_acct_sm.cgi,v $
-# Revision 1.5  1999-02-07 09:59:32  ivan
+# Revision 1.6  1999-02-28 00:03:46  ivan
+# removed misleading comments
+#
+# Revision 1.5  1999/02/07 09:59:32  ivan
 # more mod_perl fixes, and bugfixes Peter Wemm sent via email
 #
 # Revision 1.4  1999/01/19 05:14:00  ivan

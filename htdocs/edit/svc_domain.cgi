@@ -1,11 +1,9 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_domain.cgi,v 1.8 1999-02-07 09:59:25 ivan Exp $
+# $Id: svc_domain.cgi,v 1.9 1999-02-28 00:03:39 ivan Exp $
 #
 # Usage: svc_domain.cgi pkgnum{pkgnum}-svcpart{svcpart}
 #        http://server.name/path/svc_domain.cgi?pkgnum{pkgnum}-svcpart{svcpart}
-#
-# Note: Should be run setuid freeside as user nobody
 #
 # ivan@voicenet.com 97-jan-5 -> 97-jan-6
 #
@@ -17,7 +15,10 @@
 # no GOV in instructions ivan@sisd.com 98-jul-17
 #
 # $Log: svc_domain.cgi,v $
-# Revision 1.8  1999-02-07 09:59:25  ivan
+# Revision 1.9  1999-02-28 00:03:39  ivan
+# removed misleading comments
+#
+# Revision 1.8  1999/02/07 09:59:25  ivan
 # more mod_perl fixes, and bugfixes Peter Wemm sent via email
 #
 # Revision 1.7  1999/01/19 05:13:46  ivan

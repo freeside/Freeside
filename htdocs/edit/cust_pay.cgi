@@ -1,11 +1,9 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_pay.cgi,v 1.5 1999-01-25 12:09:56 ivan Exp $
+# $Id: cust_pay.cgi,v 1.6 1999-02-28 00:03:35 ivan Exp $
 #
 # Usage: cust_pay.cgi invnum
 #        http://server.name/path/cust_pay.cgi?invnum
-#
-# Note: Should be run setuid as user nobody.
 #
 # some hooks for modifications as well as additions, but needs work.
 #
@@ -14,7 +12,10 @@
 # rewrite ivan@sisd.com 98-mar-16
 #
 # $Log: cust_pay.cgi,v $
-# Revision 1.5  1999-01-25 12:09:56  ivan
+# Revision 1.6  1999-02-28 00:03:35  ivan
+# removed misleading comments
+#
+# Revision 1.5  1999/01/25 12:09:56  ivan
 # yet more mod_perl stuff
 #
 # Revision 1.4  1999/01/19 05:13:37  ivan

@@ -1,11 +1,9 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_credit.cgi,v 1.6 1999-01-25 12:09:52 ivan Exp $
+# $Id: cust_credit.cgi,v 1.7 1999-02-28 00:03:33 ivan Exp $
 #
 # Usage: cust_credit.cgi custnum [ -paybatch ]
 #        http://server.name/path/cust_credit?custnum [ -paybatch ]
-#
-# Note: Should be run setuid root as user nobody.
 #
 # some hooks in here for modifications as well as additions, but needs (lots) more work.
 # also see process/cust_credit.cgi, the script that processes the form.
@@ -25,7 +23,10 @@
 # rewrite ivan@sisd.com 98-mar-16
 #
 # $Log: cust_credit.cgi,v $
-# Revision 1.6  1999-01-25 12:09:52  ivan
+# Revision 1.7  1999-02-28 00:03:33  ivan
+# removed misleading comments
+#
+# Revision 1.6  1999/01/25 12:09:52  ivan
 # yet more mod_perl stuff
 #
 # Revision 1.5  1999/01/19 05:13:33  ivan

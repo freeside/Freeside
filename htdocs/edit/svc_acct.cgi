@@ -1,11 +1,9 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct.cgi,v 1.8 1999-02-23 08:09:22 ivan Exp $
+# $Id: svc_acct.cgi,v 1.9 1999-02-28 00:03:37 ivan Exp $
 #
 # Usage: svc_acct.cgi {svcnum} | pkgnum{pkgnum}-svcpart{svcpart}
 #        http://server.name/path/svc_acct.cgi? {svcnum} | pkgnum{pkgnum}-svcpart{svcpart}
-#
-# Note: Should be run setuid freeside as user nobody
 #
 # ivan@voicenet.com 96-dec-18
 #
@@ -18,7 +16,10 @@
 # use conf/shells and dbdef username length ivan@sisd.com 98-jul-13
 #
 # $Log: svc_acct.cgi,v $
-# Revision 1.8  1999-02-23 08:09:22  ivan
+# Revision 1.9  1999-02-28 00:03:37  ivan
+# removed misleading comments
+#
+# Revision 1.8  1999/02/23 08:09:22  ivan
 # beginnings of one-screen new customer entry and some other miscellania
 #
 # Revision 1.7  1999/02/07 09:59:22  ivan

@@ -1,11 +1,9 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_bill.cgi,v 1.3 1999-01-19 05:14:11 ivan Exp $
+# $Id: cust_bill.cgi,v 1.4 1999-02-28 00:03:54 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/cust_bill.cgi
-#
-# Note: Should be run setuid freeside as user nobody.
 #
 # ivan@voicenet.com 97-apr-4
 #
@@ -13,7 +11,10 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # $Log: cust_bill.cgi,v $
-# Revision 1.3  1999-01-19 05:14:11  ivan
+# Revision 1.4  1999-02-28 00:03:54  ivan
+# removed misleading comments
+#
+# Revision 1.3  1999/01/19 05:14:11  ivan
 # for mod_perl: no more top-level my() variables; use vars instead
 # also the last s/create/new/;
 #

@@ -1,11 +1,9 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main.cgi,v 1.9 1999-02-23 08:09:20 ivan Exp $
+# $Id: cust_main.cgi,v 1.10 1999-02-28 00:03:34 ivan Exp $
 #
 # Usage: cust_main.cgi custnum
 #        http://server.name/path/cust_main.cgi?custnum
-#
-# Note: Should be run setuid freeside as user nobody.
 #
 # ivan@voicenet.com 96-nov-29 -> 96-dec-04
 #
@@ -40,7 +38,10 @@
 # fixed one missed day->daytime ivan@sisd.com 98-jul-13
 #
 # $Log: cust_main.cgi,v $
-# Revision 1.9  1999-02-23 08:09:20  ivan
+# Revision 1.10  1999-02-28 00:03:34  ivan
+# removed misleading comments
+#
+# Revision 1.9  1999/02/23 08:09:20  ivan
 # beginnings of one-screen new customer entry and some other miscellania
 #
 # Revision 1.8  1999/01/25 12:09:53  ivan
@@ -88,6 +89,10 @@ use FS::cust_main_county;
 
   #for false laziness below
   use FS::svc_acct_pop;
+
+  #for (other) false laziness below
+  use FS::agent;
+  use FS::type_pkgs;
 
 $cgi = new CGI;
 cgisuidsetup($cgi);
@@ -306,6 +311,34 @@ unless ( $custnum ) {
   #use FS::part_svc;
   #use FS::part_pkg;
 
+  #false laziness, copied from FS::cust_pkg::order
+  my %part_pkg;
+  if ( scalar(@agents) == 1 ) {
+    # generate %part_pkg
+    # $part_pkg{$pkgpart} is true iff $custnum may purchase $pkgpart
+    	#my($cust_main)=qsearchs('cust_main',{'custnum'=>$custnum});
+    	#my($agent)=qsearchs('agent',{'agentnum'=> $cust_main->agentnum });
+    my($agent)=qsearchs('agent',{'agentnum'=> $agentnum });
+
+    my($type_pkgs);
+    foreach $type_pkgs ( qsearch('type_pkgs',{'typenum'=> $agent->typenum }) ) {
+      my($pkgpart)=$type_pkgs->pkgpart;
+      $part_pkg{$pkgpart}++;
+    }
+  } else {
+    #can't know (agent not chosen), so, allow all
+    my %typenum;
+    foreach my $agent ( @agents ) {
+      next if $typenum{$agent->typenum}++;
+      foreach my $type_pkgs ( qsearch('type_pkgs',{'typenum'=> $agent->typenum }) ) {
+        my($pkgpart)=$type_pkgs->pkgpart;
+        $part_pkg{$pkgpart}++;
+      }
+    }
+
+  }
+  #eslaf
+
   my %pkgpart;
   #foreach ( @pkg_svc ) {
   foreach ( qsearch( 'pkg_svc', {} ) ) {
@@ -317,7 +350,10 @@ unless ( $custnum ) {
 
   my @part_pkg =
     #grep { $pkgpart{ $_->pkgpart } == 1 } qsearch( 'part_pkg', {} );
-    grep { ( $pkgpart{ $_->pkgpart } || 0 ) == 1 } qsearch( 'part_pkg', {} );
+    grep {
+      ( $pkgpart{ $_->pkgpart } || 0 ) == 1
+      && $part_pkg{ $_->pkgpart }
+    } qsearch( 'part_pkg', {} );
 
   if ( @part_pkg ) {
 

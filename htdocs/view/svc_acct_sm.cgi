@@ -1,11 +1,9 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct_sm.cgi,v 1.8 1999-02-09 09:23:00 ivan Exp $
+# $Id: svc_acct_sm.cgi,v 1.9 1999-02-28 00:04:03 ivan Exp $
 #
 # Usage: svc_acct_sm.cgi svcnum
 #        http://server.name/path/svc_acct_sm.cgi?svcnum
-#
-# Note: Should be run setuid freeside as user nobody.
 #
 # based on view/svc_acct.cgi
 # 
@@ -22,7 +20,10 @@
 # /var/spool/freeside/conf/domain ivan@sisd.com 98-jul-17
 #
 # $Log: svc_acct_sm.cgi,v $
-# Revision 1.8  1999-02-09 09:23:00  ivan
+# Revision 1.9  1999-02-28 00:04:03  ivan
+# removed misleading comments
+#
+# Revision 1.8  1999/02/09 09:23:00  ivan
 # visual and bugfixes
 #
 # Revision 1.7  1999/02/07 09:59:42  ivan

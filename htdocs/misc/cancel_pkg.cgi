@@ -1,11 +1,9 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cancel_pkg.cgi,v 1.4 1999-01-19 05:14:04 ivan Exp $
+# $Id: cancel_pkg.cgi,v 1.5 1999-02-28 00:03:49 ivan Exp $
 #
 # Usage: cancel_pkg.cgi pkgnum
 #        http://server.name/path/cancel_pkg.cgi pkgnum
-#
-# Note: Should be run setuid freeside as user nobody
 #
 # IT DOESN'T RUN THE APPROPRIATE PROGRAMS YET!!!!
 #
@@ -29,7 +27,10 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # $Log: cancel_pkg.cgi,v $
-# Revision 1.4  1999-01-19 05:14:04  ivan
+# Revision 1.5  1999-02-28 00:03:49  ivan
+# removed misleading comments
+#
+# Revision 1.4  1999/01/19 05:14:04  ivan
 # for mod_perl: no more top-level my() variables; use vars instead
 # also the last s/create/new/;
 #

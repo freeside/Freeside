@@ -1,11 +1,9 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main.cgi,v 1.12 1999-02-07 09:59:40 ivan Exp $
+# $Id: cust_main.cgi,v 1.13 1999-02-28 00:04:00 ivan Exp $
 #
 # Usage: cust_main.cgi custnum
 #        http://server.name/path/cust_main.cgi?custnum
-#
-# Note: Should be run setuid freeside as user nobody.
 #
 # the payment history section could use some work, see below
 # 
@@ -33,7 +31,10 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: cust_main.cgi,v $
-# Revision 1.12  1999-02-07 09:59:40  ivan
+# Revision 1.13  1999-02-28 00:04:00  ivan
+# removed misleading comments
+#
+# Revision 1.12  1999/02/07 09:59:40  ivan
 # more mod_perl fixes, and bugfixes Peter Wemm sent via email
 #
 # Revision 1.11  1999/01/25 12:26:04  ivan
