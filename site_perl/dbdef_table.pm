@@ -202,12 +202,12 @@ sub sql_create_table {
 
   "CREATE TABLE ". $self->name. " ( ". join(", ", @columns). " )",
   ( map {
-    my($index) = $_ . "_index";
+    my($index) = $self->name. "__". $_ . "_index";
     $index =~ s/,\s*/_/g;
     "CREATE UNIQUE INDEX $index ON ". $self->name. " ($_)"
   } $self->unique->sql_list ),
   ( map {
-    my($index) = $_ . "_index";
+    my($index) = $self->name. "__". $_ . "_index";
     $index =~ s/,\s*/_/g;
     "CREATE INDEX $index ON ". $self->name. " ($_)"
   } $self->index->sql_list ),
@@ -224,6 +224,10 @@ sub sql_create_table {
 
 L<FS::dbdef>, L<FS::dbdef_unique>, L<FS::dbdef_index>, L<FS::dbdef_unique>,
 L<DBI>
+
+=head1 VERSION
+
+$Id: dbdef_table.pm,v 1.2 1998-10-14 07:05:06 ivan Exp $
 
 =head1 HISTORY
 
@@ -242,6 +246,11 @@ looks like, did the same thing singles in colgroup!
 ivan@sisd.com 98-jun-4
 
 pod ivan@sisd.com 98-sep-24
+
+$Log: dbdef_table.pm,v $
+Revision 1.2  1998-10-14 07:05:06  ivan
+1.1.4 release, fix postgresql
+
 
 =cut
 

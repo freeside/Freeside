@@ -68,7 +68,7 @@ my($char_d) = 80; #default maxlength for text fields
 
 #my(@date_type)  = ( 'timestamp', '', ''     );
 my(@date_type)  = ( 'int', 'NULL', ''     );
-my(@perl_type) = ( 'long varchar', 'NULL', ''   ); 
+my(@perl_type) = ( 'varchar', 'NULL', ''   ); 
 my(@money_type);
 if (datasrc =~ m/Pg/) { #Pg can't do decimal(10,2)
   @money_type = ( 'money',   '', '' );
@@ -315,7 +315,7 @@ sub tables_hash_hack {
       'columns' => [
         'taxnum',   'int',   '',    '',
         'state',    'char',  '',    2,  #two letters max in US... elsewhere?
-        'county',   'varchar',  '',    $char_d,
+        'county',   'varchar',  'NULL',    $char_d,
         'tax',      'real',  '',    '', #tax %
       ],
       'primary_key' => 'taxnum',
@@ -353,7 +353,7 @@ sub tables_hash_hack {
         'state',    'char', '',     2,
         'zip',      'varchar', '',     10,
         'country',  'char', '',     2,
-        'trancode', 'TINYINT', '', '',
+        'trancode', 'int', '', '',
         'cardnum',  'varchar', '',     16,
         'exp',      @date_type,
         'payname',  'varchar', 'NULL', $char_d,
@@ -476,8 +476,8 @@ sub tables_hash_hack {
         'username',  'varchar',   '',   $username_len, #unique (& remove dup code)
         '_password', 'varchar',   '',   25, #13 for encryped pw's plus ' *SUSPENDED*
         'popnum',    'int',    'NULL',   '',
-        'uid',       'bigint', 'NULL',   '',
-        'gid',       'bigint', 'NULL',   '',
+        'uid',       'int', 'NULL',   '',
+        'gid',       'int', 'NULL',   '',
         'finger',    'varchar',   'NULL',   $char_d,
         'dir',       'varchar',   'NULL',   $char_d,
         'shell',     'varchar',   'NULL',   $char_d,
@@ -493,7 +493,7 @@ sub tables_hash_hack {
       'columns' => [
         'svcnum',    'int',    '',   '',
         'domsvc',    'int',    '',   '',
-        'domuid',    'bigint', '',   '',
+        'domuid',    'int', '',   '',
         'domuser',   'varchar',   '',   $char_d,
       ],
       'primary_key' => 'svcnum',
