@@ -143,7 +143,7 @@ sub check {
   $cardnum = $1;
   $self->cardnum($cardnum);
   validate($cardnum) or return "Illegal credit card number";
-  return "Unknown card type" if cardtype($self->payinfo) eq "Unknown";
+  return "Unknown card type" if cardtype($cardnum) eq "Unknown";
 
   if ( $self->exp eq '' ) {
     return "Expriation date required";
@@ -183,7 +183,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: cust_pay_batch.pm,v 1.3 1998-12-29 11:59:44 ivan Exp $
+$Id: cust_pay_batch.pm,v 1.4 1999-07-17 22:02:16 ivan Exp $
 
 =head1 BUGS
 
@@ -202,7 +202,10 @@ added hfields
 ivan@sisd.com 97-nov-13
 
 $Log: cust_pay_batch.pm,v $
-Revision 1.3  1998-12-29 11:59:44  ivan
+Revision 1.4  1999-07-17 22:02:16  ivan
+another bug noticed by Steve Gertz <sglist@hollywood.mwis.net>
+
+Revision 1.3  1998/12/29 11:59:44  ivan
 mostly properly OO, some work still to be done with svc_ stuff
 
 Revision 1.2  1998/11/18 09:01:44  ivan
