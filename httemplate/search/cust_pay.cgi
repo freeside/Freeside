@@ -99,7 +99,8 @@
                'count_query' => $count_query,
                'count_addl'  => [ '$%.2f total paid', ],
                'header'      =>
-                 [ qw(Payment Amount Date), 'Contact name', 'Company', ],
+                 [ qw(Payment Amount Date), 'Cust #', 'Contact name',
+                   'Company', ],
                'fields'      => [
                  sub {
                    my $cust_pay = shift;
@@ -115,6 +116,7 @@
                  },
                  sub { sprintf('$%.2f', shift->paid ) },
                  sub { time2str('%b %d %Y', shift->_date ) },
+                 'custnum',
                  sub { my $cust_main = shift->cust_main;
                        $cust_main->get('last'). ', '. $cust_main->first;
                      },
@@ -122,10 +124,12 @@
                        $cust_main->company;
                      },
                ],
+               'align' => 'lrrrll',
                'links' => [
                  '',
                  '',
                  '',
+                 $link,
                  $link,
                  $link,
                ],

@@ -2,6 +2,16 @@
 
   my(%opt) = @_;
 
+  my %align = (
+    'l' => 'left',
+    'r' => 'right',
+    'c' => 'center',
+    ' ' => '',
+    '.' => '',
+  );
+  $opt{align} = [ map $align{$_}, split(//, $opt{align}) ],
+    unless !$opt{align} || ref($opt{align});
+
   if ( ref($opt{'query'}) ) {
 
   }
@@ -85,11 +95,14 @@
     </TR>
     <% foreach my $row ( @$rows ) { %>
          <TR>
-         <% if ( $opt{'fields'} ) { %>
-           <% my $links = $opt{'links'} ? [ @{$opt{'links'}} ] : ''; %>
-           <% foreach my $field ( @{$opt{'fields'}} ) { %>
-             <% my $a = ''; %>
-             <% if ( $links ) {
+         <% if ( $opt{'fields'} ) {
+              my $links = $opt{'links'} ? [ @{$opt{'links'}} ] : '';
+              my $aligns = $opt{'align'} ? [ @{$opt{'align'}} ] : '';
+              foreach my $field ( @{$opt{'fields'}} ) {
+                my $align = $aligns ? shift @$aligns : '';
+                $align = " ALIGN=$align" if $align;
+                my $a = '';
+                if ( $links ) {
                   my $link = shift @$links;
                   $link = &{$link}($row) if ref($link) eq 'CODE';
                   if ( $link ) {
@@ -104,9 +117,9 @@
                 }
              %>
              <% if ( ref($field) eq 'CODE' ) { %>
-               <TD><%= $a %><%= &{$field}($row) %><%= $a ? '</A>' : '' %></TD>
+               <TD<%= $align %>><%= $a %><%= &{$field}($row) %><%= $a ? '</A>' : '' %></TD>
              <% } else { %>
-               <TD><%= $a %><%= $row->$field() %><%= $a ? '</A>' : '' %></TD>
+               <TD<%= $align %>><%= $a %><%= $row->$field() %><%= $a ? '</A>' : '' %></TD>
              <% } %>
            <% } %>
          <% } else { %>
