@@ -2020,11 +2020,16 @@ sub batch_import {
       payby    => 'BILL', #default
       paydate  => '12/2037', #default
     );
+    my $billtime = time;
     my %cust_pkg = ( pkgpart => $pkgpart );
     foreach my $field ( @fields ) {
       if ( $field =~ /^cust_pkg\.(setup|bill|susp|expire|cancel)$/ ) {
         #$cust_pkg{$1} = str2time( shift @$columns );
-        $cust_pkg{$1} = str2time( shift @columns );
+        if ( $1 eq 'setup' ) {
+          $billtime = str2time(shift @columns);
+        } else {
+          $cust_pkg{$1} = str2time( shift @columns );
+        }
       } else {
         #$cust_main{$field} = shift @$columns; 
         $cust_main{$field} = shift @columns; 
@@ -2042,6 +2047,23 @@ sub batch_import {
       $dbh->rollback if $oldAutoCommit;
       return "can't insert customer for $line: $error";
     }
+
+    #false laziness w/bill.cgi
+    $error = $cust_main->bill( 'time' => $billtime );
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "can't bill customer for $line: $error";
+    }
+
+    $cust_main->apply_payments;
+    $cust_main->apply_credits;
+
+    $error = $cust_main->collect();
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "can't collect customer for $line: $error";
+    }
+
     $imported++;
   }
 
