@@ -570,9 +570,12 @@ function cust_credit_areyousure(href) {
 
 <% if ( $conf->config('payby-default') ne 'HIDE' ) { %>
   
-  <BR><BR><A NAME="history">Payment History</A>
-  (<A HREF="<%= $p %>edit/cust_pay.cgi?custnum=<%= $custnum %>">Post payment</A>
-  | <A HREF="<%= $p %>edit/cust_credit.cgi?<%= $custnum %>">Post credit</A>)
+  <BR><BR><A NAME="history"><FONT SIZE="+2">Payment History</FONT></A><BR>
+  <A HREF="<%= $p %>edit/cust_pay.cgi?custnum=<%= $custnum %>">Post cash/check payment</A>
+  | <A HREF="<%= $p %>misc/payment.cgi?payby=CARD;custnum=<%= $custnum %>">Process credit card payment</A>
+  | <A HREF="<%= $p %>misc/payment.cgi?payby=CHEK;custnum=<%= $custnum %>">Process electronic check (ACH) payment</A>
+  <BR><A HREF="<%= $p %>edit/cust_credit.cgi?<%= $custnum %>">Post credit</A>
+  <BR>
 
   <%
   #get payment history

@@ -71,6 +71,7 @@ sub handler
       use HTML::Entities;
       use IO::Handle;
       use IO::File;
+      use Business::CreditCard;
       use String::Approx qw(amatch);
       use Chart::LinesPoints;
       use HTML::Widgets::SelectLayers 0.03;

@@ -1,0 +1,2 @@
+<% my $conf = new FS::Conf; %>
+<%= small_custview( shift, shift || $conf->config('countrydefault') ) %>

@@ -1701,7 +1701,7 @@ sub realtime_bop {
   #overrides
   $self->set( $_ => $options{$_} )
     foreach grep { exists($options{$_}) }
-            qw( payname address1 address2 city state zip payinfo paydate );
+            qw( payname address1 address2 city state zip payinfo paydate paycvv);
 
   #load up config
   my $bop_config = 'business-onlinepayment';
@@ -1711,6 +1711,9 @@ sub realtime_bop {
     $conf->config($bop_config);
   $action ||= 'normal authorization';
   pop @bop_options if scalar(@bop_options) % 2 && $bop_options[-1] =~ /^\s*$/;
+  die "No real-time processor is enabled - ".
+      "did you set the business-onlinepayment configuration value?\n"
+    unless $processor;
 
   #massage data
 
@@ -1837,11 +1840,12 @@ sub realtime_bop {
   }
 
   #remove paycvv after initial transaction
-  #make this disable-able via a config option if anyone insists?  
-  # (though that probably violates cardholder agreements)
+  #false laziness w/misc/process/payment.cgi - check both to make sure working
+  # correctly
   if ( defined $self->dbdef_table->column('paycvv')
        && length($self->paycvv)
        && ! grep { $_ eq cardtype($self->payinfo) } $conf->config('cvv-save')
+       && ! length($options{'paycvv'})
   ) {
     my $new = new FS::cust_main { $self->hash };
     $new->paycvv('');
@@ -2119,6 +2123,24 @@ sub balance_date {
       - $self->total_credited
       - $self->total_unapplied_payments
   );
+}
+
+=item paydate_monthyear
+
+Returns a two-element list consisting of the month and year of this customer's
+paydate (credit card expiration date for CARD customers)
+
+=cut
+
+sub paydate_monthyear {
+  my $self = shift;
+  if ( $self->paydate  =~ /^(\d{4})-(\d{2})-\d{2}$/ ) { #Pg date format
+    ( $2, $1 );
+  } elsif ( $self->paydate =~ /^(\d{1,2})-(\d{1,2}-)?(\d{4}$)/ ) {
+    ( $1, $3 );
+  } else {
+    ('', '');
+  }
 }
 
 =item invoicing_list [ ARRAYREF ]

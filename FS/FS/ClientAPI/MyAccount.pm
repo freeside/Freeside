@@ -9,6 +9,7 @@ use Cache::SharedMemoryCache; #store in db?
 use FS::CGI qw(small_custview); #doh
 use FS::Conf;
 use FS::Record qw(qsearch qsearchs);
+use FS::Msgcat qw(gettext);
 use FS::svc_acct;
 use FS::svc_domain;
 use FS::cust_main;
@@ -176,11 +177,7 @@ sub payment_info {
     warn $return{card_type} = cardtype($cust_main->payinfo);
     $return{payinfo} = $cust_main->payinfo;
 
-    if ( $cust_main->paydate  =~ /^(\d{4})-(\d{2})-\d{2}$/ ) { #Pg date format
-      @return{'month', 'year'} = ( $2, $1 );
-    } elsif ( $cust_main->paydate =~ /^(\d{1,2})-(\d{1,2}-)?(\d{4}$)/ ) {
-      @return{'month', 'year'} = ( $1, $3 );
-    }
+    @return{'month', 'year'} = $cust_main->paydate_monthyear;
 
   }
 
@@ -212,7 +209,10 @@ sub payment_info {
 
 };
 
+#some false laziness with httemplate/process/payment.cgi - look there for
+#ACH and CVV support stuff
 sub process_payment {
+
   my $p = shift;
 
   my $session = $cache->get($p->{'session_id'})
@@ -225,6 +225,69 @@ sub process_payment {
   my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
     or return { 'error' => "unknown custnum $custnum" };
 
+  $p->{'payname'} =~ /^([\w \,\.\-\']+)$/
+    or return { 'error' => gettext('illegal_name'). " payname: ". $p->{'payname'} };
+  my $payname = $1;
+
+  $p->{'paybatch'} =~ /^([\w \!\@\#\$\%\&\(\)\-\+\;\:\'\"\,\.\?\/\=]*)$/
+    or return { 'error' => gettext('illegal_text'). " paybatch: ". $p->{'paybatch'} };
+  my $paybatch = $1;
+
+  my $payinfo;
+  my $paycvv = '';
+  #if ( $payby eq 'CHEK' ) {
+  #
+  #  $p->{'payinfo1'} =~ /^(\d+)$/
+  #    or return { 'error' => "illegal account number ". $p->{'payinfo1'} };
+  #  my $payinfo1 = $1;
+  #   $p->{'payinfo2'} =~ /^(\d+)$/
+  #    or return { 'error' => "illegal ABA/routing number ". $p->{'payinfo2'} };
+  #  my $payinfo2 = $1;
+  #  $payinfo = $payinfo1. '@'. $payinfo2;
+  # 
+  #} elsif ( $payby eq 'CARD' ) {
+   
+    $payinfo = $p->{'payinfo'};
+    $payinfo =~ s/\D//g;
+    $payinfo =~ /^(\d{13,16})$/
+      or return { 'error' => gettext('invalid_card') }; # . ": ". $self->payinfo
+    $payinfo = $1;
+    validate($payinfo)
+      or return { 'error' => gettext('invalid_card') }; # . ": ". $self->payinfo
+    return { 'error' => gettext('unknown_card_type') }
+      if cardtype($payinfo) eq "Unknown";
+
+    if ( defined $cust_main->dbdef_table->column('paycvv') ) {
+      if ( length($p->{'paycvv'} ) ) {
+        if ( cardtype($payinfo) eq 'American Express card' ) {
+          $p->{'paycvv'} =~ /^(\d{4})$/
+            or return { 'error' => "CVV2 (CID) for American Express cards is four digits." };
+          $paycvv = $1;
+        } else {
+          $p->{'paycvv'} =~ /^(\d{3})$/
+            or return { 'error' => "CVV2 (CVC2/CID) is three digits." };
+          $paycvv = $1;
+        }
+      }
+    }
+  
+  #} else {
+  #  die "unknown payby $payby";
+  #}
+
+  my $error = $cust_main->realtime_bop( 'CC', $p->{'amount'},
+    'quiet'    => 1,
+    'payinfo'  => $payinfo,
+    'paydate'  => $p->{'year'}. '-'. $p->{'month'}. '-01',
+    'payname'  => $payname,
+    'paybatch' => $paybatch,
+    'paycvv'   => $paycvv,
+    map { $_ => $p->{$_} } qw( address1 address2 city state zip )
+  );
+  return { 'error' => $error } if $error;
+
+  $cust_main->apply_payments;
+
   if ( $p->{'save'} ) {
     my $new = new FS::cust_main { $cust_main->hash };
     $new->set( $_ => $p->{$_} )
@@ -235,15 +298,6 @@ sub process_payment {
     return { 'error' => $error } if $error;
     $cust_main = $new;
   }
-
-  my $error = $cust_main->realtime_bop( 'CC', $p->{'amount'}, quiet=>1,
-    'paydate' => $p->{'year'}. '-'. $p->{'month'}. '-01',
-    map { $_ => $p->{$_} }
-      qw( payname address1 address2 city state zip payinfo paybatch )
-  );
-  return { 'error' => $error } if $error;
-
-  $cust_main->apply_payments;
 
   return { 'error' => '' };
 
