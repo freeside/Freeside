@@ -635,7 +635,9 @@ Called by the suspend method of FS::cust_pkg (see L<FS::cust_pkg>).
 sub suspend {
   my $self = shift;
   my %hash = $self->hash;
-  unless ( $hash{_password} =~ /^\*SUSPENDED\* / ) {
+  unless ( $hash{_password} =~ /^\*SUSPENDED\* /
+           || $hash{_password} eq '*'
+         ) {
     $hash{_password} = '*SUSPENDED* '.$hash{_password};
     my $new = new FS::svc_acct ( \%hash );
     $new->replace($self);
@@ -964,7 +966,7 @@ sub ssh {
 
 =head1 VERSION
 
-$Id: svc_acct.pm,v 1.59 2001-12-20 02:07:04 ivan Exp $
+$Id: svc_acct.pm,v 1.60 2001-12-20 02:09:52 ivan Exp $
 
 =head1 BUGS
 
