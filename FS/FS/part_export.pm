@@ -885,7 +885,7 @@ tie my %forward_shellcommands_options, 'Tie::IxHash',
     'sqlmail' => {
       'desc' => 'Real-time export to SQL-backed mail server',
       'options' => \%sqlmail_options,
-      'nodomain' => 'N',
+      'nodomain' => '',
       'notes' => 'Database schema can be made to work with Courier IMAP and Exim.  Others could work but are untested. (...extended description from pc-intouch?...)',
     },
 
