@@ -43,9 +43,8 @@ Returns an HTML header.
 =cut
 
 sub header {
-  my($title,$menubar,$etc)=@_;
-  #use Carp;
-  #confess $etc if defined $etc;
+  my($title,$menubar,$etc)=@_; #$etc is for things like onLoad= etc.
+  use Carp;
   $etc = '' unless defined $etc;
 
   my $x =  <<END;
