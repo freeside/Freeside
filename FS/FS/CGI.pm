@@ -298,7 +298,7 @@ sub small_custview {
   my $html = 'Customer #<B>'. $cust_main->custnum. '</B></A>'.
     ' - <B><FONT COLOR="'. $cust_main->statuscolor. '">'.
     ucfirst($cust_main->status). '</FONT></B>'.
-    ntable('#e8e8e8'). '<TR><TD>'. ntable("#cccccc",2).
+    ntable('#e8e8e8'). '<TR><TD VALIGN="top">'. ntable("#cccccc",2).
     '<TR><TD ALIGN="right" VALIGN="top">Billing<BR>Address</TD><TD BGCOLOR="#ffffff">'.
     $cust_main->getfield('last'). ', '. $cust_main->first. '<BR>';
 
@@ -329,7 +329,7 @@ sub small_custview {
 
     my $pre = $cust_main->ship_last ? 'ship_' : '';
 
-    $html .= '<TD>'. ntable("#cccccc",2).
+    $html .= '<TD VALIGN="top">'. ntable("#cccccc",2).
       '<TR><TD ALIGN="right" VALIGN="top">Service<BR>Address</TD><TD BGCOLOR="#ffffff">'.
       $cust_main->get("${pre}last"). ', '.
       $cust_main->get("${pre}first"). '<BR>';
