@@ -30,9 +30,9 @@ databases/p5-DBD-Pg
 #databases/p5-DBD-mysql
 databases/p5-DBIx-DataSource
     #database/p5-DBIx-DBSchema
-    #net/p5-Net-SSH
+net/p5-Net-SSH
 textproc/p5-String-ShellQuote
-    #net/p5-Net-SCP
+net/p5-Net-SCP
 www/p5-Apache-ASP
 www/p5-HTML-Mason
 devel/p5-Tie-IxHash
