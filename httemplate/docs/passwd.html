@@ -11,6 +11,6 @@ You may use fs_passwd/fs_passwd as a "passwd", "chfn" and "chsh" replacement on 
   <li>Copy fs_passwd/fs_passwd to /usr/local/bin on the shell machine(s).  (chown freeside, chmod 4755).  You may link it to passwd, chfn and chsh as well.
   <li>Copy fs_passwd/fs_passwdd to /usr/local/sbin on the shell machine(s).  (chown freeside, chmod 500)
   <li>Create /usr/local/freeside on the shell machine(s). (chown freeside, chmod 700)
-  <li>Run an iteration of "fs_passwd/fs_passwd_server shell.machine" as the freeside user for each shell machine (this is a daemon process).
+  <li>Run an iteration of "fs_passwd/fs_passwd_server <i>user</i> shell.machine" as the freeside user for each shell machine (this is a daemon process).  <i>user</i> refers to the freeside user from the <a href="config.html">mapsecrets configuration file</a>.
 </ul>
 </body>
