@@ -142,9 +142,12 @@ while (1) {
 
     my @invoicing_list = split( /\s*\,\s*/, $signup_data->{'invoicing_list'} );
 
+    $signup_data->{'pkgpart'} =~ /^(\d+)$/ or '' =~ /^()$/;
+    my $pkgpart = $1;
+
     my $part_pkg =
-      qsearchs( 'part_pkg', { 'pkgpart' => $signup_data->{'pkgpart'} } )
-        or $error ||= "WARNING: unknown pkgpart ". $signup_data->{pkgpart};
+      qsearchs( 'part_pkg', { 'pkgpart' => $pkgpart } )
+        or $error ||= "WARNING: unknown pkgpart: $pkgpart";
     my $svcpart = $part_pkg->svcpart unless $error;
 
     my $cust_pkg = new FS::cust_pkg ( {

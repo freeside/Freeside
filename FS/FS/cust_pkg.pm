@@ -225,7 +225,7 @@ sub check {
     return "Unknown customer ". $self->custnum unless $self->cust_main;
   }
 
-  return "Unknown pkgpart"
+  return "Unknown pkgpart: ". $self->pkgpart
     unless qsearchs( 'part_pkg', { 'pkgpart' => $self->pkgpart } );
 
   $self->otaker(getotaker) unless $self->otaker;
@@ -701,7 +701,7 @@ sub order {
 
 =head1 VERSION
 
-$Id: cust_pkg.pm,v 1.20 2002-04-22 21:23:16 ivan Exp $
+$Id: cust_pkg.pm,v 1.21 2002-05-04 00:47:24 ivan Exp $
 
 =head1 BUGS
 
