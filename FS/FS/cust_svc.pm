@@ -477,14 +477,14 @@ sub attribute_since_sqlradacct {
       $str2time = 'extract(epoch from ';
     }
 
-    my $sth = $dbh->prepare("SELECT SUM(?)
+    my $sth = $dbh->prepare("SELECT SUM($attrib)
                                FROM radacct
                                WHERE UserName = ?
                                  AND $str2time AcctStopTime ) >= ?
                                  AND $str2time AcctStopTime ) <  ?
                                  AND AcctStopTime IS NOT NULL"
     ) or die $dbh->errstr;
-    $sth->execute($attrib, $username, $start, $end) or die $sth->errstr;
+    $sth->execute($username, $start, $end) or die $sth->errstr;
 
     $sum += $sth->fetchrow_arrayref->[0];
 
