@@ -2,7 +2,7 @@ package FS::part_pkg;
 
 use strict;
 use vars qw( @ISA %freq %plans $DEBUG );
-use Carp;
+use Carp qw(cluck);
 use Tie::IxHash;
 use FS::Conf;
 use FS::Record qw( qsearch qsearchs dbh dbdef );
@@ -454,13 +454,18 @@ Returns the option value for the given name, or the empty string.
 =cut
 
 sub option {
-  my $self = shift;
+  my( $self, $opt ) = @_;
   my $part_pkg_option =
     qsearchs('part_pkg_option', {
       pkgpart    => $self->pkgpart,
-      optionname => shift,
+      optionname => $opt,
   } );
-  $part_pkg_option ? $part_pkg_option->optionvalue : '';
+  return $part_pkg_option->optionvalue if $part_pkg_option;
+  my %plandata = map { /^(\w+)=(.*)$/; ( $1 => $2 ); }
+                     split("\n", $self->plandata );
+  return $plandata{$opt} if exists $plandata{$opt};
+  cluck "Package definition option $opt not found in options or plandata!\n";
+  '';
 }
 
 =item _rebless
