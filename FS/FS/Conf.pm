@@ -302,6 +302,34 @@ httemplate/docs/config.html
   },
 
   {
+    'key'         => 'encryption',
+    'section'     => 'billing',
+    'description' => 'Enable encryption of credit cards.',
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'encryptionmodule',
+    'section'     => 'billing',
+    'description' => 'Use which module for encryption?',
+    'type'        => 'text',
+  },
+
+  {
+    'key'         => 'encryptionpublickey',
+    'section'     => 'billing',
+    'description' => 'Your RSA Public Key - Required if Encryption is turned on.',
+    'type'        => 'textarea',
+  },
+
+  {
+    'key'         => 'encryptionprivatekey',
+    'section'     => 'billing',
+    'description' => 'Your RSA Private Key - Including this will enable the "Bill Now" feature.  However if the system is compromised, a hacker can use this key to decode the stored credit card information.  This is generally not a good idea.',
+    'type'        => 'textarea',
+  },
+
+  {
     'key'         => 'business-onlinepayment',
     'section'     => 'billing',
     'description' => '<a href="http://search.cpan.org/search?mode=module&query=Business%3A%3AOnlinePayment">Business::OnlinePayment</a> support, at least three lines: processor, login, and password.  An optional fourth line specifies the action or actions (multiple actions are separated with `,\': for example: `Authorization Only, Post Authorization\').    Optional additional lines are passed to Business::OnlinePayment as %processor_options.',

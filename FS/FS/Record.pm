@@ -13,6 +13,7 @@ use DBIx::DBSchema 0.23;
 use FS::UID qw(dbh getotaker datasrc driver_name);
 use FS::SearchCache;
 use FS::Msgcat qw(gettext);
+use FS::Conf;
 
 use FS::part_virtual_field;
 
@@ -23,6 +24,12 @@ use Tie::IxHash;
 
 $DEBUG = 0;
 $me = '[FS::Record]';
+
+my $conf;
+my $rsa_module;
+my $rsa_loaded;
+my $rsa_encrypt;
+my $rsa_decrypt;
 
 #ask FS::UID to run this stuff for us later
 $FS::UID::callback{'FS::Record'} = sub { 
@@ -379,32 +386,42 @@ sub qsearch {
       }
     }
   }
-  
+  my @return;
   if ( eval 'scalar(@FS::'. $table. '::ISA);' ) {
     if ( eval 'FS::'. $table. '->can(\'new\')' eq \&new ) {
       #derivied class didn't override new method, so this optimization is safe
       if ( $cache ) {
-        map {
+        @return = map {
           new_or_cached( "FS::$table", { %{$_} }, $cache )
         } values(%result);
       } else {
-        map {
+        @return = map {
           new( "FS::$table", { %{$_} } )
         } values(%result);
       }
     } else {
       warn "untested code (class FS::$table uses custom new method)";
-      map {
+      @return = map {
         eval 'FS::'. $table. '->new( { %{$_} } )';
       } values(%result);
     }
+
+    # Check for encrypted fields and decrypt them.
+    if ($conf->exists('encryption') && eval 'defined(@FS::'. $table . '::encrypted_fields)') {
+      foreach my $record (@return) {
+        foreach my $field (eval '@FS::'. $table . '::encrypted_fields') {
+          # Set it directly... This may cause a problem in the future...
+          $record->setfield($field, $record->decrypt($record->getfield($field)));
+        }
+      }
+    }
   } else {
     cluck "warning: FS::$table not loaded; returning FS::Record objects";
-    map {
+    @return = map {
       FS::Record->new( $table, { %{$_} } );
     } values(%result);
   }
-
+  return @return;
 }
 
 =item jsearch TABLE, HASHREF, SELECT, EXTRA_SQL, PRIMARY_TABLE, PRIMARY_KEY
@@ -598,6 +615,7 @@ otherwise returns false.
 
 sub insert {
   my $self = shift;
+  my $saved = {};
 
   my $error = $self->check;
   return $error if $error;
@@ -628,6 +646,17 @@ sub insert {
   }
 
   my $table = $self->table;
+
+  
+  # Encrypt before the database
+  if ($conf->exists('encryption') && defined(eval '@FS::'. $table . 'encrypted_fields')) {
+    foreach my $field (eval '@FS::'. $table . '::encrypted_fields') {
+      $self->{'saved'} = $self->getfield($field);
+      $self->setfield($field, $self->enrypt($self->getfield($field)));
+    }
+  }
+
+
   #false laziness w/delete
   my @real_fields =
     grep defined($self->getfield($_)) && $self->getfield($_) ne "",
@@ -741,6 +770,12 @@ sub insert {
 
   dbh->commit or croak dbh->errstr if $FS::UID::AutoCommit;
 
+  # Now that it has been saved, reset the encrypted fields so that $new 
+  # can still be used.
+  foreach my $field (keys %{$saved}) {
+    $self->setfield($field, $saved->{$field});
+  }
+
   '';
 }
 
@@ -847,6 +882,8 @@ sub replace {
   my $new = shift;
   my $old = shift;  
 
+  my $saved = {};
+
   if (!defined($old)) { 
     warn "[debug]$me replace called with no arguments; autoloading old record\n"
      if $DEBUG;
@@ -871,6 +908,14 @@ sub replace {
 
   my $error = $new->check;
   return $error if $error;
+  
+  # Encrypt for replace
+  if ($conf->exists('encryption') && defined(eval '@FS::'. $new->table . 'encrypted_fields')) {
+    foreach my $field (eval '@FS::'. $new->table . '::encrypted_fields') {
+      $saved->{$field} = $new->getfield($field);
+      $new->setfield($field, $new->encrypt($new->getfield($field)));
+    }
+  }
 
   #my @diff = grep $new->getfield($_) ne $old->getfield($_), $old->fields;
   my %diff = map { ($new->getfield($_) ne $old->getfield($_))
@@ -999,6 +1044,12 @@ sub replace {
       foreach(@rep_vfields);
 
   dbh->commit or croak dbh->errstr if $FS::UID::AutoCommit;
+
+  # Now that it has been saved, reset the encrypted fields so that $new 
+  # can still be used.
+  foreach my $field (keys %{$saved}) {
+    $new->setfield($field, $saved->{$field});
+  }
 
   '';
 
@@ -1651,6 +1702,70 @@ sub _dump {
   join("\n", map {
     "$_: ". $self->getfield($_). "|"
   } (fields($self->table)) );
+}
+
+sub encrypt {
+  my ($self, $value) = @_;
+  my $encrypted;
+  if ($conf->exists('encryption') && !$self->is_encrypted($value)) {
+    $self->loadRSA;
+    if (ref($rsa_encrypt) =~ /::RSA/) { # We Can Encrypt
+      # RSA doesn't like the empty string so let's pack it up
+      # The database doesn't like the RSA data so uuencode it
+      my $length = length($value)+1;
+      $encrypted = pack("u*",$rsa_encrypt->encrypt(pack("Z$length",$value)));
+    }
+  }
+  return $encrypted;
+}
+
+sub is_encrypted {
+  my ($self, $value) = @_;
+  # Possible Bug - Some work may be required here....
+
+  if (length($value) > 80) {
+    return 1;
+  } else {
+    return 0;
+  }
+}
+
+sub decrypt {
+  my ($self,$value) = @_;
+  my $decrypted = $value; # Will return the original value if it isn't encrypted or can't be decrypted.
+  if ($conf->exists('encryption') && $self->is_encrypted($value)) {
+    $self->loadRSA;
+    if (ref($rsa_decrypt) =~ /::RSA/) {
+      my $encrypted = unpack ("u*", $value);
+      $decrypted =  unpack("Z*", $rsa_decrypt->decrypt($encrypted));
+    }
+  }
+  return $decrypted;
+}
+
+sub loadRSA {
+    my $self = shift;;
+    #Initialize the Module
+    if (!$conf->exists('encryptionmodule')) {
+	carp "warning: There is no Encryption Module Defined!";
+	return;
+    }
+    $rsa_module = $conf->config('encryptionmodule');
+    if (!$rsa_loaded) {
+	eval ("require $rsa_module"); # No need to import the namespace
+	$rsa_loaded++;
+    }
+    # Initialize Encryption
+    if ($conf->exists('encryptionpublickey') && $conf->config('encryptionpublickey') ne '') {
+      my $public_key = join("\n",$conf->config('encryptionpublickey'));
+      $rsa_encrypt = $rsa_module->new_public_key($public_key);
+    }
+    
+    # Intitalize Decryption
+    if ($conf->exists('encryptionprivatekey') && $conf->config('encryptionprivatekey') ne '') {
+      my $private_key = join("\n",$conf->config('encryptionprivatekey'));
+      $rsa_decrypt = $rsa_module->new_private_key($private_key);
+    }
 }
 
 sub DESTROY { return; }

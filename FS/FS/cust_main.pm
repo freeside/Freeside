@@ -1,7 +1,7 @@
 package FS::cust_main;
 
 use strict;
-use vars qw( @ISA @EXPORT_OK $conf $DEBUG $import );
+use vars qw( @ISA @EXPORT_OK $conf $DEBUG $import @encrypted_fields);
 use vars qw( $realtime_bop_decline_quiet ); #ugh
 use Safe;
 use Carp;
@@ -52,6 +52,8 @@ $DEBUG = 0;
 #$DEBUG = 1;
 
 $import = 0;
+
+@encrypted_fields = ('payinfo', 'paycvv');
 
 #ask FS::UID to run this stuff for us later
 #$FS::UID::callback{'FS::cust_main'} = sub { 
@@ -175,11 +177,84 @@ FS::Record.  The following fields are currently supported:
 
 =item ship_fax - phone (optional)
 
-=item payby - I<CARD> (credit card - automatic), I<DCRD> (credit card - on-demand), I<CHEK> (electronic check - automatic), I<DCHK> (electronic check - on-demand), I<LECB> (Phone bill billing), I<BILL> (billing), I<COMP> (free), or I<PREPAY> (special billing type: applies a payment from a prepaid card - see L<FS::prepay_credit> - and sets billing type to I<BILL>)
+=item payby 
 
-=item payinfo - card number, P.O., comp issuer (4-8 lowercase alphanumerics; think username) or prepayment identifier (see L<FS::prepay_credit>)
+I<CARD> (credit card - automatic), I<DCRD> (credit card - on-demand), I<CHEK> (electronic check - automatic), I<DCHK> (electronic check - on-demand), I<LECB> (Phone bill billing), I<BILL> (billing), I<COMP> (free), or I<PREPAY> (special billing type: applies a credit - see L<FS::prepay_credit> and sets billing type to I<BILL>)
 
-=item paycvv - Card Verification Value, "CVV2" (also known as CVC2 or CID), the 3 or 4 digit number on the back (or front, for American Express) of the credit card
+=item payinfo 
+
+Card Number, P.O., comp issuer (4-8 lowercase alphanumerics; think username) or prepayment identifier (see L<FS::prepay_credit>)
+
+=cut 
+
+sub payinfo {
+  my($self,$payinfo) = @_;
+  if ( defined($payinfo) ) {
+    $self->paymask($payinfo);
+    $self->setfield('payinfo', $payinfo); # This is okay since we are the 'setter'
+  } else {
+    $payinfo = $self->getfield('payinfo'); # This is okay since we are the 'getter'
+    return $payinfo;
+  }
+}
+
+
+=item paycvv
+ 
+Card Verification Value, "CVV2" (also known as CVC2 or CID), the 3 or 4 digit number on the back (or front, for American Express) of the credit card
+
+=cut
+
+=item paymask - Masked payment type
+
+=over 4 
+
+=item Credit Cards
+
+Mask all but the last four characters.
+
+=item Checks
+
+Mask all but last 2 of account number and bank routing number.
+
+=item Others
+
+Do nothing, return the unmasked string.
+
+=back
+
+=cut 
+
+sub paymask {
+  my($self,$value)=@_;
+
+  # If it doesn't exist then generate it
+  my $paymask=$self->getfield('paymask');
+  if (!defined($value) && (!defined($paymask) || $paymask eq '')) {
+    $value = $self->payinfo;
+  }
+
+  if ( defined($value) && !$self->is_encrypted($value)) {
+    my $payinfo = $value;
+    my $payby = $self->payby;
+    if ($payby eq 'CARD' || $payby eq 'DCARD') { # Credit Cards (Show last four)
+      $paymask = 'x'x(length($payinfo)-4). substr($payinfo,(length($payinfo)-4));
+    } elsif ($payby eq 'CHEK' ||
+             $payby eq 'DCHK' ) { # Checks (Show last 2 @ bank)
+      my( $account, $aba ) = split('@', $payinfo );
+      $paymask = 'x'x(length($account)-2). substr($account,(length($account)-2))."@".$aba;
+    } else { # Tie up loose ends
+      $paymask = $payinfo;
+    }
+    $self->setfield('paymask', $paymask); # This is okay since we are the 'setter'
+  } else {
+    $paymask = 'N/A';
+  }
+  return $paymask;
+}
+
+
+
 
 =item paydate - expiration date, mm/yyyy, m/yyyy, mm/yy or m/yy
 
@@ -602,6 +677,16 @@ sub replace {
   local $SIG{TSTP} = 'IGNORE';
   local $SIG{PIPE} = 'IGNORE';
 
+  # If the mask is blank then try to set it - if we can...
+  if (!defined($self->paymask) && $self->paymask eq '') {
+    $self->paymask($self->payinfo);
+  }
+
+  # We absolutely have to have an old vs. new record to make this work.
+  if (!defined($old)) {
+    $old = qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
+  }
+
   if ( $self->payby eq 'COMP' && $self->payby ne $old->payby
        && $conf->config('users-allow_comp')                  ) {
     return "You are not permitted to create complimentary accounts."
@@ -695,7 +780,7 @@ sub queue_fuzzyfiles_update {
 
 Checks all fields to make sure this is a valid customer record.  If there is
 an error, returns the error, otherwise returns false.  Called by the insert
-and repalce methods.
+and replace methods.
 
 =cut
 
@@ -826,9 +911,19 @@ sub check {
 
   $self->payby =~ /^(CARD|DCRD|CHEK|DCHK|LECB|BILL|COMP|PREPAY)$/
     or return "Illegal payby: ". $self->payby;
+
+  # If it is encrypted and the private key is not availaible then we can't
+  # check the credit card.
+
+  my $check_payinfo = 1;
+
+  if ($self->is_encrypted($self->payinfo)) {
+    $check_payinfo = 0;
+  }
+
   $self->payby($1);
 
-  if ( $self->payby eq 'CARD' || $self->payby eq 'DCRD' ) {
+  if ( $check_payinfo && ($self->payby eq 'CARD' || $self->payby eq 'DCRD')) {
 
     my $payinfo = $self->payinfo;
     $payinfo =~ s/\D//g;
@@ -856,7 +951,7 @@ sub check {
       }
     }
 
-  } elsif ( $self->payby eq 'CHEK' || $self->payby eq 'DCHK' ) {
+  } elsif ($check_payinfo && ( $self->payby eq 'CHEK' || $self->payby eq 'DCHK' )) {
 
     my $payinfo = $self->payinfo;
     $payinfo =~ s/[^\d\@]//g;
@@ -2478,15 +2573,17 @@ sub paydate_monthyear {
 
 =item payinfo_masked
 
-Returns a "masked" payinfo field with all but the last four characters replaced
-by 'x'es.  Useful for displaying credit cards.
+Returns a "masked" payinfo field appropriate to the payment type.  Masked characters are replaced by 'x'es.  Use this to display publicly accessable account Information.
+
+Credit Cards - Mask all but the last four characters.
+Checks - Mask all but last 2 of account number and bank routing number.
+Others - Do nothing, return the unmasked string.
 
 =cut
 
 sub payinfo_masked {
   my $self = shift;
-  my $payinfo = $self->payinfo;
-  'x'x(length($payinfo)-4). substr($payinfo,(length($payinfo)-4));
+  return $self->paymask;
 }
 
 =item invoicing_list [ ARRAYREF ]
