@@ -3,7 +3,8 @@ package FS::svc_acct;
 use strict;
 use vars qw( @ISA $nossh_hack $conf $dir_prefix @shells $usernamemin
              $usernamemax $passwordmin
-             $shellmachine @saltset @pw_set);
+             $shellmachine $useradd $usermod $userdel 
+             @saltset @pw_set);
 use Carp;
 use FS::Conf;
 use FS::Record qw( qsearchs fields );
@@ -23,6 +24,27 @@ $FS::UID::callback{'FS::svc_acct'} = sub {
   $usernamemin = $conf->config('usernamemin') || 2;
   $usernamemax = $conf->config('usernamemax');
   $passwordmin = $conf->config('passwordmin') || 6;
+  if ( $shellmachine ) {
+    if ( $conf->exists('shellmachine-useradd') ) {
+      $useradd = join("\n", $conf->config('shellmachine-useradd') )
+                 || 'cp -pr /etc/skel $dir; chown -R $uid.$gid $dir';
+    } else {
+      $useradd = 'useradd -d $dir -m -s $shell -u $uid $username';
+    }
+    if ( $conf->exists('shellmachine-userdel') ) {
+      $userdel = join("\n", $conf->config('shellmachine-userdel') )
+                 || 'rm -rf $dir';
+    } else {
+      $userdel = 'userdel $username';
+    }
+    $usermod = join("\n", $conf->config('shellmachine-usermod') )
+               || '[ -d $old_dir ] && mv $old_dir $new_dir || ( '.
+                    'chmod u+t $old_dir; mkdir $new_dir; cd $old_dir; '.
+                    'find . -depth -print | cpio -pdm $new_dir; '.
+                    'chmod u-t $new_dir; chown -R $uid.$gid $new_dir; '.
+                    'rm -rf $old_dir'.
+                  ')';
+  }
 };
 
 @saltset = ( 'a'..'z' , 'A'..'Z' , '0'..'9' , '.' , '/' );
@@ -111,12 +133,21 @@ The additional fields pkgnum and svcpart (see L<FS::cust_svc>) should be
 defined.  An FS::cust_svc record will be created and inserted.
 
 If the configuration value (see L<FS::Conf>) shellmachine exists, and the 
-username, uid, and dir fields are defined, the command
+username, uid, and dir fields are defined, the command(s) specified in
+the shellmachine-useradd configuration are exectued on shellmachine via ssh.
+This behaviour can be surpressed by setting $FS::svc_acct::nossh_hack true.
+If the shellmachine-useradd configuration file does not exist,
 
   useradd -d $dir -m -s $shell -u $uid $username
 
-is executed on shellmachine via ssh.  This behaviour can be surpressed by
-setting $FS::svc_acct::nossh_hack true.
+is the default.  If the shellmachine-useradd configuration file exists but
+it empty,
+
+  cp -pr /etc/skel $dir; chown -R $uid.$gid $dir
+
+is the default instead.  Otherwise the contents of the file are treated as
+a double-quoted perl string, with the following variables available:
+$username, $uid, $gid, $dir, and $shell.
 
 =cut
 
@@ -148,26 +179,15 @@ sub insert {
   $error = $self->SUPER::insert;
   return $error if $error;
 
-  my ( $username, $uid, $dir, $shell ) = (
+  my( $username, $uid, $gid, $dir, $shell ) = (
     $self->username,
     $self->uid,
+    $self->gid,
     $self->dir,
     $self->shell,
   );
-  if ( $username 
-       && $uid
-       && $dir
-       && $shellmachine
-       && ! $nossh_hack ) {
-    #one way
-    ssh("root\@$shellmachine",
-        "useradd -d $dir -m -s $shell -u $uid $username"
-    );
-    #another way
-    #ssh("root\@$shellmachine","/bin/mkdir $dir; /bin/chmod 711 $dir; ".
-    #  "/bin/cp -p /etc/skel/.* $dir 2>/dev/null; ".
-    #  "/bin/cp -pR /etc/skel/Maildir $dir 2>/dev/null; ".
-    #  "/bin/chown -R $uid $dir") unless $nossh_hack;
+  if ( $username && $uid && $dir && $shellmachine && ! $nossh_hack ) {
+    ssh("root\@$shellmachine", eval "$useradd");
   }
 
   ''; #no error
@@ -180,12 +200,22 @@ error, otherwise returns false.
 
 The corresponding FS::cust_svc record will be deleted as well.
 
-If the configuration value (see L<FS::Conf>) shellmachine exists, the command:
+If the configuration value (see L<FS::Conf>) shellmachine exists, the
+command(s) specified in the shellmachine-userdel configuration file are
+executed on shellmachine via ssh.  This behavior can be surpressed by setting
+$FS::svc_acct::nossh_hack true.  If the shellmachine-userdel configuration
+file does not exist,
 
   userdel $username
 
-is executed on shellmachine via ssh.  This behaviour can be surpressed by
-setting $FS::svc_acct::nossh_hack true.
+is the default.  If the shellmachine-userdel configuration file exists but
+is empty,
+
+  rm -rf $dir
+
+is the default instead.  Otherwise the contents of the file are treated as a
+double-quoted perl string, with the following variables available:
+$username and $dir.
 
 =cut
 
@@ -203,9 +233,12 @@ sub delete {
   $error = $self->SUPER::delete;
   return $error if $error;
 
-  my $username = $self->username;
+  my( $username, $dir ) = (
+    $self->username,
+    $self->dir,
+  );
   if ( $username && $shellmachine && ! $nossh_hack ) {
-    ssh("root\@$shellmachine","userdel $username");
+    ssh("root\@$shellmachine", eval "$userdel");
   }
 
   '';
@@ -217,11 +250,13 @@ Replaces OLD_RECORD with this one in the database.  If there is an error,
 returns the error, otherwise returns false.
 
 If the configuration value (see L<FS::Conf>) shellmachine exists, and the 
-dir field has changed, the command:
+dir field has changed, the command(s) specified in the shellmachine-usermod
+configuraiton file are executed on shellmachine via ssh.  This behavior can
+be surpressed by setting $FS::svc-acct::nossh_hack true.  If the
+shellmachine-userdel configuration file does not exist or is empty, :
 
-  [ -d $old_dir ] && (
+  [ -d $old_dir ] && mv $old_dir $new_dir || (
     chmod u+t $old_dir;
-    umask 022;
     mkdir $new_dir;
     cd $old_dir;
     find . -depth -print | cpio -pdm $new_dir;
@@ -258,21 +293,14 @@ sub replace {
   $error = $new->SUPER::replace($old);
   return $error if $error;
 
-  my ( $old_dir, $new_dir ) = ( $old->getfield('dir'), $new->getfield('dir') );
-  my ( $uid, $gid) = ( $new->getfield('uid'), $new->getfield('gid') );
-  if ( $old_dir
-       && $new_dir
-       && $old_dir ne $new_dir
-       && ! $nossh_hack
-  ) {
-    ssh("root\@$shellmachine","[ -d $old_dir ] && ".
-                 "( chmod u+t $old_dir; ". #turn off qmail delivery
-                 "umask 022; mkdir $new_dir; cd $old_dir; ".
-                 "find . -depth -print | cpio -pdm $new_dir; ".
-                 "chmod u-t $new_dir; chown -R $uid.$gid $new_dir; ".
-                 "rm -rf $old_dir". 
-                 ")"
-    );
+  my ( $old_dir, $new_dir, $uid, $gid ) = (
+    $old->getfield('dir'),
+    $new->getfield('dir'),
+    $new->getfield('uid'),
+    $new->getfield('gid'),
+  );
+  if ( $old_dir && $new_dir && $old_dir ne $new_dir && ! $nossh_hack ) {
+    ssh("root\@$shellmachine", eval "$usermod" );
   }
 
   ''; #no error
@@ -504,13 +532,12 @@ sub radius_check {
 
 =head1 VERSION
 
-$Id: svc_acct.pm,v 1.10 2000-07-06 13:56:42 ivan Exp $
+$Id: svc_acct.pm,v 1.11 2000-07-17 10:37:27 ivan Exp $
 
 =head1 BUGS
 
-The remote commands should be configurable.
-
-The bits which ssh should fork before doing so.
+The bits which ssh should fork before doing so (or maybe queue jobs for a
+daemon).
 
 The $recref stuff in sub check should be cleaned up.
 
