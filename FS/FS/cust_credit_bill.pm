@@ -99,7 +99,8 @@ sub check {
   my $self = shift;
 
   my $error =
-    $self->ut_number('crednum')
+    $self->ut_numbern('creditbillnum')
+    || $self->ut_number('crednum')
     || $self->ut_number('invnum')
     || $self->ut_numbern('_date')
     || $self->ut_money('amount')
@@ -129,7 +130,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: cust_credit_bill.pm,v 1.1 2001-09-01 21:52:19 jeff Exp $
+$Id: cust_credit_bill.pm,v 1.2 2001-09-01 22:18:38 ivan Exp $
 
 =head1 BUGS
 
@@ -137,8 +138,8 @@ The delete method.
 
 =head1 SEE ALSO
 
-L<FS::Record>, L<FS::cust_refund>, L<FS::cust_bill>, schema.html from the base
-documentation.
+L<FS::Record>, L<FS::cust_refund>, L<FS::cust_bill>, L<cust_credit>,
+schema.html from the base documentation.
 
 =cut
 
