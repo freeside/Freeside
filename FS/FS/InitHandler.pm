@@ -9,7 +9,7 @@ $DEBUG = 1;
 
 sub handler {
 
-=pod
+#=pod
 
   use Date::Format;
   use Date::Parse;
