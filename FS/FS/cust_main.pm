@@ -2068,13 +2068,13 @@ sub realtime_refund_bop {
 
   my $cust_pay = '';
   my $amount = $options{'amount'};
-  my( $pay_processor, $auth, $order_number );
+  my( $pay_processor, $auth, $order_number ) = ( '', '', '' );
   if ( $options{'paynum'} ) {
     warn "FS::cust_main::realtime_bop: paynum: $options{paynum}\n" if $DEBUG;
     $cust_pay = qsearchs('cust_pay', { paynum=>$options{'paynum'} } )
       or return "Unknown paynum $options{'paynum'}";
     $amount ||= $cust_pay->paid;
-    $cust_pay->paybatch =~ /^(\w+):(\w+)(:(\w+))?$/
+    $cust_pay->paybatch =~ /^(\w+):(\w*)(:(\w+))?$/
       or return "Can't parse paybatch for paynum $options{'paynum'}: ".
                 $cust_pay->paybatch;
     ( $pay_processor, $auth, $order_number ) = ( $1, $2, $4 );
@@ -2084,19 +2084,22 @@ sub realtime_refund_bop {
   }
   return "neither amount nor paynum specified" unless $amount;
 
+  my %content = (
+    'type'           => $method,
+    'login'          => $login,
+    'password'       => $password,
+    'order_number'   => $order_number,
+    'amount'         => $amount,
+    'referer'        => 'http://cleanwhisker.420.am/',
+  );
+  $content{authorization} = $auth
+    if length($auth); #echeck/ACH transactions have an order # but no auth
+                      #(at least with authorize.net)
+
   #first try void if applicable
   if ( $cust_pay && $cust_pay->paid == $amount ) { #and check dates?
     my $void = new Business::OnlinePayment( $processor, @bop_options );
-    $void->content(
-      'type'           => $method,
-      'action'         => 'void',
-      'login'          => $login,
-      'password'       => $password,
-      'order_number'   => $order_number,
-      'amount'         => $amount,
-      'authorization'  => $auth,
-      'referer'        => 'http://cleanwhisker.420.am/',
-    );
+    $void->content( 'action' => 'void', %content );
     $void->submit();
     if ( $void->is_success ) {
       my $error = $cust_pay->void($options{'reason'});
@@ -2127,7 +2130,6 @@ sub realtime_refund_bop {
     $payname =  "$payfirst $paylast";
   }
 
-  my %content = ();
   if ( $method eq 'CC' ) { 
 
     $content{card_number} = $self->payinfo;
@@ -2158,13 +2160,7 @@ sub realtime_refund_bop {
   #then try refund
   my $refund = new Business::OnlinePayment( $processor, @bop_options );
   $refund->content(
-    'type'           => $method,
     'action'         => 'credit',
-    'login'          => $login,
-    'password'       => $password,
-    'order_number'   => $order_number,
-    'amount'         => $amount,
-    'authorization'  => $auth,
     'customer_id'    => $self->custnum,
     'last_name'      => $paylast,
     'first_name'     => $payfirst,
@@ -2174,7 +2170,6 @@ sub realtime_refund_bop {
     'state'          => $self->state,
     'zip'            => $self->zip,
     'country'        => $self->country,
-    'referer'        => 'http://cleanwhisker.420.am/',
     %content, #after
   );
   $refund->submit();
