@@ -233,7 +233,8 @@ sub check {
     or return "Illegal last name: ". $self->getfield('last');
   $self->setfield('last',$1);
 
-  $self->first =~ /^([\w \,\.\-\']+)$/ or return "Illegal first name";
+  $self->first =~ /^([\w \,\.\-\']+)$/
+    or return "Illegal first name: ". $self->first;
   $self->first($1);
 
   if ( $self->ss eq '' ) {
@@ -242,11 +243,11 @@ sub check {
     my $ss = $self->ss;
     $ss =~ s/\D//g;
     $ss =~ /^(\d{3})(\d{2})(\d{4})$/
-      or return "Illegal social security number";
+      or return "Illegal social security number: ". $self->ss;
     $self->ss("$1-$2-$3");
   }
 
-  $self->country =~ /^(\w\w)$/ or return "Illegal country";
+  $self->country =~ /^(\w\w)$/ or return "Illegal country: ". $self->country;
   $self->country($1);
   unless ( qsearchs('cust_main_county', {
     'country' => $self->country,
@@ -261,10 +262,12 @@ sub check {
       } );
   }
 
-  $self->zip =~ /^\s*(\w[\w\-\s]{3,8}\w)\s*$/ or return "Illegal zip";
+  $self->zip =~ /^\s*(\w[\w\-\s]{3,8}\w)\s*$/
+    or return "Illegal zip: ". $self->zip;
   $self->zip($1);
 
-  $self->payby =~ /^(CARD|BILL|COMP)$/ or return "Illegal payby: ". $self->payby;
+  $self->payby =~ /^(CARD|BILL|COMP)$/
+    or return "Illegal payby: ". $self->payby;
   $self->payby($1);
 
   if ( $self->payby eq 'CARD' ) {
@@ -272,21 +275,22 @@ sub check {
     my $payinfo = $self->payinfo;
     $payinfo =~ s/\D//g;
     $payinfo =~ /^(\d{13,16})$/
-      or return "Illegal credit card number";
+      or return "Illegal credit card number: ". $self->payinfo;
     $payinfo = $1;
     $self->payinfo($payinfo);
-    validate($payinfo) or return "Illegal credit card number";
+    validate($payinfo)
+      or return "Illegal credit card number: ". $self->payinfo;
     return "Unknown card type" if cardtype($self->payinfo) eq "Unknown";
 
   } elsif ( $self->payby eq 'BILL' ) {
 
     $error = $self->ut_textn('payinfo');
-    return "Illegal P.O. number" if $error;
+    return "Illegal P.O. number: ". $self->payinfo if $error;
 
   } elsif ( $self->payby eq 'COMP' ) {
 
     $error = $self->ut_textn('payinfo');
-    return "Illegal comp account issuer" if $error;
+    return "Illegal comp account issuer: ". $self->payinfo if $error;
 
   }
 
@@ -295,7 +299,7 @@ sub check {
     $self->paydate('');
   } else {
     $self->paydate =~ /^(\d{1,2})[\/\-](\d{2}(\d{2})?)$/
-      or return "Illegal expiration date";
+      or return "Illegal expiration date: ". $self->paydate;
     if ( length($2) == 4 ) {
       $self->paydate("$2-$1-01");
     } elsif ( $2 > 97 ) { #should pry change to check for "this year"
@@ -309,11 +313,11 @@ sub check {
     $self->payname( $self->first. " ". $self->getfield('last') );
   } else {
     $self->payname =~ /^([\w \,\.\-\']+)$/
-      or return "Illegal billing name";
+      or return "Illegal billing name: ". $self->payname;
     $self->payname($1);
   }
 
-  $self->tax =~ /^(Y?)$/ or return "Illegal tax";
+  $self->tax =~ /^(Y?)$/ or return "Illegal tax: ". $self->tax;
   $self->tax($1);
 
   $self->otaker(getotaker);
@@ -881,7 +885,7 @@ sub check_invoicing_list {
 
 =head1 VERSION
 
-$Id: cust_main.pm,v 1.18 1999-04-10 06:54:11 ivan Exp $
+$Id: cust_main.pm,v 1.19 1999-04-10 07:38:06 ivan Exp $
 
 =head1 BUGS
 
@@ -937,7 +941,10 @@ enable cybercash, cybercash v3 support, don't need to import
 FS::UID::{datasrc,checkruid} ivan@sisd.com 98-sep-19-21
 
 $Log: cust_main.pm,v $
-Revision 1.18  1999-04-10 06:54:11  ivan
+Revision 1.19  1999-04-10 07:38:06  ivan
+_all_ check stuff with illegal data return the bad data too, to help debugging
+
+Revision 1.18  1999/04/10 06:54:11  ivan
 ditto
 
 Revision 1.17  1999/04/10 05:27:38  ivan
