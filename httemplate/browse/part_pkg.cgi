@@ -12,7 +12,8 @@ my @part_pkg = qsearch('part_pkg', \%search );
 my $total = scalar(@part_pkg);
 
 my $sortby;
-my %num_active_cust_pkg;
+my %num_active_cust_pkg = ();
+my( $suspended_sth, $canceled_sth ) = ( '', '' );
 if ( $cgi->param('active') ) {
   my $active_sth = dbh->prepare(
     'SELECT COUNT(*) FROM cust_pkg WHERE pkgpart = ?'.
@@ -27,6 +28,18 @@ if ( $cgi->param('active') ) {
   $sortby = sub {
     $num_active_cust_pkg{$b->pkgpart} <=> $num_active_cust_pkg{$a->pkgpart};
   };
+
+  $suspended_sth = dbh->prepare(
+    'SELECT COUNT(*) FROM cust_pkg WHERE pkgpart = ?'.
+    ' AND ( cancel IS NULL OR cancel = 0 )'.
+    ' AND susp IS NOT NULL AND susp > 0'
+  ) or die dbh->errstr;
+
+  $canceled_sth = dbh->prepare(
+    'SELECT COUNT(*) FROM cust_pkg WHERE pkgpart = ?'.
+    ' AND cancel IS NOT NULL AND cancel > 0'
+  ) or die dbh->errstr;
+
 } else {
   $sortby = \*pkgpart_sort;
 }
@@ -102,8 +115,19 @@ END
     print "        <TD ROWSPAN=$rowspan>";
     print '<FONT COLOR="#00CC00"><B>'.
           $num_active_cust_pkg{$hashref->{'pkgpart'}}.
-          qq!</B></FONT>&nbsp;<A HREF="${p}search/cust_pkg.cgi?magic=active;pkgpart=$hashref->{pkgpart}">active</A>!;
-    # suspended/cancelled
+          qq!</B></FONT>&nbsp;<A HREF="${p}search/cust_pkg.cgi?magic=active;pkgpart=$hashref->{pkgpart}">active</A><BR>!;
+
+    $suspended_sth->execute( $part_pkg->pkgpart ) or die $suspended_sth->errstr;
+    my $num_suspended = $suspended_sth->fetchrow_arrayref->[0];
+    print '<FONT COLOR="#FF9900"<B>'. $num_suspended.
+          qq!</B></FONT>&nbsp;<A HREF="${p}search/cust_pkg.cgi?magic=suspended;pkgpart=$hashref->{pkgpart}">suspended</A><BR>!;
+
+    $canceled_sth->execute( $part_pkg->pkgpart ) or die $canceled_sth->errstr;
+    my $num_canceled = $canceled_sth->fetchrow_arrayref->[0];
+    print '<FONT COLOR="#FF0000"<B>'. $num_canceled.
+          qq!</B></FONT>&nbsp;<A HREF="${p}search/cust_pkg.cgi?magic=canceled;pkgpart=$hashref->{pkgpart}">canceled</A>!;
+
+
     print '</TD>';
   }
   print <<END;
