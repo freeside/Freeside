@@ -334,7 +334,7 @@ INVOICE_FROM, if specified, overrides the default email invoice From: address.
 sub send {
   my $self = shift;
   my $template = scalar(@_) ? shift : '';
-  return '' if scalar(@_) && $_[0] && $self->cust_main->agentnum ne shift;
+  return 'N/A' if scalar(@_) && $_[0] && $self->cust_main->agentnum != shift;
   my $invoice_from = scalar(@_) ? shift : $conf->config('invoice_from');
 
   my @print_text = $self->print_text('', $template);
