@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main.cgi,v 1.3 1998-12-17 06:17:00 ivan Exp $
+# $Id: cust_main.cgi,v 1.4 1998-12-23 08:08:15 ivan Exp $
 #
 # Usage: cust_main.cgi custnum
 #        http://server.name/path/cust_main.cgi?custnum
@@ -40,7 +40,10 @@
 # fixed one missed day->daytime ivan@sisd.com 98-jul-13
 #
 # $Log: cust_main.cgi,v $
-# Revision 1.3  1998-12-17 06:17:00  ivan
+# Revision 1.4  1998-12-23 08:08:15  ivan
+# fix typo
+#
+# Revision 1.3  1998/12/17 06:17:00  ivan
 # fix double // in relative URLs, s/CGI::Base/CGI/;
 #
 
@@ -70,7 +73,7 @@ if ( $query =~ /^(\d+)$/ ) { #editing
   $action='Add';
 }
 
-my $p1 = popurl(1);'
+my $p1 = popurl(1);
 print $cgi->header, header("Customer $action", ''), <<END;
     <FORM ACTION="${p1}process/cust_main.cgi" METHOD=POST>
     <PRE>
@@ -82,7 +85,7 @@ print $custnum ? $custnum : " (NEW)" , "</B></FONT>";
 
 #agentnum
 my($agentnum)=$cust_main->agentnum || 1; #set to first agent by default
-my(@agents) = qsearch('agent',{});
+my @agents = qsearch( 'agent', {} );
 print qq!\n\nAgent # <SELECT NAME="agentnum" SIZE="1">!;
 my($agent);
 foreach $agent (sort {
