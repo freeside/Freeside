@@ -7,6 +7,8 @@ httemplate/docs/upgrade8.html instead
 
 ----
 
+install HTML-Widgets-SelectLayers from CPAN or http://www.420.am/selectlayers
+
 install the FS perl modules and httemplate as per install.html or upgrade8.html
 
 ALTER TABLE cust_bill_event ADD status varchar(80);

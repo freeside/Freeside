@@ -42,24 +42,12 @@ unless ( $part_pkg->plan ) { #backwards-compat
 $action ||= $part_pkg->pkgpart ? 'Edit' : 'Add';
 my $hashref = $part_pkg->hashref;
 
-%>
-
-<SCRIPT>
-function visualize(what) {
-  if (document.getElementById) {
-    document.getElementById('d<%= $part_pkg->plan %>').style.visibility = "visible";
-  } else {
-    document.l<%= $part_pkg->plan %>.visibility = "visible";
-  }
-}
-</SCRIPT>
-
-<% 
 
 print header("$action Package Definition", menubar(
   'Main Menu' => popurl(2),
   'View all packages' => popurl(2). 'browse/part_pkg.cgi',
-), ' onLoad="visualize()"');
+));
+#), ' onLoad="visualize()"');
 
 print qq!<FONT SIZE="+1" COLOR="#ff0000">Error: !, $cgi->param('error'),
       "</FONT>"
@@ -164,8 +152,12 @@ unless ( 0 ) {
   #print "</TR></TABLE>";
 }
 
+foreach my $f ( qw( clone pkgnum ) ) {
+  print qq!<INPUT TYPE="hidden" NAME="$f" VALUE="!. $cgi->param($f). '">';
+}
+print '<INPUT TYPE="hidden" NAME="pkgpart" VALUE="'. $part_pkg->pkgpart. '">';
+
 # prolly should be in database
-use Tie::IxHash;
 tie my %plans, 'Tie::IxHash',
   'flat' => {
     'name' => 'Flat rate',
@@ -314,159 +306,99 @@ tie my %plans, 'Tie::IxHash',
 
 ;
 
-%>
-
-<SCRIPT>
-var layer = null;
-
-function changed(what) {
-  layer = what.options[what.selectedIndex].value;
-<% foreach my $layer ( keys %plans ) { %>
-  if (layer == "<%= $layer %>" ) {
-    <% foreach my $not ( grep { $_ ne $layer } keys %plans ) { %>
-      if (document.getElementById) {
-        document.getElementById('d<%= $not %>').style.visibility = "hidden";
-      } else {
-        document.l<%= $not %>.visibility = "hidden";
-      }
-    <% } %>
-    if (document.getElementById) {
-      document.getElementById('d<%= $layer %>').style.visibility = "visible";
-    } else {
-      document.l<%= $layer %>.visibility = "visible";
-    }
-  }
-<% } %>
-}
-
-</SCRIPT>
-<BR>
-Price plan <SELECT NAME="plan" SIZE=1 onChange="changed(this);">
-<OPTION>
-<% foreach my $layer (keys %plans ) { %>
-<OPTION VALUE="<%= $layer %>"<%= ' SELECTED'x($layer eq $part_pkg->plan) %>><%= $plans{$layer}->{'name'} %>
-<% } %>
-</SELECT></FORM>
-
-<SCRIPT>
-function fchanged(what) {
-  fixup(what.form);
-}
-
-function fixup(what) {
-<% foreach my $f ( qw( pkg comment freq ), @fixups ) { %>
-  what.<%= $f %>.value = document.dummy.<%= $f %>.value;
-<% } %>
-<% foreach my $f ( qw( setuptax recurtax disabled ) ) { %>
-  if (document.dummy.<%= $f %>.checked)
-    what.<%= $f %>.value = 'Y';
-  else
-    what.<%= $f %>.value = '';
-<% } %>
-  what.plan.value = document.dummy.plan.options[document.dummy.plan.selectedIndex].value;
-<% foreach my $p ( keys %plans ) { %>
-  if ( what.plan.value == "<%= $p %>" ) {
-    what.setup.value = <%= $plans{$p}->{setup} %>;
-    what.recur.value = <%= $plans{$p}->{recur} %>;
-  }
-<% } %>
-}
-</SCRIPT>
-
-<% my %plandata = map { /^(\w+)=(.*)$/; ( $1 => $2 ); }
+my %plandata = map { /^(\w+)=(.*)$/; ( $1 => $2 ); }
                     split("\n", $part_pkg->plandata );
-   #foreach my $layer ( 'konq_kludge', keys %plans ) { 
-   foreach my $layer ( 'konq_kludge', keys %plans ) {
-     my $visibility = "hidden";
-%>
-<SCRIPT>
-if (document.getElementById) {
-    document.write("<DIV ID=\"d<%= $layer %>\" STYLE=\"visibility: <%= $visibility %>; position: absolute\">");
-} else {
-<% $visibility="show" if $visibility eq "visible"; %>
-    document.write("<LAYER ID=\"l<%= $layer %>\" VISIBILITY=\"<%= $visibility %>\">");
-}
-</SCRIPT>
 
-<FORM NAME="<%= $layer %>" ACTION="process/part_pkg.cgi" METHOD=POST onSubmit="fixup(this)">
-<INPUT TYPE="hidden" NAME="plan" VALUE="<%= $part_pkg->plan %>">
-<INPUT TYPE="hidden" NAME="pkg" VALUE="<%= $hashref->{pkg} %>">
-<INPUT TYPE="hidden" NAME="comment" VALUE="$<%= $hashref->{comment} %>">
-<INPUT TYPE="hidden" NAME="freq" VALUE="<%= $hashref->{freq} %>">
-<INPUT TYPE="hidden" NAME="setuptax" VALUE="<%= $hashref->{setuptax} %>">
-<INPUT TYPE="hidden" NAME="recurtax" VALUE="<%= $hashref->{recurtax} %>">
-<INPUT TYPE="hidden" NAME="disabled" VALUE="<%= $hashref->{disabled} %>">
-<% foreach my $f ( @fixups ) { %>
-<INPUT TYPE="hidden" NAME="<%= $f %>" VALUE="">
-<% } %>
+tie my %options, 'Tie::IxHash', map { $_=>$plans{$_}->{'name'} } keys %plans;
 
-<%
-if ( $cgi->param('clone') ) {
-  print qq!<INPUT TYPE="hidden" NAME="clone" VALUE="!, $cgi->param('clone'), qq!">!;
-}
-if ( $cgi->param('pkgnum') ) {
-  print qq!<INPUT TYPE="hidden" NAME="pkgnum" VALUE="!, $cgi->param('pkgnum'), qq!">!;
-}
-%>
+my $widget = new HTML::Widgets::SelectLayers(
+  'selected_layer' => $part_pkg->plan,
+  'options'        => \%options,
+  'form_name'      => 'dummy',
+  'form_action'    => 'process/part_pkg.cgi',
+  'form_text'      => [ qw(pkg comment freq clone pkgnum pkgpart), @fixups ],
+  'form_checkbox'  => [ qw(setuptax recurtax disabled) ],
+  'fixup_callback' => sub {
+                        #my $ = @_;
+                        my $html = '';
+                        for my $p ( keys %plans ) {
+                          $html .= "if ( what.plan.value == \"$p\" ) {
+                                      what.setup.value = $plans{$p}->{setup} ;
+                                      what.recur.value = $plans{$p}->{recur} ;
+                                    }\n";
+                        }
+                        $html;
+                      },
+  'layer_callback' => sub {
+    my $layer = shift;
+    my $html = qq!<INPUT TYPE="hidden" NAME="plan" VALUE="$layer">!.
+               ntable("#cccccc",2);
+    my $href = $plans{$layer}->{'fields'};
+    foreach my $field ( exists($plans{$layer}->{'fieldorder'})
+                          ? @{$plans{$layer}->{'fieldorder'}}
+                          : keys %{ $href }
+                      ) {
 
-<INPUT TYPE="hidden" NAME="pkgpart" VALUE="<%= $hashref->{pkgpart} %>">
-<%= ntable("#cccccc",2) %>
+      $html .= '<TR><TD ALIGN="right">'. $href->{$field}{'name'}. '</TD><TD>';
 
-<% my $href = $plans{$layer}->{'fields'};
-   foreach my $field ( exists($plans{$layer}->{'fieldorder'})
-                         ? @{$plans{$layer}->{'fieldorder'}}
-                         : keys %{ $href }
-                     ) {
-%>
-  <TR><TD ALIGN="right"><%= $href->{$field}{'name'} %></TD>
-  <TD>
-  <% if ( ! exists($href->{$field}{'type'}) ) { %>
-       <INPUT TYPE="text" NAME="<%= $field %>" VALUE="<%= exists($plandata{$field}) ? $plandata{$field} : $href->{$field}{'default'} %>" onChange="fchanged(this)">
-  <% } elsif ( $href->{$field}{'type'} eq 'select_multiple' ) { %>
-       <SELECT MULTIPLE NAME="<%= $field %>" onChange="fchanged(this)">
-       <% foreach my $record ( qsearch( $href->{$field}{'select_table'}, $href->{$field}{'select_hash'} ) ) {
-          my $value = $record->getfield($href->{$field}{'select_key'}); %>
-         <OPTION VALUE="<%= $value %>"<%= $plandata{$field} =~ /(^|, *)$value *(,|$)/ ? ' SELECTED' : '' %>><%= $record->getfield($href->{$field}{'select_label'}) %>
-       <% } %>
-       </SELECT>
-  <% } %>
-  </TD></TR>
-<% } %>
+      if ( ! exists($href->{$field}{'type'}) ) {
+        $html .= qq!<INPUT TYPE="text" NAME="$field" VALUE="!.
+                 ( exists($plandata{$field})
+                     ? $plandata{$field}
+                     : $href->{$field}{'default'} ).
+                 qq!" onChange="fchanged(this)">!;
+      } elsif ( $href->{$field}{'type'} eq 'select_multiple' ) {
+        $html .= qq!<SELECT MULTIPLE NAME="$field" onChange="fchanged(this)">!;
+        foreach my $record (
+          qsearch( $href->{$field}{'select_table'},
+                   $href->{$field}{'select_hash'}   )
+        ) {
+          my $value = $record->getfield($href->{$field}{'select_key'});
+          $html .= qq!<OPTION VALUE="$value"!.
+                   (  $plandata{$field} =~ /(^|, *)$value *(,|$)/
+                        ? ' SELECTED'
+                        : ''          ).
+                   '>'. $record->getfield($href->{$field}{'select_label'})
+        }
+        $html .= '</SELECT>';
+      }
 
-</TABLE>
-<INPUT TYPE="hidden" NAME="plandata" VALUE="<%= join(',', keys %{ $href } ) %>">
-<BR><BR>
-
-<%
-print qq!<INPUT TYPE="submit" VALUE="!,
-      $hashref->{pkgpart} ? "Apply changes" : "Add package",
-      qq!" onClick="fchanged(this)">!;
-%>
-
-<BR><BR>don't edit this unless you know what you're doing <INPUT TYPE="button" VALUE="refresh expressions" onClick="fchanged(this)"><%= ntable("#cccccc",2) %><TR><TD>
-<FONT SIZE="1">Setup expression<BR><INPUT TYPE="text" NAME="setup" SIZE="160" VALUE="<%= $hashref->{setup} %>" onLoad="fchanged(this)"></FONT><BR>
-<FONT SIZE="1">Recurring espression<BR><INPUT TYPE="text" NAME="recur" SIZE="160" VALUE="<%= $hashref->{recur} %>" onLoad="fchanged(this)"></FONT>
-</TR></TD>
-</TABLE>
-
-</FORM>
-
-<SCRIPT>
-if (document.getElementById) {
-  document.write("</DIV>");
-} else {
-  document.write("</LAYER>");
-}
-</SCRIPT>
-
-<% } %>
-
-<TAG onLoad="
-    if (document.getElementById) {
-      document.getElementById('d<%= $part_pkg->plan %>').style.visibility = 'visible';
-    } else {
-      document.l<%= $part_pkg->plan %>.visibility = 'visible';
+      $html .= '</TD></TR>';
     }
-">
+    $html .= '</TABLE>';
+
+    $html .= '<INPUT TYPE="hidden" NAME="plandata" VALUE="'.
+             join(',', keys %{ $href } ). '">'.
+             '<BR><BR>';
+             
+    $html .= '<INPUT TYPE="submit" VALUE="'.
+             ( $hashref->{pkgpart} ? "Apply changes" : "Add package" ).
+             '" onClick="fchanged(this)">';
+
+    $html .= '<BR><BR>don\'t edit this unless you know what you\'re doing '.
+             '<INPUT TYPE="button" VALUE="refresh expressions" '.
+               'onClick="fchanged(this)">'.
+             ntable("#cccccc",2).
+             '<TR><TD>'.
+             '<FONT SIZE="1">Setup expression<BR>'.
+             '<INPUT TYPE="text" NAME="setup" SIZE="160" VALUE="'.
+               $hashref->{setup}. '" onLoad="fchanged(this)">'.
+             '</FONT><BR>'.
+             '<FONT SIZE="1">Recurring espression<BR>'.
+             '<INPUT TYPE="text" NAME="recur" SIZE="160" VALUE="'.
+               $hashref->{recur}. '" onLoad="fchanged(this)">'.
+             '</FONT>'.
+             '</TR></TD>'.
+             '</TABLE>';
+
+    $html;
+
+  },
+);
+
+%>
+
+<BR>
+Price plan <%= $widget->html %>
   </BODY>
 </HTML>

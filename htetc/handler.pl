@@ -66,6 +66,7 @@ sub handler
       use IO::Handle;
       use IO::File;
       use String::Approx qw(amatch);
+      use HTML::Widgets::SelectLayers;
       use FS::UID qw(cgisuidsetup dbh getotaker datasrc);
       use FS::Record qw(qsearch qsearchs fields dbdef);
       use FS::Conf;
@@ -102,6 +103,8 @@ sub handler
       use FS::svc_forward;
       use FS::svc_www;
       use FS::type_pkgs;
+      use FS::part_export;
+      #use FS::part_export_option;
 
       *CGI::redirect = sub {
         my( $self, $location ) = @_;

@@ -15,25 +15,16 @@
    }
    my $action = $part_svc->svcpart ? 'Edit' : 'Add';
    my $hashref = $part_svc->hashref;
-   my $p_svcdb = $part_svc->svcdb || 'svc_acct';
+#   my $p_svcdb = $part_svc->svcdb || 'svc_acct';
 
+
+           #" onLoad=\"visualize()\""
 %>
-
-<SCRIPT>
-function visualize(what) {
-  if (document.getElementById) {
-    document.getElementById('d<%= $p_svcdb %>').style.visibility = "visible";
-  } else {
-    document.l<%= $p_svcdb %>.visibility = "visible";
-  }
-}
-</SCRIPT>
 
 <%= header("$action Service Definition",
            menubar( 'Main Menu'         => $p,
                     'View all service definitions' => "${p}browse/part_svc.cgi"
                   ),
-           " onLoad=\"visualize()\""
            )
 %>
 
@@ -47,6 +38,7 @@ function visualize(what) {
 <BR><BR>
 Service  <INPUT TYPE="text" NAME="svc" VALUE="<%= $hashref->{svc} %>"><BR>
 Disable new orders <INPUT TYPE="checkbox" NAME="disabled" VALUE="Y"<%= $hashref->{disabled} eq 'Y' ? ' CHECKED' : '' %>><BR>
+<INPUT TYPE="hidden" NAME="svcpart" VALUE="<%= $hashref->{svcpart} %>">
 <BR>
 Services are items you offer to your customers.
 <UL><LI>svc_acct - Shell accounts, POP mailboxes, SLIP/PPP and ISDN accounts
@@ -64,37 +56,6 @@ values.  For example, a SLIP/PPP account may have a default (or perhaps fixed)
 blank <B>slipip</B> as well as a fixed shell something like <B>/bin/true</B> or
 <B>/usr/bin/passwd</B>.
 <BR><BR>
-<SCRIPT>
-var svcdb = null;
-function changed(what) {
-  svcdb = what.options[what.selectedIndex].value;
-<% foreach my $svcdb ( qw( svc_acct svc_domain svc_acct_sm svc_forward svc_www ) ) { %>
-  if (svcdb == "<%= $svcdb %>" ) {
-    <% foreach my $not ( grep { $_ ne $svcdb } (
-                           qw(svc_acct svc_domain svc_acct_sm svc_forward svc_www) ) ) { %>
-      if (document.getElementById) {
-        document.getElementById('d<%= $not %>').style.visibility = "hidden";
-      } else {
-        document.l<%= $not %>.visibility = "hidden";
-      }
-    <% } %>
-    if (document.getElementById) {
-      document.getElementById('d<%= $svcdb %>').style.visibility = "visible";
-    } else {
-      document.l<%= $svcdb %>.visibility = "visible";
-    }
-  }
-<% } %>
-}
-</SCRIPT>
-<% my @dbs = $hashref->{svcdb}
-             ? ( $hashref->{svcdb} )
-             : qw( svc_acct svc_domain svc_acct_sm svc_forward svc_www ); %>
-Table<SELECT NAME="svcdb" SIZE=1 onChange="changed(this)">
-<% foreach my $svcdb (@dbs) { %>
-<OPTION VALUE="<%= $svcdb %>" <%= ' SELECTED'x($svcdb eq $hashref->{svcdb}) %>><%= $svcdb %>
-<% } %>
-</SELECT></FORM>
 
 <%
 #these might belong somewhere else for other user interfaces 
@@ -152,121 +113,81 @@ my %defs = (
   },
 );
 
-#  svc_acct svc_domain svc_acct_sm svc_charge svc_wo
-foreach my $svcdb ( qw(
-  konq_kludge svc_acct svc_domain svc_acct_sm svc_forward svc_www
-) ) {
+  my @dbs = $hashref->{svcdb}
+             ? ( $hashref->{svcdb} )
+             : qw( svc_acct svc_domain svc_acct_sm svc_forward svc_www );
 
-#  my(@fields) = $svcdb eq 'konq_kludge'
-#                  ? ()
-#                  : grep { $_ ne 'svcnum' } fields($svcdb);
-  #yucky kludge
-  my(@fields) = defined( $FS::Record::dbdef->table($svcdb) )
-                  ? grep { $_ ne 'svcnum' } fields($svcdb)
-                  : ();
-  #my($rowspan)=scalar(@rows);
-
-  #my($ptmp)="<TD ROWSPAN=$rowspan>$svcdb</TD>";
-#  $visibility = $svcdb eq $part_svc->svcdb ? "SHOW" : "HIDDEN";
-#  $visibility = $svcdb eq $p_svcdb ? "visible" : "hidden";
-  my $visibility = "hidden";
-%>
-<SCRIPT>
-if (document.getElementById) {
-    document.write("<DIV ID=\"d<%= $svcdb %>\" STYLE=\"visibility: <%= $visibility %>; position: absolute\">");
-} else {
-<% $visibility="show" if $visibility eq "visible"; %>
-    document.write("<LAYER ID=\"l<%= $svcdb %>\" VISIBILITY=\"<%= $visibility %>\">");
-}
-
-function fixup(what) {
-  what.svc.value = document.dummy.svc.value;
-  what.svcdb.value = document.dummy.svcdb.options[document.dummy.svcdb.selectedIndex].value;
-  if (document.dummy.disabled.checked)
-    what.disabled.value = 'Y';
-  else
-    what.disabled.value = '';
-}
-</SCRIPT>
-<FORM NAME="<%= $svcdb %>" ACTION="process/part_svc.cgi" METHOD=POST onSubmit="fixup(this)">
-<INPUT TYPE="hidden" NAME="svcpart" VALUE="<%= $hashref->{svcpart} %>">
-<INPUT TYPE="hidden" NAME="svc" VALUE="<%= $hashref->{svc} %>">
-<INPUT TYPE="hidden" NAME="disabled" VALUE="<%= $hashref->{disabled} %>">
-<INPUT TYPE="hidden" NAME="svcdb" VALUE="<%= $svcdb %>">
-<%
-  #print "$svcdb<BR>" unless $svcdb eq 'konq_kludge';
-  print table(). "<TH>Field</TH><TH COLSPAN=2>Modifier</TH>" unless $svcdb eq 'konq_kludge';
-
-  foreach my $field (@fields) {
-    my $part_svc_column = $part_svc->part_svc_column($field);
-    my $value = $cgi->param('error')
-                  ? $cgi->param("${svcdb}__${field}")
-                  : $part_svc_column->columnvalue;
-    my $flag = $cgi->param('error')
-                 ? $cgi->param("${svcdb}__${field}_flag")
-                 : $part_svc_column->columnflag;
-    #print "<TR>$ptmp<TD>$field";
-    print "<TR><TD>$field";
-    my $def = $defs{$svcdb}{$field};
-    my $desc = ref($def) ? $def->{desc} : $def;
-    
-    print "- <FONT SIZE=-1>$desc</FONT>" if $desc;
-    print "</TD>";
-    print qq!<TD><INPUT TYPE="radio" NAME="${svcdb}__${field}_flag" VALUE=""!.
-      ' CHECKED'x($flag eq ''). ">Off</TD>";
-    print qq!<TD><INPUT TYPE="radio" NAME="${svcdb}__${field}_flag" VALUE="D"!.
-      ' CHECKED'x($flag eq 'D'). ">Default ";
-    print qq!<INPUT TYPE="radio" NAME="${svcdb}__${field}_flag" VALUE="F"!.
-      ' CHECKED'x($flag eq 'F'). ">Fixed ";
-    print '<BR>';
-    if ( ref($def) ) {
-      if ( $def->{type} eq 'select' ) {
-        print qq!<SELECT NAME="${svcdb}__${field}">!;
-        print '<OPTION> </OPTION>' unless $value;
-        foreach my $record ( qsearch( $def->{select_table}, {} ) ) {
-          my $rvalue = $record->getfield($def->{select_key});
-          print qq!<OPTION VALUE="$rvalue"!.
-                ( $rvalue==$value ? ' SELECTED>' : '>' ).
-                $record->getfield($def->{select_label}). '</OPTION>';
+  tie my %svcdb, 'Tie::IxHash', map { $_=>$_ } @dbs;
+  my $widget = new HTML::Widgets::SelectLayers(
+    #'selected_layer' => $p_svcdb,
+    'selected_layer' => $hashref->{svcdb} || 'svc_acct',
+    'options'        => \%svcdb,
+    'form_name'      => 'dummy',
+    'form_action'    => 'process/part_svc.cgi',
+    'form_text'      => [ qw( svc svcpart ) ],
+    'form_checkbox'  => [ 'disabled' ],
+    'layer_callback' => sub {
+      my $layer = shift;
+      my $html = qq!<INPUT TYPE="hidden" NAME="svcdb" VALUE="$layer">!.
+                 table(). "<TH>Field</TH><TH COLSPAN=2>Modifier</TH>";
+      #yucky kludge
+      my @fields = defined( $FS::Record::dbdef->table($layer) )
+                      ? grep { $_ ne 'svcnum' } fields($layer)
+                      : ();
+      foreach my $field (@fields) {
+        my $part_svc_column = $part_svc->part_svc_column($field);
+        my $value = $cgi->param('error')
+                      ? $cgi->param("${layer}__${field}")
+                      : $part_svc_column->columnvalue;
+        my $flag = $cgi->param('error')
+                     ? $cgi->param("${layer}__${field}_flag")
+                     : $part_svc_column->columnflag;
+        my $def = $defs{$layer}{$field};
+        my $desc = ref($def) ? $def->{desc} : $def;
+        
+        $html .= "<TR><TD>$field";
+        $html .= "- <FONT SIZE=-1>$desc</FONT>" if $desc;
+        $html .=  "</TD>";
+        $html .=
+          qq!<TD><INPUT TYPE="radio" NAME="${layer}__${field}_flag" VALUE=""!.
+          ' CHECKED'x($flag eq ''). ">Off</TD>".
+          qq!<TD><INPUT TYPE="radio" NAME="${layer}__${field}_flag" VALUE="D"!.
+          ' CHECKED'x($flag eq 'D'). ">Default ".
+          qq!<INPUT TYPE="radio" NAME="${layer}__${field}_flag" VALUE="F"!.
+          ' CHECKED'x($flag eq 'F'). ">Fixed ".
+          '<BR>';
+        if ( ref($def) ) {
+          if ( $def->{type} eq 'select' ) {
+            $html .= qq!<SELECT NAME="${layer}__${field}">!;
+            $html .= '<OPTION> </OPTION>' unless $value;
+            foreach my $record ( qsearch( $def->{select_table}, {} ) ) {
+              my $rvalue = $record->getfield($def->{select_key});
+              $html .= qq!<OPTION VALUE="$rvalue"!.
+                       ( $rvalue==$value ? ' SELECTED>' : '>' ).
+                       $record->getfield($def->{select_label}). '</OPTION>';
+            }
+            $html .= '</SELECT>';
+          } else {
+            $html .= '<font color="#ff0000">unknown type'. $def->{type};
+          }
+        } else {
+          $html .=
+            qq!<INPUT TYPE="text" NAME="${layer}__${field}" VALUE="$value">!;
         }
-        print '</SELECT>';
-      } else {
-        print '<font color="#ff0000">unknown type'. $def->{type};
+        $html .= "</TD></TR>\n";
       }
-    } else {
-      print qq!<INPUT TYPE="text" NAME="${svcdb}__${field}" VALUE="$value">!;
-    }
-    print "</TD></TR>\n";
-    #$ptmp='';
-  }
-  print "</TABLE>" unless $svcdb eq 'konq_kludge';
+      $html .= "</TABLE>";
 
-print qq!\n<BR><INPUT TYPE="submit" VALUE="!,
-      $hashref->{svcpart} ? "Apply changes" : "Add service",
-      qq!">! unless $svcdb eq 'konq_kludge';
+      $html .= '<BR><INPUT TYPE="submit" VALUE="'.
+               ($hashref->{svcpart} ? 'Apply changes' : 'Add service'). '">';
 
-  print "</FORM>";
-  print <<END;
-    <SCRIPT>
-    if (document.getElementById) {
-      document.write("</DIV>");
-    } else {
-      document.write("</LAYER>");
-    }
-    </SCRIPT>
-END
-}
-#print "</TABLE>";
+      $html;
+
+    },
+  );
+
 %>
-
-<TAG onLoad="
-    if (document.getElementById) {
-      document.getElementById('d<%= $p_svcdb %>').style.visibility = 'visible';
-    } else {
-      document.l<%= $p_svcdb %>.visibility = 'visible';
-    }
-">
-
+Table <%= $widget->html %>
   </BODY>
 </HTML>
 
