@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: signup.cgi,v 1.24 2002-04-19 13:17:56 ivan Exp $
+# $Id: signup.cgi,v 1.25 2002-04-19 23:50:37 ivan Exp $
 
 use strict;
 use vars qw( @payby $cgi $locales $packages $pops $init_data $error
@@ -12,6 +12,7 @@ use vars qw( @payby $cgi $locales $packages $pops $init_data $error
              $ieak_file $ieak_template $cck_file $cck_template
              $signup_html $signup_template $success_html $success_template
              $ac $exch $loc
+             $email_name $pkg
              $self_url
            );
 use subs qw( print_form print_okay expselect signup_default success_default );
@@ -245,7 +246,7 @@ sub print_okay {
   my $password = $1;
   ( $cgi->param('first'). ' '. $cgi->param('last') ) =~ /^(.*)$/
     or die "fatal: invalid email_name got past FS::SignupClient::new_customer";
-  my $email_name = $1;
+  $email_name = $1; #global for template
 
   my $pop = pop_info($cgi->param('popnum'));
     #or die "fatal: invalid popnum got past FS::SignupClient::new_customer";
@@ -255,7 +256,8 @@ sub print_okay {
     ( $ac, $exch, $loc ) = ( '', '', ''); #presumably you're not using them.
   }
 
-  my $pkg = ( grep { $_->{'pkgpart'} eq $pkgpart } @$packages )[0]->{'pkg'};
+  #global for template
+  $pkg = ( grep { $_->{'pkgpart'} eq $pkgpart } @$packages )[0]->{'pkg'};
 
   if ( $ieak_template
        && $user_agent->platform eq 'ia32'
