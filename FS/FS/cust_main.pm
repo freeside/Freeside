@@ -1146,7 +1146,7 @@ sub collect {
       my $error = eval $part_bill_event->eventcode;
 
       if ( $@ ) {
-        warn "fatal error running invoice event (". part_bill_event->eventcode.
+        warn "fatal error running invoice event (". $part_bill_event->eventcode.
              "): $@";
       }
 
