@@ -1422,7 +1422,7 @@ sub _items_credits {
       #'description' => 'Credit ref\#'. $_->crednum.
       #                 " (". time2str("%x",$_->cust_credit->_date) .")".
       #                 $reason,
-      'description' => 'Credit applied'.
+      'description' => 'Credit applied '.
                        time2str("%x",$_->cust_credit->_date). $reason,
       'amount'      => sprintf("%10.2f",$_->amount),
     };
