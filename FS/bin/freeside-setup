@@ -1039,7 +1039,7 @@ sub tables_hash_hack {
       'columns' => [
         'svcpart', 'int', '', '',
 	'routernum', 'int', '', '',
-      ];
+      ],
       'primary_key' => '',
       'unique'      => [],
       'index'       => [],
