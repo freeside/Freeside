@@ -179,7 +179,7 @@ my %defs = (
       $html .= '<BR><BR>'. table().
                table(). "<TR><TH COLSPAN=$columns>Exports</TH></TR><TR>";
       foreach my $part_export ( @part_export ) {
-        $html .= '<TD><INPUT TYPE="checbox"'.
+        $html .= '<TD><INPUT TYPE="checkbox"'.
                  ' NAME="exportnum'. $part_export->exportnum. '"  VALUE="1" ';
         $html .= 'CHECKED'
           if ( $clone || $part_svc->svcpart ) #null svcpart search causing error
