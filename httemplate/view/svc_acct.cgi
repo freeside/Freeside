@@ -83,7 +83,7 @@ if ( $password =~ /^\*\w+\* (.*)$/ ) {
   print "<I>(login disabled)</I> ";
 }
 if ( $conf->exists('showpasswords') ) {
-  print "$password";
+  print '<PRE>'. encode_entities($password). '</PRE>';
 } else {
   print "<I>(hidden)</I>";
 }
