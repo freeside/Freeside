@@ -68,7 +68,7 @@ $footer
 %%	UNCOMMENT the following FOUR lines and change the path if necssary to provide a logo
 \fancyhead[LO,LE]{
 \begin{tabular}{l}
-\includegraphics{/usr/local/etc/freeside/logo.eps}
+\includegraphics{/usr/local/etc/freeside/conf.DBI:Pg:dbname=freeside/logo.eps}
 \end{tabular}}
 %
 %%	The Heading comprising isue date, customer ref & INVOICE name
