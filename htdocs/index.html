@@ -21,9 +21,10 @@
       </A>
     </P>
     <HR>
-      <H3><A HREF="edit/cust_main.cgi">New Customer</A></H3>
-        <A NAME="search"><H3>Search</H3></A>
-        <MENU>
+    <ul>
+      <li><A HREF="edit/cust_main.cgi">New Customer</A>
+      <li><A NAME="search">Search</A>
+        <ul>
         <LI><A HREF="search/cust_main.html">
             customers (by last name and/or company)
         </A>
@@ -32,9 +33,9 @@
         <LI><A HREF="search/svc_domain.html">domains (by domain)</A>
         <LI><A HREF="search/svc_acct_sm.html">mail aliases (by domain, and optionally username)</A>
         <LI><A HREF="search/cust_bill.html">invoices (by invoice number)</A>
-        </MENU>
-        <A NAME="browse"><H3>Browse</H3></A>
-        <MENU>
+        </ul>
+      <li><A NAME="browse">Browse</A>
+        <ul>
           <LI><A HREF="search/cust_main.cgi?custnum">customers (by customer number)</A>
           <LI><A HREF="search/cust_main.cgi?last">customers (by last name)</A>
           <LI><A HREF="search/cust_main.cgi?company">customers (by company)</A>
@@ -50,9 +51,9 @@
           <LI><A HREF="search/svc_domain.cgi?domain">domains (by domain)</A>
           <LI><A HREF="search/svc_domain.cgi?UN_svcnum">unlinked domains (by service number)</A>
           <LI><A HREF="search/svc_domain.cgi?UN_domain">unlinked domains (by domain)</A>
-      </MENU>
-          <A NAME="admin"><H3>Administration</H3></a>
-        <MENU>
+        </ul>
+      <li><A NAME="admin">Administration</a>
+        <ul>
           <LI><A HREF="browse/part_svc.cgi">
             View/Edit services
           </A>
@@ -73,24 +74,21 @@
           </A>
             - Agents are resellers of your service.  Agents may be limited
               to a subset of your full offerings (via their type).
-          <BR>
           <LI><A HREF="browse/part_referral.cgi">
             View/Edit referrals
           </A>
             - Where a customer heard about your service.  Tracked for
               informational purposes.
-          <BR>
           <LI><A HREF="browse/cust_main_county.cgi">
             View/Edit locales and tax rates
           </A>
             - Change tax rates, or break down a country into states, or a state
               into counties and assign different tax rates to each.
-          <BR>
           <LI><A HREF="browse/svc_acct_pop.cgi">
             View/Edit POPs 
           </A>
             - Points of Presence 
-    </MENU>
-    </FONT>
+        </ul>
+      </ul>
   </BODY>
 </HTML>
