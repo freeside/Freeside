@@ -466,7 +466,7 @@ foreach my $bill (@bills) {
                                              $payment->payinfo,
                                              $cust_bill_pay->amount,
                       );
-    $payinfo = 'x'x(length($payinfo)-4). substr($payinfo,(length($payinfo)-4));
+    $payinfo = 'x'x(length($payinfo)-4). substr($payinfo,(length($payinfo)-4))
       if $payby eq 'CARD';
     my $target = "$payby$payinfo";
     $payby =~ s/^BILL$/Check #/ if $payinfo;
@@ -549,7 +549,7 @@ foreach my $payment (@unapplied_payments) {
   my $payby = $payment->payby;
   my $payinfo = $payment->payinfo;
   #false laziness w/above
-  $payinfo = substr($payinfo,0,4). 'x'x(length($payinfo)-4)
+  $payinfo = 'x'x(length($payinfo)-4). substr($payinfo,(length($payinfo)-4))
     if $payby eq 'CARD';
   my $target = "$payby$payinfo";
   $payby =~ s/^BILL$/Check #/ if $payinfo;
