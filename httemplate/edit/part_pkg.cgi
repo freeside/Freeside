@@ -131,11 +131,12 @@ my $columns = 3;
 my @part_svc = qsearch( 'part_svc', { 'disabled' => '' } );
 foreach my $part_svc ( @part_svc ) {
   my $svcpart = $part_svc->svcpart;
-  my $pkg_svc = qsearchs( 'pkg_svc', {
-    'pkgpart'  => $cgi->param('clone') || $part_pkg->pkgpart,
+  my $pkgpart = $cgi->param('clone') || $part_pkg->pkgpart;
+  my $pkg_svc = $pkgpart && qsearchs( 'pkg_svc', {
+    'pkgpart'  => $pkgpart,
     'svcpart'  => $svcpart,
   } ) || new FS::pkg_svc ( {
-    'pkgpart'  => $cgi->param('clone') || $part_pkg->pkgpart,
+    'pkgpart'  => $pkgpart,
     'svcpart'  => $svcpart,
     'quantity' => 0,
   });
