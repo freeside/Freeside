@@ -53,6 +53,7 @@ sub num_customer_tickets {
     select count(*) from tickets 
        where ( status = 'new' or status = 'open' or status = 'stalled' )
          and target = 'freeside://freeside/cust_main/$custnum'
+         $priority_sql
   ";
 
   my $sth = $dbh->prepare($sql) or die $dbh->errstr;
