@@ -17,14 +17,14 @@ use FS::UID qw(adminsuidsetup);
 use FS::Record qw(qsearchs);
 use FS::svc_acct;
 
+my $user = shift or die &usage;
+adminsuidsetup $user; 
+
+my($shellmachine)=shift or die &usage;
+
 $SIG{CHLD} = sub { wait() };
 
-&adminsuidsetup; 
-
 my($fs_passwdd)="/usr/local/sbin/fs_passwdd";
-
-my($shellmachine)=shift;
-die "Usage: fs_passwd_server shellmachine\n" unless $shellmachine;
 
 while (1) {
   my($reader,$writer)=(new IO::Handle, new IO::Handle);
@@ -69,5 +69,9 @@ while (1) {
   close $reader;
   sleep 60;
   warn "Connection to $shellmachine lost!  Reconnecting...\n";
+}
+
+sub usage {
+  die "Usage:\n\n  fs_passwd_server user shellmachine\n";
 }
 
