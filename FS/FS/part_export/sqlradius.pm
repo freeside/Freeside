@@ -13,7 +13,7 @@ sub _export_insert {
 
   foreach my $table (qw(reply check)) {
     my $method = "radius_$table";
-    my %attrib = $svc_acct->$method;
+    my %attrib = $svc_acct->$method();
     next unless keys %attrib;
     my $err_or_queue = $self->sqlradius_queue( $svc_acct->svcnum, 'insert',
       $table, $svc_acct->username, %attrib );
@@ -56,8 +56,8 @@ sub _export_replace {
 
   foreach my $table (qw(reply check)) {
     my $method = "radius_$table";
-    my %new = $new->$method;
-    my %old = $old->$method;
+    my %new = $new->$method();
+    my %old = $old->$method();
     if ( grep { !exists $old{$_} #new attributes
                 || $new{$_} ne $old{$_} #changed
               } keys %new
