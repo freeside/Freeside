@@ -1,4 +1,4 @@
-<!-- $Id: part_svc.cgi,v 1.1 2001-07-30 07:36:04 ivan Exp $ -->
+<!-- $Id: part_svc.cgi,v 1.2 2001-08-11 04:55:03 ivan Exp $ -->
 <% 
    my $part_svc;
    if ( $cgi->param('error') ) { #error
@@ -86,8 +86,11 @@ function changed(what) {
 <% } %>
 }
 </SCRIPT>
+<% my @dbs = $hashref->{svcdb}
+             ? ( $hashref->{svcdb} )
+             : qw( svc_acct svc_domain svc_acct_sm svc_www ); %>
 Table<SELECT NAME="svcdb" SIZE=1 onChange="changed(this)">
-<% foreach my $svcdb (qw( svc_acct svc_domain svc_acct_sm svc_www )) { %>
+<% foreach my $svcdb (@dbs) { %>
 <OPTION VALUE="<%= $svcdb %>" <%= ' SELECTED'x($svcdb eq $hashref->{svcdb}) %>><%= $svcdb %>
 <% } %>
 </SELECT>
