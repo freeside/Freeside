@@ -142,7 +142,7 @@ sub update_values {
   # Update records to conform to a particular server_type.
 
   my ($self, $svc, $svcdb) = (shift,shift,shift);
-  my $svchash = $svc->hashref or return '';
+  my $svchash = { %{$svc->hashref} } or return ''; # We need a copy.
 
   if ($svcdb eq 'svc_acct') {
     if ($self->option('server_type') eq 'courier_crypt') {
