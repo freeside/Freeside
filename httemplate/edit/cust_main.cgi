@@ -104,7 +104,7 @@ if ( $custnum && ! $conf->exists('editreferrals') ) {
     $refnum ||= $referrals[0]->refnum;
     print qq!<INPUT TYPE="hidden" NAME="refnum" VALUE="$refnum">!;
   } else {
-    print qq!<BR><BR>${r}Referral <SELECT NAME="refnum" SIZE="1">!;
+    print qq!<BR><BR>${r}Advertising source <SELECT NAME="refnum" SIZE="1">!;
     print "<OPTION> " unless $refnum;
     my($referral);
     foreach $referral (sort {

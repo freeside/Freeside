@@ -158,7 +158,7 @@ print '<TD VALIGN="top">';
     my $referral = qsearchs('part_referral', {
       'refnum' => $cust_main->refnum
     } );
-    print '<TR><TD ALIGN="right">Referral</TD><TD BGCOLOR="#ffffff">',
+    print '<TR><TD ALIGN="right">Advertising source</TD><TD BGCOLOR="#ffffff">',
           $referral->refnum, ": ", $referral->referral, '</TD></TR>';
   }
   print '<TR><TD ALIGN="right">Order taker</TD><TD BGCOLOR="#ffffff">',
