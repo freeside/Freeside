@@ -292,7 +292,7 @@ sub label {
     my $domain = qsearchs( 'domain_record', { 'recnum' => $svc_x->recnum } );
     $tag = $domain->reczone;
   } elsif ( $svcdb eq 'svc_broadband' ) {
-    $tag = $svc_x->ip_addr . '/' . $svc_x->ip_netmask;
+    $tag = $svc_x->ip_addr;
   } else {
     cluck "warning: asked for label of unsupported svcdb; using svcnum";
     $tag = $svc_x->getfield('svcnum');
