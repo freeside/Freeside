@@ -610,7 +610,8 @@ Returns the domain associated with this account.
 sub domain {
   my $self = shift;
   if ( $self->domsvc ) {
-    my $svc_domain = qsearchs( 'svc_domain', { 'svcnum' => $self->domsvc } );
+    my $svc_domain = qsearchs( 'svc_domain', { 'svcnum' => $self->domsvc } )
+      or die "no svc_domain.svcnum for svc_acct.domsvc ". $self->domsvc;
     $svc_domain->domain;
   } else {
     $mydomain or die "svc_acct.domsvc is null and no legacy domain config file";
@@ -632,7 +633,7 @@ sub email {
 
 =head1 VERSION
 
-$Id: svc_acct.pm,v 1.28 2001-08-21 03:03:36 ivan Exp $
+$Id: svc_acct.pm,v 1.29 2001-09-02 04:51:11 ivan Exp $
 
 =head1 BUGS
 

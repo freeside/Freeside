@@ -122,7 +122,8 @@ sub label {
   my $self = shift;
   my $part_svc = qsearchs( 'part_svc', { 'svcpart' => $self->svcpart } );
   my $svcdb = $part_svc->svcdb;
-  my $svc_x = qsearchs( $svcdb, { 'svcnum' => $self->svcnum } );
+  my $svc_x = qsearchs( $svcdb, { 'svcnum' => $self->svcnum } )
+    or die "can't find $svcdb.svcnum ". $self->svcnum;
   my $svc = $part_svc->svc;
   my $tag;
   if ( $svcdb eq 'svc_acct' ) {
@@ -154,7 +155,7 @@ sub label {
 
 =head1 VERSION
 
-$Id: cust_svc.pm,v 1.3 2001-08-20 11:18:20 ivan Exp $
+$Id: cust_svc.pm,v 1.4 2001-09-02 04:51:11 ivan Exp $
 
 =head1 BUGS
 
