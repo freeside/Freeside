@@ -3,8 +3,9 @@
 
 #untaint invnum
 my($query) = $cgi->keywords;
-$query =~ /^(\d+)$/;
-my $invnum = $1;
+$query =~ /^((.+)-)?(\d+)$/;
+my $templatename = $1;
+my $invnum = $3;
 
 my $cust_bill = qsearchs('cust_bill',{'invnum'=>$invnum});
 die "Invoice #$invnum not found!" unless $cust_bill;
@@ -43,13 +44,27 @@ foreach my $cust_bill_event (
 ) {
   my $status = $cust_bill_event->status;
   $status .= ': '. $cust_bill_event->statustext if $cust_bill_event->statustext;
-  print '<TR><TD>'. $cust_bill_event->part_bill_event->event. '</TD><TD>'.
+  my $part_bill_event = $cust_bill_event->part_bill_event;
+  print '<TR><TD>'. $part_bill_event->event;
+
+  if (
+    $part_bill_event->plan eq 'send_alternate'
+    && $part_bill_event->plandata =~ /^templatename (.*)$/m
+  ) {
+    my $templatename = $1;
+    print qq! ( <A HREF="${p}view/cust_bill.cgi?$templatename-$invnum">!.
+          'view text</A> | '.
+          qq!<A HREF="${p}view/cust_bill-pdf.cgi?$templatename-$invnum.pdf">!.
+          'view typeset</A> )';
+  }
+
+  print '</TD><TD>'.
         time2str("%a %b %e %T %Y", $cust_bill_event->_date). '</TD><TD>'.
         $status. '</TD></TR>';
 }
 print '</TABLE><BR><PRE>';
 
-print $cust_bill->print_text;
+print $cust_bill->print_text('', $templatename);
 
 	#formatting
 	print <<END;
