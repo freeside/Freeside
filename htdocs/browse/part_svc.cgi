@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: part_svc.cgi,v 1.2 1998-11-20 08:50:37 ivan Exp $
+# $Id: part_svc.cgi,v 1.3 1998-11-20 23:10:57 ivan Exp $
 #
 # ivan@sisd.com 97-nov-14, 97-dec-9
 #
@@ -10,7 +10,10 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: part_svc.cgi,v $
-# Revision 1.2  1998-11-20 08:50:37  ivan
+# Revision 1.3  1998-11-20 23:10:57  ivan
+# visual
+#
+# Revision 1.2  1998/11/20 08:50:37  ivan
 # s/CGI::Base/CGI.pm, visual fixes
 #
 
@@ -36,8 +39,7 @@ print table, <<END;
         <TH COLSPAN=2>Service</TH>
         <TH>Table</TH>
         <TH>Field</TH>
-        <TH>Action</TH>
-        <TH>Value</TH>
+        <TH COLSPAN=2>Modifier</TH>
       </TR>
 END
 
