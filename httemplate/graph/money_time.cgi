@@ -25,18 +25,25 @@ my $emonth = $cgi->param('emonth') || $curmon+1;
 <%= table('e8e8e8') %>
 <%
 
-my @items = qw( invoiced netsales credits receipts );
+my @items = qw( invoiced netsales credits payments receipts );
 my %label = (
   'invoiced' => 'Gross Sales',
   'netsales' => 'Net Sales',
   'credits'  => 'Credits',
-  'receipts' => 'Receipts',
+  'payments' => 'Gross Receipts',
+  'receipts' => 'Net Receipts',
 );
 my %color = (
   'invoiced' => '9999ff', #light blue
   'netsales' => '0000cc', #blue
   'credits'  => 'cc0000', #red
+  'payments' => '99cc99', #light green
   'receipts' => '00cc00', #green
+);
+my %link = (
+  'invoiced' => "${p}search/cust_bill.html?",
+  'credits'  => "${p}search/cust_credit.html?",
+  'payments' => "${p}search/cust_pay.cgi?magic=_date;",
 );
 
 my $report = new FS::Report::Table::Monthly (
@@ -47,7 +54,6 @@ my $report = new FS::Report::Table::Monthly (
   'end_year'    => $eyear,
 );
 my $data = $report->data;
-
 
 my @mon = qw(Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec);
 
@@ -64,9 +70,15 @@ my @mon = qw(Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec);
 
 <% foreach my $row (@items) { %>
   <TR><TH><FONT COLOR="#<%= $color{$row} %>"><%= $label{$row} %></FONT></TH>
+  <% my $link = exists($link{$row})
+       ? qq(<A HREF="$link{$row})
+       : '';
+     my @speriod = @{$data->{speriod}};
+     my @eperiod = @{$data->{eperiod}};
+  %>
   <% foreach my $column ( @{$data->{$row}} ) { %>
     <TD ALIGN="right" BGCOLOR="#ffffff">
-      <FONT COLOR="#<%= $color{$row} %>">$<%= sprintf("%.2f", $column) %></FONT>
+      <%= $link ? $link. 'begin='. shift(@speriod). ';end='. shift(@eperiod). '">' : '' %><FONT COLOR="#<%= $color{$row} %>">$<%= sprintf("%.2f", $column) %></FONT><%= $link ? '</A>' : '' %>
     </TD>
   <% } %>
   </TR>

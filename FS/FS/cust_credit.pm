@@ -300,6 +300,18 @@ sub credited {
   sprintf( "%.2f", $amount );
 }
 
+=item cust_main
+
+Returns the customer (see L<FS::cust_main>) for this credit.
+
+=cut
+
+sub cust_main {
+  my $self = shift;
+  qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
+}
+
+
 =back
 
 =head1 BUGS

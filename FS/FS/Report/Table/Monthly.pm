@@ -18,7 +18,7 @@ FS::Report::Table::Monthly - Tables of report data, indexed monthly
 
   use FS::Report::Table::Monthly;
 
-  my $report = new FS::Report::Table (
+  my $report = new FS::Report::Table::Monthly (
     'items' => [ 'invoiced', 'netsales', 'credits', 'receipts', ],
     'start_month' => 4,
     'start_year'  => 2000,
@@ -53,8 +53,10 @@ sub data {
     push @{$data{label}}, "$smonth/$syear";
 
     my $speriod = timelocal(0,0,0,1,$smonth-1,$syear);
+    push @{$data{speriod}}, $speriod;
     if ( ++$smonth == 13 ) { $syear++; $smonth=1; }
     my $eperiod = timelocal(0,0,0,1,$smonth-1,$syear);
+    push @{$data{eperiod}}, $eperiod;
   
     foreach my $item ( @{$self->{'items'}} ) {
       push @{$data{$item}}, $self->$item($speriod, $eperiod);
@@ -95,19 +97,13 @@ sub netsales { #net sales
     AND LOWER(part_pkg.pkg) LIKE 'expense _%'
   ");
 
-  $self->invoiced($speriod,$eperiod)-$credited-$expenses;
+  $self->invoiced($speriod,$eperiod) - $credited - $expenses;
 }
 
 #deferred revenue
 
 sub receipts { #cashflow
   my( $self, $speriod, $eperiod ) = ( shift, shift, shift );
-
-  #cashflow
-  my $paid = $self->scalar_sql("
-    SELECT SUM(paid) FROM cust_pay
-    WHERE ". $self->in_time_period($speriod, $eperiod)
-  );
 
   my $refunded = $self->scalar_sql("
     SELECT SUM(refund) FROM cust_refund
@@ -129,7 +125,15 @@ sub receipts { #cashflow
   ");
   #    my $expenses_sql2 = "SELECT SUM(cust_bill_pay.amount) FROM cust_bill_pay, cust_bill_pkg, cust_bill, cust_pkg, part_pkg WHERE cust_bill_pay.invnum = cust_bill.invnum AND cust_bill.invnum = cust_bill_pkg.invnum AND cust_bill_pay._date >= $speriod AND cust_bill_pay._date < $eperiod AND cust_pkg.pkgnum = cust_bill_pkg.pkgnum AND cust_pkg.pkgpart = part_pkg.pkgpart AND LOWER(part_pkg.pkg) LIKE 'expense _%'";
   
-  $paid-$refunded-$expenses;
+  $self->payments($speriod, $eperiod) - $refunded - $expenses;
+}
+
+sub payments {
+  my( $self, $speriod, $eperiod ) = ( shift, shift, shift );
+  $self->scalar_sql("
+    SELECT SUM(paid) FROM cust_pay
+    WHERE ". $self->in_time_period($speriod, $eperiod)
+  );
 }
 
 sub credits {

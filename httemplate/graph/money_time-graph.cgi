@@ -15,17 +15,19 @@ my $emonth = $cgi->param('emonth') || $curmon+1;
 #my @labels;
 #my %data;
 
-my @items = qw( invoiced netsales credits receipts );
+my @items = qw( invoiced netsales credits payments receipts );
 my %label = (
  'invoiced' => 'Gross Sales (invoiced)', 
  'netsales' => 'Net Sales (invoiced - applied credits)',
  'credits'  => 'Credits',
- 'receipts' => 'Receipts/Cashflow (payments - refunds)',
+ 'payments' => 'Gross Receipts (payments)',
+ 'receipts' => 'Net Receipts/Cashflow (payments - refunds)',
 );
 my %color = (
   'invoiced' => [ 153, 153, 255 ], #light blue
   'netsales' => [   0,   0, 204 ], #blue
   'credits'  => [ 204,   0,   0 ], #red
+  'payments' => [ 153, 204, 153 ], #light green
   'receipts' => [   0, 204,   0 ], #green
 );
 

@@ -1,22 +1,30 @@
 <%
    my( $count_query, $sql_query );
-   if ( $cgi->keywords ) {
-     my($query) = $cgi->keywords;
+   if ( $cgi->param('begin') || $cgi->param('end') || $cgi->keywords ) {
+
      my $owed =
        "charged - ( SELECT COALESCE(SUM(amount),0) FROM cust_bill_pay
                     WHERE cust_bill_pay.invnum = cust_bill.invnum )
                 - ( SELECT COALESCE(SUM(amount),0) FROM cust_credit_bill
                     WHERE cust_credit_bill.invnum = cust_bill.invnum )";
+
      my @where;
-     my $orderby = '';
+     my $orderby = 'ORDER BY cust_bill._date';
+
+     if ( $cgi->param('begin') =~ /^(\d+)$/ ) {
+       push @where, "cust_bill._date >= $1",
+     }
+     if ( $cgi->param('end') =~ /^(\d+)$/ ) {
+       push @where, "cust_bill._date < $1",
+     }
+
+     my($query) = $cgi->keywords;
      if ( $query =~ /^(OPEN(\d*)_)?(invnum|date|custnum)$/ ) {
        my($open, $days, $field) = ($1, $2, $3);
        $field = "_date" if $field eq 'date';
        $orderby = "ORDER BY cust_bill.$field";
        push @where, "0 != $owed" if $open;
        push @where, "cust_bill._date < ". (time-86400*$days) if $days;
-     } else {
-       die "unknown query string $query";
      }
    
      my $extra_sql = scalar(@where) ? 'WHERE '. join(' AND ', @where) : '';
@@ -50,12 +58,13 @@
                'name'        => 'invoices',
                'query'       => $sql_query,
                'count_query' => $count_query,
-               'count_addl'  => [ '$%.2f total amount',
+               'count_addl'  => [ '$%.2f total invoiced',
                                   '$%.2f total outstanding balance',
                                 ],
                'redirect'    => $link,
                'header'      =>
-                 [ '', qw(Balance Amount Date ), 'Contact name', 'Company' ],
+                 [ 'Invoice #', qw(Balance Amount Date), 'Contact name',
+                   'Company' ],
                'fields'      => [
                  'invnum',
                  sub { sprintf('$%.2f', shift->get('owed') ) },

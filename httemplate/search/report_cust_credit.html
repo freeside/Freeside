@@ -1,26 +1,29 @@
 <HTML>
   <HEAD>
-    <TITLE>Payment report criteria</TITLE>
+    <TITLE>Credit report criteria</TITLE>
     <LINK REL="stylesheet" TYPE="text/css" HREF="../elements/calendar-win2k-2.css" TITLE="win2k-2">
     <SCRIPT TYPE="text/javascript" SRC="../elements/calendar_stripped.js"></SCRIPT>
     <SCRIPT TYPE="text/javascript" SRC="../elements/calendar-en.js"></SCRIPT>
     <SCRIPT TYPE="text/javascript" SRC="../elements/calendar-setup.js"></SCRIPT>
   </HEAD>
   <BODY BGCOLOR="#e8e8e8">
-    <H1>Payment report criteria</H1>
-    <FORM ACTION="cust_pay.cgi" METHOD="post">
+    <H1>Credit report criteria</H1>
+    <FORM ACTION="cust_credit.html" METHOD="post">
     <INPUT TYPE="hidden" NAME="magic" VALUE="_date">
     <TABLE>
       <TR>
-        <TD ALIGN="right">Payments of type: </TD>
-        <TD><SELECT NAME="payby">
+        <TD ALIGN="right">Credits by employee: </TD>
+<%
+  my $sth = dbh->prepare("SELECT DISTINCT otaker FROM cust_credit")
+    or die dbh->errstr;
+  $sth->execute or die $sth->errstr;
+  my @otakers = map { $_->[0] } @{$sth->fetchall_arrayref};
+%>
+        <TD><SELECT NAME="otaker">
               <OPTION VALUE="">all</OPTION>
-              <OPTION VALUE="CARD">credit card (all)</OPTION>
-              <OPTION VALUE="CARD-VisaMC">credit card (Visa/MasterCard)</OPTION>
-              <OPTION VALUE="CARD-Amex">credit card (American Express)</OPTION>
-              <OPTION VALUE="CARD-Discover">credit card (Discover)</OPTION>
-              <OPTION VALUE="CHEK">electronic check / ACH</OPTION>
-              <OPTION VALUE="BILL">check / cash</OPTION>
+              <% foreach my $otaker ( @otakers ) { %>
+                <OPTION VALUE="<%= $otaker %>"><%= $otaker %></OPTION>
+              <% } %>
             </SELECT>
         </TD>
       </TR>

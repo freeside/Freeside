@@ -50,11 +50,11 @@
     $header ||= $sth->{NAME};
   }
 
-  if ( exists($opt{'redirect'}) && scalar(@$rows) == 1 ) {
+  if ( exists($opt{'redirect'}) && scalar(@$rows) == 1 && $total == 1 ) {
     my( $url, $method ) = @{$opt{'redirect'}};
     redirect( $url. $rows->[0]->$method() );
   } else {
-
+    $opt{'name'} =~ s/s$// if $total == 1;
 %>
 <%= include( '/elements/header.html', $opt{'title'},
                include( '/elements/menubar.html', 'Main menu' => $p )
@@ -87,9 +87,16 @@
          <% foreach my $field ( @{$opt{'fields'}} ) { %>
            <% my $a = ''; %>
            <% if ( $links ) {
-                my( $url, $method ) = @{shift @$links};
-                $a = $url. $row->$method();
-                $a = qq(<A HREF="$a">);
+                my $link = shift @$links;
+                if ( $link ) {
+                  my( $url, $method ) = @{$link};
+                  if ( ref($method) eq 'CODE' ) {
+                    $a = $url. &{$method}($row);
+                  } else {
+                    $a = $url. $row->$method();
+                  }
+                  $a = qq(<A HREF="$a">);
+                }
               }
            %>
            <% if ( ref($field) eq 'CODE' ) { %>

@@ -1,0 +1,76 @@
+<%
+   #my( $count_query, $sql_query );
+
+   my @search = ();
+
+   if ( $cgi->param('otaker') && $cgi->param('otaker') =~ /^([\w\.\-]+)$/ ) {
+     push @search, "otaker = '$1'";
+   }
+
+   #false laziness with cust_pkg.cgi and cust_pay.cgi
+   if ( $cgi->param('beginning')
+        && $cgi->param('beginning') =~ /^([ 0-9\-\/]{1,10})$/ ) {
+     my $beginning = str2time($1);
+     push @search, "_date >= $beginning ";
+   }
+   if ( $cgi->param('ending')
+             && $cgi->param('ending') =~ /^([ 0-9\-\/]{1,10})$/ ) {
+     my $ending = str2time($1) + 86399;
+     push @search, " _date <= $ending ";
+   }
+
+   if ( $cgi->param('begin')
+        && $cgi->param('begin') =~ /^(\d+)$/ ) {
+     push @search, "_date >= $1 ";
+   }
+   if ( $cgi->param('end')
+             && $cgi->param('end') =~ /^(\d+)$/ ) {
+     push @search, " _date < $1 ";
+   }
+
+   my $where = scalar(@search)
+                 ? 'WHERE '. join(' AND ', @search)
+                 : '';
+
+   my $count_query = "SELECT COUNT(*), SUM(amount) FROM cust_credit $where";
+   my $sql_query   = {
+     'table'     => 'cust_credit',
+     'hashref'   => {},
+     'extra_sql' => $where,
+   };
+
+   my $clink = [ "${p}view/cust_main.cgi?", 'custnum' ];
+
+%>
+<%= include( 'elements/search.html',
+               'title'       => 'Credit Search Results',
+               'name'        => 'credits',
+               'query'       => $sql_query,
+               'count_query' => $count_query,
+               'count_addl'  => [ '$%.2f total credited', ],
+               #'redirect'    => $link,
+               'header'      =>
+                 [ qw(Amount Date), 'Contact name', qw(Company By Reason) ],
+               'fields'      => [
+                 #'crednum',
+                 sub { sprintf('$%.2f', shift->amount ) },
+                 sub { time2str('%b %d %Y', shift->_date ) },
+                 sub { my $cust_main = shift->cust_main;
+                       $cust_main->get('last'). ', '. $cust_main->first;
+                     },
+                 sub { my $cust_main = shift->cust_main;
+                       $cust_main->company;
+                     },
+                 'otaker',
+                 'reason',
+               ],
+               'links' => [
+                 '',
+                 '',
+                 $clink,
+                 $clink,
+                 '',
+                 '',
+               ],
+    )
+%>
