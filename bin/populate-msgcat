@@ -27,7 +27,7 @@ foreach my $msgcode ( keys %messages ) {
   }
 }
 
-print "Message catalog initialized sucessfully\n";
+#print "Message catalog initialized sucessfully\n";
 
 sub messages {
 

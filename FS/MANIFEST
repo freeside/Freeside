@@ -9,8 +9,11 @@ bin/freeside-email
 bin/freeside-queued
 bin/freeside-addoutsource
 bin/freeside-addoutsourceuser
+bin/freeside-deloutsource
+bin/freeside-deloutsourceuser
 bin/freeside-apply-credits
 bin/freeside-adduser
+bin/freeside-deluser
 bin/freeside-setup
 bin/freeside-setinvoice
 bin/freeside-overdue

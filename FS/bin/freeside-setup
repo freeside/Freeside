@@ -7,7 +7,7 @@ use strict;
 use vars qw($opt_s);
 use Getopt::Std;
 use DBI;
-use DBIx::DBSchema 0.20;
+use DBIx::DBSchema 0.21;
 use DBIx::DBSchema::Table;
 use DBIx::DBSchema::Column;
 use DBIx::DBSchema::ColGroup::Unique;

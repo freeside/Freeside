@@ -1,0 +1,11 @@
+#!/bin/sh
+
+domain=$1
+
+dropdb $domain && \
+rm -rf /usr/local/etc/freeside/conf.DBI:Pg:host=localhost\;dbname=$domain && \
+rm -rf /usr/local/etc/freeside/counters.DBI:Pg:host=localhost\;dbname=$domain && \
+rm -rf /usr/local/etc/freeside/cache.DBI:Pg:host=localhost\;dbname=$domain && \
+rm -rf /usr/local/etc/freeside/export.DBI:Pg:host=localhost\;dbname=$domain && \
+rm /usr/local/etc/freeside/dbdef.DBI:Pg:host=localhost\;dbname=$domain
+

@@ -1,0 +1,6 @@
+#!/bin/sh
+
+username=$1
+
+freeside-deluser -h /usr/local/etc/freeside/htpasswd $username 2>/dev/null
+
