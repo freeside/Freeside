@@ -50,12 +50,29 @@ foreach my $r (
       AND ( county  = ? OR ? = '' )
       AND ( state   = ? OR ? = '' )
       AND ( country = ? )
-      AND ( taxclass = ? OR ? = '' )
       AND payby != 'COMP'
   ";
+  my @param = qw( county county state state country ); # taxclass);
+
+  my $num_others = 
+    scalar_sql( $r, [qw( country state state county county taxname taxname )], 
+      "SELECT COUNT(*) FROM cust_main_county
+         WHERE country = ?
+         AND ( state = ? OR ( state IS NULL AND ? = '' ) )
+         AND ( county = ? OR ( county IS NULL AND ? = '' ) )
+         AND ( taxname = ? OR ( taxname IS NULL AND ? = '' ) ) "
+    );
+
+  die "didn't even find self?" unless $num_others;
+
+  if ( $num_others > 1 ) {
+    $fromwhere .= " AND ( taxclass = ?  ) ";
+    push @param, 'taxclass';
+  }
+
   my $nottax = 'pkgnum != 0';
 
-  my $a = scalar_sql($r,
+  my $a = scalar_sql($r, \@param,
     "SELECT SUM(cust_bill_pkg.setup+cust_bill_pkg.recur) $fromwhere AND $nottax"
   );
   $total += $a;
@@ -63,7 +80,7 @@ foreach my $r (
 
   foreach my $e ( grep { $r->get($_.'tax') =~ /^Y/i }
                        qw( cust_bill_pkg.setup cust_bill_pkg.recur ) ) {
-    my $x = scalar_sql($r,
+    my $x = scalar_sql($r, \@param,
       "SELECT SUM($e) $fromwhere AND $nottax"
     );
     $exempt += $x;
@@ -72,13 +89,13 @@ foreach my $r (
 
   foreach my $e ( grep { $r->get($_.'tax') !~ /^Y/i }
                        qw( cust_bill_pkg.setup cust_bill_pkg.recur ) ) {
-    my $t = scalar_sql($r,
+    my $t = scalar_sql($r, \@param, 
       "SELECT SUM($e) $fromwhere AND $nottax AND ( tax != 'Y' OR tax IS NULL )"
     );
     $taxable += $t;
     $regions{$label}->{'taxable'} += $t;
 
-    my $x = scalar_sql($r,
+    my $x = scalar_sql($r, \@param, 
       "SELECT SUM($e) $fromwhere AND $nottax AND tax = 'Y'"
     );
     $exempt += $x;
@@ -94,7 +111,7 @@ foreach my $r (
 
   #match itemdesc if necessary!
   my $named_tax = $r->taxname ? 'AND itemdesc = '. dbh->quote($r->taxname) : '';
-  my $x = scalar_sql($r,
+  my $x = scalar_sql($r, \@param,
     "SELECT SUM(cust_bill_pkg.setup+cust_bill_pkg.recur) $fromwhere ".
     "AND pkgnum = 0 $named_tax",
   );
@@ -124,11 +141,10 @@ push @regions, {
 #false laziness w/FS::Report::Table::Monthly (sub should probably be moved up
 #to FS::Report or FS::Record or who the fuck knows where)
 sub scalar_sql {
-  my( $r, $sql ) = @_;
+  my( $r, $param, $sql ) = @_;
   #warn "$sql\n";
   my $sth = dbh->prepare($sql) or die dbh->errstr;
-  $sth->execute( map $r->$_(),
-                     qw( county county state state country taxclass taxclass ) )
+  $sth->execute( map $r->$_(), @$param )
     or die "Unexpected error executing statement $sql: ". $sth->errstr;
   $sth->fetchrow_arrayref->[0] || 0;
 }
