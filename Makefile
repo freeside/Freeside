@@ -21,6 +21,9 @@ QUEUED_RESTART = /etc/init.d/freeside restart
 #not changable yet
 FREESIDE_CONF = /usr/local/etc/freeside
 
+VERSION="1.4.0pre11"
+TAG="1_4_0_PRE11"
+
 help:
 	@echo "supported targets: aspdocs masondocs alldocs docs install-docs"
 	@echo "                   htmlman"
@@ -54,9 +57,6 @@ htmlman:
 	[ -e ./httemplate/docs/man/FS/UI ] || mkdir httemplate/docs/man/FS/UI
 	[ -e DONT_REBUILD_DOCS ] || bin/pod2x
 
-upload-docs:
-	ssh cleanwhisker.420.am rm -rf /var/www/www.sisd.com/freeside/devdocs
-	scp -pr httemplate/docs cleanwhisker.420.am:/var/www/www.sisd.com/freeside/devdocs
 
 install-docs: docs
 	[ -e ${FREESIDE_DOCUMENT_ROOT} ] && mv ${FREESIDE_DOCUMENT_ROOT} ${FREESIDE_DOCUMENT_ROOT}.`date +%Y%m%d%H%M%S` || true
@@ -113,4 +113,25 @@ clean:
 	rm -rf aspdocs masondocs
 	cd FS; \
 	make clean
+
+#these are probably only useful if you're me...
+
+upload-docs:
+	ssh cleanwhisker.420.am rm -rf /var/www/www.sisd.com/freeside/devdocs
+	scp -pr httemplate/docs cleanwhisker.420.am:/var/www/www.sisd.com/freeside/devdocs
+
+release: upload-docs
+	cd /home/ivan/freeside_current
+	cvs tag ${TAG}
+
+	cd /home/ivan
+	cvs export -r $TAG -d freeside-${VERSION} freeside
+	tar czvf freeside-${VERSION}.tar.gz freeside-${VERSION}
+
+	scp freeside-${VERSION} ivan@cleanwhisker.420.am:/var/www/sisd.420.am/freeside/
+
+update-webdemo:
+	ssh ivan@pouncequick.420.am '( cd freeside; cvs update -d -P )'
+	#ssh root@pouncequick.420.am '( cd /home/ivan/freeside; make clean; make deploy )'
+	ssh root@pouncequick.420.am '( cd /home/ivan/freeside; make deploy )'
 
