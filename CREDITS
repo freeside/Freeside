@@ -12,7 +12,7 @@ Jerry St. Pierre <jstpi@city.timmins.on.ca> did the "SISD" graphic used in
 1.0.x and most of 1.1.x.
 
 Mark Norris of Urban Design, Inc. <http://www.urban.com/> did the red "S"
-logo for later 1.1.x versions and 1.2.x
+logo for later 1.1.x versions until 1.4.1
 
 Brian McCane? <bmccane@maxbaud.net> contributed PostgreSQL support, HTML
 style enhancements and many, many bugfixes.
@@ -123,8 +123,19 @@ licensed under the terms fo the GNU GPL.
 Contains "Request Tracker" <http://www.bestpractical.com/rt/> by Jesse
 Vincent <jesse@bestpractical.com> licensed under the terms of the GNU GPL.
 
-Contains "SQL Ledger" <http://www.sql-ledger.com/> by DWS Systems Inc. and
-contributors licensed under the terms of the GNU GPL.
+#not yet used...
+# Contains "SQL Ledger" <http://www.sql-ledger.com/> by DWS Systems Inc. and
+# contributors licensed under the terms of the GNU GPL.
+
+Peter Bowen <pbowen@aboutws.com> started the difficult modular price plans
+changes, added credit card encryption features, and other things I've
+probably overlooked.
+
+Rebecca Cardennis <http://www.shinza.org/> created the great new logo first
+released with 1.4.2beta1 and 1.5.0pre6.
+
+Troy Hammonds <troyh@netsignia.net> sent in RADIUS session history viewing
+code and other things I'm probably forgetting.
 
 Everything else is my (Ivan Kohler <ivan@420.am>) fault.
 
