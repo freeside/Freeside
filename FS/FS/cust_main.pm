@@ -1053,8 +1053,8 @@ sub bill {
               $dbh->rollback if $oldAutoCommit;
               return
                 "fatal: can't find tax rate for state/county/country/taxclass ".
-                join('/', map $self->$_(), qw(state county country taxclass) ).
-                "\n";
+                join('/', ( map $self->$_(), qw(state county country) ),
+                          $part_pkg->taxclass ).  "\n";
             };
 
           if ( $cust_main_county->exempt_amount ) {
