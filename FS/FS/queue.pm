@@ -241,7 +241,10 @@ sub joblisting {
   my @queue = qsearch( 'queue', $hashref );
   return '' unless scalar(@queue);
 
-  my $html = FS::CGI::table(). <<END;
+  my $p = FS::CGI::popurl(2);
+
+  my $html = qq!<FORM ACTION="$p/misc/queue.cgi" METHOD="POST">!.
+             FS::CGI::table(). <<END;
       <TR>
         <TH COLSPAN=2>Job</TH>
         <TH>Args</TH>
@@ -253,7 +256,8 @@ END
 
   my $dangerous = $conf->exists('queue_dangerous_controls');
 
-  my $p = FS::CGI::popurl(2);
+  my $areboxes = 0;
+
   foreach my $queue ( sort { 
     $a->getfield('jobnum') <=> $b->getfield('jobnum')
   } @queue ) {
@@ -270,8 +274,9 @@ END
     my $date = time2str( "%a %b %e %T %Y", $queue->_date );
     my $status = $queue->status;
     $status .= ': '. $queue->statustext if $queue->statustext;
-    if ( $dangerous
-         || ( ! $noactions && $status =~ /^failed/ || $status =~ /^locked/ ) ) {
+    my $changable = $dangerous
+         || ( ! $noactions && $status =~ /^failed/ || $status =~ /^locked/ );
+    if ( $changable ) {
       $status .=
         qq! (&nbsp;<A HREF="$p/misc/queue.cgi?jobnum=$jobnum&action=new">retry</A>&nbsp;|!.
         qq!&nbsp;<A HREF="$p/misc/queue.cgi?jobnum=$jobnum&action=del">remove</A>&nbsp;)!;
@@ -300,11 +305,23 @@ END
       $html .= "<TD>$account</TD>";
     }
 
+    if ( $changable ) {
+      $areboxes=1;
+      $html .=
+        qq!<TD><INPUT NAME="jobnum$jobnum" TYPE="checkbox" VALUE="1"></TD>!;
+
+    }
+
     $html .= '</TR>';
 
 }
 
   $html .= '</TABLE>';
+
+  if ( $areboxes ) {
+    $html .= '<BR><INPUT TYPE="submit" NAME="action" VALUE="retry selected">'.
+             '<INPUT TYPE="submit" NAME="action" VALUE="remove selected"><BR>';
+  }
 
   $html;
 
@@ -314,7 +331,7 @@ END
 
 =head1 VERSION
 
-$Id: queue.pm,v 1.10 2002-03-27 07:08:08 ivan Exp $
+$Id: queue.pm,v 1.11 2002-04-13 08:51:54 ivan Exp $
 
 =head1 BUGS
 
