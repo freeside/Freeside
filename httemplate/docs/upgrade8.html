@@ -135,6 +135,8 @@ ALTER TABLE part_pkg ADD plan varchar NULL;
 ALTER TABLE part_pkg ADD plandata varchar NULL;
 ALTER TABLE part_pkg ADD setuptax char(1) NULL;
 ALTER TABLE part_pkg ADD recurtax char(1) NULL;
+ALTER TABLE part_pkg ADD disabled char(1) NULL;
+ALTER TABLE part_svc ADD disabled char(1) NULL;
 CREATE INDEX cust_main3 ON cust_main ( referral_custnum );
 CREATE INDEX cust_credit_bill1 ON cust_credit_bill ( crednum );
 CREATE INDEX cust_credit_bill2 ON cust_credit_bill ( invnum );
