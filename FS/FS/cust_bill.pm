@@ -470,7 +470,7 @@ sub realtime_card {
   my($payname, $payfirst, $paylast);
   if ( $cust_main->payname ) {
     $payname = $cust_main->payname;
-    $payname =~ /^\s*([\w \,\.\-\']*\w)?\s+([\w\,\.\-\']+)$/
+    $payname =~ /^\s*([\w \,\.\-\']*)?\s+([\w\,\.\-\']+)$/
       or do {
               #$dbh->rollback if $oldAutoCommit;
               return "Illegal payname $payname";
@@ -880,7 +880,7 @@ sub print_text {
 
 =head1 VERSION
 
-$Id: cust_bill.pm,v 1.19 2002-02-12 18:56:16 ivan Exp $
+$Id: cust_bill.pm,v 1.20 2002-02-26 09:06:51 ivan Exp $
 
 =head1 BUGS
 
