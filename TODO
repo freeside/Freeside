@@ -1,10 +1,29 @@
-$Id: TODO,v 1.64 2001-06-03 14:15:52 ivan Exp $
+$Id: TODO,v 1.65 2001-06-06 22:22:13 ivan Exp $
 
 If you are interested in helping with any of these, please join the
 *development* mailing list (send a blank message to
 ivan-freeside-devel-subscribe@sisd.com) to avoid duplication of effort.
 
 ---
+
+random templating thoughts:
+for starters, read the "Template Syntax" section of Text::Template
+that sums up the starting philosophy pretty well
+> Text::Template is unsuitable because it's backwards, but don't worry about
++that quite yet.  everything in that section applies
+..
+then ttp://forum.swarthmore.edu/epigone/modperl/frahthonbror/19990525144012.8806.qmail@plover.com
+..
+then: given that as background, freside will use a simple template syntax designed
++to interact well with the webmonkey html editors, and will export to Mason
++and Apache::ASP for starters, and eventually any "right-side-out" "eval"
++templating system
+
+
+make svc_acct.import complain if you try to use a local file
+
+make the invoices configurable such that:
+> Also, Can you change FreeSide so that it says "GST" instead of TAX?
 
 "Andrew Wafula" <awafula2000@yahoo.co.uk>:
 > Following my recent questions on money_char, i would like to suggest that
