@@ -1,10 +1,138 @@
-$Id: TODO,v 1.32 1999-07-08 01:02:24 ivan Exp $
+$Id: TODO,v 1.33 1999-07-08 11:40:40 ivan Exp $
 
 If you are interested in helping with any of these, please join the mailing
 list (send a blank message to ivan-freeside-subscribe@sisd.com) to avoid 
 duplication of effort.
 
 ---
+
+grep 'uncomment this to encrypt password immediately' site_perl/svc_acct.pm
+Not to say that it shouldn't be a configurable option.
+
+in site_perl/cust_main_invoice.pm (elsewhere?), error out if mydomain config file is gone
+(at least until the idea of a default domain goes away)
+
+FS::Record::qsearch does an eval every loop iteration (which is itself not
+guaranteed to work across all DBD's and should be fixed).  This has got to be
+slow.  Fix it.  (I think recent Perls might have a way to accept a variable
+there, no eval needed?)
+
+Could you have added /bin/sync, /sbin/shutdown, and /bin/halt to the
+`shells' configuration file before importing, and removed them afterwords?
+(even better if svc_acct.import did that automatically - it could just    
+munge and restore @FS::svc_acct::shells... hmm.)
+
+> BTW, Ivan, I am trying to verify in an additional database table that a
+> particular user doesn't exist. This database is used to store email aliases a$
+> additional POP boxes for our customers (kinda like AOL allows). I have toyed  
+> with the idea of just writing the aliases to an email only svc_acct that
+> doesn't write to the password file, but that isn't really how I want to do it.
+
+Actually, I think that's a pretty good way to do it.  Cerkit contributed
+support a little while back for svc_acct.pm and svc_acct.export for
+multiple export targets.  It needs to be cleaned up and documented, which
+I'll try to get to soon.  For this to work correctly, the svc_acct_sm
+table should go away, along with the concept of a "default" domain.  
+
+default setting for new packages should allow all agents to purchase them...
+with a config file for the old behaviour
+
+replace Term::Query  with Quiz::Question?
+
+Check config file reading stuff from CPAN
+ 
+Authorizenet module from CPAN!
+
+<http://www.math.fu-berlin.de/~leitner/mutt/faq.html> has a good y2k complience
+statement!
+
+    I'm hoping Freeside can support arbitrailly complex pricing plans
+    because of a simple concept: all prices are perl expressions.  So if
+    you use `19.95' for example, perl evalates that to be `19.95'.  But if
+    you need to do a complex pricing scheme, you just need to write an
+    appropriate perl expression, which will most likely pull data from the
+    database to return pricing.  Some things will already log to SQL; for
+    example most RADIUS servers can or have a patch available.  Getting
+    Freeside to bill based on any sort of data then becomes a matter of
+    importing the data into the database.
+ 
+    There are some issues involved with pro-rating, partial month charges,
+    that sort of thing.  Expressions will need a standard way to have the
+    applicable time/data ranges passed to them.  Also the expressions are
+    currently running under the Safe perl module, and the opmask might not
+    be right in all situations.  I'll try to spend some time working on
+    this if you are using it.
+
+> 2. can customers view their bills on-line.                                    
+ 
+Not yet; it needs to be proxied from Freeside to a customer web server in
+a secure way using something not completely unlike the fs_passwd,
+fs_passwdd, fs_passwd_server trio.
+
+
+> Lastly, if someone over pays on an invoice, the credit part does not flow
+> over to other invoices..
+
+The total balance flows over correctly, but individual payments don't.
+The code you're looking for is in FS::cust_pay::insert
+
+The question of what to do with overpayments that don't have another 
+invoice to flow into (yet.. or possibly not) is still an open one.    The
+legacy system Freeside replaced long ago had a separate place for this
+(payments waiting for an invoice) for each customer, and it gave our
+bookeeper fits.
+
+
+option to relax username uniqueness in favor of username+domain or mail/shell
+vs. radius to ease import for isp's with namespace problems or who buy others.
+
+do i have to store anything for radius realms besides regular radius attributes
+(which are handled fine now)?
+
+warn or complain or something when invoice_from is empty (and we use it)
+
+Right now Freeside uses the `freq' field of a package definition as a 
+number of months.  The specific section of code you're looking for is in  
+FS::cust_main::bill:
+        
+        #change this bit to use Date::Manip?
+        #$sdate=$cust_pkg->bill || time;
+        #$sdate=$cust_pkg->bill || $time;
+        $sdate = $cust_pkg->bill || $cust_pkg->setup || $time;
+        my ($sec,$min,$hour,$mday,$mon,$year) =
+          (localtime($sdate) )[0,1,2,3,4,5];
+        $mon += $part_pkg->getfield('freq');
+        until ( $mon < 12 ) { $mon -= 12; $year++; }
+        $cust_pkg->setfield('bill',
+          timelocal($sec,$min,$hour,$mday,$mon,$year));
+        $cust_pkg_mod_flag = 1;
+  
+..and when I went poking for this, looks like it tells us just what needs   
+to be done!  Hehehe...
+
+Date::Manip can handle cool things like "+ 1 month" (actually the current
+case of /^(\d+)$/ would have to be added as a special case of "+ $1 
+month") and "+ 30 days" (what you need) and even "+ 5 business days" !
+
+
+On Wed, Apr 28, 1999 at 08:38:16PM +0000, Kristian Hoffmann wrote:
+> I can't quite seem to figure out how this exporting works.  From what I
+> understand, when you run svc_acct.export, it rewrites the /etc/passwd,
+> /etc/shadow, etc. files.  Is this only for initial setups with the
+> export hooks being in the pm's?
+ 
+You can use both, or just one method.  The configuration files control    
+this.  One of the things in the TODO is to take out the last few things   
+that aren't customizable wrt this and put them in config files.
+
+http://www.daemonnews.org/199905/user-mgmt.html
+
+Term::Query doesn't install out of the box from CPAN.  Fix it (and get it 
+submitted upstream!), or remove requirement from bin/svc_acct.import and
+bin/svc_acct_sm.import and take it out of the install instructions.
+
+use this cool link to explain the Freeside API
+ftp://cpan.nas.nasa.gov/pub/perl/CPAN/doc/FMTEYEWTK/easy_objects.html
 
 Multiple tax rates by geographic region (county, state, and county) are   
 supported; just choose View/Edit tax rates from the main menu.
