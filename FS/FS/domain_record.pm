@@ -107,7 +107,7 @@ sub check {
   return "Unknown svcnum (in svc_domain)"
     unless qsearchs('svc_domain', { 'svcnum' => $self->svcnum } );
 
-  $self->reczone =~ /^(@|[a-z0-9\.\-]+)$/
+  $self->reczone =~ /^(@|[a-zA-Z0-9\.\-]+)$/
     or return "Illegal reczone: ". $self->reczone;
   $self->reczone($1);
 
@@ -156,7 +156,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: domain_record.pm,v 1.3 2001-08-21 02:44:47 ivan Exp $
+$Id: domain_record.pm,v 1.4 2002-04-20 10:09:42 ivan Exp $
 
 =head1 BUGS
 
