@@ -74,7 +74,7 @@ map { qsearchs('part_export', { exportnum => $_->exportnum } ) } qsearch('export
   ) {
 %>
       <TR>
-        <TD><A HREF="<%= $p %>edit/part_export.cgi?<%= $part_export->exportnum %>"><%= $part_export->exporttype %> to <%= $part_export->machine %></A></TD></TR>
+        <TD><A HREF="<%= $p %>edit/part_export.cgi?<%= $part_export->exportnum %>"><%= $part_export->exporttype %>&nbsp;to&nbsp;<%= $part_export->machine %></A></TD></TR>
 <%  } %>
       </TABLE></TD>
 
