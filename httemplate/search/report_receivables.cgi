@@ -1,18 +1,20 @@
 <%
 
 use strict;
-use vars qw( $cgi );
+use vars qw( $cgi $user );
 use CGI;
-use CGI::Carp qw(fatalsToBrowser);
-use FS::UID qw(cgisuidsetup);
+use CGI::Carp qw( fatalsToBrowser );
+use FS::UID qw( cgisuidsetup getotaker );
 
 $cgi = new CGI;
 &cgisuidsetup($cgi);
 
-print $cgi->header( '-expires' => '-2m' ),
-      header('Current Receivables Report Results');
+$user = getotaker;
 
-open (REPORT, "/usr/bin/freeside-receivables-report -v freeside |");
+print $cgi->header( '-expires' => '-2m' ),
+  header('Current Receivables Report Results');
+
+open (REPORT, "/usr/bin/freeside-receivables-report -v $user |");
 
 print '<PRE>';
 while(<REPORT>) {

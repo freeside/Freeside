@@ -73,6 +73,9 @@ sub forksuidsetup {
   $user = shift;
   croak "fatal: adminsuidsetup called without arguements" unless $user;
 
+  $user =~ /^([\w\-\.]+)/ or croak "fatal: illegal user $user";
+  $user = $1;
+
   $ENV{'PATH'} ='/usr/local/bin:/usr/bin:/usr/ucb:/bin';
   $ENV{'SHELL'} = '/bin/sh';
   $ENV{'IFS'} = " \t\n";
@@ -252,7 +255,7 @@ coderef into the hash %FS::UID::callback :
 
 =head1 VERSION
 
-$Id: UID.pm,v 1.12 2002-01-19 15:16:22 ivan Exp $
+$Id: UID.pm,v 1.13 2002-02-23 02:14:25 jeff Exp $
 
 =head1 BUGS
 
