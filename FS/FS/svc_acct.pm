@@ -783,12 +783,14 @@ sub check {
   $recref->{quota} = $1;
 
   unless ( $part_svc->part_svc_column('slipip')->columnflag eq 'F' ) {
-    unless ( $recref->{slipip} eq '0e0' ) {
+    if ( $recref->{slipip} eq '' ) {
+      $recref->{slipip} = '';
+    } elsif ( $recref->{slipip} eq '0e0' ) {
+      $recref->{slipip} = '0e0';
+    } else {
       $recref->{slipip} =~ /^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/
         or return "Illegal slipip: ". $self->slipip;
       $recref->{slipip} = $1;
-    } else {
-      $recref->{slipip} = '0e0';
     }
 
   }
