@@ -48,7 +48,7 @@ FS::Record.  The following fields are currently supported:
 
 =item custnum - customer (see L<FS::cust_main>)
 
-=item dest - Invoice destination: If numeric, a <a href="#svc_acct">svcnum</a>, if string, a literal email address, or `POST' to enable mailing (the default if no cust_main_invoice records exist)
+=item dest - Invoice destination: If numeric, a svcnum (see L<FS::svc_acct>), if string, a literal email address, or `POST' to enable mailing (the default if no cust_main_invoice records exist)
 
 =back
 
@@ -167,7 +167,7 @@ sub address {
 
 =head1 VERSION
 
-$Id: cust_main_invoice.pm,v 1.1 1999-08-04 09:03:53 ivan Exp $
+$Id: cust_main_invoice.pm,v 1.2 2000-06-20 07:13:03 ivan Exp $
 
 =head1 BUGS
 
