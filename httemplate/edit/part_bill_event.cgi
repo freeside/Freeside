@@ -41,7 +41,7 @@ print ntable("#cccccc",2), <<END;
 <TR><TD ALIGN="right">Payby</TD><TD><SELECT NAME="payby">
 END
 
-for (qw(CARD BILL COMP)) {
+for (qw(CARD CHEK BILL COMP)) {
   print qq!<OPTION VALUE="$_"!;
   if ($part_bill_event->payby eq $_) {
     print " SELECTED>$_</OPTION>";
