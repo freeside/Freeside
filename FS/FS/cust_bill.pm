@@ -490,6 +490,7 @@ sub send_csv {
     $self->invnum,
     $self->custnum,
     time2str("%x", $self->_date),
+    sprintf("%.2f", $self->charged),
     ( map { $cust_main->getfield($_) }
         qw( first last company address1 address2 city state zip country ) ),
     map { '' } (1..5),
@@ -1100,7 +1101,7 @@ sub print_text {
 
 =head1 VERSION
 
-$Id: cust_bill.pm,v 1.39 2002-08-30 23:42:47 ivan Exp $
+$Id: cust_bill.pm,v 1.40 2002-08-30 23:48:43 ivan Exp $
 
 =head1 BUGS
 
