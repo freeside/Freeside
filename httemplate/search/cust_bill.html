@@ -41,7 +41,7 @@
    
    } else {
      $cgi->param('invnum') =~ /^\s*(FS-)?(\d+)\s*$/;
-     $count_query = 'SELECT 1';
+     $count_query = "SELECT COUNT(*) FROM cust_bill WHERE invnum = $2";
      $sql_query = {
        'table'     => 'cust_bill',
        'hashref'   => { 'invnum' => $2 },
