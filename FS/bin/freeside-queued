@@ -21,7 +21,7 @@ my $pid_file = '/var/run/freeside-queued.pid';
 
 my $user = shift or die &usage;
 
-&daemonize;
+&daemonize1;
 
 sub REAPER { my $pid = wait; $SIG{CHLD} = \&REAPER; }
 $SIG{CHLD} =  \&REAPER;
@@ -37,6 +37,8 @@ $ENV{HOME} = (getpwuid($>))[7]; #for ssh
 adminsuidsetup $user;
 
 $log_file = "/usr/local/etc/freeside/queuelog.". $FS::UID::datasrc;
+
+&daemonize2;
 
 $SIG{__DIE__} = \&_die;
 $SIG{__WARN__} = \&_logmsg;
@@ -134,7 +136,7 @@ sub _logmsg {
   close $log;
 }
 
-sub daemonize {
+sub daemonize1 {
 
   chdir "/" or die "Can't chdir to /: $!";
   open STDIN, '/dev/null'   or die "Can't read /dev/null: $!";
@@ -146,11 +148,18 @@ sub daemonize {
     print $pidfh "$pid\n";
     exit;
   }
+  #open STDOUT, '>/dev/null'
+  #                          or die "Can't write to /dev/null: $!";
+  #setsid                  or die "Can't start a new session: $!";
+  #open STDERR, '>&STDOUT' or die "Can't dup stdout: $!";
+
+}
+
+sub daemonize2 {
   open STDOUT, '>/dev/null'
                             or die "Can't write to /dev/null: $!";
   setsid                  or die "Can't start a new session: $!";
   open STDERR, '>&STDOUT' or die "Can't dup stdout: $!";
-
 }
 
 =head1 NAME
