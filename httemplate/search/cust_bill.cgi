@@ -147,13 +147,13 @@ if ( scalar(@cust_bill) == 1 && $total == 1) {
 END
 
   my(%saw, $cust_bill);
-  my($tot_balance, $tot_amount) = (0, 0); #BOGUS
+#  my($tot_balance, $tot_amount) = (0, 0); #BOGUS
   foreach $cust_bill (
     sort $sortby grep(!$saw{$_->invnum}++, @cust_bill)
   ) {
     my($invnum, $owed, $charged, $date ) = (
       $cust_bill->invnum,
-      sprintf("%.2f", $cust_bill->owed),
+      sprintf("%.2f", $cust_bill->getfield('owed')),
       sprintf("%.2f", $cust_bill->charged),
       $cust_bill->_date,
     );
