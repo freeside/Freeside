@@ -23,28 +23,35 @@ if ( $cgi->keywords ) {
   my @where;
   if ( $query eq 'invnum' ) {
     $sortby = \*invnum_sort;
+    $orderby = "ORDER BY cust_bill.invnum";
     #@cust_bill = qsearch('cust_bill', {} );
   } elsif ( $query eq 'date' ) {
     $sortby = \*date_sort;
+    $orderby = "ORDER BY cust_bill._date";
     #@cust_bill = qsearch('cust_bill', {} );
   } elsif ( $query eq 'custnum' ) {
     $sortby = \*custnum_sort;
+    $orderby = "ORDER BY cust_bill.custnum";
     #@cust_bill = qsearch('cust_bill', {} );
   } elsif ( $query eq 'OPEN_invnum' ) {
     $sortby = \*invnum_sort;
+    $orderby = "ORDER BY cust_bill.invnum";
     #@cust_bill = grep $_->owed != 0, qsearch('cust_bill', {} );
     push @where, "0 != $owed";
   } elsif ( $query eq 'OPEN_date' ) {
     $sortby = \*date_sort;
+    $orderby = "ORDER BY cust_bill._date";
     #@cust_bill = grep $_->owed != 0, qsearch('cust_bill', {} );
     push @where, "0 != $owed";
   } elsif ( $query eq 'OPEN_custnum' ) {
     $sortby = \*custnum_sort;
+    $orderby = "ORDER BY cust_bill.custnum";
     #@cust_bill = grep $_->owed != 0, qsearch('cust_bill', {} );
     push @where, "0 != $owed";
   } elsif ( $query =~ /^OPEN(\d+)_invnum$/ ) {
     my $open = $1 * 86400;
     $sortby = \*invnum_sort;
+    $orderby = "ORDER BY cust_bill.invnum";
     #@cust_bill =
     #  grep $_->owed != 0 && $_->_date < time - $open, qsearch('cust_bill', {} );
     push @where, "0 != $owed".
@@ -52,6 +59,7 @@ if ( $cgi->keywords ) {
   } elsif ( $query =~ /^OPEN(\d+)_date$/ ) {
     my $open = $1 * 86400;
     $sortby = \*date_sort;
+    $orderby = "ORDER BY cust_bill._date";
     #@cust_bill =
     #  grep $_->owed != 0 && $_->_date < time - $open, qsearch('cust_bill', {} );
     push @where, "0 != $owed".
@@ -60,6 +68,7 @@ if ( $cgi->keywords ) {
   } elsif ( $query =~ /^OPEN(\d+)_custnum$/ ) {
     my $open = $1 * 86400;
     $sortby = \*custnum_sort;
+    $orderby = "ORDER BY cust_bill.custnum";
     #@cust_bill =
     #  grep $_->owed != 0 && $_->_date < time - $open, qsearch('cust_bill', {} );
     push @where, "0 != $owed".
@@ -136,7 +145,11 @@ if ( $total == 1 ) {
 
   print header("Invoice Search Results", menubar(
           'Main Menu', popurl(2)
-        )), "$total matching invoices found<BR><BR>$pager", &table(), <<END;
+        )).
+        "$total matching invoices found<BR>".
+        "\$$tot_balance total balance<BR>".
+        "\$$tot_amount total amount<BR>".
+        "<BR>$pager". table(). <<END;
       <TR>
         <TH></TH>
         <TH>Balance</TH>
@@ -148,7 +161,6 @@ if ( $total == 1 ) {
 END
 
   my(%saw, $cust_bill);
-#  my($tot_balance, $tot_amount) = (0, 0); #BOGUS
   foreach $cust_bill (
     sort $sortby grep(!$saw{$_->invnum}++, @cust_bill)
   ) {
@@ -159,9 +171,6 @@ END
       $cust_bill->_date,
     );
     my $pdate = time2str("%b %d %Y", $date);
-
-    #$tot_balance += $owed;
-    #$tot_amount += $charged;
 
     my $rowspan = 1;
 
@@ -195,10 +204,10 @@ END
   }
   $tot_balance = sprintf("%.2f", $tot_balance);
   $tot_amount = sprintf("%.2f", $tot_amount);
-  print <<END;
-      <TR><TD></TD><TH><FONT SIZE=-1>Total</FONT></TH><TH><FONT SIZE=-1>Total</FONT></TH></TR>
+  print "</TABLE>$pager<BR><BR>". table(). <<END;
+      <TR><TD>-----</TD><TH><FONT SIZE=-1>Total<BR>Balance</FONT></TH><TH><FONT SIZE=-1>Total<BR>Amount</FONT></TH></TR>
       <TR><TD></TD><TD ALIGN="right"><FONT SIZE=-1>\$$tot_balance</FONT></TD><TD ALIGN="right"><FONT SIZE=-1>\$$tot_amount</FONT></TD></TD></TR>
-    </TABLE>$pager
+    </TABLE>
   </BODY>
 </HTML>
 END
