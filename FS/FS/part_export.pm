@@ -390,8 +390,9 @@ sub _rebless {
   my $exporttype = $self->exporttype;
   my $class = ref($self). "::$exporttype";
   eval "use $class;";
-  die $@ if $@;
-  bless($self, $class);
+  #die $@ if $@;
+  bless($self, $class) unless $@;
+  $self;
 }
 
 #these should probably all go away, just let the subclasses define em
