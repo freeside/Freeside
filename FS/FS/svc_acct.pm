@@ -71,9 +71,15 @@ $FS::UID::callback{'FS::svc_acct'} = sub {
     $cyrus_admin_user = '';
     $cyrus_admin_pass = '';
   }
-  if ( $conf->exists('icradius_secrets') ) {
-    $icradius_dbh = DBI->connect($conf->config('icradius_secrets'))
-      or die $DBI::errstr;
+  if ( $conf->exists('icradiusmachines') ) {
+    if ( $conf->exists('icradius_secrets') ) {
+      #need some sort of late binding so it's only connected to when
+      # actually used, hmm
+      $icradius_dbh = DBI->connect($conf->config('icradius_secrets'))
+        or die $DBI::errstr;
+    } else {
+      $icradius_dbh = dbh;
+    }
   } else {
     $icradius_dbh = '';
   }
@@ -273,15 +279,29 @@ sub insert {
     }
   }
   if ( $icradius_dbh ) {
-    my $queue = new FS::queue { 'job' => 'FS::svc_acct::icradius_rc_insert' };
-    $error = $queue->insert( $self->username,
-                             $self->_password,
-                             $self->radius_check
-                           );
+
+    my $radcheck_queue =
+      new FS::queue { 'job' => 'FS::svc_acct::icradius_rc_insert' };
+    $error = $radcheck_queue->insert( $self->username,
+                                      $self->_password,
+                                      $self->radius_check
+                                    );
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return "queueing job (transaction rolled back): $error";
     }
+
+    my $radreply_queue =
+      new FS::queue { 'job' => 'FS::svc_acct::icradius_rr_insert' };
+    $error = $radreply_queue->insert( $self->username,
+                                      $self->_password,
+                                      $self->radius_reply
+                                    );
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "queueing job (transaction rolled back): $error";
+    }
+
   }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
@@ -348,6 +368,25 @@ sub icradius_rc_insert {
       ) ). " )"
     );
     $sth->execute or die "can't insert into radcheck table: ". $sth->errstr;
+  }
+
+  1;
+}
+
+sub icradius_rr_insert {
+  my( $username, $password, %radreply ) = @_;
+  
+  foreach my $attribute ( keys %radreply ) {
+    my $sth = $icradius_dbh->prepare(
+      "INSERT INTO radreply ( id, UserName, Attribute, Value ) VALUES ( ".
+      join(", ", map { $icradius_dbh->quote($_) } (
+        '',
+        $username,
+        $attribute,
+        $radreply{$attribute},
+      ) ). " )"
+    );
+    $sth->execute or die "can't insert into radreply table: ". $sth->errstr;
   }
 
   1;
@@ -471,12 +510,21 @@ sub delete {
     }
   }
   if ( $icradius_dbh ) {
+
     my $queue = new FS::queue { 'job' => 'FS::svc_acct::icradius_rc_delete' };
     $error = $queue->insert( $self->username );
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return "queueing job (transaction rolled back): $error";
     }
+
+    my $queue = new FS::queue { 'job' => 'FS::svc_acct::icradius_rr_delete' };
+    $error = $queue->insert( $self->username );
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "queueing job (transaction rolled back): $error";
+    }
+
   }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
@@ -512,6 +560,18 @@ sub icradius_rc_delete {
   );
   $sth->execute($username)
     or die "can't delete from radcheck table: ". $sth->errstr;
+
+  1;
+}
+
+sub icradius_rr_delete {
+  my $username = shift;
+  
+  my $sth = $icradius_dbh->prepare(
+    'DELETE FROM radreply WHERE UserName = ?'
+  );
+  $sth->execute($username)
+    or die "can't delete from radreply table: ". $sth->errstr;
 
   1;
 }
@@ -863,12 +923,17 @@ expected to change in the future.
 
 sub radius_reply { 
   my $self = shift;
-  map {
-    /^(radius_(.*))$/;
-    my($column, $attrib) = ($1, $2);
-    #$attrib =~ s/_/\-/g;
-    ( $FS::raddb::attrib{lc($attrib)}, $self->getfield($column) );
-  } grep { /^radius_/ && $self->getfield($_) } fields( $self->table );
+  my %reply =
+    map {
+      /^(radius_(.*))$/;
+      my($column, $attrib) = ($1, $2);
+      #$attrib =~ s/_/\-/g;
+      ( $FS::raddb::attrib{lc($attrib)}, $self->getfield($column) );
+    } grep { /^radius_/ && $self->getfield($_) } fields( $self->table );
+  if ( $self->ip && $self->ip ne '0e0' ) {
+    $reply{Framed-IP-Address} = $self->ip;
+  }
+  %reply;
 }
 
 =item radius_check
@@ -966,7 +1031,7 @@ sub ssh {
 
 =head1 VERSION
 
-$Id: svc_acct.pm,v 1.60 2001-12-20 02:09:52 ivan Exp $
+$Id: svc_acct.pm,v 1.61 2002-01-14 20:28:17 ivan Exp $
 
 =head1 BUGS
 
