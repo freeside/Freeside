@@ -47,7 +47,7 @@ unless ( $templatename ) {
     sort { $a->_date <=> $b->_date } $cust_bill->cust_bill_event
   ) {
     my $status = $cust_bill_event->status;
-    $status .= ': '. $cust_bill_event->statustext
+    $status .= ': '. encode_entities($cust_bill_event->statustext)
       if $cust_bill_event->statustext;
     my $part_bill_event = $cust_bill_event->part_bill_event;
     print '<TR><TD>'. $part_bill_event->event;

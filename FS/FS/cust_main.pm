@@ -1582,6 +1582,7 @@ sub collect {
       my $error;
       {
         local $realtime_bop_decline_quiet = 1 if $options{'quiet'};
+        local $SIG{__DIE__}; # don't want Mason __DIE__ handler active
         $error = eval $part_bill_event->eventcode;
       }
 

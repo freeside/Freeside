@@ -78,16 +78,80 @@ sub send_email {
   my $smtpmachine = $conf->config('smtpmachine');
   $!=0;
 
-  my $rv = $message->smtpsend( 'Host' => $smtpmachine )
-    or $message->smtpsend( Host => $smtpmachine, Debug => 1 );
-
-  if ($rv) { #smtpsend returns a list of addresses, not true/false
-    return '';
-  } else {
-    return "can't send email to $to via server $smtpmachine with SMTP: $!";
-  }  
+  $message->mysmtpsend( 'Host'     => $smtpmachine,
+                        'MailFrom' => $options{'from'},
+                      );
 
 }
+
+package Mail::Internet;
+
+use Mail::Address;
+use Net::SMTP;
+
+sub Mail::Internet::mysmtpsend {
+    my $src  = shift;
+    my %opt = @_;
+    my $host = $opt{Host};
+    my $envelope = $opt{MailFrom};
+    my $noquit = 0;
+    my $smtp;
+    my @hello = defined $opt{Hello} ? (Hello => $opt{Hello}) : ();
+
+    push(@hello, 'Port', $opt{'Port'})
+	if exists $opt{'Port'};
+
+    push(@hello, 'Debug', $opt{'Debug'})
+	if exists $opt{'Debug'};
+
+    if(ref($host) && UNIVERSAL::isa($host,'Net::SMTP')) {
+	$smtp = $host;
+	$noquit = 1;
+    }
+    else {
+	#local $SIG{__DIE__};
+	#$smtp = eval { Net::SMTP->new($host, @hello) };
+	$smtp = new Net::SMTP $host, @hello;
+    }
+
+    unless ( defined($smtp) ) {
+      my $err = $!;
+      $err =~ s/Invalid argument/Unknown host/;
+      return "can't connect to $host: $err"
+    }
+
+    my $hdr = $src->head->dup;
+
+    _prephdr($hdr);
+
+    # Who is it to
+
+    my @rcpt = map { ref($_) ? @$_ : $_ } grep { defined } @opt{'To','Cc','Bcc'};
+    @rcpt = map { $hdr->get($_) } qw(To Cc Bcc)
+	unless @rcpt;
+    my @addr = map($_->address, Mail::Address->parse(@rcpt));
+
+    return 'No valid destination addresses found!'
+	unless(@addr);
+
+    $hdr->delete('Bcc'); # Remove blind Cc's
+
+    # Send it
+
+    my $ok = $smtp->mail( $envelope ) &&
+		$smtp->to(@addr) &&
+		$smtp->data(join("", @{$hdr->header},"\n",@{$src->body}));
+
+    if ( $ok ) {
+      $smtp->quit
+          unless $noquit;
+      return '';
+    } else {
+      return $smtp->code. ' '. $smtp->message;
+    }
+
+}
+package FS::Misc;
 
 =head1 BUGS
 
