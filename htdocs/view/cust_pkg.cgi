@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_pkg.cgi,v 1.10 1999-04-09 03:52:55 ivan Exp $
+# $Id: cust_pkg.cgi,v 1.11 1999-04-09 04:22:34 ivan Exp $
 #
 # Usage: cust_pkg.cgi pkgnum
 #        http://server.name/path/cust_pkg.cgi?pkgnum
@@ -24,7 +24,10 @@
 # no FS::Search ivan@sisd.com 98-mar-7
 # 
 # $Log: cust_pkg.cgi,v $
-# Revision 1.10  1999-04-09 03:52:55  ivan
+# Revision 1.11  1999-04-09 04:22:34  ivan
+# also table()
+#
+# Revision 1.10  1999/04/09 03:52:55  ivan
 # explicit & for table/itable/ntable
 #
 # Revision 1.9  1999/04/08 12:00:19  ivan
@@ -142,8 +145,7 @@ print  '<TR><TD ALIGN="right">Order taker</TD><TD BGCOLOR="#ffffff">',
 unless ($cancel) {
 
   #services
-  print '<BR>Service Information', &table,
-  ;
+  print '<BR>Service Information', &table();
 
   #list of services this pkgpart includes
   my $pkg_svc;

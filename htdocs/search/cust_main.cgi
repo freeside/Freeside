@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main.cgi,v 1.10 1999-04-09 03:52:55 ivan Exp $
+# $Id: cust_main.cgi,v 1.11 1999-04-09 04:22:34 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/cust_main.cgi
@@ -17,7 +17,10 @@
 # display total, use FS::CGI ivan@sisd.com 98-jul-17
 #
 # $Log: cust_main.cgi,v $
-# Revision 1.10  1999-04-09 03:52:55  ivan
+# Revision 1.11  1999-04-09 04:22:34  ivan
+# also table()
+#
+# Revision 1.10  1999/04/09 03:52:55  ivan
 # explicit & for table/itable/ntable
 #
 # Revision 1.9  1999/02/28 00:03:55  ivan
@@ -96,7 +99,7 @@ if ( scalar(@cust_main) == 1 ) {
   my($total)=scalar(@cust_main);
   print $cgi->header( '-expires' => 'now' ), header("Customer Search Results",menubar(
     'Main Menu', popurl(2)
-  )), "$total matching customers found<BR>", &table, <<END;
+  )), "$total matching customers found<BR>", &table(), <<END;
       <TR>
         <TH></TH>
         <TH>Contact name</TH>

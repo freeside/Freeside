@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct_pop.cgi,v 1.6 1999-04-09 03:52:55 ivan Exp $
+# $Id: svc_acct_pop.cgi,v 1.7 1999-04-09 04:22:34 ivan Exp $
 #
 # ivan@sisd.com 98-mar-8
 #
@@ -10,7 +10,10 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: svc_acct_pop.cgi,v $
-# Revision 1.6  1999-04-09 03:52:55  ivan
+# Revision 1.7  1999-04-09 04:22:34  ivan
+# also table()
+#
+# Revision 1.6  1999/04/09 03:52:55  ivan
 # explicit & for table/itable/ntable
 #
 # Revision 1.5  1999/01/19 05:13:30  ivan
@@ -45,7 +48,7 @@ $p = popurl(2);
 
 print $cgi->header( '-expires' => 'now' ), header('POP Listing', menubar(
   'Main Menu' => $p,
-)), "Points of Presence<BR><BR>", &table, <<END;
+)), "Points of Presence<BR><BR>", &table(), <<END;
       <TR>
         <TH></TH>
         <TH>City</TH>

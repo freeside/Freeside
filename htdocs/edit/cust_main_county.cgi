@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main_county.cgi,v 1.7 1999-04-09 03:52:55 ivan Exp $
+# $Id: cust_main_county.cgi,v 1.8 1999-04-09 04:22:34 ivan Exp $
 #
 # ivan@sisd.com 97-dec-13-16
 #
@@ -11,7 +11,10 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 # 
 # $Log: cust_main_county.cgi,v $
-# Revision 1.7  1999-04-09 03:52:55  ivan
+# Revision 1.8  1999-04-09 04:22:34  ivan
+# also table()
+#
+# Revision 1.7  1999/04/09 03:52:55  ivan
 # explicit & for table/itable/ntable
 #
 # Revision 1.6  1999/01/25 12:09:55  ivan
@@ -54,7 +57,7 @@ print qq!<FONT SIZE="+1" COLOR="#ff0000">Error: !, $cgi->param('error'),
   if $cgi->param('error');
 
 print qq!<FORM ACTION="!, popurl(1),
-    qq!process/cust_main_county.cgi" METHOD=POST>!, &table, <<END;
+    qq!process/cust_main_county.cgi" METHOD=POST>!, &table(), <<END;
       <TR>
         <TH><FONT SIZE=-1>Country</FONT></TH>
         <TH><FONT SIZE=-1>State</FONT></TH>

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: cust_main.cgi,v 1.15 1999-04-09 03:52:55 ivan Exp $
+# $Id: cust_main.cgi,v 1.16 1999-04-09 04:22:34 ivan Exp $
 #
 # Usage: cust_main.cgi custnum
 #        http://server.name/path/cust_main.cgi?custnum
@@ -31,7 +31,10 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: cust_main.cgi,v $
-# Revision 1.15  1999-04-09 03:52:55  ivan
+# Revision 1.16  1999-04-09 04:22:34  ivan
+# also table()
+#
+# Revision 1.15  1999/04/09 03:52:55  ivan
 # explicit & for table/itable/ntable
 #
 # Revision 1.14  1999/04/08 04:04:37  ivan
@@ -235,7 +238,7 @@ print qq!<BR><BR><A NAME="cust_pkg">Packages</A> !,
 #display packages
 
 #formatting
-print qq!!, &table, "\n",
+print qq!!, &table(), "\n",
       qq!<TR><TH COLSPAN=2 ROWSPAN=2>Package</TH><TH COLSPAN=5>!,
       qq!Dates</TH><TH COLSPAN=2 ROWSPAN=2>Services</TH></TR>\n!,
       qq!<TR><TH><FONT SIZE=-1>Setup</FONT></TH><TH>!,

@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: part_svc.cgi,v 1.10 1999-04-09 03:52:55 ivan Exp $
+# $Id: part_svc.cgi,v 1.11 1999-04-09 04:22:34 ivan Exp $
 #
 # ivan@sisd.com 97-nov-14, 97-dec-9
 #
@@ -10,7 +10,10 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: part_svc.cgi,v $
-# Revision 1.10  1999-04-09 03:52:55  ivan
+# Revision 1.11  1999-04-09 04:22:34  ivan
+# also table()
+#
+# Revision 1.10  1999/04/09 03:52:55  ivan
 # explicit & for table/itable/ntable
 #
 # Revision 1.9  1999/01/19 05:13:29  ivan
@@ -60,7 +63,7 @@ print $cgi->header( '-expires' => 'now' ), header('Service Part Listing', menuba
 )),<<END;
     Services are items you offer to your customers.<BR><BR>
 END
-print &table, <<END;
+print &table(), <<END;
       <TR>
         <TH COLSPAN=2>Service</TH>
         <TH>Table</TH>

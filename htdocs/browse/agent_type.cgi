@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: agent_type.cgi,v 1.7 1999-04-09 03:52:55 ivan Exp $
+# $Id: agent_type.cgi,v 1.8 1999-04-09 04:22:34 ivan Exp $
 #
 # ivan@sisd.com 97-dec-10
 #
@@ -11,7 +11,10 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: agent_type.cgi,v $
-# Revision 1.7  1999-04-09 03:52:55  ivan
+# Revision 1.8  1999-04-09 04:22:34  ivan
+# also table()
+#
+# Revision 1.7  1999/04/09 03:52:55  ivan
 # explicit & for table/itable/ntable
 #
 # Revision 1.6  1999/04/07 11:10:46  ivan
@@ -51,7 +54,7 @@ $p = popurl(2);
 print $cgi->header( '-expires' => 'now' ), header("Agent Type Listing", menubar(
   'Main Menu' => $p,
 )), "Agent types define groups of packages that you can then assign to".
-    " particular agents.<BR><BR>", &table, <<END;
+    " particular agents.<BR><BR>", &table(), <<END;
       <TR>
         <TH COLSPAN=2>Agent Type</TH>
         <TH COLSPAN="2">Packages</TH>

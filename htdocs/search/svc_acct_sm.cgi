@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct_sm.cgi,v 1.8 1999-04-09 03:52:55 ivan Exp $
+# $Id: svc_acct_sm.cgi,v 1.9 1999-04-09 04:22:34 ivan Exp $
 #
 # Usage: post form to:
 #        http://server.name/path/svc_domain.cgi
@@ -17,7 +17,10 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # $Log: svc_acct_sm.cgi,v $
-# Revision 1.8  1999-04-09 03:52:55  ivan
+# Revision 1.9  1999-04-09 04:22:34  ivan
+# also table()
+#
+# Revision 1.8  1999/04/09 03:52:55  ivan
 # explicit & for table/itable/ntable
 #
 # Revision 1.7  1999/02/28 00:03:56  ivan
@@ -79,7 +82,7 @@ if ( scalar(@svc_acct_sm) == 1 ) {
 } elsif ( scalar(@svc_acct_sm) > 1 ) {
   print $cgi->header( '-expires' => 'now' ),
         header('Mail Alias Search Results'),
-        &table, <<END;
+        &table(), <<END;
       <TR>
         <TH>Mail to<BR><FONT SIZE=-1>(click to view mail alias)</FONT></TH>
         <TH>Forwards to<BR><FONT SIZE=-1>(click to view account)</FONT></TH>

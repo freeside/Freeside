@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: part_svc.cgi,v 1.11 1999-04-09 03:52:55 ivan Exp $
+# $Id: part_svc.cgi,v 1.12 1999-04-09 04:22:34 ivan Exp $
 #
 # ivan@sisd.com 97-nov-14
 #
@@ -10,7 +10,10 @@
 # use FS::CGI, added inline documentation ivan@sisd.com 98-jul-12
 #
 # $Log: part_svc.cgi,v $
-# Revision 1.11  1999-04-09 03:52:55  ivan
+# Revision 1.12  1999-04-09 04:22:34  ivan
+# also table()
+#
+# Revision 1.11  1999/04/09 03:52:55  ivan
 # explicit & for table/itable/ntable
 #
 # Revision 1.10  1999/04/08 13:01:50  ivan
@@ -103,7 +106,7 @@ blank <B>slipip</B> as well as a fixed shell something like <B>/bin/true</B> or
 <B>/usr/bin/passwd</B>.
 <BR><BR>
 END
-print &table, '<TR><TH>Table<SELECT NAME="svcdb" SIZE=1>',
+print &table(), '<TR><TH>Table<SELECT NAME="svcdb" SIZE=1>',
       map '<OPTION'. ' SELECTED'x($_ eq $hashref->{svcdb}). ">$_\n", qw(
         svc_acct svc_domain svc_acct_sm
       );
