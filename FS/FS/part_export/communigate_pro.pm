@@ -31,10 +31,10 @@ sub _export_insert {
 
 sub _export_replace {
   my( $self, $new, $old ) = (shift, shift, shift);
-  return "can't (yet) change domain with CommuniGate Pro"
-    if $old->domain ne $new->domain;
   return "can't (yet) change username with CommuniGate Pro"
     if $old->username ne $new->username;
+  return "can't (yet) change domain with CommuniGate Pro"
+    if $self->export_username($old) ne $self->export_username($new);
   return "can't (yet) change GECOS with CommuniGate Pro"
     if $old->finger ne $new->finger;
   return "can't (yet) change quota with CommuniGate Pro"
