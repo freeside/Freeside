@@ -46,7 +46,7 @@ my $domain = $svc_domain->domain;
 Service #<%= $svcnum %>
 <BR>Service: <B><%= $part_svc->svc %></B>
 <BR>Domain name: <B><%= $domain %></B>
-<BR>Catch all email <A HREF="${p}misc/catchall.cgi?<%= $svcnum %>">(change)</A>:
+<BR>Catch all email <A HREF="<%= ${p} %>misc/catchall.cgi?<%= $svcnum %>">(change)</A>:
 <%= $email ? "<B>$email</B>" : "<I>(none)<I>" %>
 <BR><BR><A HREF="http://www.geektools.com/cgi-bin/proxy.cgi?query=<%=$domain%>;targetnic=auto">View whois information.</A>
 <BR><BR>
