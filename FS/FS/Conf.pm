@@ -221,8 +221,8 @@ httemplate/docs/config.html
 
   {
     'key'         => 'apacheroot',
-    'section'     => 'apache',
-    'description' => 'The directory containing Apache virtual hosts',
+    'section'     => 'deprecated',
+    'description' => '<b>DEPRECATED</b>, add a <i>www_shellcommands</i> <a href="../browse/part_export.cgi">export</a> instead.  The directory containing Apache virtual hosts',
     'type'        => 'text',
   },
 
@@ -235,8 +235,8 @@ httemplate/docs/config.html
 
   {
     'key'         => 'apachemachine',
-    'section'     => 'apache',
-    'description' => 'A machine with the apacheroot directory and user home directories.  The existance of this file enables setup of virtual host directories, and, in conjunction with the `home\' configuration file, symlinks into user home directories.',
+    'section'     => 'deprecated',
+    'description' => '<b>DEPRECATED</b>, add a <i>www_shellcommands</i> <a href="../browse/part_export.cgi">export</a> instead.  A machine with the apacheroot directory and user home directories.  The existance of this file enables setup of virtual host directories, and, in conjunction with the `home\' configuration file, symlinks into user home directories.',
     'type'        => 'text',
   },
 

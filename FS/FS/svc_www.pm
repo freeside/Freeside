@@ -1,7 +1,7 @@
 package FS::svc_www;
 
 use strict;
-use vars qw(@ISA $conf $apacheroot $apachemachine $apacheip $nossh_hack );
+use vars qw(@ISA $conf $apacheip);
 #use FS::Record qw( qsearch qsearchs );
 use FS::Record qw( qsearchs dbh );
 use FS::svc_Common;
@@ -9,15 +9,12 @@ use FS::cust_svc;
 use FS::domain_record;
 use FS::svc_acct;
 use FS::svc_domain;
-use Net::SSH qw(ssh);
 
 @ISA = qw( FS::svc_Common );
 
 #ask FS::UID to run this stuff for us later
 $FS::UID::callback{'FS::svc_www'} = sub { 
   $conf = new FS::Conf;
-  $apacheroot = $conf->config('apacheroot');
-  $apachemachine = $conf->config('apachemachine');
   $apacheip = $conf->config('apacheip');
 };
 
@@ -85,20 +82,6 @@ otherwise returns false.
 The additional fields pkgnum and svcpart (see L<FS::cust_svc>) should be 
 defined.  An FS::cust_svc record will be created and inserted.
 
-If the configuration values (see L<FS::Conf>) I<apachemachine>, and
-I<apacheroot> exist, the command:
-
-  mkdir $apacheroot/$zone;
-  chown $username $apacheroot/$zone;
-  ln -s $apacheroot/$zone $homedir/$zone
-
-I<$zone> is the DNS A record pointed to by I<recnum>
-I<$username> is the username pointed to by I<usersvc>
-I<$homedir> is that user's home directory
-
-is executed on I<apachemachine> via ssh.  This behaviour can be surpressed by
-setting $FS::svc_www::nossh_hack true.
-
 =cut
 
 sub insert {
@@ -145,37 +128,6 @@ sub insert {
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
-  }
-
-  my $domain_record = qsearchs('domain_record', { 'recnum' => $self->recnum } );    # or die ?
-  my $zone = $domain_record->reczone;
-    # or die ?
-  unless ( $zone =~ /\.$/ ) {
-    my $dom_svcnum = $domain_record->svcnum;
-    my $svc_domain = qsearchs('svc_domain', { 'svcnum' => $dom_svcnum } );
-      # or die ?
-    $zone .= '.'. $svc_domain->domain;
-  }
-
-  my $svc_acct = qsearchs('svc_acct', { 'svcnum' => $self->usersvc } );
-    # or die ?
-  my $username = $svc_acct->username;
-    # or die ?
-  my $homedir = $svc_acct->dir;
-    # or die ?
-
-  if ( $apachemachine
-       && $apacheroot
-       && $zone
-       && $username
-       && $homedir
-       && ! $nossh_hack
-  ) {
-    ssh("root\@$apachemachine",
-        "mkdir $apacheroot/$zone; ".
-        "chown $username $apacheroot/$zone; ".
-        "ln -s $apacheroot/$zone $homedir/$zone"
-    );
   }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
@@ -283,6 +235,30 @@ sub check {
     unless qsearchs('svc_acct', { 'svcnum' => $self->usersvc } );
 
   ''; #no error
+}
+
+=item domain_record
+
+Returns the FS::domain_record record for this web virtual host's zone (see
+L<FS::domain_record>).
+
+=cut
+
+sub domain_record {
+  my $self = shift;
+  qsearchs('domain_record', { 'recnum' => $self->recnum } );
+}
+
+=item svc_acct
+
+Returns the FS::svc_acct record for this web virtual host's owner (see
+L<FS::svc_acct>).
+
+=cut
+
+sub svc_acct {
+  my $self = shift;
+  qsearchs('svc_acct', { 'svcnum' => $self->usersvc } );
 }
 
 =back

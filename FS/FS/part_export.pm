@@ -531,7 +531,7 @@ tie my %shellcommands_options, 'Tie::IxHash',
                },
   'useradd_stdin' => { label=>'Insert command STDIN',
                        type =>'textarea',
-                       default=>"",
+                       default=>'',
                      },
   'userdel' => { label=>'Delete command',
                  default=>'userdel $username',
@@ -552,7 +552,7 @@ tie my %shellcommands_options, 'Tie::IxHash',
                },
   'usermod_stdin' => { label=>'Modify command STDIN',
                        type =>'textarea',
-                       default=>"",
+                       default=>'',
                      },
 ;
 
@@ -579,6 +579,19 @@ tie my %shellcommands_withdomain_options, 'Tie::IxHash',
                        type =>'textarea',
                        #default=>"$_password\n$_password\n",
                      },
+;
+
+tie my %www_shellcommands_options, 'Tie::IxHash',
+  'user' => { lable=>'Remote username', default=>'root' },
+  'useradd' => { label=>'Insert command',
+                 default=>'mkdir /var/www/$zone; chown $username /var/www/$zone; ln -s /var/www/$zone $homedir/$zone',
+               },
+  'userdel'  => { label=>'Delete command',
+                  default=>'[ -n &quot;$zone&quot; ] && rm -rf /var/www/$zone; rm $homedir/$zone',
+                },
+  'usermod'  => { label=>'Modify command',
+                  default=>'[ -n &quot;$old_zone&quot; ] && rm $old_homedir/$old_zone; [ &quot;$old_zone&quot; != &quot;$new_zone&quot; -a -n &quot;$new_zone&quot; ] && mv /var/www/$old_zone /var/www/$new_zone; [ &quot;$old_username&quot; != &quot;$new_username&quot; ] && chown -R $new_username /var/www/$new_zone; ln -s /var/www/$new_zone $new_homedir/$new_zone',
+                },
 ;
 
 tie my %textradius_options, 'Tie::IxHash',
@@ -800,9 +813,9 @@ tie my %sqlmail_options, 'Tie::IxHash',
 
   'svc_www' => {
     'www_shellcommands' => {
-      'desc'    => 'www_shellcommands',
-      'options' => {}, # \%www_shellcommands_options,
-      'notes'   => 'unfinished...',
+      'desc' => 'Run remote commands via SSH, for virtual web sites.',
+      'options' => \%www_shellcommands_options,
+      'notes'    => 'Run remote commands via SSH, for virtual web sites.  You will need to <a href="../docs/ssh.html">setup SSH for unattended operation</a>.',
     },
 
   },
