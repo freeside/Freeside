@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: fs-setup,v 1.95 2002-06-28 20:23:54 ivan Exp $
+# $Id: fs-setup,v 1.96 2002-07-06 12:13:49 ivan Exp $
 
 #to delay loading dbdef until we're ready
 BEGIN { $FS::Record::setup_hack = 1; }
@@ -164,6 +164,11 @@ foreach $attribute (@check_attributes) {
 foreach my $table ( grep { ! /^h_/ } $dbdef->tables ) {
   my $tableobj = $dbdef->table($table)
     or die "unknown table $table";
+
+  die "unique->lol_ref undefined for $table"
+    unless defined $tableobj->unique->lol_ref;
+  die "index->lol_ref undefined for $table"
+    unless defined $tableobj->index->lol_ref;
 
   my $h_tableobj = DBIx::DBSchema::Table->new( {
     name        => "h_$table",
@@ -336,7 +341,7 @@ sub tables_hash_hack {
         'prog',     @perl_type,
       ],
       'primary_key' => 'agentnum',
-      'unique' => [ [] ],
+      'unique' => [],
       'index' => [ ['typenum'] ],
     },
 
@@ -346,8 +351,8 @@ sub tables_hash_hack {
         'atype',     'varchar', '', $char_d,
       ],
       'primary_key' => 'typenum',
-      'unique' => [ [] ],
-      'index' => [ [] ],
+      'unique' => [],
+      'index' => [],
     },
 
     'type_pkgs' => {
@@ -370,7 +375,7 @@ sub tables_hash_hack {
         'closed',    'char', 'NULL', 1,
       ],
       'primary_key' => 'invnum',
-      'unique' => [ [] ],
+      'unique' => [],
       'index' => [ ['custnum'] ],
     },
 
@@ -402,7 +407,7 @@ sub tables_hash_hack {
         'disabled',     'char', 'NULL', 1,
       ],
       'primary_key' => 'eventpart',
-      'unique' => [ [] ],
+      'unique' => [],
       'index' => [ ['payby'] ],
     },
 
@@ -431,7 +436,7 @@ sub tables_hash_hack {
         'closed',    'char', 'NULL', 1,
       ],
       'primary_key' => 'crednum',
-      'unique' => [ [] ],
+      'unique' => [],
       'index' => [ ['custnum'] ],
     },
 
@@ -444,7 +449,7 @@ sub tables_hash_hack {
         'amount',   @money_type,
       ],
       'primary_key' => 'creditbillnum',
-      'unique' => [ [] ],
+      'unique' => [],
       'index' => [ ['crednum'], ['invnum'] ],
     },
 
@@ -494,7 +499,7 @@ sub tables_hash_hack {
         'comments', 'text', 'NULL', '',
       ],
       'primary_key' => 'custnum',
-      'unique' => [ [] ],
+      'unique' => [],
       #'index' => [ ['last'], ['company'] ],
       'index' => [ ['last'], [ 'company' ], [ 'referral_custnum' ] ],
     },
@@ -506,7 +511,7 @@ sub tables_hash_hack {
         'dest',     'varchar', '',  $char_d,
       ],
       'primary_key' => 'destnum',
-      'unique' => [ [] ],
+      'unique' => [],
       'index' => [ ['custnum'], ],
     },
 
@@ -523,9 +528,9 @@ sub tables_hash_hack {
         'tax',      'real',  '',    '', #tax %
       ],
       'primary_key' => 'taxnum',
-      'unique' => [ [] ],
+      'unique' => [],
   #    'unique' => [ ['taxnum'], ['state', 'county'] ],
-      'index' => [ [] ],
+      'index' => [],
     },
 
     'cust_pay' => {
@@ -542,7 +547,7 @@ sub tables_hash_hack {
         'closed',    'char', 'NULL', 1,
       ],
       'primary_key' => 'paynum',
-      'unique' => [ [] ],
+      'unique' => [],
       'index' => [ [ 'custnum' ], [ 'paybatch' ] ],
     },
 
@@ -555,7 +560,7 @@ sub tables_hash_hack {
         '_date',   @date_type
       ],
       'primary_key' => 'billpaynum',
-      'unique' => [ [] ],
+      'unique' => [],
       'index' => [ [ 'paynum' ], [ 'invnum' ] ],
     },
 
@@ -581,7 +586,7 @@ sub tables_hash_hack {
         'amount',   @money_type,
       ],
       'primary_key' => 'paybatchnum',
-      'unique' => [ [] ],
+      'unique' => [],
       'index' => [ ['invnum'], ['custnum'] ],
     },
 
@@ -599,7 +604,7 @@ sub tables_hash_hack {
         'manual_flag', 'char', 'NULL', 1,
       ],
       'primary_key' => 'pkgnum',
-      'unique' => [ [] ],
+      'unique' => [],
       'index' => [ ['custnum'] ],
     },
 
@@ -619,8 +624,8 @@ sub tables_hash_hack {
         'closed',    'char', 'NULL', 1,
       ],
       'primary_key' => 'refundnum',
-      'unique' => [ [] ],
-      'index' => [ [] ],
+      'unique' => [],
+      'index' => [],
     },
 
     'cust_credit_refund' => {
@@ -632,7 +637,7 @@ sub tables_hash_hack {
         '_date',   @date_type
       ],
       'primary_key' => 'creditrefundnum',
-      'unique' => [ [] ],
+      'unique' => [],
       'index' => [ [ 'crednum', 'refundnum' ] ],
     },
 
@@ -644,7 +649,7 @@ sub tables_hash_hack {
         'svcpart',   'int',    '',   '',
       ],
       'primary_key' => 'svcnum',
-      'unique' => [ [] ],
+      'unique' => [],
       'index' => [ ['svcnum'], ['pkgnum'], ['svcpart'] ],
     },
 
@@ -664,8 +669,8 @@ sub tables_hash_hack {
         'taxclass',   'varchar', 'NULL', $char_d,
       ],
       'primary_key' => 'pkgpart',
-      'unique' => [ [] ],
-      'index' => [ [] ],
+      'unique' => [],
+      'index' => [],
     },
 
 #    'part_title' => {
@@ -695,8 +700,8 @@ sub tables_hash_hack {
         'referral', 'varchar',   '',   $char_d,
       ],
       'primary_key' => 'refnum',
-      'unique' => [ [] ],
-      'index' => [ [] ],
+      'unique' => [],
+      'index' => [],
     },
 
     'part_svc' => {
@@ -707,8 +712,8 @@ sub tables_hash_hack {
         'disabled',   'char',  'NULL',   1,
       ],
       'primary_key' => 'svcpart',
-      'unique' => [ [] ],
-      'index' => [ [] ],
+      'unique' => [],
+      'index' => [],
     },
 
     'part_svc_column' => {
@@ -735,7 +740,7 @@ sub tables_hash_hack {
         'loc',       'char',   'NULL',   4, #NULL for legacy purposes
       ],
       'primary_key' => 'popnum',
-      'unique' => [ [] ],
+      'unique' => [],
       'index' => [ [ 'state' ] ],
     },
 
@@ -749,7 +754,7 @@ sub tables_hash_hack {
         'nxx',       'char',    '',     3,
       ],
       'primary_key' => 'localnum',
-      'unique' => [ [] ],
+      'unique' => [],
       'index' => [ [ 'npa', 'nxx' ], [ 'popnum' ] ],
     },
 
@@ -772,6 +777,7 @@ sub tables_hash_hack {
       ],
       'primary_key' => 'svcnum',
       #'unique' => [ [ 'username', 'domsvc' ] ],
+      'unique' => [],
       'index' => [ ['username'], ['domsvc'] ],
     },
 
@@ -805,7 +811,7 @@ sub tables_hash_hack {
       ],
       'primary_key' => 'svcnum',
       'unique' => [ ['domain'] ],
-      'index' => [ [] ],
+      'index' => [],
     },
 
     'domain_record' => {
@@ -818,7 +824,7 @@ sub tables_hash_hack {
         'recdata',   'varchar', '',  $char_d,
       ],
       'primary_key' => 'recnum',
-      'unique'      => [ [] ],
+      'unique'      => [],
       'index'       => [ ['svcnum'] ],
     },
 
@@ -830,7 +836,7 @@ sub tables_hash_hack {
         'dst',      'varchar',    'NULL',  $char_d,
       ],
       'primary_key' => 'svcnum',
-      'unique'      => [ [] ],
+      'unique'      => [],
       'index'       => [ ['srcsvc'], ['dstsvc'] ],
     },
 
@@ -841,8 +847,8 @@ sub tables_hash_hack {
         'usersvc',  'int',    '',  '',
       ],
       'primary_key' => 'svcnum',
-      'unique'      => [ [] ],
-      'index'       => [ [] ],
+      'unique'      => [],
+      'index'       => [],
     },
 
     #'svc_wo' => {
@@ -867,7 +873,7 @@ sub tables_hash_hack {
       ],
       'primary_key' => 'prepaynum',
       'unique'      => [ ['identifier'] ],
-      'index'       => [ [] ],
+      'index'       => [],
     },
 
     'port' => {
