@@ -296,7 +296,7 @@ sub increment_serial {
 
 =item svc_domain
 
-Returns the domain (see L<FS::svc_domain) for this record.
+Returns the domain (see L<FS::svc_domain>) for this record.
 
 =cut
 
@@ -309,7 +309,7 @@ sub svc_domain {
 
 =head1 VERSION
 
-$Id: domain_record.pm,v 1.9 2002-05-23 13:00:08 ivan Exp $
+$Id: domain_record.pm,v 1.10 2002-06-10 23:02:41 ivan Exp $
 
 =head1 BUGS
 
