@@ -56,7 +56,7 @@ my %map = (
 
                 },
   'name'     => 'finger',
-  'maildir'  => sub { shift->domain. '/maildirs/'. shift->username. '/' },
+  'maildir'  => sub { $_[0]->domain. '/maildirs/'. $_[0]->username. '/' },
   'domain'   => sub { shift->domain },
   'svcnum'   => 'svcnum',
 );
@@ -125,6 +125,20 @@ sub acct_sql_insert { #subroutine, not method
 
   $sth->execute( map $record{$_}, keys %record )
     or die "can't insert into $table table: ". $sth->errstr;
+
+  $dbh->disconnect;
+}
+
+sub acct_sql_delete { #subroutine, not method
+  my $dbh = acct_sql_connect(shift, shift, shift);
+  my( $table, %record ) = @_;
+
+  my $sth = $dbh->prepare(
+    "DELETE FROM  $table WHERE ". join(' AND ', map "$_ = ? ", keys %record )
+  ) or die $dbh->errstr;
+
+  $sth->execute( map $record{$_}, keys %record )
+    or die "can't delete from $table table: ". $sth->errstr;
 
   $dbh->disconnect;
 }
