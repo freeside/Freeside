@@ -9,7 +9,6 @@ use FS::part_pkg;
 use FS::part_svc;
 use FS::pkg_svc;
 use FS::svc_acct;
-use FS::svc_acct_sm;
 use FS::svc_domain;
 use FS::svc_forward;
 use FS::domain_record;
@@ -276,11 +275,6 @@ sub label {
   my $tag;
   if ( $svcdb eq 'svc_acct' ) {
     $tag = $svc_x->email;
-  } elsif ( $svcdb eq 'svc_acct_sm' ) {
-    my $domuser = $svc_x->domuser eq '*' ? '(anything)' : $svc_x->domuser;
-    my $svc_domain = qsearchs ( 'svc_domain', { 'svcnum' => $svc_x->domsvc } );
-    my $domain = $svc_domain->domain;
-    $tag = "$domuser\@$domain";
   } elsif ( $svcdb eq 'svc_forward' ) {
     my $svc_acct = qsearchs( 'svc_acct', { 'svcnum' => $svc_x->srcsvc } );
     $tag = $svc_acct->email. '->';
@@ -346,7 +340,7 @@ sub seconds_since {
 
 =head1 VERSION
 
-$Id: cust_svc.pm,v 1.16 2002-09-09 23:01:35 khoff Exp $
+$Id: cust_svc.pm,v 1.17 2002-09-18 22:39:01 ivan Exp $
 
 =head1 BUGS
 

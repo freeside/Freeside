@@ -251,10 +251,6 @@ sub delete {
   return "Can't delete a domain which has accounts!"
     if qsearch( 'svc_acct', { 'domsvc' => $self->svcnum } );
 
-  return "Can't delete a domain with (svc_acct_sm) mail aliases!"
-    if defined( $FS::Record::dbdef->table('svc_acct_sm') )
-       && qsearch('svc_acct_sm', { 'domsvc' => $self->svcnum } );
-
   #return "Can't delete a domain with (domain_record) zone entries!"
   #  if qsearch('domain_record', { 'svcnum' => $self->svcnum } );
 
