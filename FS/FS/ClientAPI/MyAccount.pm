@@ -555,7 +555,8 @@ sub order_pkg {
     $cust_main->apply_credits;
     $bill_error = $cust_main->collect;
 
-    if ( $cust_main->balance > $old_balance
+    if (    $cust_main->balance > $old_balance
+         && $cust_main->balance > 0
          && $cust_main->payby !~ /^(BILL|DCRD|DCHK)$/ ) {
       #this makes sense.  credit is "un-doing" the invoice
       $cust_main->credit( sprintf("%.2f", $cust_main->balance - $old_balance ),
@@ -563,7 +564,7 @@ sub order_pkg {
       $cust_main->apply_credits( 'order' => 'newest' );
 
       $cust_pkg->cancel('quiet'=>1);
-      return { 'error' => '_decline' };
+      return { 'error' => '_decline', 'bill_error' => $bill_error };
     } else {
       $cust_pkg->reexport;
     }
