@@ -836,8 +836,12 @@ sub invoicing_list {
       } 
     }
   }
-  map { $_->address }
-    qsearch( 'cust_main_invoice', { 'custnum' => $self->custnum } );
+  if ( $self->custnum ) {
+    map { $_->address }
+      qsearch( 'cust_main_invoice', { 'custnum' => $self->custnum } );
+  } else {
+    ();
+  }
 }
 
 =item check_invoicing_list ARRAYREF
@@ -867,7 +871,7 @@ sub check_invoicing_list {
 
 =head1 VERSION
 
-$Id: cust_main.pm,v 1.14 1999-03-29 12:06:15 ivan Exp $
+$Id: cust_main.pm,v 1.15 1999-04-07 13:41:54 ivan Exp $
 
 =head1 BUGS
 
@@ -923,7 +927,10 @@ enable cybercash, cybercash v3 support, don't need to import
 FS::UID::{datasrc,checkruid} ivan@sisd.com 98-sep-19-21
 
 $Log: cust_main.pm,v $
-Revision 1.14  1999-03-29 12:06:15  ivan
+Revision 1.15  1999-04-07 13:41:54  ivan
+in &invoicing_list, don't search if there's no custnum yet
+
+Revision 1.14  1999/03/29 12:06:15  ivan
 buglet in email invoices fixed
 
 Revision 1.13  1999/02/28 20:09:03  ivan
