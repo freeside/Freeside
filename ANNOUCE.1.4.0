@@ -1,150 +1,50 @@
-templated web interface (start, anyway)
-separate billing and service addresses
-customer comments
-edit/part_svc.cgi
-svc_forward and better dealing with virtualdomains!  and realm export to RADIUS
-customer-to-customer referrals
-quick order
-no more single default domain
+Hi,
 
-no more postgres/RADIUS weirdness yay!, 31 character column names etc.
-PostgreSQL no longer needs to be recompiled for long RADIUS attributes.   
-RADIUS integration and RADIUS attribute defaults updated.
+I'm pleased to announce the first beta release of Freeside 1.4.0.
+Freeside is a web-based, open-source billing and account administration
+package for ISPs, web hosts, and similar businesses.
 
-Fuzzy searches on large data sets are much faster.
-     
-Job queues have been implemented.
+You can see a web demo, read the documentation, and download the new beta
+at <http://www.sisd.com/freeside/>.
 
-Integration with Cyrus IMAP server.
+Although Freeside is free software, it is supported commercially with
+installation, customization, training and support services.  Please
+consider our services and help support the development of the software!
 
-Support for instant (previously only batch) update of an ICRADIUS or
-FreeRADIUS stored in a local or remote MySQL installation (separate from
-the Freeside database)
 
-1.4.0 has a new Authorize.Net interface, updated for Authorize.Net 3.0
+Major new features in 1.4.0 include:
 
-completely templated signup server
+- Billing engine has been rewritten and now has support for easily added
+  "price plans".  Included price plans include anniversary billing,
+  1st-of-the-month billing (pro-rated and subscription), free for N days,
+  commissions for referrals and per-minute/per-hour charges.
 
-items setup/recur tax exempt flag
-     
-jeff!
+- Customer-to-customer referrals, tracking and commissions.
 
-Price plans.  For starters, multi-level customer-to-customer commissions
-in addition to flat rate pricing.  Price plans are written in Perl and
-it's straightforward to add new ones.  I'm expect we'll see plans for
-pro-rating, metered billing and the like soon.
+- Configurable invoice events triggered for delinquent customers can
+  re-send invoices, suspend accounts, charge late fees, and so on.
 
-New UI for packages and price plans.
+- Export and provisioning system has been rewritten.  New provisioning
+  methods can now be "plugged-in" for any service type.  Included exports
+  include BSD and Linux password files, configurable shell commands,
+  RADIUS (both text and SQL, including groups), BIND configuration files,
+  Cyrus, vpopmail, and many others.
 
-Per-package tax exemption for setup and/or recurring fee         
+- Complete set of history tables tracking all changes to the database.
 
-New UI in the signup server, new customer and new account pages that 
-breaks down access numbers by state and should be easier to use for a
-large number of dialup numbers.  (POPs)   
+- Job queue with display and retry for provisioning tasks.
 
-Database support for local call mappin - the data on what exchanges
-can call which of your access numbers as a local call.
+- UI overhaul - easier to navigate and use.  Quick package order and
+  one-time charges.  Separate billing and service contact information.
+  Customer comments.
 
-easier installation/instructions & web configuration
+- Performance optimizations.
 
-expedited payment-entry
-- a quick check entry tool for entering large numbers of checks as well
-  as customer information on the payment entry screen
+- Financials have been rewritten.  Apply payments and credits against
+  specific invoices (in whole or in part), or have the system apply
+  automatically.
 
-- automatic application of payments and credits to outstanding invoices
-  
-#freeside-overdue
-#- the `freeside-overdue' script to list, add postal invoicing, suspend,   
-#  or cancel overdue and/or expired accounts.
+- Texas tax.
 
-- Payments and credits are applied against invoices when posted.
+- Improved documentation and easier install.
 
-- A bunch of UI fixes/tweaks: package browse, payment/credit entry, search
-  by check #, others
-
-  - Web interface for per-hour or per-minute account charges using the
-    session monitor.
-  
-  - Invoice events - set late fees, suspension, cancellation, etc. events
-    on overdue invoices.
-  
-  - Packages and service disable flags for a more manageable UI.
-
-HTML manpages now up-to-date and generated on install
-
-schema changes for more configurable export
-
-invoice events work & show up on invoice view
-
-- Pro-rating price plan
-
-- svc_www for virtual host services
--svc_www is here, better support for apache integration
-
-- fs_passwd/fs_passwd.cgi web-based password changer for users
-
-LinkPoint support
-
-Most notably, the main menu has gotten a significant facelift and should
-be easier to understand and use.
-
-New frequently-requested financial reports contributed by Jeff Finucane,
-thanks!
-
-The queue daemon web UI has been finished - you can now retry and remove
-jobs, error messages from failed jobs appear on the web interface, and
-account detail pages show any pending provisioning jobs for thsoe
-accounts.
-
-fs-setup should work under MySQL again.  The browse links are still broken
-("all customers", "all packages", "all accounts") but at least you should
-be able to get everything else working...
-
-Critical Path provisioning has been updated and can now username changes
-and suspension/unsuspension.
-
-- New export code!
-- Name and company searches:
-  - now case-insensative
-  - pulldown for search type
-- Email notification for deleted payments
-- History tables - complete history of all database changes
-- Alternate invoice templates for things like late noitces
-- ICRADIUS groups (usergroup table if not radgroupreply & radgroupcheck)
-- Signup server
-  - Error messages in message catalog
-  - Agent is now selectable (multiple signup servers for different agents
-    can now run on the same machine)
-  - signup_server-realtime configuration option to run cards immediately
-  - signup-alternate.html example for free and pay packages on the same
-    signup page
-- Texas tax
-
-schema diagram
-
---
-
-- MySQL is now supported
-
-- BIND import and export and web UI support for editing the zone files.
-  (apply the patch at http://rt.cpan.org/NoAuth/Bug.html?id=508 if 
-   importing zones until upstream release DNS::ZoneParse 0.9)
-
-- Welcome emails
-
-- Working company searches and job queue dependancies
-
-card retry changes (ticket 417)
-
---
-
-- real-time text radius export
-
-- one-time charges
-
-- found "must start freeside-queued as freeside" problem on freebsd.
-  freeside-queued now compatible with freebsd, old openssh, mysql...
-
-- shellcommands now works! has defaults for freebsd, linux, netbsd, just directories, etc.
-
-- real-time textradius export!
