@@ -1138,13 +1138,16 @@ sub print_ps {
 
   my $file = $self->print_latex(@_);
 
-  #error checking!!
-  system('pslatex', "$file.tex");
-  system('pslatex', "$file.tex");
-  system('dvips', '-q', '-t', 'letter', "$file.dvi", '-o', "$file.ps" );
+  system("pslatex $file.tex >/dev/null 2>&1") == 0
+    or die "pslatex failed: $!";
+  system("pslatex $file.tex >/dev/null 2>&1") == 0
+    or die "pslatex failed: $!";
+
+  system('dvips', '-q', '-t', 'letter', "$file.dvi", '-o', "$file.ps" ) == 0
+    or die "dbips failed: $!";
 
   open(POSTSCRIPT, "<$file.ps")
-    or die "can't open $file.ps (probable error in LaTeX template): $!\n";
+    or die "can't open $file.ps: $! (error in LaTeX template?)\n";
 
   unlink("$file.dvi", "$file.log", "$file.aux", "$file.ps", "$file.tex");
 
@@ -1179,15 +1182,21 @@ sub print_pdf {
   #system('pdflatex', "$file.tex");
   #! LaTeX Error: Unknown graphics extension: .eps.
 
-  #error checking!!
-  system('pslatex', "$file.tex");
-  system('pslatex', "$file.tex");
+  system("pslatex $file.tex >/dev/null 2>&1") == 0
+    or die "pslatex failed: $!";
+  system("pslatex $file.tex >/dev/null 2>&1") == 0
+    or die "pslatex failed: $!";
 
   #system('dvipdf', "$file.dvi", "$file.pdf" );
-  system("dvips -q -t letter -f $file.dvi | gs -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -sOutputFile=$file.pdf -c save pop -");
+  system(
+    "dvips -q -t letter -f $file.dvi ".
+    "| gs -q -dNOPAUSE -dBATCH -sDEVICE=pdfwrite -sOutputFile=$file.pdf ".
+    "     -c save pop -"
+  ) == 0
+    or die "dvips failed: $!";
 
   open(PDF, "<$file.pdf")
-    or die "can't open $file.pdf (probably error in LaTeX tempalte: $!\n";
+    or die "can't open $file.pdf: $! (error in LaTeX template?)\n";
 
   unlink("$file.dvi", "$file.log", "$file.aux", "$file.pdf", "$file.tex");
 
