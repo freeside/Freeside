@@ -57,7 +57,7 @@ All further configuration files and directories are located in
   <li><a name="invoice_from">invoice_from</a> - Return address on email invoices.
   <li><a name="invoice_template">invoice_template</a> - Required template file for invoices.  See the <a href="billing.html">section on billing</a> for details.
   <li><a name="lpr">lpr</a> - Print command for paper invoices, for example `lpr -h'.
-  <li><a name="maildisablecatchall">maildisablecatchall</a> - The existance of this file will disable the requirement that each virtual domain have a catch-all mailbox.
+  <li><a name="maildisablecatchall">maildisablecatchall</a> - <b>DEPRECIATED</b>, now the default.  The existance of this file used to disable the requirement that each virtual domain have a catch-all mailbox.
   <li><a name="money_char">money_char</a> - Currency symbol - defaults to `$'.
   <li><a name="mxmachines">mxmachines</a> - MX entries for new domains, weight and machine, one per line, with trailing `.'
   <li><a name="nsmachines">nsmachines</a> - NS nameservers for new domains, one per line, with trailing `.'
@@ -97,13 +97,13 @@ All further configuration files and directories are located in
   <li><a name="soarefresh">soarefresh</a> - SOA refresh for new domains
   <li><a name="soaretry">soaretry</a> - SOA retry for new domains
   <li><a name="statedefault">statedefault</a> - Default state or province (if not supplied, the default is `CA')
-  <li><a name="textradiusprepend">textradiusprepend</a> - <b>depriciated<b>, use RADIUS check attributes instead.  The contents of this file will be prepended to the first line of a user's RADIUS entry in text exports.
+  <li><a name="textradiusprepend">textradiusprepend</a> - <b>DEPRECIATED</b>, use RADIUS check attributes instead.  This option will be removed soon.  The contents of this file will be prepended to the first line of a user's RADIUS entry in text exports.
   <li><a name="usernamemin">usernamemin</a> - Minimum username length (default 2);
   <li><a name="usernamemax">usernamemax</a> - Maximum username length (default is the size of the SQL column, probably specified when fs-setup was run)
   <li><a name="usernamemax">username-letter</a> - The existance of this file will turn on the requirement that usernames contain at least one letter.
   <li><a name="usernamemax">username-letterfirst</a> - The existance of this file will turn on the requirement that usernames start with a letter.
    <li><a name="username_policy">username_policy</a> - This file controls the mechanism for preventing duplicate usernames in passwd/radius files exported from svc_accts.  This should be one of 'prepend domsvc' 'append domsvc' or 'append domain'
-   <li><a name="vpopmailmachines">vpopmailmachines</a> - Your vpopmail pop toasters, one per line.  Each line is of the form "machinename vpopdir vpopuid vpopgid".  Eg: poptoaster.domain.tld /home/vpopmail 508 508 Note: vpopuid and vpopgid are values taken from the vpopmail machine's /etc/passwd
+   <li><a name="vpopmailmachines">vpopmailmachines</a> - Your vpopmail pop toasters, one per line.  Each line is of the form "machinename vpopdir vpopuid vpopgid".  For example: <code>poptoaster.domain.tld /home/vpopmail 508 508</code>  Note: vpopuid and vpopgid are values taken from the vpopmail machine's /etc/passwd
 
 </ul>
 </body>

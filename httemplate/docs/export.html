@@ -14,7 +14,7 @@ it is reccommended that you replicate the data to an external RADIUS machine rat
         <li>radiusmachines - <b>users</b> is copied to the <b>/etc/raddb</b> directory on the remote machine.  If no errors occur, the command <b>( builddbm )</b> is executed on the remote machine.
         <li>icradiusmachines - Local radcheck and radreply tables will be created.  If any machines are specified, the remote MySQL database will be locked and the radcheck table will be copied to the those machines.  You may also need to set the <a href="config.html#icradius_mysqlsource">icradius_mysqlsource</a> and/or <a href="config.html#icradius_mysqldest">icradius_mysqldest</a> configuration files.  Currently you need to be running MySQL for your Freeside database to use this feature.
       </ul>
-    <li>site_perl/svc_acct.pm - If a shellmachine is defined, users can be created, modified and deleted remotely; see below.
+    <li>svc_acct.pm - If a shellmachine is defined, users can be created, modified and deleted remotely; see below.
       <ul>
         <li>Account creation - If the <b>username</b>, <b>uid</b> and <b>dir</b> fields are defined for a new user, the command(s) specified in the <a href="config.html#shellmachine-useradd">shellmachine-useradd</a> configuration file are executed on shellmachine via ssh.  If this file does not exist, <code>useradd -d $dir -m -s $shell -u $uid $username</code> is the default.  If the file exists but is empty, <code>cp -pr /etc/skel $dir; chown -R $uid.$gid $dir</code> is the default instead.  Otherwise the contents of the file are treated as a double-quoted perl string, with the following variables available: <code>$username</code>, <code>$uid</code>, <code>$gid</code>, <code>$dir</code>, and <code>$shell</code>.
         <li>Account deletion - The command(s) specified in the <a href="config.html#shellmachine-userdel">shellmachine-userdel</a> configuration file are executed on shellmachine via ssh.  If this file does not exist, <code>userdel $username</code> is the default.  If the file exists but is empty, <code>rm -rf $dir</code> is the default instead.  Otherwise the contents of the file are treated as a double-quoted perl string, with the following variables available: <code>$username</code> and <code>$dir</code>.
@@ -26,15 +26,22 @@ it is reccommended that you replicate the data to an external RADIUS machine rat
         <li>shellmachine - The command <b>[ -e <i>homedir</i>/.qmail-default ] || { touch <i>homedir</i>/.qmail-default; chown <i>uid</i>.<i>gid</i> <i>homedir</i>/.qmail-default; }</b> will be run on this machine for users in the virtualdomains file.
         <li>sendmailmachines - <b>sendmail.cw</b> and <b>virtusertable</b> are copied to the remote machine as <b>/etc/sendmail.cw.new</b> and <b>/etc/virtusertable.new</b>.  If no errors occur, they are moved to <b>/etc/sendmail.cw</b> and <b>/etc/virtusertable</b> and the command specified in the <a href="config.html#sendmailrestart">sendmailrestart</a> configuration file is executed.  (The path can be changed from the default <b>/etc</b> with the <a href="config.html#sendmailconfigpath">sendmailconfigpath</a> configuration file.)
       </ul>
-    <li>site_perl/svc_acct_sm.pm - If the qmailmachines configuration file exists and a shellmachine is defined, user <b>.qmail-</b> files can be updated.
+    <li>svc_domain.pm - If the qmailmachines configuration file exists and a shellmachine is defined, user <b>.qmail-</b> files can be updated for catchall mailboxes.
       <ul>
-        <li>The command <b>[ -e <i>homedir</i>/.qmail-<i>domain</i>-default ] || { touch <i>homedir</i>/.qmail-<i>domain</i>-default; chown <i>uid</i>.<i>gid</i> <i>homedir</i>/.qmail-<i>domain</i>-default; }</b> is run.
+        <li>The command <pre>[ -e <i>homedir</i>/.qmail-<i>domain</i>-default ] || {
+    touch <i>homedir</i>/.qmail-<i>domain</i>-default;
+    chown <i>uid</i>.<i>gid</i> <i>homedir</i>/.qmail-<i>domain</i>-default;
+}</pre> is run.
       </ul>
+    <li>svc_forward.pm - Not yet documented; see manpage.
+    <li>svc_www.pm - Not yet documented; see manpage.
   </ul>
   <br><a name=ssh>Unattended remote login</a> - Freeside can login to remote machines unattended using SSH.  This can pose a security risk if not configured correctly, and will allow an intruder who breaks into your freeside machine full access to your remote machines.  <b>Do not use this feature unless you understand what you are doing!</b>
     <ul>
-      <li>As the freeside user (on your freeside machine), generate an authentication key using <a href="http://www.tac.nyc.ny.us/cgi-bin/man-cgi?ssh-keygen+1">ssh-keygen</a>.  Since this is for unattended operation, you need to use a blank passphrase.
-      <li>Append the newly-created identity.pub file to root's authorized_keys on the remote machine(s).
+      <li>As the freeside user (on your freeside machine), generate an authentication key using <a href="http://www.tac.eu.org/cgi-bin/man-cgi?ssh-keygen+1">ssh-keygen</a>.  Since this is for unattended operation, use a blank passphrase.
+      <li>Append the newly-created <code>identity.pub</code> file to <code>~root/.ssh/authorized_keys</code> on the remote machine(s).
+      <li>Some new SSH v2 implementation accept v2 style keys only.  Use the <code>-t</code> option to <a href="http://www.tac.eu.org/cgi-bin/man-cgi?ssh-keygen+1">ssh-keygen</a>, and append the created <code>id_dsa.pub</code> or <code>id_rsa.pub</code> to <code>~root/.ssh/authorized_keys2</code> on the remote machine(s).
+      <li>You may need to set <code>PermitRootLogin without-password</code> (meaning with keys only) in your <code>sshd_config</code> file on the remote machine(s).
     </ul>
 
 </body>

@@ -4,7 +4,7 @@
 <body>
   <h1>Schema reference</h1>
   <ul>
-    <li><a name="agent">agent</a> - Agents are resellers of your service.  Agents may be limited to a subset of your full offerings (via their agent type).
+    <li><a name="agent" href="man/FS/agent.html">agent</a> - Agents are resellers of your service.  Agents may be limited to a subset of your full offerings (via their agent type).
       <ul>
         <li>agentnum - primary key
         <li>agent - name of this agent
@@ -12,12 +12,12 @@
         <li>prog - (unimplemented)
         <li>freq - (unimplemented)
       </ul>
-    <li><a name="agent_type">agent_type</a> - Agent types define groups of packages that you can then assign to particular agents.
+    <li><a name="agent_type" href="man/FS/agent_type.html">agent_type</a> - Agent types define groups of packages that you can then assign to particular agents.
       <ul>
         <li>typenum - primary key
         <li>atype - name of this agent type
       </ul>
-    <li><a name="cust_bill">cust_bill</a> - Invoices.  Declarations that a customer owes you money.  The specific charges are itemized in <a href="#cust_billl_pkg">cust_bill_pkg</a>.
+    <li><a name="cust_bill" href="man/FS/cust_bill.html">cust_bill</a> - Invoices.  Declarations that a customer owes you money.  The specific charges are itemized in <a href="#cust_bill_pkg">cust_bill_pkg</a>.
       <ul>
         <li>invnum - primary key
         <li>custnum - <a href="#cust_main">customer</a>
@@ -25,7 +25,7 @@
         <li>charged - amount of this invoice
         <li>printed - how many times this invoice has been printed automatically
       </ul>
-    <li><a name="cust_bill_pkg">cust_bill_pkg</a> - Invoice line items
+    <li><a name="cust_bill_pkg" href="man/FS/cust_bill_pkg.html">cust_bill_pkg</a> - Invoice line items
       <ul>
         <li>invnum - (multiple) key
         <li>pkgnum - <a href="#cust_pkg">package</a> or 0 for the special virtual sales tax package
@@ -34,7 +34,7 @@
         <li>sdate - starting date
         <li>edate - ending date
       </ul>
-    <li><a name="cust_credit">cust_credit</a> - Credits.  The equivalent of a negative <a href="#cust_bill">cust_bill</a> record.
+    <li><a name="cust_credit" href="man/FS/cust_credit.html">cust_credit</a> - Credits.  The equivalent of a negative <a href="#cust_bill">cust_bill</a> record.
       <ul>
         <li>crednum - primary key
         <li>custnum - <a href="#cust_main">customer</a>
@@ -43,12 +43,11 @@
         <li>otaker - order taker
         <li>reason
       </ul>
-    <li><a name="cust_main">cust_main</a> - Customers
+    <li><a name="cust_main" href="man/FS/cust_main.html">cust_main</a> - Customers
       <ul>
         <li>custnum - primary key
         <li>agentnum - <a href="#agent">agent</a>
         <li>refnum - <a href="#part_referral">referral</a>
-        <li>titlenum - <a href="#part_title">title</a>
         <li>first - name
         <li>last - name
         <li>ss - social security number
@@ -84,13 +83,13 @@
         <li>otaker - order taker
       </ul>
       (columns in <i>italics</i> are optional)
-    <li><a name="cust_main_invoice">cust_main_invoice</a> - Invoice destinations for email invoices.  Note that a customer can have many email destinations for their invoice (either literal or via svcnum), but only one postal destination.
+    <li><a name="cust_main_invoice" href="man/FS/cust_main_invoice.html">cust_main_invoice</a> - Invoice destinations for email invoices.  Note that a customer can have many email destinations for their invoice (either literal or via svcnum), but only one postal destination.
       <ul>
         <li>destnum - primary key
         <li>custnum - <a href="#cust_main">customer</a>
         <li>dest - Invoice destination.  Freeside supports three types of invoice delivery: send directly to a service defined in Freeside, send to an arbitrary email address, or print the invoice to a printer and have someone send it out via snail mail.  Freeside determines which method to use based on the contents of the dest field.  If the contents are numeric, a <a href="#svc_acct">svcnum</a> pointing to a valid service is expected in the field.  If the contents are a string, a literal email address is expected to be in the field.  If the special keyword `POST' is present, the snail mail method is used (which is the default if no cust_main_invoice records exist).  Snail mail invoices get their address information from <A name="#cust_main">cust_main</A> and are printed with the printer defined in the configuration files.
       </ul>
-    <li><a name="cust_main_county">cust_main_county</a> - Tax rates
+    <li><a name="cust_main_county" href="man/FS/cust_main_county.html">cust_main_county</a> - Tax rates
       <ul>
         <li>taxnum - primary key
         <li>state
@@ -98,7 +97,7 @@
         <li>country
         <li>tax - % rate
       </ul>
-    <li><a name="cust_pay">cust_pay</a> - Payments.  Money being transferred from a customer.
+    <li><a name="cust_pay" href="man/FS/cust_pay.html">cust_pay</a> - Payments.  Money being transferred from a customer.
       <ul>
         <li>paynum - primary key
         <li>invnum - <a href="#cust_bill">invoice</a>
@@ -108,7 +107,7 @@
         <li>payinfo - card number, P.O.#, or comp issuer
         <li>paybatch - text field for tracking card processor batches
       </ul>
-    <li><a name="cust_pay_batch">cust_pay_batch</a> - Pending batch
+    <li><a name="cust_pay_batch" href="man/FS/cust_pay_batch.html">cust_pay_batch</a> - Pending batch
       <ul>
         <li>trancode - 77 for charges
         <li>cardnum
@@ -126,7 +125,7 @@
         <li>zip
         <li>country
       </ul>
-    <li><a name="cust_pkg">cust_pkg</a> - Customer billing items
+    <li><a name="cust_pkg" href="man/FS/cust_pkg.html">cust_pkg</a> - Customer billing items
       <ul>
         <li>pkgnum - primary key
         <li>custnum - <a href="#cust_main">customer</a>
@@ -138,7 +137,7 @@
         <li>cancel - (past) cancellation date
         <li>otaker - order taker
       </ul>
-    <li><a name="cust_refund">cust_refund</a> - Refunds.  The transfer of money to a customer; equivalent to a negative <a href="#cust_pay">cust_pay</a> record.
+    <li><a name="cust_refund" href="man/FS/cust_refund.html">cust_refund</a> - Refunds.  The transfer of money to a customer; equivalent to a negative <a href="#cust_pay">cust_pay</a> record.
       <ul>
         <li>refundnum - primary key
         <li>crednum - <a href="#cust_credit">credit</a>
@@ -148,13 +147,13 @@
         <li>payinfo - card number, P.O.#, or comp issuer
         <li>otaker - order taker
       </ul>
-    <li><a name="cust_svc">cust_svc</a> - Customer services
+    <li><a name="cust_svc" href="man/FS/cust_svc.html">cust_svc</a> - Customer services
       <ul>
         <li>svcnum - primary key
         <li>pkgnum - <a href="#cust_pkg">package</a>
         <li>svcpart - <a href="#part_svc">Service definition</a>
       </ul>
-    <li><a name="nas">nas</a> - Network Access Server (terminal server)
+    <li><a name="nas" href="man/FS/nas.html">nas</a> - Network Access Server (terminal server)
       <ul>
         <li>nasnum - primary key
         <li>nas - NAS name
@@ -162,7 +161,7 @@
         <li>nasfqdn - NAS fully-qualified domain name
         <li>last - timestamp indicating the last instant the NAS was in a known state (used by the session monitoring).
       </ul>
-    <li><a name="part_pkg">part_pkg</a> - Package definitions
+    <li><a name="part_pkg" href="man/FS/part_pkg.html">part_pkg</a> - Package definitions
       <ul>
         <li>pkgpart - primary key
         <li>pkg - package name
@@ -171,12 +170,12 @@
         <li>freq - recurring frequency (months)
         <li>recur - recurring fee
       </ul>
-    <li><a name="part_referral">part_referral</a> - Referral listing
+    <li><a name="part_referral" href="man/FS/part_referral.html">part_referral</a> - Referral listing
       <ul>
         <li>refnum - primary key
         <li>referral - referral
       </ul>
-    <li><a name="part_svc">part_svc</a> - Service definitions
+    <li><a name="part_svc" href="man/FS/part_svc.html">part_svc</a> - Service definitions
       <ul>
         <li>svcpart - primary key
         <li>svc - name of this service
@@ -184,31 +183,26 @@
         <li><i>table</i>__<i>field</i> - Default or fixed value for <i>field</i> in <i>table</i>
         <li><i>table</i>__<i>field</i>_flag - null, D or F
       </ul>
-    <li><a name="part_title">part_title</a> - Personal titles
-      <ul>
-        <li>titlenum - primary key
-        <li>title - personal title (`Dr.' or `Mr.')
-      </ul>
-    <li><a name="pkg_svc">pkg_svc</a>
+    <li><a name="pkg_svc" href="man/FS/pkg_svc.html">pkg_svc</a>
       <ul>
         <li>pkgpart - <a href="#part_pkg">Package definition</a>
         <li>svcpart - <a href="#part_svc">Service definition</a>
         <li>quantity - quantity of this service that this package includes
       </ul>
-    <li><a name="port">port</a> - individual port on a <a href="#nas">nas</a>
+    <li><a name="port" href="man/FS/port.html">port</a> - individual port on a <a href="#nas">nas</a>
       <ul>
         <li>portnum - primary key
         <li>ip - IP address of this port
         <li>nasport - port number on the NAS
         <li>nasnum - <a href="#nas">NAS</a>
       </ul>
-    <li><a name="prepay_credit">prepay_credit</a>
+    <li><a name="prepay_credit" href="man/FS/prepay_credit.html">prepay_credit</a>
       <ul>
         <li>prepaynum - primary key
         <li>identifier - text or numeric string used to receive this credit
         <li>amount - amount of credit
       </ul>
-    <li><a name="session">session</a>
+    <li><a name="session" href="man/FS/session.html">session</a>
       <ul>
         <li>sessionnum - primary key
         <li>portnum - <a href="#port">Port</a>
@@ -217,7 +211,7 @@
         <li>logout - timestamp indicating the end of this user session.  May be null, which indicates a currently open session.
       </ul>
 
-    <li><a name="svc_acct">svc_acct</a> - Accounts
+    <li><a name="svc_acct" href="man/FS/svc_acct.html">svc_acct</a> - Accounts
       <ul>
         <li>svcnum - <a href="#cust_svc">primary key</a>
         <li>username
@@ -232,7 +226,7 @@
         <li>slipip - IP address
         <li>radius_<i>Radius_Attribute</i> - Radius-Attribute
       </ul>
-    <li><a name="svc_acct_pop">svc_acct_pop</a> - Points of Presence
+    <li><a name="svc_acct_pop" href="man/FS/svc_acct_pop.html">svc_acct_pop</a> - Points of Presence
       <ul>
         <li>popnum - primary key
         <li>city
@@ -241,26 +235,26 @@
         <li>exch - exchange
         <li>loc - rest of number
       </ul>
-    <li><a name="svc_acct_sm">svc_acct_sm</a> - <b>DEPRICIATED</b> Domain mail aliases
+    <li><a name="svc_acct_sm" href="man/FS/svc_acct_sm.html">svc_acct_sm</a> - <b>DEPRECIATED</b> Domain mail aliases
       <ul>
         <li>svcnum - <a href="#cust_svc">primary key</a>
         <li>domsvc - <a href="#svc_domain">Domain</a> (by svcnum)
         <li>domuid - <a href="#svc_acct">Account</a> (by uid)
         <li>domuser - domuser @ <a href="#svc_domain">Domain</a> forwards to <a href="#svc_acct">Account</a>
       </ul>
-    <li><a name="svc_domain">svc_domain</a> - Domains
+    <li><a name="svc_domain" href="man/FS/svc_domain.html">svc_domain</a> - Domains
       <ul>
         <li>svcnum - <a href="#cust_svc">primary key</a>
         <li>domain
       </ul>
-    <li><a name="svc_forward>svc_forward</a> - Mail forwarding aliases
+    <li><a name="svc_forward" href="man/FS/svc_forward.html">svc_forward</a> - Mail forwarding aliases
       <ul>
         <li>svcnum - <a href="#cust_svc">primary key</a>
-        <li>srcsvc - <a href="#svc_acct">svcnum of the source of this forward
-        <li>dstsvc - <a href="#svc_acct">svcnum of the destination of this forward
+        <li>srcsvc - <a href="#svc_acct">svcnum of the source of this forward</a>
+        <li>dstsvc - <a href="#svc_acct">svcnum of the destination of this forward</a>
         <li>dst - foreign destination (email address) - forward not local to freeside
       </ul>
-    <li><a name="domain_record">domain_record</a> - Domain zone detail
+    <li><a name="domain_record" href="man/FS/domain_record.html">domain_record</a> - Domain zone detail
       <ul>
         <li>recnum - primary key
         <li>svcnum - <a href="#svc_domain">Domain</a> (by svcnum)
@@ -269,13 +263,13 @@
         <li>rectype - type for this record (<b>A</b>, <b>MX</b>, etc.)
         <li>recdata - data for this record
       </ul>
-    <li><a name="svc_www">svc_www</a>
+    <li><a name="svc_www" href="man/FS/svc_www.html">svc_www</a>
       <ul>
        <li>svcnum - <a href="#cust-svc">primary key</a>
        <li>recnum - <a href="#domain_record">host</a>
        <li>usersvc - <a href="#svc_acct">account</a>
       </ul>
-    <li><a name="type_pkgs">type_pkgs</a>
+    <li><a name="type_pkgs" href="man/FS/type_pkgs.html">type_pkgs</a>
       <ul>
         <li>typenum - <a href="#agent_type">agent type</a>
         <li>pkgpart - <a href="#part_pkg">Package definition</a>
