@@ -217,9 +217,10 @@ sub getsecrets {
   die "No user!" unless $user;
   my($conf) = new FS::Conf $conf_dir;
   my($line) = grep /^\s*$user\s/, $conf->config('mapsecrets');
+  die "User not found in mapsecrets!" unless $line;
   $line =~ /^\s*$user\s+(.*)$/;
   $secrets = $1;
-  die "User not found in mapsecrets file!" unless $secrets;
+  die "Illegal mapsecrets line for user?!" unless $secrets;
   ($datasrc, $db_user, $db_pass) = $conf->config($secrets)
     or die "Can't get secrets: $!";
   $FS::Conf::default_dir .= "/conf.$datasrc";
@@ -282,7 +283,10 @@ inlined suidsetup
 ivan@sisd.com 98-sep-12
 
 $Log: UID.pm,v $
-Revision 1.4  1998-11-13 09:56:52  ivan
+Revision 1.5  1998-11-15 00:51:51  ivan
+eliminated some warnings on certain fatal errors (well, it is less confusing)
+
+Revision 1.4  1998/11/13 09:56:52  ivan
 change configuration file layout to support multiple distinct databases (with
 own set of config files, export, etc.)
 
