@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct_sm.import,v 1.2 1998-12-10 07:23:18 ivan Exp $
+# $Id: svc_acct_sm.import,v 1.3 1999-03-24 00:51:55 ivan Exp $
 #
 # ivan@sisd.com 98-mar-9
 #
@@ -16,7 +16,10 @@
 # ivan@sisd.com 98-jul-13
 #
 # $Log: svc_acct_sm.import,v $
-# Revision 1.2  1998-12-10 07:23:18  ivan
+# Revision 1.3  1999-03-24 00:51:55  ivan
+# die if no relevant services... cvspain
+#
+# Revision 1.2  1998/12/10 07:23:18  ivan
 # use FS::Conf, need user (for datasrc)
 #
 
@@ -46,6 +49,9 @@ my(%mta) = (
   map { $_->svcpart, $_ } qsearch('part_svc',{'svcdb'=>'svc_domain'});
 %m_part_svc =
   map { $_->svcpart, $_ } qsearch('part_svc',{'svcdb'=>'svc_acct_sm'});
+
+die "No services with svcdb svc_domain!\n" unless %d_part_svc;
+die "No services with svcdb svc_svc_acct_sm!\n" unless %m_part_svc;
 
 print "\n\n", 
       ( join "\n", map "$_: ".$d_part_svc{$_}->svc, sort keys %d_part_svc ),
