@@ -1,0 +1,53 @@
+#!/usr/bin/perl
+#
+# hack to update/add read-only permissions for a user on the db
+#
+# usage: pg-readonly freesideuser readonlyuser
+
+use strict;
+use DBI;
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw(dbdef);
+
+my $user = shift or die &usage;
+adminsuidsetup($user);
+
+#---
+
+#su postgres -c 'createlang plpgsql freeside'
+
+#---
+
+my $MASTERHOST = '172.21.0.204';
+my $SLAVEHOST = '172.21.0.205';
+#my $REPLICATIONUSER='pgsql';
+my $REPLICATIONUSER='postgres';
+
+#drop set ( id = 1, origin = 1);
+
+print <<END;
+cluster name = freeside;
+node 1 admin conninfo = 'dbname=freeside host=$MASTERHOST user=$REPLICATIONUSER';
+node 2 admin conninfo = 'dbname=freeside host=$SLAVEHOST user=$REPLICATIONUSER';
+init cluster ( id=1, comment = 'Master Node');
+create set (id=1, origin=1, comment='All freeside tables');
+
+END
+
+my $id = 1;
+
+foreach my $table ( dbdef->tables ) {
+  #next if $table =~ /^sql_/i;
+  print "set add table (set id=1, origin=1, id=". $id++. ", fully qualified name = 'public.$table' );\n";
+
+}
+
+print <<END;
+store node (id=2, comment = 'Slave node');
+store path (server = 1, client = 2, conninfo='dbname=freeside host=$MASTERHOST user=freeside');
+store path (server = 2, client = 1, conninfo='dbname=freeside host=$SLAVEHOST user=freeside');
+store listen (origin=1, provider = 1, receiver =2);
+store listen (origin=2, provider = 2, receiver =1);
+END
+
+
