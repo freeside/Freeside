@@ -122,11 +122,12 @@ sub new {
 
   foreach my $field ( $self->fields ) { 
     $hashref->{$field}='' unless defined $hashref->{$field};
-    #trim the '$' from money fields for Pg (belong HERE?)
+    #trim the '$' and ',' from money fields for Pg (belong HERE?)
     #(what about Pg i18n?)
     if ( datasrc =~ m/Pg/ 
          && $self->dbdef_table->column($field)->type eq 'money' ) {
       ${$hashref}{$field} =~ s/^\$//;
+      ${$hashref}{$field} =~ s/\,//;
     }
   }
 
@@ -822,7 +823,7 @@ sub hfields {
 
 =head1 VERSION
 
-$Id: Record.pm,v 1.14 1999-04-07 14:58:31 ivan Exp $
+$Id: Record.pm,v 1.15 1999-04-08 12:08:59 ivan Exp $
 
 =head1 BUGS
 
@@ -944,7 +945,10 @@ added pod documentation ivan@sisd.com 98-sep-6
 ut_phonen got ''; at the end ivan@sisd.com 98-sep-27
 
 $Log: Record.pm,v $
-Revision 1.14  1999-04-07 14:58:31  ivan
+Revision 1.15  1999-04-08 12:08:59  ivan
+fix up PostgreSQL money fields so you can actually use them as numbers.  bah.
+
+Revision 1.14  1999/04/07 14:58:31  ivan
 more kludges to get around different null/empty handling in Perl vs. MySQL vs.
 PostgreSQL etc.
 
