@@ -98,8 +98,8 @@ if ( $part_svc->part_export('sqlradius') ) {
     print ' (no billing cycle available for unaudited account)<BR>';
   }
 
-  print 'Input: <B>'. sprintf("%.3f", $input). ' megabytes<BR>';
-  print 'Output: <B>'. sprintf("%.3f", $output). ' megabytes<BR>';
+  print 'Input: <B>'. sprintf("%.3f", $input). '</B> megabytes<BR>';
+  print 'Output: <B>'. sprintf("%.3f", $output). '</B> megabytes<BR>';
 
   print '<BR>';
 
