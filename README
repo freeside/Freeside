@@ -1,6 +1,8 @@
-Freeside, 1.1.6
+Freeside, 1.2.0
 
-Copyright (C) 1998 Silicon Interactive Software Design.  All rights reserved.
+Copyright (C) 1999 Ivan Kohler
+Copyright (C) 1999 Silicon Interactive Software Design
+All rights reserved
 
     This program is free software; you can redistribute it and/or modify
     it under the terms of either:
@@ -38,6 +40,5 @@ A mailing list for users and developers is available.  Send a blank message to
 Commercial support is available from Ivan Kohler <ivan@sisd.com>.  Please
 subscribe to the the mailing list to request free support!
 
-Ivan Kohler
-ivan@sisd.com
-
+Ivan Kohler <ivan@sisd.com>
+20 4,16 * * * saytime
