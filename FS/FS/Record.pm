@@ -315,6 +315,8 @@ sub AUTOLOAD {
   my($field)=$AUTOLOAD;
   $field =~ s/.*://;
   if ( defined($value) ) {
+    confess "errant AUTOLOAD $field for $self (arg $value)"
+      unless $self->can('setfield');
     $self->setfield($field,$value);
   } else {
     $self->getfield($field);
@@ -915,7 +917,7 @@ sub DESTROY { return; }
 
 =head1 VERSION
 
-$Id: Record.pm,v 1.16 2001-05-07 15:42:02 ivan Exp $
+$Id: Record.pm,v 1.17 2001-06-03 11:27:00 ivan Exp $
 
 =head1 BUGS
 
