@@ -1291,6 +1291,13 @@ httemplate/docs/config.html
     'select_enum' => [ 'none', 'username', 'username@domain' ],
   },
 
+  {
+    'key'         => 'svc_external-skip_manual',
+    'section'     => 'UI',
+    'description' => 'When provisioning svc_external services, skip manual entry of id and title fields in the UI.  Usually used in conjunction with an export that populates these fields (i.e. artera_turbo).',
+    'type'        => 'checkbox',
+  },
+
 );
 
 1;

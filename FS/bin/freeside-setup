@@ -1127,7 +1127,7 @@ sub tables_hash_hack {
     'svc_external' => {
       'columns' => [
         'svcnum', 'int', '', '',
-        'id',     'int', '', '',
+        'id',     'int', 'NULL', '',
         'title',  'varchar', 'NULL', $char_d,
       ],
       'primary_key' => 'svcnum',

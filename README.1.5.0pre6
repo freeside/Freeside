@@ -25,6 +25,9 @@ CREATE TABLE cust_pay_void (
 );
 CREATE INDEX cust_pay_void1 ON cust_pay_void(custnum);
 
+alter table svc_external alter column id drop not null;
+alter table h_svc_external alter column id drop not null;
+
 dbdef-create username
 create-history-tables username cust_pay_refund cust_pay_void
 dbdef-create username

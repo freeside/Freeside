@@ -158,7 +158,7 @@ sub check {
 
   my $error = 
     $self->ut_numbern('svcnum')
-    || $self->ut_number('id')
+    || $self->ut_numbern('id')
     || $self->ut_textn('title')
   ;
 

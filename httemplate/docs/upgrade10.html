@@ -80,7 +80,7 @@ CREATE INDEX acct_snarf1 ON acct_snarf ( svcnum );
 
 CREATE TABLE svc_external (
   svcnum int NOT NULL,
-  id int NOT NULL,
+  id int,
   title varchar(80),
   PRIMARY KEY (svcnum)
 );
