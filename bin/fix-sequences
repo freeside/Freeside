@@ -1,0 +1,55 @@
+#!/usr/bin/perl -Tw
+
+use strict;
+use DBI;
+use DBIx::DBSchema 0.21;
+use DBIx::DBSchema::Table;
+use DBIx::DBSchema::Column;
+use DBIx::DBSchema::ColGroup::Unique;
+use DBIx::DBSchema::ColGroup::Index;
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw(dbdef);
+
+my $user = shift or die &usage;
+my $dbh = adminsuidsetup $user;
+
+my $schema = dbdef();
+
+#false laziness w/fs-setup
+my @tables = scalar(@ARGV)
+               ? @ARGV
+               : grep { ! /^h_/ } $schema->tables;
+foreach my $table ( @tables ) {
+  my $tableobj = $schema->table($table)
+    or die "unknown table $table (did you run dbdef-create?)\n";
+
+  my $primary_key = $tableobj->primary_key;
+  next unless $primary_key;
+
+  my $col = $tableobj->column($primary_key);
+
+  next unless uc($col->type) eq 'SERIAL'
+              || ( driver_name eq 'Pg'
+                     && defined($col->default)
+                     && $col->default =~ /^nextval\(/i
+                 )
+              || ( driver_name eq 'mysql'
+                     && defined($col->local)
+                     && $col->local =~ /AUTO_INCREMENT/i
+                 );
+
+  warn "fixing sequence for $table\n";
+
+  $dbh->do( "SELECT setval( '${table}_${primary_key}_seq',
+                            ( SELECT max($primary_key) FROM $table ) );" )
+    or die $dbh->errstr;
+
+}
+
+$dbh->commit or die $dbh->errstr;
+$dbh->disconnect or die $dbh->errstr;
+
+sub usage {
+  die "Usage:\n  create-history-tables user [ table table ... ] \n";
+}
+
