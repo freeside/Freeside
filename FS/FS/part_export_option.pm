@@ -38,7 +38,7 @@ currently supported:
 
 =item exportnum - export (see L<FS::part_export>)
 
-=item option - option name
+=item optionname - option name
 
 =item opeionvalue - option value
 
@@ -105,7 +105,7 @@ sub check {
   my $error = 
     $self->ut_numbern('optionnum')
     || $self->ut_number('exportnum')
-    || $self->ut_alpha('option')
+    || $self->ut_alpha('optionname')
     || $self->ut_textn('optionvalue')
   ;
   return $error if $error;

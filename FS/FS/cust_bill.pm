@@ -388,7 +388,7 @@ sub send {
   #my @print_text = $cust_bill->print_text; #( date )
   my @invoicing_list = $self->cust_main->invoicing_list;
   if ( grep { $_ ne 'POST' } @invoicing_list ) { #email invoice
-    $ENV{SMTPHOSTS} = $smtpmachine;
+    #$ENV{SMTPHOSTS} = $smtpmachine;
     $ENV{MAILADDRESS} = $invoice_from;
     my $header = new Mail::Header ( [
       "From: $invoice_from",
@@ -401,11 +401,14 @@ sub send {
     my $message = new Mail::Internet (
       'Header' => $header,
       'Body' => [ $self->print_text ], #( date)
+      #'Debug' => 1,
     );
-    $message->smtpsend
-      or return "(customer # ". $self->custnum. ") can't send invoice email".
-                " for ". join(', ', grep { $_ ne 'POST' } @invoicing_list ).
-                " to server $smtpmachine!";
+    $!=0;
+    $message->smtpsend( Host => $smtpmachine )
+      or $message->smtpsend( Host => $smtpmachine, Debug => 1 )
+        or return "(customer # ". $self->custnum. ") can't send invoice email".
+                  " to ". join(', ', grep { $_ ne 'POST' } @invoicing_list ).
+                  " via server $smtpmachine with SMTP: $!";
 
   #} elsif ( grep { $_ eq 'POST' } @invoicing_list ) {
   } elsif ( ! @invoicing_list || grep { $_ eq 'POST' } @invoicing_list ) {
@@ -880,7 +883,7 @@ sub print_text {
 
 =head1 VERSION
 
-$Id: cust_bill.pm,v 1.20 2002-02-26 09:06:51 ivan Exp $
+$Id: cust_bill.pm,v 1.21 2002-03-07 14:10:10 ivan Exp $
 
 =head1 BUGS
 

@@ -2,8 +2,9 @@ package FS::part_export;
 
 use strict;
 use vars qw( @ISA );
-use FS::Record qw( qsearch qsearchs );
+use FS::Record qw( qsearch qsearchs dbh );
 use FS::part_svc;
+use FS::part_export_option;
 
 @ISA = qw(FS::Record);
 
@@ -18,7 +19,10 @@ FS::part_export - Object methods for part_export records
   $record = new FS::part_export \%hash;
   $record = new FS::part_export { 'column' => 'value' };
 
-  $error = $record->insert;
+  ($new_record, $options) = $template_recored->clone( $svcpart );
+
+  $error = $record->insert( { 'option' => 'value' } );
+  $error = $record->insert( \$options );
 
   $error = $new_record->replace($old_record);
 
@@ -34,7 +38,7 @@ fields are currently supported:
 
 =over 4
 
-=item eventpart - primary key
+=item exportnum - primary key
 
 =item svcpart - Service definition (see L<FS::part_svc>) to which this export applies
 
@@ -63,14 +67,76 @@ points to.  You can ask the object for a copy with the I<hash> method.
 
 sub table { 'part_export'; }
 
-=item insert
+=item clone SVCPART
+
+An alternate constructor.  Creates a new export by duplicating an existing
+export.  The given svcpart is assigned to the new export.
+
+Returns a list consisting of the new export object and a hashref of options.
+
+=cut
+
+sub clone {
+  my $self = shift;
+  my $class = ref($self);
+  my %hash = $self->hash;
+  $hash{'exportnum'} = '';
+  $hash{'svcpart'} = shift;
+  ( $class->new( \%hash ),
+    { map { $_->optionname => $_->optionvalue }
+        qsearch('part_export_option', { 'exportnum' => $self->exportnum } )
+    }
+  );
+}
+
+=item insert HASHREF
 
 Adds this record to the database.  If there is an error, returns the error,
 otherwise returns false.
 
+If a hash reference of options is supplied, part_export_option records are
+created (see L<FS::part_export_option>).
+
 =cut
 
-# the insert method can be inherited from FS::Record
+#false laziness w/queue.pm
+sub insert {
+  my $self = shift;
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $error = $self->SUPER::insert;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  my $options = shift;
+  foreach my $optionname ( keys %{$options} ) {
+    my $part_export_option = new FS::part_export_option ( {
+      'optionname'  => $optionname,
+      'optionvalue' => $options->{$optionname},
+    } );
+    $error = $part_export_option->insert;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+  '';
+
+};
 
 =item delete
 
@@ -119,6 +185,17 @@ sub check {
   #check exporttype?
 
   ''; #no error
+}
+
+=item part_svc
+
+Returns the service definition (see L<FS::part_svc>) for this export.
+
+=cut
+
+sub part_svc {
+  my $self = shift;
+  qsearchs('part_svc', { svcpart => $self->svcpart } );
 }
 
 =back

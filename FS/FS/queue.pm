@@ -78,6 +78,7 @@ created (see L<FS::queue_arg>).
 
 =cut
 
+#false laziness w/part_export.pm
 sub insert {
   my $self = shift;
 
@@ -289,7 +290,7 @@ END
 
 =head1 VERSION
 
-$Id: queue.pm,v 1.6 2002-02-22 06:42:28 ivan Exp $
+$Id: queue.pm,v 1.7 2002-03-07 14:10:10 ivan Exp $
 
 =head1 BUGS
 
