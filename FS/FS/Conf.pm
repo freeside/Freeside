@@ -185,7 +185,7 @@ httemplate/docs/config.html
 
   {
     'key'         => 'address',
-    'section'     => 'depreciated',
+    'section'     => 'deprecated',
     'description' => 'This configuration option is no longer used.  See <a href="#invoice_template">invoice_template</a> instead.',
     'type'        => 'text',
   },
@@ -304,7 +304,7 @@ httemplate/docs/config.html
 
   {
     'key'         => 'domain',
-    'section'     => 'depreciated',
+    'section'     => 'deprecated',
     'description' => 'Your domain name.',
     'type'        => 'text',
   },
@@ -416,8 +416,8 @@ httemplate/docs/config.html
 
   {
     'key'         => 'maildisablecatchall',
-    'section'     => 'depreciated',
-    'description' => '<b>DEPRECIATED</b>, now the default.  Turning this option on used to disable the requirement that each virtual domain have a catch-all mailbox.',
+    'section'     => 'deprecated',
+    'description' => '<b>DEPRECATED</b>, now the default.  Turning this option on used to disable the requirement that each virtual domain have a catch-all mailbox.',
     'type'        => 'checkbox',
   },
 
@@ -654,8 +654,8 @@ httemplate/docs/config.html
 
   {
     'key'         => 'textradiusprepend',
-    'section'     => 'depreciated',
-    'description' => '<b>DEPRECIATED</b>, use RADIUS check attributes instead.  This option will be removed soon.  The contents will be prepended to the first line of a user\'s RADIUS entry in text exports.',
+    'section'     => 'deprecated',
+    'description' => '<b>DEPRECATED</b>, use RADIUS check attributes instead.  This option will be removed soon.  The contents will be prepended to the first line of a user\'s RADIUS entry in text exports.',
     'type'        => 'text',
   },
 

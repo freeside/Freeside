@@ -8,7 +8,7 @@
 <% foreach my $section ( qw(required billing username password UI session
                             shell mail radius apache BIND
                            ),
-                         '', 'depreciated') { %>
+                         '', 'deprecated') { %>
   <%= table("#cccccc", 2) %>
   <tr>
     <th colspan="2" bgcolor="#dcdcdc">
