@@ -1,0 +1,161 @@
+#!/usr/bin/perl -w
+
+use strict;
+use Term::Query qw(query);
+use Net::SCP qw(iscp);
+use FS::UID qw(adminsuidsetup datasrc);
+use FS::Record qw(qsearch); #qsearchs);
+##use FS::svc_acct_sm;
+#use FS::svc_domain;
+#use FS::domain_record;
+use FS::svc_acct;
+##use FS::part_svc;
+use FS::svc_forward;
+use FS::svc_domain;
+
+my $user = shift or die &usage;
+adminsuidsetup $user;
+
+#$FS::svc_Common::noexport_hack = 1;
+#$FS::domain_record::noserial_hack = 1;
+
+use vars qw($defaultdomain);
+$defaultdomain = 'surferz.net';
+
+use vars qw($svcpart $domain_svcpart);
+$svcpart = 2;
+$domain_svcpart = 1;
+
+use vars qw($spooldir);
+$spooldir = "/usr/local/etc/freeside/export.". datasrc. "/sendmail";
+mkdir $spooldir unless -d $spooldir;
+
+print "\n\n", <<END;
+Enter the location and name of your Sendmail aliases file, for example
+"mail.isp.com:/etc/mail/aliases"
+END
+my($aliases)=&getvalue(":");
+
+use vars qw($aliases_machine $aliases_prefix);
+$alises_machine = (split(/:/, $aliases))[0];
+$aliases_prefix = "$spooldir/$aliases_machine";
+mkdir $aliases_prefix unless -d $aliases_prefix;
+
+iscp("root\@$aliases","$aliases_prefix/aliases.import");
+
+print "\n\n", <<END;
+Enter the location and name of your Sendmail virtusertable directory, for example
+"mail.isp.com:/etc/mail/virtusertable"
+END
+my($virtusertable)=&getvalue(":");
+
+use vars qw($virtusertable_machine $virtusertable_prefix);
+$virtusertable_machine = (split(/:/, $virtusertable))[0];
+$prefix = "$spooldir/$aliases_machine";
+mkdir $prefix unless -d $prefix;
+mkdir "$prefix/virtusertable.import" unless -d "$prefix/virtusertable.import";
+
+iscp("root\@$virtusertable/*","$aliases_prefix/virtusertable.import/");
+
+sub getvalue {
+  my $prompt = shift;
+  $^W=0; # Term::Query isn't -w-safe
+  my $return = query $prompt, '';
+  $^W=1;
+  $return;
+}
+
+print "\n\n";
+
+##
+
+#!! handle all files
+
+open(ALIASES,"<$aliases_prefix/aliases.import") or die $!;
+while (<ALIASES>) {
+  next if /^\s*#/ || /^\s*$/; #skip comments & blank lines
+
+  #!! handle catchalls!!!
+
+  unless ( /^([\w\@\.]+):\s*()\s*$/ ) {
+    warn "Unparsable line: $_";
+    next;
+  }
+  my($rawusername, $rawdest) = ($1, $2)
+
+  my($username, $domain);
+  if ( $rawusername =~ /^(\w+)\@([\w\.]+)$/ ) {
+    $username = $1;
+    $domain = $2;
+  } elsif ( $rawusername =~ /\@/ ) {
+    die "Unparsable username: $rawusername\n";
+  } else {
+    $username = $rawusername;
+    $domain = $defaultdomain;
+  }
+
+  #find or create svc_acct record
+
+  my @svc_acct = grep { $_->cust_svc->svcpart == $svcpart }
+                   qsearch('svc_acct', {
+                     'username' => $username,
+                     'domain'   => $domain,
+                   });
+
+  if ( scalar(@svc_acct) > 1 ) {
+    die "multiple sources found for $username\@$domain !\n";
+  }
+
+  my $svc_acct;
+  if ( @svc_acct ) {
+    $svc_acct = $svc_acct[0];
+  } else {
+
+    my $svc_domain = qsearchs('svc_domain', { 'domain' => $domain } );
+    $svc_domain ||= new FS::svc_domain ({
+      'svcpart' => $domain_svcpart,
+      'domain'  => $domain,
+    });
+    unless ( $svc_domain->svcnum ) {
+      my $error = $svc_domain->insert;
+      if ( $error ) {
+        die "can't insert domain: $domain\n";
+      }
+    }
+
+    $svc_acct = new FS::svc_acct ({
+      svcpart => $svcpart,
+      username => $username,
+      domsvc   => $svc_domain->svcnum,
+    });
+    my $error = $svc_acct->insert;
+    if ( $error ) {
+      die "can't insert account: $username\@$domain\n";
+    }
+
+  }
+
+  #!!handle multiple destinations!
+
+  my $svc_forward = new FS::svc_forward ({
+    srcsvc => $svc_acct->srcsvc,
+    dstsvc => 
+    dst    =>
+  });
+  my $error = $svc_forward->insert;
+  if ( $error ) {
+    die "$rawusername: $rawdest: $error\n";
+  }
+
+}
+
+##
+
+sub usage {
+  die "Usage:\n\n  sendmail.import user\n";
+}
+
+
+
+
+
