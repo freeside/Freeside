@@ -249,15 +249,15 @@ httemplate/docs/config.html
 
   {
     'key'         => 'bindprimary',
-    'section'     => 'BIND',
-    'description' => 'Your BIND primary nameserver.  This enables export of /var/named/named.conf and zone files into /var/named',
+    'section'     => 'deprecated',
+    'description' => '<b>DEPRECATED</b>, add a <i>bind</i> <a href="../browse/part_export.cgi">export</a> instead.  Your BIND primary nameserver.  This enables export of /var/named/named.conf and zone files into /var/named',
     'type'        => 'text',
   },
 
   {
     'key'         => 'bindsecondaries',
-    'section'     => 'BIND',
-    'description' => 'Your BIND secondary nameservers, one per line.  This enables export of /var/named/named.conf',
+    'section'     => 'deprecated',
+    'description' => '<b>DEPRECATED</b>, add a <i>bind_slave</i> <a href="../browse/part_export.cgi">export</a> instead.  Your BIND secondary nameservers, one per line.  This enables export of /var/named/named.conf',
     'type'        => 'textarea',
   },
 
@@ -277,8 +277,8 @@ httemplate/docs/config.html
 
   {
     'key'         => 'bsdshellmachines',
-    'section'     => 'shell',
-    'description' => 'Your BSD flavored shell (and mail) machines, one per line.  This enables export of `/etc/passwd\' and `/etc/master.passwd\'.',
+    'section'     => 'deprecated',
+    'description' => '<b>DEPRECATED</b>, add a <i>bsdshell</i> <a href="../browse/part_export.cgi">export</a> instead.  Your BSD flavored shell (and mail) machines, one per line.  This enables export of `/etc/passwd\' and `/etc/master.passwd\'.',
     'type'        => 'textarea',
   },
 
@@ -506,8 +506,8 @@ httemplate/docs/config.html
 
   {
     'key'         => 'nismachines',
-    'section'     => 'shell',
-    'description' => 'Your NIS master (not slave master) machines, one per line.  This enables export of `/etc/global/passwd\' and `/etc/global/shadow\'.',
+    'section'     => 'deprecated',
+    'description' => '<b>DEPRECATED</b>.  Your NIS master (not slave master) machines, one per line.  This enables export of `/etc/global/passwd\' and `/etc/global/shadow\'.',
     'type'        => 'textarea',
   },
 
@@ -633,8 +633,8 @@ httemplate/docs/config.html
 
   {
     'key'         => 'shellmachines',
-    'section'     => 'shell',
-    'description' => 'Your Linux and System V flavored shell (and mail) machines, one per line.  This enables export of `/etc/passwd\' and `/etc/shadow\' files.',
+    'section'     => 'deprecated',
+    'description' => '<b>DEPRECATED</b>, add a <i>sysvshell</i> <a href="../browse/part_export.cgi">export</a> instead.  Your Linux and System V flavored shell (and mail) machines, one per line.  This enables export of `/etc/passwd\' and `/etc/shadow\' files.',
      'type'        => 'textarea',
  },
 
@@ -935,6 +935,35 @@ httemplate/docs/config.html
     'section'     => 'billing',
     'description' => 'Enable per-package tax classes',
     'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'welcome_email',
+    'section'     => '',
+    'description' => 'Template file for welcome email.  Welcome emails are sent to the customer email invoice destination(s) each time a svc_acct record is created.  See the <a href="http://search.cpan.org/doc/MJD/Text-Template-1.42/Template.pm">Text::Template</a> documentation for details on the template substitution language.  The following variables are available: <code>$username</code>, <code>$password</code>, <code>$first</code>, <code>$last</code> and <code>$pkg</code>.',
+    'type'        => 'textarea',
+  },
+
+  {
+    'key'         => 'welcome_email-from',
+    'section'     => '',
+    'description' => 'From: address header for welcome email',
+    'type'        => 'text',
+  },
+
+  {
+    'key'         => 'welcome_email-subject',
+    'section'     => '',
+    'description' => 'Subject: header for welcome email',
+    'type'        => 'text',
+  },
+  
+  {
+    'key'         => 'welcome_email-mimetype',
+    'section'     => '',
+    'description' => 'MIME type for welcome email',
+    'type'        => 'select',
+    'select_enum' => [ 'text/plain', 'text/html' ],
   },
 
 );

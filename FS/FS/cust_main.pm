@@ -220,7 +220,8 @@ invoicing_list destination to the newly-created svc_acct.  Here's an example:
 
 sub insert {
   my $self = shift;
-  my @param = @_;
+  my $cust_pkgs = @_ ? shift : {};
+  my $invoicing_list = @_ ? shift : '';
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -261,27 +262,35 @@ sub insert {
     return $error;
   }
 
-  if ( @param ) { # CUST_PKG_HASHREF
-    my $cust_pkgs = shift @param;
-    foreach my $cust_pkg ( keys %$cust_pkgs ) {
-      $cust_pkg->custnum( $self->custnum );
-      $error = $cust_pkg->insert;
+  # invoicing list
+  if ( $invoicing_list ) {
+    $error = $self->check_invoicing_list( $invoicing_list );
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "checking invoicing_list (transaction rolled back): $error";
+    }
+    $self->invoicing_list( $invoicing_list );
+  }
+
+  # packages
+  foreach my $cust_pkg ( keys %$cust_pkgs ) {
+    $cust_pkg->custnum( $self->custnum );
+    $error = $cust_pkg->insert;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "inserting cust_pkg (transaction rolled back): $error";
+    }
+    foreach my $svc_something ( @{$cust_pkgs->{$cust_pkg}} ) {
+      $svc_something->pkgnum( $cust_pkg->pkgnum );
+      if ( $seconds && $svc_something->isa('FS::svc_acct') ) {
+        $svc_something->seconds( $svc_something->seconds + $seconds );
+        $seconds = 0;
+      }
+      $error = $svc_something->insert;
       if ( $error ) {
         $dbh->rollback if $oldAutoCommit;
-        return "inserting cust_pkg (transaction rolled back): $error";
-      }
-      foreach my $svc_something ( @{$cust_pkgs->{$cust_pkg}} ) {
-        $svc_something->pkgnum( $cust_pkg->pkgnum );
-        if ( $seconds && $svc_something->isa('FS::svc_acct') ) {
-          $svc_something->seconds( $svc_something->seconds + $seconds );
-          $seconds = 0;
-        }
-        $error = $svc_something->insert;
-        if ( $error ) {
-          $dbh->rollback if $oldAutoCommit;
-          #return "inserting svc_ (transaction rolled back): $error";
-          return $error;
-        }
+        #return "inserting svc_ (transaction rolled back): $error";
+        return $error;
       }
     }
   }
@@ -289,16 +298,6 @@ sub insert {
   if ( $seconds ) {
     $dbh->rollback if $oldAutoCommit;
     return "No svc_acct record to apply pre-paid time";
-  }
-
-  if ( @param ) { # INVOICING_LIST_ARYREF
-    my $invoicing_list = shift @param;
-    $error = $self->check_invoicing_list( $invoicing_list );
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return "checking invoicing_list (transaction rolled back): $error";
-    }
-    $self->invoicing_list( $invoicing_list );
   }
 
   if ( $amount ) {

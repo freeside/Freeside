@@ -61,44 +61,48 @@ while (1) {
   }
   $warnkids=0;
 
-  my $nodepend = driver name eq 'mysql'
+  my $nodepend = driver_name eq 'mysql'
    ? ''
    : 'AND 0 = ( SELECT COUNT(*) FROM queue_depend'.
      ' WHERE queue_depend.jobnum = queue.jobnum ) ';
 
-  my($job, $ljob);
-  {
-    my $oldAutoCommit = $FS::UID::AutoCommit;
-    local $FS::UID::AutoCommit = 0;
-    my $dbh = dbh; 
+  #my($job, $ljob);
+  #{
+  #  my $oldAutoCommit = $FS::UID::AutoCommit;
+  #  local $FS::UID::AutoCommit = 0;
+  $FS::UID::AutoCommit = 0;
+  my $dbh = dbh; 
   
-    $job = qsearchs(
-      'queue',
-      { 'status' => 'new' },
-      '',
-      driver_name eq 'mysql'
-        ? "$nodepend ORDER BY jobnum LIMIT 1 FOR UPDATE"
-        : "$nodepend ORDER BY jobnum FOR UPDATE LIMIT 1"
-    ) or do {
-      $dbh->commit or die $dbh->errstr if $oldAutoCommit;
-      sleep 5; #connecting to db is expensive
-      next;
-    };
+  my $job = qsearchs(
+    'queue',
+    { 'status' => 'new' },
+    '',
+    driver_name eq 'mysql'
+      ? "$nodepend ORDER BY jobnum LIMIT 1 FOR UPDATE"
+      : "$nodepend ORDER BY jobnum FOR UPDATE LIMIT 1"
+  ) or do {
+    $dbh->commit or die $dbh->errstr; #if $oldAutoCommit;
+    sleep 5; #connecting to db is expensive
+    next;
+  };
 
-    if ( driver_name eq 'mysql'
-         && qsearch('queue_depend', { 'jobnum' => $job->jobnum } ) ) {
-      $dbh->commit or die $dbh->errstr if $oldAutoCommit;
-      next;
-    }
+  if ( driver_name eq 'mysql'
+       && qsearch('queue_depend', { 'jobnum' => $job->jobnum } ) ) {
+    $dbh->commit or die $dbh->errstr; #if $oldAutoCommit;
+    sleep 5; #would be better if mysql could do everything in query above
+    next;
+  }
 
-    my %hash = $job->hash;
-    $hash{'status'} = 'locked';
-    $ljob = new FS::queue ( \%hash );
-    my $error = $ljob->replace($job);
-    die $error if $error;
+  my %hash = $job->hash;
+  $hash{'status'} = 'locked';
+  my $ljob = new FS::queue ( \%hash );
+  my $error = $ljob->replace($job);
+  die $error if $error;
 
-    $dbh->commit or die $dbh->errstr if $oldAutoCommit;
-  } 
+  $dbh->commit or die $dbh->errstr; #if $oldAutoCommit;
+
+  $FS::UID::AutoCommit = 1;
+  #} 
 
   my @args = $ljob->args;
 

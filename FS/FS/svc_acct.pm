@@ -8,6 +8,8 @@ use vars qw( @ISA $noexport_hack $conf
              $username_noperiod $username_nounderscore $username_nodash
              $username_uppercase
              $mydomain
+             $welcome_template $welcome_from $welcome_subject $welcome_mimetype
+             $smtpmachine
              $dirhash
              @saltset @pw_set );
 use Carp;
@@ -48,8 +50,19 @@ $FS::UID::callback{'FS::svc_acct'} = sub {
   $username_uppercase = $conf->exists('username-uppercase');
   $username_ampersand = $conf->exists('username-ampersand');
   $mydomain = $conf->config('domain');
-
   $dirhash = $conf->config('dirhash') || 0;
+  if ( $conf->exists('welcome_email') ) {
+    $welcome_template = new Text::Template (
+      TYPE   => 'ARRAY',
+      SOURCE => [ map "$_\n", $conf->config('welcome_email') ]
+    ) or warn "can't create welcome email template: $Text::Template::ERROR";
+    $welcome_from = $conf->config('welcome_email-from'); # || 'your-isp-is-dum'
+    $welcome_subject = $conf->config('welcome_email-subject') || 'Welcome';
+    $welcome_mimetype = $conf->config('welcome_email-mimetype') || 'text/plain';
+  } else {
+    $welcome_template = '';
+  }
+  $smtpmachine = $conf->config('smtpmachine');
 };
 
 @saltset = ( 'a'..'z' , 'A'..'Z' , '0'..'9' , '.' , '/' );
@@ -283,7 +296,8 @@ sub insert {
       && $self->username !~ /^toor$/ #FreeBSD
     ;
 
-  $error = $self->SUPER::insert;
+  my @jobnums;
+  $error = $self->SUPER::insert(\@jobnums);
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
@@ -304,11 +318,56 @@ sub insert {
   }
 
   #false laziness with sub replace (and cust_main)
-  my $queue = new FS::queue { 'job' => 'FS::svc_acct::append_fuzzyfiles' };
+  my $queue = new FS::queue {
+    'svcnum' => $self->svcnum,
+    'job'    => 'FS::svc_acct::append_fuzzyfiles'
+  };
   $error = $queue->insert($self->username);
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return "queueing job (transaction rolled back): $error";
+  }
+
+  #welcome email
+  my $cust_pkg = $self->cust_svc->cust_pkg;
+  my( $cust_main, $to ) = ( '', '' );
+  if ( $welcome_template && $cust_pkg ) {
+    my $cust_main = $cust_pkg->cust_main;
+    my $to = join(', ', grep { $_ ne 'POST' } $cust_main->invoicing_list );
+    if ( $to ) {
+      my $wqueue = new FS::queue {
+        'svcnum' => $self->svcnum,
+        'job'    => 'FS::svc_acct::send_email'
+      };
+      warn "attempting to queue email to $to";
+      my $error = $wqueue->insert(
+        'to'       => $to,
+        'from'     => $welcome_from,
+        'subject'  => $welcome_subject,
+        'mimetype' => $welcome_mimetype,
+        'body'     => $welcome_template->fill_in( HASH => {
+                        'username' => $self->username,
+                        'password' => $self->_password,
+                        'first'    => $cust_main->first,
+                        'last'     => $cust_main->getfield('last'),
+                        'pkg'      => $cust_pkg->part_pkg->pkg,
+                      } ),
+      );
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "queuing welcome email: $error";
+      }
+  
+      foreach my $jobnum ( @jobnums ) {
+        my $error = $wqueue->depend_insert($jobnum);
+        if ( $error ) {
+          $dbh->rollback if $oldAutoCommit;
+          return "queuing welcome email job dependancy: $error";
+        }
+      }
+
+    }
+  
   }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
@@ -487,7 +546,10 @@ sub replace {
   }
 
   #false laziness with sub insert (and cust_main)
-  my $queue = new FS::queue { 'job' => 'FS::svc_acct::append_fuzzyfiles' };
+  my $queue = new FS::queue {
+    'svcnum' => $new->svcnum,
+    'job'    => 'FS::svc_acct::append_fuzzyfiles'
+  };
   $error = $queue->insert($new->username);
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
@@ -878,6 +940,40 @@ sub radius_groups {
 =head1 SUBROUTINES
 
 =over 4
+
+=item send_email
+
+=cut
+
+sub send_email {
+  my %opt = @_;
+
+  use Date::Format;
+  use Mail::Internet 1.44;
+  use Mail::Header;
+
+  $opt{mimetype} ||= 'text/plain';
+  $opt{mimetype} .= '; charset="iso-8859-1"' unless $opt{mimetype} =~ /charset/;
+
+  $ENV{MAILADDRESS} = $opt{from};
+  my $header = new Mail::Header ( [
+    "From: $opt{from}",
+    "To: $opt{to}",
+    "Sender: $opt{from}",
+    "Reply-To: $opt{from}",
+    "Date: ". time2str("%a, %d %b %Y %X %z", time),
+    "Subject: $opt{subject}",
+    "Content-Type: $opt{mimetype}",
+  ] );
+  my $message = new Mail::Internet (
+    'Header' => $header,
+    'Body' => [ map "$_\n", split("\n", $opt{body}) ],
+  );
+  $!=0;
+  $message->smtpsend( Host => $smtpmachine )
+    or $message->smtpsend( Host => $smtpmachine, Debug => 1 )
+      or die "can't send email to $opt{to} via $smtpmachine with SMTP: $!";
+}
 
 =item check_and_rebuild_fuzzyfiles
 

@@ -5,6 +5,7 @@ use vars qw( @ISA $noexport_hack );
 use FS::Record qw( qsearchs fields dbh );
 use FS::cust_svc;
 use FS::part_svc;
+use FS::queue;
 
 @ISA = qw( FS::Record );
 
@@ -27,7 +28,7 @@ inherit from, i.e. FS::svc_acct.  FS::svc_Common inherits from FS::Record.
 
 =over 4
 
-=item insert
+=item insert [ JOBNUM_ARRAYREF ]
 
 Adds this record to the database.  If there is an error, returns the error,
 otherwise returns false.
@@ -35,10 +36,14 @@ otherwise returns false.
 The additional fields pkgnum and svcpart (see L<FS::cust_svc>) should be 
 defined.  An FS::cust_svc record will be created and inserted.
 
+If an arrayref is passed as parameter, the B<jobnum>s of any export jobs will
+be added to the array.
+
 =cut
 
 sub insert {
   my $self = shift;
+  local $FS::queue::jobnums = shift if @_;
   my $error;
 
   local $SIG{HUP} = 'IGNORE';
@@ -359,7 +364,7 @@ sub cancel { ''; }
 
 =head1 VERSION
 
-$Id: svc_Common.pm,v 1.11 2002-06-11 03:25:03 ivan Exp $
+$Id: svc_Common.pm,v 1.12 2002-06-14 11:22:53 ivan Exp $
 
 =head1 BUGS
 

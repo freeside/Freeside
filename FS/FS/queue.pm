@@ -1,7 +1,7 @@
 package FS::queue;
 
 use strict;
-use vars qw( @ISA @EXPORT_OK $conf );
+use vars qw( @ISA @EXPORT_OK $conf $jobnums);
 use Exporter;
 use FS::UID;
 use FS::Conf;
@@ -17,6 +17,8 @@ use FS::cust_svc;
 $FS::UID::callback{'FS::queue'} = sub {
   $conf = new FS::Conf;
 };
+
+$jobnums = '';
 
 =head1 NAME
 
@@ -117,6 +119,8 @@ sub insert {
       return $error;
     }
   }
+
+  push @$jobnums, $self->jobnum if $jobnums;
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
@@ -257,10 +261,10 @@ in a database transaction.
 
 sub depend_insert {
   my($self, $other_jobnum) = @_;
-  my $queue_depend = new FS::queue_depend (
+  my $queue_depend = new FS::queue_depend ( {
     'jobnum'        => $self->jobnum,
     'depend_jobnum' => $other_jobnum,
-  );
+  } );
   $queue_depend->insert;
 }
 
@@ -278,6 +282,7 @@ sub joblisting {
   my($hashref, $noactions) = @_;
 
   use Date::Format;
+  use HTML::Entities;
   use FS::CGI;
 
   my @queue = qsearch( 'queue', $hashref );
@@ -308,7 +313,9 @@ END
 
     my $args;
     if ( $dangerous || $queue->job !~ /^FS::part_export::/ || !$noactions ) {
-      $args = join(' ', $queue->args);
+      $args = encode_entities( join(' ',
+        map { length($_)<54 ? $_ : substr($_,0,32)."..."  } $queue->args #1&g
+      ) );
     } else {
       $args = '';
     }
@@ -318,7 +325,7 @@ END
     $status .= ': '. $queue->statustext if $queue->statustext;
     my @queue_depend = $queue->queue_depend;
     $status .= ' (waiting for '.
-               join(', ', map { $_->other_jobnum } @queue_depend ). 
+               join(', ', map { $_->depend_jobnum } @queue_depend ). 
                ')'
       if @queue_depend;
     my $changable = $dangerous
@@ -378,9 +385,11 @@ END
 
 =head1 VERSION
 
-$Id: queue.pm,v 1.13 2002-05-15 14:00:32 ivan Exp $
+$Id: queue.pm,v 1.14 2002-06-14 11:22:53 ivan Exp $
 
 =head1 BUGS
+
+$jobnums global
 
 =head1 SEE ALSO
 
