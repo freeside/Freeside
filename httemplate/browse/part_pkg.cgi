@@ -81,8 +81,7 @@ END
     my($svcpart)=$pkg_svc->getfield('svcpart');
     my($part_svc) = qsearchs('part_svc',{'svcpart'=> $svcpart });
     print $n,qq!<TD><A HREF="${p}edit/part_svc.cgi?$svcpart">!,
-          $part_svc->getfield('svc'),"</A>",
-          (($hashref->{def_svcpart} == $svcpart) ? "*</TD><TD>" : "</TD><TD>"),
+          $part_svc->getfield('svc'),"</A></TD><TD>",
           $pkg_svc->getfield('quantity'),"</TD></TR>\n";
     $n="<TR>";
   }
@@ -94,7 +93,6 @@ $colspan = $cgi->param('showdisabled') ? 8 : 9;
 print <<END;
    <TR><TD COLSPAN=$colspan><I><A HREF="${p}edit/part_pkg.cgi">Add a new package definition</A></I></TD></TR>
     </TABLE>
-    &nbsp* - Default service
   </BODY>
 </HTML>
 END

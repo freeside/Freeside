@@ -2,7 +2,7 @@ package FS::part_pkg;
 
 use strict;
 use vars qw( @ISA );
-use FS::Record qw( qsearch qsearchs dbh );
+use FS::Record qw( qsearch dbh );
 use FS::pkg_svc;
 use FS::agent_type;
 use FS::type_pkgs;
@@ -225,12 +225,6 @@ sub check {
 
   }
 
-  if ($self->def_svcpart and my @pkg_svc = $self->pkg_svc) {
-    unless (grep { $_->svcpart == $self->def_svcpart } @pkg_svc) {
-      return "no svcparts for this package match def_svcpart ".$self->def_svcpart;
-    }
-  }
-
     $self->ut_numbern('pkgpart')
       || $self->ut_text('pkg')
       || $self->ut_text('comment')
@@ -265,23 +259,11 @@ associated with this billing item definition (see L<FS::pkg_svc>).  Returns
 false if there not exactly one service definition with quantity 1, or if 
 SVCDB is specified and does not match the svcdb of the service definition, 
 
-If the part_pkg has a nonzero def_svcpart, it takes precedence, even if it has 
-quantity > 1 and/or there are other service definitions, UNLESS SVCDB is specified 
-and doesn't match the svcdb of the def_svcpart.
-
 =cut
 
 sub svcpart {
   my $self = shift;
   my $svcdb = shift;
-
-  if ($self->def_svcpart) {
-    if ((not $svcdb) or qsearchs('part_svc', { svcpart => $self->def_svcpart,
-                                               svcdb   => $svcdb })) {
-      return $self->def_svcpart;
-    }
-  }
-
   my @pkg_svc = $self->pkg_svc;
   return '' if scalar(@pkg_svc) != 1
                || $pkg_svc[0]->quantity != 1
@@ -315,7 +297,7 @@ sub payby {
 
 =head1 VERSION
 
-$Id: part_pkg.pm,v 1.15 2002-06-08 07:48:36 khoff Exp $
+$Id: part_pkg.pm,v 1.16 2002-06-10 01:39:50 khoff Exp $
 
 =head1 BUGS
 

@@ -67,24 +67,8 @@ otherwise returns false.
 
 =item delete
 
-Deletes this record from the database.  If this svcpart is also the default svcpart,
-we set part_pkg.def_svcpart to NULL.  If there is an error, returns the error,
-otherwise returns false.
-
-sub delete {
-  my $self = shift;
-  my $part_pkg = qsearchs( 'part_pkg', { pkgpart => $self->pkgpart } );
-
-  # Should this be wrapped in a transaction?
-  if ( $part_pkg->def_svcpart == $self->svcpart ) {
-    my $new = new FS::part_pkg $part_pkg->hash;
-    $new->def_svcpart = 0;
-    my $error = $new->replace($part_pkg);
-    return $error if $error;
-  }
-
-  $self->SUPER::delete;
-}
+Deletes this record from the database.  If there is an error, returns the
+error, otherwise returns false.
 
 =item replace OLD_RECORD
 
@@ -98,16 +82,6 @@ sub replace {
 
   return "Can't change pkgpart!" if $old->pkgpart != $new->pkgpart;
   return "Can't change svcpart!" if $old->svcpart != $new->svcpart;
-
-  my $part_pkg = qsearchs( 'part_pkg', { pkgpart => $new->pkgpart } );
-
-  # Should this be wrapped in a transaction?
-  if ( ($part_pkg->def_svcpart == $new->svcpart) && ($new->quantity == 0) ) {
-    my $new_part_pkg = new FS::part_pkg $part_pkg->hash;
-    $new_part_pkg->def_svcpart = 0;
-    my $error = $new_part_pkg->replace($part_pkg);
-    return $error if $error;
-  }
 
   $new->SUPER::replace($old);
 }
@@ -163,7 +137,7 @@ sub part_svc {
 
 =head1 VERSION
 
-$Id: pkg_svc.pm,v 1.2 2002-06-08 07:48:37 khoff Exp $
+$Id: pkg_svc.pm,v 1.3 2002-06-10 01:39:50 khoff Exp $
 
 =head1 BUGS
 
