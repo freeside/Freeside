@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: signup.cgi,v 1.22 2002-04-17 11:43:37 ivan Exp $
+# $Id: signup.cgi,v 1.23 2002-04-17 12:14:37 ivan Exp $
 
 use strict;
 use vars qw( @payby $cgi $locales $packages $pops $init_data $error
@@ -31,8 +31,12 @@ use FS::SignupClient 0.03 qw( signup_info new_customer );
 
 $ieak_file = '/usr/local/freeside/ieak.template';
 $cck_file = '/usr/local/freeside/cck.template';
-$signup_html = '/usr/local/freeside/signup.html';
-$success_html = '/usr/local/freeside/success.html';
+$signup_html = -e 'signup.html'
+                 ? 'signup.html'
+                 : '/usr/local/freeside/signup.html';
+$success_html = -e 'success.html'
+                  ? 'success.html'
+                  : '/usr/local/freeside/success.html';
 
 if ( -e $ieak_file ) {
   my $ieak_txt = Text::Template::_load_text($ieak_file)
