@@ -30,14 +30,14 @@ Run remote commands via SSH, for virtual web sites.  You will need to
 <BR><BR>Use these buttons for some useful presets:
 <UL>
   <LI>
-    <INPUT TYPE="button" VALUE="Maintain directories" onClick'
+    <INPUT TYPE="button" VALUE="Maintain directories" onClick='
       this.form.user.value = "root";
       this.form.useradd.value = "mkdir /var/www/$zone; chown $username /var/www/$zone; ln -s /var/www/$zone $homedir/$zone";
       this.form.userdel.value = "[ -n &quot;$zone&quot; ] && rm -rf /var/www/$zone; rm $homedir/$zone";
       this.form.usermod.value = "[ -n &quot;$old_zone&quot; ] && rm $old_homedir/$old_zone; [ &quot;$old_zone&quot; != &quot;$new_zone&quot; -a -n &quot;$new_zone&quot; ] && mv /var/www/$old_zone /var/www/$new_zone; [ &quot;$old_username&quot; != &quot;$new_username&quot; ] && chown -R $new_username /var/www/$new_zone; ln -s /var/www/$new_zone $new_homedir/$new_zone";
     '>
   <LI>
-    <INPUT TYPE="button" VALUE="ISPMan CLI" onClick'
+    <INPUT TYPE="button" VALUE="ISPMan CLI" onClick='
       this.form.user.value = "root";
       this.form.useradd.value = "/usr/local/ispman/ispman.addvhost -d $domain $zone";
       this.form.userdel.value = "/usr/local/ispman/idpman.deletevhost -d $domain $zone";

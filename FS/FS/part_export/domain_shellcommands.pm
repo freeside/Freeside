@@ -34,6 +34,7 @@ Run remote commands via SSH, for domains.  You will need to
       this.form.useradd.value = "[ \"$uid\" -a \"$gid\" -a \"$dir\" -a \"$qdomain\" ] && [ -e $dir/.qmail-$qdomain-default ] || { touch $dir/.qmail-$qdomain-default; chown $uid:$gid $dir/.qmail-$qdomain-default; }";
       this.form.userdel.value = "";
       this.form.usermod.value = "";
+    '>
   <LI>
     <INPUT TYPE="button" VALUE="ISPMan CLI" onClick='
       this.form.useradd.value = "/usr/local/ispman/bin/ispman.addDomain -d $domain changeme";
