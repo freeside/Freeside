@@ -99,12 +99,12 @@
   </TD>
 </TR><TR>
   <TD COLSPAN=2>
-    <INPUT TYPE="checkbox" CHECKED NAME="save">
+    <INPUT TYPE="checkbox" CHECKED NAME="save" VALUE="1">
     Remember this information
   </TD>
 </TR><TR>
   <TD COLSPAN=2>
-    <INPUT TYPE="checkbox"<%= $payby eq 'CARD' ? ' CHECKED' : '' %> NAME="CARD">
+    <INPUT TYPE="checkbox"<%= $payby eq 'CARD' ? ' CHECKED' : '' %> NAME="auto" VALUE="1">
     Charge future payments to this card automatically
   </TD>
 </TR>

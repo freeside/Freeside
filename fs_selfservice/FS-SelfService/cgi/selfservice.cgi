@@ -53,7 +53,8 @@ if ( $cgi->param('session') eq 'login' ) {
 
 $session_id = $cgi->param('session');
 
-$cgi->param('action') =~ /^(myaccount|view_invoice|make_payment)$/
+$cgi->param('action') =~
+    /^(myaccount|view_invoice|make_payment|process_payment)$/
   or die "unknown action ". $cgi->param('action');
 my $action = $1;
 
@@ -91,6 +92,76 @@ sub view_invoice {
 
 sub make_payment {
   payment_info( 'session_id' => $session_id );
+}
+
+sub process_payment {
+
+  $cgi->param('amount') =~ /^\s*(\d+(\.\d{2})?)\s*$/
+    or die "illegal amount"; #!!!
+  my $amount = $1;
+
+  my $payinfo = $cgi->param('payinfo');
+  $payinfo =~ s/\D//g;
+  $payinfo =~ /^(\d{13,16})$/
+    #or $error ||= $init_data->{msgcat}{invalid_card}; #. $self->payinfo;
+    or die "illegal card"; #!!!
+  $payinfo = $1;
+  validate($payinfo)
+    #or $error ||= $init_data->{msgcat}{invalid_card}; #. $self->payinfo;
+    or die "invalid card"; #!!!
+  cardtype($payinfo) eq $cgi->param('card_type')
+    #or $error ||= $init_data->{msgcat}{not_a}. $cgi->param('CARD_type');
+    or die "not a ". $cgi->param('card_type');
+
+  $cgi->param('month') =~ /^(\d{2})$/ or die "illegal month";
+  my $month = $1;
+  $cgi->param('year') =~ /^(\d{4})$/ or die "illegal year";
+  my $year = $1;
+
+  $cgi->param('payname') =~ /^(.{0,80})$/ or die "illegal payname";
+  my $payname = $1;
+
+  $cgi->param('address1') =~ /^(.{0,80})$/ or die "illegal address1";
+  my $address1 = $1;
+
+  $cgi->param('address2') =~ /^(.{0,80})$/ or die "illegal address2";
+  my $address2 = $1;
+
+  $cgi->param('city') =~ /^(.{0,80})$/ or die "illegal city";
+  my $city = $1;
+
+  $cgi->param('state') =~ /^(.{2})$/ or die "illegal state";
+  my $state = $1;
+
+  $cgi->param('zip') =~ /^(.{0,10})$/ or die "illegal zip";
+  my $zip = $1;
+
+  my $save = 0;
+  $save = 1 if $cgi->param('save');
+
+  my $auto = 0;
+  $auto = 1 if $cgi->param('auto');
+
+  $cgi->param('paybatch') =~ /^([\w\-\.]+)$/ or die "illegal paybatch";
+  my $patbatch = $1;
+
+  process_payment(
+    'session_id' => $session_id,
+    'amount'     => $amount,
+    'payinfo'    => $payinfo,
+    'month'      => $month,
+    'year'       => $year,
+    'payname'    => $payname,
+    'address1'   => $address1,
+    'address2'   => $address2,
+    'city'       => $city,
+    'state'      => $state,
+    'zip'        => $zip,
+    'save'       => $save,
+    'auto'       => $auto,
+    'paybatch'   => $paybatch,
+  );
+
 }
 
 #--
