@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 
 use strict;
-use vars qw( $log_file $sigterm $sigint );
+use vars qw( $log_file $sigterm $sigint $kids $max_kids );
 use subs qw( _die _logmsg );
 use Fcntl qw(:flock);
 use POSIX qw(setsid);
@@ -19,15 +19,18 @@ use FS::part_export;
 
 my $pid_file = '/var/run/freeside-queued.pid';
 
+$max_kids = '10'; #guess it should be a config file...
+$kids = 0;
+
 my $user = shift or die &usage;
 
 &daemonize1;
 
-sub REAPER { my $pid = wait; $SIG{CHLD} = \&REAPER; }
+sub REAPER { my $pid = wait; $SIG{CHLD} = \&REAPER; $kids--; }
 $SIG{CHLD} =  \&REAPER;
 
- $sigterm = 0;
- $sigint = 0;
+$sigterm = 0;
+$sigint = 0;
 $SIG{INT} = sub { warn "SIGINT received; shutting down\n"; $sigint++; };
 $SIG{TERM} = sub { warn "SIGTERM received; shutting down\n"; $sigterm++; };
 
@@ -45,7 +48,16 @@ $SIG{__WARN__} = \&_logmsg;
 
 warn "freeside-queued starting\n";
 
+my $warnkids=0;
 while (1) {
+
+  #prevent runaway forking
+  if ( $kids >= $max_kids ) {
+    warn "WARNING: maximum $kids children reached\n" unless $warnkids++;
+    sleep 1; #waiting for signals is cheap
+    next;
+  }
+  $warnkids=0;
 
   my $job = qsearchs(
     'queue',
@@ -55,7 +67,7 @@ while (1) {
       ? 'ORDER BY jobnum LIMIT 1 FOR UPDATE'
       : 'ORDER BY jobnum FOR UPDATE LIMIT 1'
   ) or do {
-    sleep 5;
+    sleep 5; #connecting to db is expensive
     next;
   };
 
@@ -67,7 +79,6 @@ while (1) {
 
   my @args = $ljob->args;
 
-  # number of children limit?
   defined( my $pid = fork ) or do {
     warn "WARNING: can't fork: $!\n";
     my %hash = $job->hash;
@@ -76,9 +87,12 @@ while (1) {
     my $ljob = new FS::queue ( \%hash );
     my $error = $ljob->replace($job);
     die $error if $error;
+    next; #don't increment the kid counter
   };
 
-  unless ( $pid ) { #kid time
+  if ( $pid ) {
+    $kids++;
+  } else { #kid time
 
     #get new db handles
     $FS::UID::dbh->{InactiveDestroy} = 1;

@@ -409,6 +409,8 @@ package FS::part_export::infostreet;
 use vars qw(@ISA);
 @ISA = qw(FS::part_export);
 
+sub rebless { shift; }
+
 sub _export_insert {
   my( $self, $svc_acct ) = (shift, shift);
   $self->infostreet_queue( $svc_acct->svcnum,
@@ -487,6 +489,8 @@ sub _infostreet_parse { #subroutine, not method
 package FS::part_export::sqlradius;
 use vars qw(@ISA);
 @ISA = qw(FS::part_export);
+
+sub rebless { shift; }
 
 sub _export_insert {
   my($self, $svc_acct) = (shift, shift);
@@ -684,7 +688,9 @@ sub sqlradius_connect {
   package FS::part_export::myexport;
   use vars qw(@ISA);
   @ISA = qw(FS::part_export);
-  
+
+  sub rebless { shift; }
+
   sub _export_insert {
     my($self, $svc_something) = (shift, shift);
     $self->myexport_queue( $svc_acct->svcnum, 'insert',
