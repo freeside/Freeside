@@ -562,7 +562,7 @@ sub ut_float {
    $self->getfield($field) =~ /^(\d+)$/ ||
    $self->getfield($field) =~ /^(\d+\.\d+e\d+)$/ ||
    $self->getfield($field) =~ /^(\d+e\d+)$/)
-    or return "Illegal or empty (float) $field!";
+    or return "Illegal or empty (float) $field: ". $self->getfield($field);
   $self->setfield($field,$1);
   '';
 }
@@ -577,7 +577,7 @@ is an error, returns the error, otherwise returns false.
 sub ut_number {
   my($self,$field)=@_;
   $self->getfield($field) =~ /^(\d+)$/
-    or return "Illegal or empty (numeric) $field!";
+    or return "Illegal or empty (numeric) $field: ". $self->getfield($field);
   $self->setfield($field,$1);
   '';
 }
@@ -592,7 +592,7 @@ an error, returns the error, otherwise returns false.
 sub ut_numbern {
   my($self,$field)=@_;
   $self->getfield($field) =~ /^(\d*)$/
-    or return "Illegal (numeric) $field!";
+    or return "Illegal (numeric) $field: ". $self->getfield($field);
   $self->setfield($field,$1);
   '';
 }
@@ -608,7 +608,7 @@ sub ut_money {
   my($self,$field)=@_;
   $self->setfield($field, 0) if $self->getfield($field) eq '';
   $self->getfield($field) =~ /^(\-)? ?(\d*)(\.\d{2})?$/
-    or return "Illegal (money) $field!";
+    or return "Illegal (money) $field: ". $self->getfield($field);
   #$self->setfield($field, "$1$2$3" || 0);
   $self->setfield($field, ( ($1||''). ($2||''). ($3||'') ) || 0);
   '';
@@ -626,7 +626,7 @@ false.
 sub ut_text {
   my($self,$field)=@_;
   $self->getfield($field) =~ /^([\w \!\@\#\$\%\&\(\)\-\+\;\:\'\"\,\.\?\/]+)$/
-    or return "Illegal or empty (text) $field";
+    or return "Illegal or empty (text) $field: ". $self->getfield($field);
   $self->setfield($field,$1);
   '';
 }
@@ -642,7 +642,7 @@ May be null.  If there is an error, returns the error, otherwise returns false.
 sub ut_textn {
   my($self,$field)=@_;
   $self->getfield($field) =~ /^([\w \!\@\#\$\%\&\(\)\-\+\;\:\'\"\,\.\?\/]*)$/
-    or return "Illegal (text) $field";
+    or return "Illegal (text) $field: ". $self->getfield($field);
   $self->setfield($field,$1);
   '';
 }
@@ -657,7 +657,8 @@ an error, returns the error, otherwise returns false.
 sub ut_alpha {
   my($self,$field)=@_;
   $self->getfield($field) =~ /^(\w+)$/
-    or return "Illegal or empty (alphanumeric) $field!";
+    or return "Illegal or empty (alphanumeric) $field: ".
+              $self->getfield($field);
   $self->setfield($field,$1);
   '';
 }
@@ -672,7 +673,7 @@ error, returns the error, otherwise returns false.
 sub ut_alphan {
   my($self,$field)=@_;
   $self->getfield($field) =~ /^(\w*)$/ 
-    or return "Illegal (alphanumeric) $field!";
+    or return "Illegal (alphanumeric) $field: ". $self->getfield($field);
   $self->setfield($field,$1);
   '';
 }
@@ -692,7 +693,7 @@ sub ut_phonen {
   } else {
     $phonen =~ s/\D//g;
     $phonen =~ /^(\d{3})(\d{3})(\d{4})(\d*)$/
-      or return "Illegal (phone) $field!";
+      or return "Illegal (phone) $field: ". $self->getfield($field);
     $phonen = "$1-$2-$3";
     $phonen .= " x$4" if $4;
     $self->setfield($field,$phonen);
@@ -708,7 +709,8 @@ Untaints arbitrary data.  Be careful.
 
 sub ut_anything {
   my($self,$field)=@_;
-  $self->getfield($field) =~ /^(.*)$/ or return "Illegal $field!";
+  $self->getfield($field) =~ /^(.*)$/
+    or return "Illegal $field: ". $self->getfield($field);
   $self->setfield($field,$1);
   '';
 }
@@ -823,7 +825,7 @@ sub hfields {
 
 =head1 VERSION
 
-$Id: Record.pm,v 1.15 1999-04-08 12:08:59 ivan Exp $
+$Id: Record.pm,v 1.16 1999-04-10 07:03:38 ivan Exp $
 
 =head1 BUGS
 
@@ -945,7 +947,10 @@ added pod documentation ivan@sisd.com 98-sep-6
 ut_phonen got ''; at the end ivan@sisd.com 98-sep-27
 
 $Log: Record.pm,v $
-Revision 1.15  1999-04-08 12:08:59  ivan
+Revision 1.16  1999-04-10 07:03:38  ivan
+return the value with ut_* error messages, to assist in debugging
+
+Revision 1.15  1999/04/08 12:08:59  ivan
 fix up PostgreSQL money fields so you can actually use them as numbers.  bah.
 
 Revision 1.14  1999/04/07 14:58:31  ivan
