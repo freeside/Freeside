@@ -75,6 +75,7 @@ FS/part_export/cyrus.pm
 FS/part_export/domain_shellcommands.pm
 FS/part_export/http.pm
 FS/part_export/infostreet.pm
+FS/part_export/ldap.pm
 FS/part_export/null.pm
 FS/part_export/shellcommands.pm
 FS/part_export/shellcommands_withdomain.pm
@@ -149,6 +150,7 @@ t/part_export-cyrus.t
 t/part_export-domain_shellcommands.t
 t/part_export-http.t
 t/part_export-infostreet.t
+t/part_export-ldap.t
 t/part_export-null.t
 t/part_export-shellcommands.t
 t/part_export-shellcommands_withdomain.t

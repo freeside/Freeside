@@ -70,6 +70,8 @@ my $widget = new HTML::Widgets::SelectLayers(
         $html .= qq!<TEXTAREA NAME="$option">$value</TEXTAREA>!;
       } elsif ( $type eq 'text' ) {
         $html .= qq!<INPUT TYPE="text" NAME="$option" VALUE="$value" SIZE=64>!;
+      } elsif ( $type eq 'checkbox' ) {
+        $html .= qq!<INPUT TYPE="checkbox" NAME="$option" VALUE="1">!;
       } else {
         $html .= "unknown type $type";
       }

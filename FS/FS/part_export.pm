@@ -724,6 +724,32 @@ tie my %sqlmail_options, 'Tie::IxHash',
   'password' => { label=>'Database password' },
 ;
 
+tie my %ldap_options, 'Tie::IxHash',
+  'dn'         => { label=>'DN' },
+  'password'   => { label=>'Optional DN password' },
+  'attributes' => { label=>'Attributes',
+                    type=>'textarea',
+                    default=>join("\n",
+                      'uid $username',
+                      'mail $username\@$domain',
+                      'uidno $uid',
+                      'gidno $gid',
+                      'cn $first',
+                      'sn $last',
+                      'mailquota $quota',
+                      'vmail',
+                      'location',
+                      'mailtag',
+                      'mailhost',
+                      'mailmessagestore $dir',
+                      'userpassword $crypt_password',
+                      'hint',
+                      'answer $sec_phrase',
+                    ),
+                  },
+  'radius'     => { label=>'Export RADIUS attributes', type=>'checkbox', },
+;
+
 
 #export names cannot have dashes...
 %exports = (
@@ -764,6 +790,12 @@ tie my %sqlmail_options, 'Tie::IxHash',
       'desc' => 'Real-time export via remote SSH.',
       'options' => \%shellcommands_withdomain_options,
       'notes' => 'Run remote commands via SSH.  username@domain (rather than just usernames) are considered unique (also see shellcommands).  You probably want this if the commands you are running will accept a domain as a parameter, and will allow the same username with different domains.  You will need to <a href="../docs/ssh.html">setup SSH for unattended operation</a>.',
+    },
+
+    'ldap' => {
+      'desc' => 'Real-time export to LDAP',
+      'options' => \%ldap_options,
+      'notes' => 'Real-time export to arbitrary LDAP attributes.  Requires installation of <a href="http://search.cpan.org/search?dist=Net-LDAP">Net::LDAP</a> from CPAN.',
     },
 
     'sqlradius' => {
