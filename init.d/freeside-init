@@ -7,14 +7,6 @@ QUEUED_USER=%%%QUEUED_USER%%%
 
 FREESIDE_PATH="%%%FREESIDE_PATH%%%"
 
-PASSWD_USER=%%%PASSWD_USER%%%
-PASSWD_MACHINE=%%%PASSWD_MACHINE%%%
-
-SIGNUP_USER=%%%SIGNUP_USER%%%
-SIGNUP_MACHINE=%%%SIGNUP_MACHINE%%%
-SIGNUP_AGENTNUM=%%%SIGNUP_AGENTNUM%%%
-SIGNUP_REFNUM=%%%SIGNUP_REFNUM%%%
-
 SELFSERVICE_USER=%%%SELFSERVICE_USER%%%
 SELFSERVICE_MACHINE=%%%SELFSERVICE_MACHINE%%%
 
@@ -23,14 +15,6 @@ case "$1" in
         # Start daemons.
         echo -n "Starting freeside-queued: "
         freeside-queued $QUEUED_USER
-        echo "done."
-
-        echo -n "Starting fs_passwd_server: "
-        su freeside -c "$FREESIDE_PATH/fs_passwd/fs_passwd_server $PASSWD_USER $PASSWD_MACHINE" &
-        echo "done."
-
-        echo -n "Starting fs_signup_server: "
-        su freeside -c "$FREESIDE_PATH/fs_signup/fs_signup_server $SIGNUP_USER $SIGNUP_MACHINE $SIGNUP_AGENTNUM $SIGNUP_REFNUM" &
         echo "done."
 
         echo -n "Starting freeside-selfservice-server: "
@@ -42,14 +26,6 @@ case "$1" in
         # Stop daemons.
         echo -n "Stopping freeside-queued: "
         kill `cat /var/run/freeside-queued.pid`
-        echo "done."
-
-        echo -n "Stopping fs_passwd_server: "
-        killall fs_passwd_server
-        echo "done."
-
-        echo -n "Stopping fs_signup_server: "
-        killall fs_signup_server
         echo "done."
 
         echo -n "Stopping freeside-selfservice-server: "
