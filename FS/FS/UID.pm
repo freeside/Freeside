@@ -188,7 +188,7 @@ sub cgisetotaker {
     $user = lc ( $cgi->connection->user );
   } else {
     die "fatal: Can't get REMOTE_USER! for cgi $cgi - you need to setup ".
-        "Apache user authentication as documented in htdocs/docs/config.html";
+        "Apache user authentication as documented in httemplate/docs/config.html";
   }
   $user;
 }
@@ -252,7 +252,7 @@ coderef into the hash %FS::UID::callback :
 
 =head1 VERSION
 
-$Id: UID.pm,v 1.10 2001-09-24 03:23:34 ivan Exp $
+$Id: UID.pm,v 1.11 2001-11-06 17:58:08 ivan Exp $
 
 =head1 BUGS
 
