@@ -132,7 +132,7 @@ sub _export_unsuspend {
   $self->queue_statusChange(15, $svc_external);
 }
 
-sub queue_StatusChange {
+sub queue_statusChange {
   my( $self, $status, $svc_external ) = @_;
 
   my $queue = new FS::queue {
