@@ -2,7 +2,7 @@ package FS::Record;
 
 use strict;
 use vars qw( $dbdef_file $dbdef $setup_hack $AUTOLOAD @ISA @EXPORT_OK $DEBUG
-             $me );
+             $me %dbdef_cache );
 use subs qw(reload_dbdef);
 use Exporter;
 use Carp qw(carp cluck croak confess);
@@ -1130,8 +1130,10 @@ I<$FS::Record::setup_hack> is true.  Returns a DBIx::DBSchema object.
 
 sub reload_dbdef {
   my $file = shift || $dbdef_file;
-  $dbdef = load DBIx::DBSchema $file
-    or die "can't load database schema from $file";
+  $dbdef = exists $dbdef_cache{$file}
+    ? $dbdef_cache{$file}
+    : $dbdef_cache{$file} = DBIx::DBSchema->load( $file )
+                              or die "can't load database schema from $file";
 }
 
 =item dbdef

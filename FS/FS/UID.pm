@@ -92,7 +92,7 @@ sub forksuidsetup {
 
   foreach ( keys %callback ) {
     &{$callback{$_}};
-    delete $callback{$_}; #run once
+    # breaks multi-database installs # delete $callback{$_}; #run once
   }
 
   $dbh;
@@ -256,7 +256,7 @@ coderef into the hash %FS::UID::callback :
 
 =head1 VERSION
 
-$Id: UID.pm,v 1.15 2002-06-14 09:19:33 ivan Exp $
+$Id: UID.pm,v 1.16 2002-06-28 08:23:44 ivan Exp $
 
 =head1 BUGS
 
