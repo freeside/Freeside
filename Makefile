@@ -37,7 +37,7 @@ INIT_FILE = /etc/init.d/freeside
 #deb
 INIT_INSTALL = /usr/sbin/update-rc.d freeside defaults 21 20
 #redhat, fedora
-#INIT_INSTALL = /sbin/chkconfig freeside
+#INIT_INSTALL = /sbin/chkconfig freeside on
 #not necessary (freebsd)
 #INIT_INSTALL = /usr/bin/true
 
