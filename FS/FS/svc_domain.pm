@@ -342,9 +342,8 @@ sub check {
     return "Unknown catchall" unless $svc_acct;
   }
 
-  my $error = $self->ut_textn('purpose')
-           or $self->SUPER::check;
-  return $error if $error;
+  $self->ut_textn('purpose')
+    or $self->SUPER::check;
 
 }
 
