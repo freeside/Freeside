@@ -2,7 +2,14 @@
 
 # Template for importing legacy customer data
 #
+# $Id: TEMPLATE_cust_main.import,v 1.2 1998-12-16 05:29:45 ivan Exp $
+#
 # ivan@sisd.com 98-aug-17 - 20
+#
+# $Log: TEMPLATE_cust_main.import,v $
+# Revision 1.2  1998-12-16 05:29:45  ivan
+# adminsuidsetup now need user
+#
 
 use strict;
 use FS::UID qw(adminsuidsetup datasrc);
@@ -11,7 +18,8 @@ use FS::cust_main;
 use FS::cust_pkg;
 use Date::Parse;
 
-adminsuidsetup;
+my $user = shift or die &usage;
+adminsuidsetup $user;
 
 # use these for the imported cust_main records (unless you have these in legacy
 # data)
@@ -187,3 +195,8 @@ while (<CLIENT>) {
 
 warn "\n$link of $line lines linked\n";
 
+# ---
+
+sub usage {
+  die "Usage:\n\n  cust_main.import user\n";
+}
