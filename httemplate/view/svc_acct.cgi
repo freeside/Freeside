@@ -93,14 +93,18 @@ if (    $part_svc->part_export('sqlradius')
   }
 
   if ( $cust_pkg ) {
-    print ' since last bill ('. time2str("%C", $last_bill). ') - '. 
-          $plandata{recur_included_hours}. ' total hours in plan<BR>';
+    print ' since last bill ('. time2str("%C", $last_bill). ')'.
+    print ' - '. $plandata{recur_included_hours}. ' total hours in plan<BR>'
+      if length($plandata{recur_included_hours});
   } else {
     print ' (no billing cycle available for unaudited account)<BR>';
   }
 
   print 'Input: <B>'. sprintf("%.3f", $input). '</B> megabytes<BR>';
   print 'Output: <B>'. sprintf("%.3f", $output). '</B> megabytes<BR>';
+
+  my $href = qq!<A HREF="${p}search/sqlradius.cgi?svcnum=$svcnum!;
+  print qq!View sessions: this billing cycle | $href">all sessions</A>!;
 
   print '<BR>';
 

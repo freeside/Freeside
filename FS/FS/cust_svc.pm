@@ -547,48 +547,22 @@ Meaningless for records where B<svcdb> is not "svc_acct".
 sub get_session_history {
   my($self, $start, $end, $attrib) = @_;
 
-  my $username = $self->svc_x->username;
+  #$attrib ???
 
-  my @part_export = $self->part_svc->part_export('sqlradius')
-    or die "no sqlradius export configured for this service type";
+  my @part_export = $self->part_svc->part_export('sqlradius');
+  push @part_export, $self->part_svc->part_export('sqlradius_withdomain');
+  die "no sqlradius or sqlradius_withdomain export configured for this".
+      "service type"
+    unless @part_export;
     #or return undef;
                      
   my @sessions = ();
 
   foreach my $part_export ( @part_export ) {
-                                            
-    my $dbh = DBI->connect( map { $part_export->option($_) }
-                            qw(datasrc username password)    )
-      or die "can't connect to sqlradius database: ". $DBI::errstr;
-
-    #select a unix time conversion function based on database type
-    my $str2time;                                                 
-    if ( $dbh->{Driver}->{Name} =~ /^mysql(PP)?$/ ) {
-      $str2time = 'UNIX_TIMESTAMP(';          
-    } elsif ( $dbh->{Driver}->{Name} eq 'Pg' ) {
-      $str2time = 'EXTRACT( EPOCH FROM ';       
-    } else {
-      warn "warning: unknown database type ". $dbh->{Driver}->{Name}.
-           "; guessing how to convert to UNIX timestamps";
-      $str2time = 'extract(epoch from ';                  
-    }
-
-    my @fields = qw( acctstarttime acctstoptime acctsessiontime
-                     acctinputoctets acctoutputoctets framedipaddress );
-     
-    my $sth = $dbh->prepare('SELECT '. join(', ', @fields).
-                            "  FROM radacct
-                               WHERE UserName = ?
-                                 AND $str2time AcctStopTime ) >= ?
-                                 AND $str2time AcctStopTime ) <=  ?
-                                 ORDER BY AcctStartTime DESC
-    ") or die $dbh->errstr;                                 
-    $sth->execute($username, $start, $end) or die $sth->errstr;
-
-    push @sessions, map { { %$_ } } @{ $sth->fetchall_arrayref({}) };
-
+    push @sessions, $part_export->usage_sessions( $self->svc_x, $start, $end );
   }
-  \@sessions
+
+  \@sessions;
 
 }
 

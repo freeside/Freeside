@@ -1,6 +1,7 @@
 <%
-  my($title, $menubar) = @_;
+  my($title, $menubar) = ( shift, shift );
   my $etc = @_ ? shift : ''; #$etc is for things like onLoad= etc.
+  my $head = @_ ? shift : ''; #$head is for things that go in the <HEAD> section
 %>
     <HTML>
       <HEAD>
@@ -10,6 +11,7 @@
         <META HTTP-Equiv="Cache-Control" Content="no-cache">
         <META HTTP-Equiv="Pragma" Content="no-cache">
         <META HTTP-Equiv="Expires" Content="0"> 
+        <%= $head %>
       </HEAD>
       <BODY BGCOLOR="#e8e8e8"<%= $etc %>>
           <FONT SIZE=6>

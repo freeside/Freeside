@@ -333,5 +333,112 @@ sub sqlradius_connect {
   DBI->connect(@_) or die $DBI::errstr;
 }
 
+#--
+
+=item usage_sessions TIMESTAMP_START TIMESTAMP_END [ SVC_ACCT [ IP [ SQL_SELECT ] ] ]
+
+TIMESTAMP_START and TIMESTAMP_END are specified as UNIX timestamps; see
+L<perlfunc/"time">.  Also see L<Time::Local> and L<Date::Parse> for conversion
+functions.
+
+SVC_ACCT, if specified, limits the results to the specified account.
+
+IP, if specified, limits the results to the specified IP address.
+
+#SQL_SELECT defaults to * if unspecified.  It can be useful to set it to 
+#SUM(acctsessiontime) or SUM(AcctInputOctets), etc.
+
+Returns an array of hash references
+Returns an arrayref of hashrefs with the following fields:
+
+=over 4
+
+=item username
+
+=item framedipaddress
+
+=item acctstarttime
+
+=item acctstoptime
+
+=item acctsessiontime
+
+=item acctinputoctets
+
+=item acctoutputoctets
+
+=back
+
+=cut
+
+#some false laziness w/cust_svc::seconds_since_sqlradacct
+
+sub usage_sessions {
+  my( $self, $start, $end ) = splice(@_, 0, 3);
+  my $svc_acct = @_ ? shift : '';
+  my $ip = @_ ? shift : '';
+  #my $select = @_ ? shift : '*';
+
+  $end ||= 2147483647;
+
+  return () if $self->option('ignore_accounting');
+
+  my $dbh = sqlradius_connect( map $self->option($_),
+                                   qw( datasrc username password ) );
+
+  #select a unix time conversion function based on database type
+  my $str2time;
+  if ( $dbh->{Driver}->{Name} =~ /^mysql(PP)?$/ ) {
+    $str2time = 'UNIX_TIMESTAMP(';
+  } elsif ( $dbh->{Driver}->{Name} eq 'Pg' ) {
+    $str2time = 'EXTRACT( EPOCH FROM ';
+  } else {
+    warn "warning: unknown database type ". $dbh->{Driver}->{Name}.
+         "; guessing how to convert to UNIX timestamps";
+    $str2time = 'extract(epoch from ';
+  }
+
+  my @fields = (
+                 qw( username realm framedipaddress
+                     acctsessiontime acctinputoctets acctoutputoctets
+                   ),
+                 "$str2time acctstarttime ) as acctstarttime",
+                 "$str2time acctstoptime ) as acctstoptime",
+               );
+
+  my @param = ();
+  my $where = '';
+
+  if ( $svc_acct ) {
+    my $username = $self->export_username($svc_acct);
+    if ( $svc_acct =~ /^([^@]+)\@([^@]+)$/ ) {
+      $where = '( UserName = ? OR ( UserName = ? AND Realm = ? ) ) AND';
+      push @param, $username, $1, $2;
+    } else {
+      $where = 'UserName = ? AND';
+      push @param, $username;
+    }
+  }
+
+  if ( length($ip) ) {
+    $where .= ' FramedIPAddress = ? AND';
+    push @param, $ip;
+  }
+
+  push @param, $start, $end;
+
+  my $sth = $dbh->prepare('SELECT '. join(', ', @fields).
+                          "  FROM radacct
+                             WHERE $where
+                                   $str2time AcctStopTime ) >= ?
+                               AND $str2time AcctStopTime ) <=  ?
+                               ORDER BY AcctStartTime DESC
+  ") or die $dbh->errstr;                                 
+  $sth->execute(@param) or die $sth->errstr;
+
+  [ map { { %$_ } } @{ $sth->fetchall_arrayref({}) } ];
+
+}
+
 1;
 
