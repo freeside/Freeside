@@ -5,27 +5,53 @@ my @cust_pay;
 if ( $cgi->param('magic') && $cgi->param('magic') eq '_date' ) {
 
   my %search;
+  my @search;
+
   if ( $cgi->param('payby') ) {
-    $cgi->param('payby') =~ /^(CARD|CHEK|BILL)$/
+    $cgi->param('payby') =~ /^(CARD|CHEK|BILL)(-(VisaMC|Amex|Discover))?$/
       or die "illegal payby ". $cgi->param('payby');
     $search{'payby'} = $1;
+    if ( $3 ) {
+      if ( $3 eq 'VisaMC' ) {
+        #avoid posix regexes for portability
+        push @search, " (    substring(payinfo from 1 for 1) = '4'  ".
+                      "   OR substring(payinfo from 1 for 2) = '51' ".
+                      "   OR substring(payinfo from 1 for 2) = '52' ".
+                      "   OR substring(payinfo from 1 for 2) = '53' ".
+                      "   OR substring(payinfo from 1 for 2) = '54' ".
+                      "   OR substring(payinfo from 1 for 2) = '54' ".
+                      "   OR substring(payinfo from 1 for 2) = '55' ".
+                      " ) ";
+      } elsif ( $3 eq 'Amex' ) {
+        push @search, " (    substring(payinfo from 1 for 2 ) = '34' ".
+                      "   OR substring(payinfo from 1 for 2 ) = '37' ".
+                      " ) ";
+      } elsif ( $3 eq 'Discover' ) {
+        push @search, " substring(payinfo from 1 for 4 ) = '6011' ";
+      } else {
+        die "unknown card type $3";
+      }
+    }
   }
 
   #false laziness with cust_pkg.cgi
-  my $range = '';
   if ( $cgi->param('beginning')
        && $cgi->param('beginning') =~ /^([ 0-9\-\/]{0,10})$/ ) {
     my $beginning = str2time($1);
-    $range = " WHERE _date >= $beginning ";
+    push @search, "_date >= $beginning ";
   }
   if ( $cgi->param('ending')
             && $cgi->param('ending') =~ /^([ 0-9\-\/]{0,10})$/ ) {
     my $ending = str2time($1) + 86400;
-    $range .= ( $range ? ' AND ' : ' WHERE ' ). " _date <= $ending ";
+    push @search, " _date <= $ending ";
   }
-  $range =~ s/^\s*WHERE/ AND/ if scalar(keys %search) ;
+  my $search;
+  if ( @search ) {
+    $search = ( scalar(keys %search) ? ' AND ' : ' WHERE ' ).
+              join(' AND ', @search);
+  }
 
-  @cust_pay = qsearch('cust_pay', \%search, '', $range );
+  @cust_pay = qsearch('cust_pay', \%search, '', $search );
 
   $sortby = \*date_sort;
 
