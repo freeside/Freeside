@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: svc_acct_sm.export,v 1.3 2000-06-12 08:37:56 ivan Exp $
+# $Id: svc_acct_sm.export,v 1.4 2000-06-29 14:02:29 ivan Exp $
 # 
 # Create and export config files for sendmail, qmail
 #
@@ -42,7 +42,10 @@
 # /var/spool/freeside/conf and sendmail updates ivan@sisd.com 98-aug-14
 #
 # $Log: svc_acct_sm.export,v $
-# Revision 1.3  2000-06-12 08:37:56  ivan
+# Revision 1.4  2000-06-29 14:02:29  ivan
+# add sendmailrestart configuration file
+#
+# Revision 1.3  2000/06/12 08:37:56  ivan
 # sendmail fix from Jeff Finucane
 #
 # Revision 1.2  1998/12/10 07:23:17  ivan
@@ -195,6 +198,10 @@ foreach $sendmailmachine (@sendmailmachines) {
     " )"
   )
     == 0 or die "ssh error: $!";
+  if ( $conf->config('sendmailrestart') ) {
+    ssh("root\@$sendmailmachine", $conf->config('sendmailrestart') )
+      == 0 or die "ssh error: $!";
+  }
 }
 
 my($qmailmachine);
