@@ -71,7 +71,7 @@ if ( $cgi->param('browse')
     } elsif ( $query eq 'tickets' ) {
       $sortby = \*tickets_sort;
       $orderby = "ORDER BY tickets DESC";
-      push @select, FS::TicketSystem->sql_customer_tickets. " as tickets";
+      push @select, FS::TicketSystem->sql_num_customer_tickets. " as tickets";
       push @addl_headers, 'Tickets';
       push @addl_cols, 'tickets';
     } else {
@@ -402,7 +402,7 @@ END
       if ( $addl_col eq 'tickets' ) {
         if ( @custom_priorities ) {
           print '<TABLE>';
-          foreach my $priority ( @custom_priorities ) {
+          foreach my $priority ( @custom_priorities, '' ) {
             my $ahref =
               '<A HREF="'.
                 FS::TicketSystem->href_customer_tickets($custnum,$priority).
@@ -410,16 +410,19 @@ END
             print "<TR><TD ALIGN=right>$ahref".
                     FS::TicketSystem->num_customer_tickets($custnum,$priority).
                   "</A></TD>".
-                  "<TD ALIGN=left>$ahref$priority</A></TD></TR>";
+                  "<TD ALIGN=left>$ahref".
+                  ( $priority || '<i>(none)</i>' ).
+                  </A></TD></TR>";
           }
-          print "<TR><TD ALIGN=right>";
+          print '<TR><TD BGCOLOR="#000000" COLSPAN=2>&nbsp;</TD></TR>'.
+                '<TR><TD ALIGN=right>';
         }
         my $ahref =
           '<A HREF="'.
             FS::TicketSystem->href_customer_tickets($custnum).
           '">';
         print $ahref. $cust_main->get($addl_col). '</A>';
-        print "</TD><TD ALIGN=left>${ahref}total</A></TD></TR></TABLE>"
+        print "</TD><TD ALIGN=left>${ahref}Total</A></TD></TR></TABLE>"
           if @custom_priorities;
       } else {
         print $cust_main->get($addl_col);

@@ -1,0 +1,119 @@
+<%
+  my( $cust_main ) = @_;
+  my @invoicing_list = $cust_main->invoicing_list;
+%>
+
+Billing information
+(<A HREF="<%= $p %>misc/bill.cgi?<%= $cust_main->custnum %>">Bill now</A>)
+<%= ntable("#cccccc") %><TR><TD><%= ntable("#cccccc",2) %>
+<TR>
+  <TD ALIGN="right">Tax&nbsp;exempt</TD>
+  <TD BGCOLOR="#ffffff"><%= $cust_main->tax ? 'yes' : 'no' %></TD>
+</TR>
+<TR>
+  <TD ALIGN="right">Postal&nbsp;invoices</TD>
+  <TD BGCOLOR="#ffffff">
+    <%= ( grep { $_ eq 'POST' } @invoicing_list ) ? 'yes' : 'no' %>
+  </TD>
+</TR>
+<TR>
+  <TD ALIGN="right">Email&nbsp;invoices</TD>
+  <TD BGCOLOR="#ffffff">
+    <%= join(', ', grep { $_ ne 'POST' } @invoicing_list ) || 'no' %>
+  </TD>
+</TR>
+<TR>
+  <TD ALIGN="right">Billing&nbsp;type</TD>
+  <TD BGCOLOR="#ffffff">
+
+<% if ( $cust_main->payby eq 'CARD' || $cust_main->payby eq 'DCRD' ) { %>
+
+    Credit&nbsp;card&nbsp;<%= $cust_main->payby eq 'CARD' ? '(automatic)' : '(on-demand)' %>
+  </TD>
+</TR>
+<TR>
+  <TD ALIGN="right">Card number</TD>
+  <TD BGCOLOR="#ffffff"><%= $cust_main->payinfo_masked %></TD>
+</TR>
+<TR>
+  <TD ALIGN="right">Expiration</TD>
+  <TD BGCOLOR="#ffffff"><%= $cust_main->paydate %></TD>
+</TR>
+<TR>
+  <TD ALIGN="right">Name on card</TD>
+  <TD BGCOLOR="#ffffff"><%= $cust_main->payname %></TD>
+</TR>
+
+<% } elsif ( $cust_main->payby eq 'CHEK' || $cust_main->payby eq 'DCHK') {
+     my( $account, $aba ) = split('@', $cust_main->payinfo );
+%>
+
+    Electronic&nbsp;check&nbsp;<%= $cust_main->payby eq 'CHEK' ? '(automatic)' : '(on-demand)' %>
+  </TD>
+</TR>
+<TR>
+  <TD ALIGN="right">ABA/Routing code</TD>
+  <TD BGCOLOR="#ffffff"><%= $aba %></TD>
+</TR>
+<TR>
+  <TD ALIGN="right">Account number</TD>
+  <TD BGCOLOR="#ffffff"><%= $account %></TD>
+</TR>
+<TR>
+  <TD ALIGN="right">Bank name</TD>
+  <TD BGCOLOR="#ffffff"><%= $cust_main->payname %></TD>
+</TR>
+
+<% } elsif ( $cust_main->payby eq 'LECB' ) {
+     $cust_main->payinfo =~ /^(\d{3})(\d{3})(\d{4})$/;
+     my $payinfo = "$1-$2-$3";
+%>
+
+    Phone&nbsp;bill&nbsp;billing
+  </TD>
+</TR>
+<TR>
+  <TD ALIGN="right">Phone number</TD>
+  <TD BGCOLOR="#ffffff"><%= $payinfo %></TD>
+</TR>
+
+<% } elsif ( $cust_main->payby eq 'BILL' ) { %>
+
+    Billing
+  </TD>
+</TR>
+
+  <% if ( $cust_main->payinfo ) { %>
+<TR>
+  <TD ALIGN="right">P.O. </TD>
+  <TD BGCOLOR="#ffffff"><%= $cust_main->payinfo %></TD>
+</TR>
+  <% } %>
+
+<TR>
+  <TD ALIGN="right">Expiration</TD>
+  <TD BGCOLOR="#ffffff"><%= $cust_main->paydate %></TD>
+</TR>
+<TR>
+  <TD ALIGN="right">Attention</TD>
+  <TD BGCOLOR="#ffffff"><%= $cust_main->payname %></TD>
+</TR>
+
+<% } elsif ( $cust_main->payby eq 'COMP' ) { %>
+
+    Complimentary
+  </TD>
+</TR>
+<TR>
+  <TD ALIGN="right">Authorized&nbsp;by</TD>
+  <TD BGCOLOR="#ffffff"><%= $cust_main->payinfo %></TD>
+</TR>
+<TR>
+  <TD ALIGN="right">Expiration</TD>
+  <TD BGCOLOR="#ffffff"><%= $cust_main->paydate %></TD>
+</TR>
+
+<% } %>
+
+</TABLE></TD></TR></TABLE>
+

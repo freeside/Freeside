@@ -25,42 +25,93 @@ sub num_customer_tickets {
 
   #$dbh ||= create one from some config options
 
+  my( $from_sql, @param) = $self->_from_customer( $custnum, $priority );
+
+  my $sql = "select count(*) $from_sql";
+  my $sth = $dbh->prepare($sql) or die $dbh->errstr. " preparing $sql";
+  $sth->execute(@param)         or die $sth->errstr. " executing $sql";
+
+  $sth->fetchrow_arrayref->[0];
+
+}
+
+sub customer_tickets {
+  my( $self, $custnum, $limit, $priority, $dbh ) = @_;
+  $limit ||= 0;
+
+  #$dbh ||= create one from some config options
+
+  my( $from_sql, @param) = $self->_from_customer( $custnum, $priority );
+  my $sql = "select * $from_sql order by priority desc limit $limit";
+  my $sth = $dbh->prepare($sql) or die $dbh->errstr. "preparing $sql";
+  $sth->execute(@param)         or die $sth->errstr. "executing $sql";
+
+  #munge column names???  #httemplate/view/cust_main/tickets.html has column
+  #names that might not make sense now...
+  $sth->fetchall_arrayref({});
+
+}
+
+sub _from_customer {
+  my( $self, $custnum, $priority ) = @_;
+
   my @param = ();
-  my $priority_sql = '';
+  my $join = '';
+  my $where = '';
   if ( defined($priority) ) {
+
+    my $queue_sql = " customfields.queue = ( select id from queues
+                                              where queues.name = ? )
+                      or ( ? = '' and customfields.queue = 0 )";
+
     if ( length($priority) ) {
-      my $queue_sql = " queue = ( select id from queues where queues.name = ? )
-                        or ( ? = '' and queue = 0 )";
-      $priority_sql = "
-        and ? = ( select content from TicketCustomFieldValues
-                   where ticket = tickets.id
-                     and customfield = ( select id from customfields
-                                          where name = ?
-                                            and ( $queue_sql )
-                                       )
-                )
-      ";
-      push @param, $priority,
-                   $priority_field,
-                   $priority_field_queue,
-                   $priority_field_queue;
+      #$where = "    
+      #  and ? = ( select content from TicketCustomFieldValues
+      #             where ticket = tickets.id
+      #               and customfield = ( select id from customfields
+      #                                    where name = ?
+      #                                      and ( $queue_sql )
+      #                                 )
+      #          )
+      #";
+      push @param, $priority;
+
+      $join = "join TicketCustomFieldValues
+                 on ( tickets.id = TicketCustomFieldValues.ticket )";
+      
+      $where = "and content = ?
+                and customfield = ( select id from customfields
+                                     where name = ?
+                                       and ( $queue_sql )
+                                  )
+               ";
     } else {
-      return '0nothandledyet0';
+      $where =
+               "and 0 = ( select count(*) from TicketCustomFieldValues
+                           where ticket = tickets.id
+                             and customfield = ( select id from customfields
+                                                  where name = ?
+                                                    and ( $queue_sql )
+                                               )
+                        )
+               ";
     }
+    push @param, $priority_field,
+                 $priority_field_queue,
+                 $priority_field_queue;
   }
 
   my $sql = "
-    select count(*) from tickets
+                    from tickets
+                    join queues on ( tickets.queue = queues.id )
                     join links on ( tickets.id = links.localbase )
+                    $join 
        where ( status = 'new' or status = 'open' or status = 'stalled' )
          and target = 'freeside://freeside/cust_main/$custnum'
-         $priority_sql
+         $where
   ";
 
-  my $sth = $dbh->prepare($sql) or die $dbh->errstr;
-  $sth->execute(@param)         or die $sth->errstr;
-
-  $sth->fetchrow_arrayref->[0];
+  ( $sql, @param );
 
 }
 
@@ -97,6 +148,17 @@ sub href_customer_tickets {
   $href .= '%20%0A%27%3Csmall%3E__ToldRelative__%3C%2Fsmall%3E%27%2C%20%0A%27%3Csmall%3E__LastUpdatedRelative__%3C%2Fsmall%3E%27%2C%20%0A%27%3Csmall%3E__TimeLeft__%3C%2Fsmall%3E%27';
 
   $href;
+}
+
+
+sub href_new_ticket {
+  my( $self, $custnum ) = @_;
+  'Ticket/Create.html?Queue=1&new-MemberOf=freeside://freeside/cust_main/'.$custnum;
+}
+
+sub href_ticket {
+  my($self, $ticketnum) = @_;
+  'Ticket/Display.html?id='.$ticketnum;
 }
 
 1;

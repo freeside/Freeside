@@ -1,0 +1,54 @@
+<%
+  my( $cust_main ) = @_;
+
+  my $conf = new FS::Conf;
+  my $num = 10;
+
+  my @tickets = ();
+  unless ( $conf->config('ticket_system-custom_priority_field') ) {
+
+    @tickets =
+      @{ FS::TicketSystem->customer_tickets($cust_main->custnum, $num) };
+
+  } else {
+
+    foreach my $priority (
+      $conf->config('ticket_system-custom_priority_field-values'), ''
+    ) {
+      last if scalar(@tickets) >= $num;
+      push @tickets, 
+        @{ FS::TicketSystem->customer_tickets( $cust_main->custnum,
+                                               $num - scalar(@tickets),
+                                               $priority,
+                                             )
+         };
+    }
+
+  }
+
+%>
+
+Highest priority tickets
+(<A HREF="<%= FS::TicketSystem->href_customer_tickets($cust_main->custnum) %>">View all tickets for this customer</A>)
+(<A HREF="<%= FS::TicketSystem->href_new_ticket($cust_main->custnum) %>">New ticket for this customer</A>)
+<%= table() %>
+<TR>
+  <TH>#</TH>
+  <TH>Subject</TH>
+  <TH>Priority</TH>
+  <TH>Queue</TH>
+  <TH>Status</TH>
+</TR>
+<% foreach my $ticket ( @tickets ) {
+     my $href = FS::TicketSystem->href_ticket($ticket->{id});
+%>
+<TR>
+  <TD><A HREF=<%=$href%>><%= $ticket->{id} %></A></TD>
+  <TD><A HREF=<%=$href%>><%= $ticket->{subject} %></A></TD>
+  <TD ALIGN="right"><%= $ticket->{content} || $ticket->{priority} %></TD>
+  <TD><%= $ticket->{name} %></TD>
+  <TD><%= $ticket->{status} %></TD>
+</TR>
+<% } %>
+</TABLE>
+

@@ -1,0 +1,131 @@
+<%
+  my( $cust_main ) = @_;
+  my $conf = new FS::Conf;
+%>
+
+Billing address
+<%= ntable("#cccccc") %><TR><TD><%= ntable("#cccccc",2) %>
+<TR>
+  <TD ALIGN="right">Contact&nbsp;name</TD>
+  <TD COLSPAN=3 BGCOLOR="#ffffff">
+    <%= $cust_main->last. ', '. $cust_main->first %>
+  </TD>
+<% if ( $conf->exists('show_ss') ) { %>
+  <TD ALIGN="right">SS#</TD>
+  <TD BGCOLOR="#ffffff"><%= $cust_main->ss || '&nbsp' %></TD>
+<% } %>
+</TR>
+<TR>
+  <TD ALIGN="right">Company</TD>
+  <TD COLSPAN=5 BGCOLOR="#ffffff"><%= $cust_main->company %></TD>
+</TR>
+<TR>
+  <TD ALIGN="right">Address</TD>
+  <TD COLSPAN=5 BGCOLOR="#ffffff"><%= $cust_main->address1 %></TD>
+</TR>
+<% if ( $cust_main->address2 ) { %>
+<TR>
+  <TD ALIGN="right">&nbsp;</TD>
+  <TD COLSPAN=5 BGCOLOR="#ffffff"><%= $cust_main->address2 %></TD>
+</TR>
+<% } %>
+<TR>
+  <TD ALIGN="right">City</TD>
+  <TD BGCOLOR="#ffffff"><%= $cust_main->city %></TD>
+  <TD ALIGN="right">State</TD>
+  <TD BGCOLOR="#ffffff"><%= $cust_main->state %></TD>
+  <TD ALIGN="right">Zip</TD>
+  <TD BGCOLOR="#ffffff"><%= $cust_main->zip %></TD>
+</TR>
+<TR>
+  <TD ALIGN="right">Country</TD>
+  <TD BGCOLOR="#ffffff"><%= $cust_main->country %></TD>
+</TR>
+<%
+  my $daytime_label = FS::Msgcat::_gettext('daytime') =~ /^(daytime)?$/
+                        ? 'Day&nbsp;Phone'
+                        : FS::Msgcat::_gettext('daytime');
+  my $night_label = FS::Msgcat::_gettext('night') =~ /^(night)?$/
+                        ? 'Night&nbsp;Phone'
+                        : FS::Msgcat::_gettext('night');
+%>
+<TR>
+  <TD ALIGN="right"><%= $daytime_label %></TD>
+  <TD COLSPAN=5 BGCOLOR="#ffffff">
+    <%= $cust_main->daytime || '&nbsp' %>
+  </TD>
+</TR>
+<TR>
+  <TD ALIGN="right"><%= $night_label %></TD>
+  <TD COLSPAN=5 BGCOLOR="#ffffff">
+    <%= $cust_main->night || '&nbsp' %>
+  </TD>
+</TR>
+<TR>
+  <TD ALIGN="right">Fax</TD>
+  <TD COLSPAN=5 BGCOLOR="#ffffff">
+    <%= $cust_main->fax || '&nbsp' %>
+  </TD>
+</TR>
+</TABLE></TD></TR></TABLE>
+
+<% if ( defined $cust_main->dbdef_table->column('ship_last') ) {
+     my $pre = $cust_main->ship_last ? 'ship_' : '';
+%>
+
+<BR>
+Service address
+<%= ntable("#cccccc") %><TR><TD><%= ntable("#cccccc",2) %>
+<TR>
+  <TD ALIGN="right">Contact name</TD>
+  <TD COLSPAN=5 BGCOLOR="#ffffff">
+    <%= $cust_main->get("${pre}last"). ', '. $cust_main->get("${pre}first") %>
+  </TD>
+</TR>
+<TR>
+  <TD ALIGN="right">Company</TD>
+  <TD COLSPAN=5 BGCOLOR="#ffffff"><%= $cust_main->get("${pre}company") %></TD>
+</TR>
+<TR>
+  <TD ALIGN="right">Address</TD>
+  <TD COLSPAN=5 BGCOLOR="#ffffff"><%= $cust_main->get("${pre}address1") %></TD>
+</TR>
+<% if ( $cust_main->get("${pre}address2") ) { %>
+<TR>
+  <TD ALIGN="right">&nbsp;</TD>
+  <TD COLSPAN=5 BGCOLOR="#ffffff"><%= $cust_main->get("${pre}address2") %></TD>
+</TR>
+<% } %>
+<TR>
+  <TD ALIGN="right">City</TD>
+  <TD BGCOLOR="#ffffff"><%= $cust_main->get("${pre}city") %></TD>
+  <TD ALIGN="right">State</TD>
+  <TD BGCOLOR="#ffffff"><%= $cust_main->get("${pre}state") %></TD>
+  <TD ALIGN="right">Zip</TD>
+  <TD BGCOLOR="#ffffff"><%= $cust_main->get("${pre}zip") %></TD>
+</TR>
+<TR>
+  <TD ALIGN="right">Country</TD>
+  <TD BGCOLOR="#ffffff"><%= $cust_main->get("${pre}country") %></TD>
+</TR>
+<TR>
+  <TD ALIGN="right"><%= $daytime_label %></TD>
+  <TD COLSPAN=5 BGCOLOR="#ffffff">
+    <%= $cust_main->get("${pre}daytime") || '&nbsp' %>
+  </TD>
+</TR>
+<TR>
+  <TD ALIGN="right"><%= $night_label %></TD>
+  <TD COLSPAN=5 BGCOLOR="#ffffff">
+    <%= $cust_main->get("${pre}night") || '&nbsp' %>
+  </TD>
+</TR>
+<TR>
+  <TD ALIGN="right">Fax</TD>
+  <TD COLSPAN=5 BGCOLOR="#ffffff">
+    <%= $cust_main->get("${pre}fax") || '&nbsp' %>
+  </TD>
+</TR>
+</TABLE></TD></TR></TABLE>
+
+<% } %>

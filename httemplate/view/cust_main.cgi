@@ -70,239 +70,43 @@ print "This customer's signup URL: ".
       "<a href=\"$signupurl?ref=$custnum\">$signupurl?ref=$custnum</a><BR><BR>";
 }
 
-print '<A NAME="cust_main"></A>';
-
-print &itable(), '<TR>';
-
-print '<TD VALIGN="top">';
-
-  print "Billing address", &ntable("#cccccc"), "<TR><TD>",
-        &ntable("#cccccc",2),
-    '<TR><TD ALIGN="right">Contact&nbsp;name</TD>',
-      '<TD COLSPAN=3 BGCOLOR="#ffffff">',
-      $cust_main->last, ', ', $cust_main->first,
-      '</TD>';
-print '<TD ALIGN="right">SS#</TD><TD BGCOLOR="#ffffff">',
-      $cust_main->ss || '&nbsp', '</TD>'
-  if $conf->exists('show_ss');
-
-print '</TR>',
-    '<TR><TD ALIGN="right">Company</TD><TD COLSPAN=5 BGCOLOR="#ffffff">',
-      $cust_main->company,
-      '</TD></TR>',
-    '<TR><TD ALIGN="right">Address</TD><TD COLSPAN=5 BGCOLOR="#ffffff">',
-      $cust_main->address1,
-      '</TD></TR>',
-  ;
-  print '<TR><TD ALIGN="right">&nbsp;</TD><TD COLSPAN=5 BGCOLOR="#ffffff">',
-        $cust_main->address2, '</TD></TR>'
-    if $cust_main->address2;
-  print '<TR><TD ALIGN="right">City</TD><TD BGCOLOR="#ffffff">',
-          $cust_main->city,
-          '</TD><TD ALIGN="right">State</TD><TD BGCOLOR="#ffffff">',
-          $cust_main->state,
-          '</TD><TD ALIGN="right">Zip</TD><TD BGCOLOR="#ffffff">',
-          $cust_main->zip, '</TD></TR>',
-        '<TR><TD ALIGN="right">Country</TD><TD BGCOLOR="#ffffff">',
-          $cust_main->country,
-          '</TD></TR>',
-  ;
-  my $daytime_label = FS::Msgcat::_gettext('daytime') || 'Day&nbsp;Phone';
-  my $night_label = FS::Msgcat::_gettext('night') || 'Night&nbsp;Phone';
-  print '<TR><TD ALIGN="right">'. $daytime_label.
-          '</TD><TD COLSPAN=5 BGCOLOR="#ffffff">',
-          $cust_main->daytime || '&nbsp', '</TD></TR>',
-        '<TR><TD ALIGN="right">'. $night_label. 
-          '</TD><TD COLSPAN=5 BGCOLOR="#ffffff">',
-          $cust_main->night || '&nbsp', '</TD></TR>',
-        '<TR><TD ALIGN="right">Fax</TD><TD COLSPAN=5 BGCOLOR="#ffffff">',
-          $cust_main->fax || '&nbsp', '</TD></TR>',
-        '</TABLE>', "</TD></TR></TABLE>"
-  ;
-
-  if ( defined $cust_main->dbdef_table->column('ship_last') ) {
-
-    my $pre = $cust_main->ship_last ? 'ship_' : '';
-
-    print "<BR>Service address", &ntable("#cccccc"), "<TR><TD>",
-          &ntable("#cccccc",2),
-      '<TR><TD ALIGN="right">Contact name</TD>',
-        '<TD COLSPAN=5 BGCOLOR="#ffffff">',
-        $cust_main->get("${pre}last"), ', ', $cust_main->get("${pre}first"),
-        '</TD></TR>',
-      '<TR><TD ALIGN="right">Company</TD><TD COLSPAN=5 BGCOLOR="#ffffff">',
-        $cust_main->get("${pre}company"),
-        '</TD></TR>',
-      '<TR><TD ALIGN="right">Address</TD><TD COLSPAN=5 BGCOLOR="#ffffff">',
-        $cust_main->get("${pre}address1"),
-        '</TD></TR>',
-    ;
-    print '<TR><TD ALIGN="right">&nbsp;</TD><TD COLSPAN=5 BGCOLOR="#ffffff">',
-          $cust_main->get("${pre}address2"), '</TD></TR>'
-      if $cust_main->get("${pre}address2");
-    print '<TR><TD ALIGN="right">City</TD><TD BGCOLOR="#ffffff">',
-            $cust_main->get("${pre}city"),
-            '</TD><TD ALIGN="right">State</TD><TD BGCOLOR="#ffffff">',
-            $cust_main->get("${pre}state"),
-            '</TD><TD ALIGN="right">Zip</TD><TD BGCOLOR="#ffffff">',
-            $cust_main->get("${pre}zip"), '</TD></TR>',
-          '<TR><TD ALIGN="right">Country</TD><TD BGCOLOR="#ffffff">',
-            $cust_main->get("${pre}country"),
-            '</TD></TR>',
-    ;
-    print '<TR><TD ALIGN="right">'. $daytime_label. '</TD>',
-          '<TD COLSPAN=5 BGCOLOR="#ffffff">',
-            $cust_main->get("${pre}daytime") || '&nbsp', '</TD></TR>',
-          '<TR><TD ALIGN="right">'. $night_label. '</TD>'.
-          '<TD COLSPAN=5 BGCOLOR="#ffffff">',
-            $cust_main->get("${pre}night") || '&nbsp', '</TD></TR>',
-          '<TR><TD ALIGN="right">Fax</TD><TD COLSPAN=5 BGCOLOR="#ffffff">',
-            $cust_main->get("${pre}fax") || '&nbsp', '</TD></TR>',
-          '</TABLE>', "</TD></TR></TABLE>"
-    ;
-
-  }
-
-print '</TD>';
-
-print '<TD VALIGN="top">';
-
-  print &ntable("#cccccc"), "<TR><TD>", &ntable("#cccccc",2),
-        '<TR><TD ALIGN="right">Customer&nbsp;number</TD><TD BGCOLOR="#ffffff">',
-        $custnum, '</TD></TR>',
-  ;
-
-  my @agents = qsearch( 'agent', {} );
-  my $agent;
-  unless ( scalar(@agents) == 1 ) {
-    $agent = qsearchs('agent',{ 'agentnum' => $cust_main->agentnum } );
-    print '<TR><TD ALIGN="right">Agent</TD><TD BGCOLOR="#ffffff">',
-        $agent->agentnum, ": ", $agent->agent, '</TD></TR>';
-  } else {
-    $agent = $agents[0];
-  }
-  my @referrals = qsearch( 'part_referral', {} );
-  unless ( scalar(@referrals) == 1 ) {
-    my $referral = qsearchs('part_referral', {
-      'refnum' => $cust_main->refnum
-    } );
-    print '<TR><TD ALIGN="right">Advertising&nbsp;source</TD><TD BGCOLOR="#ffffff">',
-          $referral->refnum, ": ", $referral->referral, '</TD></TR>';
-  }
-  print '<TR><TD ALIGN="right">Order taker</TD><TD BGCOLOR="#ffffff">',
-    $cust_main->otaker, '</TD></TR>';
-
-  print '<TR><TD ALIGN="right">Referring&nbsp;Customer</TD><TD BGCOLOR="#ffffff">';
-  my $referring_cust_main = '';
-  if ( $cust_main->referral_custnum
-       && ( $referring_cust_main =
-            qsearchs('cust_main', { custnum => $cust_main->referral_custnum } )
-          )
-     ) {
-    print '<A HREF="'. popurl(1). 'cust_main.cgi?'.
-          $cust_main->referral_custnum. '">'.
-          $cust_main->referral_custnum. ': '.
-          ( $referring_cust_main->company
-              ? $referring_cust_main->company. ' ('.
-                  $referring_cust_main->last. ', '. $referring_cust_main->first.
-                  ')'
-              : $referring_cust_main->last. ', '. $referring_cust_main->first
-          ).
-          '</A>';
-  }
-  print '</TD></TR>';
-
-  print '</TABLE></TD></TR></TABLE>';
-
-print '<BR>';
-
-if ( $conf->config('payby-default') ne 'HIDE' ) {
-
-  my @invoicing_list = $cust_main->invoicing_list;
-  print "Billing information (",
-       qq!<A HREF="!, popurl(2), qq!misc/bill.cgi?$custnum">!, "Bill now</A>)",
-        &ntable("#cccccc"), "<TR><TD>", &ntable("#cccccc",2),
-        '<TR><TD ALIGN="right">Tax&nbsp;exempt</TD><TD BGCOLOR="#ffffff">',
-        $cust_main->tax ? 'yes' : 'no',
-        '</TD></TR>',
-        '<TR><TD ALIGN="right">Postal&nbsp;invoices</TD><TD BGCOLOR="#ffffff">',
-        ( grep { $_ eq 'POST' } @invoicing_list ) ? 'yes' : 'no',
-        '</TD></TR>',
-        '<TR><TD ALIGN="right">Email&nbsp;invoices</TD><TD BGCOLOR="#ffffff">',
-        join(', ', grep { $_ ne 'POST' } @invoicing_list ) || 'no',
-        '</TD></TR>',
-        '<TR><TD ALIGN="right">Billing&nbsp;type</TD><TD BGCOLOR="#ffffff">',
-  ;
-
-  if ( $cust_main->payby eq 'CARD' || $cust_main->payby eq 'DCRD' ) {
-    my $payinfo = $cust_main->payinfo_masked;
-    print 'Credit&nbsp;card&nbsp;',
-          ( $cust_main->payby eq 'CARD' ? '(automatic)' : '(on-demand)' ),
-          '</TD></TR>',
-          '<TR><TD ALIGN="right">Card number</TD><TD BGCOLOR="#ffffff">',
-          $payinfo, '</TD></TR>',
-          '<TR><TD ALIGN="right">Expiration</TD><TD BGCOLOR="#ffffff">',
-          $cust_main->paydate, '</TD></TR>',
-          '<TR><TD ALIGN="right">Name on card</TD><TD BGCOLOR="#ffffff">',
-          $cust_main->payname, '</TD></TR>'
-    ;
-  } elsif ( $cust_main->payby eq 'CHEK' || $cust_main->payby eq 'DCHK') {
-    my( $account, $aba ) = split('@', $cust_main->payinfo );
-    print 'Electronic&nbsp;check&nbsp;',
-          ( $cust_main->payby eq 'CHEK' ? '(automatic)' : '(on-demand)' ),
-          '</TD></TR>',
-          '<TR><TD ALIGN="right">Account number</TD><TD BGCOLOR="#ffffff">',
-          $account, '</TD></TR>',
-          '<TR><TD ALIGN="right">ABA/Routing code</TD><TD BGCOLOR="#ffffff">',
-          $aba, '</TD></TR>',
-          '<TR><TD ALIGN="right">Bank name</TD><TD BGCOLOR="#ffffff">',
-          $cust_main->payname, '</TD></TR>'
-    ;
-  } elsif ( $cust_main->payby eq 'LECB' ) {
-    $cust_main->payinfo =~ /^(\d{3})(\d{3})(\d{4})$/;
-    my $payinfo = "$1-$2-$3";
-    print 'Phone&nbsp;bill&nbsp;billing</TD></TR>',
-          '<TR><TD ALIGN="right">Phone number</TD><TD BGCOLOR="#ffffff">',
-          $payinfo, '</TD></TR>',
-    ;
-  } elsif ( $cust_main->payby eq 'BILL' ) {
-    print 'Billing</TD></TR>';
-    print '<TR><TD ALIGN="right">P.O. </TD><TD BGCOLOR="#ffffff">',
-          $cust_main->payinfo, '</TD></TR>',
-      if $cust_main->payinfo;
-    print '<TR><TD ALIGN="right">Expiration</TD><TD BGCOLOR="#ffffff">',
-          $cust_main->paydate, '</TD></TR>',
-          '<TR><TD ALIGN="right">Attention</TD><TD BGCOLOR="#ffffff">',
-          $cust_main->payname, '</TD></TR>',
-    ;
-  } elsif ( $cust_main->payby eq 'COMP' ) {
-    print 'Complimentary</TD></TR>',
-          '<TR><TD ALIGN="right">Authorized&nbsp;by</TD><TD BGCOLOR="#ffffff">',
-          $cust_main->payinfo, '</TD></TR>',
-          '<TR><TD ALIGN="right">Expiration</TD><TD BGCOLOR="#ffffff">',
-          $cust_main->paydate, '</TD></TR>',
-    ;
-  }
-
-  print "</TABLE></TD></TR></TABLE>";
-
-}
-
-print '</TD></TR></TABLE>';
-
-if ( defined $cust_main->dbdef_table->column('comments')
-     && $cust_main->comments =~ /[^\s\n\r]/ )
-{
-  print "<BR>Comments". &ntable("#cccccc"). "<TR><TD>".
-        &ntable("#cccccc",2).
-        '<TR><TD BGCOLOR="#ffffff"><PRE>'.
-        encode_entities($cust_main->comments).
-        '</PRE></TD></TR></TABLE></TABLE>';
-}
-
 %>
 
-</TD></TR></TABLE>
+<A NAME="cust_main"></A>
+<%= &itable() %>
+<TR>
+  <TD VALIGN="top">
+    <%= include('cust_main/contacts.html', $cust_main ) %>
+  </TD>
+  <TD VALIGN="top">
+    <%= include('cust_main/misc.html', $cust_main ) %>
+    <% if ( $conf->config('payby-default') ne 'HIDE' ) { %>
+      <BR>
+      <%= include('cust_main/billing.html', $cust_main ) %>
+    <% } %>
+  </TD>
+</TR>
+</TABLE>
+
+<%
+if ( defined $cust_main->dbdef_table->column('comments')
+     && $cust_main->comments =~ /[^\s\n\r]/              ) {
+%>
+<BR>
+Comments
+<%= ntable("#cccccc") %><TR><TD><%= ntable("#cccccc",2) %>
+<TR>
+  <TD BGCOLOR="#ffffff">
+    <PRE><%= encode_entities($cust_main->comments) %></PRE>
+  </TD>
+</TR>
+</TABLE></TABLE>
+<% } %>
+
+<% if ( $conf->config('ticket_system') ) { %>
+  <BR>
+  <%= include('cust_main/tickets.html', $cust_main ) %>
+<% } %>
 
 <BR>
 <SCRIPT TYPE="text/javascript">
@@ -319,6 +123,15 @@ function enable_order_pkg () {
 <SELECT NAME="pkgpart" onChange="enable_order_pkg()"><OPTION>Order additional package
 
 <%
+
+my @agents = qsearch( 'agent', {} );
+my $agent;
+unless ( scalar(@agents) == 1 ) {
+  $agent = qsearchs('agent',{ 'agentnum' => $cust_main->agentnum } );
+} else {
+  $agent = $agents[0];
+}
+
 foreach my $part_pkg (
   qsearch( 'part_pkg', { 'disabled' => '' }, '',
            ' AND 0 < ( SELECT COUNT(*) FROM type_pkgs '.
@@ -330,7 +143,7 @@ foreach my $part_pkg (
 <OPTION VALUE="<%= $part_pkg->pkgpart %>"><%= $part_pkg->pkg %> - <%= $part_pkg->comment %>
 <% } %>
 
-</SELECT><INPUT NAME="submit" TYPE="submit" VALUE="Order Package" disabled></FORM><BR>
+</SELECT><INPUT NAME="submit" TYPE="submit" VALUE="Order Package" disabled></FORM>
 
 <%
 
@@ -364,7 +177,7 @@ if ( $conf->config('payby-default') ne 'HIDE' ) {
 }
 
 print qq!<A NAME="cust_pkg">Packages</A> !,
-      qq!( <A HREF="!, popurl(2), qq!edit/cust_pkg.cgi?$custnum">Order and cancel packages</A> (preserves services) )!,
+      qq!( <A HREF="!, popurl(2), qq!edit/cust_pkg.cgi?$custnum">Bulk order and cancel packages</A> (preserves services) )!,
 ;
 
 #begin display packages

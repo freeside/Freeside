@@ -1,0 +1,75 @@
+<%
+  my( $cust_main ) = @_;
+%>
+
+<%= ntable("#cccccc") %><TR><TD><%= &ntable("#cccccc",2) %>
+<TR>
+  <TD ALIGN="right">Customer&nbsp;number</TD>
+  <TD BGCOLOR="#ffffff"><%= $cust_main->custnum %></TD>
+</TR>
+
+<%
+  my @agents = qsearch( 'agent', {} );
+  my $agent;
+  unless ( scalar(@agents) == 1 ) {
+    $agent = qsearchs('agent',{ 'agentnum' => $cust_main->agentnum } );
+%>
+
+<TR>
+  <TD ALIGN="right">Agent</TD>
+  <TD BGCOLOR="#ffffff"><%= $agent->agentnum %>: <%= $agent->agent %></TD>
+</TR>
+
+<%
+  } else {
+    $agent = $agents[0];
+  }
+
+  my @referrals = qsearch( 'part_referral', {} );
+  unless ( scalar(@referrals) == 1 ) {
+    my $referral = qsearchs('part_referral', {
+      'refnum' => $cust_main->refnum
+    } );
+%>
+
+<TR>
+  <TD ALIGN="right">Advertising&nbsp;source</TD>
+  <TD BGCOLOR="#ffffff"><%= $referral->refnum %>: <%= $referral->referral%></TD>
+</TR>
+
+<% } %>
+
+<TR>
+  <TD ALIGN="right">Order taker</TD>
+  <TD BGCOLOR="#ffffff"><%= $cust_main->otaker %></TD>
+</TR>
+<TR>
+  <TD ALIGN="right">Referring&nbsp;Customer</TD>
+  <TD BGCOLOR="#ffffff">
+
+<%
+  my $referring_cust_main = '';
+  if ( $cust_main->referral_custnum
+       && ( $referring_cust_main =
+            qsearchs('cust_main', { custnum => $cust_main->referral_custnum } )
+          )
+     ) {
+%>
+
+<A HREF="<%= popurl(1) %>cust_main.cgi?<%= $cust_main->referral_custnum %>"><%=$cust_main->referral_custnum %>: 
+<%=
+  ( $referring_cust_main->company
+      ? $referring_cust_main->company. ' ('.
+          $referring_cust_main->last. ', '. $referring_cust_main->first.
+          ')'
+      : $referring_cust_main->last. ', '. $referring_cust_main->first
+  )
+%></A>
+
+<% } %>
+
+  </TD>
+</TR>
+
+</TABLE></TD></TR></TABLE>
+
