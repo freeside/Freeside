@@ -19,5 +19,7 @@ Run bin/create-history-tables
 
 Run bin/dbdef-create again
 
+Arrange for freeside-expiration-alerter to be run daily, if desired.
+
 Restart Apache and freeside-queued
 

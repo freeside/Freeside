@@ -191,6 +191,13 @@ httemplate/docs/config.html
   },
 
   {
+    'key'         => 'alerter_template',
+    'section'     => 'billing',
+    'description' => 'Template file for billing method expiration alerts.  See the <a href="../docs/billing.html#invoice_template">billing documentation</a> for details.',
+    'type'        => 'textarea',
+  },
+
+  {
     'key'         => 'apacheroot',
     'section'     => 'apache',
     'description' => 'The directory containing Apache virtual hosts',
@@ -489,6 +496,14 @@ httemplate/docs/config.html
 #    'section'     => 'required',
 #    'description' => 'Directory which contains domain registry information.  Each registry is a directory.',
 #  },
+
+  {
+    'key'         => 'report_template',
+    'section'     => 'required',
+    'description' => 'Required template file for reports.  See the <a href="../docs/billing.html">billing documentation</a> for details.',
+    'type'        => 'textarea',
+  },
+
 
   {
     'key'         => 'maxsearchrecordsperpage',

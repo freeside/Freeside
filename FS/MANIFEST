@@ -15,6 +15,7 @@ bin/freeside-receivables-report
 bin/freeside-tax-report
 bin/freeside-cc-receipts-report
 bin/freeside-credit-report
+bin/freeside-expiration-alerter
 FS.pm
 FS/CGI.pm
 FS/Conf.pm
