@@ -838,8 +838,8 @@ sub radius_reply {
       #$attrib =~ s/_/\-/g;
       ( $FS::raddb::attrib{lc($attrib)}, $self->getfield($column) );
     } grep { /^radius_/ && $self->getfield($_) } fields( $self->table );
-  if ( $self->ip && $self->ip ne '0e0' ) {
-    $reply{'Framed-IP-Address'} = $self->ip;
+  if ( $self->slipip && $self->slipip ne '0e0' ) {
+    $reply{'Framed-IP-Address'} = $self->slipip;
   }
   %reply;
 }
