@@ -25,11 +25,13 @@ function part_export_areyousure(href) {
 
     Services are items you offer to your customers.<BR><BR>
 
-<FORM METHOD="POST" ACTION="<%= $p %>edit/part_svc.cgi"><A HREF="<%= $p %>edit/part_svc.cgi"><I>Add a new service definition</I></A>&nbsp;or&nbsp;<SELECT NAME="clone"><OPTION></OPTION>
+<FORM METHOD="POST" ACTION="<%= $p %>edit/part_svc.cgi">
+<A HREF="<%= $p %>edit/part_svc.cgi"><I>Add a new service definition</I></A><% if ( @part_svc ) { %>&nbsp;or&nbsp;<SELECT NAME="clone"><OPTION></OPTION>
 <% foreach my $part_svc ( @part_svc ) { %>
   <OPTION VALUE="<%= $part_svc->svcpart %>"><%= $part_svc->svc %></OPTION>
 <% } %>
 </SELECT><INPUT TYPE="submit" VALUE="Clone existing service">
+<% } %>
 </FORM><BR>
 
 <%= $total %> services
