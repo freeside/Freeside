@@ -39,7 +39,7 @@ foreach my $export ( @exports ) {
     use vars qw($zone $username);
     $zone = $svc_www->domain_record->zone;
     $username = $svc_www->svc_acct->username;
-    print HTTPD_CONF eval(qq("$template"));
+    print HTTPD_CONF eval(qq("$template")). "\n\n";
   }
 
   my $user = $export->option('user');
