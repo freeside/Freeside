@@ -803,8 +803,8 @@ httemplate/docs/config.html
 
   {
     'key'         => 'vpopmailrestart',
-    'section'     => 'mail',
-    'description' => 'If defined, the shell commands to run on vpopmail machines after files are copied.  An example can be found in eg/vpopmailrestart of the source distribution.',
+    'section'     => 'deprecated',
+    'description' => '<b>DEPRECATED</b>, add a <i>vpopmail</i> <a href="../browse/part_export.cgi">export</a> instead.  This option used to define the shell commands to run on vpopmail machines after files are copied.  An example can be found in eg/vpopmailrestart of the source distribution.',
     'type'        => 'textarea',
   },
 
