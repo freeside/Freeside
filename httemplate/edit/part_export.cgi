@@ -68,9 +68,10 @@ my $widget = new HTML::Widgets::SelectLayers(
         $html .= '</SELECT>';
       } elsif ( $type eq 'textarea' ) {
         $html .= qq!<TEXTAREA NAME="$option" COLS=80 ROWS=8 WRAP="virtual">!.
-                 qq!$value</TEXTAREA>!;
+                 encode_entities($value). '</TEXTAREA>';
       } elsif ( $type eq 'text' ) {
-        $html .= qq!<INPUT TYPE="text" NAME="$option" VALUE="$value" SIZE=64>!;
+        $html .= qq!<INPUT TYPE="text" NAME="$option" VALUE="!.
+                 encode_entities($value). '" SIZE=64>';
       } elsif ( $type eq 'checkbox' ) {
         $html .= qq!<INPUT TYPE="checkbox" NAME="$option" VALUE="1"!;
         $html .= ' CHECKED' if $value;
