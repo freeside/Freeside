@@ -14,6 +14,8 @@ use FS::Conf;
 use FS::Record qw( qsearch qsearchs );
 use FS::cust_main_county;
 use FS::cust_main;
+use FS::cust_bill;
+use FS::cust_pkg;
 use FS::Msgcat qw(gettext);
 
 use vars qw( $opt $Debug );
@@ -24,6 +26,11 @@ my $user = shift or die &usage;
 &adminsuidsetup( $user ); 
 
 my $conf = new FS::Conf;
+
+if ($conf->exists('signup_server-quiet')) {
+    $FS::cust_bill::quiet = 1;
+    $FS::cust_pkg::quiet = 1;
+}
 
 #my @payby = qw(CARD PREPAY);
 my @payby = $conf->config('signup_server-payby');
@@ -136,7 +143,7 @@ while (1) {
 
       map { $_ => $signup_data->{$_} } qw(
         last first ss company address1 address2 city county state zip country
-        daytime night fax payby payinfo paydate payname referral_custnum
+        daytime night fax payby payinfo paydate payname referral_custnum comments
       ),
 
     } );

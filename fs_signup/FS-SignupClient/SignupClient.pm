@@ -56,6 +56,7 @@ FS::SignupClient - Freeside signup client API
     'payname'          => $payname,
     'invoicing_list'   => $invoicing_list,
     'referral_custnum' => $referral_custnum,
+    'comments'         => $comments,
     'pkgpart'          => $pkgpart,
     'username'         => $username,
     '_password'        => $password,
@@ -141,6 +142,7 @@ a paramater with the following keys:
   payname
   invoicing_list
   referral_custnum
+  comments
   pkgpart
   username
   _password
@@ -161,7 +163,7 @@ sub new_customer {
   my $signup_data = { map { $_ => $hashref->{$_} } qw(
     first last ss company address1 address2 city county state zip country
     daytime night fax payby payinfo paydate payname invoicing_list
-    referral_custnum pkgpart username _password sec_phrase popnum
+    referral_custnum comments pkgpart username _password sec_phrase popnum
   ) };
 
   $signup_data->{agentnum} = $hashref->{agentnum} if $hashref->{agentnum};
