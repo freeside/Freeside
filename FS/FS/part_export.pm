@@ -307,7 +307,7 @@ sub part_svc {
 
 =item svc_x
 
-Returns a list of associate FS::svc_* records.
+Returns a list of associated FS::svc_* records.
 
 =cut
 
