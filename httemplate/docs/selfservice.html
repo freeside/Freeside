@@ -23,7 +23,7 @@ Then:
   <li>Set the <a href="../config/config.cgi#unclassified"><i>signup_server-default_agentnum</i></a> configuration value to a default <a href="../browse/agent.cgi">agent number</a>.
   <li>Set the <a href="../config/config.cgi#unclassified"><i>signup_server-default_refnum</i></a> to a default <a href="../browse/part_referral.cgi">advertising source</a>.
   <li>Add the user `freeside' to the the external machine.
-  <li>Copy or symlink the <pre>fs_signup/FS-SelfService/cgi/</pre> directory into the web server's document space, for customer self-service and reseller access.  Optionally, customize the .html templates.
+  <li>Copy or symlink the <pre>fs_selfservice/FS-SelfService/cgi/</pre> directory into the web server's document space, for customer self-service and reseller access.  Optionally, customize the .html templates.
   <li>Copy or symlink the <pre>fs_signup/FS-SignupClient/cgi/</pre> directory into the web server's document space, for signups. Optionally, customize the .html templates.
   <li>When linking to signup.cgi, you can include a referring custnum in the URL as follows: <code>http://public.web.server/path/signup.cgi?ref=1542</code>
   <li>Enable CGI execution for files with the `.cgi' extension.  (with <a href="http://www.apache.org/docs/mod/mod_mime.html#addhandler">Apache</a>)
