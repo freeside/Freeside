@@ -1335,7 +1335,8 @@ sub collect {
       my $cust_bill_event = new FS::cust_bill_event {
         'invnum'     => $cust_bill->invnum,
         'eventpart'  => $part_bill_event->eventpart,
-        '_date'      => $invoice_time,
+        #'_date'      => $invoice_time,
+        '_date'      => time,
         'status'     => $status,
         'statustext' => $statustext,
       };
