@@ -351,7 +351,7 @@ sub unsuspend {
 =item part_pkg
 
 Returns the definition for this billing item, as an FS::part_pkg object (see
-L<FS::part_pkg).
+L<FS::part_pkg>).
 
 =cut
 
@@ -490,7 +490,7 @@ sub order {
 
 =head1 VERSION
 
-$Id: cust_pkg.pm,v 1.1 1999-08-04 09:03:53 ivan Exp $
+$Id: cust_pkg.pm,v 1.2 1999-08-04 11:50:41 ivan Exp $
 
 =head1 BUGS
 
