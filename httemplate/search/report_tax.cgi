@@ -40,19 +40,29 @@ foreach my $r (
     $label = $r->county." county, $label" if $r->county;
   }
 
-  my $fromwhere = "
-    FROM cust_bill_pkg
-      JOIN cust_bill USING ( invnum ) 
-      JOIN cust_main USING ( custnum )
-      LEFT OUTER JOIN cust_pkg USING ( pkgnum )
-      LEFT OUTER JOIN part_pkg USING ( pkgpart )
+  my $join_pkg = "
+      JOIN cust_pkg USING ( pkgnum )
+      JOIN part_pkg USING ( pkgpart )
+  ";
+
+  my $where = "
     WHERE _date >= $beginning AND _date <= $ending
       AND ( county  = ? OR ? = '' )
       AND ( state   = ? OR ? = '' )
       AND ( country = ? )
       AND payby != 'COMP'
   ";
-  my @param = qw( county county state state country ); # taxclass);
+
+  my $taxwhere = my $fromwhere = "
+    FROM cust_bill_pkg
+      JOIN cust_bill USING ( invnum ) 
+      JOIN cust_main USING ( custnum )
+  ";
+
+  $fromwhere .= $join_pkg. $where;
+  $taxwhere .= $where;
+
+  my @taxparam = my @param = qw( county county state state country );
 
   my $num_others = 
     scalar_sql( $r, [qw( country state state county county taxname taxname )], 
@@ -111,8 +121,8 @@ foreach my $r (
 
   #match itemdesc if necessary!
   my $named_tax = $r->taxname ? 'AND itemdesc = '. dbh->quote($r->taxname) : '';
-  my $x = scalar_sql($r, \@param,
-    "SELECT SUM(cust_bill_pkg.setup+cust_bill_pkg.recur) $fromwhere ".
+  my $x = scalar_sql($r, \@taxparam,
+    "SELECT SUM(cust_bill_pkg.setup+cust_bill_pkg.recur) $taxwhere ".
     "AND pkgnum = 0 $named_tax",
   );
   $tax += $x;
