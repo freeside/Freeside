@@ -220,7 +220,7 @@ sub vpopmail_sync {
   eval "use Net::SSH;";
   die $@ if $@;
 
-  ssh("vpopmail\@$machine", $restart);
+  ssh("vpopmail\@$machine", $restart) if $restart;
 }
 
 
