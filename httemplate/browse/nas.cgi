@@ -45,6 +45,7 @@ foreach my $nas ( sort { $a->nasnum <=> $b->nasnum } qsearch( 'nas', {} ) ) {
   print "</TABLE><BR>";
 }
 
+#Time::Duration??
 sub pretty_interval {
   my $interval = shift;
   my %howlong = (

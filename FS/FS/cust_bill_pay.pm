@@ -125,12 +125,16 @@ sub insert {
 
 =item delete
 
-Currently unimplemented (accounting reasons).
+Deletes this payment application, unless the closed flag for the parent payment
+(see L<FS::cust_pay>) is set.
 
 =cut
 
 sub delete {
-  return "Can't (yet?) delete cust_bill_pay records!";
+  my $self = shift;
+  return "Can't delete application for closed payment"
+    if $self->cust_pay->closed =~ /^Y/i;
+  $self->SUPER::delete(@_);
 }
 
 =item replace OLD_RECORD
@@ -195,7 +199,7 @@ sub cust_bill {
 
 =head1 VERSION
 
-$Id: cust_bill_pay.pm,v 1.11 2002-01-24 16:58:47 ivan Exp $
+$Id: cust_bill_pay.pm,v 1.12 2002-02-07 22:29:34 ivan Exp $
 
 =head1 BUGS
 

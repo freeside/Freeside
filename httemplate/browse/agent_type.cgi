@@ -1,4 +1,4 @@
-<!-- $Id: agent_type.cgi,v 1.7 2002-01-30 14:18:08 ivan Exp $ -->
+<!-- $Id: agent_type.cgi,v 1.8 2002-02-07 22:29:34 ivan Exp $ -->
 <%
 
 print header("Agent Type Listing", menubar(
@@ -7,7 +7,7 @@ print header("Agent Type Listing", menubar(
     " particular agents.<BR><BR>", &table(), <<END;
       <TR>
         <TH COLSPAN=2>Agent Type</TH>
-        <TH COLSPAN="2">Packages</TH>
+        <TH COLSPAN=2>Packages</TH>
       </TR>
 END
 
@@ -47,7 +47,7 @@ END
 }
 
 print <<END;
-  <TR><TD COLSPAN=2><I><A HREF="${p}edit/agent_type.cgi">Add a new agent type</A></I></TD></TR>
+  <TR><TD COLSPAN=4><I><A HREF="${p}edit/agent_type.cgi">Add a new agent type</A></I></TD></TR>
     </TABLE>
   </BODY>
 </HTML>

@@ -1,4 +1,4 @@
-<!-- $Id: cust_main.cgi,v 1.19 2002-01-30 14:18:09 ivan Exp $ -->
+<!-- $Id: cust_main.cgi,v 1.20 2002-02-07 22:29:35 ivan Exp $ -->
 <%
 
 my $conf = new FS::Conf;
@@ -324,6 +324,16 @@ print "</TR>";
 #formatting
 print "</TABLE>";
 
+print <<END;
+<SCRIPT>
+function areyousure(href) {
+    if (confirm("Are you sure you want to delete this payment?")
+ == true)
+        window.location.href = href;
+}
+</SCRIPT>
+END
+
 #formatting
 print qq!<BR><BR><A NAME="history">Payment History!.
       qq!</A> ( !.
@@ -371,8 +381,11 @@ foreach my $bill (@bills) {
     my $target = "$payby$payinfo";
     $payby =~ s/^BILL$/Check #/ if $payinfo;
     $payby =~ s/^(CARD|COMP)$/$1 /;
+    my $delete = $payment->closed !~ /^Y/i && $conf->exists('deletepayments')
+                   ? qq! (<A HREF="javascript:areyousure('${p}misc/delete-cust_pay.cgi?!. $payment->paynum. qq!')">delete</A>)!
+                   : '';
     push @history,
-      "$date\tPayment, Invoice #$invnum ($payby$payinfo)\t\t$paid\t\t\t$target";
+      "$date\tPayment, Invoice #$invnum ($payby$payinfo)$delete\t\t$paid\t\t\t$target";
   }
 
   my(@cust_credit_bill)=
@@ -430,11 +443,15 @@ foreach my $payment (@unapplied_payments) {
   my $target = "$payby$payinfo";
   $payby =~ s/^BILL$/Check #/ if $payinfo;
   $payby =~ s/^(CARD|COMP)$/$1 /;
+  my $delete = $payment->closed !~ /^Y/i && $conf->exists('deletepayments')
+                 ? qq! (<A HREF="javascript:areyousure('${p}misc/delete-cust_pay.cgi?!. $payment->paynum. qq!')">delete</A>)!
+                 : '';
   push @history,
     $payment->_date. "\t".
-    '<A HREF="'. popurl(2). 'edit/cust_bill_pay.cgi?'. $payment->paynum. '">'.
     '<b><font size="+1" color="#ff0000">Unapplied payment #' .
-    $payment->paynum . " ($payby$payinfo)</font></b></A>".
+    $payment->paynum . " ($payby$payinfo)</font></b> ".
+    '(<A HREF="'. popurl(2). 'edit/cust_bill_pay.cgi?'. $payment->paynum. '">'.
+    "apply</A>)$delete".
     "\t\t" . $payment->unapplied . "\t\t\t$target";
 }
 

@@ -211,14 +211,44 @@ sub upgrade_replace { #1.3.x->1.4.x
 
 =item delete
 
-Currently unimplemented (accounting reasons).
+Deletes this payment and all associated applications (see L<FS::cust_bill_pay>),
+unless the closed flag is set.
 
 =cut
 
 sub delete {
   my $self = shift;
   return "Can't delete closed payment" if $self->closed =~ /^Y/i;
-  $self->SUPER::delete(@_);
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  foreach my $cust_bill_pay ( $self->cust_bill_pay ) {
+    my $error = $cust_bill_pay->delete;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
+  my $error = $self->SUPER::delete(@_);
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+  '';
+
 }
 
 =item replace OLD_RECORD
@@ -318,7 +348,7 @@ sub unapplied {
 
 =head1 VERSION
 
-$Id: cust_pay.pm,v 1.15 2002-01-29 16:33:15 ivan Exp $
+$Id: cust_pay.pm,v 1.16 2002-02-07 22:29:34 ivan Exp $
 
 =head1 BUGS
 

@@ -268,6 +268,13 @@ httemplate/docs/config.html
   },
 
   {
+    'key'         => 'deletepayments',
+    'section'     => 'UI',
+    'description' => 'Enable deletion of unclosed payments.  Be very careful!  Only delete payments that were data-entry errors, not adjustments.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'dirhash',
     'section'     => 'shell',
     'description' => 'Optional numeric value to control directory hashing.  If positive, hashes directories for the specified number of levels from the front of the username.  If negative, hashes directories for the specified number of levels from the end of the username.  Some examples: <ul><li>1: user -> <a href="#home">/home</a>/u/user<li>2: user -> <a href="#home">/home</a>/u/s/user<li>-1: user -> <a href="#home">/home</a>/r/user<li>-2: user -> <a href="#home">home</a>/r/e/user</ul>',
