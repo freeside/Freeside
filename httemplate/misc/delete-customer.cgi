@@ -1,9 +1,12 @@
 <%
 #
-# $Id: delete-customer.cgi,v 1.1 2001-07-30 07:36:04 ivan Exp $
+# $Id: delete-customer.cgi,v 1.2 2001-08-11 04:15:14 ivan Exp $
 #
 # $Log: delete-customer.cgi,v $
-# Revision 1.1  2001-07-30 07:36:04  ivan
+# Revision 1.2  2001-08-11 04:15:14  ivan
+# better docs
+#
+# Revision 1.1  2001/07/30 07:36:04  ivan
 # templates!!!
 #
 # Revision 1.1  1999/04/15 16:44:36  ivan
@@ -53,7 +56,11 @@ if ( qsearch('cust_pkg', { 'custnum' => $custnum, 'cancel' => '' } ) ) {
 }
 
 print <<END;
-This will <b>completely remove</b> all traces of this customer record.
+This will <b>completely remove</b> all traces of this customer record.  This
+is <B>not</B> what you want if this is a real customer who has simply
+canceled service with you.  For that, cancel all of the customer's packages.
+(you can optionally hide cancelled customers with the <a href="../docs/config.html#hidecancelledcustomers">hidecancelledcustomers</a> configuration file)
+<br>
 <br>Are you <b>absolutely sure</b> you want to delete this customer?
 <br><input type="submit" value="Yes">
 </form></body></html>
