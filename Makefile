@@ -152,8 +152,7 @@ create-database:
 
 create-config: install-perl-modules
 	[ -e ${FREESIDE_CONF} ] && mv ${FREESIDE_CONF} ${FREESIDE_CONF}.`date +%Y%m%d%H%M%S` || true
-	mkdir ${FREESIDE_CONF}
-	chown freeside ${FREESIDE_CONF}
+	install -d -o freeside ${FREESIDE_CONF}
 
 	touch ${FREESIDE_CONF}/secrets
 	chown freeside ${FREESIDE_CONF}/secrets
