@@ -1,7 +1,7 @@
 package FS::cust_svc;
 
 use strict;
-use vars qw( @ISA );
+use vars qw( @ISA $ignore_quantity );
 use Carp qw( cluck );
 use FS::Record qw( qsearch qsearchs dbh );
 use FS::cust_pkg;
@@ -16,6 +16,8 @@ use FS::domain_record;
 use FS::part_export;
 
 @ISA = qw( FS::Record );
+
+$ignore_quantity = 0;
 
 sub _cache {
   my $self = shift;
@@ -229,7 +231,7 @@ sub check {
     });
     return "Already ". scalar(@cust_svc). " ". $part_svc->svc.
            " services for pkgnum ". $self->pkgnum
-      if scalar(@cust_svc) >= $quantity;
+      if scalar(@cust_svc) >= $quantity && (!$ignore_quantity || !$quantity);
   }
 
   ''; #no error
