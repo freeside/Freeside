@@ -33,7 +33,10 @@
 # lose background, FS::CGI ivan@sisd.com 98-sep-2
 #
 # $Log: cust_main.cgi,v $
-# Revision 1.2  1998-11-13 11:28:08  ivan
+# Revision 1.3  1998-11-15 13:14:20  ivan
+# first pass as per-customer custom pricing
+#
+# Revision 1.2  1998/11/13 11:28:08  ivan
 # s/CGI-modules/CGI.pm/;, relative URL's with popurl
 #
 
@@ -203,7 +206,12 @@ foreach $package (@packages) {
         $pref->{pkgnum}, qq!">!, 
         $pref->{pkgnum}, qq!</A></FONT></TD>!,
         "<TD><FONT SIZE=-1>", $part_pkg->getfield('pkg'), " - ",
-        $part_pkg->getfield('comment'), "</FONT></TD>",
+        $part_pkg->getfield('comment'), 
+          qq!<FORM ACTION="!, popurl(2), qq!/edit/part_pkg.cgi" METHOD=POST>!,
+          qq!<INPUT TYPE="hidden" NAME="clone" VALUE="!, $part_pkg->pkgpart, qq!">!,
+          qq!<INPUT TYPE="hidden" NAME="pkgnum" VALUE="!, $package->pkgnum, qq!">!,
+          qq!<INPUT TYPE="submit" VALUE="Customize Pricing">!,
+          "</FORM></FONT></TD>",
         "<TD><FONT SIZE=-1>", 
         $pref->{setup} ? time2str("%D",$pref->{setup} ) : "" ,
         "</FONT></TD>",
