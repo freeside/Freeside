@@ -1,7 +1,7 @@
 package FS::svc_Common;
 
 use strict;
-use vars qw( @ISA );
+use vars qw( @ISA $noexport_hack );
 use FS::Record qw( qsearchs fields dbh );
 use FS::cust_svc;
 use FS::part_svc;
@@ -85,6 +85,18 @@ sub insert {
     return $error;
   }
 
+  #new-style exports!
+  unless ( $noexport_hack ) {
+    foreach my $part_export ( $self->cust_svc->part_svc->part_export ) {
+      my $error = $part_export->export_insert($self);
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "exporting to ". $part_export->exporttype.
+               " (transaction rolled back): $error";
+      }
+    }
+  }
+
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
   '';
@@ -112,15 +124,80 @@ sub delete {
 
   my $svcnum = $self->svcnum;
 
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
   $error = $self->SUPER::delete;
+  return $error if $error;
+
+  #new-style exports!
+  unless ( $noexport_hack ) {
+    foreach my $part_export ( $self->cust_svc->part_svc->part_export ) {
+      my $error = $part_export->export_delete($self);
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "exporting to ". $part_export->exporttype.
+               " (transaction rolled back): $error";
+      }
+    }
+  }
+
   return $error if $error;
 
   my $cust_svc = $self->cust_svc;
   $error = $cust_svc->delete;
   return $error if $error;
 
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
   '';
 }
+
+=item replace OLD_RECORD
+
+Replaces OLD_RECORD with this one.  If there is an error, returns the error,
+otherwise returns false.
+
+=cut
+
+sub replace {
+  my ($new, $old) = (shift, shift);
+  my $error;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $error = $new->SUPER::replace($old);
+  if ($error) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  #new-style exports!
+  unless ( $noexport_hack ) {
+    foreach my $part_export ( $new->cust_svc->part_svc->part_export ) {
+      my $error = $part_export->export_replace($new,$old);
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "exporting to ". $part_export->exporttype.
+               " (transaction rolled back): $error";
+      }
+    }
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  '';
+}
+
 
 =item setfixed
 
@@ -215,7 +292,7 @@ sub cancel { ''; }
 
 =head1 VERSION
 
-$Id: svc_Common.pm,v 1.8 2002-03-18 16:05:35 ivan Exp $
+$Id: svc_Common.pm,v 1.9 2002-05-31 00:18:56 khoff Exp $
 
 =head1 BUGS
 

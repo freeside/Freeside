@@ -235,18 +235,6 @@ sub insert {
     }
   }
 
-  #new-style exports!
-  unless ( $noexport_hack ) {
-    foreach my $part_export ( $self->cust_svc->part_svc->part_export ) {
-      my $error = $part_export->export_insert($self);
-      if ( $error ) {
-        $dbh->rollback if $oldAutoCommit;
-        return "exporting to ". $part_export->exporttype.
-               " (transaction rolled back): $error";
-      }
-    }
-  }
-
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   ''; #no error
 }
@@ -340,18 +328,6 @@ sub delete {
     return $error;
   }
 
-  #new-style exports!
-  unless ( $noexport_hack ) {
-    foreach my $part_export ( $part_svc->part_export ) {
-      my $error = $part_export->export_delete($self);
-      if ( $error ) {
-        $dbh->rollback if $oldAutoCommit;
-        return "exporting to ". $part_export->exporttype.
-               " (transaction rolled back): $error";
-      }
-    }
-  }
-
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
 }
@@ -434,18 +410,6 @@ sub replace {
       }
     }
 
-  }
-
-  #new-style exports!
-  unless ( $noexport_hack ) {
-    foreach my $part_export ( $new->cust_svc->part_svc->part_export ) {
-      my $error = $part_export->export_replace($new,$old);
-      if ( $error ) {
-        $dbh->rollback if $oldAutoCommit;
-        return "exporting to ". $part_export->exporttype.
-               " (transaction rolled back): $error";
-      }
-    }
   }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;

@@ -282,6 +282,7 @@ sub delete {
       return $error;
     }
   }
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 }
 
 =item replace OLD_RECORD
@@ -298,8 +299,8 @@ sub replace {
   return "Can't change domain - reorder."
     if $old->getfield('domain') ne $new->getfield('domain'); 
 
-  $new->SUPER::replace($old);
-
+  my $error = $new->SUPER::replace($old);
+  return $error if $error;
 }
 
 =item suspend
@@ -450,7 +451,7 @@ sub submit_internic {
 
 =head1 VERSION
 
-$Id: svc_domain.pm,v 1.29 2002-05-22 18:44:01 ivan Exp $
+$Id: svc_domain.pm,v 1.30 2002-05-31 00:18:57 khoff Exp $
 
 =head1 BUGS
 
