@@ -73,11 +73,13 @@ sub config {
   my $fh = new IO::File "<$dir/$file" or return;
   if ( wantarray ) {
     map {
-      /^(.*)$/ or die "Illegal line in $dir/$file:\n$_\n";
+      /^(.*)$/
+        or die "Illegal line (array context) in $dir/$file:\n$_\n";
       $1;
     } <$fh>;
   } else {
-    <$fh> =~ /^(.*)$/ or die "Illegal line in $dir/$file:\n$_\n";
+    <$fh> =~ /^(.*)$/
+      or die "Illegal line (scalar context) in $dir/$file:\n$_\n";
     $1;
   }
 }
@@ -112,7 +114,10 @@ Ivan Kohler <ivan@sisd.com> 98-sep-6
 sub exists forgot to fetch $dir ivan@sisd.com 98-sep-27
 
 $Log: Conf.pm,v $
-Revision 1.3  1999-03-29 01:29:33  ivan
+Revision 1.4  1999-05-11 10:09:13  ivan
+try to diagnose strange multiple-line problem
+
+Revision 1.3  1999/03/29 01:29:33  ivan
 die unless the configuration directory exists
 
 Revision 1.2  1998/11/13 04:08:44  ivan
