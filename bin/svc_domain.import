@@ -1,6 +1,8 @@
 #!/usr/bin/perl -w
 #
-# $Id: svc_domain.import,v 1.5 2002-04-30 05:43:34 ivan Exp $
+# $Id: svc_domain.import,v 1.6 2002-05-20 11:02:47 ivan Exp $
+
+#need to manually put header in /usr/local/etc/freeside/export.<datasrc./bind/<machine>/named.conf.HEADER
 
 use strict;
 use vars qw( %d_part_svc );
