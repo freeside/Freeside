@@ -1,7 +1,7 @@
 #!/bin/sh
 
 
-wget --passive-ftp ftp://apt-rpm.tuxfamily.org/apt/redhat/9/en/i386/RPMS.extra/apt-*i386.rpm
+wget --passive-ftp --continue ftp://apt-rpm.tuxfamily.org/apt/redhat/9/en/i386/RPMS.extra/apt-*i386.rpm
 rpm -i apt*i386.rpm
 cp sources.list /etc/apt/
 apt-get update; apt-get update
@@ -9,8 +9,11 @@ apt-get update; apt-get update
 
 apt-get install perl-Devel-Symdump perl-BSD-Resource
 
-wget --passive-ftp http://reb00t.com/linux/RPMS/redhat-9/apache/apache-1.3.28-0.n0i.src.rpm http://reb00t.com/linux/RPMS/redhat-9/mm/mm-1.2.1-0.n0i.i686.rpm http://reb00t.com/linux/RPMS/redhat-9/mm/mm-devel-1.2.1-0.n0i.i686.rpm
+wget --passive-ftp --continue http://reb00t.com/linux/RPMS/redhat-9/apache/apache-1.3.28-0.n0i.src.rpm http://reb00t.com/linux/RPMS/redhat-9/mm/mm-1.2.1-0.n0i.i686.rpm http://reb00t.com/linux/RPMS/redhat-9/mm/mm-devel-1.2.1-0.n0i.i686.rpm
 rpm -i mm-1.2.1-0.n0i.i686.rpm mm-devel-1.2.1-0.n0i.i686.rpm apache-1.3.28-0.n0i.src.rpm
+
+install -d /usr/src/redhat
+for a in BUILD RPMS SOURCES SPECS SRPMS; do mkdir /usr/src/redhat/$a; done
 
 cd /usr/src/redhat/SPECS  
 rpmbuild -ba apache.spec
