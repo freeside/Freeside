@@ -10,7 +10,7 @@
 use DBI;
 use strict;
 use CGI;
-use FS::TestAdminClient qw(authenticate list_packages list_mailboxes delete_mailbox password_mailbox add_mailbox list_forwards list_pkg_forwards delete_forward add_forward);
+use FS::MailAdminClient qw(authenticate list_packages list_mailboxes delete_mailbox password_mailbox add_mailbox list_forwards list_pkg_forwards delete_forward add_forward);
 
 my $sessionfile = '/usr/local/apache/htdocs/mailadmin/adminsess';   # session file
 my $tmpdir = '/usr/local/apache/htdocs/mailadmin/tmp';		# Location to store temp files
