@@ -899,7 +899,7 @@ sub fields {
   }
   #croak "Usage: \@fields = fields(\$table)\n   or: \@fields = \$record->fields" unless $table;
   my($table_obj) = $dbdef->table($table);
-  croak "Unknown table $table" unless $table_obj;
+  confess "Unknown table $table" unless $table_obj;
   $table_obj->columns;
 }
 
@@ -993,7 +993,7 @@ sub DESTROY { return; }
 
 =head1 VERSION
 
-$Id: Record.pm,v 1.27 2001-09-11 00:08:18 ivan Exp $
+$Id: Record.pm,v 1.28 2001-09-14 18:05:16 ivan Exp $
 
 =head1 BUGS
 
