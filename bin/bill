@@ -1,88 +1,4 @@
-#!/usr/local/bin/perl -Tw
-#
-# bill: Bill customer(s)
-#
-# Usage: bill [ -c [ i ] ] [ -d 'date' ] [ -b ]
-#
-# Bills all customers.
-#
-# Adds record to /dbin/cust_bill and /dbin/cust_pay (if payment made -
-# CARD & COMP), prints invoice / charges card etc.
-#
-# -c: Turn on collecting (you probably want this).
-#
-# -i: real-time billing (as opposed to batch billing).  only relevant
-#     for credit cards.
-#
-# -d: Pretent it's 'date'.  Date is in any format Date::Parse is happy with,
-#     but be careful.
-#
-# ## n/a ## -b: send batch when done billing
-#
-# ivan@voicenet.com sep/oct 96
-#
-# separated billing and collections, cleaned up code.
-# ivan@voicenet.com 96-nov-11
-#
-# added -d option
-# ivan@voicenet.com 96-nov-13
-#
-# added -v option and started to implement it, added 'd:' to getopts call
-#  (oops!)
-# ivan@voicenet.com 97-jan-2
-#
-# added more debug messages, moved some searches to fssearch.pl library (for 
-# speed)
-# rewrote "all customer" finder to know about bill dates, for speed.
-# ivan@voicenet.com 97-jan-8
-#
-# thought about it a while, and removed passing of the -d option to collect...?
-# ivan@voicenet.com 97-jan-14
-#
-# make all -v stuff STDERR 
-# ivan@voicenet.com 97-feb-4
-#
-# added pkgnum as argument to program from /db/part_pkg, with kludge for the
-# "/bin/echo XX" 's already there.
-# ivan@voicenet.com 97-feb-23
-#
-# - general cleanup
-# - customers who are suspended can still be billed for the setup fee
-# - cust_pkg record is re-read after the package setup fee program is run.
-#   this way,
-#   that program can modify the record (for example, to start accounts off
-#   suspended)
-#   (best to think four or five times before modifying anything else!)
-# ivan@voicenet.com 97-feb-26
-#
-# don't bill recurring fee if its not time! (was removed)
-# ivan@voicenet.com 97-mar-6
-#
-# added -b option, send batch when done billing.
-# ivan@voicenet.com 97-apr-4
-#
-#insecure dependency on line 179ish below needs to be fixed before bill is
-#used setuid
-# ivan@voicenet.com 97-jun-2
-#
-# removed running of setup program (depriciated)
-# ivan@voicenet.com 97-jul-21
-#
-# rewrote for new API, removed option to specify custnums (use FS::Bill 
-# instead), removed -v option (?)
-# ivan@voicenet.com 97-jul-22 - 23 - 25 -28
-# (need to add back in email stuff, look in /home/ivan/old/dbin/collect)
-#
-# s/suidsetup/adminsuidsetup/, s/FS::Search/FS::Record/, added some batch
-# exporting stuff (which still needs to be generalized) and removed &idiot
-# ivan@sisd.com 98-may-27
-#
-# $Log: bill,v $
-# Revision 1.4  1998-11-07 08:21:26  ivan
-# missing use
-#
-
-# setup
+#!/usr/bin/perl -Tw
 
 use strict;
 use Fcntl qw(:flock);
@@ -92,14 +8,12 @@ use FS::UID qw(adminsuidsetup swapuid);
 use FS::Record qw(qsearch qsearchs);
 use FS::cust_main;
 
-my($batchfile)="/var/spool/freeside/batch";
-my($batchlock)="/var/spool/freeside/batch.lock";
-
-adminsuidsetup;
-
 &untaint_argv;	#what it sounds like  (eww)
 use vars qw($opt_b $opt_c $opt_i $opt_d);
 getopts("bcid:");	#switches
+my $user = shift or die &usage;
+
+adminsuidsetup $user;
 
 #we're at now now (and later).
 my($time)= $main::opt_d ? str2time($main::opt_d) : $^T;
@@ -123,8 +37,6 @@ foreach $cust_main (
 
   print "Billing customer #" . $cust_main->getfield('custnum') . "\n";
 
-  bless($cust_main,"FS::cust_main");
-
   my($error);
 
   $error=$cust_main->bill('time'=>$time);
@@ -144,44 +56,6 @@ foreach $cust_main (
 
 }
 
-#if ($main::opt_b) {
-#
-#  die "Batch still waiting for reply? ($batchlock exists)\n" if -e $batchlock;
-#  open(BATCHLOCK,"+>>$batchlock") or die "Can't open $batchlock: $!";
-#  select(BATCHLOCK); $|=1; select(STDOUT);
-#  unless ( flock(BATCHLOCK,,LOCK_EX|LOCK_NB) ) {
-#    seek(BATCHLOCK,0,0);
-#    my($pid)=<BATCHLOCK>;
-#    chop($pid);
-#    die "Is a batch running? (pid $pid)\n";
-#  }
-#  seek(BATCHLOCK,0,0);
-#  print BATCHLOCK $$,"\n";
-#
-#  ( open(BATCH,">$batchfile")
-#    and flock(BATCH,LOCK_EX|LOCK_NB)
-#  ) or die "Can't open $batchfile: $!";
-#
-#  my($cust_pay_batch);
-#  foreach $cust_pay_batch (qsearch('cust_pay_batch',{})) {
-#    print BATCH join(':',
-#      $_->getfield('cardnum'),
-#      $_->getfield('exp'),
-#      $_->getfield('amount'),
-#      $_->getfield('payname')
-#        || $_->getfield('first'). ' '. $_->getfield('last'),
-#      "Description",
-#      $_->getfield('zip'),
-#    ),"\n";
-#  }
-#
-#  flock(BATCH,LOCK_UN);
-#  close BATCH;
-#
-#  flock(BATCHLOCK,LOCK_UN);
-#  close BATCHLOCK;
-#}
-
 # subroutines
 
 sub untaint_argv {
@@ -190,4 +64,107 @@ sub untaint_argv {
     $ARGV[$_]=$1;
   }
 }
+
+sub usage {
+  die "Usage:\n\n  bill [ -c [ i ] ] [ -d 'date' ] [ -b ] user\n";
+}
+
+=head1 NAME
+
+bill - Command line (crontab, script) interface to customer billing.
+
+=head1 SYNOPSIS
+
+  bill [ -c [ i ] ] [ -d 'date' ] user
+
+=head1 DESCRIPTION
+
+Bills all customers.  Searches for customers who are due for billing and calls
+the bill and collect methods of a cust_main object.  See L<FS::cust_main>.
+
+-c: Turn on collecting (you probably want this).
+
+-i: real-time billing (as opposed to batch billing).  only relevant
+    for credit cards.
+
+-d: Pretent it's 'date'.  Date is in any format Date::Parse is happy with,
+    but be careful.
+
+user: From the mapsecrets file - see config.html from the base documentation
+
+=head1 BUGS
+
+=head1 SEE ALSO
+
+L<FS::cust_main>, config.html from the base documentation
+
+=head1 HISTORY
+
+ivan@voicenet.com sep/oct 96
+
+separated billing and collections, cleaned up code.
+ivan@voicenet.com 96-nov-11
+
+added -d option
+ivan@voicenet.com 96-nov-13
+
+added -v option and started to implement it, added 'd:' to getopts call
+  (oops!)
+ivan@voicenet.com 97-jan-2
+
+added more debug messages, moved some searches to fssearch.pl library (for 
+speed)
+rewrote "all customer" finder to know about bill dates, for speed.
+ivan@voicenet.com 97-jan-8
+
+thought about it a while, and removed passing of the -d option to collect...?
+ivan@voicenet.com 97-jan-14
+
+make all -v stuff STDERR 
+ivan@voicenet.com 97-feb-4
+
+added pkgnum as argument to program from /db/part_pkg, with kludge for the
+"/bin/echo XX" 's already there.
+ivan@voicenet.com 97-feb-23
+
+- general cleanup
+- customers who are suspended can still be billed for the setup fee
+- cust_pkg record is re-read after the package setup fee program is run.
+  this way,
+  that program can modify the record (for example, to start accounts off
+  suspended)
+  (best to think four or five times before modifying anything else!)
+ivan@voicenet.com 97-feb-26
+
+don't bill recurring fee if its not time! (was removed)
+ivan@voicenet.com 97-mar-6
+
+added -b option, send batch when done billing.
+ivan@voicenet.com 97-apr-4
+
+insecure dependency on line 179ish below needs to be fixed before bill is
+used setuid
+ivan@voicenet.com 97-jun-2
+
+removed running of setup program (depriciated)
+ivan@voicenet.com 97-jul-21
+
+rewrote for new API, removed option to specify custnums (use FS::Bill 
+instead), removed -v option (?)
+ivan@voicenet.com 97-jul-22 - 23 - 25 -28
+(need to add back in email stuff, look in /home/ivan/old/dbin/collect)
+
+s/suidsetup/adminsuidsetup/, s/FS::Search/FS::Record/, added some batch
+exporting stuff (which still needs to be generalized) and removed &idiot
+ivan@sisd.com 98-may-27
+
+$Log: bill,v $
+Revision 1.5  1998-11-15 02:51:21  ivan
+adminsuidsetup needs user, pod, cleanup
+
+Revision 1.4  1998/11/07 08:21:26  ivan
+missing use
+
+=cut
+
 
