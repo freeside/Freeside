@@ -17,43 +17,58 @@
 #       bmccane@maxbaud.net     98-apr-3
 #
 # display total, use FS::CGI ivan@sisd.com 98-jul-17
+#
+# $Log: cust_main.cgi,v $
+# Revision 1.2  1998-11-12 08:10:22  ivan
+# CGI.pm instead of CGI-modules
+# relative URLs using popurl
+# got rid of lots of little tables
+# s/agrep/String::Approx/;
+# bubble up packages and services and link (slow)
+#
 
 use strict;
-use CGI::Request;
+use vars qw(%ncancelled_pkgs %all_pkgs);
+use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use IO::Handle;
-use IPC::Open2;
+use String::Approx qw(amatch);
 use FS::UID qw(cgisuidsetup);
 use FS::Record qw(qsearch qsearchs);
-use FS::CGI qw(header idiot);
+use FS::CGI qw(header menubar idiot popurl table);
+use FS::cust_main;
 
-my($fuzziness)=2; #fuzziness for fuzzy searches, see man agrep
-                  #0-4: 0=no fuzz, 4=very fuzzy (too much fuzz!)
-
-my($req)=new CGI::Request;
-&cgisuidsetup($req->cgi);
+my($cgi)=new CGI;
+cgisuidsetup($cgi);
 
 my(@cust_main);
 my($sortby);
 
-my($query)=$req->cgi->var('QUERY_STRING');
-if ( $query eq 'custnum' ) {
-  $sortby=\*custnum_sort;
-  @cust_main=qsearch('cust_main',{});  
-} elsif ( $query eq 'last' ) {
-  $sortby=\*last_sort;
-  @cust_main=qsearch('cust_main',{});  
-} elsif ( $query eq 'company' ) {
-  $sortby=\*company_sort;
-  @cust_main=qsearch('cust_main',{});  
+if ( $cgi->keywords ) {
+  my($query)=$cgi->keywords;
+  if ( $query eq 'custnum' ) {
+    $sortby=\*custnum_sort;
+    @cust_main=qsearch('cust_main',{});  
+  } elsif ( $query eq 'last' ) {
+    $sortby=\*last_sort;
+    @cust_main=qsearch('cust_main',{});  
+  } elsif ( $query eq 'company' ) {
+    $sortby=\*company_sort;
+    @cust_main=qsearch('cust_main',{});
+  }
 } else {
-  &cardsearch if ($req->param('card_on') );
-  &lastsearch if ($req->param('last_on') );
-  &companysearch if ($req->param('company_on') );
+  &cardsearch if ( $cgi->param('card_on') && $cgi->param('card') );
+  &lastsearch if ( $cgi->param('last_on') && $cgi->param('last_text') );
+  &companysearch if ( $cgi->param('company_on') && $cgi->param('company_text') );
 }
 
+my(%ncancelled_pkgs) =
+  map { $_->custnum => [ $_->ncancelled_pkgs ] } @cust_main;
+my(%all_pkgs) = 
+  map { $_->custnum => [ $_->all_pkgs ] } @cust_main;
+
 if ( scalar(@cust_main) == 1 ) {
-  $req->cgi->redirect("../view/cust_main.cgi?". $cust_main[0]->custnum);
+  print $cgi->redirect(popurl(2). "/view/cust_main.cgi?". $cust_main[0]->custnum);
   exit;
 } elsif ( scalar(@cust_main) == 0 ) {
   idiot "No matching customers found!\n";
@@ -61,20 +76,18 @@ if ( scalar(@cust_main) == 1 ) {
 } else { 
 
   my($total)=scalar(@cust_main);
-  CGI::Base::SendHeaders(); # one guess
-  print header("Customer Search Results",''), <<END;
-
-    $total matching customers found
-    <TABLE BORDER=4 CELLSPACING=0 CELLPADDING=0>
+  print $cgi->header, header("Customer Search Results",menubar(
+    'Main Menu', popurl(2)
+  )), "$total matching customers found<BR>", table, <<END;
       <TR>
-        <TH>Cust. #</TH>
+        <TH></TH>
         <TH>Contact name</TH>
         <TH>Company</TH>
+        <TH>Packages</TH>
+        <TH COLSPAN=2>Services</TH>
       </TR>
 END
 
-  my($lines)=16;
-  my($lcount)=$lines;
   my(%saw,$cust_main);
   foreach $cust_main (
     sort $sortby grep(!$saw{$_->custnum}++, @cust_main)
@@ -85,25 +98,47 @@ END
       $cust_main->getfield('first'),
       $cust_main->company,
     );
+
+    my(@lol_cust_svc);
+    my($rowspan)=0;#scalar( @{$all_pkgs{$custnum}} );
+    foreach ( @{$all_pkgs{$custnum}} ) {
+      my(@cust_svc) = qsearch( 'cust_svc', { 'pkgnum' => $_->pkgnum } );
+      push @lol_cust_svc, \@cust_svc;
+      $rowspan += scalar(@cust_svc) || 1;
+    }
+
+    #my($rowspan) = scalar(@{$all_pkgs{$custnum}});
+    my($view) = popurl(2). "/view/cust_main.cgi?$custnum";
     print <<END;
     <TR>
-      <TD><A HREF="../view/cust_main.cgi?$custnum"><FONT SIZE=-1>$custnum</FONT></A></TD>
-      <TD><FONT SIZE=-1>$last, $first</FONT></TD>
-      <TD><FONT SIZE=-1>$company</FONT></TD>
-    </TR>
+      <TD ROWSPAN=$rowspan><A HREF="$view"><FONT SIZE=-1>$custnum</FONT></A></TD>
+      <TD ROWSPAN=$rowspan><A HREF="$view"><FONT SIZE=-1>$last, $first</FONT></A></TD>
+      <TD ROWSPAN=$rowspan><A HREF="$view"><FONT SIZE=-1>$company</FONT></A></TD>
 END
-    if ($lcount-- == 0) { # lots of little tables instead of one big one
-      $lcount=$lines;
-      print <<END;   
-  </TABLE>
-  <TABLE BORDER=4 CELLSPACING=0 CELLPADDING=0>
-    <TR>
-      <TH>Cust. #</TH>
-      <TH>Contact name</TH>
-      <TH>Company<TH>
-    </TR>
-END
+
+    my($n1)='';
+    foreach ( @{$all_pkgs{$custnum}} ) {
+      my($pkgnum) = ($_->pkgnum);
+      my($pkg) = $_->part_pkg->pkg;
+      my($pkgview) = popurl(2). "/view/cust_pkg.cgi?$pkgnum";
+      #my(@cust_svc) = shift @lol_cust_svc;
+      my(@cust_svc) = qsearch( 'cust_svc', { 'pkgnum' => $_->pkgnum } );
+      my($rowspan) = scalar(@cust_svc) || 1;
+
+      print $n1, qq!<TD ROWSPAN=$rowspan><A HREF="$pkgview"><FONT SIZE=-1>$pkg</FONT></A></TD>!;
+      my($n2)='';
+      foreach my $cust_svc ( @cust_svc ) {
+         my($label, $value, $svcdb) = $cust_svc->label;
+         my($svcnum) = $cust_svc->svcnum;
+         my($sview) = popurl(2). "/view";
+         print $n2,qq!<TD><A HREF="$sview/$svcdb.cgi?$svcnum"><FONT SIZE=-1>$label</FONT></A></TD>!,
+               qq!<TD><A HREF="$sview/$svcdb.cgi?$svcnum"><FONT SIZE=-1>$value</FONT></A></TD>!;
+         $n2="</TR><TR>";
+      }
+      #print qq!</TR><TR>\n!;
+      $n1="</TR><TR>";
     }
+    print "<\TR>";
   }
  
   print <<END;
@@ -122,6 +157,8 @@ sub last_sort {
 }
 
 sub company_sort {
+  return -1 if $a->company && ! $b->company;
+  return 1 if ! $a->company && $b->company;
   $a->getfield('company') cmp $b->getfield('company');
 }
 
@@ -131,7 +168,7 @@ sub custnum_sort {
 
 sub cardsearch {
 
-  my($card)=$req->param('card');
+  my($card)=$cgi->param('card');
   $card =~ s/\D//g;
   $card =~ /^(\d{13,16})$/ or do { idiot "Illegal card number\n"; exit; };
   my($payinfo)=$1;
@@ -142,11 +179,11 @@ sub cardsearch {
 
 sub lastsearch {
   my(%last_type);
-  foreach ( $req->param('last_type') ) {
+  foreach ( $cgi->param('last_type') ) {
     $last_type{$_}++;
   }
 
-  $req->param('last_text') =~ /^([\w \,\.\-\']*)$/
+  $cgi->param('last_text') =~ /^([\w \,\.\-\']*)$/
     or do { idiot "Illegal last name"; exit; };
   my($last)=$1;
 
@@ -163,16 +200,9 @@ sub lastsearch {
 
     my(@all_last)=map $_->getfield('last'), qsearch('cust_main',{});
     if ($last_type{'Fuzzy'}) { 
-      my($reader,$writer) = ( new IO::Handle, new IO::Handle );
-      open2($reader,$writer,'agrep',"-$fuzziness",'-i','-k',
-            substr($last,0,30));
-      print $writer join("\n",@all_last),"\n";
-      close $writer;
-      while (<$reader>) {
-        chop;
-        $last{$_}++;
-      } 
-      close $reader;
+      foreach ( amatch($last, [ qw(i) ], @all_last) ) {
+        $last{$_}++; 
+      }
     }
 
     #if ($last_type{'Sound-alike'}) {
@@ -189,11 +219,11 @@ sub lastsearch {
 sub companysearch {
 
   my(%company_type);
-  foreach ( $req->param('company_type') ) {
+  foreach ( $cgi->param('company_type') ) {
     $company_type{$_}++ 
   };
 
-  $req->param('company_text') =~ /^([\w \,\.\-\']*)$/
+  $cgi->param('company_text') =~ /^([\w \,\.\-\']*)$/
     or do { idiot "Illegal company"; exit; };
   my($company)=$1;
 
@@ -210,16 +240,9 @@ sub companysearch {
     my(@all_company)=map $_->company, qsearch('cust_main',{});
 
     if ($company_type{'Fuzzy'}) { 
-      my($reader,$writer) = ( new IO::Handle, new IO::Handle );
-      open2($reader,$writer,'agrep',"-$fuzziness",'-i','-k',
-            substr($company,0,30));
-      print $writer join("\n",@all_company),"\n";
-      close $writer;
-      while (<$reader>) {
-        chop;
+      foreach ( amatch($company, [ qw(i) ], @all_company ) ) {
         $company{$_}++;
       }
-      close $reader;
     }
 
     #if ($company_type{'Sound-alike'}) {
