@@ -107,7 +107,8 @@ Returns:
 
 sub text {
   my $self = shift;
-  $self->city. ', '. $self->state. ' ('. $self->ac. ')/'. $self->exch;
+  $self->city. ', '. $self->state.
+    ' ('. $self->ac. ')/'. $self->exch. '-'. $self->loc;
 }
 
 =back
@@ -179,7 +180,7 @@ END
 
 =head1 VERSION
 
-$Id: svc_acct_pop.pm,v 1.5 2001-09-27 21:49:31 ivan Exp $
+$Id: svc_acct_pop.pm,v 1.6 2001-12-18 06:29:30 ivan Exp $
 
 =head1 BUGS
 
