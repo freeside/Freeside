@@ -281,13 +281,20 @@ sub prefixes_short {
 
   foreach my $rate_prefix ( $self->rate_prefix ) {
     if ( $countrycode ne $rate_prefix->countrycode ) {
-      $out =~ s/,$//;
+      $out =~ s/, $//;
       $countrycode = $rate_prefix->countrycode;
-      $out.= " $countrycode-";
+      $out.= " +$countrycode ";
     }
-    $out .= $rate_prefix->npa. ',';
+    my $npa = $rate_prefix->npa;
+    if ( $countrycode eq '1' ) {
+      $out .= '('. substr( $npa, 0, 3 ). ')';
+      $out .= ' '. substr( $npa, 3 ) if length($npa) > 3;
+    } else {
+      $out .= $rate_prefix->npa;
+    }
+    $out .= ', ';
   }
-  $out =~ s/,$//;
+  $out =~ s/, $//;
 
   $out;
 }
