@@ -4,6 +4,7 @@ use strict;
 use vars qw( @ISA );
 use FS::Record qw( qsearch qsearchs fields dbh );
 use FS::part_svc_column;
+use FS::part_export;
 
 @ISA = qw(FS::Record);
 
@@ -323,7 +324,7 @@ sub part_export {
 
 =head1 VERSION
 
-$Id: part_svc.pm,v 1.11 2002-03-23 17:49:01 ivan Exp $
+$Id: part_svc.pm,v 1.12 2002-03-26 13:58:29 ivan Exp $
 
 =head1 BUGS
 
