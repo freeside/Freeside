@@ -20,11 +20,11 @@ if ( $cgi->param('error') ) {
     map { $_, scalar($cgi->param($_)) } fields('part_pkg')
   } );
 }
+my $clone_part_pkg = '';
 if ( $cgi->param('clone') ) {
-  $action='Custom Pricing';
-  my $old_part_pkg =
-    qsearchs('part_pkg', { 'pkgpart' => $cgi->param('clone') } );
-  $part_pkg ||= $old_part_pkg->clone;
+  $action = 'Custom Pricing';
+  $clone_part_pkg= qsearchs('part_pkg', { 'pkgpart' => $cgi->param('clone') } );
+  $part_pkg ||= $clone_part_pkg->clone;
   $part_pkg->disabled('Y');
 } elsif ( $query && $query =~ /^(\d+)$/ ) {
   $part_pkg ||= qsearchs('part_pkg',{'pkgpart'=>$1});
@@ -230,7 +230,8 @@ print '<INPUT TYPE="hidden" NAME="pkgpart" VALUE="'. $part_pkg->pkgpart. '">';
 tie my %plans, 'Tie::IxHash', %{ FS::part_pkg::plan_info() };
 
 my %plandata = map { /^(\w+)=(.*)$/; ( $1 => $2 ); }
-                    split("\n", $part_pkg->plandata );
+                    split("\n", ($clone_part_pkg||$part_pkg)->plandata );
+warn join("\n", map { "$_: $plandata{$_}" } keys %plandata ). "\n";
 
 tie my %options, 'Tie::IxHash', map { $_=>$plans{$_}->{'name'} } keys %plans;
 
