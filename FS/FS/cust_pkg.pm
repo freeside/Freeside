@@ -268,33 +268,11 @@ sub cancel {
   foreach my $cust_svc (
     qsearch( 'cust_svc', { 'pkgnum' => $self->pkgnum } )
   ) {
-    my $part_svc = qsearchs( 'part_svc', { 'svcpart' => $cust_svc->svcpart } );
+    my $error = $cust_svc->cancel;
 
-    $part_svc->svcdb =~ /^([\w\-]+)$/ or do {
-      $dbh->rollback if $oldAutoCommit;
-      return "Illegal svcdb value in part_svc!";
-    };
-    my $svcdb = $1;
-    require "FS/$svcdb.pm";
-
-    my $svc = qsearchs( $svcdb, { 'svcnum' => $cust_svc->svcnum } );
-    if ($svc) {
-      $error = $svc->cancel;
-      if ( $error ) {
-        $dbh->rollback if $oldAutoCommit;
-        return "Error cancelling service: $error" 
-      }
-      $error = $svc->delete;
-      if ( $error ) {
-        $dbh->rollback if $oldAutoCommit;
-        return "Error deleting service: $error";
-      }
-    }
-
-    $error = $cust_svc->delete;
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
-      return "Error deleting cust_svc: $error";
+      return "Error cancelling cust_svc: $error";
     }
 
   }
@@ -701,7 +679,7 @@ sub order {
 
 =head1 VERSION
 
-$Id: cust_pkg.pm,v 1.21 2002-05-04 00:47:24 ivan Exp $
+$Id: cust_pkg.pm,v 1.22 2002-05-22 12:17:06 ivan Exp $
 
 =head1 BUGS
 

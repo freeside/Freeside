@@ -85,9 +85,67 @@ otherwise returns false.
 =item delete
 
 Deletes this service from the database.  If there is an error, returns the
-error, otherwise returns false.
+error, otherwise returns false.  Note that this only removes the cust_svc
+record - you should probably use the B<cancel> method instead.
 
-Called by the cancel method of the package (see L<FS::cust_pkg>).
+=item cancel
+
+Cancels the relevant service by calling the B<cancel> method of the associated
+FS::svc_XXX object (i.e. an FS::svc_acct object or FS::svc_domain object),
+deleting the FS::svc_XXX record and then deleting this record.
+
+If there is an error, returns the error, otherwise returns false.
+
+=cut
+
+sub cancel {
+  my $self = shift;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE'; 
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $part_svc = $self->part_svc;
+
+  $part_svc->svcdb =~ /^([\w\-]+)$/ or do {
+    $dbh->rollback if $oldAutoCommit;
+    return "Illegal svcdb value in part_svc!";
+  };
+  my $svcdb = $1;
+  require "FS/$svcdb.pm";
+
+  my $svc = $self->svc_x;
+  if ($svc) {
+    my $error = $svc->cancel;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "Error canceling service: $error";
+    }
+    $error = $svc->delete;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "Error deleting service: $error";
+    }
+  }
+
+  my $error = $self->delete;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return "Error deleting cust_svc: $error";
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+  ''; #no errors
+
+}
 
 =item replace OLD_RECORD
 
@@ -286,7 +344,7 @@ sub seconds_since {
 
 =head1 VERSION
 
-$Id: cust_svc.pm,v 1.14 2002-04-20 02:06:38 ivan Exp $
+$Id: cust_svc.pm,v 1.15 2002-05-22 12:17:06 ivan Exp $
 
 =head1 BUGS
 
