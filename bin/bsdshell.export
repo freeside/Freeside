@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 
-# sysvshell and bsdshell export
+# bsdshell export
 
 use strict;
 use File::Rsync;
@@ -19,16 +19,12 @@ adminsuidsetup $user;
 my $spooldir = "/usr/local/etc/freeside/export.". datasrc;
 #my $spooldir = "/usr/local/etc/freeside/export.". datasrc. "/shell";
 
-my @sysv_exports = qsearch('part_export', { 'exporttype' => 'sysvshell' } );
 my @bsd_exports = qsearch('part_export', { 'exporttype' => 'bsdshell' } );
 
 my $rsync = File::Rsync->new({
   rsh     => 'ssh',
 #  dry_run => 1,
 });
-
-foreach my $export ( @sysv_exports ) {
-}
 
 foreach my $export ( @bsd_exports ) {
   my $machine = $export->machine;
@@ -41,10 +37,10 @@ foreach my $export ( @bsd_exports ) {
     #!!!  and flock(MASTER,LOCK_EX|LOCK_NB)
   ) or die "Can't open $prefix/master.passwd: $!";
   ( open(PASSWD,">$prefix/passwd")
-    #!!!  and flock(MASTER,LOCK_EX|LOCK_NB)
+    #!!!  and flock(PASSWD,LOCK_EX|LOCK_NB)
   ) or die "Can't open $prefix/passwd: $!";
 
-  chmod 0644, "$spooldir/passwd";
+  chmod 0644, "$prefix/passwd";
   chmod 0600, "$prefix/master.passwd";
 
   #false laziness with  freeside-sqlradius-reset and bind.export

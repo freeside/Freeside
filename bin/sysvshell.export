@@ -1,0 +1,117 @@
+#!/usr/bin/perl -w
+
+# sysvshell export
+
+use strict;
+use File::Rsync;
+use Net::SSH qw(ssh);
+use FS::UID qw(adminsuidsetup datasrc);
+use FS::Record qw(qsearch qsearchs);
+use FS::part_export;
+use FS::cust_svc;
+use FS::svc_acct;
+
+my @saltset = ( 'a'..'z' , 'A'..'Z' , '0'..'9' , '.' , '/' );
+
+my $user = shift or die &usage;
+adminsuidsetup $user;
+
+my $spooldir = "/usr/local/etc/freeside/export.". datasrc;
+#my $spooldir = "/usr/local/etc/freeside/export.". datasrc. "/shell";
+
+my @sysv_exports = qsearch('part_export', { 'exporttype' => 'sysvshell' } );
+
+my $rsync = File::Rsync->new({
+  rsh     => 'ssh',
+#  dry_run => 1,
+});
+
+foreach my $export ( @sysv_exports ) {
+  my $machine = $export->machine;
+  my $prefix = "$spooldir/$machine";
+  mkdir $prefix, 0700 unless -d $prefix;
+
+  #LOCKING!!!
+
+  ( open(SHADOW,">$prefix/shadow")
+    #!!!  and flock(SHADOW,LOCK_EX|LOCK_NB)
+  ) or die "Can't open $prefix/shadow: $!";
+  ( open(PASSWD,">$prefix/passwd")
+    #!!!  and flock(PASSWD,LOCK_EX|LOCK_NB)
+  ) or die "Can't open $prefix/passwd: $!";
+
+  chmod 0644, "$prefix/passwd";
+  chmod 0600, "$prefix/shadow";
+
+  #false laziness with  freeside-sqlradius-reset and bind.export
+  my @svc_acct = 
+    map { qsearchs('svc_acct', { 'svcnum' => $_->svcnum } ) }
+      map { qsearch('cust_svc', { 'svcpart' => $_->svcpart } ) }
+        grep { qsearch('cust_svc', { 'svcpart' => $_->svcpart } ) }
+          $export->export_svc;
+
+  next unless @svc_acct;
+
+  foreach my $svc_acct ( sort { $a->uid <=> $b->uid } @svc_acct ) {
+
+    my $password = $svc_acct->_password;
+    my $cpassword;
+    #if ( ( length($password) <= 8 )
+    if ( ( length($password) <= 12 )
+         && ( $password ne '*' )
+         && ( $password ne '!!' )
+         && ( $password ne '' )
+    ) {
+      $cpassword=crypt($password,
+                       $saltset[int(rand(64))].$saltset[int(rand(64))]
+      );
+      # MD5 !!!!
+    } else {
+      $cpassword=$password;
+    }
+
+    ###
+    # FORMAT OF THE PASSWD FILE HERE
+    print PASSWD join(":",
+      $svc_acct->username,
+      'x', # "##". $username,
+      $svc_acct->uid,
+      $svc_acct->gid,
+      $svc_acct->finger,
+      $svc_acct->dir,
+      $svc_acct->shell,
+    ), "\n";
+
+    ###
+    # FORMAT OF THE SHADOW FILE HERE
+    print SHADOW join(":",
+      $svc_acct->username,
+      $cpassword,
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+    ), "\n";
+
+  }
+
+  #!!! flock(SHADOW,LOCK_UN);
+  #!!! flock(PASSWD,LOCK_UN);
+  close SHADOW;
+  close PASSWD;
+
+  $rsync->exec( {
+    src  => "$prefix/shadow",
+    dest => "root\@$machine:/etc/shadow"
+  } ) or die "rsync to $machine failed: ". join(" / ", $rsync->err);
+
+  $rsync->exec( {
+    src  => "$prefix/passwd",
+    dest => "root\@$machine:/etc/passwd"
+  } ) or die "rsync to $machine failed: ". join(" / ", $rsync->err);
+
+  # UNLOCK!!
+}
