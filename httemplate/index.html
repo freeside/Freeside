@@ -28,10 +28,10 @@
     <TR><TD>
         <BR><FONT SIZE="+1"><A HREF="edit/cust_main.cgi">New Customer</A></FONT>
         <BR>
-        <BR><FORM ACTION="search/cust_main.cgi" METHOD="POST"><INPUT TYPE="hidden" NAME="last_on" VALUE="1">Last name <INPUT TYPE="text" NAME="last_text"><INPUT TYPE="hidden" NAME="last_type" VALUE="Fuzzy"><INPUT TYPE="submit" VALUE="Search"></FORM> or <A HREF="search/cust_main.cgi?browse=last">all customers by last name</A>
-        <BR><FORM ACTION="search/cust_main.cgi" METHOD="POST"><INPUT TYPE="hidden" NAME="company_on" VALUE="1">Company <INPUT TYPE="text" NAME="company_text"><INPUT TYPE="hidden" NAME="company_type" VALUE="Fuzzy"><INPUT TYPE="submit" VALUE="Search"></FORM> or <A HREF="search/cust_main.cgi?browse=company">all customers by company</A>
-        <BR><FORM ACTION="search/svc_acct.cgi" METHOD="POST">Username <INPUT TYPE="text" NAME="username"><INPUT TYPE="submit" VALUE="Search"></FORM> or <A HREF="search/svc_acct.cgi?username">all accounts by username</A>
-        <BR><FORM ACTION="search/svc_domain.cgi" METHOD="POST">Domain <INPUT TYPE="text" NAME="domain"><INPUT TYPE="submit" VALUE="Search"></FORM> or <A HREF="search/svc_domain.cgi?domain">all domains</A>
+        <BR><FORM ACTION="search/cust_main.cgi" METHOD="POST"><INPUT TYPE="hidden" NAME="last_on" VALUE="1">Last name <INPUT TYPE="text" NAME="last_text"><INPUT TYPE="hidden" NAME="last_type" VALUE="Fuzzy"><INPUT TYPE="submit" VALUE="Search"> or <A HREF="search/cust_main.cgi?browse=last">all customers by last name</A></FORM>
+        <BR><FORM ACTION="search/cust_main.cgi" METHOD="POST"><INPUT TYPE="hidden" NAME="company_on" VALUE="1">Company <INPUT TYPE="text" NAME="company_text"><INPUT TYPE="hidden" NAME="company_type" VALUE="Fuzzy"><INPUT TYPE="submit" VALUE="Search"> or <A HREF="search/cust_main.cgi?browse=company">all customers by company</A></FORM>
+        <BR><FORM ACTION="search/svc_acct.cgi" METHOD="POST">Username <INPUT TYPE="text" NAME="username"><INPUT TYPE="submit" VALUE="Search"> or <A HREF="search/svc_acct.cgi?username">all accounts by username</A></FORM>
+        <BR><FORM ACTION="search/svc_domain.cgi" METHOD="POST">Domain <INPUT TYPE="text" NAME="domain"><INPUT TYPE="submit" VALUE="Search"> or <A HREF="search/svc_domain.cgi?domain">all domains</A></FORM>
 <!--        <LI><A HREF="search/svc_acct_sm.html">mail aliases (by domain, and optionally username)</A>-->
 <!--        <LI><A HREF="search/svc_forward.html">mail forwards (by ?)</A>-->
       <BR><BR>
@@ -66,14 +66,14 @@
               <LI>120 day open invoices (<A HREF="search/cust_bill.cgi?OPEN120_invnum">by invoice number</A>) (<A HREF="search/cust_bill.cgi?OPEN120_date">by date</A>) (<A HREF="search/cust_bill.cgi?OPEN120_custnum">by customer number</A>)
               <LI>all invoices (<A HREF="search/cust_bill.cgi?invnum">by invoice number</A>) (<A HREF="search/cust_bill.cgi?date">by date</A>) (<A HREF="search/cust_bill.cgi?custnum">by customer number</A>)
             </UL>
-      <BR><BR>Financial reports
+      Financial reports
             <UL>
               <LI> <A HREF="search/report_receivables.cgi">current receivables</A>
               <LI> <A HREF="search/report_tax.html">tax reports</A>
               <LI> <A HREF="search/report_cc.html">credit card receipts</A>
               <LI> <A HREF="search/report_credit.html">credit memos</A>
             </UL>
-      <BR><CENTER><HR WIDTH="94%" NOSHADE></CENTER><BR>
+      <CENTER><HR WIDTH="94%" NOSHADE></CENTER><BR>
       <A NAME="admin">Administration</a>
         <ul>
           <LI><A HREF="browse/part_pkg.cgi">View/Edit package definitions</A>
@@ -130,6 +130,13 @@
         <LI>120 day open invoices (<A HREF="search/cust_bill.cgi?OPEN120_invnum">by invoice number</A>) (<A HREF="search/cust_bill.cgi?OPEN120_date">by date</A>) (<A HREF="search/cust_bill.cgi?OPEN120_custnum">by customer number</A>)
         <LI>all invoices (<A HREF="search/cust_bill.cgi?invnum">by invoice number</A>) (<A HREF="search/cust_bill.cgi?date">by date</A>) (<A HREF="search/cust_bill.cgi?custnum">by customer number</A>)
       </UL>
+    Financial reports
+            <UL>
+              <LI> <A HREF="search/report_receivables.cgi">current receivables</A>
+              <LI> <A HREF="search/report_tax.html">tax reports</A>
+              <LI> <A HREF="search/report_cc.html">credit card receipts</A>
+              <LI> <A HREF="search/report_credit.html">credit memos</A>
+            </UL>
     <BR>
     </TD></TR>
     </TABLE>
