@@ -3,7 +3,7 @@ package FS::cust_credit;
 use strict;
 use vars qw( @ISA );
 use FS::UID qw( getotaker );
-use FS::Record qw( qsearchs );
+use FS::Record qw( qsearch qsearchs );
 use FS::cust_main;
 use FS::cust_refund;
 
@@ -150,7 +150,7 @@ sub credited {
 
 =head1 VERSION
 
-$Id: cust_credit.pm,v 1.5 2001-04-23 19:27:28 ivan Exp $
+$Id: cust_credit.pm,v 1.6 2001-04-23 19:50:07 ivan Exp $
 
 =head1 BUGS
 
