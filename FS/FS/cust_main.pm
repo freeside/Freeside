@@ -1582,7 +1582,7 @@ sub charge {
 
   my $part_pkg = new FS::part_pkg ( {
     'pkg'      => $pkg || 'One-time charge',
-    'comment'  => $comment,
+    'comment'  => $comment || '$'. sprintf("%.2f".$amount),
     'setup'    => $amount,
     'freq'     => 0,
     'recur'    => '0',
