@@ -843,12 +843,16 @@ sub cp_change {
   if ( $password =~ /^\*SUSPENDED\* (.*)$/ ) {
     $password = $1;
     $app->set_mailbox_status(
-                              Other => 'T',
+                              Domain       => $mydomain,
+                              Mailbox      => $username,
+                              Other        => 'T',
                               Other_Bounce => 'T',
                             );
   } else {
     $app->set_mailbox_status(
-                              Other => 'F',
+                              Domain       => $mydomain,
+                              Mailbox      => $username,
+                              Other        => 'F',
                               Other_Bounce => 'F',
                             );
   }
