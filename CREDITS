@@ -21,11 +21,7 @@ following Freeside features by contracting me for a custom billing system
 based on Freeside:
   - Multiple, separate databases and configurations on one box.
   - Per-customer pricing (custom packages)
-  - Optional customer titles, middle initials and EIN numbers
   - Internationalization wrt addresses (cust_main, cust_main_county)
-
-  - Integration with Radiator, http://www.open.com.au/radiator
-  - Integration with NetSurfer NetKit ISP, http://www.netsurfer.com/
 Thanks!
 
 Everything else is my (Ivan Kohler <ivan@sisd.com>) fault.
