@@ -3,7 +3,6 @@
 
 my $conf = new FS::Conf;
 
-#false laziness with view/cust_pkg.cgi, but i'm trying to make that go away so
 my %uiview = ();
 my %uiadd = ();
 foreach my $part_svc ( qsearch('part_svc',{}) ) {
@@ -401,7 +400,7 @@ foreach my $pkg (sort pkgsort_pkgnum_cancel @$packages) {
 <!--pkgnum: <%=$pkg->{pkgnum}%>-->
 <TR>
   <TD ROWSPAN=<%=$rowspan%>>
-    <%=$pkg->{pkgnum}%>:
+    <A NAME="cust_pkg<%=$pkg->{pkgnum}%>"><%=$pkg->{pkgnum}%></A>:
     <%=$pkg->{pkg}%> - <%=$pkg->{comment}%><BR>
 <% unless ($pkg->{cancel}) { %>
     (&nbsp;<%=pkg_change_link($pkg)%>&nbsp;)
@@ -989,11 +988,6 @@ sub pkg_datestr {
   ( my $strip = time2str($format, $pkg->{$field}) ) =~ s/ (\d)/$1/g;
   $strip;
 }
-
-#sub pkg_details_link {
-#  my $pkg = shift or return '';
-#  return qq!<a href="${p}view/cust_pkg.cgi?$pkg->{pkgnum}">Details</a>!;
-#}
 
 sub pkg_change_link {
   my $pkg = shift or return '';

@@ -24,8 +24,7 @@ if ($pkgnum) {
 
 <%= header('External Service View', menubar(
   ( ( $custnum )
-    ? ( "View this package (#$pkgnum)" => "${p}view/cust_pkg.cgi?$pkgnum",
-        "View this customer (#$custnum)" => "${p}view/cust_main.cgi?$custnum",
+    ? ( "View this customer (#$custnum)" => "${p}view/cust_main.cgi?$custnum",
       )                                                                       
     : ( "Cancel this (unaudited) external service" =>
           "${p}misc/cancel-unaudited.cgi?$svcnum" )

@@ -32,8 +32,7 @@ my $www = $domain_record->zone;
 
 print header('Website View', menubar(
   ( ( $custnum )
-    ? ( "View this package (#$pkgnum)" => "${p}view/cust_pkg.cgi?$pkgnum",
-        "View this customer (#$custnum)" => "${p}view/cust_main.cgi?$custnum",
+    ? ( "View this customer (#$custnum)" => "${p}view/cust_main.cgi?$custnum",
       )                                                                       
     : ( "Cancel this (unaudited) website" =>
           "${p}misc/cancel-unaudited.cgi?$svcnum" )

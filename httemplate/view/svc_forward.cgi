@@ -25,8 +25,7 @@ my $part_svc = qsearchs('part_svc',{'svcpart'=> $cust_svc->svcpart } )
 
 print header('Mail Forward View', menubar(
   ( ( $pkgnum || $custnum )
-    ? ( "View this package (#$pkgnum)" => "${p}view/cust_pkg.cgi?$pkgnum",
-        "View this customer (#$custnum)" => "${p}view/cust_main.cgi?$custnum",
+    ? ( "View this customer (#$custnum)" => "${p}view/cust_main.cgi?$custnum",
       )
     : ( "Cancel this (unaudited) mail forward" =>
           "${p}misc/cancel-unaudited.cgi?$svcnum" )

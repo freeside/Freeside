@@ -17,7 +17,8 @@ if ($error) {
 <%
   eidiot($error);
 } else {
-  print $cgi->redirect(popurl(3). "view/cust_pkg.cgi?". $cust_pkg[0]->pkgnum );
+  print $cgi->redirect(popurl(3). "view/cust_main.cgi?$custnum".
+                       "#cust_pkg". $cust_pkg[0]->pkgnum );
 }
 
 %>

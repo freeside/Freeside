@@ -34,8 +34,7 @@ my $domain = $svc_domain->domain;
 
 <%= header('Domain View', menubar(
   ( ( $pkgnum || $custnum )
-    ? ( "View this package (#$pkgnum)" => "${p}view/cust_pkg.cgi?$pkgnum",
-        "View this customer (#$custnum)" => "${p}view/cust_main.cgi?$custnum",
+    ? ( "View this customer (#$custnum)" => "${p}view/cust_main.cgi?$custnum",
       )
     : ( "Cancel this (unaudited) domain" =>
           "${p}misc/cancel-unaudited.cgi?$svcnum" )

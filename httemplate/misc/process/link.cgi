@@ -32,7 +32,9 @@ my $error = $new->replace($old);
 
 unless ($error) {
   #no errors, so let's view this customer.
-  print $cgi->redirect(popurl(3). "view/cust_pkg.cgi?$pkgnum");
+  my $custnum = $new->cust_pkg->custnum;
+  print $cgi->redirect(popurl(3). "view/cust_main.cgi?$custnum"
+                       "#cust_pkg$pkgnum" );
 } else {
 %>
 <!-- mason kludge -->

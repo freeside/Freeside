@@ -16,7 +16,9 @@ if ( $error ) {
   $cgi->param('error', $error);
   print $cgi->redirect(popurl(2). "REAL_cust_pkg.cgi?". $cgi->query_string );
 } else { 
-  print $cgi->redirect(popurl(3). "view/cust_pkg.cgi?". $pkgnum);
+  my $custnum = $new->custnum;
+  print $cgi->redirect(popurl(3). "view/cust_main.cgi?$custnum".
+                       "#cust_pkg$pkgnum" );
 }
 
 %>

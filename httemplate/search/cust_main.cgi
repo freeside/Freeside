@@ -435,7 +435,7 @@ END
 
       my $pkg = $part_pkg->pkg;
       my $comment = $part_pkg->comment;
-      my $pkgview = $p. 'view/cust_pkg.cgi?'. $pkgnum;
+      my $pkgview = "${p}view/cust_main.cgi?$custnum#cust_pkg$pkgnum";
       my @cust_svc = @{shift @lol_cust_svc};
       #my(@cust_svc) = qsearch( 'cust_svc', { 'pkgnum' => $_->pkgnum } );
       my $rowspan = scalar(@cust_svc) || 1;

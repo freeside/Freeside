@@ -175,8 +175,8 @@ if ( $cgi->param('magic') && $cgi->param('magic') eq 'bill' ) {
 }
 
 if ( scalar(@cust_pkg) == 1 ) {
-  my($pkgnum)=$cust_pkg[0]->pkgnum;
-  print $cgi->redirect(popurl(2). "view/cust_pkg.cgi?$pkgnum");
+  print $cgi->redirect("${p}view/cust_main.cgi?". $cust_pkg[0]->custnum.
+                       "#cust_pkg". $cust_pkg[0]->pkgnum );
   #exit;
 } elsif ( scalar(@cust_pkg) == 0 ) { #error
 %>
@@ -300,7 +300,7 @@ END
     my $rowspan = scalar(@cust_svc) || 1;
     my $p = popurl(2);
     print $n1, <<END;
-      <TD ROWSPAN=$rowspan><A HREF="${p}view/cust_pkg.cgi?$pkgnum"><FONT SIZE=-1>$pkgnum - $pkg</FONT></A></TD>
+      <TD ROWSPAN=$rowspan><A HREF="${p}view/cust_main.cgi?$custnum#cust_pkg$pkgnum"><FONT SIZE=-1>$pkgnum - $pkg</FONT></A></TD>
       <TD ROWSPAN=$rowspan>$setup</TD>
 END
 

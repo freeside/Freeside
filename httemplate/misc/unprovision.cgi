@@ -12,10 +12,6 @@ my $svcnum = $1;
 
 my $cust_svc = qsearchs('cust_svc',{'svcnum'=>$svcnum});
 die "Unknown svcnum!" unless $cust_svc;
-#&eidiot(qq!This account has already been audited.  Cancel the 
-#    <A HREF="!. popurl(2). qq!view/cust_pkg.cgi?! . $cust_svc->getfield('pkgnum') .
-#    qq!pkgnum"> package</A> instead.!) 
-#  if $cust_svc->pkgnum ne '' && $cust_svc->pkgnum ne '0';
 
 my $custnum = $cust_svc->cust_pkg->custnum;
 
