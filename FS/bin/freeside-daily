@@ -4,8 +4,9 @@ use strict;
 use Fcntl qw(:flock);
 use Date::Parse;
 use Getopt::Std;
-use FS::UID qw(adminsuidsetup driver_name dbh);
+use FS::UID qw(adminsuidsetup driver_name dbh datasrc);
 use FS::Record qw(qsearch qsearchs);
+use FS::Conf;
 use FS::cust_main;
 
 &untaint_argv;	#what it sounds like  (eww)
@@ -55,6 +56,22 @@ if ( driver_name eq 'Pg' ) {
     my $sth = dbh->prepare($statement) or die dbh->errstr;
     $sth->execute or die $sth->errstr;
   }
+}
+
+#local hack
+my $conf = new FS::Conf;
+my $dest = $conf->config('dump-scpdest');
+if ( $dest ) {
+  datasrc =~ /dbname=([\w\.]+)$/ or die "unparsable datasrc ". datasrc;
+  my $database = $1;
+  eval "use Net::SCP qw(scp);";
+  if ( driver_name eq 'Pg' ) {
+    system("pg_dump $database >/var/tmp/$database.sql")
+  } else {
+    die "database dumps not yet supported for ". driver_name;
+  }
+  scp("/var/tmp/$database.sql", $dest);
+  unlink "/var/tmp/$database.sql" or die $!;
 }
 
 # subroutines

@@ -989,6 +989,13 @@ httemplate/docs/config.html
     'type'        => 'checkbox',
   },
 
+  {
+    'key'         => 'dump-scpdest',
+    'section'     => '',
+    'description' => 'destination for scp database dumps: user@host:/path',
+    'type'        => 'text',
+  },
+
 );
 
 1;
