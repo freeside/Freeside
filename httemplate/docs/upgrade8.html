@@ -132,6 +132,7 @@ ALTER TABLE svc_acct ADD domsvc integer NOT NULL;
 ALTER TABLE svc_domain ADD catchall integer NULL;
 ALTER TABLE cust_main ADD referral_custnum integer NULL;
 ALTER TABLE cust_pay ADD custnum integer;
+ALTER TABLE cust_pay_batch ADD paybatchnum integer;
 ALTER TABLE cust_refund ADD custnum integer;
 CREATE INDEX cust_main3 ON cust_main ( referral_custnum );
 CREATE INDEX cust_credit_bill1 ON cust_credit_bill ( crednum );
@@ -140,13 +141,14 @@ CREATE INDEX cust_bill_pay1 ON cust_bill_pay ( invnum );
 CREATE INDEX cust_bill_pay2 ON cust_bill_pay ( paynum );
 CREATE INDEX cust_credit_refund1 ON cust_credit_refund ( crednum );
 CREATE INDEX cust_credit_refund2 ON cust_credit_refund ( refundnum );
+CREATE UNIQUE INDEX cust_pay_batch_pkey ON cust_pay_batch ( paybatchnum );
 CREATE UNIQUE INDEX part_svc_column1 ON part_svc_column ( svcpart, columnname );
 </pre>
 
   <li>If you are using PostgreSQL, apply the following changes to your database:
 <pre>
 CREATE UNIQUE INDEX agent_pkey ON agent ( agentnum );
-CREATE UNIQUE INDEX agent_type_pkey agent_type ( typenum );
+CREATE UNIQUE INDEX agent_type_pkey ON agent_type ( typenum );
 CREATE UNIQUE INDEX cust_bill_pkey ON cust_bill ( invnum );
 CREATE UNIQUE INDEX cust_credit_pkey ON cust_credit ( crednum );
 CREATE UNIQUE INDEX cust_main_pkey ON cust_main ( custnum );

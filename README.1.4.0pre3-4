@@ -12,5 +12,8 @@ CREATE TABLE part_pop_local (
 );
 CREATE INDEX part_pop_local1 ON part_pop_local ( npa, nxx );
 
+ALTER TABLE cust_pay_batch ADD paybatchnum integer;
+CREATE UNIQUE INDEX cust_pay_batch_pkey ON cust_pay_batch ( paybatchnum );
+
 Run bin/dbdef-create
 

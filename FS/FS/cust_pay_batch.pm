@@ -35,6 +35,8 @@ following fields are currently supported:
 
 =over 4
 
+=item paybatchnum - primary key (automatically assigned)
+
 =item trancode - 77 for charges
 
 =item cardnum
@@ -117,7 +119,8 @@ sub check {
   my $self = shift;
 
   my $error = 
-      $self->ut_numbern('trancode')
+      $self->ut_numbern('paybatchnum')
+    || $self->ut_numbern('trancode')
     || $self->ut_number('cardnum') 
     || $self->ut_money('amount')
     || $self->ut_number('invnum')
@@ -188,7 +191,7 @@ sub check {
 
 =head1 VERSION
 
-$Id: cust_pay_batch.pm,v 1.2 2000-06-17 21:48:05 ivan Exp $
+$Id: cust_pay_batch.pm,v 1.3 2001-10-02 16:00:30 jeff Exp $
 
 =head1 BUGS
 
