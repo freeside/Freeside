@@ -190,7 +190,7 @@ sub insert {
   } elsif ( $options{'options'} ) {
 
     warn "  inserting part_pkg_option records for options hashref" if $DEBUG;
-    foreach my $optionname ( %{$options{'options'}} ) {
+    foreach my $optionname ( keys %{$options{'options'}} ) {
 
       my $part_pkg_option =
         new FS::part_pkg_option {
