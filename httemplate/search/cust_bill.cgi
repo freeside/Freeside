@@ -26,7 +26,7 @@ if ( $cgi->keywords ) {
     $field = "_date" if $field eq 'date';
     $orderby = "ORDER BY cust_bill.$field";
     push @where, "0 != $owed" if $open;
-    push @where, "cust_bill._date < ". (time-86400*days) if $days;
+    push @where, "cust_bill._date < ". (time-86400*$days) if $days;
 #  if ( $query eq 'invnum' ) {
 #    $sortby = \*invnum_sort;
 #    $orderby = "ORDER BY cust_bill.invnum";
