@@ -64,7 +64,7 @@ sub h_svc_x {
     require "FS/h_$svcdb.pm";
     qsearchs( "h_$svcdb",
               { 'svcnum'       => $self->svcnum, },
-              "FS::h_$svcdb"->sql_h_search(@_),
+              "FS::h_$svcdb"->sql_h_searchs(@_),
             );
   #}
 }

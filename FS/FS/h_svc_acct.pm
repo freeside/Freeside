@@ -29,7 +29,7 @@ sub svc_domain {
   my $self = shift;
   qsearchs( 'h_svc_domain',
             { 'svcnum' => $self->domsvc },
-            FS::h_svc_domain->sql_h_search(@_),
+            FS::h_svc_domain->sql_h_searchs(@_),
           );
 }
 

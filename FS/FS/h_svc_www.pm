@@ -29,7 +29,7 @@ sub domain_record {
   my $self = shift;
   qsearchs( 'h_domain_record',
             { 'recnum' => $self->recnum },
-            FS::h_domain_record->sql_h_search(@_),
+            FS::h_domain_record->sql_h_searchs(@_),
           );
 }
 

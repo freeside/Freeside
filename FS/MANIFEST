@@ -64,6 +64,7 @@ FS/cust_credit_refund.pm
 FS/cust_svc.pm
 FS/h_Common.pm
 FS/h_cust_svc.pm
+FS/h_domain_record.pm
 FS/h_svc_acct.pm
 FS/h_svc_broadband.pm
 FS/h_svc_domain.pm
@@ -185,6 +186,7 @@ t/cust_svc.t
 t/h_cust_svc.t
 t/h_Common.t
 t/h_cust_svc.t
+t/h_domain_record.t
 t/h_svc_acct.t
 t/h_svc_broadband.t
 t/h_svc_domain.t

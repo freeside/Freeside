@@ -69,6 +69,20 @@ sub sql_h_search {
 
 }
 
+=item sql_h_searchs END_TIMESTAMP [ START_TIMESTAMP ] 
+
+Like sql_h_search, but limited to the single most recent record (before
+END_TIMESTAMP)
+
+=cut
+
+sub sql_h_searchs {
+  my $self = shift;
+  my($select, $where, $cacheobj, $as) = $self->sql_h_search(@_);
+  $where .= ' LIMIT 1';
+  ($select, $where, $cacheobj, $as);
+}
+
 =back
 
 =head1 BUGS

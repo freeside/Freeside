@@ -29,7 +29,7 @@ sub srcsvc_acct {
   my $self = shift;
   qsearchs( 'h_svc_acct',
             { 'svcnum' => $self->srcsvc },
-            FS::h_svc_acct->sql_h_search(@_),
+            FS::h_svc_acct->sql_h_searchs(@_),
           );
 }
 
@@ -41,7 +41,7 @@ sub dstsvc_acct {
   my $self = shift;
   qsearchs( 'h_svc_acct',
             { 'svcnum' => $self->dstsvc },
-            FS::h_svc_acct->sql_h_search(@_),
+            FS::h_svc_acct->sql_h_searchs(@_),
           );
 }
 
