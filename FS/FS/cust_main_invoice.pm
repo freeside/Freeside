@@ -158,8 +158,9 @@ Returns the literal email address for this record (or `POST').
 
 sub address {
   my $self = shift;
-  if ( $self->dest =~ /(\d+)$/ ) {
-    my $svc_acct = qsearchs( 'svc_acct', { 'svcnum' => $1 } );
+  if ( $self->dest =~ /^(\d+)$/ ) {
+    my $svc_acct = qsearchs( 'svc_acct', { 'svcnum' => $1 } )
+      or return undef;
     $svc_acct->username . '@' . $mydomain;
   } else {
     $self->dest;
@@ -170,7 +171,7 @@ sub address {
 
 =head1 VERSION
 
-$Id: cust_main_invoice.pm,v 1.4 2001-07-27 17:16:25 ivan Exp $
+$Id: cust_main_invoice.pm,v 1.5 2001-08-11 00:01:39 ivan Exp $
 
 =head1 BUGS
 
