@@ -70,7 +70,7 @@ function SafeOnsubmit() {
                 <option value="<%= $value %>"<%= $value eq $conf->config($i->key) || ( $type eq 'selectmultiple' && grep { $_ eq $value } $conf->config($i->key) ) ? ' SELECTED' : '' %>><%= $value %>
               <% } %>
               <% if ( $conf->exists($i->key) && $conf->config($i->key) && ! grep { $conf->config($i->key) eq $_ } @{$i->select_enum}) { %>
-                <option value=<%= $conf->config($i->key) %> SELECTED><%= conf->config($i->key) %>
+                <option value=<%= $conf->config($i->key) %> SELECTED><%= $conf->config($i->key) %>
               <% } %>
             </select>
           <% } elsif ( $type eq 'editlist' )  { %>
