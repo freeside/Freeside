@@ -364,7 +364,7 @@ foreach my $package (@packages) {
 
   for ( qw( setup bill susp expire cancel ) ) {
     print "<TD ROWSPAN=$rowspan><FONT SIZE=-1>", ( $package->getfield($_)
-            ? time2str("%D<BR><FONT SIZE=-2>%r %z</FONT>",
+            ? time2str("%D<BR><FONT SIZE=-3>%l:%M:%S%P&nbsp;%z</FONT>",
               $package->getfield($_) )
             :  '&nbsp'
           ), '</FONT></TD>',
