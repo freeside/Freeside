@@ -1,0 +1,57 @@
+#!/usr/bin/perl -Tw
+
+use strict;
+use Date::Parse;
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw(qsearchs);
+use FS::svc_acct;
+
+my $fs_user = shift or die &usage;
+adminsuidsetup( $fs_user );
+
+my $target_user = shift or die &usage;
+my $start = shift or die &usage;
+my $stop = shift || time;
+
+my $svc_acct = qsearchs( 'svc_acct', { 'username' => $target_user } );
+die "username $target_user not found\n" unless $svc_acct;
+
+print $svc_acct->seconds_since_sqlradacct( str2time($start), str2time($stop) );
+
+sub usage {
+  die "Usage:\n\n  freeside-sqlradius-seconds freeside_username target_username start_date stop_date\n";
+}
+
+
+=head1 NAME
+
+freeside-sqlradius-seconds - Real-time radacct import daemon
+
+=head1 SYNOPSIS
+
+  freeside-sqlradius-seconds freeside_username target_username start_date [ stop_date ]
+
+=head1 DESCRIPTION
+
+Returns the number of seconds the specified username has been online between
+start_date (inclusive) and stop_date (exclusive).
+See L<FS::svc_acct/seconds_since_sqlradacct>
+
+B<freeside_username> is a username added by freeside-adduser.
+B<target_username> is the username of the user account to query.
+B<start_date> and B<stop_date> are in any format Date::Parse is happy with.
+B<stop_date> defaults to now if not specified.
+
+=head1 BUGS
+
+Selection of the account in question is rather simplistic in that
+B<target_username> doesn't necessarily identify a unique account (and wouldn't
+even if a domain was specified), and no sqlradius export is checked for.
+
+=head1 SEE ALSO
+
+L<FS::svc_acct/seconds_since_sqlradacct>
+
+=cut
+
+1;

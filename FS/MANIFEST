@@ -21,6 +21,7 @@ bin/freeside-radgroup
 bin/freeside-receivables-report
 bin/freeside-sqlradius-radacctd
 bin/freeside-sqlradius-reset
+bin/freeside-sqlradius-seconds
 bin/freeside-tax-report
 bin/freeside-cc-receipts-report
 bin/freeside-credit-report
