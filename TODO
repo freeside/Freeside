@@ -1,10 +1,42 @@
-$Id: TODO,v 1.39 1999-09-22 22:06:34 ivan Exp $
+$Id: TODO,v 1.40 2000-01-27 00:27:50 ivan Exp $
 
 If you are interested in helping with any of these, please join the mailing
 list (send a blank message to ivan-freeside-subscribe@sisd.com) to avoid 
 duplication of effort.
 
 ---
+
+There's no way to do this currently, though it would be pretty
+straightforward to modify the source - specifically, the _collect_
+subroutine in FS::cust_main.
+>
+On Mon, Dec 13, 1999 at 04:05:32PM -0700, Jeff Garner wrote:
+> Freeside will e-mail my users when they are billed if they are setup as
+> billing.
+>
+> When setup by credit card it does not e-mail them.  Is there a way to
+> turn on e-mail invoices for those who are billed via credit card?  Kind
+> of like a recipt of billing....
+
+
+doc: http://www.softagency.co.jp/mysql/qmail.en.html
+
+sql1992.txt standard is 18 character column names.  shoot for that, not just
+32 (postgresql default)
+
+Also note that (AFAIK) Freeside won't display any package that has more
+than one service on the "Add Customer" page.  The reason for this is
+because there's no way to dynamically alter the displayed html form
+based on which package is selected. One possible solution would be to
+make an additional page that's used in the signup process that would
+display the form for each package, like a MS-style "Wizard".  The first
+page lets you select the package, then the second page has the custom
+form with fields for each service in that package and a save button. Of
+course, that would require a little perl work.
+.
+Later,
+Scott Cruzen <sic@boernenet.com>
+
 
 Your suggested script with back up /usr/local/etc/freeside, but will miss
 any database not named `freeside'.  Both of our scripts are specific to
@@ -137,7 +169,7 @@ table should go away, along with the concept of a "default" domain.
 default setting for new packages should allow all agents to purchase them...
 with a config file for the old behaviour
 
-replace Term::Query  with Quiz::Question?
+fix or replace Term::Query (Quiz::Question doesn't do what i need)
 
 Check config file reading stuff from CPAN
  
