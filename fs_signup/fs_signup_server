@@ -221,7 +221,7 @@ while (1) {
         'Agent  : '. $cust_main->agent->agent. "\n",
         "\n",
       ];
-      if ( $cust_main->balance ) {
+      if ( $cust_main->balance > 0 ) {
         push @$body,
           "This customer has an outstanding balance and has been suspended.\n";
       }
