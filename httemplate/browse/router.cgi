@@ -20,16 +20,20 @@ my $p2 = popurl(2);
   </TR>
 <% foreach my $router (sort {$a->routernum <=> $b->routernum} @router) {
      my @addr_block = $router->addr_block;
+     if (scalar(@addr_block) == 0) {
+       push @addr_block, '&nbsp;';
+     }
 %>
   <TR>
-    <TD ROWSPAN="<%=scalar(@addr_block)%>">
+    <TD ROWSPAN="<%=scalar(@addr_block)+1%>">
       <A HREF="<%=$p2%>edit/router.cgi?<%=$router->routernum%>"><%=$router->routername%></A>
     </TD>
-    <TD>
-    <% foreach my $block ( @addr_block ) { %>
-      <%=$block->NetAddr%></BR>
-    <% } %>
-    </TD>
+  </TR>
+  <% foreach my $block ( @addr_block ) { %>
+  <TR>
+    <TD><%=UNIVERSAL::isa($block, 'FS::addr_block') ? $block->NetAddr : '&nbsp;'%></TD>
+  </TR>
+  <% } %>
   </TR>
 <% } %>
 </TABLE>
