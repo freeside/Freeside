@@ -79,8 +79,8 @@ sub adminsuidsetup {
   croak "Not running uid freeside!" unless checkeuid();
   getsecrets;
   $dbh = DBI->connect($datasrc,$db_user,$db_pass, {
-                          'AutoCommit' => 'false',
-                          'ChopBlanks' => 'true',
+                          'AutoCommit' => 0,
+                          'ChopBlanks' => 1,
   } ) or die "DBI->connect error: $DBI::errstr\n";
 
   swapuid(); #go to non-privledged user if running setuid freeside
@@ -259,7 +259,7 @@ coderef into the hash %FS::UID::callback :
 
 =head1 VERSION
 
-$Id: UID.pm,v 1.4 2001-02-03 14:03:49 ivan Exp $
+$Id: UID.pm,v 1.5 2001-02-21 01:45:07 ivan Exp $
 
 =head1 BUGS
 
