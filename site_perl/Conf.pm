@@ -53,7 +53,12 @@ Returns the directory.
 
 sub dir {
   my($self) = @_;
-  $self->{dir};
+  my $dir = $self->{dir};
+  -e $dir or die "FATAL: $dir doesn't exist!";
+  -d $dir or die "FATAL: $dir isn't a directory!";
+  -r $dir or die "FATAL: Can't read $dir!";
+  -x $dir or die "FATAL: $dir not searchable (executable)!";
+  $dir;
 }
 
 =item config 
@@ -107,7 +112,10 @@ Ivan Kohler <ivan@sisd.com> 98-sep-6
 sub exists forgot to fetch $dir ivan@sisd.com 98-sep-27
 
 $Log: Conf.pm,v $
-Revision 1.2  1998-11-13 04:08:44  ivan
+Revision 1.3  1999-03-29 01:29:33  ivan
+die unless the configuration directory exists
+
+Revision 1.2  1998/11/13 04:08:44  ivan
 no default default_dir (ironic)
 
 
