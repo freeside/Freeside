@@ -128,6 +128,8 @@ sub regionselector {
   my ( $selected_county, $selected_state, $selected_country,
        $prefix, $onchange ) = @_;
 
+  $prefix = '' unless defined $prefix;
+
   $countyflag = 0;
 
 #  unless ( @cust_main_county ) { #cache 
