@@ -198,7 +198,9 @@ sub sprintAutoProfile {
 
 sub include {
   ( my $file = shift ) =~ s(^/)(%%%FREESIDE_DOCUMENT_ROOT%%%/);
-  ${$Response->TrapInclude($file, @_)};
+  #broken in 5.005# ${$Response->TrapInclude($file, @_)};
+  my $ref = $Response->TrapInclude($file, @_);
+  $$ref;
 }
 
 if ( defined(@DBIx::Profile::ISA) ) {
