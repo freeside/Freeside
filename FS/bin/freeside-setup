@@ -609,6 +609,7 @@ sub tables_hash_hack {
         'otaker',    'varchar', '', 32,
         'setup',     @date_type,
         'bill',      @date_type,
+        'last_bill', @date_type,
         'susp',      @date_type,
         'cancel',    @date_type,
         'expire',    @date_type,
