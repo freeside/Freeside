@@ -2174,7 +2174,7 @@ paydate (credit card expiration date for CARD customers)
 
 sub paydate_monthyear {
   my $self = shift;
-  if ( $self->paydate  =~ /^(\d{4})-(\d{2})-\d{2}$/ ) { #Pg date format
+  if ( $self->paydate  =~ /^(\d{4})-(\d{1,2})-\d{1,2}$/ ) { #Pg date format
     ( $2, $1 );
   } elsif ( $self->paydate =~ /^(\d{1,2})-(\d{1,2}-)?(\d{4}$)/ ) {
     ( $1, $3 );
