@@ -3,7 +3,7 @@ package FS::svc_acct;
 use strict;
 use vars qw( @ISA $nossh_hack $conf $dir_prefix @shells $usernamemin
              $usernamemax $passwordmin $username_letter $username_letterfirst
-             $shellmachine $useradd $usermod $userdel 
+             $shellmachine $useradd $usermod $userdel $mydomain
              @saltset @pw_set);
 use Carp;
 use FS::Conf;
@@ -50,6 +50,7 @@ $FS::UID::callback{'FS::svc_acct'} = sub {
   }
   $username_letter = $conf->exists('username-letter');
   $username_letterfirst = $conf->exists('username-letterfirst');
+  $mydomain = $conf->config('domain');
 };
 
 @saltset = ( 'a'..'z' , 'A'..'Z' , '0'..'9' , '.' , '/' );
@@ -604,13 +605,16 @@ sub radius_check {
 
 Returns the domain associated with this account.
 
--cut
+=cut
 
 sub domain {
   my $self = shift;
-  my $svc_domain = qsearchs( 'svc_domain', { 'svcnum' => $self->domsvc } )
-    or die "svc_acct.domsvc ". $self->domsvc." not found in svc_domain.svcnum";
-  $svc_domain->domain;
+  if ( $self->domsvc ) {
+    my $svc_domain = qsearchs( 'svc_domain', { 'svcnum' => $self->domsvc } );
+    $svc_domain->domain;
+  } else {
+    $mydomain or die "svc_acct.domsvc is null and no legacy domain config file";
+  }
 }
 
 =item email
@@ -628,7 +632,7 @@ sub email {
 
 =head1 VERSION
 
-$Id: svc_acct.pm,v 1.27 2001-08-21 00:39:07 ivan Exp $
+$Id: svc_acct.pm,v 1.28 2001-08-21 03:03:36 ivan Exp $
 
 =head1 BUGS
 
