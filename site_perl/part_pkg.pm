@@ -29,8 +29,8 @@ FS::part_pkg - Object methods for part_pkg objects
 
 =head1 DESCRIPTION
 
-An FS::part_pkg represents a billing item definition.  FS::part_pkg inherits
-from FS::Record.  The following fields are currently supported:
+An FS::part_pkg object represents a billing item definition.  FS::part_pkg
+inherits from FS::Record.  The following fields are currently supported:
 
 =over 4
 
@@ -129,9 +129,11 @@ sub check {
 
 =head1 VERSION
 
-$Id: part_pkg.pm,v 1.4 1998-12-29 11:59:48 ivan Exp $
+$Id: part_pkg.pm,v 1.5 1998-12-31 01:04:16 ivan Exp $
 
 =head1 BUGS
+
+It doesn't properly override FS::Record yet.
 
 The delete method is unimplemented.
 
@@ -150,8 +152,8 @@ ivan@sisd.com 97-dec-5
 pod ivan@sisd.com 98-sep-21
 
 $Log: part_pkg.pm,v $
-Revision 1.4  1998-12-29 11:59:48  ivan
-mostly properly OO, some work still to be done with svc_ stuff
+Revision 1.5  1998-12-31 01:04:16  ivan
+doc
 
 Revision 1.3  1998/11/15 13:00:15  ivan
 bugfix in clone method, clone method doc clarification
