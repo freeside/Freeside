@@ -56,6 +56,41 @@ function areyousure(href) {
 
 <%
 
+#if ( $cust_pkg && $cust_pkg->part_pkg->plan eq 'sqlradacct_hour' ) {
+if ( $part_svc->part_export('sqlradius') ) {
+
+  my $last_bill;
+  if ( $cust_pkg ) {
+    #false laziness w/httemplate/edit/part_pkg... this stuff doesn't really
+    #belong in plan data
+     my %plandata = map { /^(\w+)=(.*)$/; ( $1 => $2 ); }
+                      split("\n", $cust_pkg->part_pkg->plandata );
+
+    $last_bill = $cust_pkg->last_bill;
+  } else {
+    $last_bill = 0;
+  }
+
+  my $seconds = $svc_acct->seconds_since_sqlradacct( $last_bill, time );
+  my $h = int($seconds/3600);
+  my $m = int( ($seconds%3600) / 60 );
+  my $s = $seconds%60;
+
+  if ( $seconds ) {
+    print "Online <B>$h</B>h <B>$m</B>m <B>$s</B>s";
+  } else {
+    print 'Has not logged on';
+  }
+
+  if ( $cust_pkg ) {
+    print ' this billing cycle (since '. time2str(%C, $last_bill). ') - '. 
+          $plandata{recur_included_hours}. ' total hours in plan<BR><BR>';
+  } else {
+    print ' (no billing cycle available for unaudited package)<BR><BR>';
+  }
+
+}
+
 #print qq!<BR><A HREF="../misc/sendconfig.cgi?$svcnum">Send account information</A>!;
 
 print qq!<A HREF="${p}edit/svc_acct.cgi?$svcnum">Edit this information</A><BR>!.
@@ -145,41 +180,6 @@ print '<TR><TD ALIGN="right">RADIUS groups</TD><TD BGCOLOR="#ffffff">'.
       join('<BR>', $svc_acct->radius_groups). '</TD></TR>';
 
 print '</TABLE></TD></TR></TABLE><BR><BR>';
-
-#if ( $cust_pkg && $cust_pkg->part_pkg->plan eq 'sqlradacct_hour' ) {
-if ( $part_svc->part_export('sqlradius') ) {
-
-  my $last_bill;
-  if ( $cust_pkg ) {
-    #false laziness w/httemplate/edit/part_pkg... this stuff doesn't really
-    #belong in plan data
-     my %plandata = map { /^(\w+)=(.*)$/; ( $1 => $2 ); }
-                      split("\n", $cust_pkg->part_pkg->plandata );
-
-    $last_bill = $cust_pkg->last_bill;
-  } else {
-    $last_bill = 0;
-  }
-
-  my $seconds = $svc_acct->seconds_since_sqlradacct( $last_bill, time );
-  my $h = int($seconds/3600);
-  my $m = int( ($seconds%3600) / 60 );
-  my $s = $seconds%60;
-
-  if ( $seconds ) {
-    print "Online ${h}h ${m}m ${s}s";
-  } else {
-    print 'Has not logged on';
-  }
-
-  if ( $cust_pkg ) {
-    print ' this billing cycle (since '. time2str(%C, $last_bill). ') - '. 
-          $plandata{recur_included_hours}. ' total hours in plan<BR><BR>';
-  } else {
-    print ' (no billing cycle available for unaudited package)<BR><BR>';
-  }
-
-}
 
 print join("\n", $conf->config('svc_acct-notes') ).  '<BR><BR>'.
       joblisting({'svcnum'=>$svcnum}, 1). '</BODY></HTML>';
