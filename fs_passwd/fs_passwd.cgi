@@ -22,6 +22,9 @@ my $cgi = new CGI;
 $cgi->param('username') =~ /^([^\n]{0,255}$)/ or die "Illegal username";
 my $me = $1;
 
+$cgi->param('domain') =~ /^([^\n]{0,255}$)/ or die "Illegal domain";
+my $domain = $1;
+
 $cgi->param('old_password') =~ /^([^\n]{0,255}$)/ or die "Illegal old_password";
 my $old_password = $1;
 
@@ -33,6 +36,7 @@ die "New passwords don't match"
 
 my $rv = passwd(
   'username'     => $me,
+  'domain'       => $domain,
   'old_password' => $old_password,
   'new_password' => $new_password,
 );
