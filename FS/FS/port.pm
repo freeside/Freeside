@@ -4,6 +4,7 @@ use strict;
 use vars qw( @ISA );
 use FS::Record qw( qsearchs );
 use FS::nas;
+use FS::session;
 
 @ISA = qw(FS::Record);
 
@@ -25,6 +26,8 @@ FS::port - Object methods for port records
   $error = $record->delete;
 
   $error = $record->check;
+
+  $session = $port->session;
 
 =head1 DESCRIPTION
 
@@ -113,11 +116,20 @@ sub check {
   ''; #no error
 }
 
+=item session
+
+Returns the currently open session, or if no session is currently open, the
+most recent session.  See L<FS::session>.
+
+=cut
+
+
+
 =back
 
 =head1 VERSION
 
-$Id: port.pm,v 1.1 2000-10-27 20:18:32 ivan Exp $
+$Id: port.pm,v 1.2 2000-12-03 13:44:05 ivan Exp $
 
 =head1 BUGS
 
@@ -135,7 +147,10 @@ added hfields
 ivan@sisd.com 97-nov-13
 
 $Log: port.pm,v $
-Revision 1.1  2000-10-27 20:18:32  ivan
+Revision 1.2  2000-12-03 13:44:05  ivan
+beginnings of web status for session monitor
+
+Revision 1.1  2000/10/27 20:18:32  ivan
 oops, also necessary for session monitor
 
 Revision 1.1  1999/08/04 08:03:03  ivan
