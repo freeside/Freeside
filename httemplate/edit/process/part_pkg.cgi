@@ -30,14 +30,15 @@ my %pkg_svc = map { $_ => $cgi->param("pkg_svc$_") }
 my $error;
 my $custnum = '';
 if ( $pkgpart ) {
-  $error = $new->replace( $old, 'pkg_svc'     => \%pkg_svc,
-                                'primary_svc' => $cgi->param('pkg_svc_primary'),
+  $error = $new->replace( $old,
+                          pkg_svc     => \%pkg_svc,
+                          primary_svc => scalar($cgi->param('pkg_svc_primary')),
                         );
 } else {
-  $error = $new->insert( 'pkg_svc'     => \%pkg_svc,
-                         'primary_svc' => $cgi->param('pkg_svc_primary'),
-                         'cust_pkg'    => $cgi->param('pkgnum'),
-                         'custnum_ref' => \$custnum,
+  $error = $new->insert(  pkg_svc     => \%pkg_svc,
+                          primary_svc => scalar($cgi->param('pkg_svc_primary')),
+                          cust_pkg    => $cgi->param('pkgnum'),
+                          custnum_ref => \$custnum,
                        );
   $pkgpart = $new->pkgpart;
 }
