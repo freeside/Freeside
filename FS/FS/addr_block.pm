@@ -324,5 +324,7 @@ To be implemented.
 Minimum block size should be a config option.  It's hardcoded at /30 right
 now because that's the smallest block that makes any sense at all.
 
+=cut
+
 1;
 
