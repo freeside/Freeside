@@ -104,15 +104,17 @@ Installs w/integrated RT:
   CREATE INDEX Attributes2 on Attributes(ObjectType, ObjectId);
 
 
-dbdef-create username
+(make sure you have upgrade DBIx::DBSchema to 0.24)
+dbdef-create username 
 create-history-tables username rate rate_detail rate_region rate_prefix reg_code reg_code_pkg
 dbdef-create username
 
 install Javascript::RPC (JavaScript::RPC::Server::CGI), Text::CSV_XS,
-Spreadsheet::WriteExcel, IO-stringy (IO::Scalar) and Frontier::RPC
-(Frontier::RPC2)
+Spreadsheet::WriteExcel, IO-stringy (IO::Scalar), Frontier::RPC
+(Frontier::RPC2) and MIME::Entity (MIME-tools)
 
 afterwords (for installs w/integrated RT):
+install HTML::Scrubber and Text::Quoted
 make configure-rt
 make deploy
 /opt/rt3/sbin/rt-setup-database --action insert --datadir etc/upgrade/3.1.15
