@@ -636,7 +636,6 @@ sub batch_card {
     'state'    => $cust_main->getfield('state'),
     'zip'      => $cust_main->getfield('zip'),
     'country'  => $cust_main->getfield('country'),
-    'trancode' => 77,
     'cardnum'  => $cust_main->getfield('payinfo'),
     'exp'      => $cust_main->getfield('paydate'),
     'payname'  => $cust_main->getfield('payname'),
