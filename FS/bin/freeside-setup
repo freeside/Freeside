@@ -1190,8 +1190,9 @@ sub tables_hash_hack {
       'columns' => [
         'regionnum',   'serial',      '', '',
         'regionname',  'varchar',     '', $char_d,
+      ],
       'primary_key' => 'regionnum',
-      'unique'      => [].
+      'unique'      => [],
       'index'       => [],
     },
 
@@ -1204,8 +1205,9 @@ sub tables_hash_hack {
         'nxx',         'varchar', 'NULL', 3,
       ],
       'primary_key' => 'prefixnum',
-      'unique'      => [].
+      'unique'      => [],
       'index'       => [ [ 'countrycode' ], [ 'regionnum' ] ],
+    },
 
 
   );
