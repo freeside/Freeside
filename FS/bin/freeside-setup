@@ -669,7 +669,7 @@ sub tables_hash_hack {
       ],
       'primary_key' => 'pkgpart',
       'unique' => [],
-      'index' => [],
+      'index' => [ [ disabled ], ],
     },
 
 #    'part_title' => {
@@ -712,7 +712,7 @@ sub tables_hash_hack {
       ],
       'primary_key' => 'svcpart',
       'unique' => [],
-      'index' => [],
+      'index' => [ [ 'disabled' ] ],
     },
 
     'part_svc_column' => {

@@ -280,14 +280,14 @@ print '<BR>'.
   qq!<INPUT TYPE="hidden" NAME="custnum" VALUE="$custnum">!.
   '<SELECT NAME="pkgpart"><OPTION> ';
 
-foreach my $type_pkgs ( qsearch('type_pkgs',{'typenum'=> $agent->typenum }) ) {
-  my $pkgpart = $type_pkgs->pkgpart;
-#  my $part_pkg = qsearchs('part_pkg', { 'pkgpart' => $pkgpart } )
-#    or do { warn "unknown type_pkgs.pkgpart $pkgpart"; next; };
-  my $part_pkg =
-    qsearchs('part_pkg', { 'pkgpart' => $pkgpart, 'disabled' => '' } )
-    or next;
-  print qq!<OPTION VALUE="$pkgpart">!. $part_pkg->pkg. ' - '.
+foreach my $part_pkg (
+  qsearch( 'part_pkg', { 'disabled' => '' }, '',
+           ' AND 0 < ( SELECT COUNT(*) FROM type_pkgs '.
+           '             WHERE typenum = '. $agent->typenum.
+           '             AND type_pkgs.pkgpart = part_pkg.pkgpart )'
+         )
+) {
+  print '<OPTION VALUE="'. $part_pkg->pkgpart. '">'. $part_pkg->pkg. ' - '.
         $part_pkg->comment;
 }
 

@@ -7,6 +7,7 @@ schema changes:
   *** add column cust_main_county.taxname
   *** add column cust_bill_pkg.itemdesc
   *** drop index cust_bill_pkg1
+  *** add index part_pkg1 and part_svc1
 
 install DBIx::DBSchema 0.21
 install NetAddr::IP
