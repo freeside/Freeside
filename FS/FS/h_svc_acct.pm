@@ -1,13 +1,17 @@
 package FS::h_svc_acct;
 
 use strict;
-use vars qw( @ISA );
+use vars qw( @ISA $DEBUG );
+use Carp qw(carp);
 use FS::Record qw(qsearchs);
 use FS::h_Common;
 use FS::svc_acct;
+use FS::svc_domain;
 use FS::h_svc_domain;
 
 @ISA = qw( FS::h_Common FS::svc_acct );
+
+$DEBUG = 0;
 
 sub table { 'h_svc_acct' };
 
@@ -32,6 +36,27 @@ sub svc_domain {
             FS::h_svc_domain->sql_h_searchs(@_),
           );
 }
+
+=item domain
+
+Returns the domain associated with this account.
+
+=cut
+
+sub domain {
+  my $self = shift;
+  die "svc_acct.domsvc is null for svcnum ". $self->svcnum unless $self->domsvc;
+
+  my $svc_domain = $self->svc_domain(@_) || $self->SUPER::svc_domain()
+    or die 'no history svc_domain.svcnum for svc_acct.domsvc ' . $self->domsvc;
+
+  carp 'Using FS::svc_acct record in place of missing FS::h_svc_acct record.'
+    if ($svc_domain->isa('FS::svc_acct') and $DEBUG);
+
+  $svc_domain->domain;
+
+}
+
 
 =back
 

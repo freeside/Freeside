@@ -40,9 +40,25 @@ Returns a list consisting of:
 sub label {
   my $self = shift;
   carp "FS::h_cust_svc::label called on $self" if $DEBUG;
-  my $svc_x = $self->h_svc_x(@_)
-    or die "can't find h_". $self->part_svc->svcdb. '.svcnum '. $self->svcnum;
-  $self->_svc_label($svc_x, @_);
+  my $svc_x = $self->h_svc_x(@_);
+  my $part_svc = $self->part_svc;
+
+  unless ($svc_x) {
+    carp "can't find h_". $self->part_svc->svcdb. '.svcnum '. $self->svcnum if $DEBUG;
+    return $part_svc->svc, 'n/a', $part_svc->svcdb;
+  }
+
+  my @label;
+  eval { @label = $self->_svc_label($svc_x, @_); };
+
+  if ($@) {
+    carp 'while resolving history record for svcdb/svcnum ' . 
+         $part_svc->svcdb . '/' . $self->svcnum . ': ' . $@ if $DEBUG;
+    return $part_svc->svc, 'n/a', $part_svc->svcdb;
+  } else {
+    return @label;
+  }
+
 }
 
 =item h_svc_x END_TIMESTAMP [ START_TIMESTAMP ] 
