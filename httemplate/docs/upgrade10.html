@@ -62,7 +62,7 @@ CREATE TABLE svc_broadband (
   PRIMARY KEY (svcnum)
 );
 
-DELETE INDEX cust_bill_pkg1;
+DROP INDEX cust_bill_pkg1;
 
 ALTER TABLE cust_bill_pkg ADD itemdesc varchar(80) NULL;
 ALTER TABLE h_cust_bill_pkg ADD itemdesc varchar(80) NULL;
