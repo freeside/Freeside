@@ -806,7 +806,24 @@ returns the error, otherwise returns false.
 =cut
 
 sub replace {
-  my ( $new, $old ) = ( shift, shift );
+  my $new = shift;
+
+  my $old;
+  if ( @_ ) { 
+    $old = shift;
+  } else {
+    warn "[debug]$me replace called with no arguments; autoloading old record\n"
+     if $DEBUG;
+    my $primary_key = $new->dbdef_table->primary_key;
+    if ( $primary_key ) {
+      $old = qsearchs($new->table, { $primary_key => $new->$primary_key() } )
+        or croak "can't find ". $new->table. ".$primary_key ".
+                 $new->$primary_key();
+    } else {
+      croak $new->table. " has no primary key; pass old record as argument";
+    }
+  }
+
   warn "[debug]$me $new ->replace $old\n" if $DEBUG;
 
   return "Records not in same table!" unless $new->table eq $old->table;
