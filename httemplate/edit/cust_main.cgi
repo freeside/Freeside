@@ -191,8 +191,10 @@ END
 my $countrydefault = $conf->config('countrydefault') || 'US';
 $cust_main->country( $countrydefault ) unless $cust_main->country;
 
-$cust_main->state( $conf->config('statedefault') || 'CA' )
-  unless $cust_main->state || $cust_main->country ne 'US';
+my $statedefault = $conf->config('statedefault')
+                   || ($countrydefault eq 'US' ? 'CA' : '');
+$cust_main->state( $statedefault )
+  unless $cust_main->state || $cust_main->country ne $countrydefault;
 
 my($county_html, $state_html, $country_html) =
   FS::cust_main_county::regionselector( $cust_main->county,
@@ -343,7 +345,9 @@ sub expselect {
     $return .= ">$_";
   }
   $return .= qq!</SELECT>/<SELECT NAME="$prefix!. qq!_year" SIZE="1">!;
-  for ( 2001 .. 2037 ) {
+  my @t = localtime;
+  my $thisYear = $t[5] + 1900;
+  for ( ($thisYear > $y && $y > 0 ? $y : $thisYear) .. 2037 ) {
     $return .= "<OPTION";
     $return .= " SELECTED" if $_ == $y;
     $return .= ">$_";
