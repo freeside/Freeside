@@ -1,0 +1,119 @@
+templated web interface (start, anyway)
+separate billing and service addresses
+customer comments
+edit/part_svc.cgi
+svc_forward and better dealing with virtualdomains!  and realm export to RADIUS
+customer-to-customer referrals
+quick order
+no more single default domain
+
+no more postgres/RADIUS weirdness yay!, 31 character column names etc.
+PostgreSQL no longer needs to be recompiled for long RADIUS attributes.   
+RADIUS integration and RADIUS attribute defaults updated.
+
+Fuzzy searches on large data sets are much faster.
+     
+Job queues have been implemented.
+
+Integration with Cyrus IMAP server.
+
+Support for instant (previously only batch) update of an ICRADIUS or
+FreeRADIUS stored in a local or remote MySQL installation (separate from
+the Freeside database)
+
+1.4.0 has a new Authorize.Net interface, updated for Authorize.Net 3.0
+
+completely templated signup server
+
+items setup/recur tax exempt flag
+     
+jeff!
+
+Price plans.  For starters, multi-level customer-to-customer commissions
+in addition to flat rate pricing.  Price plans are written in Perl and
+it's straightforward to add new ones.  I'm expect we'll see plans for
+pro-rating, metered billing and the like soon.
+
+New UI for packages and price plans.
+
+Per-package tax exemption for setup and/or recurring fee         
+
+New UI in the signup server, new customer and new account pages that 
+breaks down access numbers by state and should be easier to use for a
+large number of dialup numbers.  (POPs)   
+
+Database support for local call mappin - the data on what exchanges
+can call which of your access numbers as a local call.
+
+easier installation/instructions & web configuration
+
+expedited payment-entry
+- a quick check entry tool for entering large numbers of checks as well
+  as customer information on the payment entry screen
+
+- automatic application of payments and credits to outstanding invoices
+  
+#freeside-overdue
+#- the `freeside-overdue' script to list, add postal invoicing, suspend,   
+#  or cancel overdue and/or expired accounts.
+
+- Payments and credits are applied against invoices when posted.
+
+- A bunch of UI fixes/tweaks: package browse, payment/credit entry, search
+  by check #, others
+
+  - Web interface for per-hour or per-minute account charges using the
+    session monitor.
+  
+  - Invoice events - set late fees, suspension, cancellation, etc. events
+    on overdue invoices.
+  
+  - Packages and service disable flags for a more manageable UI.
+
+HTML manpages now up-to-date and generated on install
+
+schema changes for more configurable export
+
+no mysql support :(
+
+invoice events work & show up on invoice view
+
+- Pro-rating price plan
+
+- svc_www for virtual host services
+-svc_www is here, better support for apache integration
+
+- fs_passwd/fs_passwd.cgi web-based password changer for users
+
+LinkPoint support
+
+Most notably, the main menu has gotten a significant facelift and should
+be easier to understand and use.
+
+New frequently-requested financial reports contributed by Jeff Finucane,
+thanks!
+
+The queue daemon web UI has been finished - you can now retry and remove
+jobs, error messages from failed jobs appear on the web interface, and
+account detail pages show any pending provisioning jobs for thsoe
+accounts.
+
+fs-setup should work under MySQL again.  The browse links are still broken
+("all customers", "all packages", "all accounts") but at least you should
+be able to get everything else working...
+
+Critical Path provisioning has been updated and can now username changes
+and suspension/unsuspension.
+
+-- 
+
+added case-insensitive and substring to default search
+
+full history tables (notification for deleted payments)
+
+alternate templates (late invoices!)
+
+new export! (well, almost)
+
+icradius groups (usergroup table if not radgroupreply & radgroupcheck)
+
