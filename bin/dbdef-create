@@ -1,19 +1,28 @@
 #!/usr/bin/perl -Tw
 #
+# $Id: dbdef-create,v 1.2 1998-11-19 11:17:44 ivan Exp $
+#
 # create dbdef file for existing mySQL database (needs SHOW|DESCRIBE command
 # not in Pg) based on fs-setup
 #
 # ivan@sisd.com 98-jun-2
+#
+# $Log: dbdef-create,v $
+# Revision 1.2  1998-11-19 11:17:44  ivan
+# adminsuidsetup requires argument
+#
 
 use strict;
 use DBI;
 use FS::dbdef;
 use FS::UID qw(adminsuidsetup datasrc);
 
-#needs to match FS::Record
-my($dbdef_file) = "/var/spool/freeside/dbdef.". datasrc;
+my $user = shift or die &usage;
 
-my($dbh)=adminsuidsetup;
+my($dbh)=adminsuidsetup $user;
+
+#needs to match FS::Record
+my($dbdef_file) = "/usr/local/etc/freeside/dbdef.". datasrc;
 
 my($tables_sth)=$dbh->prepare("SHOW TABLES");
 my($tables_rv)=$tables_sth->execute;
@@ -83,3 +92,6 @@ my($dbdef) = new FS::dbdef ( @tables );
 #important
 $dbdef->save($dbdef_file);
 
+sub usage {
+  die "Usage:\n  dbdef-create user\n";
+}
