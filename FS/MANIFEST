@@ -54,6 +54,7 @@ FS/part_export/cp.pm
 FS/part_export/cyrus.pm
 FS/part_export/infostreet.pm
 FS/part_export/shellcommands.pm
+FS/part_export/sqlmail.pm
 FS/part_export/sqlradius.pm
 FS/part_export/textradius.pm
 FS/part_export/vpopmail.pm
@@ -117,6 +118,7 @@ t/part_export-cp.t
 t/part_export-cyrus.t
 t/part_export-infostreet.t
 t/part_export-shellcommands.t
+t/part_export-sqlmail.t
 t/part_export-sqlradius.t
 t/part_export-textradius.t
 t/part_export-vpopmail.t
