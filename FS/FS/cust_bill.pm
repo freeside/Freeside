@@ -606,7 +606,7 @@ for supported processors.
 
 sub realtime_ach {
   my $self = shift;
-  $self->realtime_bop('ECHECK', @_);
+  $self->realtime_bop('CHECK', @_);
 }
 
 sub realtime_bop {
@@ -624,7 +624,7 @@ sub realtime_bop {
   $address .= ", ". $cust_main->address2 if $cust_main->address2;
 
   my($payname, $payfirst, $paylast);
-  if ( $cust_main->payname && $method ne 'ECHECK' ) {
+  if ( $cust_main->payname && $method ne 'CHECK' ) {
     $payname = $cust_main->payname;
     $payname =~ /^\s*([\w \,\.\-\']*)?\s+([\w\,\.\-\']+)\s*$/
       or do {
@@ -668,7 +668,7 @@ sub realtime_bop {
     $content{card_number} = $cust_main->payinfo;
     $cust_main->paydate =~ /^\d{2}(\d{2})[\/\-](\d+)[\/\-]\d+$/;
     $content{expiration} = "$2/$1";
-  } elsif ( $method eq 'ECHECK' ) {
+  } elsif ( $method eq 'CHECK' ) {
     my($account_number,$routing_code) = $cust_main->payinfo;
     ( $content{account_number}, $content{routing_code} ) =
       split('@', $cust_main->payinfo);
@@ -747,8 +747,8 @@ sub realtime_bop {
   if ( $transaction->is_success() ) {
 
     my %method2payby = (
-      'CC'     => 'CARD',
-      'ECHECK' => 'CHEK',
+      'CC'    => 'CARD',
+      'CHECK' => 'CHEK',
     );
 
     my $cust_pay = new FS::cust_pay ( {
@@ -1074,7 +1074,7 @@ sub print_text {
 
 =head1 VERSION
 
-$Id: cust_bill.pm,v 1.49 2002-10-13 01:05:29 ivan Exp $
+$Id: cust_bill.pm,v 1.50 2002-10-15 09:54:24 ivan Exp $
 
 =head1 BUGS
 
