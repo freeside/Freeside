@@ -10,6 +10,8 @@ use FS::part_pkg;
 use FS::svc_acct_pop;
 use FS::cust_main;
 use FS::cust_pkg;
+use FS::svc_acct;
+use FS::acct_snarf;
 use FS::Msgcat qw(gettext);
 
 use FS::ClientAPI; #hmm
@@ -154,6 +156,20 @@ sub new_customer {
     map { $_ => $packet->{$_} }
       qw( username _password sec_phrase popnum ),
   } );
+
+  my @acct_snarf;
+  my $snarfnum = 1;
+  while ( length($packet->{"snarf_machine$snarfnum"}) ) {
+    my $acct_snarf = new FS::acct_snarf ( {
+      'machine'   => $packet->{"snarf_machine$snarfnum"},
+      'protocol'  => $packet->{"snarf_protocol$snarfnum"},
+      'username'  => $packet->{"snarf_username$snarfnum"},
+      '_password' => $packet->{"snarf_password$snarfnum"},
+    } );
+    $snarfnum++;
+    push @acct_snarf, $acct_snarf;
+  }
+  $svc_acct->child_objects( \@acct_snarf );
 
   my $y = $svc_acct->setdefault; # arguably should be in new method
   return { 'error' => $y } if $y && !ref($y);

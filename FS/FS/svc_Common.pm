@@ -80,7 +80,7 @@ sub check {
   $self->SUPER::check;
 }
 
-=item insert [ JOBNUM_ARRAYREF ]
+=item insert [ JOBNUM_ARRAYREF [ OBJECTS_ARRAYREF ] ]
 
 Adds this record to the database.  If there is an error, returns the error,
 otherwise returns false.
@@ -91,11 +91,16 @@ defined.  An FS::cust_svc record will be created and inserted.
 If an arrayref is passed as parameter, the B<jobnum>s of any export jobs will
 be added to the array.
 
+If an arrayref of FS::tablename objects (for example, FS::acct_snarf objects)
+is passed as the optional second parameter, they will have their svcnum fields
+set and will be inserted after this record, but before any exports are run.
+
 =cut
 
 sub insert {
   my $self = shift;
   local $FS::queue::jobnums = shift if @_;
+  my $objects = scalar(@_) ? shift : [];
   my $error;
 
   local $SIG{HUP} = 'IGNORE';
@@ -140,6 +145,15 @@ sub insert {
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
+  }
+
+  foreach my $object ( @$objects ) {
+    $object->svcnum($self->svcnum);
+    $error = $object->insert;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
   }
 
   #new-style exports!
@@ -416,7 +430,7 @@ sub cancel { ''; }
 
 =head1 VERSION
 
-$Id: svc_Common.pm,v 1.13 2003-08-05 00:20:47 khoff Exp $
+$Id: svc_Common.pm,v 1.14 2003-10-25 02:05:44 ivan Exp $
 
 =head1 BUGS
 

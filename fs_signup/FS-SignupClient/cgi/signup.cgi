@@ -1,6 +1,6 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: signup.cgi,v 1.47 2003-10-24 19:28:49 ivan Exp $
+# $Id: signup.cgi,v 1.48 2003-10-25 02:05:44 ivan Exp $
 
 use strict;
 use vars qw( @payby $cgi $locales $packages
@@ -266,6 +266,7 @@ if ( defined $cgi->param('magic') ) {
         '_password'        => $password,
         'popnum'           => $popnum,
         'agentnum'         => $agentnum,
+        map { $_ => $cgi->param($_) } grep { /^snarf_/ } $cgi->param
       } );
 
     }
@@ -273,6 +274,9 @@ if ( defined $cgi->param('magic') ) {
     if ( $error eq '_decline' ) {
       print_decline();
     } elsif ( $error ) {
+      #fudge the snarf info
+      no strict 'refs';
+      ${$_} = $cgi->param($_) foreach grep { /^snarf_/ } $cgi->param;
       print_form();
     } else {
       print_okay();

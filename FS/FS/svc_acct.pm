@@ -188,9 +188,15 @@ The additional field I<usergroup> can optionally be defined; if so it should
 contain an arrayref of group names.  See L<FS::radius_usergroup>.  (used in
 sqlradius export only)
 
+The additional field I<child_objects> can optionally be defined; if so it
+should contain an arrayref of FS::tablename objects.  They will have their
+svcnum fields set and will be inserted after this record, but before any
+exports are run.
+
 (TODOC: L<FS::queue> and L<freeside-queued>)
 
 (TODOC: new exports!)
+
 
 =cut
 
@@ -319,7 +325,7 @@ sub insert {
   #see?  i told you it was more complicated
 
   my @jobnums;
-  $error = $self->SUPER::insert(\@jobnums);
+  $error = $self->SUPER::insert(\@jobnums, $self->child_objects || [] );
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;

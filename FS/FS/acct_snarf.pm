@@ -90,9 +90,9 @@ returns the error, otherwise returns false.
 
 =item check
 
-Checks all fields to make sure this is a valid example.  If there is
-an error, returns the error, otherwise returns false.  Called by the insert
-and replace methods.
+Checks all fields to make sure this is a valid external mail account.  If
+there is an error, returns the error, otherwise returns false.  Called by the
+insert and replace methods.
 
 =cut
 
@@ -103,7 +103,7 @@ sub check {
     || $self->ut_number('svcnum')
     || $self->ut_foreign_key('svcnum', 'svc_acct', 'svcnum')
     || $self->ut_domain('machine')
-    || $self->alphan('protocol')
+    || $self->ut_alphan('protocol')
     || $self->ut_textn('username')
   ;
   return $error if $error;
