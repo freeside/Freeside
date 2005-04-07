@@ -9,7 +9,7 @@ use FS::cust_svc;
 
 @ISA = qw( FS::h_Common FS::cust_svc );
 
-$DEBUG = 0;
+$DEBUG = 1;
 
 sub table { 'h_cust_svc'; }
 
@@ -73,16 +73,21 @@ cancelled before START_TIMESTAMP.
 sub h_svc_x {
   my $self = shift;
   my $svcdb = $self->part_svc->svcdb;
-  #if ( $svcdb eq 'svc_acct' && $self->{'_svc_acct'} ) {
-  #  $self->{'_svc_acct'};
-  #} else {
-    warn "requiring FS/h_$svcdb.pm" if $DEBUG;
-    require "FS/h_$svcdb.pm";
-    qsearchs( "h_$svcdb",
-              { 'svcnum'       => $self->svcnum, },
-              "FS::h_$svcdb"->sql_h_searchs(@_),
-            );
-  #}
+
+  warn "requiring FS/h_$svcdb.pm" if $DEBUG;
+  require "FS/h_$svcdb.pm";
+  my $svc_x = qsearchs(
+    "h_$svcdb",
+    { 'svcnum' => $self->svcnum, },
+    "FS::h_$svcdb"->sql_h_searchs(@_),
+  ) || $self->SUPER::svc_x
+    or die "no history ${svcdb}.svcnum for cust_svc.svcnum ". $self->svcnum;
+
+  carp "Using $svcdb in place of missing h_${svcdb} record."
+   if ($svc_x->isa('FS::' . $svcdb) and $DEBUG);
+
+  return $svc_x;
+
 }
 
 =back

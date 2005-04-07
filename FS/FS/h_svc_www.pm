@@ -40,7 +40,7 @@ sub domain_record {
   ) || $self->SUPER::domain_record
     or die "no history domain_record.recnum for svc_www.recnum ". $self->domsvc;
 
-  carp 'Using FS::svc_acct record in place of missing FS::h_svc_acct record.'
+  carp 'Using domain_record in place of missing h_domain_record record.'
     if ($domain_record->isa('FS::domain_record') and $DEBUG);
 
   return $domain_record;
