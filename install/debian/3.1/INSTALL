@@ -1,0 +1,42 @@
+#!/bin/sh
+
+#echo "deb http://pouncequick.420.am/~ivan/freeside-sarge/ ./" >>/etc/apt/sources.list
+
+apt-get update
+apt-get install screen zsh libapache-mod-ssl libapache-mod-ssl-doc \
+        libapache-mod-perl rsync postgresql postgresql-contrib cvs fsh \
+        liburi-perl libhtml-tagset-perl libnet-perl \
+        libwww-perl libbusiness-creditcard-perl \
+        libmailtools-perl libtimedate-perl libdate-manip-perl \
+        libfile-counterfile-perl libfreezethaw-perl libstring-approx-perl \
+        libtext-template-perl libdbi-perl libdbd-pg-perl \
+        libdbix-dbschema-perl libnet-ssh-perl \
+        libstring-shellquote-perl libnet-scp-perl libhtml-mason-perl \
+        libtie-ixhash-perl libtime-duration-perl \
+        libhtml-widgets-selectlayers-perl \
+        libapache-dbi-perl libcache-cache-perl libdbd-mysql-perl \
+        libcrypt-passwdmd5-perl libnetaddr-ip-perl \
+        libnet-whois-raw-perl libchart-perl \
+        libmime-perl libapache-session-perl libhtml-tree-perl \
+        libhtml-format-perl libtest-inline-perl libclass-returnvalue-perl \
+        libdbix-searchbuilder-perl  liblog-dispatch-perl \
+        liblocale-maketext-lexicon-perl liblocale-maketext-fuzzy-perl \
+        libtext-wrapper-perl libtime-modules-perl libterm-readkey-perl \
+        libtext-autoformat-perl libtext-quoted-perl libregexp-common-perl \
+        libhtml-scrubber-perl libtree-simple-perl liblocale-subcountry-perl
+
+useradd freeside
+su postgres -c "createuser -P freeside"
+
+su freeside -c "createdb freeside"
+
+perl -p -i.fsbackup -e 's/^(User|Group) .*/$1 freeside/' /etc/apache/httpd.conf
+
+#?
+cd ../../..
+make install-perl-modules
+make create-config
+freeside-adduser -c -h /usr/local/etc/freeside/htpasswd ivan
+su freeside -c 'freeside-setup ivan'
+su freeside -c '/home/ivan/freeside/bin/populate-msgcat ivan'
+make deploy

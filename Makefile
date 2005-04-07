@@ -52,6 +52,10 @@ HTTPD_RESTART = /etc/init.d/apache restart
 #apache
 #HTTPD_RESTART = /usr/local/apache/bin/apachectl stop; sleep 10; /usr/local/apache/bin/apachectl startssl
 
+#(an include directory, not a file - "Include /etc/apache/conf.d" in httpd.conf)
+#deb (3.1+), 
+APACHE_CONF = /etc/apache/conf.d
+
 FREESIDE_RESTART = ${INIT_FILE} restart
 
 #deb, redhat, fedora, mandrake, suse, others?
@@ -78,8 +82,8 @@ SELFSERVICE_INSTALL_USER = ivan
 SELFSERVICE_INSTALL_USERADD = /usr/sbin/useradd
 #SELFSERVICE_INSTALL_USERADD = "/usr/sbin/pw useradd"
 
-RT_ENABLED = 0
-#RT_ENABLED = 1
+#RT_ENABLED = 0
+RT_ENABLED = 1
 RT_DOMAIN = example.com
 RT_TIMEZONE = US/Pacific;
 #RT_TIMEZONE = US/Eastern;
@@ -185,6 +189,14 @@ install-init:
 	" ${INIT_FILE}
 	${INIT_INSTALL}
 
+install-apache:
+	[ -d ${APACHE_CONF} ] && \
+	  install -o root -m 755 htetc/freeside-base.conf ${APACHE_CONF} && \
+	  ( [ ${RT_ENABLED} -eq 1 ] && install -o root -m 755 htetc/freeside-rt.conf ${APACHE_CONF} || true ) && \
+	  perl -p -i -e "\
+	    s'%%%FREESIDE_DOCUMENT_ROOT%%%'${FREESIDE_DOCUMENT_ROOT}'g; \
+	  " ${APACHE_CONF}/freeside-*.conf
+
 install-selfservice:
 	[ -e ~freeside/.ssh/id_dsa.pub ] || su - freeside -c 'ssh-keygen -t dsa'
 	for MACHINE in ${SELFSERVICE_MACHINES}; do \
@@ -203,7 +215,7 @@ update-selfservice:
 	  ssh ${SELFSERVICE_INSTALL_USER}@$$MACHINE "cd FS-SelfService; sudo make install" ;\
 	done
 
-install: install-perl-modules install-docs install-init install-rt
+install: install-perl-modules install-docs install-init install-apache install-rt
 
 deploy: install
 	${HTTPD_RESTART}
