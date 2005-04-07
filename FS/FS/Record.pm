@@ -9,7 +9,7 @@ use Carp qw(carp cluck croak confess);
 use File::CounterFile;
 use Locale::Country;
 use DBI qw(:sql_types);
-use DBIx::DBSchema 0.23;
+use DBIx::DBSchema 0.25;
 use FS::UID qw(dbh getotaker datasrc driver_name);
 use FS::SearchCache;
 use FS::Msgcat qw(gettext);
@@ -883,8 +883,6 @@ sub replace {
   my $new = shift;
   my $old = shift;  
 
-  my $saved = {};
-
   if (!defined($old)) { 
     warn "[debug]$me replace called with no arguments; autoloading old record\n"
      if $DEBUG;
@@ -911,6 +909,7 @@ sub replace {
   return $error if $error;
   
   # Encrypt for replace
+  my $saved = {};
   if ($conf->exists('encryption') && defined(eval '@FS::'. $new->table . 'encrypted_fields')) {
     foreach my $field (eval '@FS::'. $new->table . '::encrypted_fields') {
       $saved->{$field} = $new->getfield($field);

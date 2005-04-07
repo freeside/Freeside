@@ -9,7 +9,7 @@ use Getopt::Std;
 use Locale::Country;
 use Locale::SubCountry;
 use DBI;
-use DBIx::DBSchema 0.21;
+use DBIx::DBSchema 0.25;
 use DBIx::DBSchema::Table;
 use DBIx::DBSchema::Column;
 use DBIx::DBSchema::ColGroup::Unique;

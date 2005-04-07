@@ -4,7 +4,7 @@
 
 use strict;
 use DBI;
-use DBIx::DBSchema 0.21;
+use DBIx::DBSchema 0.26;
 use DBIx::DBSchema::Table;
 use DBIx::DBSchema::Column;
 use DBIx::DBSchema::ColGroup::Unique;

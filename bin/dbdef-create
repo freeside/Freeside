@@ -2,7 +2,7 @@
 
 use strict;
 use DBI;
-use DBIx::DBSchema 0.22;
+use DBIx::DBSchema 0.26;
 use FS::UID qw(adminsuidsetup datasrc driver_name);
 
 my $user = shift or die &usage;
