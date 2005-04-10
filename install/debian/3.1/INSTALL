@@ -3,8 +3,11 @@
 #echo "deb http://pouncequick.420.am/~ivan/freeside-sarge/ ./" >>/etc/apt/sources.list
 
 apt-get update
-apt-get install screen zsh libapache-mod-ssl libapache-mod-ssl-doc \
-        libapache-mod-perl rsync postgresql postgresql-contrib cvs fsh \
+apt-get install make screen zsh cvs fsh rsync \
+        apache libapache-mod-ssl libapache-mod-ssl-doc libapache-mod-perl \
+        postgresql postgresql-contrib \
+        tetex-base tetex-bin tetex-extra \
+        gs lpr libpaper-utils psutils dialog psfontmgr \
         liburi-perl libhtml-tagset-perl libnet-perl \
         libwww-perl libbusiness-creditcard-perl \
         libmailtools-perl libtimedate-perl libdate-manip-perl \
@@ -23,7 +26,8 @@ apt-get install screen zsh libapache-mod-ssl libapache-mod-ssl-doc \
         liblocale-maketext-lexicon-perl liblocale-maketext-fuzzy-perl \
         libtext-wrapper-perl libtime-modules-perl libterm-readkey-perl \
         libtext-autoformat-perl libtext-quoted-perl libregexp-common-perl \
-        libhtml-scrubber-perl libtree-simple-perl liblocale-subcountry-perl
+        libhtml-scrubber-perl libtree-simple-perl liblocale-subcountry-perl \
+        libtext-csv-perl libspreadsheet-writeexcel-perl libfrontier-rpc-perl
 
 useradd freeside
 su postgres -c "createuser -P freeside"
