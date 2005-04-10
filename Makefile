@@ -82,8 +82,8 @@ SELFSERVICE_INSTALL_USER = ivan
 SELFSERVICE_INSTALL_USERADD = /usr/sbin/useradd
 #SELFSERVICE_INSTALL_USERADD = "/usr/sbin/pw useradd"
 
-#RT_ENABLED = 0
-RT_ENABLED = 1
+RT_ENABLED = 0
+#RT_ENABLED = 1
 RT_DOMAIN = example.com
 RT_TIMEZONE = US/Pacific;
 #RT_TIMEZONE = US/Eastern;
@@ -191,11 +191,12 @@ install-init:
 
 install-apache:
 	[ -d ${APACHE_CONF} ] && \
-	  install -o root -m 755 htetc/freeside-base.conf ${APACHE_CONF} && \
-	  ( [ ${RT_ENABLED} -eq 1 ] && install -o root -m 755 htetc/freeside-rt.conf ${APACHE_CONF} || true ) && \
-	  perl -p -i -e "\
-	    s'%%%FREESIDE_DOCUMENT_ROOT%%%'${FREESIDE_DOCUMENT_ROOT}'g; \
-	  " ${APACHE_CONF}/freeside-*.conf
+	  ( install -o root -m 755 htetc/freeside-base.conf ${APACHE_CONF} && \
+	    ( [ ${RT_ENABLED} -eq 1 ] && install -o root -m 755 htetc/freeside-rt.conf ${APACHE_CONF} || true ) && \
+	    perl -p -i -e "\
+	      s'%%%FREESIDE_DOCUMENT_ROOT%%%'${FREESIDE_DOCUMENT_ROOT}'g; \
+	    " ${APACHE_CONF}/freeside-*.conf \
+	  ) || true
 
 install-selfservice:
 	[ -e ~freeside/.ssh/id_dsa.pub ] || su - freeside -c 'ssh-keygen -t dsa'
