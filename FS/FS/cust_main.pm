@@ -1907,7 +1907,10 @@ sub realtime_bop {
        || ( $conf->exists('emailinvoiceonly') && ! @invoicing_list ) ) {
     push @invoicing_list, $self->all_emails;
   }
-  my $email = $invoicing_list[0];
+
+  my $email = ($conf->exists('business-onlinepayment-email-override'))
+              ? $conf->config('business-onlinepayment-email-override')
+              : $invoicing_list[0];
 
   my $payinfo = exists($options{'payinfo'})
                   ? $options{'payinfo'}

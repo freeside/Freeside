@@ -351,6 +351,13 @@ httemplate/docs/config.html
   },
 
   {
+    'key'         => 'business-onlinepayment-email-override',
+    'section'     => 'billing',
+    'description' => 'Email address used instead of customer email address when submitting a BOP transaction.',
+    'type'        => 'text',
+  },
+
+  {
     'key'         => 'bsdshellmachines',
     'section'     => 'deprecated',
     'description' => '<b>DEPRECATED</b>, add a <i>bsdshell</i> <a href="../browse/part_export.cgi">export</a> instead.  Your BSD flavored shell (and mail) machines, one per line.  This enables export of `/etc/passwd\' and `/etc/master.passwd\'.',
