@@ -10,7 +10,7 @@ use FS::h_svc_acct;
 
 use Carp qw(carp);
 
-$DEBUG = 1;
+$DEBUG = 0;
 
 @ISA = qw( FS::h_Common FS::svc_forward );
 

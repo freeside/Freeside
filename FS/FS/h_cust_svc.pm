@@ -9,7 +9,7 @@ use FS::cust_svc;
 
 @ISA = qw( FS::h_Common FS::cust_svc );
 
-$DEBUG = 1;
+$DEBUG = 0;
 
 sub table { 'h_cust_svc'; }
 
