@@ -898,7 +898,7 @@ sub _check_duplicate {
     return 'unknown svcpart '. $self->svcpart;
   }
 
-  my $global_unique = $conf->config('global_unique-username');
+  my $global_unique = $conf->config('global_unique-username') || 'none';
 
   my @dup_user = grep { !$self->svcnum || $_->svcnum != $self->svcnum }
                  qsearch( 'svc_acct', { 'username' => $self->username } );
