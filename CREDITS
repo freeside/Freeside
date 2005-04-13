@@ -134,8 +134,8 @@ probably overlooked.
 Rebecca Cardennis <http://www.shinza.org/> created the great new logo first
 released with 1.4.2beta1 and 1.5.0pre6.
 
-Troy Hammonds <troyh@netsignia.net> sent in RADIUS session history viewing
-code and other things I'm probably forgetting.
+Troy Hammonds <troyh@netsignia.net> sent in RADIUS session history viewing,
+many bugfixes and other things I'm probably forgetting.
 
 Contains the "Javascript Remote Scripting (JSRS)" client library
 <http://www.ashleyit.com/rs/main.htm> by Brent Ashley <brent@ashleyit.com>

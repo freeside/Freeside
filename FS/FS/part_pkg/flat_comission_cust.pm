@@ -38,13 +38,16 @@ sub calc_recur {
 
   my $amount = $self->option('comission_amount');
   my $num_active = scalar(
-    $cust_pkg->cust_main->referral_cust_pkgcust_main_ncancelled(
+    $cust_pkg->cust_main->referral_cust_main_ncancelled(
       $self->option('comission_depth')
     )
   );
 
-  my $error = $cust_pkg->cust_main->credit( $amount*$num_active, "commission" );
-  die $error if $error;
+  if ( $amount && $num_active ) {
+    my $error =
+      $cust_pkg->cust_main->credit( $amount*$num_active, "commission" );
+    die $error if $error;
+  }
 
   $self->option('recur_fee');
 }
