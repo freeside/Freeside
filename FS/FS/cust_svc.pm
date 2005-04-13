@@ -178,6 +178,7 @@ sub replace {
   if ( $new->svcpart != $old->svcpart ) {
     my $svc_x = $new->svc_x;
     my $new_svc_x = ref($svc_x)->new({$svc_x->hash, svcpart=>$new->svcpart });
+    local($FS::Record::nowarn_identical) = 1;
     my $error = $new_svc_x->replace($svc_x);
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;

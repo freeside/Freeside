@@ -2,7 +2,7 @@ package FS::Record;
 
 use strict;
 use vars qw( $dbdef_file $dbdef $setup_hack $AUTOLOAD @ISA @EXPORT_OK $DEBUG
-             $me %dbdef_cache %virtual_fields_cache );
+             $me %dbdef_cache %virtual_fields_cache $nowarn_identical );
 use subs qw(reload_dbdef);
 use Exporter;
 use Carp qw(carp cluck croak confess);
@@ -24,6 +24,8 @@ use Tie::IxHash;
 
 $DEBUG = 0;
 $me = '[FS::Record]';
+
+$nowarn_identical = 0;
 
 my $conf;
 my $rsa_module;
@@ -922,7 +924,8 @@ sub replace {
                    ? ($_, $new->getfield($_)) : () } $old->fields;
                    
   unless ( keys(%diff) ) {
-    carp "[warning]$me $new -> replace $old: records identical";
+    carp "[warning]$me $new -> replace $old: records identical"
+      unless $nowarn_identical;
     return '';
   }
 
