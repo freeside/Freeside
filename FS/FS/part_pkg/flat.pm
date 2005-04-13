@@ -4,6 +4,7 @@ use strict;
 use vars qw(@ISA %info);
 #use FS::Record qw(qsearch);
 use FS::part_pkg;
+use Date::Manip;
 
 @ISA = qw(FS::part_pkg);
 
