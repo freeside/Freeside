@@ -1,7 +1,8 @@
 package FS::cust_main;
 
 use strict;
-use vars qw( @ISA @EXPORT_OK $conf $DEBUG $import @encrypted_fields);
+use vars qw( @ISA @EXPORT_OK $DEBUG $conf @encrypted_fields
+             $import $skip_fuzzyfiles );
 use vars qw( $realtime_bop_decline_quiet ); #ugh
 use Safe;
 use Carp;
@@ -53,6 +54,7 @@ $DEBUG = 0;
 #$DEBUG = 1;
 
 $import = 0;
+$skip_fuzzyfiles = 0;
 
 @encrypted_fields = ('payinfo', 'paycvv');
 
@@ -420,10 +422,12 @@ sub insert {
     }
   }
 
-  $error = $self->queue_fuzzyfiles_update;
-  if ( $error ) {
-    $dbh->rollback if $oldAutoCommit;
-    return "updating fuzzy search cache: $error";
+  unless ( $import || $skip_fuzzyfiles ) {
+    $error = $self->queue_fuzzyfiles_update;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "updating fuzzy search cache: $error";
+    }
   }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
@@ -735,10 +739,12 @@ sub replace {
     }
   }
 
-  $error = $self->queue_fuzzyfiles_update;
-  if ( $error ) {
-    $dbh->rollback if $oldAutoCommit;
-    return "updating fuzzy search cache: $error";
+  unless ( $import || $skip_fuzzyfiles ) {
+    $error = $self->queue_fuzzyfiles_update;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "updating fuzzy search cache: $error";
+    }
   }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;

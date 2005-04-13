@@ -1,7 +1,7 @@
 package FS::svc_acct;
 
 use strict;
-use vars qw( @ISA $DEBUG $me $conf
+use vars qw( @ISA $DEBUG $me $conf $skip_fuzzyfiles
              $dir_prefix @shells $usernamemin
              $usernamemax $passwordmin $passwordmax
              $username_ampersand $username_letter $username_letterfirst
@@ -274,15 +274,12 @@ sub insert {
     }
   }
 
-  #false laziness with sub replace (and cust_main)
-  my $queue = new FS::queue {
-    'svcnum' => $self->svcnum,
-    'job'    => 'FS::svc_acct::append_fuzzyfiles'
-  };
-  $error = $queue->insert($self->username);
-  if ( $error ) {
-    $dbh->rollback if $oldAutoCommit;
-    return "queueing job (transaction rolled back): $error";
+  unless ( $skip_fuzzyfiles ) {
+    $error = $self->queue_fuzzyfiles_update;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "updating fuzzy search cache: $error";
+    }
   }
 
   my $cust_pkg = $self->cust_svc->cust_pkg;
@@ -544,22 +541,53 @@ sub replace {
     return $error if $error;
   }
 
-  if ( $new->username ne $old->username ) {
-    #false laziness with sub insert (and cust_main)
-    my $queue = new FS::queue {
-      'svcnum' => $new->svcnum,
-      'job'    => 'FS::svc_acct::append_fuzzyfiles'
-    };
-    $error = $queue->insert($new->username);
+  if ( $new->username ne $old->username && ! $skip_fuzzyfiles ) {
+    $error = $new->queue_fuzzyfiles_update;
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
-      return "queueing job (transaction rolled back): $error";
+      return "updating fuzzy search cache: $error";
     }
   }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   ''; #no error
 }
+
+=item queue_fuzzyfiles_update
+
+Used by insert & replace to update the fuzzy search cache
+
+=cut
+
+sub queue_fuzzyfiles_update {
+  my $self = shift;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $queue = new FS::queue {
+    'svcnum' => $self->svcnum,
+    'job'    => 'FS::svc_acct::append_fuzzyfiles'
+  };
+  my $error = $queue->insert($self->username);
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return "queueing job (transaction rolled back): $error";
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  '';
+
+}
+
 
 =item suspend
 
@@ -992,6 +1020,9 @@ sub radius_reply {
     } grep { /^radius_/ && $self->getfield($_) } fields( $self->table );
   if ( $self->slipip && $self->slipip ne '0e0' ) {
     $reply{$radius_ip} = $self->slipip;
+  }
+  if ( $self->seconds !~ /^$/ ) {
+    $reply{'Session-Timeout'} = $self->seconds;
   }
   %reply;
 }
