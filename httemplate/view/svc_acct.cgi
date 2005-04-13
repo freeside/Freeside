@@ -204,49 +204,80 @@ print "<TR><TD ALIGN=\"right\">Access number</TD>".
       "<TD BGCOLOR=\"#ffffff\">". $svc_acct_pop->text. '</TD></TR>'
   if $svc_acct_pop;
 
-if ($svc_acct->uid ne '') {
-  print "<TR><TD ALIGN=\"right\">Uid</TD>".
-          "<TD BGCOLOR=\"#ffffff\">". $svc_acct->uid. "</TD></TR>",
-        "<TR><TD ALIGN=\"right\">Gid</TD>".
-          "<TD BGCOLOR=\"#ffffff\">". $svc_acct->gid. "</TD></TR>",
-        "<TR><TD ALIGN=\"right\">GECOS</TD>".
-          "<TD BGCOLOR=\"#ffffff\">". $svc_acct->finger. "</TD></TR>",
-        "<TR><TD ALIGN=\"right\">Home directory</TD>".
-          "<TD BGCOLOR=\"#ffffff\">". $svc_acct->dir. "</TD></TR>",
-        "<TR><TD ALIGN=\"right\">Shell</TD>".
-          "<TD BGCOLOR=\"#ffffff\">". $svc_acct->shell. "</TD></TR>",
-        "<TR><TD ALIGN=\"right\">Quota</TD>".
-          "<TD BGCOLOR=\"#ffffff\">". $svc_acct->quota. "</TD></TR>"
-  ;
-} else {
-  print "<TR><TH COLSPAN=2>(No shell account)</TH></TR>";
-}
+%>
 
-if ($svc_acct->slipip) {
-  print "<TR><TD ALIGN=\"right\">IP address</TD><TD BGCOLOR=\"#ffffff\">".
-        ( ( $svc_acct->slipip eq "0.0.0.0" || $svc_acct->slipip eq '0e0' )
-          ? "<I>(Dynamic)</I>"
-          : $svc_acct->slipip
-        ). "</TD>";
-  my($attribute);
-  foreach $attribute ( grep /^radius_/, $svc_acct->fields ) {
-    #warn $attribute;
-    $attribute =~ /^radius_(.*)$/;
-    my $pattribute = $FS::raddb::attrib{$1};
-    print "<TR><TD ALIGN=\"right\">Radius (reply) $pattribute</TD>".
-          "<TD BGCOLOR=\"#ffffff\">". $svc_acct->getfield($attribute).
-          "</TD></TR>";
-  }
-  foreach $attribute ( grep /^rc_/, $svc_acct->fields ) {
-    #warn $attribute;
-    $attribute =~ /^rc_(.*)$/;
-    my $pattribute = $FS::raddb::attrib{$1};
-    print "<TR><TD ALIGN=\"right\">Radius (check) $pattribute: </TD>".
-          "<TD BGCOLOR=\"#ffffff\">". $svc_acct->getfield($attribute).
-          "</TD></TR>";
-  }
-} else {
-  print "<TR><TH COLSPAN=2>(No SLIP/PPP account)</TH></TR>";
+<% if ($svc_acct->uid ne '') { %>
+  <TR>
+    <TD ALIGN="right">UID</TD>
+    <TD BGCOLOR="#ffffff"><%= $svc_acct->uid %></TD>
+  </TR>
+<% } %>
+
+<% if ($svc_acct->gid ne '') { %>
+  <TR>
+    <TD ALIGN="right">GID</TD>
+    <TD BGCOLOR="#ffffff"><%= $svc_acct->gid %></TD>
+  </TR>
+<% } %>
+
+<% if ($svc_acct->finger ne '') { %>
+  <TR>
+    <TD ALIGN="right">GECOS</TD>
+    <TD BGCOLOR="#ffffff"><%= $svc_acct->finger %></TD>
+  </TR>
+<% } %>
+
+<% if ($svc_acct->dir ne '') { %>
+  <TR>
+    <TD ALIGN="right">Home directory</TD>
+    <TD BGCOLOR="#ffffff"><%= $svc_acct->dir %></TD>
+  </TR>
+<% } %>
+
+<% if ($svc_acct->shell ne '') { %>
+  <TR>
+    <TD ALIGN="right">Shell</TD>
+    <TD BGCOLOR="#ffffff"><%= $svc_acct->shell %></TD>
+  </TR>
+<% } %>
+
+<% if ($svc_acct->quota ne '') { %>
+  <TR>
+    <TD ALIGN="right">Quota</TD>
+    <TD BGCOLOR="#ffffff"><%= $svc_acct->quota %></TD>
+  </TR>
+<% } %>
+
+<% if ($svc_acct->slipip) { %>
+  <TR>
+    <TD ALIGN="right">IP address</TD>
+    <TD BGCOLOR="#ffffff">
+      <%= ( $svc_acct->slipip eq "0.0.0.0" || $svc_acct->slipip eq '0e0' )
+            ? "<I>(Dynamic)</I>"
+            : $svc_acct->slipip
+      %>
+    </TD>
+  </TR>
+<% } %>
+
+<%
+
+my($attribute);
+foreach $attribute ( grep /^radius_/, $svc_acct->fields ) {
+  #warn $attribute;
+  $attribute =~ /^radius_(.*)$/;
+  my $pattribute = $FS::raddb::attrib{$1};
+  print "<TR><TD ALIGN=\"right\">Radius (reply) $pattribute</TD>".
+        "<TD BGCOLOR=\"#ffffff\">". $svc_acct->getfield($attribute).
+        "</TD></TR>";
+}
+foreach $attribute ( grep /^rc_/, $svc_acct->fields ) {
+  #warn $attribute;
+  $attribute =~ /^rc_(.*)$/;
+  my $pattribute = $FS::raddb::attrib{$1};
+  print "<TR><TD ALIGN=\"right\">Radius (check) $pattribute: </TD>".
+        "<TD BGCOLOR=\"#ffffff\">". $svc_acct->getfield($attribute).
+        "</TD></TR>";
 }
 
 print '<TR><TD ALIGN="right">RADIUS groups</TD><TD BGCOLOR="#ffffff">'.

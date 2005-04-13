@@ -67,8 +67,8 @@ my $conf = new FS::Conf;
 my %defs = (
   'svc_acct' => {
     'dir'       => 'Home directory',
-    'uid'       => 'UID (set to fixed and blank for dial-only)',
-    'slipip'    => 'IP address (Set to fixed and blank to disable dialin, or, set a value to be exported to RADIUS Framed-IP-Address.  Use the special value <code>0e0</code> [zero e zero] to enable export to RADIUS without a Framed-IP-Address.)',
+    'uid'       => 'UID (set to fixed and blank for no UIDs)',
+    'slipip'    => 'IP address',
 #    'popnum'    => qq!<A HREF="$p/browse/svc_acct_pop.cgi/">POP number</A>!,
     'popnum'    => {
                      desc => 'Access number',
@@ -85,7 +85,7 @@ my %defs = (
     '_password' => 'Password',
     'gid'       => 'GID (when blank, defaults to UID)',
     'shell'     => {
-                     desc =>'Shell (all service definitions should have a default or fixed shell that is present in the <b>shells</b> configuration file)',
+                     desc =>'Shell (all service definitions should have a default or fixed shell that is present in the <b>shells</b> configuration file, set to blank for no shell tracking)',
                      type =>'select',
                      select_list => [ $conf->config('shells') ],
                    },
