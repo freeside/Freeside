@@ -167,7 +167,9 @@ FS::svc_Common.  The following fields are currently supported:
 
 =item domsvc - svcnum from svc_domain
 
-=item radius_I<Radius_Attribute> - I<Radius-Attribute>
+=item radius_I<Radius_Attribute> - I<Radius-Attribute> (reply)
+
+=item rc_I<Radius_Attribute> - I<Radius-Attribute> (check)
 
 =back
 
