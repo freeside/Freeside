@@ -1594,6 +1594,9 @@ use vars qw(%attrib);
   #NETC.NET.AU (RADIATOR?)
   'authentication_type' => 'Authentication-Type',
 
+  #wtxs (dunno)
+  'radius_operator' => 'Radius-Operator',
+
 );
 
 1;
