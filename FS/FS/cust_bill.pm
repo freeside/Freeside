@@ -4,7 +4,7 @@ use strict;
 use vars qw( @ISA $conf $money_char );
 use vars qw( $invoice_lines @buf ); #yuck
 use Date::Format;
-use Text::Template;
+use Text::Template 1.20;
 use File::Temp 0.14;
 use String::ShellQuote;
 use FS::UID qw( datasrc );
@@ -418,16 +418,17 @@ sub send {
   my @print_text = $self->print_text('', $template);
   my @invoicing_list = $self->cust_main->invoicing_list;
 
-  if ( grep { $_ !~ /^(POST|FAX)$/ } @invoicing_list or !@invoicing_list  ) { #email
+  if ( grep { $_ !~ /^(POST|FAX)$/ } @invoicing_list or !@invoicing_list  ) {
+    #email
 
     #better to notify this person than silence
     @invoicing_list = ($invoice_from) unless @invoicing_list;
 
     my $error = send_email(
       $self->generate_email(
-        'from'   => $invoice_from,
-        'to'     => [ grep { $_ !~ /^(POST|FAX)$/ } @invoicing_list ],
-	'print_text' => [ @print_text ],
+        'from'       => $invoice_from,
+        'to'         => [ grep { $_ !~ /^(POST|FAX)$/ } @invoicing_list ],
+        'print_text' => [ @print_text ],
       )
     );
     die "can't email invoice: $error\n" if $error;
@@ -454,9 +455,8 @@ sub send {
     }
 
     if ( grep { $_ eq 'FAX' } @invoicing_list ) { #fax
-      unless ($conf->exists('invoice_latex')) {
-	die 'FAX invoice destination not supported with plain text invoices.'
-      }
+      die 'FAX invoice destination not supported with plain text invoices.'
+        unless $conf->exists('invoice_latex');
       my $dialstring = $self->cust_main->getfield('fax');
       #Check $dialstring?
       my $error = send_fax(docdata => $lpr_data, dialstring => $dialstring);
@@ -1102,8 +1102,26 @@ sub print_latex {
   my $templatefile = 'invoice_latex';
   my $suffix = length($template) ? "_$template" : '';
   $templatefile .= $suffix;
-  my @invoice_template = $conf->config($templatefile)
+  my @invoice_template = map "$_\n", $conf->config($templatefile)
     or die "cannot load config file $templatefile";
+
+  my($format, $text_template);
+  if ( grep { /^%%Detail/ } @invoice_template ) {
+    #change this to a die when the old code is removed
+    warn "old-style invoice template $templatefile; ".
+         "patch with conf/invoice_latex.diff\n";
+    $format = 'old';
+  } else {
+    $format = 'Text::Template';
+    $text_template = new Text::Template(
+      TYPE => 'ARRAY',
+      SOURCE => \@invoice_template,
+      DELIMITERS => [ '[@--', '--@]' ],
+    );
+
+    $text_template->compile()
+      or die 'While compiling ' . $templatefile . ': ' . $Text::Template::ERROR;
+  }
 
   my %invoice_data = (
     'invnum'       => $self->invnum,
@@ -1143,110 +1161,198 @@ sub print_latex {
       ? _latex_escape("Purchase Order #". $cust_main->payinfo)
       : '~';
 
-  my @line_item = ();
-  my @total_item = ();
   my @filled_in = ();
-  while ( @invoice_template ) {
-    my $line = shift @invoice_template;
-
-    if ( $line =~ /^%%Detail\s*$/ ) {
-
-      while ( ( my $line_item_line = shift @invoice_template )
-              !~ /^%%EndDetail\s*$/                            ) {
-        push @line_item, $line_item_line;
-      }
-      foreach my $line_item ( $self->_items ) {
-      #foreach my $line_item ( $self->_items_pkg ) {
-        $invoice_data{'ref'} = $line_item->{'pkgnum'};
-        $invoice_data{'description'} = _latex_escape($line_item->{'description'});
-        if ( exists $line_item->{'ext_description'} ) {
-          $invoice_data{'description'} .=
-            "\\tabularnewline\n~~".
-            join("\\tabularnewline\n~~", map { _latex_escape($_) } @{$line_item->{'ext_description'}} );
+  if ( $format eq 'old' ) {
+  
+    my @line_item = ();
+    my @total_item = ();
+    while ( @invoice_template ) {
+      my $line = shift @invoice_template;
+  
+      if ( $line =~ /^%%Detail\s*$/ ) {
+  
+        while ( ( my $line_item_line = shift @invoice_template )
+                !~ /^%%EndDetail\s*$/                            ) {
+          push @line_item, $line_item_line;
         }
-        $invoice_data{'amount'} = $line_item->{'amount'};
-        $invoice_data{'product_code'} = $line_item->{'pkgpart'} || 'N/A';
-        push @filled_in,
-          map { my $b=$_; $b =~ s/\$(\w+)/$invoice_data{$1}/eg; $b } @line_item;
-      }
-
-    } elsif ( $line =~ /^%%TotalDetails\s*$/ ) {
-
-      while ( ( my $total_item_line = shift @invoice_template )
-              !~ /^%%EndTotalDetails\s*$/                      ) {
-        push @total_item, $total_item_line;
-      }
-
-      my @total_fill = ();
-
-      my $taxtotal = 0;
-      foreach my $tax ( $self->_items_tax ) {
-        $invoice_data{'total_item'} = _latex_escape($tax->{'description'});
-        $taxtotal += ( $invoice_data{'total_amount'} = $tax->{'amount'} );
+        foreach my $line_item ( $self->_items ) {
+        #foreach my $line_item ( $self->_items_pkg ) {
+          $invoice_data{'ref'} = $line_item->{'pkgnum'};
+          $invoice_data{'description'} =
+            _latex_escape($line_item->{'description'});
+          if ( exists $line_item->{'ext_description'} ) {
+            $invoice_data{'description'} .=
+              "\\tabularnewline\n~~".
+              join( "\\tabularnewline\n~~",
+                    map _latex_escape($_), @{$line_item->{'ext_description'}}
+                  );
+          }
+          $invoice_data{'amount'} = $line_item->{'amount'};
+          $invoice_data{'product_code'} = $line_item->{'pkgpart'} || 'N/A';
+          push @filled_in,
+            map { my $b=$_; $b =~ s/\$(\w+)/$invoice_data{$1}/eg; $b } @line_item;
+        }
+  
+      } elsif ( $line =~ /^%%TotalDetails\s*$/ ) {
+  
+        while ( ( my $total_item_line = shift @invoice_template )
+                !~ /^%%EndTotalDetails\s*$/                      ) {
+          push @total_item, $total_item_line;
+        }
+  
+        my @total_fill = ();
+  
+        my $taxtotal = 0;
+        foreach my $tax ( $self->_items_tax ) {
+          $invoice_data{'total_item'} = _latex_escape($tax->{'description'});
+          $taxtotal += ( $invoice_data{'total_amount'} = $tax->{'amount'} );
+          push @total_fill,
+            map { my $b=$_; $b =~ s/\$(\w+)/$invoice_data{$1}/eg; $b }
+                @total_item;
+        }
+  
+        if ( $taxtotal ) {
+          $invoice_data{'total_item'} = 'Sub-total';
+          $invoice_data{'total_amount'} =
+            '\dollar '. sprintf('%.2f', $self->charged - $taxtotal );
+          unshift @total_fill,
+            map { my $b=$_; $b =~ s/\$(\w+)/$invoice_data{$1}/eg; $b }
+                @total_item;
+        }
+  
+        $invoice_data{'total_item'} = '\textbf{Total}';
+        $invoice_data{'total_amount'} =
+          '\textbf{\dollar '. sprintf('%.2f', $self->charged + $pr_total ). '}';
         push @total_fill,
           map { my $b=$_; $b =~ s/\$(\w+)/$invoice_data{$1}/eg; $b }
               @total_item;
-      }
-
-      if ( $taxtotal ) {
-        $invoice_data{'total_item'} = 'Sub-total';
+  
+        #foreach my $thing ( sort { $a->_date <=> $b->_date } $self->_items_credits, $self->_items_payments
+  
+        # credits
+        foreach my $credit ( $self->_items_credits ) {
+          $invoice_data{'total_item'} = _latex_escape($credit->{'description'});
+          #$credittotal
+          $invoice_data{'total_amount'} = '-\dollar '. $credit->{'amount'};
+          push @total_fill, 
+            map { my $b=$_; $b =~ s/\$(\w+)/$invoice_data{$1}/eg; $b }
+                @total_item;
+        }
+  
+        # payments
+        foreach my $payment ( $self->_items_payments ) {
+          $invoice_data{'total_item'} = _latex_escape($payment->{'description'});
+          #$paymenttotal
+          $invoice_data{'total_amount'} = '-\dollar '. $payment->{'amount'};
+          push @total_fill, 
+            map { my $b=$_; $b =~ s/\$(\w+)/$invoice_data{$1}/eg; $b }
+                @total_item;
+        }
+  
+        $invoice_data{'total_item'} = '\textbf{'. $self->balance_due_msg. '}';
         $invoice_data{'total_amount'} =
-          '\dollar '. sprintf('%.2f', $self->charged - $taxtotal );
-        unshift @total_fill,
+          '\textbf{\dollar '. sprintf('%.2f', $self->owed + $pr_total ). '}';
+        push @total_fill,
           map { my $b=$_; $b =~ s/\$(\w+)/$invoice_data{$1}/eg; $b }
               @total_item;
+  
+        push @filled_in, @total_fill;
+  
+      } else {
+        #$line =~ s/\$(\w+)/$invoice_data{$1}/eg;
+        $line =~ s/\$(\w+)/exists($invoice_data{$1}) ? $invoice_data{$1} : nounder($1)/eg;
+        push @filled_in, $line;
       }
-
-      $invoice_data{'total_item'} = '\textbf{Total}';
-      $invoice_data{'total_amount'} =
-        '\textbf{\dollar '. sprintf('%.2f', $self->charged + $pr_total ). '}';
-      push @total_fill,
-        map { my $b=$_; $b =~ s/\$(\w+)/$invoice_data{$1}/eg; $b }
-            @total_item;
-
-      #foreach my $thing ( sort { $a->_date <=> $b->_date } $self->_items_credits, $self->_items_payments
-
-      # credits
-      foreach my $credit ( $self->_items_credits ) {
-        $invoice_data{'total_item'} = _latex_escape($credit->{'description'});
-        #$credittotal
-        $invoice_data{'total_amount'} = '-\dollar '. $credit->{'amount'};
-        push @total_fill, 
-          map { my $b=$_; $b =~ s/\$(\w+)/$invoice_data{$1}/eg; $b }
-              @total_item;
-      }
-
-      # payments
-      foreach my $payment ( $self->_items_payments ) {
-        $invoice_data{'total_item'} = _latex_escape($payment->{'description'});
-        #$paymenttotal
-        $invoice_data{'total_amount'} = '-\dollar '. $payment->{'amount'};
-        push @total_fill, 
-          map { my $b=$_; $b =~ s/\$(\w+)/$invoice_data{$1}/eg; $b }
-              @total_item;
-      }
-
-      $invoice_data{'total_item'} = '\textbf{'. $self->balance_due_msg. '}';
-      $invoice_data{'total_amount'} =
-        '\textbf{\dollar '. sprintf('%.2f', $self->owed + $pr_total ). '}';
-      push @total_fill,
-        map { my $b=$_; $b =~ s/\$(\w+)/$invoice_data{$1}/eg; $b }
-            @total_item;
-
-      push @filled_in, @total_fill;
-
-    } else {
-      #$line =~ s/\$(\w+)/$invoice_data{$1}/eg;
-      $line =~ s/\$(\w+)/exists($invoice_data{$1}) ? $invoice_data{$1} : nounder($1)/eg;
-      push @filled_in, $line;
+  
     }
 
-  }
+    sub nounder {
+      my $var = $1;
+      $var =~ s/_/\-/g;
+      $var;
+    }
 
-  sub nounder {
-    my $var = $1;
-    $var =~ s/_/\-/g;
-    $var;
+  } elsif ( $format eq 'Text::Template' ) {
+
+    my @detail_items = ();
+    my @total_items = ();
+
+    $invoice_data{'detail_items'} = \@detail_items;
+    $invoice_data{'total_items'} = \@total_items;
+  
+    foreach my $line_item ( $self->_items ) {
+      my $detail = {
+        ext_description => [],
+      };
+      $detail->{'ref'} = $line_item->{'pkgnum'};
+      $detail->{'quantity'} = 1;
+      $detail->{'description'} = _latex_escape($line_item->{'description'});
+      if ( exists $line_item->{'ext_description'} ) {
+        @{$detail->{'ext_description'}} = map {
+          _latex_escape($_);
+        } @{$line_item->{'ext_description'}};
+      }
+      $detail->{'amount'} = $line_item->{'amount'};
+      $detail->{'product_code'} = $line_item->{'pkgpart'} || 'N/A';
+  
+      push @detail_items, $detail;
+    }
+  
+  
+    my $taxtotal = 0;
+    foreach my $tax ( $self->_items_tax ) {
+      my $total = {};
+      $total->{'total_item'} = _latex_escape($tax->{'description'});
+      $taxtotal += ( $invoice_data{'total_amount'} = $tax->{'amount'} );
+      push @total_items, $total;
+    }
+  
+    if ( $taxtotal ) {
+      my $total = {};
+      $total->{'total_item'} = 'Sub-total';
+      $total->{'total_amount'} =
+        '\dollar '. sprintf('%.2f', $self->charged - $taxtotal );
+      unshift @total_items, $total;
+    }
+  
+    {
+      my $total = {};
+      $total->{'total_item'} = '\textbf{Total}';
+      $total->{'total_amount'} =
+        '\textbf{\dollar '. sprintf('%.2f', $self->charged + $pr_total ). '}';
+      push @total_items, $total;
+    }
+  
+    #foreach my $thing ( sort { $a->_date <=> $b->_date } $self->_items_credits, $self->_items_payments
+  
+    # credits
+    foreach my $credit ( $self->_items_credits ) {
+      my $total;
+      $total->{'total_item'} = _latex_escape($credit->{'description'});
+      #$credittotal
+      $total->{'total_amount'} = '-\dollar '. $credit->{'amount'};
+      push @total_items, $total;
+    }
+  
+    # payments
+    foreach my $payment ( $self->_items_payments ) {
+      my $total = {};
+      $total->{'total_item'} = _latex_escape($payment->{'description'});
+      #$paymenttotal
+      $total->{'total_amount'} = '-\dollar '. $payment->{'amount'};
+      push @total_items, $total;
+    }
+  
+    { 
+      my $total;
+      $total->{'total_item'} = '\textbf{'. $self->balance_due_msg. '}';
+      $total->{'total_amount'} =
+        '\textbf{\dollar '. sprintf('%.2f', $self->owed + $pr_total ). '}';
+      push @total_items, $total;
+    }
+
+  } else {
+    die "guru meditation #54";
   }
 
   my $dir = $FS::UID::conf_dir. "cache.". $FS::UID::datasrc;
@@ -1255,7 +1361,13 @@ sub print_latex {
                            SUFFIX   => '.tex',
                            UNLINK   => 0,
                          ) or die "can't open temp file: $!\n";
-  print $fh join("\n", @filled_in ), "\n";
+  if ( $format eq 'old' ) {
+    print $fh join('', @filled_in );
+  } elsif ( $format eq 'Text::Template' ) {
+    $text_template->fill_in(OUTPUT => $fh, HASH => \%invoice_data);
+  } else {
+    die "guru meditation #32";
+  }
   close $fh;
 
   $fh->filename =~ /^(.*).tex$/ or die "unparsable filename: ". $fh->filename;

@@ -1,0 +1,138 @@
+--- invoice_latex.old	2005-04-14 01:52:02.000000000 -0700
++++ invoice_latex	2005-04-14 02:33:26.000000000 -0700
+@@ -5,7 +5,7 @@
+ %% Asplen Management Ltd
+ %% www.asplen.co.uk
+ %%
+-%% Modified for Freeside by Ivan Kohler
++%% Modified for Freeside by Ivan Kohler and Kristian Hoffman
+ %%
+ %% Changes
+ %% 	0.1	4/12/00	Created
+@@ -61,7 +61,7 @@
+ %%	Headers and footers defined for the first page
+ \fancyfoot[CO,CE]{\small{
+ \begin{tabular}{c}
+-$footer
++[@-- $footer --@]
+ \end{tabular}}}
+ %
+ %%	The LH Heading comprising logo
+@@ -76,7 +76,7 @@
+ \begin{tabular}{rcl}
+ Invoice date & & Invoice number \\
+ \vspace{0.2cm}
+-\textbf{$date} & & \textbf{$invnum} \\\hline
++\textbf{[@-- $date --@]} & & \textbf{[@-- $invnum --@]} \\\hline
+ \rule{0pt}{5ex} &~~ \huge{\textsc{Invoice}}& \\
+ \vspace{-0.2cm}
+  & & \\\hline
+@@ -85,71 +85,76 @@
+ %%	Header & footer changes for subsequent pages
+ %
+ \afterpage{ \fancyfoot[RO,RE]{\small{\thepage\ of \pageref{LastPage}}} }
+-\afterpage{ \fancyfoot[CO,CE]{\small{$smallfooter}} }
++\afterpage{ \fancyfoot[CO,CE]{\small{[@-- $smallfooter --@]}} }
+ \afterpage{ \fancyhead[LO,LE]{\small{}} }
+ \afterpage{ \fancyhead[RO,RE]{\small{
+ \begin{tabular}{ll}
+ Invoice date & Invoice number\\
+-\textbf{$date} & \textbf{$invnum}\\
++\textbf{[@-- $date --@]} & \textbf{[@-- $invnum --@]}\\
+ \end{tabular}}} }
+ %
+ %
+ \makebox{
+ \begin{minipage}[t]{2.9in}
+ \vspace{0.20in}
+-\textbf{$payname}\\
+-\addressline{$company}
+-\addressline{$address1}
+-\addressline{$address2}
+-\addressline{$city, $state  $zip}
+-\addressline{$country}
++\textbf{[@-- $payname --@]}\\
++\addressline{[@-- $company --@]}
++\addressline{[@-- $address1 --@]}
++\addressline{[@-- $address2 --@]}
++\addressline{[@-- $city --@], [@-- $state --@]  [@-- $zip --@]}
++\addressline{[@-- $country --@]}
+ \end{minipage}}
+ \hfill
+ \makebox{
+ \begin{minipage}[t]{2.5in}
+ \begin{flushright}
+-Terms: $terms\\
+-$po_line\\
++Terms: [@-- $terms --@]\\
++[@-- $po_line --@]\\
+ \end{flushright}
+ \end{minipage}}
+ \vspace{0.5cm}
+ %
+ \section*{\textsc{Charges}}
+-\begin{longtable}{|c|l|c|r|r|}
++\begin{longtable}{|c|l|r|}
+ \hline
+ \rule{0pt}{2.5ex}
+ \makebox[1.4cm]{\textbf{Ref}} & 
+-\makebox[7.9cm][l]{\textbf{Description}} & 
+-\makebox[1.3cm][c]{\textbf{Quantity}} & 
+-\makebox[2.5cm][r]{\textbf{Unit Price}} & 
+-\makebox[2.5cm][r]{\textbf{Amount}} \\
++\makebox[13cm][l]{\textbf{Description}} & 
++\makebox[2cm][r]{\textbf{Amount}} \\
+ \hline
+ \endfirsthead
+-\multicolumn{5}{r}{\rule{0pt}{2.5ex}Continued from previous page}\\
++\multicolumn{3}{r}{\rule{0pt}{2.5ex}Continued from previous page}\\
+ \hline
+ \rule{0pt}{2.5ex}
+ \makebox[1.4cm]{\textbf{Ref}} & 
+-\makebox[7.9cm][l]{\textbf{Description}} & 
+-\makebox[1.3cm][c]{\textbf{Quantity}} & 
+-\makebox[2.5cm][r]{\textbf{Unit Price}} & 
+-\makebox[2.5cm][r]{\textbf{Amount}} \\
++\makebox[13cm][l]{\textbf{Description}} & 
++\makebox[2cm][r]{\textbf{Amount}} \\
+ \hline
+ \endhead
+-\multicolumn{5}{r}{\rule{0pt}{2.5ex}/cont...}\\
++\multicolumn{3}{r}{\rule{0pt}{2.5ex}/cont...}\\
+ \endfoot
+-%%TotalDetails
+- & \multicolumn{3}{l}{$total_item}    & $total_amount\\
+-%%EndTotalDetails
++[@--
++
++  foreach my $line (@total_items) {
++    $OUT .= ' & \multicolumn{1}{l}{' . $line->{'total_item'} . '} & ' .
++            $line->{'total_amount'} . '\\\\' . "\n";
++  }
++
++--@]
+ \hline
+ \endlastfoot
+-%%Detail
+-\rule{0pt}{2.5ex}$ref & 
+-\begin{tabular}{l}
+-$description\tabularnewline
+-\end{tabular}
+-& $quantity & \dollar $amount & \dollar $amount\\\hline
+-%%EndDetail
++[@--
++
++  foreach my $line (@detail_items) {
++    $OUT .= '\rule{0pt}{2.5ex}' . $line->{'ref'} . ' &' . "\n".
++            '\begin{tabular}{l}' . "\n".
++            $line->{'description'} . '\tabularnewline' . "\n".
++            '\end{tabular}' . "\n".
++            '& \dollar ' . $line->{'amount'} . '\\\\\\hline' . "\n";
++  }
++
++--@]
+ \end{longtable}
+ \vfill
+-$notes
++[@-- $notes --@]
+ \end{document}
