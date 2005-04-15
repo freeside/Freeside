@@ -87,7 +87,7 @@ Service #<%= $svcnum %>
 <INPUT TYPE="text" NAME="reczone"> 
 <INPUT TYPE="hidden" NAME="recaf" VALUE="IN"> IN 
  <SELECT NAME="rectype">
-<% foreach (qw( A NS CNAME MX PTR) ) { %>
+<% foreach (qw( A NS CNAME MX PTR TXT) ) { %>
   <OPTION VALUE="<%=$_%>"><%=$_%></OPTION>
 <% } %>
  </SELECT>

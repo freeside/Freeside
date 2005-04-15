@@ -369,6 +369,7 @@ sub domain_record {
     MX => 3,
     CNAME => 4,
     A => 5,
+    TXT => 6,
   );
 
   sort { $order{$a->rectype} <=> $order{$b->rectype} }

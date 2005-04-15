@@ -257,8 +257,8 @@ sub check {
   $self->recaf =~ /^(IN)$/ or return "Illegal recaf: ". $self->recaf;
   $self->recaf($1);
 
-  $self->rectype =~ /^(SOA|NS|MX|A|PTR|CNAME|_mstr)$/
-    or return "Illegal rectype (only SOA NS MX A PTR CNAME recognized): ".
+  $self->rectype =~ /^(SOA|NS|MX|A|PTR|CNAME|TXT|_mstr)$/
+    or return "Illegal rectype (only SOA NS MX A PTR CNAME TXT recognized): ".
               $self->rectype;
   $self->rectype($1);
 
@@ -290,6 +290,10 @@ sub check {
   } elsif ( $self->rectype eq 'CNAME' ) {
     $self->recdata =~ /^([a-z0-9\.\-]+|\@)$/i
       or return "Illegal data for CNAME record: ". $self->recdata;
+    $self->recdata($1);
+  } elsif ( $self->rectype eq 'TXT' ) {
+    $self->recdata =~ /^((?:\S+)|(?:"[[:ascii:]]+"))$/
+      or return "Illegal data for TXT record: ". $self->recdata;
     $self->recdata($1);
   } elsif ( $self->rectype eq '_mstr' ) {
     $self->recdata =~ /^((\d{1,3}\.){3}\d{1,3})$/

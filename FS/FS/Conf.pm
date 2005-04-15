@@ -647,7 +647,7 @@ httemplate/docs/config.html
     'editlist_parts' => [ { type=>'text' },
                           { type=>'immutable', value=>'IN' },
                           { type=>'select',
-                            select_enum=>{ map { $_=>$_ } qw(A CNAME MX NS)} },
+                            select_enum=>{ map { $_=>$_ } qw(A CNAME MX NS TXT)} },
                           { type=> 'text' }, ],
   },
 
