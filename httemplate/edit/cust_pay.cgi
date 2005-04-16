@@ -58,6 +58,7 @@ my $paybatch = "webui-$_date-$$-". rand() * 2**32;
 <INPUT TYPE="hidden" NAME="quickpay" VALUE="<%= $quickpay %>">
 
 <% 
+my $money_char = $conf->config('money_char') || '$';
 my $custnum;
 if ( $link eq 'invnum' ) {
 
@@ -130,7 +131,7 @@ Payment
 </SCRIPT>
 <TR>
   <TD ALIGN="right">Amount</TD>
-  <TD BGCOLOR="#ffffff" ALIGN="right">$</TD>
+  <TD BGCOLOR="#ffffff" ALIGN="right"><%= $money_char %></TD>
   <TD><INPUT TYPE="text" NAME="paid" VALUE="<%= $paid %>" SIZE=8 MAXLENGTH=8></TD>
 </TR>
 <TR>
