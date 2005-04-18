@@ -833,7 +833,7 @@ sub check {
   return "Unknown refnum"
     unless qsearchs( 'part_referral', { 'refnum' => $self->refnum } );
 
-  return "Unknown referring custnum ". $self->referral_custnum
+  return "Unknown referring custnum: ". $self->referral_custnum
     unless ! $self->referral_custnum 
            || qsearchs( 'cust_main', { 'custnum' => $self->referral_custnum } );
 
@@ -1265,7 +1265,7 @@ If there is an error, returns the error, otherwise returns false.
 sub bill {
   my( $self, %options ) = @_;
   return '' if $self->payby eq 'COMP';
-  warn "bill customer ". $self->custnum if $DEBUG;
+  warn "bill customer ". $self->custnum. "\n" if $DEBUG;
 
   my $time = $options{'time'} || time;
 
@@ -1304,7 +1304,7 @@ sub bill {
     #NO!! next if $cust_pkg->cancel;  
     next if $cust_pkg->getfield('cancel');  
 
-    warn "  bill package ". $cust_pkg->pkgnum if $DEBUG;
+    warn "  bill package ". $cust_pkg->pkgnum. "\n" if $DEBUG;
 
     #? to avoid use of uninitialized value errors... ?
     $cust_pkg->setfield('bill', '')
@@ -1321,7 +1321,7 @@ sub bill {
     my $setup = 0;
     if ( !$cust_pkg->setup || $options{'resetup'} ) {
     
-      warn "    bill setup" if $DEBUG;
+      warn "    bill setup\n" if $DEBUG;
 
       $setup = eval { $cust_pkg->calc_setup( $time ) };
       if ( $@ ) {
@@ -1340,7 +1340,7 @@ sub bill {
          ( $cust_pkg->getfield('bill') || 0 ) <= $time
     ) {
 
-      warn "    bill recur" if $DEBUG;
+      warn "    bill recur\n" if $DEBUG;
 
       # XXX shared with $recur_prog
       $sdate = $cust_pkg->bill || $cust_pkg->setup || $time;
@@ -1673,7 +1673,7 @@ sub collect {
   $self->select_for_update; #mutex
 
   my $balance = $self->balance;
-  warn "collect customer ". $self->custnum. ": balance $balance" if $DEBUG;
+  warn "collect customer ". $self->custnum. ": balance $balance\n" if $DEBUG;
   unless ( $balance > 0 ) { #redundant?????
     $dbh->rollback if $oldAutoCommit; #hmm
     return '';
@@ -1698,7 +1698,7 @@ sub collect {
 
     last if $self->balance <= 0;
 
-    warn "invnum ". $cust_bill->invnum. " (owed ". $cust_bill->owed. ")"
+    warn "invnum ". $cust_bill->invnum. " (owed ". $cust_bill->owed. ")\n"
       if $DEBUG;
 
     foreach my $part_bill_event (
