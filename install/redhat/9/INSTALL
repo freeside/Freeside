@@ -1,32 +1,51 @@
 #!/bin/sh
 
-wget --passive-ftp --continue http://redhat.usu.edu/mirrors/apt4rpm/apt-0.5.5cnc4.1-fr1.20030325a.2.i386.rpm
+wget --passive-ftp --continue http://download.fedora.us/fedora/redhat/9/i386/RPMS.stable/apt-0.5.5cnc6-0.fdr.8.rh90.i386.rpm
 rpm -i apt*i386.rpm
-cp sources.list /etc/apt/
+#cp sources.list /etc/apt/
 apt-get update
 
-apt-get install httpd mod_perl mod_ssl perl-CGI perl-CPAN perl-DBD-MySQL perl-DateManip perl-HTML-Parser perl-HTML-Tagset perl-TimeDate perl-URI perl-libwww-perl perl-suidperl rsync postgresql postgresql-docs postgresql-libs postgresql-server screen zsh lftp cvs gcc # gd openssh
+apt-get install krb5-devel perl-CGI perl-CPAN perl-DateManip perl-HTML-Parser perl-HTML-Tagset perl-TimeDate perl-URI perl-libwww-perl perl-suidperl rsync postgresql postgresql-docs postgresql-libs postgresql-server screen zsh lftp cvs gcc # perl-DBD-MySQL # perl-suidperl gd openssh
 
-wget --passive-ftp --continue http://atrpms.physik.fu-berlin.de/dist/rh9/perl-GD/perl-GD-2.11-7.rh9.at.i386.rpm http://atrpms.physik.fu-berlin.de/dist/rh9/atrpms/atrpms-54-1.rh9.at.noarch.rpm http://atrpms.physik.fu-berlin.de/dist/rh9/gd/gd-2.0.15-1_6.rh9.at.i386.rpm
+wget --passive-ftp --continue http://dl.atrpms.net/production/packages/redhat-9-i386/atrpms/perl-GD-2.16-10.rh9.at.i386.rpm http://dl.atrpms.net/production/packages/common/atrpms/atrpms-61-1.at.noarch.rpm http://dl.atrpms.net/testing/packages/redhat-9-i386/atrpms/gd-2.0.28-1_10.rh9.at.i386.rpm http://dl.atrpms.net/testing/packages/redhat-9-i386/atrpms/libgd2-2.0.28-1_10.rh9.at.i386.rpm
 
-cp /etc/apt/apt.conf /etc/apt/apt.conf.real
+#cp /etc/apt/apt.conf /etc/apt/apt.conf.real
 
-rpm -i gd-2.0.15-1_6.rh9.at.i386.rpm atrpms-54-1.rh9.at.noarch.rpm perl-GD-2.11-7.rh9.at.i386.rpm 
+rpm -i atrpms*.rpm libgd2*i386.rpm gd-2*i386.rpm perl-GD*i386.rpm 
 
-mv /etc/apt/apt.conf.real /etc/apt/apt.conf
+#mv /etc/apt/apt.conf.real /etc/apt/apt.conf
 
-perl -MCPAN -e"install Locale::Country, Net::Whois, Business::CreditCard, \
+apt-get install perl-MIME-tools
+
+perl -MCPAN -e"install Locale::Country, Business::CreditCard, \
                        Mail::Internet, File::CounterFile, FreezeThaw, \
                        String::Approx, Text::Template, DBIx::DataSource, \
                        DBIx::DBSchema, Net::SSH, String::ShellQuote, \
-                       Net::SCP, Apache::ASP, Tie::IxHash, Time::Duration, \
+                       Net::SCP, HTML::Mason, Tie::IxHash, Time::Duration, \
                        HTML::Widgets::SelectLayers, Apache::DBI, \
                        Cache::Cache, Test::Pod, NetAddr::IP, IPC::ShareLite, \
                        Chart::LinesPoints, Net::Whois::Raw, \
-                       Locale::SubCountry, Crypt::PasswdMD5, DBI, DBD::Pg"
+                       Locale::SubCountry, Crypt::PasswdMD5, DBI, DBD::Pg, \
+                       JavaScript::RPC::Server::CGI, Text::CSV_XS, \
+                       Spreadsheet::WriteExcel, Frontier::RPC2, \
+                       File::Temp, Storable"
+
+apt-get remove httpd mod_perl mod_ssl
+#apachetoolbox
+lftpget http://easynews.dl.sourceforge.net/sourceforge/apachetoolbox/Apachetoolbox-install-1.5.72.tar.gz
+tar xzvf Apachetoolbox-install-1.5.72.tar.gz
+(cd Apachetoolbox-1.5.72; sh install.sh)
+# 4
+# 16
+# go
+# export INCLUDES="-I/usr/kerberos/include"
+cd apache_1.3.31;make
+#make certificate TYPE=dummy
+make install
 
 
-#apachetoolbox i guess
+#apache config
+#apache init script 
 
 /usr/sbin/useradd freeside
 

@@ -1,8 +1,8 @@
 <pre>
 this is incomplete
 
-install DBD::Pg 1.32 (or, if you're using a Perl version before 5.6, you could try installing DBD::Pg 1.22 with <a href="http://420.am/~ivan/DBD-Pg-1.22-fixvercmp.patch">this patch</a> and commenting out the "use DBD::Pg 1.32" at the top of DBIx/DBSchema/DBD/Pg.pm)
-install DBIx::DBSchema 0.24
+install DBD::Pg 1.32, 1.41 or later (not 1.40) (or, if you're using a Perl version before 5.6, you could try installing DBD::Pg 1.22 with <a href="http://420.am/~ivan/DBD-Pg-1.22-fixvercmp.patch">this patch</a> and commenting out the "use DBD::Pg 1.32" at the top of DBIx/DBSchema/DBD/Pg.pm)
+install DBIx::DBSchema 0.26
 install Net::SSH 0.08
 - If using Apache::ASP, add PerlSetVar RequestBinaryRead Off and PerlSetVar IncludesDir /your/freeside/document/root/ to your Apache configuration and make sure you are using Apache::ASP minimum version 2.55.
 - In httpd.conf, change &lt;Files ~ \.cgi&gt; to  &lt;Files ~ (\.cgi|\.html)&gt;
@@ -55,7 +55,7 @@ CREATE TABLE part_svc_router (
   svcrouternum serial,
   svcpart int NOT NULL,
   routernum int NOT NULL,
-  PRIMARY KEY (svcrouternum),
+  PRIMARY KEY (svcrouternum)
 );
 
 CREATE TABLE addr_block (
@@ -94,6 +94,7 @@ CREATE TABLE svc_external (
   PRIMARY KEY (svcnum)
 );
 
+<!--
 CREATE TABLE part_pkg_temp (
     pkgpart serial NOT NULL,
     pkg varchar(80) NOT NULL,
@@ -159,6 +160,8 @@ DROP INDEX h_part_pkg_temp_pkey;
 CREATE UNIQUE INDEX h_part_pkg_pkey ON h_part_pkg (historynum);
 probably this one?: select setval('h_part_pkg_temp_historynum_seq', ( select max(historynum) from h_part_pkg) );
 probably not this one?: select setval('h_part_pkg_historynum_seq', ( select max(historynum) from h_part_pkg) );
+-->ALTER TABLE part_pkg ADD COLUMN taxclass varchar(80) NULL;
+ALTER TABLE h_part_pkg ADD COLUMN taxclass varchar(80) NULL;
 
 CREATE TABLE cust_pay_refund (
     payrefundnum serial NOT NULL,
@@ -191,8 +194,8 @@ CREATE TABLE part_pkg_option (
   optionnum serial,
   pkgpart int not null,
   optionname varchar(80) not null,
-  optionvalue text NULL
-  PRIMARY KEY (optionnum),
+  optionvalue text NULL,
+  PRIMARY KEY (optionnum)
 );
 CREATE INDEX part_pkg_option1 ON part_pkg_option ( pkgpart );
 CREATE INDEX part_pkg_option2 ON part_pkg_option ( optionname );
@@ -244,7 +247,7 @@ CREATE INDEX reg_code2 ON reg_code ( agentnum );
 CREATE TABLE reg_code_pkg (
     codepkgnum serial,
     codenum int NOT NULL,
-    pkgpart int NOT NULL
+    pkgpart int NOT NULL,
     PRIMARY KEY (codepkgnum)
 );
 CREATE UNIQUE INDEX reg_code_pkg1 ON reg_code_pkg ( codenum, pkgpart );
@@ -287,8 +290,6 @@ ALTER TABLE agent ADD _password varchar(80) NULL;
 ALTER TABLE h_agent ADD _password varchar(80) NULL;
 ALTER TABLE cust_main ADD paycvv varchar(512) NULL;
 ALTER TABLE h_cust_main ADD paycvv varchar(512) NULL;
-ALTER TABLE cust_main ALTER COLUMN payinfo varchar(512) NULL;
-ALTER TABLE h_cust_main ALTER COLUMN payinfo varchar(512) NULL;
 ALTER TABLE cust_main ADD paymask varchar(80) NULL;
 ALTER TABLE h_cust_main ADD paymask varchar(80) NULL;
 ALTER TABLE part_referral ADD disabled char(1) NULL;
@@ -308,20 +309,34 @@ ALTER TABLE h_prepay_credit ADD agentnum integer NULL;
 ALTER TABLE type_pkgs ADD typepkgnum int;
 ALTER TABLE type_pkgs ALTER COLUMN typepkgnum SET DEFAULT nextval('public.type_pkgs_typepkgnum_seq'::text);
 CREATE SEQUENCE type_pkgs_typepkgnum_seq;
+UPDATE type_pkgs SET typepkgnum = nextval('public.type_pkgs_typepkgnum_seq'::text) WHERE typepkgnum IS NULL;
 ALTER TABLE type_pkgs ALTER typepkgnum SET NOT NULL;
 ALTER TABLE type_pkgs ADD PRIMARY KEY (typepkgnum);
+ALTER TABLE h_type_pkgs ADD typepkgnum int;
 
 ALTER TABLE cust_bill_pkg ADD billpkgnum int;
 ALTER TABLE cust_bill_pkg ALTER COLUMN billpkgnum SET DEFAULT nextval('public.cust_bill_pkg_billpkgnum_seq'::text);
 CREATE SEQUENCE cust_bill_pkg_billpkgnum_seq;
+UPDATE cust_bill_pkg SET billpkgnum = nextval('public.cust_bill_pkg_billpkgnum_seq'::text) WHERE billpkgnum IS NULL;
 ALTER TABLE cust_bill_pkg ALTER billpkgnum SET NOT NULL;
 ALTER TABLE cust_bill_pkg ADD PRIMARY KEY (billpkgnum);
+ALTER TABLE h_cust_bill_pkg ADD billpkgnum int;
 
 ALTER TABLE pkg_svc ADD pkgsvcnum int;
 ALTER TABLE pkg_svc ALTER COLUMN pkgsvcnum SET DEFAULT nextval('public.pkg_svc_pkgsvcnum_seq'::text);
 CREATE SEQUENCE pkg_svc_pkgsvcnum_seq;
+UPDATE pkg_svc SET pkgsvcnum = nextval('public.pkg_svc_pkgsvcnum_seq'::text) WHERE pkgsvcnum IS NULL;
 ALTER TABLE pkg_svc ALTER pkgsvcnum SET NOT NULL;
 ALTER TABLE pkg_svc ADD PRIMARY KEY (pkgsvcnum);
+ALTER TABLE h_pkg_svc ADD pkgsvcnum int;
+
+On recent Pg versions:
+
+ALTER TABLE cust_main ALTER COLUMN payinfo varchar(512) NULL;
+ALTER TABLE h_cust_main ALTER COLUMN payinfo varchar(512) NULL;
+
+Or on older Pg versions that don't support altering columns directly:
+
 
 On recent Pg versions:
 
