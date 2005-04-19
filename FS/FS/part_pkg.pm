@@ -230,7 +230,10 @@ sub insert {
   my $pkg_svc = $options{'pkg_svc'} || {};
   foreach my $part_svc ( qsearch('part_svc', {} ) ) {
     my $quantity = $pkg_svc->{$part_svc->svcpart} || 0;
-    my $primary_svc = $options{'primary_svc'} == $part_svc->svcpart ? 'Y' : '';
+    my $primary_svc =
+      ( $options{'primary_svc'} && $options{'primary_svc'}==$part_svc->svcpart )
+        ? 'Y'
+        : '';
 
     my $pkg_svc = new FS::pkg_svc( {
       'pkgpart'     => $self->pkgpart,
