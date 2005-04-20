@@ -112,7 +112,7 @@ sub _export_insert {
   my %record = map { my $value = $map{$_};
                      my @arg = ();
                      push @arg, $self->option('crypt')
-                       if $_ eq 'crypt_password' && $self->option('crypt');
+                       if $value eq 'crypt_password' && $self->option('crypt');
                      $_ => $svc_acct->$value(@arg);
                    } keys %map;
 
