@@ -18,7 +18,23 @@ tie my %options, 'Tie::IxHash',
                             type  => 'textarea',
                           },
   'primary_key'        => { label => 'Database primary key' },
+  'crypt'              => { label => 'Password encryption',
+                            type=>'select', options=>[qw(crypt md5)],
+                            default=>'crypt',
+                          },
 ;
+
+tie my %vpopmail_map, 'Tie::IxHash',
+  'pw_name'   => 'username',
+  'pw_domain' => 'domain',
+  'pw_passwd' => 'crypt_password',
+  'pw_uid'    => 'uid',
+  'pw_gid'    => 'gid',
+  'pw_gecos'  => 'finger',
+  'pw_dir'    => 'dir',
+  'pw_shell'  => 'shell',
+;
+my $vpopmail_map = join('\n', map "$_ $vpopmail_map{$_}", keys %vpopmail_map );
 
 tie my %postfix_courierimap_mailbox_map, 'Tie::IxHash',
   'username' => 'email',
@@ -46,23 +62,27 @@ my $postfix_courierimap_alias_map =
 %info = (
   'svc'      => 'svc_acct',
   'desc'     => 'Real-time export of accounts to SQL databases '.
-                '(Postfix+Courier IMAP, others?)',
+                '(vpopmail, Postfix+Courier IMAP, others?)',
   'options'  => \%options,
   'nodomain' => '',
   'notes'    => <<END
-Export accounts (svc_acct records) to SQL databases.  Written for
-Postfix+Courier IMAP but intended to be generally useful for generic SQL
-exports, eventually.
+Export accounts (svc_acct records) to SQL databases.  Currently has default
+configurations for vpopmail and Postfix+Courier IMAP but intended to be
+configurable for other schemas as well.
 
-<BR><BR>In contrast to sqlmail, this is newer and less well tested, and
-currently less flexible.  It is intended to export just svc_acct records only,
-rather than a single export for svc_acct, svc_forward and svc_domain records,
-to export in "default" formats rather than configure the MTA or POP/IMAP server
-for a Freeside-specific schema, and possibly to be configured for different
-mail server setups through some subclassing rather than options.
+<BR><BR>In contrast to sqlmail, this is intended to export just svc_acct
+records only, rather than a single export for svc_acct, svc_forward and
+svc_domain records, to export in "default" database schemas rather than
+configure the MTA or POP/IMAP server for a Freeside-specific schema, and
+to be configured for different mail server setups.
 
 <BR><BR>Use these buttons for some useful presets:
 <UL>
+  <li><INPUT TYPE="button" VALUE="vpopmail" onClick='
+    this.form.table.value = "vpopmail";
+    this.form.schema.value = "$vpopmail_map";
+    this.form.primary_key.value = "pw_name, pw_domain";
+  '>
   <LI><INPUT TYPE="button" VALUE="postfix_courierimap_mailbox" onClick='
     this.form.table.value = "mailbox";
     this.form.schema.value = "$postfix_courierimap_mailbox_map";
@@ -90,7 +110,10 @@ sub _export_insert {
   my %map = $self->_map;
 
   my %record = map { my $value = $map{$_};
-                     $_ => $svc_acct->$value();
+                     my @arg = ();
+                     push @arg, $self->option('crypt')
+                       if $_ eq 'crypt_password' && $self->option('crypt');
+                     $_ => $svc_acct->$value(@arg);
                    } keys %map;
 
   my $err_or_queue =
@@ -113,7 +136,10 @@ sub _export_replace {
   my $keymap = $map{$self->option('primary_key')};
 
   my %record = map { my $value = $map{$_};
-                     $_ => $new->$value();
+                     my @arg = ();
+                     push @arg, $self->option('crypt')
+                       if $_ eq 'crypt_password' && $self->option('crypt');
+                     $_ => $new->$value(@arg);
                    } keys %map;
 
   my $err_or_queue = $self->acct_sql_queue(

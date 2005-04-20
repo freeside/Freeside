@@ -15,7 +15,7 @@ use vars qw( @ISA $DEBUG $me $conf $skip_fuzzyfiles
              @saltset @pw_set );
 use Carp;
 use Fcntl qw(:flock);
-use Crypt::PasswdMD5;
+use Crypt::PasswdMD5 1.2;
 use FS::UID qw( datasrc );
 use FS::Conf;
 use FS::Record qw( qsearch qsearchs fields dbh dbdef );
@@ -1273,10 +1273,17 @@ sub check_password {
 
 }
 
-=item crypt_password
+=item crypt_password [ DEFAULT_ENCRYPTION_TYPE ]
 
 Returns an encrypted password, either by passing through an encrypted password
 in the database or by encrypting a plaintext password from the database.
+
+The optional DEFAULT_ENCRYPTION_TYPE parameter can be set to I<crypt> (classic
+UNIX DES crypt), I<md5> (md5 crypt supported by most modern Linux and BSD
+distrubtions), or (eventually) I<blowfish> (blowfish hashing supported by
+OpenBSD, SuSE, other Linux distibutions with pam_unix2, etc.).  The default
+encryption type is only used if the password is not already encrypted in the
+database.
 
 =cut
 
@@ -1288,10 +1295,19 @@ sub crypt_password {
        || $self->_password =~ /^\$(1|2a?)\$/ ) {
     $self->_password;
   } else {
-    crypt(
-      $self->_password,
-      $saltset[int(rand(64))].$saltset[int(rand(64))]
-    );
+    my $encryption = scalar(@_) ? shift : 'crypt';
+    if ( $encryption eq 'crypt' ) {
+      crypt(
+        $self->_password,
+        $saltset[int(rand(64))].$saltset[int(rand(64))]
+      );
+    } elsif ( $encryption eq 'md5' ) {
+      unix_md5_crypt( $self->_password );
+    } elsif ( $encryption eq 'blowfish' ) {
+      die "unknown encryption method $encryption";
+    } else {
+      die "unknown encryption method $encryption";
+    }
   }
 }
 
