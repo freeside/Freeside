@@ -37,12 +37,17 @@ su postgres -c "createuser -P freeside"
 su freeside -c "createdb freeside"
 
 perl -p -i.fsbackup -e 's/^(User|Group) .*/$1 freeside/' /etc/apache/httpd.conf
+( cd /usr/share/doc/libapache-mod-ssl/examples/;
+  cp mod-ssl.conf vhost.conf.gz /etc/apache/conf.d
+)
+gunzip /etc/apache/conf.d/vhost.conf.gz
 
 #?
 cd ../../..
 make install-perl-modules
 make create-config
 freeside-adduser -c -h /usr/local/etc/freeside/htpasswd ivan
+freeside-adduser fs_queue
 su freeside -c 'freeside-setup ivan'
 su freeside -c '/home/ivan/freeside/bin/populate-msgcat ivan'
 make deploy
