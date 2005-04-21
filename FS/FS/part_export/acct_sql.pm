@@ -133,7 +133,17 @@ sub _export_replace {
   my($self, $new, $old) = (shift, shift, shift);
 
   my %map = $self->_map;
-  my $keymap = $map{$self->option('primary_key')};
+
+  my @primary_key = ();
+  if ( $self->option('primary_key') =~ /,/ ) {
+    foreach my $key ( split(/\s*,\s*/, $self->option('primary_key') ) ) {
+      my $keymap = $map{$key};
+      push @primary_key, $old->$keymap();
+    }
+  } else {
+    my $keymap = $map{$self->option('primary_key')};
+    push @primary_key, $old->$keymap();
+  }
 
   my %record = map { my $value = $map{$_};
                      my @arg = ();
@@ -146,7 +156,7 @@ sub _export_replace {
     $new->svcnum,
     'replace',
     $self->option('table'),
-    $self->option('primary_key') => $old->$keymap(),
+    $self->option('primary_key'), @primary_key, 
     %record,
   );
   return $err_or_queue unless ref($err_or_queue);
@@ -155,13 +165,26 @@ sub _export_replace {
 
 sub _export_delete {
   my ( $self, $svc_acct ) = (shift, shift);
+
   my %map = $self->_map;
-  my $keymap = $map{$self->option('primary_key')};
+
+  my %primary_key = ();
+  if ( $self->option('primary_key') =~ /,/ ) {
+    foreach my $key ( split(/\s*,\s*/, $self->option('primary_key') ) ) {
+      my $keymap = $map{$key};
+      $primary_key{ $key } = $svc_acct->$keymap();
+    }
+  } else {
+    my $keymap = $map{$self->option('primary_key')};
+    $primary_key{ $self->option('primary_key') } = $svc_acct->$keymap(),
+  }
+
   my $err_or_queue = $self->acct_sql_queue(
     $svc_acct->svcnum,
     'delete',
     $self->option('table'),
-    $self->option('primary_key') => $svc_acct->$keymap(),
+    %primary_key,
+    #$self->option('primary_key') => $svc_acct->$keymap(),
   );
   return $err_or_queue unless ref($err_or_queue);
   '';
@@ -212,14 +235,27 @@ sub acct_sql_delete { #subroutine, not method
 
 sub acct_sql_replace { #subroutine, not method
   my $dbh = acct_sql_connect(shift, shift, shift);
-  my( $table, $pkey, $old_pkey, %record ) = @_;
+
+  my( $table, $pkey ) = ( shift, shift );
+
+  my %primary_key = ();
+  if ( $pkey =~ /,/ ) {
+    foreach my $key ( split(/\s*,\s*/, $pkey ) ) {
+      $primary_key{$key} = shift;
+    }
+  } else {
+    $primary_key{$pkey} = shift;
+  }
+
+  my %record = @_;
 
   my $sth = $dbh->prepare(
-    "UPDATE $table SET ". join(', ', map "$_ = ?", keys %record ).
-    "WHERE $pkey = ?"
+    "UPDATE $table".
+    ' SET '.   join(', ',    map "$_ = ?", keys %record      ).
+    ' WHERE '. join(' AND ', map "$_ = ?", keys %primary_key )
   ) or die $dbh->errstr;
 
-  $sth->execute( values(%record), $old_pkey );
+  $sth->execute( values(%record), values(%primary_key) );
 
   $dbh->disconnect;
 }
