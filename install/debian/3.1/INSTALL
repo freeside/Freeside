@@ -31,6 +31,7 @@ apt-get install make screen zsh cvs fsh rsync \
 	libjavascript-rpc-perl
 
 useradd freeside
+groupadd freeside
 su postgres -c "createuser -P freeside"
 
 su freeside -c "createdb freeside"
