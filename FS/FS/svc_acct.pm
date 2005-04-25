@@ -1120,6 +1120,41 @@ sub acct_snarf {
   qsearch('acct_snarf', { 'svcnum' => $self->svcnum } );
 }
 
+=item decrement_seconds SECONDS
+
+Decrements the I<seconds> field of this record by the given amount.
+
+=cut
+
+sub decrement_seconds {
+  my( $self, $seconds ) = @_;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+  
+  my $sth = dbh->prepare(
+    'UPDATE svc_acct SET seconds = seconds - ? WHERE svcnum = ?'
+  ) or die dbh->errstr;;
+  $sth->execute($seconds, $self->svcnum) or die $sth->errstr;
+  if ( $conf->exists('svc_acct-usage_suspend')
+       && $self->seconds - $seconds <= 0       ) {
+    #my $error = $self->suspend;
+    my $error = $self->cust_svc->cust_pkg->suspend;
+    die $error if $error;
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+}
+
 =item seconds_since TIMESTAMP
 
 Returns the number of seconds this account has been online since TIMESTAMP,

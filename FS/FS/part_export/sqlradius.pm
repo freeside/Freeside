@@ -2,8 +2,10 @@ package FS::part_export::sqlradius;
 
 use vars qw(@ISA $DEBUG %info %options $notes1 $notes2);
 use Tie::IxHash;
-use FS::Record qw( dbh );
+use FS::Record qw( dbh qsearch );
 use FS::part_export;
+use FS::svc_acct;
+use FS::export_svc;
 
 @ISA = qw(FS::part_export);
 
@@ -463,6 +465,85 @@ sub usage_sessions {
   $sth->execute(@param) or die $sth->errstr;
 
   [ map { { %$_ } } @{ $sth->fetchall_arrayref({}) } ];
+
+}
+
+=item update_svc_acct
+
+=cut
+
+sub update_svc_acct {
+  my $self = shift;
+
+  my $dbh = sqlradius_connect( map $self->option($_),
+                                   qw( datasrc username password ) );
+
+  my @fields = qw( radacctid username realm acctsessiontime );
+
+  my @param = ();
+  my $where = '';
+
+  my $sth = $dbh->prepare("
+    SELECT RadAcctId, UserName, Realm, AcctSessionTime
+      FROM radacct
+      WHERE FreesideStatus IS NULL
+        AND AcctStopTime != 0
+  ") or die $dbh->errstr;
+  $sth->execute() or die $sth->errstr;
+
+  while ( my $row = $sth->fetchrow_arrayref ) {
+    my($RadAcctId, $UserName, $Realm, $AcctSessionTime) = @$row;
+    warn "processing record: ".
+         "$RadAcctId ($UserName\@$Realm for ${AcctSessionTime}s"
+      if $DEBUG;
+
+    my %search = ( 'username' => $UserName );
+    my $extra_sql = '';
+    if ( ref($self) =~ /withdomain/ ) { #well...
+      $extra_sql = " AND '$Realm' = ( SELECT domain FROM svc_domain
+                          WHERE svc_domain.svcnum = svc_acct.domsvc ) ";
+      my $svc_domain = qsearch
+    }
+
+    my @svc_acct =
+      grep { qsearch( 'export_svc', { 'exportnum' => $self->exportnum,
+                                      'svcpart'   => $_->cust_svc->svcpart, } )
+           }
+      qsearch( 'svc_acct',
+                 { 'username' => $UserName },
+                 '',
+                 $extra_sql
+               );
+
+    my $errinfo = "for RADIUS detail RadAcctID $RadAcctId ".
+                  "(UserName $UserName, Realm $Realm)";
+    my $status = 'skipped';
+    if ( !@svc_acct ) {
+      warn "WARNING: no svc_acct record found $errinfo - skipping\n";
+    } elsif ( scalar(@svc_acct) > 1 ) {
+      warn "WARNING: multiple svc_acct records found $errinfo - skipping\n";
+    } else {
+      my $svc_acct = $svc_acct[0];
+      warn "found svc_acct ". $svc_acct->svcnum. " $errinfo\n" if $DEBUG;
+      if ( $svc_acct->seconds !~ /^$/ ) {
+        warn "  svc_acct.seconds found (". $svc_acct->seconds.
+             ") - decrementing\n"
+          if $DEBUG;
+        $svc_acct->decrement_seconds($AcctSessionTime);
+        $status = 'done';
+      } else {
+        warn "  no existing seconds value for svc_acct - skiping\n" if $DEBUG;
+      }
+    }
+
+    warn "setting FreesideStatus to $status $errinfo\n" if $DEBUG; 
+    my $psth = $dbh->prepare("UPDATE radacct
+                                SET FreesideStatus = ?
+                                WHERE RadAcctId = ?"
+    ) or die $dbh->errstr;
+    $psth->execute($status, $RadAcctId) or die $psth->errstr;
+
+  }
 
 }
 

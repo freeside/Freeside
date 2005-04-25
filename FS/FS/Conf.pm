@@ -1448,6 +1448,13 @@ httemplate/docs/config.html
     'type'        => [qw( checkbox textarea )],
   },
 
+  {
+    'key'         => 'svc_acct-usage_suspend',
+    'section'     => 'billing',
+    'description' => 'Suspends the package an account belongs to when svc_acct.seconds is decremented to 0 or below (accounts with an empty seconds value are ignored).  Typically used in conjunction with prepaid packages and freeside-sqlradius-radacctd.',
+    'type'        => 'checkbox',
+  },
+
 );
 
 1;

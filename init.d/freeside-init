@@ -21,6 +21,10 @@ case "$1" in
         freeside-queued $QUEUED_USER
         echo "done."
 
+        echo -n "Starting freeside-sqlradius-radacctd: "
+        freeside-sqlradius-radacctd $QUEUED_USER
+        echo "done."
+
         for MACHINE in $SELFSERVICE_MACHINES; do
           echo -n "Starting freeside-selfservice-server to $MACHINE: "
           freeside-selfservice-server $SELFSERVICE_USER $MACHINE
@@ -32,6 +36,10 @@ case "$1" in
         # Stop daemons.
         echo -n "Stopping freeside-queued: "
         kill `cat /var/run/freeside-queued.pid`
+        echo "done."
+
+        echo -n "Stopping freeside-sqlradius-radacctd: "
+        kill `cat /var/run/freeside-sqlradius-radacctd.pid`
         echo "done."
 
         if [ -e /var/run/freeside-selfservice-server.$SELFSERVICE_USER.pid ]

@@ -1,23 +1,16 @@
 #!/usr/bin/perl -w
-#
-# freeside-selfservice-server
-
-# alas, much false laziness with freeside-queued and fs_signup_server.  at
-# least it is slated to replace fs_{signup,passwd,mailadmin}_server
-# should probably generalize the version in here, or better yet use
-# Proc::Daemon or somesuch
 
 use strict;
-use vars qw( $Debug %kids $kids $max_kids $shutdown $log_file $ssh_pid
-             $keepalives );
-use subs qw( lock_write unlock_write );
+use vars qw( $Debug %kids $kids $max_kids $ssh_pid $keepalives );
+use subs qw( lock_write unlock_write myshutdown usage );
 use Fcntl qw(:flock);
-use POSIX qw(:sys_wait_h setsid);
+use POSIX qw(:sys_wait_h);
 use IO::Handle;
 use IO::Select;
 use IO::File;
 use Storable 2.09 qw(nstore_fd fd_retrieve);
 use Net::SSH qw(sshopen2);
+use FS::Daemon qw(daemonize1 drop_root logfile daemonize2 sigint sigterm);
 use FS::UID qw(adminsuidsetup forksuidsetup);
 use FS::ClientAPI;
 
@@ -28,7 +21,6 @@ use FS::cust_pkg;
 $Debug = 1; # 2 will turn on more logging
             # 3 will log packet contents, including passwords
 
-$shutdown = 0;
 $max_kids = '10'; #?
 $keepalives = 0; #let clientd turn it on, so we don't barf on old ones
 $kids = 0;
@@ -37,12 +29,31 @@ my $user = shift or die &usage;
 my $machine = shift or die &usage;
 my $tag = scalar(@ARGV) ? shift : '';
 
-# $FS::UID::datasrc not posible
-my $pid_file = "/var/run/freeside-selfservice-server.$user.$machine.pid";
-
 my $lock_file = "/usr/local/etc/freeside/selfservice.$machine.writelock";
 
-&init($user);
+
+# to keep pid files unique w/multi machines (and installs!)
+# $FS::UID::datasrc not posible
+daemonize1("freeside-selfservice-server","$user.$machine");
+
+#false laziness w/Daemon::drop_root
+my $freeside_gid = scalar(getgrnam('freeside'))
+  or die "can't find freeside group\n";
+
+open(LOCKFILE,">$lock_file") or die "can't open $lock_file: $!";
+chown $FS::UID::freeside_uid, $freeside_gid, $lock_file;
+
+drop_root();
+
+$ENV{HOME} = (getpwuid($>))[7]; #for ssh
+
+adminsuidsetup $user;
+
+#logfile("/usr/local/etc/freeside/selfservice.". $FS::UID::datasrc); #MACHINE
+logfile("/usr/local/etc/freeside/selfservice.$machine.log");
+
+daemonize2();
+
 
 my $conf = new FS::Conf;
 
@@ -69,7 +80,7 @@ while (1) {
     $undisp = 1;
     my @handles = $s->can_read(5);
     unless ( @handles ) {
-      &shutdown if $shutdown;
+      myshutdown() if sigint() || sigterm();
       if ( $keepalives && $keepalive_count++ > 10 ) {
         $keepalive_count = 0;
         lock_write;
@@ -150,7 +161,7 @@ while (1) {
 
   }
 
-  &shutdown if $shutdown;
+  myshutdown if sigint() || sigterm();
   warn "connection lost, reconnecting\n" if $Debug;
   sleep 3;
 
@@ -172,70 +183,7 @@ sub reap_kids {
   #warn "done reaping\n";
 }
 
-sub init {
-  my $user = shift;
-
-  chdir "/" or die "Can't chdir to /: $!";
-  open STDIN, '/dev/null' or die "Can't read /dev/null: $!";
-  defined(my $pid = fork) or die "Can't fork: $!";
-  if ( $pid ) {
-    print "freeside-selfservice-server to $machine started with pid $pid\n"; #logging to $log_file
-    exit unless $pid_file;
-    my $pidfh = new IO::File ">$pid_file" or exit;
-    print $pidfh "$pid\n";
-    exit;
-  }
-
-#  sub REAPER { my $pid = wait; $SIG{CHLD} = \&REAPER; $kids--; }
-#  #sub REAPER { my $pid = wait; $kids--; $SIG{CHLD} = \&REAPER; }
-#  $SIG{CHLD} =  \&REAPER;
-
-  $shutdown = 0;
-  $SIG{HUP} = sub { warn "SIGHUP received; shutting down\n"; $shutdown++; };
-  $SIG{INT} = sub { warn "SIGINT received; shutting down\n"; $shutdown++; };
-  $SIG{TERM} = sub { warn "SIGTERM received; shutting down\n"; $shutdown++; };
-  $SIG{QUIT} = sub { warn "SIGQUIT received; shutting down\n"; $shutdown++; };
-  $SIG{PIPE} = sub { warn "SIGPIPE received; shutting down\n"; $shutdown++; };
-
-  #false laziness w/freeside-queued
-  my $freeside_gid = scalar(getgrnam('freeside'))
-    or die "can't setgid to freeside group\n";
-
-  open(LOCKFILE,">$lock_file") or die "can't open $lock_file: $!";
-  chown $FS::UID::freeside_uid, $freeside_gid, $lock_file;
-
-  $) = $freeside_gid;
-  $( = $freeside_gid;
-  #if freebsd can't setuid(), presumably it can't setgid() either.  grr fleabsd
-  ($(,$)) = ($),$();
-  $) = $freeside_gid;
-
-  $> = $FS::UID::freeside_uid;
-  $< = $FS::UID::freeside_uid;
-  #freebsd is sofa king broken, won't setuid()
-  ($<,$>) = ($>,$<);
-  $> = $FS::UID::freeside_uid;
-  #eslaf
-
-  $ENV{HOME} = (getpwuid($>))[7]; #for ssh
-  adminsuidsetup $user;
-
-  #$log_file = "/usr/local/etc/freeside/selfservice.". $FS::UID::datasrc; #MACHINE NAME
-  $log_file = "/usr/local/etc/freeside/selfservice.$machine.log";
-
-  open STDOUT, '>/dev/null'
-                            or die "Can't write to /dev/null: $!";
-  setsid                  or die "Can't start a new session: $!";
-  open STDERR, '>&STDOUT' or die "Can't dup stdout: $!";
-
-  $SIG{__DIE__} = \&_die;
-  $SIG{__WARN__} = \&_logmsg;
-
-  warn "freeside-selfservice-server starting\n";
-
-}
-
-sub shutdown {
+sub myshutdown {
   &reap_kids;
   my $wait = 12; #wait up to 1 minute
   while ( $kids > 0 && $wait-- ) {
@@ -246,27 +194,6 @@ sub shutdown {
   warn "abandoning $kids children" if $kids;
   kill 'TERM', $ssh_pid if $ssh_pid;
   die "exiting";
-}
-
-sub _die {
-  my $msg = shift;
-  unlink $pid_file if -e $pid_file;
-  _logmsg($msg);
-}
-
-sub _logmsg {
-  chomp( my $msg = shift );
-  _do_logmsg( "[server] [". scalar(localtime). "] [$$] $msg\n" );
-}
-
-sub _do_logmsg {
-  chomp( my $msg = shift );
-  my $log = new IO::File ">>$log_file";
-  flock($log, LOCK_EX);
-  seek($log, 0, 2);
-  print $log "$msg\n";
-  flock($log, LOCK_UN);
-  close $log;
 }
 
 sub lock_write {
