@@ -1,0 +1,84 @@
+#!/usr/bin/perl
+
+use strict;
+
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw(qsearch qsearchs);
+use FS::svc_Common;
+use FS::part_svc_router;
+use FS::svc_broadband;
+use FS::router;
+use FS::addr_block;
+
+$FS::svc_Common::noexport_hack = 1;  #Disable exports!
+
+my $user = shift if $ARGV[0] or die &usage;
+adminsuidsetup($user);
+
+my $remapfile = shift if $ARGV[0] or die &usage;
+my $old_blocknum = shift if $ARGV[0] or die &usage;
+my $new_blocknum = shift if $ARGV[0] or die &usage;
+my $old_svcnum = shift if $ARGV[0];
+
+my %ipmap;
+
+open(REMAP, "<$remapfile") or die $!;
+while (<REMAP>) {
+  next unless (/^([0-9\.]+)\s+([0-9\.]+)$/);
+  my ($old_ip, $new_ip) = ($1, $2);
+  $ipmap{$old_ip} = $new_ip;
+}
+close(REMAP);
+
+my @svcs;
+if ($old_svcnum) {
+  @svcs = ( qsearchs('svc_broadband', { svcnum => $old_svcnum,
+                                        blocknum => $old_blocknum }) );
+} else {
+  @svcs = qsearch('svc_broadband', { blocknum => $old_blocknum });
+}
+
+foreach my $old_sb (@svcs) {
+
+  my $old_ip = $old_sb->ip_addr;
+  my $new_ip = $ipmap{$old_ip};
+  print "Renumbering ${old_ip} (${old_blocknum}) => ${new_ip} (${new_blocknum})...\n";
+
+
+  my $new_sb = new FS::svc_broadband
+    { $old_sb->hash,
+      ip_addr => $new_ip,
+      blocknum => $new_blocknum,
+      svcpart => $old_sb->cust_svc->svcpart,
+    };
+
+  my $error = $new_sb->replace($old_sb);
+  die $error if $error;
+
+}
+
+
+
+exit(0);
+
+sub usage {
+
+  my $usage = <<EOT;
+Usage:
+  svc_broadband.renumber user remapfile old_blocknum new_blocknum [ svcnum ]
+
+remapfile format:
+old_ip_address	new_ip_address
+...
+
+Example remapfile:
+10.0.0.5	192.168.0.5
+10.0.0.20	192.168.0.20
+10.0.0.32	192.168.0.3
+
+Warning: This assumes your routers have already been reconfigured with the
+         new addresses.  Exports will not be run!
+
+EOT
+
+}
