@@ -4,7 +4,7 @@
 
 my($query)=$cgi->keywords;
 $query ||= ''; #to avoid use of unitialized value errors
-my(@svc_www, $orderby);
+my $orderby;
 if ( $query eq 'svcnum' ) {
   $orderby = 'ORDER BY svcnum';
 } else {
