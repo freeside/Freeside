@@ -78,7 +78,7 @@ my $format_cust = sub {
     $name = $svc_forward->company. " ($name)" if $svc_forward->company;
     $name;
   } else {
-    '';
+    '<I>(unlinked)</I>';
   }
 };
 
