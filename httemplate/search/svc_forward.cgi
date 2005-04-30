@@ -15,14 +15,21 @@ my $count_query = 'SELECT COUNT(*) FROM svc_forward';
 my $sql_query = {
   'table'     => 'svc_forward',
   'hashref'   => {},
+  'select'    => join(', ',
+                   'svc_forward.*',
+                   map "cust_main.$_", qw(custnum last first company)
+                 ),
   'extra_sql' => $orderby,
+  'addl_from' => 'LEFT JOIN cust_svc  USING ( svcnum  )'.
+                 'LEFT JOIN cust_pkg  USING ( pkgnum  )'.
+                 'LEFT JOIN cust_main USING ( custnum )',
 };
 
 #        <TH>Service #<BR><FONT SIZE=-1>(click to view forward)</FONT></TH>
 #        <TH>Mail to<BR><FONT SIZE=-1>(click to view account)</FONT></TH>
 #        <TH>Forwards to<BR><FONT SIZE=-1>(click to view account)</FONT></TH>
 
-my $link = [ "${p}/view/svc_forward.cgi?", 'svcnum' ];
+my $link = [ "${p}view/svc_forward.cgi?", 'svcnum' ];
 
 my $format_src = sub {
   my $svc_forward = shift;
@@ -62,12 +69,14 @@ my $link_dst = sub {
   }
 };
 
-#this would quite a bit more efficient as a left join as part of the main query
 my $format_cust = sub {
   my $svc_forward = shift;
-  my $cust_pkg = $svc_forward->cust_svc->cust_pkg;
-  if ( $cust_pkg ) {
-    $cust_pkg->cust_main->name;
+
+  if ( $svc_forward->custnum ) {
+    #false laziness w/FS::cust_main::name
+    my $name = $svc_forward->get('last'). ', '. $svc_forward->first;
+    $name = $svc_forward->company. " ($name)" if $svc_forward->company;
+    $name;
   } else {
     '';
   }
@@ -75,9 +84,8 @@ my $format_cust = sub {
 
 my $link_cust = sub {
   my $svc_forward = shift;
-  my $cust_pkg = $svc_forward->cust_svc->cust_pkg;
-  if ( $cust_pkg ) {
-    [ "${p}view/cust_main.cgi?", sub { shift->cust_svc->cust_pkg->custnum } ];
+  if ( $svc_forward->custnum ) {
+    [ "${p}view/cust_main.cgi?", 'custnum' ];
   } else {
     '';
   }
