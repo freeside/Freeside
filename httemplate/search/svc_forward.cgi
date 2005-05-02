@@ -4,7 +4,7 @@ my $conf = new FS::Conf;
 
 my($query)=$cgi->keywords;
 $query ||= ''; #to avoid use of unitialized value errors
-my($orderby);
+my $orderby;
 if ( $query eq 'svcnum' ) {
   $orderby = 'ORDER BY svcnum';
 } else {
@@ -69,26 +69,10 @@ my $link_dst = sub {
   }
 };
 
-my $format_cust = sub {
-  my $svc_forward = shift;
-
-  if ( $svc_forward->custnum ) {
-    #false laziness w/FS::cust_main::name
-    my $name = $svc_forward->get('last'). ', '. $svc_forward->first;
-    $name = $svc_forward->company. " ($name)" if $svc_forward->company;
-    $name;
-  } else {
-    '<I>(unlinked)</I>';
-  }
-};
-
+#smaller false laziness w/svc_*.cgi here
 my $link_cust = sub {
-  my $svc_forward = shift;
-  if ( $svc_forward->custnum ) {
-    [ "${p}view/cust_main.cgi?", 'custnum' ];
-  } else {
-    '';
-  }
+  my $svc_x = shift;
+  $svc_x->custnum ? [ "${p}view/cust_main.cgi?", 'custnum' ] : '';
 };
 
 %><%= include ('elements/search.html',
@@ -105,7 +89,7 @@ my $link_cust = sub {
                  'fields'            => [ 'svcnum',
                                           $format_src,
                                           $format_dst,
-                                          $format_cust,
+                                          \&FS::svc_Common::cust_name,
                                         ],
                  'links'             => [ $link,
                                           $link_src,
