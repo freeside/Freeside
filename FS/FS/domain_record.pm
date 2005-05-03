@@ -292,7 +292,7 @@ sub check {
       or return "Illegal data for CNAME record: ". $self->recdata;
     $self->recdata($1);
   } elsif ( $self->rectype eq 'TXT' ) {
-    $self->recdata =~ /^((?:\S+)|(?:"[[:ascii:]]+"))$/
+    $self->recdata =~ /^((?:\S+)|(?:".+"))$/
       or return "Illegal data for TXT record: ". $self->recdata;
     $self->recdata($1);
   } elsif ( $self->rectype eq '_mstr' ) {
