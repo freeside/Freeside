@@ -87,8 +87,7 @@ ALTER TABLE h_prepay_credit ADD agentnum integer NULL;
 ALTER TABLE type_pkgs ADD typepkgnum int;
 ALTER TABLE type_pkgs ALTER COLUMN typepkgnum SET DEFAULT nextval('public.type_pkgs_typepkgnum_seq'::text);
 CREATE SEQUENCE type_pkgs_typepkgnum_seq;
-UPDATE type_pkgs SET typepkgnum = nextval('public.type_pkgs_typepkgnum_seq'::tex
-t) WHERE typepkgnum IS NULL;
+UPDATE type_pkgs SET typepkgnum = nextval('public.type_pkgs_typepkgnum_seq'::text) WHERE typepkgnum IS NULL;
 ALTER TABLE type_pkgs ALTER typepkgnum SET NOT NULL;
 ALTER TABLE type_pkgs ADD PRIMARY KEY (typepkgnum);
 ALTER TABLE h_type_pkgs ADD typepkgnum int;
@@ -96,8 +95,7 @@ ALTER TABLE h_type_pkgs ADD typepkgnum int;
 ALTER TABLE cust_bill_pkg ADD billpkgnum int;
 ALTER TABLE cust_bill_pkg ALTER COLUMN billpkgnum SET DEFAULT nextval('public.cust_bill_pkg_billpkgnum_seq'::text);
 CREATE SEQUENCE cust_bill_pkg_billpkgnum_seq;
-UPDATE cust_bill_pkg SET billpkgnum = nextval('public.cust_bill_pkg_billpkgnum_s
-eq'::text) WHERE billpkgnum IS NULL;
+UPDATE cust_bill_pkg SET billpkgnum = nextval('public.cust_bill_pkg_billpkgnum_seq'::text) WHERE billpkgnum IS NULL;
 ALTER TABLE cust_bill_pkg ALTER billpkgnum SET NOT NULL;
 ALTER TABLE cust_bill_pkg ADD PRIMARY KEY (billpkgnum);
 ALTER TABLE h_cust_bill_pkg ADD billpkgnum int;
@@ -105,8 +103,7 @@ ALTER TABLE h_cust_bill_pkg ADD billpkgnum int;
 ALTER TABLE pkg_svc ADD pkgsvcnum int;
 ALTER TABLE pkg_svc ALTER COLUMN pkgsvcnum SET DEFAULT nextval('public.pkg_svc_pkgsvcnum_seq'::text);
 CREATE SEQUENCE pkg_svc_pkgsvcnum_seq;
-UPDATE pkg_svc SET pkgsvcnum = nextval('public.pkg_svc_pkgsvcnum_seq'::text) WHE
-RE pkgsvcnum IS NULL;
+UPDATE pkg_svc SET pkgsvcnum = nextval('public.pkg_svc_pkgsvcnum_seq'::text) WHERE pkgsvcnum IS NULL;
 ALTER TABLE pkg_svc ALTER pkgsvcnum SET NOT NULL;
 ALTER TABLE pkg_svc ADD PRIMARY KEY (pkgsvcnum);
 ALTER TABLE h_pkg_svc ADD pkgsvcnum int;
@@ -114,8 +111,7 @@ ALTER TABLE h_pkg_svc ADD pkgsvcnum int;
 ALTER TABLE part_svc_router ADD svcrouternum int;
 ALTER TABLE part_svc_router ALTER COLUMN svcrouternum SET DEFAULT nextval('public.part_svc_router_svcrouternum_seq'::text);
 CREATE SEQUENCE part_svc_router_svcrouternum_seq;
-UPDATE part_svc_router SET svcrouternum = nextval('public.part_svc_router_svcrou
-ternum_seq'::text) WHERE svcrouternum IS NULL;
+UPDATE part_svc_router SET svcrouternum = nextval('public.part_svc_router_svcrouternum_seq'::text) WHERE svcrouternum IS NULL;
 ALTER TABLE part_svc_router ALTER svcrouternum SET NOT NULL;
 ALTER TABLE part_svc_router ADD PRIMARY KEY (svcrouternum);
 ALTER TABLE h_part_svc_router ADD svcrouternum int;
