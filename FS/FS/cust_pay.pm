@@ -183,7 +183,8 @@ sub insert {
     my $payby = $self->payby;
     my $payinfo = $self->payinfo;
     $payby =~ s/^BILL$/Check/ if $payinfo;
-    $payinfo = $self->payinfo_masked if $payby eq 'CARD';
+    $payinfo = $self->payinfo_masked if $payby eq 'CARD' || $payby eq 'CHEK';
+    $payby =~ s/^CHEK$/Electronic check/;
 
     my $error = send_email(
       'from'    => $conf->config('invoice_from'), #??? well as good as any
@@ -464,8 +465,16 @@ by 'x'es.  Useful for displaying credit cards.
 
 sub payinfo_masked {
   my $self = shift;
-  my $payinfo = $self->payinfo;
-  'x'x(length($payinfo)-4). substr($payinfo,(length($payinfo)-4));
+  #some false laziness w/cust_main::paymask
+  if ( $self->payby eq 'CARD' ) {
+    my $payinfo = $self->payinfo;
+    'x'x(length($payinfo)-4). substr($payinfo,(length($payinfo)-4));
+  } elsif ( $self->payby eq 'CHEK' ) {
+    my( $account, $aba ) = split('@', $self->payinfo );
+    'x'x(length($account)-2). substr($account,(length($account)-2)). "@". $aba;
+  } else {
+    $self->payinfo;
+  }
 }
 
 =back
