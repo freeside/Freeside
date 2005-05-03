@@ -1446,9 +1446,9 @@ sub print_pdf {
   my $sfile = shell_quote $file;
 
   system("pslatex $sfile.tex >/dev/null 2>&1") == 0
-    or die "pslatex $file.tex failed: $!";
+    or die "pslatex $file.tex failed; see $file.log for details?\n";
   system("pslatex $sfile.tex >/dev/null 2>&1") == 0
-    or die "pslatex $file.tex failed: $!";
+    or die "pslatex $file.tex failed; see $file.log for details?\n";
 
   #system('dvipdf', "$file.dvi", "$file.pdf" );
   system(
