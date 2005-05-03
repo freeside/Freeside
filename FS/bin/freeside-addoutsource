@@ -4,21 +4,21 @@ domain=$1
 
 createdb $domain && \
 \
-mkdir /usr/local/etc/freeside/conf.DBI:Pg:host=localhost\;dbname=$domain && \
+mkdir /usr/local/etc/freeside/conf.DBI:Pg:dbname=$domain && \
 \
-chown freeside /usr/local/etc/freeside/conf.DBI:Pg:host=localhost\;dbname=$domain && \
+chown freeside /usr/local/etc/freeside/conf.DBI:Pg:dbname=$domain && \
 \
-cp /home/ivan/freeside/conf/[a-z]* /usr/local/etc/freeside/conf.DBI:Pg:host=localhost\;dbname=$domain && \
+cp /home/ivan/freeside/conf/[a-z]* /usr/local/etc/freeside/conf.DBI:Pg:dbname=$domain && \
 \
-touch /usr/local/etc/freeside/conf.DBI:Pg:host=localhost\;dbname=$domain/secrets && \
+touch /usr/local/etc/freeside/conf.DBI:Pg:dbname=$domain/secrets && \
 \
-chown freeside /usr/local/etc/freeside/conf.DBI:Pg:host=localhost\;dbname=$domain/secrets && \
+chown freeside /usr/local/etc/freeside/conf.DBI:Pg:dbname=$domain/secrets && \
 \
-chmod 600 /usr/local/etc/freeside/conf.DBI:Pg:host=localhost\;dbname=$domain/secrets && \
+chmod 600 /usr/local/etc/freeside/conf.DBI:Pg:dbname=$domain/secrets && \
 \
-echo -e "DBI:Pg:host=localhost;dbname=$domain\nfreeside\n" >/usr/local/etc/freeside/conf.DBI:Pg:host=localhost\;dbname=$domain/secrets && \
+echo -e "DBI:Pg:dbname=$domain\nfreeside\n" >/usr/local/etc/freeside/conf.DBI:Pg:dbname=$domain/secrets && \
 \
-mkdir /usr/local/etc/freeside/counters.DBI:Pg:host=localhost\;dbname=$domain && \
-mkdir /usr/local/etc/freeside/cache.DBI:Pg:host=localhost\;dbname=$domain && \
-mkdir /usr/local/etc/freeside/export.DBI:Pg:host=localhost\;dbname=$domain
+mkdir /usr/local/etc/freeside/counters.DBI:Pg:dbname=$domain && \
+mkdir /usr/local/etc/freeside/cache.DBI:Pg:dbname=$domain && \
+mkdir /usr/local/etc/freeside/export.DBI:Pg:dbname=$domain
 
