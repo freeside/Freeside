@@ -561,6 +561,13 @@ httemplate/docs/config.html
   },
 
   {
+    'key'         => 'invoice_latexreturnaddress',
+    'section'     => 'billing',
+    'description' => 'Return address for LaTeX typeset PostScript invoices.',
+    'type'        => 'textarea',
+  },
+
+  {
     'key'         => 'invoice_latexsmallfooter',
     'section'     => 'billing',
     'description' => 'Optional small footer for multi-page LaTeX typeset PostScript invoices.',

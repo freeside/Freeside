@@ -13,7 +13,7 @@
     <li>Typeset (LaTeX) invoice templates
       <ul>
         <li>Install teTeX and Ghostscript (included with most distributions).
-        <li>Place your logo in EPS (Encapsulated PostScript) format at <code>/usr/local/etc/freeside/conf.<i>your_datasrc</i>/logo.eps</code>.
+        <li>Place your logo in EPS (Encapsulated PostScript) format with size 90pt X 36pt (<code>epsffit -c 0 0 90 33 yourlogo.eps &gt;logo.eps</code>) at <code>/usr/local/etc/freeside/conf.<i>your_datasrc</i>/logo.eps</code>.
         <li>Edit the <b>invoice_latexfooter</b>, <b>invoice_latexnotes</b>, and <b>invoice_latexsmallfooter</b> configuration files.  If you are adventurous, edit <b>invoice_latex</b> as well.
       </ul>
     <li>Plaintext invoice templates

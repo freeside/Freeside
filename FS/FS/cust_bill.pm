@@ -1137,9 +1137,11 @@ sub print_latex {
     'country'      => _latex_escape($cust_main->country),
     'footer'       => join("\n", $conf->config('invoice_latexfooter') ),
     'smallfooter'  => join("\n", $conf->config('invoice_latexsmallfooter') ),
+    'returnaddress' => join("\n", $conf->config('invoice_latexreturnaddress') ),
     'quantity'     => 1,
     'terms'        => $conf->config('invoice_default_terms') || 'Payable upon receipt',
     #'notes'        => join("\n", $conf->config('invoice_latexnotes') ),
+    'conf_dir'     => "$FS::UID::conf_dir/conf.$FS::UID::datasrc",
   );
 
   my $countrydefault = $conf->config('countrydefault') || 'US';
