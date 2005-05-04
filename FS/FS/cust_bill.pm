@@ -1109,7 +1109,7 @@ sub print_latex {
   if ( grep { /^%%Detail/ } @invoice_template ) {
     #change this to a die when the old code is removed
     warn "old-style invoice template $templatefile; ".
-         "patch with conf/invoice_latex.diff\n";
+         "patch with conf/invoice_latex.diff or use new conf/invoice_latex*\n";
     $format = 'old';
   } else {
     $format = 'Text::Template';
