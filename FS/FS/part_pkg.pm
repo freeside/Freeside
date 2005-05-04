@@ -375,6 +375,7 @@ sub replace {
     next unless $old_quantity != $quantity || $old_primary_svc ne $primary_svc;
   
     my $new_pkg_svc = new FS::pkg_svc( {
+      'pkgsvcnum'   => ( $old_pkg_svc ? $old_pkg_svc->pkgsvcnum : '' ),
       'pkgpart'     => $new->pkgpart,
       'svcpart'     => $part_svc->svcpart,
       'quantity'    => $quantity, 
