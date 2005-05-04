@@ -903,7 +903,9 @@ sub replace {
   return "Records not in same table!" unless $new->table eq $old->table;
 
   my $primary_key = $old->dbdef_table->primary_key;
-  return "Can't change $primary_key"
+  return "Can't change primary key $primary_key ".
+         'from '. $old->getfield($primary_key).
+         ' to ' . $new->getfield($primary_key)
     if $primary_key
        && ( $old->getfield($primary_key) ne $new->getfield($primary_key) );
 
