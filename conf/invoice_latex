@@ -173,7 +173,7 @@
 \addressline{[@-- $company --@]}
 \addressline{[@-- $address1 --@]}
 \addressline{[@-- $address2 --@]}
-\addressline{[@-- $city --@], [@-- $state --@]  [@-- $zip --@]}
+\addressline{[@-- $city --@], [@-- $state --@]~~[@-- $zip --@]}
 \addressline{[@-- $country --@]}
 \end{minipage}}
 \end{tabular}
