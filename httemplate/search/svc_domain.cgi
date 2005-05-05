@@ -53,7 +53,7 @@ my $sql_query = {
                  'LEFT JOIN cust_main USING ( custnum )',
 };
 
-my $link = [ "${p}view/svc_domain.cgi", 'svcnum' ];
+my $link = [ "${p}view/svc_domain.cgi?", 'svcnum' ];
 
 #smaller false laziness w/svc_*.cgi here
 my $link_cust = sub {
