@@ -29,7 +29,7 @@
 
       <INPUT TYPE=CHECKBOX NAME="DeleteLink--<%$link->Type%>-<%$link->Target%>">
 %#        <& ShowLink, URI => $link->TargetURI &><br>
-        <A HREF="<% $link->TargetURI->Resolver->HREF %>"><% $link->TargetURI->Resolver->AsStringLong |n %>
+        <A HREF="<% $link->TargetURI->Resolver->HREF %>"><% $link->TargetURI->Resolver->AsStringLong |n %></A>
       <BR>
 % }
     </td>
