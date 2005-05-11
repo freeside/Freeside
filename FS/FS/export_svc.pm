@@ -131,79 +131,82 @@ sub insert {
     warn "WARNING: No duplicate checking done on merge of $svcdb exports";
   }
 
-  my $done = 0;
-  my $percheck = $mult / scalar(@checks);
-  foreach my $check ( @checks ) {
+  if ( @checks ) {
+  
+    my $done = 0;
+    my $percheck = $mult / scalar(@checks);
 
-    if ( $job ) {
-      $error = $job->update_statustext(int( $offset + ($done+.33) *$percheck ));
-      if ( $error ) {
-        $dbh->rollback if $oldAutoCommit;
-        return $error;
+    foreach my $check ( @checks ) {
+  
+      if ( $job ) {
+        $error = $job->update_statustext(int( $offset + ($done+.33) *$percheck ));
+        if ( $error ) {
+          $dbh->rollback if $oldAutoCommit;
+          return $error;
+        }
       }
-    }
-
-    my @current_svc = $self->part_export->svc_x;
-    #warn "current: ". scalar(@current_svc). " $current_svc[0]\n";
-
-    if ( $job ) {
-      $error = $job->update_statustext(int( $offset + ($done+.67) *$percheck ));
-      if ( $error ) {
-        $dbh->rollback if $oldAutoCommit;
-        return $error;
+  
+      my @current_svc = $self->part_export->svc_x;
+      #warn "current: ". scalar(@current_svc). " $current_svc[0]\n";
+  
+      if ( $job ) {
+        $error = $job->update_statustext(int( $offset + ($done+.67) *$percheck ));
+        if ( $error ) {
+          $dbh->rollback if $oldAutoCommit;
+          return $error;
+        }
       }
-    }
-
-    my @new_svc = $self->part_svc->svc_x;
-    #warn "new: ". scalar(@new_svc). " $new_svc[0]\n";
-
-    if ( $job ) {
-      $error = $job->update_statustext(int( $offset + ($done+1) *$percheck ));
-      if ( $error ) {
-        $dbh->rollback if $oldAutoCommit;
-        return $error;
+  
+      my @new_svc = $self->part_svc->svc_x;
+      #warn "new: ". scalar(@new_svc). " $new_svc[0]\n";
+  
+      if ( $job ) {
+        $error = $job->update_statustext(int( $offset + ($done+1) *$percheck ));
+        if ( $error ) {
+          $dbh->rollback if $oldAutoCommit;
+          return $error;
+        }
       }
+  
+      my $method = $check->{'method'};
+      my %cur_svc = map { $_->$method() => $_ } @current_svc;
+      my @dup_svc = grep { $cur_svc{$_->$method()} } @new_svc;
+      #my @diff_customer = grep { 
+      #                           $_->cust_pkg->custnum != $cur_svc{$_->$method()}->cust_pkg->custnum
+      #                         } @dup_svc;
+  
+  
+  
+      if ( @dup_svc ) { #aye, that's the rub
+        #error out for now, eventually accept different options of adjustments
+        # to make to allow us to continue forward
+        $dbh->rollback if $oldAutoCommit;
+  
+        my @diff_customer_svc = grep {
+          my $cust_pkg = $_->cust_svc->cust_pkg;
+          my $custnum = $cust_pkg ? $cust_pkg->custnum : 0;
+          my $other_cust_pkg = $cur_svc{$_->$method()}->cust_svc->cust_pkg;
+          my $other_custnum = $other_cust_pkg ? $other_cust_pkg->custnum : 0;
+          $custnum != $other_custnum;
+        } @dup_svc;
+  
+        my $label = $check->{'label'};
+        my $sortby = $check->{'sortby'};
+        return "Can't export ".
+               $self->part_svc->svcpart.':'.$self->part_svc->svc. " service to ".
+               $self->part_export->exportnum.':'.$self->part_export->exporttype.
+                 ' on '. $self->part_export->machine.
+               ' : '. scalar(@dup_svc). " duplicate $label".
+               ' ('. scalar(@diff_customer_svc). " from different customers)".
+               #": ". join(', ', sort $sortby map { $_->$method() } @dup_svc )
+               ": ". join(', ', sort $sortby map { $_->$method() } @diff_customer_svc )
+               ;
+      }
+  
+      $done++;
     }
 
-    my $method = $check->{'method'};
-    my %cur_svc = map { $_->$method() => $_ } @current_svc;
-    my @dup_svc = grep { $cur_svc{$_->$method()} } @new_svc;
-    #my @diff_customer = grep { 
-    #                           $_->cust_pkg->custnum != $cur_svc{$_->$method()}->cust_pkg->custnum
-    #                         } @dup_svc;
-
-
-
-    if ( @dup_svc ) { #aye, that's the rub
-      #error out for now, eventually accept different options of adjustments
-      # to make to allow us to continue forward
-      $dbh->rollback if $oldAutoCommit;
-
-      my @diff_customer_svc = grep {
-        my $cust_pkg = $_->cust_svc->cust_pkg;
-        my $custnum = $cust_pkg ? $cust_pkg->custnum : 0;
-        my $other_cust_pkg = $cur_svc{$_->$method()}->cust_svc->cust_pkg;
-        my $other_custnum = $other_cust_pkg ? $other_cust_pkg->custnum : 0;
-        $custnum != $other_custnum;
-      } @dup_svc;
-
-      my $label = $check->{'label'};
-      my $sortby = $check->{'sortby'};
-      return "Can't export ".
-             $self->part_svc->svcpart.':'.$self->part_svc->svc. " service to ".
-             $self->part_export->exportnum.':'.$self->part_export->exporttype.
-               ' on '. $self->part_export->machine.
-             ' : '. scalar(@dup_svc). " duplicate $label".
-             ' ('. scalar(@diff_customer_svc). " from different customers)".
-             #": ". join(', ', sort $sortby map { $_->$method() } @dup_svc )
-             ": ". join(', ', sort $sortby map { $_->$method() } @diff_customer_svc )
-             ;
-    }
-
-    $done++;
-  }
-
-  #end of duplicate check, whew
+  } #end of duplicate check, whew
 
   $error = $self->SUPER::insert;
   if ( $error ) {
