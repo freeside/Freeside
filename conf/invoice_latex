@@ -230,8 +230,8 @@ Terms: [@-- $terms --@]\\
             '{' . $line->{'amount'} . "}${rowbreak}\n";
 
     foreach my $ext_desc (@$ext_description) {
-      $ext_desc = substr($ext_desc, 0, 70) . '...'
-        if (length($ext_desc) > 70);
+      $ext_desc = substr($ext_desc, 0, 80) . '...'
+        if (length($ext_desc) > 80);
       $OUT .= '\FSextdesc{' . $ext_desc . '}' . "${rowbreak}\n";
     }
 
