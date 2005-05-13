@@ -7,6 +7,7 @@ use Date::Format;
 use Text::Template 1.20;
 use File::Temp 0.14;
 use String::ShellQuote;
+use HTML::Entities;
 use FS::UID qw( datasrc );
 use FS::Record qw( qsearch qsearchs );
 use FS::Misc qw( send_email send_fax );
@@ -1083,7 +1084,6 @@ sub print_latex {
   my( $self, $today, $template ) = @_;
   $today ||= time;
 
-#  my $invnum = $self->invnum;
   my $cust_main = $self->cust_main;
   $cust_main->payname( $cust_main->first. ' '. $cust_main->getfield('last') )
     unless $cust_main->payname && $cust_main->payby !~ /^(CHEK|DCHK)$/;
@@ -1092,10 +1092,6 @@ sub print_latex {
 #  my( $cr_total, @cr_cust_credit ) = $self->cust_credit; #credits
   #my $balance_due = $self->owed + $pr_total - $cr_total;
   my $balance_due = $self->owed + $pr_total;
-
-  #my @collect = ();
-  #my($description,$amount);
-  @buf = ();
 
   #create the template
   $template ||= $self->_agent_template;
@@ -1123,6 +1119,16 @@ sub print_latex {
       or die 'While compiling ' . $templatefile . ': ' . $Text::Template::ERROR;
   }
 
+  my $returnaddress;
+  if ( $conf->exists('invoice_latexreturnaddress')
+       && length($conf->exists('invoice_latexreturnaddress'))
+     )
+  {
+    $returnaddress = join("\n", $conf->config('invoice_latexreturnaddress') );
+  } else {
+    $returnaddress = '~';
+  }
+
   my %invoice_data = (
     'invnum'       => $self->invnum,
     'date'         => time2str('%b %o, %Y', $self->_date),
@@ -1137,7 +1143,7 @@ sub print_latex {
     'country'      => _latex_escape($cust_main->country),
     'footer'       => join("\n", $conf->config('invoice_latexfooter') ),
     'smallfooter'  => join("\n", $conf->config('invoice_latexsmallfooter') ),
-    'returnaddress' => join("\n", $conf->config('invoice_latexreturnaddress') ),
+    'returnaddress' => $returnaddress,
     'quantity'     => 1,
     'terms'        => $conf->config('invoice_default_terms') || 'Payable upon receipt',
     #'notes'        => join("\n", $conf->config('invoice_latexnotes') ),
@@ -1207,12 +1213,13 @@ sub print_latex {
         my $taxtotal = 0;
         foreach my $tax ( $self->_items_tax ) {
           $invoice_data{'total_item'} = _latex_escape($tax->{'description'});
-          $taxtotal += ( $invoice_data{'total_amount'} = $tax->{'amount'} );
+          $taxtotal += $tax->{'amount'};
+          $invoice_data{'total_amount'} = '\dollar '. $tax->{'amount'};
           push @total_fill,
             map { my $b=$_; $b =~ s/\$(\w+)/$invoice_data{$1}/eg; $b }
                 @total_item;
         }
-  
+
         if ( $taxtotal ) {
           $invoice_data{'total_item'} = 'Sub-total';
           $invoice_data{'total_amount'} =
@@ -1305,7 +1312,8 @@ sub print_latex {
     foreach my $tax ( $self->_items_tax ) {
       my $total = {};
       $total->{'total_item'} = _latex_escape($tax->{'description'});
-      $taxtotal += ( $invoice_data{'total_amount'} = $tax->{'amount'} );
+      $taxtotal += $tax->{'amount'};
+      $total->{'total_amount'} = '\dollar '. $tax->{'amount'};
       push @total_items, $total;
     }
   
@@ -1476,6 +1484,232 @@ sub print_pdf {
 
 }
 
+=item print_html [ TIME [ , TEMPLATE ] ]
+
+Returns an HTML invoice, as a scalar.
+
+TIME an optional value used to control the printing of overdue messages.  The
+default is now.  It isn't the date of the invoice; that's the `_date' field.
+It is specified as a UNIX timestamp; see L<perlfunc/"time">.  Also see
+L<Time::Local> and L<Date::Parse> for conversion functions.
+
+=cut
+
+#sub print_html {
+#  my $self = shift;
+#
+#  my $file = $self->print_latex(@_);
+#
+#  my $dir = $FS::UID::conf_dir. "cache.". $FS::UID::datasrc;
+#  chdir($dir);
+#
+#  my $sfile = shell_quote $file;
+#
+#  system("htlatex $sfile.tex") == 0
+#    or die "hlatex $file.tex failed; is hlatex installed, or see $file.log for details?\n";
+#  #system("ltoh $sfile.tex") == 0
+#  #  or die "ltoh $file.tex failed; is hlatex installed, or see $file.log for details?\n";
+#
+#  open(HTML, "<$file.html")
+#    or die "can't open $file.html: $! (error in LaTeX template?)\n";
+#
+#  #unlink("$file.dvi", "$file.log", "$file.aux", "$file.html", "$file.tex");
+#
+#  my $html = '';
+#  while (<HTML>) {
+#
+#    s/<link\s+rel="stylesheet"\s+type="text\/css"\s+href="invoice\.(\d+)\.(\w+)\.css">/<link rel="stylesheet" type="text\/css" href="cust_bill.html?$1.$2.css">/;
+##    s/<link\s+//;
+#    $html .= $_;
+#  }
+#
+#  close HTML;
+#
+#  return $html;
+#
+#}
+#
+##inefficient proof-of-concept for now
+#sub print_html_css {
+#  my $self = shift;
+#
+#  my $file = $self->print_latex(@_);
+#
+#  my $dir = $FS::UID::conf_dir. "cache.". $FS::UID::datasrc;
+#  chdir($dir);
+#
+#  my $sfile = shell_quote $file;
+#
+#  system("htlatex $sfile.tex") == 0
+#    or die "hlatex $file.tex failed; is hlatex installed, or see $file.log for details?\n";
+#  #system("ltoh $sfile.tex") == 0
+#  #  or die "ltoh $file.tex failed; is hlatex installed, or see $file.log for details?\n";
+#
+#  open(CSS, "<$file.css")
+#    or die "can't open $file.html: $! (error in LaTeX template?)\n";
+#
+#  unlink("$file.dvi", "$file.log", "$file.aux", "$file.html", "$file.tex");
+#
+#  my $css = '';
+#  while (<CSS>) {
+#    $css .= $_;
+#  }
+#
+#  close CSS;
+#
+#  return $css;
+#
+#}
+
+sub print_html {
+  my( $self, $today, $template ) = @_;
+  $today ||= time;
+
+  my $cust_main = $self->cust_main;
+  $cust_main->payname( $cust_main->first. ' '. $cust_main->getfield('last') )
+    unless $cust_main->payname && $cust_main->payby !~ /^(CHEK|DCHK)$/;
+
+  $template ||= $self->_agent_template;
+  my $templatefile = 'invoice_html';
+  my $suffix = length($template) ? "_$template" : '';
+  $templatefile .= $suffix;
+  my @html_template = map "$_\n", $conf->config($templatefile)
+    or die "cannot load config file $templatefile";
+
+  my $html_template = new Text::Template(
+    TYPE   => 'ARRAY',
+    SOURCE => \@html_template,
+    DELIMITERS => [ '<%=', '%>' ],
+  );
+
+  $html_template->compile()
+    or die 'While compiling ' . $templatefile . ': ' . $Text::Template::ERROR;
+
+  my $returnaddress = $conf->exists('invoice_htmlreturnaddress')
+    ? join("\n", $conf->config('invoice_htmlreturnaddress') )
+    : join("\n", map { s/~/&nbsp;/g; s/\\\\\*?\s*$/<BR>/; }
+                     $conf->config('invoice_latexreturnaddress')
+          );
+  warn $conf->config('invoice_latexreturnaddress');
+  warn $returnaddress;
+
+  my %invoice_data = (
+    'invnum'       => $self->invnum,
+    'date'         => time2str('%b&nbsp;%o,&nbsp;%Y', $self->_date),
+    'agent'        => encode_entities($cust_main->agent->agent),
+    'payname'      => encode_entities($cust_main->payname),
+    'company'      => encode_entities($cust_main->company),
+    'address1'     => encode_entities($cust_main->address1),
+    'address2'     => encode_entities($cust_main->address2),
+    'city'         => encode_entities($cust_main->city),
+    'state'        => encode_entities($cust_main->state),
+    'zip'          => encode_entities($cust_main->zip),
+    'country'      => encode_entities($cust_main->country),
+#    'footer'       => join("\n", $conf->config('invoice_latexfooter') ),
+#    'smallfooter'  => join("\n", $conf->config('invoice_latexsmallfooter') ),
+    'returnaddress' => $returnaddress,
+    'terms'        => $conf->config('invoice_default_terms')
+                      || 'Payable upon receipt',
+    #'notes'        => join("\n", $conf->config('invoice_latexnotes') ),
+#    'conf_dir'     => "$FS::UID::conf_dir/conf.$FS::UID::datasrc",
+  );
+
+  my $countrydefault = $conf->config('countrydefault') || 'US';
+  $invoice_data{'country'} = '' if $invoice_data{'country'} eq $countrydefault;
+
+#  #do variable substitutions in notes
+#  $invoice_data{'notes'} =
+#    join("\n",
+#      map { my $b=$_; $b =~ s/\$(\w+)/$invoice_data{$1}/eg; $b }
+#        $conf->config_orbase('invoice_latexnotes', $suffix)
+#    );
+#
+#  $invoice_data{'footer'} =~ s/\n+$//;
+#  $invoice_data{'smallfooter'} =~ s/\n+$//;
+#  $invoice_data{'notes'} =~ s/\n+$//;
+#
+  $invoice_data{'po_line'} =
+    (  $cust_main->payby eq 'BILL' && $cust_main->payinfo )
+      ? encode_entities("Purchase Order #". $cust_main->payinfo)
+      : '';
+
+  my $money_char = $conf->config('money_char') || '$';
+
+  foreach my $line_item ( $self->_items ) {
+    my $detail = {
+      ext_description => [],
+    };
+    $detail->{'ref'} = $line_item->{'pkgnum'};
+    $detail->{'description'} = encode_entities($line_item->{'description'});
+    if ( exists $line_item->{'ext_description'} ) {
+      @{$detail->{'ext_description'}} = map {
+        encode_entities($_);
+      } @{$line_item->{'ext_description'}};
+    }
+    $detail->{'amount'} = $money_char. $line_item->{'amount'};
+    $detail->{'product_code'} = $line_item->{'pkgpart'} || 'N/A';
+
+    push @{$invoice_data{'detail_items'}}, $detail;
+  }
+
+
+  my $taxtotal = 0;
+  foreach my $tax ( $self->_items_tax ) {
+    my $total = {};
+    $total->{'total_item'} = encode_entities($tax->{'description'});
+    $taxtotal += $tax->{'amount'};
+    $total->{'total_amount'} = $money_char. $tax->{'amount'};
+    push @{$invoice_data{'total_items'}}, $total;
+  }
+
+  if ( $taxtotal ) {
+    my $total = {};
+    $total->{'total_item'} = 'Sub-total';
+    $total->{'total_amount'} =
+      $money_char. sprintf('%.2f', $self->charged - $taxtotal );
+    unshift @{$invoice_data{'total_items'}}, $total;
+  }
+
+  my( $pr_total, @pr_cust_bill ) = $self->previous; #previous balance
+  {
+    my $total = {};
+    $total->{'total_item'} = '<b>Total</b>';
+    $total->{'total_amount'} =
+      "<b>$money_char".  sprintf('%.2f', $self->charged + $pr_total ). '</b>';
+    push @{$invoice_data{'total_items'}}, $total;
+  }
+
+  #foreach my $thing ( sort { $a->_date <=> $b->_date } $self->_items_credits, $self->_items_payments
+
+  # credits
+  foreach my $credit ( $self->_items_credits ) {
+    my $total;
+    $total->{'total_item'} = encode_entities($credit->{'description'});
+    #$credittotal
+    $total->{'total_amount'} = "-$money_char". $credit->{'amount'};
+    push @{$invoice_data{'total_items'}}, $total;
+  }
+
+  # payments
+  foreach my $payment ( $self->_items_payments ) {
+    my $total = {};
+    $total->{'total_item'} = encode_entities($payment->{'description'});
+    #$paymenttotal
+    $total->{'total_amount'} = "-$money_char". $payment->{'amount'};
+    push @{$invoice_data{'total_items'}}, $total;
+  }
+
+  { 
+    my $total;
+    $total->{'total_item'} = '<b>'. $self->balance_due_msg. '</b>';
+    $total->{'total_amount'} =
+      "<b>$money_char".  sprintf('%.2f', $self->owed + $pr_total ). '</b>';
+    push @{$invoice_data{'total_items'}}, $total;
+  }
+
+  $html_template->fill_in( HASH => \%invoice_data);
+}
+
 # quick subroutine for print_latex
 #
 # There are ten characters that LaTeX treats as special characters, which
@@ -1531,7 +1765,7 @@ sub _items_previous {
                        ' ('. time2str('%x',$_->_date). ')',
       #'pkgpart'     => 'N/A',
       'pkgnum'      => 'N/A',
-      'amount'      => sprintf("%10.2f", $_->owed),
+      'amount'      => sprintf("%.2f", $_->owed),
     };
   }
   @b;
@@ -1584,7 +1818,7 @@ sub _items_cust_bill_pkg {
           description     => $description,
           #pkgpart         => $part_pkg->pkgpart,
           pkgnum          => $cust_pkg->pkgnum,
-          amount          => sprintf("%10.2f", $cust_bill_pkg->setup),
+          amount          => sprintf("%.2f", $cust_bill_pkg->setup),
           ext_description => \@d,
         };
       }
@@ -1596,7 +1830,7 @@ sub _items_cust_bill_pkg {
                                time2str('%x', $cust_bill_pkg->edate). ')',
           #pkgpart         => $part_pkg->pkgpart,
           pkgnum          => $cust_pkg->pkgnum,
-          amount          => sprintf("%10.2f", $cust_bill_pkg->recur),
+          amount          => sprintf("%.2f", $cust_bill_pkg->recur),
           ext_description => [ $cust_pkg->h_labels_short($cust_bill_pkg->edate,
                                                          $cust_bill_pkg->sdate),
                                $cust_bill_pkg->details,
@@ -1612,7 +1846,7 @@ sub _items_cust_bill_pkg {
       if ( $cust_bill_pkg->setup != 0 ) {
         push @b, {
           'description' => $itemdesc,
-          'amount'      => sprintf("%10.2f", $cust_bill_pkg->setup),
+          'amount'      => sprintf("%.2f", $cust_bill_pkg->setup),
         };
       }
       if ( $cust_bill_pkg->recur != 0 ) {
@@ -1620,7 +1854,7 @@ sub _items_cust_bill_pkg {
           'description' => "$itemdesc (".
                            time2str("%x", $cust_bill_pkg->sdate). ' - '.
                            time2str("%x", $cust_bill_pkg->edate). ')',
-          'amount'      => sprintf("%10.2f", $cust_bill_pkg->recur),
+          'amount'      => sprintf("%.2f", $cust_bill_pkg->recur),
         };
       }
 
@@ -1651,7 +1885,7 @@ sub _items_credits {
       #                 $reason,
       'description' => 'Credit applied '.
                        time2str("%x",$_->cust_credit->_date). $reason,
-      'amount'      => sprintf("%10.2f",$_->amount),
+      'amount'      => sprintf("%.2f",$_->amount),
     };
   }
   #foreach ( @cr_cust_credit ) {
@@ -1677,7 +1911,7 @@ sub _items_payments {
     push @b, {
       'description' => "Payment received ".
                        time2str("%x",$_->cust_pay->_date ),
-      'amount'      => sprintf("%10.2f", $_->amount )
+      'amount'      => sprintf("%.2f", $_->amount )
     };
   }
 
