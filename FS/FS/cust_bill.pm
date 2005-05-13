@@ -1,13 +1,14 @@
 package FS::cust_bill;
 
 use strict;
-use vars qw( @ISA $conf $money_char );
+use vars qw( @ISA $DEBUG $conf $money_char );
 use vars qw( $invoice_lines @buf ); #yuck
 use Date::Format;
 use Text::Template 1.20;
 use File::Temp 0.14;
 use String::ShellQuote;
 use HTML::Entities;
+use Locale::Country;
 use FS::UID qw( datasrc );
 use FS::Record qw( qsearch qsearchs );
 use FS::Misc qw( send_email send_fax );
@@ -21,6 +22,8 @@ use FS::cust_pay_batch;
 use FS::cust_bill_event;
 
 @ISA = qw( FS::Record );
+
+$DEBUG = 1;
 
 #ask FS::UID to run this stuff for us later
 FS::UID->install_callback( sub { 
@@ -1029,8 +1032,10 @@ sub print_text {
     if $cust_main->address2;
   $FS::cust_bill::_template::address[$l++] =
     $cust_main->city. ", ". $cust_main->state. "  ".  $cust_main->zip;
-  $FS::cust_bill::_template::address[$l++] = $cust_main->country
-    unless $cust_main->country eq 'US';
+
+  my $countrydefault = $conf->config('countrydefault') || 'US';
+  $FS::cust_bill::_template::address[$l++] = code2country($cust_main->country)
+    unless $cust_main->country eq $countrydefault;
 
 	#  #overdue? (variable for the template)
 	#  $FS::cust_bill::_template::overdue = ( 
@@ -1083,6 +1088,8 @@ sub print_latex {
 
   my( $self, $today, $template ) = @_;
   $today ||= time;
+  warn "FS::cust_bill::print_latex called on $self with suffix $template\n"
+    if $DEBUG;
 
   my $cust_main = $self->cust_main;
   $cust_main->payname( $cust_main->first. ' '. $cust_main->getfield('last') )
@@ -1132,6 +1139,7 @@ sub print_latex {
   my %invoice_data = (
     'invnum'       => $self->invnum,
     'date'         => time2str('%b %o, %Y', $self->_date),
+    'today'        => time2str('%b %o, %Y', $today),
     'agent'        => _latex_escape($cust_main->agent->agent),
     'payname'      => _latex_escape($cust_main->payname),
     'company'      => _latex_escape($cust_main->company),
@@ -1140,7 +1148,6 @@ sub print_latex {
     'city'         => _latex_escape($cust_main->city),
     'state'        => _latex_escape($cust_main->state),
     'zip'          => _latex_escape($cust_main->zip),
-    'country'      => _latex_escape($cust_main->country),
     'footer'       => join("\n", $conf->config('invoice_latexfooter') ),
     'smallfooter'  => join("\n", $conf->config('invoice_latexsmallfooter') ),
     'returnaddress' => $returnaddress,
@@ -1151,14 +1158,20 @@ sub print_latex {
   );
 
   my $countrydefault = $conf->config('countrydefault') || 'US';
-  $invoice_data{'country'} = '' if $invoice_data{'country'} eq $countrydefault;
+  if ( $cust_main->country eq $countrydefault ) {
+    $invoice_data{'country'} = '';
+  } else {
+    $invoice_data{'country'} = _latex_escape(code2country($cust_main->country));
+  }
 
   #do variable substitutions in notes
   $invoice_data{'notes'} =
     join("\n",
       map { my $b=$_; $b =~ s/\$(\w+)/$invoice_data{$1}/eg; $b }
-        $conf->config_orbase('invoice_latexnotes', $suffix)
+        $conf->config_orbase('invoice_latexnotes', $template)
     );
+  warn "invoice notes: ". $invoice_data{'notes'}. "\n"
+    if $DEBUG;
 
   $invoice_data{'footer'} =~ s/\n+$//;
   $invoice_data{'smallfooter'} =~ s/\n+$//;
@@ -1604,7 +1617,6 @@ sub print_html {
     'city'         => encode_entities($cust_main->city),
     'state'        => encode_entities($cust_main->state),
     'zip'          => encode_entities($cust_main->zip),
-    'country'      => encode_entities($cust_main->country),
 #    'footer'       => join("\n", $conf->config('invoice_latexfooter') ),
 #    'smallfooter'  => join("\n", $conf->config('invoice_latexsmallfooter') ),
     'returnaddress' => $returnaddress,
@@ -1613,6 +1625,14 @@ sub print_html {
     #'notes'        => join("\n", $conf->config('invoice_latexnotes') ),
 #    'conf_dir'     => "$FS::UID::conf_dir/conf.$FS::UID::datasrc",
   );
+
+  my $countrydefault = $conf->config('countrydefault') || 'US';
+  if ( $cust_main->country eq $countrydefault ) {
+    $invoice_data{'country'} = '';
+  } else {
+    $invoice_data{'country'} =
+      encode_entities(code2country($cust_main->country));
+  }
 
   my $countrydefault = $conf->config('countrydefault') || 'US';
   $invoice_data{'country'} = '' if $invoice_data{'country'} eq $countrydefault;
