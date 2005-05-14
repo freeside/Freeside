@@ -14,7 +14,7 @@
       <ul>
         <li>Install teTeX and Ghostscript (included with most distributions).
         <li>Place your logo in EPS (Encapsulated PostScript) format with size 90pt X 36pt (<code>epsffit -c 0 0 90 33 yourlogo.eps &gt;logo.eps</code>) at <code>/usr/local/etc/freeside/conf.<i>your_datasrc</i>/logo.eps</code>.
-        <li>Edit the <b>invoice_latexfooter</b>, <b>invoice_latexnotes</b>, and <b>invoice_latexsmallfooter</b> configuration files.  If you are adventurous, edit <b>invoice_latex</b> as well.
+        <li>Edit the <b>invoice_latexreturnaddress</b>, <b>invoice_latexfooter</b>, <b>invoice_latexnotes</b>, and <b>invoice_latexsmallfooter</b> configuration options.  If you are adventurous, edit <b>invoice_latex</b> as well.
       </ul>
     <li>Plaintext invoice templates
       <ul>
@@ -29,6 +29,13 @@
             <li>@address - A six-element array containing the customer name, company, and address.
 <!--            <li>$overdue - true if this invoice is overdue -->
           </ul>
+      </ul>
+    <li>HTML invoice templates
+      <ul>
+        <li>Place your logo in PNG format at <code>/usr/local/etc/freeside/conf.<i>your_datasrc</i>/logo.png</code>.
+        <li>HTML invoices also use <a href="http://search.cpan.org/~mjd/Text-Template/lib/Text/Template.pm">Text::Template</a>.
+        <li>Edit the <b>invoice_html</b> configuration option.
+        <li>The following configuration options can be set to override the default behaviour of using the invoice_latex* data: <b>invoice_htmlreturnaddress</b>, and <b>invoice_htmlfooter</b>, <b>invoice_htmlnotes</b>.  
       </ul>
 <!--    <li>Batch credit card processing
       <ul>

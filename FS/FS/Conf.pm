@@ -209,6 +209,31 @@ sub config_items {
         new FS::ConfItem {
                            'key'         => $basename,
                            'section'     => 'billing',
+                           'description' => 'Alternate HTML template for invoices.  See the <a href="../docs/billing.html">billing documentation</a> for details.',
+                           'type'        => 'textarea',
+                         }
+      } glob($self->dir. '/invoice_html_*')
+  ),
+  ( map { 
+        my $basename = basename($_);
+        $basename =~ /^(.*)$/;
+        $basename = $1;
+        ($latexname = $basename ) =~ s/latex/html/;
+        new FS::ConfItem {
+                           'key'         => $basename,
+                           'section'     => 'billing',
+                           'description' => "Alternate Notes section for HTML invoices.  Defaults to the same data in $latexname if not specified.",
+                           'type'        => 'textarea',
+                         }
+      } glob($self->dir. '/invoice_htmlnotes_*')
+  ),
+  ( map { 
+        my $basename = basename($_);
+        $basename =~ /^(.*)$/;
+        $basename = $1;
+        new FS::ConfItem {
+                           'key'         => $basename,
+                           'section'     => 'billing',
                            'description' => 'Alternate LaTeX template for invoices.  See the <a href="../docs/billing.html">billing documentation</a> for details.',
                            'type'        => 'textarea',
                          }
@@ -540,9 +565,38 @@ httemplate/docs/config.html
   },
 
   {
+    'key'         => 'invoice_html',
+    'section'     => 'billing',
+    'description' => 'Optional HTML template for invoices.  See the <a href="../docs/billing.html">billing documentation</a> for details.',
+
+    'type'        => 'textarea',
+  },
+
+  {
+    'key'         => 'invoice_htmlnotes',
+    'section'     => 'billing',
+    'description' => 'Notes section for HTML invoices.  Defaults to the same data in invoice_latexnotes if not specified.',
+    'type'        => 'textarea',
+  },
+
+  {
+    'key'         => 'invoice_htmlfooter',
+    'section'     => 'billing',
+    'description' => 'Footer for HTML invoices.  Defaults to the same data in invoice_latexfooter if not specified.',
+    'type'        => 'textarea',
+  },
+
+  {
+    'key'         => 'invoice_htmlreturnaddress',
+    'section'     => 'billing',
+    'description' => 'Return address for HTML invoices.  Defaults to the same data in invoice_latexreturnaddress if not specified.',
+    'type'        => 'textarea',
+  },
+
+  {
     'key'         => 'invoice_latex',
     'section'     => 'billing',
-    'description' => 'Optional LaTeX template for typeset PostScript invoices.',
+    'description' => 'Optional LaTeX template for typeset PostScript invoices.  See the <a href="../docs/billing.html">billing documentation</a> for details.',
     'type'        => 'textarea',
   },
 

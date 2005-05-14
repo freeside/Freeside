@@ -62,7 +62,7 @@ unless ( $templatename ) {
     ) {
       my $templatename = $1;
       print qq! ( <A HREF="${p}view/cust_bill.cgi?$templatename-$invnum">!.
-            'view text</A> | '.
+            'view</A> | '.
             qq!<A HREF="${p}view/cust_bill-pdf.cgi?$templatename-$invnum.pdf">!.
             'view typeset</A> )';
     }
@@ -74,11 +74,15 @@ unless ( $templatename ) {
   print '</TABLE><BR>';
 }
 
-print '<PRE>', $cust_bill->print_text('', $templatename);
+if ( $conf->exists('invoice_html') ) {
+  print $cust_bill->print_html('', $templatename);
+} else {
+  print '<PRE>', $cust_bill->print_text('', $templatename), '</PRE>';
+}
 
 	#formatting
 	print <<END;
-    </PRE></FONT>
+    </FONT>
   </BODY>
 </HTML>
 END

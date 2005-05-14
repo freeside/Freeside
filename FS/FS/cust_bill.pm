@@ -343,57 +343,200 @@ Returns an argument list to be passed to L<FS::Misc::send_email>.
 
 =cut
 
+use MIME::Entity;
+
 sub generate_email {
 
   my $self = shift;
   my %args = @_;
 
-  my $mimeparts;
-  if ($conf->exists('invoice_email_pdf')) {
-    #warn "[FS::cust_bill::send] creating PDF attachment";
-    #mime parts arguments a la MIME::Entity->build().
-    $mimeparts = [
-      {
-        'Type'        => 'application/pdf',
-        'Encoding'    => 'base64',
-        'Data'        => [ $self->print_pdf('', $args{'template'}) ],
-        'Disposition' => 'attachment',
-        'Filename'    => 'invoice.pdf',
-      },
-    ];
-  }
+  my $me = '[FS::cust_bill::generate_email]';
 
-  my $email_text;
-  if ($conf->exists('invoice_email_pdf')
-      and scalar($conf->config('invoice_email_pdf_note'))) {
-
-    #warn "[FS::cust_bill::send] using 'invoice_email_pdf_note'";
-    $email_text = [ map { $_ . "\n" } $conf->config('invoice_email_pdf_note') ];
-  } else {
-    #warn "[FS::cust_bill::send] not using 'invoice_email_pdf_note'";
-    if (ref($args{'print_text'}) eq 'ARRAY') {
-      $email_text = $args{'print_text'};
-    } else {
-      $email_text = [ $self->print_text('', $args{'template'}) ];
-    }
-  }
-
-  my @invoicing_list;
-  if (ref($args{'to'} eq 'ARRAY')) {
-    @invoicing_list = @{$args{'to'}};
-  } else {
-    @invoicing_list = grep { $_ !~ /^(POST|FAX)$/ } $self->cust_main->invoicing_list;
-  }
-
-  return (
+  my %return = (
     'from'      => $args{'from'},
-    'to'        => [ @invoicing_list ],
     'subject'   => (($args{'subject'}) ? $args{'subject'} : 'Invoice'),
-    'body'      => $email_text,
-    'mimeparts' => $mimeparts,
   );
 
+  if (ref($args{'to'} eq 'ARRAY')) {
+    $return{'to'} = $args{'to'};
+  } else {
+    $return{'to'} = [ grep { $_ !~ /^(POST|FAX)$/ }
+                           $self->cust_main->invoicing_list
+                    ];
+  }
 
+  if ( $conf->exists('invoice_html') ) {
+
+    warn "$me creating HTML/text multipart message"
+      if $DEBUG;
+
+    $return{'nobody'} = 1;
+
+    my $alternative = build MIME::Entity
+      'Type'        => 'multipart/alternative',
+      'Encoding'    => '7bit',
+      'Disposition' => 'inline'
+    ;
+
+    my $data;
+    if ( $conf->exists('invoice_email_pdf')
+         and scalar($conf->config('invoice_email_pdf_note')) ) {
+
+      warn "$me using 'invoice_email_pdf_note' in multipart message"
+        if $DEBUG;
+      $data = [ map { $_ . "\n" }
+                    $conf->config('invoice_email_pdf_note')
+              ];
+
+    } else {
+
+      warn "$me not using 'invoice_email_pdf_note' in multipart message"
+        if $DEBUG;
+      if ( ref($args{'print_text'}) eq 'ARRAY' ) {
+        $data = $args{'print_text'};
+      } else {
+        $data = [ $self->print_text('', $args{'template'}) ];
+      }
+
+    }
+
+    $alternative->attach(
+      'Type'        => 'text/plain',
+      #'Encoding'    => 'quoted-printable',
+      'Encoding'    => '7bit',
+      'Data'        => $data,
+      'Disposition' => 'inline',
+    );
+
+    $args{'from'} =~ /\@([\w\.\-]+)/ or $1 = 'example.com';
+    my $content_id = join('.', rand()*(2**32), $$, time). "\@$1";
+
+    my $image = build MIME::Entity
+      'Type'       => 'image/png',
+      'Encoding'   => 'base64',
+      'Path'       => "$FS::UID::conf_dir/conf.$FS::UID::datasrc/logo.png",
+      'Filename'   => 'logo.png',
+      'Content-ID' => "<$content_id>",
+    ;
+
+    $alternative->attach(
+      'Type'        => 'text/html',
+      'Encoding'    => 'quoted-printable',
+      'Data'        => [ '<html>',
+                         '  <head>',
+                         '    <title>',
+                         '      '. encode_entities($return{'subject'}), 
+                         '    </title>',
+                         '  </head>',
+                         '  <body bgcolor="#e8e8e8">',
+                         $self->print_html('', $args{'template'}, $content_id),
+                         '  </body>',
+                         '</html>',
+                       ],
+      'Disposition' => 'inline',
+      #'Filename'    => 'invoice.pdf',
+    );
+
+    if ( $conf->exists('invoice_email_pdf') ) {
+
+      #attaching pdf too:
+      # multipart/mixed
+      #   multipart/related
+      #     multipart/alternative
+      #       text/plain
+      #       text/html
+      #     image/png
+      #   application/pdf
+
+      my $related = build MIME::Entity 'Type'     => 'multipart/related',
+                                       'Encoding' => '7bit';
+
+      #false laziness w/Misc::send_email
+      $related->head->replace('Content-type',
+        $related->mime_type.
+        '; boundary="'. $related->head->multipart_boundary. '"'.
+        '; type=multipart/alternative'
+      );
+
+      $related->add_part($alternative);
+
+      $related->add_part($image);
+
+      my $pdf = build MIME::Entity $self->mimebuild_pdf('', $args{'template'});
+
+      $return{'mimeparts'} = [ $related, $pdf ];
+
+    } else {
+
+      #no other attachment:
+      # multipart/related
+      #   multipart/alternative
+      #     text/plain
+      #     text/html
+      #   image/png
+
+      $return{'content-type'} = 'multipart/related';
+      $return{'mimeparts'} = [ $alternative, $image ];
+      $return{'type'} = 'multipart/alternative'; #Content-Type of first part...
+      #$return{'disposition'} = 'inline';
+
+    }
+  
+  } else {
+
+    if ( $conf->exists('invoice_email_pdf') ) {
+      warn "$me creating PDF attachment"
+        if $DEBUG;
+
+      #mime parts arguments a la MIME::Entity->build().
+      $return{'mimeparts'} = [
+        { $self->mimebuild_pdf('', $args{'template'}) }
+      ];
+    }
+  
+    if ( $conf->exists('invoice_email_pdf')
+         and scalar($conf->config('invoice_email_pdf_note')) ) {
+
+      warn "$me using 'invoice_email_pdf_note'"
+        if $DEBUG;
+      $return{'body'} = [ map { $_ . "\n" }
+                              $conf->config('invoice_email_pdf_note')
+                        ];
+
+    } else {
+
+      warn "$me not using 'invoice_email_pdf_note'"
+        if $DEBUG;
+      if ( ref($args{'print_text'}) eq 'ARRAY' ) {
+        $return{'body'} = $args{'print_text'};
+      } else {
+        $return{'body'} = [ $self->print_text('', $args{'template'}) ];
+      }
+
+    }
+
+  }
+
+  %return;
+
+}
+
+=item mimebuild_pdf
+
+Returns a list suitable for passing to MIME::Entity->build(), representing
+this invoice as PDF attachment.
+
+=cut
+
+sub mimebuild_pdf {
+  my $self = shift;
+  (
+    'Type'        => 'application/pdf',
+    'Encoding'    => 'base64',
+    'Data'        => [ $self->print_pdf(@_) ],
+    'Disposition' => 'attachment',
+    'Filename'    => 'invoice.pdf',
+  );
 }
 
 =item send [ TEMPLATENAME [ , AGENTNUM [ , INVOICE_FROM ] ] ]
@@ -419,7 +562,7 @@ sub send {
       ? shift
       : ( $self->_agent_invoice_from || $conf->config('invoice_from') );
 
-  my @print_text = $self->print_text('', $template);
+  #my @print_text = $self->print_text('', $template);
   my @invoicing_list = $self->cust_main->invoicing_list;
 
   if ( grep { $_ !~ /^(POST|FAX)$/ } @invoicing_list or !@invoicing_list  ) {
@@ -432,7 +575,8 @@ sub send {
       $self->generate_email(
         'from'       => $invoice_from,
         'to'         => [ grep { $_ !~ /^(POST|FAX)$/ } @invoicing_list ],
-        'print_text' => [ @print_text ],
+        #'print_text' => [ @print_text ],
+        'template'   => $template,
       )
     );
     die "can't email invoice: $error\n" if $error;
@@ -445,7 +589,7 @@ sub send {
     if ($conf->config('invoice_latex')) {
       $lpr_data = [ $self->print_ps('', $template) ];
     } else {
-      $lpr_data = \@print_text;
+      $lpr_data = [ $self->print_text('', $template) ];
     }
 
     if ( grep { $_ eq 'POST' } @invoicing_list ) { #postal
@@ -1164,14 +1308,14 @@ sub print_latex {
     $invoice_data{'country'} = _latex_escape(code2country($cust_main->country));
   }
 
-  #do variable substitutions in notes
-  $invoice_data{'notes'} =
-    join("\n",
-      map { my $b=$_; $b =~ s/\$(\w+)/$invoice_data{$1}/eg; $b }
-        $conf->config_orbase('invoice_latexnotes', $template)
-    );
-  warn "invoice notes: ". $invoice_data{'notes'}. "\n"
-    if $DEBUG;
+#  #do variable substitutions in notes
+#  $invoice_data{'notes'} =
+#    join("\n",
+#      map { my $b=$_; $b =~ s/\$(\w+)/$invoice_data{$1}/eg; $b }
+#        $conf->config_orbase('invoice_latexnotes', $template)
+#    );
+#  warn "invoice notes: ". $invoice_data{'notes'}. "\n"
+#    if $DEBUG;
 
   $invoice_data{'footer'} =~ s/\n+$//;
   $invoice_data{'smallfooter'} =~ s/\n+$//;
@@ -1497,7 +1641,7 @@ sub print_pdf {
 
 }
 
-=item print_html [ TIME [ , TEMPLATE ] ]
+=item print_html [ TIME [ , TEMPLATE [ , CID ] ] ]
 
 Returns an HTML invoice, as a scalar.
 
@@ -1506,76 +1650,13 @@ default is now.  It isn't the date of the invoice; that's the `_date' field.
 It is specified as a UNIX timestamp; see L<perlfunc/"time">.  Also see
 L<Time::Local> and L<Date::Parse> for conversion functions.
 
+CID is a MIME Content-ID used to create a "cid:" URL for the logo image, used
+when emailing the invoice as part of a multipart/related MIME email.
+
 =cut
 
-#sub print_html {
-#  my $self = shift;
-#
-#  my $file = $self->print_latex(@_);
-#
-#  my $dir = $FS::UID::conf_dir. "cache.". $FS::UID::datasrc;
-#  chdir($dir);
-#
-#  my $sfile = shell_quote $file;
-#
-#  system("htlatex $sfile.tex") == 0
-#    or die "hlatex $file.tex failed; is hlatex installed, or see $file.log for details?\n";
-#  #system("ltoh $sfile.tex") == 0
-#  #  or die "ltoh $file.tex failed; is hlatex installed, or see $file.log for details?\n";
-#
-#  open(HTML, "<$file.html")
-#    or die "can't open $file.html: $! (error in LaTeX template?)\n";
-#
-#  #unlink("$file.dvi", "$file.log", "$file.aux", "$file.html", "$file.tex");
-#
-#  my $html = '';
-#  while (<HTML>) {
-#
-#    s/<link\s+rel="stylesheet"\s+type="text\/css"\s+href="invoice\.(\d+)\.(\w+)\.css">/<link rel="stylesheet" type="text\/css" href="cust_bill.html?$1.$2.css">/;
-##    s/<link\s+//;
-#    $html .= $_;
-#  }
-#
-#  close HTML;
-#
-#  return $html;
-#
-#}
-#
-##inefficient proof-of-concept for now
-#sub print_html_css {
-#  my $self = shift;
-#
-#  my $file = $self->print_latex(@_);
-#
-#  my $dir = $FS::UID::conf_dir. "cache.". $FS::UID::datasrc;
-#  chdir($dir);
-#
-#  my $sfile = shell_quote $file;
-#
-#  system("htlatex $sfile.tex") == 0
-#    or die "hlatex $file.tex failed; is hlatex installed, or see $file.log for details?\n";
-#  #system("ltoh $sfile.tex") == 0
-#  #  or die "ltoh $file.tex failed; is hlatex installed, or see $file.log for details?\n";
-#
-#  open(CSS, "<$file.css")
-#    or die "can't open $file.html: $! (error in LaTeX template?)\n";
-#
-#  unlink("$file.dvi", "$file.log", "$file.aux", "$file.html", "$file.tex");
-#
-#  my $css = '';
-#  while (<CSS>) {
-#    $css .= $_;
-#  }
-#
-#  close CSS;
-#
-#  return $css;
-#
-#}
-
 sub print_html {
-  my( $self, $today, $template ) = @_;
+  my( $self, $today, $template, $cid ) = @_;
   $today ||= time;
 
   my $cust_main = $self->cust_main;
@@ -1598,17 +1679,10 @@ sub print_html {
   $html_template->compile()
     or die 'While compiling ' . $templatefile . ': ' . $Text::Template::ERROR;
 
-  my $returnaddress = $conf->exists('invoice_htmlreturnaddress')
-    ? join("\n", $conf->config('invoice_htmlreturnaddress') )
-    : join("\n", map { s/~/&nbsp;/g; s/\\\\\*?\s*$/<BR>/; }
-                     $conf->config('invoice_latexreturnaddress')
-          );
-  warn $conf->config('invoice_latexreturnaddress');
-  warn $returnaddress;
-
   my %invoice_data = (
     'invnum'       => $self->invnum,
     'date'         => time2str('%b&nbsp;%o,&nbsp;%Y', $self->_date),
+    'today'        => time2str('%b %o, %Y', $today),
     'agent'        => encode_entities($cust_main->agent->agent),
     'payname'      => encode_entities($cust_main->payname),
     'company'      => encode_entities($cust_main->company),
@@ -1617,14 +1691,17 @@ sub print_html {
     'city'         => encode_entities($cust_main->city),
     'state'        => encode_entities($cust_main->state),
     'zip'          => encode_entities($cust_main->zip),
-#    'footer'       => join("\n", $conf->config('invoice_latexfooter') ),
-#    'smallfooter'  => join("\n", $conf->config('invoice_latexsmallfooter') ),
-    'returnaddress' => $returnaddress,
     'terms'        => $conf->config('invoice_default_terms')
                       || 'Payable upon receipt',
-    #'notes'        => join("\n", $conf->config('invoice_latexnotes') ),
+    'cid'          => $cid,
 #    'conf_dir'     => "$FS::UID::conf_dir/conf.$FS::UID::datasrc",
   );
+
+  $invoice_data{'returnaddress'} = $conf->exists('invoice_htmlreturnaddress')
+    ? join("\n", $conf->config('invoice_htmlreturnaddress') )
+    : join("\n", map { s/~/&nbsp;/g; s/\\\\\*?\s*$/<BR>/; $_; }
+                     $conf->config('invoice_latexreturnaddress')
+          );
 
   my $countrydefault = $conf->config('countrydefault') || 'US';
   if ( $cust_main->country eq $countrydefault ) {
@@ -1634,8 +1711,20 @@ sub print_html {
       encode_entities(code2country($cust_main->country));
   }
 
-  my $countrydefault = $conf->config('countrydefault') || 'US';
-  $invoice_data{'country'} = '' if $invoice_data{'country'} eq $countrydefault;
+  $invoice_data{'notes'} =
+    length($conf->config_orbase('invoice_htmlnotes', $template))
+      ? join("\n", $conf->config_orbase('invoice_htmlnotes', $template) )
+      : join("\n", map { 
+                         s/%%(.*)$/<!-- $1 -->/;
+                         s/\\section\*\{\\textsc\{(.)(.*)\}\}/<p><b><font size="+1">$1<\/font>\U$2<\/b>/;
+                         s/\\begin\{enumerate\}/<ol>/;
+                         s/\\item /  <li>/;
+                         s/\\end\{enumerate\}/<\/ol>/;
+                         s/\\textbf\{(.*)\}/<b>$1<\/b>/;
+                         $_;
+                       } 
+                       $conf->config_orbase('invoice_latexnotes', $template)
+            );
 
 #  #do variable substitutions in notes
 #  $invoice_data{'notes'} =
@@ -1643,11 +1732,13 @@ sub print_html {
 #      map { my $b=$_; $b =~ s/\$(\w+)/$invoice_data{$1}/eg; $b }
 #        $conf->config_orbase('invoice_latexnotes', $suffix)
 #    );
-#
-#  $invoice_data{'footer'} =~ s/\n+$//;
-#  $invoice_data{'smallfooter'} =~ s/\n+$//;
-#  $invoice_data{'notes'} =~ s/\n+$//;
-#
+
+   $invoice_data{'footer'} = $conf->exists('invoice_htmlfooter')
+     ? join("\n", $conf->config('invoice_htmlfooter') )
+     : join("\n", map { s/~/&nbsp;/g; s/\\\\\*?\s*$/<BR>/; $_; }
+                      $conf->config('invoice_latexfooter')
+           );
+
   $invoice_data{'po_line'} =
     (  $cust_main->payby eq 'BILL' && $cust_main->payinfo )
       ? encode_entities("Purchase Order #". $cust_main->payinfo)

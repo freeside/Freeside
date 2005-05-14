@@ -1,11 +1,14 @@
 package FS::Misc;
 
 use strict;
-use vars qw ( @ISA @EXPORT_OK );
+use vars qw ( @ISA @EXPORT_OK $DEBUG );
 use Exporter;
+use Carp;
 
 @ISA = qw( Exporter );
 @EXPORT_OK = qw( send_email send_fax );
+
+$DEBUG = 1;
 
 =head1 NAME
 
@@ -37,11 +40,19 @@ I<to> - (required) comma-separated scalar or arrayref of recipients
 
 I<subject> - (required)
 
-I<content-type> - (optional) MIME type
+I<content-type> - (optional) MIME type for the body
 
-I<body> - (required) arrayref of body text lines
+I<body> - (required unless I<nobody> is true) arrayref of body text lines
 
-I<mimeparts> - (optional) arrayref of MIME::Entity->build PARAMHASH refs, not MIME::Entity objects.  These will be passed as arguments to MIME::Entity->attach().
+I<mimeparts> - (optional, but required if I<nobody> is true) arrayref of MIME::Entity->build PARAMHASH refs or MIME::Entity objects.  These will be passed as arguments to MIME::Entity->attach().
+
+I<nobody> - (optional) when set true, send_email will ignore the I<body> option and simply construct a message with the given I<mimeparts>.  In this case,
+I<content-type>, if specified, overrides the default "multipart/mixed" for the outermost MIME container.
+
+I<content-encoding> - (optional) when using nobody, optional top-level MIME
+encoding which, if specified, overrides the default "7bit".
+
+I<type> - (optional) type parameter for multipart/related messages
 
 =cut
 
@@ -62,44 +73,93 @@ sub send_email {
   $ENV{MAILADDRESS} = $options{'from'};
   my $to = ref($options{to}) ? join(', ', @{ $options{to} } ) : $options{to};
 
-  my @mimeparts = (ref($options{'mimeparts'}) eq 'ARRAY')
-                  ? @{$options{'mimeparts'}} : ();
-  my $mimetype = (scalar(@mimeparts)) ? 'multipart/mixed' : 'text/plain';
+  my @mimeargs = ();
+  my @mimeparts = ();
+  if ( $options{'nobody'} ) {
 
-  my @mimeargs;
-  if (scalar(@mimeparts)) {
+    croak "'mimeparts' option required when 'nobody' option given\n"
+      unless $options{'mimeparts'};
+
+    @mimeparts = @{$options{'mimeparts'}};
+
     @mimeargs = (
-      'Type'  => 'multipart/mixed',
+      'Type'         => ( $options{'content-type'} || 'multipart/mixed' ),
+      'Encoding'     => ( $options{'content-encoding'} || '7bit' ),
     );
 
-    push @mimeparts,
-      { 
-        'Data'        => $options{'body'},
-        'Disposition' => 'inline',
-        'Type'        => (($options{'content-type'} ne '')
-                          ? $options{'content-type'} : 'text/plain'),
-      };
   } else {
-    @mimeargs = (
-      'Type'  => (($options{'content-type'} ne '')
-                  ? $options{'content-type'} : 'text/plain'),
-      'Data'  => $options{'body'},
-    );
+
+    @mimeparts = @{$options{'mimeparts'}}
+      if ref($options{'mimeparts'}) eq 'ARRAY';
+
+    if (scalar(@mimeparts)) {
+
+      @mimeargs = (
+        'Type'     => 'multipart/mixed',
+        'Encoding' => '7bit',
+      );
+  
+      unshift @mimeparts, { 
+        'Type'        => ( $options{'content-type'} || 'text/plain' ),
+        'Data'        => $options{'body'},
+        'Encoding'    => ( $options{'content-type'} ? '-SUGGEST' : '7bit' ),
+        'Disposition' => 'inline',
+      };
+
+    } else {
+    
+      @mimeargs = (
+        'Type'     => ( $options{'content-type'} || 'text/plain' ),
+        'Data'     => $options{'body'},
+        'Encoding' => ( $options{'content-type'} ? '-SUGGEST' : '7bit' ),
+      );
+
+    }
+
   }
 
+  $options{'from'} =~ /\@([\w\.\-]+)/ or $1 = 'example.com';
+  my $message_id = join('.', rand()*(2**32), $$, time). "\@$1";
+
   my $message = MIME::Entity->build(
-    'From'      =>    $options{'from'},
-    'To'        =>    $to,
-    'Sender'    =>    $options{'from'},
-    'Reply-To'  =>    $options{'from'},
-    'Date'      =>    time2str("%a, %d %b %Y %X %z", time),
-    'Subject'   =>    $options{'subject'},
+    'From'       => $options{'from'},
+    'To'         => $to,
+    'Sender'     => $options{'from'},
+    'Reply-To'   => $options{'from'},
+    'Date'       => time2str("%a, %d %b %Y %X %z", time),
+    'Subject'    => $options{'subject'},
+    'Message-ID' => "<$message_id>",
     @mimeargs,
   );
 
+  if ( $options{'type'} ) {
+    #false laziness w/cust_bill::generate_email
+    $message->head->replace('Content-type',
+      $message->mime_type.
+      '; boundary="'. $message->head->multipart_boundary. '"'.
+      '; type='. $options{'type'}
+    );
+  }
+
   foreach my $part (@mimeparts) {
-    next unless ref($part) eq 'HASH'; #warn?
-    $message->attach(%$part);
+
+    if ( UNIVERSAL::isa($part, 'MIME::Entity') ) {
+
+      warn "attaching MIME part from MIME::Entity object\n"
+        if $DEBUG;
+      $message->add_part($part);
+
+    } elsif ( ref($part) eq 'HASH' ) {
+
+      warn "attaching MIME part from hashref:\n".
+           join("\n", map "  $_: ".$part->{$_}, keys %$part ). "\n"
+        if $DEBUG;
+      $message->attach(%$part);
+
+    } else {
+      croak "mimepart $part isn't a hashref or MIME::Entity object!";
+    }
+
   }
 
   my $smtpmachine = $conf->config('smtpmachine');
