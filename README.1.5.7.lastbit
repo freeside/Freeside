@@ -60,5 +60,5 @@ CREATE SEQUENCE virtual_field_vfieldnum_seq;
 UPDATE virtual_field SET vfieldnum = nextval('public.virtual_field_vfieldnum_seq'::text) WHERE vfieldnum IS NULL;
 ALTER TABLE virtual_field ALTER vfieldnum SET NOT NULL;
 ALTER TABLE virtual_field ADD PRIMARY KEY (vfieldnum);
-ALTER TABLE h_virtual_field ADD vfieldnum int;
+-- ALTER TABLE h_virtual_field ADD vfieldnum int;
 
