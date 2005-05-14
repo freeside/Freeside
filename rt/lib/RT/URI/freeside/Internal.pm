@@ -32,7 +32,7 @@ use vars qw($conf);
 
 use FS;
 use FS::UID qw(dbh);
-use FS::CGI qw(popurl);
+use FS::CGI qw(popurl small_custview);
 use FS::Conf;
 use FS::Record qw(qsearchs qsearch dbdef);
 use FS::cust_main;
@@ -82,7 +82,7 @@ sub _FreesideGetRecord {
     return;
   }
 
-  return { $fsrec->hash };
+  return { $fsrec->hash, '_object' => $fsrec };
 
 }
 
@@ -96,7 +96,7 @@ sub FreesideGetConfig {
 
   $conf = new FS::Conf unless ref($conf);
 
-  return $conf->config(@_);
+  return scalar($conf->config(@_));
 
 }
 
@@ -109,6 +109,28 @@ sub smart_search { #Subroutine
 sub small_custview {
 
   return &FS::CGI::small_custview(@_);
+
+}
+
+sub _FreesideURILabelLong {
+
+  my $self = shift;
+
+  my $table = $self->{'fstable'};
+
+  if ( $table eq 'cust_main' ) {
+
+    my $rec = $self->_FreesideGetRecord();
+    return small_custview( $rec->{'_object'},
+                           scalar(FS::Conf->new->config('countrydefault')),
+                           1 #nobalance
+                         );
+
+  } else {
+
+    return $self->_FreesideURILabel();
+
+  }
 
 }
 

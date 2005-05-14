@@ -138,6 +138,13 @@ Installs w/integrated RT:
   CREATE INDEX Attributes1 on Attributes(Name);
   CREATE INDEX Attributes2 on Attributes(ObjectType, ObjectId);
 
+  Add these lines to /opt/rt3/etc/RT_SiteConfig.pm (before the "1;"):
+    $RT::URI::freeside::IntegrationType = 'Internal';
+    $RT::URI::freeside::URL = 'http://path/to/your/freeside/';
+    Set($DatabaseHost   , '');
+
+(End of Installs w/integrated RT)
+
 
 (make sure you have upgrade DBIx::DBSchema to 0.24)
 dbdef-create username 

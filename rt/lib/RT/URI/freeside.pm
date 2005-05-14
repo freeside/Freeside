@@ -163,7 +163,7 @@ sub _FreesideURILabel {
 
 }
 
-=item _FreesideURILabel
+=item _FreesideURILabelLong
 
 Method that returns a longer string describing the customer referenced
 in the URI.
