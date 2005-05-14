@@ -95,6 +95,21 @@ sub config {
   }
 }
 
+=item config_binary KEY
+
+Returns the exact scalar value for key.
+
+=cut
+
+sub config_binary {
+  my($self,$file)=@_;
+  my($dir)=$self->dir;
+  my $fh = new IO::File "<$dir/$file" or return;
+  local $/;
+  my $content = <$fh>;
+  $content;
+}
+
 =item exists KEY
 
 Returns true if the specified key exists, even if the corresponding value
