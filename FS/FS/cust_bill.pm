@@ -1699,7 +1699,12 @@ sub print_html {
 
   $invoice_data{'returnaddress'} = $conf->exists('invoice_htmlreturnaddress')
     ? join("\n", $conf->config('invoice_htmlreturnaddress') )
-    : join("\n", map { s/~/&nbsp;/g; s/\\\\\*?\s*$/<BR>/; $_; }
+    : join("\n", map { 
+                       s/~/&nbsp;/g;
+                       s/\\\\\*?\s*$/<BR>/;
+                       s/\\hypenation\{[\w\s\-]+\}//;
+                       $_;
+                     }
                      $conf->config('invoice_latexreturnaddress')
           );
 
