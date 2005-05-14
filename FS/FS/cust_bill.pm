@@ -23,7 +23,7 @@ use FS::cust_bill_event;
 
 @ISA = qw( FS::Record );
 
-$DEBUG = 1;
+$DEBUG = 0;
 
 #ask FS::UID to run this stuff for us later
 FS::UID->install_callback( sub { 

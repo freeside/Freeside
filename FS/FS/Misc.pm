@@ -8,7 +8,7 @@ use Carp;
 @ISA = qw( Exporter );
 @EXPORT_OK = qw( send_email send_fax );
 
-$DEBUG = 1;
+$DEBUG = 0;
 
 =head1 NAME
 
@@ -245,12 +245,12 @@ sub send_fax {
 
   if ($faxjob->success) {
     warn "Successfully queued fax to '$options{dialstring}' with jobid " .
-            $faxjob->jobid;
+           $faxjob->jobid
+      if $DEBUG;
+    return '';
   } else {
     return 'Error while sending FAX: ' . $faxjob->trace;
   }
-
-  return '';
 
 }
 
