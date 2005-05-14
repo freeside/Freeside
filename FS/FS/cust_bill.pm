@@ -1702,7 +1702,7 @@ sub print_html {
     : join("\n", map { 
                        s/~/&nbsp;/g;
                        s/\\\\\*?\s*$/<BR>/;
-                       s/\\hypenation\{[\w\s\-]+\}//;
+                       s/\\hyphenation\{[\w\s\-]+\}//;
                        $_;
                      }
                      $conf->config('invoice_latexreturnaddress')
