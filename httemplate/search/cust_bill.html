@@ -58,6 +58,9 @@
        : '';
    };
 
+  my $conf = new FS::Conf;
+  my $money_char = $conf->config('money_char') || '$';
+
 %><%= include( 'elements/search.html',
                  'title'       => 'Invoice Search Results',
                  'name'        => 'invoices',
@@ -72,8 +75,8 @@
                      'Company' ],
                  'fields'      => [
                    'invnum',
-                   sub { sprintf('$%.2f', shift->get('owed') ) },
-                   sub { sprintf('$%.2f', shift->charged     ) },
+                   sub { sprintf($money_char.'%.2f', shift->get('owed') ) },
+                   sub { sprintf($money_char.'%.2f', shift->charged     ) },
                    sub { time2str('%b %d %Y', shift->_date ) },
                    sub { my $cust_bill = shift;
                          my $cust_main = $cust_bill->cust_main;
