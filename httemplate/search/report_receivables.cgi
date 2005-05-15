@@ -116,8 +116,8 @@ END
                  'header'      => [
                                     '#',
                                     'Customer',
-                                    'Status (me)',
-                                    'Status (cust_main)',
+                                    'Status', # (me)',
+                                    #'Status', # (cust_main)',
                                     '0-30',
                                     '30-60',
                                     '60-90',
@@ -128,7 +128,7 @@ END
                                     '',
                                     'Total',
                                     '',
-                                    '',
+                                    #'',
                                     sprintf( $money_char.'%.2f',
                                              $row->{'owed_0_30'} ),
                                     sprintf( $money_char.'%.2f',
@@ -139,33 +139,6 @@ END
                                              $row->{'owed_90_pl'} ),
                                     sprintf( '<b>'. $money_char.'%.2f'. '</b>',
                                              $row->{'owed_total'} ),
-                                  ],
-                 'align'       => 'rlccrrrrr',
-                 'size'        => [ '', '', '-1', '-1', '', '', '', '',  '', ],
-                 'style'       => [ '', '',  'b',  'b', '', '', '', '', 'b', ],
-                 'color'       => [
-                                    '',
-                                    '',
-                                    sub {  
-                                          my $row = shift;
-                                          my $status = 'Cancelled';
-                                          my $statuscol = 'FF0000';
-                                          if ( $row->uncancelled_pkgs ) {
-                                            $status = 'Suspended';
-                                            $statuscol = 'FF9900';
-                                            if ( $row->active_pkgs ) {
-                                              $status = 'Active';
-                                              $statuscol = '00CC00';
-                                            }
-                                          }
-                                           $statuscol;
-                                        },
-                                    sub { shift->statuscolor; },
-                                    '',
-                                    '',
-                                    '',
-                                    '',
-                                    '',
                                   ],
                  'fields'      => [
                                     'custnum',
@@ -184,7 +157,7 @@ END
                                           }
                                           $status;
                                         },
-                                    sub { ucfirst(shift->status) },
+                                    #sub { ucfirst(shift->status) },
                                     sub { sprintf( $money_char.'%.2f',
                                                    shift->get('owed_0_30') ) },
                                     sub { sprintf( $money_char.'%.2f',
@@ -196,6 +169,48 @@ END
                                     sub { sprintf( $money_char.'%.2f',
                                                    shift->get('owed_total') ) },
                                   ],
+                 'links'       => [
+                                    [ "${p}view/cust_main.cgi?", 'custnum' ],
+                                    [ "${p}view/cust_main.cgi?", 'custnum' ],
+                                    '',
+                                    #'',
+                                    '',
+                                    '',
+                                    '',
+                                    '',
+                                    '',
+                                  ],
+                 #'align'       => 'rlccrrrrr',
+                 'align'       => 'rlcrrrrr',
+                 #'size'        => [ '', '', '-1', '-1', '', '', '', '',  '', ],
+                 #'style'       => [ '', '',  'b',  'b', '', '', '', '', 'b', ],
+                 'size'        => [ '', '', '-1', '', '', '', '',  '', ],
+                 'style'       => [ '', '',  'b', '', '', '', '', 'b', ],
+                 'color'       => [
+                                    '',
+                                    '',
+                                    sub {  
+                                          my $row = shift;
+                                          my $status = 'Cancelled';
+                                          my $statuscol = 'FF0000';
+                                          if ( $row->uncancelled_pkgs ) {
+                                            $status = 'Suspended';
+                                            $statuscol = 'FF9900';
+                                            if ( $row->active_pkgs ) {
+                                              $status = 'Active';
+                                              $statuscol = '00CC00';
+                                            }
+                                          }
+                                           $statuscol;
+                                        },
+                                    #sub { shift->statuscolor; },
+                                    '',
+                                    '',
+                                    '',
+                                    '',
+                                    '',
+                                  ],
+
              )
 %>
                                     
