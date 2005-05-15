@@ -3066,9 +3066,15 @@ Returns an SQL expression identifying active cust_main records.
 
 =cut
 
+my $recurring_sql = "
+  '0' != ( select freq from part_pkg
+             where cust_pkg.pkgpart = part_pkg.pkgpart )
+";
+
 sub active_sql { "
   0 < ( SELECT COUNT(*) FROM cust_pkg
           WHERE cust_pkg.custnum = cust_main.custnum
+            AND $recurring_sql
             AND ( cust_pkg.cancel IS NULL OR cust_pkg.cancel = 0 )
             AND ( cust_pkg.susp   IS NULL OR cust_pkg.susp   = 0 )
       )
@@ -3085,10 +3091,12 @@ sub suspended_sql { susp_sql(@_); }
 sub susp_sql { "
     0 < ( SELECT COUNT(*) FROM cust_pkg
             WHERE cust_pkg.custnum = cust_main.custnum
+              AND $recurring_sql
               AND ( cust_pkg.cancel IS NULL OR cust_pkg.cancel = 0 )
         )
     AND 0 = ( SELECT COUNT(*) FROM cust_pkg
                 WHERE cust_pkg.custnum = cust_main.custnum
+                  AND $recurring_sql
                   AND ( cust_pkg.susp IS NULL OR cust_pkg.susp = 0 )
                   AND ( cust_pkg.cancel IS NULL OR cust_pkg.cancel = 0 )
             )
@@ -3108,6 +3116,7 @@ sub cancel_sql { "
       )
   AND 0 = ( SELECT COUNT(*) FROM cust_pkg
               WHERE cust_pkg.custnum = cust_main.custnum
+                AND $recurring_sql
                 AND ( cust_pkg.cancel IS NULL OR cust_pkg.cancel = 0 )
           )
 "; }

@@ -245,11 +245,18 @@
               %>
                    <TR>
                    <% if ( $opt{'fields'} ) {
-                        my $links = $opt{'links'} ? [ @{$opt{'links'}} ] : '';
+
+                        my $links  = $opt{'links'} ? [ @{$opt{'links'}} ] : '';
                         my $aligns = $opt{'align'} ? [ @{$opt{'align'}} ] : '';
+                        my $colors = $opt{'color'} ? [ @{$opt{'color'}} ] : [];
+                        my $sizes  = $opt{'size'}  ? [ @{$opt{'size'}}  ] : [];
+                        my $styles = $opt{'style'} ? [ @{$opt{'style'}} ] : [];
+
                         foreach my $field ( @{$opt{'fields'}} ) {
+
                           my $align = $aligns ? shift @$aligns : '';
                           $align = " ALIGN=$align" if $align;
+
                           my $a = '';
                           if ( $links ) {
                             my $link = shift @$links;
@@ -264,11 +271,32 @@
                               $a = qq(<A HREF="$a">);
                             }
                           }
+
+                          my $font = '';
+                          my $color = shift @$colors;
+                          $color = &{$color}($row) if ref($color) eq 'CODE';
+                          my $size = shift @$sizes;
+                          $size = &{$size}($row) if ref($size) eq 'CODE';
+                          if ( $color || $size ) {
+                            $font = '<FONT '.
+                                    ( $color ? "COLOR=#$color "   : '' ).
+                                    ( $size  ? qq(SIZE="$size" )  : '' ).
+                                    '>';
+                          }
+
+                          my($s, $es) = ( '', '' );
+                          my $style = shift @$styles;
+                          $style = &{$style}($row) if ref($style) eq 'CODE';
+                          if ( $style ) {
+                            $s = join( '', map "<$_>", split('', $style) );
+                            $es = join( '', map "</$_>", split('', $style) );
+                          }
+
                        %>
                        <% if ( ref($field) eq 'CODE' ) { %>
-                         <TD CLASS="grid" BGCOLOR="<%= $bgcolor %>"<%= $align %>><%= $a %><%= &{$field}($row) %><%= $a ? '</A>' : '' %></TD>
+                         <TD CLASS="grid" BGCOLOR="<%= $bgcolor %>"<%= $align %>><%= $font %><%= $a %><%= $s %><%= &{$field}($row) %><%= $es %><%= $a ? '</A>' : '' %><%= $font ? '</FONT>' : '' %></TD>
                        <% } else { %>
-                         <TD CLASS="grid" BGCOLOR="<%= $bgcolor %>"<%= $align %>><%= $a %><%= $row->$field() %><%= $a ? '</A>' : '' %></TD>
+                         <TD CLASS="grid" BGCOLOR="<%= $bgcolor %>"<%= $align %>><%= $font %><%= $a %><%= $s %><%= $row->$field() %><%= $es %><%= $a ? '</A>' : '' %><%= $font ? '</FONT>' : '' %></TD>
                        <% } %>
                      <% } %>
                    <% } else { %>
@@ -277,6 +305,14 @@
                      <% } %>
                    <% } %>
                    </TR>
+              <% } %>
+
+              <% if ( $opt{'footer'} ) { %>
+                <TR>
+                <% foreach my $footer ( @{ $opt{'footer'} } ) { %>
+                     <TD CLASS="grid" BGCOLOR="#dddddd" STYLE="border-top: dashed 1px black;"><i><%= $footer %></i></TH>
+                <% } %>
+                </TR>
               <% } %>
             
             </TABLE>
