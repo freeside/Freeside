@@ -32,7 +32,8 @@ tie my %vpopmail_map, 'Tie::IxHash',
   'pw_gid'    => 'gid',
   'pw_gecos'  => 'finger',
   'pw_dir'    => 'dir',
-  'pw_shell'  => 'shell',
+  #'pw_shell'  => 'shell',
+  'pw_shell'  => 'quota',
 ;
 my $vpopmail_map = join('\n', map "$_ $vpopmail_map{$_}", keys %vpopmail_map );
 
