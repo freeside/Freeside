@@ -1308,14 +1308,14 @@ sub print_latex {
     $invoice_data{'country'} = _latex_escape(code2country($cust_main->country));
   }
 
+  $invoice_data{'notes'} =
+    join("\n",
 #  #do variable substitutions in notes
-#  $invoice_data{'notes'} =
-#    join("\n",
 #      map { my $b=$_; $b =~ s/\$(\w+)/$invoice_data{$1}/eg; $b }
-#        $conf->config_orbase('invoice_latexnotes', $template)
-#    );
-#  warn "invoice notes: ". $invoice_data{'notes'}. "\n"
-#    if $DEBUG;
+        $conf->config_orbase('invoice_latexnotes', $template)
+    );
+  warn "invoice notes: ". $invoice_data{'notes'}. "\n"
+    if $DEBUG;
 
   $invoice_data{'footer'} =~ s/\n+$//;
   $invoice_data{'smallfooter'} =~ s/\n+$//;
