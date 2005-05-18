@@ -97,6 +97,8 @@ foreach my $agent ( sort {
         <TD>
           <A HREF="<%= $p %>search/report_cust_pay.html?agentnum=<%= $agent->agentnum %>">Payments</A>
           <BR><A HREF="<%= $p %>search/report_cust_credit.html?agentnum=<%= $agent->agentnum %>">Credits</A>
+          <BR><A HREF="<%= $p %>search/report_receivables.html?agentnum=<%= $agent->agentnum %>">A/R Aging</A>
+          <!--<BR><A HREF="<%= $p %>search/money_time.cgi?agentnum=<%= $agent->agentnum %>">Sales/Credits/Receipts</A>-->
 
         </TD>
 

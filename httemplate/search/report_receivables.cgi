@@ -91,6 +91,12 @@ where 0 <
          )
 END
 
+  my $agentnum = '';
+  if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
+    $agentnum = $1;
+    $where .= " AND agentnum = '$agentnum' ";
+  }
+
   my $count_sql = "select count(*) from cust_main $where";
 
   my $sql_query = {
@@ -100,6 +106,10 @@ END
     'extra_sql' => "$where order by coalesce(lower(company), ''), lower(last)",
   };
 
+  if ( $agentnum ) {
+    $owed_cols =~
+      s/cust_bill\.custnum/cust_bill.custnum AND cust_main.agentnum = '$agentnum'/g;
+  }
   my $total_sql = "select $owed_cols";
   my $total_sth = dbh->prepare($total_sql) or die dbh->errstr;
   $total_sth->execute or die $total_sth->errstr;
