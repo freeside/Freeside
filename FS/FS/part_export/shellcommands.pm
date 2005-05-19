@@ -1,6 +1,6 @@
 package FS::part_export::shellcommands;
 
-use vars qw(@ISA %info)
+use vars qw(@ISA %info);
 use Tie::IxHash;
 use String::ShellQuote;
 use FS::part_export;

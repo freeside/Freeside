@@ -1,6 +1,6 @@
 package FS::part_export::acct_sql;
 
-use vars qw(@ISA %info)
+use vars qw(@ISA %info);
 use Tie::IxHash;
 #use Digest::MD5 qw(md5_hex);
 use FS::Record; #qw(qsearchs);
