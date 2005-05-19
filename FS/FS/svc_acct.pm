@@ -1322,7 +1322,7 @@ sub crypt_password {
   #eventually should check a "password-encoding" field
   if ( length($self->_password) == 13
        || $self->_password =~ /^\$(1|2a?)\$/
-       || $self->_password =~ /^(\*|NP|\*LK\*)$/
+       || $self->_password =~ /^(\*|NP|\*LK\*|!!?)$/
      )
   {
     $self->_password;
