@@ -72,7 +72,7 @@ my $link = $templatename ? "$templatename-$invnum" : $invnum;
           && $part_bill_event->plandata =~ /^(agent_)?templatename (.*)$/m
         ) {
           my $alt_templatename = $2;
-          my $alt_link = "$templatename-$invnum";
+          my $alt_link = "$alt_templatename-$invnum";
         %>
           ( <A HREF="<%= $p %>view/cust_bill.cgi?<%= $alt_link %>">view</A>
           | <A HREF="<%= $p %>view/cust_bill-pdf.cgi?<%= $alt_link %>.pdf">view
