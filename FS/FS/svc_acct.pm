@@ -463,11 +463,6 @@ sub replace {
 
   return "can't modify system account" if $old->_check_system;
 
-  return "Username in use"
-    if $old->username ne $new->username &&
-      qsearchs( 'svc_acct', { 'username' => $new->username,
-                               'domsvc'   => $new->domsvc,
-                             } );
   {
     #no warnings 'numeric';  #alas, a 5.006-ism
     local($^W) = 0;
