@@ -10,7 +10,7 @@ use FS::part_export;
 tie my %options, 'Tie::IxHash',
   'user' => { label=>'Remote username', default=>'root' },
   'useradd' => { label=>'Insert command',
-                 default=>'useradd -c $finger -d $dir -m -s $shell -u $uid -g $gid -p $crypt_password $username'
+                 default=>'useradd -c $finger -d $dir -m -s $shell -u $uid -p $crypt_password $username'
                 #default=>'cp -pr /etc/skel $dir; chown -R $uid.$gid $dir'
                },
   'useradd_stdin' => { label=>'Insert command STDIN',
@@ -75,7 +75,7 @@ running will not accept a domain as a parameter.  You will need to
 <UL>
   <LI>
     <INPUT TYPE="button" VALUE="Linux" onClick='
-      this.form.useradd.value = "useradd -c $finger -d $dir -m -s $shell -u $uid -g $gid -p $crypt_password $username";
+      this.form.useradd.value = "useradd -c $finger -d $dir -m -s $shell -u $uid -p $crypt_password $username";
       this.form.useradd_stdin.value = "";
       this.form.userdel.value = "userdel -r $username";
       this.form.userdel_stdin.value="";
@@ -88,7 +88,7 @@ running will not accept a domain as a parameter.  You will need to
     '>
   <LI>
     <INPUT TYPE="button" VALUE="FreeBSD before 4.10 / 5.3" onClick='
-      this.form.useradd.value = "lockf /etc/passwd.lock pw useradd $username -d $dir -m -s $shell -u $uid -g $gid -c $finger -h 0";
+      this.form.useradd.value = "lockf /etc/passwd.lock pw useradd $username -d $dir -m -s $shell -u $uid -c $finger -h 0";
       this.form.useradd_stdin.value = "$_password\n";
       this.form.userdel.value = "lockf /etc/passwd.lock pw userdel $username -r"; this.form.userdel_stdin.value="";
       this.form.usermod.value = "lockf /etc/passwd.lock pw usermod $old_username -d $new_dir -m -l $new_username -s $new_shell -u $new_uid -g $new_gid -c $new_finger -h 0";
@@ -118,7 +118,7 @@ running will not accept a domain as a parameter.  You will need to
     '>
   <LI>
     <INPUT TYPE="button" VALUE="NetBSD/OpenBSD" onClick='
-      this.form.useradd.value = "useradd -c $finger -d $dir -m -s $shell -u $uid -g $gid -p $crypt_password $username";
+      this.form.useradd.value = "useradd -c $finger -d $dir -m -s $shell -u $uid -p $crypt_password $username";
       this.form.useradd_stdin.value = "";
       this.form.userdel.value = "userdel -r $username";
       this.form.userdel_stdin.value="";
