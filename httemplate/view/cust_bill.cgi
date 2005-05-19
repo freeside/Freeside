@@ -1,4 +1,3 @@
-<!-- mason kludge -->
 <%
 
 #untaint invnum
@@ -15,76 +14,98 @@ my $custnum = $cust_bill->getfield('custnum');
 
 #my $printed = $cust_bill->printed;
 
-print header('Invoice View', menubar(
+my $link = $templatename ? "$templatename-$invnum" : $invnum;
+
+%>
+<%= header('Invoice View', menubar(
   "Main Menu" => $p,
   "View this customer (#$custnum)" => "${p}view/cust_main.cgi?$custnum",
-));
+)) %>
 
-print qq!<A HREF="${p}edit/cust_pay.cgi?$invnum">Enter payments (check/cash) against this invoice</A> | !
-  if $cust_bill->owed > 0;
+<% if ( $cust_bill->owed > 0 ) { %>
+  <A HREF="<%= $p %>edit/cust_pay.cgi?<%= $invnum %>">Enter payments (check/cash) against this invoice</A> |
+<% } %>
 
-print qq!<A HREF="${p}misc/print-invoice.cgi?$invnum">Reprint this invoice</A>!;
-if ( grep { $_ ne 'POST' } $cust_bill->cust_main->invoicing_list ) {
-  print qq! | <A HREF="${p}misc/email-invoice.cgi?$invnum">!.
-        qq!Re-email this invoice</A>!;
-}
+<A HREF="<%= $p %>misc/print-invoice.cgi?<%= $link %>">Reprint this invoice</A>
 
-print qq! | <A HREF="${p}misc/fax-invoice.cgi?$invnum">Refax this invoice</A>!
-  if ($conf->exists('hylafax'));
+<% if ( grep { $_ ne 'POST' } $cust_bill->cust_main->invoicing_list ) { %>
+  | <A HREF="<%= $p %>misc/email-invoice.cgi?<%= $link %>">Re-email
+      this invoice</A>
+<% } %>
 
-print '<BR><BR>';
+<% if ( $conf->exists('hylafax') && length($cust_bill->cust_main->fax) ) { %>
+  | <A HREF="<%= $p %>misc/fax-invoice.cgi?<%= $link %>">Re-fax
+      this invoice</A>
+<% } %>
 
-if ( $conf->exists('invoice_latex') ) {
-  my $link = "${p}view/cust_bill-pdf.cgi?";
-  $link .= "$templatename-" if $templatename;
-  $link .= "$invnum.pdf";
-  print menubar(
-    'View typeset invoice' => $link,
-  ), '<BR><BR>';
-}
+<BR><BR>
 
-#false laziness with search/cust_bill_event.cgi
+<% if ( $conf->exists('invoice_latex') ) { %>
+  <A HREF="<%= $p %>view/cust_bill-pdf.cgi?$link.pdf">View typeset invoice</A>
+  <BR><BR>
+<% } %>
 
-unless ( $templatename ) {
-  print table(). '<TR><TH>Event</TH><TH>Date</TH><TH>Status</TH></TR>';
-  foreach my $cust_bill_event (
-    sort { $a->_date <=> $b->_date } $cust_bill->cust_bill_event
-  ) {
+<% #false laziness with search/cust_bill_event.cgi
+   unless ( $templatename ) { %>
+
+  <%= table() %>
+  <TR>
+    <TH>Event</TH>
+    <TH>Date</TH>
+    <TH>Status</TH>
+  </TR>
+
+  <% foreach my $cust_bill_event (
+       sort { $a->_date <=> $b->_date } $cust_bill->cust_bill_event
+     ) {
+
     my $status = $cust_bill_event->status;
     $status .= ': '. encode_entities($cust_bill_event->statustext)
       if $cust_bill_event->statustext;
     my $part_bill_event = $cust_bill_event->part_bill_event;
-    print '<TR><TD>'. $part_bill_event->event;
+  %>
+    <TR>
+      <TD><%= $part_bill_event->event %>
   
-    if (
-      $part_bill_event->plan eq 'send_alternate'
-      && $part_bill_event->plandata =~ /^templatename (.*)$/m
-    ) {
-      my $templatename = $1;
-      print qq! ( <A HREF="${p}view/cust_bill.cgi?$templatename-$invnum">!.
-            'view</A> | '.
-            qq!<A HREF="${p}view/cust_bill-pdf.cgi?$templatename-$invnum.pdf">!.
-            'view typeset</A> )';
-    }
+        <% if (
+          $part_bill_event->plan eq 'send_alternate'
+          && $part_bill_event->plandata =~ /^(agent_)?templatename (.*)$/m
+        ) {
+          my $alt_templatename = $2;
+          my $alt_link = "$templatename-$invnum";
+        %>
+          ( <A HREF="<%= $p %>view/cust_bill.cgi?<%= $alt_link %>">view</A>
+          | <A HREF="<%= $p %>view/cust_bill-pdf.cgi?<%= $alt_link %>.pdf">view
+              typeset</A>
+          | <A HREF="<%= $p %>misc/print-invoice.cgi?<%= $alt_link %>">re-print</A>
+          <% if ( grep { $_ ne 'POST' }
+                       $cust_bill->cust_main->invoicing_list ) { %>
+            | <A HREF="<%= $p %>misc/email-invoice.cgi?<%= $alt_link %>">re-email</A>
+          <% } %>
+                       
+          <% if ( $conf->exists('hylafax')
+                  && length($cust_bill->cust_main->fax) ) { %>
+            | <A HREF="<%= $p %>misc/fax-invoice.cgi?<%= $alt_link %>">re-fax</A>
+          <% } %>
+
+          )
+        <% } %>
   
-    print '</TD><TD>'.
-          time2str("%a %b %e %T %Y", $cust_bill_event->_date). '</TD><TD>'.
-          $status. '</TD></TR>';
-  }
-  print '</TABLE><BR>';
-}
+      </TD>
+      <TD><%= time2str("%a %b %e %T %Y", $cust_bill_event->_date) %></TD>
+      <TD><%= $status %></TD>
+    </TR>
+  <% } %>
 
-if ( $conf->exists('invoice_html') ) {
-  print $cust_bill->print_html('', $templatename);
-} else {
-  print '<PRE>', $cust_bill->print_text('', $templatename), '</PRE>';
-}
+  </TABLE>
+  <BR>
 
-	#formatting
-	print <<END;
-    </FONT>
-  </BODY>
-</HTML>
-END
+<% } %>
 
-%>
+<% if ( $conf->exists('invoice_html') ) { %>
+  <%= $cust_bill->print_html('', $templatename) %>
+<% } else { %>
+  <PRE><%= $cust_bill->print_text('', $templatename) %></PRE>
+<% } %>
+
+</BODY></HTML>
