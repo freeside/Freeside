@@ -1,6 +1,6 @@
 package FS::part_export::shellcommands;
 
-use vars qw(@ISA %info @saltset);
+use vars qw(@ISA %info)
 use Tie::IxHash;
 use String::ShellQuote;
 use FS::part_export;
@@ -53,6 +53,10 @@ tie my %options, 'Tie::IxHash',
   'unsuspend_stdin' => { label=>'Unsuspension command STDIN',
                          default=>'',
                        },
+  'crypt' => { label   => 'Default password encryption',
+               type=>'select', options=>[qw(crypt md5)],
+               default => 'crypt',
+             },
 ;
 
 %info = (
@@ -145,7 +149,7 @@ old_ for replace operations):
   <LI><code>$username</code>
   <LI><code>$_password</code>
   <LI><code>$quoted_password</code> - unencrypted password quoted for the shell
-  <LI><code>$crypt_password</code> - encrypted password
+  <LI><code>$crypt_password</code> - encrypted password (quoted for the shell)
   <LI><code>$uid</code>
   <LI><code>$gid</code>
   <LI><code>$finger</code> - GECOS, already quoted for the shell (do not add additional quotes)
@@ -159,8 +163,6 @@ old_ for replace operations):
 </UL>
 END
 );
-
-@saltset = ( 'a'..'z' , 'A'..'Z' , '0'..'9' , '.' , '/' );
 
 sub rebless { shift; }
 
@@ -229,16 +231,8 @@ sub _export_command {
   $quoted_password = shell_quote $_password;
   $domain = $svc_acct->domain;
 
-  #eventually should check a "password-encoding" field
-  if ( length($svc_acct->_password) == 13
-       || $svc_acct->_password =~ /^\$(1|2a?)\$/ ) {
-    $crypt_password = shell_quote $svc_acct->_password;
-  } else {
-    $crypt_password = crypt(
-      $svc_acct->_password,
-      $saltset[int(rand(64))].$saltset[int(rand(64))]
-    );
-  }
+  $crypt_password =
+    shell_quote( $svc_acct->crypt_password( $self->option('crypt') ) );
 
   @radius_groups = $svc_acct->radius_groups;
 
@@ -270,15 +264,8 @@ sub _export_replace {
   $old_domain = $old->domain;
   $new_domain = $new->domain;
 
-  #eventuall should check a "password-encoding" field
-  if ( length($new->_password) == 13
-       || $new->_password =~ /^\$(1|2a?)\$/ ) {
-    $new_crypt_password = shell_quote $new->_password;
-  } else {
-    $new_crypt_password =
-      crypt( $new->_password, $saltset[int(rand(64))].$saltset[int(rand(64))]
-    );
-  }
+  $new_crypt_password =
+    shell_quote( $new->crypt_password( $self->option('crypt') ) );
 
   @old_radius_groups = $old->radius_groups;
   @new_radius_groups = $new->radius_groups;

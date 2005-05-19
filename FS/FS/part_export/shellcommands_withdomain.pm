@@ -44,6 +44,10 @@ tie my %options, 'Tie::IxHash',
   'unsuspend_stdin' => { label=>'Unsuspension command STDIN',
                          default=>'',
                        },
+  'crypt' => { label   => 'Default password encryption',
+               type=>'select', options=>[qw(crypt md5)],
+               default => 'crypt',
+             },
 ;
 
 %info = (
@@ -86,7 +90,7 @@ The following variables are available for interpolation (prefixed with
   <LI><code>$domain</code>
   <LI><code>$_password</code>
   <LI><code>$quoted_password</code> - unencrypted password quoted for the shell
-  <LI><code>$crypt_password</code> - encrypted password
+  <LI><code>$crypt_password</code> - encrypted password (quoted for the shell)
   <LI><code>$uid</code>
   <LI><code>$gid</code>
   <LI><code>$finger</code> - GECOS, already quoted for the shell (do not add additional quotes)
