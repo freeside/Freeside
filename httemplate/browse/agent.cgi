@@ -1,5 +1,3 @@
-<!-- mason kludge -->
-
 <%
 
   my %search;
@@ -11,7 +9,6 @@
   }
 
 %>
-
 <%= header('Agent Listing', menubar(
   'Main Menu'   => $p,
   'Agent Types' => $p. 'browse/agent_type.cgi',
@@ -71,43 +68,43 @@ foreach my $agent ( sort {
 
           <TABLE CELLSPACING=0 CELLPADDING=0>
             <TR>
-              <TH ALIGN="right">
-                <%= my $num_prospect = $agent->num_prospect_cust_main %>
+              <TH ALIGN="right" WIDTH="40%">
+                <%= my $num_prospect = $agent->num_prospect_cust_main %>&nbsp;
               </TH>
-              <TD>&nbsp;
+              <TD>
                 <% if ( $num_prospect ) { %>
                   <A HREF="<%= $cust_main_link %>&prospect=1"><% } %>prospects<% if ($num_prospect ) { %></A><% } %>
               <TD>
             </TR>
             <TR>
-              <TH ALIGN="right">
+              <TH ALIGN="right" WIDTH="40%">
                 <FONT COLOR="#00CC00">
-                  <%= my $num_active = $agent->num_active_cust_main %>
+                  <%= my $num_active = $agent->num_active_cust_main %>&nbsp;
                 </FONT>
               </TH>
-              <TD>&nbsp;
+              <TD>
                 <% if ( $num_active ) { %>
                   <A HREF="<%= $cust_main_link %>&active=1"><% } %>active<% if ( $num_active ) { %></A><% } %>
               </TD>
             </TR>
             <TR>
-              <TH ALIGN="right">
+              <TH ALIGN="right" WIDTH="40%">
                 <FONT COLOR="#FF9900">
-                  <%= my $num_susp = $agent->num_susp_cust_main %>
+                  <%= my $num_susp = $agent->num_susp_cust_main %>&nbsp;
                 </FONT>
               </TH>
-              <TD>&nbsp;
+              <TD>
                 <% if ( $num_susp ) { %>
                   <A HREF="<%= $cust_main_link %>&suspended=1"><% } %>suspended<% if ( $num_susp ) { %></A><% } %>
               </TD>
             </TR>
             <TR>
-              <TH ALIGN="right">
+              <TH ALIGN="right" WIDTH="40%">
                 <FONT COLOR="#FF0000">
-                  <%= my $num_cancel = $agent->num_cancel_cust_main %>
+                  <%= my $num_cancel = $agent->num_cancel_cust_main %>&nbsp;
                 </FONT>
               </TH>
-              <TD>&nbsp;
+              <TD>
                 <% if ( $num_cancel ) { %>
                   <A HREF="<%= $cust_main_link %>&showcancelledcustomers=1&cancelled=1"><% } %>cancelled<% if ( $num_cancel ) { %></A><% } %>
               </TD>
