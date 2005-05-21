@@ -69,29 +69,50 @@ foreach my $agent ( sort {
 
         <TD>
 
-          <B>
-            <%= my $num_prospect = $agent->num_prospect_cust_main %>
-          </B>
-          <% if ( $num_prospect ) { %>
-            <A HREF="<%= $cust_main_link %>&prospect=1"><% } %>prospects<% if ($num_prospect ) { %></A><% } %>
-
-          <BR><FONT COLOR="#00CC00"><B>
-            <%= my $num_active = $agent->num_active_cust_main %>
-          </B></FONT>
-          <% if ( $num_active ) { %>
-            <A HREF="<%= $cust_main_link %>&active=1"><% } %>active<% if ( $num_active ) { %></A><% } %>
-
-          <BR><FONT COLOR="#FF9900"><B>
-            <%= my $num_susp = $agent->num_susp_cust_main %>
-          </B></FONT>
-          <% if ( $num_susp ) { %>
-            <A HREF="<%= $cust_main_link %>&suspended=1"><% } %>suspended<% if ( $num_susp ) { %></A><% } %>
-
-          <BR><FONT COLOR="#FF0000"><B>
-            <%= my $num_cancel = $agent->num_cancel_cust_main %>
-          </B></FONT>
-          <% if ( $num_cancel ) { %>
-            <A HREF="<%= $cust_main_link %>&showcancelledcustomers=1&cancelled=1"><% } %>cancelled<% if ( $num_cancel ) { %></A><% } %>
+          <TABLE CELLSPACING=0 CELLPADDING=0>
+            <TR>
+              <TH ALIGN="right">
+                <%= my $num_prospect = $agent->num_prospect_cust_main %>
+              </TH>
+              <TD>&nbsp;
+                <% if ( $num_prospect ) { %>
+                  <A HREF="<%= $cust_main_link %>&prospect=1"><% } %>prospects<% if ($num_prospect ) { %></A><% } %>
+              <TD>
+            </TR>
+            <TR>
+              <TH ALIGN="right">
+                <FONT COLOR="#00CC00">
+                  <%= my $num_active = $agent->num_active_cust_main %>
+                </FONT>
+              </TH>
+              <TD>&nbsp;
+                <% if ( $num_active ) { %>
+                  <A HREF="<%= $cust_main_link %>&active=1"><% } %>active<% if ( $num_active ) { %></A><% } %>
+              </TD>
+            </TR>
+            <TR>
+              <TH ALIGN="right">
+                <FONT COLOR="#FF9900">
+                  <%= my $num_susp = $agent->num_susp_cust_main %>
+                </FONT>
+              </TH>
+              <TD>&nbsp;
+                <% if ( $num_susp ) { %>
+                  <A HREF="<%= $cust_main_link %>&suspended=1"><% } %>suspended<% if ( $num_susp ) { %></A><% } %>
+              </TD>
+            </TR>
+            <TR>
+              <TH ALIGN="right">
+                <FONT COLOR="#FF0000">
+                  <%= my $num_cancel = $agent->num_cancel_cust_main %>
+                </FONT>
+              </TH>
+              <TD>&nbsp;
+                <% if ( $num_cancel ) { %>
+                  <A HREF="<%= $cust_main_link %>&showcancelledcustomers=1&cancelled=1"><% } %>cancelled<% if ( $num_cancel ) { %></A><% } %>
+              </TD>
+            </TR>
+          </TABLE>
         </TD>
 
         <TD>
