@@ -57,6 +57,7 @@ if ( $cgi->param('browse')
 ) {
 
   my %search = ();
+
   if ( $cgi->param('browse') ) {
     my $query = $cgi->param('browse');
     if ( $query eq 'custnum' ) {
@@ -80,15 +81,16 @@ if ( $cgi->param('browse')
   } else {
     $sortby = \*last_sort; #??
     $orderby = "ORDER BY LOWER(last || ' ' || first)"; #??
-    if ( $cgi->param('otaker_on') ) {
-      $cgi->param('otaker') =~ /^(\w{1,32})$/ or eidiot "Illegal otaker\n";
-      $search{otaker} = $1;
-    } elsif ( $cgi->param('agentnum_on') ) {
-      $cgi->param('agentnum') =~ /^(\d+)$/ or eidiot "Illegal agentnum\n";
-      $search{agentnum} = $1;
-    } else {
-      die "unknown query...";
-    }
+  }
+
+  if ( $cgi->param('otaker_on') ) {
+    $cgi->param('otaker') =~ /^(\w{1,32})$/ or eidiot "Illegal otaker\n";
+    $search{otaker} = $1;
+  } elsif ( $cgi->param('agentnum_on') ) {
+    $cgi->param('agentnum') =~ /^(\d+)$/ or eidiot "Illegal agentnum\n";
+    $search{agentnum} = $1;
+#  } else {
+#    die "unknown query...";
   }
 
   my @qual = ();
