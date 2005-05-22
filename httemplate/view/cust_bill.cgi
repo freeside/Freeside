@@ -41,7 +41,7 @@ my $link = $templatename ? "$templatename-$invnum" : $invnum;
 <BR><BR>
 
 <% if ( $conf->exists('invoice_latex') ) { %>
-  <A HREF="<%= $p %>view/cust_bill-pdf.cgi?$link.pdf">View typeset invoice</A>
+  <A HREF="<%= $p %>view/cust_bill-pdf.cgi?<%= $link %>.pdf">View typeset invoice</A>
   <BR><BR>
 <% } %>
 
