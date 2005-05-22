@@ -51,6 +51,8 @@ fields are currently supported:
 
 =item seconds - time amount of credit (see L<FS::svc_acct/seconds>)
 
+=item agentnum - optional agent (see L<FS::agent>) for this prepaid card
+
 =back
 
 =head1 METHODS
