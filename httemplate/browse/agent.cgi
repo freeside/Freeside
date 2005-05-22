@@ -33,7 +33,7 @@ full offerings (via their type).<BR><BR>
   <TH>Type</TH>
   <TH>Customers</TH>
   <TH>Reports</TH>
-  <TH>Registration Codes</TH>
+  <TH>Registration codes</TH>
   <TH>Prepaid cards</TH>
   <TH><FONT SIZE=-1>Freq.</FONT></TH>
   <TH><FONT SIZE=-1>Prog.</FONT></TH>
