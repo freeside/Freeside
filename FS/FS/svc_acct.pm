@@ -1327,7 +1327,7 @@ sub crypt_password {
   {
     $self->_password;
   } else {
-    my $encryption = scalar(@_) ? shift : 'crypt';
+    my $encryption = ( scalar(@_) && $_[0] ) ? shift : 'crypt';
     if ( $encryption eq 'crypt' ) {
       crypt(
         $self->_password,
