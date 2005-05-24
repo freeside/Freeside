@@ -82,8 +82,8 @@ SELFSERVICE_INSTALL_USER = ivan
 SELFSERVICE_INSTALL_USERADD = /usr/sbin/useradd
 #SELFSERVICE_INSTALL_USERADD = "/usr/sbin/pw useradd"
 
-RT_ENABLED = 0
-#RT_ENABLED = 1
+#RT_ENABLED = 0
+RT_ENABLED = 1
 RT_DOMAIN = example.com
 RT_TIMEZONE = US/Pacific;
 #RT_TIMEZONE = US/Eastern;
@@ -99,8 +99,8 @@ FREESIDE_CONF = /usr/local/etc/freeside
 #rt/config.layout.in
 RT_PATH = /opt/rt3
 
-VERSION=1.5.0pre6
-TAG=freeside_1_5_0pre6
+VERSION=1.5.7
+TAG=freeside_1_5_7
 
 help:
 	@echo "supported targets: aspdocs masondocs alldocs docs install-docs"
