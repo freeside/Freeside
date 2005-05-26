@@ -103,9 +103,9 @@ my $link = $templatename ? "$templatename-$invnum" : $invnum;
 <% } %>
 
 <% if ( $conf->exists('invoice_html') ) { %>
-  <%= $cust_bill->print_html('', $templatename) %>
+  <%= join("\n", $cust_bill->print_html('', $templatename) ) %>
 <% } else { %>
-  <PRE><%= $cust_bill->print_text('', $templatename) %></PRE>
+  <PRE><%= join("\n", $cust_bill->print_text('', $templatename) ) %></PRE>
 <% } %>
 
 </BODY></HTML>
