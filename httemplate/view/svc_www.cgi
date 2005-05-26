@@ -21,9 +21,13 @@ if ($pkgnum) {
 #eofalse
 
 my $usersvc = $svc_www->usersvc;
-my $svc_acct = qsearchs('svc_acct', { 'svcnum' => $usersvc } )
-  or die "svc_www: Unknown usersvc $usersvc";
-my $email = $svc_acct->email;
+my $svc_acct = '';
+my $email = '';
+if ( $usersvc ) {
+  $svc_acct = qsearchs('svc_acct', { 'svcnum' => $usersvc } )
+    or die "svc_www: Unknown usersvc $usersvc";
+  $email = $svc_acct->email;
+}
 
 my $domain_record = qsearchs('domain_record', { 'recnum' => $svc_www->recnum } )
   or die "svc_www: Unknown recnum ". $svc_www->recnum;
@@ -46,7 +50,15 @@ print header('Website View', menubar(
       qq!<TR><TD ALIGN="right">Website name</TD>!.
         qq!<TD BGCOLOR="#ffffff"><A HREF="http://$www">$www<A></TD></TR>!.
       qq!<TR><TD ALIGN="right">Account</TD>!.
-        qq!<TD BGCOLOR="#ffffff"><A HREF="${p}view/svc_acct.cgi?$usersvc">$email</A></TD></TR>!;
+        qq!<TD BGCOLOR="#ffffff">!;
+
+if ( $usersvc ) {
+  print qq!<A HREF="${p}view/svc_acct.cgi?$usersvc">$email</A>!;
+} else {
+  print '</i>(none)</i>';
+}
+
+print '</TD></TR>';
 
 foreach (sort { $a cmp $b } $svc_www->virtual_fields) {
   print $svc_www->pvf($_)->widget('HTML', 'view', $svc_www->getfield($_)),

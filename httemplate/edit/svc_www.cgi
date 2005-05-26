@@ -196,6 +196,7 @@ foreach $_ (keys %arec) {
 print "</SELECT></TD></TR>";
 
 print '<TR><TD ALIGN="right">Username</TD><TD><SELECT NAME="usersvc" SIZE=1>';
+print '<OPTION VALUE="">(none)';
 foreach $_ (keys %svc_acct) {
   print "<OPTION", ($_ eq $usersvc) ? " SELECTED" : "",
         qq! VALUE="$_">$svc_acct{$_}!;

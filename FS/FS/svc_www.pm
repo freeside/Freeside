@@ -204,7 +204,7 @@ sub check {
   my $error =
     $self->ut_numbern('svcnum')
 #    || $self->ut_number('recnum')
-    || $self->ut_number('usersvc')
+    || $self->ut_numbern('usersvc')
   ;
   return $error if $error;
 
@@ -238,8 +238,10 @@ sub check {
     return "Illegal recnum: ". $self->recnum;
   }
 
-  return "Unknown usersvc (svc_acct.svcnum): ". $self->usersvc
-    unless qsearchs('svc_acct', { 'svcnum' => $self->usersvc } );
+  if ( $self->usersvc ) {
+    return "Unknown usersvc0 (svc_acct.svcnum): ". $self->usersvc
+      unless qsearchs('svc_acct', { 'svcnum' => $self->usersvc } );
+  }
 
   $self->SUPER::check;
 
