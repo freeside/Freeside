@@ -183,7 +183,6 @@ my @part_svc = qsearch(
   "WHERE disabled IS NULL OR disabled = ''
       OR 0 < ( SELECT quantity FROM pkg_svc
                 WHERE pkg_svc.svcpart = part_svc.svcpart
-                  AND pkgpart = 72
              )"
 );
 foreach my $part_svc ( @part_svc ) {
