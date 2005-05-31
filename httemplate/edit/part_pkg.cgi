@@ -13,21 +13,26 @@ if ( $cgi->param('pkgnum') && $cgi->param('pkgnum') =~ /^(\d+)$/ ) {
 }
 
 my ($query) = $cgi->keywords;
-my $action = '';
+
 my $part_pkg = '';
 if ( $cgi->param('error') ) {
   $part_pkg = new FS::part_pkg ( {
     map { $_, scalar($cgi->param($_)) } fields('part_pkg')
   } );
 }
+
+my $action = '';
 my $clone_part_pkg = '';
+my $pkgpart = '';
 if ( $cgi->param('clone') ) {
+  $pkgpart = $cgi->param('clone');
   $action = 'Custom Pricing';
   $clone_part_pkg= qsearchs('part_pkg', { 'pkgpart' => $cgi->param('clone') } );
   $part_pkg ||= $clone_part_pkg->clone;
   $part_pkg->disabled('Y');
 } elsif ( $query && $query =~ /^(\d+)$/ ) {
   $part_pkg ||= qsearchs('part_pkg',{'pkgpart'=>$1});
+  $pkgpart = $part_pkg->pkgpart;
 } else {
   unless ( $part_pkg ) {
     $part_pkg = new FS::part_pkg {};
@@ -173,21 +178,19 @@ unless ( 0 ) {
 END
 }
 
+
+my $where =  "WHERE disabled IS NULL OR disabled = ''";
+if ( $pkgpart ) {
+  $where .=  "   OR 0 < ( SELECT quantity FROM pkg_svc
+                           WHERE pkg_svc.svcpart = part_svc.svcpart
+                             AND pkgpart = $pkgpart
+                        )";
+}
 my @fixups = ();
 my $count = 0;
 my $columns = 3;
-my @part_svc = qsearch(
-  'part_svc',
-  {},
-  '',
-  "WHERE disabled IS NULL OR disabled = ''
-      OR 0 < ( SELECT quantity FROM pkg_svc
-                WHERE pkg_svc.svcpart = part_svc.svcpart
-             )"
-);
-foreach my $part_svc ( @part_svc ) {
+foreach my $part_svc ( qsearch('part_svc', {}, '', $where) ) {
   my $svcpart = $part_svc->svcpart;
-  my $pkgpart = $cgi->param('clone') || $part_pkg->pkgpart;
   my $pkg_svc = $pkgpart && qsearchs( 'pkg_svc', {
     'pkgpart'  => $pkgpart,
     'svcpart'  => $svcpart,
