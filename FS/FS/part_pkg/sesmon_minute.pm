@@ -34,7 +34,7 @@ use FS::part_pkg;
 );
 
 
-sub cakc_recur {
+sub calc_recur {
   my( $self, $cust_pkg ) = @);
   my $min = $cust_pkg->seconds_since($cust_pkg->bill || 0) / 60;
   $min -= $self->option('recur_included_min');
