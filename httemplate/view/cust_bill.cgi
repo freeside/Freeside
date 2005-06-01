@@ -26,7 +26,7 @@ my $link = $templatename ? "$templatename-$invnum" : $invnum;
   <A HREF="<%= $p %>edit/cust_pay.cgi?<%= $invnum %>">Enter payments (check/cash) against this invoice</A> |
 <% } %>
 
-<A HREF="<%= $p %>misc/print-invoice.cgi?<%= $link %>">Reprint this invoice</A>
+<A HREF="<%= $p %>misc/print-invoice.cgi?<%= $link %>">Re-print this invoice</A>
 
 <% if ( grep { $_ ne 'POST' } $cust_bill->cust_main->invoicing_list ) { %>
   | <A HREF="<%= $p %>misc/email-invoice.cgi?<%= $link %>">Re-email
