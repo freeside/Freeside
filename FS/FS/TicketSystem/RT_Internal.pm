@@ -26,28 +26,13 @@ sub customer_tickets {
   $self->SUPER::customer_tickets( $custnum, $limit, $priority, dbh );
 }
 
-sub href_customer_tickets {
-  my $self = shift;
-  # well, 2 is wrong here but will have to do for now
-  baseurl().'rt/'. $self->_href_customer_tickets(@_);
-}
-
-sub href_new_ticket {
-  my $self = shift;
-  # well, 2 is wrong here but will have to do for now
-  baseurl().'rt/'. $self->_href_new_ticket(@_);
-}
-
-sub href_ticket {
-  my $self = shift;
-  # well, 2 is wrong here but will have to do for now
-  baseurl().'rt/'. $self->_href_ticket(@_);
-}
-
 sub baseurl {
-
-  return popurl(2);
-
+  #my $self = shift;
+  if ( $RT::URI::freeside::URL ) {
+    $RT::URI::freeside::URL. 'rt/';
+  } else {
+    'http://you_need_to_set_RT_URI_freeside_URL_in_SiteConfig.pm/';
+  }
 }
 
 1;
