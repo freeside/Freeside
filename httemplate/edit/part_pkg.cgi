@@ -186,10 +186,12 @@ if ( $pkgpart ) {
                              AND pkgpart = $pkgpart
                         )";
 }
+my @part_svc = qsearch('part_svc', {}, '', $where);
+
 my @fixups = ();
 my $count = 0;
 my $columns = 3;
-foreach my $part_svc ( qsearch('part_svc', {}, '', $where) ) {
+foreach my $part_svc ( @part_svc ) {
   my $svcpart = $part_svc->svcpart;
   my $pkg_svc = $pkgpart && qsearchs( 'pkg_svc', {
     'pkgpart'  => $pkgpart,
