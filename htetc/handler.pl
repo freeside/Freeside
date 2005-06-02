@@ -95,6 +95,7 @@ sub handler
       use Time::Local;
       use Time::Duration;
       use Tie::IxHash;
+      use URI::Escape;
       use HTML::Entities;
       use IO::Handle;
       use IO::File;

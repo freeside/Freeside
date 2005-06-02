@@ -4,6 +4,19 @@ package FS::UI::Web;
 #use FS::UI
 #@ISA = qw( FS::UI );
 
+use Date::Parse;
+sub parse_beginning_ending {
+  my($cgi) = @_;
+
+  $cgi->param('beginning') =~ /^([ 0-9\-\/]{0,10})$/;
+  my $beginning = str2time($1) || 0;
+
+  #need an option to turn off the + 86399 ???
+  $cgi->param('ending') =~ /^([ 0-9\-\/]{0,10})$/;
+  my $ending =  ( $1 ? str2time($1) : 4294880896 ) + 86399;
+
+  ( $beginning, $ending );
+}
 
 # begin JSRPC code...
 

@@ -189,6 +189,7 @@
                  include( '/elements/menubar.html', @menubar )
              )
   %>
+  <%= defined($opt{'html_init'}) ? $opt{'html_init'} : '' %>
   <% my $pager = include ( '/elements/pager.html',
                              'offset'     => $offset,
                              'num_rows'   => scalar(@$rows),

@@ -1,6 +1,14 @@
 <%
-  my( $formname, $fields, $action, $success_url, $key ) = @_;
+  my( $formname, $fields, $action, $url_or_message, $key ) = @_;
   $key = '' unless defined $key;
+
+  my $url_or_message_link;
+  if ( ref($url_or_message) ) { #its a message or something
+    $url_or_message_link =
+      'message='. uri_escape( $url_or_message->{'message'} )
+  } else {
+    $url_or_message_link = "url=$url_or_message";
+  }
 %>
 
 <SCRIPT TYPE="text/javascript" SRC="../elements/jsrsClient.js"></SCRIPT>
@@ -52,7 +60,7 @@ function <%=$key%>process () {
 
 function <%=$key%>myCallback( jobnum ) {
 
-  overlib( OLiframeContent('<%=$p%>elements/progress-popup.html?jobnum=' + jobnum + ';url=<%=$success_url%>;formname=<%=$formname%>' , 432, 136, 'progress_popup'), CAPTION, 'Please wait...', STICKY, AUTOSTATUSCAP, CLOSETEXT, '', CLOSECLICK, MIDX, 0, MIDY, 0 );
+  overlib( OLiframeContent('<%=$p%>elements/progress-popup.html?jobnum=' + jobnum + ';<%=$url_or_message_link%>;formname=<%=$formname%>' , 432, 136, 'progress_popup'), CAPTION, 'Please wait...', STICKY, AUTOSTATUSCAP, CLOSETEXT, '', CLOSECLICK, MIDX, 0, MIDY, 0 );
 
 }
 

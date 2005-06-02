@@ -171,11 +171,32 @@ sub check {
   $self->SUPER::check;
 }
 
+=item templatename
+
+Returns the alternate invoice template name, if any, or false if there is
+no alternate template for this invoice event.
+
+=cut
+
+sub templatename {
+  my $self = shift;
+  if (    $self->plan     =~ /^send_(alternate|agent)$/
+       && $self->plandata =~ /^(agent_)?templatename (.*)$/m
+     )
+  {
+    $2;
+  } else {
+    '';
+  }
+}
+
+
 =back
 
 =head1 BUGS
 
-Alas.
+The whole "eventcode" idea is bunk.  This should be refactored with subclasses
+like part_pkg/ and part_export/
 
 =head1 SEE ALSO
 

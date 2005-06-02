@@ -128,7 +128,6 @@
       <BR><A HREF="browse/cust_pay_batch.cgi">View pending credit card batch</A>      <BR><BR><A HREF="search/cust_pkg_report.cgi">Packages (by next bill date range)</A>
       <BR><BR>Invoice reports
             <UL>
-              <LI><a href="search/cust_bill_event.html">Invoice event errors (failed credit cards, processor or printer problems, etc.)</a>
               <LI>open invoices (<A HREF="search/cust_bill.html?OPEN_invnum">by invoice number</A>) (<A HREF="search/cust_bill.html?OPEN_date">by date</A>) (<A HREF="search/cust_bill.html?OPEN_custnum">by customer number</A>)
               <LI>15 day open invoices (<A HREF="search/cust_bill.html?OPEN15_invnum">by invoice number</A>) (<A HREF="search/cust_bill.html?OPEN15_date">by date</A>) (<A HREF="search/cust_bill.html?OPEN15_custnum">by customer number</A>)
               <LI>30 day open invoices (<A HREF="search/cust_bill.html?OPEN30_invnum">by invoice number</A>) (<A HREF="search/cust_bill.html?OPEN30_date">by date</A>) (<A HREF="search/cust_bill.html?OPEN30_custnum">by customer number</A>)
@@ -136,6 +135,11 @@
               <LI>90 day open invoices (<A HREF="search/cust_bill.html?OPEN90_invnum">by invoice number</A>) (<A HREF="search/cust_bill.html?OPEN90_date">by date</A>) (<A HREF="search/cust_bill.html?OPEN90_custnum">by customer number</A>)
               <LI>120 day open invoices (<A HREF="search/cust_bill.html?OPEN120_invnum">by invoice number</A>) (<A HREF="search/cust_bill.html?OPEN120_date">by date</A>) (<A HREF="search/cust_bill.html?OPEN120_custnum">by customer number</A>)
               <LI>all invoices (<A HREF="search/cust_bill.html?invnum">by invoice number</A>) (<A HREF="search/cust_bill.html?date">by date</A>) (<A HREF="search/cust_bill.html?custnum">by customer number</A>)
+            </UL>
+      Invoice event reports
+            <UL>
+              <LI><a href="search/cust_bill_event.html">All invoice events for a date range</a>
+              <LI><a href="search/cust_bill_event.html?failed=1">Invoice event errors for a date range (failed credit cards, processor or printer problems, etc.)</a>
             </UL>
       <A HREF="search/report_cust_pay.html">Payment report (by type and/or date range)</A>
       <BR><BR><A HREF="search/report_cust_credit.html">Credit report (by employee and/or date range)</A>

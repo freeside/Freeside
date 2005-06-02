@@ -2,7 +2,7 @@ package FS::part_pkg;
 
 use strict;
 use vars qw( @ISA %freq %plans $DEBUG );
-use Carp qw(carp cluck);
+use Carp qw(carp cluck confess);
 use Tie::IxHash;
 use FS::Conf;
 use FS::Record qw( qsearch qsearchs dbh dbdef );
@@ -643,9 +643,15 @@ on how to create new price plans, but until then, see L</NEW PLAN CLASSES>.
 sub _rebless {
   my $self = shift;
   my $plan = $self->plan;
+  unless ( $plan ) {
+    confess "no price plan found for pkgpart ". $self->pkgpart. "\n"
+      if $DEBUG;
+    return $self;
+  }
   my $class = ref($self). "::$plan";
+  warn "reblessing $self into $class" if $DEBUG;
   eval "use $class;";
-  #die $@ if $@;
+  die $@ if $@;
   bless($self, $class) unless $@;
   $self;
 }
@@ -697,6 +703,7 @@ sub calc_cancel { 0; }
 
 my %info;
 foreach my $INC ( @INC ) {
+  warn "globbing $INC/FS/part_pkg/*.pm\n" if $DEBUG;
   foreach my $file ( glob("$INC/FS/part_pkg/*.pm") ) {
     warn "attempting to load plan info from $file\n" if $DEBUG;
     $file =~ /\/(\w+)\.pm$/ or do {

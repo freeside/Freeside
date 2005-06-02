@@ -1,6 +1,7 @@
 <%
   my $jobnum = $cgi->param('jobnum');
   my $url = $cgi->param('url');
+  my $message = $cgi->param('message');
   my $formname = scalar($cgi->param('formname'));
 %>
 <HTML>
@@ -29,7 +30,17 @@ function updateStatus( status_statustext ) {
     bar1.update;
     jsrsExecute( '<%=$p%>elements/jsrsServer.html', updateStatus, 'job_status', '<%= $jobnum %>' );
   } else if ( status.indexOf('complete') > -1 ) {
+<% if ( $message ) { %>
+    document.getElementById("progress_message").innerHTML = "<%= $message %>";
+    document.getElementById("progress_bar").innerHTML = '';
+    document.getElementById("progress_percent").innerHTML = '<INPUT TYPE="button" VALUE="OK" onClick="parent.nd(1);">';
+    document.getElementById("progress_jobnum").innerHTML = '';
+    parent.document.<%=$formname%>.submit.disabled=false;
+<% } elsif ( $url ) { %>
     window.top.location.href = '<%= $url %>';
+<% } else { %>
+    alert('job done but no url or message specified');
+<% } %>
   } else if ( status.indexOf('error') > -1 ) {
     document.getElementById("progress_message").innerHTML = '<FONT SIZE="+1" COLOR="#FF0000">Error: ' + statustext + '</FONT>';
     document.getElementById("progress_bar").innerHTML = '';

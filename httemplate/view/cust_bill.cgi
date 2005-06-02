@@ -67,11 +67,8 @@ my $link = $templatename ? "$templatename-$invnum" : $invnum;
     <TR>
       <TD><%= $part_bill_event->event %>
   
-        <% if (
-          $part_bill_event->plan eq 'send_alternate'
-          && $part_bill_event->plandata =~ /^(agent_)?templatename (.*)$/m
-        ) {
-          my $alt_templatename = $2;
+        <% if ( $part_bill_event->templatename ) {
+          my $alt_templatename = $part_bill_event->templatename;
           my $alt_link = "$alt_templatename-$invnum";
         %>
           ( <A HREF="<%= $p %>view/cust_bill.cgi?<%= $alt_link %>">view</A>

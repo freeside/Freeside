@@ -20,6 +20,9 @@ use FS::cust_pkg;
 use FS::cust_credit_bill;
 use FS::cust_pay_batch;
 use FS::cust_bill_event;
+use FS::part_pkg;
+use FS::cust_bill_pay;
+use FS::part_bill_event;
 
 @ISA = qw( FS::Record );
 
@@ -557,63 +560,121 @@ sub send {
   my $self = shift;
   my $template = scalar(@_) ? shift : '';
   return 'N/A' if scalar(@_) && $_[0] && $self->cust_main->agentnum != shift;
+
   my $invoice_from =
     scalar(@_)
       ? shift
       : ( $self->_agent_invoice_from || $conf->config('invoice_from') );
 
-  #my @print_text = $self->print_text('', $template);
   my @invoicing_list = $self->cust_main->invoicing_list;
 
-  if ( grep { $_ !~ /^(POST|FAX)$/ } @invoicing_list or !@invoicing_list  ) {
-    #email
+  $self->send_email($template, $invoice_from)
+    if grep { $_ !~ /^(POST|FAX)$/ } @invoicing_list or !@invoicing_list;
 
-    #better to notify this person than silence
-    @invoicing_list = ($invoice_from) unless @invoicing_list;
+  $self->send_print($template)
+    if grep { $_ eq 'POST' } @invoicing_list; #postal
 
-    my $error = send_email(
-      $self->generate_email(
-        'from'       => $invoice_from,
-        'to'         => [ grep { $_ !~ /^(POST|FAX)$/ } @invoicing_list ],
-        #'print_text' => [ @print_text ],
-        'template'   => $template,
-      )
-    );
-    die "can't email invoice: $error\n" if $error;
-    #die "$error\n" if $error;
-
-  }
-
-  if ( grep { $_ =~ /^(POST|FAX)$/ } @invoicing_list ) {
-    my $lpr_data;
-    if ($conf->config('invoice_latex')) {
-      $lpr_data = [ $self->print_ps('', $template) ];
-    } else {
-      $lpr_data = [ $self->print_text('', $template) ];
-    }
-
-    if ( grep { $_ eq 'POST' } @invoicing_list ) { #postal
-      my $lpr = $conf->config('lpr');
-      open(LPR, "|$lpr")
-        or die "Can't open pipe to $lpr: $!\n";
-      print LPR @{$lpr_data};
-      close LPR
-        or die $! ? "Error closing $lpr: $!\n"
-                  : "Exit status $? from $lpr\n";
-    }
-
-    if ( grep { $_ eq 'FAX' } @invoicing_list ) { #fax
-      die 'FAX invoice destination not supported with plain text invoices.'
-        unless $conf->exists('invoice_latex');
-      my $dialstring = $self->cust_main->getfield('fax');
-      #Check $dialstring?
-      my $error = send_fax(docdata => $lpr_data, dialstring => $dialstring);
-      die $error if $error;
-    }
-
-  }
+  $self->send_fax($template)
+    if grep { $_ eq 'FAX' } @invoicing_list; #fax
 
   '';
+
+}
+
+=item email [ TEMPLATENAME  [ , INVOICE_FROM ] ] 
+
+Emails this invoice.
+
+TEMPLATENAME, if specified, is the name of a suffix for alternate invoices.
+
+INVOICE_FROM, if specified, overrides the default email invoice From: address.
+
+=cut
+
+sub email {
+  my $self = shift;
+  my $template = scalar(@_) ? shift : '';
+  my $invoice_from =
+    scalar(@_)
+      ? shift
+      : ( $self->_agent_invoice_from || $conf->config('invoice_from') );
+
+  my @invoicing_list = grep { $_ !~ /^(POST|FAX)$/ } 
+                            $self->cust_main->invoicing_list;
+
+  #better to notify this person than silence
+  @invoicing_list = ($invoice_from) unless @invoicing_list;
+
+  my $error = send_email(
+    $self->generate_email(
+      'from'       => $invoice_from,
+      'to'         => [ grep { $_ !~ /^(POST|FAX)$/ } @invoicing_list ],
+      'template'   => $template,
+    )
+  );
+  die "can't email invoice: $error\n" if $error;
+  #die "$error\n" if $error;
+
+}
+
+=item lpr_data [ TEMPLATENAME ]
+
+Returns the postscript or plaintext for this invoice.
+
+TEMPLATENAME, if specified, is the name of a suffix for alternate invoices.
+
+=cut
+
+sub lpr_data {
+  my( $self, $template) = @_;
+  $conf->exists('invoice_latex')
+    ? [ $self->print_ps('', $template) ]
+    : [ $self->print_text('', $template) ];
+}
+
+=item print [ TEMPLATENAME ]
+
+Prints this invoice.
+
+TEMPLATENAME, if specified, is the name of a suffix for alternate invoices.
+
+=cut
+
+sub print {
+  my $self = shift;
+  my $template = scalar(@_) ? shift : '';
+
+  my $lpr = $conf->config('lpr');
+  open(LPR, "|$lpr")
+    or die "Can't open pipe to $lpr: $!\n";
+  print LPR @{ $self->lpr_data($template) };
+  close LPR
+    or die $! ? "Error closing $lpr: $!\n"
+              : "Exit status $? from $lpr\n";
+}
+
+=item fax [ TEMPLATENAME ] 
+
+Faxes this invoice.
+
+TEMPLATENAME, if specified, is the name of a suffix for alternate invoices.
+
+=cut
+
+sub fax {
+  my $self = shift;
+  my $template = scalar(@_) ? shift : '';
+
+  die 'FAX invoice destination not (yet?) supported with plain text invoices.'
+    unless $conf->exists('invoice_latex');
+
+  my $dialstring = $self->cust_main->getfield('fax');
+  #Check $dialstring?
+
+  my $error = send_fax( 'docdata'    => $self->lpr_data($template),
+                        'dialstring' => $dialstring,
+                      );
+  die $error if $error;
 
 }
 
@@ -1024,7 +1085,7 @@ sub print_text {
     ( grep { ! $_->pkgnum } $self->cust_bill_pkg ),  #then taxes
   ) {
 
-    if ( $cust_bill_pkg->pkgnum ) {
+    if ( $cust_bill_pkg->pkgnum > 0 ) {
 
       my $cust_pkg = qsearchs('cust_pkg', { pkgnum =>$cust_bill_pkg->pkgnum } );
       my $part_pkg = qsearchs('part_pkg', { pkgpart=>$cust_pkg->pkgpart } );
@@ -1919,7 +1980,7 @@ sub _items_cust_bill_pkg {
   my @b = ();
   foreach my $cust_bill_pkg ( @$cust_bill_pkg ) {
 
-    if ( $cust_bill_pkg->pkgnum ) {
+    if ( $cust_bill_pkg->pkgnum > 0 ) {
 
       my $cust_pkg = qsearchs('cust_pkg', { pkgnum =>$cust_bill_pkg->pkgnum } );
       my $part_pkg = qsearchs('part_pkg', { pkgpart=>$cust_pkg->pkgpart } );

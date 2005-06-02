@@ -1,14 +1,19 @@
-<HTML>
-  <HEAD>
-    <TITLE>Invoice event errors</TITLE>
+<%= include(
+      '/elements/header.html',
+      ( $cgi->param('failed') ? 'Failed invoice events' : 'invoice events' ),
+      include('/elements/menubar.html',
+                'Main menu' => $p, # popurl(2),
+             ),
+
+    )
+%>
     <LINK REL="stylesheet" TYPE="text/css" HREF="../elements/calendar-win2k-2.css" TITLE="win2k-2">
     <SCRIPT TYPE="text/javascript" SRC="../elements/calendar_stripped.js"></SCRIPT>
     <SCRIPT TYPE="text/javascript" SRC="../elements/calendar-en.js"></SCRIPT>
     <SCRIPT TYPE="text/javascript" SRC="../elements/calendar-setup.js"></SCRIPT>
-  </HEAD>
-  <BODY BGCOLOR="#e8e8e8">
-    <H1>Invoice event errors</H1>
+
     <FORM ACTION="cust_bill_event.cgi" METHOD="GET">
+    <INPUT TYPE="hidden" NAME="failed" VALUE="<%= $cgi->param('failed') %>">
     <TABLE>
       <!--<TR>
         <TD ALIGN="right">Customer type</TD>
@@ -51,4 +56,3 @@
     </FORM>
   </BODY>
 </HTML>
-
