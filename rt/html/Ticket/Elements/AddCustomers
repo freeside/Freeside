@@ -35,7 +35,6 @@ my $freeside_url = &RT::URI::freeside::FreesideURL();
 my @Customers = ();
 if ( $CustomerString ) {
     @Customers = &RT::URI::freeside::smart_search( 'search' => $CustomerString );
-    warn scalar(@Customers);
 }
 
 my @Services = ();
