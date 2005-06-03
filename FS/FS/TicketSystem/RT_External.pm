@@ -180,7 +180,7 @@ sub _href_customer_tickets {
 
 sub href_customer_tickets {
   my $self = shift;
-  $self->baseurl(). $self->_href_customer_tickets(@_);
+  $self->baseurl. $self->_href_customer_tickets(@_);
 }
 
 
@@ -196,7 +196,7 @@ sub _href_new_ticket {
 
 sub href_new_ticket {
   my $self = shift;
-  baseurl(). $self->_href_new_ticket(@_);
+  $self->baseurl. $self->_href_new_ticket(@_);
 }
 
 sub _href_ticket {
@@ -206,7 +206,7 @@ sub _href_ticket {
 
 sub href_ticket {
   my $self = shift;
-  baseurl(). $self->_href_ticket(@_);
+  $self->baseurl. $self->_href_ticket(@_);
 }
 
 sub baseurl {
