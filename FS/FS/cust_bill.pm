@@ -568,13 +568,13 @@ sub send {
 
   my @invoicing_list = $self->cust_main->invoicing_list;
 
-  $self->send_email($template, $invoice_from)
+  $self->email($template, $invoice_from)
     if grep { $_ !~ /^(POST|FAX)$/ } @invoicing_list or !@invoicing_list;
 
-  $self->send_print($template)
+  $self->print($template)
     if grep { $_ eq 'POST' } @invoicing_list; #postal
 
-  $self->send_fax($template)
+  $self->fax($template)
     if grep { $_ eq 'FAX' } @invoicing_list; #fax
 
   '';
