@@ -69,6 +69,9 @@ FS::UID->install_callback( sub {
 
 sub send_email {
   my(%options) = @_;
+  warn "FS::Misc::send_email called with options:\n  ".
+       join("\n", map { "  $_: ". $options{$_} } keys %options ). "\n"
+    if $DEBUG;
 
   $ENV{MAILADDRESS} = $options{'from'};
   my $to = ref($options{to}) ? join(', ', @{ $options{to} } ) : $options{to};
@@ -122,6 +125,8 @@ sub send_email {
   if ( $options{'from'} =~ /\@([\w\.\-]+)/ ) {
     $domain = $1;
   } else {
+    warn 'no domain found in invoice from address '. $options{'from'}.
+         '; constructing Message-ID @example.com'; 
     $domain = 'example.com';
   }
   my $message_id = join('.', rand()*(2**32), $$, time). "\@$domain";
