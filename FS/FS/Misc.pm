@@ -118,8 +118,13 @@ sub send_email {
 
   }
 
-  $options{'from'} =~ /\@([\w\.\-]+)/ or $1 = 'example.com';
-  my $message_id = join('.', rand()*(2**32), $$, time). "\@$1";
+  my $domain;
+  if ( $options{'from'} =~ /\@([\w\.\-]+)/ ) {
+    $domain = $1;
+  } else {
+    $domain = 'example.com';
+  }
+  my $message_id = join('.', rand()*(2**32), $$, time). "\@$domain";
 
   my $message = MIME::Entity->build(
     'From'       => $options{'from'},
