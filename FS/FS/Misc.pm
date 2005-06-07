@@ -4,6 +4,7 @@ use strict;
 use vars qw ( @ISA @EXPORT_OK $DEBUG );
 use Exporter;
 use Carp;
+use Data::Dumper;
 
 @ISA = qw( Exporter );
 @EXPORT_OK = qw( send_email send_fax );
@@ -69,9 +70,12 @@ FS::UID->install_callback( sub {
 
 sub send_email {
   my(%options) = @_;
-  warn "FS::Misc::send_email called with options:\n  ".
-       join("\n", map { "  $_: ". $options{$_} } keys %options ). "\n"
-    if $DEBUG;
+  if ( $DEBUG ) {
+    my %doptions = %options;
+    $doptions{'body'} = '(full body not shown in debug)';
+    warn "FS::Misc::send_email called with options:\n  ". Dumper(\%doptions);
+#         join("\n", map { "  $_: ". $options{$_} } keys %options ). "\n"
+  }
 
   $ENV{MAILADDRESS} = $options{'from'};
   my $to = ref($options{to}) ? join(', ', @{ $options{to} } ) : $options{to};
