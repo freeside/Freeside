@@ -37,7 +37,6 @@ use FS::svc_www;
 @ISA = qw( FS::svc_Common );
 
 $DEBUG = 0;
-#$DEBUG = 1;
 $me = '[FS::svc_acct]';
 
 #ask FS::UID to run this stuff for us later
@@ -1117,12 +1116,45 @@ sub acct_snarf {
 
 =item decrement_seconds SECONDS
 
-Decrements the I<seconds> field of this record by the given amount.
+Decrements the I<seconds> field of this record by the given amount.  If there
+is an error, returns the error, otherwise returns false.
 
 =cut
 
 sub decrement_seconds {
-  my( $self, $seconds ) = @_;
+  shift->_op_seconds('-', @_);
+}
+
+=item increment_seconds SECONDS
+
+Increments the I<seconds> field of this record by the given amount.  If there
+is an error, returns the error, otherwise returns false.
+
+=cut
+
+sub increment_seconds {
+  shift->_op_seconds('+', @_);
+}
+
+
+my %op2action = (
+  '-' => 'suspend',
+  '+' => 'unsuspend',
+);
+my %op2condition = (
+  '-' => sub { my($self, $seconds) = @_;
+               $self->seconds - $seconds <= 0;
+             },
+  '+' => sub { my($self, $seconds) = @_;
+               $self->seconds + $seconds > 0;
+             },
+);
+
+sub _op_seconds {
+  my( $self, $op, $seconds ) = @_;
+  warn "$me _op_seconds called for svcnum ". $self->svcnum.
+       ' ('. $self->email. "): $op $seconds\n"
+    if $DEBUG;
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -1134,21 +1166,40 @@ sub decrement_seconds {
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
-  
-  my $sth = dbh->prepare(
-    'UPDATE svc_acct SET seconds = seconds - ? WHERE svcnum = ?'
-  ) or die dbh->errstr;;
-  $sth->execute($seconds, $self->svcnum) or die $sth->errstr;
-  if ( $conf->exists('svc_acct-usage_suspend')
-       && $self->seconds - $seconds <= 0       ) {
-    #my $error = $self->suspend;
-    my $error = $self->cust_svc->cust_pkg->suspend;
-    die $error if $error;
+
+  my $sql = "UPDATE svc_acct SET seconds = ".
+            " CASE WHEN seconds IS NULL THEN 0 ELSE seconds END ". #$seconds||0
+            " $op ? WHERE svcnum = ?";
+  warn "$me $sql\n"
+    if $DEBUG;
+
+  my $sth = $dbh->prepare( $sql )
+    or die "Error preparing $sql: ". $dbh->errstr;
+  my $rv = $sth->execute($seconds, $self->svcnum);
+  die "Error executing $sql: ". $sth->errstr
+    unless defined($rv);
+  die "Can't update seconds for svcnum". $self->svcnum
+    if $rv == 0;
+
+  my $action = $op2action{$op};
+
+  if ( $conf->exists("svc_acct-usage_$action")
+       && &{$op2condition{$op}}($self, $seconds)    ) {
+    #my $error = $self->$action();
+    my $error = $self->cust_svc->cust_pkg->$action();
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "Error ${action}ing: $error";
+    }
   }
 
+  warn "$me update sucessful; committing\n"
+    if $DEBUG;
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  '';
 
 }
+
 
 =item seconds_since TIMESTAMP
 

@@ -1,13 +1,89 @@
 <%= $url = "$selfurl?session=$session_id;action="; ''; %>
+<TABLE BORDER=0><TR>
 <TD VALIGN="top" HEIGHT=384 BGCOLOR="#dddddd">
 
-<A HREF="<%= $url %>myaccount">Overview</A><BR><BR>
-<!--A HREF="<%= $url %>change_bill"-->Change&nbsp;payment&nbsp;info</A>&nbsp;*<BR><BR>
-<!--A HREF="<%= $url %>change_ship"-->Change&nbsp;service&nbsp;address</A>&nbsp;*<BR><BR>
-<A HREF="<%= $url %>provision">Setup&nbsp;my&nbsp;services</A><BR><BR>
-<!--A HREF="<%= $url %>order"-->Purchase&nbsp;additional&nbsp;package</A>&nbsp;*<BR><BR>
-<!--<A HREF="<%= $url %>pw_list">Change&nbsp;password(s)</A>&nbsp;*<BR><BR>-->
-<A HREF="passwd.html">Change&nbsp;password(s)</A><BR><BR>
-<A HREF="<%= $url %>logout">Logout</A><BR><BR>
+<TABLE CELLSPACING=0 BORDER=0>
+
+<%= 
+
+my @menu = (
+{ title=>' ' },
+{ title=>'Overview', url=>'myaccount', size=>'+1', },
+{ title=>' ' },
+
+{ title=>'Purchase', size=>'+1', },
+  { title=>'Purchase additional package*', url=>'order', 'indent'=>2 },
+);
+
+if ( 1 ) { #XXXFIXME "enable selfservice prepay features" flag or something, eventually per-pkg or something really fancy
+
+  push @menu, (
+    { title=>'Recharge my account with a credit card',
+      url=>'make_payment', indent=>2 },
+    { title=>'Recharge my account with a prepaid card',
+      url=>'recharge_prepay', indent=>2 },
+  );
+
+}
+
+push @menu, (
+
+{ title=>' ' },
+
+{ title=>'Setup my services', url=>'provision', size=>'+1', },
+
+{ title=>' ' },
+
+{ title=>'Change my information', size=>'+1', },
+  { title=>'Change payment information*', url=>'change_bill', indent=>2 },
+  { title=>'Change service address*',     url=>'change_ship', indent=>2 },
+  { title=>'Change password(s)*',         url=>'hmmmFIXME',   indent=>2 },
+
+{ title=>' ' },
+
+{ title=>'Logout',   url=>'logout', size=>'+1', },
+
+);
+
+foreach my $item ( @menu ) {
+
+  $OUT .= '<TR><TD'; 
+  if ( exists $item->{'url'} && $action eq $item->{'url'} ) {
+    $OUT .= ' BGCOLOR="#eeeeee" '.
+            ' STYLE="border-top: 1px solid black;'.
+                   ' border-left: 1px solid black;'.
+                   ' border-bottom: 1px solid black"';
+  } else {
+    $OUT .= ' STYLE="border-right: 1px solid black"';
+  }
+  $OUT.='>';
+
+  $OUT .= '<FONT SIZE="'. $item->{'size'}. '">'
+    if exists $item->{'size'};
+
+  $OUT .= '&nbsp;' x $item->{'indent'}
+    if exists $item->{'indent'};
+
+  $OUT .= '<A HREF="'. $url. $item->{'url'}. '">'
+    if exists $item->{'url'} && $action ne $item->{'url'};
+
+  $item->{'title'} =~ s/ /&nbsp;/g;
+  $OUT .= $item->{'title'};
+
+  $OUT .= '</FONT>'
+    if exists $item->{'size'};
+
+  $OUT .= '</A>'
+    if exists $item->{'url'} && $action ne $item->{'url'};
+
+  $OUT .= '</TD></TR>';
+
+}
+
+%>
+
+</TABLE>
+
+<A HREF="passwd.html">(tempFIXME) Change&nbsp;password(s)</A><BR><BR>
 *&nbsp;coming&nbsp;soon
 </TD>

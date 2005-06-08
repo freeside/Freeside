@@ -1531,6 +1531,13 @@ httemplate/docs/config.html
     'type'        => 'checkbox',
   },
 
+  {
+    'key'         => 'svc_acct-usage_unsuspend',
+    'section'     => 'billing',
+    'description' => 'Unuspends the package an account belongs to when svc_acct.seconds is incremented from 0 or below to a positive value (accounts with an empty seconds value are ignored).  Typically used in conjunction with prepaid packages and freeside-sqlradius-radacctd.',
+    'type'        => 'checkbox',
+  },
+
 );
 
 1;

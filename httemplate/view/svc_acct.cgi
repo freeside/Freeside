@@ -283,6 +283,11 @@ foreach $attribute ( grep /^rc_/, $svc_acct->fields ) {
 print '<TR><TD ALIGN="right">RADIUS groups</TD><TD BGCOLOR="#ffffff">'.
       join('<BR>', $svc_acct->radius_groups). '</TD></TR>';
 
+if ( $svc_acct->seconds =~ /^\d+$/ ) {
+  print '<TR><TD ALIGN="right">Prepaid time</TD><TD BGCOLOR="#ffffff">'.
+        duration_exact($svc_acct->seconds). '</TD></TR>';
+}
+
 # Can this be abstracted further?  Maybe a library function like
 # widget('HTML', 'view', $svc_acct) ?  It would definitely make UI 
 # style management easier.

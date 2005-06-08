@@ -31,6 +31,7 @@ $socket .= '.'.$tag if defined $tag && length($tag);
   'cancel'               => 'MyAccount/cancel',        #add to ss cgi!
   'payment_info'         => 'MyAccount/payment_info',
   'process_payment'      => 'MyAccount/process_payment',
+  'process_prepay'       => 'MyAccount/process_prepay',
   'list_pkgs'            => 'MyAccount/list_pkgs',     #add to ss cgi!
   'order_pkg'            => 'MyAccount/order_pkg',     #add to ss cgi!
   'cancel_pkg'           => 'MyAccount/cancel_pkg',    #add to ss cgi!

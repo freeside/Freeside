@@ -1,7 +1,7 @@
 package FS::cust_main;
 
 use strict;
-use vars qw( @ISA @EXPORT_OK $DEBUG $conf @encrypted_fields
+use vars qw( @ISA @EXPORT_OK $DEBUG $me $conf @encrypted_fields
              $import $skip_fuzzyfiles );
 use vars qw( $realtime_bop_decline_quiet ); #ugh
 use Safe;
@@ -51,7 +51,7 @@ use FS::Msgcat qw(gettext);
 $realtime_bop_decline_quiet = 0;
 
 $DEBUG = 0;
-#$DEBUG = 1;
+$me = '[FS::cust_main]';
 
 $import = 0;
 $skip_fuzzyfiles = 0;
@@ -349,33 +349,21 @@ sub insert {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  my $prepay_credit = '';
-  my $seconds = 0;
+  my $prepay_identifier = '';
+  my( $amount, $seconds ) = ( 0, 0 );
   if ( $self->payby eq 'PREPAY' ) {
+
     $self->payby('BILL');
-    $prepay_credit = qsearchs(
-      'prepay_credit',
-      { 'identifier' => $self->payinfo },
-      '',
-      'FOR UPDATE'
-    );
-    unless ( $prepay_credit ) {
-      $dbh->rollback if $oldAutoCommit;
-      return "Invalid prepaid card: ". $self->payinfo;
-    }
-    $seconds = $prepay_credit->seconds;
-    if ( $prepay_credit->agentnum ) {
-      if ( $self->agentnum && $self->agentnum != $prepay_credit->agentnum ) {
-        $dbh->rollback if $oldAutoCommit;
-        return "prepaid card not valid for agent ". $self->agentnum;
-      }
-      $self->agentnum($prepay_credit->agentnum);
-    }
-    my $error = $prepay_credit->delete;
+    $prepay_identifier = $self->payinfo;
+    $self->payinfo('');
+
+    my $error = $self->get_prepay($prepay_identifier, \$amount, \$seconds);
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
-      return "removing prepay_credit (transaction rolled back): $error";
+      #return "error applying prepaid card (transaction rolled back): $error";
+      return $error;
     }
+
   }
 
   my $error = $self->SUPER::insert;
@@ -407,15 +395,8 @@ sub insert {
     return "No svc_acct record to apply pre-paid time";
   }
 
-  if ( $prepay_credit && $prepay_credit->amount ) {
-    my $cust_pay = new FS::cust_pay {
-      'custnum' => $self->custnum,
-      'paid'    => $prepay_credit->amount,
-      #'_date'   => #date the prepaid card was purchased???
-      'payby'   => 'PREP',
-      'payinfo' => $prepay_credit->identifier,
-    };
-    $error = $cust_pay->insert;
+  if ( $amount ) {
+    $error = $self->insert_prepay($amount, $prepay_identifier);
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return "inserting prepayment (transaction rolled back): $error";
@@ -524,6 +505,195 @@ sub order_pkgs {
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   ''; #no error
+}
+
+=item recharge_prepay IDENTIFIER | PREPAY_CREDIT_OBJ [ , AMOUNTREF, SECONDSREF ]
+
+Recharges this (existing) customer with the specified prepaid card (see
+L<FS::prepay_credit>), specified either by I<identifier> or as an
+FS::prepay_credit object.  If there is an error, returns the error, otherwise
+returns false.
+
+Optionally, two scalar references can be passed as well.  They will have their
+values filled in with the amount and number of seconds applied by this prepaid
+card.
+
+=cut
+
+sub recharge_prepay { 
+  my( $self, $prepay_credit, $amountref, $secondsref ) = @_;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my( $amount, $seconds ) = ( 0, 0 );
+
+  my $error = $self->get_prepay($prepay_credit, \$amount, \$seconds)
+           || $self->increment_seconds($seconds)
+           || $self->insert_cust_pay_prepay( $amount,
+                                             ref($prepay_credit)
+                                               ? $prepay_credit->identifier
+                                               : $prepay_credit
+                                           );
+
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  if ( defined($amountref)  ) { $$amountref  = $amount;  }
+  if ( defined($secondsref) ) { $$secondsref = $seconds; }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  '';
+
+}
+
+=item get_prepay IDENTIFIER | PREPAY_CREDIT_OBJ , AMOUNTREF, SECONDSREF
+
+Looks up and deletes a prepaid card (see L<FS::prepay_credit>),
+specified either by I<identifier> or as an FS::prepay_credit object.
+
+References to I<amount> and I<seconds> scalars should be passed as arguments
+and will be incremented by the values of the prepaid card.
+
+If the prepaid card specifies an I<agentnum> (see L<FS::agent>), it is used to
+check or set this customer's I<agentnum>.
+
+If there is an error, returns the error, otherwise returns false.
+
+=cut
+
+
+sub get_prepay {
+  my( $self, $prepay_credit, $amountref, $secondsref ) = @_;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  unless ( ref($prepay_credit) ) {
+
+    my $identifier = $prepay_credit;
+
+    $prepay_credit = qsearchs(
+      'prepay_credit',
+      { 'identifier' => $prepay_credit },
+      '',
+      'FOR UPDATE'
+    );
+
+    unless ( $prepay_credit ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "Invalid prepaid card: ". $identifier;
+    }
+
+  }
+
+  if ( $prepay_credit->agentnum ) {
+    if ( $self->agentnum && $self->agentnum != $prepay_credit->agentnum ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "prepaid card not valid for agent ". $self->agentnum;
+    }
+    $self->agentnum($prepay_credit->agentnum);
+  }
+
+  my $error = $prepay_credit->delete;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return "removing prepay_credit (transaction rolled back): $error";
+  }
+
+  $$amountref  += $prepay_credit->amount;
+  $$secondsref += $prepay_credit->seconds;
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  '';
+
+}
+
+=item increment_seconds SECONDS
+
+Updates this customer's single or primary account (see L<FS::svc_acct>) by
+the specified number of seconds.  If there is an error, returns the error,
+otherwise returns false.
+
+=cut
+
+sub increment_seconds {
+  my( $self, $seconds ) = @_;
+  warn "$me increment_seconds called: $seconds seconds\n"
+    if $DEBUG;
+
+  my @cust_pkg = grep { $_->part_pkg->svcpart('svc_acct') }
+                      $self->ncancelled_pkgs;
+
+  if ( ! @cust_pkg ) {
+    return 'No packages with primary or single services found'.
+           ' to apply pre-paid time';
+  } elsif ( scalar(@cust_pkg) > 1 ) {
+    #maybe have a way to specify the package/account?
+    return 'Multiple packages found to apply pre-paid time';
+  }
+
+  my $cust_pkg = $cust_pkg[0];
+  warn "  found package pkgnum ". $cust_pkg->pkgnum. "\n"
+    if $DEBUG;
+
+  my @cust_svc =
+    $cust_pkg->cust_svc( $cust_pkg->part_pkg->svcpart('svc_acct') );
+
+  if ( ! @cust_svc ) {
+    return 'No account found to apply pre-paid time';
+  } elsif ( scalar(@cust_svc) > 1 ) {
+    return 'Multiple accounts found to apply pre-paid time';
+  }
+  
+  my $svc_acct = $cust_svc[0]->svc_x;
+  warn "  found service svcnum ". $svc_acct->pkgnum.
+       ' ('. $svc_acct->email. ")\n"
+    if $DEBUG;
+
+  $svc_acct->increment_seconds($seconds);
+
+}
+
+=item insert_cust_pay_prepay AMOUNT [ PAYINFO ]
+
+Inserts a prepayment in the specified amount for this customer.  An optional
+second argument can specify the prepayment identifier for tracking purposes.
+If there is an error, returns the error, otherwise returns false.
+
+=cut
+
+sub insert_cust_pay_prepay {
+  my( $self, $amount ) = splice(@_, 0, 2);
+  my $payinfo = scalar(@_) ? shift : '';
+
+  my $cust_pay = new FS::cust_pay {
+    'custnum' => $self->custnum,
+    'paid'    => $amount,
+    #'_date'   => #date the prepaid card was purchased???
+    'payby'   => 'PREP',
+    'payinfo' => $payinfo,
+  };
+  $cust_pay->insert;
+
 }
 
 =item reexport

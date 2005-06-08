@@ -6,6 +6,7 @@ use subs qw(_cache);
 use Digest::MD5 qw(md5_hex);
 use Date::Format;
 use Business::CreditCard;
+use Time::Duration;
 use FS::CGI qw(small_custview); #doh
 use FS::Conf;
 use FS::Record qw(qsearch qsearchs);
@@ -135,11 +136,15 @@ sub customer_info {
     $return{'postal_invoicing'} =
       0 < ( grep { $_ eq 'POST' } $cust_main->invoicing_list );
 
-  } else { #no customer record
+  } elsif ( $session->{'svcnum'} ) { #no customer record
 
     my $svc_acct = qsearchs('svc_acct', { 'svcnum' => $session->{'svcnum'} } )
       or die "unknown svcnum";
     $return{name} = $svc_acct->email;
+
+  } else {
+
+    return { 'error' => 'Expired session' }; #XXX redirect to login w/this err!
 
   }
 
@@ -354,6 +359,36 @@ sub process_payment {
   }
 
   return { 'error' => '' };
+
+}
+
+sub process_prepay {
+
+  my $p = shift;
+
+  my $session = _cache->get($p->{'session_id'})
+    or return { 'error' => "Can't resume session" }; #better error message
+
+  my %return;
+
+  my $custnum = $session->{'custnum'};
+
+  my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
+    or return { 'error' => "unknown custnum $custnum" };
+
+  my( $amount, $seconds ) = ( 0, 0 );
+  my $error = $cust_main->recharge_prepay( $p->{'prepaid_cardnum'},
+                                           \$amount,
+                                           \$seconds
+                                         );
+
+  return { 'error' => $error } if $error;
+
+  return { 'error'    => '',
+           'amount'   => $amount,
+           'seconds'  => $seconds,
+           'duration' => duration_exact($seconds),
+         };
 
 }
 

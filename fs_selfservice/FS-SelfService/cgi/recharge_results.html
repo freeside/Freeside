@@ -1,0 +1,24 @@
+<HTML><HEAD><TITLE>MyAccount</TITLE></HEAD>
+<BODY BGCOLOR="#eeeeee"><FONT SIZE=5>MyAccount</FONT><BR><BR>
+<%= $url = "$selfurl?session=$session_id;action="; ''; %>
+<%= include('myaccount_menu') %>
+<TD VALIGN="top">
+<FONT SIZE=4>Recharge results</FONT><BR><BR>
+<%= if ( $error ) {
+  $OUT .= qq!<FONT SIZE="+1" COLOR="#ff0000">Error processing your prepaid card: $error</FONT>!;
+} else {
+  $OUT .= 'Prepaid card recharge sucessful!<BR><BR>';
+
+  $OUT .= '$'. sprintf('%.2f', $amount). ' added to your account.<BR><BR>'
+    if $amount;
+
+  $OUT .= $duration. ' added to your account.<BR><BR>'
+    if $seconds;
+
+  $OUT .= 'Thank you.';
+} %>
+</TD></TR></TABLE>
+<HR>
+<FONT SIZE="-2">powered by <a href="http://www.sisd.com/freeside">freeside</a></FONT>
+</BODY></HTML>
+

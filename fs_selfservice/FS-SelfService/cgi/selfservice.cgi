@@ -9,6 +9,7 @@ use Text::Template;
 use HTML::Entities;
 use FS::SelfService qw( login customer_info invoice
                         payment_info process_payment 
+                        process_prepay
                         list_pkgs
                         part_svc_info provision_acct provision_external
                         unprovision_svc
@@ -61,7 +62,7 @@ $session_id = $cgi->param('session');
 
 #order|pw_list XXX ???
 $cgi->param('action') =~
-    /^(myaccount|view_invoice|make_payment|payment_results|logout|change_bill|change_ship|provision|provision_svc|process_svc_acct|process_svc_external|delete_svc)$/
+    /^(myaccount|view_invoice|make_payment|payment_results|recharge_prepay|recharge_results|logout|change_bill|change_ship|provision|provision_svc|process_svc_acct|process_svc_external|delete_svc)$/
   or die "unknown action ". $cgi->param('action');
 my $action = $1;
 
@@ -79,6 +80,7 @@ if ( $result->{error} eq "Can't resume session" ) { #ick
 warn "processing template $action\n";
 do_template($action, {
   'session_id' => $session_id,
+  'action'     => $action, #so the menu knows what tab we're on...
   %{$result}
 });
 
@@ -171,6 +173,22 @@ sub payment_results {
     'paybatch'   => $paybatch,
   );
 
+}
+
+sub recharge_prepay {
+  customer_info( 'session_id' => $session_id );
+}
+
+sub recharge_results {
+
+  my $prepaid_cardnum = $cgi->param('prepaid_cardnum');
+  $prepaid_cardnum =~ s/\W//g;
+  $prepaid_cardnum =~ /^(\w*)$/ or die "illegal prepaid card number";
+  $prepaid_cardnum = $1;
+
+  process_prepay ( 'session_id'     => $session_id,
+                   'prepaid_cardnum' => $prepaid_cardnum,
+                 );
 }
 
 sub logout {
