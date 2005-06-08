@@ -40,7 +40,7 @@ supported:
 
 =item invnum - invoice (see L<FS::cust_bill>)
 
-=item pkgnum - package (see L<FS::cust_pkg>) or 0 for the special virtual sales tax package
+=item pkgnum - package (see L<FS::cust_pkg>) or 0 for the special virtual sales tax package, or -1 for the virtual line item (itemdesc is used for the line)
 
 =item setup - setup fee
 
@@ -50,7 +50,7 @@ supported:
 
 =item edate - ending date of recurring fee
 
-=item itemdesc - Line item description (currentlty used only when pkgnum is 0)
+=item itemdesc - Line item description (currentlty used only when pkgnum is 0 or -1)
 
 =back
 
@@ -156,7 +156,7 @@ sub check {
 
   my $error =
          $self->ut_numbern('billpkgnum')
-      || $self->ut_number('pkgnum')
+      || $self->ut_snumber('pkgnum')
       || $self->ut_number('invnum')
       || $self->ut_money('setup')
       || $self->ut_money('recur')
@@ -166,7 +166,8 @@ sub check {
   ;
   return $error if $error;
 
-  if ( $self->pkgnum != 0 ) { #allow unchecked pkgnum 0 for tax! (add to part_pkg?)
+  #if ( $self->pkgnum != 0 ) { #allow unchecked pkgnum 0 for tax! (add to part_pkg?)
+  if ( $self->pkgnum > 0 ) { #allow -1 for non-pkg line items and 0 for tax (add to part_pkg?)
     return "Unknown pkgnum ". $self->pkgnum
       unless qsearchs( 'cust_pkg', { 'pkgnum' => $self->pkgnum } );
   }
