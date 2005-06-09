@@ -126,7 +126,7 @@ sub check {
 
       or $c =~ /^\s*\$cust_bill\->(comp|realtime_(card|ach|lec)|batch_card|send)\(\);\s*$/
 
-      or $c =~ /^\s*\$cust_bill\->send(_if_newest)?\(\'[\w\-\s]+\'\s*(,\s*\d+\s*,\s*'[\w\@\.\-\+]*'\s*)?\);\s*$/
+      or $c =~ /^\s*\$cust_bill\->send(_if_newest)?\(\'[\w\-\s]+\'\s*(,\s*(\d+|\[\s*\d+(,\s*\d+)*\s*\])\s*,\s*'[\w\@\.\-\+]*'\s*)?\);\s*$/
 
       or $c =~ /^\s*\$cust_main\->apply_payments; \$cust_main->apply_credits; "";\s*$/
 

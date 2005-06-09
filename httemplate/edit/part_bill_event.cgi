@@ -83,11 +83,12 @@ sub select_pkgpart {
 
 sub select_agentnum {
   my $plandata = shift;
-  my $agentnum = $plandata->{'agentnum'};
-  '<SELECT NAME="agentnum">'.
+  #my $agentnum = $plandata->{'agentnum'};
+  my %agentnums = map { $_=>1 } split(/,\s*/, $plandata->{'agentnum'});
+  '<SELECT NAME="agentnum" MULTIPLE>'.
   join("\n", map {
     '<OPTION VALUE="'. $_->agentnum. '"'.
-    ( $_->agentnum == $agentnum ? ' SELECTED' : '' ).
+    ( $agentnums{$_->agentnum} ? ' SELECTED' : '' ).
     '>'. $_->agent
   } qsearch('agent', { 'disabled' => '' } ) ).
   '</SELECT>';
@@ -187,11 +188,11 @@ tie my %events, 'Tie::IxHash',
 
   'send_agent' => {
     'name' => 'Send invoice (email/print) ',
-    'code' => '$cust_bill->send(\'%%%agent_templatename%%%\', %%%agentnum%%%, \'%%%agent_invoice_from%%%\');',
+    'code' => '$cust_bill->send(\'%%%agent_templatename%%%\', [ %%%agentnum%%% ], \'%%%agent_invoice_from%%%\');',
     'html' => sub {
         '<TABLE BORDER=0>
           <TR>
-            <TD ALIGN="right">only for agent </TD>
+            <TD ALIGN="right">only for agent(s) </TD>
             <TD>'. &select_agentnum(@_). '</TD>
           </TR>
           <TR>

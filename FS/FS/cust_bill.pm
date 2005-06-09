@@ -550,7 +550,8 @@ emails or print.  See L<FS::cust_main_invoice>.
 TEMPLATENAME, if specified, is the name of a suffix for alternate invoices.
 
 AGENTNUM, if specified, means that this invoice will only be sent for customers
-of the specified agent.
+of the specified agent or agent(s).  AGENTNUM can be a scalar agentnum (for a
+single agent) or an arrayref of agentnums.
 
 INVOICE_FROM, if specified, overrides the default email invoice From: address.
 
@@ -559,7 +560,10 @@ INVOICE_FROM, if specified, overrides the default email invoice From: address.
 sub send {
   my $self = shift;
   my $template = scalar(@_) ? shift : '';
-  return 'N/A' if scalar(@_) && $_[0] && $self->cust_main->agentnum != shift;
+  if ( scalar(@_) && $_[0]  ) {
+    my $agentnums = ref($_[0]) ? shift : [ shift ];
+    return 'N/A' unless grep { $_ == $self->cust_main->agentnum } @$agentnums;
+  }
 
   my $invoice_from =
     scalar(@_)
