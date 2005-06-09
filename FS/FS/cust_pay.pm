@@ -1,7 +1,7 @@
 package FS::cust_pay;
 
 use strict;
-use vars qw( @ISA $conf $unsuspendauto );
+use vars qw( @ISA $conf $unsuspendauto $ignore_noapply );
 use Date::Format;
 use Business::CreditCard;
 use Text::Template;
@@ -14,6 +14,8 @@ use FS::cust_main;
 use FS::cust_pay_void;
 
 @ISA = qw( FS::Record );
+
+$ignore_noapply = 0;
 
 #ask FS::UID to run this stuff for us later
 FS::UID->install_callback( sub { 
@@ -134,8 +136,13 @@ sub insert {
     };
     $error = $cust_bill_pay->insert;
     if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return "error inserting $cust_bill_pay: $error";
+      if ( $ignore_noapply ) {
+        warn "warning: error inserting $cust_bill_pay: $error ".
+             "(ignore_noapply flag set; inserting cust_pay record anyway)\n";
+      } else {
+        $dbh->rollback if $oldAutoCommit;
+        return "error inserting $cust_bill_pay: $error";
+      }
     }
   }
 
