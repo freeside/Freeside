@@ -1,12 +1,9 @@
 <%
 
-##untaint invnum
-#my($query) = $cgi->keywords;
-#$query =~ /^((.+)-)?(\d+)$/;
-#my $templatename = $2;
-#my $invnum = $3;
-
-my $templatename = '';
+my($query) = $cgi->keywords;
+$query =~ /^([^\.\/]*)$/;
+my $templatename = $1;
+$templatename = "_$templatename" if $templatename;
 
 my $conf = new FS::Conf;
 http_header('Content-Type' => 'image/png' );

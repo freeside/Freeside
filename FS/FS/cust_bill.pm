@@ -414,10 +414,18 @@ sub generate_email {
     $args{'from'} =~ /\@([\w\.\-]+)/ or $1 = 'example.com';
     my $content_id = join('.', rand()*(2**32), $$, time). "\@$1";
 
+    my $path = "$FS::UID::conf_dir/conf.$FS::UID::datasrc";
+    my $file;
+    if ( [ -e "$path/logo_". $args{'_template'}. ".png" ] ) {
+      $file = "$path/logo_". $args{'_template'}. ".png";
+    } else {
+      $file = "$path/logo.png";
+    }
+
     my $image = build MIME::Entity
       'Type'       => 'image/png',
       'Encoding'   => 'base64',
-      'Path'       => "$FS::UID::conf_dir/conf.$FS::UID::datasrc/logo.png",
+      'Path'       => $file,
       'Filename'   => 'logo.png',
       'Content-ID' => "<$content_id>",
     ;
@@ -1760,6 +1768,7 @@ sub print_html {
     'terms'        => $conf->config('invoice_default_terms')
                       || 'Payable upon receipt',
     'cid'          => $cid,
+    'template'     => $template,
 #    'conf_dir'     => "$FS::UID::conf_dir/conf.$FS::UID::datasrc",
   );
 
