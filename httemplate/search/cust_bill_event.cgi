@@ -47,7 +47,7 @@ my $html_init = join("\n", map {
   include('/elements/progress-init.html',
             $_.'form',
             [ 'action', 'beginning', 'ending', 'failed' ],
-            "../misc/${_}invoices.cgi",
+            "../misc/${_}invoice_events.cgi",
             { 'message' => "Invoices re-${action}ed" }, #would be nice to show the number of them, but...
             $_, #key
          ),

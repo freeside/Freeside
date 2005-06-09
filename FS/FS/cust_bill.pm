@@ -2114,6 +2114,98 @@ sub _items_payments {
 
 =back
 
+=head1 SUBROUTINES
+
+=over 4
+
+=item reprint
+
+=cut
+
+sub process_reprint {
+  process_re_X('print', @_);
+}
+
+=item reemail
+
+=cut
+
+sub process_reemail {
+  process_re_X('email', @_);
+}
+
+=item refax
+
+=cut
+
+sub process_refax {
+  process_re_X('fax', @_);
+}
+
+use Storable qw(thaw);
+use Data::Dumper;
+use MIME::Base64;
+sub process_re_X {
+  my( $method, $job ) = ( shift, shift );
+
+  my $param = thaw(decode_base64(shift));
+  warn Dumper($param) if $DEBUG;
+
+  re_X(
+    $method,
+    $param->{'beginning'},
+    $param->{'ending'},
+    $param->{'failed'},
+    $job,
+  );
+
+}
+
+sub re_X {
+  my($method, $beginning, $ending, $failed, $job) = @_;
+
+  my $where = " WHERE plan LIKE 'send%'".
+              "   AND cust_bill_event._date >= $beginning".
+              "   AND cust_bill_event._date <= $ending";
+  $where .= " AND statustext != '' AND statustext IS NOT NULL"
+    if $failed;
+
+  my $from = 'LEFT JOIN part_bill_event USING ( eventpart )';
+
+  my @cust_bill_event = qsearch( 'cust_bill_event', {}, '', $where, '', $from );
+
+  my( $num, $last, $min_sec ) = (0, time, 5); #progresbar foo
+  foreach my $cust_bill_event ( @cust_bill_event ) {
+
+    $cust_bill_event->cust_bill->$method(
+      $cust_bill_event->part_bill_event->templatename
+    );
+
+    if ( $job ) { #progressbar foo
+      $num++;
+      if ( time - $min_sec > $last ) {
+        my $error = $job->update_statustext(
+          int( 100 * $num / scalar(@cust_bill_event) )
+        );
+        die $error if $error;
+        $last = time;
+      }
+    }
+
+  }
+
+  #this doesn't work, but it would be nice
+  #if ( $job ) { #progressbar foo
+  #  my $error = $job->update_statustext(
+  #    scalar(@cust_bill_event). " invoices re-${method}ed"
+  #  );
+  #  die $error if $error;
+  #}
+
+}
+
+=back
+
 =head1 BUGS
 
 The delete method.
