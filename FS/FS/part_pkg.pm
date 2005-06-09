@@ -648,6 +648,7 @@ sub _rebless {
       if $DEBUG;
     return $self;
   }
+  return $self if ref($self) =~ /::$plan$/; #already blessed into plan subclass
   my $class = ref($self). "::$plan";
   warn "reblessing $self into $class" if $DEBUG;
   eval "use $class;";
