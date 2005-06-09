@@ -258,8 +258,8 @@ sub part_svc {
 
 =item cust_pkg
 
-Returns the definition for this service, as a FS::part_svc object (see
-L<FS::part_svc>).
+Returns the package this service belongs to, as a FS::cust_pkg object (see
+L<FS::cust_pkg>).
 
 =cut
 
