@@ -1336,11 +1336,10 @@ sub print_latex {
   }
 
   my $returnaddress;
-  if ( $conf->exists('invoice_latexreturnaddress')
-       && length($conf->exists('invoice_latexreturnaddress'))
-     )
-  {
-    $returnaddress = join("\n", $conf->config('invoice_latexreturnaddress') );
+  if ( length($conf->config_orbase('invoice_latexreturnaddress', $template) ) {
+    $returnaddress = join("\n",
+      $conf->config_orbase('invoice_latexreturnaddress', $template)
+    );
   } else {
     $returnaddress = '~';
   }
@@ -1762,16 +1761,17 @@ sub print_html {
 #    'conf_dir'     => "$FS::UID::conf_dir/conf.$FS::UID::datasrc",
   );
 
-  $invoice_data{'returnaddress'} = $conf->exists('invoice_htmlreturnaddress')
-    ? join("\n", $conf->config('invoice_htmlreturnaddress') )
-    : join("\n", map { 
-                       s/~/&nbsp;/g;
-                       s/\\\\\*?\s*$/<BR>/;
-                       s/\\hyphenation\{[\w\s\-]+\}//;
-                       $_;
-                     }
-                     $conf->config('invoice_latexreturnaddress')
-          );
+  $invoice_data{'returnaddress'} =
+    length( $conf->config_orbase('invoice_htmlreturnaddress', $template) )
+      ? join("\n", $conf->config('invoice_htmlreturnaddress', $template) )
+      : join("\n", map { 
+                         s/~/&nbsp;/g;
+                         s/\\\\\*?\s*$/<BR>/;
+                         s/\\hyphenation\{[\w\s\-]+\}//;
+                         $_;
+                       }
+                       $conf->config_orbase('invoice_latexreturnaddress', $template)
+            );
 
   my $countrydefault = $conf->config('countrydefault') || 'US';
   if ( $cust_main->country eq $countrydefault ) {
