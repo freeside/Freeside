@@ -1336,7 +1336,7 @@ sub print_latex {
   }
 
   my $returnaddress;
-  if ( length($conf->config_orbase('invoice_latexreturnaddress', $template) ) {
+  if ( length($conf->config_orbase('invoice_latexreturnaddress', $template)) ) {
     $returnaddress = join("\n",
       $conf->config_orbase('invoice_latexreturnaddress', $template)
     );
