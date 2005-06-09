@@ -1358,8 +1358,8 @@ sub print_latex {
     'city'         => _latex_escape($cust_main->city),
     'state'        => _latex_escape($cust_main->state),
     'zip'          => _latex_escape($cust_main->zip),
-    'footer'       => join("\n", $conf->config('invoice_latexfooter') ),
-    'smallfooter'  => join("\n", $conf->config('invoice_latexsmallfooter') ),
+    'footer'       => join("\n", $conf->config_orbase('invoice_latexfooter', $template) ),
+    'smallfooter'  => join("\n", $conf->config_orbase('invoice_latexsmallfooter', $template) ),
     'returnaddress' => $returnaddress,
     'quantity'     => 1,
     'terms'        => $conf->config('invoice_default_terms') || 'Payable upon receipt',
@@ -1805,11 +1805,12 @@ sub print_html {
 #        $conf->config_orbase('invoice_latexnotes', $suffix)
 #    );
 
-   $invoice_data{'footer'} = $conf->exists('invoice_htmlfooter')
-     ? join("\n", $conf->config('invoice_htmlfooter') )
-     : join("\n", map { s/~/&nbsp;/g; s/\\\\\*?\s*$/<BR>/; $_; }
-                      $conf->config('invoice_latexfooter')
-           );
+   $invoice_data{'footer'} =
+     length($conf->config_orbase('invoice_htmlfooter', $template))
+       ? join("\n", $conf->config_orbase('invoice_htmlfooter', $template) )
+       : join("\n", map { s/~/&nbsp;/g; s/\\\\\*?\s*$/<BR>/; $_; }
+                        $conf->config_orbase('invoice_latexfooter', $template)
+             );
 
   $invoice_data{'po_line'} =
     (  $cust_main->payby eq 'BILL' && $cust_main->payinfo )

@@ -158,7 +158,12 @@ sub check {
   if ( $self->plandata =~ /^(agent_)?templatename\s+(.*)$/m ) {
     my $name= $2;
 
-    foreach my $file (qw( template latex latexnotes html htmlnotes )) {
+    foreach my $file (qw( template
+                          latex latexnotes latexreturnaddress latexfooter
+                            latexsmallfooter
+                          html htmlnotes htmlreturnaddress htmlfooter
+                     ))
+    {
       unless ( $conf->exists("invoice_${file}_$name") ) {
         $conf->set(
           "invoice_${file}_$name" =>
