@@ -1017,9 +1017,9 @@ sub _agent_plandata {
       'plan'      => 'send_agent',
       'plandata'  => { 'op'    => '~',
                        'value' => "(^|\n)agentnum ".
-                                   '\[?[0-9 ,]*'.
-                                  '[ ,]'. $self->cust_main->agentnum. '[ ,]'.
-                                  '[0-9 ,]*\]?'.
+                                   '([0-9]*, )*'.
+                                  $self->cust_main->agentnum.
+                                   '(, [0-9]*)*'.
                                   "(\n|\$)",
                      },
     },
