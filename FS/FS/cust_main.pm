@@ -687,7 +687,7 @@ sub insert_cust_pay_prepay {
 
   my $cust_pay = new FS::cust_pay {
     'custnum' => $self->custnum,
-    'paid'    => $amount,
+    'paid'    => sprintf('%.2f', $amount),
     #'_date'   => #date the prepaid card was purchased???
     'payby'   => 'PREP',
     'payinfo' => $payinfo,
