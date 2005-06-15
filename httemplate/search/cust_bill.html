@@ -19,6 +19,7 @@
    #   )
    #{
 
+     #some false laziness w/cust_bill::re_X
      my @where;
      my $orderby = 'ORDER BY cust_bill._date';
 
@@ -118,7 +119,7 @@
     ( my $action = $_ ) =~ s/_$//;
     include('/elements/progress-init.html',
               $_.'form',
-              [ 'begin', 'end', 'agentnum', 'open', 'days' ],
+              [ 'begin', 'end', 'agentnum', 'open', 'days', 'newest_percust' ],
               "../misc/${_}invoices.cgi",
               { 'message' => "Invoices re-${action}ed" }, #would be nice to show the number of them, but...
               $_, #key

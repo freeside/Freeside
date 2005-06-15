@@ -2153,39 +2153,71 @@ sub process_re_X {
 
   re_X(
     $method,
-    $param->{'beginning'},
-    $param->{'ending'},
-    $param->{'failed'},
     $job,
+    %$param,
   );
 
 }
 
 sub re_X {
-  my($method, $beginning, $ending, $failed, $job) = @_;
+  my($method, $job, %param ) = @_;
+#              [ 'begin', 'end', 'agentnum', 'open', 'days', 'newest_percust' ],
 
-  my $where = " WHERE plan LIKE 'send%'".
-              "   AND cust_bill_event._date >= $beginning".
-              "   AND cust_bill_event._date <= $ending";
-  $where .= " AND statustext != '' AND statustext IS NOT NULL"
-    if $failed;
+  #some false laziness w/search/cust_bill.html
+  my $distinct = '';
+  my $orderby = 'ORDER BY cust_bill._date';
 
-  my $from = 'LEFT JOIN part_bill_event USING ( eventpart )';
+  my @where;
 
-  my @cust_bill_event = qsearch( 'cust_bill_event', {}, '', $where, '', $from );
+  if ( $param{'begin'} =~ /^(\d+)$/ ) {
+    push @where, "cust_bill._date >= $1";
+  }
+  if ( $param{'end'} =~ /^(\d+)$/ ) {
+    push @where, "cust_bill._date < $1";
+  }
+  if ( $param{'agentnum'} =~ /^(\d+)$/ ) {
+    push @where, "cust_main.agentnum = $1";
+  }
+
+  my $owed =
+    "charged - ( SELECT COALESCE(SUM(amount),0) FROM cust_bill_pay
+                 WHERE cust_bill_pay.invnum = cust_bill.invnum )
+             - ( SELECT COALESCE(SUM(amount),0) FROM cust_credit_bill
+                 WHERE cust_credit_bill.invnum = cust_bill.invnum )";
+
+  push @where, "0 != $owed"
+    if $param{'open'};
+
+  push @where, "cust_bill._date < ". (time-86400*$param{'days'})
+    if $param{'days'};
+
+  my $extra_sql = scalar(@where) ? 'WHERE '. join(' AND ', @where) : '';
+
+  my $addl_from = 'left join cust_main using ( custnum )';
+
+  if ( $param{'newest_percust'} ) {
+    $distinct = 'DISTINCT ON ( cust_bill.custnum )';
+    $orderby = 'ORDER BY cust_bill.custnum ASC, cust_bill._date DESC';
+    #$count_query = "SELECT COUNT(DISTINCT cust_bill.custnum), 'N/A', 'N/A'";
+  }
+     
+  my @cust_bill = qsearch( 'cust_bill',
+                           {},
+                           "$distinct cust_bill.*",
+                           $extra_sql,
+                           '',
+                           $addl_from
+                         );
 
   my( $num, $last, $min_sec ) = (0, time, 5); #progresbar foo
-  foreach my $cust_bill_event ( @cust_bill_event ) {
-
-    $cust_bill_event->cust_bill->$method(
-      $cust_bill_event->part_bill_event->templatename
-    );
+  foreach my $cust_bill ( @cust_bill ) {
+    $cust_bill->$method();
 
     if ( $job ) { #progressbar foo
       $num++;
       if ( time - $min_sec > $last ) {
         my $error = $job->update_statustext(
-          int( 100 * $num / scalar(@cust_bill_event) )
+          int( 100 * $num / scalar(@cust_bill) )
         );
         die $error if $error;
         $last = time;
@@ -2193,14 +2225,6 @@ sub re_X {
     }
 
   }
-
-  #this doesn't work, but it would be nice
-  #if ( $job ) { #progressbar foo
-  #  my $error = $job->update_statustext(
-  #    scalar(@cust_bill_event). " invoices re-${method}ed"
-  #  );
-  #  die $error if $error;
-  #}
 
 }
 
