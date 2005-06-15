@@ -3,6 +3,7 @@ package FS::cust_bill;
 use strict;
 use vars qw( @ISA $DEBUG $conf $money_char );
 use vars qw( $invoice_lines @buf ); #yuck
+use IPC::Run3;
 use Date::Format;
 use Text::Template 1.20;
 use File::Temp 0.14;
@@ -631,7 +632,7 @@ sub email {
 
 =item lpr_data [ TEMPLATENAME ]
 
-Returns the postscript or plaintext for this invoice.
+Returns the postscript or plaintext for this invoice as an arrayref.
 
 TEMPLATENAME, if specified, is the name of a suffix for alternate invoices.
 
@@ -657,12 +658,14 @@ sub print {
   my $template = scalar(@_) ? shift : '';
 
   my $lpr = $conf->config('lpr');
-  open(LPR, "|$lpr")
-    or die "Can't open pipe to $lpr: $!\n";
-  print LPR @{ $self->lpr_data($template) };
-  close LPR
-    or die $! ? "Error closing $lpr: $!\n"
-              : "Exit status $? from $lpr\n";
+
+  my $outerr = '';
+  run3 $lpr, $self->lpr_data($template), \$outerr, \$outerr;
+  if ( $? ) {
+    $outerr = ": $outerr" if length($outerr);
+    die "Error from $lpr (exit status ". ($?>>8). ")$outerr\n";
+  }
+
 }
 
 =item fax [ TEMPLATENAME ] 
