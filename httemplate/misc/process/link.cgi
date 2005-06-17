@@ -19,7 +19,7 @@ unless ( $svcnum ) {
     $search{$1} = $cgi->param('link_value2');
   }
 
-  my @svc_x = ( sort { ($b->cust_svc->pkgnum > 0) <=> ($a->cust_svc->pkgnum > 0)
+  my @svc_x = ( sort { ($a->cust_svc->pkgnum > 0) <=> ($b->cust_svc->pkgnum > 0)
                        or ($b->cust_svc->svcpart == $svcpart)
                             <=> ($a->cust_svc->svcpart == $svcpart)
                      }
@@ -31,7 +31,7 @@ unless ( $svcnum ) {
          "(svcpart $svcpart):\n";
     foreach my $svc_x ( @svc_x ) {
       warn "  ". $svc_x->email.
-           " (svcnum".  $svc_x->svcnum. ",".
+           " (svcnum ". $svc_x->svcnum. ",".
            " pkgnum ".  $svc_x->cust_svc->pkgnum. ",".
            " svcpart ". $svc_x->cust_svc->svcpart. ")\n";
     }
