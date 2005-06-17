@@ -31,8 +31,8 @@ unless ( $svcnum ) {
          "(svcpart $svcpart):\n";
     foreach my $svc_x ( @svc_x ) {
       warn "  ". $svc_x->email.
-           " (pkgnum ". $_->cust_svc->pkgnum.
-           ", svcpart ". $_->cust_svc->svcpart. ")\n";
+           " (pkgnum ". $svc_x->cust_svc->pkgnum.
+           ", svcpart ". $svc_x->cust_svc->svcpart. ")\n";
     }
   }
 
