@@ -1,5 +1,7 @@
 <%
 
+my $DEBUG = 0;
+
 $cgi->param('pkgnum') =~ /^(\d+)$/;
 my $pkgnum = $1;
 $cgi->param('svcpart') =~ /^(\d+)$/;
@@ -16,14 +18,30 @@ unless ( $svcnum ) {
   if ( $cgi->param('link_field2') =~ /^(\w+)$/ ) {
     $search{$1} = $cgi->param('link_value2');
   }
-  my $svc_x = ( sort { ($b->cust_svc->pkgnum > 0) <=> ($a->cust_svc->pkgnum > 0)
+
+  my @svc_x = ( sort { ($b->cust_svc->pkgnum > 0) <=> ($a->cust_svc->pkgnum > 0)
                        or ($b->cust_svc->svcpart == $svcpart)
                             <=> ($a->cust_svc->svcpart == $svcpart)
                      }
                      qsearch( $svcdb, \%search )
-              )[0];
+              );
+
+  if ( $DEBUG ) {
+    warn scalar(@svc_x). " candidate accounts found for linking ".
+         "(svcpart $svcpart):\n";
+    foreach my $svc_x ( @svc_x ) {
+      warn "  ". $svc_x->email.
+           " (pkgnum ". $_->cust_svc->pkgnum.
+           ", svcpart ". $_->cust_svc->svcpart. ")\n";
+    }
+  }
+
+  my $svc_x = $svc_x[0];
+
   eidiot("$link_field not found!") unless $svc_x;
+
   $svcnum = $svc_x->svcnum;
+
 }
 
 my $old = qsearchs('cust_svc',{'svcnum'=>$svcnum});
