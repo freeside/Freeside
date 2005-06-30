@@ -396,7 +396,7 @@ sub insert {
   }
 
   if ( $amount ) {
-    $error = $self->insert_prepay($amount, $prepay_identifier);
+    $error = $self->insert_cust_pay_prepay($amount, $prepay_identifier);
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return "inserting prepayment (transaction rolled back): $error";
