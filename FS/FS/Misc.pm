@@ -340,6 +340,8 @@ sub Mail::Internet::mysmtpsend {
 }
 package FS::Misc;
 
+=back
+
 =head1 BUGS
 
 This package exists.
