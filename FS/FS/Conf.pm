@@ -1050,6 +1050,13 @@ httemplate/docs/config.html
     'type'        => 'checkbox',
   },
 
+  { 
+    'key'         => 'username-percent',
+    'section'     => 'username',
+    'description' => 'Allow the percent character (%) in usernames.',
+    'type'        => 'checkbox',
+  },
+
   {
     'key'         => 'username_policy',
     'section'     => 'deprecated',
