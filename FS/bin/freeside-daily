@@ -43,10 +43,16 @@ my $where_bill_event = <<"END";
   0 < ( select count(*) from cust_bill
           where cust_main.custnum = cust_bill.custnum
             and 0 < charged
-                    - ( select sum(amount) from cust_bill_pay
-                          where cust_bill.invnum = cust_bill_pay.invnum )
-                    - ( select sum(amount) from cust_credit_bill
-                          where cust_bill.invnum = cust_credit_bill.invnum )
+                    - coalesce(
+                                ( select sum(amount) from cust_bill_pay
+                                    where cust_bill.invnum = cust_bill_pay.invnum )
+                                ,0
+                              )
+                    - coalesce(
+                                ( select sum(amount) from cust_credit_bill
+                                    where cust_bill.invnum = cust_credit_bill.invnum )
+                                ,0
+                              )
             and 0 < ( select count(*) from part_bill_event
                         where payby = cust_main.payby
                           and ( disabled is null or disabled = '' )
@@ -61,7 +67,7 @@ my $where_bill_event = <<"END";
       )
 END
 
-my $extra_sql = ( scalar(%search) ? ' AND ' : ' WHERE ' ). "$where_pkg OR $where_bill_event";
+my $extra_sql = ( scalar(%search) ? ' AND ' : ' WHERE ' ). "( $where_pkg OR $where_bill_event )";
 
 my @cust_main;
 if ( @ARGV ) {
