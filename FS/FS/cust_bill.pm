@@ -818,7 +818,7 @@ sub send_csv {
   ) or die "can't create csv";
   print CSV $csv->string. "\n";
 
-  #new charges (false laziness w/print_text)
+  #new charges (false laziness w/print_text and _items stuff)
   foreach my $cust_bill_pkg ( $self->cust_bill_pkg ) {
 
     my($pkg, $setup, $recur, $sdate, $edate);
@@ -1061,7 +1061,7 @@ L<Time::Local> and L<Date::Parse> for conversion functions.
 
 =cut
 
-#still some false laziness w/print_text
+#still some false laziness w/_items stuff (and send_csv)
 sub print_text {
 
   my( $self, $today, $template ) = @_;
@@ -1102,50 +1102,49 @@ sub print_text {
     ( grep { ! $_->pkgnum } $self->cust_bill_pkg ),  #then taxes
   ) {
 
+    my $desc = $cust_bill_pkg->desc;
+
     if ( $cust_bill_pkg->pkgnum > 0 ) {
 
-      my $cust_pkg = qsearchs('cust_pkg', { pkgnum =>$cust_bill_pkg->pkgnum } );
-      my $part_pkg = qsearchs('part_pkg', { pkgpart=>$cust_pkg->pkgpart } );
-      my $pkg = $part_pkg->pkg;
-
       if ( $cust_bill_pkg->setup != 0 ) {
-        my $description = $pkg;
+        my $description = $desc;
         $description .= ' Setup' if $cust_bill_pkg->recur != 0;
         push @buf, [ $description,
                      $money_char. sprintf("%10.2f", $cust_bill_pkg->setup) ];
         push @buf,
           map { [ "  ". $_->[0]. ": ". $_->[1], '' ] }
-              $cust_pkg->h_labels($self->_date);
+              $cust_bill_pkg->cust_pkg->h_labels($self->_date);
       }
 
       if ( $cust_bill_pkg->recur != 0 ) {
         push @buf, [
-          "$pkg (" . time2str("%x", $cust_bill_pkg->sdate) . " - " .
-                                time2str("%x", $cust_bill_pkg->edate) . ")",
+          "$desc (" . time2str("%x", $cust_bill_pkg->sdate) . " - " .
+                      time2str("%x", $cust_bill_pkg->edate) . ")",
           $money_char. sprintf("%10.2f", $cust_bill_pkg->recur)
         ];
         push @buf,
           map { [ "  ". $_->[0]. ": ". $_->[1], '' ] }
-              $cust_pkg->h_labels($cust_bill_pkg->edate, $cust_bill_pkg->sdate);
+              $cust_bill_pkg->cust_pkg->h_labels( $cust_bill_pkg->edate,
+                                                  $cust_bill_pkg->sdate );
       }
 
       push @buf, map { [ "  $_", '' ] } $cust_bill_pkg->details;
 
     } else { #pkgnum tax or one-shot line item
-      my $itemdesc = defined $cust_bill_pkg->dbdef_table->column('itemdesc')
-                     ? ( $cust_bill_pkg->itemdesc || 'Tax' )
-                     : 'Tax';
+
       if ( $cust_bill_pkg->setup != 0 ) {
-        push @buf, [ $itemdesc,
+        push @buf, [ $desc,
                      $money_char. sprintf("%10.2f", $cust_bill_pkg->setup) ];
       }
       if ( $cust_bill_pkg->recur != 0 ) {
-        push @buf, [ "$itemdesc (". time2str("%x", $cust_bill_pkg->sdate). " - "
-                                  . time2str("%x", $cust_bill_pkg->edate). ")",
+        push @buf, [ "$desc (". time2str("%x", $cust_bill_pkg->sdate). " - "
+                              . time2str("%x", $cust_bill_pkg->edate). ")",
                      $money_char. sprintf("%10.2f", $cust_bill_pkg->recur)
                    ];
       }
+
     }
+
   }
 
   push @buf,['','-----------'];
@@ -1305,7 +1304,7 @@ L<Time::Local> and L<Date::Parse> for conversion functions.
 
 =cut
 
-#still some false laziness w/print_text
+#still some false laziness w/print_text (mostly print_text should use _items stuff though)
 sub print_latex {
 
   my( $self, $today, $template ) = @_;
@@ -1999,21 +1998,19 @@ sub _items_cust_bill_pkg {
   my @b = ();
   foreach my $cust_bill_pkg ( @$cust_bill_pkg ) {
 
+    my $desc = $cust_bill_pkg->desc;
+
     if ( $cust_bill_pkg->pkgnum > 0 ) {
 
-      my $cust_pkg = qsearchs('cust_pkg', { pkgnum =>$cust_bill_pkg->pkgnum } );
-      my $part_pkg = qsearchs('part_pkg', { pkgpart=>$cust_pkg->pkgpart } );
-      my $pkg = $part_pkg->pkg;
-
       if ( $cust_bill_pkg->setup != 0 ) {
-        my $description = $pkg;
+        my $description = $desc;
         $description .= ' Setup' if $cust_bill_pkg->recur != 0;
-        my @d = $cust_pkg->h_labels_short($self->_date);
+        my @d = $cust_bill_pkg->cust_pkg->h_labels_short($self->_date);
         push @d, $cust_bill_pkg->details if $cust_bill_pkg->recur == 0;
         push @b, {
           description     => $description,
           #pkgpart         => $part_pkg->pkgpart,
-          pkgnum          => $cust_pkg->pkgnum,
+          pkgnum          => $cust_bill_pkg->pkgnum,
           amount          => sprintf("%.2f", $cust_bill_pkg->setup),
           ext_description => \@d,
         };
@@ -2021,33 +2018,31 @@ sub _items_cust_bill_pkg {
 
       if ( $cust_bill_pkg->recur != 0 ) {
         push @b, {
-          description     => "$pkg (" .
+          description     => "$desc (" .
                                time2str('%x', $cust_bill_pkg->sdate). ' - '.
                                time2str('%x', $cust_bill_pkg->edate). ')',
           #pkgpart         => $part_pkg->pkgpart,
-          pkgnum          => $cust_pkg->pkgnum,
+          pkgnum          => $cust_bill_pkg->pkgnum,
           amount          => sprintf("%.2f", $cust_bill_pkg->recur),
-          ext_description => [ $cust_pkg->h_labels_short($cust_bill_pkg->edate,
-                                                         $cust_bill_pkg->sdate),
-                               $cust_bill_pkg->details,
-                             ],
+          ext_description =>
+            [ $cust_bill_pkg->cust_pkg->h_labels_short( $cust_bill_pkg->edate,
+                                                        $cust_bill_pkg->sdate),
+              $cust_bill_pkg->details,
+            ],
         };
       }
 
     } else { #pkgnum tax or one-shot line item (??)
 
-      my $itemdesc = defined $cust_bill_pkg->dbdef_table->column('itemdesc')
-                     ? ( $cust_bill_pkg->itemdesc || 'Tax' )
-                     : 'Tax';
       if ( $cust_bill_pkg->setup != 0 ) {
         push @b, {
-          'description' => $itemdesc,
+          'description' => $desc,
           'amount'      => sprintf("%.2f", $cust_bill_pkg->setup),
         };
       }
       if ( $cust_bill_pkg->recur != 0 ) {
         push @b, {
-          'description' => "$itemdesc (".
+          'description' => "$desc (".
                            time2str("%x", $cust_bill_pkg->sdate). ' - '.
                            time2str("%x", $cust_bill_pkg->edate). ')',
           'amount'      => sprintf("%.2f", $cust_bill_pkg->recur),

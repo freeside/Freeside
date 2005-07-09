@@ -4,7 +4,7 @@ use strict;
 use vars qw(@ISA %info);
 use DBI;
 #use FS::Record qw(qsearch qsearchs);
-use FS::part_pkg;
+use FS::part_pkg::flat;
 
 @ISA = qw(FS::part_pkg::flat);
 

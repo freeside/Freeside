@@ -529,7 +529,8 @@ sub update_svc_acct {
         warn "  svc_acct.seconds found (". $svc_acct->seconds.
              ") - decrementing\n"
           if $DEBUG;
-        $svc_acct->decrement_seconds($AcctSessionTime);
+        my $error = $svc_acct->decrement_seconds($AcctSessionTime);
+        die $error if $error;
         $status = 'done';
       } else {
         warn "  no existing seconds value for svc_acct - skiping\n" if $DEBUG;

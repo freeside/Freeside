@@ -204,6 +204,25 @@ sub details {
     #qsearch ( 'cust_bill_pkg_detail', { 'lineitemnum' => $self->lineitemnum });
 }
 
+=item desc
+
+Returns a description for this line item.  For typical line items, this is the
+I<pkg> field of the corresponding B<FS::part_pkg> object (see L<FS::part_pkg>).
+For one-shot line items and named taxes, it is the I<itemdesc> field of this
+line item, and for generic taxes, simply returns "Tax".
+
+=cut
+
+sub desc {
+  my $self = shift;
+
+  if ( $self->pkgnum > 0 ) {
+    $self->cust_pkg->part_pkg->pkg;
+  } else {
+    $self->itemdesc || 'Tax';
+  }
+}
+
 =back
 
 =head1 BUGS

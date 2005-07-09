@@ -78,4 +78,8 @@ sub is_free_options {
   qw( setup_fee recur_fee );
 }
 
+sub is_prepaid {
+  0; #no, we're postpaid
+}
+
 1;
