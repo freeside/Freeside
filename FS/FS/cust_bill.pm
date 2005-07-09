@@ -417,7 +417,10 @@ sub generate_email {
 
     my $path = "$FS::UID::conf_dir/conf.$FS::UID::datasrc";
     my $file;
-    if ( [ -e "$path/logo_". $args{'_template'}. ".png" ] ) {
+    if ( length($args{'_template'})
+         && -e "$path/logo_". $args{'_template'}. ".png"
+       )
+    {
       $file = "$path/logo_". $args{'_template'}. ".png";
     } else {
       $file = "$path/logo.png";
@@ -553,8 +556,8 @@ sub mimebuild_pdf {
 
 =item send [ TEMPLATENAME [ , AGENTNUM [ , INVOICE_FROM ] ] ]
 
-Sends this invoice to the destinations configured for this customer: send
-emails or print.  See L<FS::cust_main_invoice>.
+Sends this invoice to the destinations configured for this customer: sends
+email, prints and/or faxes.  See L<FS::cust_main_invoice>.
 
 TEMPLATENAME, if specified, is the name of a suffix for alternate invoices.
 
