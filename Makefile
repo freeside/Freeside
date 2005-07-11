@@ -41,8 +41,10 @@ INIT_INSTALL = /usr/sbin/update-rc.d freeside defaults 21 20
 #not necessary (freebsd)
 #INIT_INSTALL = /usr/bin/true
 
-#deb, suse
-HTTPD_RESTART = /etc/init.d/apache restart
+#deb
+HTTPD_RESTART = /etc/init.d/apache reload
+#suse
+#HTTPD_RESTART = /etc/init.d/apache restart
 #redhat, fedora, mandrake
 #HTTPD_RESTART = /etc/init.d/httpd restart
 #freebsd
@@ -82,8 +84,8 @@ SELFSERVICE_INSTALL_USER = ivan
 SELFSERVICE_INSTALL_USERADD = /usr/sbin/useradd
 #SELFSERVICE_INSTALL_USERADD = "/usr/sbin/pw useradd"
 
-#RT_ENABLED = 0
-RT_ENABLED = 1
+RT_ENABLED = 0
+#RT_ENABLED = 1
 RT_DOMAIN = example.com
 RT_TIMEZONE = US/Pacific;
 #RT_TIMEZONE = US/Eastern;
