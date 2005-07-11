@@ -53,4 +53,4 @@ textproc/p5-Text-CSV_XS
 misc/p5-Locale-SubCountry
 devel/p5-IO-stringy
 textproc/p5-XML-Parser
-
+mail/p5-MIME-Tools
