@@ -59,15 +59,25 @@ while ( my $row = $sth->fetchrow_hashref ) {
     $prefix = $2;
   }
 
-  my @rate_prefix = map { 
-                          #warn $row->{'Country'}. ": $prefixprefix$_\n";
-                          new FS::rate_prefix {
-                            'countrycode' => $row->{'Code'},
-                            'npa'         => $prefixprefix.$_,
-                          };
-                        }
-                        split(/\s*[;,]\s*/, $prefix);
+  my @rate_prefix = ();
+  if ( $prefix =~ /\d/ ) {
 
+    @rate_prefix = map { 
+                         #warn $row->{'Country'}. ": $prefixprefix$_\n";
+                         new FS::rate_prefix {
+                           'countrycode' => $row->{'Code'},
+                           'npa'         => $prefixprefix.$_,
+                         };
+                       }
+                       split(/\s*[;,]\s*/, $prefix);
+
+  } else {
+    @rate_prefix = ( new FS::rate_prefix {
+                       'countycode' => $row->{'Code'},
+                       'npa'        => '',
+                     };
+                   );
+  }
 
   my $dest_detail = new FS::rate_detail {
                                           'ratenum'         => $ratenum,

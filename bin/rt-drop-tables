@@ -1,0 +1,29 @@
+#!/usr/bin/perl
+
+my @tables = qw(
+Attachments 
+Queues 
+Links 
+Principals 
+Groups 
+ScripConditions 
+Transactions 
+Scrips 
+ACL 
+GroupMembers 
+CachedGroupMembers 
+Users 
+Tickets 
+ScripActions 
+Templates 
+TicketCustomFieldValues 
+CustomFields 
+CustomFieldValues 
+sessions 
+);
+
+foreach my $table ( @tables ) {
+  print "drop table $table;\n";
+  print "drop sequence ${table}_id_seq;\n";
+}
+
