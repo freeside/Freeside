@@ -778,7 +778,7 @@ sub _custoragent_session_custnum {
 
     $context = 'customer';
     $session = _cache->get($p->{'session_id'})
-      or return { 'error' => "Can't resume session" }; #better error message
+      or return ( 'error' => "Can't resume session" ); #better error message
     $custnum = $session->{'custnum'};
 
   } elsif ( $p->{'agent_session_id'} ) {
@@ -788,11 +788,11 @@ sub _custoragent_session_custnum {
       'namespace' => 'FS::ClientAPI::Agent',
     } );
     $session = $agent_cache->get($p->{'agent_session_id'})
-      or return { 'error' => "Can't resume session" }; #better error message
+      or return ( 'error' => "Can't resume session" ); #better error message
     $custnum = $p->{'custnum'};
 
   } else {
-    return { 'error' => "Can't resume session" }; #better error message
+    return ( 'error' => "Can't resume session" ); #better error message
   }
 
   ($context, $session, $custnum);
