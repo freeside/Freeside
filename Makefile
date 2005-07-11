@@ -303,8 +303,8 @@ clean:
 #these are probably only useful if you're me...
 
 upload-docs: forcehtmlman
-	ssh pouncequick.420.am rm -rf /var/www/www.sisd.com/freeside/docs
-	scp -pr httemplate/docs pouncequick.420.am:/var/www/www.sisd.com/freeside/docs
+	ssh 420.am rm -rf /var/www/www.sisd.com/freeside/docs
+	scp -pr httemplate/docs 420.am:/var/www/www.sisd.com/freeside/docs
 
 release: upload-docs
 	cd /home/ivan/freeside
@@ -315,11 +315,11 @@ release: upload-docs
 	cvs export -r ${TAG} -d freeside-${VERSION} freeside
 	tar czvf freeside-${VERSION}.tar.gz freeside-${VERSION}
 
-	scp freeside-${VERSION}.tar.gz ivan@pouncequick.420.am:/var/www/sisd.420.am/freeside/
+	scp freeside-${VERSION}.tar.gz ivan@420.am:/var/www/www.sisd.com/freeside/
 	mv freeside-${VERSION} freeside-${VERSION}.tar.gz ..
 
 update-webdemo:
-	ssh ivan@pouncequick.420.am '( cd freeside; cvs update -d -P )'
-	#ssh root@pouncequick.420.am '( cd /home/ivan/freeside; make clean; make deploy )'
-	ssh root@pouncequick.420.am '( cd /home/ivan/freeside; make deploy )'
+	ssh ivan@420.am '( cd freeside; cvs update -d -P )'
+	#ssh root@420.am '( cd /home/ivan/freeside; make clean; make deploy )'
+	ssh root@420.am '( cd /home/ivan/freeside; make deploy )'
 
