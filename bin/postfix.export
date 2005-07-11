@@ -40,7 +40,7 @@ foreach my $export ( @exports ) {
     my $srcsvc_acct = $svc_forward->srcsvc_acct;
     if ( $srcsvc_acct ) {
       ( $username, $domain ) = ( $srcsvc_acct->username, $srcsvc_acct->domain );
-    } elsif ( $svc_forward->src =~ /([^@]*)\@([^@]+)$/ ) {
+    } elsif ( $svc_forward->src =~ /^([^@]*)\@([^@]+)$/ ) {
       ( $username, $domain ) = ( $1, $2 );
     } else {
       die "bad svc_forward record?  svcnum ". $svc_forward->svcnum. "\n";
