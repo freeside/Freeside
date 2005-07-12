@@ -150,5 +150,8 @@ by Foteos Macrides (derived from overLIB <http://www.bosrup.com/web/overlib/>
 by Erik Bosrup), licensed under the terms of the Artistic license
 <http://www.macridesweb.com/oltest/license.html>.
 
+Ricardo SIGNES <rjbs+freeside-devel@icgroup.com> has contributed a bunch of
+patches to clean up and refactor various stuff in the module layer.  Thanks!
+
 Everything else is my (Ivan Kohler <ivan@420.am>) fault.
 

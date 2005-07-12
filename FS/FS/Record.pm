@@ -427,6 +427,34 @@ sub qsearch {
   return @return;
 }
 
+=item by_key PRIMARY_KEY_VALUE
+
+This is a class method that returns the record with the given primary key
+value.  This method is only useful in FS::Record subclasses.  For example:
+
+  my $cust_main = FS::cust_main->by_key(1); # retrieve customer with custnum 1
+
+is equivalent to:
+
+  my $cust_main = qsearchs('cust_main', { 'custnum' => 1 } );
+
+=cut
+
+sub by_key {
+  my ($class, $pkey_value) = @_;
+
+  my $table = $class->table
+    or croak "No table for $class found";
+
+  my $dbdef_table = $dbdef->table($table)
+    or die "No schema for table $table found - ".
+           "do you need to create it or run dbdef-create?";
+  my $pkey = $dbdef_table->primary_key
+    or die "No primary key for table $table";
+
+  return qsearchs($table, { $pkey => $pkey_value });
+}
+
 =item jsearch TABLE, HASHREF, SELECT, EXTRA_SQL, PRIMARY_TABLE, PRIMARY_KEY
 
 Experimental JOINed search method.  Using this method, you can execute a
