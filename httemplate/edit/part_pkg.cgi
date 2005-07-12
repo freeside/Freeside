@@ -187,22 +187,20 @@ if ( $pkgpart ) {
                         )";
 }
 my @part_svc = qsearch('part_svc', {}, '', $where);
+my %pkg_svc = map { $_->svcpart => $_ } $part_pkg->pkg_svc;
 
 my @fixups = ();
 my $count = 0;
 my $columns = 3;
 foreach my $part_svc ( @part_svc ) {
   my $svcpart = $part_svc->svcpart;
-  my $pkg_svc = $pkgpart && qsearchs( 'pkg_svc', {
-    'pkgpart'  => $pkgpart,
-    'svcpart'  => $svcpart,
-  } ) || new FS::pkg_svc ( {
-    'pkgpart'     => $pkgpart,
-    'svcpart'     => $svcpart,
-    'quantity'    => 0,
-    'primary_svc' => '',
-  });
-  #? #next unless $pkg_svc;
+  my $pkg_svc = $pkg_svc{$svcpart}
+             || new FS::pkg_svc ( {
+                                   'pkgpart'     => $pkgpart,
+                                   'svcpart'     => $svcpart,
+                                   'quantity'    => 0,
+                                   'primary_svc' => '',
+                                } );
 
   push @fixups, "pkg_svc$svcpart";
 
