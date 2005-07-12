@@ -144,9 +144,8 @@ foreach my $part_pkg ( sort $sortby @part_pkg ) {
         <TD ROWSPAN=<%= $rowspan %>><%= $plandata %></TD>
 
 <%
-  my($pkg_svc);
   my($n)="";
-  foreach $pkg_svc ( @pkg_svc ) {
+  foreach my $pkg_svc ( @pkg_svc ) {
     my($svcpart)=$pkg_svc->getfield('svcpart');
     my($part_svc) = qsearchs('part_svc',{'svcpart'=> $svcpart });
     print $n,qq!<TD><A HREF="${p}edit/part_svc.cgi?$svcpart">!,
