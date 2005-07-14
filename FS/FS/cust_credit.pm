@@ -4,13 +4,14 @@ use strict;
 use vars qw( @ISA $conf $unsuspendauto );
 use Date::Format;
 use FS::UID qw( dbh getotaker );
-use FS::Record qw( qsearch qsearchs );
 use FS::Misc qw(send_email);
+use FS::Record qw( qsearch qsearchs );
+use FS::cust_main_Mixin;
 use FS::cust_main;
 use FS::cust_refund;
 use FS::cust_credit_bill;
 
-@ISA = qw( FS::Record );
+@ISA = qw( FS::cust_main_Mixin FS::Record );
 
 #ask FS::UID to run this stuff for us later
 $FS::UID::callback{'FS::cust_credit'} = sub { 
@@ -75,6 +76,12 @@ Creates a new credit.  To add the credit to the database, see L<"insert">.
 =cut
 
 sub table { 'cust_credit'; }
+sub cust_linked { $_[0]->cust_main_custnum; } 
+sub cust_unlinked_msg {
+  my $self = shift;
+  "WARNING: can't find cust_main.custnum ". $self->custnum.
+  ' (cust_credit.crednum '. $self->crednum. ')';
+}
 
 =item insert
 

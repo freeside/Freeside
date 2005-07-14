@@ -52,6 +52,7 @@ FS/cust_bill_pkg_detail.pm
 FS/cust_credit.pm
 FS/cust_credit_bill.pm
 FS/cust_main.pm
+FS/cust_main_Mixin.pm
 FS/cust_main_county.pm
 FS/cust_main_invoice.pm
 FS/cust_pay.pm
@@ -177,6 +178,7 @@ t/cust_credit.t
 t/cust_credit_bill.t
 t/cust_credit_refund.t
 t/cust_main.t
+t/cust_main_Mixin.t
 t/cust_main_county.t
 t/cust_main_invoice.t
 t/cust_pay.t

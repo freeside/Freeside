@@ -11,8 +11,9 @@ use String::ShellQuote;
 use HTML::Entities;
 use Locale::Country;
 use FS::UID qw( datasrc );
-use FS::Record qw( qsearch qsearchs );
 use FS::Misc qw( send_email send_fax );
+use FS::Record qw( qsearch qsearchs );
+use FS::cust_main_Mixin;
 use FS::cust_main;
 use FS::cust_bill_pkg;
 use FS::cust_credit;
@@ -25,7 +26,7 @@ use FS::part_pkg;
 use FS::cust_bill_pay;
 use FS::part_bill_event;
 
-@ISA = qw( FS::Record );
+@ISA = qw( FS::cust_main_Mixin FS::Record );
 
 $DEBUG = 0;
 
@@ -104,6 +105,13 @@ Invoices are normally created by calling the bill method of a customer object
 =cut
 
 sub table { 'cust_bill'; }
+
+sub cust_linked { $_[0]->cust_main_custnum; } 
+sub cust_unlinked_msg {
+  my $self = shift;
+  "WARNING: can't find cust_main.custnum ". $self->custnum.
+  ' (cust_bill.invnum '. $self->invnum. ')';
+}
 
 =item insert
 

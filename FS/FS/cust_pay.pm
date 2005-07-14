@@ -5,15 +5,16 @@ use vars qw( @ISA $conf $unsuspendauto $ignore_noapply );
 use Date::Format;
 use Business::CreditCard;
 use Text::Template;
-use FS::Record qw( dbh qsearch qsearchs );
 use FS::Misc qw(send_email);
+use FS::Record qw( dbh qsearch qsearchs );
+use FS::cust_main_Mixin;
 use FS::cust_bill;
 use FS::cust_bill_pay;
 use FS::cust_pay_refund;
 use FS::cust_main;
 use FS::cust_pay_void;
 
-@ISA = qw( FS::Record );
+@ISA = qw( FS::cust_main_Mixin FS::Record );
 
 $ignore_noapply = 0;
 
@@ -81,6 +82,12 @@ Creates a new payment.  To add the payment to the databse, see L<"insert">.
 =cut
 
 sub table { 'cust_pay'; }
+sub cust_linked { $_[0]->cust_main_custnum; } 
+sub cust_unlinked_msg {
+  my $self = shift;
+  "WARNING: can't find cust_main.custnum ". $self->custnum.
+  ' (cust_pay.paynum '. $self->paynum. ')';
+}
 
 =item insert
 

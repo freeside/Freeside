@@ -17,7 +17,8 @@ my $sql_query = {
   'hashref'   => {},
   'select'    => join(', ',
                    'svc_forward.*',
-                   map "cust_main.$_", qw(custnum last first company)
+                    'cust_main.custnum',
+                    FS::UI::Web::cust_sql_fields(),
                  ),
   'extra_sql' => $orderby,
   'addl_from' => 'LEFT JOIN cust_svc  USING ( svcnum  )'.
@@ -75,7 +76,7 @@ my $link_cust = sub {
   $svc_x->custnum ? [ "${p}view/cust_main.cgi?", 'custnum' ] : '';
 };
 
-%><%= include ('elements/search.html',
+%><%= include( 'elements/search.html',
                  'title'             => "Mail forward Search Results",
                  'name'              => 'mail forwards',
                  'query'             => $sql_query,
@@ -84,17 +85,19 @@ my $link_cust = sub {
                  'header'            => [ '#',
                                           'Mail to',
                                           'Forwards to',
-                                          'Customer',
+                                          FS::UI::Web::cust_header(),
                                         ],
                  'fields'            => [ 'svcnum',
                                           $format_src,
                                           $format_dst,
-                                          \&FS::svc_Common::cust_name,
+                                          \&FS::UI::Web::cust_fields,
                                         ],
                  'links'             => [ $link,
                                           $link_src,
                                           $link_dst,
-                                          $link_cust,
+                                          ( map { $link_cust }
+                                                FS::UI::Web::cust_header()
+                                          ),
                                         ],
-              )
+             )
 %>

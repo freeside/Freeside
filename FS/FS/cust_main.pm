@@ -3160,9 +3160,51 @@ Returns a name string for this customer, either "Company (Last, First)" or
 
 sub name {
   my $self = shift;
-  my $name = $self->get('last'). ', '. $self->first;
+  my $name = $self->bill_contact;
   $name = $self->company. " ($name)" if $self->company;
   $name;
+}
+
+=item ship_name
+
+Returns a name string for this (service/shipping) contact, either
+"Company (Last, First)" or "Last, First".
+
+=cut
+
+sub ship_name {
+  my $self = shift;
+  if ( $self->get('ship_last') ) { 
+    my $name = $self->ship_contact;
+    $name = $self->ship_company. " ($name)" if $self->ship_company;
+    $name;
+  } else {
+    $self->name;
+  }
+}
+
+=item contact
+
+Returns this customer's full (billing) contact name only, "Last, First"
+
+=cut
+
+sub contact {
+  my $self = shift;
+  $self->get('last'). ', '. $self->first;
+}
+
+=item ship_contact
+
+Returns this customer's full (shipping) contact name only, "Last, First"
+
+=cut
+
+sub ship_contact {
+  my $self = shift;
+  $self->get('ship_last')
+    ? $self->get('ship_last'). ', '. $self->ship_first
+    : $self->bill_contact;
 }
 
 =item status

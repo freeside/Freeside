@@ -3,10 +3,11 @@ package FS::cust_bill_event;
 use strict;
 use vars qw( @ISA $DEBUG );
 use FS::Record qw( qsearch qsearchs );
+use FS::cust_main_Mixin;
 use FS::cust_bill;
 use FS::part_bill_event;
 
-@ISA = qw(FS::Record);
+@ISA = qw(FS::cust_main_Mixin FS::Record);
 
 $DEBUG = 0;
 
@@ -69,6 +70,13 @@ points to.  You can ask the object for a copy with the I<hash> method.
 # the new method can be inherited from FS::Record, if a table method is defined
 
 sub table { 'cust_bill_event'; }
+
+sub cust_linked { $_[0]->cust_main_custnum; } 
+sub cust_unlinked_msg {
+  my $self = shift;
+  "WARNING: can't find cust_main.custnum ". $self->custnum.
+  ' (cust_bill.invnum '. $self->invnum. ')';
+}
 
 =item insert
 

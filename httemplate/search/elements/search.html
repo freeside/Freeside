@@ -152,7 +152,9 @@
           #  }
           #}
           if ( ref($field) eq 'CODE' ) {
-            $worksheet->write($r, $c++, &{$field}($row) );
+            foreach my $value ( &{$field}($row) ) {
+              $worksheet->write($r, $c++, $value );
+            }
           } else {
             $worksheet->write($r, $c++, $row->$field() );
           }
@@ -253,7 +255,18 @@
                         my $sizes  = $opt{'size'}  ? [ @{$opt{'size'}}  ] : [];
                         my $styles = $opt{'style'} ? [ @{$opt{'style'}} ] : [];
 
-                        foreach my $field ( @{$opt{'fields'}} ) {
+                        foreach my $field (
+
+                          map {
+                                if ( ref($_) eq 'CODE' ) {
+                                  &{$_}($row);
+                                } else {
+                                  $row->$_();
+                                }
+                              }
+                          @{$opt{'fields'}}
+
+                        ) {
 
                           my $align = $aligns ? shift @$aligns : '';
                           $align = " ALIGN=$align" if $align;
@@ -294,11 +307,7 @@
                           }
 
                        %>
-                       <% if ( ref($field) eq 'CODE' ) { %>
-                         <TD CLASS="grid" BGCOLOR="<%= $bgcolor %>"<%= $align %>><%= $font %><%= $a %><%= $s %><%= &{$field}($row) %><%= $es %><%= $a ? '</A>' : '' %><%= $font ? '</FONT>' : '' %></TD>
-                       <% } else { %>
-                         <TD CLASS="grid" BGCOLOR="<%= $bgcolor %>"<%= $align %>><%= $font %><%= $a %><%= $s %><%= $row->$field() %><%= $es %><%= $a ? '</A>' : '' %><%= $font ? '</FONT>' : '' %></TD>
-                       <% } %>
+                       <TD CLASS="grid" BGCOLOR="<%= $bgcolor %>"<%= $align %>><%= $font %><%= $a %><%= $s %><%= $field %><%= $es %><%= $a ? '</A>' : '' %><%= $font ? '</FONT>' : '' %></TD>
                      <% } %>
                    <% } else { %>
                      <% foreach ( @$row ) { %>

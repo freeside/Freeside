@@ -1,5 +1,8 @@
 package FS::UI::Web;
 
+use FS::Conf;
+use FS::Record qw(dbdef);
+
 #use vars qw(@ISA);
 #use FS::UI
 #@ISA = qw( FS::UI );
@@ -18,7 +21,102 @@ sub parse_beginning_ending {
   ( $beginning, $ending );
 }
 
+###
+# cust_main report methods
+###
+
+=item cust_header
+
+Returns an array of customer information headers according to the
+B<cust-fields> configuration setting.
+
+=cut
+
+use vars qw( @cust_fields );
+
+sub cust_sql_fields {
+  my @fields = qw( last first company );
+  push @fields, map "ship_$_", @fields
+    if dbdef->table('cust_main')->column('ship_last');
+  map "cust_main.$_", @fields;
+}
+
+sub cust_header {
+
+  warn "FS::svc_Common::cust_header called"
+    if $DEBUG;
+
+  my $conf = new FS::Conf;
+
+  my %header2method = (
+    'Customer'           => 'name',
+    'Cust#'              => 'custnum',
+    'Name'               => 'contact',
+    'Company'            => 'company',
+    '(bill) Customer'    => 'name',
+    '(service) Customer' => 'ship_name',
+    '(bill) Name'        => 'contact',
+    '(service) Name'     => 'ship_contact',
+    '(bill) Company'     => 'company',
+    '(service) Company'  => 'ship_company',
+  );
+
+  my @cust_header;
+  if (    $conf->exists('cust-fields')
+       && $conf->config('cust-fields') =~ /^([\w \|\#\(\)]+):/
+     )
+  {
+    warn "  found cust-fields configuration value"
+      if $DEBUG;
+
+    my $cust_fields = $1;
+     @cust_header = split(/ \| /, $cust_fields);
+     @cust_fields = map { $header2method{$_} } @cust_header;
+  } else { 
+    warn "  no cust-fields configuration value found; using default 'Customer'"
+      if $DEBUG;
+    @cust_header = ( 'Customer' );
+    @cust_fields = ( 'cust_name' );
+  }
+
+  #my $svc_x = shift;
+  @cust_header;
+}
+
+=item cust_fields
+
+Given a svc_ object that contains fields from cust_main (say, from a
+JOINed search.  See httemplate/search/svc_* for examples), returns an array
+of customer information according to the <B>cust-fields</B> configuration
+setting, or "(unlinked)" if this service is not linked to a customer.
+
+=cut
+
+sub cust_fields {
+  my $svc_x = shift;
+  warn "FS::svc_Common::cust_fields called for $svc_x ".
+       "(cust_fields: @cust_fields)"
+    if $DEBUG > 1;
+
+  cust_header() unless @cust_fields;
+
+  my $seen_unlinked = 0;
+  map { 
+    if ( $svc_x->custnum ) {
+      warn "  $svc_x -> $_"
+        if $DEBUG > 1;
+      $svc_x->$_(@_);
+    } else {
+      warn "  ($svc_x unlinked)"
+        if $DEBUG > 1;
+      $seen_unlinked++ ? '' : '(unlinked)';
+    }
+  } @cust_fields;
+}
+
+###
 # begin JSRPC code...
+###
 
 package FS::UI::Web::JSRPC;
 

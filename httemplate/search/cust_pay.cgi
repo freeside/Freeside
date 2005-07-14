@@ -73,7 +73,11 @@
    
      $sql_query = {
        'table'     => 'cust_pay',
-       'select'    => 'cust_pay.*, cust_main.last, cust_main.first, cust_main.company',
+       'select'    => join(', ',
+                        'cust_pay.*',
+                        'cust_main.custnum as cust_main_custnum',
+                        FS::UI::Web::cust_sql_fields(),
+                      ),
        'hashref'   => {},
        'extra_sql' => "$search ORDER BY _date",
        'addl_from' => 'LEFT JOIN cust_main USING ( custnum )',
@@ -99,7 +103,12 @@
    
    }
 
-   my $link = [ "${p}view/cust_main.cgi?", 'custnum' ];
+   my $link = sub {
+     my $cust_pay = shift;
+     $cust_pay->cust_main_custnum
+       ? [ "${p}view/cust_main.cgi?", 'custnum' ] 
+       : '';
+   };
 
 %><%= include( 'elements/search.html',
                  'title'       => $title,
@@ -107,9 +116,11 @@
                  'query'       => $sql_query,
                  'count_query' => $count_query,
                  'count_addl'  => [ '$%.2f total paid', ],
-                 'header'      =>
-                   [ qw(Payment Amount Date), 'Cust #', 'Contact name',
-                     'Company', ],
+                 'header'      => [ 'Payment',
+                                    'Amount',
+                                    'Date',
+                                    FS::UI::Web::cust_header(),
+                                  ],
                  'fields'      => [
                    sub {
                      my $cust_pay = shift;
@@ -119,24 +130,23 @@
                        'E-check acct#'. $cust_pay->payinfo;
                      } elsif ( $cust_pay->payby eq 'BILL' ) {
                        'Check #'. $cust_pay->payinfo;
+                     } elsif ( $cust_pay->payby eq 'PREP' ) {
+                       'Prepaid card #'. $cust_pay->payinfo;
                      } else {
                        $cust_pay->payby. ' '. $cust_pay->payinfo;
                      }
                    },
                    sub { sprintf('$%.2f', shift->paid ) },
                    sub { time2str('%b %d %Y', shift->_date ) },
-                   'custnum',
-                   sub { $_[0]->get('last'). ', '. $_[0]->first; },
-                   'company',
+                   \&FS::UI::Web::cust_fields,
                  ],
-                 'align' => 'lrrrll',
+                 #'align' => 'lrrrll',
+                 'align' => 'rrr',
                  'links' => [
                    '',
                    '',
                    '',
-                   $link,
-                   $link,
-                   $link,
+                   ( map { $link } FS::UI::Web::cust_header() ),
                  ],
       )
 %>

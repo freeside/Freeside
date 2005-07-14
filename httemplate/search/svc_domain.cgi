@@ -37,7 +37,6 @@ if ( keys %svc_domain ) {
                     join(' AND ', map "$_ = ". dbh->quote($svc_domain{$_}),
                                       keys %svc_domain
                         );
-
 }
 
 my $sql_query = {
@@ -45,12 +44,13 @@ my $sql_query = {
   'hashref'   => \%svc_domain,
   'select'    => join(', ',
                    'svc_domain.*',
-                   map "cust_main.$_", qw(custnum last first company)
+                    'cust_main.custnum',
+                    FS::UI::Web::cust_sql_fields(),
                  ),
   'extra_sql' => "$extra_sql $orderby",
-  'addl_from' => 'LEFT JOIN cust_svc  USING ( svcnum  )'.
-                 'LEFT JOIN cust_pkg  USING ( pkgnum  )'.
-                 'LEFT JOIN cust_main USING ( custnum )',
+  'addl_from' => 'LEFT JOIN cust_svc  USING ( svcnum  ) '.
+                 'LEFT JOIN cust_pkg  USING ( pkgnum  ) '.
+                 'LEFT JOIN cust_main USING ( custnum ) ',
 };
 
 my $link = [ "${p}view/svc_domain.cgi?", 'svcnum' ];
@@ -69,15 +69,17 @@ my $link_cust = sub {
                  'redirect'          => $link,
                  'header'            => [ '#',
                                           'Domain',
-                                          'Customer',
+                                          FS::UI::Web::cust_header(),
                                         ],
                  'fields'            => [ 'svcnum',
                                           'domain',
-                                          \&FS::svc_Common::cust_name,
+                                          \&FS::UI::Web::cust_fields,
                                         ],
                  'links'             => [ $link,
                                           $link,
-                                          $link_cust,
+                                          ( map { $link_cust }
+                                                FS::UI::Web::cust_header()
+                                          ),
                                         ],
               )
 %>

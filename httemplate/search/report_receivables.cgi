@@ -118,14 +118,16 @@ END
   my $conf = new FS::Conf;
   my $money_char = $conf->config('money_char') || '$';
 
+  my $align = join('', map { /#/ ? 'r' : 'l' } FS::UI::Web::cust_header() ).
+             'crrrrr';
+
 %><%= include( 'elements/search.html',
                  'title'       => 'Accounts Receivable Aging Summary',
                  'name'        => 'customers',
                  'query'       => $sql_query,
                  'count_query' => $count_sql,
                  'header'      => [
-                                    '#',
-                                    'Customer',
+                                    FS::UI::Web::cust_header(),
                                     'Status', # (me)',
                                     #'Status', # (cust_main)',
                                     '0-30',
@@ -135,8 +137,12 @@ END
                                     'Total',
                                   ],
                  'footer'      => [
-                                    '',
                                     'Total',
+                                    ( map '',
+                                          ( 1 .. 
+                                            scalar(FS::UI::Web::cust_header()-1)
+                                          )
+                                    ),
                                     '',
                                     #'',
                                     sprintf( $money_char.'%.2f',
@@ -151,8 +157,7 @@ END
                                              $row->{'owed_total'} ),
                                   ],
                  'fields'      => [
-                                    'custnum',
-                                    'name',
+                                    \&FS::UI::Web::cust_fields,
                                     sub {
                                           my $row = shift;
                                           my $status = 'Cancelled';
@@ -191,14 +196,15 @@ END
                                     '',
                                   ],
                  #'align'       => 'rlccrrrrr',
-                 'align'       => 'rlcrrrrr',
+                 'align'       => $align,
                  #'size'        => [ '', '', '-1', '-1', '', '', '', '',  '', ],
                  #'style'       => [ '', '',  'b',  'b', '', '', '', '', 'b', ],
-                 'size'        => [ '', '', '-1', '', '', '', '',  '', ],
-                 'style'       => [ '', '',  'b', '', '', '', '', 'b', ],
+                 'size'        => [ ( map '', FS::UI::Web::cust_header() ),
+                                    '-1', '', '', '', '',  '', ],
+                 'style'       => [ ( map '', FS::UI::Web::cust_header() ),
+                                    'b', '', '', '', '', 'b', ],
                  'color'       => [
-                                    '',
-                                    '',
+                                    ( map '', FS::UI::Web::cust_header() ),
                                     sub {  
                                           my $row = shift;
                                           my $status = 'Cancelled';

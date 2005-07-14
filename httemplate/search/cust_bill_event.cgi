@@ -27,8 +27,8 @@ my $sql_query = {
                    'part_bill_event.event',
                    'cust_bill.custnum',
                    'cust_bill._date AS cust_bill_date',
-                   map "cust_main.$_", qw(last first company)
-
+                   'cust_main.custnum AS cust_main_custnum',
+                   FS::UI::Web::cust_sql_fields(),
                  ),
   'extra_sql' => "$where ORDER BY _date ASC",
   'addl_from' => 'LEFT JOIN part_bill_event USING ( eventpart ) '.
@@ -71,6 +71,13 @@ push @$menubar, 'Re-fax these events' =>
                   "javascript:fax_process()"
   if $conf->exists('hylafax');
 
+my $link_cust = sub {
+  my $cust_bill_event = shift;
+  $cust_bill_event->cust_main_custnum
+    ? [ "${p}view/cust_main.cgi?", 'custnum' ]
+    : '';
+};
+
 %><%= include( 'elements/search.html',
                  'title'       => $title,
                  'html_init'   => $html_init,
@@ -78,9 +85,12 @@ push @$menubar, 'Re-fax these events' =>
                  'name'        => 'billing events',
                  'query'       => $sql_query,
                  'count_query' => $count_sql,
-                 'header'      => [ qw( Event Date Status ),
+                 'header'      => [ 'Event',
+                                    'Date',
+                                    'Status',
                                     #'Inv #', 'Inv Date', 'Cust #',
-                                    'Invoice', 'Cust #',
+                                    'Invoice',
+                                    FS::UI::Web::cust_header(),
                                   ],
                  'fields' => [
                                'event',
@@ -99,9 +109,7 @@ push @$menubar, 'Re-fax these events' =>
                                        time2str("%D", $_[0]->cust_bill_date).
                                      ')';
                                    },
-                               sub { FS::cust_main::name($_[0]) },
-
-
+                               \&FS::UI::Web::cust_fields,
                              ],
                  'links' => [
                               '',
@@ -113,8 +121,7 @@ push @$menubar, 'Re-fax these events' =>
                                 $template .= '-' if $template;
                                 [ "${p}view/cust_bill.cgi?$template", 'invnum'];
                               },
-                              [ "${p}view/cust_main.cgi?", 'custnum' ],
-                              [ "${p}view/cust_main.cgi?", 'custnum' ],
+                              ( map { $link_cust } FS::UI::Web::cust_header() ),
                             ],
              )
 %>

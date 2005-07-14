@@ -3,15 +3,16 @@ package FS::svc_Common;
 use strict;
 use vars qw( @ISA $noexport_hack $DEBUG );
 use FS::Record qw( qsearch qsearchs fields dbh );
+use FS::cust_main_Mixin;
 use FS::cust_svc;
 use FS::part_svc;
 use FS::queue;
 use FS::cust_main;
 
-@ISA = qw( FS::Record );
+@ISA = qw( FS::cust_main_Mixin FS::Record );
 
-$DEBUG = 0;
-#$DEBUG = 1;
+#$DEBUG = 0;
+$DEBUG = 1;
 
 =head1 NAME
 
@@ -545,20 +546,6 @@ same object for svc_ classes which don't implement a suspension fallback
 
 sub clone_kludge_unsuspend {
   shift;
-}
-
-=item cust_name
-
-Given a svc_ object that contains fields from cust_main (say, from a
-JOINed search.  See httemplate/search/svc_* for examples), returns the 
-equivalent of "$svc_x->cust_svc->cust_pkg->name" (but much more efficient),
-or "(unlinked)" if this service is not linked to a customer.
-
-=cut
-
-sub cust_name {
-  my $svc_x = shift;
-  $svc_x->custnum ? FS::cust_main::name($svc_x) : '(unlinked)';
 }
 
 =back

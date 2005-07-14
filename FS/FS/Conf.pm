@@ -1545,6 +1545,23 @@ httemplate/docs/config.html
     'type'        => 'checkbox',
   },
 
+  {
+    'key'         => 'cust-fields',
+    'section'     => 'UI',
+    'description' => 'Which customer fields to display on reports',
+    'type'        => 'select',
+    'select_enum' => [
+      'Customer: Last, First</b> or</i> Company (Last, First)</b>',
+      'Cust# | Customer: custnum | Last, First or Company (Last, First)',
+      'Name | Company: Last, First | Company',
+      'Cust# | Name | Company: custnum | Last, First | Company',
+      '(bill) Customer | (service) Customer: Last, First or Company (Last, First) | (same for service address if present)',
+      'Cust# | (bill) Customer | (service) Customer:  custnum | Last, First or Company (Last, First) | (same for service address if present)',
+      '(bill) Name | (bill) Company | (service) Name | (service) Company: Last, First | Company | (same for service address if present)',
+      'Cust# | (bill) Name | (bill) Company | (service) Name | (service) Company: custnum | Last, First | Company | (same for service address if present)',
+    ],
+  },
+
 );
 
 1;
