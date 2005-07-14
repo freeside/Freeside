@@ -95,7 +95,7 @@
                         'cust_bill.*',
                         #( map "cust_main.$_", qw(custnum last first company) ),
                         'cust_main.custnum as cust_main_custnum',
-                        ( map "cust_main.$_", qw(last first company) ),
+                        FS::UI::Web::cust_sql_fields(),
                         "$owed as owed",
                       ),
        'extra_sql' => "$extra_sql $orderby"
@@ -106,8 +106,7 @@
    my $link  = [ "${p}view/cust_bill.cgi?", 'invnum', ];
    my $clink = sub {
      my $cust_bill = shift;
-     my $cust_main = $cust_bill->cust_main;
-     $cust_main
+     $cust_bill->cust_main_custnum
        ? [ "${p}view/cust_main.cgi?", 'custnum' ]
        : '';
    };
@@ -154,32 +153,18 @@
                  'count_query' => $count_query,
                  'count_addl'  => $count_addl,
                  'redirect'    => $link,
-                 'header'      =>
-                   [ 'Invoice #', qw(Balance Amount Date), 'Contact name',
-                     'Company' ],
+                 'header'      => [ 'Invoice #',
+                                    'Balance',
+                                    'Amount',
+                                    'Date',
+                                    FS::UI::Web::cust_header(),
+                                  ],
                  'fields'      => [
                    'invnum',
                    sub { sprintf($money_char.'%.2f', shift->get('owed') ) },
                    sub { sprintf($money_char.'%.2f', shift->charged     ) },
                    sub { time2str('%b %d %Y', shift->_date ) },
-                   sub { my $cust_bill = shift;
-                         # my $cust_main = $cust_bill->cust_main;
-                         # $cust_main
-                         #   ? $cust_main->get('last'). ', '. $cust_main->first
-                         #   : "WARNING: can't find cust_main.custnum ".
-                         #     $cust_bill->custnum. ' (cust_bill.invnum '.
-                         #     $cust_bill->invnum. ')';
-                         if ( $cust_bill->cust_main_custnum ) {
-                           FS::cust_main::name($cust_bill);
-                         } else {
-                           "WARNING: can't find cust_main.custnum ".
-                              $cust_bill->custnum. ' (cust_bill.invnum '.
-                              $cust_bill->invnum. ')';
-                         }
-                       },
-                   sub { my $cust_main = shift->cust_main;
-                         $cust_main ? $cust_main->company : '';
-                       },
+                   \&FS::UI::Web::cust_fields,
                  ],
                  'align' => 'rrrrll',
                  'links' => [
@@ -187,8 +172,7 @@
                    $link,
                    $link,
                    $link,
-                   $clink,
-                   $clink,
+                   ( map { $clink } FS::UI::Web::cust_header() ),
                  ],
   
       )
