@@ -1,5 +1,6 @@
 package FS::UI::Web;
 
+use vars qw($DEBUG);
 use FS::Conf;
 use FS::Record qw(dbdef);
 
@@ -76,7 +77,7 @@ sub cust_header {
     warn "  no cust-fields configuration value found; using default 'Customer'"
       if $DEBUG;
     @cust_header = ( 'Customer' );
-    @cust_fields = ( 'cust_name' );
+    @cust_fields = ( 'name' );
   }
 
   #my $svc_x = shift;

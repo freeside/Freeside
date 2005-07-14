@@ -11,8 +11,7 @@ use FS::cust_main;
 
 @ISA = qw( FS::cust_main_Mixin FS::Record );
 
-#$DEBUG = 0;
-$DEBUG = 1;
+$DEBUG = 0;
 
 =head1 NAME
 
