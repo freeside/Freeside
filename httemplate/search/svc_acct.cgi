@@ -94,10 +94,10 @@ my $sql_query = {
                     FS::UI::Web::cust_sql_fields(),
                   ),
   'extra_sql' => "$extra_sql $orderby",
-  'addl_from' => 'LEFT JOIN cust_svc  USING ( svcnum  ) '.
-                 'LEFT JOIN part_svc  USING ( svcpart ) '.
-                 'LEFT JOIN cust_pkg  USING ( pkgnum  ) '.
-                 'LEFT JOIN cust_main USING ( custnum ) ',
+  'addl_from' => ' LEFT JOIN cust_svc  USING ( svcnum  ) '.
+                 ' LEFT JOIN part_svc  USING ( svcpart ) '.
+                 ' LEFT JOIN cust_pkg  USING ( pkgnum  ) '.
+                 ' LEFT JOIN cust_main USING ( custnum ) ',
 };
 
 my $link      = [ "${p}view/svc_acct.cgi?",   'svcnum'  ];

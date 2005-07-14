@@ -4,14 +4,30 @@ my $conf = new FS::Conf;
 
 my($query)=$cgi->keywords;
 $query ||= ''; #to avoid use of unitialized value errors
+
+
 my $orderby;
+
+my $cjoin = '';
+my @extra_sql = ();
+if ( $query =~ /^UN_(.*)$/ ) {
+  $query = $1;
+  $cjoin = 'LEFT JOIN cust_svc USING ( svcnum )';
+  push @extra_sql, 'pkgnum IS NULL';
+}
+
 if ( $query eq 'svcnum' ) {
   $orderby = 'ORDER BY svcnum';
 } else {
   eidiot('unimplemented');
 }
 
-my $count_query = 'SELECT COUNT(*) FROM svc_forward';
+my $extra_sql = 
+  scalar(@extra_sql)
+    ? ' WHERE '. join(' AND ', @extra_sql )
+    : '';
+
+my $count_query = "SELECT COUNT(*) FROM svc_forward $cjoin $extra_sql";
 my $sql_query = {
   'table'     => 'svc_forward',
   'hashref'   => {},
@@ -20,10 +36,11 @@ my $sql_query = {
                     'cust_main.custnum',
                     FS::UI::Web::cust_sql_fields(),
                  ),
-  'extra_sql' => $orderby,
-  'addl_from' => 'LEFT JOIN cust_svc  USING ( svcnum  )'.
-                 'LEFT JOIN cust_pkg  USING ( pkgnum  )'.
-                 'LEFT JOIN cust_main USING ( custnum )',
+  'extra_sql' => "$extra_sql $orderby",
+  'addl_from' => ' LEFT JOIN cust_svc  USING ( svcnum  ) '.
+                 ' LEFT JOIN part_svc  USING ( svcpart ) '.
+                 ' LEFT JOIN cust_pkg  USING ( pkgnum  ) '.
+                 ' LEFT JOIN cust_main USING ( custnum ) ',
 };
 
 #        <TH>Service #<BR><FONT SIZE=-1>(click to view forward)</FONT></TH>
