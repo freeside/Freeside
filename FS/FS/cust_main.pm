@@ -3160,7 +3160,7 @@ Returns a name string for this customer, either "Company (Last, First)" or
 
 sub name {
   my $self = shift;
-  my $name = $self->bill_contact;
+  my $name = $self->contact;
   $name = $self->company. " ($name)" if $self->company;
   $name;
 }
@@ -3204,7 +3204,7 @@ sub ship_contact {
   my $self = shift;
   $self->get('ship_last')
     ? $self->get('ship_last'). ', '. $self->ship_first
-    : $self->bill_contact;
+    : $self->contact;
 }
 
 =item status
