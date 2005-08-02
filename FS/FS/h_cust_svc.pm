@@ -80,13 +80,15 @@ sub h_svc_x {
     "h_$svcdb",
     { 'svcnum' => $self->svcnum, },
     "FS::h_$svcdb"->sql_h_searchs(@_),
-  ) || $self->SUPER::svc_x
-    or die "no history ${svcdb}.svcnum for cust_svc.svcnum ". $self->svcnum;
+  ) || $self->SUPER::svc_x;
 
-  carp "Using $svcdb in place of missing h_${svcdb} record."
-   if ($svc_x->isa('FS::' . $svcdb) and $DEBUG);
-
-  return $svc_x;
+  if ($svc_x) {
+    carp "Using $svcdb in place of missing h_${svcdb} record."
+      if ($svc_x->isa('FS::' . $svcdb) and $DEBUG);
+    return $svc_x;
+  } else {
+    return '';
+  }
 
 }
 
