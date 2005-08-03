@@ -425,7 +425,7 @@ sub generate_email {
 
     my $path = "$FS::UID::conf_dir/conf.$FS::UID::datasrc";
     my $file;
-    if ( length($args{'_template'})
+    if ( defined($args{'_template'}) && length($args{'_template'})
          && -e "$path/logo_". $args{'_template'}. ".png"
        )
     {
@@ -1785,17 +1785,25 @@ sub print_html {
 #    'conf_dir'     => "$FS::UID::conf_dir/conf.$FS::UID::datasrc",
   );
 
-  $invoice_data{'returnaddress'} =
-    length( $conf->config_orbase('invoice_htmlreturnaddress', $template) )
-      ? join("\n", $conf->config('invoice_htmlreturnaddress', $template) )
-      : join("\n", map { 
-                         s/~/&nbsp;/g;
-                         s/\\\\\*?\s*$/<BR>/;
-                         s/\\hyphenation\{[\w\s\-]+\}//;
-                         $_;
-                       }
-                       $conf->config_orbase('invoice_latexreturnaddress', $template)
-            );
+  if (
+         defined( $conf->config_orbase('invoice_htmlreturnaddress', $template) )
+      && length(  $conf->config_orbase('invoice_htmlreturnaddress', $template) )
+  ) {
+    $invoice_data{'returnaddress'} =
+      join("\n", $conf->config('invoice_htmlreturnaddress', $template) );
+  } else {
+    $invoice_data{'returnaddress'} =
+      join("\n", map { 
+                       s/~/&nbsp;/g;
+                       s/\\\\\*?\s*$/<BR>/;
+                       s/\\hyphenation\{[\w\s\-]+\}//;
+                       $_;
+                     }
+                     $conf->config_orbase( 'invoice_latexreturnaddress',
+                                           $template
+                                         )
+          );
+  }
 
   my $countrydefault = $conf->config('countrydefault') || 'US';
   if ( $cust_main->country eq $countrydefault ) {
@@ -1805,20 +1813,26 @@ sub print_html {
       encode_entities(code2country($cust_main->country));
   }
 
-  $invoice_data{'notes'} =
-    length($conf->config_orbase('invoice_htmlnotes', $template))
-      ? join("\n", $conf->config_orbase('invoice_htmlnotes', $template) )
-      : join("\n", map { 
-                         s/%%(.*)$/<!-- $1 -->/;
-                         s/\\section\*\{\\textsc\{(.)(.*)\}\}/<p><b><font size="+1">$1<\/font>\U$2<\/b>/;
-                         s/\\begin\{enumerate\}/<ol>/;
-                         s/\\item /  <li>/;
-                         s/\\end\{enumerate\}/<\/ol>/;
-                         s/\\textbf\{(.*)\}/<b>$1<\/b>/;
-                         $_;
-                       } 
-                       $conf->config_orbase('invoice_latexnotes', $template)
-            );
+  if (
+         defined( $conf->config_orbase('invoice_htmlnotes', $template) )
+      && length(  $conf->config_orbase('invoice_htmlnotes', $template) )
+  ) {
+    $invoice_data{'notes'} =
+      join("\n", $conf->config_orbase('invoice_htmlnotes', $template) );
+  } else {
+    $invoice_data{'notes'} = 
+      join("\n", map { 
+                       s/%%(.*)$/<!-- $1 -->/;
+                       s/\\section\*\{\\textsc\{(.)(.*)\}\}/<p><b><font size="+1">$1<\/font>\U$2<\/b>/;
+                       s/\\begin\{enumerate\}/<ol>/;
+                       s/\\item /  <li>/;
+                       s/\\end\{enumerate\}/<\/ol>/;
+                       s/\\textbf\{(.*)\}/<b>$1<\/b>/;
+                       $_;
+                     } 
+                     $conf->config_orbase('invoice_latexnotes', $template)
+          );
+  }
 
 #  #do variable substitutions in notes
 #  $invoice_data{'notes'} =
@@ -1827,12 +1841,18 @@ sub print_html {
 #        $conf->config_orbase('invoice_latexnotes', $suffix)
 #    );
 
+  if (
+         defined( $conf->config_orbase('invoice_htmlfooter', $template) )
+      && length(  $conf->config_orbase('invoice_htmlfooter', $template) )
+  ) {
    $invoice_data{'footer'} =
-     length($conf->config_orbase('invoice_htmlfooter', $template))
-       ? join("\n", $conf->config_orbase('invoice_htmlfooter', $template) )
-       : join("\n", map { s/~/&nbsp;/g; s/\\\\\*?\s*$/<BR>/; $_; }
-                        $conf->config_orbase('invoice_latexfooter', $template)
-             );
+     join("\n", $conf->config_orbase('invoice_htmlfooter', $template) );
+  } else {
+   $invoice_data{'footer'} =
+       join("\n", map { s/~/&nbsp;/g; s/\\\\\*?\s*$/<BR>/; $_; }
+                      $conf->config_orbase('invoice_latexfooter', $template)
+           );
+  }
 
   $invoice_data{'po_line'} =
     (  $cust_main->payby eq 'BILL' && $cust_main->payinfo )
