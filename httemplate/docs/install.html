@@ -14,7 +14,7 @@ Before installing, you need:
   <li>Optional, enables typeset invoices: teTeX and Ghostscript (included with most distributions).
   <li>A <b>transactional</b> database engine <a href="http://search.cpan.org/search?mode=module&query=DBD%3A%3A">supported</a> by Perl's <a href="http://dbi.perl.org">DBI</a>.
     <ul>
-      <li><a href="http://www.postgresql.org/">PostgreSQL</a> is recommended (v7.2 or later).
+      <li><a href="http://www.postgresql.org/">PostgreSQL</a> is recommended (v7.2 or later, 7.4 or later recommended).
       <li> <a href="http://www.mysql.com/">MySQL</a> is <b>not currently supported</b>.  <FONT SIZE="-1"><i>Developers intersted in maintaining MySQL support are welcome to ask on the -devel mailing list; many things work, but MySQL support needs a maintainer to update it for recent (and future) changes.</i></FONT>
       <!-- <li><a href="http://www.mysql.com/">MySQL</a> <b>MINIMUM VERSION 4.1</b> is untested but may work.   Versions before 4.1 do not support standard SQL subqueries and are <b>NOT SUPPORTED</b>.
 <!--       <li>MySQL has been reported to work.
@@ -68,6 +68,7 @@ Before installing, you need:
       <li><a href="http://search.cpan.org/dist/IO-stringy">IO-stringy (IO::Scalar)</a>
       <li><a href="http://search.cpan.org/dist/Frontier-RPC">Frontier::RPC (Frontier::RPC2)</a>
       <li><a href="http://search.cpan.org/dist/MIME-tools">MIME::Entity (MIME-tools)</a>
+      <li><a href="http://search.cpan.org/dist/IPC-Run3">IPC::Run3</a>
 <!--      <li><a href="http://search.cpan.org/dist/Crypt-YAPassGen">Crypt::YAPassGen</a> -->
       <li><a href="http://search.cpan.org/search?mode=module&query=MIME::Entity">Fax::Hylafax::Client</a> <i>(Required if using FAX invoice destinations</i>
       <li><a href="http://search.cpan.org/dist/ApacheDBI">Apache::DBI</a> <i>(optional but recommended for better webinterface performance)</i>
@@ -184,12 +185,16 @@ require valid-user
     <ul>
       <li>First user:<font size="-1">
 <pre>$ su
-$ <a href="man/bin/freeside-adduser.html">freeside-adduser</a> -c -h /usr/local/etc/freeside/htpasswd <i>username</i></pre></font>
+% <a href="man/bin/freeside-adduser.html">freeside-adduser</a> -c -h /usr/local/etc/freeside/htpasswd <i>username</i></pre></font>
       <li>Additional users:<font size="-1">
 <pre>$ su
-$ <a href="man/bin/freeside-adduser.html">freeside-adduser</a> -h /usr/local/etc/freeside/htpasswd <i>username</i></pre></font>
+% <a href="man/bin/freeside-adduser.html">freeside-adduser</a> -h /usr/local/etc/freeside/htpasswd <i>username</i></pre></font>
     </ul>
   <i>(using other auth types, add each user to your <a href="http://httpd.apache.org/docs/misc/FAQ.html#user-authentication">Apache authentication</a> and then run: <tt>freeside-adduser <b>username</b></tt>)</i>
+  <li>Create the Freeside system users:
+<pre>$ su
+% <a href="man/bin/freeside-adduser.html">freeside-adduser</a> fs_queue
+% <a href="man/bin/freeside-adduser.html">freeside-adduser</a> fs_selfservice</pre>
   <li>As the freeside UNIX user, run <tt>freeside-setup <b>username</b></tt> to create the database tables, passing the username of a Freeside user you created above:
 <pre>
 $ su freeside
