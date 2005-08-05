@@ -5,7 +5,7 @@
    my @search = ();
 
    if ( $cgi->param('otaker') && $cgi->param('otaker') =~ /^([\w\.\-]+)$/ ) {
-     push @search, "otaker = '$1'";
+     push @search, "cust_credit.otaker = '$1'";
    }
 
    if ( $cgi->param('agentnum') && $cgi->param('agentnum') =~ /^(\d+)$/ ) {
