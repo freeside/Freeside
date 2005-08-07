@@ -12,12 +12,20 @@ use Date::Parse;
 sub parse_beginning_ending {
   my($cgi) = @_;
 
-  $cgi->param('beginning') =~ /^([ 0-9\-\/]{0,10})$/;
-  my $beginning = str2time($1) || 0;
+  my $beginning = 0;
+  if ( $cgi->param('begin') =~ /^(\d+)$/ ) {
+    $beginning = $1;
+  } elsif ( $cgi->param('beginning') =~ /^([ 0-9\-\/]{1,64})$/ ) {
+    $beginning = str2time($1) || 0;
+  }
 
-  #need an option to turn off the + 86399 ???
-  $cgi->param('ending') =~ /^([ 0-9\-\/]{0,10})$/;
-  my $ending =  ( $1 ? str2time($1) : 4294880896 ) + 86399;
+  my $ending = 4294967295; #2^32-1
+  if ( $cgi->param('end') =~ /^(\d+)$/ ) {
+    $ending = $1 - 1;
+  } elsif ( $cgi->param('ending') =~ /^([ 0-9\-\/]{1,64})$/ ) {
+    #probably need an option to turn off the + 86399
+    my $ending = str2time($1) + 86399;
+  }
 
   ( $beginning, $ending );
 }

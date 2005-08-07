@@ -91,7 +91,12 @@
 
         foreach my $field ( @{$opt{'fields'}} ) {
           if ( ref($field) eq 'CODE' ) {
-            push @line, &{$field}($row);
+            push @line, map {
+                              ref($_) eq 'ARRAY'
+                                ? '(N/A)' #unimplemented
+                                : $_;
+                            }
+                            &{$field}($row);
           } else {
             push @line, $row->$field();
           }
@@ -153,7 +158,11 @@
           #}
           if ( ref($field) eq 'CODE' ) {
             foreach my $value ( &{$field}($row) ) {
-              $worksheet->write($r, $c++, $value );
+              if ( ref($value) eq 'ARRAY' ) { 
+                $worksheet->write($r, $c++, '(N/A)' ); #unimplemented
+              } else {
+                $worksheet->write($r, $c++, $value );
+              }
             }
           } else {
             $worksheet->write($r, $c++, $row->$field() );
@@ -256,6 +265,52 @@
                         my $styles = $opt{'style'} ? [ @{$opt{'style'}} ] : [];
 
                         foreach my $field (
+
+                          map {
+                                if ( ref($_) eq 'ARRAY' ) {
+
+                                  my $tableref = $_;
+
+                                  '<TABLE BORDER=0 CELLSPACING=0 CELLPADDING=0'.
+                                  ' STYLE="border:none">'.
+
+                                  join('', map {
+
+                                    my $rowref = $_;
+
+                                    '<tr>'.
+
+                                    join('', map {
+
+                                      my $element = $_;
+
+                                      '<TD STYLE="border:none"'.
+                                      ( $element->{'align'}
+                                          ? ' ALIGN="'. $element->{'align'}. '"'
+                                          : ''
+                                      ). '>'.
+                                      ( $element->{'link'}
+                                          ? '<A HREF="'. $element->{'link'}.'">'
+                                          : ''
+                                      ).
+                                      $element->{'data'}.
+                                      ( $element->{'link'}
+                                          ? '</A>'
+                                          : ''
+                                      ).
+                                      '</td>';
+
+                                    } @$rowref ).
+
+                                    '</tr>';
+                                  } @$tableref ).
+
+                                  '</table>';
+
+                                } else {
+                                  $_;
+                                }
+                              }
 
                           map {
                                 if ( ref($_) eq 'CODE' ) {

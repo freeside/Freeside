@@ -41,27 +41,11 @@
          }
        }
      }
-   
-     #false laziness with cust_pkg.cgi
-     if ( $cgi->param('beginning')
-          && $cgi->param('beginning') =~ /^([ 0-9\-\/]{0,10})$/ ) {
-       my $beginning = str2time($1);
-       push @search, "_date >= $beginning ";
-     }
-     if ( $cgi->param('ending')
-               && $cgi->param('ending') =~ /^([ 0-9\-\/]{0,10})$/ ) {
-       my $ending = str2time($1) + 86399;
-       push @search, " _date <= $ending ";
-     }
-     if ( $cgi->param('begin')
-          && $cgi->param('begin') =~ /^(\d+)$/ ) {
-       push @search, "_date >= $1 ";
-     }
-     if ( $cgi->param('end')
-               && $cgi->param('end') =~ /^(\d+)$/ ) {
-       push @search, " _date < $1 ";
-     }
-   
+
+     my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
+     push @search, "_date >= $beginning ",
+                   "_date <= $ending";
+
      my $search = '';
      if ( @search ) {
        $search = ' WHERE '. join(' AND ', @search);

@@ -32,6 +32,7 @@ full offerings (via their type).<BR><BR>
   <TH COLSPAN=<%= ( $cgi->param('showdisabled') || !dbdef->table('agent')->column('disabled') ) ? 2 : 3 %>>Agent</TH>
   <TH>Type</TH>
   <TH>Customers</TH>
+  <TH><FONT SIZE=-1>Customer<BR>packages</FONT></TH>
   <TH>Reports</TH>
   <TH>Registration codes</TH>
   <TH>Prepaid cards</TH>
@@ -50,6 +51,8 @@ foreach my $agent ( sort {
   my $cust_main_link = $p. 'search/cust_main.cgi?agentnum_on=1&'.
                        'agentnum='. $agent->agentnum;
 
+  my $cust_pkg_link = $p. 'search/cust_pkg.cgi?agentnum='. $agent->agentnum;
+
 %>
 
       <TR>
@@ -65,7 +68,6 @@ foreach my $agent ( sort {
         <TD><A HREF="<%=$p%>edit/agent_type.cgi?<%= $agent->typenum %>"><%= $agent->agent_type->atype %></A></TD>
 
         <TD>
-
           <TABLE CELLSPACING=0 CELLPADDING=0>
             <TR>
               <TH ALIGN="right" WIDTH="40%">
@@ -107,6 +109,44 @@ foreach my $agent ( sort {
               <TD>
                 <% if ( $num_cancel ) { %>
                   <A HREF="<%= $cust_main_link %>&showcancelledcustomers=1&cancelled=1"><% } %>cancelled<% if ( $num_cancel ) { %></A><% } %>
+              </TD>
+            </TR>
+          </TABLE>
+        </TD>
+
+        <TD>
+          <TABLE CELLSPACING=0 CELLPADDING=0>
+            <TR>
+              <TH ALIGN="right" WIDTH="40%">
+                <FONT COLOR="#00CC00">
+                  <%= my $num_active_pkg = $agent->num_active_cust_pkg %>&nbsp;
+                </FONT>
+              </TH>
+              <TD>
+                <% if ( $num_active_pkg ) { %>
+                  <A HREF="<%= $cust_pkg_link %>&magic=active"><% } %>active<% if ( $num_active_pkg ) { %></A><% } %>
+              </TD>
+            </TR>
+            <TR>
+              <TH ALIGN="right" WIDTH="40%">
+                <FONT COLOR="#FF9900">
+                  <%= my $num_susp_pkg = $agent->num_susp_cust_pkg %>&nbsp;
+                </FONT>
+              </TH>
+              <TD>
+                <% if ( $num_susp_pkg ) { %>
+                  <A HREF="<%= $cust_pkg_link %>&magic=suspended"><% } %>suspended<% if ( $num_susp_pkg ) { %></A><% } %>
+              </TD>
+            </TR>
+            <TR>
+              <TH ALIGN="right" WIDTH="40%">
+                <FONT COLOR="#FF0000">
+                  <%= my $num_cancel_pkg = $agent->num_cancel_cust_pkg %>&nbsp;
+                </FONT>
+              </TH>
+              <TD>
+                <% if ( $num_cancel_pkg ) { %>
+                  <A HREF="<%= $cust_pkg_link %>&magic=cancelled"><% } %>cancelled<% if ( $num_cancel_pkg ) { %></A><% } %>
               </TD>
             </TR>
           </TABLE>

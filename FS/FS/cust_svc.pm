@@ -274,6 +274,7 @@ Returns a list consisting of:
 - The name of this service (from part_svc)
 - A meaningful identifier (username, domain, or mail alias)
 - The table name (i.e. svc_domain) for this service
+- svcnum
 
 =cut
 
@@ -326,7 +327,7 @@ sub _svc_label {
     $tag = $svc_x->getfield('svcnum');
   }
 
-  $self->part_svc->svc, $tag, $svcdb;
+  $self->part_svc->svc, $tag, $svcdb, $self->svcnum;
 
 }
 

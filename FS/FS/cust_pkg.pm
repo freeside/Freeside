@@ -3,8 +3,9 @@ package FS::cust_pkg;
 use strict;
 use vars qw(@ISA $disable_agentcheck @SVCDB_CANCEL_SEQ $DEBUG);
 use FS::UID qw( getotaker dbh );
-use FS::Record qw( qsearch qsearchs );
 use FS::Misc qw( send_email );
+use FS::Record qw( qsearch qsearchs );
+use FS::cust_main_Mixin;
 use FS::cust_svc;
 use FS::part_pkg;
 use FS::cust_main;
@@ -25,7 +26,7 @@ use FS::svc_forward;
 # for sending cancel emails in sub cancel
 use FS::Conf;
 
-@ISA = qw( FS::Record );
+@ISA = qw( FS::cust_main_Mixin FS::Record );
 
 $DEBUG = 0;
 
@@ -141,6 +142,12 @@ Create a new billing item.  To add the item to the database, see L<"insert">.
 =cut
 
 sub table { 'cust_pkg'; }
+sub cust_linked { $_[0]->cust_main_custnum; } 
+sub cust_unlinked_msg {
+  my $self = shift;
+  "WARNING: can't find cust_main.custnum ". $self->custnum.
+  ' (cust_pkg.pkgnum '. $self->pkgnum. ')';
+}
 
 =item insert [ OPTION => VALUE ... ]
 
@@ -748,6 +755,54 @@ sub available_part_svc {
       $self->part_pkg->pkg_svc;
 }
 
+=item status
+
+Returns a short status string for this package, currently:
+
+=over 4
+
+=item not yet billed
+
+=item one-time charge
+
+=item active
+
+=item suspended
+
+=item cancelled
+
+=back
+
+=cut
+
+sub status {
+  my $self = shift;
+
+  return 'cancelled' if $self->get('cancel');
+  return 'suspended' if $self->susp;
+  return 'not yet billed' unless $self->setup;
+  return 'one-time charge' if $self->part_pkg->freq =~ /^(0|$)/;
+  return 'active';
+}
+
+=item statuscolor
+
+Returns a hex triplet color string for this package's status.
+
+=cut
+
+my %statuscolor = (
+  'not yet billed'  => '000000',
+  'one-time charge' => '000000',
+  'active'          => '00CC00',
+  'suspended'       => 'FF9900',
+  'cancelled'       => 'FF0000',
+);
+sub statuscolor {
+  my $self = shift;
+  $statuscolor{$self->status};
+}
+
 =item labels
 
 Returns a list of lists, calling the label method for all services
@@ -1061,6 +1116,60 @@ sub reexport {
 }
 
 =back
+
+=head1 CLASS METHOD
+
+=over 4
+
+=item recurring_sql
+
+Returns an SQL expression identifying recurring packages.
+
+=cut
+
+sub recurring_sql { "
+  '0' != ( select freq from part_pkg
+             where cust_pkg.pkgpart = part_pkg.pkgpart )
+"; }
+
+=item active_sql
+
+Returns an SQL expression identifying active packages.
+
+=cut
+
+sub active_sql { "
+  ". $_[0]->recurring_sql(). "
+  AND ( cust_pkg.cancel IS NULL OR cust_pkg.cancel = 0 )
+  AND ( cust_pkg.susp   IS NULL OR cust_pkg.susp   = 0 )
+"; }
+
+=item susp_sql
+=item suspended_sql
+
+Returns an SQL expression identifying suspended packages.
+
+=cut
+
+sub suspended_sql { susp_sql(@_); }
+sub susp_sql { "
+  ". $_[0]->recurring_sql(). "
+  AND ( cust_pkg.cancel IS NULL OR cust_pkg.cancel = 0 )
+  AND cust_pkg.susp IS NOT NULL AND cust_pkg.susp != 0
+"; }
+
+=item cancel_sql
+=item cancelled_sql
+
+Returns an SQL exprression identifying cancelled packages.
+
+=cut
+
+sub cancelled_sql { cancel_sql(@_); }
+sub cancel_sql { "
+  ". $_[0]->recurring_sql(). "
+  AND cust_pkg.cancel IS NOT NULL AND cust_pkg.cancel != 0
+"; }
 
 =head1 SUBROUTINES
 
