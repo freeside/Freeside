@@ -21,7 +21,9 @@ machine, not the backend Freeside server.  On the public machine, install:
 Then:
 <ul>
   <li>Set the <a href="../config/config.cgi#unclassified"><i>signup_server-default_agentnum</i></a> configuration value to a default <a href="../browse/agent.cgi">agent number</a>.
-  <li>Set the <a href="../config/config.cgi#unclassified"><i>signup_server-default_refnum</i></a> to a default <a href="../browse/part_referral.cgi">advertising source</a>.
+  <li>Set the <a href="../config/config.cgi#unclassified"><i>signup_server-default_refnum</i></a> configuration value to a default <a href="../browse/part_referral.cgi">advertising source</a>.
+  <li>Set the <a href="../config/config.cgi#unclassified"><i>signup_server-payby</i></a> configuration value to the acceptable payment types for signups.
+  <li>Set the <a href="../config/config.cgi#unclassified"><i>signup_server-realtime</i></a> configuration value to run billing for signups immediately.
   <li>Add the user `freeside' to the the external machine.
   <li>Copy or symlink the <code>fs_selfservice/FS-SelfService/cgi/</code> directory into the web server's document space.  Optionally, customize the .html templates.  "Entry points" (useful places to link to) are:
     <ul>
