@@ -34,10 +34,10 @@ tie %options, 'Tie::IxHash',
 ;
 
 $notes1 = <<'END';
-Real-time export of radcheck, radreply and usergroup tables to any SQL database
-for <a href="http://www.freeradius.org/">FreeRADIUS</a>,
-<a href="http://radius.innercite.com/">ICRADIUS</a>
-or <a href="http://www.open.com.au/radiator/">Radiator</a>.  
+Real-time export of <b>radcheck</b>, <b>radreply</b> and <b>usergroup</b>
+tables to any SQL database for
+<a href="http://www.freeradius.org/">FreeRADIUS</a>
+or <a href="http://radius.innercite.com/">ICRADIUS</a>.
 END
 
 $notes2 = <<'END';
@@ -66,7 +66,7 @@ END
 
 %info = (
   'svc'      => 'svc_acct',
-  'desc'     => 'Real-time export to SQL-backed RADIUS (FreeRADIUS, ICRADIUS, Radiator)',
+  'desc'     => 'Real-time export to SQL-backed RADIUS (FreeRADIUS, ICRADIUS)',
   'options'  => \%options,
   'nodomain' => 'Y',
   'notes'    => $notes1.

@@ -8,7 +8,7 @@ tie my %options, 'Tie::IxHash', %FS::part_export::sqlradius::options;
 
 %info = (
   'svc'      => 'svc_acct',
-  'desc'     => 'Real-time export to SQL-backed RADIUS (FreeRADIUS, ICRADIUS, Radiator) with realms',
+  'desc'     => 'Real-time export to SQL-backed RADIUS (FreeRADIUS, ICRADIUS) with realms',
   'options'  => \%options,
   'nodomain' => '',
   'notes' => $FS::part_export::sqlradius::notes1.
