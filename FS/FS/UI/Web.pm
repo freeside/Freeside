@@ -24,7 +24,7 @@ sub parse_beginning_ending {
     $ending = $1 - 1;
   } elsif ( $cgi->param('ending') =~ /^([ 0-9\-\/]{1,64})$/ ) {
     #probably need an option to turn off the + 86399
-    my $ending = str2time($1) + 86399;
+    $ending = str2time($1) + 86399;
   }
 
   ( $beginning, $ending );
