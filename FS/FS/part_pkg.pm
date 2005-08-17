@@ -13,7 +13,9 @@ use FS::agent_type;
 use FS::type_pkgs;
 use FS::part_pkg_option;
 
-@ISA = qw( FS::Record );
+@ISA = qw( FS::Record ); # FS::option_Common ); # this can use option_Common
+                                                # when all the plandata bs is
+                                                # gone
 
 $DEBUG = 0;
 
@@ -754,6 +756,8 @@ The delete method is unimplemented.
 
 setup and recur semantics are not yet defined (and are implemented in
 FS::cust_bill.  hmm.).
+
+plandata should go
 
 =head1 SEE ALSO
 

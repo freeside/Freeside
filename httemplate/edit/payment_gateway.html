@@ -1,0 +1,108 @@
+<%
+
+my $payment_gateway;
+if ( $cgi->param('error') ) {
+  $payment_gateway = new FS::payment_gateway ( {
+    map { $_, scalar($cgi->param($_)) } fields('payment_gateway')
+  } );
+} elsif ( $cgi->keywords ) {
+  my($query) = $cgi->keywords;
+  $query =~ /^(\d+)$/;
+  $payment_gateway = qsearchs( 'payment_gateway', { 'gatewaynum' => $1 } );
+} else { #adding
+  $payment_gateway = new FS::payment_gateway {};
+}
+my $action = $payment_gateway->gatewaynum ? 'Edit' : 'Add';
+#my $hashref = $payment_gateway->hashref;
+
+%>
+
+<%= header("$action Payment gateway", menubar(
+  'Main Menu' => $p,
+  'View all payment gateways' => $p. 'browse/payment_gateway.html',
+)) %>
+
+<% if ( $cgi->param('error') ) { %>
+<FONT SIZE="+1" COLOR="#ff0000">Error: <%= $cgi->param('error') %></FONT>
+<% } %>
+
+<FORM ACTION="<%=popurl(1)%>process/payment_gateway.html" METHOD=POST>
+<INPUT TYPE="hidden" NAME="gatewaynum" VALUE="<%= $payment_gateway->gatewaynum %>">
+Gateway #<%= $payment_gateway->gatewaynum || "(NEW)" %>
+
+<%= ntable('#cccccc', 2, '') %>
+
+<TR>
+  <TH ALIGN="right">Gateway: </TH>
+  <TD><SELECT NAME="gateway_module" SIZE=1>
+    <% foreach my $module ( qw(
+         2CheckOut
+         AuthorizeNet
+         BankOfAmerica
+         Beanstream
+         Capstone
+         Cardstream
+         CashCow
+         CyberSource
+         eSec
+         eSelectPlus
+         Exact
+         iAuthorizer
+         IPaymentTPG
+         Jettis
+         LinkPoint
+         MerchantCommerce
+         Network1Financial
+         OCV
+         OpenECHO
+         PayConnect
+         PayflowPro
+         PaymentsGateway
+         PXPost
+         SecureHostingUPG
+         Skipjack
+         StGeorge
+         SurePay
+         TCLink
+         VirtualNet
+       ) ) {
+    %>
+      <OPTION VALUE="<%= $module %>"><%= $module %>
+    <% } %>
+    </SELECT>
+  </TD>
+</TR>
+
+<TR>
+  <TH ALIGN="right">Username: </TH>
+  <TD><INPUT TYPE="text" NAME="gateway_username"></TD>
+</TR>
+
+<TR>
+  <TH ALIGN="right">Password: </TH>
+  <TD><INPUT TYPE="text" NAME="gateway_password"></TD>
+</TR>
+
+<TR>
+  <TH ALIGN="right">Action: </TH>
+  <TD>
+    <SELECT NAME="gateway_action" SIZE=1>
+      <OPTION VALUE="Normal Authorization">Normal Authorization
+      <OPTION VALUE="Authorization Only">Authorization Only
+      <OPTION VALUE="Authorization Only, Post Authorization">Authorization Only, Post Authorization
+    </SELECT>
+  </TD>
+</TR>
+
+<TR>
+  <TH ALIGN="right">Options: </TH>
+  <TD><TEXTAREA ROWS="5" NAME="gateway_options"></TEXTAREA></TD>
+</TR>
+
+</TABLE>
+
+<BR><INPUT TYPE="submit" VALUE="<%= $payment_gateway->gatewaynum ? "Apply changes" : "Add gateway" %>">
+    </FORM>
+  </BODY>
+</HTML>
+

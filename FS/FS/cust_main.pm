@@ -256,12 +256,17 @@ sub paymask {
   return $paymask;
 }
 
-
-
-
 =item paydate - expiration date, mm/yyyy, m/yyyy, mm/yy or m/yy
 
+=item paystart_month - start date month (maestro/solo cards only)
+
+=item paystart_year - start date year (maestro/solo cards only)
+
+=item payissue - issue number (maestro/solo cards only)
+
 =item payname - name on card or billing name
+
+=item payip - IP address from which payment information was received
 
 =item tax - tax exempt, empty or `Y'
 
@@ -1099,6 +1104,19 @@ sub check {
   $self->payby =~ /^(CARD|DCRD|CHEK|DCHK|LECB|BILL|COMP|PREPAY)$/
     or return "Illegal payby: ". $self->payby;
 
+  $error =    $self->ut_numbern('paystart_month')
+           || $self->ut_numbern('paystart_year')
+           || $self->ut_numbern('payissue')
+  ;
+  return $error if $error;
+
+  if ( $self->payip eq '' ) {
+    $self->payip('');
+  } else {
+    $error = $self->ut_ip('payip');
+    return $error if $error;
+  }
+
   # If it is encrypted and the private key is not availaible then we can't
   # check the credit card.
 
@@ -1110,7 +1128,7 @@ sub check {
 
   $self->payby($1);
 
-  if ( $check_payinfo && ($self->payby eq 'CARD' || $self->payby eq 'DCRD')) {
+  if ( $check_payinfo && $self->payby =~ /^(CARD|DCRD)$/ ) {
 
     my $payinfo = $self->payinfo;
     $payinfo =~ s/\D//g;
@@ -1138,7 +1156,31 @@ sub check {
       }
     }
 
-  } elsif ($check_payinfo && ( $self->payby eq 'CHEK' || $self->payby eq 'DCHK' )) {
+    my $cardtype = cardtype($payinfo);
+    if ( $cardtype =~ /^(Switch|Solo)$/i ) {
+
+      return "Start date or issue number is required for $cardtype cards"
+        unless $self->paystart_month && $self->paystart_year or $self->payissue;
+
+      return "Start month must be between 1 and 12"
+        if $self->paystart_month
+           and $self->paystart_month < 1 || $self->paystart_month > 12;
+
+      return "Start year must be 1990 or later"
+        if $self->paystart_year
+           and $self->paystart_year < 1990;
+
+      return "Issue number must be beween 1 and 99"
+        if $self->payissue
+          and $self->payissue < 1 || $self->payissue > 99;
+
+    } else {
+      $self->paystart_month('');
+      $self->paystart_year('');
+      $self->payissue('');
+    }
+
+  } elsif ( $check_payinfo && $self->payby =~ /^(CHEK|DCHK)$/ ) {
 
     my $payinfo = $self->payinfo;
     $payinfo =~ s/[^\d\@]//g;
@@ -2036,25 +2078,77 @@ sub realtime_bop {
 
   $options{'description'} ||= 'Internet services';
 
-  #pre-requisites
-  die "Real-time processing not enabled\n"
-    unless $conf->exists('business-onlinepayment');
   eval "use Business::OnlinePayment";  
   die $@ if $@;
 
-  #load up config
-  my $bop_config = 'business-onlinepayment';
-  $bop_config .= '-ach'
-    if $method eq 'ECHECK' && $conf->exists($bop_config. '-ach');
-  my ( $processor, $login, $password, $action, @bop_options ) =
-    $conf->config($bop_config);
-  $action ||= 'normal authorization';
-  pop @bop_options if scalar(@bop_options) % 2 && $bop_options[-1] =~ /^\s*$/;
-  die "No real-time processor is enabled - ".
-      "did you set the business-onlinepayment configuration value?\n"
-    unless $processor;
+  my $payinfo = exists($options{'payinfo'})
+                  ? $options{'payinfo'}
+                  : $self->payinfo;
 
-  #massage data
+  ###
+  # select a gateway
+  ###
+
+  my $taxclass = ''; #XXX not yet
+
+  #look for an agent gateway override first
+  my $cardtype;
+  if ( $method eq 'CC' ) {
+    $cardtype = cardtype($payinfo);
+  } elsif ( $method eq 'ECHECK' ) {
+    $cardtype = 'ACH';
+  } else {
+    $cardtype = $method;
+  }
+
+  my $override =
+       qsearchs('agent_payment_gateway', { agentnum => $self->agentnum,
+                                           cardtype => $cardtype,
+                                           taxclass => $taxclass,       } )
+    || qsearchs('agent_payment_gateway', { agentnum => $self->agentnum,
+                                           cardtype => '',
+                                           taxclass => $taxclass,       } )
+    || qsearchs('agent_payment_gateway', { agentnum => $self->agentnum,
+                                           cardtype => $cardtype,
+                                           taxclass => '',              } )
+    || qsearchs('agent_payment_gateway', { agentnum => $self->agentnum,
+                                           cardtype => '',
+                                           taxclass => '',              } );
+
+  my $payment_gateway = '';
+  my( $processor, $login, $password, $action, @bop_options );
+  if ( $override ) { #use a payment gateway override
+
+    $payment_gateway = $override->payment_gateway;
+
+    $processor   = $payment_gateway->gateway_module;
+    $login       = $payment_gateway->gateway_username;
+    $password    = $payment_gateway->gateway_password;
+    $action      = $payment_gateway->gateway_action;
+    @bop_options = $payment_gateway->options;
+
+  } else { #use the standard settings from the config
+
+    die "Real-time processing not enabled\n"
+      unless $conf->exists('business-onlinepayment');
+
+    #load up config
+    my $bop_config = 'business-onlinepayment';
+    $bop_config .= '-ach'
+      if $method eq 'ECHECK' && $conf->exists($bop_config. '-ach');
+    ( $processor, $login, $password, $action, @bop_options ) =
+      $conf->config($bop_config);
+    $action ||= 'normal authorization';
+    pop @bop_options if scalar(@bop_options) % 2 && $bop_options[-1] =~ /^\s*$/;
+    die "No real-time processor is enabled - ".
+        "did you set the business-onlinepayment configuration value?\n"
+      unless $processor;
+
+  }
+
+  ###
+  # massage data
+  ###
 
   my $address = exists($options{'address1'})
                     ? $options{'address1'}
@@ -2087,10 +2181,6 @@ sub realtime_bop {
   my $email = ($conf->exists('business-onlinepayment-email-override'))
               ? $conf->config('business-onlinepayment-email-override')
               : $invoicing_list[0];
-
-  my $payinfo = exists($options{'payinfo'})
-                  ? $options{'payinfo'}
-                  : $self->payinfo;
 
   my %content = ();
   if ( $method eq 'CC' ) { 
@@ -2130,7 +2220,9 @@ sub realtime_bop {
     $content{phone} = $payinfo;
   }
 
-  #transaction(s)
+  ###
+  # run transaction(s)
+  ###
 
   my( $action1, $action2 ) = split(/\s*\,\s*/, $action );
 
@@ -2208,7 +2300,10 @@ sub realtime_bop {
 
   }
 
-  #remove paycvv after initial transaction
+  ###
+  # remove paycvv after initial transaction
+  ###
+
   #false laziness w/misc/process/payment.cgi - check both to make sure working
   # correctly
   if ( defined $self->dbdef_table->column('paycvv')
@@ -2221,7 +2316,10 @@ sub realtime_bop {
     }
   }
 
-  #result handling
+  ###
+  # result handling
+  ###
+
   if ( $transaction->is_success() ) {
 
     my %method2payby = (
@@ -2230,7 +2328,13 @@ sub realtime_bop {
       'LEC'    => 'LECB',
     );
 
-    my $paybatch = "$processor:". $transaction->authorization;
+    my $paybatch = '';
+    if ( $payment_gateway ) { # agent override
+      $paybatch = $payment_gateway->gatewaynum. '-';
+    }
+
+    $paybatch .= "$processor:". $transaction->authorization;
+
     $paybatch .= ':'. $transaction->order_number
       if $transaction->can('order_number')
       && length($transaction->order_number);
@@ -3278,17 +3382,10 @@ Returns an SQL expression identifying active cust_main records.
 
 =cut
 
-my $recurring_sql = "
-  '0' != ( select freq from part_pkg
-             where cust_pkg.pkgpart = part_pkg.pkgpart )
-";
-
 sub active_sql { "
   0 < ( SELECT COUNT(*) FROM cust_pkg
           WHERE cust_pkg.custnum = cust_main.custnum
-            AND $recurring_sql
-            AND ( cust_pkg.cancel IS NULL OR cust_pkg.cancel = 0 )
-            AND ( cust_pkg.susp   IS NULL OR cust_pkg.susp   = 0 )
+            AND ". FS::cust_pkg->active_sql. "
       )
 "; }
 
@@ -3299,6 +3396,12 @@ Returns an SQL expression identifying suspended cust_main records.
 
 =cut
 
+#my $recurring_sql = FS::cust_pkg->recurring_sql;
+my $recurring_sql = "
+  '0' != ( select freq from part_pkg
+             where cust_pkg.pkgpart = part_pkg.pkgpart )
+";
+
 sub suspended_sql { susp_sql(@_); }
 sub susp_sql { "
     0 < ( SELECT COUNT(*) FROM cust_pkg
@@ -3308,9 +3411,7 @@ sub susp_sql { "
         )
     AND 0 = ( SELECT COUNT(*) FROM cust_pkg
                 WHERE cust_pkg.custnum = cust_main.custnum
-                  AND $recurring_sql
-                  AND ( cust_pkg.susp IS NULL OR cust_pkg.susp = 0 )
-                  AND ( cust_pkg.cancel IS NULL OR cust_pkg.cancel = 0 )
+                  AND ". FS::cust_pkg->active_sql. "
             )
 "; }
 

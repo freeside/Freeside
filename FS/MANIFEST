@@ -92,6 +92,8 @@ FS/part_export/http.pm
 FS/part_export/infostreet.pm
 FS/part_export/ldap.pm
 FS/part_export/null.pm
+FS/part_export/radiator.pm
+FS/part_export/router.pm
 FS/part_export/shellcommands.pm
 FS/part_export/shellcommands_withdomain.pm
 FS/part_export/sqlmail.pm
@@ -221,6 +223,7 @@ t/part_export-ldap.t
 t/part_export-null.t
 t/part_export-passwdfile.t
 t/part_export-postfix.t
+t/part_export-radiator.t
 t/part_export-router.t
 t/part_export-shellcommands.t
 t/part_export-shellcommands_withdomain.t
@@ -276,3 +279,11 @@ t/msgcat.t
 t/raddb.t
 t/clientapi_session.t
 t/clientapi_session_field.t
+FS/payment_gateway.pm
+t/payment_gateway.t
+FS/payment_gateway_option.pm
+t/payment_gateway_option.t
+FS/option_Common.pm
+t/option_Common.t
+FS/agent_payment_gateway.pm
+t/agent_payment_gateway.t

@@ -1,0 +1,64 @@
+<%
+
+$cgi->param('agentnum') =~ /(\d+)$/ or die "illegal agentnum";
+my $agent = qsearchs('agent', { 'agentnum' => $1 } );
+die "agentnum $1 not found" unless $agent;
+
+#my @agent_payment_gateway;
+if ( $cgi->param('error') ) {
+}
+
+my $action = 'Add';
+
+%>
+
+<%= header("$action payment gateway override for ". $agent->agent,  menubar(
+  'Main Menu' => $p,
+  #'View all payment gateways' => $p. 'browse/payment_gateway.html',
+  'View all agents' => $p. 'browse/agent.html',
+)) %>
+
+<% if ( $cgi->param('error') ) { %>
+<FONT SIZE="+1" COLOR="#ff0000">Error: <%= $cgi->param('error') %></FONT>
+<% } %>
+
+<FORM ACTION="<%=popurl(1)%>process/agent_payment_gateway.html" METHOD=POST>
+<INPUT TYPE="hidden" NAME="agentnum" VALUE="<%= $agent->agentnum %>">
+
+Use gateway <SELECT NAME="gatewaynum">
+<% foreach my $payment_gateway (
+      qsearch('payment_gateway', { 'disabled' => '' } )
+    ) {
+%>
+  <OPTION VALUE="<%= $payment_gateway->gatewaynum %>"><%= $payment_gateway->gateway_module %> (<%= $payment_gateway->gateway_username %>)
+<% } %>
+</SELECT>
+<BR><BR>
+
+for <SELECT NAME="cardtype" MULTIPLE>
+<% foreach my $cardtype (
+  "",
+  "VISA card",
+  "MasterCard",
+  "Discover card",
+  "American Express card",
+  "Diner's Club/Carte Blanche",
+  "enRoute",
+  "JCB",
+  "BankCard",
+  "Switch",
+  "Solo",
+  'ACH',
+) { %>
+  <OPTION VALUE="<%= $cardtype %>"><%= $cardtype || '(Default fallback)' %>
+<% } %>
+</SELECT>
+<BR><BR>
+
+(optional) when invoice contains only items of taxclass <INPUT TYPE="text" NAME="taxclass">
+<BR><BR>
+
+<INPUT TYPE="submit" VALUE="Add gateway override">
+</FORM>
+</BODY>
+</HTML>

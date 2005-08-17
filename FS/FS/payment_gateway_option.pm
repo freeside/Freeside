@@ -1,22 +1,21 @@
-package FS::part_export_option;
+package FS::payment_gateway_option;
 
 use strict;
 use vars qw( @ISA );
 use FS::Record qw( qsearch qsearchs );
-use FS::part_export;
 
 @ISA = qw(FS::Record);
 
 =head1 NAME
 
-FS::part_export_option - Object methods for part_export_option records
+FS::payment_gateway_option - Object methods for payment_gateway_option records
 
 =head1 SYNOPSIS
 
-  use FS::part_export_option;
+  use FS::payment_gateway_option;
 
-  $record = new FS::part_export_option \%hash;
-  $record = new FS::part_export_option { 'column' => 'value' };
+  $record = new FS::payment_gateway_option \%hash;
+  $record = new FS::payment_gateway_option { 'column' => 'value' };
 
   $error = $record->insert;
 
@@ -28,19 +27,20 @@ FS::part_export_option - Object methods for part_export_option records
 
 =head1 DESCRIPTION
 
-An FS::part_export_option object represents an export option.
-FS::part_export_option inherits from FS::Record.  The following fields are
-currently supported:
+An FS::payment_gateway_option object represents an option key and value for
+a payment gateway.  FS::payment_gateway_option inherits from
+FS::Record.  The following fields are currently supported:
 
 =over 4
 
 =item optionnum - primary key
 
-=item exportnum - export (see L<FS::part_export>)
+=item gatewaynum - 
 
-=item optionname - option name
+=item optionname - 
 
-=item optionvalue - option value
+=item optionvalue - 
+
 
 =back
 
@@ -50,8 +50,7 @@ currently supported:
 
 =item new HASHREF
 
-Creates a new export option.  To add the export option to the database, see
-L<"insert">.
+Creates a new option.  To add the option to the database, see L<"insert">.
 
 Note that this stores the hash reference, not a distinct copy of the hash it
 points to.  You can ask the object for a copy with the I<hash> method.
@@ -60,7 +59,7 @@ points to.  You can ask the object for a copy with the I<hash> method.
 
 # the new method can be inherited from FS::Record, if a table method is defined
 
-sub table { 'part_export_option'; }
+sub table { 'payment_gateway_option'; }
 
 =item insert
 
@@ -90,7 +89,7 @@ returns the error, otherwise returns false.
 
 =item check
 
-Checks all fields to make sure this is a valid export option.  If there is
+Checks all fields to make sure this is a valid option.  If there is
 an error, returns the error, otherwise returns false.  Called by the insert
 and replace methods.
 
@@ -104,16 +103,11 @@ sub check {
 
   my $error = 
     $self->ut_numbern('optionnum')
-    || $self->ut_foreign_key('exportnum', 'part_export', 'exportnum')
-    || $self->ut_alpha('optionname')
-    || $self->ut_anything('optionvalue')
+    || $self->ut_foreign_key('gatewaynum', 'payment_gateway', 'gatewaynum')
+    || $self->ut_text('optionname')
+    || $self->ut_textn('optionvalue')
   ;
   return $error if $error;
-
-  return "Unknown exportnum: ". $self->exportnum
-    unless qsearchs('part_export', { 'exportnum' => $self->exportnum } );
-
-  #check options & values?
 
   $self->SUPER::check;
 }
@@ -122,11 +116,9 @@ sub check {
 
 =head1 BUGS
 
-Possibly.
-
 =head1 SEE ALSO
 
-L<FS::part_export>, L<FS::Record>, schema.html from the base documentation.
+L<FS::Record>, schema.html from the base documentation.
 
 =cut
 

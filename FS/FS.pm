@@ -237,11 +237,11 @@ The main documentation is in httemplate/docs.
 =head1 SUPPORT
 
 A mailing list for users is available.  Send a blank message to
-<ivan-freeside-subscribe@sisd.com> to subscribe.
+<freeside-users-subscribe@sisd.com> to subscribe.
 
 A mailing list for developers is available.  It is intended to be lower volume
 and higher SNR than the users list.  Send a blank message to
-<ivan-freeside-devel-subscribe@sisd.com> to subscribe.
+<freeside-devel-subscribe@sisd.com> to subscribe.
 
 Commercial support is available; see
 <http://www.sisd.com/freeside/commercial.html>.

@@ -5,11 +5,12 @@ use vars qw( @ISA @EXPORT_OK $DEBUG %exports );
 use Exporter;
 use Tie::IxHash;
 use FS::Record qw( qsearch qsearchs dbh );
+use FS::option_Common;
 use FS::part_svc;
 use FS::part_export_option;
 use FS::export_svc;
 
-@ISA = qw(FS::Record);
+@ISA = qw( FS::option_Common );
 @EXPORT_OK = qw(export_info);
 
 $DEBUG = 0;
@@ -103,48 +104,6 @@ otherwise returns false.
 If a hash reference of options is supplied, part_export_option records are
 created (see L<FS::part_export_option>).
 
-=cut
-
-#false laziness w/queue.pm
-sub insert {
-  my $self = shift;
-  my $options = shift;
-  local $SIG{HUP} = 'IGNORE';
-  local $SIG{INT} = 'IGNORE';
-  local $SIG{QUIT} = 'IGNORE';
-  local $SIG{TERM} = 'IGNORE';
-  local $SIG{TSTP} = 'IGNORE';
-  local $SIG{PIPE} = 'IGNORE';
-
-  my $oldAutoCommit = $FS::UID::AutoCommit;
-  local $FS::UID::AutoCommit = 0;
-  my $dbh = dbh;
-
-  my $error = $self->SUPER::insert;
-  if ( $error ) {
-    $dbh->rollback if $oldAutoCommit;
-    return $error;
-  }
-
-  foreach my $optionname ( keys %{$options} ) {
-    my $part_export_option = new FS::part_export_option ( {
-      'exportnum'   => $self->exportnum,
-      'optionname'  => $optionname,
-      'optionvalue' => $options->{$optionname},
-    } );
-    $error = $part_export_option->insert;
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return $error;
-    }
-  }
-
-  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
-
-  '';
-
-}
-
 =item delete
 
 Delete this record from the database.
@@ -171,14 +130,6 @@ sub delete {
     return $error;
   }
 
-  foreach my $part_export_option ( $self->part_export_option ) {
-    my $error = $part_export_option->delete;
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return $error;
-    }
-  }
-
   foreach my $export_svc ( $self->export_svc ) {
     my $error = $export_svc->delete;
     if ( $error ) {
@@ -192,72 +143,6 @@ sub delete {
   '';
 
 }
-
-=item replace OLD_RECORD HASHREF
-
-Replaces the OLD_RECORD with this one in the database.  If there is an error,
-returns the error, otherwise returns false.
-
-If a hash reference of options is supplied, part_export_option records are
-created or modified (see L<FS::part_export_option>).
-
-=cut
-
-sub replace {
-  my $self = shift;
-  my $old = shift;
-  my $options = shift;
-  local $SIG{HUP} = 'IGNORE';
-  local $SIG{INT} = 'IGNORE';
-  local $SIG{QUIT} = 'IGNORE';
-  local $SIG{TERM} = 'IGNORE';
-  local $SIG{TSTP} = 'IGNORE';
-  local $SIG{PIPE} = 'IGNORE';
-
-  my $oldAutoCommit = $FS::UID::AutoCommit;
-  local $FS::UID::AutoCommit = 0;
-  my $dbh = dbh;
-
-  my $error = $self->SUPER::replace($old);
-  if ( $error ) {
-    $dbh->rollback if $oldAutoCommit;
-    return $error;
-  }
-
-  foreach my $optionname ( keys %{$options} ) {
-    my $old = qsearchs( 'part_export_option', {
-        'exportnum'   => $self->exportnum,
-        'optionname'  => $optionname,
-    } );
-    my $new = new FS::part_export_option ( {
-        'exportnum'   => $self->exportnum,
-        'optionname'  => $optionname,
-        'optionvalue' => $options->{$optionname},
-    } );
-    $new->optionnum($old->optionnum) if $old;
-    my $error = $old ? $new->replace($old) : $new->insert;
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return $error;
-    }
-  }
-
-  #remove extraneous old options
-  foreach my $opt (
-    grep { !exists $options->{$_->optionname} } $old->part_export_option
-  ) {
-    my $error = $opt->delete;
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return $error;
-    }
-  }
-
-  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
-
-  '';
-
-};
 
 =item check
 
@@ -347,35 +232,16 @@ L<FS::part_export_option>).
 
 sub part_export_option {
   my $self = shift;
-  qsearch('part_export_option', { 'exportnum' => $self->exportnum } );
+  $self->option_objects;
 }
 
 =item options 
 
 Returns a list of option names and values suitable for assigning to a hash.
 
-=cut
-
-sub options {
-  my $self = shift;
-  map { $_->optionname => $_->optionvalue } $self->part_export_option;
-}
-
 =item option OPTIONNAME
 
 Returns the option value for the given name, or the empty string.
-
-=cut
-
-sub option {
-  my $self = shift;
-  my $part_export_option =
-    qsearchs('part_export_option', {
-      exportnum  => $self->exportnum,
-      optionname => shift,
-  } );
-  $part_export_option ? $part_export_option->optionvalue : '';
-}
 
 =item _rebless
 

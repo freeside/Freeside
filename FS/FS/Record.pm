@@ -1,9 +1,8 @@
 package FS::Record;
 
 use strict;
-use vars qw( $dbdef_file $dbdef $setup_hack $AUTOLOAD @ISA @EXPORT_OK $DEBUG
-             $me %dbdef_cache %virtual_fields_cache $nowarn_identical );
-use subs qw(reload_dbdef);
+use vars qw( $AUTOLOAD @ISA @EXPORT_OK $DEBUG
+             $me %virtual_fields_cache $nowarn_identical );
 use Exporter;
 use Carp qw(carp cluck croak confess);
 use File::CounterFile;
@@ -11,6 +10,7 @@ use Locale::Country;
 use DBI qw(:sql_types);
 use DBIx::DBSchema 0.25;
 use FS::UID qw(dbh getotaker datasrc driver_name);
+use FS::Schema qw(dbdef);
 use FS::SearchCache;
 use FS::Msgcat qw(gettext);
 use FS::Conf;
@@ -20,6 +20,8 @@ use FS::part_virtual_field;
 use Tie::IxHash;
 
 @ISA = qw(Exporter);
+
+#export dbdef for now... everything else expects to find it here
 @EXPORT_OK = qw(dbh fields hfields qsearch qsearchs dbdef jsearch);
 
 $DEBUG = 0;
@@ -33,13 +35,10 @@ my $rsa_loaded;
 my $rsa_encrypt;
 my $rsa_decrypt;
 
-#ask FS::UID to run this stuff for us later
-$FS::UID::callback{'FS::Record'} = sub { 
+FS::UID->install_callback( sub {
   $conf = new FS::Conf; 
   $File::CounterFile::DEFAULT_DIR = "/usr/local/etc/freeside/counters.". datasrc;
-  $dbdef_file = "/usr/local/etc/freeside/dbdef.". datasrc;
-  &reload_dbdef unless $setup_hack; #$setup_hack needed now?
-};
+} );
 
 =head1 NAME
 
@@ -48,7 +47,7 @@ FS::Record - Database record objects
 =head1 SYNOPSIS
 
     use FS::Record;
-    use FS::Record qw(dbh fields qsearch qsearchs dbdef);
+    use FS::Record qw(dbh fields qsearch qsearchs);
 
     $record = new FS::Record 'table', \%hash;
     $record = new FS::Record 'table', { 'column' => 'value', ... };
@@ -93,10 +92,6 @@ FS::Record - Database record objects
     $error = $record->ut_phonen('column');
     $error = $record->ut_anything('column');
     $error = $record->ut_name('column');
-
-    $dbdef = reload_dbdef;
-    $dbdef = reload_dbdef "/non/standard/filename";
-    $dbdef = dbdef;
 
     $quoted_value = _quote($value,'table','field');
 
@@ -218,7 +213,7 @@ sub qsearch {
   my $dbh = dbh;
 
   my $table = $cache ? $cache->table : $stable;
-  my $dbdef_table = $dbdef->table($table)
+  my $dbdef_table = dbdef->table($table)
     or die "No schema for table $table found - ".
            "do you need to create it or run dbdef-create?";
   my $pkey = $dbdef_table->primary_key;
@@ -254,7 +249,7 @@ sub qsearch {
       if ( ! defined( $record->{$_} ) || $record->{$_} eq '' ) {
         if ( $op eq '=' ) {
           if ( driver_name eq 'Pg' ) {
-            my $type = $dbdef->table($table)->column($column)->type;
+            my $type = dbdef->table($table)->column($column)->type;
             if ( $type =~ /(int|serial)/i ) {
               qq-( $column IS NULL )-;
             } else {
@@ -265,7 +260,7 @@ sub qsearch {
           }
         } elsif ( $op eq '!=' ) {
           if ( driver_name eq 'Pg' ) {
-            my $type = $dbdef->table($table)->column($column)->type;
+            my $type = dbdef->table($table)->column($column)->type;
             if ( $type =~ /(int|serial)/i ) {
               qq-( $column IS NOT NULL )-;
             } else {
@@ -335,7 +330,7 @@ sub qsearch {
     grep defined( $record->{$_} ) && $record->{$_} ne '', @real_fields
   ) {
     if ( $record->{$field} =~ /^\d+(\.\d+)?$/
-         && $dbdef->table($table)->column($field)->type =~ /(int|serial)/i
+         && dbdef->table($table)->column($field)->type =~ /(int|serial)/i
     ) {
       $sth->bind_param($bind++, $record->{$field}, { TYPE => SQL_INTEGER } );
     } else {
@@ -446,7 +441,7 @@ sub by_key {
   my $table = $class->table
     or croak "No table for $class found";
 
-  my $dbdef_table = $dbdef->table($table)
+  my $dbdef_table = dbdef->table($table)
     or die "No schema for table $table found - ".
            "do you need to create it or run dbdef-create?";
   my $pkey = $dbdef_table->primary_key
@@ -520,7 +515,7 @@ Returns the DBIx::DBSchema::Table object for the table.
 sub dbdef_table {
   my($self)=@_;
   my($table)=$self->table;
-  $dbdef->table($table);
+  dbdef->table($table);
 }
 
 =item get, getfield COLUMN
@@ -787,7 +782,7 @@ sub insert {
 
 
   my $h_sth;
-  if ( defined $dbdef->table('h_'. $table) ) {
+  if ( defined dbdef->table('h_'. $table) ) {
     my $h_statement = $self->_h_statement('insert');
     warn "[debug]$me $h_statement\n" if $DEBUG > 2;
     $h_sth = dbh->prepare($h_statement) or do {
@@ -848,7 +843,7 @@ sub delete {
   my $sth = dbh->prepare($statement) or return dbh->errstr;
 
   my $h_sth;
-  if ( defined $dbdef->table('h_'. $self->table) ) {
+  if ( defined dbdef->table('h_'. $self->table) ) {
     my $h_statement = $self->_h_statement('delete');
     warn "[debug]$me $h_statement\n" if $DEBUG > 2;
     $h_sth = dbh->prepare($h_statement) or return dbh->errstr;
@@ -992,7 +987,7 @@ sub replace {
   my $sth = dbh->prepare($statement) or return dbh->errstr;
 
   my $h_old_sth;
-  if ( defined $dbdef->table('h_'. $old->table) ) {
+  if ( defined dbdef->table('h_'. $old->table) ) {
     my $h_old_statement = $old->_h_statement('replace_old');
     warn "[debug]$me $h_old_statement\n" if $DEBUG > 2;
     $h_old_sth = dbh->prepare($h_old_statement) or return dbh->errstr;
@@ -1001,7 +996,7 @@ sub replace {
   }
 
   my $h_new_sth;
-  if ( defined $dbdef->table('h_'. $new->table) ) {
+  if ( defined dbdef->table('h_'. $new->table) ) {
     my $h_new_statement = $new->_h_statement('replace_new');
     warn "[debug]$me $h_new_statement\n" if $DEBUG > 2;
     $h_new_sth = dbh->prepare($h_new_statement) or return dbh->errstr;
@@ -1552,9 +1547,9 @@ sub virtual_fields {
   my $table;
   $table = $self->table or confess "virtual_fields called on non-table";
 
-  confess "Unknown table $table" unless $dbdef->table($table);
+  confess "Unknown table $table" unless dbdef->table($table);
 
-  return () unless $self->dbdef->table('part_virtual_field');
+  return () unless dbdef->table('part_virtual_field');
 
   unless ( $virtual_fields_cache{$table} ) {
     my $query = 'SELECT name from part_virtual_field ' .
@@ -1622,39 +1617,10 @@ fields() and other subroutines elsewhere in FS::Record.
 sub real_fields {
   my $table = shift;
 
-  my($table_obj) = $dbdef->table($table);
+  my($table_obj) = dbdef->table($table);
   confess "Unknown table $table" unless $table_obj;
   $table_obj->columns;
 }
-
-=item reload_dbdef([FILENAME])
-
-Load a database definition (see L<DBIx::DBSchema>), optionally from a
-non-default filename.  This command is executed at startup unless
-I<$FS::Record::setup_hack> is true.  Returns a DBIx::DBSchema object.
-
-=cut
-
-sub reload_dbdef {
-  my $file = shift || $dbdef_file;
-
-  unless ( exists $dbdef_cache{$file} ) {
-    warn "[debug]$me loading dbdef for $file\n" if $DEBUG;
-    $dbdef_cache{$file} = DBIx::DBSchema->load( $file )
-                            or die "can't load database schema from $file";
-  } else {
-    warn "[debug]$me re-using cached dbdef for $file\n" if $DEBUG;
-  }
-  $dbdef = $dbdef_cache{$file};
-}
-
-=item dbdef
-
-Returns the current database definition.  See L<DBIx::DBSchema>.
-
-=cut
-
-sub dbdef { $dbdef; }
 
 =item _quote VALUE, TABLE, COLUMN
 
@@ -1666,7 +1632,7 @@ type (see L<DBIx::DBSchema::Column>) does not end in `char' or `binary'.
 
 sub _quote {
   my($value, $table, $column) = @_;
-  my $column_obj = $dbdef->table($table)->column($column);
+  my $column_obj = dbdef->table($table)->column($column);
   my $column_type = $column_obj->type;
   my $nullable = $column_obj->null;
 
@@ -1701,7 +1667,7 @@ sub vfieldpart_hashref {
   my $self = shift;
   my $table = $self->table;
 
-  return {} unless $self->dbdef->table('part_virtual_field');
+  return {} unless dbdef->table('part_virtual_field');
 
   my $dbh = dbh;
   my $statement = "SELECT vfieldpart, name FROM part_virtual_field WHERE ".

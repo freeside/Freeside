@@ -1,0 +1,129 @@
+#!/usr/bin/perl -w
+
+use strict;
+use vars qw($DEBUG $DRY_RUN);
+use Term::ReadKey;
+use DBIx::DBSchema 0.27;
+use FS::UID qw(adminsuidsetup checkeuid datasrc );  #getsecrets);
+use FS::Schema qw( dbdef dbdef_dist reload_dbdef );
+
+
+$DEBUG = 1;
+$DRY_RUN = 0;
+
+
+die "Not running uid freeside!" unless checkeuid();
+
+my $user = shift or die &usage;
+my $dbh = adminsuidsetup($user);
+
+#needs to match FS::Schema...
+my $dbdef_file = "/usr/local/etc/freeside/dbdef.". datasrc;
+
+dbdef_create($dbh, $dbdef_file);
+reload_dbdef($dbdef_file);
+
+
+foreach my $table ( dbdef_dist->tables ) {
+
+  if ( dbdef->table($table) ) {
+
+    warn "$table exists\n" if $DEBUG > 1;
+
+    foreach my $column ( dbdef_dist->table($table)->columns ) {
+      if ( dbdef->table($table)->column($column) )  {
+        warn "  $table.$column exists\n" if $DEBUG > 2;
+      } else {
+
+        if ( $DEBUG ) {
+          print STDERR "column $table.$column does not exist.  create?";
+          next unless yesno();
+        }
+
+        foreach my $statement (
+          dbdef_dist->table($table)->column($column)->sql_add_column( $dbh )
+        ) {
+          warn "$statement\n" if $DEBUG || $DRY_RUN;
+          unless ( $DRY_RUN ) {
+            $dbh->do( $statement)
+              or die "CREATE error: ". $dbh->errstr. "\nexecuting: $statement";
+          }
+        }
+
+      }
+
+    }
+
+    #should eventually check & create missing indices
+
+    #should eventually drop columns not in dbdef_dist...
+
+  } else {
+
+    if ( $DEBUG ) {
+      print STDERR "table $table does not exist.  create?";
+      next unless yesno();
+    }
+
+    foreach my $statement (
+      dbdef_dist->table($table)->sql_create_table( $dbh )
+    ) {
+      warn "$statement\n" if $DEBUG || $DRY_RUN;
+      unless ( $DRY_RUN ) {
+        $dbh->do( $statement)
+          or die "CREATE error: ". $dbh->errstr. "\nexecuting: $statement";
+      }
+    }
+
+  }
+
+}
+
+# should eventually drop tables not in dbdef_dist too i guess...
+
+$dbh->commit or die $dbh->errstr;
+
+dbdef_create($dbh, $dbdef_file);
+
+$dbh->disconnect or die $dbh->errstr;
+
+###
+
+my $all = 0;
+sub yesno {
+  print STDERR ' [yes/no/all] ';
+  if ( $all ) {
+    warn "yes\n";
+    return 1;
+  } else {
+    while ( 1 ) {
+      ReadMode 4;
+      my $x = lc(ReadKey);
+      ReadMode 0;
+      if ( $x eq 'n' ) {
+        warn "no\n"; 
+        return 0;
+      } elsif ( $x eq 'y' ) {
+        warn "yes\n"; 
+        return 1;
+      } elsif ( $x eq 'a' ) {
+        warn "yes\n"; 
+        $all = 1;
+        return 1;
+      }
+    }
+  }
+}
+
+sub dbdef_create { # reverse engineer the schema from the DB and save to file
+  my( $dbh, $file ) = @_;
+  my $dbdef = new_native DBIx::DBSchema $dbh;
+  $dbdef->save($file);
+}
+
+sub usage {
+  die "Usage:\n  freeside-upgrade user\n"; 
+}
+
+1;
+

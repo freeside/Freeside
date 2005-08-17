@@ -5,6 +5,8 @@ NOTE: Version numbering has been simplified.  1.5.7 is the version after
 1.5.0pre6.  It is still a development version - releases with odd numbered 
 middle parts (NN in x.NN.x) are development versions, like Perl or Linux.
 
+If migrating from 1.5.7, see README.1.5.8 instead
+
 If migrating from 1.5.0pre6, see README.1.5.7 instead
 
 install DBD::Pg 1.32, 1.41 or later (not 1.40) (or, if you're using a Perl version before 5.6, you could try installing DBD::Pg 1.22 with <a href="http://420.am/~ivan/DBD-Pg-1.22-fixvercmp.patch">this patch</a> and commenting out the "use DBD::Pg 1.32" at the top of DBIx/DBSchema/DBD/Pg.pm)
@@ -23,318 +25,7 @@ Spreadsheet::WriteExcel, IO-stringy (IO::Scalar), Frontier::RPC
 INSERT INTO msgcat ( msgnum, msgcode, locale, msg ) VALUES ( 20, 'svc_external-id', 'en_US', 'External ID' );
 INSERT INTO msgcat ( msgnum, msgcode, locale, msg ) VALUES ( 21, 'svc_external-title', 'en_US', 'Title' );
 
-CREATE TABLE cust_bill_pkg_detail (
-  detailnum serial,
-  pkgnum int NOT NULL,
-  invnum int NOT NULL,
-  detail varchar(80),
-  PRIMARY KEY (detailnum)
-);
-CREATE INDEX cust_bill_pkg_detail1 ON cust_bill_pkg_detail ( pkgnum, invnum );
-
-CREATE TABLE part_virtual_field (
-  vfieldpart int NOT NULL,
-  dbtable varchar(32) NOT NULL,
-  name varchar(32) NOT NULL,
-  check_block text,
-  list_source text,
-  length integer,
-  label varchar(80),
-  PRIMARY KEY (vfieldpart)
-);
-
-CREATE TABLE virtual_field (
-  recnum integer NOT NULL,
-  vfieldpart integer NOT NULL,
-  value varchar(128) NOT NULL,
-  PRIMARY KEY (vfieldpart, recnum)
-);
-
-CREATE TABLE router (
-  routernum serial,
-  routername varchar(80),
-  svcnum int,
-  PRIMARY KEY (routernum)
-);
-
-CREATE TABLE part_svc_router (
-  svcrouternum serial,
-  svcpart int NOT NULL,
-  routernum int NOT NULL,
-  PRIMARY KEY (svcrouternum)
-);
-
-CREATE TABLE addr_block (
-  blocknum serial,
-  routernum int NOT NULL,
-  ip_gateway varchar(15) NOT NULL,
-  ip_netmask int NOT NULL,
-  PRIMARY KEY (blocknum)
-);
-CREATE UNIQUE INDEX addr_block1 ON addr_block ( blocknum, routernum );
-
-CREATE TABLE svc_broadband (
-  svcnum int NOT NULL,
-  blocknum int NOT NULL,
-  speed_up int NOT NULL,
-  speed_down int NOT NULL,
-  ip_addr varchar(15),
-  PRIMARY KEY (svcnum)
-);
-
-CREATE TABLE acct_snarf (
-  snarfnum serial,
-  svcnum int NOT NULL,
-  machine varchar(255) NULL,
-  protocol varchar(80) NULL,
-  username varchar(80) NULL,
-  _password varchar(80) NULL,
-  PRIMARY KEY (snarfnum)
-);
-CREATE INDEX acct_snarf1 ON acct_snarf ( svcnum );
-
-CREATE TABLE svc_external (
-  svcnum int NOT NULL,
-  id int,
-  title varchar(80),
-  PRIMARY KEY (svcnum)
-);
-
-<!--
-CREATE TABLE part_pkg_temp (
-    pkgpart serial NOT NULL,
-    pkg varchar(80) NOT NULL,
-    "comment" varchar(80) NOT NULL,
-    setup text NULL,
-    freq varchar(80) NOT NULL,
-    recur text NULL,
-    setuptax char(1) NULL,
-    recurtax char(1) NULL,
-    plan varchar(80) NULL,
-    plandata text NULL,
-    disabled char(1) NULL,
-    taxclass varchar(80) NULL,
-    PRIMARY KEY (pkgpart)
-);
-INSERT INTO part_pkg_temp SELECT * from part_pkg;
-DROP TABLE part_pkg;
-ALTER TABLE part_pkg_temp RENAME TO part_pkg;
-CREATE INDEX part_pkg1 ON part_pkg(disabled);
-
-On modern Pg:
-ALTER TABLE part_pkg DROP CONSTRAINT part_pkg_temp_pkey;
-ALTER TABLE part_pkg ADD PRIMARY KEY (pkgpart);
-select setval('public.part_pkg_temp_pkgpart_seq', ( select max(pkgpart) from part_pkg) );
-
-Or on Pg versions that don't support DROP CONSTRAINT and ADD PRIMARY KEY (tested on 7.1 and 7.2 so far):
-DROP INDEX part_pkg_temp_pkey;
-CREATE UNIQUE INDEX part_pkg_pkey ON part_pkg (pkgpart);
-probably this one?: select setval('part_pkg_temp_pkgpart_seq', ( select max(pkgpart) from part_pkg) );
-probably not this one?: select setval('part_pkg_pkgpart_seq', ( select max(pkgpart) from part_pkg) );
-
-CREATE TABLE h_part_pkg_temp (
-    historynum serial NOT NULL,
-    history_date int,
-    history_user varchar(80) NOT NULL,
-    history_action varchar(80) NOT NULL,
-    pkgpart int NOT NULL,
-    pkg varchar(80) NOT NULL,
-    "comment" varchar(80) NOT NULL,
-    setup text NULL,
-    freq varchar(80) NOT NULL,
-    recur text NULL,
-    setuptax char(1) NULL,
-    recurtax char(1) NULL,
-    plan varchar(80) NULL,
-    plandata text NULL,
-    disabled char(1) NULL,
-    taxclass varchar(80) NULL,
-    PRIMARY KEY (historynum)
-);
-INSERT INTO h_part_pkg_temp SELECT * from h_part_pkg;
-DROP TABLE h_part_pkg;
-ALTER TABLE h_part_pkg_temp RENAME TO h_part_pkg;
-CREATE INDEX h_part_pkg1 ON h_part_pkg(disabled);
-
-On modern Pg:
-ALTER TABLE h_part_pkg DROP CONSTRAINT h_part_pkg_temp_pkey;
-ALTER TABLE h_part_pkg ADD PRIMARY KEY (historynum);
-select setval('public.h_part_pkg_temp_historynum_seq', ( select max(historynum) from h_part_pkg) );
-
-Or on Pg versions that don't support DROP CONSTRAINT and ADD PRIMARY KEY (tested on 7.1 and 7.2 so far):
-DROP INDEX h_part_pkg_temp_pkey;
-CREATE UNIQUE INDEX h_part_pkg_pkey ON h_part_pkg (historynum);
-probably this one?: select setval('h_part_pkg_temp_historynum_seq', ( select max(historynum) from h_part_pkg) );
-probably not this one?: select setval('h_part_pkg_historynum_seq', ( select max(historynum) from h_part_pkg) );
--->ALTER TABLE part_pkg ADD COLUMN taxclass varchar(80) NULL;
-ALTER TABLE h_part_pkg ADD COLUMN taxclass varchar(80) NULL;
-
-CREATE TABLE cust_pay_refund (
-    payrefundnum serial NOT NULL,
-    paynum int NOT NULL,
-    refundnum int NOT NULL,
-    _date int NOT NULL,
-    amount decimal(10,2) NOT NULL,
-    PRIMARY KEY (payrefundnum)
-);
-CREATE INDEX cust_pay_refund1 ON cust_pay_refund(paynum);
-CREATE INDEX cust_pay_refund2 ON cust_pay_refund(refundnum);
-
-CREATE TABLE cust_pay_void (
-  paynum int NOT NULL,
-  custnum int NOT NULL,
-  paid decimal(10,2) NOT NULL,
-  _date int,
-  payby char(4) NOT NULL,
-  payinfo varchar(80),
-  paybatch varchar(80),
-  closed char(1),
-  void_date int,
-  reason varchar(80),
-  otaker varchar(32) NOT NULL,
-  PRIMARY KEY (paynum)
-);
-CREATE INDEX cust_pay_void1 ON cust_pay_void(custnum);
-
-CREATE TABLE part_pkg_option (
-  optionnum serial,
-  pkgpart int not null,
-  optionname varchar(80) not null,
-  optionvalue text NULL,
-  PRIMARY KEY (optionnum)
-);
-CREATE INDEX part_pkg_option1 ON part_pkg_option ( pkgpart );
-CREATE INDEX part_pkg_option2 ON part_pkg_option ( optionname );
-
-CREATE TABLE rate (
-    ratenum serial NOT NULL,
-    ratename varchar(80) NOT NULL,
-    PRIMARY KEY (ratenum)
-);
-
-CREATE TABLE rate_detail (
-    ratedetailnum serial NOT NULL,
-    ratenum int NOT NULL,
-    orig_regionnum int NULL,
-    dest_regionnum int NOT NULL,
-    min_included int NOT NULL,
-    min_charge decimal(10,2) NOT NULL,
-    sec_granularity int NOT NULL,
-    PRIMARY KEY (ratedetailnum)
-);
-CREATE UNIQUE INDEX rate_detail1 ON rate_detail ( ratenum, orig_regionnum, dest_regionnum );
-
-CREATE TABLE rate_region (
-    regionnum serial NOT NULL,
-    regionname varchar(80) NOT NULL,
-    PRIMARY KEY (regionnum)
-);
-
-CREATE TABLE rate_prefix (
-    prefixnum serial NOT NULL,
-    regionnum int NOT NULL, 
-    countrycode varchar(3) NOT NULL,
-    npa varchar(6) NULL,
-    nxx varchar(3) NULL,
-    PRIMARY KEY (prefixnum)
-);
-CREATE INDEX rate_prefix1 ON rate_prefix ( countrycode );
-CREATE INDEX rate_prefix2 ON rate_prefix ( regionnum );
-
-CREATE TABLE reg_code (
-    codenum serial NOT NULL,
-    code varchar(80) NOT NULL,
-    agentnum int NOT NULL,
-    PRIMARY KEY (codenum)
-);
-CREATE UNIQUE INDEX reg_code1 ON reg_code ( agentnum, code );
-CREATE INDEX reg_code2 ON reg_code ( agentnum );
-
-CREATE TABLE reg_code_pkg (
-    codepkgnum serial,
-    codenum int NOT NULL,
-    pkgpart int NOT NULL,
-    PRIMARY KEY (codepkgnum)
-);
-CREATE UNIQUE INDEX reg_code_pkg1 ON reg_code_pkg ( codenum, pkgpart );
-CREATE INDEX reg_code_pkg2 ON reg_code_pkg ( codenum );
-
-CREATE TABLE clientapi_session (
-    sessionnum serial NOT NULL,
-    sessionid varchar(80) NOT NULL,
-    namespace varchar(80) NOT NULL,
-    PRIMARY KEY (sessionnum)
-);
-CREATE UNIQUE INDEX clientapi_session1 ON clientapi_session ( sessionid, namespace );
-
-CREATE TABLE clientapi_session_field (
-    fieldnum serial NOT NULL,
-    sessionnum int NOT NULL,
-    fieldname varchar(80) NOT NULL,
-    fieldvalue text NULL,
-    PRIMARY KEY (fieldnum)
-);
-CREATE UNIQUE INDEX clientapi_session_field1 ON clientapi_session_field ( sessionnum, fieldname );
-
 DROP INDEX cust_bill_pkg1;
-
-ALTER TABLE cust_bill_pkg ADD itemdesc varchar(80) NULL;
-ALTER TABLE h_cust_bill_pkg ADD itemdesc varchar(80) NULL;
-ALTER TABLE cust_main_county ADD taxname varchar(80) NULL;
-ALTER TABLE h_cust_main_county ADD taxname varchar(80) NULL;
-ALTER TABLE cust_main_county ADD setuptax char(1) NULL;
-ALTER TABLE h_cust_main_county ADD setuptax char(1) NULL;
-ALTER TABLE cust_main_county ADD recurtax char(1) NULL;
-ALTER TABLE h_cust_main_county ADD recurtax char(1) NULL;
-ALTER TABLE cust_pkg ADD last_bill int NULL;
-ALTER TABLE h_cust_pkg ADD last_bill int NULL;
-ALTER TABLE agent ADD disabled char(1) NULL;
-ALTER TABLE h_agent ADD disabled char(1) NULL;
-ALTER TABLE agent ADD username varchar(80) NULL;
-ALTER TABLE h_agent ADD username varchar(80) NULL;
-ALTER TABLE agent ADD _password varchar(80) NULL;
-ALTER TABLE h_agent ADD _password varchar(80) NULL;
-ALTER TABLE cust_main ADD paycvv varchar(512) NULL;
-ALTER TABLE h_cust_main ADD paycvv varchar(512) NULL;
-ALTER TABLE cust_main ADD paymask varchar(80) NULL;
-ALTER TABLE h_cust_main ADD paymask varchar(80) NULL;
-ALTER TABLE part_referral ADD disabled char(1) NULL;
-ALTER TABLE h_part_referral ADD disabled char(1) NULL;
-CREATE INDEX part_referral1 ON part_referral ( disabled );
-ALTER TABLE pkg_svc ADD primary_svc char(1) NULL;
-ALTER TABLE h_pkg_svc ADD primary_svc char(1) NULL;
-ALTER TABLE svc_forward ADD src varchar(255) NULL;
-ALTER TABLE h_svc_forward ADD src varchar(255) NULL;
-ALTER TABLE part_pkg ADD promo_code varchar(80) NULL;
-ALTER TABLE h_part_pkg ADD promo_code varchar(80) NULL;
-CREATE INDEX part_pkg2 ON part_pkg ( promo_code );
-CREATE INDEX h_part_pkg2 ON h_part_pkg ( promo_code );
-ALTER TABLE prepay_credit ADD agentnum integer NULL;
-ALTER TABLE h_prepay_credit ADD agentnum integer NULL;
-
-ALTER TABLE type_pkgs ADD typepkgnum int;
-ALTER TABLE type_pkgs ALTER COLUMN typepkgnum SET DEFAULT nextval('public.type_pkgs_typepkgnum_seq'::text);
-CREATE SEQUENCE type_pkgs_typepkgnum_seq;
-UPDATE type_pkgs SET typepkgnum = nextval('public.type_pkgs_typepkgnum_seq'::text) WHERE typepkgnum IS NULL;
-ALTER TABLE type_pkgs ALTER typepkgnum SET NOT NULL;
-ALTER TABLE type_pkgs ADD PRIMARY KEY (typepkgnum);
-ALTER TABLE h_type_pkgs ADD typepkgnum int;
-
-ALTER TABLE cust_bill_pkg ADD billpkgnum int;
-ALTER TABLE cust_bill_pkg ALTER COLUMN billpkgnum SET DEFAULT nextval('public.cust_bill_pkg_billpkgnum_seq'::text);
-CREATE SEQUENCE cust_bill_pkg_billpkgnum_seq;
-UPDATE cust_bill_pkg SET billpkgnum = nextval('public.cust_bill_pkg_billpkgnum_seq'::text) WHERE billpkgnum IS NULL;
-ALTER TABLE cust_bill_pkg ALTER billpkgnum SET NOT NULL;
-ALTER TABLE cust_bill_pkg ADD PRIMARY KEY (billpkgnum);
-ALTER TABLE h_cust_bill_pkg ADD billpkgnum int;
-
-ALTER TABLE pkg_svc ADD pkgsvcnum int;
-ALTER TABLE pkg_svc ALTER COLUMN pkgsvcnum SET DEFAULT nextval('public.pkg_svc_pkgsvcnum_seq'::text);
-CREATE SEQUENCE pkg_svc_pkgsvcnum_seq;
-UPDATE pkg_svc SET pkgsvcnum = nextval('public.pkg_svc_pkgsvcnum_seq'::text) WHERE pkgsvcnum IS NULL;
-ALTER TABLE pkg_svc ALTER pkgsvcnum SET NOT NULL;
-ALTER TABLE pkg_svc ADD PRIMARY KEY (pkgsvcnum);
-ALTER TABLE h_pkg_svc ADD pkgsvcnum int;
 
 On recent Pg versions:
 
@@ -342,7 +33,7 @@ ALTER TABLE cust_main ALTER COLUMN payinfo varchar(512) NULL;
 ALTER TABLE h_cust_main ALTER COLUMN payinfo varchar(512) NULL;
 
 Or on older Pg versions that don't support altering columns directly:
-
+(write me)
 
 On recent Pg versions:
 
@@ -368,25 +59,25 @@ If you created your database with a version before 1.4.2, dump database, edit:
 - domain_record and h_domain_record: increase recdata from 80 to 255
 then reload
 
-optionally:
-
-  CREATE INDEX cust_main6 ON cust_main ( daytime );
-  CREATE INDEX cust_main7 ON cust_main ( night );
-  CREATE INDEX cust_main8 ON cust_main ( fax );
-  CREATE INDEX cust_main9 ON cust_main ( ship_daytime );
-  CREATE INDEX cust_main10 ON cust_main ( ship_night );
-  CREATE INDEX cust_main11 ON cust_main ( ship_fax );
-  CREATE INDEX agent2 ON agent ( disabled );
-  CREATE INDEX part_bill_event2 ON part_bill_event ( disabled );
-  CREATE INDEX cust_pay4 ON cust_pay (_date);
-
-  serial columns
-
 mandatory again:
 
-dbdef-create username
-create-history-tables username cust_bill_pkg_detail router part_svc_router addr_block svc_broadband acct_snarf svc_external cust_pay_refund cust_pay_void part_pkg_option rate rate_detail rate_region rate_prefix reg_code reg_code_pkg
-dbdef-create username
+make install-perl-modules to install the new libraries and CLI utilities
+run "freeside-upgrade username" to create the remaining new tables and columns
+
+optionally:
+
+CREATE INDEX cust_main6 ON cust_main ( daytime );
+CREATE INDEX cust_main7 ON cust_main ( night );
+CREATE INDEX cust_main8 ON cust_main ( fax );
+CREATE INDEX cust_main9 ON cust_main ( ship_daytime );
+CREATE INDEX cust_main10 ON cust_main ( ship_night );
+CREATE INDEX cust_main11 ON cust_main ( ship_fax );
+CREATE INDEX agent2 ON agent ( disabled );
+CREATE INDEX part_bill_event2 ON part_bill_event ( disabled );
+CREATE INDEX cust_pay4 ON cust_pay (_date);
+CREATE INDEX part_referral1 ON part_referral ( disabled );
+CREATE INDEX part_pkg2 ON part_pkg ( promo_code );
+CREATE INDEX h_part_pkg2 ON h_part_pkg ( promo_code );
 
 apache - fix <Files> sections to include .html also
 

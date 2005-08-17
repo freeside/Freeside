@@ -1,0 +1,70 @@
+<%
+
+  my %search;
+  if ( $cgi->param('showdisabled') ) {
+    %search = ();
+  } else {
+    %search = ( 'disabled' => '' );
+  }
+
+%>
+<%= header('Payment gateways', menubar(
+  'Main Menu' => $p,
+  'Agents'    => $p. 'browse/agent.cgi',
+)) %>
+
+<A HREF="<%= $p %>edit/payment_gateway.html"><I>Add a new payment gateway</I></A><BR><BR>
+
+<%= $cgi->param('showdisabled')
+    ? do { $cgi->param('showdisabled', 0);
+           '( <a href="'. $cgi->self_url. '">hide disabled gateways</a> )'; }
+    : do { $cgi->param('showdisabled', 1);
+           '( <a href="'. $cgi->self_url. '">show disabled gateways</a> )'; }
+%>
+
+<%= table() %>
+<TR>
+  <TH COLSPAN=<%= $cgi->param('showdisabled') ? 1 : 2 %>>#</TH>
+  <TH>Gateway</TH>
+  <TH>Username</TH>
+  <TH>Password</TH>
+  <TH>Action</TH>
+  <TH>Options</TH>
+</TR>
+
+<% foreach my $payment_gateway ( qsearch( 'payment_gateway', \%search ) ) { %>
+
+  <TR>
+    <TD><%= $payment_gateway->gatewaynum %></TD>
+    <% if ( !$cgi->param('showdisabled') ) { %>
+      <TD><%= $payment_gateway->disabled ? 'DISABLED' : '' %></TD>
+    <% } %>
+    <TD><%= $payment_gateway->gateway_module %>
+      <%= !$payment_gateway->disabled 
+            ? '<FONT SIZE="-1"> <A HREF="misc/disable-payment_gateway.cgi?'. $payment_gateway->gatewaynum.'">(disable)</A></FONT>'
+            : ''
+      %>
+    </TD>
+    <TD><%= $payment_gateway->gateway_username %></TD>
+    <TD> - </TD>
+    <TD><%= $payment_gateway->gateway_action %></TD>
+    <TD>
+      <TABLE CELLSPACING=0 CELLPADDING=0>
+        <% my %options = $payment_gateway->options;
+           foreach my $option ( keys %options ) {
+        %>
+          <TR>
+            <TH><%= $option %>:</TH>
+            <TD><%= $options{$option} %></TD>
+          </TR>
+        <% } %>
+      </TABLE>
+    </TD>
+  </TR>
+
+<% } %>
+
+</TABLE>
+</BODY>
+</HTML>
+

@@ -1,0 +1,87 @@
+#!/usr/bin/perl
+
+use FS::Schema qw( dbdef_dist );
+
+my $table = shift;
+
+###
+# add a new FS/FS/table.pm
+###
+
+my %ut = ( #just guesses
+  'int'     => 'number',
+  'number'  => 'float',
+  'varchar' => 'text',
+  'text'    => 'text',
+);
+
+my $dbdef_table = dbdef_dist->table($table)
+  or die "define table in Schema.pm first";
+my $primary_key = $dbdef_table->primary_key;
+
+open(SRC,"<eg/table_template.pm") or die $!;
+-e "FS/FS/$table.pm" and die "FS/FS/$table.pm already exists!";
+open(DEST,">FS/FS/$table.pm") or die $!;
+
+while (my $line = <SRC>) {
+
+  $line =~ s/table_name/$table/g;
+
+  if ( $line =~ /^=item\s+field\s+-\s+description\s*$/ ) {
+
+    foreach my $column ( $dbdef_table->columns ) {
+      print DEST "=item $column - ";
+      print DEST "primary key"
+        if $column eq $primary_key;
+      print DEST "\n\n";
+    }
+    next;
+
+  } elsif ( $line=~ /^(\s*)\$self->ut_numbern\('primary_key'\)\s*/ ) {
+
+    print DEST "$1\$self->ut_numbern('$primary_key')\n"
+      if $primary_key;
+    next;
+
+  } elsif (
+    $line =~ /^(\s*)\|\|\s+\$self->ut_number\('validate_other_fields'\)\s*/
+  ) {
+
+    foreach my $column ( grep { $_ ne $primary_key } $dbdef_table->columns ) {
+      my $ut = $ut{$dbdef_table->column($column)->type};
+      $ut .= 'n' if $dbdef_table->column($column)->null;
+      print DEST "$1|| \$self->ut_$ut('$column')\n";
+    }
+    next;
+
+  }
+
+  print DEST $line;
+}
+
+close SRC;
+close DEST;
+
+###
+# add FS/t/table.t
+###
+
+open(TEST,">FS/t/$table.t") or die $!;
+print TEST <<ENDTEST;
+BEGIN { \$| = 1; print "1..1\n" }
+END {print "not ok 1\n" unless \$loaded;}
+use FS::$table;
+\$loaded=1;
+print "ok 1\n";
+ENDTEST
+close TEST;
+
+###
+# add them to MANIFEST
+###
+
+open(MANIFEST,">>FS/MANIFEST") or die $!;
+print MANIFEST "FS/$table.pm\n",
+               "t/$table.t\n";
+close MANIFEST;
+

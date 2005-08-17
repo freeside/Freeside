@@ -165,6 +165,8 @@ sub handler
       use FS::rate;
       use FS::rate_region;
       use FS::rate_prefix;
+      use FS::payment_gateway;
+      use FS::agent_payment_gateway;
       use FS::XMLRPC;
 
       if ( %%%RT_ENABLED%%% ) {

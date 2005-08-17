@@ -36,6 +36,7 @@ full offerings (via their type).<BR><BR>
   <TH>Reports</TH>
   <TH>Registration codes</TH>
   <TH>Prepaid cards</TH>
+  <TH><FONT SIZE=-1>Payment Gateway Overrides</FONT></TH>
   <TH><FONT SIZE=-1>Freq.</FONT></TH>
   <TH><FONT SIZE=-1>Prog.</FONT></TH>
 </TR>
@@ -172,6 +173,30 @@ foreach my $agent ( sort {
           <% if ( $num_prepay_credit ) { %>
             <A HREF="<%=$p%>search/prepay_credit.html?agentnum=<%= $agent->agentnum %>"><% } %>Unused<% if ( $num_prepay_credit ) { %></A><% } %>
           <BR><A HREF="<%=$p%>edit/prepay_credit.cgi?agentnum=<%= $agent->agentnum %>">Generate cards</A>
+        </TD>
+
+        <TD>
+          <TABLE CELLSPACING=0 CELLPADDING=0>
+            <% foreach my $override (
+                 # sort { }  want taxclass-full stuff first?  and default cards (empty cardtype)
+                 qsearch('agent_payment_gateway', { 'agentnum' => $agent->agentnum } )
+               ) {
+            %>
+              <TR>
+                <TD> 
+                  <%= $override->cardtype || 'Default' %> to <%= $override->payment_gateway->gateway_module %> (<%= $override->payment_gateway->gateway_username %>)
+                  <%= $override->taxclass
+                        ? ' for '. $override->taxclass. ' only'
+                        : ''
+                  %>
+                  <FONT SIZE=-1><A HREF="<%=$p%>misc/delete-agent_payment_gateway.cgi?<%= 'XXXoverridenum' %>">(delete)</A></FONT>
+                </TD>
+              </TR>
+            <% } %>
+            <TR>
+              <TD><FONT SIZE=-1><A HREF="<%=$p%>edit/agent_payment_gateway.html?agentnum=<%= $agent->agentnum %>">(add override)</A></FONT></TD>
+            </TR>
+          </TABLE>
         </TD>
 
         <TD><%= $agent->freq %></TD>
