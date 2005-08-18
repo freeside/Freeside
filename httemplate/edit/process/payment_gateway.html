@@ -1,0 +1,28 @@
+<%
+
+my $gatewaynum = $cgi->param('gatewaynum');
+
+my $old = qsearchs('payment_gateway',{'gatewaynum'=>$gatewaynum}) if $gatewaynum;
+
+my $new = new FS::payment_gateway ( {
+  map {
+    $_, scalar($cgi->param($_));
+  } fields('payment_gateway')
+} );
+
+my $error;
+if ( $gatewaynum ) {
+  $error=$new->replace($old);
+} else {
+  $error=$new->insert;
+  $gatewaynum=$new->getfield('gatewaynum');
+}
+
+if ( $error ) {
+  $cgi->param('error', $error);
+  print $cgi->redirect(popurl(2). "payment_gateway.html?". $cgi->query_string );
+} else { 
+  print $cgi->redirect(popurl(3). "browse/payment_gateway.html");
+}
+
+%>
