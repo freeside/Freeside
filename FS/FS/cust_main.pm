@@ -42,6 +42,8 @@ use FS::part_bill_event;
 use FS::cust_bill_event;
 use FS::cust_tax_exempt;
 use FS::type_pkgs;
+use FS::payment_gateway;
+use FS::agent_payment_gateway;
 use FS::Msgcat qw(gettext);
 
 @ISA = qw( FS::Record );
@@ -2089,7 +2091,20 @@ sub realtime_bop {
   # select a gateway
   ###
 
-  my $taxclass = ''; #XXX not yet
+  my $taxclass = '';
+  if ( $options{'invnum'} ) {
+    my $cust_bill = qsearchs('cust_bill', { 'invnum' => $options{'invnum'} } );
+    die "invnum ". $options{'invnum'}. " not found" unless $cust_bill;
+    my @taxclasses =
+      map  { $_->part_pkg->taxclass }
+      grep { $_ }
+      map  { $_->cust_pkg }
+      $cust_bill->cust_bill_pkg;
+    unless ( grep { $taxclasses[0] ne $_ } @taxclasses ) { #unless there are
+                                                           #different taxclasses
+      $taxclass = $taxclasses[0];
+    }
+  }
 
   #look for an agent gateway override first
   my $cardtype;
@@ -2129,20 +2144,8 @@ sub realtime_bop {
 
   } else { #use the standard settings from the config
 
-    die "Real-time processing not enabled\n"
-      unless $conf->exists('business-onlinepayment');
-
-    #load up config
-    my $bop_config = 'business-onlinepayment';
-    $bop_config .= '-ach'
-      if $method eq 'ECHECK' && $conf->exists($bop_config. '-ach');
     ( $processor, $login, $password, $action, @bop_options ) =
-      $conf->config($bop_config);
-    $action ||= 'normal authorization';
-    pop @bop_options if scalar(@bop_options) % 2 && $bop_options[-1] =~ /^\s*$/;
-    die "No real-time processor is enabled - ".
-        "did you set the business-onlinepayment configuration value?\n"
-      unless $processor;
+      $self->default_payment_gateway($method);
 
   }
 
@@ -2401,6 +2404,31 @@ sub realtime_bop {
 
 }
 
+=item default_payment_gateway
+
+=cut
+
+sub default_payment_gateway {
+  my( $self, $method ) = @_;
+
+  die "Real-time processing not enabled\n"
+    unless $conf->exists('business-onlinepayment');
+
+  #load up config
+  my $bop_config = 'business-onlinepayment';
+  $bop_config .= '-ach'
+    if $method eq 'ECHECK' && $conf->exists($bop_config. '-ach');
+  my ( $processor, $login, $password, $action, @bop_options ) =
+    $conf->config($bop_config);
+  $action ||= 'normal authorization';
+  pop @bop_options if scalar(@bop_options) % 2 && $bop_options[-1] =~ /^\s*$/;
+  die "No real-time processor is enabled - ".
+      "did you set the business-onlinepayment configuration value?\n"
+    unless $processor;
+
+  ( $processor, $login, $password, $action, @bop_options )
+}
+
 =item remove_cvv
 
 Removes the I<paycvv> field from the database directly.
@@ -2461,39 +2489,94 @@ sub realtime_refund_bop {
     warn "  $_ => $options{$_}\n" foreach keys %options;
   }
 
-  #pre-requisites
-  die "Real-time processing not enabled\n"
-    unless $conf->exists('business-onlinepayment');
   eval "use Business::OnlinePayment";  
   die $@ if $@;
 
-  #load up config
-  my $bop_config = 'business-onlinepayment';
-  $bop_config .= '-ach'
-    if $method eq 'ECHECK' && $conf->exists($bop_config. '-ach');
-  my ( $processor, $login, $password, $unused_action, @bop_options ) =
-    $conf->config($bop_config);
-  #$action ||= 'normal authorization';
-  pop @bop_options if scalar(@bop_options) % 2 && $bop_options[-1] =~ /^\s*$/;
-  die "No real-time processor is enabled - ".
-      "did you set the business-onlinepayment configuration value?\n"
-    unless $processor;
+  ###
+  # look up the original payment and optionally a gateway for that payment
+  ###
 
   my $cust_pay = '';
   my $amount = $options{'amount'};
-  my( $pay_processor, $auth, $order_number ) = ( '', '', '' );
+
+  my( $processor, $login, $password, @bop_options ) ;
+  my( $auth, $order_number ) = ( '', '', '' );
+
   if ( $options{'paynum'} ) {
+
     warn "FS::cust_main::realtime_bop: paynum: $options{paynum}\n" if $DEBUG;
     $cust_pay = qsearchs('cust_pay', { paynum=>$options{'paynum'} } )
       or return "Unknown paynum $options{'paynum'}";
     $amount ||= $cust_pay->paid;
-    $cust_pay->paybatch =~ /^(\w+):([\w-]*)(:(\w+))?$/
+
+    $cust_pay->paybatch =~ /^((\d+)\-)?(\w+):([\w-]*)(:(\w+))?$/
       or return "Can't parse paybatch for paynum $options{'paynum'}: ".
                 $cust_pay->paybatch;
-    ( $pay_processor, $auth, $order_number ) = ( $1, $2, $4 );
-    return "processor of payment $options{'paynum'} $pay_processor does not".
-           " match current processor $processor"
-      unless $pay_processor eq $processor;
+    my $gatewaynum = '';
+    ( $gatewaynum, $processor, $auth, $order_number ) = ( $2, $3, $4, $6 );
+
+    if ( $gatewaynum ) { #gateway for the payment to be refunded
+
+      my $payment_gateway =
+        qsearchs('payment_gateway', { 'gatewaynum' => $gatewaynum } );
+      die "payment gateway $gatewaynum not found"
+        unless $payment_gateway;
+
+      $processor   = $payment_gateway->gateway_module;
+      $login       = $payment_gateway->gateway_username;
+      $password    = $payment_gateway->gateway_password;
+      @bop_options = $payment_gateway->options;
+
+    } else { #try the default gateway
+
+      my( $conf_processor, $unused_action );
+      ( $conf_processor, $login, $password, $unused_action, @bop_options ) =
+        $self->default_payment_gateway($method);
+
+      return "processor of payment $options{'paynum'} $processor does not".
+             " match default processor $conf_processor"
+        unless $processor eq $conf_processor;
+
+    }
+
+
+  } else { # didn't specify a paynum, so look for agent gateway overrides
+           # like a normal transaction 
+
+    my $cardtype;
+    if ( $method eq 'CC' ) {
+      $cardtype = cardtype($self->payinfo);
+    } elsif ( $method eq 'ECHECK' ) {
+      $cardtype = 'ACH';
+    } else {
+      $cardtype = $method;
+    }
+    my $override =
+           qsearchs('agent_payment_gateway', { agentnum => $self->agentnum,
+                                               cardtype => $cardtype,
+                                               taxclass => '',              } )
+        || qsearchs('agent_payment_gateway', { agentnum => $self->agentnum,
+                                               cardtype => '',
+                                               taxclass => '',              } );
+
+    if ( $override ) { #use a payment gateway override
+ 
+      my $payment_gateway = $override->payment_gateway;
+
+      $processor   = $payment_gateway->gateway_module;
+      $login       = $payment_gateway->gateway_username;
+      $password    = $payment_gateway->gateway_password;
+      #$action      = $payment_gateway->gateway_action;
+      @bop_options = $payment_gateway->options;
+
+    } else { #use the standard settings from the config
+
+      my $unused_action;
+      ( $processor, $login, $password, $unused_action, @bop_options ) =
+        $self->default_payment_gateway($method);
+
+    }
+
   }
   return "neither amount nor paynum specified" unless $amount;
 
