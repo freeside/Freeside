@@ -194,7 +194,7 @@ my %defs = (
 
       $html .=  table(). "<TH>Field</TH><TH COLSPAN=2>Modifier</TH>";
       #yucky kludge
-      my @fields = defined( $FS::Record::dbdef->table($layer) )
+      my @fields = defined( dbdef->table($layer) )
                       ? grep { $_ ne 'svcnum' } fields($layer)
                       : ();
       push @fields, 'usergroup' if $layer eq 'svc_acct'; #kludge
