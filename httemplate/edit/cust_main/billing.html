@@ -168,7 +168,7 @@ if ( $payby_default eq 'HIDE' ) {
 
         qq!<TR><TD ALIGN="right" WIDTH="200">CVV2&nbsp;!.
 
-          qq!(<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('../docs/cvv2.html', 472, 308, 'cvv2_popup' ), CAPTION, 'CVV2 Help', STICKY, AUTOSTATUSCAP, CLOSECLICK, DRAGGABLE ); return false;">help</A>)!.
+          qq!(<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('../docs/cvv2.html', 480, 352, 'cvv2_popup' ), CAPTION, 'CVV2 Help', STICKY, AUTOSTATUSCAP, CLOSECLICK, DRAGGABLE ); return false;">help</A>)!.
           qq!</TD>!.
           '<TD WIDTH="408"><INPUT TYPE="text" NAME="paycvv" VALUE="'. ( $payby =~ /^(CARD|DCRD)$/ ? $cust_main->paycvv : '' ). '" SIZE=4 MAXLENGTH=4>'.
 
