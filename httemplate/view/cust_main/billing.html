@@ -6,28 +6,7 @@
 Billing information
 (<A HREF="<%= $p %>misc/bill.cgi?<%= $cust_main->custnum %>">Bill now</A>)
 <%= ntable("#cccccc") %><TR><TD><%= ntable("#cccccc",2) %>
-<TR>
-  <TD ALIGN="right">Tax&nbsp;exempt</TD>
-  <TD BGCOLOR="#ffffff"><%= $cust_main->tax ? 'yes' : 'no' %></TD>
-</TR>
-<TR>
-  <TD ALIGN="right">Postal&nbsp;invoices</TD>
-  <TD BGCOLOR="#ffffff">
-    <%= ( grep { $_ eq 'POST' } @invoicing_list ) ? 'yes' : 'no' %>
-  </TD>
-</TR>
-<TR>
-  <TD ALIGN="right">FAX&nbsp;invoices</TD>
-  <TD BGCOLOR="#ffffff">
-    <%= ( grep { $_ eq 'FAX' } @invoicing_list ) ? 'yes' : 'no' %>
-  </TD>
-</TR>
-<TR>
-  <TD ALIGN="right">Email&nbsp;invoices</TD>
-  <TD BGCOLOR="#ffffff">
-    <%= join(', ', grep { $_ !~ /^(POST|FAX)$/ } @invoicing_list ) || 'no' %>
-  </TD>
-</TR>
+
 <TR>
   <TD ALIGN="right">Billing&nbsp;type</TD>
   <TD BGCOLOR="#ffffff">
@@ -41,10 +20,37 @@ Billing information
   <TD ALIGN="right">Card number</TD>
   <TD BGCOLOR="#ffffff"><%= $cust_main->payinfo_masked %></TD>
 </TR>
+
+<%
+#false laziness w/elements/select-month_year.html & edit/cust_main/billing.html
+my( $mon, $year );
+my $date = $cust_main->paydate || '12-2037';
+if ( $date  =~ /^(\d{4})-(\d{1,2})-\d{1,2}$/ ) { #PostgreSQL date format
+  ( $mon, $year ) = ( $2, $1 );
+} elsif ( $date =~ /^(\d{1,2})-(\d{1,2}-)?(\d{4}$)/ ) {
+  ( $mon, $year ) = ( $1, $3 );
+} else {
+  warn "unrecognized expiration date format: $date";
+  ( $mon, $year ) = ( '', '' );
+}
+%>
 <TR>
   <TD ALIGN="right">Expiration</TD>
-  <TD BGCOLOR="#ffffff"><%= $cust_main->paydate %></TD>
+  <TD BGCOLOR="#ffffff"><%= "$mon/$year" %></TD>
 </TR>
+
+<% if ( $cust_main->paystart_month ) { %>
+  <TR>
+    <TD ALIGN="right">Start date</TD>
+    <TD BGCOLOR="#ffffff"><%= $cust_main->paystart_month. '/'. $cust_main->paystart_year %>
+  </TR>
+<% } elsif ( $cust_main->payissue ) { %>
+  <TR>
+    <TD ALIGN="right">Issue #</TD>
+    <TD BGCOLOR="#ffffff"><%= $cust_main->payissue %>
+  </TR>
+<% } %>
+
 <TR>
   <TD ALIGN="right">Name on card</TD>
   <TD BGCOLOR="#ffffff"><%= $cust_main->payname %></TD>
@@ -97,10 +103,6 @@ Billing information
   <% } %>
 
 <TR>
-  <TD ALIGN="right">Expiration</TD>
-  <TD BGCOLOR="#ffffff"><%= $cust_main->paydate %></TD>
-</TR>
-<TR>
   <TD ALIGN="right">Attention</TD>
   <TD BGCOLOR="#ffffff"><%= $cust_main->payname %></TD>
 </TR>
@@ -114,12 +116,49 @@ Billing information
   <TD ALIGN="right">Authorized&nbsp;by</TD>
   <TD BGCOLOR="#ffffff"><%= $cust_main->payinfo %></TD>
 </TR>
+
+<%
+#false laziness w/above etc.
+my( $mon, $year );
+my $date = $cust_main->paydate || '12-2037';
+if ( $date  =~ /^(\d{4})-(\d{1,2})-\d{1,2}$/ ) { #PostgreSQL date format
+  ( $mon, $year ) = ( $2, $1 );
+} elsif ( $date =~ /^(\d{1,2})-(\d{1,2}-)?(\d{4}$)/ ) {
+  ( $mon, $year ) = ( $1, $3 );
+} else {
+  warn "unrecognized expiration date format: $date";
+  ( $mon, $year ) = ( '', '' );
+}
+%>
 <TR>
   <TD ALIGN="right">Expiration</TD>
-  <TD BGCOLOR="#ffffff"><%= $cust_main->paydate %></TD>
+  <TD BGCOLOR="#ffffff"><%= "$mon/$year" %></TD>
 </TR>
 
 <% } %>
+
+<TR>
+  <TD ALIGN="right">Tax&nbsp;exempt</TD>
+  <TD BGCOLOR="#ffffff"><%= $cust_main->tax ? 'yes' : 'no' %></TD>
+</TR>
+<TR>
+  <TD ALIGN="right">Postal&nbsp;invoices</TD>
+  <TD BGCOLOR="#ffffff">
+    <%= ( grep { $_ eq 'POST' } @invoicing_list ) ? 'yes' : 'no' %>
+  </TD>
+</TR>
+<TR>
+  <TD ALIGN="right">FAX&nbsp;invoices</TD>
+  <TD BGCOLOR="#ffffff">
+    <%= ( grep { $_ eq 'FAX' } @invoicing_list ) ? 'yes' : 'no' %>
+  </TD>
+</TR>
+<TR>
+  <TD ALIGN="right">Email&nbsp;invoices</TD>
+  <TD BGCOLOR="#ffffff">
+    <%= join(', ', grep { $_ !~ /^(POST|FAX)$/ } @invoicing_list ) || 'no' %>
+  </TD>
+</TR>
 
 </TABLE></TD></TR></TABLE>
 

@@ -251,7 +251,7 @@ END
   foreach my $state ( sort keys %{ $cust_main_county{$selected_country} } ) {
     my $text = $state || '(n/a)';
     my $selected = $state eq $selected_state ? 'SELECTED' : '';
-    $state_html .= "\n<OPTION $selected VALUE=$state>$text</OPTION>"
+    $state_html .= qq(\n<OPTION $selected VALUE="$state">$text</OPTION>);
   }
   $state_html .= '</SELECT>';
 
@@ -265,7 +265,7 @@ END
       keys %cust_main_county
   ) {
     my $selected = $country eq $selected_country ? ' SELECTED' : '';
-    $country_html .= "\n<OPTION$selected>$country</OPTION>"
+    $country_html .= qq(\n<OPTION$selected VALUE="$country">$country</OPTION>");
   }
   $country_html .= '</SELECT>';
 

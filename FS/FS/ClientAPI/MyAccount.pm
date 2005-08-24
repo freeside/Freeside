@@ -27,7 +27,7 @@ use vars qw( @cust_main_editable_fields );
     county state zip country daytime night fax
   ship_first ship_last ship_company ship_address1 ship_address2 ship_city
     ship_state ship_zip ship_country ship_daytime ship_night ship_fax
-  payby payinfo payname
+  payby payinfo payname paystart_month paystart_year payissue payip
 );
 
 use subs qw(_provision);
@@ -226,6 +226,8 @@ sub payment_info {
       'MasterCard' => 'MasterCard',
       'Discover' => 'Discover card',
       'American Express' => 'American Express card',
+      'Switch' => 'Switch',
+      'Solo' => 'Solo',
     },
 
   };
@@ -341,7 +343,8 @@ sub process_payment {
     'payname'  => $payname,
     'paybatch' => $paybatch,
     'paycvv'   => $paycvv,
-    map { $_ => $p->{$_} } qw( address1 address2 city state zip )
+    map { $_ => $p->{$_} } qw( paystart_month paystart_year payissue payip
+                               address1 address2 city state zip )
   );
   return { 'error' => $error } if $error;
 
@@ -350,7 +353,8 @@ sub process_payment {
   if ( $p->{'save'} ) {
     my $new = new FS::cust_main { $cust_main->hash };
     $new->set( $_ => $p->{$_} )
-      foreach qw( payname address1 address2 city state zip payinfo );
+      foreach qw( payname paystart_month paystart_year payissue payip
+                  address1 address2 city state zip payinfo );
     $new->set( 'paydate' => $p->{'year'}. '-'. $p->{'month'}. '-01' );
     $new->set( 'payby' => $p->{'auto'} ? 'CARD' : 'DCRD' );
     my $error = $new->replace($cust_main);

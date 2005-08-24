@@ -30,7 +30,7 @@ my $r = qq!<font color="#ff0000">*</font>&nbsp;!;
 
 %>
 
-<%= &itable("#cccccc") %>
+<%= &ntable("#cccccc") %>
 
 <TR>
   <TH ALIGN="right"><%=$r%>Contact&nbsp;name<BR>(last,&nbsp;first)</TH>
@@ -42,7 +42,7 @@ my $r = qq!<font color="#ff0000">*</font>&nbsp;!;
 <% if ( $conf->exists('show_ss') && !$pre ) { %>
   <TD ALIGN="right">SS#</TD>
   <TD><INPUT TYPE="text" NAME="ss" VALUE="<%= $cust_main->ss %>" SIZE=11></TD>
-<% } else { %>
+<% } elsif ( !$pre ) { %>
   <TD><INPUT TYPE="hidden" NAME="ss" VALUE="<%= $cust_main->ss %>"></TD>
 <% } %>
 

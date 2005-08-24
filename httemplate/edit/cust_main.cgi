@@ -1,4 +1,3 @@
-<!-- mason kludge -->
 <%
 
   #for misplaced logic below
@@ -18,6 +17,7 @@ my $conf = new FS::Conf;
 my $error = '';
 my($custnum, $username, $password, $popnum, $cust_main, $saved_pkgpart);
 my(@invoicing_list);
+my $same = '';
 if ( $cgi->param('error') ) {
   $error = $cgi->param('error');
   $cust_main = new FS::cust_main ( {
@@ -34,6 +34,7 @@ if ( $cgi->param('error') ) {
   $password = $cgi->param('_password');
   $popnum = $cgi->param('popnum');
   @invoicing_list = split( /\s*,\s*/, $cgi->param('invoicing_list') );
+  $same = $cgi->param('same');
 } elsif ( $cgi->keywords ) { #editing
   my( $query ) = $cgi->keywords;
   $query =~ /^(\d+)$/;
@@ -74,7 +75,7 @@ my $action = $custnum ? 'Edit' : 'Add';
 <FONT SIZE="+1" COLOR="#ff0000">Error: <%= $error %></FONT>
 <% } %>
 
-<FORM ACTION="<%= popurl(1) %>process/cust_main.cgi" METHOD=POST NAME="form1" onSubmit="document.form1.submit.disabled=true">
+<FORM NAME="topform" STYLE="margin-bottom: 0">
 <INPUT TYPE="hidden" NAME="custnum" VALUE="<%= $custnum %>">
 Customer # <%= $custnum ? "<B>$custnum</B>" : " (NEW)" %>
 
@@ -199,7 +200,7 @@ function samechanged(what) {
   my $checked = '';
   my $disabled = '';
   my $disabledselect = '';
-  unless ( $cust_main->ship_last && $cgi->param('same') ne 'Y' ) {
+  unless ( $cust_main->ship_last && $same ne 'Y' ) {
     $checked = 'CHECKED';
     $disabled = 'DISABLED style="background-color: #dddddd"';
     foreach (
@@ -218,184 +219,133 @@ Service address
 
 <% } %>
 
-<%
-# billing info
+<!-- billing info -->
 
-sub expselect {
-  my $prefix = shift;
-  my( $m, $y ) = (0, 0);
-  if ( scalar(@_) ) {
-    my $date = shift || '01-2000';
-    if ( $date  =~ /^(\d{4})-(\d{1,2})-\d{1,2}$/ ) { #PostgreSQL date format
-      ( $m, $y ) = ( $2, $1 );
-    } elsif ( $date =~ /^(\d{1,2})-(\d{1,2}-)?(\d{4}$)/ ) {
-      ( $m, $y ) = ( $1, $3 );
-    } else {
-      die "unrecognized expiration date format: $date";
-    }
-  }
+<%= include('cust_main/billing.html', $cust_main ) %>
 
-  my $return = qq!<SELECT NAME="$prefix!. qq!_month" SIZE="1">!;
-  for ( 1 .. 12 ) {
-    $return .= "<OPTION";
-    $return .= " SELECTED" if $_ == $m;
-    $return .= ">$_";
-  }
-  $return .= qq!</SELECT>/<SELECT NAME="$prefix!. qq!_year" SIZE="1">!;
-  my @t = localtime;
-  my $thisYear = $t[5] + 1900;
-  for ( ($thisYear > $y && $y > 0 ? $y : $thisYear) .. 2037 ) {
-    $return .= "<OPTION";
-    $return .= " SELECTED" if $_ == $y;
-    $return .= ">$_";
-  }
-  $return .= "</SELECT>";
+<SCRIPT>
+function bottomfixup(what) {
 
-  $return;
-}
+  var topvars = new Array(
+    'custnum', 'agentnum', 'refnum', 'referral_custnum',
 
-my $payby_default = $conf->config('payby-default');
+    'last', 'first', 'ss', 'company',
+    'address1', 'address2', 'city',
+    'county', 'state', 'zip', 'country',
+    'daytime', 'night', 'fax',
 
-if ( $payby_default eq 'HIDE' ) {
+    'same',
 
-  $cust_main->payby('BILL') unless $cust_main->payby;
+    'ship_last', 'ship_first', 'ship_company',
+    'ship_address1', 'ship_address2', 'ship_city',
+    'ship_county', 'ship_state', 'ship_zip', 'ship_country',
+    'ship_daytime','ship_night', 'ship_fax',
 
-  foreach my $field (qw( tax payby )) {
-    print qq!<INPUT TYPE="hidden" NAME="$field" VALUE="!.
-          $cust_main->getfield($field). '">';
-  }
-
-  print qq!<INPUT TYPE="hidden" NAME="invoicing_list" VALUE="!.
-        join(', ', $cust_main->invoicing_list). '">';
-
-  foreach my $payby (qw( CARD DCRD CHEK DCHK LECB BILL COMP )) {
-    foreach my $field (qw( payinfo payname )) {
-      print qq!<INPUT TYPE="hidden" NAME="${payby}_$field" VALUE="!.
-            $cust_main->getfield($field). '">';
-    }
-
-    #false laziness w/expselect
-    my( $m, $y );
-    my $date = $cust_main->paydate || '12-2037';
-    if ( $date  =~ /^(\d{4})-(\d{1,2})-\d{1,2}$/ ) { #PostgreSQL date format
-      ( $m, $y ) = ( $2, $1 );
-    } elsif ( $date =~ /^(\d{1,2})-(\d{1,2}-)?(\d{4}$)/ ) {
-      ( $m, $y ) = ( $1, $3 );
-    } else {
-      die "unrecognized expiration date format: $date";
-    }
-
-    print qq!<INPUT TYPE="hidden" NAME="${payby}_month" VALUE="$m">!.
-          qq!<INPUT TYPE="hidden" NAME="${payby}_year"  VALUE="$y">!;
-
-  }
-
-} else {
-
-  print "<BR>Billing information", &itable("#cccccc"),
-        qq!<TR><TD><INPUT TYPE="checkbox" NAME="tax" VALUE="Y"!;
-  print qq! CHECKED! if $cust_main->tax eq "Y";
-  print qq!>Tax Exempt</TD></TR><TR><TD>!.
-        qq!<INPUT TYPE="checkbox" NAME="invoicing_list_POST" VALUE="POST"!;
-
-  #my @invoicing_list = $cust_main->invoicing_list;
-  print qq! CHECKED!
-    if ( ! @invoicing_list && ! $conf->exists('disablepostalinvoicedefault') )
-       || grep { $_ eq 'POST' } @invoicing_list;
-  print qq!>Postal mail invoice</TD></TR><TR><TD>!;
-  print qq!<INPUT TYPE="checkbox" NAME="invoicing_list_FAX" VALUE="FAX"!;
-  print qq! CHECKED! if (grep { $_ eq 'FAX' } @invoicing_list);
-  print qq!>FAX invoice</TD></TR>!;
-  my $invoicing_list = join(', ', grep { $_ !~ /^(POST|FAX)$/ } @invoicing_list );
-  print qq!<TR><TD>Email invoice <INPUT TYPE="text" NAME="invoicing_list" VALUE="$invoicing_list"></TD></TR>!;
-
-  print "<TR><TD>Billing type</TD></TR>",
-        "</TABLE>", '<SCRIPT>
-                       var mywindow = -1;
-                       function myopen(filename,windowname,properties) {
-                         myclose();
-                         mywindow = window.open(filename,windowname,properties);
-                       }
-                       function myclose() {
-                         if ( mywindow != -1 )
-                           mywindow.close();
-                         mywindow = -1;
-                       }
-                       var achwindow = -1;
-                       function achopen(filename,windowname,properties) {
-                         achclose();
-                         achwindow = window.open(filename,windowname,properties);
-                       }
-                       function achclose() {
-                         if ( achwindow != -1 )
-                           achwindow.close();
-                         achwindow = -1;
-                       }
-                     </SCRIPT>',
-        &table("#cccccc"), "<TR>";
-
-  my($payinfo, $payname)=(
-    $cust_main->payinfo,
-    $cust_main->payname,
+    'select' // XXX key
   );
 
-  my %payby = (
-    'CARD' => qq!Credit card (automatic)<BR>${r}<INPUT TYPE="text" NAME="CARD_payinfo" VALUE="" MAXLENGTH=19><BR>${r}Exp !. expselect("CARD"). qq!<BR>${r}Name on card<BR><INPUT TYPE="text" NAME="CARD_payname" VALUE="">!,
-    'DCRD' => qq!Credit card (on-demand)<BR>${r}<INPUT TYPE="text" NAME="DCRD_payinfo" VALUE="" MAXLENGTH=19><BR>${r}Exp !. expselect("DCRD"). qq!<BR>${r}Name on card<BR><INPUT TYPE="text" NAME="DCRD_payname" VALUE="">!,
-    'CHEK' => qq!Electronic check (automatic)<BR>${r}Account number <INPUT TYPE="text" NAME="CHEK_payinfo1" VALUE=""><BR>${r}ABA/Routing number <INPUT TYPE="text" NAME="CHEK_payinfo2" VALUE="" SIZE=10 MAXLENGTH=9> (<A HREF="javascript:achopen('../docs/ach.html','ach','toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=no,resizable=yes,copyhistory=no,width=384,height=256')">help</A>)<INPUT TYPE="hidden" NAME="CHEK_month" VALUE="12"><INPUT TYPE="hidden" NAME="CHEK_year" VALUE="2037"><BR>${r}Bank name <INPUT TYPE="text" NAME="CHEK_payname" VALUE="">!,
-    'DCHK' => qq!Electronic check (on-demand)<BR>${r}Account number <INPUT TYPE="text" NAME="DCHK_payinfo1" VALUE=""><BR>${r}ABA/Routing number <INPUT TYPE="text" NAME="DCHK_payinfo2" VALUE="" SIZE=10 MAXLENGTH=9> (<A HREF="javascript:achopen('../docs/ach.html','ach','toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=no,resizable=yes,copyhistory=no,width=384,height=256')">help</A>)<INPUT TYPE="hidden" NAME="DCHK_month" VALUE="12"><INPUT TYPE="hidden" NAME="DCHK_year" VALUE="2037"><BR>${r}Bank name <INPUT TYPE="text" NAME="DCHK_payname" VALUE="">!,
-    'LECB' => qq!Phone bill billing<BR>${r}Phone number <INPUT TYPE="text" BANE="LECB_payinfo" VALUE="" MAXLENGTH=15 SIZE=16><INPUT TYPE="hidden" NAME="LECB_month" VALUE="12"><INPUT TYPE="hidden" NAME="LECB_year" VALUE="2037"><INPUT TYPE="hidden" NAME="LECB_payname" VALUE="">!,
-    'BILL' => qq!Billing<BR>P.O. <INPUT TYPE="text" NAME="BILL_payinfo" VALUE=""><BR><INPUT TYPE="hidden" NAME="BILL_month" VALUE="12"><INPUT TYPE="hidden" NAME="BILL_year" VALUE="2037">Attention<BR><INPUT TYPE="text" NAME="BILL_payname" VALUE="">!,
-    'COMP' => qq!Complimentary<BR>${r}Approved by<INPUT TYPE="text" NAME="COMP_payinfo" VALUE=""><BR>${r}Exp !. expselect("COMP"),
-);
+  var layervars = new Array(
+    'payauto',
+    'payinfo', 'payinfo1', 'payinfo2',
+    'exp_month', 'exp_year', 'paycvv',
+    'paystart_month', 'paystart_year', 'payissue',
+    'payip'
+  );
 
-  if ( $cust_main->dbdef_table->column('paycvv') ) {
-    foreach my $payby ( grep { exists $payby{$_} } qw(CARD DCRD) ) { #1.4/1.5 bs
-      $payby{$payby} .= qq!<BR>CVV2&nbsp;(<A HREF="javascript:myopen('../docs/cvv2.html','cvv2','toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=no,resizable=yes,copyhistory=no,width=480,height=288')">help</A>)&nbsp;<INPUT TYPE="text" NAME=${payby}_paycvv VALUE="" SIZE=4 MAXLENGTH=4>!;
-    }
+  var billing_bottomvars = new Array(
+    'tax',
+    'invoicing_list', 'invoicing_list_POST', 'invoicing_list_FAX'
+  );
+
+  for ( f=0; f < topvars.length; f++ ) {
+    var field = topvars[f];
+    copyelement( document.topform.elements[field],
+                 document.bottomform.elements[field]
+               );
   }
 
-  my( $account, $aba ) = split('@', $payinfo);
-
-  my %paybychecked = (
-    'CARD' => qq!Credit card (automatic)<BR>${r}<INPUT TYPE="text" NAME="CARD_payinfo" VALUE="$payinfo" MAXLENGTH=19><BR>${r}Exp !. expselect("CARD", $cust_main->paydate). qq!<BR>${r}Name on card<BR><INPUT TYPE="text" NAME="CARD_payname" VALUE="$payname">!,
-    'DCRD' => qq!Credit card (on-demand)<BR>${r}<INPUT TYPE="text" NAME="DCRD_payinfo" VALUE="$payinfo" MAXLENGTH=19><BR>${r}Exp !. expselect("DCRD", $cust_main->paydate). qq!<BR>${r}Name on card<BR><INPUT TYPE="text" NAME="DCRD_payname" VALUE="$payname">!,
-    'CHEK' => qq!Electronic check (automatic)<BR>${r}Account number <INPUT TYPE="text" NAME="CHEK_payinfo1" VALUE="$account"><BR>${r}ABA/Routing number <INPUT TYPE="text" NAME="CHEK_payinfo2" VALUE="$aba" SIZE=10 MAXLENGTH=9> (<A HREF="javascript:achopen('../docs/ach.html','ach','toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=no,resizable=yes,copyhistory=no,width=384,height=256')">help</A>)<INPUT TYPE="hidden" NAME="CHEK_month" VALUE="12"><INPUT TYPE="hidden" NAME="CHEK_year" VALUE="2037"><BR>${r}Bank name <INPUT TYPE="text" NAME="CHEK_payname" VALUE="$payname">!,
-    'DCHK' => qq!Electronic check (on-demand)<BR>${r}Account number <INPUT TYPE="text" NAME="DCHK_payinfo1" VALUE="$account"><BR>${r}ABA/Routing number <INPUT TYPE="text" NAME="DCHK_payinfo2" VALUE="$aba" SIZE=10 MAXLENGTH=9> (<A HREF="javascript:achopen('../docs/ach.html','ach','toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=no,resizable=yes,copyhistory=no,width=384,height=256')">help</A>)<INPUT TYPE="hidden" NAME="DCHK_month" VALUE="12"><INPUT TYPE="hidden" NAME="DCHK_year" VALUE="2037"><BR>${r}Bank name <INPUT TYPE="text" NAME="DCHK_payname" VALUE="$payname">!,
-    'LECB' => qq!Phone bill billing<BR>${r}Phone number <INPUT TYPE="text" BANE="LECB_payinfo" VALUE="$payinfo" MAXLENGTH=15 SIZE=16><INPUT TYPE="hidden" NAME="LECB_month" VALUE="12"><INPUT TYPE="hidden" NAME="LECB_year" VALUE="2037"><INPUT TYPE="hidden" NAME="LECB_payname" VALUE="">!,
-    'BILL' => qq!Billing<BR>P.O. <INPUT TYPE="text" NAME="BILL_payinfo" VALUE="$payinfo"><BR><INPUT TYPE="hidden" NAME="BILL_month" VALUE="12"><INPUT TYPE="hidden" NAME="BILL_year" VALUE="2037">Attention<BR><INPUT TYPE="text" NAME="BILL_payname" VALUE="$payname">!,
-    'COMP' => qq!Complimentary<BR>${r}Approved by<INPUT TYPE="text" NAME="COMP_payinfo" VALUE="$payinfo"><BR>${r}Exp !. expselect("COMP", $cust_main->paydate),
-);
-
-  if ( $cust_main->dbdef_table->column('paycvv') ) {
-    my $paycvv = $cust_main->paycvv;
-
-    foreach my $payby ( grep { exists $payby{$_} } qw(CARD DCRD) ) { #1.4/1.5 bs
-      $paybychecked{$payby} .= qq!<BR>CVV2&nbsp;(<A HREF="javascript:myopen('../docs/cvv2.html','cvv2','toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=no,resizable=yes,copyhistory=no,width=480,height=288')">help</A>)&nbsp;<INPUT TYPE="text" NAME=${payby}_paycvv VALUE="$paycvv" SIZE=4 MAXLENGTH=4>!;
-    }
+  var layerform = document.topform.select.options[document.topform.select.selectedIndex].value;
+  for ( f=0; f < layervars.length; f++ ) {
+    var field = layervars[f];
+    copyelement( document.forms[layerform].elements[field],
+                 document.bottomform.elements[field]
+               );
   }
 
+  for ( f=0; f < billing_bottomvars.length; f++ ) {
+    var field = billing_bottomvars[f];
+    copyelement( document.billing_bottomform.elements[field],
+                 document.bottomform.elements[field]
+               );
+  }
 
-  $cust_main->payby($payby_default) unless $cust_main->payby;
-  for (qw(CARD DCRD CHEK DCHK LECB BILL COMP)) {
-    print qq!<TD VALIGN=TOP><INPUT TYPE="radio" NAME="payby" VALUE="$_"!;
-    if ($cust_main->payby eq "$_") {
-      print qq! CHECKED> $paybychecked{$_}</TD>!;
+}
+
+function copyelement(from, to) {
+  if ( from == undefined ) {
+    to.value = '';
+  } else if ( from.type == 'select-one' ) {
+    to.value = from.options[from.selectedIndex].value;
+    //alert(from + " (" + from.type + "): " + to.name + " => (" + from.selectedIndex + ") " + to.value);
+  } else if ( from.type == 'checkbox' ) {
+    if ( from.checked ) {
+      to.value = from.value;
     } else {
-      print qq!> $payby{$_}</TD>!;
+      to.value = '';
+    }
+  } else {
+    if ( from.value == undefined ) {
+      to.value = '';
+    } else {
+      to.value = from.value;
     }
   }
-
-  print "</TR></TABLE>$r required fields for each billing type";
-
+  //alert(from + ": " + to.name + " => " + to.value);
 }
 
-if ( defined $cust_main->dbdef_table->column('comments') ) {
-    print "<BR><BR>Comments", &itable("#cccccc"),
-          qq!<TR><TD><TEXTAREA COLS=80 ROWS=5 WRAP="HARD" NAME="comments">!,
-          $cust_main->comments, "</TEXTAREA>",
-          "</TD></TR></TABLE>";
-}
+</SCRIPT>
+
+<FORM ACTION="<%= popurl(1) %>process/cust_main.cgi" METHOD=POST NAME="bottomform" onSubmit="document.bottomform.submit.disabled=true; bottomfixup(this.form);" STYLE="margin-top: 0; margin-bottom: 0">
+
+<% foreach my $hidden (
+     'custnum', 'agentnum', 'refnum', 'referral_custnum',
+     'last', 'first', 'ss', 'company',
+     'address1', 'address2', 'city',
+     'county', 'state', 'zip', 'country',
+     'daytime', 'night', 'fax',
+     
+     'same',
+     
+     'ship_last', 'ship_first', 'ship_company',
+     'ship_address1', 'ship_address2', 'ship_city',
+     'ship_county', 'ship_state', 'ship_zip', 'ship_country',
+     'ship_daytime','ship_night', 'ship_fax',
+     
+     'select', #XXX key
+
+     'payauto',
+     'payinfo', 'payinfo1', 'payinfo2',
+     'exp_month', 'exp_year', 'paycvv',
+     'paystart_month', 'paystart_year', 'payissue',
+     'payip',
+     
+     'tax',
+     'invoicing_list', 'invoicing_list_POST', 'invoicing_list_FAX'
+   ) {
+%>
+  <INPUT TYPE="hidden" NAME="<%= $hidden %>" VALUE="">
+<% } %>
+
+<BR>Comments
+<%= &ntable("#cccccc") %>
+  <TR>
+    <TD>
+      <TEXTAREA COLS=80 ROWS=5 WRAP="HARD" NAME="comments"><%= $cust_main->comments %></TEXTAREA>
+    </TD>
+  </TR>
+</TABLE>
+
+<%
 
 unless ( $custnum ) {
   # pry the wrong place for this logic.  also pretty expensive
@@ -425,7 +375,7 @@ unless ( $custnum ) {
 
 #    print "<BR><BR>First package", &itable("#cccccc", "0 ALIGN=LEFT"),
 #apiabuse & undesirable wrapping
-    print "<BR><BR>First package", &itable("#cccccc"),
+    print "<BR>First package", &ntable("#cccccc"),
           qq!<TR><TD COLSPAN=2><SELECT NAME="pkgpart_svcpart">!;
 
     print qq!<OPTION VALUE="">(none)!;
@@ -453,7 +403,7 @@ unless ( $custnum ) {
 (blank to generate)</TD></TR>
 END
 
-    print '<TR><TD ALIGN="right">Access number</TD><TD WIDTH="100%">'
+    print '<TR><TD ALIGN="right">Access number</TD><TD>'
           .
           &FS::svc_acct_pop::popselector($popnum).
           '</TD></TR></TABLE>'
@@ -463,9 +413,9 @@ END
 
 my $otaker = $cust_main->otaker;
 print qq!<INPUT TYPE="hidden" NAME="otaker" VALUE="$otaker">!,
-      qq!<BR><INPUT NAME="submit" TYPE="submit" VALUE="!,
-      $custnum ?  "Apply Changes" : "Add Customer", qq!">!,
-      "</FORM></BODY></HTML>",
+      qq!<BR><INPUT TYPE="submit" NAME="submit" VALUE="!,
+      $custnum ?  "Apply Changes" : "Add Customer", qq!"><BR>!,
+      "</FORM></DIV></BODY></HTML>",
 ;
 
 %>

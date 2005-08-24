@@ -163,6 +163,10 @@ FS::SelfService - Freeside self-service API
                         'payby'            => $payby,
                         'payinfo'          => $payinfo,
                         'paycvv'           => $paycvv,
+                        'paystart_month'   => $paystart_month
+                        'paystart_year'    => $paystart_year,
+                        'payissue'         => $payissue,
+                        'payip'            => $payip
                         'paydate'          => $paydate,
                         'payname'          => $payname,
                         'invoicing_list'   => $invoicing_list,

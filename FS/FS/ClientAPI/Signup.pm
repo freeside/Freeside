@@ -197,7 +197,12 @@ sub new_customer {
       ship_city ship_county ship_state ship_zip ship_country
       ship_daytime ship_night ship_fax
 
-      payby payinfo paycvv paydate payname referral_custnum comments
+      payby
+      payinfo paycvv paydate payname
+      paystart_month paystart_year payissue
+      payip
+
+      referral_custnum comments
     )
 
   } );

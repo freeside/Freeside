@@ -1,5 +1,7 @@
 <%
 
+warn join('', map { "$_ => ". $cgi->param($_). "\n" } $cgi->param );
+
 my $error = '';
 
 #unmunge stuff
@@ -8,19 +10,25 @@ $cgi->param('tax','') unless defined $cgi->param('tax');
 
 $cgi->param('refnum', (split(/:/, ($cgi->param('refnum'))[0] ))[0] );
 
-my $payby = $cgi->param('payby');
+#my $payby = $cgi->param('payby');
+my $payby = $cgi->param('select'); # XXX key
+
+my %noauto = (
+  'CARD' => 'DCRD',
+  'CHEK' => 'DCHK',
+);
+$payby = $noauto{$payby}
+  if ! $cgi->param('payauto') && exists $noauto{$payby};
+
+$cgi->param('payby', $payby);
+
 if ( $payby ) {
   if ( $payby eq 'CHEK' || $payby eq 'DCHK' ) {
     $cgi->param('payinfo',
-      $cgi->param($payby. '_payinfo1'). '@'. $cgi->param($payby. '_payinfo2') );
-  } else {
-    $cgi->param('payinfo', $cgi->param( $payby. '_payinfo' ) );
+      $cgi->param('payinfo1'). '@'. $cgi->param('payinfo2') );
   }
   $cgi->param('paydate',
-    $cgi->param( $payby. '_month' ). '-'. $cgi->param( $payby. '_year' ) );
-  $cgi->param('payname', $cgi->param( $payby. '_payname' ) );
-  $cgi->param('paycvv', $cgi->param( $payby. '_paycvv' ) )
-    if defined $cgi->param( $payby. '_paycvv' );
+    $cgi->param( 'exp_month' ). '-'. $cgi->param( 'exp_year' ) );
 }
 
 my @invoicing_list = split( /\s*\,\s*/, $cgi->param('invoicing_list') );

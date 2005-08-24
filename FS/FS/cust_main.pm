@@ -17,7 +17,7 @@ BEGIN {
 use Date::Format;
 #use Date::Manip;
 use String::Approx qw(amatch);
-use Business::CreditCard;
+use Business::CreditCard 0.28;
 use FS::UID qw( getotaker dbh );
 use FS::Record qw( qsearchs qsearch dbdef );
 use FS::Misc qw( send_email );
@@ -2195,13 +2195,33 @@ sub realtime_bop {
     $paydate =~ /^\d{2}(\d{2})[\/\-](\d+)[\/\-]\d+$/;
     $content{expiration} = "$2/$1";
 
-    if ( defined $self->dbdef_table->column('paycvv') ) {
-      my $paycvv = exists($options{'paycvv'})
-                     ? $options{'paycvv'}
-                     : $self->paycvv;
-      $content{cvv2} = $self->paycvv
-        if length($paycvv);
-    }
+    my $paycvv = exists($options{'paycvv'})
+                   ? $options{'paycvv'}
+                   : $self->paycvv;
+    $content{cvv2} = $self->paycvv
+      if length($paycvv);
+
+    my $paystart_month = exists($options{'paystart_month'})
+                           ? $options{'paystart_month'}
+                           : $self->paystart_month;
+
+    my $paystart_year  = exists($options{'paystart_year'})
+                           ? $options{'paystart_year'}
+                           : $self->paystart_year;
+
+    $content{card_start} = "$paystart_month/$paystart_year"
+      if $paystart_month && $paystart_year;
+
+    my $payissue       = exists($options{'payissue'})
+                           ? $options{'payissue'}
+                           : $self->payissue;
+    $content{issue_number} = $payissue if $payissue;
+
+    my $payip          = exists($options{'payip'})
+                           ? $options{'payip'}
+                           : $self->payip;
+    $content{customer_ip} = $payip
+      if length($payip);
 
     $content{recurring_billing} = 'YES'
       if qsearch('cust_pay', { 'custnum' => $self->custnum,
