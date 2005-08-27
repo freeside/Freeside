@@ -1229,6 +1229,32 @@ sub tables_hashref {
       'index'       => [ [ 'agentnum', 'cardtype' ], ],
     },
 
+    'banned_pay' => {
+      'columns' => [
+        'bannum',  'serial',   '',     '',
+        'payby',   'char',     '',       4,
+        'payinfo', 'varchar',  '',     128, #say, a 512-big digest _hex encoded
+	#'paymask', 'varchar',  'NULL', $char_d,
+        '_date',   @date_type,
+        'otaker',  'varchar',  '',     32,
+        'reason',  'varchar',  'NULL', $char_d,
+      ],
+      'primary_key' => 'bannum',
+      'unique'      => [ [ 'payby', 'payinfo' ] ],
+      'index'       => [],
+    },
+
+    'cancel_reason' => {
+      'columns' => [
+        'reasonnum', 'serial',  '',     '',
+        'reason',    'varchar', '',     $char_d,
+        'disabled',  'char',    'NULL', 1,
+      ],
+      'primary_key' => 'reasonnum',
+      'unique' => [],
+      'index'  => [ [ 'disabled' ] ],
+    },
+
   };
 
 }

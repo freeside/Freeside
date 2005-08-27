@@ -14,6 +14,7 @@ BEGIN {
   #eval "use Time::Local qw(timelocal timelocal_nocheck);";
   eval "use Time::Local qw(timelocal_nocheck);";
 }
+use Digest::MD5 qw(md5_base64);
 use Date::Format;
 #use Date::Manip;
 use String::Approx qw(amatch);
@@ -21,6 +22,7 @@ use Business::CreditCard 0.28;
 use FS::UID qw( getotaker dbh );
 use FS::Record qw( qsearchs qsearch dbdef );
 use FS::Misc qw( send_email );
+use FS::Msgcat qw(gettext);
 use FS::cust_pkg;
 use FS::cust_svc;
 use FS::cust_bill;
@@ -44,7 +46,7 @@ use FS::cust_tax_exempt;
 use FS::type_pkgs;
 use FS::payment_gateway;
 use FS::agent_payment_gateway;
-use FS::Msgcat qw(gettext);
+use FS::banned_pay;
 
 @ISA = qw( FS::Record );
 
@@ -1140,8 +1142,13 @@ sub check {
     $self->payinfo($payinfo);
     validate($payinfo)
       or return gettext('invalid_card'); # . ": ". $self->payinfo;
+
     return gettext('unknown_card_type')
       if cardtype($self->payinfo) eq "Unknown";
+
+    my $ban = qsearchs('banned_pay', $self->_banned_pay_hashref);
+    return "Banned credit card" if $ban;
+
     if ( defined $self->dbdef_table->column('paycvv') ) {
       if (length($self->paycvv) && !$self->is_encrypted($self->paycvv)) {
         if ( cardtype($self->payinfo) eq 'American Express card' ) {
@@ -1190,6 +1197,9 @@ sub check {
     $payinfo = "$1\@$2";
     $self->payinfo($payinfo);
     $self->paycvv('') if $self->dbdef_table->column('paycvv');
+
+    my $ban = qsearchs('banned_pay', $self->_banned_pay_hashref);
+    return "Banned ACH account" if $ban;
 
   } elsif ( $self->payby eq 'LECB' ) {
 
@@ -1428,9 +1438,14 @@ sub suspend_unless_pkgpart {
 
 Cancels all uncancelled packages (see L<FS::cust_pkg>) for this customer.
 
-Available options are: I<quiet>
+Available options are: I<quiet>, I<reasonnum>, and I<ban>
 
 I<quiet> can be set true to supress email cancellation notices.
+
+# I<reasonnum> can be set to a cancellation reason (see L<FS::cancel_reason>)
+
+I<ban> can be set true to ban this customer's credit card or ACH information,
+if present.
 
 Always returns a list: an empty list on success or a list of errors.
 
@@ -1438,7 +1453,39 @@ Always returns a list: an empty list on success or a list of errors.
 
 sub cancel {
   my $self = shift;
+  my %opt = @_;
+
+  if ( $opt{'ban'} && $self->payby =~ /^(CARD|DCRD|CHEK|DCHK)$/ ) {
+
+    #should try decryption (we might have the private key)
+    # and if not maybe queue a job for the server that does?
+    return ( "Can't (yet) ban encrypted credit cards" )
+      if $self->is_encrypted($self->payinfo);
+
+    my $ban = new FS::banned_pay $self->_banned_pay_hashref;
+    my $error = $ban->insert;
+    return ( $error ) if $error;
+
+  }
+
   grep { $_ } map { $_->cancel(@_) } $self->ncancelled_pkgs;
+}
+
+sub _banned_pay_hashref {
+  my $self = shift;
+
+  my %payby2ban = (
+    'CARD' => 'CARD',
+    'DCRD' => 'CARD',
+    'CHEK' => 'CHEK',
+    'DCHK' => 'CHEK'
+  );
+
+  {
+    'payby'   => $payby2ban{$self->payby},
+    'payinfo' => md5_base64($self->payinfo),
+    #'reason'  =>
+  };
 }
 
 =item agent

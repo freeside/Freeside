@@ -287,3 +287,7 @@ FS/option_Common.pm
 t/option_Common.t
 FS/agent_payment_gateway.pm
 t/agent_payment_gateway.t
+FS/banned_pay.pm
+t/banned_pay.t
+FS/cancel_reason.pm
+t/cancel_reason.t
