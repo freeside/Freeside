@@ -676,7 +676,7 @@ httemplate/docs/config.html
   {
     'key'         => 'payment_receipt_email',
     'section'     => 'billing',
-    'description' => 'Template file for payment receipts.',
+    'description' => 'Template file for payment receipts.  Payment receipts are sent to the customer email invoice destination(s) when a payment is received.  See the <a href="http://search.cpan.org/~mjd/Text-Template/lib/Text/Template.pm">Text::Template</a> documentation for details on the template substitution language.  The following variables are available: <ul><li><code>$date</code> <li><code>$name</code> <li><code>$paynum</code> - Freeside payment number <li><code>$paid</code> - Amount of payment <li><code>$payby</code> - Payment type (Card, Check, Electronic check, etc.) <li><code>$payinfo</code> - Masked credit card number or check number <li><code>$balance</code> - New balance</ul>',
     'type'        => 'textarea',
   },
 
@@ -1260,7 +1260,7 @@ httemplate/docs/config.html
   {
     'key'         => 'welcome_email',
     'section'     => '',
-    'description' => 'Template file for welcome email.  Welcome emails are sent to the customer email invoice destination(s) each time a svc_acct record is created.  See the <a href="http://search.cpan.org/doc/MJD/Text-Template-1.42/Template.pm">Text::Template</a> documentation for details on the template substitution language.  The following variables are available: <code>$username</code>, <code>$password</code>, <code>$first</code>, <code>$last</code> and <code>$pkg</code>.',
+    'description' => 'Template file for welcome email.  Welcome emails are sent to the customer email invoice destination(s) each time a svc_acct record is created.  See the <a href="http://search.cpan.org/~mjd/Text-Template/lib/Text/Template.pm">Text::Template</a> documentation for details on the template substitution language.  The following variables are available<ul><li><code>$username</code> <li><code>$password</code> <li><code>$first</code> <li><code>$last</code> <li><code>$pkg</code></ul>',
     'type'        => 'textarea',
   },
 
