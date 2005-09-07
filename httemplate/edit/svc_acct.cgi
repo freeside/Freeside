@@ -97,7 +97,7 @@ if ( $svc_acct->_password ) {
 }
 
 my $ulen = $conf->config('usernamemax')
-           || $svc_acct->dbdef_table->column('username')->length;
+           || dbdef->table('svc_acct')->column('username')->length;
 my $ulen2 = $ulen+2;
 
 my $pmax = $conf->config('passwordmax') || 8;
