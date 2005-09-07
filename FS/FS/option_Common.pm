@@ -81,7 +81,7 @@ sub insert {
     #  $dbh->rollback if $oldAutoCommit;
     #  return $@;
     #}
-    my $option_record = $option_table->new($href);
+    my $option_record = "FS::$option_table"->new($href);
 
     $error = $option_record->insert;
     if ( $error ) {
@@ -124,7 +124,7 @@ sub delete {
   }
   
   my $pkey = $self->pkey;
-  my $option_table = $self->option_table;
+  #my $option_table = $self->option_table;
 
   foreach my $obj ( $self->option_objects ) {
     my $error = $obj->delete;
@@ -198,7 +198,7 @@ sub replace {
     #  $dbh->rollback if $oldAutoCommit;
     #  return $@;
     #}
-    my $new = $option_table->new($href);
+    my $new = "FS::$option_table"->new($href);
 
     $new->optionnum($old->optionnum) if $old;
     my $error = $old ? $new->replace($old) : $new->insert;
