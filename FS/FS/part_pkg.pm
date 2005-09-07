@@ -420,7 +420,7 @@ sub check {
     my $error = $self->ut_number('freq');
     return $error if $error;
   } else {
-    $self->freq =~ /^(\d+[dw]?)$/
+    $self->freq =~ /^(\d+[hdw]?)$/
       or return "Illegal or empty freq: ". $self->freq;
     $self->freq($1);
   }
@@ -535,6 +535,7 @@ Returns an english representation of the I<freq> field, such as "monthly",
 
 tie %freq, 'Tie::IxHash', 
   '0'  => '(no recurring fee)',
+  '1h' => 'hourly',
   '1d' => 'daily',
   '1w' => 'weekly',
   '2w' => 'biweekly (every 2 weeks)',
@@ -557,8 +558,8 @@ sub freq_pretty {
     $freq{$freq};
   } else {
     my $interval = 'month';
-    if ( $freq =~ /^(\d+)([dw])$/ ) {
-      my %interval = ( 'd'=>'day', 'w'=>'week' );
+    if ( $freq =~ /^(\d+)([hdw])$/ ) {
+      my %interval = ( 'h' => 'hour', 'd'=>'day', 'w'=>'week' );
       $interval = $interval{$2};
     }
     if ( $1 == 1 ) {
