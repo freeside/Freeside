@@ -8,7 +8,7 @@ use FS::part_export;
 
 tie my %options, 'Tie::IxHash',
   'user'       => { label=>'Remote access username' },
-  'accesshash' => { label=>'Remote access key' },
+  'accesshash' => { label=>'Remote access key', type=>'textarea' },
 ;
 
 %info = (
