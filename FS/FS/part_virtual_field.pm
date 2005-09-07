@@ -2,7 +2,8 @@ package FS::part_virtual_field;
 
 use strict;
 use vars qw( @ISA );
-use FS::Record qw( qsearchs qsearch dbdef );
+use FS::Record qw( qsearchs qsearch );
+use FS::Schema qw( dbdef );
 
 @ISA = qw( FS::Record );
 
@@ -161,7 +162,7 @@ sub check {
 
   # Make sure it's a real table with a numeric primary key
   my ($table, $pkey);
-  if($table = $FS::Record::dbdef->table($self->dbtable)) {
+  if($table = dbdef->table($self->dbtable)) {
     if($pkey = $table->primary_key) {
       if($table->column($pkey)->type =~ /int/i) {
         # this is what it should be

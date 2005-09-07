@@ -3,6 +3,7 @@ package FS::part_svc;
 use strict;
 use vars qw( @ISA $DEBUG );
 use FS::Record qw( qsearch qsearchs fields dbh );
+use FS::Schema qw( dbdef );
 use FS::part_svc_column;
 use FS::part_export;
 use FS::export_svc;
@@ -465,7 +466,7 @@ sub process {
               my @fields = fields($svcdb);
               push @fields, 'usergroup' if $svcdb eq 'svc_acct'; #kludge
               map { ( $svcdb.'__'.$_, $svcdb.'__'.$_.'_flag' )  } @fields;
-            } grep defined( $FS::Record::dbdef->table($_) ),
+            } grep defined( dbdef->table($_) ),
                    qw( svc_acct svc_domain svc_forward svc_www svc_broadband )
       )
   } );
