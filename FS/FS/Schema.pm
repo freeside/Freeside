@@ -226,12 +226,14 @@ sub dbdef_dist {
 
 sub tables_hashref {
 
-  my($char_d) = 80; #default maxlength for text fields
+  my $char_d = 80; #default maxlength for text fields
 
   #my(@date_type)  = ( 'timestamp', '', ''     );
-  my(@date_type)  = ( 'int', 'NULL', ''     );
-  my(@perl_type) = ( 'text', 'NULL', ''  ); 
+  my @date_type  = ( 'int', 'NULL', ''     );
+  my @perl_type = ( 'text', 'NULL', ''  ); 
   my @money_type = ( 'decimal',   '', '10,2' );
+
+  my $username_len = 32; #usernamemax config file
 
   return {
 
