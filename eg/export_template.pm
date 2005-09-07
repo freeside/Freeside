@@ -56,6 +56,24 @@ sub _export_delete {
   ref($err_or_queue) ? '' : $err_or_queue;
 }
 
+#these two are optional
+# fallback for svc_acct will change and restore password
+sub _export_suspend {
+  my( $self, $svc_something ) = (shift, shift);
+  $err_or_queue = $self->myexport_queue( $svc_something->svcnum,
+    'suspend', $svc_something->username );
+  ref($err_or_queue) ? '' : $err_or_queue;
+}
+
+sub _export_unsuspend {
+  my( $self, $svc_something ) = (shift, shift);
+  $err_or_queue = $self->myexport_queue( $svc_something->svcnum,
+    'unsuspend', $svc_something->username );
+  ref($err_or_queue) ? '' : $err_or_queue;
+}
+
+###
+
 #a good idea to queue anything that could fail or take any time
 sub myexport_queue {
   my( $self, $svcnum, $method ) = (shift, shift, shift);
@@ -78,4 +96,11 @@ sub myexport_delete { #subroutine, not method
   my( $username ) = @_;
   #do things with $username
 }
+
+sub myexport_suspend { #subroutine, not method
+}
+
+sub myexport_unsuspend { #subroutine, not method
+}
+
 
