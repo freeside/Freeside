@@ -1,8 +1,7 @@
 #!/usr/bin/perl
 
 # usage: generate-raddb radius-server/raddb/dictionary* >raddb.pm
-#  i.e.: generate-raddb ~/src/freeradius-0.2/raddb/dictionary* >FS/raddb.pm
-
+#  i.e.: generate-raddb ~/freeradius/freeradius-1.0.4/share/dictionary* /home/ivan/wirelessoceans/dictionary.ip3networks >raddb.pm.new
 print <<END;
 package FS::raddb;
 use vars qw(%attrib);
