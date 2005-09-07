@@ -38,6 +38,14 @@ print qq!<A HREF="${p}edit/cust_main.cgi?$custnum">Edit this customer</A>!;
 <SCRIPT TYPE="text/javascript" SRC="../elements/overlibmws.js"></SCRIPT>
 <SCRIPT TYPE="text/javascript" SRC="../elements/overlibmws_iframe.js"></SCRIPT>
 <SCRIPT TYPE="text/javascript" SRC="../elements/overlibmws_draggable.js"></SCRIPT>
+
+<SCRIPT TYPE="text/javascript">
+function areyousure(href, message) {
+  if (confirm(message) == true)
+    window.location.href = href;
+}
+</SCRIPT>
+
 <SCRIPT TYPE="text/javascript">
 
 <%
