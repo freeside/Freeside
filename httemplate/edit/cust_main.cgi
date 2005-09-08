@@ -247,7 +247,7 @@ function bottomfixup(what) {
   var layervars = new Array(
     'payauto',
     'payinfo', 'payinfo1', 'payinfo2',
-    'exp_month', 'exp_year', 'paycvv',
+    'payname', 'exp_month', 'exp_year', 'paycvv',
     'paystart_month', 'paystart_year', 'payissue',
     'payip'
   );
@@ -325,7 +325,7 @@ function copyelement(from, to) {
 
      'payauto',
      'payinfo', 'payinfo1', 'payinfo2',
-     'exp_month', 'exp_year', 'paycvv',
+     'payname', 'exp_month', 'exp_year', 'paycvv',
      'paystart_month', 'paystart_year', 'payissue',
      'payip',
      
