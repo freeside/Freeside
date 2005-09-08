@@ -1,6 +1,6 @@
 package FS::part_export::radiator;
 
-use vars qw(@ISA %info);
+use vars qw(@ISA %info $radusers);
 use Tie::IxHash;
 use FS::part_export::sqlradius;
 
@@ -20,6 +20,8 @@ END
 );
 
 @ISA = qw(FS::part_export::sqlradius); #for regular sqlradius accounting
+
+$radusers = 'RADUSERS'; #MySQL is case sensitive about table names!  huh
 
 #sub export_username {
 #  my($self, $svc_acct) = (shift, shift);
@@ -99,7 +101,7 @@ sub radiator_insert { #subroutine, not method
   my %hash = @_;
 
   my $sth = $dbh->prepare(
-    'INSERT INTO radusers ( '. join(', ', keys %hash ). ' ) '.
+    "INSERT INTO $radusers ( ". join(', ', keys %hash ). ' ) '.
       'VALUES ( '. join(', ', map '?', keys %hash ). ' ) '
   ) or die $dbh->errstr;
   $sth->execute( values %hash )
@@ -114,7 +116,7 @@ sub radiator_replace { #subroutine, not method
   my ( $old_username, %hash ) = @_;
 
   my $sth = $dbh->prepare(
-    'UPDATE radusers SET '. join(', ', map " $_ = ?", keys %hash ).
+    "UPDATE $radusers SET ". join(', ', map " $_ = ?", keys %hash ).
       ' WHERE username = ?'
   ) or die $dbh->errstr;
   $sth->execute( values(%hash), $old_username )
@@ -128,7 +130,7 @@ sub radiator_delete { #subroutine, not method
   my ( $username ) = @_;
 
   my $sth = $dbh->prepare(
-    'DELETE FROM radusers WHERE username = ?'
+    "DELETE FROM $radusers WHERE username = ?"
   ) or die $dbh->errstr;
   $sth->execute( $username )
     or die $sth->errstr;
