@@ -9,7 +9,7 @@ if ( UNIVERSAL::can(dbh, 'sprintProfile') ) {
 
   if ( lc($r->content_type) eq 'text/html' ) {
 
-    $profile = '<PRE>'. ("\n"x4096). encode_entities(dbh->sprintProfile()).
+    $profile = '<PRE>'. encode_entities(dbh->sprintProfile()).
                #"\n\n". &sprintAutoProfile(). '</PRE>';
                "\n\n".                        '</PRE>';
   } 
