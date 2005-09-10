@@ -1,0 +1,65 @@
+<%
+  my ( $url, @subs ) = @_;
+
+  $url .= ( ($url =~ /\?/) ? '&' : '?' ).
+          'sub=';
+
+%>
+
+<SCRIPT TYPE="text/javascript">
+
+  function rs_init_object() {
+    var A;
+    try {
+      A=new ActiveXObject("Msxml2.XMLHTTP");
+    } catch (e) {
+      try {
+        A=new ActiveXObject("Microsoft.XMLHTTP");
+      } catch (oc) {
+        A=null;
+      }
+    }
+    if(!A && typeof XMLHttpRequest != "undefined")
+      A = new XMLHttpRequest();
+    if (!A)
+      alert("Can't create XMLHttpRequest object");
+    return A;
+
+  }
+
+  <% foreach my $func (@subs) { 
+
+       my $furl = $url . uri_escape($func);
+       $furl =~ s/\"/\\\\\"/; #javascript escape
+
+  %>
+
+    function <%=$func%>() {
+	// count args; build URL
+	var url = "<%=$furl%>";
+	var a = <%=$func%>.arguments;
+	for (var i = 0; i < a.length-1; i++) 
+	    url = url + "&arg=" + escape(a[i]);
+	url = url.replace( /[+]/g, '%2B'); // fix the unescaped plus signs 
+	var xmlhttp = rs_init_object();
+	xmlhttp.open("GET", url, true);
+	xmlhttp.onreadystatechange = function() {
+	    if (xmlhttp.readyState != 4) 
+		return;
+	    //rs_debug("received " + x.responseText);
+
+	    if (xmlhttp.status != 200) {
+	      alert(xmlhttp.status + " status connecting to " + url);
+	    } else {
+              var data = xmlhttp.responseText;
+              a[a.length-1](data);
+            }
+        }
+        xmlhttp.send(null);
+        //rs_debug("x_$func_name url = " + url);
+        //rs_debug("x_$func_name waiting..");
+    }
+
+  <% } %>
+
+</SCRIPT>

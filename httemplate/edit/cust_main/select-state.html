@@ -1,0 +1,27 @@
+<%
+
+  my %opt = @_;
+  foreach my $opt (qw( county state country prefix onchange disabled )) {
+    $opt{$_} = '' unless exists($opt{$_}) && defined($opt{$_});
+  }
+
+%>
+
+<SELECT NAME="<%= $opt{'prefix'} %>state" onChange="<%= $opt{'prefix'} %>state_changed(this); <%= $opt{'onchange'} %>" <%= $opt{'disabled'} %>>
+
+<% foreach my $state (
+     sort
+     map { $_->state }
+     qsearch( 'cust_main_county',
+              { 'country' => $opt{'country'} },
+              'DISTINCT ON ( state ) *',
+            )
+   ) {
+%>
+
+  <OPTION VALUE="<%= $state %>"<%= $state eq $opt{'state'} ? ' SELECTED' : '' %>><%= $state || '(n/a)' %>
+
+<% } %>
+
+</SELECT>
+

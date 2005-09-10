@@ -153,5 +153,10 @@ by Erik Bosrup), licensed under the terms of the Artistic license
 Ricardo SIGNES <rjbs+freeside-devel@icgroup.com> has contributed a bunch of
 patches to clean up and refactor various stuff in the module layer.  Thanks!
 
+XMLHttpRequest implementation based on the SAJAX toolkit, licensed under the
+terms of the BSD license.
+(c) copyright 2005 modernmethod, inc
+Perl backend version (c) copyright 2005 Nathan Schmidt
+
 Everything else is my (Ivan Kohler <ivan@420.am>) fault.
 
