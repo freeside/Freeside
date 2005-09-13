@@ -183,7 +183,9 @@
   } else { # regular HTML
 
     if ( exists($opt{'redirect'}) && scalar(@$rows) == 1 && $total == 1 ) {
-      my( $url, $method ) = @{$opt{'redirect'}};
+      my $redirect = $opt{'redirect'};
+      $redirect = &{$redirect}($rows->[0]) if ref($redirect) eq 'CODE';
+      my( $url, $method ) = @$redirect;
       redirect( $url. $rows->[0]->$method() );
     } else {
       ( my $xlsname = $opt{'name'} ) =~ s/\W//g;
