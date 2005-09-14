@@ -68,11 +68,11 @@ close DEST;
 
 open(TEST,">FS/t/$table.t") or die $!;
 print TEST <<ENDTEST;
-BEGIN { \$| = 1; print "1..1\n" }
-END {print "not ok 1\n" unless \$loaded;}
+BEGIN { \$| = 1; print "1..1\\n" }
+END {print "not ok 1\\n" unless \$loaded;}
 use FS::$table;
 \$loaded=1;
-print "ok 1\n";
+print "ok 1\\n";
 ENDTEST
 close TEST;
 
