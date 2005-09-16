@@ -1035,7 +1035,7 @@ sub check {
      } ) ) {
       return "Unknown state/county/country: ".
         $self->state. "/". $self->county. "/". $self->country
-        unless qsearch('cust_main_county',{
+        unless qsearc('cust_main_county',{
           'state'   => $self->state,
           'county'  => $self->county,
           'country' => $self->country,
@@ -1082,7 +1082,7 @@ sub check {
        } ) ) {
         return "Unknown ship_state/ship_county/ship_country: ".
           $self->ship_state. "/". $self->ship_county. "/". $self->ship_country
-          unless qsearchs('cust_main_county',{
+          unless qsearch('cust_main_county',{
             'state'   => $self->ship_state,
             'county'  => $self->ship_county,
             'country' => $self->ship_country,
