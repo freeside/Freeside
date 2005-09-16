@@ -1035,7 +1035,7 @@ sub check {
      } ) ) {
       return "Unknown state/county/country: ".
         $self->state. "/". $self->county. "/". $self->country
-        unless qsearc('cust_main_county',{
+        unless qsearch('cust_main_county',{
           'state'   => $self->state,
           'county'  => $self->county,
           'country' => $self->country,
