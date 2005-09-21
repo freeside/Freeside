@@ -291,3 +291,4 @@ FS/banned_pay.pm
 t/banned_pay.t
 FS/cancel_reason.pm
 t/cancel_reason.t
+bin/freeside-prepaidd

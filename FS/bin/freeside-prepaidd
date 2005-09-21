@@ -1,0 +1,75 @@
+#!/usr/bin/perl -w
+
+use strict;
+use FS::Daemon qw(daemonize1 drop_root logfile daemonize2 sigint sigterm);
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw(qsearch); # qsearchs);
+use FS::cust_pkg;
+
+my $user = shift or die &usage;
+
+#daemonize1('freeside-sprepaidd', $user); #keep unique pid files w/multi installs
+daemonize1('freeside-prepaidd');
+
+drop_root();
+
+adminsuidsetup($user);
+
+logfile( "/usr/local/etc/freeside/prepaidd-log.". $FS::UID::datasrc );
+
+daemonize2();
+
+#--
+
+while (1) {
+
+  foreach my $cust_pkg ( 
+    qsearch( {
+      'select'    => 'cust_pkg.*, part_pkg.plan',
+      'table'     => 'cust_pkg',
+      'addl_from' => 'LEFT JOIN part_pkg USING ( pkgpart )',
+      #'hashref'   => { 'plan' => 'prepaid' },#should check part_pkg::is_prepaid
+      #'extra_sql' => "AND bill < ". time.
+      'hashref'   => {},
+      'extra_sql' => "WHERE plan = 'prepaid' AND bill < ". time.
+                     " AND bill IS NOT NULL".
+                     " AND ( susp   IS NULL OR susp   = 0)".
+                     " AND ( cancel IS NULL OR cancel = 0)"
+    } )
+  ) {
+    my $error = $cust_pkg->suspend;
+    warn "Error suspended package ". $cust_pkg->pkgnum.
+         " for custnum ". $cust_pkg->custnum.
+         ": $error\n"
+      if $error;
+  }
+
+  die "exiting" if sigterm() || sigint();
+  sleep 5;
+
+}
+
+#--
+
+sub usage { 
+  die "Usage:\n\n  freeside-prepaidd user\n";
+}
+
+=head1 NAME
+
+freeside-prepaidd - Real-time daemon for prepaid packages
+
+=head1 SYNOPSIS
+
+  freeside-prepaidd
+
+=head1 DESCRIPTION
+
+Runs continuously and suspendes any prepaid customer packages which have
+passed their renewal date (next bill date).
+
+=head1 SEE ALSO
+
+=cut
+
+1;

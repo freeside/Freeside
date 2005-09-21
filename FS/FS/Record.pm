@@ -185,12 +185,35 @@ sub create {
   }
 }
 
-=item qsearch TABLE, HASHREF, SELECT, EXTRA_SQL, CACHE_OBJ, ADDL_FROM
+=item qsearch PARAMS_HASHREF | TABLE, HASHREF, SELECT, EXTRA_SQL, CACHE_OBJ, ADDL_FROM
 
 Searches the database for all records matching (at least) the key/value pairs
 in HASHREF.  Returns all the records found as `FS::TABLE' objects if that
 module is loaded (i.e. via `use FS::cust_main;'), otherwise returns FS::Record
 objects.
+
+The preferred usage is to pass a hash reference of named parameters:
+
+  my @records = qsearch( {
+                           'table'     => 'table_name',
+                           'hashref'   => { 'field' => 'value'
+                                            'field' => { 'op'    => '<',
+                                                         'value' => '420',
+                                                       },
+                                          },
+
+                           #these are optional...
+                           'select'    => '*',
+                           'extra_sql' => 'AND field ',
+                           #'cache_obj' => '', #optional
+                           'addl_from' => 'LEFT JOIN othtable USING ( field )',
+                         }
+                       );
+
+Much code still uses old-style positional parameters, this is also probably
+fine in the common case where there are only two parameters:
+
+  my @records = qsearch( 'table', { 'field' => 'value' } );
 
 ###oops, argh, FS::Record::new only lets us create database fields.
 #Normal behaviour if SELECT is not specified is `*', as in
@@ -204,12 +227,24 @@ objects.
 =cut
 
 sub qsearch {
-  my($stable, $record, $select, $extra_sql, $cache, $addl_from ) = @_;
+  my($stable, $record, $select, $extra_sql, $cache, $addl_from );
+  if ( ref($_[0]) ) { #hashref for now, eventually maybe accept a list too
+    my $opt = shift;
+    $stable    = $opt->{'table'}     or die "table name is required";
+    $record    = $opt->{'hashref'}   || {};
+    $select    = $opt->{'select'}    || '*';
+    $extra_sql = $opt->{'extra_sql'} || '';
+    $cache     = $opt->{'cache_obj'} || '';
+    $addl_from = $opt->{'addl_from'} || '';
+  } else {
+    ($stable, $record, $select, $extra_sql, $cache, $addl_from ) = @_;
+    $select ||= '*';
+  }
+
   #$stable =~ /^([\w\_]+)$/ or die "Illegal table: $table";
   #for jsearch
   $stable =~ /^([\w\s\(\)\.\,\=]+)$/ or die "Illegal table: $stable";
   $stable = $1;
-  $select ||= '*';
   my $dbh = dbh;
 
   my $table = $cache ? $cache->table : $stable;
@@ -471,7 +506,7 @@ sub jsearch {
   );
 }
 
-=item qsearchs TABLE, HASHREF, SELECT, EXTRA_SQL, CACHE_OBJ, ADDL_FROM
+=item qsearchs PARAMS_HASHREF | TABLE, HASHREF, SELECT, EXTRA_SQL, CACHE_OBJ, ADDL_FROM
 
 Same as qsearch, except that if more than one record matches, it B<carp>s but
 returns the first.  If this happens, you either made a logic error in asking

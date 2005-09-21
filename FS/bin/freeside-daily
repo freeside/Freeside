@@ -89,6 +89,19 @@ foreach $cust_main ( @cust_main ) {
          $cust_main->custnum. ": $error"
       if $error;
   }
+  # $^T not $time because -d is for pre-printing invoices
+  foreach my $cust_pkg (
+    grep { $_->part_pkg->is_prepaid
+           && $_->bill && $_->bill < $^T && ! $_->susp
+         }
+         $cust_main->ncancelled_pkgs
+  ) {
+    my $error = $cust_pkg->suspend;
+    warn "Error suspending package ". $cust_pkg->pkgnum.
+         " for custnum ". $cust_main->custnum.
+         ": $error"
+      if $error;
+  }
 
   my $error = $cust_main->bill( 'time'    => $time,
                                 'resetup' => $opt_s, );

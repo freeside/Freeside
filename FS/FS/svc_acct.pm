@@ -15,6 +15,7 @@ use vars qw( @ISA $DEBUG $me $conf $skip_fuzzyfiles
              @saltset @pw_set );
 use Carp;
 use Fcntl qw(:flock);
+use Date::Format;
 use Crypt::PasswdMD5 1.2;
 use FS::UID qw( datasrc );
 use FS::Conf;
@@ -1011,6 +1012,7 @@ expected to change in the future.
 
 sub radius_reply { 
   my $self = shift;
+
   my %reply =
     map {
       /^(radius_(.*))$/;
@@ -1018,12 +1020,15 @@ sub radius_reply {
       #$attrib =~ s/_/\-/g;
       ( $FS::raddb::attrib{lc($attrib)}, $self->getfield($column) );
     } grep { /^radius_/ && $self->getfield($_) } fields( $self->table );
+
   if ( $self->slipip && $self->slipip ne '0e0' ) {
     $reply{$radius_ip} = $self->slipip;
   }
+
   if ( $self->seconds !~ /^$/ ) {
     $reply{'Session-Timeout'} = $self->seconds;
   }
+
   %reply;
 }
 
@@ -1040,16 +1045,25 @@ expected to change in the future.
 
 sub radius_check {
   my $self = shift;
-  my $password = $self->_password;
-  my $pw_attrib = length($password) <= 12 ? $radius_password : 'Crypt-Password';
-  ( $pw_attrib => $password,
+
+  my %check = 
     map {
       /^(rc_(.*))$/;
       my($column, $attrib) = ($1, $2);
       #$attrib =~ s/_/\-/g;
       ( $FS::raddb::attrib{lc($attrib)}, $self->getfield($column) );
-    } grep { /^rc_/ && $self->getfield($_) } fields( $self->table )
-  );
+    } grep { /^rc_/ && $self->getfield($_) } fields( $self->table );
+
+  my $password = $self->_password;
+  my $pw_attrib = length($password) <= 12 ? $radius_password : 'Crypt-Password';  $check{$pw_attrib} = $password;
+
+  my $cust_pkg = $self->cust_svc->cust_pkg;
+  if ( $cust_pkg && $cust_pkg->part_pkg->is_prepaid ) {
+    $check{'Expiration'} = time2str('%B %e %Y %T', $cust_pkg->bill ); #http://lists.cistron.nl/pipermail/freeradius-users/2005-January/040184.html
+  }
+
+  %check;
+
 }
 
 =item domain
@@ -1086,10 +1100,7 @@ Returns the FS::cust_svc record for this account (see L<FS::cust_svc>).
 
 =cut
 
-sub cust_svc {
-  my $self = shift;
-  qsearchs( 'cust_svc', { 'svcnum' => $self->svcnum } );
-}
+#inherited from svc_Common
 
 =item email
 

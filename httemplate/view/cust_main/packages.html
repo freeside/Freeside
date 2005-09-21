@@ -5,6 +5,10 @@
   my $packages = get_packages($cust_main, $conf);
 %>
 
+<STYLE TYPE="text/css">
+.package .provision { font-weight: bold }
+</STYLE>
+
 <A NAME="cust_pkg"><FONT SIZE="+2">Packages</FONT></A>
 
 <%= include('order_pkg.html', $cust_main ) %>
@@ -71,12 +75,10 @@ foreach my $pkg (sort pkgsort_pkgnum_cancel @$packages) {
     (&nbsp;<%=pkg_dates_link($pkg)%>&nbsp;|&nbsp;<%=pkg_customize_link($pkg,$cust_main->custnum)%>&nbsp;)
 <% } %>
   </TD>
-<%
-  #foreach (qw(setup last_bill next_bill susp expire cancel)) {
-  #  print qq!  <TD ROWSPAN=$rowspan>! . pkg_datestr($pkg,$_,$conf) . qq!</TD>\n!;
-  #}
-  print "<TD ROWSPAN=$rowspan>". &itable('');
+  <TD ROWSPAN=<%=$rowspan%>>
+    <TABLE BORDER=0 CELLSPACING=0 CELLPADDING=0 WIDTH="100%">
 
+<%
   sub myfreq {
     my $part_pkg = shift;
     my $freq = $part_pkg->freq_pretty;
@@ -84,92 +86,190 @@ foreach my $pkg (sort pkgsort_pkgnum_cancel @$packages) {
     $freq;
   }
 
-  if ( $pkg->{cancel} ) { #status: cancelled
+  #this should use cust_pkg->status and cust_pkg->statuscolor eventually
 
-    print '<TR><TD><FONT COLOR="#ff0000"><B>Cancelled&nbsp;</B></FONT></TD>'.
-          '<TD>'. pkg_datestr($pkg,'cancel',$conf). '</TD></TR>';
-    unless ( $pkg->{setup} ) {
-      print '<TR><TD COLSPAN=2>Never billed</TD></TR>';
-    } else {
-      print "<TR><TD>Setup&nbsp;</TD><TD>".
-            pkg_datestr($pkg, 'setup',$conf). '</TD></TR>';
-      print "<TR><TD>Last&nbsp;bill&nbsp;</TD><TD>".
-            pkg_datestr($pkg, 'last_bill',$conf). '</TD></TR>'
-        if $pkg->{'last_bill'};
-      print "<TR><TD>Suspended&nbsp;</TD><TD>".
-            pkg_datestr($pkg, 'susp',$conf). '</TD></TR>'
-        if $pkg->{'susp'};
-    }
+  my $colspan = $conf->exists('cust_pkg-display_times') ? 8 : 4;
+  my $width = $conf->exists('cust_pkg-display_times') ? '38%' : '56%';
 
+  #false laziness w/edit/REAL_cust_pkg.cgi
+  my( $billed_or_prepaid, $last_bill_or_renewed, $next_bill_or_prepaid_until );
+  unless ( $pkg->{'part_pkg'}->is_prepaid ) {
+    $billed_or_prepaid = 'billed';
+    $last_bill_or_renewed = 'Last&nbsp;bill';
+    $next_bill_or_prepaid_until = 'Next&nbsp;bill';
   } else {
-
-    if ( $pkg->{susp} ) { #status: suspended
-      print '<TR><TD><FONT COLOR="#FF9900"><B>Suspended</B>&nbsp;</FONT></TD>'.
-            '<TD>'. pkg_datestr($pkg,'susp',$conf). '</TD></TR>';
-      unless ( $pkg->{setup} ) {
-        print '<TR><TD COLSPAN=2>Never billed</TD></TR>';
-      } else {
-        print "<TR><TD>Setup&nbsp;</TD><TD>". 
-              pkg_datestr($pkg, 'setup',$conf). '</TD></TR>';
-      }
-      print "<TR><TD>Last&nbsp;bill&nbsp;</TD><TD>".
-            pkg_datestr($pkg, 'last_bill',$conf). '</TD></TR>'
-        if $pkg->{'last_bill'};
-      # next bill ??
-      print "<TR><TD>Expires&nbsp;</TD><TD>".
-            pkg_datestr($pkg, 'expire',$conf). '</TD></TR>'
-        if $pkg->{'expire'};
-      print '<TR><TD COLSPAN=2>(&nbsp;'. pkg_unsuspend_link($pkg).
-            '&nbsp;|&nbsp;'. pkg_cancel_link($pkg). '&nbsp;)</TD></TR>';
-
-    } else { #status: active
-
-      unless ( $pkg->{setup} ) { #not setup
-
-        print '<TR><TD COLSPAN=2>Not&nbsp;yet&nbsp;billed&nbsp;(';
-        unless ( $pkg->{freq} ) {
-          print 'one-time&nbsp;charge)</TD></TR>';
-          print '<TR><TD COLSPAN=2>(&nbsp;'. pkg_cancel_link($pkg).
-                '&nbsp;)</TD</TR>';
-        } else {
-          print 'billed&nbsp;'. myfreq($pkg->{part_pkg}). ')</TD></TR>';
-        }
-
-      } else { #setup
-
-        unless ( $pkg->{freq} ) {
-          print "<TR><TD COLSPAN=2>One-time&nbsp;charge</TD></TR>".
-                '<TR><TD>Billed&nbsp;</TD><TD>'.
-                pkg_datestr($pkg,'setup',$conf). '</TD></TR>';
-        } else {
-          print '<TR><TD COLSPAN=2><FONT COLOR="#00CC00"><B>Active</B></FONT>'.
-                ',&nbsp;billed&nbsp;'. myfreq($pkg->{part_pkg}). '</TD></TR>'.
-                '<TR><TD>Setup&nbsp;</TD><TD>'.
-                pkg_datestr($pkg, 'setup',$conf). '</TD></TR>';
-        }
-
-      }
-
-      print "<TR><TD>Last&nbsp;bill&nbsp;</TD><TD>".
-            pkg_datestr($pkg, 'last_bill',$conf). '</TD></TR>'
-        if $pkg->{'last_bill'};
-      print "<TR><TD>Next&nbsp;bill&nbsp;</TD><TD>".
-            pkg_datestr($pkg, 'next_bill',$conf). '</TD></TR>'
-        if $pkg->{'next_bill'};
-      print "<TR><TD>Expires&nbsp;</TD><TD>".
-            pkg_datestr($pkg, 'expire',$conf). '</TD></TR>'
-        if $pkg->{'expire'};
-      if ( $pkg->{freq} ) {
-        print '<TR><TD COLSPAN=2>(&nbsp;'. pkg_suspend_link($pkg).
-              '&nbsp;|&nbsp;'. pkg_cancel_link($pkg). '&nbsp;)</TD></TR>';
-      }
-
-    }
-
+    $billed_or_prepaid = 'prepaid';
+    $last_bill_or_renewed = 'Renewed';
+    $next_bill_or_prepaid_until = 'Prepaid&nbsp;until';
   }
 
-  print "</TABLE></TD>\n";
+%>
 
+<% if ( $pkg->{cancel} ) { %> <!-- #status: cancelled -->
+
+  <TR>
+    <TD WIDTH="<%=$width%>" ALIGN="right"><FONT COLOR="#ff0000"><B>Cancelled&nbsp;</B></FONT></TD>
+    <%= pkg_datestr($pkg,'cancel',$conf) %>
+  </TR>
+
+  <% unless ( $pkg->{setup} ) { %>
+
+    <TR>
+      <TD COLSPAN=<%=$colspan%>>Never billed</TD>
+    </TR>
+
+  <% } else { %>
+
+    <TR>
+      <TD WIDTH="<%=$width%>" ALIGN="right">Setup&nbsp;</TD>
+      <%= pkg_datestr($pkg, 'setup',$conf) %>
+    </TR>
+
+    <% if ( $pkg->{'last_bill'} ) { %>
+      <TR>
+        <TD WIDTH="<%=$width%>" ALIGN="right"><%= $last_bill_or_renewed %>&nbsp;</TD>
+        <%= pkg_datestr($pkg, 'last_bill',$conf) %>
+      </TR>
+    <% } %>
+
+    <% if ( $pkg->{'susp'} ) { %>
+      <TR>
+        <TD WIDTH="<%=$width%>" ALIGN="right">Suspended&nbsp;</TD>
+        <%= pkg_datestr($pkg, 'susp',$conf) %>
+      </TR>
+    <% } %>
+
+  <% } %>
+
+<% } else { %>
+
+  <% if ( $pkg->{susp} ) { %> <!-- #status: suspended -->
+
+    <TR>
+      <TD WIDTH="<%=$width%>" ALIGN="right"><FONT COLOR="#FF9900"><B>Suspended</B>&nbsp;</FONT></TD>
+      <%= pkg_datestr($pkg,'susp',$conf) %>
+    </TR>
+
+    <% unless ( $pkg->{setup} ) { %>
+
+      <TR>
+        <TD COLSPAN=<%=$colspan%>>Never billed</TD>
+      </TR>
+
+    <% } else { %>
+
+      <TR>
+        <TD WIDTH="<%=$width%>" ALIGN="right">Setup&nbsp;</TD>
+        <%= pkg_datestr($pkg, 'setup',$conf) %>
+      </TR>
+      
+    <% } %>
+
+    <% if ( $pkg->{'last_bill'} ) { %>
+      <TR>
+        <TD WIDTH="<%=$width%>" ALIGN="right"><%= $last_bill_or_renewed %>&nbsp;</TD>
+        <%= pkg_datestr($pkg, 'last_bill',$conf) %>
+      </TR>
+    <% } %>
+
+    <!-- # next bill ?? -->
+
+    <% if ( $pkg->{'expire'} ) { %>
+      <TR>
+        <TD WIDTH="<%=$width%>" ALIGN="right">Expires&nbsp;</TD>
+        <%= pkg_datestr($pkg, 'expire',$conf) %>
+      </TR>
+    <% } %>
+
+    <TR>
+      <TD COLSPAN=<%=$colspan%>>(&nbsp;<%= pkg_unsuspend_link($pkg) %>&nbsp;|&nbsp;<%= pkg_cancel_link($pkg) %>&nbsp;)</TD>
+    </TR>
+
+  <% } else { %> <!-- #status: active -->
+
+    <% unless ( $pkg->{setup} ) { %> <!-- #not setup -->
+
+      <% unless ( $pkg->{'freq'} ) { %>
+
+        <TR>
+          <TD COLSPAN=<%=$colspan%>>Not&nbsp;yet&nbsp;billed&nbsp;(one-time&nbsp;charge)</TD>
+        </TR>
+
+        <TR>
+          <TD COLSPAN=<%=$colspan%>>(&nbsp;<%= pkg_cancel_link($pkg) %>&nbsp;)</TD>
+        </TR>
+
+      <% } else { %>
+
+        <TR>
+          <TD COLSPAN=<%=$colspan%>>Not&nbsp;yet&nbsp;billed&nbsp;(<%= $billed_or_prepaid %>&nbsp;<%= myfreq($pkg->{part_pkg}) %>)</TD>
+        </TR>
+
+      <% } %>
+
+    <% } else { %> <!-- #setup -->
+
+      <% unless ( $pkg->{freq} ) { %>
+
+        <TR>
+          <TD COLSPAN=<%=$colspan%>>One-time&nbsp;charge</TD>
+        </TR>
+
+        <TR>
+          <TD WIDTH="<%=$width%>" ALIGN="right">Billed&nbsp;</TD>
+          <%= pkg_datestr($pkg,'setup',$conf) %>
+        </TR>
+
+      <% } else { %>
+
+        <TR>
+          <TD COLSPAN=<%=$colspan%>><FONT COLOR="#00CC00"><B>Active</B></FONT>,&nbsp;<%= $billed_or_prepaid %>&nbsp;<%= myfreq($pkg->{part_pkg}) %></TD>
+        </TR>
+
+        <TR>
+          <TD WIDTH="<%=$width%>" ALIGN="right">Setup&nbsp;</TD>
+          <%= pkg_datestr($pkg, 'setup',$conf) %>
+        </TR>
+
+      <% } %>
+
+    <% } %>
+
+    <% if ( $pkg->{'last_bill'} ) { %>
+      <TR>
+        <TD WIDTH="<%=$width%>" ALIGN="right"><%= $last_bill_or_renewed %>&nbsp;</TD>
+        <%= pkg_datestr($pkg, 'last_bill',$conf) %>
+      </TR>
+    <% } %>
+
+    <% if ( $pkg->{'next_bill'} ) { %>
+      <TR>
+        <TD WIDTH="<%=$width%>" ALIGN="right"><%= $next_bill_or_prepaid_until %>&nbsp;</TD>
+        <%= pkg_datestr($pkg, 'next_bill',$conf) %>
+      </TR>
+    <% } %>
+
+    <% if ( $pkg->{'expire'} ) { %>
+      <TR>
+        <TD WIDTH="<%=$width%>" ALIGN="right">Expires&nbsp;</TD>
+        <%= pkg_datestr($pkg, 'expire',$conf) %>
+      </TR>
+    <% } %>
+
+    <% if ( $pkg->{freq} ) { %>
+      <TR>
+        <TD COLSPAN=<%=$colspan%>>(&nbsp;<%= pkg_suspend_link($pkg) %>&nbsp;|&nbsp;<%= pkg_cancel_link($pkg) %>&nbsp;)</TD>
+      </TR>
+    <% } %>
+
+  <% } %>
+
+<% } %>
+
+</TABLE>
+</TD>
+
+<%
   if ($rowspan == 0) { print qq!</TR>\n!; next; }
 
   my $cnt = 0;
@@ -342,9 +442,15 @@ sub pkgsort_pkgnum_cancel {
 sub pkg_datestr {
   my($pkg, $field, $conf) = @_ or return '';
   return '&nbsp;' unless $pkg->{$field};
-  my $format = $conf->exists('pkg_showtimes')
-               ? '<B>%D</B>&nbsp;<FONT SIZE=-3>%l:%M:%S%P&nbsp;%z</FONT>'
-               : '<B>%b&nbsp;%o,&nbsp;%Y</B>';
+  my $format = '<TD align="left"><B>%b</B></TD>'.
+               '<TD align="right"><B>&nbsp;%o,</B></TD>'.
+               '<TD align="right"><B>&nbsp;%Y</B></TD>';
+  #$format .= '&nbsp;<FONT SIZE=-3>%l:%M:%S%P&nbsp;%z</FONT>'
+  $format .= '<TD ALIGN="right"><B>&nbsp;%l</TD>'.
+             '<TD ALIGN="center"><B>:</B></TD>'.
+             '<TD ALIGN="left"><B>%M</B></TD>'.
+             '<TD ALIGN="left"><B>&nbsp;%P</B></TD>'
+    if $conf->exists('cust_pkg-display_times');
   ( my $strip = time2str($format, $pkg->{$field}) ) =~ s/ (\d)/$1/g;
   $strip;
 }

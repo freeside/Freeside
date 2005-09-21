@@ -1562,6 +1562,13 @@ httemplate/docs/config.html
     ],
   },
 
+  {
+    'key'         => 'cust_pkg-display_times',
+    'section'     => 'UI',
+    'description' => 'Display full timestamps (not just dates) for customer packages.  Useful if you are doing real-time things like hourly prepaid.',
+    'type'        => 'checkbox',
+  },
+
 );
 
 1;
