@@ -15,7 +15,11 @@
 
 <% if ( $countyflag ) { %>
 
-  <%= include('/elements/xmlhttp.html', $p.'misc/counties.cgi', $opt{'prefix'}. 'get_counties' ) %>
+  <%= include('/elements/xmlhttp.html',
+                'url'  => $p.'misc/counties.cgi',
+                'subs' => [ $opt{'prefix'}. 'get_counties' ],
+             )
+%>
   
   <SCRIPT TYPE="text/javascript">
   

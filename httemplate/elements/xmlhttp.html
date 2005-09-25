@@ -1,5 +1,9 @@
 <%
-  my ( $url, @subs ) = @_;
+  my ( %opt ) = @_;
+
+  my $url = $opt{'url'};
+  #my $action = exists $opt{'action'} ? $opt{'action'} : 'GET';
+  #my @subs = @{ $opt{'subs'};
 
   $url .= ( ($url =~ /\?/) ? '&' : '?' ).
           'sub=';
@@ -27,7 +31,7 @@
 
   }
 
-  <% foreach my $func (@subs) { 
+  <% foreach my $func ( @{$opt{'subs'}} ) { 
 
        my $furl = $url . uri_escape($func);
        $furl =~ s/\"/\\\\\"/; #javascript escape
@@ -38,11 +42,21 @@
 	// count args; build URL
 	var url = "<%=$furl%>";
 	var a = <%=$func%>.arguments;
-	for (var i = 0; i < a.length-1; i++) 
-	    url = url + "&arg=" + escape(a[i]);
+	var args;
+	var len;
+	if ( a && typeof a  == 'object'  && a[0].constructor == Array ) {
+	    args = a[0];
+            len = args.length
+	} else {
+            args = a;
+            len = args.length - 1;
+	}
+	for (var i = 0; i < len; i++) 
+	    url = url + "&arg=" + escape(args[i]);
 	url = url.replace( /[+]/g, '%2B'); // fix the unescaped plus signs 
 	var xmlhttp = rs_init_object();
 	xmlhttp.open("GET", url, true);
+	xmlhttp.setRequestHeader("If-Modified-Since", "Sat, 1 Jan 2000 00:00:00 GMT");
 	xmlhttp.onreadystatechange = function() {
 	    if (xmlhttp.readyState != 4) 
 		return;

@@ -11,7 +11,11 @@
   }
 %>
 
-<SCRIPT TYPE="text/javascript" SRC="../elements/jsrsClient.js"></SCRIPT>
+<%= include('/elements/xmlhttp.html',
+              'url'  => $action,
+              'subs' => [ 'start_job' ],
+           )
+%>
 <SCRIPT TYPE="text/javascript" SRC="../elements/overlibmws.js"></SCRIPT>
 <SCRIPT TYPE="text/javascript" SRC="../elements/overlibmws_iframe.js"></SCRIPT>
 <SCRIPT TYPE="text/javascript">
@@ -54,8 +58,10 @@ function <%=$key%>process () {
     }
   }
 
-  jsrsPOST = true;
-  jsrsExecute( '<%= $action %>', <%=$key%>myCallback, 'start_job', Hash );
+  // jsrsPOST = true;
+  // jsrsExecute( '<%= $action %>', <%=$key%>myCallback, 'start_job', Hash );
+
+  start_job( Hash, <%=$key%>myCallback );
 
 }
 

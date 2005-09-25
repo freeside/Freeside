@@ -110,8 +110,9 @@ other fixes.
 Charles A Beasley <cbeasley@noment.net> contributed quota editing for the
 Infostreet export.
 
-Richard Siddall <richard.siddall@elirion.net> sent in Mason fixes and other
-things I'm probably forgetting.
+Richard Siddall <richard.siddall@elirion.net> sent in Mason fixes, fixed lots
+of typos, mod_perl 2.0 work, RPM packaging and other things I'm probably
+forgetting.
 
 Contains "JS Calendar" <http://dynarch.com/mishoo/calendar.epl>
 by Mihai Bazon <mishoo@infoiasi.ro> licensed under the terms of the GNU LGPL.
@@ -136,11 +137,6 @@ released with 1.4.2beta1 and 1.5.0pre6.
 
 Troy Hammonds <troyh@netsignia.net> sent in RADIUS session history viewing,
 many bugfixes and other things I'm probably forgetting.
-
-Contains the "Javascript Remote Scripting (JSRS)" client library
-<http://www.ashleyit.com/rs/main.htm> by Brent Ashley <brent@ashleyit.com>
-licensed under the "No Nonsense Copyright and License" (see the included
-JSRS-LICENSE file).
 
 Contains the QLIB JavaScript library <http://qlib.quazzle.com/> by 
 Quazzle.com, Serge Dolgov, licensed under the terms of the GNU GPL.

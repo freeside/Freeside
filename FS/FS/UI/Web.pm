@@ -133,12 +133,12 @@ use strict;
 use vars qw(@ISA $DEBUG);
 use Storable qw(nfreeze);
 use MIME::Base64;
-use JavaScript::RPC::Server::CGI;
+#use JavaScript::RPC::Server::CGI;
 use FS::UID;
 use FS::Record qw(qsearchs);
 use FS::queue;
 
-@ISA = qw( JavaScript::RPC::Server::CGI );
+#@ISA = qw( JavaScript::RPC::Server::CGI );
 $DEBUG = 0;
 
 sub new {
@@ -146,11 +146,41 @@ sub new {
         my $self  = {
                 env => {},
                 job => shift,
+                cgi => shift,
         };
 
         bless $self, $class;
 
         return $self;
+}
+
+sub process {
+
+  my $self = shift;
+
+  my $cgi = $self->{'cgi'};
+
+  # XXX this should parse JSON foo and build a proper data structure
+  my @args = $cgi->param('arg');
+
+  my $sub = $cgi->param('sub'); #????
+
+  warn "FS::UI::Web::JSRPC::process:\n".
+       "  cgi=$cgi\n".
+       "  sub=$sub\n".
+       "  args=".join(', ',@args)."\n"
+    if $DEBUG;
+
+  if ( $sub eq 'start_job' ) {
+
+    $self->start_job(@args);
+
+  } elsif ( $sub eq 'job_status' ) {
+
+    $self->job_status(@args);
+
+  }
+
 }
 
 sub start_job {
@@ -193,7 +223,10 @@ sub start_job {
   my $error = $job->insert( '_JOB', encode_base64(nfreeze(\%param)) );
 
   if ( $error ) {
-    $error;
+    $error;  #this doesn't seem to be handled well,
+             # will trigger "illegal jobnum" below?
+             # (should never be an error inserting the job, though, only thing
+             #  would be Pg f%*kage)
   } else {
     $job->jobnum;
   }
@@ -203,7 +236,7 @@ sub start_job {
 sub job_status {
   my( $self, $jobnum ) = @_; #$url ???
 
-  sleep 5; #could use something better...
+  sleep 1; # XXX could use something better...
 
   my $job;
   if ( $jobnum =~ /^(\d+)$/ ) {
@@ -222,13 +255,23 @@ sub job_status {
     @return = ( 'error', $job ? $job->statustext : $jobnum );
   }
 
-  join("\n",@return);
+  #join("\n",@return);
+
+  #XXX should use JSON!
+  @return = map {
+    s/\\/\\\\/g;
+    s/\n/\\n/g;
+    s/"/\"/g;
+    $_
+  } @return;
+  
+  '[ '. join(', ', map { qq("$_") } @return). " ]\n";
 
 }
 
-sub get_new_query {
-  FS::UID::cgi();
-}
+#sub get_new_query {
+#  FS::UID::cgi();
+#}
 
 1;
 

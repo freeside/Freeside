@@ -187,9 +187,8 @@ dbdef-create username
 create-history-tables username rate rate_detail rate_region rate_prefix reg_code reg_code_pkg
 dbdef-create username
 
-install Javascript::RPC (JavaScript::RPC::Server::CGI), Text::CSV_XS,
-Spreadsheet::WriteExcel, IO-stringy (IO::Scalar), Frontier::RPC
-(Frontier::RPC2), MIME::Entity (MIME-tools) and IPC::Run3
+install Text::CSV_XS, Spreadsheet::WriteExcel, IO-stringy (IO::Scalar),
+Frontier::RPC (Frontier::RPC2), MIME::Entity (MIME-tools) and IPC::Run3
 
 afterwords (for installs w/integrated RT):
 install HTML::Scrubber, Text::Quoted and Tree::Simple

@@ -5,6 +5,14 @@
 - add active/suspended/cancelled customer packages to agent browse
 - add export to everyone.net outsource mail service
 - add native Radiator export
-- added agent/taxclass gateway overrides
+- added agent/taxclass/card type-specific gateway overrides for people with
+  multiple payment gateways for different resellers, taxclasses and/or card
+  types
 - re-did billing section of customer edit and added switch/solo support
 - add cpanel export
+- added prepaid packages that set the RADIUS "Expiration" attribute and
+  auto-suspend on their next bill date
+- added banned card table and option to send customer cards there on cancel
+- moved to XMLHttpRequest instead of hidden iframe transport for progress bar,
+  should be more efficient and improve compatibility with Konq and maybe other
+  browsers?

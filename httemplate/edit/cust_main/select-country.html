@@ -10,7 +10,11 @@
 
 %>
 
-<%= include('/elements/xmlhttp.html', $p.'misc/states.cgi', $opt{'prefix'}. 'get_states') %>
+<%= include('/elements/xmlhttp.html',
+              'url'  => $p.'misc/states.cgi',
+              'subs' => [ $opt{'prefix'}. 'get_states' ],
+           )
+%>
 
 <SCRIPT TYPE="text/javascript">
 
