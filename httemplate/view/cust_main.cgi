@@ -16,12 +16,6 @@ foreach my $part_svc ( qsearch('part_svc',{}) ) {
   'Main Menu' => $p,
 )) %>
 
-<STYLE TYPE="text/css">
-.package TH { font-size: medium }
-.package TR { font-size: smaller }
-.package .provision { font-weight: bold }
-</STYLE>
-
 <%
 
 die "No customer specified (bad URL)!" unless $cgi->keywords;
