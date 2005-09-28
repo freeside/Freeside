@@ -1633,6 +1633,9 @@ sub bill {
       } elsif ( $part_pkg->freq =~ /^(\d+)d$/ ) {
         my $days = $1;
         $mday += $days;
+      } elsif ( $part_pkg->freq =~ /^(\d+)h$/ ) {
+        my $hours = $1;
+        $hour += $hours;
       } else {
         $dbh->rollback if $oldAutoCommit;
         return "unparsable frequency: ". $part_pkg->freq;
