@@ -1058,7 +1058,7 @@ sub radius_check {
   my $pw_attrib = length($password) <= 12 ? $radius_password : 'Crypt-Password';  $check{$pw_attrib} = $password;
 
   my $cust_pkg = $self->cust_svc->cust_pkg;
-  if ( $cust_pkg && $cust_pkg->part_pkg->is_prepaid ) {
+  if ( $cust_pkg && $cust_pkg->part_pkg->is_prepaid && $cust_pkg->bill ) {
     $check{'Expiration'} = time2str('%B %e %Y %T', $cust_pkg->bill ); #http://lists.cistron.nl/pipermail/freeradius-users/2005-January/040184.html
   }
 
