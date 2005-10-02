@@ -184,16 +184,16 @@ require valid-user
     <ul>
       <li>First user:<font size="-1">
 <pre>$ su
-% <a href="man/bin/freeside-adduser.html">freeside-adduser</a> -c -h /usr/local/etc/freeside/htpasswd <i>username</i></pre></font>
+# <a href="man/bin/freeside-adduser.html">freeside-adduser</a> -c -h /usr/local/etc/freeside/htpasswd <i>username</i></pre></font>
       <li>Additional users:<font size="-1">
 <pre>$ su
-% <a href="man/bin/freeside-adduser.html">freeside-adduser</a> -h /usr/local/etc/freeside/htpasswd <i>username</i></pre></font>
+# <a href="man/bin/freeside-adduser.html">freeside-adduser</a> -h /usr/local/etc/freeside/htpasswd <i>username</i></pre></font>
     </ul>
   <i>(using other auth types, add each user to your <a href="http://httpd.apache.org/docs/misc/FAQ.html#user-authentication">Apache authentication</a> and then run: <tt>freeside-adduser <b>username</b></tt>)</i>
   <li>Create the Freeside system users:
 <pre>$ su
-% <a href="man/bin/freeside-adduser.html">freeside-adduser</a> fs_queue
-% <a href="man/bin/freeside-adduser.html">freeside-adduser</a> fs_selfservice</pre>
+# <a href="man/bin/freeside-adduser.html">freeside-adduser</a> fs_queue
+# <a href="man/bin/freeside-adduser.html">freeside-adduser</a> fs_selfservice</pre>
   <li>As the freeside UNIX user, run <tt>freeside-setup <b>username</b></tt> to create the database tables, passing the username of a Freeside user you created above:
 <pre>
 $ su freeside
