@@ -69,9 +69,6 @@ INSTALLGROUP = root
 
 QUEUED_USER=fs_queue
 
-#eventually this shouldn't be needed
-FREESIDE_PATH = `pwd`
-
 SELFSERVICE_USER = fs_selfservice
 #never run on the same machine in production!!!
 SELFSERVICE_MACHINES = localhost
@@ -101,17 +98,32 @@ FREESIDE_CONF = /usr/local/etc/freeside
 #rt/config.layout.in
 RT_PATH = /opt/rt3
 
+#only used for dev kludge now, not a big deal
+FREESIDE_PATH = `pwd`
+PERL_INC_DEV_KLUDGE = /usr/local/share/perl/5.8.7/
+
 VERSION=1.5.8cvs
 TAG=freeside_1_5_8
 
 help:
-	@echo "supported targets: aspdocs masondocs alldocs docs install-docs"
-	@echo "                   htmlman"
-	@echo "                   perl-modules install-perl-modules"
+	@echo "supported targets:"
+	@echo "                   create-database create-config"
 	@echo "                   install deploy"
-	@echo "                   create-database"
 	@echo "                   configure-rt create-rt"
-	@echo "                   clean"
+	@echo "                   clean help"
+	@echo
+	@echo "                   install-docs install-perl-modules"
+	@echo "                   install-init install-apache"
+	@echo "                   install-rt"
+	@echo "                   install-selfservice update-selfservice"
+	@echo
+	@echo "                   dev dev-docs dev-perl-modules"
+	@echo
+	@echo "                   aspdocs masondocs alldocs docs"
+	@echo "                   htmlman forcehtmlman"
+	@echo "                   perl-modules"
+	#@echo
+	#@echo "                   upload-docs release update-webdemo"
 
 aspdocs: htmlman httemplate/* httemplate/*/* httemplate/*/*/* httemplate/*/*/*/* httemplate/*/*/*/*/*
 	rm -rf aspdocs
@@ -168,6 +180,18 @@ install-docs: docs
 	[ "${TEMPLATE}" = "mason" -a ! -e ${MASONDATA} ] && mkdir ${MASONDATA} || true
 	[ "${TEMPLATE}" = "mason" ] && chown -R freeside ${MASONDATA} || true
 
+dev-docs: docs
+	[ -e ${FREESIDE_DOCUMENT_ROOT} ] && mv ${FREESIDE_DOCUMENT_ROOT} ${FREESIDE_DOCUMENT_ROOT}.`date +%Y%m%d%H%M%S` || true
+	ln -s ${FREESIDE_PATH}/masondocs ${FREESIDE_DOCUMENT_ROOT}
+	cp htetc/handler.pl ${MASON_HANDLER}
+	perl -p -i -e "\
+	  s'%%%FREESIDE_DOCUMENT_ROOT%%%'${FREESIDE_DOCUMENT_ROOT}'g; \
+	  s'%%%RT_ENABLED%%%'${RT_ENABLED}'g; \
+	  s'###use Module::Refresh;###'use Module::Refresh;'; \
+	  s'###Module::Refresh->refresh;###'Module::Refresh->refresh;'; \
+	" ${MASON_HANDLER} || true
+
+
 perl-modules:
 	cd FS; \
 	[ -e Makefile ] || perl Makefile.PL; \
@@ -177,15 +201,26 @@ perl-modules:
 	" blib/lib/FS.pm
 
 install-perl-modules: perl-modules
+	[ -L ${PERL_INC_DEV_KLUDGE}/FS ] \
+	  && rm ${PERL_INC_DEV_KLUDGE}/FS \
+	  && mv ${PERL_INC_DEV_KLUDGE}/FS.old ${PERL_INC_DEV_KLUDGE}/FS \
+	  || true
 	cd FS; \
 	make install UNINST=1
+
+dev-perl-modules:
+	[ -d ${PERL_INC_DEV_KLUDGE}/FS -a ! -L ${PERL_INC_DEV_KLUDGE}/FS ] \
+	  && mv ${PERL_INC_DEV_KLUDGE}/FS ${PERL_INC_DEV_KLUDGE}/FS.old \
+	  || true
+
+	rm -rf ${PERL_INC_DEV_KLUDGE}/FS
+	ln -sf ${FREESIDE_PATH}/FS/FS ${PERL_INC_DEV_KLUDGE}/FS
 
 install-init:
 	#[ -e ${INIT_FILE} ] || install -o root -g ${INSTALLGROUP} -m 711 init.d/freeside-init ${INIT_FILE}
 	install -o root -g ${INSTALLGROUP} -m 711 init.d/freeside-init ${INIT_FILE}
 	perl -p -i -e "\
 	  s/%%%QUEUED_USER%%%/${QUEUED_USER}/g;\
-	  s'%%%FREESIDE_PATH%%%'${FREESIDE_PATH}'g;\
 	  s/%%%SELFSERVICE_USER%%%/${SELFSERVICE_USER}/g;\
 	  s/%%%SELFSERVICE_MACHINES%%%/${SELFSERVICE_MACHINES}/g;\
 	" ${INIT_FILE}
@@ -224,6 +259,8 @@ install: install-perl-modules install-docs install-init install-apache install-r
 deploy: install
 	${HTTPD_RESTART}
 	${FREESIDE_RESTART}
+
+dev: dev-perl-modules dev-docs
 
 create-database:
 	perl -e 'use DBIx::DataSource qw( create_database ); create_database( "${DATASOURCE}", "${DB_USER}", "${DB_PASSWORD}" ) or die $$DBIx::DataSource::errstr;'

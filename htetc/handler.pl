@@ -20,6 +20,8 @@ use HTML::Mason::ApacheHandler;
 
 use strict;
 
+###use Module::Refresh;###
+
 # List of modules that you want to use from components (see Admin
 # manual for details)
 #{  package HTML::Mason::Commands;
@@ -269,6 +271,8 @@ sub handler
       }
 
     } # end package HTML::Mason::Commands;
+
+    ###Module::Refresh->refresh;###
 
     $r->content_type('text/html');
     #eorar
