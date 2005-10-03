@@ -1,4 +1,3 @@
-<!-- mason kludge -->
 <%
 
 my $conf = new FS::Conf;
@@ -6,6 +5,7 @@ my @shells = $conf->config('shells');
 
 my($svcnum, $pkgnum, $svcpart, $part_svc, $svc_acct, @groups);
 if ( $cgi->param('error') ) {
+
   $svc_acct = new FS::svc_acct ( {
     map { $_, scalar($cgi->param($_)) } fields('svc_acct')
   } );
@@ -15,7 +15,9 @@ if ( $cgi->param('error') ) {
   $part_svc = qsearchs( 'part_svc', { 'svcpart' => $svcpart } );
   die "No part_svc entry for svcpart $svcpart!" unless $part_svc;
   @groups = $cgi->param('radius_usergroup');
+
 } else {
+
   my($query) = $cgi->keywords;
   if ( $query =~ /^(\d+)$/ ) { #editing
     $svcnum=$1;
@@ -46,35 +48,43 @@ if ( $cgi->param('error') ) {
 
     $svcnum='';
 
-    #set gecos
-    my($cust_pkg)=qsearchs('cust_pkg',{'pkgnum'=>$pkgnum});
-    if ($cust_pkg) {
-      my($cust_main)=qsearchs('cust_main',{'custnum'=> $cust_pkg->custnum } );
-      unless ( $part_svc->part_svc_column('uid')->columnflag eq 'F' ) {
-        $svc_acct->setfield('finger',
-          $cust_main->getfield('first') . " " . $cust_main->getfield('last')
-        );
-      }
-    }
-
-    #set fixed and default fields from part_svc
-    foreach my $part_svc_column (
-      grep { $_->columnflag } $part_svc->all_part_svc_column
-    ) {
-      if ( $part_svc_column->columnname eq 'usergroup' ) {
-        @groups = split(',', $part_svc_column->columnvalue);
-      } else {
-        $svc_acct->setfield( $part_svc_column->columnname,
-                             $part_svc_column->columnvalue,
-                           );
-      }
-    }
-
   }
 }
 
+my( $cust_pkg, $cust_main ) = ( '', '' );
+if ( $pkgnum ) {
+  $cust_pkg = qsearchs('cust_pkg', { 'pkgnum' => $pkgnum } );
+  $cust_main = $cust_pkg->cust_main;
+}
+
+unless ( $svcnum || $cgi->param('error') ) { #adding
+
+  #set gecos
+  if ($cust_main) {
+    unless ( $part_svc->part_svc_column('uid')->columnflag eq 'F' ) {
+      $svc_acct->setfield('finger',
+        $cust_main->getfield('first') . " " . $cust_main->getfield('last')
+      );
+    }
+  }
+
+  #set fixed and default fields from part_svc
+  foreach my $part_svc_column (
+    grep { $_->columnflag } $part_svc->all_part_svc_column
+  ) {
+    if ( $part_svc_column->columnname eq 'usergroup' ) {
+      @groups = split(',', $part_svc_column->columnvalue);
+    } else {
+      $svc_acct->setfield( $part_svc_column->columnname,
+                           $part_svc_column->columnvalue,
+                         );
+    }
+  }
+
+}
+
 #fixed radius groups always override & display
-if ( $part_svc->part_svc_column('usergroup')->columnflag eq "F" ) {
+if ( $part_svc->part_svc_column('usergroup')->columnflag eq 'F' ) {
   @groups = split(',', $part_svc->part_svc_column('usergroup')->columnvalue);
 }
 
@@ -106,47 +116,81 @@ my $pmax = $conf->config('passwordmax') || 8;
 my $pmax2 = $pmax+2;
 
 my $p1 = popurl(1);
-print header("$action $svc account");
 
-print qq!<FONT SIZE="+1" COLOR="#ff0000">Error: !, $cgi->param('error'),
-      "</FONT><BR><BR>"
-  if $cgi->param('error');
+%>
 
-print 'Service # '. ( $svcnum ? "<B>$svcnum</B>" : " (NEW)" ). '<BR>'.
-      'Service: <B>'. $part_svc->svc. '</B><BR><BR>'.
-      <<END;
-    <FORM NAME="OneTrueForm" ACTION="${p1}process/svc_acct.cgi" METHOD=POST>
-      <INPUT TYPE="hidden" NAME="svcnum" VALUE="$svcnum">
-      <INPUT TYPE="hidden" NAME="pkgnum" VALUE="$pkgnum">
-      <INPUT TYPE="hidden" NAME="svcpart" VALUE="$svcpart">
-END
+<%= header("$action $svc account") %>
 
-print &ntable("#cccccc",2), <<END;
-<TR><TD ALIGN="right">Username</TD>
-<TD><INPUT TYPE="text" NAME="username" VALUE="$username" SIZE=$ulen2 MAXLENGTH=$ulen></TD></TR>
-<TR><TD ALIGN="right">Password</TD>
-<TD><INPUT TYPE="text" NAME="_password" VALUE="$password" SIZE=$pmax2 MAXLENGTH=$pmax>
-(blank to generate)</TD>
+<% if ( $cgi->param('error') ) { %>
+  <FONT SIZE="+1" COLOR="#ff0000">Error: <%= $cgi->param('error') %></FONT>
+  <BR><BR>
+<% } %>
+
+<% if ( $cust_main ) { %>
+  <%= include( '/elements/small_custview.html', $cust_main, '', 1 ) %>
+  <BR>
+<% } %>
+
+<FORM NAME="OneTrueForm" ACTION="<%= $p1 %>process/svc_acct.cgi" METHOD=POST>
+<INPUT TYPE="hidden" NAME="svcnum" VALUE="<%= $svcnum %>">
+<INPUT TYPE="hidden" NAME="pkgnum" VALUE="<%= $pkgnum %>">
+<INPUT TYPE="hidden" NAME="svcpart" VALUE="<%= $svcpart %>">
+
+Service # <%= $svcnum ? "<B>$svcnum</B>" : " (NEW)" %><BR>
+
+<%= ntable("#cccccc",2) %>
+
+<TR>
+  <TD ALIGN="right">Service</TD>
+  <TD BGCOLOR="#eeeeee"><%= $part_svc->svc %></TD>
 </TR>
-END
 
+<TR>
+  <TD ALIGN="right">Username</TD>
+  <TD>
+    <INPUT TYPE="text" NAME="username" VALUE="<%= $username %>" SIZE=<%= $ulen2 %> MAXLENGTH=<%= $ulen %>>
+  </TD>
+</TR>
+
+<TR>
+  <TD ALIGN="right">Password</TD>
+  <TD>
+    <INPUT TYPE="text" NAME="_password" VALUE="<%= $password %>" SIZE=<%= $pmax2 %> MAXLENGTH=<%= $pmax %>>
+    (blank to generate)
+  </TD>
+</TR>
+
+
+<%
 my $sec_phrase = $svc_acct->sec_phrase;
 if ( $conf->exists('security_phrase') ) {
-  print <<END;
-  <TR><TD ALIGN="right">Security phrase</TD>
-  <TD><INPUT TYPE="text" NAME="sec_phrase" VALUE="$sec_phrase" SIZE=32>
-    (for forgotten passwords)</TD>
-  </TD>
-END
-} else {
-  print qq!<INPUT TYPE="hidden" NAME="sec_phrase" VALUE="$sec_phrase">!;
-}
+%>
 
+  <TR>
+    <TD ALIGN="right">Security phrase</TD>
+    <TD>
+      <INPUT TYPE="text" NAME="sec_phrase" VALUE="<%= $sec_phrase %>" SIZE=32>
+      (for forgotten passwords)
+    </TD>
+  </TD>
+
+<% } else { %>
+
+  <INPUT TYPE="hidden" NAME="sec_phrase" VALUE="<%= $sec_phrase %>">
+
+<% } %>
+
+
+<%
 #domain
 my $domsvc = $svc_acct->domsvc || 0;
 if ( $part_svc->part_svc_column('domsvc')->columnflag eq 'F' ) {
-  print qq!<INPUT TYPE="hidden" NAME="domsvc" VALUE="$domsvc">!;
-} else { 
+%>
+
+  <INPUT TYPE="hidden" NAME="domsvc" VALUE="<%= $domsvc %>">
+
+<% } else { 
+
   my %svc_domain = ();
 
   if ( $domsvc ) {
@@ -170,7 +214,6 @@ if ( $part_svc->part_svc_column('domsvc')->columnflag eq 'F' ) {
     }
   }
 
-  my $cust_pkg = qsearchs('cust_pkg', { 'pkgnum' => $pkgnum } );
   if ($cust_pkg && !$conf->exists('svc_acct-alldomains') ) {
     my @cust_svc =
       map { qsearch('cust_svc', { 'pkgnum' => $_->pkgnum } ) }
@@ -183,121 +226,223 @@ if ( $part_svc->part_svc_column('domsvc')->columnflag eq 'F' ) {
   } else {
     %svc_domain = map { $_->svcnum => $_ } qsearch('svc_domain', {} );
   }
-  print qq!<TR><TD ALIGN="right">Domain</TD>!.
-        qq!<TD><SELECT NAME="domsvc" SIZE=1>\n!;
-  foreach my $svcnum (
-    sort { $svc_domain{$a}->domain cmp $svc_domain{$b}->domain }
-      keys %svc_domain
-  ) {
-    my $svc_domain = $svc_domain{$svcnum};
-    print qq!<OPTION VALUE="!. $svc_domain->svcnum. qq!"!.
-          ( $svc_domain->svcnum == $domsvc ? ' SELECTED' : '' ).
-          '>'. $svc_domain->domain. "\n" ;
-  }
-  print "</SELECT></TD></TR>";
-}
 
+%>
+
+  <TR>
+    <TD ALIGN="right">Domain</TD>
+    <TD>
+      <SELECT NAME="domsvc" SIZE=1>
+
+        <% foreach my $svcnum (
+             sort { $svc_domain{$a}->domain cmp $svc_domain{$b}->domain }
+                  keys %svc_domain
+           ) {
+             my $svc_domain = $svc_domain{$svcnum};
+        %>
+
+             <OPTION VALUE="<%= $svc_domain->svcnum %>" <%= $svc_domain->svcnum == $domsvc ? ' SELECTED' : '' %>><%= $svc_domain->domain %>
+
+       <% } %>
+      </SELECT>
+    </TD>
+  </TR>
+
+<% } %>
+
+
+<%
 #pop
 my $popnum = $svc_acct->popnum || 0;
-if ( $part_svc->part_svc_column('popnum')->columnflag eq "F" ) {
-  print qq!<INPUT TYPE="hidden" NAME="popnum" VALUE="$popnum">!;
-} else { 
-  print qq!<TR><TD ALIGN="right">Access number</TD>!.
-        qq!<TD>!. FS::svc_acct_pop::popselector($popnum). '</TD></TR>';
-}
+if ( $part_svc->part_svc_column('popnum')->columnflag eq 'F' ) {
+%>
 
-my($uid,$gid,$finger,$dir)=(
-  $svc_acct->uid,
-  $svc_acct->gid,
-  $svc_acct->finger,
-  $svc_acct->dir,
-);
+  <INPUT TYPE="hidden" NAME="popnum" VALUE="<%= $popnum %>">
 
-print <<END;
-<INPUT TYPE="hidden" NAME="uid" VALUE="$uid">
-<INPUT TYPE="hidden" NAME="gid" VALUE="$gid">
-END
 
-if ( !$finger && $part_svc->part_svc_column('uid')->columnflag eq 'F' ) {
-  print '<INPUT TYPE="hidden" NAME="finger" VALUE="">';
-} else {
-  print '<TR><TD ALIGN="right">GECOS</TD>'.
-        qq!<TD><INPUT TYPE="text" NAME="finger" VALUE="$finger"></TD></TR>!;
-}
-print qq!<INPUT TYPE="hidden" NAME="dir" VALUE="$dir">!;
+<% } else { %>
 
+  <TR>
+    <TD ALIGN="right">Access number</TD>
+    <TD><%= FS::svc_acct_pop::popselector($popnum) %></TD>
+  </TR>
+
+<% } %>
+
+
+<% #uid/gid %>
+<% foreach my $xid (qw( uid gid )) { %>
+
+  <%
+  if ( $part_svc->part_svc_column($xid)->columnflag eq 'F'
+       || ! $conf->exists("svc_acct-edit_$xid")
+     ) {
+  %>
+  
+    <% if ( length($svc_acct->$xid()) ) { %>
+  
+      <TR>
+        <TD ALIGN="right"><%= uc($xid) %></TD>
+          <TD BGCOLOR="#eeeeee"><%= $svc_acct->$xid() %></TD>
+        <TD>
+        </TD>
+      </TR>
+  
+    <% } else { %>
+  
+      <INPUT TYPE="hidden" NAME="<%= $xid %>" VALUE="<%= $svc_acct->$xid() %>">
+  
+    <% } %>
+  
+  <% } else { %>
+  
+    <TR>
+      <TD ALIGN="right"><%= uc($xid) %></TD>
+      <TD>
+        <INPUT TYPE="text" NAME="<%= $xid %>" SIZE=8 MAXLENGTH=6 VALUE="<%= $svc_acct->$xid() %>">
+      </TD>
+    </TR>
+  
+  <% } %>
+
+<% } %>
+
+
+<%
+#finger
+if ( $part_svc->part_svc_column('uid')->columnflag eq 'F'
+     && ! $svc_acct->finger ) { 
+%>
+
+  <INPUT TYPE="hidden" NAME="finger" VALUE="">
+
+<% } else { %>
+
+  <TR>
+    <TD ALIGN="right">GECOS</TD>
+    <TD>
+      <INPUT TYPE="text" NAME="finger" VALUE="<%= $svc_acct->finger %>">
+    </TD>
+  </TR>
+
+<% } %>
+
+
+<INPUT TYPE="hidden" NAME="dir" VALUE="<%= $svc_acct->dir %>">
+
+
+<%
+#shell
 my $shell = $svc_acct->shell;
-if ( $part_svc->part_svc_column('shell')->columnflag eq "F"
+if ( $part_svc->part_svc_column('shell')->columnflag eq 'F'
      || ( !$shell && $part_svc->part_svc_column('uid')->columnflag eq 'F' )
    ) {
-  print qq!<INPUT TYPE="hidden" NAME="shell" VALUE="$shell">!;
-} else {
-  print qq!<TR><TD ALIGN="right">Shell</TD><TD><SELECT NAME="shell" SIZE=1>!;
-  my($etc_shell);
-  foreach $etc_shell (@shells) {
-    print "<OPTION", $etc_shell eq $shell ? ' SELECTED' : '', ">",
-          $etc_shell, "\n";
-  }
-  print "</SELECT></TD></TR>";
-}
+%>
 
-my($quota,$slipip)=(
-  $svc_acct->quota,
-  $svc_acct->slipip,
-);
+  <INPUT TYPE="hidden" NAME="shell" VALUE="<%= $shell %>">
 
-if ( $part_svc->part_svc_column('quota')->columnflag eq "F" )
-{
-  print qq!<INPUT TYPE="hidden" NAME="quota" VALUE="$quota">!;
-} else {
-  print <<END;
-    <TR><TD ALIGN="right">Quota:</TD>
-        <TD> <INPUT TYPE="text" NAME="quota" VALUE="$quota" ></TD>
-    </TR>
-END
-}
+<% } else { %>
 
-if ( $part_svc->part_svc_column('slipip')->columnflag eq "F" ) {
-  print qq!<INPUT TYPE="hidden" NAME="slipip" VALUE="$slipip">!;
-} else {
-  print qq!<TR><TD ALIGN="right">IP</TD><TD><INPUT TYPE="text" NAME="slipip" VALUE="$slipip"></TD></TR>!;
-}
+  <TR>
+    <TD ALIGN="right">Shell</TD>
+    <TD>
+      <SELECT NAME="shell" SIZE=1>
 
+        <%
+           my($etc_shell);
+           foreach $etc_shell (@shells) {
+        %>
+
+          <OPTION<%= $etc_shell eq $shell ? ' SELECTED' : '' %>><%= $etc_shell %>
+
+        <% } %>
+
+      </SELECT>
+    </TD>
+  </TR>
+
+<% } %>
+
+
+<% if ( $part_svc->part_svc_column('quota')->columnflag eq 'F' ) { %>
+
+  <INPUT TYPE="hidden" NAME="quota" VALUE="<%= $svc_acct->quota %>">
+
+<% } else { %>
+
+  <TR>
+    <TD ALIGN="right">Quota:</TD>
+    <TD><INPUT TYPE="text" NAME="quota" VALUE="<%= $svc_acct->quota %>"></TD>
+  </TR>
+  
+<% } %>
+
+
+<% if ( $part_svc->part_svc_column('slipip')->columnflag eq 'F' ) { %>
+
+  <INPUT TYPE="hidden" NAME="slipip" VALUE="<%= $svc_acct->slipip %>">
+
+<% } else { %>
+
+  <TR>
+    <TD ALIGN="right">IP</TD>
+    <TD><INPUT TYPE="text" NAME="slipip" VALUE="<%= $svc_acct->slipip %>"></TD>
+  </TR>
+
+<% } %>
+
+
+<%
 foreach my $r ( grep { /^r(adius|[cr])_/ } fields('svc_acct') ) {
   $r =~ /^^r(adius|[cr])_(.+)$/ or next; #?
   my $a = $2;
-  if ( $part_svc->part_svc_column($r)->columnflag eq 'F' ) {
-    print qq!<INPUT TYPE="hidden" NAME="$r" VALUE="!.
-          $svc_acct->getfield($r). '">';
-  } else {
-    print qq!<TR><TD ALIGN="right">$FS::raddb::attrib{$a}</TD><TD><INPUT TYPE="text" NAME="$r" VALUE="!.
-          $svc_acct->getfield($r). '"></TD></TR>';
-  }
-}
-
-print '<TR><TD ALIGN="right">RADIUS groups</TD>';
-if ( $part_svc->part_svc_column('usergroup')->columnflag eq "F" ) {
-  print '<TD BGCOLOR="#ffffff">'. join('<BR>', @groups);
-} else {
-  print '<TD>'. &FS::svc_acct::radius_usergroup_selector( \@groups );
-}
-print '</TD></TR>';
-
-foreach my $field ($svc_acct->virtual_fields) {
-  if ( $part_svc->part_svc_column($field)->columnflag ne 'F' ) {
-    # If the flag is X, it won't even show up in $svc_acct->virtual_fields.
-    print $svc_acct->pvf($field)->widget('HTML', 'edit', 
-        $svc_acct->getfield($field));
-  }
-}
-  
-#submit
-print qq!</TABLE><BR><INPUT TYPE="submit" VALUE="Submit">!; 
-
-print <<END;
-    </FORM>
-  </BODY>
-</HTML>
-END
-
 %>
+
+  <% if ( $part_svc->part_svc_column($r)->columnflag eq 'F' ) { %>
+
+    <INPUT TYPE="hidden" NAME="<%= $r %>" VALUE="<%= $svc_acct->getfield($r) %>">
+
+  <% } else { %>
+
+    <TR>
+      <TD ALIGN="right"><%= $FS::raddb::attrib{$a} %></TD>
+      <TD><INPUT TYPE="text" NAME="<%= $r %>" VALUE="<%= $svc_acct->getfield($r) %>"></TD>
+    </TR>
+
+  <% } %>
+
+<% } %>
+
+
+<TR>
+  <TD ALIGN="right">RADIUS groups</TD>
+
+  <% if ( $part_svc->part_svc_column('usergroup')->columnflag eq 'F' ) { %>
+
+    <TD BGCOLOR="#eeeeee"><%= join('<BR>', @groups) %></TD>
+
+  <% } else { %>
+
+    <TD><%= FS::svc_acct::radius_usergroup_selector( \@groups ) %></TD>
+
+  <% } %>
+
+</TR>
+
+<% foreach my $field ($svc_acct->virtual_fields) { %>
+
+  <% # If the flag is X, it won't even show up in $svc_acct->virtual_fields. %>
+  <% if ( $part_svc->part_svc_column($field)->columnflag ne 'F' ) { %>
+
+    <%= $svc_acct->pvf($field)->widget('HTML', 'edit', $svc_acct->getfield($field)) %>
+
+  <% } %>
+
+<% } %>
+  
+</TABLE>
+<BR>
+
+<INPUT TYPE="submit" VALUE="Submit">
+
+</FORM></BODY></HTML>

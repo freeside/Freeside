@@ -384,10 +384,8 @@ sub seconds_since_sqlradacct {
 
   my $svc_x = $self->svc_x;
 
-  my @part_export = $self->part_svc->part_export('sqlradius');
-  push @part_export, $self->part_svc->part_export('sqlradius_withdomain');
-  die "no sqlradius or sqlradius_withdomain export configured for this".
-      "service type"
+  my @part_export = $self->part_svc->part_export_usage;
+  die "no usage-capable export configured for this service type"
     unless @part_export;
     #or return undef;
 

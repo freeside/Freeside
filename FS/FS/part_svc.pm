@@ -393,8 +393,8 @@ sub all_part_svc_column {
 
 =item part_export [ EXPORTTYPE ]
 
-Returns all exports (see L<FS::part_export>) for this service, or, if an
-export type is specified, only returns exports of the given type.
+Returns a list of all exports (see L<FS::part_export>) for this service, or,
+if an export type is specified, only returns exports of the given type.
 
 =cut
 
@@ -404,6 +404,18 @@ sub part_export {
   $search{'exporttype'} = shift if @_;
   map { qsearchs('part_export', { 'exportnum' => $_->exportnum, %search } ) }
     qsearch('export_svc', { 'svcpart' => $self->svcpart } );
+}
+
+=item part_export_usage
+
+Returns a list of any exports (see L<FS::part_export>) for this service that
+are capable of reporting usage information.
+
+=cut
+
+sub part_export_usage {
+  my $self = shift;
+  grep $_->can('usage_sessions'), $self->part_export;
 }
 
 =item cust_svc

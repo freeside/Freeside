@@ -668,7 +668,7 @@ httemplate/docs/config.html
 
   {
     'key'         => 'invoice_send_receipts',
-    'section'     => 'deprecated',q
+    'section'     => 'deprecated',
     'description' => '<b>DEPRECATED</b>, this used to send an invoice copy on payments and credits.  See the payment_receipt_email and XXXX instead.',
     'type'        => 'checkbox',
   },
@@ -1568,6 +1568,21 @@ httemplate/docs/config.html
     'description' => 'Display full timestamps (not just dates) for customer packages.  Useful if you are doing real-time things like hourly prepaid.',
     'type'        => 'checkbox',
   },
+
+  {
+    'key'         => 'svc_acct-edit_uid',
+    'section'     => 'shell',
+    'description' => 'Allow UID editing.',
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'svc_acct-edit_gid',
+    'section'     => 'shell',
+    'description' => 'Allow GID editing.',
+    'type'        => 'checkbox',
+  },
+
 
 );
 

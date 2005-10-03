@@ -467,7 +467,14 @@ sub replace {
   {
     #no warnings 'numeric';  #alas, a 5.006-ism
     local($^W) = 0;
-    return "Can't change uid!" if $old->uid != $new->uid;
+
+    foreach my $xid (qw( uid gid )) {
+
+      return "Can't change $xid!"
+        if ! $conf->exists("svc_acct-edit_$xid")
+           && $old->$xid() != $new->$xid();
+    }
+
   }
 
   #change homdir when we change username
