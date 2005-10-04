@@ -57,8 +57,8 @@ sub _xrc_command {
   );
 
   my $dresponse = $xrc->lookupMXReadyClientIDByEmailDomain( string($domain) );
-  return $response->error unless $response->is_success;
-  my $clientID = $response->content;
+  return $dresponse->error unless $dresponse->is_success;
+  my $clientID = $dresponse->content;
   return "clientID for domain $domain not found"
     if $clientID == -1;
 
