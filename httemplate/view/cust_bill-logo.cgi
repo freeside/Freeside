@@ -3,8 +3,11 @@
 my($query) = $cgi->keywords;
 $query =~ /^([^\.\/]*)$/;
 my $templatename = $1;
-$templatename = "_$templatename"
-  if $templatename && $conf->exists("${logo}_$templatename.png");
+if ( $templatename && $conf->exists("${logo}_$templatename.png") ) {
+  $templatename = "_$templatename";
+} else {
+  $templatename = '';
+}
 
 my $conf = new FS::Conf;
 
