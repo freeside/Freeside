@@ -104,58 +104,64 @@ my $agentnum = $cust_main->agentnum || $agents[0]->agentnum; #default to first
   </SELECT>
 <% } %>
 
+<!-- referral (advertising source) -->
+
 <%
-
-# (referral and referring customer still need to be "template"ized)
-
-#referral
-
 my $refnum = $cust_main->refnum || $conf->config('referraldefault') || 0;
 if ( $custnum && ! $conf->exists('editreferrals') ) {
-  print qq!<INPUT TYPE="hidden" NAME="refnum" VALUE="$refnum">!;
-} else {
-  my(@referrals) = qsearch('part_referral',{});
-  if ( scalar(@referrals) == 0 ) {
-    eidiot "You have not created any advertising sources.  You must create at least one advertising source before adding a customer.  Go to ". popurl(2). "browse/part_referral.cgi and create one or more advertising sources.";
-  } elsif ( scalar(@referrals) == 1 ) {
-    $refnum ||= $referrals[0]->refnum;
-    print qq!<INPUT TYPE="hidden" NAME="refnum" VALUE="$refnum">!;
-  } else {
-    print qq!<BR><BR>${r}Advertising source <SELECT NAME="refnum" SIZE="1">!;
-    print "<OPTION> " unless $refnum;
-    my($referral);
-    foreach $referral (sort {
-      $a->refnum <=> $b->refnum;
-    } @referrals) {
-      print "<OPTION" . " SELECTED"x($referral->refnum==$refnum),
-      ">", $referral->refnum, ": ", $referral->referral;
-    }
-    print "</SELECT>";
-  }
-}
+%>
 
-#referring customer
+  <INPUT TYPE="hidden" NAME="refnum" VALUE="<%= $refnum %>">
 
-#print qq!<BR><BR>Referring Customer: !;
+<%
+ } else {
+
+   my(@referrals) = qsearch('part_referral',{});
+   if ( scalar(@referrals) == 0 ) {
+     eidiot "You have not created any advertising sources.  You must create at least one advertising source before adding a customer.  Go to ". popurl(2). "browse/part_referral.cgi and create one or more advertising sources.";
+   } elsif ( scalar(@referrals) == 1 ) {
+     $refnum ||= $referrals[0]->refnum;
+%>
+
+     <INPUT TYPE="hidden" NAME="refnum" VALUE="<%= $refnum %>">
+
+<% } else { %>
+
+     <BR><BR><%=$r%>Advertising source 
+     <SELECT NAME="refnum" SIZE="1">
+       <%= $refnum ? '' : '<OPTION VALUE="">' %>
+       <% foreach my $referral (sort { $a->refnum <=> $b->refnum } @referrals) { %>
+         <OPTION VALUE="<%= $referral->refnum %>" <%= $referral->refnum == $refnum ? 'SELECTED' : '' %>><%= $referral->refnum %>: <%= $referral->referral %>
+       <% } %>
+     </SELECT>
+<% } %>
+
+<% } %>
+
+<!-- referring customer -->
+
+<%
 my $referring_cust_main = '';
 if ( $cust_main->referral_custnum
      and $referring_cust_main =
            qsearchs('cust_main', { custnum => $cust_main->referral_custnum } )
 ) {
-  print '<BR><BR>Referring Customer: <A HREF="'. popurl(1). '/cust_main.cgi?'.
-        $cust_main->referral_custnum. '">'.
-        $cust_main->referral_custnum. ': '.
-        ( $referring_cust_main->company
-          || $referring_cust_main->last. ', '. $referring_cust_main->first ).
-        '</A><INPUT TYPE="hidden" NAME="referral_custnum" VALUE="'.
-        $cust_main->referral_custnum. '">';
-} elsif ( ! $conf->exists('disable_customer_referrals') ) {
-  print '<BR><BR>Referring customer number: <INPUT TYPE="text" NAME="referral_custnum" VALUE="">';
-} else {
-  print '<INPUT TYPE="hidden" NAME="referral_custnum" VALUE="">';
-}
-
 %>
+
+  <BR><BR>Referring Customer: 
+  <A HREF="<%= popurl(1) %>/cust_main.cgi?<%= $cust_main->referral_custnum %>"><%= $cust_main->referral_custnum %>: <%= $referring_cust_main->name %></A>
+  <INPUT TYPE="hidden" NAME="referral_custnum" VALUE="<%= $cust_main->referral_custnum %>">
+
+<% } elsif ( ! $conf->exists('disable_customer_referrals') ) { %>
+
+  <BR><BR>Referring customer number: 
+  <INPUT TYPE="text" NAME="referral_custnum" VALUE="">
+
+<% } else { %>
+
+  <INPUT TYPE="hidden" NAME="referral_custnum" VALUE="">
+
+<% } %>
 
 <!-- contact info -->
 
@@ -306,7 +312,7 @@ function copyelement(from, to) {
       to.value = from.value;
     }
   }
-  //alert(from + ": " + to.name + " => " + to.value);
+  //alert(from + " (" + from.type + "): " + to.name + " => " + to.value);
 }
 
 </SCRIPT>
