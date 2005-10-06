@@ -1505,6 +1505,13 @@ httemplate/docs/config.html
   },
 
   {
+    'key'         => 'cc-void',
+    'section'     => 'billing',
+    'description' => 'Enable local-only voiding of credit card payments in addition to refunds against the payment gateway',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'address2-search',
     'section'     => 'UI',
     'description' => 'Enable a "Unit" search box which searches the second address field',
