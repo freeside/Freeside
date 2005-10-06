@@ -10,6 +10,8 @@ tie my %options, 'Tie::IxHash',
   'clientID'  => { label=>'clientID' },
   'password'  => { label=>'Password' },
   #'workgroup' => { label=>'Default Workgroup' },
+  'debug'     => { label=>'Enable debugging',
+                    type=>'checkbox'          },
 ;
 
 %info = (
@@ -50,6 +52,9 @@ sub _xrc_command {
   
   eval "use Net::XRC qw(:types);";
   return $@ if $@;
+
+  local($Net::XRC::DEBUG) = 1
+    if $self->option('debug');
 
   my $xrc = new Net::XRC (
     'clientID' => $self->option('clientID'),
