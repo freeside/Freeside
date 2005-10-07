@@ -244,7 +244,7 @@ sub paymask {
   if ( defined($value) && !$self->is_encrypted($value)) {
     my $payinfo = $value;
     my $payby = $self->payby;
-    if ($payby eq 'CARD' || $payby eq 'DCARD') { # Credit Cards (Show last four)
+    if ($payby eq 'CARD' || $payby eq 'DCRD') { # Credit Cards (Show last four)
       $paymask = 'x'x(length($payinfo)-4). substr($payinfo,(length($payinfo)-4));
     } elsif ($payby eq 'CHEK' ||
              $payby eq 'DCHK' ) { # Checks (Show last 2 @ bank)
