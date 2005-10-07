@@ -69,7 +69,7 @@ if ( $date  =~ /^(\d{4})-(\d{1,2})-\d{1,2}$/ ) { #PostgreSQL date format
 </TR>
 <TR>
   <TD ALIGN="right">Account number</TD>
-  <TD BGCOLOR="#ffffff"><%= $account %></TD>
+  <TD BGCOLOR="#ffffff"><%= 'x'x(length($account)-2). substr($account,(length($account)-2)) %></TD>
 </TR>
 <TR>
   <TD ALIGN="right">Bank name</TD>
