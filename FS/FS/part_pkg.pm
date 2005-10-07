@@ -441,6 +441,10 @@ sub check {
   return 'Unknown plan '. $self->plan
     unless exists($plans{$self->plan});
 
+  my $conf = new FS::Conf;
+  return 'Taxclass is required'
+    if ! $self->taxclass && $conf->exists('require_taxclasses');
+
   '';
 }
 
