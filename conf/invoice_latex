@@ -87,7 +87,7 @@
     \makebox{
       \begin{tabular}{ll}
         \includegraphics{[@-- $conf_dir --@]/logo.eps} &
-        \begin{minipage}[b]{3.5cm}
+        \begin{minipage}[b]{5.5cm}
 [@-- $returnaddress --@]
         \end{minipage}
       \end{tabular}
