@@ -1,49 +1,18 @@
 <%
   my( $cust_main ) = @_;
-  my $conf = new FS::Conf;
 %>
 
 <FORM ACTION="<%=$p%>edit/process/quick-charge.cgi" METHOD="POST">
+
 <INPUT TYPE="hidden" NAME="custnum" VALUE="<%= $cust_main->custnum %>">
+
 Description:<INPUT TYPE="text" NAME="pkg">
+
 Amount:<INPUT TYPE="text" NAME="amount" SIZE=6>
-<% #false laziness w/ edit/part_pkg.cgi %>
-<% if ( $conf->exists('enable_taxclasses') ) { %>
 
-    <SELECT NAME="taxclass">
+<%= include('/elements/select-taxclass.html') %>
 
-      <% if ( $conf->exists('require_taxclasses') ) { %>
-
-        <OPTION VALUE="(select)">Select tax class
-
-      <% } else { %>
-
-        <OPTION VALUE="">
-
-      <% } %>
-
-      <%
-        my $sth = dbh->prepare('SELECT DISTINCT taxclass FROM cust_main_county')
-          or die dbh->errstr;
-        $sth->execute or die $sth->errstr;
-        my %taxclasses = map { $_->[0] => 1 } @{$sth->fetchall_arrayref};
-        my @taxclasses = grep $_, keys %taxclasses;
-      %>
-  
-      <% foreach my $taxclass ( @taxclasses ) { %>
-  
-          <OPTION VALUE="<%= $taxclass %>"<%= 0 ? ' SELECTED' : '' %>><%= $taxclass %>
-  
-      <% } %>
-
-    </SELECT>
-
-<% } else { %>
-
-  <INPUT TYPE="hidden" NAME="taxclass" VALUE="">';
-  
-<% } %>
-  
 <INPUT TYPE="submit" VALUE="One-time charge">
+
 </FORM>
 

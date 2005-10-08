@@ -13,7 +13,7 @@ my( $error, $cust_main);
 if ( $cgi->param('taxclass') eq '(select)' ) {
 
 
- $error = "Must select a tax class";
+ $error = 'Must select a tax class';
 } else {
 
   my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )

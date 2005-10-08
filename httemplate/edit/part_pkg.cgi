@@ -1,4 +1,3 @@
-<!-- mason kludge -->
 <%
 
 if ( $cgi->param('clone') && $cgi->param('clone') =~ /^(\d+)$/ ) {
@@ -120,42 +119,31 @@ Tax information
   <TR>
     <TD ALIGN="right">Setup fee tax exempt</TD>
     <TD>
-<%
+      <INPUT TYPE="checkbox" NAME="setuptax" VALUE="Y" <%= $hashref->{setuptax} eq 'Y' ? ' CHECKED' : '' %>>
+    </TD>
+  </TR>
+  <TR>
+    <TD ALIGN="right">Recurring fee tax exempt</TD>
+    <TD>
+      <INPUT TYPE="checkbox" NAME="recurtax" VALUE="Y" <%= $hashref->{recurtax} eq 'Y' ? ' CHECKED' : '' %>>
+    </TD>
+  </TR>
 
-print '<INPUT TYPE="checkbox" NAME="setuptax" VALUE="Y"';
-print ' CHECKED' if $hashref->{setuptax} eq "Y";
-print '>';
+<% my $conf = new FS::Conf; %>
+<% if ( $conf->exists('enable_taxclasses') ) { %>
 
-print <<END;
-</TD></TR>
-<TR><TD ALIGN="right">Recurring fee tax exempt</TD><TD>
-END
+  <TR>
+    <TD align="right">Tax class</TD>
+    <TD>
+      <%= include('/elements/select-taxclass.html', $hashref->{taxclass} ) %>
+    </TD>
+  </TR>
 
-print '<INPUT TYPE="checkbox" NAME="recurtax" VALUE="Y"';
-print ' CHECKED' if $hashref->{recurtax} eq "Y";
-print '>';
+<% } else { %>
 
-print '</TD></TR>';
+  <%= include('/elements/select-taxclass.html', $hashref->{taxclass} ) %>
 
-my $conf = new FS::Conf;
-#false laziness w/ view/cust_main.cgi quick order
-if ( $conf->exists('enable_taxclasses') ) {
-  print '<TR><TD ALIGN="right">Tax class</TD><TD><SELECT NAME="taxclass">';
-  my $sth = dbh->prepare('SELECT DISTINCT taxclass FROM cust_main_county')
-    or die dbh->errstr;
-  $sth->execute or die $sth->errstr;
-  foreach my $taxclass ( map $_->[0], @{$sth->fetchall_arrayref} ) {
-    print qq!<OPTION VALUE="$taxclass"!;
-    print ' SELECTED' if $taxclass eq $hashref->{taxclass};
-    print qq!>$taxclass</OPTION>!;
-  }
-  print '</SELECT></TD></TR>';
-} else {
-  print
-    '<INPUT TYPE="hidden" NAME="taxclass" VALUE="'. $hashref->{taxclass}. '">';
-}
-
-%>
+<% } %>
 
 </TABLE>
 

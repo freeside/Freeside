@@ -29,12 +29,18 @@ my %pkg_svc = map { $_ => scalar($cgi->param("pkg_svc$_")) }
 
 my $error;
 my $custnum = '';
-if ( $pkgpart ) {
+if ( $cgi->param('taxclass') eq '(select)' ) {
+
+  $error = 'Must select a tax class';
+
+} elsif ( $pkgpart ) {
+
   $error = $new->replace( $old,
                           pkg_svc     => \%pkg_svc,
                           primary_svc => scalar($cgi->param('pkg_svc_primary')),
                         );
 } else {
+
   $error = $new->insert(  pkg_svc     => \%pkg_svc,
                           primary_svc => scalar($cgi->param('pkg_svc_primary')),
                           cust_pkg    => $cgi->param('pkgnum'),
@@ -42,6 +48,7 @@ if ( $pkgpart ) {
                        );
   $pkgpart = $new->pkgpart;
 }
+
 if ( $error ) {
   $cgi->param('error', $error );
   print $cgi->redirect(popurl(2). "part_pkg.cgi?". $cgi->query_string );
