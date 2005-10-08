@@ -1,0 +1,134 @@
+<%= header( 'Quick payment entry',
+            menubar(
+                     'Main Menu' => popurl(1),
+                   ),
+            'onLoad="addRow()"',
+          )
+%>
+
+<% if ( $cgi->param('error') ) { %>
+  <FONT SIZE="+1" COLOR="#ff0000">Error: <%= $cgi->param('error') %></FONT>
+<% } %>
+
+<SCRIPT TYPE="text/javascript">
+
+  var rownum = 0;
+
+  function addRow() {
+
+    var table = document.getElementById('OneTrueTable');
+    var tablebody = table.getElementsByTagName('tbody').item(0);
+
+    var row = document.createElement('TR');
+
+    var custnum_cell = document.createElement('TD');
+    var custnum_input = document.createElement('INPUT');
+    custnum_input.setAttribute('name', 'custnum'+rownum);
+    custnum_input.setAttribute('size', 8);
+    custnum_input.setAttribute('maxlength', 7);
+    custnum_input.setAttribute('rownum', rownum);
+    custnum_input.onchange = search_custnum;
+
+    custnum_cell.appendChild(custnum_input);
+    row.appendChild(custnum_cell);
+
+    var customer_cell = document.createElement('TD');
+    var customer_input = document.createElement('INPUT');
+    custnum_input.setAttribute('name', 'customer'+rownum);
+    customer_input.setAttribute('size', 32);
+    customer_input.setAttribute('value', '(last name or company)' );
+    customer_input.onfocus = clearhint;
+    customer_input.setAttribute('rownum', rownum);
+    customer_input.onchange = search_customer;
+    customer_cell.appendChild(customer_input);
+    row.appendChild(customer_cell);
+
+    var paid_cell = document.createElement('TD');
+    var paid_text = document.createTextNode('$');
+    var paid_input = document.createElement('INPUT');
+    paid_input.setAttribute('name', 'paid'+rownum);
+    paid_input.setAttribute('size', 8);
+    paid_input.setAttribute('maxlength', 8);
+    paid_cell.appendChild(paid_text);
+    paid_cell.appendChild(paid_input);
+    row.appendChild(paid_cell);
+
+    var payinfo_cell = document.createElement('TD');
+    var payinfo_input = document.createElement('INPUT');
+    payinfo_input.setAttribute('name', 'payinfo'+rownum);
+    payinfo_input.setAttribute('size', 10);
+    payinfo_cell.appendChild(payinfo_input);
+    row.appendChild(payinfo_cell);
+
+    tablebody.appendChild(row);
+
+    rownum++;
+
+  }
+
+  function clearhint() {
+
+    if ( this.value == '(last name or company)' )
+      this.value = '';
+
+  }
+
+  function search_custnum() {
+
+    var searchrow = this.getAttribute('rownum');
+
+    alert('search for custnum row#' + searchrow );
+
+  }
+
+  function search_customer() {
+
+    var searchrow = this.getAttribute('rownum');
+
+    alert('search for customer row#' + searchrow );
+
+  }
+
+</SCRIPT>
+
+<FORM ACTION="<%= $p %>process/batch-cust_pay.cgi" METHOD=POST>
+
+<B>Batch <INPUT TYPE="text" NAME="paybatch"><BR><BR>
+
+<TABLE ID="OneTrueTable" BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0>
+
+<TR>
+  <TH>Cust #</TH>
+  <TH>Customer</TH>
+  <TH>Amount</TH>
+  <TH>Check #</TH>
+</TR>
+
+<!-- 
+<TR>
+  <TD>
+    <INPUT TYPE="text" NAME="custnum0" SIZE=8 MAXLENGTH=7 onChange="alert('search for custnum')" >
+  </TD>
+  <TD>
+    <INPUT TYPE="text" NAME="customer0" SIZE=32 VALUE="(last name or company)" onChange="alert('search for customer')" >
+  </TD>
+  <TD>
+    $<INPUT TYPE="text" NAME="paid0" SIZE=8 MAXLENGTH=8>
+  </TD>
+  <TD>
+    <INPUT TYPE="text" NAME="payinfo" SIZE=10>
+  </TD>
+</TR>
+-->
+
+</TABLE>
+
+<BR>
+<INPUT TYPE="button" VALUE="TEST addrow" onClick="addRow()">
+
+<BR>
+<INPUT TYPE="submit" VALUE="Post payments">
+
+</FORM>
+</BODY>
+</HTML>
