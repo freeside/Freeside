@@ -122,11 +122,12 @@ sub insert {
     $self->custnum($cust_bill->custnum );
   }
 
-  my $cust_main = $self->cust_main;
-  my $old_balance = $cust_main->balance;
 
   my $error = $self->check;
   return $error if $error;
+
+  my $cust_main = $self->cust_main;
+  my $old_balance = $cust_main->balance;
 
   $error = $self->SUPER::insert;
   if ( $error ) {
@@ -396,6 +397,61 @@ sub check {
   }
 
   $self->SUPER::check;
+}
+
+=item batch_insert CUST_PAY_OBJECT, ...
+
+Class method which inserts multiple payments.  Takes a list of FS::cust_pay
+objects.  Returns a list, each element representing the status of inserting the
+corresponding payment - empty.  If there is an error inserting any payment, the
+entire transaction is rolled back, i.e. all payments are inserted or none are.
+
+For example:
+
+  my @errors = FS::cust_pay->batch_insert(@cust_pay);
+  my $num_errors = scalar(grep $_, @errors);
+  if ( $num_errors == 0 ) {
+    #success; all payments were inserted
+  } else {
+    #failure; no payments were inserted.
+  }
+
+=cut
+
+sub batch_insert {
+  my $self = shift; #class method
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $errors = 0;
+  
+  my @errors = map {
+    my $error = $_->insert;
+    if ( $error ) { 
+      $errors++;
+    } else {
+      $_->cust_main->apply_payments;
+    }
+    $error;
+  } @_;
+
+  if ( $errors ) {
+    $dbh->rollback if $oldAutoCommit;
+  } else {
+    $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  }
+
+  @errors;
+
 }
 
 =item cust_bill_pay

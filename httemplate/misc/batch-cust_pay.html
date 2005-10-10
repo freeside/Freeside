@@ -1,18 +1,319 @@
 <%= header( 'Quick payment entry',
             menubar(
-                     'Main Menu' => popurl(1),
+                     'Main Menu' => $p, #popurl(1),
+                     'Old-style quick payment entry' =>
+                       $p. 'search/cust_main-quickpay.html',
                    ),
-            'onLoad="addRow()"',
+            ( $cgi->param('error') ? '' : 'onload="addRow()"' ),
           )
 %>
 
 <% if ( $cgi->param('error') ) { %>
-  <FONT SIZE="+1" COLOR="#ff0000">Error: <%= $cgi->param('error') %></FONT>
+  <FONT SIZE="+1" COLOR="#ff0000"><%= $cgi->param('error') %></FONT><BR><BR>
 <% } %>
+
+
+<FORM ACTION="process/batch-cust_pay.cgi" NAME="OneTrueForm" METHOD="POST" onsubmit="document.OneTrueForm.submit.disabled=true;">
+
+<!-- <B>Batch</B> <INPUT TYPE="text" NAME="paybatch"><BR><BR> -->
 
 <SCRIPT TYPE="text/javascript">
 
-  var rownum = 0;
+  function clearhint_custnum() {
+
+    //this.style.color = '#000000';
+
+    if ( this.value == 'Not found' || this.value == 'Multiple' ) {
+      this.value = '';
+      this.style.color = '#000000';
+    }
+
+  }
+
+  function clearhint_customer() {
+
+    this.style.color = '#000000';
+
+    if ( this.value == '(last name or company)' || this.value == 'Not found' )
+      this.value = '';
+
+  }
+
+  function search_custnum() {
+
+    this.style.color = '#000000'
+
+    var custnum_obj = this;
+    var searchrow = this.getAttribute('rownum');
+    var custnum = this.value;
+
+    if ( custnum == 'searching...' || custnum == 'Not found' || custnum == '' )
+      return;
+
+    if ( this.getAttribute('magic') == 'nosearch' ) {
+      this.setAttribute('magic', '');
+      return;
+    }
+
+    if ( ( rownum - searchrow ) == 1 ) {
+      addRow();
+    }
+    var customer = document.getElementById('customer'+searchrow);
+    customer.value = 'searching...';
+    customer.disabled = true;
+    customer.style.color = '#000000';
+    customer.style.backgroundColor = '#dddddd';
+
+    var customer_select = document.getElementById('cust_select'+searchrow);
+
+    //alert('search for custnum ' + custnum + ', row#' + searchrow );
+
+    customer.style.display = '';
+    customer_select.style.display = 'none';
+
+    function search_custnum_update(name) {
+
+      var name = eval('(' + name + ')' );
+
+      customer.disabled = false;
+      customer.style.backgroundColor = '#ffffff';
+
+      if ( name.length > 0 ) {
+        //alert('custnum found: ' + name);
+        customer.value = name;
+        customer.setAttribute('magic', 'nosearch');
+      } else {
+        customer.value = 'Not found';
+        customer.style.color = '#ff0000';
+        custnum_obj.style.color = '#ff0000';
+
+      }
+
+    }
+
+    custnum_search( custnum, search_custnum_update );
+
+  }
+
+  function search_customer() {
+
+    var customer_obj = this;
+    var searchrow = this.getAttribute('rownum');
+    var customer = this.value;
+
+    if ( customer == 'searching...' || customer == 'Not found' || customer == '' )
+      return;
+
+    if ( this.getAttribute('magic') == 'nosearch' ) {
+      this.setAttribute('magic', '');
+      return;
+    }
+
+    if ( ( rownum - searchrow ) == 1 ) {
+      addRow();
+    }
+
+    var custnum_obj = document.getElementById('custnum'+searchrow);
+    custnum_obj.value = 'searching...';
+    custnum_obj.disabled = true;
+    custnum_obj.style.color = '#000000';
+    custnum_obj.style.backgroundColor = '#dddddd';
+
+    var customer_select = document.getElementById('cust_select'+searchrow);
+
+    //alert('search for customer ' + customer + ', row#' + searchrow );
+
+    function search_customer_update(customers) {
+
+      //alert('customers returned: ' + customers);
+
+      var customerArray = eval('(' + customers + ')');
+
+      custnum_obj.disabled = false;
+      custnum_obj.style.backgroundColor = '#ffffff';
+
+      if ( customerArray.length == 0 ) {
+
+        custnum_obj.value = 'Not found';
+        custnum_obj.style.color = '#ff0000';
+        customer_obj.style.color = '#ff0000';
+
+        customer_obj.style.display = '';
+        customer_select.style.display = 'none';
+
+
+      } else if ( customerArray.length == 1 ) {
+
+        //alert('one customer found: ' + customerArray[0]);
+
+        custnum_obj.value = customerArray[0][0];
+        customer_obj.value = customerArray[0][1];
+
+        customer_obj.style.display = '';
+        customer_select.style.display = 'none';
+
+
+      } else {
+
+        custnum_obj.value = 'Multiple'; // or something
+        custnum_obj.style.color = '#ff0000';
+
+        //alert('multiple customers found, have to create select dropdown');
+
+        //blank the current list
+        for ( var i = customer_select.length; i >= 0; i-- )
+          customer_select.options[i] = null;
+
+        opt(customer_select, '', 'Multiple customers match "' + customer + '" - select one', '#ff0000');
+
+        //add the multiple customers
+        for ( var s = 0; s < customerArray.length; s++ )
+          opt(customer_select, customerArray[s][0], customerArray[s][1], '#000000');
+
+        opt(customer_select, 'cancel', '(Edit search string)', '#000000');
+
+        customer_obj.style.display = 'none';
+
+        customer_select.style.display = '';
+
+      }
+
+    }
+
+    smart_search( customer, search_customer_update );
+
+  }
+
+  function select_customer() {
+
+    var custnum = this.options[this.selectedIndex].value;
+    var customer = this.options[this.selectedIndex].text;
+
+    var searchrow = this.getAttribute('rownum');
+    var custnum_obj = document.getElementById('custnum'+searchrow);
+    var customer_obj = document.getElementById('customer'+searchrow);
+
+    if ( custnum == '' ) {
+      //this.style.color = '#ff0000';
+
+    } else if ( custnum == 'cancel' ) {
+
+      custnum_obj.value = '';
+      custnum_obj.style.color = '#000000';
+
+      this.style.display = 'none';
+      customer_obj.style.display = '';
+      customer_obj.focus();
+
+    } else {
+
+
+      custnum_obj.value = custnum;
+      custnum_obj.style.color = '#000000';
+
+      customer_obj.value = customer;
+      customer_obj.style.color = '#000000';
+
+      this.style.display = 'none';
+      customer_obj.style.display = '';
+
+    }
+
+  }
+
+  function opt(what,value,text,color) {
+    var optionName = new Option(text, value, false, false);
+    optionName.style.color = color;
+    var length = what.length;
+    what.options[length] = optionName;
+  }
+
+</SCRIPT>
+
+<TABLE ID="OneTrueTable" BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0>
+
+<TR>
+  <TH>Cust #</TH>
+  <TH>Customer</TH>
+  <TH>Amount</TH>
+  <TH>Check #</TH>
+  <TH BGCOLOR="#e8e8e8"></TH>
+</TR>
+
+<% my $row = 0;
+   if ( $cgi->param('error') ) {
+     my $param = $cgi->Vars;
+%>
+
+  <% for ( $row = 0; exists($param->{"custnum$row"}); $row++ ) { %>
+
+    <TR>
+
+      <TD>
+        <INPUT TYPE="text" NAME="custnum<%= $row %>" ID="custnum<%= $row %>" SIZE=8 MAXLENGTH=12 VALUE="<%= $param->{"custnum$row"} %>" rownum="<%= $row %>">
+          <SCRIPT TYPE="text/javascript">
+            var custnum_input<%= $row %> = document.getElementById("custnum<%= $row %>");
+            custnum_input<%= $row %>.onfocus = clearhint_custnum;
+            custnum_input<%= $row %>.onchange = search_custnum;
+          </SCRIPT>
+      </TD>
+
+      <TD>
+        <INPUT TYPE="text" NAME="customer<%= $row %>" ID="customer<%= $row %>" SIZE=64 VALUE="<%= $param->{"customer$row"} %>" rownum="<%= $row %>">
+          <SCRIPT TYPE="text/javascript">
+            var customer_input<%= $row %> = document.getElementById("customer<%= $row %>");
+            customer_input<%= $row %>.onfocus = clearhint_customer;
+            customer_input<%= $row %>.onclick = clearhint_customer;
+            customer_input<%= $row %>.onchange = search_customer;
+          </SCRIPT>
+        <SELECT NAME="cust_select<%= $row %>" ID="cust_select<%= $row %>" rownum="<%= $row %>" STYLE="color:#ff0000; display:none"">
+        </SELECT>
+          <SCRIPT TYPE="text/javascript">
+            var customer_select<%= $row %> = document.getElementById("cust_select<%= $row %>");
+            customer_select<%= $row %>.onchange = select_customer;
+          </SCRIPT>
+      </TD>
+
+      <TD>
+        $<INPUT TYPE="text" NAME="paid<%= $row %>" SIZE=8 MAXLENGTH=8 VALUE="<%= $param->{"paid$row"} %>" >
+      </TD>
+
+      <TD>
+        <INPUT TYPE="text" NAME="payinfo<%= $row %>" SIZE=10 VALUE="<%= $param->{"payinfo$row"} %>" >
+      </TD>
+
+      <TD BGCOLOR="#e8e8e8">
+      <% if ( $param->{"error$row"} ) { %>
+        <FONT SIZE="-1" COLOR="#ff0000">Error: <%= $param->{"error$row"} %></FONT>
+      <% } %>
+      </TD>
+
+    </TR>
+
+  <% } %>
+
+<% } %>
+
+</TABLE>
+
+<!-- <BR>
+<INPUT TYPE="button" VALUE="TEST addrow" onclick="addRow()"> -->
+
+<BR>
+<INPUT TYPE="submit" NAME="submit" VALUE="Post payments">
+
+</FORM>
+
+
+<%= include('/elements/xmlhttp.html',
+              'url'  => $p. 'misc/xmlhttp-cust_main-search.cgi',
+              'subs' => [qw( custnum_search smart_search )],
+           )
+%>
+
+<SCRIPT TYPE="text/javascript">
+
+  var rownum = <%= $row %>;
 
   function addRow() {
 
@@ -22,43 +323,66 @@
     var row = document.createElement('TR');
 
     var custnum_cell = document.createElement('TD');
-    var custnum_input = document.createElement('INPUT');
-    custnum_input.setAttribute('name', 'custnum'+rownum);
-    custnum_input.setAttribute('size', 8);
-    custnum_input.setAttribute('maxlength', 7);
-    custnum_input.setAttribute('rownum', rownum);
-    custnum_input.onchange = search_custnum;
 
-    custnum_cell.appendChild(custnum_input);
+      var custnum_input = document.createElement('INPUT');
+      custnum_input.setAttribute('name', 'custnum'+rownum);
+      custnum_input.setAttribute('id',   'custnum'+rownum);
+      custnum_input.setAttribute('size', 8);
+      custnum_input.setAttribute('maxlength', 12);
+      custnum_input.setAttribute('rownum', rownum);
+      custnum_input.onfocus = clearhint_custnum;
+      custnum_input.onchange = search_custnum;
+      custnum_cell.appendChild(custnum_input);
+
     row.appendChild(custnum_cell);
 
     var customer_cell = document.createElement('TD');
-    var customer_input = document.createElement('INPUT');
-    custnum_input.setAttribute('name', 'customer'+rownum);
-    customer_input.setAttribute('size', 32);
-    customer_input.setAttribute('value', '(last name or company)' );
-    customer_input.onfocus = clearhint;
-    customer_input.setAttribute('rownum', rownum);
-    customer_input.onchange = search_customer;
-    customer_cell.appendChild(customer_input);
+
+      var customer_input = document.createElement('INPUT');
+      customer_input.setAttribute('name', 'customer'+rownum);
+      customer_input.setAttribute('id',   'customer'+rownum);
+      customer_input.setAttribute('size', 64);
+      customer_input.setAttribute('value', '(last name or company)' );
+      customer_input.setAttribute('rownum', rownum);
+      customer_input.onfocus = clearhint_customer;
+      customer_input.onclick = clearhint_customer;
+      customer_input.onchange = search_customer;
+      customer_cell.appendChild(customer_input);
+
+      var customer_select = document.createElement('SELECT');
+      customer_select.setAttribute('name', 'cust_select'+rownum);
+      customer_select.setAttribute('id',   'cust_select'+rownum);
+      customer_select.setAttribute('rownum', rownum);
+      customer_select.style.color = '#ff0000';
+      customer_select.style.display = 'none';
+      customer_select.onchange = select_customer;
+      customer_cell.appendChild(customer_select);
+
     row.appendChild(customer_cell);
 
     var paid_cell = document.createElement('TD');
-    var paid_text = document.createTextNode('$');
-    var paid_input = document.createElement('INPUT');
-    paid_input.setAttribute('name', 'paid'+rownum);
-    paid_input.setAttribute('size', 8);
-    paid_input.setAttribute('maxlength', 8);
-    paid_cell.appendChild(paid_text);
-    paid_cell.appendChild(paid_input);
+
+      var paid_text = document.createTextNode('$');
+      paid_cell.appendChild(paid_text);
+
+      var paid_input = document.createElement('INPUT');
+      paid_input.setAttribute('name', 'paid'+rownum);
+      paid_input.setAttribute('size', 8);
+      paid_input.setAttribute('maxlength', 8);
+      paid_cell.appendChild(paid_input);
+
     row.appendChild(paid_cell);
 
     var payinfo_cell = document.createElement('TD');
-    var payinfo_input = document.createElement('INPUT');
-    payinfo_input.setAttribute('name', 'payinfo'+rownum);
-    payinfo_input.setAttribute('size', 10);
-    payinfo_cell.appendChild(payinfo_input);
+      var payinfo_input = document.createElement('INPUT');
+      payinfo_input.setAttribute('name', 'payinfo'+rownum);
+      payinfo_input.setAttribute('size', 10);
+      payinfo_cell.appendChild(payinfo_input);
     row.appendChild(payinfo_cell);
+
+    var error_cell = document.createElement('TD');
+    error_cell.style.backgroundColor = '#e8e8e8';
+    row.appendChild(error_cell);
 
     tablebody.appendChild(row);
 
@@ -66,69 +390,7 @@
 
   }
 
-  function clearhint() {
-
-    if ( this.value == '(last name or company)' )
-      this.value = '';
-
-  }
-
-  function search_custnum() {
-
-    var searchrow = this.getAttribute('rownum');
-
-    alert('search for custnum row#' + searchrow );
-
-  }
-
-  function search_customer() {
-
-    var searchrow = this.getAttribute('rownum');
-
-    alert('search for customer row#' + searchrow );
-
-  }
-
 </SCRIPT>
 
-<FORM ACTION="<%= $p %>process/batch-cust_pay.cgi" METHOD=POST>
-
-<B>Batch <INPUT TYPE="text" NAME="paybatch"><BR><BR>
-
-<TABLE ID="OneTrueTable" BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0>
-
-<TR>
-  <TH>Cust #</TH>
-  <TH>Customer</TH>
-  <TH>Amount</TH>
-  <TH>Check #</TH>
-</TR>
-
-<!-- 
-<TR>
-  <TD>
-    <INPUT TYPE="text" NAME="custnum0" SIZE=8 MAXLENGTH=7 onChange="alert('search for custnum')" >
-  </TD>
-  <TD>
-    <INPUT TYPE="text" NAME="customer0" SIZE=32 VALUE="(last name or company)" onChange="alert('search for customer')" >
-  </TD>
-  <TD>
-    $<INPUT TYPE="text" NAME="paid0" SIZE=8 MAXLENGTH=8>
-  </TD>
-  <TD>
-    <INPUT TYPE="text" NAME="payinfo" SIZE=10>
-  </TD>
-</TR>
--->
-
-</TABLE>
-
-<BR>
-<INPUT TYPE="button" VALUE="TEST addrow" onClick="addRow()">
-
-<BR>
-<INPUT TYPE="submit" VALUE="Post payments">
-
-</FORM>
 </BODY>
 </HTML>

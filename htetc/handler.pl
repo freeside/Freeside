@@ -99,6 +99,7 @@ sub handler
       use Tie::IxHash;
       use URI::Escape;
       use HTML::Entities;
+      use JSON;
       use IO::Handle;
       use IO::File;
       use IO::Scalar;

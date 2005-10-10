@@ -1,60 +1,78 @@
 <%
    my $title = 'Payment Search Results';
    my( $count_query, $sql_query );
-   if ( $cgi->param('magic') && $cgi->param('magic') eq '_date' ) {
-   
-     my @search = ();
+   if ( $cgi->param('magic') ) {
 
-     if ( $cgi->param('agentnum') && $cgi->param('agentnum') =~ /^(\d+)$/ ) {
-       push @search, "agentnum = $1"; # $search{'agentnum'} = $1;
-       my $agent = qsearchs('agent', { 'agentnum' => $1 } );
-       die "unknown agentnum $1" unless $agent;
-       $title = $agent->agent. " $title";
-     }
+     my @search = ();
+     my $orderby;
+     if ( $cgi->param('magic') eq '_date' ) {
    
-     if ( $cgi->param('payby') ) {
-       $cgi->param('payby') =~ /^(CARD|CHEK|BILL)(-(VisaMC|Amex|Discover))?$/
-         or die "illegal payby ". $cgi->param('payby');
-       push @search, "cust_pay.payby = '$1'";
-       if ( $3 ) {
-         if ( $3 eq 'VisaMC' ) {
-           #avoid posix regexes for portability
-           push @search,
-             " (    substring(cust_pay.payinfo from 1 for 1) = '4'  ".
-             "   OR substring(cust_pay.payinfo from 1 for 2) = '51' ".
-             "   OR substring(cust_pay.payinfo from 1 for 2) = '52' ".
-             "   OR substring(cust_pay.payinfo from 1 for 2) = '53' ".
-             "   OR substring(cust_pay.payinfo from 1 for 2) = '54' ".
-             "   OR substring(cust_pay.payinfo from 1 for 2) = '54' ".
-             "   OR substring(cust_pay.payinfo from 1 for 2) = '55' ".
-             " ) ";
-         } elsif ( $3 eq 'Amex' ) {
-           push @search,
-             " (    substring(cust_pay.payinfo from 1 for 2 ) = '34' ".
-             "   OR substring(cust_pay.payinfo from 1 for 2 ) = '37' ".
-             " ) ";
-         } elsif ( $3 eq 'Discover' ) {
-           push @search,
-             " substring(cust_pay.payinfo from 1 for 4 ) = '6011' ";
-         } else {
-           die "unknown card type $3";
+  
+       if ( $cgi->param('agentnum') && $cgi->param('agentnum') =~ /^(\d+)$/ ) {
+         push @search, "agentnum = $1"; # $search{'agentnum'} = $1;
+         my $agent = qsearchs('agent', { 'agentnum' => $1 } );
+         die "unknown agentnum $1" unless $agent;
+         $title = $agent->agent. " $title";
+       }
+     
+       if ( $cgi->param('payby') ) {
+         $cgi->param('payby') =~ /^(CARD|CHEK|BILL)(-(VisaMC|Amex|Discover))?$/
+           or die "illegal payby ". $cgi->param('payby');
+         push @search, "cust_pay.payby = '$1'";
+         if ( $3 ) {
+           if ( $3 eq 'VisaMC' ) {
+             #avoid posix regexes for portability
+             push @search,
+               " (    substring(cust_pay.payinfo from 1 for 1) = '4'  ".
+               "   OR substring(cust_pay.payinfo from 1 for 2) = '51' ".
+               "   OR substring(cust_pay.payinfo from 1 for 2) = '52' ".
+               "   OR substring(cust_pay.payinfo from 1 for 2) = '53' ".
+               "   OR substring(cust_pay.payinfo from 1 for 2) = '54' ".
+               "   OR substring(cust_pay.payinfo from 1 for 2) = '54' ".
+               "   OR substring(cust_pay.payinfo from 1 for 2) = '55' ".
+               " ) ";
+           } elsif ( $3 eq 'Amex' ) {
+             push @search,
+               " (    substring(cust_pay.payinfo from 1 for 2 ) = '34' ".
+               "   OR substring(cust_pay.payinfo from 1 for 2 ) = '37' ".
+               " ) ";
+           } elsif ( $3 eq 'Discover' ) {
+             push @search,
+               " substring(cust_pay.payinfo from 1 for 4 ) = '6011' ";
+           } else {
+             die "unknown card type $3";
+           }
          }
        }
-     }
+  
+       my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
+       push @search, "_date >= $beginning ",
+                     "_date <= $ending";
+  
+       $orderby = '_date';
+   
+     } elsif ( $cgi->param('magic') eq 'paybatch' ) {
 
-     my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
-     push @search, "_date >= $beginning ",
-                   "_date <= $ending";
+       $cgi->param('paybatch') =~ /^([\w\/\:\-\.]+)$/
+         or die "illegal paybatch: ". $cgi->param('paybatch');
+
+       push @search, "paybatch = '$1'";
+
+       $orderby = "LOWER(company || ' ' || last || ' ' || first )";
+
+     } else {
+       die "unknown search magic: ". $cgi->param('magic');
+     }
 
      my $search = '';
      if ( @search ) {
        $search = ' WHERE '. join(' AND ', @search);
      }
-
+  
      $count_query = "SELECT COUNT(*), SUM(paid) ".
                     "FROM cust_pay LEFT JOIN cust_main USING ( custnum )".
                     $search;
-   
+
      $sql_query = {
        'table'     => 'cust_pay',
        'select'    => join(', ',
@@ -63,10 +81,10 @@
                         FS::UI::Web::cust_sql_fields(),
                       ),
        'hashref'   => {},
-       'extra_sql' => "$search ORDER BY _date",
+       'extra_sql' => "$search ORDER BY $orderby",
        'addl_from' => 'LEFT JOIN cust_main USING ( custnum )',
      };
-   
+
    } else {
    
      $cgi->param('payinfo') =~ /^\s*(\d+)\s*$/ or die "illegal payinfo";
