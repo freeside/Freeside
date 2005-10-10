@@ -113,7 +113,6 @@ sub _export_suspend {
 
   $self->_xrc_command( 'suspendUser',
                        $svc_acct->domain,
-                       $domain_clientID,
                        string($svc_acct->username),
                      );
 }
