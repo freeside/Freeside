@@ -26,7 +26,9 @@
 
   if ( $num_errors ) {
 
-    $cgi->param('error', "$num_errors error". ($num_errors>1 ? 's' : '') );
+    $cgi->param('error', "$num_errors error". ($num_errors>1 ? 's' : '').
+                         ' - Batch not processed, correct and resubmit'
+               );
 
     my $erow=0;
     $cgi->param('error'. $erow++, shift @errors) while @errors;
