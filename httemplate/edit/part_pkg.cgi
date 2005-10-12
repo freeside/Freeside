@@ -28,7 +28,7 @@ if ( $cgi->param('clone') ) {
   $action = 'Custom Pricing';
   $clone_part_pkg= qsearchs('part_pkg', { 'pkgpart' => $cgi->param('clone') } );
   $part_pkg ||= $clone_part_pkg->clone;
-  $part_pkg->disabled('Y');
+  $part_pkg->disabled('Y'); #isn't sticky on errors
 } elsif ( $query && $query =~ /^(\d+)$/ ) {
   $part_pkg ||= qsearchs('part_pkg',{'pkgpart'=>$1});
   $pkgpart = $part_pkg->pkgpart;
@@ -59,20 +59,7 @@ my $hashref = $part_pkg->hashref;
   <FONT SIZE="+1" COLOR="#ff0000">Error: <%= $cgi->param('error') %></FONT>
 <% } %>
 
-<% #print '<FORM ACTION="', popurl(1), 'process/part_pkg.cgi" METHOD=POST>'; %>
-
 <FORM NAME="dummy">
-
-<%
-#if ( $cgi->param('clone') ) {
-#  print qq!<INPUT TYPE="hidden" NAME="clone" VALUE="!, $cgi->param('clone'), qq!">!;
-#}
-#if ( $cgi->param('pkgnum') ) {
-#  print qq!<INPUT TYPE="hidden" NAME="pkgnum" VALUE="!, $cgi->param('pkgnum'), qq!">!;
-#}
-#
-#print qq!<INPUT TYPE="hidden" NAME="pkgpart" VALUE="$hashref->{pkgpart}">!,
-%>
 
 <%= itable('',8,1) %><TR><TD VALIGN="top">
 
@@ -157,15 +144,13 @@ $thead .=  '<TH BGCOLOR="#dcdcdc"><FONT SIZE=-1>Primary</FONT></TH>'
   if dbdef->table('pkg_svc')->column('primary_svc');
 $thead .= '<TH BGCOLOR="#dcdcdc">Service</TH></TR>';
 
-#unless ( $cgi->param('clone') ) {
-#dunno why...
-unless ( 0 ) {
-  #print <<END, $thead;
-  print <<END, itable('', 4, 1), '<TR><TD VALIGN="top">', $thead;
-<BR><BR>Services included
-END
-}
+%>
 
+<%= itable('', 4, 1) %><TR><TD VALIGN="top">
+<BR><BR>Services included
+<%= $thead %>
+
+<%
 
 my $where =  "WHERE disabled IS NULL OR disabled = ''";
 if ( $pkgpart ) {
@@ -175,7 +160,8 @@ if ( $pkgpart ) {
                         )";
 }
 my @part_svc = qsearch('part_svc', {}, '', $where);
-my %pkg_svc = map { $_->svcpart => $_ } $part_pkg->pkg_svc;
+my $q_part_pkg = $clone_part_pkg || $part_pkg;
+my %pkg_svc = map { $_->svcpart => $_ } $q_part_pkg->pkg_svc;
 
 my @fixups = ();
 my $count = 0;
@@ -192,45 +178,42 @@ foreach my $part_svc ( @part_svc ) {
 
   push @fixups, "pkg_svc$svcpart";
 
-  #unless ( defined ($cgi->param('clone')) && $cgi->param('clone') ) {
-  #dunno why...
-  unless ( 0 ) {
-    print '<TR>'; # if $count == 0 ;
-    print qq!<TD><INPUT TYPE="text" NAME="pkg_svc$svcpart" SIZE=4 MAXLENGTH=3 VALUE="!,
-          $cgi->param("pkg_svc$svcpart") || $pkg_svc->quantity || 0,
-          qq!"></TD>!;
-    if ( dbdef->table('pkg_svc')->column('primary_svc') ) {
-      print qq!<TD><INPUT TYPE="radio" NAME="pkg_svc_primary" VALUE="$svcpart"!;
-      print ' CHECKED' if $pkg_svc->primary_svc =~ /^Y/i;
-      print '></TD>';
-    }
-    print qq!<TD><A HREF="part_svc.cgi?!,$part_svc->svcpart,
-          qq!">!, $part_svc->getfield('svc'), '</A>';
-    print ' (DISABLED)' if $part_svc->disabled =~ /^Y/i;
-    print '</TD></TR>';
-#    print "</TABLE></TD><TD>$thead" if ++$count == int(scalar(@part_svc) / 2);
-    $count+=1;
-    foreach ( 1 .. $columns-1 ) {
-      print "</TABLE></TD><TD VALIGN=\"top\">$thead"
-        if $count == int( $_ * scalar(@part_svc) / $columns );
-    }
-  } else {
-    print qq!<INPUT TYPE="hidden" NAME="pkg_svc$svcpart" VALUE="!,
-          $cgi->param("pkg_svc$svcpart") || $pkg_svc->quantity || 0, qq!">\n!;
-  }
-}
+%>
 
-#unless ( $cgi->param('clone') ) {
-#dunno why...
-unless ( 0 ) {
-  print "</TR></TABLE></TD></TR></TABLE>";
-  #print "</TR></TABLE>";
-}
+  <TR>
+    <TD>
+      <INPUT TYPE="text" NAME="pkg_svc<%= $svcpart %>" SIZE=4 MAXLENGTH=3 VALUE="<%= $cgi->param("pkg_svc$svcpart") || $pkg_svc->quantity || 0 %>">
+    </TD>
+   
+    <TD>
+      <INPUT TYPE="radio" NAME="pkg_svc_primary" VALUE="<%= $svcpart %>" <%= $pkg_svc->primary_svc =~ /^Y/i ? ' CHECKED' : '' %>>
+    </TD>
 
-foreach my $f ( qw( clone pkgnum ) ) {
-  print qq!<INPUT TYPE="hidden" NAME="$f" VALUE="!. $cgi->param($f). '">';
-}
-print '<INPUT TYPE="hidden" NAME="pkgpart" VALUE="'. $part_pkg->pkgpart. '">';
+    <TD>
+      <A HREF="part_svc.cgi?<%= $part_svc->svcpart %>"><%= $part_svc->svc %></A>      <%= $part_svc->disabled =~ /^Y/i ? ' (DISABLED' : '' %>
+    </TD>
+  </TR>
+
+  <% $count++;
+     foreach ( 1 .. $columns-1 ) {
+       if ( $count == int( $_ * scalar(@part_svc) / $columns ) ) { 
+  %>
+         </TABLE></TD><TD VALIGN="top"><%= $thead %>
+
+  <%   }
+     }
+  %>
+
+<% } %>
+
+</TR></TABLE></TD></TR></TABLE>
+
+<% foreach my $f ( qw( clone pkgnum ) ) { %>
+  <INPUT TYPE="hidden" NAME="<%= $f %>" VALUE="<%= $cgi->param($f) %>">
+<% } %>
+<INPUT TYPE="hidden" NAME="pkgpart" VALUE="<%= $part_pkg->pkgpart %>">
+
+<%
 
 # prolly should be in database
 tie my %plans, 'Tie::IxHash', %{ FS::part_pkg::plan_info() };
