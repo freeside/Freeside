@@ -9,6 +9,7 @@ use FS::part_export;
 tie my %options, 'Tie::IxHash',
   'user'       => { label=>'Remote access username' },
   'accesshash' => { label=>'Remote access key', type=>'textarea' },
+  'debug'      => { label=>'Enable debugging', type=>'checkbox' },
 ;
 
 %info = (
@@ -82,43 +83,67 @@ sub cpanel_queue {
     $self->machine,
     $self->option('user'),
     $self->option('accesshash'),
+    $self->option('debug'),
     @_ 
   ) or $queue;
 }
 
 
 sub cpanel_insert { #subroutine, not method
-  my $whm = cpanel_connect(shift, shift, shift);
+  my( $machine, $user, $accesshash, $debug ) = splice(@_,0,4);
+  my $whm = cpanel_connect($machine, $user, $accesshash, $debug);
+  warn "  cpanel->createacct ". join(', ', @_). "\n"
+    if $debug;
   my $response = $whm->createacct(@_);
   die $whm->{'error'} if $whm->{'error'};
+  warn "  cpanel response: $response\n"
+    if $debug;
 }
 
 #sub cpanel_replace { #subroutine, not method
 #}
 
 sub cpanel_delete { #subroutine, not method
-  my $whm = cpanel_connect(shift, shift, shift);
+  my( $machine, $user, $accesshash, $debug ) = splice(@_,0,4);
+  my $whm = cpanel_connect($machine, $user, $accesshash, $debug);
+  warn "  cpanel->killacct ". join(', ', @_). "\n"
+    if $debug;
   my $response = $whm->killacct(shift);
   die $whm->{'error'} if $whm->{'error'};
+  warn "  cpanel response: $response\n"
+    if $debug;
 }
 
 sub cpanel_suspend { #subroutine, not method
-  my $whm = cpanel_connect(shift, shift, shift);
+  my( $machine, $user, $accesshash, $debug ) = splice(@_,0,4);
+  my $whm = cpanel_connect($machine, $user, $accesshash, $debug);
+  warn "  cpanel->suspend ". join(', ', @_). "\n"
+    if $debug;
   my $response = $whm->suspend(shift);
   die $whm->{'error'} if $whm->{'error'};
+  warn "  cpanel response: $response\n"
+    if $debug;
 }
 
 sub cpanel_unsuspend { #subroutine, not method
-  my $whm = cpanel_connect(shift, shift, shift);
+  my( $machine, $user, $accesshash, $debug ) = splice(@_,0,4);
+  my $whm = cpanel_connect($machine, $user, $accesshash, $debug);
+  warn "  cpanel->unsuspend ". join(', ', @_). "\n"
+    if $debug;
   my $response = $whm->unsuspend(shift);
   die $whm->{'error'} if $whm->{'error'};
+  warn "  cpanel response: $response\n"
+    if $debug;
 }
 
 sub cpanel_connect {
-  my( $host, $user, $accesshash ) = @_;
+  my( $host, $user, $accesshash, $debug ) = @_;
 
   eval "use Cpanel::Accounting;";
   die $@ if $@;
+
+  warn "creating new Cpanel::Accounting connection to $user@$host\n"
+    if $debug;
 
   my $whm = new Cpanel::Accounting;
   $whm->{'host'}       = $host;
