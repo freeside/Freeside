@@ -472,7 +472,8 @@ sub replace {
 
       return "Can't change $xid!"
         if ! $conf->exists("svc_acct-edit_$xid")
-           && $old->$xid() != $new->$xid();
+           && $old->$xid() != $new->$xid()
+           && $new->cust_svc->part_svc->part_svc_column($xid)->columnflag ne 'F'
     }
 
   }

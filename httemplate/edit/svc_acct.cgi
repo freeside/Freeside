@@ -288,11 +288,9 @@ if ( $part_svc->part_svc_column('popnum')->columnflag eq 'F' ) {
         </TD>
       </TR>
   
-    <% } else { %>
-  
-      <INPUT TYPE="hidden" NAME="<%= $xid %>" VALUE="<%= $svc_acct->$xid() %>">
-  
     <% } %>
+  
+    <INPUT TYPE="hidden" NAME="<%= $xid %>" VALUE="<%= $svc_acct->$xid() %>">
   
   <% } else { %>
   
