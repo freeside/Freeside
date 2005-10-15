@@ -1476,11 +1476,20 @@ httemplate/docs/config.html
     'type'        => 'select-sub',
     'options_sub' => sub { eval "use FS::TicketSystem;";
                            die $@ if $@;
-                           FS::TicketSystem->queues();
+                           my $conf = new FS::Conf;
+                           if ( $conf->config('ticket_system') ) {
+                             FS::TicketSystem->queues();
+                           } else {
+                             ();
+                           }
                          },
     'option_sub'  => sub { eval "use FS::TicketSystem;";
                            die $@ if $@;
-                           FS::TicketSystem->queue(shift);
+                           if ( $conf->config('ticket_system') ) {
+                             FS::TicketSystem->queue(shift);
+                           } else {
+                             '';
+                           }
                          },
   },
 
