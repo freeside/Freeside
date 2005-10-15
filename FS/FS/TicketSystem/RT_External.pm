@@ -219,6 +219,8 @@ sub queues {
 sub queue {
   my($self, $queueid) = @_;
 
+  return '' unless $queueid;
+
   my $sql = "select name from queues where id = ?";
   my $sth = $dbh->prepare($sql) or die $dbh->errstr. " preparing $sql";
   $sth->execute($queueid)       or die $sth->errstr. " executing $sql";
