@@ -81,96 +81,96 @@ SPAN.nav {  font-family: Verdana, Arial, Helvetica, sans-serif;
 a.topnav-0 {  font-family: Verdana, sans-serif;
 	 font-size: 16px;
 	 font-weight: normal;
-	 color: #FFFFFF;
+	 color: #000000;
 	 text-decoration: none;
 	 white-space: nowrap}
 a.topnav-1 {  font-family: Verdana, sans-serif;
 	 font-size: 14px;
 	 font-weight: normal;
-	 color: #FFFFFF;
+	 color: #000000;
 	 text-decoration: none;
 	 white-space: nowrap}
 a.topnav-2 {  font-family: Verdana, sans-serif;
 	 font-size: 12px;
 	 font-weight: normal;
-	 color: #FFFFFF;
+	 color: #000000;
 	 text-decoration: none;
 	 white-space: nowrap}
 a.topnav-3 {  font-family: Verdana, sans-serif;
 	 font-size: 11px;
 	 font-weight: normal;
-	 color: #FFFFFF;
+	 color: #000000;
 	 text-decoration: none;
 	 white-space: nowrap}
 a.topnav-4 {  font-family: Verdana, sans-serif;
 	 font-size: 11px;
 	 font-weight: normal;
-	 color: #FFFFFF;
+	 color: #000000;
 	 text-decoration: none;
 	 white-space: nowrap}
 a.topnav-5 {  font-family: Verdana, sans-serif;
 	 font-size: 11px;
 	 font-weight: normal;
-	 color: #FFFFFF;
+	 color: #000000;
 	 text-decoration: none;
 	 white-space: nowrap}
 li.topnav-0-minor {
-	 border-top: solid #999999 1px;
+	 border-top: solid #777777 1px;
 	 padding-top: .1em;
 	 margin-top: .5em;
 }
 li.topnav-1-minor {
-	 border-top: solid #999999 1px;
+	 border-top: solid #777777 1px;
 	 padding-top: .1em;
 	 margin-top: .5em;
 }
 li.topnav-2-minor {
-	 border-top: solid #999999 1px;
+	 border-top: solid #777777 1px;
 	 padding-top: .1em;
 	 margin-top: .5em;
 }
 li.topnav-3-minor {
-	 border-top: solid #999999 1px;
+	 border-top: solid #777777 1px;
 	 padding-top: .1em;
 	 margin-top: .5em;
 }
 li.topnav-4-minor {
-	 border-top: solid #999999 1px;
+	 border-top: solid #777777 1px;
 	 padding-top: .1em;
 	 margin-top: .5em;
 }
 li.topnav-5-minor {
-	 border-top: solid #999999 1px;
+	 border-top: solid #777777 1px;
 	 padding-top: .1em;
 	 margin-top: .5em;
 }
 li.topnav-0-major {
-	 border-bottom: solid white 1px;
+	 border-bottom: solid black 1px;
 	 padding-top: .25em;
 	 padding-bottom: .5em;
 }
 li.topnav-1-major {
-	 border-bottom: solid white 1px;
+	 border-bottom: solid black 1px;
 	 padding-top: .25em;
 	 padding-bottom: .5em;
 }
 li.topnav-2-major {
-	 border-bottom: solid white 1px;
+	 border-bottom: solid black 1px;
 	 padding-top: .25em;
 	 padding-bottom: .5em;
 }
 li.topnav-3-major {
-	 border-bottom: solid white 1px;
+	 border-bottom: solid black 1px;
 	 padding-top: .25em;
 	 padding-bottom: .5em;
 }
 li.topnav-4-major {
-	 border-bottom: solid white 1px;
+	 border-bottom: solid black 1px;
 	 padding-top: .25em;
 	 padding-bottom: .5em;
 }
 li.topnav-5-major {
-	 border-bottom: solid white 1px;
+	 border-bottom: solid black 1px;
 	 padding-top: .25em;
 	 padding-bottom: .5em;
 }
@@ -191,37 +191,37 @@ li.topnav-5-major {
 a.currenttopnav-0 {  font-family: Verdana, sans-serif;
 	 font-size: 16px;
          font-weight: bold;
-	 color: #FFFF66;
+	 color: #000000; background-color: #cccccc;
 	 text-decoration: none;
 	 white-space: nowrap}
 a.currenttopnav-1 {  font-family: Verdana, sans-serif;
 	 font-size: 14px;
          font-weight: bold;
-	 color: #FFFF66;
+	 color: #000000; background-color: #cccccc;
 	 text-decoration: none;
 	 white-space: nowrap}
 a.currenttopnav-2 {  font-family: Verdana, sans-serif;
 	 font-size: 12px;
          font-weight: normal;
-	 color: #FFFF66;
+	 color: #000000; background-color: #cccccc;
 	 text-decoration: none;
 	 white-space: nowrap}
 a.currenttopnav-3 {  font-family: Verdana, sans-serif;
 	 font-size: 11px;
          font-weight: normal;
-	 color: #FFFF66;
+	 color: #000000; background-color: #cccccc;
 	 text-decoration: none;
 	 white-space: nowrap}
 a.currenttopnav-4 {  font-family: Verdana, sans-serif;
 	 font-size: 11px;
          font-weight: normal;
-	 color: #FFFF66;
+	 color: #000000; background-color: #cccccc;
 	 text-decoration: none;
 	 white-space: nowrap}
 a.currenttopnav-5 {  font-family: Verdana, sans-serif;
 	 font-size: 11px;
          font-weight: normal;
-	 color: #FFFF66;
+	 color: #000000; background-color: #cccccc;
 	 text-decoration: none;
 	 white-space: nowrap}
 li.currenttopnav-0-minor {
@@ -230,57 +230,57 @@ li.currenttopnav-0-minor {
 	 margin-top: .5em;
 }
 li.currenttopnav-1-minor {
-	 border-top: solid #999999 1px;
+	 border-top: solid #777777 1px;
 	 padding-top: .1em;
 	 margin-top: .5em;
 }
 li.currenttopnav-2-minor {
-	 border-top: solid #999999 1px;
+	 border-top: solid #777777 1px;
 	 padding-top: .1em;
 	 margin-top: .5em;
 }
 li.currenttopnav-3-minor {
-	 border-top: solid #999999 1px;
+	 border-top: solid #777777 1px;
 	 padding-top: .1em;
 	 margin-top: .5em;
 }
 li.currenttopnav-4-minor {
-	 border-top: solid #999999 1px;
+	 border-top: solid #777777 1px;
 	 padding-top: .1em;
 	 margin-top: .5em;
 }
 li.currenttopnav-5-minor {
-	 border-top: solid #999999 1px;
+	 border-top: solid #777777 1px;
 	 padding-top: .1em;
 	 margin-top: .5em;
 }
 li.currenttopnav-0-major {
-	 border-bottom: solid white 1px;
+	 border-bottom: solid black 1px;
 	 padding-top: .25em;
 	 padding-bottom: .5em;
 }
 li.currenttopnav-1-major {
-	 border-bottom: solid white 1px;
+	 border-bottom: solid black 1px;
 	 padding-top: .25em;
 	 padding-bottom: .5em;
 }
 li.currenttopnav-2-major {
-	 border-bottom: solid white 1px;
+	 border-bottom: solid black 1px;
 	 padding-top: .25em;
 	 padding-bottom: .5em;
 }
 li.currenttopnav-3-major {
-	 border-bottom: solid white 1px;
+	 border-bottom: solid black 1px;
 	 padding-top: .25em;
 	 padding-bottom: .5em;
 }
 li.currenttopnav-4-major {
-	 border-bottom: solid white 1px;
+	 border-bottom: solid black 1px;
 	 padding-top: .25em;
 	 padding-bottom: .5em;
 }
 li.currenttopnav-5-major {
-	 border-bottom: solid white 1px;
+	 border-bottom: solid black 1px;
 	 padding-top: .25em;
 	 padding-bottom: .5em;
 }

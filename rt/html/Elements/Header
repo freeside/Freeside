@@ -77,7 +77,6 @@ ONLOAD="
 >
 <table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#FFFFFF">
   <tr> 
-<<<<<<< Header
     <td colspan=2 rowspan=2><img border=0 alt="freeside" src="<%$RT::WebImagesURL%>/small-logo.png" width="92" height="62"></td>
     <td align="left" rowspan=2><font size=6><% &RT::URI::freeside::FreesideGetConfig('company_name') %> Ticketing</font></td>
     <td align="right" valign="top">
