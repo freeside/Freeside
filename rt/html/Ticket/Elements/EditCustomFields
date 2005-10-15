@@ -1,8 +1,8 @@
-%# {{{ BEGIN BPS TAGGED BLOCK
+%# BEGIN BPS TAGGED BLOCK {{{
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -42,7 +42,7 @@
 %# works based on those contributions, and sublicense and distribute
 %# those contributions and any derivatives thereof.
 %# 
-%# }}} END BPS TAGGED BLOCK
+%# END BPS TAGGED BLOCK }}}
 <table>
 <tr>
 <td valign="top" width="50%">
@@ -66,7 +66,11 @@
       <b><%$CustomField->Name%></b><br>
       <i><%$CustomField->FriendlyType%></i>
     </td>
-    <td class="entry"><& EditCustomField, TicketObj => $TicketObj, CustomField => $CustomField, NamePrefix => $NamePrefix &></td>
+    <td class="entry"><& /Elements/EditCustomField, 
+        Object => $TicketObj, 
+        CustomField => $CustomField, 
+        NamePrefix => $NamePrefix 
+        &></td>
   </tr>
 % }
 </table>
@@ -79,12 +83,12 @@ my $CustomFields;
 my $NamePrefix;
 
 if ($TicketObj) {
- $CustomFields = $TicketObj->QueueObj->CustomFields();
-  $NamePrefix = "Ticket-".$TicketObj->Id."-CustomField-";
+ $CustomFields = $TicketObj->CustomFields();
+  $NamePrefix = "Object-RT::Ticket-".$TicketObj->Id."-CustomField-";
 
 } else {
- $CustomFields = $QueueObj->CustomFields();
-  $NamePrefix = "CustomField-";
+ $CustomFields = $QueueObj->TicketCustomFields();
+  $NamePrefix = "Object-RT::Ticket--CustomField-";
 }
 
 

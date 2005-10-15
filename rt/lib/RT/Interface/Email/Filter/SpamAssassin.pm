@@ -1,8 +1,8 @@
-# {{{ BEGIN BPS TAGGED BLOCK
+# BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -42,22 +42,31 @@
 # works based on those contributions, and sublicense and distribute
 # those contributions and any derivatives thereof.
 # 
-# }}} END BPS TAGGED BLOCK
+# END BPS TAGGED BLOCK }}}
 package RT::Interface::Email::Filter::SpamAssassin;
 
 use Mail::SpamAssassin;
 my $spamtest = Mail::SpamAssassin->new();
 
 sub GetCurrentUser {
-    my $item = shift;
-    my $status = $spamtest->check ($item);
-    return (undef, 0) unless $status->is_spam();
+    my %args = (
+        Message     => undef,
+        CurrentUser => undef,
+        AuthLevel   => undef,
+        @_
+    );
+    my $status = $spamtest->check( $args{'Message'} );
+    return ( $args{'CurrentUser'}, $args{'AuthLevel'} )
+      unless $status->is_spam();
+
     eval { $status->rewrite_mail() };
-    if ($status->get_hits > $status->get_required_hits()*1.5) { 
+    if ( $status->get_hits > $status->get_required_hits() * 1.5 ) {
+
         # Spammy indeed
-        return (undef, -1);
+        return ( $args{'CurrentUser'}, -1 );
     }
-    return (undef, 0);
+    return ( $args{'CurrentUser'}, $args{'AuthLevel'} );
+
 }
 
 =head1 NAME

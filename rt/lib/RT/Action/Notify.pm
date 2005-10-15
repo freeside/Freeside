@@ -1,8 +1,8 @@
-# {{{ BEGIN BPS TAGGED BLOCK
+# BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -42,7 +42,7 @@
 # works based on those contributions, and sublicense and distribute
 # those contributions and any derivatives thereof.
 # 
-# }}} END BPS TAGGED BLOCK
+# END BPS TAGGED BLOCK }}}
 #
 package RT::Action::Notify;
 require RT::Action::SendEmail;
@@ -158,9 +158,9 @@ sub SetRecipients {
         @{ $self->{'Bcc'} } = @Bcc;
     }
     else {
-        @{ $self->{'To'} }  = grep ( !/^$creator$/, @To );
-        @{ $self->{'Cc'} }  = grep ( !/^$creator$/, @Cc );
-        @{ $self->{'Bcc'} } = grep ( !/^$creator$/, @Bcc );
+        @{ $self->{'To'} }  = grep ( lc $_ ne lc $creator, @To );
+        @{ $self->{'Cc'} }  = grep ( lc $_ ne lc $creator, @Cc );
+        @{ $self->{'Bcc'} } = grep ( lc $_ ne lc $creator, @Bcc );
     }
     @{ $self->{'PseudoTo'} } = @PseudoTo;
 

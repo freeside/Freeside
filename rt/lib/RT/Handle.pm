@@ -1,8 +1,8 @@
-# {{{ BEGIN BPS TAGGED BLOCK
+# BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -42,7 +42,8 @@
 # works based on those contributions, and sublicense and distribute
 # those contributions and any derivatives thereof.
 # 
-# }}} END BPS TAGGED BLOCK
+# END BPS TAGGED BLOCK }}}
+
 =head1 NAME
 
   RT::Handle - RT's database handle
@@ -89,7 +90,9 @@ sub Connect {
     my $self = shift;
 
     if ($RT::DatabaseType eq 'Oracle') {
-        $ENV{'NLS_LANG'} = ".UTF8";
+        $ENV{'NLS_LANG'} = "AMERICAN_AMERICA.AL32UTF8";
+        $ENV{'NLS_NCHAR'} = "AL32UTF8";
+        
     }
 
     $self->SUPER::Connect(
@@ -101,19 +104,23 @@ sub Connect {
    
 }
 
-=item BuildDSN
+=head2 BuildDSN
 
 Build the DSN for the RT database. doesn't take any parameters, draws all that
 from the config file.
 
 =cut
 
+use File::Spec;
 
 sub BuildDSN {
     my $self = shift;
 # Unless the database port is a positive integer, we really don't want to pass it.
 $RT::DatabasePort = undef unless (defined $RT::DatabasePort && $RT::DatabasePort =~ /^(\d+)$/);
 $RT::DatabaseHost = undef unless (defined $RT::DatabaseHost && $RT::DatabaseHost ne '');
+$RT::DatabaseName = File::Spec->catfile($RT::VarPath, $RT::DatabaseName)
+    if ($RT::DatabaseType eq 'SQLite') and
+	not File::Spec->file_name_is_absolute($RT::DatabaseName);
 
 
     $self->SUPER::BuildDSN(Host => $RT::DatabaseHost, 

@@ -1,8 +1,8 @@
-%# {{{ BEGIN BPS TAGGED BLOCK
+%# BEGIN BPS TAGGED BLOCK {{{
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -42,14 +42,14 @@
 %# works based on those contributions, and sublicense and distribute
 %# those contributions and any derivatives thereof.
 %# 
-%# }}} END BPS TAGGED BLOCK
+%# END BPS TAGGED BLOCK }}}
 <SELECT NAME=<%$Name%>>
 <OPTION VALUE="" 
-<% $Default eq undef && 'SELECTED' %>
+<% ! defined $Default && 'SELECTED' %>
 >-</OPTION>
 %while  (my $ScripCondition = $ScripConditions->Next) {
 <OPTION VALUE=<%$ScripCondition->Id%>
-<% $ScripCondition->Id == $Default && 'SELECTED' %>
+<% defined $Default && $ScripCondition->Id == $Default && 'SELECTED' %>
 ><% loc($ScripCondition->Name) %>
 </OPTION>
 %}

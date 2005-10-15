@@ -1,9 +1,9 @@
 
-# {{{ BEGIN BPS TAGGED BLOCK
+# BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -43,7 +43,7 @@
 # works based on those contributions, and sublicense and distribute
 # those contributions and any derivatives thereof.
 # 
-# }}} END BPS TAGGED BLOCK
+# END BPS TAGGED BLOCK }}}
 # Released under the terms of version 2 of the GNU Public License
 
 =head1 NAME
@@ -52,20 +52,12 @@
 
 =head1 SYNOPSIS
 
-  use RT::Group;
+use RT::Group;
 my $group = new RT::Group($CurrentUser);
 
 =head1 DESCRIPTION
 
 An RT group object.
-
-=head1 AUTHOR
-
-Jesse Vincent, jesse@bestpractical.com
-
-=head1 SEE ALSO
-
-RT
 
 =head1 METHODS
 
@@ -154,6 +146,9 @@ ok($group_3->HasMemberRecursively($principal_2) == undef, "group 3 has member 2 
 
 =cut
 
+
+package RT::Group;
+
 use strict;
 no warnings qw(redefine);
 
@@ -171,6 +166,7 @@ $RIGHTS = {
     ModifyOwnMembership => 'Join or leave this group',                 # loc_pair
     EditSavedSearches => 'Edit saved searches for this group',        # loc_pair
     ShowSavedSearches => 'Display saved searches for this group',        # loc_pair
+    SeeGroup => 'Make this group visible to user',                    # loc_pair
 };
 
 # Tell RT::ACE that this sort of object can get acls granted
@@ -435,6 +431,7 @@ sub LoadSystemRoleGroup {
 # }}}
 
 # {{{ sub Create
+
 =head2 Create
 
 You need to specify what sort of group you're creating by calling one of the other
@@ -469,6 +466,7 @@ sub _Create {
         Type        => undef,
         Instance    => '0',
         InsideTransaction => undef,
+        _RecordTransaction => 1,
         @_
     );
 
@@ -514,8 +512,12 @@ sub _Create {
     $cgm->Create(Group =>$self->PrincipalObj, Member => $self->PrincipalObj, ImmediateParent => $self->PrincipalObj);
 
 
+    if ( $args{'_RecordTransaction'} ) {
+	$self->_NewTransaction( Type => "Create" );
+    }
 
     $RT::Handle->Commit() unless ($args{'InsideTransaction'});
+
     return ( $id, $self->loc("Group created") );
 }
 
@@ -710,6 +712,7 @@ If passed a positive value, this group will be disabled. No rights it commutes o
 It will not appear in most group listings.
 
 This routine finds all the cached group members that are members of this group  (recursively) and disables them.
+
 =cut 
 
  # }}}
@@ -754,7 +757,7 @@ This routine finds all the cached group members that are members of this group  
 
     #Clear the key cache. TODO someday we may want to just clear a little bit of the keycache space. 
     # TODO what about the groups key cache?
-    RT::Principal->_InvalidateACLCache();
+    RT::Principal->InvalidateACLCache();
 
 
 
@@ -786,7 +789,8 @@ sub Disabled {
 
 =head2 DeepMembersObj
 
-Returns an RT::CachedGroupMembers object of this group's members.
+Returns an RT::CachedGroupMembers object of this group's members,
+including all members of subgroups.
 
 =cut
 
@@ -839,7 +843,7 @@ sub UserMembersObj {
 
 =head2 MembersObj
 
-Returns an RT::CachedGroupMembers object of this group's members.
+Returns an RT::GroupMembers object of this group's direct members.
 
 =cut
 
@@ -1165,11 +1169,70 @@ sub _DeleteMember {
 
 # }}}
 
+# {{{ sub _CleanupInvalidDelegations
+
+=head2 _CleanupInvalidDelegations { InsideTransaction => undef }
+
+Revokes all ACE entries delegated by members of this group which are
+inconsistent with their current delegation rights.  Does not perform
+permission checks.  Should only ever be called from inside the RT
+library.
+
+If called from inside a transaction, specify a true value for the
+InsideTransaction parameter.
+
+Returns a true value if the deletion succeeded; returns a false value
+and logs an internal error if the deletion fails (should not happen).
+
+=cut
+
+# XXX Currently there is a _CleanupInvalidDelegations method in both
+# RT::User and RT::Group.  If the recursive cleanup call for groups is
+# ever unrolled and merged, this code will probably want to be
+# factored out into RT::Principal.
+
+sub _CleanupInvalidDelegations {
+    my $self = shift;
+    my %args = ( InsideTransaction => undef,
+		  @_ );
+
+    unless ( $self->Id ) {
+	$RT::Logger->warning("Group not loaded.");
+	return (undef);
+    }
+
+    my $in_trans = $args{InsideTransaction};
+
+    # TODO: Can this be unrolled such that the number of DB queries is constant rather than linear in exploded group size?
+    my $members = $self->DeepMembersObj();
+    $members->LimitToUsers();
+    $RT::Handle->BeginTransaction() unless $in_trans;
+    while ( my $member = $members->Next()) {
+	my $ret = $member->MemberObj->_CleanupInvalidDelegations(InsideTransaction => 1,
+								 Object => $args{Object});
+	unless ($ret) {
+	    $RT::Handle->Rollback() unless $in_trans;
+	    return (undef);
+	}
+    }
+    $RT::Handle->Commit() unless $in_trans;
+    return(1);
+}
+
+# }}}
+
 # {{{ ACL Related routines
 
 # {{{ sub _Set
 sub _Set {
     my $self = shift;
+    my %args = (
+        Field => undef,
+        Value => undef,
+	TransactionType   => 'Set',
+	RecordTransaction => 1,
+        @_
+    );
 
 	if ($self->Domain eq 'Personal') {
    		if ($self->CurrentUser->PrincipalId == $self->Instance) {
@@ -1187,7 +1250,30 @@ sub _Set {
         	return ( 0, $self->loc('Permission Denied') );
     	}
 	}
-    return ( $self->SUPER::_Set(@_) );
+
+    my $Old = $self->SUPER::_Value("$args{'Field'}");
+    
+    my ($ret, $msg) = $self->SUPER::_Set( Field => $args{'Field'},
+					  Value => $args{'Value'} );
+    
+    #If we can't actually set the field to the value, don't record
+    # a transaction. instead, get out of here.
+    if ( $ret == 0 ) { return ( 0, $msg ); }
+
+    if ( $args{'RecordTransaction'} == 1 ) {
+
+        my ( $Trans, $Msg, $TransObj ) = $self->_NewTransaction(
+                                               Type => $args{'TransactionType'},
+                                               Field     => $args{'Field'},
+                                               NewValue  => $args{'Value'},
+                                               OldValue  => $Old,
+                                               TimeTaken => $args{'TimeTaken'},
+        );
+        return ( $Trans, scalar $TransObj->Description );
+    }
+    else {
+        return ( $ret, $msg );
+    }
 }
 
 # }}}
@@ -1195,7 +1281,7 @@ sub _Set {
 
 
 
-=item CurrentUserHasRight RIGHTNAME
+=head2 CurrentUserHasRight RIGHTNAME
 
 Returns true if the current user has the specified right for this group.
 
@@ -1275,5 +1361,21 @@ sub PrincipalId {
 }
 
 # }}}
+
+sub BasicColumns {
+    (
+	[ Name => 'Name' ],
+	[ Description => 'Description' ],
+    );
+}
+
 1;
+
+=head1 AUTHOR
+
+Jesse Vincent, jesse@bestpractical.com
+
+=head1 SEE ALSO
+
+RT
 

@@ -1,8 +1,8 @@
-%# {{{ BEGIN BPS TAGGED BLOCK
+%# BEGIN BPS TAGGED BLOCK {{{
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -42,30 +42,33 @@
 %# works based on those contributions, and sublicense and distribute
 %# those contributions and any derivatives thereof.
 %# 
-%# }}} END BPS TAGGED BLOCK
+%# END BPS TAGGED BLOCK }}}
 <& /Admin/Elements/Header, Title => loc('Select a user') &>
 <& /Admin/Elements/UserTabs, current_tab => 'Admin/Users/', 
     current_subtab => 'Admin/Users/',
     Title => loc('Select a user') &>
 
-
-
-
-<%$caption%>:<BR>
-<UL>
+<h1><%$caption%></h1>
+<p><&|/l&>Select a user</&>:</p>
+<ul>
 %if ($users->Count == 0) {
-<LI> <i><&|/l&>No users matching search criteria found.</&></i>
+<li><i><&|/l&>No users matching search criteria found.</&></i></li>
 % }
+%my @ids;
 %while ( $user = $users->Next) {
+%    push @ids, $user->Id;
 <LI><A HREF="Modify.html?id=<%$user->id%>"><%$user->Name || loc('(no name listed)')%></a></LI>
 %}
-
 </UL>
+%if (my $ids = join(',', @ids)) {
+<em>(<a href="<%$RT::WebPath%>/Download/Tabular/User/<% $ids %>/Users.tsv"><&|/l&>Download as a tab-delimited file</&></a>)</em><br>
+%}
+
 <br><br>
 <FORM METHOD=POST ACTION="<% $RT::WebPath %>/Admin/Users/index.html">
 
 <&|/l&>Find people whose</&> <& /Elements/SelectUsers &><BR>
-<input type="checkbox" name="FindDisabledUsers"> <&|/l&>Include disabled users in search.</&>
+<input type="checkbox" name="FindDisabledUsers" value="1"> <&|/l&>Include disabled users in search.</&>
 <BR>
 <div align=right><input type=submit value="<&|/l&>Go!</&>"></div> 
 </FORM>
@@ -78,19 +81,26 @@ if ($FindDisabledUsers) {
 	$users->{'find_disabled_rows'} = 1;
 }
 
-unless (defined $UserString) {
-    $users->LimitToPrivileged();
-    $caption = loc("Privileged users");
+if (length $UserString) {
+    $caption = loc("Users matching search criteria");
+    if ($UserField =~ /^CustomField-(\d+)/) {
+	$users->LimitCustomField(
+	    CUSTOMFIELD => $1,
+	    OPERATOR => $UserOp,
+	    VALUE => $UserString,
+	); 
+    }
+    else {
+	$users->Limit(
+	    FIELD => $UserField,
+	    OPERATOR => $UserOp,
+	    VALUE => $UserString,
+	); 
+    }
 }
 else {
-    $caption = loc("Users matching search criteria");
-
-  if ($UserString) {
-	$users->Limit( FIELD => $UserField,
-		        OPERATOR => $UserOp,
-		       VALUE => $UserString); 
-
-}
+    $caption = loc("Privileged users");
+    $users->LimitToPrivileged;
 }
 </%INIT>
 <%ARGS>

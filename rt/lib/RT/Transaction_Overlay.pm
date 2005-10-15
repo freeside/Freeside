@@ -1,8 +1,8 @@
-# {{{ BEGIN BPS TAGGED BLOCK
+# BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -42,7 +42,8 @@
 # works based on those contributions, and sublicense and distribute
 # those contributions and any derivatives thereof.
 # 
-# }}} END BPS TAGGED BLOCK
+# END BPS TAGGED BLOCK }}}
+
 =head1 NAME
 
   RT::Transaction - RT\'s transaction object
@@ -70,6 +71,9 @@ ok(require RT::Transaction);
 
 =cut
 
+
+package RT::Transaction;
+
 use strict;
 no warnings qw(redefine);
 
@@ -84,8 +88,9 @@ use RT::Scrips;
 
 Create a new transaction.
 
-This routine should _never_ be called anything other Than RT::Ticket. It should not be called 
-from client code. Ever. Not ever.  If you do this, we will hunt you down. and break your kneecaps.
+This routine should _never_ be called by anything other than RT::Ticket. 
+It should not be called 
+from client code. Ever. Not ever.  If you do this, we will hunt you down and break your kneecaps.
 Then the unpleasant stuff will start.
 
 TODO: Document what gets passed to this
@@ -97,7 +102,6 @@ sub Create {
     my %args = (
         id             => undef,
         TimeTaken      => 0,
-        Ticket         => 0,
         Type           => 'undefined',
         Data           => '',
         Field          => undef,
@@ -106,24 +110,36 @@ sub Create {
         MIMEObj        => undef,
         ActivateScrips => 1,
         CommitScrips => 1,
+	ObjectType => 'RT::Ticket',
+	ObjectId => 0,
+	ReferenceType => undef,
+        OldReference       => undef,
+        NewReference       => undef,
         @_
     );
 
+    $args{ObjectId} ||= $args{Ticket};
+
     #if we didn't specify a ticket, we need to bail
-    unless ( $args{'Ticket'} ) {
-        return ( 0, $self->loc( "Transaction->Create couldn't, as you didn't specify a ticket id"));
+    unless ( $args{'ObjectId'} && $args{'ObjectType'}) {
+        return ( 0, $self->loc( "Transaction->Create couldn't, as you didn't specify an object type and id"));
     }
 
 
 
     #lets create our transaction
-    my %params = (Ticket    => $args{'Ticket'},
+    my %params = (
         Type      => $args{'Type'},
         Data      => $args{'Data'},
         Field     => $args{'Field'},
         OldValue  => $args{'OldValue'},
         NewValue  => $args{'NewValue'},
-        Created   => $args{'Created'}
+        Created   => $args{'Created'},
+	ObjectType => $args{'ObjectType'},
+	ObjectId => $args{'ObjectId'},
+	ReferenceType => $args{'ReferenceType'},
+	OldReference => $args{'OldReference'},
+	NewReference => $args{'NewReference'},
     );
 
     # Parameters passed in during an import that we probably don't want to touch, otherwise
@@ -137,20 +153,20 @@ sub Create {
 
 
     #Provide a way to turn off scrips if we need to
-        $RT::Logger->debug('About to think about scrips for transaction' .$self->Id);            
-    if ( $args{'ActivateScrips'} ) {
+        $RT::Logger->debug('About to think about scrips for transaction #' .$self->Id);
+    if ( $args{'ActivateScrips'} and $args{'ObjectType'} eq 'RT::Ticket' ) {
        $self->{'scrips'} = RT::Scrips->new($RT::SystemUser);
 
-        $RT::Logger->debug('About to prepare scrips for transaction' .$self->Id);            
+        $RT::Logger->debug('About to prepare scrips for transaction #' .$self->Id); 
 
         $self->{'scrips'}->Prepare(
             Stage       => 'TransactionCreate',
             Type        => $args{'Type'},
-            Ticket      => $args{'Ticket'},
+            Ticket      => $args{'ObjectId'},
             Transaction => $self->id,
         );
         if ($args{'CommitScrips'} ) {
-            $RT::Logger->debug('About to commit scrips for transaction' .$self->Id);
+            $RT::Logger->debug('About to commit scrips for transaction #' .$self->Id);
             $self->{'scrips'}->Commit();
         }
     }
@@ -178,10 +194,34 @@ sub Scrips {
 
 # {{{ sub Delete
 
+=head2 Delete
+
+Delete this transaction. Currently DOES NOT CHECK ACLS
+
+=cut
+
 sub Delete {
     my $self = shift;
-    return ( 0,
-        $self->loc('Deleting this object could break referential integrity') );
+
+
+    $RT::Handle->BeginTransaction();
+
+    my $attachments = $self->Attachments;
+
+    while (my $attachment = $attachments->Next) {
+        my ($id, $msg) = $attachment->Delete();
+        unless ($id) {
+            $RT::Handle->Rollback();
+            return($id, $self->loc("System Error: [_1]", $msg));
+        }
+    }
+    my ($id,$msg) = $self->SUPER::Delete();
+        unless ($id) {
+            $RT::Handle->Rollback();
+            return($id, $self->loc("System Error: [_1]", $msg));
+        }
+    $RT::Handle->Commit();
+    return ($id,$msg);
 }
 
 # }}}
@@ -386,7 +426,7 @@ sub Attachments {
         }
 
         #if they ain't got rights to see, return an empty object
-        else {
+        elsif ($self->__Value('ObjectType') eq "RT::Ticket") {
             unless ( $self->CurrentUserHasRight('ShowTicket') ) {
                 return ( $self->{'attachments'} );
             }
@@ -467,7 +507,7 @@ sub Description {
     }
 
     #if they ain't got rights to see, don't let em
-    else {
+    elsif ($self->__Value('ObjectType') eq "RT::Ticket") {
         unless ( $self->CurrentUserHasRight('ShowTicket') ) {
             return ($self->loc("Permission Denied") );
         }
@@ -493,7 +533,6 @@ Returns a text string which briefly describes this transaction
 sub BriefDescription {
     my $self = shift;
 
-
     #If it's a comment or a comment email record,
     #  we need to be extra special careful
     if ( $self->__Value('Type') =~ /^Comment/ ) {
@@ -503,42 +542,67 @@ sub BriefDescription {
     }
 
     #if they ain't got rights to see, don't let em
-    else {
+    elsif ( $self->__Value('ObjectType') eq "RT::Ticket" ) {
         unless ( $self->CurrentUserHasRight('ShowTicket') ) {
             return ( $self->loc("Permission Denied") );
         }
     }
 
-    my $type = $self->Type; #cache this, rather than calling it 30 times
+    my $type = $self->Type;    #cache this, rather than calling it 30 times
 
-    if ( !defined( $type ) ) {
+    if ( !defined($type) ) {
         return $self->loc("No transaction type specified");
     }
 
+    my $obj_type = $self->FriendlyObjectType;
+
     if ( $type eq 'Create' ) {
-        return ($self->loc("Ticket created"));
+        return ( $self->loc( "[_1] created", $obj_type ) );
     }
     elsif ( $type =~ /Status/ ) {
         if ( $self->Field eq 'Status' ) {
             if ( $self->NewValue eq 'deleted' ) {
-                return ($self->loc("Ticket deleted"));
+                return ( $self->loc( "[_1] deleted", $obj_type ) );
             }
             else {
-                return ( $self->loc("Status changed from [_1] to [_2]", $self->loc($self->OldValue), $self->loc($self->NewValue) ));
+                return (
+                    $self->loc(
+                        "Status changed from [_1] to [_2]",
+                        "'" . $self->loc( $self->OldValue ) . "'",
+                        "'" . $self->loc( $self->NewValue ) . "'"
+                    )
+                );
 
             }
         }
 
         # Generic:
-       my $no_value = $self->loc("(no value)"); 
-        return ( $self->loc( "[_1] changed from [_2] to [_3]", $self->Field , ( $self->OldValue || $no_value ) ,  $self->NewValue ));
+        my $no_value = $self->loc("(no value)");
+        return (
+            $self->loc(
+                "[_1] changed from [_2] to [_3]",
+                $self->Field,
+                ( $self->OldValue ? "'" . $self->OldValue . "'" : $no_value ),
+                "'" . $self->NewValue . "'"
+            )
+        );
     }
 
-    if (my $code = $_BriefDescriptions{$type}) {
+    if ( my $code = $_BriefDescriptions{$type} ) {
         return $code->($self);
     }
 
-    return $self->loc( "Default: [_1]/[_2] changed from [_3] to [_4]", $type, $self->Field, $self->OldValue, $self->NewValue );
+    return $self->loc(
+        "Default: [_1]/[_2] changed from [_3] to [_4]",
+        $type,
+        $self->Field,
+        (
+            $self->OldValue
+            ? "'" . $self->OldValue . "'"
+            : $self->loc("(no value)")
+        ),
+        "'" . $self->NewValue . "'"
+    );
 }
 
 %_BriefDescriptions = (
@@ -600,7 +664,7 @@ sub BriefDescription {
         my $self = shift;
         my $Old = RT::User->new( $self->CurrentUser );
         $Old->Load( $self->OldValue );
-        return $self->loc("Stolen from [_1] ",  $Old->Name);
+        return $self->loc("Stolen from [_1]",  $Old->Name);
     },
     Give => sub {
         my $self = shift;
@@ -702,7 +766,10 @@ sub BriefDescription {
     },
     Set => sub {
         my $self = shift;
-        if ( $self->Field eq 'Queue' ) {
+        if ( $self->Field eq 'Password' ) {
+            return $self->loc('Password changed');
+        }
+        elsif ( $self->Field eq 'Queue' ) {
             my $q1 = new RT::Queue( $self->CurrentUser );
             $q1->Load( $self->OldValue );
             my $q2 = new RT::Queue( $self->CurrentUser );
@@ -719,7 +786,7 @@ sub BriefDescription {
             return $self->loc( "[_1] changed from [_2] to [_3]", $self->Field, $t2->AsString, $t1->AsString );
         }
         else {
-            return $self->loc( "[_1] changed from [_2] to [_3]", $self->Field, $self->OldValue, $self->NewValue );
+            return $self->loc( "[_1] changed from [_2] to [_3]", $self->Field, ($self->OldValue? "'".$self->OldValue ."'" : $self->loc("(no value)")) , "'". $self->NewValue."'" );
         }
     },
     PurgeTransaction => sub {
@@ -743,6 +810,7 @@ Returns false otherwise
 
 sub IsInbound {
     my $self = shift;
+    $self->ObjectType eq 'RT::Ticket' or return undef;
     return ( $self->TicketObj->IsRequestor( $self->CreatorObj->PrincipalId ) );
 }
 
@@ -750,23 +818,11 @@ sub IsInbound {
 
 # }}}
 
-sub _ClassAccessible {
+sub _OverlayAccessible {
     {
 
-        id => { read => 1, type => 'int(11)', default => '' },
-          EffectiveTicket =>
-          { read => 1, write => 1, type => 'int(11)', default => '' },
-          Ticket =>
-          { read => 1, public => 1, type => 'int(11)', default => '' },
-          TimeTaken => { read => 1, type => 'int(11)',      default => '' },
-          Type      => { read => 1, type => 'varchar(20)',  default => '' },
-          Field     => { read => 1, type => 'varchar(40)',  default => '' },
-          OldValue  => { read => 1, type => 'varchar(255)', default => '' },
-          NewValue  => { read => 1, type => 'varchar(255)', default => '' },
-          Data      => { read => 1, type => 'varchar(100)', default => '' },
-          Creator => { read => 1, auto => 1, type => 'int(11)', default => '' },
-          Created =>
-          { read => 1, auto => 1, type => 'datetime', default => '' },
+          ObjectType => { public => 1},
+          ObjectId => { public => 1},
 
     }
 };
@@ -823,9 +879,16 @@ sub _Value {
         }
 
     }
+    # Make sure the user can see the custom field before showing that it changed
+    elsif ( ( $self->__Value('Type') eq 'CustomField' ) && $self->__Value('Field') ) {
+        my $cf = RT::CustomField->new( $self->CurrentUser );
+        $cf->Load( $self->__Value('Field') );
+        return (undef) unless ( $cf->CurrentUserHasRight('SeeCustomField') );
+    }
+
 
     #if they ain't got rights to see, don't let em
-    else {
+    elsif ($self->__Value('ObjectType') eq "RT::Ticket") {
         unless ( $self->CurrentUserHasRight('ShowTicket') ) {
             return (undef);
         }
@@ -858,6 +921,150 @@ sub CurrentUserHasRight {
 }
 
 # }}}
+
+sub Ticket {
+    my $self = shift;
+    return $self->ObjectId;
+}
+
+sub TicketObj {
+    my $self = shift;
+    return $self->Object;
+}
+
+sub OldValue {
+    my $self = shift;
+    if (my $type = $self->__Value('ReferenceType')) {
+	my $Object = $type->new($self->CurrentUser);
+	$Object->Load($self->__Value('OldReference'));
+	return $Object->Content;
+    }
+    else {
+	return $self->__Value('OldValue');
+    }
+}
+
+sub NewValue {
+    my $self = shift;
+    if (my $type = $self->__Value('ReferenceType')) {
+	my $Object = $type->new($self->CurrentUser);
+	$Object->Load($self->__Value('NewReference'));
+	return $Object->Content;
+    }
+    else {
+	return $self->__Value('NewValue');
+    }
+}
+
+sub Object {
+    my $self  = shift;
+    my $Object = $self->__Value('ObjectType')->new($self->CurrentUser);
+    $Object->Load($self->__Value('ObjectId'));
+    return($Object);
+}
+
+sub FriendlyObjectType {
+    my $self = shift;
+    my $type = $self->ObjectType or return undef;
+    $type =~ s/^RT:://;
+    return $self->loc($type);
+}
+
+=head2 UpdateCustomFields
+    
+    Takes a hash of 
+
+    CustomField-<<Id>> => Value
+        or 
+
+    Object-RT::Transaction-CustomField-<<Id>> => Value parameters to update
+    this transaction's custom fields
+
+=cut
+
+sub UpdateCustomFields {
+    my $self = shift;
+    my %args = (@_);
+
+    # This method used to have an API that took a hash of a single
+    # value "ARGSRef", which was a reference to a hash of arguments.
+    # This was insane. The next few lines of code preserve that API
+    # while giving us something saner.
+       
+
+    # TODO: 3.6: DEPRECATE OLD API
+
+    my $args; 
+
+    if ($args{'ARGSRef'}) { 
+        $args = $args{ARGSRef};
+    } else {
+        $args = \%args;
+    }
+
+    foreach my $arg ( keys %$args ) {
+        next
+          unless ( $arg =~
+            /^(?:Object-RT::Transaction--)?CustomField-(\d+)/ );
+	next if $arg =~ /-Magic$/;
+        my $cfid   = $1;
+        my $values = $args->{$arg};
+        foreach
+          my $value ( UNIVERSAL::isa( $values, 'ARRAY' ) ? @$values : $values )
+        {
+            next unless length($value);
+            $self->_AddCustomFieldValue(
+                Field             => $cfid,
+                Value             => $value,
+                RecordTransaction => 0,
+            );
+        }
+    }
+}
+
+
+
+=head2 CustomFieldValues
+
+ Do name => id mapping (if needed) before falling back to RT::Record's CustomFieldValues
+
+ See L<RT::Record>
+
+=cut
+
+sub CustomFieldValues {
+    my $self  = shift;
+    my $field = shift;
+
+    if ( UNIVERSAL::can( $self->Object, 'QueueObj' ) ) {
+
+        unless ( $field =~ /^\d+$/o ) {
+            my $CFs = RT::CustomFields->new( $self->CurrentUser );
+             $CFs->Limit( FIELD => 'Name', VALUE => $field);
+            $CFs->LimitToLookupType($self->CustomFieldLookupType);
+            $CFs->LimitToGlobalOrObjectId($self->Object->QueueObj->id);
+            $field = $CFs->First->id if $CFs->First;
+        }
+    }
+    return $self->SUPER::CustomFieldValues($field);
+}
+
+# }}}
+
+# {{{ sub CustomFieldLookupType
+
+=head2 CustomFieldLookupType
+
+Returns the RT::Transaction lookup type, which can 
+be passed to RT::CustomField->Create() via the 'LookupType' hash key.
+
+=cut
+
+# }}}
+
+sub CustomFieldLookupType {
+    "RT::Queue-RT::Ticket-RT::Transaction";
+}
 
 # Transactions don't change. by adding this cache congif directiove, we don't lose pathalogically on long tickets.
 sub _CacheConfig {

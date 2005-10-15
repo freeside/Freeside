@@ -1,9 +1,9 @@
 #!/usr/bin/perl -w 
-# {{{ BEGIN BPS TAGGED BLOCK
+# BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -43,7 +43,7 @@
 # works based on those contributions, and sublicense and distribute
 # those contributions and any derivatives thereof.
 # 
-# }}} END BPS TAGGED BLOCK
+# END BPS TAGGED BLOCK }}}
 # Portions Copyright 2002 Autrijus Tang <autrijus@autrijus.org>
 
 use strict;
@@ -98,7 +98,7 @@ sub extract_strings_from_code {
 
     local $/;
     return if ( -d $_ );
-    return if ( $File::Find::dir =~ 'lib/blib|lib/t/autogen|var|m4|local' );
+    return if ( $File::Find::dir =~ 'lib/blib|lib/t/autogen|var|m4|local|\.svn' );
     return if ( /\.po$|\.bak$|~|,D|,B$|extract-message-catalog$/ );
     return if ( /^[\.#]/ );
     return if ( -f "$_.in" );
@@ -195,6 +195,7 @@ sub update {
     while (@lines) {
         my $msghdr = "";
         $msghdr .= shift @lines while ( $lines[0] && $lines[0] !~ /^msgid/ );
+        
         my $msgid  = shift @lines;
         my $msgstr = "";
         $msgstr .= shift @lines while ( $lines[0] && $lines[0] =~ /^(msgstr|")/ );
@@ -203,8 +204,8 @@ sub update {
 
         chomp $msgid;
         chomp $msgstr;
-        $msgid  =~ s/^msgid "(.*)"$/$1/    or warn $msgid;
-        $msgstr =~ s/^msgstr "(.*)"$/$1/ms or warn $msgstr;
+        $msgid  =~ s/^msgid "(.*)"\s*?$/$1/ms    or warn "$msgid in $file";
+        $msgstr =~ s/^msgstr "(.*)"\s*?$/$1/ms or warn "$msgstr  in $file";
 
         $Lexicon{$msgid} = $msgstr;
         $Header{$msgid}  = $msghdr;
@@ -229,6 +230,10 @@ sub update {
 
         my %seen;
         $out .= $Header{$_} if exists $Header{$_};
+
+
+
+        next if (!$f && $_ && !$Lexicon{$_});
         if ( $f && $f !~ /^\s+$/ ) {
 
             $out .= "#: $f\n";

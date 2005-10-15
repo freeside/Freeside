@@ -1,8 +1,8 @@
-# {{{ BEGIN BPS TAGGED BLOCK
+# BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -42,7 +42,8 @@
 # works based on those contributions, and sublicense and distribute
 # those contributions and any derivatives thereof.
 # 
-# }}} END BPS TAGGED BLOCK
+# END BPS TAGGED BLOCK }}}
+
 =head1 SYNOPSIS
 
   use RT::Attachment;
@@ -65,6 +66,9 @@ ok (require RT::Attachment);
 =end testing
 
 =cut
+
+
+package RT::Attachment;
 
 use strict;
 no warnings qw(redefine);
@@ -153,6 +157,13 @@ sub Create {
     defined($Subject) or $Subject = '';
     chomp($Subject);
 
+    #Get the Message-ID
+    my $MessageId = $Attachment->head->get( 'Message-ID', 0 );
+    defined($MessageId) or $MessageId = '';
+    chomp ($MessageId);
+    $MessageId =~ s/^<(.*)>$/$1/go;
+
+
     #Get the filename
     my $Filename = $Attachment->head->recommended_filename || eval {
 	${ $Attachment->head->{mail_hdr_hash}{'Content-Disposition'}[0] }
@@ -162,12 +173,19 @@ sub Create {
     # If a message has no bodyhandle, that means that it has subparts (or appears to)
     # and we should act accordingly.  
     unless ( defined $Attachment->bodyhandle ) {
+
         $id = $self->SUPER::Create(
             TransactionId => $args{'TransactionId'},
             Parent        => 0,
             ContentType   => $Attachment->mime_type,
             Headers => $Attachment->head->as_string,
+            MessageId => $MessageId,
             Subject => $Subject);
+        
+        unless ($id) {
+            $RT::Logger->crit("Attachment insert failed - ".$RT::Handle->dbh->errstr);
+
+        }
 
         foreach my $part ( $Attachment->parts ) {
             my $SubAttachment = new RT::Attachment( $self->CurrentUser );
@@ -176,7 +194,6 @@ sub Create {
                 Parent        => $id,
                 Attachment    => $part,
                 ContentType   => $Attachment->mime_type,
-                Headers       => $Attachment->head->as_string(),
 
             );
         }
@@ -186,21 +203,21 @@ sub Create {
     #If it's not multipart
     else {
 
-
-        my $Body = $Attachment->bodyhandle->as_string;
-
-
 	my ($ContentEncoding, $Body) = $self->_EncodeLOB($Attachment->bodyhandle->as_string, $Attachment->mime_type);
-
-
         my $id = $self->SUPER::Create( TransactionId => $args{'TransactionId'},
                                        ContentType   => $Attachment->mime_type,
                                        ContentEncoding => $ContentEncoding,
                                        Parent          => $args{'Parent'},
-                                       Headers       =>  $Attachment->head->as_string, 
+                                                  Headers       =>  $Attachment->head->as_string,
                                        Subject       =>  $Subject,
                                        Content         => $Body,
-                                       Filename => $Filename, );
+                                       Filename => $Filename, 
+                                        MessageId => $MessageId
+                                    );
+        unless ($id) {
+            $RT::Logger->crit("Attachment insert failed - ".$RT::Handle->dbh->errstr);
+        }
+
         return ($id);
     }
 }
@@ -220,7 +237,11 @@ sub Import {
     my %args = ( ContentEncoding => 'none',
 
 		 @_ );
-    return($self->SUPER::Create(@_));
+
+
+ ($args{'ContentEncoding'}, $args{'Content'}) = $self->_EncodeLOB($args{'Content'}, $args{'MimeType'});
+
+    return($self->SUPER::Create(%args));
 }
 
 # {{{ sub Content
@@ -234,26 +255,7 @@ before returning it.
 
 sub Content {
   my $self = shift;
-  my $decode_utf8 = (($self->ContentType =~ qr{^text/plain}i) ? 1 : 0);
-
-  if ( $self->ContentEncoding eq 'none' || ! $self->ContentEncoding ) {
-      return $self->_Value(
-	  'Content',
-	  decode_utf8 => $decode_utf8,
-      );
-  } elsif ( $self->ContentEncoding eq 'base64' ) {
-      return ( $decode_utf8
-        ? Encode::decode_utf8(MIME::Base64::decode_base64($self->_Value('Content')))
-        : MIME::Base64::decode_base64($self->_Value('Content'))
-      );
-  } elsif ( $self->ContentEncoding eq 'quoted-printable' ) {
-      return ( $decode_utf8
-        ? Encode::decode_utf8(MIME::QuotedPrint::decode($self->_Value('Content')))
-        : MIME::QuotedPrint::decode($self->_Value('Content'))
-      );
-  } else {
-      return( $self->loc("Unknown ContentEncoding [_1]", $self->ContentEncoding));
-  }
+   $self->_DecodeLOB($self->ContentType, $self->ContentEncoding, $self->_Value('Content', decode_utf8 => 0));
 }
 
 
@@ -265,7 +267,7 @@ sub Content {
 =head2 OriginalContent
 
 Returns the attachment's content as octets before RT's mangling.
-Currently, this just means restoring text/plain content back to its
+Currently, this just means restoring text content back to its
 original encoding.
 
 =cut
@@ -273,7 +275,8 @@ original encoding.
 sub OriginalContent {
   my $self = shift;
 
-  return $self->Content unless $self->ContentType eq 'text/plain';
+  return $self->Content unless (
+     $self->ContentType =~ qr{^(text/plain|message/rfc822)$}i) ;
   my $enc = $self->OriginalEncoding;
 
   my $content;
@@ -398,19 +401,16 @@ sub Quote {
 
 =head2 NiceHeaders
 
-Returns the To, From, Cc, Date and Subject headers.
-
-It is a known issue that this breaks if any of these headers are not
-properly unfolded.
+Returns a multi-line string of the To, From, Cc, Date and Subject headers.
 
 =cut
 
 sub NiceHeaders {
     my $self = shift;
     my $hdrs = "";
-    my @hdrs = split(/\n/,$self->Headers);
+    my @hdrs = $self->_SplitHeaders;
     while (my $str = shift @hdrs) {
-	    next unless $str =~ /^(To|From|RT-Send-Cc|Cc|Bcc:Date|Subject): /i;
+	    next unless $str =~ /^(To|From|RT-Send-Cc|Cc|Bcc|Date|Subject):/i;
 	    $hdrs .= $str . "\n";
 	    $hdrs .= shift( @hdrs ) . "\n" while ($hdrs[0] =~ /^[ \t]+/);
     }
@@ -433,10 +433,9 @@ an abstraction barrier that makes it impossible to pass this data directly
 sub Headers {
     my $self = shift;
     my $hdrs="";
-    for ($self->_SplitHeaders) {
-	    $hdrs.="$_\n" unless /^(RT-Send-Bcc):/i
-    }
-    return $hdrs;
+    my @headers =  grep { !/^RT-Send-Bcc/i } $self->_SplitHeaders;
+    return join("\n",@headers);
+
 }
 
 
@@ -535,7 +534,7 @@ sub _Value {
 =head2 _SplitHeaders
 
 Returns an array of this attachment object's headers, with one header 
-per array entry. multiple lines are folded
+per array entry. multiple lines are folded.
 
 =begin testing
 

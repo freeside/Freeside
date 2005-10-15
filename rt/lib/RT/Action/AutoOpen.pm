@@ -1,8 +1,8 @@
-# {{{ BEGIN BPS TAGGED BLOCK
+# BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -42,7 +42,7 @@
 # works based on those contributions, and sublicense and distribute
 # those contributions and any derivatives thereof.
 # 
-# }}} END BPS TAGGED BLOCK
+# END BPS TAGGED BLOCK }}}
 # This Action will open the BASE if a dependent is resolved.
 
 package RT::Action::AutoOpen;
@@ -74,6 +74,8 @@ sub Prepare {
     if ( ( $self->TicketObj->Status eq 'open' )
          || ( ( $self->TicketObj->Status eq 'new' )
               && $self->TransactionObj->IsInbound )
+         || ( defined $self->TransactionObj->Message->First
+              && $self->TransactionObj->Message->First->GetHeader('RT-Control') =~ /\bno-autoopen\b/i )
       ) {
 
         return undef;

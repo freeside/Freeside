@@ -1,8 +1,8 @@
-%# {{{ BEGIN BPS TAGGED BLOCK
+%# BEGIN BPS TAGGED BLOCK {{{
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -42,8 +42,11 @@
 %# works based on those contributions, and sublicense and distribute
 %# those contributions and any derivatives thereof.
 %# 
-%# }}} END BPS TAGGED BLOCK
+%# END BPS TAGGED BLOCK }}}
 <& /Elements/TitleBoxStart, title => loc('Saved searches') &>
+%# Hide all the save functionality if the user shouldn't see it.
+% if ($session{'CurrentUser'}->HasRight( Right => 'CreateSavedSearch',
+%                                       Object=> $RT::System )) {
 <&|/l&>Privacy:</&>
 % if ($CurrentSearch->{'Object'} && $CurrentSearch->{'Object'}->id) {
 <& SearchPrivacy, Object => $CurrentSearch->{'Object'}->Object &><br>
@@ -52,13 +55,14 @@
 % }
 <&|/l&>Description</&>:<br>
 <font size="-1"><input size="25" name="Description" value="<%$CurrentSearch->{'Description'}%>"></font>
-<br>
+<nobr>
 % if ($SearchId ne 'new') {
 % if ($Dirty) {
 <input type="submit" name="Revert" value="<%loc('Revert')%>">
 % }
 <input type="submit" name="Delete" value="<%loc('Delete')%>">
 <input type="submit" name="CopySearch" value="<%loc('Copy')%>">
+</nobr>
 
 % }
 
@@ -66,12 +70,18 @@
 <input type="submit" name="Save" value="<%loc('Save')%>">
 % }
 <hr>
+% }
 <&|/l&>Load saved search:</&><br>
 <& SelectSearchesForObjects, Name => 'LoadSavedSearch', Objects => \@Objects&>
 <input value="<%loc('Load')%>" type="submit">
 <& /Elements/TitleBoxEnd &>
 
 <%init>
+
+unless ($session{'CurrentUser'}->HasRight( Right => 'LoadSavedSearch',
+                                          Object=> $RT::System )) {
+    return;
+}
 my @Objects;
 
 push @Objects,  $session{CurrentUser}->UserObj;

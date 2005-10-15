@@ -1,8 +1,8 @@
-# {{{ BEGIN BPS TAGGED BLOCK
+# BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -42,7 +42,7 @@
 # works based on those contributions, and sublicense and distribute
 # those contributions and any derivatives thereof.
 # 
-# }}} END BPS TAGGED BLOCK
+# END BPS TAGGED BLOCK }}}
 package RT::Interface::Email::Auth::MailFrom;
 use RT::Interface::Email qw(ParseSenderAddressFromHead CreateUser);
 
@@ -116,6 +116,36 @@ sub GetCurrentUser {
                      || $unpriv->PrincipalObj->HasRight(
                                                        Object => $args{'Queue'},
                                                        Right  => 'ReplyToTicket'
+                     )
+              ) {
+                return ( $args{'CurrentUser'}, 0 );
+            }
+
+        }
+        elsif ( $args{'Action'} =~ /^take$/i ) {
+
+            # check to see whether "Everybody" or "Unprivileged users" can correspond on tickets
+            unless ( $everyone->PrincipalObj->HasRight(Object => $args{'Queue'},
+                                                       Right  => 'OwnTicket'
+                     )
+                     || $unpriv->PrincipalObj->HasRight(
+                                                       Object => $args{'Queue'},
+                                                       Right  => 'OwnTicket'
+                     )
+              ) {
+                return ( $args{'CurrentUser'}, 0 );
+            }
+
+        }
+        elsif ( $args{'Action'} =~ /^resolve$/i ) {
+
+            # check to see whether "Everybody" or "Unprivileged users" can correspond on tickets
+            unless ( $everyone->PrincipalObj->HasRight(Object => $args{'Queue'},
+                                                       Right  => 'ModifyTicket'
+                     )
+                     || $unpriv->PrincipalObj->HasRight(
+                                                       Object => $args{'Queue'},
+                                                       Right  => 'ModifyTicket'
                      )
               ) {
                 return ( $args{'CurrentUser'}, 0 );

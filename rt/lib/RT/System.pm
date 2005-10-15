@@ -1,8 +1,8 @@
-# {{{ BEGIN BPS TAGGED BLOCK
+# BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -42,7 +42,8 @@
 # works based on those contributions, and sublicense and distribute
 # those contributions and any derivatives thereof.
 # 
-# }}} END BPS TAGGED BLOCK
+# END BPS TAGGED BLOCK }}}
+
 =head1 NAME 
 
 RT::System
@@ -81,7 +82,10 @@ $RIGHTS = {
     AdminUsers     => 'Create, delete and modify users',              # loc_pair
     ModifySelf     => "Modify one's own RT account",                  # loc_pair
     DelegateRights =>
-      "Delegate specific rights which have been granted to you."      # loc_pair
+      "Delegate specific rights which have been granted to you.",     # loc_pair
+    ShowConfigTab => "show Configuration tab",     # loc_pair
+    LoadSavedSearch => "allow loading of saved searches",     # loc_pair
+    CreateSavedSearch => "allow creation of saved searches",      # loc_pair
 };
 
 # Tell RT::ACE that this sort of object can get acls granted
@@ -118,12 +122,14 @@ sub AvailableRights {
 
     my $queue = RT::Queue->new($RT::SystemUser);
     my $group = RT::Group->new($RT::SystemUser);
+    my $cf    = RT::CustomField->new($RT::SystemUser);
 
     my $qr =$queue->AvailableRights();
     my $gr = $group->AvailableRights();
+    my $cr = $cf->AvailableRights();
 
     # Build a merged list of all system wide rights, queue rights and group rights.
-    my %rights = (%{$RIGHTS}, %{$gr}, %{$qr});
+    my %rights = (%{$RIGHTS}, %{$gr}, %{$qr}, %{$cr});
     return(\%rights);
 }
 

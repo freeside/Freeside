@@ -1,8 +1,8 @@
-# {{{ BEGIN BPS TAGGED BLOCK
+# BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -42,7 +42,7 @@
 # works based on those contributions, and sublicense and distribute
 # those contributions and any derivatives thereof.
 # 
-# }}} END BPS TAGGED BLOCK
+# END BPS TAGGED BLOCK }}}
 package RT::URI::fsck_com_rt;
 
 use RT::Ticket;
@@ -75,7 +75,7 @@ ok (UNIVERSAL::isa($uri,RT::URI::fsck_com_rt), "It's an RT::URI::fsck_com_rt");
 ok ($uri->isa('RT::URI::base'), "It's an RT::URI::base");
 ok ($uri->isa('RT::Base'), "It's an RT::Base");
 
-is ($uri->LocalURIPrefix , 'fsck.com-rt://example.com');
+is ($uri->LocalURIPrefix , 'fsck.com-rt://'.$RT::Organization);
 
 =end testing
 

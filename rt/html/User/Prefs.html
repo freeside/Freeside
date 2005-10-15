@@ -1,8 +1,8 @@
-%# {{{ BEGIN BPS TAGGED BLOCK
+%# BEGIN BPS TAGGED BLOCK {{{
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -42,7 +42,7 @@
 %# works based on those contributions, and sublicense and distribute
 %# those contributions and any derivatives thereof.
 %# 
-%# }}} END BPS TAGGED BLOCK
+%# END BPS TAGGED BLOCK }}}
 <& /Elements/Header, Title=>loc("Preferences") &>
 <& /User/Elements/Tabs, 
     current_tab => 'User/Prefs.html', 
@@ -165,7 +165,7 @@
 %if ($UserObj->Privileged) {
 <BR>
 <& /Elements/TitleBoxStart, title => loc('Signature') &>
-<TEXTAREA COLS=80 ROWS=5 name="Signature" WRAP=HARD>
+<TEXTAREA COLS=80 ROWS=5 name="Signature" class="signature" WRAP=HARD>
 <%$UserObj->Signature%></TEXTAREA>
 <& /Elements/TitleBoxEnd &>
 % }
@@ -210,9 +210,10 @@ if ($UserObj->Id) {
 					    Object => $UserObj,
 					    ARGSRef => \%ARGS );
     if ($Lang) {
-        $session{'CurrentUser'}->LanguageHandle($Lang);
-        $session{'CurrentUser'}= $session{'CurrentUser'}; # Force writeback
+	$session{'CurrentUser'}->LanguageHandle($Lang);
+	$session{'CurrentUser'} = $session{'CurrentUser'}; # force writeback
     }
+
     push (@results,@fieldresults);
 
 

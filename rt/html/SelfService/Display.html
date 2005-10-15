@@ -1,8 +1,8 @@
-%# {{{ BEGIN BPS TAGGED BLOCK
+%# BEGIN BPS TAGGED BLOCK {{{
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -42,7 +42,7 @@
 %# works based on those contributions, and sublicense and distribute
 %# those contributions and any derivatives thereof.
 %# 
-%# }}} END BPS TAGGED BLOCK
+%# END BPS TAGGED BLOCK }}}
 <& /SelfService/Elements/Header, Title => loc('#[_1]: [_2]', $Ticket->id, $Ticket->Subject) &>
 
 <& /Elements/ListActions, actions => \@results &>
@@ -54,6 +54,7 @@
                 title_class=> 'inverse',  
                 color => "#993333" &>
                 <& /Ticket/Elements/ShowBasics, Ticket => $Ticket &>
+                <& /Ticket/Elements/ShowCustomFields, Ticket => $Ticket &>
           <& /Elements/TitleBoxEnd &>
 </TD>
         <TD VALIGN=TOP WIDTH="50%" class="boxcontainer">
@@ -69,7 +70,14 @@
 
 
 %#!!pape: selfservice_find_attachments.patch {{
-<& /Ticket/Elements/ShowHistory, Ticket => $Ticket, AttachPath => "Attachment", Attachments => $attachments, UpdatePath => "Update.html" &>
+<& /Ticket/Elements/ShowHistory, 
+      Ticket => $Ticket, 
+      URIFile => "Display.html", 
+      ShowHeaders => $ARGS{'ShowHeaders'},
+      AttachPath => "Attachment", 
+      Attachments => $attachments, 
+      UpdatePath => "Update.html" 
+&>
 %#!!pape: selfservice_find_attachments.patch }}
 
 
@@ -85,6 +93,30 @@ my ( $field, @results );
 my @id = ( ref $id eq 'ARRAY' ) ? @{$id} : ($id);
 
 my $Ticket = new RT::Ticket( $session{'CurrentUser'} );
+
+# store the uploaded attachment in session
+if ( $ARGS{'Attach'} ) {    # attachment?
+    $session{'Attachments'} = {} unless defined $session{'Attachments'};
+
+    my $subject = "$ARGS{'Attach'}";
+
+    # since CGI.pm deutf8izes the magic field, we need to add it back.
+    Encode::_utf8_on($subject);
+
+    # strip leading directories
+    $subject =~ s#^.*[\\/]##;
+
+    my $attachment = MakeMIMEEntity(
+        Subject             => $subject,
+        Body                => "",
+        AttachmentFieldName => 'Attach'
+    );
+
+    $session{'Attachments'} =
+    { %{ $session{'Attachments'} || {} },
+        $ARGS{'Attach'} => $attachment };
+}
+
 if ( $id[0] eq 'new' ) {
 
     # {{{ Create a new ticket
@@ -97,108 +129,87 @@ if ( $id[0] eq 'new' ) {
 
     unless ( $Queue->CurrentUserHasRight('CreateTicket') ) {
         $m->comp( 'Error.html',
-             Why =>
-               loc('You have no permission to create tickets in that queue.') );
+            Why =>
+              loc('You have no permission to create tickets in that queue.') );
         $m->abort;
     }
 
-    my @Requestors = split ( /\s*,\s*/, $ARGS{'Requestors'} );
-    my @Cc         = split ( /\s*,\s*/, $ARGS{'Cc'} );
 
-    my $MIMEObj = MakeMIMEEntity( Subject             => $ARGS{'Subject'},
-                                  From                => $ARGS{'From'},
-                                  Cc                  => $ARGS{'Cc'},
-                                  Body                => $ARGS{'Content'},
-                                  AttachmentFieldName => 'Attach' );
+    ( $Ticket, @results ) =
+    CreateTicket( Attachments => $session{'Attachments'}, %ARGS, Status => 'new' );
 
-    #TODO in Create_Details.html: priorities and due-date
-    my ( $id, $Trans, $ErrMsg ) = $Ticket->Create( Queue     => $ARGS{Queue},
-                                                   Requestor => \@Requestors,
-                                                   Cc        => \@Cc,
-                                                   Subject   => $ARGS{Subject},
-                                                   MIMEObj   => $MIMEObj );
-    unless ( $id && $Trans ) {
-        $m->comp( 'Error.html', Why => $ErrMsg );
-        $m->abort();
+    unless ( $Ticket->id ) {
+        $m->comp( 'Error.html', Why => join( "\n", @results ));
+              $m->abort();
+        }
+
+        # }}}
+
+        # delete temporary storage entry to make WebUI clean
+        unless ( keys %{ $session{'Attachments'} } and $ARGS{'UpdateAttach'} ) {
+            delete $session{'Attachments'};
+        }
+
+        # }}}
     }
-
-    push ( @results, $ErrMsg );
+    else {
+        unless ( $Ticket->Load( $id[0] ) ) {
+            $m->comp( 'Error.html',
+                Why => loc( "Couldn't load ticket '[_1]'", $id ) );
+            $m->abort();
+        }
+    }
 
     # }}}
 
-# delete temporary storage entry to make WebUI clean
-unless (keys %{$session{'Attachments'}} and $ARGS{'UpdateAttach'}) {
-    delete $session{'Attachments'};
-}
-# }}}
-}
-else {
-    unless ( $Ticket->Load( $id[0] ) ) {
+    unless ( $Ticket->CurrentUserHasRight('ShowTicket') ) {
         $m->comp( 'Error.html',
-                  Why => loc( "Couldn't load ticket '[_1]'", $id ) );
+            Why => loc("No permission to display that ticket") );
         $m->abort();
     }
-}
 
-# }}}
+    my ( $code, $msg );
 
-unless ( $Ticket->CurrentUserHasRight('ShowTicket') ) {
-    $m->comp( 'Error.html',
-              Why => loc("No permission to display that ticket") );
-    $m->abort();
-}
+    #Update the status
+    if (    ( defined $ARGS{'Status'} )
+        and $ARGS{'Status'}
+        and ( $ARGS{'Status'} ne $Ticket->Status ) )
+    {
+        ( $code, $msg ) = $Ticket->SetStatus( $ARGS{'Status'} );
+        push @results, "$msg";
+    }
 
-my ( $code, $msg );
+    # }}}
 
-#Update the status
-if (     ( defined $ARGS{'Status'} ) and $ARGS{'Status'}
-     and ( $ARGS{'Status'} ne $Ticket->Status ) ) {
-    ( $code, $msg ) = $Ticket->SetStatus( $ARGS{'Status'} );
-    push @results, "$msg";
-}
-
-# {{{ store the uploaded attachment in session
-if ($ARGS{'Attach'}) {			# attachment?
-    $session{'Attachments'} = {} unless defined $session{'Attachments'};
-
-    my $subject = "$ARGS{'Attach'}";
-    # since CGI.pm deutf8izes the magic field, we need to add it back.
-    Encode::_utf8_on($subject);
-    # strip leading directories
-    $subject =~ s#^.*[\\/]##;
-
-    my $attachment = MakeMIMEEntity(
-        Subject             => $subject,
-        Body                => "",
-        AttachmentFieldName => 'Attach'
+    if (
+        $session{'Attachments'}
+        || (   $ARGS{'UpdateContent'} ne ''
+            && $ARGS{'UpdateContent'} ne "-- \n"
+            . $session{'CurrentUser'}->UserObj->Signature )
+      )
+    {
+        $ARGS{UpdateAttachments} = $session{'Attachments'};
+    }
+    ProcessUpdateMessage(
+        ARGSRef   => \%ARGS,
+        Actions   => \@results,
+        TicketObj => $Ticket
     );
 
-    $session{'Attachments'} = { %{$session{'Attachments'} || {}},
-				$ARGS{'Attach'} => $attachment };
-}
-# }}}
+    # delete temporary storage entry to make WebUI clean
+    unless ( keys %{ $session{'Attachments'} } and $ARGS{'UpdateAttach'} ) {
+        delete $session{'Attachments'};
+    }
 
-if ( $session{'Attachments'} || 
-     (   $ARGS{'UpdateContent'} ne ''
-	 && $ARGS{'UpdateContent'} ne "-- \n"
-	 . $session{'CurrentUser'}->UserObj->Signature )) {
-    $ARGS{UpdateAttachments} = $session{'Attachments'};
-}
-ProcessUpdateMessage( ARGSRef   => \%ARGS,
-                      Actions   => \@results,
-                      TicketObj => $Ticket );
+    my @cfupdates = ProcessObjectCustomFieldUpdates(Object => $Ticket, ARGSRef => \%ARGS);
+    push (@results, @cfupdates);
 
-# delete temporary storage entry to make WebUI clean
-unless (keys %{$session{'Attachments'}} and $ARGS{'UpdateAttach'}) {
-    delete $session{'Attachments'};
-}
-# }}}
+    # }}}
 
-my $Transactions = $Ticket->Transactions;
+    my $Transactions = $Ticket->Transactions;
 
-#!!pape: selfservice_find_attachments.patch {{
-my $attachments = $m->comp('/Ticket/Elements/FindAttachments', Ticket => $Ticket);
-#!!pape: selfservice_find_attachments.patch }}
+    my $attachments =
+      $m->comp( '/Ticket/Elements/FindAttachments', Ticket => $Ticket );
 
 </%INIT>
 

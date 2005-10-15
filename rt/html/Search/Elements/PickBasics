@@ -1,8 +1,8 @@
-%# {{{ BEGIN BPS TAGGED BLOCK
+%# BEGIN BPS TAGGED BLOCK {{{
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -42,11 +42,18 @@
 %# works based on those contributions, and sublicense and distribute
 %# those contributions and any derivatives thereof.
 %# 
-%# }}} END BPS TAGGED BLOCK
-<tr><td>
-% foreach my $field (@fields) {
+%# END BPS TAGGED BLOCK }}}
+<tr>
+<td class="label">
+<&|/l&>id</&>
+</td><td>
+<& /Elements/SelectEqualityOperator, Name => "idOp" &>
+</td><td>
+<INPUT Name="ValueOfid" SIZE=5>
+</td>
+</tr>
+
 <tr><td align=right>
-% if ($field eq "Attachment") {
 <& /Elements/SelectAttachmentField, Name => 'AttachmentField' &>
 </td><td>
 <& /Elements/SelectBoolean, Name => "AttachmentOp", 
@@ -57,44 +64,26 @@
 &> 
 </td><td>
 <Input Name="ValueOfAttachment" Size=20>
-% } elsif ($field eq "Dates") {
-<& /Elements/SelectDateType, Name=>"DateField" &>
+</td>
+</tr>
+<tr>
+<td class="label">
+<&|/l&>Queue</&>
 </td><td>
-<& /Elements/SelectDateRelation, Name=>"DateOp" &>
+<& /Elements/SelectBoolean,  Name => "QueueOp" , 
+					True => loc("is"), 
+					False => loc("isn't"), 
+					TrueVal=> '=', 
+					FalseVal => '!=' &>
 </td><td>
-<& /Elements/SelectDate, Name => "ValueOfDate", ShowTime => 0, Default => '' &>
-% } elsif ($field eq "Links") {
-<& SelectLinks, Name=>"LinksField" &>
-</td><td>
-<& /Elements/SelectBoolean, Name => "LinksOp", 
-			    True => loc("is"), 
-  			    False => loc("isn't"), 
-			    TrueVal=> '=', 
-			    FalseVal => '!=' 
-&>  
-</td><td>
-<INPUT Name="ValueOfLinks" value="" SIZE=5>
-%} elsif ($field eq "Priority") {
-<SELECT NAME="PriorityField">
-<OPTION VALUE="Priority"><&|/l&>Priority</&></OPTION>
-<OPTION VALUE="InitialPriority"><&|/l&>Initial Priority</&></OPTION>
-<OPTION VALUE="FinalPriority"><&|/l&>Final Priority</&></OPTION>
-</SELECT>
-</td><td>
-<& /Elements/SelectEqualityOperator, Name => "PriorityOp" &>
-</td><td>
-<INPUT Name="ValueOfPriority" SIZE=5>
-%} elsif ($field =~ m/Time.*/) {
-<SELECT NAME="TimeField">
-<OPTION VALUE="TimeWorked"><&|/l&>Time Worked</&></OPTION>
-<OPTION VALUE="TimeEstimated"><&|/l&>Time Estimated</&></OPTION>
-<OPTION VALUE="TimeLeft"><&|/l&>Time Left</&></OPTION>
-</SELECT>
-</td><td>
-<& /Elements/SelectEqualityOperator, Name => "TimeOp" &>
-</td><td>
-<INPUT Name="ValueOfTime" SIZE=5>
-% } elsif ($field eq "Status") {
+<& /Elements/SelectQueue, 
+    Name => "ValueOfQueue", 
+    NamedValues => 1, 
+    CheckQueueRight => 'ShowTicket' &>
+</td>
+</tr>
+<tr>
+<td class="label">
 <&|/l&>Status</&>
 </td><td>
 <& /Elements/SelectBoolean, Name => "StatusOp", 
@@ -105,32 +94,9 @@
 &>  
 </td><td>
 <& /Elements/SelectStatus, Name => "ValueOfStatus", SkipDeleted => 1 &>
-%} elsif ($field =~ m/.*Priority/ || $field =~ m/Time.*/) {
-<&|/l&><%$field%></&>
-</td><td>
-<& /Elements/SelectEqualityOperator, Name => $field . "Op" &>
-</td><td>
-<INPUT Name="<%"ValueOf" . $field%>" SIZE=5>
-% } elsif ($field eq "Queue") {
-<&|/l&>Queue</&>
-</td><td>
-<& /Elements/SelectBoolean,  Name => "QueueOp" , 
-					True => loc("is"), 
-					False => loc("isn't"), 
-					TrueVal=> '=', 
-					FalseVal => '!=' &>
-</td><td>
-<& /Elements/SelectQueue, Name => "ValueOfQueue", NamedValues => 1 &>
-% } elsif ($field eq "id") {
-<&|/l&>Id</&>
-</td><td>
-<& /Elements/SelectEqualityOperator, Name => "idOp" &>
-</td><td>
-<INPUT Name="ValueOfid" SIZE=5>
-% } elsif ($field eq "People") {
-% foreach my $field (@people) {
+</td>
+</tr>
 <tr><td class="label">
-% if ($field eq "Actor") {
 <SELECT NAME="ActorField">
 <OPTION VALUE="Owner"><&|/l&>Owner</&></OPTION>
 <OPTION VALUE="Creator"><&|/l&>Creator</&></OPTION>
@@ -142,43 +108,80 @@
 					  FalseVal => '!=' 
 &> 
 </td><td>
-<& /Elements/SelectOwner, Name => "ValueOfActor" &>
-% } elsif ($field eq 'Watcher') {
+<& /Elements/SelectOwner, Name => "ValueOfActor", ValueAttribute => 'Name' &>
+</td>
+</tr>
+<tr>
+<td class="label">
 <& SelectPersonType, Name => 'WatcherField', Default => 'Requestor' &>
 </td><td>
 <& /Elements/SelectMatch, Name => "WatcherOp" &>
 </td><td>
 <Input Name="ValueOfWatcher" Size=20>
-% } else {
-<&|/l&><%$field%></&>
-<& /Elements/SelectMatch, Name => "$field" . "Op" &>
-<INPUT Name="<%"ValueOf" . $field%>" value=""SIZE=20>
-% }
-</td></tr>
-% }
-% } else {
-<&|/l&><%$field%></&>
+</tr>
+<tr>
+<td class="label">
+<& SelectPersonType, Name => 'WatcherGroupField', Default => 'RequestorGroup', Suffix => 'Group' &>
 </td><td>
-<& /Elements/SelectMatch, Name => "$field" . "Op" &>
+<& /Elements/SelectBoolean, Name => "WatcherGroupOp", 
+					  True=> loc('belongs to'), 
+					  False=> loc('does not belong to'), 
+					  TrueVal=> '=', 
+					  FalseVal => '!='
+&>
 </td><td>
-<INPUT Name="<%"ValueOf" . $field%>" value="" SIZE=20>
-% }
+<& SelectGroup, Name => 'ValueOfWatcherGroup' &>
+</td> 
+</tr>
+<tr>
+<td class="label">
+<& /Elements/SelectDateType, Name=>"DateField" &>
+</td><td>
+<& /Elements/SelectDateRelation, Name=>"DateOp" &>
+</td><td>
+<& /Elements/SelectDate, Name => "ValueOfDate", ShowTime => 0, Default => '' &>
 </td></tr>
-% }
-<& '/Elements/Callback', _CallbackName => 'EndOfList' &>
+<tr>
+<td class="label">
+<SELECT NAME="TimeField">
+<OPTION VALUE="TimeWorked"><&|/l&>Time Worked</&></OPTION>
+<OPTION VALUE="TimeEstimated"><&|/l&>Time Estimated</&></OPTION>
+<OPTION VALUE="TimeLeft"><&|/l&>Time Left</&></OPTION>
+</SELECT>
+</td><td>
+<& /Elements/SelectEqualityOperator, Name => "TimeOp" &>
+</td><td>
+<INPUT Name="ValueOfTime" SIZE=5>
+</td>
+</tr>
+<tr>
+<td class="label">
+<SELECT NAME="PriorityField">
+<OPTION VALUE="Priority"><&|/l&>Priority</&></OPTION>
+<OPTION VALUE="InitialPriority"><&|/l&>Initial Priority</&></OPTION>
+<OPTION VALUE="FinalPriority"><&|/l&>Final Priority</&></OPTION>
+</SELECT>
+</td><td>
+<& /Elements/SelectEqualityOperator, Name => "PriorityOp" &>
+</td><td>
+<INPUT Name="ValueOfPriority" SIZE=5>
+</td>
+</tr>
+<tr>
+<td class="label">
+<& SelectLinks, Name=>"LinksField" &>
+</td><td>
+<& /Elements/SelectBoolean, Name => "LinksOp", 
+			    True => loc("is"), 
+  			    False => loc("isn't"), 
+			    TrueVal=> '=', 
+			    FalseVal => '!=' &>  
+</td><td>
+<INPUT Name="ValueOfLinks" value="" SIZE=5>
+</td></tr>
 <%INIT>
-my @fields = ('Attachment',
-    'Queue',
-    'Status',
-    'People',
-    'Dates',
-    'Time',
-    'Priority',
-    'Links',
-    'id',
-    );
-
 my @people = ('Actor',
 	      'Watcher',
+	      'WatcherGroup',
 	      );
 </%INIT>

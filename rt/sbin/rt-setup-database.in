@@ -1,9 +1,9 @@
 #!@PERL@ -w
-# {{{ BEGIN BPS TAGGED BLOCK
+# BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -43,7 +43,7 @@
 # works based on those contributions, and sublicense and distribute
 # those contributions and any derivatives thereof.
 # 
-# }}} END BPS TAGGED BLOCK
+# END BPS TAGGED BLOCK }}}
 use strict;
 use vars qw($PROMPT $VERSION $Handle $Nobody $SystemUser $item);
 use vars
@@ -196,6 +196,7 @@ sub insert_schema {
 
 	local $SIG{__WARN__} = sub {};
 	my $is_local = 0; # local/etc/schema needs to be nonfatal. 
+        $dbh->begin_work or die $dbh->errstr;
         foreach my $statement (@schema) {
 	    if ($statement =~ /^\s*;$/) { $is_local = 1; next; }
             print STDERR "SQL: $statement\n" if defined $args{'debug'};
@@ -204,12 +205,13 @@ sub insert_schema {
                 die "Problem with statement:\n $statement\n" . $sth->errstr;
             }
         }
+        $dbh->commit or die $dbh->errstr;
 
     }
     else {
         die "Couldn't find schema file for " . $RT::DatabaseType . "\n";
     }
-    print "schema sucessfully inserted\n";
+    print "Done setting up database schema.\n";
 
 }
 
@@ -217,7 +219,6 @@ sub insert_schema {
 
 # {{{ sub drop_db
 sub drop_db {
-    return if ( $RT::DatabaseType eq 'SQLite' );
     if ( $RT::DatabaseType eq 'Oracle' ) {
         print <<END;
 
@@ -241,6 +242,10 @@ END
 
     print "Dropping $RT::DatabaseType database $RT::DatabaseName.\n";
 
+    if ( $RT::DatabaseType eq 'SQLite' ) {
+	unlink $RT::DatabaseName or warn $!;
+	return;
+    }
     $dbh->do("Drop DATABASE $RT::DatabaseName") or warn $DBI::errstr;
 }
 
@@ -273,20 +278,19 @@ sub create_db {
 # }}}
 
 sub get_dba_password {
-    print
-"In order to create a new database and grant RT access to that database,\n";
+    print "In order to create or update your RT database,";
     print "this script needs to connect to your "
       . $RT::DatabaseType
       . " instance on "
       . $RT::DatabaseHost . " as "
       . $args{'dba'} . ".\n";
-    print
-"Please specify that user's database password below. If the user has no database\n";
+    print "Please specify that user's database password below. If the user has no database\n";
     print "password, just press return.\n\n";
     print "Password: ";
     ReadMode('noecho');
     my $password = ReadLine(0);
     ReadMode('normal');
+    print "\n";
     return ($password);
 }
 
@@ -313,15 +317,15 @@ sub insert_acl {
     }
     elsif ( $RT::DatabaseType =~ /^mysql$/i ) {
         do $base_path . "/acl.mysql"
-          || die "Couldn't find ACLS for mysql in " . $RT::EtcPath . "\n" . $@;
+          || die "Couldn't find ACLS for mysql in $base_path\n" . $@;
     }
     elsif ( $RT::DatabaseType =~ /^Sybase$/i ) {
         do $base_path . "/acl.Sybase"
-          || die "Couldn't find ACLS for Sybase in " . $RT::EtcPath . "\n" . $@;
+          || die "Couldn't find ACLS for Sybase in $base_path\n" . $@;
     }
     elsif ( $RT::DatabaseType =~ /^informix$/i ) {
         do $base_path . "/acl.Informix"
-          || die "Couldn't find ACLS for Informix in " . $RT::EtcPath . "\n" . $@;
+          || die "Couldn't find ACLS for Informix in $base_path\n" . $@;
     }
     elsif ( $RT::DatabaseType =~ /^SQLite$/i ) {
         return;
@@ -338,6 +342,7 @@ sub insert_acl {
             die "Problem with statement:\n $statement\n" . $sth->errstr;
         }
     }
+    print "Done setting up database ACLs.\n";
 }
 
 # }}}
@@ -402,7 +407,8 @@ sub insert_initial_data {
         RealName => 'The RT System itself',
         Comments =>
 'Do not delete or modify this user. It is integral to RT\'s internal database structures',
-        Creator => '1' );
+        Creator => '1',
+        LastUpdatedBy => '1' );
 
     unless ($val) {
         print "$msg\n";
@@ -436,6 +442,7 @@ sub insert_data {
                              ObjectType    => 'RT::System',
                              ObjectId      => '1' );
 
+        print "done.\n";
     }
 
     # Slurp in stuff to insert from the datafile. Possible things to go in here:-
@@ -609,7 +616,7 @@ sub insert_data {
         print "done.\n";
     }
     $RT::Handle->Disconnect() unless ($RT::DatabaseType eq 'SQLite');
-
+    print "Done setting up database content.\n";
 }
 
 =head2 ACLEquivGroupId

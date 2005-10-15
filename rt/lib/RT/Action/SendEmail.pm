@@ -1,8 +1,8 @@
-# {{{ BEGIN BPS TAGGED BLOCK
+# BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -42,7 +42,7 @@
 # works based on those contributions, and sublicense and distribute
 # those contributions and any derivatives thereof.
 # 
-# }}} END BPS TAGGED BLOCK
+# END BPS TAGGED BLOCK }}}
 # Portions Copyright 2000 Tobias Brox <tobix@cpan.org>
 
 package RT::Action::SendEmail;
@@ -150,6 +150,10 @@ sub Prepare {
     # try to convert message body from utf-8 to $RT::EmailOutputEncoding
     $self->SetHeader( 'Content-Type', 'text/plain; charset="utf-8"' );
 
+    # fsck.com #5959: Since RT sends 8bit mail, we should say so.
+    $self->SetHeader( 'Content-Transfer-Encoding','8bit');
+
+
     RT::I18N::SetMIMEEntityToEncoding( $MIMEObj, $RT::EmailOutputEncoding,
         'mime_words_ok' );
     $self->SetHeader( 'Content-Type', 'text/plain; charset="' . $RT::EmailOutputEncoding . '"' );
@@ -225,9 +229,11 @@ sub SendMessage {
     my $self    = shift;
     my $MIMEObj = shift;
 
-    my $msgid = $MIMEObj->head->get('Message-Id');
+    my $msgid = $MIMEObj->head->get('Message-ID');
     chomp $msgid;
 
+    $self->ScripActionObj->{_Message_ID}++;
+    
     $RT::Logger->info( $msgid . " #"
         . $self->TicketObj->id . "/"
         . $self->TransactionObj->id
@@ -394,12 +400,13 @@ sub RecordOutgoingMailTransaction {
         $type = 'EmailRecord';
     }
 
+    my $msgid = $MIMEObj->head->get('Message-ID');
+    chomp $msgid;
 
-      
     my ( $id, $msg ) = $transaction->Create(
         Ticket         => $self->TicketObj->Id,
         Type           => $type,
-        Data           => $MIMEObj->head->get('Message-Id'),
+        Data           => $msgid,
         MIMEObj        => $MIMEObj,
         ActivateScrips => 0
     );
@@ -427,28 +434,38 @@ sub SetRTSpecialHeaders {
     $self->SetHeaderAsEncoding( 'Subject', $RT::EmailOutputEncoding )
       if ($RT::EmailOutputEncoding);
     $self->SetReturnAddress();
+    $self->SetReferencesHeaders();
 
-    # TODO: this one is broken.  What is this email really a reply to?
-    # If it's a reply to an incoming message, we'll need to use the
-    # actual message-id from the appropriate Attachment object.  For
-    # incoming mails, we would like to preserve the In-Reply-To and/or
-    # References.
+    unless ($self->TemplateObj->MIMEObj->head->get('Message-ID')) {
+      # Get Message-ID for this txn
+      my $msgid = "";
+      $msgid = $self->TransactionObj->Message->First->GetHeader("RT-Message-ID")
+        || $self->TransactionObj->Message->First->GetHeader("Message-ID")
+        if $self->TransactionObj->Message && $self->TransactionObj->Message->First;
 
-    $self->SetHeader( 'In-Reply-To',
-        "<rt-" . $self->TicketObj->id() . "\@" . $RT::rtname . ">" );
-
-    # TODO We should always add References headers for all message-ids
-    # of previous messages related to this ticket.
-
-    $self->SetHeader( 'Message-ID',
-        "<rt-"
-        . $RT::VERSION . "-"
-        . $self->TicketObj->id() . "-"
-        . $self->TransactionObj->id() . "-"
-        . $self->ScripObj->Id . "."
-        . rand(20) . "\@"
-        . $RT::Organization . ">" )
-      unless $self->TemplateObj->MIMEObj->head->get('Message-ID');
+      # If there is one, and we can parse it, then base our Message-ID on it
+      if ($msgid 
+          and $msgid =~ s/<(rt-.*?-\d+-\d+)\.(\d+-0-0)\@$RT::Organization>$/
+                         "<$1." . $self->TicketObj->id
+                          . "-" . $self->ScripObj->id
+                          . "-" . $self->ScripActionObj->{_Message_ID}
+                          . "@" . $RT::Organization . ">"/eg
+          and $2 == $self->TicketObj->id) {
+        $self->SetHeader( "Message-ID" => $msgid );
+      } else {
+        $self->SetHeader( 'Message-ID',
+            "<rt-"
+            . $RT::VERSION . "-"
+            . $$ . "-"
+            . CORE::time() . "-"
+            . int(rand(2000)) . '.'
+            . $self->TicketObj->id . "-"
+            . $self->ScripObj->id . "-"  # Scrip
+            . $self->ScripActionObj->{_Message_ID} . "@"  # Email sent
+            . $RT::Organization
+            . ">" );
+      }
+    }
 
     $self->SetHeader( 'Precedence', "bulk" )
       unless ( $self->TemplateObj->MIMEObj->head->get("Precedence") );
@@ -482,28 +499,67 @@ sub RemoveInappropriateRecipients {
 
     my @blacklist;
 
+    my @types = qw/To Cc Bcc/;
+
     # Weed out any RT addresses. We really don't want to talk to ourselves!
-    @{ $self->{'To'} } =
-      RT::EmailParser::CullRTAddresses( "", @{ $self->{'To'} } );
-    @{ $self->{'Cc'} } =
-      RT::EmailParser::CullRTAddresses( "", @{ $self->{'Cc'} } );
-    @{ $self->{'Bcc'} } =
-      RT::EmailParser::CullRTAddresses( "", @{ $self->{'Bcc'} } );
+    foreach my $type (@types) {
+        @{ $self->{$type} } =
+          RT::EmailParser::CullRTAddresses( "", @{ $self->{$type} } );
+    }
 
     # If there are no recipients, don't try to send the message.
     # If the transaction has content and has the header RT-Squelch-Replies-To
 
-    if ( defined $self->TransactionObj->Attachments->First() ) {
+    if ( $self->TransactionObj->Attachments->First() ) {
+        if (
+            $self->TransactionObj->Attachments->First->GetHeader(
+                'RT-DetectedAutoGenerated')
+          )
+        {
+
+            # What do we want to do with this? It's probably (?) a bounce
+            # caused by one of the watcher addresses being broken.
+            # Default ("true") is to redistribute, for historical reasons.
+
+            if ( !$RT::RedistributeAutoGeneratedMessages ) {
+
+                # Don't send to any watchers.
+                @{ $self->{'To'} }  = ();
+                @{ $self->{'Cc'} }  = ();
+                @{ $self->{'Bcc'} } = ();
+
+            }
+            elsif ( $RT::RedistributeAutoGeneratedMessages eq 'privileged' ) {
+
+                # Only send to "privileged" watchers.
+                #
+
+                foreach my $type (@types) {
+
+                    foreach my $addr ( @{ $self->{$type} } ) {
+                        my $user = RT::User->new($RT::SystemUser);
+                        $user->LoadByEmail($addr);
+                        @{ $self->{$type} } =
+                          grep ( !/^\Q$addr\E$/, @{ $self->{$type} } )
+                          if ( !$user->Privileged );
+
+                    }
+                }
+
+            }
+
+        }
+
         my $squelch =
           $self->TransactionObj->Attachments->First->GetHeader(
             'RT-Squelch-Replies-To');
 
         if ($squelch) {
-            @blacklist = split ( /,/, $squelch );
+            @blacklist = split( /,/, $squelch );
         }
     }
 
-# Let's grab the SquelchMailTo attribue and push those entries into the @blacklist
+    # Let's grab the SquelchMailTo attribue and push those entries into the @blacklist
     my @non_recipients = $self->TicketObj->SquelchMailTo;
     foreach my $attribute (@non_recipients) {
         push @blacklist, $attribute->Content;
@@ -514,10 +570,10 @@ sub RemoveInappropriateRecipients {
 
     foreach my $person_to_yank (@blacklist) {
         $person_to_yank =~ s/\s//g;
-        @{ $self->{'To'} } = grep ( !/^$person_to_yank$/, @{ $self->{'To'} } );
-        @{ $self->{'Cc'} } = grep ( !/^$person_to_yank$/, @{ $self->{'Cc'} } );
-        @{ $self->{'Bcc'} } =
-          grep ( !/^$person_to_yank$/, @{ $self->{'Bcc'} } );
+        foreach my $type (@types) {
+            @{ $self->{$type} } =
+              grep ( !/^\Q$person_to_yank\E$/, @{ $self->{$type} } );
+        }
     }
 }
 
@@ -671,7 +727,92 @@ sub SetSubjectToken {
 
 # }}}
 
+=head2 SetReferencesHeaders
+
+Set References and In-Reply-To headers for this message.
+
+=cut
+
+sub SetReferencesHeaders {
+
+    my $self = shift;
+    my ( @in_reply_to, @references, @msgid );
+
+    my $attachments = $self->TransactionObj->Message;
+
+    if ( my $top = $attachments->First() ) {
+        @in_reply_to = split(/\s+/m, $top->GetHeader('In-Reply-To') || '');  
+        @references = split(/\s+/m, $top->GetHeader('References') || '' );  
+        @msgid = split(/\s+/m, $top->GetHeader('Message-ID') || ''); 
+    }
+    else {
+        return (undef);
+    }
+
+    # There are two main cases -- this transaction was created with
+    # the RT Web UI, and hence we want to *not* append its Message-ID
+    # to the References and In-Reply-To.  OR it came from an outside
+    # source, and we should treat it as per the RFC
+    if ( "@msgid" =~ /<(rt-.*?-\d+-\d+)\.(\d+-0-0)\@$RT::Organization>/) {
+
+      # Make all references which are internal be to version which we
+      # have sent out
+      for (@references, @in_reply_to) {
+        s/<(rt-.*?-\d+-\d+)\.(\d+-0-0)\@$RT::Organization>$/
+          "<$1." . $self->TicketObj->id .
+             "-" . $self->ScripObj->id .
+             "-" . $self->ScripActionObj->{_Message_ID} .
+             "@" . $RT::Organization . ">"/eg
+      }
+
+      # In reply to whatever the internal message was in reply to
+      $self->SetHeader( 'In-Reply-To', join( " ",  ( @in_reply_to )));
+
+      # Default the references to whatever we're in reply to
+      @references = @in_reply_to unless @references;
+
+      # References are unchanged from internal
+    } else {
+      # In reply to that message
+      $self->SetHeader( 'In-Reply-To', join( " ",  ( @msgid )));
+
+      # Default the references to whatever we're in reply to
+      @references = @in_reply_to unless @references;
+
+      # Push that message onto the end of the references
+      push @references, @msgid;
+    }
+
+    # Push pseudo-ref to the front
+    my $pseudo_ref = $self->PseudoReference;
+    @references = ($pseudo_ref, grep { $_ ne $pseudo_ref } @references);
+
+    # If there are more than 10 references headers, remove all but the
+    # first four and the last six (Gotta keep this from growing
+    # forever)
+    splice(@references, 4, -6) if ($#references >= 10);
+
+    # Add on the references
+    $self->SetHeader( 'References', join( " ",   @references) );
+    $self->TemplateObj->MIMEObj->head->fold_length( 'References', 80 );
+
+}
+
 # }}}
+
+=head2 PseudoReference
+
+Returns a fake Message-ID: header for the ticket to allow a base level of threading
+
+=cut
+
+sub PseudoReference {
+
+    my $self = shift;
+    my $pseudo_ref =  '<RT-Ticket-'.$self->TicketObj->id .'@'.$RT::Organization .'>';
+    return $pseudo_ref;
+}
+
 
 # {{{ SetHeadingAsEncoding
 

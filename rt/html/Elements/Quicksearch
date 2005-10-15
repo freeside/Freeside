@@ -1,8 +1,8 @@
-%# {{{ BEGIN BPS TAGGED BLOCK
+%# BEGIN BPS TAGGED BLOCK {{{
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -42,42 +42,40 @@
 %# works based on those contributions, and sublicense and distribute
 %# those contributions and any derivatives thereof.
 %# 
-%# }}} END BPS TAGGED BLOCK
+%# END BPS TAGGED BLOCK }}}
 <& /Elements/TitleBoxStart, title => loc("Quick search"), bodyclass => "" &>
 
 <TABLE BORDER=0 cellspacing=0 cellpadding=1 WIDTH=100%>                       
 <tr>                                                                          
-       <th align=left><&|/l&>Queue</&></th>                                         
-       <th align=right><font size=-1><&|/l&>New</&></font></th>
-       <th align=right><font size=-1><&|/l&>Open</&></font></th>          
+       <th class="collection-as-table" align=left><&|/l&>Queue</&></th>                                         
+       <th class="collection-as-table" align=right><&|/l&>New</&></th>
+       <th class="collection-as-table" align=right><&|/l&>Open</&></th>          
 </tr>
 
 <%PERL>
 my $i;
 while (my $queue = $Queues->Next) {
-        my $new_q = "Queue = '".$queue->Name."' AND Status = 'new'";
-        my $open_q = "Queue = '".$queue->Name."' AND Status = 'open'";
-        my $all_q = "Queue = '".$queue->Name."' AND (Status = 'open' OR Status = 'new')";
+  next unless ($queue->CurrentUserHasRight('ShowTicket'));
 
+  my $name = $queue->Name;
+  $name =~ s|(['\\])|\\$1|g;
+  
+  my $new_q = "Queue = '$name' AND Status = 'new'";
+  my $open_q = "Queue = '$name' AND Status = 'open'";
+  my $all_q = "Queue = '$name' AND (Status = 'open' OR Status = 'new')";
 
-     $Tickets->ClearRestrictions;                                           
-     $Tickets->LimitStatus(VALUE => "open");                                
-     $Tickets->LimitQueue(VALUE => $queue->Name, OPERATOR => '=');            
-     my $open = $Tickets->Count();
+  $Tickets->FromSQL($open_q);
+  my $open = $Tickets->Count();
 
-     $Tickets->ClearRestrictions;                                           
-     $Tickets->LimitStatus(VALUE => "new");
-     $Tickets->LimitQueue(VALUE => $queue->Name, OPERATOR => '=');            
-     my $new = $Tickets->Count();
+  $Tickets->FromSQL($new_q);
+  my $new = $Tickets->Count();
 
-
-
+  $i++;
 </%PERL>
-% $i++;                                                                         
 <TR class="<% $i%2 ? 'oddline' : 'evenline'%>" >                                
-<td><A HREF="<% $RT::WebPath%>/Search/Results.html?Query=<%$all_q%>&Rows=50" TITLE="<% $queue->Description %>"><%$queue->Name%></a></TD>
-<td align="right"><A HREF="<% $RT::WebPath%>/Search/Results.html?Query=<%$new_q%>&Rows=50"><%$new%></a></TD>
-<td align="right"><A HREF="<% $RT::WebPath%>/Search/Results.html?Query=<%$open_q%>&Rows=50"><%$open%></a></TD>
+<td><A HREF="<% $RT::WebPath%>/Search/Results.html?Query=<%$all_q |nu%>&Rows=50" TITLE="<% $queue->Description %>"><%$queue->Name%></a></TD>
+<td align="right"><A HREF="<% $RT::WebPath%>/Search/Results.html?Query=<%$new_q |nu%>&Rows=50"><%$new%></a></TD>
+<td align="right"><A HREF="<% $RT::WebPath%>/Search/Results.html?Query=<%$open_q |nu%>&Rows=50"><%$open%></a></TD>
 </TR>
 % }
 </TABLE>

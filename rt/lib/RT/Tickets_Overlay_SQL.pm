@@ -1,8 +1,8 @@
-# {{{ BEGIN BPS TAGGED BLOCK
+# BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -42,11 +42,11 @@
 # works based on those contributions, and sublicense and distribute
 # those contributions and any derivatives thereof.
 # 
-# }}} END BPS TAGGED BLOCK
+# END BPS TAGGED BLOCK }}}
+package RT::Tickets;
+
 use strict;
 use warnings;
-
-use RT::Tickets;
 
 # Import configuration data from the lexcial scope of __PACKAGE__ (or
 # at least where those two Subroutines are defined.)
@@ -73,7 +73,7 @@ sub _InitSQL {
   $self->{'_sql_linkalias'}    = undef;
   $self->{'_sql_transalias'}    = undef;
   $self->{'_sql_trattachalias'} = undef;
-  $self->{'_sql_keywordalias'}  = undef;
+  $self->{'_sql_object_cf_alias'}  = undef;
   $self->{'_sql_depth'}         = 0;
   $self->{'_sql_localdepth'}    = 0;
   $self->{'_sql_query'}         = '';
@@ -149,15 +149,18 @@ use Regexp::Common qw /delimited/;
 use constant VALUE => 1;
 use constant AGGREG => 2;
 use constant OP => 4;
-use constant PAREN => 8;
-use constant KEYWORD => 16;
-my @tokens = qw[VALUE AGGREG OP PAREN KEYWORD];
+use constant OPEN_PAREN => 8;
+use constant CLOSE_PAREN => 16;
+use constant KEYWORD => 32;
+my @tokens = qw[VALUE AGGREG OP OPEN_PAREN CLOSE_PAREN KEYWORD];
 
 my $re_aggreg = qr[(?i:AND|OR)];
-my $re_value  = qr[$RE{delimited}{-delim=>qq{\'\"}}|\d+];
-my $re_keyword = qr[$RE{delimited}{-delim=>qq{\'\"}}|(?:\{|\}|\w|\.)+];
+my $re_delim  = qr[$RE{delimited}{-delim=>qq{\'\"}}];
+my $re_value  = qr[$re_delim|\d+|NULL];
+my $re_keyword = qr[$re_delim|(?:\{|\}|\w|\.)+];
 my $re_op     = qr[=|!=|>=|<=|>|<|(?i:IS NOT)|(?i:IS)|(?i:NOT LIKE)|(?i:LIKE)]; # long to short
-my $re_paren  = qr'\(|\)';
+my $re_open_paren  = qr'\(';
+my $re_close_paren  = qr'\)';
 
 sub _close_bundle
 {
@@ -193,7 +196,7 @@ sub _close_bundle
 
 sub _parser {
   my ($self,$string) = @_;
-  my $want = KEYWORD | PAREN;
+  my $want = KEYWORD | OPEN_PAREN;
   my $last = undef;
 
   my $depth = 0;
@@ -214,17 +217,19 @@ sub _parser {
                       |$re_op
                       |$re_keyword
                       |$re_value
-                      |$re_paren
-                     )/igx ) {
+                      |$re_open_paren
+                      |$re_close_paren
+                     )/iogx ) {
     my $val = $1;
     my $current = 0;
 
     # Highest priority is last
-    $current = OP      if $val =~ /^$re_op$/io;
-    $current = VALUE   if $val =~ /^$re_value$/io;
-    $current = KEYWORD if $val =~ /^$re_keyword$/io && ($want & KEYWORD);
-    $current = AGGREG  if $val =~ /^$re_aggreg$/io;
-    $current = PAREN   if $val =~ /^$re_paren$/io;
+    $current = OP          if ($want & OP)          && $val =~ /^$re_op$/io;
+    $current = VALUE       if ($want & VALUE)       && $val =~ /^$re_value$/io;
+    $current = KEYWORD     if ($want & KEYWORD)     && $val =~ /^$re_keyword$/io;
+    $current = AGGREG      if ($want & AGGREG)      && $val =~ /^$re_aggreg$/io;
+    $current = OPEN_PAREN  if ($want & OPEN_PAREN)  && $val =~ /^$re_open_paren$/io;
+    $current = CLOSE_PAREN if ($want & CLOSE_PAREN) && $val =~ /^$re_close_paren$/io;
 
 
     unless ($current && $want & $current) {
@@ -238,24 +243,23 @@ sub _parser {
     #$RT::Logger->debug("We've just found a '$current' called '$val'");
 
     # Parens are highest priority
-    if ($current & PAREN) {
-      if ($val eq "(") {
-        $self->_close_bundle(@bundle);  @bundle = ();
-        $depth++;
-        $self->_OpenParen;
+    if ($current & OPEN_PAREN) {
+      $self->_close_bundle(@bundle);  @bundle = ();
+      $depth++;
+      $self->_OpenParen;
 
-      } else {
-        $self->_close_bundle(@bundle);  @bundle = ();
-        $depth--;
-        $self->_CloseParen;
-      }
-
-      $want = KEYWORD | PAREN | AGGREG;
+      $want = KEYWORD | OPEN_PAREN;
     }
+    elsif ( $current & CLOSE_PAREN ) {
+      $self->_close_bundle(@bundle);  @bundle = ();
+      $depth--;
+      $self->_CloseParen;
 
+      $want = CLOSE_PAREN | AGGREG;
+    }
     elsif ( $current & AGGREG ) {
       $ea = $val;
-      $want = KEYWORD | PAREN;
+      $want = KEYWORD | OPEN_PAREN;
     }
     elsif ( $current & KEYWORD ) {
       $key = $val;
@@ -270,17 +274,17 @@ sub _parser {
 
       # Remove surrounding quotes from $key, $val
       # (in future, simplify as for($key,$val) { action on $_ })
-      if ($key =~ /$RE{delimited}{-delim=>qq{\'\"}}/) {
+      if ($key =~ /$re_delim/o) {
         substr($key,0,1) = "";
         substr($key,-1,1) = "";
       }
-      if ($val =~ /$RE{delimited}{-delim=>qq{\'\"}}/) {
+      if ($val =~ /$re_delim/o) {
         substr($val,0,1) = "";
         substr($val,-1,1) = "";
       }
       # Unescape escaped characters
-      $key =~ s!\\(.)!$1!g;                                                    
-      $val =~ s!\\(.)!$1!g;     
+      $key =~ s!\\(.)!$1!g;
+      $val =~ s!\\(.)!$1!g;
       #    print "$ea Key=[$key] op=[$op]  val=[$val]\n";
 
 
@@ -336,7 +340,7 @@ sub _parser {
   
       ($ea,$key,$op,$value) = ("","","","");
   
-      $want = PAREN | AGGREG;
+      $want = CLOSE_PAREN | AGGREG;
     } else {
       die "I'm lost";
     }
@@ -347,10 +351,10 @@ sub _parser {
   $self->_close_bundle(@bundle);  @bundle = ();
 
   die "Incomplete query"
-    unless (($want | PAREN) || ($want | KEYWORD));
+    unless (($want | CLOSE_PAREN) || ($want | KEYWORD));
 
   die "Incomplete Query"
-    unless ($last && ($last | PAREN) || ($last || VALUE));
+    unless ($last && ($last | CLOSE_PAREN) || ($last || VALUE));
 
   # This will never happen, because the parser will complain
   die "Mismatched parentheses"
@@ -431,14 +435,13 @@ $query = ("Subject LIKE '$string' OR Content LIKE '$string'");
 
 my ($id, $msg) = $tix->FromSQL($query);
 
+
 ok ($id, $msg);
 
 is ($tix->Count, scalar @ids, "number of returned tickets same as entered");
-
 while (my $tick = $tix->Next) {
     push @expectedids, $tick->Id;
 }
-
 ok (eq_array(\@ids, \@expectedids), "returned expected tickets");
 
 $query = ("id = $ids[0] OR MemberOf = $ids[0]");
@@ -476,7 +479,7 @@ sub FromSQL {
   $self->{_sql_query} = $query;
   eval { $self->_parser( $query ); };
     if ($@) {
-        $RT::Logger->error( $@ );
+        $RT::Logger->error( "Query error in <<$query>>:\n$@" );
         return(0,$@);
     }
   # We only want to look at EffectiveId's (mostly) for these searches.
@@ -505,8 +508,12 @@ sub FromSQL {
     $self->SUPER::Limit( FIELD => 'Type', OPERATOR => '=', VALUE => 'ticket');
   }
 
-  # We never ever want to show deleted tickets
-  $self->SUPER::Limit(FIELD => 'Status' , OPERATOR => '!=', VALUE => 'deleted');
+  # We don't want deleted tickets unless 'allow_deleted_search' is set
+  unless( $self->{'allow_deleted_search'} ) {
+    $self->SUPER::Limit(FIELD => 'Status',
+                        OPERATOR => '!=',
+                        VALUE => 'deleted');
+  }
 
 
   # set SB's dirty flag

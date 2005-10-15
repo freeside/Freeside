@@ -1,8 +1,8 @@
-%# {{{ BEGIN BPS TAGGED BLOCK
+%# BEGIN BPS TAGGED BLOCK {{{
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -42,9 +42,9 @@
 %# works based on those contributions, and sublicense and distribute
 %# those contributions and any derivatives thereof.
 %# 
-%# }}} END BPS TAGGED BLOCK
+%# END BPS TAGGED BLOCK }}}
 <SELECT NAME=<%$Name%>>
-% foreach my $stage (qw(TransactionCreate TransactionBatch Disabled)) {
+% foreach my $stage (@stages) {
 <OPTION VALUE=<%$stage%>
 <% ($stage eq $Default) && 'SELECTED' %>
 ><% loc($stage) %>
@@ -54,6 +54,9 @@
 if ($Default eq '') {
     $Default = 'TransactionCreate';
 }
+my @stages = 'TransactionCreate';
+push @stages, 'TransactionBatch' if $RT::UseTransactionBatch;
+push @stages, 'Disabled';
 </%INIT>
 <%ARGS>
 $Default => 'TransactionCreate'

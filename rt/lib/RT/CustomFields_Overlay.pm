@@ -1,8 +1,8 @@
-# {{{ BEGIN BPS TAGGED BLOCK
+# BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -42,7 +42,8 @@
 # works based on those contributions, and sublicense and distribute
 # those contributions and any derivatives thereof.
 # 
-# }}} END BPS TAGGED BLOCK
+# END BPS TAGGED BLOCK }}}
+
 =head1 NAME
 
   RT::CustomFields - a collection of RT CustomField objects
@@ -64,13 +65,31 @@ ok (require RT::CustomFields);
 
 =cut
 
+
+package RT::CustomFields;
+
 use strict;
 no warnings qw(redefine);
+use DBIx::SearchBuilder::Unique;
+
+
+sub _OCFAlias {
+    my $self = shift;
+    unless ($self->{_sql_ocfalias}) {
+
+        $self->{'_sql_ocfalias'} = $self->NewAlias('ObjectCustomFields');
+    $self->Join( ALIAS1 => 'main',
+                FIELD1 => 'id',
+                ALIAS2 => $self->_OCFAlias,
+                FIELD2 => 'CustomField' );
+    }
+    return($self->{_sql_ocfalias});
+}
 
 
 # {{{ sub LimitToGlobalOrQueue 
 
-=item LimitToGlobalOrQueue QUEUEID
+=head2 LimitToGlobalOrQueue QUEUEID
 
 Limits the set of custom fields found to global custom fields or those tied to the queue with ID QUEUEID 
 
@@ -79,8 +98,8 @@ Limits the set of custom fields found to global custom fields or those tied to t
 sub LimitToGlobalOrQueue {
     my $self = shift;
     my $queue = shift;
-    $self->LimitToQueue($queue);
-    $self->LimitToGlobal();
+    $self->LimitToGlobalOrObjectId( $queue );
+    $self->LimitToLookupType( 'RT::Queue-RT::Ticket' );
 }
 
 # }}}
@@ -99,11 +118,12 @@ sub LimitToQueue  {
    my $self = shift;
   my $queue = shift;
  
-  $self->Limit (ENTRYAGGREGATOR => 'OR',
-		FIELD => 'Queue',
+  $self->Limit (ALIAS => $self->_OCFAlias,
+                ENTRYAGGREGATOR => 'OR',
+		FIELD => 'ObjectId',
 		VALUE => "$queue")
       if defined $queue;
-  
+  $self->LimitToLookupType( 'RT::Queue-RT::Ticket' );
 }
 # }}}
 
@@ -121,10 +141,11 @@ another call to this method or LimitToQueue
 sub LimitToGlobal  {
    my $self = shift;
  
-  $self->Limit (ENTRYAGGREGATOR => 'OR',
-		FIELD => 'Queue',
+  $self->Limit (ALIAS => $self->_OCFAlias,
+                ENTRYAGGREGATOR => 'OR',
+		FIELD => 'ObjectId',
 		VALUE => 0);
-  
+  $self->LimitToLookupType( 'RT::Queue-RT::Ticket' );
 }
 # }}}
 
@@ -133,9 +154,9 @@ sub LimitToGlobal  {
 
 =head2 _DoSearch
 
-  A subclass of DBIx::SearchBuilder::_DoSearch that makes sure that _Disabled ro
-ws never get seen unless
-we're explicitly trying to see them.
+A subclass of DBIx::SearchBuilder::_DoSearch that makes sure that 
+ _Disabled rows never get seen unless we're explicitly trying to see 
+them.
 
 =cut
 
@@ -152,6 +173,91 @@ sub _DoSearch {
 }
 
 # }}}
+
+# {{{ sub Next 
+
+=head2 Next
+
+Returns the next custom field that this user can see.
+
+=cut
+  
+sub Next {
+    my $self = shift;
+    
+    
+    my $CF = $self->SUPER::Next();
+    if ((defined($CF)) and (ref($CF))) {
+
+	if ($CF->CurrentUserHasRight('SeeCustomField')) {
+	    return($CF);
+	}
+	
+	#If the user doesn't have the right to show this queue
+	else {	
+	    return($self->Next());
+	}
+    }
+    #if there never was any queue
+    else {
+	return(undef);
+    }	
+    
+}
+# }}}
+
+sub LimitToLookupType  {
+    my $self = shift;
+    my $lookup = shift;
+ 
+    $self->Limit( FIELD => 'LookupType', VALUE => "$lookup" );
+}
+
+sub LimitToChildType  {
+    my $self = shift;
+    my $lookup = shift;
+ 
+    $self->Limit( FIELD => 'LookupType', VALUE => "$lookup" );
+    $self->Limit( FIELD => 'LookupType', ENDSWITH => "$lookup" );
+}
+
+sub LimitToParentType  {
+    my $self = shift;
+    my $lookup = shift;
+ 
+    $self->Limit( FIELD => 'LookupType', VALUE => "$lookup" );
+    $self->Limit( FIELD => 'LookupType', STARTSWITH => "$lookup" );
+}
+
+sub LimitToGlobalOrObjectId {
+    my $self = shift;
+    my $global_only = 1;
+
+
+    foreach my $id (@_) {
+	$self->Limit( ALIAS           => $self->_OCFAlias,
+		    FIELD           => 'ObjectId',
+		    OPERATOR        => '=',
+		    VALUE           => $id || 0,
+		    ENTRYAGGREGATOR => 'OR' );
+	$global_only = 0 if $id;
+    }
+
+    $self->Limit( ALIAS           => $self->_OCFAlias,
+                 FIELD           => 'ObjectId',
+                 OPERATOR        => '=',
+                 VALUE           => 0,
+                 ENTRYAGGREGATOR => 'OR' ) unless $global_only;
+
+    $self->OrderByCols(
+	{ ALIAS => $self->_OCFAlias, FIELD => 'ObjectId' },
+	{ ALIAS => $self->_OCFAlias, FIELD => 'SortOrder' },
+    );
+    
+    # This doesn't work on postgres. 
+    #$self->OrderBy( ALIAS => $class_cfs , FIELD => "SortOrder", ORDER => 'ASC');
+
+}
   
 1;
 

@@ -1,8 +1,8 @@
-%# {{{ BEGIN BPS TAGGED BLOCK
+%# BEGIN BPS TAGGED BLOCK {{{
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -42,7 +42,7 @@
 %# works based on those contributions, and sublicense and distribute
 %# those contributions and any derivatives thereof.
 %# 
-%# }}} END BPS TAGGED BLOCK
+%# END BPS TAGGED BLOCK }}}
 <& /Elements/Header, Title => $title &>
 <& /Ticket/Elements/Tabs, 
     Ticket => $TicketObj, 
@@ -58,7 +58,7 @@
 
 <tr><td align=right><&|/l&>Status</&>:</td>
 <td>
-<& /Elements/SelectStatus, Name=>"Status", DefaultLabel => loc("[_1] (Unchanged)", $TicketObj->Status), Default => $ARGS{'Status'} || ($TicketObj->Status eq $DefaultStatus ? undef : $DefaultStatus)&>
+<& /Elements/SelectStatus, Name=>"Status", DefaultLabel => loc("[_1] (Unchanged)", loc($TicketObj->Status)), Default => $ARGS{'Status'} || ($TicketObj->Status eq $DefaultStatus ? undef : $DefaultStatus)&>
 <&|/l&>Owner</&>:  
 <& /Elements/SelectOwner, Name=>"Owner", DefaultLabel => loc("[_1] (Unchanged)", $TicketObj->OwnerObj->Name()), QueueObj => $TicketObj->QueueObj, TicketObj => $TicketObj, Default => $ARGS{'Owner'} &>
 <&|/l&>Worked</&>: <input size=4 name="UpdateTimeWorked" value="<% $ARGS{UpdateTimeWorked}%>"> <&|/l&>minutes</&></td></tr>
@@ -94,19 +94,33 @@ value="<% $ARGS{UpdateCc} %>"><BR>
 <TD COLSPAN=5>
 <&|/l&>Check box to delete</&><BR>
 % foreach my $attach_name (keys %{$session{'Attachments'}}) {
-<input type="checkbox" name="DeleteAttach-<%$attach_name%>"><%$attach_name%><BR>
+<input type="checkbox" name="DeleteAttach-<%$attach_name%>" value="1"><%$attach_name%><BR>
 % } # end of foreach
 </TD>
 </TR>
 <TR>
 % } # end of if
+
+% if (my $TxnCFs = $TicketObj->TransactionCustomFields) {
+%    while (my $CF = $TxnCFs->Next()) {
+<TR>
+<TD ALIGN=RIGHT><% $CF->Name %>:</TD>
+<TD><& /Elements/EditCustomField, CustomField => $CF, NamePrefix =>
+    "Object-RT::Transaction--CustomField-" &><em><% $CF->FriendlyType %></em></TD>
+</TR>
+%    } # end if while
+% } # end of if
+
 <tr><td align=right><&|/l&>Attach</&>:</td><td><input name="Attach" type="file"><INPUT TYPE=SUBMIT NAME="AddMoreAttach" VALUE="<&|/l&>Add More Files</&>"><input type="hidden" name="UpdateAttach" value="1">
 </td></tr>
 <tr><td align="right" valign="top"><&|/l&>Message</&>:</td><td>
 <& /Elements/Callback, _CallbackName => 'BeforeMessageBox', %ARGS &>
 % if (exists $ARGS{UpdateContent}) {
+% # preserve QuoteTransaction so we can use it to set up sane references/in/reply to
+% my $temp = $ARGS{'QuoteTransaction'};
 % delete $ARGS{'QuoteTransaction'};
 <& /Elements/MessageBox, Name=>"UpdateContent", Default=>$ARGS{UpdateContent}, IncludeSignature => 0, %ARGS&>
+% $ARGS{'QuoteTransaction'} = $temp;
 % } else {
 <& /Elements/MessageBox, Name=>"UpdateContent", %ARGS &>
 % }
@@ -122,7 +136,6 @@ value="<% $ARGS{UpdateCc} %>"><BR>
 % }
 </FORM>
 <%INIT>
-
 my $CanRespond = 0;
 my $CanComment = 0;
 my $title;
@@ -168,6 +181,7 @@ foreach my $key (keys %ARGS) {
     }
     $session{'Attachments'} = { %{$session{'Attachments'} || {}} };
 }
+# }}}
 
 # {{{ store the uploaded attachment in session
 if ($ARGS{'Attach'}) {			# attachment?
@@ -180,7 +194,7 @@ if ($ARGS{'Attach'}) {			# attachment?
     $subject =~ s#^.*[\\/]##;
 
     my $attachment = MakeMIMEEntity(
-        Subject             => $subject,
+        Filename             => $subject,
         Body                => "",
         AttachmentFieldName => 'Attach'
     );
@@ -200,6 +214,7 @@ if ( exists $ARGS{SubmitTicket} ) {
     $m->comp('Display.html', TicketObj => $TicketObj, %ARGS);
     return;
 }
+
 </%INIT>
 
 <%ARGS>

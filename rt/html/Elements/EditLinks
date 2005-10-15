@@ -1,8 +1,8 @@
-%# {{{ BEGIN BPS TAGGED BLOCK
+%# BEGIN BPS TAGGED BLOCK {{{
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -42,7 +42,7 @@
 %# works based on those contributions, and sublicense and distribute
 %# those contributions and any derivatives thereof.
 %# 
-%# }}} END BPS TAGGED BLOCK
+%# END BPS TAGGED BLOCK }}}
 <TABLE width=100%>
   <TR>
     <TD VALIGN=TOP WIDTH=50%>
@@ -57,7 +57,7 @@
     <td class="labeltop"><&|/l&>Depends on</&>:</td>
     <td class="value">
 % while (my $link = $Object->DependsOn->Next) {
-      <INPUT TYPE=CHECKBOX NAME="DeleteLink--<%$link->Type%>-<%$link->Target%>">
+      <INPUT TYPE=CHECKBOX NAME="DeleteLink--<%$link->Type%>-<%$link->Target%>" value="1">
         <& ShowLink, URI => $link->TargetURI &><br>
 % }
     </td>
@@ -67,7 +67,7 @@
     <td class="value">
 % while (my $link = $Object->DependedOnBy->Next) {
 % my $member = $link->BaseObj;
-      <INPUT TYPE=CHECKBOX NAME="DeleteLink-<%$link->Base%>-<%$link->Type%>-">
+      <INPUT TYPE=CHECKBOX NAME="DeleteLink-<%$link->Base%>-<%$link->Type%>-" value="1">
         <& ShowLink, URI => $link->BaseURI &><br>
 % }
     </td>
@@ -76,7 +76,7 @@
     <td class="labeltop"><&|/l&>Parents</&>:</td>
     <td class="value">
 % while (my $link = $Object->MemberOf->Next) {
-      <INPUT TYPE=CHECKBOX NAME="DeleteLink--<%$link->Type%>-<%$link->Target%>">
+      <INPUT TYPE=CHECKBOX NAME="DeleteLink--<%$link->Type%>-<%$link->Target%>" value="1">
         <& ShowLink, URI => $link->TargetURI &><br>
 % }
     </td>
@@ -85,7 +85,7 @@
     <td class="labeltop"><&|/l&>Children</&>:</td>
     <td class="value">
 % while (my $link = $Object->Members->Next) {
-      <INPUT TYPE=CHECKBOX NAME="DeleteLink-<%$link->Base%>-<%$link->Type%>-">
+      <INPUT TYPE=CHECKBOX NAME="DeleteLink-<%$link->Base%>-<%$link->Type%>-" value="1">
         <& ShowLink, URI => $link->BaseURI &><br>
 % }
     </td>
@@ -94,7 +94,7 @@
     <td class="labeltop"><&|/l&>Refers to</&>:</td>
     <td class="value">
 % while (my $link = $Object->RefersTo->Next) {
-      <INPUT TYPE=CHECKBOX NAME="DeleteLink--<%$link->Type%>-<%$link->Target%>">
+      <INPUT TYPE=CHECKBOX NAME="DeleteLink--<%$link->Type%>-<%$link->Target%>" value="1">
         <& ShowLink, URI => $link->TargetURI &><br>
 %}
     </td>
@@ -103,7 +103,7 @@
     <td class="labeltop"><&|/l&>Referred to by</&>:</td>
     <td class="value">
 % while (my $link = $Object->ReferredToBy->Next) {
-      <INPUT TYPE=CHECKBOX NAME="DeleteLink-<%$link->Base%>-<%$link->Type%>-">
+      <INPUT TYPE=CHECKBOX NAME="DeleteLink-<%$link->Base%>-<%$link->Type%>-" value="1">
         <& ShowLink, URI => $link->BaseURI &><br>
 % }
     </td>
@@ -114,9 +114,12 @@
 <TD VALIGN=TOP>
 <h3><&|/l&>New Links</&></h3>
 % if (ref($Object) eq 'RT::Ticket') {
-<i><&|/l&>Enter tickets or URIs to link tickets to. Separate multiple entries with spaces.</&></i><br>
+<i><&|/l&>Enter tickets or URIs to link tickets to. Separate multiple entries with spaces.</&>
+<& /Elements/Callback, _CallbackName => 'ExtraLinkInstructions' &>
+</i><br>
 % } elsif (ref($Object) eq 'RT::Queue') {
-<i><&|/l&>Enter queues or URIs to link queues to. Separate multiple entries with spaces.</&></i><br>
+<i><&|/l&>Enter queues or URIs to link queues to. Separate multiple entries with spaces.</&>
+</i><br>
 % } else {
 <i><&|/l&>Enter objects or URIs to link objects to. Separate multiple entries with spaces.</&></i><br>
 % }

@@ -1,8 +1,8 @@
-%# {{{ BEGIN BPS TAGGED BLOCK
+%# BEGIN BPS TAGGED BLOCK {{{
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -42,7 +42,7 @@
 %# works based on those contributions, and sublicense and distribute
 %# those contributions and any derivatives thereof.
 %# 
-%# }}} END BPS TAGGED BLOCK
+%# END BPS TAGGED BLOCK }}}
 <%perl>
  if ($ShowDisplayModes or $ShowTitle) {
 my $title;
@@ -104,8 +104,8 @@ while ( my $Transaction = $Transactions->Next ) {
     $m->comp( 'ShowTransaction',
             %ARGS,
 
-	      AttachPath	  => $AttachPath,
-	      UpdatePath	   => $UpdatePath,
+              AttachPath           => $AttachPath,
+              UpdatePath           => $UpdatePath,
               Ticket               => $Ticket,
               Transaction          => $Transaction,
               ShowHeaders          => $ShowHeaders,
@@ -116,6 +116,10 @@ while ( my $Transaction = $Transactions->Next ) {
               AttachmentContent    => $trans_content,
               LastTransaction      => $Transactions->IsLast
  );
+
+# manually flush the content buffer after each txn, so the user sees
+# some update
+$m->flush_buffer(); 
 }
 
 </%perl>
@@ -127,9 +131,7 @@ while ( my $Transaction = $Transactions->Next ) {
 my $Transactions = new RT::Transactions($session{'CurrentUser'});
 if ($Tickets) {
     while (my $t = $Tickets->Next) {
-	$Transactions->Limit(FIELD => 'Ticket',
-			     OPERATOR => '=',
-			     VALUE => $t->Id);
+        $Transactions->LimitToTicket($t->id);
     }
 } else {
     $Transactions = $Ticket->Transactions;
@@ -153,5 +155,4 @@ $ShowDisplayModes => 1
 $ShowTitleBarCommands => 1
 $AttachPath => $RT::WebPath."/Ticket/Attachment"
 $UpdatePath => $RT::WebPath."/Ticket/Update.html"
-
 </%ARGS>

@@ -1,8 +1,8 @@
-%# {{{ BEGIN BPS TAGGED BLOCK
+%# BEGIN BPS TAGGED BLOCK {{{
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -42,27 +42,30 @@
 %# works based on those contributions, and sublicense and distribute
 %# those contributions and any derivatives thereof.
 %# 
-%# }}} END BPS TAGGED BLOCK
+%# END BPS TAGGED BLOCK }}}
 <INPUT TYPE=HIDDEN NAME="CheckACL"  VALUE="<%$ACLDesc%>">
      <TABLE BORDER=0>
 <TR>
 <TD valign=top width="180" align="left"> 
+%  my %current_rights;
 <h3><&|/l&>Current rights</&></h3>
-% if ($ACLObj->Count() > 0) {
-<i>(<&|/l&>Check box to revoke right</&>)</i> <BR>
-% } else {
+% if ($ACLObj->Count() == 0) {
 <i><&|/l&>No rights granted.</&></i> <BR>    
-% }
+% } else {
+<i>(<&|/l&>Check box to revoke right</&>)</i> <BR>
 % while (my $right = $ACLObj->Next()) {
 % if ($right->RightName) {
+% $current_rights{$right->RightName} = 1;
 <input type=checkbox value="<%$right->Id%>" name="RevokeRight-<%$ACLDesc%>-<%$right->RightName%>"> <% loc($right->RightName) %><br>
 % }
 %  }
+% }
 </TD>
 <TD valign=top>
 <h3><&|/l&>New rights</&></h3> 
 <SELECT SIZE=5  MULTIPLE  NAME="GrantRight-<%$ACLDesc%>">
 % foreach $right (sort keys %Rights) {
+% next if $current_rights{$right};
       <OPTION VALUE="<%$right%>"  
 	><% loc($right) %></OPTION>
 % }
@@ -100,7 +103,7 @@
     } 
 
         else {
-                %Rights = { loc('System Error') => loc("No rights found")};
+                %Rights = ( loc('System Error') => loc("No rights found") );
         }
         
     $ACLDesc = "$PrincipalId-".ref($Object)."-".$Object->Id;

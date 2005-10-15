@@ -1,8 +1,8 @@
-%# {{{ BEGIN BPS TAGGED BLOCK
+%# BEGIN BPS TAGGED BLOCK {{{
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -42,13 +42,13 @@
 %# works based on those contributions, and sublicense and distribute
 %# those contributions and any derivatives thereof.
 %# 
-%# }}} END BPS TAGGED BLOCK
+%# END BPS TAGGED BLOCK }}}
 <& /Elements/ListActions, actions => \@actions &>
 
 <form action="Scrips.html" method="post">
 <input type="hidden" name="id" value="<%$id%>">
 
-<P><&|/l&>Current Scrips</&>:</P>
+<h2><&|/l&>Current Scrips</&></h2>
 % if ($Scrips->Count == 0 ) {
 <P><i><&|/l&>(No scrips)</&></i></P>
 % } else {
@@ -58,7 +58,7 @@
 %   while (my $scrip = $Scrips->Next ) {
 <TR>
 <TD>
-<input type="checkbox" name="DeleteScrip-<%$scrip->Id%>">
+<input type="checkbox" name="DeleteScrip-<%$scrip->Id%>" value="1">
 </TD>
 <TD>
 <a href="Scrip.html?id=<%$scrip->Id%>&Queue=<%$id%>"><% $scrip->Description || "<i>(".loc('no value').")</i>" |n %></a><br>
