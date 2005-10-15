@@ -1,8 +1,8 @@
-%# {{{ BEGIN BPS TAGGED BLOCK
+%# BEGIN BPS TAGGED BLOCK {{{
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -42,7 +42,7 @@
 %# works based on those contributions, and sublicense and distribute
 %# those contributions and any derivatives thereof.
 %# 
-%# }}} END BPS TAGGED BLOCK
+%# END BPS TAGGED BLOCK }}}
 <table class="lightgray" border=0 cellspacing=0 cellpadding=0 width="100%">
   <th class="lightgray" align="left" width=42%><span class="rtname"><%$AppName%></span>
   </th>
@@ -76,7 +76,7 @@
 % if ($actions->{"$action"}->{'html'}) {
 % push @actions, $actions->{"$action"}->{'html'}; 
 % } else {
-% push @actions,  "<A class='nav' HREF=\"".$RT::WebPath."/".$actions->{$action}->{'path'}."\">".$actions->{$action}->{'title'}."</A>";
+% push @actions,  qq|<a class="nav" href="|.$RT::WebPath."/".$actions->{$action}->{'path'}.qq|">|.$actions->{$action}->{'title'}."</a>";
 % }
 %  }
 %#<% join(" | ", @actions) | n %>
@@ -94,11 +94,12 @@
 </tr>
 <TR valign="top">
 <TD valign="top" width="100%" height="100%" class="mainbody" >
-
+<& /Elements/Callback, _CallbackName => 'BeforeBody',  %ARGS &>
+%$m->flush_buffer(); # we've got the page laid out, let's flush the buffer;
 <%INIT>
 
   foreach my $tab (sort keys %{$toptabs}) {
-    if ($toptabs->{$tab}->{'path'} eq $current_toptab) {
+    if ($current_toptab && $toptabs->{$tab}->{'path'} eq $current_toptab) {
       $toptabs->{$tab}->{"subtabs"} = $tabs;
       $toptabs->{$tab}->{"current_subtab"} = $current_tab;
     }

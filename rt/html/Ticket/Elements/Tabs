@@ -1,8 +1,8 @@
-%# {{{ BEGIN BPS TAGGED BLOCK
+%# BEGIN BPS TAGGED BLOCK {{{
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -42,7 +42,7 @@
 %# works based on those contributions, and sublicense and distribute
 %# those contributions and any derivatives thereof.
 %# 
-%# }}} END BPS TAGGED BLOCK
+%# END BPS TAGGED BLOCK }}}
 <& /Elements/Callback, Ticket => $Ticket, actions=> $actions, tabs => $tabs, %ARGS &>
 <& /Elements/Tabs, 
     tabs => $tabs, 
@@ -123,7 +123,7 @@ my $ticket_page_tabs = {
             path  => "Ticket/ModifyCustomers.html?id=" . $id, },
     _F => { title => loc('Jumbo'),
             path  => "Ticket/ModifyAll.html?id=" . $id,
-            seperator => 1
+            separator => 1
  },
 
 };
@@ -189,6 +189,7 @@ my $args = "?" . $m->comp(
     Order   => $ARGS{'Order'}   || $session{'CurrentSearchHash'}->{'Order'},
     Rows    => $ARGS{'Rows'},
   ) if ($ARGS{'Query'} or $session{'CurrentSearchHash'}->{'Query'});
+$args ||= '';
 
 $tabs->{"f"} = { path      => "Search/Build.html?NewQuery=1",
                  title     => loc('New Query')};
@@ -213,7 +214,7 @@ if (defined $session{'tickets'} and $session{'tickets'}->Count) {
 <%ARGS>
 $Ticket => undef
 $subtabs => undef
-$current_tab => undef
-$current_subtab => undef
+$current_tab => ''
+$current_subtab => ''
 $Title => undef
 </%ARGS>

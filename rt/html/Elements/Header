@@ -1,8 +1,8 @@
-%# {{{ BEGIN BPS TAGGED BLOCK
+%# BEGIN BPS TAGGED BLOCK {{{
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -42,7 +42,7 @@
 %# works based on those contributions, and sublicense and distribute
 %# those contributions and any derivatives thereof.
 %# 
-%# }}} END BPS TAGGED BLOCK
+%# END BPS TAGGED BLOCK }}}
 %#<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <HTML>
 <HEAD>
@@ -77,15 +77,18 @@ ONLOAD="
 >
 <table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#FFFFFF">
   <tr> 
-    <td rowspan=2><img border=0 alt="freeside" src="<%$RT::WebImagesURL%>/small-logo.png" width="92" height="62"></td>
+<<<<<<< Header
+    <td colspan=2 rowspan=2><img border=0 alt="freeside" src="<%$RT::WebImagesURL%>/small-logo.png" width="92" height="62"></td>
     <td align="left" rowspan=2><font size=6><% &RT::URI::freeside::FreesideGetConfig('company_name') %> Ticketing</font></td>
     <td align="right" valign="top">
 % if ($session{'CurrentUser'} && $session{'CurrentUser'}->Id && $LoggedIn) {
 <SPAN STYLE="display: none"><A HREF="#skipnav"><&|/l&>Skip Menu</&></A> |</SPAN>
+%if ($session{'CurrentUser'}->HasRight( Right => 'ModifySelf', Object => $RT::System )) {
 <A  HREF="<%$RT::WebPath%><% $Prefs %>" ><&|/l&>Preferences</&></A>
+% }
 <& /Elements/Callback, %ARGS &>
 % unless ($RT::WebExternalAuth and !$RT::WebFallbackToInternalAuth) {
-| <A  HREF="<%$RT::WebPath%>/NoAuth/Logout.html<%$URL && "?URL=".$URL%>"><&|/l&>Logout</&></a>
+| <A  HREF="<%$RT::WebPath%>/NoAuth/Logout.html<%$URL ? "?URL=".$URL : ''%>"><&|/l&>Logout</&></a>
 % }
 <BR>
 <&|/l, "<b>".$session{'CurrentUser'}->Name."</b>" &>Logged in as [_1]</&>
@@ -130,7 +133,7 @@ require RT::URI::freeside;
 <%ARGS>
 $Prefs => '/User/Prefs.html'
 $Focus => 'focus'
-$Title => undef
+$Title =>  'RT'
 $Code => undef
 $Refresh => 0
 $Why => undef

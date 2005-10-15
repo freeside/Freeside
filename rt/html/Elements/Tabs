@@ -1,8 +1,8 @@
-%# {{{ BEGIN BPS TAGGED BLOCK
+%# BEGIN BPS TAGGED BLOCK {{{
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -42,7 +42,7 @@
 %# works based on those contributions, and sublicense and distribute
 %# those contributions and any derivatives thereof.
 %# 
-%# }}} END BPS TAGGED BLOCK
+%# END BPS TAGGED BLOCK }}}
 <& /Elements/PageLayout,
     current_toptab => $current_toptab,
     current_tab => $current_tab,
@@ -76,16 +76,24 @@ my $basetabs = {
                     C => { title => loc('Tools'),
                            path => 'Tools/Offline.html'
                          },
-                    E => { title => loc('Configuration'),
-                           path => 'Admin/'
-                         },
-                    K => { title => loc('Preferences'),
-                        path => 'User/Prefs.html'
-                      },
                     P => { title => loc('Approval'),
                            path => 'Approvals/'
                          },
                  };
+
+if ($session{'CurrentUser'}->HasRight( Right => 'ShowConfigTab', 
+				       Object => $RT::System )) {
+    $basetabs->{E} = { title => loc('Configuration'),
+                       path => 'Admin/',
+		     };
+}
+
+if ($session{'CurrentUser'}->HasRight( Right => 'ModifySelf', 
+				       Object => $RT::System )) {
+    $basetabs->{K} = { title => loc('Preferences'),
+                       path => 'User/Prefs.html'
+		     };
+}
 
 if (!defined $toptabs) {
    $toptabs = $basetabs;

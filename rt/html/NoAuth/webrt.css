@@ -1,8 +1,8 @@
-%# {{{ BEGIN BPS TAGGED BLOCK
+%# BEGIN BPS TAGGED BLOCK {{{
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -42,7 +42,7 @@
 %# works based on those contributions, and sublicense and distribute
 %# those contributions and any derivatives thereof.
 %# 
-%# }}} END BPS TAGGED BLOCK
+%# END BPS TAGGED BLOCK }}}
 SPAN.nav {  font-family: Verdana, Arial, Helvetica, sans-serif;
 	 font-size: 12px;
 %#	 color: #FFFFFF;
@@ -72,6 +72,109 @@ SPAN.nav {  font-family: Verdana, Arial, Helvetica, sans-serif;
 	 color: #000000;
 	 text-decoration: none;
 	 white-space: nowrap}
+
+%# .topnav is the original RT class for the sidebar navigation tabs.
+%# Font-sizing by level depth was originally hard-coded into Elements/Menu.
+%# This modification sets a different class name for each level, allowing
+%# style sheet control over the formats.
+
+a.topnav-0 {  font-family: Verdana, sans-serif;
+	 font-size: 16px;
+	 font-weight: normal;
+	 color: #FFFFFF;
+	 text-decoration: none;
+	 white-space: nowrap}
+a.topnav-1 {  font-family: Verdana, sans-serif;
+	 font-size: 14px;
+	 font-weight: normal;
+	 color: #FFFFFF;
+	 text-decoration: none;
+	 white-space: nowrap}
+a.topnav-2 {  font-family: Verdana, sans-serif;
+	 font-size: 12px;
+	 font-weight: normal;
+	 color: #FFFFFF;
+	 text-decoration: none;
+	 white-space: nowrap}
+a.topnav-3 {  font-family: Verdana, sans-serif;
+	 font-size: 11px;
+	 font-weight: normal;
+	 color: #FFFFFF;
+	 text-decoration: none;
+	 white-space: nowrap}
+a.topnav-4 {  font-family: Verdana, sans-serif;
+	 font-size: 11px;
+	 font-weight: normal;
+	 color: #FFFFFF;
+	 text-decoration: none;
+	 white-space: nowrap}
+a.topnav-5 {  font-family: Verdana, sans-serif;
+	 font-size: 11px;
+	 font-weight: normal;
+	 color: #FFFFFF;
+	 text-decoration: none;
+	 white-space: nowrap}
+li.topnav-0-minor {
+	 border-top: solid #999999 1px;
+	 padding-top: .1em;
+	 margin-top: .5em;
+}
+li.topnav-1-minor {
+	 border-top: solid #999999 1px;
+	 padding-top: .1em;
+	 margin-top: .5em;
+}
+li.topnav-2-minor {
+	 border-top: solid #999999 1px;
+	 padding-top: .1em;
+	 margin-top: .5em;
+}
+li.topnav-3-minor {
+	 border-top: solid #999999 1px;
+	 padding-top: .1em;
+	 margin-top: .5em;
+}
+li.topnav-4-minor {
+	 border-top: solid #999999 1px;
+	 padding-top: .1em;
+	 margin-top: .5em;
+}
+li.topnav-5-minor {
+	 border-top: solid #999999 1px;
+	 padding-top: .1em;
+	 margin-top: .5em;
+}
+li.topnav-0-major {
+	 border-bottom: solid white 1px;
+	 padding-top: .25em;
+	 padding-bottom: .5em;
+}
+li.topnav-1-major {
+	 border-bottom: solid white 1px;
+	 padding-top: .25em;
+	 padding-bottom: .5em;
+}
+li.topnav-2-major {
+	 border-bottom: solid white 1px;
+	 padding-top: .25em;
+	 padding-bottom: .5em;
+}
+li.topnav-3-major {
+	 border-bottom: solid white 1px;
+	 padding-top: .25em;
+	 padding-bottom: .5em;
+}
+li.topnav-4-major {
+	 border-bottom: solid white 1px;
+	 padding-top: .25em;
+	 padding-bottom: .5em;
+}
+li.topnav-5-major {
+	 border-bottom: solid white 1px;
+	 padding-top: .25em;
+	 padding-bottom: .5em;
+}
+
 .currenttopnav {  font-family: Verdana, Arial, Helvetica, sans-serif;
 	 font-size: 16px;
          font-weight: bold;
@@ -79,6 +182,109 @@ SPAN.nav {  font-family: Verdana, Arial, Helvetica, sans-serif;
 	 color: #000000; background-color: #cccccc;
 	 text-decoration: none;
 	 white-space: nowrap}
+
+%# .currenttopnav is the original RT class for the sidebar navigation tabs.
+%# Font-sizing by level depth was originally hard-coded into Elements/Menu.
+%# This modification sets a different class name for each level, allowing
+%# style sheet control over the formats
+
+a.currenttopnav-0 {  font-family: Verdana, sans-serif;
+	 font-size: 16px;
+         font-weight: bold;
+	 color: #FFFF66;
+	 text-decoration: none;
+	 white-space: nowrap}
+a.currenttopnav-1 {  font-family: Verdana, sans-serif;
+	 font-size: 14px;
+         font-weight: bold;
+	 color: #FFFF66;
+	 text-decoration: none;
+	 white-space: nowrap}
+a.currenttopnav-2 {  font-family: Verdana, sans-serif;
+	 font-size: 12px;
+         font-weight: normal;
+	 color: #FFFF66;
+	 text-decoration: none;
+	 white-space: nowrap}
+a.currenttopnav-3 {  font-family: Verdana, sans-serif;
+	 font-size: 11px;
+         font-weight: normal;
+	 color: #FFFF66;
+	 text-decoration: none;
+	 white-space: nowrap}
+a.currenttopnav-4 {  font-family: Verdana, sans-serif;
+	 font-size: 11px;
+         font-weight: normal;
+	 color: #FFFF66;
+	 text-decoration: none;
+	 white-space: nowrap}
+a.currenttopnav-5 {  font-family: Verdana, sans-serif;
+	 font-size: 11px;
+         font-weight: normal;
+	 color: #FFFF66;
+	 text-decoration: none;
+	 white-space: nowrap}
+li.currenttopnav-0-minor {
+	 border-top: solid #999999 1px;
+	 padding-top: .1em;
+	 margin-top: .5em;
+}
+li.currenttopnav-1-minor {
+	 border-top: solid #999999 1px;
+	 padding-top: .1em;
+	 margin-top: .5em;
+}
+li.currenttopnav-2-minor {
+	 border-top: solid #999999 1px;
+	 padding-top: .1em;
+	 margin-top: .5em;
+}
+li.currenttopnav-3-minor {
+	 border-top: solid #999999 1px;
+	 padding-top: .1em;
+	 margin-top: .5em;
+}
+li.currenttopnav-4-minor {
+	 border-top: solid #999999 1px;
+	 padding-top: .1em;
+	 margin-top: .5em;
+}
+li.currenttopnav-5-minor {
+	 border-top: solid #999999 1px;
+	 padding-top: .1em;
+	 margin-top: .5em;
+}
+li.currenttopnav-0-major {
+	 border-bottom: solid white 1px;
+	 padding-top: .25em;
+	 padding-bottom: .5em;
+}
+li.currenttopnav-1-major {
+	 border-bottom: solid white 1px;
+	 padding-top: .25em;
+	 padding-bottom: .5em;
+}
+li.currenttopnav-2-major {
+	 border-bottom: solid white 1px;
+	 padding-top: .25em;
+	 padding-bottom: .5em;
+}
+li.currenttopnav-3-major {
+	 border-bottom: solid white 1px;
+	 padding-top: .25em;
+	 padding-bottom: .5em;
+}
+li.currenttopnav-4-major {
+	 border-bottom: solid white 1px;
+	 padding-top: .25em;
+	 padding-bottom: .5em;
+}
+li.currenttopnav-5-major {
+	 border-bottom: solid white 1px;
+	 padding-top: .25em;
+	 padding-bottom: .5em;
+}
+
 .topactions {  font-family: Verdana, Arial, Helvetica, sans-serif;
 	 font-size: 10px;
 	 color: #FFFFFF;
@@ -113,12 +319,12 @@ SPAN.nav {  font-family: Verdana, Arial, Helvetica, sans-serif;
 	 vertical-align: top;
 	 text-align: left;
          }
-.blueright {
-	 background-color: #4682B4;
-%#	 background-color: #eeeeee;
+%# Actually the "topactions" section
+.blueright {  background-color: #4682B4;
 	 background-position: left top;
 	 vertical-align: top;
 	 text-align: right;
+         padding-right: 1em;
          }
 .olddarkblue {  background-color: #003399;
 	 background-position: left top;
@@ -184,7 +390,7 @@ div.messagebody {
 
 
 div.downloadattachment {
-    font size: 10px;
+    font-size: 10px;
     text-align: right;
 
 }
@@ -389,31 +595,20 @@ SPAN.attribution {
 SPAN.label { font-size: 0.8em; 
 }
 
+DIV.page-stats { font-size: 0.8em;
+                  color: #cccccc;
+                  text-align: right;
+              }
+
+
 BLOCKQUOTE {
   font-style: italic;
-  /* color: #990; */
 }
-
-ADDRESS { 
-  text-align: right;
-  font-weight: bold;
-  font-style: italic 
-}
-
-BLOCKQUOTE P {			/* Try to avoid space above the attribution */
-  margin-bottom: 0;
-}
-BLOCKQUOTE ADDRESS {
-  margin: 0;
-}
-
 
 .emphasized {
   font-weight: bold
 }
 
-
-P.map-also { font-style: italic; margin-left: 15%; text-align: right }
 
 .oddline { 
         background-color : #ccccee;
@@ -430,6 +625,43 @@ ul.topnav {
 	margin-bottom:0;
 }
 
+.menu-major-separator {
+	border-bottom: solid white 1px;
+	padding-top: .25em;
+	padding-bottom: .5em;
+}
+
+.menu-minor-separator {
+        border-top: solid #999999 1px;
+	padding-top: .1em;
+	margin-top: .5em;
+}
+
+TH.collection-as-table {  text-align: center;
+                          font-size: 0.8em; 
+                          padding-left: .5em;
+                          padding-right: .5em;
+                          color: #333333;
+                          background-color: #cccccc;
+                          white-space: nowrap;
+                  }
+
+TD.collection-as-table {  text-align: left;
+                          padding-left: .5em;
+                          padding-right: .5em;
+                        }
+
+textarea.signature {
+    width: 100%;
+}
+textarea.comments {
+    width: 100%;
+}
+
+textarea.messagebox {
+    width: 100%;
+}
+
 %# Provide a callback for adding/modifying the style sheet.
 %# http://www.w3.org/TR/REC-CSS1 - section 3.2, says:
 %#   "latter specified rule wins"
@@ -439,5 +671,5 @@ inherit => undef
 </%flags>
 <%init>
 $r->content_type('text/css');
-$r->headers_out->{'Expires'} = '+30m';
+#$r->headers_out->{'Expires'} = '+30m';
 </%init>

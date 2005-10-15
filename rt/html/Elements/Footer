@@ -1,8 +1,8 @@
-%# {{{ BEGIN BPS TAGGED BLOCK
+%# BEGIN BPS TAGGED BLOCK {{{
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -42,7 +42,7 @@
 %# works based on those contributions, and sublicense and distribute
 %# those contributions and any derivatives thereof.
 %# 
-%# }}} END BPS TAGGED BLOCK
+%# END BPS TAGGED BLOCK }}}
 % if ($Menu) {
 </td>
 </tr>
@@ -52,21 +52,13 @@
 <& /Elements/Callback, %ARGS &>
 <!--
 <div class="bpscredits">
-<&|/l,     '&#187;&#124;&#171;', 
-     $RT::VERSION, 
-     '2004', 
-    '<a href="http://www.bestpractical.com?rt='.$RT::VERSION.'">Best Practical Solutions, LLC</a>',
-&>[_1] RT [_2] Copyright 1996-[_3] [_4].</&><br>
+<&|/l,     '&#187;&#124;&#171;', $RT::VERSION, '2005', '<a href="http://www.bestpractical.com?rt='.$RT::VERSION.'">Best Practical Solutions, LLC</a>', &>[_1] RT [_2] Copyright 1996-[_3] [_4].</&><br>
 % if (!$Menu) {
 <&|/l&>Distributed under version 2 <a href="http://www.gnu.org/copyleft/gpl.html"> of the GNU GPL.</a></&><br>
 <&|/l, '<a href="mailto:sales@bestpractical.com">sales@bestpractical.com</a>' &>To inquire about support, training, custom development or licensing, please contact [_1].</&><br>
 % }
 </div>
 -->
-% if ($Debug) {
-<HR>
-<b><&|/l&>Time to display</&>: <%Time::HiRes::tv_interval( $m->{'rt_base_time'} )%></b>
-% }
 % if ($Debug >= 2 ) {
 % require Data::Dumper;
 % my $d = Data::Dumper->new([\%ARGS], [qw(%ARGS)]);
@@ -74,6 +66,7 @@
 <%$d->Dump() %>
 </pre>
 % }
+<div class="page-stats"><&|/l&>Time to display</&>: <%Time::HiRes::tv_interval( $m->{'rt_base_time'} )%></div>
 % if ($Menu) {
 </TD>
 </TR>
