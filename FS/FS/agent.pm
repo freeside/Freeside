@@ -2,12 +2,13 @@ package FS::agent;
 
 use strict;
 use vars qw( @ISA );
+#use Crypt::YAPassGen;
 use FS::Record qw( dbh qsearch qsearchs );
 use FS::cust_main;
 use FS::cust_pkg;
 use FS::agent_type;
 use FS::reg_code;
-#use Crypt::YAPassGen;
+use FS::TicketSystem;
 
 @ISA = qw( FS::Record );
 
@@ -166,6 +167,18 @@ sub pkgpart_hashref {
   my $self = shift;
   $self->agent_type->pkgpart_hashref;
 }
+
+=item ticketing_queue
+
+Returns the queue name corresponding with the id from the I<ticketing_queueid>
+field, or the empty string.
+
+=cut
+
+sub ticketing_queue {
+  my $self = shift;
+  FS::TicketSystem->queue($self->ticketing_queueid);
+};
 
 =item num_prospect_cust_main
 

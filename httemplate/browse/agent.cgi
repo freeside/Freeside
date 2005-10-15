@@ -8,6 +8,8 @@
     %search = ( 'disabled' => '' );
   }
 
+  my $conf = new FS::Conf;
+
 %>
 <%= header('Agent Listing', menubar(
   'Main Menu'   => $p,
@@ -36,6 +38,9 @@ full offerings (via their type).<BR><BR>
   <TH>Reports</TH>
   <TH>Registration codes</TH>
   <TH>Prepaid cards</TH>
+  <% if ( $conf->config('ticket_system') ) { %>
+    <TH>Ticketing</TH>
+  <% } %>
   <TH><FONT SIZE=-1>Payment Gateway Overrides</FONT></TH>
   <TH><FONT SIZE=-1>Freq.</FONT></TH>
   <TH><FONT SIZE=-1>Prog.</FONT></TH>
@@ -174,6 +179,16 @@ foreach my $agent ( sort {
             <A HREF="<%=$p%>search/prepay_credit.html?agentnum=<%= $agent->agentnum %>"><% } %>Unused<% if ( $num_prepay_credit ) { %></A><% } %>
           <BR><A HREF="<%=$p%>edit/prepay_credit.cgi?agentnum=<%= $agent->agentnum %>">Generate cards</A>
         </TD>
+
+        <% if ( $conf->config('ticket_system') ) { %>
+
+          <TD>
+            <% if ( $agent->ticketing_queueid ) { %>
+              Queue: <%= $agent->ticketing_queueid %>: <%= $agent->ticketing_queue %><BR>
+            <% } %>
+          </TD>
+
+        <% } %>
 
         <TD>
           <TABLE CELLSPACING=0 CELLPADDING=0>

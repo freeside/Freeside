@@ -16,16 +16,6 @@ sub sql_num_customer_tickets {
    )";
 }
 
-sub num_customer_tickets {
-  my( $self, $custnum, $priority ) = ( shift, shift, shift );
-  $self->SUPER::num_customer_tickets( $custnum, $priority, dbh );
-}
-
-sub customer_tickets {
-  my( $self, $custnum, $limit, $priority ) = ( shift, shift, shift, shift );
-  $self->SUPER::customer_tickets( $custnum, $limit, $priority, dbh );
-}
-
 sub baseurl {
   #my $self = shift;
   if ( $RT::URI::freeside::URL ) {

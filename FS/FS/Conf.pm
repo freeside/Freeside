@@ -1472,8 +1472,16 @@ httemplate/docs/config.html
   {
     'key'         => 'ticket_system-default_queueid',
     'section'     => '',
-    'description' => 'Default queue number used when creating new customer tickets.',
-    'type'        => 'text',
+    'description' => 'Default queue used when creating new customer tickets.',
+    'type'        => 'select-sub',
+    'options_sub' => sub { eval "use FS::TicketSystem;";
+                           die $@ if $@;
+                           FS::TicketSystem->queues();
+                         },
+    'option_sub'  => sub { eval "use FS::TicketSystem;";
+                           die $@ if $@;
+                           FS::TicketSystem->queue(shift);
+                         },
   },
 
   {

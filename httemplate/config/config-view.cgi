@@ -36,19 +36,35 @@
         <% foreach my $type ( ref($i->type) ? @{$i->type} : $i->type ) {
              my $n = 0; %>
           <% if ( $type eq '' ) { %>
-            <tr><td><font color="#ff0000">no type</font></td></tr>
+            <tr>
+              <td><font color="#ff0000">no type</font></td>
+            </tr>
           <% } elsif (   $type eq 'textarea'
                       || $type eq 'editlist'
                       || $type eq 'selectmultiple' ) { %>
-            <tr><td bgcolor="#ffffff">
+            <tr>
+              <td bgcolor="#ffffff">
 <pre>
 <%= encode_entities(join("\n", $conf->config($i->key) ) ) %>
 </pre>
-            </td></tr>
+              </td>
+            </tr>
           <% } elsif ( $type eq 'checkbox' ) { %>
-            <tr><td bgcolor="#<%= $conf->exists($i->key) ? '00ff00">YES' : 'ff0000">NO' %></td></tr>
+            <tr>
+              <td bgcolor="#<%= $conf->exists($i->key) ? '00ff00">YES' : 'ff0000">NO' %></td>
+            </tr>
           <% } elsif ( $type eq 'text' || $type eq 'select' )  { %>
-            <tr><td bgcolor="#ffffff"><%= $conf->exists($i->key) ? $conf->config($i->key) : '' %></td></tr>
+            <tr>
+              <td bgcolor="#ffffff">
+                <%= $conf->exists($i->key) ? $conf->config($i->key) : '' %>
+              </td></tr>
+          <% } elsif ( $type eq 'select-sub' ) { %>
+            <tr>
+              <td bgcolor="#ffffff">
+                <%= $conf->config($i->key) %>: 
+                <%= &{ $i->option_sub }( $conf->config($i->key) ) %>
+              </td>
+            </tr>
           <% } else { %>
             <tr><td>
               <font color="#ff0000">unknown type <%= $type %></font>

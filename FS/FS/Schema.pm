@@ -247,6 +247,7 @@ sub tables_hashref {
         'disabled',     'char', 'NULL', 1,
         'username', 'varchar',       'NULL',     $char_d,
         '_password','varchar',       'NULL',     $char_d,
+        'ticketing_queueid', 'int', 'NULL', '',
       ],
       'primary_key' => 'agentnum',
       'unique' => [],

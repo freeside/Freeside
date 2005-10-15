@@ -3,11 +3,13 @@ package FS::TicketSystem::RT_External;
 use strict;
 use vars qw( $conf $default_queueid
              $priority_field $priority_field_queue $field
-	     $external_dbh $external_url );
+	     $dbh $external_url );
 use URI::Escape;
-use FS::UID;
+use FS::UID qw(dbh);
+use FS::Record qw(qsearchs);
+use FS::cust_main;
 
-install_callback FS::UID sub { 
+FS::UID->install_callback( sub { 
   my $conf = new FS::Conf;
   $default_queueid = $conf->config('ticket_system-default_queueid');
   $priority_field =
@@ -24,20 +26,19 @@ install_callback FS::UID sub {
   }
 
   $external_url = '';
+  $dbh = dbh;
   if ($conf->config('ticket_system') eq 'RT_External') {
     my ($datasrc, $user, $pass) = $conf->config('ticket_system-rt_external_datasrc');
-    $external_dbh = DBI->connect($datasrc, $user, $pass, { 'ChopBlanks' => 1 })
+    $dbh = DBI->connect($datasrc, $user, $pass, { 'ChopBlanks' => 1 })
       or die "RT_External DBI->connect error: $DBI::errstr\n";
 
     $external_url = $conf->config('ticket_system-rt_external_url');
   }
 
-};
+} );
 
 sub num_customer_tickets {
-  my( $self, $custnum, $priority, $dbh ) = @_;
-
-  $dbh ||= $external_dbh;
+  my( $self, $custnum, $priority ) = @_;
 
   my( $from_sql, @param) = $self->_from_customer( $custnum, $priority );
 
@@ -50,10 +51,8 @@ sub num_customer_tickets {
 }
 
 sub customer_tickets {
-  my( $self, $custnum, $limit, $priority, $dbh ) = @_;
+  my( $self, $custnum, $limit, $priority ) = @_;
   $limit ||= 0;
-
-  $dbh ||= $external_dbh;
 
   my( $from_sql, @param) = $self->_from_customer( $custnum, $priority );
   my $sql = "select tickets.*, queues.name".
@@ -131,12 +130,14 @@ sub _from_customer {
 
 }
 
-sub _href_customer_tickets {
+sub href_customer_tickets {
   my( $self, $custnum, $priority ) = @_;
+
+  my $href = $self->baseurl;
 
   #i snarfed this from an RT bookmarked search, it could be unescaped in the
   #source for readability and run through uri_escape
-  my $href = 
+  $href .= 
     'Search/Results.html?Order=ASC&Query=%20MemberOf%20%3D%20%27freeside%3A%2F%2Ffreeside%2Fcust_main%2F'.
     $custnum.
     '%27%20%20AND%20%28%20Status%20%3D%20%27open%27%20%20OR%20Status%20%3D%20%27new%27%20%20OR%20Status%20%3D%20%27stalled%27%20%29%20'
@@ -178,35 +179,52 @@ sub _href_customer_tickets {
 
 }
 
-sub href_customer_tickets {
-  my $self = shift;
-  $self->baseurl. $self->_href_customer_tickets(@_);
-}
+sub href_new_ticket {
+  my( $self, $custnum_or_cust_main, $requestors ) = @_;
 
+  my( $custnum, $cust_main );
+  if ( ref($custnum_or_cust_main) ) {
+    $cust_main = $custnum_or_cust_main;
+    $custnum = $cust_main->custnum;
+  } else {
+    $custnum = $custnum_or_cust_main;
+    $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } );
+  }
+  my $queueid = $cust_main->agent->ticketing_queueid || $default_queueid;
 
-sub _href_new_ticket {
-  my( $self, $custnum, $requestors ) = @_;
-
+  $self->baseurl.
   'Ticket/Create.html?'.
-    "Queue=$default_queueid".
+    "Queue=$queueid".
     "&new-MemberOf=freeside://freeside/cust_main/$custnum".
     ( $requestors ? '&Requestors='. uri_escape($requestors) : '' )
     ;
 }
 
-sub href_new_ticket {
-  my $self = shift;
-  $self->baseurl. $self->_href_new_ticket(@_);
-}
-
-sub _href_ticket {
-  my($self, $ticketnum) = @_;
-  'Ticket/Display.html?id='.$ticketnum;
-}
-
 sub href_ticket {
-  my $self = shift;
-  $self->baseurl. $self->_href_ticket(@_);
+  my($self, $ticketnum) = @_;
+  $self->baseurl. 'Ticket/Display.html?id='.$ticketnum;
+}
+
+sub queues {
+  my($self) = @_;
+
+  my $sql = "select id, name from queues where disabled = 0";
+  my $sth = $dbh->prepare($sql) or die $dbh->errstr. " preparing $sql";
+  $sth->execute()               or die $sth->errstr. " executing $sql";
+
+  map { $_->[0] => $_->[1] } @{ $sth->fetchall_arrayref([]) };
+
+}
+
+sub queue {
+  my($self, $queueid) = @_;
+
+  my $sql = "select name from queues where id = ?";
+  my $sth = $dbh->prepare($sql) or die $dbh->errstr. " preparing $sql";
+  $sth->execute($queueid)       or die $sth->errstr. " executing $sql";
+
+  $sth->fetchrow_arrayref->[0];
+
 }
 
 sub baseurl {

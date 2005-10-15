@@ -73,6 +73,21 @@ function SafeOnsubmit() {
                 <option value=<%= $conf->config($i->key) %> SELECTED><%= $conf->config($i->key) %>
               <% } %>
             </select>
+          <% } elsif ( $type eq 'select-sub' ) { %>
+            <select name="<%= $i->key. $n %>">
+              <option value="">
+              <% my %options = &{$i->options_sub};
+                 my @options = sort { $a <=> $b } keys %options;
+                 my %saw;
+                 foreach my $value ( @options ) {
+                    local($^W)=0; next if $saw{$value}++;
+              %>
+                <option value="<%= $value %>"<%= $value eq $conf->config($i->key) ? ' SELECTED' : '' %>><%= $value %>: <%= $options{$value} %>
+              <% } %>
+              <% if ( $conf->exists($i->key) && $conf->config($i->key) && ! exists $options{$conf->config($i->key)} ) { %>
+                <option value=<%= $conf->config($i->key) %> SELECTED><%= $conf->config($i->key) %>: <%= &{ $i->option_sub }( $conf->config($i->key) ) %>
+              <% } %>
+            </select>
           <% } elsif ( $type eq 'editlist' )  { %>
             <script>
               function doremove<%= $i->key. $n %>() {
