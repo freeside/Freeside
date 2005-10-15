@@ -1,0 +1,45 @@
+#!/bin/bash
+
+database="freeside"
+DEVICE="/dev/hda"
+
+su freeside -c "pg_dump $database" >/var/backups/$database.sql
+
+DATE=$(date +%Y-%m-%d)
+
+#NOTE: These two paths must end in a / in
+#order to correctly build up the other paths
+#BACKUP_DIR="/backup/directory/"
+BACKUP_DIR="/backup/"
+	#TEMP_BACKUP_FILES_DIR="/backup/temp/"
+
+BACKUP_FILE=$BACKUP_DIR"backup-"$DATE".tar.bz2"
+	#DATABASE_FILE=$TEMP_BACKUP_FILES_DIR"foo-"$DATE".sql"
+
+	#These directories shouldn't end in a / although
+	#I don't think it will cause any problems if
+	#they do. There should be a space at the end though
+	#to ensure the database file gets concatenated correctly.
+	#SOURCE="/a/location /other/locations " $DATABASE_FILE
+
+#echo Removing old backup directories
+rm -rf $BACKUP_DIR
+	#rm -rf $TEMP_BACKUP_FILES_DIR
+
+#echo Creating new backup directories
+mkdir $BACKUP_DIR
+	#mkdir $TEMP_BACKUP_FILES_DIR
+
+	#echo Creating database backup
+	#pg_dump -U username -f $DATABASE_FILE databaseName
+
+#echo Backing up $SOURCE to file $BACKUP_FILE
+#tar -cvpl -f $BACKUP_FILE --anchored --exclude /backup /
+tar -cjpl -f $BACKUP_FILE --anchored --exclude /backup /
+
+	##This is not necessary and possibly harmful for DVD+RW media
+	#echo Quick blanking media
+	#dvd+rw-format -blank /dev/hdc
+
+#echo Burning backup
+growisofs -dvd-compat -Z $DEVICE -quiet -r -J $BACKUP_FILE
