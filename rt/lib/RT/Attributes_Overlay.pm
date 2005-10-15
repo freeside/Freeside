@@ -1,8 +1,8 @@
-# {{{ BEGIN BPS TAGGED BLOCK
+# BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -42,7 +42,8 @@
 # works based on those contributions, and sublicense and distribute
 # those contributions and any derivatives thereof.
 # 
-# }}} END BPS TAGGED BLOCK
+# END BPS TAGGED BLOCK }}}
+
 =head1 NAME
 
   RT::Attributes - collection of RT::Attribute objects
@@ -57,29 +58,10 @@ my $Attributes = new RT::Attributes($CurrentUser);
 
 =head1 METHODS
 
-=begin testing
-
-ok(require RT::Attributes);
-
-my $root = RT::User->new($RT::SystemUser);
-ok (UNIVERSAL::isa($root, 'RT::User'));
-$root->Load('root');
-ok($root->id, "Found a user for root");
-
-my $attr = $root->Attributes;
-
-ok (UNIVERSAL::isa($attr,'RT::Attributes'), 'got the attributes object');
-
-my ($id, $msg) =  $root->AddAttribute(Name => 'TestAttr', Content => 'The attribute has content'); 
-ok ($id, $msg);
-my @names = $attr->Names;
-
-is ($names[0] , 'TestAttr');
-
-
-=end testing
-
 =cut
+
+
+package RT::Attributes;
 
 use strict;
 no warnings qw(redefine);
@@ -175,13 +157,17 @@ sub DeleteEntry {
                  Content => undef,
                  id => undef,
                  @_);
-
+    my $found = 0;
     foreach my $attr ($self->Named($args{'Name'})){ 
-        $attr->Delete
-            if (!defined $args{'id'} and !defined $args{'Content'})
-            or (defined $args{'id'} and $attr->id eq $args{'id'})
-            or (defined $args{'Content'} and $attr->Content eq $args{'Content'});
+      if ((!defined $args{'id'} and !defined $args{'Content'})
+          or (defined $args{'id'} and $attr->id eq $args{'id'})
+          or (defined $args{'Content'} and $attr->Content eq $args{'Content'})) {
+        my ($id, $msg) = $attr->Delete;
+        return ($id, $msg) unless $id;
+        $found = 1;
+      }
     }
+    return (0, "No entry found") unless $found;
     $self->_DoSearch();
     return (1, $self->loc('Attribute Deleted'));
 }

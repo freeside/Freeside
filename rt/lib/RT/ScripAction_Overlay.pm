@@ -1,8 +1,8 @@
-# {{{ BEGIN BPS TAGGED BLOCK
+# BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -42,7 +42,8 @@
 # works based on those contributions, and sublicense and distribute
 # those contributions and any derivatives thereof.
 # 
-# }}} END BPS TAGGED BLOCK
+# END BPS TAGGED BLOCK }}}
+
 =head1 NAME
 
   RT::ScripAction - RT Action object
@@ -68,6 +69,9 @@ ok (require RT::ScripAction);
 
 =cut
 
+
+package RT::ScripAction;
+
 use strict;
 no warnings qw(redefine);
 use RT::Template;
@@ -89,10 +93,12 @@ sub _Accessible  {
 # }}}
 
 # {{{ sub Create 
+
 =head2 Create
-  
- Takes a hash. Creates a new Action entry.
- should be better documented.
+
+Takes a hash. Creates a new Action entry.  should be better
+documented.
+
 =cut
 
 sub Create  {
@@ -111,6 +117,15 @@ sub Delete  {
 # }}}
 
 # {{{ sub Load 
+
+=head2 Load IDENTIFIER
+
+Loads an action by its Name.
+
+Returns: Id, Error Message
+
+=cut
+
 sub Load  {
     my $self = shift;
     my $identifier = shift;
@@ -133,7 +148,7 @@ sub Load  {
 	
 	$self->{'Template'} = $template;
     }
-    return ($self->loc('[_1] ScripAction loaded', $self->Id));
+    return ($self->Id, ($self->loc('[_1] ScripAction loaded', $self->Id)));
 }
 # }}}
 
@@ -160,13 +175,13 @@ sub LoadAction  {
  
     eval "require $type" || die "Require of $type failed.\n$@\n";
     
-    $self->{'Action'}  = $type->new ( ScripActionObj => $self, 
-				      TicketObj => $args{'TicketObj'},
-				      ScripObj => $args{'ScripObj'},
-				      TransactionObj => $args{'TransactionObj'},
-				      TemplateObj => $self->TemplateObj,
-				      Argument => $self->Argument,
-                      CurrentUser => $self->CurrentUser
+    $self->{'Action'}  = $type->new ( Argument => $self->Argument,
+                                      CurrentUser => $self->CurrentUser,
+                                      ScripActionObj => $self, 
+                                      ScripObj => $args{'ScripObj'},
+                                      TemplateObj => $self->TemplateObj,
+                                      TicketObj => $args{'TicketObj'},
+                                      TransactionObj => $args{'TransactionObj'},
 				    );
 }
 # }}}
@@ -214,6 +229,7 @@ sub TemplateObj {
 
 sub Prepare  {
     my $self = shift;
+    $self->{_Message_ID} = 0;
     return ($self->Action->Prepare());
   
 }

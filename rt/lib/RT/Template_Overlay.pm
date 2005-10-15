@@ -1,8 +1,8 @@
-# {{{ BEGIN BPS TAGGED BLOCK
+# BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -42,7 +42,7 @@
 # works based on those contributions, and sublicense and distribute
 # those contributions and any derivatives thereof.
 # 
-# }}} END BPS TAGGED BLOCK
+# END BPS TAGGED BLOCK }}}
 # Portions Copyright 2000 Tobias Brox <tobix@cpan.org> 
 
 =head1 NAME
@@ -65,6 +65,9 @@ ok(require RT::Template);
 =end testing
 
 =cut
+
+
+package RT::Template;
 
 use strict;
 no warnings qw(redefine);
@@ -321,10 +324,13 @@ sub MIMEObj {
 
 # {{{ sub Parse 
 
-=item Parse
+=head2 Parse
 
  This routine performs Text::Template parsing on the template and then
  imports the results into a MIME::Entity so we can really use it
+
+ Takes a hash containing Argument, TicketObj, and TransactionObj.
+
  It returns a tuple of (val, message)
  If val is 0, the message contains an error message
 
@@ -403,7 +409,15 @@ sub _ParseContent {
         SOURCE => $content
     );
 
-    my $retval = $template->fill_in( PACKAGE => 'T' );
+    my $is_broken = 0;
+    my $retval = $template->fill_in( PACKAGE => 'T', BROKEN => sub {
+        my (%args) = @_;
+        $RT::Logger->error("Template parsing error: $args{error}")
+	    unless $args{error} =~ /^Died at /; # ignore intentional die()
+        $is_broken++;
+	return undef;
+    } );
+    return undef if $is_broken;
 
     # MIME::Parser has problems dealing with high-bit utf8 data.
     Encode::_utf8_off($retval);

@@ -1,8 +1,8 @@
-# {{{ BEGIN BPS TAGGED BLOCK
+# BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -42,7 +42,7 @@
 # works based on those contributions, and sublicense and distribute
 # those contributions and any derivatives thereof.
 # 
-# }}} END BPS TAGGED BLOCK
+# END BPS TAGGED BLOCK }}}
 # lib/RT/Interface/REST.pm
 #
 
@@ -54,7 +54,7 @@ BEGIN {
     use Exporter ();
     use vars qw($VERSION @ISA @EXPORT);
 
-    $VERSION = do { my @r = (q$Revision: 1.1.1.2 $ =~ /\d+/g); sprintf "%d."."%02d"x$#r, @r };
+    $VERSION = do { my @r = (q$Revision: 1.1.1.3 $ =~ /\d+/g); sprintf "%d."."%02d"x$#r, @r };
 
     @ISA = qw(Exporter);
     @EXPORT = qw(expand_list form_parse form_compose vpush vsplit);

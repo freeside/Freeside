@@ -1,0 +1,11 @@
+<& /Admin/Elements/Header, Title => $title &>
+<& /Admin/Elements/GlobalCustomFieldTabs,
+    current_tab => "Admin/Global/CustomFields/Queue-Transactions.html",
+    current_subtab => "Admin/Global/CustomFields/Queue-Transactions.html",
+    Title => $title
+    &>
+    <& /Admin/Elements/EditCustomFields, %ARGS, title => $title, ObjectType => 'RT::Queue', Object=> $object, SubType => 'RT::Ticket-RT::Transaction' &>
+<%INIT>
+  my $title = loc( 'Edit Custom Fields for tickets in all queues');
+  my $object = RT::Queue->new($session{'CurrentUser'});
+</%INIT>

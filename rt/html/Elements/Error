@@ -1,8 +1,8 @@
-%# {{{ BEGIN BPS TAGGED BLOCK
+%# BEGIN BPS TAGGED BLOCK {{{
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -42,7 +42,7 @@
 %# works based on those contributions, and sublicense and distribute
 %# those contributions and any derivatives thereof.
 %# 
-%# }}} END BPS TAGGED BLOCK
+%# END BPS TAGGED BLOCK }}}
 <& /Elements/Callback, %ARGS, error => $error &>
 <& /Elements/Header, Code => $Code, Why => $Why &>
 <& /Elements/Tabs &>
@@ -53,9 +53,11 @@
 <%$Details%>
 </font>
 <& /Elements/TitleBoxEnd &>
-</body>
-</HTML>
 
+<%cleanup>
+$m->comp('/Elements/Footer');
+$m->abort();
+</%cleanup>
 
 <%args>
 $Code => undef

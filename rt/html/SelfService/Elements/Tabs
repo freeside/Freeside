@@ -1,8 +1,8 @@
-%# {{{ BEGIN BPS TAGGED BLOCK
+%# BEGIN BPS TAGGED BLOCK {{{
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -42,7 +42,7 @@
 %# works based on those contributions, and sublicense and distribute
 %# those contributions and any derivatives thereof.
 %# 
-%# }}} END BPS TAGGED BLOCK
+%# END BPS TAGGED BLOCK }}}
 <& /Elements/PageLayout,
     current_toptab => $current_toptab,
     current_tab => $current_tab,
@@ -67,12 +67,16 @@ my $tabs = { A  => { title => loc('Open tickets'),
                          path => 'SelfService/Closed.html',
                        },
              C => { title => loc('New ticket'),
-                    path => 'SelfService/Create.html'
-                    },
-             Z => { title => loc('Preferences'),
-                    path => 'SelfService/Prefs.html'
+                    path => 'SelfService/CreateTicketInQueue.html'
                     }
            };
+if ($session{'CurrentUser'}->HasRight( Right => 'ModifySelf',
+				       Object => $RT::System )) {
+	$tabs->{Z} = { title => loc('Preferences'),
+		       path => 'SelfService/Prefs.html'
+		       };
+}
+
 my $actions = {
 	B => { html => $m->scomp('GotoTicket') 
 		}

@@ -1,8 +1,8 @@
-%# {{{ BEGIN BPS TAGGED BLOCK
+%# BEGIN BPS TAGGED BLOCK {{{
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -42,18 +42,19 @@
 %# works based on those contributions, and sublicense and distribute
 %# those contributions and any derivatives thereof.
 %# 
-%# }}} END BPS TAGGED BLOCK
+%# END BPS TAGGED BLOCK }}}
 <%flags>
 inherit => undef # inhibit UTF8 conversion done in /autohandler
 </%flags>
 <%ARGS>
-$message
 $queue => 1
 $action => "correspond"
 $ticket => undef
 </%ARGS>
 <%init>
 use RT::Interface::Email; 
+$r->content_type('text/plain; charset=utf-8');
+$m->error_format('text');
 my ( $status, $error, $Ticket ) = RT::Interface::Email::Gateway(\%ARGS);
  if ($status == -75 ) {
 $m->out("temporary failure - ". $error);
@@ -71,4 +72,6 @@ $m->out('Requestor: '. $Ticket->Requestors->MemberEmailAddressesAsString );
  }   else { 
 $m->out('not ok - '.$error);
  }
+
+$m->abort();
 </%init>

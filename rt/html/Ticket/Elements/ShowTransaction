@@ -1,8 +1,8 @@
-%# {{{ BEGIN BPS TAGGED BLOCK
+%# BEGIN BPS TAGGED BLOCK {{{
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -42,9 +42,9 @@
 %# works based on those contributions, and sublicense and distribute
 %# those contributions and any derivatives thereof.
 %# 
-%# }}} END BPS TAGGED BLOCK
+%# END BPS TAGGED BLOCK }}}
 <TR class="<% $RowNum%2 ? 'oddline' : 'evenline'%>" >
-<TD rowspan="2" valign="top" bgcolor="<%$bgcolor%>"><A NAME="txn-<%$Transaction->Id%>" href="#txn-<%$Transaction->Id%>">#</A><% $LastTransaction ? '<a name="lasttrans">&nbsp;</a>' : '&nbsp;' |n %></TD>
+<TD rowspan="2" valign="top" bgcolor="<%$bgcolor%>"><A NAME="txn-<%$Transaction->Id%>" href="<% $DisplayPath %>#txn-<%$Transaction->Id%>">#</A><% $LastTransaction ? '<a name="lasttrans">&nbsp;</a>' : '&nbsp;' |n %></TD>
 <TD>&nbsp&nbsp;</TD>
 <TD><font size=-2><% $transdate|n %></font>&nbsp;</TD>
 % my $desc = $Transaction->BriefDescription;
@@ -56,6 +56,9 @@
 <TD ALIGN="RIGHT"><font size=-1><%$titlebar_commands|n%></font></TD>
 </TR>
 <TR class="<% $RowNum%2 ? 'oddline' : 'evenline'%>"><TD colspan=5>
+% if ($Transaction->CustomFieldValues->Count) {
+<& /Elements/ShowCustomFields, Object => $Transaction &>
+% }
 % $m->comp('ShowTransactionAttachments', %ARGS, Parent => 0) unless ($Collapsed ||!$ShowBody);
 </TD>
 </TR>
@@ -67,6 +70,7 @@ $ShowHeaders => 0
 $Collapsed => undef
 $ShowTitleBarCommands => 1
 $RowNum => 1
+$DisplayPath => $RT::WebPath."/Ticket/Display.html?id=".$Ticket->id
 $AttachPath => $RT::WebPath."/Ticket/Attachment"
 $UpdatePath => $RT::WebPath."/Ticket/Update.html"
 $EmailRecordPath => $RT::WebPath."/Ticket/ShowEmailRecord.html"
@@ -114,6 +118,7 @@ else {
 if ( $Ticket->Id != $Transaction->Ticket ) {
     $TicketString = "Ticket " . $Transaction->Ticket . ": ";
 }
+$TicketString ||= '';
 
 if ( $Transaction->TimeTaken != 0 ) {
     $TimeTaken = $Transaction->TimeTaken . " min";

@@ -1,8 +1,8 @@
-# {{{ BEGIN BPS TAGGED BLOCK
+# BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -42,7 +42,8 @@
 # works based on those contributions, and sublicense and distribute
 # those contributions and any derivatives thereof.
 # 
-# }}} END BPS TAGGED BLOCK
+# END BPS TAGGED BLOCK }}}
+
 =head1 NAME
 
   RT::GroupMember - a member of an RT Group
@@ -71,6 +72,9 @@ ok (require RT::GroupMember);
 
 
 =cut
+
+
+package RT::GroupMember;
 
 use strict;
 no warnings qw(redefine);
@@ -120,7 +124,7 @@ sub Create {
 
     #Clear the key cache. TODO someday we may want to just clear a little bit of the keycache space. 
     # TODO what about the groups key cache?
-    RT::Principal->_InvalidateACLCache();
+    RT::Principal->InvalidateACLCache();
 
     $RT::Handle->BeginTransaction() unless ($args{'InsideTransaction'});
 
@@ -229,7 +233,7 @@ sub _StashUser {
 
     #Clear the key cache. TODO someday we may want to just clear a little bit of the keycache space. 
     # TODO what about the groups key cache?
-    RT::Principal->_InvalidateACLCache();
+    RT::Principal->InvalidateACLCache();
 
 
     # We really need to make sure we don't add any members to this group
@@ -303,9 +307,6 @@ sub Delete {
         VALUE    => $self->GroupObj->Id
     );
 
-    #Clear the key cache. TODO someday we may want to just clear a little bit of the keycache space. 
-    # TODO what about the groups key cache?
-    RT::Principal->_InvalidateACLCache();
 
 
 
@@ -319,12 +320,27 @@ sub Delete {
         }
     }
 
-    my $err = $self->SUPER::Delete();
+    my ($err, $msg) = $self->SUPER::Delete();
     unless ($err) {
             $RT::Logger->warning("Couldn't delete cached group submember ".$self->Id);
         $RT::Handle->Rollback();
         return (undef);
     }
+
+    # Since this deletion may have changed the former member's
+    # delegation rights, we need to ensure that no invalid delegations
+    # remain.
+    $err = $self->MemberObj->_CleanupInvalidDelegations(InsideTransaction => 1);
+    unless ($err) {
+	$RT::Logger->warning("Unable to revoke delegated rights for principal ".$self->Id);
+	$RT::Handle->Rollback();
+	return (undef);
+    }
+
+    #Clear the key cache. TODO someday we may want to just clear a little bit of the keycache space. 
+    # TODO what about the groups key cache?
+    RT::Principal->InvalidateACLCache();
+
     $RT::Handle->Commit();
     return ($err);
 

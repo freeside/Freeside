@@ -1,9 +1,9 @@
 #!@PERL@
-# {{{ BEGIN BPS TAGGED BLOCK
+# BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -43,7 +43,7 @@
 # works based on those contributions, and sublicense and distribute
 # those contributions and any derivatives thereof.
 # 
-# }}} END BPS TAGGED BLOCK
+# END BPS TAGGED BLOCK }}}
 use strict;
 
 BEGIN {
@@ -53,10 +53,12 @@ BEGIN {
     $ENV{'ENV'}    = '' if defined $ENV{'ENV'};
     $ENV{'IFS'}    = '' if defined $ENV{'IFS'};
 
-    eval { require Apache2; require APR::Table; require MasonX::Apache2Handler; 1 } or
-    eval { require Apache2; require Apache::compat; 1 } or die $@
+    use CGI qw(-private_tempfiles);    #bring this in before mason, to make sure we
+                                   #set private_tempfiles
+
+    die "RT does not support mod_perl 1.99. Please upgrade to mod_perl 2.0"
       if $ENV{'MOD_PERL'}
-      and $ENV{'MOD_PERL'} =~ m{mod_perl/(?:2|1\.9)};
+      and $ENV{'MOD_PERL'} =~ m{mod_perl/(?:1\.9)};
 
 }
 
@@ -65,50 +67,36 @@ use RT;
 
 package RT::Mason;
 
-use CGI qw(-private_tempfiles);    #bring this in before mason, to make sure we
-                                   #set private_tempfiles
-
-use HTML::Mason;    # brings in subpackages: Parser, Interp, etc.
-
 use vars qw($Nobody $SystemUser $Handler $r);
 
 #This drags in RT's config.pm
-RT::LoadConfig();
+BEGIN {
+    RT::LoadConfig();
+    if ($RT::DevelMode) { require Module::Refresh; }
+}
 
-use Carp;
 
 {
 
     package HTML::Mason::Commands;
     use vars qw(%session);
-
-    use RT::Tickets;
-    use RT::Transactions;
-    use RT::Users;
-    use RT::CurrentUser;
-    use RT::Templates;
-    use RT::Queues;
-    use RT::ScripActions;
-    use RT::ScripConditions;
-    use RT::Scrips;
-    use RT::Groups;
-    use RT::GroupMembers;
-    use RT::CustomFields;
-    use RT::CustomFieldValues;
-    use RT::TicketCustomFieldValues;
-
-    use RT::Interface::Web;
-    use MIME::Entity;
-    use Text::Wrapper;
-    use CGI::Cookie;
-    use Time::ParseDate;
-    use HTML::Entities;
-    use HTML::Scrubber;
-    use Text::Quoted;
 }
 
+use RT::Interface::Web;
 use RT::Interface::Web::Handler;
 $Handler = RT::Interface::Web::Handler->new(@RT::MasonParameters);
+
+if ($ENV{'MOD_PERL'} && !$RT::DevelMode) {
+    # Under static_source, we need to purge the component cache
+    # each time we restart, so newer components may be reloaded.
+    #
+    # We can't do this in FastCGI or we'll blow away the component root _every_ time a new server starts
+    # which happens every few hits.
+    
+    use File::Path qw( rmtree );
+    use File::Glob qw( bsd_glob );
+    rmtree([ bsd_glob("$RT::MasonDataDir/obj/*") ], 0, 1);
+}
 
 sub handler {
     ($r) = @_;
@@ -116,10 +104,19 @@ sub handler {
     local $SIG{__WARN__};
     local $SIG{__DIE__};
 
-    RT::Init();
-
     # We don't need to handle non-text, non-xml items
-    return -1 if defined( $r->content_type ) && $r->content_type !~ m!(^text/|\bxml\b)!io;
+    if ($r->content_type =~ m/^httpd\b.*\bdirectory/i) {
+        use File::Spec::Unix;
+        # Our DirectoryIndex is always index.html, regardless of httpd settings
+        $r->filename( File::Spec::Unix->catfile( $r->filename, 'index.html' ) );
+    }
+    elsif (defined( $r->content_type )) {
+	$r->content_type =~ m!(^text/|\bxml\b)!i or return -1;
+    }
+
+    Module::Refresh->refresh if $RT::DevelMode;
+
+    RT::Init();
 
     my %session;
     my $status;
@@ -130,12 +127,8 @@ sub handler {
 
     undef(%session);
 
-    if ( $RT::Handle->TransactionDepth ) {
-        $RT::Handle->ForceRollback;
-        $RT::Logger->crit(
-"Transaction not committed. Usually indicates a software fault. Data loss may have occurred"
-        );
-    }
+    RT::Interface::Web::Handler->CleanupRequest();
+
     return $status;
 }
 

@@ -1,8 +1,8 @@
-# {{{ BEGIN BPS TAGGED BLOCK
+# BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -42,7 +42,7 @@
 # works based on those contributions, and sublicense and distribute
 # those contributions and any derivatives thereof.
 # 
-# }}} END BPS TAGGED BLOCK
+# END BPS TAGGED BLOCK }}}
 package RT::Action::CreateTickets;
 require RT::Action::Generic;
 
@@ -148,8 +148,8 @@ A convoluted example
          push (@admins, $admin->EmailAddress); 
      }
  }
- Queue: Approvals
- Type: Approval
+ Queue: ___Approvals
+ Type: approval
  AdminCc: {join ("\nAdminCc: ",@admins) }
  Depended-On-By: TOP
  Refers-To: TOP
@@ -164,7 +164,7 @@ A convoluted example
  Subject: Manager approval
  Depended-On-By: TOP
  Refers-On: {$Tickets{"approval"}->Id}
- Queue: Approvals
+ Queue: ___Approvals
  Content-Type: text/plain
  Content: 
  Your approval is requred for this ticket, too.
@@ -213,7 +213,7 @@ A complete list of acceptable fields for this beastie:
 
 Fields marked with an * are required.
 
-Fields marked with a + man have multiple values, simply
+Fields marked with a + may have multiple values, simply
 by repeating the fieldname on a new line with an additional value.
 
 Fields marked with a ! are postponed to be processed after all
@@ -243,8 +243,8 @@ ok ($approvalsq->Id, "Created Approvals test queue");
 
 my $approvals = 
 '===Create-Ticket: approval
-Queue: Approvals
-Type: Approval
+Queue: ___Approvals
+Type: approval
 AdminCc: {join ("\nAdminCc: ",@admins) }
 Depended-On-By: {$Tickets{"TOP"}->Id}
 Refers-To: TOP 
@@ -258,7 +258,7 @@ ENDOFCONTENT
 ===Create-Ticket: two
 Subject: Manager approval.
 Depended-On-By: approval
-Queue: Approvals
+Queue: ___Approvals
 Content-Type: text/plain
 Content: 
 Your minion approved ticket {$Tickets{"TOP"}->Id}. you ok with that?
@@ -565,12 +565,14 @@ sub CreateByTemplate {
     # XXX: cargo cult programming that works. i'll be back.
     use bytes;
 
-    %T::Tickets = ();
+    local %T::Tickets = %T::Tickets;
+    local $T::TOP = $T::TOP;
+    local $T::ID = $T::ID;
+    $T::Tickets{'TOP'} = $T::TOP = $top if $top;
 
     my $ticketargs;
     my ( @links, @postponed );
     foreach my $template_id ( @{ $self->{'create_tickets'} } ) {
-        $T::Tickets{'TOP'} = $T::TOP = $top if $top;
         $RT::Logger->debug("Workflow: processing $template_id of $T::TOP")
           if $T::TOP;
 
@@ -628,7 +630,8 @@ sub UpdateByTemplate {
     use bytes;
 
     my @results;
-    %T::Tickets = ();
+    local %T::Tickets = %T::Tickets;
+    local $T::ID = $T::ID;
 
     my $ticketargs;
     my ( @links, @postponed );

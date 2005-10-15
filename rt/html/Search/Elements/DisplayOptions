@@ -1,8 +1,8 @@
-%# {{{ BEGIN BPS TAGGED BLOCK
+%# BEGIN BPS TAGGED BLOCK {{{
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -42,7 +42,7 @@
 %# works based on those contributions, and sublicense and distribute
 %# those contributions and any derivatives thereof.
 %# 
-%# }}} END BPS TAGGED BLOCK
+%# END BPS TAGGED BLOCK }}}
 <& /Elements/TitleBoxStart, title => loc("Display Columns") &>
 <table>
 <tr>
@@ -54,15 +54,15 @@
 <tr>
 <td class=label>
 <&|/l&>Order by</&>:
-</td><td class=label>
+</td><td class=value>
 <select name="OrderBy">
 % foreach my $field (keys %fields) {
 %    next unless $field;
 <option value=<%$field%>
-% if ($field eq $OrderBy) {
+% if ($field =~ /^$OrderBy$/i) {
 SELECTED
 % }
-><%$field%></option>
+><&|/l&><%$field%></&></option>
 % }
 </select>
 <select name="Order">
@@ -81,7 +81,7 @@ SELECTED
 </tr>
 <td class=label>
 <&|/l&>Rows per page</&>:
-</td><td>
+</td><td class="value">
 <& /Elements/SelectResultsPerPage, 
     Name => "RowsPerPage", 
     Default => $RowsPerPage &>
@@ -91,13 +91,14 @@ SELECTED
 </td>
 </tr>
 </table>
-<& /Elements/Submit, Caption => "Do the Search", Label => loc('Search'), Name => 'DoSearch'&>
 <& /Elements/TitleBoxEnd &>
 
 <%INIT>
 my $tickets = new RT::Tickets($session{'CurrentUser'});
 my %fields = %{$tickets->FIELDS};
 map { $fields{$_}->[0] =~ /^(?:ENUM|INT|DATE|STRING)$/ || delete $fields{$_} } keys %fields;
+delete $fields{'EffectiveId'};
+
 
 </%INIT>
 

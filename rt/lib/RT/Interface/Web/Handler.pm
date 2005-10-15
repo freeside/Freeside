@@ -1,8 +1,8 @@
-# {{{ BEGIN BPS TAGGED BLOCK
+# BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -42,8 +42,23 @@
 # works based on those contributions, and sublicense and distribute
 # those contributions and any derivatives thereof.
 # 
-# }}} END BPS TAGGED BLOCK
+# END BPS TAGGED BLOCK }}}
+
 package RT::Interface::Web::Handler;
+
+use CGI qw/-private_tempfiles/;
+use MIME::Entity;
+use Text::Wrapper;
+use CGI::Cookie;
+use Time::ParseDate;
+use Time::HiRes;
+use HTML::Entities;
+use HTML::Scrubber;
+use Text::Quoted;
+use RT::Interface::Web::Handler;
+use File::Path qw( rmtree );
+use File::Glob qw( bsd_glob );
+use File::Spec::Unix;
 
 sub DefaultHandlerArgs  { (
     comp_root => [
@@ -53,7 +68,10 @@ sub DefaultHandlerArgs  { (
     default_escape_flags => 'h',
     data_dir             => "$RT::MasonDataDir",
     allow_globals        => [qw(%session)],
-    autoflush            => 1
+    # Turn off static source if we're in developer mode.
+    static_source        => ($RT::DevelMode ? '0' : '1'), 
+    use_object_files     => ($RT::DevelMode ? '0' : '1'), 
+    autoflush            => 0
 ) };
 
 # {{{ sub new 
@@ -69,19 +87,17 @@ sub new {
     my $class = shift;
     $class->InitSessionDir;
 
-    if ($MasonX::Apache2Handler::VERSION) {
-        goto &NewApache2Handler;
-    }
-    elsif ($mod_perl::VERSION and $mod_perl::VERSION >= 1.9908) {
-	require Apache::RequestUtil;
-	no warnings 'redefine';
-	my $sub = *Apache::request{CODE};
-	*Apache::request = sub {
-	    my $r;
-	    eval { $r = $sub->('Apache'); };
-	    # warn $@ if $@;
-	    return $r;
-	};
+    if ( $mod_perl::VERSION && $mod_perl::VERSION >= 1.9908 ) {
+#        require Apache::RequestUtil;
+#        no warnings 'redefine';
+#        my $sub = *Apache::request{CODE};
+#        *Apache::request = sub {
+#            my $r;
+#            eval { $r = $sub->('Apache'); };
+#
+#            # warn $@ if $@;
+#            return $r;
+#        };
         goto &NewApacheHandler;
     }
     elsif ($CGI::MOD_PERL) {
@@ -96,14 +112,14 @@ sub InitSessionDir {
     # Activate the following if running httpd as root (the normal case).
     # Resets ownership of all files created by Mason at startup.
     # Note that mysql uses DB for sessions, so there's no need to do this.
-    unless ( $RT::DatabaseType =~ /(mysql|Pg)/ ) {
+    unless ( $RT::DatabaseType =~ /(?:mysql|Pg)/ ) {
 
         # Clean up our umask to protect session files
         umask(0077);
 
         if ($CGI::MOD_PERL) {
             chown( Apache->server->uid, Apache->server->gid,
-                [$RT::MasonSessionDir] )
+                $RT::MasonSessionDir )
             if Apache->server->can('uid');
         }
 
@@ -170,9 +186,36 @@ sub NewHandler {
     );
   
     $handler->interp->set_escape( h => \&RT::Interface::Web::EscapeUTF8 );
+    $handler->interp->set_escape( u => \&RT::Interface::Web::EscapeURI  );
     return($handler);
 }
 
+=head2 CleanupRequest
+
+Rollback any uncommitted transaction.
+Flush the ACL cache
+Flush the searchbuilder query cache
+
+=cut
+
+sub CleanupRequest {
+
+    if ( $RT::Handle->TransactionDepth ) {
+        $RT::Handle->ForceRollback;
+        $RT::Logger->crit(
+            "Transaction not committed. Usually indicates a software fault."
+            . "Data loss may have occurred" );
+    }
+
+    # Clean out the ACL cache. the performance impact should be marginal.
+    # Consistency is imprived, too.
+    RT::Principal->InvalidateACLCache();
+    DBIx::SearchBuilder::Record::Cachable->FlushCache
+      if ( $RT::WebFlushDbCacheEveryRequest
+        and UNIVERSAL::can(
+            'DBIx::SearchBuilder::Record::Cachable' => 'FlushCache' ) );
+
+}
 # }}}
 
 1;

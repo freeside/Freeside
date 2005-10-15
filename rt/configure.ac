@@ -3,11 +3,11 @@ dnl
 dnl Process this file with autoconf to produce a configure script
 dnl
 dnl Embed in generated ./configure script the following CVS info:
-AC_REVISION($Revision: 1.1.1.4 $)dnl
+AC_REVISION($Revision: 1.1.1.5 $)dnl
 
 dnl Setup autoconf
 AC_PREREQ(2.53)
-AC_INIT(RT, [3.2.2], [rt-bugs@fsck.com])
+AC_INIT(RT, [3.4.4], [rt-bugs@fsck.com])
 AC_CONFIG_SRCDIR([lib/RT.pm.in])
 
 dnl Extract RT version number components
@@ -43,13 +43,33 @@ dnl Defaults paths for installation
 AC_PREFIX_DEFAULT([/opt/rt3])
 RT_ENABLE_LAYOUT
 
-dnl RTGROUP
-AC_ARG_WITH(rt-group,
-	    AC_HELP_STRING([--with-rt-group=GROUP],
-	    		   [group to own all files (default: rt)]),
-            RTGROUP=$withval,
-            RTGROUP=rt)
-AC_SUBST(RTGROUP)
+
+# ACRT_USER_EXISTS( users, variable, default )
+# - users is a list of users [www apache www-docs]
+#    from highest to lowest priority to high priority (i.e. first match)
+# - variable is what you set with the result
+#
+
+AC_DEFUN([ACRT_USER_GUESS],
+ [ 
+   $2=$3
+   for x in $1; do
+    AC_MSG_CHECKING([if user $x exists]) 
+     AS_IF([ $PERL -e"exit( defined getpwnam('$x') ? 0 : 1)" ],
+           [ AC_MSG_RESULT([found]); $2=$x ; break],
+           [ AC_MSG_RESULT([not found]) ])
+   done
+  ])
+AC_DEFUN([ACRT_GROUP_GUESS],
+ [ 
+   $2=$3
+   for x in $1; do
+    AC_MSG_CHECKING([if group $x exists]) 
+     AS_IF([ $PERL -e"exit( defined getgrnam('$x') ? 0 : 1)" ],
+           [ AC_MSG_RESULT([found]); $2=$x ; break],
+           [ AC_MSG_RESULT([not found]) ])
+   done
+  ])
 
 dnl BIN_OWNER
 AC_ARG_WITH(bin-owner,
@@ -160,27 +180,37 @@ AC_ARG_WITH(web-user,
 	    AC_HELP_STRING([--with-web-user=USER],
 	    		   [user the web server runs as (default: www)]),
             WEB_USER=$withval,
-            WEB_USER=www)
+            ACRT_USER_GUESS([www www-data apache httpd nobody],[WEB_USER],[www])
+)
 AC_SUBST(WEB_USER)
 
 dnl WEB_GROUP
 AC_ARG_WITH(web-group,
-            AC_HELP_STRING([--with-web-group=GROUP],
+	    AC_HELP_STRING([--with-web-group=GROUP],
 		           [group the web server runs as (default: www)]),
             WEB_GROUP=$withval,
-            WEB_GROUP=www)
+            ACRT_GROUP_GUESS([www www-data apache httpd nogroup nobody],[WEB_GROUP], [www]))
 AC_SUBST(WEB_GROUP)
+
+dnl RTGROUP
+AC_ARG_WITH(rt-group,
+	    AC_HELP_STRING([--with-rt-group=GROUP],
+	    		   [group to own all files (default: rt)]),
+            RTGROUP=$withval,
+            ACRT_GROUP_GUESS([rt3 rt $WEB_GROUP],[RTGROUP], [rt]))
+AC_SUBST(RTGROUP)
 
 dnl INSTALL AS ME
 my_group=$(groups|cut -f1 -d' ')
+my_user=${USER:-$LOGNAME}
 AC_ARG_WITH(my-user-group,
             AC_HELP_STRING([--with-my-user-group],
                            [set all users and groups to current user/group]),
             RTGROUP=$my_group
-            BIN_OWNER=$USER
-            LIBS_OWNER=$USER
+            BIN_OWNER=$my_user
+            LIBS_OWNER=$my_user
             LIBS_GROUP=$my_group
-            WEB_USER=$USER
+            WEB_USER=$my_user
             WEB_GROUP=$my_group)
 
 
@@ -194,6 +224,14 @@ AC_ARG_WITH(apachectl,
             APACHECTL=`which apachectl`)
 AC_SUBST(APACHECTL)
 
+dnl RT's "maintainer mode"
+AC_ARG_WITH(devel-mode,
+            AC_HELP_STRING([--with-devel-mode],
+                           [Turn on development aids that might hurt you in production]),
+
+            RT_DEVEL_MODE="1", 
+            RT_DEVEL_MODE="0")
+AC_SUBST(RT_DEVEL_MODE)
 dnl This section maps the variable names this script 'natively' generates
 dnl to their existing names. They should be removed from here as the .in
 dnl files are changed to use the new names.
@@ -226,25 +264,26 @@ AC_SUBST([RT_LOG_PATH],			${exp_logfiledir})
 
 dnl Configure the output files, and generate them.
 
+dnl Binaries that should be +x
 AC_CONFIG_FILES([
+		 sbin/rt-dump-database
 		 sbin/rt-setup-database
-                 sbin/rt-test-dependencies
-                 Makefile
-		 etc/RT_Config.pm
-		 lib/RT.pm
-                 lib/t/00smoke.t
-                 lib/t/01harness.t
-                 lib/t/02regression.t
-                 lib/t/03web.pl
-                 lib/t/04_send_email.pl
-		 lib/t/05cronsupport.pl
+		 sbin/rt-test-dependencies
  		 bin/mason_handler.fcgi
  		 bin/mason_handler.scgi
  		 bin/standalone_httpd
- 		 bin/mason_handler.svc
  		 bin/rt-crontool
  		 bin/rt-mailgate
-		 bin/rt
- 		 bin/webmux.pl]
-                )
+		 bin/rt],
+		[chmod ug+x $ac_file]
+               )
+
+dnl All other generated files
+AC_CONFIG_FILES([
+		 Makefile
+		 etc/RT_Config.pm
+		 lib/RT.pm
+ 		 bin/mason_handler.svc
+		 bin/webmux.pl],
+               )
 AC_OUTPUT

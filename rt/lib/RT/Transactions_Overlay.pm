@@ -1,8 +1,8 @@
-# {{{ BEGIN BPS TAGGED BLOCK
+# BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -42,7 +42,8 @@
 # works based on those contributions, and sublicense and distribute
 # those contributions and any derivatives thereof.
 # 
-# }}} END BPS TAGGED BLOCK
+# END BPS TAGGED BLOCK }}}
+
 =head1 NAME
 
   RT::Transactions - a collection of RT Transaction objects
@@ -65,6 +66,9 @@ ok (require RT::Transactions);
 
 =cut
 
+
+package RT::Transactions;
+
 use strict;
 no warnings qw(redefine);
 
@@ -84,6 +88,72 @@ sub _Init   {
   return ( $self->SUPER::_Init(@_));
 }
 # }}}
+
+=head2 Limit
+
+A wrapper around SUPER::Limit to catch migration issues
+
+=cut
+
+sub Limit {
+	my $self = shift;
+	my %args = (@_);
+
+	if ($args{'FIELD'} eq 'Ticket') {
+		Carp::cluck("Historical code calling RT::Transactions::Limit with a 'Ticket'.  This deprecated API will be deleted in 3.6");
+		$self->SUPER::Limit(FIELD => 'ObjectType', OPERATOR => '=', VALUE =>'RT::Ticket');
+		$args{'FIELD'} = 'ObjectId';
+		$self->SUPER::Limit(%args);
+
+	} else {
+
+		$self->SUPER::Limit(%args);
+	}
+
+
+}
+
+
+
+=head2 LimitToTicket TICKETID 
+
+Find only transactions for the ticket whose id is TICKETID.
+
+This includes tickets merged into TICKETID.
+
+Repeated calls to this method will intelligently limit down to that set of tickets, joined with an OR
+
+
+=cut
+
+
+sub LimitToTicket {
+    my $self = shift;
+    my $tid  = shift;
+
+    unless ( $self->{'tickets_table'} ) {
+        $self->{'tickets_table'} ||= $self->NewAlias('Tickets');
+        $self->Join(
+            ALIAS1 => 'main',
+            FIELD1 => 'ObjectId',
+            ALIAS2 => $self->{'tickets_table'},
+            FIELD2 => 'id'
+        );
+        $self->Limit(
+            FIELD => 'ObjectType',
+            VALUE => 'RT::Ticket',
+        );
+    }
+    $self->Limit(
+        ALIAS           => $self->{tickets_table},
+        FIELD           => 'EffectiveId',
+        OPERATOR        => '=',
+        ENTRYAGGREGATOR => 'OR',
+        VALUE           => $tid,
+    );
+
+}
+
 
 # {{{ sub Next
 sub Next {

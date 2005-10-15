@@ -1,8 +1,8 @@
-# {{{ BEGIN BPS TAGGED BLOCK
+# BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -42,7 +42,8 @@
 # works based on those contributions, and sublicense and distribute
 # those contributions and any derivatives thereof.
 # 
-# }}} END BPS TAGGED BLOCK
+# END BPS TAGGED BLOCK }}}
+
 =head1 SYNOPSIS
 
   use RT::ACE;
@@ -62,6 +63,9 @@ ok(require RT::ACE);
 =end testing
 
 =cut
+
+
+package RT::ACE;
 
 use strict;
 no warnings qw(redefine);
@@ -129,8 +133,8 @@ Load an ACE by specifying a paramhash with the following fields:
 
             OR
 
-        ObjectType => undef,
-        ObjectId => undef
+	      ObjectType => undef,
+	      ObjectId => undef
 
 =cut
 
@@ -155,16 +159,9 @@ sub LoadByValues {
         );
     }
 
-    my ($object_type, $object_id);
-    
-    if ($args{'Object'} && UNIVERSAL::can($args{'Object'},'id')) {
-        $object_type = ref($args{'Object'});
-        $object_id = $args{'Object'}->id;
-    } elsif ($args{'ObjectId'} || $args{'ObjectType'}) {
-        $object_type = $args{'ObjectType'};
-        $object_id = $args{'ObjectId'};
-    } else {
-            return ( 0, $self->loc("System error. Right not granted.") );
+    my ($object, $object_type, $object_id) = $self->_ParseObjectArg( %args );
+    unless( $object ) {
+	return ( 0, $self->loc("System error. Right not granted.") );
     }
 
     $self->LoadByCols( PrincipalId   => $princ_obj->Id,
@@ -208,6 +205,12 @@ PARAMS is a parameter hash with the following elements:
    ObjectType => the type of the object in question (ref ($object))
    ObjectId => the id of the object in question $object->Id
 
+
+
+   Returns a tuple of (STATUS, MESSAGE);  If the call succeeded, STATUS is true. Otherwise it's false.
+
+
+
 =cut
 
 sub Create {
@@ -215,8 +218,16 @@ sub Create {
     my %args = ( PrincipalId   => undef,
                  PrincipalType => undef,
                  RightName     => undef,
-                 Object    => $RT::System,
+                 Object        => undef,
                  @_ );
+    #if we haven't specified any sort of right, we're talking about a global right
+    if (!defined $args{'Object'} && !defined $args{'ObjectId'} && !defined $args{'ObjectType'}) {
+        $args{'Object'} = $RT::System;
+    }
+    ($args{'Object'}, $args{'ObjectType'}, $args{'ObjectId'}) = $self->_ParseObjectArg( %args );
+    unless( $args{'Object'} ) {
+	return ( 0, $self->loc("System error. Right not granted.") );
+    }
 
     # {{{ Validate the principal
     my $princ_obj;
@@ -232,17 +243,6 @@ sub Create {
 
     # }}}
 
-
-    if ($args{'Object'} && ($args{'ObjectId'} || $args{'ObjectType'})) {
-        use Carp;
-        $RT::Logger->crit(Carp::cluck("ACE::Create called with an ObjectType or an ObjectId"));
-    }
-
-
-    
-    unless ($args{'Object'} && UNIVERSAL::can($args{'Object'},'id')) {
-            return ( 0, $self->loc("System error. Right not granted.") );
-    }
     # {{{ Check the ACL
 
     if (ref( $args{'Object'}) eq 'RT::Group' ) {
@@ -292,17 +292,14 @@ sub Create {
         }
     }
 
-    unless ( $args{'RightName'} ) {
-        return ( 0, $self->loc('Invalid right') );
-    }
     # }}}
 
     # Make sure the right doesn't already exist.
     $self->LoadByCols( PrincipalId   => $princ_obj->id,
                        PrincipalType => $args{'PrincipalType'},
                        RightName     => $args{'RightName'},
-                       ObjectType    => ref($args{'Object'}),
-                       ObjectId      => $args{'Object'}->id,
+                       ObjectType    => $args{'ObjectType'},
+                       ObjectId      => $args{'ObjectId'},
                        DelegatedBy   => 0,
                        DelegatedFrom => 0 );
     if ( $self->Id ) {
@@ -318,7 +315,7 @@ sub Create {
                                    DelegatedFrom => 0 );
 
     #Clear the key cache. TODO someday we may want to just clear a little bit of the keycache space. 
-    RT::Principal->_InvalidateACLCache();
+    RT::Principal->InvalidateACLCache();
 
     if ( $id > 0 ) {
         return ( $id, $self->loc('Right Granted') );
@@ -628,7 +625,7 @@ sub Delegate {
 
     #Clear the key cache. TODO someday we may want to just clear a little bit of the keycache space. 
     # TODO what about the groups key cache?
-    RT::Principal->_InvalidateACLCache();
+    RT::Principal->InvalidateACLCache();
 
     if ( $id > 0 ) {
         return ( $id, $self->loc('Right Delegated') );
@@ -691,7 +688,7 @@ sub _Delete {
     while ( my $delegated_ace = $delegated_from_this->Next ) {
         ( $delete_succeeded, $submsg ) =
           $delegated_ace->_Delete( InsideTransaction => 1 );
-        last if ($delete_succeeded);
+        last unless ($delete_succeeded);
     }
 
     unless ($delete_succeeded) {
@@ -701,18 +698,23 @@ sub _Delete {
 
     my ( $val, $msg ) = $self->SUPER::Delete(@_);
 
-    #Clear the key cache. TODO someday we may want to just clear a little bit of the keycache space. 
-    # TODO what about the groups key cache?
-    RT::Principal->_InvalidateACLCache();
+    # If we're revoking delegation rights (see above), we may need to
+    # revoke all rights delegated by the recipient.
+    if ($val and ($self->RightName() eq 'DelegateRights' or
+		  $self->RightName() eq 'SuperUser')) {
+	$val = $self->PrincipalObj->_CleanupInvalidDelegations( InsideTransaction => 1 );
+    }
 
     if ($val) {
+	#Clear the key cache. TODO someday we may want to just clear a little bit of the keycache space. 
+	# TODO what about the groups key cache?
+	RT::Principal->InvalidateACLCache();
         $RT::Handle->Commit() unless $InsideTransaction;
         return ( $val, $self->loc('Right revoked') );
     }
-    else {
-        $RT::Handle->Rollback() unless $InsideTransaction;
-        return ( 0, $self->loc('Right could not be revoked') );
-    }
+
+    $RT::Handle->Rollback() unless $InsideTransaction;
+    return ( 0, $self->loc('Right could not be revoked') );
 }
 
 # }}}
@@ -924,6 +926,33 @@ sub _CanonicalizePrincipal {
     }
     return ( $princ_obj, $princ_type );
 }
+
+sub _ParseObjectArg {
+    my $self = shift;
+    my %args = ( Object    => undef,
+                 ObjectId    => undef,
+                 ObjectType    => undef,
+                 @_ );
+
+    if( $args{'Object'} && ($args{'ObjectId'} || $args{'ObjectType'}) ) {
+	$RT::Logger->crit( "Method called with an ObjectType or an ObjectId and Object args" );
+	return ();
+    } elsif( $args{'Object'} && !UNIVERSAL::can($args{'Object'},'id') ) {
+	$RT::Logger->crit( "Method called called Object that has no id method" );
+	return ();
+    } elsif( $args{'Object'} ) {
+	my $obj = $args{'Object'};
+	return ($obj, ref $obj, $obj->id);
+    } elsif ( $args{'ObjectType'} ) {
+	my $obj =  $args{'ObjectType'}->new( $self->CurrentUser );
+	$obj->Load( $args{'ObjectId'} );
+	return ($obj, ref $obj, $obj->id);
+    } else {
+	$RT::Logger->crit( "Method called with wrong args" );
+	return ();
+    }
+}
+
 
 # }}}
 1;

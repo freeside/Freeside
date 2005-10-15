@@ -1,8 +1,8 @@
-# {{{ BEGIN BPS TAGGED BLOCK
+# BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -42,7 +42,8 @@
 # works based on those contributions, and sublicense and distribute
 # those contributions and any derivatives thereof.
 # 
-# }}} END BPS TAGGED BLOCK
+# END BPS TAGGED BLOCK }}}
+
 =head1 NAME
 
   RT::Scrips - a collection of RT Scrip objects
@@ -64,6 +65,9 @@ ok (require RT::Scrips);
 =end testing
 
 =cut
+
+
+package RT::Scrips;
 
 use strict;
 no warnings qw(redefine);
@@ -254,6 +258,7 @@ sub Prepared {
 
 
 # {{{ sup _SetupSourceObjects
+
 =head2  _SetupSourceObjects { TicketObj , Ticket, Transaction, TransactionObj }
 
 Setup a ticket and transaction for this Scrip collection to work with as it runs through the 
@@ -313,8 +318,8 @@ sub _FindScrips {
 
     $self->LimitToQueue( $self->{'TicketObj'}->QueueObj->Id )
       ;    #Limit it to  $Ticket->QueueObj->Id
-    $self->LimitToGlobal()
-      unless $self->{'TicketObj'}->QueueObj->Disabled;    # or to "global"
+    $self->LimitToGlobal();
+      # or to "global"
 
     $self->Limit( FIELD => "Stage", VALUE => $args{'Stage'} );
 
@@ -328,14 +333,16 @@ sub _FindScrips {
     );
 
     #We only want things where the scrip applies to this sort of transaction
-    $self->Limit(
-        ALIAS           => $ConditionsAlias,
-        FIELD           => 'ApplicableTransTypes',
-        OPERATOR        => 'LIKE',
-        VALUE           => $args{'Type'},
-        ENTRYAGGREGATOR => 'OR',
-      )
-      if $args{'Type'};
+    # TransactionBatch stage can define list of transaction
+    foreach( split /\s*,\s*/, ($args{'Type'} || '') ) {
+	$self->Limit(
+	    ALIAS           => $ConditionsAlias,
+	    FIELD           => 'ApplicableTransTypes',
+	    OPERATOR        => 'LIKE',
+	    VALUE           => $_,
+	    ENTRYAGGREGATOR => 'OR',
+	)
+    }
 
     # Or where the scrip applies to any transaction
     $self->Limit(

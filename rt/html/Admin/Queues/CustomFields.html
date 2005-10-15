@@ -1,8 +1,8 @@
-%# {{{ BEGIN BPS TAGGED BLOCK
+%# BEGIN BPS TAGGED BLOCK {{{
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -42,30 +42,29 @@
 %# works based on those contributions, and sublicense and distribute
 %# those contributions and any derivatives thereof.
 %# 
-%# }}} END BPS TAGGED BLOCK
+%# END BPS TAGGED BLOCK }}}
 <& /Admin/Elements/Header, Title => $title &>
-<& /Admin/Elements/QueueTabs, id => $Queue->id, 
-    current_tab => 'Admin/Queues/CustomFields.html?id='.$id, 
-    QueueObj => $Queue,                                                      
-    subtabs => $subtabs,
+<&    /Admin/Elements/QueueTabs,
+    id => $Object->id, 
+    current_tab => "Admin/Queues/CustomFields.html?SubType=$SubType&id=$id", 
+    current_subtab => "Admin/Queues/CustomFields.html?SubType=$SubType&id=$id", 
+    QueueObj => $Object,
     Title => $title
     &>
 
-<& /Admin/Elements/EditCustomFields, title => $title, %ARGS &>
+    <& /Admin/Elements/EditCustomFields, %ARGS, title => $title, Object => $Object, ObjectType => 'RT::Queue' &>
 <%INIT>
-my $Queue = new RT::Queue($session{'CurrentUser'});
-$Queue->Load($id) || Abort(loc("Couldn't load queue", $id));
+my $Object = RT::Queue->new( $session{'CurrentUser'} );
 
-my $CustomFields = RT::CustomFields->new($RT::SystemUser);
-$CustomFields->LimitToQueue($Queue->Id);
-my $subtabs = {
-	 A => { title => loc('New custom field'),
-	     	path => "Admin/Queues/CustomField.html?create=1&Queue=".$id,
-			   }
-	      };
+$Object->Load($id) || Abort( loc( "Couldn't load object [_1]", $id ) );
+my $FriendlySubTypes =
+  RT::CustomField->new( $session{'CurrentUser'} )
+  ->FriendlyLookupType( $Object->CustomFieldLookupType );
 
-my $title=  loc('Edit Custom Fields for [_1]', $Queue->Name);
+my $title = loc( 'Edit Custom Fields for [_1]', $Object->Name );
+
 </%INIT>
 <%ARGS>
 $id => undef
+$SubType => 'RT::Queue-RT::Ticket'
 </%ARGS>

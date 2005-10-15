@@ -1,8 +1,8 @@
-# {{{ BEGIN BPS TAGGED BLOCK
+# BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -42,7 +42,8 @@
 # works based on those contributions, and sublicense and distribute
 # those contributions and any derivatives thereof.
 # 
-# }}} END BPS TAGGED BLOCK
+# END BPS TAGGED BLOCK }}}
+
 =head1 NAME
 
   RT::User - RT User object
@@ -65,6 +66,9 @@ ok(require RT::User);
 
 =cut
 
+
+package RT::User;
+
 use strict;
 no warnings qw(redefine);
 
@@ -75,7 +79,7 @@ use vars qw(%_USERS_KEY_CACHE);
 use Digest::MD5;
 use RT::Principals;
 use RT::ACE;
-use RT::EmailParser;
+use RT::Interface::Email;
 
 
 # {{{ sub _Accessible 
@@ -118,41 +122,41 @@ sub _OverlayAccessible {
 
 my $u1 = RT::User->new($RT::SystemUser);
 is(ref($u1), 'RT::User');
-my ($id, $msg) = $u1->Create(Name => 'CreateTest1', EmailAddress => 'create-test-1@example.com');
+my ($id, $msg) = $u1->Create(Name => 'CreateTest1'.$$, EmailAddress => $$.'create-test-1@example.com');
 ok ($id, "Creating user CreateTest1 - " . $msg );
 
 # Make sure we can't create a second user with the same name
 my $u2 = RT::User->new($RT::SystemUser);
-($id, $msg) = $u2->Create(Name => 'CreateTest1', EmailAddress => 'create-test-2@example.com');
+($id, $msg) = $u2->Create(Name => 'CreateTest1'.$$, EmailAddress => $$.'create-test-2@example.com');
 ok (!$id, $msg);
 
 
 # Make sure we can't create a second user with the same EmailAddress address
 my $u3 = RT::User->new($RT::SystemUser);
-($id, $msg) = $u3->Create(Name => 'CreateTest2', EmailAddress => 'create-test-1@example.com');
+($id, $msg) = $u3->Create(Name => 'CreateTest2'.$$, EmailAddress => $$.'create-test-1@example.com');
 ok (!$id, $msg);
 
 # Make sure we can create a user with no EmailAddress address
 my $u4 = RT::User->new($RT::SystemUser);
-($id, $msg) = $u4->Create(Name => 'CreateTest3');
+($id, $msg) = $u4->Create(Name => 'CreateTest3'.$$);
 ok ($id, $msg);
 
 # make sure we can create a second user with no EmailAddress address
 my $u5 = RT::User->new($RT::SystemUser);
-($id, $msg) = $u5->Create(Name => 'CreateTest4');
+($id, $msg) = $u5->Create(Name => 'CreateTest4'.$$);
 ok ($id, $msg);
 
 # make sure we can create a user with a blank EmailAddress address
 my $u6 = RT::User->new($RT::SystemUser);
-($id, $msg) = $u6->Create(Name => 'CreateTest6', EmailAddress => '');
+($id, $msg) = $u6->Create(Name => 'CreateTest6'.$$, EmailAddress => '');
 ok ($id, $msg);
 # make sure we can create a second user with a blankEmailAddress address
 my $u7 = RT::User->new($RT::SystemUser);
-($id, $msg) = $u7->Create(Name => 'CreateTest7', EmailAddress => '');
+($id, $msg) = $u7->Create(Name => 'CreateTest7'.$$, EmailAddress => '');
 ok ($id, $msg);
 
 # Can we change the email address away from from "";
-($id,$msg) = $u7->SetEmailAddress('foo@bar');
+($id,$msg) = $u7->SetEmailAddress('foo@bar'.$$);
 ok ($id, $msg);
 # can we change the address back to "";  
 ($id,$msg) = $u7->SetEmailAddress('');
@@ -171,8 +175,12 @@ sub Create {
         Privileged => 0,
         Disabled => 0,
         EmailAddress => '',
+        _RecordTransaction => 1,
         @_    # get the real argumentlist
     );
+
+    # remove the value so it does not cripple SUPER::Create
+    my $record_transaction = delete $args{'_RecordTransaction'};
 
     #Check the ACL
     unless ( $self->CurrentUser->HasRight(Right => 'AdminUsers', Object => $RT::System) ) {
@@ -204,7 +212,7 @@ sub Create {
         $args{'Password'} = '*NO-PASSWORD*';
     }
     elsif ( length( $args{'Password'} ) < $RT::MinimumPasswordLength ) {
-        return ( 0, $self->loc("Password too short") );
+        return ( 0, $self->loc("Password needs to be at least [_1] characters long",$RT::MinimumPasswordLength) );
     }
 
     else {
@@ -314,7 +322,12 @@ sub Create {
     }
 
 
+    if ( $record_transaction ) {
+	$self->_NewTransaction( Type => "Create" );
+    }
+
     $RT::Handle->Commit;
+
     return ( $id, $self->loc('User created') );
 }
 
@@ -573,12 +586,15 @@ sub LoadOrCreateByEmail {
         my ($val, $message);
 
 	my ( $Address, $Name ) =
-		RT::EmailParser::ParseAddressFromHeader('', $email);
+	RT::Interface::Email::ParseAddressFromHeader($email);
 	$email = $Address;
 
         $self->LoadByEmail($email);
         $message = $self->loc('User loaded');
         unless ($self->Id) {
+		$self->Load($email);
+	}
+	unless($self->Id) {
             ( $val, $message ) = $self->Create(
                 Name => $email,
                 EmailAddress => $email,
@@ -649,11 +665,13 @@ sub ValidateEmailAddress {
 
 
 
-=item CanonicalizeEmailAddress ADDRESS
+=head2 CanonicalizeEmailAddress ADDRESS
 
-# CanonicalizeEmailAddress converts email addresses into canonical form.
-# it takes one email address in and returns the proper canonical
-# form. You can dump whatever your proper local config is in here
+CanonicalizeEmailAddress converts email addresses into canonical form.
+it takes one email address in and returns the proper canonical
+form. You can dump whatever your proper local config is in here.  Note
+that it may be called as a static method; in this case, $self may be
+undef.
 
 =cut
 
@@ -676,14 +694,14 @@ sub CanonicalizeEmailAddress {
 
 
 
-=item CanonicalizeUserInfo HASH of ARGS
+=head2 CanonicalizeUserInfo HASH of ARGS
 
-# CanonicalizeUserInfo can convert all User->Create options.
-# it takes a hashref of all the params sent to User->Create and
-# returns that same hash, by default nothing is done.
+CanonicalizeUserInfo can convert all User->Create options.
+it takes a hashref of all the params sent to User->Create and
+returns that same hash, by default nothing is done.
 
-# This function is intended to allow users to have their info looked up via
-# an outside source and modified upon creation.
+This function is intended to allow users to have their info looked up via
+an outside source and modified upon creation.
 
 =cut
 
@@ -718,7 +736,11 @@ sub SetRandomPassword {
         return ( 0, $self->loc("Permission Denied") );
     }
 
-    my $pass = $self->GenerateRandomPassword( 6, 8 );
+
+    my $min = ( $RT::MinimumPasswordLength > 6 ?  $RT::MinimumPasswordLength : 6);
+    my $max = ( $RT::MinimumPasswordLength > 8 ?  $RT::MinimumPasswordLength : 8);
+
+    my $pass = $self->GenerateRandomPassword( $min, $max) ;
 
     # If we have "notify user on 
 
@@ -764,7 +786,7 @@ sub ResetPassword {
         $template->LoadGlobalTemplate('RT_PasswordChange_Privileged');
     }
     else {
-        $template->LoadGlobalTemplate('RT_PasswordChange_Privileged');
+        $template->LoadGlobalTemplate('RT_PasswordChange_NonPrivileged');
     }
 
     unless ( $template->Id ) {
@@ -1006,29 +1028,54 @@ sub SetPassword {
     my $password = shift;
 
     unless ( $self->CurrentUserCanModify('Password') ) {
-        return ( 0, $self->loc('Permission Denied') );
+        return ( 0, $self->loc('Password: Permission Denied') );
     }
 
     if ( !$password ) {
         return ( 0, $self->loc("No password set") );
     }
     elsif ( length($password) < $RT::MinimumPasswordLength ) {
-        return ( 0, $self->loc("Password too short") );
+        return ( 0, $self->loc("Password needs to be at least [_1] characters long", $RT::MinimumPasswordLength) );
     }
     else {
+        my $new = !$self->HasPassword;
         $password = $self->_GeneratePassword($password);
-        return ( $self->SUPER::SetPassword( $password));
+        my ( $val, $msg ) = $self->SUPER::SetPassword($password);
+        if ($val) {
+            return ( 1, $self->loc("Password set") ) if $new;
+            return ( 1, $self->loc("Password changed") );
+        }
+        else {
+            return ( $val, $msg );
+        }
     }
 
 }
 
 =head2 _GeneratePassword PASSWORD
 
-returns an MD5 hash of the password passed in, in base64 encoding.
+returns an MD5 hash of the password passed in, in hexadecimal encoding.
 
 =cut
 
 sub _GeneratePassword {
+    my $self = shift;
+    my $password = shift;
+
+    my $md5 = Digest::MD5->new();
+    $md5->add($password);
+    return ($md5->hexdigest);
+
+}
+
+=head2 _GeneratePasswordBase64 PASSWORD
+
+returns an MD5 hash of the password passed in, in base64 encoding
+(obsoleted now).
+
+=cut
+
+sub _GeneratePasswordBase64 {
     my $self = shift;
     my $password = shift;
 
@@ -1039,6 +1086,31 @@ sub _GeneratePassword {
 }
 
 # }}}
+
+                                                                                
+=head2 HasPassword
+                                                                                
+Returns true if the user has a valid password, otherwise returns false.         
+                                                                               
+=cut
+
+
+sub HasPassword {
+    my $self = shift;
+    if (   ( $self->__Value('Password') eq '' )
+        || ( $self->__Value('Password') eq undef ) )
+    {
+
+        return (undef);
+    }
+    if ( $self->__Value('Password') eq '*NO-PASSWORD*' ) {
+        return undef;
+    }
+
+    return 1;
+
+}
+
 
 # {{{ sub IsPassword 
 
@@ -1066,8 +1138,7 @@ sub IsPassword {
         return (undef);
     }
 
-    if ( ($self->__Value('Password') eq '') || 
-         ($self->__Value('Password') eq undef) )  {
+    unless ($self->HasPassword) {
         return(undef);
      }
 
@@ -1077,9 +1148,12 @@ sub IsPassword {
     }
 
     #  if it's a historical password we say ok.
-
-    if ( $self->__Value('Password') eq crypt( $value, $self->__Value('Password') ) ) {
-        return (1);
+    if ($self->__Value('Password') eq crypt($value, $self->__Value('Password'))
+        or $self->_GeneratePasswordBase64($value) eq $self->__Value('Password'))
+    {
+        # ...but upgrade the legacy password inplace.
+        $self->SUPER::SetPassword( $self->_GeneratePassword($value) );
+        return(1);
     }
 
     # no password check has succeeded. get out
@@ -1131,7 +1205,7 @@ The response is cached. PrincipalObj should never ever change.
 ok(my $u = RT::User->new($RT::SystemUser));
 ok($u->Load(1), "Loaded the first user");
 ok($u->PrincipalObj->ObjectId == 1, "user 1 is the first principal");
-ok($u->PrincipalObj->PrincipalType eq 'User' , "Principal 1 is a user, not a group");
+is($u->PrincipalObj->PrincipalType, 'User' , "Principal 1 is a user, not a group");
 
 =end testing
 
@@ -1220,9 +1294,29 @@ sub HasGroupRight {
 
 # }}}
 
+# {{{ sub OwnGroups 
+
+=head2 OwnGroups
+
+Returns a group collection object containing the groups of which this
+user is a member.
+
+=cut
+
+sub OwnGroups {
+    my $self = shift;
+    my $groups = RT::Groups->new($self->CurrentUser);
+    $groups->LimitToUserDefinedGroups;
+    $groups->WithMember(PrincipalId => $self->Id, 
+			Recursively => 1);
+    return $groups;
+}
+
+# }}}
+
 # {{{ sub Rights testing
 
-=head2 Rights testing
+=head1 Rights testing
 
 
 =begin testing
@@ -1237,7 +1331,7 @@ ok($rootq->Id, "Loaded the first queue");
 ok ($rootq->CurrentUser->HasRight(Right=> 'CreateTicket', Object => $rootq), "Root can create tickets");
 
 my $new_user = RT::User->new($RT::SystemUser);
-my ($id, $msg) = $new_user->Create(Name => 'ACLTest');
+my ($id, $msg) = $new_user->Create(Name => 'ACLTest'.$$);
 
 ok ($id, "Created a new user for acl test $msg");
 
@@ -1268,7 +1362,7 @@ ok($tickid, "Created ticket: $tickid");
 ok (!$new_user->HasRight( Object => $new_tick, Right => 'ModifyTicket'), "User can't modify the ticket without group membership");
 # Create a new group
 my $group = RT::Group->new($RT::SystemUser);
-$group->CreateUserDefinedGroup(Name => 'ACLTest');
+$group->CreateUserDefinedGroup(Name => 'ACLTest'.$$);
 ok($group->Id, "Created a new group Ok");
 # Grant a group the right to modify tickets in a queue
 ok(my ($gv,$gm) = $group->PrincipalObj->GrantRight( Object => $q, Right => 'ModifyTicket'),"Granted the group the right to modify tickets");
@@ -1295,7 +1389,7 @@ ok($q_as_system->Id, "Loaded the first queue");
 my $new_tick2 = RT::Ticket->new($RT::SystemUser);
 my ($tick2id, $tickmsg) = $new_tick2->Create(Subject=> 'ACL Test 2', Queue =>$q_as_system->Id);
 ok($tick2id, "Created ticket: $tick2id");
-ok($new_tick2->QueueObj->id eq $q_as_system->Id, "Created a new ticket in queue 1");
+is($new_tick2->QueueObj->id, $q_as_system->Id, "Created a new ticket in queue 1");
 
 
 # make sure that the user can't do this without subgroup membership
@@ -1303,7 +1397,7 @@ ok (!$new_user->HasRight( Object => $new_tick2, Right => 'ModifyTicket'), "User 
 
 # Create a subgroup
 my $subgroup = RT::Group->new($RT::SystemUser);
-$subgroup->CreateUserDefinedGroup(Name => 'Subgrouptest');
+$subgroup->CreateUserDefinedGroup(Name => 'Subgrouptest',$$);
 ok($subgroup->Id, "Created a new group ".$subgroup->Id."Ok");
 #Add the subgroup as a subgroup of the group
 my ($said, $samsg) =  $group->AddMember($subgroup->PrincipalId);
@@ -1318,8 +1412,8 @@ ok ($new_user->HasRight( Object => $new_tick2, Right => 'ModifyTicket'), "User c
 #  {{{ Deal with making sure that members of subgroups of a disabled group don't have rights
 
 my ($id, $msg);
- ($id, $msg) =  $group->SetDisabled(1);
- ok ($id,$msg);
+($id, $msg) =  $group->SetDisabled(1);
+ok ($id,$msg);
 ok (!$new_user->HasRight( Object => $new_tick2, Right => 'ModifyTicket'), "User can't modify the ticket when the group ".$group->Id. " is disabled");
  ($id, $msg) =  $group->SetDisabled(0);
 ok($id,$msg);
@@ -1464,7 +1558,7 @@ ok($rqv, "Revoked the right successfully - $rqm");
 
 # {{{ sub HasRight
 
-=head2 sub HasRight
+=head2 HasRight
 
 Shim around PrincipalObj->HasRight. See RT::Principal
 
@@ -1523,8 +1617,8 @@ sub CurrentUserCanModify {
 
 =head2 CurrentUserHasRight
   
-  Takes a single argument. returns 1 if $Self->CurrentUser
-  has the requested right. returns undef otherwise
+Takes a single argument. returns 1 if $Self->CurrentUser
+has the requested right. returns undef otherwise
 
 =cut
 
@@ -1537,6 +1631,77 @@ sub CurrentUserHasRight {
 
 # }}}
 
+# {{{ sub _CleanupInvalidDelegations
+
+=head2 _CleanupInvalidDelegations { InsideTransaction => undef }
+
+Revokes all ACE entries delegated by this user which are inconsistent
+with their current delegation rights.  Does not perform permission
+checks.  Should only ever be called from inside the RT library.
+
+If called from inside a transaction, specify a true value for the
+InsideTransaction parameter.
+
+Returns a true value if the deletion succeeded; returns a false value
+and logs an internal error if the deletion fails (should not happen).
+
+=cut
+
+# XXX Currently there is a _CleanupInvalidDelegations method in both
+# RT::User and RT::Group.  If the recursive cleanup call for groups is
+# ever unrolled and merged, this code will probably want to be
+# factored out into RT::Principal.
+
+sub _CleanupInvalidDelegations {
+    my $self = shift;
+    my %args = ( InsideTransaction => undef,
+		  @_ );
+
+    unless ( $self->Id ) {
+	$RT::Logger->warning("User not loaded.");
+	return (undef);
+    }
+
+    my $in_trans = $args{InsideTransaction};
+
+    return(1) if ($self->HasRight(Right => 'DelegateRights',
+				  Object => $RT::System));
+
+    # Look up all delegation rights currently posessed by this user.
+    my $deleg_acl = RT::ACL->new($RT::SystemUser);
+    $deleg_acl->LimitToPrincipal(Type => 'User',
+				 Id => $self->PrincipalId,
+				 IncludeGroupMembership => 1);
+    $deleg_acl->Limit( FIELD => 'RightName',
+		       OPERATOR => '=',
+		       VALUE => 'DelegateRights' );
+    my @allowed_deleg_objects = map {$_->Object()}
+	@{$deleg_acl->ItemsArrayRef()};
+
+    # Look up all rights delegated by this principal which are
+    # inconsistent with the allowed delegation objects.
+    my $acl_to_del = RT::ACL->new($RT::SystemUser);
+    $acl_to_del->DelegatedBy(Id => $self->Id);
+    foreach (@allowed_deleg_objects) {
+	$acl_to_del->LimitNotObject($_);
+    }
+
+    # Delete all disallowed delegations
+    while ( my $ace = $acl_to_del->Next() ) {
+	my $ret = $ace->_Delete(InsideTransaction => 1);
+	unless ($ret) {
+	    $RT::Handle->Rollback() unless $in_trans;
+	    $RT::Logger->warning("Couldn't delete delegated ACL entry ".$ace->Id);
+	    return (undef);
+	}
+    }
+
+    $RT::Handle->Commit() unless $in_trans;
+    return (1);
+}
+
+# }}}
+
 # {{{ sub _Set
 
 sub _Set {
@@ -1545,6 +1710,8 @@ sub _Set {
     my %args = (
         Field => undef,
         Value => undef,
+	TransactionType   => 'Set',
+	RecordTransaction => 1,
         @_
     );
 
@@ -1558,13 +1725,29 @@ sub _Set {
         return ( 0, $self->loc("Permission Denied") );
     }
 
-    #Set the new value
-    my ( $ret, $msg ) = $self->SUPER::_Set(
-        Field => $args{'Field'},
-        Value => $args{'Value'}
-    );
+    my $Old = $self->SUPER::_Value("$args{'Field'}");
+    
+    my ($ret, $msg) = $self->SUPER::_Set( Field => $args{'Field'},
+					  Value => $args{'Value'} );
+    
+    #If we can't actually set the field to the value, don't record
+    # a transaction. instead, get out of here.
+    if ( $ret == 0 ) { return ( 0, $msg ); }
 
-    return ( $ret, $msg );
+    if ( $args{'RecordTransaction'} == 1 ) {
+
+        my ( $Trans, $Msg, $TransObj ) = $self->_NewTransaction(
+                                               Type => $args{'TransactionType'},
+                                               Field     => $args{'Field'},
+                                               NewValue  => $args{'Value'},
+                                               OldValue  => $Old,
+                                               TimeTaken => $args{'TimeTaken'},
+        );
+        return ( $Trans, scalar $TransObj->BriefDescription );
+    }
+    else {
+        return ( $ret, $msg );
+    }
 }
 
 # }}}
@@ -1614,6 +1797,14 @@ sub _Value {
 
 # }}}
 
+sub BasicColumns {
+    (
+	[ Name => 'User Id' ],
+	[ EmailAddress => 'Email' ],
+	[ RealName => 'Name' ],
+	[ Organization => 'Organization' ],
+    );
+}
 
 1;
 

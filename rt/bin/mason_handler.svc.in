@@ -1,9 +1,9 @@
 #!@PERL@
-# {{{ BEGIN BPS TAGGED BLOCK
+# BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -43,7 +43,8 @@
 # works based on those contributions, and sublicense and distribute
 # those contributions and any derivatives thereof.
 # 
-# }}} END BPS TAGGED BLOCK
+# END BPS TAGGED BLOCK }}}
+
 =head1 NAME
 
 mason_handler.svc - Win32 IIS Service handler for RT
@@ -236,6 +237,7 @@ while( my $cgi = CGI::Fast->new ) {
     warn "Serving $comp\n";
 
     $Handler->handle_cgi($comp);
+    RT::Interface::Web::Handler->CleanupRequest();
     # _should_ always be tied
 }
 

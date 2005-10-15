@@ -1,8 +1,8 @@
-# {{{ BEGIN BPS TAGGED BLOCK
+# BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -42,7 +42,8 @@
 # works based on those contributions, and sublicense and distribute
 # those contributions and any derivatives thereof.
 # 
-# }}} END BPS TAGGED BLOCK
+# END BPS TAGGED BLOCK }}}
+
 =head1 NAME
 
   RT::Scrip - an RT Scrip object
@@ -97,6 +98,9 @@ ok ($ticket2->Priority != '87', "Ticket priority is set right");
 =end testing
 
 =cut
+
+
+package RT::Scrip;
 
 use strict;
 no warnings qw(redefine);
@@ -265,7 +269,7 @@ sub ActionObj {
         $self->{'ScripActionObj'} = RT::ScripAction->new( $self->CurrentUser );
 
         #TODO: why are we loading Actions with templates like this.
-        # two seperate methods might make more sense
+        # two separate methods might make more sense
         $self->{'ScripActionObj'}->Load( $self->ScripAction, $self->Template );
     }
     return ( $self->{'ScripActionObj'} );
@@ -335,6 +339,9 @@ should be loaded by the SuperUser role
 
 =cut
 
+
+# XXX TODO : This code appears to be obsoleted in favor of similar code in Scrips->Apply.
+# Why is this here? Is it still called?
 
 sub Apply {
     my $self = shift;
@@ -417,16 +424,19 @@ sub IsApplicable {
 	    $RT::Logger->error( "Unknown Scrip stage:" . $self->Stage );
 	    return (undef);
 	}
-
+	my $ConditionObj = $self->ConditionObj;
 	foreach my $TransactionObj ( @Transactions ) {
+	    # in TxnBatch stage we can select scrips that are not applicable to all txns
+	    my $txn_type = $TransactionObj->Type;
+	    next unless( $ConditionObj->ApplicableTransTypes =~ /(?:^|,)(?:Any|\Q$txn_type\E)(?:,|$)/i );
 	    # Load the scrip's Condition object
-	    $self->ConditionObj->LoadCondition(
+	    $ConditionObj->LoadCondition(
 		ScripObj       => $self,
 		TicketObj      => $args{'TicketObj'},
 		TransactionObj => $TransactionObj,
 	    );
 
-            if ( $self->ConditionObj->IsApplicable() ) {
+            if ( $ConditionObj->IsApplicable() ) {
 	        # We found an application Transaction -- return it
                 $return = $TransactionObj;
                 last;
@@ -502,7 +512,7 @@ sub Commit {
     $args{'TicketObj'}->Load( $args{'TicketObj'}->Id );
 
     if ($@) {
-        $RT::Logger->error( "Scrip IsApplicable " . $self->Id . " died. - " . $@ );
+        $RT::Logger->error( "Scrip Commit " . $self->Id . " died. - " . $@ );
         return (undef);
     }
 

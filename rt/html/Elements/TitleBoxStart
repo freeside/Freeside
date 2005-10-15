@@ -1,8 +1,8 @@
-%# {{{ BEGIN BPS TAGGED BLOCK
+%# BEGIN BPS TAGGED BLOCK {{{
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -42,7 +42,7 @@
 %# works based on those contributions, and sublicense and distribute
 %# those contributions and any derivatives thereof.
 %# 
-%# }}} END BPS TAGGED BLOCK
+%# END BPS TAGGED BLOCK }}}
 <TABLE CLASS="box <%$class|n%>" 
         BGCOLOR="<%$color%>" 
         CELLSPACING=0
@@ -74,7 +74,7 @@ $class =>  undef
 $bodyclass => undef
 $title_href => undef
 $title => undef
-$title_class => undef
+$title_class => ''
 
 $titleright_href => undef
 $titleright => undef

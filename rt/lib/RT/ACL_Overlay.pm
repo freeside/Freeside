@@ -1,8 +1,8 @@
-# {{{ BEGIN BPS TAGGED BLOCK
+# BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -42,7 +42,8 @@
 # works based on those contributions, and sublicense and distribute
 # those contributions and any derivatives thereof.
 # 
-# }}} END BPS TAGGED BLOCK
+# END BPS TAGGED BLOCK }}}
+
 =head1 NAME
 
   RT::ACL - collection of RT ACE objects
@@ -65,6 +66,9 @@ ok(require RT::ACL);
 
 =cut
 
+
+package RT::ACL;
+
 use strict;
 no warnings qw(redefine);
 
@@ -86,13 +90,64 @@ Limit the ACL to rights for the object $object. It needs to be an RT::Record cla
 
 sub LimitToObject {
     my $self = shift;
-    my $obj = shift;
-    unless (defined($obj) && ref($obj) && UNIVERSAL::can($obj, 'id')) {
-    return undef;
+    my $obj  = shift;
+    unless ( defined($obj)
+        && ref($obj)
+        && UNIVERSAL::can( $obj, 'id' )
+        && $obj->id )
+    {
+        return undef;
     }
-    $self->Limit(FIELD => 'ObjectType', OPERATOR=> '=', VALUE => ref($obj), ENTRYAGGREGATOR => 'OR');
-    $self->Limit(FIELD => 'ObjectId', OPERATOR=> '=', VALUE => $obj->id, ENTRYAGGREGATOR => 'OR', QUOTEVALUE => 0);
+    $self->Limit(
+        FIELD           => 'ObjectType',
+        OPERATOR        => '=',
+        VALUE           => ref($obj),
+        ENTRYAGGREGATOR => 'OR'
+    );
+    $self->Limit(
+        FIELD           => 'ObjectId',
+        OPERATOR        => '=',
+        VALUE           => $obj->id,
+        ENTRYAGGREGATOR => 'OR',
+        QUOTEVALUE      => 0
+    );
 
+}
+
+# }}}
+
+# {{{ LimitNotObject
+
+=head2 LimitNotObject $object
+
+Limit the ACL to rights NOT on the object $object.  $object needs to be
+an RT::Record class.
+
+=cut
+
+sub LimitNotObject {
+    my $self = shift;
+    my $obj  = shift;
+    unless ( defined($obj)
+        && ref($obj)
+        && UNIVERSAL::can( $obj, 'id' )
+        && $obj->id )
+    {
+        return undef;
+    }
+    $self->Limit( FIELD => 'ObjectType',
+		  OPERATOR => '!=',
+		  VALUE => ref($obj),
+		  ENTRYAGGREGATOR => 'OR',
+		  SUBCLAUSE => $obj->id
+		);
+    $self->Limit( FIELD => 'ObjectId',
+		  OPERATOR => '!=',
+		  VALUE => $obj->id,
+		  ENTRYAGGREGATOR => 'OR',
+		  QUOTEVALUE => 0,
+		  SUBCLAUSE => $obj->id
+		);
 }
 
 # }}}

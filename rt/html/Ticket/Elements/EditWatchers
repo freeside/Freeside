@@ -1,8 +1,8 @@
-%# {{{ BEGIN BPS TAGGED BLOCK
+%# BEGIN BPS TAGGED BLOCK {{{
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -42,7 +42,7 @@
 %# works based on those contributions, and sublicense and distribute
 %# those contributions and any derivatives thereof.
 %# 
-%# }}} END BPS TAGGED BLOCK
+%# END BPS TAGGED BLOCK }}}
 <ul>
 %# Print out a placeholder if there are none.
 %if ($Members->Count == 0 ) {
@@ -52,7 +52,7 @@
 
 %while (my $watcher=$Members->Next) {
 <li>
-<INPUT TYPE=CHECKBOX NAME="Ticket-DeleteWatcher-Type-<%$Watchers->Type%>-Principal-<%$watcher->MemberId%>" UNCHECKED>
+<INPUT TYPE=CHECKBOX NAME="Ticket-DeleteWatcher-Type-<%$Watchers->Type%>-Principal-<%$watcher->MemberId%>" value="1" UNCHECKED>
 %if ($watcher->MemberObj->IsUser) { 
 <a href="<%$RT::WebPath%>/Admin/Users/Modify.html?id=<%$watcher->MemberObj->Object->id%>">
 <%$watcher->MemberObj->Object->Name%></a>

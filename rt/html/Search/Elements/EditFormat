@@ -1,8 +1,8 @@
-%# {{{ BEGIN BPS TAGGED BLOCK
+%# BEGIN BPS TAGGED BLOCK {{{
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -42,14 +42,14 @@
 %# works based on those contributions, and sublicense and distribute
 %# those contributions and any derivatives thereof.
 %# 
-%# }}} END BPS TAGGED BLOCK
+%# END BPS TAGGED BLOCK }}}
 <table>
 <tr>
 <td>
-<&|/l&>Available Columns</&>:
+<&|/l&>Add Columns</&>:
 </td>
 <td>
-Format:
+<&|/l&>Format</&>:
 </td>
 <td></td>
 <td>
@@ -58,50 +58,42 @@ Format:
 <tr>
 <td valign=top>
 <select size="6" name="SelectDisplayColumns" multiple>
-% my $i = 0;
-% while ($i < scalar @$AvailableColumns) {
-% my $field = $AvailableColumns->[$i];
-% if ($field) {
-<option value=<%$i%>
-><%$field%></option>
-% }
-% $i++;
+% foreach my $field ( @$AvailableColumns) {
+<option value="<%$field%>"><% loc( $field) %></option>
+%# $m->comp( '/Elements/RT__Ticket/ColumnMap', Name => $field, Attr => 'title') || 
 % }
 </select>
 </td>
 <td>
-Link:
-<select name=Link>
+<&|/l&>Link</&>:
+<select name="Link">
 <option value="None">-</option>
-<option value="Display">Display</option>
-<option value="Take">Take</option>
+<option value="Display"><&|/l&>Display</&></option>
+<option value="Take"><&|/l&>Take</&></option>
 </select>
-<br>Title: <input name="Title" size=10>
-<br>Size:
-<select name=Size>
+<br><&|/l&>Title</&>: <input name="Title" size=10>
+<br><&|/l&>Size</&>:
+<select name="Size">
 <option value="">-</option>
-<option value="Small">Small</option>
-<option value="Large">Large</option>
+<option value="Small"><&|/l&>Small</&></option>
+<option value="Large"><&|/l&>Large</&></option>
 </select>
-<br>Face:
-<select name=Face>
+<br><&|/l&>Style</&>:
+<select name="Face">
 <option value="">-</option>
-<option value="Bold">Bold</option>
-<option value="Italic">Italic</option>
+<option value="Bold"><&|/l&>Bold</&></option>
+<option value="Italic"><&|/l&>Italic</&></option>
 </select>
 </td>
 <td>
 <input type=submit name="AddCol" value="->">
 </td>
 <td valign=top>
-<select size=4 name="CurrentDisplayColumns" style="width : 100%">
-% $i = 0;
-% while ($i < scalar @$CurrentFormat) {
-% my $field = $CurrentFormat->[$i];
-% if ($field) {
-<option value=<%$i%>><%$field->{Column}%></option>
-% }
-% $i++;
+<select size=4 name="CurrentDisplayColumns">
+% my $i=0;
+% foreach my $field (@$CurrentFormat) {
+<option value="<%$i++%>><%$field->{Column}%>">
+<%loc( $field->{Column}) %></option>
 % }
 </select>
 <br>

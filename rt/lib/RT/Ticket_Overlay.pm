@@ -1,8 +1,8 @@
-# {{{ BEGIN BPS TAGGED BLOCK
+# BEGIN BPS TAGGED BLOCK {{{
 # 
 # COPYRIGHT:
 #  
-# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 #                                          <jesse@bestpractical.com>
 # 
 # (Except where explicitly superseded by other copyright notices)
@@ -42,7 +42,7 @@
 # works based on those contributions, and sublicense and distribute
 # those contributions and any derivatives thereof.
 # 
-# }}} END BPS TAGGED BLOCK
+# END BPS TAGGED BLOCK }}}
 # {{{ Front Material 
 
 =head1 SYNOPSIS
@@ -66,12 +66,16 @@ ok($testqueue->Create( Name => 'ticket tests'));
 ok($testqueue->Id != 0);
 use_ok(RT::CustomField);
 ok(my $testcf = RT::CustomField->new($RT::SystemUser));
-ok($testcf->Create( Name => 'selectmulti',
+my ($ret, $cmsg) = $testcf->Create( Name => 'selectmulti',
                     Queue => $testqueue->id,
-                               Type => 'SelectMultiple'));
-ok($testcf->AddValue ( Name => 'Value1',
+                               Type => 'SelectMultiple');
+ok($ret,"Created the custom field - ".$cmsg);
+($ret,$cmsg) = $testcf->AddValue ( Name => 'Value1',
                         SortOrder => '1',
-                        Description => 'A testing value'));
+                        Description => 'A testing value');
+
+ok($ret, "Added a value - ".$cmsg);
+
 ok($testcf->AddValue ( Name => 'Value2',
                         SortOrder => '2',
                         Description => 'Another testing value'));
@@ -107,8 +111,8 @@ ok($t->CustomFieldValues($testcf->Id)->Count == 0);
 
 ok(my $t2 = RT::Ticket->new($RT::SystemUser));
 ok($t2->Load($id));
-ok($t2->Subject eq 'Testing');
-ok($t2->QueueObj->Id eq $testqueue->id);
+is($t2->Subject, 'Testing');
+is($t2->QueueObj->Id, $testqueue->id);
 ok($t2->OwnerObj->Id == $u->Id);
 
 my $t3 = RT::Ticket->new($RT::SystemUser);
@@ -133,6 +137,9 @@ ok($t3->CustomFieldValues($testcf->Id)->Count == 1,
 
 =cut
 
+
+package RT::Ticket;
+
 use strict;
 no warnings qw(redefine);
 
@@ -142,8 +149,8 @@ use RT::Record;
 use RT::Links;
 use RT::Date;
 use RT::CustomFields;
-use RT::TicketCustomFieldValues;
 use RT::Tickets;
+use RT::Transactions;
 use RT::URI::fsck_com_rt;
 use RT::URI;
 use MIME::Entity;
@@ -231,6 +238,7 @@ sub Load {
     #TODO modify this routine to look at EffectiveId and do the recursive load
     # thing. be careful to cache all the interim tickets we try so we don't loop forever.
 
+
     #If it's a local URI, turn it into a ticket id
     if ( $id =~ /^$RT::TicketBaseURI(\d+)$/ ) {
         $id = $1;
@@ -243,7 +251,7 @@ sub Load {
 
     #If we have an integer URI, load the ticket
     if ( $id =~ /^\d+$/ ) {
-        my $ticketid = $self->LoadById($id);
+        my ($ticketid,$msg) = $self->LoadById($id);
 
         unless ($self->Id) {
             $RT::Logger->crit("$self tried to load a bogus ticket: $id\n");
@@ -253,11 +261,13 @@ sub Load {
 
     #It's not a URI. It's not a numerical ticket ID. Punt!
     else {
+        $RT::Logger->warning("Tried to load a bogus ticket id: '$id'");
         return (undef);
     }
 
     #If we're merged, resolve the merge.
     if ( ( $self->EffectiveId ) and ( $self->EffectiveId != $self->Id ) ) {
+        $RT::Logger->debug ("We found a merged ticket.". $self->id ."/".$self->EffectiveId);
         return ( $self->Load( $self->EffectiveId ) );
     }
 
@@ -377,8 +387,7 @@ sub Create {
         $QueueObj->Load( $args{'Queue'}->Id );
     }
     else {
-        $RT::Logger->debug(
-            $args{'Queue'} . " not a recognised queue object." );
+        $RT::Logger->debug( $args{'Queue'} . " not a recognised queue object." );
     }
 
     #Can't create a ticket without a queue.
@@ -397,11 +406,7 @@ sub Create {
     {
         return (
             0, 0,
-            $self->loc(
-                "No permission to create tickets in the queue '[_1]'",
-                $QueueObj->Name
-            )
-        );
+            $self->loc( "No permission to create tickets in the queue '[_1]'", $QueueObj->Name));
     }
 
     unless ( $QueueObj->IsValidStatus( $args{'Status'} ) ) {
@@ -673,7 +678,7 @@ sub Create {
         foreach my $link (
             ref( $args{$type} ) ? @{ $args{$type} } : ( $args{$type} ) )
         {
-            my ( $wval, $wmsg ) = $self->AddLink(
+            my ( $wval, $wmsg ) = $self->_AddLink(
                 Type                          => $LINKTYPEMAP{$type}->{'Type'},
                 $LINKTYPEMAP{$type}->{'Mode'} => $link,
                 Silent                        => 1
@@ -691,13 +696,18 @@ sub Create {
         next unless ( $arg =~ /^CustomField-(\d+)$/i );
         my $cfid = $1;
         foreach
-          my $value ( ref( $args{$arg} ) ? @{ $args{$arg} } : ( $args{$arg} ) )
+          my $value ( UNIVERSAL::isa( $args{$arg} => 'ARRAY' ) ? @{ $args{$arg} } : ( $args{$arg} ) )
         {
             next unless ( length($value) );
+
+            # Allow passing in uploaded LargeContent etc by hash reference
             $self->_AddCustomFieldValue(
+                (UNIVERSAL::isa( $value => 'HASH' )
+                    ? %$value
+                    : (Value => $value)
+                ),
                 Field             => $cfid,
-                Value             => $value,
-                RecordTransaction => 0
+                RecordTransaction => 0,
             );
         }
     }
@@ -715,6 +725,8 @@ sub Create {
 
         if ( $self->Id && $Trans ) {
 
+            $TransObj->UpdateCustomFields(ARGSRef => \%args);
+
             $RT::Logger->info( "Ticket " . $self->Id . " created in queue '" . $QueueObj->Name . "' by " . $self->CurrentUser->Name );
             $ErrStr = $self->loc( "Ticket [_1] created in queue '[_2]'", $self->Id, $QueueObj->Name );
             $ErrStr = join( "\n", $ErrStr, @non_fatal_errors );
@@ -724,11 +736,7 @@ sub Create {
 
             $ErrStr = join( "\n", $ErrStr, @non_fatal_errors );
             $RT::Logger->error("Ticket couldn't be created: $ErrStr");
-            return (
-                0, 0,
-                $self->loc(
-                    "Ticket could not be created due to an internal error")
-            );
+            return ( 0, 0, $self->loc( "Ticket could not be created due to an internal error"));
         }
 
         $RT::Handle->Commit();
@@ -750,170 +758,6 @@ sub Create {
 
 # }}}
 
-# {{{ sub CreateFromEmailMessage
-
-
-=head2 CreateFromEmailMessage { Message, Queue, ExtractActorFromHeaders } 
-
-This code replaces what was once a large part of the email gateway.
-It takes an email message as a parameter, parses out the sender, subject
-and a MIME object. It then creates a ticket based on those attributes
-
-=cut
-
-sub CreateFromEmailMessage {
-    my $self = shift;
-    my %args = ( Message => undef,
-                 Queue => undef,
-                 ExtractActorFromSender => undef,
-                 @_ );
-
-    
-    # Pull out requestor
-
-    # Pull out Cc?
-
-    # 
-
-
-}
-
-# }}}
-
-
-# {{{ CreateFrom822
-
-=head2 FORMAT
-
-CreateTickets uses the template as a template for an ordered set of tickets 
-to create. The basic format is as follows:
-
-
- ===Create-Ticket: identifier
- Param: Value
- Param2: Value
- Param3: Value
- Content: Blah
- blah
- blah
- ENDOFCONTENT
-=head2 Acceptable fields
-
-A complete list of acceptable fields for this beastie:
-
-
-    *  Queue           => Name or id# of a queue
-       Subject         => A text string
-       Status          => A valid status. defaults to 'new'
-
-       Due             => Dates can be specified in seconds since the epoch
-                          to be handled literally or in a semi-free textual
-                          format which RT will attempt to parse.
-       Starts          => 
-       Started         => 
-       Resolved        => 
-       Owner           => Username or id of an RT user who can and should own 
-                          this ticket
-   +   Requestor       => Email address
-   +   Cc              => Email address 
-   +   AdminCc         => Email address 
-       TimeWorked      => 
-       TimeEstimated   => 
-       TimeLeft        => 
-       InitialPriority => 
-       FinalPriority   => 
-       Type            => 
-    +  DependsOn       => 
-    +  DependedOnBy    =>
-    +  RefersTo        =>
-    +  ReferredToBy    => 
-    +  Members         =>
-    +  MemberOf        => 
-       Content         => content. Can extend to multiple lines. Everything
-                          within a template after a Content: header is treated
-                          as content until we hit a line containing only 
-                          ENDOFCONTENT
-       ContentType     => the content-type of the Content field
-       CustomField-<id#> => custom field value
-
-Fields marked with an * are required.
-
-Fields marked with a + man have multiple values, simply
-by repeating the fieldname on a new line with an additional value.
-
-
-When parsed, field names are converted to lowercase and have -s stripped.
-Refers-To, RefersTo, refersto, refers-to and r-e-f-er-s-tO will all 
-be treated as the same thing.
-
-
-=begin testing
-
-use_ok(RT::Ticket);
-
-=end testing
-
-
-=cut
-
-sub CreateFrom822 {
-    my $self    = shift;
-    my $content = shift;
-
-
-
-    my %args = $self->_Parse822HeadersForAttributes($content);
-
-    # Now we have a %args to work with.
-    # Make sure we have at least the minimum set of
-    # reasonable data and do our thang
-    my $ticket = RT::Ticket->new($RT::SystemUser);
-
-    my %ticketargs = (
-        Queue           => $args{'queue'},
-        Subject         => $args{'subject'},
-        Status          => $args{'status'},
-        Due             => $args{'due'},
-        Starts          => $args{'starts'},
-        Started         => $args{'started'},
-        Resolved        => $args{'resolved'},
-        Owner           => $args{'owner'},
-        Requestor       => $args{'requestor'},
-        Cc              => $args{'cc'},
-        AdminCc         => $args{'admincc'},
-        TimeWorked      => $args{'timeworked'},
-        TimeEstimated   => $args{'timeestimated'},
-        TimeLeft        => $args{'timeleft'},
-        InitialPriority => $args{'initialpriority'},
-        FinalPriority   => $args{'finalpriority'},
-        Type            => $args{'type'},
-        DependsOn       => $args{'dependson'},
-        DependedOnBy    => $args{'dependedonby'},
-        RefersTo        => $args{'refersto'},
-        ReferredToBy    => $args{'referredtoby'},
-        Members         => $args{'members'},
-        MemberOf        => $args{'memberof'},
-        MIMEObj         => $args{'mimeobj'}
-    );
-
-    # Add custom field entries to %ticketargs.
-    # TODO: allow named custom fields
-    map {
-        /^customfield-(\d+)$/
-          && ( $ticketargs{ "CustomField-" . $1 } = $args{$_} );
-    } keys(%args);
-
-    my ( $id, $transid, $msg ) = $ticket->Create(%ticketargs);
-    unless ($id) {
-        $RT::Logger->error( "Couldn't create a related ticket for "
-              . $self->TicketObj->Id . " "
-              . $msg );
-    }
-
-    return (1);
-}
-
-# }}}
 
 # {{{ UpdateFrom822 
 
@@ -1029,7 +873,6 @@ sub UpdateFrom822 {
         $ticketargs{'Queue'} = $tempqueue->Id() if ( $tempqueue->id );
     }
 
-    # die "updaterecordobject is a webui thingy";
     my @results;
 
     foreach my $attribute (@attribs) {
@@ -1321,16 +1164,24 @@ sub Import {
         }
     }
 
+    my $create_groups_ret = $self->_CreateTicketGroups();
+    unless ($create_groups_ret) {
+        $RT::Logger->crit(
+            "Couldn't create ticket groups for ticket " . $self->Id );
+    }
+
+    $self->OwnerGroup->_AddMember( PrincipalId => $Owner->PrincipalId );
+
     my $watcher;
     foreach $watcher ( @{ $args{'Cc'} } ) {
-        $self->_AddWatcher( Type => 'Cc', Person => $watcher, Silent => 1 );
+        $self->_AddWatcher( Type => 'Cc', Email => $watcher, Silent => 1 );
     }
     foreach $watcher ( @{ $args{'AdminCc'} } ) {
-        $self->_AddWatcher( Type => 'AdminCc', Person => $watcher,
+        $self->_AddWatcher( Type => 'AdminCc', Email => $watcher,
             Silent => 1 );
     }
     foreach $watcher ( @{ $args{'Requestor'} } ) {
-        $self->_AddWatcher( Type => 'Requestor', Person => $watcher,
+        $self->_AddWatcher( Type => 'Requestor', Email => $watcher,
             Silent => 1 );
     }
 
@@ -1338,7 +1189,6 @@ sub Import {
 }
 
 # }}}
-
 
 # {{{ Routines dealing with watchers.
 
@@ -1487,7 +1337,7 @@ sub AddWatcher {
             }
         }
         else {
-            $RT::Logger->warn( "$self -> AddWatcher got passed a bogus type");
+            $RT::Logger->warning( "$self -> AddWatcher got passed a bogus type");
             return ( 0, $self->loc('Error in parameters to Ticket->AddWatcher') );
         }
     }
@@ -1523,6 +1373,10 @@ sub _AddWatcher {
     if ($args{'Email'}) {
         my $user = RT::User->new($RT::SystemUser);
         my ($pid, $msg) = $user->LoadOrCreateByEmail($args{'Email'});
+	# If we can't load the user by email address, let's try to load by username	
+	unless ($pid) { 
+		($pid,$msg) = $user->Load($args{'Email'})
+	}
         if ($pid) {
             $args{'PrincipalId'} = $pid; 
         }
@@ -2385,6 +2239,8 @@ MIMEObj, TimeTaken, CcMessageTo, BccMessageTo, Content, DryRun
 If DryRun is defined, this update WILL NOT BE RECORDED. Scrips will not be committed.
 They will, however, be prepared and you'll be able to access them through the TransactionObj
 
+Returns: Transaction id, Error Message, Transaction Object
+(note the different order from Create()!)
 
 =cut
 
@@ -2433,6 +2289,9 @@ if there's no MIMEObj, Content is used to build a MIME::Entity object
 
 If DryRun is defined, this update WILL NOT BE RECORDED. Scrips will not be committed.
 They will, however, be prepared and you'll be able to access them through the TransactionObj
+
+Returns: Transaction id, Error Message, Transaction Object
+(note the different order from Create()!)
 
 
 =cut
@@ -2522,6 +2381,24 @@ sub _RecordNote {
                                                     undef, $args{'BccMessageTo'}
                                  ) )
       if defined $args{'BccMessageTo'};
+
+    # If this is from an external source, we need to come up with its
+    # internal Message-ID now, so all emails sent because of this
+    # message have a common Message-ID
+    unless ($args{'MIMEObj'}->head->get('Message-ID')
+            =~ /<(rt-.*?-\d+-\d+)\.(\d+-0-0)\@$RT::Organization>/) {
+        $args{'MIMEObj'}->head->set( 'RT-Message-ID',
+            "<rt-"
+            . $RT::VERSION . "-"
+            . $$ . "-"
+            . CORE::time() . "-"
+            . int(rand(2000)) . '.'
+            . $self->id . "-"
+            . "0" . "-"  # Scrip
+            . "0" . "@"  # Email sent
+            . $RT::Organization
+            . ">" );
+    }
 
     #Record the correspondence (write the transaction)
     my ( $Trans, $msg, $TransObj ) = $self->_NewTransaction(
@@ -2647,6 +2524,51 @@ sub DeleteLink {
 
 Takes a paramhash of Type and one of Base or Target. Adds that link to this ticket.
 
+=begin testing 
+
+my $q1 = RT::Queue->new($RT::SystemUser);
+my ($id,$msg) = $q1->Create(Name => 'LinkTest1');
+ok ($id,$msg);
+my $q2 = RT::Queue->new($RT::SystemUser);
+($id,$msg) = $q2->Create(Name => 'LinkTest2');
+ok ($id,$msg);
+
+my $u1 = RT::User->new($RT::SystemUser);
+($id,$msg) =$u1->Create(Name => 'LinkTestUser');
+
+ok ($id,$msg);
+
+($id,$msg) = $u1->PrincipalObj->GrantRight ( Object => $q1, Right => 'CreateTicket');
+ok ($id,$msg);
+($id,$msg) = $u1->PrincipalObj->GrantRight ( Object => $q1, Right => 'ModifyTicket');
+ok ($id,$msg);
+
+my $tid;
+
+my $creator = RT::CurrentUser->new($u1->id);
+
+my $ticket = RT::Ticket->new( $creator);
+ok($ticket->isa('RT::Ticket'));
+($id,$tid, $msg) = $ticket->Create(Subject => 'Link test 1', Queue => $q1->id);
+ok ($id,$msg);
+
+
+my $ticket2 = RT::Ticket->new($RT::SystemUser);
+($id, $tid, $msg) = $ticket2->Create(Subject => 'Link test 2', Queue => $q2->id);
+ok ($id, $msg);
+
+($id,$msg) =$ticket->AddLink(Type => 'RefersTo', Target => $ticket2->id);
+ok(!$id,$msg);
+($id,$msg) = $u1->PrincipalObj->GrantRight ( Object => $q2, Right => 'CreateTicket');
+ok ($id,$msg);
+($id,$msg) = $u1->PrincipalObj->GrantRight ( Object => $q2, Right => 'ModifyTicket');
+ok ($id,$msg);
+($id,$msg) =$ticket->AddLink(Type => 'RefersTo', Target => $ticket2->id);
+ok($id,$msg);
+($id,$msg) =$ticket->AddLink(Type => 'RefersTo', Target => -1);
+ok(!$id,$msg);
+
+=end testing 
 
 =cut
 
@@ -2662,6 +2584,58 @@ sub AddLink {
     unless ( $self->CurrentUserHasRight('ModifyTicket') ) {
         return ( 0, $self->loc("Permission Denied") );
     }
+
+
+    $self->_AddLink(%args);
+}
+
+=head2 _AddLink  
+
+Private non-acled variant of AddLink so that links can be added during create.
+
+=cut
+
+sub _AddLink {
+    my $self = shift;
+    my %args = ( Target => '',
+                 Base   => '',
+                 Type   => '',
+                 Silent => undef,
+                 @_ );
+
+    # {{{ If the other URI is an RT::Ticket, we want to make sure the user
+    # can modify it too...
+    my $other_ticket_uri = RT::URI->new($self->CurrentUser);
+
+    if ( $args{'Target'} ) {
+        $other_ticket_uri->FromURI( $args{'Target'} );
+
+    }
+    elsif ( $args{'Base'} ) {
+        $other_ticket_uri->FromURI( $args{'Base'} );
+    }
+
+    unless ( $other_ticket_uri->Resolver && $other_ticket_uri->Scheme ) {
+	my $msg = $args{'Target'} ? $self->loc("Couldn't resolve target '[_1]' into a URI.", $args{'Target'})
+          : $self->loc("Couldn't resolve base '[_1]' into a URI.", $args{'Base'});
+        $RT::Logger->warning( "$self $msg\n" );
+
+        return( 0, $msg );
+    }
+
+    if ( $other_ticket_uri->Resolver->Scheme eq 'fsck.com-rt') {
+        my $object = $other_ticket_uri->Resolver->Object;
+
+        if (   UNIVERSAL::isa( $object, 'RT::Ticket' )
+            && $object->id
+            && !$object->CurrentUserHasRight('ModifyTicket') )
+        {
+            return ( 0, $self->loc("Permission Denied") );
+        }
+
+    }
+
+    # }}}
 
     my ($val, $Msg) = $self->SUPER::_AddLink(%args);
 
@@ -2680,7 +2654,7 @@ sub AddLink {
 
     # Don't write the transaction if we're doing this on create
     if ( $args{'Silent'} ) {
-        return ( 1, $Msg );
+        return ( $val, $Msg );
     }
     else {
 	my $remote_uri = RT::URI->new( $RT::SystemUser );
@@ -2692,52 +2666,67 @@ sub AddLink {
 				   Field => $LINKDIRMAP{$args{'Type'}}->{$direction},
 				   NewValue =>  $remote_uri->URI || $remote_link,
 				   TimeTaken => 0 );
-        return ( $Trans, $Msg );
+        return ( $val, $Msg );
     }
 
 }
 
 # }}}
 
+
 # {{{ sub MergeInto
 
 =head2 MergeInto
+
 MergeInto take the id of the ticket to merge this ticket into.
+
+
+=begin testing
+
+my $t1 = RT::Ticket->new($RT::SystemUser);
+$t1->Create ( Subject => 'Merge test 1', Queue => 'general', Requestor => 'merge1@example.com');
+my $t1id = $t1->id;
+my $t2 = RT::Ticket->new($RT::SystemUser);
+$t2->Create ( Subject => 'Merge test 2', Queue => 'general', Requestor => 'merge2@example.com');
+my $t2id = $t2->id;
+my ($msg, $val) = $t1->MergeInto($t2->id);
+ok ($msg,$val);
+$t1 = RT::Ticket->new($RT::SystemUser);
+is ($t1->id, undef, "ok. we've got a blank ticket1");
+$t1->Load($t1id);
+
+is ($t1->id, $t2->id);
+
+is ($t1->Requestors->MembersObj->Count, 2);
+
+
+=end testing
 
 =cut
 
 sub MergeInto {
     my $self      = shift;
-    my $MergeInto = shift;
+    my $ticket_id = shift;
 
     unless ( $self->CurrentUserHasRight('ModifyTicket') ) {
         return ( 0, $self->loc("Permission Denied") );
     }
 
     # Load up the new ticket.
-    my $NewTicket = RT::Ticket->new($RT::SystemUser);
-    $NewTicket->Load($MergeInto);
+    my $MergeInto = RT::Ticket->new($RT::SystemUser);
+    $MergeInto->Load($ticket_id);
 
     # make sure it exists.
-    unless ( defined $NewTicket->Id ) {
+    unless ( $MergeInto->Id ) {
         return ( 0, $self->loc("New ticket doesn't exist") );
     }
 
     # Make sure the current user can modify the new ticket.
-    unless ( $NewTicket->CurrentUserHasRight('ModifyTicket') ) {
-        $RT::Logger->debug("failed...");
+    unless ( $MergeInto->CurrentUserHasRight('ModifyTicket') ) {
         return ( 0, $self->loc("Permission Denied") );
     }
 
-    $RT::Logger->debug(
-        "checking if the new ticket has the same id and effective id...");
-    unless ( $NewTicket->id == $NewTicket->EffectiveId ) {
-        $RT::Logger->err( "$self trying to merge into "
-              . $NewTicket->Id
-              . " which is itself merged.\n" );
-        return ( 0,
-            $self->loc("Can't merge into a merged ticket. You should never get this error") );
-    }
+    $RT::Handle->BeginTransaction();
 
     # We use EffectiveId here even though it duplicates information from
     # the links table becasue of the massive performance hit we'd take
@@ -2747,19 +2736,20 @@ sub MergeInto {
     #update this ticket's effective id to the new ticket's id.
     my ( $id_val, $id_msg ) = $self->__Set(
         Field => 'EffectiveId',
-        Value => $NewTicket->Id()
+        Value => $MergeInto->Id()
     );
 
     unless ($id_val) {
-        $RT::Logger->error(
-            "Couldn't set effective ID for " . $self->Id . ": $id_msg" );
+        $RT::Handle->Rollback();
         return ( 0, $self->loc("Merge failed. Couldn't set EffectiveId") );
     }
 
     my ( $status_val, $status_msg ) = $self->__Set( Field => 'Status', Value => 'resolved');
 
     unless ($status_val) {
+        $RT::Handle->Rollback();
         $RT::Logger->error( $self->loc("[_1] couldn't set status to resolved. RT's Database may be inconsistent.", $self) );
+        return ( 0, $self->loc("Merge failed. Couldn't set Status") );
     }
 
 
@@ -2767,11 +2757,24 @@ sub MergeInto {
     my $old_links_to = RT::Links->new($self->CurrentUser);
     $old_links_to->Limit(FIELD => 'Target', VALUE => $self->URI);
 
+    my %old_seen;
     while (my $link = $old_links_to->Next) {
-        if ($link->Base eq $NewTicket->URI) {
+        if (exists $old_seen{$link->Base."-".$link->Type}) {
+            $link->Delete;
+        }   
+        elsif ($link->Base eq $MergeInto->URI) {
             $link->Delete;
         } else {
-            $link->SetTarget($NewTicket->URI);
+            # First, make sure the link doesn't already exist. then move it over.
+            my $tmp = RT::Link->new($RT::SystemUser);
+            $tmp->LoadByCols(Base => $link->Base, Type => $link->Type, LocalTarget => $MergeInto->id);
+            if ($tmp->id)   {
+                    $link->Delete;
+            } else { 
+                $link->SetTarget($MergeInto->URI);
+                $link->SetLocalTarget($MergeInto->id);
+            }
+            $old_seen{$link->Base."-".$link->Type} =1;
         }
 
     }
@@ -2780,41 +2783,54 @@ sub MergeInto {
     $old_links_from->Limit(FIELD => 'Base', VALUE => $self->URI);
 
     while (my $link = $old_links_from->Next) {
-        if ($link->Target eq $NewTicket->URI) {
+        if (exists $old_seen{$link->Type."-".$link->Target}) {
+            $link->Delete;
+        }   
+        if ($link->Target eq $MergeInto->URI) {
             $link->Delete;
         } else {
-            $link->SetBase($NewTicket->URI);
+            # First, make sure the link doesn't already exist. then move it over.
+            my $tmp = RT::Link->new($RT::SystemUser);
+            $tmp->LoadByCols(Target => $link->Target, Type => $link->Type, LocalBase => $MergeInto->id);
+            if ($tmp->id)   {
+                    $link->Delete;
+            } else { 
+                $link->SetBase($MergeInto->URI);
+                $link->SetLocalBase($MergeInto->id);
+                $old_seen{$link->Type."-".$link->Target} =1;
+            }
         }
 
     }
 
     # Update time fields
-    $NewTicket->SetTimeEstimated(($NewTicket->TimeEstimated || 0) + ($self->TimeEstimated || 0));
-    $NewTicket->SetTimeWorked(   ($NewTicket->TimeWorked || 0)    + ($self->TimeWorked || 0));
-    $NewTicket->SetTimeLeft(     ($NewTicket->TimeLeft || 0)      + ($self->TimeLeft || 0));   
+    foreach my $type qw(TimeEstimated TimeWorked TimeLeft) {
 
-    #add all of this ticket's watchers to that ticket.
-    my $requestors = $self->Requestors->MembersObj;
-    while (my $watcher = $requestors->Next) { 
-        $NewTicket->_AddWatcher( Type => 'Requestor',
-                                  Silent => 1,
-                                  PrincipalId => $watcher->MemberId);
+        my $mutator = "Set$type";
+        $MergeInto->$mutator(
+            ( $MergeInto->$type() || 0 ) + ( $self->$type() || 0 ) );
+
+    }
+#add all of this ticket's watchers to that ticket.
+    foreach my $watcher_type qw(Requestors Cc AdminCc) {
+
+        my $people = $self->$watcher_type->MembersObj;
+        my $addwatcher_type =  $watcher_type;
+        $addwatcher_type  =~ s/s$//;
+
+        while ( my $watcher = $people->Next ) {
+            
+           my ($val, $msg) =  $MergeInto->_AddWatcher(
+                Type        => $addwatcher_type,
+                Silent => 1,
+                PrincipalId => $watcher->MemberId
+            );
+            unless ($val) {
+                $RT::Logger->warning($msg);
+            }
     }
 
-    my $Ccs = $self->Cc->MembersObj;
-    while (my $watcher = $Ccs->Next) { 
-        $NewTicket->_AddWatcher( Type => 'Cc',
-                                  Silent => 1,
-                                  PrincipalId => $watcher->MemberId);
     }
-
-    my $AdminCcs = $self->AdminCc->MembersObj;
-    while (my $watcher = $AdminCcs->Next) { 
-        $NewTicket->_AddWatcher( Type => 'AdminCc',
-                                  Silent => 1,
-                                  PrincipalId => $watcher->MemberId);
-    }
-
 
     #find all of the tickets that were merged into this ticket. 
     my $old_mergees = new RT::Tickets( $self->CurrentUser );
@@ -2828,15 +2844,16 @@ sub MergeInto {
     while ( my $ticket = $old_mergees->Next() ) {
         my ( $val, $msg ) = $ticket->__Set(
             Field => 'EffectiveId',
-            Value => $NewTicket->Id()
+            Value => $MergeInto->Id()
         );
     }
 
     #make a new link: this ticket is merged into that other ticket.
-    $self->AddLink( Type   => 'MergedInto', Target => $NewTicket->Id());
+    $self->AddLink( Type   => 'MergedInto', Target => $MergeInto->Id());
 
-    $NewTicket->_SetLastUpdated;
+    $MergeInto->_SetLastUpdated;    
 
+    $RT::Handle->Commit();
     return ( 1, $self->loc("Merge Successful") );
 }
 
@@ -2904,12 +2921,13 @@ ok ($root->Id, "Loaded the root user");
 my $t = RT::Ticket->new($RT::SystemUser);
 $t->Load(1);
 $t->SetOwner('root');
-ok ($t->OwnerObj->Name eq 'root' , "Root owns the ticket");
+is ($t->OwnerObj->Name, 'root' , "Root owns the ticket");
 $t->Steal();
-ok ($t->OwnerObj->id eq $RT::SystemUser->id , "SystemUser owns the ticket");
+is ($t->OwnerObj->id, $RT::SystemUser->id , "SystemUser owns the ticket");
 my $txns = RT::Transactions->new($RT::SystemUser);
 $txns->OrderBy(FIELD => 'id', ORDER => 'DESC');
-$txns->Limit(FIELD => 'Ticket', VALUE => '1');
+$txns->Limit(FIELD => 'ObjectId', VALUE => '1');
+$txns->Limit(FIELD => 'ObjectType', VALUE => 'RT::Ticket');
 my $steal  = $txns->First;
 ok($steal->OldValue == $root->Id , "Stolen from root");
 ok($steal->NewValue == $RT::SystemUser->Id , "Stolen by the systemuser");
@@ -3136,14 +3154,14 @@ my $tt = RT::Ticket->new($RT::SystemUser);
 my ($id, $tid, $msg)= $tt->Create(Queue => 'general',
             Subject => 'test');
 ok($id, $msg);
-ok($tt->Status eq 'new', "New ticket is created as new");
+is($tt->Status, 'new', "New ticket is created as new");
 
 ($id, $msg) = $tt->SetStatus('open');
 ok($id, $msg);
-ok ($msg =~ /open/i, "Status message is correct");
+like($msg, qr/open/i, "Status message is correct");
 ($id, $msg) = $tt->SetStatus('resolved');
 ok($id, $msg);
-ok ($msg =~ /resolved/i, "Status message is correct");
+like($msg, qr/resolved/i, "Status message is correct");
 ($id, $msg) = $tt->SetStatus('resolved');
 ok(!$id,$msg);
 
@@ -3191,9 +3209,9 @@ sub SetStatus {
                      RecordTransaction => 0 );
     }
 
-    if ( $args{Status} =~ /^(resolved|rejected|dead)$/ ) {
-
-        #When we resolve a ticket, set the 'Resolved' attribute to now.
+    #When we close a ticket, set the 'Resolved' attribute to now.
+    # It's misnamed, but that's just historical.
+    if ( $self->QueueObj->IsInactiveStatus($args{Status}) ) {
         $self->_Set( Field             => 'Resolved',
                      Value             => $now->ISO,
                      RecordTransaction => 0 );
@@ -3203,6 +3221,7 @@ sub SetStatus {
    my ($val, $msg)= $self->_Set( Field           => 'Status',
                           Value           => $args{Status},
                           TimeTaken       => 0,
+                          CheckACL      => 0,
                           TransactionType => 'Status'  );
 
     return($val,$msg);
@@ -3295,285 +3314,7 @@ sub Resolve {
 
 # }}}
 
-# {{{ Routines dealing with custom fields
-
-
-# {{{ FirstCustomFieldValue
-
-=item FirstCustomFieldValue FIELD
-
-Return the content of the first value of CustomField FIELD for this ticket
-Takes a field id or name
-
-=cut
-
-sub FirstCustomFieldValue {
-    my $self = shift;
-    my $field = shift;
-    my $values = $self->CustomFieldValues($field);
-    if ($values->First) {
-        return $values->First->Content;
-    } else {
-        return undef;
-    }
-
-}
-
-
-
-# {{{ CustomFieldValues
-
-=item CustomFieldValues FIELD
-
-Return a TicketCustomFieldValues object of all values of CustomField FIELD for this ticket.  
-Takes a field id or name.
-
-
-=cut
-
-sub CustomFieldValues {
-    my $self  = shift;
-    my $field = shift;
-
-    my $cf = RT::CustomField->new($self->CurrentUser);
-
-    if ($field =~ /^\d+$/) {
-        $cf->LoadById($field);
-    } elsif ($field) {
-        $cf->LoadByNameAndQueue(Name => $field, Queue => $self->QueueObj->Id);
-        unless( $cf->id ) {
-            $cf->LoadByNameAndQueue(Name => $field, Queue => '0');
-        }
-    }
-    my $cf_values = RT::TicketCustomFieldValues->new( $self->CurrentUser );
-    $cf_values->LimitToCustomField($cf->id) if $cf->id;
-    $cf_values->LimitToTicket($self->Id());
-    $cf_values->OrderBy( FIELD => 'id' );
-
-    # @values is a CustomFieldValues object;
-    return ($cf_values);
-}
-
-# }}}
-
-# {{{ AddCustomFieldValue
-
-=item AddCustomFieldValue { Field => FIELD, Value => VALUE }
-
-VALUE should be a string.
-FIELD can be a CustomField object, a CustomField ID, or a CustomField Name.
-
-
-Adds VALUE as a value of CustomField FIELD.  If this is a single-value custom field,
-deletes the old value. 
-If VALUE isn't a valid value for the custom field, returns 
-(0, 'Error message' ) otherwise, returns (1, 'Success Message')
-
-=cut
-
-sub AddCustomFieldValue {
-    my $self = shift;
-    unless ( $self->CurrentUserHasRight('ModifyTicket') ) {
-        return ( 0, $self->loc("Permission Denied") );
-    }
-    $self->_AddCustomFieldValue(@_);
-}
-
-sub _AddCustomFieldValue {
-    my $self = shift;
-    my %args = (
-        Field => undef,
-        Value => undef,
-	RecordTransaction => 1,
-        @_
-    );
-
-    my $cf = RT::CustomField->new( $self->CurrentUser );
-    if ( UNIVERSAL::isa( $args{'Field'}, "RT::CustomField" ) ) {
-        $cf->Load( $args{'Field'}->id );
-    }
-    elsif ($args{'Field'} =~ /\D/) {
-        $cf->LoadByNameAndQueue( Name => $args{'Field'}, Queue => $self->QueueObj->Id );
-    }
-    else {
-        $cf->Load( $args{'Field'} );
-    }
-
-    unless ( $cf->Id ) {
-        return ( 0, $self->loc("Custom field [_1] not found", $args{'Field'}) );
-    }
-
-    # Load up a TicketCustomFieldValues object for this custom field and this ticket
-    my $values = $cf->ValuesForTicket( $self->id );
-
-    unless ( $cf->ValidateValue( $args{'Value'} ) ) {
-        return ( 0, $self->loc("Invalid value for custom field") );
-    }
-
-    # If the custom field only accepts a single value, delete the existing
-    # value and record a "changed from foo to bar" transaction
-    if ( $cf->SingleValue ) {
-
-        # We need to whack any old values here.  In most cases, the custom field should
-        # only have one value to delete.  In the pathalogical case, this custom field
-        # used to be a multiple and we have many values to whack....
-        my $cf_values = $values->Count;
-
-        if ( $cf_values > 1 ) {
-            my $i = 0;   #We want to delete all but the last one, so we can then
-                 # execute the same code to "change" the value from old to new
-            while ( my $value = $values->Next ) {
-                $i++;
-                if ( $i < $cf_values ) {
-                    my $old_value = $value->Content;
-                    my ($val, $msg) = $cf->DeleteValueForTicket(Ticket => $self->Id, Content => $value->Content);
-                    unless ($val) {
-                        return (0,$msg);
-                    }
-                    my ( $TransactionId, $Msg, $TransactionObj ) =
-                      $self->_NewTransaction(
-                        Type     => 'CustomField',
-                        Field    => $cf->Id,
-                        OldValue => $old_value
-                      );
-                }
-            }
-        }
-
-        my $old_value;
-        if (my $value = $cf->ValuesForTicket( $self->Id )->First) {
-	    $old_value = $value->Content();
-	    return (1) if $old_value eq $args{'Value'};
-	}
-
-        my ( $new_value_id, $value_msg ) = $cf->AddValueForTicket(
-            Ticket  => $self->Id,
-            Content => $args{'Value'}
-        );
-
-        unless ($new_value_id) {
-            return ( 0,
-                $self->loc("Could not add new custom field value for ticket. [_1] ",
-                  ,$value_msg) );
-        }
-
-        my $new_value = RT::TicketCustomFieldValue->new( $self->CurrentUser );
-        $new_value->Load($new_value_id);
-
-        # now that adding the new value was successful, delete the old one
-	if (defined $old_value) {
-	    my ($val, $msg) = $cf->DeleteValueForTicket(Ticket => $self->Id, Content => $old_value);
-	    unless ($val) { 
-	    		return (0,$msg);
-	    }
-	}
-
-	if ($args{'RecordTransaction'}) {
-        my ( $TransactionId, $Msg, $TransactionObj ) = $self->_NewTransaction(
-            Type     => 'CustomField',
-            Field    => $cf->Id,
-            OldValue => $old_value,
-            NewValue => $new_value->Content
-        );
-	}
-
-        if ( $old_value eq '' ) {
-            return ( 1, $self->loc("[_1] [_2] added", $cf->Name, $new_value->Content) );
-        }
-        elsif ( $new_value->Content eq '' ) {
-            return ( 1, $self->loc("[_1] [_2] deleted", $cf->Name, $old_value) );
-        }
-        else {
-            return ( 1, $self->loc("[_1] [_2] changed to [_3]", $cf->Name, $old_value, $new_value->Content ) );
-        }
-
-    }
-
-    # otherwise, just add a new value and record "new value added"
-    else {
-        my ( $new_value_id ) = $cf->AddValueForTicket(
-            Ticket  => $self->Id,
-            Content => $args{'Value'}
-        );
-
-        unless ($new_value_id) {
-            return ( 0,
-                $self->loc("Could not add new custom field value for ticket. "));
-        }
-    if ( $args{'RecordTransaction'} ) {
-        my ( $TransactionId, $Msg, $TransactionObj ) = $self->_NewTransaction(
-            Type     => 'CustomField',
-            Field    => $cf->Id,
-            NewValue => $args{'Value'}
-        );
-        unless ($TransactionId) {
-            return ( 0,
-                $self->loc( "Couldn't create a transaction: [_1]", $Msg ) );
-        }
-    }
-        return ( 1, $self->loc("[_1] added as a value for [_2]",$args{'Value'}, $cf->Name));
-    }
-
-}
-
-# }}}
-
-# {{{ DeleteCustomFieldValue
-
-=item DeleteCustomFieldValue { Field => FIELD, Value => VALUE }
-
-Deletes VALUE as a value of CustomField FIELD. 
-
-VALUE can be a string, a CustomFieldValue or a TicketCustomFieldValue.
-
-If VALUE isn't a valid value for the custom field, returns 
-(0, 'Error message' ) otherwise, returns (1, 'Success Message')
-
-=cut
-
-sub DeleteCustomFieldValue {
-    my $self = shift;
-    my %args = (
-        Field => undef,
-        Value => undef,
-        @_);
-
-    unless ( $self->CurrentUserHasRight('ModifyTicket') ) {
-        return ( 0, $self->loc("Permission Denied") );
-    }
-    my $cf = RT::CustomField->new( $self->CurrentUser );
-    if ( UNIVERSAL::isa( $args{'Field'}, "RT::CustomField" ) ) {
-        $cf->LoadById( $args{'Field'}->id );
-    }
-    else {
-        $cf->LoadById( $args{'Field'} );
-    }
-
-    unless ( $cf->Id ) {
-        return ( 0, $self->loc("Custom field not found") );
-    }
-
-
-     my ($val, $msg) = $cf->DeleteValueForTicket(Ticket => $self->Id, Content => $args{'Value'});
-     unless ($val) { 
-            return (0,$msg);
-     }
-        my ( $TransactionId, $Msg, $TransactionObj ) = $self->_NewTransaction(
-            Type     => 'CustomField',
-            Field    => $cf->Id,
-            OldValue => $args{'Value'}
-        );
-        unless($TransactionId) {
-            return(0, $self->loc("Couldn't create a transaction: [_1]", $Msg));
-        } 
-
-        return($TransactionId, $self->loc("[_1] is no longer a value for custom field [_2]", $args{'Value'}, $cf->Name));
-}
-
-# }}}
-
-# }}}
-
+	
 # {{{ Actions + Routines dealing with transactions
 
 # {{{ sub SetTold and _SetTold
@@ -3628,113 +3369,6 @@ sub _SetTold {
 
 # }}}
 
-# {{{ sub Transactions 
-
-=head2 Transactions
-
-  Returns an RT::Transactions object of all transactions on this ticket
-
-=cut
-
-sub Transactions {
-    my $self = shift;
-
-    use RT::Transactions;
-    my $transactions = RT::Transactions->new( $self->CurrentUser );
-
-    #If the user has no rights, return an empty object
-    if ( $self->CurrentUserHasRight('ShowTicket') ) {
-        my $tickets = $transactions->NewAlias('Tickets');
-        $transactions->Join(
-            ALIAS1 => 'main',
-            FIELD1 => 'Ticket',
-            ALIAS2 => $tickets,
-            FIELD2 => 'id'
-        );
-        $transactions->Limit(
-            ALIAS => $tickets,
-            FIELD => 'EffectiveId',
-            VALUE => $self->id()
-        );
-
-        # if the user may not see comments do not return them
-        unless ( $self->CurrentUserHasRight('ShowTicketComments') ) {
-            $transactions->Limit(
-                FIELD    => 'Type',
-                OPERATOR => '!=',
-                VALUE    => "Comment",
-                ENTRYAGGREGATOR => 'AND'
-            );
-            $transactions->Limit(
-                FIELD    => 'Type',
-                OPERATOR => '!=',
-                VALUE    => "CommentEmailRecord",
-                ENTRYAGGREGATOR => 'AND'
-            );
-        }
-    }
-
-    return ($transactions);
-}
-
-# }}}
-
-# {{{ sub _NewTransaction
-
-=head2 _NewTransaction  PARAMHASH
-
-Private function to create a new RT::Transaction object for this ticket update
-
-=cut
-
-sub _NewTransaction {
-    my $self = shift;
-    my %args = (
-        TimeTaken => 0,
-        Type      => undef,
-        OldValue  => undef,
-        NewValue  => undef,
-        Data      => undef,
-        Field     => undef,
-        MIMEObj   => undef,
-        ActivateScrips => 1,
-        CommitScrips => 1,
-        @_
-    );
-
-    require RT::Transaction;
-    my $trans = new RT::Transaction( $self->CurrentUser );
-    my ( $transaction, $msg ) = $trans->Create(
-        Ticket    => $self->Id,
-        TimeTaken => $args{'TimeTaken'},
-        Type      => $args{'Type'},
-        Data      => $args{'Data'},
-        Field     => $args{'Field'},
-        NewValue  => $args{'NewValue'},
-        OldValue  => $args{'OldValue'},
-        MIMEObj   => $args{'MIMEObj'},
-        ActivateScrips => $args{'ActivateScrips'},
-        CommitScrips => $args{'CommitScrips'},
-    );
-
-    # Rationalize the object since we may have done things to it during the caching.
-    $self->Load($self->Id);
-
-    $RT::Logger->warning($msg) unless $transaction;
-
-    $self->_SetLastUpdated;
-
-    if ( defined $args{'TimeTaken'} ) {
-        $self->_UpdateTimeTaken( $args{'TimeTaken'} );
-    }
-    if ( $RT::UseTransactionBatch and $transaction ) {
-	    push @{$self->{_TransactionBatch}}, $trans;
-    }
-    return ( $transaction, $msg, $trans );
-}
-
-# }}}
-
 =head2 TransactionBatch
 
   Returns an array reference of all transactions created on this ticket during
@@ -3752,6 +3386,11 @@ sub TransactionBatch {
 sub DESTROY {
     my $self = shift;
 
+    # DESTROY methods need to localize $@, or it may unset it.  This
+    # causes $m->abort to not bubble all of the way up.  See perlbug
+    # http://rt.perl.org/rt3/Ticket/Display.html?id=17650
+    local $@;
+
     # The following line eliminates reentrancy.
     # It protects against the fact that perl doesn't deal gracefully
     # when an object's refcount is changed in its destructor.
@@ -3763,6 +3402,7 @@ sub DESTROY {
 	Stage		=> 'TransactionBatch',
 	TicketObj	=> $self,
 	TransactionObj	=> $batch->[0],
+	Type		=> join(',', (map { $_->Type } @{$batch}) )
     );
 }
 
@@ -3770,9 +3410,9 @@ sub DESTROY {
 
 # {{{ PRIVATE UTILITY METHODS. Mostly needed so Ticket can be a DBIx::Record
 
-# {{{ sub _ClassAccessible
+# {{{ sub _OverlayAccessible
 
-sub _ClassAccessible {
+sub _OverlayAccessible {
     {
         EffectiveId       => { 'read' => 1,  'write' => 1,  'public' => 1 },
           Queue           => { 'read' => 1,  'write' => 1 },
@@ -3854,7 +3494,7 @@ sub _Set {
                                                OldValue  => $Old,
                                                TimeTaken => $args{'TimeTaken'},
         );
-        return ( $Trans, scalar $TransObj->Description );
+        return ( $Trans, scalar $TransObj->BriefDescription );
     }
     else {
         return ( $ret, $msg );
@@ -3972,7 +3612,9 @@ sub HasRight {
 
     unless ( ( defined $args{'Principal'} ) and ( ref( $args{'Principal'} ) ) )
     {
-        $RT::Logger->warning("Principal attrib undefined for Ticket::HasRight");
+        Carp::cluck;
+        $RT::Logger->crit("Principal attrib undefined for Ticket::HasRight");
+        return(undef);
     }
 
     return (
@@ -3986,6 +3628,103 @@ sub HasRight {
 # }}}
 
 # }}}
+
+# {{{ sub Transactions 
+
+=head2 Transactions
+
+  Returns an RT::Transactions object of all transactions on this ticket
+
+=cut
+
+sub Transactions {
+    my $self = shift;
+
+    my $transactions = RT::Transactions->new( $self->CurrentUser );
+
+    #If the user has no rights, return an empty object
+    if ( $self->CurrentUserHasRight('ShowTicket') ) {
+        $transactions->LimitToTicket($self->id);
+
+        # if the user may not see comments do not return them
+        unless ( $self->CurrentUserHasRight('ShowTicketComments') ) {
+            $transactions->Limit(
+                FIELD    => 'Type',
+                OPERATOR => '!=',
+                VALUE    => "Comment"
+            );
+            $transactions->Limit(
+                FIELD    => 'Type',
+                OPERATOR => '!=',
+                VALUE    => "CommentEmailRecord",
+                ENTRYAGGREGATOR => 'AND'
+            );
+
+        }
+    }
+
+    return ($transactions);
+}
+
+# }}}
+
+
+# {{{ TransactionCustomFields
+
+=head2 TransactionCustomFields
+
+    Returns the custom fields that transactions on tickets will ahve.
+
+=cut
+
+sub TransactionCustomFields {
+    my $self = shift;
+    return $self->QueueObj->TicketTransactionCustomFields;
+}
+
+# }}}
+
+# {{{ sub CustomFieldValues
+
+=head2 CustomFieldValues
+
+# Do name => id mapping (if needed) before falling back to
+# RT::Record's CustomFieldValues
+
+See L<RT::Record>
+
+=cut
+
+sub CustomFieldValues {
+    my $self  = shift;
+    my $field = shift;
+    unless ( $field =~ /^\d+$/ ) {
+        my $cf = RT::CustomField->new( $self->CurrentUser );
+        $cf->LoadByNameAndQueue( Name => $field, Queue => $self->QueueObj->Id );
+        unless ( $cf->id ) {
+            $cf->LoadByNameAndQueue( Name => $field, Queue => '0' );
+        }
+        $field = $cf->id;
+    }
+    return $self->SUPER::CustomFieldValues($field);
+}
+
+# }}}
+
+# {{{ sub CustomFieldLookupType
+
+=head2 CustomFieldLookupType
+
+Returns the RT::Ticket lookup type, which can be passed to 
+RT::CustomField->Create() via the 'LookupType' hash key.
+
+=cut
+
+# }}}
+
+sub CustomFieldLookupType {
+    "RT::Queue-RT::Ticket";
+}
 
 1;
 

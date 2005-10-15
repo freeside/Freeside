@@ -1,8 +1,8 @@
-%# {{{ BEGIN BPS TAGGED BLOCK
+%# BEGIN BPS TAGGED BLOCK {{{
 %# 
 %# COPYRIGHT:
 %#  
-%# This software is Copyright (c) 1996-2004 Best Practical Solutions, LLC 
+%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
 %#                                          <jesse@bestpractical.com>
 %# 
 %# (Except where explicitly superseded by other copyright notices)
@@ -42,7 +42,7 @@
 %# works based on those contributions, and sublicense and distribute
 %# those contributions and any derivatives thereof.
 %# 
-%# }}} END BPS TAGGED BLOCK
+%# END BPS TAGGED BLOCK }}}
 <& /Admin/Elements/Header, Title => $title  &>
 
 <& /Admin/Elements/GroupTabs, 
@@ -53,7 +53,7 @@
 
 
 
-<FORM ACTION="<%$RT::WebPath%>/Admin/Groups/Modify.html" METHOD=POST>
+<FORM ACTION="<%$RT::WebPath%>/Admin/Groups/Modify.html" METHOD=POST ENCTYPE="multipart/form-data">
 
 %unless ($Group->Id) {
 <INPUT TYPE=HIDDEN NAME=id VALUE="new">
@@ -65,16 +65,27 @@
 <&|/l&>Name</&>:
 </TD>
 <TD><INPUT name="Name" value="<%$Group->Name%>"></TD>
-</TR><TR>
+</TR>
+<TR>
 <TD ALIGN=RIGHT>
 <&|/l&>Description</&>:</TD><TD COLSPAN=3><INPUT name="Description" value="<%$Group->Description%>" size=60></TD>
-</TR><TR>
+</TR>
+% my $CFs = $Group->CustomFields;
+% while (my $CF = $CFs->Next) {
+<TR VALIGN="TOP"><TD ALIGN="RIGHT">
+<% $CF->Name %>:
+</TD><TD>
+<& /Elements/EditCustomField, CustomField => $CF, Object => $Group &>
+</TD></TR>
+% }
+<TR>
 <TD COLSPAN=2>
 <INPUT TYPE=HIDDEN NAME="SetEnabled" VALUE="1">
 <INPUT TYPE=CHECKBOX NAME="Enabled" VALUE="1" <%$EnabledChecked%>> <&|/l&>Enabled (Unchecking this box disables this group)</&><BR>
 </TR>
+<& /Elements/Callback, GroupObj => $Group, results => \@results, %ARGS &>
 </TABLE>
-<& /Elements/Submit, Label => loc('Create'), Reset => 1 &>
+<& /Elements/Submit, Label => loc('Save Changes'), Reset => 1 &>
 </form>
 <%INIT>
 
@@ -124,6 +135,7 @@ if ($id) {
 					    Object => $Group,
 					    ARGSRef => \%ARGS );
     push (@results,@fieldresults);
+    push @results, ProcessObjectCustomFieldUpdates( ARGSRef => \%ARGS, Object => $Group );
 }
 
 #we're asking about enabled on the web page but really care about disabled.
