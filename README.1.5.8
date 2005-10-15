@@ -5,9 +5,24 @@ install DBIx::DBSchema 0.27
 install HTML::Widgets:SelectLayers 0.05
 install Business::CreditCard 0.28
 
+install the new version
+run "freeside-upgrade username" to uprade your database schema
+
+-----
+
 Installs w/integrated RT:
   Install Module::Versions::Report
 
-install the new version
-run "freeside-upgrade username" to uprade your database schema
+  chmod a+r /opt/rt3/etc/RT*Config.pm
+  cd rt
+  su freeside
+
+  /opt/rt3/sbin/rt-setup-database --action schema --datadir etc/upgrade/3.3.0
+  /opt/rt3/sbin/rt-setup-database --action acl --datadir etc/upgrade/3.3.0
+  /opt/rt3/sbin/rt-setup-database --action insert --datadir etc/upgrade/3.3.0
+
+  /opt/rt3/sbin/rt-setup-database --action schema --datadir etc/upgrade/3.3.11
+  /opt/rt3/sbin/rt-setup-database --action acl --datadir etc/upgrade/3.3.11
+  /opt/rt3/sbin/rt-setup-database --action insert --datadir etc/upgrade/3.3.11
+
 
