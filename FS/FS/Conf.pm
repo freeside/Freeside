@@ -1617,6 +1617,12 @@ httemplate/docs/config.html
     'type'        => 'checkbox',
   },
 
+  {
+    'key'         => 'zone-underscore',
+    'section'     => 'BIND',
+    'description' => 'Allow underscores in zone names.  As underscores are illegal characters in zone names, this option is not recommended.',
+    'type'        => 'checkbox',
+  },
 
 );
 

@@ -1,22 +1,33 @@
 #!/usr/bin/perl -w
 #
+# REQUIRED:
+# -p: part number for domains
+#
+# -n: named.conf file (or an include file with zones you want to import),
+#     for example root@ns.isp.com:/var/named/named.conf
+#
+# OPTIONAL:
+# -d: dry-run, debug: don't insert any records, just dump debugging output
 # -s: import slave zones as master.  useful if you need to recreate your
 #     primary nameserver from a secondary
-# -c chroot_dir: import data from chrooted bind (corrects the path for
-#                downloading zone files
+# -c dir: override patch for downloading zone files (for example, when
+#         downloading zone files from chrooted bind)
 #
 # need to manually put header in
 #  /usr/local/etc/freeside/export.<datasrc./bind/<machine>/named.conf.HEADER
+# (or, nowadays, better just to include the file freeside exports)
 
 use strict;
-use vars qw( %d_part_svc );
+
+use vars qw($domain_svcpart);
+
 use Getopt::Std;
-use Term::Query qw(query);
+use Data::Dumper;
 #use BIND::Conf_Parser;
 #use DNS::ZoneParse 0.81;
 
-#use Net::SCP qw(iscp);
-use Net::SCP qw(scp);
+use Net::SCP qw(scp iscp);
+
 use FS::UID qw(adminsuidsetup datasrc);
 use FS::Record qw(qsearch); #qsearchs);
 #use FS::svc_acct_sm;
@@ -25,8 +36,8 @@ use FS::domain_record;
 #use FS::svc_acct;
 #use FS::part_svc;
 
-use vars qw($opt_s $opt_c);
-getopts("sc:");
+use vars qw($opt_p $opt_n $opt_s $opt_c $opt_d);
+getopts("p:n:sc:d");
 
 my $user = shift or die &usage;
 adminsuidsetup $user;
@@ -38,42 +49,19 @@ use vars qw($spooldir);
 $spooldir = "/usr/local/etc/freeside/export.". datasrc. "/bind";
 mkdir $spooldir unless -d $spooldir;
 
-%d_part_svc =
-  map { $_->svcpart, $_ } qsearch('part_svc',{'svcdb'=>'svc_domain'});
+$domain_svcpart = $opt_p;
 
-print "\n\n",
-      ( join "\n", map "$_: ".$d_part_svc{$_}->svc, sort keys %d_part_svc ),
-      "\n\n";
-use vars qw($domain_svcpart);
-$^W=0; #Term::Query isn't -w-safe
-$domain_svcpart =
-  query "Enter part number for domains: ", 'irk', [ keys %d_part_svc ];
-$^W=1;
+my $named_conf = $opt_n;
 
-print "\n\n", <<END;
-Enter the location and name of your primary named.conf file, for example
-"ns.isp.com:/var/named/named.conf"
-END
-my($named_conf)=&getvalue(":");
-  
 use vars qw($named_machine $prefix);
 $named_machine = (split(/:/, $named_conf))[0];
-$prefix = "$spooldir/$named_machine";
+my $pnamed_machine = $named_machine;
+$pnamed_machine =~ s/^[\w\-]+\@//;
+$prefix = "$spooldir/$pnamed_machine";
 mkdir $prefix unless -d $prefix;
 
-#iscp("root\@$named_conf","$prefix/named.conf.import");
-scp("root\@$named_conf","$prefix/named.conf.import");
-
-
-sub getvalue {
-  my $prompt = shift;
-  $^W=0; # Term::Query isn't -w-safe
-  my $return = query $prompt, '';
-  $^W=1;
-  $return;
-}
-
-print "\n\n";
+#iscp("$named_conf","$prefix/named.conf.import");
+scp("$named_conf","$prefix/named.conf.import");
 
 ##
 
@@ -87,7 +75,7 @@ print "\nBIND import completed.\n";
 ##
 
 sub usage {
-  die "Usage:\n\n  bind.import user\n";
+  die "Usage:\n\n  bind.import -p partnum -n \"user\@machine:/path/to/named.conf\" [ -s ] [ -c chroot_dir ] [ -f ] user\n";
 }
 
 ########
@@ -97,11 +85,13 @@ BEGIN {
   use BIND::Conf_Parser;
   use vars qw(@ISA $named_dir);
   @ISA = qw(BIND::Conf_Parser);
-  
+
+  $named_dir = 'COULD_NOT_FIND_NAMED_DIRECTORY_TRY_SETTING_-C_OPTION';
   sub handle_option {
     my($self, $option, $argument) = @_;
     return unless $option eq "directory";
     $named_dir = $argument;
+    #warn "found named dir: $named_dir\n";
   }
   
   sub handle_zone {
@@ -130,20 +120,25 @@ BEGIN {
 
     if ( $type eq 'slave' && !$main::opt_s ) {
 
-      #use Data::Dumper;
-      #print Dumper($options);
-      #exit;
+      if ( $main::opt_d ) {
 
-      foreach my $master ( @{ $options->{masters} } ) {
-        my $domain_record = new FS::domain_record( {
-          'svcnum'  => $domain->svcnum,
-          'reczone' => '@',
-          'recaf'   => 'IN',
-          'rectype' => '_mstr',
-          'recdata' => $master,
-        } );
-        my $error = $domain_record->insert;
-        die $error if $error;
+        use Data::Dumper;
+        print "$name: ". Dumper($options);
+
+      } else {
+
+        foreach my $master ( @{ $options->{masters} } ) {
+          my $domain_record = new FS::domain_record( {
+            'svcnum'  => $domain->svcnum,
+            'reczone' => '@',
+            'recaf'   => 'IN',
+            'rectype' => '_mstr',
+            'recdata' => $master,
+          } );
+          my $error = $domain_record->insert;
+          die $error if $error;
+        }
+
       }
 
     } elsif ( $type eq 'master' || ( $type eq 'slave' && $main::opt_s ) ) {
@@ -153,54 +148,79 @@ BEGIN {
       use File::Basename;
       my $basefile = basename($file);
       my $sourcefile = $file;
-      $sourcefile = "$named_dir/$sourcefile" unless $file =~ /^\//;
-      $sourcefile = "$main::opt_c/$sourcefile" if $main::opt_c;
+      if ( $main::opt_c ) {
+        $sourcefile = "$main::opt_c/$sourcefile" if $main::opt_c;
+      } else {
+        $sourcefile = "$named_dir/$sourcefile" unless $file =~ /^\//;
+      }
 
       use Net::SCP qw(iscp scp);
-      scp("root\@$main::named_machine:$sourcefile",
-           "$main::prefix/$basefile.import");
+      #iscp("$main::named_machine:$sourcefile",
+      #     "$main::prefix/$basefile.import");
+      scp("$main::named_machine:$sourcefile",
+          "$main::prefix/$basefile.import");
     
       use DNS::ZoneParse 0.84;
       my $zone = DNS::ZoneParse->new("$main::prefix/$basefile.import");
     
       my $dump = $zone->dump;
-  
-      #use Data::Dumper;
-      #print "$name: ". Dumper($dump);
-      #exit;
+
+      if ( $main::opt_d ) {
+
+        use Data::Dumper;
+        print "$name: ". Dumper($dump);
+
+      } else {
     
-      foreach my $rectype ( keys %$dump ) {
-        if ( $rectype =~ /^SOA$/i ) {
-          my $rec = $dump->{$rectype};
-          my $domain_record = new FS::domain_record( {
-            'svcnum'  => $domain->svcnum,
-            'reczone' => $rec->{origin},
-            'recaf'   => 'IN',
-            'rectype' => $rectype,
-            'recdata' =>
-              $rec->{primary}. ' '. $rec->{email}. ' ( '.
-             join(' ', map $rec->{$_},
-                           qw( serial refresh retry expire minimumTTL ) ).
-             ' )',
-          } );
-          my $error = $domain_record->insert;
-          die $error if $error;
-       } else {
-          #die $dump->{$rectype};
-          foreach my $rec ( @{ $dump->{$rectype} } ) {
+        foreach my $rectype ( keys %$dump ) {
+          if ( $rectype =~ /^SOA$/i ) {
+            my $rec = $dump->{$rectype};
+            $rec->{email} =~ s/\@/\./;
             my $domain_record = new FS::domain_record( {
               'svcnum'  => $domain->svcnum,
-              'reczone' => $rec->{name},
-              'recaf'   => $rec->{class},
+              'reczone' => $rec->{origin},
+              'recaf'   => 'IN',
               'rectype' => $rectype,
-              'recdata' => ( $rectype =~ /^MX$/i
-                               ? $rec->{priority}. ' '. $rec->{host}
-                               : $rec->{host}                      ),
+              'recdata' =>
+                $rec->{primary}. ' '. $rec->{email}. ' ( '.
+               join(' ', map $rec->{$_},
+                             qw( serial refresh retry expire minimumTTL ) ).
+               ' )',
             } );
             my $error = $domain_record->insert;
             die $error if $error;
+         } else {
+            #die $dump->{$rectype};
+
+            my $datasub;
+            if ( $rectype =~ /^MX$/i ) {
+              $datasub = sub { $_[0]->{priority}. ' '. $_[0]->{host}; };
+            } elsif ( $rectype =~ /^TXT$/i ) {
+              $datasub = sub { $_[0]->{text}; };
+            } else {
+              $datasub = sub { $_[0]->{host}; };
+            }
+
+            foreach my $rec ( @{ $dump->{$rectype} } ) {
+              my $domain_record = new FS::domain_record( {
+                'svcnum'  => $domain->svcnum,
+                'reczone' => $rec->{name},
+                'recaf'   => $rec->{class} || 'IN',
+                'rectype' => $rectype,
+                'recdata' => &{$datasub}($rec),
+              } );
+              my $error = $domain_record->insert;
+              if ( $error ) {
+                warn "$error inserting ".
+                     $rec->{name}. ' . '. $domain->domain. "\n";
+                warn Dumper($rec);
+                #system('cat',"$main::prefix/$basefile.import");
+                die;
+              }
+            }
           }
         }
+
       }
 
     #} else {
