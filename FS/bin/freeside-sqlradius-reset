@@ -48,6 +48,9 @@ foreach my $export ( @exports ) {
 
   foreach my $svc_acct ( @svc_acct ) {
 
+    $svc_acct->check; #set any fixed usergroup so it'll export even if all
+                      #svc_acct records don't have the group yet
+
     #false laziness with FS::svc_acct::insert (like it matters)
     my $error = $export->export_insert($svc_acct);
     die $error if $error;
