@@ -11,7 +11,7 @@ use FS::cust_svc;
 
 @ISA = qw(FS::Record);
 
-$DEBUG = 1;
+$DEBUG = 0;
 
 =head1 NAME
 
@@ -467,7 +467,7 @@ sub process {
   $param->{'svc_acct__usergroup'} =
     ref($param->{'svc_acct__usergroup'})
       ? join(',', @{$param->{'svc_acct__usergroup'}} )
-      : '';
+      : $param->{'svc_acct__usergroup'};
   
   my $new = new FS::part_svc ( {
     map {

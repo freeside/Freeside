@@ -23,7 +23,6 @@ my $hashref = $part_svc->hashref;
 
            #" onLoad=\"visualize()\""
 %>
-<!-- mason kludge -->
 <%= header("$action Service Definition",
            menubar( 'Main Menu'         => $p,
                     'View all service definitions' => "${p}browse/part_svc.cgi"
@@ -98,7 +97,7 @@ my %defs = (
                      select_label => 'domain',
                    },
     'usergroup' => {
-                     desc =>'ICRADIUS/FreeRADIUS groups',
+                     desc =>'RADIUS groups',
                      type =>'radius_usergroup_selector',
                    },
   },
