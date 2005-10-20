@@ -4,7 +4,6 @@ use strict;
 use vars qw(@ISA %info);
 #use FS::Record qw(qsearch);
 use FS::part_pkg;
-use Date::Manip;
 
 @ISA = qw(FS::part_pkg);
 
@@ -45,33 +44,29 @@ sub base_recur {
 
 sub calc_remain {
   my ($self, $cust_pkg) = @_;
-  my $time = time;
+  my $time = time;  #should be able to pass this in for credit calculation
   my $next_bill = $cust_pkg->getfield('bill') || 0;
   my $last_bill = $cust_pkg->last_bill || 0;
   return 0 if    ! $self->base_recur
               || ! $self->option('unused_credit', 1)
               || ! $last_bill
-              || ! $next_bill;
+              || ! $next_bill
+              || $next_bill < $time;
 
-  my $now_date = ParseDate("epoch $time");
-  my $last_date = ParseDate("epoch $last_bill");
-  my $next_date = ParseDate("epoch $next_bill");
-  my $err;
-  my $delta = DateCalc($now_date,$next_date,\$err, 0);
-  my $days_remaining = Delta_Format($delta, 4, "%dh");
+  my %sec = (
+    'h' =>    3600, # 60 * 60
+    'd' =>   86400, # 60 * 60 * 24
+    'w' =>  604800, # 60 * 60 * 24 * 7
+    'm' => 2629744, # 60 * 60 * 24 * 365.2422 / 12 
+  );
 
-  my $frequency = $self->freq;
+  $self->freq =~ /^(\d+)([hdwm]?)$/
+    or die 'unparsable frequency: '. $self->freq;
+  my $freq_sec = $1 * $sec{$2||'m'};
+  return 0 unless $freq_sec;
 
-  # TODO: Remove this after the frequencies are Data::Manip friendly.
-  $frequency .= "m" unless $frequency =~ /[wd]$/;
+  sprintf("%.2f", $self->base_recur * ( $next_bill - $time ) / $freq_sec );
 
-  my $freq_delta = ParseDateDelta($frequency);
-  my $days = Delta_Format($freq_delta,4,"%dh");
-
-  my $recurring= $self->base_recur;
-  my $daily =  $recurring/$days;
-
-  sprintf("%.2f",($daily * $days_remaining));
 }
 
 sub is_free_options {

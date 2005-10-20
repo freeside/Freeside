@@ -407,7 +407,7 @@ sub cancel {
   if ( $remaining_value > 0 ) {
     my $error = $self->cust_main->credit(
       $remaining_value,
-      'Credit for unused time on'. $self->part_pkg->pkg,
+      'Credit for unused time on '. $self->part_pkg->pkg,
     );
     if ($error) {
       $dbh->rollback if $oldAutoCommit;
