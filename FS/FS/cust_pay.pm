@@ -61,7 +61,8 @@ currently supported:
 L<Time::Local> and L<Date::Parse> for conversion functions.
 
 =item payby - `CARD' (credit cards), `CHEK' (electronic check/ACH),
-`LECB' (phone bill billing), `BILL' (billing), or `COMP' (free)
+`LECB' (phone bill billing), `BILL' (billing), `PREP` (prepaid card),
+`CASH' (cash), `WEST' (Western Union) or `COMP' (free)
 
 =item payinfo - card number, check #, or comp issuer (4-8 lowercase alphanumerics; think username), respectively
 
@@ -373,7 +374,8 @@ sub check {
 
   $self->_date(time) unless $self->_date;
 
-  $self->payby =~ /^(CARD|CHEK|LECB|BILL|COMP|PREP)$/ or return "Illegal payby";
+  $self->payby =~ /^(CARD|CHEK|LECB|BILL|COMP|PREP|CASH|WEST)$/
+    or return "Illegal payby";
   $self->payby($1);
 
   #false laziness with cust_refund::check

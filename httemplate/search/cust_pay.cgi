@@ -16,14 +16,27 @@
        }
      
        if ( $cgi->param('payby') ) {
-         $cgi->param('payby') =~ /^(CARD|CHEK|BILL)(-(VisaMC|Amex|Discover))?$/
-           or die "illegal payby ". $cgi->param('payby');
+         $cgi->param('payby') =~
+           /^(CARD|CHEK|BILL|PREP|CASH|WEST)(-(VisaMC|Amex|Discover|Maestro))?$/
+             or die "illegal payby ". $cgi->param('payby');
          push @search, "cust_pay.payby = '$1'";
          if ( $3 ) {
            if ( $3 eq 'VisaMC' ) {
              #avoid posix regexes for portability
              push @search,
-               " (    substring(cust_pay.payinfo from 1 for 1) = '4'  ".
+               " ( (     substring(cust_pay.payinfo from 1 for 1) = '4'     ".
+               "     AND substring(cust_pay.payinfo from 1 for 4) != '4936' ".
+               "     AND substring(cust_pay.payinfo from 1 for 6)           ".
+               "         NOT SIMILAR TO '49030[2-9]'                        ".
+               "     AND substring(cust_pay.payinfo from 1 for 6)           ".
+               "         NOT SIMILAR TO '49033[5-9]'                        ".
+               "     AND substring(cust_pay.payinfo from 1 for 6)           ".
+               "         NOT SIMILAR TO '49110[1-2]'                        ".
+               "     AND substring(cust_pay.payinfo from 1 for 6)           ".
+               "         NOT SIMILAR TO '49117[4-9]'                        ".
+               "     AND substring(cust_pay.payinfo from 1 for 6)           ".
+               "         NOT SIMILAR TO '49118[1-2]'                        ".
+               "   )".
                "   OR substring(cust_pay.payinfo from 1 for 2) = '51' ".
                "   OR substring(cust_pay.payinfo from 1 for 2) = '52' ".
                "   OR substring(cust_pay.payinfo from 1 for 2) = '53' ".
@@ -38,7 +51,25 @@
                " ) ";
            } elsif ( $3 eq 'Discover' ) {
              push @search,
-               " substring(cust_pay.payinfo from 1 for 4 ) = '6011' ";
+               "    substring(cust_pay.payinfo from 1 for 4 ) = '6011'  ".
+               " OR substring(cust_pay.payinfo from 1 for 3 ) = '650'   ";
+           } elsif ( $3 eq 'Maestro' ) { 
+             push @search,
+               " (    substring(cust_pay.payinfo from 1 for 2 ) = '63'     ".
+               '   OR substring(cust_pay.payinfo from 1 for 2 ) = '67'     ".
+               '   OR substring(cust_pay.payinfo from 1 for 6 ) = '564182' ".
+               "   OR substring(cust_pay.payinfo from 1 for 4 ) = '4936'   ".
+               "   OR substring(cust_pay.payinfo from 1 for 6 )            ".
+               "      SIMILAR TO '49030[2-9]'                             ".
+               "   OR substring(cust_pay.payinfo from 1 for 6 )            ".
+               "      SIMILAR TO '49033[5-9]'                             ".
+               "   OR substring(cust_pay.payinfo from 1 for 6 )            ".
+               "      SIMILAR TO '49110[1-2]'                             ".
+               "   OR substring(cust_pay.payinfo from 1 for 6 )            ".
+               "      SIMILAR TO '49117[4-9]'                             ".
+               "   OR substring(cust_pay.payinfo from 1 for 6 )            ".
+               "      SIMILAR TO '49118[1-2]'                             ".
+               " ) ";
            } else {
              die "unknown card type $3";
            }
@@ -134,6 +165,10 @@
                        'Check #'. $cust_pay->payinfo;
                      } elsif ( $cust_pay->payby eq 'PREP' ) {
                        'Prepaid card #'. $cust_pay->payinfo;
+                     } elsif ( $cust_pay->payby eq 'CASH' ) {
+                       'Cash '. $cust_pay->payinfo;
+                     } elsif ( $cust_pay->payby eq 'WEST' ) {
+                       'Western Union'; #. $cust_pay->payinfo;
                      } else {
                        $cust_pay->payby. ' '. $cust_pay->payinfo;
                      }

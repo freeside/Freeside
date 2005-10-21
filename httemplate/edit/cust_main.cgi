@@ -35,6 +35,7 @@ if ( $cgi->param('error') ) {
   $popnum = $cgi->param('popnum');
   @invoicing_list = split( /\s*,\s*/, $cgi->param('invoicing_list') );
   $same = $cgi->param('same');
+  $cust_main->setfield('paid' => $cgi->param('paid')) if $cgi->param('paid');
 } elsif ( $cgi->keywords ) { #editing
   my( $query ) = $cgi->keywords;
   $query =~ /^(\d+)$/;
@@ -261,7 +262,8 @@ function bottomfixup(what) {
     'payinfo', 'payinfo1', 'payinfo2',
     'payname', 'exp_month', 'exp_year', 'paycvv',
     'paystart_month', 'paystart_year', 'payissue',
-    'payip'
+    'payip',
+    'paid'
   );
 
   var billing_bottomvars = new Array(
@@ -340,6 +342,7 @@ function copyelement(from, to) {
      'payname', 'exp_month', 'exp_year', 'paycvv',
      'paystart_month', 'paystart_year', 'payissue',
      'payip',
+     'paid',
      
      'tax',
      'invoicing_list', 'invoicing_list_POST', 'invoicing_list_FAX'

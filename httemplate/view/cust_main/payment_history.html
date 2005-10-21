@@ -1,13 +1,56 @@
 <%
   my( $cust_main ) = @_;
-  my $conf = new FS::Conf;
   my $custnum = $cust_main->custnum;
+
+  my $conf = new FS::Conf;
+
+  my @payby = $conf->config('payby');
+  #@payby = (qw( CARD DCRD CHEK DCHK LECB BILL CASH WEST COMP ))
+  @payby = (qw( CARD DCRD CHEK DCHK LECB BILL CASH COMP ))
+    unless grep /\w/, @payby;
+  my %payby = map { $_=>1 } @payby;
+
+  my $s = 0;
+
 %>
 
 <BR><BR><A NAME="history"><FONT SIZE="+2">Payment History</FONT></A><BR>
-<A HREF="<%= $p %>edit/cust_pay.cgi?custnum=<%= $custnum %>">Post cash/check payment</A>
-| <A HREF="<%= $p %>misc/payment.cgi?payby=CARD;custnum=<%= $custnum %>">Process credit card payment</A>
-| <A HREF="<%= $p %>misc/payment.cgi?payby=CHEK;custnum=<%= $custnum %>">Process electronic check (ACH) payment</A>
+
+<% if ( $payby{'BILL'} ) { %>
+
+  <%= $s++ ? ' | ' : '' %>
+  <A HREF="<%= $p %>edit/cust_pay.cgi?payby=BILL;custnum=<%= $custnum %>">Post check payment</A>
+
+<% } %>
+
+<% if ( $payby{'CASH'} ) { %>
+
+  <%= $s++ ? ' | ' : '' %>
+  <A HREF="<%= $p %>edit/cust_pay.cgi?payby=CASH;custnum=<%= $custnum %>">Post cash payment</A>
+
+<% } %>
+
+<% if ( $payby{'WEST'} ) { %>
+
+  <%= $s++ ? ' | ' : '' %>
+  <A HREF="<%= $p %>edit/cust_pay.cgi?payby=WEST;custnum=<%= $custnum %>">Post Western Union payment</A>
+
+<% } %>
+
+<% if ( $payby{'CARD'} || $payby{'DCRD'} ) { %>
+
+  <%= $s++ ? ' | ' : '' %>
+  <A HREF="<%= $p %>misc/payment.cgi?payby=CARD;custnum=<%= $custnum %>">Process credit card payment</A>
+
+<% } %>
+
+<% if ( $payby{'CHEK'} || $payby{'DCHK'} ) { %>
+
+  <%= $s++ ? ' | ' : '' %>
+  <A HREF="<%= $p %>misc/payment.cgi?payby=CHEK;custnum=<%= $custnum %>">Process electronic check (ACH) payment</A>
+
+<% } %>
+
 <BR><A HREF="<%= $p %>edit/cust_credit.cgi?<%= $custnum %>">Post credit</A>
 <BR>
 
@@ -51,8 +94,11 @@ foreach my $cust_pay ($cust_main->cust_pay) {
   $payby =~ s/^BILL$/Check #/ if $payinfo;
   $payby =~ s/^CHEK$/Electronic check /;
   $payby =~ s/^PREP$/Prepaid card /;
+  $payby =~ s/^CARD$/Credit card #/; 
+  $payby =~ s/^COMP$/Complimentary by /; 
+  $payby =~ s/^CASH$/Cash/;
+  $payby =~ s/^WEST$/Western Union/;
   $payby =~ s/^BILL$//;
-  $payby =~ s/^(CARD|COMP)$/$1 /;
   my $info = $payby ? " ($payby$payinfo)" : '';
 
   my( $pre, $post, $desc, $apply, $ext ) = ( '', '', '', '', '' );

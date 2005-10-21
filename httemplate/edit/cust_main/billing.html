@@ -4,6 +4,11 @@ my( $cust_main ) = @_;
 my $conf = new FS::Conf;
 my $payby_default = $conf->config('payby-default');
 
+my @payby = $conf->config('payby');
+#@payby = (qw( CARD DCRD CHEK DCHK LECB BILL CASH WEST COMP ))
+@payby = (qw( CARD DCRD CHEK DCHK LECB BILL CASH COMP ))
+  unless grep /\w/, @payby;
+
 if ( $payby_default eq 'HIDE' ) {
 
   $cust_main->payby('BILL') unless $cust_main->payby;
@@ -294,15 +299,60 @@ if ( $payby_default eq 'HIDE' ) {
 
       '</TABLE>',
 
+    'CASH' =>
+
+      '<TABLE BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0 HEIGHT=192>'.
+
+        qq!<TR><TD ALIGN="right" WIDTH="200">${r}Amount </TD>!.
+          qq!<TD WIDTH="408"><INPUT TYPE="text" NAME="paid" VALUE="!. ( $payby eq 'CASH' ? $cust_main->paid : '' ). qq!"></TD></TR>!.
+
+        '<TR><TD>&nbsp;</TD></TR>'.
+        '<TR><TD>&nbsp;</TD></TR>'.
+        '<TR><TD>&nbsp;</TD></TR>'.
+        '<TR><TD>&nbsp;</TD></TR>'.
+        '<TR><TD>&nbsp;</TD></TR>'.
+        '<TR><TD>&nbsp;</TD></TR>'.
+
+      '</TABLE>',
+
+    'WEST' =>
+
+      '<TABLE BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0 HEIGHT=192>'.
+
+        qq!<TR><TD ALIGN="right" WIDTH="200">${r}Amount </TD>!.
+          qq!<TD WIDTH="408"><INPUT TYPE="text" NAME="paid" VALUE="!. ( $payby eq 'WEST' ? $cust_main->paid : '' ). qq!"></TD></TR>!.
+
+        '<TR><TD>&nbsp;</TD></TR>'.
+        '<TR><TD>&nbsp;</TD></TR>'.
+        '<TR><TD>&nbsp;</TD></TR>'.
+        '<TR><TD>&nbsp;</TD></TR>'.
+        '<TR><TD>&nbsp;</TD></TR>'.
+        '<TR><TD>&nbsp;</TD></TR>'.
+
+      '</TABLE>',
+
   );
 
-  tie my %options, 'Tie::IxHash',
+
+  my %allopt = (
     'CARD' => 'Credit card',
     'CHEK' => 'Electronic check',
     'LECB' => 'Phone bill billing',
     'BILL' => 'Billing',
+    'CASH' => 'Cash', # initial payment, then billing',
+    'WEST' => 'Western Union', # initial payment, then billing',
     'COMP' => 'Complimentary',
-  ;
+  );
+  if ( $cust_main->custnum ) { #don't offer CASH and WEST initial payment types
+                               # when editing customer
+    delete $allopt{$_} for qw(CASH WEST);
+  }
+  
+  tie my %options, 'Tie::IxHash',
+    map  { $_ => $allopt{$_} }
+    grep { exists $allopt{$_} }
+         @payby;
+
   my %payby2option = (
     ( map { $_ => $_ } keys %options ),
     'DCRD' => 'CARD',

@@ -55,6 +55,9 @@ if ( defined($cgi->param('same')) && $cgi->param('same') eq "Y" ) {
   );
 }
 
+$new->setfield('paid', $cgi->param('paid') )
+  if $cgi->param('paid');
+
 #perhaps this stuff should go to cust_main.pm
 my $cust_pkg = '';
 my $svc_acct = '';

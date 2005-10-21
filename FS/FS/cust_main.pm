@@ -360,6 +360,7 @@ sub insert {
 
   my $prepay_identifier = '';
   my( $amount, $seconds ) = ( 0, 0 );
+  my $payby = '';
   if ( $self->payby eq 'PREPAY' ) {
 
     $self->payby('BILL');
@@ -372,6 +373,14 @@ sub insert {
       #return "error applying prepaid card (transaction rolled back): $error";
       return $error;
     }
+
+    $payby = 'PREP' if $amount;
+
+  } elsif ( $self->payby =~ /^(CASH|WEST)$/ ) {
+
+    $payby = $1;
+    $self->payby('BILL');
+    $amount = $self->paid;
 
   }
 
@@ -405,12 +414,14 @@ sub insert {
   }
 
   if ( $amount ) {
-    $error = $self->insert_cust_pay_prepay($amount, $prepay_identifier);
+    $error = $self->insert_cust_pay($payby, $amount, $prepay_identifier);
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
-      return "inserting prepayment (transaction rolled back): $error";
+      return "inserting payment (transaction rolled back): $error";
     }
   }
+
+
 
   unless ( $import || $skip_fuzzyfiles ) {
     $error = $self->queue_fuzzyfiles_update;
@@ -691,14 +702,42 @@ If there is an error, returns the error, otherwise returns false.
 =cut
 
 sub insert_cust_pay_prepay {
-  my( $self, $amount ) = splice(@_, 0, 2);
+  shift->insert_cust_pay('PREP', @_);
+}
+
+=item insert_cust_pay_cash AMOUNT [ PAYINFO ]
+
+Inserts a cash payment in the specified amount for this customer.  An optional
+second argument can specify the payment identifier for tracking purposes.
+If there is an error, returns the error, otherwise returns false.
+
+=cut
+
+sub insert_cust_pay_cash {
+  shift->insert_cust_pay('CASH', @_);
+}
+
+=item insert_cust_pay_prepay AMOUNT [ PAYINFO ]
+
+Inserts a Western Union payment in the specified amount for this customer.  An
+optional second argument can specify the prepayment identifier for tracking
+purposes.  If there is an error, returns the error, otherwise returns false.
+
+=cut
+
+sub insert_cust_pay_west {
+  shift->insert_cust_pay('WEST', @_);
+}
+
+sub insert_cust_pay {
+  my( $self, $payby, $amount ) = splice(@_, 0, 3);
   my $payinfo = scalar(@_) ? shift : '';
 
   my $cust_pay = new FS::cust_pay {
     'custnum' => $self->custnum,
     'paid'    => sprintf('%.2f', $amount),
     #'_date'   => #date the prepaid card was purchased???
-    'payby'   => 'PREP',
+    'payby'   => $payby,
     'payinfo' => $payinfo,
   };
   $cust_pay->insert;
@@ -1105,7 +1144,7 @@ sub check {
     }
   }
 
-  $self->payby =~ /^(CARD|DCRD|CHEK|DCHK|LECB|BILL|COMP|PREPAY)$/
+  $self->payby =~ /^(CARD|DCRD|CHEK|DCHK|LECB|BILL|COMP|PREPAY|CASH|WEST)$/
     or return "Illegal payby: ". $self->payby;
 
   $error =    $self->ut_numbern('paystart_month')
@@ -1242,7 +1281,7 @@ sub check {
 
   if ( $self->paydate eq '' || $self->paydate eq '-' ) {
     return "Expriation date required"
-      unless $self->payby =~ /^(BILL|PREPAY|CHEK|LECB)$/;
+      unless $self->payby =~ /^(BILL|PREPAY|CHEK|LECB|CASH|WEST)$/;
     $self->paydate('');
   } else {
     my( $m, $y );
