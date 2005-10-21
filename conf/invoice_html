@@ -31,9 +31,11 @@
             </td>
           </tr>
           <tr>
-            <th colspan=3 align="center">
+            <th>&nbsp;</th>
+            <th colspan=1 align="center">
               <FONT SIZE="+3">I</FONT><FONT SIZE="+2">NVOICE</FONT>
             </th>
+            <th>&nbsp;</th>
           </tr>
         </table>
       </td>
