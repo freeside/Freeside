@@ -1122,7 +1122,7 @@ sub tables_hashref {
       ],
       'primary_key' => 'ratedetailnum',
       'unique'      => [ [ 'ratenum', 'orig_regionnum', 'dest_regionnum' ] ],
-      'index'       => [],
+      'index'       => [ [ 'ratenum', 'dest_regionnum' ] ],
     },
 
     'rate_region' => {

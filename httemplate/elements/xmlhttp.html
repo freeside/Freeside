@@ -2,11 +2,11 @@
   my ( %opt ) = @_;
 
   my $url = $opt{'url'};
-  #my $action = exists $opt{'action'} ? $opt{'action'} : 'GET';
+  my $method = exists($opt{'method'}) ? $opt{'method'} : 'GET';
   #my @subs = @{ $opt{'subs'};
 
-  $url .= ( ($url =~ /\?/) ? '&' : '?' ).
-          'sub=';
+  $url .= ( ($url =~ /\?/) ? '&' : '?' )
+    if $method eq 'GET';
 
 %>
 
@@ -33,43 +33,64 @@
 
   <% foreach my $func ( @{$opt{'subs'}} ) { 
 
-       my $furl = $url . uri_escape($func);
+       my $furl = $url;
        $furl =~ s/\"/\\\\\"/; #javascript escape
 
   %>
 
     function <%=$func%>() {
-	// count args; build URL
-	var url = "<%=$furl%>";
-	var a = <%=$func%>.arguments;
-	var args;
-	var len;
-	if ( a && typeof a  == 'object'  && a[0].constructor == Array ) {
-	    args = a[0];
+        // count args; build URL
+        var url = "<%=$furl%>";
+        var a = <%=$func%>.arguments;
+
+        var args;
+        var len;
+        var content = 'sub=<%= uri_escape($func) %>';
+        if ( a && typeof a  == 'object'  && a[0].constructor == Array ) {
+            args = a[0];
             len = args.length
-	} else {
+        } else {
             args = a;
             len = args.length - 1;
-	}
-	for (var i = 0; i < len; i++) 
-	    url = url + "&arg=" + escape(args[i]);
-	url = url.replace( /[+]/g, '%2B'); // fix the unescaped plus signs 
-	var xmlhttp = rs_init_object();
-	xmlhttp.open("GET", url, true);
-	xmlhttp.setRequestHeader("If-Modified-Since", "Sat, 1 Jan 2000 00:00:00 GMT");
-	xmlhttp.onreadystatechange = function() {
-	    if (xmlhttp.readyState != 4) 
-		return;
-	    //rs_debug("received " + x.responseText);
+        }
+        for (var i = 0; i < len; i++) 
+            content = content + "&arg=" + escape(args[i]);
+        content = content.replace( /[+]/g, '%2B'); // fix unescaped plus signs 
 
-	    if (xmlhttp.status != 200) {
-	      alert(xmlhttp.status + " status connecting to " + url);
-	    } else {
+        if ( '<%=$method%>' == 'GET' ) {
+          url = url + content;
+        }
+
+        //alert('<%=$method%> ' + url);
+
+        var xmlhttp = rs_init_object();
+        xmlhttp.open("<%=$method%>", url, true);
+
+        xmlhttp.onreadystatechange = function() {
+            if (xmlhttp.readyState != 4) 
+        	return;
+
+            if (xmlhttp.status != 200) {
+              alert(xmlhttp.status + " status connecting to " + url);
+            } else {
               var data = xmlhttp.responseText;
+              //alert('received response: ' + data);
               a[a.length-1](data);
             }
         }
-        xmlhttp.send(null);
+
+        if ( '<%=$method%>' == 'POST' ) {
+
+          xmlhttp.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+          xmlhttp.send(content);
+
+        } else {
+
+          xmlhttp.setRequestHeader("If-Modified-Since", "Sat, 1 Jan 2000 00:00:00 GMT");
+          xmlhttp.send(null);
+
+        }
+
         //rs_debug("x_$func_name url = " + url);
         //rs_debug("x_$func_name waiting..");
     }

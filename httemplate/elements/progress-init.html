@@ -12,8 +12,9 @@
 %>
 
 <%= include('/elements/xmlhttp.html',
-              'url'  => $action,
-              'subs' => [ 'start_job' ],
+              'method' => 'POST',
+              'url'    => $action,
+              'subs'   => [ 'start_job' ],
            )
 %>
 <SCRIPT TYPE="text/javascript" SRC="../elements/overlibmws.js"></SCRIPT>
@@ -26,6 +27,8 @@ function OLiframeContent(src, width, height, name) {
 }
 
 function <%=$key%>process () {
+
+  //alert('<%=$key%>process for form <%=$formname%>');
 
   document.<%=$formname%>.submit.disabled=true;
 
@@ -40,8 +43,10 @@ function <%=$key%>process () {
        )
     {
         if ( field.type == 'select-multiple' ) {
+          //alert('select-multiple ' + field.name);
           for (var j=0; j < field.options.length; j++) {
             if ( field.options[j].selected ) {
+              //alert(field.name + ' => ' + field.options[j].value);
               Hash[x++] = field.name;
               Hash[x++] = field.options[j].value;
             }
@@ -61,6 +66,8 @@ function <%=$key%>process () {
   // jsrsPOST = true;
   // jsrsExecute( '<%= $action %>', <%=$key%>myCallback, 'start_job', Hash );
 
+  //alert('start_job( ' + Hash + ', <%=$key%>myCallback )' );
+  //alert('start_job()' );
   start_job( Hash, <%=$key%>myCallback );
 
 }
