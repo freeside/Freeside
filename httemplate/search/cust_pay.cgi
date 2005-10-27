@@ -56,8 +56,8 @@
            } elsif ( $3 eq 'Maestro' ) { 
              push @search,
                " (    substring(cust_pay.payinfo from 1 for 2 ) = '63'     ".
-               '   OR substring(cust_pay.payinfo from 1 for 2 ) = '67'     ".
-               '   OR substring(cust_pay.payinfo from 1 for 6 ) = '564182' ".
+               "   OR substring(cust_pay.payinfo from 1 for 2 ) = '67'     ".
+               "   OR substring(cust_pay.payinfo from 1 for 6 ) = '564182' ".
                "   OR substring(cust_pay.payinfo from 1 for 4 ) = '4936'   ".
                "   OR substring(cust_pay.payinfo from 1 for 6 )            ".
                "      SIMILAR TO '49030[2-9]'                             ".
