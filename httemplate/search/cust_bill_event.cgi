@@ -15,7 +15,9 @@ my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
 
 my $where = " WHERE cust_bill_event._date >= $beginning".
             "   AND cust_bill_event._date <= $ending";
-$where .= " AND statustext != '' AND statustext IS NOT NULL"
+$where .= " AND statustext != '' ".
+          " AND statustext IS NOT NULL ".
+          " AND statustext != 'N/A' "
   if $cgi->param('failed');
 
 my $sql_query = {
