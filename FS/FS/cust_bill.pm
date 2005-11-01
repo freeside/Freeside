@@ -836,7 +836,7 @@ sub spool_csv {
   my($self, %opt) = @_;
 
   if ( $opt{'dest'} ) {
-    my %invoicing_list = map { /^(POST|FAX)$/ or $1 = 'EMAIL'; $1 => 1 }
+    my %invoicing_list = map { /^(POST|FAX)$/ or 'EMAIL' =~ /^(.*)$/; $1 => 1 }
                              $self->cust_main->invoicing_list;
     return unless $invoicing_list{$opt{'dest'}};
   }
