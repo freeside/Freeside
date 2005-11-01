@@ -882,6 +882,8 @@ sub spool_csv {
   flock(CSV, LOCK_UN);
   close CSV;
 
+  return '';
+
 }
 
 =item print_csv OPTION => VALUE, ...
