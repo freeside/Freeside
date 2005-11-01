@@ -8,7 +8,7 @@ for a in header detail; do
   mv spool-$a.csv $date-$a.csv
 done
 
-echo zip $date.zip $date-header.csv $date-detail.csv
+zip $date.zip $date-header.csv $date-detail.csv
 
 echo $dir/$date.zip
 
