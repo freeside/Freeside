@@ -1,14 +1,14 @@
 #!/bin/sh
 
-date = `date`
-dir = /usr/local/etc/freeside/export.DBI:Pg:dbname=freeside/cust_bill
-cd $dir
+date=`date +"%Y%m%d"`
+dir="/usr/local/etc/freeside/export.DBI:Pg:dbname=freeside/cust_bill"
+cd "$dir"
 
 for a in header detail; do
   mv spool-$a.csv $date-$a.csv
 done
 
-zip $date.zip $date-header.csv $date-detail.csv
+echo zip $date.zip $date-header.csv $date-detail.csv
 
 echo $dir/$date.zip
 
