@@ -822,12 +822,24 @@ Spools CSV invoice data.
 
 Options are:
 
-format - 'default' or 'billco'
+=over 4
+
+=item format - 'default' or 'billco'
+
+=item dest - if set (to POST, EMAIL or FAX), only sends spools invoices if the customer has the corresponding invoice destinations set (see L<FS::cust_main_invoice>).
+
+=back
 
 =cut
 
 sub spool_csv {
   my($self, %opt) = @_;
+
+  if ( $opt{'dest'} ) {
+    my %invoicing_list = map { /^(POST|FAX)$/ or $1 = 'EMAIL'; $1 => 1 }
+                             $self->cust_main->invoicing_list;
+    return unless $invoicing_list{$opt{'dest'}};
+  }
 
   #create file(s)
 
@@ -1010,7 +1022,8 @@ sub print_csv {
     $taxtotal += $_->{'amount'} foreach $self->_items_tax;
 
     my $duedate = '';
-    if ( $conf->config('invoice_default_terms') =~ /^\s*Net\s*(\d+)\s*$/ ) {
+    if (    $conf->exists('invoice_default_terms') 
+         && $conf->config('invoice_default_terms')=~ /^\s*Net\s*(\d+)\s*$/ ) {
       $duedate = time2str("%m/%d/%Y", $self->_date + ($1*86400) );
     }
 
