@@ -252,6 +252,7 @@ tie my %events, 'Tie::IxHash',
   'spool_csv' => {
     'name' => 'Spool CSV invoice data',
     'code' => '$cust_bill->spool_csv( \'format\' => \'%%%spoolformat%%%\',
+                                      \'dest\'   => \'%%%spooldest%%%\',
                                     );',
     'html' =>
         '<TABLE BORDER=0>'.
@@ -264,6 +265,15 @@ tie my %events, 'Tie::IxHash',
             '</SELECT>'.
             '-->'.
             '<INPUT TYPE="text" NAME="spoolformat" VALUE="%%%spoolformat%%%">'.
+          '</TD></TR>'.
+        '<TR><TD align="right">For destination: </TD>'.
+          '<TD>'.
+            '<SELECT NAME="spooldest">'.
+              '<OPTION VALUE="">(all)'.
+              '<OPTION VALUE="POST">Postal mail'.
+              '<OPTION VALUE="EMAIL">Email'.
+              '<OPTION VALUE="Fax">Fax'.
+            '</SELECT>'.
           '</TD></TR>'.
         '</TABLE>',
     'weight' => 50,
