@@ -214,13 +214,26 @@ tie my %events, 'Tie::IxHash',
 
   'send_csv_ftp' => {
     'name' => 'Upload CSV invoice data to an FTP server',
-    'code' => '$cust_bill->send_csv( protocol => \'ftp\',
-                                     server   => \'%%%ftpserver%%%\',
-                                     username => \'%%%ftpusername%%%\',
-                                     password => \'%%%ftppassword%%%\',
-                                     dir      => \'%%%ftpdir%%%\'       );',
+    'code' => '$cust_bill->send_csv( protocol   => \'ftp\',
+                                     server     => \'%%%ftpserver%%%\',
+                                     username   => \'%%%ftpusername%%%\',
+                                     password   => \'%%%ftppassword%%%\',
+                                     dir        => \'%%%ftpdir%%%\',
+                                     \'format\' => \'%%%ftpformat%%%\',
+                                   );',
     'html' =>
-        '<TABLE BORDER=0><TR><TD ALIGN="right">FTP server: </TD>'.
+        '<TABLE BORDER=0>'.
+        '<TR><TD align="right">Format ("default" or "billco"): </TD>'.
+          '<TD>'.
+            '<!--'.
+            '<SELECT NAME="ftpformat">'.
+              '<OPTION VALUE="default">Default'.
+              '<OPTION VALUE="billco">Billco'.
+            '</SELECT>'.
+            '-->'.
+            '<INPUT TYPE="text" NAME="ftpformat" VALUE="%%%ftpformat%%%">'.
+          '</TD></TR>'.
+        '<TR><TD ALIGN="right">FTP server: </TD>'.
           '<TD><INPUT TYPE="text" NAME="ftpserver" VALUE="%%%ftpserver%%%">'.
           '</TD></TR>'.
         '<TR><TD ALIGN="right">FTP username: </TD><TD>'.
@@ -231,6 +244,26 @@ tie my %events, 'Tie::IxHash',
           '</TD></TR>'.
         '<TR><TD ALIGN="right">FTP directory: </TD>'.
           '<TD><INPUT TYPE="text" NAME="ftpdir" VALUE="%%%ftpdir%%%">'.
+          '</TD></TR>'.
+        '</TABLE>',
+    'weight' => 50,
+  },
+
+  'spool_csv' => {
+    'name' => 'Spool CSV invoice data',
+    'code' => '$cust_bill->spool_csv( \'format\' => \'%%%spoolformat%%%\',
+                                    );',
+    'html' =>
+        '<TABLE BORDER=0>'.
+        '<TR><TD align="right">Format ("default" or "billco"): </TD>'.
+          '<TD>'.
+            '<!--'.
+            '<SELECT NAME="spoolformat">'.
+              '<OPTION VALUE="default">Default'.
+              '<OPTION VALUE="billco">Billco'.
+            '</SELECT>'.
+            '-->'.
+            '<INPUT TYPE="text" NAME="spoolformat" VALUE="%%%spoolformat%%%">'.
           '</TD></TR>'.
         '</TABLE>',
     'weight' => 50,
