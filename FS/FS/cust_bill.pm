@@ -838,7 +838,8 @@ sub spool_csv {
   if ( $opt{'dest'} ) {
     my %invoicing_list = map { /^(POST|FAX)$/ or 'EMAIL' =~ /^(.*)$/; $1 => 1 }
                              $self->cust_main->invoicing_list;
-    return unless $invoicing_list{$opt{'dest'}};
+    return 'N/A' unless $invoicing_list{$opt{'dest'}}
+                     || ! keys %invoicing_list;
   }
 
   #create file(s)
