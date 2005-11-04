@@ -154,5 +154,8 @@ terms of the BSD license.
 (c) copyright 2005 modernmethod, inc
 Perl backend version (c) copyright 2005 Nathan Schmidt
 
+Scott Edwards <supadupa@gmail.com> contributed magic for XMLHTTP error
+handling, and other patches.
+
 Everything else is my (Ivan Kohler <ivan@420.am>) fault.
 
