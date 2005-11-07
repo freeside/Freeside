@@ -51,8 +51,9 @@
                " ) ";
            } elsif ( $3 eq 'Discover' ) {
              push @search,
-               "    substring(cust_pay.payinfo from 1 for 4 ) = '6011'  ".
-               " OR substring(cust_pay.payinfo from 1 for 3 ) = '650'   ";
+               " (    substring(cust_pay.payinfo from 1 for 4 ) = '6011'  ".
+               "   OR substring(cust_pay.payinfo from 1 for 3 ) = '650'   ".
+               " ) ";
            } elsif ( $3 eq 'Maestro' ) { 
              push @search,
                " (    substring(cust_pay.payinfo from 1 for 2 ) = '63'     ".
