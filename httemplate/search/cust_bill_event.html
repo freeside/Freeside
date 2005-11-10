@@ -51,6 +51,33 @@
   });
 </SCRIPT>
       </TR>
+      <!--
+      <TR>
+        <TD ALIGN="right">Events: </TD>
+        <TD>
+          <SELECT NAME="eventpart">
+            <OPTION SELECTED VALUE=""><%= $cgi->param('failed') ? '(all failed events)' : '(all events)' %>
+            <% foreach my $part_bill_event ( qsearch( 'part_bill_event', {} ) ) { %>
+            <% } %>
+          </SELECT>
+        </TD>
+      </TR>
+      -->
+      <TR>
+        <TD ALIGN="right">Events for payment type: </TD>
+        <TD>
+          <SELECT NAME="part_bill_event.payby">
+            <OPTION SELECTED VALUE="">(all)
+            <OPTION VALUE="CARD">Credit card (automatic)
+            <OPTION VALUE="BILL">Billing
+            <OPTION VALUE="CHEK">Electronic check (automatic)
+            <OPTION VALUE="DCRD">Credit card (on-demand)
+            <OPTION VALUE="DCHK">Electronic check (on-demand)
+            <OPTION VALUE="LECB">Phone bill billing
+            <OPTION VALUE="COMP">Complimentary
+          </SELECT>
+        </TD>
+      </TR>
     </TABLE>
     <BR><INPUT TYPE="submit" VALUE="Get Report">
     </FORM>

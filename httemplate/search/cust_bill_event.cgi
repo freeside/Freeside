@@ -15,10 +15,16 @@ my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
 
 my $where = " WHERE cust_bill_event._date >= $beginning".
             "   AND cust_bill_event._date <= $ending";
-$where .= " AND statustext != '' ".
-          " AND statustext IS NOT NULL ".
-          " AND statustext != 'N/A' "
-  if $cgi->param('failed');
+
+if ( $cgi->param('failed') ) {
+  $where .= " AND statustext != '' ".
+            " AND statustext IS NOT NULL ".
+            " AND statustext != 'N/A' "
+}
+
+if ( $cgi->param('part_bill_event.payby') =~ /^(\w+)$/ ) {
+  $where .= " AND part_bill_event.payby = '$1' ";
+}
 
 my $sql_query = {
   'table'     => 'cust_bill_event',
@@ -38,7 +44,9 @@ my $sql_query = {
                  'LEFT JOIN cust_main       USING ( custnum   ) ',
 };
 
-my $count_sql = "select count(*) from cust_bill_event $where";
+my $count_sql = "SELECT COUNT(*) FROM cust_bill_event ".
+                "LEFT JOIN part_bill_event USING ( eventpart ) ".
+                $where;
 
 my $conf = new FS::Conf;
 
