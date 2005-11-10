@@ -87,7 +87,6 @@ sub _export_replace {
 
   $self->_xrc_command( 'setUserPassword',
                        $new->domain,
-                       $domain_clientID,
                        string($new->username),
                        string($new->_password),
                      );
