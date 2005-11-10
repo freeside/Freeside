@@ -36,8 +36,8 @@ my $domain = $svc_domain->domain;
   ( ( $pkgnum || $custnum )
     ? ( "View this customer (#$custnum)" => "${p}view/cust_main.cgi?$custnum",
       )
-    : ( "Cancel this (unaudited) domain" =>
-          "${p}misc/cancel-unaudited.cgi?$svcnum" )
+    : ( "Delete this (unaudited) domain" =>
+          "javascript:areyousure('${p}misc/cancel-unaudited.cgi?$svcnum', 'Delete $domain and all records?' )" )
   ),
   "Main menu" => $p,
 )) %>
@@ -50,8 +50,8 @@ Service #<%= $svcnum %>
 <BR><BR><A HREF="<%= ${p} %>misc/whois.cgi?custnum=<%=$custnum%>;svcnum=<%=$svcnum%>;domain=<%=$domain%>">View whois information.</A>
 <BR><BR>
 <SCRIPT>
-  function areyousure(href) {
-    if ( confirm("Remove this record?") == true )
+  function areyousure(href, message) {
+    if ( confirm(message) == true )
       window.location.href = href;
   }
   function slave_areyousure() {
@@ -74,7 +74,7 @@ Service #<%= $svcnum %>
     <td><%= $domain_record->recdata %>
 
     <% unless ( $domain_record->rectype eq 'SOA' ) { %>
-      (<A HREF="javascript:areyousure('<%=$p%>misc/delete-domain_record.cgi?<%=$domain_record->recnum%>')">delete</A>)
+      (<A HREF="javascript:areyousure('<%=$p%>misc/delete-domain_record.cgi?<%=$domain_record->recnum%>', 'Delete \'<%= $domain_record->reczone %> <%= $type %> <%= $domain_record->recdata %>\' ?' )">delete</A>)
     <% } %>
     </td></tr>
   <% } %>
