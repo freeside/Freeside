@@ -264,6 +264,8 @@ suspend is normally updated by the suspend and unsuspend methods.
 cancel is normally updated by the cancel method (and also the order subroutine
 in some cases).
 
+Calls 
+
 =cut
 
 sub replace {
@@ -281,7 +283,51 @@ sub replace {
 
   local($disable_agentcheck) = 1 if $old->pkgpart == $new->pkgpart;
 
-  $new->SUPER::replace($old);
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  #save off and freeze RADIUS attributes for any associated svc_acct records
+  my @svc_acct = ();
+  if ( $old->part_pkg->is_prepaid || $new->part_pkg->is_prepaid ) {
+
+                #also check for specific exports?
+                # to avoid spurious modify export events
+    @svc_acct = map  { $_->svc_x }
+                grep { $_->part_svc->svcdb eq 'svc_acct' }
+                     $old->cust_svc;
+
+    $_->snapshot foreach @svc_acct;
+
+  }
+
+  my $error = $new->SUPER::replace($old);
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  #for prepaid packages,
+  #trigger export of new RADIUS Expiration attribute when cust_pkg.bill changes
+  foreach my $old_svc_acct ( @svc_acct ) {
+    my $new_svc_acct = new FS::svc_acct { $old_svc_acct->hash };
+    my $s_error = $new_svc_acct->replace($old_svc_acct);
+    if ( $s_error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $s_error;
+    }
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  '';
+
 }
 
 =item check

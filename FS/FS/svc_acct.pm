@@ -1021,6 +1021,9 @@ expected to change in the future.
 sub radius_reply { 
   my $self = shift;
 
+  return %{ $self->{'radius_reply'} }
+    if exists $self->{'radius_reply'};
+
   my %reply =
     map {
       /^(radius_(.*))$/;
@@ -1054,6 +1057,9 @@ expected to change in the future.
 sub radius_check {
   my $self = shift;
 
+  return %{ $self->{'radius_check'} }
+    if exists $self->{'radius_check'};
+
   my %check = 
     map {
       /^(rc_(.*))$/;
@@ -1071,6 +1077,41 @@ sub radius_check {
   }
 
   %check;
+
+}
+
+=item snapshot
+
+This method instructs the object to "snapshot" or freeze RADIUS check and
+reply attributes to the current values.
+
+=cut
+
+#bah, my english is too broken this morning
+#Of note is the "Expiration" attribute, which, for accounts in prepaid packages, is typically defined on-the-fly as the associated packages cust_pkg.bill.  (This is used by
+#the FS::cust_pkg's replace method to trigger the correct export updates when
+#package dates change)
+
+sub snapshot {
+  my $self = shift;
+
+  $self->{$_} = { $self->$_() }
+    foreach qw( radius_reply radius_check );
+
+}
+
+=item forget_snapshot
+
+This methos instructs the object to forget any previously snapshotted
+RADIUS check and reply attributes.
+
+=cut
+
+sub forget_snapshot {
+  my $self = shift;
+
+  delete $self->{$_}
+    foreach qw( radius_reply radius_check );
 
 }
 
