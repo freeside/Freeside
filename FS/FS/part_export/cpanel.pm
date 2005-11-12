@@ -91,13 +91,50 @@ sub cpanel_queue {
 
 sub cpanel_insert { #subroutine, not method
   my( $machine, $user, $accesshash, $debug ) = splice(@_,0,4);
-  my $whm = cpanel_connect($machine, $user, $accesshash, $debug);
-  warn "  cpanel->createacct ". join(', ', @_). "\n"
+
+#  my $whm = cpanel_connect($machine, $user, $accesshash, $debug);
+#  warn "  cpanel->createacct ". join(', ', @_). "\n"
+#    if $debug;
+#  my $response = $whm->createacct(@_);
+#  die $whm->{'error'} if $whm->{'error'};
+#  warn "  cpanel response: $response\n"
+#    if $debug;
+
+  warn "cpanel_insert: attempting web interface to add POP"
     if $debug;
-  my $response = $whm->createacct(@_);
-  die $whm->{'error'} if $whm->{'error'};
-  warn "  cpanel response: $response\n"
-    if $debug;
+
+  my($domain, $username, $password, $svc) = @_;
+
+  use LWP::UserAgent;
+  use HTTP::Request::Common qw(POST);
+
+  my $url =
+    "http://$user:$accesshash\@$domain:2082/frontend/x/mail/addpop2.html";
+
+  my $ua = LWP::UserAgent->new();
+
+  #$req->authorization_basic($user, $accesshash);
+
+  my $res = $ua->request(
+    POST( 'http://$user:$accesshash@$domain:2082/frontend/x/mail/addpop2.html',
+          [ 
+            'email'    => $username,
+            'domain'   => $domain,
+            'password' => $password,
+            'quota'    => 10, #?
+          ] 
+        )
+  );
+
+  die "Error submitting data to $url: ". $res->status_line
+    unless $res->is_success;
+
+  die "Username in use"
+    if $res->content =~ /exists/;
+
+  die "Account not created: ". $res->content
+    if $res->content =~ /failure/;
+
 }
 
 #sub cpanel_replace { #subroutine, not method
