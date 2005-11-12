@@ -116,7 +116,7 @@ sub cpanel_insert { #subroutine, not method
   #$req->authorization_basic($user, $accesshash);
 
   my $res = $ua->request(
-    POST( 'http://$user:$accesshash@$domain:2082/frontend/x/mail/addpop2.html',
+    POST( $url,
           [ 
             'email'    => $username,
             'domain'   => $domain,
