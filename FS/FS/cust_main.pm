@@ -2275,6 +2275,13 @@ sub realtime_bop {
               : $invoicing_list[0];
 
   my %content = ();
+
+  my $payip = exists($options{'payip'})
+                ? $options{'payip'}
+                : $self->payip;
+  $content{customer_ip} = $payip
+    if length($payip);
+
   if ( $method eq 'CC' ) { 
 
     $content{card_number} = $payinfo;
@@ -2305,12 +2312,6 @@ sub realtime_bop {
                            ? $options{'payissue'}
                            : $self->payissue;
     $content{issue_number} = $payissue if $payissue;
-
-    my $payip          = exists($options{'payip'})
-                           ? $options{'payip'}
-                           : $self->payip;
-    $content{customer_ip} = $payip
-      if length($payip);
 
     $content{recurring_billing} = 'YES'
       if qsearch('cust_pay', { 'custnum' => $self->custnum,
