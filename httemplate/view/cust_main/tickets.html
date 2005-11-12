@@ -30,7 +30,7 @@
 
 Highest priority tickets
 (<A HREF="<%= FS::TicketSystem->href_customer_tickets($cust_main->custnum) %>">View all tickets for this customer</A>)
-(<A HREF="<%= FS::TicketSystem->href_new_ticket($cust_main->custnum, join(', ', grep { $_ !~ /^(POST|FAX)$/ } $cust_main->invoicing_list ) ) %>">New ticket for this customer</A>)
+(<A HREF="<%= FS::TicketSystem->href_new_ticket($cust_main, join(', ', grep { $_ !~ /^(POST|FAX)$/ } $cust_main->invoicing_list ) ) %>">New ticket for this customer</A>)
 <%= table() %>
 <TR>
   <TH>#</TH>
