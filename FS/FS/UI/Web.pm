@@ -130,16 +130,15 @@ sub cust_fields {
 package FS::UI::Web::JSRPC;
 
 use strict;
-use vars qw(@ISA $DEBUG);
+use vars qw($DEBUG);
 use Storable qw(nfreeze);
 use MIME::Base64;
-#use JavaScript::RPC::Server::CGI;
+use JSON;
 use FS::UID;
 use FS::Record qw(qsearchs);
 use FS::queue;
 
-#@ISA = qw( JavaScript::RPC::Server::CGI );
-$DEBUG = 0;
+$DEBUG = 1;
 
 sub new {
         my $class = shift;
@@ -150,6 +149,8 @@ sub new {
         };
 
         bless $self, $class;
+
+        die "CGI object required as second argument" unless $self->{'cgi'};
 
         return $self;
 }
@@ -255,23 +256,9 @@ sub job_status {
     @return = ( 'error', $job ? $job->statustext : $jobnum );
   }
 
-  #join("\n",@return);
-
-  #XXX should use JSON!
-  @return = map {
-    s/\\/\\\\/g;
-    s/\n/\\n/g;
-    s/"/\"/g;
-    $_
-  } @return;
-  
-  '[ '. join(', ', map { qq("$_") } @return). " ]\n";
+  objToJson(\@return);
 
 }
-
-#sub get_new_query {
-#  FS::UID::cgi();
-#}
 
 1;
 

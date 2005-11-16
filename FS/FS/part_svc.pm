@@ -11,7 +11,7 @@ use FS::cust_svc;
 
 @ISA = qw(FS::Record);
 
-$DEBUG = 0;
+$DEBUG = 1;
 
 =head1 NAME
 
@@ -418,15 +418,73 @@ sub part_export_usage {
   grep $_->can('usage_sessions'), $self->part_export;
 }
 
-=item cust_svc
+=item cust_svc [ PKGPART ] 
 
-Returns a list of associated FS::cust_svc records.
+Returns a list of associated customer services (FS::cust_svc records).
+
+If a PKGPART is specified, returns the customer services which are contained
+within packages of that type (see L<FS::part_pkg>).  If PKGPARTis specified as
+B<0>, returns unlinked customer services.
 
 =cut
 
 sub cust_svc {
   my $self = shift;
-  qsearch('cust_svc', { 'svcpart' => $self->svcpart } );
+
+  my $hashref = { 'svcpart' => $self->svcpart };
+
+  my( $addl_from, $extra_sql ) = ( '', '' );
+  if ( @_ ) {
+    my $pkgpart = shift;
+    if ( $pkgpart =~ /^(\d+)$/ ) {
+      $addl_from = 'LEFT JOIN cust_pkg USING ( pkgnum )';
+      $extra_sql = "AND pkgpart = $1";
+    } elsif ( $pkgpart eq '0' ) {
+      $hashref->{'pkgnum'} = '';
+    }
+  }
+
+  qsearch({
+    'table'     => 'cust_svc',
+    'addl_from' => $addl_from,
+    'hashref'   => $hashref,
+    'extra_sql' => $extra_sql,
+  });
+}
+
+=item num_cust_svc [ PKGPART ] 
+
+Returns the number of associated customer services (FS::cust_svc records).
+
+If a PKGPART is specified, returns the number of customer services which are
+contained within packages of that type (see L<FS::part_pkg>).  If PKGPART
+is specified as B<0>, returns the number of unlinked customer services.
+
+=cut
+
+sub num_cust_svc {
+  my $self = shift;
+
+  my @param = ( $self->svcpart );
+
+  my( $join, $and ) = ( '', '' );
+  if ( @_ ) {
+    my $pkgpart = shift;
+    if ( $pkgpart ) {
+      $join = 'LEFT JOIN cust_pkg USING ( pkgnum )';
+      $and = 'AND pkgpart = ?';
+      push @param, $pkgpart;
+    } elsif ( $pkgpart eq '0' ) {
+      $and = 'AND pkgnum IS NULL';
+    }
+  }
+
+  my $sth = dbh->prepare(
+    "SELECT COUNT(*) FROM cust_svc $join WHERE svcpart = ? $and"
+  ) or die dbh->errstr;
+  $sth->execute(@param)
+    or die $sth->errstr;
+  $sth->fetchrow_arrayref->[0];
 }
 
 =item svc_x
@@ -440,6 +498,7 @@ sub svc_x {
   map { $_->svc_x } $self->cust_svc;
 }
 
+
 =back
 
 =head1 SUBROUTINES
@@ -448,7 +507,7 @@ sub svc_x {
 
 =item process
 
-Experimental job-queue processor for web interface adds/edits
+Job-queue processor for web interface adds/edits
 
 =cut
 
@@ -506,6 +565,69 @@ sub process {
   die $error if $error;
 }
 
+=item process_bulk_cust_svc
+
+Job-queue processor for web interface bulk customer service changes
+
+=cut
+
+use Storable qw(thaw);
+use Data::Dumper;
+use MIME::Base64;
+sub process_bulk_cust_svc {
+  my $job = shift;
+
+  my $param = thaw(decode_base64(shift));
+  warn Dumper($param) if $DEBUG;
+
+  my $old_part_svc =
+    qsearchs('part_svc', { 'svcpart' => $param->{'old_svcpart'} } );
+
+  die "Must select a new service definition\n" unless $param->{'new_svcpart'};
+
+  #the rest should be abstracted out to to its own subroutine?
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  local( $FS::cust_svc::ignore_quantity ) = 1;
+
+  my $total = $old_part_svc->num_cust_svc( $param->{'pkgpart'} );
+
+  my $n = 0;
+  foreach my $old_cust_svc ( $old_part_svc->cust_svc( $param->{'pkgpart'} ) ) {
+
+    my $new_cust_svc = new FS::cust_svc { $old_cust_svc->hash };
+
+    $new_cust_svc->svcpart( $param->{'new_svcpart'} );
+    my $error = $new_cust_svc->replace($old_cust_svc);
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      die "$error\n" if $error;
+    }
+
+    $error = $job->update_statustext( int( 100 * ++$n / $total ) );
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      die $error if $error;
+    }
+
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+  '';
+
+}
+
 =head1 BUGS
 
 Delete is unimplemented.
@@ -513,7 +635,7 @@ Delete is unimplemented.
 The list of svc_* tables is hardcoded.  When svc_acct_pop is renamed, this
 should be fixed.
 
-all_part_svc_column method should be documented
+all_part_svc_column methods should be documented
 
 =head1 SEE ALSO
 
