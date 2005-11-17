@@ -29,7 +29,7 @@ tie my %options, 'Tie::IxHash',
                        type =>'textarea',
                        #default=>"$_password\n$_password\n",
                      },
-  'usermod_pwonly' => { label=>'Disallow username changes',
+  'usermod_pwonly' => { label=>'Disallow username, domain, uid, dir and RADIUS group changes',
                         type =>'checkbox',
                       },
   'suspend' => { label=>'Suspension command',
@@ -89,8 +89,8 @@ The following variables are available for interpolation (prefixed with
   <LI><code>$username</code>
   <LI><code>$domain</code>
   <LI><code>$_password</code>
-  <LI><code>$quoted_password</code> - unencrypted password quoted for the shell
-  <LI><code>$crypt_password</code> - encrypted password (quoted for the shell)
+  <LI><code>$quoted_password</code> - unencrypted password, already quoted for the shell (do not add additional quotes)
+  <LI><code>$crypt_password</code> - encrypted password, already quoted for the shell (do not add additional quotes)
   <LI><code>$uid</code>
   <LI><code>$gid</code>
   <LI><code>$finger</code> - GECOS, already quoted for the shell (do not add additional quotes)

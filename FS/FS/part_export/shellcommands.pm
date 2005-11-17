@@ -38,7 +38,7 @@ tie my %options, 'Tie::IxHash',
                        type =>'textarea',
                        default=>'',
                      },
-  'usermod_pwonly' => { label=>'Disallow username changes',
+  'usermod_pwonly' => { label=>'Disallow username, domain, uid, gid, dir and RADIUS group changes',
                         type =>'checkbox',
                       },
   'suspend' => { label=>'Suspension command',
@@ -148,8 +148,8 @@ old_ for replace operations):
 <UL>
   <LI><code>$username</code>
   <LI><code>$_password</code>
-  <LI><code>$quoted_password</code> - unencrypted password quoted for the shell
-  <LI><code>$crypt_password</code> - encrypted password (quoted for the shell)
+  <LI><code>$quoted_password</code> - unencrypted password, already quoted for the shell (do not add additional quotes)
+  <LI><code>$crypt_password</code> - encrypted password, already quoted for the shell (do not add additional quotes)
   <LI><code>$uid</code>
   <LI><code>$gid</code>
   <LI><code>$finger</code> - GECOS, already quoted for the shell (do not add additional quotes)
@@ -280,6 +280,9 @@ sub _export_replace {
     }
     if ( $old_uid != $new_uid ) {
       $error ||= "can't change uid";
+    }
+    if ( $old_gid != $new_gid ) {
+      $error ||= "can't change gid";
     }
     if ( $old_dir ne $new_dir ) {
       $error ||= "can't change dir";
