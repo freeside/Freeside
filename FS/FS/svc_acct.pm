@@ -497,8 +497,10 @@ sub replace {
   return $error if $error;
 
   $old->usergroup( [ $old->radius_groups ] );
-  warn "old groups: ". join(' ',@{$old->usergroup}). "\n" if $DEBUG;
-  warn "new groups: ". join(' ',@{$new->usergroup}). "\n" if $DEBUG;
+  if ( $DEBUG ) {
+    warn $old->email. " old groups: ". join(' ',@{$old->usergroup}). "\n";
+    warn $new->email. "new groups: ". join(' ',@{$new->usergroup}). "\n";
+  }
   if ( $new->usergroup ) {
     #(sorta) false laziness with FS::part_export::sqlradius::_export_replace
     my @newgroups = @{$new->usergroup};
