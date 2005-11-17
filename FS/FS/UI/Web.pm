@@ -164,6 +164,9 @@ sub process {
   # XXX this should parse JSON foo and build a proper data structure
   my @args = $cgi->param('arg');
 
+  #work around konqueror bug!
+  @args = map { s/\x00$//; $_; } @args;
+
   my $sub = $cgi->param('sub'); #????
 
   warn "FS::UI::Web::JSRPC::process:\n".
