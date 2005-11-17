@@ -11,7 +11,7 @@ use FS::cust_svc;
 
 @ISA = qw(FS::Record);
 
-$DEBUG = 1;
+$DEBUG = 0;
 
 =head1 NAME
 

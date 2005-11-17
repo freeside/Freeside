@@ -138,7 +138,7 @@ use FS::UID;
 use FS::Record qw(qsearchs);
 use FS::queue;
 
-$DEBUG = 1;
+$DEBUG = 0;
 
 sub new {
         my $class = shift;
