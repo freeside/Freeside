@@ -163,7 +163,7 @@ Service #<B><%= $svcnum %></B>
     <OPTION VALUE="">Change service</OPTION>
     <OPTION VALUE="">--------------</OPTION>
     <% foreach my $opt_part_svc ( @part_svc ) { %>
-      <OPTION VALUE="<%= $part_svc->svcpart %>"><%= $opt_part_svc->svc %></OPTION>
+      <OPTION VALUE="<%= $opt_part_svc->svcpart %>"><%= $opt_part_svc->svc %></OPTION>
     <% } %>
   </SELECT>
   <INPUT NAME="submit" TYPE="submit" VALUE="Change" disabled>
