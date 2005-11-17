@@ -561,7 +561,7 @@ sub tables_hashref {
       ],
       'primary_key' => 'pkgnum',
       'unique' => [],
-      'index' => [ ['custnum'] ],
+      'index' => [ ['custnum'], ['pkgpart'] ],
     },
 
     'cust_refund' => {

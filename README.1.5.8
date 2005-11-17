@@ -8,6 +8,9 @@ install Business::CreditCard 0.28
 install the new version
 run "freeside-upgrade username" to uprade your database schema
 
+Optional:
+CREATE INDEX cust_pkg2 ON cust_pkg ( pkgpart );
+
 Optional for better VoIP performance:
 CREATE INDEX rate_detail2 ON rate_detail ( ratenum, dest_regionnum );
 
