@@ -56,7 +56,7 @@ sub customer_tickets {
 
   my( $from_sql, @param) = $self->_from_customer( $custnum, $priority );
   my $sql = "select tickets.*, queues.name".
-            ( length($priority) ? ", ticketcustomfieldvalues.content" : '' ).
+            ( length($priority) ? ", objectcustomfieldvalues.content" : '' ).
             " $from_sql order by priority desc limit $limit";
   my $sth = $dbh->prepare($sql) or die $dbh->errstr. "preparing $sql";
   $sth->execute(@param)         or die $sth->errstr. "executing $sql";
@@ -91,10 +91,11 @@ sub _from_customer {
       #";
       push @param, $priority;
 
-      $join = "join TicketCustomFieldValues
-                 on ( tickets.id = TicketCustomFieldValues.ticket )";
+      $join = "join ObjectCustomFieldValues
+                 on ( tickets.id = ObjectCustomFieldValues.ObjectId )";
       
-      $where = "and content = ?
+      $where = "and ObjectType = 'RT::Ticket'
+                and content = ?
                 and customfield = ( select id from customfields
                                      where name = ?
                                        and ( $queue_sql )
@@ -102,8 +103,9 @@ sub _from_customer {
                ";
     } else {
       $where =
-               "and 0 = ( select count(*) from TicketCustomFieldValues
-                           where ticket = tickets.id
+               "and 0 = ( select count(*) from ObjectCustomFieldValues
+                           where ObjectId    = tickets.id
+                             and ObjectType  = 'RT::Ticket'
                              and customfield = ( select id from customfields
                                                   where name = ?
                                                     and ( $queue_sql )
