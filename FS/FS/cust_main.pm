@@ -2,7 +2,7 @@ package FS::cust_main;
 
 use strict;
 use vars qw( @ISA @EXPORT_OK $DEBUG $me $conf @encrypted_fields
-             $import $skip_fuzzyfiles );
+             $import $skip_fuzzyfiles $ignore_expired_card );
 use vars qw( $realtime_bop_decline_quiet ); #ugh
 use Safe;
 use Carp;
@@ -59,6 +59,7 @@ $me = '[FS::cust_main]';
 
 $import = 0;
 $skip_fuzzyfiles = 0;
+$ignore_expired_card = 0;
 
 @encrypted_fields = ('payinfo', 'paycvv');
 
@@ -926,6 +927,11 @@ sub replace {
       unless grep { $_ eq getotaker } $conf->config('users-allow_comp');
   }
 
+  local($ignore_expired_card) = 1
+    if $old->payby  =~ /^(CARD|DCRD)$/
+    && $self->payby =~ /^(CARD|DCRD)$/
+    && $old->payinfo eq $self->payinfo;
+
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
@@ -1281,7 +1287,7 @@ sub check {
 
   if ( $self->paydate eq '' || $self->paydate eq '-' ) {
     return "Expriation date required"
-      unless $self->payby =~ /^(BILL|PREPAY|CHEK|LECB|CASH|WEST)$/;
+      unless $self->payby =~ /^(BILL|PREPAY|CHEK|DCHK|LECB|CASH|WEST)$/;
     $self->paydate('');
   } else {
     my( $m, $y );
@@ -1295,7 +1301,9 @@ sub check {
     $self->paydate("$y-$m-01");
     my($nowm,$nowy)=(localtime(time))[4,5]; $nowm++; $nowy+=1900;
     return gettext('expired_card')
-      if !$import && ( $y<$nowy || ( $y==$nowy && $1<$nowm ) );
+      if !$import
+      && !$ignore_expired_card 
+      && ( $y<$nowy || ( $y==$nowy && $1<$nowm ) );
   }
 
   if ( $self->payname eq '' && $self->payby !~ /^(CHEK|DCHK)$/ &&
