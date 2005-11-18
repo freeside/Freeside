@@ -86,7 +86,8 @@ sub _from_customer {
                     ON ( CustomFields.id = ObjectCustomFields.CustomField )
          WHERE LookupType = 'RT::Queue-RT::Ticket'
            AND name = ?
-           AND ( $queue_sql )";
+           AND ( $queue_sql )
+       )";
 
     push @param, $priority_field,
                  $priority_field_queue,
