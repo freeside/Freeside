@@ -121,6 +121,8 @@ END
   my $align = join('', map { /#/ ? 'r' : 'l' } FS::UI::Web::cust_header() ).
              'crrrrr';
 
+  my $clink = [ "${p}view/cust_main.cgi?", 'custnum' ];
+
 %><%= include( 'elements/search.html',
                  'title'       => 'Accounts Receivable Aging Summary',
                  'name'        => 'customers',
@@ -185,8 +187,7 @@ END
                                                    shift->get('owed_total') ) },
                                   ],
                  'links'       => [
-                                    [ "${p}view/cust_main.cgi?", 'custnum' ],
-                                    [ "${p}view/cust_main.cgi?", 'custnum' ],
+                                    ( map $clink, FS::UI::Web::cust_header() ),
                                     '',
                                     #'',
                                     '',
