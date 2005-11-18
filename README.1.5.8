@@ -5,8 +5,11 @@ install DBIx::DBSchema 0.27
 install HTML::Widgets:SelectLayers 0.05
 install Business::CreditCard 0.28
 
-install the new version
+make install-perl-modules
 run "freeside-upgrade username" to uprade your database schema
+
+(if freeside-upgrade hangs, try stopping Apache, all Freeside processes, and
+ anything else connected to your database, especially on older Pg versions)
 
 Optional:
 CREATE INDEX cust_pkg2 ON cust_pkg ( pkgpart );
@@ -34,4 +37,9 @@ Installs w/integrated RT:
   run "dbdef-create username"
 
   make configure-rt
+
+------
+
+make install-docs
+ (or "make deploy" if you've got everything setup in the Makefile)
 
