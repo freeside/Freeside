@@ -42,7 +42,7 @@ sub num_customer_tickets {
 
   my( $from_sql, @param) = $self->_from_customer( $custnum, $priority );
 
-  my $sql = "select count(*) $from_sql";
+  my $sql = "SELECT COUNT(*) $from_sql";
   my $sth = $dbh->prepare($sql) or die $dbh->errstr. " preparing $sql";
   $sth->execute(@param)         or die $sth->errstr. " executing $sql";
 
@@ -55,9 +55,9 @@ sub customer_tickets {
   $limit ||= 0;
 
   my( $from_sql, @param) = $self->_from_customer( $custnum, $priority );
-  my $sql = "select tickets.*, queues.name".
+  my $sql = "SELECT tickets.*, queues.name".
             ( length($priority) ? ", objectcustomfieldvalues.content" : '' ).
-            " $from_sql order by priority desc limit $limit";
+            " $from_sql ORDER BY priority DESC LIMIT $limit";
   my $sth = $dbh->prepare($sql) or die $dbh->errstr. "preparing $sql";
   $sth->execute(@param)         or die $sth->errstr. "executing $sql";
 
@@ -75,9 +75,22 @@ sub _from_customer {
   my $where = '';
   if ( defined($priority) ) {
 
-    my $queue_sql = " customfields.queue = ( select id from queues
-                                              where queues.name = ? )
-                      or ( ? = '' and customfields.queue = 0 )";
+    my $queue_sql = " ObjectCustomFields.ObjectId = ( SELECT id FROM queues
+                                                       WHERE queues.name = ? )
+                      OR ( ? = '' AND ObjectCustomFields.ObjectId = 0 )";
+
+    my $customfield_sql =
+      "customfield = ( 
+        SELECT CustomFields.Id FROM CustomFields
+                  JOIN ObjectCustomFields
+                    ON ( CustomFields.id = ObjectCustomFields.CustomField )
+         WHERE LookupType = 'RT::Queue-RT::Ticket'
+           AND name = ?
+           AND ( $queue_sql )";
+
+    push @param, $priority_field,
+                 $priority_field_queue,
+                 $priority_field_queue;
 
     if ( length($priority) ) {
       #$where = "    
@@ -89,42 +102,35 @@ sub _from_customer {
       #                                 )
       #          )
       #";
-      push @param, $priority;
+      unshift @param, $priority;
 
-      $join = "join ObjectCustomFieldValues
-                 on ( tickets.id = ObjectCustomFieldValues.ObjectId )";
+      $join = "JOIN ObjectCustomFieldValues
+                 ON ( tickets.id = ObjectCustomFieldValues.ObjectId )";
       
-      $where = "and ObjectType = 'RT::Ticket'
-                and content = ?
-                and customfield = ( select id from customfields
-                                     where name = ?
-                                       and ( $queue_sql )
-                                  )
-               ";
+      $where = " AND content = ?
+                 AND ObjectType = 'RT::Ticket'
+                 AND $customfield_sql";
+
     } else {
+
       $where =
-               "and 0 = ( select count(*) from ObjectCustomFieldValues
-                           where ObjectId    = tickets.id
-                             and ObjectType  = 'RT::Ticket'
-                             and customfield = ( select id from customfields
-                                                  where name = ?
-                                                    and ( $queue_sql )
-                                               )
+               "AND 0 = ( SELECT count(*) FROM ObjectCustomFieldValues
+                           WHERE ObjectId    = tickets.id
+                             AND ObjectType  = 'RT::Ticket'
+                             AND $customfield_sql
                         )
                ";
     }
-    push @param, $priority_field,
-                 $priority_field_queue,
-                 $priority_field_queue;
+
   }
 
   my $sql = "
-                    from tickets
-                    join queues on ( tickets.queue = queues.id )
-                    join links on ( tickets.id = links.localbase )
+                    FROM tickets
+                    JOIN queues ON ( tickets.queue = queues.id )
+                    JOIN links ON ( tickets.id = links.localbase )
                     $join 
-       where ( status = 'new' or status = 'open' or status = 'stalled' )
-         and target = 'freeside://freeside/cust_main/$custnum'
+       WHERE ( status = 'new' OR status = 'open' OR status = 'stalled' )
+         AND target = 'freeside://freeside/cust_main/$custnum'
          $where
   ";
 
@@ -210,7 +216,7 @@ sub href_ticket {
 sub queues {
   my($self) = @_;
 
-  my $sql = "select id, name from queues where disabled = 0";
+  my $sql = "SELECT id, name FROM queues WHERE disabled = 0";
   my $sth = $dbh->prepare($sql) or die $dbh->errstr. " preparing $sql";
   $sth->execute()               or die $sth->errstr. " executing $sql";
 
@@ -223,7 +229,7 @@ sub queue {
 
   return '' unless $queueid;
 
-  my $sql = "select name from queues where id = ?";
+  my $sql = "SELECT name FROM queues WHERE id = ?";
   my $sth = $dbh->prepare($sql) or die $dbh->errstr. " preparing $sql";
   $sth->execute($queueid)       or die $sth->errstr. " executing $sql";
 
