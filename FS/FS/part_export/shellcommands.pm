@@ -41,6 +41,9 @@ tie my %options, 'Tie::IxHash',
   'usermod_pwonly' => { label=>'Disallow username, domain, uid, gid, dir and RADIUS group changes',
                         type =>'checkbox',
                       },
+  'usermod_nousername' => { label=>'Disallow just username changes',
+                            type =>'checkbox',
+                          },
   'suspend' => { label=>'Suspension command',
                  default=>'usermod -L $username',
                },
@@ -270,11 +273,13 @@ sub _export_replace {
   @old_radius_groups = $old->radius_groups;
   @new_radius_groups = $new->radius_groups;
 
-  if ( $self->option('usermod_pwonly') ) {
-    my $error = '';
+  my $error = '';
+  if ( $self->option('usermod_pwonly') || $self->option('usermod_nousername') ){
     if ( $old_username ne $new_username ) {
       $error ||= "can't change username";
     }
+  }
+  if ( $self->option('usermod_pwonly') ) {
     if ( $old_domain ne $new_domain ) {
       $error ||= "can't change domain";
     }
@@ -291,9 +296,10 @@ sub _export_replace {
          join("\n", sort @new_radius_groups)    ) {
       $error ||= "can't change RADIUS groups";
     }
-    return $error. ' ('. $self->exporttype. ' to '. $self->machine. ')'
-      if $error;
   }
+  return $error. ' ('. $self->exporttype. ' to '. $self->machine. ')'
+    if $error;
+
   $self->shellcommands_queue( $new->svcnum,
     user         => $self->option('user')||'root',
     host         => $self->machine,
