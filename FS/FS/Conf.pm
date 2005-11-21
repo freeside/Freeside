@@ -1526,6 +1526,21 @@ httemplate/docs/config.html
   },
 
   {
+    'key'         => 'ticket_system-rt_external_datasrc',
+    'section'     => '',
+    'description' => 'With external RT integration, the DBI data source for the external RT installation, for example, <code>DBI:Pg:user=rt_user;password=rt_word;host=rt.example.com;dbname=rt</code>',
+    'type'        => 'text',
+
+  },
+
+  {
+    'key'         => 'ticket_system-rt_external_url',
+    'section'     => '',
+    'description' => 'With external RT integration, the URL for the external RT installation, for example, <code>https://rt.example.com/rt</code>',
+    'type'        => 'text',
+  },
+
+  {
     'key'         => 'company_name',
     'section'     => 'required',
     'description' => 'Your company name',
