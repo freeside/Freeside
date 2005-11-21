@@ -198,8 +198,8 @@ sub insert {
                  ' on '. $self->part_export->machine.
                ' : '. scalar(@dup_svc). " duplicate $label".
                ' ('. scalar(@diff_customer_svc). " from different customers)".
-               #": ". join(', ', sort $sortby map { $_->$method() } @dup_svc )
-               ": ". join(', ', sort $sortby map { $_->$method() } @diff_customer_svc )
+               ": ". join(', ', sort $sortby map { $_->$method() } @dup_svc )
+               #": ". join(', ', sort $sortby map { $_->$method() } @diff_customer_svc )
                ;
       }
   

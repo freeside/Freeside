@@ -562,7 +562,7 @@ sub process {
     $param->{'svcpart'} = $new->getfield('svcpart');
   }
 
-  die $error if $error;
+  die "$error\n" if $error;
 }
 
 =item process_bulk_cust_svc

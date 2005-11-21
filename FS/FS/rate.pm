@@ -363,7 +363,7 @@ sub process {
     #$ratenum = $rate->getfield('ratenum');
   }
 
-  die $error if $error;
+  die "$error\n" if $error;
 
 }
 
