@@ -1,6 +1,7 @@
 Freeside
 
-Copyright (C) 2000,2001,2002,2003 Ivan Kohler
+Copyright (C) 2005 Freeside Internet Services, Inc.
+Copyright (C) 2000-2005 Ivan Kohler
 Copyright (C) 1999 Silicon Interactive Software Design
 All rights reserved
 
@@ -29,15 +30,16 @@ The Freeside home page is at `http://www.sisd.com/freeside'.
 The documentation is in `httemplate/docs'.
 
 A mailing list for users is available.  Send a blank message to
-<ivan-freeside-subscribe@sisd.com> to subscribe.
+<freeside-users-subscribe@sisd.com> to subscribe.
 
 A mailing list for developers is available.  It is intended to be lower volume
 and higher SNR than the users list.  Send a blank message to
-<ivan-freeside-devel-subscribe@sisd.com> to subscribe.
+<freeside-devel-subscribe@sisd.com> to subscribe.
 
-Commercial support is available from Ivan Kohler <ivan@sisd.com>.  Requests for
-free support sent to me directly will be ignored.  Please subscribe to the the
-user mailing list to request free support!
+Commercial installation, customization and support services as well as
+preconfigured appliances are available from Ivan Kohler <ivan@sisd.com>.
+Requests for free support sent to me directly will be ignored.  Please
+subscribe to the the user mailing list to request free support!
 
 Ivan Kohler <ivan-freeside_readme@420.am>
 
