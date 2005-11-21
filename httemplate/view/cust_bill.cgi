@@ -8,10 +8,10 @@ my $invnum = $3;
 
 my $conf = new FS::Conf;
 
-my @payby = $conf->config('payby');
+my @payby =  grep /\w/, $conf->config('payby');
 #@payby = (qw( CARD DCRD CHEK DCHK LECB BILL CASH WEST COMP ))
 @payby = (qw( CARD DCRD CHEK DCHK LECB BILL CASH COMP ))
-  unless grep /\w/, @payby;
+  unless @payby;
 my %payby = map { $_=>1 } @payby;
 
 my $cust_bill = qsearchs('cust_bill',{'invnum'=>$invnum});
