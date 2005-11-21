@@ -29,7 +29,7 @@ my $link = $templatename ? "$templatename-$invnum" : $invnum;
 )) %>
 
 <% if ( $cust_bill->owed > 0
-        && ( $payby{'BILL'} || $payby{'CASH'} || $payby{'WEST'} )
+        && ( $payby{'BILL'} || $payby{'CASH'} || $payby{'WEST'} || $payby{'MCRD'} )
       )
    {
      my $s = 0;
@@ -55,6 +55,13 @@ my $link = $templatename ? "$templatename-$invnum" : $invnum;
   
     <%= $s++ ? ' | ' : '' %>
     <A HREF="<%= $p %>edit/cust_pay.cgi?payby=WEST;invnum=<%= $invnum %>">Western Union</A>
+  
+  <% } %>
+
+  <% if ( $payby{'MCRD'} ) { %>
+  
+    <%= $s++ ? ' | ' : '' %>
+    <A HREF="<%= $p %>edit/cust_pay.cgi?payby=MCRD;invnum=<%= $invnum %>">manual credit card</A>
   
   <% } %>
 

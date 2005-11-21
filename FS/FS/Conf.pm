@@ -1298,7 +1298,7 @@ httemplate/docs/config.html
     'section'     => 'billing',
     'description' => 'Available payment types.',
     'type'        => 'selectmultiple',
-    'select_enum' => [ qw(CARD DCRD CHEK DCHK LECB BILL CASH WEST COMP) ],
+    'select_enum' => [ qw(CARD DCRD CHEK DCHK LECB BILL CASH WEST MCRD COMP) ],
   },
 
   {
@@ -1306,7 +1306,7 @@ httemplate/docs/config.html
     'section'     => 'UI',
     'description' => 'Default payment type.  HIDE disables display of billing information and sets customers to BILL.',
     'type'        => 'select',
-    'select_enum' => [ '', qw(CARD DCRD CHEK DCHK LECB BILL CASH WEST COMP HIDE) ],
+    'select_enum' => [ '', qw(CARD DCRD CHEK DCHK LECB BILL CASH WEST MCRD COMP HIDE) ],
   },
 
   {

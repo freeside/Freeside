@@ -331,6 +331,22 @@ if ( $payby_default eq 'HIDE' ) {
 
       '</TABLE>',
 
+    'MCRD' =>
+
+      '<TABLE BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0 HEIGHT=192>'.
+
+        qq!<TR><TD ALIGN="right" WIDTH="200">${r}Amount </TD>!.
+          qq!<TD WIDTH="408"><INPUT TYPE="text" NAME="paid" VALUE="!. ( $payby eq 'MCRD' ? $cust_main->paid : '' ). qq!"></TD></TR>!.
+
+        '<TR><TD>&nbsp;</TD></TR>'.
+        '<TR><TD>&nbsp;</TD></TR>'.
+        '<TR><TD>&nbsp;</TD></TR>'.
+        '<TR><TD>&nbsp;</TD></TR>'.
+        '<TR><TD>&nbsp;</TD></TR>'.
+        '<TR><TD>&nbsp;</TD></TR>'.
+
+      '</TABLE>',
+
   );
 
 
@@ -341,11 +357,12 @@ if ( $payby_default eq 'HIDE' ) {
     'BILL' => 'Billing',
     'CASH' => 'Cash', # initial payment, then billing',
     'WEST' => 'Western Union', # initial payment, then billing',
+    'MCRD' => 'Manual credit card', # initial payment, then billing',
     'COMP' => 'Complimentary',
   );
-  if ( $cust_main->custnum ) { #don't offer CASH and WEST initial payment types
+  if ( $cust_main->custnum ) { #don't offer CASH/WEST/MCRD initial payment types
                                # when editing customer
-    delete $allopt{$_} for qw(CASH WEST);
+    delete $allopt{$_} for qw(CASH WEST MCRD);
   }
   
   tie my %options, 'Tie::IxHash',
@@ -365,7 +382,7 @@ if ( $payby_default eq 'HIDE' ) {
     #'form_action'    => 'nothingyet',
     #chops bottom of page in IE# 'under_position' => 'absolute',
     'html_between'   => '</TD></TR></TABLE>',
-    'selected_layer' => $payby2option{$payby} || 'CARD',
+    'selected_layer' => $payby2option{$payby || $payby_default || $payby[0] },
     'layer_callback' => sub { my $layer = shift; $payby{$layer}; },
   );
 

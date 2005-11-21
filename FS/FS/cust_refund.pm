@@ -52,7 +52,7 @@ L<Time::Local> and L<Date::Parse> for conversion functions.
 
 =item payby - `CARD' (credit cards), `CHEK' (electronic check/ACH),
 `LECB' (Phone bill billing), `BILL' (billing), `CASH' (cash),
-`WEST' (Western Union), or `COMP' (free)
+`WEST' (Western Union), `MCRD' (Manual credit card), or `COMP' (free)
 
 =item payinfo - card number, P.O.#, or comp issuer (4-8 lowercase alphanumerics; think username)
 
@@ -212,7 +212,7 @@ sub check {
     unless $self->crednum 
            || qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
 
-  $self->payby =~ /^(CARD|CHEK|LECB|BILL|COMP|CASH|WEST)$/
+  $self->payby =~ /^(CARD|CHEK|LECB|BILL|COMP|CASH|WEST|MCRD)$/
     or return "Illegal payby";
   $self->payby($1);
 

@@ -6,6 +6,7 @@ my %payby = (
   'BILL' => 'Check',
   'CASH' => 'Cash',
   'WEST' => 'Western Union',
+  'MCRD' => 'Manual credit card',
 );
 
 my($link, $linknum, $paid, $payby, $payinfo, $quickpay, $_date); 

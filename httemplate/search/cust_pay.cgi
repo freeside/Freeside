@@ -17,7 +17,7 @@
      
        if ( $cgi->param('payby') ) {
          $cgi->param('payby') =~
-           /^(CARD|CHEK|BILL|PREP|CASH|WEST)(-(VisaMC|Amex|Discover|Maestro))?$/
+           /^(CARD|CHEK|BILL|PREP|CASH|WEST|MCRD)(-(VisaMC|Amex|Discover|Maestro))?$/
              or die "illegal payby ". $cgi->param('payby');
          push @search, "cust_pay.payby = '$1'";
          if ( $3 ) {
@@ -170,6 +170,8 @@
                        'Cash '. $cust_pay->payinfo;
                      } elsif ( $cust_pay->payby eq 'WEST' ) {
                        'Western Union'; #. $cust_pay->payinfo;
+                     } elsif ( $cust_pay->payby eq 'MCRD' ) {
+                       'Manual credit card'; #. $cust_pay->payinfo;
                      } else {
                        $cust_pay->payby. ' '. $cust_pay->payinfo;
                      }

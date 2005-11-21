@@ -377,7 +377,7 @@ sub insert {
 
     $payby = 'PREP' if $amount;
 
-  } elsif ( $self->payby =~ /^(CASH|WEST)$/ ) {
+  } elsif ( $self->payby =~ /^(CASH|WEST|MCRD)$/ ) {
 
     $payby = $1;
     $self->payby('BILL');
@@ -718,7 +718,7 @@ sub insert_cust_pay_cash {
   shift->insert_cust_pay('CASH', @_);
 }
 
-=item insert_cust_pay_prepay AMOUNT [ PAYINFO ]
+=item insert_cust_pay_west AMOUNT [ PAYINFO ]
 
 Inserts a Western Union payment in the specified amount for this customer.  An
 optional second argument can specify the prepayment identifier for tracking
@@ -1150,7 +1150,7 @@ sub check {
     }
   }
 
-  $self->payby =~ /^(CARD|DCRD|CHEK|DCHK|LECB|BILL|COMP|PREPAY|CASH|WEST)$/
+  $self->payby =~ /^(CARD|DCRD|CHEK|DCHK|LECB|BILL|COMP|PREPAY|CASH|WEST|MCRD)$/
     or return "Illegal payby: ". $self->payby;
 
   $error =    $self->ut_numbern('paystart_month')
@@ -1287,7 +1287,7 @@ sub check {
 
   if ( $self->paydate eq '' || $self->paydate eq '-' ) {
     return "Expriation date required"
-      unless $self->payby =~ /^(BILL|PREPAY|CHEK|DCHK|LECB|CASH|WEST)$/;
+      unless $self->payby =~ /^(BILL|PREPAY|CHEK|DCHK|LECB|CASH|WEST|MCRD)$/;
     $self->paydate('');
   } else {
     my( $m, $y );

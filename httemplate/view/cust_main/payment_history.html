@@ -51,6 +51,13 @@
 
 <% } %>
 
+<% if ( $payby{'MCRD'} ) { %>
+
+  <%= $s++ ? ' | ' : '' %>
+  <A HREF="<%= $p %>edit/cust_pay.cgi?payby=MCRD;custnum=<%= $custnum %>">Post manual credit card payment</A>
+
+<% } %>
+
 <BR><A HREF="<%= $p %>edit/cust_credit.cgi?<%= $custnum %>">Post credit</A>
 <BR>
 
@@ -98,6 +105,7 @@ foreach my $cust_pay ($cust_main->cust_pay) {
   $payby =~ s/^COMP$/Complimentary by /; 
   $payby =~ s/^CASH$/Cash/;
   $payby =~ s/^WEST$/Western Union/;
+  $payby =~ s/^MCRD$/Manual credit card/;
   $payby =~ s/^BILL$//;
   my $info = $payby ? " ($payby$payinfo)" : '';
 
