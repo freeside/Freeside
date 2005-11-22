@@ -2,6 +2,7 @@ package FS::svc_Common;
 
 use strict;
 use vars qw( @ISA $noexport_hack $DEBUG );
+use Carp;
 use FS::Record qw( qsearch qsearchs fields dbh );
 use FS::cust_main_Mixin;
 use FS::cust_svc;
