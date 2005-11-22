@@ -34,6 +34,38 @@ inherit from, i.e. FS::svc_acct.  FS::svc_Common inherits from FS::Record.
 
 =cut
 
+sub new {
+  my $proto = shift;
+  my $class = ref($proto) || $proto;
+  my $self = {};
+  bless ($self, $class);
+
+  unless ( defined ( $self->table ) ) {
+    $self->{'Table'} = shift;
+    carp "warning: FS::Record::new called with table name ". $self->{'Table'};
+  }
+  
+  #$self->{'Hash'} = shift;
+  my $newhash = shift;
+  $self->{'Hash'} = { map { $_ => $newhash->{$_} } qw(svcnum svcpart) };
+  $self->setdefault;
+  $self->{'Hash'}{$_} = $newhash->{$_}
+    foreach #grep length($newhash->{$_}),
+            keys %$newhash;
+
+  foreach my $field ( grep !defined($self->{'Hash'}{$_}), $self->fields ) { 
+    $self->{'Hash'}{$field}='';
+  }
+
+  $self->_rebless if $self->can('_rebless');
+
+  $self->{'modified'} = 0;
+
+  $self->_cache($self->{'Hash'}, shift) if $self->can('_cache') && @_;
+
+  $self;
+}
+
 sub virtual_fields {
 
   # This restricts the fields based on part_svc_column and the svcpart of 
