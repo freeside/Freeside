@@ -1202,6 +1202,13 @@ httemplate/docs/config.html
   },
 
   {
+    'key'         => 'backend-realtime',
+    'section'     => '',
+    'description' => 'Run billing for backend signups immediately.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'declinetemplate',
     'section'     => 'billing',
     'description' => 'Template file for credit card decline emails.',

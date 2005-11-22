@@ -123,7 +123,20 @@ if ( $new->custnum eq '' ) {
   tie my %hash, 'Tie::RefHash';
   %hash = ( $cust_pkg => [ $svc_acct ] ) if $cust_pkg;
   $error ||= $new->insert( \%hash, \@invoicing_list );
+
+  my $conf = new FS::Conf;
+  if ( $conf->exists('backend-realtime') && ! $error ) {
+
+    my $berror = $new->bill;
+    $new->apply_payments;
+    $new->apply_credits;
+    $berror ||= $new->collect;
+    warn "Warning, error billing during backend-realtime: $berror" if $berror;
+
+  }
+  
 } else { #create old record object
+
   my $old = qsearchs( 'cust_main', { 'custnum' => $new->custnum } ); 
   $error ||= "Old record not found!" unless $old;
   if ( defined dbdef->table('cust_main')->column('paycvv')
@@ -132,6 +145,7 @@ if ( $new->custnum eq '' ) {
     $new->paycvv($old->paycvv);
   }
   $error ||= $new->replace($old, \@invoicing_list);
+  
 }
 
 if ( $error ) {
