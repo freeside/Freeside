@@ -74,10 +74,25 @@ sub _radiator_hash {
         qw( framed_filter_id framed_mtu framed_netmask framed_protocol
             framed_routing login_host login_service login_tcp_port )
   );
-  $hash{timeleft} = $svc_acct->seconds
+  $hash{'timeleft'} = $svc_acct->seconds
     if $svc_acct->seconds =~ /^\d+$/;
-  $hash{staticaddress} = $svc_acct->slipip
+  $hash{'staticaddress'} = $svc_acct->slipip
     if $svc_acct->slipip =~ /^[\d\.]+$/; # and $self->slipip ne '0.0.0.0';
+
+  $hash{'servicename'} = ( $svc_acct->radius_groups )[0];
+
+  my $cust_pkg = $self->cust_svc->cust_pkg;
+  $hash{validto} = $cust_pkg->bill
+    if $cust_pkg && $cust_pkg->part_pkg->is_prepaid && $cust_pkg->bill;
+
+  #some other random stuff, should probably be attributes or virtual fields
+  #$hash{'state'} = 0; #only inserts
+  #$hash{'badlogins'} = 0; #only inserts
+  $hash{'maxlogins'} = 1;
+  $hash{'addeddate'} = $cust_pkg->setup
+    if $cust_pkg && $cust_pkg->setup;
+  $hash{'validfrom'} = $cust_pkg->last_bill || $cust_pkg->setup
+    if $cust_pkg &&  ( $cust_pkg->last_bill || $cust_pkg->setup );
 
   %hash;
 }
@@ -99,6 +114,8 @@ sub radiator_queue {
 sub radiator_insert { #subroutine, not method
   my $dbh = radiator_connect(shift, shift, shift);
   my %hash = @_;
+  $hash{'state'} = 0; #see "random stuff" above
+  $hash{'badlogins'} = 0; #see "random stuff" above
 
   my $sth = $dbh->prepare(
     "INSERT INTO $radusers ( ". join(', ', keys %hash ). ' ) '.
