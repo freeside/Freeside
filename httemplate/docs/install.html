@@ -21,6 +21,7 @@ Before installing, you need:
          MySQL's default <a href="http://www.mysql.com/doc/M/y/MyISAM.html">MyISAM</a> and <a href="http://www.mysql.com/doc/I/S/ISAM.html">ISAM</a> table types are not supported.  You <b>must</b> use one of the new <a href="http://www.mysql.com/doc/T/a/Table_types.html">transaction-safe table types</a> such as <a href="http://www.mysql.com/doc/I/n/InnoDB.html">InnoDB</a>.  Set it as the default table type using the <code>--default-table-type=InnoDB</code> <a href="http://www.mysql.com/documentation/mysql/bychapter/manual_MySQL_Database_Administration.html#Command-line_options">mysqld command-line option</a> or by setting <code>default-table-type=InnoDB</code> in the <a href="http://www.mysql.com/documentation/mysql/bychapter/manual_MySQL_Database_Administration.html#Option_files">my.cnf option file</a>.
 -->
     </ul>
+    <i>Note: the above only applies to the database used by the Freeside software itself. Freeside can integrate with RADIUS and other servers running MySQL <!--(any version)--> or any other DBI-supported database.</i>
   <li>Perl modules (<a href="http://search.cpan.org/~andk/CPAN/lib/CPAN.pm">CPAN</a> will query, download and build perl modules automatically)
     <ul>
 <!--      <li><a href="http://search.cpan.org/dist/Array-PrintCols">Array-PrintCols</a>
