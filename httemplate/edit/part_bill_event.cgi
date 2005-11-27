@@ -223,7 +223,7 @@ tie my %events, 'Tie::IxHash',
                                    );',
     'html' =>
         '<TABLE BORDER=0>'.
-        '<TR><TD align="right">Format ("default" or "billco"): </TD>'.
+        '<TR><TD ALIGN="right">Format ("default" or "billco"): </TD>'.
           '<TD>'.
             '<!--'.
             '<SELECT NAME="ftpformat">'.
@@ -251,31 +251,58 @@ tie my %events, 'Tie::IxHash',
 
   'spool_csv' => {
     'name' => 'Spool CSV invoice data',
-    'code' => '$cust_bill->spool_csv( \'format\' => \'%%%spoolformat%%%\',
-                                      \'dest\'   => \'%%%spooldest%%%\',
-                                    );',
-    'html' =>
-        '<TABLE BORDER=0>'.
-        '<TR><TD align="right">Format ("default" or "billco"): </TD>'.
-          '<TD>'.
-            '<!--'.
-            '<SELECT NAME="spoolformat">'.
-              '<OPTION VALUE="default">Default'.
-              '<OPTION VALUE="billco">Billco'.
-            '</SELECT>'.
-            '-->'.
-            '<INPUT TYPE="text" NAME="spoolformat" VALUE="%%%spoolformat%%%">'.
-          '</TD></TR>'.
-        '<TR><TD align="right">For destination: </TD>'.
-          '<TD>'.
-            '<SELECT NAME="spooldest">'.
-              '<OPTION VALUE="">(all)'.
-              '<OPTION VALUE="POST">Postal mail'.
-              '<OPTION VALUE="EMAIL">Email'.
-              '<OPTION VALUE="Fax">Fax'.
-            '</SELECT>'.
-          '</TD></TR>'.
-        '</TABLE>',
+    'code' => '$cust_bill->spool_csv(
+                 \'format\' => \'%%%spoolformat%%%\',
+                 \'dest\'   => \'%%%spooldest%%%\',
+                 \'agent_spools\' => \'%%%spoolagent_spools%%%\',
+               );',
+    'html' => sub {
+       my $plandata = shift;
+
+       my $html =
+       '<TABLE BORDER=0>'.
+       '<TR><TD ALIGN="right">Format: </TD>'.
+         '<TD>'.
+           '<SELECT NAME="spoolformat">';
+
+       foreach my $option (qw( default billco )) {
+         $html .= qq(<OPTION VALUE="$option");
+         $html .= ' SELECTED' if $option eq $plandata->{'spoolformat'};
+         $html .= ">\u$option";
+       }
+
+       $html .= 
+           '</SELECT>'.
+         '</TD></TR>'.
+       '<TR><TD ALIGN="right">For destination: </TD>'.
+         '<TD>'.
+           '<SELECT NAME="spooldest">';
+
+       tie my %dest, 'Tie::IxHash', 
+         ''      => '(all)',
+         'POST'  => 'Postal Mail',
+         'EMAIL' => 'Email',
+         'FAX'   => 'Fax',
+       ;
+
+       foreach my $dest (keys %dest) {
+         $html .= qq(<OPTION VALUE="$dest");
+         $html .= ' SELECTED' if $dest eq $plandata->{'spooldest'};
+         $html .= '>'. $dest{$dest};
+       }
+
+       $html .=
+           '</SELECT>'.
+         '</TD></TR>'.
+       '<TR><TD ALIGN="right">Individual per-agent spools? </TD>'.
+         '<TD><INPUT TYPE="checkbox" NAME="spoolagent_spools" VALUE="1" '.
+           ( $plandata->{'spoolagent_spools'} ? 'CHECKED' : '' ).
+           '>'.
+         '</TD></TR>'.
+       '</TABLE>';
+
+       $html;
+    },
     'weight' => 50,
   },
 

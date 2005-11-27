@@ -739,16 +739,9 @@ server
 username
 password
 dir
-format - 'default' or 'billco'
 
-#???
-If I<format> is not specified or "default", the file will be named
-"N-YYYYMMDDHHMMSS.csv" where N is the invoice number and YYMMDDHHMMSS is a
-timestamp.
-
-#???
-If I<format> is "billco", two files will be created and uploaded.  They will be named "N-YYYYMMDDHHMMSS-header.csv" and "N-YYYYMMDDHHMMSS-detail.csv" where N
-is the invoice number and YYMMDDHHMMSS is a timestamp(???).
+The file will be named "N-YYYYMMDDHHMMSS.csv" where N is the invoice number
+and YYMMDDHHMMSS is a timestamp.
 
 See L</print_csv> for a description of the output format.
 
@@ -763,26 +756,12 @@ sub send_csv {
   mkdir $spooldir, 0700 unless -d $spooldir;
 
   my $tracctnum = $self->invnum. time2str('-%Y%m%d%H%M%S', time);
-  my $file = "$spooldir/$tracctnum";
-  if ( lc($opt{'format'}) eq 'billco' ) {
-    $file .= '-header.csv';
-  } else {
-    #$file = $spooldir. '/'. $self->invnum. time2str('-%Y%m%d%H%M%S.csv', time);
-    $file .= '.csv';
-  }
+  my $file = "$spooldir/$tracctnum.csv";
   
   my ( $header, $detail ) = $self->print_csv(%opt, 'tracctnum' => $tracctnum );
 
   open(CSV, ">$file") or die "can't open $file: $!";
   print CSV $header;
-
-  my $oldfile = '';
-  if ( lc($opt{'format'}) eq 'billco' ) {
-    close CSV;
-    $oldfile = $file;
-    $file = "$spooldir/$tracctnum-detail.csv";
-    open(CSV,">$file") or die "can't open $file: $!";
-  }
 
   print CSV $detail;
 
@@ -804,14 +783,10 @@ sub send_csv {
 
   $net->cwd($opt{dir}) or die "can't cwd to $opt{dir}";
 
-  if ( $oldfile) {
-    $net->put($oldfile) or die "can't put $oldfile: $!";
-  }
   $net->put($file) or die "can't put $file: $!";
 
   $net->quit;
 
-  unlink $oldfile if $oldfile;
   unlink $file;
 
 }
@@ -828,6 +803,8 @@ Options are:
 
 =item dest - if set (to POST, EMAIL or FAX), only sends spools invoices if the customer has the corresponding invoice destinations set (see L<FS::cust_main_invoice>).
 
+=item agent_spools - if set to a true value, will spool to per-agent files rather than a single global file
+
 =back
 
 =cut
@@ -835,26 +812,25 @@ Options are:
 sub spool_csv {
   my($self, %opt) = @_;
 
+  my $cust_main = $self->cust_main;
+
   if ( $opt{'dest'} ) {
     my %invoicing_list = map { /^(POST|FAX)$/ or 'EMAIL' =~ /^(.*)$/; $1 => 1 }
-                             $self->cust_main->invoicing_list;
+                             $cust_main->invoicing_list;
     return 'N/A' unless $invoicing_list{$opt{'dest'}}
                      || ! keys %invoicing_list;
   }
-
-  #create file(s)
 
   my $spooldir = "/usr/local/etc/freeside/export.". datasrc. "/cust_bill";
   mkdir $spooldir, 0700 unless -d $spooldir;
 
   my $tracctnum = $self->invnum. time2str('-%Y%m%d%H%M%S', time);
-  my $file = "$spooldir/spool";
-  if ( lc($opt{'format'}) eq 'billco' ) {
-    $file .= '-header.csv';
-  } else {
-    #$file = $spooldir. '/'. $self->invnum. time2str('-%Y%m%d%H%M%S.csv', time);
-    $file .= '.csv';
-  }
+
+  my $file =
+    "$spooldir/".
+    ( $opt{'agent_spools'} ? 'agentnum'.$cust_main->agentnum : 'spool' ).
+    ( lc($opt{'format'}) eq 'billco' ? '-header' : '' ) .
+    '.csv';
   
   my ( $header, $detail ) = $self->print_csv(%opt, 'tracctnum' => $tracctnum );
 
@@ -864,14 +840,15 @@ sub spool_csv {
 
   print CSV $header;
 
-  my $oldfile = '';
   if ( lc($opt{'format'}) eq 'billco' ) {
 
     flock(CSV, LOCK_UN);
     close CSV;
 
-    $oldfile = $file;
-    $file = "$spooldir/spool-detail.csv";
+    $file =
+      "$spooldir/".
+      ( $opt{'agent_spools'} ? 'agentnum'.$cust_main->agentnum : 'spool' ).
+      '-detail.csv';
 
     open(CSV,">>$file") or die "can't open $file: $!";
     flock(CSV, LOCK_EX);
