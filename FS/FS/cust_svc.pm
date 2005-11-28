@@ -492,10 +492,8 @@ sub attribute_since_sqlradacct {
 
   my $svc_x = $self->svc_x;
 
-  my @part_export = $self->part_svc->part_export('sqlradius');
-  push @part_export, $self->part_svc->part_export('sqlradius_withdomain');
-  die "no sqlradius or sqlradius_withdomain export configured for this".
-      "service type"
+  my @part_export = $self->part_svc->part_export_usage;
+  die "no usage-capable export configured for this service type"
     unless @part_export;
     #or return undef;
 
@@ -521,14 +519,7 @@ sub attribute_since_sqlradacct {
       $str2time = 'extract(epoch from ';
     }
 
-    my $username;
-    if ( $part_export->exporttype eq 'sqlradius' ) {
-      $username = $svc_x->username;
-    } elsif ( $part_export->exporttype eq 'sqlradius_withdomain' ) {
-      $username = $svc_x->email;
-    } else {
-      die 'unknown exporttype '. $part_export->exporttype;
-    }
+    my $username = $part_export->export_username($svc_x);
 
     my $sth = $dbh->prepare("SELECT SUM($attrib)
                                FROM radacct
