@@ -385,7 +385,8 @@ sub seconds_since_sqlradacct {
   my $svc_x = $self->svc_x;
 
   my @part_export = $self->part_svc->part_export_usage;
-  die "no usage-capable export configured for this service type"
+  die "no accounting-capable exports are enabled for ". $self->part_svc->svc.
+      " service definition"
     unless @part_export;
     #or return undef;
 
@@ -493,7 +494,8 @@ sub attribute_since_sqlradacct {
   my $svc_x = $self->svc_x;
 
   my @part_export = $self->part_svc->part_export_usage;
-  die "no usage-capable export configured for this service type"
+  die "no accounting-capable exports are enabled for ". $self->part_svc->svc.
+      " service definition"
     unless @part_export;
     #or return undef;
 
@@ -552,7 +554,8 @@ sub get_session_history {
   #$attrib ???
 
   my @part_export = $self->part_svc->part_export_usage;
-  die "no accounting-capable exports are enabled for this service definition"
+  die "no accounting-capable exports are enabled for ". $self->part_svc->svc.
+      " service definition"
     unless @part_export;
     #or return undef;
                      
