@@ -140,7 +140,7 @@ ALTER TABLE radacct ADD COLUMN FreesideStatus varchar(32) NULL;
 
 If you want to ignore the existing accountg records, also do:
 
-UPDATE TABLE radacct SET FreesideStatus = 'done' WHERE FreesideStatus IS NULL;
+UPDATE radacct SET FreesideStatus = 'done' WHERE FreesideStatus IS NULL;
 
 =head1 SEE ALSO
 
