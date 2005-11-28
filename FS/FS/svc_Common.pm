@@ -51,7 +51,7 @@ sub new {
   $self->{'Hash'} = { map { $_ => $newhash->{$_} } qw(svcnum svcpart) };
   $self->setdefault;
   $self->{'Hash'}{$_} = $newhash->{$_}
-    foreach #grep length($newhash->{$_}),
+    foreach grep length($newhash->{$_}),
             keys %$newhash;
 
   foreach my $field ( grep !defined($self->{'Hash'}{$_}), $self->fields ) { 
