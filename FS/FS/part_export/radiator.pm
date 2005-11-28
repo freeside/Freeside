@@ -81,7 +81,7 @@ sub _radiator_hash {
 
   $hash{'servicename'} = ( $svc_acct->radius_groups )[0];
 
-  my $cust_pkg = $self->cust_svc->cust_pkg;
+  my $cust_pkg = $svc_acct->cust_svc->cust_pkg;
   $hash{validto} = $cust_pkg->bill
     if $cust_pkg && $cust_pkg->part_pkg->is_prepaid && $cust_pkg->bill;
 
