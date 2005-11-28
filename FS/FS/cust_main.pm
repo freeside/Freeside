@@ -54,7 +54,10 @@ use FS::banned_pay;
 
 $realtime_bop_decline_quiet = 0;
 
-$DEBUG = 0;
+# 1 is mostly method/subroutine entry and options
+# 2 traces progress of some operations
+# 3 is even more information including possibly sensitive data
+$DEBUG = 3;
 $me = '[FS::cust_main]';
 
 $import = 0;
@@ -344,7 +347,7 @@ sub insert {
   my $cust_pkgs = @_ ? shift : {};
   my $invoicing_list = @_ ? shift : '';
   my %options = @_;
-  warn "FS::cust_main::insert called with options ".
+  warn "$me insert called with options ".
        join(', ', map { "$_: $options{$_}" } keys %options ). "\n"
     if $DEBUG;
 
@@ -368,6 +371,9 @@ sub insert {
     $prepay_identifier = $self->payinfo;
     $self->payinfo('');
 
+    warn "  looking up prepaid card $prepay_identifier\n"
+      if $DEBUG > 1;
+
     my $error = $self->get_prepay($prepay_identifier, \$amount, \$seconds);
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
@@ -385,6 +391,9 @@ sub insert {
 
   }
 
+  warn "  inserting $self\n"
+    if $DEBUG > 1;
+
   my $error = $self->SUPER::insert;
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
@@ -392,7 +401,9 @@ sub insert {
     return $error;
   }
 
-  # invoicing list
+  warn "  setting invoicing list\n"
+    if $DEBUG > 1;
+
   if ( $invoicing_list ) {
     $error = $self->check_invoicing_list( $invoicing_list );
     if ( $error ) {
@@ -402,7 +413,9 @@ sub insert {
     $self->invoicing_list( $invoicing_list );
   }
 
-  # packages
+  warn "  ordering packages\n"
+    if $DEBUG > 1;
+
   $error = $self->order_pkgs($cust_pkgs, \$seconds, %options);
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
@@ -415,6 +428,8 @@ sub insert {
   }
 
   if ( $amount ) {
+    warn "  inserting initial $payby payment of $amount\n"
+      if $DEBUG > 1;
     $error = $self->insert_cust_pay($payby, $amount, $prepay_identifier);
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
@@ -422,15 +437,18 @@ sub insert {
     }
   }
 
-
-
   unless ( $import || $skip_fuzzyfiles ) {
+    warn "  queueing fuzzyfiles update\n"
+      if $DEBUG > 1;
     $error = $self->queue_fuzzyfiles_update;
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return "updating fuzzy search cache: $error";
     }
   }
+
+  warn "  insert complete; committing transaction\n"
+    if $DEBUG > 1;
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
@@ -478,7 +496,7 @@ sub order_pkgs {
   my %svc_options = ();
   $svc_options{'depend_jobnum'} = $options{'depend_jobnum'}
     if exists $options{'depend_jobnum'};
-  warn "FS::cust_main::order_pkgs called with options ".
+  warn "$me order_pkgs called with options ".
        join(', ', map { "$_: $options{$_}" } keys %options ). "\n"
     if $DEBUG;
 
@@ -674,7 +692,7 @@ sub increment_seconds {
 
   my $cust_pkg = $cust_pkg[0];
   warn "  found package pkgnum ". $cust_pkg->pkgnum. "\n"
-    if $DEBUG;
+    if $DEBUG > 1;
 
   my @cust_svc =
     $cust_pkg->cust_svc( $cust_pkg->part_pkg->svcpart('svc_acct') );
@@ -688,7 +706,7 @@ sub increment_seconds {
   my $svc_acct = $cust_svc[0]->svc_x;
   warn "  found service svcnum ". $svc_acct->pkgnum.
        ' ('. $svc_acct->email. ")\n"
-    if $DEBUG;
+    if $DEBUG > 1;
 
   $svc_acct->increment_seconds($seconds);
 
@@ -759,7 +777,7 @@ otherwise returns false.
 sub reexport {
   my $self = shift;
 
-  carp "warning: FS::cust_main::reexport is deprectated; ".
+  carp "WARNING: FS::cust_main::reexport is deprectated; ".
        "use the depend_jobnum option to insert or order_pkgs to delay export";
 
   local $SIG{HUP} = 'IGNORE';
@@ -1028,7 +1046,8 @@ and replace methods.
 sub check {
   my $self = shift;
 
-  #warn "BEFORE: \n". $self->_dump;
+  warn "$me check BEFORE: \n". $self->_dump
+    if $DEBUG > 2;
 
   my $error =
     $self->ut_numbern('custnum')
@@ -1322,7 +1341,8 @@ sub check {
 
   $self->otaker(getotaker) unless $self->otaker;
 
-  #warn "AFTER: \n". $self->_dump;
+  warn "$me check AFTER: \n". $self->_dump
+    if $DEBUG > 2;
 
   $self->SUPER::check;
 }
@@ -1573,7 +1593,8 @@ If there is an error, returns the error, otherwise returns false.
 sub bill {
   my( $self, %options ) = @_;
   return '' if $self->payby eq 'COMP';
-  warn "bill customer ". $self->custnum. "\n" if $DEBUG;
+  warn "$me bill customer ". $self->custnum. "\n"
+    if $DEBUG;
 
   my $time = $options{'time'} || time;
 
@@ -1612,7 +1633,7 @@ sub bill {
     #NO!! next if $cust_pkg->cancel;  
     next if $cust_pkg->getfield('cancel');  
 
-    warn "  bill package ". $cust_pkg->pkgnum. "\n" if $DEBUG;
+    warn "  bill package ". $cust_pkg->pkgnum. "\n" if $DEBUG > 1;
 
     #? to avoid use of uninitialized value errors... ?
     $cust_pkg->setfield('bill', '')
@@ -1629,7 +1650,7 @@ sub bill {
     my $setup = 0;
     if ( !$cust_pkg->setup || $options{'resetup'} ) {
     
-      warn "    bill setup\n" if $DEBUG;
+      warn "    bill setup\n" if $DEBUG > 1;
 
       $setup = eval { $cust_pkg->calc_setup( $time ) };
       if ( $@ ) {
@@ -1648,7 +1669,7 @@ sub bill {
          ( $cust_pkg->getfield('bill') || 0 ) <= $time
     ) {
 
-      warn "    bill recur\n" if $DEBUG;
+      warn "    bill recur\n" if $DEBUG > 1;
 
       # XXX shared with $recur_prog
       $sdate = $cust_pkg->bill || $cust_pkg->setup || $time;
@@ -1697,7 +1718,8 @@ sub bill {
 
     if ( $cust_pkg->modified ) {
 
-      warn "  package ". $cust_pkg->pkgnum. " modified; updating\n" if $DEBUG;
+      warn "  package ". $cust_pkg->pkgnum. " modified; updating\n"
+        if $DEBUG >1;
 
       $error=$cust_pkg->replace($old_cust_pkg);
       if ( $error ) { #just in case
@@ -1717,7 +1739,7 @@ sub bill {
       }
       if ( $setup != 0 || $recur != 0 ) {
         warn "    charges (setup=$setup, recur=$recur); queueing line items\n"
-          if $DEBUG;
+          if $DEBUG > 1;
         my $cust_bill_pkg = new FS::cust_bill_pkg ({
           'pkgnum'  => $cust_pkg->pkgnum,
           'setup'   => $setup,
@@ -1984,7 +2006,8 @@ sub collect {
   $self->select_for_update; #mutex
 
   my $balance = $self->balance;
-  warn "collect customer ". $self->custnum. ": balance $balance\n" if $DEBUG;
+  warn "$me collect customer ". $self->custnum. ": balance $balance\n"
+    if $DEBUG;
   unless ( $balance > 0 ) { #redundant?????
     $dbh->rollback if $oldAutoCommit; #hmm
     return '';
@@ -2009,8 +2032,8 @@ sub collect {
 
     last if $self->balance <= 0;
 
-    warn "invnum ". $cust_bill->invnum. " (owed ". $cust_bill->owed. ")\n"
-      if $DEBUG;
+    warn "  invnum ". $cust_bill->invnum. " (owed ". $cust_bill->owed. ")\n"
+      if $DEBUG > 1;
 
     foreach my $part_bill_event (
       sort {    $a->seconds   <=> $b->seconds
@@ -2030,8 +2053,8 @@ sub collect {
       last if $cust_bill->owed <= 0  # don't run subsequent events if owed<=0
            || $self->balance   <= 0; # or if balance<=0
 
-      warn "calling invoice event (". $part_bill_event->eventcode. ")\n"
-        if $DEBUG;
+      warn "  calling invoice event (". $part_bill_event->eventcode. ")\n"
+        if $DEBUG > 1;
       my $cust_main = $self; #for callback
 
       my $error;
@@ -2171,7 +2194,7 @@ I<quiet> can be set true to surpress email decline notices.
 sub realtime_bop {
   my( $self, $method, $amount, %options ) = @_;
   if ( $DEBUG ) {
-    warn "$self $method $amount\n";
+    warn "$me realtime_bop: $method $amount\n";
     warn "  $_ => $options{$_}\n" foreach keys %options;
   }
 
@@ -2433,7 +2456,7 @@ sub realtime_bop {
   ) {
     my $error = $self->remove_cvv;
     if ( $error ) {
-      warn "error removing cvv: $error\n";
+      warn "WARNING: error removing cvv: $error\n";
     }
   }
 
@@ -2603,7 +2626,7 @@ gateway is attempted.
 sub realtime_refund_bop {
   my( $self, $method, %options ) = @_;
   if ( $DEBUG ) {
-    warn "$self $method refund\n";
+    warn "$me realtime_refund_bop: $method refund\n";
     warn "  $_ => $options{$_}\n" foreach keys %options;
   }
 
@@ -2622,7 +2645,7 @@ sub realtime_refund_bop {
 
   if ( $options{'paynum'} ) {
 
-    warn "FS::cust_main::realtime_bop: paynum: $options{paynum}\n" if $DEBUG;
+    warn "  paynum: $options{paynum}\n" if $DEBUG > 1;
     $cust_pay = qsearchs('cust_pay', { paynum=>$options{'paynum'} } )
       or return "Unknown paynum $options{'paynum'}";
     $amount ||= $cust_pay->paid;
@@ -2712,7 +2735,7 @@ sub realtime_refund_bop {
 
   #first try void if applicable
   if ( $cust_pay && $cust_pay->paid == $amount ) { #and check dates?
-    warn "FS::cust_main::realtime_bop: attempting void\n" if $DEBUG;
+    warn "  attempting void\n" if $DEBUG > 1;
     my $void = new Business::OnlinePayment( $processor, @bop_options );
     $void->content( 'action' => 'void', %content );
     $void->submit();
@@ -2725,13 +2748,13 @@ sub realtime_refund_bop {
         warn $e;
         return $e;
       }
-      warn "FS::cust_main::realtime_bop: void successful\n" if $DEBUG;
+      warn "  void successful\n" if $DEBUG > 1;
       return '';
     }
   }
 
-  warn "FS::cust_main::realtime_bop: void unsuccessful, trying refund\n"
-    if $DEBUG;
+  warn "  void unsuccessful, trying refund\n"
+    if $DEBUG > 1;
 
   #massage data
   my $address = $self->address1;
