@@ -4,7 +4,7 @@ use strict;
 use vars qw( @part_export );
 use subs qw(myshutdown);
 use POSIX qw(:sys_wait_h);
-use IO::File;
+#use IO::File;
 use FS::Daemon qw(daemonize1 drop_root logfile daemonize2 sigint sigterm);
 use FS::UID qw(adminsuidsetup); #forksuidsetup driver_name dbh myconnect);
 use FS::Record qw(qsearch); # qsearchs);
@@ -29,10 +29,15 @@ daemonize2();
 
 #--
 
+#don't just look for ->can('usage_sessions'), we're sqlradius-specific
+# (radiator is supposed to be setup with a radacct table)
+
 @part_export =
   qsearch('part_export', { 'exporttype' => 'sqlradius' } );
 push @part_export,
   qsearch('part_export', { 'exporttype' => 'sqlradius_withdomain' } );
+push @part_export,
+  qsearch('part_export', { 'exporttype' => 'radiator' } );
 
 @part_export = grep { ! $_->option('ignore_accounting') } @part_export;
 
