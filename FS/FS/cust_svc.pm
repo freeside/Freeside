@@ -410,14 +410,7 @@ sub seconds_since_sqlradacct {
       $str2time = 'extract(epoch from ';
     }
 
-    my $username;
-    if ( $part_export->exporttype eq 'sqlradius' ) {
-      $username = $svc_x->username;
-    } elsif ( $part_export->exporttype eq 'sqlradius_withdomain' ) {
-      $username = $svc_x->email;
-    } else {
-      die 'unknown exporttype '. $part_export->exporttype;
-    }
+    my $username = $part_export->export_username($svc_x);
 
     my $query;
   
@@ -567,11 +560,8 @@ sub get_session_history {
 
   #$attrib ???
 
-  #my @part_export = $cust_svc->part_svc->part_export->can('usage_sessions');
-  my @part_export = $self->part_svc->part_export('sqlradius');
-  push @part_export, $self->part_svc->part_export('sqlradius_withdomain');
-  die "no sqlradius or sqlradius_withdomain export configured for this".
-      "service type"
+  my @part_export = $self->part_svc->part_export_usage;
+  die "no accounting-capable exports are enabled for this service definition"
     unless @part_export;
     #or return undef;
                      
