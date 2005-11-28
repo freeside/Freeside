@@ -41,7 +41,8 @@ push @part_export,
 
 @part_export = grep { ! $_->option('ignore_accounting') } @part_export;
 
-die "no sqlradius or sqlradius_withdomain exports without ignore_accounting"
+die "no sqlradius, sqlradius_withdomain or radiator exports without".
+    " ignore_accounting"
   unless @part_export;
 
 while (1) {
@@ -126,10 +127,10 @@ freeside-sqlradius-radacctd - Real-time radacct import daemon
 
 =head1 DESCRIPTION
 
-Imports records from an the SQL radacct tables of all sqlradius and
-sqlradius_withdomain exports (except those with the ignore_accounting flag) and
-updates the svc_acct.seconds for each account.  Runs as a daemon and updates
-the database in real-time.
+Imports records from an the SQL radacct tables of all sqlradius, 
+sqlradius_withdomain and radiator exports (except those with the
+ignore_accounting flag) and updates the svc_acct.seconds for each account.
+Runs as a daemon and updates the database in real-time.
 
 B<username> is a username added by freeside-adduser.
 
