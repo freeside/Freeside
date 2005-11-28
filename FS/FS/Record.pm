@@ -433,7 +433,8 @@ sub qsearch {
         } values(%result);
       }
     } else {
-      warn "untested code (class FS::$table uses custom new method)";
+      #okay, its been tested
+      # warn "untested code (class FS::$table uses custom new method)";
       @return = map {
         eval 'FS::'. $table. '->new( { %{$_} } )';
       } values(%result);
