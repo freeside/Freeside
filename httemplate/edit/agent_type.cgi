@@ -37,7 +37,15 @@ Agent Type
 
 Select which packages agents of this type may sell to customers<BR>
 
-<% foreach my $part_pkg ( qsearch('part_pkg',{ 'disabled' => '' }) ) { %>
+<% foreach my $part_pkg (
+     qsearch({ 'table'     => 'part_pkg',
+               'hashref'   => { 'disabled' => '' },
+               'select'    => 'part_pkg.*',
+               'addl_from' => 'LEFT JOIN type_pkgs USING ( pkgpart )',
+               'extra_sql' => 'OR typenum = '. $agent_type->typenum,
+            })
+   ) {
+%>
 
   <BR>
   <INPUT TYPE="checkbox" NAME="pkgpart<%= $part_pkg->pkgpart %>" <%=
@@ -50,7 +58,8 @@ Select which packages agents of this type may sell to customers<BR>
   %> VALUE="ON">
 
   <A HREF="<%= $p %>edit/part_pkg.cgi?<%= $part_pkg->pkgpart %>"><%= $part_pkg->pkgpart %>: 
-  <%= $part_pkg->pkg %> (<%= $part_pkg->comment %>)</A>
+  <%= $part_pkg->pkg %> - <%= $part_pkg->comment %></A>
+  <%= $part_pkg->disabled =~ /^Y/i ? ' (DISABLED)' : '' %>
 
 <% } %>
 
