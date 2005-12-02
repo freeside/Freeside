@@ -11,7 +11,9 @@ If migrating from 1.5.0pre6, see README.1.5.7 instead
 
 install JSON
 install DBD::Pg 1.32, 1.41 or later (not 1.40) (or, if you're using a Perl version before 5.6, you could try installing DBD::Pg 1.22 with <a href="http://420.am/~ivan/DBD-Pg-1.22-fixvercmp.patch">this patch</a> and commenting out the "use DBD::Pg 1.32" at the top of DBIx/DBSchema/DBD/Pg.pm)
-install DBIx::DBSchema 0.26
+install DBIx::DBSchema 0.27 (or later)
+  (if you are running Pg version 7.2.x or earlier, install at least
+   DBIx::DBSchema 0.29)
 install Net::SSH 0.08
 install HTML::Widgets::SelectLayers 0.05
 
