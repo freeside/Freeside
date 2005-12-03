@@ -187,7 +187,7 @@ sub handler
           use RT::GroupMembers;
           use RT::CustomFields;
           use RT::CustomFieldValues;
-          use RT::TicketCustomFieldValues;
+          use RT::ObjectCustomFieldValues;
 
           use RT::Interface::Web;
           use MIME::Entity;
