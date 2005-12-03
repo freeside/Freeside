@@ -21,6 +21,8 @@ my $dbh = adminsuidsetup($user);
 my $dbdef_file = "/usr/local/etc/freeside/dbdef.". datasrc;
 
 dbdef_create($dbh, $dbdef_file);
+
+delete $FS::Schema::dbdef_cache{$dbdef_file}; #force an actual reload
 reload_dbdef($dbdef_file);
 
 
