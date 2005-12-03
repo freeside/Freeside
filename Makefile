@@ -84,8 +84,8 @@ SELFSERVICE_INSTALL_USERADD = /usr/sbin/useradd
 #RT_ENABLED = 0
 RT_ENABLED = 1
 RT_DOMAIN = example.com
-RT_TIMEZONE = US/Pacific;
-#RT_TIMEZONE = US/Eastern;
+RT_TIMEZONE = US/Pacific
+#RT_TIMEZONE = US/Eastern
 FREESIDE_URL = "http://localhost/freeside/"
 
 #for now, same db as specified in DATASOURCE... eventually, otherwise?
