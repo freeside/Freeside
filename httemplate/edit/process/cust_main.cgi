@@ -1,7 +1,5 @@
 <%
 
-warn join('', map { "$_ => ". $cgi->param($_). "\n" } $cgi->param );
-
 my $error = '';
 
 #unmunge stuff
