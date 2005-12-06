@@ -750,13 +750,15 @@ sub insert {
     warn "[debug]$me retreiving sequence from database\n" if $DEBUG;
     if ( driver_name eq 'Pg' ) {
 
-      my $oid = $sth->{'pg_oid_status'};
-      my $i_sql = "SELECT $primary_key FROM $table WHERE oid = ?";
+      #my $oid = $sth->{'pg_oid_status'};
+      #my $i_sql = "SELECT $primary_key FROM $table WHERE oid = ?";
+      my $i_sql = "SELECT currval('${table}_${primary_key}_seq')";
       my $i_sth = dbh->prepare($i_sql) or do {
         dbh->rollback if $FS::UID::AutoCommit;
         return dbh->errstr;
       };
-      $i_sth->execute($oid) or do {
+      #$i_sth->execute($oid) or do {
+      $i_sth->execute() or do {
         dbh->rollback if $FS::UID::AutoCommit;
         return $i_sth->errstr;
       };
@@ -1471,6 +1473,8 @@ Check/untaint zip codes.
 
 =cut
 
+my @zip_reqd_countries = qw( CA ); #US implicit...
+
 sub ut_zip {
   my( $self, $field, $country ) = @_;
   if ( $country eq 'US' ) {
@@ -1479,7 +1483,10 @@ sub ut_zip {
                 $self->getfield($field);
     $self->setfield($field,$1);
   } else {
-    if ( $self->getfield($field) =~ /^\s*$/ ) {
+    if ( $self->getfield($field) =~ /^\s*$/
+         && ( !$country || ! grep { $_ eq $country } @zip_reqd_countries )
+       )
+    {
       $self->setfield($field,'');
     } else {
       $self->getfield($field) =~ /^\s*(\w[\w\-\s]{2,8}\w)\s*$/
