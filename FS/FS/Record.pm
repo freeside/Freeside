@@ -752,7 +752,16 @@ sub insert {
 
       #my $oid = $sth->{'pg_oid_status'};
       #my $i_sql = "SELECT $primary_key FROM $table WHERE oid = ?";
-      my $i_sql = "SELECT currval('${table}_${primary_key}_seq')";
+
+      my $default = $self->dbdef_table->column($primary_key)->default;
+      unless ( $default =~ /^nextval\('"?([\w\.]+)"?'/i ) {
+        dbh->rollback if $FS::UID::AutoCommit;
+        return "can't parse $table.$primary_key default value".
+               " for sequence name: $default";
+      }
+      my $sequence = $1;
+
+      my $i_sql = "SELECT currval('$sequence')";
       my $i_sth = dbh->prepare($i_sql) or do {
         dbh->rollback if $FS::UID::AutoCommit;
         return dbh->errstr;

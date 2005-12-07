@@ -9,7 +9,7 @@ use Getopt::Std;
 use Locale::Country;
 use Locale::SubCountry;
 use FS::UID qw(adminsuidsetup datasrc checkeuid getsecrets);
-use FS::Schema qw( dbdef_dist );
+use FS::Schema qw( dbdef_dist reload_dbdef );
 use FS::Record;
 use FS::cust_main_county;
 #use FS::raddb;
@@ -98,6 +98,12 @@ foreach my $statement ( $dbdef->sql($dbh) ) {
     or die "CREATE error: ". $dbh->errstr. "\ndoing statement: $statement";
 }
 
+#now go back and reverse engineer the db
+#so we pick up the correct column DEFAULTs for #oidless inserts
+dbdef_create($dbh, $dbdef_file);
+delete $FS::Schema::dbdef_cache{$dbdef_file}; #force an actual reload
+reload_dbdef($dbdef_file);
+
 #cust_main_county
 foreach my $country ( sort map uc($_), all_country_codes ) {
 
@@ -161,6 +167,12 @@ $dbh->commit or die $dbh->errstr;
 $dbh->disconnect or die $dbh->errstr;
 
 #print "Freeside database initialized sucessfully\n";
+
+sub dbdef_create { # reverse engineer the schema from the DB and save to file
+  my( $dbh, $file ) = @_;
+  my $dbdef = new_native DBIx::DBSchema $dbh;
+  $dbdef->save($file);
+}
 
 sub usage {
   die "Usage:\n  freeside-setup user\n"; 
