@@ -14,11 +14,12 @@ my $custnum = $cust_main->custnum;
 my $new;
 if ($cgi->param('invnum') =~ /^Refund$/) {
   $new = new FS::cust_refund ( {
-    'reason'  => $cust_credit->reason,
+    'reason'  => ( $cust_credit->reason || 'refund from credit' ),
     'refund'  => $cgi->param('amount'),
     'payby'   => 'BILL',
     #'_date'   => $cgi->param('_date'),
-    'payinfo' => 'Cash',
+    #'payinfo' => 'Cash',
+    'payinfo' => 'Refund',
     'crednum' => $crednum,
   } );
 } else {

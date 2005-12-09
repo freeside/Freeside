@@ -229,11 +229,24 @@ foreach my $cust_pay_void ($cust_main->cust_pay_void) {
   $payby =~ s/^(CARD|COMP)$/$1 /;
   my $info = $payby ? " ($payby$payinfo)" : '';
 
+  my $unvoid = '';
+  if ( $cust_pay_void->closed !~ /^Y/i && $conf->exists('unvoid') ) {
+    $unvoid = qq! (<A HREF="javascript:areyousure('!.
+              qq!${p}misc/unvoid-cust_pay_void.cgi?!. $cust_pay_void->paynum.
+              qq!', 'Are you sure you want to unvoid this payment?')"!.
+              qq! TITLE="Unvoid this payment from the database!.
+                ( $cust_pay_void->payby =~ /^(CARD|CHEK)$/
+                  ? ' (do not send anything to the payment gateway)'
+                  : '' 
+                ). '"'.
+              qq!>unvoid</A>)!;
+  }
+
   push @history, {
     'date'   => $cust_pay_void->_date,
     'desc'   => "<DEL>Payment $info</DEL> <I>voided ".
                 time2str("%D", $cust_pay_void->void_date).
-                " by ". $cust_pay_void->otaker. '</i>',
+                " by ". $cust_pay_void->otaker. '</i>'. $unvoid,
     'void_payment' => $cust_pay_void->paid,
   };
 
@@ -313,7 +326,10 @@ foreach my $cust_credit ($cust_main->cust_credit) {
   push @history, {
     'date'   => $cust_credit->_date,
     'desc'   => $pre. "Credit$post by ". $cust_credit->otaker.
-                ' ('. $cust_credit->reason. ')'.
+                ( $cust_credit->reason
+		    ? ' ('. $cust_credit->reason. ')'
+		    : ''
+		).
                 "$desc$apply$delete$unapply",
     'credit' => $cust_credit->amount,
   };
