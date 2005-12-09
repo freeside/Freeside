@@ -234,7 +234,10 @@ Service address
 
 <!-- billing info -->
 
-<%= include('cust_main/billing.html', $cust_main ) %>
+<%= include( 'cust_main/billing.html', $cust_main,
+               'invoicing_list' => \@invoicing_list,
+           )
+%>
 
 <SCRIPT>
 function bottomfixup(what) {

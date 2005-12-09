@@ -1,6 +1,7 @@
 <%
 
-my( $cust_main ) = @_;
+my( $cust_main, %options ) = @_;
+my @invoicing_list = @{ $options{'invoicing_list'} };
 my $conf = new FS::Conf;
 my $payby_default = $conf->config('payby-default');
 
@@ -49,13 +50,11 @@ if ( $payby_default eq 'HIDE' ) {
 
   <INPUT TYPE="hidden" NAME="tax" VALUE="<%= $cust_main->tax %>">
 
-  <INPUT TYPE="hidden" NAME="invoicing_list" VALUE="<%= join(', ', $cust_main->invoicing_list) %>">
+  <INPUT TYPE="hidden" NAME="invoicing_list" VALUE="<%= join(', ', @invoicing_list) %>">
 
   </FORM>
 
 <% } else {
-
-  my @invoicing_list = $cust_main->invoicing_list;
 
   my $r = qq!<font color="#ff0000">*</font>&nbsp;!;
 
