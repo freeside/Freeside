@@ -68,7 +68,7 @@ sub _radiator_hash {
   my( $self, $svc_acct ) = @_;
   my %hash = (
     'username'  => $self->export_username($svc_acct),
-    'pass_word' => $svc_acct->_password,
+    'pass_word' => $svc_acct->crypt_password,
     'fullname'  => $svc_acct->finger,
     map { my $method = "radius_$_"; $_ => $svc_acct->$method(); }
         qw( framed_filter_id framed_mtu framed_netmask framed_protocol
@@ -82,7 +82,7 @@ sub _radiator_hash {
   $hash{'servicename'} = ( $svc_acct->radius_groups )[0];
 
   my $cust_pkg = $svc_acct->cust_svc->cust_pkg;
-  $hash{validto} = $cust_pkg->bill
+  $hash{'validto'} = $cust_pkg->bill
     if $cust_pkg && $cust_pkg->part_pkg->is_prepaid && $cust_pkg->bill;
 
   #some other random stuff, should probably be attributes or virtual fields
