@@ -10,11 +10,16 @@ my $new = new FS::payment_gateway ( {
   } fields('payment_gateway')
 } );
 
+my @options = split(/\r?\n/, $cgi->param('gateway_options') );
+pop @options
+  if scalar(@options) % 2 && $options[-1] =~ /^\s*$/;
+my %options = @options;
+
 my $error;
 if ( $gatewaynum ) {
   $error=$new->replace($old);
 } else {
-  $error=$new->insert;
+  $error=$new->insert(\%options);
   $gatewaynum=$new->getfield('gatewaynum');
 }
 
