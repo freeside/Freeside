@@ -755,6 +755,28 @@ sub check {
       if $recref->{uid} == 0
          && $recref->{username} !~ /^(root|toor|smtp)$/;
 
+    unless ( $recref->{username} eq 'sync' ) {
+      if ( grep $_ eq $recref->{shell}, @shells ) {
+        $recref->{shell} = (grep $_ eq $recref->{shell}, @shells)[0];
+      } else {
+        return "Illegal shell \`". $self->shell. "\'; ".
+               $conf->dir. "/shells contains: @shells";
+      }
+    } else {
+      $recref->{shell} = '/bin/sync';
+    }
+
+  } else {
+    $recref->{gid} ne '' ? 
+      return "Can't have gid without uid" : ( $recref->{gid}='' );
+    #$recref->{dir} ne '' ? 
+    #  return "Can't have directory without uid" : ( $recref->{dir}='' );
+    $recref->{shell} ne '' ? 
+      return "Can't have shell without uid" : ( $recref->{shell}='' );
+  }
+
+  unless ( $part_svc->part_svc_column('dir')->columnflag eq 'F' ) {
+
     $recref->{dir} =~ /^([\/\w\-\.\&]*)$/
       or return "Illegal directory: ". $recref->{dir};
     $recref->{dir} = $1;
@@ -777,24 +799,6 @@ sub check {
     ;
     }
 
-    unless ( $recref->{username} eq 'sync' ) {
-      if ( grep $_ eq $recref->{shell}, @shells ) {
-        $recref->{shell} = (grep $_ eq $recref->{shell}, @shells)[0];
-      } else {
-        return "Illegal shell \`". $self->shell. "\'; ".
-               $conf->dir. "/shells contains: @shells";
-      }
-    } else {
-      $recref->{shell} = '/bin/sync';
-    }
-
-  } else {
-    $recref->{gid} ne '' ? 
-      return "Can't have gid without uid" : ( $recref->{gid}='' );
-    $recref->{dir} ne '' ? 
-      return "Can't have directory without uid" : ( $recref->{dir}='' );
-    $recref->{shell} ne '' ? 
-      return "Can't have shell without uid" : ( $recref->{shell}='' );
   }
 
   #  $error = $self->ut_textn('finger');
