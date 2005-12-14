@@ -93,6 +93,8 @@ sub _radiator_hash {
     if $cust_pkg && $cust_pkg->setup;
   $hash{'validfrom'} = $cust_pkg->last_bill || $cust_pkg->setup
     if $cust_pkg &&  ( $cust_pkg->last_bill || $cust_pkg->setup );
+  $hash{'state'} = $cust_pkg->susp ? 1 : 0
+    if $cust_pkg;
 
   %hash;
 }
