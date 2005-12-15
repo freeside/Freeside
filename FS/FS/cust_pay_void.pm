@@ -3,7 +3,8 @@ use strict;
 use vars qw( @ISA );
 use Business::CreditCard;
 use FS::UID qw(getotaker);
-use FS::Record qw(qsearchs); # dbh qsearch );
+use FS::Record qw(qsearchs dbh fields); # qsearch );
+use FS::cust_pay;
 #use FS::cust_bill;
 #use FS::cust_bill_pay;
 #use FS::cust_pay_refund;
@@ -78,15 +79,52 @@ sub table { 'cust_pay_void'; }
 
 Adds this voided payment to the database.
 
-=item delete
+=item unvoid 
 
-Currently unimplemented.
+"Un-void"s this payment: Deletes the voided payment from the database and adds
+back a normal payment.
 
 =cut
 
-sub delete {
-  return "Can't delete voided payments!";
+sub unvoid {
+  my $self = shift;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $cust_pay = new FS::cust_pay ( {
+    map { $_ => $self->get($_) } fields('cust_pay')
+  } );
+  my $error = $cust_pay->insert;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  $error = $self->delete;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+  '';
+
 }
+
+=item delete
+
+Deletes this voided payment.  You probably don't want to use this directly; see
+the B<unvoid> method to add the original payment back.
 
 =item replace OLD_RECORD
 

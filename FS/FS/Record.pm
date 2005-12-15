@@ -745,9 +745,12 @@ sub insert {
 
   $sth->execute or return $sth->errstr;
 
-  my $insertid = '';
-  if ( $db_seq ) { # get inserted id from the database, if applicable
+  # get inserted id from the database, if applicable & needed
+  if ( $db_seq && ! $self->getfield($primary_key) ) {
     warn "[debug]$me retreiving sequence from database\n" if $DEBUG;
+  
+    my $insertid = '';
+
     if ( driver_name eq 'Pg' ) {
 
       #my $oid = $sth->{'pg_oid_status'};
@@ -793,11 +796,15 @@ sub insert {
       }
 
     } else {
+
       dbh->rollback if $FS::UID::AutoCommit;
       return "don't know how to retreive inserted ids from ". driver_name. 
              ", try using counterfiles (maybe run dbdef-create?)";
+
     }
+
     $self->setfield($primary_key, $insertid);
+
   }
 
   my @virtual_fields = 

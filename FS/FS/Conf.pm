@@ -1569,6 +1569,13 @@ httemplate/docs/config.html
   },
 
   {
+    'key'         => 'unvoid',
+    'section'     => 'billing',
+    'description' => 'Enable unvoiding of voided payments',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'address2-search',
     'section'     => 'UI',
     'description' => 'Enable a "Unit" search box which searches the second address field',
