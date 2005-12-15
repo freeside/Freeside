@@ -42,7 +42,10 @@ Select which packages agents of this type may sell to customers<BR>
                'hashref'   => { 'disabled' => '' },
                'select'    => 'part_pkg.*',
                'addl_from' => 'LEFT JOIN type_pkgs USING ( pkgpart )',
-               'extra_sql' => 'OR typenum = '. $agent_type->typenum,
+               'extra_sql' => ( $agent_type->typenum
+                                  ? 'OR typenum = '. $agent_type->typenum
+                                  : ''
+                              ),
             })
    ) {
 %>

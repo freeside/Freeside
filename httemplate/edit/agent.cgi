@@ -75,7 +75,7 @@ Agent #<%= $hashref->{agentnum} ? $hashref->{agentnum} : "(NEW)" %>
     my @queueids = sort { $a <=> $b } keys %queues;
   %>
     <TR>
-      <TD ALIGN="right">Ticketing</TD>
+      <TD ALIGN="right">Ticketing queue</TD>
       <TD>
         <SELECT NAME="ticketing_queueid">
           <OPTION VALUE=""><%= $default_queue %>
