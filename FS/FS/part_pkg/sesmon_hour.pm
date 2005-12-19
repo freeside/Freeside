@@ -13,7 +13,7 @@ use FS::part_pkg::flat;
     'setup_fee' => { 'name' => 'Setup fee for this package',
                      'default' => 0,
                    },
-    'recur_flat' => { 'name' => 'Base monthly charge for this package',
+    'recur_flat' => { 'name' => 'Base recurring fee for this package',
                       'default' => 0,
                     },
     'unused_credit' => { 'name' => 'Credit the customer for the unused portion'.
