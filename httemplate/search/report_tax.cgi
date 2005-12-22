@@ -91,10 +91,10 @@ foreach my $r (qsearch('cust_main_county', {}, '', $gotcust) ) {
 
   ## calculate customer-exemption for this region
 
-  my($t, $x_cust) = (0, 0);
+  my($taxable, $x_cust) = (0, 0);
   foreach my $e ( grep { $r->get($_.'tax') !~ /^Y/i }
                        qw( cust_bill_pkg.setup cust_bill_pkg.recur ) ) {
-    $t += scalar_sql($r, \@param, 
+    $taxable += scalar_sql($r, \@param, 
       "SELECT SUM($e) $fromwhere AND $nottax AND ( tax != 'Y' OR tax IS NULL )"
     );
 
@@ -123,17 +123,17 @@ foreach my $r (qsearch('cust_main_county', {}, '', $gotcust) ) {
   );
   if ( $x_monthly ) {
     warn $r->taxnum(). ": $x_monthly\n";
-    $t -= $x_monthly;
+    $taxable -= $x_monthly;
   }
 
   $exempt_monthly += $x_monthly;
   $regions{$label}->{'exempt_monthly'} += $x_monthly;
 
-  $taxable += $t;
-  $regions{$label}->{'taxable'} += $t;
+  $tot_taxable += $taxable;
+  $regions{$label}->{'taxable'} += $taxable;
 
-  $owed += $t * ($r->tax/100);
-  $regions{$label}->{'owed'} += $t * ($r->tax/100);
+  $owed += $taxable * ($r->tax/100);
+  $regions{$label}->{'owed'} += $taxable * ($r->tax/100);
 
   if ( defined($regions{$label}->{'rate'})
        && $regions{$label}->{'rate'} != $r->tax.'%' ) {
@@ -189,7 +189,7 @@ push @regions, {
   'exempt_cust'    => $exempt_cust,
   'exempt_pkg'     => $exempt_pkg,
   'exempt_monthly' => $exempt_monthly,
-  'taxable'        => $taxable,
+  'taxable'        => $tot_taxable,
   'rate'           => '',
   'owed'           => $owed,
   'tax'            => $tax,
