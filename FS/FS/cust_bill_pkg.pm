@@ -3,11 +3,12 @@ package FS::cust_bill_pkg;
 use strict;
 use vars qw( @ISA );
 use FS::Record qw( qsearch qsearchs dbdef dbh );
+use FS::cust_main_Mixin;
 use FS::cust_pkg;
 use FS::cust_bill;
 use FS::cust_bill_pkg_detail;
 
-@ISA = qw( FS::Record );
+@ISA = qw( FS::cust_main_Mixin FS::Record );
 
 =head1 NAME
 
@@ -222,6 +223,14 @@ sub desc {
     $self->itemdesc || 'Tax';
   }
 }
+
+=back
+
+=head1 CLASS METHODS
+
+=over 4
+
+=item  
 
 =back
 

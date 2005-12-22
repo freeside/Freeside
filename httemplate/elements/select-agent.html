@@ -1,0 +1,24 @@
+<%
+  my( $agentnum, %opt ) = @_;
+
+  my @agents;
+  if ( $opt{'agents'} ) {
+    @agents = @{ $opt{'agents'} };
+  } else {
+    @agents = qsearch( 'agent', { disabled=>'' } );
+  }
+
+%>
+
+<SELECT NAME="agentnum">
+
+  <OPTION VALUE="">all</OPTION>
+
+  <% foreach my $agent ( sort { $a->agent cmp $b->agent } @agents ) { %>
+
+    <OPTION VALUE="<%= $agent->agentnum %>"<%= $agentnum == $agent->agentnum ? ' SELECTED' : '' %>><%= $agent->agent %>
+
+  <% } %>
+
+</SELECT>
+

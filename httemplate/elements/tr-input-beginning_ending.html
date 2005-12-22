@@ -1,0 +1,39 @@
+<LINK REL="stylesheet" TYPE="text/css" HREF="../elements/calendar-win2k-2.css" TITLE="win2k-2">
+<SCRIPT TYPE="text/javascript" SRC="../elements/calendar_stripped.js"></SCRIPT>
+<SCRIPT TYPE="text/javascript" SRC="../elements/calendar-en.js"></SCRIPT>
+<SCRIPT TYPE="text/javascript" SRC="../elements/calendar-setup.js"></SCRIPT>
+
+
+<TR>
+  <TD ALIGN="right">From: </TD>
+  <TD><INPUT TYPE="text" NAME="beginning" ID="beginning_text" VALUE="" SIZE=11 MAXLENGTH=10> <IMG SRC="../images/calendar.png" ID="beginning_button" STYLE="cursor: pointer" TITLE="Select date"><BR><i>m/d/y</i></TD>
+<SCRIPT TYPE="text/javascript">
+  Calendar.setup({
+    inputField: "beginning_text",
+    ifFormat:   "%m/%d/%Y",
+    button:     "beginning_button",
+    align:      "BR"
+  });
+</SCRIPT>
+</TR>
+
+<TR>
+  <TD ALIGN="right">To: </TD>
+  <TD><INPUT TYPE="text" NAME="ending" ID="ending_text" VALUE="" SIZE=11 MAXLENGTH=10> <IMG SRC="../images/calendar.png" ID="ending_button" STYLE="cursor: pointer" TITLE="Select date"><BR><i>m/d/y</i></TD>
+<SCRIPT TYPE="text/javascript">
+  Calendar.setup({
+    inputField: "ending_text",
+    ifFormat:   "%m/%d/%Y",
+    button:     "ending_button",
+    align:      "BR"
+  });
+</SCRIPT>
+</TR>
+
+<TR>
+  <TD></TD>
+  <TD>
+    <FONT SIZE="-1">(leave one or both dates blank for an open-ended search)</FONT>
+  </TD>
+</TR>
+

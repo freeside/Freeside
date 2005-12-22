@@ -1,0 +1,29 @@
+<%
+  my( $agentnum, %opt ) = @_;
+
+  my @agents;
+  if ( $opt{'agents'} ) {
+    @agents = @{ $opt{'agents'} };
+  } else {
+    @agents = qsearch( 'agent', { disabled=>'' } );
+  }
+
+%>
+
+<% if ( scalar(@agents) == 1 ) { %>
+
+  <INPUT TYPE="hidden" NAME="agentnum" VALUE="<%= $agents[0]->agentnum %>">
+
+<% } else { %>
+
+  <TR>
+    <TD ALIGN="right"><%= $opt{'label'} || 'Agent: ' %></TD>
+    <TD>
+      <%= include( '/elements/select-agent.html', $agentnum,
+                     'agents' => \@agents,
+                 )
+      %>
+    </TD>
+  </TR>
+
+<% } %>
