@@ -44,7 +44,7 @@ my $gotcust = "
 ";
 
 my $monthly_exempt_warning = 0;
-my($total, $taxable, $owed, $tax) = ( 0, 0, 0, 0, 0 );
+my($total, $tot_taxable, $owed, $tax) = ( 0, 0, 0, 0, 0 );
 my( $exempt_cust, $exempt_pkg, $exempt_monthly ) = ( 0, 0 );
 my $out = 'Out of taxable region(s)';
 my %regions = ();
