@@ -3,6 +3,7 @@
 my $user = getotaker;
 
 my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
+warn("*****  $beginning $ending\n");
 
 my $from_join_cust = "
   FROM cust_bill_pkg
@@ -251,7 +252,7 @@ my $baselink = $p. "search/cust_bill_pkg.cgi?begin=$beginning;end=$ending";
 
 <%= header( "$agentname Sales Tax Report - ".
               time2str('%h %o %Y through ', $beginning ).
-              ( $cgi->param('ending') == 4294967295
+              ( $ending == 4294967295
                   ? 'now'
                   : time2str('%h %o %Y', $ending )
               ),
