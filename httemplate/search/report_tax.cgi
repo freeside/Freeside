@@ -3,7 +3,6 @@
 my $user = getotaker;
 
 my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
-warn("*****  $beginning $ending\n");
 
 my $from_join_cust = "
   FROM cust_bill_pkg
@@ -45,6 +44,7 @@ my $gotcust = "
 ";
 
 my $monthly_exempt_warning = 0;
+my $taxclass_flag = 0;
 my($total, $tot_taxable, $owed, $tax) = ( 0, 0, 0, 0, 0 );
 my( $exempt_cust, $exempt_pkg, $exempt_monthly ) = ( 0, 0 );
 my $out = 'Out of taxable region(s)';
@@ -54,7 +54,6 @@ foreach my $r (qsearch('cust_main_county', {}, '', $gotcust) ) {
 
   my $label = getlabel($r);
   $regions{$label}->{'label'} = $label;
-
   $regions{$label}->{'url_param'} = join(';', map "$_=".$r->$_(), qw( county state country ) );
 
   my $fromwhere = $from_join_cust. $join_pkg. $where;
@@ -63,7 +62,9 @@ foreach my $r (qsearch('cust_main_county', {}, '', $gotcust) ) {
   if ( $r->taxclass ) {
     $fromwhere .= " AND taxclass = ? ";
     push @param, 'taxclass';
-    $regions{$label}->{'url_param'} .= ';taxclass='. $r->taxclass;
+    $regions{$label}->{'url_param'} .= ';taxclass='. $r->taxclass
+      if $cgi->param('show_taxclasses');
+    $taxclass_flag = 1;
   }
 
 #  my $label = getlabel($r);
@@ -147,7 +148,7 @@ foreach my $r (qsearch('cust_main_county', {}, '', $gotcust) ) {
 
 my $taxwhere = "$from_join_cust $where";
 my @taxparam = @base_param;
-
+my %base_regions = ();
 #foreach my $label ( keys %regions ) {
 foreach my $r (
   qsearch( 'cust_main_county',
@@ -176,12 +177,26 @@ foreach my $r (
   $tax += $x;
   $regions{$label}->{'tax'} += $x;
 
+  if ( $cgi->param('show_taxclasses') ) {
+    my $base_label = getlabel($r, 'no_taxclass'=>1 );
+    $base_regions{$base_label}->{'label'} = $base_label;
+    $base_regions{$base_label}->{'url_param'} =
+      join(';', map "$_=".$r->$_(), qw( county state country ) );
+    $base_regions{$base_label}->{'tax'} += $x;
+  }
+
 }
 
 #ordering
-my @regions = map $regions{$_},
-              sort { ( ($a eq $out) cmp ($b eq $out) ) || ($b cmp $a) }
-              keys %regions;
+my @regions =
+  map $regions{$_},
+  sort { ( ($a eq $out) cmp ($b eq $out) ) || ($b cmp $a) }
+  keys %regions;
+
+my @base_regions =
+  map $base_regions{$_},
+  sort { ( ($a eq $out) cmp ($b eq $out) ) || ($b cmp $a) }
+  keys %base_regions;
 
 push @regions, {
   'label'          => 'Total',
@@ -200,6 +215,7 @@ push @regions, {
 
 sub getlabel {
   my $r = shift;
+  my %opt = @_;
 
   my $label;
   if (
@@ -224,7 +240,10 @@ sub getlabel {
     $label = $r->country;
     $label = $r->state.", $label" if $r->state;
     $label = $r->county." county, $label" if $r->county;
-    $label = "$label (". $r->taxclass. ")" if $r->taxclass;
+    $label = "$label (". $r->taxclass. ")"
+      if $r->taxclass
+      && $cgi->param('show_taxclasses')
+      && ! $opt{'no_taxclasses'};
     #$label = $r->taxname. " ($label)" if $r->taxname;
   }
   return $label;
@@ -263,11 +282,13 @@ my $baselink = $p. "search/cust_bill_pkg.cgi?begin=$beginning;end=$ending";
 <%= include('/elements/table-grid.html') %>
 
   <TR>
-    <TH CLASS="grid" BGCOLOR="#cccccc"ROWSPAN=2></TH>
-    <TH CLASS="grid" BGCOLOR="#cccccc"COLSPAN=5>Sales</TH>
-    <TH CLASS="grid" BGCOLOR="#cccccc"ROWSPAN=2>Rate</TH>
-    <TH CLASS="grid" BGCOLOR="#cccccc"ROWSPAN=2>Tax owed</TH>
-    <TH CLASS="grid" BGCOLOR="#cccccc"ROWSPAN=2>Tax invoiced</TH>
+    <TH CLASS="grid" BGCOLOR="#cccccc" ROWSPAN=2></TH>
+    <TH CLASS="grid" BGCOLOR="#cccccc" COLSPAN=5>Sales</TH>
+    <TH CLASS="grid" BGCOLOR="#cccccc" ROWSPAN=2>Rate</TH>
+    <TH CLASS="grid" BGCOLOR="#cccccc" ROWSPAN=2>Tax owed</TH>
+    <% unless ( $cgi->param('show_taxclasses') ) { %>
+      <TH CLASS="grid" BGCOLOR="#cccccc" ROWSPAN=2>Tax invoiced</TH>
+    <% } %>
   </TR>
   <TR>
     <TH CLASS="grid" BGCOLOR="#cccccc">Total</TH>
@@ -299,6 +320,7 @@ my $baselink = $p. "search/cust_bill_pkg.cgi?begin=$beginning;end=$ending";
          }
        }
   %>
+
     <TR>
       <TD CLASS="grid" BGCOLOR="<%= $bgcolor %>"><%= $region->{'label'} %></TD>
       <TD CLASS="grid" BGCOLOR="<%= $bgcolor %>" ALIGN="right">
@@ -320,13 +342,59 @@ my $baselink = $p. "search/cust_bill_pkg.cgi?begin=$beginning;end=$ending";
       <TD CLASS="grid" BGCOLOR="<%= $bgcolor %>" ALIGN="right">
         $<%= sprintf('%.2f', $region->{'owed'} ) %>
       </TD>
+      <% unless ( $cgi->param('show_taxclasses') ) { %>
+        <TD CLASS="grid" BGCOLOR="<%= $bgcolor %>" ALIGN="right">
+          <A HREF="<%= $link %>;istax=1">$<%= sprintf('%.2f', $region->{'tax'} ) %></A>
+        </TD>
+      <% } %>
+    </TR>
+    
+  <% } %>
+
+</TABLE>
+
+
+<% if ( $cgi->param('show_taxclasses') ) { %>
+
+  <BR>
+  <%= include('/elements/table-grid.html') %>
+  <TR>
+    <TH CLASS="grid" BGCOLOR="#cccccc"></TH>
+    <TH CLASS="grid" BGCOLOR="#cccccc">Tax invoiced</TH>
+  </TR>
+
+  <% #some false laziness w/above
+     foreach my $region ( @base_regions ) {
+
+       if ( $bgcolor eq $bgcolor1 ) {
+         $bgcolor = $bgcolor2;
+       } else {
+         $bgcolor = $bgcolor1;
+       }
+
+       my $link = $baselink;
+       if ( $region->{'label'} ne 'Total' ) {
+         if ( $region->{'label'} eq $out ) {
+           $link .= ';out=1';
+         } else {
+           $link .= ';'. $region->{'url_param'};
+         }
+       }
+  %>
+
+    <TR>
+      <TD CLASS="grid" BGCOLOR="<%= $bgcolor %>"><%= $region->{'label'} %></TD>
       <TD CLASS="grid" BGCOLOR="<%= $bgcolor %>" ALIGN="right">
         <A HREF="<%= $link %>;istax=1">$<%= sprintf('%.2f', $region->{'tax'} ) %></A>
       </TD>
     </TR>
+
   <% } %>
 
-</TABLE>
+  </TABLE>
+
+<% } %>
+
 
 <% if ( $monthly_exempt_warning ) { %>
   <BR>
