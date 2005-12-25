@@ -20,18 +20,21 @@ my $where = "
 if ( $cgi->param('out') ) {
 
   $where .= "
-    AND 0 = ( SELECT COUNT(*) FROM cust_main_county
-               WHERE (    cust_main_county.county  = cust_main.county
-                       OR cust_main_county.county IS NULL AND cust_main.county  =  ''
-                       OR cust_main_county.county  =  ''  AND cust_main.county IS NULL
-                     )
-                 AND (    cust_main_county.state   = cust_main.state
-                       OR cust_main_county.state  IS NULL AND cust_main.state  =  ''
-                       OR cust_main_county.state   =  ''  AND cust_main.state IS NULL
-                     )
-                 AND cust_main_county.country = cust_main.country
-                 AND cust_main_county.tax > 0
+    AND 0 = (
+      SELECT COUNT(*) FROM cust_main_county
+      WHERE (    cust_main_county.county  = cust_main.county
+              OR ( cust_main_county.county IS NULL AND cust_main.county  =  '' )
+              OR ( cust_main_county.county  =  ''  AND cust_main.county IS NULL)
+              OR ( cust_main_county.county IS NULL AND cust_main.county IS NULL)
             )
+        AND (    cust_main_county.state   = cust_main.state
+              OR ( cust_main_county.state  IS NULL AND cust_main.state  =  ''  )
+              OR ( cust_main_county.state   =  ''  AND cust_main.state IS NULL )
+              OR ( cust_main_county.state  IS NULL AND cust_main.state IS NULL )
+            )
+        AND cust_main_county.country = cust_main.country
+        AND cust_main_county.tax > 0
+    )
   ";
 
 } elsif ( $cgi->param('country' ) ) {
