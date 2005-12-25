@@ -334,7 +334,7 @@ sub tables_hashref {
       ],
       'primary_key' => 'billpkgnum',
       'unique' => [],
-      'index' => [ ['invnum'] ],
+      'index' => [ ['invnum'], [ 'pkgnum' ] ],
     },
 
     'cust_bill_pkg_detail' => {
@@ -433,6 +433,8 @@ sub tables_hashref {
       #'index' => [ ['last'], ['company'] ],
       'index' => [ ['last'], [ 'company' ], [ 'referral_custnum' ],
                    [ 'daytime' ], [ 'night' ], [ 'fax' ], [ 'refnum' ],
+                   [ 'ship_last' ], [ 'ship_company' ],
+                   [ 'county' ], [ 'state' ], [ 'country' ]
                  ],
     },
 
@@ -465,7 +467,7 @@ sub tables_hashref {
       'primary_key' => 'taxnum',
       'unique' => [],
   #    'unique' => [ ['taxnum'], ['state', 'county'] ],
-      'index' => [],
+      'index' => [ [ 'county' ], [ 'state' ], [ 'country' ] ],
     },
 
     'cust_pay' => {

@@ -17,6 +17,14 @@ run "freeside-upgrade username" to uprade your database schema
 Optional:
 CREATE INDEX cust_pkg2 ON cust_pkg ( pkgpart );
 
+CREATE INDEX cust_bill_pkg2 ON cust_bill_pkg ( pkgnum );
+CREATE INDEX cust_main9 ON cust_main ( county );
+CREATE INDEX cust_main10 ON cust_main ( state );
+CREATE INDEX cust_main11 ON cust_main ( country );
+CREATE INDEX cust_main_county1 ON cust_main_county ( county );
+CREATE INDEX cust_main_county2 ON cust_main_county ( state );
+CREATE INDEX cust_main_county3 ON cust_main_county ( country );
+
 Optional for better VoIP performance:
 CREATE INDEX rate_detail2 ON rate_detail ( ratenum, dest_regionnum );
 
