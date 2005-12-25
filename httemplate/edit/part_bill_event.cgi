@@ -95,7 +95,7 @@ sub select_agentnum {
 }
 
 my $conf = new FS::Conf;
-my $money_char = $conf->config('money_char');
+my $money_char = $conf->config('money_char') || '$';
 
 #this is pretty kludgy right here.
 tie my %events, 'Tie::IxHash',
