@@ -1,5 +1,8 @@
 <%
 
+my $conf = new FS::Conf;
+my $money_char = $conf->config('money_char') || '$';
+
 my $user = getotaker;
 
 my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
@@ -283,8 +286,10 @@ my $baselink = $p. "search/cust_bill_pkg.cgi?begin=$beginning;end=$ending";
 
   <TR>
     <TH CLASS="grid" BGCOLOR="#cccccc" ROWSPAN=2></TH>
-    <TH CLASS="grid" BGCOLOR="#cccccc" COLSPAN=5>Sales</TH>
+    <TH CLASS="grid" BGCOLOR="#cccccc" COLSPAN=9>Sales</TH>
+    <TH CLASS="grid" BGCOLOR="#cccccc" ROWSPAN=2></TH>
     <TH CLASS="grid" BGCOLOR="#cccccc" ROWSPAN=2>Rate</TH>
+    <TH CLASS="grid" BGCOLOR="#cccccc" ROWSPAN=2></TH>
     <TH CLASS="grid" BGCOLOR="#cccccc" ROWSPAN=2>Tax owed</TH>
     <% unless ( $cgi->param('show_taxclasses') ) { %>
       <TH CLASS="grid" BGCOLOR="#cccccc" ROWSPAN=2>Tax invoiced</TH>
@@ -292,9 +297,13 @@ my $baselink = $p. "search/cust_bill_pkg.cgi?begin=$beginning;end=$ending";
   </TR>
   <TR>
     <TH CLASS="grid" BGCOLOR="#cccccc">Total</TH>
+    <TH CLASS="grid" BGCOLOR="#cccccc"></TH>
     <TH CLASS="grid" BGCOLOR="#cccccc">Non-taxable<BR><FONT SIZE=-1>(tax-exempt customer)</FONT></TH>
+    <TH CLASS="grid" BGCOLOR="#cccccc"></TH>
     <TH CLASS="grid" BGCOLOR="#cccccc">Non-taxable<BR><FONT SIZE=-1>(tax-exempt package)</FONT></TH>
+    <TH CLASS="grid" BGCOLOR="#cccccc"></TH>
     <TH CLASS="grid" BGCOLOR="#cccccc">Non-taxable<BR><FONT SIZE=-1>(monthly exemption)</FONT></TH>
+    <TH CLASS="grid" BGCOLOR="#cccccc"></TH>
     <TH CLASS="grid" BGCOLOR="#cccccc">Taxable</TH>
   </TR>
 
@@ -324,27 +333,33 @@ my $baselink = $p. "search/cust_bill_pkg.cgi?begin=$beginning;end=$ending";
     <TR>
       <TD CLASS="grid" BGCOLOR="<%= $bgcolor %>"><%= $region->{'label'} %></TD>
       <TD CLASS="grid" BGCOLOR="<%= $bgcolor %>" ALIGN="right">
-        <A HREF="<%= $link %>;nottax=1">$<%= sprintf('%.2f', $region->{'total'} ) %></A>
+        <A HREF="<%= $link %>;nottax=1"><%= $money_char %><%= sprintf('%.2f', $region->{'total'} ) %></A>
       </TD>
+      <TD CLASS="grid" BGCOLOR="<%= $bgcolor %>"><FONT SIZE="+1"><B> - </B></FONT></TD>
       <TD CLASS="grid" BGCOLOR="<%= $bgcolor %>" ALIGN="right">
-        <A HREF="<%= $link %>;nottax=1;cust_tax=Y">$<%= sprintf('%.2f', $region->{'exempt_cust'} ) %></A>
+        <A HREF="<%= $link %>;nottax=1;cust_tax=Y"><%= $money_char %><%= sprintf('%.2f', $region->{'exempt_cust'} ) %></A>
       </TD>
+      <TD CLASS="grid" BGCOLOR="<%= $bgcolor %>"><FONT SIZE="+1"><B> - </B></FONT></TD>
       <TD CLASS="grid" BGCOLOR="<%= $bgcolor %>" ALIGN="right">
-        <A HREF="<%= $link %>;nottax=1;pkg_tax=Y">$<%= sprintf('%.2f', $region->{'exempt_pkg'} ) %></A>
+        <A HREF="<%= $link %>;nottax=1;pkg_tax=Y"><%= $money_char %><%= sprintf('%.2f', $region->{'exempt_pkg'} ) %></A>
       </TD>
+      <TD CLASS="grid" BGCOLOR="<%= $bgcolor %>"><FONT SIZE="+1"><B> - </B></FONT></TD>
       <TD CLASS="grid" BGCOLOR="<%= $bgcolor %>" ALIGN="right">
-        $<%= sprintf('%.2f', $region->{'exempt_monthly'} ) %></A>
+        <%= $money_char %><%= sprintf('%.2f', $region->{'exempt_monthly'} ) %></A>
         </TD>
+      <TD CLASS="grid" BGCOLOR="<%= $bgcolor %>"><FONT SIZE="+1"><B> = </B></FONT></TD>
       <TD CLASS="grid" BGCOLOR="<%= $bgcolor %>" ALIGN="right">
-        $<%= sprintf('%.2f', $region->{'taxable'} ) %></A>
+        <%= $money_char %><%= sprintf('%.2f', $region->{'taxable'} ) %></A>
       </TD>
+      <TD CLASS="grid" BGCOLOR="<%= $bgcolor %>"><%= $region->{'label'} eq 'Total' ? '' : '<FONT FACE="sans-serif" SIZE="+1"><B> X </B></FONT>' %></TD>
       <TD CLASS="grid" BGCOLOR="<%= $bgcolor %>" ALIGN="right"><%= $region->{'rate'} %></TD>
+      <TD CLASS="grid" BGCOLOR="<%= $bgcolor %>"><%= $region->{'label'} eq 'Total' ? '' : '<FONT FACE="sans-serif" SIZE="+1"><B> = </B></FONT>' %></TD>
       <TD CLASS="grid" BGCOLOR="<%= $bgcolor %>" ALIGN="right">
-        $<%= sprintf('%.2f', $region->{'owed'} ) %>
+        <%= $money_char %><%= sprintf('%.2f', $region->{'owed'} ) %>
       </TD>
       <% unless ( $cgi->param('show_taxclasses') ) { %>
         <TD CLASS="grid" BGCOLOR="<%= $bgcolor %>" ALIGN="right">
-          <A HREF="<%= $link %>;istax=1">$<%= sprintf('%.2f', $region->{'tax'} ) %></A>
+          <A HREF="<%= $link %>;istax=1"><%= $money_char %><%= sprintf('%.2f', $region->{'tax'} ) %></A>
         </TD>
       <% } %>
     </TR>
@@ -373,23 +388,30 @@ my $baselink = $p. "search/cust_bill_pkg.cgi?begin=$beginning;end=$ending";
        }
 
        my $link = $baselink;
-       if ( $region->{'label'} ne 'Total' ) {
+       #if ( $region->{'label'} ne 'Total' ) {
          if ( $region->{'label'} eq $out ) {
            $link .= ';out=1';
          } else {
            $link .= ';'. $region->{'url_param'};
          }
-       }
+       #}
   %>
 
     <TR>
       <TD CLASS="grid" BGCOLOR="<%= $bgcolor %>"><%= $region->{'label'} %></TD>
       <TD CLASS="grid" BGCOLOR="<%= $bgcolor %>" ALIGN="right">
-        <A HREF="<%= $link %>;istax=1">$<%= sprintf('%.2f', $region->{'tax'} ) %></A>
+        <A HREF="<%= $link %>;istax=1"><%= $money_char %><%= sprintf('%.2f', $region->{'tax'} ) %></A>
       </TD>
     </TR>
 
   <% } %>
+
+  <TR>
+   <TD CLASS="grid" BGCOLOR="<%= $bgcolor %>">Total</TD>
+    <TD CLASS="grid" BGCOLOR="<%= $bgcolor %>" ALIGN="right">
+      <A HREF="<%= $baselink %>;istax=1"><%= $money_char %><%= sprintf('%.2f', $tax ) %></A>
+    </TD>
+  </TR>
 
   </TABLE>
 
