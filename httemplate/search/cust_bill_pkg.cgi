@@ -79,7 +79,7 @@ if ( $cgi->param('pkg_tax') ) {
     "SELECT COUNT(*), SUM(cust_bill_pkg.setup + cust_bill_pkg.recur)";
 
 }
-$count_query += " FROM cust_bill_pkg $join_cust  $join_pkg $where";
+$count_query .= " FROM cust_bill_pkg $join_cust  $join_pkg $where";
 
 my $query = {
   'table'     => 'cust_bill_pkg',
