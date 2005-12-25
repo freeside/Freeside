@@ -94,6 +94,9 @@ sub select_agentnum {
   '</SELECT>';
 }
 
+my $conf = new FS::Conf;
+my $money_char = $conf->config('money_char');
+
 #this is pretty kludgy right here.
 tie my %events, 'Tie::IxHash',
 
@@ -108,6 +111,12 @@ tie my %events, 'Tie::IxHash',
   'suspend' => {
     'name'   => 'Suspend',
     'code'   => '$cust_main->suspend();',
+    'weight' => 10,
+  },
+  'suspend' => {
+    'name'   => 'Suspend if balance (this invoice and previous) over',
+    'code'   => '$cust_bill->cust_suspend_if_balance_over( %%%balanceover%%% );',
+    'html'   => " $money_char ". '<INPUT TYPE="text" SIZE="7" NAME="balanceover" VALUE="%%%balanceover%%%">',
     'weight' => 10,
   },
   'suspend-if-pkgpart' => {

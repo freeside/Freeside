@@ -236,6 +236,25 @@ sub cust_main {
   qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
 }
 
+=item cust_suspend_if_balance_over AMOUNT
+
+Suspends the customer associated with this invoice if the total amount owed on
+this invoice and all older invoices is greater than the specified amount.
+
+Returns a list: an empty list on success or a list of errors.
+
+=cut
+
+sub cust_suspend_if_balance_over {
+  my( $self, $amount ) = ( shift, shift );
+  my $cust_main = $self->cust_main;
+  if ( $cust_main->total_owed_date($self->_date) < $amount ) {
+    return ();
+  } else {
+    $cust_main->suspend;
+  }
+}
+
 =item cust_credit
 
 Depreciated.  See the cust_credited method.
@@ -2388,6 +2407,7 @@ sub _items_payments {
   @b;
 
 }
+
 
 =back
 

@@ -1460,7 +1460,8 @@ sub unsuspend {
 =item suspend
 
 Suspends all unsuspended packages (see L<FS::cust_pkg>) for this customer.
-Always returns a list: an empty list on success or a list of errors.
+
+Returns a list: an empty list on success or a list of errors.
 
 =cut
 
@@ -1472,8 +1473,9 @@ sub suspend {
 =item suspend_if_pkgpart PKGPART [ , PKGPART ... ]
 
 Suspends all unsuspended packages (see L<FS::cust_pkg>) matching the listed
-PKGPARTs (see L<FS::part_pkg>).  Always returns a list: an empty list on
-success or a list of errors.
+PKGPARTs (see L<FS::part_pkg>).
+
+Returns a list: an empty list on success or a list of errors.
 
 =cut
 
@@ -1488,8 +1490,9 @@ sub suspend_if_pkgpart {
 =item suspend_unless_pkgpart PKGPART [ , PKGPART ... ]
 
 Suspends all unsuspended packages (see L<FS::cust_pkg>) unless they match the
-listed PKGPARTs (see L<FS::part_pkg>).  Always returns a list: an empty list
-on success or a list of errors.
+listed PKGPARTs (see L<FS::part_pkg>).
+
+Returns a list: an empty list on success or a list of errors.
 
 =cut
 

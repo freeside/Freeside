@@ -134,6 +134,8 @@ sub check {
 
       or $c =~ /^\s*\$cust_main\->suspend_(if|unless)_pkgpart\([\d\,\s]*\);\s*$/
 
+      or $c =~ /^\s*\$cust_bill\->cust_suspend_if_balance_over\([\d\.\s]*\);\s*$/
+
       or do {
         #log
         return "illegal eventcode: $c";
