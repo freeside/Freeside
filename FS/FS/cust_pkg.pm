@@ -17,7 +17,7 @@ use FS::reg_code;
 
 # need to 'use' these instead of 'require' in sub { cancel, suspend, unsuspend,
 # setup }
-# because they load configuraion by setting FS::UID::callback (see TODO)
+# because they load configuration by setting FS::UID::callback (see TODO)
 use FS::svc_acct;
 use FS::svc_domain;
 use FS::svc_www;
@@ -359,7 +359,7 @@ sub check {
              qsearchs( 'reg_code', { 'code'     => $self->reg_code,
                                      'agentnum' => $self->cust_main->agentnum })
            ) {
-      return "Unknown registraiton code";
+      return "Unknown registration code";
     }
 
   } elsif ( $self->promo_code ) {

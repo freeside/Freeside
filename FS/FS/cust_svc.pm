@@ -200,7 +200,7 @@ sub replace {
 =item check
 
 Checks all fields to make sure this is a valid service.  If there is an error,
-returns the error, otehrwise returns false.  Called by the insert and
+returns the error, otherwise returns false.  Called by the insert and
 replace methods.
 
 =cut

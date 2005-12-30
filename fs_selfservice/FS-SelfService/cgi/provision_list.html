@@ -41,7 +41,7 @@ function areyousure(href, message) {
     #}
 
     unless ( $cust_svc->{'svcnum'} == $svcnum ) {
-      $OUT .= qq!(<A HREF="javascript:areyousure('${url}delete_svc;svcnum=$cust_svc->{svcnum}', 'This will perminantly delete the $cust_svc->{label}[1] $cust_svc->{label}[0].  Are you sure?')">!.
+      $OUT .= qq!(<A HREF="javascript:areyousure('${url}delete_svc;svcnum=$cust_svc->{svcnum}', 'This will permanently delete the $cust_svc->{label}[1] $cust_svc->{label}[0].  Are you sure?')">!.
               'delete</A>)';
 
     }

@@ -55,7 +55,7 @@ if ( $cust_main->payby =~ /^(CARD|DCRD|CHEK|DCHK)$/ ) {
 }
 %>
 
-var confirm_cancel = '<FORM METHOD="POST" ACTION="<%= $p %>misc/cust_main-cancel.cgi"> <INPUT TYPE="hidden" NAME="custnum" VALUE="<%= $custnum %>"> <BR><P ALIGN="center"><B>Perminantly delete all services and cancel this customer?</B> <%= $ban%><BR><P ALIGN="CENTER"> <INPUT TYPE="submit" VALUE="Cancel customer">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<INPUT TYPE="BUTTON" VALUE="Don\'t cancel" onClick="cClick()"> </FORM> ';
+var confirm_cancel = '<FORM METHOD="POST" ACTION="<%= $p %>misc/cust_main-cancel.cgi"> <INPUT TYPE="hidden" NAME="custnum" VALUE="<%= $custnum %>"> <BR><P ALIGN="center"><B>Permanently delete all services and cancel this customer?</B> <%= $ban%><BR><P ALIGN="CENTER"> <INPUT TYPE="submit" VALUE="Cancel customer">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<INPUT TYPE="BUTTON" VALUE="Don\'t cancel" onClick="cClick()"> </FORM> ';
 
 </SCRIPT>
 

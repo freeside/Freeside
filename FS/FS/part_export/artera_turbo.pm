@@ -43,7 +43,7 @@ Reseller API.  Requires installation of
 <a href="http://search.cpan.org/dist/Net-Artera">Net::Artera</a>
 from CPAN.  You probably also want to:
 <UL>
-  <LI>In the configuraiton UI section: set the <B>svc_external-skip_manual</B> and <B>svc_external-display_type</B> configuration values.
+  <LI>In the configuration UI section: set the <B>svc_external-skip_manual</B> and <B>svc_external-display_type</B> configuration values.
   <LI>In the message catalog: set <B>svc_external-id</B> to <I>Artera Serial Number</I> and set <B>svc_external-title</B> to <I>Artera Key Code</I>.
 </UL>
 END

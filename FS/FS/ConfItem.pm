@@ -2,7 +2,7 @@ package FS::ConfItem;
 
 =head1 NAME
 
-FS::ConfItem - Configutaion option meta-data.
+FS::ConfItem - Configuration option meta-data.
 
 =head1 SYNOPSIS
 

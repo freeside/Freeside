@@ -1070,7 +1070,7 @@ END
 
 Note: Resellers can also use the B<signup_info> and B<new_customer> functions
 with their active session, and the B<customer_info> and B<order_pkg> functions
-with their active session and an additonal I<custnum> parameter.
+with their active session and an additional I<custnum> parameter.
 
 =over 4
 

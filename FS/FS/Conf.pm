@@ -512,7 +512,7 @@ httemplate/docs/config.html
   {
     'key'         => 'erpcdmachines',
     'section'     => 'deprecated',
-    'description' => '<b>DEPRECATED</b>, ERPCD is no longer supported.  Used to be ERPCD authenticaion machines, one per line.  This enables export of `/usr/annex/acp_passwd\' and `/usr/annex/acp_dialup\'',
+    'description' => '<b>DEPRECATED</b>, ERPCD is no longer supported.  Used to be ERPCD authentication machines, one per line.  This enables export of `/usr/annex/acp_passwd\' and `/usr/annex/acp_dialup\'',
     'type'        => 'textarea',
   },
 
@@ -1478,7 +1478,7 @@ httemplate/docs/config.html
   {
     'key'         => 'ticket_system',
     'section'     => '',
-    'description' => 'Ticketing system integraiton.  <b>RT_Internal</b> uses the built-in RT ticketing system (see the <a href="../docs/install-rt">integrated ticketing installation instructions</a>).   <b>RT_External</b> accesses an external RT installation in a separate database (local or remote).',
+    'description' => 'Ticketing system integration.  <b>RT_Internal</b> uses the built-in RT ticketing system (see the <a href="../docs/install-rt">integrated ticketing installation instructions</a>).   <b>RT_External</b> accesses an external RT installation in a separate database (local or remote).',
     'type'        => 'select',
     #'select_enum' => [ '', qw(RT_Internal RT_Libs RT_External) ],
     'select_enum' => [ '', qw(RT_Internal RT_External) ],
