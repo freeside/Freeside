@@ -1,14 +1,20 @@
 #!/bin/sh
 
+AGENTNUMS="1 2 3"
+
 date=`date +"%Y%m%d"`
 dir="/usr/local/etc/freeside/export.DBI:Pg:dbname=freeside/cust_bill"
 cd "$dir"
 
-for a in header detail; do
-  mv spool-$a.csv $date-$a.csv
+for AGENTNUM in $AGENTNUMS; do
+
+  for a in header detail; do
+    mv agentnum$AGENTNUM-$a.csv agentnum$AGENTNUM-$date-$a.csv
+  done
+
+  zip agentnum$AGENTNUM-$date.zip agentnum$AGENTNUM-$date-header.csv agentnum$AGENTNUM-$date-detail.csv
+
+  echo $dir/agentnum$AGENTNUM-$date.zip
+
 done
-
-zip $date.zip $date-header.csv $date-detail.csv
-
-echo $dir/$date.zip
 
