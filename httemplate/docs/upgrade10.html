@@ -9,13 +9,13 @@ If migrating from 1.5.7, see README.1.5.8 instead
 
 If migrating from 1.5.0pre6, see README.1.5.7 instead
 
-install JSON
 install DBD::Pg 1.32, 1.41 or later (not 1.40) (or, if you're using a Perl version before 5.6, you could try installing DBD::Pg 1.22 with <a href="http://420.am/~ivan/DBD-Pg-1.22-fixvercmp.patch">this patch</a> and commenting out the "use DBD::Pg 1.32" at the top of DBIx/DBSchema/DBD/Pg.pm)
 install DBIx::DBSchema 0.27 (or later)
   (if you are running Pg version 7.2.x or earlier, install at least
    DBIx::DBSchema 0.29)
 install Net::SSH 0.08
 install HTML::Widgets::SelectLayers 0.05
+install Business::CreditCard 0.28
 
 - If using Apache::ASP, add PerlSetVar RequestBinaryRead Off and PerlSetVar IncludesDir /your/freeside/document/root/ to your Apache configuration and make sure you are using Apache::ASP minimum version 2.55.
 - In httpd.conf, change &lt;Files ~ \.cgi&gt; to  &lt;Files ~ (\.cgi|\.html)&gt;
@@ -38,7 +38,7 @@ ALTER TABLE cust_main ALTER COLUMN payinfo varchar(512) NULL;
 ALTER TABLE h_cust_main ALTER COLUMN payinfo varchar(512) NULL;
 
 Or on older Pg versions that don't support altering columns directly:
-(write me)
+(dump database, edit & reload)
 
 On recent Pg versions:
 
@@ -71,12 +71,18 @@ run "freeside-upgrade username" to create the remaining new tables and columns
 
 optionally:
 
-CREATE INDEX cust_main6 ON cust_main ( daytime );
-CREATE INDEX cust_main7 ON cust_main ( night );
-CREATE INDEX cust_main8 ON cust_main ( fax );
-CREATE INDEX cust_main9 ON cust_main ( ship_daytime );
-CREATE INDEX cust_main10 ON cust_main ( ship_night );
-CREATE INDEX cust_main11 ON cust_main ( ship_fax );
+CREATE INDEX cust_main4 ON cust_main ( daytime );
+CREATE INDEX cust_main5 ON cust_main ( night );
+CREATE INDEX cust_main6 ON cust_main ( fax );
+CREATE INDEX cust_main7 ON cust_main ( refnum );
+CREATE INDEX cust_main8 ON cust_main ( county );
+CREATE INDEX cust_main9 ON cust_main ( state );
+CREATE INDEX cust_main10 ON cust_main ( country );
+CREATE INDEX cust_main11 ON cust_main ( ship_last );
+CREATE INDEX cust_main12 ON cust_main ( ship_company );
+CREATE INDEX cust_main13 ON cust_main ( ship_daytime );
+CREATE INDEX cust_main14 ON cust_main ( ship_night );
+CREATE INDEX cust_main15 ON cust_main ( ship_fax );
 CREATE INDEX agent2 ON agent ( disabled );
 CREATE INDEX part_bill_event2 ON part_bill_event ( disabled );
 CREATE INDEX cust_pay4 ON cust_pay (_date);
