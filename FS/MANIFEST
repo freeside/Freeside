@@ -65,7 +65,9 @@ FS/cust_refund.pm
 FS/cust_credit_refund.pm
 FS/cust_svc.pm
 FS/h_Common.pm
+FS/h_cust_bill.pm
 FS/h_cust_svc.pm
+FS/h_cust_tax_exempt.pm
 FS/h_domain_record.pm
 FS/h_svc_acct.pm
 FS/h_svc_broadband.pm
@@ -152,6 +154,7 @@ FS/queue_arg.pm
 FS/queue_depend.pm
 FS/msgcat.pm
 FS/cust_tax_exempt.pm
+FS/cust_tax_exempt_pkg.pm
 FS/clientapi_session.pm
 FS/clientapi_session_field.pm
 t/agent.t
@@ -189,7 +192,9 @@ t/cust_pay_refund.t
 t/cust_pkg.t
 t/cust_refund.t
 t/cust_svc.t
+t/h_cust_bill.t
 t/h_cust_svc.t
+t/h_cust_tax_exempt.t
 t/h_Common.t
 t/h_cust_svc.t
 t/h_domain_record.t
@@ -200,6 +205,7 @@ t/h_svc_external.t
 t/h_svc_forward.t
 t/h_svc_www.t
 t/cust_tax_exempt.t
+t/cust_tax_exempt_pkg.t
 t/domain_record.t
 t/nas.t
 t/part_bill_event.t

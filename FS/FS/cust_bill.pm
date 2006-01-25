@@ -121,8 +121,14 @@ returns the error, otherwise returns false.
 
 =item delete
 
-Currently unimplemented.  I don't remove invoices because there would then be
-no record you ever posted this invoice (which is bad, no?)
+This method now works but you probably shouldn't use it.  Instead, apply a
+credit against the invoice.
+
+Using this method to delete invoices outright is really, really bad.  There
+would be no record you ever posted this invoice, and there are no check to
+make sure charged = 0 or that there are no associated cust_bill_pkg records.
+
+Really, don't use it.
 
 =cut
 
@@ -142,14 +148,20 @@ collect method of a customer object (see L<FS::cust_main>).
 
 =cut
 
-sub replace {
+#replace can be inherited from Record.pm
+
+# replace_check is now the preferred way to #implement replace data checks
+# (so $object->replace() works without an argument)
+
+sub replace_check {
   my( $new, $old ) = ( shift, shift );
   return "Can't change custnum!" unless $old->custnum == $new->custnum;
   #return "Can't change _date!" unless $old->_date eq $new->_date;
   return "Can't change _date!" unless $old->_date == $new->_date;
-  return "Can't change charged!" unless $old->charged == $new->charged;
+  return "Can't change charged!" unless $old->charged == $new->charged
+                                     || $old->charged == 0;
 
-  $new->SUPER::replace($old);
+  '';
 }
 
 =item check

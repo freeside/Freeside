@@ -976,6 +976,24 @@ sub tables_hashref {
       'index'       => [],
     },
 
+    'cust_tax_exempt_pkg' => {
+      'columns' => [
+        'exemptpkgnum',  'serial', '', '',
+        #'custnum',      'int', '', '',
+        'billpkgnum',   'int', '', '',
+        'taxnum',       'int', '', '',
+        'year',         'int', '', '',
+        'month',        'int', '', '',
+        'amount',       @money_type,
+      ],
+      'primary_key' => 'exemptpkgnum',
+      'unique' => [],
+      'index'  => [ [ 'taxnum', 'year', 'month' ],
+                    [ 'billpkgnum' ],
+                    [ 'taxnum' ]
+                  ],
+    },
+
     'router' => {
       'columns' => [
         'routernum', 'serial', '', '',

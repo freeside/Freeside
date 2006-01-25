@@ -1,23 +1,23 @@
-package FS::cust_tax_exempt;
+package FS::cust_tax_exempt_pkg;
 
 use strict;
 use vars qw( @ISA );
 use FS::Record qw( qsearch qsearchs );
-use FS::cust_main;
+use FS::cust_bill_pkg;
 use FS::cust_main_county;
 
 @ISA = qw(FS::Record);
 
 =head1 NAME
 
-FS::cust_tax_exempt - Object methods for cust_tax_exempt records
+FS::cust_tax_exempt_pkg - Object methods for cust_tax_exempt_pkg records
 
 =head1 SYNOPSIS
 
-  use FS::cust_tax_exempt;
+  use FS::cust_tax_exempt_pkg;
 
-  $record = new FS::cust_tax_exempt \%hash;
-  $record = new FS::cust_tax_exempt { 'column' => 'value' };
+  $record = new FS::cust_tax_exempt_pkg \%hash;
+  $record = new FS::cust_tax_exempt_pkg { 'column' => 'value' };
 
   $error = $record->insert;
 
@@ -29,15 +29,15 @@ FS::cust_tax_exempt - Object methods for cust_tax_exempt records
 
 =head1 DESCRIPTION
 
-An FS::cust_tax_exempt object represents a record of an old-style customer tax
+An FS::cust_tax_exempt_pkg object represents a record of a customer tax
 exemption.  Currently this is only used for "texas tax".  FS::cust_tax_exempt
 inherits from FS::Record.  The following fields are currently supported:
 
 =over 4
 
-=item exemptnum - primary key
+=item exemptpkgnum - primary key
 
-=item custnum - customer (see L<FS::cust_main>)
+=item billpkgnum - invoice line item (see L<FS::cust_bill_pkg>)
 
 =item taxnum - tax rate (see L<FS::cust_main_county>)
 
@@ -48,12 +48,6 @@ inherits from FS::Record.  The following fields are currently supported:
 =item amount
 
 =back
-
-=head1 NOTE
-
-Old-style customer tax exemptions are only useful for legacy migrations - if
-you are looking for current customer tax exemption data see
-L<FS::cust_tax_exempt_pkg>.
 
 =head1 METHODS
 
@@ -71,7 +65,7 @@ points to.  You can ask the object for a copy with the I<hash> method.
 
 # the new method can be inherited from FS::Record, if a table method is defined
 
-sub table { 'cust_tax_exempt'; }
+sub table { 'cust_tax_exempt_pkg'; }
 
 =item insert
 
@@ -114,7 +108,8 @@ sub check {
   my $self = shift;
 
   $self->ut_numbern('exemptnum')
-    || $self->ut_foreign_key('custnum', 'cust_main', 'custnum')
+#    || $self->ut_foreign_key('custnum', 'cust_main', 'custnum')
+    || $self->ut_foreign_key('billpkgnum', 'cust_bill_pkg', 'billpkgnum')
     || $self->ut_foreign_key('taxnum', 'cust_main_county', 'taxnum')
     || $self->ut_number('year') #check better
     || $self->ut_number('month') #check better
@@ -123,27 +118,16 @@ sub check {
   ;
 }
 
-=item cust_main_county
-
-Returns the FS::cust_main_county object associated with this tax exemption.
-
-=cut
-
-sub cust_main_county {
-  my $self = shift;
-  qsearchs( 'cust_main_county', { 'taxnum' => $self->taxnum } );
-}
-
 =back
 
 =head1 BUGS
 
-Texas tax is a royal pain in the ass.
+Texas tax is still a royal pain in the ass.
 
 =head1 SEE ALSO
 
-L<FS::cust_main_county>, L<FS::cust_main>, L<FS::Record>, schema.html from the
-base documentation.
+L<FS::cust_main_county>, L<FS::cust_bill_pkg>, L<FS::Record>, schema.html from
+the base documentation.
 
 =cut
 

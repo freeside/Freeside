@@ -43,6 +43,7 @@ use FS::part_pkg;
 use FS::part_bill_event;
 use FS::cust_bill_event;
 use FS::cust_tax_exempt;
+use FS::cust_tax_exempt_pkg;
 use FS::type_pkgs;
 use FS::payment_gateway;
 use FS::agent_payment_gateway;
@@ -1617,16 +1618,28 @@ sub bill {
 
   $self->select_for_update; #mutex
 
+  #create a new invoice
+  #(we'll remove it later if it doesn't actually need to be generated [contains
+  # no line items] and we're inside a transaciton so nothing else will see it)
+  my $cust_bill = new FS::cust_bill ( {
+    'custnum' => $self->custnum,
+    '_date'   => $time,
+    #'charged' => $charged,
+    'charged' => 0,
+  } );
+  $error = $cust_bill->insert;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return "can't create invoice for customer #". $self->custnum. ": $error";
+  }
+  my $invnum = $cust_bill->invnum;
+
+  ###
   # find the packages which are due for billing, find out how much they are
   # & generate invoice database.
- 
-  my( $total_setup, $total_recur ) = ( 0, 0 );
-  #my( $taxable_setup, $taxable_recur ) = ( 0, 0 );
-  my @cust_bill_pkg = ();
-  #my $tax = 0;##
-  #my $taxable_charged = 0;##
-  #my $charged = 0;##
+  ###
 
+  my( $total_setup, $total_recur ) = ( 0, 0 );
   my %tax;
 
   foreach my $cust_pkg (
@@ -1649,7 +1662,10 @@ sub bill {
 
     my @details = ();
 
+    ###
     # bill setup
+    ###
+
     my $setup = 0;
     if ( !$cust_pkg->setup || $options{'resetup'} ) {
     
@@ -1664,7 +1680,10 @@ sub bill {
       $cust_pkg->setfield('setup', $time) unless $cust_pkg->setup;
     }
 
-    #bill recurring fee
+    ###
+    # bill recurring fee
+    ### 
+
     my $recur = 0;
     my $sdate;
     if ( $part_pkg->getfield('freq') ne '0' &&
@@ -1719,6 +1738,10 @@ sub bill {
     warn "\$recur is undefined" unless defined($recur);
     warn "\$cust_pkg->bill is undefined" unless defined($cust_pkg->bill);
 
+    ###
+    # If $cust_pkg has been modified, update it and create cust_bill_pkg records
+    ###
+
     if ( $cust_pkg->modified ) {
 
       warn "  package ". $cust_pkg->pkgnum. " modified; updating\n"
@@ -1740,10 +1763,13 @@ sub bill {
         $dbh->rollback if $oldAutoCommit;
         return "negative recur $recur for pkgnum ". $cust_pkg->pkgnum;
       }
+
       if ( $setup != 0 || $recur != 0 ) {
-        warn "    charges (setup=$setup, recur=$recur); queueing line items\n"
+
+        warn "    charges (setup=$setup, recur=$recur); adding line items\n"
           if $DEBUG > 1;
         my $cust_bill_pkg = new FS::cust_bill_pkg ({
+          'invnum'  => $invnum,
           'pkgnum'  => $cust_pkg->pkgnum,
           'setup'   => $setup,
           'recur'   => $recur,
@@ -1751,9 +1777,17 @@ sub bill {
           'edate'   => $cust_pkg->bill,
           'details' => \@details,
         });
-        push @cust_bill_pkg, $cust_bill_pkg;
+        $error = $cust_bill_pkg->insert;
+        if ( $error ) {
+          $dbh->rollback if $oldAutoCommit;
+          return "can't create invoice line item for invoice #$invnum: $error";
+        }
         $total_setup += $setup;
         $total_recur += $recur;
+
+        ###
+        # handle taxes
+        ###
 
         unless ( $self->tax =~ /Y/i || $self->payby eq 'COMP' ) {
 
@@ -1803,7 +1837,8 @@ sub bill {
             next unless $taxable_charged;
 
             if ( $tax->exempt_amount && $tax->exempt_amount > 0 ) {
-              my ($mon,$year) = (localtime($sdate) )[4,5];
+              #my ($mon,$year) = (localtime($sdate) )[4,5];
+              my ($mon,$year) = (localtime( $sdate || $cust_bill->_date ) )[4,5];
               $mon++;
               my $freq = $part_pkg->freq || 1;
               if ( $freq !~ /(\d+)$/ ) {
@@ -1811,40 +1846,74 @@ sub bill {
                 return "daily/weekly package definitions not (yet?)".
                        " compatible with monthly tax exemptions";
               }
-              my $taxable_per_month = sprintf("%.2f", $taxable_charged / $freq );
+              my $taxable_per_month =
+                sprintf("%.2f", $taxable_charged / $freq );
+
+              #call the whole thing off if this customer has any old
+              #exemption records...
+              my @cust_tax_exempt =
+                qsearch( 'cust_tax_exempt' => { custnum=> $self->custnum } );
+              if ( @cust_tax_exempt ) {
+                $dbh->rollback if $oldAutoCommit;
+                return
+                  'this customer still has old-style tax exemption records; '.
+                  'run bin/fs-migrate-cust_tax_exempt?';
+              }
+
               foreach my $which_month ( 1 .. $freq ) {
-                my %hash = (
-                  'custnum' => $self->custnum,
-                  'taxnum'  => $tax->taxnum,
-                  'year'    => 1900+$year,
-                  'month'   => $mon++,
-                );
-                #until ( $mon < 12 ) { $mon -= 12; $year++; }
-                until ( $mon < 13 ) { $mon -= 12; $year++; }
-                my $cust_tax_exempt =
-                  qsearchs('cust_tax_exempt', \%hash)
-                  || new FS::cust_tax_exempt( { %hash, 'amount' => 0 } );
-                my $remaining_exemption = sprintf("%.2f",
-                  $tax->exempt_amount - $cust_tax_exempt->amount );
+
+                #maintain the new exemption table now
+                my $sql = "
+                  SELECT SUM(amount)
+                    FROM cust_tax_exempt_pkg
+                      LEFT JOIN cust_bill_pkg USING ( billpkgnum )
+                      LEFT JOIN cust_bill     USING ( invnum     )
+                    WHERE custnum = ?
+                      AND taxnum  = ?
+                      AND year    = ?
+                      AND month   = ?
+                ";
+                my $sth = dbh->prepare($sql) or do {
+                  $dbh->rollback if $oldAutoCommit;
+                  return "fatal: can't lookup exising exemption: ". dbh->errstr;
+                };
+                $sth->execute(
+                  $self->custnum,
+                  $tax->taxnum,
+                  1900+$year,
+                  $mon,
+                ) or do {
+                  $dbh->rollback if $oldAutoCommit;
+                  return "fatal: can't lookup exising exemption: ". dbh->errstr;
+                };
+                my $existing_exemption = $sth->fetchrow_arrayref->[0];
+                
+                my $remaining_exemption =
+                  $tax->exempt_amount - $existing_exemption;
                 if ( $remaining_exemption > 0 ) {
                   my $addl = $remaining_exemption > $taxable_per_month
                     ? $taxable_per_month
                     : $remaining_exemption;
                   $taxable_charged -= $addl;
-                  my $new_cust_tax_exempt = new FS::cust_tax_exempt ( {
-                    $cust_tax_exempt->hash,
-                    'amount' =>
-                      sprintf("%.2f", $cust_tax_exempt->amount + $addl),
+
+                  my $cust_tax_exempt_pkg = new FS::cust_tax_exempt_pkg ( {
+                    'billpkgnum' => $cust_bill_pkg->billpkgnum,
+                    'taxnum'     => $tax->taxnum,
+                    'year'       => 1900+$year,
+                    'month'      => $mon,
+                    'amount'     => sprintf("%.2f", $addl ),
                   } );
-                  $error = $new_cust_tax_exempt->exemptnum
-                    ? $new_cust_tax_exempt->replace($cust_tax_exempt)
-                    : $new_cust_tax_exempt->insert;
+                  $error = $cust_tax_exempt_pkg->insert;
                   if ( $error ) {
                     $dbh->rollback if $oldAutoCommit;
-                    return "fatal: can't update cust_tax_exempt: $error";
+                    return "fatal: can't insert cust_tax_exempt_pkg: $error";
                   }
-  
                 } # if $remaining_exemption > 0
+
+                #++
+                $mon++;
+                #until ( $mon < 12 ) { $mon -= 12; $year++; }
+                until ( $mon < 13 ) { $mon -= 12; $year++; }
   
               } #foreach $which_month
   
@@ -1866,86 +1935,41 @@ sub bill {
 
   } #foreach my $cust_pkg
 
-  my $charged = sprintf( "%.2f", $total_setup + $total_recur );
-#  my $taxable_charged = sprintf( "%.2f", $taxable_setup + $taxable_recur );
-
-  unless ( @cust_bill_pkg ) { #don't create invoices with no line items
+  unless ( $cust_bill->cust_bill_pkg ) {
+    $cust_bill->delete; #don't create an invoice w/o line items
     $dbh->commit or die $dbh->errstr if $oldAutoCommit;
     return '';
-  } 
-
-#  unless ( $self->tax =~ /Y/i
-#           || $self->payby eq 'COMP'
-#           || $taxable_charged == 0 ) {
-#    my $cust_main_county = qsearchs('cust_main_county',{
-#        'state'   => $self->state,
-#        'county'  => $self->county,
-#        'country' => $self->country,
-#    } ) or die "fatal: can't find tax rate for state/county/country ".
-#               $self->state. "/". $self->county. "/". $self->country. "\n";
-#    my $tax = sprintf( "%.2f",
-#      $taxable_charged * ( $cust_main_county->getfield('tax') / 100 )
-#    );
-
-  if ( dbdef->table('cust_bill_pkg')->column('itemdesc') ) { #1.5 schema
-
-    foreach my $taxname ( grep { $tax{$_} > 0 } keys %tax ) {
-      my $tax = sprintf("%.2f", $tax{$taxname} );
-      $charged = sprintf( "%.2f", $charged+$tax );
-  
-      my $cust_bill_pkg = new FS::cust_bill_pkg ({
-        'pkgnum'   => 0,
-        'setup'    => $tax,
-        'recur'    => 0,
-        'sdate'    => '',
-        'edate'    => '',
-        'itemdesc' => $taxname,
-      });
-      push @cust_bill_pkg, $cust_bill_pkg;
-    }
-  
-  } else { #1.4 schema
-
-    my $tax = 0;
-    foreach ( values %tax ) { $tax += $_ };
-    $tax = sprintf("%.2f", $tax);
-    if ( $tax > 0 ) {
-      $charged = sprintf( "%.2f", $charged+$tax );
-
-      my $cust_bill_pkg = new FS::cust_bill_pkg ({
-        'pkgnum' => 0,
-        'setup'  => $tax,
-        'recur'  => 0,
-        'sdate'  => '',
-        'edate'  => '',
-      });
-      push @cust_bill_pkg, $cust_bill_pkg;
-    }
-
   }
 
-  my $cust_bill = new FS::cust_bill ( {
-    'custnum' => $self->custnum,
-    '_date'   => $time,
-    'charged' => $charged,
-  } );
-  $error = $cust_bill->insert;
-  if ( $error ) {
-    $dbh->rollback if $oldAutoCommit;
-    return "can't create invoice for customer #". $self->custnum. ": $error";
-  }
+  my $charged = sprintf( "%.2f", $total_setup + $total_recur );
 
-  my $invnum = $cust_bill->invnum;
-  my $cust_bill_pkg;
-  foreach $cust_bill_pkg ( @cust_bill_pkg ) {
-    #warn $invnum;
-    $cust_bill_pkg->invnum($invnum);
+  foreach my $taxname ( grep { $tax{$_} > 0 } keys %tax ) {
+    my $tax = sprintf("%.2f", $tax{$taxname} );
+    $charged = sprintf( "%.2f", $charged+$tax );
+  
+    my $cust_bill_pkg = new FS::cust_bill_pkg ({
+      'invnum'   => $invnum,
+      'pkgnum'   => 0,
+      'setup'    => $tax,
+      'recur'    => 0,
+      'sdate'    => '',
+      'edate'    => '',
+      'itemdesc' => $taxname,
+    });
     $error = $cust_bill_pkg->insert;
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
-      return "can't create invoice line item for customer #". $self->custnum.
-             ": $error";
+      return "can't create invoice line item for invoice #$invnum: $error";
     }
+    $total_setup += $tax;
+
+  }
+
+  $cust_bill->charged( sprintf( "%.2f", $total_setup + $total_recur ) );
+  $error = $cust_bill->replace;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return "can't update charged for invoice #$invnum: $error";
   }
   
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;

@@ -977,6 +977,11 @@ sub replace {
 
   warn "[debug]$me $new ->replace $old\n" if $DEBUG;
 
+  if ( $new->can('replace_check') ) {
+    my $error = $new->replace_check($old);
+    return $error if $error;
+  }
+
   return "Records not in same table!" unless $new->table eq $old->table;
 
   my $primary_key = $old->dbdef_table->primary_key;
