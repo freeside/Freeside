@@ -3,10 +3,11 @@ package FS::cust_tax_exempt_pkg;
 use strict;
 use vars qw( @ISA );
 use FS::Record qw( qsearch qsearchs );
+use FS::cust_main_Mixin;
 use FS::cust_bill_pkg;
 use FS::cust_main_county;
 
-@ISA = qw(FS::Record);
+@ISA = qw( FS::cust_main_Mixin FS::Record );
 
 =head1 NAME
 

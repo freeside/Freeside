@@ -5,18 +5,36 @@
   <BODY BGCOLOR="#e8e8e8">
     <H1>Tax Report Criteria</H1>
     <FORM ACTION="report_tax.cgi" METHOD="GET">
+
     <TABLE>
+
      <%= include( '/elements/tr-select-agent.html' ) %>
+
      <%= include( '/elements/tr-input-beginning_ending.html' ) %>
-     <TR>
-       <TD ALIGN="right"><INPUT TYPE="checkbox" NAME="show_taxclasses" VALUE="1"></TD>
-       <TD>Show tax classes</TD>
-     </TR>
+
+     <% my $conf = new FS::Conf;
+        if ( $conf->exists('enable_taxclasses') ) {
+     %>
+       <TR>
+         <TD ALIGN="right"><INPUT TYPE="checkbox" NAME="show_taxclasses" VALUE="1"></TD>
+         <TD>Show tax classes</TD>
+       </TR>
+     <% } %>
+
+     <% my @pkg_class = qsearch('pkg_class', {});
+        if ( @pkg_class ) {
+     %>
+       <TR>
+         <TD ALIGN="right"><INPUT TYPE="checkbox" NAME="show_pkgclasses" VALUE="1"></TD>
+         <TD>Show package classes</TD>
+       </TR>
+     <% } %>
+
     </TABLE>
 
-      <BR><INPUT TYPE="submit" VALUE="Get Report">
-
+    <BR><INPUT TYPE="submit" VALUE="Get Report">
     </FORM>
+
   </BODY>
 </HTML>
 

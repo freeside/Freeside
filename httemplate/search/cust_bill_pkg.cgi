@@ -4,7 +4,7 @@ my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
 
 my $join_cust = "
     JOIN cust_bill USING ( invnum ) 
-    JOIN cust_main USING ( custnum )
+    LEFT JOIN cust_main USING ( custnum )
 ";
 
 my $join_pkg = "
@@ -16,6 +16,10 @@ my $where = "
   WHERE _date >= $beginning AND _date <= $ending
     AND payby != 'COMP'
 ";
+
+if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
+  $where .= " AND agentnum = $1 ";
+}
 
 if ( $cgi->param('out') ) {
 
@@ -62,19 +66,27 @@ my $count_query;
 if ( $cgi->param('pkg_tax') ) {
 
   $count_query =
-    "SELECT COUNT(*), SUM( ( CASE WHEN part_pkg.setuptax = 'Y'
-                                 THEN cust_bill_pkg.setup
-                                 ELSE 0 )
-                          +
-                          ( CASE WHEN part_pkg.recurtax = 'Y'
-                                 THEN cust_bill_pkg.recur
-                                 ELSE 0 )
-                        )";
+    "SELECT COUNT(*), SUM(
+                           ( CASE WHEN part_pkg.setuptax = 'Y'
+                                  THEN cust_bill_pkg.setup
+                                  ELSE 0
+                             END
+                           )
+                           +
+                           ( CASE WHEN part_pkg.recurtax = 'Y'
+                                  THEN cust_bill_pkg.recur
+                                  ELSE 0
+                             END
+                           )
+                         )
+    ";
 
   $where .= " AND (
                        ( part_pkg.setuptax = 'Y' AND cust_bill_pkg.setup > 0 )
                     OR ( part_pkg.recurtax = 'Y' AND cust_bill_pkg.recur > 0 )
-                  )";
+                  )
+              AND ( tax != 'Y' OR tax IS NULL )
+            ";
 
 } else {
 

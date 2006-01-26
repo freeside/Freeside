@@ -438,6 +438,13 @@ sub check {
   ;
   return $error if $error;
 
+  if ( $self->classnum !~ /^$/ ) {
+    my $error = $self->ut_foreign_key('classnum', 'pkg_class', 'classnum');
+    return $error if $error;
+  } else {
+    $self->classnum('');
+  }
+
   return 'Unknown plan '. $self->plan
     unless exists($plans{$self->plan});
 

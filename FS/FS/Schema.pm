@@ -625,6 +625,7 @@ sub tables_hashref {
         'plandata',   'text', 'NULL', '',
         'disabled',   'char', 'NULL', 1,
         'taxclass',   'varchar', 'NULL', $char_d,
+        'classnum',   'int',     'NULL', '',
       ],
       'primary_key' => 'pkgpart',
       'unique' => [],
@@ -1275,6 +1276,16 @@ sub tables_hashref {
       'primary_key' => 'reasonnum',
       'unique' => [],
       'index'  => [ [ 'disabled' ] ],
+    },
+
+    'pkg_class' => {
+      'columns' => [
+        'classnum',   'serial',  '', '',
+        'classname',  'varchar', '', $char_d,
+      ],
+      'primary_key' => 'classnum',
+      'unique' => [],
+      'index' => [],
     },
 
   };

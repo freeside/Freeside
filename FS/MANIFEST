@@ -125,6 +125,7 @@ FS/part_svc.pm
 FS/part_svc_column.pm
 FS/part_svc_router.pm
 FS/part_virtual_field.pm
+FS/pkg_class.pm
 FS/pkg_svc.pm
 FS/rate.pm
 FS/rate_detail.pm
@@ -258,6 +259,7 @@ t/part_pop_local.t
 t/part_referral.t
 t/part_svc.t
 t/part_svc_column.t
+t/pkg_class.t
 t/pkg_svc.t
 t/port.t
 t/prepay_credit.t
