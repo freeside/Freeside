@@ -71,9 +71,9 @@ my $query = {
   'hashref'   => {},
   'select'    => join(', ',
                    'cust_tax_exempt_pkg.*',
-                   #'cust_bill_pkg.*',
-                   #'cust_bill._date',
-                   #'part_pkg.pkg',
+                   'cust_bill_pkg.*',
+                   'cust_bill.*',
+                   'part_pkg.pkg',
                    'cust_main.custnum',
                    FS::UI::Web::cust_sql_fields(),
                  ),
@@ -94,32 +94,42 @@ my $money_char = $conf->config('money_char') || '$';
                  'count_addl'  => [ $money_char. '%.2f total', ],
                  'header'      => [
                    '#',
-                   'Date',
+                   'Month',
                    'Amount',
-
-                   #'Description',
-                   #'Setup charge',
-                   #'Recurring charge',
-                   #'Invoice',
-                   #'Date',
-
+                   'Line item',
+                   'Invoice',
+                   'Date',
                    FS::UI::Web::cust_header(),
                  ],
                  'fields'      => [
                    'exemptpkgnum',
                    sub { $_[0]->month. '/'. $_[0]->year; },
-                   'amount',
+                   sub { $money_char. $_[0]->amount; },
 
-                   #sub { $_[0]->pkgnum > 0
-                   #        ? $_[0]->get('pkg')
-                   #        : $_[0]->get('itemdesc')
-                   #    },
-                   ##strikethrough or "N/A ($amount)" or something these when
-                   ## they're not applicable to pkg_tax search
-                   #sub { sprintf($money_char.'%.2f', shift->setup ) },
-                   #sub { sprintf($money_char.'%.2f', shift->recur ) },
-                   #'invnum',
-                   #sub { time2str('%b %d %Y', shift->_date ) },
+                   sub {
+                     $_[0]->billpkgnum. ': '.
+                     ( $_[0]->pkgnum > 0
+                         ? $_[0]->get('pkg')
+                         : $_[0]->get('itemdesc')
+                     ).
+                     ' ('.
+                     ( $_[0]->setup > 0
+                         ? $money_char. $_[0]->setup. ' setup'
+                         : ''
+                     ).
+                     ( $_[0]->setup > 0 && $_[0]->recur > 0
+                       ? ' / '
+                       : ''
+                     ).
+                     ( $_[0]->recur > 0
+                         ? $money_char. $_[0]->recur. ' recur'
+                         : ''
+                     ).
+                     ')';
+                   },
+
+                   'invnum',
+                   sub { time2str('%b %d %Y', shift->_date ) },
 
                    \&FS::UI::Web::cust_fields,
                  ],
@@ -128,16 +138,13 @@ my $money_char = $conf->config('money_char') || '$';
                    '',
                    '',
 
-                   #'',
-                   #'',
-                   #'',
-                   #'',
-                   #$ilink,
-                   #$ilink,
+                   '',
+                   $ilink,
+                   $ilink,
 
                    ( map { $clink } FS::UI::Web::cust_header() ),
                  ],
-                 'align' => 'rrr', # 'rlrrrc',
+                 'align' => 'rrrlrc', # 'rlrrrc',
            )
 %>
 
