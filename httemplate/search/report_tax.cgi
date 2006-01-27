@@ -413,6 +413,8 @@ my $exemptlink = $p. "search/cust_tax_exempt_pkg.cgi?$dateagentlink";
   </TR>
 
   <% #some false laziness w/above
+     $bgcolor1 = '#eeeeee';
+     $bgcolor2 = '#ffffff';
      foreach my $region ( @base_regions ) {
 
        if ( $bgcolor eq $bgcolor1 ) {
@@ -439,6 +441,14 @@ my $exemptlink = $p. "search/cust_tax_exempt_pkg.cgi?$dateagentlink";
     </TR>
 
   <% } %>
+
+  <%
+     if ( $bgcolor eq $bgcolor1 ) {
+       $bgcolor = $bgcolor2;
+     } else {
+       $bgcolor = $bgcolor1;
+     }
+  %>
 
   <TR>
    <TD CLASS="grid" BGCOLOR="<%= $bgcolor %>">Total</TD>
