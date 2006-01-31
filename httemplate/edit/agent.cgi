@@ -19,7 +19,7 @@ my $conf = new FS::Conf;
 
 %>
 
-<%= header("$action Agent", menubar(
+<%= include("/elements/header.html","$action Agent", menubar(
   'Main Menu' => $p,
   'View all agents' => $p. 'browse/agent.cgi',
 )) %>

@@ -15,7 +15,7 @@ $cgi->param('multiplier', '60') unless $cgi->param('multiplier');
 
 %>
 
-<%= header('Generate prepaid cards'. ($agent ? ' for '. $agent->agent : ''),
+<%= include("/elements/header.html",'Generate prepaid cards'. ($agent ? ' for '. $agent->agent : ''),
            menubar( 'Main Menu' => $p, ))
 %>
 

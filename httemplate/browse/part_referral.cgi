@@ -1,5 +1,5 @@
 <!-- mason kludge -->
-<%= header("Advertising source Listing", menubar(
+<%= include("/elements/header.html","Advertising source Listing", menubar(
   'Main Menu' => $p,
 #  'Add new referral' => "../edit/part_referral.cgi",
 )) %>

@@ -12,7 +12,7 @@ my $action = 'Add';
 
 %>
 
-<%= header("$action payment gateway override for ". $agent->agent,  menubar(
+<%= include("/elements/header.html","$action payment gateway override for ". $agent->agent,  menubar(
   'Main Menu' => $p,
   #'View all payment gateways' => $p. 'browse/payment_gateway.html',
   'View all agents' => $p. 'browse/agent.html',

@@ -82,7 +82,7 @@ my ($ip_addr, $speed_up, $speed_down, $blocknum) =
 
 %>
 
-<%=header("Broadband Service $action", '')%>
+<%=include("/elements/header.html","Broadband Service $action", '')%>
 
 <% if ($cgi->param('error')) { %>
 <FONT SIZE="+1" COLOR="#ff0000">Error: <%=$cgi->param('error')%></FONT><BR>

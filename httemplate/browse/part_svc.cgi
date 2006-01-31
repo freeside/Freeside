@@ -28,7 +28,7 @@ if ( $cgi->param('orderby') eq 'active' ) {
 }
 
 %>
-<%= header('Service Definition Listing', menubar( 'Main Menu' => $p) ) %>
+<%= include("/elements/header.html",'Service Definition Listing', menubar( 'Main Menu' => $p) ) %>
 
 <SCRIPT>
 function part_export_areyousure(href) {

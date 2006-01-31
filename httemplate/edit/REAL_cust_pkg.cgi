@@ -33,7 +33,7 @@ if ( $error ) {
 #my $custnum = $cust_pkg->getfield('custnum');
 %>
 
-<%= header('Customer package - Edit dates') %>
+<%= include("/elements/header.html",'Customer package - Edit dates') %>
 <%
 #, menubar(
 #  "View this customer (#$custnum)" => popurl(2). "view/cust_main.cgi?$custnum",

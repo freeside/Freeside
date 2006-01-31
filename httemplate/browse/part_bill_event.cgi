@@ -12,7 +12,7 @@ my @part_bill_event = qsearch('part_bill_event', \%search );
 my $total = scalar(@part_bill_event);
 
 %>
-<%= header('Invoice Event Listing', menubar( 'Main Menu' => $p) ) %>
+<%= include("/elements/header.html",'Invoice Event Listing', menubar( 'Main Menu' => $p) ) %>
 
     Invoice events are actions taken on overdue invoices.<BR><BR>
 <A HREF="<%= $p %>edit/part_bill_event.cgi"><I>Add a new invoice event</I></A>

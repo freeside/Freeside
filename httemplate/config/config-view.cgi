@@ -1,5 +1,5 @@
 <!-- mason kludge -->
-<%= header('View Configuration', menubar( 'Main Menu' => $p,
+<%= include("/elements/header.html",'View Configuration', menubar( 'Main Menu' => $p,
                                      'Edit Configuration' => 'config.cgi' ) ) %>
 
 <% my $conf = new FS::Conf; my @config_items = $conf->config_items; %>

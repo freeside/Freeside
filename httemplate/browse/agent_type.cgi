@@ -1,5 +1,5 @@
 <!-- mason kludge -->
-<%= header("Agent Type Listing", menubar(
+<%= include("/elements/header.html","Agent Type Listing", menubar(
   'Main Menu' => $p,
   'Agents'    => $p. 'browse/agent.cgi',
 )) %>

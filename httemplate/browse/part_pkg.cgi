@@ -48,7 +48,7 @@ my $conf = new FS::Conf;
 my $taxclasses = $conf->exists('enable_taxclasses');
 
 %>
-<%= header("Package Definition Listing",menubar( 'Main Menu' => $p )) %>
+<%= include("/elements/header.html","Package Definition Listing",menubar( 'Main Menu' => $p )) %>
 <% unless ( $cgi->param('active') ) { %>
   One or more service definitions are grouped together into a package 
   definition and given pricing information.  Customers purchase packages

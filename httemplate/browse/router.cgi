@@ -1,4 +1,4 @@
-<%= header('Routers', menubar('Main Menu'   => $p)) %>
+<%= include("/elements/header.html",'Routers', menubar('Main Menu'   => $p)) %>
 <%
 
 my @router = qsearch('router', {});

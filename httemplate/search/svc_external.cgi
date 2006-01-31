@@ -48,7 +48,7 @@ if ( scalar(@svc_external) == 1 ) {
 } else {
 %>
 <!-- mason kludge -->
-<%= header("External Search Results",'') %>
+<%= include("/elements/header.html","External Search Results",'') %>
 
     <%= scalar(@svc_external) %> matching external services found
     <TABLE BORDER=4 CELLSPACING=0 CELLPADDING=0>

@@ -23,7 +23,7 @@ my $custnum = $cust_bill->getfield('custnum');
 my $link = $templatename ? "$templatename-$invnum" : $invnum;
 
 %>
-<%= header('Invoice View', menubar(
+<%= include("/elements/header.html",'Invoice View', menubar(
   "Main Menu" => $p,
   "View this customer (#$custnum)" => "${p}view/cust_main.cgi?$custnum",
 )) %>

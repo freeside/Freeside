@@ -37,7 +37,7 @@ my $domain = $svc_domain->domain;
 
 <% if ( $custnum ) { %>
 
-  <%= header("View $svc account", menubar(
+  <%= include("/elements/header.html","View $svc account", menubar(
     "View this customer (#$custnum)" => "${p}view/cust_main.cgi?$custnum",
     "Main menu" => $p,
   )) %>
@@ -54,7 +54,7 @@ my $domain = $svc_domain->domain;
   }
   </SCRIPT>
   
-  <%= header('Account View', menubar(
+  <%= include("/elements/header.html",'Account View', menubar(
     "Cancel this (unaudited) account" =>
             "javascript:areyousure(\'${p}misc/cancel-unaudited.cgi?$svcnum\')",
     "Main menu" => $p,

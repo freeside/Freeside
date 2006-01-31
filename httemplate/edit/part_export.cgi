@@ -100,7 +100,7 @@ my $widget = new HTML::Widgets::SelectLayers(
 );
 
 %>
-<%= header("$action Export", menubar(
+<%= include("/elements/header.html","$action Export", menubar(
   'Main Menu' => popurl(2),
 ), ' onLoad="visualize()"')
 %>

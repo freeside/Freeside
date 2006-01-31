@@ -8,7 +8,7 @@
   }
 
 %>
-<%= header('Payment gateways', menubar(
+<%= include("/elements/header.html",'Payment gateways', menubar(
   'Main Menu' => $p,
   'Agents'    => $p. 'browse/agent.cgi',
 )) %>

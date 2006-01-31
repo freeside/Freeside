@@ -29,7 +29,7 @@ unless ( ref($error) ) {
   $cgi->redirect(popurl(3). "edit/prepay_credit.cgi?". $cgi->query_string )
 %><% } else { %>
 
-<%= header( "$num prepaid cards generated".
+<%= include("/elements/header.html", "$num prepaid cards generated".
               ( $agent ? ' for '.$agent->agent : '' ),
             menubar( 'Main menu' => popurl(3) )
           )

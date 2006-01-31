@@ -16,7 +16,7 @@ my $date = $cust_pkg->expire ? time2str('%D', $cust_pkg->expire) : '';
 
 %>
 
-<%= header('Expire package', menubar(
+<%= include("/elements/header.html",'Expire package', menubar(
   "View this customer (#$custnum)" => "${p}view/cust_main.cgi?$custnum",
   'Main Menu' => popurl(2)
 )) %>

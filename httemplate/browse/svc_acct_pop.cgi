@@ -4,7 +4,7 @@
                                      WHERE popnum = ?           ")
     or die dbh->errstr;
 %>
-<%= header('Access Number Listing', menubar( 'Main Menu' => $p )) %>
+<%= include("/elements/header.html",'Access Number Listing', menubar( 'Main Menu' => $p )) %>
 Points of Presence<BR><BR>
 <A HREF="<%= $p %>edit/svc_acct_pop.cgi"><I>Add new Access Number</I></A><BR><BR>
 <%= table() %>

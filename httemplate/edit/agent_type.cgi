@@ -16,7 +16,7 @@ my $action = $agent_type->typenum ? 'Edit' : 'Add';
 
 %>
 
-<%= header("$action Agent Type", menubar(
+<%= include("/elements/header.html","$action Agent Type", menubar(
   'Main Menu' => "$p",
   'View all agent types' => "${p}browse/agent_type.cgi",
 ))

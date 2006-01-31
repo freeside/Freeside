@@ -32,7 +32,7 @@ my $domain = $svc_domain->domain;
 
 %>
 
-<%= header('Domain View', menubar(
+<%= include("/elements/header.html",'Domain View', menubar(
   ( ( $pkgnum || $custnum )
     ? ( "View this customer (#$custnum)" => "${p}view/cust_main.cgi?$custnum",
       )

@@ -25,7 +25,7 @@ if ($pkgnum) {
 
 %>
 
-<%= header('External Service View', menubar(
+<%= include("/elements/header.html",'External Service View', menubar(
   ( ( $custnum )
     ? ( "View this customer (#$custnum)" => "${p}view/cust_main.cgi?$custnum",
       )                                                                       

@@ -31,7 +31,7 @@ my $link_field2 = $link_field2{$svcdb};
 
 %>
 
-<%= header("Link to existing $svc") %>
+<%= include("/elements/header.html","Link to existing $svc") %>
 <FORM ACTION="<%= popurl(1) %>process/link.cgi" METHOD=POST>
 
 <% if ( $link_field ) { %>

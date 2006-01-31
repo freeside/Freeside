@@ -23,7 +23,7 @@ my $hashref = $part_svc->hashref;
 
            #" onLoad=\"visualize()\""
 %>
-<%= header("$action Service Definition",
+<%= include("/elements/header.html","$action Service Definition",
            menubar( 'Main Menu'         => $p,
                     'View all service definitions' => "${p}browse/part_svc.cgi"
                   ),

@@ -59,7 +59,7 @@
 
 %>
 
-<%= header( 'Prepaid Income (Unearned Revenue) Report',
+<%= include("/elements/header.html", 'Prepaid Income (Unearned Revenue) Report',
             menubar( 'Main Menu'=>$p, ) )               %>
 <%= table() %>
   <TR>

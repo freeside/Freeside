@@ -1,5 +1,5 @@
 <!-- mason kludge -->
-<%= header('Map tables') %>
+<%= include("/elements/header.html",'Map tables') %>
 
 <SCRIPT>
 var gSafeOnload = new Array();

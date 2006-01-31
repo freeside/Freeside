@@ -110,7 +110,7 @@ my $src = $svc_forward->dbdef_table->column('src') ? $svc_forward->src : '';
 
 %>
 
-<%= header("Mail Forward $action") %>
+<%= include("/elements/header.html","Mail Forward $action") %>
 
 <% if ( $cgi->param('error') ) { %>
   <FONT SIZE="+1" COLOR="#ff0000">Error: <%= $cgi->param('error') %></FONT>

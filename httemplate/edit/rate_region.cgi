@@ -34,7 +34,7 @@ if ( @rate_prefix ) {
 
 %>
 
-<%= header("$action Region", menubar(
+<%= include("/elements/header.html","$action Region", menubar(
       'Main Menu' => $p,
       #'View all regions' => "${p}browse/rate_region.cgi",
     ))

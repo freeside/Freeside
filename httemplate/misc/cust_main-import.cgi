@@ -1,5 +1,5 @@
 <!-- mason kludge -->
-<%= header('Batch Customer Import') %>
+<%= include("/elements/header.html",'Batch Customer Import') %>
 <FORM ACTION="process/cust_main-import.cgi" METHOD="post" ENCTYPE="multipart/form-data">
 Import a CSV file containing customer records.<BR><BR>
 Default file format is CSV, with the following field order: <i>cust_pkg.setup, dayphone, first, last, address1, address2, city, state, zip, comments</i><BR><BR>

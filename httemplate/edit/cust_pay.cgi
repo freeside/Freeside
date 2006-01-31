@@ -45,7 +45,7 @@ $title .= " against Invoice #$linknum" if $link eq 'invnum';
 
 %>
 
-<%=  header($title, '') %>
+<%=  include("/elements/header.html",$title, '') %>
 
 <% if ( $cgi->param('error') ) { %>
 <FONT SIZE="+1" COLOR="#ff0000">Error: <%= $cgi->param('error') %></FONT>

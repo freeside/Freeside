@@ -1,5 +1,5 @@
 <!-- mason kludge -->
-<%= header("Pending credit card batch", menubar( 'Main Menu' => $p,)) %>
+<%= include("/elements/header.html","Pending credit card batch", menubar( 'Main Menu' => $p,)) %>
 
 <FORM ACTION="<%=$p%>misc/download-batch.cgi" METHOD="POST">
 Download batch in format <SELECT NAME="format">

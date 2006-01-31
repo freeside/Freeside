@@ -12,7 +12,7 @@ foreach my $part_svc ( qsearch('part_svc',{}) ) {
 
 %>
 
-<%= header("Customer View", menubar(
+<%= include("/elements/header.html","Customer View", menubar(
   'Main Menu' => $p,
 )) %>
 

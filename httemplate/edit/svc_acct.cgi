@@ -119,7 +119,7 @@ my $p1 = popurl(1);
 
 %>
 
-<%= header("$action $svc account") %>
+<%= include("/elements/header.html","$action $svc account") %>
 
 <% if ( $cgi->param('error') ) { %>
   <FONT SIZE="+1" COLOR="#ff0000">Error: <%= $cgi->param('error') %></FONT>

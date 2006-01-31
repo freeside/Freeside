@@ -48,7 +48,7 @@ my $hashref = $part_pkg->hashref;
 
 %>
 
-<%= header("$action Package Definition", menubar(
+<%= include("/elements/header.html","$action Package Definition", menubar(
   'Main Menu' => popurl(2),
   'View all packages' => popurl(2). 'browse/part_pkg.cgi',
 )) %>

@@ -4,7 +4,7 @@
   my $domain = $cgi->param('domain');
 
 %>
-<%= header("Whois $domain", menubar(
+<%= include("/elements/header.html","Whois $domain", menubar(
   ( $custnum
     ? ( "View this customer (#$custnum)" => "${p}view/cust_main.cgi?$custnum",
       )

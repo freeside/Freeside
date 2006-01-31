@@ -298,7 +298,7 @@ my $baselink   = $p. "search/cust_bill_pkg.cgi?$dateagentlink";
 my $exemptlink = $p. "search/cust_tax_exempt_pkg.cgi?$dateagentlink";
 %>
 
-<%= header( "$agentname Sales Tax Report - ".
+<%= include("/elements/header.html", "$agentname Sales Tax Report - ".
               ( $beginning
                   ? time2str('%h %o %Y ', $beginning )
                   : ''

@@ -6,7 +6,7 @@ my $agent = qsearchs('agent', { 'agentnum' => $agentnum } );
 
 %>
 
-<%= header('Generate registration codes for '. $agent->agent, menubar(
+<%= include("/elements/header.html",'Generate registration codes for '. $agent->agent, menubar(
       'Main Menu' => $p,
     ))
 %>

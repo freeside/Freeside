@@ -44,7 +44,7 @@ my (
    );
 %>
 
-<%=header('Broadband Service View', menubar(
+<%=include("/elements/header.html",'Broadband Service View', menubar(
   ( ( $custnum )
     ? ( "View this customer (#$custnum)" => "${p}view/cust_main.cgi?$custnum",
       )                                                                       

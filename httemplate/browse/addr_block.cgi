@@ -1,4 +1,4 @@
-<%= header('Address Blocks', menubar('Main Menu'   => $p)) %>
+<%= include("/elements/header.html",'Address Blocks', menubar('Main Menu'   => $p)) %>
 <%
 
 use NetAddr::IP;

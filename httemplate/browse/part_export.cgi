@@ -1,5 +1,5 @@
 <!-- mason kludge -->
-<%= header("Export Listing", menubar( 'Main Menu' => "$p#sysadmin" )) %>
+<%= include("/elements/header.html","Export Listing", menubar( 'Main Menu' => "$p#sysadmin" )) %>
 Provisioning services to external machines, databases and APIs.<BR><BR>
 <A HREF="<%= $p %>edit/part_export.cgi"><I>Add a new export</I></A><BR><BR>
 <SCRIPT>

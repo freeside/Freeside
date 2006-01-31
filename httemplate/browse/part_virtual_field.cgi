@@ -1,4 +1,4 @@
-<%= header('Virtual field definitions', menubar('Main Menu'   => $p)) %>
+<%= include("/elements/header.html",'Virtual field definitions', menubar('Main Menu'   => $p)) %>
 <%
 
 my %pvfs;

@@ -1,5 +1,5 @@
 <!-- mason kludge -->
-<%= header('Edit Configuration', menubar( 'Main Menu' => $p ) ) %>
+<%= include("/elements/header.html",'Edit Configuration', menubar( 'Main Menu' => $p ) ) %>
 <SCRIPT>
 var gSafeOnload = new Array();
 var gSafeOnsubmit = new Array();

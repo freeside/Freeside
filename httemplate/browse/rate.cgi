@@ -1,5 +1,5 @@
 <!-- mason kludge -->
-<%= header("Rate plan listing", menubar( 'Main Menu' => "$p#sysadmin" )) %>
+<%= include("/elements/header.html","Rate plan listing", menubar( 'Main Menu' => "$p#sysadmin" )) %>
 Rate plans, regions and prefixes for VoIP and call billing.<BR><BR>
 <A HREF="<%=$p%>edit/rate.cgi"><I>Add a rate plan</I></A>
 | <A HREF="<%=$p%>edit/rate_region.cgi"><I>Add a region</I></A>

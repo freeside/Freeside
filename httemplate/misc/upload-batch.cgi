@@ -24,7 +24,7 @@
   } else {
     %>
     <!-- mason kludge -->
-    <%= header('Batch results upload sucessful') %> <%
+    <%= include("/elements/header.html",'Batch results upload sucessful') %> <%
   }
 %>
 

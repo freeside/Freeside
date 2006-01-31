@@ -28,7 +28,7 @@ unless ( ref($error) ) {
   $cgi->redirect(popurl(3). "edit/reg_code.cgi?". $cgi->query_string )
 %><% } else { %>
 
-<%= header("$num registration codes generated for ". $agent->agent, menubar(
+<%= include("/elements/header.html","$num registration codes generated for ". $agent->agent, menubar(
   'Main menu'       => popurl(3),
   'View all agents' => popurl(3). 'browse/agent.cgi',
 ) ) %>

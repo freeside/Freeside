@@ -17,7 +17,7 @@ my $action = $payment_gateway->gatewaynum ? 'Edit' : 'Add';
 
 %>
 
-<%= header("$action Payment gateway", menubar(
+<%= include("/elements/header.html","$action Payment gateway", menubar(
   'Main Menu' => $p,
   'View all payment gateways' => $p. 'browse/payment_gateway.html',
 )) %>

@@ -1,5 +1,5 @@
 <!-- mason kludge -->
-<%= header('Batch Customer Charge') %>
+<%= include("/elements/header.html",'Batch Customer Charge') %>
 <FORM ACTION="process/cust_main-import_charges.cgi" METHOD="post" ENCTYPE="multipart/form-data">
 Import a CSV file containing customer charges.<BR><BR>
 Default file format is CSV, with the following field order: <i>custnum, amount, description</i><BR><BR>

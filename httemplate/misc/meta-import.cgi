@@ -1,5 +1,5 @@
 <!-- mason kludge -->
-<%= header('Import') %>
+<%= include("/elements/header.html",'Import') %>
 <FORM ACTION="process/meta-import.cgi" METHOD="post" ENCTYPE="multipart/form-data">
 Import data from a DBI data source<BR><BR>
 
