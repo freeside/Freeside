@@ -103,7 +103,7 @@ sub payby2longname {
 
 sub cust_payby {
   my $self = shift;
-  grep { ! exists $hash{$_}->{cust_main} } self->payby;
+  grep { ! exists $hash{$_}->{cust_main} } $self->payby;
 }
 
 sub cust_payby2longname {
