@@ -171,6 +171,7 @@ sub handler
       use FS::payment_gateway;
       use FS::agent_payment_gateway;
       use FS::XMLRPC;
+      use FS::payby;
 
       if ( %%%RT_ENABLED%%% ) {
         eval '

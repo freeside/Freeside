@@ -1,4 +1,4 @@
-<!-- mason kludge -->
+<!--mason kludge-->
 <%
 
 if ( $cgi->param('eventpart') && $cgi->param('eventpart') =~ /^(\d+)$/ ) {
@@ -23,48 +23,86 @@ if ( $query && $query =~ /^(\d+)$/ ) {
 $action ||= $part_bill_event->eventpart ? 'Edit' : 'Add';
 my $hashref = $part_bill_event->hashref;
 
-print header("$action Invoice Event Definition", menubar(
-  'Main Menu' => popurl(2),
-  'View all invoice events' => popurl(2). 'browse/part_bill_event.cgi',
-));
+%>
 
-print qq!<FONT SIZE="+1" COLOR="#ff0000">Error: !, $cgi->param('error'),
-      "</FONT>"
-  if $cgi->param('error');
+<%= include('/elements/header.html',
+      "$action Invoice Event Definition",
+      menubar(
+        'Main Menu' => popurl(2),
+        'View all invoice events' => popurl(2). 'browse/part_bill_event.cgi',
+      )
+    )
+%>
 
-print '<FORM ACTION="', popurl(1), 'process/part_bill_event.cgi" METHOD=POST>'.
-      '<INPUT TYPE="hidden" NAME="eventpart" VALUE="'.
-      $part_bill_event->eventpart  .'">';
-print "Invoice Event #", $hashref->{eventpart} ? $hashref->{eventpart} : "(NEW)";
+<% if ( $cgi->param('error') ) { %>
+  <FONT SIZE="+1" COLOR="#ff0000">Error: <%= $cgi->param('error') %></FONT>
+<% } %>
 
-print ntable("#cccccc",2), <<END;
-<TR><TD ALIGN="right">Payby</TD><TD><SELECT NAME="payby">
-END
+<FORM ACTION="<%= popurl(1) %>process/part_bill_event.cgi" METHOD=POST>
+<INPUT TYPE="hidden" NAME="eventpart" VALUE="<%= $part_bill_event->eventpart %>">
+Invoice Event #<%= $hashref->{eventpart} ? $hashref->{eventpart} : "(NEW)" %>
 
-for (qw(CARD DCRD CHEK DCHK LECB BILL COMP)) {
-  print qq!<OPTION VALUE="$_"!;
-  if ($part_bill_event->payby eq $_) {
-    print " SELECTED>$_</OPTION>";
-  } else {
-    print ">$_</OPTION>";
-  }
-}
+<%=  ntable("#cccccc",2) %>
 
-my $days = $hashref->{seconds}/86400;
+  <TR>
+    <TD ALIGN="right">Event name </TD>
+    <TD><INPUT TYPE="text" NAME="event" VALUE="<%= $hashref->{event} %>"></TD>
+  </TR>
 
-print <<END;
-</SELECT></TD></TR>
-<TR><TD ALIGN="right">Event</TD><TD><INPUT TYPE="text" NAME="event" VALUE="$hashref->{event}"></TD></TR>
-<TR><TD ALIGN="right">After</TD><TD><INPUT TYPE="text" NAME="days" VALUE="$days"> days</TD></TR>
-END
+  <TR>
+    <TD ALIGN="right">For </TD>
+    <TD>
+      <SELECT NAME="payby">
 
-print '<TR><TD ALIGN="right">Disabled</TD><TD>';
-print '<INPUT TYPE="checkbox" NAME="disabled" VALUE="Y"';
-print ' CHECKED' if $hashref->{disabled} eq "Y";
-print '>';
-print '</TD></TR>';
+        <% tie my %payby, 'Tie::IxHash', FS::payby->cust_payby2longname;
+           foreach my $payby ( keys %payby ) {
+        %>
 
-print '<TR><TD ALIGN="right">Action</TD><TD>';
+          <OPTION VALUE="<%= $payby %>"<%= ($part_bill_event->payby eq $payby) ? ' SELECTED' : '' %>><%= $payby{$payby} %></OPTION>
+
+        <% } %>
+
+      </SELECT> customers
+    </TD>
+  </TR>
+
+  <% my $days = $hashref->{seconds}/86400; %>
+
+  <TR>
+    <TD ALIGN="right">After</TD>
+    <TD><INPUT TYPE="text" NAME="days" VALUE="<%= $days %>"> days</TD>
+  </TR>
+
+  <TR>
+    <TD ALIGN="right">Test event</TD>
+    <TD>
+      <SELECT NAME="freq">
+
+        <% tie my %freq, 'Tie::IxHash', '1d' => 'daily', '1m' => 'monthly';
+           foreach my $freq ( keys %freq ) {
+        %>
+
+          <OPTION VALUE="<%= $freq %>"<%= ($part_bill_event->freq eq $freq) ? ' SELECTED' : '' %>><%= $freq{$freq} %></OPTION>
+
+        <% } %>
+
+      </SELECT>
+    </TD>
+  </TR>
+
+
+  <TR>
+    <TD ALIGN="right">Disabled</TD>
+    <TD>
+      <INPUT TYPE="checkbox" NAME="disabled" VALUE="Y"<%= $hashref->{disabled} eq 'Y' ? ' CHECKED' : '' %>>
+    </TD>
+  </TR>
+
+  <TR>
+    <TD VALIGN="top" ALIGN="right">Action</TD>
+    <TD>
+
+<%
 
 #print ntable();
 
@@ -113,7 +151,7 @@ tie my %events, 'Tie::IxHash',
     'code'   => '$cust_main->suspend();',
     'weight' => 10,
   },
-  'suspend' => {
+  'suspend-if-balance' => {
     'name'   => 'Suspend if balance (this invoice and previous) over',
     'code'   => '$cust_bill->cust_suspend_if_balance_over( %%%balanceover%%% );',
     'html'   => " $money_char ". '<INPUT TYPE="text" SIZE="7" NAME="balanceover" VALUE="%%%balanceover%%%">',
@@ -174,13 +212,13 @@ tie my %events, 'Tie::IxHash',
   },
 
   'send' => {
-    'name' => 'Send invoice (email/print)',
+    'name' => 'Send invoice (email/print/fax)',
     'code' => '$cust_bill->send();',
     'weight' => 50,
   },
 
   'send_alternate' => {
-    'name' => 'Send invoice (email/print) with alternate template',
+    'name' => 'Send invoice (email/print/fax) with alternate template',
     'code' => '$cust_bill->send(\'%%%templatename%%%\');',
     'html' =>
         '<INPUT TYPE="text" NAME="templatename" VALUE="%%%templatename%%%">',
@@ -188,7 +226,7 @@ tie my %events, 'Tie::IxHash',
   },
 
   'send_if_newest' => {
-    'name' => 'Send invoice (email/print) with alternate template, if it is still the newest invoice (useful for late notices - set to 31 days or later)',
+    'name' => 'Send invoice (email/print/fax) with alternate template, if it is still the newest invoice (useful for late notices - set to 31 days or later)',
     'code' => '$cust_bill->send_if_newest(\'%%%if_newest_templatename%%%\');',
     'html' =>
         '<INPUT TYPE="text" NAME="if_newest_templatename" VALUE="%%%if_newest_templatename%%%">',
@@ -196,7 +234,7 @@ tie my %events, 'Tie::IxHash',
   },
 
   'send_agent' => {
-    'name' => 'Send invoice (email/print) ',
+    'name' => 'Send invoice (email/print/fax) ',
     'code' => '$cust_bill->send(\'%%%agent_templatename%%%\', [ %%%agentnum%%% ], \'%%%agent_invoice_from%%%\');',
     'html' => sub {
         '<TABLE BORDER=0>
@@ -263,6 +301,7 @@ tie my %events, 'Tie::IxHash',
     'code' => '$cust_bill->spool_csv(
                  \'format\' => \'%%%spoolformat%%%\',
                  \'dest\'   => \'%%%spooldest%%%\',
+                 \'balanceover\' => \'%%%spoolbalanceover%%%\',
                  \'agent_spools\' => \'%%%spoolagent_spools%%%\',
                );',
     'html' => sub {
@@ -303,6 +342,13 @@ tie my %events, 'Tie::IxHash',
        $html .=
            '</SELECT>'.
          '</TD></TR>'.
+
+       '<TR>'.
+         '<TD ALIGN="right">if balance (this invoice and previous) over </TD>'.
+         '<TD>'.
+           "$money_char ".
+           '<INPUT TYPE="text" SIZE="7" NAME="spoolbalanceover" VALUE="%%%spoolbalanceover%%%">'.
+         '</TD>'.
        '<TR><TD ALIGN="right">Individual per-agent spools? </TD>'.
          '<TD><INPUT TYPE="checkbox" NAME="spoolagent_spools" VALUE="1" '.
            ( $plandata->{'spoolagent_spools'} ? 'CHECKED' : '' ).

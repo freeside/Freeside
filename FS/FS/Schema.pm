@@ -307,6 +307,7 @@ sub tables_hashref {
     'part_bill_event' => {
       'columns' => [
         'eventpart',    'serial',  '', '',
+        'freq',        'varchar',       'NULL',     $char_d,
         'payby',       'char',  '', 4,
         'event',       'varchar',           '',     $char_d,
         'eventcode',    @perl_type,
