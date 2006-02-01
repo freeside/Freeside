@@ -13,13 +13,7 @@ my $user = shift or die &usage;
 adminsuidsetup $user;
 
 use FS::Cron::bill qw(bill);
-bill(%opt);
-
-use FS::Cron::vacuum qw(vacuum);
-vacuum();
-
-use FS::Cron::backup qw(backup_scp);
-backup_scp();
+bill(%opt, 'freq'=>'1m' );
 
 ###
 # subroutines
@@ -35,7 +29,7 @@ sub untaint_argv {
 }
 
 sub usage {
-  die "Usage:\n\n  freeside-daily [ -d 'date' ] user [ custnum custnum ... ]\n";
+  die "Usage:\n\n  freeside-monthly [ -d 'date' ] user [ custnum custnum ... ]\n";
 }
 
 ###
@@ -44,16 +38,17 @@ sub usage {
 
 =head1 NAME
 
-freeside-daily - Run daily billing and invoice collection events.
+freeside-monthly - Run monthly billing and invoice collection events.
 
 =head1 SYNOPSIS
 
-  freeside-daily [ -d 'date' ] [ -y days ] [ -p 'payby' ] [ -a agentnum ] [ -s ] [ -v ] user [ custnum custnum ... ]
+  freeside-monthly [ -d 'date' ] [ -y days ] [ -p 'payby' ] [ -a agentnum ] [ -s ] [ -v ] user [ custnum custnum ... ]
 
 =head1 DESCRIPTION
 
-Bills customers and runs invoice collection events.  Should be run from
-crontab daily.
+Bills customers and runs invoice collection events, for the alternate monthly
+event chain.  If you have defined monthly event checks, should be run from
+crontab monthly.
 
 Bills customers.  Searches for customers who are due for billing and calls
 the bill and collect methods of a cust_main object.  See L<FS::cust_main>.
@@ -79,11 +74,18 @@ user: From the mapsecrets file - see config.html from the base documentation
 custnum: if one or more customer numbers are specified, only bills those
 customers.  Otherwise, bills all customers.
 
+=head1 NOTE
+
+In most cases, you would use freeside-daily only and not freeside-monthly.
+freeside-monthly would only be used in cases where you have events that can
+only be run once each month, for example, batching invoices to a third-party
+print/mail provider.
+
 =head1 BUGS
 
 =head1 SEE ALSO
 
-L<FS::cust_main>, config.html from the base documentation
+L<freeside-daily>, L<FS::cust_main>, config.html from the base documentation
 
 =cut
 

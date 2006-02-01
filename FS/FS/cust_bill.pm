@@ -836,6 +836,8 @@ Options are:
 
 =item agent_spools - if set to a true value, will spool to per-agent files rather than a single global file
 
+=item balanceover - if set, only spools the invoice if the total amount owed on this invoice and all older invoices is greater than the specified amount.
+
 =back
 
 =cut
@@ -850,6 +852,11 @@ sub spool_csv {
                              $cust_main->invoicing_list;
     return 'N/A' unless $invoicing_list{$opt{'dest'}}
                      || ! keys %invoicing_list;
+  }
+
+  if ( $opt{'balanceover'} ) {
+    return 'N/A'
+      if $cust_main->total_owed_date($self->_date) < $opt{'balanceover'};
   }
 
   my $spooldir = "/usr/local/etc/freeside/export.". datasrc. "/cust_bill";

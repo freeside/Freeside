@@ -32,7 +32,8 @@ my $total = scalar(@part_bill_event);
      my $oldfreq = '';
 
      my @payby_part_bill_event =  grep { $payby eq $_->payby }
-                                  sort {    $a->seconds   <=> $b->seconds
+                                  sort {    $a->freq      cmp $b->freq # for now
+                                         || $a->seconds   <=> $b->seconds
                                          || $a->weight    <=> $b->weight
                                          || $a->eventpart <=> $b->eventpart
                                        }

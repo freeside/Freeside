@@ -118,8 +118,6 @@ FS::cust_main - Object methods for cust_main records
   $error = $record->collect;
   $error = $record->collect %options;
   $error = $record->collect 'invoice_time'   => $time,
-                            'batch_card'     => 'yes',
-                            'report_badcard' => 'yes',
                           ;
 
 =head1 DESCRIPTION
@@ -1886,7 +1884,7 @@ sub bill {
                   $dbh->rollback if $oldAutoCommit;
                   return "fatal: can't lookup exising exemption: ". dbh->errstr;
                 };
-                my $existing_exemption = $sth->fetchrow_arrayref->[0];
+                my $existing_exemption = $sth->fetchrow_arrayref->[0] || 0;
                 
                 my $remaining_exemption =
                   $tax->exempt_amount - $existing_exemption;
@@ -2001,16 +1999,10 @@ for conversion functions.
 retry - Retry card/echeck/LEC transactions even when not scheduled by invoice
 events.
 
-retry_card - Deprecated alias for 'retry'
-
-batch_card - This option is deprecated.  See the invoice events web interface
-to control whether cards are batched or run against a realtime gateway.
-
-report_badcard - This option is deprecated.
-
-force_print - This option is deprecated; see the invoice events web interface.
-
 quiet - set true to surpress email card/ACH decline notices.
+
+freq - "1d" for the traditional, daily events (the default), or "1m" for the
+new monthly events
 
 =cut
 
@@ -2052,6 +2044,13 @@ sub collect {
     }
   }
 
+  my $extra_sql = '';
+  if ( defined $options{'freq'} && $options{'freq'} eq '1m' ) {
+    $extra_sql = " AND freq = '1m' ";
+  } else {
+    $extra_sql = " AND ( freq = '1d' OR freq IS NULL OR freq = '' ) ";
+  }
+
   foreach my $cust_bill ( $self->open_cust_bill ) {
 
     # don't try to charge for the same invoice if it's already in a batch
@@ -2073,8 +2072,12 @@ sub collect {
                                 'status'    => 'done',
                                                                    } )
              }
-          qsearch('part_bill_event', { 'payby'    => $self->payby,
-                                       'disabled' => '',           } )
+          qsearch( {
+            'table'     => 'part_bill_event',
+            'hashref'   => { 'payby'    => $self->payby,
+                             'disabled' => '',           },
+            'extra_sql' => $extra_sql,
+          } )
     ) {
 
       last if $cust_bill->owed <= 0  # don't run subsequent events if owed<=0

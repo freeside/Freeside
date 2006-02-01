@@ -33,6 +33,9 @@ FS/ClientAPI/passwd.pm
 FS/ClientAPI/MyAccount.pm
 FS/Conf.pm
 FS/ConfItem.pm
+FS/Cron/backup.pm
+FS/Cron/bill.pm
+FS/Cron/vacuum.pm
 FS/Daemon.pm
 FS/Misc.pm
 FS/Record.pm
@@ -167,6 +170,9 @@ t/ClientAPI.t
 t/ClientAPI_SessionCache.t
 t/Conf.t
 t/ConfItem.t
+t/Cron-backup.t
+t/Cron-bill.t
+t/Cron-vacuum.t
 t/Daemon.t
 t/Misc.t
 t/Record.t
