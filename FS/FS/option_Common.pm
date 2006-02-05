@@ -140,7 +140,7 @@ sub delete {
 
 }
 
-=item replace [ HASHREF | OPTION => VALUE ... ]
+=item replace OLD_RECORD [ HASHREF | OPTION => VALUE ... ]
 
 Replaces the OLD_RECORD with this one in the database.  If there is an error,
 returns the error, otherwise returns false.

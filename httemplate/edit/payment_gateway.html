@@ -34,70 +34,89 @@ Gateway #<%= $payment_gateway->gatewaynum || "(NEW)" %>
 
 <TR>
   <TH ALIGN="right">Gateway: </TH>
-  <TD><SELECT NAME="gateway_module" SIZE=1>
-    <% foreach my $module ( qw(
-         2CheckOut
-         AuthorizeNet
-         BankOfAmerica
-         Beanstream
-         Capstone
-         Cardstream
-         CashCow
-         CyberSource
-         eSec
-         eSelectPlus
-         Exact
-         iAuthorizer
-         IPaymentTPG
-         Jettis
-         LinkPoint
-         MerchantCommerce
-         Network1Financial
-         OCV
-         OpenECHO
-         PayConnect
-         PayflowPro
-         PaymentsGateway
-         PXPost
-         SecureHostingUPG
-         Skipjack
-         StGeorge
-         SurePay
-         TCLink
-         TransactionCentral
-         VirtualNet
-       ) ) {
-    %>
-      <OPTION VALUE="<%= $module %>"><%= $module %>
+  <TD>
+
+    <% if ( $payment_gateway->gatewaynum ) { %>
+
+      <%= $payment_gateway->gateway_module %>
+      <INPUT TYPE="hidden" NAME="gateway_module" VALUE="<%= $payment_gateway->gateway_module %>">
+
+    <% } else { %>
+
+      <SELECT NAME="gateway_module" SIZE=1>
+        <% foreach my $module ( qw(
+             2CheckOut
+             AuthorizeNet
+             BankOfAmerica
+             Beanstream
+             Capstone
+             Cardstream
+             CashCow
+             CyberSource
+             eSec
+             eSelectPlus
+             Exact
+             iAuthorizer
+             IPaymentTPG
+             Jettis
+             LinkPoint
+             MerchantCommerce
+             Network1Financial
+             OCV
+             OpenECHO
+             PayConnect
+             PayflowPro
+             PaymentsGateway
+             PXPost
+             SecureHostingUPG
+             Skipjack
+             StGeorge
+             SurePay
+             TCLink
+             TransactionCentral
+             VirtualNet
+           ) ) {
+        %>
+          <OPTION VALUE="<%= $module %>"><%= $module %>
+        <% } %>
+      </SELECT>
+
     <% } %>
-    </SELECT>
+
   </TD>
 </TR>
 
 <TR>
   <TH ALIGN="right">Username: </TH>
-  <TD><INPUT TYPE="text" NAME="gateway_username"></TD>
+  <TD><INPUT TYPE="text" NAME="gateway_username" VALUE="<%= $payment_gateway->gateway_username %>"></TD>
 </TR>
 
 <TR>
   <TH ALIGN="right">Password: </TH>
-  <TD><INPUT TYPE="text" NAME="gateway_password"></TD>
+  <TD><INPUT TYPE="text" NAME="gateway_password" VALUE="<%= $payment_gateway->gateway_password %>"></TD>
 </TR>
 
 <TR>
   <TH ALIGN="right">Action: </TH>
   <TD>
     <SELECT NAME="gateway_action" SIZE=1>
-      <OPTION VALUE="Normal Authorization">Normal Authorization
-      <OPTION VALUE="Authorization Only">Authorization Only
-      <OPTION VALUE="Authorization Only, Post Authorization">Authorization Only, Post Authorization
+      <% foreach my $action ( 
+                              'Normal Authorization',
+                              'Authorization Only',
+                              'Authorization Only, Post Authorization',
+                            ) {
+      %>
+        <OPTION VALUE="<%= $action %>"<%= $action eq $payment_gateway->gateway_action ? ' SELECTED' : '' %>><%= $action %>
+      <% } %>
     </SELECT>
   </TD>
 </TR>
 
 <TR>
   <TH ALIGN="right">Options: </TH>
-  <TD><TEXTAREA ROWS="5" NAME="gateway_options"></TEXTAREA></TD>
+  <TD>
+    <TEXTAREA ROWS="5" NAME="gateway_options"><%= join("\r", $payment_gateway->options ) %></TEXTAREA>
+  </TD>
 </TR>
 
 </TABLE>

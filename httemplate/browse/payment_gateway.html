@@ -40,10 +40,13 @@
       <TD><%= $payment_gateway->disabled ? 'DISABLED' : '' %></TD>
     <% } %>
     <TD><%= $payment_gateway->gateway_module %>
-      <%= !$payment_gateway->disabled 
-            ? '<FONT SIZE="-1"> <A HREF="misc/disable-payment_gateway.cgi?'. $payment_gateway->gatewaynum.'">(disable)</A></FONT>'
-            : ''
-      %>
+      <FONT SIZE="-1">
+        <A HREF="<%=$p%>edit/payment_gateway.html?<%= $payment_gateway->gatewaynum %>">(edit)</A>
+        <%= !$payment_gateway->disabled 
+              ? '<A HREF="'. $p. 'misc/disable-payment_gateway.cgi?'. $payment_gateway->gatewaynum.'">(disable)</A>'
+              : ''
+        %>
+      </FONT>
     </TD>
     <TD><%= $payment_gateway->gateway_username %></TD>
     <TD> - </TD>

@@ -17,7 +17,7 @@ my %options = @options;
 
 my $error;
 if ( $gatewaynum ) {
-  $error=$new->replace($old);
+  $error=$new->replace($old, \%options);
 } else {
   $error=$new->insert(\%options);
   $gatewaynum=$new->getfield('gatewaynum');
