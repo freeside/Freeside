@@ -52,8 +52,6 @@ $title .= " against Invoice #$linknum" if $link eq 'invnum';
 <BR><BR>
 <% } %>
 
-<%= ntable("#cccccc",2) %>
-
 <LINK REL="stylesheet" TYPE="text/css" HREF="../elements/calendar-win2k-2.css" TITLE="win2k-2">
 <SCRIPT TYPE="text/javascript" SRC="../elements/calendar_stripped.js"></SCRIPT>
 <SCRIPT TYPE="text/javascript" SRC="../elements/calendar-en.js"></SCRIPT>
