@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 
 use strict;
-use vars qw( $Debug %kids $kids $max_kids $ssh_pid $keepalives );
+use vars qw( $Debug %kids $kids $max_kids $ssh_pid %old_ssh_pid $keepalives );
 use subs qw( lock_write unlock_write myshutdown usage );
 use Fcntl qw(:flock);
 use POSIX qw(:sys_wait_h);
@@ -102,6 +102,7 @@ while (1) {
       if ( $ssh_pid ) {
         warn "sending TERM signal to ssh process $ssh_pid\n" if $Debug;
         kill 'TERM', $ssh_pid;
+        $old_ssh_pid{$ssh_pid} = 1;
         $ssh_pid = 0;
       }
       last;
@@ -179,6 +180,10 @@ sub reap_kids {
       $kids--;
       delete $kids{$kid};
     }
+  }
+
+  foreach my $pid ( keys %old_ssh_pid ) {
+    waitpid($pid, WNOHANG) and delete $old_ssh_pid{$pid};
   }
   #warn "done reaping\n";
 }
