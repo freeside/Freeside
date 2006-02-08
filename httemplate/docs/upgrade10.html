@@ -1,76 +1,86 @@
-<pre>
-this is incomplete
+<head>
+  <title>Upgrading to 1.5.8</title>
+</head>
+<body>
+<h1>Upgrading to 1.5.8 from 1.4.1 or 1.4.2</h1
 
-NOTE: Version numbering has been simplified.  1.5.7 is the version after
-1.5.0pre6.  It is still a development version - releases with odd numbered 
-middle parts (NN in x.NN.x) are development versions, like Perl or Linux.
+<table bgcolor="#dddddd">
+<tr><td>
+<i><b>Note:</b> Version numbering has been simplified.  1.5.7 and 1.5.8 are the
+versions following 1.5.0pre6.  They are still development versions - releases
+with odd numbered middle parts (NN in x.NN.x) are development versions, like
+Perl or Linux.
+</td></tr>
+</table>
+<br>
 
-If migrating from 1.5.7, see README.1.5.8 instead
+<ul>
+  <li>If migrating from 1.5.0pre6, see README.1.5.7 instead
+  <li>If migrating from 1.5.7, see README.1.5.8 instead
+  <li> install DBD::Pg 1.32, 1.41 or later (not 1.40) (or, if you're using a Perl version before 5.6, you could try installing DBD::Pg 1.22 with <a href="http://420.am/~ivan/DBD-Pg-1.22-fixvercmp.patch">this patch</a> and commenting out the "use DBD::Pg 1.32" at the top of DBIx/DBSchema/DBD/Pg.pm)
+  <li> install DBIx::DBSchema 0.27 (or later) (if you are running Pg version 7.2.x or earlier, install at least DBIx::DBSchema 0.29)
+  <li> install Net::SSH 0.08 or later
+  <li> install HTML::Widgets::SelectLayers 0.05 or later
+  <li> install Business::CreditCard 0.28 or later
 
-If migrating from 1.5.0pre6, see README.1.5.7 instead
-
-install DBD::Pg 1.32, 1.41 or later (not 1.40) (or, if you're using a Perl version before 5.6, you could try installing DBD::Pg 1.22 with <a href="http://420.am/~ivan/DBD-Pg-1.22-fixvercmp.patch">this patch</a> and commenting out the "use DBD::Pg 1.32" at the top of DBIx/DBSchema/DBD/Pg.pm)
-install DBIx::DBSchema 0.27 (or later)
-  (if you are running Pg version 7.2.x or earlier, install at least
-   DBIx::DBSchema 0.29)
-install Net::SSH 0.08
-install HTML::Widgets::SelectLayers 0.05
-install Business::CreditCard 0.28
-
-- If using Apache::ASP, add PerlSetVar RequestBinaryRead Off and PerlSetVar IncludesDir /your/freeside/document/root/ to your Apache configuration and make sure you are using Apache::ASP minimum version 2.55.
-- In httpd.conf, change &lt;Files ~ \.cgi&gt; to  &lt;Files ~ (\.cgi|\.html)&gt;
-- In httpd.conf, change <b>AddHandler perl-script .cgi</b> or <b>SetHandler perl-script</b> to <b>AddHandler perl-script .cgi .html</b>
-
-install NetAddr::IP, Chart::Base, Locale::SubCountry, Text::CSV_XS, 
+  <li>If using Apache::ASP, add PerlSetVar RequestBinaryRead Off and PerlSetVar IncludesDir /your/freeside/document/root/ to your Apache configuration and make sure you are using Apache::ASP minimum version 2.55.
+    <ul>
+      <li>In httpd.conf, change &lt;Files ~ \.cgi&gt; to  &lt;Files ~ (\.cgi|\.html)&gt;
+      <li>In httpd.conf, change <b>AddHandler perl-script .cgi</b> or <b>SetHandler perl-script</b> to <b>AddHandler perl-script .cgi .html</b>
+    </ul>
+  <li>install NetAddr::IP, Chart::Base, Locale::SubCountry, Text::CSV_XS, 
 Spreadsheet::WriteExcel, IO-stringy (IO::Scalar), Frontier::RPC
 (Frontier::RPC2), MIME::Entity (MIME-tools), IPC::Run3, Net::Whois::Raw,
 JSON and Term::ReadKey
 <!-- and Crypt::YAPassGen-->
 
+  <li>Apply the following changes to your database:
+<pre>
 INSERT INTO msgcat ( msgnum, msgcode, locale, msg ) VALUES ( 20, 'svc_external-id', 'en_US', 'External ID' );
 INSERT INTO msgcat ( msgnum, msgcode, locale, msg ) VALUES ( 21, 'svc_external-title', 'en_US', 'Title' );
 
 DROP INDEX cust_bill_pkg1;
+</pre>
 
-On recent Pg versions:
-
+  <li>On recent Pg versions:
+<pre>
 ALTER TABLE cust_main ALTER COLUMN payinfo varchar(512) NULL;
 ALTER TABLE h_cust_main ALTER COLUMN payinfo varchar(512) NULL;
+</pre>
+On older Pg versions that don't support altering columns directly, you will need to dump the database, edit the schema definitions in the dump file, and reload.
 
-Or on older Pg versions that don't support altering columns directly:
-(dump database, edit & reload)
-
-On recent Pg versions:
-
+  <li>On recent Pg versions:
+<pre>
 ALTER TABLE svc_forward ALTER COLUMN srcsvc DROP NOT NULL;
 ALTER TABLE h_svc_forward ALTER COLUMN srcsvc DROP NOT NULL;
 ALTER TABLE svc_forward ALTER COLUMN dstsvc DROP NOT NULL;
 ALTER TABLE h_svc_forward ALTER COLUMN dstsvc DROP NOT NULL;
 ALTER TABLE cust_main ALTER COLUMN zip DROP NOT NULL;
 ALTER TABLE h_cust_main ALTER COLUMN zip DROP NOT NULL;
-
+</pre>
 Or on Pg versions that don't support DROP NOT NULL (tested on 7.1 and 7.2 so far):
+<pre>
 UPDATE pg_attribute SET attnotnull = FALSE WHERE ( attname = 'srcsvc' OR attname = 'dstsvc' ) AND ( attrelid = ( SELECT oid FROM pg_class WHERE relname = 'svc_forward' ) OR attrelid = ( SELECT oid FROM pg_class WHERE relname = 'h_svc_forward' ) );
 UPDATE pg_attribute SET attnotnull = FALSE WHERE ( attname = 'zip' ) AND ( attrelid = ( SELECT oid FROM pg_class WHERE relname = 'cust_main' ) OR attrelid = ( SELECT oid FROM pg_class WHERE relname = 'h_cust_main' ) );
+</pre>
 
-If you created your database with a version before 1.4.2, dump database, edit:
-- cust_main and h_cust_main: increase otaker from 8 to 32
-- cust_main and h_cust_main: change ss from char(11) to varchar(11) ( "character(11)" to "character varying(11)" )
-- cust_credit and h_cust_credit: increase otaker from 8 to 32
-- cust_pkg and h_cust_pkg: increase otaker from 8 to 32
-- cust_refund and h_cust_refund: increase otaker from 8 to 32
-- domain_record and h_domain_record: increase reczone from 80 to 255
-- domain_record and h_domain_record: change rectype from char to varchar ( "character(5)" to "character varying(5)" )
-- domain_record and h_domain_record: increase recdata from 80 to 255
-then reload
+  <li> If you created your database with a version before 1.4.2, dump database, edit the following, then reload:
+    <ul>
+      <li>cust_main and h_cust_main: increase otaker from 8 to 32
+      <li>cust_main and h_cust_main: change ss from char(11) to varchar(11) ( "character(11)" to "character varying(11)" )
+      <li>cust_credit and h_cust_credit: increase otaker from 8 to 32
+      <li>cust_pkg and h_cust_pkg: increase otaker from 8 to 32
+      <li>cust_refund and h_cust_refund: increase otaker from 8 to 32
+      <li>domain_record and h_domain_record: increase reczone from 80 to 255
+      <li>domain_record and h_domain_record: change rectype from char to varchar ( "character(5)" to "character varying(5)" )
+      <li>domain_record and h_domain_record: increase recdata from 80 to 255
+    </ul>
 
-mandatory again:
+<li>make install-perl-modules to install the new libraries and CLI utilities
+<li>run "freeside-upgrade username" to create the remaining new tables and columns
 
-make install-perl-modules to install the new libraries and CLI utilities
-run "freeside-upgrade username" to create the remaining new tables and columns
-
-optionally:
-
+<li>optionally:
+<pre>
 CREATE INDEX cust_main4 ON cust_main ( daytime );
 CREATE INDEX cust_main5 ON cust_main ( night );
 CREATE INDEX cust_main6 ON cust_main ( fax );
@@ -89,5 +99,9 @@ CREATE INDEX cust_pay4 ON cust_pay (_date);
 CREATE INDEX part_referral1 ON part_referral ( disabled );
 CREATE INDEX part_pkg2 ON part_pkg ( promo_code );
 CREATE INDEX h_part_pkg2 ON h_part_pkg ( promo_code );
-
 </pre>
+
+</ul>
+
+</body>
+</html>
