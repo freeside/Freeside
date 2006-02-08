@@ -262,7 +262,7 @@ sub getsecrets {
   $secrets = $1;
   die "Illegal mapsecrets line for user?!" unless $secrets;
   ($datasrc, $db_user, $db_pass) = $conf->config($secrets)
-    or die "Can't get secrets: $!";
+    or die "Can't get secrets: $secrets: $!\n";
   $FS::Conf::default_dir = $conf_dir. "/conf.$datasrc";
   undef $driver_name;
   ($datasrc, $db_user, $db_pass);
