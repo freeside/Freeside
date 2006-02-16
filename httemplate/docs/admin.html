@@ -11,49 +11,8 @@
   /home/httpd/html, open https://your_host/freeside/. Replace
   "your_host" with the name or network address of your web server.
   <li>Select <u>Configuration</u> from the main menu and update your configuration values.
-  <li>Next you must create a service definition.  An example of a service
-  definition would be a dial-up account or a domain.  First, it is
-  necessary to create a domain definition.  Click on <u>View/Edit service
-  definitions</u> and <u>Add a new service definition</u> with <i>Table</i>
-  <b>svc_domain</b> (and no modifiers).
 
-  <li>Now that you have created your first service, you must create a package
-  including this service which you can sell to customers.  Zero, one, or many
-  services are bundled into a package.  Click on <u>View/Edit package
-  definitions</u> and <u>Add a new package definition</u> which includes
-  quantity <b>1</b> of the svc_domain service you created above.
-
-  <li>After you create your first package, then you must define who is
-  able to sell that package by creating an agent type.  An example of
-  an agent type would be an internal sales representitive which sells
-  regular and promotional packages, as opposed to an external sales
-  representitive which would only sell regular packages of services.  Click on
-  <u>View/Edit agent types</u> and <u>Add a new agent type</u>.  Allow this
-  agent type to sell the package you created above.
-
-  <li>After creating a new agent type, you must create an agent.  Click on
-  <u>View/Edit agents</u> and <u>Add a new agent</u>.
-
-  <li>Set up at least one Advertising source.  Advertising sources will help
-  you keep track of how effective your advertising is, tracking where customers
-  heard of your service offerings.  You must create at least one advertising 
-  source.  If you do not wish to use the referral functionality, simply create
-  a single advertising source only.  Click on <u>View/Edit advertising
-  sources</u> and <u>Add a new advertising source</u>.
-
-  <li>Click on <u>New Customer</u> and create a new customer for your system
-  accounts with billing type <b>Complimentary</b>.  Leave the <i>First
-  package</i> dropdown set to <b>(none)</b>.
-
-  <li>From the Customer View screen of the newly created customer, order the
-  package you defined above.
-
-  <li>From the Package View screen of the newly created package, choose
-  <u>(Provision)</u> to add the customer's service for this new package.
-
-  <li>Add your own domain.
-
-  <li>Go back to <u>View/Edit service definitions</u> on the main menu, and
+  <li>Go to <u>View/Edit service definitions</u> on the main menu, and
   <u>Add a new service definition</u> with <i>Table</i> <b>svc_acct</b>.
   Select your domain in the <b>domsvc</b> Modifier.  Set <b>Fixed</b> to define
   a service locked-in to this domain, or <b>Default</b> to define a service
@@ -69,7 +28,7 @@
 
   <li>If you are using Freeside to keep track of sales taxes, define tax
   information for your locales by clicking on the <u>View/Edit locales and tax
-  rates</b> on the main menu.
+  rates</u> on the main menu.
 
   <li>If you would like Freeside to notify your customers when their credit
   cards and other billing arrangements are about to expire, arrange for

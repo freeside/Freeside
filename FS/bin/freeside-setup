@@ -4,23 +4,20 @@
 BEGIN { $FS::Schema::setup_hack = 1; }
 
 use strict;
-use vars qw($opt_s);
+use vars qw($opt_s $opt_d $opt_v);
 use Getopt::Std;
-use Locale::Country;
-use Locale::SubCountry;
 use FS::UID qw(adminsuidsetup datasrc checkeuid getsecrets);
 use FS::Schema qw( dbdef_dist reload_dbdef );
 use FS::Record;
-use FS::cust_main_county;
 #use FS::raddb;
-use FS::part_bill_event;
+use FS::Setup qw(create_initial_data);
 
 die "Not running uid freeside!" unless checkeuid();
 
 #my %attrib2db =
 #  map { lc($FS::raddb::attrib{$_}) => $_ } keys %FS::raddb::attrib;
 
-getopts("s");
+getopts("svd:");
 my $user = shift or die &usage;
 getsecrets($user);
 
@@ -94,6 +91,7 @@ my $dbh = adminsuidsetup $user;
 $|=1;
 
 foreach my $statement ( $dbdef->sql($dbh) ) {
+  warn $statement if $statement =~ /TABLE cdr/;
   $dbh->do( $statement )
     or die "CREATE error: ". $dbh->errstr. "\ndoing statement: $statement";
 }
@@ -104,69 +102,14 @@ dbdef_create($dbh, $dbdef_file);
 delete $FS::Schema::dbdef_cache{$dbdef_file}; #force an actual reload
 reload_dbdef($dbdef_file);
 
-#cust_main_county
-foreach my $country ( sort map uc($_), all_country_codes ) {
+create_initial_data('domain' => $opt_d);
 
-  my $subcountry = eval { new Locale::SubCountry($country) };
-  my @states = $subcountry ? $subcountry->all_codes : undef;
-
-  if ( !scalar(@states) || ( scalar(@states) == 1 && !defined($states[0]) ) ) {
-
-    my $cust_main_county = new FS::cust_main_county({
-      'tax'   => 0,
-      'country' => $country,
-    });  
-    my $error = $cust_main_county->insert;
-    die $error if $error;
-
-  } else {
-
-    if ( $states[0] =~ /^(\d+|\w)$/ ) {
-      @states = map $subcountry->full_name($_), @states
-    }
-
-    foreach my $state ( @states ) {
-
-      my $cust_main_county = new FS::cust_main_county({
-        'state' => $state,
-        'tax'   => 0,
-        'country' => $country,
-      });  
-      my $error = $cust_main_county->insert;
-      die $error if $error;
-
-    }
-  
-  }
-}
-
-#billing events
-foreach my $aref ( 
-  #[ 'COMP', 'Comp invoice', '$cust_bill->comp();', 30, 'comp' ],
-  [ 'CARD', 'Batch card', '$cust_bill->batch_card();', 40, 'batch-card' ],
-  [ 'BILL', 'Send invoice', '$cust_bill->send();', 50, 'send' ],
-  [ 'DCRD', 'Send invoice', '$cust_bill->send();', 50, 'send' ],
-  [ 'DCHK', 'Send invoice', '$cust_bill->send();', 50, 'send' ],
-) {
-
-  my $part_bill_event = new FS::part_bill_event({
-    'payby' => $aref->[0],
-    'event' => $aref->[1],
-    'eventcode' => $aref->[2],
-    'seconds' => 0,
-    'weight' => $aref->[3],
-    'plan' => $aref->[4],
-  });
-  my($error);
-  $error=$part_bill_event->insert;
-  die $error if $error;
-
-}
+warn "Freeside database initialized - commiting transaction\n" if $opt_v;
 
 $dbh->commit or die $dbh->errstr;
 $dbh->disconnect or die $dbh->errstr;
 
-#print "Freeside database initialized sucessfully\n";
+warn "Database initialization committed sucessfully\n" if $opt_v;
 
 sub dbdef_create { # reverse engineer the schema from the DB and save to file
   my( $dbh, $file ) = @_;
@@ -175,7 +118,7 @@ sub dbdef_create { # reverse engineer the schema from the DB and save to file
 }
 
 sub usage {
-  die "Usage:\n  freeside-setup user\n"; 
+  die "Usage:\n  freeside-setup -d domain.name [ -v ] user\n"; 
 }
 
 1;

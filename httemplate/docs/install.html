@@ -196,17 +196,10 @@ require valid-user
 <pre>$ su
 # <a href="man/bin/freeside-adduser.html">freeside-adduser</a> fs_queue
 # <a href="man/bin/freeside-adduser.html">freeside-adduser</a> fs_selfservice</pre>
-  <li>As the freeside UNIX user, run <tt>freeside-setup <b>username</b></tt> to create the database tables, passing the username of a Freeside user you created above:
+  <li>As the freeside UNIX user, run <tt>freeside-setup -d <b>domain.name</b> <b>username</b></tt> to create the database tables and initial data, passing the username of a Freeside user you created above:
 <pre>
 $ su freeside
-$ freeside-setup <b>username</b>
-</pre>
-  Alternately, use the -s option to enable shipping addresses: <tt>freeside-setup -s <b>username</b></tt>
-  <li>As the freeside UNIX user, run <tt>bin/populate-msgcat <b>username</b></tt> (in the untar'ed freeside directory) to populate the message catalog, passing the username of a Freeside user you created above:
-<pre>
-$ su freeside
-$ cd <b>/path/to/freeside/</b>
-$ bin/populate-msgcat <b>username</b>
+$ freeside-setup -d </b>example.com</b> <b>username</b>
 </pre>
   <li><tt>freeside-queued</tt> was installed with the Perl modules.  Start it now and ensure that is run upon system startup (Do this manually, or edit the top-level Makefile, replacing INIT_FILE with the appropriate location on your systemand QUEUED_USER with the username of a Freeside user you created above, and run <tt>make install-init</tt>)
   <li>Now proceed to the initial <a href="admin.html">administration</a> of your installation.
