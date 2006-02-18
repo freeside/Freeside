@@ -52,7 +52,7 @@ Before installing, you need:
       <li><a href="http://search.cpan.org/dist/Net-SSH">Net-SSH</a>
       <li><a href="http://search.cpan.org/dist/String-ShellQuote">String-ShellQuote</a>
       <li><a href="http://search.cpan.org/dist/Net-SCP">Net-SCP</a>
-      <li><a href="http://www.masonhq.com/">HTML::Mason</a> (recommended, enables full functionality) or <a href="http://www.apache-asp.org/">Apache::ASP</a> (deprecated, integrated RT ticketing will not be available)
+      <li><a href="http://www.masonhq.com/">HTML::Mason</a>
       <li><a href="http://search.cpan.org/dist/Tie-IxHash">Tie-IxHash</a>
       <li><a href="http://search.cpan.org/dist/Time-Duration">Time-Duration</a>
       <li><a href="http://search.cpan.org/dist/HTML-Widgets-SelectLayers">HTML-Widgets-SelectLayers</a>
@@ -123,15 +123,7 @@ $ su
     <li>Run a <b>separate</b> iteration of Apache[-SSL] with mod_perl enabled <b>as the freeside user</b>.
     <li>Edit the <tt>Makefile</tt> and set <tt>TEMPLATE</tt> to <tt>asp</tt> or <tt>mason</tt>.  Also set <tt>FREESIDE_DOCUMENT_ROOT</tt>.
     <li>Run <tt> make install-docs</tt>.
-</ul>
-<table>
-  <tr>
-    <th>Mason (recommended)</th><th>Apache::ASP (deprecated)</th>
-  </tr>
-  <tr>
-
-    <td valign="top"><ul>
-      <li>Configure Apache:
+<li>Configure Apache:
 <font size="-1"><pre>
 PerlModule HTML::Mason
 # your freeside docuemnt root
@@ -145,33 +137,6 @@ require&nbsp;"/usr/local/etc/freeside/handler.pl";
 &lt;/Perl&gt;
 &lt;/Directory&gt;
 </pre></font>
-    </ul></td>
-
-    <td valign="top"><ul>
-      <li>Configure Apache:
-<font size="-1"><pre>
-PerlModule Apache::ASP
-# your freeside document root
-&lt;Directory&nbsp;/var/www/freeside&gt;
-&lt;Files ~ (\.cgi|\.html)&gt;
-AddHandler perl-script .cgi .html
-PerlHandler Apache::ASP
-&lt;/Files&gt;
-&lt;Perl&gt;
-$MLDBM::RemoveTaint = 1;
-&lt;/Perl&gt;
-PerlSetVar&nbsp;Global&nbsp;/usr/local/etc/freeside/asp-global/
-PerlSetVar&nbsp;Debug&nbsp;2
-PerlSetVar&nbsp;RequestBinaryRead&nbsp;Off
-# your freeside document root
-PerlSetVar&nbsp;IncludesDir&nbsp;/var/www/freeside
-&lt;/Directory&gt;
-</pre></font>
-    </ul></td>
-
-  </tr>
-</table>
-<ul>
 <li>Restrict access to this web interface - see the <a href="http://httpd.apache.org/docs/misc/FAQ.html#user-authentication">Apache documentation on user authentication</a>.    For example, to configure user authentication with <a href="http://httpd.apache.org/docs/mod/mod_auth.html">mod_auth</a> (flat files), add something like the following to your Apache httpd.conf file, adjusting for your actual paths:
 <pre>
 #your freeside document root
