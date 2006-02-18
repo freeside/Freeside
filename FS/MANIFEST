@@ -122,6 +122,7 @@ FS/part_pkg/sql_generic.pm
 FS/part_pkg/sqlradacct_hour.pm
 FS/part_pkg/subscription.pm
 FS/part_pkg/voip_sqlradacct.pm
+FS/part_pkg/voip_cdr.pm
 FS/part_pop_local.pm
 FS/part_referral.pm
 FS/part_svc.pm
@@ -261,7 +262,7 @@ t/part_pkg-sql_external.t
 t/part_pkg-sql_generic.t
 t/part_pkg-sqlradacct_hour.t
 t/part_pkg-subscription.t
-t/part_pkg-voip_sqlradacct.t
+t/part_pkg-voip_cdr.t
 t/part_pop_local.t
 t/part_referral.t
 t/part_svc.t
@@ -308,3 +309,11 @@ t/banned_pay.t
 FS/cancel_reason.pm
 t/cancel_reason.t
 bin/freeside-prepaidd
+FS/cdr.pm
+t/cdr.t
+FS/cdr_calltype.pm
+t/cdr_calltype.t
+FS/cdr_type.pm
+t/cdr_type.t
+FS/cdr_carrier.pm
+t/cdr_carrier.t

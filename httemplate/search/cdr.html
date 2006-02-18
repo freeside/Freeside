@@ -1,0 +1,20 @@
+<%
+
+my $hashref = {};
+#process params for CDR search, populate $hashref...
+
+my $count_query = 'SELECT COUNT(*) FROM cdr';
+# and fixup $count_query
+
+%><%= include( 'elements/search.html',
+               'title' => 'Call Detail Records',
+               'name'  => 'call detail records',
+               'query' => { 'table'   => 'cdr',
+                            'hashref' => $hashref
+                          },
+               'count_query' => $count_query,
+               'header' => [ fields('cdr') ], #XXX fill in some nice names
+               'fields' => [ fields('cdr') ], #XXX fill in some pretty-print
+                                              # processing, etc.
+             )
+%>

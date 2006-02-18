@@ -1,0 +1,15 @@
+<%= include("/elements/header.html",'Call Detail Record Import') %>
+<FORM ACTION="process/cdr-import.html" METHOD="POST" ENCTYPE="multipart/form-data">
+Import a CSV file containing Call Detail Records (CDRs).<BR><BR>
+CDR Format: <SELECT NAME="format">
+<!-- <OPTION VALUE="asterisk">Asterisk</OPTION> -->
+<OPTION VALUE="unitel">Unitel/RSLCOM</OPTION>
+</SELECT><BR><BR>
+
+Filename: <INPUT TYPE="file" NAME="csvfile"><BR><BR>
+
+<INPUT TYPE="submit" VALUE="Upload">
+</FORM>
+
+<%= include('/elements/footer.html') %>
+

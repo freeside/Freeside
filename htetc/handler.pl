@@ -88,7 +88,7 @@ sub handler
     #rar
     { package HTML::Mason::Commands;
       use strict;
-      use vars qw( $cgi $p );
+      use vars qw( $cgi $p $fsurl);
       use vars qw( %session );
       use CGI 2.47 qw(-private_tempfiles);
       #use CGI::Carp qw(fatalsToBrowser);
@@ -118,8 +118,8 @@ sub handler
       use FS::UID qw(cgisuidsetup dbh getotaker datasrc driver_name);
       use FS::Record qw(qsearch qsearchs fields dbdef);
       use FS::Conf;
-      use FS::CGI qw(header menubar popurl table itable ntable idiot eidiot
-                     small_custview myexit http_header);
+      use FS::CGI qw(header menubar popurl rooturl table itable ntable idiot
+                     eidiot small_custview myexit http_header);
       use FS::UI::Web;
       use FS::Msgcat qw(gettext geterror);
       use FS::Misc qw( send_email send_fax );
@@ -172,6 +172,7 @@ sub handler
       use FS::agent_payment_gateway;
       use FS::XMLRPC;
       use FS::payby;
+      use FS::cdr;
 
       if ( %%%RT_ENABLED%%% ) {
         eval '
@@ -234,8 +235,8 @@ sub handler
         &cgisuidsetup($cgi);
         #&cgisuidsetup($r);
         $p = popurl(2);
+        $fsurl = rooturl();
       }
-
 
       sub include {
         use vars qw($m);

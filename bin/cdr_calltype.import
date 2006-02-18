@@ -1,0 +1,41 @@
+#!/usr/bin/perl -w
+#
+# bin/cdr_calltype.import ivan ~ivan/convergent/newspecs/fixed_inbound/calltypes.csv
+
+use strict;
+use FS::UID qw(dbh adminsuidsetup);
+use FS::cdr_calltype;
+
+my $user = shift or die &usage;
+adminsuidsetup $user;
+
+while (<>) {
+
+  chomp;
+  my $line = $_;
+
+  #$line =~ /^(\d+),"([^"]+)"$/ or do {
+  $line =~ /^(\d+),"([^"]+)"/ or do {
+    warn "unparsable line: $line\n";
+    next;
+  };
+
+  my $cdr_calltype = new FS::cdr_calltype {
+    'calltypenum'  => $1,
+    'calltypename' => $2,
+  };
+  
+  #my $error = $cdr_calltype->check;
+  my $error = $cdr_calltype->insert;
+  if ( $error ) {
+    warn "********** $error FOR LINE: $line\n";
+    dbh->commit;
+    #my $wait = scalar(<STDIN>);
+  }
+
+}
+
+sub usage {
+  "Usage:\n\ncdr_calltype.import username filename ...\n";
+}
+

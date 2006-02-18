@@ -16,6 +16,7 @@ BEGIN {
 }
 use Digest::MD5 qw(md5_base64);
 use Date::Format;
+use Date::Parse;
 #use Date::Manip;
 use String::Approx qw(amatch);
 use Business::CreditCard 0.28;
@@ -3964,8 +3965,6 @@ sub batch_import {
   my $pkgpart = $param->{pkgpart};
   my @fields = @{$param->{fields}};
 
-  eval "use Date::Parse;";
-  die $@ if $@;
   eval "use Text::CSV_XS;";
   die $@ if $@;
 
@@ -4071,8 +4070,6 @@ sub batch_charge {
   my $fh = $param->{filehandle};
   my @fields = @{$param->{fields}};
 
-  eval "use Date::Parse;";
-  die $@ if $@;
   eval "use Text::CSV_XS;";
   die $@ if $@;
 

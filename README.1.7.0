@@ -1,4 +1,6 @@
 
+install DBIx::DBSchema 0.29 (or later)
+
 make install-perl-modules
 run "freeside-upgrade username" to uprade your database schema
 

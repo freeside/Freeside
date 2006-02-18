@@ -41,6 +41,7 @@ sub calc_setup {
   $self->option('setup_fee');
 }
 
+#false laziness w/voip_cdr... resolve it if this one ever gets used again
 sub calc_recur {
   my($self, $cust_pkg, $sdate, $details ) = @_;
 
