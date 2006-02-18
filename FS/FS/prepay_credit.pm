@@ -61,7 +61,7 @@ fields are currently supported:
 
 =item new HASHREF
 
-Creates a new pre-paid credit.  To add the example to the database, see
+Creates a new pre-paid credit.  To add the pre-paid credit to the database, see
 L<"insert">.
 
 Note that this stores the hash reference, not a distinct copy of the hash it

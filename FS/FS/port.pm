@@ -52,7 +52,7 @@ from FS::Record.  The following fields are currently supported:
 
 =item new HASHREF
 
-Creates a new port.  To add the example to the database, see L<"insert">.
+Creates a new port.  To add the port to the database, see L<"insert">.
 
 Note that this stores the hash reference, not a distinct copy of the hash it
 points to.  You can ask the object for a copy with the I<hash> method.
@@ -91,7 +91,7 @@ returns the error, otherwise returns false.
 
 =item check
 
-Checks all fields to make sure this is a valid example.  If there is
+Checks all fields to make sure this is a valid port.  If there is
 an error, returns the error, otherwise returns false.  Called by the insert
 and replace methods.
 

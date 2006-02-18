@@ -98,7 +98,7 @@ returns the error, otherwise returns false.
 
 =item check
 
-Checks all fields to make sure this is a valid example.  If there is
+Checks all fields to make sure this is a valid NAS.  If there is
 an error, returns the error, otherwise returns false.  Called by the insert
 and replace methods.
 

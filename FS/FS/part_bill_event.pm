@@ -61,8 +61,8 @@ FS::Record.  The following fields are currently supported:
 
 =item new HASHREF
 
-Creates a new invoice event definition.  To add the example to the database,
-see L<"insert">.
+Creates a new invoice event definition.  To add the invoice event definition to
+the database, see L<"insert">.
 
 Note that this stores the hash reference, not a distinct copy of the hash it
 points to.  You can ask the object for a copy with the I<hash> method.

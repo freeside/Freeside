@@ -52,7 +52,8 @@ If you just want to B<use> message catalogs, see L<FS::Msgcat>.
 
 =item new HASHREF
 
-Creates a new example.  To add the example to the database, see L<"insert">.
+Creates a new message catalog entry.  To add the message catalog entry to the
+database, see L<"insert">.
 
 Note that this stores the hash reference, not a distinct copy of the hash it
 points to.  You can ask the object for a copy with the I<hash> method.
@@ -91,8 +92,8 @@ returns the error, otherwise returns false.
 
 =item check
 
-Checks all fields to make sure this is a valid example.  If there is
-an error, returns the error, otherwise returns false.  Called by the insert
+Checks all fields to make sure this is a valid message catalog entry.  If there
+is an error, returns the error, otherwise returns false.  Called by the insert
 and replace methods.
 
 =cut
