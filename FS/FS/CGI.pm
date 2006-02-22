@@ -9,7 +9,7 @@ use URI::URL;
 use FS::UID;
 
 @ISA = qw(Exporter);
-@EXPORT_OK = qw(header menubar idiot eidiot popurl table itable ntable
+@EXPORT_OK = qw(header menubar idiot eidiot popurl rooturl table itable ntable
                 small_custview myexit http_header);
 
 =head1 NAME
@@ -223,6 +223,34 @@ sub popurl {
   my $x = $url->as_string;
   $x .= '/' unless $x =~ /\/$/;
   $x;
+}
+
+=item rooturl 
+
+=cut
+
+sub rooturl {
+  #this doesn't work so well...
+  #'%%%FREESIDE_URL%%%';
+
+  # better to start with the client-provided URL
+  my $cgi = &FS::UID::cgi;
+  my $url_string = $cgi->isa('Apache') ? $cgi->uri : $cgi->url;
+  $url_string =~ s/\?.*//;
+
+  #even though this is kludgy
+  $url_string =~
+    s{
+       (browse|config|docs|edit|graph|misc|search|view)
+       /
+       (process/)?
+       ([\w\-\.]+)
+       $
+     }
+     {}x;
+
+  $url_string;
+
 }
 
 =item table
