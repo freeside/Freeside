@@ -51,14 +51,22 @@ Billing address
 %>
 <TR>
   <TD ALIGN="right"><%= $daytime_label %></TD>
-  <TD COLSPAN=5 BGCOLOR="#ffffff">
-    <%= $cust_main->daytime || '&nbsp' %>
+  <TD COLSPAN=6 BGCOLOR="#ffffff">
+    <%= include('/elements/phonenumber.html',
+                  $cust_main->daytime,
+                  'callable'=>1
+               )
+    %>
   </TD>
 </TR>
 <TR>
   <TD ALIGN="right"><%= $night_label %></TD>
-  <TD COLSPAN=5 BGCOLOR="#ffffff">
-    <%= $cust_main->night || '&nbsp' %>
+  <TD COLSPAN=6 BGCOLOR="#ffffff">
+    <%= include('/elements/phonenumber.html',
+                  $cust_main->night,
+                  'callable'=>1
+               )
+    %>
   </TD>
 </TR>
 <TR>
@@ -111,13 +119,21 @@ Service address
 <TR>
   <TD ALIGN="right"><%= $daytime_label %></TD>
   <TD COLSPAN=5 BGCOLOR="#ffffff">
-    <%= $cust_main->get("${pre}daytime") || '&nbsp' %>
+    <%= include('/elements/phonenumber.html',
+                  $cust_main->get("${pre}daytime"),
+                  'callable'=>1
+               )
+    %>
   </TD>
 </TR>
 <TR>
   <TD ALIGN="right"><%= $night_label %></TD>
   <TD COLSPAN=5 BGCOLOR="#ffffff">
-    <%= $cust_main->get("${pre}night") || '&nbsp' %>
+    <%= include('/elements/phonenumber.html',
+                  $cust_main->get("${pre}night"),
+                  'callable'=>1
+               )
+    %>
   </TD>
 </TR>
 <TR>

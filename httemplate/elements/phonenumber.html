@@ -1,0 +1,23 @@
+<%
+  my( $number, %opt ) = @_;
+  my $conf = new FS::Conf;
+  ( my $snumber = $number ) =~ s/\D//g;
+%>
+<SCRIPT TYPE="text/javascript" SRC="../elements/overlibmws.js"></SCRIPT>
+<SCRIPT TYPE="text/javascript" SRC="../elements/overlibmws_iframe.js"></SCRIPT>
+<SCRIPT TYPE="text/javascript" SRC="../elements/overlibmws_draggable.js"></SCRIPT>
+<SCRIPT TYPE="text/javascript">
+function OLiframeContent(src, width, height, name) {
+  return ('<iframe src="'+src+'" width="'+width+'" height="'+height+'"'
+   +(name?' name="'+name+'" id="'+name+'"':'')+' scrolling="auto">'
+   +'<div>[iframe not supported]</div></iframe>');
+}
+</SCRIPT>
+<% if ( length($number) ) { %>
+  <%= $number %>
+  <% if ( $opt{'callable'} && $conf->config('vonage-username') ) { %>
+      <A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('https://secure.click2callu.com/tpcc/makecall?username=<%= $conf->config('vonage-username') %>&password=<%= $conf->config('vonage-password') %>&fromnumber=<%= $conf->config('vonage-fromnumber')%>&tonumber=1<%= $snumber %>', 240, 64, 'call_popup'), CAPTION, 'Initiating call', STICKY, AUTOSTATUSCAP, CLOSECLICK, DRAGGABLE, WIDTH, 240, HEIGHT, 64 ); return false;" TITLE="Call this number"><IMG SRC="<%=$fsurl%>images/red_telephone_mimooh_01.png" BORDER=0 ALT="Call this number"></A>
+  <% } %>
+<% } else { %>
+  &nbsp;
+<% } %>
