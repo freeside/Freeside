@@ -759,15 +759,16 @@ sub plan_info {
 
 =head1 NEW PLAN CLASSES
 
-A module should be added in FS/FS/part_pkg/ (an example may be found in
-eg/plan_template.pm)
+A module should be added in FS/FS/part_pkg/  Eventually, an example may be
+found in eg/plan_template.pm.  Until then, it is suggested that you use the
+other modules in FS/FS/part_pkg/ as a guide.
 
 =head1 BUGS
 
 The delete method is unimplemented.
 
 setup and recur semantics are not yet defined (and are implemented in
-FS::cust_bill.  hmm.).
+FS::cust_bill.  hmm.).  now they're deprecated and need to go.
 
 plandata should go
 
