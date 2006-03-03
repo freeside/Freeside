@@ -12,13 +12,23 @@ my $smonth = $cgi->param('smonth') || $curmon+1;
 my $eyear = $cgi->param('eyear') || 1900+$curyear;
 my $emonth = $cgi->param('emonth') || $curmon+1;
 
+#XXX or virtual
+my( $agentnum, $agent ) = ('', '');
+if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
+  $agentnum = $1;
+  $agent = qsearchs('agent', { 'agentnum' => $agentnum } );
+  die "agentnum $agentnum not found!" unless $agent;
+}
+my $agentname = $agent ? $agent->agent.' ' : '';
+warn $agentname;
+
 %>
 
-<HTML>
-  <HEAD>
-    <TITLE>Sales, Credits and Receipts Summary</TITLE>
-  </HEAD>
-<BODY BGCOLOR="#e8e8e8">
+<%= include('/elements/header.html',
+              $agentname. 'Sales, Credits and Receipts Summary'
+           )
+%>
+
 <IMG SRC="money_time-graph.cgi?<%= $cgi->query_string %>" WIDTH="976" HEIGHT="384">
 <BR>
 
@@ -41,9 +51,9 @@ my %color = (
   'receipts' => '00cc00', #green
 );
 my %link = (
-  'invoiced' => "${p}search/cust_bill.html?",
-  'credits'  => "${p}search/cust_credit.html?",
-  'payments' => "${p}search/cust_pay.cgi?magic=_date;",
+  'invoiced' => "${p}search/cust_bill.html?agentnum=$agentnum;",
+  'credits'  => "${p}search/cust_credit.html?agentnum=$agentnum;",
+  'payments' => "${p}search/cust_pay.cgi?magic=_date;agentnum=$agentnum;",
 );
 
 my $report = new FS::Report::Table::Monthly (
@@ -52,6 +62,7 @@ my $report = new FS::Report::Table::Monthly (
   'start_year'  => $syear,
   'end_month'   => $emonth,
   'end_year'    => $eyear,
+  'agentnum'    => $agentnum,
 );
 my $data = $report->data;
 
@@ -118,6 +129,8 @@ From <SELECT NAME="smonth">
 <OPTION VALUE="<%= $y %>"<%= $y == $eyear ? ' SELECTED' : '' %>><%= $y %>
 <% } %>
 </SELECT>
+
+for agent: <%= include('/elements/select-agent.html', $agentnum) %>
 
 <INPUT TYPE="submit" VALUE="Redisplay">
 </FORM>

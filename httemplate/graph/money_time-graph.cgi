@@ -12,6 +12,12 @@ my $eyear = $cgi->param('eyear') || 1900+$curyear;
 my $emonth = $cgi->param('emonth') || $curmon+1;
 #if ( $emonth++>12 ) { $emonth-=12; $eyear++; }
 
+# XXX or virtual
+my $agentnum = '';
+if ( $cgi->param('agentnum') =~ /^(\d*)$/ ) {
+  $agentnum = $1;
+}
+
 #my @labels;
 #my %data;
 
@@ -37,6 +43,7 @@ my $report = new FS::Report::Table::Monthly (
   'start_year'  => $syear,
   'end_month'   => $emonth,
   'end_year'    => $eyear,
+  'agentnum'    => $agentnum,
 );
 my %data = %{$report->data};
 
