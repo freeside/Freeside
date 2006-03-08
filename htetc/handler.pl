@@ -173,6 +173,8 @@ sub handler
       use FS::XMLRPC;
       use FS::payby;
       use FS::cdr;
+      use FS::inventory_class;
+      use FS::inventory_item;
 
       if ( %%%RT_ENABLED%%% ) {
         eval '
@@ -245,8 +247,10 @@ sub handler
 
       sub redirect {
         my( $location ) = @_;
+        warn 'redir1 $m='.$m;
         use vars qw($m);
         $m->clear_buffer;
+        warn 'redir3-prof';
         #false laziness w/above
         if ( defined(@DBIx::Profile::ISA) ) { #profiling redirect
 
@@ -263,10 +267,14 @@ sub handler
           );
           dbh->{'private_profile'} = {};
 
-          $m->abort(200);
+          warn 'redir9-prof';
+          my $rv = $m->abort(200);
+          warn "redir10-prof: $rv";
+          $rv;
 
         } else { #normal redirect
 
+          warn 'redir9-redirect';
           $m->redirect($location);
 
         }

@@ -1,5 +1,73 @@
 <%
 
+  # options example...  
+  # (everything not commented required is optional)
+  #
+  # # basic options, required
+  # 'title'       => 'Page title',
+  # 'name'        => 'items', #name for the records returned
+  #
+  # # some HTML callbacks...
+  # 'menubar'     => '', #menubar arrayref
+  # 'html_init'   => '', #after the header/menubar and before the pager
+  #
+  # #literal SQL query string or qsearch hashref, required
+  # 'query'       => {
+  #                    'table'     => 'tablename',
+  #                    #everything else is optional...
+  #                    'hashref'   => { 'field' => 'value',
+  #                                     'field' => { 'op'    => '<',
+  #                                                  'value' => '54',
+  #                                                },
+  #                                   },
+  #                    'select'    => '*',
+  #                    'addl_from' => '', #'LEFT JOIN othertable USING ( key )',
+  #                    'extra_sql' => '', #'AND otherstuff', #'WHERE onlystuff',
+  #                    
+  #
+  #                  },
+  #                  # "select * from tablename";
+  #
+  # #required unless 'query' is an SQL query string (shouldn't be...)
+  # 'count_query' => 'SELECT COUNT(*) FROM tablename',
+  #
+  # 'count_addl' => [], #additional count fields listref of sprintf strings
+  #                     # [ $money_char.'%.2f total paid', ],
+  #
+  # #listref of column labels, <TH>
+  # #required unless 'query' is an SQL query string
+  # # (if not specified the database column names will be used)
+  # 'header'      => [ '#', 'Item' ],
+  #
+  # #listref - each item is a literal column name (or method) or coderef
+  # #if not specified all columns will be shown
+  # 'fields'      => [
+  #                    'column',
+  #                    sub { my $row = shift; $row->column; },
+  #                  ],
+  #
+  # #listref of column footers
+  # 'footer'      => [],
+  # 
+  # #listref - each item is the empty string, or a listref of ...
+  # 'links'       =>
+  #
+  #
+  # 'align'       => 'lrc.', #one letter for each column, left/right/center/none
+  #                          # can also pass a listref with full values:
+  #                          # [ 'left', 'right', 'center', '' ]
+  #
+  # #listrefs...
+  # #currently only HTML, maybe eventually Excel too
+  # 'color'       => [],
+  # 'size'        => [],
+  # 'style'       => [],
+  # 
+  # #redirect if there's only one item...
+  # # listref of URL base and column name (or method)
+  # # or a coderef that returns the same
+  # 'redirect' =>
+
   my(%opt) = @_;
   #warn join(' / ', map { "$_ => $opt{$_}" } keys %opt ). "\n";
 
@@ -189,7 +257,9 @@
       redirect( $url. $rows->[0]->$method() );
     } else {
       ( my $xlsname = $opt{'name'} ) =~ s/\W//g;
-      $opt{'name'} =~ s/s$// if $total == 1;
+      #$opt{'name'} =~ s/s$// if $total == 1;
+      $opt{'name'} =~ s/((s)e)?s$/$2/ if $total == 1;  #should use Lingua::bs
+                                                       # to "depluralize"
 
       my @menubar = ();
       if ( $opt{'menubar'} ) {
@@ -197,6 +267,8 @@
       } else {
         @menubar = ( 'Main menu' => $p );
       }
+
+
   %>
   <%= include( '/elements/header.html', $opt{'title'},
                  include( '/elements/menubar.html', @menubar )
@@ -239,7 +311,8 @@
             <%= include('/elements/table-grid.html') %>
 
               <TR>
-              <% foreach my $header ( @$header ) { %>
+              <% 
+                 foreach my $header ( @$header ) { %>
                    <TH CLASS="grid" BGCOLOR="#cccccc"><%= $header %></TH>
               <% } %>
               </TR>
@@ -386,7 +459,6 @@
       </TABLE>
   
   <% } %>
-  </BODY>
-  </HTML>
+  <%= include( '/elements/footer.html' ) %>
   <% } %>
 <% } %>

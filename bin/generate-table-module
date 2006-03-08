@@ -13,6 +13,7 @@ my %ut = ( #just guesses
   'number'  => 'float',
   'varchar' => 'text',
   'text'    => 'text',
+  'serial'  => 'number',
 );
 
 my $dbdef_table = dbdef_dist->table($table)

@@ -1,0 +1,46 @@
+<%
+
+  # options example...
+  # 
+  # 'table' => 
+  # #? 'primary_key' => #required when the dbdef doesn't know...???
+  # #? 'fields' => []
+
+  my(%opt) = @_;
+
+  #false laziness w/edit.html
+  my $table = $opt{'table'};
+  my $class = "FS::$table";
+  my $pkey = dbdef->table($table)->primary_key; #? $opt{'primary_key'} || 
+  my $fields = $opt{'fields'}
+               #|| [ grep { $_ ne $pkey } dbdef->table($table)->columns ];
+               || [ fields($table) ];
+
+  my $pkeyvalue = $cgi->param($pkey);
+
+  my $old = qsearchs( $table, { $pkey => $pkeyvalue } ) if $pkeyvalue;
+
+  my $new = $class->new( {
+    map {
+      $_, scalar($cgi->param($_));
+    } @$fields
+  } );
+
+  my $error;
+  if ( $pkeyvalue ) {
+    $error = $new->replace($old);
+  } else {
+    warn $new;
+    $error = $new->insert;
+    warn $error;
+    $pkeyvalue = $new->getfield($pkey);
+  }
+
+  if ( $error ) {
+    $cgi->param('error', $error);
+    print $cgi->redirect(popurl(2). "$table.html?". $cgi->query_string );
+  } else { 
+    print $cgi->redirect(popurl(3). "search/$table.html");
+  }
+
+%>

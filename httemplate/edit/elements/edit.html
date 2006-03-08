@@ -1,0 +1,118 @@
+<%
+
+  # options example...
+  #
+  # 'name'  =>
+  # 'table' =>
+  # #? 'primary_key' => #required when the dbdef doesn't know...???
+  # 'labels' => {
+  #               'column' => 'Label',
+  #             }
+  #
+  # listref - each item is a literal column name (or method) or (notyet) coderef
+  # if not specified all columns (except for the primary key) will be editable
+  # 'fields' => [
+  #             ]
+  #
+  # 'menubar'     => '', #menubar arrayref
+
+  my(%opt) = @_;
+
+  #false laziness w/process.html
+  my $table = $opt{'table'};
+  my $class = "FS::$table";
+  my $pkey = dbdef->table($table)->primary_key; #? $opt{'primary_key'} || 
+  my $fields = $opt{'fields'}
+               #|| [ grep { $_ ne $pkey } dbdef->table($table)->columns ];
+               || [ grep { $_ ne $pkey } fields($table) ];
+
+  my $object;
+  if ( $cgi->param('error') ) {
+
+    $object = $class->new( {
+      map { $_ => scalar($cgi->param($_)) } fields($table)
+    });
+
+  } elsif ( $cgi->keywords ) { #editing
+
+    my( $query ) = $cgi->keywords;
+    $query =~ /^(\d+)$/;
+    $object = qsearchs( $table, { $pkey => $1 } );
+
+  } else { #adding
+
+    $object = $class->new( {} );
+
+  }
+
+  my $action = $object->$pkey() ? 'Edit' : 'Add';
+
+  my $title = "$action $opt{'name'}";
+
+  my @menubar = ();
+  if ( $opt{'menubar'} ) {
+    @menubar = @{ $opt{'menubar'} };
+  } else {
+    @menubar = (
+      'Main menu' => $p, #eventually get rid of this when the ACL/UI update is done
+      "View all $opt{'name'}s" => "${p}search/$table.html", #eventually use Lingua::bs to pluralize
+    );
+  }
+
+%>
+
+
+<%= include("/elements/header.html", $title,
+              include( '/elements/menubar.html', @menubar )
+           )
+%>
+
+<% if ( $cgi->param('error') ) { %>
+  <FONT SIZE="+1" COLOR="#ff0000">Error: <%= $cgi->param('error') %></FONT>
+  <BR><BR>
+<% } %>
+
+<FORM ACTION="<%= popurl(1) %>process/<%= $table %>.html" METHOD=POST>
+<INPUT TYPE="hidden" NAME="<%= $pkey %>" VALUE="<%= $object->$pkey() %>">
+<%= ( $opt{labels} && exists $opt{labels}->{$pkey} )
+      ? $opt{labels}->{$pkey}
+      : $pkey
+%>
+#<%= $object->$pkey() || "(NEW)" %>
+
+<%= ntable("#cccccc",2) %>
+
+<% foreach my $field ( @$fields ) { %>
+
+  <TR>
+
+    <TD ALIGN="right">
+      <%= ( $opt{labels} && exists $opt{labels}->{$field} )
+              ? $opt{labels}->{$field}
+              : $field
+      %>
+    </TD>
+
+    <%
+      #just text in one size for now... eventually more options for
+      # uneditable, hidden, <SELECT>, etc. fields
+    %>
+
+    <TD>
+      <INPUT TYPE="text" NAME="<%= $field %>" VALUE="<%= $object->$field() %>">
+    <TD>
+
+  </TR>
+
+<% } %>
+
+</TABLE>
+
+<BR>
+
+<INPUT TYPE="submit" VALUE="<%= $object->$pkey() ? "Apply changes" : "Add $opt{'name'}" %>">
+
+</FORM>
+
+<%= include("/elements/footer.html") %>
+

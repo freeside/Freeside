@@ -443,7 +443,7 @@ sub tables_hashref {
       #'index' => [ ['last'], ['company'] ],
       'index' => [ ['last'], [ 'company' ], [ 'referral_custnum' ],
                    [ 'daytime' ], [ 'night' ], [ 'fax' ], [ 'refnum' ],
-                   [ 'county' ], [ 'state' ], [ 'country' ]
+                   [ 'county' ], [ 'state' ], [ 'country' ], [ 'zip' ],
                  ],
     },
 
@@ -1352,6 +1352,10 @@ sub tables_hashref {
         'upstream_price',      'decimal', 'NULL',  '10,2', '', '', 
         'upstream_rateplanid',     'int', 'NULL',      '', '', '', #?
 
+        # how it was rated internally...
+        'ratedetailnum',           'int', 'NULL',      '', '', '',
+        'rated_price',         'decimal', 'NULL',  '10,2', '', '',
+
         'distance',            'decimal', 'NULL',      '', '', '',
         'islocal',                 'int', 'NULL',      '', '', '', # '',  '', 0, '' instead?
 
@@ -1373,7 +1377,7 @@ sub tables_hashref {
         # a svcnum... right..?
         'svcnum',             'int',   'NULL',     '',   '', '', 
 
-        #NULL, done, skipped, pushed_downstream (or something)
+        #NULL, done (or something)
         'freesidestatus', 'varchar',   'NULL',     32,   '', '', 
 
       ],
@@ -1412,6 +1416,39 @@ sub tables_hashref {
       'index'       => [],
     },
 
+    #map upstream rateid (XXX or rateplanid?) to ours...
+    'cdr_upstream_rate' => { # XXX or 'cdr_upstream_rateplan' ??
+      'columns' => [
+        # XXX or 'upstream_rateplanid' ??
+        'upstream_rateid', 'int', 'NULL', '', '', '',
+        'ratedetailnum',   'int', 'NULL', '', '', '',
+      ],
+      'primary_key' => '', #XXX need a primary key
+      'unique' => [ [ 'upstream_rateid' ] ], #unless we add another field, yeah
+      'index'  => [],
+    },
+
+    'inventory_item' => {
+      'columns' => [
+        'itemnum',  'serial',      '',      '', '', '',
+        'classnum', 'int',         '',      '', '', '',
+        'item',     'varchar',     '', $char_d, '', '',
+        'svcnum',   'int',     'NULL',      '', '', '',
+      ],
+      'primary_key' => 'itemnum',
+      'unique' => [ [ 'classnum', 'item' ] ],
+      'index'  => [ [ 'classnum' ], [ 'svcnum' ] ],
+    },
+
+    'inventory_class' => {
+      'columns' => [
+        'classnum',  'serial',       '', '', '', '',
+        'classname', 'varchar', $char_d, '', '', '',
+      ],
+      'primary_key' => 'classnum',
+      'unique' => [],
+      'index'  => [],
+    },
 
   };
 

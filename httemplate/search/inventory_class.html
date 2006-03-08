@@ -1,0 +1,58 @@
+<%
+
+tie my %labels, 'Tie::IxHash',
+  'num_avail' => 'Available', #  <FONT SIZE="-1"><A HREF="eventually">(upload batch)</A></FONT>',
+  'num_used'  => 'In use', #'Used', #'Allocated',
+  'num_total' => 'Total',
+;
+my %inv_action_link = (
+  'num_avail' => 'eventually'
+);
+my %inv_action_label = (
+  'num_avail' => 'upload_batch'
+);
+
+my $link = [ "${p}edit/inventory_class.html?", 'classnum' ];
+
+%><%= include( 'elements/search.html',
+                 'title'       => 'Inventory Classes',
+                 'name'        => 'inventory classes',
+                 'menubar'     => [ 'Add a new inventory class' =>
+                                      $p.'edit/inventory_class.html',
+                                  ],
+                 'query'       => { 'table' => 'inventory_class', },
+                 'count_query' => 'SELECT COUNT(*) FROM inventory_class',
+                 'header'      => [ '#', 'Inventory class', 'Inventory' ],
+                 'fields'      => [ 'classnum',
+                                    'classname',
+                                    sub {
+                                          #my $inventory_class = shift;
+                                          my $i_c = shift;
+
+                                          [ map {
+                                                  [
+                                                    {
+                                                      'data'  => '<B>'. $i_c->$_(). '</B>',
+                                                      'align' => 'right',
+                                                    },
+                                                    {
+                                                      'data'  => $labels{$_},
+                                                      'align' => 'left',
+                                                    },
+                                                    { 'data'  => ( exists($inv_action_link{$_})
+                                                                   ? '<FONT SIZE="-1">(<A HREF="'. $inv_action_link{$_}. '">'. $inv_action_label{$_}. '</A>)</FONT>'
+                                                                   : ''
+                                                                 ),
+                                                      'align'  => 'left',
+                                                    },
+                                                  ]
+                                                } keys %labels
+                                          ];
+                                        },
+                                  ],
+                 'links'       => [ $link,
+                                    $link,
+                                    '',
+                                  ],
+             )
+%>

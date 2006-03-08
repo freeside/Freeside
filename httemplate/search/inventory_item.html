@@ -1,0 +1,35 @@
+<%
+
+my $classnum = $cgi->param('classnum');
+$classnum =~ /^(\d+)$/ or eidiot "illegal agentnum $agentnum";
+$classnum = $1;
+my $inventory_class = qsearchs('inventory_class', { 'classnum' => $classnum } );
+
+my $count_query =
+  "SELECT COUNT(*) FROM inventory_class WHERE classnum = $classnum";
+
+%><%= include( 'elements/search.html',
+                 'title'       => $inventory_class->classname. ' Inventory',
+
+                 #less lame to use Lingua:: something to pluralize
+                 'name'        => $inventory_class->classname. 's',
+
+                 'query'       => {
+                                    'table'   => 'inventory_item',
+                                    'hashref' => { 'classnum' => $classnum },
+                                  },
+
+                 'count_query' => $count_query,
+
+                 # XXX proper full service/customer link ala svc_acct
+                 'header'      => [ '#', $inventory_class->classname, 'svcnum' ],
+
+                 'fields'      => [
+                   'itemnum',
+                   'item',
+                   'svcnum', #XXX proper full service customer link ala svc_acct
+                             # "unallocated" ?  "available" ?
+                 ],
+
+             )
+%>
