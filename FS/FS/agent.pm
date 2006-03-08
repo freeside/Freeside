@@ -195,7 +195,7 @@ sub num_sql {
   my( $self, $sql ) = @_;
   my $statement = "SELECT COUNT(*) FROM cust_main WHERE agentnum = ? AND $sql";
   my $sth = dbh->prepare($statement) or die dbh->errstr." preparing $statement";
-  $sth->execute($self->agentnum) or die $sth->errstr. "executing $statement";
+  $sth->execute($self->agentnum) or die $sth->errstr. " executing $statement";
   $sth->fetchrow_arrayref->[0];
 }
 
