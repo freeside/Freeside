@@ -5,11 +5,18 @@ tie my %labels, 'Tie::IxHash',
   'num_used'  => 'In use', #'Used', #'Allocated',
   'num_total' => 'Total',
 ;
-my %inv_action_link = (
-  'num_avail' => 'eventually'
+
+my %link = (
+  'num_avail' => ';avail=1',
+  'num_used'  => ';avail=1',
+  'num_total' => '',
 );
-my %inv_action_label = (
-  'num_avail' => 'upload_batch'
+
+my %inv_action_link = (
+  'num_avail' => [ 'upload batch',
+                   $p.'misc/inventory_item-import.html?classnum=',
+                   'classnum'
+                 ],
 );
 
 my $link = [ "${p}edit/inventory_class.html?", 'classnum' ];
@@ -29,20 +36,44 @@ my $link = [ "${p}edit/inventory_class.html?", 'classnum' ];
                                           #my $inventory_class = shift;
                                           my $i_c = shift;
 
+                                          my $link =
+                                            $p. 'search/inventory_item.html?'.
+                                            'classnum='. $i_c->classnum;
+
+                                          my %actioncol = ();
+                                          foreach ( keys %inv_action_link ) {
+                                            my($label, $baseurl, $method) =
+                                              @{ $inv_action_link{$_} };
+                                            my $url = $baseurl. $i_c->$method();
+                                            $actioncol{$_} =
+                                              '<FONT SIZE="-1">'.
+                                              '('.
+                                              '<A HREF="'.$url.'">'.
+                                              $label.
+                                              '</A>'.
+                                              ')'.
+                                              '</FONT>';
+                                          }
+
+                                          my %num = map { 
+                                            $_ => $i_c->$_();
+                                          } keys %labels;
+
                                           [ map {
                                                   [
                                                     {
-                                                      'data'  => '<B>'. $i_c->$_(). '</B>',
+                                                      'data'  => '<B>'. $num{$_}. '</B>',
                                                       'align' => 'right',
                                                     },
                                                     {
                                                       'data'  => $labels{$_},
                                                       'align' => 'left',
-                                                    },
-                                                    { 'data'  => ( exists($inv_action_link{$_})
-                                                                   ? '<FONT SIZE="-1">(<A HREF="'. $inv_action_link{$_}. '">'. $inv_action_label{$_}. '</A>)</FONT>'
-                                                                   : ''
+                                                      'link'  => ( $num{$_}
+                                                                     ? $link.$link{$_}
+                                                                     : ''
                                                                  ),
+                                                    },
+                                                    { 'data'  => $actioncol{$_},
                                                       'align'  => 'left',
                                                     },
                                                   ]

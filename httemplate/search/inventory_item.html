@@ -1,15 +1,31 @@
 <%
 
 my $classnum = $cgi->param('classnum');
-$classnum =~ /^(\d+)$/ or eidiot "illegal agentnum $agentnum";
+$classnum =~ /^(\d+)$/ or eidiot "illegal classnum $classnum";
 $classnum = $1;
-my $inventory_class = qsearchs('inventory_class', { 'classnum' => $classnum } );
+
+my $inventory_class = qsearchs( {
+  'table'     => 'inventory_class',
+  'hashref'   => { 'classnum' => $classnum },
+} );
+
+my $title = $inventory_class->classname. ' Inventory';
+
+#little false laziness with SQL fragments in inventory_class.pm
+my $extra_sql = '';
+if ( $cgi->param('avail') ) {
+  $extra_sql = 'AND ( svcnum IS NULL OR svcnum = 0 )';
+  $title .= ' - Available';
+} elsif ( $cgi->param('used') ) {
+  $extra_sql = 'AND svcnum IS NOT NULL AND svcnum > 0';
+  $title .= ' - In use';
+}
 
 my $count_query =
-  "SELECT COUNT(*) FROM inventory_class WHERE classnum = $classnum";
+  "SELECT COUNT(*) FROM inventory_item WHERE classnum = $classnum $extra_sql";
 
 %><%= include( 'elements/search.html',
-                 'title'       => $inventory_class->classname. ' Inventory',
+                 'title'       => $title,
 
                  #less lame to use Lingua:: something to pluralize
                  'name'        => $inventory_class->classname. 's',
@@ -17,6 +33,7 @@ my $count_query =
                  'query'       => {
                                     'table'   => 'inventory_item',
                                     'hashref' => { 'classnum' => $classnum },
+                                    'extra_sql' => $extra_sql,
                                   },
 
                  'count_query' => $count_query,

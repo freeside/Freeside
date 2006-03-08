@@ -2,8 +2,9 @@ package FS::inventory_item;
 
 use strict;
 use vars qw( @ISA );
-use FS::Record qw( qsearch qsearchs );
+use FS::Record qw( dbh qsearch qsearchs );
 use FS::inventory_class;
+use FS::cust_svc;
 
 @ISA = qw(FS::Record);
 
@@ -105,20 +106,96 @@ sub check {
     $self->ut_numbern('itemnum')
     || $self->ut_foreign_key('classnum', 'inventory_class', 'classnum' )
     || $self->ut_text('item')
-    || $self->ut_numbern('svcnum')
+    || $self->ut_foreign_keyn('svcnum', 'cust_svc', 'svcnum' )
   ;
   return $error if $error;
 
   $self->SUPER::check;
 }
 
+=item cust_svc
+
+Returns the customer service associated with this inventory item, if the
+item has been used (see L<FS::cust_svc>).
+
+=cut
+
+sub cust_svc {
+  my $self = shift;
+  return '' unless $self->svcnum;
+  qsearchs( 'cust_svc', { 'svcnum' => $self->svcnum } );
+}
+
+=back
+
+=head1 CLASS METHODS
+
+=over 4
+
+=item batch_import
+
+=cut
+
+sub batch_import {
+  my $param = shift;
+
+  my $fh = $param->{filehandle};
+
+  my $imported = 0;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+  
+  my $line;
+  while ( defined($line=<$fh>) ) {
+
+    chomp $line;
+
+    my $inventory_item = new FS::inventory_item {
+      'classnum' => $param->{'classnum'},
+      'item'     => $line,
+    };
+
+    my $error = $inventory_item->insert;
+
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+
+      #or just skip?
+      #next;
+    }
+
+    $imported++;
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+  #might want to disable this if we skip records for any reason...
+  return "Empty file!" unless $imported;
+
+  '';
+
+}
+
 =back
 
 =head1 BUGS
 
+maybe batch_import should be a regular method in FS::inventory_class
+
 =head1 SEE ALSO
 
-L<FS::Record>, schema.html from the base documentation.
+L<inventory_class>, L<cust_svc>, L<FS::Record>, schema.html from the base
+documentation.
 
 =cut
 
