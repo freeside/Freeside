@@ -247,10 +247,8 @@ sub handler
 
       sub redirect {
         my( $location ) = @_;
-        warn 'redir1 $m='.$m;
         use vars qw($m);
         $m->clear_buffer;
-        warn 'redir3-prof';
         #false laziness w/above
         if ( defined(@DBIx::Profile::ISA) ) { #profiling redirect
 
@@ -267,14 +265,13 @@ sub handler
           );
           dbh->{'private_profile'} = {};
 
-          warn 'redir9-prof';
-          my $rv = $m->abort(200);
-          warn "redir10-prof: $rv";
-          $rv;
+          #whew.  removing this is all that's needed to fix the annoying
+          #blank-page-instead-of-profiling-redirect-when-called-from-an-include
+          #bug triggered by mason 1.32
+          #my $rv = $m->abort(200);
 
         } else { #normal redirect
 
-          warn 'redir9-redirect';
           $m->redirect($location);
 
         }
