@@ -92,12 +92,12 @@ print "This customer's signup URL: ".
 %>
 
 <A NAME="cust_main"></A>
-<%= &itable() %>
+<TABLE BORDER=0>
 <TR>
   <TD VALIGN="top">
     <%= include('cust_main/contacts.html', $cust_main ) %>
   </TD>
-  <TD VALIGN="top">
+  <TD VALIGN="top" STYLE="padding-left: 54px">
     <%= include('cust_main/misc.html', $cust_main ) %>
     <% if ( $conf->config('payby-default') ne 'HIDE' ) { %>
       <BR>
