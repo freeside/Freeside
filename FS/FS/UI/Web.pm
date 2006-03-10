@@ -131,6 +131,7 @@ package FS::UI::Web::JSRPC;
 
 use strict;
 use vars qw($DEBUG);
+use Carp;
 use Storable qw(nfreeze);
 use MIME::Base64;
 use JSON;
@@ -150,7 +151,7 @@ sub new {
 
         bless $self, $class;
 
-        die "CGI object required as second argument" unless $self->{'cgi'};
+        croak "CGI object required as second argument" unless $self->{'cgi'};
 
         return $self;
 }
