@@ -14,7 +14,7 @@
 <%= include('/elements/xmlhttp.html',
               'method' => 'POST',
               'url'    => $action,
-              'subs'   => [ 'start_job' ],
+              'subs'   => [ $key.'start_job' ],
            )
 %>
 <SCRIPT TYPE="text/javascript" SRC="../elements/overlibmws.js"></SCRIPT>
@@ -32,7 +32,7 @@ function <%=$key%>process () {
 
   document.<%=$formname%>.submit.disabled=true;
 
-  overlib( 'Submitting job to server...', WIDTH, 432, HEIGHT, 136, CAPTION, 'Please wait...', STICKY, AUTOSTATUSCAP, CLOSETEXT, '', CLOSECLICK, MIDX, 0, MIDY, 0 );
+  overlib( 'Submitting job to server...', WIDTH, 444, HEIGHT, 168, CAPTION, 'Please wait...', STICKY, AUTOSTATUSCAP, CLOSETEXT, '', CLOSECLICK, MIDX, 0, MIDY, 0 );
 
   var Hash = new Array();
   var x = 0;
@@ -68,13 +68,13 @@ function <%=$key%>process () {
 
   //alert('start_job( ' + Hash + ', <%=$key%>myCallback )' );
   //alert('start_job()' );
-  start_job( Hash, <%=$key%>myCallback );
+  <%=$key%>start_job( Hash, <%=$key%>myCallback );
 
 }
 
 function <%=$key%>myCallback( jobnum ) {
 
-  overlib( OLiframeContent('<%=$p%>elements/progress-popup.html?jobnum=' + jobnum + ';<%=$url_or_message_link%>;formname=<%=$formname%>' , 432, 136, 'progress_popup'), CAPTION, 'Please wait...', STICKY, AUTOSTATUSCAP, CLOSETEXT, '', CLOSECLICK, MIDX, 0, MIDY, 0 );
+  overlib( OLiframeContent('<%=$p%>elements/progress-popup.html?jobnum=' + jobnum + ';<%=$url_or_message_link%>;formname=<%=$formname%>' , 444, 168, 'progress_popup'), CAPTION, 'Please wait...', STICKY, AUTOSTATUSCAP, CLOSETEXT, '', CLOSECLICK, MIDX, 0, MIDY, 0 );
 
 }
 
