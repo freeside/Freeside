@@ -14,7 +14,8 @@
 <%= include('/elements/xmlhttp.html',
               'method' => 'POST',
               'url'    => $action,
-              'subs'   => [ $key.'start_job' ],
+              'subs'   => [ 'start_job' ],
+              'key'    => $key,
            )
 %>
 <SCRIPT TYPE="text/javascript" SRC="../elements/overlibmws.js"></SCRIPT>

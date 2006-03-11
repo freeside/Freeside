@@ -4,6 +4,7 @@
   my $url = $opt{'url'};
   my $method = exists($opt{'method'}) ? $opt{'method'} : 'GET';
   #my @subs = @{ $opt{'subs'};
+  my $key = exists($opt{'key'}) ? $opt{'key'} : '';
 
   $url .= ( ($url =~ /\?/) ? '&' : '?' )
     if $method eq 'GET';
@@ -38,10 +39,10 @@
 
   %>
 
-    function <%=$func%>() {
+    function <%=$key%><%=$func%>() {
         // count args; build URL
         var url = "<%=$furl%>";
-        var a = <%=$func%>.arguments;
+        var a = <%=$key%><%=$func%>.arguments;
 
         var args;
         var len;
