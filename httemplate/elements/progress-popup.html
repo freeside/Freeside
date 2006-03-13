@@ -45,7 +45,9 @@ function updateStatus( status_statustext ) {
     document.getElementById("progress_bar").innerHTML = '';
     document.getElementById("progress_percent").innerHTML = '<INPUT TYPE="button" VALUE="OK" onClick="parent.nd(1);">';
     document.getElementById("progress_jobnum").innerHTML = '';
-    parent.document.<%=$formname%>.submit.disabled=false;
+    if ( parent.document.<%=$formname%>.submit.disabled == true ) {
+      parent.document.<%=$formname%>.submit.disabled=false;
+    }
 <% } elsif ( $url ) { %>
     window.top.location.href = '<%= $url %>';
 <% } else { %>
@@ -56,7 +58,9 @@ function updateStatus( status_statustext ) {
     document.getElementById("progress_bar").innerHTML = '';
     document.getElementById("progress_percent").innerHTML = '<INPUT TYPE="button" VALUE="OK" onClick="parent.nd(1);">';
     document.getElementById("progress_jobnum").innerHTML = '';
-    parent.document.<%=$formname%>.submit.disabled=false;
+    if ( parent.document.<%=$formname%>.submit.disabled == true ) {
+      parent.document.<%=$formname%>.submit.disabled=false;
+    }
   } else {
     alert('XXX unknown status returned from server: ' + status);
   }
@@ -64,7 +68,7 @@ function updateStatus( status_statustext ) {
 }
 </SCRIPT>
 
-    <TABLE>
+    <TABLE WIDTH="100%">
       <TR>
         <TD ALIGN="center" ID="progress_message">
           Server processing job...
