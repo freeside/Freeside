@@ -285,7 +285,7 @@ sub qsearch {
         if ( $op eq '=' ) {
           if ( driver_name eq 'Pg' ) {
             my $type = dbdef->table($table)->column($column)->type;
-            if ( $type =~ /(int|serial)/i ) {
+            if ( $type =~ /(int|(big)?serial)/i ) {
               qq-( $column IS NULL )-;
             } else {
               qq-( $column IS NULL OR $column = '' )-;
@@ -296,7 +296,7 @@ sub qsearch {
         } elsif ( $op eq '!=' ) {
           if ( driver_name eq 'Pg' ) {
             my $type = dbdef->table($table)->column($column)->type;
-            if ( $type =~ /(int|serial)/i ) {
+            if ( $type =~ /(int|(big)?serial)/i ) {
               qq-( $column IS NOT NULL )-;
             } else {
               qq-( $column IS NOT NULL AND $column != '' )-;
@@ -365,7 +365,7 @@ sub qsearch {
     grep defined( $record->{$_} ) && $record->{$_} ne '', @real_fields
   ) {
     if ( $record->{$field} =~ /^\d+(\.\d+)?$/
-         && dbdef->table($table)->column($field)->type =~ /(int|serial)/i
+         && dbdef->table($table)->column($field)->type =~ /(int|(big)?serial)/i
     ) {
       $sth->bind_param($bind++, $record->{$field}, { TYPE => SQL_INTEGER } );
     } else {
@@ -695,7 +695,7 @@ sub insert {
     my $col = $self->dbdef_table->column($primary_key);
     
     $db_seq =
-      uc($col->type) eq 'SERIAL'
+      uc($col->type) =~ /^(BIG)?SERIAL\d?/
       || ( driver_name eq 'Pg'
              && defined($col->default)
              && $col->default =~ /^nextval\(/i
@@ -1026,7 +1026,7 @@ sub replace {
          #false laziness w/qsearch
          if ( driver_name eq 'Pg' ) {
             my $type = $old->dbdef_table->column($_)->type;
-            if ( $type =~ /(int|serial)/i ) {
+            if ( $type =~ /(int|(big)?serial)/i ) {
               qq-( $_ IS NULL )-;
             } else {
               qq-( $_ IS NULL OR $_ = '' )-;
@@ -1498,12 +1498,23 @@ my @zip_reqd_countries = qw( CA ); #US implicit...
 
 sub ut_zip {
   my( $self, $field, $country ) = @_;
+
   if ( $country eq 'US' ) {
-    $self->getfield($field) =~ /\s*(\d{5}(\-\d{4})?)\s*$/
+
+    $self->getfield($field) =~ /^\s*(\d{5}(\-\d{4})?)\s*$/
       or return gettext('illegal_zip'). " $field for country $country: ".
                 $self->getfield($field);
-    $self->setfield($field,$1);
+    $self->setfield($field, $1);
+
+  } elsif ( $country eq 'CA' ) {
+
+    $self->getfield($field) =~ /^\s*([A-Z]\d[A-Z])\s*(\d[A-Z]\d)\s*$/i
+      or return gettext('illegal_zip'). " $field for country $country: ".
+                $self->getfield($field);
+    $self->setfield($field, "$1 $2");
+
   } else {
+
     if ( $self->getfield($field) =~ /^\s*$/
          && ( !$country || ! grep { $_ eq $country } @zip_reqd_countries )
        )
@@ -1514,7 +1525,9 @@ sub ut_zip {
         or return gettext('illegal_zip'). " $field: ". $self->getfield($field);
       $self->setfield($field,$1);
     }
+
   }
+
   '';
 }
 
