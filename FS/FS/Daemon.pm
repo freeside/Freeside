@@ -5,6 +5,7 @@ use vars qw( $pid_dir $me $pid_file $sigint $sigterm $logfile );
 use Exporter;
 use Fcntl qw(:flock);
 use POSIX qw(setsid);
+use IO::File;
 use Date::Format;
 
 #this is a simple refactoring of the stuff from freeside-queued, just to
