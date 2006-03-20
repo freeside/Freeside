@@ -1,0 +1,142 @@
+#!/usr/bin/perl -w
+#
+# Usage: bin/cdr_upstream_rate.import username ratenum filename 
+#
+# records will be imported into cdr_upstream_rate, rate_detail and rate_region
+# 
+# Example: bin/cdr_upstream_rate.import ivan 1 ~ivan/convergent/sample_rate_table.csv
+#
+#   username: a freeside login (from /usr/local/etc/freeside/mapsecrets)
+#   ratenum: rate plan (FS::rate) created with the web UI
+#   filename: CSV file
+#
+#     the following fields are currently used:
+#       - Class Code         => cdr_upstream_rate.rateid
+#       - Description        => rate_region.regionname
+#                               (rate_detail->dest_region)
+#       - 1_rate             => ( * 60 / 1_rate_seconds ) => rate_detail.min_charge
+#       - 1_rate_seconds     => (used above)
+#       - 1_second_increment => rate_detail.sec_granularity
+#
+#     the following fields are not (yet) used:
+#       - Flagfall           => what's this for?
+#
+#       - 1_cap_time         => freeside doesn't have voip time caps yet...
+#       - 1_cap_cost         => freeside doesn't have voip cost caps yet...
+#       - 1_repeat           => not sure what this is for, sample data is all 0
+#
+#       - 2_rate             => \
+#       - 2_rate_seconds     =>  |
+#       - 2_second_increment =>  | not sure what the second set of rate data
+#       - 2_cap_time         =>  | is supposed to be for...
+#       - 2_cap_cost         =>  |
+#       - 2_repeat           => /
+#
+#       - Carrier            => probably not needed?
+#       - Start Date         => not necessary?
+
+use strict;
+use vars qw( $DEBUG );
+use Text::CSV_XS;
+use FS::UID qw(dbh adminsuidsetup);
+use FS::Record qw(qsearchs);
+use FS::rate;
+use FS::cdr_upstream_rate;
+use FS::rate_detail;
+use FS::rate_region;
+
+$DEBUG = 1;
+
+my $user = shift or die &usage;
+adminsuidsetup $user;
+
+my $ratenum = shift or die &usage;
+
+my $rate = qsearchs( 'rate', { 'ratenum' => $ratenum } );
+die "rate plan $ratenum not found in rate table\n"
+  unless $rate;
+
+my $csv = new Text::CSV_XS;
+my $hline = scalar(<>);
+chomp($hline);
+$csv->parse($hline) or die "can't parse header: $hline\n";
+my @header = $csv->fields();
+
+$FS::UID::AutoCommit = 0;
+
+while (<>) {
+
+  chomp;
+  my $line = $_;
+
+#  #$line =~ /^(\d+),"([^"]+)"$/ or do {
+#  #}
+#  $line =~ /^(\d+),"([^"]+)"/ or do {
+#    warn "unparsable line: $line\n";
+#    next;
+#  };
+
+  $csv->parse($line) or die "can't parse line: $line\n";
+  my @line = $csv->fields();
+
+  my %hash = map { $_ => shift(@line) } @header;
+
+  warn join('', map { "$_ => $hash{$_}\n" } keys %hash )
+    if $DEBUG > 1;
+
+  my $rate_region = new FS::rate_region {
+    'regionname' => $hash{'Description'}
+  };
+
+  my $error = $rate_region->insert;
+  if ( $error ) {
+    dbh->rollback;
+    die "error inserting into rate_region: $error\n";
+  }
+  my $dest_regionnum = $rate_region->regionnum;
+  warn "rate_region $dest_regionnum inserted\n"
+    if $DEBUG;
+
+  my $rate_detail = new FS::rate_detail {
+    'ratenum'         => $ratenum,
+    'dest_regionnum'  => $dest_regionnum,
+    'min_included'    => 0,
+    #'min_charge',     => sprintf('%.5f', 60 * $hash{'1_rate'} / $hash{'1_rate_seconds'} ),
+    'min_charge',     => sprintf('%.5f', $hash{'1_rate'} /
+                                         ( $hash{'1_rate_seconds'} / 60 )
+                                ),
+    'sec_granularity' => $hash{'1_second_increment'},
+  };
+  $error = $rate_detail->insert;
+  if ( $error ) {
+    dbh->rollback;
+    die "error inserting into rate_detail: $error\n";
+  }
+  my $ratedetailnum = $rate_detail->ratedetailnum;
+  warn "rate_detail $ratedetailnum inserted\n"
+    if $DEBUG;
+
+  my $cdr_upstream_rate = new FS::cdr_upstream_rate {
+    'upstream_rateid'  => $hash{'Class Code'},
+    'ratedetailnum'    => $rate_detail->ratedetailnum,
+  };
+  $error = $cdr_upstream_rate->insert;
+  if ( $error ) {
+    dbh->rollback;
+    die "error inserting into cdr_upstream_rate: $error\n";
+  }
+  warn "cdr_upstream_rate ". $cdr_upstream_rate->upstreamratenum. " inserted\n"
+    if $DEBUG;
+
+  dbh->commit or die "can't commit: ". dbh->errstr;
+
+  warn "\n" if $DEBUG;
+
+}
+
+dbh->commit or die "can't commit: ". dbh->errstr;
+
+sub usage {
+  "Usage:\n\ncdr_upstream_rate.import username ratenum filename\n";
+}
+

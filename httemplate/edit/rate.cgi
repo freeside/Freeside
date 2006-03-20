@@ -13,7 +13,9 @@ my $action = $rate->ratenum ? 'Edit' : 'Add';
 my $p1 = popurl(1);
 
 my %granularity = (
+  '1', => '1 second',
   '6'  => '6 second',
+  '30' => '30 second', # '1/2 minute',
   '60' => 'minute',
 );
 
@@ -60,9 +62,10 @@ Rate plan
      qsearch({
                'select'    => 'DISTINCT ON ( regionnum ) rate_region.*',
                'table'     => 'rate_region',
-               'addl_from' => 'INNER JOIN rate_prefix USING ( regionnum )',
                'hashref'   => {},
-               'extra_sql' => "WHERE countrycode != '1'",
+               #'addl_from' => 'INNER JOIN rate_prefix USING ( regionnum )',
+               #'extra_sql' => "WHERE countrycode != '1'",
+
                               # 'ORDER BY regionname'
                               # ERROR: SELECT DISTINCT ON expressions must
                               #        match initial ORDER BY expressions

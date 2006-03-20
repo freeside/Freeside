@@ -4,18 +4,19 @@ use strict;
 use vars qw(@ISA $DEBUG %info);
 use Date::Format;
 use Tie::IxHash;
+use FS::Conf;
 use FS::Record qw(qsearchs qsearch);
 use FS::part_pkg::flat;
 #use FS::rate;
-use FS::rate_prefix;
+#use FS::rate_prefix;
 
 @ISA = qw(FS::part_pkg::flat);
 
 $DEBUG = 1;
 
-tie my %region_method, 'Tie::IxHash',
+tie my %rating_method, 'Tie::IxHash',
   'prefix' => 'Rate calls by using destination prefix to look up a region and rate according to the internal prefix and rate tables',
-  'upstream_rateid' => 'Rate calls by mapping the upstream rate ID (# rate plan ID?) directly to an internal rate (rate_detail)', #upstream_rateplanid
+  'upstream' => 'Rate calls based on upstream data: If the call type is "1", map the upstream rate ID directly to an internal rate (rate_detail), otherwise, pass the upstream price through directly.',
 ;
 
 #tie my %cdr_location, 'Tie::IxHash',
@@ -43,10 +44,14 @@ tie my %region_method, 'Tie::IxHash',
                      'select_key'   => 'ratenum',
                      'select_label' => 'ratename',
                    },
-    'region_method' => { 'name' => 'Region rating method',
+    'rating_method' => { 'name' => 'Region rating method',
                          'type' => 'select',
-                         'select_options' => \%region_method,
+                         'select_options' => \%rating_method,
                        },
+
+    'default_prefix' => { 'name'    => 'Default prefix optionally prepended to customer DID numbers when searching for CDR records',
+                          'default' => '+1',
+                        },
 
     #XXX also have option for an external db??
 #    'cdr_location' => { 'name' => 'CDR database location'
@@ -72,7 +77,7 @@ tie my %region_method, 'Tie::IxHash',
 #                  },
 
   },
-  'fieldorder' => [qw( setup_fee recur_flat unused_credit ratenum ignore_unrateable )],
+  'fieldorder' => [qw( setup_fee recur_flat unused_credit ratenum rating_method default_prefix )],
   'weight' => 40,
 );
 
@@ -83,15 +88,19 @@ sub calc_setup {
 
 #false laziness w/voip_sqlradacct... resolve it if that one ever gets used again
 sub calc_recur {
-  my($self, $cust_pkg, $sdate, $details ) = @_;
+  my($self, $cust_pkg, $sdate, $details, $param ) = @_;
 
   my $last_bill = $cust_pkg->last_bill;
 
   my $ratenum = $cust_pkg->part_pkg->option('ratenum');
 
+  my $spool_cdr = $cust_pkg->cust_main->spool_cdr;
+
   my %included_min = ();
 
   my $charges = 0;
+
+  my $downstream_cdr = '';
 
   # also look for a specific domain??? (username@telephonedomain)
   foreach my $cust_svc (
@@ -99,147 +108,227 @@ sub calc_recur {
   ) {
 
     foreach my $cdr (
-      $cust_svc->get_cdrs( $last_bill, $$sdate )
+      $cust_svc->get_cdrs_for_update()  # $last_bill, $$sdate )
     ) {
       if ( $DEBUG > 1 ) {
         warn "rating CDR $cdr\n".
              join('', map { "  $_ => ". $cdr->{$_}. "\n" } keys %$cdr );
       }
 
-      my( $regionnum, $rate_detail );
-      if ( $self->option('region_method') eq 'prefix'
-           || ! $self->option('region_method')
+      my $rate_detail;
+      my( $rate_region, $regionnum );
+      my $pretty_destnum;
+      my $charge = 0;
+      my @call_details = ();
+      if ( $self->option('rating_method') eq 'prefix'
+           || ! $self->option('rating_method')
          )
       {
 
-        ###
-        # look up rate details based on called station id
-        ###
+        die "rating_method 'prefix' not yet supported";
+
+#        ###
+#        # look up rate details based on called station id
+#        ###
+#  
+#        my $dest = $cdr->dst;
+#  
+#        #remove non-phone# stuff and whitespace
+#        $dest =~ s/\s//g;
+#        my $proto = '';
+#        $dest =~ s/^(\w+):// and $proto = $1; #sip:
+#        my $siphost = '';
+#        $dest =~ s/\@(.*)$// and $siphost = $1; # @10.54.32.1, @sip.example.com
+#  
+#        #determine the country code
+#        my $countrycode;
+#        if (    $dest =~ /^011(((\d)(\d))(\d))(\d+)$/
+#             || $dest =~ /^\+(((\d)(\d))(\d))(\d+)$/
+#           )
+#        {
+#  
+#          my( $three, $two, $one, $u1, $u2, $rest ) = ( $1,$2,$3,$4,$5,$6 );
+#          #first look for 1 digit country code
+#          if ( qsearch('rate_prefix', { 'countrycode' => $one } ) ) {
+#            $countrycode = $one;
+#            $dest = $u1.$u2.$rest;
+#          } elsif ( qsearch('rate_prefix', { 'countrycode' => $two } ) ) { #or 2
+#            $countrycode = $two;
+#            $dest = $u2.$rest;
+#          } else { #3 digit country code
+#            $countrycode = $three;
+#            $dest = $rest;
+#          }
+#  
+#        } else {
+#          $countrycode = '1';
+#          $dest =~ s/^1//;# if length($dest) > 10;
+#        }
+#  
+#        warn "rating call to +$countrycode $dest\n" if $DEBUG;
+#        $pretty_destnum = "+$countrycode $dest";
+#  
+#        #find a rate prefix, first look at most specific (4 digits) then 3, etc.,
+#        # finally trying the country code only
+#        my $rate_prefix = '';
+#        for my $len ( reverse(1..6) ) {
+#          $rate_prefix = qsearchs('rate_prefix', {
+#            'countrycode' => $countrycode,
+#            #'npa'         => { op=> 'LIKE', value=> substr($dest, 0, $len) }
+#            'npa'         => substr($dest, 0, $len),
+#          } ) and last;
+#        }
+#        $rate_prefix ||= qsearchs('rate_prefix', {
+#          'countrycode' => $countrycode,
+#          'npa'         => '',
+#        });
+#  
+#        die "Can't find rate for call to +$countrycode $dest\n"
+#          unless $rate_prefix;
+#  
+#        $regionnum = $rate_prefix->regionnum;
+#        $rate_detail = qsearchs('rate_detail', {
+#          'ratenum'        => $ratenum,
+#          'dest_regionnum' => $regionnum,
+#        } );
+#  
+#        $rate_region = $rate_prefix->rate_region;
+#
+#        warn "  found rate for regionnum $regionnum ".
+#             "and rate detail $rate_detail\n"
+#          if $DEBUG;
+
+      } elsif ( $self->option('rating_method') eq 'upstream' ) {
+
+        if ( $cdr->cdrtypenum == 1 ) { #rate based on upstream rateid
+
+          $rate_detail = $cdr->cdr_upstream_rate->rate_detail;
+
+          $regionnum = $rate_detail->dest_regionnum;
+          $rate_region = $rate_detail->dest_region;
+
+          $pretty_destnum = $cdr->dst;
+
+          warn "  found rate for regionnum $regionnum and ".
+               "rate detail $rate_detail\n"
+            if $DEBUG;
+
+        } else { #pass upstream price through
+
+          $charge = sprintf('%.2f', $cdr->upstream_price);
   
-        my $dest = $cdr->{'calledstationid'};  # XXX
-  
-        #remove non-phone# stuff and whitespace
-        $dest =~ s/\s//g;
-        my $proto = '';
-        $dest =~ s/^(\w+):// and $proto = $1; #sip:
-        my $siphost = '';
-        $dest =~ s/\@(.*)$// and $siphost = $1; # @10.54.32.1, @sip.example.com
-  
-        #determine the country code
-        my $countrycode;
-        if (    $dest =~ /^011(((\d)(\d))(\d))(\d+)$/
-             || $dest =~ /^\+(((\d)(\d))(\d))(\d+)$/
-           )
-        {
-  
-          my( $three, $two, $one, $u1, $u2, $rest ) = ( $1,$2,$3,$4,$5,$6 );
-          #first look for 1 digit country code
-          if ( qsearch('rate_prefix', { 'countrycode' => $one } ) ) {
-            $countrycode = $one;
-            $dest = $u1.$u2.$rest;
-          } elsif ( qsearch('rate_prefix', { 'countrycode' => $two } ) ) { #or 2
-            $countrycode = $two;
-            $dest = $u2.$rest;
-          } else { #3 digit country code
-            $countrycode = $three;
-            $dest = $rest;
-          }
-  
-        } else {
-          $countrycode = '1';
-          $dest =~ s/^1//;# if length($dest) > 10;
+          @call_details = (
+            #time2str("%Y %b %d - %r", $cdr->calldate_unix ),
+            time2str("%c", $cdr->calldate_unix),  #XXX this should probably be a config option dropdown so they can select US vs- rest of world dates or whatnot
+            'N/A', #minutes...
+            '$'.$charge,
+            #$pretty_destnum,
+            $cdr->description, #$rate_region->regionname,
+          );
+
         }
-  
-        warn "rating call to +$countrycode $dest\n" if $DEBUG;
-  
-        #find a rate prefix, first look at most specific (4 digits) then 3, etc.,
-        # finally trying the country code only
-        my $rate_prefix = '';
-        for my $len ( reverse(1..6) ) {
-          $rate_prefix = qsearchs('rate_prefix', {
-            'countrycode' => $countrycode,
-            #'npa'         => { op=> 'LIKE', value=> substr($dest, 0, $len) }
-            'npa'         => substr($dest, 0, $len),
-          } ) and last;
-        }
-        $rate_prefix ||= qsearchs('rate_prefix', {
-          'countrycode' => $countrycode,
-          'npa'         => '',
-        });
-  
-        die "Can't find rate for call to +$countrycode $dest\n"
-          unless $rate_prefix;
-  
-        $regionnum = $rate_prefix->regionnum;
-        $rate_detail = qsearchs('rate_detail', {
-          'ratenum'        => $ratenum,
-          'dest_regionnum' => $regionnum,
-        } );
-  
-        warn "  found rate for regionnum $regionnum ".
-             "and rate detail $rate_detail\n"
-          if $DEBUG;
-
-      } elsif ( $self->option('region_method') eq 'upstream_rateid' ) { #upstream_rateplanid
-
-        $regionnum = ''; #XXXXX regionnum should be something
-
-        $rate_detail = $cdr->cdr_upstream_rate->rate_detail;
-
-        warn "  found rate for ". #regionnum $regionnum and ".
-             "rate detail $rate_detail\n"
-          if $DEBUG;
 
       } else {
         die "don't know how to rate CDRs using method: ".
-            $self->option('region_method'). "\n";
+            $self->option('rating_method'). "\n";
       }
 
       ###
       # find the price and add detail to the invoice
       ###
 
-      $included_min{$regionnum} = $rate_detail->min_included
-        unless exists $included_min{$regionnum};
+      # if $rate_detail is not found, skip this CDR... i.e. 
+      # don't add it to invoice, don't set its status to NULL,
+      # don't call downstream_csv or something on it...
+      # but DO emit a warning...
+      if ( ! $rate_detail && ! scalar(@call_details) ) {
+  
+        warn "no rate_detail found for CDR.acctid:  ". $cdr->acctid.
+             "; skipping\n"
 
-      my $granularity = $rate_detail->sec_granularity;
-      my $seconds = $cdr->{'acctsessiontime'}; # XXX
-      $seconds += $granularity - ( $seconds % $granularity );
-      my $minutes = sprintf("%.1f", $seconds / 60);
-      $minutes =~ s/\.0$// if $granularity == 60;
+      } else { # there *is* a rate_detail (or call_details), proceed...
 
-      $included_min{$regionnum} -= $minutes;
+        unless ( @call_details ) {
+    
+          $included_min{$regionnum} = $rate_detail->min_included
+            unless exists $included_min{$regionnum};
+      
+          my $granularity = $rate_detail->sec_granularity;
+          my $seconds = $cdr->billsec; # |ength($cdr->billsec) ? $cdr->billsec : $cdr->duration;
+          $seconds += $granularity - ( $seconds % $granularity );
+          my $minutes = sprintf("%.1f", $seconds / 60);
+          $minutes =~ s/\.0$// if $granularity == 60;
+      
+          $included_min{$regionnum} -= $minutes;
+      
+          if ( $included_min{$regionnum} < 0 ) {
+            my $charge_min = 0 - $included_min{$regionnum};
+            $included_min{$regionnum} = 0;
+            $charge = sprintf('%.2f', $rate_detail->min_charge * $charge_min );
+            $charges += $charge;
+          }
+      
+          # this is why we need regionnum/rate_region....
+          warn "  (rate region $rate_region)\n" if $DEBUG;
+      
+          @call_details = (
+            #time2str("%Y %b %d - %r", $cdr->calldate_unix ),
+            time2str("%c", $cdr->calldate_unix),  #XXX this should probably be a config option dropdown so they can select US vs- rest of world dates or whatnot
+            $minutes.'m',
+            '$'.$charge,
+            $pretty_destnum,
+            $rate_region->regionname,
+          );
 
-      my $charge = 0;
-      if ( $included_min{$regionnum} < 0 ) {
-        my $charge_min = 0 - $included_min{$regionnum};
-        $included_min{$regionnum} = 0;
-        $charge = sprintf('%.2f', $rate_detail->min_charge * $charge_min );
-        $charges += $charge;
+        }
+    
+        warn "  adding details on charge to invoice: ".
+             join(' - ', @call_details )
+          if $DEBUG;
+    
+        push @$details, join(' - ', @call_details); #\@call_details,
+  
+        # if the customer flag is on, call "downstream_csv" or something
+        # like it to export the call downstream!
+        # XXX price plan option to pick format, or something...
+        $downstream_cdr .= $cdr->downstream_csv( 'format' => 'convergent' )
+          if $spool_cdr;
+  
+        my $error = $cdr->set_status_and_rated_price('done', $charge);
+        die $error if $error;
+  
       }
-
-      # XXXXXXX
-#      my $rate_region = $rate_prefix->rate_region;
-#      warn "  (rate region $rate_region)\n" if $DEBUG;
-#
-#      my @call_details = (
-#        #time2str("%Y %b %d - %r", $session->{'acctstarttime'}),
-#        time2str("%c", $cdr->{'acctstarttime'}),  #XXX
-#        $minutes.'m',
-#        '$'.$charge,
-#        "+$countrycode $dest",
-#        $rate_region->regionname,
-#      );
-#
-#      warn "  adding details on charge to invoice: ".
-#           join(' - ', @call_details )
-#        if $DEBUG;
-#
-#      push @$details, join(' - ', @call_details); #\@call_details,
-
+  
     } # $cdr
 
   } # $cust_svc
+
+  if ( $spool_cdr && length($downstream_cdr) ) {
+
+    use FS::UID qw(datasrc);
+    my $dir = '/usr/local/etc/freeside/export.'. datasrc. '/cdr';
+    mkdir $dir, 0700 unless -d $dir;
+    $dir .= '/'. $cust_pkg->custnum.
+    mkdir $dir, 0700 unless -d $dir;
+    my $filename = time2str("$dir/CDR%Y%m%d-spool.CSV", time); #XXX invoice date instead?  would require changing the order things are generated in cust_main::bill insert cust_bill first - with transactions it could be done though
+
+    push @{ $param->{'precommit_hooks'} },
+         sub {
+               #lock the downstream spool file and append the records 
+               use Fcntl qw(:flock);
+               use IO::File;
+               my $spool = new IO::File ">>$filename"
+                 or die "can't open $filename: $!\n";
+               flock( $spool, LOCK_EX)
+                 or die "can't lock $filename: $!\n";
+               seek($spool, 0, 2)
+                 or die "can't seek to end of $filename: $!\n";
+               print $spool $downstream_cdr;
+               flock( $spool, LOCK_UN );
+               close $spool;
+             };
+
+  } #if ( $spool_cdr && length($downstream_cdr) )
 
   $self->option('recur_flat') + $charges;
 

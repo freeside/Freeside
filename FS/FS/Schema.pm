@@ -437,6 +437,7 @@ sub tables_hashref {
         'refnum',   'int',  '',     '', '', '', 
         'referral_custnum', 'int',  'NULL', '', '', '', 
         'comments', 'text', 'NULL', '', '', '', 
+        'spool_cdr','char', 'NULL', 1, '', '', 
       ],
       'primary_key' => 'custnum',
       'unique' => [],
@@ -1146,7 +1147,8 @@ sub tables_hashref {
         'orig_regionnum',  'int', 'NULL', '', '', '', 
         'dest_regionnum',  'int',     '', '', '', '', 
         'min_included',    'int',     '', '', '', '', 
-        'min_charge',      @money_type, '', '', 
+        #'min_charge',      @money_type, '', '', 
+        'min_charge',      'decimal', '', '10,5', '', '', 
         'sec_granularity', 'int',     '', '', '', '', 
         #time period (link to table of periods)?
       ],
@@ -1416,14 +1418,14 @@ sub tables_hashref {
       'index'       => [],
     },
 
-    #map upstream rateid (XXX or rateplanid?) to ours...
-    'cdr_upstream_rate' => { # XXX or 'cdr_upstream_rateplan' ??
+    #map upstream rateid to ours...
+    'cdr_upstream_rate' => {
       'columns' => [
-        # XXX or 'upstream_rateplanid' ??
-        'upstream_rateid', 'int', 'NULL', '', '', '',
+        'upstreamratenum', 'serial',  '', '', '', '',
+        'upstream_rateid', 'varchar', '', $char_d, '', '', 
         'ratedetailnum',   'int', 'NULL', '', '', '',
       ],
-      'primary_key' => '', #XXX need a primary key
+      'primary_key' => 'upstreamratenum', #XXX need a primary key
       'unique' => [ [ 'upstream_rateid' ] ], #unless we add another field, yeah
       'index'  => [],
     },

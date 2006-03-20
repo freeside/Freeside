@@ -114,12 +114,40 @@ sub check {
     || $self->ut_foreign_keyn('orig_regionnum', 'rate_region', 'regionnum' )
     || $self->ut_foreign_key('dest_regionnum', 'rate_region', 'regionnum' )
     || $self->ut_number('min_included')
-    || $self->ut_money('min_charge')
+
+    #|| $self->ut_money('min_charge')
+    #good enough for now...
+    || $self->ut_float('min_charge')
+
     || $self->ut_number('sec_granularity')
   ;
   return $error if $error;
 
   $self->SUPER::check;
+}
+
+=item orig_region 
+
+Returns the origination region (see L<FS::rate_region>) associated with this
+call plan rate.
+
+=cut
+
+sub orig_region {
+  my $self = shift;
+  qsearchs('rate_region', { 'regionnum' => $self->orig_regionnum } );
+}
+
+=item dest_region 
+
+Returns the destination region (see L<FS::rate_region>) associated with this
+call plan rate.
+
+=cut
+
+sub dest_region {
+  my $self = shift;
+  qsearchs('rate_region', { 'regionnum' => $self->dest_regionnum } );
 }
 
 =back

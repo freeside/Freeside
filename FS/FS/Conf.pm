@@ -1681,6 +1681,20 @@ httemplate/docs/config.html
     'type'        => 'text',
   },
 
+  {
+    'key'         => 'echeck-nonus',
+    'section'     => 'billing',
+    'description' => 'Disable ABA-format account checking for Electronic Check payment info',
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'voip-cust_cdr_spools',
+    'section'     => '',
+    'description' => 'Enable the per-customer option for individual CDR spools.',
+    'type'        => 'checkbox',
+  },
+
 );
 
 1;

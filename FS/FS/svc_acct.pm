@@ -20,6 +20,7 @@ use Crypt::PasswdMD5 1.2;
 use FS::UID qw( datasrc );
 use FS::Conf;
 use FS::Record qw( qsearch qsearchs fields dbh dbdef );
+use FS::Msgcat qw(gettext);
 use FS::svc_Common;
 use FS::cust_svc;
 use FS::part_svc;
@@ -31,9 +32,9 @@ use FS::queue;
 use FS::radius_usergroup;
 use FS::export_svc;
 use FS::part_export;
-use FS::Msgcat qw(gettext);
 use FS::svc_forward;
 use FS::svc_www;
+use FS::cdr;
 
 @ISA = qw( FS::svc_Common );
 
@@ -1342,6 +1343,67 @@ given time range.  (document this better)
 sub get_session_history {
   my $self = shift;
   $self->cust_svc->get_session_history(@_);
+}
+
+=item get_cdrs TIMESTAMP_START TIMESTAMP_END [ 'OPTION' => 'VALUE ... ]
+
+=cut
+
+sub get_cdrs {
+  my($self, $start, $end, %opt ) = @_;
+
+  my $did = $self->username; #yup
+
+  my $prefix = $opt{'default_prefix'}; #convergent.au '+61'
+
+  my $for_update = $opt{'for_update'} ? 'FOR UPDATE' : '';
+
+  #SELECT $for_update * FROM cdr
+  #  WHERE calldate >= $start #need a conversion
+  #    AND calldate <  $end   #ditto
+  #    AND (    charged_party = "$did"
+  #          OR charged_party = "$prefix$did" #if length($prefix);
+  #          OR ( ( charged_party IS NULL OR charged_party = '' )
+  #               AND
+  #               ( src = "$did" OR src = "$prefix$did" ) # if length($prefix)
+  #             )
+  #        )
+  #    AND ( freesidestatus IS NULL OR freesidestatus = '' )
+
+  my $charged_or_src;
+  if ( length($prefix) ) {
+    $charged_or_src =
+      " AND (    charged_party = '$did' 
+              OR charged_party = '$prefix$did'
+              OR ( ( charged_party IS NULL OR charged_party = '' )
+                   AND
+                   ( src = '$did' OR src = '$prefix$did' )
+                 )
+            )
+      ";
+  } else {
+    $charged_or_src = 
+      " AND (    charged_party = '$did' 
+              OR ( ( charged_party IS NULL OR charged_party = '' )
+                   AND
+                   src = '$did'
+                 )
+            )
+      ";
+
+  }
+
+  qsearch(
+    'select'    => "$for_update *",
+    'table'     => 'cdr',
+    'hashref'   => {
+                     #( freesidestatus IS NULL OR freesidestatus = '' )
+                     'freesidestatus' => '',
+                   },
+    'extra_sql' => $charged_or_src,
+
+  );
+
 }
 
 =item radius_groups

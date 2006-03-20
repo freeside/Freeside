@@ -297,16 +297,35 @@ my $widget = new HTML::Widgets::SelectLayers(
         $html .= ' MULTIPLE'
           if $href->{$field}{'type'} eq 'select_multiple';
         $html .= qq! NAME="$field" onChange="fchanged(this)">!;
-        foreach my $record (
-          qsearch( $href->{$field}{'select_table'},
-                   $href->{$field}{'select_hash'}   )
-        ) {
-          my $value = $record->getfield($href->{$field}{'select_key'});
-          $html .= qq!<OPTION VALUE="$value"!.
-                   (  $plandata{$field} =~ /(^|, *)$value *(,|$)/
-                        ? ' SELECTED'
-                        : ''          ).
-                   '>'. $record->getfield($href->{$field}{'select_label'})
+
+        if ( $href->{$field}{'select_table'} ) {
+          foreach my $record (
+            qsearch( $href->{$field}{'select_table'},
+                     $href->{$field}{'select_hash'}   )
+          ) {
+            my $value = $record->getfield($href->{$field}{'select_key'});
+            $html .= qq!<OPTION VALUE="$value"!.
+                     (  $plandata{$field} =~ /(^|, *)$value *(,|$)/
+                          ? ' SELECTED'
+                          : ''
+                     ).
+                     '>'. $record->getfield($href->{$field}{'select_label'});
+          }
+        } elsif ( $href->{$field}{'select_options'} ) {
+          foreach my $key ( keys %{ $href->{$field}{'select_options'} } ) {
+            my $value = $href->{$field}{'select_options'}{$key};
+            $html .= qq!<OPTION VALUE="$key"!.
+                     ( $plandata{$field} =~ /(^|, *)$value *(,|$)/
+                         ? ' SELECTED'
+                         : ''
+                     ).
+                     '>'. $value;
+          }
+
+        } else {
+          $html .= '<font color="#ff0000">warning: '.
+                   "don't know how to retreive options for $field select field".
+                   '</font>';
         }
         $html .= '</SELECT>';
       }

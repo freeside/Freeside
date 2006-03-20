@@ -322,3 +322,5 @@ FS/inventory_class.pm
 t/inventory_class.t
 FS/inventory_item.pm
 t/inventory_item.t
+FS/cdr_upstream_rate.pm
+t/cdr_upstream_rate.t

@@ -16,6 +16,7 @@ use FS::svc_broadband;
 use FS::svc_external;
 use FS::domain_record;
 use FS::part_export;
+use FS::cdr;
 
 @ISA = qw( FS::Record );
 
@@ -568,6 +569,50 @@ sub get_session_history {
 
   @sessions;
 
+}
+
+=item get_cdrs_for_update
+
+Returns (and SELECTs "FOR UPDATE") all unprocessed (freesidestatus NULL) CDR
+objects (see L<FS::cdr>) associated with this service.
+
+Currently CDRs are associated with svc_acct services via a DID in the
+username.  This part is rather tenative and still subject to change...
+
+=cut
+
+sub get_cdrs_for_update {
+  my($self, %options) = @_;
+
+  my $default_prefix = $options{'default_prefix'};
+
+  #Currently CDRs are associated with svc_acct services via a DID in the
+  #username.  This part is rather tenative and still subject to change...
+  #return () unless $self->svc_x->isa('FS::svc_acct');
+  return () unless $self->part_svc->svcdb eq 'svc_acct';
+  my $number = $self->svc_x->username;
+
+  my @cdrs = 
+    qsearch(
+      'table'      => 'cdr',
+      'hashref'    => { 'freesidestatus' => '',
+                        'charged_party'  => $number
+                      },
+      'extra_sql'  => 'FOR UPDATE',
+    );
+
+  if ( length($default_prefix) ) {
+    push @cdrs,
+      qsearch(
+        'table'      => 'cdr',
+        'hashref'    => { 'freesidestatus' => '',
+                          'charged_party'  => "$default_prefix$number",
+                        },
+        'extra_sql'  => 'FOR UPDATE',
+      );
+  }
+
+  @cdrs;
 }
 
 =item pkg_svc

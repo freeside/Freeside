@@ -159,6 +159,12 @@ if ( $date  =~ /^(\d{4})-(\d{1,2})-\d{1,2}$/ ) { #PostgreSQL date format
     <%= join(', ', grep { $_ !~ /^(POST|FAX)$/ } @invoicing_list ) || 'no' %>
   </TD>
 </TR>
+<% my $conf = new FS::Conf; if ( $conf->exists('voip-cust_cdr_spools') ) { %>
+  <TR>
+    <TD ALIGN="right">Spool&nbsp;CDRs</TD>
+    <TD BGCOLOR="#ffffff"><%= $cust_main->spool_cdr ? 'yes' : 'no' %></TD>
+  </TR>
+<% } %>
 
 </TABLE></TD></TR></TABLE>
 

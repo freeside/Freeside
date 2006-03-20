@@ -284,6 +284,8 @@ sub paymask {
 
 =item referral_custnum - referring customer number
 
+=item spool_cdr - Enable individual CDR spooling, empty or `Y'
+
 =back
 
 =head1 METHODS
@@ -1257,7 +1259,11 @@ sub check {
 
     my $payinfo = $self->payinfo;
     $payinfo =~ s/[^\d\@]//g;
-    $payinfo =~ /^(\d+)\@(\d{9})$/ or return 'invalid echeck account@aba';
+    if ( $conf->exists('echeck-nonus') ) {
+      $payinfo =~ /^(\d+)\@(\d+)$/ or return 'invalid echeck account@aba';
+    } else {
+      $payinfo =~ /^(\d+)\@(\d{9})$/ or return 'invalid echeck account@aba';
+    }
     $payinfo = "$1\@$2";
     $self->payinfo($payinfo);
     $self->paycvv('') if $self->dbdef_table->column('paycvv');
@@ -1336,8 +1342,10 @@ sub check {
     $self->payname($1);
   }
 
-  $self->tax =~ /^(Y?)$/ or return "Illegal tax: ". $self->tax;
-  $self->tax($1);
+  foreach my $flag (qw( tax spool_cdr )) {
+    $self->$flag() =~ /^(Y?)$/ or return "Illegal $flag: ". $self->$flag();
+    $self->$flag($1);
+  }
 
   $self->otaker(getotaker) unless $self->otaker;
 
@@ -1640,6 +1648,7 @@ sub bill {
 
   my( $total_setup, $total_recur ) = ( 0, 0 );
   my %tax;
+  my @precommit_hooks = ();
 
   foreach my $cust_pkg (
     qsearch('cust_pkg', { 'custnum' => $self->custnum } )
@@ -1673,7 +1682,7 @@ sub bill {
       $setup = eval { $cust_pkg->calc_setup( $time ) };
       if ( $@ ) {
         $dbh->rollback if $oldAutoCommit;
-        return $@;
+        return "$@ running calc_setup for $cust_pkg\n";
       }
 
       $cust_pkg->setfield('setup', $time) unless $cust_pkg->setup;
@@ -1695,10 +1704,13 @@ sub bill {
       # XXX shared with $recur_prog
       $sdate = $cust_pkg->bill || $cust_pkg->setup || $time;
 
-      $recur = eval { $cust_pkg->calc_recur( \$sdate, \@details ) };
+      #over two params!  lets at least switch to a hashref for the rest...
+      my %param = ( 'precommit_hooks' => \@precommit_hooks, );
+
+      $recur = eval { $cust_pkg->calc_recur( \$sdate, \@details, \%param ) };
       if ( $@ ) {
         $dbh->rollback if $oldAutoCommit;
-        return $@;
+        return "$@ running calc_recur for $cust_pkg\n";
       }
 
       #change this bit to use Date::Manip? CAREFUL with timezones (see
@@ -1969,6 +1981,16 @@ sub bill {
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return "can't update charged for invoice #$invnum: $error";
+  }
+
+  foreach my $hook ( @precommit_hooks ) { 
+    eval {
+      &{$hook}; #($self) ?
+    };
+    if ( $@ ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "$@ running precommit hook $hook\n";
+    }
   }
   
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;

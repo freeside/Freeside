@@ -3,11 +3,13 @@ package FS::cdr;
 use strict;
 use vars qw( @ISA );
 use Date::Parse;
+use Date::Format;
 use FS::UID qw( dbh );
 use FS::Record qw( qsearch qsearchs );
 use FS::cdr_type;
 use FS::cdr_calltype;
 use FS::cdr_carrier;
+use FS::cdr_upstream_rate;
 
 @ISA = qw(FS::Record);
 
@@ -99,6 +101,8 @@ following fields are currently supported:
 
 =item upstream_rateplanid - Upstream rate plan ID
 
+=item rated_price - Rated (or re-rated) price
+
 =item distance - km (need units field?)
 
 =item islocal - Local - 1, Non Local = 0
@@ -121,7 +125,7 @@ following fields are currently supported:
 
 =item svcnum - Link to customer service (see L<FS::cust_svc>)
 
-=item freesidestatus - NULL, done, skipped, pushed_downstream (or something)
+=item freesidestatus - NULL, done (or something)
 
 =back
 
@@ -241,7 +245,184 @@ sub check {
   $self->SUPER::check;
 }
 
-my %formats = (
+=item set_status_and_rated_price STATUS [ RATED_PRICE ]
+
+Sets the status to the provided string.  If there is an error, returns the
+error, otherwise returns false.
+
+=cut
+
+sub set_status_and_rated_price {
+  my($self, $status, $rated_price) = @_;
+  $self->status($status);
+  $self->rated_price($rated_price);
+  $self->replace();
+}
+
+=item calldate_unix 
+
+Parses the calldate in SQL string format and returns a UNIX timestamp.
+
+=cut
+
+sub calldate_unix {
+  str2time(shift->calldate);
+}
+
+=item cdr_carrier
+
+Returns the FS::cdr_carrier object associated with this CDR, or false if no
+carrierid is defined.
+
+=cut
+
+my %carrier_cache = ();
+
+sub cdr_carrier {
+  my $self = shift;
+  return '' unless $self->carrierid;
+  $carrier_cache{$self->carrierid} ||=
+    qsearchs('cdr_carrier', { 'carrierid' => $self->carrierid } );
+}
+
+=item carriername 
+
+Returns the carrier name (see L<FS::cdr_carrier>), or the empty string if
+no FS::cdr_carrier object is assocated with this CDR.
+
+=cut
+
+sub carriername {
+  my $self = shift;
+  my $cdr_carrier = $self->cdr_carrier;
+  $cdr_carrier ? $cdr_carrier->carriername : '';
+}
+
+=item cdr_calltype
+
+Returns the FS::cdr_calltype object associated with this CDR, or false if no
+calltypenum is defined.
+
+=cut
+
+my %calltype_cache = ();
+
+sub cdr_calltype {
+  my $self = shift;
+  return '' unless $self->calltypenum;
+  $calltype_cache{$self->calltypenum} ||=
+    qsearchs('cdr_calltype', { 'calltypenum' => $self->calltypenum } );
+}
+
+=item calltypename 
+
+Returns the call type name (see L<FS::cdr_calltype>), or the empty string if
+no FS::cdr_calltype object is assocated with this CDR.
+
+=cut
+
+sub calltypename {
+  my $self = shift;
+  my $cdr_calltype = $self->cdr_calltype;
+  $cdr_calltype ? $cdr_calltype->calltypename : '';
+}
+
+=item cdr_upstream_rate
+
+Returns the upstream rate mapping (see L<FS::cdr_upstream_rate>), or the empty
+string if no FS::cdr_upstream_rate object is associated with this CDR.
+
+=cut
+
+sub cdr_upstream_rate {
+  my $self = shift;
+  return '' unless $self->upstream_rateid;
+  qsearchs('cdr_upstream_rate', { 'upstream_rateid' => $self->upstream_rateid })
+    or '';
+}
+
+=item _convergent_format COLUMN [ COUNTRYCODE ]
+
+Returns the number in COLUMN formatted as follows:
+
+If the country code does not match COUNTRYCODE (default "61"), it is returned
+unchanged.
+
+If the country code does match COUNTRYCODE (default "61"), it is removed.  In
+addiiton, "0" is prepended unless the number starts with 13, 18 or 19. (???)
+
+=cut
+
+sub _convergent_format {
+  my( $self, $field ) = ( shift, shift );
+  my $countrycode = scalar(@_) ? shift : '61'; #+61 = australia
+  #my $number = $self->$field();
+  my $number = $self->get($field);
+  #if ( $number =~ s/^(\+|011)$countrycode// ) {
+  if ( $number =~ s/^\+$countrycode// ) {
+    $number = "0$number"
+      unless $number =~ /^1[389]/; #???
+  }
+  $number;
+}
+
+=item downstream_csv [ OPTION => VALUE, ... ]
+
+=cut
+
+my %export_formats = (
+  'convergent' => [
+    'carriername', #CARRIER
+    sub { shift->_convergent_format('src') }, #SERVICE_NUMBER
+    sub { shift->_convergent_format('charged_party') }, #CHARGED_NUMBER
+    sub { time2str('%Y-%m-%d', shift->calldate_unix ) }, #DATE
+    sub { time2str('%T',       shift->calldate_unix ) }, #TIME
+    'billsec', #'duration', #DURATION
+    sub { shift->_convergent_format('dst') }, #NUMBER_DIALED
+    '', #XXX add (from prefixes in most recent email) #FROM_DESC
+    '', #XXX add (from prefixes in most recent email) #TO_DESC
+    'calltypename', #CLASS_CODE
+    'rated_price', #PRICE
+    sub { shift->rated_price ? 'Y' : 'N' }, #RATED
+    '', #OTHER_INFO
+  ],
+);
+
+sub downstream_csv {
+  my( $self, %opt ) = @_;
+
+  my $format = $opt{'format'}; # 'convergent';
+  return "Unknown format $format" unless exists $export_formats{$format};
+
+  eval "use Text::CSV_XS;";
+  die $@ if $@;
+  my $csv = new Text::CSV_XS;
+
+  my @columns =
+    map {
+          ref($_) ? &{$_}($self) : $self->$_();
+        }
+    @{ $export_formats{$format} };
+
+  my $status = $csv->combine(@columns);
+  die "FS::CDR: error combining ". $csv->error_input(). "into downstream CSV"
+    unless $status;
+
+  $csv->string;
+
+}
+
+=back
+
+=head1 CLASS METHODS
+
+=over 4
+
+=item batch_import
+
+=cut
+
+my %import_formats = (
   'asterisk' => [
     'accountcode',
     'src',
@@ -264,14 +445,15 @@ my %formats = (
   ],
   'unitel' => [
     'uniqueid',
-    'cdr_type',
-    'calldate', # XXX may need massaging
-    'billsec', #XXX duration and billsec?
-               # sub { $_[0]->billsec(  $_[1] );
-               #       $_[0]->duration( $_[1] );
-               #     },
+    #'cdr_type',
+    'cdrtypenum',
+    'calldate', # may need massaging?  huh maybe not...
+    #'billsec', #XXX duration and billsec?
+                sub { $_[0]->billsec(  $_[1] );
+                      $_[0]->duration( $_[1] );
+                    },
     'src',
-    'dst',
+    'dst', # XXX needs to have "+61" prepended unless /^\+/ ???
     'charged_party',
     'upstream_currency',
     'upstream_price',
@@ -279,8 +461,8 @@ my %formats = (
     'distance',
     'islocal',
     'calltypenum',
-    'startdate', # XXX will definitely need massaging
-    'enddate',   # XXX same
+    'startdate',  #XXX needs massaging
+    'enddate',    #XXX same
     'description',
     'quantity',
     'carrierid',
@@ -294,7 +476,7 @@ sub batch_import {
   my $fh = $param->{filehandle};
   my $format = $param->{format};
 
-  return "Unknown format $format" unless exists $formats{$format};
+  return "Unknown format $format" unless exists $import_formats{$format};
 
   eval "use Text::CSV_XS;";
   die $@ if $@;
@@ -339,7 +521,7 @@ sub batch_import {
         }
 
       }
-      @{ $formats{$format} }
+      @{ $import_formats{$format} }
     ;
 
     my $cdr = new FS::cdr ( \%cdr );
