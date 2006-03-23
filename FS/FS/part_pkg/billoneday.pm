@@ -1,4 +1,4 @@
-package FS::part_pkg::subscription;
+package FS::part_pkg::billoneday;
 
 use strict;
 use vars qw(@ISA %info);
@@ -9,7 +9,7 @@ use FS::part_pkg::flat;
 @ISA = qw(FS::part_pkg::flat);
 
 %info = (
-  'name' => 'First partial month full charge, then flat-rate (selectable month billing)',
+  'name' => 'charge a full month  every (selectable) billing day',
   'fields' => {
     'setup_fee' => { 'name' => 'Setup fee for this package',
                      'default' => 0,
@@ -34,8 +34,15 @@ sub calc_recur {
 
   my $mnow = $$sdate;
   my ($sec,$min,$hour,$mday,$mon,$year) = (localtime($mnow) )[0,1,2,3,4,5];
-  $$sdate = timelocal(0,0,0,$self->option('cutoff_day'),$mon,$year);
+  my $mstart = timelocal(0,0,0,$self->option('cutoff_day'),$mon,$year);
+  my $mend = timelocal(0,0,0,$self->option('cutoff_day'), $mon == 11 ? 0 : $mon+1, $year+($mon==11));
 
+  if($mday > $self->option('cutoff_date') and $mstart != $mnow ) {
+    $$sdate = timelocal(0,0,0,$self->option('cutoff_day'), $mon == 11 ? 0 : $mon+1,  $year+($mon==11));
+  }
+  else{
+    $$sdate = timelocal(0,0,0,$self->option('cutoff_day'), $mon, $year);
+  }
   $self->option('recur_fee');
 }
 1;
