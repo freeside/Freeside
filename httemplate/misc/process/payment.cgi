@@ -126,7 +126,7 @@ if ( $cgi->param('save') ) {
   $new->set( $_ => $cgi->param($_) ) foreach @{$payby2fields{$payby}};
 
   my $error = $new->replace($cust_main);
-  eidiot "payment processed sucessfully, but error saving info: $error"
+  eidiot "payment processed successfully, but error saving info: $error"
     if $error;
   $cust_main = $new;
 }
@@ -134,7 +134,7 @@ if ( $cgi->param('save') ) {
 #success!
 
 %>
-<%= include( '/elements/header.html', ucfirst($type{$payby}). ' processing sucessful',
+<%= include( '/elements/header.html', ucfirst($type{$payby}). ' processing successful',
              include('/elements/menubar.html',
                        'Main menu' => popurl(3),
                        "View this customer (#$custnum)" =>
