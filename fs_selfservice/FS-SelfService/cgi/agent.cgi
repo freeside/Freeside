@@ -193,7 +193,7 @@ sub process_signup {
   } else {
     $action = 'agent_main';
     my $agent_info = agent_info( 'session_id' => $session_id );
-    $agent_info->{'message'} = 'Signup sucessful';
+    $agent_info->{'message'} = 'Signup successful';
     $agent_info;
   }
 
@@ -324,7 +324,7 @@ sub process_svc_acct {
     $action = 'agent_provision';
     return {
       %{agent_provision()},
-      'message' => $result->{'svc'}. ' setup sucessfully.',
+      'message' => $result->{'svc'}. ' setup successfully.',
     };
   }
 
@@ -343,7 +343,7 @@ sub process_svc_external {
     %{agent_provision()},
     'message' => $result->{'error'}
                    ? '<FONT COLOR="#FF0000">'. $result->{'error'}. '</FONT>'
-                   : $result->{'svc'}. ' setup sucessfully'.
+                   : $result->{'svc'}. ' setup successfully'.
                      ': serial number '.
                      sprintf('%010d', $result->{'id'}). '-'. $result->{'title'}
   };
@@ -403,7 +403,7 @@ sub process_order_pkg {
     #$cgi->delete( grep { $_ ne 'custnum' } $cgi->param );
     return {
       %{view_customer()},
-      'message' => 'Package order sucessful.',
+      'message' => 'Package order successful.',
     };
   }
 

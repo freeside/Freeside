@@ -1267,7 +1267,7 @@ sub _op_seconds {
     }
   }
 
-  warn "$me update sucessful; committing\n"
+  warn "$me update successful; committing\n"
     if $DEBUG;
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
@@ -1455,7 +1455,7 @@ sub clone_kludge_unsuspend {
 =item check_password 
 
 Checks the supplied password against the (possibly encrypted) password in the
-database.  Returns true for a sucessful authentication, false for no match.
+database.  Returns true for a successful authentication, false for no match.
 
 Currently supported encryptions are: classic DES crypt() and MD5
 

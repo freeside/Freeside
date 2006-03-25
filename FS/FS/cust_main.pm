@@ -336,7 +336,7 @@ Currently available options are: I<depend_jobnum> and I<noexport>.
 If I<depend_jobnum> is set, all provisioning jobs will have a dependancy
 on the supplied jobnum (they will not run until the specific job completes).
 This can be used to defer provisioning until some action completes (such
-as running the customer's credit card sucessfully).
+as running the customer's credit card successfully).
 
 The I<noexport> option is deprecated.  If I<noexport> is set true, no
 provisioning jobs (exports) are scheduled.  (You can schedule them later with
@@ -480,7 +480,7 @@ Currently available options are: I<depend_jobnum> and I<noexport>.
 If I<depend_jobnum> is set, all provisioning jobs will have a dependancy
 on the supplied jobnum (they will not run until the specific job completes).
 This can be used to defer provisioning until some action completes (such
-as running the customer's credit card sucessfully).
+as running the customer's credit card successfully).
 
 The I<noexport> option is deprecated.  If I<noexport> is set true, no
 provisioning jobs (exports) are scheduled.  (You can schedule them later with
@@ -2234,7 +2234,7 @@ if set, will override the value from the customer record.
 I<description> is a free-text field passed to the gateway.  It defaults to
 "Internet services".
 
-If an I<invnum> is specified, this payment (if sucessful) is applied to the
+If an I<invnum> is specified, this payment (if successful) is applied to the
 specified invoice.  If you don't specify an I<invnum> you might want to
 call the B<apply_payments> method.
 
@@ -2488,7 +2488,7 @@ sub realtime_bop {
     $capture->submit();
 
     unless ( $capture->is_success ) {
-      my $e = "Authorization sucessful but capture failed, custnum #".
+      my $e = "Authorization successful but capture failed, custnum #".
               $self->custnum. ': '.  $capture->result_code.
               ": ". $capture->error_message;
       warn $e;
@@ -2668,7 +2668,7 @@ gateway is attempted.
 #I<zip>, I<payinfo> and I<paydate> are also available.  Any of these options,
 #if set, will override the value from the customer record.
 
-#If an I<invnum> is specified, this payment (if sucessful) is applied to the
+#If an I<invnum> is specified, this payment (if successful) is applied to the
 #specified invoice.  If you don't specify an I<invnum> you might want to
 #call the B<apply_payments> method.
 

@@ -21,6 +21,6 @@
   } else {
     %>
     <!-- mason kludge -->
-    <%= include("/elements/header.html",'Import sucessful') %> <%
+    <%= include("/elements/header.html",'Import successful') %> <%
   }
 %>

@@ -109,7 +109,7 @@ warn "Freeside database initialized - commiting transaction\n" if $opt_v;
 $dbh->commit or die $dbh->errstr;
 $dbh->disconnect or die $dbh->errstr;
 
-warn "Database initialization committed sucessfully\n" if $opt_v;
+warn "Database initialization committed successfully\n" if $opt_v;
 
 sub dbdef_create { # reverse engineer the schema from the DB and save to file
   my( $dbh, $file ) = @_;

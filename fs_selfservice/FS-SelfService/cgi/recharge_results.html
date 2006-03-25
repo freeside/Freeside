@@ -7,7 +7,7 @@
 <%= if ( $error ) {
   $OUT .= qq!<FONT SIZE="+1" COLOR="#ff0000">Error processing your prepaid card: $error</FONT>!;
 } else {
-  $OUT .= 'Prepaid card recharge sucessful!<BR><BR>';
+  $OUT .= 'Prepaid card recharge successful!<BR><BR>';
 
   $OUT .= '$'. sprintf('%.2f', $amount). ' added to your account.<BR><BR>'
     if $amount;

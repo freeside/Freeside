@@ -43,7 +43,7 @@ inherits from FS::Record.  The following fields are currently supported:
 
 The job specified by B<jobnum> depends on the job specified B<depend_jobnum> -
 the B<jobnum> job will not be run until the B<depend_jobnum> job has completed
-sucessfully (or manually removed).
+successfully (or manually removed).
 
 =head1 METHODS
 
