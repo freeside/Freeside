@@ -1,5 +1,5 @@
 
-install DBIx::DBSchema 0.29 (or later)
+install DBIx::DBSchema 0.31 (or later)
 
 make install-perl-modules
 run "freeside-upgrade username" to uprade your database schema
@@ -11,6 +11,10 @@ If you have any records in the cust_tax_exempt table, you *MUST* migrate them
 to the new cust_tax_exempt_pkg table.  An example script to get you started is
 in bin/fs-migrate-cust_tax_exempt - it may need to be customized for your
 specific data.
+
+Optional for better zip code report performance:
+CREATE INDEX cust_main16 on cust_main ( zip );
+CREATE INDEX cust_main17 on cust_main ( ship_zip );
 
 ------
 
