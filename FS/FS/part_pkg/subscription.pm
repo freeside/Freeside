@@ -9,7 +9,7 @@ use FS::part_pkg::flat;
 @ISA = qw(FS::part_pkg::flat);
 
 %info = (
-  'name' => 'First partial month full charge, then flat-rate (selectable month billing)',
+  'name' => 'First partial month full charge, then flat-rate (selectable billing day)',
   'fields' => {
     'setup_fee' => { 'name' => 'Setup fee for this package',
                      'default' => 0,
@@ -23,18 +23,21 @@ use FS::part_pkg::flat;
 
   },
   'fieldorder' => [ 'setup_fee', 'recur_fee','cutoff_day'],
-  #'setup' => 'what.setup_fee.value',
-  #'recur' => '\'my $mnow = $sdate; my ($sec,$min,$hour,$mday,$mon,$year) = (localtime($sdate) )[0,1,2,3,4,5]; $sdate = timelocal(0,0,0,$self->option('cutoff_day'),$mon,$year); \' + what.recur_fee.value',
   'freq' => 'm',
   'weight' => 30,
 );
 
 sub calc_recur {
   my($self, $cust_pkg, $sdate ) = @_;
-
+  my $cutoff_day=$self->option('cutoff_day') or 1;
   my $mnow = $$sdate;
   my ($sec,$min,$hour,$mday,$mon,$year) = (localtime($mnow) )[0,1,2,3,4,5];
-  $$sdate = timelocal(0,0,0,$self->option('cutoff_day'),$mon,$year);
+
+  if($mday <$cutoff_day){
+     if ($mon==0) {$mon=11;$year--;}
+     else {$mon--;}
+  }
+$$sdate = timelocal(0,0,0,$cutoff_day,$mon,$year);
 
   $self->option('recur_fee');
 }

@@ -35,12 +35,23 @@ use FS::part_pkg::flat;
 
 sub calc_recur {
   my($self, $cust_pkg, $sdate ) = @_;
+  my $cutoff_day=$self->option('cutoff_day') or 1;
   my $mnow = $$sdate;
   my ($sec,$min,$hour,$mday,$mon,$year) = (localtime($mnow) )[0,1,2,3,4,5];
-  my $mstart = timelocal(0,0,0,$self->option('cutoff_day'),$mon,$year);
-  my $mend = timelocal(0,0,0,$self->option('cutoff_day'), $mon == 11 ? 0 : $mon+1, $year+($mon==11));
-  $$sdate = $mstart;
+  my $mend;
+  my $mstart;
+  if($mday > $cutoff_day){
+    $mend = timelocal(0,0,0,$cutoff_day, $mon == 11 ? 0 : $mon+1, $year+($mon==11));
+    $mstart=  timelocal(0,0,0,$cutoff_day,$mon,$year);  
 
+  }
+  else{
+    $mend = timelocal(0,0,0,$cutoff_day, $mon, $year);
+     if ($mon==0) {$mon=11;$year--;} else {$mon--;}
+    $mstart=  timelocal(0,0,0,$cutoff_day,$mon,$year);  
+  }
+
+   $$sdate = $mstart;
   my $permonth = $self->option('recur_fee') / $self->freq;
 
   $permonth * ( ( $self->freq - 1 ) + ($mend-$mnow) / ($mend-$mstart) );
