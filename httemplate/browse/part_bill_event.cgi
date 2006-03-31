@@ -31,13 +31,14 @@ my $total = scalar(@part_bill_event);
    foreach my $payby ( keys %payby ) {
      my $oldfreq = '';
 
-     my @payby_part_bill_event =  grep { $payby eq $_->payby }
-                                  sort {    $a->freq      cmp $b->freq # for now
-                                         || $a->seconds   <=> $b->seconds
-                                         || $a->weight    <=> $b->weight
-                                         || $a->eventpart <=> $b->eventpart
-                                       }
-                                  @part_bill_event;
+     my @payby_part_bill_event =
+       grep { $payby eq $_->payby }
+       sort {    ( $a->freq || '1d') cmp ( $b->freq || '1d' ) # for now
+              ||   $a->seconds       <=>   $b->seconds
+              ||   $a->weight        <=>   $b->weight
+              ||   $a->eventpart     <=>   $b->eventpart
+            }
+       @part_bill_event;
 
 %>
 
