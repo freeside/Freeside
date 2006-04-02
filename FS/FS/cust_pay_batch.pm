@@ -147,7 +147,7 @@ sub check {
   return "Unknown card type" if cardtype($cardnum) eq "Unknown";
 
   if ( $self->exp eq '' ) {
-    return "Expriation date required"; #unless 
+    return "Expiration date required"; #unless 
     $self->exp('');
   } else {
     if ( $self->exp =~ /^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/ ) {

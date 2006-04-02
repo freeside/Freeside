@@ -1311,7 +1311,7 @@ sub check {
   }
 
   if ( $self->paydate eq '' || $self->paydate eq '-' ) {
-    return "Expriation date required"
+    return "Expiration date required"
       unless $self->payby =~ /^(BILL|PREPAY|CHEK|DCHK|LECB|CASH|WEST|MCRD)$/;
     $self->paydate('');
   } else {
