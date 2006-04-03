@@ -1455,9 +1455,9 @@ httemplate/docs/config.html
   {
     'key'         => 'global_unique-username',
     'section'     => 'username',
-    'description' => 'Global username uniqueness control: none (usual setting - check uniqueness per exports), username (all usernames are globally unique, regardless of domain or exports), or username@domain (all username@domain pairs are globally unique, regardless of exports)',
+    'description' => 'Global username uniqueness control: none (usual setting - check uniqueness per exports), username (all usernames are globally unique, regardless of domain or exports), or username@domain (all username@domain pairs are globally unique, regardless of exports).  disabled turns off duplicate checking completely and is STRONGLY NOT RECOMMENDED unless you REALLY need to turn this off.',
     'type'        => 'select',
-    'select_enum' => [ 'none', 'username', 'username@domain' ],
+    'select_enum' => [ 'none', 'username', 'username@domain', 'disabled' ],
   },
 
   {

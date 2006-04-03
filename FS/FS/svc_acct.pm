@@ -902,6 +902,9 @@ per export and with identical I<svcpart> values.
 sub _check_duplicate {
   my $self = shift;
 
+  my $global_unique = $conf->config('global_unique-username') || 'none';
+  return '' if $global_unique eq 'disabled';
+
   #this is Pg-specific.  what to do for mysql etc?
   # ( mysql LOCK TABLES certainly isn't equivalent or useful here :/ )
   warn "$me locking svc_acct table for duplicate search" if $DEBUG;
@@ -913,8 +916,6 @@ sub _check_duplicate {
   unless ( $part_svc ) {
     return 'unknown svcpart '. $self->svcpart;
   }
-
-  my $global_unique = $conf->config('global_unique-username') || 'none';
 
   my @dup_user = grep { !$self->svcnum || $_->svcnum != $self->svcnum }
                  qsearch( 'svc_acct', { 'username' => $self->username } );
