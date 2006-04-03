@@ -364,12 +364,13 @@ sub domain_record {
   my $self = shift;
 
   my %order = (
-    SOA => 1,
-    NS => 2,
-    MX => 3,
-    CNAME => 4,
-    A => 5,
-    TXT => 6,
+    'SOA'   => 1,
+    'NS'    => 2,
+    'MX'    => 3,
+    'CNAME' => 4,
+    'A'     => 5,
+    'TXT'   => 6,
+    'PTR'   => 7,
   );
 
   sort { $order{$a->rectype} <=> $order{$b->rectype} }
