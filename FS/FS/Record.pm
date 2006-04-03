@@ -1341,9 +1341,10 @@ sub ut_text {
   #warn "msgcat ". \&msgcat. "\n";
   #warn "notexist ". \&notexist. "\n";
   #warn "AUTOLOAD ". \&AUTOLOAD. "\n";
-  $self->getfield($field) =~ /^([\w \!\@\#\$\%\&\(\)\-\+\;\:\'\"\,\.\?\/\=\[\]]+)$/
-    or return gettext('illegal_or_empty_text'). " $field: ".
-               $self->getfield($field);
+  $self->getfield($field)
+    =~ /^([\w \!\@\#\$\%\&\(\)\-\+\;\:\'\"\,\.\?\/\=\[\]]+)$/
+      or return gettext('illegal_or_empty_text'). " $field: ".
+                 $self->getfield($field);
   $self->setfield($field,$1);
   '';
 }
@@ -1358,8 +1359,9 @@ May be null.  If there is an error, returns the error, otherwise returns false.
 
 sub ut_textn {
   my($self,$field)=@_;
-  $self->getfield($field) =~ /^([\w \!\@\#\$\%\&\(\)\-\+\;\:\'\"\,\.\?\/\=]*)$/
-    or return gettext('illegal_text'). " $field: ". $self->getfield($field);
+  $self->getfield($field)
+    =~ /^([\w \!\@\#\$\%\&\(\)\-\+\;\:\'\"\,\.\?\/\=\[\]]*)$/
+      or return gettext('illegal_text'). " $field: ". $self->getfield($field);
   $self->setfield($field,$1);
   '';
 }
