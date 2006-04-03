@@ -33,13 +33,13 @@ Billing address
   <TD ALIGN="right">City</TD>
   <TD BGCOLOR="#ffffff"><%= $cust_main->city %></TD>
   <TD ALIGN="right">State</TD>
-  <TD BGCOLOR="#ffffff"><%= $cust_main->state %></TD>
+  <TD BGCOLOR="#ffffff"><%= state_label($cust_main->state, $cust_main->country) %></TD>
   <TD ALIGN="right">Zip</TD>
   <TD BGCOLOR="#ffffff"><%= $cust_main->zip %></TD>
 </TR>
 <TR>
   <TD ALIGN="right">Country</TD>
-  <TD BGCOLOR="#ffffff"><%= $cust_main->country %></TD>
+  <TD BGCOLOR="#ffffff"><%= code2country($cust_main->country) %></TD>
 </TR>
 <%
   my $daytime_label = FS::Msgcat::_gettext('daytime') =~ /^(daytime)?$/

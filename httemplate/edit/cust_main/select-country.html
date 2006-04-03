@@ -26,7 +26,7 @@
 
   function <%= $opt{'prefix'} %>country_changed(what, callback) {
 
-    country = what.options[what.selectedIndex].text;
+    country = what.options[what.selectedIndex].value;
 
     function <%= $opt{'prefix'} %>update_states(states) {
 
@@ -36,8 +36,8 @@
 
       // add the new states
       var statesArray = eval('(' + states + ')' );
-      for ( var s = 0; s < statesArray.length; s++ ) {
-          var stateLabel = statesArray[s];
+      for ( var s = 0; s < statesArray.length; s=s+2 ) {
+          var stateLabel = statesArray[s+1];
           if ( stateLabel == "" )
               stateLabel = '(n/a)';
           opt(what.form.<%= $opt{'prefix'} %>state, statesArray[s], stateLabel);
@@ -58,13 +58,14 @@
 <SELECT NAME="<%= $opt{'prefix'} %>country" onChange="<%= $opt{'prefix'} %>country_changed(this); <%= $opt{'onchange'} %>" <%= $opt{'disabled'} %>>
 
 <% foreach my $country (
-     sort { ($b eq $countrydefault) <=> ($a eq $countrydefault) or $a cmp $b }
+     sort {    ($b eq $countrydefault) <=> ($a eq $countrydefault)
+            or code2country($a) cmp code2country($b) }
      map { $_->country }
      qsearch( 'cust_main_county',{}, 'DISTINCT ON ( country ) *', )
    ) {
 %>
 
-  <OPTION VALUE="<%= $country %>"<%= $country eq $opt{'country'} ? ' SELECTED' : '' %>><%= $country %>
+  <OPTION VALUE="<%= $country %>"<%= $country eq $opt{'country'} ? ' SELECTED' : '' %>><%= code2country($country). " ($country)" %>
 
 <% } %>
 

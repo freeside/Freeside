@@ -114,6 +114,7 @@ sub handler
       use String::Approx qw(amatch);
       use Chart::LinesPoints;
       use HTML::Widgets::SelectLayers 0.05;
+      use Locale::Country;
       use FS;
       use FS::UID qw(cgisuidsetup dbh getotaker datasrc driver_name);
       use FS::Record qw(qsearch qsearchs fields dbdef);
@@ -122,7 +123,7 @@ sub handler
                      eidiot small_custview myexit http_header);
       use FS::UI::Web;
       use FS::Msgcat qw(gettext geterror);
-      use FS::Misc qw( send_email send_fax );
+      use FS::Misc qw( send_email send_fax states_hash state_label );
       use FS::Report::Table::Monthly;
       use FS::TicketSystem;
 
@@ -208,6 +209,7 @@ sub handler
         my( $self, $location ) = @_;
         use vars qw($m);
 
+        # false laziness w/below
         if ( defined(@DBIx::Profile::ISA) ) { #profiling redirect
 
           my $page =

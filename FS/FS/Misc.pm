@@ -7,7 +7,7 @@ use Carp;
 use Data::Dumper;
 
 @ISA = qw( Exporter );
-@EXPORT_OK = qw( send_email send_fax );
+@EXPORT_OK = qw( send_email send_fax states_hash state_label );
 
 $DEBUG = 0;
 
@@ -185,6 +185,80 @@ sub send_email {
 
 }
 
+#this kludges a "mysmtpsend" method into Mail::Internet for send_email above
+package Mail::Internet;
+
+use Mail::Address;
+use Net::SMTP;
+
+sub Mail::Internet::mysmtpsend {
+    my $src  = shift;
+    my %opt = @_;
+    my $host = $opt{Host};
+    my $envelope = $opt{MailFrom};
+    my $noquit = 0;
+    my $smtp;
+    my @hello = defined $opt{Hello} ? (Hello => $opt{Hello}) : ();
+
+    push(@hello, 'Port', $opt{'Port'})
+	if exists $opt{'Port'};
+
+    push(@hello, 'Debug', $opt{'Debug'})
+	if exists $opt{'Debug'};
+
+    if(ref($host) && UNIVERSAL::isa($host,'Net::SMTP')) {
+	$smtp = $host;
+	$noquit = 1;
+    }
+    else {
+	#local $SIG{__DIE__};
+	#$smtp = eval { Net::SMTP->new($host, @hello) };
+	$smtp = new Net::SMTP $host, @hello;
+    }
+
+    unless ( defined($smtp) ) {
+      my $err = $!;
+      $err =~ s/Invalid argument/Unknown host/;
+      return "can't connect to $host: $err"
+    }
+
+    my $hdr = $src->head->dup;
+
+    _prephdr($hdr);
+
+    # Who is it to
+
+    my @rcpt = map { ref($_) ? @$_ : $_ } grep { defined } @opt{'To','Cc','Bcc'};
+    @rcpt = map { $hdr->get($_) } qw(To Cc Bcc)
+	unless @rcpt;
+    my @addr = map($_->address, Mail::Address->parse(@rcpt));
+
+    return 'No valid destination addresses found!'
+	unless(@addr);
+
+    $hdr->delete('Bcc'); # Remove blind Cc's
+
+    # Send it
+
+    #warn "Headers: \n" . join('',@{$hdr->header});
+    #warn "Body: \n" . join('',@{$src->body});
+
+    my $ok = $smtp->mail( $envelope ) &&
+		$smtp->to(@addr) &&
+		$smtp->data(join("", @{$hdr->header},"\n",@{$src->body}));
+
+    if ( $ok ) {
+      $smtp->quit
+          unless $noquit;
+      return '';
+    } else {
+      return $smtp->code. ' '. $smtp->message;
+    }
+
+}
+package FS::Misc;
+#eokludge
+
 =item send_fax OPTION => VALUE ...
 
 Options:
@@ -268,77 +342,66 @@ sub send_fax {
 
 }
 
-package Mail::Internet;
+=item states_hash COUNTRY
 
-use Mail::Address;
-use Net::SMTP;
+Returns a list of key/value pairs containing state (or other sub-country
+division) abbriviations and names.
 
-sub Mail::Internet::mysmtpsend {
-    my $src  = shift;
-    my %opt = @_;
-    my $host = $opt{Host};
-    my $envelope = $opt{MailFrom};
-    my $noquit = 0;
-    my $smtp;
-    my @hello = defined $opt{Hello} ? (Hello => $opt{Hello}) : ();
+=cut
 
-    push(@hello, 'Port', $opt{'Port'})
-	if exists $opt{'Port'};
+use FS::Record qw(qsearch);
+use Locale::SubCountry;
 
-    push(@hello, 'Debug', $opt{'Debug'})
-	if exists $opt{'Debug'};
+sub states_hash {
+  my($country) = @_;
 
-    if(ref($host) && UNIVERSAL::isa($host,'Net::SMTP')) {
-	$smtp = $host;
-	$noquit = 1;
-    }
-    else {
-	#local $SIG{__DIE__};
-	#$smtp = eval { Net::SMTP->new($host, @hello) };
-	$smtp = new Net::SMTP $host, @hello;
-    }
+  my @states = 
+#     sort
+     map { s/[\n\r]//g; $_; }
+     map { $_->state; }
+     qsearch( 'cust_main_county',
+              { 'country' => $country },
+              'DISTINCT ON ( state ) *',
+            )
+  ;
 
-    unless ( defined($smtp) ) {
-      my $err = $!;
-      $err =~ s/Invalid argument/Unknown host/;
-      return "can't connect to $host: $err"
-    }
+  #it could throw a fatal "Invalid country code" error (for example "AX")
+  my $subcountry = eval { new Locale::SubCountry($country) }
+    or return ( '', '(n/a)' );
 
-    my $hdr = $src->head->dup;
+  #"i see your schwartz is as big as mine!"
+  map  { ( $_->[0] => $_->[1] ) }
+  sort { $a->[1] cmp $b->[1] }
+  map  { [ $_ => state_label($_, $subcountry) ] }
+       @states;
+}
 
-    _prephdr($hdr);
+=item state_label STATE COUNTRY_OR_LOCALE_SUBCOUNRY_OBJECT
 
-    # Who is it to
+=cut
 
-    my @rcpt = map { ref($_) ? @$_ : $_ } grep { defined } @opt{'To','Cc','Bcc'};
-    @rcpt = map { $hdr->get($_) } qw(To Cc Bcc)
-	unless @rcpt;
-    my @addr = map($_->address, Mail::Address->parse(@rcpt));
+sub state_label {
+  my( $state, $country ) = @_;
 
-    return 'No valid destination addresses found!'
-	unless(@addr);
+  unless ( ref($country) ) {
+    $country = eval { new Locale::SubCountry($country) }
+      or return'(n/a)';
 
-    $hdr->delete('Bcc'); # Remove blind Cc's
+  }
 
-    # Send it
+  # US kludge to avoid changing existing behaviour 
+  # also we actually *use* the abbriviations...
+  my $full_name = $country->country_code eq 'US'
+                    ? ''
+                    : $country->full_name($state);
 
-    #warn "Headers: \n" . join('',@{$hdr->header});
-    #warn "Body: \n" . join('',@{$src->body});
+  $full_name = '' if $full_name eq 'unknown';
+  $full_name =~ s/\(see also.*\)\s*$//;
+  $full_name .= " ($state)" if $full_name;
 
-    my $ok = $smtp->mail( $envelope ) &&
-		$smtp->to(@addr) &&
-		$smtp->data(join("", @{$hdr->header},"\n",@{$src->body}));
-
-    if ( $ok ) {
-      $smtp->quit
-          unless $noquit;
-      return '';
-    } else {
-      return $smtp->code. ' '. $smtp->message;
-    }
+  $full_name || $state || '(n/a)';
 
 }
-package FS::Misc;
 
 =back
 

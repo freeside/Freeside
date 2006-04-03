@@ -9,17 +9,10 @@
 
 <SELECT NAME="<%= $opt{'prefix'} %>state" onChange="<%= $opt{'prefix'} %>state_changed(this); <%= $opt{'onchange'} %>" <%= $opt{'disabled'} %>>
 
-<% foreach my $state (
-     sort
-     map { $_->state }
-     qsearch( 'cust_main_county',
-              { 'country' => $opt{'country'} },
-              'DISTINCT ON ( state ) *',
-            )
-   ) {
-%>
+<% tie my %states, 'Tie::IxHash', states_hash( $opt{'country'} ); %>
+<% foreach my $state ( keys %states ) { %>
 
-  <OPTION VALUE="<%= $state %>"<%= $state eq $opt{'state'} ? ' SELECTED' : '' %>><%= $state || '(n/a)' %>
+  <OPTION VALUE="<%= $state %>"<%= $state eq $opt{'state'} ? ' SELECTED' : '' %>><%= $states{$state} || '(n/a)' %>
 
 <% } %>
 
