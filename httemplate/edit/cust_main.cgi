@@ -70,7 +70,11 @@ my $action = $custnum ? 'Edit' : 'Add';
 
 <!-- top -->
 
-<%= header("Customer $action", '', ' onUnload="myclose()"') %>
+<%= include('/elements/header.html',
+      "Customer $action",
+      '',
+      ' onUnload="myclose()"'
+) %>
 
 <% if ( $error ) { %>
 <FONT SIZE="+1" COLOR="#ff0000">Error: <%= $error %></FONT>
@@ -271,7 +275,8 @@ function bottomfixup(what) {
 
   var billing_bottomvars = new Array(
     'tax',
-    'invoicing_list', 'invoicing_list_POST', 'invoicing_list_FAX'
+    'invoicing_list', 'invoicing_list_POST', 'invoicing_list_FAX',
+    'spool_cdr'
   );
 
   for ( f=0; f < topvars.length; f++ ) {
@@ -348,7 +353,8 @@ function copyelement(from, to) {
      'paid',
      
      'tax',
-     'invoicing_list', 'invoicing_list_POST', 'invoicing_list_FAX'
+     'invoicing_list', 'invoicing_list_POST', 'invoicing_list_FAX',
+     'spool_cdr'
    ) {
 %>
   <INPUT TYPE="hidden" NAME="<%= $hidden %>" VALUE="">
