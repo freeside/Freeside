@@ -112,19 +112,22 @@ sub _export_replace {
   ( $old_qdomain = $old_domain ) =~ s/\./:/g; #see dot-qmail(5): EXTENSION ADDRESSES
   ( $new_qdomain = $new_domain ) =~ s/\./:/g; #see dot-qmail(5): EXTENSION ADDRESSES
 
-  if ( $old->catchall ) {
+  { 
     no strict 'refs';
-    my $svc_acct = $old->catchall_svc_acct;
-    ${"old_$_"} = $svc_acct->getfield($_) foreach qw(uid gid dir);
-  } else {
-    ${"old_$_"} = '' foreach qw(uid gid dir);
-  }
-  if ( $new->catchall ) {
-    no strict 'refs';
-    my $svc_acct = $new->catchall_svc_acct;
-    ${"new_$_"} = $svc_acct->getfield($_) foreach qw(uid gid dir);
-  } else {
-    ${"new_$_"} = '' foreach qw(uid gid dir);
+
+    if ( $old->catchall ) {
+      my $svc_acct = $old->catchall_svc_acct;
+      ${"old_$_"} = $svc_acct->getfield($_) foreach qw(uid gid dir);
+    } else {
+      ${"old_$_"} = '' foreach qw(uid gid dir);
+    }
+    if ( $new->catchall ) {
+      my $svc_acct = $new->catchall_svc_acct;
+      ${"new_$_"} = $svc_acct->getfield($_) foreach qw(uid gid dir);
+    } else {
+      ${"new_$_"} = '' foreach qw(uid gid dir);
+    }
+
   }
 
   #done setting variables for the command
