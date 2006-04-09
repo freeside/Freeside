@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 #
-# $Id: freeside-adduser,v 1.8 2002-09-27 05:36:29 ivan Exp $
+# $Id: freeside-adduser,v 1.9 2006-04-09 20:36:06 ivan Exp $
 
 use strict;
 use vars qw($opt_h $opt_b $opt_c $opt_s);
@@ -12,6 +12,14 @@ my $FREESIDE_CONF = "/usr/local/etc/freeside";
 getopts("bch:s:");
 die &usage if $opt_c && ! $opt_h;
 my $user = shift or die &usage;
+
+open(MAPSECRETS,"<$FREESIDE_CONF/mapsecrets")
+  or die "can't open $FREESIDE_CONF/mapsecrets: $!";
+while (<MAPSECRETS>) {
+  /^(\S+) / or die "unparsable line in mapsecrets: $_";
+  die "user $user already exists\n" if $user eq $1;
+}
+close MAPSECRETS;
 
 if ( $opt_h ) {
   my @args = ( 'htpasswd' );
