@@ -1,54 +1,7 @@
-<!-- mason kludge -->
 <% my $conf = new FS::Conf; %>
-<HTML>
-  <HEAD>
-    <TITLE>
-      Freeside Main Menu
-    </TITLE>
-  </HEAD>
-  <BODY BGCOLOR="#FFFFFF">
-  <table width="100%">
-    <tr>
-      <td rowspan=2>
-        <IMG BORDER=0 ALT="freeside" SRC="images/small-logo.png">
-      </td>
-      <td align=left rowspan=2> <!-- valign="top" -->
-        <font size=6><%= $conf->config('company_name') %> Billing</font>
-      </td>
-      <td align=right valign=top>Logged in as <b><%= getotaker %></b>
-      </td>
-    </tr>
-    <tr>
-      <td align=right valign=bottom>
-
-        <table>
-          <tr>
-            <td align=right>
-              <FONT SIZE="-2">
-               <A HREF="http://www.sisd.com/freeside">Freeside</A>&nbsp;v<%= $FS::VERSION %><BR>
-               <A HREF="docs/">Documentation</A><BR>
-              </FONT>
-            </td>
-            <% if ( $conf->config('ticket_system') eq 'RT_Internal' ) { %>
-            <% eval "use RT;"; %>
-              <td bgcolor=#000000></td>
-              <td align=left>
-                <FONT SIZE="-2">
-                 <A HREF="http://www.bestpractical.com/rt">RT<A>&nbsp;v<%= $RT::VERSION %><BR>
-                 <A HREF="http://wiki.bestpractical.com/">Documentation</A><BR>
-                </FONT>
-              </td>
-            <% } %>
-
-          </tr>
-        </table>
-
-      </td>
-    </tr>
-  </table>
+<%= include('/elements/header.html', 'Freeside Main Menu' ) %>
 
   <BR>
-
 
 [<A NAME="customer_service" style="background-color: #cccccc">&nbsp;Sales&nbsp;/&nbsp;Customer&nbsp;service&nbsp;</A>]
 <% if ( $conf->config('ticket_system') ) { %>
@@ -57,7 +10,7 @@
 [&nbsp;<A HREF="#bookkeeping">Bookkeeping&nbsp;/&nbsp;Collections</A>&nbsp;]
 [&nbsp;<A HREF="#reports">Reports</A>&nbsp;]
 [&nbsp;<A HREF="#sysadmin">Sysadmin</A>&nbsp;]
-    <TABLE CELLSPACING=2 CELLPADDING=0 BORDER=0" WIDTH="100%" BGCOLOR="#eeeeee">
+    <TABLE CELLSPACING=2 CELLPADDING=0 BORDER=0" WIDTH="100%" BGCOLOR="#eeeeee" STYLE="border: 1px solid black">
     <TR><TH BGCOLOR="#cccccc">Sales / Customer service</TH></TR>
     <TR><TD>
         <BR><FONT SIZE="+1"><A HREF="edit/cust_main.cgi">New Customer</A></FONT>
@@ -88,7 +41,7 @@
 [&nbsp;<A HREF="#bookkeeping">Bookkeeping&nbsp;/&nbsp;Collections</A>&nbsp;]
 [&nbsp;<A HREF="#reports">Reports</A>&nbsp;]
 [&nbsp;<A HREF="#sysadmin">Sysadmin</A>&nbsp;]
-    <TABLE CELLSPACING=2 CELLPADDING=0 BORDER=0" WIDTH="100%" BGCOLOR="#eeeeee">
+    <TABLE CELLSPACING=2 CELLPADDING=0 BORDER=0" WIDTH="100%" BGCOLOR="#eeeeee" STYLE="border: 1px solid black">
     <TR><TH BGCOLOR="#cccccc">Support/Ticketing</TH></TR>
     <TR><TD>
 	<% if ( $conf->config('ticket_system') eq 'RT_Internal' ) { %>
@@ -117,7 +70,7 @@
 [<A NAME="bookkeeping" style="background-color: #cccccc">&nbsp;Bookkeeping&nbsp;/&nbsp;Collections&nbsp;</A>]
 [&nbsp;<A HREF="#reports">Reports</A>&nbsp;]
 [&nbsp;<A HREF="#sysadmin">Sysadmin</A>&nbsp;]
-    <TABLE CELLSPACING=2 CELLPADDING=0 BORDER=0 WIDTH="100%" BGCOLOR="#eeeeee">
+    <TABLE CELLSPACING=2 CELLPADDING=0 BORDER=0 WIDTH="100%" BGCOLOR="#eeeeee" STYLE="border: 1px solid black">
     <TR><TH BGCOLOR="#cccccc">Bookkeeping / Collections</TH></TR>
     <TR><TD>
       <BR><A HREF="misc/batch-cust_pay.html">Quick payment entry</A>
@@ -165,7 +118,7 @@
 [&nbsp;<A HREF="#bookkeeping">Bookkeeping&nbsp;/&nbsp;Collections</A>&nbsp;]
 [<A NAME="reports" style="background-color: #cccccc">&nbsp;Reports&nbsp;</A>]
 [&nbsp;<A HREF="#sysadmin">Sysadmin</A>&nbsp;]
-    <TABLE CELLSPACING=2 CELLPADDING=0 BORDER=0 WIDTH="100%" BGCOLOR="#eeeeee">
+    <TABLE CELLSPACING=2 CELLPADDING=0 BORDER=0 WIDTH="100%" BGCOLOR="#eeeeee" STYLE="border: 1px solid black">
     <TR><TH BGCOLOR="#cccccc">Reports</TH></TR>
     <TR><TD>
       <BR>
@@ -190,6 +143,7 @@
       <UL>
         <LI><A HREF="search/cust_main-otaker.cgi">Search customers by ordering employee</A>
       </UL>
+    <A HREF="search/report_cust_main-zip.html">Zip code distribution</A><BR><BR>
     <FORM ACTION="search/sql.html" METHOD="GET">SQL query: <TT>SELECT </TT><INPUT TYPE="text" NAME="sql" SIZE=32><INPUT TYPE="submit" VALUE="Query"></FORM>
 
     <BR>
@@ -208,7 +162,7 @@
 [&nbsp;<A HREF="#bookkeeping">Bookkeeping&nbsp;/&nbsp;Collections</A>&nbsp;]
 [&nbsp;<A HREF="#reports">Reports</A>&nbsp;]
 [<A NAME="sysadmin" style="background-color: #cccccc">&nbsp;Sysadmin&nbsp;</A>]
-    <TABLE CELLSPACING=2 CELLPADDING=0 BORDER=0 WIDTH="100%" BGCOLOR="#eeeeee">
+    <TABLE CELLSPACING=2 CELLPADDING=0 BORDER=0 WIDTH="100%" BGCOLOR="#eeeeee" STYLE="border: 1px solid black">
     <TR><TH BGCOLOR="#cccccc">Sysadmin</TH></TR>
     <TR><TD>
       <BR>
@@ -289,5 +243,6 @@
       <BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR>
       <BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR>
       <BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR>
-  </BODY>
-</HTML>
+
+<%= include('/elements/footer.html') %>
+

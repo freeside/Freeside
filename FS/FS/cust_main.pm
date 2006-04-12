@@ -3711,6 +3711,27 @@ sub cancel_sql { "
           )
 "; }
 
+=item uncancel_sql
+=item uncancelled_sql
+
+Returns an SQL expression identifying un-cancelled cust_main records.
+
+=cut
+
+sub uncancelled_sql { uncancel_sql(@_); }
+sub uncancel_sql { "
+  ( 0 < ( SELECT COUNT(*) FROM cust_pkg
+                 WHERE cust_pkg.custnum = cust_main.custnum
+                   AND ( cust_pkg.cancel IS NULL
+                         OR cust_pkg.cancel = 0
+                       )
+        )
+    OR 0 = ( SELECT COUNT(*) FROM cust_pkg
+               WHERE cust_pkg.custnum = cust_main.custnum
+           )
+  )
+"; }
+
 =item fuzzy_search FUZZY_HASHREF [ HASHREF, SELECT, EXTRA_SQL, CACHE_OBJ ]
 
 Performs a fuzzy (approximate) search and returns the matching FS::cust_main
@@ -3860,6 +3881,7 @@ sub rebuild_fuzzyfiles {
   use Fcntl qw(:flock);
 
   my $dir = $FS::UID::conf_dir. "cache.". $FS::UID::datasrc;
+  mkdir $dir, 0700 unless -d $dir;
 
   #last
 

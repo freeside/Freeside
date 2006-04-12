@@ -102,18 +102,8 @@ if ( $cgi->param('browse')
              && ! $cgi->param('showcancelledcustomers') )
      ) {
     #grep { $_->ncancelled_pkgs || ! $_->all_pkgs }
-    push @qual, "
-       ( 0 < ( SELECT COUNT(*) FROM cust_pkg
-                      WHERE cust_pkg.custnum = cust_main.custnum
-                        AND ( cust_pkg.cancel IS NULL
-                              OR cust_pkg.cancel = 0
-                            )
-             )
-         OR 0 = ( SELECT COUNT(*) FROM cust_pkg
-                    WHERE cust_pkg.custnum = cust_main.custnum
-                )
-       )
-    ";
+    push @qual, FS::cust_main->uncancel_sql;
+
    }
 
   push @qual, FS::cust_main->cancel_sql   if $cgi->param('cancelled');

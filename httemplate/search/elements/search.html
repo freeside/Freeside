@@ -68,6 +68,8 @@
   # # or a coderef that returns the same
   # 'redirect' =>
 
+  my $DEBUG = 0;
+
   my(%opt) = @_;
   #warn join(' / ', map { "$_ => $opt{$_}" } keys %opt ). "\n";
 
@@ -118,6 +120,7 @@
   my $header = $opt{'header'};
   my $rows;
   if ( ref($opt{'query'}) ) {
+
     #eval "use FS::$opt{'query'};";
     $rows = [ qsearch(
       $opt{'query'}->{'table'}, 
@@ -127,7 +130,9 @@
       '',
       (exists($opt{'query'}->{'addl_from'}) ? $opt{'query'}->{'addl_from'} : '')
     ) ];
+
   } else {
+
     my $sth = dbh->prepare("$opt{'query'} $limit")
       or die "Error preparing $opt{'query'}: ". dbh->errstr;
     $sth->execute
@@ -137,7 +142,14 @@
     $rows = $sth->fetchall_arrayref;
 
     $header ||= $sth->{NAME};
+
   }
+
+  warn scalar(@$rows). ' rows returned from '.
+       ( ref($opt{'query'}) ? 'qsearch query' : 'literal SQL query' )
+    if $DEBUG || $opt{'debug'};
+
+  # display the results - csv, xls or html
 
   if ( $type eq 'csv' ) {
 
@@ -437,7 +449,7 @@
                      <% } %>
                    <% } else { %>
                      <% foreach ( @$row ) { %>
-                          <TD CLASS="grid" BGCOLOR="$bgcolor"><%= $_ %></TD>
+                          <TD CLASS="grid" BGCOLOR="<%= $bgcolor %>"><%= $_ %></TD>
                      <% } %>
                    <% } %>
                    </TR>

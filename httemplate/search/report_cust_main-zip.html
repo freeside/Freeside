@@ -1,0 +1,46 @@
+<%= include('/elements/header.html', 'Zip code report') %>
+
+    <FORM ACTION="cust_main-zip.html" METHOD="GET">
+
+    <TABLE>
+
+      <TR>
+        <TD ALIGN="right">Billing or service zip</TD>
+        <TD>
+          <SELECT NAME="column">
+            <OPTION VALUE="zip">Billing zip
+            <OPTION VALUE="ship_zip">Service zip
+          </SELECT>
+        </TD>
+      </TR>
+
+      <TR>
+        <TD ALIGN="right">Ignore +4 for US zip codes</TD>
+        <TD><INPUT TYPE="checkbox" NAME="ignore_plus4" VALUE="yes" CHECKED> </TD>
+      </TR>
+
+      <TR>
+        <TD ALIGN="right">Show customers with status:</TD>
+        <TD>
+          <SELECT NAME="status">
+            <OPTION VALUE="">all
+            <OPTION VALUE="prospect">prospect (no packages ever)
+            <OPTION SELECTED VALUE="uncancel">all except cancelled
+            <OPTION VALUE="active">active recurring packages
+            <OPTION VALUE="susp">suspended
+            <OPTION VALUE="cancel">cancelled
+          </SELECT>
+        </TD>
+      </TR>
+
+      <%= include( '/elements/tr-select-agent.html',
+                     $cgi->param('agentnum'),
+                     'label' => 'for agent: ',
+                 )
+      %>
+
+    </TABLE>
+    <BR><INPUT TYPE="submit" VALUE="Get Report">
+    </FORM>
+  </BODY>
+</HTML>

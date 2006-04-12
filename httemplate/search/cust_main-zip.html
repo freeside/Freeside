@@ -1,0 +1,95 @@
+<%
+
+# XXX link to customers
+
+my @where = ();
+
+# select status
+
+if ( $cgi->param('status') =~ /^(prospect|uncancel|active|susp|cancel)$/ ) {
+  my $method = $1.'_sql';
+  push @where, FS::cust_main->$method();
+}
+
+# select agent
+# XXX this needs to be virtualized by agent too (like lots of stuff)
+
+my $agentnum = '';
+if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
+  $agentnum = $1;
+  push @where, "cust_main.agentnum = $agentnum";
+}
+my $where = scalar(@where) ? 'WHERE '. join(' AND ', @where) : '';
+
+# bill zip vs ship zip
+
+sub fieldorempty {
+  my $field = shift;
+  "CASE WHEN $field IS NULL THEN '' ELSE $field END";
+}
+
+sub strip_plus4 {
+  my $field = shift;
+  "CASE WHEN $field is NULL
+    THEN ''
+    ELSE CASE WHEN $field LIKE '_____-____'
+           THEN SUBSTRING($field FROM 1 FOR 5)
+           ELSE $field
+         END
+  END";
+}
+
+my( $zip, $czip);
+if ( $cgi->param('column') eq 'ship_zip' ) {
+
+  my $casewhen_noship =
+    "CASE WHEN ( ship_last IS NULL OR ship_last = '' ) THEN ";
+
+  $czip = "$casewhen_noship zip ELSE ship_zip END";
+
+  if ( $cgi->param('ignore_plus4') ) {
+    $zip = $casewhen_noship. strip_plus4('zip').
+                   " ELSE ". strip_plus4('ship_zip'). ' END';
+
+  } else {
+    $zip = $casewhen_noship. fieldorempty('zip').
+                   " ELSE ". fieldorempty('ship_zip'). ' END';
+  }
+
+} else {
+
+  $czip = 'zip';
+
+  if ( $cgi->param('ignore_plus4') ) {
+    $zip = strip_plus4('zip');
+  } else {
+    $zip = fieldorempty('zip');
+  }
+
+}
+
+# construct the queries and send 'em off
+
+my $sql_query = 
+  "SELECT $zip AS zipcode,
+          COUNT(*) AS num_cust
+     FROM cust_main
+     $where
+     GROUP BY zipcode
+     ORDER BY num_cust DESC
+  ";
+
+my $count_sql = "select count(distinct $czip) from cust_main $where";
+
+# XXX should link...
+
+%><%= include( 'elements/search.html',
+                 'title'       => 'Zip code Search Results',
+                 'name'        => 'zip codes',
+                 'query'       => $sql_query,
+                 'count_query' => $count_sql,
+                 'header'      => [ 'Zip code', 'Customers', ],
+                 #'fields'      => [ 'zip', 'num_cust', ],
+                 'links'       => [ '', sub { 'somewhere'; }  ],
+             )
+%>
