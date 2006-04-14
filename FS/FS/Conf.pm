@@ -1695,6 +1695,13 @@ httemplate/docs/config.html
     'type'        => 'checkbox',
   },
 
+  {
+    'key'         => 'svc_forward-arbitrary_dst',
+    'section'     => '',
+    'description' => "Allow forwards to point to arbitrary strings that don't necessarily look like email addresses.  Only used when using forwards for weird, non-email things.",
+    'type'        => 'checkbox',
+  },
+
 );
 
 1;

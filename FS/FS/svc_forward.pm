@@ -257,9 +257,15 @@ sub check {
   }
 
   if ( $self->dst ) {
-    $self->dst =~ /^([\w\.\-\&]*)(\@([\w\-]+\.)+\w+)$/
-       or return "Illegal dst: ". $self->dst;
-    $self->dst("$1$2");
+    my $conf = new FS::Conf;
+    if ( $conf->exists('svc_forward-arbitrary_dst') ) {
+      my $error = $self->ut_textn('dst');
+      return $error if $error;
+    } else {
+      $self->dst =~ /^([\w\.\-\&]*)(\@([\w\-]+\.)+\w+)$/
+         or return "Illegal dst: ". $self->dst;
+      $self->dst("$1$2");
+    }
   } else {
     $self->dst('');
   }
