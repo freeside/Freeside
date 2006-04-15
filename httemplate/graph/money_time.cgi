@@ -95,8 +95,8 @@ my @mon = qw(Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec);
     </TD>
     <% $total += $column; %>
   <% } %>
-  <TD ALIGN="right" BGCOLOR="#eeeeee">
-    <%= $link ? $link. 'begin='. @{$data->{speriod}}[0]. ';end='. @{$data->{speriod}}[0]. '">' : '' %><FONT COLOR="#<%= $color{$row} %>">$<%= sprintf("%.2f", $total) %></FONT><%= $link ? '</A>' : '' %>
+  <TD ALIGN="right" BGCOLOR="#f5f6be">
+    <%= $link ? $link. 'begin='. @{$data->{speriod}}[0]. ';end='. @{$data->{eperiod}}[0]. '">' : '' %><FONT COLOR="#<%= $color{$row} %>">$<%= sprintf("%.2f", $total) %></FONT><%= $link ? '</A>' : '' %>
   </TD>
   </TR>
 <% } %>
