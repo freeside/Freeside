@@ -95,7 +95,7 @@ my @mon = qw(Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec);
     </TD>
     <% $total += $column; %>
   <% } %>
-  <TD><%= sprintf("%.2f", $total) %>
+  <TD><%= sprintf("%.2f", $total) %></TD>
   </TR>
 <% } %>
 </TABLE>
