@@ -77,6 +77,7 @@ my @mon = qw(Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec);
      %>
      <TH><%= $column %></TH>
 <% } %>
+  <TH>Total</TH>
 </TR>
 
 <% foreach my $row (@items) { %>
@@ -86,12 +87,15 @@ my @mon = qw(Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec);
        : '';
      my @speriod = @{$data->{speriod}};
      my @eperiod = @{$data->{eperiod}};
+     my $total = 0;
   %>
   <% foreach my $column ( @{$data->{$row}} ) { %>
     <TD ALIGN="right" BGCOLOR="#ffffff">
       <%= $link ? $link. 'begin='. shift(@speriod). ';end='. shift(@eperiod). '">' : '' %><FONT COLOR="#<%= $color{$row} %>">$<%= sprintf("%.2f", $column) %></FONT><%= $link ? '</A>' : '' %>
     </TD>
+    <% $total += $column; %>
   <% } %>
+  <TD><%= sprintf("%.2f", $total) %>
   </TR>
 <% } %>
 </TABLE>
