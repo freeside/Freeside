@@ -28,7 +28,7 @@ apt-get install make screen zsh cvs fsh rsync \
         libtext-autoformat-perl libtext-quoted-perl libregexp-common-perl \
         libhtml-scrubber-perl libtree-simple-perl liblocale-subcountry-perl \
         libtext-csv-perl libspreadsheet-writeexcel-perl libfrontier-rpc-perl \
-	libjavascript-rpc-perl libipc-run3-perl
+	libjavascript-rpc-perl libipc-run3-perl libjson-perl
 
 useradd freeside
 groupadd freeside
