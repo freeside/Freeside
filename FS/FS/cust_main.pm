@@ -923,6 +923,8 @@ sub replace {
   my $self = shift;
   my $old = shift;
   my @param = @_;
+  warn "$me replace called\n"
+    if $DEBUG;
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -1261,10 +1263,11 @@ sub check {
     $payinfo =~ s/[^\d\@]//g;
     if ( $conf->exists('echeck-nonus') ) {
       $payinfo =~ /^(\d+)\@(\d+)$/ or return 'invalid echeck account@aba';
+      $payinfo = "$1\@$2";
     } else {
       $payinfo =~ /^(\d+)\@(\d{9})$/ or return 'invalid echeck account@aba';
+      $payinfo = "$1\@$2";
     }
-    $payinfo = "$1\@$2";
     $self->payinfo($payinfo);
     $self->paycvv('') if $self->dbdef_table->column('paycvv');
 
