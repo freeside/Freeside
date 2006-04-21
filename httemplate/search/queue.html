@@ -1,0 +1,124 @@
+<%
+
+my $hashref = {};
+
+my $conf = new FS::Conf;
+my $dangerous = $conf->exists('queue_dangerous_controls');
+
+my $noactions = 0;
+
+my $count_query = 'SELECT COUNT(*) FROM queue'; # + $hashref
+
+my $areboxes = 0;
+
+%><%= include( 'elements/search.html',
+                 'title'       => 'Job Queue',
+                 'menubar'     => [ 'Main menu' => $p, ],
+                 'name'        => 'jobs',
+                 'query'       => { 'table'     => 'queue',
+                                    'hashref'   => $hashref,
+                                    'extra_sql' => 'ORDER BY jobnum',
+                                  },
+                 'count_query' => $count_query,
+                 'header' => [ '#',
+                               'Job',
+                               'Args',
+                               'Date',
+                               'Status',
+                               'Account', # unless $hashref->{'svcnum'}
+                               '', # checkbox column
+                             ],
+                 'fields' => [
+                               'jobnum',
+                               'job',
+                               sub {
+                                 my $queue = shift;
+                                 if (    $dangerous
+                                      || $queue->job !~ /^FS::part_export::/
+                                      || !$noactions
+                                    )
+                                 {
+                                   encode_entities( join(' ', $queue->args) );
+                                 } else {
+                                   '';
+                                 }
+                               },
+                               sub {
+                                 time2str( "%a %b %e %T %Y", shift->_date );
+                               },
+                               sub {
+                                 my $queue = shift;
+                                 my $jobnum = $queue->jobnum;
+                                 my $status = $queue->status;
+                                 $status .= ': '. $queue->statustext
+                                   if $queue->statustext;
+                                 my @queue_depend = $queue->queue_depend;
+                                 $status .= ' (waiting for '.
+                                            join(', ', map { $_->depend_jobnum }
+                                                           @queue_depend
+                                                ). 
+                                            ')'
+                                   if @queue_depend;
+                                 my $changable = $dangerous
+                                                 || ( ! $noactions
+                                                      && $status =~ /^failed/
+                                                      || $status =~ /^locked/
+                                                    );
+                                 if ( $changable ) {
+                                   $status .=
+                                     qq! (&nbsp;<A HREF="$p/misc/queue.cgi?jobnum=$jobnum&action=new">retry</A>&nbsp;|!.
+                                     qq!&nbsp;<A HREF="$p/misc/queue.cgi?jobnum=$jobnum&action=del">remove</A>&nbsp;)!;
+                                 }
+                                 $status;
+                               },
+                               sub {
+                                 my $queue = shift;
+                                 # return '' if $hashref->{'svcnum'}
+                                 my $cust_svc = $queue->cust_svc;
+                                 my $account;
+                                 if ( $cust_svc ) {
+                                   my $table = $cust_svc->part_svc->svcdb;
+                                   my $label = ( $cust_svc->label )[1];
+                                   qq!<A HREF="../view/$table.cgi?!. $queue->svcnum.
+                                   qq!">$label</A>!;
+                                 } else {
+                                   '';
+                                 }
+                               },
+                               sub {
+                                 my $queue = shift;
+                                 my $jobnum = $queue->jobnum;
+                                 my $status = $queue->status;
+                                 my $changable = $dangerous
+                                                 || ( ! $noactions
+                                                      && $status eq 'failed'
+                                                      || $status eq 'locked'
+                                                    );
+                                 if ( $changable ) {
+                                   $areboxes = 1;
+                                   qq!<INPUT NAME="jobnum$jobnum" TYPE="checkbox" VALUE="1">!;
+                                 } else {
+                                   '';
+                                 }
+                               },
+                             ],
+                 #'links' =>  [
+                 #              '',
+                 #              '',
+                 #              '',
+                 #              '',
+                 #              '',
+                 #              '', #$acct_link,
+                 #              '',
+                 #            ],
+                 'html_foot' => sub {
+                                  if ( $areboxes ) {
+                                    '<BR><INPUT TYPE="submit" NAME="action" VALUE="retry selected">'.
+                                    '<INPUT TYPE="submit" NAME="action" VALUE="remove selected"><BR>';
+                                  } else {
+                                    '';
+                                  }
+                                },
+             )
+
+%>

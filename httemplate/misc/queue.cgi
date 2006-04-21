@@ -42,6 +42,6 @@ if ( $action eq 'new' ) {
   }
 }
 
-print $cgi->redirect(popurl(2). "browse/queue.cgi");
+print $cgi->redirect(popurl(2). "search/queue.html");
 
 %>
