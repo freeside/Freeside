@@ -20,10 +20,11 @@ use FS::part_pkg;
                                    ' of service at cancellation',
                          'type' => 'checkbox',
                        },
+    'externalid' => { 'name'   => 'Optional External ID',
+                      'default' => '',
+                    },
   },
-  'fieldorder' => [ 'setup_fee', 'recur_fee', 'unused_credit' ],
-  #'setup' => 'what.setup_fee.value',
-  #'recur' => 'what.recur_fee.value',
+  'fieldorder' => [ 'setup_fee', 'recur_fee', 'unused_credit', 'externalid' ],
   'weight' => 10,
 );
 

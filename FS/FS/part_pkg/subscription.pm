@@ -20,8 +20,12 @@ use FS::part_pkg::flat;
     'cutoff_day' => { 'name' => 'billing day',
                       'default' => 1,
                     },
-
+    #it would be better if this had to be turned on, its confusing
+    'externalid' => { 'name'   => 'Optional External ID',
+                      'default' => '',
+                    },
   },
+  'fieldorder' => [ 'setup_fee', 'recur_fee', 'cutoff_day', 'externalid' ],
   'fieldorder' => [ 'setup_fee', 'recur_fee','cutoff_day'],
   'freq' => 'm',
   'weight' => 30,
@@ -29,16 +33,18 @@ use FS::part_pkg::flat;
 
 sub calc_recur {
   my($self, $cust_pkg, $sdate ) = @_;
-  my $cutoff_day=$self->option('cutoff_day') or 1;
+  my $cutoff_day = $self->option('cutoff_day') || 1;
   my $mnow = $$sdate;
   my ($sec,$min,$hour,$mday,$mon,$year) = (localtime($mnow) )[0,1,2,3,4,5];
 
-  if($mday <$cutoff_day){
+  if ( $mday < $cutoff_day ) {
      if ($mon==0) {$mon=11;$year--;}
      else {$mon--;}
   }
-$$sdate = timelocal(0,0,0,$cutoff_day,$mon,$year);
+
+  $$sdate = timelocal(0,0,0,$cutoff_day,$mon,$year);
 
   $self->option('recur_fee');
 }
+
 1;
