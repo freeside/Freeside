@@ -84,6 +84,7 @@ Package information
       <INPUT TYPE="text" NAME="comment" SIZE=32 VALUE="<%=$part_pkg->comment%>">
     </TD>
   </TR>
+  <%= include( '/elements/tr-select-pkg_class.html', $part_pkg->classnum ) %>
   <TR>
     <TD ALIGN="right">Promotional code</TD>
     <TD>
@@ -146,8 +147,8 @@ $thead .= '<TH BGCOLOR="#dcdcdc">Service</TH></TR>';
 
 %>
 
-<%= itable('', 4, 1) %><TR><TD VALIGN="top">
 <BR><BR>Services included
+<%= itable('', 4, 1) %><TR><TD VALIGN="top">
 <%= $thead %>
 
 <%
@@ -194,14 +195,14 @@ foreach my $part_svc ( @part_svc ) {
     </TD>
   </TR>
 
-  <% $count++;
-     foreach ( 1 .. $columns-1 ) {
+  <% foreach ( 1 .. $columns-1 ) {
        if ( $count == int( $_ * scalar(@part_svc) / $columns ) ) { 
   %>
          </TABLE></TD><TD VALIGN="top"><%= $thead %>
 
   <%   }
      }
+     $count++;
   %>
 
 <% } %>
@@ -224,7 +225,7 @@ my %plandata = map { /^(\w+)=(.*)$/; ( $1 => $2 ); }
 
 tie my %options, 'Tie::IxHash', map { $_=>$plans{$_}->{'name'} } keys %plans;
 
-my @form_select = ();
+my @form_select = ('classnum');
 if ( $conf->exists('enable_taxclasses') ) {
   push @form_select, 'taxclass';
 } else {

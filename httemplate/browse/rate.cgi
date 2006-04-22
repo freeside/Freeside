@@ -1,34 +1,33 @@
-<!-- mason kludge -->
-<%= include("/elements/header.html","Rate plan listing", menubar( 'Main Menu' => "$p#sysadmin" )) %>
-Rate plans, regions and prefixes for VoIP and call billing.<BR><BR>
-<A HREF="<%=$p%>edit/rate.cgi"><I>Add a rate plan</I></A>
-| <A HREF="<%=$p%>edit/rate_region.cgi"><I>Add a region</I></A>
-<BR><BR>
-<SCRIPT>
-function rate_areyousure(href) {
-  if (confirm("Are you sure you want to delete this rate plan?") == true)
-    window.location.href = href;
-}
-</SCRIPT>
+<%
 
-<%= table() %>
-  <TR>
-    <TH COLSPAN=2>Rate plan</TH>
-  </TR>
+my $html_init = 
+  'Rate plans, regions and prefixes for VoIP and call billing.<BR><BR>'.
+  qq!<A HREF="${p}edit/rate.cgi"><I>Add a rate plan</I></A>!.
+  qq! | <A HREF="${p}edit/rate_region.cgi"><I>Add a region</I></A>!.
+  '<BR><BR>
+   <SCRIPT>
+   function rate_areyousure(href) {
+    if (confirm("Are you sure you want to delete this rate plan?") == true)
+      window.location.href = href;
+   }
+   </SCRIPT>';
 
-<% foreach my $rate ( sort { 
-     $a->getfield('ratenum') <=> $b->getfield('ratenum')
-   } qsearch('rate',{}) ) {
+my $count_query = 'SELECT COUNT(*) FROM rate';
+
+my $link = [ $p.'edit/rate.cgi?', 'ratenum' ];
+
+%><%= include( 'elements/browse.html',
+                 'title'       => 'Rate plans',
+                 'menubar'     => [ 'Main menu' => $p, ],
+                 'html_init'   => $html_init,
+                 'name'        => 'rate plans',
+                 'query'       => { 'table'     => 'rate',
+                                    'hashref'   => {},
+                                    'extra_sql' => 'ORDER BY ratenum',
+                                  },
+                 'count_query' => $count_query,
+                 'header'      => [ '#', 'Rate plan', ],
+                 'fields'      => [ 'ratenum', 'ratename' ],
+                 'links'       => [ $link, $link ],
+             )
 %>
-  <TR>
-    <TD><A HREF="<%= $p %>edit/rate.cgi?<%= $rate->ratenum %>"><%= $rate->ratenum %></A></TD>
-    <TD><A HREF="<%= $p %>edit/rate.cgi?<%= $rate->ratenum %>"><%= $rate->ratename %></A></TD>
-  </TR>
-
-<% } %>
-
-</TABLE>
-</BODY>
-</HTML>
-
- 

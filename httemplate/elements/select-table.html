@@ -1,0 +1,45 @@
+<%
+
+  ##required
+  # 'table'    => 'table_name',
+  # 'name_col' => 'name_column',
+  #
+  ##strongly recommended (you want your forms to be "sticky" on errors, right?)
+  # 'value'    => 'current_value',
+  #
+  ##opt
+  # 'empty_label' => '', #better specify it though, the default might change
+  # 'hashref'     => {},
+  # 'records'     => \@records, #instead of hashref
+
+  my( %opt ) = @_;
+
+  my $key = dbdef->table($opt{'table'})->primary_key; #? $opt{'primary_key'} ||
+
+  my $name_col = $opt{'name_col'};
+
+  my @records = ();
+  if ( $opt{'records'} ) {
+    @records = @{ $opt{'records'} };
+  } else {
+    @records = qsearch( $opt{'table'}, ( $opt{'hashref'} || {} ) );
+  }
+
+%>
+
+<SELECT NAME="<%= $key %>">
+
+  <OPTION VALUE=""><%= $opt{'empty_label'} || 'all' %></OPTION>
+
+  <% foreach my $record ( sort { $a->$name_col() cmp $b->$name_col() }
+                               @records
+                        )
+     {
+  %>
+
+    <OPTION VALUE="<%= $record->$key() %>"<%= $opt{'value'} == $record->$key() ? ' SELECTED' : '' %>><%= $record->$name_col() %>
+
+  <% } %>
+
+</SELECT>
+

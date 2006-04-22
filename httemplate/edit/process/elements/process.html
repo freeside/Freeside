@@ -5,6 +5,7 @@
   # 'table' => 
   # #? 'primary_key' => #required when the dbdef doesn't know...???
   # #? 'fields' => []
+  # 'viewall_dir' => '', #'search' or 'browse', defaults to 'search'
 
   my(%opt) = @_;
 
@@ -40,7 +41,10 @@
     $cgi->param('error', $error);
     print $cgi->redirect(popurl(2). "$table.html?". $cgi->query_string );
   } else { 
-    print $cgi->redirect(popurl(3). "search/$table.html");
+    print $cgi->redirect( popurl(3).
+                          ( $opt{'viewall_dir'} || 'search' ).
+                          "/$table.html"
+                        );
   }
 
 %>

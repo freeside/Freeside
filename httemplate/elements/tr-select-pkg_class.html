@@ -1,0 +1,29 @@
+<%
+  my( $classnum, %opt ) = @_;
+
+  my @pkg_class;
+  if ( $opt{'pkg_class'} ) {
+    @pkg_class = @{ $opt{'pkg_class'} };
+  } else {
+    @pkg_class = qsearch( 'pkg_class', {} ); # { disabled=>'' } );
+  }
+
+%>
+
+<% if ( scalar(@pkg_class) == 0 ) { %>
+
+  <INPUT TYPE="hidden" NAME="classnum" VALUE="">
+
+<% } else { %>
+
+  <TR>
+    <TD ALIGN="right"><%= $opt{'label'} || 'Package class' %></TD>
+    <TD>
+      <%= include( '/elements/select-pkg_class.html', $classnum,
+                     'pkg_class' => \@pkg_class,
+                 )
+      %>
+    </TD>
+  </TR>
+
+<% } %>

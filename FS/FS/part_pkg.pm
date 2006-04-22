@@ -12,6 +12,7 @@ use FS::cust_pkg;
 use FS::agent_type;
 use FS::type_pkgs;
 use FS::part_pkg_option;
+use FS::pkg_class;
 
 @ISA = qw( FS::Record ); # FS::option_Common ); # this can use option_Common
                                                 # when all the plandata bs is
@@ -57,6 +58,8 @@ inherits from FS::Record.  The following fields are currently supported:
 =item pkg - Text name of this package definition (customer-viewable)
 
 =item comment - Text name of this package definition (non-customer-viewable)
+
+=item classnum - Optional package class (see L<FS::pkg_class>)
 
 =item promo_code - Promotional code
 
@@ -453,6 +456,37 @@ sub check {
     if ! $self->taxclass && $conf->exists('require_taxclasses');
 
   '';
+}
+
+=item pkg_class
+
+Returns the package class, as an FS::pkg_class object, or the empty string
+if there is no package class.
+
+=cut
+
+sub pkg_class {
+  my $self = shift;
+  if ( $self->classnum ) {
+    qsearchs('pkg_class', { 'classnum' => $self->classnum } );
+  } else {
+    return '';
+  }
+}
+
+=item classname 
+
+Returns the package class name, or the empty string if there is no package
+class.
+
+=cut
+
+sub classname {
+  my $self = shift;
+  my $pkg_class = $self->pkg_class;
+  $pkg_class
+    ? $pkg_class->classname
+    : '';
 }
 
 =item pkg_svc

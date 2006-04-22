@@ -19,8 +19,10 @@ if ( $cgi->param('magic') && $cgi->param('magic') eq 'bill' ) {
 
   my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
   push @where,
-    "bill >= $beginning ",
-    "bill <= $ending",
+    #"bill >= $beginning ",
+    #"bill <= $ending",
+    "CASE WHEN bill IS NULL THEN 0 ELSE bill END >= $beginning ",
+    "CASE WHEN bill IS NULL THEN 0 ELSE bill END <= $ending",
     '( cancel IS NULL OR cancel = 0 )';
 
 } else {
@@ -141,7 +143,7 @@ sub time_or_blank {
                   'name'        => 'packages',
                   'query'       => $sql_query,
                   'count_query' => $count_query,
-                  'redirect'    => $link,
+                  #'redirect'    => $link,
                   'header'      => [ '#',
                                      'Package',
                                      'Status',

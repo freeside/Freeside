@@ -15,6 +15,8 @@
   #             ]
   #
   # 'menubar'     => '', #menubar arrayref
+  #
+  # 'viewall_dir' => '', #'search' or 'browse', defaults to 'search'
 
   my(%opt) = @_;
 
@@ -55,7 +57,9 @@
   } else {
     @menubar = (
       'Main menu' => $p, #eventually get rid of this when the ACL/UI update is done
-      "View all $opt{'name'}s" => "${p}search/$table.html", #eventually use Lingua::bs to pluralize
+      #eventually use Lingua::bs to pluralize
+      "View all $opt{'name'}s" => $p. ( $opt{'viewall_dir'} || 'search' ).
+                                  "/$table.html",
     );
   }
 

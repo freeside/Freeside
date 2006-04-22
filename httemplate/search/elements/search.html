@@ -8,8 +8,12 @@
   # 'name'        => 'items', #name for the records returned
   #
   # # some HTML callbacks...
-  # 'menubar'     => '', #menubar arrayref
-  # 'html_init'   => '', #after the header/menubar and before the pager
+  # 'menubar'          => '', #menubar arrayref
+  # 'html_init'        => '', #after the header/menubar and before the pager
+  # 'html_foot'        => '', #at the bottom
+  # 'html_posttotal'   => '', #at the bottom
+  #                           # (these three can be strings or coderefs)
+  # 
   #
   # #literal SQL query string or qsearch hashref, required
   # 'query'       => {
@@ -38,6 +42,10 @@
   # #required unless 'query' is an SQL query string
   # # (if not specified the database column names will be used)
   # 'header'      => [ '#', 'Item' ],
+  #
+  # 'disable_download' => '', # set true to hide the CSV/Excel download links
+  # 'disable_nonefound' => '', # set true to disable the "No matching Xs found"
+  #                            # message
   #
   # #listref - each item is a literal column name (or method) or coderef
   # #if not specified all columns will be shown
@@ -286,7 +294,13 @@
                  include( '/elements/menubar.html', @menubar )
              )
   %>
-  <%= defined($opt{'html_init'}) ? $opt{'html_init'} : '' %>
+  <%= defined($opt{'html_init'}) 
+        ? ( ref($opt{'html_init'})
+              ? &{$opt{'html_init'}}()
+              : $opt{'html_init'}
+          )
+        : ''
+  %>
   <% my $pager = include ( '/elements/pager.html',
                              'offset'     => $offset,
                              'num_rows'   => scalar(@$rows),
@@ -295,26 +309,38 @@
                          );
   %>
   <% unless ( $total ) { %>
-    No matching <%= $opt{'name'} %> found.<BR>
+    <% unless ( $opt{'disable_nonefound'} ) { %>
+      No matching <%= $opt{'name'} %> found.<BR>
+    <% } %>
   <% } else { %>
   
     <TABLE>
       <TR>
         <TD VALIGN="bottom">
-          <%= $total %> total <%= $opt{'name'} %><BR>
+          <%= $total %> total <%= $opt{'name'} %>
+          <%= defined($opt{'html_posttotal'}) 
+                ? ( ref($opt{'html_posttotal'})
+                      ? &{$opt{'html_posttotal'}}()
+                      : $opt{'html_posttotal'}
+                  )
+                : ''
+          %>
+          <BR>
           <% if ( $opt{'count_addl'} ) { %>
             <% my $n=0; foreach my $count ( @{$opt{'count_addl'}} ) { %>
               <%= sprintf( $count, $count_arrayref->[++$n] ) %><BR>
             <% } %>
           <% } %>
         </TD>
-        <TD ALIGN="right">
-          <% $cgi->param('_type', "$xlsname.xls" ); %>
-          Download full results<BR>
-          as <A HREF="<%= $cgi->self_url %>">Excel spreadsheet</A><BR>
-          <% $cgi->param('_type', 'csv'); %>
-          as <A HREF="<%= $cgi->self_url %>">CSV file</A>
-        </TD>
+        <% unless ( $opt{'disable_download'} ) { %>
+          <TD ALIGN="right">
+            <% $cgi->param('_type', "$xlsname.xls" ); %>
+            Download full results<BR>
+            as <A HREF="<%= $cgi->self_url %>">Excel spreadsheet</A><BR>
+            <% $cgi->param('_type', 'csv'); %>
+            as <A HREF="<%= $cgi->self_url %>">CSV file</A>
+          </TD>
+        <% } %>
       </TR>
       <TR>
         <TD COLSPAN=2>
@@ -471,6 +497,13 @@
       </TABLE>
   
   <% } %>
+  <%= defined($opt{'html_foot'}) 
+        ? ( ref($opt{'html_foot'})
+              ? &{$opt{'html_foot'}}()
+              : $opt{'html_foot'}
+          )
+        : ''
+  %>
   <%= include( '/elements/footer.html' ) %>
   <% } %>
 <% } %>

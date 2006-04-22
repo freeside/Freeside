@@ -176,6 +176,7 @@ sub handler
       use FS::cdr;
       use FS::inventory_class;
       use FS::inventory_item;
+      use FS::pkg_class;
 
       if ( %%%RT_ENABLED%%% ) {
         eval '

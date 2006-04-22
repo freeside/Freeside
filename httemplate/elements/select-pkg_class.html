@@ -1,0 +1,16 @@
+<%
+  my( $classnum, %opt ) = @_;
+
+  my %select_opt = ();
+  $select_opt{'records'} = $opt{'pkg_class'}
+    if $opt{'pkg_class'};
+
+%><%= include( '/elements/select-table.html',
+                 'table'       => 'pkg_class',
+                 'name_col'    => 'classname',
+                 'value'       => $classnum,
+                 'empty_label' => '(none)',
+                 #'hashref'     => { 'disabled' => '' },
+                 #%select_opt,
+             )
+%>
