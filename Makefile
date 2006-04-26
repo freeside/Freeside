@@ -41,10 +41,8 @@ INIT_INSTALL = /usr/sbin/update-rc.d freeside defaults 21 20
 #not necessary (freebsd)
 #INIT_INSTALL = /usr/bin/true
 
-#deb
-HTTPD_RESTART = /etc/init.d/apache reload
-#suse
-#HTTPD_RESTART = /etc/init.d/apache restart
+#deb, suse
+HTTPD_RESTART = /etc/init.d/apache restart
 #redhat, fedora, mandrake
 #HTTPD_RESTART = /etc/init.d/httpd restart
 #freebsd
@@ -198,7 +196,10 @@ perl-modules:
 	make; \
 	perl -p -i -e "\
 	  s/%%%VERSION%%%/${VERSION}/g;\
-	" blib/lib/FS.pm
+	" blib/lib/FS.pm; \
+	perl -p -i -e "\
+	  s'%%%FREESIDE_URL%%%'${FREESIDE_URL}'g;\
+	" blib/lib/FS/CGI.pm
 
 install-perl-modules: perl-modules
 	[ -L ${PERL_INC_DEV_KLUDGE}/FS ] \
@@ -208,13 +209,13 @@ install-perl-modules: perl-modules
 	cd FS; \
 	make install UNINST=1
 
-dev-perl-modules:
+dev-perl-modules: perl-modules
 	[ -d ${PERL_INC_DEV_KLUDGE}/FS -a ! -L ${PERL_INC_DEV_KLUDGE}/FS ] \
 	  && mv ${PERL_INC_DEV_KLUDGE}/FS ${PERL_INC_DEV_KLUDGE}/FS.old \
 	  || true
 
 	rm -rf ${PERL_INC_DEV_KLUDGE}/FS
-	ln -sf ${FREESIDE_PATH}/FS/FS ${PERL_INC_DEV_KLUDGE}/FS
+	ln -sf ${FREESIDE_PATH}/FS/blib/lib/FS ${PERL_INC_DEV_KLUDGE}/FS
 
 install-init:
 	#[ -e ${INIT_FILE} ] || install -o root -g ${INSTALLGROUP} -m 711 init.d/freeside-init ${INIT_FILE}
