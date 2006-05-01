@@ -43,7 +43,7 @@ sub calc_recur {
   my $mend;
   my $mstart;
   
-  if ( $mday > $cutoff_day ) {
+  if ( $mday >= $cutoff_day ) {
     $mend =
       timelocal(0,0,0,$cutoff_day, $mon == 11 ? 0 : $mon+1, $year+($mon==11));
     $mstart =
