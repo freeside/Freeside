@@ -109,6 +109,7 @@ sub _from_customer {
                  ON ( tickets.id = ObjectCustomFieldValues.ObjectId )";
       
       $where = " AND content = ?
+                 AND disabled != 1
                  AND ObjectType = 'RT::Ticket'
                  AND $customfield_sql";
 
