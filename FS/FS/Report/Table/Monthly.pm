@@ -156,6 +156,47 @@ sub credits {
   );
 }
 
+#these should be auto-generated
+sub invoiced_12mo {
+  my( $self, $speriod, $eperiod, $agentnum ) = @_;
+  $speriod = $self->_subtract_11mo($speriod);
+  $self->invoiced($speriod, $eperiod, $agentnum);
+}
+
+sub netsales_12mo {
+  my( $self, $speriod, $eperiod, $agentnum ) = @_;
+  $speriod = $self->_subtract_11mo($speriod);
+  $self->netsales($speriod, $eperiod, $agentnum);
+}
+
+sub receipts_12mo {
+  my( $self, $speriod, $eperiod, $agentnum ) = @_;
+  $speriod = $self->_subtract_11mo($speriod);
+  $self->receipts($speriod, $eperiod, $agentnum);
+}
+
+sub payments_12mo {
+  my( $self, $speriod, $eperiod, $agentnum ) = @_;
+  $speriod = $self->_subtract_11mo($speriod);
+  $self->payments($speriod, $eperiod, $agentnum);
+}
+
+sub credits_12mo {
+  my( $self, $speriod, $eperiod, $agentnum ) = @_;
+  $speriod = $self->_subtract_11mo($speriod);
+  $self->credits($speriod, $eperiod, $agentnum);
+}
+
+#not being too bad with the false laziness
+use Time::Local qw(timelocal);
+sub _subtract_11mo {
+  my($self, $time) = @_;
+  my ($sec,$min,$hour,$mday,$mon,$year) = (localtime($time) )[0,1,2,3,4,5];
+  $mon -= 11;
+  if ( $mon < 0 ) { $mon+=12; $year--; }
+  timelocal($sec,$min,$hour,$mday,$mon,$year);
+}
+
 # NEEDS TO BE AGENTNUM-capable
 sub canceled { #active
   my( $self, $speriod, $eperiod, $agentnum ) = @_;

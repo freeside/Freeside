@@ -22,6 +22,10 @@ if ( $cgi->param('agentnum') =~ /^(\d*)$/ ) {
 #my %data;
 
 my @items = qw( invoiced netsales credits payments receipts );
+if ( $cgi->param('12mo') == 1 ) {
+  @items = map $_.'_12mo', @items;
+}
+
 my %label = (
  'invoiced' => 'Gross Sales (invoiced)', 
  'netsales' => 'Net Sales (invoiced - applied credits)',
@@ -29,6 +33,9 @@ my %label = (
  'payments' => 'Gross Receipts (payments)',
  'receipts' => 'Net Receipts/Cashflow (payments - refunds)',
 );
+$label{$_.'_12mo'} = $label{$_}. " (previous 12 months)"
+  foreach keys %label;
+
 my %color = (
   'invoiced' => [ 153, 153, 255 ], #light blue
   'netsales' => [   0,   0, 204 ], #blue
@@ -36,6 +43,8 @@ my %color = (
   'payments' => [ 153, 204, 153 ], #light green
   'receipts' => [   0, 204,   0 ], #green
 );
+$color{$_.'_12mo'} = $color{$_}
+  foreach keys %color;
 
 my $report = new FS::Report::Table::Monthly (
   'items' => \@items,

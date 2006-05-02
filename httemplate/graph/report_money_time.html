@@ -1,0 +1,71 @@
+<%
+
+#my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) = localtime(time);
+my ($curmon,$curyear) = (localtime(time))[4,5];
+
+#find first month
+my $syear = 1899+$curyear;
+my $smonth = $curmon+1;
+
+#want 12 month by default, not 13
+$smonth++;
+if ( $smonth > 12 ) { $smonth-=12; $syear++ }
+
+#find last month
+my $eyear = 1900+$curyear;
+my $emonth = $curmon+1;
+
+my @mon = qw(Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec);
+
+%>
+<%= include('/elements/header.html', 'Sales, Credits and Receipts Summary' ) %>
+
+<FORM ACTION="money_time.cgi" METHOD="GET">
+
+<!--
+<INPUT TYPE="checkbox" NAME="ar">
+  Accounts receivable (invoices - applied credits)<BR>
+<INPUT TYPE="checkbox" NAME="charged">
+  Just Invoices<BR>
+<INPUT TYPE="checkbox" NAME="defer">
+  Accounts receivable, with deferred revenue (invoices - applied credits, with charges for annual/semi-annual/quarterly/etc. services deferred over applicable time period) (there has got to be a shorter description for this)<BR>
+<INPUT TYPE="checkbox" NAME="cash">
+  Cashflow (payments - refunds)<BR>
+<BR>
+-->
+
+From: <SELECT NAME="smonth">
+<% foreach my $mon ( 1..12 ) { %>
+<OPTION VALUE="<%= $mon %>"<%= $mon == $smonth ? ' SELECTED' : '' %>><%= $mon[$mon-1] %>
+<% } %>
+</SELECT>
+<SELECT NAME="syear">
+<% foreach my $y ( 1999 .. 2010 ) { %>
+<OPTION VALUE="<%= $y %>"<%= $y == $syear ? ' SELECTED' : '' %>><%= $y %>
+<% } %>
+</SELECT>
+<BR>
+
+To: <SELECT NAME="emonth">
+<% foreach my $mon ( 1..12 ) { %>
+<OPTION VALUE="<%= $mon %>"<%= $mon == $emonth ? ' SELECTED' : '' %>><%= $mon[$mon-1] %>
+<% } %>
+</SELECT>
+<SELECT NAME="eyear">
+<% foreach my $y ( 1999 .. 2010 ) { %>
+<OPTION VALUE="<%= $y %>"<%= $y == $eyear ? ' SELECTED' : '' %>><%= $y %>
+<% } %>
+</SELECT>
+<BR>
+
+For agent: <%= include('/elements/select-agent.html' ) %>
+<BR>
+
+<INPUT TYPE="checkbox" NAME="12mo" VALUE="1"> Show 12 month totals instead of monthly values.
+<BR>
+
+<INPUT TYPE="submit" VALUE="Display">
+</FORM>
+
+<%= include('/elements/footer.html') %>
+
