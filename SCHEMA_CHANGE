@@ -6,6 +6,7 @@ if the changes are something other than table and/or column additions:
 - README.1.5.X
 
 for new tables:
+- make sure the new tables are added to FS/FS/Schema.pm and run make install-perl-modules
 - run bin/generate-table-module tablename
 - edit the resulting FS/FS/table.pm
 
