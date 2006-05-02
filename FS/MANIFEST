@@ -25,6 +25,7 @@ bin/freeside-sqlradius-radacctd
 bin/freeside-sqlradius-reset
 bin/freeside-sqlradius-seconds
 FS.pm
+FS/AccessRight.pm
 FS/CGI.pm
 FS/InitHandler.pm
 FS/ClientAPI.pm
@@ -46,6 +47,7 @@ FS/SearchCache.pm
 FS/UI/Web.pm
 FS/UID.pm
 FS/Msgcat.pm
+FS/Pony.pm
 FS/acct_snarf.pm
 FS/agent.pm
 FS/agent_type.pm
@@ -165,6 +167,7 @@ FS/clientapi_session.pm
 FS/clientapi_session_field.pm
 t/agent.t
 t/agent_type.t
+t/AccessRight.t
 t/CGI.t
 t/InitHandler.t
 t/ClientAPI.t
@@ -324,3 +327,15 @@ FS/inventory_item.pm
 t/inventory_item.t
 FS/cdr_upstream_rate.pm
 t/cdr_upstream_rate.t
+FS/access_user.pm
+t/access_user.t
+FS/access_user_pref.pm
+t/access_user_pref.t
+FS/access_group.pm
+t/access_group.t
+FS/access_usergroup.pm
+t/access_usergroup.t
+FS/access_groupagent.pm
+t/access_groupagent.t
+FS/access_right.pm
+t/access_right.t
