@@ -1,0 +1,16 @@
+<%= include('/elements/header.html', 'Accounts Receivable Aging Summary' ) %>
+
+    <FORM ACTION="report_receivables.cgi" METHOD="GET">
+
+    <TABLE>
+
+     <%= include( '/elements/tr-select-agent.html' ) %>
+
+    </TABLE>
+
+    <BR><INPUT TYPE="submit" VALUE="Get Report">
+    </FORM>
+
+  </BODY>
+</HTML>
+
