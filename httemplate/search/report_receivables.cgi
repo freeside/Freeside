@@ -110,7 +110,7 @@ END
     $owed_cols =~
       s/cust_bill\.custnum/cust_bill.custnum AND cust_main.agentnum = '$agentnum'/g;
   }
-  my $total_sql = "select $owed_cols";
+  my $total_sql = "select $owed_cols from cust_main";
   my $total_sth = dbh->prepare($total_sql) or die dbh->errstr;
   $total_sth->execute or die $total_sth->errstr;
   my $row = $total_sth->fetchrow_hashref();
