@@ -1,16 +1,12 @@
 <%
   my( $classnum, %opt ) = @_;
 
-  my @pkg_class;
-  if ( $opt{'pkg_class'} ) {
-    @pkg_class = @{ $opt{'pkg_class'} };
-  } else {
-    @pkg_class = qsearch( 'pkg_class', {} ); # { disabled=>'' } );
-  }
+  $opt{'pkg_class'} ||= [ qsearch( 'pkg_class', {} ) ]; # { disabled=>'' } )
 
+  #warn "***** tr-select-pkg-class: \n". Dumper(%opt);
 %>
 
-<% if ( scalar(@pkg_class) == 0 ) { %>
+<% if ( scalar(@{ $opt{'pkg_class'} }) == 0 ) { %>
 
   <INPUT TYPE="hidden" NAME="classnum" VALUE="">
 
@@ -19,10 +15,7 @@
   <TR>
     <TD ALIGN="right"><%= $opt{'label'} || 'Package class' %></TD>
     <TD>
-      <%= include( '/elements/select-pkg_class.html', $classnum,
-                     'pkg_class' => \@pkg_class,
-                 )
-      %>
+      <%= include( '/elements/select-pkg_class.html', $classnum, %opt ) %>
     </TD>
   </TR>
 

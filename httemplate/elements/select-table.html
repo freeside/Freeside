@@ -11,8 +11,11 @@
   # 'empty_label' => '', #better specify it though, the default might change
   # 'hashref'     => {},
   # 'records'     => \@records, #instead of hashref
+  # 'pre_options' => [ 'value' => 'option' ], #before normal options
 
   my( %opt ) = @_;
+
+  #warn "***** select-table: \n". Dumper(%opt);
 
   my $key = dbdef->table($opt{'table'})->primary_key; #? $opt{'primary_key'} ||
 
@@ -25,11 +28,17 @@
     @records = qsearch( $opt{'table'}, ( $opt{'hashref'} || {} ) );
   }
 
+  my @pre_options = $opt{'pre_options'} ? @{ $opt{'pre_options'} } : ();
+
 %>
 
 <SELECT NAME="<%= $key %>">
 
-  <OPTION VALUE=""><%= $opt{'empty_label'} || 'all' %></OPTION>
+  <% while ( @pre_options ) { %>
+    <OPTION VALUE="<%= shift(@pre_options) %>"><%= shift(@pre_options) %>
+  <% } %>
+
+  <OPTION VALUE=""><%= $opt{'empty_label'} || 'all' %>
 
   <% foreach my $record ( sort { $a->$name_col() cmp $b->$name_col() }
                                @records

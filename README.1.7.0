@@ -1,5 +1,6 @@
 
 install DBIx::DBSchema 0.31 (or later)
+install Color::Scheme
 
 make install-perl-modules
 run "freeside-upgrade username" to uprade your database schema

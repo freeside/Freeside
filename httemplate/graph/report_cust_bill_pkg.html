@@ -1,0 +1,29 @@
+<%= include('/elements/header.html', 'Sales Report' ) %>
+
+<FORM ACTION="cust_bill_pkg.cgi" METHOD="GET">
+
+<TABLE>
+
+<%= include('/elements/tr-select-from_to.html' ) %>
+
+<%= include('/elements/tr-select-agent.html', 'label' => 'For agent: ' ) %>
+
+<%= include('/elements/tr-select-pkg_class.html', '',
+              'pre_options' => [ '0' => 'all' ],
+              'empty_label' => '(empty class)',
+           )
+%>
+
+<!--
+<TR>
+  <TD ALIGN="right"><INPUT TYPE="checkbox" NAME="separate_0freq" VALUE="1"></TD>
+  <TD>Separate one-time vs. recurring sales</TD>
+</TR>
+-->
+
+</TABLE>
+
+<BR><INPUT TYPE="submit" VALUE="Display">
+</FORM>
+
+<%= include('/elements/footer.html') %>

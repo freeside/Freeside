@@ -113,6 +113,8 @@ sub handler
       use Business::CreditCard;
       use String::Approx qw(amatch);
       use Chart::LinesPoints;
+      use Chart::Mountain;
+      use Color::Scheme;
       use HTML::Widgets::SelectLayers 0.05;
       use Locale::Country;
       use FS;
