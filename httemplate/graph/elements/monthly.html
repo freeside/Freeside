@@ -5,10 +5,10 @@
   # 'title'        => 'Page title',
   # 'items'        => \@items,
   # 'params'       => \@params, # opt,
-  # 'labels'       => \@labels, # or \%labels (keys are items)
-  # 'graph_labels' => \%graph_labels,
-  # 'colors'       => \%colors,
-  # 'links         => \%link, #opt
+  # 'labels'       => \@labels,       # or \%labels (keys are items)
+  # 'graph_labels' => \@graph_labels, # or \%graph_labels,
+  # 'colors'       => \@colors,       # or \%colors,
+  # 'links         => \@links,        # or \%link, #opt
   # 'start_month'  => $smonth,
   # 'start_year'   => $syear,
   # 'end_month'    => $emonth,
@@ -16,26 +16,38 @@
   # 'agentnum'     => $agentnum, #opt
   # 'nototal'      => 1, #opt,
   # 'graph_type'   => 'LinesPoints', #opt
+  # 'remove_empty' => 1, #opt,
+  # 'bottom_total' => 1, #opt,
 
   my(%opt) = @_;
   my @items = @{ $opt{'items'} };
 
-  #foreach my $other (qw( labels graph_labels colors links )) {
-  foreach my $other (qw( labels graph_labels colors )) {
+  foreach my $other (qw( labels graph_labels colors links )) {
+  #foreach my $other (qw( labels graph_labels colors )) {
     if ( ref($opt{$other}) eq 'HASH' ) {
       $opt{$other} = [ map $opt{$other}{$_}, @items ];
     }
   }
 
   my $report = new FS::Report::Table::Monthly (
+
     #'items'       => $opt{'items'},
-    'items'       => \@items,
-    'params'      => $opt{'params'},
-    'start_month' => $opt{'start_month'},
-    'start_year'  => $opt{'start_year'},
-    'end_month'   => $opt{'end_month'},
-    'end_year'    => $opt{'end_year'},
-    'agentnum'    => $opt{'agentnum'},
+    'items'        => \@items,
+    'params'       => $opt{'params'},
+    'item_labels'  => ( $cgi->param('_type') =~ /^(png)$/
+                          ? $opt{'graph_labels'}
+                          : $opt{'labels'}
+                      ),
+    'colors'       => $opt{'colors'},
+    'links'        => $opt{'links'},
+
+    'start_month'  => $opt{'start_month'},
+    'start_year'   => $opt{'start_year'},
+    'end_month'    => $opt{'end_month'},
+    'end_year'     => $opt{'end_year'},
+
+    'agentnum'     => $opt{'agentnum'},
+    'remove_empty' => $opt{'remove_empty'},
   );
   my $data = $report->data;
 
@@ -61,14 +73,15 @@
                             'dataset'.$d++ =>
                               [ map hex($_), unpack 'a2a2a2', $color ]
                           }
-                          @{ $opt{'colors'} }
+                          #@{ $opt{'colors'} }
+                          @{ $data->{'colors'} }
                     ),
                     #'grey_background' => [ 211, 211, 211 ],
                     'grey_background' => 'white',
                     'background' => [ 0xe8, 0xe8, 0xe8 ], #grey
                   },
       #'grey_background' => 'false',
-      'legend_labels' => $opt{'graph_labels'},
+      'legend_labels' => $data->{'item_labels'},
       'brush_size' => 4,
       #'pt_size' => 12,
     );
@@ -112,36 +125,72 @@
 
 </TR>
 
-<% foreach my $row (@items) {
+<% my @bottom_total = ();
+   foreach my $row ( @{ $data->{'items'} } ) {
 
-     my $color = shift( @{ $opt{'colors'} } );
+     #my $color = shift( @{ $opt{'colors'} } );
+     my $color = shift( @{ $data->{'colors'} } );
+     my $link = shift( @{ $data->{'links'} } );
+     $link = $link ? qq(<A HREF="$link) : '';
 %>
 
   <TR>
 
-    <TH><FONT COLOR="#<%= $color %>"><%= shift( @{ $opt{'labels'} } ) %></FONT></TH>
+    <TH><FONT COLOR="#<%= $color %>"><%= shift( @{ $data->{'item_labels'} } ) %></FONT></TH>
 
-    <% my $link = exists($opt{'links'}{$row})
-         ? qq(<A HREF="$opt{'links'}{$row})
-         : '';
+    <% #my $link = exists($opt{'links'}{$row})
+       #  ? qq(<A HREF="$opt{'links'}{$row})
+       #  : '';
        my @speriod = @{$data->{speriod}};
        my @eperiod = @{$data->{eperiod}};
        my $total = 0;
     %>
-    <% foreach my $column ( @{ shift( @{$data->{data}} ) } ) { # ( @{$data->{$row}} ) {
+    <% my $col = 0;
+       foreach my $column ( @{ shift( @{$data->{data}} ) } ) { # ( @{$data->{$row}} ) {
     %>
 
       <TD ALIGN="right" BGCOLOR="#ffffff">
         <%= $link ? $link. 'begin='. shift(@speriod). ';end='. shift(@eperiod). '">' : '' %><FONT COLOR="#<%= $color %>">$<%= sprintf("%.2f", $column) %></FONT><%= $link ? '</A>' : '' %>
       </TD>
-      <% $total += $column; %>
+      <%
+         $total += $column;
+         $bottom_total[$col++] += $column;
+      %>
 
     <% } %>
 
     <% unless ( $opt{'nototal'} ) { %>
 
       <TD ALIGN="right" BGCOLOR="#f5f6be">
-        <%= $link ? $link. 'begin='. @{$data->{speriod}}[0]. ';end='. @{$data->{eperiod}}[-1]. '">' : '' %><FONT COLOR="#<%= $color %>">$<%= sprintf("%.2f", $total) %></FONT><%= $link ? '</A>' : '' %>
+        <%= $link ? $link. 'begin='. ${$data->{speriod}}[0]. ';end='. ${$data->{eperiod}}[-1]. '">' : '' %><FONT COLOR="#<%= $color %>">$<%= sprintf("%.2f", $total) %></FONT><%= $link ? '</A>' : '' %>
+      </TD>
+
+      <% $bottom_total[$col++] += $total; %>
+
+    <% } %>
+
+  </TR>
+
+<% } %>
+
+<% if ( $opt{'bottom_total'} ) {
+     my @speriod = ( @{$data->{speriod}}, ${$data->{speriod}}[0] );
+     my @eperiod = ( @{$data->{eperiod}}, ${$data->{eperiod}}[-1] );
+%>
+
+  <TR>
+    <TH>Total</TH>
+
+    <% foreach my $total ( @bottom_total ) { %>
+
+      <TD ALIGN="right" BGCOLOR="#f5f6be">
+        <%= $opt{'bottom_link'}
+              ? '<A HREF="'. $opt{'bottom_link'}.
+                'begin='. shift(@speriod).
+                ';end='. shift(@eperiod). '">'
+              : ''
+        %>$<%= sprintf("%.2f", $total) %><%= $opt{'bottom_link'} ? '</A>' : '' %>
+
       </TD>
 
     <% } %>

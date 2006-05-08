@@ -12,13 +12,21 @@ my $join_pkg = "
     LEFT JOIN part_pkg USING ( pkgpart )
 ";
 
-my $where = "
-  WHERE _date >= $beginning AND _date <= $ending
-    AND payby != 'COMP'
-";
+my $where = " WHERE _date >= $beginning AND _date <= $ending ";
+
+$where .= " AND payby != 'COMP' "
+  unless $cgi->param('include_comp_cust');
 
 if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
   $where .= " AND agentnum = $1 ";
+}
+
+if ( $cgi->param('classnum') =~ /^(\d+)$/ ) {
+  if ( $1 == 0 ) {
+    $where .= " AND classnum IS NULL ";
+  } else {
+    $where .= " AND classnum = $1 ";
+  }
 }
 
 if ( $cgi->param('out') ) {

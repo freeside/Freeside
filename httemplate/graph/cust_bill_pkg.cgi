@@ -36,17 +36,22 @@ if ( $cgi->param('classnum') =~ /^(\d*)$/ ) {
 }
 
 my $hue = 0;
-my $hue_increment = 145;
+#my $hue_increment = 170;
+#my $hue_increment = 145;
+my $hue_increment = 125;
 
-my @items = ();
+my @items  = ();
 my @params = ();
 my @labels = ();
 my @colors = ();
+my @links  = ();
+
+my $link = "${p}search/cust_bill_pkg.cgi?nottax=1;include_comp_cust=1";
 
 foreach my $agent ( $sel_agent || qsearch('agent', { 'disabled' => '' } ) ) {
 
   my $col_scheme = Color::Scheme->new
-                     ->from_hue($hue)
+                     ->from_hue($hue) #->from_hex($agent->color)
                      ->scheme('analogic')
                    ;
   my @recur_colors = ();
@@ -67,9 +72,13 @@ foreach my $agent ( $sel_agent || qsearch('agent', { 'disabled' => '' } ) ) {
           : ''
       );
 
-    # push some params
-    push @params,
-      [ 'classnum' => ( ref($pkg_class) ? $pkg_class->classnum : '' ) ];
+    my $row_classnum = ref($pkg_class) ? $pkg_class->classnum : 0;
+    my $row_agentnum = $agent->agentnum;
+    push @params, [ 'classnum' => $row_classnum,
+                    'agentnum' => $row_agentnum,
+                  ];
+
+    push @links, "$link;agentnum=$row_agentnum;classnum=$row_classnum;";
 
     @recur_colors = ($col_scheme->colors)[0,4,8,1,5,9]
       unless @recur_colors;
@@ -83,18 +92,21 @@ foreach my $agent ( $sel_agent || qsearch('agent', { 'disabled' => '' } ) ) {
 
 }
 
-use Data::Dumper;
-warn Dumper(\@items);
+#use Data::Dumper;
+#warn Dumper(\@items);
 
 %><%= include('elements/monthly.html',
-                'title'        => $title. 'Sales Report',
+                'title'        => $title. 'Sales Report (Gross)',
                 'graph_type'   => 'Mountain',
                 'items'        => \@items,
                 'params'       => \@params,
                 'labels'       => \@labels,
                 'graph_labels' => \@labels,
                 'colors'       => \@colors,
-                #'links'        => \%link,
+                'links'        => \@links,
+                'remove_empty' => 1,
+                'bottom_total' => 1,
+                'bottom_link'  => "$link;",
                 'start_month'  => $smonth,
                 'start_year'   => $syear,
                 'end_month'    => $emonth,

@@ -24,6 +24,11 @@ FS::Report::Table::Monthly - Tables of report data, indexed monthly
     'start_year'  => 2000,
     'end_month'   => 4,
     'end_year'    => 2020,
+    #opt
+    'agentnum'    => 54
+    'params'      => [ [ 'paramsfor', 'item_one' ], [ 'item', 'two' ] ], # ...
+    'remove_empty' => 1, #collapse empty rows, default 0
+    'item_labels' => [ ], #useful with remove_empty
   );
 
   my $data = $report->data;
@@ -40,6 +45,9 @@ Returns a hashref of data (!! describe)
 
 sub data {
   my $self = shift;
+
+  #use Data::Dumper;
+  #warn Dumper($self);
 
   my $smonth = $self->{'start_month'};
   my $syear = $self->{'start_year'};
@@ -59,11 +67,60 @@ sub data {
     my $eperiod = timelocal(0,0,0,1,$smonth-1,$syear);
     push @{$data{eperiod}}, $eperiod;
   
+    my $col = 0;
+    my @row = ();
     foreach my $item ( @{$self->{'items'}} ) {
-      push @{$data{$item}}, $self->$item($speriod, $eperiod, $agentnum);
+      my @param = $self->{'params'} ? @{ $self->{'params'}[$col] }: ();
+      my $value = $self->$item($speriod, $eperiod, $agentnum, @param);
+      #push @{$data{$item}}, $value;
+      push @{$data{data}->[$col++]}, $value;
     }
 
   }
+
+  #these need to get generalized, sheesh
+  $data{'items'}       = $self->{'items'};
+  $data{'item_labels'} = $self->{'item_labels'} || $self->{'items'};
+  $data{'colors'}      = $self->{'colors'};
+  $data{'links'}       = $self->{'links'} || [];
+
+  #use Data::Dumper;
+  #warn Dumper(\%data);
+
+  if ( $self->{'remove_empty'} ) {
+
+    #warn "removing empty rows\n";
+
+    my $col = 0;
+    #these need to get generalized, sheesh
+    my @newitems = ();
+    my @newlabels = ();
+    my @newdata = ();
+    my @newcolors = ();
+    my @newlinks = ();
+    foreach my $item ( @{$self->{'items'}} ) {
+
+      if ( grep { $_ != 0 } @{$data{'data'}->[$col]} ) {
+        push @newitems,  $data{'items'}->[$col];
+        push @newlabels, $data{'item_labels'}->[$col];
+        push @newdata,   $data{'data'}->[$col];
+        push @newcolors, $data{'colors'}->[$col];
+        push @newlinks,  $data{'links'}->[$col];
+      }
+
+      $col++;
+    }
+
+    $data{'items'}       = \@newitems;
+    $data{'item_labels'} = \@newlabels;
+    $data{'data'}        = \@newdata;
+    $data{'colors'}      = \@newcolors;
+    $data{'links'}       = \@newlinks;
+
+  }
+
+  #use Data::Dumper;
+  #warn Dumper(\%data);
 
   \%data;
 
@@ -71,12 +128,14 @@ sub data {
 
 sub invoiced { #invoiced
   my( $self, $speriod, $eperiod, $agentnum ) = @_;
+
   $self->scalar_sql("
     SELECT SUM(charged)
       FROM cust_bill
         LEFT JOIN cust_main USING ( custnum )
       WHERE ". $self->in_time_period_and_agent($speriod, $eperiod, $agentnum)
   );
+  
 }
 
 sub netsales { #net sales
@@ -195,6 +254,34 @@ sub _subtract_11mo {
   $mon -= 11;
   if ( $mon < 0 ) { $mon+=12; $year--; }
   timelocal($sec,$min,$hour,$mday,$mon,$year);
+}
+
+sub cust_bill_pkg {
+  my( $self, $speriod, $eperiod, $agentnum, %opt ) = @_;
+
+  my $where = '';
+  if ( $opt{'classnum'} =~ /^(\d+)$/ ) {
+    if ( $1 == 0 ) {
+      $where = "classnum IS NULL";
+    } else {
+      $where = "classnum = $1";
+    }
+  }
+
+  $agentnum ||= $opt{'agentnum'};
+
+  $self->scalar_sql("
+    SELECT SUM(cust_bill_pkg.setup + cust_bill_pkg.recur)
+      FROM cust_bill_pkg
+        LEFT JOIN cust_bill USING ( invnum )
+        LEFT JOIN cust_main USING ( custnum )
+        LEFT JOIN cust_pkg USING ( pkgnum )
+        LEFT JOIN part_pkg USING ( pkgpart )
+      WHERE pkgnum != 0
+        AND $where
+        AND ". $self->in_time_period_and_agent($speriod, $eperiod, $agentnum)
+  );
+  
 }
 
 # NEEDS TO BE AGENTNUM-capable
