@@ -19,14 +19,38 @@ my $join_pkg = "
     LEFT JOIN cust_pkg USING ( pkgnum )
     LEFT JOIN part_pkg USING ( pkgpart )
 ";
-my $where = "
-  WHERE _date >= $beginning AND _date <= $ending
-    AND ( county  = ? OR ? = '' )
-    AND ( state   = ? OR ? = '' )
-    AND   country = ?
-";
-#    AND payby != 'COMP'
+
+my $where = "WHERE _date >= $beginning AND _date <= $ending ";
 my @base_param = qw( county county state state country );
+if ( $conf->exists('tax-ship_address') ) {
+
+  $where .= "
+      AND (    (     ( ship_last IS NULL     OR  ship_last  = '' )
+                 AND ( county       = ? OR ? = '' )
+                 AND ( state        = ? OR ? = '' )
+                 AND   country      = ?
+               )
+            OR (       ship_last IS NOT NULL AND ship_last != ''
+                 AND ( ship_county  = ? OR ? = '' )
+                 AND ( ship_state   = ? OR ? = '' )
+                 AND   ship_country = ?
+               )
+          )
+  ";
+  #    AND payby != 'COMP'
+
+  push @base_param, @base_param;
+
+} else {
+
+  $where .= "
+      AND ( county  = ? OR ? = '' )
+      AND ( state   = ? OR ? = '' )
+      AND   country = ?
+  ";
+  #    AND payby != 'COMP'
+
+}
 
 my $agentname = '';
 if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
@@ -38,16 +62,63 @@ if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
 
 my $gotcust = "
   WHERE 0 < ( SELECT COUNT(*) FROM cust_main
-              WHERE ( cust_main.county  = cust_main_county.county
-                      OR cust_main_county.county = ''
-                      OR cust_main_county.county IS NULL )
-                AND ( cust_main.state   = cust_main_county.state
-                      OR cust_main_county.state = ''
-                      OR cust_main_county.state IS NULL )
-                AND ( cust_main.country = cust_main_county.country )
-              LIMIT 1
-            )
 ";
+if ( $conf->exists('tax-ship_address') ) {
+
+  $gotcust .= "
+                WHERE
+
+                (    cust_main_county.country = cust_main.country
+                  OR cust_main_county.country = cust_main.ship_country
+                )
+
+                AND
+
+                ( 
+
+                  (     ( ship_last IS NULL     OR  ship_last = '' )
+                    AND (    cust_main_county.country = cust_main.country )
+                    AND (    cust_main_county.state = cust_main.state
+                          OR cust_main_county.state = ''
+                          OR cust_main_county.state IS NULL )
+                    AND (    cust_main_county.county = cust_main.county
+                          OR cust_main_county.county = ''
+                          OR cust_main_county.county IS NULL )
+                  )
+  
+                  OR
+  
+                  (       ship_last IS NOT NULL AND ship_last != ''
+                    AND (    cust_main_county.country = cust_main.ship_country )
+                    AND (    cust_main_county.state = cust_main.ship_state
+                          OR cust_main_county.state = ''
+                          OR cust_main_county.state IS NULL )
+                    AND (    cust_main_county.county = cust_main.ship_county
+                          OR cust_main_county.county = ''
+                          OR cust_main_county.county IS NULL )
+                  )
+
+                )
+
+                LIMIT 1
+            )
+  ";
+
+} else {
+
+  $gotcust .= "
+                WHERE ( cust_main.county  = cust_main_county.county
+                        OR cust_main_county.county = ''
+                        OR cust_main_county.county IS NULL )
+                  AND ( cust_main.state   = cust_main_county.state
+                        OR cust_main_county.state = ''
+                        OR cust_main_county.state IS NULL )
+                  AND ( cust_main.country = cust_main_county.country )
+                LIMIT 1
+            )
+  ";
+
+}
 
 my($total, $tot_taxable, $owed, $tax) = ( 0, 0, 0, 0, 0 );
 my( $exempt_cust, $exempt_pkg, $exempt_monthly ) = ( 0, 0 );
@@ -190,8 +261,8 @@ foreach my $r (
 
   my $label = getlabel($r);
 
-  my $fromwhere = $join_pkg. $where. " AND payby != 'COMP' ";
-  my @param = @base_param; 
+  #my $fromwhere = $join_pkg. $where. " AND payby != 'COMP' ";
+  #my @param = @base_param; 
 
   #match itemdesc if necessary!
   my $named_tax =

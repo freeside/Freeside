@@ -1702,6 +1702,13 @@ httemplate/docs/config.html
     'type'        => 'checkbox',
   },
 
+  {
+    'key'         => 'tax-ship_address',
+    'section'     => 'billing',
+    'description' => 'By default, tax calculations are done based on the billing address.  Enable this switch to calculate tax based on the shipping address instead.  Note: Tax reports can take a long time when enabled.',
+    'type'        => 'checkbox',
+  },
+
 );
 
 1;

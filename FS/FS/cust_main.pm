@@ -1805,29 +1805,26 @@ sub bill {
 
         unless ( $self->tax =~ /Y/i || $self->payby eq 'COMP' ) {
 
-          my @taxes = qsearch( 'cust_main_county', {
-                                 'state'    => $self->state,
-                                 'county'   => $self->county,
-                                 'country'  => $self->country,
-                                 'taxclass' => $part_pkg->taxclass,
-                                                                      } );
+          my $prefix = 
+            ( $conf->exists('tax-ship_address') && length($self->ship_last) )
+            ? 'ship_'
+            : '';
+          my %taxhash = map { $_ => $self->get("$prefix$_") }
+                            qw( state county country );
+
+          $taxhash{'taxclass'} = $part_pkg->taxclass;
+
+          my @taxes = qsearch( 'cust_main_county', \%taxhash );
+
           unless ( @taxes ) {
-            @taxes =  qsearch( 'cust_main_county', {
-                                  'state'    => $self->state,
-                                  'county'   => $self->county,
-                                  'country'  => $self->country,
-                                  'taxclass' => '',
-                                                                      } );
+            $taxhash{'taxclass'} = '';
+            @taxes =  qsearch( 'cust_main_county', \%taxhash );
           }
 
           #one more try at a whole-country tax rate
           unless ( @taxes ) {
-            @taxes =  qsearch( 'cust_main_county', {
-                                  'state'    => '',
-                                  'county'   => '',
-                                  'country'  => $self->country,
-                                  'taxclass' => '',
-                                                                      } );
+            $taxhash{$_} = '' foreach qw( state county );
+            @taxes =  qsearch( 'cust_main_county', \%taxhash );
           }
 
           # maybe eliminate this entirely, along with all the 0% records
@@ -1835,8 +1832,10 @@ sub bill {
             $dbh->rollback if $oldAutoCommit;
             return
               "fatal: can't find tax rate for state/county/country/taxclass ".
-              join('/', ( map $self->$_(), qw(state county country) ),
-                        $part_pkg->taxclass ).  "\n";
+              join('/', ( map $self->get("$prefix$_"),
+                              qw(state county country)
+                        ),
+                        $part_pkg->taxclass ). "\n";
           }
   
           foreach my $tax ( @taxes ) {
