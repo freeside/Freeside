@@ -22,3 +22,6 @@ CREATE INDEX cust_main17 on cust_main ( ship_zip );
 make install-docs
  (or "make deploy" if you've got everything setup in the Makefile)
 
+(errors?  try "make clean" then "make install-perl-modules", then
+ "make install-docs" or "make deploy" again)
+
