@@ -1,6 +1,38 @@
 <%
 
-  my $charged = <<END;
+  sub owed {
+    my($start, $end, %opt) = @_;
+
+    my @where = ();
+
+    #handle start and end ranges
+
+    #24h * 60m * 60s
+    push @where, "cust_bill._date <= extract(epoch from now())-".
+                 ($start * 86400)
+      if $start;
+  
+    push @where, "cust_bill._date > extract(epoch from now()) - ".
+                 ($end * 86400)
+      if $end;
+
+    #handle 'cust' option
+  
+    push @where, "cust_main.custnum = cust_bill.custnum"
+      if $opt{'cust'};
+
+    #handle 'agentnum' option
+    my $join = '';
+    if ( $opt{'agentnum'} ) {
+      $join = 'LEFT JOIN cust_main USING ( custnum )';
+      push @where, "agentnum = '$opt{'agentnum'}'";
+    }
+
+    my $where = scalar(@where) ? 'WHERE '.join(' AND ', @where) : '';
+  
+    my $as = $opt{'noas'} ? '' : "as owed_${start}_$end";
+
+    my $charged = <<END;
   sum( charged
        - coalesce(
            ( select sum(amount) from cust_bill_pay
@@ -16,48 +48,19 @@
      )
 END
 
-  my $owed_cols = <<END;
-       coalesce(
-         ( select $charged from cust_bill
-           where cust_bill._date > extract(epoch from now())-2592000
-             and cust_main.custnum = cust_bill.custnum
-         )
-         ,0
-       ) as owed_0_30,
+    "coalesce( ( select $charged from cust_bill $join $where ) ,0 ) $as";
+  
+  }
 
-       coalesce(
-         ( select $charged from cust_bill
-           where cust_bill._date >  extract(epoch from now())-5184000
-             and cust_bill._date <= extract(epoch from now())-2592000
-             and cust_main.custnum = cust_bill.custnum
-         )
-         ,0
-       ) as owed_30_60,
+  my @ranges = (
+    [  0, 30 ],
+    [ 30, 60 ],
+    [ 60, 90 ],
+    [ 90,  0 ],
+    [  0,  0 ],
+  );
 
-       coalesce(
-         ( select $charged from cust_bill
-           where cust_bill._date >  extract(epoch from now())-7776000
-             and cust_bill._date <= extract(epoch from now())-5184000
-             and cust_main.custnum = cust_bill.custnum
-         )
-         ,0
-       ) as owed_60_90,
-
-       coalesce(
-         ( select $charged from cust_bill
-           where cust_bill._date <= extract(epoch from now())-7776000
-             and cust_main.custnum = cust_bill.custnum
-         )
-         ,0
-       ) as owed_90_pl,
-
-       coalesce(
-         ( select $charged from cust_bill
-           where cust_main.custnum = cust_bill.custnum
-         )
-         ,0
-       ) as owed_total
-END
+  my $owed_cols = join(',', map owed( @$_, 'cust'=>1 ), @ranges );
 
   my $recurring = <<END;
         '0' != ( select freq from part_pkg
@@ -81,15 +84,7 @@ END
 
 END
 
-  my $where = <<END;
-where 0 <
-  coalesce(
-           ( select $charged from cust_bill
-             where cust_main.custnum = cust_bill.custnum
-           )
-           ,0
-         )
-END
+  my $where = "where ". owed(0, 0, 'cust'=>1, 'noas'=>1). " > 0";
 
   my $agentnum = '';
   if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
@@ -106,13 +101,11 @@ END
     'extra_sql' => "$where order by coalesce(lower(company), ''), lower(last)",
   };
 
-  if ( $agentnum ) {
-    $owed_cols =~
-      s/cust_bill\.custnum/cust_bill.custnum AND cust_main.agentnum = '$agentnum'/g;
-  }
-  my $total_sql = "select $owed_cols from cust_main";
+  my $total_sql = "select ".
+                    join(',', map owed( @$_, 'agentnum'=>$agentnum ), @ranges );
+
   my $total_sth = dbh->prepare($total_sql) or die dbh->errstr;
-  $total_sth->execute or die $total_sth->errstr;
+  $total_sth->execute or die "error executing $total_sql: ". $total_sth->errstr;
   my $row = $total_sth->fetchrow_hashref();
 
   my $conf = new FS::Conf;
@@ -154,9 +147,9 @@ END
                                     sprintf( $money_char.'%.2f',
                                              $row->{'owed_60_90'} ),
                                     sprintf( $money_char.'%.2f',
-                                             $row->{'owed_90_pl'} ),
+                                             $row->{'owed_90_0'} ),
                                     sprintf( '<b>'. $money_char.'%.2f'. '</b>',
-                                             $row->{'owed_total'} ),
+                                             $row->{'owed_0_0'} ),
                                   ],
                  'fields'      => [
                                     \&FS::UI::Web::cust_fields,
@@ -182,9 +175,9 @@ END
                                     sub { sprintf( $money_char.'%.2f',
                                                    shift->get('owed_60_90') ) },
                                     sub { sprintf( $money_char.'%.2f',
-                                                   shift->get('owed_90_pl') ) },
+                                                   shift->get('owed_90_0') ) },
                                     sub { sprintf( $money_char.'%.2f',
-                                                   shift->get('owed_total') ) },
+                                                   shift->get('owed_0_0') ) },
                                   ],
                  'links'       => [
                                     ( map $clink, FS::UI::Web::cust_header() ),
