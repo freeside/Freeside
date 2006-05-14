@@ -220,14 +220,13 @@ if ( scalar(@cust_main) == 1 && ! $cgi->param('referral_custnum') ) {
   eidiot "No matching customers found!\n";
 } else { 
 %>
-<!-- mason kludge -->
-<%
+<%= include('/elements/header.html', "Customer Search Results", '' ) %>
 
-  $total ||= scalar(@cust_main);
-  print header("Customer Search Results",menubar(
-    'Main Menu', popurl(2)
-  )), "$total matching customers found ";
+  <% $total ||= scalar(@cust_main); %>
 
+  <%= $total %> matching customers found
+
+  <%
   #begin pager
   my $pager = '';
   if ( $total != scalar(@cust_main) && $maxrecords ) {
@@ -368,12 +367,14 @@ END
     my $pcompany = $company
       ? qq!<A HREF="$view"><FONT SIZE=-1>$company</FONT></A>!
       : '<FONT SIZE=-1>&nbsp;</FONT>';
-    print <<END;
+    %>
+
     <TR>
-      <TD ROWSPAN=$rowspan><A HREF="$view"><FONT SIZE=-1>$custnum</FONT></A></TD>
-      <TD ROWSPAN=$rowspan><A HREF="$view"><FONT SIZE=-1>$last, $first</FONT></A></TD>
-      <TD ROWSPAN=$rowspan>$pcompany</TD>
-END
+      <TD ROWSPAN=<%= $rowspan || 1 %>><A HREF="<%= $view %>"><FONT SIZE=-1><%= $custnum %></FONT></A></TD>
+      <TD ROWSPAN=<%= $rowspan || 1 %>><A HREF="<%= $view %>"><FONT SIZE=-1><%= "$last, $first" %></FONT></A></TD>
+      <TD ROWSPAN=<%= $rowspan || 1 %>><%= $pcompany %></TD>
+
+    <%
     if ( defined dbdef->table('cust_main')->column('ship_last') ) {
       my($ship_last,$ship_first,$ship_company)=(
         $cust_main->ship_last || $cust_main->getfield('last'),
@@ -383,15 +384,18 @@ END
       my $pship_company = $ship_company
         ? qq!<A HREF="$view"><FONT SIZE=-1>$ship_company</FONT></A>!
         : '<FONT SIZE=-1>&nbsp;</FONT>';
-      print <<END;
-      <TD ROWSPAN=$rowspan><A HREF="$view"><FONT SIZE=-1>$ship_last, $ship_first</FONT></A></TD>
-      <TD ROWSPAN=$rowspan>$pship_company</A></TD>
-END
-    }
+      %>
 
-    foreach my $addl_col ( @addl_cols ) {
-      print "<TD ROWSPAN=$rowspan ALIGN=right><FONT SIZE=-1>";
-      if ( $addl_col eq 'tickets' ) {
+      <TD ROWSPAN=<%= $rowspan || 1 %>><A HREF="<%= $view %>"><FONT SIZE=-1><%= "$ship_last, $ship_first" %></FONT></A></TD>
+      <TD ROWSPAN=<%= $rowspan || 1 %>><%= $pship_company %></A></TD>
+
+    <% }
+
+    foreach my $addl_col ( @addl_cols ) { %>
+
+      <TD ROWSPAN=<%= $rowspan || 1 %> ALIGN=right><FONT SIZE=-1>
+
+      <% if ( $addl_col eq 'tickets' ) {
         if ( @custom_priorities ) {
           print &itable('', 0);
           foreach my $priority ( @custom_priorities, '' ) {
@@ -461,10 +465,14 @@ END
     }
     print "</TR>";
   }
- 
-  print "</TABLE>$pager</BODY></HTML>";
 
-}
+  %>
+ 
+  </TABLE><%= $pager %>
+
+  <%= include('/elements/footer.html') %>
+
+<% }
 
 #undef $cache; #does this help?
 

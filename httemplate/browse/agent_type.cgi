@@ -1,60 +1,62 @@
-<!-- mason kludge -->
-<%= include("/elements/header.html","Agent Type Listing", menubar(
-  'Main Menu' => $p,
-  'Agents'    => $p. 'browse/agent.cgi',
-)) %>
-Agent types define groups of packages that you can then assign to particular
-agents.<BR><BR>
-<A HREF="<%= $p %>edit/agent_type.cgi"><I>Add a new agent type</I></A><BR><BR>
+<%
 
-<%= table() %>
-<TR>
-  <TH COLSPAN=2>Agent Type</TH>
-  <TH COLSPAN=2>Packages</TH>
-</TR>
+my $html_init = 
+  'Agent types define groups of packages that you can then assign to'.
+  ' particular agents.<BR><BR>'.
+  qq!<A HREF="${p}edit/agent_type.cgi"><I>Add a new agent type</I></A><BR><BR>!;
 
-<% 
-foreach my $agent_type ( sort { 
-  $a->getfield('typenum') <=> $b->getfield('typenum')
-} qsearch('agent_type',{}) ) {
-  my $hashref = $agent_type->hashref;
-  #more efficient to do this with SQL...
-  my @type_pkgs = grep { $_->part_pkg and ! $_->part_pkg->disabled }
-                       qsearch('type_pkgs',{'typenum'=> $hashref->{typenum} });
-  my $rowspan = scalar(@type_pkgs);
-  $rowspan = int($rowspan/2+0.5) ;
-  print <<END;
-      <TR>
-        <TD ROWSPAN=$rowspan><A HREF="${p}edit/agent_type.cgi?$hashref->{typenum}">
-          $hashref->{typenum}
-        </A></TD>
-        <TD ROWSPAN=$rowspan><A HREF="${p}edit/agent_type.cgi?$hashref->{typenum}">$hashref->{atype}</A></TD>
-END
+my $count_query = 'SELECT COUNT(*) FROM agent_type';
 
-  my($type_pkgs);
-  my($tdcount) = -1 ;
-  foreach $type_pkgs ( @type_pkgs ) {
-    my($pkgpart)=$type_pkgs->getfield('pkgpart');
-    my($part_pkg) = qsearchs('part_pkg',{'pkgpart'=> $pkgpart });
-    print qq!<TR>! if ($tdcount == 0) ;
-    $tdcount = 0 if ($tdcount == -1) ;
-    print qq!<TD><A HREF="${p}edit/part_pkg.cgi?$pkgpart">!,
-          $part_pkg->getfield('pkg'),"</A></TD>";
-    $tdcount ++ ;
-    if ($tdcount == 2)
-    {
-	print qq!</TR>\n! ;
-	$tdcount = 0 ;
-    }
-  }
+#false laziness w/access_user.html
+my $packages_sub = sub {
+  my $agent_type = shift;
 
-  print "</TR>";
-}
+  [ map  {
+           my $type_pkgs = $_;
+           my $part_pkg = $type_pkgs->part_pkg;
+           [
+             {
+               'data'  => $part_pkg->pkg. ' - '. $part_pkg->comment,
+               'align' => 'left',
+               'link'  => $p. 'edit/part_pkg.cgi?'. $type_pkgs->pkgpart,
+             },
+           ];
+         }
+    #sort {
+    #     }
+    grep {
+           $_->part_pkg and ! $_->part_pkg->disabled
+         }
+    $agent_type->type_pkgs #XXX the method should order itself by something
+  ];
 
-print <<END;
-    </TABLE>
-  </BODY>
-</HTML>
-END
+};
 
+my $link = [ $p.'edit/agent_type.cgi?', 'typenum' ];
+
+%><%= include( 'elements/browse.html',
+                 'title'   => 'Agent Types',
+                 'menubar'     => [ #'Main menu' => $p,
+                                    'Agents'    =>"${p}browse/agent.cgi",
+                                  ],
+                 'html_init'   => $html_init,
+                 'name'        => 'agent types',
+                 'query'       => { 'table'     => 'agent_type',
+                                    'hashref'   => {},
+                                    'extra_sql' => 'ORDER BY typenum', # 'ORDER BY atype',
+                                  },
+                 'count_query' => $count_query,
+                 'header'      => [ '#',
+                                    'Agent Type',
+                                    'Packages',
+                                  ],
+                 'fields'      => [ 'typenum',
+                                    'atype',
+                                    $packages_sub,
+                                  ],
+                 'links'       => [ $link,
+                                    $link,
+                                    '',
+                                  ],
+             )
 %>

@@ -17,6 +17,13 @@
   # 'menubar'     => '', #menubar arrayref
   #
   # 'viewall_dir' => '', #'search' or 'browse', defaults to 'search'
+  #
+  # 'html_bottom' => '', #string
+  # 'html_bottom' => sub {
+  #                        my $object = shift;
+  #                        # ...
+  #                        "html_string";
+  #                      },
 
   my(%opt) = @_;
 
@@ -27,6 +34,7 @@
   my $fields = $opt{'fields'}
                #|| [ grep { $_ ne $pkey } dbdef->table($table)->columns ];
                || [ grep { $_ ne $pkey } fields($table) ];
+  #my @actualfields = map { ref($_) ? $_->{'field'} : $_ } @$fields;
 
   my $object;
   if ( $cgi->param('error') ) {
@@ -63,10 +71,7 @@
     );
   }
 
-%>
-
-
-<%= include("/elements/header.html", $title,
+%><%= include("/elements/header.html", $title,
               include( '/elements/menubar.html', @menubar )
            )
 %>
@@ -86,7 +91,18 @@
 
 <%= ntable("#cccccc",2) %>
 
-<% foreach my $field ( @$fields ) { %>
+<% foreach my $f ( @$fields ) {
+
+    my( $field, $type);
+    if ( ref($f) ) {
+      $field = $f->{'field'},
+      $type  = $f->{'type'} || 'text',
+    } else {
+      $field = $f;
+      $type = 'text';
+    }
+
+%>
 
   <TR>
 
@@ -98,12 +114,11 @@
     </TD>
 
     <%
-      #just text in one size for now... eventually more options for
-      # uneditable, hidden, <SELECT>, etc. fields
+      #eventually more options for <SELECT>, etc. fields
     %>
 
     <TD>
-      <INPUT TYPE="text" NAME="<%= $field %>" VALUE="<%= $object->$field() %>">
+      <INPUT TYPE="<%= $type %>" NAME="<%= $field %>" VALUE="<%= $object->$field() %>">
     <TD>
 
   </TR>
@@ -111,6 +126,11 @@
 <% } %>
 
 </TABLE>
+
+<%= ref( $opt{'html_bottom'} )
+      ? &{ $opt{'html_bottom'} }( $object )
+      : $opt{'html_bottom'}
+%>
 
 <BR>
 

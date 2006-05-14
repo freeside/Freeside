@@ -2463,6 +2463,7 @@ use Data::Dumper;
 use MIME::Base64;
 sub process_re_X {
   my( $method, $job ) = ( shift, shift );
+  warn "process_re_X $method for job $job\n" if $DEBUG;
 
   my $param = thaw(decode_base64(shift));
   warn Dumper($param) if $DEBUG;
@@ -2478,6 +2479,10 @@ sub process_re_X {
 sub re_X {
   my($method, $job, %param ) = @_;
 #              [ 'begin', 'end', 'agentnum', 'open', 'days', 'newest_percust' ],
+  if ( $DEBUG ) {
+    warn "re_X $method for job $job with param:\n".
+         join( '', map { "  $_ => ". $param{$_}. "\n" } keys %param );
+  }
 
   #some false laziness w/search/cust_bill.html
   my $distinct = '';

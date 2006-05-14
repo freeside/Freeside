@@ -2,6 +2,7 @@
   my($item, $url, @html);
   while (@_) {
     ($item, $url) = splice(@_,0,2);
+    next if $item =~ /^\s*Main\s+Menu\s*$/i;
     push @html, qq!<A HREF="$url">$item</A>!;
   }
 %>

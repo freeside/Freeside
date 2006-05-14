@@ -1,38 +1,43 @@
-<HTML>
-  <HEAD>
-    <TITLE>Payment report criteria</TITLE>
-  </HEAD>
-  <BODY BGCOLOR="#e8e8e8">
-    <H1>Payment report criteria</H1>
-    <FORM ACTION="cust_pay.cgi" METHOD="GET">
-    <INPUT TYPE="hidden" NAME="magic" VALUE="_date">
-    <TABLE>
-      <TR>
-        <TD ALIGN="right">Payments of type: </TD>
-        <TD><SELECT NAME="payby">
-              <OPTION VALUE="">all</OPTION>
-              <OPTION VALUE="CARD">credit card (all)</OPTION>
-              <OPTION VALUE="CARD-VisaMC">credit card (Visa/MasterCard)</OPTION>
-              <OPTION VALUE="CARD-Amex">credit card (American Express)</OPTION>
-              <OPTION VALUE="CARD-Discover">credit card (Discover)</OPTION>
-              <OPTION VALUE="CARD-Maestro">credit card (Maestro/Switch/Solo)</OPTION>
-              <OPTION VALUE="CHEK">electronic check / ACH</OPTION>
-              <OPTION VALUE="BILL">check</OPTION>
-              <OPTION VALUE="PREP">prepaid card</OPTION>
-              <OPTION VALUE="CASH">cash</OPTION>
-              <OPTION VALUE="WEST">Western Union</OPTION>
-              <OPTION VALUE="MCRD">manual credit card</OPTION>
-            </SELECT>
-        </TD>
-      </TR>
-      <%= include( '/elements/tr-select-agent.html',
-                     $cgi->param('agentnum'),
-                     'label' => 'for agent: ',
-                 )
-      %>
-      <%= include( '/elements/tr-input-beginning_ending.html' ) %>
-    </TABLE>
-    <BR><INPUT TYPE="submit" VALUE="Get Report">
-    </FORM>
-  </BODY>
-</HTML>
+<%= include('/elements/header.html', 'Payment report' ) %>
+
+<FORM ACTION="cust_pay.cgi" METHOD="GET">
+<INPUT TYPE="hidden" NAME="magic" VALUE="_date">
+
+<TABLE>
+
+  <TR>
+    <TD ALIGN="right">Payments of type: </TD>
+    <TD>
+      <SELECT NAME="payby">
+        <OPTION VALUE="">all</OPTION>
+        <OPTION VALUE="CARD">credit card (all)</OPTION>
+        <OPTION VALUE="CARD-VisaMC">credit card (Visa/MasterCard)</OPTION>
+        <OPTION VALUE="CARD-Amex">credit card (American Express)</OPTION>
+        <OPTION VALUE="CARD-Discover">credit card (Discover)</OPTION>
+        <OPTION VALUE="CARD-Maestro">credit card (Maestro/Switch/Solo)</OPTION>
+        <OPTION VALUE="CHEK">electronic check / ACH</OPTION>
+        <OPTION VALUE="BILL">check</OPTION>
+        <OPTION VALUE="PREP">prepaid card</OPTION>
+        <OPTION VALUE="CASH">cash</OPTION>
+        <OPTION VALUE="WEST">Western Union</OPTION>
+        <OPTION VALUE="MCRD">manual credit card</OPTION>
+      </SELECT>
+    </TD>
+  </TR>
+
+  <%= include( '/elements/tr-select-agent.html',
+                 $cgi->param('agentnum'),
+                 'label' => 'for agent: ',
+             )
+  %>
+
+  <%= include( '/elements/tr-input-beginning_ending.html' ) %>
+
+</TABLE>
+
+<BR>
+<INPUT TYPE="submit" VALUE="Get Report">
+
+</FORM>
+
+<%= include('/elements/footer.html') %>

@@ -1,0 +1,33 @@
+<%
+
+my $html_init = 
+  "Internal access groups control access to the back-office interface.<BR><BR>".
+  qq!<A HREF="${p}edit/access_group.html"><I>Add an internal access group</I></A><BR><BR>!;
+
+my $count_query = 'SELECT COUNT(*) FROM access_group';
+
+my $link = [ $p.'edit/access_group.html?', 'groupnum' ];
+
+%><%= include( 'elements/browse.html',
+                 'title'       => 'Internal Access Groups',
+                 'menubar'     => [ # 'Main menu' => $p,
+                                    'Internal users' => $p.'browse/access_user.html',
+                                  ],
+                 'html_init'   => $html_init,
+                 'name'        => 'internal access groups',
+                 'query'       => { 'table'     => 'access_group',
+                                    'hashref'   => {},
+                                    'extra_sql' => 'ORDER BY groupname', #??
+                                  },
+                 'count_query' => $count_query,
+                 'header'      => [ '#',
+                                    'Group name',
+                                  ],
+                 'fields'      => [ 'groupnum',
+                                    'groupname',
+                                  ],
+                 'links'       => [ $link,
+                                    $link,
+                                  ],
+             )
+%>

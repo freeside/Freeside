@@ -1,0 +1,22 @@
+<%
+  my( $groupnum, %opt ) = @_;
+
+  $opt{'access_group'} ||= [ qsearch( 'access_group', {} ) ]; # { disabled=>'' } )
+
+  #warn "***** tr-select-access_group: \n". Dumper(%opt);
+%>
+
+<% if ( scalar(@{ $opt{'access_group'} }) == 0 ) { %>
+
+  <INPUT TYPE="hidden" NAME="groupnum" VALUE="">
+
+<% } else { %>
+
+  <TR>
+    <TD ALIGN="right"><%= $opt{'label'} || 'Access group' %></TD>
+    <TD>
+      <%= include( '/elements/select-access_group.html', $groupnum, %opt ) %>
+    </TD>
+  </TR>
+
+<% } %>

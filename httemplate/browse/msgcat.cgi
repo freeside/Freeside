@@ -1,10 +1,6 @@
-<!-- mason kludge -->
-<%
-
-print header("View Message catalog", menubar(
-  'Main Menu' => $p,
+<%= include('/elements/header.html', "View Message catalog", menubar(
   'Edit message catalog' => $p. "edit/msgcat.cgi",
-)), '<BR>';
+)) %><%
 
 my $widget = new HTML::Widgets::SelectLayers(
   'selected_layer' => 'en_US',
@@ -38,13 +34,7 @@ my $widget = new HTML::Widgets::SelectLayers(
   },
 
 );
-
-print $widget->html;
-
-print <<END;
-    </TABLE>
-  </BODY>
-</HTML>
-END
-
 %>
+
+<%=  $widget->html %>
+<%= include('/elements/footer.html') %>

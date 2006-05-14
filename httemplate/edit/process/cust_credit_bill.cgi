@@ -34,11 +34,19 @@ if ($cgi->param('invnum') =~ /^Refund$/) {
 my $error = $new->insert;
 
 if ( $error ) {
+
   $cgi->param('error', $error);
-  print $cgi->redirect(popurl(2). "cust_credit_bill.cgi?". $cgi->query_string );
+  %><%= $cgi->redirect(popurl(2). "cust_credit_bill.cgi?". $cgi->query_string ) %><%
+
 } else {
-  print $cgi->redirect(popurl(3). "view/cust_main.cgi?$custnum");
-}
 
+  #print $cgi->redirect(popurl(3). "view/cust_main.cgi?$custnum");
 
-%>
+  %><%= header('Credit application sucessful') %>
+  <SCRIPT TYPE="text/javascript">
+    window.top.location.reload();
+  </SCRIPT>
+
+  </BODY></HTML>
+
+<% } %>

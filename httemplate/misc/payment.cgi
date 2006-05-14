@@ -35,28 +35,18 @@
 <INPUT TYPE="hidden" NAME="custnum" VALUE="<%= $custnum %>">
 <INPUT TYPE="hidden" NAME="payby" VALUE="<%= $payby %>">
 <INPUT TYPE="hidden" NAME="paybatch" VALUE="<%= $paybatch %>">
-<SCRIPT>
-var mywindow = -1;
-function myopen(filename,windowname,properties) {
-  myclose();
-  mywindow = window.open(filename,windowname,properties);
-}
-function myclose() {
-  if ( mywindow != -1 )
-    mywindow.close();
-  mywindow = -1;
-}
-var achwindow = -1;
-function achopen(filename,windowname,properties) {
-  achclose();
-  achwindow = window.open(filename,windowname,properties);
-}
-function achclose() {
-  if ( achwindow != -1 )
-    achwindow.close();
-  achwindow = -1;
+
+<SCRIPT TYPE="text/javascript" SRC="../elements/overlibmws.js"></SCRIPT>
+<SCRIPT TYPE="text/javascript" SRC="../elements/overlibmws_iframe.js"></SCRIPT>
+<SCRIPT TYPE="text/javascript" SRC="../elements/overlibmws_draggable.js"></SCRIPT>
+<SCRIPT TYPE="text/javascript">
+function OLiframeContent(src, width, height, name) {
+  return ('<iframe src="'+src+'" width="'+width+'" height="'+height+'"'
+   +(name?' name="'+name+'" id="'+name+'"':'')+' scrolling="auto">'
+   +'<div>[iframe not supported]</div></iframe>');
 }
 </SCRIPT>
+
 <% #include( '/elements/table.html', '#cccccc' ) %>
 <%= ntable('#cccccc') %>
   <TR>
@@ -112,7 +102,7 @@ function achclose() {
   <TR>
     <TD ALIGN="right">CVV2</TD>
     <TD><INPUT TYPE="text" NAME="paycvv" VALUE="<%= $paycvv %>" SIZE=4 MAXLENGTH=4>
-        (<A HREF="javascript:myopen('../docs/cvv2.html','cvv2','toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=no,resizable=yes,copyhistory=no,width=480,height=288')">help</A>)
+        (<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('../docs/cvv2.html', 480, 352, 'cvv2_popup' ), CAPTION, 'CVV2 Help', STICKY, AUTOSTATUSCAP, CLOSECLICK, DRAGGABLE ); return false;">help</A>)
     </TD>
   </TR>
   <TR>
@@ -173,7 +163,7 @@ function achclose() {
     <TD ALIGN="right">ABA/Routing&nbsp;number</TD>
     <TD>
       <INPUT TYPE="text" SIZE=10 MAXLENGTH=9 NAME="payinfo2" VALUE="<%=$payinfo2%>">
-      (<A HREF="javascript:achopen('../docs/ach.html','ach','toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=no,resizable=yes,copyhistory=no,width=384,height=256')">help</A>)
+      (<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('../docs/ach.html', 380, 240, 'ach_popup' ), CAPTION, 'ACH Help', STICKY, AUTOSTATUSCAP, CLOSECLICK, DRAGGABLE ); return false;">help</A>)
     </TD>
   </TR>
   <TR>
@@ -205,5 +195,5 @@ function achclose() {
 <BR>
 <INPUT TYPE="submit" NAME="process" VALUE="Process payment">
 </FORM>
-</BODY>
-</HTML>
+
+<%= include('/elements/footer.html') %>

@@ -67,7 +67,7 @@ foreach my $pkg (sort pkgsort_pkgnum_cancel @$packages) {
 
 <!--pkgnum: <%=$pkg->{pkgnum}%>-->
 <TR>
-  <TD ROWSPAN=<%=$rowspan%>>
+  <TD ROWSPAN=<%= $rowspan || 1 %>>
     <A NAME="cust_pkg<%=$pkg->{pkgnum}%>"><%=$pkg->{pkgnum}%></A>:
     <%=$pkg->{pkg}%> - <%=$pkg->{comment}%><BR>
 <% unless ($pkg->{cancel}) { %>
@@ -75,7 +75,7 @@ foreach my $pkg (sort pkgsort_pkgnum_cancel @$packages) {
     (&nbsp;<%=pkg_dates_link($pkg)%>&nbsp;|&nbsp;<%=pkg_customize_link($pkg,$cust_main->custnum)%>&nbsp;)
 <% } %>
   </TD>
-  <TD ROWSPAN=<%=$rowspan%>>
+  <TD ROWSPAN=<%= $rowspan || 1 %>>
     <TABLE BORDER=0 CELLSPACING=0 CELLPADDING=0 WIDTH="100%">
 
 <%

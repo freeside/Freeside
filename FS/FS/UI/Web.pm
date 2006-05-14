@@ -184,6 +184,10 @@ sub process {
 
     $self->job_status(@args);
 
+  } else {
+
+    die "unknown sub $sub";
+
   }
 
 }
@@ -228,11 +232,19 @@ sub start_job {
   my $error = $job->insert( '_JOB', encode_base64(nfreeze(\%param)) );
 
   if ( $error ) {
+
+    warn "job not inserted: $error\n"
+      if $DEBUG;
+
     $error;  #this doesn't seem to be handled well,
              # will trigger "illegal jobnum" below?
              # (should never be an error inserting the job, though, only thing
              #  would be Pg f%*kage)
   } else {
+
+    warn "job inserted successfully with jobnum ". $job->jobnum. "\n"
+      if $DEBUG;
+
     $job->jobnum;
   }
   
@@ -253,7 +265,7 @@ sub job_status {
   my @return;
   if ( $job && $job->status ne 'failed' ) {
     @return = ( 'progress', $job->statustext );
-  } elsif ( !$job ) { #handle job gone case : job sucessful
+  } elsif ( !$job ) { #handle job gone case : job successful
                       # so close popup, redirect parent window...
     @return = ( 'complete' );
   } else {

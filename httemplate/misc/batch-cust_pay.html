@@ -1,8 +1,6 @@
 <%= include("/elements/header.html", 'Quick payment entry',
             menubar(
                      'Main Menu' => $p, #popurl(1),
-                     'Old-style quick payment entry' =>
-                       $p. 'search/cust_main-quickpay.html',
                    ),
             ( $cgi->param('error') ? '' : 'onload="addRow()"' ),
           )

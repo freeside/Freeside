@@ -168,7 +168,7 @@
     <TR><TD>
       <BR>
       <!-- <BR>View active NAS ports: 
-        <A HREF="browse/nas.cgi">session server</A>
+        <A HREF="browse/nas.cgi">session server</A> -->
         <!-- or <A HREF="browse/nas-sqlradius.cgi">RADIUS</A>
       <BR> -->
       <A HREF="search/queue.html">View pending job queue</A>
@@ -177,7 +177,15 @@
       <BR><A HREF="misc/dump.cgi">Download database dump</A>
       <BR><BR><CENTER><HR WIDTH="94%" NOSHADE></CENTER><BR>
       <A NAME="config" HREF="config/config-view.cgi">Configuration</a><!-- - <font size="+2" color="#ff0000">start here</font> -->
-      <BR><BR><A NAME="admin">Provisioning, services and packages</a>
+      <BR><BR>
+      <A NAME="employees">Employees</A>
+        <UL>
+          <LI><A HREF="browse/access_user.html">View/Edit employees</A>
+            - Setup internal users
+          <LI><A HREF="browse/access_group.html">View/Edit employee groups</A>
+            - Employee groups allow you to control access to the backend
+        </UL>
+      <A NAME="admin">Provisioning, services and packages</a>
         <ul>
           <LI><A HREF="browse/part_export.cgi">View/Edit exports</A>
             - Provisioning services to external machines, databases and APIs.

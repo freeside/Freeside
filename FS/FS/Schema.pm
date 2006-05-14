@@ -244,6 +244,8 @@ sub tables_hashref {
 
   my $username_len = 32; #usernamemax config file
 
+    # name type nullability length default local
+
   return {
 
     'agent' => {
@@ -445,6 +447,9 @@ sub tables_hashref {
       'index' => [ ['last'], [ 'company' ], [ 'referral_custnum' ],
                    [ 'daytime' ], [ 'night' ], [ 'fax' ], [ 'refnum' ],
                    [ 'county' ], [ 'state' ], [ 'country' ], [ 'zip' ],
+                   [ 'ship_last' ], [ 'ship_company' ],
+                   [ 'payby' ], [ 'paydate' ],
+
                  ],
     },
 
@@ -1444,15 +1449,93 @@ sub tables_hashref {
 
     'inventory_class' => {
       'columns' => [
-        'classnum',  'serial',       '', '', '', '',
-        'classname', 'varchar', $char_d, '', '', '',
+        'classnum',  'serial',       '',      '', '', '',
+        'classname', 'varchar',      '', $char_d, '', '',
       ],
       'primary_key' => 'classnum',
       'unique' => [],
       'index'  => [],
     },
 
+    'access_user' => {
+      'columns' => [
+        'usernum',   'serial',  '',      '', '', '',
+        'username',  'varchar', '', $char_d, '', '',
+        '_password', 'varchar', '', $char_d, '', '',
+        'last',      'varchar', '', $char_d, '', '', 
+        'first',     'varchar', '', $char_d, '', '', 
+      ],
+      'primary_key' => 'usernum',
+      'unique' => [ [ 'username' ] ],
+      'index'  => [],
+    },
+
+    'access_user_pref' => {
+      'columns' => [
+        'prefnum',    'serial',       '', '', '', '',
+        'usernum',     'int',       '', '', '', '',
+        'prefname', 'varchar', '', $char_d, '', '', 
+        'prefvalue', 'text', 'NULL', '', '', '', 
+      ],
+      'primary_key' => 'prefnum',
+      'unique' => [],
+      'index'  => [ [ 'usernum' ] ],
+    },
+
+    'access_group' => {
+      'columns' => [
+        'groupnum',   'serial', '',      '', '', '',
+        'groupname', 'varchar', '', $char_d, '', '',
+      ],
+      'primary_key' => 'groupnum',
+      'unique' => [ [ 'groupname' ] ],
+      'index'  => [],
+    },
+
+    'access_usergroup' => {
+      'columns' => [
+        'usergroupnum', 'serial', '', '', '', '',
+        'usernum',         'int', '', '', '', '',
+        'groupnum',        'int', '', '', '', '',
+      ],
+      'primary_key' => 'usergroupnum',
+      'unique' => [ [ 'usernum', 'groupnum' ] ],
+      'index'  => [ [ 'usernum' ] ],
+    },
+
+    'access_groupagent' => {
+      'columns' => [
+        'groupagentnum', 'serial', '', '', '', '',
+        'groupnum',         'int', '', '', '', '',
+        'agentnum',         'int', '', '', '', '',
+      ],
+      'primary_key' => 'groupagentnum',
+      'unique' => [ [ 'groupnum', 'agentnum' ] ],
+      'index'  => [ [ 'groupnum' ] ],
+    },
+
+    'access_right' => {
+      'columns' => [
+        'rightnum',   'serial', '',      '', '', '',
+        'righttype', 'varchar', '', $char_d, '', '',
+        'rightobjnum',   'int', '',      '', '', '',
+        'rightname', 'varchar', '',      '', '', '',
+      ],
+      'primary_key' => 'rightnum',
+      'unique' => [ [ 'righttype', 'rightobjnum', 'rightname' ] ],
+      'index'  => [],
+    },
+
   };
+
+    #'new_table' => {
+    #  'columns' => [
+    #    'num', 'serial',       '', '', '', '',
+    #  ],
+    #  'primary_key' => 'num',
+    #  'unique' => [],
+    #  'index'  => [],
+    #},
 
 }
 

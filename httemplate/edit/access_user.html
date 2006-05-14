@@ -1,0 +1,37 @@
+<%= include( 'elements/edit.html',
+                 'name'   => 'Internal User',
+                 'table'  => 'access_user',
+                 'fields' => [
+                               'username',
+                               { field=>'_password', type=>'password' },
+                               'last',
+                               'first',
+                             ],
+                 'labels' => { 
+                               'usernum'   => 'User number',
+                               'username'  => 'Username',
+                               '_password' => 'Password',
+                               'last'      => 'Last name',
+                               'first'     => 'First name',
+                             },
+                 'viewall_dir' => 'browse',
+                 'html_bottom' =>
+                   sub {
+                     my $access_user = shift;
+
+                     '<BR>Internal Access Groups<BR>'.
+                     ntable("#cccccc",2).
+                     '<TR><TD>'.
+                     include( '/elements/checkboxes-table.html',
+                                'source_obj'   => $access_user,
+                                'link_table'   => 'access_usergroup',
+                                'target_table' => 'access_group',
+                                'name_col'     => 'groupname',
+                                'target_link'  => $p.'edit/access_group.html?',
+                                #'disable-able' => 1,
+                            ).
+                     '</TR></TD></TABLE>'
+                     ;
+                   },
+           )
+%>

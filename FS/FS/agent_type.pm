@@ -3,10 +3,11 @@ package FS::agent_type;
 use strict;
 use vars qw( @ISA );
 use FS::Record qw( qsearch );
+use FS::m2m_Common;
 use FS::agent;
 use FS::type_pkgs;
 
-@ISA = qw( FS::Record );
+@ISA = qw( FS::m2m_Common FS::Record );
 
 =head1 NAME
 

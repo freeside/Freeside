@@ -11,8 +11,8 @@ my $select = '*';
 my $orderby = 'pkgpart';
 if ( $cgi->param('active') ) {
 
-  $orderby = 'num_active';
-
+  $orderby = 'num_active DESC';
+}
   $select = "
 
     *,
@@ -33,13 +33,13 @@ if ( $cgi->param('active') ) {
 
   ";
 
-}
+#}
 
 my $conf = new FS::Conf;
 my $taxclasses = $conf->exists('enable_taxclasses');
 
 my $html_init;
-unless ( $cgi->param('active') ) {
+#unless ( $cgi->param('active') ) {
   $html_init = qq!
     One or more service definitions are grouped together into a package 
     definition and given pricing information.  Customers purchase packages
@@ -47,7 +47,7 @@ unless ( $cgi->param('active') ) {
     <A HREF="${p}edit/part_pkg.cgi"><I>Add a new package definition</I></A>
     <BR><BR>
   !;
-}
+#}
 
 my $posttotal;
 if ( $cgi->param('showdisabled') ) {
@@ -85,7 +85,7 @@ unless ( 0 ) { #already showing only one class or something?
   $align .= 'l';
 }
 
-if ( $cgi->param('active') ) {
+#if ( $cgi->param('active') ) {
   push @header, 'Customer<BR>packages';
   my %col = (
     'active'      => '00CC00',
@@ -117,7 +117,7 @@ if ( $cgi->param('active') ) {
                             } (qw( active suspended cancelled ))
                       ]; };
   $align .= 'r';
-}
+#}
 
 push @header, 'Frequency';
 push @fields, sub { shift->freq_pretty; };

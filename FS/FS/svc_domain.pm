@@ -230,7 +230,11 @@ sub delete {
     my $error = $domain_record->delete;
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
-      return $error;
+      return "can't delete DNS entry: ".
+             join(' ', map $domain_record->$_(),
+                           qw( reczone recaf rectype recdata )
+                 ).
+             ":$error";
     }
   }
 

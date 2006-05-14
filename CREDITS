@@ -157,5 +157,11 @@ Perl backend version (c) copyright 2005 Nathan Schmidt
 Scott Edwards <supadupa@gmail.com> contributed magic for XMLHTTP error
 handling, and other patches.
 
+Contains XMenu <http://webfx.eae.net/dhtml/xmenu/xmenu.html>
+by Erik Arvidsson, licensed under the terms of the GNU GPL.
+
+Contains public domain artwork from openclipart.org by mimooh and other
+authors.
+
 Everything else is my (Ivan Kohler <ivan@420.am>) fault.
 

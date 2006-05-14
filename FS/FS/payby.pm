@@ -115,7 +115,8 @@ sub cust_payby2longname {
 
 =head1 BUGS
 
-This should eventually be an actual database table.
+This should eventually be an actual database table, and all tables that
+currently have a char payby field should have a foreign key into here instead.
 
 =head1 SEE ALSO
 

@@ -1,0 +1,63 @@
+<%
+
+my $html_init = 
+  "Internal users have access to the back-office interface.  Typically, this is your employees and contractors, but in a VISP setup, you can also add accounts for your reseller's employees.  It is <B>highly recommended</B> to add a <B>separate account for each person</B> rather than using role accounts.<BR><BR>".
+  qq!<A HREF="${p}edit/access_user.html"><I>Add an internal user</I></A><BR><BR>!;
+
+#false laziness w/agent_type.cgi
+my $groups_sub = sub {
+  my $access_user = shift;
+
+  [ map {
+          my $access_usergroup = $_;
+          my $access_group = $access_usergroup->access_group;
+          [
+            {
+              'data'  => $access_group->groupname,
+              'align' => 'left',
+              'link'  =>
+                $p. 'edit/access_group.html?'. $access_usergroup->groupnum,
+            },
+          ];
+        }
+    grep { $_->access_group # and ! $_->access_group->disabled
+         }
+    $access_user->access_usergroup,
+
+  ];
+
+};
+
+my $count_query = 'SELECT COUNT(*) FROM access_user';
+
+my $link = [ $p.'edit/access_user.html?', 'usernum' ];
+
+%><%= include( 'elements/browse.html',
+                 'title'       => 'Internal Users',
+                 'menubar'     => [ #'Main menu' => $p,
+                                    'Internal access groups' => $p.'browse/access_group.html',
+                                  ],
+                 'html_init'   => $html_init,
+                 'name'        => 'internal users',
+                 'query'       => { 'table'     => 'access_user',
+                                    'hashref'   => {},
+                                    'extra_sql' => 'ORDER BY last, first',
+                                  },
+                 'count_query' => $count_query,
+                 'header'      => [ '#',
+                                    'Username',
+                                    'Full name',
+                                    'Groups'
+                                  ],
+                 'fields'      => [ 'usernum',
+                                    'username',
+                                    'name', # sub { shift->name },
+                                    $groups_sub,
+                                  ],
+                 'links'       => [ $link,
+                                    $link,
+                                    $link,
+                                    ''
+                                  ],
+             )
+%>

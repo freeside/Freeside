@@ -1,40 +1,35 @@
-<HTML>
-  <HEAD>
-    <TITLE>Tax Report Criteria</TITLE>
-  </HEAD>
-  <BODY BGCOLOR="#e8e8e8">
-    <H1>Tax Report Criteria</H1>
-    <FORM ACTION="report_tax.cgi" METHOD="GET">
+<%= include('/elements/header.html', 'Tax Report' ) %>
 
-    <TABLE>
+<FORM ACTION="report_tax.cgi" METHOD="GET">
 
-     <%= include( '/elements/tr-select-agent.html' ) %>
+<TABLE>
 
-     <%= include( '/elements/tr-input-beginning_ending.html' ) %>
+ <%= include( '/elements/tr-select-agent.html' ) %>
 
-     <% my $conf = new FS::Conf;
-        if ( $conf->exists('enable_taxclasses') ) {
-     %>
-       <TR>
-         <TD ALIGN="right"><INPUT TYPE="checkbox" NAME="show_taxclasses" VALUE="1"></TD>
-         <TD>Show tax classes</TD>
-       </TR>
-     <% } %>
+ <%= include( '/elements/tr-input-beginning_ending.html' ) %>
 
-     <% my @pkg_class = qsearch('pkg_class', {});
-        if ( @pkg_class ) {
-     %>
-       <TR>
-         <TD ALIGN="right"><INPUT TYPE="checkbox" NAME="show_pkgclasses" VALUE="1"></TD>
-         <TD>Show package classes</TD>
-       </TR>
-     <% } %>
+ <% my $conf = new FS::Conf;
+    if ( $conf->exists('enable_taxclasses') ) {
+ %>
+   <TR>
+     <TD ALIGN="right"><INPUT TYPE="checkbox" NAME="show_taxclasses" VALUE="1"></TD>
+     <TD>Show tax classes</TD>
+   </TR>
+ <% } %>
 
-    </TABLE>
+ <% my @pkg_class = qsearch('pkg_class', {});
+    if ( @pkg_class ) {
+ %>
+   <TR>
+     <TD ALIGN="right"><INPUT TYPE="checkbox" NAME="show_pkgclasses" VALUE="1"></TD>
+     <TD>Show package classes</TD>
+   </TR>
+ <% } %>
 
-    <BR><INPUT TYPE="submit" VALUE="Get Report">
-    </FORM>
+</TABLE>
 
-  </BODY>
-</HTML>
+<BR><INPUT TYPE="submit" VALUE="Get Report">
 
+</FORM>
+
+<%= include('/elements/footer.html') %>

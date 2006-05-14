@@ -1,4 +1,3 @@
-<!-- mason kludge -->
 <%
 
 my $part_referral;
@@ -17,32 +16,29 @@ my $action = $part_referral->refnum ? 'Edit' : 'Add';
 my $hashref = $part_referral->hashref;
 
 my $p1 = popurl(1);
-print header("$action Advertising source", menubar(
+
+%><%= include('/elements/header.html', "$action Advertising source", menubar(
   'Main Menu' => popurl(2),
   'View all advertising sources' => popurl(2). "browse/part_referral.cgi",
-));
+)) %>
 
-print qq!<FONT SIZE="+1" COLOR="#ff0000">Error: !, $cgi->param('error'),
-      "</FONT>"
-  if $cgi->param('error');
+<% if ( $cgi->param('error') ) { %>
+  <FONT SIZE="+1" COLOR="#ff0000">Error: <%= $cgi->param('error') %></FONT>
+<% } %>
 
-print qq!<FORM ACTION="${p1}process/part_referral.cgi" METHOD=POST>!;
+<FORM ACTION="<%= $p1 %>process/part_referral.cgi" METHOD=POST>
 
-print qq!<INPUT TYPE="hidden" NAME="refnum" VALUE="$hashref->{refnum}">!;
+<INPUT TYPE="hidden" NAME="refnum" VALUE="<%= $hashref->{refnum} %>">
+
+<%
 #print "Referral #", $hashref->{refnum} ? $hashref->{refnum} : "(NEW)";
-
-print <<END;
-Advertising source <INPUT TYPE="text" NAME="referral" SIZE=32 VALUE="$hashref->{referral}">
-END
-
-print qq!<BR><INPUT TYPE="submit" VALUE="!,
-      $hashref->{refnum} ? "Apply changes" : "Add advertising source",
-      qq!">!;
-
-print <<END;
-    </FORM>
-  </BODY>
-</HTML>
-END
-
 %>
+
+Advertising source <INPUT TYPE="text" NAME="referral" SIZE=32 VALUE="<%= $hashref->{referral} %>">
+
+<BR>
+<INPUT TYPE="submit" VALUE="<%= $hashref->{refnum} ? "Apply changes" : "Add advertising source" %>">
+
+</FORM>
+
+<%= include('/elements/footer.html') %>

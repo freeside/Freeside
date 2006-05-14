@@ -61,7 +61,7 @@ my $link_cust = sub {
   $svc_x->custnum ? [ "${p}view/cust_main.cgi?", 'custnum' ] : '';
 };
 
-%><%= include ('elements/search.html',
+%><%= include( 'elements/search.html',
                  'title'             => "Domain Search Results",
                  'name'              => 'domains',
                  'query'             => $sql_query,

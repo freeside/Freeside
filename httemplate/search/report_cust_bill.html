@@ -1,28 +1,28 @@
-  <HEAD>
-    <TITLE>Invoice report criteria</TITLE>
-  </HEAD>
-  <BODY BGCOLOR="#e8e8e8">
-    <H1>Invoice report criteria</H1>
-    <FORM ACTION="cust_bill.html" METHOD="GET">
-    <INPUT TYPE="hidden" NAME="magic" VALUE="_date">
-    <TABLE>
-      <%= include( '/elements/tr-select-agent.html',
-                     $cgi->param('agentnum'),
-                     'label' => 'Invoices for agent: ',
-                 )
-      %>
-      <%= include( '/elements/tr-input-beginning_ending.html' ) %>
-      <TR>
-        <TD ALIGN="right"><INPUT TYPE="checkbox" NAME="open" VALUE="1" CHECKED></TD>
-        <TD>Show only open invoices</TD>
-      </TR>
-      <TR>
-        <TD ALIGN="right"><INPUT TYPE="checkbox" NAME="newest_percust" VALUE="1"></TD>
-        <TD>Show only the single most recent invoice per-customer</TD>
-      </TR>
-    </TABLE>
-    <BR><INPUT TYPE="submit" VALUE="Get Report">
-    </FORM>
-  </BODY>
-</HTML>
+<%= include('/elements/header.html', 'Invoice report criteria' ) %>
 
+<FORM ACTION="cust_bill.html" METHOD="GET">
+<INPUT TYPE="hidden" NAME="magic" VALUE="_date">
+
+<TABLE>
+  <%= include( '/elements/tr-select-agent.html',
+                 $cgi->param('agentnum'),
+                 'label' => 'Invoices for agent: ',
+             )
+  %>
+  <%= include( '/elements/tr-input-beginning_ending.html' ) %>
+  <TR>
+    <TD ALIGN="right"><INPUT TYPE="checkbox" NAME="open" VALUE="1" CHECKED></TD>
+    <TD>Show only open invoices</TD>
+  </TR>
+  <TR>
+    <TD ALIGN="right"><INPUT TYPE="checkbox" NAME="newest_percust" VALUE="1"></TD>
+    <TD>Show only the single most recent invoice per-customer</TD>
+  </TR>
+</TABLE>
+
+<BR>
+<INPUT TYPE="submit" VALUE="Get Report">
+
+</FORM>
+
+<%= include('/elements/footer.html') %>

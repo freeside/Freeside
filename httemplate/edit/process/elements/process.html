@@ -2,10 +2,21 @@
 
   # options example...
   # 
+  ###
+  ##req
+  ##
   # 'table' => 
+  #
   # #? 'primary_key' => #required when the dbdef doesn't know...???
   # #? 'fields' => []
+  #
+  ###
+  ##opt
+  ###
   # 'viewall_dir' => '', #'search' or 'browse', defaults to 'search'
+  # 'process_m2m' => { 'link_table'   => 'link_table_name',
+  #                    'target_table' => 'target_table_name',
+  #                  }.
 
   my(%opt) = @_;
 
@@ -31,10 +42,14 @@
   if ( $pkeyvalue ) {
     $error = $new->replace($old);
   } else {
-    warn $new;
     $error = $new->insert;
-    warn $error;
     $pkeyvalue = $new->getfield($pkey);
+  }
+
+  if ( !$error && $opt{'process_m2m'} ) {
+    $error = $new->process_m2m( %{ $opt{'process_m2m'} },
+                                'params' => scalar($cgi->Vars),
+                              );
   }
 
   if ( $error ) {

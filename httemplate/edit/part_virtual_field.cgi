@@ -1,4 +1,3 @@
-<!-- mason kludge -->
 <%
 my ($vfieldpart, $part_virtual_field);
 
@@ -21,12 +20,14 @@ if ( $cgi->param('error') ) {
 my $action = $part_virtual_field->vfieldpart ? 'Edit' : 'Add';
 
 my $p1 = popurl(1);
-print header("$action Virtual Field Definition", '');
 
-print qq!<FONT SIZE="+1" COLOR="#ff0000">Error: !, $cgi->param('error'),
-      "</FONT>"
-  if $cgi->param('error');
-%>
+%><%= include('/elements/header.html', "$action Virtual Field Definition") %>
+
+<% if ( $cgi->param('error') ) { %>
+  <FONT SIZE="+1" COLOR="#ff0000">Error: <%= $cgi->param('error') %></FONT>
+  <BR><BR>
+<% } %>
+
 <FORM ACTION="<%=$p1%>process/generic.cgi" METHOD="POST">
 
 <INPUT TYPE="hidden" NAME="table" VALUE="part_virtual_field">
@@ -83,10 +84,8 @@ Field #<B><%=$vfieldpart or "(NEW)"%></B><BR><BR>
 
 </FORM>
 
-<BR><BR>
+<BR>
 <FONT SIZE=-2>If you don't understand what <I>check_block</I> and 
 <I>list_source</I> mean, <B>LEAVE THEM BLANK</B>.  We mean it.</FONT>
 
-
-</BODY>
-</HTML>
+<%= include('/elements/footer.html') %>

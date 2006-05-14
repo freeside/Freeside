@@ -2,20 +2,285 @@
   my($title, $menubar) = ( shift, shift );
   my $etc = @_ ? shift : ''; #$etc is for things like onLoad= etc.
   my $head = @_ ? shift : ''; #$head is for things that go in the <HEAD> section
+  my $conf = new FS::Conf;
 %>
-    <HTML>
-      <HEAD>
-        <TITLE>
-          <%= $title %>
-        </TITLE>
-        <META HTTP-Equiv="Cache-Control" Content="no-cache">
-        <META HTTP-Equiv="Pragma" Content="no-cache">
-        <META HTTP-Equiv="Expires" Content="0"> 
-        <%= $head %>
-      </HEAD>
-      <BODY BGCOLOR="#e8e8e8"<%= $etc %>>
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML>
+  <HEAD>
+    <TITLE>
+      <%= $title %>
+    </TITLE>
+    <META HTTP-Equiv="Cache-Control" Content="no-cache">
+    <META HTTP-Equiv="Pragma" Content="no-cache">
+    <META HTTP-Equiv="Expires" Content="0"> 
+    <script type="text/javascript" src="<%=$fsurl%>elements/cssexpr.js"></script>
+    <script type="text/javascript" src="<%=$fsurl%>elements/xmenu.js"></script>
+    <link href="<%=$fsurl%>elements/xmenu.css" type="text/css" rel="stylesheet">
+    <%
+
+      tie my %report_menu, 'Tie::IxHash',
+        'Report one' => [ 'there', 'theretip' ],
+        'Report too' => [ 'here',  'heretip'  ],
+      ;
+
+      tie my %config_employees, 'Tie::IxHash',
+        'View/Edit employees' => [ $fsurl.'browse/access_user.html', 'Setup internal users' ],
+        'View/Edit employee groups' => [ $fsurl.'browse/access_group.html', 'Employee groups allow you to control access to the backend' ],
+      ;
+
+      tie my %config_export_svc_pkg, 'Tie::IxHash',
+        'View/Edit exports'             => [ $fsurl.'browse/part_export.cgi', 'Provisioning services to external machines, databases and APIs' ],
+        'View/Edit service definitions' => [ $fsurl.'browse/part_svc.cgi', 'Services are items you offer to your customers' ],
+        'View/Edit package definitions' => [ $fsurl.'browse/part_pkg.cgi', 'One or more services are grouped together into a package and given pricing information. Customers purchase packages, not services' ],
+        'View/Edit package classes'     => [ $fsurl.'browse/pkg_class.html', 'Package classes define groups of packages, for reporting and convenience purposes.' ],
+      ;
+
+      tie my %config_agent, 'Tie::IxHash',
+        'View/Edit agent types' => [ $fsurl.'browse/agent_type.cgi', 'Agent types define groups of package definitions that you can then assign to particular agents' ],
+        'View/Edit agents'      => [ $fsurl.'browse/agent.cgi', 'Agents are resellers of your service. Agents may be limited to a subset of your full offerings (via their type)' ],
+      ;
+
+      tie my %config_billing, 'Tie::IxHash',
+        'View/Edit payment gateways'         => [ $fsurl.'browse/payment_gateway.html', 'Credit card and electronic check processors' ],
+        'View/Edit invoice events'           => [ $fsurl.'browse/part_bill_event.cgi', 'Actions for overdue invoices' ],
+        'View/Edit prepaid cards'            => [ $fsurl.'browse/prepay_credit.html', 'View outstanding cards, generate new cards' ],
+        'View/Edit call rates and regions'   => [ $fsurl.'browse/rate.cgi', 'Manage rate plans, regions and prefixes for VoIP and call billing' ],
+        'View/Edit locales and tax rates'    => [ $fsurl.'browse/cust_main_county.cgi', 'Change tax rates, or break down a country into states, or a state into counties and assign different tax rates to each' ],
+      ;
+
+      tie my %config_dialup, 'Tie::IxHash',
+        'View/Edit access numbers' => [ $fsurl.'browse/svc_acct_pop.cgi', 'Points of Presence' ],
+      ;
+
+      tie my %config_broadband, 'Tie::IxHash',
+        'View/Edit routers'        => [ $fsurl.'browse/router.cgi', 'Broadband access routers' ],
+        'View/Edit address blocks' => [ $fsurl.'browse/addr_block.cgi', 'Manage address blocks and block assignments to broadband routers' ],
+      ;
+
+      tie my %config_misc, 'Tie::IxHash',
+        'View/Edit advertising sources' => [ $fsurl.'browse/part_referral.cgi', 'Where a customer heard about your service.  Tracked for informational purposes' ],
+        'View/Edit virtual fields' => [ $fsurl.'browse/part_virtual_field.cgi', 'Locally defined fields', ],
+        'View/Edit message catalog' => [ $fsurl.'browse/msgcat.cgi', 'Change error messages and other customizable labels' ],
+        'View/Edit inventory classes and inventory' => [ $fsurl.'browse/inventory_class.html', 'Setup inventory classes and stock inventory' ],
+      ;
+
+      tie my %config_menu, 'Tie::IxHash',
+        'Settings'      => [ $fsurl.'config/config-view.cgi', 'XXXconfigittip' ],
+        'separator'     => '', #its a separator!
+        'Employees'     => [ \%config_employees, 'XXXtooltip' ],
+        'Provisioning, services and packages'
+                        => [ \%config_export_svc_pkg, 'XXXtootip'    ],
+        'Resellers'     => [ \%config_agent, 'XXXtootip'    ],
+        'Billing'       => [ \%config_billing, 'XXXtootip'    ],
+        'Dialup'        => [ \%config_dialup, 'XXXtootip'    ],
+        'Fixed (username-less) broadband'
+                        => [ \%config_broadband, 'XXXtootip'    ],
+        'Miscellaneous' => [ \%config_misc, 'XXXtootip'    ],
+      ;
+
+      tie my %menu, 'Tie::IxHash',
+        'Home'          => [ $fsurl, 'hometip', ],
+        'Top item one'  => [ 'nowhere_yet', 'nowheretip', ],
+        'Top item too'  => [ 'nowhere_yet_either', 'eithertip', ],
+        'Reports'       => [ \%report_menu, 'reportmenutip' ],
+        'Configuration' => [ \%config_menu, 'configmenutip' ],
+      ;
+
+      use vars qw($gmenunum);
+      $gmenunum = 0;
+
+      sub submenu {
+        my($submenu, $title) = @_;
+        my $menunum = $gmenunum++;
+
+        #return two args: html, menuname
+
+        "var myMenu$menunum = new WebFXMenu;\n".
+        #"myMenu$menunum.useAutoPosition = true;\n".
+        "myMenu$menunum.emptyText = '$title';\n".
+
+        (
+          join("\n", map {
+  
+            if ( !ref( $submenu->{$_} ) ) {
+  
+              "myMenu$menunum.add(new WebFXMenuSeparator());";
+  
+            } else {
+  
+              my($url_or_submenu, $tooltip ) = @{ $submenu->{$_} };
+              if ( ref($url_or_submenu) ) {
+  
+                my($subhtml, $submenuname ) = submenu($url_or_submenu, $_); #mmm, recursion
+  
+                "$subhtml\n".
+                "myMenu$menunum.add(new WebFXMenuItem(\"$_\", null, \"$tooltip\", $submenuname ));";
+  
+              } else {
+  
+                "myMenu$menunum.add(new WebFXMenuItem(\"$_\", \"$url_or_submenu\", \"$tooltip\" ));";
+  
+              }
+  
+            }
+  
+          } keys %$submenu )
+        ). "\n".
+        "myMenu$menunum.width = 224\n",
+
+        "myMenu$menunum";
+
+      }
+
+    %>
+    <SCRIPT TYPE="text/javascript">
+
+      webfxMenuImagePath      = "<%=$fsurl%>images/";
+      webfxMenuUseHover       = 1;
+      webfxMenuShowTime       = 300;
+      webfxMenuHideTime       = 500;
+
+      var myBar = new WebFXMenuBar;
+
+      <% foreach my $item ( keys %menu ) {
+
+           my( $url_or_submenu, $tooltip ) = @{ $menu{$item} };
+
+           if ( ref($url_or_submenu) ) {
+
+             warn $item;
+
+             my( $subhtml, $submenuname ) = submenu($url_or_submenu, $item);
+
+      %>
+
+             <%= $subhtml %>
+             myBar.add(new WebFXMenuButton("<%= $item %>", null, "<%= $tooltip %>", <%= $submenuname %> ));
+
+      <%   } else { %>
+        
+             myBar.add(new WebFXMenuButton("<%= $item %>", "<%= $url_or_submenu %>", "<%= $tooltip %>" ));
+
+      <%   }
+
+        }
+      %>
+
+      myBar.show( null, 'vertical' );
+      //myBar.show( null, 'horizontal' );
+
+      //var myMenu = new WebFXMenu;
+      //myMenu.add(new WebFXMenuItem("Menu Item 1", "http://www.domain.com", "Tool tip to show"));
+      //myMenu.add(new WebFXMenuSeparator());
+      //myMenu.add(new WebFXMenuItem("Menu Item 2", "http://www.domain.com", "Tool tip to show"));
+      
+      //var mySubMenu = new WebFXMenu;
+      //mySubMenu.add(new WebFXMenuItem("Menu Item 3", "http://www.domain.com", "Tool tip to show"));
+      //myMenu.add(new WebFXMenuItem("Menu Item 4 with sub menu", null, "Tool tip to show", mySubMenu));
+
+      myBar.width = 154;
+
+    </SCRIPT>
+
+    <SCRIPT TYPE="text/javascript">
+      function clearhint_search_cust () {
+        alert(this);
+        if ( this.value='(cust #, name or company)' )
+          this.value = '';
+      }
+    </SCRIPT>
+
+    <%= $head %>
+
+  </HEAD>
+  <BODY BACKGROUND="<%=$fsurl%>images/background-cheat.png" <%= $etc %> STYLE="margin-top:0; margin-bottom:0; margin-left:0; margin-right:0">
+    <table width="100%" CELLPADDING=0 CELLSPACING=0 STYLE="padding-left:0; padding-right:4">
+      <tr>
+        <td rowspan=2 BGCOLOR="#ffffff">
+          <IMG BORDER=0 ALT="freeside" SRC="<%=$fsurl%>images/small-logo.png">
+        </td>
+        <td align=left rowspan=2 BGCOLOR="#ffffff"> <!-- valign="top" -->
+          <font size=6><%= $conf->config('company_name') %> Billing</font>
+        </td>
+        <td align=right valign=top BGCOLOR="#ffffff">Logged in as <b><%= getotaker %>&nbsp</b><br><FONT SIZE="-2"><a href="<%=$fsurl%>pref/XXXwritethis">Preferences</a>&nbsp;<BR><BR></FONT>
+        </td>
+      </tr>
+      <tr>
+        <td align=right valign=bottom BGCOLOR="#ffffff">
+  
+          <table>
+            <tr>
+              <td align=right BGCOLOR="#ffffff">
+                <FONT SIZE="-2">
+                 <A HREF="http://www.sisd.com/freeside">Freeside</A>&nbsp;v<%= $FS::VERSION %><BR>
+                 <A HREF="<%= $fsurl %>docs/">Documentation</A><BR>
+                </FONT>
+              </td>
+              <% if ( $conf->config('ticket_system') eq 'RT_Internal' ) { %>
+              <% eval "use RT;"; %>
+                <td bgcolor=#000000></td>
+                <td align=left>
+                  <FONT SIZE="-2">
+                   <A HREF="http://www.bestpractical.com/rt">RT<A>&nbsp;v<%= $RT::VERSION %><BR>
+                   <A HREF="http://wiki.bestpractical.com/">Documentation</A><BR>
+                  </FONT>
+                </td>
+              <% } %>
+  
+            </tr>
+          </table>
+  
+        </td>
+      </tr>
+    </table>
+
+    <TABLE WIDTH="100%" CELLSPACING=0 CELLPADDING=4>
+      <TR>
+        <TD COLSPAN=4 WIDTH="100%" STYLE="padding:0"><IMG BORDER=0 ALT="" SRC="<%=$fsurl%>images/black-gradient.png" HEIGHT="13" WIDTH="100%"></TD>
+      </TR>
+      <TR>
+        <TD COLSPAN=1 BGCOLOR="#000000" WIDTH="154">
+        </TD>
+        <TD COLSPAN=1 BGCOLOR="#000000" ALIGN="right">
+          <FORM ACTION="<%=$fsurl%>edit/cust_main.cgi" METHOD="GET" STYLE="margin:0">
+            <INPUT TYPE="submit" VALUE="New customer">
+          </FORM>
+        </TD>
+        <TD COLSPAN=1 BGCOLOR="#000000" ALIGN="right">
+          <FORM ACTION="<%=$fsurl%>search/cust_main.cgi" METHOD="GET" STYLE="margin:0">
+            <INPUT NAME="search_cust" TYPE="text" VALUE="(cust #, name or company)" SIZE="23" onFocus="clearhint_search_cust" onClick="clearhint_search_cust">
+            <INPUT TYPE="submit" VALUE="Search customers">
+          </FORM>
+        </TD>
+        <TD COLSPAN=1 BGCOLOR="#000000" ALIGN="right">
+          <FORM ACTION="<%=$fsurl%>rt/index.html" METHOD="GET" STYLE="margin:0">
+            <INPUT NAME="q" TYPE="text" VALUE="" onFocus="clearhint_search_ticket" onClick="clearhint_search_ticket">
+            <INPUT TYPE="submit" VALUE="Search tickets">
+          </FORM>
+        </TD>
+      </TR>
+    </TABLE>
+    <TABLE WIDTH="100%" HEIGHT="100%" CELLSPACING=0 CELLPADDING=4>
+      <TR>
+        <TD BGCOLOR="#000000" STYLE="padding:0" WIDTH="154"></TD>
+        <TD STYLE="padding:0" WIDTH="13"><IMG BORDER=0 ALT="" SRC="<%=$fsurl%>images/black-gray-corner.png"></TD>
+        <TD STYLE="padding:0"><IMG BORDER=0 ALT="" SRC="<%=$fsurl%>images/black-gray-top.png" HEIGHT="13" WIDTH="100%"></TD>
+      </TR>
+      <TR HEIGHT="100%">
+        <TD BGCOLOR="#000000" ALIGN="left" HEIGHT="100%" WIDTH="154" VALIGN="top" ALIGN="right">
+          <SCRIPT TYPE="text/javascript">
+            document.write(myBar);
+          </SCRIPT>
+          <BR>
+          <IMG SRC="<%=$fsurl%>images/32clear.gif" HEIGHT="1" WIDTH="154">
+
+        </TD>
+        <TD STYLE="padding:0" HEIGHT="100%" WIDTH=13 VALIGN="top"><IMG WIDTH="13" HEIGHT="100%" BORDER=0 ALT="" SRC="<%=$fsurl%>images/black-gray-side.png"></TD>
+        <TD BGCOLOR="#e8e8e8" HEIGHT="100%"> <!-- WIDTH="100%"> -->
+
           <FONT SIZE=6>
             <%= $title %>
           </FONT>
+
           <BR><BR>
-          <%= $menubar ? "$menubar<BR><BR>" : '' %>
+          <%= $menubar !~ /^\s*$/ ? "$menubar<BR><BR>" : '' %>

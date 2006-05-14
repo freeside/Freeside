@@ -38,17 +38,18 @@ if ( $query eq 'svcnum' ) {
 }
 
 if ( scalar(@svc_external) == 1 ) {
-  print $cgi->redirect(popurl(2). "view/svc_external.cgi?". $svc_external[0]->svcnum);
-  #exit;
+
+  %><%= $cgi->redirect(popurl(2). "view/svc_external.cgi?". $svc_external[0]->svcnum) %><%
+
 } elsif ( scalar(@svc_external) == 0 ) {
-%>
-<!-- mason kludge -->
-<%
-  eidiot "No matching external services found!\n";
-} else {
-%>
-<!-- mason kludge -->
-<%= include("/elements/header.html","External Search Results",'') %>
+
+  %><%= include('/elements/header.html', 'External Search Results' ) %>
+
+  No matching external services found
+
+<% } else {
+
+  %><%= include('/elements/header.html', 'External Search Results', '') %>
 
     <%= scalar(@svc_external) %> matching external services found
     <TABLE BORDER=4 CELLSPACING=0 CELLPADDING=0>

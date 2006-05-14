@@ -397,49 +397,66 @@ unless ( $custnum ) {
 
   if ( @part_pkg ) {
 
-#    print "<BR><BR>First package", &itable("#cccccc", "0 ALIGN=LEFT"),
-#apiabuse & undesirable wrapping
-    print "<BR>First package", &ntable("#cccccc"),
-          qq!<TR><TD COLSPAN=2><SELECT NAME="pkgpart_svcpart">!;
+    #    print "<BR><BR>First package", &itable("#cccccc", "0 ALIGN=LEFT"),
+    #apiabuse & undesirable wrapping
 
-    print qq!<OPTION VALUE="">(none)!;
+    %>
+    <BR>First package
+    <%= ntable("#cccccc") %>
+    
+      <TR>
+        <TD COLSPAN=2>
+          <SELECT NAME="pkgpart_svcpart">
+            <OPTION VALUE="">(none)
+    
+            <% foreach my $part_pkg ( @part_pkg ) { %>
+    
+              <OPTION VALUE="<%= $part_pkg->pkgpart. "_". $part_pkg->svcpart('svc_acct') %>"<%= ( $saved_pkgpart && $part_pkg->pkgpart == $saved_pkgpart ) ? ' SELECTED' : '' %>><%= $part_pkg->pkg. " - ". $part_pkg->comment %>
+    
+            <% } %>
+          </SELECT>
+        </TD>
+      </TR>
+    
+      <% 
+        #false laziness: (mostly) copied from edit/svc_acct.cgi
+        #$ulen = $svc_acct->dbdef_table->column('username')->length;
+        my $ulen = dbdef->table('svc_acct')->column('username')->length;
+        my $ulen2 = $ulen+2;
+        my $passwordmax = $conf->config('passwordmax') || 8;
+        my $pmax2 = $passwordmax + 2;
+      %>
+    
+      <TR>
+        <TD ALIGN="right">Username</TD>
+        <TD>
+          <INPUT TYPE="text" NAME="username" VALUE="<%= $username %>" SIZE=<%= $ulen2 %> MAXLENGTH=<%= $ulen %>>
+        </TD>
+      </TR>
+    
+      <TR>
+        <TD ALIGN="right">Password</TD>
+        <TD>
+          <INPUT TYPE="text" NAME="_password" VALUE="<%= $password %>" SIZE=<%= $pmax2 %> MAXLENGTH=<%= $passwordmax %>>
+          (blank to generate)
+        </TD>
+      </TR>
+    
+      <TR>
+        <TD ALIGN="right">Access number</TD>
+        <TD><%= FS::svc_acct_pop::popselector($popnum) %></TD>
+      </TR>
+    </TABLE>
+    
+  <% } %>
 
-    foreach my $part_pkg ( @part_pkg ) {
-      print qq!<OPTION VALUE="!,
-#              $part_pkg->pkgpart. "_". $pkgpart{ $part_pkg->pkgpart }, '"';
-              $part_pkg->pkgpart. "_". $part_pkg->svcpart('svc_acct'), '"';
-      print " SELECTED" if $saved_pkgpart && ( $part_pkg->pkgpart == $saved_pkgpart );
-      print ">", $part_pkg->pkg, " - ", $part_pkg->comment;
-    }
-    print "</SELECT></TD></TR>";
+<% } %>
 
-    #false laziness: (mostly) copied from edit/svc_acct.cgi
-    #$ulen = $svc_acct->dbdef_table->column('username')->length;
-    my $ulen = dbdef->table('svc_acct')->column('username')->length;
-    my $ulen2 = $ulen+2;
-    my $passwordmax = $conf->config('passwordmax') || 8;
-    my $pmax2 = $passwordmax + 2;
-    print <<END;
-<TR><TD ALIGN="right">Username</TD>
-<TD><INPUT TYPE="text" NAME="username" VALUE="$username" SIZE=$ulen2 MAXLENGTH=$ulen></TD></TR>
-<TR><TD ALIGN="right">Password</TD>
-<TD><INPUT TYPE="text" NAME="_password" VALUE="$password" SIZE=$pmax2 MAXLENGTH=$passwordmax>
-(blank to generate)</TD></TR>
-END
+<INPUT TYPE="hidden" NAME="otaker" VALUE="<%= $cust_main->otaker %>">
+<BR>
+<INPUT TYPE="submit" NAME="submit" VALUE="<%= $custnum ?  "Apply Changes" : "Add Customer" %>">
+<BR>
+</FORM>
 
-    print '<TR><TD ALIGN="right">Access number</TD><TD>'
-          .
-          &FS::svc_acct_pop::popselector($popnum).
-          '</TD></TR></TABLE>'
-          ;
-  }
-}
+<%= include('/elements/footer.html') %>
 
-my $otaker = $cust_main->otaker;
-print qq!<INPUT TYPE="hidden" NAME="otaker" VALUE="$otaker">!,
-      qq!<BR><INPUT TYPE="submit" NAME="submit" VALUE="!,
-      $custnum ?  "Apply Changes" : "Add Customer", qq!"><BR>!,
-      "</FORM></DIV></BODY></HTML>",
-;
-
-%>

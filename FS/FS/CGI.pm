@@ -62,9 +62,9 @@ sub header {
       </HEAD>
       <BODY BGCOLOR="#e8e8e8"$etc>
           <FONT SIZE=6>
-            $title
+            <CENTER>$title</CENTER>
           </FONT>
-          <BR><BR>
+          <BR><!--<BR>-->
 END
   $x .=  $menubar. "<BR><BR>" if $menubar;
   $x;
@@ -115,6 +115,7 @@ sub menubar { #$menubar=menubar('Main Menu', '../', 'Item', 'url', ... );
   my($item,$url,@html);
   while (@_) {
     ($item,$url)=splice(@_,0,2);
+    next if $item =~ /^\s*Main\s+Menu\s*$/i;
     push @html, qq!<A HREF="$url">$item</A>!;
   }
   join(' | ',@html);

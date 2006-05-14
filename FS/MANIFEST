@@ -339,3 +339,4 @@ FS/access_groupagent.pm
 t/access_groupagent.t
 FS/access_right.pm
 t/access_right.t
+FS/m2m_Common.pm

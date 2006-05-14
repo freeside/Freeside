@@ -1,4 +1,3 @@
-<!-- mason kludge -->
 <%
 
 my($svcnum, $pkgnum, $svcpart, $kludge_action, $purpose, $part_svc,
@@ -66,33 +65,31 @@ my $otaker = getotaker;
 my $domain = $svc_domain->domain;
 
 my $p1 = popurl(1);
-print header("$action $svc", '');
-
-print qq!<FONT SIZE="+1" COLOR="#ff0000">Error: !, $cgi->param('error'),
-      "</FONT>"
-  if $cgi->param('error');
-
-print <<END;
-    <FORM ACTION="${p1}process/svc_domain.cgi" METHOD=POST>
-      <INPUT TYPE="hidden" NAME="svcnum" VALUE="$svcnum">
-      <INPUT TYPE="hidden" NAME="pkgnum" VALUE="$pkgnum">
-      <INPUT TYPE="hidden" NAME="svcpart" VALUE="$svcpart">
-END
-
-print qq!<INPUT TYPE="radio" NAME="action" VALUE="N"!;
-print ' CHECKED' if $kludge_action eq 'N';
-print qq!>New!;
-print qq!<BR><INPUT TYPE="radio" NAME="action" VALUE="M"!;
-print ' CHECKED' if $kludge_action eq 'M';
-print qq!>Transfer!;
-
-print <<END;
-<P>Domain <INPUT TYPE="text" NAME="domain" VALUE="$domain" SIZE=28 MAXLENGTH=63>
-<BR>Purpose/Description: <INPUT TYPE="text" NAME="purpose" VALUE="$purpose" SIZE=64>
-<P><INPUT TYPE="submit" VALUE="Submit">
-    </FORM>
-  </BODY>
-</HTML>
-END
 
 %>
+
+<%= include('/elements/header.html', "$action $svc", '') %>
+
+<% if ( $cgi->param('error') ) { %>
+  <FONT SIZE="+1" COLOR="#ff0000">Error: <%= $cgi->param('error') %></FONT>
+<% } %>
+
+<FORM ACTION="<%= $p1 %>process/svc_domain.cgi" METHOD=POST>
+<INPUT TYPE="hidden" NAME="svcnum" VALUE="<%= $svcnum %>">
+<INPUT TYPE="hidden" NAME="pkgnum" VALUE="<%= $pkgnum %>">
+<INPUT TYPE="hidden" NAME="svcpart" VALUE="<%= $svcpart %>">
+
+<INPUT TYPE="radio" NAME="action" VALUE="N"<%= $kludge_action eq 'N' ? ' CHECKED' : '' %>>New
+<BR>
+
+<INPUT TYPE="radio" NAME="action" VALUE="M"<%= $kludge_action eq 'M' ? ' CHECKED' : '' %>>Transfer
+
+<P>Domain <INPUT TYPE="text" NAME="domain" VALUE="<%= $domain %>" SIZE=28 MAXLENGTH=63>
+
+<BR>Purpose/Description: <INPUT TYPE="text" NAME="purpose" VALUE="<%= $purpose %>" SIZE=64>
+
+<P><INPUT TYPE="submit" VALUE="Submit">
+
+</FORM>
+
+<%= include('/elements/footer.html') %>
