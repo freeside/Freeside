@@ -57,9 +57,13 @@
 <%INIT>
 my $action;
 my $basetopactions = {
-	A => { html => $m->scomp('/Elements/CreateTicket')	
+#	A => { html => $m->scomp('/Elements/CreateTicket')	
+#		},
+	A => { html => $m->scomp('/Elements/FreesideNewCust')	
 		},
-	B => { html => $m->scomp('/Elements/SimpleSearch') 
+	B => { html => $m->scomp('/Elements/FreesideSearch')	
+		},
+	C => { html => $m->scomp('/Elements/SimpleSearch') 
 		}
 	};
 my $basetabs = {

@@ -55,9 +55,14 @@
 	border:			1px solid white;
 }	
 
-.webfx-menu a:visited,
-.webfx-menu a:visited:hover {
+.webfx-menu a:visited {
 	color:			black;
+	border:			1px solid white;
+}
+
+.webfx-menu a:hover {
+	color:			black;
+	border:			1px solid #7e0079;
 }
 
 .webfx-menu a:hover {
@@ -98,11 +103,12 @@
 	/* border:			1px solid #7E0079; */
 	/* border:			1px solid #000000; */
 	/* border: none */
+	color:				white;
 
 	padding:		2px;
 	
 	font-family:	Verdana, Helvetica, Sans-Serif;
-	font-size:		11px;
+	/* font-size:		11px; */
 	
 	/* IE5.0 has the wierdest box model for inline elements */
 	padding:		expression(constExpression(ie50 ? "0px" : "2px"));
@@ -130,6 +136,10 @@
 
 	/* IE5.0 Does not paint borders and padding on inline elements without a height/width */
 	height:		expression(constExpression(ie50 ? "17px" : "auto"));
+}
+
+.webfx-menu-bar a:link {
+	color: white;
 }
 
 .webfx-menu-bar a:hover {

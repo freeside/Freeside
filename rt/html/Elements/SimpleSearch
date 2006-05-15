@@ -43,7 +43,13 @@
 %# those contributions and any derivatives thereof.
 %# 
 %# END BPS TAGGED BLOCK }}}
-<form action="<% $RT::WebPath %>/index.html">
-<input size="12" name="q" autocomplete="off" accesskey="0">
+<form action="<% $RT::WebPath %>/index.html" STYLE="margin:0">
+<SCRIPT TYPE="text/javascript">
+  function clearhint_search_ticket (what) {
+    if ( what.value = '(ticket # or subject string)' )
+      what.value = '';
+  }
+</SCRIPT>
+<input name="q" accesskey="0" VALUE="(ticket # or subject string)" onFocus="clearhint_search_ticket(this);" onClick="clearhint_search_ticket(this);" STYLE="text-align:right">
 <input type="submit" value="<&|/l&>Search tickets</&>">&nbsp;
 </form>

@@ -21,3 +21,6 @@ html/Ticket/Elements/ShowCustomers
 html/Ticket/ModifyCustomers.html
 html/NoAuth/images/small-logo.png
  html/NoAuth/webrt.css
+
+html/Elements/TitleBoxStart
+html/Search/Bulk.html

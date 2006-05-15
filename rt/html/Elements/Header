@@ -67,7 +67,7 @@ function hideshow(num) {
 </script>
 <& /Elements/Callback, _CallbackName => 'Head', %ARGS &>
 </HEAD>
-<BODY BGCOLOR="<%$BgColor%>"
+<BODY BACKGROUND="<%$fsurl%>images/background-cheat.png" STYLE="margin-top:0; margin-bottom:0; margin-left:0; margin-right:0" 
 % if ($Focus) {
 ONLOAD="
     var tmp = (document.getElementsByName('<% $Focus %>'));
@@ -75,13 +75,15 @@ ONLOAD="
 "
 % }
 >
-<table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#FFFFFF">
+<table width="100%" border="0" cellspacing="0" cellpadding="0" bgcolor="#FFFFFF" STYLE="padding-left:0; padding-right:4">
   <tr> 
     <td colspan=2 rowspan=2><img border=0 alt="freeside" src="<%$RT::WebImagesURL%>/small-logo.png" width="92" height="62"></td>
-    <td align="left" rowspan=2><font size=6><% &RT::URI::freeside::FreesideGetConfig('company_name') %> Ticketing</font></td>
+    <td align="left" rowspan=2><font size=6><% &RT::URI::freeside::FreesideGetConfig('company_name') || 'ExampleCo' %></font></td>
     <td align="right" valign="top">
 % if ($session{'CurrentUser'} && $session{'CurrentUser'}->Id && $LoggedIn) {
 <SPAN STYLE="display: none"><A HREF="#skipnav"><&|/l&>Skip Menu</&></A> |</SPAN>
+<&|/l, "<b>".$session{'CurrentUser'}->Name."</b>" &>Logged in as [_1]</&>
+<BR>
 %if ($session{'CurrentUser'}->HasRight( Right => 'ModifySelf', Object => $RT::System )) {
 <A  HREF="<%$RT::WebPath%><% $Prefs %>" ><&|/l&>Preferences</&></A>
 % }
@@ -89,8 +91,6 @@ ONLOAD="
 % unless ($RT::WebExternalAuth and !$RT::WebFallbackToInternalAuth) {
 | <A  HREF="<%$RT::WebPath%>/NoAuth/Logout.html<%$URL ? "?URL=".$URL : ''%>"><&|/l&>Logout</&></a>
 % }
-<BR>
-<&|/l, "<b>".$session{'CurrentUser'}->Name."</b>" &>Logged in as [_1]</&>
 % } else {
 <&|/l&>Not logged in.</&>
 % }

@@ -78,7 +78,7 @@ $title_class => ''
 
 $titleright_href => undef
 $titleright => undef
-$contentbg => "#dddddd"
+$contentbg => "#d4d4d4"
 $color => "#336699"
 </%ARGS>
 <%init>

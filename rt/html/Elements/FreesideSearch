@@ -1,0 +1,10 @@
+<form action="<% $RT::URI::freeside::URL %>/search/cust_main.cgi" STYLE="margin:0">
+    <SCRIPT TYPE="text/javascript">
+      function clearhint_search_cust (what) {
+        if ( what.value = '(cust #, name or company)' )
+          what.value = '';
+      }
+    </SCRIPT>
+<input name="search_cust" accesskey="0" VALUE="(cust #, name or company)" SIZE="23" onFocus="clearhint_search_cust(this);" onClick="clearhint_search_cust(this);" STYLE="text-align:right">
+<input type="submit" value="<&|/l&>Search customers</&>">&nbsp;
+</form>

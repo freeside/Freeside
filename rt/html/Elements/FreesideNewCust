@@ -1,0 +1,3 @@
+<form action="<% $RT::URI::freeside::URL %>/edit/cust_main.cgi" STYLE="margin:0">
+<INPUT TYPE="submit" VALUE="<&|/l&>New customer</&>"&nbsp;
+</FORM>

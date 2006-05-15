@@ -16,6 +16,7 @@
     <script type="text/javascript" src="<%=$fsurl%>elements/cssexpr.js"></script>
     <script type="text/javascript" src="<%=$fsurl%>elements/xmenu.js"></script>
     <link href="<%=$fsurl%>elements/xmenu.css" type="text/css" rel="stylesheet">
+    <link href="<%=$fsurl%>elements/freeside.css" type="text/css" rel="stylesheet">
     <%
 
       tie my %report_menu, 'Tie::IxHash',
@@ -183,10 +184,16 @@
     </SCRIPT>
 
     <SCRIPT TYPE="text/javascript">
-      function clearhint_search_cust () {
-        alert(this);
-        if ( this.value='(cust #, name or company)' )
-          this.value = '';
+      function clearhint_search_cust (what) {
+        if ( what.value = '(cust #, name or company)' )
+          what.value = '';
+      }
+    </SCRIPT>
+
+    <SCRIPT TYPE="text/javascript">
+      function clearhint_search_ticket (what) {
+        if ( what.value = '(ticket # or subject string)' )
+          what.value = '';
       }
     </SCRIPT>
 
@@ -200,7 +207,7 @@
           <IMG BORDER=0 ALT="freeside" SRC="<%=$fsurl%>images/small-logo.png">
         </td>
         <td align=left rowspan=2 BGCOLOR="#ffffff"> <!-- valign="top" -->
-          <font size=6><%= $conf->config('company_name') %> Billing</font>
+          <font size=6><%= $conf->config('company_name') || 'ExampleCo' %></font>
         </td>
         <td align=right valign=top BGCOLOR="#ffffff">Logged in as <b><%= getotaker %>&nbsp</b><br><FONT SIZE="-2"><a href="<%=$fsurl%>pref/XXXwritethis">Preferences</a>&nbsp;<BR><BR></FONT>
         </td>
@@ -248,13 +255,13 @@
         </TD>
         <TD COLSPAN=1 BGCOLOR="#000000" ALIGN="right">
           <FORM ACTION="<%=$fsurl%>search/cust_main.cgi" METHOD="GET" STYLE="margin:0">
-            <INPUT NAME="search_cust" TYPE="text" VALUE="(cust #, name or company)" SIZE="23" onFocus="clearhint_search_cust" onClick="clearhint_search_cust">
+            <INPUT NAME="search_cust" TYPE="text" VALUE="(cust #, name or company)" SIZE="23" onFocus="clearhint_search_cust(this);" onClick="clearhint_search_cust(this);" STYLE="text-align:right">
             <INPUT TYPE="submit" VALUE="Search customers">
           </FORM>
         </TD>
         <TD COLSPAN=1 BGCOLOR="#000000" ALIGN="right">
           <FORM ACTION="<%=$fsurl%>rt/index.html" METHOD="GET" STYLE="margin:0">
-            <INPUT NAME="q" TYPE="text" VALUE="" onFocus="clearhint_search_ticket" onClick="clearhint_search_ticket">
+            <INPUT NAME="q" TYPE="text" VALUE="(ticket # or subject string)" onFocus="clearhint_search_ticket(this);" onClick="clearhint_search_ticket(this);" STYLE="text-align:right">
             <INPUT TYPE="submit" VALUE="Search tickets">
           </FORM>
         </TD>

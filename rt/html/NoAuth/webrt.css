@@ -43,7 +43,13 @@
 %# those contributions and any derivatives thereof.
 %# 
 %# END BPS TAGGED BLOCK }}}
-SPAN.nav {  font-family: Verdana, Arial, Helvetica, sans-serif;
+
+/* * {
+  font-family: Arial, Verdana, Helvetica, sans-serif;
+  font-size: 1.2em;
+} */
+
+SPAN.nav {  font-family: Arial, Verdana, Helvetica, sans-serif;
 	 font-size: 12px;
 %#	 color: #FFFFFF;
 	 color: #000000;
@@ -51,7 +57,7 @@ SPAN.nav {  font-family: Verdana, Arial, Helvetica, sans-serif;
 	 white-space: nowrap}
 .nav2 {	 font-size: 10px;
 	 white-space: nowrap}
-.nav {  font-family: Verdana, Arial, Helvetica, sans-serif;
+.nav {  font-family: Arial, Verdana, Helvetica, sans-serif;
 	 font-size: 13px;
 %#	 font-weight: normal;
 	 font-weight: bold;
@@ -59,17 +65,17 @@ SPAN.nav {  font-family: Verdana, Arial, Helvetica, sans-serif;
 	 color: #000000;
 	 text-decoration: none;
 	 white-space: nowrap}
-.currentnav {  font-family: Verdana, Arial, Helvetica, sans-serif;
+.currentnav {  font-family: Arial, Verdana, Helvetica, sans-serif;
 	 font-size: 13px;
          font-weight: bold;
 	 color: #FFFF66;
 	 text-decoration: none;
 	 white-space: nowrap}
-.topnav {  font-family: Verdana, Arial, Helvetica, sans-serif;
+.topnav {  font-family: Arial, Verdana, Helvetica, sans-serif;
 	 font-size: 16px;
 	 font-weight: normal;
-%#	 color: #FFFFFF;
-	 color: #000000;
+	 color: #FFFFFF;
+%#	 color: #000000;
 	 text-decoration: none;
 	 white-space: nowrap}
 
@@ -81,37 +87,43 @@ SPAN.nav {  font-family: Verdana, Arial, Helvetica, sans-serif;
 a.topnav-0 {  font-family: Verdana, sans-serif;
 	 font-size: 16px;
 	 font-weight: normal;
-	 color: #000000;
+%#	 color: #000000;
+	 color: #FFFFFF;
 	 text-decoration: none;
 	 white-space: nowrap}
 a.topnav-1 {  font-family: Verdana, sans-serif;
 	 font-size: 14px;
 	 font-weight: normal;
-	 color: #000000;
+%#	 color: #000000;
+	 color: #FFFFFF;
 	 text-decoration: none;
 	 white-space: nowrap}
 a.topnav-2 {  font-family: Verdana, sans-serif;
 	 font-size: 12px;
 	 font-weight: normal;
-	 color: #000000;
+%#	 color: #000000;
+	 color: #FFFFFF;
 	 text-decoration: none;
 	 white-space: nowrap}
 a.topnav-3 {  font-family: Verdana, sans-serif;
 	 font-size: 11px;
 	 font-weight: normal;
-	 color: #000000;
+%#	 color: #000000;
+	 color: #FFFFFF;
 	 text-decoration: none;
 	 white-space: nowrap}
 a.topnav-4 {  font-family: Verdana, sans-serif;
 	 font-size: 11px;
 	 font-weight: normal;
-	 color: #000000;
+%#	 color: #000000;
+	 color: #FFFFFF;
 	 text-decoration: none;
 	 white-space: nowrap}
 a.topnav-5 {  font-family: Verdana, sans-serif;
 	 font-size: 11px;
 	 font-weight: normal;
-	 color: #000000;
+%#	 color: #000000;
+	 color: #FFFFFF;
 	 text-decoration: none;
 	 white-space: nowrap}
 li.topnav-0-minor {
@@ -175,7 +187,7 @@ li.topnav-5-major {
 	 padding-bottom: .5em;
 }
 
-.currenttopnav {  font-family: Verdana, Arial, Helvetica, sans-serif;
+.currenttopnav {  font-family: Arial, Verdana, Helvetica, sans-serif;
 	 font-size: 16px;
          font-weight: bold;
 %#	 color: #FFFF66;
@@ -191,37 +203,37 @@ li.topnav-5-major {
 a.currenttopnav-0 {  font-family: Verdana, sans-serif;
 	 font-size: 16px;
          font-weight: bold;
-	 color: #000000; background-color: #cccccc;
+	 color: #ffffff; background-color: #7e0079;
 	 text-decoration: none;
 	 white-space: nowrap}
 a.currenttopnav-1 {  font-family: Verdana, sans-serif;
 	 font-size: 14px;
          font-weight: bold;
-	 color: #000000; background-color: #cccccc;
+	 color: #ffffff; background-color: #7e0079;
 	 text-decoration: none;
 	 white-space: nowrap}
 a.currenttopnav-2 {  font-family: Verdana, sans-serif;
 	 font-size: 12px;
          font-weight: normal;
-	 color: #000000; background-color: #cccccc;
+	 color: #ffffff; background-color: #7e0079;
 	 text-decoration: none;
 	 white-space: nowrap}
 a.currenttopnav-3 {  font-family: Verdana, sans-serif;
 	 font-size: 11px;
          font-weight: normal;
-	 color: #000000; background-color: #cccccc;
+	 color: #ffffff; background-color: #7e0079;
 	 text-decoration: none;
 	 white-space: nowrap}
 a.currenttopnav-4 {  font-family: Verdana, sans-serif;
 	 font-size: 11px;
          font-weight: normal;
-	 color: #000000; background-color: #cccccc;
+	 color: #ffffff; background-color: #7e0079;
 	 text-decoration: none;
 	 white-space: nowrap}
 a.currenttopnav-5 {  font-family: Verdana, sans-serif;
 	 font-size: 11px;
          font-weight: normal;
-	 color: #000000; background-color: #cccccc;
+	 color: #ffffff; background-color: #7e0079;
 	 text-decoration: none;
 	 white-space: nowrap}
 li.currenttopnav-0-minor {
@@ -285,18 +297,18 @@ li.currenttopnav-5-major {
 	 padding-bottom: .5em;
 }
 
-.topactions {  font-family: Verdana, Arial, Helvetica, sans-serif;
+.topactions {  font-family: Arial, Verdana, Helvetica, sans-serif;
 	 font-size: 10px;
 	 color: #FFFFFF;
 	 text-decoration: none;
 	 white-space: nowrap}
-.subnav {  font-family: Verdana, Arial, Helvetica, sans-serif;
+.subnav {  font-family: Arial, Verdana, Helvetica, sans-serif;
 	 font-size: 11px;
 	 font-weight: normal;
 	 color: #FFFFFF;
 	 text-decoration: none;
 	 white-space: nowrap}
-.currentsubnav {  font-family: Verdana, Arial, Helvetica, sans-serif;
+.currentsubnav {  font-family: Arial, Verdana, Helvetica, sans-serif;
 	 font-size: 11px;
          font-weight: bold;
 	 color: #FFFF66;
@@ -355,6 +367,20 @@ li.currenttopnav-5-major {
 	 vertical-align: top;
 	 text-align: right;
          }
+.black {
+	 background-color: #000000;
+	 color: #ffffff;
+	 background-position: left top;
+	 vertical-align: top;
+	 text-align: left;
+         }
+.blackright { 
+	 background-color: #000000;
+	 color: #ffffff;
+	 background-position: left top;
+	 vertical-align: top;
+	 text-align: right;
+         }
 .mediumgray {
 	 background-color: #cccccc;
 	 background-position: left top;
@@ -363,6 +389,30 @@ li.currenttopnav-5-major {
          }
 .mediumgrayright { 
 	 background-color: #cccccc;
+	 background-position: left top;
+	 vertical-align: top;
+	 text-align: right;
+         }
+.darkmediumgray {
+	 background-color: #aaaaaa;
+	 background-position: left top;
+	 vertical-align: top;
+	 text-align: left;
+         }
+.darkmediumgrayright { 
+	 background-color: #aaaaaa;
+	 background-position: left top;
+	 vertical-align: top;
+	 text-align: right;
+         }
+.bggray {
+	 background-color: #e8e8e8;
+	 background-position: left top;
+	 vertical-align: top;
+	 text-align: left;
+         }
+.bggrayright { 
+	 background-color: #e8e8e8;
 	 background-position: left top;
 	 vertical-align: top;
 	 text-align: right;
@@ -396,26 +446,26 @@ div.downloadattachment {
 }
 
 
-td {  font-family: Verdana, Arial, Helvetica, sans-serif;
+td {  font-family: Arial, Verdana, Helvetica, sans-serif;
 	 font-size: 11px;
 	 background-position: left top;
          }
 .black { background-color: #000000;
 	 background-position: left top;
          }
-span.rtname {  font-family: Verdana, Arial, Helvetica, sans-serif;
+span.rtname {  font-family: Arial, Verdana, Helvetica, sans-serif;
 	 font-size: 18px;
 	 font-weight: normal;
 	 color: #ffffff}
-span.title {  font-family: Verdana, Arial, Helvetica, sans-serif;
+span.title {  font-family: Arial, Verdana, Helvetica, sans-serif;
 	 font-size: 20px;
 	 font-weight: bold;
 	 color: #ffffff}
-.header {  font-family: Verdana, Arial, Helvetica, sans-serif;
+.header {  font-family: Arial, Verdana, Helvetica, sans-serif;
 	 font-size: 12px;
 	 font-weight: bold;
 	 color: #0066CC}
-.subheader { font-family: Verdana, Arial, Helvetica, sans-serif;
+.subheader { font-family: Arial, Verdana, Helvetica, sans-serif;
 	 font-size: 11px;
 	 font-weight: bold;
 	 color: #0066CC }
@@ -426,7 +476,7 @@ span.title {  font-family: Verdana, Arial, Helvetica, sans-serif;
 .labeltop {       font-weight: normal;
 	       text-align: right;
 	       vertical-align: top }
-.productnav {  font-family: Verdana, Arial, Helvetica, sans-serif;
+.productnav {  font-family: Arial, Verdana, Helvetica, sans-serif;
 	 font-size: 11px;
 	 color: #000000;
 	 text-align: center;
@@ -450,6 +500,7 @@ TD.mainbody {
         padding-right: 1em;
         margin-left: 1em;
         margin-right: 1em;
+        background-color: #e8e8e8;
 }
 
 td.boxcontainer + td.boxcontainer {
@@ -492,7 +543,7 @@ TD.titlebox {
 
 SPAN.message {
 	font-size: 100%;
-        font-family: Verdana, Arial, Helvetica, sans-serif;
+        font-family: Arial, Verdana, Helvetica, sans-serif;
 }
 
 
@@ -549,8 +600,9 @@ A:link IMG, A:visited IMG { border-style: none }
 a:focus {text-decoration: underline }
 A IMG { color: white } /* The only way to hide the border in NS 4.x */
 
-a:link {  text-decoration: none}
-a:visited {  text-decoration: none}  
+/* a:link {  text-decoration: none} */
+/* a:visited {  text-decoration: none}   */
+
 a:hover {  text-decoration: underline}
 /* a:focus { background-color: #ccccee } */
 

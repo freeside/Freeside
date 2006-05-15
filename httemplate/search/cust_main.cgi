@@ -186,6 +186,13 @@ if ( $cgi->param('browse')
     push @cust_main, @{&companysearch};
   }
 
+  if ( $cgi->param('search_cust') ) {
+    $sortby = \*company_sort;
+    $orderby = "ORDER BY LOWER(company || ' ' || last || ' ' || first )";
+    warn "smart searching for: ". $cgi->param('search_cust');
+    push @cust_main, smart_search( 'search' => $cgi->param('search_cust') );
+  }
+
   @cust_main = grep { $_->ncancelled_pkgs || ! $_->all_pkgs } @cust_main
     if ! $cgi->param('cancelled')
        && (
@@ -313,7 +320,7 @@ END
       $conf->config('ticket_system-custom_priority_field-values');
   }
 
-  print "<BR><BR>". $pager. &table(). <<END;
+  print "<BR><BR>". $pager. include('/elements/table-grid.html'). <<END;
       <TR>
         <TH></TH>
         <TH>(bill) name</TH>
