@@ -3,7 +3,7 @@
 }
 
 A:link IMG, A:visited { border-style: none }
-A:focus {text-decoration: underline }
+/* A:focus {text-decoration: underline } */
 
 a:link, a:visited {
   /* text-decoration: none; */

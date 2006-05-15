@@ -4,72 +4,24 @@
   <BR>
 
 [<A NAME="customer_service" style="background-color: #cccccc">&nbsp;Sales&nbsp;/&nbsp;Customer&nbsp;service&nbsp;</A>]
-<% if ( $conf->config('ticket_system') ) { %>
-  [&nbsp;<A HREF="#ticketing">Support&nbsp;/&nbsp;Ticketing</A>&nbsp;]
-<% } %>
 [&nbsp;<A HREF="#bookkeeping">Bookkeeping&nbsp;/&nbsp;Collections</A>&nbsp;]
 [&nbsp;<A HREF="#reports">Reports</A>&nbsp;]
-[&nbsp;<A HREF="#sysadmin">Sysadmin</A>&nbsp;]
     <TABLE CELLSPACING=2 CELLPADDING=0 BORDER=0" WIDTH="100%" BGCOLOR="#eeeeee" STYLE="border: 1px solid black">
     <TR><TH BGCOLOR="#cccccc">Sales / Customer service</TH></TR>
     <TR><TD>
-        <BR><FONT SIZE="+1"><A HREF="edit/cust_main.cgi">New Customer</A></FONT>
-        <BR>
-        <BR><FORM ACTION="search/cust_main.cgi" METHOD="GET"><INPUT TYPE="hidden" NAME="custnum_on" VALUE="1">Customer # <INPUT TYPE="text" NAME="custnum_text"><INPUT TYPE="submit" VALUE="Search"> or <A HREF="search/cust_main.cgi?browse=custnum">all customers by customer number</A></FORM>
-        <FORM ACTION="search/cust_main.cgi" METHOD="GET"><INPUT TYPE="hidden" NAME="last_on" VALUE="1">Last name <INPUT TYPE="text" NAME="last_text"><SELECT NAME="last_type"><OPTION SELECTED VALUE="All">(all)</OPTION><OPTION>Fuzzy<OPTION>Substring</OPTION><OPTION>Exact</OPTION></SELECT><INPUT TYPE="submit" VALUE="Search"> or <A HREF="search/cust_main.cgi?browse=last">all customers by last name</A></FORM>
-        <FORM ACTION="search/cust_main.cgi" METHOD="GET"><INPUT TYPE="hidden" NAME="company_on" VALUE="1">Company <INPUT TYPE="text" NAME="company_text"><SELECT NAME="company_type"><OPTION SELECTED VALUE="All">(all)</OPTION><OPTION>Fuzzy<OPTION>Substring</OPTION><OPTION>Exact</OPTION></SELECT><INPUT TYPE="submit" VALUE="Search"> or <A HREF="search/cust_main.cgi?browse=company">all customers by company</A></FORM>
-<% if ( $conf->exists('address2-search') ) { %>
-        <FORM ACTION="search/cust_main.cgi" METHOD="GET"><INPUT TYPE="hidden" NAME="address2_on" VALUE="1">Unit <INPUT TYPE="text" NAME="address2_text"><INPUT TYPE="submit" VALUE="Search"></FORM>
-<% } %>
-        <FORM ACTION="search/cust_main.cgi" METHOD="GET"><INPUT TYPE="hidden" NAME="phone_on" VALUE="1">Phone # <INPUT TYPE="text" NAME="phone_text"><INPUT TYPE="submit" VALUE="Search"></FORM>
-        <BR><FORM ACTION="search/svc_acct.cgi" METHOD="GET">Username <INPUT TYPE="text" NAME="username"><SELECT NAME="username_type"><OPTION VALUE="All">(all)</OPTION><OPTION>Fuzzy</OPTION><OPTION>Substring</OPTION><OPTION SELECTED>Exact</OPTION></SELECT><INPUT TYPE="submit" VALUE="Search"> or <A HREF="search/svc_acct.cgi?username">all accounts by username</A> or <A HREF="search/svc_acct.cgi?uid">uid</A></FORM>
-        <BR><FORM ACTION="search/svc_domain.cgi" METHOD="GET">Domain <INPUT TYPE="text" NAME="domain"><INPUT TYPE="submit" VALUE="Search"> or <A HREF="search/svc_domain.cgi?domain">all domains</A></FORM>
-	<BR><FORM ACTION="search/svc_broadband.cgi" METHOD="GET">IP Address <INPUT TYPE="text" NAME="ip_addr"><INPUT TYPE="submit" VALUE="Search"> or <A HREF="search/svc_broadband.cgi?svcnum">all services by svcnum</A> or <A HREF="search/svc_broadband.cgi?blocknum">address block</A></FORM>
-        <BR><A HREF="search/svc_forward.cgi?svcnum">all mail forwards by svcnum</A><BR>
-        <BR><A HREF="search/svc_www.cgi?svcnum">all virtual hosts by svcnum</A><BR>
-        <BR><A HREF="search/svc_external.cgi?svcnum">all external services by svcnum</A><BR>
+        <BR><FORM ACTION="search/svc_acct.cgi" METHOD="GET">Username <INPUT TYPE="text" NAME="username"><SELECT NAME="username_type"><OPTION VALUE="All">(all)</OPTION><OPTION>Fuzzy</OPTION><OPTION>Substring</OPTION><OPTION SELECTED>Exact</OPTION></SELECT><INPUT TYPE="submit" VALUE="Search"></FORM>
+        <BR><FORM ACTION="search/svc_domain.cgi" METHOD="GET">Domain <INPUT TYPE="text" NAME="domain"><INPUT TYPE="submit" VALUE="Search"></FORM>
+	<BR><FORM ACTION="search/svc_broadband.cgi" METHOD="GET">IP Address <INPUT TYPE="text" NAME="ip_addr"><INPUT TYPE="submit" VALUE="Search"></FORM>
       <BR>
     </TD></TR>
     </TABLE>
 
     <BR><BR><BR>
 
-<% if ( $conf->config('ticket_system') ) { %>
 
 [&nbsp;<A HREF="#customer_service">Sales&nbsp;/&nbsp;Customer&nbsp;service</A>&nbsp;]
-[<A NAME="ticketing" style="background-color: #cccccc">&nbsp;Support&nbsp;/&nbsp;Ticketing&nbsp;</A>]
-[&nbsp;<A HREF="#bookkeeping">Bookkeeping&nbsp;/&nbsp;Collections</A>&nbsp;]
-[&nbsp;<A HREF="#reports">Reports</A>&nbsp;]
-[&nbsp;<A HREF="#sysadmin">Sysadmin</A>&nbsp;]
-    <TABLE CELLSPACING=2 CELLPADDING=0 BORDER=0" WIDTH="100%" BGCOLOR="#eeeeee" STYLE="border: 1px solid black">
-    <TR><TH BGCOLOR="#cccccc">Support/Ticketing</TH></TR>
-    <TR><TD>
-	<% if ( $conf->config('ticket_system') eq 'RT_Internal' ) { %>
-        <BR><FONT SIZE="+1"><A HREF="rt/">Ticketing Main</A></FONT>
-        <BR><BR>
-        Reports
-        <UL>
-          <LI><A HREF="search/cust_main.cgi?browse=tickets">Customers sorted by active tickets</A>
-	  <!-- <LI><A HREF="">Active tickets not assigned to a customer</A> -->
-	<% } else { %>
-	<BR><FONT SIZE="+1"><A HREF="<%=FS::TicketSystem->baseurl()%>">Ticketing Main</A></FONT>
-        <BR><BR>
-        <% } %>
-    </TD></TR>
-    </TABLE>
-
-    <BR><BR><BR>
-
-<% } %>
-
-
-[&nbsp;<A HREF="#customer_service">Sales&nbsp;/&nbsp;Customer&nbsp;service</A>&nbsp;]
-<% if ( $conf->config('ticket_system') ) { %>
-  [&nbsp;<A HREF="#ticketing">Support&nbsp;/&nbsp;Ticketing</A>&nbsp;]
-<% } %>
 [<A NAME="bookkeeping" style="background-color: #cccccc">&nbsp;Bookkeeping&nbsp;/&nbsp;Collections&nbsp;</A>]
 [&nbsp;<A HREF="#reports">Reports</A>&nbsp;]
-[&nbsp;<A HREF="#sysadmin">Sysadmin</A>&nbsp;]
     <TABLE CELLSPACING=2 CELLPADDING=0 BORDER=0 WIDTH="100%" BGCOLOR="#eeeeee" STYLE="border: 1px solid black">
     <TR><TH BGCOLOR="#cccccc">Bookkeeping / Collections</TH></TR>
     <TR><TD>
@@ -78,30 +30,12 @@
       <BR><FORM ACTION="search/cust_main.cgi" METHOD="GET">Credit card # <INPUT TYPE="hidden" NAME="card_on" VALUE="1"><INPUT TYPE="text" NAME="card"><INPUT TYPE="submit" VALUE="Search"></FORM>
       <FORM ACTION="search/cust_bill.html" METHOD="GET">Invoice # <INPUT TYPE="text" NAME="invnum" SIZE="8"><INPUT TYPE="submit" VALUE="Search"></FORM>
       <FORM ACTION="search/cust_pay.cgi" METHOD="GET">Check # <INPUT TYPE="text" NAME="payinfo" SIZE="8"><INPUT TYPE="hidden" NAME="payby" VALUE="BILL"><INPUT TYPE="submit" VALUE="Search"></FORM>
-      <BR><A HREF="browse/cust_pay_batch.cgi">View pending credit card batch</A>      <BR><BR><A HREF="search/cust_pkg_report.cgi">Packages (by next bill date range)</A>
-      <BR><BR>Invoice reports
-            <UL>
-              <LI>open invoices (<A HREF="search/cust_bill.html?OPEN_invnum">by invoice number</A>) (<A HREF="search/cust_bill.html?OPEN_date">by date</A>) (<A HREF="search/cust_bill.html?OPEN_custnum">by customer number</A>)
-              <LI>15 day open invoices (<A HREF="search/cust_bill.html?OPEN15_invnum">by invoice number</A>) (<A HREF="search/cust_bill.html?OPEN15_date">by date</A>) (<A HREF="search/cust_bill.html?OPEN15_custnum">by customer number</A>)
-              <LI>30 day open invoices (<A HREF="search/cust_bill.html?OPEN30_invnum">by invoice number</A>) (<A HREF="search/cust_bill.html?OPEN30_date">by date</A>) (<A HREF="search/cust_bill.html?OPEN30_custnum">by customer number</A>)
-              <LI>60 day open invoices (<A HREF="search/cust_bill.html?OPEN60_invnum">by invoice number</A>) (<A HREF="search/cust_bill.html?OPEN60_date">by date</A>) (<A HREF="search/cust_bill.html?OPEN60_custnum">by customer number</A>)
-              <LI>90 day open invoices (<A HREF="search/cust_bill.html?OPEN90_invnum">by invoice number</A>) (<A HREF="search/cust_bill.html?OPEN90_date">by date</A>) (<A HREF="search/cust_bill.html?OPEN90_custnum">by customer number</A>)
-              <LI>120 day open invoices (<A HREF="search/cust_bill.html?OPEN120_invnum">by invoice number</A>) (<A HREF="search/cust_bill.html?OPEN120_date">by date</A>) (<A HREF="search/cust_bill.html?OPEN120_custnum">by customer number</A>)
-              <LI>all invoices (<A HREF="search/cust_bill.html?invnum">by invoice number</A>) (<A HREF="search/cust_bill.html?date">by date</A>) (<A HREF="search/cust_bill.html?custnum">by customer number</A>)
-            </UL>
-      <A HREF="search/report_cust_bill.html">Advanced invoice reports</A><BR><BR>
+      <BR>
       Invoice event reports
             <UL>
               <LI><a href="search/cust_bill_event.html">All invoice events for a date range</a>
               <LI><a href="search/cust_bill_event.html?failed=1">Invoice event errors for a date range (failed credit cards, processor or printer problems, etc.)</a>
             </UL>
-      <A HREF="graph/report_money_time.html">Sales, Credits and Receipts Summary</A>
-      <BR><BR><A HREF="graph/report_cust_bill_pkg.html">Sales report (by agent, package class and/or date range)</A>
-      <BR><BR><A HREF="search/report_cust_credit.html">Credit report (by employee and/or date range)</A>
-      <BR><BR><A HREF="search/report_cust_pay.html">Payment report (by type and/or date range)</A>
-      <BR><BR><A HREF="search/report_receivables.html">Accounts Receivable Aging Summary</A>
-      <BR><BR><A HREF="search/report_prepaid_income.html">Prepaid Income (Unearned Revenue) Report</A>
-      <BR><BR><A HREF="search/report_tax.html">Sales Tax Liability Report</A>
       <BR><BR>
     </TD></TR>
     </TABLE>
@@ -113,150 +47,20 @@
 
 
 [&nbsp;<A HREF="#customer_service">Sales&nbsp;/&nbsp;Customer&nbsp;service</A>&nbsp;]
-<% if ( $conf->config('ticket_system') ) { %>
-  [&nbsp;<A HREF="#ticketing">Support&nbsp;/&nbsp;Ticketing</A>&nbsp;]
-<% } %>
 [&nbsp;<A HREF="#bookkeeping">Bookkeeping&nbsp;/&nbsp;Collections</A>&nbsp;]
 [<A NAME="reports" style="background-color: #cccccc">&nbsp;Reports&nbsp;</A>]
-[&nbsp;<A HREF="#sysadmin">Sysadmin</A>&nbsp;]
     <TABLE CELLSPACING=2 CELLPADDING=0 BORDER=0 WIDTH="100%" BGCOLOR="#eeeeee" STYLE="border: 1px solid black">
     <TR><TH BGCOLOR="#cccccc">Reports</TH></TR>
     <TR><TD>
       <BR>
       <A HREF="search/sqlradius.html">RADIUS sessions</A><BR><BR>
-      Auditing pre-Freeside services with no customer record
-      <UL>
-        <LI>unlinked accounts (<A HREF="search/svc_acct.cgi?UN_svcnum">by service number</A>) (<A HREF="search/svc_acct.cgi?UN_username">by username</A>) (<A HREF="search/svc_acct.cgi?UN_uid">by uid</A>)
-        <LI>unlinked mail forwards (<A HREF="search/svc_forward.cgi?UN_svcnum">by service number</A>)
-        <LI>unlinked domains (<A HREF="search/svc_domain.cgi?UN_svcnum">by service number</A>) (<A HREF="search/svc_domain.cgi?UN_domain">by domain</A>)
-        <LI>unlinked externals (<A HREF="search/svc_external.cgi?UN_svcnum">by service number</A>) (<A HREF="search/svc_external.cgi?UN_id">by id</A>)
-      </UL>
-      Packages
-      <UL>
-        <LI><A HREF="search/cust_pkg.cgi?pkgnum">all packages (by package number)</A>
-        <LI><A HREF="search/cust_pkg.cgi?magic=suspended">suspended packages (by package number)</A>
-        <LI><A HREF="search/cust_pkg.cgi?APKG_pkgnum">packages with unconfigured services (by package number)</A>
-        <LI><A HREF="search/cust_pkg_report.cgi">packages (by next bill date range)</A>
-      </UL>
-      <A HREF="browse/part_pkg.cgi?active=1">Package definitions (by number of active packages)</A><BR><BR>
-      <A HREF="browse/part_svc.cgi?orderby=active">Service definitions (by number of active services)</A><BR><BR>
-    Customers
-      <UL>
-        <LI><A HREF="search/cust_main-otaker.cgi">Search customers by ordering employee</A>
-      </UL>
-    <A HREF="search/report_cust_main-zip.html">Zip code distribution</A><BR><BR>
     <FORM ACTION="search/sql.html" METHOD="GET">SQL query: <TT>SELECT </TT><INPUT TYPE="text" NAME="sql" SIZE=32><INPUT TYPE="submit" VALUE="Query"></FORM>
 
     <BR>
     </TD></TR>
     </TABLE>
 
-
-
     <BR><BR><BR>
-
-
-[&nbsp;<A HREF="#customer_service">Sales&nbsp;/&nbsp;Customer&nbsp;service</A>&nbsp;]
-<% if ( $conf->config('ticket_system') ) { %>
-  [&nbsp;<A HREF="#ticketing">Support&nbsp;/&nbsp;Ticketing</A>&nbsp;]
-<% } %>
-[&nbsp;<A HREF="#bookkeeping">Bookkeeping&nbsp;/&nbsp;Collections</A>&nbsp;]
-[&nbsp;<A HREF="#reports">Reports</A>&nbsp;]
-[<A NAME="sysadmin" style="background-color: #cccccc">&nbsp;Sysadmin&nbsp;</A>]
-    <TABLE CELLSPACING=2 CELLPADDING=0 BORDER=0 WIDTH="100%" BGCOLOR="#eeeeee" STYLE="border: 1px solid black">
-    <TR><TH BGCOLOR="#cccccc">Sysadmin</TH></TR>
-    <TR><TD>
-      <BR>
-      <!-- <BR>View active NAS ports: 
-        <A HREF="browse/nas.cgi">session server</A> -->
-        <!-- or <A HREF="browse/nas-sqlradius.cgi">RADIUS</A>
-      <BR> -->
-      <A HREF="search/queue.html">View pending job queue</A>
-      <BR><A HREF="misc/cust_main-import.cgi">Batch import customers from CSV file</A>
-      <BR><A HREF="misc/cust_main-import_charges.cgi">Batch import charges from CSV file</A>
-      <BR><A HREF="misc/dump.cgi">Download database dump</A>
-      <BR><BR><CENTER><HR WIDTH="94%" NOSHADE></CENTER><BR>
-      <A NAME="config" HREF="config/config-view.cgi">Configuration</a><!-- - <font size="+2" color="#ff0000">start here</font> -->
-      <BR><BR>
-      <A NAME="employees">Employees</A>
-        <UL>
-          <LI><A HREF="browse/access_user.html">View/Edit employees</A>
-            - Setup internal users
-          <LI><A HREF="browse/access_group.html">View/Edit employee groups</A>
-            - Employee groups allow you to control access to the backend
-        </UL>
-      <A NAME="admin">Provisioning, services and packages</a>
-        <ul>
-          <LI><A HREF="browse/part_export.cgi">View/Edit exports</A>
-            - Provisioning services to external machines, databases and APIs.
-          <LI><A HREF="browse/part_svc.cgi">View/Edit service definitions</A>
-            - Services are items you offer to your customers.
-          <LI><A HREF="browse/part_pkg.cgi">View/Edit package definitions</A>
-            - One or more services are grouped together into a package and
-              given pricing information.  Customers purchase packages, not
-              services.
-          <LI><A HREF="browse/pkg_class.html">View/Edit package classes</A>
-            - Package classes define groups of packages, for reporting and
-              convenience purposes.
-        </ul>
-      <A NAME="admin_agent">Resellers</a>
-        <ul>
-          <LI><A HREF="browse/agent_type.cgi">View/Edit agent types</A>
-            - Agent types define groups of package definitions that you can
-              then assign to particular agents.
-          <LI><A HREF="browse/agent.cgi">View/Edit agents</A>
-            - Agents are resellers of your service.  Agents may be limited
-              to a subset of your full offerings (via their type).
-        </ul>
-      <A NAME="admin_billing">Billing</a>
-        <ul>
-          <LI><A HREF="browse/payment_gateway.html">View/Edit payment gateways</A>
-            - Credit card and electronic check processors
-          <LI><A HREF="browse/part_bill_event.cgi">View/Edit invoice events</A>
-            - Actions for overdue invoices
-          <LI><A HREF="search/prepay_credit.html">View/Edit prepaid cards</A>
-            - View outstanding cards, generate new cards
-	  <LI><A HREF="browse/rate.cgi">View/Edit call rates and regions</A>
-	    - Manage rate plans, regions and prefixes for VoIP and call billing.
-          <LI><A HREF="browse/cust_main_county.cgi">View/Edit locales and tax rates</A>
-            - Change tax rates, or break down a country into states, or a state
-              into counties and assign different tax rates to each.
-        </ul>
-      <A NAME="admin_svc_acct">Dialup</a>
-        <ul>
-          <LI><A HREF="browse/svc_acct_pop.cgi">View/Edit access numbers</A>
-            - Points of Presence 
-        </ul>
-      <A NAME="admin_svc_broadband">Fixed (username-less) broadband</a>
-        <ul>
-	  <LI><A HREF="browse/router.cgi">View/Edit routers</A>
-	  - Broadband access routers
-	  <LI><A HREF="browse/addr_block.cgi">View/Edit address blocks</A>
-	  - Manage address blocks and block assignments to broadband routers.
-	</ul>
-      <A NAME="admin_misc">Miscellaneous</a>
-        <ul>
-          <LI><A HREF="browse/part_referral.cgi">View/Edit advertising sources</A>
-            - Where a customer heard about your service.  Tracked for
-              informational purposes.
-          <LI><A HREF="browse/part_virtual_field.cgi">View/Edit virtual fields</A>
-	  - Locally defined fields
-	  <LI><A HREF="browse/msgcat.cgi">View/Edit message catalog</A>
-	  - Change error messages and other customizable labels.
-	  <LI><A HREF="browse/inventory_class.html">View/Edit inventory classes and inventory</A>
-	  - Setup inventory classes and stock inventory.
-	</ul>
-        <BR>
-      </TD></TR>
-      </TABLE>
-      <BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR>
-      <BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR>
-      <BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR>
-      <BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR>
-      <BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR>
-      <BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR>
-      <BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR>
-      <BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR><BR>
 
 <%= include('/elements/footer.html') %>
 
