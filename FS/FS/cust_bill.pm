@@ -13,7 +13,7 @@ use HTML::Entities;
 use Locale::Country;
 use FS::UID qw( datasrc );
 use FS::Misc qw( send_email send_fax );
-use FS::Record qw( qsearch qsearchs );
+use FS::Record qw( qsearch qsearchs dbh );
 use FS::cust_main_Mixin;
 use FS::cust_main;
 use FS::cust_bill_pkg;
@@ -1282,8 +1282,22 @@ L<FS::cust_pay_batch>).
 sub batch_card {
   my $self = shift;
   my $cust_main = $self->cust_main;
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $pay_batch = qsearchs('pay_batch'=> '');
+
+  unless ($pay_batch) {
+    $pay_batch = new FS::pay_batch;
+    my $error = $pay_batch->insert;
+    if ( $error ) {
+      die "error creating new batch: $error\n";
+    }
+  }
 
   my $cust_pay_batch = new FS::cust_pay_batch ( {
+    'batchnum' => $pay_batch->getfield('batchnum'),
     'invnum'   => $self->getfield('invnum'),
     'custnum'  => $cust_main->getfield('custnum'),
     'last'     => $cust_main->getfield('last'),
@@ -1294,13 +1308,15 @@ sub batch_card {
     'state'    => $cust_main->getfield('state'),
     'zip'      => $cust_main->getfield('zip'),
     'country'  => $cust_main->getfield('country'),
-    'cardnum'  => $cust_main->payinfo,
+    'payinfo'  => $cust_main->payinfo,
     'exp'      => $cust_main->getfield('paydate'),
     'payname'  => $cust_main->getfield('payname'),
     'amount'   => $self->owed,
   } );
   my $error = $cust_pay_batch->insert;
   die $error if $error;
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
   '';
 }

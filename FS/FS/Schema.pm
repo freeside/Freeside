@@ -538,10 +538,21 @@ sub tables_hashref {
       'index' => [ [ 'paynum' ], [ 'invnum' ] ],
     },
 
+    'pay_batch' => { #batches of payments to an external processor
+      'columns' => [
+        'batchnum',   'serial',    '',   '', '', '', 
+        'status',  'char', 'NULL',     1, '', '', 
+      ],
+      'primary_key' => 'batchnum',
+      'unique' => [],
+      'index' => [],
+    },
+
     'cust_pay_batch' => { #what's this used for again?  list of customers
                           #in current CARD batch? (necessarily CARD?)
       'columns' => [
         'paybatchnum',   'serial',    '',   '', '', '', 
+        'batchnum',   'int',    '',   '', '', '', 
         'invnum',   'int',    '',   '', '', '', 
         'custnum',   'int',    '',   '', '', '', 
         'last',     'varchar', '',     $char_d, '', '', 
@@ -553,7 +564,7 @@ sub tables_hashref {
         'zip',      'varchar', 'NULL', 10, '', '', 
         'country',  'char', '',     2, '', '', 
         #        'trancode', 'int', '', '', '', ''
-        'cardnum',  'varchar', '',     16, '', '', 
+        'payinfo',  'varchar', '',     512, '', '', 
         #'exp',      @date_type, '', ''
         'exp',      'varchar', '',     11, '', '', 
         'payname',  'varchar', 'NULL', $char_d, '', '', 
@@ -561,7 +572,7 @@ sub tables_hashref {
       ],
       'primary_key' => 'paybatchnum',
       'unique' => [],
-      'index' => [ ['invnum'], ['custnum'] ],
+      'index' => [ ['batchnum'], ['invnum'], ['custnum'] ],
     },
 
     'cust_pkg' => {

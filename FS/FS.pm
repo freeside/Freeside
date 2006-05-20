@@ -142,7 +142,9 @@ L<FS::cust_credit_bill> - Credit application to invoice class
 
 L<FS::cust_pay_refund> - Refund application to payment class
 
-L<FS::cust_pay_batch> - Credit card transaction queue class
+L<FS::pay_batch> - Credit card transaction queue class
+
+L<FS::cust_pay_batch> - Credit card transaction member queue class
 
 L<FS::prepay_credit> - Prepaid "calling card" credit class.
 

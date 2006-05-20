@@ -8,6 +8,15 @@ install DBIx::DBSchema 0.27 (or later)
 install HTML::Widgets:SelectLayers 0.05 (or later)
 install Business::CreditCard 0.28 (or later)
 
+ALTER TABLE cust_pay_batch ADD COLUMN batchnum int;
+ALTER TABLE cust_pay_batch ALTER COLUMN batchnum SET NOT NULL;
+ALTER TABLE cust_pay_batch ADD COLUMN payinfo varchar(512);
+UPDATE cust_pay_batch SET payinfo = cardnum;
+ALTER TABLE cust_pay_batch DROP COLUMN cardnum;
+ALTER TABLE h_cust_pay_batch ADD COLUMN payinfo varchar(512);
+UPDATE h_cust_pay_batch SET payinfo = cardnum;
+ALTER TABLE h_cust_pay_batch DROP COLUMN cardnum;
+
 make install-perl-modules
 run "freeside-upgrade username" to uprade your database schema
 

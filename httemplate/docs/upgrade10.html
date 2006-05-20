@@ -46,6 +46,14 @@ DROP INDEX cust_bill_pkg1;
 <pre>
 ALTER TABLE cust_main ALTER COLUMN payinfo varchar(512) NULL;
 ALTER TABLE h_cust_main ALTER COLUMN payinfo varchar(512) NULL;
+ALTER TABLE cust_pay_batch ADD COLUMN batchnum int NOT NULL;
+ALTER TABLE cust_pay_batch ALTER COLUMN batchnum SET NOT NULL;
+ALTER TABLE cust_pay_batch ADD COLUMN payinfo varchar(512) NULL;
+UPDATE cust_pay_batch SET payinfo = cardnum;
+ALTER TABLE cust_pay_batch DROP COLUMN cardnum;
+ALTER TABLE h_cust_pay_batch ADD COLUMN payinfo varchar(512) NULL;
+UPDATE h_cust_pay_batch SET payinfo = cardnum;
+ALTER TABLE h_cust_pay_batch DROP COLUMN cardnum;
 </pre>
 On older Pg versions that don't support altering columns directly, you will need to dump the database, edit the schema definitions in the dump file, and reload.
 

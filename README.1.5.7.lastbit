@@ -62,3 +62,8 @@ ALTER TABLE virtual_field ALTER vfieldnum SET NOT NULL;
 ALTER TABLE virtual_field ADD PRIMARY KEY (vfieldnum);
 -- ALTER TABLE h_virtual_field ADD vfieldnum int;
 
+ALTER TABLE cust_pay_batch RENAME COLUMN cardnum TO payinfo;
+ALTER TABLE cust_pay_batch ALTER COLUMN payinfo varchar(512) NULL;
+ALTER TABLE h_cust_pay_batch RENAME COLUMN cardnum TO payinfo;
+ALTER TABLE h_cust_pay_batch ALTER COLUMN payinfo varchar(512) NULL;
+

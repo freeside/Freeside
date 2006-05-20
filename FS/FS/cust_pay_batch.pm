@@ -37,7 +37,7 @@ following fields are currently supported:
 
 =item paybatchnum - primary key (automatically assigned)
 
-=item cardnum
+=item payinfo
 
 =item exp - card expiration 
 
@@ -119,7 +119,7 @@ sub check {
   my $error = 
       $self->ut_numbern('paybatchnum')
     || $self->ut_numbern('trancode') #depriciated
-    || $self->ut_number('cardnum') 
+    || $self->ut_number('payinfo') 
     || $self->ut_money('amount')
     || $self->ut_number('invnum')
     || $self->ut_number('custnum')
@@ -137,14 +137,19 @@ sub check {
   $self->first =~ /^([\w \,\.\-\']+)$/ or return "Illegal first name";
   $self->first($1);
 
-  my $cardnum = $self->cardnum;
-  $cardnum =~ s/\D//g;
-  $cardnum =~ /^(\d{13,16})$/
-    or return "Illegal credit card number";
-  $cardnum = $1;
-  $self->cardnum($cardnum);
-  validate($cardnum) or return "Illegal credit card number";
-  return "Unknown card type" if cardtype($cardnum) eq "Unknown";
+  # FIXME
+  # there is no point in false laziness here
+  # we will effectively set "check_payinfo to 0"
+  # we can change that when we finish the refactor
+  
+  #my $cardnum = $self->cardnum;
+  #$cardnum =~ s/\D//g;
+  #$cardnum =~ /^(\d{13,16})$/
+  #  or return "Illegal credit card number";
+  #$cardnum = $1;
+  #$self->cardnum($cardnum);
+  #validate($cardnum) or return "Illegal credit card number";
+  #return "Unknown card type" if cardtype($cardnum) eq "Unknown";
 
   if ( $self->exp eq '' ) {
     return "Expiration date required"; #unless 
@@ -304,6 +309,21 @@ sub import_results {
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
+
+  my $pay_batch = qsearchs('pay_batch',{'batchnum'=> $paybatch});
+  unless ($pay_batch && $pay_batch->status eq 'I') {
+    $dbh->rollback if $oldAutoCommit;
+    return "batch $paybatch is not in transit";
+  };
+
+  my %batchhash = $pay_batch->hash;
+  $batchhash{'status'} = 'R';   # Resolved
+  my $newbatch = new FS::pay_batch ( \%batchhash );
+  my $error = $newbatch->replace($paybatch);
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error
+  }
 
   my $total = 0;
   my $line;

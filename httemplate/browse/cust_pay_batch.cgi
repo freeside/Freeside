@@ -3,7 +3,9 @@
 
 <FORM ACTION="<%=$p%>misc/download-batch.cgi" METHOD="POST">
 Download batch in format <SELECT NAME="format">
+<OPTION VALUE="">Default batch mode</OPTION>
 <OPTION VALUE="csv-td_canada_trust-merchant_pc_batch">CSV file for TD Canada Trust Merchant PC Batch</OPTION>
+<OPTION VALUE="BoM">Bank of Montreal ECA results</OPTION>
 </SELECT><INPUT TYPE="submit" VALUE="Download"></FORM>
 <BR><BR>
 
@@ -11,7 +13,9 @@ Download batch in format <SELECT NAME="format">
 Upload results<BR>
 Filename <INPUT TYPE="file" NAME="batch_results"><BR>
 Format <SELECT NAME="format">
+<OPTION VALUE="">Default batch mode</OPTION>
 <OPTION VALUE="csv-td_canada_trust-merchant_pc_batch">CSV results from TD Canada Trust Merchant PC Batch</OPTION>
+<OPTION VALUE="BoM">Bank of Montreal ECA results</OPTION>
 </SELECT><BR>
 <INPUT TYPE="submit" VALUE="Upload"></FORM>
 <BR>
@@ -47,7 +51,7 @@ $<%= sprintf("%.2f", $total) %> total in pending batch<BR>
 foreach my $cust_pay_batch ( sort { $a->paybatchnum <=> $b->paybatchnum }
                              qsearch('cust_pay_batch', {} )
 ) {
-  my $cardnum = $cust_pay_batch->cardnum;
+  my $cardnum = $cust_pay_batch->payinfo;
   #$cardnum =~ s/.{4}$/xxxx/;
   $cardnum = 'x'x(length($cardnum)-4). substr($cardnum,(length($cardnum)-4));
 

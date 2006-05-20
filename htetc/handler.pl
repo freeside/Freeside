@@ -149,6 +149,7 @@ sub handler
       use FS::part_svc;
       use FS::part_svc_router;
       use FS::part_virtual_field;
+      use FS::pay_batch;
       use FS::pkg_svc;
       use FS::port;
       use FS::queue qw(joblisting);
