@@ -121,6 +121,7 @@
   #    <BR> -->
 
   tie my %tools_menu, 'Tie::IxHash',
+    'Quick payment entry' => [ $fsurl.'misc/batch-cust_pay.html', 'Enter multiple payments in a batch' ],
     'Job Queue' => [ $fsurl.'search/queue.html', 'View pending job queue' ],
     'Importing' => [ \%tools_importing, 'Import tools' ],
     'Exporting' => [ \%tools_exporting, 'Export tools' ],
@@ -168,17 +169,17 @@
   ;
 
   tie my %config_menu, 'Tie::IxHash',
-    'Settings'      => [ $fsurl.'config/config-view.cgi', 'XXXconfigittip' ],
+    'Settings'      => [ $fsurl.'config/config-view.cgi', '' ],
     'separator'     => '', #its a separator!
-    'Employees'     => [ \%config_employees, 'XXXtooltip' ],
+    'Employees'     => [ \%config_employees, '' ],
     'Provisioning, services and packages'
-                    => [ \%config_export_svc_pkg, 'XXXtootip'    ],
-    'Resellers'     => [ \%config_agent, 'XXXtootip'    ],
-    'Billing'       => [ \%config_billing, 'XXXtootip'    ],
-    'Dialup'        => [ \%config_dialup, 'XXXtootip'    ],
+                    => [ \%config_export_svc_pkg, ''    ],
+    'Resellers'     => [ \%config_agent, ''    ],
+    'Billing'       => [ \%config_billing, ''    ],
+    'Dialup'        => [ \%config_dialup, ''    ],
     'Fixed (username-less) broadband'
-                    => [ \%config_broadband, 'XXXtootip'    ],
-    'Miscellaneous' => [ \%config_misc, 'XXXtootip'    ],
+                    => [ \%config_broadband, ''    ],
+    'Miscellaneous' => [ \%config_misc, ''    ],
   ;
 
   tie my %menu, 'Tie::IxHash',
@@ -253,7 +254,7 @@
   webfxMenuImagePath      = "<%=$fsurl%>images/";
   webfxMenuUseHover       = 1;
   webfxMenuShowTime       = 300;
-  webfxMenuHideTime       = 500;
+  webfxMenuHideTime       = 300;
 
   var myBar = new WebFXMenuBar;
 
