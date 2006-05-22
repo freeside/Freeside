@@ -345,7 +345,8 @@ upload-docs: forcehtmlman
 	ssh 420.am rm -rf /var/www/www.sisd.com/freeside/docs
 	scp -pr httemplate/docs 420.am:/var/www/www.sisd.com/freeside/docs
 
-release: upload-docs
+#release: upload-docs
+release:
 	cd /home/ivan/freeside
 	#cvs tag ${TAG}
 	cvs tag -F ${TAG}
