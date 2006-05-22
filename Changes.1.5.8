@@ -1,7 +1,8 @@
 Major new features and updates since 1.5.7:
 - Added prepaid packages that set the RADIUS "Expiration" attribute and
   auto-suspend on their next bill date
-- Added banned card table and option to send customer cards there on cancel
+- Added banned card table and option to send customer cards there on
+  cancel
 - Bulk svcpart change
 - Integrated RT upgraded to 3.4.4
 
@@ -10,25 +11,26 @@ UI:
 - Redo quick payment entry page with ajax magic
 - Redid account view and edit pages, add ability to edit uid/gid if conf
   options for it are turned on
-- cust-fields configuration value to control which customer fields are shown
-  on reports
+- cust-fields configuration value to control which customer fields are
+  shown on reports
 - Moved account search (httemplate/search/svc_acct.cgi), cust_pkg search
   (httemplate/search/cust_pkg.cgi) and others to new template
 - add unlinked mail forward (svc_forward) report
-- Moved to XMLHttpRequest instead of hidden iframe transport for progress bar
-- Also use XMLHttpRequest for retreiving states rather than send a huge page
-  for customer add/edit, much faster
+- Moved to XMLHttpRequest instead of hidden iframe transport for
+  progress bar
+- Also use XMLHttpRequest for retreiving states rather than send a huge
+  page for customer add/edit, much faster
 
 Resellers:
 - Added active/suspended/cancelled customer packages to agent browse
 
 Billing:
 - Added maximum "cap" options to RADIUS usage charges
-- Added support for maestro/switch/solo cards, including start date and issue
-  number
-- Added agent/taxclass/card type-specific gateway overrides for people with
-  multiple payment gateways for different resellers, taxclasses and/or card
-  types
+- Added support for maestro/switch/solo cards, including start date and
+  issue number
+- Added agent/taxclass/card type-specific gateway overrides for people
+  with multiple payment gateways for different resellers, taxclasses
+  and/or card types
 - Explicit payment types for cash and (optionally) western union
 
 Reporting:
