@@ -1215,7 +1215,12 @@ sub check {
       if cardtype($self->payinfo) eq "Unknown";
 
     my $ban = qsearchs('banned_pay', $self->_banned_pay_hashref);
-    return "Banned credit card" if $ban;
+    if ( $ban ) {
+      return 'Banned credit card: banned on '.
+             time2str('%a %h %o at %r', $ban->_date).
+             ' by '. $ban->otaker.
+             ' (ban# '. $ban->bannum. ')';
+    }
 
     if ( defined $self->dbdef_table->column('paycvv') ) {
       if (length($self->paycvv) && !$self->is_encrypted($self->paycvv)) {
@@ -1272,7 +1277,12 @@ sub check {
     $self->paycvv('') if $self->dbdef_table->column('paycvv');
 
     my $ban = qsearchs('banned_pay', $self->_banned_pay_hashref);
-    return "Banned ACH account" if $ban;
+    if ( $ban ) {
+      return 'Banned ACH account: banned on '.
+             time2str('%a %h %o at %r', $ban->_date).
+             ' by '. $ban->otaker.
+             ' (ban# '. $ban->bannum. ')';
+    }
 
   } elsif ( $self->payby eq 'LECB' ) {
 
