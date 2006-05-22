@@ -1,28 +1,41 @@
-- move account search (httemplate/search/svc_acct.cgi) to new template
-- cust-fields configuration value to control which customer fields are shown on reports
+Major new features and updates since 1.5.7:
+- Added prepaid packages that set the RADIUS "Expiration" attribute and
+  auto-suspend on their next bill date
+- Added banned card table and option to send customer cards there on cancel
+- Bulk svcpart change
+- Integrated RT upgraded to 3.4.4
+
+UI:
+- Re-did billing section of customer edit, should be much less confusing
+- Redo quick payment entry page with ajax magic
+- Redid account view and edit pages, add ability to edit uid/gid if conf
+  options for it are turned on
+- cust-fields configuration value to control which customer fields are shown
+  on reports
+- Moved account search (httemplate/search/svc_acct.cgi), cust_pkg search
+  (httemplate/search/cust_pkg.cgi) and others to new template
 - add unlinked mail forward (svc_forward) report
-- move cust_pkg search (httemplate/search/cust_pkg.cgi) to new template
-- add active/suspended/cancelled customer packages to agent browse
-- add export to everyone.net outsource mail service
-- add native Radiator export
-- added agent/taxclass/card type-specific gateway overrides for people with
+- Moved to XMLHttpRequest instead of hidden iframe transport for progress bar
+- Also use XMLHttpRequest for retreiving states rather than send a huge page
+  for customer add/edit, much faster
+
+Resellers:
+- Added active/suspended/cancelled customer packages to agent browse
+
+Billing:
+- Added maximum "cap" options to RADIUS usage charges
+- Added support for maestro/switch/solo cards, including start date and issue
+  number
+- Added agent/taxclass/card type-specific gateway overrides for people with
   multiple payment gateways for different resellers, taxclasses and/or card
   types
-- re-did billing section of customer edit and added maestro/switch/solo support
-- add cpanel export
-- added prepaid packages that set the RADIUS "Expiration" attribute and
-  auto-suspend on their next bill date
-- added banned card table and option to send customer cards there on cancel
-- moved to XMLHttpRequest instead of hidden iframe transport for progress bar,
-  should be more efficient and improve compatibility with Konq and maybe other
-  browsers?
-- also use XMLHttpRequest for retreiving states rather than send a huge page
-  for customer add/edit, much faster
-- redo account view and edit pages, add ability to edit uid/gid if conf options
-  for it are turned on
-- redo quick payment entry page with ajax magic
-- explicit payment types for cash and (optionally) western union
-- bulk svcpart change
-- tax report updated, per-agent option and most items now clickable
-- direct radiator export
-- added maximum "cap" options to RADIUS usage charges
+- Explicit payment types for cash and (optionally) western union
+
+Reporting:
+- Tax report updated, per-agent option and most items now clickable
+
+Exports:
+- Added a Cpanel export
+- Added a native Radiator export
+- Added an export to everyone.net outsourced mail service
+
