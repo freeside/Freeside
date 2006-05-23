@@ -1,6 +1,16 @@
 
 install DBIx::DBSchema 0.31 (or later)
 install Color::Scheme
+install Data::Table
+
+ALTER TABLE cust_pay_batch ADD COLUMN batchnum int;
+ALTER TABLE cust_pay_batch ALTER COLUMN batchnum SET NOT NULL;
+ALTER TABLE cust_pay_batch ADD COLUMN payinfo varchar(512);
+UPDATE cust_pay_batch SET payinfo = cardnum;
+ALTER TABLE cust_pay_batch DROP COLUMN cardnum;
+ALTER TABLE h_cust_pay_batch ADD COLUMN payinfo varchar(512);
+UPDATE h_cust_pay_batch SET payinfo = cardnum;
+ALTER TABLE h_cust_pay_batch DROP COLUMN cardnum;
 
 make install-perl-modules
 run "freeside-upgrade username" to uprade your database schema
@@ -16,6 +26,9 @@ specific data.
 Optional for better zip code report performance:
 CREATE INDEX cust_main16 on cust_main ( zip );
 CREATE INDEX cust_main17 on cust_main ( ship_zip );
+
+Optional to eliminate harmless but noisy warnings:
+UPDATE cust_main_county SET exempt_amount = 0 WHERE exempt_amount IS NULL;
 
 ------
 
