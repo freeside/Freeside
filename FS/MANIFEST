@@ -342,7 +342,3 @@ t/access_right.t
 FS/m2m_Common.pm
 FS/pay_batch.pm
 t/pay_batch.t
-FS/pay_batch.pm
-t/pay_batch.t
-FS/pay_batch.pm
-t/pay_batch.t
