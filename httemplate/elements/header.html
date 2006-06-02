@@ -21,9 +21,12 @@
         if ( what.value = '(cust #, name or company)' )
           what.value = '';
       }
-    </SCRIPT>
 
-    <SCRIPT TYPE="text/javascript">
+      function clearhint_search_svc (what) {
+        if ( what.value = '(user, user@domain or domain)' )
+          what.value = '';
+      }
+
       function clearhint_search_ticket (what) {
         if ( what.value = '(ticket # or subject string)' )
           what.value = '';
@@ -79,17 +82,21 @@
         <TD COLSPAN=4 WIDTH="100%" STYLE="padding:0"><IMG BORDER=0 ALT="" SRC="<%=$fsurl%>images/black-gradient.png" HEIGHT="13" WIDTH="100%"></TD>
       </TR>
       <TR>
-        <TD COLSPAN=1 BGCOLOR="#000000" WIDTH="154">
-        </TD>
-        <TD COLSPAN=1 BGCOLOR="#000000" ALIGN="right">
+        <TD COLSPAN=1 BGCOLOR="#000000" ALIGN="right" WIDTH="15%">
           <FORM ACTION="<%=$fsurl%>edit/cust_main.cgi" METHOD="GET" STYLE="margin:0">
             <INPUT TYPE="submit" VALUE="New customer">
           </FORM>
         </TD>
         <TD COLSPAN=1 BGCOLOR="#000000" ALIGN="right">
           <FORM ACTION="<%=$fsurl%>search/cust_main.cgi" METHOD="GET" STYLE="margin:0">
-            <INPUT NAME="search_cust" TYPE="text" VALUE="(cust #, name or company)" SIZE="23" onFocus="clearhint_search_cust(this);" onClick="clearhint_search_cust(this);" STYLE="text-align:right">
+            <INPUT NAME="search_cust" TYPE="text" VALUE="(cust #, name or company)" SIZE="22" onFocus="clearhint_search_cust(this);" onClick="clearhint_search_cust(this);" STYLE="text-align:right">
             <INPUT TYPE="submit" VALUE="Search customers">
+          </FORM>
+        </TD>
+        <TD COLSPAN=1 BGCOLOR="#000000" ALIGN="right">
+          <FORM ACTION="<%=$fsurl%>search/svc_Smart.html" METHOD="GET" STYLE="margin:0">
+            <INPUT NAME="search_svc" TYPE="text" VALUE="(user, user@domain or domain)" SIZE="26" onFocus="clearhint_search_svc(this);" onClick="clearhint_search_svc(this);" STYLE="text-align:right">
+            <INPUT TYPE="submit" VALUE="Search services">
           </FORM>
         </TD>
         <TD COLSPAN=1 BGCOLOR="#000000" ALIGN="right">

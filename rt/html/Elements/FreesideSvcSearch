@@ -1,0 +1,10 @@
+<form action="<% $RT::URI::freeside::URL %>/search/svc_Smart.html" STYLE="margin:0">
+    <SCRIPT TYPE="text/javascript">
+      function clearhint_search_svc (what) {
+        if ( what.value = '(user, user@domain or domain)' )
+          what.value = '';
+      }
+    </SCRIPT>
+<input name="search_svc" accesskey="0" VALUE="(user, user@domain or domain)" SIZE="27" onFocus="clearhint_search_svc(this);" onClick="clearhint_search_svc(this);" STYLE="text-align:right">
+<input type="submit" value="<&|/l&>Search services</&>">&nbsp;
+</form>
