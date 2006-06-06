@@ -119,8 +119,6 @@ following fields are currently supported:
 
 #Telstra =1, Optus = 2, RSL COM = 3
 
-=back
-
 =item upstream_rateid - Upstream Rate ID
 
 =item svcnum - Link to customer service (see L<FS::cust_svc>)
