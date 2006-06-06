@@ -75,7 +75,6 @@ SPAN.nav {  font-family: Arial, Verdana, Helvetica, sans-serif;
 	 font-size: 16px;
 	 font-weight: normal;
 	 color: #FFFFFF;
-%#	 color: #000000;
 	 text-decoration: none;
 	 white-space: nowrap}
 
@@ -87,42 +86,36 @@ SPAN.nav {  font-family: Arial, Verdana, Helvetica, sans-serif;
 a.topnav-0 {  font-family: Verdana, sans-serif;
 	 font-size: 16px;
 	 font-weight: normal;
-%#	 color: #000000;
 	 color: #FFFFFF;
 	 text-decoration: none;
 	 white-space: nowrap}
 a.topnav-1 {  font-family: Verdana, sans-serif;
 	 font-size: 14px;
 	 font-weight: normal;
-%#	 color: #000000;
 	 color: #FFFFFF;
 	 text-decoration: none;
 	 white-space: nowrap}
 a.topnav-2 {  font-family: Verdana, sans-serif;
 	 font-size: 12px;
 	 font-weight: normal;
-%#	 color: #000000;
 	 color: #FFFFFF;
 	 text-decoration: none;
 	 white-space: nowrap}
 a.topnav-3 {  font-family: Verdana, sans-serif;
 	 font-size: 11px;
 	 font-weight: normal;
-%#	 color: #000000;
 	 color: #FFFFFF;
 	 text-decoration: none;
 	 white-space: nowrap}
 a.topnav-4 {  font-family: Verdana, sans-serif;
 	 font-size: 11px;
 	 font-weight: normal;
-%#	 color: #000000;
 	 color: #FFFFFF;
 	 text-decoration: none;
 	 white-space: nowrap}
 a.topnav-5 {  font-family: Verdana, sans-serif;
 	 font-size: 11px;
 	 font-weight: normal;
-%#	 color: #000000;
 	 color: #FFFFFF;
 	 text-decoration: none;
 	 white-space: nowrap}
@@ -190,8 +183,7 @@ li.topnav-5-major {
 .currenttopnav {  font-family: Arial, Verdana, Helvetica, sans-serif;
 	 font-size: 16px;
          font-weight: bold;
-%#	 color: #FFFF66;
-	 color: #000000; background-color: #cccccc;
+	 color: #ffffff; background-color: #7e0079;
 	 text-decoration: none;
 	 white-space: nowrap}
 
