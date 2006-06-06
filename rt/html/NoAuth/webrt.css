@@ -59,10 +59,8 @@ SPAN.nav {  font-family: Arial, Verdana, Helvetica, sans-serif;
 	 white-space: nowrap}
 .nav {  font-family: Arial, Verdana, Helvetica, sans-serif;
 	 font-size: 13px;
-%#	 font-weight: normal;
 	 font-weight: bold;
-%#	 color: #FFFFFF;
-	 color: #000000;
+	 color: #FFFFFF;
 	 text-decoration: none;
 	 white-space: nowrap}
 .currentnav {  font-family: Arial, Verdana, Helvetica, sans-serif;
