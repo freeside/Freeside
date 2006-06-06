@@ -1,3 +1,4 @@
+/*
 %# BEGIN BPS TAGGED BLOCK {{{
 %# 
 %# COPYRIGHT:
@@ -43,6 +44,7 @@
 %# those contributions and any derivatives thereof.
 %# 
 %# END BPS TAGGED BLOCK }}}
+*/
 
 /* * {
   font-family: Arial, Verdana, Helvetica, sans-serif;
@@ -75,10 +77,12 @@ SPAN.nav {  font-family: Arial, Verdana, Helvetica, sans-serif;
 	 text-decoration: none;
 	 white-space: nowrap}
 
+/*
 %# .topnav is the original RT class for the sidebar navigation tabs.
 %# Font-sizing by level depth was originally hard-coded into Elements/Menu.
 %# This modification sets a different class name for each level, allowing
 %# style sheet control over the formats.
+*/
 
 a.topnav-0 {  font-family: Verdana, sans-serif;
 	 font-size: 16px;
@@ -184,10 +188,12 @@ li.topnav-5-major {
 	 text-decoration: none;
 	 white-space: nowrap}
 
+/*
 %# .currenttopnav is the original RT class for the sidebar navigation tabs.
 %# Font-sizing by level depth was originally hard-coded into Elements/Menu.
 %# This modification sets a different class name for each level, allowing
 %# style sheet control over the formats
+*/
 
 a.currenttopnav-0 {  font-family: Verdana, sans-serif;
 	 font-size: 16px;
@@ -315,12 +321,12 @@ li.currenttopnav-5-major {
          }
 .blue {
 	 background-color: #4682B4;
-%#	 background-color: #eeeeee;
+/* %#	 background-color: #eeeeee; */
 	 background-position: left top;
 	 vertical-align: top;
 	 text-align: left;
          }
-%# Actually the "topactions" section
+/* %# Actually the "topactions" section */
 .blueright {  background-color: #4682B4;
 	 background-position: left top;
 	 vertical-align: top;
@@ -604,7 +610,7 @@ SPAN.date { font-size: 0.8em }
 
 span.title { font-size: 1.6em;
 	     vertical-align: middle;
-%#	     color: #ffffff;
+/* %#	     color: #ffffff; */
              color: #000000;
            }
 span.productname { font-size: 2em;
@@ -703,6 +709,7 @@ textarea.messagebox {
     width: 100%;
 }
 
+/*
 %# Provide a callback for adding/modifying the style sheet.
 %# http://www.w3.org/TR/REC-CSS1 - section 3.2, says:
 %#   "latter specified rule wins"
@@ -714,3 +721,4 @@ inherit => undef
 $r->content_type('text/css');
 #$r->headers_out->{'Expires'} = '+30m';
 </%init>
+*/
