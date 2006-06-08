@@ -147,7 +147,7 @@
   tie my %config_billing, 'Tie::IxHash',
     'View/Edit payment gateways'         => [ $fsurl.'browse/payment_gateway.html', 'Credit card and electronic check processors' ],
     'View/Edit invoice events'           => [ $fsurl.'browse/part_bill_event.cgi', 'Actions for overdue invoices' ],
-    'View/Edit prepaid cards'            => [ $fsurl.'browse/prepay_credit.html', 'View outstanding cards, generate new cards' ],
+    'View/Edit prepaid cards'            => [ $fsurl.'search/prepay_credit.html', 'View outstanding cards, generate new cards' ],
     'View/Edit call rates and regions'   => [ $fsurl.'browse/rate.cgi', 'Manage rate plans, regions and prefixes for VoIP and call billing' ],
     'View/Edit locales and tax rates'    => [ $fsurl.'browse/cust_main_county.cgi', 'Change tax rates, or break down a country into states, or a state into counties and assign different tax rates to each' ],
   ;
