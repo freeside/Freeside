@@ -33,7 +33,8 @@ my $jdate = sprintf("%03d", $date[5] % 100).sprintf("%03d", $date[7]);
 
 if ($format eq "BoM") {
 
-  my($reformat,$origid,$datacenter,$typecode,$shortname,$longname,$mybank,$myacct) = $conf->config("batchconfig-$format");
+  my($origid,$datacenter,$typecode,$shortname,$longname,$mybank,$myacct) =
+    $conf->config("batchconfig-$format");
   %><%= sprintf( "A%10s%04u%06u%05u%54s\n",$origid,$pay_batch->batchnum,$jdate,$datacenter,"").
         sprintf( "XD%03u%06u%-15s%-30s%09u%-12s   \n",$typecode,$jdate,$shortname,$longname,$mybank,$myacct )
   %><%
