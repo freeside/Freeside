@@ -6,10 +6,10 @@ my $conf=new FS::Conf;
 http_header('Content-Type' => 'text/plain' );
 
 my $format;
-if ( $cgi->param('format') =~ /^([\w ]+)$/ ) {
+if ( $cgi->param('format') =~ /^([\w\- ]+)$/ ) {
   $format = $1;
 } else {
-  $format = $conf->config('batch_default_format');
+  $format = $conf->config('batch-default_format');
 }
 
 my $oldAutoCommit = $FS::UID::AutoCommit;
@@ -39,7 +39,7 @@ if ($format eq "BoM") {
         sprintf( "XD%03u%06u%-15s%-30s%09u%-12s   \n",$typecode,$jdate,$shortname,$longname,$mybank,$myacct )
   %><%
 
-}elsif ($format eq "CSV file for TD Canada Trust Merchant PC Batch"){
+}elsif ($format eq "csv-td_canada_trust-merchant_pc_batch"){
 #  1;
 }else{
   die "Unknown format for batch in batchconfig. \n";
@@ -63,7 +63,7 @@ for my $cust_pay_batch ( sort { $a->paybatchnum <=> $b->paybatchnum }
     my( $account, $aba ) = split( '@', $cust_pay_batch->payinfo );
     %><%= sprintf( "D%010u%09u%-12s%-29s%-19s\n",$cust_pay_batch->amount*100,$aba,$account,$cust_pay_batch->payname,$cust_pay_batch->invnum %><%
 
-  } elsif ($format eq "CSV file for TD Canada Trust Merchant PC Batch") {
+  } elsif ($format eq "csv-td_canada_trust-merchant_pc_batch") {
 
     %>,,,,<%= $cust_pay_batch->payinfo %>,<%= $exp %>,<%= $cust_pay_batch->amount %>,<%= $cust_pay_batch->paybatchnum %><%
 
@@ -78,7 +78,7 @@ if ($format eq "BoM") {
   %><%= sprintf( "YD%08u%014u%56s\n",$batchcount,$batchtotal*100,"" ).
         sprintf( "Z%014u%05u%014u%05u%41s\n",$batchtotal*100,$batchcount,"0","0","" ) %><%
 
-} elsif ($format eq "CSV file for TD Canada Trust Merchant PC Batch"){
+} elsif ($format eq "csv-td_canada_trust-merchant_pc_batch"){
   #1;
 } else {
   die "I'm already dead (again), but you did not know that.\n";
