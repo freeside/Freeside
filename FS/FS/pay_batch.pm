@@ -98,7 +98,7 @@ sub check {
 
   my $error = 
     $self->ut_numbern('batchnum')
-    || $self->ut_enum('status', [ '', 'I', 'R' ])
+    || $self->ut_enum('status', [ 'O', 'I', 'R' ])
   ;
   return $error if $error;
 

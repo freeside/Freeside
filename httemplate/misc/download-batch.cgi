@@ -16,7 +16,7 @@ my $oldAutoCommit = $FS::UID::AutoCommit;
 local $FS::UID::AutoCommit = 0;
 my $dbh = dbh;
 
-my $pay_batch = qsearchs('pay_batch', {'status'=>''} );
+my $pay_batch = qsearchs('pay_batch', {'status'=>'O'} );
 die "No pending batch. \n" unless $pay_batch;
 
 my %batchhash = $pay_batch->hash;

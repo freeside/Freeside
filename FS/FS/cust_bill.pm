@@ -1286,10 +1286,11 @@ sub batch_card {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  my $pay_batch = qsearchs('pay_batch'=> '');
+  my $pay_batch = qsearchs('pay_batch', {'status' => 'O'});
 
   unless ($pay_batch) {
     $pay_batch = new FS::pay_batch;
+    $pay_batch->setfield('status' => 'O');
     my $error = $pay_batch->insert;
     if ( $error ) {
       die "error creating new batch: $error\n";
