@@ -4,7 +4,7 @@ my $html_init =
   "Internal users have access to the back-office interface.  Typically, this is your employees and contractors, but in a VISP setup, you can also add accounts for your reseller's employees.  It is <B>highly recommended</B> to add a <B>separate account for each person</B> rather than using role accounts.<BR><BR>".
   qq!<A HREF="${p}edit/access_user.html"><I>Add an internal user</I></A><BR><BR>!;
 
-#false laziness w/agent_type.cgi
+#false laziness w/access_group.html & agent_type.cgi
 my $groups_sub = sub {
   my $access_user = shift;
 

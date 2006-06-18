@@ -68,16 +68,28 @@
    ) {
 
      my $targetnum = $target_obj->$target_pkey();
+
+     my $checked;
+     if ( $cgi->param('error') ) {
+
+       $checked = $cgi->param($target_pkey.$targetnum)
+                    ? 'CHECKED'
+                    : '';
+
+     } else {
+
+       $checked = qsearchs( $opt{'link_table'}, {
+                                                  $source_pkey => $sourcenum,
+                                                  $target_pkey => $targetnum,
+                                                }                             )
+                    ? 'CHECKED'
+                    : ''
+
+     }
+
 %>
 
-  <INPUT TYPE="checkbox" NAME="<%= $target_pkey. $targetnum %>" <%=
-        qsearchs( $opt{'link_table'}, {
-          $source_pkey => $sourcenum,
-          $target_pkey => $targetnum,
-        })
-          ? 'CHECKED '
-          : ''
-  %> VALUE="ON">
+  <INPUT TYPE="checkbox" NAME="<%= $target_pkey. $targetnum %>" <%= $checked %> VALUE="ON">
 
   <% if ( $opt{'target_link'} ) { %>
 

@@ -16,6 +16,18 @@
   #
   # 'menubar'     => '', #menubar arrayref
   #
+  # #run when re-displaying with an error
+  # 'error_callback' => sub { my $cgi, $object = @_; },
+  #
+  # #run when editing
+  # 'edit_callback' => sub { my $cgi, $object = @_; },
+  #
+  # #run when adding
+  # 'new_callback' => sub { my $cgi, $object = @_; },
+  #
+  # #broken'html_table_bottom' => '', #string or listref of additinal HTML to
+  #                            #add before </TABLE>
+  #
   # 'viewall_dir' => '', #'search' or 'browse', defaults to 'search'
   #
   # 'html_bottom' => '', #string
@@ -43,15 +55,24 @@
       map { $_ => scalar($cgi->param($_)) } fields($table)
     });
 
+    &{$opt{'error_callback'}}($cgi, $object)
+      if $opt{'error_callback'};
+
   } elsif ( $cgi->keywords ) { #editing
 
     my( $query ) = $cgi->keywords;
     $query =~ /^(\d+)$/;
     $object = qsearchs( $table, { $pkey => $1 } );
 
+    &{$opt{'edit_callback'}}($cgi, $object)
+      if $opt{'edit_callback'};
+
   } else { #adding
 
     $object = $class->new( {} );
+
+    &{$opt{'new_callback'}}($cgi, $object)
+      if $opt{'new_callback'};
 
   }
 

@@ -1,7 +1,7 @@
 package FS::part_pkg;
 
 use strict;
-use vars qw( @ISA %freq %plans $DEBUG );
+use vars qw( @ISA %plans $DEBUG );
 use Carp qw(carp cluck confess);
 use Tie::IxHash;
 use FS::Conf;
@@ -571,6 +571,32 @@ sub is_free {
   }
 }
 
+
+sub freqs_href {
+  #method, class method or sub? #my $self = shift;
+
+  tie my %freq, 'Tie::IxHash', 
+    '0'  => '(no recurring fee)',
+    '1h' => 'hourly',
+    '1d' => 'daily',
+    '1w' => 'weekly',
+    '2w' => 'biweekly (every 2 weeks)',
+    '1'  => 'monthly',
+    '2'  => 'bimonthly (every 2 months)',
+    '3'  => 'quarterly (every 3 months)',
+    '6'  => 'semiannually (every 6 months)',
+    '12' => 'annually',
+    '24' => 'biannually (every 2 years)',
+    '36' => 'triannually (every 3 years)',
+    '48' => '(every 4 years)',
+    '60' => '(every 5 years)',
+    '120' => '(every 10 years)',
+  ;
+
+  \%freq;
+
+}
+
 =item freq_pretty
 
 Returns an english representation of the I<freq> field, such as "monthly",
@@ -578,29 +604,14 @@ Returns an english representation of the I<freq> field, such as "monthly",
 
 =cut
 
-tie %freq, 'Tie::IxHash', 
-  '0'  => '(no recurring fee)',
-  '1h' => 'hourly',
-  '1d' => 'daily',
-  '1w' => 'weekly',
-  '2w' => 'biweekly (every 2 weeks)',
-  '1'  => 'monthly',
-  '2'  => 'bimonthly (every 2 months)',
-  '3'  => 'quarterly (every 3 months)',
-  '6'  => 'semiannually (every 6 months)',
-  '12' => 'annually',
-  '24' => 'biannually (every 2 years)',
-  '36' => 'triannually (every 3 years)',
-  '48' => '(every 4 years)',
-  '60' => '(every 5 years)',
-  '120' => '(every 10 years)',
-;
-
 sub freq_pretty {
   my $self = shift;
   my $freq = $self->freq;
-  if ( exists($freq{$freq}) ) {
-    $freq{$freq};
+
+  my $freqs_href = $self->freqs_href;
+
+  if ( exists($freqs_href->{$freq}) ) {
+    $freqs_href->{$freq};
   } else {
     my $interval = 'month';
     if ( $freq =~ /^(\d+)([hdw])$/ ) {

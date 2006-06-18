@@ -1,5 +1,15 @@
 <%= include( 'elements/process.html',
                'table'       => 'access_group',
                'viewall_dir' => 'browse',
+               'process_m2m' => { 'link_table'   => 'access_groupagent',
+                                  'target_table' => 'agent',
+                                },
+               'process_m2name' => {
+                     'link_table'   => 'access_right',
+                     'link_static'  => { 'righttype' => 'FS::access_group', },
+                     'num_col'      => 'rightobjnum',
+                     'name_col'     => 'rightname',
+                     'names_list'   => [ FS::AccessRight->rights() ],
+               },
            )
 %>

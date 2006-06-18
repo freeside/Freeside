@@ -3,6 +3,7 @@ package FS::access_groupagent;
 use strict;
 use vars qw( @ISA );
 use FS::Record qw( qsearch qsearchs );
+use FS::agent;
 
 @ISA = qw(FS::Record);
 
@@ -27,7 +28,7 @@ FS::access_groupagent - Object methods for access_groupagent records
 
 =head1 DESCRIPTION
 
-An FS::access_groupagent object represents an example.  FS::access_groupagent inherits from
+An FS::access_groupagent object represents an group reseller virtualization.  FS::access_groupagent inherits from
 FS::Record.  The following fields are currently supported:
 
 =over 4
@@ -47,7 +48,7 @@ FS::Record.  The following fields are currently supported:
 
 =item new HASHREF
 
-Creates a new example.  To add the example to the database, see L<"insert">.
+Creates a new group reseller virtualization.  To add the record to the database, see L<"insert">.
 
 Note that this stores the hash reference, not a distinct copy of the hash it
 points to.  You can ask the object for a copy with the I<hash> method.
@@ -86,7 +87,7 @@ returns the error, otherwise returns false.
 
 =item check
 
-Checks all fields to make sure this is a valid example.  If there is
+Checks all fields to make sure this is a valid group reseller virtualization.  If there is
 an error, returns the error, otherwise returns false.  Called by the insert
 and replace methods.
 
@@ -100,19 +101,28 @@ sub check {
 
   my $error = 
     $self->ut_numbern('groupagentnum')
-    || $self->ut_number('groupnum')
-    || $self->ut_number('agentnum')
+    || $self->ut_foreign_key('groupnum', 'access_group', 'groupnum')
+    || $self->ut_foreign_key('agentnum', 'agent',        'agentnum')
   ;
   return $error if $error;
 
   $self->SUPER::check;
 }
 
+=item agent
+
+Returns the associated FS::agent object.
+
+=cut
+
+sub agent {
+  my $self = shift;
+  qsearchs('agent', { 'agentnum' => $self->agentnum } );
+}
+
 =back
 
 =head1 BUGS
-
-The author forgot to customize this manpage.
 
 =head1 SEE ALSO
 

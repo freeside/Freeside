@@ -1,0 +1,85 @@
+<%
+
+  ##
+  # required
+  ##
+  # 'link_table'      => 'table_name',
+  #
+  # 'name_col' => 'name_column',
+  # #or
+  # 'name_callback' => sub { },
+  #
+  # 'names_list' => [ 'value', 'other value' ],
+  #
+  ##
+  # recommended (required?)
+  ##
+  # 'source_obj'   => $obj,
+  # #or?
+  # #'source_table' => 'table_name',
+  # #'sourcenum'    => '4', #current value of primary key in source_table
+  # #                       # (none is okay, just pass it if you have it)
+  ##
+  # optional
+  ##
+  # 'num_col' => 'col_name' #if column name is different in link_table than
+  #                         #source_table
+  # 'link_static' => { 'column' => 'value' },
+
+  my( %opt ) = @_;
+
+  my( $source_pkey, $sourcenum, $source_obj );
+  if ( $opt{'source_obj'} ) {
+
+    $source_obj = $opt{'source_obj'};
+    #$source_table = $source_obj->dbdef_table->table;
+    $source_pkey = $source_obj->dbdef_table->primary_key;
+    $sourcenum = $source_obj->$source_pkey();
+
+  } else {
+
+    #$source_obj?
+    $source_pkey = $opt{'source_table'}
+                     ? dbdef->table($opt{'source_table'})->primary_key
+                     : '';
+    $sourcenum = $opt{'sourcenum'};
+  }
+
+  $source_pkey = $opt{'num_col'} || $source_pkey;
+
+  my $link_static = $opt{'link_static'} || {};
+
+%>
+
+<% foreach my $name ( @{ $opt{'names_list'} } ) {
+
+     my $checked;
+     if ( $cgi->param('error') ) {
+
+       $checked = $cgi->param($opt{'link_table'}. ".$name" )
+                    ? 'CHECKED'
+                    : '';
+
+     } else {
+
+       $checked =
+         qsearchs( $opt{'link_table'}, {
+                                         $source_pkey     => $sourcenum,
+                                         $opt{'name_col'} => $name,
+                                         %$link_static,
+                                       }                                 )
+                    ? 'CHECKED'
+                    : ''
+
+     }
+
+%>
+
+  <INPUT TYPE="checkbox" NAME="<%= $opt{'link_table'}. ".$name" %>" <%= $checked %> VALUE="ON">
+
+  <%= $name %>
+
+  <BR>
+
+<% } %>
+

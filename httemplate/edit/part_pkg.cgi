@@ -237,7 +237,7 @@ if ( dbdef->table('pkg_svc')->column('primary_svc') ) {
   push @form_radio, 'pkg_svc_primary';
 }
 
-tie my %freq, 'Tie::IxHash', %FS::part_pkg::freq;
+tie my %freq, 'Tie::IxHash', %{FS::part_pkg->freqs_href()};
 if ( $part_pkg->dbdef_table->column('freq')->type =~ /(int)/i ) {
   delete $freq{$_} foreach grep { ! /^\d+$/ } keys %freq;
 }

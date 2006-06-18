@@ -3,8 +3,11 @@ package FS::access_group;
 use strict;
 use vars qw( @ISA );
 use FS::Record qw( qsearch qsearchs );
+use FS::m2name_Common;
+use FS::access_groupagent;
+use FS::access_right;
 
-@ISA = qw(FS::Record);
+@ISA = qw(FS::m2m_Common FS::m2name_Common FS::Record);
 
 =head1 NAME
 
@@ -27,15 +30,14 @@ FS::access_group - Object methods for access_group records
 
 =head1 DESCRIPTION
 
-An FS::access_group object represents an example.  FS::access_group inherits from
+An FS::access_group object represents an access group.  FS::access_group inherits from
 FS::Record.  The following fields are currently supported:
 
 =over 4
 
 =item groupnum - primary key
 
-=item groupname - 
-
+=item groupname - Access group name
 
 =back
 
@@ -45,7 +47,7 @@ FS::Record.  The following fields are currently supported:
 
 =item new HASHREF
 
-Creates a new example.  To add the example to the database, see L<"insert">.
+Creates a new access group.  To add the access group to the database, see L<"insert">.
 
 Note that this stores the hash reference, not a distinct copy of the hash it
 points to.  You can ask the object for a copy with the I<hash> method.
@@ -84,7 +86,7 @@ returns the error, otherwise returns false.
 
 =item check
 
-Checks all fields to make sure this is a valid example.  If there is
+Checks all fields to make sure this is a valid access group.  If there is
 an error, returns the error, otherwise returns false.  Called by the insert
 and replace methods.
 
@@ -105,11 +107,50 @@ sub check {
   $self->SUPER::check;
 }
 
+=item access_groupagent
+
+Returns all associated FS::access_groupagent records.
+
+=cut
+
+sub access_groupagent {
+  my $self = shift;
+  qsearch('access_groupagent', { 'groupnum' => $self->groupnum } );
+}
+
+=item access_rights
+
+Returns all associated FS::access_right records.
+
+=cut
+
+sub access_rights {
+  my $self = shift;
+  qsearch('access_right', { 'righttype'   => 'FS::access_group',
+                            'rightobjnum' => $self->groupnum 
+                          }
+         );
+}
+
+=item access_right RIGHTNAME
+
+Returns the specified FS::access_right record.  Can be used as a boolean, to
+test if this group has the given RIGHTNAME.
+
+=cut
+
+sub access_right {
+  my( $self, $name ) = shift;
+  qsearchs('access_right', { 'righttype'   => 'FS::access_group',
+                             'rightobjnum' => $self->groupnum,
+                             'rightname'   => $name,
+                           }
+          );
+}
+
 =back
 
 =head1 BUGS
-
-The author forgot to customize this manpage.
 
 =head1 SEE ALSO
 

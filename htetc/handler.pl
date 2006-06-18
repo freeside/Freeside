@@ -182,6 +182,10 @@ sub handler
       use FS::pkg_class;
       use FS::access_user;
       use FS::access_group;
+      use FS::access_usergroup;
+      use FS::access_groupagent;
+      use FS::access_right;
+      use FS::AccessRight;
 
       if ( %%%RT_ENABLED%%% ) {
         eval '

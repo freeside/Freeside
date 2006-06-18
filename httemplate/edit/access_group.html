@@ -5,6 +5,42 @@
                                'groupnum'   => 'Group number',
                                'groupname'  => 'Group name',
                              },
+
                  'viewall_dir' => 'browse',
+
+                 'html_bottom' =>
+                   sub {
+                     my $access_group = shift;
+
+                     "<BR>Group virtualized to customers of agents:<BR>".
+                     ntable("#cccccc",2).
+                     '<TR><TD>'.
+                     include( '/elements/checkboxes-table.html',
+                                'source_obj'   => $access_group,
+                                'link_table'   => 'access_groupagent',
+                                'target_table' => 'agent',
+                                'name_col'     => 'agent',
+                                'target_link'  => $p.'edit/agent.cgi?',
+                                'disable-able' => 1,
+                            ).
+                     '</TR></TD></TABLE>'.
+
+                     "<BR>Group rights:<BR>".
+                     ntable("#cccccc",2).
+                     '<TR><TD>'.
+                     include( '/elements/checkboxes-table-name.html',
+                                'source_obj'   => $access_group,
+                                'link_table'   => 'access_right',
+                                'link_static'  => { 'righttype' =>
+                                                      'FS::access_group',
+                                                  },
+                                'num_col'      => 'rightobjnum',
+                                'name_col'     => 'rightname',
+                                'names_list'   => [ FS::AccessRight->rights() ],
+                            ).
+                     '</TR></TD></TABLE>'
+
+                     ;
+                   },
            )
 %>
