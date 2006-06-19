@@ -1,10 +1,12 @@
 package FS::CurrentUser;
 
-use vars qw($CurrentUser);
+use vars qw($CurrentUser $upgrade_hack);
 
 #not at compile-time, circular dependancey causes trouble
 #use FS::Record qw(qsearchs);
 #use FS::access_user;
+
+$upgrade_hack = 0;
 
 =head1 NAME
 
@@ -19,8 +21,9 @@ FS::CurrentUser - Package representing the current user
 sub load_user {
   my( $class, $user ) = @_; #, $pass
 
-  #XXX remove me at some point
-  return "" if $user =~ /^fs_(queue|selfservice)$/;
+  return "" if $upgrade_hack;
+
+  #return "" if $user =~ /^fs_(queue|selfservice)$/;
 
   #not the best thing in the world...
   eval "use FS::Record qw(qsearchs);";

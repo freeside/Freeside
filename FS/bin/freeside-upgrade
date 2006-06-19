@@ -5,6 +5,7 @@ use vars qw($DEBUG $DRY_RUN);
 use Term::ReadKey;
 use DBIx::DBSchema 0.31;
 use FS::UID qw(adminsuidsetup checkeuid datasrc );  #getsecrets);
+use FS::CurrentUser;
 use FS::Schema qw( dbdef dbdef_dist reload_dbdef );
 
 $DEBUG = 1;
@@ -12,6 +13,7 @@ $DEBUG = 1;
 die "Not running uid freeside!" unless checkeuid();
 
 my $user = shift or die &usage;
+$FS::CurrentUser::upgrade_hack = 1;
 my $dbh = adminsuidsetup($user);
 
 #needs to match FS::Schema...
