@@ -18,6 +18,10 @@ run "freeside-upgrade username" to uprade your database schema
 (if freeside-upgrade hangs, try stopping Apache, all Freeside processes, and
  anything else connected to your database, especially on older Pg versions)
 
+ACL bootstrapping:
+  - Run "bin/mapsecrets2access_user username"
+  - You can then add more restrictive groups and move your users into them
+
 If you have any records in the cust_tax_exempt table, you *MUST* migrate them
 to the new cust_tax_exempt_pkg table.  An example script to get you started is
 in bin/fs-migrate-cust_tax_exempt - it may need to be customized for your

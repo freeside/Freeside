@@ -9,6 +9,11 @@
 - gross sales report/graph broken down by agent and package class
 - config switch to base tax off shipping address if present (warning: tax reports can take a long time with this switch on)
 - plesk provisioning
+- "inactive" package status 
+- more options in package report (classes, etc.)
+and (now they're finally here)...
+- ACLs
+- Agent virtualization
 
 -------- some of the above, nicely:
 
@@ -33,7 +38,3 @@
   - Bookeeping/Collections | Sales report (by agent, package class ...
 
 --------
-
-and...
-- ACLs
-- Agent virtualization
