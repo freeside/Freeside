@@ -473,6 +473,7 @@ END
       my $rowspan = scalar(@cust_svc) || 1;
 
       print $n1, qq!<TD CLASS="grid" BGCOLOR="$bgcolor"  ROWSPAN=$rowspan><A HREF="$pkgview"><FONT SIZE=-1>$pkg - $comment</FONT></A></TD>!;
+
       my($n2)='';
       foreach my $cust_svc ( @cust_svc ) {
          my($label, $value, $svcdb) = $cust_svc->label;
@@ -482,9 +483,19 @@ END
                qq!<TD CLASS="grid" BGCOLOR="$bgcolor" ><A HREF="$sview/$svcdb.cgi?$svcnum"><FONT SIZE=-1>$value</FONT></A></TD>!;
          $n2="</TR><TR>";
       }
+
+      unless ( @cust_svc ) {
+        print qq!<TD CLASS="grid" BGCOLOR="$bgcolor" COLSPAN=2>&nbsp;</TD>!;
+      }
+
       #print qq!</TR><TR>\n!;
       $n1="</TR><TR>";
     }
+
+    unless ( @{$all_pkgs{$custnum}} ) {
+      print qq!<TD CLASS="grid" BGCOLOR="$bgcolor" COLSPAN=3>&nbsp;</TD>!;
+    }
+    
     print "</TR>";
   }
 
