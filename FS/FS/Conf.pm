@@ -4,6 +4,7 @@ use vars qw($default_dir @config_items $DEBUG );
 use IO::File;
 use File::Basename;
 use FS::ConfItem;
+use FS::ConfDefaults;
 
 $DEBUG = 0;
 
@@ -1619,18 +1620,9 @@ httemplate/docs/config.html
   {
     'key'         => 'cust-fields',
     'section'     => 'UI',
-    'description' => 'Which customer fields to display on reports',
+    'description' => 'Which customer fields to display on reports by default',
     'type'        => 'select',
-    'select_enum' => [
-      'Customer: Last, First</b> or</i> Company (Last, First)</b>',
-      'Cust# | Customer: custnum | Last, First or Company (Last, First)',
-      'Name | Company: Last, First | Company',
-      'Cust# | Name | Company: custnum | Last, First | Company',
-      '(bill) Customer | (service) Customer: Last, First or Company (Last, First) | (same for service address if present)',
-      'Cust# | (bill) Customer | (service) Customer:  custnum | Last, First or Company (Last, First) | (same for service address if present)',
-      '(bill) Name | (bill) Company | (service) Name | (service) Company: Last, First | Company | (same for service address if present)',
-      'Cust# | (bill) Name | (bill) Company | (service) Name | (service) Company: custnum | Last, First | Company | (same for service address if present)',
-    ],
+    'select_hash' => [ FS::ConfDefaults->cust_fields_avail() ],
   },
 
   {
@@ -1707,6 +1699,21 @@ httemplate/docs/config.html
     'section'     => 'billing',
     'description' => 'By default, tax calculations are done based on the billing address.  Enable this switch to calculate tax based on the shipping address instead.  Note: Tax reports can take a long time when enabled.',
     'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'batch-default_format',
+    'section'     => 'billing',
+    'description' => 'Default format for batches.',
+    'type'        => 'select',
+    'select_enum' => [ 'csv-td_canada_trust-merchant_pc_batch', 'BoM' ]
+  },
+
+  {
+    'key'         => 'batchconfig-BoM',
+    'section'     => 'billing',
+    'description' => 'Configuration for Bank of Montreal batching, seven lines: 1. Origin ID, 2. Datacenter, 3. Typecode, 4. Short name, 5. Long name, 6. Bank, 7. Bank account',
+    'type'        => 'textarea',
   },
 
 );

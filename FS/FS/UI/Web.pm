@@ -8,6 +8,8 @@ use FS::Record qw(dbdef);
 #use FS::UI
 #@ISA = qw( FS::UI );
 
+$DEBUG = 0;
+
 use Date::Parse;
 sub parse_beginning_ending {
   my($cgi) = @_;
@@ -31,73 +33,116 @@ sub parse_beginning_ending {
 }
 
 ###
-# cust_main report methods
+# cust_main report subroutines
 ###
 
-=item cust_header
 
-Returns an array of customer information headers according to the
-B<cust-fields> configuration setting.
+=item cust_header [ CUST_FIELDS_VALUE ]
+
+Returns an array of customer information headers according to the supplied
+customer fields value, or if no value is supplied, the B<cust-fields>
+configuration value.
 
 =cut
 
 use vars qw( @cust_fields );
-
-sub cust_sql_fields {
-  my @fields = qw( last first company );
-  push @fields, map "ship_$_", @fields
-    if dbdef->table('cust_main')->column('ship_last');
-  map "cust_main.$_", @fields;
-}
 
 sub cust_header {
 
   warn "FS::svc_Common::cust_header called"
     if $DEBUG;
 
-  my $conf = new FS::Conf;
-
   my %header2method = (
-    'Customer'           => 'name',
-    'Cust#'              => 'custnum',
-    'Name'               => 'contact',
-    'Company'            => 'company',
-    '(bill) Customer'    => 'name',
-    '(service) Customer' => 'ship_name',
-    '(bill) Name'        => 'contact',
-    '(service) Name'     => 'ship_contact',
-    '(bill) Company'     => 'company',
-    '(service) Company'  => 'ship_company',
+    'Customer'                 => 'name',
+    'Cust#'                    => 'custnum',
+    'Name'                     => 'contact',
+    'Company'                  => 'company',
+    '(bill) Customer'          => 'name',
+    '(service) Customer'       => 'ship_name',
+    '(bill) Name'              => 'contact',
+    '(service) Name'           => 'ship_contact',
+    '(bill) Company'           => 'company',
+    '(service) Company'        => 'ship_company',
+    'Address 1'                => 'address1',
+    'Address 2'                => 'address2',
+    'City'                     => 'city',
+    'State'                    => 'state',
+    'Zip'                      => 'zip',
+    'Country'                  => 'country_full',
+    'Day phone'                => 'daytime', # XXX should use msgcat, but how?
+    'Night phone'              => 'night',   # XXX should use msgcat, but how?
+    'Invoicing email(s)'       => 'invoicing_list_emailonly',
   );
 
+  my $cust_fields;
   my @cust_header;
-  if (    $conf->exists('cust-fields')
-       && $conf->config('cust-fields') =~ /^([\w \|\#\(\)]+):/
-     )
-  {
-    warn "  found cust-fields configuration value"
-      if $DEBUG;
+  if ( @_ && $_[0] ) {
 
-    my $cust_fields = $1;
-     @cust_header = split(/ \| /, $cust_fields);
-     @cust_fields = map { $header2method{$_} } @cust_header;
-  } else { 
-    warn "  no cust-fields configuration value found; using default 'Customer'"
+    warn "  using supplied cust-fields override".
+          " (ignoring cust-fields config file)"
       if $DEBUG;
-    @cust_header = ( 'Customer' );
-    @cust_fields = ( 'name' );
+    $cust_fields = shift;
+
+  } else {
+
+    my $conf = new FS::Conf;
+    if (    $conf->exists('cust-fields')
+         && $conf->config('cust-fields') =~ /^([\w \|\#\(\)]+):?/
+       )
+    {
+      warn "  found cust-fields configuration value"
+        if $DEBUG;
+      $cust_fields = $1;
+    } else { 
+      warn "  no cust-fields configuration value found; using default 'Customer'"
+        if $DEBUG;
+      $cust_fields = 'Customer';
+    }
+  
   }
+
+  @cust_header = split(/ \| /, $cust_fields);
+  @cust_fields = map { $header2method{$_} } @cust_header;
 
   #my $svc_x = shift;
   @cust_header;
 }
 
-=item cust_fields
+=item cust_sql_fields [ CUST_FIELDS_VALUE ]
+
+Returns a list of fields for the SELECT portion of an SQL query.
+
+As with L<the cust_header subroutine|/cust_header>, the fields returned are
+defined by the supplied customer fields setting, or if no customer fields
+setting is supplied, the <B>cust-fields</B> configuration value. 
+
+=cut
+
+sub cust_sql_fields {
+
+  my @fields = qw( last first company );
+  push @fields, map "ship_$_", @fields;
+  push @fields, 'country';
+
+  cust_header(@_);
+  #inefficientish, but tiny lists and only run once per page
+  push @fields,
+    grep { my $field = $_; grep { $_ eq $field } @cust_fields }
+         qw( address1 address2 city state zip daytime night );
+
+  map "cust_main.$_", @fields;
+}
+
+=item cust_fields SVC_OBJECT [ CUST_FIELDS_VALUE ]
 
 Given a svc_ object that contains fields from cust_main (say, from a
 JOINed search.  See httemplate/search/svc_* for examples), returns an array
-of customer information according to the <B>cust-fields</B> configuration
-setting, or "(unlinked)" if this service is not linked to a customer.
+of customer information, or "(unlinked)" if this service is not linked to a
+customer.
+
+As with L<the cust_header subroutine|/cust_header>, the fields returned are
+defined by the supplied customer fields setting, or if no customer fields
+setting is supplied, the <B>cust-fields</B> configuration value. 
 
 =cut
 
@@ -107,7 +152,8 @@ sub cust_fields {
        "(cust_fields: @cust_fields)"
     if $DEBUG > 1;
 
-  cust_header() unless @cust_fields;
+  #cust_header(@_) unless @cust_fields; #now need to cache to keep cust_fields
+  #                                     #override incase we were passed as a sub
 
   my $seen_unlinked = 0;
   map { 

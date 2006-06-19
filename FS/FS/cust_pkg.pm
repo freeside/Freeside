@@ -2,6 +2,7 @@ package FS::cust_pkg;
 
 use strict;
 use vars qw(@ISA $disable_agentcheck @SVCDB_CANCEL_SEQ $DEBUG);
+use Tie::IxHash;
 use FS::UID qw( getotaker dbh );
 use FS::Misc qw( send_email );
 use FS::Record qw( qsearch qsearchs );
@@ -824,11 +825,37 @@ Returns a short status string for this package, currently:
 sub status {
   my $self = shift;
 
+  my $freq = length($self->freq) ? $self->freq : $self->part_pkg->freq;
+
   return 'cancelled' if $self->get('cancel');
   return 'suspended' if $self->susp;
   return 'not yet billed' unless $self->setup;
-  return 'one-time charge' if $self->part_pkg->freq =~ /^(0|$)/;
+  return 'one-time charge' if $freq =~ /^(0|$)/;
   return 'active';
+}
+
+=item statuses
+
+Class method that returns the list of possible status strings for pacakges
+(see L<the status method|/status>).  For example:
+
+  @statuses = FS::cust_pkg->statuses();
+
+=cut
+
+tie my %statuscolor, 'Tie::IxHash', 
+  'not yet billed'  => '000000',
+  'one-time charge' => '000000',
+  'active'          => '00CC00',
+  'suspended'       => 'FF9900',
+  'cancelled'       => 'FF0000',
+;
+
+sub statuses {
+  my $self = shift; #could be class...
+  grep { $_ !~ /^(not yet billed)$/ } #this is a dumb status anyway
+                                      # mayble split btw one-time vs. recur
+    keys %statuscolor;
 }
 
 =item statuscolor
@@ -837,13 +864,6 @@ Returns a hex triplet color string for this package's status.
 
 =cut
 
-my %statuscolor = (
-  'not yet billed'  => '000000',
-  'one-time charge' => '000000',
-  'active'          => '00CC00',
-  'suspended'       => 'FF9900',
-  'cancelled'       => 'FF0000',
-);
 sub statuscolor {
   my $self = shift;
   $statuscolor{$self->status};
@@ -1163,7 +1183,7 @@ sub reexport {
 
 =back
 
-=head1 CLASS METHOD
+=head1 CLASS METHODS
 
 =over 4
 
@@ -1178,6 +1198,17 @@ sub recurring_sql { "
              where cust_pkg.pkgpart = part_pkg.pkgpart )
 "; }
 
+=item onetime_sql
+
+Returns an SQL expression identifying one-time packages.
+
+=cut
+
+sub onetime_sql { "
+  '0' = ( select freq from part_pkg
+            where cust_pkg.pkgpart = part_pkg.pkgpart )
+"; }
+
 =item active_sql
 
 Returns an SQL expression identifying active packages.
@@ -1190,6 +1221,19 @@ sub active_sql { "
   AND ( cust_pkg.susp   IS NULL OR cust_pkg.susp   = 0 )
 "; }
 
+=item inactive_sql
+
+Returns an SQL expression identifying inactive packages (one-time packages
+that are otherwise unsuspended/uncancelled).
+
+=cut
+
+sub inactive_sql { "
+  ". $_[0]->onetime_sql(). "
+  AND ( cust_pkg.cancel IS NULL OR cust_pkg.cancel = 0 )
+  AND ( cust_pkg.susp   IS NULL OR cust_pkg.susp   = 0 )
+"; }
+
 =item susp_sql
 =item suspended_sql
 
@@ -1198,11 +1242,13 @@ Returns an SQL expression identifying suspended packages.
 =cut
 
 sub suspended_sql { susp_sql(@_); }
-sub susp_sql { "
-  ". $_[0]->recurring_sql(). "
-  AND ( cust_pkg.cancel IS NULL OR cust_pkg.cancel = 0 )
-  AND cust_pkg.susp IS NOT NULL AND cust_pkg.susp != 0
-"; }
+sub susp_sql {
+  #$_[0]->recurring_sql(). ' AND '.
+  "
+        ( cust_pkg.cancel IS     NULL  OR cust_pkg.cancel = 0 )
+    AND   cust_pkg.susp   IS NOT NULL AND cust_pkg.susp  != 0
+  ";
+}
 
 =item cancel_sql
 =item cancelled_sql
@@ -1212,10 +1258,10 @@ Returns an SQL exprression identifying cancelled packages.
 =cut
 
 sub cancelled_sql { cancel_sql(@_); }
-sub cancel_sql { "
-  ". $_[0]->recurring_sql(). "
-  AND cust_pkg.cancel IS NOT NULL AND cust_pkg.cancel != 0
-"; }
+sub cancel_sql { 
+  #$_[0]->recurring_sql(). ' AND '.
+  "cust_pkg.cancel IS NOT NULL AND cust_pkg.cancel != 0";
+}
 
 =head1 SUBROUTINES
 

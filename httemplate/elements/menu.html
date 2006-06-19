@@ -85,7 +85,7 @@
     'All customer packages' => [ $fsurl.'search/cust_pkg.cgi?pkgnum', 'List all customer packages', ],
     'Suspended customer packages' => [ $fsurl.'search/cust_pkg.cgi?magic=suspended', 'List suspended packages' ],
     'Customer packages with unconfigured services' => [ $fsurl.'search/cust_pkg.cgi?APKG_pkgnum', 'List packages which have provisionable services' ],
-    'By next bill date' => [ $fsurl.'search/cust_pkg_report.cgi', 'Search packages by next bill date' ],
+    'Advanced package reports' => [ $fsurl.'search/report_cust_pkg.html', 'by agent, date range, status, package definition' ],
   ;
 
   tie my %report_financial, 'Tie::IxHash', 
@@ -264,7 +264,7 @@
 
        if ( ref($url_or_submenu) ) {
 
-         warn $item;
+         #warn $item;
 
          my( $subhtml, $submenuname ) = submenu($url_or_submenu, $item);
 

@@ -18,6 +18,7 @@ if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
 }
 my $title = $sel_agent ? $sel_agent->agent.' ' : '';
 
+#false lazinessish w/search/cust_pkg.cgi
 my $classnum = 0;
 my @pkg_class = ();
 if ( $cgi->param('classnum') =~ /^(\d*)$/ ) {
@@ -34,6 +35,7 @@ if ( $cgi->param('classnum') =~ /^(\d*)$/ ) {
     push @pkg_class, '(empty class)';
   }
 }
+#eslaf
 
 my $hue = 0;
 #my $hue_increment = 170;

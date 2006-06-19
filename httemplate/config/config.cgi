@@ -55,25 +55,65 @@ function SafeOnsubmit() {
              #warn $i->key unless defined($type);
         %>
           <% if ( $type eq '' ) { %>
-            <font color="#ff0000">no type</font>
+
+               <font color="#ff0000">no type</font>
+
           <% } elsif ( $type eq 'textarea' ) { %>
-            <textarea name="<%= $i->key. $n %>" rows=5><%= "\n". join("\n", $conf->config($i->key) ) %></textarea>
+
+               <textarea name="<%= $i->key. $n %>" rows=5><%= "\n". join("\n", $conf->config($i->key) ) %></textarea>
+
           <% } elsif ( $type eq 'checkbox' ) { %>
-            <input name="<%= $i->key. $n %>" type="checkbox" value="1"<%= $conf->exists($i->key) ? ' CHECKED' : '' %>>
+
+               <input name="<%= $i->key. $n %>" type="checkbox" value="1"<%= $conf->exists($i->key) ? ' CHECKED' : '' %>>
+
           <% } elsif ( $type eq 'text' )  { %>
-            <input name="<%= $i->key. $n %>" type="<%= $type %>" value="<%= $conf->exists($i->key) ? $conf->config($i->key) : '' %>">
+
+               <input name="<%= $i->key. $n %>" type="<%= $type %>" value="<%= $conf->exists($i->key) ? $conf->config($i->key) : '' %>">
+
           <% } elsif ( $type eq 'select' || $type eq 'selectmultiple' )  { %>
-            <select name="<%= $i->key. $n %>" <%= $type eq 'selectmultiple' ? 'MULTIPLE' : '' %>>
-              <% my %saw;
-                 foreach my $value ( "", @{$i->select_enum} ) {
-                    local($^W)=0; next if $saw{$value}++; %>
-                <option value="<%= $value %>"<%= $value eq $conf->config($i->key) || ( $type eq 'selectmultiple' && grep { $_ eq $value } $conf->config($i->key) ) ? ' SELECTED' : '' %>><%= $value %>
+          
+               <select name="<%= $i->key. $n %>" <%= $type eq 'selectmultiple' ? 'MULTIPLE' : '' %>>
+               <% 
+                  my %hash = ();
+                  if ( $i->select_enum ) {
+                    tie %hash, 'Tie::IxHash',
+                      '' => '', map { $_ => $_ } @{ $i->select_enum };
+                  } elsif ( $i->select_hash ) {
+                    if ( ref($i->select_hash) eq 'ARRAY' ) {
+                      tie %hash, 'Tie::IxHash',
+                        '' => '', @{ $i->select_hash };
+                    } else {
+                      tie %hash, 'Tie::IxHash',
+                        '' => '', %{ $i->select_hash };
+                    }
+                  } else {
+                    %hash = ( '' => 'WARNING: neither select_enum nor select_hash specified in Conf.pm for configuration option "'. $i->key. '"' );
+                  }
+
+                  my %saw = ();
+                  foreach my $value ( keys %hash ) {
+                    local($^W)=0; next if $saw{$value}++;
+                    my $label = $hash{$value};
+               %>
+
+                    <option value="<%= $value %>"<%= $value eq $conf->config($i->key) || ( $type eq 'selectmultiple' && grep { $_ eq $value } $conf->config($i->key) ) ? ' SELECTED' : '' %>><%= $label %>
+
+               <% } %>
+
+              <% my $curvalue = $conf->config($i->key);
+                 if ( $conf->exists($i->key) && $curvalue
+                      && ! grep { $curvalue eq $_ } @{$i->select_enum}
+                    ) {
+              %>
+              
+                   <option value="<%= $conf->config($i->key) %>" SELECTED><%= exists( $hash{ $conf->config($i->key) } ) ? $hash{ $conf->config($i->key) } : $conf->config($i->key) %>
+
               <% } %>
-              <% if ( $conf->exists($i->key) && $conf->config($i->key) && ! grep { $conf->config($i->key) eq $_ } @{$i->select_enum}) { %>
-                <option value=<%= $conf->config($i->key) %> SELECTED><%= $conf->config($i->key) %>
-              <% } %>
+
             </select>
+
           <% } elsif ( $type eq 'select-sub' ) { %>
+
             <select name="<%= $i->key. $n %>">
               <option value="">
               <% my %options = &{$i->options_sub};
@@ -88,7 +128,9 @@ function SafeOnsubmit() {
                 <option value=<%= $conf->config($i->key) %> SELECTED><%= $conf->config($i->key) %>: <%= &{ $i->option_sub }( $conf->config($i->key) ) %>
               <% } %>
             </select>
-          <% } elsif ( $type eq 'editlist' )  { %>
+
+          <% } elsif ( $type eq 'editlist' ) { %>
+
             <script>
               function doremove<%= $i->key. $n %>() {
                 fromObject = document.OneTrueForm.<%= $i->key. $n %>;
@@ -167,9 +209,13 @@ function SafeOnsubmit() {
             <% } %>
             <td><input type="button" value="add" onClick="doadd<%= $i->key. $n %>(this.form)"></td>
             </tr></table>
+
           <% } else { %>
+
             <font color="#ff0000">unknown type <%= $type %></font>
+
           <% } %>
+
         <% $n++; } %>
       </td>
       <td><a name="<%= $i->key %>">
