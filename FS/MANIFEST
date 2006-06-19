@@ -345,3 +345,4 @@ t/pay_batch.t
 FS/ConfDefaults.pm
 t/ConfDefaults.t
 FS/m2name_Common.pm
+FS/CurrentUser.pm

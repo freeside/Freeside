@@ -1,19 +1,80 @@
 <%
 
-my %part_pkg = map { $_->pkgpart => $_ } qsearch('part_pkg', {});
+# my %part_pkg = map { $_->pkgpart => $_ } qsearch('part_pkg', {});
 
 my($query) = $cgi->keywords;
 
-my $orderby;
-my @where;
-my $cjoin = '';
+my @where = ();
+
+##
+# parse agent
+##
 
 if ( $cgi->param('agentnum') =~ /^(\d+)$/ and $1 ) {
-  $cjoin = "LEFT JOIN cust_main USING ( custnum )";
   push @where,
     "agentnum = $1";
 }
 
+##
+# parse status
+##
+
+if (    $cgi->param('magic')  eq 'active'
+     || $cgi->param('status') eq 'active' ) {
+
+  push @where, FS::cust_pkg->active_sql();
+
+} elsif (    $cgi->param('magic')  eq 'suspended'
+          || $cgi->param('status') eq 'suspended'  ) {
+
+  push @where, FS::cust_pkg->suspended_sql();
+
+} elsif (    $cgi->param('magic')  =~ /^cancell?ed$/
+          || $cgi->param('status') =~ /^cancell?ed$/ ) {
+
+  push @where, FS::cust_pkg->cancelled_sql();
+
+} elsif ( $cgi->param('status') =~ /^(one-time charge|inactive)$/ ) {
+
+  push @where, FS::cust_pkg->inactive_sql();
+
+}
+
+###
+# parse package class
+###
+
+#false lazinessish w/graph/cust_bill_pkg.cgi
+my $classnum = 0;
+my @pkg_class = ();
+if ( $cgi->param('classnum') =~ /^(\d*)$/ ) {
+  $classnum = $1;
+  if ( $classnum ) { #a specific class
+    push @where, "classnum = $classnum";
+
+    #@pkg_class = ( qsearchs('pkg_class', { 'classnum' => $classnum } ) );
+    #die "classnum $classnum not found!" unless $pkg_class[0];
+    #$title .= $pkg_class[0]->classname.' ';
+
+  } elsif ( $classnum eq '' ) { #the empty class
+
+    push @where, "classnum IS NULL";
+    #$title .= 'Empty class ';
+    #@pkg_class = ( '(empty class)' );
+  } elsif ( $classnum eq '0' ) {
+    #@pkg_class = qsearch('pkg_class', {} ); # { 'disabled' => '' } );
+    #push @pkg_class, '(empty class)';
+  } else {
+    die "illegal classnum";
+  }
+}
+#eslaf
+
+###
+# parse magic, legacy, etc.
+###
+
+my $orderby;
 if ( $cgi->param('magic') && $cgi->param('magic') eq 'bill' ) {
   $orderby = 'ORDER BY bill';
 
@@ -23,7 +84,8 @@ if ( $cgi->param('magic') && $cgi->param('magic') eq 'bill' ) {
     #"bill <= $ending",
     "CASE WHEN bill IS NULL THEN 0 ELSE bill END >= $beginning ",
     "CASE WHEN bill IS NULL THEN 0 ELSE bill END <= $ending",
-    '( cancel IS NULL OR cancel = 0 )';
+    #'( cancel IS NULL OR cancel = 0 )'
+  ;
 
 } else {
 
@@ -32,30 +94,6 @@ if ( $cgi->param('magic') && $cgi->param('magic') eq 'bill' ) {
   ) {
 
     $orderby = 'ORDER BY pkgnum';
-
-    if ( $cgi->param('magic') eq 'active' ) {
-
-      #push @where,
-      #  '( susp IS NULL OR susp = 0 )',
-      #  '( cancel IS NULL OR cancel = 0)';
-      push @where, FS::cust_pkg->active_sql();
-
-    } elsif ( $cgi->param('magic') eq 'suspended' ) {
-
-      push @where,
-        'susp IS NOT NULL',
-        'susp != 0',
-        '( cancel IS NULL OR cancel = 0)';
-
-    } elsif ( $cgi->param('magic') =~ /^cancell?ed$/ ) {
-
-      push @where,
-        'cancel IS NOT NULL',
-        'cancel != 0';
-
-    } else {
-      die "guru meditation #420";
-    }
 
     if ( $cgi->param('pkgpart') =~ /^(\d+)$/ ) {
       push @where, "pkgpart = $1";
@@ -84,21 +122,35 @@ if ( $cgi->param('magic') && $cgi->param('magic') eq 'bill' ) {
 
 }
 
+##
+# setup queries, links, subs, etc. for the search
+##
+
+# here is the agent virtualization
+push @where, $FS::CurrentUser::CurrentUser->agentnums_sql;
+
 my $extra_sql = scalar(@where) ? ' WHERE '. join(' AND ', @where) : '';
 
-my $count_query = "SELECT COUNT(*) FROM cust_pkg $cjoin $extra_sql";
+my $addl_from = 'LEFT JOIN cust_main USING ( custnum  ) '.
+                'LEFT JOIN part_pkg  USING ( pkgpart  ) '.
+                'LEFT JOIN pkg_class USING ( classnum ) ';
+
+my $count_query = "SELECT COUNT(*) FROM cust_pkg $addl_from $extra_sql";
 
 my $sql_query = {
   'table'     => 'cust_pkg',
   'hashref'   => {},
   'select'    => join(', ',
                             'cust_pkg.*',
+                            ( map "part_pkg.$_", qw( pkg freq ) ),
+                            'pkg_class.classname',
                             'cust_main.custnum as cust_main_custnum',
-                            FS::UI::Web::cust_sql_fields(),
+                            FS::UI::Web::cust_sql_fields(
+                              $cgi->param('cust_fields')
+                            ),
                  ),
   'extra_sql' => "$extra_sql $orderby",
-  'addl_from' => ' LEFT JOIN cust_main USING ( custnum ) ',
-                 #' LEFT JOIN part_pkg  USING ( pkgpart ) '
+  'addl_from' => $addl_from,
 };
 
 my $link = sub {
@@ -138,6 +190,10 @@ sub time_or_blank {
    };
 }
 
+###
+# and finally, include the search template
+### 
+
 %><%=  include( 'elements/search.html',
                   'title'       => 'Package Search Results', 
                   'name'        => 'packages',
@@ -146,6 +202,7 @@ sub time_or_blank {
                   #'redirect'    => $link,
                   'header'      => [ '#',
                                      'Package',
+                                     'Class',
                                      'Status',
                                      'Freq.',
                                      'Setup',
@@ -154,18 +211,25 @@ sub time_or_blank {
                                      'Susp.',
                                      'Expire',
                                      'Cancel',
-                                     FS::UI::Web::cust_header(),
+                                     FS::UI::Web::cust_header(
+                                       $cgi->param('cust_fields')
+                                     ),
                                      'Services',
                                    ],
                   'fields'      => [
                     'pkgnum',
-                    sub { my $part_pkg = $part_pkg{shift->pkgpart};
-                          $part_pkg->pkg; # ' - '. $part_pkg->comment;
+                    sub { #my $part_pkg = $part_pkg{shift->pkgpart};
+                          #$part_pkg->pkg; # ' - '. $part_pkg->comment;
+                          $_[0]->pkg; # ' - '. $_[0]->comment;
                         },
+                    'classname',
                     sub { ucfirst(shift->status); },
                     sub { #shift->part_pkg->freq_pretty;
-                          my $part_pkg = $part_pkg{shift->pkgpart};
-                          $part_pkg->freq_pretty;
+
+                          #my $part_pkg = $part_pkg{shift->pkgpart};
+                          #$part_pkg->freq_pretty;
+
+                          FS::part_pkg::freq_pretty(shift);
                         },
 
                     #sub { time2str('%b %d %Y', shift->setup); },
@@ -204,6 +268,7 @@ sub time_or_blank {
                   'color' => [
                     '',
                     '',
+                    '',
                     sub { shift->statuscolor; },
                     '',
                     '',
@@ -212,12 +277,16 @@ sub time_or_blank {
                     '',
                     '',
                     '',
-                    ( map { '' } FS::UI::Web::cust_header() ),
+                    ( map { '' }
+                          FS::UI::Web::cust_header(
+                                                    $cgi->param('cust_fields')
+                                                  )
+                    ),
                     '',
                   ],
-                  'style' => [ '', '', 'b' ],
-                  'size'  => [ '', '', '-1', ],
-                  'align' => 'rlclrrrrrr',
+                  'style' => [ '', '', '', 'b' ],
+                  'size'  => [ '', '', '', '-1', ],
+                  'align' => 'rllclrrrrrr',
                   'links' => [
                     $link,
                     $link,
@@ -229,7 +298,12 @@ sub time_or_blank {
                     '',
                     '',
                     '',
-                    ( map { $clink } FS::UI::Web::cust_header() ),
+                    '',
+                    ( map { $clink }
+                          FS::UI::Web::cust_header(
+                                                    $cgi->param('cust_fields')
+                                                  )
+                    ),
                     '',
                   ],
               )

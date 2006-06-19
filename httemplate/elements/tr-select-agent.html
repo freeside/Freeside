@@ -3,9 +3,16 @@
 
   my @agents;
   if ( $opt{'agents'} ) {
-    @agents = @{ $opt{'agents'} };
+    #@agents = @{ $opt{'agents'} };
+    #here is the agent virtualization
+    my $agentnums_href = $FS::CurrentUser::CurrentUser->agentnums_href;
+    @agents = grep $agentnums_href->{$_->agentnum}, @{ $opt{'agents'} };
   } else {
-    @agents = qsearch( 'agent', { disabled=>'' } );
+    @agents = qsearch( {
+      'table'     => 'agent',
+      'hashref'   => { disabled=>'' },
+      'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
+    });
   }
 
 %>

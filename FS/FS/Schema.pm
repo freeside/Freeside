@@ -16,12 +16,13 @@ use FS::UID qw(datasrc);
 $DEBUG = 0;
 $me = '[FS::Schema]';
 
-#ask FS::UID to run this stuff for us later
-FS::UID->install_callback( sub {
-  #$conf = new FS::Conf; 
-  &reload_dbdef("/usr/local/etc/freeside/dbdef.". datasrc)
-    unless $setup_hack; #$setup_hack needed now?
-} );
+#hardcoded now...
+##ask FS::UID to run this stuff for us later
+#FS::UID->install_callback( sub {
+#  #$conf = new FS::Conf; 
+#  &reload_dbdef("/usr/local/etc/freeside/dbdef.". datasrc)
+#    unless $setup_hack; #$setup_hack needed now?
+#} );
 
 =head1 NAME
 

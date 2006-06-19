@@ -5,11 +5,9 @@ my $orderby = 'ORDER BY svcnum';
 my($query)=$cgi->keywords;
 $query ||= ''; #to avoid use of unitialized value errors
 
-my $cjoin = '';
 my @extra_sql = ();
 if ( $query =~ /^UN_(.*)$/ ) {
   $query = $1;
-  $cjoin = 'LEFT JOIN cust_svc USING ( svcnum )';
   push @extra_sql, 'pkgnum IS NULL';
 }
 
@@ -24,7 +22,6 @@ if ( $query eq 'svcnum' ) {
   push @extra_sql, "popnum = $1";
   $orderby = "ORDER BY LOWER(username)";
 } elsif ( $cgi->param('svcpart') =~ /^(\d+)$/ ) {
-  $cjoin ||= 'LEFT JOIN cust_svc USING ( svcnum )';
   push @extra_sql, "svcpart = $1";
   $orderby = "ORDER BY uid";
   #$orderby = "ORDER BY svcnum";
@@ -72,12 +69,20 @@ if ( $query eq 'svcnum' ) {
 
 }
 
+my $addl_from = ' LEFT JOIN cust_svc  USING ( svcnum  ) '.
+                ' LEFT JOIN part_svc  USING ( svcpart ) '.
+                ' LEFT JOIN cust_pkg  USING ( pkgnum  ) '.
+                ' LEFT JOIN cust_main USING ( custnum ) ';
+
+#here is the agent virtualization
+push @extra_sql, $FS::CurrentUser::CurrentUser->agentnums_sql;
+
 my $extra_sql = 
   scalar(@extra_sql)
     ? ' WHERE '. join(' AND ', @extra_sql )
     : '';
 
-my $count_query = "SELECT COUNT(*) FROM svc_acct $cjoin $extra_sql";
+my $count_query = "SELECT COUNT(*) FROM svc_acct $addl_from $extra_sql";
 #if ( keys %svc_acct ) {
 #  $count_query .= ' WHERE '.
 #                    join(' AND ', map "$_ = ". dbh->quote($svc_acct{$_}),
@@ -94,10 +99,7 @@ my $sql_query = {
                     FS::UI::Web::cust_sql_fields(),
                   ),
   'extra_sql' => "$extra_sql $orderby",
-  'addl_from' => ' LEFT JOIN cust_svc  USING ( svcnum  ) '.
-                 ' LEFT JOIN part_svc  USING ( svcpart ) '.
-                 ' LEFT JOIN cust_pkg  USING ( pkgnum  ) '.
-                 ' LEFT JOIN cust_main USING ( custnum ) ',
+  'addl_from' => $addl_from,
 };
 
 my $link      = [ "${p}view/svc_acct.cgi?",   'svcnum'  ];
@@ -117,21 +119,21 @@ my $link_cust = sub {
                  'count_query' => $count_query,
                  'redirect'    => $link,
                  'header'      => [ '#',
+                                    'Service',
                                     'Account',
                                     'UID',
-                                    'Service',
                                     FS::UI::Web::cust_header(),
                                   ],
                  'fields'      => [ 'svcnum',
+                                    'svc',
                                     'email',
                                     'uid',
-                                    'svc',
                                     \&FS::UI::Web::cust_fields,
                                   ],
                  'links'       => [ $link,
                                     $link,
                                     $link,
-                                    '',
+                                    $link,
                                     ( map { $link_cust }
                                           FS::UI::Web::cust_header()
                                     ),

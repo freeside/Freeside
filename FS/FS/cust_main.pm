@@ -20,6 +20,7 @@ use Date::Parse;
 #use Date::Manip;
 use String::Approx qw(amatch);
 use Business::CreditCard 0.28;
+use Locale::Country;
 use FS::UID qw( getotaker dbh );
 use FS::Record qw( qsearchs qsearch dbdef );
 use FS::Misc qw( send_email );
@@ -79,7 +80,7 @@ sub _cache {
   my $self = shift;
   my ( $hashref, $cache ) = @_;
   if ( exists $hashref->{'pkgnum'} ) {
-#    #@{ $self->{'_pkgnum'} } = ();
+    #@{ $self->{'_pkgnum'} } = ();
     my $subcache = $cache->subcache( 'pkgnum', 'cust_pkg', $hashref->{custnum});
     $self->{'_pkgnum'} = $subcache;
     #push @{ $self->{'_pkgnum'} },
@@ -3186,6 +3187,7 @@ This interface may change in the future.
 
 sub invoicing_list {
   my( $self, $arrayref ) = @_;
+
   if ( $arrayref ) {
     my @cust_main_invoice;
     if ( $self->custnum ) {
@@ -3220,12 +3222,14 @@ sub invoicing_list {
       warn $error if $error;
     }
   }
+  
   if ( $self->custnum ) {
     map { $_->address }
       qsearch( 'cust_main_invoice', { 'custnum' => $self->custnum } );
   } else {
     ();
   }
+
 }
 
 =item check_invoicing_list ARRAYREF
@@ -3301,6 +3305,18 @@ sub invoicing_list_addpost {
   my @invoicing_list = $self->invoicing_list;
   push @invoicing_list, 'POST';
   $self->invoicing_list(\@invoicing_list);
+}
+
+=item invoicing_list_emailonly
+
+Returns the list of email invoice recipients (invoicing_list without non-email
+destinations such as POST and FAX).
+
+=cut
+
+sub invoicing_list_emailonly {
+  my $self = shift;
+  grep { $_ !~ /^([A-Z]+)$/ } $self->invoicing_list;
 }
 
 =item referral_cust_main [ DEPTH [ EXCLUDE_HASHREF ] ]
@@ -3600,6 +3616,17 @@ sub ship_contact {
     : $self->contact;
 }
 
+=item country_full
+
+Returns this customer's full country name
+
+=cut
+
+sub country_full {
+  my $self = shift;
+  code2country($self->country);
+}
+
 =item status
 
 Returns a status string for this customer, currently:
@@ -3609,6 +3636,8 @@ Returns a status string for this customer, currently:
 =item prospect - No packages have ever been ordered
 
 =item active - One or more recurring packages is active
+
+=item inactive - No active recurring packages, but otherwise unsuspended/uncancelled (the inactive status is new - previously inactive customers were mis-identified as cancelled)
 
 =item suspended - All non-cancelled recurring packages are suspended
 
@@ -3620,7 +3649,7 @@ Returns a status string for this customer, currently:
 
 sub status {
   my $self = shift;
-  for my $status (qw( prospect active suspended cancelled )) {
+  for my $status (qw( prospect active inactive suspended cancelled )) {
     my $method = $status.'_sql';
     my $numnum = ( my $sql = $self->$method() ) =~ s/cust_main\.custnum/?/g;
     my $sth = dbh->prepare("SELECT $sql") or die dbh->errstr;
@@ -3635,14 +3664,18 @@ Returns a hex triplet color string for this customer's status.
 
 =cut
 
-my %statuscolor = (
-  'prospect'  => '000000',
-  'active'    => '00CC00',
-  'suspended' => 'FF9900',
-  'cancelled' => 'FF0000',
-);
+
 sub statuscolor {
   my $self = shift;
+
+  my %statuscolor = (
+    'prospect'  => '7e0079', #'000000', #black?  naw, purple
+    'active'    => '00CC00', #green
+    'inactive'  => '0000CC', #blue
+    'suspended' => 'FF9900', #yellow
+    'cancelled' => 'FF0000', #red
+  );
+
   $statuscolor{$self->status};
 }
 
@@ -3659,23 +3692,38 @@ with no packages ever ordered)
 
 =cut
 
+use vars qw($select_count_pkgs);
+$select_count_pkgs =
+  "SELECT COUNT(*) FROM cust_pkg
+    WHERE cust_pkg.custnum = cust_main.custnum";
+
 sub prospect_sql { "
-  0 = ( SELECT COUNT(*) FROM cust_pkg
-          WHERE cust_pkg.custnum = cust_main.custnum
-      )
+  0 = ( $select_count_pkgs )
 "; }
 
 =item active_sql
 
-Returns an SQL expression identifying active cust_main records.
+Returns an SQL expression identifying active cust_main records (customers with
+no active recurring packages, but otherwise unsuspended/uncancelled).
 
 =cut
 
 sub active_sql { "
-  0 < ( SELECT COUNT(*) FROM cust_pkg
-          WHERE cust_pkg.custnum = cust_main.custnum
-            AND ". FS::cust_pkg->active_sql. "
+  0 < ( $select_count_pkgs AND ". FS::cust_pkg->active_sql. "
       )
+"; }
+
+=item inactive_sql
+
+Returns an SQL expression identifying inactive cust_main records (customers with
+active recurring packages).
+
+=cut
+
+sub inactive_sql { "
+  0 = ( $select_count_pkgs AND ". FS::cust_pkg->active_sql. " )
+  AND
+  0 < ( $select_count_pkgs AND ". FS::cust_pkg->inactive_sql. " )
 "; }
 
 =item susp_sql
@@ -3685,23 +3733,12 @@ Returns an SQL expression identifying suspended cust_main records.
 
 =cut
 
-#my $recurring_sql = FS::cust_pkg->recurring_sql;
-my $recurring_sql = "
-  '0' != ( select freq from part_pkg
-             where cust_pkg.pkgpart = part_pkg.pkgpart )
-";
 
 sub suspended_sql { susp_sql(@_); }
 sub susp_sql { "
-    0 < ( SELECT COUNT(*) FROM cust_pkg
-            WHERE cust_pkg.custnum = cust_main.custnum
-              AND $recurring_sql
-              AND ( cust_pkg.cancel IS NULL OR cust_pkg.cancel = 0 )
-        )
-    AND 0 = ( SELECT COUNT(*) FROM cust_pkg
-                WHERE cust_pkg.custnum = cust_main.custnum
-                  AND ". FS::cust_pkg->active_sql. "
-            )
+    0 < ( $select_count_pkgs AND ". FS::cust_pkg->suspended_sql. " )
+    AND
+    0 = ( $select_count_pkgs AND ". FS::cust_pkg->active_sql. " )
 "; }
 
 =item cancel_sql
@@ -3712,16 +3749,21 @@ Returns an SQL expression identifying cancelled cust_main records.
 =cut
 
 sub cancelled_sql { cancel_sql(@_); }
-sub cancel_sql { "
-  0 < ( SELECT COUNT(*) FROM cust_pkg
-          WHERE cust_pkg.custnum = cust_main.custnum
-      )
-  AND 0 = ( SELECT COUNT(*) FROM cust_pkg
-              WHERE cust_pkg.custnum = cust_main.custnum
-                AND $recurring_sql
-                AND ( cust_pkg.cancel IS NULL OR cust_pkg.cancel = 0 )
-          )
-"; }
+sub cancel_sql {
+
+  my $recurring_sql = FS::cust_pkg->recurring_sql;
+  #my $recurring_sql = "
+  #  '0' != ( select freq from part_pkg
+  #             where cust_pkg.pkgpart = part_pkg.pkgpart )
+  #";
+
+  "
+    0 < ( $select_count_pkgs )
+    AND 0 = ( $select_count_pkgs AND $recurring_sql
+                  AND ( cust_pkg.cancel IS NULL OR cust_pkg.cancel = 0 )
+            )
+  ";
+}
 
 =item uncancel_sql
 =item uncancelled_sql
@@ -3732,15 +3774,12 @@ Returns an SQL expression identifying un-cancelled cust_main records.
 
 sub uncancelled_sql { uncancel_sql(@_); }
 sub uncancel_sql { "
-  ( 0 < ( SELECT COUNT(*) FROM cust_pkg
-                 WHERE cust_pkg.custnum = cust_main.custnum
+  ( 0 < ( $select_count_pkgs
                    AND ( cust_pkg.cancel IS NULL
                          OR cust_pkg.cancel = 0
                        )
         )
-    OR 0 = ( SELECT COUNT(*) FROM cust_pkg
-               WHERE cust_pkg.custnum = cust_main.custnum
-           )
+    OR 0 = ( $select_count_pkgs )
   )
 "; }
 
@@ -3802,11 +3841,18 @@ Returns a (possibly empty) array of FS::cust_main objects.
 sub smart_search {
   my %options = @_;
   my $search = delete $options{'search'};
-  my @cust_main = ();
 
+  #here is the agent virtualization
+  my $agentnums_sql = $FS::CurrentUser::CurrentUser->agentnums_sql;
+
+  my @cust_main = ();
   if ( $search =~ /^\s*(\d+)\s*$/ ) { # customer # search
 
-    push @cust_main, qsearch('cust_main', { 'custnum' => $1, %options } );
+    push @cust_main, qsearch( {
+      'table'     => 'cust_main',
+      'hashref'   => { 'custnum' => $1, %options },
+      'extra_sql' => " AND $agentnums_sql", #agent virtualization
+    } );
 
   } elsif ( $search =~ /^\s*(\S.*\S)\s*$/ ) { #value search
 
@@ -3820,50 +3866,65 @@ sub smart_search {
       if defined dbdef->table('cust_main')->column('ship_last');
     $sql .= ' )';
 
-    push @cust_main, qsearch( 'cust_main', \%options, '', $sql );
+    push @cust_main, qsearch( {
+      'table'     => 'cust_main',
+      'hashref'   => \%options,
+      'extra_sql' => "$sql AND $agentnums_sql", #agent virtualization
+    } );
 
     unless ( @cust_main ) {  #no exact match, trying substring/fuzzy
 
       #still some false laziness w/ search/cust_main.cgi
 
       #substring
-      push @cust_main, qsearch( 'cust_main',
-                                { 'last'     => { 'op'    => 'ILIKE',
-                                                  'value' => "%$q_value%" },
-                                  %options,
-                                }
-                              );
-      push @cust_main, qsearch( 'cust_main',
-                                { 'ship_last' => { 'op'    => 'ILIKE',
-                                                   'value' => "%$q_value%" },
-                                  %options,
-
-                                }
-                              )
+      push @cust_main, qsearch( {
+        'table'     => 'cust_main',
+        'hashref'   => { 'last'     => { 'op'    => 'ILIKE',
+                                         'value' => "%$q_value%" },
+                         %options,
+                       },
+        'extra_sql' => " AND $agentnums_sql", #agent virtualizaiton
+      } );
+      push @cust_main, qsearch( {
+        'table'     => 'cust_main',
+        'hashref'   => { 'ship_last' => { 'op'     => 'ILIKE',
+                                          'value' => "%$q_value%" },
+                         %options, 
+                       },
+        'extra_sql' => " AND $agentnums_sql", #agent virtualization
+      } )
         if defined dbdef->table('cust_main')->column('ship_last');
 
-      push @cust_main, qsearch( 'cust_main',
-                                { 'company'  => { 'op'    => 'ILIKE',
-                                                  'value' => "%$q_value%" },
-                                  %options,
-                                }
-                              );
-      push @cust_main, qsearch( 'cust_main',
-                                { 'ship_company' => { 'op' => 'ILIKE',
-                                                   'value' => "%$q_value%" },
-                                  %options,
-                                }
-                              )
+      push @cust_main, qsearch( {
+        'table'     => 'cust_main',
+        'hashref'   => { 'company'  => { 'op'    => 'ILIKE',
+                                         'value' => "%$q_value%" },
+                         %options,
+                       },
+        'extra_sql' => " AND $agentnums_sql", #agent virtualization
+      } );
+      push @cust_main, qsearch(  {
+        'table'     => 'cust_main',
+        'hashref'   => { 'ship_company' => { 'op'    => 'ILIKE',
+                                             'value' => "%$q_value%" },
+                         %options,
+                       },
+        'extra_sql' => " AND $agentnums_sql", #agent virtualization
+      } )
         if defined dbdef->table('cust_main')->column('ship_last');
 
       #fuzzy
       push @cust_main, FS::cust_main->fuzzy_search(
-        { 'last'     => $value },
-        \%options,
+        { 'last'     => $value }, #fuzzy hashref
+        \%options,                #hashref
+        '',                       #select
+        " AND $agentnums_sql",    #extra_sql  #agent virtualization
       );
       push @cust_main, FS::cust_main->fuzzy_search(
-        { 'company'  => $value },
-        \%options,
+        { 'company'  => $value }, #fuzzy hashref
+        \%options,                #hashref
+        '',                       #select
+        " AND $agentnums_sql",    #extra_sql  #agent virtualization
       );
 
     }

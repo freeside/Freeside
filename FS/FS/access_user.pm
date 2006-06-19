@@ -2,7 +2,7 @@ package FS::access_user;
 
 use strict;
 use vars qw( @ISA );
-use FS::Record qw( qsearch qsearchs );
+use FS::Record qw( qsearch qsearchs dbh );
 use FS::m2m_Common;
 use FS::access_usergroup;
 
@@ -29,7 +29,7 @@ FS::access_user - Object methods for access_user records
 
 =head1 DESCRIPTION
 
-An FS::access_user object represents an example.  FS::access_user inherits from
+An FS::access_user object represents an internal access user.  FS::access_user inherits from
 FS::Record.  The following fields are currently supported:
 
 =over 4
@@ -52,7 +52,7 @@ FS::Record.  The following fields are currently supported:
 
 =item new HASHREF
 
-Creates a new example.  To add the example to the database, see L<"insert">.
+Creates a new internal access user.  To add the user to the database, see L<"insert">.
 
 Note that this stores the hash reference, not a distinct copy of the hash it
 points to.  You can ask the object for a copy with the I<hash> method.
@@ -91,7 +91,7 @@ returns the error, otherwise returns false.
 
 =item check
 
-Checks all fields to make sure this is a valid example.  If there is
+Checks all fields to make sure this is a valid internal access user.  If there is
 an error, returns the error, otherwise returns false.  Called by the insert
 and replace methods.
 
@@ -151,11 +151,50 @@ sub access_usergroup {
 #
 #}
 
+=item agentnums 
+
+Returns a list of agentnums this user can view (via group membership).
+
+=cut
+
+sub agentnums {
+  my $self = shift;
+  my $sth = dbh->prepare(
+    "SELECT DISTINCT agentnum FROM access_usergroup
+                              JOIN access_groupagent USING ( groupnum )
+       WHERE usernum = ?"
+  ) or die dbh->errstr;
+  $sth->execute($self->usernum) or die $sth->errstr;
+  map { $_->[0] } @{ $sth->fetchall_arrayref };
+}
+
+=item agentnums_href
+
+Returns a hashref of agentnums this user can view.
+
+=cut
+
+sub agentnums_href {
+  my $self = shift;
+  { map { $_ => 1 } $self->agentnums };
+}
+
+=item agentnums_sql
+
+Returns an sql fragement to select only agentnums this user can view.
+
+=cut
+
+sub agentnums_sql {
+  my $self = shift;
+  '( '.
+    join( ' OR ', map "agentnum = $_", $self->agentnums ).
+  ' )';
+}
+
 =back
 
 =head1 BUGS
-
-The author forgot to customize this manpage.
 
 =head1 SEE ALSO
 

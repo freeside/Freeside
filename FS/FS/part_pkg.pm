@@ -608,7 +608,8 @@ sub freq_pretty {
   my $self = shift;
   my $freq = $self->freq;
 
-  my $freqs_href = $self->freqs_href;
+  #my $freqs_href = $self->freqs_href;
+  my $freqs_href = freqs_href();
 
   if ( exists($freqs_href->{$freq}) ) {
     $freqs_href->{$freq};

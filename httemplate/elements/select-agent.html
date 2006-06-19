@@ -11,6 +11,8 @@
                  'value'       => $agentnum,
                  'empty_label' => 'all',
                  'hashref'     => { 'disabled' => '' },
+                 'extra_sql'   => ' AND '.
+                                  $FS::CurrentUser::CurrentUser->agentnums_sql,
                  %select_opt,
              )
 %>

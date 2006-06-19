@@ -10,6 +10,7 @@
   ##opt
   # 'empty_label' => '', #better specify it though, the default might change
   # 'hashref'     => {},
+  # 'extra_sql'   => '',
   # 'records'     => \@records, #instead of hashref
   # 'pre_options' => [ 'value' => 'option' ], #before normal options
 
@@ -25,7 +26,11 @@
   if ( $opt{'records'} ) {
     @records = @{ $opt{'records'} };
   } else {
-    @records = qsearch( $opt{'table'}, ( $opt{'hashref'} || {} ) );
+    @records = qsearch( {
+      'table'     => $opt{'table'},
+      'hashref'   => ( $opt{'hashref'} || {} ),
+      'extra_sql' => ( $opt{'extra_sql'} || '' ),
+    });
   }
 
   my @pre_options = $opt{'pre_options'} ? @{ $opt{'pre_options'} } : ();

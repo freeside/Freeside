@@ -13,6 +13,7 @@ use Exporter;
 use Carp qw(carp croak cluck);
 use DBI;
 use FS::Conf;
+use FS::CurrentUser;
 
 @ISA = qw(Exporter);
 @EXPORT_OK = qw(checkeuid checkruid cgisuidsetup adminsuidsetup forksuidsetup
@@ -87,6 +88,12 @@ sub forksuidsetup {
 
   $dbh = &myconnect;
 
+  use FS::Schema qw(reload_dbdef);
+  reload_dbdef("/usr/local/etc/freeside/dbdef.$datasrc")
+    unless $FS::Schema::setup_hack;
+
+  FS::CurrentUser->load_user($user);
+
   foreach ( keys %callback ) {
     &{$callback{$_}};
     # breaks multi-database installs # delete $callback{$_}; #run once
@@ -98,7 +105,11 @@ sub forksuidsetup {
 }
 
 sub myconnect {
-  DBI->connect( getsecrets, {'AutoCommit' => 0, 'ChopBlanks' => 1, } )
+  DBI->connect( getsecrets, { 'AutoCommit'         => 0,
+                              'ChopBlanks'         => 1,
+                              'ShowErrorStatement' => 1,
+                            }
+              )
     or die "DBI->connect error: $DBI::errstr\n";
 }
 
@@ -256,10 +267,10 @@ sub getsecrets {
   $user = $setuser if $setuser;
   die "No user!" unless $user;
   my($conf) = new FS::Conf $conf_dir;
-  my($line) = grep /^\s*$user\s/, $conf->config('mapsecrets');
+  my($line) = grep /^\s*($user|\*)\s/, $conf->config('mapsecrets');
   die "User $user not found in mapsecrets!" unless $line;
-  $line =~ /^\s*$user\s+(.*)$/;
-  $secrets = $1;
+  $line =~ /^\s*($user|\*)\s+(.*)$/;
+  $secrets = $2;
   die "Illegal mapsecrets line for user?!" unless $secrets;
   ($datasrc, $db_user, $db_pass) = $conf->config($secrets)
     or die "Can't get secrets: $secrets: $!\n";

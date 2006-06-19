@@ -29,14 +29,12 @@ $me = '[FS::Record]';
 
 $nowarn_identical = 0;
 
-my $conf;
 my $rsa_module;
 my $rsa_loaded;
 my $rsa_encrypt;
 my $rsa_decrypt;
 
 FS::UID->install_callback( sub {
-  $conf = new FS::Conf; 
   $File::CounterFile::DEFAULT_DIR = "/usr/local/etc/freeside/counters.". datasrc;
 } );
 
@@ -441,6 +439,7 @@ sub qsearch {
     }
 
     # Check for encrypted fields and decrypt them.
+    my $conf = new FS::Conf; 
     if ($conf->exists('encryption') && eval 'defined(@FS::'. $table . '::encrypted_fields)') {
       foreach my $record (@return) {
         foreach my $field (eval '@FS::'. $table . '::encrypted_fields') {
@@ -711,6 +710,7 @@ sub insert {
 
   
   # Encrypt before the database
+  my $conf = new FS::Conf;
   if ($conf->exists('encryption') && defined(eval '@FS::'. $table . 'encrypted_fields')) {
     foreach my $field (eval '@FS::'. $table . '::encrypted_fields') {
       $self->{'saved'} = $self->getfield($field);
@@ -727,12 +727,18 @@ sub insert {
   my @values = map { _quote( $self->getfield($_), $table, $_) } @real_fields;
   #eslaf
 
-  my $statement = "INSERT INTO $table ( ".
-      join( ', ', @real_fields ).
-    ") VALUES (".
-      join( ', ', @values ).
-    ")"
-  ;
+  my $statement = "INSERT INTO $table ";
+  if ( @real_fields ) {
+    $statement .=
+      "( ".
+        join( ', ', @real_fields ).
+      ") VALUES (".
+        join( ', ', @values ).
+       ")"
+    ;
+  } else {
+    $statement .= 'DEFAULT VALUES';
+  }
   warn "[debug]$me $statement\n" if $DEBUG > 1;
   my $sth = dbh->prepare($statement) or return dbh->errstr;
 
@@ -995,6 +1001,7 @@ sub replace {
   return $error if $error;
   
   # Encrypt for replace
+  my $conf = new FS::Conf;
   my $saved = {};
   if ($conf->exists('encryption') && defined(eval '@FS::'. $new->table . 'encrypted_fields')) {
     foreach my $field (eval '@FS::'. $new->table . '::encrypted_fields') {
@@ -1635,7 +1642,8 @@ sub virtual_fields {
                 "WHERE dbtable = '$table'";
     my $dbh = dbh;
     my $result = $dbh->selectcol_arrayref($query);
-    confess $dbh->errstr if $dbh->err;
+    confess "Error executing virtual fields query: $query: ". $dbh->errstr
+      if $dbh->err;
     $virtual_fields_cache{$table} = $result;
   }
 
@@ -1788,6 +1796,7 @@ sub encrypt {
   my ($self, $value) = @_;
   my $encrypted;
 
+  my $conf = new FS::Conf;
   if ($conf->exists('encryption')) {
     if ($self->is_encrypted($value)) {
       # Return the original value if it isn't plaintext.
@@ -1821,6 +1830,7 @@ sub is_encrypted {
 sub decrypt {
   my ($self,$value) = @_;
   my $decrypted = $value; # Will return the original value if it isn't encrypted or can't be decrypted.
+  my $conf = new FS::Conf;
   if ($conf->exists('encryption') && $self->is_encrypted($value)) {
     $self->loadRSA;
     if (ref($rsa_decrypt) =~ /::RSA/) {
@@ -1836,6 +1846,7 @@ sub loadRSA {
     #Initialize the Module
     $rsa_module = 'Crypt::OpenSSL::RSA'; # The Default
 
+    my $conf = new FS::Conf;
     if ($conf->exists('encryptionmodule') && $conf->config('encryptionmodule') ne '') {
       $rsa_module = $conf->config('encryptionmodule');
     }

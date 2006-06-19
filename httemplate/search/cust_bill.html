@@ -1,4 +1,9 @@
 <%
+
+   my $join_cust_main = 'LEFT JOIN cust_main USING ( custnum )';
+   #here is the agent virtualization
+   my $agentnums_sql = $FS::CurrentUser::CurrentUser->agentnums_sql;
+
    my( $count_query, $sql_query );
    my( $count_addl ) = ( '' );
    my( $distinct ) = ( '' );
@@ -6,11 +11,15 @@
    my($agentnum) = ( '' );
    my($open, $days) = ( '', '' );
    if ( $cgi->param('invnum') =~ /^\s*(FS-)?(\d+)\s*$/ ) {
-     $count_query = "SELECT COUNT(*) FROM cust_bill WHERE invnum = $2";
+     $count_query =
+       "SELECT COUNT(*) FROM cust_bill $join_cust_main".
+       "  WHERE invnum = $2 AND $agentnums_sql"; #agent virtualization
      $sql_query = {
        'table'     => 'cust_bill',
+       'addl_from' => $join_cust_main,
        'hashref'   => { 'invnum' => $2 },
        #'select'    => '*',
+       'extra_sql' => " AND $agentnums_sql", #agent virtualization
      };
    } else {
    #if ( $cgi->param('begin') || $cgi->param('end')
@@ -68,9 +77,9 @@
        push @where, "cust_bill._date < ". (time-86400*$days) if $days;
      }
 
+     #here is the agent virtualization
+     push @where, $agentnums_sql;
      my $extra_sql = scalar(@where) ? 'WHERE '. join(' AND ', @where) : '';
-
-     my $addl_from = 'left join cust_main using ( custnum )';
 
      if ( $cgi->param('newest_percust') ) {
        $distinct = 'DISTINCT ON ( cust_bill.custnum )';
@@ -85,11 +94,11 @@
                        '$%.2f total outstanding balance',
                      ];
      }
-     $count_query .=  " FROM cust_bill $addl_from $extra_sql";
+     $count_query .=  " FROM cust_bill $join_cust_main $extra_sql";
    
      $sql_query = {
        'table'     => 'cust_bill',
-       'addl_from' => $addl_from,
+       'addl_from' => $join_cust_main,
        'hashref'   => {},
        'select'    => "$distinct ". join(', ',
                         'cust_bill.*',

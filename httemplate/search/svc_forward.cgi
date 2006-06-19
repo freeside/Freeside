@@ -5,14 +5,12 @@ my $conf = new FS::Conf;
 my($query)=$cgi->keywords;
 $query ||= ''; #to avoid use of unitialized value errors
 
-
 my $orderby;
 
-my $cjoin = '';
 my @extra_sql = ();
-if ( $query =~ /^UN_(.*)$/ ) {
+if ( $query =~ /^UN_(.*)$/ ) { #UN searches need to be acl'ed (and need to
+                                    #fix $agentnums_sql
   $query = $1;
-  $cjoin = 'LEFT JOIN cust_svc USING ( svcnum )';
   push @extra_sql, 'pkgnum IS NULL';
 }
 
@@ -22,12 +20,20 @@ if ( $query eq 'svcnum' ) {
   eidiot('unimplemented');
 }
 
+my $addl_from = ' LEFT JOIN cust_svc  USING ( svcnum  ) '.
+                ' LEFT JOIN part_svc  USING ( svcpart ) '.
+                ' LEFT JOIN cust_pkg  USING ( pkgnum  ) '.
+                ' LEFT JOIN cust_main USING ( custnum ) ';
+
+#here is the agent virtualization
+push @extra_sql, $FS::CurrentUser::CurrentUser->agentnums_sql;
+
 my $extra_sql = 
   scalar(@extra_sql)
     ? ' WHERE '. join(' AND ', @extra_sql )
     : '';
 
-my $count_query = "SELECT COUNT(*) FROM svc_forward $cjoin $extra_sql";
+my $count_query = "SELECT COUNT(*) FROM svc_forward $addl_from $extra_sql";
 my $sql_query = {
   'table'     => 'svc_forward',
   'hashref'   => {},
@@ -37,10 +43,7 @@ my $sql_query = {
                     FS::UI::Web::cust_sql_fields(),
                  ),
   'extra_sql' => "$extra_sql $orderby",
-  'addl_from' => ' LEFT JOIN cust_svc  USING ( svcnum  ) '.
-                 ' LEFT JOIN part_svc  USING ( svcpart ) '.
-                 ' LEFT JOIN cust_pkg  USING ( pkgnum  ) '.
-                 ' LEFT JOIN cust_main USING ( custnum ) ',
+  'addl_from' => $addl_from,
 };
 
 #        <TH>Service #<BR><FONT SIZE=-1>(click to view forward)</FONT></TH>
@@ -100,16 +103,19 @@ my $link_cust = sub {
                  'count_query'       => $count_query,
                  'redirect'          => $link,
                  'header'            => [ '#',
+                                          'Service',
                                           'Mail to',
                                           'Forwards to',
                                           FS::UI::Web::cust_header(),
                                         ],
                  'fields'            => [ 'svcnum',
+                                          'svc',
                                           $format_src,
                                           $format_dst,
                                           \&FS::UI::Web::cust_fields,
                                         ],
                  'links'             => [ $link,
+                                          $link,
                                           $link_src,
                                           $link_dst,
                                           ( map { $link_cust }

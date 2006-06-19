@@ -117,6 +117,10 @@ if ( $cgi->param('browse')
 
   my $addl_qual = join(' AND ', @qual);
 
+  #here is the agent virtualization
+  $addl_qual .= ( $addl_qual ? ' AND ' : '' ).
+                $FS::CurrentUser::CurrentUser->agentnums_sql;
+
   if ( $addl_qual ) {
     $qual .= ' AND ' if $qual;
     $qual .= $addl_qual;
@@ -322,32 +326,43 @@ END
 
   print "<BR><BR>". $pager. include('/elements/table-grid.html'). <<END;
       <TR>
-        <TH></TH>
-        <TH>(bill) name</TH>
-        <TH>company</TH>
+        <TH CLASS="grid" BGCOLOR="#cccccc"></TH>
+        <TH CLASS="grid" BGCOLOR="#cccccc">(bill) name</TH>
+        <TH CLASS="grid" BGCOLOR="#cccccc">company</TH>
 END
 
 if ( defined dbdef->table('cust_main')->column('ship_last') ) {
   print <<END;
-      <TH>(service) name</TH>
-      <TH>company</TH>
+      <TH CLASS="grid" BGCOLOR="#cccccc">(service) name</TH>
+      <TH CLASS="grid" BGCOLOR="#cccccc">company</TH>
 END
 }
 
 foreach my $addl_header ( @addl_headers ) {
-  print "<TH>$addl_header</TH>";
+  print '<TH CLASS="grid" BGCOLOR="#cccccc">'. "$addl_header</TH>";
 }
 
 print <<END;
-        <TH>Packages</TH>
-        <TH COLSPAN=2>Services</TH>
+        <TH CLASS="grid" BGCOLOR="#cccccc">Packages</TH>
+        <TH CLASS="grid" BGCOLOR="#cccccc" COLSPAN=2>Services</TH>
       </TR>
 END
+
+  my $bgcolor1 = '#eeeeee';
+  my $bgcolor2 = '#ffffff';
+  my $bgcolor;
 
   my(%saw,$cust_main);
   foreach $cust_main (
     sort $sortby grep(!$saw{$_->custnum}++, @cust_main)
   ) {
+
+    if ( $bgcolor eq $bgcolor1 ) {
+      $bgcolor = $bgcolor2;
+    } else {
+      $bgcolor = $bgcolor1;
+    }
+
     my($custnum,$last,$first,$company)=(
       $cust_main->custnum,
       $cust_main->getfield('last'),
@@ -377,9 +392,9 @@ END
     %>
 
     <TR>
-      <TD ROWSPAN=<%= $rowspan || 1 %>><A HREF="<%= $view %>"><FONT SIZE=-1><%= $custnum %></FONT></A></TD>
-      <TD ROWSPAN=<%= $rowspan || 1 %>><A HREF="<%= $view %>"><FONT SIZE=-1><%= "$last, $first" %></FONT></A></TD>
-      <TD ROWSPAN=<%= $rowspan || 1 %>><%= $pcompany %></TD>
+      <TD CLASS="grid" BGCOLOR="<%= $bgcolor %>" ROWSPAN=<%= $rowspan || 1 %>><A HREF="<%= $view %>"><FONT SIZE=-1><%= $custnum %></FONT></A></TD>
+      <TD CLASS="grid" BGCOLOR="<%= $bgcolor %>" ROWSPAN=<%= $rowspan || 1 %>><A HREF="<%= $view %>"><FONT SIZE=-1><%= "$last, $first" %></FONT></A></TD>
+      <TD CLASS="grid" BGCOLOR="<%= $bgcolor %>" ROWSPAN=<%= $rowspan || 1 %>><%= $pcompany %></TD>
 
     <%
     if ( defined dbdef->table('cust_main')->column('ship_last') ) {
@@ -393,14 +408,14 @@ END
         : '<FONT SIZE=-1>&nbsp;</FONT>';
       %>
 
-      <TD ROWSPAN=<%= $rowspan || 1 %>><A HREF="<%= $view %>"><FONT SIZE=-1><%= "$ship_last, $ship_first" %></FONT></A></TD>
-      <TD ROWSPAN=<%= $rowspan || 1 %>><%= $pship_company %></A></TD>
+      <TD CLASS="grid" BGCOLOR="<%= $bgcolor %>" ROWSPAN=<%= $rowspan || 1 %>><A HREF="<%= $view %>"><FONT SIZE=-1><%= "$ship_last, $ship_first" %></FONT></A></TD>
+      <TD CLASS="grid" BGCOLOR="<%= $bgcolor %>" ROWSPAN=<%= $rowspan || 1 %>><%= $pship_company %></A></TD>
 
     <% }
 
     foreach my $addl_col ( @addl_cols ) { %>
 
-      <TD ROWSPAN=<%= $rowspan || 1 %> ALIGN=right><FONT SIZE=-1>
+      <TD CLASS="grid" BGCOLOR="<%= $bgcolor %>" ROWSPAN=<%= $rowspan || 1 %> ALIGN=right><FONT SIZE=-1>
 
       <% if ( $addl_col eq 'tickets' ) {
         if ( @custom_priorities ) {
@@ -457,14 +472,14 @@ END
       #my(@cust_svc) = qsearch( 'cust_svc', { 'pkgnum' => $_->pkgnum } );
       my $rowspan = scalar(@cust_svc) || 1;
 
-      print $n1, qq!<TD ROWSPAN=$rowspan><A HREF="$pkgview"><FONT SIZE=-1>$pkg - $comment</FONT></A></TD>!;
+      print $n1, qq!<TD CLASS="grid" BGCOLOR="$bgcolor"  ROWSPAN=$rowspan><A HREF="$pkgview"><FONT SIZE=-1>$pkg - $comment</FONT></A></TD>!;
       my($n2)='';
       foreach my $cust_svc ( @cust_svc ) {
          my($label, $value, $svcdb) = $cust_svc->label;
          my($svcnum) = $cust_svc->svcnum;
          my($sview) = $p.'view';
-         print $n2,qq!<TD><A HREF="$sview/$svcdb.cgi?$svcnum"><FONT SIZE=-1>$label</FONT></A></TD>!,
-               qq!<TD><A HREF="$sview/$svcdb.cgi?$svcnum"><FONT SIZE=-1>$value</FONT></A></TD>!;
+         print $n2,qq!<TD CLASS="grid" BGCOLOR="$bgcolor" ><A HREF="$sview/$svcdb.cgi?$svcnum"><FONT SIZE=-1>$label</FONT></A></TD>!,
+               qq!<TD CLASS="grid" BGCOLOR="$bgcolor" ><A HREF="$sview/$svcdb.cgi?$svcnum"><FONT SIZE=-1>$value</FONT></A></TD>!;
          $n2="</TR><TR>";
       }
       #print qq!</TR><TR>\n!;
