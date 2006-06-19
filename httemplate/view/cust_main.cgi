@@ -1,4 +1,3 @@
-<!-- mason kludge -->
 <%
 
 my $conf = new FS::Conf;
@@ -12,12 +11,16 @@ foreach my $part_svc ( qsearch('part_svc',{}) ) {
 
 %>
 
+
 <%= include("/elements/header.html","Customer View", 
 	include("/elements/menubar.html",
   'Main Menu' => $p,
 )) %>
 
+
 <%
+
+my $curuser = $FS::CurrentUser::CurrentUser;
 
 die "No customer specified (bad URL)!" unless $cgi->keywords;
 my($query) = $cgi->keywords; # needs parens with my, ->keywords returns array
@@ -26,9 +29,13 @@ my $custnum = $1;
 my $cust_main = qsearchs('cust_main',{'custnum'=>$custnum});
 die "Customer not found!" unless $cust_main;
 
-print qq!<A HREF="${p}edit/cust_main.cgi?$custnum">Edit this customer</A>!;
-
 %>
+
+
+<% if ( $curuser->access_right('Edit customer') ) { %>
+  <A HREF="<%= $p %>edit/cust_main.cgi?<%= $custnum %>">Edit this customer</A> | 
+<% } %>
+
 
 <SCRIPT TYPE="text/javascript" SRC="../elements/overlibmws.js"></SCRIPT>
 <SCRIPT TYPE="text/javascript" SRC="../elements/overlibmws_iframe.js"></SCRIPT>
@@ -60,37 +67,36 @@ var confirm_cancel = '<FORM METHOD="POST" ACTION="<%= $p %>misc/cust_main-cancel
 
 </SCRIPT>
 
-<% if ( $cust_main->ncancelled_pkgs ) { %>
-
-  | <A HREF="javascript:void(0);" onClick="overlib(confirm_cancel, CAPTION, 'Confirm cancellation', STICKY, AUTOSTATUSCAP, CLOSETEXT, '', MIDX, 0, MIDY, 0, DRAGGABLE, WIDTH, 576, HEIGHT, 128, TEXTSIZE, 3, BGCOLOR, '#ff0000', CGCOLOR, '#ff0000' ); return false; ">Cancel this customer</A>
-
+<% if ( $curuser->access_right('Cancel customer')
+        && $cust_main->ncancelled_pkgs
+      ) {
+%>
+  <A HREF="javascript:void(0);" onClick="overlib(confirm_cancel, CAPTION, 'Confirm cancellation', STICKY, AUTOSTATUSCAP, CLOSETEXT, '', MIDX, 0, MIDY, 0, DRAGGABLE, WIDTH, 576, HEIGHT, 128, TEXTSIZE, 3, BGCOLOR, '#ff0000', CGCOLOR, '#ff0000' ); return false; ">Cancel this customer</A> | 
 <% } %>
 
+
+<% if ( $conf->exists('deletecustomers')
+        && $curuser->access_right('Delete customer')
+      ) {
+%>
+  <A HREF="<%= $p %>misc/delete-customer.cgi?<%= $custnum%>">Delete this customer</A> | 
+<% } %>
+
+
+<% unless ( $conf->exists('disable_customer_referrals') ) { %>
+  <A HREF="<%= popurl(2) %>edit/cust_main.cgi?referral_custnum=<%= $custnum %>">Refer a new customer</A> | 
+  <A HREF="<%= popurl(2) %>search/cust_main.cgi?referral_custnum=<%= $custnum %>">View this customer's referrals</A>
+<% } %>
+
+
+<BR><BR>
+
 <%
-
-print qq! | <A HREF="${p}misc/delete-customer.cgi?$custnum">!.
-      'Delete this customer</A>'
-  if $conf->exists('deletecustomers');
-
-unless ( $conf->exists('disable_customer_referrals') ) {
-  print qq! | <A HREF="!, popurl(2),
-        qq!edit/cust_main.cgi?referral_custnum=$custnum">!,
-        qq!Refer a new customer</A>!;
-
-  print qq! | <A HREF="!, popurl(2),
-        qq!search/cust_main.cgi?referral_custnum=$custnum">!,
-        qq!View this customer's referrals</A>!;
-}
-
-print '<BR><BR>';
-
 my $signupurl = $conf->config('signupurl');
 if ( $signupurl ) {
-print "This customer's signup URL: ".
-      "<a href=\"$signupurl?ref=$custnum\">$signupurl?ref=$custnum</a><BR><BR>";
-}
-
 %>
+  This customer's signup URL: <A HREF="<%= $signupurl %>?ref=<%= $custnum %>"><%= $signupurl %>?ref=<%= $custnum %></A><BR><BR>
+<% } %>
 
 <A NAME="cust_main"></A>
 <TABLE BORDER=0>
@@ -135,5 +141,4 @@ Comments
   <%= include('cust_main/payment_history.html', $cust_main ) %>
 <% } %>
 
-</BODY></HTML>
-
+<%= include('/elements/footer.html') %>

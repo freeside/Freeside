@@ -944,10 +944,13 @@ sub replace {
     $old = qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
   }
 
-  if ( $self->payby eq 'COMP' && $self->payby ne $old->payby
-       && $conf->config('users-allow_comp')                  ) {
-    return "You are not permitted to create complimentary accounts."
-      unless grep { $_ eq getotaker } $conf->config('users-allow_comp');
+  my $curuser = $FS::CurrentUser::CurrentUser;
+  if (    $self->payby eq 'COMP'
+       && $self->payby ne $old->payby
+       && ! $curuser->access_right('Complimentary customer')
+     )
+  {
+    return "You are not permitted to create complimentary accounts.";
   }
 
   local($ignore_expired_card) = 1
@@ -1302,9 +1305,12 @@ sub check {
 
   } elsif ( $self->payby eq 'COMP' ) {
 
-    if ( !$self->custnum && $conf->config('users-allow_comp') ) {
+    my $curuser = $FS::CurrentUser::CurrentUser;
+    if (    ! $self->custnum
+         && ! $curuser->access_right('Complimentary customer')
+       )
+    {
       return "You are not permitted to create complimentary accounts."
-        unless grep { $_ eq getotaker } $conf->config('users-allow_comp');
     }
 
     $error = $self->ut_textn('payinfo');

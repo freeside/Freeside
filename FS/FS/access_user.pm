@@ -192,6 +192,29 @@ sub agentnums_sql {
   ' )';
 }
 
+=item access_right
+
+Given a right name, returns true if this user has this right (currently via
+group membership, eventually also via user overrides).
+
+=cut
+
+sub access_right {
+  my( $self, $rightname ) = @_;
+  my $sth = dbh->prepare("
+    SELECT groupnum FROM access_usergroup
+                    LEFT JOIN access_group USING ( groupnum )
+                    LEFT JOIN access_right
+                         ON ( access_group.groupnum = access_right.rightobjnum )
+      WHERE usernum = ?
+        AND righttype = 'FS::access_group'
+        AND rightname = ?
+  ") or die dbh->errstr;
+  $sth->execute($self->usernum, $rightname) or die $sth->errstr;
+  my $row = $sth->fetchrow_arrayref;
+  $row ? $row->[0] : '';
+}
+
 =back
 
 =head1 BUGS

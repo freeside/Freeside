@@ -84,10 +84,13 @@ assigned to users and/or groups.
   #'View Customer | View tickets',
   'Edit customer',
   'Cancel customer',
-  'Delete customer',
+  'Complimentary customer', #aka users-allow_comp 
+  'Delete customer', #aka. deletecustomers #Enable customer deletions. Be very careful! Deleting a customer will remove all traces that this customer ever existed! It should probably only be used when auditing a legacy database. Normally, you cancel all of a customers' packages if they cancel service.
 
   'Order customer package',
+  'One-time charge',
   'Change customer package',
+  'Bulk change customer packages',
   'Edit customer package dates',
   'Customize customer package',
   'Suspend customer package',
@@ -95,14 +98,43 @@ assigned to users and/or groups.
   'Cancel customer package immediately',
   'Cancel customer package later',
 
-  'Provision service',
-  'Unprovision service',
-  #legacy link stuff
+  'Provision customer service',
+  'Unprovision customer service',
+
+  'View/link unlinked services', #not agent-virtualizable without more work
+
+  'View invoices',
 
   'Post payment',
+  'Post payment batch',
+  'Unapply payment', #aka. unapplypayments Enable "unapplication" of unclosed payments.
   'Process payment',
+  'Refund payment',
+
+  'Delete payment', #aka. deletepayments - Enable deletion of unclosed payments. Be very careful! Only delete payments that were data-entry errors, not adjustments. Optionally specify one or more comma-separated email addresses to be notified when a payment is deleted.
+
   'Post credit',
-  #more financial stuff
+  #'Apply credit',
+  'Unapply credit', #aka unapplycredits Enable "unapplication" of unclosed credits.
+  'Delete credit', #aka. deletecredits Enable deletion of unclosed credits. Be very careful! Only delete credits that were data-entry errors, not adjustments. Optionally specify one or more comma-separated email addresses to be notified when a credit is deleted.
+
+  'Credit card void', #aka. cc-void #Enable local-only voiding of echeck payments in addition to refunds against the payment gateway
+  'Echeck void', #aka. echeck-void #Enable local-only voiding of echeck payments in addition to refunds against the payment gateway
+  'Unvoid', #aka. unvoid #Enable unvoiding of voided payments
+
+  'List customers',
+  #'List zip codes',
+  'List invoices',
+  'List packages',
+  'List services',
+
+  'Financial reports',
+
+  'Job queue', # these are not currently agent-virtualized
+  'Import',    #
+  'Export',    #
+
+  'Configuration', #none of the configuraiton is agent-virtualized either
 
 );
 

@@ -4,6 +4,8 @@
 
   my $conf = new FS::Conf;
 
+  my $curuser = $FS::CurrentUser::CurrentUser;
+
   my @payby = grep /\w/, $conf->config('payby');
   #@payby = (qw( CARD DCRD CHEK DCHK LECB BILL CASH WEST COMP ))
   @payby = (qw( CARD DCRD CHEK DCHK LECB BILL CASH COMP ))
@@ -16,42 +18,48 @@
 
 <BR><BR><A NAME="history"><FONT SIZE="+2">Payment History</FONT></A><BR>
 
-<% if ( $payby{'BILL'} ) { %>
+<% if ( $payby{'BILL'} && $curuser->access_right('Post payment') ) { %>
 
   <%= $s++ ? ' | ' : '' %>
   <A HREF="<%= $p %>edit/cust_pay.cgi?payby=BILL;custnum=<%= $custnum %>">Post check payment</A>
 
 <% } %>
 
-<% if ( $payby{'CASH'} ) { %>
+<% if ( $payby{'CASH'} && $curuser->access_right('Post payment') ) { %>
 
   <%= $s++ ? ' | ' : '' %>
   <A HREF="<%= $p %>edit/cust_pay.cgi?payby=CASH;custnum=<%= $custnum %>">Post cash payment</A>
 
 <% } %>
 
-<% if ( $payby{'WEST'} ) { %>
+<% if ( $payby{'WEST'} && $curuser->access_right('Post payment') ) { %>
 
   <%= $s++ ? ' | ' : '' %>
   <A HREF="<%= $p %>edit/cust_pay.cgi?payby=WEST;custnum=<%= $custnum %>">Post Western Union payment</A>
 
 <% } %>
 
-<% if ( $payby{'CARD'} || $payby{'DCRD'} ) { %>
+<% if ( ( $payby{'CARD'} || $payby{'DCRD'} )
+        && $curuser->access_right('Process payment')
+      ) {
+%>
 
   <%= $s++ ? ' | ' : '' %>
   <A HREF="<%= $p %>misc/payment.cgi?payby=CARD;custnum=<%= $custnum %>">Process credit card payment</A>
 
 <% } %>
 
-<% if ( $payby{'CHEK'} || $payby{'DCHK'} ) { %>
+<% if ( ( $payby{'CHEK'} || $payby{'DCHK'} )
+        && $curuser->access_right('Process payment')
+      ) {
+%>
 
   <%= $s++ ? ' | ' : '' %>
   <A HREF="<%= $p %>misc/payment.cgi?payby=CHEK;custnum=<%= $custnum %>">Process electronic check (ACH) payment</A>
 
 <% } %>
 
-<% if ( $payby{'MCRD'} ) { %>
+<% if ( $payby{'MCRD'} && $curuser->access_right('Post payment') ) { %>
 
   <%= $s++ ? ' | ' : '' %>
   <A HREF="<%= $p %>edit/cust_pay.cgi?payby=MCRD;custnum=<%= $custnum %>">Post manual credit card payment</A>
@@ -60,9 +68,13 @@
 
 <BR>
 
-<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('<%= $p %>edit/cust_credit.cgi?<%= $custnum %>', 392, 336, 'cust_credit_popup' ), CAPTION, 'Post credit', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK )">Post credit</A>
+<% if ( $curuser->access_right('Post credit') ) { %>
 
-<BR>
+  <A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('<%= $p %>edit/cust_credit.cgi?<%= $custnum %>', 392, 336, 'cust_credit_popup' ), CAPTION, 'Post credit', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK )">Post credit</A>
+
+  <BR>
+
+<% } %>
 
 <%
 #get payment history
@@ -75,11 +87,14 @@ foreach my $cust_bill ($cust_main->cust_bill) {
               : '';
   my $post = ( $cust_bill->owed > 0 ) ? '</FONT></B>' : '';
   my $invnum = $cust_bill->invnum;
+  my $link = $curuser->access_right('View invoices')
+               ? qq!<A HREF="${p}view/cust_bill.cgi?$invnum">!
+               : '';
   push @history, {
     'date'   => $cust_bill->_date,
-    'desc'   => qq!<A HREF="${p}view/cust_bill.cgi?$invnum">!. $pre.
+    'desc'   => $link. $pre.
                 "Invoice #$invnum (Balance \$". $cust_bill->owed. ')'.
-                $post. '</A>',
+                $post. ( $link ? '</A>' : '' ),
     'charge' => $cust_bill->charged,
   };
 }
@@ -169,6 +184,7 @@ foreach my $cust_pay ($cust_main->cust_pay) {
        && $cust_pay->payby =~ /^(CARD|CHEK)$/
        && time-$cust_pay->_date < $refund_days*86400
        && $cust_pay->unrefunded > 0
+       && $curuser->access_right('Refund payment')
   ) {
     $refund = qq! (<A HREF="${p}edit/cust_refund.cgi?payby=$1;!.
               qq!paynum=!. $cust_pay->paynum. '"'.
@@ -178,9 +194,17 @@ foreach my $cust_pay ($cust_main->cust_pay) {
 
   my $void = '';
   if (    $cust_pay->closed !~ /^Y/i
-       && ( $cust_pay->payby ne 'CARD' || $conf->exists('cc-void')     )
-       && ( $cust_pay->payby ne 'CHEK' || $conf->exists('echeck-void') ) 
-     ) {
+       && (    ( $cust_pay->payby eq 'CARD'
+                 && $conf->exists('cc-void')
+                 && $curuser->acccess_right('Credit card void')
+               )
+            || ( $cust_pay->payby eq 'CHEK'
+                 && $conf->exists('echeck-void')
+                 && $curuser->acccess_right('Echeck void')
+               ) 
+          )
+     )
+  {
     $void = qq! (<A HREF="javascript:areyousure('!.
             qq!${p}misc/void-cust_pay.cgi?!. $cust_pay->paynum.
             qq!', 'Are you sure you want to void this payment?')"!.
@@ -193,7 +217,11 @@ foreach my $cust_pay ($cust_main->cust_pay) {
   }
 
   my $delete = '';
-  if ( $cust_pay->closed !~ /^Y/i && $conf->exists('deletepayments') ) {
+  if ( $cust_pay->closed !~ /^Y/i
+       && $conf->exists('deletepayments')
+       && $curuser->access_right('Delete payment')
+     )
+  {
     $delete = qq! (<A HREF="javascript:areyousure('!.
               qq!${p}misc/delete-cust_pay.cgi?!. $cust_pay->paynum.
               qq!', 'Are you sure you want to delete this payment?')"!.
@@ -204,7 +232,10 @@ foreach my $cust_pay ($cust_main->cust_pay) {
   my $unapply = '';
   if (    $cust_pay->closed !~ /^Y/i
        && $conf->exists('unapplypayments')
-       && scalar(@cust_bill_pay)           ) {
+       && scalar(@cust_bill_pay)           
+       && $curuser->access_right('Unapply payment')
+     )
+  {
     $unapply = qq! (<A HREF="javascript:areyousure('!.
                qq!${p}misc/unapply-cust_pay.cgi?!. $cust_pay->paynum.
                qq!', 'Are you sure you want to unapply this payment?')"!.
@@ -236,7 +267,11 @@ foreach my $cust_pay_void ($cust_main->cust_pay_void) {
   my $info = $payby ? " ($payby$payinfo)" : '';
 
   my $unvoid = '';
-  if ( $cust_pay_void->closed !~ /^Y/i && $conf->exists('unvoid') ) {
+  if ( $cust_pay_void->closed !~ /^Y/i
+       && $conf->exists('unvoid')
+       && $curuser->access_right('Unvoid')
+     )
+  {
     $unvoid = qq! (<A HREF="javascript:areyousure('!.
               qq!${p}misc/unvoid-cust_pay_void.cgi?!. $cust_pay_void->paynum.
               qq!', 'Are you sure you want to unvoid this payment?')"!.
@@ -314,7 +349,11 @@ foreach my $cust_credit ($cust_main->cust_credit) {
   }
 #
   my $delete = '';
-  if ( $cust_credit->closed !~ /^Y/i && $conf->exists('deletecredits') ) {
+  if ( $cust_credit->closed !~ /^Y/i
+       && $conf->exists('deletecredits')
+       && $curuser->access_right('Delete credit')
+     )
+  {
     $delete = qq! (<A HREF="javascript:areyousure('!.
               qq!${p}misc/delete-cust_credit.cgi?!. $cust_credit->crednum.
               qq!', 'Are you sure you want to delete this credit?')">!.
@@ -324,7 +363,10 @@ foreach my $cust_credit ($cust_main->cust_credit) {
   my $unapply = '';
   if (    $cust_credit->closed !~ /^Y/i
        && $conf->exists('unapplycredits')
-       && scalar(@cust_credit_bill)       ) {
+       && scalar(@cust_credit_bill)
+       && $curuser->access_right('Unapply credit')
+     )
+  {
     $unapply = qq! (<A HREF="javascript:areyousure('!.
                qq!${p}misc/unapply-cust_credit.cgi?!. $cust_credit->crednum.
                qq!', 'Are you sure you want to unapply this credit?')">!.

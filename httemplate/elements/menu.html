@@ -3,6 +3,8 @@
   my $conf = new FS::Conf;
   my $fsurl = $opt{'freeside_baseurl'};
 
+  my $curuser = $FS::CurrentUser::CurrentUser;
+
   #Active tickets not assigned to a customer
 
   tie my %report_customers_lists, 'Tie::IxHash',
@@ -40,23 +42,27 @@
   tie my %report_services_acct, 'Tie::IxHash',
     'All accounts by username' => [ $fsurl.'search/svc_acct.cgi?username', '' ],
     'All accounts by UID'      => [ $fsurl.'search/svc_acct.cgi?uid', '' ],
-    'Unlinked accounts'        => [ $fsurl.'search/svc_acct.cgi?UN_uid', 'Pre-Freeside accounts without a customer record' ],
   ;
+  $report_services_acct{'Unlinked accounts'} = [ $fsurl.'search/svc_acct.cgi?UN_uid', 'Pre-Freeside accounts without a customer record' ]
+    if $curuser->access_right('View/link unlinked services');
 
   tie my %report_services_domain, 'Tie::IxHash',
     'All domains'      => [ $fsurl.'search/svc_domain.cgi?domain', '' ],
-    'Unlinked domains' => [ $fsurl.'search/svc_domain.cgi?UN_domain', 'Pre-Freeside domains without a customer record' ],
   ;
+  $report_services_domain{'Unlinked domains'} = [ $fsurl.'search/svc_domain.cgi?UN_domain', 'Pre-Freeside domains without a customer record' ]
+    if $curuser->access_right('View/link unlinked services');
 
   tie my %report_services_forward, 'Tie::IxHash',
     'All mail forwards'      => [ $fsurl.'search/svc_forward.cgi?svcnum', '' ],
-    'Unlinked mail forwards' => [ $fsurl.'search/svc_forward.cgi?UN_svcnum', 'Pre-Freeside mail forwards without a customer record' ],
   ;
+  $report_services_forward{'Unlinked mail forwards'} = [ $fsurl.'search/svc_forward.cgi?UN_svcnum', 'Pre-Freeside mail forwards without a customer record' ]
+    if $curuser->access_right('View/link unlinked services');
 
   tie my %report_services_www, 'Tie::IxHash',
     'All virtual hosts'     => [ $fsurl.'search/svc_www.cgi?svcnum', '' ],
-    'Unlinked virtual hosts' => [ $fsurl.'search/svc_www.cgi?UN_svcnum', 'Pre-Freeside virtual hosts without a customer record' ],
   ;
+  $report_services_www{'Unlinked virtual hosts'} = [ $fsurl.'search/svc_www.cgi?UN_svcnum', 'Pre-Freeside virtual hosts without a customer record' ]
+    if $curuser->access_right('View/link unlinked services');
 
   tie my %report_services_broadband, 'Tie::IxHash',
     'All broadband services' => [ $fsurl.'search/svc_broadband.cgi?svcnum', '' ],
@@ -65,28 +71,31 @@
 
   tie my %report_services_external, 'Tie::IxHash',
     'All external services' => [ $fsurl.'search/svc_external.cgi?id', '' ],
-    'Unlinked external services' => [ $fsurl.'search/svc_external.cgi?UN_id', 'Pre-Freeside domains without a customer record' ],
   ;
+  $report_services_external{'Unlinked external services'} = [ $fsurl.'search/svc_external.cgi?UN_id', 'Pre-Freeside domains without a customer record' ]
+    if $curuser->access_right('View/link unlinked services');
 
-  tie my %report_services, 'Tie::IxHash',
-    'Service definitions' => [ $fsurl.'browse/part_svc.cgi?orderby=active', 'Service definitions by number of active packages' ],
-    'separator' => '',
-    'Accounts'            => [ \%report_services_acct, 'Access accounts and mailboxes' ],
-    'Domains'             => [ \%report_services_domain, 'Domains', ],
-    'Mail forwards'       => [ \%report_services_forward, 'Mail forwards', ],
-    'Virtual hosts'       => [ \%report_services_www, 'Virtual hosting', ],
-    'Broadband services'  => [ \%report_services_broadband, 'Fixed (username-less) broadband services', ],
-    'External services'   => [ \%report_services_external, 'External services', ],
-  ;
+  tie my %report_services, 'Tie::IxHash';
+  if ( $curuser->access_right('Configuration') ) {
+    $report_services{'Service definitions'} =  [ $fsurl.'browse/part_svc.cgi?orderby=active', 'Service definitions by number of active packages' ];
+    $report_services{'separator'} =  '';
+  }
+  $report_services{'Accounts'} =  [ \%report_services_acct, 'Access accounts and mailboxes' ];
+  $report_services{'Domains'} =  [ \%report_services_domain, 'Domains', ];
+  $report_services{'Mail forwards'} =  [ \%report_services_forward, 'Mail forwards', ];
+  $report_services{'Virtual hosts'} =  [ \%report_services_www, 'Virtual hosting', ];
+  $report_services{'Broadband services'} =  [ \%report_services_broadband, 'Fixed (username-less) broadband services', ];
+  $report_services{'External services'} =  [ \%report_services_external, 'External services', ];
 
-  tie my %report_packages, 'Tie::IxHash',
-    'Package definitions' => [ $fsurl.'browse/part_pkg.cgi?active=1', 'Package definitions by number of active packages' ],
-    'separator' => '',
-    'All customer packages' => [ $fsurl.'search/cust_pkg.cgi?pkgnum', 'List all customer packages', ],
-    'Suspended customer packages' => [ $fsurl.'search/cust_pkg.cgi?magic=suspended', 'List suspended packages' ],
-    'Customer packages with unconfigured services' => [ $fsurl.'search/cust_pkg.cgi?APKG_pkgnum', 'List packages which have provisionable services' ],
-    'Advanced package reports' => [ $fsurl.'search/report_cust_pkg.html', 'by agent, date range, status, package definition' ],
-  ;
+  tie my %report_packages, 'Tie::IxHash';
+  if ( $curuser->access_right('Configuration') ) {
+    $report_packages{'Package definitions'} =  [ $fsurl.'browse/part_pkg.cgi?active=1', 'Package definitions by number of active packages' ];
+    $report_packages{'separator'} =  '';
+  }
+  $report_packages{'All customer packages'} =  [ $fsurl.'search/cust_pkg.cgi?pkgnum', 'List all customer packages', ];
+  $report_packages{'Suspended customer packages'} =  [ $fsurl.'search/cust_pkg.cgi?magic=suspended', 'List suspended packages' ];
+  $report_packages{'Customer packages with unconfigured services'} =  [ $fsurl.'search/cust_pkg.cgi?APKG_pkgnum', 'List packages which have provisionable services' ];
+  $report_packages{'Advanced package reports'} =  [ $fsurl.'search/report_cust_pkg.html', 'by agent, date range, status, package definition' ];
 
   tie my %report_financial, 'Tie::IxHash', 
     'Sales, Credits and Receipts' => [ $fsurl.'graph/report_money_time.html', 'Sales, credits and receipts summary graph' ],
@@ -98,13 +107,17 @@
     'Sales Tax Liability' => [ $fsurl.'search/report_tax.html', 'Sales tax liability report' ],
   ;
 
-  tie my %report_menu, 'Tie::IxHash',
-    'Customers' => [ \%report_customers,  'Customer reports'  ],
-    'Invoices'  => [ \%report_invoices,   'Invoice reports'   ],
-    'Packages'  => [ \%report_packages,   'Package reports'   ],
-    'Services'  => [ \%report_services,   'Services reports'   ],
-    'Financial' => [ \%report_financial,  'Financial reports' ],
-  ;
+  tie my %report_menu, 'Tie::IxHash';
+  $report_menu{'Customers'} = [ \%report_customers, 'Customer reports'  ]
+    if $curuser->access_right('List customers');
+  $report_menu{'Invoices'} =  [ \%report_invoices,  'Invoice reports'   ]
+    if $curuser->access_right('List invoices');
+  $report_menu{'Packages'} =  [ \%report_packages,  'Package reports'   ]
+    if $curuser->access_right('List packages');
+  $report_menu{'Services'} =  [ \%report_services,  'Services reports'  ]
+    if $curuser->access_right('List services');
+  $report_menu{'Financial'} = [ \%report_financial, 'Financial reports' ]
+    if $curuser->access_right('Financial reports');
 
   tie my %tools_importing, 'Tie::IxHash',
     'Import customers from CSV file' => [ $fsurl.'misc/cust_main-import.cgi', '' ],
@@ -120,12 +133,15 @@
   #      <!-- or <A HREF="browse/nas-sqlradius.cgi">RADIUS</A>
   #    <BR> -->
 
-  tie my %tools_menu, 'Tie::IxHash',
-    'Quick payment entry' => [ $fsurl.'misc/batch-cust_pay.html', 'Enter multiple payments in a batch' ],
-    'Job Queue' => [ $fsurl.'search/queue.html', 'View pending job queue' ],
-    'Importing' => [ \%tools_importing, 'Import tools' ],
-    'Exporting' => [ \%tools_exporting, 'Export tools' ],
-  ;
+  tie my %tools_menu, 'Tie::IxHash', ();
+  $tools_menu{'Quick payment entry'} =  [ $fsurl.'misc/batch-cust_pay.html', 'Enter multiple payments in a batch' ]
+    if $curuser->access_right('Post payment batch');
+  $tools_menu{'Job Queue'} =  [ $fsurl.'search/queue.html', 'View pending job queue' ]
+    if $curuser->access_right('Job queue');
+  $tools_menu{'Importing'} =  [ \%tools_importing, 'Import tools' ]
+    if $curuser->access_right('Import');
+  $tools_menu{'Exporting'} =  [ \%tools_exporting, 'Export tools' ]
+    if $curuser->access_right('Export');
 
   tie my %config_employees, 'Tie::IxHash',
     'View/Edit employees' => [ $fsurl.'browse/access_user.html', 'Setup internal users' ],
@@ -191,10 +207,13 @@
                           ),
                           'Ticketing start page',
                         ],
-    'Reports'        => [ \%report_menu, 'Lists, reporting and graphing' ],
-    'Tools'          => [ \%tools_menu, 'Tools' ],
-    'Configuration'  => [ \%config_menu, 'Configuraiton and setup' ],
   ;
+  $menu{'Reports'} = [ \%report_menu, 'Lists, reporting and graphing' ]
+    if keys %report_menu;
+  $menu{'Tools'} = [ \%tools_menu, 'Tools' ]
+    if keys %tools_menu;
+  $menu{'Configuration'} = [ \%config_menu, 'Configuraiton and setup' ]
+    if $curuser->access_right('Configuration');
 
   use vars qw($gmenunum);
   $gmenunum = 0;
