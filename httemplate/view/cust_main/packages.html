@@ -333,12 +333,18 @@ foreach my $pkg (sort pkgsort_pkgnum_cancel @$packages) {
 <%
       $cnt++;
     }
-    if ( $svcpart->{count} < $svcpart->{quantity} 
-         && $curuser->access_right('Provision customer services')
-       ) {
-      print qq!<TR>\n! if ($cnt > 0);
-      print qq!  <TD COLSPAN=2>!.svc_provision_link($pkg, $svcpart, $conf, $curuser).qq!</TD>\n</TR>\n!;
+    if ( $svcpart->{count} < $svcpart->{quantity} ) {
+      print '<TR>' if ($cnt > 0);
+      if ( $curuser->access_right('Provision customer service') ) {
+        print '<TD COLSPAN=2>'.
+              svc_provision_link($pkg, $svcpart, $conf, $curuser).
+              '</TD></TR>';
+      } else {
+        #print '<TD COLSPAN=2>&nbsp;</TD></TR>';
+        print '<TD COLSPAN=2></TD></TR>';
+      }
     }
+
   }
 }
 #end display packages
