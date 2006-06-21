@@ -13,21 +13,18 @@ my $packages_sub = sub {
 
   [ map  {
            my $type_pkgs = $_;
-           my $part_pkg = $type_pkgs->part_pkg;
+           #my $part_pkg = $type_pkgs->part_pkg;
            [
              {
-               'data'  => $part_pkg->pkg. ' - '. $part_pkg->comment,
+               #'data'  => $part_pkg->pkg. ' - '. $part_pkg->comment,
+               'data'  => $type_pkgs->pkg. ' - '. $type_pkgs->comment,
                'align' => 'left',
                'link'  => $p. 'edit/part_pkg.cgi?'. $type_pkgs->pkgpart,
              },
            ];
          }
-    #sort {
-    #     }
-    grep {
-           $_->part_pkg and ! $_->part_pkg->disabled
-         }
-    $agent_type->type_pkgs #XXX the method should order itself by something
+
+    $agent_type->type_pkgs_enabled
   ];
 
 };

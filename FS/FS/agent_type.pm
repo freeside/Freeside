@@ -136,6 +136,27 @@ sub type_pkgs {
   qsearch('type_pkgs', { 'typenum' => $self->typenum } );
 }
 
+=item type_pkgs_enabled
+
+Returns all FS::type_pkg objects (see L<FS::type_pkgs>) that link to enabled
+package definitions (see L<FS::part_pkg>).
+
+An additional strange feature is that the returned type_pkg objects also have
+all fields of the associated part_pkg object.
+
+=cut
+
+sub type_pkgs_enabled {
+  my $self = shift;
+  qsearch({
+    'table'     => 'type_pkgs',
+    'addl_from' => 'JOIN part_pkg USING ( pkgpart )',
+    'hashref'   => { 'typenum' => $self->typenum },
+    'extra_sql' => " AND ( disabled = '' OR disabled IS NULL )".
+                   " ORDER BY pkg",
+  });
+}
+
 =item pkgpart
 
 Returns the pkgpart of all package definitions (see L<FS::part_pkg>) for this
@@ -151,6 +172,13 @@ sub pkgpart {
 =back
 
 =head1 BUGS
+
+type_pkgs_enabled should order itself by something (pkg?)
+
+type_pkgs_enabled should populate something that caches for the part_pkg method
+rather than add fields to this object, right?  In fact we need a "poop" object
+framework that does that automatically for any joined search at some point....
+right?
 
 =head1 SEE ALSO
 
