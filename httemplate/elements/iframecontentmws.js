@@ -12,7 +12,6 @@
 */
 
 function OLiframeContent(src, width, height, name, frameborder) {
- alert(src);
  return ('<iframe src="'+src+'" width="'+width+'" height="'+height+'"'
  +(name!=null?' name="'+name+'" id="'+name+'"':'')
  +(frameborder!=null?' frameborder="'+frameborder+'"':'')
