@@ -70,7 +70,7 @@
 
 <% if ( $curuser->access_right('Post credit') ) { %>
 
-  <A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('<%= $p %>edit/cust_credit.cgi?<%= $custnum %>', 392, 336, 'cust_credit_popup' ), CAPTION, 'Post credit', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK )">Post credit</A>
+  <A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('<%= $p %>edit/cust_credit.cgi?<%= $custnum %>', 392, 336, 'cust_credit_popup' ), CAPTION, 'Post credit', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK ); return false;">Post credit</A>
 
   <BR>
 
@@ -135,7 +135,7 @@ foreach my $cust_pay ($cust_main->cust_pay) {
     $post = '</FONT></B>';
     $apply = qq! (<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('${p}edit/cust_bill_pay.cgi?!.
              $cust_pay->paynum.
-             qq!', 392, 336, 'cust_credit_popup' ), CAPTION, 'Post credit', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK )">apply</A>)!;
+             qq!', 392, 336, 'cust_credit_popup' ), CAPTION, 'Post credit', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK ); return false;">apply</A>)!;
 
   } elsif (    scalar(@cust_bill_pay)   == 1
             && scalar(@cust_pay_refund) == 0
@@ -173,7 +173,7 @@ foreach my $cust_pay ($cust_main->cust_pay) {
                $cust_pay->unapplied. ' unapplied</FONT></B>'.
                qq! (<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('${p}edit/cust_bill_pay.cgi?!.
                $cust_pay->paynum. 
-               qq!', 392, 336, 'cust_credit_popup' ), CAPTION, 'Post credit', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK )">apply</A>)!.
+               qq!', 392, 336, 'cust_credit_popup' ), CAPTION, 'Post credit', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK ); return false;">apply</A>)!.
                '<BR>';
     }
   }
@@ -307,7 +307,7 @@ foreach my $cust_credit ($cust_main->cust_credit) {
     $post = '</FONT></B>';
     $apply = qq! (<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('${p}edit/cust_credit_bill.cgi?!.
              $cust_credit->crednum.
-             qq!', 392, 336, 'cust_credit_popup' ), CAPTION, 'Post credit', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK )">apply</A>)!;
+             qq!', 392, 336, 'cust_credit_popup' ), CAPTION, 'Post credit', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK ); return false;">apply</A>)!;
   } elsif (    scalar(@cust_credit_bill)   == 1
             && scalar(@cust_credit_refund) == 0
             && $cust_credit->credited == 0      ) {
@@ -343,7 +343,7 @@ foreach my $cust_credit ($cust_main->cust_credit) {
                $cust_credit->credited. ' unapplied</FONT></B>'.
                qq! (<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('${p}edit/cust_credit_bill.cgi?!.
                $cust_credit->crednum.
-               qq!', 392, 336, 'cust_credit_popup' ), CAPTION, 'Post credit', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK )">apply</A>)!.
+               qq!', 392, 336, 'cust_credit_popup' ), CAPTION, 'Post credit', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK ); return false;">apply</A>)!.
                '<BR>';
     }
   }
