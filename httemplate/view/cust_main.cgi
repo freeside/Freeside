@@ -40,6 +40,7 @@ die "Customer not found!" unless $cust_main;
 <SCRIPT TYPE="text/javascript" SRC="../elements/overlibmws.js"></SCRIPT>
 <SCRIPT TYPE="text/javascript" SRC="../elements/overlibmws_iframe.js"></SCRIPT>
 <SCRIPT TYPE="text/javascript" SRC="../elements/overlibmws_draggable.js"></SCRIPT>
+<SCRIPT TYPE="text/javascript" SRC="../elements/iframecontentmws.js"></SCRIPT>
 
 <SCRIPT TYPE="text/javascript">
 function areyousure(href, message) {
