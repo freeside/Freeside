@@ -53,10 +53,13 @@ my $posttotal;
 if ( $cgi->param('showdisabled') ) {
   $cgi->param('showdisabled', 0);
   $posttotal = '( <a href="'. $cgi->self_url. '">hide disabled packages</a> )';
+  $cgi->param('showdisabled', 1);
 } else {
   $cgi->param('showdisabled', 1);
   $posttotal = '( <a href="'. $cgi->self_url. '">show disabled packages</a> )';
+  $cgi->param('showdisabled', 0);
 }
+
 
 # ------
 
@@ -68,7 +71,8 @@ my $align = 'rll';
 my @links = ( $link, $link, '' );
 my @style = ( '', '', '' );
 
-unless ( $cgi->param('showdisabled') ) { #its been reversed already
+#unless ( $cgi->param('showdisabled') ) { #its been reversed already
+if ( $cgi->param('showdisabled') ) { #its been reversed already
   push @header, 'Status';
   push @fields, sub { shift->disabled
                         ? '<FONT COLOR="#FF0000">DISABLED</FONT>'
