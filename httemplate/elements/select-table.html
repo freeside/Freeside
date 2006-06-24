@@ -8,11 +8,15 @@
   # 'value'    => 'current_value',
   #
   ##opt
-  # 'empty_label' => '', #better specify it though, the default might change
-  # 'hashref'     => {},
-  # 'extra_sql'   => '',
-  # 'records'     => \@records, #instead of hashref
-  # 'pre_options' => [ 'value' => 'option' ], #before normal options
+  # 'empty_label'  => '', #better specify it though, the default might change
+  # 'hashref'      => {},
+  # 'extra_sql'    => '',
+  # 'records'      => \@records, #instead of hashref
+  # 'pre_options'  => [ 'value' => 'option' ], #before normal options
+  # 'element_name' => '', #HTML element name, defaults to the name of
+  #                       # the primary key column
+  # 'element_etc'  => '', #additional attributes (i.e. "DISABLED") for the
+  #                       #<SELECT> element
 
   my( %opt ) = @_;
 
@@ -37,7 +41,7 @@
 
 %>
 
-<SELECT NAME="<%= $key %>">
+<SELECT NAME="<%= $opt{'element_name'} || $key %>" <%= $opt{'element_etc'} %>>
 
   <% while ( @pre_options ) { %>
     <OPTION VALUE="<%= shift(@pre_options) %>"><%= shift(@pre_options) %>

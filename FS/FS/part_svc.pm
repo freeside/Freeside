@@ -11,7 +11,7 @@ use FS::cust_svc;
 
 @ISA = qw(FS::Record);
 
-$DEBUG = 0;
+$DEBUG = 1;
 
 =head1 NAME
 
@@ -79,7 +79,7 @@ the part_svc_column table appropriately (see L<FS::part_svc_column>).
 
 =item I<svcdb>__I<field> - Default or fixed value for I<field> in I<svcdb>.
 
-=item I<svcdb>__I<field>_flag - defines I<svcdb>__I<field> action: null, `D' for default, or `F' for fixed.  For virtual fields, can also be 'X' for excluded.
+=item I<svcdb>__I<field>_flag - defines I<svcdb>__I<field> action: null or empty (no default), `D' for default, `F' for fixed (unchangeable), `M' for manual selection from inventory, or `A' for automatic selection from inventory.  For virtual fields, can also be 'X' for excluded.
 
 =back
 
@@ -142,7 +142,8 @@ sub insert {
     } );
 
     my $flag = $self->getfield($svcdb.'__'.$field.'_flag');
-    if ( uc($flag) =~ /^([DFX])$/ ) {
+    #if ( uc($flag) =~ /^([DFMAX])$/ ) {
+    if ( uc($flag) =~ /^([A-Z])$/ ) { #part_svc_column will test it
       $part_svc_column->setfield('columnflag', $1);
       $part_svc_column->setfield('columnvalue',
         $self->getfield($svcdb.'__'.$field)
@@ -260,7 +261,8 @@ sub replace {
       } );
 
       my $flag = $new->getfield($svcdb.'__'.$field.'_flag');
-      if ( uc($flag) =~ /^([DFX])$/ ) {
+      #if ( uc($flag) =~ /^([DFMAX])$/ ) {
+      if ( uc($flag) =~ /^([A-Z])$/ ) { #part_svc_column will test it
         $part_svc_column->setfield('columnflag', $1);
         $part_svc_column->setfield('columnvalue',
           $new->getfield($svcdb.'__'.$field)
@@ -536,7 +538,16 @@ sub process {
         map { my $svcdb = $_;
               my @fields = fields($svcdb);
               push @fields, 'usergroup' if $svcdb eq 'svc_acct'; #kludge
-              map { ( $svcdb.'__'.$_, $svcdb.'__'.$_.'_flag' )  } @fields;
+
+              map {
+                    if ( $param->{ $svcdb.'__'.$_.'_flag' } =~ /^[MA]$/ ) {
+                      $param->{ $svcdb.'__'.$_ } =
+                        delete( $param->{ $svcdb.'__'.$_.'_classnum' } );
+                    }
+                    ( $svcdb.'__'.$_, $svcdb.'__'.$_.'_flag' );
+                  }
+                  @fields;
+
             } grep defined( dbdef->table($_) ),
                    qw( svc_acct svc_domain svc_forward svc_www svc_broadband )
       )

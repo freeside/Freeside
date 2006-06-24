@@ -1,9 +1,15 @@
 <% 
 
+#code duplication w/ edit/part_svc.cgi, should move this hash to part_svc.pm
 my %flag = (
-  'D' => 'Default',
-  'F' => 'Fixed',
   ''  => '',
+  'D' => 'Default',
+  'F' => 'Fixed (unchangeable)',
+  #'M' => 'Manual selection from inventory',
+  'M' => 'Manual selected from inventory',
+  #'A' => 'Automatically fill in from inventory',
+  'A' => 'Automatically filled in from inventory',
+  'X' => 'Excluded',
 );
 
 my %search;
@@ -26,6 +32,8 @@ if ( $cgi->param('orderby') eq 'active' ) {
 } elsif ( $cgi->param('orderby') eq 'svc' ) { 
   @part_svc = sort { lc($a->svc) cmp lc($b->svc) } @part_svc;
 }
+
+my %inventory_class = ();
 
 %>
 <%= include("/elements/header.html",'Service Definition Listing', menubar( 'Main Menu' => $p) ) %>
@@ -125,7 +133,21 @@ map { qsearchs('part_export', { exportnum => $_->exportnum } ) } qsearch('export
      <%= $n1 %>
      <TD><%= $field %></TD>
      <TD><%= $flag{$flag} %></TD>
-     <TD><%= $part_svc->part_svc_column($field)->columnvalue%></TD>
+
+     <TD>
+       <% my $value = $part_svc->part_svc_column($field)->columnvalue;
+          if ( $flag =~ /^[MA]$/ ) { 
+            $inventory_class{$value}
+              ||= qsearchs('inventory_class', { 'classnum' => $value } );
+       %>
+            <%= $inventory_class{$value}
+                  ? $inventory_class{$value}->classname
+                  : "WARNING: inventory_class.classnum $value not found" %>
+       <% } else { %>
+            <%= $value %>
+       <% } %>
+     </TD>
+
 
 <%     $n1="</TR><TR>";
      }

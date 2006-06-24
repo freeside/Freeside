@@ -38,27 +38,23 @@ Service  <INPUT TYPE="text" NAME="svc" VALUE="<%= $hashref->{svc} %>"><BR>
 Disable new orders <INPUT TYPE="checkbox" NAME="disabled" VALUE="Y"<%= $hashref->{disabled} eq 'Y' ? ' CHECKED' : '' %>><BR>
 <INPUT TYPE="hidden" NAME="svcpart" VALUE="<%= $hashref->{svcpart} %>">
 <BR>
-Services are items you offer to your customers.
-<UL><LI>svc_acct - Shell accounts, POP mailboxes, SLIP/PPP and ISDN accounts
+Service definitions are the templates for items you offer to your customers.
+<UL><LI>svc_acct - Accounts - anything with a username (Mailboxes, PPP accounts, shell accounts, etc.)
     <LI>svc_domain - Domains
     <LI>svc_forward - mail forwarding
     <LI>svc_www - Virtual domain website
-    <LI>svc_broadband - Broadband/High-speed Internet service
+    <LI>svc_broadband - Broadband/High-speed Internet service (always-on)
     <LI>svc_external - Externally-tracked service
 <!--   <LI>svc_charge - One-time charges (Partially unimplemented)
        <LI>svc_wo - Work orders (Partially unimplemented)
 -->
 </UL>
 For the selected table, you can give fields default or fixed (unchangable)
-values.  For example, a SLIP/PPP account may have a default (or perhaps fixed)
-<B>slipip</B> of <B>0.0.0.0</B>, while a POP mailbox will probably have a fixed
-blank <B>slipip</B> as well as a fixed shell something like <B>/bin/true</B> or
-<B>/usr/bin/passwd</B>.
+values, or select an inventory class to manually or automatically fill in
+that field.
 <BR><BR>
 
 <%
-
-my %vfields;
 
 #these might belong somewhere else for other user interfaces 
 #pry need to eventually create stuff that's shared amount UIs
@@ -77,28 +73,42 @@ my %defs = (
                      select_label => 'city',
                    },
     'username'  => {
-                      desc => 'Username',
-                      type => 'disabled',
+                     desc => 'Username',
+                     type => 'text',
+                     disable_default => 1,
+                     disable_fixed => 1,
                    },
-    'quota'     => '',
+    'quota'     => { 
+                     desc => '',
+                     type => 'text',
+                     disable_inventory => 1,
+                   },
     '_password' => 'Password',
     'gid'       => 'GID (when blank, defaults to UID)',
     'shell'     => {
-                     desc =>'Shell (all service definitions should have a default or fixed shell that is present in the <b>shells</b> configuration file, set to blank for no shell tracking)',
+                     #desc =>'Shell (all service definitions should have a default or fixed shell that is present in the <b>shells</b> configuration file, set to blank for no shell tracking)',
+                     desc =>'Shell ( set to blank for no shell tracking)',
                      type =>'select',
                      select_list => [ $conf->config('shells') ],
+                     disable_inventory => 1,
                    },
-    'finger'    => 'GECOS',
+    'finger'    => 'Real name (GECOS)',
     'domsvc'    => {
                      desc =>'svcnum from svc_domain',
                      type =>'select',
                      select_table => 'svc_domain',
                      select_key   => 'svcnum',
                      select_label => 'domain',
+                     disable_inventory => 1,
                    },
     'usergroup' => {
                      desc =>'RADIUS groups',
                      type =>'radius_usergroup_selector',
+                     disable_inventory => 1,
+                   },
+    'seconds'   => { desc => '',
+                     type => 'text',
+                     disable_inventory => 1,
                    },
   },
   'svc_domain' => {
@@ -132,6 +142,7 @@ my %defs = (
   },
 );
 
+  my %vfields;
   foreach my $svcdb (grep dbdef->table($_), keys %defs ) {
     my $self = "FS::$svcdb"->new;
     $vfields{$svcdb} = {};
@@ -149,6 +160,37 @@ my %defs = (
       warn "\$vfields{$svcdb}->{$field} = $pvf";
     } #next $field
   } #next $svcdb
+
+  #code duplication w/ edit/part_svc.cgi, should move this hash to part_svc.pm
+  # and generalize the subs
+  # condition sub is tested to see whether to disable display of this choice
+  # params: ( $def, $layer, $field )  (see SUB below)
+  my $inv_sub = sub {
+    ref($_[0]) && (    $_[0]->{disable_inventory} 
+                    || $_[0]->{'type'} ne 'text'  )
+  };
+  tie my %flag, 'Tie::IxHash',
+    ''  => { 'desc' => 'No default', },
+    'D' => { 'desc' => 'Default',
+             'condition' =>
+               sub { ref($_[0]) && $_[0]->{disable_default} }, 
+           },
+    'F' => { 'desc' => 'Fixed (unchangeable)',
+             'condition' =>
+               sub { ref($_[0]) && $_[0]->{disable_fixed} }, 
+           },
+    'M' => { 'desc' => 'Manual selection from inventory',
+             'condition' => $inv_sub,
+           },
+    'A' => { 'desc' => 'Automatically fill in from inventory',
+             'condition' => $inv_sub,
+           },
+    'X' => { 'desc' => 'Excluded',
+             'condition' =>
+               sub { ! $vfields{$_[1]}->{$_[2]} },
+
+           },
+  ;
   
   my @dbs = $hashref->{svcdb}
              ? ( $hashref->{svcdb} )
@@ -174,8 +216,8 @@ my %defs = (
       my @part_export =
         map { qsearch( 'part_export', {exporttype => $_ } ) }
           keys %{FS::part_export::export_info($layer)};
-      $html .= '<BR><BR>'. table().
-               table(). "<TR><TH COLSPAN=$columns>Exports</TH></TR><TR>";
+      $html .= '<BR><BR>'. table(). 
+               "<TR><TH COLSPAN=$columns>Exports</TH></TR><TR>";
       foreach my $part_export ( @part_export ) {
         $html .= '<TD><INPUT TYPE="checkbox"'.
                  ' NAME="exportnum'. $part_export->exportnum. '"  VALUE="1" ';
@@ -191,75 +233,176 @@ my %defs = (
       }
       $html .= '</TR></TABLE><BR><BR>';
 
-      $html .=  table(). "<TH>Field</TH><TH COLSPAN=2>Modifier</TH>";
+      $html .= include('/elements/table-grid.html', 'cellpadding' => 4 ).
+               '<TR>'.
+                 '<TH CLASS="grid" BGCOLOR="#cccccc">Field</TH>'.
+                 '<TH CLASS="grid" BGCOLOR="#cccccc" COLSPAN=2>Modifier</TH>'.
+               '</TR>';
+
+      my $bgcolor1 = '#eeeeee';
+      my $bgcolor2 = '#ffffff';
+      my $bgcolor;
+
       #yucky kludge
       my @fields = defined( dbdef->table($layer) )
                       ? grep { $_ ne 'svcnum' } fields($layer)
                       : ();
       push @fields, 'usergroup' if $layer eq 'svc_acct'; #kludge
       $part_svc->svcpart($clone) if $clone; #haha, undone below
+
+
       foreach my $field (@fields) {
+
         my $part_svc_column = $part_svc->part_svc_column($field);
         my $value = $part_svc_column->columnvalue;
         my $flag = $part_svc_column->columnflag;
         my $def = $defs{$layer}{$field};
         my $desc = ref($def) ? $def->{desc} : $def;
+
+        if ( $bgcolor eq $bgcolor1 ) {
+          $bgcolor = $bgcolor2;
+        } else {
+          $bgcolor = $bgcolor1;
+        }
         
-        $html .= "<TR><TD>$field";
+        $html .= qq!<TR><TD CLASS="grid" BGCOLOR="$bgcolor" ALIGN="right">!.
+                 $field;
         $html .= "- <FONT SIZE=-1>$desc</FONT>" if $desc;
         $html .=  "</TD>";
         $flag = '' if ref($def) && $def->{type} eq 'disabled';
-        $html .=
-          qq!<TD><INPUT TYPE="radio" NAME="${layer}__${field}_flag" VALUE=""!.
-          ' CHECKED'x($flag eq ''). ">Off</TD>".
-          '<TD>';
-        unless ( ref($def) && $def->{type} eq 'disabled' ) {
-          $html .= 
-            qq!<INPUT TYPE="radio" NAME="${layer}__${field}_flag" VALUE="D"!.
-            ' CHECKED'x($flag eq 'D'). ">Default ".
-            qq!<INPUT TYPE="radio" NAME="${layer}__${field}_flag" VALUE="F"!.
-            ' CHECKED'x($flag eq 'F'). ">Fixed ";
-          $html .= '<BR>';
-        }
-        if ( ref($def) ) {
-          if ( $def->{type} eq 'select' ) {
-            $html .= qq!<SELECT NAME="${layer}__${field}">!;
-            $html .= '<OPTION> </OPTION>' unless $value;
-            if ( $def->{select_table} ) {
-              foreach my $record ( qsearch( $def->{select_table}, {} ) ) {
-                my $rvalue = $record->getfield($def->{select_key});
-                $html .= qq!<OPTION VALUE="$rvalue"!.
-                         ( $rvalue==$value ? ' SELECTED>' : '>' ).
-                         $record->getfield($def->{select_label}). '</OPTION>';
-              } #next $record
-            } else { # select_list
-              foreach my $item ( @{$def->{select_list}} ) {
-                $html .= qq!<OPTION VALUE="$item"!.
-                         ( $item eq $value ? ' SELECTED>' : '>' ).
-                         $item. '</OPTION>';
-              } #next $item
-            } #endif
-            $html .= '</SELECT>';
-          } elsif ( $def->{type} eq 'radius_usergroup_selector' ) {
-            $html .= FS::svc_acct::radius_usergroup_selector(
-              [ split(',', $value) ], "${layer}__${field}" );
-          } elsif ( $def->{type} eq 'disabled' ) {
-            $html .=
-              qq!<INPUT TYPE="hidden" NAME="${layer}__${field}" VALUE="">!;
-          } else {
-            $html .= '<font color="#ff0000">unknown type'. $def->{type};
-          }
+
+        $html .= qq!<TD CLASS="grid" BGCOLOR="$bgcolor">!;
+
+        if ( ref($def) && $def->{type} eq 'disabled' ) {
+        
+          $html .= 'No default';
+
         } else {
-          $html .=
-            qq!<INPUT TYPE="text" NAME="${layer}__${field}" VALUE="$value">!;
+
+          $html .= qq!<SELECT NAME="${layer}__${field}_flag"!.
+                      qq! onChange="${layer}__${field}_flag_changed(this)">!;
+
+          foreach my $f ( keys %flag ) {
+
+            #here is where the SUB from above is called, to skip some choices
+            next if $flag{$f}->{condition}
+                 && &{ $flag{$f}->{condition} }( $def, $layer, $field );
+
+            $html .= qq!<OPTION VALUE="$f"!.
+                     ' SELECTED'x($flag eq $f ).
+                     '>'. $flag{$f}->{desc};
+
+          }
+
+          $html .= '</SELECT>';
+
+          $html .= join("\n",
+            '<SCRIPT>',
+            "  function ${layer}__${field}_flag_changed(what) {",
+            '    var f = what.options[what.selectedIndex].value;',
+            '    if ( f == "" || f == "X" ) { //disable',
+            "      what.form.${layer}__${field}.disabled = true;".
+            "      what.form.${layer}__${field}.style.backgroundColor = '#dddddd';".
+            "      if ( what.form.${layer}__${field}_classnum ) {".
+            "        what.form.${layer}__${field}_classnum.disabled = true;".
+            "        what.form.${layer}__${field}_classnum.style.backgroundColor = '#dddddd';".
+            "      }".
+            '    } else if ( f == "D" || f == "F" ) { //enable, text box',
+            "      what.form.${layer}__${field}.disabled = false;".
+            "      what.form.${layer}__${field}.style.backgroundColor = '#ffffff';".
+            "      what.form.${layer}__${field}.style.display = '';".
+            "      if ( what.form.${layer}__${field}_classnum ) {".
+            "        what.form.${layer}__${field}_classnum.disabled = false;".
+            "        what.form.${layer}__${field}_classnum.style.backgroundColor = '#ffffff';".
+            "        what.form.${layer}__${field}_classnum.style.display = 'none';".
+            "      }".
+            '    } else if ( f == "M" || f == "A" ) { //enable, inventory',
+            "      what.form.${layer}__${field}.disabled = false;".
+            "      what.form.${layer}__${field}.style.backgroundColor = '#ffffff';".
+            "      what.form.${layer}__${field}.style.display = 'none';".
+            "      if ( what.form.${layer}__${field}_classnum ) {".
+            "        what.form.${layer}__${field}_classnum.disabled = false;".
+            "        what.form.${layer}__${field}_classnum.style.backgroundColor = '#ffffff';".
+            "        what.form.${layer}__${field}_classnum.style.display = '';".
+            "      }".
+            '    }',
+            '  }',
+            '</SCRIPT>',
+          );
+
         }
 
-        if($vfields{$layer}->{$field}) {
-          $html .= qq!<BR><INPUT TYPE="radio" NAME="${layer}__${field}_flag" VALUE="X"!.
-          ' CHECKED'x($flag eq 'X'). ">Excluded ";
+        $html .= qq!</TD><TD CLASS="grid" BGCOLOR="$bgcolor">!;
+
+        my $disabled = $flag ? ''
+                             : 'DISABLED STYLE="background-color: #dddddd"';
+
+        if ( ! ref($def) || $def->{type} eq 'text' ) {
+
+          my $nodisplay = ' STYLE="display:none"';
+          my $is_inv = ( $flag =~ /^[MA]$/ );
+
+          $html .=
+            qq!<INPUT TYPE="text" NAME="${layer}__${field}" VALUE="$value" !.
+            $disabled.
+            ( $is_inv ? $nodisplay : $disabled ).
+            '>';
+
+          $html .= include('/elements/select-table.html',
+                             'element_name' => "${layer}__${field}_classnum",
+                             'element_etc'  => ( $is_inv
+                                                   ? $disabled
+                                                   : $nodisplay
+                                               ),
+                             'table'        => 'inventory_class',
+                             'name_col'     => 'classname',
+                             'value'        => $value,
+                             'empty_label'  => 'Select inventory class',
+                          );
+
+        } elsif ( $def->{type} eq 'select' ) {
+
+          $html .= qq!<SELECT NAME="${layer}__${field}" $disabled>!;
+          $html .= '<OPTION> </OPTION>' unless $value;
+          if ( $def->{select_table} ) {
+            foreach my $record ( qsearch( $def->{select_table}, {} ) ) {
+              my $rvalue = $record->getfield($def->{select_key});
+              $html .= qq!<OPTION VALUE="$rvalue"!.
+                       ( $rvalue==$value ? ' SELECTED>' : '>' ).
+                       $record->getfield($def->{select_label}). '</OPTION>';
+            } #next $record
+          } else { # select_list
+            foreach my $item ( @{$def->{select_list}} ) {
+              $html .= qq!<OPTION VALUE="$item"!.
+                       ( $item eq $value ? ' SELECTED>' : '>' ).
+                       $item. '</OPTION>';
+            } #next $item
+          } #endif
+          $html .= '</SELECT>';
+
+        } elsif ( $def->{type} eq 'radius_usergroup_selector' ) {
+
+          #XXX disable the RADIUS usergroup selector?  ugh it sure does need
+          #an overhaul, people have dum group problems because of it
+
+          $html .= FS::svc_acct::radius_usergroup_selector(
+            [ split(',', $value) ], "${layer}__${field}" );
+
+        } elsif ( $def->{type} eq 'disabled' ) {
+
+          $html .=
+            qq!<INPUT TYPE="hidden" NAME="${layer}__${field}" VALUE="">!;
+
+        } else {
+
+          $html .= '<font color="#ff0000">unknown type'. $def->{type};
+
         }
+
         $html .= "</TD></TR>\n";
-      }
+
+      } #foreach my $field (@fields) {
+
       $part_svc->svcpart('') if $clone; #undone
       $html .= "</TABLE>";
 
