@@ -9,10 +9,12 @@ use FS::cust_svc;
 use FS::part_svc;
 use FS::queue;
 use FS::cust_main;
+use FS::inventory_item;
+use FS::inventory_class;
 
 @ISA = qw( FS::cust_main_Mixin FS::Record );
 
-$DEBUG = 0;
+$DEBUG = 1;
 
 =head1 NAME
 
@@ -202,6 +204,12 @@ sub insert {
     $self->svcpart($cust_svc->svcpart);
   }
 
+  $error = $self->set_auto_inventory;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
   $error = $self->SUPER::insert;
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
@@ -297,7 +305,7 @@ sub delete {
   #new-style exports!
   unless ( $noexport_hack ) {
     foreach my $part_export ( $self->cust_svc->part_svc->part_export ) {
-      my $error = $part_export->export_delete($self);
+      $error = $part_export->export_delete($self);
       if ( $error ) {
         $dbh->rollback if $oldAutoCommit;
         return "exporting to ". $part_export->exporttype.
@@ -306,11 +314,18 @@ sub delete {
     }
   }
 
-  return $error if $error;
+  $error = $self->return_inventory;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return "error returning inventory: $error";
+  }
 
   my $cust_svc = $self->cust_svc;
   $error = $cust_svc->delete;
-  return $error if $error;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
@@ -338,7 +353,13 @@ sub replace {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  my $error = $new->SUPER::replace($old);
+  my $error = $new->set_auto_inventory;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  $error = $new->SUPER::replace($old);
   if ($error) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
@@ -409,7 +430,7 @@ to test the return).  Usually called by the check method.
 
 sub setfixed {
   my $self = shift;
-  $self->setx('F');
+  $self->setx('F', @_);
 }
 
 =item setdefault
@@ -422,19 +443,67 @@ the FS::part_svc object (use ref() to test the return).
 
 sub setdefault {
   my $self = shift;
-  $self->setx('D');
+  $self->setx('D', @_ );
 }
+
+=item set_default_and_fixed
+
+=cut
+
+sub set_default_and_fixed {
+  my $self = shift;
+  $self->setx( [ 'D', 'F' ], @_ );
+}
+
+=item setx FLAG | FLAG_ARRAYREF , [ CALLBACK_HASHREF ]
+
+Sets fields according to the passed in flag or arrayref of flags.
+
+Optionally, a hashref of field names and callback coderefs can be passed.
+If a coderef exists for a given field name, instead of setting the field,
+the coderef is called with the column value (part_svc_column.columnvalue)
+as the single parameter.
+
+=cut
 
 sub setx {
   my $self = shift;
   my $x = shift;
+  my @x = ref($x) ? @$x : ($x);
+  my %coderef = @_ ? shift : {};
 
-  my $error;
-
-  $error =
+  my $error =
     $self->ut_numbern('svcnum')
   ;
   return $error if $error;
+
+  my $part_svc = $self->part_svc;
+  return "Unkonwn svcpart" unless $part_svc;
+
+  #set default/fixed/whatever fields from part_svc
+
+  foreach my $part_svc_column (
+    grep { my $f = $_->columnflag; grep { $f eq $_ } @x } #columnflag in @x
+    $part_svc->all_part_svc_column
+  ) {
+
+    my $columnname  = $part_svc_column->columnname;
+    my $columnvalue = $part_svc_column->columnvalue;
+
+    if ( exists( $coderef{columnname} ) ) {
+      &{ $coderef{$columnname} }( $self, $columnvalue);
+    } else {
+      $self->setfield( $columnname, $columnvalue );
+    }
+
+  }
+
+ $part_svc;
+
+}
+
+sub part_svc {
+  my $self = shift;
 
   #get part_svc
   my $svcpart;
@@ -445,20 +514,129 @@ sub setx {
     return "Unknown svcnum" unless $cust_svc; 
     $svcpart = $cust_svc->svcpart;
   }
-  my $part_svc = qsearchs( 'part_svc', { 'svcpart' => $svcpart } );
+
+  qsearchs( 'part_svc', { 'svcpart' => $svcpart } );
+
+}
+
+=item set_auto_inventory
+
+Sets any fields which auto-populate from inventory (see L<FS::part_svc>).
+If there is an error, returns the error, otherwise returns false.
+
+=cut
+
+sub set_auto_inventory {
+  my $self = shift;
+
+  my $error =
+    $self->ut_numbern('svcnum')
+  ;
+  return $error if $error;
+
+  my $part_svc = $self->part_svc;
   return "Unkonwn svcpart" unless $part_svc;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
 
   #set default/fixed/whatever fields from part_svc
   my $table = $self->table;
   foreach my $field ( grep { $_ ne 'svcnum' } $self->fields ) {
     my $part_svc_column = $part_svc->part_svc_column($field);
-    if ( $part_svc_column->columnflag eq $x ) {
-      $self->setfield( $field, $part_svc_column->columnvalue );
+    if ( $part_svc_column->columnflag eq 'A' && $self->$field() eq '' ) {
+
+      my $classnum = $part_svc_column->columnvalue;
+      my $inventory_item = qsearchs({
+        'table'     => 'inventory_item',
+        'hashref'   => { 'classnum' => $classnum, 
+                         'svcnum'   => '',
+                       },
+        'extra_sql' => 'LIMIT 1 FOR UPDATE',
+      });
+
+      unless ( $inventory_item ) {
+        $dbh->rollback if $oldAutoCommit;
+        my $inventory_class =
+          qsearchs('inventory_class', { 'classnum' => $classnum } );
+        return "Can't find inventory_class.classnum $classnum"
+          unless $inventory_class;
+        return "Out of ". $inventory_class->classname. "s\n"; #Lingua:: BS
+                                                              #for pluralizing
+      }
+
+      $inventory_item->svcnum( $self->svcnum );
+      my $ierror = $inventory_item->replace();
+      if ( $ierror ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "Error provisioning inventory: $ierror";
+        
+      }
+
+      $self->setfield( $field, $inventory_item->item );
+
     }
   }
 
- $part_svc;
+ $dbh->commit or die $dbh->errstr if $oldAutoCommit;
 
+ '';
+
+}
+
+=item return_inventory
+
+=cut
+
+sub return_inventory {
+  my $self = shift;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  foreach my $inventory_item ( $self->inventory_item ) {
+    $inventory_item->svcnum('');
+    my $error = $inventory_item->replace();
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "Error returning inventory: $error";
+    }
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+  '';
+}
+
+=item inventory_item
+
+Returns the inventory items associated with this svc_ record, as
+FS::inventory_item objects (see L<FS::inventory_item>.
+
+=cut
+
+sub inventory_item {
+  my $self = shift;
+  qsearch({
+    'table'     => 'inventory_item',
+    'hashref'   => { 'svcnum' => $self->svcnum, },
+  });
 }
 
 =item cust_svc

@@ -68,18 +68,9 @@ unless ( $svcnum || $cgi->param('error') ) { #adding
     }
   }
 
-  #set fixed and default fields from part_svc
-  foreach my $part_svc_column (
-    grep { $_->columnflag } $part_svc->all_part_svc_column
-  ) {
-    if ( $part_svc_column->columnname eq 'usergroup' ) {
-      @groups = split(',', $part_svc_column->columnvalue);
-    } else {
-      $svc_acct->setfield( $part_svc_column->columnname,
-                           $part_svc_column->columnvalue,
-                         );
-    }
-  }
+  $svc_acct->set_default_and_fixed( {
+    'usergroup' => sub { @groups = split(',', shift ); },
+  } );
 
 }
 
@@ -274,7 +265,7 @@ if ( $part_svc->part_svc_column('popnum')->columnflag eq 'F' ) {
 <% foreach my $xid (qw( uid gid )) { %>
 
   <%
-  if ( $part_svc->part_svc_column($xid)->columnflag eq 'F'
+  if ( $part_svc->part_svc_column($xid)->columnflag =~ /^[FA]$/
        || ! $conf->exists("svc_acct-edit_$xid")
      ) {
   %>
@@ -376,7 +367,7 @@ if ( $part_svc->part_svc_column('shell')->columnflag eq 'F'
 <% } %>
 
 
-<% if ( $part_svc->part_svc_column('slipip')->columnflag eq 'F' ) { %>
+<% if ( $part_svc->part_svc_column('slipip')->columnflag =~ /^[FA]$/ ) { %>
 
   <INPUT TYPE="hidden" NAME="slipip" VALUE="<%= $svc_acct->slipip %>">
 
@@ -396,7 +387,7 @@ foreach my $r ( grep { /^r(adius|[cr])_/ } fields('svc_acct') ) {
   my $a = $2;
 %>
 
-  <% if ( $part_svc->part_svc_column($r)->columnflag eq 'F' ) { %>
+  <% if ( $part_svc->part_svc_column($r)->columnflag =~ /^[FA]$/ ) { %>
 
     <INPUT TYPE="hidden" NAME="<%= $r %>" VALUE="<%= $svc_acct->getfield($r) %>">
 

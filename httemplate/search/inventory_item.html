@@ -24,7 +24,30 @@ if ( $cgi->param('avail') ) {
 my $count_query =
   "SELECT COUNT(*) FROM inventory_item WHERE classnum = $classnum $extra_sql";
 
+my $link = sub {
+  my $inventory_item = shift;
+  if ( $inventory_item->svcnum ) {
+    [ "${p}view/svc_acct.cgi?", 'svcnum' ];
+  } else {
+    '';
+  }
+};
+my $link_cust = sub {
+  my $inventory_item = shift;
+  if ( $inventory_item->custnum ) {
+    [ "${p}view/cust_main.cgi?", 'custnum' ];
+  } else {
+    '';
+  }
+};
+
+my $addl_from = ' LEFT JOIN cust_svc  USING ( svcnum  ) '.
+                ' LEFT JOIN part_svc  USING ( svcpart ) '.
+                ' LEFT JOIN cust_pkg  USING ( pkgnum  ) '.
+                ' LEFT JOIN cust_main USING ( custnum ) ';
+
 %><%= include( 'elements/search.html',
+
                  'title'       => $title,
 
                  #less lame to use Lingua:: something to pluralize
@@ -33,19 +56,52 @@ my $count_query =
                  'query'       => {
                                     'table'   => 'inventory_item',
                                     'hashref' => { 'classnum' => $classnum },
+                                    'select'  => join(', ',
+                                        'inventory_item.*',
+                                        'cust_main.custnum',
+                                        FS::UI::Web::cust_sql_fields(),
+                                      ),
                                     'extra_sql' => $extra_sql,
+                                    'addl_from' => $addl_from,
                                   },
 
                  'count_query' => $count_query,
 
-                 # XXX proper full service/customer link ala svc_acct
-                 'header'      => [ '#', $inventory_class->classname, 'svcnum' ],
+                 'header'      => [
+                   '#',
+                   $inventory_class->classname,
+                   'Service',
+                   FS::UI::Web::cust_header(),
+                 ],
 
                  'fields'      => [
                    'itemnum',
                    'item',
-                   'svcnum', #XXX proper full service customer link ala svc_acct
+                   #'svcnum', #XXX proper full service customer link ala svc_acct
                              # "unallocated" ?  "available" ?
+                   sub {
+                     #this could be way more efficient with a mixin
+                     # like cust_main_Mixin that let us all all the methods
+                     # on data we already have...
+                     my $inventory_item = shift;
+                     my $cust_svc = $inventory_item->cust_svc;
+                     if ( $cust_svc ) {
+                       my($label, $value) = $cust_svc->label;
+                       "$label: $value";
+                     } else {
+                       '(available)';
+                     }
+                   },
+
+                   \&FS::UI::Web::cust_fields,
+
+                 ],
+
+                 'links'       => [
+                   '',
+                   '',
+                   $link,
+                   ( map { $link_cust } FS::UI::Web::cust_header() ),
                  ],
 
              )

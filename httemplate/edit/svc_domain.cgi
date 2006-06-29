@@ -44,14 +44,7 @@ if ( $cgi->param('error') ) {
 
     $svcnum='';
 
-    #set fixed and default fields from part_svc
-    foreach my $part_svc_column (
-      grep { $_->columnflag } $part_svc->all_part_svc_column
-    ) {
-      $svc_domain->setfield( $part_svc_column->columnname,
-                             $part_svc_column->columnvalue,
-                           );
-    }
+    $svc_domain->set_default_and_fixed;
 
   }
 

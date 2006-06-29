@@ -179,9 +179,10 @@ my %defs = (
              'condition' =>
                sub { ref($_[0]) && $_[0]->{disable_fixed} }, 
            },
-    'M' => { 'desc' => 'Manual selection from inventory',
-             'condition' => $inv_sub,
-           },
+# need to template-ize httemplate/edit/svc_* first
+#    'M' => { 'desc' => 'Manual selection from inventory',
+#             'condition' => $inv_sub,
+#           },
     'A' => { 'desc' => 'Automatically fill in from inventory',
              'condition' => $inv_sub,
            },

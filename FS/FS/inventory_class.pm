@@ -120,7 +120,7 @@ sub num_avail {
 
 sub num_sql {
   my( $self, $sql ) = @_;
-  my $sql = "AND $sql" if length($sql);
+  $sql = "AND $sql" if length($sql);
   my $statement =
     "SELECT COUNT(*) FROM inventory_item WHERE classnum = ? $sql";
   my $sth = dbh->prepare($statement) or die dbh->errstr. " preparing $statement";
