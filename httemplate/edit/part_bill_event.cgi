@@ -139,10 +139,18 @@ my $money_char = $conf->config('money_char') || '$';
 tie my %events, 'Tie::IxHash',
 
   'fee' => {
-    'name'   => 'Late fee',
+    'name'   => 'Late fee (flat)',
     'code'   => '$cust_main->charge( %%%charge%%%, \'%%%reason%%%\' );',
     'html'   => 
       'Amount <INPUT TYPE="text" SIZE="7" NAME="charge" VALUE="%%%charge%%%">'.
+      '<BR>Reason <INPUT TYPE="text" NAME="reason" VALUE="%%%reason%%%">',
+    'weight' => 10,
+  },
+  'fee_percent' => {
+    'name'   => 'Late fee (percentage)',
+    'code'   => '$cust_main->charge( sprintf(\'%.2f\', $cust_bill->owed * %%%percent%%% / 100 ), \'%%%reason%%%\' );',
+    'html'   => 
+      'Percent <INPUT TYPE="text" SIZE="2" NAME="percent" VALUE="%%%percent%%%">%'.
       '<BR>Reason <INPUT TYPE="text" NAME="reason" VALUE="%%%reason%%%">',
     'weight' => 10,
   },
