@@ -257,7 +257,7 @@ sub _export_replace {
     ${"old_$_"} = $old->getfield($_) foreach $old->fields;
     ${"new_$_"} = $new->getfield($_) foreach $new->fields;
   }
-  $new_finger =~ /^(.*)\s+(\S+)$/ or $finger =~ /^((.*))$/;
+  $new_finger =~ /^(.*)\s+(\S+)$/ or $new_finger =~ /^((.*))$/;
   ($new_first, $new_last ) = ( $1, $2 );
   $new_first = shell_quote $new_first;
   $new_last = shell_quote $new_last;
