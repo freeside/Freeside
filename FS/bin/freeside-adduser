@@ -1,27 +1,27 @@
 #!/usr/bin/perl -w
 #
-# $Id: freeside-adduser,v 1.10 2006-04-13 21:29:01 ivan Exp $
+# $Id: freeside-adduser,v 1.11 2006-06-30 14:30:26 ivan Exp $
 
 use strict;
-use vars qw($opt_h $opt_b $opt_c $opt_s);
+use vars qw($opt_h $opt_b $opt_c $opt_g);
 use Fcntl qw(:flock);
 use Getopt::Std;
 
 my $FREESIDE_CONF = "/usr/local/etc/freeside";
 
-getopts("bch:s:");
+getopts("bch:g:");
 die &usage if $opt_c && ! $opt_h;
 my $user = shift or die &usage;
 
-if ( -e "$FREESIDE_CONF/mapsecrets" ) {
-  open(MAPSECRETS,"<$FREESIDE_CONF/mapsecrets")
-    or die "can't open $FREESIDE_CONF/mapsecrets: $!";
-  while (<MAPSECRETS>) {
-    /^(\S+) / or die "unparsable line in mapsecrets: $_";
-    die "user $user already exists\n" if $user eq $1;
-  }
-  close MAPSECRETS;
-}
+#if ( -e "$FREESIDE_CONF/mapsecrets" ) {
+#  open(MAPSECRETS,"<$FREESIDE_CONF/mapsecrets")
+#    or die "can't open $FREESIDE_CONF/mapsecrets: $!";
+#  while (<MAPSECRETS>) {
+#    /^(\S+) / or die "unparsable line in mapsecrets: $_";
+#    die "user $user already exists\n" if $user eq $1;
+#  }
+#  close MAPSECRETS;
+#}
 
 if ( $opt_h ) {
   my @args = ( 'htpasswd' );
@@ -32,16 +32,49 @@ if ( $opt_h ) {
   system(@args) == 0 or die "htpasswd failed: $?";
 }
 
-my $secretfile = $opt_s || 'secrets';
+#my $secretfile = $opt_s || 'secrets';
+#
+#open(MAPSECRETS,">>$FREESIDE_CONF/mapsecrets")
+#  and flock(MAPSECRETS,LOCK_EX)
+#    or die "can't open $FREESIDE_CONF/mapsecrets: $!";
+#print MAPSECRETS "$user $secretfile\n";
+#close MAPSECRETS or die "can't close $FREESIDE_CONF/mapsecrets: $!";
 
-open(MAPSECRETS,">>$FREESIDE_CONF/mapsecrets")
-  and flock(MAPSECRETS,LOCK_EX)
-    or die "can't open $FREESIDE_CONF/mapsecrets: $!";
-print MAPSECRETS "$user $secretfile\n";
-close MAPSECRETS or die "can't close $FREESIDE_CONF/mapsecrets: $!";
+###
+
+use FS::UID qw(adminsuidsetup);
+use FS::CurrentUser;
+use FS::access_user;
+use FS::access_usergroup;
+
+$FS::CurrentUser::upgrade_hack = 1;
+#adminsuidsetup $rootuser;
+adminsuidsetup $user;
+
+my $access_user = new FS::access_user {
+  'username'  => $user,
+  '_password' => 'notyet',
+  'first'     => 'Firstname', # $opt_f || 
+  'last'      => 'Lastname',  # $opt_l || 
+};
+my $au_error = $access_user->insert;
+die $au_error if $au_error;
+
+if ( $opt_g ) {
+
+  my $access_usergroup = new FS::access_usergroup {
+    'usernum'  => $access_user->usernum,
+    'groupnum' => $opt_g,
+  };
+  my $aug_error = $access_usergroup->insert;
+  die $aug_error if $aug_error;
+
+}
+
+###
 
 sub usage {
-  die "Usage:\n\n  freeside-adduser [ -h htpasswd_file [ -c ] [ -b ] ] [ -s secretfile ] username"
+  die "Usage:\n\n  freeside-adduser [ -h htpasswd_file [ -c ] [ -b ] ] [ -g groupnum ] username"
 }
 
 =head1 NAME
@@ -50,7 +83,7 @@ freeside-adduser - Command line interface to add (freeside) users.
 
 =head1 SYNOPSIS
 
-  freeside-adduser [ -h htpasswd_file [ -c ] ] [ -s secretfile ] username
+  freeside-adduser [ -h htpasswd_file [ -c ] ] -g 1 username
 
 =head1 DESCRIPTION
 
@@ -61,9 +94,9 @@ sales/tech folks) to the web interface, not for adding customer accounts.
 
   -c: Passed to htpasswd(1)
 
-  -s: Specify an alternate secret file
-
   -b: same as htpasswd(1), probably insecure, not recommended
+
+  -g: initial groupnum
 
 =head1 SEE ALSO
 
