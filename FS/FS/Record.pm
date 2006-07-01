@@ -763,7 +763,7 @@ sub insert {
       #my $i_sql = "SELECT $primary_key FROM $table WHERE oid = ?";
 
       my $default = $self->dbdef_table->column($primary_key)->default;
-      unless ( $default =~ /^nextval\('"?([\w\.]+)"?'/i ) {
+      unless ( $default =~ /^nextval\(\(?'"?([\w\.]+)"?'/i ) {
         dbh->rollback if $FS::UID::AutoCommit;
         return "can't parse $table.$primary_key default value".
                " for sequence name: $default";
