@@ -5,6 +5,7 @@ Makefile.PL
 README
 bin/freeside-addoutsource
 bin/freeside-addoutsourceuser
+bin/freeside-addgroup
 bin/freeside-adduser
 bin/freeside-apply-credits
 bin/freeside-bill

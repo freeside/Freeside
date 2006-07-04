@@ -1,0 +1,50 @@
+#!/usr/bin/perl
+
+use strict;
+use vars qw($opt_s);
+use Getopt::Std;
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw(qsearch);
+use FS::CurrentUser;
+use FS::AccessRight;
+use FS::access_group;
+use FS::access_right;
+use FS::access_groupagent;
+
+getopts("s");
+my $user = shift or die &usage; #just for adminsuidsetup
+my $group = shift or die &usage;
+
+$FS::CurrentUser::upgrade_hack = 1;
+#adminsuidsetup $rootuser;
+adminsuidsetup $user;
+
+my $access_group = new FS::access_group { 'groupname' => $group };
+my $error = $access_group->insert;
+die $error if $error;
+
+if ( $opt_s ) {
+  foreach my $rightname ( FS::AccessRight->rights ) {
+    my $access_right = new FS::access_right {
+      'righttype'   => 'FS::access_group',
+      'rightobjnum' => $access_group->groupnum,
+      'rightname'   => $rightname,
+    };
+    my $ar_error = $access_right->insert;
+    die $ar_error if $ar_error;
+  }
+
+  foreach my $agent ( qsearch('agent', {} ) ) {
+    my $access_groupagent = new FS::access_groupagent {
+      'groupnum' => $access_group->groupnum,
+      'agentnum' => $agent->agentnum,
+    };
+    my $aga_error = $access_groupagent->insert;
+    die $aga_error if $aga_error;
+  }
+}
+
+sub usage {
+  die "Usage:\n\n  freeside-addgroup [ -s ] username groupname"
+}
+

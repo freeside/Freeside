@@ -1,6 +1,4 @@
 #!/usr/bin/perl -w
-#
-# $Id: freeside-adduser,v 1.11 2006-06-30 14:30:26 ivan Exp $
 
 use strict;
 use vars qw($opt_h $opt_b $opt_c $opt_g);
