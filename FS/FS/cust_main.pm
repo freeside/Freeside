@@ -3886,7 +3886,7 @@ sub smart_search {
       push @cust_main, qsearch( {
         'table'     => 'cust_main',
         'hashref'   => { 'last'     => { 'op'    => 'ILIKE',
-                                         'value' => "%$q_value%" },
+                                         'value' => "%$value%" },
                          %options,
                        },
         'extra_sql' => " AND $agentnums_sql", #agent virtualizaiton
@@ -3894,7 +3894,7 @@ sub smart_search {
       push @cust_main, qsearch( {
         'table'     => 'cust_main',
         'hashref'   => { 'ship_last' => { 'op'     => 'ILIKE',
-                                          'value' => "%$q_value%" },
+                                          'value' => "%$value%" },
                          %options, 
                        },
         'extra_sql' => " AND $agentnums_sql", #agent virtualization
@@ -3904,7 +3904,7 @@ sub smart_search {
       push @cust_main, qsearch( {
         'table'     => 'cust_main',
         'hashref'   => { 'company'  => { 'op'    => 'ILIKE',
-                                         'value' => "%$q_value%" },
+                                         'value' => "%$value%" },
                          %options,
                        },
         'extra_sql' => " AND $agentnums_sql", #agent virtualization
@@ -3912,7 +3912,7 @@ sub smart_search {
       push @cust_main, qsearch(  {
         'table'     => 'cust_main',
         'hashref'   => { 'ship_company' => { 'op'    => 'ILIKE',
-                                             'value' => "%$q_value%" },
+                                             'value' => "%$value%" },
                          %options,
                        },
         'extra_sql' => " AND $agentnums_sql", #agent virtualization
