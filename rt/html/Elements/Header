@@ -67,7 +67,7 @@ function hideshow(num) {
 </script>
 <& /Elements/Callback, _CallbackName => 'Head', %ARGS &>
 </HEAD>
-<BODY BACKGROUND="<%$fsurl%>images/background-cheat.png" STYLE="margin-top:0; margin-bottom:0; margin-left:0; margin-right:0" 
+<BODY BACKGROUND="<% $RT::URI::freeside::URL %>/images/background-cheat.png" STYLE="margin-top:0; margin-bottom:0; margin-left:0; margin-right:0" 
 % if ($Focus) {
 ONLOAD="
     var tmp = (document.getElementsByName('<% $Focus %>'));

@@ -45,7 +45,7 @@
 %# END BPS TAGGED BLOCK }}}
 <table class="black" border=0 cellspacing=0 cellpadding=0 width="100%">
 <tr>
-  <TD colspan=5 WIDTH="100%" STYLE="padding:0"><IMG BORDER=0 ALT="" SRC="<% $RT::URI::freeside::URL %>images/black-gradient.png" HEIGHT="13" WIDTH="100%"></TD>
+  <TD colspan=5 WIDTH="100%" STYLE="padding:0"><IMG BORDER=0 ALT="" SRC="<% $RT::URI::freeside::URL %>/images/black-gradient.png" HEIGHT="13" WIDTH="100%"></TD>
 </tr>
 <tr>
 %#  <th class="black" align="left" width=15%><span class="rtname"><%$AppName%></span>
@@ -62,15 +62,15 @@
 <table border=0 cellspacing=0 cellpadding=0 width="100%" height="100%">
 <TR>
   <TD BGCOLOR="#000000" STYLE="padding:0" WIDTH="154"></TD>
-  <TD STYLE="padding:0" WIDTH="13"><IMG BORDER=0 ALT="" SRC="<% $RT::URI::freeside::URL %>images/black-gray-corner.png"></TD>
-  <TD STYLE="padding:0"><IMG BORDER=0 ALT="" SRC="<% $RT::URI::freeside::URL %>images/black-gray-top.png" HEIGHT="13" WIDTH="100%"></TD>
+  <TD STYLE="padding:0" WIDTH="13"><IMG BORDER=0 ALT="" SRC="<% $RT::URI::freeside::URL %>/images/black-gray-corner.png"></TD>
+  <TD STYLE="padding:0"><IMG BORDER=0 ALT="" SRC="<% $RT::URI::freeside::URL %>/images/black-gray-top.png" HEIGHT="13" WIDTH="100%"></TD>
 </TR>
 %# Vertical menu
 <TR height="100%">
 <TD valign="top" width="140" class="black">
           <& /Elements/Menu, toptabs => $toptabs, current_toptab => $current_toptab &>
 </TD>
-<TD STYLE="padding:0" HEIGHT="100%" WIDTH=13 VALIGN="top"><IMG WIDTH="13" HEIGHT="100%" BORDER=0 ALT="" SRC="<% $RT::URI::freeside::URL %>images/black-gray-side.png"></TD>
+<TD STYLE="padding:0" HEIGHT="100%" WIDTH=13 VALIGN="top"><IMG WIDTH="13" HEIGHT="100%" BORDER=0 ALT="" SRC="<% $RT::URI::freeside::URL %>/images/black-gray-side.png"></TD>
 <td valign="top">
 <table width="100%" height="100%" border="0" cellpadding="0" cellspacing="0">
 <tr>
