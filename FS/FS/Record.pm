@@ -1727,7 +1727,7 @@ sub _quote {
        ( $nullable ? ' NULL' : ' NOT NULL' ).
        ")\n" if $DEBUG > 2;
 
-  if ( $value eq '' && $column_type =~ /^int/ ) {
+  if ( $value eq '' && $column_type =~ /^(int|numeric)/ ) {
     if ( $nullable ) {
       'NULL';
     } else {

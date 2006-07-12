@@ -347,3 +347,6 @@ FS/ConfDefaults.pm
 t/ConfDefaults.t
 FS/m2name_Common.pm
 FS/CurrentUser.pm
+FS/svc_phone.pm
+t/svc_phone.t
+FS/h_svc_phone.pm

@@ -9,25 +9,35 @@
   #               'column' => 'Label',
   #             }
   #
-  # listref - each item is a literal column name (or method) or (notyet) coderef
+  # listref - each item is a literal column name (or method) or hashref
+  #                                                          or (notyet) coderef
   # if not specified all columns (except for the primary key) will be editable
   # 'fields' => [
+  #               'columname',
+  #               { 'field' => 'another_columname',
+  #                 'type' => 'text', #text, fixed, hidden
+  #               },
   #             ]
   #
   # 'menubar'     => '', #menubar arrayref
   #
   # #run when re-displaying with an error
-  # 'error_callback' => sub { my $cgi, $object = @_; },
+  # 'error_callback' => sub { my( $cgi, $object ) = @_; },
   #
   # #run when editing
-  # 'edit_callback' => sub { my $cgi, $object = @_; },
+  # 'edit_callback' => sub { my( $cgi, $object ) = @_; },
+  #
+  # # returns a hashref for the new object
+  # 'new_hashref_callback'
   #
   # #run when adding
-  # 'new_callback' => sub { my $cgi, $object = @_; },
+  # 'new_callback' => sub { my( $cgi, $object ) = @_; },
   #
-  # #uninmplemented
-  # #'html_table_bottom' => '', #string or listref of additinal HTML to
-  # #                           #add before </TABLE>
+  # #XXX describe
+  # 'field_callback' => sub { },
+  #
+  # #string or coderef of additional HTML to add before </TABLE>
+  # 'html_table_bottom' => '',
   #
   # 'viewall_dir' => '', #'search' or 'browse', defaults to 'search'
   #
@@ -64,13 +74,19 @@
     my( $query ) = $cgi->keywords;
     $query =~ /^(\d+)$/;
     $object = qsearchs( $table, { $pkey => $1 } );
+    warn "$table $pkey => $1"
+      if $opt{'debug'};
 
     &{$opt{'edit_callback'}}($cgi, $object)
       if $opt{'edit_callback'};
 
   } else { #adding
 
-    $object = $class->new( {} );
+    my $hashref = $opt{'new_hashref_callback'}
+                    ? &{$opt{'new_hashref_callback'}}
+                    : {};
+
+    $object = $class->new( $hashref );
 
     &{$opt{'new_callback'}}($cgi, $object)
       if $opt{'new_callback'};
@@ -113,16 +129,15 @@
 
 <%= ntable("#cccccc",2) %>
 
-<% foreach my $f ( @$fields ) {
+<% foreach my $f ( map { ref($_) ? $_ : {'field'=>$_} }
+                       @$fields
+                 ) {
 
-    my( $field, $type);
-    if ( ref($f) ) {
-      $field = $f->{'field'},
-      $type  = $f->{'type'} || 'text',
-    } else {
-      $field = $f;
-      $type = 'text';
-    }
+    &{ $opt{'field_callback'} }( $f )
+      if $opt{'field_callback'};
+
+    my $field = $f->{'field'};
+    my $type = $f->{'type'} ||= 'text';
 
 %>
 
@@ -137,15 +152,28 @@
 
     <%
       #eventually more options for <SELECT>, etc. fields
+      if ( $type eq 'fixed' ) {
     %>
 
-    <TD>
-      <INPUT TYPE="<%= $type %>" NAME="<%= $field %>" VALUE="<%= $object->$field() %>">
-    <TD>
+      <TD BGCOLOR="#dddddd"><%= $f->{'value'} %></TD>
+      <INPUT TYPE="hidden" NAME="<%= $field %>" VALUE="<%= $f->{'value'} %>">
+
+    <% } else { %>
+
+      <TD>
+        <INPUT TYPE="<%= $type %>" NAME="<%= $field %>" VALUE="<%= $object->$field() %>">
+      <TD>
+
+    <% } %>
 
   </TR>
 
 <% } %>
+
+<%= ref( $opt{'html_table_bottom'} )
+      ? &{ $opt{'html_table_bottom'} }( $object )
+      : $opt{'html_table_bottom'}
+%>
 
 </TABLE>
 

@@ -1538,6 +1538,18 @@ sub tables_hashref {
       'index'  => [],
     },
 
+    'svc_phone' => {
+      'columns' => [
+        'svcnum',      'int',         '',      '', '', '', 
+        'countrycode', 'varchar',     '',       3, '', '', 
+        'phonenum',    'varchar',     '',      15, '', '',  #12 ?
+        'pin',         'varchar', 'NULL', $char_d, '', '',
+      ],
+      'primary_key' => 'svcnum',
+      'unique' => [],
+      'index'  => [ [ 'countrycode', 'phonenum' ] ],
+    },
+
   };
 
     #'new_table' => {

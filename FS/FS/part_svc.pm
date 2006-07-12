@@ -347,7 +347,6 @@ and replace methods.
 
 sub check {
   my $self = shift;
-  my $recref = $self->hashref;
 
   my $error;
   $error=
@@ -358,8 +357,9 @@ sub check {
   ;
   return $error if $error;
 
-  my @fields = eval { fields( $recref->{svcdb} ) }; #might die
-  return "Unknown svcdb!" unless @fields;
+  my @fields = eval { fields( $self->svcdb ) }; #might die
+  return "Unknown svcdb: ". $self->svcdb. " (Error: $@)"
+    unless @fields;
 
   $self->SUPER::check;
 }
@@ -549,7 +549,9 @@ sub process {
                   @fields;
 
             } grep defined( dbdef->table($_) ),
-                   qw( svc_acct svc_domain svc_forward svc_www svc_broadband )
+                   qw( svc_acct svc_domain svc_forward svc_www svc_broadband
+                       svc_phone svc_external
+                     )
       )
   } );
   

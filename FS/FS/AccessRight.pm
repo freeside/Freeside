@@ -128,6 +128,8 @@ assigned to users and/or groups.
   'List packages',
   'List services',
 
+  'List rating data',
+
   'Financial reports',
 
   'Job queue', # these are not currently agent-virtualized

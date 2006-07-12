@@ -13,6 +13,7 @@ use FS::svc_acct;
 use FS::svc_domain;
 use FS::svc_forward;
 use FS::svc_broadband;
+use FS::svc_phone;
 use FS::svc_external;
 use FS::domain_record;
 use FS::part_export;
@@ -277,6 +278,10 @@ Returns a list consisting of:
 - The table name (i.e. svc_domain) for this service
 - svcnum
 
+Usage example:
+
+  my($label, $value, $svcdb) = $cust_svc->label;
+
 =cut
 
 sub label {
@@ -315,6 +320,8 @@ sub _svc_label {
     $tag = $domain_record->zone;
   } elsif ( $svcdb eq 'svc_broadband' ) {
     $tag = $svc_x->ip_addr;
+  } elsif ( $svcdb eq 'svc_phone' ) {
+    $tag = $svc_x->phonenum; #XXX format it better
   } elsif ( $svcdb eq 'svc_external' ) {
     my $conf = new FS::Conf;
     if ( $conf->config('svc_external-display_type') eq 'artera_turbo' ) {
@@ -586,30 +593,29 @@ sub get_cdrs_for_update {
 
   my $default_prefix = $options{'default_prefix'};
 
-  #Currently CDRs are associated with svc_acct services via a DID in the
-  #username.  This part is rather tenative and still subject to change...
-  #return () unless $self->svc_x->isa('FS::svc_acct');
-  return () unless $self->part_svc->svcdb eq 'svc_acct';
-  my $number = $self->svc_x->username;
+  #CDRs are now associated with svc_phone services via svc_phone.phonenum
+  #return () unless $self->svc_x->isa('FS::svc_phone');
+  return () unless $self->part_svc->svcdb eq 'svc_phone';
+  my $number = $self->svc_x->phonenum;
 
   my @cdrs = 
-    qsearch(
+    qsearch( {
       'table'      => 'cdr',
       'hashref'    => { 'freesidestatus' => '',
                         'charged_party'  => $number
                       },
       'extra_sql'  => 'FOR UPDATE',
-    );
+    } );
 
   if ( length($default_prefix) ) {
     push @cdrs,
-      qsearch(
+      qsearch( {
         'table'      => 'cdr',
         'hashref'    => { 'freesidestatus' => '',
                           'charged_party'  => "$default_prefix$number",
                         },
         'extra_sql'  => 'FOR UPDATE',
-      );
+      } );
   }
 
   @cdrs;

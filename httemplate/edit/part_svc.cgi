@@ -39,11 +39,12 @@ Disable new orders <INPUT TYPE="checkbox" NAME="disabled" VALUE="Y"<%= $hashref-
 <INPUT TYPE="hidden" NAME="svcpart" VALUE="<%= $hashref->{svcpart} %>">
 <BR>
 Service definitions are the templates for items you offer to your customers.
-<UL><LI>svc_acct - Accounts - anything with a username (Mailboxes, PPP accounts, shell accounts, etc.)
+<UL><LI>svc_acct - Accounts - anything with a username (Mailboxes, PPP accounts, shell accounts, RADIUS entries for broadband, etc.)
     <LI>svc_domain - Domains
     <LI>svc_forward - mail forwarding
     <LI>svc_www - Virtual domain website
     <LI>svc_broadband - Broadband/High-speed Internet service (always-on)
+    <LI>svc_phone - Customer phone numbers
     <LI>svc_external - Externally-tracked service
 <!--   <LI>svc_charge - One-time charges (Partially unimplemented)
        <LI>svc_wo - Work orders (Partially unimplemented)
@@ -60,6 +61,7 @@ that field.
 #pry need to eventually create stuff that's shared amount UIs
 my $conf = new FS::Conf;
 my %defs = (
+
   'svc_acct' => {
     'dir'       => 'Home directory',
     'uid'       => 'UID (set to fixed and blank for no UIDs)',
@@ -111,14 +113,17 @@ my %defs = (
                      disable_inventory => 1,
                    },
   },
+
   'svc_domain' => {
     'domain'    => 'Domain',
   },
+
   'svc_forward' => {
     'srcsvc'    => 'service from which mail is to be forwarded',
     'dstsvc'    => 'service to which mail is to be forwarded',
     'dst'       => 'someone@another.domain.com to use when dstsvc is 0',
   },
+
 #  'svc_charge' => {
 #    'amount'    => 'amount',
 #  },
@@ -126,20 +131,36 @@ my %defs = (
 #    'worker'    => 'Worker',
 #    '_date'      => 'Date',
 #  },
+
   'svc_www' => {
     #'recnum' => '',
     #'usersvc' => '',
   },
+
   'svc_broadband' => {
     'speed_down' => 'Maximum download speed for this service in Kbps.  0 denotes unlimited.',
     'speed_up' => 'Maximum upload speed for this service in Kbps.  0 denotes unlimited.',
     'ip_addr' => 'IP address.  Leave blank for automatic assignment.',
     'blocknum' => 'Address block.',
   },
+
+  'svc_phone' => {
+    'countrycode' => { desc => 'Country code',
+                       type => 'text',
+                       disable_inventory => 1,
+                     },
+    'phonenum'    => 'Phone number',
+    'pin'         => { desc => 'Personal Identification Number',
+                       type => 'text',
+                       disable_inventory => 1,
+                     },
+  },
+
   'svc_external' => {
     #'id' => '',
     #'title' => '',
   },
+
 );
 
   my %vfields;
@@ -195,7 +216,7 @@ my %defs = (
   
   my @dbs = $hashref->{svcdb}
              ? ( $hashref->{svcdb} )
-             : qw( svc_acct svc_domain svc_forward svc_www svc_broadband svc_external );
+             : qw( svc_acct svc_domain svc_forward svc_www svc_broadband svc_phone svc_external );
 
   tie my %svcdb, 'Tie::IxHash', map { $_=>$_ } grep dbdef->table($_), @dbs;
   my $widget = new HTML::Widgets::SelectLayers(

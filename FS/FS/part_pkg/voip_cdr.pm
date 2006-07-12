@@ -102,9 +102,8 @@ sub calc_recur {
 
   my $downstream_cdr = '';
 
-  # also look for a specific domain??? (username@telephonedomain)
   foreach my $cust_svc (
-    grep { $_->part_svc->svcdb eq 'svc_acct' } $cust_pkg->cust_svc
+    grep { $_->part_svc->svcdb eq 'svc_phone' } $cust_pkg->cust_svc
   ) {
 
     foreach my $cdr (
@@ -125,78 +124,85 @@ sub calc_recur {
          )
       {
 
-        die "rating_method 'prefix' not yet supported";
+        ###
+        # look up rate details based on called station id
+        # (or calling station id for toll free calls)
+        ###
 
-#        ###
-#        # look up rate details based on called station id
-#        ###
-#  
-#        my $dest = $cdr->dst;
-#  
-#        #remove non-phone# stuff and whitespace
-#        $dest =~ s/\s//g;
+        my( $to_or_from, $number );
+        if ( $cdr->dst =~ /^(\+?1)?8[02-8]{2}/ ) { #tollfree call
+          $to_or_from = 'from';
+          $number = $cdr->src;
+        } else { #regular call
+          $to_or_from = 'to';
+          $number = $cdr->dst;
+        }
+  
+        #remove non-phone# stuff and whitespace
+        $number =~ s/\s//g;
 #        my $proto = '';
 #        $dest =~ s/^(\w+):// and $proto = $1; #sip:
 #        my $siphost = '';
 #        $dest =~ s/\@(.*)$// and $siphost = $1; # @10.54.32.1, @sip.example.com
-#  
-#        #determine the country code
-#        my $countrycode;
-#        if (    $dest =~ /^011(((\d)(\d))(\d))(\d+)$/
-#             || $dest =~ /^\+(((\d)(\d))(\d))(\d+)$/
-#           )
-#        {
-#  
-#          my( $three, $two, $one, $u1, $u2, $rest ) = ( $1,$2,$3,$4,$5,$6 );
-#          #first look for 1 digit country code
-#          if ( qsearch('rate_prefix', { 'countrycode' => $one } ) ) {
-#            $countrycode = $one;
-#            $dest = $u1.$u2.$rest;
-#          } elsif ( qsearch('rate_prefix', { 'countrycode' => $two } ) ) { #or 2
-#            $countrycode = $two;
-#            $dest = $u2.$rest;
-#          } else { #3 digit country code
-#            $countrycode = $three;
-#            $dest = $rest;
-#          }
-#  
-#        } else {
-#          $countrycode = '1';
-#          $dest =~ s/^1//;# if length($dest) > 10;
-#        }
-#  
-#        warn "rating call to +$countrycode $dest\n" if $DEBUG;
-#        $pretty_destnum = "+$countrycode $dest";
-#  
-#        #find a rate prefix, first look at most specific (4 digits) then 3, etc.,
-#        # finally trying the country code only
-#        my $rate_prefix = '';
-#        for my $len ( reverse(1..6) ) {
-#          $rate_prefix = qsearchs('rate_prefix', {
-#            'countrycode' => $countrycode,
-#            #'npa'         => { op=> 'LIKE', value=> substr($dest, 0, $len) }
-#            'npa'         => substr($dest, 0, $len),
-#          } ) and last;
-#        }
-#        $rate_prefix ||= qsearchs('rate_prefix', {
-#          'countrycode' => $countrycode,
-#          'npa'         => '',
-#        });
-#  
-#        die "Can't find rate for call to +$countrycode $dest\n"
-#          unless $rate_prefix;
-#  
-#        $regionnum = $rate_prefix->regionnum;
-#        $rate_detail = qsearchs('rate_detail', {
-#          'ratenum'        => $ratenum,
-#          'dest_regionnum' => $regionnum,
-#        } );
-#  
-#        $rate_region = $rate_prefix->rate_region;
-#
-#        warn "  found rate for regionnum $regionnum ".
-#             "and rate detail $rate_detail\n"
-#          if $DEBUG;
+  
+        #determine the country code
+        my $countrycode;
+        if (    $number =~ /^011(((\d)(\d))(\d))(\d+)$/
+             || $number =~ /^\+(((\d)(\d))(\d))(\d+)$/
+           )
+        {
+  
+          my( $three, $two, $one, $u1, $u2, $rest ) = ( $1,$2,$3,$4,$5,$6 );
+          #first look for 1 digit country code
+          if ( qsearch('rate_prefix', { 'countrycode' => $one } ) ) {
+            $countrycode = $one;
+            $number = $u1.$u2.$rest;
+          } elsif ( qsearch('rate_prefix', { 'countrycode' => $two } ) ) { #or 2
+            $countrycode = $two;
+            $number = $u2.$rest;
+          } else { #3 digit country code
+            $countrycode = $three;
+            $number = $rest;
+          }
+  
+        } else {
+          $countrycode = '1';
+          $number =~ s/^1//;# if length($number) > 10;
+        }
+  
+        warn "rating call $to_or_from +$countrycode $number\n" if $DEBUG;
+        $pretty_destnum = "+$countrycode $number";
+  
+        #find a rate prefix, first look at most specific (4 digits) then 3, etc.,
+        # finally trying the country code only
+        my $rate_prefix = '';
+        for my $len ( reverse(1..6) ) {
+          $rate_prefix = qsearchs('rate_prefix', {
+            'countrycode' => $countrycode,
+            #'npa'         => { op=> 'LIKE', value=> substr($number, 0, $len) }
+            'npa'         => substr($number, 0, $len),
+          } ) and last;
+        }
+        $rate_prefix ||= qsearchs('rate_prefix', {
+          'countrycode' => $countrycode,
+          'npa'         => '',
+        });
+
+        #
+        die "Can't find rate for call $to_or_from +$countrycode $\numbern"
+          unless $rate_prefix;
+  
+        $regionnum = $rate_prefix->regionnum;
+        $rate_detail = qsearchs('rate_detail', {
+          'ratenum'        => $ratenum,
+          'dest_regionnum' => $regionnum,
+        } );
+  
+        $rate_region = $rate_prefix->rate_region;
+
+        warn "  found rate for regionnum $regionnum ".
+             "and rate detail $rate_detail\n"
+          if $DEBUG;
 
       } elsif ( $self->option('rating_method') eq 'upstream' ) {
 

@@ -11,13 +11,15 @@ if ( $cgi->param('freesidestatus') eq 'NULL' ) {
 
   my $title = "Unprocessed $title";
   $hashref->{'freesidestatus'} = ''; # Record.pm will take care of it
-  $count_query .= " AND ( freesidestatus IS NULL OR freesidestatus = '' )";
+  #$count_query .= " AND ( freesidestatus IS NULL OR freesidestatus = '' )";
+  $count_query .= " WHERE ( freesidestatus IS NULL OR freesidestatus = '' )";
 
 } elsif ( $cgi->param('freesidestatus') =~ /^([\w ]+)$/ ) {
 
   my $title = "Processed $title";
   $hashref->{'freesidestatus'} = $1;
-  $count_query .= " AND freesidestatus = '$1'";
+  #$count_query .= " AND freesidestatus = '$1'";
+  $count_query .= " WHERE freesidestatus = '$1'";
 
 }
 

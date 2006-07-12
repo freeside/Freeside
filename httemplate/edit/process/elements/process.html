@@ -5,6 +5,7 @@
   ###
   ##req
   ##
+  #
   # 'table' => 
   #
   # #? 'primary_key' => #required when the dbdef doesn't know...???
@@ -13,7 +14,14 @@
   ###
   ##opt
   ###
+  #
   # 'viewall_dir' => '', #'search' or 'browse', defaults to 'search'
+  # OR
+  # 'redirect'    => 'view/table.cgi?', # value of primary key is appended
+  #
+  # 'edit_ext' => 'html', #defaults to 'html', you might want 'cgi' while the
+  #                       #naming is still inconsistent
+  # 
   # 'process_m2m' => { 'link_table'   => 'link_table_name',
   #                    'target_table' => 'target_table_name',
   #                  },
@@ -65,9 +73,14 @@
                                  );
   }
 
+  # XXX print?!?!
+
   if ( $error ) {
     $cgi->param('error', $error);
-    print $cgi->redirect(popurl(2). "$table.html?". $cgi->query_string );
+    my $edit_ext = $opt{'edit_ext'} || 'html';
+    print $cgi->redirect(popurl(2). "$table.$edit_ext?". $cgi->query_string );
+  } elsif ( $opt{'redirect'} ) {
+    print $cgi->redirect( $opt{'redirect'}. $pkeyvalue );
   } else { 
     print $cgi->redirect( popurl(3).
                           ( $opt{'viewall_dir'} || 'search' ).

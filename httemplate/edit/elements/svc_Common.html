@@ -1,0 +1,98 @@
+<%
+
+  my %opt = @_;
+
+  #my( $svcnum, $pkgnum, $svcpart, $part_svc );
+  my( $pkgnum, $svcpart, $part_svc );
+
+  #get & untaint pkgnum & svcpart
+  my($query) = $cgi->keywords; #they're not proper cgi params
+  if ( $query =~ /^pkgnum(\d+)-svcpart(\d+)$/ ) {
+    $pkgnum  = $1;
+    $svcpart = $2;
+    $cgi->delete_all(); #so the standard edit.html treats this correctly as new
+  }
+
+%><%= include( 'edit.html',
+
+                 'menubar' => [],
+
+                 'error_callback' => sub {
+                   my( $cgi, $svc_x ) = @_;
+                   #$svcnum = $svc_x->svcnum;
+                   $pkgnum  = $cgi->param('pkgnum');
+                   $svcpart = $cgi->param('svcpart');
+
+                   $part_svc = qsearchs( 'part_svc', { svcpart=>$svcpart });
+                   die "No part_svc entry!" unless $part_svc;
+                 },
+
+                 'edit_callback' => sub {
+                   my( $cgi, $svc_x ) = @_;
+                   #$svcnum = $svc_x->svcnum;
+                   my $cust_svc = $svc_x->cust_svc
+                     or die "Unknown (cust_svc) svcnum!";
+
+                   $pkgnum  = $cust_svc->pkgnum;
+                   $svcpart = $cust_svc->svcpart;
+  
+                   $part_svc = qsearchs ('part_svc', { svcpart=>$svcpart });
+                   die "No part_svc entry!" unless $part_svc;
+                 },
+
+                 'new_hash_callback' => sub {
+                   #my( $cgi, $svc_x ) = @_;
+
+                   { svcpart => $svcpart };
+
+                 },
+
+                 'new_callback' => sub {
+                    my( $cgi, $svc_x ) = @_;;
+
+                    $part_svc = qsearchs( 'part_svc', { svcpart=>$svcpart });
+                    die "No part_svc entry!" unless $part_svc;
+
+                    #$svcnum='';
+
+                    $svc_x->set_default_and_fixed;
+
+                 },
+
+                 'field_callback' => sub {
+                   my $f = shift;
+                   my $columndef = $part_svc->part_svc_column($f->{'field'});
+                   my $flag = $columndef->columnflag;
+                   if ( $flag eq 'F' ) {
+                     $f->{'type'} = 'fixed';
+                     $f->{'value'} = $columndef->columnvalue;
+                   }
+                 },
+
+                 'html_table_bottom' => sub {
+                   my $svc_x = shift;
+                   my $html = '';
+                   foreach my $field ($svc_x->virtual_fields) {
+                     if ($part_svc->part_svc_column($field)->columnflag ne 'F'){
+                       # If the flag is X, it won't even show up
+                       # in $svc_acct->virtual_fields.
+                       $html .=
+                         $svc_x->pvf($field)->widget( 'HTML',
+                                                      'edit', 
+                                                      $svc_x->getfield($field)
+                                                    );
+                     }
+                   }
+                   $html;
+                 },
+
+                 'html_bottom' => sub {
+                   qq!<INPUT TYPE="hidden" NAME="pkgnum" VALUE="$pkgnum">!.
+                   qq!<INPUT TYPE="hidden" NAME="svcpart" VALUE="$svcpart">!;
+                 },
+
+                 'debug' => 1,
+
+                 %opt #pass through/override params
+             )
+%>

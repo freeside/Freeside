@@ -1,0 +1,116 @@
+<%
+
+  # options example...
+  #
+  # 'table' => 'svc_something'
+  #
+  # 'labels' => {
+  #               'column' => 'Label',
+  #             },
+  #
+  # listref - each item is a literal column name (or method) or (notyet) coderef
+  # if not specified all columns (except for the primary key) will be viewable
+  # 'fields' => [
+  #             ]
+
+  my(%opt) = @_;
+
+  my $table = $opt{'table'};
+
+  my $fields = $opt{'fields'}
+               #|| [ grep { $_ ne 'svcnum' } dbdef->table($table)->columns ];
+               || [ grep { $_ ne 'svcnum' } fields($table) ];
+
+  my($query) = $cgi->keywords;
+  $query =~ /^(\d+)$/;
+  my $svcnum = $1;
+  my $svc_x = qsearchs( $opt{'table'}, { 'svcnum' => $svcnum } )
+    or die "Unknown svcnum $svcnum in ". $opt{'table'}. " table\n";
+
+  my $cust_svc = $svc_x->cust_svc;
+  my($label, $value, $svcdb) = $cust_svc->label;
+
+  my $pkgnum = $cust_svc->pkgnum;
+
+  my($cust_pkg, $custnum);
+  if ($pkgnum) {
+    $cust_pkg = $cust_svc->cust_pkg;
+    $custnum = $cust_pkg->custnum;
+  } else {
+    $cust_pkg = '';
+    $custnum = '';
+  }
+
+%>
+
+<% if ( $custnum ) { %>
+
+  <%= include("/elements/header.html","View $label: $value", menubar(
+    "View this customer (#$custnum)" => "${p}view/cust_main.cgi?$custnum",
+  )) %>
+
+  <%= include( '/elements/small_custview.html', $custnum, '', 1 ) %>
+  <BR>
+
+<% } else { %>
+
+  <SCRIPT>
+  function areyousure(href) {
+      if (confirm("Permanently delete this <%= $label %>?") == true)
+          window.location.href = href;
+  }
+  </SCRIPT>
+
+  <%= include("/elements/header.html","View $label: $value", menubar(
+      "Cancel this (unaudited) $label" =>
+            "javascript:areyousure(\'${p}misc/cancel-unaudited.cgi?$svcnum\')"
+  )) %>
+
+<% } %>
+
+Service #<B><%= $svcnum %></B>
+| <A HREF="<%=$p%>edit/<%= $opt{'table'} %>.cgi?<%=$svcnum%>">Edit this <%= $label %></A>
+<BR>
+
+<%= ntable("#cccccc") %><TR><TD><%= ntable("#cccccc",2) %>
+
+<% foreach my $f ( @$fields ) {
+
+     my( $field, $type);
+     if ( ref($f) ) {
+       $field = $f->{'field'},
+       $type  = $f->{'type'} || 'text',
+     } else {
+       $field = $f;
+       $type = 'text';
+     }
+%>
+
+  <TR>
+    <TD ALIGN="right">
+      <%= ( $opt{labels} && exists $opt{labels}->{$field} )
+              ? $opt{labels}->{$field}
+              : $field
+      %>
+    </TD>
+
+    <%
+      #eventually more options for <SELECT>, etc. fields
+    %>
+
+    <TD BGCOLOR="#ffffff"><%= $svc_x->$field %><TD>
+
+  </TR>
+
+<% } %>
+
+<% foreach (sort { $a cmp $b } $svc_x->virtual_fields) { %>
+  <%= $svc_x->pvf($_)->widget('HTML', 'view', $svc_x->getfield($_)) %>
+<% } %>
+
+</TABLE></TD></TR></TABLE>
+
+<BR>
+<%= joblisting({'svcnum'=>$svcnum}, 1) %>
+
+<%= include('/elements/footer.html') %>

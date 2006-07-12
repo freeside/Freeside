@@ -4,6 +4,7 @@ use strict;
 use vars qw( @ISA );
 use Date::Parse;
 use Date::Format;
+use Time::Local;
 use FS::UID qw( dbh );
 use FS::Record qw( qsearch qsearchs );
 use FS::cdr_type;
@@ -224,6 +225,17 @@ sub check {
 #  ;
 #  return $error if $error;
 
+  $self->calldate( $self->startdate_sql )
+    if !$self->calldate && $self->startdate;
+
+  unless ( $self->charged_party ) {
+    if ( $self->dst =~ /^(\+?1)?8[02-8]{2}/ ) {
+      $self->charged_party($self->dst);
+    } else {
+      $self->charged_party($self->src);
+    }
+  }
+
   #check the foreign keys even?
   #do we want to outright *reject* the CDR?
   my $error =
@@ -252,7 +264,7 @@ error, otherwise returns false.
 
 sub set_status_and_rated_price {
   my($self, $status, $rated_price) = @_;
-  $self->status($status);
+  $self->freesidestatus($status);
   $self->rated_price($rated_price);
   $self->replace();
 }
@@ -265,6 +277,20 @@ Parses the calldate in SQL string format and returns a UNIX timestamp.
 
 sub calldate_unix {
   str2time(shift->calldate);
+}
+
+=item startdate_sql
+
+Parses the startdate in UNIX timestamp format and returns a string in SQL
+format.
+
+=cut
+
+sub startdate_sql {
+  my($sec,$min,$hour,$mday,$mon,$year) = localtime(shift->startdate);
+  $mon++;
+  $year += 1900;
+  "$year-$mon-$mday $hour:$min:$sec";
 }
 
 =item cdr_carrier
@@ -420,6 +446,8 @@ sub downstream_csv {
 
 =cut
 
+my($tmp_mday, $tmp_mon, $tmp_year);
+
 my %import_formats = (
   'asterisk' => [
     'accountcode',
@@ -465,7 +493,42 @@ my %import_formats = (
     'quantity',
     'carrierid',
     'upstream_rateid',
-  ]
+  ],
+  'ams' => [
+
+    # Date
+    sub { my($cdr, $date) = @_;
+          $date =~ /^(\d{1,2})\/(\d{1,2})\/(\d\d(\d\d)?)$/
+            or die "unparsable date: $date"; #maybe we shouldn't die...
+          #$cdr->startdate( timelocal(0, 0, 0 ,$2, $1-1, $3) );
+          ($tmp_mday, $tmp_mon, $tmp_year) = ( $2, $1-1, $3 );
+        },
+
+    # Time
+    sub { my($cdr, $time) = @_;
+          #my($sec, $min, $hour, $mday, $mon, $year)= localtime($cdr->startdate);
+          $time =~ /^(\d{1,2}):(\d{1,2}):(\d{1,2})$/
+            or die "unparsable time: $time"; #maybe we shouldn't die...
+          #$cdr->startdate( timelocal($3, $2, $1 ,$mday, $mon, $year) );
+          $cdr->startdate(
+            timelocal($3, $2, $1 ,$tmp_mday, $tmp_mon, $tmp_year)
+          );
+        },
+
+    # Source_Number
+    'src',
+
+    # Terminating_Number
+    'dst',
+
+    # Duration
+    sub { my($cdr, $min) = @_;
+          my $sec = sprintf('%.0f', $min * 60 );
+          $cdr->billsec(  $sec );
+          $cdr->duration( $sec );
+        },
+
+  ],
 );
 
 sub batch_import {
@@ -494,9 +557,19 @@ sub batch_import {
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
-  
+
+  if ( $format eq 'ams' ) { # and other formats with a header too?
+
+  }
+
+  my $body = 0;
   my $line;
   while ( defined($line=<$fh>) ) {
+
+    #skip header...
+    if ( ! $body++ && $format eq 'ams' && $line =~ /^[\w\, ]+$/ ) {
+      next;
+    }
 
     $csv->parse($line) or do {
       $dbh->rollback if $oldAutoCommit;
@@ -505,6 +578,10 @@ sub batch_import {
 
     my @columns = $csv->fields();
     #warn join('-',@columns);
+
+    if ( $format eq 'ams' ) {
+      @columns = map { s/^ +//; $_; } @columns;
+    }
 
     my @later = ();
     my %cdr =
