@@ -7,6 +7,7 @@ use strict;
 use vars qw($opt_s $opt_d $opt_v);
 use Getopt::Std;
 use FS::UID qw(adminsuidsetup datasrc checkeuid getsecrets);
+use FS::CurrentUser;
 use FS::Schema qw( dbdef_dist reload_dbdef );
 use FS::Record;
 #use FS::raddb;
@@ -85,6 +86,7 @@ $dbdef->save($dbdef_file);
 # create 'em
 ###
 
+$FS::CurrentUser::upgrade_hack = 1;
 my $dbh = adminsuidsetup $user;
 
 #create tables

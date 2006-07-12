@@ -48,6 +48,8 @@ sub create_initial_data {
   #initial_data data
   populate_initial_data(%opt);
 
+  populate_access();
+
   populate_msgcat();
   
   if ( $oldAutoCommit ) {
@@ -130,6 +132,11 @@ sub initial_data {
 
   #tie my %hash, 'Tie::DxHash', 
   tie my %hash, 'Tie::IxHash', 
+
+    #superuser group
+    'access_group' => [
+      { 'groupname' => 'Superuser' },
+    ],
 
     #billing events
     'part_bill_event' => [
@@ -279,6 +286,32 @@ sub initial_data {
   ;
 
   \%hash;
+
+}
+
+sub populate_access {
+
+  use FS::AccessRight;
+  use FS::access_right;
+
+  foreach my $rightname ( FS::AccessRight->rights ) {
+    my $access_right = new FS::access_right {
+      'righttype'   => 'FS::access_group',
+      'rightobjnum' => 1, #$supergroup->groupnum,
+      'rightname'   => $rightname,
+    };
+    my $ar_error = $access_right->insert;
+    die $ar_error if $ar_error;
+  }
+
+  #foreach my $agent ( qsearch('agent', {} ) ) {
+    my $access_groupagent = new FS::access_groupagent {
+      'groupnum' => $supergroup->groupnum,
+      'agentnum' => 1, #$agent->agentnum,
+    };
+    my $aga_error = $access_groupagent->insert;
+    die $aga_error if $aga_error;
+  #}
 
 }
 
