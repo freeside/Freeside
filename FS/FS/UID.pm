@@ -267,11 +267,18 @@ sub getsecrets {
   $user = $setuser if $setuser;
   die "No user!" unless $user;
   my($conf) = new FS::Conf $conf_dir;
-  my($line) = grep /^\s*($user|\*)\s/, $conf->config('mapsecrets');
-  die "User $user not found in mapsecrets!" unless $line;
-  $line =~ /^\s*($user|\*)\s+(.*)$/;
-  $secrets = $2;
-  die "Illegal mapsecrets line for user?!" unless $secrets;
+
+  if ( $conf->exists('mapsecrets') ) {
+    my($line) = grep /^\s*($user|\*)\s/, $conf->config('mapsecrets');
+    die "User $user not found in mapsecrets!" unless $line;
+    $line =~ /^\s*($user|\*)\s+(.*)$/;
+    $secrets = $2;
+    die "Illegal mapsecrets line for user?!" unless $secrets;
+  } else {
+    # no mapsecrets file at all, so do the default thing
+    $secrets = 'secrets';
+  }
+
   ($datasrc, $db_user, $db_pass) = $conf->config($secrets)
     or die "Can't get secrets: $secrets: $!\n";
   $FS::Conf::default_dir = $conf_dir. "/conf.$datasrc";
