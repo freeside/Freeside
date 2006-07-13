@@ -92,6 +92,9 @@ END
     $where .= " AND agentnum = '$agentnum' ";
   }
 
+  #here is the agent virtualization
+  $where .= ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql;
+
   my $count_sql = "select count(*) from cust_main $where";
 
   my $sql_query = {

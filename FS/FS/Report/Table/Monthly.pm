@@ -5,6 +5,7 @@ use vars qw( @ISA $expenses_kludge );
 use Time::Local;
 use FS::UID qw( dbh );
 use FS::Report::Table;
+use FS::CurrentUser;
 
 @ISA = qw( FS::Report::Table );
 
@@ -215,7 +216,7 @@ sub credits {
   );
 }
 
-#these should be auto-generated
+#these should be auto-generated or $AUTOLOADed or something
 sub invoiced_12mo {
   my( $self, $speriod, $eperiod, $agentnum ) = @_;
   $speriod = $self->_subtract_11mo($speriod);
@@ -330,9 +331,16 @@ sub suspended { #suspended
 sub in_time_period_and_agent {
   my( $self, $speriod, $eperiod, $agentnum ) = splice(@_, 0, 4);
   my $table = @_ ? shift().'.' : '';
+
   my $sql = "${table}_date >= $speriod AND ${table}_date < $eperiod";
+
+  #agent selection
   $sql .= " AND agentnum = $agentnum"
     if $agentnum;
+
+  #agent virtualization
+  $sql .= ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql;
+
   $sql;
 }
 

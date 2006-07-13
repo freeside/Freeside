@@ -36,9 +36,10 @@
      push @search, " _date < $1 ";
    }
 
-   my $where = scalar(@search)
-                 ? 'WHERE '. join(' AND ', @search)
-                 : '';
+   #here is the agent virtualization
+   push @search, $FS::CurrentUser::CurrentUser->agentnums_sql;
+
+   my $where = 'WHERE '. join(' AND ', @search);
 
    my $count_query = 'SELECT COUNT(*), SUM(amount) '.
                      'FROM cust_credit LEFT JOIN cust_main USING ( custnum ) '.

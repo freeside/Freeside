@@ -96,10 +96,10 @@
        die "unknown search magic: ". $cgi->param('magic');
      }
 
-     my $search = '';
-     if ( @search ) {
-       $search = ' WHERE '. join(' AND ', @search);
-     }
+     #here is the agent virtualization
+     push @search, $FS::CurrentUser::CurrentUser->agentnums_sql;
+
+     my $search = ' WHERE '. join(' AND ', @search);
   
      $count_query = "SELECT COUNT(*), SUM(paid) ".
                     "FROM cust_pay LEFT JOIN cust_main USING ( custnum )".
@@ -125,14 +125,16 @@
      $cgi->param('payby') =~ /^(\w+)$/ or die "illegal payby";
      my $payby = $1;
    
-     $count_query = "SELECT COUNT(*), SUM(paid) FROM cust_pay ".
-                    "WHERE payinfo = '$payinfo' AND payby = '$payby'";
+     $count_query = "SELECT COUNT(*), SUM(paid) FROM cust_pay".
+                    "  WHERE payinfo = '$payinfo' AND payby = '$payby'".
+                    "  AND ". $FS::CurrentUser::CurrentUser->agentnums_sql;
    
      $sql_query = {
        'table'     => 'cust_pay',
        'hashref'   => { 'payinfo' => $payinfo,
                         'payby'   => $payby    },
-       'extra_sql' => "ORDER BY _date",
+       'extra_sql' => $FS::CurrentUser::CurrentUser->agentnums_sql.
+                      " ORDER BY _date",
      };
    
    }
