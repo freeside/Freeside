@@ -19,8 +19,8 @@ die "Not running uid freeside!" unless checkeuid();
 #  map { lc($FS::raddb::attrib{$_}) => $_ } keys %FS::raddb::attrib;
 
 getopts("svd:");
-my $user = shift or die &usage;
-getsecrets($user);
+#my $user = shift or die &usage;
+getsecrets(); #$user);
 
 #needs to match FS::Record
 my($dbdef_file) = "/usr/local/etc/freeside/dbdef.". datasrc;
@@ -87,7 +87,7 @@ $dbdef->save($dbdef_file);
 ###
 
 $FS::CurrentUser::upgrade_hack = 1;
-my $dbh = adminsuidsetup $user;
+my $dbh = adminsuidsetup; #$user;
 
 #create tables
 $|=1;

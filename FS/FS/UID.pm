@@ -72,10 +72,15 @@ sub adminsuidsetup {
 
 sub forksuidsetup {
   $user = shift;
-  croak "fatal: adminsuidsetup called without arguements" unless $user;
 
-  $user =~ /^([\w\-\.]+)$/ or croak "fatal: illegal user $user";
-  $user = $1;
+  if ( $FS::CurrentUser::upgrade_hack ) {
+    $user = '';
+  } else {
+    croak "fatal: adminsuidsetup called without arguements" unless $user;
+
+    $user =~ /^([\w\-\.]+)$/ or croak "fatal: illegal user $user";
+    $user = $1;
+  }
 
   $ENV{'PATH'} ='/usr/local/bin:/usr/bin:/usr/ucb:/bin';
   $ENV{'SHELL'} = '/bin/sh';
@@ -265,10 +270,10 @@ the `/usr/local/etc/freeside/mapsecrets' file.
 sub getsecrets {
   my($setuser) = shift;
   $user = $setuser if $setuser;
-  die "No user!" unless $user;
   my($conf) = new FS::Conf $conf_dir;
 
   if ( $conf->exists('mapsecrets') ) {
+    die "No user!" unless $user;
     my($line) = grep /^\s*($user|\*)\s/, $conf->config('mapsecrets');
     die "User $user not found in mapsecrets!" unless $line;
     $line =~ /^\s*($user|\*)\s+(.*)$/;
