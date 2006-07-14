@@ -74,7 +74,7 @@ sub forksuidsetup {
   $user = shift;
 
   if ( $FS::CurrentUser::upgrade_hack ) {
-    $user = '';
+    $user = 'fs_bootstrap';
   } else {
     croak "fatal: adminsuidsetup called without arguements" unless $user;
 

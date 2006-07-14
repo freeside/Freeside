@@ -21,7 +21,9 @@ FS::CurrentUser - Package representing the current user
 sub load_user {
   my( $class, $user ) = @_; #, $pass
 
-  return "" if $upgrade_hack;
+  if ( $upgrade_hack ) {
+    return new FS::CurrentUser::BootstrapUser;
+  }
 
   #return "" if $user =~ /^fs_(queue|selfservice)$/;
 
@@ -48,6 +50,17 @@ Creepy crawlies
 =head1 SEE ALSO
 
 =cut
+
+package FS::CurrentUser::BootstrapUser;
+
+sub new {
+  my $proto = shift;
+  my $class = ref($proto) || $proto;
+  my $self = {};
+  bless ($self, $class);
+}
+
+sub AUTOLOAD { 1 };
 
 1;
 
