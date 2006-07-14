@@ -22,7 +22,7 @@ sub load_user {
   my( $class, $user ) = @_; #, $pass
 
   if ( $upgrade_hack ) {
-    return new FS::CurrentUser::BootstrapUser;
+    return $CurrentUser = new FS::CurrentUser::BootstrapUser;
   }
 
   #return "" if $user =~ /^fs_(queue|selfservice)$/;
