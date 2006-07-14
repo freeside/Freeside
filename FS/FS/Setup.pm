@@ -306,7 +306,7 @@ sub populate_access {
 
   #foreach my $agent ( qsearch('agent', {} ) ) {
     my $access_groupagent = new FS::access_groupagent {
-      'groupnum' => $supergroup->groupnum,
+      'groupnum' => 1, #$supergroup->groupnum,
       'agentnum' => 1, #$agent->agentnum,
     };
     my $aga_error = $access_groupagent->insert;
