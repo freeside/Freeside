@@ -1365,7 +1365,7 @@ sub order {
       $dbh->rollback if $oldAutoCommit;
       return "Unable to transfer all services from package ".$old_pkg->pkgnum;
     }
-    $error = $old_pkg->cancel;
+    $error = $old_pkg->cancel( quiet=>1 );
     if ($error) {
       $dbh->rollback;
       return $error;
