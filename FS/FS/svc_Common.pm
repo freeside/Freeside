@@ -470,7 +470,7 @@ sub setx {
   my $self = shift;
   my $x = shift;
   my @x = ref($x) ? @$x : ($x);
-  my %coderef = @_ ? shift : {};
+  my $coderef = scalar(@_) ? shift : {};
 
   my $error =
     $self->ut_numbern('svcnum')
@@ -490,8 +490,8 @@ sub setx {
     my $columnname  = $part_svc_column->columnname;
     my $columnvalue = $part_svc_column->columnvalue;
 
-    if ( exists( $coderef{columnname} ) ) {
-      &{ $coderef{$columnname} }( $self, $columnvalue);
+    if ( exists( $coderef->{$columnname} ) ) {
+      &{ $coderef->{$columnname} }( $self, $columnvalue);
     } else {
       $self->setfield( $columnname, $columnvalue );
     }
