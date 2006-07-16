@@ -15,7 +15,7 @@ Filename <INPUT TYPE="file" NAME="batch_results"><BR>
 Format <SELECT NAME="format">
 <OPTION VALUE="">Default batch mode</OPTION>
 <OPTION VALUE="csv-td_canada_trust-merchant_pc_batch">CSV results from TD Canada Trust Merchant PC Batch</OPTION>
-<OPTION VALUE="BoM">Bank of Montreal ECA results</OPTION>
+<OPTION VALUE="BoM">Bank of Montreal ECA batch</OPTION>
 </SELECT><BR>
 <INPUT TYPE="submit" VALUE="Upload"></FORM>
 <BR>

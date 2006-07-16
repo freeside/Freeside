@@ -17,6 +17,7 @@ my $sql_query = {
   'hashref'   => {},
   'select'    => join(', ',
                    'svc_www.*',
+                   'part_svc.svc',
                    'cust_main.custnum',
                    FS::UI::Web::cust_sql_fields(),
                  ),
@@ -43,11 +44,13 @@ my $link_cust = sub {
                  'count_query' => $count_query,
                  'redirect'    => $link,
                  'header'      => [ '#',
+                                    'Service',
                                     'Zone',
                                     'User',
                                     FS::UI::Web::cust_header(),
                                   ],
                  'fields'      => [ 'svcnum',
+                                    'svc',
                                     sub { $_[0]->domain_record->zone },
                                     sub {
                                           my $svc_www = shift;
@@ -59,6 +62,7 @@ my $link_cust = sub {
                                     \&FS::UI::Web::cust_fields,
                                   ],
                  'links'       => [ $link,
+                                    $link,
                                     '',
                                     $ulink,
                                     ( map { $link_cust }

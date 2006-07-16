@@ -57,8 +57,9 @@ if ( -e $pid_file ) {
   open(PIDFILE,"<$pid_file");
   my $old_pid = <PIDFILE>;
   close PIDFILE;
-  $old_pid =~ /^(\d+)$/;
-  kill 'TERM', $1;
+  if ( $old_pid =~ /^(\d+)$/ ) {
+    kill 'TERM', $1;
+  }
 }
 open(PIDFILE,">$pid_file");
 print PIDFILE "$$\n";

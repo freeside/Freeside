@@ -3,10 +3,11 @@ package FS::inventory_item;
 use strict;
 use vars qw( @ISA );
 use FS::Record qw( dbh qsearch qsearchs );
+use FS::cust_main_Mixin;
 use FS::inventory_class;
 use FS::cust_svc;
 
-@ISA = qw(FS::Record);
+@ISA = qw( FS::cust_main_Mixin FS::Record );
 
 =head1 NAME
 

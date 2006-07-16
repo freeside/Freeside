@@ -221,7 +221,8 @@ sub cust_main_sql {
 
 =item num_active_cust_main
 
-Returns the number of active customers for this agent.
+Returns the number of active customers for this agent (customers with active
+recurring packages).
 
 =cut
 
@@ -238,6 +239,28 @@ Returns the active customers for this agent, as cust_main objects.
 sub active_cust_main {
   shift->cust_main_sql(FS::cust_main->active_sql);
 }
+
+=item num_inactive_cust_main
+
+Returns the number of inactive customers for this agent (customers with no
+active recurring packages, but otherwise unsuspended/uncancelled).
+
+=cut
+
+sub num_inactive_cust_main {
+  shift->num_sql(FS::cust_main->inactive_sql);
+}
+
+=item inactive_cust_main
+
+Returns the inactive customers for this agent, as cust_main objects.
+
+=cut
+
+sub inactive_cust_main {
+  shift->cust_main_sql(FS::cust_main->inactive_sql);
+}
+
 
 =item num_susp_cust_main
 

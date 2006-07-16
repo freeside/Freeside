@@ -24,9 +24,7 @@ my $otaker = getotaker;
 
 my $p1 = popurl(1);
 
-%>
-
-<%= header("Post Credit", '') %>
+%><%= include('/elements/header-popup.html', 'Post Credit') %>
 
 <% if ( $cgi->param('error') ) { %>
   <FONT SIZE="+1" COLOR="#ff0000">Error: <%= $cgi->param('error') %></FONT>

@@ -95,6 +95,7 @@ my $sql_query = {
   'hashref'   => {}, # \%svc_acct,
   'select'    => join(', ',
                     'svc_acct.*',
+                    'part_svc.svc',
                     'cust_main.custnum',
                     FS::UI::Web::cust_sql_fields(),
                   ),

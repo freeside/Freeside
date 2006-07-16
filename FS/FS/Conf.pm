@@ -1363,8 +1363,8 @@ httemplate/docs/config.html
 
   {
     'key'         => 'users-allow_comp',
-    'section'     => '',
-    'description' => 'Usernames (Freeside users, created with <a href="../docs/man/bin/freeside-adduser.html">freeside-adduser</a>) which can create complimentary customers, one per line.  If no usernames are entered, all users can create complimentary accounts.',
+    'section'     => 'deprecated',
+    'description' => '<b>DEPRECATED</b>, enable the <i>Complimentary customer</i> access right instead.  Was: Usernames (Freeside users, created with <a href="../docs/man/bin/freeside-adduser.html">freeside-adduser</a>) which can create complimentary customers, one per line.  If no usernames are entered, all users can create complimentary accounts.',
     'type'        => 'textarea',
   },
 

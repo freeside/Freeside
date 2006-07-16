@@ -6,13 +6,7 @@
 <SCRIPT TYPE="text/javascript" SRC="../elements/overlibmws.js"></SCRIPT>
 <SCRIPT TYPE="text/javascript" SRC="../elements/overlibmws_iframe.js"></SCRIPT>
 <SCRIPT TYPE="text/javascript" SRC="../elements/overlibmws_draggable.js"></SCRIPT>
-<SCRIPT TYPE="text/javascript">
-function OLiframeContent(src, width, height, name) {
-  return ('<iframe src="'+src+'" width="'+width+'" height="'+height+'"'
-   +(name?' name="'+name+'" id="'+name+'"':'')+' scrolling="auto">'
-   +'<div>[iframe not supported]</div></iframe>');
-}
-</SCRIPT>
+<SCRIPT TYPE="text/javascript" SRC="../elements/iframecontentmws.js"></SCRIPT>
 <% if ( length($number) ) { %>
   <%= $number %>
   <% if ( $opt{'callable'} && $conf->config('vonage-username') ) { %>

@@ -21,6 +21,7 @@ use FS::cust_credit;
 use FS::cust_pay;
 use FS::cust_pkg;
 use FS::cust_credit_bill;
+use FS::pay_batch;
 use FS::cust_pay_batch;
 use FS::cust_bill_event;
 use FS::part_pkg;
@@ -1282,17 +1283,19 @@ L<FS::cust_pay_batch>).
 sub batch_card {
   my $self = shift;
   my $cust_main = $self->cust_main;
+
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
   my $pay_batch = qsearchs('pay_batch', {'status' => 'O'});
 
-  unless ($pay_batch) {
+  unless ( $pay_batch ) {
     $pay_batch = new FS::pay_batch;
     $pay_batch->setfield('status' => 'O');
     my $error = $pay_batch->insert;
     if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
       die "error creating new batch: $error\n";
     }
   }
@@ -1315,10 +1318,12 @@ sub batch_card {
     'amount'   => $self->owed,
   } );
   my $error = $cust_pay_batch->insert;
-  die $error if $error;
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    die $error;
+  }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
-
   '';
 }
 

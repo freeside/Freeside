@@ -1,7 +1,7 @@
 /*
  overlibmws_draggable.js plug-in module - Copyright Foteos Macrides 2002=2005
    For support of the DRAGGABLE feature.
-   Initial: August 24, 2002 - Last Revised: January 12, 2005
+   Initial: August 24, 2002 - Last Revised: March 2, 2006
  See the Change History and Command Reference for overlibmws via:
 
 	http://www.macridesweb.com/oltest/
@@ -37,7 +37,7 @@ function OLsetDrgCur(d){if(!OLns4)over.style.cursor=(d?'move':'auto');}
 
 function OLgrabEl(e){
 var e=(e||event);
-var cKy=(OLns4?e.modifiers&Event.ALT_MASK:(!OLop7?e.altKey:e.ctrlKey));o3_dragging=1;
+var cKy=(OLns4?e.modifiers&Event.ALT_MASK:(e.altKey||(OLop7&&e.ctrlKey)));o3_dragging=1;
 if(cKy){OLsetDrgCur(0);document.onmouseup=function(){OLsetDrgCur(1);o3_dragging=0;}
 return(OLns4?routeEvent(e):true);}
 OLx=(e.pageX||e.clientX+OLfd().scrollLeft);OLy=(e.pageY||e.clientY+OLfd().scrollTop);
