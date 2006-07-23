@@ -170,7 +170,7 @@ END
                                   ],
                  'fields'      => [
                                     \&FS::UI::Web::cust_fields,
-                                    sub { ( &{$status_statuscol}($row) )[0] },
+                                    sub { ( &{$status_statuscol}(shift) )[0] },
                                     #sub { ucfirst(shift->status) },
                                     sub { sprintf( $money_char.'%.2f',
                                                    shift->get('owed_0_30') ) },
@@ -203,7 +203,7 @@ END
                                     'b', '', '', '', '', 'b', ],
                  'color'       => [
                                     ( map '', FS::UI::Web::cust_header() ),
-                                    sub { ( &{$status_statuscol}($row) )[1] },
+                                    sub { ( &{$status_statuscol}(shift) )[1] },
                                     #sub { shift->statuscolor; },
                                     '',
                                     '',
