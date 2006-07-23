@@ -70,7 +70,7 @@ END
   my $cancelled_sql = FS::cust_pkg->inactive_sql;
 
   my $packages_cols = <<END;
-       ( $select_count_pkgs                    ) AS num_pkgs,
+       ( $select_count_pkgs                    ) AS num_pkgs_sql,
        ( $select_count_pkgs AND $active_sql    ) AS active_pkgs,
        ( $select_count_pkgs AND $inactive_sql  ) AS inactive_pkgs,
        ( $select_count_pkgs AND $suspended_sql ) AS suspended_pkgs,
@@ -117,7 +117,7 @@ END
     my $row = shift;
 
     my $status = 'unknown';
-    if ( $row->num_pkgs == 0 ) {
+    if ( $row->num_pkgs_sql == 0 ) {
       $status = 'prospect';
     } elsif ( $row->active_pkgs    > 0 ) {
       $status = 'active';
