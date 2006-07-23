@@ -3670,18 +3670,17 @@ Returns a hex triplet color string for this customer's status.
 
 =cut
 
+use vars qw(%statuscolor);
+%statuscolor = (
+  'prospect'  => '7e0079', #'000000', #black?  naw, purple
+  'active'    => '00CC00', #green
+  'inactive'  => '0000CC', #blue
+  'suspended' => 'FF9900', #yellow
+  'cancelled' => 'FF0000', #red
+);
 
 sub statuscolor {
   my $self = shift;
-
-  my %statuscolor = (
-    'prospect'  => '7e0079', #'000000', #black?  naw, purple
-    'active'    => '00CC00', #green
-    'inactive'  => '0000CC', #blue
-    'suspended' => 'FF9900', #yellow
-    'cancelled' => 'FF0000', #red
-  );
-
   $statuscolor{$self->status};
 }
 
@@ -3702,6 +3701,10 @@ use vars qw($select_count_pkgs);
 $select_count_pkgs =
   "SELECT COUNT(*) FROM cust_pkg
     WHERE cust_pkg.custnum = cust_main.custnum";
+
+sub select_count_pkgs_sql {
+  $select_count_pkgs;
+}
 
 sub prospect_sql { "
   0 = ( $select_count_pkgs )

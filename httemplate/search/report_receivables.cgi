@@ -62,26 +62,19 @@ END
 
   my $owed_cols = join(',', map owed( @$_, 'cust'=>1 ), @ranges );
 
-  my $recurring = <<END;
-        '0' != ( select freq from part_pkg
-                   where cust_pkg.pkgpart = part_pkg.pkgpart )
-END
+  my $select_count_pkgs = FS::cust_main->select_count_pkgs_sql;
+
+  my $active_sql    = FS::cust_pkg->active_sql;
+  my $inactive_sql  = FS::cust_pkg->inactive_sql;
+  my $suspended_sql = FS::cust_pkg->inactive_sql;
+  my $cancelled_sql = FS::cust_pkg->inactive_sql;
 
   my $packages_cols = <<END;
-
-       ( select count(*) from cust_pkg
-           where cust_main.custnum = cust_pkg.custnum
-             and $recurring
-             and ( cancel = 0 or cancel is null )
-       ) as uncancelled_pkgs,
-
-       ( select count(*) from cust_pkg
-           where cust_main.custnum = cust_pkg.custnum
-             and $recurring
-             and ( cancel = 0 or cancel is null )
-             and ( susp = 0 or susp is null )
-       ) as active_pkgs
-
+       ( $select_count_pkgs                    ) AS num_pkgs,
+       ( $select_count_pkgs AND $active_sql    ) AS active_pkgs,
+       ( $select_count_pkgs AND $inactive_sql  ) AS inactive_pkgs,
+       ( $select_count_pkgs AND $suspended_sql ) AS suspended_pkgs,
+       ( $select_count_pkgs AND $cancelled_sql ) AS cancelled_pkgs
 END
 
   my $where = "where ". owed(0, 0, 'cust'=>1, 'noas'=>1). " > 0";
@@ -118,6 +111,27 @@ END
              'crrrrr';
 
   my $clink = [ "${p}view/cust_main.cgi?", 'custnum' ];
+
+  my $status_statuscol = sub {
+    #conceptual false laziness with cust_main::status...
+    my $row = shift;
+
+    my $status = 'unknown';
+    if ( $self->num_pkgs == 0 ) {
+      $status = 'prospect';
+    } elsif ( $self->active_pkgs) > 0 ) {
+      $status = 'active';
+    } elsif ( $self->inactive_pkgs > 0 ) {
+      $status = 'inactive';
+    } elsif ( $self->suspended_pkgs > 0 ) {
+      $status = 'suspended';
+    } elsif ( $self->cancelled_pkgs > 0 ) {
+      $status = 'cancelled'
+    }
+
+    ( ucfirst($status), $FS::cust_main::statuscolor{$status} );
+  };
+
 
 %><%= include( 'elements/search.html',
                  'title'       => 'Accounts Receivable Aging Summary',
@@ -156,20 +170,7 @@ END
                                   ],
                  'fields'      => [
                                     \&FS::UI::Web::cust_fields,
-                                    sub {
-                                          my $row = shift;
-                                          my $status = 'Cancelled';
-                                          my $statuscol = 'FF0000';
-                                          if ( $row->uncancelled_pkgs ) {
-                                            $status = 'Suspended';
-                                            $statuscol = 'FF9900';
-                                            if ( $row->active_pkgs ) {
-                                              $status = 'Active';
-                                              $statuscol = '00CC00';
-                                            }
-                                          }
-                                          $status;
-                                        },
+                                    sub { (shift->status_statuscol)[0] },
                                     #sub { ucfirst(shift->status) },
                                     sub { sprintf( $money_char.'%.2f',
                                                    shift->get('owed_0_30') ) },
@@ -202,20 +203,7 @@ END
                                     'b', '', '', '', '', 'b', ],
                  'color'       => [
                                     ( map '', FS::UI::Web::cust_header() ),
-                                    sub {  
-                                          my $row = shift;
-                                          my $status = 'Cancelled';
-                                          my $statuscol = 'FF0000';
-                                          if ( $row->uncancelled_pkgs ) {
-                                            $status = 'Suspended';
-                                            $statuscol = 'FF9900';
-                                            if ( $row->active_pkgs ) {
-                                              $status = 'Active';
-                                              $statuscol = '00CC00';
-                                            }
-                                          }
-                                           $statuscol;
-                                        },
+                                    sub { (shift->status_statuscol)[1] },
                                     #sub { shift->statuscolor; },
                                     '',
                                     '',
