@@ -119,13 +119,13 @@ END
     my $status = 'unknown';
     if ( $self->num_pkgs == 0 ) {
       $status = 'prospect';
-    } elsif ( $self->active_pkgs) > 0 ) {
+    } elsif ( $row->active_pkgs    > 0 ) {
       $status = 'active';
-    } elsif ( $self->inactive_pkgs > 0 ) {
+    } elsif ( $row->inactive_pkgs  > 0 ) {
       $status = 'inactive';
-    } elsif ( $self->suspended_pkgs > 0 ) {
+    } elsif ( $row->suspended_pkgs > 0 ) {
       $status = 'suspended';
-    } elsif ( $self->cancelled_pkgs > 0 ) {
+    } elsif ( $row->cancelled_pkgs > 0 ) {
       $status = 'cancelled'
     }
 
