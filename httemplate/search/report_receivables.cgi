@@ -117,7 +117,7 @@ END
     my $row = shift;
 
     my $status = 'unknown';
-    if ( $self->num_pkgs == 0 ) {
+    if ( $row->num_pkgs == 0 ) {
       $status = 'prospect';
     } elsif ( $row->active_pkgs    > 0 ) {
       $status = 'active';
