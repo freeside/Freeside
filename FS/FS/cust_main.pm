@@ -3866,6 +3866,11 @@ sub smart_search {
   } elsif ( $search =~ /^\s*(\S.*\S)\s*$/ ) { #value search
 
     my $value = lc($1);
+
+    # remove "(Last, First)" in "Company (Last, First"), otherwise the
+    # full strings the browser remembers won't work
+    $value =~ s/\([\w \,\.\-\']*\)$//; #false laziness w/Record::ut_name
+    
     my $q_value = dbh->quote($value);
 
     #exact
@@ -3937,6 +3942,10 @@ sub smart_search {
       );
 
     }
+
+    #eliminate duplicates
+    my %saw = ();
+    @cust_main = grep { !$saw{$_->custnum}++ } @cust_main;
 
   }
 
