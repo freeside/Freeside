@@ -109,6 +109,7 @@ if ( $cgi->param('browse')
   push @qual, FS::cust_main->cancel_sql   if $cgi->param('cancelled');
   push @qual, FS::cust_main->prospect_sql if $cgi->param('prospect');
   push @qual, FS::cust_main->active_sql   if $cgi->param('active');
+  push @qual, FS::cust_main->inactive_sql if $cgi->param('inactive');
   push @qual, FS::cust_main->susp_sql     if $cgi->param('suspended');
 
   #EWWWWWW
@@ -415,48 +416,78 @@ END
 
     foreach my $addl_col ( @addl_cols ) { %>
 
-      <TD CLASS="grid" BGCOLOR="<%= $bgcolor %>" ROWSPAN=<%= $rowspan || 1 %> ALIGN=right><FONT SIZE=-1>
+      <% if ( $addl_col eq 'tickets' ) { %>
 
-      <% if ( $addl_col eq 'tickets' ) {
-        if ( @custom_priorities ) {
-          print &itable('', 0);
-          foreach my $priority ( @custom_priorities, '' ) {
-          
-            my $num =
-              FS::TicketSystem->num_customer_tickets($custnum,$priority);
-            my $ahref = '';
-            $ahref= '<A HREF="'.
-                    FS::TicketSystem->href_customer_tickets($custnum,$priority).
-                    '">'
-              if $num;
+        <% if ( @custom_priorities ) { %>
 
-            print '<TR>'.
-                  "  <TD ALIGN=right><FONT SIZE=-1>$ahref$num</A></FONT></TD>".
-                  "<TD ALIGN=left><FONT SIZE=-1>$ahref".
-                  ( $priority || '<i>(none)</i>' ).
-                  "</A></FONT></TD></TR>";
+             <TD CLASS="inv" BGCOLOR="<%= $bgcolor %>" ROWSPAN=<%= $rowspan || 1 %> ALIGN=right><FONT SIZE=-1>
 
-          }
-          print '<TR><TD BGCOLOR="#000000" COLSPAN=2></TD></TR>'.
-                '<TR><TD ALIGN=right><FONT SIZE=-1>';
-        }
+               <TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0>
 
-        my $ahref = '';
-        $ahref = '<A HREF="'.
-                    FS::TicketSystem->href_customer_tickets($custnum).
-                    '">'
-          if $cust_main->get($addl_col);
+               <% foreach my $priority ( @custom_priorities, '' ) { %>
 
-        print $ahref. $cust_main->get($addl_col). '</A>';
-        print "</FONT></TD><TD ALIGN=left>".
-              "<FONT SIZE=-1>${ahref}Total</A><FONT>".
-              "</TD></TR></TABLE>"
-          if @custom_priorities;
+                 <%
+                    my $num =
+                      FS::TicketSystem->num_customer_tickets($custnum,$priority);
+                    my $ahref = '';
+                    $ahref= '<A HREF="'.
+                            FS::TicketSystem->href_customer_tickets($custnum,$priority).
+                            '">'
+                      if $num;
+                 %>
+        
+                 <TR>
+                   <TD ALIGN=right>
+                     <FONT SIZE=-1><%= $ahref.$num %></A></FONT>
+                   </TD>
+                   <TD ALIGN=left>
+                     <FONT SIZE=-1><%= $ahref %><%= $priority || '<i>(none)</i>' %></A></FONT>
+                   </TD>
+                 </TR>
+   
+               <% } %>
 
-      } else {
-        print $cust_main->get($addl_col);
+             <TR>
+               <TH ALIGN=right STYLE="border-top: dashed 1px black">
+               <FONT SIZE=-1>
+
+        <% } else { %>
+
+          <TD CLASS="grid" BGCOLOR="<%= $bgcolor %>" ROWSPAN=<%= $rowspan || 1 %> ALIGN=right><FONT SIZE=-1>
+
+        <% } %>
+
+        <%
+           my $ahref = '';
+           $ahref = '<A HREF="'.
+                       FS::TicketSystem->href_customer_tickets($custnum).
+                       '">'
+             if $cust_main->get($addl_col);
+        %>
+
+        <%= $ahref %><%= $cust_main->get($addl_col) %></A>
+
+        <% if ( @custom_priorities ) { %>
+
+          </FONT></TH>
+            <TH ALIGN=left STYLE="border-top: dashed 1px black">
+              <FONT SIZE=-1><%= ${ahref} %>Total</A><FONT>
+            </TH>
+          </TR>
+          </TABLE>
+
+        <% } %>
+
+        </FONT></TD>
+
+      } else { %>
+
+        <TD CLASS="grid" BGCOLOR="<%= $bgcolor %>" ROWSPAN=<%= $rowspan || 1 %> ALIGN=right><FONT SIZE=-1>
+          <%= $cust_main->get($addl_col) %>
+        </FONT></TD>
+
+<%
       }
-      print "</FONT></TD>";
     }
 
     my($n1)='';

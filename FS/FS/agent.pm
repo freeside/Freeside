@@ -322,6 +322,17 @@ sub num_pkg_sql {
   $sth->fetchrow_arrayref->[0];
 }
 
+=item num_inactive_cust_pkg
+
+Returns the number of inactive customer packages (one-time packages otherwise
+unsuspended/uncancelled) for this agent.
+
+=cut
+
+sub num_inactive_cust_pkg {
+  shift->num_pkg_sql(FS::cust_pkg->inactive_sql);
+}
+
 =item num_susp_cust_pkg
 
 Returns the number of suspended customer packages for this agent.

@@ -24,6 +24,12 @@ if (    $cgi->param('magic')  eq 'active'
 
   push @where, FS::cust_pkg->active_sql();
 
+} elsif (    $cgi->param('magic')  eq 'inactive'
+          || $cgi->param('status') eq 'inactive' ) {
+
+  push @where, FS::cust_pkg->inactive_sql();
+
+
 } elsif (    $cgi->param('magic')  eq 'suspended'
           || $cgi->param('status') eq 'suspended'  ) {
 
@@ -47,7 +53,10 @@ if (    $cgi->param('magic')  eq 'active'
 #false lazinessish w/graph/cust_bill_pkg.cgi
 my $classnum = 0;
 my @pkg_class = ();
-if ( $cgi->param('classnum') =~ /^(\d*)$/ ) {
+if ( exists($cgi->Vars->{'classnum'})
+     && $cgi->param('classnum') =~ /^(\d*)$/
+   )
+{
   $classnum = $1;
   if ( $classnum ) { #a specific class
     push @where, "classnum = $classnum";
@@ -90,7 +99,7 @@ if ( $cgi->param('magic') && $cgi->param('magic') eq 'bill' ) {
 } else {
 
   if ( $cgi->param('magic') &&
-       $cgi->param('magic') =~ /^(active|suspended|cancell?ed)$/
+       $cgi->param('magic') =~ /^(active|inactive|suspended|cancell?ed)$/
   ) {
 
     $orderby = 'ORDER BY pkgnum';
