@@ -480,7 +480,7 @@ END
 
         </FONT></TD>
 
-      } else { %>
+      <% } else { %>
 
         <TD CLASS="grid" BGCOLOR="<%= $bgcolor %>" ROWSPAN=<%= $rowspan || 1 %> ALIGN=right><FONT SIZE=-1>
           <%= $cust_main->get($addl_col) %>
