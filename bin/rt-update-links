@@ -1,0 +1,36 @@
+#!/usr/bin/perl
+
+use FS::UID qw(adminsuidsetup);
+
+my( $olddb, $newdb ) = ( shift, shift );
+
+$FS::CurrentUser::upgrade_hack = 1;
+my $dbh = adminsuidsetup;
+
+my $statement = "select * from links where base like 'fsck.com-rt://$olddb/%' OR target like 'fsck.com-rt://$olddb/%'";
+
+my $sth = $dbh->prepare($statement) or die $dbh->errstr;
+$sth->execute or die $sth->errstr;
+
+while ( my $row = $sth->fetchrow_hashref ) {
+
+  ( my $base = $row->{'base'} )
+    =~ s(^fsck\.com-rt://$olddb/)(fsck.com-rt://$newdb/);
+
+  ( my $target = $row->{'target'} )
+    =~ s(^fsck\.com-rt://$olddb/)(fsck.com-rt://$newdb/);
+
+  if ( $row->{'base'} ne $base || $row->{'target'} ne $target ) {
+
+    my $update = 'UPDATE links SET base = ?, target = ? where id = ?';
+    my @param = ( $base, $target, $row->{'id'} );
+
+    warn "$update : ". join(', ', @param). "\n";
+    $dbh->do($update, {}, @param );
+
+  }
+
+}
+
+$dbh->commit;
+
