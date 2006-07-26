@@ -10,7 +10,7 @@ use subs qw(
   getsecrets cgisetotaker
 );
 use Exporter;
-use Carp qw(carp croak cluck);
+use Carp qw(carp croak cluck confess);
 use DBI;
 use FS::Conf;
 use FS::CurrentUser;
@@ -72,6 +72,7 @@ sub adminsuidsetup {
 
 sub forksuidsetup {
   $user = shift;
+  my $olduser = $user;
 
   if ( $FS::CurrentUser::upgrade_hack ) {
     $user = 'fs_bootstrap';
@@ -91,7 +92,11 @@ sub forksuidsetup {
 
   croak "Not running uid freeside!" unless checkeuid();
 
-  $dbh = &myconnect;
+  if ( $FS::CurrentUser::upgrade_hack && $olduser ) {
+    $dbh = &myconnect($olduser);
+  } else {
+    $dbh = &myconnect();
+  }
 
   use FS::Schema qw(reload_dbdef);
   reload_dbdef("/usr/local/etc/freeside/dbdef.$datasrc")
@@ -110,10 +115,10 @@ sub forksuidsetup {
 }
 
 sub myconnect {
-  DBI->connect( getsecrets, { 'AutoCommit'         => 0,
-                              'ChopBlanks'         => 1,
-                              'ShowErrorStatement' => 1,
-                            }
+  DBI->connect( getsecrets(@_), { 'AutoCommit'         => 0,
+                                  'ChopBlanks'         => 1,
+                                  'ShowErrorStatement' => 1,
+                                }
               )
     or die "DBI->connect error: $DBI::errstr\n";
 }
@@ -275,7 +280,7 @@ sub getsecrets {
   if ( $conf->exists('mapsecrets') ) {
     die "No user!" unless $user;
     my($line) = grep /^\s*($user|\*)\s/, $conf->config('mapsecrets');
-    die "User $user not found in mapsecrets!" unless $line;
+    confess "User $user not found in mapsecrets!" unless $line;
     $line =~ /^\s*($user|\*)\s+(.*)$/;
     $secrets = $2;
     die "Illegal mapsecrets line for user?!" unless $secrets;
