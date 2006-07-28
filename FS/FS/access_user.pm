@@ -1,12 +1,15 @@
 package FS::access_user;
 
 use strict;
-use vars qw( @ISA );
+use vars qw( @ISA $htpasswd_file );
 use FS::Record qw( qsearch qsearchs dbh );
 use FS::m2m_Common;
 use FS::access_usergroup;
 
 @ISA = qw( FS::m2m_Common FS::Record );
+
+#kludge htpasswd for now
+$htpasswd_file = '/usr/local/etc/freeside/htpasswd';
 
 =head1 NAME
 
@@ -70,7 +73,51 @@ otherwise returns false.
 
 =cut
 
-# the insert method can be inherited from FS::Record
+sub insert {
+  my $self = shift;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $error =
+       $self->SUPER::insert(@_)
+    || $self->htpasswd_kludge()
+  ;
+
+  if ( $error ) {
+    $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
+    return $error;
+  } else {
+    $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+    '';
+  }
+
+}
+
+sub htpasswd_kludge {
+  my $self = shift;
+  if ( 
+       system('htpasswd', '-b', @_,
+                          $htpasswd_file,
+                          $self->username,
+                          $self->_password,
+             ) == 0
+     )
+  {
+    return '';
+  } else {
+    return 'htpasswd exited unsucessfully';
+  }
+}
+
 
 =item delete
 
@@ -78,7 +125,34 @@ Delete this record from the database.
 
 =cut
 
-# the delete method can be inherited from FS::Record
+sub delete {
+  my $self = shift;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $error =
+       $self->SUPER::delete(@_)
+    || $self->htpasswd_kludge('-D')
+  ;
+
+  if ( $error ) {
+    $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
+    return $error;
+  } else {
+    $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+    '';
+  }
+
+}
 
 =item replace OLD_RECORD
 
@@ -87,7 +161,34 @@ returns the error, otherwise returns false.
 
 =cut
 
-# the replace method can be inherited from FS::Record
+sub replace {
+  my($new, $old) = ( shift, shift );
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $error =
+       $new->SUPER::replace($old, @_)
+    || $new->htpasswd_kludge()
+  ;
+
+  if ( $error ) {
+    $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
+    return $error;
+  } else {
+    $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+    '';
+  }
+
+}
 
 =item check
 
