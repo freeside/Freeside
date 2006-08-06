@@ -70,11 +70,20 @@ unless ( $svcnum || $cgi->param('error') ) { #adding
 
   $svc_acct->set_default_and_fixed( {
     #false laziness w/svc-acct::_fieldhandlers
-    'usergroup' => sub { return $_[0] if ref($_[0]) eq 'ARRAY';
-                         @groups = split(/\s*,\s*/, shift );
-                         \@groups;
-                       },
-  } );
+    'usergroup' => sub { 
+                         my( $self, $groups ) = @_;
+                         if ( ref($groups) eq 'ARRAY' ) {
+                           @groups = @$groups;
+                           $groups;
+                         } elsif ( length($groups) ) {
+                           @groups = split(/\s*,\s*/, $groups);
+                           [ @groups ];
+                         } else {
+                           @groups = ();
+                           [];
+                         }
+    }
+  );
 
 }
 

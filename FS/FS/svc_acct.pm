@@ -192,11 +192,11 @@ sub _fieldhandlers {
   {
     #false laziness with edit/svc_acct.cgi
     'usergroup' => sub { 
-                         my $usergroup = shift;
-                         if ( ref($usergroup) eq 'ARRAY' ) {
-                           $usergroup;
-                         } elsif ( length($usergroup) ) {
-                           [ split(/\s*,\s*/, $usergroup) ];
+                         my( $self, $groups ) = @_;
+                         if ( ref($groups) eq 'ARRAY' ) {
+                           $groups;
+                         } elsif ( length($groups) ) {
+                           [ split(/\s*,\s*/, $groups) ];
                          } else {
                            [];
                          }

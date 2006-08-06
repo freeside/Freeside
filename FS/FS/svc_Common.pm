@@ -72,7 +72,7 @@ sub new {
 }
 
 #empty default
-sub _fieldhandlers { (); }
+sub _fieldhandlers { {}; }
 
 sub virtual_fields {
 
@@ -475,7 +475,7 @@ sub setx {
   my $self = shift;
   my $x = shift;
   my @x = ref($x) ? @$x : ($x);
-  my $coderef = scalar(@_) ? shift : {};
+  my $coderef = scalar(@_) ? shift : $self->_fieldhandlers;
 
   my $error =
     $self->ut_numbern('svcnum')
