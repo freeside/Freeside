@@ -1416,7 +1416,7 @@ Returns all RADIUS groups for this account (see L<FS::radius_usergroup>).
 sub radius_groups {
   my $self = shift;
   if ( $self->usergroup ) {
-    confess "specified usergroup is not an arrayref: ". $self->usergroup
+    confess "explicitly specified usergroup not an arrayref: ". $self->usergroup
       unless ref($self->usergroup) eq 'ARRAY';
     #when provisioning records, export callback runs in svc_Common.pm before
     #radius_usergroup records can be inserted...
