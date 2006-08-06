@@ -17,6 +17,7 @@ use Carp;
 use Fcntl qw(:flock);
 use Date::Format;
 use Crypt::PasswdMD5 1.2;
+use Data::Dumper;
 use FS::UID qw( datasrc );
 use FS::Conf;
 use FS::Record qw( qsearch qsearchs fields dbh dbdef );
@@ -221,7 +222,11 @@ jobnum(s) (they will not run until the specific job(s) complete(s)).
 sub insert {
   my $self = shift;
   my %options = @_;
-  my $error;
+
+  if ( $DEBUG ) {
+    warn "[$me] insert called on $self: ". Dumper($self).
+         "\nwith options: ". Dumper(%options);
+  }
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -234,7 +239,7 @@ sub insert {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  $error = $self->check;
+  my $error = $self->check;
   return $error if $error;
 
   if ( $self->svcnum && qsearchs('cust_svc',{'svcnum'=>$self->svcnum}) ) {
