@@ -104,6 +104,7 @@ sub insert {
 
 sub htpasswd_kludge {
   my $self = shift;
+  unshift @_, '-c' unless -e $htpasswd_file;
   if ( 
        system('htpasswd', '-b', @_,
                           $htpasswd_file,
