@@ -51,7 +51,9 @@ sub new {
   #$self->{'Hash'} = shift;
   my $newhash = shift;
   $self->{'Hash'} = { map { $_ => $newhash->{$_} } qw(svcnum svcpart) };
-  $self->setdefault;
+
+  $self->setdefault( $self->_fieldhandlers );
+
   $self->{'Hash'}{$_} = $newhash->{$_}
     foreach grep { defined($newhash->{$_}) && length($newhash->{$_}) }
                  keys %$newhash;
@@ -68,6 +70,9 @@ sub new {
 
   $self;
 }
+
+#empty default
+sub _fieldhandlers { (); }
 
 sub virtual_fields {
 
@@ -490,11 +495,9 @@ sub setx {
     my $columnname  = $part_svc_column->columnname;
     my $columnvalue = $part_svc_column->columnvalue;
 
-    if ( exists( $coderef->{$columnname} ) ) {
-      &{ $coderef->{$columnname} }( $self, $columnvalue);
-    } else {
-      $self->setfield( $columnname, $columnvalue );
-    }
+    $columnvalue = &{ $coderef->{$columnname} }( $self, $columnvalue )
+      if exists( $coderef->{$columnname} );
+    $self->setfield( $columnname, $columnvalue );
 
   }
 

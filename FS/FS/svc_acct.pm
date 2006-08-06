@@ -188,6 +188,20 @@ Creates a new account.  To add the account to the database, see L<"insert">.
 
 sub table { 'svc_acct'; }
 
+sub _fieldhandlers {
+  #false laziness with edit/svc_acct.cgi
+  'usergroup' => sub { 
+                       my $usergroup = shift;
+                       if ( ref($usergroup) eq 'ARRAY' ) {
+                         $usergroup;
+                       } elsif ( length($usergroup) ) {
+                         [ split(/\s*,\s*/, $usergroup) ];
+                       } else {
+                         [];
+                       }
+                     },
+}
+
 =item insert [ , OPTION => VALUE ... ]
 
 Adds this account to the database.  If there is an error, returns the error,

@@ -69,7 +69,11 @@ unless ( $svcnum || $cgi->param('error') ) { #adding
   }
 
   $svc_acct->set_default_and_fixed( {
-    'usergroup' => sub { @groups = split(',', shift ); },
+    #false laziness w/svc-acct::_fieldhandlers
+    'usergroup' => sub { return $_[0] if ref($_[0]) eq 'ARRAY';
+                         @groups = split(/\s*,\s*/, shift );
+                         \@groups;
+                       },
   } );
 
 }
