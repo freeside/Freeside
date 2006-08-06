@@ -52,7 +52,8 @@ sub new {
   my $newhash = shift;
   $self->{'Hash'} = { map { $_ => $newhash->{$_} } qw(svcnum svcpart) };
 
-  $self->setdefault( $self->_fieldhandlers );
+  $self->setdefault( $self->_fieldhandlers )
+    unless $self->svcnum;
 
   $self->{'Hash'}{$_} = $newhash->{$_}
     foreach grep { defined($newhash->{$_}) && length($newhash->{$_}) }
