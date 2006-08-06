@@ -82,8 +82,8 @@ unless ( $svcnum || $cgi->param('error') ) { #adding
                            @groups = ();
                            [];
                          }
-    }
-  );
+                       }
+  } );
 
 }
 
