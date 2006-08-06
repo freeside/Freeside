@@ -703,7 +703,7 @@ sub check {
 
   my($recref) = $self->hashref;
 
-  my $x = $self->setfixed;
+  my $x = $self->setfixed( $self->_fieldhandlers );
   return $x unless ref($x);
   my $part_svc = $x;
 

@@ -103,8 +103,6 @@ if ( $new->custnum eq '' ) {
                                      'popnum'    => $cgi->param('popnum'),
                                    } );
 
-    my $y = $svc_acct->setdefault; # arguably should be in new method
-    $error ||= $y unless ref($y);
     #and just in case you were silly
     $svc_acct->svcpart($svcpart);
     $svc_acct->username($cgi->param('username'));
