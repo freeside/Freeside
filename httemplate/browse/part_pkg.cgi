@@ -1,5 +1,6 @@
 <%
 
+#false laziness w/access_user.html
 my %search = ();
 my $search = '';
 unless ( $cgi->param('showdisabled') ) {
@@ -71,6 +72,7 @@ my $align = 'rll';
 my @links = ( $link, $link, '' );
 my @style = ( '', '', '' );
 
+#false laziness w/access_user.html
 #unless ( $cgi->param('showdisabled') ) { #its been reversed already
 if ( $cgi->param('showdisabled') ) { #its been reversed already
   push @header, 'Status';

@@ -36,6 +36,7 @@ sub load_user {
   $CurrentUser = qsearchs('access_user', {
     'username' => $user,
     #'_password' =>
+    'disabled' => '',
   } );
 
   die "unknown user: $user" unless $CurrentUser; # or bad password

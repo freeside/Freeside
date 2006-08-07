@@ -1476,6 +1476,7 @@ sub tables_hashref {
         '_password', 'varchar', '', $char_d, '', '',
         'last',      'varchar', '', $char_d, '', '', 
         'first',     'varchar', '', $char_d, '', '', 
+        'disabled',     'char', 'NULL',   1, '', '', 
       ],
       'primary_key' => 'usernum',
       'unique' => [ [ 'username' ] ],

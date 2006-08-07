@@ -47,6 +47,8 @@ FS::Record.  The following fields are currently supported:
 
 =item first -
 
+=item disabled - empty or 'Y'
+
 =back
 
 =head1 METHODS
@@ -211,6 +213,7 @@ sub check {
     || $self->ut_text('_password')
     || $self->ut_text('last')
     || $self->ut_text('first')
+    || $self->ut_enum('disabled', [ '', 'Y' ] )
   ;
   return $error if $error;
 

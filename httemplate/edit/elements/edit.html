@@ -15,7 +15,9 @@
   # 'fields' => [
   #               'columname',
   #               { 'field' => 'another_columname',
-  #                 'type' => 'text', #text, fixed, hidden
+  #                 'type'  => 'text', #text, fixed, hidden, checkbox
+  #                                    #eventually more for <SELECT>, etc.
+  #                 'value' => 'Y', #only for checkbox
   #               },
   #             ]
   #
@@ -150,13 +152,16 @@
       %>
     </TD>
 
-    <%
-      #eventually more options for <SELECT>, etc. fields
-      if ( $type eq 'fixed' ) {
-    %>
+    <% if ( $type eq 'fixed' ) { %>
 
       <TD BGCOLOR="#dddddd"><%= $f->{'value'} %></TD>
       <INPUT TYPE="hidden" NAME="<%= $field %>" VALUE="<%= $f->{'value'} %>">
+
+    <% } elsif ( $type eq 'checkbox' ) { %>
+
+      <TD>
+        <INPUT TYPE="checkbox" NAME="<%= $field %>" VALUE="<%= $f->{'value'} %>" <%= $object->$field() eq $f->{'value'} ? ' CHECKED' : '' %>>
+      </TD>
 
     <% } else { %>
 
