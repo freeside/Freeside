@@ -380,8 +380,7 @@
 
                                   my $tableref = $_;
 
-                                  '<TABLE BORDER=0 CELLSPACING=0 CELLPADDING=0'.
-                                  ' STYLE="border:none">'.
+                                  '<TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0>'.
 
                                   join('', map {
 
@@ -393,7 +392,7 @@
 
                                       my $element = $_;
 
-                                      '<TD STYLE="border:none"'.
+                                      '<TD'.
                                       ( $element->{'align'}
                                           ? ' ALIGN="'. $element->{'align'}. '"'
                                           : ''
@@ -431,6 +430,8 @@
                           @{$opt{'fields'}}
 
                         ) {
+
+                          my $class = ( $field =~ /^<TABLE/i ) ? 'inv' : 'grid';
 
                           my $align = $aligns ? shift @$aligns : '';
                           $align = " ALIGN=$align" if $align;
@@ -471,7 +472,7 @@
                           }
 
                        %>
-                       <TD CLASS="grid" BGCOLOR="<%= $bgcolor %>"<%= $align %>><%= $font %><%= $a %><%= $s %><%= $field %><%= $es %><%= $a ? '</A>' : '' %><%= $font ? '</FONT>' : '' %></TD>
+                       <TD CLASS="<%= $class %>" BGCOLOR="<%= $bgcolor %>"<%= $align %>><%= $font %><%= $a %><%= $s %><%= $field %><%= $es %><%= $a ? '</A>' : '' %><%= $font ? '</FONT>' : '' %></TD>
                      <% } %>
                    <% } else { %>
                      <% foreach ( @$row ) { %>
