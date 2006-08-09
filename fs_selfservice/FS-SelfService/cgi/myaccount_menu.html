@@ -12,7 +12,7 @@ my @menu = (
 { title=>' ' },
 
 { title=>'Purchase', size=>'+1', },
-  { title=>'Purchase additional package*', url=>'order', 'indent'=>2 },
+#  { title=>'Purchase additional package*', url=>'order', 'indent'=>2 },
 );
 
 if ( 1 ) { #XXXFIXME "enable selfservice prepay features" flag or something, eventually per-pkg or something really fancy
@@ -35,8 +35,8 @@ push @menu, (
 { title=>' ' },
 
 { title=>'Change my information', size=>'+1', },
-  { title=>'Change payment information*', url=>'change_bill',     indent=>2 },
-  { title=>'Change service address*',     url=>'change_ship',     indent=>2 },
+#  { title=>'Change payment information*', url=>'change_bill',     indent=>2 },
+#  { title=>'Change service address*',     url=>'change_ship',     indent=>2 },
   { title=>'Change password(s)',          url=>'change_password', indent=>2 },
 
 { title=>' ' },
@@ -82,7 +82,9 @@ foreach my $item ( @menu ) {
 
 %>
 
-<TR><TD STYLE="border-right: 1px solid black"><BR><BR>*&nbsp;coming&nbsp;soon</TD></TR>
+<!-- <TR><TD STYLE="border-right: 1px solid black"><BR><BR>*&nbsp;coming&nbsp;soon</TD></TR> -->
+
+<TR><TD STYLE="border-right: 1px solid black" HEIGHT="100%"><BR><BR><BR><BR></TD></TR>
 
 </TABLE>
 
