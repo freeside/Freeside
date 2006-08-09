@@ -168,6 +168,13 @@ sub initial_data {
         'weight'    => 50,
         'plan'      => 'send',
       },
+      { 'payby'     => 'DCLN',
+        'event'     => 'Suspend',
+        'seconds'   => 0,
+        'eventcode' => '$cust_bill->suspend();',
+        'weight'    => 40,
+        'plan'      => 'suspend',
+      },
     ],
     
     #you must create a service definition. An example of a service definition

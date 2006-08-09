@@ -1,11 +1,16 @@
 package FS::cust_pay_batch;
 
 use strict;
-use vars qw( @ISA );
-use FS::Record qw(dbh qsearchs);
+use vars qw( @ISA $DEBUG );
+use FS::Record qw(dbh qsearch qsearchs);
 use Business::CreditCard;
 
 @ISA = qw( FS::Record );
+
+# 1 is mostly method/subroutine entry and options
+# 2 traces progress of some operations
+# 3 is even more information including possibly sensitive data
+$DEBUG = 0;
 
 =head1 NAME
 
@@ -37,6 +42,10 @@ following fields are currently supported:
 
 =item paybatchnum - primary key (automatically assigned)
 
+=item batchnum - indentifies group in batch
+
+=item payby - CARD/CHEK/LECB/BILL/COMP
+
 =item payinfo
 
 =item exp - card expiration 
@@ -64,6 +73,8 @@ following fields are currently supported:
 =item zip 
 
 =item country 
+
+=item status
 
 =back
 
@@ -94,16 +105,8 @@ otherwise returns false.
 
 =item replace OLD_RECORD
 
-#inactive
-#
-#Replaces the OLD_RECORD with this one in the database.  If there is an error,
-#returns the error, otherwise returns false.
-
-=cut
-
-sub replace {
-  return "Can't (yet?) replace batched transactions!";
-}
+Replaces the OLD_RECORD with this one in the database.  If there is an error,
+returns the error, otherwise returns false.
 
 =item check
 
@@ -119,7 +122,6 @@ sub check {
   my $error = 
       $self->ut_numbern('paybatchnum')
     || $self->ut_numbern('trancode') #depriciated
-    || $self->ut_number('payinfo') 
     || $self->ut_money('amount')
     || $self->ut_number('invnum')
     || $self->ut_number('custnum')
@@ -137,6 +139,10 @@ sub check {
   $self->first =~ /^([\w \,\.\-\']+)$/ or return "Illegal first name";
   $self->first($1);
 
+  $self->payby =~ /^(CARD|CHEK|LECB|BILL|COMP|PREP|CASH|WEST|MCRD)$/
+    or return "Illegal payby";
+  $self->payby($1);
+
   # FIXME
   # there is no point in false laziness here
   # we will effectively set "check_payinfo to 0"
@@ -152,7 +158,8 @@ sub check {
   #return "Unknown card type" if cardtype($cardnum) eq "Unknown";
 
   if ( $self->exp eq '' ) {
-    return "Expiration date required"; #unless 
+    return "Expiration date required"
+      unless $self->payby =~ /^(CHEK|DCHK|LECB|WEST)$/;
     $self->exp('');
   } else {
     if ( $self->exp =~ /^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/ ) {
@@ -226,7 +233,11 @@ sub import_results {
   my $format = $param->{'format'};
   my $paybatch = $param->{'paybatch'};
 
+  my $filetype;      # CSV, Fixed80, Fixed264
   my @fields;
+  my $formatre;      # for Fixed.+
+  my @values;
+  my $begin_condition;
   my $end_condition;
   my $end_hook;
   my $hook;
@@ -234,6 +245,8 @@ sub import_results {
   my $declined_condition;
 
   if ( $format eq 'csv-td_canada_trust-merchant_pc_batch' ) {
+
+    $filetype = "CSV";
 
     @fields = (
       'paybatchnum', # Reference#:  Invoice number of the transaction
@@ -293,6 +306,58 @@ sub import_results {
     };
 
 
+  }elsif ( $format eq 'PAP' ) {
+
+    $filetype = "Fixed264";
+
+    @fields = (
+      'recordtype',  # We are interested in the 'D' or debit records
+      'batchnum',    # Record#:  batch number we used when sending the file
+      'datacenter',  # Where in the bowels of the bank the data was processed
+      'paid',        # Amount:  Amount of the transaction.  Dollars and cents
+                     #          with no decimal entered.
+      '_date',       # Transaction Date:  Date the Transaction was processed
+      'bank',        # Routing information
+      'payinfo',     # Account number for the transaction
+      'paybatchnum', # Reference#:  Invoice number of the transaction
+    );
+
+    $formatre = '^(.).{19}(.{4})(.{3})(.{10})(.{6})(.{9})(.{12}).{110}(.{19}).{71}$'; 
+
+    $end_condition = sub {
+      my $hash = shift;
+      $hash->{'recordtype'} eq 'W';
+    };
+
+    $end_hook = sub {
+      my( $hash, $total) = @_;
+      $total = sprintf("%.2f", $total);
+      my $batch_total = $hash->{'datacenter'}.$hash->{'paid'}.
+                        substr($hash->{'_date'},0,1);          # YUCK!
+      $batch_total = sprintf("%.2f", $batch_total / 100 );
+      return "Our total $total does not match bank total $batch_total!"
+        if $total != $batch_total;
+      '';
+    };
+
+    $hook = sub {
+      my $hash = shift;
+      $hash->{'paid'} = sprintf("%.2f", $hash->{'paid'} / 100 );
+      my $tmpdate = timelocal( 0,0,1,1,0,substr($hash->{'_date'}, 0, 3)+2000); 
+      $tmpdate += 86400*(substr($hash->{'_date'}, 3, 3)-1) ;
+      $hash->{'_date'} = $tmpdate;
+      $hash->{'payinfo'} = $hash->{'payinfo'} . '@' . $hash->{'bank'};
+    };
+
+    $approved_condition = sub {
+      1;
+    };
+
+    $declined_condition = sub {
+      0;
+    };
+
+
   } else {
     return "Unknown format $format";
   }
@@ -316,10 +381,10 @@ sub import_results {
     return "batch $paybatch is not in transit";
   };
 
-  my %batchhash = $pay_batch->hash;
-  $batchhash{'status'} = 'R';   # Resolved
-  my $newbatch = new FS::pay_batch ( \%batchhash );
-  my $error = $newbatch->replace($paybatch);
+  my $newbatch = new FS::pay_batch { $pay_batch->hash };
+  $newbatch->status('R');   # Resolved
+  $newbatch->upload(time);
+  my $error = $newbatch->replace($pay_batch);
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error
@@ -331,12 +396,23 @@ sub import_results {
 
     next if $line =~ /^\s*$/; #skip blank lines
 
-    $csv->parse($line) or do {
+    if ($filetype eq "CSV") {
+      $csv->parse($line) or do {
+        $dbh->rollback if $oldAutoCommit;
+        return "can't parse: ". $csv->error_input();
+      };
+      @values = $csv->fields();
+    }elsif ($filetype eq "Fixed80" || $filetype eq "Fixed264"){
+      @values = $line =~ /$formatre/;
+      unless (@values) {
+        $dbh->rollback if $oldAutoCommit;
+        return "can't parse: ". $line;
+      };
+    }else{
       $dbh->rollback if $oldAutoCommit;
-      return "can't parse: ". $csv->error_input();
-    };
+      return "Unknown file type $filetype";
+    }
 
-    my @values = $csv->fields();
     my %hash;
     foreach my $field ( @fields ) {
       my $value = shift @values;
@@ -354,26 +430,25 @@ sub import_results {
     }
 
     my $cust_pay_batch =
-      qsearchs('cust_pay_batch', { 'paybatchnum' => $hash{'paybatchnum'} } );
+      qsearchs('cust_pay_batch', { 'paybatchnum' => $hash{'paybatchnum'}+0 } );
     unless ( $cust_pay_batch ) {
       $dbh->rollback if $oldAutoCommit;
       return "unknown paybatchnum $hash{'paybatchnum'}\n";
     }
     my $custnum = $cust_pay_batch->custnum,
+    my $payby = $cust_pay_batch->payby,
 
-    my $error = $cust_pay_batch->delete;
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return "error removing paybatchnum $hash{'paybatchnum'}: $error\n";
-    }
+    my $new_cust_pay_batch = new FS::cust_pay_batch { $cust_pay_batch->hash };
 
     &{$hook}(\%hash);
 
     if ( &{$approved_condition}(\%hash) ) {
 
+      $new_cust_pay_batch->status('Approved');
+
       my $cust_pay = new FS::cust_pay ( {
         'custnum'  => $custnum,
-        'payby'    => 'CARD',
+	'payby'    => $payby,
         'paybatch' => $paybatch,
         map { $_ => $hash{$_} } (qw( paid _date payinfo )),
       } );
@@ -388,9 +463,81 @@ sub import_results {
 
     } elsif ( &{$declined_condition}(\%hash) ) {
 
-      #this should be configurable... if anybody else ever uses batches
-      $cust_pay_batch->cust_main->suspend;
+      $new_cust_pay_batch->status('Declined');
 
+      #this should be configurable... if anybody else ever uses batches
+      # $cust_pay_batch->cust_main->suspend;
+
+      foreach my $part_bill_event (
+        sort {    $a->seconds   <=> $b->seconds
+               || $a->weight    <=> $b->weight
+               || $a->eventpart <=> $b->eventpart }
+          grep { ! qsearch( 'cust_bill_event', {
+                               'invnum'    => $cust_pay_batch->invnum,
+                               'eventpart' => $_->eventpart,
+                               'status'    => 'done',
+                                                                   } )
+               }
+            qsearch( {
+              'table'     => 'part_bill_event',
+              'hashref'   => { 'payby'    => 'DCLN',
+                               'disabled' => '',           },
+            } )
+      ) {
+
+        # don't run subsequent events if balance<=0
+        last if $cust_pay_batch->cust_main->balance <= 0;
+
+        warn "  calling invoice event (". $part_bill_event->eventcode. ")\n"
+          if $DEBUG > 1;
+        my $cust_main = $cust_pay_batch->cust_main; #for callback
+
+        my $error;
+        {
+          local $SIG{__DIE__}; # don't want Mason __DIE__ handler active
+          $error = eval $part_bill_event->eventcode;
+        }
+
+        my $status = '';
+        my $statustext = '';
+        if ( $@ ) {
+          $status = 'failed';
+          $statustext = $@;
+        } elsif ( $error ) {
+          $status = 'done';
+          $statustext = $error;
+        } else {
+          $status = 'done'
+        }
+
+	#add cust_bill_event
+	my $cust_bill_event = new FS::cust_bill_event {
+	  'invnum'     => $cust_pay_batch->invnum,
+	  'eventpart'  => $part_bill_event->eventpart,
+	  '_date'      => time,
+	  'status'     => $status,
+	  'statustext' => $statustext,
+	};
+	$error = $cust_bill_event->insert;
+	if ( $error ) {
+	  # gah, even with transactions.
+	  $dbh->commit if $oldAutoCommit; #well.
+          my $e = 'WARNING: Event run but database not updated - '.
+                  'error inserting cust_bill_event, invnum #'. $cust_pay_batch->invnum.
+		  ', eventpart '. $part_bill_event->eventpart.
+                  ": $error";
+          warn $e;
+          return $e;
+        }
+
+      }
+
+    }
+
+    my $error = $new_cust_pay_batch->replace($cust_pay_batch);
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "error updating status of paybatchnum $hash{'paybatchnum'}: $error\n";
     }
 
   }

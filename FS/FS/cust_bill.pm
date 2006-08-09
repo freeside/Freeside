@@ -1284,6 +1284,9 @@ sub batch_card {
   my $self = shift;
   my $cust_main = $self->cust_main;
 
+  my $amount = sprintf("%.2f", $cust_main->balance - $cust_main->in_transit_payments);
+  return '' unless $amount > 0;
+  
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
@@ -1300,9 +1303,14 @@ sub batch_card {
     }
   }
 
+  my $old_cust_pay_batch = qsearchs('cust_pay_batch', {
+      'batchnum' => $pay_batch->getfield('batchnum'),
+      'custnum'  => $cust_main->getfield('custnum'),
+  } );
+
   my $cust_pay_batch = new FS::cust_pay_batch ( {
     'batchnum' => $pay_batch->getfield('batchnum'),
-    'invnum'   => $self->getfield('invnum'),
+    'invnum'   => $self->getfield('invnum'),       # is there a better value?
     'custnum'  => $cust_main->getfield('custnum'),
     'last'     => $cust_main->getfield('last'),
     'first'    => $cust_main->getfield('first'),
@@ -1312,12 +1320,23 @@ sub batch_card {
     'state'    => $cust_main->getfield('state'),
     'zip'      => $cust_main->getfield('zip'),
     'country'  => $cust_main->getfield('country'),
+    'payby'    => $cust_main->payby,
     'payinfo'  => $cust_main->payinfo,
     'exp'      => $cust_main->getfield('paydate'),
     'payname'  => $cust_main->getfield('payname'),
-    'amount'   => $self->owed,
+    'amount'   => $amount,                          # consolidating
   } );
-  my $error = $cust_pay_batch->insert;
+  
+  $cust_pay_batch->paybatchnum($old_cust_pay_batch->paybatchnum)
+    if $old_cust_pay_batch;
+
+  my $error;
+  if ($old_cust_pay_batch) {
+    $error = $cust_pay_batch->replace($old_cust_pay_batch)
+  } else {
+    $error = $cust_pay_batch->insert;
+  }
+
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     die $error;

@@ -34,7 +34,11 @@ FS::Record.  The following fields are currently supported:
 
 =item batchnum - primary key
 
-=item status - 
+=item status -  
+
+=item download - 
+
+=item upload - 
 
 
 =back
@@ -109,7 +113,7 @@ sub check {
 
 =head1 BUGS
 
-The author forgot to customize this manpage.
+status is somewhat redundant now that download and upload exist
 
 =head1 SEE ALSO
 

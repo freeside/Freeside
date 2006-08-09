@@ -542,7 +542,9 @@ sub tables_hashref {
     'pay_batch' => { #batches of payments to an external processor
       'columns' => [
         'batchnum',   'serial',    '',   '', '', '', 
-        'status',  'char', 'NULL',     1, '', '', 
+        'status',     'char', 'NULL',     1, '', '', 
+        'download',   @date_type, 'NULL', '', 
+        'upload',     @date_type, 'NULL', '', 
       ],
       'primary_key' => 'batchnum',
       'unique' => [],
@@ -565,11 +567,13 @@ sub tables_hashref {
         'zip',      'varchar', 'NULL', 10, '', '', 
         'country',  'char', '',     2, '', '', 
         #        'trancode', 'int', '', '', '', ''
+        'payby',    'char',   '',     4, '', '', # CARD/BILL/COMP, should be
         'payinfo',  'varchar', '',     512, '', '', 
         #'exp',      @date_type, '', ''
-        'exp',      'varchar', '',     11, '', '', 
+        'exp',      'varchar', 'NULL',     11, '', '', 
         'payname',  'varchar', 'NULL', $char_d, '', '', 
         'amount',   @money_type, '', '', 
+        'status',   'varchar', 'NULL',     $char_d, '', '', 
       ],
       'primary_key' => 'paybatchnum',
       'unique' => [],

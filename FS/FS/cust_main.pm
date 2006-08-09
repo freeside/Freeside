@@ -2046,6 +2046,8 @@ quiet - set true to surpress email card/ACH decline notices.
 freq - "1d" for the traditional, daily events (the default), or "1m" for the
 new monthly events
 
+payby - allows for one time override of normal customer billing method
+
 =cut
 
 sub collect {
@@ -2116,7 +2118,10 @@ sub collect {
              }
           qsearch( {
             'table'     => 'part_bill_event',
-            'hashref'   => { 'payby'    => $self->payby,
+            'hashref'   => { 'payby'    => (exists($options{'payby'})
+	                                     ? $options{'payby'}
+					     : $self->payby
+					   ),
                              'disabled' => '',           },
             'extra_sql' => $extra_sql,
           } )
@@ -3141,6 +3146,29 @@ sub balance_date {
       - $self->total_credited
       - $self->total_unapplied_payments
   );
+}
+
+=item in_transit_payments
+
+Returns the total of requests for payments for this customer pending in 
+batches in transit to the bank.  See L<FS::pay_batch> and L<FS::cust_pay_batch>
+
+=cut
+
+sub in_transit_payments {
+  my $self = shift;
+  my $in_transit_payments = 0;
+  foreach my $pay_batch ( qsearch('pay_batch', {
+    'status' => 'I',
+  } ) ) {
+    foreach my $cust_pay_batch ( qsearch('cust_pay_batch', {
+      'batchnum' => $pay_batch->batchnum,
+      'custnum' => $self->custnum,
+    } ) ) {
+      $in_transit_payments += $cust_pay_batch->amount;
+    }
+  }
+  sprintf( "%.2f", $in_transit_payments );
 }
 
 =item paydate_monthyear

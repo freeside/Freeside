@@ -90,6 +90,11 @@ tie %hash, 'Tie::IxHash',
     shortname => 'Complimentary',
     longname  => 'Complimentary',
   },
+  'DCLN' => {  # This is only an event.
+    tinyname  => 'declined',
+    shortname => 'Declined payment',
+    longname  => 'Declined payment',
+  },
 ;
 
 sub payby {

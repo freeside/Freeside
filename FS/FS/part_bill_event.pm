@@ -144,7 +144,7 @@ sub check {
   }
 
   my $error = $self->ut_numbern('eventpart')
-    || $self->ut_enum('payby', [qw( CARD DCRD CHEK DCHK LECB BILL COMP )] )
+    || $self->ut_enum('payby', [qw( CARD DCLN DCRD CHEK DCHK LECB BILL COMP )] )
     || $self->ut_text('event')
     || $self->ut_anything('eventcode')
     || $self->ut_number('seconds')

@@ -8,9 +8,11 @@ ALTER TABLE cust_pay_batch ALTER COLUMN batchnum SET NOT NULL;
 ALTER TABLE cust_pay_batch ADD COLUMN payinfo varchar(512);
 UPDATE cust_pay_batch SET payinfo = cardnum;
 ALTER TABLE cust_pay_batch DROP COLUMN cardnum;
+ALTER TABLE cust_pay_batch ALTER COLUMN exp DROP NOT NULL;
 ALTER TABLE h_cust_pay_batch ADD COLUMN payinfo varchar(512);
 UPDATE h_cust_pay_batch SET payinfo = cardnum;
 ALTER TABLE h_cust_pay_batch DROP COLUMN cardnum;
+ALTER TABLE h_cust_pay_batch ALTER COLUMN exp DROP NOT NULL;
 
 make install-perl-modules
 run "freeside-upgrade username" to uprade your database schema

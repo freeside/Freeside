@@ -1,12 +1,24 @@
 <!-- mason kludge -->
-<%= include("/elements/header.html","Pending credit card batch", menubar( 'Main Menu' => $p,)) %>
+<%= include("/elements/header.html","Credit card batch details", menubar( 'Main Menu' => $p,)) %>
+
+<%
+
+die "No batch specified (bad URL)!" unless $cgi->keywords;
+my($query) = $cgi->keywords;
+$query =~ /^(\d+)$/;
+my $batchnum = $1;
+my $pay_batch = qsearchs('pay_batch',{'batchnum'=>$batchnum});
+die "Batch not found!" unless $pay_batch;
+
+%>
 
 <FORM ACTION="<%=$p%>misc/download-batch.cgi" METHOD="POST">
 Download batch in format <SELECT NAME="format">
 <OPTION VALUE="">Default batch mode</OPTION>
 <OPTION VALUE="csv-td_canada_trust-merchant_pc_batch">CSV file for TD Canada Trust Merchant PC Batch</OPTION>
-<OPTION VALUE="BoM">Bank of Montreal ECA results</OPTION>
-</SELECT><INPUT TYPE="submit" VALUE="Download"></FORM>
+<OPTION VALUE="PAP">80 byte file for TD Canada Trust PAP Batch</OPTION>
+<OPTION VALUE="BoM">Bank of Montreal ECA batch</OPTION>
+</SELECT><INPUT TYPE="hidden" NAME="batchnum" VALUE="<%= $batchnum %>"><INPUT TYPE="submit" VALUE="Download"></FORM>
 <BR><BR>
 
 <FORM ACTION="<%=$p%>misc/upload-batch.cgi" METHOD="POST" ENCTYPE="multipart/form-data">
@@ -15,25 +27,28 @@ Filename <INPUT TYPE="file" NAME="batch_results"><BR>
 Format <SELECT NAME="format">
 <OPTION VALUE="">Default batch mode</OPTION>
 <OPTION VALUE="csv-td_canada_trust-merchant_pc_batch">CSV results from TD Canada Trust Merchant PC Batch</OPTION>
-<OPTION VALUE="BoM">Bank of Montreal ECA batch</OPTION>
+<OPTION VALUE="PAP">264 byte results for TD Canada Trust PAP Batch</OPTION>
+<OPTION VALUE="BoM">Bank of Montreal ECA results</OPTION>
 </SELECT><BR>
 <INPUT TYPE="submit" VALUE="Upload"></FORM>
 <BR>
 
 <%
-  my $statement = "SELECT SUM(amount) from cust_pay_batch";
+  my $statement = "SELECT SUM(amount) from cust_pay_batch WHERE batchnum=".
+                     $batchnum;
   my $sth = dbh->prepare($statement) or die dbh->errstr. "doing $statement";
   $sth->execute or die "Error executing \"$statement\": ". $sth->errstr;
   my $total = $sth->fetchrow_arrayref->[0];
 
-  my $c_statement = "SELECT COUNT(*) from cust_pay_batch";
+  my $c_statement = "SELECT COUNT(*) from cust_pay_batch WHERE batchnum=".
+                       $batchnum;
   my $c_sth = dbh->prepare($c_statement)
     or die dbh->errstr. "doing $c_statement";
   $c_sth->execute or die "Error executing \"$c_statement\": ". $c_sth->errstr;
   my $cards = $c_sth->fetchrow_arrayref->[0];
 %>
 <%= $cards %> credit card payments batched<BR>
-$<%= sprintf("%.2f", $total) %> total in pending batch<BR>
+$<%= sprintf("%.2f", $total) %> total in batch<BR>
 
 <BR>
 <%= &table() %>
@@ -45,11 +60,12 @@ $<%= sprintf("%.2f", $total) %> total in pending batch<BR>
         <TH>Card</TH>
         <TH>Exp</TH>
         <TH>Amount</TH>
+        <TH>Status</TH>
       </TR>
 
 <%
 foreach my $cust_pay_batch ( sort { $a->paybatchnum <=> $b->paybatchnum }
-                             qsearch('cust_pay_batch', {} )
+                             qsearch('cust_pay_batch', {'batchnum'=>$batchnum} )
 ) {
   my $cardnum = $cust_pay_batch->payinfo;
   #$cardnum =~ s/.{4}$/xxxx/;
@@ -71,6 +87,7 @@ foreach my $cust_pay_batch ( sort { $a->paybatchnum <=> $b->paybatchnum }
         <TD><%= $cardnum %></TD>
         <TD><%= $exp %></TD>
         <TD align="right">$<%= $cust_pay_batch->amount %></TD>
+        <TD><%= $cust_pay_batch->status %></TD>
       </TR>
 
 <% } %>
