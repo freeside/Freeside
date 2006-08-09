@@ -9,6 +9,7 @@ WriteMakefile(
                            ],
     'INSTALLSCRIPT'     => '/usr/local/sbin',
     'INSTALLSITEBIN'    => '/usr/local/sbin',
+    'INSTALLSITESCRIPT' => '/usr/local/sbin', #recent deb users this...
     'PERM_RWX'          => '750',
     'PREREQ_PM'		=> {
                              'Storable' => 2.09,
