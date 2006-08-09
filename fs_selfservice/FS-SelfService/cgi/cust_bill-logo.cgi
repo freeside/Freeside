@@ -9,7 +9,7 @@ my $cgi = new CGI;
 my($query) = $cgi->keywords;
 $query =~ /^([^\.\/]*)$/ or '' =~ /^()$/;
 my $templatename = $1;
-my $hashref = invoice_logo($templatename);
+my $hashref = invoice_logo('templatename' => $templatename);
 
 print $cgi->header( '-type'    => $hashref->{'content_type'},
                     '-expires' => 'now',
