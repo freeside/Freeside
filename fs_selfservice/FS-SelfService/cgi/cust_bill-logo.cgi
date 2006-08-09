@@ -4,15 +4,15 @@ use strict;
 use CGI;
 use FS::SelfService qw( invoice_logo );
 
-$cgi = new CGI;
+my $cgi = new CGI;
 
 my($query) = $cgi->keywords;
 $query =~ /^([^\.\/]*)$/ or '' =~ /^()$/;
 my $templatename = $1;
-invoice_logo($templatename);
+my $hashref = invoice_logo($templatename);
 
-print $cgi->header( '-type'    => $content_type,
+print $cgi->header( '-type'    => $hashref->{'content_type'},
                     '-expires' => 'now',
                   ).
-      $logo;
+      $hashref->{'logo'};
 
