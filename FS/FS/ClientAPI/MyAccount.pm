@@ -414,9 +414,36 @@ sub invoice {
   return { 'error'        => '',
            'invnum'       => $invnum,
            'invoice_text' => join('', $cust_bill->print_text ),
+           'invoice_html' => $cust_bill->print_html,
          };
 
 }
+
+sub invoice_logo {
+  my $p = shift;
+
+  #sessioning for this?  how do we get the session id to the backend invoice
+  # template so it can add it to the link, blah
+
+  my $templatename = $p->{'templatename'};
+
+  #false laziness-ish w/view/cust_bill-logo.cgi
+
+  my $conf = new FS::Conf;
+  if ( $templatename =~ /^([^\.\/]*)$/ && $conf->exists("logo_$1.png") ) {
+    $templatename = "_$1";
+  } else {
+    $templatename = '';
+  }
+
+  my $filename = "logo$templatename.png";
+
+  return { 'error'        => '',
+           'logo'         => $conf->config_binary($filename),
+           'content_type' => 'image/png', #should allow gif, jpg too
+         };
+}
+
 
 sub list_invoices {
   my $p = shift;

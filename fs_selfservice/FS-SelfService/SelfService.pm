@@ -27,6 +27,7 @@ $socket .= '.'.$tag if defined $tag && length($tag);
   'customer_info'        => 'MyAccount/customer_info',
   'edit_info'            => 'MyAccount/edit_info',     #add to ss cgi!
   'invoice'              => 'MyAccount/invoice',
+  'invoice_logo'         => 'MyAccount/invoice_logo',
   'list_invoices'        => 'MyAccount/list_invoices', #?
   'cancel'               => 'MyAccount/cancel',        #add to ss cgi!
   'payment_info'         => 'MyAccount/payment_info',
