@@ -33,7 +33,8 @@ $socket .= '.'.$tag if defined $tag && length($tag);
   'payment_info'         => 'MyAccount/payment_info',
   'process_payment'      => 'MyAccount/process_payment',
   'process_prepay'       => 'MyAccount/process_prepay',
-  'list_pkgs'            => 'MyAccount/list_pkgs',     #add to ss cgi!
+  'list_pkgs'            => 'MyAccount/list_pkgs',     #add to ss cgi (added?)
+  'list_svcs'            => 'MyAccount/list_svcs',     #add to ss cgi (added?)
   'order_pkg'            => 'MyAccount/order_pkg',     #add to ss cgi!
   'cancel_pkg'           => 'MyAccount/cancel_pkg',    #add to ss cgi!
   'charge'               => 'MyAccount/charge',        #?
@@ -41,6 +42,7 @@ $socket .= '.'.$tag if defined $tag && length($tag);
   'provision_acct'       => 'MyAccount/provision_acct',
   'provision_external'   => 'MyAccount/provision_external',
   'unprovision_svc'      => 'MyAccount/unprovision_svc',
+  'myaccount_passwd'     => 'MyAccount/myaccount_passwd',
   'signup_info'          => 'Signup/signup_info',
   'new_customer'         => 'Signup/new_customer',
   'agent_login'          => 'Agent/agent_login',
@@ -73,6 +75,7 @@ foreach my $autoload ( keys %autoload ) {
                    if ( ref($_[0]) ) {
                      $param = shift;
                    } else {
+                     #warn scalar(@_). ": ". join(" / ", @_);
                      $param = { @_ };
                    }
 

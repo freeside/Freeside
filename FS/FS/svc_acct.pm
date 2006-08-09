@@ -484,6 +484,11 @@ sub replace {
   my $error;
   warn "$me replacing $old with $new\n" if $DEBUG;
 
+  # We absolutely have to have an old vs. new record to make this work.
+  if (!defined($old)) {
+    $old = qsearchs( 'svc_acct', { 'svcnum' => $new->svcnum } );
+  }
+
   return "can't modify system account" if $old->_check_system;
 
   {

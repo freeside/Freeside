@@ -35,9 +35,9 @@ push @menu, (
 { title=>' ' },
 
 { title=>'Change my information', size=>'+1', },
-  { title=>'Change payment information*', url=>'change_bill', indent=>2 },
-  { title=>'Change service address*',     url=>'change_ship', indent=>2 },
-  { title=>'Change password(s)*',         url=>'hmmmFIXME',   indent=>2 },
+  { title=>'Change payment information*', url=>'change_bill',     indent=>2 },
+  { title=>'Change service address*',     url=>'change_ship',     indent=>2 },
+  { title=>'Change password(s)',          url=>'change_password', indent=>2 },
 
 { title=>' ' },
 
@@ -82,8 +82,8 @@ foreach my $item ( @menu ) {
 
 %>
 
+<TR><TD STYLE="border-right: 1px solid black"><BR><BR>*&nbsp;coming&nbsp;soon</TD></TR>
+
 </TABLE>
 
-<A HREF="passwd.html">(tempFIXME) Change&nbsp;password(s)</A><BR><BR>
-*&nbsp;coming&nbsp;soon
 </TD>

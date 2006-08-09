@@ -13,6 +13,7 @@ use FS::SelfService qw( login customer_info invoice
                         list_pkgs
                         part_svc_info provision_acct provision_external
                         unprovision_svc
+                        list_svcs myaccount_passwd
                       );
 
 $template_dir = '.';
@@ -62,7 +63,7 @@ $session_id = $cgi->param('session');
 
 #order|pw_list XXX ???
 $cgi->param('action') =~
-    /^(myaccount|view_invoice|make_payment|payment_results|recharge_prepay|recharge_results|logout|change_bill|change_ship|provision|provision_svc|process_svc_acct|process_svc_external|delete_svc)$/
+    /^(myaccount|view_invoice|make_payment|payment_results|recharge_prepay|recharge_results|logout|change_bill|change_ship|provision|provision_svc|process_svc_acct|process_svc_external|delete_svc|change_password|process_change_password)$/
   or die "unknown action ". $cgi->param('action');
 my $action = $1;
 
@@ -255,6 +256,41 @@ sub delete_svc {
     'session_id' => $session_id,
     'svcnum'     => $cgi->param('svcnum'),
   );
+}
+
+sub change_password {
+  list_svcs(
+    'session_id' => $session_id,
+    'svcdb'      => 'svc_acct',
+  );
+};
+
+sub process_change_password {
+
+  my $result = myaccount_passwd(
+    'session_id'    => $session_id,
+    map { $_ => $cgi->param($_) } qw( svcnum new_password new_password2 )
+  );
+
+  if ( exists $result->{'error'} && $result->{'error'} ) { 
+
+    $action = 'change_password';
+    return {
+      $cgi->Vars,
+      %{ list_svcs( 'session_id' => $session_id,
+                    'svcdb'      => 'svc_acct',
+                  )
+       },
+      #'svcnum' => $cgi->param('svcnum'),
+      'error'  => $result->{'error'}
+    };
+
+ } else {
+
+   return $result;
+
+ }
+
 }
 
 #--

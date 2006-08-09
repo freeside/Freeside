@@ -526,6 +526,51 @@ sub list_pkgs {
 
 }
 
+sub list_svcs {
+  my $p = shift;
+
+  use Data::Dumper;
+
+  my($context, $session, $custnum) = _custoragent_session_custnum($p);
+  return { 'error' => $session } if $context eq 'error';
+
+  my $search = { 'custnum' => $custnum };
+  $search->{'agentnum'} = $session->{'agentnum'} if $context eq 'agent';
+  my $cust_main = qsearchs('cust_main', $search )
+    or return { 'error' => "unknown custnum $custnum" };
+
+  my @cust_svc = ();
+  #foreach my $cust_pkg ( $cust_main->ncancelled_pkgs ) {
+  foreach my $cust_pkg ( $cust_main->unsuspended_pkgs ) {
+    push @cust_svc, @{[ $cust_pkg->cust_svc ]}; #@{[ ]} to force array context
+  }
+  @cust_svc = grep { $_->part_svc->svcdb eq $p->{'svcdb'} } @cust_svc
+    if $p->{'svcdb'};
+
+  #@svc_x = sort { $a->domain cmp $b->domain || $a->username cmp $b->username }
+  #              @svc_x;
+
+  { 
+    #no#'svcnum'   => $session->{'svcnum'},
+    'custnum'  => $custnum,
+    'svcs'     => [ map { 
+                          my $svc_x = $_->svc_x;
+                          my($label, $value) = $_->label;
+
+                          { 'svcnum'   => $_->svcnum,
+                            'label'    => $label,
+                            'value'    => $value,
+                            'username' => $svc_x->username,
+                            'email'    => $svc_x->email,
+                            # more...
+                          };
+                        }
+                        @cust_svc
+                  ],
+  };
+
+}
+
 sub order_pkg {
   my $p = shift;
 
@@ -795,6 +840,45 @@ sub unprovision_svc {
            'error' => $cust_svc->cancel,
            'small_custview' =>
              small_custview( $cust_main, $conf->config('countrydefault') ),
+         };
+
+}
+
+sub myaccount_passwd {
+  my $p = shift;
+  my($context, $session, $custnum) = _custoragent_session_custnum($p);
+  return { 'error' => $session } if $context eq 'error';
+
+  return { 'error' => "New passwords don't match." }
+    if $p->{'new_password'} ne $p->{'new_password2'};
+
+  return { 'error' => 'Enter new password' }
+    unless length($p->{'new_password'});
+
+  #my $search = { 'custnum' => $custnum };
+  #$search->{'agentnum'} = $session->{'agentnum'} if $context eq 'agent';
+  $custnum =~ /^(\d+)$/ or die "illegal custnum";
+  my $search = " AND custnum = $1";
+  $search .= " AND agentnum = ". $session->{'agentnum'} if $context eq 'agent';
+
+  my $svc_acct = qsearchs( {
+    'table'     => 'svc_acct',
+    'addl_from' => 'LEFT JOIN cust_svc  USING ( svcnum  ) '.
+                   'LEFT JOIN cust_pkg  USING ( pkgnum  ) '.
+                   'LEFT JOIN cust_main USING ( custnum ) ',
+    'hashref'   => { 'svcnum' => $p->{'svcnum'}, },
+    'extra_sql' => $search, #important
+  } )
+    or return { 'error' => "Service not found" };
+
+  $svc_acct->_password($p->{'new_password'});
+  my $error = $svc_acct->replace();
+
+  my($label, $value) = $svc_acct->cust_svc->label;
+
+  return { 'error' => $error,
+           'label' => $label,
+           'value' => $value,
          };
 
 }
