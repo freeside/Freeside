@@ -2,7 +2,7 @@ package FS::part_referral;
 
 use strict;
 use vars qw( @ISA );
-use FS::Record qw(qsearchs);
+use FS::Record qw( qsearch qsearchs dbh );
 use FS::agent;
 
 @ISA = qw( FS::Record );
@@ -116,6 +116,65 @@ Returns the associated agent for this referral, if any, as an FS::agent object.
 sub agent {
   my $self = shift;
   qsearchs('agent', { 'agentnum' => $self->agentnum } );
+}
+
+=back
+
+=head1 CLASS METHODS
+
+=over 4
+
+=item acl_agentnum_sql
+
+Returns an SQL fragment for searching for part_referral records allowed by the
+current users's agent ACLs (and "Edit global advertising sources" right).
+
+=cut
+
+sub acl_agentnum_sql {
+  #my $class = shift;
+
+  my $curuser = $FS::CurrentUser::CurrentUser;
+  my $sql = $curuser->agentnums_sql;
+  $sql = " ( $sql OR agentnum IS NULL ) "
+    if $curuser->access_right('Edit global advertising sources');
+
+  $sql;
+
+}
+
+=item all_part_referral
+
+Returns all part_referral records allowed by the current users's agent ACLs
+(and "Edit global advertising sources" right).
+
+=cut
+
+sub all_part_referral {
+  my $self = shift;
+
+  qsearch({
+    'table'     => 'part_referral',
+    'extra_sql' => ' WHERE '. $self->acl_agentnum_sql. ' ORDER BY refnum ',
+  });
+
+}
+
+=item num_part_referral
+
+Returns the number of part_referral records allowed by the current users's
+agent ACLs (and "Edit global advertising sources" right).
+
+=cut
+
+sub num_part_referral {
+  my $self = shift;
+
+  my $sth = dbh->prepare(
+    'SELECT COUNT(*) FROM part_referral WHERE '. $self->acl_agentnum_sql
+  ) or die dbh->errstr;
+  $sth->execute() or die $sth->errstr;
+  $sth->fetchrow_arrayref->[0];
 }
 
 =back

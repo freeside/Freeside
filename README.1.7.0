@@ -34,6 +34,9 @@ Optional for better zip code report performance:
 CREATE INDEX cust_main16 on cust_main ( zip );
 CREATE INDEX cust_main17 on cust_main ( ship_zip );
 
+Optional if you're using the new agent cust ref#s:
+CREATE UNIQUE INDEX cust_main18 ON cust_main ( agentnum, agent_custid );
+
 Optional to eliminate harmless but noisy warnings:
 UPDATE cust_main_county SET exempt_amount = 0 WHERE exempt_amount IS NULL;
 

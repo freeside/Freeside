@@ -1,5 +1,6 @@
 <%
   my( $cust_main ) = @_;
+  my $conf = new FS::Conf;
 %>
 
 <%= ntable("#cccccc") %><TR><TD><%= &ntable("#cccccc",2) %>
@@ -25,8 +26,18 @@
     $agent = $agents[0];
   }
 
-  my @referrals = qsearch( 'part_referral', {} );
-  unless ( scalar(@referrals) == 1 ) {
+  if ( $cust_main->agent_custid ) {
+%>
+
+<TR>
+  <TD ALIGN="right">Agent customer ref#</TD>
+  <TD BGCOLOR="#ffffff"><%= $cust_main->agent_custid %></TD>
+</TR>
+
+<%
+  }
+
+  unless ( FS::part_referral->num_part_referral == 1 ) {
     my $referral = qsearchs('part_referral', {
       'refnum' => $cust_main->refnum
     } );

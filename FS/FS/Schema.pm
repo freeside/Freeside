@@ -394,6 +394,7 @@ sub tables_hashref {
       'columns' => [
         'custnum',  'serial',  '',     '', '', '', 
         'agentnum', 'int',  '',     '', '', '', 
+        'agent_custid', 'varchar', 'NULL', $char_d, '', '',
 #        'titlenum', 'int',  'NULL',   '', '', '', 
         'last',     'varchar', '',     $char_d, '', '', 
 #        'middle',   'varchar', 'NULL', $char_d, '', '', 
@@ -443,7 +444,7 @@ sub tables_hashref {
         'spool_cdr','char', 'NULL', 1, '', '', 
       ],
       'primary_key' => 'custnum',
-      'unique' => [],
+      'unique' => [ [ 'agentnum', 'agent_custid' ] ],
       #'index' => [ ['last'], ['company'] ],
       'index' => [ ['last'], [ 'company' ], [ 'referral_custnum' ],
                    [ 'daytime' ], [ 'night' ], [ 'fax' ], [ 'refnum' ],

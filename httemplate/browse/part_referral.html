@@ -32,12 +32,7 @@ Where a customer heard about your service. Tracked for informational purposes.
     'Total'         =>   86400, # 60sec * 60min * 24hrs
   );
 
-  my $curuser = $FS::CurrentUser::CurrentUser;
-  my $extra_sql = $curuser->agentnums_sql;
-  $extra_sql .= ' OR agentnum IS NULL '
-    if $curuser->access_right('Edit global advertising sources');
-
-  $extra_sql = " WHERE $extra_sql";
+  $extra_sql = " WHERE ". FS::part_referral->acl_agentnum_sql;
 
   my $statement = "SELECT COUNT(*) FROM h_cust_main
                     WHERE history_action = 'insert'

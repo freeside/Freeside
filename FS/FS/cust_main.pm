@@ -1060,6 +1060,7 @@ sub check {
   my $error =
     $self->ut_numbern('custnum')
     || $self->ut_number('agentnum')
+    || $self->ut_textn('agent_custid')
     || $self->ut_number('refnum')
     || $self->ut_name('last')
     || $self->ut_name('first')
