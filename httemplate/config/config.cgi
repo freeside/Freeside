@@ -102,7 +102,7 @@ function SafeOnsubmit() {
 
               <% my $curvalue = $conf->config($i->key);
                  if ( $conf->exists($i->key) && $curvalue
-                      && ! grep { $curvalue eq $_ } @{$i->select_enum}
+                      && ! $hash{$curvalue}
                     ) {
               %>
               
