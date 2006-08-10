@@ -543,8 +543,8 @@ sub tables_hashref {
       'columns' => [
         'batchnum',   'serial',    '',   '', '', '', 
         'status',     'char', 'NULL',     1, '', '', 
-        'download',   @date_type, 'NULL', '', 
-        'upload',     @date_type, 'NULL', '', 
+        'download',   @date_type, '', '', 
+        'upload',     @date_type, '', '', 
       ],
       'primary_key' => 'batchnum',
       'unique' => [],
