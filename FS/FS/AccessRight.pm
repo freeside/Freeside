@@ -136,8 +136,11 @@ assigned to users and/or groups.
   'Import',    #
   'Export',    #
 
-  'Configuration', #none of the configuraiton is agent-virtualized either
+  'Edit advertising sources',
+  'Edit global advertising sources',
 
+  'Configuration', #most of the rest of the configuraiton is not
+                   # agent-virtualized
 );
 
 sub rights {

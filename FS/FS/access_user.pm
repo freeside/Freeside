@@ -106,6 +106,10 @@ sub insert {
 
 sub htpasswd_kludge {
   my $self = shift;
+  
+  #awful kludge to skip setting htpasswd for fs_* users
+  return '' if $self->username =~ /^fs_/;
+
   unshift @_, '-c' unless -e $htpasswd_file;
   if ( 
        system('htpasswd', '-b', @_,
@@ -296,6 +300,24 @@ sub agentnums_sql {
     join( ' OR ', map "agentnum = $_", $self->agentnums ).
   ' )';
 }
+
+=item agentnum
+
+Returns true if the user can view the specified agent.
+
+=cut
+
+sub agentnum {
+  my( $self, $agentnum ) = @_;
+  my $sth = dbh->prepare(
+    "SELECT COUNT(*) FROM access_usergroup
+                     JOIN access_groupagent USING ( groupnum )
+       WHERE usernum = ? AND agentnum = ?"
+  ) or die dbh->errstr;
+  $sth->execute($self->usernum, $agentnum) or die $sth->errstr;
+  $sth->fetchrow_arrayref->[0];
+}
+
 
 =item access_right
 

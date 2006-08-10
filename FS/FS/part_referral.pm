@@ -2,7 +2,8 @@ package FS::part_referral;
 
 use strict;
 use vars qw( @ISA );
-use FS::Record;
+use FS::Record qw(qsearchs);
+use FS::agent;
 
 @ISA = qw( FS::Record );
 
@@ -39,6 +40,8 @@ The following fields are currently supported:
 =item referral - Text name of this advertising source
 
 =item disabled - Disabled flag, empty or 'Y'
+
+=item agentnum - Optional agentnum (see L<FS::agent>)
 
 =back
 
@@ -95,15 +98,24 @@ sub check {
 
   my $error = $self->ut_numbern('refnum')
     || $self->ut_text('referral')
+    || $self->ut_enum('disabled', [ '', 'Y' ] )
+    #|| $self->ut_foreign_keyn('agentnum', 'agent', 'agentnum')
+    || $self->ut_agentnum_acl('agentnum', 'Edit global advertising sources')
   ;
   return $error if $error;
 
-  if ( $self->dbdef_table->column('disabled') ) {
-    $error = $self->ut_enum('disabled', [ '', 'Y' ] );
-    return $error if $error;
-  }
-
   $self->SUPER::check;
+}
+
+=item agent 
+
+Returns the associated agent for this referral, if any, as an FS::agent object.
+
+=cut
+
+sub agent {
+  my $self = shift;
+  qsearchs('agent', { 'agentnum' => $self->agentnum } );
 }
 
 =back

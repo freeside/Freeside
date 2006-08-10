@@ -10,6 +10,7 @@ use Locale::Country;
 use DBI qw(:sql_types);
 use DBIx::DBSchema 0.25;
 use FS::UID qw(dbh getotaker datasrc driver_name);
+use FS::CurrentUser;
 use FS::Schema qw(dbdef);
 use FS::SearchCache;
 use FS::Msgcat qw(gettext);
@@ -1620,6 +1621,36 @@ sub ut_foreign_keyn {
     : '';
 }
 
+=item ut_agentnum_acl
+
+Checks this column as an agentnum, taking into account the current users's
+ACLs.
+
+=cut
+
+sub ut_agentnum_acl {
+  my( $self, $field, $null_acl ) = @_;
+
+  my $error = $self->ut_foreign_keyn($field, 'agent', 'agentnum');
+  return "Illegal agentnum: $error" if $error;
+
+  my $curuser = $FS::CurrentUser::CurrentUser;
+
+  if ( $self->$field() ) {
+
+    return "Access deined"
+      unless $curuser->agentnum($self->$field());
+
+  } else {
+
+    return "Access denied"
+      unless $curuser->access_right($null_acl);
+
+  }
+
+  '';
+
+}
 
 =item virtual_fields [ TABLE ]
 

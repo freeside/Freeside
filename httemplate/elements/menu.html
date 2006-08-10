@@ -189,26 +189,36 @@
     'View/Edit address blocks' => [ $fsurl.'browse/addr_block.cgi', 'Manage address blocks and block assignments to broadband routers' ],
   ;
 
-  tie my %config_misc, 'Tie::IxHash',
-    'View/Edit advertising sources' => [ $fsurl.'browse/part_referral.cgi', 'Where a customer heard about your service.  Tracked for informational purposes' ],
-    'View/Edit virtual fields' => [ $fsurl.'browse/part_virtual_field.cgi', 'Locally defined fields', ],
-    'View/Edit message catalog' => [ $fsurl.'browse/msgcat.cgi', 'Change error messages and other customizable labels' ],
-    'View/Edit inventory classes and inventory' => [ $fsurl.'browse/inventory_class.html', 'Setup inventory classes and stock inventory' ],
-  ;
+  tie my %config_misc, 'Tie::IxHash';
+  $config_misc{'View/Edit advertising sources'} = [ $fsurl.'browse/part_referral.html', 'Where a customer heard about your service.  Tracked for informational purposes' ]
+    if $curuser->access_right('Configuration')
+    || $curuser->access_right('Edit advertising sources')
+    || $curuser->access_right('Edit global advertising sources');
+  if ( $curuser->access_right('Configuration') ) {
+    $config_misc{'View/Edit virtual fields'} = [ $fsurl.'browse/part_virtual_field.cgi', 'Locally defined fields', ];
+    $config_misc{'View/Edit message catalog'} = [ $fsurl.'browse/msgcat.cgi', 'Change error messages and other customizable labels' ];
+    $config_misc{'View/Edit inventory classes and inventory'} = [ $fsurl.'browse/inventory_class.html', 'Setup inventory classes and stock inventory' ];
+  }
 
-  tie my %config_menu, 'Tie::IxHash',
-    'Settings'      => [ $fsurl.'config/config-view.cgi', '' ],
-    'separator'     => '', #its a separator!
-    'Employees'     => [ \%config_employees, '' ],
-    'Provisioning, services and packages'
-                    => [ \%config_export_svc_pkg, ''    ],
-    'Resellers'     => [ \%config_agent, ''    ],
-    'Billing'       => [ \%config_billing, ''    ],
-    'Dialup'        => [ \%config_dialup, ''    ],
-    'Fixed (username-less) broadband'
-                    => [ \%config_broadband, ''    ],
-    'Miscellaneous' => [ \%config_misc, ''    ],
-  ;
+  tie my %config_menu, 'Tie::IxHash';
+  if ( $curuser->access_right('Configuration' ) ) {
+    %config_menu = (
+      'Settings'      => [ $fsurl.'config/config-view.cgi', '' ],
+      'separator'     => '', #its a separator!
+      'Employees'     => [ \%config_employees, '' ],
+      'Provisioning, services and packages'
+                      => [ \%config_export_svc_pkg, ''    ],
+      'Resellers'     => [ \%config_agent, ''    ],
+      'Billing'       => [ \%config_billing, ''    ],
+      'Dialup'        => [ \%config_dialup, ''    ],
+      'Fixed (username-less) broadband'
+                      => [ \%config_broadband, ''    ],
+    );
+  }
+  $config_menu{'Miscellaneous'} = [ \%config_misc, ''    ]
+    if $curuser->access_right('Configuration')
+    || $curuser->access_right('Edit advertising sources')
+    || $curuser->access_right('Edit global advertising sources');
 
   tie my %menu, 'Tie::IxHash',
     'Billing Main'   => [ $fsurl, 'Billing start page', ],
@@ -225,7 +235,9 @@
   $menu{'Tools'} = [ \%tools_menu, 'Tools' ]
     if keys %tools_menu;
   $menu{'Configuration'} = [ \%config_menu, 'Configuraiton and setup' ]
-    if $curuser->access_right('Configuration');
+    if $curuser->access_right('Configuration')
+    || $curuser->access_right('Edit advertising sources')
+    || $curuser->access_right('Edit global advertising sources');
 
   use vars qw($gmenunum);
   $gmenunum = 0;

@@ -692,9 +692,10 @@ sub tables_hashref {
 
     'part_referral' => {
       'columns' => [
-        'refnum',   'serial',    '',   '', '', '', 
-        'referral', 'varchar',   '',   $char_d, '', '', 
-        'disabled',     'char', 'NULL', 1, '', '', 
+        'refnum',   'serial',     '',        '', '', '', 
+        'referral', 'varchar',    '',   $char_d, '', '', 
+        'disabled', 'char',   'NULL',         1, '', '', 
+        'agentnum', 'int',    'NULL',        '', '', '', 
       ],
       'primary_key' => 'refnum',
       'unique' => [],

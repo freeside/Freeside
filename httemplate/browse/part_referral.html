@@ -1,11 +1,9 @@
-<!-- mason kludge -->
-<%= include("/elements/header.html","Advertising source Listing", menubar(
-  'Main Menu' => $p,
-#  'Add new referral' => "../edit/part_referral.cgi",
-)) %>
+<%= include("/elements/header.html","Advertising source Listing" ) %>
+
 Where a customer heard about your service. Tracked for informational purposes.
 <BR><BR>
-<A HREF="<%= $p %>edit/part_referral.cgi"><I>Add a new advertising source</I></A>
+
+<A HREF="<%= $p %>edit/part_referral.html"><I>Add a new advertising source</I></A>
 <BR><BR>
 
 <%
@@ -34,36 +32,73 @@ Where a customer heard about your service. Tracked for informational purposes.
     'Total'         =>   86400, # 60sec * 60min * 24hrs
   );
 
+  my $curuser = $FS::CurrentUser::CurrentUser;
+  my $extra_sql = $curuser->agentnums_sql;
+  $extra_sql .= ' OR agentnum IS NULL '
+    if $curuser->access_right('Edit global advertising sources');
+
+  $extra_sql = " WHERE $extra_sql";
+
   my $statement = "SELECT COUNT(*) FROM h_cust_main
                     WHERE history_action = 'insert'
                       AND refnum = ?
                       AND history_date >= ?
 		      AND history_date < ?
-		  ";
+		      AND ". $curuser->agentnums_sql;
   my $sth = dbh->prepare($statement)
     or die dbh->errstr;
+
+  my $show_agentnums = scalar($curuser->agentnums);
+
 %>
 
-<%= table() %>
+<%= include('/elements/table-grid.html') %>
+
+<% my $bgcolor1 = '#eeeeee';
+   my $bgcolor2 = '#ffffff';
+   my $bgcolor = '';
+%>
+
 <TR>
-  <TH COLSPAN=2 ROWSPAN=2>Advertising source</TH>
-  <TH COLSPAN=<%= scalar(keys %after) %>>Customers</TH>
+  <TH CLASS="grid" BGCOLOR="#cccccc" COLSPAN=2 ROWSPAN=2>Advertising source</TH>
+  <% if ( $show_agentnums ) { %>
+    <TH CLASS="grid" BGCOLOR="#cccccc" ROWSPAN=2>Agent</TH>
+  <% } %>
+  <TH CLASS="grid" BGCOLOR="#cccccc" COLSPAN=<%= scalar(keys %after) %>>Customers</TH>
 </TR>
 <% for my $period ( keys %after ) { %>
-  <TH><FONT SIZE=-1><%= $period %></FONT></TH>
+  <TH CLASS="grid" BGCOLOR="#cccccc"><FONT SIZE=-1><%= $period %></FONT></TH>
 <% } %>
 </TR>
 
 <%
-foreach my $part_referral ( sort { 
-  $a->getfield('refnum') <=> $b->getfield('refnum')
-} qsearch('part_referral',{}) ) {
+foreach my $part_referral (
+
+  qsearch({
+    'table'     => 'part_referral',
+    'extra_sql' => "$extra_sql ORDER BY refnum",
+  })
+
+) {
+
+  if ( $bgcolor eq $bgcolor1 ) {
+    $bgcolor = $bgcolor2;
+  } else {
+    $bgcolor = $bgcolor1;
+  }
+
 %>
       <TR>
-        <TD><A HREF="<%= $p %>edit/part_referral.cgi?<%= $part_referral->refnum %>">
+
+        <TD CLASS="grid" BGCOLOR="<%= $bgcolor %>"><A HREF="<%= $p %>edit/part_referral.html?<%= $part_referral->refnum %>">
           <%= $part_referral->refnum %></A></TD>
-        <TD><A HREF="<%= $p %>edit/part_referral.cgi?<%= $part_referral->refnum %>">
+        <TD CLASS="grid" BGCOLOR="<%= $bgcolor %>"><A HREF="<%= $p %>edit/part_referral.html?<%= $part_referral->refnum %>">
           <%= $part_referral->referral %></A></TD>
+
+        <% if ( $show_agentnums ) { %>
+          <TD CLASS="grid" BGCOLOR="<%= $bgcolor %>"><%= $part_referral->agentnum ? $part_referral->agent->agent : '(global)' %></TD>
+        <% } %>
+
         <% for my $period ( keys %after ) {
           $sth->execute( $part_referral->refnum,
                          $today-$after{$period},
@@ -71,7 +106,7 @@ foreach my $part_referral ( sort {
           ) or die $sth->errstr;
           my $number = $sth->fetchrow_arrayref->[0];
         %>
-          <TD ALIGN="right"><%= $number %></TD>
+          <TD CLASS="grid" BGCOLOR="<%= $bgcolor %>" ALIGN="right"><%= $number %></TD>
         <% } %>
       </TR>
 <% } %>
@@ -82,14 +117,14 @@ foreach my $part_referral ( sort {
     or die dbh->errstr;
 %>
       <TR>
-        <TH COLSPAN=2>Total</TH>
+        <TD BGCOLOR="#dddddd" COLSPAN=3><B>Total</B></TD>
         <% for my $period ( keys %after ) {
           $sth->execute( $today-$after{$period},
                          $today+$before{$period},
           ) or die $sth->errstr;
           my $number = $sth->fetchrow_arrayref->[0];
         %>
-          <TD ALIGN="right"><%= $number %></TD>
+          <TD BGCOLOR="#dddddd" ALIGN="right"><%= $number %></TD>
         <% } %>
       </TR>
     </TABLE>
