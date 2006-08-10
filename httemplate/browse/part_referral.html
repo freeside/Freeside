@@ -117,14 +117,14 @@ foreach my $part_referral (
     or die dbh->errstr;
 %>
       <TR>
-        <TD BGCOLOR="#dddddd" COLSPAN=3><B>Total</B></TD>
+        <TD BGCOLOR="#dddddd" ALIGN="center" COLSPAN=3><B>Total</B></TD>
         <% for my $period ( keys %after ) {
           $sth->execute( $today-$after{$period},
                          $today+$before{$period},
           ) or die $sth->errstr;
           my $number = $sth->fetchrow_arrayref->[0];
         %>
-          <TD BGCOLOR="#dddddd" ALIGN="right"><%= $number %></TD>
+          <TD BGCOLOR="#dddddd" ALIGN="right"><B><%= $number %><B></TD>
         <% } %>
       </TR>
     </TABLE>
