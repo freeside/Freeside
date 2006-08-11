@@ -32,7 +32,7 @@ Where a customer heard about your service. Tracked for informational purposes.
     'Total'         =>   86400, # 60sec * 60min * 24hrs
   );
 
-  $extra_sql = " WHERE ". FS::part_referral->acl_agentnum_sql;
+  my $curuser = $FS::CurrentUser::CurrentUser;
 
   my $statement = "SELECT COUNT(*) FROM h_cust_main
                     WHERE history_action = 'insert'
@@ -67,14 +67,7 @@ Where a customer heard about your service. Tracked for informational purposes.
 </TR>
 
 <%
-foreach my $part_referral (
-
-  qsearch({
-    'table'     => 'part_referral',
-    'extra_sql' => "$extra_sql ORDER BY refnum",
-  })
-
-) {
+foreach my $part_referral ( FS::part_referral->all_part_referral(1) ) {
 
   if ( $bgcolor eq $bgcolor1 ) {
     $bgcolor = $bgcolor2;
@@ -82,13 +75,23 @@ foreach my $part_referral (
     $bgcolor = $bgcolor1;
   }
 
+  $a = 0;
+
 %>
       <TR>
 
-        <TD CLASS="grid" BGCOLOR="<%= $bgcolor %>"><A HREF="<%= $p %>edit/part_referral.html?<%= $part_referral->refnum %>">
-          <%= $part_referral->refnum %></A></TD>
-        <TD CLASS="grid" BGCOLOR="<%= $bgcolor %>"><A HREF="<%= $p %>edit/part_referral.html?<%= $part_referral->refnum %>">
-          <%= $part_referral->referral %></A></TD>
+        <TD CLASS="grid" BGCOLOR="<%= $bgcolor %>">
+          <% if ( $part_referral->agentnum || $curuser->access_right('Edit global advertising sources') ) { 
+            $a++;
+          %>
+            <A HREF="<%= $p %>edit/part_referral.html?<%= $part_referral->refnum %>">
+          <% } %>
+          <%= $part_referral->refnum %><%= $a ? '</A>' : '' %></TD>
+        <TD CLASS="grid" BGCOLOR="<%= $bgcolor %>">
+          <% if ( $a ) { %>
+            <A HREF="<%= $p %>edit/part_referral.html?<%= $part_referral->refnum %>">
+          <% } %>
+          <%= $part_referral->referral %><%= $a ? '</A>' : '' %></TD>
 
         <% if ( $show_agentnums ) { %>
           <TD CLASS="grid" BGCOLOR="<%= $bgcolor %>"><%= $part_referral->agentnum ? $part_referral->agent->agent : '(global)' %></TD>

@@ -66,6 +66,8 @@ if ( $cgi->param('error') ) {
 $cgi->delete_all();
 my $action = $custnum ? 'Edit' : 'Add';
 
+my $r = qq!<font color="#ff0000">*</font>&nbsp;!;
+
 %>
 
 <!-- top -->
@@ -77,37 +79,28 @@ my $action = $custnum ? 'Edit' : 'Add';
 ) %>
 
 <% if ( $error ) { %>
-<FONT SIZE="+1" COLOR="#ff0000">Error: <%= $error %></FONT>
+<FONT SIZE="+1" COLOR="#ff0000">Error: <%= $error %></FONT><BR><BR>
 <% } %>
 
 <FORM NAME="topform" STYLE="margin-bottom: 0">
 <INPUT TYPE="hidden" NAME="custnum" VALUE="<%= $custnum %>">
-Customer # <%= $custnum ? "<B>$custnum</B>" : " (NEW)" %>
+<% if ( $custnum ) { %>
+  Customer #<B><%= $custnum %></B> - 
+  <B><FONT COLOR="<%= $cust_main->statuscolor %>">
+    <%= ucfirst($cust_main->status) %>
+  </FONT></B>
+  <BR><BR>
+<% } %>
+
+<%= &ntable("#cccccc") %>
 
 <!-- agent -->
 
-<%
-
-my $r = qq!<font color="#ff0000">*</font>&nbsp;!;
-
-my %agent_search = dbdef->table('agent')->column('disabled')
-                     ? ( 'disabled' => '' ) : ();
-my @agents = qsearch( 'agent', \%agent_search );
-#die "No agents created!" unless @agents;
-eidiot "You have not created any agents (or all agents are disabled).  You must create at least one agent before adding a customer.  Go to ". popurl(2). "browse/agent.cgi and create one or more agents." unless @agents;
-my $agentnum = $cust_main->agentnum || $agents[0]->agentnum; #default to first
-
+<%= include('/elements/tr-select-agent.html', $cust_main->agentnum,
+              'label'       => "<B>${r}Agent</B>",
+              'empty_label' => 'Select agent',
+           )
 %>
-
-<% if ( scalar(@agents) == 1 ) { %>
-  <INPUT TYPE="hidden" NAME="agentnum" VALUE="<%= $agentnum %>">
-<% } else { %>
-  <BR><BR><%=$r%>Agent <SELECT NAME="agentnum" SIZE="1">
-  <% foreach my $agent (sort { $a->agent cmp $b->agent; } @agents) { %>
-    <OPTION VALUE="<%= $agent->agentnum %>"<%= " SELECTED"x($agent->agentnum==$agentnum) %>><%= $agent->agent %>
-  <% } %>
-  </SELECT>
-<% } %>
 
 <!-- referral (advertising source) -->
 
@@ -118,28 +111,9 @@ if ( $custnum && ! $conf->exists('editreferrals') ) {
 
   <INPUT TYPE="hidden" NAME="refnum" VALUE="<%= $refnum %>">
 
-<%
- } else {
-
-   my(@referrals) = qsearch('part_referral',{});
-   if ( scalar(@referrals) == 0 ) {
-     eidiot "You have not created any advertising sources.  You must create at least one advertising source before adding a customer.  Go to ". popurl(2). "browse/part_referral.cgi and create one or more advertising sources.";
-   } elsif ( scalar(@referrals) == 1 ) {
-     $refnum ||= $referrals[0]->refnum;
-%>
-
-     <INPUT TYPE="hidden" NAME="refnum" VALUE="<%= $refnum %>">
-
 <% } else { %>
 
-     <BR><BR><%=$r%>Advertising source 
-     <SELECT NAME="refnum" SIZE="1">
-       <%= $refnum ? '' : '<OPTION VALUE="">' %>
-       <% foreach my $referral (sort { $a->refnum <=> $b->refnum } @referrals) { %>
-         <OPTION VALUE="<%= $referral->refnum %>" <%= $referral->refnum == $refnum ? 'SELECTED' : '' %>><%= $referral->refnum %>: <%= $referral->referral %>
-       <% } %>
-     </SELECT>
-<% } %>
+   <%= include('/elements/tr-select-part_referral.html') %>
 
 <% } %>
 
@@ -153,20 +127,28 @@ if ( $cust_main->referral_custnum
 ) {
 %>
 
-  <BR><BR>Referring Customer: 
-  <A HREF="<%= popurl(1) %>/cust_main.cgi?<%= $cust_main->referral_custnum %>"><%= $cust_main->referral_custnum %>: <%= $referring_cust_main->name %></A>
+  <TR>
+    <TD ALIGN="right">Referring customer</TD>
+    <TD>
+      <A HREF="<%= popurl(1) %>/cust_main.cgi?<%= $cust_main->referral_custnum %>"><%= $cust_main->referral_custnum %>: <%= $referring_cust_main->name %></A>
+    </TD>
+  </TR>
   <INPUT TYPE="hidden" NAME="referral_custnum" VALUE="<%= $cust_main->referral_custnum %>">
 
 <% } elsif ( ! $conf->exists('disable_customer_referrals') ) { %>
 
-  <BR><BR>Referring customer number: 
-  <INPUT TYPE="text" NAME="referral_custnum" VALUE="">
+  <TR>
+    <TD ALIGN="right">Referring customer</TD>
+    <TD><INPUT TYPE="text" NAME="referral_custnum" VALUE=""></TD>
+  </TR>
 
 <% } else { %>
 
   <INPUT TYPE="hidden" NAME="referral_custnum" VALUE="">
 
 <% } %>
+
+</TABLE>
 
 <!-- contact info -->
 
@@ -377,10 +359,10 @@ unless ( $custnum ) {
 
   #false laziness, copied from FS::cust_pkg::order
   my $pkgpart;
+  my @agents = $FS::CurrentUser::CurrentUser->agents;
   if ( scalar(@agents) == 1 ) {
     # $pkgpart->{PKGPART} is true iff $custnum may purchase PKGPART
-    my($agent)=qsearchs('agent',{'agentnum'=> $agentnum });
-    $pkgpart = $agent->pkgpart_hashref;
+    $pkgpart = $agents[0]->pkgpart_hashref;
   } else {
     #can't know (agent not chosen), so, allow all
     my %typenum;

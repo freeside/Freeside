@@ -7,12 +7,9 @@
     #here is the agent virtualization
     my $agentnums_href = $FS::CurrentUser::CurrentUser->agentnums_href;
     @agents = grep $agentnums_href->{$_->agentnum}, @{ $opt{'agents'} };
+    delete $opt{'agents'};
   } else {
-    @agents = qsearch( {
-      'table'     => 'agent',
-      'hashref'   => { disabled=>'' },
-      'extra_sql' => ' AND '. $FS::CurrentUser::CurrentUser->agentnums_sql,
-    });
+    @agents = $FS::CurrentUser::CurrentUser->agents;
   }
 
 %>
@@ -24,10 +21,11 @@
 <% } else { %>
 
   <TR>
-    <TD ALIGN="right"><%= $opt{'label'} || 'Agent: ' %></TD>
+    <TD ALIGN="right"><%= $opt{'label'} || 'Agent' %></TD>
     <TD>
       <%= include( '/elements/select-agent.html', $agentnum,
                      'agents' => \@agents,
+                     %opt,
                  )
       %>
     </TD>

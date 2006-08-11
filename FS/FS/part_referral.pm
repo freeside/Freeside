@@ -124,29 +124,36 @@ sub agent {
 
 =over 4
 
-=item acl_agentnum_sql
+=item acl_agentnum_sql [ INCLUDE_GLOBAL_BOOL ]
 
 Returns an SQL fragment for searching for part_referral records allowed by the
 current users's agent ACLs (and "Edit global advertising sources" right).
 
+Pass a true value to include global advertising sources (for example, when
+simply using rather than editing advertising sources).
+
 =cut
 
 sub acl_agentnum_sql {
-  #my $class = shift;
+  my $self = shift;
 
   my $curuser = $FS::CurrentUser::CurrentUser;
   my $sql = $curuser->agentnums_sql;
   $sql = " ( $sql OR agentnum IS NULL ) "
-    if $curuser->access_right('Edit global advertising sources');
+    if $curuser->access_right('Edit global advertising sources')
+    or defined($_[0]) && $_[0];
 
   $sql;
 
 }
 
-=item all_part_referral
+=item all_part_referral [ INCLUDE_GLOBAL_BOOL ]
 
 Returns all part_referral records allowed by the current users's agent ACLs
 (and "Edit global advertising sources" right).
+
+Pass a true value to include global advertising sources (for example, when
+simply using rather than editing advertising sources).
 
 =cut
 
@@ -155,12 +162,12 @@ sub all_part_referral {
 
   qsearch({
     'table'     => 'part_referral',
-    'extra_sql' => ' WHERE '. $self->acl_agentnum_sql. ' ORDER BY refnum ',
+    'extra_sql' => ' WHERE '. $self->acl_agentnum_sql(@_). ' ORDER BY refnum ',
   });
 
 }
 
-=item num_part_referral
+=item num_part_referral [ INCLUDE_GLOBAL_BOOL ]
 
 Returns the number of part_referral records allowed by the current users's
 agent ACLs (and "Edit global advertising sources" right).
@@ -171,7 +178,7 @@ sub num_part_referral {
   my $self = shift;
 
   my $sth = dbh->prepare(
-    'SELECT COUNT(*) FROM part_referral WHERE '. $self->acl_agentnum_sql
+    'SELECT COUNT(*) FROM part_referral WHERE '. $self->acl_agentnum_sql(@_)
   ) or die dbh->errstr;
   $sth->execute() or die $sth->errstr;
   $sth->fetchrow_arrayref->[0];

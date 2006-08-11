@@ -1,8 +1,7 @@
 <%
   my( $agentnum, %opt ) = @_;
 
-  my %select_opt = ();
-  $select_opt{'records'} = $opt{'agents'}
+  $opt{'records'} = delete $opt{'agents'}
     if $opt{'agents'};
 
 %><%= include( '/elements/select-table.html',
@@ -12,7 +11,8 @@
                  'empty_label' => 'all',
                  'hashref'     => { 'disabled' => '' },
                  'extra_sql'   => ' AND '.
-                                  $FS::CurrentUser::CurrentUser->agentnums_sql,
-                 %select_opt,
+                                  $FS::CurrentUser::CurrentUser->agentnums_sql.
+                                  ' ORDER BY agent',
+                 %opt,
              )
 %>

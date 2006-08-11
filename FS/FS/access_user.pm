@@ -5,6 +5,7 @@ use vars qw( @ISA $htpasswd_file );
 use FS::Record qw( qsearch qsearchs dbh );
 use FS::m2m_Common;
 use FS::access_usergroup;
+use FS::agent;
 
 @ISA = qw( FS::m2m_Common FS::Record );
 
@@ -318,6 +319,21 @@ sub agentnum {
   $sth->fetchrow_arrayref->[0];
 }
 
+=item agents
+
+Returns the list of agents this user can view (via group membership), as
+FS::agent objects.
+
+=cut
+
+sub agents {
+  my $self = shift;
+  qsearch({
+    'table'     => 'agent',
+    'hashref'   => { disabled=>'' },
+    'extra_sql' => ' AND '. $self->agentnums_sql,
+  });
+}
 
 =item access_right
 
