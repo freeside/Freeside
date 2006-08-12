@@ -24,7 +24,7 @@ my $otaker = getotaker;
 
 my $p1 = popurl(1);
 
-%><%= include('/elements/header-popup.html', 'Post Credit') %>
+%><%= include('/elements/header-popup.html', 'Enter Credit') %>
 
 <% if ( $cgi->param('error') ) { %>
   <FONT SIZE="+1" COLOR="#ff0000">Error: <%= $cgi->param('error') %></FONT>
@@ -72,7 +72,7 @@ Credit
 </TABLE>
 
 <BR>
-<CENTER><INPUT TYPE="submit" VALUE="Post credit"></CENTER>
+<CENTER><INPUT TYPE="submit" VALUE="Enter credit"></CENTER>
     </FORM>
   </BODY>
 </HTML>
