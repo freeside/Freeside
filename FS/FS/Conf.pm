@@ -435,29 +435,29 @@ httemplate/docs/config.html
 
   {
     'key'         => 'deletepayments',
-    'section'     => 'UI',
-    'description' => 'Enable deletion of unclosed payments.  Be very careful!  Only delete payments that were data-entry errors, not adjustments.  Optionally specify one or more comma-separated email addresses to be notified when a payment is deleted.',
+    'section'     => 'billing',
+    'description' => 'Enable deletion of unclosed payments.  Really, with voids this is pretty much not recommended in any situation anymore.  Be very careful!  Only delete payments that were data-entry errors, not adjustments.  Optionally specify one or more comma-separated email addresses to be notified when a payment is deleted.',
     'type'        => [qw( checkbox text )],
   },
 
   {
     'key'         => 'deletecredits',
-    'section'     => 'UI',
-    'description' => 'Enable deletion of unclosed credits.  Be very careful!  Only delete credits that were data-entry errors, not adjustments.  Optionally specify one or more comma-separated email addresses to be notified when a credit is deleted.',
+    'section'     => 'deprecated',
+    'description' => '<B>DEPRECATED</B>, now controlled by ACLs.  Used to enable deletion of unclosed credits.  Be very careful!  Only delete credits that were data-entry errors, not adjustments.  Optionally specify one or more comma-separated email addresses to be notified when a credit is deleted.',
     'type'        => [qw( checkbox text )],
   },
 
   {
     'key'         => 'unapplypayments',
-    'section'     => 'UI',
-    'description' => 'Enable "unapplication" of unclosed payments.',
+    'section'     => 'deprecated',
+    'description' => '<B>DEPRECATED</B>, now controlled by ACLs.  Used to enable "unapplication" of unclosed payments.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'unapplycredits',
-    'section'     => 'UI',
-    'description' => 'Enable "unapplication" of unclosed credits.',
+    'section'     => 'deprecated',
+    'description' => '<B>DEPRECATED</B>, now controlled by ACLs.  Used to nable "unapplication" of unclosed credits.',
     'type'        => 'checkbox',
   },
 
@@ -1557,22 +1557,22 @@ httemplate/docs/config.html
 
   {
     'key'         => 'echeck-void',
-    'section'     => 'billing',
-    'description' => 'Enable local-only voiding of echeck payments in addition to refunds against the payment gateway',
+    'section'     => 'deprecated',
+    'description' => '<B>DEPRECATED</B>, now controlled by ACLs.  Used to enable local-only voiding of echeck payments in addition to refunds against the payment gateway',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'cc-void',
-    'section'     => 'billing',
-    'description' => 'Enable local-only voiding of credit card payments in addition to refunds against the payment gateway',
+    'section'     => 'deprecated',
+    'description' => '<B>DEPRECATED</B>, now controlled by ACLs.  Used to enable local-only voiding of credit card payments in addition to refunds against the payment gateway',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'unvoid',
-    'section'     => 'billing',
-    'description' => 'Enable unvoiding of voided payments',
+    'section'     => 'deprecated',
+    'description' => '<B>DEPRECATED</B>, now controlled by ACLs.  Used to enable unvoiding of voided payments',
     'type'        => 'checkbox',
   },
 

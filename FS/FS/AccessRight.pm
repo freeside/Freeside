@@ -120,6 +120,7 @@ assigned to users and/or groups.
 
   'Credit card void', #aka. cc-void #Enable local-only voiding of echeck payments in addition to refunds against the payment gateway
   'Echeck void', #aka. echeck-void #Enable local-only voiding of echeck payments in addition to refunds against the payment gateway
+  'Regular void',
   'Unvoid', #aka. unvoid #Enable unvoiding of voided payments
 
   'List customers',
