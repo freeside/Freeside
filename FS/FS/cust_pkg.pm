@@ -556,18 +556,27 @@ sub suspend {
   ''; #no errors
 }
 
-=item unsuspend
+=item unsuspend [ OPTION => VALUE ... ]
 
 Unsuspends all services (see L<FS::cust_svc> and L<FS::part_svc>) in this
 package, then unsuspends the package itself (clears the susp field).
+
+Available options are: I<adjust_next_bill>.
+
+I<adjust_next_bill> can be set true to adjust the next bill date forward by
+the amount of time the account was inactive.  This was set true by default
+since 1.4.2 and 1.5.0pre6; however, starting with 1.7.0 this needs to be
+explicitly requested.  Price plans for which this makes sense (anniversary-date
+based than prorate or subscription) could have an option to enable this
+behaviour?
 
 If there is an error, returns the error, otherwise returns false.
 
 =cut
 
 sub unsuspend {
-  my $self = shift;
-  my($error);
+  my( $self, %opt ) = @_;
+  my $error;
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -606,9 +615,12 @@ sub unsuspend {
   unless ( ! $self->getfield('susp') ) {
     my %hash = $self->hash;
     my $inactive = time - $hash{'susp'};
-    $hash{'susp'} = '';
+
     $hash{'bill'} = ( $hash{'bill'} || $hash{'setup'} ) + $inactive
-      if $inactive > 0 && ( $hash{'bill'} || $hash{'setup'} );
+      if $opt{'adjust_next_bill'}
+      && $inactive > 0 && ( $hash{'bill'} || $hash{'setup'} );
+
+    $hash{'susp'} = '';
     my $new = new FS::cust_pkg ( \%hash );
     $error = $new->replace($self);
     if ( $error ) {
