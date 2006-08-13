@@ -7,10 +7,6 @@
   my $packages = get_packages($cust_main, $conf);
 %>
 
-<STYLE TYPE="text/css">
-.package .provision { font-weight: bold }
-</STYLE>
-
 <A NAME="cust_pkg"><FONT SIZE="+2">Packages</FONT></A>
 
 <% if ( $curuser->access_right('Order customer package') ) { %>
@@ -54,30 +50,33 @@ Current packages
 
 <% if ( @$packages ) { %>
 
-<TABLE CLASS="package" BORDER=1 CELLSPACING=0 CELLPADDING=2 BORDERCOLOR="#999999">
+<%= include('/elements/table-grid.html') %>
+
+<% my $bgcolor1 = '#eeeeee';
+   my $bgcolor2 = '#ffffff';
+   my $bgcolor = '';
+%>
+
 <TR>
-  <TH>Package</TH>
-  <TH>Status</TH>
-  <TH COLSPAN=2>Services</TH>
+  <TH CLASS="grid" BGCOLOR="#cccccc">Package</TH>
+  <TH CLASS="grid" BGCOLOR="#cccccc">Status</TH>
+  <TH CLASS="grid" BGCOLOR="#cccccc">Services</TH>
 </TR>
 
 <%
 foreach my $pkg (sort pkgsort_pkgnum_cancel @$packages) {
-  my $rowspan = 0;
 
-  if ($pkg->{cancel}) {
-    $rowspan = 0;
+  if ( $bgcolor eq $bgcolor1 ) {
+    $bgcolor = $bgcolor2;
   } else {
-    foreach my $svcpart (@{$pkg->{svcparts}}) {
-      $rowspan += $svcpart->{count};
-      $rowspan++ if ($svcpart->{count} < $svcpart->{quantity});
-    }
-  } 
+    $bgcolor = $bgcolor1;
+  }
+
 %>
 
 <!--pkgnum: <%=$pkg->{pkgnum}%>-->
 <TR>
-  <TD ROWSPAN=<%= $rowspan || 1 %>>
+  <TD CLASS="grid" BGCOLOR="<%= $bgcolor %>">
     <A NAME="cust_pkg<%=$pkg->{pkgnum}%>"><%=$pkg->{pkgnum}%></A>:
     <%=$pkg->{pkg}%> - <%=$pkg->{comment}%><BR>
     <FONT SIZE=-1>
@@ -94,8 +93,8 @@ foreach my $pkg (sort pkgsort_pkgnum_cancel @$packages) {
       <% } %>
     </FONT>
   </TD>
-  <TD ROWSPAN=<%= $rowspan || 1 %>>
-    <TABLE BORDER=0 CELLSPACING=0 CELLPADDING=0 WIDTH="100%">
+  <TD CLASS="inv" BGCOLOR="<%= $bgcolor %>">
+    <TABLE CLASS="inv" BORDER=0 CELLSPACING=0 CELLPADDING=0 WIDTH="100%">
 
 <%
   sub myfreq {
@@ -315,42 +314,51 @@ foreach my $pkg (sort pkgsort_pkgnum_cancel @$packages) {
 </TABLE>
 </TD>
 
-<%
-  if ($rowspan == 0) { print qq!</TR>\n!; next; }
+<TD CLASS="inv" BGCOLOR="<%= $bgcolor %>">
+  <TABLE CLASS="inv" BORDER=0 CELLSPACING=0 CELLPADDING=0 WIDTH="100%">
 
-  my $cnt = 0;
+
+<%
   foreach my $svcpart (sort {$a->{svcpart} <=> $b->{svcpart}} @{$pkg->{svcparts}}) {
     foreach my $service (@{$svcpart->{services}}) {
-      print '<TR>' if ($cnt > 0);
 %>
-  <TD><%=svc_link($svcpart,$service)%></TD>
-  <TD><%=svc_label_link($svcpart,$service)%>
-    <% if ( $curuser->access_right('Unprovision customer service') ) { %>
-      <BR>(&nbsp;<%=svc_unprovision_link($service)%>&nbsp;)
-    <% } %>
-  </TD>
-</TR>
-<%
-      $cnt++;
-    }
-    if ( $svcpart->{count} < $svcpart->{quantity} ) {
-      print '<TR>' if ($cnt > 0);
-      if ( $curuser->access_right('Provision customer service') ) {
-        print '<TD COLSPAN=2>'.
-              svc_provision_link($pkg, $svcpart, $conf, $curuser).
-              '</TD></TR>';
-      } else {
-        #print '<TD COLSPAN=2>&nbsp;</TD></TR>';
-        print '<TD COLSPAN=2></TD></TR>';
-      }
-    }
+      <TR>
+        <TD ALIGN="right" VALIGN="top" ROWSPAN=2><%=svc_link($svcpart,$service)%></TD>
+        <TD STYLE="padding-bottom:0px"><B><%=svc_label_link($svcpart,$service)%></B></TD>
+      </TR>
 
-  }
-}
-#end display packages
+      <% if ( $curuser->access_right('Unprovision customer service') ) { %>
+        <TR>
+          <TD ALIGN="right" VALIGN="top" STYLE="padding-bottom:5px;padding-top:0px"><FONT SIZE="-2">(&nbsp;<%=svc_unprovision_link($service)%>&nbsp;)</FONT></TD>
+        </TR>
+      <% } %>
+
+    <% } %>
+
+    <% if ( $curuser->access_right('Provision customer service') 
+            && $svcpart->{count} < $svcpart->{quantity}
+          )
+       {
+    %>
+
+      <TR>
+        <TD COLSPAN=2 ALIGN="center" STYLE="padding-bottom:4px;padding-top:0px">
+          <B><%= svc_provision_link($pkg, $svcpart, $conf, $curuser) %></B>
+        </TD>
+      </TR>
+
+    <% } %>
+
+<% } %>
+
+</TABLE>
+</TD>
+
+<% } #end display packages
 %>
 
 </TABLE>
+
 <% } else { %>
 <BR>
 <% } %>

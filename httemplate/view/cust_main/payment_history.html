@@ -21,21 +21,21 @@
 <% if ( $payby{'BILL'} && $curuser->access_right('Post payment') ) { %>
 
   <%= $s++ ? ' | ' : '' %>
-  <A HREF="<%= $p %>edit/cust_pay.cgi?payby=BILL;custnum=<%= $custnum %>">Post check payment</A>
+  <A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('<%= $p %>edit/cust_pay.cgi?popup=1;payby=BILL;custnum=<%= $custnum %>', 392, 336, 'cust_pay_popup' ), CAPTION, 'Enter check payment', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK ); return false;">Enter check payment</A>
 
 <% } %>
 
 <% if ( $payby{'CASH'} && $curuser->access_right('Post payment') ) { %>
 
   <%= $s++ ? ' | ' : '' %>
-  <A HREF="<%= $p %>edit/cust_pay.cgi?payby=CASH;custnum=<%= $custnum %>">Post cash payment</A>
+  <A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('<%= $p %>edit/cust_pay.cgi?popup=1;payby=CASH;custnum=<%= $custnum %>', 392, 336, 'cust_pay_popup' ), CAPTION, 'Enter cash payment', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK ); return false;">Enter cash payment</A>
 
 <% } %>
 
 <% if ( $payby{'WEST'} && $curuser->access_right('Post payment') ) { %>
 
   <%= $s++ ? ' | ' : '' %>
-  <A HREF="<%= $p %>edit/cust_pay.cgi?payby=WEST;custnum=<%= $custnum %>">Post Western Union payment</A>
+  <A HREF="<%= $p %>edit/cust_pay.cgi?payby=WEST;custnum=<%= $custnum %>">Enter Western Union payment</A>
 
 <% } %>
 
@@ -62,7 +62,7 @@
 <% if ( $payby{'MCRD'} && $curuser->access_right('Post payment') ) { %>
 
   <%= $s++ ? ' | ' : '' %>
-  <A HREF="<%= $p %>edit/cust_pay.cgi?payby=MCRD;custnum=<%= $custnum %>">Post manual credit card payment</A>
+  <A HREF="<%= $p %>edit/cust_pay.cgi?payby=MCRD;custnum=<%= $custnum %>">Post manual (offline) credit card payment</A>
 
 <% } %>
 
@@ -70,7 +70,7 @@
 
 <% if ( $curuser->access_right('Post credit') ) { %>
 
-  <A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('<%= $p %>edit/cust_credit.cgi?<%= $custnum %>', 392, 336, 'cust_credit_popup' ), CAPTION, 'Post credit', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK ); return false;">Post credit</A>
+  <A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('<%= $p %>edit/cust_credit.cgi?<%= $custnum %>', 392, 336, 'cust_credit_popup' ), CAPTION, 'Enter credit', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK ); return false;">Enter credit</A>
 
   <BR>
 
@@ -430,9 +430,52 @@ foreach my $cust_refund ($cust_main->cust_refund) {
 <%
 #display payment history
 
-my %target;
 my $balance = 0;
+my %target = ();
+my $money_char = $conf->config('money_char') || '$';
+
+my $years =  $conf->config('payment_history-years') || 2;
+my $older_than = time - $years * 31556736; #60*60*24*365.24
+my $hidden = 0;
+my $seen = 0;
+my $old_history = 0;
+
 foreach my $item ( sort { $a->{'date'} <=> $b->{'date'} } @history ) {
+
+  my $display;
+  if ( $item->{'date'} < $older_than ) {
+    $display = ' STYLE="display:none" ';
+    $hidden = 1;
+  } else {
+
+    $display = '';
+
+    if ( $hidden && ! $seen++ ) {
+      ( my $balance_forward = $money_char. $balance ) =~ s/^\$\-/-&nbsp;\$/;
+    %>
+
+      <TR ID="balance_forward_row">
+        <TD CLASS="grid" BGCOLOR="#dddddd">
+          <%= time2str("%D",$item->{'date'}) %>
+        </TD>
+
+        <TD CLASS="grid" BGCOLOR="#dddddd">
+          <I>Starting balance on <%= time2str("%D",$item->{'date'}) %></I>
+          (<A HREF="javascript:void(0);" onClick="show_history();">show prior history</A>)
+        </TD>
+
+        <TD CLASS="grid" BGCOLOR="#dddddd"></TD>
+        <TD CLASS="grid" BGCOLOR="#dddddd"></TD>
+        <TD CLASS="grid" BGCOLOR="#dddddd"></TD>
+        <TD CLASS="grid" BGCOLOR="#dddddd"></TD>
+        <TD CLASS="grid" BGCOLOR="#dddddd"><I><%= $balance_forward %></I></TD>
+
+      </TR>
+
+    <%
+    }
+
+  }
 
   if ( $bgcolor eq $bgcolor1 ) {
     $bgcolor = $bgcolor2;
@@ -441,18 +484,24 @@ foreach my $item ( sort { $a->{'date'} <=> $b->{'date'} } @history ) {
   }
 
   my $charge  = exists($item->{'charge'})
-                  ? sprintf('$%.2f', $item->{'charge'})
+                  ? sprintf("$money_char\%.2f", $item->{'charge'})
                   : '';
+
   my $payment = exists($item->{'payment'})
-                  ? sprintf('-&nbsp;$%.2f', $item->{'payment'})
+                  ? sprintf("-&nbsp;$money_char\%.2f", $item->{'payment'})
                   : '';
-  $payment ||= sprintf('<DEL>-&nbsp;$%.2f</DEL>', $item->{'void_payment'})
+
+  $payment ||= sprintf( "<DEL>-&nbsp;$money_char\%.2f</DEL>",
+                        $item->{'void_payment'}
+                      )
     if exists($item->{'void_payment'});
+
   my $credit  = exists($item->{'credit'})
-                  ? sprintf('-&nbsp;$%.2f', $item->{'credit'})
+                  ? sprintf("-&nbsp;$money_char\%.2f", $item->{'credit'})
                   : '';
+
   my $refund  = exists($item->{'refund'})
-                  ? sprintf('$%.2f', $item->{'refund'})
+                  ? sprintf("$money_char\%.2f", $item->{'refund'})
                   : '';
 
   my $target = exists($item->{'target'}) ? $item->{'target'} : '';
@@ -463,11 +512,11 @@ foreach my $item ( sort { $a->{'date'} <=> $b->{'date'} } @history ) {
   $balance += $item->{'refund'}  if exists $item->{'refund'};
   $balance = sprintf("%.2f", $balance);
   $balance =~ s/^\-0\.00$/0.00/; #yay ieee fp
-  ( my $showbalance = '$'. $balance ) =~ s/^\$\-/-&nbsp;\$/;
+  ( my $showbalance = $money_char. $balance ) =~ s/^\$\-/-&nbsp;\$/;
 
 %>
 
-  <TR>
+  <TR <%= $display ? $display.' ID="old_history'.$old_history++.'"'  : ''%>>
     <TD CLASS="grid" BGCOLOR="<%= $bgcolor %>">
       <% unless ( !$target || $target{$target}++ ) { %>
         <A NAME="<%= $target %>">
@@ -501,4 +550,21 @@ foreach my $item ( sort { $a->{'date'} <=> $b->{'date'} } @history ) {
 <% } %>
 
 </TABLE>
+
+<SCRIPT TYPE="text/javascript">
+
+function show_history () {
+  //alert('showing history!');
+
+  var balance_forward_row = document.getElementById('balance_forward_row');
+
+  balance_forward_row.style.display = 'none';
+  for ( var i = 0; i < <%= $old_history %>; i++ ) {
+    var oldRow = document.getElementById('old_history'+i);
+    oldRow.style.display = '';
+  }
+
+}
+
+</SCRIPT>
 

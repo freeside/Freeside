@@ -2,24 +2,6 @@
 
 my $conf = new FS::Conf;
 
-my %uiview = ();
-my %uiadd = ();
-foreach my $part_svc ( qsearch('part_svc',{}) ) {
-  $uiview{$part_svc->svcpart} = $p. "view/". $part_svc->svcdb . ".cgi";
-  $uiadd{$part_svc->svcpart}= $p. "edit/". $part_svc->svcdb . ".cgi";
-}
-
-%>
-
-
-<%= include("/elements/header.html","Customer View", 
-	include("/elements/menubar.html",
-  'Main Menu' => $p,
-)) %>
-
-
-<%
-
 my $curuser = $FS::CurrentUser::CurrentUser;
 
 die "No customer specified (bad URL)!" unless $cgi->keywords;
@@ -31,6 +13,7 @@ die "Customer not found!" unless $cust_main;
 
 %>
 
+<%= include("/elements/header.html","Customer View: ". $cust_main->name ) %>
 
 <% if ( $curuser->access_right('Edit customer') ) { %>
   <A HREF="<%= $p %>edit/cust_main.cgi?<%= $custnum %>">Edit this customer</A> | 

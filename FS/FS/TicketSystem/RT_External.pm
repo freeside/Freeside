@@ -10,7 +10,7 @@ use FS::Record qw(qsearchs);
 use FS::cust_main;
 
 FS::UID->install_callback( sub { 
-  my $conf = new FS::Conf;
+  $conf = new FS::Conf;
   $default_queueid = $conf->config('ticket_system-default_queueid');
   $priority_field =
     $conf->config('ticket_system-custom_priority_field');
@@ -57,7 +57,7 @@ sub customer_tickets {
   my( $from_sql, @param) = $self->_from_customer( $custnum, $priority );
   my $sql = "SELECT tickets.*, queues.name".
             ( length($priority) ? ", objectcustomfieldvalues.content" : '' ).
-            " $from_sql ORDER BY priority DESC LIMIT $limit";
+            " $from_sql ORDER BY priority, id DESC LIMIT $limit";
   my $sth = $dbh->prepare($sql) or die $dbh->errstr. "preparing $sql";
   $sth->execute(@param)         or die $sth->errstr. "executing $sql";
 
@@ -131,7 +131,7 @@ sub _from_customer {
                     JOIN queues ON ( tickets.queue = queues.id )
                     JOIN links ON ( tickets.id = links.localbase )
                     $join 
-       WHERE ( status = 'new' OR status = 'open' OR status = 'stalled' )
+       WHERE ( ". join(' OR ', map "status = '$_'", $self->statuses ). " )
          AND target = 'freeside://freeside/cust_main/$custnum'
          $where
   ";
@@ -140,30 +140,43 @@ sub _from_customer {
 
 }
 
+sub statuses {
+  #my $self = shift;
+  my @statuses = grep { ! /^\s*$/ } $conf->config('cust_main-ticket_statuses');
+  @statuses = (qw( new open stalled )) unless scalar(@statuses);
+  @statuses;
+}
+
 sub href_customer_tickets {
   my( $self, $custnum, $priority ) = @_;
 
-  my $href = $self->baseurl;
+  #my $href = $self->baseurl;
 
-  #i snarfed this from an RT bookmarked search, it could be unescaped in the
-  #source for readability and run through uri_escape
-  $href .= 
-    'Search/Results.html?Order=ASC&Query=%20MemberOf%20%3D%20%27freeside%3A%2F%2Ffreeside%2Fcust_main%2F'.
-    $custnum.
-    '%27%20%20AND%20%28%20Status%20%3D%20%27open%27%20%20OR%20Status%20%3D%20%27new%27%20%20OR%20Status%20%3D%20%27stalled%27%20%29%20'
+  #i snarfed this from an RT bookmarked search, then unescaped (some of) it with
+  #perl -npe 's/%([0-9A-F]{2})/pack('C', hex($1))/eg;'
+
+  my $href .= 
+    "Search/Results.html?Order=ASC&".
+    "Query= MemberOf = 'freeside://freeside/cust_main/$custnum' ".
+    #" AND ( Status = 'open'  OR Status = 'new'  OR Status = 'stalled' )"
+    " AND ( ". join(' OR ', map "Status = '$_'", $self->statuses ). " ) "
   ;
 
   if ( defined($priority) && $field && $priority_field_queue ) {
-    $href .= 'AND%20Queue%20%3D%20%27'. $priority_field_queue. '%27%20';
+    $href .= " AND Queue = '$priority_field_queue' ";
   }
   if ( defined($priority) && $field ) {
-    $href .= '%20AND%20%27CF.'. $field. '%27%20';
+    $href .= " AND 'CF.$field' ";
     if ( $priority ) {
-      $href .= '%3D%20%27'. $priority. '%27%20';
+      $href .= "= '$priority' ";
     } else {
-      $href .= 'IS%20%27NULL%27%20';
+      $href .= "IS 'NULL' "; #this is "RTQL", not SQL
     }
   }
+
+  #$href = 
+  uri_escape($href);
+  #eventually should unescape all of it...
 
   $href .= '&Rows=100'.
            '&OrderBy=id&Page=1'.
@@ -185,7 +198,10 @@ sub href_customer_tickets {
 
   $href .= '%20%0A%27%3Csmall%3E__ToldRelative__%3C%2Fsmall%3E%27%2C%20%0A%27%3Csmall%3E__LastUpdatedRelative__%3C%2Fsmall%3E%27%2C%20%0A%27%3Csmall%3E__TimeLeft__%3C%2Fsmall%3E%27';
 
-  $href;
+  #$href =
+  #uri_escape($href);
+
+  $self->baseurl. $href;
 
 }
 

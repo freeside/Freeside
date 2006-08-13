@@ -4,9 +4,15 @@
 %>
 
 <%= ntable("#cccccc") %><TR><TD><%= &ntable("#cccccc",2) %>
+
 <TR>
   <TD ALIGN="right">Customer&nbsp;number</TD>
   <TD BGCOLOR="#ffffff"><%= $cust_main->custnum %></TD>
+</TR>
+
+<TR>
+  <TD ALIGN="right">Status</TD>
+  <TD BGCOLOR="#ffffff"><FONT COLOR="#<%= $cust_main->statuscolor %>"><B><%= ucfirst($cust_main->status) %></B></FONT></TD>
 </TR>
 
 <%
@@ -51,10 +57,6 @@
 <% } %>
 
 <TR>
-  <TD ALIGN="right">Order taker</TD>
-  <TD BGCOLOR="#ffffff"><%= $cust_main->otaker %></TD>
-</TR>
-<TR>
   <TD ALIGN="right">Referring&nbsp;Customer</TD>
   <TD BGCOLOR="#ffffff">
 
@@ -80,6 +82,11 @@
 <% } %>
 
   </TD>
+</TR>
+
+<TR>
+  <TD ALIGN="right">Order taker</TD>
+  <TD BGCOLOR="#ffffff"><%= $cust_main->otaker %></TD>
 </TR>
 
 </TABLE></TD></TR></TABLE>

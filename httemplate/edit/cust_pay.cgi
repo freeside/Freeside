@@ -9,22 +9,20 @@ my %payby = (
   'MCRD' => 'Manual credit card',
 );
 
-my($link, $linknum, $paid, $payby, $payinfo, $quickpay, $_date); 
+my($link, $linknum, $paid, $payby, $payinfo, $_date); 
 if ( $cgi->param('error') ) {
   $link     = $cgi->param('link');
   $linknum  = $cgi->param('linknum');
   $paid     = $cgi->param('paid');
   $payby    = $cgi->param('payby');
   $payinfo  = $cgi->param('payinfo');
-  $quickpay = $cgi->param('quickpay');
   $_date    = $cgi->param('_date') ? str2time($cgi->param('_date')) : time;
 } elsif ( $cgi->param('custnum') =~ /^(\d+)$/ ) {
-  $link     = 'custnum';
+  $link     = $cgi->param('popup') ? 'popup' : 'custnum';
   $linknum  = $1;
   $paid     = '';
   $payby    = $cgi->param('payby') || 'BILL';
   $payinfo  = '';
-  $quickpay = $cgi->param('quickpay');
   $_date    = time;
 } elsif ( $cgi->param('invnum') =~ /^(\d+)$/ ) {
   $link     = 'invnum';
@@ -32,7 +30,6 @@ if ( $cgi->param('error') ) {
   $paid     = '';
   $payby    = $cgi->param('payby') || 'BILL';
   $payinfo  = "";
-  $quickpay = '';
   $_date    = time;
 } else {
   die "illegal query ". $cgi->keywords;
@@ -43,9 +40,15 @@ my $paybatch = "webui-$_date-$$-". rand() * 2**32;
 my $title = 'Post '. $payby{$payby}. ' payment';
 $title .= " against Invoice #$linknum" if $link eq 'invnum';
 
-%>
+if ( $link eq 'popup' ) { 
 
-<%=  include("/elements/header.html",$title, '') %>
+%><%= include('/elements/header-popup.html', $title ) %>
+
+<% } else { %>
+
+<%=  include("/elements/header.html", $title, '') %>
+
+<% } %>
 
 <% if ( $cgi->param('error') ) { %>
 <FONT SIZE="+1" COLOR="#ff0000">Error: <%= $cgi->param('error') %></FONT>
@@ -60,7 +63,6 @@ $title .= " against Invoice #$linknum" if $link eq 'invnum';
 <FORM ACTION="<%= popurl(1) %>process/cust_pay.cgi" METHOD=POST>
 <INPUT TYPE="hidden" NAME="link" VALUE="<%= $link %>">
 <INPUT TYPE="hidden" NAME="linknum" VALUE="<%= $linknum %>">
-<INPUT TYPE="hidden" NAME="quickpay" VALUE="<%= $quickpay %>">
 
 <% 
 my $money_char = $conf->config('money_char') || '$';
@@ -74,7 +76,9 @@ if ( $link eq 'invnum' ) {
 }
 %>
 
+<% unless ( $link eq 'popup' ) { %>
 <%= small_custview($custnum, $conf->config('countrydefault')) %>
+<% } %>
 
 <INPUT TYPE="hidden" NAME="payby" VALUE="<%= $payby %>">
 

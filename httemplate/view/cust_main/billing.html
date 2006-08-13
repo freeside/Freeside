@@ -1,11 +1,23 @@
 <%
   my( $cust_main ) = @_;
   my @invoicing_list = $cust_main->invoicing_list;
+  my $conf = new FS::Conf;
+  my $money_char = $conf->config('money_char') || '$';
 %>
 
 Billing information
 (<A HREF="<%= $p %>misc/bill.cgi?<%= $cust_main->custnum %>">Bill now</A>)
 <%= ntable("#cccccc") %><TR><TD><%= ntable("#cccccc",2) %>
+
+<%
+( my $balance = $cust_main->balance )
+  =~ s/^(\-?)(.*)$/<FONT SIZE=+1>$1<\/FONT>$money_char$2/;
+%>
+
+<TR>
+  <TD ALIGN="right">Balance due</TD>
+  <TD BGCOLOR="#ffffff"><B><%= $balance %></B></TD>
+</TR>
 
 <TR>
   <TD ALIGN="right">Billing&nbsp;type</TD>
@@ -159,7 +171,7 @@ if ( $date  =~ /^(\d{4})-(\d{1,2})-\d{1,2}$/ ) { #PostgreSQL date format
     <%= join(', ', grep { $_ !~ /^(POST|FAX)$/ } @invoicing_list ) || 'no' %>
   </TD>
 </TR>
-<% my $conf = new FS::Conf; if ( $conf->exists('voip-cust_cdr_spools') ) { %>
+<% if ( $conf->exists('voip-cust_cdr_spools') ) { %>
   <TR>
     <TD ALIGN="right">Spool&nbsp;CDRs</TD>
     <TD BGCOLOR="#ffffff"><%= $cust_main->spool_cdr ? 'yes' : 'no' %></TD>

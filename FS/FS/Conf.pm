@@ -1716,6 +1716,28 @@ httemplate/docs/config.html
     'type'        => 'textarea',
   },
 
+  {
+    'key'         => 'payment_history-years',
+    'section'     => 'UI',
+    'description' => 'Number of years of payment history to show by default.  Currently defaults to 2.',
+    'type'        => 'text',
+  },
+
+  {
+    'key'         => 'cust_main-ticket_statuses',
+    'section'     => 'UI',
+    'description' => 'Show tickets with these statuses on the customer view page.',
+    'type'        => 'selectmultiple',
+    'select_enum' => [qw( new open stalled resolved rejected deleted )],
+  },
+
+  {
+    'key'         => 'cust_main-max_tickets',
+    'section'     => 'UI',
+    'description' => 'Maximum number of tickets to show on the customer view page.',
+    'type'        => 'text',
+  },
+
 );
 
 1;
