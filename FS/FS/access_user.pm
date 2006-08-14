@@ -297,8 +297,12 @@ Returns an sql fragement to select only agentnums this user can view.
 
 sub agentnums_sql {
   my $self = shift;
+
+  my @agentnums = $self->agentnums;
+  return ' 1 = 0 ' unless scalar(@agentnums);
+
   '( '.
-    join( ' OR ', map "agentnum = $_", $self->agentnums ).
+    join( ' OR ', map "agentnum = $_", @agentnums ).
   ' )';
 }
 
