@@ -3,6 +3,7 @@
   my $etc = @_ ? shift : ''; #$etc is for things like onLoad= etc.
   my $head = @_ ? shift : ''; #$head is for things that go in the <HEAD> section
   my $conf = new FS::Conf;
+
 %>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <HTML>
@@ -18,17 +19,22 @@
 
     <SCRIPT TYPE="text/javascript">
       function clearhint_search_cust (what) {
-        if ( what.value = '(cust #, name or company)' )
+        if ( what.value == '(cust #, name, company or phone)' )
+          what.value = '';
+      }
+
+      function clearhint_search_invoice (what) {
+        if ( what.value == '(inv #)' )
           what.value = '';
       }
 
       function clearhint_search_svc (what) {
-        if ( what.value = '(user, user@domain or domain)' )
+        if ( what.value == '(user, user@domain or domain)' )
           what.value = '';
       }
 
       function clearhint_search_ticket (what) {
-        if ( what.value = '(ticket # or subject string)' )
+        if ( what.value == '(ticket # or subject string)' )
           what.value = '';
       }
     </SCRIPT>
@@ -39,13 +45,11 @@
   <BODY BACKGROUND="<%=$fsurl%>images/background-cheat.png" <%= $etc %> STYLE="margin-top:0; margin-bottom:0; margin-left:0; margin-right:0">
     <table width="100%" CELLPADDING=0 CELLSPACING=0 STYLE="padding-left:0; padding-right:4">
       <tr>
-        <td rowspan=2 BGCOLOR="#ffffff">
-          <IMG BORDER=0 ALT="freeside" SRC="<%=$fsurl%>images/small-logo.png">
-        </td>
+        <td rowspan=2 BGCOLOR="#ffffff"><IMG BORDER=0 ALT="freeside" SRC="<%=$fsurl%>images/small-logo.png"></td>
         <td align=left rowspan=2 BGCOLOR="#ffffff"> <!-- valign="top" -->
           <font size=6><%= $conf->config('company_name') || 'ExampleCo' %></font>
         </td>
-        <td align=right valign=top BGCOLOR="#ffffff">Logged in as <b><%= getotaker %>&nbsp</b><br><FONT SIZE="-2"><a href="<%=$fsurl%>pref/XXXwritethis">Preferences</a>&nbsp;<BR><BR></FONT>
+        <td align=right valign=top BGCOLOR="#ffffff"><FONT SIZE="-1">Logged in as <b><%= getotaker %>&nbsp</b><br></FONT><FONT SIZE="-2"><a href="<%=$fsurl%>pref/XXXwritethis">Preferences</a>&nbsp;<BR></FONT>
         </td>
       </tr>
       <tr>
@@ -77,34 +81,88 @@
       </tr>
     </table>
 
-    <TABLE WIDTH="100%" CELLSPACING=0 CELLPADDING=4>
+<style type="text/css">
+input.fsblackbutton {
+	 background-color:#333333;
+	 color: #ffffff;
+	 border:1px solid;
+	 border-top-color:#cccccc;
+	 border-left-color:#cccccc;
+	 border-right-color:#aaaaaa;
+	 border-bottom-color:#aaaaaa;
+	 font-weight:bold;
+	 padding-left:12px;
+	 padding-right:12px;
+	 overflow:visible;
+	 filter:progid:DXImageTransform.Microsoft.Gradient(GradientType=0,StartColorStr='#ff333333',EndColorStr='#ff666666')
+}
+
+input.fsblackbuttonselected {
+	 background-color:#7e0079;
+	 color: #ffffff;
+	 border:1px solid;
+	 border-top-color:#cccccc;
+	 border-left-color:#cccccc;
+	 border-right-color:#aaaaaa;
+	 border-bottom-color:#aaaaaa;
+	 font-weight:bold;
+	 padding-left:12px;
+	 padding-right:12px;
+	 overflow:visible;
+	 filter:progid:DXImageTransform.Microsoft.Gradient(GradientType=0,StartColorStr='#ff330033',EndColorStr='#ff7e0079')
+}
+</style>
+
+    <TABLE WIDTH="100%" CELLSPACING=0 CELLPADDING=0>
       <TR>
-        <TD COLSPAN=4 WIDTH="100%" STYLE="padding:0"><IMG BORDER=0 ALT="" SRC="<%=$fsurl%>images/black-gradient.png" HEIGHT="13" WIDTH="100%"></TD>
+        <TD COLSPAN=5 WIDTH="100%" STYLE="padding:0"><IMG BORDER=0 ALT="" SRC="<%=$fsurl%>images/black-gradient.png" HEIGHT="13" WIDTH="100%"></TD>
       </TR>
+
       <TR>
-        <TD COLSPAN=1 BGCOLOR="#000000" ALIGN="right" WIDTH="15%">
+
+        <TD COLSPAN=1 BGCOLOR="#000000" ALIGN="right">
           <FORM ACTION="<%=$fsurl%>edit/cust_main.cgi" METHOD="GET" STYLE="margin:0">
-            <INPUT TYPE="submit" VALUE="New customer">
+            <INPUT TYPE="submit" VALUE="New customer" CLASS="fsblackbutton" onMouseOver="this.className='fsblackbuttonselected'; return true;" onMouseOut="this.className='fsblackbutton'; return true;" STYLE="vertical-align:bottom">
           </FORM>
         </TD>
+
         <TD COLSPAN=1 BGCOLOR="#000000" ALIGN="right">
           <FORM ACTION="<%=$fsurl%>search/cust_main.cgi" METHOD="GET" STYLE="margin:0">
-            <INPUT NAME="search_cust" TYPE="text" VALUE="(cust #, name or company)" SIZE="22" onFocus="clearhint_search_cust(this);" onClick="clearhint_search_cust(this);" STYLE="text-align:right">
-            <INPUT TYPE="submit" VALUE="Search customers">
+            <INPUT NAME="search_cust" TYPE="text" VALUE="(cust #, name, company or phone)" SIZE="28" onFocus="clearhint_search_cust(this);" onClick="clearhint_search_cust(this);" STYLE="vertical-align:bottom;text-align:right"><BR>
+            <A HREF="<%=$fsurl%>search/cust_main.html" STYLE="color: #000000; font-size: 70%">Advanced</A>
+            <INPUT TYPE="submit" VALUE="Search customers" CLASS="fsblackbutton" onMouseOver="this.className='fsblackbuttonselected'; return true;" onMouseOut="this.className='fsblackbutton'; return true;" STYLE="font-size:70%">
           </FORM>
         </TD>
+
+        <TD COLSPAN=1 BGCOLOR="#000000" ALIGN="right">
+          <% if ( $FS::CurrentUser::CurrentUser->access_right('View invoices') ) { %>
+            <FORM ACTION="<%=$fsurl%>search/cust_bill.html" METHOD="GET" STYLE="margin:0;display:inline">
+              <INPUT NAME="invnum" TYPE="text" VALUE="(inv #)" SIZE="4" onFocus="clearhint_search_invoice(this);" onClick="clearhint_search_invoice(this);" STYLE="vertical-align:bottom;text-align:right;margin-bottom:1px">
+              <% if ( $FS::CurrentUser::CurrentUser->access_right('List invoices') ) { %>
+                <A HREF="<%=$fsurl%>search/report_cust_bill.html" STYLE="color: #ffffff; font-size: 70%">Advanced</A>
+              <% } %>
+              <BR>
+              <INPUT TYPE="submit" VALUE="Search invoices" CLASS="fsblackbutton" onMouseOver="this.className='fsblackbuttonselected'; return true;" onMouseOut="this.className='fsblackbutton'; return true;" STYLE="font-size:70%">
+            </FORM>
+          <% } %>
+        </TD>
+
         <TD COLSPAN=1 BGCOLOR="#000000" ALIGN="right">
           <FORM ACTION="<%=$fsurl%>search/svc_Smart.html" METHOD="GET" STYLE="margin:0">
-            <INPUT NAME="search_svc" TYPE="text" VALUE="(user, user@domain or domain)" SIZE="26" onFocus="clearhint_search_svc(this);" onClick="clearhint_search_svc(this);" STYLE="text-align:right">
-            <INPUT TYPE="submit" VALUE="Search services">
+            <INPUT NAME="search_svc" TYPE="text" VALUE="(user, user@domain or domain)" SIZE="26" onFocus="clearhint_search_svc(this);" onClick="clearhint_search_svc(this);" STYLE="vertical-align:bottom;text-align:right"><BR>
+            <A HREF="<%=$fsurl%>search/svc_Smarter.html" STYLE="color: #000000; font-size: 70%">Advanced</A>
+            <INPUT TYPE="submit" VALUE="Search services"CLASS="fsblackbutton" onMouseOver="this.className='fsblackbuttonselected'; return true;" onMouseOut="this.className='fsblackbutton'; return true;" STYLE="font-size:70%">
           </FORM>
         </TD>
-        <TD COLSPAN=1 BGCOLOR="#000000" ALIGN="right">
+
+        <TD COLSPAN=1 BGCOLOR="#000000" ALIGN="right" STYLE="padding-right:4px">
           <FORM ACTION="<%=$fsurl%>rt/index.html" METHOD="GET" STYLE="margin:0">
-            <INPUT NAME="q" TYPE="text" VALUE="(ticket # or subject string)" onFocus="clearhint_search_ticket(this);" onClick="clearhint_search_ticket(this);" STYLE="text-align:right">
-            <INPUT TYPE="submit" VALUE="Search tickets">
+            <INPUT NAME="q" TYPE="text" VALUE="(ticket # or subject string)" onFocus="clearhint_search_ticket(this);" onClick="clearhint_search_ticket(this);" STYLE="vertical-align:bottom;text-align:right"><BR>
+            <A HREF="<%=$fsurl%>rt/Search/Build.html" STYLE="color: #ffffff; font-size: 70%">Advanced</A>
+            <INPUT TYPE="submit" VALUE="Search tickets" CLASS="fsblackbutton" onMouseOver="this.className='fsblackbuttonselected'; return true;" onMouseOut="this.className='fsblackbutton'; return true;" STYLE="font-size:70%;padding-left:2px;padding-right:2px">
           </FORM>
         </TD>
+
       </TR>
     </TABLE>
     <TABLE WIDTH="100%" HEIGHT="100%" CELLSPACING=0 CELLPADDING=4>

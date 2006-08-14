@@ -63,9 +63,11 @@ my $basetopactions = {
 		},
 	B => { html => $m->scomp('/Elements/FreesideSearch')	
 		},
-	C => { html => $m->scomp('/Elements/FreesideSvcSearch')	
+	C => { html => $m->scomp('/Elements/FreesideInvoiceSearch')	
 		},
-	D => { html => $m->scomp('/Elements/SimpleSearch') 
+	D => { html => $m->scomp('/Elements/FreesideSvcSearch')	
+		},
+	E => { html => $m->scomp('/Elements/SimpleSearch') 
 		}
 	};
 my $basetabs = {

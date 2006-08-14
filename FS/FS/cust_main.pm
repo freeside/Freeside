@@ -3824,8 +3824,8 @@ sub uncancel_sql { "
 =item fuzzy_search FUZZY_HASHREF [ HASHREF, SELECT, EXTRA_SQL, CACHE_OBJ ]
 
 Performs a fuzzy (approximate) search and returns the matching FS::cust_main
-records.  Currently, only I<last> or I<company> may be specified (the
-appropriate ship_ field is also searched if applicable).
+records.  Currently, I<first>, I<last> and/or I<company> may be specified (the
+appropriate ship_ field is also searched).
 
 Additional options are the same as FS::Record::qsearch
 
@@ -3839,19 +3839,25 @@ sub fuzzy_search {
 
   check_and_rebuild_fuzzyfiles();
   foreach my $field ( keys %$fuzzy ) {
-    my $sub = \&{"all_$field"};
     my %match = ();
-    $match{$_}=1 foreach ( amatch($fuzzy->{$field}, ['i'], @{ &$sub() } ) );
+    $match{$_}=1 foreach ( amatch( $fuzzy->{$field},
+                                   ['i'],
+                                   @{ $self->all_X($field) }
+                                 )
+                         );
 
+    my @fcust = ();
     foreach ( keys %match ) {
-      push @cust_main, qsearch('cust_main', { %$hash, $field=>$_}, @opt);
-      push @cust_main, qsearch('cust_main', { %$hash, "ship_$field"=>$_}, @opt)
-        if defined dbdef->table('cust_main')->column('ship_last');
+      push @fcust, qsearch('cust_main', { %$hash, $field=>$_}, @opt);
+      push @fcust, qsearch('cust_main', { %$hash, "ship_$field"=>$_}, @opt);
     }
+    my %fsaw = ();
+    push @cust_main, grep { ! $fsaw{$_->custnum}++ } @fcust;
   }
 
+  # we want the components of $fuzzy ANDed, not ORed, but still don't want dupes
   my %saw = ();
-  @cust_main = grep { !$saw{$_->custnum}++ } @cust_main;
+  @cust_main = grep { ++$saw{$_->custnum} == scalar(keys %$fuzzy) } @cust_main;
 
   @cust_main;
 
@@ -3866,8 +3872,9 @@ sub fuzzy_search {
 =item smart_search OPTION => VALUE ...
 
 Accepts the following options: I<search>, the string to search for.  The string
-will be searched for as a customer number, last name or company name, first
-searching for an exact match then fuzzy and substring matches.
+will be searched for as a customer number, phone number, name or company name,
+first searching for an exact match then fuzzy and substring matches (in some
+cases - see the source code for the exact heuristics used).
 
 Any additional options treated as an additional qualifier on the search
 (i.e. I<agentnum>).
@@ -3878,13 +3885,53 @@ Returns a (possibly empty) array of FS::cust_main objects.
 
 sub smart_search {
   my %options = @_;
-  my $search = delete $options{'search'};
 
   #here is the agent virtualization
   my $agentnums_sql = $FS::CurrentUser::CurrentUser->agentnums_sql;
 
   my @cust_main = ();
-  if ( $search =~ /^\s*(\d+)\s*$/ ) { # customer # search
+
+  my $search = delete $options{'search'};
+  ( my $alphanum_search = $search ) =~ s/\W//g;
+  
+  if ( $alphanum_search =~ /^1?(\d{3})(\d{3})(\d{4})(\d*)$/ ) { #phone# search
+
+    #false laziness w/Record::ut_phone
+    my $phonen = "$1-$2-$3";
+    $phonen .= " x$4" if $4;
+
+    push @cust_main, qsearch( {
+      'table'   => 'cust_main',
+      'hashref' => { %options },
+      'extra_sql' => ( scalar(keys %options) ? ' AND ' : ' WHERE ' ).
+                     ' ( '.
+                         join(' OR ', map "$_ = '$phonen'",
+                                          qw( daytime night fax
+                                              ship_daytime ship_night ship_fax )
+                             ).
+                     ' ) '.
+                     " AND $agentnums_sql", #agent virtualization
+    } );
+
+    unless ( @cust_main || $phonen =~ /x\d+$/ ) { #no exact match
+      #try looking for matches with extensions unless one was specified
+
+      push @cust_main, qsearch( {
+        'table'   => 'cust_main',
+        'hashref' => { %options },
+        'extra_sql' => ( scalar(keys %options) ? ' AND ' : ' WHERE ' ).
+                       ' ( '.
+                           join(' OR ', map "$_ LIKE '$phonen\%'",
+                                            qw( daytime night
+                                                ship_daytime ship_night )
+                               ).
+                       ' ) '.
+                       " AND $agentnums_sql", #agent virtualization
+      } );
+
+    }
+
+  } elsif ( $search =~ /^\s*(\d+)\s*$/ ) { # customer # search
 
     push @cust_main, qsearch( {
       'table'     => 'cust_main',
@@ -3892,22 +3939,86 @@ sub smart_search {
       'extra_sql' => " AND $agentnums_sql", #agent virtualization
     } );
 
-  } elsif ( $search =~ /^\s*(\S.*\S)\s*$/ ) { #value search
+  } elsif ( $search =~ /^\s*(\S.*\S)\s+\((.+), ([^,]+)\)\s*$/ ) {
+
+    my($company, $last, $first) = ( $1, $2, $3 );
+
+    # "Company (Last, First)"
+    #this is probably something a browser remembered,
+    #so just do an exact search
+
+    foreach my $prefix ( '', 'ship_' ) {
+      push @cust_main, qsearch( {
+        'table'     => 'cust_main',
+        'hashref'   => { $prefix.'first'   => $first,
+                         $prefix.'last'    => $last,
+                         $prefix.'company' => $company,
+                         %options,
+                       },
+        'extra_sql' => " AND $agentnums_sql",
+      } );
+    }
+
+  } elsif ( $search =~ /^\s*(\S.*\S)\s*$/ ) { # value search
+                                              # try (ship_){last,company}
 
     my $value = lc($1);
 
-    # remove "(Last, First)" in "Company (Last, First"), otherwise the
-    # full strings the browser remembers won't work
-    $value =~ s/\([\w \,\.\-\']*\)$//; #false laziness w/Record::ut_name
+    # # remove "(Last, First)" in "Company (Last, First)", otherwise the
+    # # full strings the browser remembers won't work
+    # $value =~ s/\([\w \,\.\-\']*\)$//; #false laziness w/Record::ut_name
+
+    use Lingua::EN::NameParse;
+    my $NameParse = new Lingua::EN::NameParse(
+             auto_clean     => 1,
+             allow_reversed => 1,
+    );
+
+    my($last, $first) = ( '', '' );
+    #maybe disable this too and just rely on NameParse?
+    if ( $value =~ /^(.+),\s*([^,]+)$/ ) { # Last, First
     
+      ($last, $first) = ( $1, $2 );
+    
+    #} elsif  ( $value =~ /^(.+)\s+(.+)$/ ) {
+    } elsif ( ! $NameParse->parse($value) ) {
+
+      my %name = $NameParse->components;
+      $first = $name{'given_name_1'};
+      $last  = $name{'surname_1'};
+
+    }
+
+    if ( $first && $last ) {
+
+      my($q_last, $q_first) = ( dbh->quote($last), dbh->quote($first) );
+
+      #exact
+      my $sql = scalar(keys %options) ? ' AND ' : ' WHERE ';
+      $sql .= "
+        (     ( LOWER(last) = $q_last AND LOWER(first) = $q_first )
+           OR ( LOWER(ship_last) = $q_last AND LOWER(ship_first) = $q_first )
+        )";
+
+      push @cust_main, qsearch( {
+        'table'     => 'cust_main',
+        'hashref'   => \%options,
+        'extra_sql' => "$sql AND $agentnums_sql", #agent virtualization
+      } );
+
+      # or it just be something that was typed in... (try that in a sec)
+
+    }
+
     my $q_value = dbh->quote($value);
 
     #exact
     my $sql = scalar(keys %options) ? ' AND ' : ' WHERE ';
-    $sql .= " ( LOWER(last) = $q_value OR LOWER(company) = $q_value";
-    $sql .= " OR LOWER(ship_last) = $q_value OR LOWER(ship_company) = $q_value"
-      if defined dbdef->table('cust_main')->column('ship_last');
-    $sql .= ' )';
+    $sql .= " (    LOWER(last)         = $q_value
+                OR LOWER(company)      = $q_value
+                OR LOWER(ship_last)    = $q_value
+                OR LOWER(ship_company) = $q_value
+              )";
 
     push @cust_main, qsearch( {
       'table'     => 'cust_main',
@@ -3920,55 +4031,61 @@ sub smart_search {
       #still some false laziness w/ search/cust_main.cgi
 
       #substring
-      push @cust_main, qsearch( {
-        'table'     => 'cust_main',
-        'hashref'   => { 'last'     => { 'op'    => 'ILIKE',
-                                         'value' => "%$value%" },
-                         %options,
-                       },
-        'extra_sql' => " AND $agentnums_sql", #agent virtualizaiton
-      } );
-      push @cust_main, qsearch( {
-        'table'     => 'cust_main',
-        'hashref'   => { 'ship_last' => { 'op'     => 'ILIKE',
-                                          'value' => "%$value%" },
-                         %options, 
-                       },
-        'extra_sql' => " AND $agentnums_sql", #agent virtualization
-      } )
-        if defined dbdef->table('cust_main')->column('ship_last');
 
-      push @cust_main, qsearch( {
-        'table'     => 'cust_main',
-        'hashref'   => { 'company'  => { 'op'    => 'ILIKE',
-                                         'value' => "%$value%" },
-                         %options,
-                       },
-        'extra_sql' => " AND $agentnums_sql", #agent virtualization
-      } );
-      push @cust_main, qsearch(  {
-        'table'     => 'cust_main',
-        'hashref'   => { 'ship_company' => { 'op'    => 'ILIKE',
-                                             'value' => "%$value%" },
-                         %options,
-                       },
-        'extra_sql' => " AND $agentnums_sql", #agent virtualization
-      } )
-        if defined dbdef->table('cust_main')->column('ship_last');
+      my @hashrefs = (
+        { 'company'      => { op=>'ILIKE', value=>"%$value%" }, },
+        { 'ship_company' => { op=>'ILIKE', value=>"%$value%" }, },
+      );
+
+      if ( $first && $last ) {
+
+        push @hashrefs,
+          { 'first'        => { op=>'ILIKE', value=>"%$first%" },
+            'last'         => { op=>'ILIKE', value=>"%$last%" },
+          },
+          { 'ship_first'   => { op=>'ILIKE', value=>"%$first%" },
+            'ship_last'    => { op=>'ILIKE', value=>"%$last%" },
+          },
+        ;
+
+      } else {
+
+        push @hashrefs,
+          { 'last'         => { op=>'ILIKE', value=>"%$value%" }, },
+          { 'ship_last'    => { op=>'ILIKE', value=>"%$value%" }, },
+        ;
+      }
+
+      foreach my $hashref ( @hashrefs ) {
+
+        push @cust_main, qsearch( {
+          'table'     => 'cust_main',
+          'hashref'   => { %$hashref,
+                           %options,
+                         },
+          'extra_sql' => " AND $agentnums_sql", #agent virtualizaiton
+        } );
+
+      }
 
       #fuzzy
-      push @cust_main, FS::cust_main->fuzzy_search(
-        { 'last'     => $value }, #fuzzy hashref
+      my @fuzopts = (
         \%options,                #hashref
         '',                       #select
         " AND $agentnums_sql",    #extra_sql  #agent virtualization
       );
-      push @cust_main, FS::cust_main->fuzzy_search(
-        { 'company'  => $value }, #fuzzy hashref
-        \%options,                #hashref
-        '',                       #select
-        " AND $agentnums_sql",    #extra_sql  #agent virtualization
-      );
+
+      if ( $first && $last ) {
+        push @cust_main, FS::cust_main->fuzzy_search(
+          { 'last'   => $last,    #fuzzy hashref
+            'first'  => $first }, #
+          @fuzopts
+        );
+      }
+      foreach my $field ( 'last', 'company' ) {
+        push @cust_main,
+          FS::cust_main->fuzzy_search( { $field => $value }, @fuzopts );
+      }
 
     }
 
@@ -3986,10 +4103,12 @@ sub smart_search {
 
 =cut
 
+use vars qw(@fuzzyfields);
+@fuzzyfields = ( 'last', 'first', 'company' );
+
 sub check_and_rebuild_fuzzyfiles {
   my $dir = $FS::UID::conf_dir. "cache.". $FS::UID::datasrc;
-  -e "$dir/cust_main.last" && -e "$dir/cust_main.company"
-    or &rebuild_fuzzyfiles;
+  rebuild_fuzzyfiles() if grep { ! -e "$dir/cust_main.$_" } @fuzzyfields
 }
 
 =item rebuild_fuzzyfiles
@@ -4003,71 +4122,39 @@ sub rebuild_fuzzyfiles {
   my $dir = $FS::UID::conf_dir. "cache.". $FS::UID::datasrc;
   mkdir $dir, 0700 unless -d $dir;
 
-  #last
+  foreach my $fuzzy ( @fuzzyfields ) {
 
-  open(LASTLOCK,">>$dir/cust_main.last")
-    or die "can't open $dir/cust_main.last: $!";
-  flock(LASTLOCK,LOCK_EX)
-    or die "can't lock $dir/cust_main.last: $!";
-
-  my @all_last = map $_->getfield('last'), qsearch('cust_main', {});
-  push @all_last,
-                 grep $_, map $_->getfield('ship_last'), qsearch('cust_main',{})
-    if defined dbdef->table('cust_main')->column('ship_last');
-
-  open (LASTCACHE,">$dir/cust_main.last.tmp")
-    or die "can't open $dir/cust_main.last.tmp: $!";
-  print LASTCACHE join("\n", @all_last), "\n";
-  close LASTCACHE or die "can't close $dir/cust_main.last.tmp: $!";
-
-  rename "$dir/cust_main.last.tmp", "$dir/cust_main.last";
-  close LASTLOCK;
-
-  #company
-
-  open(COMPANYLOCK,">>$dir/cust_main.company")
-    or die "can't open $dir/cust_main.company: $!";
-  flock(COMPANYLOCK,LOCK_EX)
-    or die "can't lock $dir/cust_main.company: $!";
-
-  my @all_company = grep $_ ne '', map $_->company, qsearch('cust_main',{});
-  push @all_company,
-       grep $_ ne '', map $_->ship_company, qsearch('cust_main', {})
-    if defined dbdef->table('cust_main')->column('ship_last');
-
-  open (COMPANYCACHE,">$dir/cust_main.company.tmp")
-    or die "can't open $dir/cust_main.company.tmp: $!";
-  print COMPANYCACHE join("\n", @all_company), "\n";
-  close COMPANYCACHE or die "can't close $dir/cust_main.company.tmp: $!";
-
-  rename "$dir/cust_main.company.tmp", "$dir/cust_main.company";
-  close COMPANYLOCK;
+    open(LOCK,">>$dir/cust_main.$fuzzy")
+      or die "can't open $dir/cust_main.$fuzzy: $!";
+    flock(LOCK,LOCK_EX)
+      or die "can't lock $dir/cust_main.$fuzzy: $!";
+  
+    my @all = map $_->getfield($fuzzy), qsearch('cust_main', {});
+    push @all,
+      grep $_, map $_->getfield("ship_$fuzzy"), qsearch('cust_main',{});
+  
+    open (CACHE,">$dir/cust_main.$fuzzy.tmp")
+      or die "can't open $dir/cust_main.$fuzzy.tmp: $!";
+    print CACHE join("\n", @all), "\n";
+    close CACHE or die "can't close $dir/cust_main.$fuzzy.tmp: $!";
+  
+    rename "$dir/cust_main.$fuzzy.tmp", "$dir/cust_main.$fuzzy";
+    close LOCK;
+  }
 
 }
 
-=item all_last
+=item all_X
 
 =cut
 
-sub all_last {
+sub all_X {
+  my( $self, $field ) = @_;
   my $dir = $FS::UID::conf_dir. "cache.". $FS::UID::datasrc;
-  open(LASTCACHE,"<$dir/cust_main.last")
-    or die "can't open $dir/cust_main.last: $!";
-  my @array = map { chomp; $_; } <LASTCACHE>;
-  close LASTCACHE;
-  \@array;
-}
-
-=item all_company
-
-=cut
-
-sub all_company {
-  my $dir = $FS::UID::conf_dir. "cache.". $FS::UID::datasrc;
-  open(COMPANYCACHE,"<$dir/cust_main.company")
-    or die "can't open $dir/cust_main.last: $!";
-  my @array = map { chomp; $_; } <COMPANYCACHE>;
-  close COMPANYCACHE;
+  open(CACHE,"<$dir/cust_main.$field")
+    or die "can't open $dir/cust_main.$field: $!";
+  my @array = map { chomp; $_; } <CACHE>;
+  close CACHE;
   \@array;
 }
 

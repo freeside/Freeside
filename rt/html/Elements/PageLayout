@@ -52,7 +52,7 @@
 %#  </th>
       <span class="topactions">
 % my $notfirst = 0; foreach my $action (sort keys %{$topactions}) {
-        <td class="blackright" ALIGN="right" <% $notfirst++ ? '' : 'WIDTH="15%"' %>>
+        <td class="blackright" ALIGN="right" VALIGN="center">
         <%$topactions->{"$action"}->{'html'} |n %>
         </td>
 % }

@@ -46,10 +46,11 @@
 <form action="<% $RT::WebPath %>/index.html" STYLE="margin:0">
 <SCRIPT TYPE="text/javascript">
   function clearhint_search_ticket (what) {
-    if ( what.value = '(ticket # or subject string)' )
+    if ( what.value == '(ticket # or subject string)' )
       what.value = '';
   }
 </SCRIPT>
-<input name="q" accesskey="0" VALUE="(ticket # or subject string)" onFocus="clearhint_search_ticket(this);" onClick="clearhint_search_ticket(this);" STYLE="text-align:right">
-<input type="submit" value="<&|/l&>Search tickets</&>">&nbsp;
+<input name="q" accesskey="0" VALUE="(ticket # or subject string)" onFocus="clearhint_search_ticket(this);" onClick="clearhint_search_ticket(this);" STYLE="text-align:right; font-family: Arial, Verdana, Helvetica, sans-serif;"><BR>
+<A HREF="<% $RT::WebPath %>/Search/Build.html" STYLE="color: #ffffff; font-size: 70%; font-weight:normal">Advanced</A>
+<input type="submit" value="<&|/l&>Search tickets</&>" CLASS="fsblackbutton" onMouseOver="this.className='fsblackbuttonselected'; return true;" onMouseOut="this.className='fsblackbutton'; return true;" STYLE="font-size:70%;padding-left:2px;padding-right:2px">
 </form>

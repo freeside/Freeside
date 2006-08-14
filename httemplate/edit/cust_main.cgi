@@ -64,7 +64,9 @@ if ( $cgi->param('error') ) {
   @invoicing_list = ();
 }
 $cgi->delete_all();
+
 my $action = $custnum ? 'Edit' : 'Add';
+$action .= ": ". $cust_main->name if $custnum;
 
 my $r = qq!<font color="#ff0000">*</font>&nbsp;!;
 
@@ -139,7 +141,13 @@ if ( $cust_main->referral_custnum
 
   <TR>
     <TD ALIGN="right">Referring customer</TD>
-    <TD><INPUT TYPE="text" NAME="referral_custnum" VALUE=""></TD>
+    <TD>
+      <!-- <INPUT TYPE="text" NAME="referral_custnum" VALUE=""> -->
+      <%= include('/elements/search-cust_main.html',
+                    'field_name' => 'referral_custnum',
+                 )
+      %>
+    </TD>
   </TR>
 
 <% } else { %>

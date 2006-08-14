@@ -1,0 +1,163 @@
+<%
+  my( %opt ) = @_;
+  $opt{'field_name'} ||= 'custnum';
+
+  my $cust_main = '';
+  if ( $opt{'value'} ) {
+    $cust_main = qsearchs(
+      'table'     => 'cust_main',
+      'hashref'   => { 'custnum' => $opt{'value'} },
+      'extra_sql' => " AND ". $FS::CurrentUser::CurrentUser->agentnums_sql,
+    );
+  }
+%>
+
+<INPUT TYPE="hidden" NAME="<%= $opt{'field_name'} %>" VALUE="<%= $opt{'value'} %>">
+
+<!-- some false laziness w/ misc/batch-cust_pay.html, though not as bad as i'd thought at first... -->
+
+<INPUT TYPE="text" NAME="<%= $opt{'field_name'} %>_search" ID="<%= $opt{'field_name'} %>_search" SIZE="32" VALUE="<%= $cust_main ? $cust_main->name : '(cust #, name or company)' %>" onFocus="clearhint_<%= $opt{'field_name'} %>_search(this);" onClick="clearhint_<%= $opt{'field_name'} %>_search(this);" onChange="smart_<%= $opt{'field_name'} %>_search(this);">
+
+<SELECT NAME="<%= $opt{'field_name'} %>_select" ID="<%= $opt{'field_name'} %>_select" STYLE="color:#ff0000; display:none" onChange="select_<%= $opt{'field_name'} %>(this);">
+</SELECT>
+
+<%= include('/elements/xmlhttp.html',
+              'url'  => $p. 'misc/xmlhttp-cust_main-search.cgi',
+              'subs' => [ 'smart_search' ],
+           )
+%>
+
+<SCRIPT TYPE="text/javascript">
+
+  function clearhint_<%= $opt{'field_name'} %>_search (what) {
+
+    what.style.color = '#000000';
+
+    if ( what.value == '(cust #, name or company)' )
+      what.value = '';
+
+    if ( what.value.indexOf('Customer not found: ') == 0 )
+      what.value = what.value.substr(20);
+
+  }
+
+  function smart_<%= $opt{'field_name'} %>_search(what) {
+
+    var customer = what.value;
+
+    if ( customer == 'searching...' || customer == ''
+         || customer.indexOf('Customer not found: ') == 0 )
+      return;
+
+    if ( what.getAttribute('magic') == 'nosearch' ) {
+      what.setAttribute('magic', '');
+      return;
+    }
+
+    //what.value = 'searching...'
+    what.disabled = true;
+    what.style.color= '#000000';
+    what.style.backgroundColor = '#dddddd';
+
+    var customer_select = document.getElementById('<%= $opt{'field_name'} %>_select');
+
+    //alert("search for customer " + customer);
+
+    function <%= $opt{'field_name'} %>_search_update(customers) {
+
+      //alert('customers returned: ' + customers);
+
+      var customerArray = eval('(' + customers + ')');
+
+      what.disabled = false;
+      what.style.backgroundColor = '#ffffff';
+
+      if ( customerArray.length == 0 ) {
+
+        what.form.<%= $opt{'field_name'} %>.value = '';
+
+        what.value = 'Customer not found: ' + what.value;
+        what.style.color = '#ff0000';
+
+        what.style.display = '';
+        customer_select.style.display = 'none';
+
+      } else if ( customerArray.length == 1 ) {
+
+        //alert('one customer found: ' + customerArray[0]);
+
+        what.form.<%= $opt{'field_name'} %>.value = customerArray[0][0];
+        what.value = customerArray[0][1];
+
+        what.style.display = '';
+        customer_select.style.display = 'none';
+
+      } else {
+
+        //alert('multiple customers found, have to create select dropdown');
+
+        //blank the current list
+        for ( var i = customer_select.length; i >= 0; i-- )
+          customer_select.options[i] = null;
+
+        opt(customer_select, '', 'Multiple customers match "' + customer + '" - select one', '#ff0000');
+
+        //add the multiple customers
+        for ( var s = 0; s < customerArray.length; s++ )
+          opt(customer_select, customerArray[s][0], customerArray[s][1], '#000000');
+
+        opt(customer_select, 'cancel', '(Edit search string)', '#000000');
+
+        what.style.display = 'none';
+        customer_select.style.display = '';
+
+      }
+
+    }
+
+    smart_search( customer, <%= $opt{'field_name'} %>_search_update );
+
+
+  }
+
+  function select_<%= $opt{'field_name'} %> (what) {
+
+    var custnum = what.options[what.selectedIndex].value;
+    var customer = what.options[what.selectedIndex].text;
+
+    var customer_obj = document.getElementById('<%= $opt{'field_name'} %>_search');
+
+    if ( custnum == '' ) {
+      //what.style.color = '#ff0000';
+
+    } else if ( custnum == 'cancel' ) {
+
+      customer_obj.style.color = '#000000';
+
+      what.style.display = 'none';
+      customer_obj.style.display = '';
+      customer_obj.focus();
+
+    } else {
+    
+      what.form.<%= $opt{'field_name'} %>.value = custnum;
+
+      customer_obj.value = customer;
+      customer_obj.style.color = '#000000';
+
+      what.style.display = 'none';
+      customer_obj.style.display = '';
+
+    }
+
+  }
+
+  function opt(what,value,text,color) {
+    var optionName = new Option(text, value, false, false);
+    optionName.style.color = color;
+    var length = what.length;
+    what.options[length] = optionName;
+  }
+
+</SCRIPT>
+
