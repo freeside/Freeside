@@ -14,6 +14,21 @@
 and (now they're finally here)...
 - ACLs
 - Agent virtualization
+  - customers etc.
+  - most reports
+  - just advertising sources in the config so far
+- percentage late fees in addition to flat
+- voip work
+- "referring customer #" ajax-ified
+- top search box updated some more
+- view/cust_main:
+  - customer status and balance displayed up top
+  - all the tables (tickets, packages, payment history) are grid-ified
+  - payment history only shows N years of history with link to show more
+  - simple payment actions are js popups
+  - configurable statuses and # of tickets for ticket list
+- edit/cust_main:
+  - magic ajax search box for referring customer
 
 -------- some of the above, nicely:
 
