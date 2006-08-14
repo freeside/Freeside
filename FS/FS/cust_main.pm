@@ -2850,6 +2850,22 @@ sub realtime_refund_bop {
     $payname =  "$payfirst $paylast";
   }
 
+  my @invoicing_list = grep { $_ ne 'POST' } $self->invoicing_list;
+  if ( $conf->exists('emailinvoiceauto')
+       || ( $conf->exists('emailinvoiceonly') && ! @invoicing_list ) ) {
+    push @invoicing_list, $self->all_emails;
+  }
+
+  my $email = ($conf->exists('business-onlinepayment-email-override'))
+              ? $conf->config('business-onlinepayment-email-override')
+              : $invoicing_list[0];
+
+  my $payip = exists($options{'payip'})
+                ? $options{'payip'}
+                : $self->payip;
+  $content{customer_ip} = $payip
+    if length($payip);
+
   my $payinfo = '';
   if ( $method eq 'CC' ) {
 
@@ -2888,6 +2904,8 @@ sub realtime_refund_bop {
     'state'          => $self->state,
     'zip'            => $self->zip,
     'country'        => $self->country,
+    'email'          => $email,
+    'phone'          => $self->daytime || $self->night,
     %content, #after
   );
   warn join('', map { "  $_ => $sub_content{$_}\n" } keys %sub_content )
