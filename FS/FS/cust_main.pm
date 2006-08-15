@@ -4230,9 +4230,33 @@ sub batch_import {
   #warn join('-',keys %$param);
   my $fh = $param->{filehandle};
   my $agentnum = $param->{agentnum};
+
   my $refnum = $param->{refnum};
   my $pkgpart = $param->{pkgpart};
-  my @fields = @{$param->{fields}};
+
+  #my @fields = @{$param->{fields}};
+  my $format = $param->{'format'};
+  my @fields;
+  my $payby;
+  if ( $format eq 'simple' ) {
+    @fields = qw( cust_pkg.setup dayphone first last
+                  address1 address2 city state zip comments );
+    $payby = 'BILL';
+  } elsif ( $format eq 'extended' ) {
+    @fields = qw( agent_custid refnum
+                  last first address1 address2 city state zip country
+                  daytime night
+                  ship_last ship_first ship_address1 ship_address2
+                  ship_city ship_state ship_zip ship_country
+                  payinfo paycvv paydate
+                  invoicing_list
+                  cust_pkg.pkgpart
+                  svc_acct.username svc_acct._password 
+                );
+    $payby = 'CARD';
+  } else {
+    die "unknown format $format";
+  }
 
   eval "use Text::CSV_XS;";
   die $@ if $@;
@@ -4271,51 +4295,99 @@ sub batch_import {
       agentnum => $agentnum,
       refnum   => $refnum,
       country  => $conf->config('countrydefault') || 'US',
-      payby    => 'BILL', #default
+      payby    => $payby, #default
       paydate  => '12/2037', #default
     );
     my $billtime = time;
     my %cust_pkg = ( pkgpart => $pkgpart );
+    my %svc_acct = ();
     foreach my $field ( @fields ) {
-      if ( $field =~ /^cust_pkg\.(setup|bill|susp|expire|cancel)$/ ) {
+
+      if ( $field =~ /^cust_pkg\.(pkgpart|setup|bill|susp|expire|cancel)$/ ) {
+
         #$cust_pkg{$1} = str2time( shift @$columns );
-        if ( $1 eq 'setup' ) {
+        if ( $1 eq 'pkgpart' ) {
+          $cust_pkg{$1} = shift @columns;
+        } elsif ( $1 eq 'setup' ) {
           $billtime = str2time(shift @columns);
         } else {
           $cust_pkg{$1} = str2time( shift @columns );
-        }
+        } 
+
+      } elsif ( $field =~ /^svc_acct\.(username|_password)$/ ) {
+
+        $svc_acct{$1} = shift @columns;
+        
       } else {
+
+        #refnum interception
+        if ( $field eq 'refnum' && $columns[0] !~ /^\s*(\d+)\s*$/ ) {
+
+          my $referral = $columns[0];
+          my $part_referral = new FS::part_referral {
+            'referral' => $referral,
+            'agentnum' => $agentnum,
+          };
+
+          my $error = $part_referral->insert;
+          if ( $error ) {
+            $dbh->rollback if $oldAutoCommit;
+            return "can't auto-insert advertising source: $referral: $error";
+          }
+          $columns[0] = $part_referral->refnum;
+        }
+
         #$cust_main{$field} = shift @$columns; 
         $cust_main{$field} = shift @columns; 
       }
     }
 
-    my $cust_pkg = new FS::cust_pkg ( \%cust_pkg ) if $pkgpart;
+    my $invoicing_list = $cust_main{'invoicing_list'}
+                           ? [ delete $cust_main{'invoicing_list'} ]
+                           : [];
+
     my $cust_main = new FS::cust_main ( \%cust_main );
+
     use Tie::RefHash;
     tie my %hash, 'Tie::RefHash'; #this part is important
-    $hash{$cust_pkg} = [] if $pkgpart;
-    my $error = $cust_main->insert( \%hash );
+
+    if ( $cust_pkg{'pkgpart'} ) {
+      my $cust_pkg = new FS::cust_pkg ( \%cust_pkg );
+
+      my @svc_acct = ();
+      if ( $svc_acct{'username'} ) {
+        $svc_acct{svcpart} = $cust_pkg->part_pkg->svcpart( 'svc_acct' );
+        push @svc_acct, new FS::svc_acct ( \%svc_acct )
+      }
+
+      $hash{$cust_pkg} = \@svc_acct;
+    }
+
+    my $error = $cust_main->insert( \%hash, $invoicing_list );
 
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return "can't insert customer for $line: $error";
     }
 
-    #false laziness w/bill.cgi
-    $error = $cust_main->bill( 'time' => $billtime );
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return "can't bill customer for $line: $error";
-    }
+    if ( $format eq 'simple' ) {
 
-    $cust_main->apply_payments;
-    $cust_main->apply_credits;
+      #false laziness w/bill.cgi
+      $error = $cust_main->bill( 'time' => $billtime );
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "can't bill customer for $line: $error";
+      }
+  
+      $cust_main->apply_payments;
+      $cust_main->apply_credits;
+  
+      $error = $cust_main->collect();
+      if ( $error ) {
+        $dbh->rollback if $oldAutoCommit;
+        return "can't collect customer for $line: $error";
+      }
 
-    $error = $cust_main->collect();
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return "can't collect customer for $line: $error";
     }
 
     $imported++;
