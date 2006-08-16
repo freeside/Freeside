@@ -27,7 +27,7 @@ if ( $opt_h ) {
   push @args, '-c' if $opt_c;
   push @args, $opt_h, $user;
   push @args, shift if $opt_b;
-  warn join(', ', 'htpasswd', @args)."\n";
+  #warn join(', ', @args)."\n";
   system(@args) == 0 or die "htpasswd failed: $?";
 }
 
