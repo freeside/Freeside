@@ -476,10 +476,10 @@ sub start_copy_skel {
   my $self = shift;
 
   #'mg_user_preference' => {},
-  #'mg_user_indicator_profile' => { 'mg_profile_indicator' => { 'mg_profile_details' }, },
-  #'mg_watchlist_header' => { 'mg_watchlist_details' },
-  #'mg_user_grid_header' => { 'mg_user_grid_details' },
-  #'mg_portfolio_header' => { 'mg_portfolio_trades' => { 'mg_portfolio_trades_positions' } },
+  #'mg_user_indicator_profile.user_indicator_profile_id' => { 'mg_profile_indicator.profile_indicator_id' => { 'mg_profile_details.profile_detail_id' }, },
+  #'mg_watchlist_header.watchlist_header_id' => { 'mg_watchlist_details.watchlist_details_id' },
+  #'mg_user_grid_header.grid_header_id' => { 'mg_user_grid_details.user_grid_details_id' },
+  #'mg_portfolio_header.portfolio_header_id' => { 'mg_portfolio_trades.portfolio_trades_id' => { 'mg_portfolio_trades_positions.portfolio_trades_positions_id' } },
   my @tables = eval($conf->config_binary('cust_main-skeleton_tables'));
   die $@ if $@;
 
@@ -494,25 +494,40 @@ sub start_copy_skel {
 sub _copy_skel {
   my( $table, $sourceid, $destid, %child_tables ) = @_;
 
-  my $dbdef_table = dbdef->table($table);
-  my $primary_key = $dbdef_table->primary_key
-    or return "$table has no primary key".
-              " (or do you need to run dbdef-create?)";
+  my $primary_key;
+  if ( $table =~ /^(\w+)\.(\w+)$/ ) {
+    ( $table, $primary_key ) = ( $1, $2 );
+  } else {
+    my $dbdef_table = dbdef->table($table);
+    $primary_key = $dbdef_table->primary_key
+      or return "$table has no primary key".
+                " (or do you need to run dbdef-create?)";
+  }
 
   warn "  _copy_skel: $table.$primary_key $sourceid to $destid for ".
        join (', ', keys %child_tables). "\n"
     if $DEBUG > 2;
 
-  foreach my $child_table ( keys %child_tables ) {
+  foreach my $child_table_def ( keys %child_tables ) {
 
-    my $child_pkey = dbdef->table($child_table)->primary_key;
-    #  or return "$table has no primary key".
-    #            " (or do you need to run dbdef-create?)\n";
+    my $child_table;
+    my $child_pkey = '';
+    if ( $child_table =~ /^(\w+)\.(\w+)$/ ) {
+      ( $child_table, $child_pkey ) = ( $1, $2 );
+    } else {
+      $child_table = $child_table_def;
+
+      $child_pkey = dbdef->table($child_table)->primary_key;
+      #  or return "$table has no primary key".
+      #            " (or do you need to run dbdef-create?)\n";
+    }
+
     my $sequence = '';
     if ( keys %{ $child_tables{$child_table} } ) {
 
       return "$child_table has no primary key".
-             " (or do you need to run dbdef-create?)\n" unless $child_pkey;
+             " (run dbdef-create or try specifying it?)\n"
+        unless $child_pkey;
 
       #false laziness w/Record::insert and only works on Pg
       #refactor the proper last-inserted-id stuff out of Record::insert if this
@@ -572,7 +587,7 @@ sub _copy_skel {
         _copy_skel( $child_table,
                     $row->{$child_pkey}, #sourceid
                     $insertid, #destid
-                    %{ $child_tables{$child_table} },
+                    %{ $child_tables{$child_table_def} },
                   );
       return $error if $error;
 
