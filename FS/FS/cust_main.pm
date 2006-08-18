@@ -480,7 +480,7 @@ sub start_copy_skel {
   #'mg_watchlist_header' => { 'mg_watchlist_details' },
   #'mg_user_grid_header' => { 'mg_user_grid_details' },
   #'mg_portfolio_header' => { 'mg_portfolio_trades' => { 'mg_portfolio_trades_positions' } },
-  my @tables = eval($conf->config('cust_main-skeleton_tables'));
+  my @tables = eval($conf->config_binary('cust_main-skeleton_tables'));
   die $@ if $@;
 
   _copy_skel( 'cust_main',                                 #tablename
