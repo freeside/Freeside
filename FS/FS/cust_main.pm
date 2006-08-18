@@ -523,7 +523,7 @@ sub _copy_skel {
     }
 
     my $sequence = '';
-    if ( keys %{ $child_tables{$child_table} } ) {
+    if ( keys %{ $child_tables{$child_table_def} } ) {
 
       return "$child_table has no primary key".
              " (run dbdef-create or try specifying it?)\n"
