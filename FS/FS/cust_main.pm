@@ -540,6 +540,10 @@ sub _copy_skel {
 
     while ( my $row = $sel_sth->fetchrow_hashref ) {
 
+      warn "    selected row: ".
+           join(', ', map { "$_=".$row->{$_} } keys %$row ). "\n"
+        if $DEBUG > 2;
+
       my $statement =
         "INSERT INTO $child_table $ins_columns VALUES $placeholders";
       my $ins_sth =dbh->prepare($statement)
