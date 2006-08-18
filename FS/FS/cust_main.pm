@@ -512,7 +512,7 @@ sub _copy_skel {
 
     my $child_table;
     my $child_pkey = '';
-    if ( $child_table =~ /^(\w+)\.(\w+)$/ ) {
+    if ( $child_table_def =~ /^(\w+)\.(\w+)$/ ) {
       ( $child_table, $child_pkey ) = ( $1, $2 );
     } else {
       $child_table = $child_table_def;
