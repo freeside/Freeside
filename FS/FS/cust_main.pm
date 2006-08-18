@@ -532,8 +532,11 @@ sub _copy_skel {
     my $ins_columns = ' ( '. join(', ', $primary_key, @ins_columns ). ' ) ';
     my $placeholders = ' ( ?, '. join(', ', map '?', @ins_columns ). ' ) ';
 
-    my $sel_sth = dbh->prepare( "SELECT $sel_columns FROM $child_table".
-                                " WHERE $primary_key = $sourceid")
+    my $sel_st = "SELECT $sel_columns FROM $child_table".
+                 " WHERE $primary_key = $sourceid";
+    warn "    $sel_st\n"
+      if $DEBUG > 2;
+    my $sel_sth = dbh->prepare( $sel_st )
       or return dbh->errstr;
   
     $sel_sth->execute or return $sel_sth->errstr;
