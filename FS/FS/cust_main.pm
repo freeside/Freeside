@@ -584,7 +584,7 @@ sub _copy_skel {
   
       # don't drink soap!  recurse!  recurse!  okay!
       my $error =
-        _copy_skel( $child_table,
+        _copy_skel( $child_table_def,
                     $row->{$child_pkey}, #sourceid
                     $insertid, #destid
                     %{ $child_tables{$child_table_def} },
