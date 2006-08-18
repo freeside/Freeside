@@ -511,7 +511,8 @@ sub _copy_skel {
     my $sequence = '';
     if ( keys %{ $child_tables{$child_table} } ) {
 
-      return "$child_table has no primary key\n" unless $child_pkey;
+      return "$child_table has no primary key".
+             " (or do you need to run dbdef-create?)\n" unless $child_pkey;
 
       #false laziness w/Record::insert and only works on Pg
       #refactor the proper last-inserted-id stuff out of Record::insert if this
