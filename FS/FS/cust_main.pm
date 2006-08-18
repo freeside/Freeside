@@ -416,6 +416,20 @@ sub insert {
     $self->invoicing_list( $invoicing_list );
   }
 
+  if (    $conf->config('cust_main-skeleton_tables')
+       && $conf->config('cust_main-skeleton_custnum') ) {
+
+    warn "  inserting skeleton records\n"
+      if $DEBUG > 1;
+
+    my $error = $self->start_copy_skel;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+
+  }
+
   warn "  ordering packages\n"
     if $DEBUG > 1;
 
@@ -455,6 +469,102 @@ sub insert {
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
+
+}
+
+sub start_copy_skel {
+  my $self = shift;
+
+  #'mg_user_preference' => {},
+  #'mg_user_indicator_profile' => { 'mg_profile_indicator' => { 'mg_profile_details' }, },
+  #'mg_watchlist_header' => { 'mg_watchlist_details' },
+  #'mg_user_grid_header' => { 'mg_user_grid_details' },
+  #'mg_portfolio_header' => { 'mg_portfolio_trades' => { 'mg_portfolio_trades_positions' } },
+  my @tables = eval($conf->config('cust_main-skeleton_tables'));
+  die $@ if $@;
+
+  _copy_skel( 'cust_main',                                 #tablename
+              $conf->config('cust_main-skeleton_custnum'), #sourceid
+              $self->custnum,                              #destid
+              @tables,                                     #child tables
+            );
+}
+
+#recursive subroutine, not a method
+sub _copy_skel {
+  my( $table, $sourceid, $destid, %child_tables ) = @_;
+
+  my $dbdef_table = dbdef->table($table);
+  my $primary_key = $dbdef_table->primary_key
+    or return "$table has no primary key".
+              " (or do you need to run dbdef-create?)";
+
+  foreach my $child_table ( keys %child_tables ) {
+
+    my $child_pkey = dbdef->table($child_table)->primary_key;
+    #  or return "$table has no primary key".
+    #            " (or do you need to run dbdef-create?)\n";
+    my $sequence = '';
+    if ( keys %{ $child_tables{$child_table} } ) {
+
+      return "$child_table has no primary key\n" unless $child_pkey;
+
+      #false laziness w/Record::insert and only works on Pg
+      #refactor the proper last-inserted-id stuff out of Record::insert if this
+      # ever gets use for anything besides a quick kludge for one customer
+      my $default = dbdef->table($child_table)->column($child_pkey)->default;
+      $default =~ /^nextval\(\(?'"?([\w\.]+)"?'/i
+        or return "can't parse $child_table.$child_pkey default value ".
+                  " for sequence name: $default";
+      $sequence = $1;
+
+    }
+  
+    my @sel_columns = grep { $_ ne $primary_key } dbdef->table($table)->columns;
+    my $sel_columns = ' ( '. join(', ', @sel_columns ). ' ) ';
+
+    my @ins_columns = grep { $_ ne $child_pkey } @sel_columns;
+    my $ins_columns = ' ( ', join(', ', $primary_key, @ins_columns ). ' ) ', 
+    my $placeholders = ' ( ?, '. join(', ', map '?', @ins_columns ). ' ) ';
+
+    my $sel_sth = dbh->prepare( "SELECT $sel_columns FROM $child_table".
+                                " WHERE $primary_key = $sourceid")
+      or return dbh->errstr;
+  
+    $sel_sth->execute or return $sel_sth->errstr;
+
+    while ( my $row = $sel_sth->fetchrow_hashref ) {
+
+      my $ins_sth =
+        dbh->prepare("INSERT INTO $child_table $ins_columns".
+                     " VALUES $placeholders")
+          or return dbh->errstr;
+      $ins_sth->execute( $destid, map $row->{$_}, @ins_columns )
+        or return $ins_sth->errstr;
+
+      #next unless keys %{ $child_tables{$child_table} };
+      next unless $sequence;
+      
+      #another section of that laziness
+      my $seq_sql = "SELECT currval('$sequence')";
+      my $seq_sth = dbh->prepare($seq_sql) or return dbh->errstr;
+      $seq_sth->execute or return $seq_sth->errstr;
+      my $insertid = $seq_sth->fetchrow_arrayref->[0];
+  
+      # don't drink soap!  recurse!  recurse!  okay!
+      my $error =
+        _copy_skel( $child_table,
+                    $row->{$child_pkey}, #sourceid
+                    $insertid, #destid
+                    %{ $child_tables{$child_table} },
+                  );
+      return $error if $error;
+
+    }
+
+  }
+
+  return '';
 
 }
 
@@ -1023,15 +1133,19 @@ sub queue_fuzzyfiles_update {
   my $dbh = dbh;
 
   my $queue = new FS::queue { 'job' => 'FS::cust_main::append_fuzzyfiles' };
-  my $error = $queue->insert($self->getfield('last'), $self->company);
+  my $error = $queue->insert( map $self->getfield($_),
+                                  qw(first last company)
+                            );
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return "queueing job (transaction rolled back): $error";
   }
 
-  if ( defined $self->dbdef_table->column('ship_last') && $self->ship_last ) {
+  if ( $self->ship_last ) {
     $queue = new FS::queue { 'job' => 'FS::cust_main::append_fuzzyfiles' };
-    $error = $queue->insert($self->getfield('ship_last'), $self->ship_company);
+    $error = $queue->insert( map $self->getfield("ship_$_"),
+                                 qw(first last company)
+                           );
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return "queueing job (transaction rolled back): $error";
@@ -4146,14 +4260,21 @@ sub rebuild_fuzzyfiles {
       or die "can't open $dir/cust_main.$fuzzy: $!";
     flock(LOCK,LOCK_EX)
       or die "can't lock $dir/cust_main.$fuzzy: $!";
-  
-    my @all = map $_->getfield($fuzzy), qsearch('cust_main', {});
-    push @all,
-      grep $_, map $_->getfield("ship_$fuzzy"), qsearch('cust_main',{});
-  
+
     open (CACHE,">$dir/cust_main.$fuzzy.tmp")
       or die "can't open $dir/cust_main.$fuzzy.tmp: $!";
-    print CACHE join("\n", @all), "\n";
+
+    foreach my $field ( $fuzzy, "ship_$fuzzy" ) {
+      my $sth = dbh->prepare("SELECT $field FROM cust_main".
+                             " WHERE $field != '' AND $field IS NOT NULL");
+      $sth->execute or die $sth->errstr;
+
+      while ( my $row = $sth->fetchrow_arrayref ) {
+        print CACHE $row->[0]. "\n";
+      }
+
+    } 
+
     close CACHE or die "can't close $dir/cust_main.$fuzzy.tmp: $!";
   
     rename "$dir/cust_main.$fuzzy.tmp", "$dir/cust_main.$fuzzy";
@@ -4181,7 +4302,7 @@ sub all_X {
 =cut
 
 sub append_fuzzyfiles {
-  my( $last, $company ) = @_;
+  #my( $first, $last, $company ) = @_;
 
   &check_and_rebuild_fuzzyfiles;
 
@@ -4189,33 +4310,23 @@ sub append_fuzzyfiles {
 
   my $dir = $FS::UID::conf_dir. "cache.". $FS::UID::datasrc;
 
-  if ( $last ) {
+  foreach my $field (qw( first last company )) {
+    my $value = shift;
 
-    open(LAST,">>$dir/cust_main.last")
-      or die "can't open $dir/cust_main.last: $!";
-    flock(LAST,LOCK_EX)
-      or die "can't lock $dir/cust_main.last: $!";
+    if ( $value ) {
 
-    print LAST "$last\n";
+      open(CACHE,">>$dir/cust_main.$field")
+        or die "can't open $dir/cust_main.$field: $!";
+      flock(CACHE,LOCK_EX)
+        or die "can't lock $dir/cust_main.$field: $!";
 
-    flock(LAST,LOCK_UN)
-      or die "can't unlock $dir/cust_main.last: $!";
-    close LAST;
-  }
+      print CACHE "$value\n";
 
-  if ( $company ) {
+      flock(CACHE,LOCK_UN)
+        or die "can't unlock $dir/cust_main.$field: $!";
+      close CACHE;
+    }
 
-    open(COMPANY,">>$dir/cust_main.company")
-      or die "can't open $dir/cust_main.company: $!";
-    flock(COMPANY,LOCK_EX)
-      or die "can't lock $dir/cust_main.company: $!";
-
-    print COMPANY "$company\n";
-
-    flock(COMPANY,LOCK_UN)
-      or die "can't unlock $dir/cust_main.company: $!";
-
-    close COMPANY;
   }
 
   1;
