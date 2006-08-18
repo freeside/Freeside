@@ -4395,7 +4395,7 @@ sub batch_import {
                   cust_pkg.pkgpart
                   svc_acct.username svc_acct._password 
                 );
-    $payby = 'CARD';
+    $payby = 'BILL';
   } else {
     die "unknown format $format";
   }
@@ -4483,6 +4483,8 @@ sub batch_import {
         $cust_main{$field} = shift @columns; 
       }
     }
+
+    $cust_main{'payby'} = 'CARD' if length($cust_main{'payinfo'});
 
     my $invoicing_list = $cust_main{'invoicing_list'}
                            ? [ delete $cust_main{'invoicing_list'} ]
