@@ -540,11 +540,14 @@ sub _copy_skel {
 
     while ( my $row = $sel_sth->fetchrow_hashref ) {
 
-      my $ins_sth =
-        dbh->prepare("INSERT INTO $child_table $ins_columns".
-                     " VALUES $placeholders")
+      my $statement =
+        "INSERT INTO $child_table $ins_columns VALUES $placeholders";
+      my $ins_sth =dbh->prepare($statement)
           or return dbh->errstr;
-      $ins_sth->execute( $destid, map $row->{$_}, @ins_columns )
+      my @param = ( $destid, map $row->{$_}, @ins_columns );
+      warn "    $statement: [ ". join(', ', @param). " ]\n"
+        if $DEBUG > 2;
+      $ins_sth->execute( @param )
         or return $ins_sth->errstr;
 
       #next unless keys %{ $child_tables{$child_table} };
