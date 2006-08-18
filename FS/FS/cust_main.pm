@@ -499,6 +499,10 @@ sub _copy_skel {
     or return "$table has no primary key".
               " (or do you need to run dbdef-create?)";
 
+  warn "  _copy_skel: $table.$primary_key $sourceid to $destid for ".
+       join (', ', keys %child_tables). "\n"
+    if $DEBUG > 2;
+
   foreach my $child_table ( keys %child_tables ) {
 
     my $child_pkey = dbdef->table($child_table)->primary_key;
