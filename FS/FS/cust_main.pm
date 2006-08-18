@@ -526,7 +526,7 @@ sub _copy_skel {
   
     my @sel_columns = grep { $_ ne $primary_key }
                            dbdef->table($child_table)->columns;
-    my $sel_columns = ' ( '. join(', ', @sel_columns ). ' ) ';
+    my $sel_columns = join(', ', @sel_columns );
 
     my @ins_columns = grep { $_ ne $child_pkey } @sel_columns;
     my $ins_columns = ' ( '. join(', ', $primary_key, @ins_columns ). ' ) ';
