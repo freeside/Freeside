@@ -529,7 +529,7 @@ sub _copy_skel {
     my $sel_columns = ' ( '. join(', ', @sel_columns ). ' ) ';
 
     my @ins_columns = grep { $_ ne $child_pkey } @sel_columns;
-    my $ins_columns = ' ( ', join(', ', $primary_key, @ins_columns ). ' ) ', 
+    my $ins_columns = ' ( '. join(', ', $primary_key, @ins_columns ). ' ) ';
     my $placeholders = ' ( ?, '. join(', ', map '?', @ins_columns ). ' ) ';
 
     my $sel_sth = dbh->prepare( "SELECT $sel_columns FROM $child_table".
