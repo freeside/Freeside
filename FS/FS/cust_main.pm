@@ -4466,16 +4466,21 @@ sub batch_import {
         if ( $field eq 'refnum' && $columns[0] !~ /^\s*(\d+)\s*$/ ) {
 
           my $referral = $columns[0];
-          my $part_referral = new FS::part_referral {
-            'referral' => $referral,
-            'agentnum' => $agentnum,
-          };
+          my %hash = ( 'referral' => $referral,
+                       'agentnum' => $agentnum,
+                     );
 
-          my $error = $part_referral->insert;
-          if ( $error ) {
-            $dbh->rollback if $oldAutoCommit;
-            return "can't auto-insert advertising source: $referral: $error";
+          my $part_referral = qsearchs('part_referral', \%hash )
+                              || new FS::part_referral \%hash;
+
+          unless ( $part_referral->refnum ) {
+            my $error = $part_referral->insert;
+            if ( $error ) {
+              $dbh->rollback if $oldAutoCommit;
+              return "can't auto-insert advertising source: $referral: $error";
+            }
           }
+
           $columns[0] = $part_referral->refnum;
         }
 
