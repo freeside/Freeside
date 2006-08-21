@@ -4,12 +4,11 @@ use strict;
 use vars qw( @ISA $conf );
 use FS::UID qw( getotaker );
 use FS::Record qw( qsearch qsearchs );
-use FS::cust_main;
-#use FS::cust_refund;
-use FS::cust_credit;
+use FS::cust_bill_ApplicationCommon;
 use FS::cust_bill;
+use FS::cust_credit;
 
-@ISA = qw( FS::Record );
+@ISA = qw( FS::cust_bill_ApplicationCommon );
 
 #ask FS::UID to run this stuff for us later
 FS::UID->install_callback( sub { 
@@ -39,7 +38,8 @@ FS::cust_credit_bill - Object methods for cust_credit_bill records
 
 An FS::cust_credit_bill object represents application of a credit (see
 L<FS::cust_credit>) to an invoice (see L<FS::cust_bill>).  FS::cust_credit_bill
-inherits from FS::Record.  The following fields are currently supported:
+inherits from FS::cust_bill_ApplicationCommon and FS::Record.  The following
+fields are currently supported:
 
 =over 4
 
@@ -69,6 +69,10 @@ see L<"insert">.
 
 sub table { 'cust_credit_bill'; }
 
+sub _app_source_name  { 'credit'; }
+sub _app_source_table { 'cust_credit'; }
+sub _app_lineitem_breakdown_table { 'cust_credit_bill_pkg'; }
+
 =item insert
 
 Adds this cust_credit_bill to the database ("Posts" all or part of a credit).
@@ -84,6 +88,8 @@ sub delete {
   my $self = shift;
   return "Can't delete application for closed credit"
     if $self->cust_credit->closed =~ /^Y/i;
+  return "Can't delete application for closed invoice"
+    if $self->cust_bill->closed =~ /^Y/i;
   $self->SUPER::delete(@_);
 }
 
@@ -110,8 +116,8 @@ sub check {
 
   my $error =
     $self->ut_numbern('creditbillnum')
-    || $self->ut_number('crednum')
-    || $self->ut_number('invnum')
+    || $self->ut_foreign_key('crednum', 'cust_credit', 'crednum')
+    || $self->ut_foreign_key('invnum', 'cust_bill', 'invnum' )
     || $self->ut_numbern('_date')
     || $self->ut_money('amount')
   ;
@@ -119,21 +125,13 @@ sub check {
 
   return "amount must be > 0" if $self->amount <= 0;
 
-  return "Unknown credit"
-    unless my $cust_credit = 
-      qsearchs( 'cust_credit', { 'crednum' => $self->crednum } );
-
-  return "Unknown invoice"
-    unless my $cust_bill =
-      qsearchs( 'cust_bill', { 'invnum' => $self->invnum } );
-
   $self->_date(time) unless $self->_date;
 
   return "Cannot apply more than remaining value of credit"
-    unless $self->amount <= $cust_credit->credited;
+    unless $self->amount <= $self->cust_credit->credited;
 
   return "Cannot apply more than remaining value of invoice"
-    unless $self->amount <= $cust_bill->owed;
+    unless $self->amount <= $self->cust_bill->owed;
 
   $self->SUPER::check;
 }
@@ -149,26 +147,17 @@ sub cust_credit {
   qsearchs( 'cust_credit', { 'crednum' => $self->crednum } );
 }
 
-=item cust_bill 
-
-Returns the invoice (see L<FS::cust_bill>)
-
-=cut
-
-sub cust_bill {
-  my $self = shift;
-  qsearchs( 'cust_bill', { 'invnum' => $self->invnum } );
-}
-
 =back
 
 =head1 BUGS
 
 The delete method.
 
+This probably should have been called cust_bill_credit.
+
 =head1 SEE ALSO
 
-L<FS::Record>, L<FS::cust_refund>, L<FS::cust_bill>, L<FS::cust_credit>,
+L<FS::Record>, L<FS::cust_bill>, L<FS::cust_credit>,
 schema.html from the base documentation.
 
 =cut

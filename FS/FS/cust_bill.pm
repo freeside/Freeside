@@ -225,6 +225,33 @@ sub cust_bill_pkg {
   qsearch( 'cust_bill_pkg', { 'invnum' => $self->invnum } );
 }
 
+=item open_cust_bill_pkg
+
+Returns the open line items for this invoice.
+
+Note that cust_bill_pkg with both setup and recur fees are returned as two
+separate line items, each with only one fee.
+
+=cut
+
+# modeled after cust_main::open_cust_bill
+sub open_cust_bill_pkg {
+  my $self = shift;
+
+  # grep { $_->owed > 0 } $self->cust_bill_pkg
+
+  my %other = ( 'recur' => 'setup',
+                'setup' => 'recur', );
+  my @open = ();
+  foreach my $field ( qw( recur setup )) {
+    push @open, map  { $_->set( $other{$field}, 0 ); $_; }
+                grep { $_->owed($field) > 0 }
+                $self->cust_bill_pkg;
+  }
+
+  @open;
+}
+
 =item cust_bill_event
 
 Returns the completed invoice events (see L<FS::cust_bill_event>) for this

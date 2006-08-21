@@ -390,6 +390,19 @@ sub tables_hashref {
       'index' => [ ['crednum'], ['invnum'] ],
     },
 
+    'cust_credit_bill_pkg' => {
+      'columns' => [
+        'creditbillpkgnum', 'serial', '',      '', '', '',
+        'creditbillnum',       'int', '',      '', '', '',
+        'billpkgnum',          'int', '',      '', '', '',
+        'amount',            @money_type,          '', '',
+        'setuprecur',      'varchar', '', $char_d, '', '',
+      ],
+      'primary_key' => 'creditbillpkgnum',
+      'unique'      => [],
+      'index'       => [ [ 'creditbillnum' ], [ 'billpkgnum' ], ],
+    },
+
     'cust_main' => {
       'columns' => [
         'custnum',  'serial',  '',     '', '', '', 
@@ -538,6 +551,19 @@ sub tables_hashref {
       'primary_key' => 'billpaynum',
       'unique' => [],
       'index' => [ [ 'paynum' ], [ 'invnum' ] ],
+    },
+
+    'cust_bill_pay_pkg' => {
+      'columns' => [
+        'billpaypkgnum', 'serial', '', '', '', '',
+        'billpaynum',       'int', '', '', '', '',
+        'billpkgnum',       'int', '', '', '', '',
+        'amount',         @money_type,     '', '',
+        'setuprecur',      'varchar', '', $char_d, '', '',
+      ],
+      'primary_key' => 'billpaypkgnum',
+      'unique'      => [],
+      'index'       => [ [ 'billpaynum' ], [ 'billpkgnum' ], ],
     },
 
     'pay_batch' => { #batches of payments to an external processor

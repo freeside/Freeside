@@ -2,11 +2,12 @@ package FS::cust_bill_pay;
 
 use strict;
 use vars qw( @ISA $conf );
-use FS::Record qw( qsearch qsearchs dbh );
+use FS::Record qw( qsearchs );
+use FS::cust_bill_ApplicationCommon;
 use FS::cust_bill;
 use FS::cust_pay;
 
-@ISA = qw( FS::Record );
+@ISA = qw( FS::cust_bill_ApplicationCommon );
 
 #ask FS::UID to run this stuff for us later
 FS::UID->install_callback( sub { 
@@ -35,8 +36,9 @@ FS::cust_bill_pay - Object methods for cust_bill_pay records
 =head1 DESCRIPTION
 
 An FS::cust_bill_pay object represents the application of a payment to a
-specific invoice.  FS::cust_bill_pay inherits from FS::Record.  The following
-fields are currently supported:
+specific invoice.  FS::cust_bill_pay inherits from
+FS::cust_bill_ApplicationCommon and FS::Record.  The following fields are
+currently supported:
 
 =over 4
 
@@ -65,6 +67,10 @@ Creates a new record.  To add the record to the database, see L<"insert">.
 
 sub table { 'cust_bill_pay'; }
 
+sub _app_source_name   { 'payment'; }
+sub _app_source_table { 'cust_pay'; }
+sub _app_lineitem_breakdown_table { 'cust_bill_pay_pkg'; }
+
 =item insert
 
 Adds this record to the database.  If there is an error, returns the error,
@@ -81,6 +87,8 @@ sub delete {
   my $self = shift;
   return "Can't delete application for closed payment"
     if $self->cust_pay->closed =~ /^Y/i;
+  return "Can't delete application for closed invoice"
+    if $self->cust_bill->closed =~ /^Y/i;
   $self->SUPER::delete(@_);
 }
 
@@ -91,13 +99,14 @@ Currently unimplemented (accounting reasons).
 =cut
 
 sub replace {
-   return "Can't (yet?) modify cust_bill_pay records!";
+   return "Can't modify application of payment!";
 }
 
 =item check
 
-Checks all fields to make sure this is a valid payment.  If there is an error,
-returns the error, otherwise returns false.  Called by the insert method.
+Checks all fields to make sure this is a valid payment application.  If there
+is an error, returns the error, otherwise returns false.  Called by the insert
+method.
 
 =cut
 
@@ -106,30 +115,22 @@ sub check {
 
   my $error = 
     $self->ut_numbern('billpaynum')
-    || $self->ut_number('invnum')
-    || $self->ut_number('paynum')
-    || $self->ut_money('amount')
+    || $self->ut_foreign_key('paynum', 'cust_pay', 'paynum' )
+    || $self->ut_foreign_key('invnum', 'cust_bill', 'invnum' )
     || $self->ut_numbern('_date')
+    || $self->ut_money('amount')
   ;
   return $error if $error;
 
   return "amount must be > 0" if $self->amount <= 0;
   
-  return "Unknown invoice"
-    unless my $cust_bill =
-      qsearchs( 'cust_bill', { 'invnum' => $self->invnum } );
-
-  return "Unknown payment"
-    unless my $cust_pay = 
-      qsearchs( 'cust_pay', { 'paynum' => $self->paynum } );
-
   $self->_date(time) unless $self->_date;
 
   return "Cannot apply more than remaining value of invoice"
-    unless $self->amount <= $cust_bill->owed;
+    unless $self->amount <= $self->cust_bill->owed;
 
   return "Cannot apply more than remaining value of payment"
-    unless $self->amount <= $cust_pay->unapplied;
+    unless $self->amount <= $self->cust_pay->unapplied;
 
   $self->SUPER::check;
 }
@@ -145,25 +146,11 @@ sub cust_pay {
   qsearchs( 'cust_pay', { 'paynum' => $self->paynum } );
 }
 
-=item cust_bill 
-
-Returns the invoice (see L<FS::cust_bill>)
-
-=cut
-
-sub cust_bill {
-  my $self = shift;
-  qsearchs( 'cust_bill', { 'invnum' => $self->invnum } );
-}
-
 =back
 
 =head1 BUGS
 
 Delete and replace methods.
-
-the checks for over-applied payments could be better done like the ones in
-cust_bill_credit
 
 =head1 SEE ALSO
 

@@ -7,6 +7,8 @@ use FS::cust_main_Mixin;
 use FS::cust_pkg;
 use FS::cust_bill;
 use FS::cust_bill_pkg_detail;
+use FS::cust_bill_pay_pkg;
+use FS::cust_credit_bill_pkg;
 
 @ISA = qw( FS::cust_main_Mixin FS::Record );
 
@@ -224,17 +226,77 @@ sub desc {
   }
 }
 
-=back
+=item owed_setup
 
-=head1 CLASS METHODS
+Returns the amount owed (still outstanding) on this line item's setup fee,
+which is the amount of the line item minus all payment applications (see
+L<FS::cust_bill_pay_pkg> and credit applications (see
+L<FS::cust_credit_bill_pkg>).
 
-=over 4
+=cut
 
-=item  
+sub owed_setup {
+  my $self = shift;
+  $self->owed('setup', @_);
+}
+
+=item owed_recur
+
+Returns the amount owed (still outstanding) on this line item's recurring fee,
+which is the amount of the line item minus all payment applications (see
+L<FS::cust_bill_pay_pkg> and credit applications (see
+L<FS::cust_credit_bill_pkg>).
+
+=cut
+
+sub owed_recur {
+  my $self = shift;
+  $self->owed('recur', @_);
+}
+
+# modeled after cust_bill::owed...
+sub owed {
+  my( $self, $field ) = @_;
+  my $balance = $self->$field();
+  $balance -= $_->amount foreach ( $self->cust_bill_pay_pkg($field) );
+  $balance -= $_->amount foreach ( $self->cust_credit_bill_pkg($field) );
+  $balance = sprintf( '%.2f', $balance );
+  $balance =~ s/^\-0\.00$/0.00/; #yay ieee fp
+  $balance;
+}
+
+sub cust_bill_pay_pkg {
+  my( $self, $field ) = @_;
+  qsearch( 'cust_bill_pay_pkg', { 'billpkgnum' => $self->billpkgnum,
+                                  'setuprecur' => $field,
+                                }
+         );
+}
+
+sub cust_credit_bill_pkg {
+  my( $self, $field ) = @_;
+  qsearch( 'cust_credit_bill_pkg', { 'billpkgnum' => $self->billpkgnum,
+                                     'setuprecur' => $field,
+                                   }
+         );
+}
 
 =back
 
 =head1 BUGS
+
+setup and recur shouldn't be separate fields.  There should be one "amount"
+field and a flag to tell you if it is a setup/one-time fee or a recurring fee.
+
+A line item with both should really be two separate records (preserving
+sdate and edate for setup fees for recurring packages - that information may
+be valuable later).  Invoice generation (cust_main::bill), invoice printing
+(cust_bill), tax reports (report_tax.cgi) and line item reports 
+(cust_bill_pkg.cgi) would need to be updated.
+
+owed_setup and owed_recur could then be repaced by just owed, and
+cust_bill::open_cust_bill_pkg and
+cust_bill_ApplicationCommon::apply_to_lineitems could be simplified.
 
 =head1 SEE ALSO
 
