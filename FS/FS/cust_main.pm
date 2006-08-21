@@ -4468,6 +4468,7 @@ sub batch_import {
           my $referral = $columns[0];
           my %hash = ( 'referral' => $referral,
                        'agentnum' => $agentnum,
+                       'disabled' => '',
                      );
 
           my $part_referral = qsearchs('part_referral', \%hash )
