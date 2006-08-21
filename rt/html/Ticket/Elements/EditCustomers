@@ -43,7 +43,7 @@
 <&|/l&>Find customer</&><BR>
 <input name="CustomerString">
 <input type=submit name="OnlySearchForCustomers" value="<&|/l&>Go!</&>">
-<br><i>cust #, last name, or company</i>
+<br><i>cust #, name, company or phone</i>
 <BR>
 %#<BR>
 %#<&|/l&>Find service</&><BR>
