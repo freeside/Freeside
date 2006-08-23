@@ -231,9 +231,6 @@ sub popurl {
 =cut
 
 sub rooturl {
-  #this doesn't work so well...
-  #'%%%FREESIDE_URL%%%';
-
   # better to start with the client-provided URL
   my $cgi = &FS::UID::cgi;
   my $url_string = $cgi->isa('Apache') ? $cgi->uri : $cgi->url;

@@ -197,9 +197,6 @@ perl-modules:
 	perl -p -i -e "\
 	  s/%%%VERSION%%%/${VERSION}/g;\
 	" blib/lib/FS.pm; \
-	perl -p -i -e "\
-	  s'%%%FREESIDE_URL%%%'${FREESIDE_URL}'g;\
-	" blib/lib/FS/CGI.pm
 
 install-perl-modules: perl-modules
 	[ -L ${PERL_INC_DEV_KLUDGE}/FS ] \
