@@ -1,4 +1,4 @@
-<%= include('/elements/header.html', 'Package Report' ) %>
+<% include('/elements/header.html', 'Package Report' ) %>
 
 <FORM ACTION="cust_pkg.cgi" METHOD="GET">
 <INPUT TYPE="hidden" NAME="magic" VALUE="bill">
@@ -8,22 +8,23 @@
     <TR>
       <TH BGCOLOR="#e8e8e8" COLSPAN=2 ALIGN="left"><FONT SIZE="+1">Search options</FONT></TH>
     </TR>
-    <%= include( '/elements/tr-select-agent.html',
+    <% include( '/elements/tr-select-agent.html',
                    $cgi->param('agentnum'),
                )
     %>
-    <%= include( '/elements/tr-select-cust_pkg-status.html' ) %>
-    <%= include( '/elements/tr-select-pkg_class.html', '',
+    <% include( '/elements/tr-select-cust_pkg-status.html' ) %>
+    <% include( '/elements/tr-select-pkg_class.html', '',
                    'pre_options' => [ '0' => 'all' ],
                    'empty_label' => '(empty class)',
                )
     %>
-    <% #include( '/elements/tr-selectmultiple-part_pkg.html' ) %>
+% #include( '/elements/tr-selectmultiple-part_pkg.html' ) 
+
     <TR>
       <TD ALIGN="right" VALIGN="center">Next bill date</TD>
       <TD>
         <TABLE>
-          <%= include( '/elements/tr-input-beginning_ending.html' ) %>
+          <% include( '/elements/tr-input-beginning_ending.html' ) %>
         </TABLE>
       </TD>
     </TR>
@@ -35,7 +36,7 @@
     <TR>
       <TH BGCOLOR="#e8e8e8" COLSPAN=2 ALIGN="left"><FONT SIZE="+1">Display options</FONT></TH>
     </TR>
-    <%= include( '/elements/tr-select-cust-fields.html' ) %>
+    <% include( '/elements/tr-select-cust-fields.html' ) %>
     
   </TABLE>
 
@@ -44,4 +45,4 @@
 
 </FORM>
 
-<%= include('/elements/footer.html') %>
+<% include('/elements/footer.html') %>

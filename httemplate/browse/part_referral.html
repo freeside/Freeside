@@ -1,129 +1,140 @@
-<%= include("/elements/header.html","Advertising source Listing" ) %>
+<% include("/elements/header.html","Advertising source Listing" ) %>
 
 Where a customer heard about your service. Tracked for informational purposes.
 <BR><BR>
 
-<A HREF="<%= $p %>edit/part_referral.html"><I>Add a new advertising source</I></A>
+<A HREF="<% $p %>edit/part_referral.html"><I>Add a new advertising source</I></A>
 <BR><BR>
+%
+%  my $today = timelocal(0, 0, 0, (localtime(time))[3..5] );
+%  my %after;
+%  tie %after, 'Tie::IxHash',
+%    'Today'         =>        0,
+%    'Yesterday'     =>    86400, # 60sec * 60min * 24hrs
+%    'Past week'     =>   518400, # 60sec * 60min * 24hrs * 6days
+%    'Past 30 days'  =>  2505600, # 60sec * 60min * 24hrs * 29days 
+%    'Past 60 days'  =>  5097600, # 60sec * 60min * 24hrs * 59days 
+%    'Past 90 days'  =>  7689600, # 60sec * 60min * 24hrs * 89days 
+%    'Past 6 months' => 15724800, # 60sec * 60min * 24hrs * 182days 
+%    'Past year'     => 31486000, # 60sec * 60min * 24hrs * 364days 
+%    'Total'         => $today,
+%  ;
+%  my %before = (
+%    'Today'         =>   86400, # 60sec * 60min * 24hrs
+%    'Yesterday'     =>       0,
+%    'Past week'     =>   86400, # 60sec * 60min * 24hrs
+%    'Past 30 days'  =>   86400, # 60sec * 60min * 24hrs
+%    'Past 60 days'  =>   86400, # 60sec * 60min * 24hrs
+%    'Past 90 days'  =>   86400, # 60sec * 60min * 24hrs
+%    'Past 6 months' =>   86400, # 60sec * 60min * 24hrs
+%    'Past year'     =>   86400, # 60sec * 60min * 24hrs
+%    'Total'         =>   86400, # 60sec * 60min * 24hrs
+%  );
+%
+%  my $curuser = $FS::CurrentUser::CurrentUser;
+%
+%  my $statement = "SELECT COUNT(*) FROM h_cust_main
+%                    WHERE history_action = 'insert'
+%                      AND refnum = ?
+%                      AND history_date >= ?
+%		      AND history_date < ?
+%		      AND ". $curuser->agentnums_sql;
+%  my $sth = dbh->prepare($statement)
+%    or die dbh->errstr;
+%
+%  my $show_agentnums = scalar($curuser->agentnums);
+%
+%
 
-<%
-  my $today = timelocal(0, 0, 0, (localtime(time))[3..5] );
-  my %after;
-  tie %after, 'Tie::IxHash',
-    'Today'         =>        0,
-    'Yesterday'     =>    86400, # 60sec * 60min * 24hrs
-    'Past week'     =>   518400, # 60sec * 60min * 24hrs * 6days
-    'Past 30 days'  =>  2505600, # 60sec * 60min * 24hrs * 29days 
-    'Past 60 days'  =>  5097600, # 60sec * 60min * 24hrs * 59days 
-    'Past 90 days'  =>  7689600, # 60sec * 60min * 24hrs * 89days 
-    'Past 6 months' => 15724800, # 60sec * 60min * 24hrs * 182days 
-    'Past year'     => 31486000, # 60sec * 60min * 24hrs * 364days 
-    'Total'         => $today,
-  ;
-  my %before = (
-    'Today'         =>   86400, # 60sec * 60min * 24hrs
-    'Yesterday'     =>       0,
-    'Past week'     =>   86400, # 60sec * 60min * 24hrs
-    'Past 30 days'  =>   86400, # 60sec * 60min * 24hrs
-    'Past 60 days'  =>   86400, # 60sec * 60min * 24hrs
-    'Past 90 days'  =>   86400, # 60sec * 60min * 24hrs
-    'Past 6 months' =>   86400, # 60sec * 60min * 24hrs
-    'Past year'     =>   86400, # 60sec * 60min * 24hrs
-    'Total'         =>   86400, # 60sec * 60min * 24hrs
-  );
 
-  my $curuser = $FS::CurrentUser::CurrentUser;
+<% include('/elements/table-grid.html') %>
+% my $bgcolor1 = '#eeeeee';
+%   my $bgcolor2 = '#ffffff';
+%   my $bgcolor = '';
+%
 
-  my $statement = "SELECT COUNT(*) FROM h_cust_main
-                    WHERE history_action = 'insert'
-                      AND refnum = ?
-                      AND history_date >= ?
-		      AND history_date < ?
-		      AND ". $curuser->agentnums_sql;
-  my $sth = dbh->prepare($statement)
-    or die dbh->errstr;
-
-  my $show_agentnums = scalar($curuser->agentnums);
-
-%>
-
-<%= include('/elements/table-grid.html') %>
-
-<% my $bgcolor1 = '#eeeeee';
-   my $bgcolor2 = '#ffffff';
-   my $bgcolor = '';
-%>
 
 <TR>
   <TH CLASS="grid" BGCOLOR="#cccccc" COLSPAN=2 ROWSPAN=2>Advertising source</TH>
-  <% if ( $show_agentnums ) { %>
+% if ( $show_agentnums ) { 
+
     <TH CLASS="grid" BGCOLOR="#cccccc" ROWSPAN=2>Agent</TH>
-  <% } %>
-  <TH CLASS="grid" BGCOLOR="#cccccc" COLSPAN=<%= scalar(keys %after) %>>Customers</TH>
+% } 
+
+  <TH CLASS="grid" BGCOLOR="#cccccc" COLSPAN=<% scalar(keys %after) %>>Customers</TH>
 </TR>
-<% for my $period ( keys %after ) { %>
-  <TH CLASS="grid" BGCOLOR="#cccccc"><FONT SIZE=-1><%= $period %></FONT></TH>
-<% } %>
+% for my $period ( keys %after ) { 
+
+  <TH CLASS="grid" BGCOLOR="#cccccc"><FONT SIZE=-1><% $period %></FONT></TH>
+% } 
+
 </TR>
+%
+%foreach my $part_referral ( FS::part_referral->all_part_referral(1) ) {
+%
+%  if ( $bgcolor eq $bgcolor1 ) {
+%    $bgcolor = $bgcolor2;
+%  } else {
+%    $bgcolor = $bgcolor1;
+%  }
+%
+%  $a = 0;
+%
+%
 
-<%
-foreach my $part_referral ( FS::part_referral->all_part_referral(1) ) {
-
-  if ( $bgcolor eq $bgcolor1 ) {
-    $bgcolor = $bgcolor2;
-  } else {
-    $bgcolor = $bgcolor1;
-  }
-
-  $a = 0;
-
-%>
       <TR>
 
-        <TD CLASS="grid" BGCOLOR="<%= $bgcolor %>">
-          <% if ( $part_referral->agentnum || $curuser->access_right('Edit global advertising sources') ) { 
-            $a++;
-          %>
-            <A HREF="<%= $p %>edit/part_referral.html?<%= $part_referral->refnum %>">
-          <% } %>
-          <%= $part_referral->refnum %><%= $a ? '</A>' : '' %></TD>
-        <TD CLASS="grid" BGCOLOR="<%= $bgcolor %>">
-          <% if ( $a ) { %>
-            <A HREF="<%= $p %>edit/part_referral.html?<%= $part_referral->refnum %>">
-          <% } %>
-          <%= $part_referral->referral %><%= $a ? '</A>' : '' %></TD>
+        <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
+% if ( $part_referral->agentnum || $curuser->access_right('Edit global advertising sources') ) { 
+%            $a++;
+%          
 
-        <% if ( $show_agentnums ) { %>
-          <TD CLASS="grid" BGCOLOR="<%= $bgcolor %>"><%= $part_referral->agentnum ? $part_referral->agent->agent : '(global)' %></TD>
-        <% } %>
+            <A HREF="<% $p %>edit/part_referral.html?<% $part_referral->refnum %>">
+% } 
 
-        <% for my $period ( keys %after ) {
-          $sth->execute( $part_referral->refnum,
-                         $today-$after{$period},
-                         $today+$before{$period},
-          ) or die $sth->errstr;
-          my $number = $sth->fetchrow_arrayref->[0];
-        %>
-          <TD CLASS="grid" BGCOLOR="<%= $bgcolor %>" ALIGN="right"><%= $number %></TD>
-        <% } %>
+          <% $part_referral->refnum %><% $a ? '</A>' : '' %></TD>
+        <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
+% if ( $a ) { 
+
+            <A HREF="<% $p %>edit/part_referral.html?<% $part_referral->refnum %>">
+% } 
+
+          <% $part_referral->referral %><% $a ? '</A>' : '' %></TD>
+% if ( $show_agentnums ) { 
+
+          <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><% $part_referral->agentnum ? $part_referral->agent->agent : '(global)' %></TD>
+% } 
+% for my $period ( keys %after ) {
+%          $sth->execute( $part_referral->refnum,
+%                         $today-$after{$period},
+%                         $today+$before{$period},
+%          ) or die $sth->errstr;
+%          my $number = $sth->fetchrow_arrayref->[0];
+%        
+
+          <TD CLASS="grid" BGCOLOR="<% $bgcolor %>" ALIGN="right"><% $number %></TD>
+% } 
+
       </TR>
-<% } %>
+% } 
+%
+%  $statement =~ s/AND refnum = \?//;
+%  $sth = dbh->prepare($statement)
+%    or die dbh->errstr;
+%
 
-<%
-  $statement =~ s/AND refnum = \?//;
-  $sth = dbh->prepare($statement)
-    or die dbh->errstr;
-%>
       <TR>
         <TD BGCOLOR="#dddddd" ALIGN="center" COLSPAN=3><B>Total</B></TD>
-        <% for my $period ( keys %after ) {
-          $sth->execute( $today-$after{$period},
-                         $today+$before{$period},
-          ) or die $sth->errstr;
-          my $number = $sth->fetchrow_arrayref->[0];
-        %>
-          <TD BGCOLOR="#dddddd" ALIGN="right"><B><%= $number %><B></TD>
-        <% } %>
+% for my $period ( keys %after ) {
+%          $sth->execute( $today-$after{$period},
+%                         $today+$before{$period},
+%          ) or die $sth->errstr;
+%          my $number = $sth->fetchrow_arrayref->[0];
+%        
+
+          <TD BGCOLOR="#dddddd" ALIGN="right"><B><% $number %><B></TD>
+% } 
+
       </TR>
     </TABLE>
   </BODY>

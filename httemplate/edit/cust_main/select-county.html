@@ -1,21 +1,21 @@
-<%
+%
+%
+%  my %opt = @_;
+%  foreach my $opt (qw( county state country prefix onchange disabled )) {
+%    $opt{$_} = '' unless exists($opt{$_}) && defined($opt{$_});
+%  }
+%
+%  my $sql = "SELECT COUNT(*) FROM cust_main_county".
+%            " WHERE county IS NOT NULL AND county != ''";
+%  my $sth = dbh->prepare($sql) or die dbh->errstr;
+%  $sth->execute or die $sth->errstr;
+%  my $countyflag = $sth->fetchrow_arrayref->[0];
+%
+%
+% if ( $countyflag ) { 
 
-  my %opt = @_;
-  foreach my $opt (qw( county state country prefix onchange disabled )) {
-    $opt{$_} = '' unless exists($opt{$_}) && defined($opt{$_});
-  }
 
-  my $sql = "SELECT COUNT(*) FROM cust_main_county".
-            " WHERE county IS NOT NULL AND county != ''";
-  my $sth = dbh->prepare($sql) or die dbh->errstr;
-  $sth->execute or die $sth->errstr;
-  my $countyflag = $sth->fetchrow_arrayref->[0];
-
-%>
-
-<% if ( $countyflag ) { %>
-
-  <%= include('/elements/xmlhttp.html',
+  <% include('/elements/xmlhttp.html',
                 'url'  => $p.'misc/counties.cgi',
                 'subs' => [ $opt{'prefix'}. 'get_counties' ],
              )
@@ -29,16 +29,16 @@
       what.options[length] = optionName;
     }
   
-    function <%= $opt{'prefix'} %>state_changed(what, callback) {
+    function <% $opt{'prefix'} %>state_changed(what, callback) {
 
       state = what.options[what.selectedIndex].text;
-      country = what.form.<%= $opt{'prefix'} %>country.options[what.form.<%= $opt{'prefix'} %>country.selectedIndex].text;
+      country = what.form.<% $opt{'prefix'} %>country.options[what.form.<% $opt{'prefix'} %>country.selectedIndex].text;
   
-      function <%= $opt{'prefix'} %>update_counties(counties) {
+      function <% $opt{'prefix'} %>update_counties(counties) {
 
         // blank the current county list
-        for ( var i = what.form.<%= $opt{'prefix'} %>county.length; i >= 0; i-- )
-            what.form.<%= $opt{'prefix'} %>county.options[i] = null;
+        for ( var i = what.form.<% $opt{'prefix'} %>county.length; i >= 0; i-- )
+            what.form.<% $opt{'prefix'} %>county.options[i] = null;
   
         // add the new counties
         var countiesArray = eval('(' + counties + ')' );
@@ -46,7 +46,7 @@
             var countyLabel = countiesArray[s];
             if ( countyLabel == "" )
                 countyLabel = '(n/a)';
-            opt(what.form.<%= $opt{'prefix'} %>county, countiesArray[s], countyLabel);
+            opt(what.form.<% $opt{'prefix'} %>county, countiesArray[s], countyLabel);
         }
 
         //run the callback
@@ -55,37 +55,37 @@
       }
   
       // go get the new counties
-      <%= $opt{'prefix'} %>get_counties( state, country, <%= $opt{'prefix'} %>update_counties );
+      <% $opt{'prefix'} %>get_counties( state, country, <% $opt{'prefix'} %>update_counties );
   
     }
   
   </SCRIPT>
 
-  <SELECT NAME="<%= $opt{'prefix'} %>county" onChange="<%= $opt{'onchange'} %>" <%= $opt{'disabled'} %>>
+  <SELECT NAME="<% $opt{'prefix'} %>county" onChange="<% $opt{'onchange'} %>" <% $opt{'disabled'} %>>
+% foreach my $county (
+%       sort
+%       map { $_->county }
+%       qsearch('cust_main_county', { 'state'   => $opt{'state'},
+%                                     'country' => $opt{'country'},
+%                                   }
+%              )
+%     ) {
+%  
 
-  <% foreach my $county (
-       sort
-       map { $_->county }
-       qsearch('cust_main_county', { 'state'   => $opt{'state'},
-                                     'country' => $opt{'country'},
-                                   }
-              )
-     ) {
-  %>
 
-    <OPTION VALUE="<%= $county %>"<%= $county eq $opt{'county'} ? ' SELECTED' : '' %>><%= $county %>
+    <OPTION VALUE="<% $county %>"<% $county eq $opt{'county'} ? ' SELECTED' : '' %>><% $county %>
+% } 
 
-  <% } %>
 
   </SELECT>
+% } else { 
 
-<% } else { %>
 
   <SCRIPT TYPE="text/javascript">
-    function <%= $opt{'prefix'} %>state_changed(what) {
+    function <% $opt{'prefix'} %>state_changed(what) {
     }
   </SCRIPT>
 
-  <INPUT TYPE="hidden" NAME="<%= $opt{'prefix'} %>county" VALUE="<%= $opt{'county'} %>">
+  <INPUT TYPE="hidden" NAME="<% $opt{'prefix'} %>county" VALUE="<% $opt{'county'} %>">
+% } 
 
-<% } %>

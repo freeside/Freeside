@@ -1,37 +1,38 @@
-<%
-
-my $html_init = 
-  'Agent types define groups of packages that you can then assign to'.
-  ' particular agents.<BR><BR>'.
-  qq!<A HREF="${p}edit/agent_type.cgi"><I>Add a new agent type</I></A><BR><BR>!;
-
-my $count_query = 'SELECT COUNT(*) FROM agent_type';
-
-#false laziness w/access_user.html
-my $packages_sub = sub {
-  my $agent_type = shift;
-
-  [ map  {
-           my $type_pkgs = $_;
-           #my $part_pkg = $type_pkgs->part_pkg;
-           [
-             {
-               #'data'  => $part_pkg->pkg. ' - '. $part_pkg->comment,
-               'data'  => $type_pkgs->pkg. ' - '. $type_pkgs->comment,
-               'align' => 'left',
-               'link'  => $p. 'edit/part_pkg.cgi?'. $type_pkgs->pkgpart,
-             },
-           ];
-         }
-
-    $agent_type->type_pkgs_enabled
-  ];
-
-};
-
-my $link = [ $p.'edit/agent_type.cgi?', 'typenum' ];
-
-%><%= include( 'elements/browse.html',
+%
+%
+%my $html_init = 
+%  'Agent types define groups of packages that you can then assign to'.
+%  ' particular agents.<BR><BR>'.
+%  qq!<A HREF="${p}edit/agent_type.cgi"><I>Add a new agent type</I></A><BR><BR>!;
+%
+%my $count_query = 'SELECT COUNT(*) FROM agent_type';
+%
+%#false laziness w/access_user.html
+%my $packages_sub = sub {
+%  my $agent_type = shift;
+%
+%  [ map  {
+%           my $type_pkgs = $_;
+%           #my $part_pkg = $type_pkgs->part_pkg;
+%           [
+%             {
+%               #'data'  => $part_pkg->pkg. ' - '. $part_pkg->comment,
+%               'data'  => $type_pkgs->pkg. ' - '. $type_pkgs->comment,
+%               'align' => 'left',
+%               'link'  => $p. 'edit/part_pkg.cgi?'. $type_pkgs->pkgpart,
+%             },
+%           ];
+%         }
+%
+%    $agent_type->type_pkgs_enabled
+%  ];
+%
+%};
+%
+%my $link = [ $p.'edit/agent_type.cgi?', 'typenum' ];
+%
+%
+<% include( 'elements/browse.html',
                  'title'   => 'Agent Types',
                  'menubar'     => [ #'Main menu' => $p,
                                     'Agents'    =>"${p}browse/agent.cgi",

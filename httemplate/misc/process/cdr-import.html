@@ -1,26 +1,30 @@
-<%
+%
+%
+%  my $fh = $cgi->upload('csvfile');
+%
+%  my $error = defined($fh)
+%    ? FS::cdr::batch_import( {
+%        'filehandle' => $fh,
+%        'format'     => $cgi->param('format'),
+%      } )
+%    : 'No file';
+%
+%  if ( $error ) {
+%    
 
-  my $fh = $cgi->upload('csvfile');
-
-  my $error = defined($fh)
-    ? FS::cdr::batch_import( {
-        'filehandle' => $fh,
-        'format'     => $cgi->param('format'),
-      } )
-    : 'No file';
-
-  if ( $error ) {
-    %>
     <!-- mason kludge -->
-    <%
-    eidiot($error);
-#    $cgi->param('error', $error);
-#    print $cgi->redirect( "${p}cust_main-import.cgi
-  } else {
-    %>
+%
+%    eidiot($error);
+%#    $cgi->param('error', $error);
+%#    print $cgi->redirect( "${p}cust_main-import.cgi
+%  } else {
+%    
+
     <!-- mason kludge -->
-    <%= include("/elements/header.html",'Import successful') %>
+    <% include("/elements/header.html",'Import successful') %>
     <!-- XXX redirect to batch search like the payment entry... -->
-    <%= include("/elements/footer.html",'Import successful') %> <%
-  }
-%>
+    <% include("/elements/footer.html",'Import successful') %> 
+%
+%  }
+%
+

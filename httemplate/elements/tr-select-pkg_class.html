@@ -1,22 +1,22 @@
-<%
-  my( $classnum, %opt ) = @_;
+%
+%  my( $classnum, %opt ) = @_;
+%
+%  $opt{'pkg_class'} ||= [ qsearch( 'pkg_class', {} ) ]; # { disabled=>'' } )
+%
+%  #warn "***** tr-select-pkg-class: \n". Dumper(%opt);
+%
+% if ( scalar(@{ $opt{'pkg_class'} }) == 0 ) { 
 
-  $opt{'pkg_class'} ||= [ qsearch( 'pkg_class', {} ) ]; # { disabled=>'' } )
-
-  #warn "***** tr-select-pkg-class: \n". Dumper(%opt);
-%>
-
-<% if ( scalar(@{ $opt{'pkg_class'} }) == 0 ) { %>
 
   <INPUT TYPE="hidden" NAME="classnum" VALUE="">
+% } else { 
 
-<% } else { %>
 
   <TR>
-    <TD ALIGN="right"><%= $opt{'label'} || 'Package class' %></TD>
+    <TD ALIGN="right"><% $opt{'label'} || 'Package class' %></TD>
     <TD>
-      <%= include( '/elements/select-pkg_class.html', $classnum, %opt ) %>
+      <% include( '/elements/select-pkg_class.html', $classnum, %opt ) %>
     </TD>
   </TR>
+% } 
 
-<% } %>

@@ -1,19 +1,20 @@
-<%
-
-  my %opt = @_;
-
-  #my( $svcnum, $pkgnum, $svcpart, $part_svc );
-  my( $pkgnum, $svcpart, $part_svc );
-
-  #get & untaint pkgnum & svcpart
-  my($query) = $cgi->keywords; #they're not proper cgi params
-  if ( $query =~ /^pkgnum(\d+)-svcpart(\d+)$/ ) {
-    $pkgnum  = $1;
-    $svcpart = $2;
-    $cgi->delete_all(); #so the standard edit.html treats this correctly as new
-  }
-
-%><%= include( 'edit.html',
+%
+%
+%  my %opt = @_;
+%
+%  #my( $svcnum, $pkgnum, $svcpart, $part_svc );
+%  my( $pkgnum, $svcpart, $part_svc );
+%
+%  #get & untaint pkgnum & svcpart
+%  my($query) = $cgi->keywords; #they're not proper cgi params
+%  if ( $query =~ /^pkgnum(\d+)-svcpart(\d+)$/ ) {
+%    $pkgnum  = $1;
+%    $svcpart = $2;
+%    $cgi->delete_all(); #so the standard edit.html treats this correctly as new
+%  }
+%
+%
+<% include( 'edit.html',
 
                  'menubar' => [],
 

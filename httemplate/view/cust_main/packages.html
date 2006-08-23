@@ -1,567 +1,575 @@
-<%
-  my( $cust_main ) = @_;
-  my $conf = new FS::Conf;
+%
+%  my( $cust_main ) = @_;
+%  my $conf = new FS::Conf;
+%
+%  my $curuser = $FS::CurrentUser::CurrentUser;
+%
+%  my $packages = get_packages($cust_main, $conf);
+%
 
-  my $curuser = $FS::CurrentUser::CurrentUser;
-
-  my $packages = get_packages($cust_main, $conf);
-%>
 
 <A NAME="cust_pkg"><FONT SIZE="+2">Packages</FONT></A>
+% if ( $curuser->access_right('Order customer package') ) { 
 
-<% if ( $curuser->access_right('Order customer package') ) { %>
-  <%= include('order_pkg.html', $cust_main ) %>
-<% } %>
+  <% include('order_pkg.html', $cust_main ) %>
+% } 
+% if ( $curuser->access_right('One-time charge')
+%        && $conf->config('payby-default') ne 'HIDE'
+%      ) {
+%
 
-<% if ( $curuser->access_right('One-time charge')
-        && $conf->config('payby-default') ne 'HIDE'
-      ) {
-%>
-  <%= include('quick-charge.html', $cust_main ) %>
-<% } %>
+  <% include('quick-charge.html', $cust_main ) %>
+% } 
+% if ( $curuser->access_right('Bulk change customer packages') ) { 
 
-<% if ( $curuser->access_right('Bulk change customer packages') ) { %>
-  <A HREF="<%= $p %>edit/cust_pkg.cgi?<%= $cust_main->custnum %>">Bulk order and cancel packages</A> (preserves services)
-<% } %>
+  <A HREF="<% $p %>edit/cust_pkg.cgi?<% $cust_main->custnum %>">Bulk order and cancel packages</A> (preserves services)
+% } 
+
 
 <BR><BR>
+% if ( @$packages ) { 
 
-<% if ( @$packages ) { %>
 Current packages
-<% } %>
+% } 
+% if ( $cust_main->num_cancelled_pkgs ) {
+%     if ( $cgi->param('showcancelledpackages') eq '0' #see if it was set by me
+%          || ( $conf->exists('hidecancelledpackages')
+%               && ! $cgi->param('showcancelledpackages')
+%             )
+%        )
+%     {
+%       $cgi->param('showcancelledpackages', 1);
+%
 
-<% if ( $cust_main->num_cancelled_pkgs ) {
-     if ( $cgi->param('showcancelledpackages') eq '0' #see if it was set by me
-          || ( $conf->exists('hidecancelledpackages')
-               && ! $cgi->param('showcancelledpackages')
-             )
-        )
-     {
-       $cgi->param('showcancelledpackages', 1);
-%>
-  ( <a href="<%= $cgi->self_url %>">show
-<%   } else {
-       $cgi->param('showcancelledpackages', 0);
-%>
-  ( <a href="<%= $cgi->self_url %>">hide
-<%   } %>
+  ( <a href="<% $cgi->self_url %>">show
+%   } else {
+%       $cgi->param('showcancelledpackages', 0);
+%
+
+  ( <a href="<% $cgi->self_url %>">hide
+%   } 
+
  cancelled packages</a> )
-<% } %>
+% } 
+% if ( @$packages ) { 
 
-<% if ( @$packages ) { %>
 
-<%= include('/elements/table-grid.html') %>
+<% include('/elements/table-grid.html') %>
+% my $bgcolor1 = '#eeeeee';
+%   my $bgcolor2 = '#ffffff';
+%   my $bgcolor = '';
+%
 
-<% my $bgcolor1 = '#eeeeee';
-   my $bgcolor2 = '#ffffff';
-   my $bgcolor = '';
-%>
 
 <TR>
   <TH CLASS="grid" BGCOLOR="#cccccc">Package</TH>
   <TH CLASS="grid" BGCOLOR="#cccccc">Status</TH>
   <TH CLASS="grid" BGCOLOR="#cccccc">Services</TH>
 </TR>
+%
+%foreach my $pkg (sort pkgsort_pkgnum_cancel @$packages) {
+%
+%  if ( $bgcolor eq $bgcolor1 ) {
+%    $bgcolor = $bgcolor2;
+%  } else {
+%    $bgcolor = $bgcolor1;
+%  }
+%
+%
 
-<%
-foreach my $pkg (sort pkgsort_pkgnum_cancel @$packages) {
 
-  if ( $bgcolor eq $bgcolor1 ) {
-    $bgcolor = $bgcolor2;
-  } else {
-    $bgcolor = $bgcolor1;
-  }
-
-%>
-
-<!--pkgnum: <%=$pkg->{pkgnum}%>-->
+<!--pkgnum: <%$pkg->{pkgnum}%>-->
 <TR>
-  <TD CLASS="grid" BGCOLOR="<%= $bgcolor %>">
-    <A NAME="cust_pkg<%=$pkg->{pkgnum}%>"><%=$pkg->{pkgnum}%></A>:
-    <%=$pkg->{pkg}%> - <%=$pkg->{comment}%><BR>
+  <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
+    <A NAME="cust_pkg<%$pkg->{pkgnum}%>"><%$pkg->{pkgnum}%></A>:
+    <%$pkg->{pkg}%> - <%$pkg->{comment}%><BR>
     <FONT SIZE=-1>
-      <% unless ( $pkg->{cancel} ) { %>
-        <% if ( $curuser->access_right('Change customer package') ) { %>
-            (&nbsp;<%=pkg_change_link($pkg)%>&nbsp;)
-        <% } %>
-        <% if ( $curuser->access_right('Edit customer package dates') ) { %>
-            (&nbsp;<%=pkg_dates_link($pkg)%>&nbsp;)
-        <% } %>
-        <% if ( $curuser->access_right('Customize customer package') ) { %>
-            (&nbsp;<%=pkg_customize_link($pkg,$cust_main->custnum)%>&nbsp;)
-        <% } %>
-      <% } %>
+% unless ( $pkg->{cancel} ) { 
+% if ( $curuser->access_right('Change customer package') ) { 
+
+            (&nbsp;<%pkg_change_link($pkg)%>&nbsp;)
+% } 
+% if ( $curuser->access_right('Edit customer package dates') ) { 
+
+            (&nbsp;<%pkg_dates_link($pkg)%>&nbsp;)
+% } 
+% if ( $curuser->access_right('Customize customer package') ) { 
+
+            (&nbsp;<%pkg_customize_link($pkg,$cust_main->custnum)%>&nbsp;)
+% } 
+% } 
+
     </FONT>
   </TD>
-  <TD CLASS="inv" BGCOLOR="<%= $bgcolor %>">
+  <TD CLASS="inv" BGCOLOR="<% $bgcolor %>">
     <TABLE CLASS="inv" BORDER=0 CELLSPACING=0 CELLPADDING=0 WIDTH="100%">
-
-<%
-  sub myfreq {
-    my $part_pkg = shift;
-    my $freq = $part_pkg->freq_pretty;
-    $freq =~ s/ /&nbsp;/g;
-    $freq;
-  }
-
-  #this should use cust_pkg->status and cust_pkg->statuscolor eventually
-
-  my $colspan = $conf->exists('cust_pkg-display_times') ? 8 : 4;
-  my $width = $conf->exists('cust_pkg-display_times') ? '38%' : '56%';
-
-  #false laziness w/edit/REAL_cust_pkg.cgi
-  my( $billed_or_prepaid, $last_bill_or_renewed, $next_bill_or_prepaid_until );
-  unless ( $pkg->{'part_pkg'}->is_prepaid ) {
-    $billed_or_prepaid = 'billed';
-    $last_bill_or_renewed = 'Last&nbsp;bill';
-    $next_bill_or_prepaid_until = 'Next&nbsp;bill';
-  } else {
-    $billed_or_prepaid = 'prepaid';
-    $last_bill_or_renewed = 'Renewed';
-    $next_bill_or_prepaid_until = 'Prepaid&nbsp;until';
-  }
-
-%>
-
-<% if ( $pkg->{cancel} ) { %> <!-- #status: cancelled -->
+%
+%  sub myfreq {
+%    my $part_pkg = shift;
+%    my $freq = $part_pkg->freq_pretty;
+%    $freq =~ s/ /&nbsp;/g;
+%    $freq;
+%  }
+%
+%  #this should use cust_pkg->status and cust_pkg->statuscolor eventually
+%
+%  my $colspan = $conf->exists('cust_pkg-display_times') ? 8 : 4;
+%  my $width = $conf->exists('cust_pkg-display_times') ? '38%' : '56%';
+%
+%  #false laziness w/edit/REAL_cust_pkg.cgi
+%  my( $billed_or_prepaid, $last_bill_or_renewed, $next_bill_or_prepaid_until );
+%  unless ( $pkg->{'part_pkg'}->is_prepaid ) {
+%    $billed_or_prepaid = 'billed';
+%    $last_bill_or_renewed = 'Last&nbsp;bill';
+%    $next_bill_or_prepaid_until = 'Next&nbsp;bill';
+%  } else {
+%    $billed_or_prepaid = 'prepaid';
+%    $last_bill_or_renewed = 'Renewed';
+%    $next_bill_or_prepaid_until = 'Prepaid&nbsp;until';
+%  }
+%
+%
+% if ( $pkg->{cancel} ) { 
+ <!-- #status: cancelled -->
 
   <TR>
-    <TD WIDTH="<%=$width%>" ALIGN="right"><FONT COLOR="#ff0000"><B>Cancelled&nbsp;</B></FONT></TD>
-    <%= pkg_datestr($pkg,'cancel',$conf) %>
+    <TD WIDTH="<%$width%>" ALIGN="right"><FONT COLOR="#ff0000"><B>Cancelled&nbsp;</B></FONT></TD>
+    <% pkg_datestr($pkg,'cancel',$conf) %>
   </TR>
+% unless ( $pkg->{setup} ) { 
 
-  <% unless ( $pkg->{setup} ) { %>
-
-    <TR>
-      <TD COLSPAN=<%=$colspan%>>Never billed</TD>
-    </TR>
-
-  <% } else { %>
 
     <TR>
-      <TD WIDTH="<%=$width%>" ALIGN="right">Setup&nbsp;</TD>
-      <%= pkg_datestr($pkg, 'setup',$conf) %>
+      <TD COLSPAN=<%$colspan%>>Never billed</TD>
     </TR>
+% } else { 
 
-    <% if ( $pkg->{'last_bill'} ) { %>
-      <TR>
-        <TD WIDTH="<%=$width%>" ALIGN="right"><%= $last_bill_or_renewed %>&nbsp;</TD>
-        <%= pkg_datestr($pkg, 'last_bill',$conf) %>
-      </TR>
-    <% } %>
-
-    <% if ( $pkg->{'susp'} ) { %>
-      <TR>
-        <TD WIDTH="<%=$width%>" ALIGN="right">Suspended&nbsp;</TD>
-        <%= pkg_datestr($pkg, 'susp',$conf) %>
-      </TR>
-    <% } %>
-
-  <% } %>
-
-<% } else { %>
-
-  <% if ( $pkg->{susp} ) { %> <!-- #status: suspended -->
 
     <TR>
-      <TD WIDTH="<%=$width%>" ALIGN="right"><FONT COLOR="#FF9900"><B>Suspended</B>&nbsp;</FONT></TD>
-      <%= pkg_datestr($pkg,'susp',$conf) %>
+      <TD WIDTH="<%$width%>" ALIGN="right">Setup&nbsp;</TD>
+      <% pkg_datestr($pkg, 'setup',$conf) %>
     </TR>
-
-    <% unless ( $pkg->{setup} ) { %>
-
-      <TR>
-        <TD COLSPAN=<%=$colspan%>>Never billed</TD>
-      </TR>
-
-    <% } else { %>
+% if ( $pkg->{'last_bill'} ) { 
 
       <TR>
-        <TD WIDTH="<%=$width%>" ALIGN="right">Setup&nbsp;</TD>
-        <%= pkg_datestr($pkg, 'setup',$conf) %>
+        <TD WIDTH="<%$width%>" ALIGN="right"><% $last_bill_or_renewed %>&nbsp;</TD>
+        <% pkg_datestr($pkg, 'last_bill',$conf) %>
       </TR>
-      
-    <% } %>
+% } 
+% if ( $pkg->{'susp'} ) { 
 
-    <% if ( $pkg->{'last_bill'} ) { %>
       <TR>
-        <TD WIDTH="<%=$width%>" ALIGN="right"><%= $last_bill_or_renewed %>&nbsp;</TD>
-        <%= pkg_datestr($pkg, 'last_bill',$conf) %>
+        <TD WIDTH="<%$width%>" ALIGN="right">Suspended&nbsp;</TD>
+        <% pkg_datestr($pkg, 'susp',$conf) %>
       </TR>
-    <% } %>
+% } 
+% } 
+% } else { 
+% if ( $pkg->{susp} ) { 
+ <!-- #status: suspended -->
+
+    <TR>
+      <TD WIDTH="<%$width%>" ALIGN="right"><FONT COLOR="#FF9900"><B>Suspended</B>&nbsp;</FONT></TD>
+      <% pkg_datestr($pkg,'susp',$conf) %>
+    </TR>
+% unless ( $pkg->{setup} ) { 
+
+
+      <TR>
+        <TD COLSPAN=<%$colspan%>>Never billed</TD>
+      </TR>
+% } else { 
+
+
+      <TR>
+        <TD WIDTH="<%$width%>" ALIGN="right">Setup&nbsp;</TD>
+        <% pkg_datestr($pkg, 'setup',$conf) %>
+      </TR>
+% } 
+% if ( $pkg->{'last_bill'} ) { 
+
+      <TR>
+        <TD WIDTH="<%$width%>" ALIGN="right"><% $last_bill_or_renewed %>&nbsp;</TD>
+        <% pkg_datestr($pkg, 'last_bill',$conf) %>
+      </TR>
+% } 
+
 
     <!-- # next bill ?? -->
+% if ( $pkg->{'expire'} ) { 
 
-    <% if ( $pkg->{'expire'} ) { %>
       <TR>
-        <TD WIDTH="<%=$width%>" ALIGN="right">Expires&nbsp;</TD>
-        <%= pkg_datestr($pkg, 'expire',$conf) %>
+        <TD WIDTH="<%$width%>" ALIGN="right">Expires&nbsp;</TD>
+        <% pkg_datestr($pkg, 'expire',$conf) %>
       </TR>
-    <% } %>
+% } 
+
 
     <TR>
-      <TD COLSPAN=<%=$colspan%>>
+      <TD COLSPAN=<%$colspan%>>
         <FONT SIZE=-1>
-          <% if ( $curuser->access_right('Unsuspend customer package') ) { %>
-            (&nbsp;<%= pkg_unsuspend_link($pkg) %>&nbsp;)
-          <% } %>
-          <% if ( $curuser->access_right('Cancel customer package') ) { %>
-            (&nbsp;<%= pkg_cancel_link($pkg) %>&nbsp;)
-          <% } %>
+% if ( $curuser->access_right('Unsuspend customer package') ) { 
+
+            (&nbsp;<% pkg_unsuspend_link($pkg) %>&nbsp;)
+% } 
+% if ( $curuser->access_right('Cancel customer package') ) { 
+
+            (&nbsp;<% pkg_cancel_link($pkg) %>&nbsp;)
+% } 
+
         </FONT>
       </TD>
     </TR>
+% } else { 
+ <!-- #status: active -->
+% unless ( $pkg->{setup} ) { 
+ <!-- #not setup -->
+% unless ( $pkg->{'freq'} ) { 
 
-  <% } else { %> <!-- #status: active -->
-
-    <% unless ( $pkg->{setup} ) { %> <!-- #not setup -->
-
-      <% unless ( $pkg->{'freq'} ) { %>
 
         <TR>
-          <TD COLSPAN=<%=$colspan%>>Not&nbsp;yet&nbsp;billed&nbsp;(one-time&nbsp;charge)</TD>
+          <TD COLSPAN=<%$colspan%>>Not&nbsp;yet&nbsp;billed&nbsp;(one-time&nbsp;charge)</TD>
         </TR>
 
         <TR>
-          <TD COLSPAN=<%=$colspan%>>
+          <TD COLSPAN=<%$colspan%>>
             <FONT SIZE=-1>
-              <% if ( $curuser->access_right('Cancel customer package immediately') ) { %>
-                (&nbsp;<%= pkg_cancel_link($pkg) %>&nbsp;)
-              <% } %>
+% if ( $curuser->access_right('Cancel customer package immediately') ) { 
+
+                (&nbsp;<% pkg_cancel_link($pkg) %>&nbsp;)
+% } 
+
             </FONT>
           </TD>
         </TR>
+% } else { 
 
-      <% } else { %>
 
         <TR>
-          <TD COLSPAN=<%=$colspan%>>Not&nbsp;yet&nbsp;billed&nbsp;(<%= $billed_or_prepaid %>&nbsp;<%= myfreq($pkg->{part_pkg}) %>)</TD>
+          <TD COLSPAN=<%$colspan%>>Not&nbsp;yet&nbsp;billed&nbsp;(<% $billed_or_prepaid %>&nbsp;<% myfreq($pkg->{part_pkg}) %>)</TD>
         </TR>
+% } 
+% } else { 
+ <!-- #setup -->
+% unless ( $pkg->{freq} ) { 
 
-      <% } %>
-
-    <% } else { %> <!-- #setup -->
-
-      <% unless ( $pkg->{freq} ) { %>
-
-        <TR>
-          <TD COLSPAN=<%=$colspan%>>One-time&nbsp;charge</TD>
-        </TR>
 
         <TR>
-          <TD WIDTH="<%=$width%>" ALIGN="right">Billed&nbsp;</TD>
-          <%= pkg_datestr($pkg,'setup',$conf) %>
-        </TR>
-
-      <% } else { %>
-
-        <TR>
-          <TD COLSPAN=<%=$colspan%>><FONT COLOR="#00CC00"><B>Active</B></FONT>,&nbsp;<%= $billed_or_prepaid %>&nbsp;<%= myfreq($pkg->{part_pkg}) %></TD>
+          <TD COLSPAN=<%$colspan%>>One-time&nbsp;charge</TD>
         </TR>
 
         <TR>
-          <TD WIDTH="<%=$width%>" ALIGN="right">Setup&nbsp;</TD>
-          <%= pkg_datestr($pkg, 'setup',$conf) %>
+          <TD WIDTH="<%$width%>" ALIGN="right">Billed&nbsp;</TD>
+          <% pkg_datestr($pkg,'setup',$conf) %>
+        </TR>
+% } else { 
+
+
+        <TR>
+          <TD COLSPAN=<%$colspan%>><FONT COLOR="#00CC00"><B>Active</B></FONT>,&nbsp;<% $billed_or_prepaid %>&nbsp;<% myfreq($pkg->{part_pkg}) %></TD>
         </TR>
 
-      <% } %>
+        <TR>
+          <TD WIDTH="<%$width%>" ALIGN="right">Setup&nbsp;</TD>
+          <% pkg_datestr($pkg, 'setup',$conf) %>
+        </TR>
+% } 
+% } 
+% if ( $pkg->{'last_bill'} ) { 
 
-    <% } %>
-
-    <% if ( $pkg->{'last_bill'} ) { %>
       <TR>
-        <TD WIDTH="<%=$width%>" ALIGN="right"><%= $last_bill_or_renewed %>&nbsp;</TD>
-        <%= pkg_datestr($pkg, 'last_bill',$conf) %>
+        <TD WIDTH="<%$width%>" ALIGN="right"><% $last_bill_or_renewed %>&nbsp;</TD>
+        <% pkg_datestr($pkg, 'last_bill',$conf) %>
       </TR>
-    <% } %>
+% } 
+% if ( $pkg->{'next_bill'} ) { 
 
-    <% if ( $pkg->{'next_bill'} ) { %>
       <TR>
-        <TD WIDTH="<%=$width%>" ALIGN="right"><%= $next_bill_or_prepaid_until %>&nbsp;</TD>
-        <%= pkg_datestr($pkg, 'next_bill',$conf) %>
+        <TD WIDTH="<%$width%>" ALIGN="right"><% $next_bill_or_prepaid_until %>&nbsp;</TD>
+        <% pkg_datestr($pkg, 'next_bill',$conf) %>
       </TR>
-    <% } %>
+% } 
+% if ( $pkg->{'expire'} ) { 
 
-    <% if ( $pkg->{'expire'} ) { %>
       <TR>
-        <TD WIDTH="<%=$width%>" ALIGN="right">Expires&nbsp;</TD>
-        <%= pkg_datestr($pkg, 'expire',$conf) %>
+        <TD WIDTH="<%$width%>" ALIGN="right">Expires&nbsp;</TD>
+        <% pkg_datestr($pkg, 'expire',$conf) %>
       </TR>
-    <% } %>
+% } 
+% if ( $pkg->{freq} ) { 
 
-    <% if ( $pkg->{freq} ) { %>
       <TR>
-        <TD COLSPAN=<%=$colspan%>>
+        <TD COLSPAN=<%$colspan%>>
           <FONT SIZE=-1>
-            <% if ( $curuser->access_right('Suspend customer package') ) { %>
-              (&nbsp;<%= pkg_suspend_link($pkg) %>&nbsp;)
-            <% } %>
-            <% if ( $curuser->access_right('Cancel customer package immediately') ) { %>
-              (&nbsp;<%= pkg_cancel_link($pkg) %>&nbsp;)
-            <% } %>
-            <% if ( $curuser->access_right('Cancel customer package later') ) { %>
-              (&nbsp;<%= pkg_expire_link($pkg) %>&nbsp;)
-            <% } %>
+% if ( $curuser->access_right('Suspend customer package') ) { 
+
+              (&nbsp;<% pkg_suspend_link($pkg) %>&nbsp;)
+% } 
+% if ( $curuser->access_right('Cancel customer package immediately') ) { 
+
+              (&nbsp;<% pkg_cancel_link($pkg) %>&nbsp;)
+% } 
+% if ( $curuser->access_right('Cancel customer package later') ) { 
+
+              (&nbsp;<% pkg_expire_link($pkg) %>&nbsp;)
+% } 
+
           <FONT>
         </TD>
       </TR>
-    <% } %>
+% } 
+% } 
+% } 
 
-  <% } %>
-
-<% } %>
 
 </TABLE>
 </TD>
 
-<TD CLASS="inv" BGCOLOR="<%= $bgcolor %>">
+<TD CLASS="inv" BGCOLOR="<% $bgcolor %>">
   <TABLE CLASS="inv" BORDER=0 CELLSPACING=0 CELLPADDING=0 WIDTH="100%">
+%
+%  foreach my $svcpart (sort {$a->{svcpart} <=> $b->{svcpart}} @{$pkg->{svcparts}}) {
+%    foreach my $service (@{$svcpart->{services}}) {
+%
 
-
-<%
-  foreach my $svcpart (sort {$a->{svcpart} <=> $b->{svcpart}} @{$pkg->{svcparts}}) {
-    foreach my $service (@{$svcpart->{services}}) {
-%>
       <TR>
-        <TD ALIGN="right" VALIGN="top" ROWSPAN=2><%=svc_link($svcpart,$service)%></TD>
-        <TD STYLE="padding-bottom:0px"><B><%=svc_label_link($svcpart,$service)%></B></TD>
+        <TD ALIGN="right" VALIGN="top" ROWSPAN=2><%svc_link($svcpart,$service)%></TD>
+        <TD STYLE="padding-bottom:0px"><B><%svc_label_link($svcpart,$service)%></B></TD>
       </TR>
+% if ( $curuser->access_right('Unprovision customer service') ) { 
 
-      <% if ( $curuser->access_right('Unprovision customer service') ) { %>
         <TR>
-          <TD ALIGN="right" VALIGN="top" STYLE="padding-bottom:5px;padding-top:0px"><FONT SIZE="-2">(&nbsp;<%=svc_unprovision_link($service)%>&nbsp;)</FONT></TD>
+          <TD ALIGN="right" VALIGN="top" STYLE="padding-bottom:5px;padding-top:0px"><FONT SIZE="-2">(&nbsp;<%svc_unprovision_link($service)%>&nbsp;)</FONT></TD>
         </TR>
-      <% } %>
+% } 
+% } 
+% if ( $curuser->access_right('Provision customer service') 
+%            && $svcpart->{count} < $svcpart->{quantity}
+%          )
+%       {
+%    
 
-    <% } %>
-
-    <% if ( $curuser->access_right('Provision customer service') 
-            && $svcpart->{count} < $svcpart->{quantity}
-          )
-       {
-    %>
 
       <TR>
         <TD COLSPAN=2 ALIGN="center" STYLE="padding-bottom:4px;padding-top:0px">
-          <B><%= svc_provision_link($pkg, $svcpart, $conf, $curuser) %></B>
+          <B><% svc_provision_link($pkg, $svcpart, $conf, $curuser) %></B>
         </TD>
       </TR>
+% } 
+% } 
 
-    <% } %>
-
-<% } %>
 
 </TABLE>
 </TD>
+% } #end display packages
+%
 
-<% } #end display packages
-%>
 
 </TABLE>
+% } else { 
 
-<% } else { %>
 <BR>
-<% } %>
+% } 
+%
+%#subroutines
+%
+%sub get_packages {
+%  my $cust_main = shift or return undef;
+%  my $conf = shift;
+%  
+%  my @packages = ();
+%  my $method;
+%  if (  $cgi->param('showcancelledpackages') eq '0' #see if it was set by me
+%     || ( $conf->exists('hidecancelledpackages')
+%           && ! $cgi->param('showcancelledpackages') )
+%     )
+%  {
+%    $method = 'ncancelled_pkgs';
+%  } else {
+%    $method = 'all_pkgs';
+%  }
+%  
+%  foreach my $cust_pkg ( $cust_main->$method() ) {
+%  
+%    my $part_pkg = $cust_pkg->part_pkg;
+%
+%    my %pkg = ();
+%
+%    #to get back to the original object... should use it in the first place!!
+%    $pkg{cust_pkg} = $cust_pkg;
+%    $pkg{part_pkg} = $part_pkg;
+%
+%    $pkg{pkgnum} = $cust_pkg->pkgnum;
+%    $pkg{pkg} = $part_pkg->pkg;
+%    $pkg{pkgpart} = $part_pkg->pkgpart;
+%    $pkg{comment} = $part_pkg->getfield('comment');
+%    $pkg{freq} = $part_pkg->freq;
+%    $pkg{setup} = $cust_pkg->getfield('setup');
+%    $pkg{last_bill} = $cust_pkg->getfield('last_bill');
+%    $pkg{next_bill} = $cust_pkg->getfield('bill');
+%    $pkg{susp} = $cust_pkg->getfield('susp');
+%    $pkg{expire} = $cust_pkg->getfield('expire');
+%    $pkg{cancel} = $cust_pkg->getfield('cancel');
+%
+%  
+%    my %svcparts = map {
+%      $_->svcpart => {
+%                       $_->part_svc->hash,
+%                       'quantity' => $_->quantity,
+%                       'count'    => $cust_pkg->num_cust_svc($_->svcpart),
+%                       #'services' => [],
+%                     };
+%    } $part_pkg->pkg_svc;
+%
+%    foreach my $cust_svc ( $cust_pkg->cust_svc ) {
+%      #warn "svcnum ". $cust_svc->svcnum. " / svcpart ". $cust_svc->svcpart. "\n";
+%      my $svc = {
+%        'svcnum' => $cust_svc->svcnum,
+%        'label'  => ($cust_svc->label)[1],
+%      };
+%
+%      #false laziness with above, to catch extraneous services.  whole
+%      #damn thing should be OO...
+%      my $svcpart = ( $svcparts{$cust_svc->svcpart} ||= {
+%        $cust_svc->part_svc->hash,
+%        'quantity' => 0,
+%        'count'    => $cust_pkg->num_cust_svc($cust_svc->svcpart),
+%        #'services' => [],
+%      } );
+%
+%      push @{$svcpart->{services}}, $svc;
+%
+%    }
+%
+%    $pkg{svcparts} = [ values %svcparts ];
+%
+%    push @packages, \%pkg;
+%  
+%  }
+%  
+%  return \@packages;
+%
+%}
+%
+%sub svc_link {
+%
+%  my ($svcpart, $svc) = (shift,shift) or return '';
+%  return qq!<A HREF="${p}view/$svcpart->{svcdb}.cgi?$svc->{svcnum}">$svcpart->{svc}</A>!;
+%
+%}
+%
+%sub svc_label_link {
+%
+%  my ($svcpart, $svc) = (shift,shift) or return '';
+%  return qq!<A HREF="${p}view/$svcpart->{svcdb}.cgi?$svc->{svcnum}">$svc->{label}</A>!;
+%
+%}
+%
+%sub svc_provision_link {
+%  my ($pkg, $svcpart, $conf, $curuser) = @_;
+%  ( my $svc_nbsp = $svcpart->{svc} ) =~ s/\s+/&nbsp;/g;
+%  my $num_left = $svcpart->{quantity} - $svcpart->{count};
+%  my $pkgnum_svcpart = "pkgnum$pkg->{pkgnum}-svcpart$svcpart->{svcpart}";
+%
+%  my $url;
+%  if ( $svcpart->{svcdb} eq 'svc_external'
+%       && $conf->exists('svc_external-skip_manual')
+%  ) {
+%    $url = "${p}edit/process/$svcpart->{svcdb}.cgi?".
+%           "pkgnum=$pkg->{pkgnum}&".
+%           "svcpart=$svcpart->{svcpart}";
+%  } else {
+%    $url = "${p}edit/$svcpart->{svcdb}.cgi?$pkgnum_svcpart";
+%  }
+%
+%  my $link = qq!<A CLASS="provision" HREF="$url">!.
+%             "Provision&nbsp;$svc_nbsp&nbsp;($num_left)</A>";
+%  if ( $conf->exists('legacy_link')
+%       && $curuser->access_right('View/link unlinked services')
+%     )
+%  {
+%    $link .= '<BR>'.
+%             qq!<A CLASS="provision" HREF="${p}misc/link.cgi?!.
+%             qq!$pkgnum_svcpart">!.
+%            "Link&nbsp;to&nbsp;legacy&nbsp;$svc_nbsp&nbsp;($num_left)</A>";
+%  }
+%  $link;
+%}
+%
+%sub svc_unprovision_link {
+%  my $svc = shift or return '';
+%  qq!<A HREF="javascript:areyousure('${p}misc/unprovision.cgi?$svc->{svcnum}',!.
+%  qq!'Permanently unprovision and delete this service?')">Unprovision</A>!;
+%}
+%
+%# This should be generalized to use config options to determine order.
+%sub pkgsort_pkgnum_cancel {
+%  if ($a->{cancel} and $b->{cancel}) {
+%    return ($a->{pkgnum} <=> $b->{pkgnum});
+%  } elsif ($a->{cancel} or $b->{cancel}) {
+%    return (-1) if ($b->{cancel});
+%    return (1) if ($a->{cancel});
+%    return (0);
+%  } else {
+%    return($a->{pkgnum} <=> $b->{pkgnum});
+%  }
+%}
+%
+%sub pkg_datestr {
+%  my($pkg, $field, $conf) = @_ or return '';
+%  return '&nbsp;' unless $pkg->{$field};
+%  my $format = '<TD align="left"><B>%b</B></TD>'.
+%               '<TD align="right"><B>&nbsp;%o,</B></TD>'.
+%               '<TD align="right"><B>&nbsp;%Y</B></TD>';
+%  #$format .= '&nbsp;<FONT SIZE=-3>%l:%M:%S%P&nbsp;%z</FONT>'
+%  $format .= '<TD ALIGN="right"><B>&nbsp;%l</TD>'.
+%             '<TD ALIGN="center"><B>:</B></TD>'.
+%             '<TD ALIGN="left"><B>%M</B></TD>'.
+%             '<TD ALIGN="left"><B>&nbsp;%P</B></TD>'
+%    if $conf->exists('cust_pkg-display_times');
+%  ( my $strip = time2str($format, $pkg->{$field}) ) =~ s/ (\d)/$1/g;
+%  $strip;
+%}
+%
+%sub pkg_change_link {
+%  my $pkg = shift or return '';
+%  return qq!<a href="${p}misc/change_pkg.cgi?$pkg->{pkgnum}">!.
+%         qq!Change&nbsp;package</a>!;
+%}
+%
+%sub pkg_suspend_link {
+%  my $pkg = shift or return '';
+%  return qq!<a href="${p}misc/susp_pkg.cgi?$pkg->{pkgnum}">Suspend</a>!;
+%}
+%
+%sub pkg_unsuspend_link {
+%  my $pkg = shift or return '';
+%  return qq!<a href="${p}misc/unsusp_pkg.cgi?$pkg->{pkgnum}">Unsuspend</a>!;
+%}
+%
+%sub pkg_cancel_link {
+%  my $pkg = shift or return '';
+%  qq!<A HREF="javascript:areyousure('${p}misc/cancel_pkg.cgi?$pkg->{pkgnum}', !.
+%  qq!'Permanently delete included services and cancel this package?')">!.
+%  qq!Cancel now</A>!;
+%}
+%
+%sub pkg_expire_link {
+%  my $pkg = shift or return '';
+%  qq!<A HREF="${p}misc/expire_pkg.cgi?$pkg->{pkgnum}">Cancel later</A>!;
+%}
+%
+%sub pkg_dates_link {
+%  my $pkg = shift or return '';
+%  qq!<A HREF="${p}edit/REAL_cust_pkg.cgi?$pkg->{pkgnum}">Edit&nbsp;dates</A>!;
+%}
+%
+%sub pkg_customize_link {
+%  my $pkg = shift or return '';
+%  my $custnum = shift;
+%  qq!<A HREF="${p}edit/part_pkg.cgi?keywords=$custnum;clone=$pkg->{pkgpart};!.
+%  qq!pkgnum=$pkg->{pkgnum}">Customize</A>!;
+%}
+%
+%
 
-<%
-#subroutines
-
-sub get_packages {
-  my $cust_main = shift or return undef;
-  my $conf = shift;
-  
-  my @packages = ();
-  my $method;
-  if (  $cgi->param('showcancelledpackages') eq '0' #see if it was set by me
-     || ( $conf->exists('hidecancelledpackages')
-           && ! $cgi->param('showcancelledpackages') )
-     )
-  {
-    $method = 'ncancelled_pkgs';
-  } else {
-    $method = 'all_pkgs';
-  }
-  
-  foreach my $cust_pkg ( $cust_main->$method() ) {
-  
-    my $part_pkg = $cust_pkg->part_pkg;
-
-    my %pkg = ();
-
-    #to get back to the original object... should use it in the first place!!
-    $pkg{cust_pkg} = $cust_pkg;
-    $pkg{part_pkg} = $part_pkg;
-
-    $pkg{pkgnum} = $cust_pkg->pkgnum;
-    $pkg{pkg} = $part_pkg->pkg;
-    $pkg{pkgpart} = $part_pkg->pkgpart;
-    $pkg{comment} = $part_pkg->getfield('comment');
-    $pkg{freq} = $part_pkg->freq;
-    $pkg{setup} = $cust_pkg->getfield('setup');
-    $pkg{last_bill} = $cust_pkg->getfield('last_bill');
-    $pkg{next_bill} = $cust_pkg->getfield('bill');
-    $pkg{susp} = $cust_pkg->getfield('susp');
-    $pkg{expire} = $cust_pkg->getfield('expire');
-    $pkg{cancel} = $cust_pkg->getfield('cancel');
-
-  
-    my %svcparts = map {
-      $_->svcpart => {
-                       $_->part_svc->hash,
-                       'quantity' => $_->quantity,
-                       'count'    => $cust_pkg->num_cust_svc($_->svcpart),
-                       #'services' => [],
-                     };
-    } $part_pkg->pkg_svc;
-
-    foreach my $cust_svc ( $cust_pkg->cust_svc ) {
-      #warn "svcnum ". $cust_svc->svcnum. " / svcpart ". $cust_svc->svcpart. "\n";
-      my $svc = {
-        'svcnum' => $cust_svc->svcnum,
-        'label'  => ($cust_svc->label)[1],
-      };
-
-      #false laziness with above, to catch extraneous services.  whole
-      #damn thing should be OO...
-      my $svcpart = ( $svcparts{$cust_svc->svcpart} ||= {
-        $cust_svc->part_svc->hash,
-        'quantity' => 0,
-        'count'    => $cust_pkg->num_cust_svc($cust_svc->svcpart),
-        #'services' => [],
-      } );
-
-      push @{$svcpart->{services}}, $svc;
-
-    }
-
-    $pkg{svcparts} = [ values %svcparts ];
-
-    push @packages, \%pkg;
-  
-  }
-  
-  return \@packages;
-
-}
-
-sub svc_link {
-
-  my ($svcpart, $svc) = (shift,shift) or return '';
-  return qq!<A HREF="${p}view/$svcpart->{svcdb}.cgi?$svc->{svcnum}">$svcpart->{svc}</A>!;
-
-}
-
-sub svc_label_link {
-
-  my ($svcpart, $svc) = (shift,shift) or return '';
-  return qq!<A HREF="${p}view/$svcpart->{svcdb}.cgi?$svc->{svcnum}">$svc->{label}</A>!;
-
-}
-
-sub svc_provision_link {
-  my ($pkg, $svcpart, $conf, $curuser) = @_;
-  ( my $svc_nbsp = $svcpart->{svc} ) =~ s/\s+/&nbsp;/g;
-  my $num_left = $svcpart->{quantity} - $svcpart->{count};
-  my $pkgnum_svcpart = "pkgnum$pkg->{pkgnum}-svcpart$svcpart->{svcpart}";
-
-  my $url;
-  if ( $svcpart->{svcdb} eq 'svc_external'
-       && $conf->exists('svc_external-skip_manual')
-  ) {
-    $url = "${p}edit/process/$svcpart->{svcdb}.cgi?".
-           "pkgnum=$pkg->{pkgnum}&".
-           "svcpart=$svcpart->{svcpart}";
-  } else {
-    $url = "${p}edit/$svcpart->{svcdb}.cgi?$pkgnum_svcpart";
-  }
-
-  my $link = qq!<A CLASS="provision" HREF="$url">!.
-             "Provision&nbsp;$svc_nbsp&nbsp;($num_left)</A>";
-  if ( $conf->exists('legacy_link')
-       && $curuser->access_right('View/link unlinked services')
-     )
-  {
-    $link .= '<BR>'.
-             qq!<A CLASS="provision" HREF="${p}misc/link.cgi?!.
-             qq!$pkgnum_svcpart">!.
-            "Link&nbsp;to&nbsp;legacy&nbsp;$svc_nbsp&nbsp;($num_left)</A>";
-  }
-  $link;
-}
-
-sub svc_unprovision_link {
-  my $svc = shift or return '';
-  qq!<A HREF="javascript:areyousure('${p}misc/unprovision.cgi?$svc->{svcnum}',!.
-  qq!'Permanently unprovision and delete this service?')">Unprovision</A>!;
-}
-
-# This should be generalized to use config options to determine order.
-sub pkgsort_pkgnum_cancel {
-  if ($a->{cancel} and $b->{cancel}) {
-    return ($a->{pkgnum} <=> $b->{pkgnum});
-  } elsif ($a->{cancel} or $b->{cancel}) {
-    return (-1) if ($b->{cancel});
-    return (1) if ($a->{cancel});
-    return (0);
-  } else {
-    return($a->{pkgnum} <=> $b->{pkgnum});
-  }
-}
-
-sub pkg_datestr {
-  my($pkg, $field, $conf) = @_ or return '';
-  return '&nbsp;' unless $pkg->{$field};
-  my $format = '<TD align="left"><B>%b</B></TD>'.
-               '<TD align="right"><B>&nbsp;%o,</B></TD>'.
-               '<TD align="right"><B>&nbsp;%Y</B></TD>';
-  #$format .= '&nbsp;<FONT SIZE=-3>%l:%M:%S%P&nbsp;%z</FONT>'
-  $format .= '<TD ALIGN="right"><B>&nbsp;%l</TD>'.
-             '<TD ALIGN="center"><B>:</B></TD>'.
-             '<TD ALIGN="left"><B>%M</B></TD>'.
-             '<TD ALIGN="left"><B>&nbsp;%P</B></TD>'
-    if $conf->exists('cust_pkg-display_times');
-  ( my $strip = time2str($format, $pkg->{$field}) ) =~ s/ (\d)/$1/g;
-  $strip;
-}
-
-sub pkg_change_link {
-  my $pkg = shift or return '';
-  return qq!<a href="${p}misc/change_pkg.cgi?$pkg->{pkgnum}">!.
-         qq!Change&nbsp;package</a>!;
-}
-
-sub pkg_suspend_link {
-  my $pkg = shift or return '';
-  return qq!<a href="${p}misc/susp_pkg.cgi?$pkg->{pkgnum}">Suspend</a>!;
-}
-
-sub pkg_unsuspend_link {
-  my $pkg = shift or return '';
-  return qq!<a href="${p}misc/unsusp_pkg.cgi?$pkg->{pkgnum}">Unsuspend</a>!;
-}
-
-sub pkg_cancel_link {
-  my $pkg = shift or return '';
-  qq!<A HREF="javascript:areyousure('${p}misc/cancel_pkg.cgi?$pkg->{pkgnum}', !.
-  qq!'Permanently delete included services and cancel this package?')">!.
-  qq!Cancel now</A>!;
-}
-
-sub pkg_expire_link {
-  my $pkg = shift or return '';
-  qq!<A HREF="${p}misc/expire_pkg.cgi?$pkg->{pkgnum}">Cancel later</A>!;
-}
-
-sub pkg_dates_link {
-  my $pkg = shift or return '';
-  qq!<A HREF="${p}edit/REAL_cust_pkg.cgi?$pkg->{pkgnum}">Edit&nbsp;dates</A>!;
-}
-
-sub pkg_customize_link {
-  my $pkg = shift or return '';
-  my $custnum = shift;
-  qq!<A HREF="${p}edit/part_pkg.cgi?keywords=$custnum;clone=$pkg->{pkgpart};!.
-  qq!pkgnum=$pkg->{pkgnum}">Customize</A>!;
-}
-
-%>

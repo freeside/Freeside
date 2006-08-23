@@ -1,25 +1,26 @@
-<%
-
-$cgi->param('agentnum') =~ /(\d+)$/ or die "illegal agentnum";
-my $agent = qsearchs('agent', { 'agentnum' => $1 } );
-die "agentnum $1 not found" unless $agent;
-
-#my $old
-
-my @new = map {
-                my $cardtype = $_;
-                new FS::agent_payment_gateway {
-                  ( map { $_ => scalar($cgi->param($_)) }
-                                    fields('agent_payment_gateway')
-                  ),
-                  'cardtype' => $cardtype,
-                };
-              }
-              $cgi->param('cardtype');
-
-foreach my $new (@new) {
-  my $error = $new->insert;
-  die $error if $error;
-}
-
-%><%= $cgi->redirect(popurl(3). "browse/agent.cgi") %>
+%
+%
+%$cgi->param('agentnum') =~ /(\d+)$/ or die "illegal agentnum";
+%my $agent = qsearchs('agent', { 'agentnum' => $1 } );
+%die "agentnum $1 not found" unless $agent;
+%
+%#my $old
+%
+%my @new = map {
+%                my $cardtype = $_;
+%                new FS::agent_payment_gateway {
+%                  ( map { $_ => scalar($cgi->param($_)) }
+%                                    fields('agent_payment_gateway')
+%                  ),
+%                  'cardtype' => $cardtype,
+%                };
+%              }
+%              $cgi->param('cardtype');
+%
+%foreach my $new (@new) {
+%  my $error = $new->insert;
+%  die $error if $error;
+%}
+%
+%
+<% $cgi->redirect(popurl(3). "browse/agent.cgi") %>

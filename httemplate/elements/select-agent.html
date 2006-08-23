@@ -1,10 +1,11 @@
-<%
-  my( $agentnum, %opt ) = @_;
-
-  $opt{'records'} = delete $opt{'agents'}
-    if $opt{'agents'};
-
-%><%= include( '/elements/select-table.html',
+%
+%  my( $agentnum, %opt ) = @_;
+%
+%  $opt{'records'} = delete $opt{'agents'}
+%    if $opt{'agents'};
+%
+%
+<% include( '/elements/select-table.html',
                  'table'       => 'agent',
                  'name_col'    => 'agent',
                  'value'       => $agentnum,

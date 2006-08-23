@@ -1,10 +1,11 @@
-<%
-  my( $refnum, %opt ) = @_;
-
-  $opt{'records'} = delete $opt{'part_referrals'}
-    if $opt{'part_referrals'};
-
-%><%= include( '/elements/select-table.html',
+%
+%  my( $refnum, %opt ) = @_;
+%
+%  $opt{'records'} = delete $opt{'part_referrals'}
+%    if $opt{'part_referrals'};
+%
+%
+<% include( '/elements/select-table.html',
                  'table'       => 'part_referral',
                  'name_col'    => 'referral',
                  'value'       => $refnum,

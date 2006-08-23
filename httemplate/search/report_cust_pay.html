@@ -1,4 +1,4 @@
-<%= include('/elements/header.html', 'Payment report' ) %>
+<% include('/elements/header.html', 'Payment report' ) %>
 
 <FORM ACTION="cust_pay.cgi" METHOD="GET">
 <INPUT TYPE="hidden" NAME="magic" VALUE="_date">
@@ -25,13 +25,13 @@
     </TD>
   </TR>
 
-  <%= include( '/elements/tr-select-agent.html',
+  <% include( '/elements/tr-select-agent.html',
                  $cgi->param('agentnum'),
                  'label' => 'for agent: ',
              )
   %>
 
-  <%= include( '/elements/tr-input-beginning_ending.html' ) %>
+  <% include( '/elements/tr-input-beginning_ending.html' ) %>
 
 </TABLE>
 
@@ -40,4 +40,4 @@
 
 </FORM>
 
-<%= include('/elements/footer.html') %>
+<% include('/elements/footer.html') %>

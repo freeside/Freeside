@@ -1,182 +1,188 @@
-<%
-  my( $cust_main ) = @_;
-  my @invoicing_list = $cust_main->invoicing_list;
-  my $conf = new FS::Conf;
-  my $money_char = $conf->config('money_char') || '$';
-%>
+%
+%  my( $cust_main ) = @_;
+%  my @invoicing_list = $cust_main->invoicing_list;
+%  my $conf = new FS::Conf;
+%  my $money_char = $conf->config('money_char') || '$';
+%
+
 
 Billing information
-(<A HREF="<%= $p %>misc/bill.cgi?<%= $cust_main->custnum %>">Bill now</A>)
-<%= ntable("#cccccc") %><TR><TD><%= ntable("#cccccc",2) %>
+(<A HREF="<% $p %>misc/bill.cgi?<% $cust_main->custnum %>">Bill now</A>)
+<% ntable("#cccccc") %><TR><TD><% ntable("#cccccc",2) %>
+%
+%( my $balance = $cust_main->balance )
+%  =~ s/^(\-?)(.*)$/<FONT SIZE=+1>$1<\/FONT>$money_char$2/;
+%
 
-<%
-( my $balance = $cust_main->balance )
-  =~ s/^(\-?)(.*)$/<FONT SIZE=+1>$1<\/FONT>$money_char$2/;
-%>
 
 <TR>
   <TD ALIGN="right">Balance due</TD>
-  <TD BGCOLOR="#ffffff"><B><%= $balance %></B></TD>
+  <TD BGCOLOR="#ffffff"><B><% $balance %></B></TD>
 </TR>
 
 <TR>
   <TD ALIGN="right">Billing&nbsp;type</TD>
   <TD BGCOLOR="#ffffff">
+% if ( $cust_main->payby eq 'CARD' || $cust_main->payby eq 'DCRD' ) { 
 
-<% if ( $cust_main->payby eq 'CARD' || $cust_main->payby eq 'DCRD' ) { %>
 
-    Credit&nbsp;card&nbsp;<%= $cust_main->payby eq 'CARD' ? '(automatic)' : '(on-demand)' %>
+    Credit&nbsp;card&nbsp;<% $cust_main->payby eq 'CARD' ? '(automatic)' : '(on-demand)' %>
   </TD>
 </TR>
 <TR>
   <TD ALIGN="right">Card number</TD>
-  <TD BGCOLOR="#ffffff"><%= $cust_main->payinfo_masked %></TD>
+  <TD BGCOLOR="#ffffff"><% $cust_main->payinfo_masked %></TD>
 </TR>
+%
+%#false laziness w/elements/select-month_year.html & edit/cust_main/billing.html
+%my( $mon, $year );
+%my $date = $cust_main->paydate || '12-2037';
+%if ( $date  =~ /^(\d{4})-(\d{1,2})-\d{1,2}$/ ) { #PostgreSQL date format
+%  ( $mon, $year ) = ( $2, $1 );
+%} elsif ( $date =~ /^(\d{1,2})-(\d{1,2}-)?(\d{4}$)/ ) {
+%  ( $mon, $year ) = ( $1, $3 );
+%} else {
+%  warn "unrecognized expiration date format: $date";
+%  ( $mon, $year ) = ( '', '' );
+%}
+%
 
-<%
-#false laziness w/elements/select-month_year.html & edit/cust_main/billing.html
-my( $mon, $year );
-my $date = $cust_main->paydate || '12-2037';
-if ( $date  =~ /^(\d{4})-(\d{1,2})-\d{1,2}$/ ) { #PostgreSQL date format
-  ( $mon, $year ) = ( $2, $1 );
-} elsif ( $date =~ /^(\d{1,2})-(\d{1,2}-)?(\d{4}$)/ ) {
-  ( $mon, $year ) = ( $1, $3 );
-} else {
-  warn "unrecognized expiration date format: $date";
-  ( $mon, $year ) = ( '', '' );
-}
-%>
 <TR>
   <TD ALIGN="right">Expiration</TD>
-  <TD BGCOLOR="#ffffff"><%= "$mon/$year" %></TD>
+  <TD BGCOLOR="#ffffff"><% "$mon/$year" %></TD>
 </TR>
+% if ( $cust_main->paystart_month ) { 
 
-<% if ( $cust_main->paystart_month ) { %>
   <TR>
     <TD ALIGN="right">Start date</TD>
-    <TD BGCOLOR="#ffffff"><%= $cust_main->paystart_month. '/'. $cust_main->paystart_year %>
+    <TD BGCOLOR="#ffffff"><% $cust_main->paystart_month. '/'. $cust_main->paystart_year %>
   </TR>
-<% } elsif ( $cust_main->payissue ) { %>
+% } elsif ( $cust_main->payissue ) { 
+
   <TR>
     <TD ALIGN="right">Issue #</TD>
-    <TD BGCOLOR="#ffffff"><%= $cust_main->payissue %>
+    <TD BGCOLOR="#ffffff"><% $cust_main->payissue %>
   </TR>
-<% } %>
+% } 
+
 
 <TR>
   <TD ALIGN="right">Name on card</TD>
-  <TD BGCOLOR="#ffffff"><%= $cust_main->payname %></TD>
+  <TD BGCOLOR="#ffffff"><% $cust_main->payname %></TD>
 </TR>
+% } elsif ( $cust_main->payby eq 'CHEK' || $cust_main->payby eq 'DCHK') {
+%     my( $account, $aba ) = split('@', $cust_main->payinfo );
+%
 
-<% } elsif ( $cust_main->payby eq 'CHEK' || $cust_main->payby eq 'DCHK') {
-     my( $account, $aba ) = split('@', $cust_main->payinfo );
-%>
 
-    Electronic&nbsp;check&nbsp;<%= $cust_main->payby eq 'CHEK' ? '(automatic)' : '(on-demand)' %>
+    Electronic&nbsp;check&nbsp;<% $cust_main->payby eq 'CHEK' ? '(automatic)' : '(on-demand)' %>
   </TD>
 </TR>
 <TR>
   <TD ALIGN="right">ABA/Routing code</TD>
-  <TD BGCOLOR="#ffffff"><%= $aba %></TD>
+  <TD BGCOLOR="#ffffff"><% $aba %></TD>
 </TR>
 <TR>
   <TD ALIGN="right">Account number</TD>
-  <TD BGCOLOR="#ffffff"><%= 'x'x(length($account)-2). substr($account,(length($account)-2)) %></TD>
+  <TD BGCOLOR="#ffffff"><% 'x'x(length($account)-2). substr($account,(length($account)-2)) %></TD>
 </TR>
 <TR>
   <TD ALIGN="right">Bank name</TD>
-  <TD BGCOLOR="#ffffff"><%= $cust_main->payname %></TD>
+  <TD BGCOLOR="#ffffff"><% $cust_main->payname %></TD>
 </TR>
+% } elsif ( $cust_main->payby eq 'LECB' ) {
+%     $cust_main->payinfo =~ /^(\d{3})(\d{3})(\d{4})$/;
+%     my $payinfo = "$1-$2-$3";
+%
 
-<% } elsif ( $cust_main->payby eq 'LECB' ) {
-     $cust_main->payinfo =~ /^(\d{3})(\d{3})(\d{4})$/;
-     my $payinfo = "$1-$2-$3";
-%>
 
     Phone&nbsp;bill&nbsp;billing
   </TD>
 </TR>
 <TR>
   <TD ALIGN="right">Phone number</TD>
-  <TD BGCOLOR="#ffffff"><%= $payinfo %></TD>
+  <TD BGCOLOR="#ffffff"><% $payinfo %></TD>
 </TR>
+% } elsif ( $cust_main->payby eq 'BILL' ) { 
 
-<% } elsif ( $cust_main->payby eq 'BILL' ) { %>
 
     Billing
   </TD>
 </TR>
+% if ( $cust_main->payinfo ) { 
 
-  <% if ( $cust_main->payinfo ) { %>
 <TR>
   <TD ALIGN="right">P.O. </TD>
-  <TD BGCOLOR="#ffffff"><%= $cust_main->payinfo %></TD>
+  <TD BGCOLOR="#ffffff"><% $cust_main->payinfo %></TD>
 </TR>
-  <% } %>
+% } 
+
 
 <TR>
   <TD ALIGN="right">Attention</TD>
-  <TD BGCOLOR="#ffffff"><%= $cust_main->payname %></TD>
+  <TD BGCOLOR="#ffffff"><% $cust_main->payname %></TD>
 </TR>
+% } elsif ( $cust_main->payby eq 'COMP' ) { 
 
-<% } elsif ( $cust_main->payby eq 'COMP' ) { %>
 
     Complimentary
   </TD>
 </TR>
 <TR>
   <TD ALIGN="right">Authorized&nbsp;by</TD>
-  <TD BGCOLOR="#ffffff"><%= $cust_main->payinfo %></TD>
+  <TD BGCOLOR="#ffffff"><% $cust_main->payinfo %></TD>
 </TR>
+%
+%#false laziness w/above etc.
+%my( $mon, $year );
+%my $date = $cust_main->paydate || '12-2037';
+%if ( $date  =~ /^(\d{4})-(\d{1,2})-\d{1,2}$/ ) { #PostgreSQL date format
+%  ( $mon, $year ) = ( $2, $1 );
+%} elsif ( $date =~ /^(\d{1,2})-(\d{1,2}-)?(\d{4}$)/ ) {
+%  ( $mon, $year ) = ( $1, $3 );
+%} else {
+%  warn "unrecognized expiration date format: $date";
+%  ( $mon, $year ) = ( '', '' );
+%}
+%
 
-<%
-#false laziness w/above etc.
-my( $mon, $year );
-my $date = $cust_main->paydate || '12-2037';
-if ( $date  =~ /^(\d{4})-(\d{1,2})-\d{1,2}$/ ) { #PostgreSQL date format
-  ( $mon, $year ) = ( $2, $1 );
-} elsif ( $date =~ /^(\d{1,2})-(\d{1,2}-)?(\d{4}$)/ ) {
-  ( $mon, $year ) = ( $1, $3 );
-} else {
-  warn "unrecognized expiration date format: $date";
-  ( $mon, $year ) = ( '', '' );
-}
-%>
 <TR>
   <TD ALIGN="right">Expiration</TD>
-  <TD BGCOLOR="#ffffff"><%= "$mon/$year" %></TD>
+  <TD BGCOLOR="#ffffff"><% "$mon/$year" %></TD>
 </TR>
+% } 
 
-<% } %>
 
 <TR>
   <TD ALIGN="right">Tax&nbsp;exempt</TD>
-  <TD BGCOLOR="#ffffff"><%= $cust_main->tax ? 'yes' : 'no' %></TD>
+  <TD BGCOLOR="#ffffff"><% $cust_main->tax ? 'yes' : 'no' %></TD>
 </TR>
 <TR>
   <TD ALIGN="right">Postal&nbsp;invoices</TD>
   <TD BGCOLOR="#ffffff">
-    <%= ( grep { $_ eq 'POST' } @invoicing_list ) ? 'yes' : 'no' %>
+    <% ( grep { $_ eq 'POST' } @invoicing_list ) ? 'yes' : 'no' %>
   </TD>
 </TR>
 <TR>
   <TD ALIGN="right">FAX&nbsp;invoices</TD>
   <TD BGCOLOR="#ffffff">
-    <%= ( grep { $_ eq 'FAX' } @invoicing_list ) ? 'yes' : 'no' %>
+    <% ( grep { $_ eq 'FAX' } @invoicing_list ) ? 'yes' : 'no' %>
   </TD>
 </TR>
 <TR>
   <TD ALIGN="right">Email&nbsp;invoices</TD>
   <TD BGCOLOR="#ffffff">
-    <%= join(', ', grep { $_ !~ /^(POST|FAX)$/ } @invoicing_list ) || 'no' %>
+    <% join(', ', grep { $_ !~ /^(POST|FAX)$/ } @invoicing_list ) || 'no' %>
   </TD>
 </TR>
-<% if ( $conf->exists('voip-cust_cdr_spools') ) { %>
+% if ( $conf->exists('voip-cust_cdr_spools') ) { 
+
   <TR>
     <TD ALIGN="right">Spool&nbsp;CDRs</TD>
-    <TD BGCOLOR="#ffffff"><%= $cust_main->spool_cdr ? 'yes' : 'no' %></TD>
+    <TD BGCOLOR="#ffffff"><% $cust_main->spool_cdr ? 'yes' : 'no' %></TD>
   </TR>
-<% } %>
+% } 
+
 
 </TABLE></TD></TR></TABLE>
 

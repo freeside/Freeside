@@ -1,122 +1,123 @@
-<%
+%
+%
+%  ##
+%  # required
+%  ##
+%  # 'target_table'    => 'table_name',
+%  # 'link_table'      => 'table_name',
+%  #
+%  # 'name_col' => 'name_column',
+%  # #or
+%  # 'name_callback' => sub { },
+%  #
+%  ##
+%  # recommended (required?)
+%  ##
+%  # 'source_obj'   => $obj,
+%  # #or?
+%  # #'source_table' => 'table_name',
+%  # #'sourcenum'    => '4', #current value of primary key in source_table
+%  # #                       # (none is okay, just pass it if you have it)
+%  ##
+%  # optional
+%  ##
+%  # 'disable-able' => 1,
+%
+%  my( %opt ) = @_;
+%
+%  my $target_pkey = dbdef->table($opt{'target_table'})->primary_key;
+%
+%  my( $source_pkey, $sourcenum, $source_obj );
+%  if ( $opt{'source_obj'} ) {
+%
+%    $source_obj = $opt{'source_obj'};
+%    #$source_table = $source_obj->dbdef_table->table;
+%    $source_pkey = $source_obj->dbdef_table->primary_key;
+%    $sourcenum = $source_obj->$source_pkey();
+%
+%  } else {
+%
+%    #$source_obj?
+%    $source_pkey = $opt{'source_table'}
+%                     ? dbdef->table($opt{'source_table'})->primary_key
+%                     : '';
+%    $sourcenum = $opt{'sourcenum'};
+%  }
+%
+%  my $hashref = $opt{'hashref'} || {};
+%
+%  my $extra_sql = '';
+%
+%  if ( $opt{'disable-able'} ) {
+%    $hashref->{'disabled'} = '';
+%
+%    $extra_sql .= ( $sourcenum && $source_pkey ) 
+%                    ? "OR $source_pkey = $sourcenum"
+%                    : '';
+%  }
+%
+%
+% foreach my $target_obj (
+%     qsearch({ 'table'     => $opt{'target_table'},
+%               'hashref'   => $hashref,
+%               'select'    => $opt{'target_table'}. '.*',
+%               'addl_from' => "LEFT JOIN $opt{'link_table'} USING ( $target_pkey )",
+%               'extra_sql' => $extra_sql,
+%            })
+%   ) {
+%
+%     my $targetnum = $target_obj->$target_pkey();
+%
+%     my $checked;
+%     if ( $cgi->param('error') ) {
+%
+%       $checked = $cgi->param($target_pkey.$targetnum)
+%                    ? 'CHECKED'
+%                    : '';
+%
+%     } else {
+%
+%       $checked = qsearchs( $opt{'link_table'}, {
+%                                                  $source_pkey => $sourcenum,
+%                                                  $target_pkey => $targetnum,
+%                                                }                             )
+%                    ? 'CHECKED'
+%                    : ''
+%
+%     }
+%
+%
 
-  ##
-  # required
-  ##
-  # 'target_table'    => 'table_name',
-  # 'link_table'      => 'table_name',
-  #
-  # 'name_col' => 'name_column',
-  # #or
-  # 'name_callback' => sub { },
-  #
-  ##
-  # recommended (required?)
-  ##
-  # 'source_obj'   => $obj,
-  # #or?
-  # #'source_table' => 'table_name',
-  # #'sourcenum'    => '4', #current value of primary key in source_table
-  # #                       # (none is okay, just pass it if you have it)
-  ##
-  # optional
-  ##
-  # 'disable-able' => 1,
 
-  my( %opt ) = @_;
+  <INPUT TYPE="checkbox" NAME="<% $target_pkey. $targetnum %>" <% $checked %> VALUE="ON">
+% if ( $opt{'target_link'} ) { 
 
-  my $target_pkey = dbdef->table($opt{'target_table'})->primary_key;
 
-  my( $source_pkey, $sourcenum, $source_obj );
-  if ( $opt{'source_obj'} ) {
+    <A HREF="<% $opt{'target_link'} %><% $targetnum %>">
+%
+%
+%  }
+%  
+<% $targetnum %>: 
+% if ( $opt{'name_callback'} ) { 
 
-    $source_obj = $opt{'source_obj'};
-    #$source_table = $source_obj->dbdef_table->table;
-    $source_pkey = $source_obj->dbdef_table->primary_key;
-    $sourcenum = $source_obj->$source_pkey();
 
-  } else {
+    <% &{ $opt{'name_callback'} }( $target_obj ) %><% $opt{'target_link'} ? '</A>' : '' %>
+% } else {
+%       my $name_col = $opt{'name_col'};
+%  
 
-    #$source_obj?
-    $source_pkey = $opt{'source_table'}
-                     ? dbdef->table($opt{'source_table'})->primary_key
-                     : '';
-    $sourcenum = $opt{'sourcenum'};
-  }
 
-  my $hashref = $opt{'hashref'} || {};
+    <% $target_obj->$name_col() %><% $opt{'target_link'} ? '</A>' : '' %>
+% } 
+% if ( $opt{'disable-able'} ) { 
 
-  my $extra_sql = '';
 
-  if ( $opt{'disable-able'} ) {
-    $hashref->{'disabled'} = '';
+    <% $target_obj->disabled =~ /^Y/i ? ' (DISABLED)' : '' %>
+% } 
 
-    $extra_sql .= ( $sourcenum && $source_pkey ) 
-                    ? "OR $source_pkey = $sourcenum"
-                    : '';
-  }
-
-%>
-
-<% foreach my $target_obj (
-     qsearch({ 'table'     => $opt{'target_table'},
-               'hashref'   => $hashref,
-               'select'    => $opt{'target_table'}. '.*',
-               'addl_from' => "LEFT JOIN $opt{'link_table'} USING ( $target_pkey )",
-               'extra_sql' => $extra_sql,
-            })
-   ) {
-
-     my $targetnum = $target_obj->$target_pkey();
-
-     my $checked;
-     if ( $cgi->param('error') ) {
-
-       $checked = $cgi->param($target_pkey.$targetnum)
-                    ? 'CHECKED'
-                    : '';
-
-     } else {
-
-       $checked = qsearchs( $opt{'link_table'}, {
-                                                  $source_pkey => $sourcenum,
-                                                  $target_pkey => $targetnum,
-                                                }                             )
-                    ? 'CHECKED'
-                    : ''
-
-     }
-
-%>
-
-  <INPUT TYPE="checkbox" NAME="<%= $target_pkey. $targetnum %>" <%= $checked %> VALUE="ON">
-
-  <% if ( $opt{'target_link'} ) { %>
-
-    <A HREF="<%= $opt{'target_link'} %><%= $targetnum %>"><%
-
-  }
-  %><%= $targetnum %>: 
-
-  <% if ( $opt{'name_callback'} ) { %>
-
-    <%= &{ $opt{'name_callback'} }( $target_obj ) %><%= $opt{'target_link'} ? '</A>' : '' %>
-
-  <% } else {
-       my $name_col = $opt{'name_col'};
-  %>
-
-    <%= $target_obj->$name_col() %><%= $opt{'target_link'} ? '</A>' : '' %>
-
-  <% } %>
-
-  <% if ( $opt{'disable-able'} ) { %>
-
-    <%= $target_obj->disabled =~ /^Y/i ? ' (DISABLED)' : '' %>
-
-  <% } %>
 
   <BR>
+% } 
 
-<% } %>
 

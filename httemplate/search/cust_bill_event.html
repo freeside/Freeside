@@ -1,4 +1,4 @@
-<%= include(
+<% include(
       '/elements/header.html',
       ( $cgi->param('failed') ? 'Failed invoice events' : 'Invoice events' ),
       include('/elements/menubar.html',
@@ -9,7 +9,7 @@
 %>
 
     <FORM ACTION="cust_bill_event.cgi" METHOD="GET">
-    <INPUT TYPE="hidden" NAME="failed" VALUE="<%= $cgi->param('failed') %>">
+    <INPUT TYPE="hidden" NAME="failed" VALUE="<% $cgi->param('failed') %>">
     <TABLE>
       <!--<TR>
         <TD ALIGN="right">Customer type</TD>
@@ -23,15 +23,16 @@
         </TD>
       </TR>
       -->
-      <%= include( '/elements/tr-input-beginning_ending.html' ) %>
+      <% include( '/elements/tr-input-beginning_ending.html' ) %>
       <!--
       <TR>
         <TD ALIGN="right">Events: </TD>
         <TD>
           <SELECT NAME="eventpart">
-            <OPTION SELECTED VALUE=""><%= $cgi->param('failed') ? '(all failed events)' : '(all events)' %>
-            <% foreach my $part_bill_event ( qsearch( 'part_bill_event', {} ) ) { %>
-            <% } %>
+            <OPTION SELECTED VALUE=""><% $cgi->param('failed') ? '(all failed events)' : '(all events)' %>
+% foreach my $part_bill_event ( qsearch( 'part_bill_event', {} ) ) { 
+% } 
+
           </SELECT>
         </TD>
       </TR>

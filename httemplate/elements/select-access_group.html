@@ -1,10 +1,11 @@
-<% 
-  my( $groupnum, %opt ) = @_;
-
-  %opt{'records'} = delete $opt{'access_group'}
-    if $opt{'access_group'};
-
-%><%= include( '/elements/select-table.html',
+% 
+%  my( $groupnum, %opt ) = @_;
+%
+%  %opt{'records'} = delete $opt{'access_group'}
+%    if $opt{'access_group'};
+%
+%
+<% include( '/elements/select-table.html',
                  'table'       => 'access_group',
                  'name_col'    => 'groupname',
                  'value'       => $groupnum,

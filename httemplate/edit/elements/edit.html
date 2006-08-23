@@ -1,197 +1,199 @@
-<%
-
-  # options example...
-  #
-  # 'name'  =>
-  # 'table' =>
-  # #? 'primary_key' => #required when the dbdef doesn't know...???
-  # 'labels' => {
-  #               'column' => 'Label',
-  #             }
-  #
-  # listref - each item is a literal column name (or method) or hashref
-  #                                                          or (notyet) coderef
-  # if not specified all columns (except for the primary key) will be editable
-  # 'fields' => [
-  #               'columname',
-  #               { 'field' => 'another_columname',
-  #                 'type'  => 'text', #text, fixed, hidden, checkbox
-  #                                    #eventually more for <SELECT>, etc.
-  #                 'value' => 'Y', #only for checkbox
-  #               },
-  #             ]
-  #
-  # 'menubar'     => '', #menubar arrayref
-  #
-  # #run when re-displaying with an error
-  # 'error_callback' => sub { my( $cgi, $object ) = @_; },
-  #
-  # #run when editing
-  # 'edit_callback' => sub { my( $cgi, $object ) = @_; },
-  #
-  # # returns a hashref for the new object
-  # 'new_hashref_callback'
-  #
-  # #run when adding
-  # 'new_callback' => sub { my( $cgi, $object ) = @_; },
-  #
-  # #XXX describe
-  # 'field_callback' => sub { },
-  #
-  # #string or coderef of additional HTML to add before </TABLE>
-  # 'html_table_bottom' => '',
-  #
-  # 'viewall_dir' => '', #'search' or 'browse', defaults to 'search'
-  #
-  # 'html_bottom' => '', #string
-  # 'html_bottom' => sub {
-  #                        my $object = shift;
-  #                        # ...
-  #                        "html_string";
-  #                      },
-
-  my(%opt) = @_;
-
-  #false laziness w/process.html
-  my $table = $opt{'table'};
-  my $class = "FS::$table";
-  my $pkey = dbdef->table($table)->primary_key; #? $opt{'primary_key'} || 
-  my $fields = $opt{'fields'}
-               #|| [ grep { $_ ne $pkey } dbdef->table($table)->columns ];
-               || [ grep { $_ ne $pkey } fields($table) ];
-  #my @actualfields = map { ref($_) ? $_->{'field'} : $_ } @$fields;
-
-  my $object;
-  if ( $cgi->param('error') ) {
-
-    $object = $class->new( {
-      map { $_ => scalar($cgi->param($_)) } fields($table)
-    });
-
-    &{$opt{'error_callback'}}($cgi, $object)
-      if $opt{'error_callback'};
-
-  } elsif ( $cgi->keywords ) { #editing
-
-    my( $query ) = $cgi->keywords;
-    $query =~ /^(\d+)$/;
-    $object = qsearchs( $table, { $pkey => $1 } );
-    warn "$table $pkey => $1"
-      if $opt{'debug'};
-
-    &{$opt{'edit_callback'}}($cgi, $object)
-      if $opt{'edit_callback'};
-
-  } else { #adding
-
-    my $hashref = $opt{'new_hashref_callback'}
-                    ? &{$opt{'new_hashref_callback'}}
-                    : {};
-
-    $object = $class->new( $hashref );
-
-    &{$opt{'new_callback'}}($cgi, $object)
-      if $opt{'new_callback'};
-
-  }
-
-  my $action = $object->$pkey() ? 'Edit' : 'Add';
-
-  my $title = "$action $opt{'name'}";
-
-  my @menubar = ();
-  if ( $opt{'menubar'} ) {
-    @menubar = @{ $opt{'menubar'} };
-  } else {
-    @menubar = (
-      'Main menu' => $p, #eventually get rid of this when the ACL/UI update is done
-      #eventually use Lingua::bs to pluralize
-      "View all $opt{'name'}s" => $p. ( $opt{'viewall_dir'} || 'search' ).
-                                  "/$table.html",
-    );
-  }
-
-%><%= include("/elements/header.html", $title,
+%
+%
+%  # options example...
+%  #
+%  # 'name'  =>
+%  # 'table' =>
+%  # #? 'primary_key' => #required when the dbdef doesn't know...???
+%  # 'labels' => {
+%  #               'column' => 'Label',
+%  #             }
+%  #
+%  # listref - each item is a literal column name (or method) or hashref
+%  #                                                          or (notyet) coderef
+%  # if not specified all columns (except for the primary key) will be editable
+%  # 'fields' => [
+%  #               'columname',
+%  #               { 'field' => 'another_columname',
+%  #                 'type'  => 'text', #text, fixed, hidden, checkbox
+%  #                                    #eventually more for <SELECT>, etc.
+%  #                 'value' => 'Y', #only for checkbox
+%  #               },
+%  #             ]
+%  #
+%  # 'menubar'     => '', #menubar arrayref
+%  #
+%  # #run when re-displaying with an error
+%  # 'error_callback' => sub { my( $cgi, $object ) = @_; },
+%  #
+%  # #run when editing
+%  # 'edit_callback' => sub { my( $cgi, $object ) = @_; },
+%  #
+%  # # returns a hashref for the new object
+%  # 'new_hashref_callback'
+%  #
+%  # #run when adding
+%  # 'new_callback' => sub { my( $cgi, $object ) = @_; },
+%  #
+%  # #XXX describe
+%  # 'field_callback' => sub { },
+%  #
+%  # #string or coderef of additional HTML to add before </TABLE>
+%  # 'html_table_bottom' => '',
+%  #
+%  # 'viewall_dir' => '', #'search' or 'browse', defaults to 'search'
+%  #
+%  # 'html_bottom' => '', #string
+%  # 'html_bottom' => sub {
+%  #                        my $object = shift;
+%  #                        # ...
+%  #                        "html_string";
+%  #                      },
+%
+%  my(%opt) = @_;
+%
+%  #false laziness w/process.html
+%  my $table = $opt{'table'};
+%  my $class = "FS::$table";
+%  my $pkey = dbdef->table($table)->primary_key; #? $opt{'primary_key'} || 
+%  my $fields = $opt{'fields'}
+%               #|| [ grep { $_ ne $pkey } dbdef->table($table)->columns ];
+%               || [ grep { $_ ne $pkey } fields($table) ];
+%  #my @actualfields = map { ref($_) ? $_->{'field'} : $_ } @$fields;
+%
+%  my $object;
+%  if ( $cgi->param('error') ) {
+%
+%    $object = $class->new( {
+%      map { $_ => scalar($cgi->param($_)) } fields($table)
+%    });
+%
+%    &{$opt{'error_callback'}}($cgi, $object)
+%      if $opt{'error_callback'};
+%
+%  } elsif ( $cgi->keywords ) { #editing
+%
+%    my( $query ) = $cgi->keywords;
+%    $query =~ /^(\d+)$/;
+%    $object = qsearchs( $table, { $pkey => $1 } );
+%    warn "$table $pkey => $1"
+%      if $opt{'debug'};
+%
+%    &{$opt{'edit_callback'}}($cgi, $object)
+%      if $opt{'edit_callback'};
+%
+%  } else { #adding
+%
+%    my $hashref = $opt{'new_hashref_callback'}
+%                    ? &{$opt{'new_hashref_callback'}}
+%                    : {};
+%
+%    $object = $class->new( $hashref );
+%
+%    &{$opt{'new_callback'}}($cgi, $object)
+%      if $opt{'new_callback'};
+%
+%  }
+%
+%  my $action = $object->$pkey() ? 'Edit' : 'Add';
+%
+%  my $title = "$action $opt{'name'}";
+%
+%  my @menubar = ();
+%  if ( $opt{'menubar'} ) {
+%    @menubar = @{ $opt{'menubar'} };
+%  } else {
+%    @menubar = (
+%      'Main menu' => $p, #eventually get rid of this when the ACL/UI update is done
+%      #eventually use Lingua::bs to pluralize
+%      "View all $opt{'name'}s" => $p. ( $opt{'viewall_dir'} || 'search' ).
+%                                  "/$table.html",
+%    );
+%  }
+%
+%
+<% include("/elements/header.html", $title,
               include( '/elements/menubar.html', @menubar )
            )
 %>
+% if ( $cgi->param('error') ) { 
 
-<% if ( $cgi->param('error') ) { %>
-  <FONT SIZE="+1" COLOR="#ff0000">Error: <%= $cgi->param('error') %></FONT>
+  <FONT SIZE="+1" COLOR="#ff0000">Error: <% $cgi->param('error') %></FONT>
   <BR><BR>
-<% } %>
+% } 
 
-<FORM ACTION="<%= popurl(1) %>process/<%= $table %>.html" METHOD=POST>
-<INPUT TYPE="hidden" NAME="<%= $pkey %>" VALUE="<%= $object->$pkey() %>">
-<%= ( $opt{labels} && exists $opt{labels}->{$pkey} )
+
+<FORM ACTION="<% popurl(1) %>process/<% $table %>.html" METHOD=POST>
+<INPUT TYPE="hidden" NAME="<% $pkey %>" VALUE="<% $object->$pkey() %>">
+<% ( $opt{labels} && exists $opt{labels}->{$pkey} )
       ? $opt{labels}->{$pkey}
       : $pkey
 %>
-#<%= $object->$pkey() || "(NEW)" %>
+#<% $object->$pkey() || "(NEW)" %>
 
-<%= ntable("#cccccc",2) %>
+<% ntable("#cccccc",2) %>
+% foreach my $f ( map { ref($_) ? $_ : {'field'=>$_} }
+%                       @$fields
+%                 ) {
+%
+%    &{ $opt{'field_callback'} }( $f )
+%      if $opt{'field_callback'};
+%
+%    my $field = $f->{'field'};
+%    my $type = $f->{'type'} ||= 'text';
+%
+%
 
-<% foreach my $f ( map { ref($_) ? $_ : {'field'=>$_} }
-                       @$fields
-                 ) {
-
-    &{ $opt{'field_callback'} }( $f )
-      if $opt{'field_callback'};
-
-    my $field = $f->{'field'};
-    my $type = $f->{'type'} ||= 'text';
-
-%>
 
   <TR>
 
     <TD ALIGN="right">
-      <%= ( $opt{labels} && exists $opt{labels}->{$field} )
+      <% ( $opt{labels} && exists $opt{labels}->{$field} )
               ? $opt{labels}->{$field}
               : $field
       %>
     </TD>
+% if ( $type eq 'fixed' ) { 
 
-    <% if ( $type eq 'fixed' ) { %>
 
-      <TD BGCOLOR="#dddddd"><%= $f->{'value'} %></TD>
-      <INPUT TYPE="hidden" NAME="<%= $field %>" VALUE="<%= $f->{'value'} %>">
+      <TD BGCOLOR="#dddddd"><% $f->{'value'} %></TD>
+      <INPUT TYPE="hidden" NAME="<% $field %>" VALUE="<% $f->{'value'} %>">
+% } elsif ( $type eq 'checkbox' ) { 
 
-    <% } elsif ( $type eq 'checkbox' ) { %>
 
       <TD>
-        <INPUT TYPE="checkbox" NAME="<%= $field %>" VALUE="<%= $f->{'value'} %>" <%= $object->$field() eq $f->{'value'} ? ' CHECKED' : '' %>>
+        <INPUT TYPE="checkbox" NAME="<% $field %>" VALUE="<% $f->{'value'} %>" <% $object->$field() eq $f->{'value'} ? ' CHECKED' : '' %>>
       </TD>
+% } else { 
 
-    <% } else { %>
 
       <TD>
-        <INPUT TYPE="<%= $type %>" NAME="<%= $field %>" VALUE="<%= $object->$field() %>">
+        <INPUT TYPE="<% $type %>" NAME="<% $field %>" VALUE="<% $object->$field() %>">
       <TD>
+% } 
 
-    <% } %>
 
   </TR>
+% } 
 
-<% } %>
 
-<%= ref( $opt{'html_table_bottom'} )
+<% ref( $opt{'html_table_bottom'} )
       ? &{ $opt{'html_table_bottom'} }( $object )
       : $opt{'html_table_bottom'}
 %>
 
 </TABLE>
 
-<%= ref( $opt{'html_bottom'} )
+<% ref( $opt{'html_bottom'} )
       ? &{ $opt{'html_bottom'} }( $object )
       : $opt{'html_bottom'}
 %>
 
 <BR>
 
-<INPUT TYPE="submit" VALUE="<%= $object->$pkey() ? "Apply changes" : "Add $opt{'name'}" %>">
+<INPUT TYPE="submit" VALUE="<% $object->$pkey() ? "Apply changes" : "Add $opt{'name'}" %>">
 
 </FORM>
 
-<%= include("/elements/footer.html") %>
+<% include("/elements/footer.html") %>
 

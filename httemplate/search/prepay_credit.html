@@ -1,15 +1,16 @@
-<%
-my $agent = '';
-my $hashref = {};
-if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
-  $hashref->{agentnum} = $1;
-  $agent = qsearchs('agent', { 'agentnum' => $1 } );
-}
-
-my $count_query = 'SELECT COUNT(*) FROM prepay_credit';
-$count_query .= ' WHERE agentnum = '. $agent->agentnum if $agent;
-
-%><%= include( 'elements/search.html',
+%
+%my $agent = '';
+%my $hashref = {};
+%if ( $cgi->param('agentnum') =~ /^(\d+)$/ ) {
+%  $hashref->{agentnum} = $1;
+%  $agent = qsearchs('agent', { 'agentnum' => $1 } );
+%}
+%
+%my $count_query = 'SELECT COUNT(*) FROM prepay_credit';
+%$count_query .= ' WHERE agentnum = '. $agent->agentnum if $agent;
+%
+%
+<% include( 'elements/search.html',
                  'title'       => 'Unused Prepaid Cards'.
                                   ($agent ? ' for '. $agent->agent : ''),
                  'menubar'     => [

@@ -9,10 +9,8 @@ DATASOURCE = DBI:Pg:dbname=freeside
 DB_USER = freeside
 DB_PASSWORD=
 
-#TEMPLATE = asp
 TEMPLATE = mason
 
-ASP_GLOBAL = /usr/local/etc/freeside/asp-global
 MASON_HANDLER = /usr/local/etc/freeside/handler.pl
 MASONDATA = /usr/local/etc/freeside/masondata
 
@@ -117,27 +115,19 @@ help:
 	@echo
 	@echo "                   dev dev-docs dev-perl-modules"
 	@echo
-	@echo "                   aspdocs masondocs alldocs docs"
+	@echo "                   masondocs alldocs docs"
 	@echo "                   htmlman forcehtmlman"
 	@echo "                   perl-modules"
 	#@echo
 	#@echo "                   upload-docs release update-webdemo"
 
-aspdocs: htmlman httemplate/* httemplate/*/* httemplate/*/*/* httemplate/*/*/*/* httemplate/*/*/*/*/*
-	rm -rf aspdocs
-	cp -pr httemplate aspdocs
-	touch aspdocs
-
 
 masondocs: htmlman httemplate/* httemplate/*/* httemplate/*/*/* httemplate/*/*/*/* httemplate/*/*/*/*/*
 	rm -rf masondocs
 	cp -pr httemplate masondocs
-	( cd masondocs; \
-	  ../bin/masonize; \
-	)
 	touch masondocs
 
-alldocs: aspdocs masondocs
+alldocs: masondocs
 
 docs:
 	make ${TEMPLATE}docs
@@ -162,25 +152,17 @@ forcehtmlman:
 install-docs: docs
 	[ -e ${FREESIDE_DOCUMENT_ROOT} ] && mv ${FREESIDE_DOCUMENT_ROOT} ${FREESIDE_DOCUMENT_ROOT}.`date +%Y%m%d%H%M%S` || true
 	cp -r ${TEMPLATE}docs ${FREESIDE_DOCUMENT_ROOT}
-	[ "${TEMPLATE}" = "asp" -a ! -e ${ASP_GLOBAL} ] && mkdir ${ASP_GLOBAL} || true
-	[ "${TEMPLATE}" = "asp" ] && chown -R freeside ${ASP_GLOBAL} || true
-	[ "${TEMPLATE}" = "asp" ] && cp htetc/global.asa ${ASP_GLOBAL} || true
-	[ "${TEMPLATE}" = "asp" ] && \
-	  perl -p -i -e "\
-	    s'%%%FREESIDE_DOCUMENT_ROOT%%%'${FREESIDE_DOCUMENT_ROOT}'g; \
-	  " ${ASP_GLOBAL}/global.asa || true
-	[ "${TEMPLATE}" = "mason" ] && cp htetc/handler.pl ${MASON_HANDLER} || true
-	[ "${TEMPLATE}" = "mason" ] && \
-	  perl -p -i -e "\
-	    s'%%%FREESIDE_DOCUMENT_ROOT%%%'${FREESIDE_DOCUMENT_ROOT}'g; \
-	    s'%%%RT_ENABLED%%%'${RT_ENABLED}'g; \
-	  " ${MASON_HANDLER} || true
-	[ "${TEMPLATE}" = "mason" -a ! -e ${MASONDATA} ] && mkdir ${MASONDATA} || true
-	[ "${TEMPLATE}" = "mason" ] && chown -R freeside ${MASONDATA} || true
+	cp htetc/handler.pl ${MASON_HANDLER}
+	perl -p -i -e "\
+	  s'%%%FREESIDE_DOCUMENT_ROOT%%%'${FREESIDE_DOCUMENT_ROOT}'g; \
+	  s'%%%RT_ENABLED%%%'${RT_ENABLED}'g; \
+	" ${MASON_HANDLER}
+	[ ! -e ${MASONDATA} ] && mkdir ${MASONDATA} || true
+	chown -R freeside ${MASONDATA}
 
-dev-docs: docs
+dev-docs:
 	[ -e ${FREESIDE_DOCUMENT_ROOT} ] && mv ${FREESIDE_DOCUMENT_ROOT} ${FREESIDE_DOCUMENT_ROOT}.`date +%Y%m%d%H%M%S` || true
-	ln -s ${FREESIDE_PATH}/masondocs ${FREESIDE_DOCUMENT_ROOT}
+	ln -s ${FREESIDE_PATH}/httemplate ${FREESIDE_DOCUMENT_ROOT}
 	cp htetc/handler.pl ${MASON_HANDLER}
 	perl -p -i -e "\
 	  s'%%%FREESIDE_DOCUMENT_ROOT%%%'${FREESIDE_DOCUMENT_ROOT}'g; \
@@ -332,7 +314,7 @@ install-rt:
 	[ ${RT_ENABLED} -eq 1 ] && ( cd rt; make install ) || true
 
 clean:
-	rm -rf aspdocs masondocs
+	rm -rf masondocs
 	cd FS; \
 	make clean
 

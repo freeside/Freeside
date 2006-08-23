@@ -1,4 +1,4 @@
-<%= include("/elements/header.html",'Batch Customer Import') %>
+<% include("/elements/header.html",'Batch Customer Import') %>
 
 <FORM ACTION="process/cust_main-import.cgi" METHOD="post" ENCTYPE="multipart/form-data">
 
@@ -16,9 +16,9 @@ of an integer, the string is searched for and if necessary auto-created in the
 target table.
 <BR><BR>
 
-<%= &ntable("#cccccc") %>
+<% &ntable("#cccccc") %>
 
-<%= include('/elements/tr-select-agent.html', '', #$agentnum,
+<% include('/elements/tr-select-agent.html', '', #$agentnum,
               'label'       => "<B>Agent</B>",
               'empty_label' => 'Select agent',
            )
@@ -38,18 +38,20 @@ target table.
   <TH ALIGN="right">CSV filename</TH>
   <TD><INPUT TYPE="file" NAME="csvfile"></TD>
 </TR>
+% #include('/elements/tr-select-part_referral.html')
+%
 
-<% #include('/elements/tr-select-part_referral.html')
-%>
 
 <!--
 <TR>
   <TH>First package</TH>
   <TD>
     <SELECT NAME="pkgpart"><OPTION VALUE="">(none)</OPTION>
-      <% foreach my $part_pkg ( qsearch('part_pkg',{'disabled'=>'' }) ) { %>
-       <OPTION VALUE="<%= $part_pkg->pkgpart %>"><%= $part_pkg->pkg. ' - '. $part_pkg->comment %></OPTION>
-      <% } %>
+% foreach my $part_pkg ( qsearch('part_pkg',{'disabled'=>'' }) ) { 
+
+       <OPTION VALUE="<% $part_pkg->pkgpart %>"><% $part_pkg->pkg. ' - '. $part_pkg->comment %></OPTION>
+% } 
+
     </SELECT>
   </TD>
 </TR>
@@ -61,5 +63,5 @@ target table.
 <INPUT TYPE="submit" VALUE="Import">
 </FORM>
 
-<%= include('/elements/footer.html') %>
+<% include('/elements/footer.html') %>
 

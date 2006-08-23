@@ -1,324 +1,333 @@
-<%
+%
+%
+%  # options example...  
+%  # (everything not commented required is optional)
+%  #
+%  # # basic options, required
+%  # 'title'       => 'Page title',
+%  # 'name'        => 'items', #name for the records returned
+%  #
+%  # # some HTML callbacks...
+%  # 'menubar'          => '', #menubar arrayref
+%  # 'html_init'        => '', #after the header/menubar and before the pager
+%  # 'html_foot'        => '', #at the bottom
+%  # 'html_posttotal'   => '', #at the bottom
+%  #                           # (these three can be strings or coderefs)
+%  # 
+%  #
+%  # #literal SQL query string or qsearch hashref, required
+%  # 'query'       => {
+%  #                    'table'     => 'tablename',
+%  #                    #everything else is optional...
+%  #                    'hashref'   => { 'field' => 'value',
+%  #                                     'field' => { 'op'    => '<',
+%  #                                                  'value' => '54',
+%  #                                                },
+%  #                                   },
+%  #                    'select'    => '*',
+%  #                    'addl_from' => '', #'LEFT JOIN othertable USING ( key )',
+%  #                    'extra_sql' => '', #'AND otherstuff', #'WHERE onlystuff',
+%  #                    
+%  #
+%  #                  },
+%  #                  # "select * from tablename";
+%  #
+%  # #required unless 'query' is an SQL query string (shouldn't be...)
+%  # 'count_query' => 'SELECT COUNT(*) FROM tablename',
+%  #
+%  # 'count_addl' => [], #additional count fields listref of sprintf strings
+%  #                     # [ $money_char.'%.2f total paid', ],
+%  #
+%  # #listref of column labels, <TH>
+%  # #required unless 'query' is an SQL query string
+%  # # (if not specified the database column names will be used)
+%  # 'header'      => [ '#', 'Item' ],
+%  #
+%  # 'disable_download' => '', # set true to hide the CSV/Excel download links
+%  # 'disable_nonefound' => '', # set true to disable the "No matching Xs found"
+%  #                            # message
+%  #
+%  # #listref - each item is a literal column name (or method) or coderef
+%  # #if not specified all columns will be shown
+%  # 'fields'      => [
+%  #                    'column',
+%  #                    sub { my $row = shift; $row->column; },
+%  #                  ],
+%  #
+%  # #listref of column footers
+%  # 'footer'      => [],
+%  # 
+%  # #listref - each item is the empty string, or a listref of ...
+%  # 'links'       =>
+%  #
+%  #
+%  # 'align'       => 'lrc.', #one letter for each column, left/right/center/none
+%  #                          # can also pass a listref with full values:
+%  #                          # [ 'left', 'right', 'center', '' ]
+%  #
+%  # #listrefs...
+%  # #currently only HTML, maybe eventually Excel too
+%  # 'color'       => [],
+%  # 'size'        => [],
+%  # 'style'       => [],
+%  # 
+%  # #redirect if there's only one item...
+%  # # listref of URL base and column name (or method)
+%  # # or a coderef that returns the same
+%  # 'redirect' =>
+%
+%  my $DEBUG = 0;
+%
+%  my(%opt) = @_;
+%  #warn join(' / ', map { "$_ => $opt{$_}" } keys %opt ). "\n";
+%
+%  my %align = (
+%    'l' => 'left',
+%    'r' => 'right',
+%    'c' => 'center',
+%    ' ' => '',
+%    '.' => '',
+%  );
+%  $opt{align} = [ map $align{$_}, split(//, $opt{align}) ],
+%    unless !$opt{align} || ref($opt{align});
+%
+%  my $type = '';
+%  my $limit = '';
+%  my($maxrecords, $total, $offset, $count_arrayref);
+%
+%  if ( $cgi->param('_type') =~ /^(csv|\w*\.xls)$/ ) {
+%  
+%    $type = $1;
+%
+%  } else { #setup some pagination things if we're in html mode
+%
+%    unless (exists($opt{'count_query'}) && length($opt{'count_query'})) {
+%      ( $opt{'count_query'} = $opt{'query'} ) =~
+%        s/^\s*SELECT\s*(.*?)\s+FROM\s/SELECT COUNT(*) FROM /i;
+%    }
+%
+%    my $conf = new FS::Conf;
+%    $maxrecords = $conf->config('maxsearchrecordsperpage');
+%
+%    $limit = $maxrecords ? "LIMIT $maxrecords" : '';
+%
+%    $offset = $cgi->param('offset') || 0;
+%    $limit .= " OFFSET $offset" if $offset;
+%
+%    my $count_sth = dbh->prepare($opt{'count_query'})
+%      or die "Error preparing $opt{'count_query'}: ". dbh->errstr;
+%    $count_sth->execute
+%      or die "Error executing $opt{'count_query'}: ". $count_sth->errstr;
+%    $count_arrayref = $count_sth->fetchrow_arrayref;
+%    $total = $count_arrayref->[0];
+%
+%  }
+%
+%  # run the query
+%
+%  my $header = $opt{'header'};
+%  my $rows;
+%  if ( ref($opt{'query'}) ) {
+%
+%    #eval "use FS::$opt{'query'};";
+%    $rows = [ qsearch(
+%      $opt{'query'}->{'table'}, 
+%      $opt{'query'}->{'hashref'} || {}, 
+%      $opt{'query'}->{'select'},
+%      $opt{'query'}->{'extra_sql'}. " $limit",
+%      '',
+%      (exists($opt{'query'}->{'addl_from'}) ? $opt{'query'}->{'addl_from'} : '')
+%    ) ];
+%
+%  } else {
+%
+%    my $sth = dbh->prepare("$opt{'query'} $limit")
+%      or die "Error preparing $opt{'query'}: ". dbh->errstr;
+%    $sth->execute
+%      or die "Error executing $opt{'query'}: ". $sth->errstr;
+%
+%    #can get # of rows without fetching them all?
+%    $rows = $sth->fetchall_arrayref;
+%
+%    $header ||= $sth->{NAME};
+%
+%  }
+%
+%  warn scalar(@$rows). ' rows returned from '.
+%       ( ref($opt{'query'}) ? 'qsearch query' : 'literal SQL query' )
+%    if $DEBUG || $opt{'debug'};
+%
+%  # display the results - csv, xls or html
+%
+%  if ( $type eq 'csv' ) {
+%
+%    #http_header('Content-Type' => 'text/comma-separated-values' ); #IE chokes
+%    http_header('Content-Type' => 'text/plain' );
+%
+%    my $csv = new Text::CSV_XS { 'always_quote' => 1,
+%                                 'eol'          => "\n", #"\015\012", #"\012"
+%                               };
+%
+%    $csv->combine(@$header); #or die $csv->status;
+%    
+<% $csv->string %>
+%
+%
+%    foreach my $row ( @$rows ) {
+%
+%      if ( $opt{'fields'} ) {
+%
+%        my @line = ();
+%
+%        foreach my $field ( @{$opt{'fields'}} ) {
+%          if ( ref($field) eq 'CODE' ) {
+%            push @line, map {
+%                              ref($_) eq 'ARRAY'
+%                                ? '(N/A)' #unimplemented
+%                                : $_;
+%                            }
+%                            &{$field}($row);
+%          } else {
+%            push @line, $row->$field();
+%          }
+%        }
+%
+%        $csv->combine(@line); #or die $csv->status;
+%
+%      } else {
+%        $csv->combine(@$row); #or die $csv->status;
+%      }
+%
+%      
+<% $csv->string %>
+%
+%
+%    }
+%
+%  #} elsif ( $type eq 'excel' ) {
+%  } elsif ( $type =~ /\.xls$/ ) {
+%
+%    #http_header('Content-Type' => 'application/excel' ); #eww
+%    http_header('Content-Type' => 'application/vnd.ms-excel' );
+%    #http_header('Content-Type' => 'application/msexcel' ); #alas
+%
+%    my $data = '';
+%    my $XLS = new IO::Scalar \$data;
+%    my $workbook = Spreadsheet::WriteExcel->new($XLS)
+%      or die "Error opening .xls file: $!";
+%
+%    my $worksheet = $workbook->add_worksheet(substr($opt{'title'},0,31));
+%
+%    my($r,$c) = (0,0);
+%
+%    $worksheet->write($r, $c++, $_) foreach @$header;
+%
+%    foreach my $row ( @$rows ) {
+%      $r++;
+%      $c = 0;
+%
+%      if ( $opt{'fields'} ) {
+%
+%        #my $links = $opt{'links'} ? [ @{$opt{'links'}} ] : '';
+%        #my $aligns = $opt{'align'} ? [ @{$opt{'align'}} ] : '';
+%
+%        foreach my $field ( @{$opt{'fields'}} ) {
+%          #my $align = $aligns ? shift @$aligns : '';
+%          #$align = " ALIGN=$align" if $align;
+%          #my $a = '';
+%          #if ( $links ) {
+%          #  my $link = shift @$links;
+%          #  $link = &{$link}($row) if ref($link) eq 'CODE';
+%          #  if ( $link ) {
+%          #    my( $url, $method ) = @{$link};
+%          #    if ( ref($method) eq 'CODE' ) {
+%          #      $a = $url. &{$method}($row);
+%          #    } else {
+%          #      $a = $url. $row->$method();
+%          #    }
+%          #    $a = qq(<A HREF="$a">);
+%          #  }
+%          #}
+%          if ( ref($field) eq 'CODE' ) {
+%            foreach my $value ( &{$field}($row) ) {
+%              if ( ref($value) eq 'ARRAY' ) { 
+%                $worksheet->write($r, $c++, '(N/A)' ); #unimplemented
+%              } else {
+%                $worksheet->write($r, $c++, $value );
+%              }
+%            }
+%          } else {
+%            $worksheet->write($r, $c++, $row->$field() );
+%          }
+%        }
+%
+%      } else {
+%        $worksheet->write($r, $c++, $_) foreach @$row;
+%      }
+%
+%    }
+%
+%    $workbook->close();# or die "Error creating .xls file: $!";
+%
+%    http_header('Content-Length' => length($data) );
+%    
+<% $data %>
+%
+%
+%  } else { # regular HTML
+%
+%    if ( exists($opt{'redirect'}) && scalar(@$rows) == 1 && $total == 1 ) {
+%      my $redirect = $opt{'redirect'};
+%      $redirect = &{$redirect}($rows->[0]) if ref($redirect) eq 'CODE';
+%      my( $url, $method ) = @$redirect;
+%      redirect( $url. $rows->[0]->$method() );
+%    } else {
+%      ( my $xlsname = $opt{'name'} ) =~ s/\W//g;
+%      #$opt{'name'} =~ s/s$// if $total == 1;
+%      $opt{'name'} =~ s/((s)e)?s$/$2/ if $total == 1;  #should use Lingua::bs
+%                                                       # to "depluralize"
+%
+%      my @menubar = ();
+%      if ( $opt{'menubar'} ) {
+%        @menubar = @{ $opt{'menubar'} };
+%      } else {
+%        @menubar = ( 'Main menu' => $p );
+%      }
+%
+%
+%  
 
-  # options example...  
-  # (everything not commented required is optional)
-  #
-  # # basic options, required
-  # 'title'       => 'Page title',
-  # 'name'        => 'items', #name for the records returned
-  #
-  # # some HTML callbacks...
-  # 'menubar'          => '', #menubar arrayref
-  # 'html_init'        => '', #after the header/menubar and before the pager
-  # 'html_foot'        => '', #at the bottom
-  # 'html_posttotal'   => '', #at the bottom
-  #                           # (these three can be strings or coderefs)
-  # 
-  #
-  # #literal SQL query string or qsearch hashref, required
-  # 'query'       => {
-  #                    'table'     => 'tablename',
-  #                    #everything else is optional...
-  #                    'hashref'   => { 'field' => 'value',
-  #                                     'field' => { 'op'    => '<',
-  #                                                  'value' => '54',
-  #                                                },
-  #                                   },
-  #                    'select'    => '*',
-  #                    'addl_from' => '', #'LEFT JOIN othertable USING ( key )',
-  #                    'extra_sql' => '', #'AND otherstuff', #'WHERE onlystuff',
-  #                    
-  #
-  #                  },
-  #                  # "select * from tablename";
-  #
-  # #required unless 'query' is an SQL query string (shouldn't be...)
-  # 'count_query' => 'SELECT COUNT(*) FROM tablename',
-  #
-  # 'count_addl' => [], #additional count fields listref of sprintf strings
-  #                     # [ $money_char.'%.2f total paid', ],
-  #
-  # #listref of column labels, <TH>
-  # #required unless 'query' is an SQL query string
-  # # (if not specified the database column names will be used)
-  # 'header'      => [ '#', 'Item' ],
-  #
-  # 'disable_download' => '', # set true to hide the CSV/Excel download links
-  # 'disable_nonefound' => '', # set true to disable the "No matching Xs found"
-  #                            # message
-  #
-  # #listref - each item is a literal column name (or method) or coderef
-  # #if not specified all columns will be shown
-  # 'fields'      => [
-  #                    'column',
-  #                    sub { my $row = shift; $row->column; },
-  #                  ],
-  #
-  # #listref of column footers
-  # 'footer'      => [],
-  # 
-  # #listref - each item is the empty string, or a listref of ...
-  # 'links'       =>
-  #
-  #
-  # 'align'       => 'lrc.', #one letter for each column, left/right/center/none
-  #                          # can also pass a listref with full values:
-  #                          # [ 'left', 'right', 'center', '' ]
-  #
-  # #listrefs...
-  # #currently only HTML, maybe eventually Excel too
-  # 'color'       => [],
-  # 'size'        => [],
-  # 'style'       => [],
-  # 
-  # #redirect if there's only one item...
-  # # listref of URL base and column name (or method)
-  # # or a coderef that returns the same
-  # 'redirect' =>
-
-  my $DEBUG = 0;
-
-  my(%opt) = @_;
-  #warn join(' / ', map { "$_ => $opt{$_}" } keys %opt ). "\n";
-
-  my %align = (
-    'l' => 'left',
-    'r' => 'right',
-    'c' => 'center',
-    ' ' => '',
-    '.' => '',
-  );
-  $opt{align} = [ map $align{$_}, split(//, $opt{align}) ],
-    unless !$opt{align} || ref($opt{align});
-
-  my $type = '';
-  my $limit = '';
-  my($maxrecords, $total, $offset, $count_arrayref);
-
-  if ( $cgi->param('_type') =~ /^(csv|\w*\.xls)$/ ) {
-  
-    $type = $1;
-
-  } else { #setup some pagination things if we're in html mode
-
-    unless (exists($opt{'count_query'}) && length($opt{'count_query'})) {
-      ( $opt{'count_query'} = $opt{'query'} ) =~
-        s/^\s*SELECT\s*(.*?)\s+FROM\s/SELECT COUNT(*) FROM /i;
-    }
-
-    my $conf = new FS::Conf;
-    $maxrecords = $conf->config('maxsearchrecordsperpage');
-
-    $limit = $maxrecords ? "LIMIT $maxrecords" : '';
-
-    $offset = $cgi->param('offset') || 0;
-    $limit .= " OFFSET $offset" if $offset;
-
-    my $count_sth = dbh->prepare($opt{'count_query'})
-      or die "Error preparing $opt{'count_query'}: ". dbh->errstr;
-    $count_sth->execute
-      or die "Error executing $opt{'count_query'}: ". $count_sth->errstr;
-    $count_arrayref = $count_sth->fetchrow_arrayref;
-    $total = $count_arrayref->[0];
-
-  }
-
-  # run the query
-
-  my $header = $opt{'header'};
-  my $rows;
-  if ( ref($opt{'query'}) ) {
-
-    #eval "use FS::$opt{'query'};";
-    $rows = [ qsearch(
-      $opt{'query'}->{'table'}, 
-      $opt{'query'}->{'hashref'} || {}, 
-      $opt{'query'}->{'select'},
-      $opt{'query'}->{'extra_sql'}. " $limit",
-      '',
-      (exists($opt{'query'}->{'addl_from'}) ? $opt{'query'}->{'addl_from'} : '')
-    ) ];
-
-  } else {
-
-    my $sth = dbh->prepare("$opt{'query'} $limit")
-      or die "Error preparing $opt{'query'}: ". dbh->errstr;
-    $sth->execute
-      or die "Error executing $opt{'query'}: ". $sth->errstr;
-
-    #can get # of rows without fetching them all?
-    $rows = $sth->fetchall_arrayref;
-
-    $header ||= $sth->{NAME};
-
-  }
-
-  warn scalar(@$rows). ' rows returned from '.
-       ( ref($opt{'query'}) ? 'qsearch query' : 'literal SQL query' )
-    if $DEBUG || $opt{'debug'};
-
-  # display the results - csv, xls or html
-
-  if ( $type eq 'csv' ) {
-
-    #http_header('Content-Type' => 'text/comma-separated-values' ); #IE chokes
-    http_header('Content-Type' => 'text/plain' );
-
-    my $csv = new Text::CSV_XS { 'always_quote' => 1,
-                                 'eol'          => "\n", #"\015\012", #"\012"
-                               };
-
-    $csv->combine(@$header); #or die $csv->status;
-    %><%= $csv->string %><%
-
-    foreach my $row ( @$rows ) {
-
-      if ( $opt{'fields'} ) {
-
-        my @line = ();
-
-        foreach my $field ( @{$opt{'fields'}} ) {
-          if ( ref($field) eq 'CODE' ) {
-            push @line, map {
-                              ref($_) eq 'ARRAY'
-                                ? '(N/A)' #unimplemented
-                                : $_;
-                            }
-                            &{$field}($row);
-          } else {
-            push @line, $row->$field();
-          }
-        }
-
-        $csv->combine(@line); #or die $csv->status;
-
-      } else {
-        $csv->combine(@$row); #or die $csv->status;
-      }
-
-      %><%= $csv->string %><%
-
-    }
-
-  #} elsif ( $type eq 'excel' ) {
-  } elsif ( $type =~ /\.xls$/ ) {
-
-    #http_header('Content-Type' => 'application/excel' ); #eww
-    http_header('Content-Type' => 'application/vnd.ms-excel' );
-    #http_header('Content-Type' => 'application/msexcel' ); #alas
-
-    my $data = '';
-    my $XLS = new IO::Scalar \$data;
-    my $workbook = Spreadsheet::WriteExcel->new($XLS)
-      or die "Error opening .xls file: $!";
-
-    my $worksheet = $workbook->add_worksheet(substr($opt{'title'},0,31));
-
-    my($r,$c) = (0,0);
-
-    $worksheet->write($r, $c++, $_) foreach @$header;
-
-    foreach my $row ( @$rows ) {
-      $r++;
-      $c = 0;
-
-      if ( $opt{'fields'} ) {
-
-        #my $links = $opt{'links'} ? [ @{$opt{'links'}} ] : '';
-        #my $aligns = $opt{'align'} ? [ @{$opt{'align'}} ] : '';
-
-        foreach my $field ( @{$opt{'fields'}} ) {
-          #my $align = $aligns ? shift @$aligns : '';
-          #$align = " ALIGN=$align" if $align;
-          #my $a = '';
-          #if ( $links ) {
-          #  my $link = shift @$links;
-          #  $link = &{$link}($row) if ref($link) eq 'CODE';
-          #  if ( $link ) {
-          #    my( $url, $method ) = @{$link};
-          #    if ( ref($method) eq 'CODE' ) {
-          #      $a = $url. &{$method}($row);
-          #    } else {
-          #      $a = $url. $row->$method();
-          #    }
-          #    $a = qq(<A HREF="$a">);
-          #  }
-          #}
-          if ( ref($field) eq 'CODE' ) {
-            foreach my $value ( &{$field}($row) ) {
-              if ( ref($value) eq 'ARRAY' ) { 
-                $worksheet->write($r, $c++, '(N/A)' ); #unimplemented
-              } else {
-                $worksheet->write($r, $c++, $value );
-              }
-            }
-          } else {
-            $worksheet->write($r, $c++, $row->$field() );
-          }
-        }
-
-      } else {
-        $worksheet->write($r, $c++, $_) foreach @$row;
-      }
-
-    }
-
-    $workbook->close();# or die "Error creating .xls file: $!";
-
-    http_header('Content-Length' => length($data) );
-    %><%= $data %><%
-
-  } else { # regular HTML
-
-    if ( exists($opt{'redirect'}) && scalar(@$rows) == 1 && $total == 1 ) {
-      my $redirect = $opt{'redirect'};
-      $redirect = &{$redirect}($rows->[0]) if ref($redirect) eq 'CODE';
-      my( $url, $method ) = @$redirect;
-      redirect( $url. $rows->[0]->$method() );
-    } else {
-      ( my $xlsname = $opt{'name'} ) =~ s/\W//g;
-      #$opt{'name'} =~ s/s$// if $total == 1;
-      $opt{'name'} =~ s/((s)e)?s$/$2/ if $total == 1;  #should use Lingua::bs
-                                                       # to "depluralize"
-
-      my @menubar = ();
-      if ( $opt{'menubar'} ) {
-        @menubar = @{ $opt{'menubar'} };
-      } else {
-        @menubar = ( 'Main menu' => $p );
-      }
-
-
-  %>
-  <%= include( '/elements/header.html', $opt{'title'},
+  <% include( '/elements/header.html', $opt{'title'},
                  include( '/elements/menubar.html', @menubar )
              )
   %>
-  <%= defined($opt{'html_init'}) 
+  <% defined($opt{'html_init'}) 
         ? ( ref($opt{'html_init'})
               ? &{$opt{'html_init'}}()
               : $opt{'html_init'}
           )
         : ''
   %>
-  <% my $pager = include ( '/elements/pager.html',
-                             'offset'     => $offset,
-                             'num_rows'   => scalar(@$rows),
-                             'total'      => $total,
-                             'maxrecords' => $maxrecords,
-                         );
-  %>
-  <% unless ( $total ) { %>
-    <% unless ( $opt{'disable_nonefound'} ) { %>
-      No matching <%= $opt{'name'} %> found.<BR>
-    <% } %>
-  <% } else { %>
+% my $pager = include ( '/elements/pager.html',
+%                             'offset'     => $offset,
+%                             'num_rows'   => scalar(@$rows),
+%                             'total'      => $total,
+%                             'maxrecords' => $maxrecords,
+%                         );
+%  
+% unless ( $total ) { 
+% unless ( $opt{'disable_nonefound'} ) { 
+
+      No matching <% $opt{'name'} %> found.<BR>
+% } 
+% } else { 
+
   
     <TABLE>
       <TR>
         <TD VALIGN="bottom">
-          <%= $total %> total <%= $opt{'name'} %>
-          <%= defined($opt{'html_posttotal'}) 
+          <% $total %> total <% $opt{'name'} %>
+          <% defined($opt{'html_posttotal'}) 
                 ? ( ref($opt{'html_posttotal'})
                       ? &{$opt{'html_posttotal'}}()
                       : $opt{'html_posttotal'}
@@ -326,185 +335,201 @@
                 : ''
           %>
           <BR>
-          <% if ( $opt{'count_addl'} ) { %>
-            <% my $n=0; foreach my $count ( @{$opt{'count_addl'}} ) { %>
-              <%= sprintf( $count, $count_arrayref->[++$n] ) %><BR>
-            <% } %>
-          <% } %>
+% if ( $opt{'count_addl'} ) { 
+% my $n=0; foreach my $count ( @{$opt{'count_addl'}} ) { 
+
+              <% sprintf( $count, $count_arrayref->[++$n] ) %><BR>
+% } 
+% } 
+
         </TD>
-        <% unless ( $opt{'disable_download'} ) { %>
+% unless ( $opt{'disable_download'} ) { 
+
           <TD ALIGN="right">
-            <% $cgi->param('_type', "$xlsname.xls" ); %>
+% $cgi->param('_type', "$xlsname.xls" ); 
+
             Download full results<BR>
-            as <A HREF="<%= $cgi->self_url %>">Excel spreadsheet</A><BR>
-            <% $cgi->param('_type', 'csv'); %>
-            as <A HREF="<%= $cgi->self_url %>">CSV file</A>
+            as <A HREF="<% $cgi->self_url %>">Excel spreadsheet</A><BR>
+% $cgi->param('_type', 'csv'); 
+
+            as <A HREF="<% $cgi->self_url %>">CSV file</A>
           </TD>
-        <% } %>
+% } 
+
       </TR>
       <TR>
         <TD COLSPAN=2>
-            <%= $pager %>
+            <% $pager %>
 
-            <%= include('/elements/table-grid.html') %>
+            <% include('/elements/table-grid.html') %>
 
               <TR>
-              <% 
-                 foreach my $header ( @$header ) { %>
-                   <TH CLASS="grid" BGCOLOR="#cccccc"><%= $header %></TH>
-              <% } %>
+% 
+%                 foreach my $header ( @$header ) { 
+
+                   <TH CLASS="grid" BGCOLOR="#cccccc"><% $header %></TH>
+% } 
+
               </TR>
-              <% my $bgcolor1 = '#eeeeee';
-                 my $bgcolor2 = '#ffffff';
-                 my $bgcolor;
-                 foreach my $row ( @$rows ) {
-                   if ( $bgcolor eq $bgcolor1 ) {
-                     $bgcolor = $bgcolor2;
-                   } else {
-                     $bgcolor = $bgcolor1;
-                   }
-              %>
+% my $bgcolor1 = '#eeeeee';
+%                 my $bgcolor2 = '#ffffff';
+%                 my $bgcolor;
+%                 foreach my $row ( @$rows ) {
+%                   if ( $bgcolor eq $bgcolor1 ) {
+%                     $bgcolor = $bgcolor2;
+%                   } else {
+%                     $bgcolor = $bgcolor1;
+%                   }
+%              
+
                    <TR>
-                   <% if ( $opt{'fields'} ) {
+% if ( $opt{'fields'} ) {
+%
+%                        my $links  = $opt{'links'} ? [ @{$opt{'links'}} ] : '';
+%                        my $aligns = $opt{'align'} ? [ @{$opt{'align'}} ] : '';
+%                        my $colors = $opt{'color'} ? [ @{$opt{'color'}} ] : [];
+%                        my $sizes  = $opt{'size'}  ? [ @{$opt{'size'}}  ] : [];
+%                        my $styles = $opt{'style'} ? [ @{$opt{'style'}} ] : [];
+%
+%                        foreach my $field (
+%
+%                          map {
+%                                if ( ref($_) eq 'ARRAY' ) {
+%
+%                                  my $tableref = $_;
+%
+%                                  '<TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0>'.
+%
+%                                  join('', map {
+%
+%                                    my $rowref = $_;
+%
+%                                    '<tr>'.
+%
+%                                    join('', map {
+%
+%                                      my $element = $_;
+%
+%                                      '<TD'.
+%                                      ( $element->{'align'}
+%                                          ? ' ALIGN="'. $element->{'align'}. '"'
+%                                          : ''
+%                                      ). '>'.
+%                                      ( $element->{'link'}
+%                                          ? '<A HREF="'. $element->{'link'}.'">'
+%                                          : ''
+%                                      ).
+%                                      $element->{'data'}.
+%                                      ( $element->{'link'}
+%                                          ? '</A>'
+%                                          : ''
+%                                      ).
+%                                      '</td>';
+%
+%                                    } @$rowref ).
+%
+%                                    '</tr>';
+%                                  } @$tableref ).
+%
+%                                  '</table>';
+%
+%                                } else {
+%                                  $_;
+%                                }
+%                              }
+%
+%                          map {
+%                                if ( ref($_) eq 'CODE' ) {
+%                                  &{$_}($row);
+%                                } else {
+%                                  $row->$_();
+%                                }
+%                              }
+%                          @{$opt{'fields'}}
+%
+%                        ) {
+%
+%                          my $class = ( $field =~ /^<TABLE/i ) ? 'inv' : 'grid';
+%
+%                          my $align = $aligns ? shift @$aligns : '';
+%                          $align = " ALIGN=$align" if $align;
+%
+%                          my $a = '';
+%                          if ( $links ) {
+%                            my $link = shift @$links;
+%                            $link = &{$link}($row) if ref($link) eq 'CODE';
+%                            if ( $link ) {
+%                              my( $url, $method ) = @{$link};
+%                              if ( ref($method) eq 'CODE' ) {
+%                                $a = $url. &{$method}($row);
+%                              } else {
+%                                $a = $url. $row->$method();
+%                              }
+%                              $a = qq(<A HREF="$a">);
+%                            }
+%                          }
+%
+%                          my $font = '';
+%                          my $color = shift @$colors;
+%                          $color = &{$color}($row) if ref($color) eq 'CODE';
+%                          my $size = shift @$sizes;
+%                          $size = &{$size}($row) if ref($size) eq 'CODE';
+%                          if ( $color || $size ) {
+%                            $font = '<FONT '.
+%                                    ( $color ? "COLOR=#$color "   : '' ).
+%                                    ( $size  ? qq(SIZE="$size" )  : '' ).
+%                                    '>';
+%                          }
+%
+%                          my($s, $es) = ( '', '' );
+%                          my $style = shift @$styles;
+%                          $style = &{$style}($row) if ref($style) eq 'CODE';
+%                          if ( $style ) {
+%                            $s = join( '', map "<$_>", split('', $style) );
+%                            $es = join( '', map "</$_>", split('', $style) );
+%                          }
+%
+%                       
 
-                        my $links  = $opt{'links'} ? [ @{$opt{'links'}} ] : '';
-                        my $aligns = $opt{'align'} ? [ @{$opt{'align'}} ] : '';
-                        my $colors = $opt{'color'} ? [ @{$opt{'color'}} ] : [];
-                        my $sizes  = $opt{'size'}  ? [ @{$opt{'size'}}  ] : [];
-                        my $styles = $opt{'style'} ? [ @{$opt{'style'}} ] : [];
+                       <TD CLASS="<% $class %>" BGCOLOR="<% $bgcolor %>"<% $align %>><% $font %><% $a %><% $s %><% $field %><% $es %><% $a ? '</A>' : '' %><% $font ? '</FONT>' : '' %></TD>
+% } 
+% } else { 
+% foreach ( @$row ) { 
 
-                        foreach my $field (
+                          <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><% $_ %></TD>
+% } 
+% } 
 
-                          map {
-                                if ( ref($_) eq 'ARRAY' ) {
-
-                                  my $tableref = $_;
-
-                                  '<TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0>'.
-
-                                  join('', map {
-
-                                    my $rowref = $_;
-
-                                    '<tr>'.
-
-                                    join('', map {
-
-                                      my $element = $_;
-
-                                      '<TD'.
-                                      ( $element->{'align'}
-                                          ? ' ALIGN="'. $element->{'align'}. '"'
-                                          : ''
-                                      ). '>'.
-                                      ( $element->{'link'}
-                                          ? '<A HREF="'. $element->{'link'}.'">'
-                                          : ''
-                                      ).
-                                      $element->{'data'}.
-                                      ( $element->{'link'}
-                                          ? '</A>'
-                                          : ''
-                                      ).
-                                      '</td>';
-
-                                    } @$rowref ).
-
-                                    '</tr>';
-                                  } @$tableref ).
-
-                                  '</table>';
-
-                                } else {
-                                  $_;
-                                }
-                              }
-
-                          map {
-                                if ( ref($_) eq 'CODE' ) {
-                                  &{$_}($row);
-                                } else {
-                                  $row->$_();
-                                }
-                              }
-                          @{$opt{'fields'}}
-
-                        ) {
-
-                          my $class = ( $field =~ /^<TABLE/i ) ? 'inv' : 'grid';
-
-                          my $align = $aligns ? shift @$aligns : '';
-                          $align = " ALIGN=$align" if $align;
-
-                          my $a = '';
-                          if ( $links ) {
-                            my $link = shift @$links;
-                            $link = &{$link}($row) if ref($link) eq 'CODE';
-                            if ( $link ) {
-                              my( $url, $method ) = @{$link};
-                              if ( ref($method) eq 'CODE' ) {
-                                $a = $url. &{$method}($row);
-                              } else {
-                                $a = $url. $row->$method();
-                              }
-                              $a = qq(<A HREF="$a">);
-                            }
-                          }
-
-                          my $font = '';
-                          my $color = shift @$colors;
-                          $color = &{$color}($row) if ref($color) eq 'CODE';
-                          my $size = shift @$sizes;
-                          $size = &{$size}($row) if ref($size) eq 'CODE';
-                          if ( $color || $size ) {
-                            $font = '<FONT '.
-                                    ( $color ? "COLOR=#$color "   : '' ).
-                                    ( $size  ? qq(SIZE="$size" )  : '' ).
-                                    '>';
-                          }
-
-                          my($s, $es) = ( '', '' );
-                          my $style = shift @$styles;
-                          $style = &{$style}($row) if ref($style) eq 'CODE';
-                          if ( $style ) {
-                            $s = join( '', map "<$_>", split('', $style) );
-                            $es = join( '', map "</$_>", split('', $style) );
-                          }
-
-                       %>
-                       <TD CLASS="<%= $class %>" BGCOLOR="<%= $bgcolor %>"<%= $align %>><%= $font %><%= $a %><%= $s %><%= $field %><%= $es %><%= $a ? '</A>' : '' %><%= $font ? '</FONT>' : '' %></TD>
-                     <% } %>
-                   <% } else { %>
-                     <% foreach ( @$row ) { %>
-                          <TD CLASS="grid" BGCOLOR="<%= $bgcolor %>"><%= $_ %></TD>
-                     <% } %>
-                   <% } %>
                    </TR>
-              <% } %>
+% } 
+% if ( $opt{'footer'} ) { 
 
-              <% if ( $opt{'footer'} ) { %>
                 <TR>
-                <% foreach my $footer ( @{ $opt{'footer'} } ) { %>
-                     <TD CLASS="grid" BGCOLOR="#dddddd" STYLE="border-top: dashed 1px black;"><i><%= $footer %></i></TH>
-                <% } %>
+% foreach my $footer ( @{ $opt{'footer'} } ) { 
+
+                     <TD CLASS="grid" BGCOLOR="#dddddd" STYLE="border-top: dashed 1px black;"><i><% $footer %></i></TH>
+% } 
+
                 </TR>
-              <% } %>
+% } 
+
             
             </TABLE>
-            <%= $pager %>
+            <% $pager %>
   
           </TD>
         </TR>
       </TABLE>
-  
-  <% } %>
-  <%= defined($opt{'html_foot'}) 
+% } 
+
+  <% defined($opt{'html_foot'}) 
         ? ( ref($opt{'html_foot'})
               ? &{$opt{'html_foot'}}()
               : $opt{'html_foot'}
           )
         : ''
   %>
-  <%= include( '/elements/footer.html' ) %>
-  <% } %>
-<% } %>
+  <% include( '/elements/footer.html' ) %>
+% } 
+% } 
+

@@ -1,59 +1,62 @@
-<%
+%
+%
+%  my %opt = @_;
+%
+%  my $prefix = $opt{'prefix'} || '';
+%  my $disabled = $opt{'disabled'} || '';
+%  my $empty = $opt{'empty_option'} || '';
+%  my $start_year = $opt{'start_year'};
+%  my $end_year = $opt{'end_year'} || '2037';
+%
+%  my @mon;
+%  if ( $opt{'show_month_abbr'} ) {
+%    @mon = qw(Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec);
+%  } else {
+%    @mon = ( 1 .. 12 );
+%  }
+%
+%  my $date = $opt{'selected_date'} || '';
+%  $date = '' if $date eq '-';
+%  #$date ||= '01-2000' unless $empty;
+%
+%  my $mon  = $opt{'selected_mon'}  || 0;
+%  my $year = $opt{'selected_year'} || 0;
+%  if ( $date ) {
+%    if ( $date  =~ /^(\d{4})-(\d{1,2})-\d{1,2}$/ ) { #PostgreSQL date format
+%      ( $mon, $year ) = ( $2, $1 );
+%    } elsif ( $date =~ /^(\d{1,2})-(\d{1,2}-)?(\d{4}$)/ ) {
+%      ( $mon, $year ) = ( $1, $3 );
+%    } else {
+%      die "unrecognized expiration date format: $date";
+%    }
+%  }
+%
+%  unless ( $start_year ) {
+%    my @t = localtime;
+%    $start_year = $t[5] + 1900;
+%  }
+%  $start_year = $year if $start_year > $year && $year > 0;
+%
+%
 
-  my %opt = @_;
 
-  my $prefix = $opt{'prefix'} || '';
-  my $disabled = $opt{'disabled'} || '';
-  my $empty = $opt{'empty_option'} || '';
-  my $start_year = $opt{'start_year'};
-  my $end_year = $opt{'end_year'} || '2037';
+<SELECT NAME="<% $prefix %>_month" SIZE="1" <% $disabled%>>
 
-  my @mon;
-  if ( $opt{'show_month_abbr'} ) {
-    @mon = qw(Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec);
-  } else {
-    @mon = ( 1 .. 12 );
-  }
+<% $empty ? '<OPTION VALUE="">' : '' %>
+% foreach ( 1 .. 12 ) { 
 
-  my $date = $opt{'selected_date'} || '';
-  $date = '' if $date eq '-';
-  #$date ||= '01-2000' unless $empty;
+   <OPTION<% $_ == $mon ? ' SELECTED' : '' %> VALUE="<% $_ %>"><% $mon[$_-1] %>
+% } 
 
-  my $mon  = $opt{'selected_mon'}  || 0;
-  my $year = $opt{'selected_year'} || 0;
-  if ( $date ) {
-    if ( $date  =~ /^(\d{4})-(\d{1,2})-\d{1,2}$/ ) { #PostgreSQL date format
-      ( $mon, $year ) = ( $2, $1 );
-    } elsif ( $date =~ /^(\d{1,2})-(\d{1,2}-)?(\d{4}$)/ ) {
-      ( $mon, $year ) = ( $1, $3 );
-    } else {
-      die "unrecognized expiration date format: $date";
-    }
-  }
 
-  unless ( $start_year ) {
-    my @t = localtime;
-    $start_year = $t[5] + 1900;
-  }
-  $start_year = $year if $start_year > $year && $year > 0;
+</SELECT>/<SELECT NAME="<% $prefix %>_year" SIZE="1" <% $disabled%>>
 
-%>
+<% $empty ? '<OPTION VALUE="">' : '' %>
+% for ( $start_year .. $end_year ) { 
 
-<SELECT NAME="<%= $prefix %>_month" SIZE="1" <%= $disabled%>>
+   <OPTION<% $_ == $year ? ' SELECTED' : '' %> VALUE="<% $_ %>"><% $_ %>
+% } 
 
-<%= $empty ? '<OPTION VALUE="">' : '' %>
-
-<% foreach ( 1 .. 12 ) { %>
-   <OPTION<%= $_ == $mon ? ' SELECTED' : '' %> VALUE="<%= $_ %>"><%= $mon[$_-1] %>
-<% } %>
-
-</SELECT>/<SELECT NAME="<%= $prefix %>_year" SIZE="1" <%= $disabled%>>
-
-<%= $empty ? '<OPTION VALUE="">' : '' %>
-
-<% for ( $start_year .. $end_year ) { %>
-   <OPTION<%= $_ == $year ? ' SELECTED' : '' %> VALUE="<%= $_ %>"><%= $_ %>
-<% } %>
 
 </SELECT>
 

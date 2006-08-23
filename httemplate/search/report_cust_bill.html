@@ -1,15 +1,15 @@
-<%= include('/elements/header.html', 'Invoice report criteria' ) %>
+<% include('/elements/header.html', 'Invoice report criteria' ) %>
 
 <FORM ACTION="cust_bill.html" METHOD="GET">
 <INPUT TYPE="hidden" NAME="magic" VALUE="_date">
 
 <TABLE>
-  <%= include( '/elements/tr-select-agent.html',
+  <% include( '/elements/tr-select-agent.html',
                  $cgi->param('agentnum'),
                  'label' => 'Invoices for agent: ',
              )
   %>
-  <%= include( '/elements/tr-input-beginning_ending.html' ) %>
+  <% include( '/elements/tr-input-beginning_ending.html' ) %>
   <TR>
     <TD ALIGN="right"><INPUT TYPE="checkbox" NAME="open" VALUE="1" CHECKED></TD>
     <TD>Show only open invoices</TD>
@@ -25,4 +25,4 @@
 
 </FORM>
 
-<%= include('/elements/footer.html') %>
+<% include('/elements/footer.html') %>

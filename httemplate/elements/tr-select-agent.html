@@ -1,34 +1,34 @@
-<%
-  my( $agentnum, %opt ) = @_;
+%
+%  my( $agentnum, %opt ) = @_;
+%
+%  my @agents;
+%  if ( $opt{'agents'} ) {
+%    #@agents = @{ $opt{'agents'} };
+%    #here is the agent virtualization
+%    my $agentnums_href = $FS::CurrentUser::CurrentUser->agentnums_href;
+%    @agents = grep $agentnums_href->{$_->agentnum}, @{ $opt{'agents'} };
+%    delete $opt{'agents'};
+%  } else {
+%    @agents = $FS::CurrentUser::CurrentUser->agents;
+%  }
+%
+%
+% if ( scalar(@agents) == 1 ) { 
 
-  my @agents;
-  if ( $opt{'agents'} ) {
-    #@agents = @{ $opt{'agents'} };
-    #here is the agent virtualization
-    my $agentnums_href = $FS::CurrentUser::CurrentUser->agentnums_href;
-    @agents = grep $agentnums_href->{$_->agentnum}, @{ $opt{'agents'} };
-    delete $opt{'agents'};
-  } else {
-    @agents = $FS::CurrentUser::CurrentUser->agents;
-  }
 
-%>
+  <INPUT TYPE="hidden" NAME="agentnum" VALUE="<% $agents[0]->agentnum %>">
+% } else { 
 
-<% if ( scalar(@agents) == 1 ) { %>
-
-  <INPUT TYPE="hidden" NAME="agentnum" VALUE="<%= $agents[0]->agentnum %>">
-
-<% } else { %>
 
   <TR>
-    <TD ALIGN="right"><%= $opt{'label'} || 'Agent' %></TD>
+    <TD ALIGN="right"><% $opt{'label'} || 'Agent' %></TD>
     <TD>
-      <%= include( '/elements/select-agent.html', $agentnum,
+      <% include( '/elements/select-agent.html', $agentnum,
                      'agents' => \@agents,
                      %opt,
                  )
       %>
     </TD>
   </TR>
+% } 
 
-<% } %>

@@ -1,8 +1,11 @@
-<%
-   my $color = shift;
-   if ( $color ) {
-%>
-    <TABLE BGCOLOR="<%= $color %>" BORDER=1 WIDTH="100%" CELLSPACING=0 CELLPADDING=2 BORDERCOLOR="#999999">
-<% } else { %>
+%
+%   my $color = shift;
+%   if ( $color ) {
+%
+
+    <TABLE BGCOLOR="<% $color %>" BORDER=1 WIDTH="100%" CELLSPACING=0 CELLPADDING=2 BORDERCOLOR="#999999">
+% } else { 
+
     <TABLE BORDER=1 CELLSPACING=0 CELLPADDING=2 BORDERCOLOR="#999999">
-<% } %>
+% } 
+

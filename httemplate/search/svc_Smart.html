@@ -1,22 +1,29 @@
-<%
+%
+%
+%if ( $cgi->param('search_svc') =~ /\.[a-z]{2,8}$/i ) {
+%
+%  # looks (enough) like a domain
+%
+%  
+<% $cgi->redirect('svc_domain.cgi?domain='. uri_escape( $cgi->param('search_svc') ) ) %>
+%
+%
+%} elsif ( $cgi->param('search_svc') =~ /\w/ ) {
+%
+%  #looks (enough) like a username
+%
+%  
+<% $cgi->redirect('svc_acct.cgi?username_type=Exact;username='. uri_escape( $cgi->param('search_svc') ) ) %>
+%
+%
+%} else {
+%
+%
+<% include('/elements/header.html', 'Unrecognized service string') %>
+  <% include('/elements/footer.html') %>
+%
+%
+%} 
+%
+%
 
-if ( $cgi->param('search_svc') =~ /\.[a-z]{2,8}$/i ) {
-
-  # looks (enough) like a domain
-
-  %><%= $cgi->redirect('svc_domain.cgi?domain='. uri_escape( $cgi->param('search_svc') ) ) %><%
-
-} elsif ( $cgi->param('search_svc') =~ /\w/ ) {
-
-  #looks (enough) like a username
-
-  %><%= $cgi->redirect('svc_acct.cgi?username_type=Exact;username='. uri_escape( $cgi->param('search_svc') ) ) %><%
-
-} else {
-
-%><%= include('/elements/header.html', 'Unrecognized service string') %>
-  <%= include('/elements/footer.html') %><%
-
-} 
-
-%>

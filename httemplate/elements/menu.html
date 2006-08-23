@@ -1,329 +1,330 @@
-<%
-  my( %opt ) = @_;
-  my $conf = new FS::Conf;
-  my $fsurl = $opt{'freeside_baseurl'};
+%
+%  my( %opt ) = @_;
+%  my $conf = new FS::Conf;
+%  my $fsurl = $opt{'freeside_baseurl'};
+%
+%  my $curuser = $FS::CurrentUser::CurrentUser;
+%
+%  #Active tickets not assigned to a customer
+%
+%  tie my %report_customers_lists, 'Tie::IxHash',
+%    'by customer number' => [ $fsurl. 'search/cust_main.cgi?browse=custnum', '' ],
+%    'by last name' => [ $fsurl. 'search/cust_main.cgi?browse=last', '' ],
+%    'by company name' => [ $fsurl. 'search/cust_main.cgi?browse=company', '' ],
+%    'by active trouble tickets' => [ $fsurl. 'search/cust_main.cgi?browse=tickets', '' ],
+%  ;
+%
+%  tie my %report_customers_search, 'Tie::IxHash',
+%    'by ordering employee' => [ $fsurl. 'search/cust_main-otaker.cgi' ],
+%  ;
+%
+%  tie my %report_customers, 'Tie::IxHash',
+%    'List customers' => [ \%report_customers_lists, 'List customers' ],
+%    'Search customers' => [ \%report_customers_search, 'Search customers' ],
+%    'Zip code distribution' => [ $fsurl.'search/report_cust_main-zip.html', 'Zip codes by number of customers' ],
+%  ;
+%
+%  tie my %report_invoices_open, 'Tie::IxHash',
+%    'All open invoices' => [ $fsurl.'search/cust_bill.html?OPEN_date', 'All invoices with an unpaid balance' ],
+%    '15 day open invoices' => [ $fsurl.'search/cust_bill.html?OPEN15_date', 'Invoices 15 days or older with an unpaid balance' ],
+%    '30 day open invoices' => [ $fsurl.'search/cust_bill.html?OPEN30_date', 'Invoices 30 days or older with an unpaid balance' ],
+%    '60 day open invoices' => [ $fsurl.'search/cust_bill.html?OPEN60_date', 'Invoices 60 days or older with an unpaid balance' ],
+%    '90 day open invoices' => [ $fsurl.'search/cust_bill.html?OPEN90_date', 'Invoices 90 days or older with an unpaid balance' ],
+%    '120 day open invoices' => [ $fsurl.'search/cust_bill.html?OPEN120_date', 'Invoices 120 days or older with an unpaid balance' ],
+%  ;
+%
+%  tie my %report_invoices, 'Tie::IxHash',
+%    'Open invoices' => [ \%report_invoices_open, 'Open invoices' ],
+%    'All invoices'  => [ $fsurl. 'search/cust_bill.html?date', 'List all invoices' ],
+%    'Advanced invoice reports' => [ $fsurl.'search/report_cust_bill.html', 'by agent, date range, etc.' ],
+%  ;
+%
+%  tie my %report_services_acct, 'Tie::IxHash',
+%    'All accounts by username' => [ $fsurl.'search/svc_acct.cgi?username', '' ],
+%    'All accounts by UID'      => [ $fsurl.'search/svc_acct.cgi?uid', '' ],
+%  ;
+%  $report_services_acct{'Unlinked accounts'} = [ $fsurl.'search/svc_acct.cgi?UN_uid', 'Pre-Freeside accounts without a customer record' ]
+%    if $curuser->access_right('View/link unlinked services');
+%
+%  tie my %report_services_domain, 'Tie::IxHash',
+%    'All domains'      => [ $fsurl.'search/svc_domain.cgi?domain', '' ],
+%  ;
+%  $report_services_domain{'Unlinked domains'} = [ $fsurl.'search/svc_domain.cgi?UN_domain', 'Pre-Freeside domains without a customer record' ]
+%    if $curuser->access_right('View/link unlinked services');
+%
+%  tie my %report_services_forward, 'Tie::IxHash',
+%    'All mail forwards'      => [ $fsurl.'search/svc_forward.cgi?svcnum', '' ],
+%  ;
+%  $report_services_forward{'Unlinked mail forwards'} = [ $fsurl.'search/svc_forward.cgi?UN_svcnum', 'Pre-Freeside mail forwards without a customer record' ]
+%    if $curuser->access_right('View/link unlinked services');
+%
+%  tie my %report_services_www, 'Tie::IxHash',
+%    'All virtual hosts'     => [ $fsurl.'search/svc_www.cgi?svcnum', '' ],
+%  ;
+%  $report_services_www{'Unlinked virtual hosts'} = [ $fsurl.'search/svc_www.cgi?UN_svcnum', 'Pre-Freeside virtual hosts without a customer record' ]
+%    if $curuser->access_right('View/link unlinked services');
+%
+%  tie my %report_services_broadband, 'Tie::IxHash',
+%    'All broadband services' => [ $fsurl.'search/svc_broadband.cgi?svcnum', '' ],
+%    #'Unlinked domain' => [ $fsurl.'search/svc_acct.cgi?UN_uid', 'Pre-Freeside domains without a customer record' ],
+%  ;
+%
+%  tie my %report_services_phone, 'Tie::IxHash',
+%    'All phone numbers' => [ $fsurl.'search/svc_phone.cgi?svcnum', '' ],
+%  ;
+%
+%  tie my %report_services_external, 'Tie::IxHash',
+%    'All external services' => [ $fsurl.'search/svc_external.cgi?id', '' ],
+%  ;
+%  $report_services_external{'Unlinked external services'} = [ $fsurl.'search/svc_external.cgi?UN_id', 'Pre-Freeside domains without a customer record' ]
+%    if $curuser->access_right('View/link unlinked services');
+%
+%  tie my %report_services, 'Tie::IxHash';
+%  if ( $curuser->access_right('Configuration') ) {
+%    $report_services{'Service definitions'} =  [ $fsurl.'browse/part_svc.cgi?orderby=active', 'Service definitions by number of active packages' ];
+%    $report_services{'separator'} =  '';
+%  }
+%  $report_services{'Accounts'} =  [ \%report_services_acct, 'Access accounts and mailboxes' ];
+%  $report_services{'Domains'} =  [ \%report_services_domain, 'Domains', ];
+%  $report_services{'Mail forwards'} =  [ \%report_services_forward, 'Mail forwards', ];
+%  $report_services{'Virtual hosts'} =  [ \%report_services_www, 'Virtual hosting', ];
+%  $report_services{'Broadband services'} =  [ \%report_services_broadband, 'Fixed (username-less) broadband services', ];
+%  $report_services{'Phone numbers'} =  [ \%report_services_phone, 'Telephone numbers', ];
+%  $report_services{'External services'} =  [ \%report_services_external, 'External services', ];
+%
+%  tie my %report_packages, 'Tie::IxHash';
+%  if ( $curuser->access_right('Configuration') ) {
+%    $report_packages{'Package definitions'} =  [ $fsurl.'browse/part_pkg.cgi?active=1', 'Package definitions by number of active packages' ];
+%    $report_packages{'separator'} =  '';
+%  }
+%  $report_packages{'All customer packages'} =  [ $fsurl.'search/cust_pkg.cgi?pkgnum', 'List all customer packages', ];
+%  $report_packages{'Suspended customer packages'} =  [ $fsurl.'search/cust_pkg.cgi?magic=suspended', 'List suspended packages' ];
+%  $report_packages{'Customer packages with unconfigured services'} =  [ $fsurl.'search/cust_pkg.cgi?APKG_pkgnum', 'List packages which have provisionable services' ];
+%  $report_packages{'Advanced package reports'} =  [ $fsurl.'search/report_cust_pkg.html', 'by agent, date range, status, package definition' ];
+%
+%  tie my %report_rating, 'Tie::IxHash',
+%    'Call Detail Records (CDRs)' => [ $fsurl.'search/report_cdr.html', '' ],
+%  ;
+%
+%  tie my %report_financial, 'Tie::IxHash', 
+%    'Sales, Credits and Receipts' => [ $fsurl.'graph/report_money_time.html', 'Sales, credits and receipts summary graph' ],
+%    'Sales Report' => [ $fsurl.'graph/report_cust_bill_pkg.html', 'Sales report and graph (by agent, package class and/or date range)' ],
+%    'Credit Report' => [ $fsurl.'search/report_cust_credit.html', 'Credit report (by employee and/or date range)' ],
+%    'Payment Report' => [ $fsurl.'search/report_cust_pay.html', 'Credit report (by type and/or date range)' ],
+%    'A/R Aging' => [ $fsurl.'search/report_receivables.html', 'Accounts Receivable Aging report' ],
+%    'Prepaid Income' => [ $fsurl.'search/report_prepaid_income.html', 'Prepaid income (unearned revenue)  report' ],
+%    'Sales Tax Liability' => [ $fsurl.'search/report_tax.html', 'Sales tax liability report' ],
+%  ;
+%
+%  tie my %report_menu, 'Tie::IxHash';
+%  $report_menu{'Customers'}   = [ \%report_customers, 'Customer reports'  ]
+%    if $curuser->access_right('List customers');
+%  $report_menu{'Invoices'}    =  [ \%report_invoices,  'Invoice reports'   ]
+%    if $curuser->access_right('List invoices');
+%  $report_menu{'Packages'}    =  [ \%report_packages,  'Package reports'   ]
+%    if $curuser->access_right('List packages');
+%  $report_menu{'Services'}    =  [ \%report_services,  'Services reports'  ]
+%    if $curuser->access_right('List services');
+%  $report_menu{'Rating data'} =  [ \%report_rating,    'Rating reports'  ]
+%    if $curuser->access_right('List rating data');
+%  $report_menu{'Financial'}  = [ \%report_financial, 'Financial reports' ]
+%    if $curuser->access_right('Financial reports');
+%
+%  tie my %tools_importing, 'Tie::IxHash',
+%    'Import customers from CSV file' => [ $fsurl.'misc/cust_main-import.cgi', '' ],
+%    'Import one-time charges from CSV file' => [ $fsurl.'misc/cust_main-import_charges.cgi', '' ],
+%    'Import Call Detail Records (CDRs) from CSV file' => [ $fsurl.'misc/cdr-import.html', '' ],
+%  ;
+%
+%  tie my %tools_exporting, 'Tie::IxHash',
+%    'Download database dump' => [ $fsurl. 'misc/dump.cgi', '' ],
+%  ;
+%  
+%  #    <!-- <BR>View active NAS ports: 
+%  #      <A HREF="browse/nas.cgi">session server</A> -->
+%  #      <!-- or <A HREF="browse/nas-sqlradius.cgi">RADIUS</A>
+%  #    <BR> -->
+%
+%  tie my %tools_menu, 'Tie::IxHash', ();
+%  $tools_menu{'Quick payment entry'} =  [ $fsurl.'misc/batch-cust_pay.html', 'Enter multiple payments in a batch' ]
+%    if $curuser->access_right('Post payment batch');
+%  $tools_menu{'Job Queue'} =  [ $fsurl.'search/queue.html', 'View pending job queue' ]
+%    if $curuser->access_right('Job queue');
+%  $tools_menu{'Importing'} =  [ \%tools_importing, 'Import tools' ]
+%    if $curuser->access_right('Import');
+%  $tools_menu{'Exporting'} =  [ \%tools_exporting, 'Export tools' ]
+%    if $curuser->access_right('Export');
+%
+%  tie my %config_employees, 'Tie::IxHash',
+%    'View/Edit employees' => [ $fsurl.'browse/access_user.html', 'Setup internal users' ],
+%    'View/Edit employee groups' => [ $fsurl.'browse/access_group.html', 'Employee groups allow you to control access to the backend' ],
+%  ;
+%
+%  tie my %config_export_svc_pkg, 'Tie::IxHash',
+%    'View/Edit exports'             => [ $fsurl.'browse/part_export.cgi', 'Provisioning services to external machines, databases and APIs' ],
+%    'View/Edit service definitions' => [ $fsurl.'browse/part_svc.cgi', 'Services are items you offer to your customers' ],
+%    'View/Edit package definitions' => [ $fsurl.'browse/part_pkg.cgi', 'One or more services are grouped together into a package and given pricing information. Customers purchase packages, not services' ],
+%    'View/Edit package classes'     => [ $fsurl.'browse/pkg_class.html', 'Package classes define groups of packages, for reporting and convenience purposes.' ],
+%  ;
+%
+%  tie my %config_agent, 'Tie::IxHash',
+%    'View/Edit agent types' => [ $fsurl.'browse/agent_type.cgi', 'Agent types define groups of package definitions that you can then assign to particular agents' ],
+%    'View/Edit agents'      => [ $fsurl.'browse/agent.cgi', 'Agents are resellers of your service. Agents may be limited to a subset of your full offerings (via their type)' ],
+%  ;
+%
+%  tie my %config_billing, 'Tie::IxHash',
+%    'View/Edit payment gateways'         => [ $fsurl.'browse/payment_gateway.html', 'Credit card and electronic check processors' ],
+%    'View/Edit invoice events'           => [ $fsurl.'browse/part_bill_event.cgi', 'Actions for overdue invoices' ],
+%    'View/Edit prepaid cards'            => [ $fsurl.'search/prepay_credit.html', 'View outstanding cards, generate new cards' ],
+%    'View/Edit call rates and regions'   => [ $fsurl.'browse/rate.cgi', 'Manage rate plans, regions and prefixes for VoIP and call billing' ],
+%    'View/Edit locales and tax rates'    => [ $fsurl.'browse/cust_main_county.cgi', 'Change tax rates, or break down a country into states, or a state into counties and assign different tax rates to each' ],
+%  ;
+%
+%  tie my %config_dialup, 'Tie::IxHash',
+%    'View/Edit access numbers' => [ $fsurl.'browse/svc_acct_pop.cgi', 'Points of Presence' ],
+%  ;
+%
+%  tie my %config_broadband, 'Tie::IxHash',
+%    'View/Edit routers'        => [ $fsurl.'browse/router.cgi', 'Broadband access routers' ],
+%    'View/Edit address blocks' => [ $fsurl.'browse/addr_block.cgi', 'Manage address blocks and block assignments to broadband routers' ],
+%  ;
+%
+%  tie my %config_misc, 'Tie::IxHash';
+%  $config_misc{'View/Edit advertising sources'} = [ $fsurl.'browse/part_referral.html', 'Where a customer heard about your service.  Tracked for informational purposes' ]
+%    if $curuser->access_right('Configuration')
+%    || $curuser->access_right('Edit advertising sources')
+%    || $curuser->access_right('Edit global advertising sources');
+%  if ( $curuser->access_right('Configuration') ) {
+%    $config_misc{'View/Edit virtual fields'} = [ $fsurl.'browse/part_virtual_field.cgi', 'Locally defined fields', ];
+%    $config_misc{'View/Edit message catalog'} = [ $fsurl.'browse/msgcat.cgi', 'Change error messages and other customizable labels' ];
+%    $config_misc{'View/Edit inventory classes and inventory'} = [ $fsurl.'browse/inventory_class.html', 'Setup inventory classes and stock inventory' ];
+%  }
+%
+%  tie my %config_menu, 'Tie::IxHash';
+%  if ( $curuser->access_right('Configuration' ) ) {
+%    %config_menu = (
+%      'Settings'      => [ $fsurl.'config/config-view.cgi', '' ],
+%      'separator'     => '', #its a separator!
+%      'Employees'     => [ \%config_employees, '' ],
+%      'Provisioning, services and packages'
+%                      => [ \%config_export_svc_pkg, ''    ],
+%      'Resellers'     => [ \%config_agent, ''    ],
+%      'Billing'       => [ \%config_billing, ''    ],
+%      'Dialup'        => [ \%config_dialup, ''    ],
+%      'Fixed (username-less) broadband'
+%                      => [ \%config_broadband, ''    ],
+%    );
+%  }
+%  $config_menu{'Miscellaneous'} = [ \%config_misc, ''    ]
+%    if $curuser->access_right('Configuration')
+%    || $curuser->access_right('Edit advertising sources')
+%    || $curuser->access_right('Edit global advertising sources');
+%
+%  tie my %menu, 'Tie::IxHash',
+%    'Billing Main'   => [ $fsurl, 'Billing start page', ],
+%    'Ticketing Main' => [ 
+%                          ( $conf->config('ticket_system') eq 'RT_External'
+%                            ? FS::TicketSystem->baseurl()
+%                            : $fsurl.'rt/'
+%                          ),
+%                          'Ticketing start page',
+%                        ],
+%  ;
+%  $menu{'Reports'} = [ \%report_menu, 'Lists, reporting and graphing' ]
+%    if keys %report_menu;
+%  $menu{'Tools'} = [ \%tools_menu, 'Tools' ]
+%    if keys %tools_menu;
+%  $menu{'Configuration'} = [ \%config_menu, 'Configuraiton and setup' ]
+%    if $curuser->access_right('Configuration')
+%    || $curuser->access_right('Edit advertising sources')
+%    || $curuser->access_right('Edit global advertising sources');
+%
+%  use vars qw($gmenunum);
+%  $gmenunum = 0;
+%
+%  sub submenu {
+%    my($submenu, $title) = @_;
+%    my $menunum = $gmenunum++;
+%
+%    #return two args: html, menuname
+%
+%    "var myMenu$menunum = new WebFXMenu;\n".
+%    #"myMenu$menunum.useAutoPosition = true;\n".
+%    "myMenu$menunum.emptyText = '$title';\n".
+%
+%    (
+%      join("\n", map {
+%
+%        if ( !ref( $submenu->{$_} ) ) {
+%
+%          "myMenu$menunum.add(new WebFXMenuSeparator());";
+%
+%        } else {
+%
+%          my($url_or_submenu, $tooltip ) = @{ $submenu->{$_} };
+%          if ( ref($url_or_submenu) ) {
+%
+%            my($subhtml, $submenuname ) = submenu($url_or_submenu, $_); #mmm, recursion
+%
+%            "$subhtml\n".
+%            "myMenu$menunum.add(new WebFXMenuItem(\"$_\", null, \"$tooltip\", $submenuname ));";
+%
+%          } else {
+%
+%            "myMenu$menunum.add(new WebFXMenuItem(\"$_\", \"$url_or_submenu\", \"$tooltip\" ));";
+%
+%          }
+%
+%        }
+%
+%      } keys %$submenu )
+%    ). "\n".
+%    "myMenu$menunum.width = 224\n",
+%
+%    "myMenu$menunum";
+%
+%  }
+%
+%
 
-  my $curuser = $FS::CurrentUser::CurrentUser;
 
-  #Active tickets not assigned to a customer
-
-  tie my %report_customers_lists, 'Tie::IxHash',
-    'by customer number' => [ $fsurl. 'search/cust_main.cgi?browse=custnum', '' ],
-    'by last name' => [ $fsurl. 'search/cust_main.cgi?browse=last', '' ],
-    'by company name' => [ $fsurl. 'search/cust_main.cgi?browse=company', '' ],
-    'by active trouble tickets' => [ $fsurl. 'search/cust_main.cgi?browse=tickets', '' ],
-  ;
-
-  tie my %report_customers_search, 'Tie::IxHash',
-    'by ordering employee' => [ $fsurl. 'search/cust_main-otaker.cgi' ],
-  ;
-
-  tie my %report_customers, 'Tie::IxHash',
-    'List customers' => [ \%report_customers_lists, 'List customers' ],
-    'Search customers' => [ \%report_customers_search, 'Search customers' ],
-    'Zip code distribution' => [ $fsurl.'search/report_cust_main-zip.html', 'Zip codes by number of customers' ],
-  ;
-
-  tie my %report_invoices_open, 'Tie::IxHash',
-    'All open invoices' => [ $fsurl.'search/cust_bill.html?OPEN_date', 'All invoices with an unpaid balance' ],
-    '15 day open invoices' => [ $fsurl.'search/cust_bill.html?OPEN15_date', 'Invoices 15 days or older with an unpaid balance' ],
-    '30 day open invoices' => [ $fsurl.'search/cust_bill.html?OPEN30_date', 'Invoices 30 days or older with an unpaid balance' ],
-    '60 day open invoices' => [ $fsurl.'search/cust_bill.html?OPEN60_date', 'Invoices 60 days or older with an unpaid balance' ],
-    '90 day open invoices' => [ $fsurl.'search/cust_bill.html?OPEN90_date', 'Invoices 90 days or older with an unpaid balance' ],
-    '120 day open invoices' => [ $fsurl.'search/cust_bill.html?OPEN120_date', 'Invoices 120 days or older with an unpaid balance' ],
-  ;
-
-  tie my %report_invoices, 'Tie::IxHash',
-    'Open invoices' => [ \%report_invoices_open, 'Open invoices' ],
-    'All invoices'  => [ $fsurl. 'search/cust_bill.html?date', 'List all invoices' ],
-    'Advanced invoice reports' => [ $fsurl.'search/report_cust_bill.html', 'by agent, date range, etc.' ],
-  ;
-
-  tie my %report_services_acct, 'Tie::IxHash',
-    'All accounts by username' => [ $fsurl.'search/svc_acct.cgi?username', '' ],
-    'All accounts by UID'      => [ $fsurl.'search/svc_acct.cgi?uid', '' ],
-  ;
-  $report_services_acct{'Unlinked accounts'} = [ $fsurl.'search/svc_acct.cgi?UN_uid', 'Pre-Freeside accounts without a customer record' ]
-    if $curuser->access_right('View/link unlinked services');
-
-  tie my %report_services_domain, 'Tie::IxHash',
-    'All domains'      => [ $fsurl.'search/svc_domain.cgi?domain', '' ],
-  ;
-  $report_services_domain{'Unlinked domains'} = [ $fsurl.'search/svc_domain.cgi?UN_domain', 'Pre-Freeside domains without a customer record' ]
-    if $curuser->access_right('View/link unlinked services');
-
-  tie my %report_services_forward, 'Tie::IxHash',
-    'All mail forwards'      => [ $fsurl.'search/svc_forward.cgi?svcnum', '' ],
-  ;
-  $report_services_forward{'Unlinked mail forwards'} = [ $fsurl.'search/svc_forward.cgi?UN_svcnum', 'Pre-Freeside mail forwards without a customer record' ]
-    if $curuser->access_right('View/link unlinked services');
-
-  tie my %report_services_www, 'Tie::IxHash',
-    'All virtual hosts'     => [ $fsurl.'search/svc_www.cgi?svcnum', '' ],
-  ;
-  $report_services_www{'Unlinked virtual hosts'} = [ $fsurl.'search/svc_www.cgi?UN_svcnum', 'Pre-Freeside virtual hosts without a customer record' ]
-    if $curuser->access_right('View/link unlinked services');
-
-  tie my %report_services_broadband, 'Tie::IxHash',
-    'All broadband services' => [ $fsurl.'search/svc_broadband.cgi?svcnum', '' ],
-    #'Unlinked domain' => [ $fsurl.'search/svc_acct.cgi?UN_uid', 'Pre-Freeside domains without a customer record' ],
-  ;
-
-  tie my %report_services_phone, 'Tie::IxHash',
-    'All phone numbers' => [ $fsurl.'search/svc_phone.cgi?svcnum', '' ],
-  ;
-
-  tie my %report_services_external, 'Tie::IxHash',
-    'All external services' => [ $fsurl.'search/svc_external.cgi?id', '' ],
-  ;
-  $report_services_external{'Unlinked external services'} = [ $fsurl.'search/svc_external.cgi?UN_id', 'Pre-Freeside domains without a customer record' ]
-    if $curuser->access_right('View/link unlinked services');
-
-  tie my %report_services, 'Tie::IxHash';
-  if ( $curuser->access_right('Configuration') ) {
-    $report_services{'Service definitions'} =  [ $fsurl.'browse/part_svc.cgi?orderby=active', 'Service definitions by number of active packages' ];
-    $report_services{'separator'} =  '';
-  }
-  $report_services{'Accounts'} =  [ \%report_services_acct, 'Access accounts and mailboxes' ];
-  $report_services{'Domains'} =  [ \%report_services_domain, 'Domains', ];
-  $report_services{'Mail forwards'} =  [ \%report_services_forward, 'Mail forwards', ];
-  $report_services{'Virtual hosts'} =  [ \%report_services_www, 'Virtual hosting', ];
-  $report_services{'Broadband services'} =  [ \%report_services_broadband, 'Fixed (username-less) broadband services', ];
-  $report_services{'Phone numbers'} =  [ \%report_services_phone, 'Telephone numbers', ];
-  $report_services{'External services'} =  [ \%report_services_external, 'External services', ];
-
-  tie my %report_packages, 'Tie::IxHash';
-  if ( $curuser->access_right('Configuration') ) {
-    $report_packages{'Package definitions'} =  [ $fsurl.'browse/part_pkg.cgi?active=1', 'Package definitions by number of active packages' ];
-    $report_packages{'separator'} =  '';
-  }
-  $report_packages{'All customer packages'} =  [ $fsurl.'search/cust_pkg.cgi?pkgnum', 'List all customer packages', ];
-  $report_packages{'Suspended customer packages'} =  [ $fsurl.'search/cust_pkg.cgi?magic=suspended', 'List suspended packages' ];
-  $report_packages{'Customer packages with unconfigured services'} =  [ $fsurl.'search/cust_pkg.cgi?APKG_pkgnum', 'List packages which have provisionable services' ];
-  $report_packages{'Advanced package reports'} =  [ $fsurl.'search/report_cust_pkg.html', 'by agent, date range, status, package definition' ];
-
-  tie my %report_rating, 'Tie::IxHash',
-    'Call Detail Records (CDRs)' => [ $fsurl.'search/report_cdr.html', '' ],
-  ;
-
-  tie my %report_financial, 'Tie::IxHash', 
-    'Sales, Credits and Receipts' => [ $fsurl.'graph/report_money_time.html', 'Sales, credits and receipts summary graph' ],
-    'Sales Report' => [ $fsurl.'graph/report_cust_bill_pkg.html', 'Sales report and graph (by agent, package class and/or date range)' ],
-    'Credit Report' => [ $fsurl.'search/report_cust_credit.html', 'Credit report (by employee and/or date range)' ],
-    'Payment Report' => [ $fsurl.'search/report_cust_pay.html', 'Credit report (by type and/or date range)' ],
-    'A/R Aging' => [ $fsurl.'search/report_receivables.html', 'Accounts Receivable Aging report' ],
-    'Prepaid Income' => [ $fsurl.'search/report_prepaid_income.html', 'Prepaid income (unearned revenue)  report' ],
-    'Sales Tax Liability' => [ $fsurl.'search/report_tax.html', 'Sales tax liability report' ],
-  ;
-
-  tie my %report_menu, 'Tie::IxHash';
-  $report_menu{'Customers'}   = [ \%report_customers, 'Customer reports'  ]
-    if $curuser->access_right('List customers');
-  $report_menu{'Invoices'}    =  [ \%report_invoices,  'Invoice reports'   ]
-    if $curuser->access_right('List invoices');
-  $report_menu{'Packages'}    =  [ \%report_packages,  'Package reports'   ]
-    if $curuser->access_right('List packages');
-  $report_menu{'Services'}    =  [ \%report_services,  'Services reports'  ]
-    if $curuser->access_right('List services');
-  $report_menu{'Rating data'} =  [ \%report_rating,    'Rating reports'  ]
-    if $curuser->access_right('List rating data');
-  $report_menu{'Financial'}  = [ \%report_financial, 'Financial reports' ]
-    if $curuser->access_right('Financial reports');
-
-  tie my %tools_importing, 'Tie::IxHash',
-    'Import customers from CSV file' => [ $fsurl.'misc/cust_main-import.cgi', '' ],
-    'Import one-time charges from CSV file' => [ $fsurl.'misc/cust_main-import_charges.cgi', '' ],
-    'Import Call Detail Records (CDRs) from CSV file' => [ $fsurl.'misc/cdr-import.html', '' ],
-  ;
-
-  tie my %tools_exporting, 'Tie::IxHash',
-    'Download database dump' => [ $fsurl. 'misc/dump.cgi', '' ],
-  ;
-  
-  #    <!-- <BR>View active NAS ports: 
-  #      <A HREF="browse/nas.cgi">session server</A> -->
-  #      <!-- or <A HREF="browse/nas-sqlradius.cgi">RADIUS</A>
-  #    <BR> -->
-
-  tie my %tools_menu, 'Tie::IxHash', ();
-  $tools_menu{'Quick payment entry'} =  [ $fsurl.'misc/batch-cust_pay.html', 'Enter multiple payments in a batch' ]
-    if $curuser->access_right('Post payment batch');
-  $tools_menu{'Job Queue'} =  [ $fsurl.'search/queue.html', 'View pending job queue' ]
-    if $curuser->access_right('Job queue');
-  $tools_menu{'Importing'} =  [ \%tools_importing, 'Import tools' ]
-    if $curuser->access_right('Import');
-  $tools_menu{'Exporting'} =  [ \%tools_exporting, 'Export tools' ]
-    if $curuser->access_right('Export');
-
-  tie my %config_employees, 'Tie::IxHash',
-    'View/Edit employees' => [ $fsurl.'browse/access_user.html', 'Setup internal users' ],
-    'View/Edit employee groups' => [ $fsurl.'browse/access_group.html', 'Employee groups allow you to control access to the backend' ],
-  ;
-
-  tie my %config_export_svc_pkg, 'Tie::IxHash',
-    'View/Edit exports'             => [ $fsurl.'browse/part_export.cgi', 'Provisioning services to external machines, databases and APIs' ],
-    'View/Edit service definitions' => [ $fsurl.'browse/part_svc.cgi', 'Services are items you offer to your customers' ],
-    'View/Edit package definitions' => [ $fsurl.'browse/part_pkg.cgi', 'One or more services are grouped together into a package and given pricing information. Customers purchase packages, not services' ],
-    'View/Edit package classes'     => [ $fsurl.'browse/pkg_class.html', 'Package classes define groups of packages, for reporting and convenience purposes.' ],
-  ;
-
-  tie my %config_agent, 'Tie::IxHash',
-    'View/Edit agent types' => [ $fsurl.'browse/agent_type.cgi', 'Agent types define groups of package definitions that you can then assign to particular agents' ],
-    'View/Edit agents'      => [ $fsurl.'browse/agent.cgi', 'Agents are resellers of your service. Agents may be limited to a subset of your full offerings (via their type)' ],
-  ;
-
-  tie my %config_billing, 'Tie::IxHash',
-    'View/Edit payment gateways'         => [ $fsurl.'browse/payment_gateway.html', 'Credit card and electronic check processors' ],
-    'View/Edit invoice events'           => [ $fsurl.'browse/part_bill_event.cgi', 'Actions for overdue invoices' ],
-    'View/Edit prepaid cards'            => [ $fsurl.'search/prepay_credit.html', 'View outstanding cards, generate new cards' ],
-    'View/Edit call rates and regions'   => [ $fsurl.'browse/rate.cgi', 'Manage rate plans, regions and prefixes for VoIP and call billing' ],
-    'View/Edit locales and tax rates'    => [ $fsurl.'browse/cust_main_county.cgi', 'Change tax rates, or break down a country into states, or a state into counties and assign different tax rates to each' ],
-  ;
-
-  tie my %config_dialup, 'Tie::IxHash',
-    'View/Edit access numbers' => [ $fsurl.'browse/svc_acct_pop.cgi', 'Points of Presence' ],
-  ;
-
-  tie my %config_broadband, 'Tie::IxHash',
-    'View/Edit routers'        => [ $fsurl.'browse/router.cgi', 'Broadband access routers' ],
-    'View/Edit address blocks' => [ $fsurl.'browse/addr_block.cgi', 'Manage address blocks and block assignments to broadband routers' ],
-  ;
-
-  tie my %config_misc, 'Tie::IxHash';
-  $config_misc{'View/Edit advertising sources'} = [ $fsurl.'browse/part_referral.html', 'Where a customer heard about your service.  Tracked for informational purposes' ]
-    if $curuser->access_right('Configuration')
-    || $curuser->access_right('Edit advertising sources')
-    || $curuser->access_right('Edit global advertising sources');
-  if ( $curuser->access_right('Configuration') ) {
-    $config_misc{'View/Edit virtual fields'} = [ $fsurl.'browse/part_virtual_field.cgi', 'Locally defined fields', ];
-    $config_misc{'View/Edit message catalog'} = [ $fsurl.'browse/msgcat.cgi', 'Change error messages and other customizable labels' ];
-    $config_misc{'View/Edit inventory classes and inventory'} = [ $fsurl.'browse/inventory_class.html', 'Setup inventory classes and stock inventory' ];
-  }
-
-  tie my %config_menu, 'Tie::IxHash';
-  if ( $curuser->access_right('Configuration' ) ) {
-    %config_menu = (
-      'Settings'      => [ $fsurl.'config/config-view.cgi', '' ],
-      'separator'     => '', #its a separator!
-      'Employees'     => [ \%config_employees, '' ],
-      'Provisioning, services and packages'
-                      => [ \%config_export_svc_pkg, ''    ],
-      'Resellers'     => [ \%config_agent, ''    ],
-      'Billing'       => [ \%config_billing, ''    ],
-      'Dialup'        => [ \%config_dialup, ''    ],
-      'Fixed (username-less) broadband'
-                      => [ \%config_broadband, ''    ],
-    );
-  }
-  $config_menu{'Miscellaneous'} = [ \%config_misc, ''    ]
-    if $curuser->access_right('Configuration')
-    || $curuser->access_right('Edit advertising sources')
-    || $curuser->access_right('Edit global advertising sources');
-
-  tie my %menu, 'Tie::IxHash',
-    'Billing Main'   => [ $fsurl, 'Billing start page', ],
-    'Ticketing Main' => [ 
-                          ( $conf->config('ticket_system') eq 'RT_External'
-                            ? FS::TicketSystem->baseurl()
-                            : $fsurl.'rt/'
-                          ),
-                          'Ticketing start page',
-                        ],
-  ;
-  $menu{'Reports'} = [ \%report_menu, 'Lists, reporting and graphing' ]
-    if keys %report_menu;
-  $menu{'Tools'} = [ \%tools_menu, 'Tools' ]
-    if keys %tools_menu;
-  $menu{'Configuration'} = [ \%config_menu, 'Configuraiton and setup' ]
-    if $curuser->access_right('Configuration')
-    || $curuser->access_right('Edit advertising sources')
-    || $curuser->access_right('Edit global advertising sources');
-
-  use vars qw($gmenunum);
-  $gmenunum = 0;
-
-  sub submenu {
-    my($submenu, $title) = @_;
-    my $menunum = $gmenunum++;
-
-    #return two args: html, menuname
-
-    "var myMenu$menunum = new WebFXMenu;\n".
-    #"myMenu$menunum.useAutoPosition = true;\n".
-    "myMenu$menunum.emptyText = '$title';\n".
-
-    (
-      join("\n", map {
-
-        if ( !ref( $submenu->{$_} ) ) {
-
-          "myMenu$menunum.add(new WebFXMenuSeparator());";
-
-        } else {
-
-          my($url_or_submenu, $tooltip ) = @{ $submenu->{$_} };
-          if ( ref($url_or_submenu) ) {
-
-            my($subhtml, $submenuname ) = submenu($url_or_submenu, $_); #mmm, recursion
-
-            "$subhtml\n".
-            "myMenu$menunum.add(new WebFXMenuItem(\"$_\", null, \"$tooltip\", $submenuname ));";
-
-          } else {
-
-            "myMenu$menunum.add(new WebFXMenuItem(\"$_\", \"$url_or_submenu\", \"$tooltip\" ));";
-
-          }
-
-        }
-
-      } keys %$submenu )
-    ). "\n".
-    "myMenu$menunum.width = 224\n",
-
-    "myMenu$menunum";
-
-  }
-
-%>
-
-<script type="text/javascript" src="<%=$fsurl%>elements/cssexpr.js"></script>
-<script type="text/javascript" src="<%=$fsurl%>elements/xmenu.js"></script>
-<link href="<%=$fsurl%>elements/xmenu.css" type="text/css" rel="stylesheet">
-<link href="<%=$fsurl%>elements/freeside.css" type="text/css" rel="stylesheet">
+<script type="text/javascript" src="<%$fsurl%>elements/cssexpr.js"></script>
+<script type="text/javascript" src="<%$fsurl%>elements/xmenu.js"></script>
+<link href="<%$fsurl%>elements/xmenu.css" type="text/css" rel="stylesheet">
+<link href="<%$fsurl%>elements/freeside.css" type="text/css" rel="stylesheet">
 
 <SCRIPT TYPE="text/javascript">
 
-  webfxMenuImagePath      = "<%=$fsurl%>images/";
+  webfxMenuImagePath      = "<%$fsurl%>images/";
   webfxMenuUseHover       = 1;
   webfxMenuShowTime       = 300;
   webfxMenuHideTime       = 300;
 
   var myBar = new WebFXMenuBar;
+% foreach my $item ( keys %menu ) {
+%
+%       my( $url_or_submenu, $tooltip ) = @{ $menu{$item} };
+%
+%       if ( ref($url_or_submenu) ) {
+%
+%         #warn $item;
+%
+%         my( $subhtml, $submenuname ) = submenu($url_or_submenu, $item);
+%
+%  
 
-  <% foreach my $item ( keys %menu ) {
 
-       my( $url_or_submenu, $tooltip ) = @{ $menu{$item} };
+         <% $subhtml %>
+         myBar.add(new WebFXMenuButton("<% $item %>", null, "<% $tooltip %>", <% $submenuname %> ));
+%   } else { 
 
-       if ( ref($url_or_submenu) ) {
-
-         #warn $item;
-
-         my( $subhtml, $submenuname ) = submenu($url_or_submenu, $item);
-
-  %>
-
-         <%= $subhtml %>
-         myBar.add(new WebFXMenuButton("<%= $item %>", null, "<%= $tooltip %>", <%= $submenuname %> ));
-
-  <%   } else { %>
     
-         myBar.add(new WebFXMenuButton("<%= $item %>", "<%= $url_or_submenu %>", "<%= $tooltip %>" ));
+         myBar.add(new WebFXMenuButton("<% $item %>", "<% $url_or_submenu %>", "<% $tooltip %>" ));
+%   }
+%
+%    }
+%  
 
-  <%   }
-
-    }
-  %>
 
   myBar.show( null, 'vertical' );
   //myBar.show( null, 'horizontal' );

@@ -1,4 +1,4 @@
-<%= include("/elements/header.html", 'Bulk customer service change',
+<% include("/elements/header.html", 'Bulk customer service change',
             menubar(
                      'Main Menu' => $p,
                    ),
@@ -9,7 +9,7 @@
 <SCRIPT TYPE="text/javascript" SRC="../elements/overlibmws_iframe.js"></SCRIPT>
 <SCRIPT TYPE="text/javascript" SRC="../elements/overlibmws_draggable.js"></SCRIPT>
 
-<%= include('/elements/progress-init.html',
+<% include('/elements/progress-init.html',
               'OneTrueForm',
               [qw( old_svcpart new_svcpart pkgpart )],
               'process/bulk-cust_svc.cgi',
@@ -18,65 +18,67 @@
 %>
 
 <FORM NAME="OneTrueForm">
+%
+%  $cgi->param('svcpart') =~ /^(\d+)$/
+%    or die "illegal svcpart: ". $cgi->param('svcpart');
+%
+%  my $old_svcpart = $1;
+%  my $src_part_svc = qsearchs('part_svc', { 'svcpart' => $old_svcpart } )
+%    or die "unknown svcpart: $old_svcpart";
+%
 
-<%
-  $cgi->param('svcpart') =~ /^(\d+)$/
-    or die "illegal svcpart: ". $cgi->param('svcpart');
 
-  my $old_svcpart = $1;
-  my $src_part_svc = qsearchs('part_svc', { 'svcpart' => $old_svcpart } )
-    or die "unknown svcpart: $old_svcpart";
-%>
-
-<INPUT NAME="old_svcpart" TYPE="hidden" VALUE="<%= $old_svcpart %>">
+<INPUT NAME="old_svcpart" TYPE="hidden" VALUE="<% $old_svcpart %>">
 Change <!-- customer
-<B><%= $src_part_svc->svcpart %>: <%= $src_part_svc->svc %></B> services
+<B><% $src_part_svc->svcpart %>: <% $src_part_svc->svc %></B> services
 <BR>
 -->
 
 <SELECT NAME="pkgpart">
+% my $num_cust_svc = $src_part_svc->num_cust_svc; 
+% if ( $num_cust_svc > 1 ) { 
 
-<% my $num_cust_svc = $src_part_svc->num_cust_svc; %>
-<% if ( $num_cust_svc > 1 ) { %>
-  <OPTION VALUE="">all <%= $num_cust_svc %> <%= $src_part_svc->svc %> services
-<% } else { %>
-  <OPTION VALUE="">the <%= $num_cust_svc %> <%= $src_part_svc->svc %> service
-<% } %>
+  <OPTION VALUE="">all <% $num_cust_svc %> <% $src_part_svc->svc %> services
+% } else { 
 
-<%
-  my $num_unlinked = $src_part_svc->num_cust_svc(0);
-  if ( $num_unlinked ) {
-%>
-  <OPTION VALUE="0">the <%= $num_unlinked %> unlinked <%= $src_part_svc->svc %> services
+  <OPTION VALUE="">the <% $num_cust_svc %> <% $src_part_svc->svc %> service
+% } 
+%
+%  my $num_unlinked = $src_part_svc->num_cust_svc(0);
+%  if ( $num_unlinked ) {
+%
 
-<% } %>
+  <OPTION VALUE="0">the <% $num_unlinked %> unlinked <% $src_part_svc->svc %> services
+% } 
+% foreach my $schwartz (
+%     grep { $_->[1] }
+%     map  { [ $_, $src_part_svc->num_cust_svc($_->pkgpart) ] }
+%          qsearch('part_pkg', {} )
+%   ) {
+%     my( $part_pkg, $num_cust_svc ) = @$schwartz;
+%
 
-<% foreach my $schwartz (
-     grep { $_->[1] }
-     map  { [ $_, $src_part_svc->num_cust_svc($_->pkgpart) ] }
-          qsearch('part_pkg', {} )
-   ) {
-     my( $part_pkg, $num_cust_svc ) = @$schwartz;
-%>
-  <OPTION VALUE="<%= $part_pkg->pkgpart %>">the <%= $num_cust_svc %>
-    <%= $src_part_svc->svc %> service<%= $num_cust_svc > 1 ? 's in' : ' in a' %>
-    <%= $part_pkg->pkg %> package<%= $num_cust_svc > 1 ? 's' : '' %>
-<% } %>
+  <OPTION VALUE="<% $part_pkg->pkgpart %>">the <% $num_cust_svc %>
+    <% $src_part_svc->svc %> service<% $num_cust_svc > 1 ? 's in' : ' in a' %>
+    <% $part_pkg->pkg %> package<% $num_cust_svc > 1 ? 's' : '' %>
+% } 
+
 </SELECT>
 <BR>
 
 to new service definition
 <SELECT NAME="new_svcpart">
-<% foreach my $dest_part_svc (
-     grep {    $_->svcpart != $old_svcpart
-            && $_->svcdb   eq $src_part_svc->svcdb
-          }
-          qsearch('part_svc', { 'disabled' => '' } )
-   ) {
-%>
-  <OPTION VALUE="<%= $dest_part_svc->svcpart %>"><%= $dest_part_svc->svcpart %>: <%= $dest_part_svc->svc %>
+% foreach my $dest_part_svc (
+%     grep {    $_->svcpart != $old_svcpart
+%            && $_->svcdb   eq $src_part_svc->svcdb
+%          }
+%          qsearch('part_svc', { 'disabled' => '' } )
+%   ) {
+%
 
-<% } %>
+  <OPTION VALUE="<% $dest_part_svc->svcpart %>"><% $dest_part_svc->svcpart %>: <% $dest_part_svc->svc %>
+% } 
+
 </SELECT>
 <BR>
 

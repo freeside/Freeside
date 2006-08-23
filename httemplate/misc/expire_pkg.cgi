@@ -1,22 +1,23 @@
 <!-- mason kludge -->
-<%
+%
+%
+%my($query) = $cgi->keywords;
+%$query =~ /^(\d+)$/;
+%my $pkgnum = $1;
+%
+%#get package record
+%my $cust_pkg = qsearchs('cust_pkg',{'pkgnum'=>$pkgnum});
+%die "Unknown pkgnum $pkgnum" unless $cust_pkg;
+%my $part_pkg = $cust_pkg->part_pkg;
+%
+%my $custnum = $cust_pkg->getfield('custnum');
+%
+%my $date = $cust_pkg->expire ? time2str('%D', $cust_pkg->expire) : '';
+%
+%
 
-my($query) = $cgi->keywords;
-$query =~ /^(\d+)$/;
-my $pkgnum = $1;
 
-#get package record
-my $cust_pkg = qsearchs('cust_pkg',{'pkgnum'=>$pkgnum});
-die "Unknown pkgnum $pkgnum" unless $cust_pkg;
-my $part_pkg = $cust_pkg->part_pkg;
-
-my $custnum = $cust_pkg->getfield('custnum');
-
-my $date = $cust_pkg->expire ? time2str('%D', $cust_pkg->expire) : '';
-
-%>
-
-<%= include("/elements/header.html",'Expire package', menubar(
+<% include("/elements/header.html",'Expire package', menubar(
   "View this customer (#$custnum)" => "${p}view/cust_main.cgi?$custnum",
   'Main Menu' => popurl(2)
 )) %>
@@ -26,15 +27,15 @@ my $date = $cust_pkg->expire ? time2str('%D', $cust_pkg->expire) : '';
 <SCRIPT TYPE="text/javascript" SRC="../elements/calendar-en.js"></SCRIPT>
 <SCRIPT TYPE="text/javascript" SRC="../elements/calendar-setup.js"></SCRIPT>
 
-<%= $pkgnum %>: <%= $part_pkg->pkg. ' - '. $part_pkg->comment %>
+<% $pkgnum %>: <% $part_pkg->pkg. ' - '. $part_pkg->comment %>
 
 <FORM NAME="formname" ACTION="process/expire_pkg.cgi" METHOD="post">
-<INPUT TYPE="hidden" NAME="pkgnum" VALUE="<%= $pkgnum %>">
+<INPUT TYPE="hidden" NAME="pkgnum" VALUE="<% $pkgnum %>">
 <TABLE>
   <TR>
     <TD>Cancel package on </TD>
-    <TD><INPUT TYPE="text" NAME="date" ID="expire_date" VALUE="<%= $date %>">
-        <IMG SRC="<%= $p %>images/calendar.png" ID="expire_button" STYLE="cursor:pointer" TITLE="Select date">
+    <TD><INPUT TYPE="text" NAME="date" ID="expire_date" VALUE="<% $date %>">
+        <IMG SRC="<% $p %>images/calendar.png" ID="expire_button" STYLE="cursor:pointer" TITLE="Select date">
         <BR><I>m/d/y</I>
     </TD>
   </TR>

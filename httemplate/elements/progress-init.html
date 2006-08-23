@@ -1,17 +1,18 @@
-<%
-  my( $formname, $fields, $action, $url_or_message, $key ) = @_;
-  $key = '' unless defined $key;
+%
+%  my( $formname, $fields, $action, $url_or_message, $key ) = @_;
+%  $key = '' unless defined $key;
+%
+%  my $url_or_message_link;
+%  if ( ref($url_or_message) ) { #its a message or something
+%    $url_or_message_link =
+%      'message='. uri_escape( $url_or_message->{'message'} )
+%  } else {
+%    $url_or_message_link = "url=$url_or_message";
+%  }
+%
 
-  my $url_or_message_link;
-  if ( ref($url_or_message) ) { #its a message or something
-    $url_or_message_link =
-      'message='. uri_escape( $url_or_message->{'message'} )
-  } else {
-    $url_or_message_link = "url=$url_or_message";
-  }
-%>
 
-<%= include('/elements/xmlhttp.html',
+<% include('/elements/xmlhttp.html',
               'method' => 'POST',
               'url'    => $action,
               'subs'   => [ 'start_job' ],
@@ -27,12 +28,12 @@ function OLiframeContent(src, width, height, name) {
    +'<div>[iframe not supported]</div></iframe>');
 }
 
-function <%=$key%>process () {
+function <%$key%>process () {
 
-  //alert('<%=$key%>process for form <%=$formname%>');
+  //alert('<%$key%>process for form <%$formname%>');
 
-  if ( document.<%=$formname%>.submit.disabled == false ) {
-    document.<%=$formname%>.submit.disabled=true;
+  if ( document.<%$formname%>.submit.disabled == false ) {
+    document.<%$formname%>.submit.disabled=true;
   }
 
   overlib( 'Submitting job to server...', WIDTH, 444, HEIGHT, 168, CAPTION, 'Please wait...', STICKY, AUTOSTATUSCAP, CLOSETEXT, '', CLOSECLICK, MIDX, 0, MIDY, 0 );
@@ -40,9 +41,9 @@ function <%=$key%>process () {
   var Hash = new Array();
   var x = 0;
   var fieldName;
-  for (var i = 0; i<document.<%=$formname%>.elements.length; i++) {
-    field  = document.<%=$formname%>.elements[i];
-    if ( <%= join(' || ', map { "(field.name.indexOf('$_') > -1)" } @$fields ) %>
+  for (var i = 0; i<document.<%$formname%>.elements.length; i++) {
+    field  = document.<%$formname%>.elements[i];
+    if ( <% join(' || ', map { "(field.name.indexOf('$_') > -1)" } @$fields ) %>
        )
     {
         if ( field.type == 'select-multiple' ) {
@@ -56,7 +57,7 @@ function <%=$key%>process () {
           }
         } else if (    ( field.type != 'radio'  && field.type != 'checkbox' )
                     || ( ( field.type == 'radio' || field.type == 'checkbox' )
-                         && document.<%=$formname%>.elements[i].checked
+                         && document.<%$formname%>.elements[i].checked
                        )
                   )
         {
@@ -67,17 +68,17 @@ function <%=$key%>process () {
   }
 
   // jsrsPOST = true;
-  // jsrsExecute( '<%= $action %>', <%=$key%>myCallback, 'start_job', Hash );
+  // jsrsExecute( '<% $action %>', <%$key%>myCallback, 'start_job', Hash );
 
-  //alert('start_job( ' + Hash + ', <%=$key%>myCallback )' );
+  //alert('start_job( ' + Hash + ', <%$key%>myCallback )' );
   //alert('start_job()' );
-  <%=$key%>start_job( Hash, <%=$key%>myCallback );
+  <%$key%>start_job( Hash, <%$key%>myCallback );
 
 }
 
-function <%=$key%>myCallback( jobnum ) {
+function <%$key%>myCallback( jobnum ) {
 
-  overlib( OLiframeContent('<%=$p%>elements/progress-popup.html?jobnum=' + jobnum + ';<%=$url_or_message_link%>;formname=<%=$formname%>' , 444, 168, 'progress_popup'), CAPTION, 'Please wait...', STICKY, AUTOSTATUSCAP, CLOSETEXT, '', CLOSECLICK, MIDX, 0, MIDY, 0 );
+  overlib( OLiframeContent('<%$p%>elements/progress-popup.html?jobnum=' + jobnum + ';<%$url_or_message_link%>;formname=<%$formname%>' , 444, 168, 'progress_popup'), CAPTION, 'Please wait...', STICKY, AUTOSTATUSCAP, CLOSETEXT, '', CLOSECLICK, MIDX, 0, MIDY, 0 );
 
 }
 

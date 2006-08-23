@@ -1,16 +1,17 @@
-<%
-  my $jobnum = $cgi->param('jobnum');
-  my $url = $cgi->param('url');
-  my $message = $cgi->param('message');
-  my $formname = scalar($cgi->param('formname'));
-%>
+%
+%  my $jobnum = $cgi->param('jobnum');
+%  my $url = $cgi->param('url');
+%  my $message = $cgi->param('message');
+%  my $formname = scalar($cgi->param('formname'));
+%
+
 <HTML>
   <HEAD>
     <TITLE></TITLE>
   </HEAD>
   <BODY BGCOLOR="#ccccff" onLoad="refreshStatus()">
 
-<%= include('/elements/xmlhttp.html',
+<% include('/elements/xmlhttp.html',
               'url'  => $p.'elements/jsrsServer.html',
               'subs' => [ 'job_status' ],
            )
@@ -20,9 +21,9 @@
 <SCRIPT TYPE="text/javascript" src="../elements/qlib/progress.js"></SCRIPT>
 <SCRIPT TYPE="text/javascript">
 function refreshStatus () {
-  //jsrsExecute( '<%=$p%>elements/jsrsServer.html', updateStatus, 'job_status', '<%= $jobnum %>' );
+  //jsrsExecute( '<%$p%>elements/jsrsServer.html', updateStatus, 'job_status', '<% $jobnum %>' );
 
-  job_status( '<%= $jobnum %>', updateStatus );
+  job_status( '<% $jobnum %>', updateStatus );
 }
 function updateStatus( status_statustext ) {
 
@@ -37,29 +38,33 @@ function updateStatus( status_statustext ) {
     document.getElementById("progress_percent").innerHTML = statustext + '%';
     bar1.set(statustext);
     bar1.update;
-    //jsrsExecute( '<%=$p%>elements/jsrsServer.html', updateStatus, 'job_status', '<%= $jobnum %>' );
-    job_status( '<%= $jobnum %>', updateStatus );
+    //jsrsExecute( '<%$p%>elements/jsrsServer.html', updateStatus, 'job_status', '<% $jobnum %>' );
+    job_status( '<% $jobnum %>', updateStatus );
   } else if ( status.indexOf('complete') > -1 ) {
-<% if ( $message ) { %>
-    document.getElementById("progress_message").innerHTML = "<%= $message %>";
+% if ( $message ) { 
+
+    document.getElementById("progress_message").innerHTML = "<% $message %>";
     document.getElementById("progress_bar").innerHTML = '';
     document.getElementById("progress_percent").innerHTML = '<INPUT TYPE="button" VALUE="OK" onClick="parent.nd(1);">';
     document.getElementById("progress_jobnum").innerHTML = '';
-    if ( parent.document.<%=$formname%>.submit.disabled == true ) {
-      parent.document.<%=$formname%>.submit.disabled=false;
+    if ( parent.document.<%$formname%>.submit.disabled == true ) {
+      parent.document.<%$formname%>.submit.disabled=false;
     }
-<% } elsif ( $url ) { %>
-    window.top.location.href = '<%= $url %>';
-<% } else { %>
+% } elsif ( $url ) { 
+
+    window.top.location.href = '<% $url %>';
+% } else { 
+
     alert('job done but no url or message specified');
-<% } %>
+% } 
+
   } else if ( status.indexOf('error') > -1 ) {
     document.getElementById("progress_message").innerHTML = '<FONT SIZE="+1" COLOR="#FF0000">Error: ' + statustext + '</FONT>';
     document.getElementById("progress_bar").innerHTML = '';
     document.getElementById("progress_percent").innerHTML = '<INPUT TYPE="button" VALUE="OK" onClick="parent.nd(1);">';
     document.getElementById("progress_jobnum").innerHTML = '';
-    if ( parent.document.<%=$formname%>.submit.disabled == true ) {
-      parent.document.<%=$formname%>.submit.disabled=false;
+    if ( parent.document.<%$formname%>.submit.disabled == true ) {
+      parent.document.<%$formname%>.submit.disabled=false;
     }
   } else {
     alert('XXX unknown status returned from server: ' + status);
@@ -90,7 +95,7 @@ function updateStatus( status_statustext ) {
         </TD>
       </TR><TR>
         <TD ALIGN="center" ID="progress_jobnum">
-          (progress of job #<%= $jobnum %>)
+          (progress of job #<% $jobnum %>)
         </TD>
       </TR>
     </TABLE>

@@ -1,421 +1,416 @@
-<%
-  my( $cust_main ) = @_;
-  my $custnum = $cust_main->custnum;
+%
+%  my( $cust_main ) = @_;
+%  my $custnum = $cust_main->custnum;
+%
+%  my $conf = new FS::Conf;
+%
+%  my $curuser = $FS::CurrentUser::CurrentUser;
+%
+%  my @payby = grep /\w/, $conf->config('payby');
+%  #@payby = (qw( CARD DCRD CHEK DCHK LECB BILL CASH WEST COMP ))
+%  @payby = (qw( CARD DCRD CHEK DCHK LECB BILL CASH COMP ))
+%    unless @payby;
+%  my %payby = map { $_=>1 } @payby;
+%
+%  my $s = 0;
+%
+%
 
-  my $conf = new FS::Conf;
-
-  my $curuser = $FS::CurrentUser::CurrentUser;
-
-  my @payby = grep /\w/, $conf->config('payby');
-  #@payby = (qw( CARD DCRD CHEK DCHK LECB BILL CASH WEST COMP ))
-  @payby = (qw( CARD DCRD CHEK DCHK LECB BILL CASH COMP ))
-    unless @payby;
-  my %payby = map { $_=>1 } @payby;
-
-  my $s = 0;
-
-%>
 
 <BR><BR><A NAME="history"><FONT SIZE="+2">Payment History</FONT></A><BR>
+% if ( $payby{'BILL'} && $curuser->access_right('Post payment') ) { 
 
-<% if ( $payby{'BILL'} && $curuser->access_right('Post payment') ) { %>
 
-  <%= $s++ ? ' | ' : '' %>
-  <A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('<%= $p %>edit/cust_pay.cgi?popup=1;payby=BILL;custnum=<%= $custnum %>', 392, 336, 'cust_pay_popup' ), CAPTION, 'Enter check payment', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK ); return false;">Enter check payment</A>
+  <% $s++ ? ' | ' : '' %>
+  <A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('<% $p %>edit/cust_pay.cgi?popup=1;payby=BILL;custnum=<% $custnum %>', 392, 336, 'cust_pay_popup' ), CAPTION, 'Enter check payment', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK ); return false;">Enter check payment</A>
+% } 
+% if ( $payby{'CASH'} && $curuser->access_right('Post payment') ) { 
 
-<% } %>
 
-<% if ( $payby{'CASH'} && $curuser->access_right('Post payment') ) { %>
+  <% $s++ ? ' | ' : '' %>
+  <A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('<% $p %>edit/cust_pay.cgi?popup=1;payby=CASH;custnum=<% $custnum %>', 392, 336, 'cust_pay_popup' ), CAPTION, 'Enter cash payment', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK ); return false;">Enter cash payment</A>
+% } 
+% if ( $payby{'WEST'} && $curuser->access_right('Post payment') ) { 
 
-  <%= $s++ ? ' | ' : '' %>
-  <A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('<%= $p %>edit/cust_pay.cgi?popup=1;payby=CASH;custnum=<%= $custnum %>', 392, 336, 'cust_pay_popup' ), CAPTION, 'Enter cash payment', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK ); return false;">Enter cash payment</A>
 
-<% } %>
+  <% $s++ ? ' | ' : '' %>
+  <A HREF="<% $p %>edit/cust_pay.cgi?payby=WEST;custnum=<% $custnum %>">Enter Western Union payment</A>
+% } 
+% if ( ( $payby{'CARD'} || $payby{'DCRD'} )
+%        && $curuser->access_right('Process payment')
+%      ) {
+%
 
-<% if ( $payby{'WEST'} && $curuser->access_right('Post payment') ) { %>
 
-  <%= $s++ ? ' | ' : '' %>
-  <A HREF="<%= $p %>edit/cust_pay.cgi?payby=WEST;custnum=<%= $custnum %>">Enter Western Union payment</A>
+  <% $s++ ? ' | ' : '' %>
+  <A HREF="<% $p %>misc/payment.cgi?payby=CARD;custnum=<% $custnum %>">Process credit card payment</A>
+% } 
+% if ( ( $payby{'CHEK'} || $payby{'DCHK'} )
+%        && $curuser->access_right('Process payment')
+%      ) {
+%
 
-<% } %>
 
-<% if ( ( $payby{'CARD'} || $payby{'DCRD'} )
-        && $curuser->access_right('Process payment')
-      ) {
-%>
+  <% $s++ ? ' | ' : '' %>
+  <A HREF="<% $p %>misc/payment.cgi?payby=CHEK;custnum=<% $custnum %>">Process electronic check (ACH) payment</A>
+% } 
+% if ( $payby{'MCRD'} && $curuser->access_right('Post payment') ) { 
 
-  <%= $s++ ? ' | ' : '' %>
-  <A HREF="<%= $p %>misc/payment.cgi?payby=CARD;custnum=<%= $custnum %>">Process credit card payment</A>
 
-<% } %>
+  <% $s++ ? ' | ' : '' %>
+  <A HREF="<% $p %>edit/cust_pay.cgi?payby=MCRD;custnum=<% $custnum %>">Post manual (offline) credit card payment</A>
+% } 
 
-<% if ( ( $payby{'CHEK'} || $payby{'DCHK'} )
-        && $curuser->access_right('Process payment')
-      ) {
-%>
-
-  <%= $s++ ? ' | ' : '' %>
-  <A HREF="<%= $p %>misc/payment.cgi?payby=CHEK;custnum=<%= $custnum %>">Process electronic check (ACH) payment</A>
-
-<% } %>
-
-<% if ( $payby{'MCRD'} && $curuser->access_right('Post payment') ) { %>
-
-  <%= $s++ ? ' | ' : '' %>
-  <A HREF="<%= $p %>edit/cust_pay.cgi?payby=MCRD;custnum=<%= $custnum %>">Post manual (offline) credit card payment</A>
-
-<% } %>
 
 <BR>
+% if ( $curuser->access_right('Post credit') ) { 
 
-<% if ( $curuser->access_right('Post credit') ) { %>
 
-  <A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('<%= $p %>edit/cust_credit.cgi?<%= $custnum %>', 392, 336, 'cust_credit_popup' ), CAPTION, 'Enter credit', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK ); return false;">Enter credit</A>
+  <A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('<% $p %>edit/cust_credit.cgi?<% $custnum %>', 392, 336, 'cust_credit_popup' ), CAPTION, 'Enter credit', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK ); return false;">Enter credit</A>
 
   <BR>
+% } 
+%
+%#get payment history
+%my @history = ();
+%
+%#invoices
+%foreach my $cust_bill ($cust_main->cust_bill) {
+%  my $pre = ( $cust_bill->owed > 0 )
+%              ? '<B><FONT SIZE="+1" COLOR="#FF0000">Open '
+%              : '';
+%  my $post = ( $cust_bill->owed > 0 ) ? '</FONT></B>' : '';
+%  my $invnum = $cust_bill->invnum;
+%  my $link = $curuser->access_right('View invoices')
+%               ? qq!<A HREF="${p}view/cust_bill.cgi?$invnum">!
+%               : '';
+%  push @history, {
+%    'date'   => $cust_bill->_date,
+%    'desc'   => $link. $pre.
+%                "Invoice #$invnum (Balance \$". $cust_bill->owed. ')'.
+%                $post. ( $link ? '</A>' : '' ),
+%    'charge' => $cust_bill->charged,
+%  };
+%}
+%
+%#payments (some false laziness w/credits)
+%foreach my $cust_pay ($cust_main->cust_pay) {
+%
+%  my $payby = $cust_pay->payby;
+%
+%  my $payinfo;
+%  if ( $payby eq 'CARD' ) {
+%    $payinfo = $cust_pay->payinfo_masked;
+%  } elsif ( $payby eq 'CHEK' && $cust_pay->payinfo =~ /^(\d+)\@(\d+)$/ ) {
+%    $payinfo = "ABA $2, Acct# $1";
+%  } else {
+%    $payinfo = $cust_pay->payinfo;
+%  }
+%  my @cust_bill_pay = $cust_pay->cust_bill_pay;
+%  my @cust_pay_refund = $cust_pay->cust_pay_refund;
+%
+%  my $target = "$payby$payinfo";
+%  $payby =~ s/^BILL$/Check #/ if $payinfo;
+%  $payby =~ s/^CHEK$/Electronic check /;
+%  $payby =~ s/^PREP$/Prepaid card /;
+%  $payby =~ s/^CARD$/Credit card #/; 
+%  $payby =~ s/^COMP$/Complimentary by /; 
+%  $payby =~ s/^CASH$/Cash/;
+%  $payby =~ s/^WEST$/Western Union/;
+%  $payby =~ s/^MCRD$/Manual credit card/;
+%  $payby =~ s/^BILL$//;
+%  my $info = $payby ? " ($payby$payinfo)" : '';
+%
+%  my( $pre, $post, $desc, $apply, $ext ) = ( '', '', '', '', '' );
+%  if (    scalar(@cust_bill_pay)   == 0
+%       && scalar(@cust_pay_refund) == 0 ) {
+%    #completely unapplied
+%    $pre = '<B><FONT COLOR="#FF0000">Unapplied ';
+%    $post = '</FONT></B>';
+%    $apply = qq! (<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('${p}edit/cust_bill_pay.cgi?!.
+%             $cust_pay->paynum.
+%             qq!', 392, 336, 'cust_bill_pay_popup' ), CAPTION, 'Apply payment', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK ); return false;">apply</A>)!;
+%
+%  } elsif (    scalar(@cust_bill_pay)   == 1
+%            && scalar(@cust_pay_refund) == 0
+%            && $cust_pay->unapplied == 0     ) {
+%    #applied to one invoice, the usual situation
+%    $desc = ' applied to Invoice #'. $cust_bill_pay[0]->invnum;
+%  } elsif (    scalar(@cust_bill_pay)   == 0
+%            && scalar(@cust_pay_refund) == 1
+%            && $cust_pay->unapplied == 0     ) {
+%    #applied to one refund
+%    $desc = ' refunded on '. time2str("%D", $cust_pay_refund[0]->_date);
+%  } else {
+%    #complicated
+%    $desc = '<BR>';
+%    foreach my $app ( sort { $a->_date <=> $b->_date }
+%                           ( @cust_bill_pay, @cust_pay_refund ) ) {
+%      if ( $app->isa('FS::cust_bill_pay') ) {
+%        $desc .= '&nbsp;&nbsp;'.
+%                 '$'. $app->amount.
+%                 ' applied to Invoice #'. $app->invnum.
+%                 '<BR>';
+%                 #' on '. time2str("%D", $cust_bill_pay->_date).
+%      } elsif ( $app->isa('FS::cust_pay_refund') ) {
+%        $desc .= '&nbsp;&nbsp;'.
+%                 '$'. $app->amount.
+%                 ' refunded on '. time2str("%D", $app->_date).
+%                 '<BR>';
+%      } else {
+%        die "$app is not a FS::cust_bill_pay or FS::cust_pay_refund";
+%      }
+%    }
+%    if ( $cust_pay->unapplied > 0 ) {
+%      $desc .= '&nbsp;&nbsp;'.
+%               '<B><FONT COLOR="#FF0000">$'.
+%               $cust_pay->unapplied. ' unapplied</FONT></B>'.
+%               qq! (<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('${p}edit/cust_bill_pay.cgi?!.
+%               $cust_pay->paynum. 
+%               qq!', 392, 336, 'cust_bill_pay_popup' ), CAPTION, 'Apply payment', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK ); return false;">apply</A>)!.
+%               '<BR>';
+%    }
+%  }
+%
+%  my $refund = '';
+%  my $refund_days = $conf->config('card_refund-days') || 120;
+%  if (    $cust_pay->closed !~ /^Y/i
+%       && $cust_pay->payby =~ /^(CARD|CHEK)$/
+%       && time-$cust_pay->_date < $refund_days*86400
+%       && $cust_pay->unrefunded > 0
+%       && $curuser->access_right('Refund payment')
+%  ) {
+%    $refund = qq! (<A HREF="${p}edit/cust_refund.cgi?payby=$1;!.
+%              qq!paynum=!. $cust_pay->paynum. '"'.
+%              qq! TITLE="Send a refund for this payment to the payment gateway"!.
+%              qq!>refund</A>)!;
+%  }
+%
+%  my $void = '';
+%  if (    $cust_pay->closed !~ /^Y/i
+%       && (    ( $cust_pay->payby eq 'CARD'
+%                 && $curuser->access_right('Credit card void')
+%               )
+%            || ( $cust_pay->payby eq 'CHEK'
+%                 && $curuser->access_right('Echeck void')
+%               )
+%            || ( $cust_pay->payby !~ /^(CARD|CHEK)$/
+%                 && $curuser->access_right('Regular void')
+%               )
+%          )
+%     )
+%  {
+%    $void = qq! (<A HREF="javascript:areyousure('!.
+%            qq!${p}misc/void-cust_pay.cgi?!. $cust_pay->paynum.
+%            qq!', 'Are you sure you want to void this payment?')"!.
+%            qq! TITLE="Void this payment from the database!.
+%              ( $cust_pay->payby =~ /^(CARD|CHEK)$/
+%                ? ' (do not send anything to the payment gateway)'
+%                : '' 
+%              ). '"'.
+%            qq!>void</A>)!;
+%  }
+%
+%  my $delete = '';
+%  if ( $cust_pay->closed !~ /^Y/i
+%       && $conf->exists('deletepayments')
+%       && $curuser->access_right('Delete payment')
+%     )
+%  {
+%    $delete = qq! (<A HREF="javascript:areyousure('!.
+%              qq!${p}misc/delete-cust_pay.cgi?!. $cust_pay->paynum.
+%              qq!', 'Are you sure you want to delete this payment?')"!.
+%              qq! TITLE="Delete this payment from the database completely - not recommended"!.
+%              qq!>delete</A>)!;
+%  }
+%
+%  my $unapply = '';
+%  if (    $cust_pay->closed !~ /^Y/i
+%       && scalar(@cust_bill_pay)           
+%       && $curuser->access_right('Unapply payment')
+%     )
+%  {
+%    $unapply = qq! (<A HREF="javascript:areyousure('!.
+%               qq!${p}misc/unapply-cust_pay.cgi?!. $cust_pay->paynum.
+%               qq!', 'Are you sure you want to unapply this payment?')"!.
+%               qq! TITLE="Keep this payment, but dissociate it from the invoices it is currently applied against"!.
+%               qq!>unapply</A>)!;
+%  }
+%
+%  push @history, {
+%    'date'    => $cust_pay->_date,
+%    'desc'    => $pre. "Payment$post$info$desc".
+%                 "$apply$refund$void$delete$unapply",
+%    'payment' => $cust_pay->paid,
+%    'target'  => $target,
+%  };
+%}
+%
+%#voided payments
+%foreach my $cust_pay_void ($cust_main->cust_pay_void) {
+%
+%  my $payby = $cust_pay_void->payby;
+%  my $payinfo = $payby eq 'CARD'
+%                  ? $cust_pay_void->payinfo_masked
+%                  : $cust_pay_void->payinfo;
+%
+%  $payby =~ s/^BILL$/Check #/ if $payinfo;
+%  $payby =~ s/^CHEK$/Electronic check /;
+%  $payby =~ s/^BILL$//;
+%  $payby =~ s/^(CARD|COMP)$/$1 /;
+%  my $info = $payby ? " ($payby$payinfo)" : '';
+%
+%  my $unvoid = '';
+%  if ( $cust_pay_void->closed !~ /^Y/i
+%       && $curuser->access_right('Unvoid')
+%     )
+%  {
+%    $unvoid = qq! (<A HREF="javascript:areyousure('!.
+%              qq!${p}misc/unvoid-cust_pay_void.cgi?!. $cust_pay_void->paynum.
+%              qq!', 'Are you sure you want to unvoid this payment?')"!.
+%              qq! TITLE="Unvoid this payment from the database!.
+%                ( $cust_pay_void->payby =~ /^(CARD|CHEK)$/
+%                  ? ' (do not send anything to the payment gateway)'
+%                  : '' 
+%                ). '"'.
+%              qq!>unvoid</A>)!;
+%  }
+%
+%  push @history, {
+%    'date'   => $cust_pay_void->_date,
+%    'desc'   => "<DEL>Payment $info</DEL> <I>voided ".
+%                time2str("%D", $cust_pay_void->void_date).
+%                " by ". $cust_pay_void->otaker. '</i>'. $unvoid,
+%    'void_payment' => $cust_pay_void->paid,
+%  };
+%
+%}
+%
+%#credits (some false laziness w/payments)
+%foreach my $cust_credit ($cust_main->cust_credit) {
+%
+%  my @cust_credit_bill = $cust_credit->cust_credit_bill;
+%  my @cust_credit_refund = $cust_credit->cust_credit_refund;
+%
+%  my( $pre, $post, $desc, $apply, $ext ) = ( '', '', '', '', '' );
+%  if (    scalar(@cust_credit_bill)   == 0
+%       && scalar(@cust_credit_refund) == 0 ) {
+%    #completely unapplied
+%    $pre = '<B><FONT COLOR="#FF0000">Unapplied ';
+%    $post = '</FONT></B>';
+%    $apply = qq! (<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('${p}edit/cust_credit_bill.cgi?!.
+%             $cust_credit->crednum.
+%             qq!', 392, 336, 'cust_credit_bill_popup' ), CAPTION, 'Apply credit', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK ); return false;">apply</A>)!;
+%  } elsif (    scalar(@cust_credit_bill)   == 1
+%            && scalar(@cust_credit_refund) == 0
+%            && $cust_credit->credited == 0      ) {
+%    #applied to one invoice, the usual situation
+%    $desc = ' applied to Invoice #'. $cust_credit_bill[0]->invnum;
+%  } elsif (    scalar(@cust_credit_bill)   == 0
+%            && scalar(@cust_credit_refund) == 1
+%            && $cust_credit->credited == 0      ) {
+%    #applied to one refund
+%    $desc = ' refunded on '.  time2str("%D", $cust_credit_refund[0]->_date);
+%  } else {
+%    #complicated
+%    $desc = '<BR>';
+%    foreach my $app ( sort { $a->_date <=> $b->_date }
+%                           ( @cust_credit_bill, @cust_credit_refund ) ) {
+%      if ( $app->isa('FS::cust_credit_bill') ) {
+%        $desc .= '&nbsp;&nbsp;'.
+%                 '$'. $app->amount.
+%                 ' applied to Invoice #'. $app->invnum.
+%                 '<BR>';
+%                 #' on '. time2str("%D", $app->_date).
+%      } elsif ( $app->isa('FS::cust_credit_refund') ) {
+%        $desc .= '&nbsp;&nbsp;'.
+%                 '$'. $app->amount.
+%                 ' refunded on '. time2str("%D", $app->_date).
+%                 '<BR>';
+%      } else {
+%        die "$app is not a FS::cust_credit_bill or a FS::cust_credit_refund";
+%      }
+%    }
+%    if ( $cust_credit->credited > 0 ) {
+%      $desc .= '&nbsp;&nbsp;<B><FONT COLOR="#FF0000">$'.
+%               $cust_credit->credited. ' unapplied</FONT></B>'.
+%               qq! (<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('${p}edit/cust_credit_bill.cgi?!.
+%               $cust_credit->crednum.
+%               qq!', 392, 336, 'cust_credit_bill_popup' ), CAPTION, 'Apply credit', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK ); return false;">apply</A>)!.
+%               '<BR>';
+%    }
+%  }
+%#
+%  my $delete = '';
+%  if ( $cust_credit->closed !~ /^Y/i
+%
+%       #s'pose deleting a credit isn't bad like deleting a payment
+%       # and this needs to be generally available until we have credit voiding..
+%       #&& $conf->exists('deletecredits')
+%
+%       && $curuser->access_right('Delete credit')
+%     )
+%  {
+%    $delete = qq! (<A HREF="javascript:areyousure('!.
+%              qq!${p}misc/delete-cust_credit.cgi?!. $cust_credit->crednum.
+%              qq!', 'Are you sure you want to delete this credit?')">!.
+%              qq!delete</A>)!;
+%  }
+%  
+%  my $unapply = '';
+%  if (    $cust_credit->closed !~ /^Y/i
+%       && scalar(@cust_credit_bill)
+%       && $curuser->access_right('Unapply credit')
+%     )
+%  {
+%    $unapply = qq! (<A HREF="javascript:areyousure('!.
+%               qq!${p}misc/unapply-cust_credit.cgi?!. $cust_credit->crednum.
+%               qq!', 'Are you sure you want to unapply this credit?')">!.
+%               qq!unapply</A>)!;
+%  }
+%  
+%  push @history, {
+%    'date'   => $cust_credit->_date,
+%    'desc'   => $pre. "Credit$post by ". $cust_credit->otaker.
+%                ( $cust_credit->reason
+%		    ? ' ('. $cust_credit->reason. ')'
+%		    : ''
+%		).
+%                "$desc$apply$delete$unapply",
+%    'credit' => $cust_credit->amount,
+%  };
+%
+%}
+%
+%#refunds
+%foreach my $cust_refund ($cust_main->cust_refund) {
+%
+%  my $payby = $cust_refund->payby;
+%  my $payinfo = $payby eq 'CARD'
+%                  ? $cust_refund->payinfo_masked
+%                  : $cust_refund->payinfo;
+%
+%  $payby =~ s/^BILL$/Check #/ if $payinfo;
+%  $payby =~ s/^CHEK$/Electronic check /;
+%  $payby =~ s/^(CARD|COMP)$/$1 /;
+%
+%  push @history, {
+%    'date'   => $cust_refund->_date,
+%    'desc'   => "Refund ($payby$payinfo) by ". $cust_refund->otaker,
+%    'refund' => $cust_refund->refund,
+%  };
+%
+%}
+%
+%
 
-<% } %>
 
-<%
-#get payment history
-my @history = ();
+<% include("/elements/table-grid.html") %>
+% my $bgcolor1 = '#eeeeee';
+%   my $bgcolor2 = '#ffffff';
+%   my $bgcolor = '';
+%
 
-#invoices
-foreach my $cust_bill ($cust_main->cust_bill) {
-  my $pre = ( $cust_bill->owed > 0 )
-              ? '<B><FONT SIZE="+1" COLOR="#FF0000">Open '
-              : '';
-  my $post = ( $cust_bill->owed > 0 ) ? '</FONT></B>' : '';
-  my $invnum = $cust_bill->invnum;
-  my $link = $curuser->access_right('View invoices')
-               ? qq!<A HREF="${p}view/cust_bill.cgi?$invnum">!
-               : '';
-  push @history, {
-    'date'   => $cust_bill->_date,
-    'desc'   => $link. $pre.
-                "Invoice #$invnum (Balance \$". $cust_bill->owed. ')'.
-                $post. ( $link ? '</A>' : '' ),
-    'charge' => $cust_bill->charged,
-  };
-}
-
-#payments (some false laziness w/credits)
-foreach my $cust_pay ($cust_main->cust_pay) {
-
-  my $payby = $cust_pay->payby;
-
-  my $payinfo;
-  if ( $payby eq 'CARD' ) {
-    $payinfo = $cust_pay->payinfo_masked;
-  } elsif ( $payby eq 'CHEK' && $cust_pay->payinfo =~ /^(\d+)\@(\d+)$/ ) {
-    $payinfo = "ABA $2, Acct# $1";
-  } else {
-    $payinfo = $cust_pay->payinfo;
-  }
-  my @cust_bill_pay = $cust_pay->cust_bill_pay;
-  my @cust_pay_refund = $cust_pay->cust_pay_refund;
-
-  my $target = "$payby$payinfo";
-  $payby =~ s/^BILL$/Check #/ if $payinfo;
-  $payby =~ s/^CHEK$/Electronic check /;
-  $payby =~ s/^PREP$/Prepaid card /;
-  $payby =~ s/^CARD$/Credit card #/; 
-  $payby =~ s/^COMP$/Complimentary by /; 
-  $payby =~ s/^CASH$/Cash/;
-  $payby =~ s/^WEST$/Western Union/;
-  $payby =~ s/^MCRD$/Manual credit card/;
-  $payby =~ s/^BILL$//;
-  my $info = $payby ? " ($payby$payinfo)" : '';
-
-  my( $pre, $post, $desc, $apply, $ext ) = ( '', '', '', '', '' );
-  if (    scalar(@cust_bill_pay)   == 0
-       && scalar(@cust_pay_refund) == 0 ) {
-    #completely unapplied
-    $pre = '<B><FONT COLOR="#FF0000">Unapplied ';
-    $post = '</FONT></B>';
-    $apply = qq! (<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('${p}edit/cust_bill_pay.cgi?!.
-             $cust_pay->paynum.
-             qq!', 392, 336, 'cust_bill_pay_popup' ), CAPTION, 'Apply payment', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK ); return false;">apply</A>)!;
-
-  } elsif (    scalar(@cust_bill_pay)   == 1
-            && scalar(@cust_pay_refund) == 0
-            && $cust_pay->unapplied == 0     ) {
-    #applied to one invoice, the usual situation
-    $desc = ' applied to Invoice #'. $cust_bill_pay[0]->invnum;
-  } elsif (    scalar(@cust_bill_pay)   == 0
-            && scalar(@cust_pay_refund) == 1
-            && $cust_pay->unapplied == 0     ) {
-    #applied to one refund
-    $desc = ' refunded on '. time2str("%D", $cust_pay_refund[0]->_date);
-  } else {
-    #complicated
-    $desc = '<BR>';
-    foreach my $app ( sort { $a->_date <=> $b->_date }
-                           ( @cust_bill_pay, @cust_pay_refund ) ) {
-      if ( $app->isa('FS::cust_bill_pay') ) {
-        $desc .= '&nbsp;&nbsp;'.
-                 '$'. $app->amount.
-                 ' applied to Invoice #'. $app->invnum.
-                 '<BR>';
-                 #' on '. time2str("%D", $cust_bill_pay->_date).
-      } elsif ( $app->isa('FS::cust_pay_refund') ) {
-        $desc .= '&nbsp;&nbsp;'.
-                 '$'. $app->amount.
-                 ' refunded on '. time2str("%D", $app->_date).
-                 '<BR>';
-      } else {
-        die "$app is not a FS::cust_bill_pay or FS::cust_pay_refund";
-      }
-    }
-    if ( $cust_pay->unapplied > 0 ) {
-      $desc .= '&nbsp;&nbsp;'.
-               '<B><FONT COLOR="#FF0000">$'.
-               $cust_pay->unapplied. ' unapplied</FONT></B>'.
-               qq! (<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('${p}edit/cust_bill_pay.cgi?!.
-               $cust_pay->paynum. 
-               qq!', 392, 336, 'cust_bill_pay_popup' ), CAPTION, 'Apply payment', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK ); return false;">apply</A>)!.
-               '<BR>';
-    }
-  }
-
-  my $refund = '';
-  my $refund_days = $conf->config('card_refund-days') || 120;
-  if (    $cust_pay->closed !~ /^Y/i
-       && $cust_pay->payby =~ /^(CARD|CHEK)$/
-       && time-$cust_pay->_date < $refund_days*86400
-       && $cust_pay->unrefunded > 0
-       && $curuser->access_right('Refund payment')
-  ) {
-    $refund = qq! (<A HREF="${p}edit/cust_refund.cgi?payby=$1;!.
-              qq!paynum=!. $cust_pay->paynum. '"'.
-              qq! TITLE="Send a refund for this payment to the payment gateway"!.
-              qq!>refund</A>)!;
-  }
-
-  my $void = '';
-  if (    $cust_pay->closed !~ /^Y/i
-       && (    ( $cust_pay->payby eq 'CARD'
-                 && $curuser->access_right('Credit card void')
-               )
-            || ( $cust_pay->payby eq 'CHEK'
-                 && $curuser->access_right('Echeck void')
-               )
-            || ( $cust_pay->payby !~ /^(CARD|CHEK)$/
-                 && $curuser->access_right('Regular void')
-               )
-          )
-     )
-  {
-    $void = qq! (<A HREF="javascript:areyousure('!.
-            qq!${p}misc/void-cust_pay.cgi?!. $cust_pay->paynum.
-            qq!', 'Are you sure you want to void this payment?')"!.
-            qq! TITLE="Void this payment from the database!.
-              ( $cust_pay->payby =~ /^(CARD|CHEK)$/
-                ? ' (do not send anything to the payment gateway)'
-                : '' 
-              ). '"'.
-            qq!>void</A>)!;
-  }
-
-  my $delete = '';
-  if ( $cust_pay->closed !~ /^Y/i
-       && $conf->exists('deletepayments')
-       && $curuser->access_right('Delete payment')
-     )
-  {
-    $delete = qq! (<A HREF="javascript:areyousure('!.
-              qq!${p}misc/delete-cust_pay.cgi?!. $cust_pay->paynum.
-              qq!', 'Are you sure you want to delete this payment?')"!.
-              qq! TITLE="Delete this payment from the database completely - not recommended"!.
-              qq!>delete</A>)!;
-  }
-
-  my $unapply = '';
-  if (    $cust_pay->closed !~ /^Y/i
-       && scalar(@cust_bill_pay)           
-       && $curuser->access_right('Unapply payment')
-     )
-  {
-    $unapply = qq! (<A HREF="javascript:areyousure('!.
-               qq!${p}misc/unapply-cust_pay.cgi?!. $cust_pay->paynum.
-               qq!', 'Are you sure you want to unapply this payment?')"!.
-               qq! TITLE="Keep this payment, but dissociate it from the invoices it is currently applied against"!.
-               qq!>unapply</A>)!;
-  }
-
-  push @history, {
-    'date'    => $cust_pay->_date,
-    'desc'    => $pre. "Payment$post$info$desc".
-                 "$apply$refund$void$delete$unapply",
-    'payment' => $cust_pay->paid,
-    'target'  => $target,
-  };
-}
-
-#voided payments
-foreach my $cust_pay_void ($cust_main->cust_pay_void) {
-
-  my $payby = $cust_pay_void->payby;
-  my $payinfo = $payby eq 'CARD'
-                  ? $cust_pay_void->payinfo_masked
-                  : $cust_pay_void->payinfo;
-
-  $payby =~ s/^BILL$/Check #/ if $payinfo;
-  $payby =~ s/^CHEK$/Electronic check /;
-  $payby =~ s/^BILL$//;
-  $payby =~ s/^(CARD|COMP)$/$1 /;
-  my $info = $payby ? " ($payby$payinfo)" : '';
-
-  my $unvoid = '';
-  if ( $cust_pay_void->closed !~ /^Y/i
-       && $curuser->access_right('Unvoid')
-     )
-  {
-    $unvoid = qq! (<A HREF="javascript:areyousure('!.
-              qq!${p}misc/unvoid-cust_pay_void.cgi?!. $cust_pay_void->paynum.
-              qq!', 'Are you sure you want to unvoid this payment?')"!.
-              qq! TITLE="Unvoid this payment from the database!.
-                ( $cust_pay_void->payby =~ /^(CARD|CHEK)$/
-                  ? ' (do not send anything to the payment gateway)'
-                  : '' 
-                ). '"'.
-              qq!>unvoid</A>)!;
-  }
-
-  push @history, {
-    'date'   => $cust_pay_void->_date,
-    'desc'   => "<DEL>Payment $info</DEL> <I>voided ".
-                time2str("%D", $cust_pay_void->void_date).
-                " by ". $cust_pay_void->otaker. '</i>'. $unvoid,
-    'void_payment' => $cust_pay_void->paid,
-  };
-
-}
-
-#credits (some false laziness w/payments)
-foreach my $cust_credit ($cust_main->cust_credit) {
-
-  my @cust_credit_bill = $cust_credit->cust_credit_bill;
-  my @cust_credit_refund = $cust_credit->cust_credit_refund;
-
-  my( $pre, $post, $desc, $apply, $ext ) = ( '', '', '', '', '' );
-  if (    scalar(@cust_credit_bill)   == 0
-       && scalar(@cust_credit_refund) == 0 ) {
-    #completely unapplied
-    $pre = '<B><FONT COLOR="#FF0000">Unapplied ';
-    $post = '</FONT></B>';
-    $apply = qq! (<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('${p}edit/cust_credit_bill.cgi?!.
-             $cust_credit->crednum.
-             qq!', 392, 336, 'cust_credit_bill_popup' ), CAPTION, 'Apply credit', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK ); return false;">apply</A>)!;
-  } elsif (    scalar(@cust_credit_bill)   == 1
-            && scalar(@cust_credit_refund) == 0
-            && $cust_credit->credited == 0      ) {
-    #applied to one invoice, the usual situation
-    $desc = ' applied to Invoice #'. $cust_credit_bill[0]->invnum;
-  } elsif (    scalar(@cust_credit_bill)   == 0
-            && scalar(@cust_credit_refund) == 1
-            && $cust_credit->credited == 0      ) {
-    #applied to one refund
-    $desc = ' refunded on '.  time2str("%D", $cust_credit_refund[0]->_date);
-  } else {
-    #complicated
-    $desc = '<BR>';
-    foreach my $app ( sort { $a->_date <=> $b->_date }
-                           ( @cust_credit_bill, @cust_credit_refund ) ) {
-      if ( $app->isa('FS::cust_credit_bill') ) {
-        $desc .= '&nbsp;&nbsp;'.
-                 '$'. $app->amount.
-                 ' applied to Invoice #'. $app->invnum.
-                 '<BR>';
-                 #' on '. time2str("%D", $app->_date).
-      } elsif ( $app->isa('FS::cust_credit_refund') ) {
-        $desc .= '&nbsp;&nbsp;'.
-                 '$'. $app->amount.
-                 ' refunded on '. time2str("%D", $app->_date).
-                 '<BR>';
-      } else {
-        die "$app is not a FS::cust_credit_bill or a FS::cust_credit_refund";
-      }
-    }
-    if ( $cust_credit->credited > 0 ) {
-      $desc .= '&nbsp;&nbsp;<B><FONT COLOR="#FF0000">$'.
-               $cust_credit->credited. ' unapplied</FONT></B>'.
-               qq! (<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('${p}edit/cust_credit_bill.cgi?!.
-               $cust_credit->crednum.
-               qq!', 392, 336, 'cust_credit_bill_popup' ), CAPTION, 'Apply credit', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK ); return false;">apply</A>)!.
-               '<BR>';
-    }
-  }
-#
-  my $delete = '';
-  if ( $cust_credit->closed !~ /^Y/i
-
-       #s'pose deleting a credit isn't bad like deleting a payment
-       # and this needs to be generally available until we have credit voiding..
-       #&& $conf->exists('deletecredits')
-
-       && $curuser->access_right('Delete credit')
-     )
-  {
-    $delete = qq! (<A HREF="javascript:areyousure('!.
-              qq!${p}misc/delete-cust_credit.cgi?!. $cust_credit->crednum.
-              qq!', 'Are you sure you want to delete this credit?')">!.
-              qq!delete</A>)!;
-  }
-  
-  my $unapply = '';
-  if (    $cust_credit->closed !~ /^Y/i
-       && scalar(@cust_credit_bill)
-       && $curuser->access_right('Unapply credit')
-     )
-  {
-    $unapply = qq! (<A HREF="javascript:areyousure('!.
-               qq!${p}misc/unapply-cust_credit.cgi?!. $cust_credit->crednum.
-               qq!', 'Are you sure you want to unapply this credit?')">!.
-               qq!unapply</A>)!;
-  }
-  
-  push @history, {
-    'date'   => $cust_credit->_date,
-    'desc'   => $pre. "Credit$post by ". $cust_credit->otaker.
-                ( $cust_credit->reason
-		    ? ' ('. $cust_credit->reason. ')'
-		    : ''
-		).
-                "$desc$apply$delete$unapply",
-    'credit' => $cust_credit->amount,
-  };
-
-}
-
-#refunds
-foreach my $cust_refund ($cust_main->cust_refund) {
-
-  my $payby = $cust_refund->payby;
-  my $payinfo = $payby eq 'CARD'
-                  ? $cust_refund->payinfo_masked
-                  : $cust_refund->payinfo;
-
-  $payby =~ s/^BILL$/Check #/ if $payinfo;
-  $payby =~ s/^CHEK$/Electronic check /;
-  $payby =~ s/^(CARD|COMP)$/$1 /;
-
-  push @history, {
-    'date'   => $cust_refund->_date,
-    'desc'   => "Refund ($payby$payinfo) by ". $cust_refund->otaker,
-    'refund' => $cust_refund->refund,
-  };
-
-}
-
-%>
-
-<%= include("/elements/table-grid.html") %>
-
-<% my $bgcolor1 = '#eeeeee';
-   my $bgcolor2 = '#ffffff';
-   my $bgcolor = '';
-%>
 
 <TR>
   <TH CLASS="grid" BGCOLOR="#cccccc">Date</TH>
@@ -426,41 +421,41 @@ foreach my $cust_refund ($cust_main->cust_refund) {
   <TH CLASS="grid" BGCOLOR="#cccccc"><FONT SIZE=-1>Refund</FONT></TH>
   <TH CLASS="grid" BGCOLOR="#cccccc"><FONT SIZE=-1>Balance</FONT></TH>
 </TR>
+%
+%#display payment history
+%
+%my $balance = 0;
+%my %target = ();
+%my $money_char = $conf->config('money_char') || '$';
+%
+%my $years =  $conf->config('payment_history-years') || 2;
+%my $older_than = time - $years * 31556736; #60*60*24*365.24
+%my $hidden = 0;
+%my $seen = 0;
+%my $old_history = 0;
+%
+%foreach my $item ( sort { $a->{'date'} <=> $b->{'date'} } @history ) {
+%
+%  my $display;
+%  if ( $item->{'date'} < $older_than ) {
+%    $display = ' STYLE="display:none" ';
+%    $hidden = 1;
+%  } else {
+%
+%    $display = '';
+%
+%    if ( $hidden && ! $seen++ ) {
+%      ( my $balance_forward = $money_char. $balance ) =~ s/^\$\-/-&nbsp;\$/;
+%    
 
-<%
-#display payment history
-
-my $balance = 0;
-my %target = ();
-my $money_char = $conf->config('money_char') || '$';
-
-my $years =  $conf->config('payment_history-years') || 2;
-my $older_than = time - $years * 31556736; #60*60*24*365.24
-my $hidden = 0;
-my $seen = 0;
-my $old_history = 0;
-
-foreach my $item ( sort { $a->{'date'} <=> $b->{'date'} } @history ) {
-
-  my $display;
-  if ( $item->{'date'} < $older_than ) {
-    $display = ' STYLE="display:none" ';
-    $hidden = 1;
-  } else {
-
-    $display = '';
-
-    if ( $hidden && ! $seen++ ) {
-      ( my $balance_forward = $money_char. $balance ) =~ s/^\$\-/-&nbsp;\$/;
-    %>
 
       <TR ID="balance_forward_row">
         <TD CLASS="grid" BGCOLOR="#dddddd">
-          <%= time2str("%D",$item->{'date'}) %>
+          <% time2str("%D",$item->{'date'}) %>
         </TD>
 
         <TD CLASS="grid" BGCOLOR="#dddddd">
-          <I>Starting balance on <%= time2str("%D",$item->{'date'}) %></I>
+          <I>Starting balance on <% time2str("%D",$item->{'date'}) %></I>
           (<A HREF="javascript:void(0);" onClick="show_history();">show prior history</A>)
         </TD>
 
@@ -468,86 +463,90 @@ foreach my $item ( sort { $a->{'date'} <=> $b->{'date'} } @history ) {
         <TD CLASS="grid" BGCOLOR="#dddddd"></TD>
         <TD CLASS="grid" BGCOLOR="#dddddd"></TD>
         <TD CLASS="grid" BGCOLOR="#dddddd"></TD>
-        <TD CLASS="grid" BGCOLOR="#dddddd"><I><%= $balance_forward %></I></TD>
+        <TD CLASS="grid" BGCOLOR="#dddddd"><I><% $balance_forward %></I></TD>
 
       </TR>
+%
+%    }
+%
+%  }
+%
+%  if ( $bgcolor eq $bgcolor1 ) {
+%    $bgcolor = $bgcolor2;
+%  } else {
+%    $bgcolor = $bgcolor1;
+%  }
+%
+%  my $charge  = exists($item->{'charge'})
+%                  ? sprintf("$money_char\%.2f", $item->{'charge'})
+%                  : '';
+%
+%  my $payment = exists($item->{'payment'})
+%                  ? sprintf("-&nbsp;$money_char\%.2f", $item->{'payment'})
+%                  : '';
+%
+%  $payment ||= sprintf( "<DEL>-&nbsp;$money_char\%.2f</DEL>",
+%                        $item->{'void_payment'}
+%                      )
+%    if exists($item->{'void_payment'});
+%
+%  my $credit  = exists($item->{'credit'})
+%                  ? sprintf("-&nbsp;$money_char\%.2f", $item->{'credit'})
+%                  : '';
+%
+%  my $refund  = exists($item->{'refund'})
+%                  ? sprintf("$money_char\%.2f", $item->{'refund'})
+%                  : '';
+%
+%  my $target = exists($item->{'target'}) ? $item->{'target'} : '';
+%
+%  $balance += $item->{'charge'}  if exists $item->{'charge'};
+%  $balance -= $item->{'payment'} if exists $item->{'payment'};
+%  $balance -= $item->{'credit'}  if exists $item->{'credit'};
+%  $balance += $item->{'refund'}  if exists $item->{'refund'};
+%  $balance = sprintf("%.2f", $balance);
+%  $balance =~ s/^\-0\.00$/0.00/; #yay ieee fp
+%  ( my $showbalance = $money_char. $balance ) =~ s/^\$\-/-&nbsp;\$/;
+%
+%
 
-    <%
-    }
 
-  }
+  <TR <% $display ? $display.' ID="old_history'.$old_history++.'"'  : ''%>>
+    <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
+% unless ( !$target || $target{$target}++ ) { 
 
-  if ( $bgcolor eq $bgcolor1 ) {
-    $bgcolor = $bgcolor2;
-  } else {
-    $bgcolor = $bgcolor1;
-  }
+        <A NAME="<% $target %>">
+% } 
 
-  my $charge  = exists($item->{'charge'})
-                  ? sprintf("$money_char\%.2f", $item->{'charge'})
-                  : '';
+      <% time2str("%D",$item->{'date'}) %>
+% if ( $target && $target{$target} == 1 ) { 
 
-  my $payment = exists($item->{'payment'})
-                  ? sprintf("-&nbsp;$money_char\%.2f", $item->{'payment'})
-                  : '';
-
-  $payment ||= sprintf( "<DEL>-&nbsp;$money_char\%.2f</DEL>",
-                        $item->{'void_payment'}
-                      )
-    if exists($item->{'void_payment'});
-
-  my $credit  = exists($item->{'credit'})
-                  ? sprintf("-&nbsp;$money_char\%.2f", $item->{'credit'})
-                  : '';
-
-  my $refund  = exists($item->{'refund'})
-                  ? sprintf("$money_char\%.2f", $item->{'refund'})
-                  : '';
-
-  my $target = exists($item->{'target'}) ? $item->{'target'} : '';
-
-  $balance += $item->{'charge'}  if exists $item->{'charge'};
-  $balance -= $item->{'payment'} if exists $item->{'payment'};
-  $balance -= $item->{'credit'}  if exists $item->{'credit'};
-  $balance += $item->{'refund'}  if exists $item->{'refund'};
-  $balance = sprintf("%.2f", $balance);
-  $balance =~ s/^\-0\.00$/0.00/; #yay ieee fp
-  ( my $showbalance = $money_char. $balance ) =~ s/^\$\-/-&nbsp;\$/;
-
-%>
-
-  <TR <%= $display ? $display.' ID="old_history'.$old_history++.'"'  : ''%>>
-    <TD CLASS="grid" BGCOLOR="<%= $bgcolor %>">
-      <% unless ( !$target || $target{$target}++ ) { %>
-        <A NAME="<%= $target %>">
-      <% } %>
-      <%= time2str("%D",$item->{'date'}) %>
-      <% if ( $target && $target{$target} == 1 ) { %>
         </A>
-      <% } %>
+% } 
+
       </FONT>
     </TD>
-    <TD CLASS="grid" BGCOLOR="<%= $bgcolor %>">
-      <%= $item->{'desc'} %>
+    <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
+      <% $item->{'desc'} %>
     </TD>
-    <TD ALIGN="right" CLASS="grid" BGCOLOR="<%= $bgcolor %>">
-      <%= $charge  %>
+    <TD ALIGN="right" CLASS="grid" BGCOLOR="<% $bgcolor %>">
+      <% $charge  %>
     </TD>
-    <TD ALIGN="right" CLASS="grid" BGCOLOR="<%= $bgcolor %>">
-      <%= $payment %>
+    <TD ALIGN="right" CLASS="grid" BGCOLOR="<% $bgcolor %>">
+      <% $payment %>
     </TD>
-    <TD ALIGN="right" CLASS="grid" BGCOLOR="<%= $bgcolor %>">
-      <%= $credit  %>
+    <TD ALIGN="right" CLASS="grid" BGCOLOR="<% $bgcolor %>">
+      <% $credit  %>
     </TD>
-    <TD ALIGN="right" CLASS="grid" BGCOLOR="<%= $bgcolor %>">
-      <%= $refund  %>
+    <TD ALIGN="right" CLASS="grid" BGCOLOR="<% $bgcolor %>">
+      <% $refund  %>
     </TD>
-    <TD ALIGN="right" CLASS="grid" BGCOLOR="<%= $bgcolor %>">
-      <%= $showbalance %>
+    <TD ALIGN="right" CLASS="grid" BGCOLOR="<% $bgcolor %>">
+      <% $showbalance %>
     </TD>
   </TR>
+% } 
 
-<% } %>
 
 </TABLE>
 
@@ -559,7 +558,7 @@ function show_history () {
   var balance_forward_row = document.getElementById('balance_forward_row');
 
   balance_forward_row.style.display = 'none';
-  for ( var i = 0; i < <%= $old_history %>; i++ ) {
+  for ( var i = 0; i < <% $old_history %>; i++ ) {
     var oldRow = document.getElementById('old_history'+i);
     oldRow.style.display = '';
   }

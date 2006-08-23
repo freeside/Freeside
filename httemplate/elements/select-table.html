@@ -1,63 +1,65 @@
-<%
+%
+%
+%  ##required
+%  # 'table'    => 'table_name',
+%  # 'name_col' => 'name_column',
+%  #
+%  ##strongly recommended (you want your forms to be "sticky" on errors, right?)
+%  # 'value'    => 'current_value',
+%  #
+%  ##opt
+%  # 'empty_label'  => '', #better specify it though, the default might change
+%  # 'hashref'      => {},
+%  # 'extra_sql'    => '',
+%  # 'records'      => \@records, #instead of hashref
+%  # 'pre_options'  => [ 'value' => 'option' ], #before normal options
+%  # 'element_name' => '', #HTML element name, defaults to the name of
+%  #                       # the primary key column
+%  # 'element_etc'  => '', #additional attributes (i.e. "DISABLED") for the
+%  #                       #<SELECT> element
+%
+%  my( %opt ) = @_;
+%
+%  #warn "***** select-table: \n". Dumper(%opt);
+%
+%  my $key = dbdef->table($opt{'table'})->primary_key; #? $opt{'primary_key'} ||
+%
+%  my $name_col = $opt{'name_col'};
+%
+%  my @records = ();
+%  if ( $opt{'records'} ) {
+%    @records = @{ $opt{'records'} };
+%  } else {
+%    @records = qsearch( {
+%      'table'     => $opt{'table'},
+%      'hashref'   => ( $opt{'hashref'} || {} ),
+%      'extra_sql' => ( $opt{'extra_sql'} || '' ),
+%    });
+%  }
+%
+%  my @pre_options = $opt{'pre_options'} ? @{ $opt{'pre_options'} } : ();
+%
+%
 
-  ##required
-  # 'table'    => 'table_name',
-  # 'name_col' => 'name_column',
-  #
-  ##strongly recommended (you want your forms to be "sticky" on errors, right?)
-  # 'value'    => 'current_value',
-  #
-  ##opt
-  # 'empty_label'  => '', #better specify it though, the default might change
-  # 'hashref'      => {},
-  # 'extra_sql'    => '',
-  # 'records'      => \@records, #instead of hashref
-  # 'pre_options'  => [ 'value' => 'option' ], #before normal options
-  # 'element_name' => '', #HTML element name, defaults to the name of
-  #                       # the primary key column
-  # 'element_etc'  => '', #additional attributes (i.e. "DISABLED") for the
-  #                       #<SELECT> element
 
-  my( %opt ) = @_;
+<SELECT NAME="<% $opt{'element_name'} || $key %>" <% $opt{'element_etc'} %>>
+% while ( @pre_options ) { 
 
-  #warn "***** select-table: \n". Dumper(%opt);
+    <OPTION VALUE="<% shift(@pre_options) %>"><% shift(@pre_options) %>
+% } 
 
-  my $key = dbdef->table($opt{'table'})->primary_key; #? $opt{'primary_key'} ||
 
-  my $name_col = $opt{'name_col'};
+  <OPTION VALUE=""><% $opt{'empty_label'} || 'all' %>
+% foreach my $record ( sort { $a->$name_col() cmp $b->$name_col() }
+%                               @records
+%                        )
+%     {
+%  
 
-  my @records = ();
-  if ( $opt{'records'} ) {
-    @records = @{ $opt{'records'} };
-  } else {
-    @records = qsearch( {
-      'table'     => $opt{'table'},
-      'hashref'   => ( $opt{'hashref'} || {} ),
-      'extra_sql' => ( $opt{'extra_sql'} || '' ),
-    });
-  }
 
-  my @pre_options = $opt{'pre_options'} ? @{ $opt{'pre_options'} } : ();
+    <OPTION VALUE="<% $record->$key() %>"<% $opt{'value'} == $record->$key() ? ' SELECTED' : '' %>><% $record->$name_col() %>
+% } 
 
-%>
-
-<SELECT NAME="<%= $opt{'element_name'} || $key %>" <%= $opt{'element_etc'} %>>
-
-  <% while ( @pre_options ) { %>
-    <OPTION VALUE="<%= shift(@pre_options) %>"><%= shift(@pre_options) %>
-  <% } %>
-
-  <OPTION VALUE=""><%= $opt{'empty_label'} || 'all' %>
-
-  <% foreach my $record ( sort { $a->$name_col() cmp $b->$name_col() }
-                               @records
-                        )
-     {
-  %>
-
-    <OPTION VALUE="<%= $record->$key() %>"<%= $opt{'value'} == $record->$key() ? ' SELECTED' : '' %>><%= $record->$name_col() %>
-
-  <% } %>
 
 </SELECT>
 

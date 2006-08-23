@@ -1,13 +1,14 @@
-<%
-
-my $agentnum = $cgi->param('agentnum');
-$agentnum =~ /^(\d+)$/ or eidiot "illegal agentnum $agentnum";
-$agentnum = $1;
-my $agent = qsearchs('agent', { 'agentnum' => $agentnum } );
-
-my $count_query = "SELECT COUNT(*) FROM reg_code WHERE agentnum = $agentnum";
-
-%><%= include( 'elements/search.html',
+%
+%
+%my $agentnum = $cgi->param('agentnum');
+%$agentnum =~ /^(\d+)$/ or eidiot "illegal agentnum $agentnum";
+%$agentnum = $1;
+%my $agent = qsearchs('agent', { 'agentnum' => $agentnum } );
+%
+%my $count_query = "SELECT COUNT(*) FROM reg_code WHERE agentnum = $agentnum";
+%
+%
+<% include( 'elements/search.html',
                  'title'       => 'Unused Registration Codes for '.
                                   $agent->agent,
                  'name'        => 'registration codes',

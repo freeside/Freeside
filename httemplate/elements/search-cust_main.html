@@ -1,27 +1,28 @@
-<%
-  my( %opt ) = @_;
-  $opt{'field_name'} ||= 'custnum';
+%
+%  my( %opt ) = @_;
+%  $opt{'field_name'} ||= 'custnum';
+%
+%  my $cust_main = '';
+%  if ( $opt{'value'} ) {
+%    $cust_main = qsearchs(
+%      'table'     => 'cust_main',
+%      'hashref'   => { 'custnum' => $opt{'value'} },
+%      'extra_sql' => " AND ". $FS::CurrentUser::CurrentUser->agentnums_sql,
+%    );
+%  }
+%
 
-  my $cust_main = '';
-  if ( $opt{'value'} ) {
-    $cust_main = qsearchs(
-      'table'     => 'cust_main',
-      'hashref'   => { 'custnum' => $opt{'value'} },
-      'extra_sql' => " AND ". $FS::CurrentUser::CurrentUser->agentnums_sql,
-    );
-  }
-%>
 
-<INPUT TYPE="hidden" NAME="<%= $opt{'field_name'} %>" VALUE="<%= $opt{'value'} %>">
+<INPUT TYPE="hidden" NAME="<% $opt{'field_name'} %>" VALUE="<% $opt{'value'} %>">
 
 <!-- some false laziness w/ misc/batch-cust_pay.html, though not as bad as i'd thought at first... -->
 
-<INPUT TYPE="text" NAME="<%= $opt{'field_name'} %>_search" ID="<%= $opt{'field_name'} %>_search" SIZE="32" VALUE="<%= $cust_main ? $cust_main->name : '(cust #, name or company)' %>" onFocus="clearhint_<%= $opt{'field_name'} %>_search(this);" onClick="clearhint_<%= $opt{'field_name'} %>_search(this);" onChange="smart_<%= $opt{'field_name'} %>_search(this);">
+<INPUT TYPE="text" NAME="<% $opt{'field_name'} %>_search" ID="<% $opt{'field_name'} %>_search" SIZE="32" VALUE="<% $cust_main ? $cust_main->name : '(cust #, name or company)' %>" onFocus="clearhint_<% $opt{'field_name'} %>_search(this);" onClick="clearhint_<% $opt{'field_name'} %>_search(this);" onChange="smart_<% $opt{'field_name'} %>_search(this);">
 
-<SELECT NAME="<%= $opt{'field_name'} %>_select" ID="<%= $opt{'field_name'} %>_select" STYLE="color:#ff0000; display:none" onChange="select_<%= $opt{'field_name'} %>(this);">
+<SELECT NAME="<% $opt{'field_name'} %>_select" ID="<% $opt{'field_name'} %>_select" STYLE="color:#ff0000; display:none" onChange="select_<% $opt{'field_name'} %>(this);">
 </SELECT>
 
-<%= include('/elements/xmlhttp.html',
+<% include('/elements/xmlhttp.html',
               'url'  => $p. 'misc/xmlhttp-cust_main-search.cgi',
               'subs' => [ 'smart_search' ],
            )
@@ -29,7 +30,7 @@
 
 <SCRIPT TYPE="text/javascript">
 
-  function clearhint_<%= $opt{'field_name'} %>_search (what) {
+  function clearhint_<% $opt{'field_name'} %>_search (what) {
 
     what.style.color = '#000000';
 
@@ -41,7 +42,7 @@
 
   }
 
-  function smart_<%= $opt{'field_name'} %>_search(what) {
+  function smart_<% $opt{'field_name'} %>_search(what) {
 
     var customer = what.value;
 
@@ -59,11 +60,11 @@
     what.style.color= '#000000';
     what.style.backgroundColor = '#dddddd';
 
-    var customer_select = document.getElementById('<%= $opt{'field_name'} %>_select');
+    var customer_select = document.getElementById('<% $opt{'field_name'} %>_select');
 
     //alert("search for customer " + customer);
 
-    function <%= $opt{'field_name'} %>_search_update(customers) {
+    function <% $opt{'field_name'} %>_search_update(customers) {
 
       //alert('customers returned: ' + customers);
 
@@ -74,7 +75,7 @@
 
       if ( customerArray.length == 0 ) {
 
-        what.form.<%= $opt{'field_name'} %>.value = '';
+        what.form.<% $opt{'field_name'} %>.value = '';
 
         what.value = 'Customer not found: ' + what.value;
         what.style.color = '#ff0000';
@@ -86,7 +87,7 @@
 
         //alert('one customer found: ' + customerArray[0]);
 
-        what.form.<%= $opt{'field_name'} %>.value = customerArray[0][0];
+        what.form.<% $opt{'field_name'} %>.value = customerArray[0][0];
         what.value = customerArray[0][1];
 
         what.style.display = '';
@@ -115,17 +116,17 @@
 
     }
 
-    smart_search( customer, <%= $opt{'field_name'} %>_search_update );
+    smart_search( customer, <% $opt{'field_name'} %>_search_update );
 
 
   }
 
-  function select_<%= $opt{'field_name'} %> (what) {
+  function select_<% $opt{'field_name'} %> (what) {
 
     var custnum = what.options[what.selectedIndex].value;
     var customer = what.options[what.selectedIndex].text;
 
-    var customer_obj = document.getElementById('<%= $opt{'field_name'} %>_search');
+    var customer_obj = document.getElementById('<% $opt{'field_name'} %>_search');
 
     if ( custnum == '' ) {
       //what.style.color = '#ff0000';
@@ -140,7 +141,7 @@
 
     } else {
     
-      what.form.<%= $opt{'field_name'} %>.value = custnum;
+      what.form.<% $opt{'field_name'} %>.value = custnum;
 
       customer_obj.value = customer;
       customer_obj.style.color = '#000000';

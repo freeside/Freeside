@@ -1,16 +1,17 @@
-<%
-  my( $cust_main ) = @_;
-%>
+%
+%  my( $cust_main ) = @_;
+%
 
-<FORM ACTION="<%=$p%>edit/process/quick-charge.cgi" METHOD="POST">
 
-<INPUT TYPE="hidden" NAME="custnum" VALUE="<%= $cust_main->custnum %>">
+<FORM ACTION="<%$p%>edit/process/quick-charge.cgi" METHOD="POST">
+
+<INPUT TYPE="hidden" NAME="custnum" VALUE="<% $cust_main->custnum %>">
 
 Description:<INPUT TYPE="text" NAME="pkg">
 
 Amount:<INPUT TYPE="text" NAME="amount" SIZE=6>
 
-<%= include('/elements/select-taxclass.html') %>
+<% include('/elements/select-taxclass.html') %>
 
 <INPUT TYPE="submit" VALUE="One-time charge">
 

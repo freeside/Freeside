@@ -1,83 +1,84 @@
-<%
-
-my $html_init = 
-  "Internal users have access to the back-office interface.  Typically, this is your employees and contractors, but in a VISP setup, you can also add accounts for your reseller's employees.  It is <B>highly recommended</B> to add a <B>separate account for each person</B> rather than using role accounts.<BR><BR>".
-  qq!<A HREF="${p}edit/access_user.html"><I>Add an internal user</I></A><BR><BR>!;
-
-#false laziness w/part_pkg.cgi
-my %search = ();
-my $search = '';
-unless ( $cgi->param('showdisabled') ) {
-  %search = ( 'disabled' => '' );
-  $search = "( disabled = '' OR disabled IS NULL )";
-}
-
-#false laziness w/access_group.html & agent_type.cgi
-my $groups_sub = sub {
-  my $access_user = shift;
-
-  [ map {
-          my $access_usergroup = $_;
-          my $access_group = $access_usergroup->access_group;
-          [
-            {
-              'data'  => $access_group->groupname,
-              'align' => 'left',
-              'link'  =>
-                $p. 'edit/access_group.html?'. $access_usergroup->groupnum,
-            },
-          ];
-        }
-    grep { $_->access_group # and ! $_->access_group->disabled
-         }
-    $access_user->access_usergroup,
-
-  ];
-
-};
-
-my $posttotal;
-if ( $cgi->param('showdisabled') ) {
-  $cgi->param('showdisabled', 0);
-  $posttotal = '( <a href="'. $cgi->self_url. '">hide disabled users</a> )';
-  $cgi->param('showdisabled', 1);
-} else {
-  $cgi->param('showdisabled', 1);
-  $posttotal = '( <a href="'. $cgi->self_url. '">show disabled users</a> )';
-  $cgi->param('showdisabled', 0);
-}
-
-my $count_query = 'SELECT COUNT(*) FROM access_user';
-$count_query .= " WHERE $search"
-  if $search;
-
-my $link = [ $p.'edit/access_user.html?', 'usernum' ];
-
-my @header = ( '#', 'Username' );
-my @fields = ( 'usernum', 'username' );
-my $align = 'rl';
-my @links = ( $link, $link );
-my @style = ( '', '' );
-
-#false laziness w/part_pkg.cgi
-#unless ( $cgi->param('showdisabled') ) { #its been reversed already
-if ( $cgi->param('showdisabled') ) { #its been reversed already
-  push @header, 'Status';
-  push @fields, sub { shift->disabled
-                        ? '<FONT COLOR="#FF0000">DISABLED</FONT>'
-                        : '<FONT COLOR="#00CC00">Active</FONT>'
-                    };
-  push @links, '';
-  $align .= 'c';
-  push @style, 'b';
-}
-
-push @header, 'Full name', 'Groups';
-push @fields, 'name',      $groups_sub;
-push @links,  $link,       '';
-$align .= 'll';
-
-%><%= include( 'elements/browse.html',
+%
+%
+%my $html_init = 
+%  "Internal users have access to the back-office interface.  Typically, this is your employees and contractors, but in a VISP setup, you can also add accounts for your reseller's employees.  It is <B>highly recommended</B> to add a <B>separate account for each person</B> rather than using role accounts.<BR><BR>".
+%  qq!<A HREF="${p}edit/access_user.html"><I>Add an internal user</I></A><BR><BR>!;
+%
+%#false laziness w/part_pkg.cgi
+%my %search = ();
+%my $search = '';
+%unless ( $cgi->param('showdisabled') ) {
+%  %search = ( 'disabled' => '' );
+%  $search = "( disabled = '' OR disabled IS NULL )";
+%}
+%
+%#false laziness w/access_group.html & agent_type.cgi
+%my $groups_sub = sub {
+%  my $access_user = shift;
+%
+%  [ map {
+%          my $access_usergroup = $_;
+%          my $access_group = $access_usergroup->access_group;
+%          [
+%            {
+%              'data'  => $access_group->groupname,
+%              'align' => 'left',
+%              'link'  =>
+%                $p. 'edit/access_group.html?'. $access_usergroup->groupnum,
+%            },
+%          ];
+%        }
+%    grep { $_->access_group # and ! $_->access_group->disabled
+%         }
+%    $access_user->access_usergroup,
+%
+%  ];
+%
+%};
+%
+%my $posttotal;
+%if ( $cgi->param('showdisabled') ) {
+%  $cgi->param('showdisabled', 0);
+%  $posttotal = '( <a href="'. $cgi->self_url. '">hide disabled users</a> )';
+%  $cgi->param('showdisabled', 1);
+%} else {
+%  $cgi->param('showdisabled', 1);
+%  $posttotal = '( <a href="'. $cgi->self_url. '">show disabled users</a> )';
+%  $cgi->param('showdisabled', 0);
+%}
+%
+%my $count_query = 'SELECT COUNT(*) FROM access_user';
+%$count_query .= " WHERE $search"
+%  if $search;
+%
+%my $link = [ $p.'edit/access_user.html?', 'usernum' ];
+%
+%my @header = ( '#', 'Username' );
+%my @fields = ( 'usernum', 'username' );
+%my $align = 'rl';
+%my @links = ( $link, $link );
+%my @style = ( '', '' );
+%
+%#false laziness w/part_pkg.cgi
+%#unless ( $cgi->param('showdisabled') ) { #its been reversed already
+%if ( $cgi->param('showdisabled') ) { #its been reversed already
+%  push @header, 'Status';
+%  push @fields, sub { shift->disabled
+%                        ? '<FONT COLOR="#FF0000">DISABLED</FONT>'
+%                        : '<FONT COLOR="#00CC00">Active</FONT>'
+%                    };
+%  push @links, '';
+%  $align .= 'c';
+%  push @style, 'b';
+%}
+%
+%push @header, 'Full name', 'Groups';
+%push @fields, 'name',      $groups_sub;
+%push @links,  $link,       '';
+%$align .= 'll';
+%
+%
+<% include( 'elements/browse.html',
                  'title'          => 'Internal Users',
                  'menubar'        => [ #'Main menu' => $p,
                                        'Internal access groups' => $p.'browse/access_group.html',

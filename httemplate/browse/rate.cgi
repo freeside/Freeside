@@ -1,22 +1,23 @@
-<%
-
-my $html_init = 
-  'Rate plans, regions and prefixes for VoIP and call billing.<BR><BR>'.
-  qq!<A HREF="${p}edit/rate.cgi"><I>Add a rate plan</I></A>!.
-  qq! | <A HREF="${p}edit/rate_region.cgi"><I>Add a region</I></A>!.
-  '<BR><BR>
-   <SCRIPT>
-   function rate_areyousure(href) {
-    if (confirm("Are you sure you want to delete this rate plan?") == true)
-      window.location.href = href;
-   }
-   </SCRIPT>';
-
-my $count_query = 'SELECT COUNT(*) FROM rate';
-
-my $link = [ $p.'edit/rate.cgi?', 'ratenum' ];
-
-%><%= include( 'elements/browse.html',
+%
+%
+%my $html_init = 
+%  'Rate plans, regions and prefixes for VoIP and call billing.<BR><BR>'.
+%  qq!<A HREF="${p}edit/rate.cgi"><I>Add a rate plan</I></A>!.
+%  qq! | <A HREF="${p}edit/rate_region.cgi"><I>Add a region</I></A>!.
+%  '<BR><BR>
+%   <SCRIPT>
+%   function rate_areyousure(href) {
+%    if (confirm("Are you sure you want to delete this rate plan?") == true)
+%      window.location.href = href;
+%   }
+%   </SCRIPT>';
+%
+%my $count_query = 'SELECT COUNT(*) FROM rate';
+%
+%my $link = [ $p.'edit/rate.cgi?', 'ratenum' ];
+%
+%
+<% include( 'elements/browse.html',
                  'title'       => 'Rate plans',
                  'menubar'     => [ 'Main menu' => $p, ],
                  'html_init'   => $html_init,

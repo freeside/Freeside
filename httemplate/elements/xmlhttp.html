@@ -1,15 +1,16 @@
-<%
-  my ( %opt ) = @_;
+%
+%  my ( %opt ) = @_;
+%
+%  my $url = $opt{'url'};
+%  my $method = exists($opt{'method'}) ? $opt{'method'} : 'GET';
+%  #my @subs = @{ $opt{'subs'};
+%  my $key = exists($opt{'key'}) ? $opt{'key'} : '';
+%
+%  $url .= ( ($url =~ /\?/) ? '&' : '?' )
+%    if $method eq 'GET';
+%
+%
 
-  my $url = $opt{'url'};
-  my $method = exists($opt{'method'}) ? $opt{'method'} : 'GET';
-  #my @subs = @{ $opt{'subs'};
-  my $key = exists($opt{'key'}) ? $opt{'key'} : '';
-
-  $url .= ( ($url =~ /\?/) ? '&' : '?' )
-    if $method eq 'GET';
-
-%>
 
 <SCRIPT TYPE="text/javascript">
 
@@ -31,22 +32,22 @@
     return A;
 
   }
+% foreach my $func ( @{$opt{'subs'}} ) { 
+%
+%       my $furl = $url;
+%       $furl =~ s/\"/\\\\\"/; #javascript escape
+%
+%  
 
-  <% foreach my $func ( @{$opt{'subs'}} ) { 
 
-       my $furl = $url;
-       $furl =~ s/\"/\\\\\"/; #javascript escape
-
-  %>
-
-    function <%=$key%><%=$func%>() {
+    function <%$key%><%$func%>() {
         // count args; build URL
-        var url = "<%=$furl%>";
-        var a = <%=$key%><%=$func%>.arguments;
+        var url = "<%$furl%>";
+        var a = <%$key%><%$func%>.arguments;
 
         var args;
         var len;
-        var content = 'sub=<%= uri_escape($func) %>';
+        var content = 'sub=<% uri_escape($func) %>';
         if ( a && typeof a  == 'object'  && a[0].constructor == Array ) {
             args = a[0];
             len = args.length
@@ -58,14 +59,14 @@
             content = content + "&arg=" + escape(args[i]);
         content = content.replace( /[+]/g, '%2B'); // fix unescaped plus signs 
 
-        if ( '<%=$method%>' == 'GET' ) {
+        if ( '<%$method%>' == 'GET' ) {
           url = url + content;
         }
 
-        //alert('<%=$method%> ' + url);
+        //alert('<%$method%> ' + url);
 
         var xmlhttp = rs_init_object();
-        xmlhttp.open("<%=$method%>", url, true);
+        xmlhttp.open("<%$method%>", url, true);
 
         xmlhttp.onreadystatechange = function() {
             if (xmlhttp.readyState != 4) 
@@ -89,7 +90,7 @@
             }
         }
 
-        if ( '<%=$method%>' == 'POST' ) {
+        if ( '<%$method%>' == 'POST' ) {
 
           xmlhttp.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
           xmlhttp.send(content);
@@ -104,7 +105,7 @@
         //rs_debug("x_$func_name url = " + url);
         //rs_debug("x_$func_name waiting..");
     }
+% } 
 
-  <% } %>
 
 </SCRIPT>

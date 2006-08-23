@@ -1,45 +1,54 @@
 <!-- mason kludge -->
-<%= include("/elements/header.html",'Import') %>
+<% include("/elements/header.html",'Import') %>
 <FORM ACTION="process/meta-import.cgi" METHOD="post" ENCTYPE="multipart/form-data">
 Import data from a DBI data source<BR><BR>
+%
+%  #false laziness with edit/cust_main.cgi
+%  my @agents = qsearch( 'agent', {} );
+%  die "No agents created!" unless @agents;
+%  my $agentnum = $agents[0]->agentnum; #default to first
+%
+%  if ( scalar(@agents) == 1 ) {
+%
 
-<%
-  #false laziness with edit/cust_main.cgi
-  my @agents = qsearch( 'agent', {} );
-  die "No agents created!" unless @agents;
-  my $agentnum = $agents[0]->agentnum; #default to first
+    <INPUT TYPE="hidden" NAME="agentnum" VALUE="<% $agentnum %>">
+% } else { 
 
-  if ( scalar(@agents) == 1 ) {
-%>
-    <INPUT TYPE="hidden" NAME="agentnum" VALUE="<%= $agentnum %>">
-<% } else { %>
     <BR><BR>Agent <SELECT NAME="agentnum" SIZE="1">
-  <% foreach my $agent (sort { $a->agent cmp $b->agent } @agents) { %>
-    <OPTION VALUE="<%= $agent->agentnum %>" <%= " SELECTED"x($agent->agentnum==$agentnum) %>><%= $agent->agent %></OPTION>
-  <% } %>
+% foreach my $agent (sort { $a->agent cmp $b->agent } @agents) { 
+
+    <OPTION VALUE="<% $agent->agentnum %>" <% " SELECTED"x($agent->agentnum==$agentnum) %>><% $agent->agent %></OPTION>
+% } 
+
     </SELECT><BR><BR>
-<% } %>
+% } 
+%
+%  my @referrals = qsearch('part_referral',{});
+%  die "No advertising sources created!" unless @referrals;
+%  my $refnum = $referrals[0]->refnum; #default to first
+%
+%  if ( scalar(@referrals) == 1 ) {
+%
 
-<%
-  my @referrals = qsearch('part_referral',{});
-  die "No advertising sources created!" unless @referrals;
-  my $refnum = $referrals[0]->refnum; #default to first
+    <INPUT TYPE="hidden" NAME="refnum" VALUE="<% $refnum %>">
+% } else { 
 
-  if ( scalar(@referrals) == 1 ) {
-%>
-    <INPUT TYPE="hidden" NAME="refnum" VALUE="<%= $refnum %>">
-<% } else { %>
     <BR><BR>Advertising source <SELECT NAME="refnum" SIZE="1">
-  <% foreach my $referral ( sort { $a->referral <=> $b->referral } @referrals) { %>
-    <OPTION VALUE="<%= $referral->refnum %>" <%= " SELECTED"x($referral->refnum==$refnum) %>><%= $referral->refnum %>: <%= $referral->referral %></OPTION>
-  <% } %>
+% foreach my $referral ( sort { $a->referral <=> $b->referral } @referrals) { 
+
+    <OPTION VALUE="<% $referral->refnum %>" <% " SELECTED"x($referral->refnum==$refnum) %>><% $referral->refnum %>: <% $referral->referral %></OPTION>
+% } 
+
     </SELECT><BR><BR>
-<% } %>
+% } 
+
 
     First package: <SELECT NAME="pkgpart"><OPTION VALUE="">(none)</OPTION>
-<% foreach my $part_pkg ( qsearch('part_pkg',{'disabled'=>'' }) ) { %>
-     <OPTION VALUE="<%= $part_pkg->pkgpart %>"><%= $part_pkg->pkg. ' - '. $part_pkg->comment %></OPTION>
-<% } %>
+% foreach my $part_pkg ( qsearch('part_pkg',{'disabled'=>'' }) ) { 
+
+     <OPTION VALUE="<% $part_pkg->pkgpart %>"><% $part_pkg->pkg. ' - '. $part_pkg->comment %></OPTION>
+% } 
+
 </SELECT><BR><BR>
 
   <table>

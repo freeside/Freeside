@@ -1,13 +1,14 @@
-<%
-  my( $status, %opt ) = @_;
+%
+%  my( $status, %opt ) = @_;
+%
+%  $opt{'statuses'} ||= [ FS::cust_pkg->statuses() ]; # { disabled=>'' } )
+%
+%
 
-  $opt{'statuses'} ||= [ FS::cust_pkg->statuses() ]; # { disabled=>'' } )
-
-%>
 
 <TR>
-  <TD ALIGN="right"><%= $opt{'label'} || 'Status' %></TD>
+  <TD ALIGN="right"><% $opt{'label'} || 'Status' %></TD>
   <TD>
-    <%= include( '/elements/select-cust_pkg-status.html', $status, %opt ) %>
+    <% include( '/elements/select-cust_pkg-status.html', $status, %opt ) %>
   </TD>
 </TR>

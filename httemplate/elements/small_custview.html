@@ -1,2 +1,3 @@
-<% my $conf = new FS::Conf; %>
-<%= small_custview( shift, shift || scalar($conf->config('countrydefault')), @_ ) %>
+% my $conf = new FS::Conf; 
+
+<% small_custview( shift, shift || scalar($conf->config('countrydefault')), @_ ) %>

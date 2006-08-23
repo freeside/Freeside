@@ -1,15 +1,16 @@
-<%
-
-my $html_init = 
-  'Package classes define groups of packages, for reporting and '.
-  'convenience purposes.<BR><BR>'.
-  qq!<A HREF="${p}edit/pkg_class.html"><I>Add a package class</I></A><BR><BR>!;
-
-my $count_query = 'SELECT COUNT(*) FROM pkg_class';
-
-my $link = [ $p.'edit/pkg_class.html?', 'classnum' ];
-
-%><%= include( 'elements/browse.html',
+%
+%
+%my $html_init = 
+%  'Package classes define groups of packages, for reporting and '.
+%  'convenience purposes.<BR><BR>'.
+%  qq!<A HREF="${p}edit/pkg_class.html"><I>Add a package class</I></A><BR><BR>!;
+%
+%my $count_query = 'SELECT COUNT(*) FROM pkg_class';
+%
+%my $link = [ $p.'edit/pkg_class.html?', 'classnum' ];
+%
+%
+<% include( 'elements/browse.html',
                  'title'       => 'Package classes',
                  'menubar'     => [ 'Main menu' => $p, ],
                  'html_init'   => $html_init,

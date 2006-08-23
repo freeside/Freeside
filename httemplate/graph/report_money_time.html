@@ -1,4 +1,4 @@
-<%= include('/elements/header.html', 'Sales, Credits and Receipts Summary' ) %>
+<% include('/elements/header.html', 'Sales, Credits and Receipts Summary' ) %>
 
 <FORM ACTION="money_time.cgi" METHOD="GET">
 
@@ -16,9 +16,9 @@
 
 <TABLE>
 
-<%= include('/elements/tr-select-from_to.html' ) %>
+<% include('/elements/tr-select-from_to.html' ) %>
 
-<%= include('/elements/tr-select-agent.html', '', 'label' => 'For agent: ' ) %>
+<% include('/elements/tr-select-agent.html', '', 'label' => 'For agent: ' ) %>
 
 <TR>
   <TD ALIGN="right"><INPUT TYPE="checkbox" NAME="12mo" VALUE="1"></TD>
@@ -30,4 +30,4 @@
 <BR><INPUT TYPE="submit" VALUE="Display">
 </FORM>
 
-<%= include('/elements/footer.html') %>
+<% include('/elements/footer.html') %>

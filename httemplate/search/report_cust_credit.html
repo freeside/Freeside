@@ -1,4 +1,4 @@
-<%= include('/elements/header.html', 'Credit report' ) %>
+<% include('/elements/header.html', 'Credit report' ) %>
 
 <FORM ACTION="cust_credit.html" METHOD="GET">
 <INPUT TYPE="hidden" NAME="magic" VALUE="_date">
@@ -6,28 +6,30 @@
 <TABLE>
   <TR>
     <TD ALIGN="right">Credits by employee: </TD>
+%
+%  my $sth = dbh->prepare("SELECT DISTINCT otaker FROM cust_credit")
+%    or die dbh->errstr;
+%  $sth->execute or die $sth->errstr;
+%  my @otakers = map { $_->[0] } @{$sth->fetchall_arrayref};
+%
 
-<%
-  my $sth = dbh->prepare("SELECT DISTINCT otaker FROM cust_credit")
-    or die dbh->errstr;
-  $sth->execute or die $sth->errstr;
-  my @otakers = map { $_->[0] } @{$sth->fetchall_arrayref};
-%>
 
     <TD><SELECT NAME="otaker">
           <OPTION VALUE="">all</OPTION>
-          <% foreach my $otaker ( @otakers ) { %>
-            <OPTION VALUE="<%= $otaker %>"><%= $otaker %></OPTION>
-          <% } %>
+% foreach my $otaker ( @otakers ) { 
+
+            <OPTION VALUE="<% $otaker %>"><% $otaker %></OPTION>
+% } 
+
         </SELECT>
     </TD>
   </TR>
-  <%= include( '/elements/tr-select-agent.html',
+  <% include( '/elements/tr-select-agent.html',
                  $cgi->param('agentnum'),
                  'label' => 'for agent: ',
              )
   %>
-  <%= include( '/elements/tr-input-beginning_ending.html' ) %>
+  <% include( '/elements/tr-input-beginning_ending.html' ) %>
 </TABLE>
 
 <BR>
@@ -35,4 +37,4 @@
 
 </FORM>
 
-<%= include('/elements/footer.html') %>
+<% include('/elements/footer.html') %>

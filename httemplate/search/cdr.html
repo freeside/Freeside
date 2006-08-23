@@ -1,29 +1,30 @@
-<%
-
-my $title = 'Call Detail Records';
-my $hashref = {};
-my $count_query = 'SELECT COUNT(*) FROM cdr';
-
-#process params for CDR search, populate $hashref...
-# and fixup $count_query
-
-if ( $cgi->param('freesidestatus') eq 'NULL' ) {
-
-  my $title = "Unprocessed $title";
-  $hashref->{'freesidestatus'} = ''; # Record.pm will take care of it
-  #$count_query .= " AND ( freesidestatus IS NULL OR freesidestatus = '' )";
-  $count_query .= " WHERE ( freesidestatus IS NULL OR freesidestatus = '' )";
-
-} elsif ( $cgi->param('freesidestatus') =~ /^([\w ]+)$/ ) {
-
-  my $title = "Processed $title";
-  $hashref->{'freesidestatus'} = $1;
-  #$count_query .= " AND freesidestatus = '$1'";
-  $count_query .= " WHERE freesidestatus = '$1'";
-
-}
-
-%><%= include( 'elements/search.html',
+%
+%
+%my $title = 'Call Detail Records';
+%my $hashref = {};
+%my $count_query = 'SELECT COUNT(*) FROM cdr';
+%
+%#process params for CDR search, populate $hashref...
+%# and fixup $count_query
+%
+%if ( $cgi->param('freesidestatus') eq 'NULL' ) {
+%
+%  my $title = "Unprocessed $title";
+%  $hashref->{'freesidestatus'} = ''; # Record.pm will take care of it
+%  #$count_query .= " AND ( freesidestatus IS NULL OR freesidestatus = '' )";
+%  $count_query .= " WHERE ( freesidestatus IS NULL OR freesidestatus = '' )";
+%
+%} elsif ( $cgi->param('freesidestatus') =~ /^([\w ]+)$/ ) {
+%
+%  my $title = "Processed $title";
+%  $hashref->{'freesidestatus'} = $1;
+%  #$count_query .= " AND freesidestatus = '$1'";
+%  $count_query .= " WHERE freesidestatus = '$1'";
+%
+%}
+%
+%
+<% include( 'elements/search.html',
                'title' => $title,
                'name'  => 'call detail records',
                'query' => { 'table'   => 'cdr',

@@ -1,21 +1,22 @@
-<%
-  my($title, $menubar) = ( shift, shift );
-  my $etc = @_ ? shift : ''; #$etc is for things like onLoad= etc.
-  my $head = @_ ? shift : ''; #$head is for things that go in the <HEAD> section
-  my $conf = new FS::Conf;
+%
+%  my($title, $menubar) = ( shift, shift );
+%  my $etc = @_ ? shift : ''; #$etc is for things like onLoad= etc.
+%  my $head = @_ ? shift : ''; #$head is for things that go in the <HEAD> section
+%  my $conf = new FS::Conf;
+%
+%
 
-%>
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <HTML>
   <HEAD>
     <TITLE>
-      <%= $title %>
+      <% $title %>
     </TITLE>
     <META HTTP-Equiv="Cache-Control" Content="no-cache">
     <META HTTP-Equiv="Pragma" Content="no-cache">
     <META HTTP-Equiv="Expires" Content="0"> 
 
-    <%= include('menu.html', 'freeside_baseurl' => $fsurl ) %>
+    <% include('menu.html', 'freeside_baseurl' => $fsurl ) %>
 
     <SCRIPT TYPE="text/javascript">
       function clearhint_search_cust (what) {
@@ -39,17 +40,17 @@
       }
     </SCRIPT>
 
-    <%= $head %>
+    <% $head %>
 
   </HEAD>
-  <BODY BACKGROUND="<%=$fsurl%>images/background-cheat.png" <%= $etc %> STYLE="margin-top:0; margin-bottom:0; margin-left:0; margin-right:0">
+  <BODY BACKGROUND="<%$fsurl%>images/background-cheat.png" <% $etc %> STYLE="margin-top:0; margin-bottom:0; margin-left:0; margin-right:0">
     <table width="100%" CELLPADDING=0 CELLSPACING=0 STYLE="padding-left:0; padding-right:4">
       <tr>
-        <td rowspan=2 BGCOLOR="#ffffff"><IMG BORDER=0 ALT="freeside" SRC="<%=$fsurl%>images/small-logo.png"></td>
+        <td rowspan=2 BGCOLOR="#ffffff"><IMG BORDER=0 ALT="freeside" SRC="<%$fsurl%>images/small-logo.png"></td>
         <td align=left rowspan=2 BGCOLOR="#ffffff"> <!-- valign="top" -->
-          <font size=6><%= $conf->config('company_name') || 'ExampleCo' %></font>
+          <font size=6><% $conf->config('company_name') || 'ExampleCo' %></font>
         </td>
-        <td align=right valign=top BGCOLOR="#ffffff"><FONT SIZE="-1">Logged in as <b><%= getotaker %>&nbsp</b><br></FONT><FONT SIZE="-2"><a href="<%=$fsurl%>pref/XXXwritethis">Preferences</a>&nbsp;<BR></FONT>
+        <td align=right valign=top BGCOLOR="#ffffff"><FONT SIZE="-1">Logged in as <b><% getotaker %>&nbsp</b><br></FONT><FONT SIZE="-2"><a href="<%$fsurl%>pref/XXXwritethis">Preferences</a>&nbsp;<BR></FONT>
         </td>
       </tr>
       <tr>
@@ -59,20 +60,22 @@
             <tr>
               <td align=right BGCOLOR="#ffffff">
                 <FONT SIZE="-2">
-                 <A HREF="http://www.sisd.com/freeside">Freeside</A>&nbsp;v<%= $FS::VERSION %><BR>
-                 <A HREF="<%= $fsurl %>docs/">Documentation</A><BR>
+                 <A HREF="http://www.sisd.com/freeside">Freeside</A>&nbsp;v<% $FS::VERSION %><BR>
+                 <A HREF="<% $fsurl %>docs/">Documentation</A><BR>
                 </FONT>
               </td>
-              <% if ( $conf->config('ticket_system') eq 'RT_Internal' ) { %>
-              <% eval "use RT;"; %>
+% if ( $conf->config('ticket_system') eq 'RT_Internal' ) { 
+% eval "use RT;"; 
+
                 <td bgcolor=#000000></td>
                 <td align=left>
                   <FONT SIZE="-2">
-                   <A HREF="http://www.bestpractical.com/rt">RT<A>&nbsp;v<%= $RT::VERSION %><BR>
+                   <A HREF="http://www.bestpractical.com/rt">RT<A>&nbsp;v<% $RT::VERSION %><BR>
                    <A HREF="http://wiki.bestpractical.com/">Documentation</A><BR>
                   </FONT>
                 </td>
-              <% } %>
+% } 
+
   
             </tr>
           </table>
@@ -115,50 +118,54 @@ input.fsblackbuttonselected {
 
     <TABLE WIDTH="100%" CELLSPACING=0 CELLPADDING=0>
       <TR>
-        <TD COLSPAN=5 WIDTH="100%" STYLE="padding:0"><IMG BORDER=0 ALT="" SRC="<%=$fsurl%>images/black-gradient.png" HEIGHT="13" WIDTH="100%"></TD>
+        <TD COLSPAN=5 WIDTH="100%" STYLE="padding:0"><IMG BORDER=0 ALT="" SRC="<%$fsurl%>images/black-gradient.png" HEIGHT="13" WIDTH="100%"></TD>
       </TR>
 
       <TR>
 
         <TD COLSPAN=1 BGCOLOR="#000000" ALIGN="right">
-          <FORM ACTION="<%=$fsurl%>edit/cust_main.cgi" METHOD="GET" STYLE="margin:0">
+          <FORM ACTION="<%$fsurl%>edit/cust_main.cgi" METHOD="GET" STYLE="margin:0">
             <INPUT TYPE="submit" VALUE="New customer" CLASS="fsblackbutton" onMouseOver="this.className='fsblackbuttonselected'; return true;" onMouseOut="this.className='fsblackbutton'; return true;" STYLE="vertical-align:bottom">
           </FORM>
         </TD>
 
         <TD COLSPAN=1 BGCOLOR="#000000" ALIGN="right">
-          <FORM ACTION="<%=$fsurl%>search/cust_main.cgi" METHOD="GET" STYLE="margin:0">
+          <FORM ACTION="<%$fsurl%>search/cust_main.cgi" METHOD="GET" STYLE="margin:0">
             <INPUT NAME="search_cust" TYPE="text" VALUE="(cust #, name, company or phone)" SIZE="28" onFocus="clearhint_search_cust(this);" onClick="clearhint_search_cust(this);" STYLE="vertical-align:bottom;text-align:right"><BR>
-            <A HREF="<%=$fsurl%>search/cust_main.html" STYLE="color: #000000; font-size: 70%">Advanced</A>
+            <A HREF="<%$fsurl%>search/cust_main.html" STYLE="color: #000000; font-size: 70%">Advanced</A>
             <INPUT TYPE="submit" VALUE="Search customers" CLASS="fsblackbutton" onMouseOver="this.className='fsblackbuttonselected'; return true;" onMouseOut="this.className='fsblackbutton'; return true;" STYLE="font-size:70%">
           </FORM>
         </TD>
 
         <TD COLSPAN=1 BGCOLOR="#000000" ALIGN="right">
-          <% if ( $FS::CurrentUser::CurrentUser->access_right('View invoices') ) { %>
-            <FORM ACTION="<%=$fsurl%>search/cust_bill.html" METHOD="GET" STYLE="margin:0;display:inline">
+% if ( $FS::CurrentUser::CurrentUser->access_right('View invoices') ) { 
+
+            <FORM ACTION="<%$fsurl%>search/cust_bill.html" METHOD="GET" STYLE="margin:0;display:inline">
               <INPUT NAME="invnum" TYPE="text" VALUE="(inv #)" SIZE="4" onFocus="clearhint_search_invoice(this);" onClick="clearhint_search_invoice(this);" STYLE="vertical-align:bottom;text-align:right;margin-bottom:1px">
-              <% if ( $FS::CurrentUser::CurrentUser->access_right('List invoices') ) { %>
-                <A HREF="<%=$fsurl%>search/report_cust_bill.html" STYLE="color: #ffffff; font-size: 70%">Advanced</A>
-              <% } %>
+% if ( $FS::CurrentUser::CurrentUser->access_right('List invoices') ) { 
+
+                <A HREF="<%$fsurl%>search/report_cust_bill.html" STYLE="color: #ffffff; font-size: 70%">Advanced</A>
+% } 
+
               <BR>
               <INPUT TYPE="submit" VALUE="Search invoices" CLASS="fsblackbutton" onMouseOver="this.className='fsblackbuttonselected'; return true;" onMouseOut="this.className='fsblackbutton'; return true;" STYLE="font-size:70%">
             </FORM>
-          <% } %>
+% } 
+
         </TD>
 
         <TD COLSPAN=1 BGCOLOR="#000000" ALIGN="right">
-          <FORM ACTION="<%=$fsurl%>search/svc_Smart.html" METHOD="GET" STYLE="margin:0">
+          <FORM ACTION="<%$fsurl%>search/svc_Smart.html" METHOD="GET" STYLE="margin:0">
             <INPUT NAME="search_svc" TYPE="text" VALUE="(user, user@domain or domain)" SIZE="26" onFocus="clearhint_search_svc(this);" onClick="clearhint_search_svc(this);" STYLE="vertical-align:bottom;text-align:right"><BR>
-            <A HREF="<%=$fsurl%>search/svc_Smarter.html" STYLE="color: #000000; font-size: 70%">Advanced</A>
+            <A HREF="<%$fsurl%>search/svc_Smarter.html" STYLE="color: #000000; font-size: 70%">Advanced</A>
             <INPUT TYPE="submit" VALUE="Search services"CLASS="fsblackbutton" onMouseOver="this.className='fsblackbuttonselected'; return true;" onMouseOut="this.className='fsblackbutton'; return true;" STYLE="font-size:70%">
           </FORM>
         </TD>
 
         <TD COLSPAN=1 BGCOLOR="#000000" ALIGN="right" STYLE="padding-right:4px">
-          <FORM ACTION="<%=$fsurl%>rt/index.html" METHOD="GET" STYLE="margin:0">
+          <FORM ACTION="<%$fsurl%>rt/index.html" METHOD="GET" STYLE="margin:0">
             <INPUT NAME="q" TYPE="text" VALUE="(ticket # or subject string)" onFocus="clearhint_search_ticket(this);" onClick="clearhint_search_ticket(this);" STYLE="vertical-align:bottom;text-align:right"><BR>
-            <A HREF="<%=$fsurl%>rt/Search/Build.html" STYLE="color: #ffffff; font-size: 70%">Advanced</A>
+            <A HREF="<%$fsurl%>rt/Search/Build.html" STYLE="color: #ffffff; font-size: 70%">Advanced</A>
             <INPUT TYPE="submit" VALUE="Search tickets" CLASS="fsblackbutton" onMouseOver="this.className='fsblackbuttonselected'; return true;" onMouseOut="this.className='fsblackbutton'; return true;" STYLE="font-size:70%;padding-left:2px;padding-right:2px">
           </FORM>
         </TD>
@@ -168,8 +175,8 @@ input.fsblackbuttonselected {
     <TABLE WIDTH="100%" HEIGHT="100%" CELLSPACING=0 CELLPADDING=4>
       <TR>
         <TD BGCOLOR="#000000" STYLE="padding:0" WIDTH="154"></TD>
-        <TD STYLE="padding:0" WIDTH="13"><IMG BORDER=0 ALT="" SRC="<%=$fsurl%>images/black-gray-corner.png"></TD>
-        <TD STYLE="padding:0"><IMG BORDER=0 ALT="" SRC="<%=$fsurl%>images/black-gray-top.png" HEIGHT="13" WIDTH="100%"></TD>
+        <TD STYLE="padding:0" WIDTH="13"><IMG BORDER=0 ALT="" SRC="<%$fsurl%>images/black-gray-corner.png"></TD>
+        <TD STYLE="padding:0"><IMG BORDER=0 ALT="" SRC="<%$fsurl%>images/black-gray-top.png" HEIGHT="13" WIDTH="100%"></TD>
       </TR>
       <TR HEIGHT="100%">
         <TD BGCOLOR="#000000" ALIGN="left" HEIGHT="100%" WIDTH="154" VALIGN="top" ALIGN="right">
@@ -177,15 +184,15 @@ input.fsblackbuttonselected {
             document.write(myBar);
           </SCRIPT>
           <BR>
-          <IMG SRC="<%=$fsurl%>images/32clear.gif" HEIGHT="1" WIDTH="154">
+          <IMG SRC="<%$fsurl%>images/32clear.gif" HEIGHT="1" WIDTH="154">
 
         </TD>
-        <TD STYLE="padding:0" HEIGHT="100%" WIDTH=13 VALIGN="top"><IMG WIDTH="13" HEIGHT="100%" BORDER=0 ALT="" SRC="<%=$fsurl%>images/black-gray-side.png"></TD>
+        <TD STYLE="padding:0" HEIGHT="100%" WIDTH=13 VALIGN="top"><IMG WIDTH="13" HEIGHT="100%" BORDER=0 ALT="" SRC="<%$fsurl%>images/black-gray-side.png"></TD>
         <TD BGCOLOR="#e8e8e8" HEIGHT="100%"> <!-- WIDTH="100%"> -->
 
           <FONT SIZE=6>
-            <%= $title %>
+            <% $title %>
           </FONT>
 
           <BR><BR>
-          <%= $menubar !~ /^\s*$/ ? "$menubar<BR><BR>" : '' %>
+          <% $menubar !~ /^\s*$/ ? "$menubar<BR><BR>" : '' %>

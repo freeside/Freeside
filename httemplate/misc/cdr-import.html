@@ -1,4 +1,4 @@
-<%= include("/elements/header.html",'Call Detail Record Import') %>
+<% include("/elements/header.html",'Call Detail Record Import') %>
 <FORM ACTION="process/cdr-import.html" METHOD="POST" ENCTYPE="multipart/form-data">
 Import a CSV file containing Call Detail Records (CDRs).<BR><BR>
 CDR Format: <SELECT NAME="format">
@@ -12,5 +12,5 @@ Filename: <INPUT TYPE="file" NAME="csvfile"><BR><BR>
 <INPUT TYPE="submit" VALUE="Upload">
 </FORM>
 
-<%= include('/elements/footer.html') %>
+<% include('/elements/footer.html') %>
 

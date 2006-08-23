@@ -1,4 +1,4 @@
-<%= include('/elements/header.html', 'Zip code report') %>
+<% include('/elements/header.html', 'Zip code report') %>
 
     <FORM ACTION="cust_main-zip.html" METHOD="GET">
 
@@ -33,7 +33,7 @@
         </TD>
       </TR>
 
-      <%= include( '/elements/tr-select-agent.html',
+      <% include( '/elements/tr-select-agent.html',
                      $cgi->param('agentnum'),
                      'label' => 'for agent: ',
                  )

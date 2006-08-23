@@ -1,78 +1,79 @@
-<%
-
-my $conf = new FS::Conf;
-
-my($query)=$cgi->keywords;
-$query ||= ''; #to avoid use of unitialized value errors
-
-my $orderby = 'ORDER BY svcnum';
-my %svc_domain = ();
-my @extra_sql = ();
-if ( $query eq 'svcnum' ) {
-  #$orderby = 'ORDER BY svcnum';
-} elsif ( $query eq 'domain' ) {
-  $orderby = 'ORDER BY domain';
-} elsif ( $query eq 'UN_svcnum' ) { #UN searches need to be acl'ed (and need to
-                                    #fix $agentnums_sql
-  #$orderby = 'ORDER BY svcnum';
-  push @extra_sql, 'pkgnum IS NULL';
-} elsif ( $query eq 'UN_domain' ) { #UN searches need to be acl'ed (and need to
-                                    #fix $agentnums_sql
-  $orderby = 'ORDER BY domain';
-  push @extra_sql, 'pkgnum IS NULL';
-} elsif ( $cgi->param('svcpart') =~ /^(\d+)$/ ) {
-  #$orderby = 'ORDER BY svcnum';
-  push @extra_sql, "svcpart = $1";
-} else {
-  $cgi->param('domain') =~ /^([\w\-\.]+)$/; 
-  $svc_domain{'domain'} = $1;
-}
-
-my $addl_from = ' LEFT JOIN cust_svc  USING ( svcnum  ) '.
-                ' LEFT JOIN part_svc  USING ( svcpart ) '.
-                ' LEFT JOIN cust_pkg  USING ( pkgnum  ) '.
-                ' LEFT JOIN cust_main USING ( custnum ) ';
-
-#here is the agent virtualization
-push @extra_sql, $FS::CurrentUser::CurrentUser->agentnums_sql;
-
-my $extra_sql = '';
-if ( @extra_sql ) {
-  $extra_sql = ( keys(%svc_domain) ? ' AND ' : ' WHERE ' ).
-               join(' AND ', @extra_sql );
-}
-
-my $count_query = "SELECT COUNT(*) FROM svc_domain $addl_from ";
-if ( keys %svc_domain ) {
-  $count_query .= ' WHERE '.
-                    join(' AND ', map "$_ = ". dbh->quote($svc_domain{$_}),
-                                      keys %svc_domain
-                        );
-}
-$count_query .= $extra_sql;
-
-my $sql_query = {
-  'table'     => 'svc_domain',
-  'hashref'   => \%svc_domain,
-  'select'    => join(', ',
-                   'svc_domain.*',
-                   'part_svc.svc',
-                   'cust_main.custnum',
-                   FS::UI::Web::cust_sql_fields(),
-                 ),
-  'extra_sql' => "$extra_sql $orderby",
-  'addl_from' => $addl_from,
-};
-
-my $link = [ "${p}view/svc_domain.cgi?", 'svcnum' ];
-
-#smaller false laziness w/svc_*.cgi here
-my $link_cust = sub {
-  my $svc_x = shift;
-  $svc_x->custnum ? [ "${p}view/cust_main.cgi?", 'custnum' ] : '';
-};
-
-%><%= include( 'elements/search.html',
+%
+%
+%my $conf = new FS::Conf;
+%
+%my($query)=$cgi->keywords;
+%$query ||= ''; #to avoid use of unitialized value errors
+%
+%my $orderby = 'ORDER BY svcnum';
+%my %svc_domain = ();
+%my @extra_sql = ();
+%if ( $query eq 'svcnum' ) {
+%  #$orderby = 'ORDER BY svcnum';
+%} elsif ( $query eq 'domain' ) {
+%  $orderby = 'ORDER BY domain';
+%} elsif ( $query eq 'UN_svcnum' ) { #UN searches need to be acl'ed (and need to
+%                                    #fix $agentnums_sql
+%  #$orderby = 'ORDER BY svcnum';
+%  push @extra_sql, 'pkgnum IS NULL';
+%} elsif ( $query eq 'UN_domain' ) { #UN searches need to be acl'ed (and need to
+%                                    #fix $agentnums_sql
+%  $orderby = 'ORDER BY domain';
+%  push @extra_sql, 'pkgnum IS NULL';
+%} elsif ( $cgi->param('svcpart') =~ /^(\d+)$/ ) {
+%  #$orderby = 'ORDER BY svcnum';
+%  push @extra_sql, "svcpart = $1";
+%} else {
+%  $cgi->param('domain') =~ /^([\w\-\.]+)$/; 
+%  $svc_domain{'domain'} = $1;
+%}
+%
+%my $addl_from = ' LEFT JOIN cust_svc  USING ( svcnum  ) '.
+%                ' LEFT JOIN part_svc  USING ( svcpart ) '.
+%                ' LEFT JOIN cust_pkg  USING ( pkgnum  ) '.
+%                ' LEFT JOIN cust_main USING ( custnum ) ';
+%
+%#here is the agent virtualization
+%push @extra_sql, $FS::CurrentUser::CurrentUser->agentnums_sql;
+%
+%my $extra_sql = '';
+%if ( @extra_sql ) {
+%  $extra_sql = ( keys(%svc_domain) ? ' AND ' : ' WHERE ' ).
+%               join(' AND ', @extra_sql );
+%}
+%
+%my $count_query = "SELECT COUNT(*) FROM svc_domain $addl_from ";
+%if ( keys %svc_domain ) {
+%  $count_query .= ' WHERE '.
+%                    join(' AND ', map "$_ = ". dbh->quote($svc_domain{$_}),
+%                                      keys %svc_domain
+%                        );
+%}
+%$count_query .= $extra_sql;
+%
+%my $sql_query = {
+%  'table'     => 'svc_domain',
+%  'hashref'   => \%svc_domain,
+%  'select'    => join(', ',
+%                   'svc_domain.*',
+%                   'part_svc.svc',
+%                   'cust_main.custnum',
+%                   FS::UI::Web::cust_sql_fields(),
+%                 ),
+%  'extra_sql' => "$extra_sql $orderby",
+%  'addl_from' => $addl_from,
+%};
+%
+%my $link = [ "${p}view/svc_domain.cgi?", 'svcnum' ];
+%
+%#smaller false laziness w/svc_*.cgi here
+%my $link_cust = sub {
+%  my $svc_x = shift;
+%  $svc_x->custnum ? [ "${p}view/cust_main.cgi?", 'custnum' ] : '';
+%};
+%
+%
+<% include( 'elements/search.html',
                  'title'             => "Domain Search Results",
                  'name'              => 'domains',
                  'query'             => $sql_query,
