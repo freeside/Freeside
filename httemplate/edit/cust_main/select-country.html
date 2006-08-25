@@ -1,15 +1,3 @@
-%
-%
-%  my %opt = @_;
-%  foreach my $opt (qw( county state country prefix onchange disabled )) {
-%    $opt{$_} = '' unless exists($opt{$_}) && defined($opt{$_});
-%  }
-%
-%  my $conf = new FS::Conf;
-%  my $countrydefault = $conf->config('countrydefault') || 'US';
-%
-%
-
 
 <% include('/elements/xmlhttp.html',
               'url'  => $p.'misc/states.cgi',
@@ -57,18 +45,32 @@
 </SCRIPT>
 
 <SELECT NAME="<% $opt{'prefix'} %>country" onChange="<% $opt{'prefix'} %>country_changed(this); <% $opt{'onchange'} %>" <% $opt{'disabled'} %>>
+
 % foreach my $country (
 %     sort {    ($b eq $countrydefault) <=> ($a eq $countrydefault)
 %            or code2country($a) cmp code2country($b) }
 %     map { $_->country }
-%     qsearch( 'cust_main_county',{}, 'DISTINCT ON ( country ) *', )
-%   ) {
-%
-
+%     qsearch({
+%               'select'    => 'country',
+%               'table'     => 'cust_main_county',
+%               'hashref'   => {},
+%               'extra_sql' => 'GROUP BY country',
+%            })
+% ) {
 
   <OPTION VALUE="<% $country %>"<% $country eq $opt{'country'} ? ' SELECTED' : '' %>><% code2country($country). " ($country)" %>
+
 % } 
 
-
 </SELECT>
+
+<%init>
+my %opt = @_;
+foreach my $opt (qw( county state country prefix onchange disabled )) {
+  $opt{$_} = '' unless exists($opt{$_}) && defined($opt{$_});
+}
+
+my $conf = new FS::Conf;
+my $countrydefault = $conf->config('countrydefault') || 'US';
+</%init>
 

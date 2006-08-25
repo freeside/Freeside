@@ -1,21 +1,20 @@
-%
-%
-%  my %opt = @_;
-%  foreach my $opt (qw( county state country prefix onchange disabled )) {
-%    $opt{$_} = '' unless exists($opt{$_}) && defined($opt{$_});
-%  }
-%
-%
-
-
 <SELECT NAME="<% $opt{'prefix'} %>state" onChange="<% $opt{'prefix'} %>state_changed(this); <% $opt{'onchange'} %>" <% $opt{'disabled'} %>>
-% tie my %states, 'Tie::IxHash', states_hash( $opt{'country'} ); 
+
 % foreach my $state ( keys %states ) { 
 
-
   <OPTION VALUE="<% $state %>"<% $state eq $opt{'state'} ? ' SELECTED' : '' %>><% $states{$state} || '(n/a)' %>
+
 % } 
 
 
 </SELECT>
+
+<%init>
+my %opt = @_;
+foreach my $opt (qw( county state country prefix onchange disabled )) {
+  $opt{$_} = '' unless exists($opt{$_}) && defined($opt{$_});
+}
+
+tie my %states, 'Tie::IxHash', states_hash( $opt{'country'} ); 
+</%init>
 

@@ -1,25 +1,10 @@
-%
-%
-%  my %opt = @_;
-%  foreach my $opt (qw( county state country prefix onchange disabled )) {
-%    $opt{$_} = '' unless exists($opt{$_}) && defined($opt{$_});
-%  }
-%
-%  my $sql = "SELECT COUNT(*) FROM cust_main_county".
-%            " WHERE county IS NOT NULL AND county != ''";
-%  my $sth = dbh->prepare($sql) or die dbh->errstr;
-%  $sth->execute or die $sth->errstr;
-%  my $countyflag = $sth->fetchrow_arrayref->[0];
-%
-%
 % if ( $countyflag ) { 
-
 
   <% include('/elements/xmlhttp.html',
                 'url'  => $p.'misc/counties.cgi',
                 'subs' => [ $opt{'prefix'}. 'get_counties' ],
              )
-%>
+  %>
   
   <SCRIPT TYPE="text/javascript">
   
@@ -69,15 +54,14 @@
 %                                     'country' => $opt{'country'},
 %                                   }
 %              )
-%     ) {
-%  
-
+% ) {
 
     <OPTION VALUE="<% $county %>"<% $county eq $opt{'county'} ? ' SELECTED' : '' %>><% $county %>
+
 % } 
 
-
   </SELECT>
+
 % } else { 
 
 
@@ -87,5 +71,18 @@
   </SCRIPT>
 
   <INPUT TYPE="hidden" NAME="<% $opt{'prefix'} %>county" VALUE="<% $opt{'county'} %>">
+
 % } 
 
+<%init>
+my %opt = @_;
+foreach my $opt (qw( county state country prefix onchange disabled )) {
+  $opt{$_} = '' unless exists($opt{$_}) && defined($opt{$_});
+}
+
+my $sql = "SELECT COUNT(*) FROM cust_main_county".
+          " WHERE county IS NOT NULL AND county != ''";
+my $sth = dbh->prepare($sql) or die dbh->errstr;
+$sth->execute or die $sth->errstr;
+my $countyflag = $sth->fetchrow_arrayref->[0];
+</%init>

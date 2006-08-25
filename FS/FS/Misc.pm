@@ -359,10 +359,12 @@ sub states_hash {
 #     sort
      map { s/[\n\r]//g; $_; }
      map { $_->state; }
-     qsearch( 'cust_main_county',
-              { 'country' => $country },
-              'DISTINCT ON ( state ) *',
-            )
+     qsearch({ 
+               'select'    => 'state',
+               'table'     => 'cust_main_county',
+               'hashref'   => { 'country' => $country },
+               'extra_sql' => 'GROUP BY state',
+            })
   ;
 
   #it could throw a fatal "Invalid country code" error (for example "AX")
