@@ -388,7 +388,9 @@ sub qsearch {
   my %result;
   tie %result, "Tie::IxHash";
   my @stuff = @{ $sth->fetchall_arrayref( {} ) };
-  if ( $pkey && $stuff[0]->{$pkey} ) {
+  #if ( $pkey ) {
+  #if ( $pkey && $stuff[0]->{$pkey} ) {
+  if ( $pkey && scalar(@stuff) && $stuff[0]->{$pkey} ) {
     %result = map { $_->{$pkey}, $_ } @stuff;
   } else {
     @result{@stuff} = @stuff;
