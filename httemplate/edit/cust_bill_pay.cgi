@@ -81,7 +81,5 @@ my @cust_bill = sort {    $a->_date  <=> $b->_date
                      }
                 grep { $_->owed != 0 }
                 qsearch('cust_bill', { 'custnum' => $cust_pay->custnum } );
-
-
 </%init>
 
