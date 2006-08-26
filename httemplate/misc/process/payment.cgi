@@ -1,5 +1,4 @@
 %
-%
 %#some false laziness w/MyAccount::process_payment
 %
 %$cgi->param('custnum') =~ /^(\d+)$/
@@ -25,10 +24,6 @@
 %$cgi->param('payby') =~ /^(CARD|CHEK)$/
 %  or die "illegal payby ". $cgi->param('payby');
 %my $payby = $1;
-%my %payby2bop = (
-%  'CARD' => 'CC',
-%  'CHEK' => 'ECHECK',
-%);
 %my %payby2fields = (
 %  'CARD' => [ qw( address1 address2 city state zip ) ],
 %  'CHEK' => [ qw( ss ) ],
@@ -87,7 +82,7 @@
 %  die "unknown payby $payby";
 %}
 %
-%my $error = $cust_main->realtime_bop( $payby2bop{$payby}, $amount,
+%my $error = $cust_main->realtime_bop( $FS::payby::payby2bop->{$payby}, $amount,
 %  'quiet'    => 1,
 %  'payinfo'  => $payinfo,
 %  'paydate'  => "$year-$month-01",

@@ -42,7 +42,7 @@ use FS::cust_bill_pay;
 use FS::prepay_credit;
 use FS::queue;
 use FS::part_pkg;
-use FS::part_bill_event;
+use FS::part_bill_event qw(due_events);
 use FS::cust_bill_event;
 use FS::cust_tax_exempt;
 use FS::cust_tax_exempt_pkg;
@@ -2251,78 +2251,27 @@ sub collect {
     warn "  invnum ". $cust_bill->invnum. " (owed ". $cust_bill->owed. ")\n"
       if $DEBUG > 1;
 
-    foreach my $part_bill_event (
-      sort {    $a->seconds   <=> $b->seconds
-             || $a->weight    <=> $b->weight
-             || $a->eventpart <=> $b->eventpart }
-        grep { $_->seconds <= ( $invoice_time - $cust_bill->_date )
-               && ! qsearch( 'cust_bill_event', {
-                                'invnum'    => $cust_bill->invnum,
-                                'eventpart' => $_->eventpart,
-                                'status'    => 'done',
-                                                                   } )
-             }
-          qsearch( {
-            'table'     => 'part_bill_event',
-            'hashref'   => { 'payby'    => (exists($options{'payby'})
-	                                     ? $options{'payby'}
-					     : $self->payby
-					   ),
-                             'disabled' => '',           },
-            'extra_sql' => $extra_sql,
-          } )
-    ) {
+    foreach my $part_bill_event ( due_events ( $cust_bill,
+                                               exists($options{'payby'}) 
+					         ? $options{'payby'}
+						 : $self->payby,
+					       $invoice_time,
+					       $extra_sql ) ) {
 
       last if $cust_bill->owed <= 0  # don't run subsequent events if owed<=0
            || $self->balance   <= 0; # or if balance<=0
 
-      warn "  calling invoice event (". $part_bill_event->eventcode. ")\n"
-        if $DEBUG > 1;
-      my $cust_main = $self; #for callback
-
-      my $error;
       {
         local $realtime_bop_decline_quiet = 1 if $options{'quiet'};
-        local $SIG{__DIE__}; # don't want Mason __DIE__ handler active
-        $error = eval $part_bill_event->eventcode;
+        warn "  do_event " .  $cust_bill . " ". (%options) .  "\n"
+          if $DEBUG > 1;
+
+        if (my $error = $part_bill_event->do_event($cust_bill, %options)) {
+	  # gah, even with transactions.
+	  $dbh->commit if $oldAutoCommit; #well.
+	  return $error;
+	}
       }
-
-      my $status = '';
-      my $statustext = '';
-      if ( $@ ) {
-        $status = 'failed';
-        $statustext = $@;
-      } elsif ( $error ) {
-        $status = 'done';
-        $statustext = $error;
-      } else {
-        $status = 'done'
-      }
-
-      #add cust_bill_event
-      my $cust_bill_event = new FS::cust_bill_event {
-        'invnum'     => $cust_bill->invnum,
-        'eventpart'  => $part_bill_event->eventpart,
-        #'_date'      => $invoice_time,
-        '_date'      => time,
-        'status'     => $status,
-        'statustext' => $statustext,
-      };
-      $error = $cust_bill_event->insert;
-      if ( $error ) {
-        #$dbh->rollback if $oldAutoCommit;
-        #return "error: $error";
-
-        # gah, even with transactions.
-        $dbh->commit if $oldAutoCommit; #well.
-        my $e = 'WARNING: Event run but database not updated - '.
-                'error inserting cust_bill_event, invnum #'. $cust_bill->invnum.
-                ', eventpart '. $part_bill_event->eventpart.
-                ": $error";
-        warn $e;
-        return $e;
-      }
-
 
     }
 
@@ -2335,9 +2284,10 @@ sub collect {
 
 =item retry_realtime
 
-Schedules realtime credit card / electronic check / LEC billing events for
-for retry.  Useful if card information has changed or manual retry is desired.
-The 'collect' method must be called to actually retry the transaction.
+Schedules realtime / batch  credit card / electronic check / LEC billing
+events for for retry.  Useful if card information has changed or manual
+retry is desired.  The 'collect' method must be called to actually retry
+the transaction.
 
 Implementation details: For each of this customer's open invoices, changes
 the status of the first "done" (with statustext error) realtime processing
@@ -2368,7 +2318,7 @@ sub retry_realtime {
         grep {
                #$_->part_bill_event->plan eq 'realtime-card'
                $_->part_bill_event->eventcode =~
-                   /\$cust_bill\->realtime_(card|ach|lec)/
+                   /\$cust_bill\->(batch|realtime)_(card|ach|lec)/
                  && $_->status eq 'done'
                  && $_->statustext
              }

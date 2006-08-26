@@ -126,11 +126,12 @@ sub check {
     || $self->ut_textn('statustext')
   ;
 
+  return "Unknown eventpart ". $self->eventpart
+    unless my $part_bill_event =
+      qsearchs( 'part_bill_event' ,{ 'eventpart' => $self->eventpart } );
+
   return "Unknown invnum ". $self->invnum
     unless qsearchs( 'cust_bill' ,{ 'invnum' => $self->invnum } );
-
-  return "Unknown eventpart ". $self->eventpart
-    unless qsearchs( 'part_bill_event' ,{ 'eventpart' => $self->eventpart } );
 
   $self->SUPER::check;
 }
@@ -170,6 +171,21 @@ sub retry {
   return '' unless $self->status eq 'done';
   my $old = ref($self)->new( { $self->hash } );
   $self->status('failed');
+  $self->replace($old);
+}
+
+=item retryable
+
+Changes the statustext of this event to B<retriable>, rendering it 
+retriable (should retry be called).
+
+=cut
+
+sub retriable {
+  my $self = shift;
+  return '' unless $self->status eq 'done';
+  my $old = ref($self)->new( { $self->hash } );
+  $self->statustext('retriable');
   $self->replace($old);
 }
 

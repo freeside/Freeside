@@ -1,0 +1,37 @@
+<% include('/elements/header.html', 'Batch payment report' ) %>
+
+<FORM ACTION="cust_pay_batch.cgi" METHOD="GET">
+
+<TABLE>
+
+  <TR>
+    <TD ALIGN="right">Payments of type: </TD>
+    <TD>
+      <SELECT NAME="payby">
+        <OPTION VALUE="">all</OPTION>
+        <OPTION VALUE="CARD">credit card</OPTION>
+        <OPTION VALUE="CHEK">electronic check / ACH</OPTION>
+      </SELECT>
+    </TD>
+  </TR>
+
+  <% include( '/elements/tr-select-agent.html',
+                 $cgi->param('agentnum'),
+                 'label' => 'for agent: ',
+             )
+  %>
+
+  <% include( '/elements/tr-input-beginning_ending.html' ) %>
+
+  <TR>
+    <TD ALIGN="right"><INPUT TYPE="checkbox" NAME="dcln" VALUE="1" CHECKED></TD>
+    <TD>Include approved items</TD>
+  </TR>
+</TABLE>
+
+<BR>
+<INPUT TYPE="submit" VALUE="Get Report">
+
+</FORM>
+
+<% include('/elements/footer.html') %>

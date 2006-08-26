@@ -350,6 +350,8 @@ FS/CurrentUser.pm
 FS/svc_phone.pm
 t/svc_phone.t
 FS/h_svc_phone.pm
+FS/cust_bill_pay_batch.pm
+t/cust_bill_pay_batch.t
 FS/cust_bill_pay_pkg.pm
 t/cust_bill_pay_pkg.t
 FS/cust_credit_bill_pkg.pm

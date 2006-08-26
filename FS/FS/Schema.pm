@@ -545,6 +545,19 @@ sub tables_hashref {
       'index' => [ [ 'paynum' ], [ 'invnum' ] ],
     },
 
+    'cust_bill_pay_batch' => {
+      'columns' => [
+        'billpaynum', 'serial',     '',   '', '', '', 
+        'invnum',  'int',     '',   '', '', '', 
+        'paybatchnum',  'int',     '',   '', '', '', 
+        'amount',  @money_type, '', '', 
+        '_date',   @date_type, '', '', 
+      ],
+      'primary_key' => 'billpaynum',
+      'unique' => [],
+      'index' => [ [ 'paybatchnum' ], [ 'invnum' ] ],
+    },
+
     'cust_bill_pay_pkg' => {
       'columns' => [
         'billpaypkgnum', 'serial', '', '', '', '',

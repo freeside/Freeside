@@ -1,0 +1,27 @@
+<% include('/elements/header.html', 'Batch criteria' ) %>
+
+<FORM ACTION="pay_batch.cgi" METHOD="GET">
+<INPUT TYPE="hidden" NAME="magic" VALUE="_date">
+
+<TABLE>
+  <% include( '/elements/tr-input-beginning_ending.html' ) %>
+  <TR>
+    <TD ALIGN="right"><INPUT TYPE="checkbox" NAME="open" VALUE="1" CHECKED></TD>
+    <TD>Show open batches</TD>
+  </TR>
+  <TR>
+    <TD ALIGN="right"><INPUT TYPE="checkbox" NAME="intransit" VALUE="1" CHECKED></TD>
+    <TD>Show in-transit batches</TD>
+  </TR>
+  <TR>
+    <TD ALIGN="right"><INPUT TYPE="checkbox" NAME="resolved" VALUE="1" CHECKED></TD>
+    <TD>Show resolved batches</TD>
+  </TR>
+</TABLE>
+
+<BR>
+<INPUT TYPE="submit" VALUE="Get Batches">
+
+</FORM>
+
+<% include('/elements/footer.html') %>

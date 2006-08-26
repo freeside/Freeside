@@ -216,8 +216,14 @@ Invoice Event #<% $hashref->{eventpart} ? $hashref->{eventpart} : "(NEW)" %>
 %
 %  'batch-card' => {
 %    'name' => 'Add card to the pending credit card batch',
-%    'code' => '$cust_bill->batch_card();',
+%    'code' => '$cust_bill->batch_card(%options);',
 %    'weight' => 40,
+%  },
+%
+%  'retriable' => {
+%    'name' => 'Mark batched card event as retriable',
+%    'code' => '$cust_pay_batch->retriable();',
+%    'weight' => 60,
 %  },
 %
 %  'send' => {
@@ -429,4 +435,5 @@ Invoice Event #<% $hashref->{eventpart} ? $hashref->{eventpart} : "(NEW)" %>
     </FORM>
   </BODY>
 </HTML>
+
 

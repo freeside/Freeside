@@ -3,7 +3,8 @@ package FS::cust_pay_batch;
 use strict;
 use vars qw( @ISA $DEBUG );
 use FS::Record qw(dbh qsearch qsearchs);
-use Business::CreditCard;
+use FS::part_bill_event qw(due_events);
+use Business::CreditCard 0.28;
 
 @ISA = qw( FS::Record );
 
@@ -30,6 +31,8 @@ FS::cust_pay_batch - Object methods for batch cards
   $error = $record->delete;
 
   $error = $record->check;
+
+  $error = $record->retriable;
 
 =head1 DESCRIPTION
 
@@ -143,19 +146,8 @@ sub check {
     or return "Illegal payby";
   $self->payby($1);
 
-  # FIXME
-  # there is no point in false laziness here
-  # we will effectively set "check_payinfo to 0"
-  # we can change that when we finish the refactor
-  
-  #my $cardnum = $self->cardnum;
-  #$cardnum =~ s/\D//g;
-  #$cardnum =~ /^(\d{13,16})$/
-  #  or return "Illegal credit card number";
-  #$cardnum = $1;
-  #$self->cardnum($cardnum);
-  #validate($cardnum) or return "Illegal credit card number";
-  #return "Unknown card type" if cardtype($cardnum) eq "Unknown";
+  #$error = FS::payby::payinfo_check($self->payby, \$self->payinfo);
+  #return $error if $error;
 
   if ( $self->exp eq '' ) {
     return "Expiration date required"
@@ -210,6 +202,54 @@ payment.
 sub cust_main {
   my $self = shift;
   qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
+}
+
+=item retriable
+
+Marks the corresponding event (see L<FS::cust_bill_event>) for this batched
+credit card payment as retriable.  Useful if the corresponding financial
+institution account was declined for temporary reasons and/or a manual 
+retry is desired.
+
+Implementation details: For the named customer's invoice, changes the
+statustext of the 'done' (without statustext) event to 'retriable.'
+
+=cut
+
+sub retriable {
+  my $self = shift;
+
+  local $SIG{HUP} = 'IGNORE';        #Hmm
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  my $cust_bill = qsearchs('cust_bill', { 'invnum' => $self->invnum } )
+    or return "event $self->eventnum references nonexistant invoice $self->invnum";
+
+  warn "cust_pay_batch->retriable working with self of " . $self->paybatchnum . " and invnum of " . $self->invnum;
+  my @cust_bill_event =
+    sort { $a->part_bill_event->seconds <=> $b->part_bill_event->seconds }
+      grep {
+        $_->part_bill_event->eventcode =~ /\$cust_bill->batch_card/
+	  && $_->status eq 'done'
+	  && ! $_->statustext
+	}
+      $cust_bill->cust_bill_event;
+  # complain loudly if scalar(@cust_bill_event) > 1 ?
+  my $error = $cust_bill_event[0]->retriable;
+  if ($error ) {
+    # gah, even with transactions.
+    $dbh->commit if $oldAutoCommit; #well.
+    return "error marking invoice event retriable: $error";
+  }
+  '';
 }
 
 =back
@@ -465,70 +505,19 @@ sub import_results {
 
       $new_cust_pay_batch->status('Declined');
 
-      #this should be configurable... if anybody else ever uses batches
-      # $cust_pay_batch->cust_main->suspend;
-
-      foreach my $part_bill_event (
-        sort {    $a->seconds   <=> $b->seconds
-               || $a->weight    <=> $b->weight
-               || $a->eventpart <=> $b->eventpart }
-          grep { ! qsearch( 'cust_bill_event', {
-                               'invnum'    => $cust_pay_batch->invnum,
-                               'eventpart' => $_->eventpart,
-                               'status'    => 'done',
-                                                                   } )
-               }
-            qsearch( {
-              'table'     => 'part_bill_event',
-              'hashref'   => { 'payby'    => 'DCLN',
-                               'disabled' => '',           },
-            } )
-      ) {
+      foreach my $part_bill_event ( due_events ( $new_cust_pay_batch,
+                                                 'DCLN',
+						 '',
+						 '') ) {
 
         # don't run subsequent events if balance<=0
         last if $cust_pay_batch->cust_main->balance <= 0;
 
-        warn "  calling invoice event (". $part_bill_event->eventcode. ")\n"
-          if $DEBUG > 1;
-        my $cust_main = $cust_pay_batch->cust_main; #for callback
-
-        my $error;
-        {
-          local $SIG{__DIE__}; # don't want Mason __DIE__ handler active
-          $error = eval $part_bill_event->eventcode;
-        }
-
-        my $status = '';
-        my $statustext = '';
-        if ( $@ ) {
-          $status = 'failed';
-          $statustext = $@;
-        } elsif ( $error ) {
-          $status = 'done';
-          $statustext = $error;
-        } else {
-          $status = 'done'
-        }
-
-	#add cust_bill_event
-	my $cust_bill_event = new FS::cust_bill_event {
-	  'invnum'     => $cust_pay_batch->invnum,
-	  'eventpart'  => $part_bill_event->eventpart,
-	  '_date'      => time,
-	  'status'     => $status,
-	  'statustext' => $statustext,
-	};
-	$error = $cust_bill_event->insert;
-	if ( $error ) {
+	if (my $error = $part_bill_event->do_event($new_cust_pay_batch)) {
 	  # gah, even with transactions.
 	  $dbh->commit if $oldAutoCommit; #well.
-          my $e = 'WARNING: Event run but database not updated - '.
-                  'error inserting cust_bill_event, invnum #'. $cust_pay_batch->invnum.
-		  ', eventpart '. $part_bill_event->eventpart.
-                  ": $error";
-          warn $e;
-          return $e;
-        }
+	  return $error;
+	}
 
       }
 

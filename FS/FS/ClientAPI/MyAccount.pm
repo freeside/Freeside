@@ -658,7 +658,7 @@ sub order_pkg {
     my $bill_error = $cust_main->bill;
     $cust_main->apply_payments;
     $cust_main->apply_credits;
-    $bill_error = $cust_main->collect;
+    $bill_error = $cust_main->collect('realtime' => 1);
 
     if (    $cust_main->balance > $old_balance
          && $cust_main->balance > 0

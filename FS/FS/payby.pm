@@ -1,8 +1,9 @@
 package FS::payby;
 
 use strict;
-use vars qw(%hash);
+use vars qw(%hash @EXPORT_OK);
 use Tie::IxHash;
+
 
 =head1 NAME
 
@@ -106,6 +107,11 @@ sub payby2longname {
   map { $_ => $hash{$_}->{longname} } $self->payby;
 }
 
+sub payby2bop {
+  { 'CARD' => 'CC'.
+    'CHEK' => 'ECHECK',};
+}
+
 sub cust_payby {
   my $self = shift;
   grep { ! exists $hash{$_}->{cust_main} } $self->payby;
@@ -114,6 +120,27 @@ sub cust_payby {
 sub cust_payby2longname {
   my $self = shift;
   map { $_ => $hash{$_}->{longname} } $self->cust_payby;
+}
+
+sub payinfo_check{
+  my($payby, $payinforef) = @_;
+
+  if ($payby eq 'CARD') {
+    $$payinforef =~ s/\D//g;
+    if ($$payinforef){
+      $$payinforef =~ /^(\d{13,16})$/
+        or return "Illegal (mistyped?) credit card number (payinfo)";
+      $$payinforef = $1;
+      validate($$payinforef) or return "Illegal credit card number";
+      return "Unknown card type" if cardype($$payinforef) eq "Unknown";
+    } else {
+      $$payinforef="N/A";
+    }
+  } else {
+    $$payinforef =~ /^([\w \!\@\#\$\%\&\(\)\-\+\;\:\'\"\,\.\?\/\=]*)$/
+    or return "Illegal text (payinfo)";
+    $$payinforef = $1;
+  }
 }
 
 =back

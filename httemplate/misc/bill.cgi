@@ -1,11 +1,12 @@
 %
-%
 %#untaint custnum
 %my($query) = $cgi->keywords;
 %$query =~ /^(\d*)$/;
 %my $custnum = $1;
 %my $cust_main = qsearchs('cust_main',{'custnum'=>$custnum});
 %die "Can't find customer!\n" unless $cust_main;
+%
+%my $conf = new FS::Conf;
 %
 %my $error = $cust_main->bill(
 %#                          'time'=>$time
@@ -23,6 +24,7 @@
 %                               #'report_badcard'=> 'yes',
 %                               #'retry_card' => 'yes',
 %                               'retry' => 'yes',
+%                               'realtime' => $conf->exists('realtime-backend'),
 %                              );
 %}
 %#&eidiot($error) if $error;

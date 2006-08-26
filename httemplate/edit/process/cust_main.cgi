@@ -126,7 +126,7 @@
 %    my $berror = $new->bill;
 %    $new->apply_payments;
 %    $new->apply_credits;
-%    $berror ||= $new->collect;
+%    $berror ||= $new->collect 'realtime' => 1;
 %    warn "Warning, error billing during backend-realtime: $berror" if $berror;
 %
 %  }
@@ -151,4 +151,5 @@
 %  print $cgi->redirect(popurl(3). "view/cust_main.cgi?". $new->custnum);
 %} 
 %
+
 

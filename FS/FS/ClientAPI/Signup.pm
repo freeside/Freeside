@@ -302,7 +302,7 @@ sub new_customer {
     $cust_main->apply_payments;
     $cust_main->apply_credits;
 
-    $bill_error = $cust_main->collect;
+    $bill_error = $cust_main->collect('realtime' => 1);
     #warn "[fs_signup_server] error collecting from new customer: $bill_error"
     #  if $bill_error;
 

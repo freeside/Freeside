@@ -1,7 +1,7 @@
 package FS::cust_bill;
 
 use strict;
-use vars qw( @ISA $DEBUG $conf $money_char );
+use vars qw( @ISA $DEBUG $me $conf $money_char );
 use vars qw( $invoice_lines @buf ); #yuck
 use Fcntl qw(:flock); #for spool_csv
 use IPC::Run3;
@@ -26,11 +26,14 @@ use FS::cust_pay_batch;
 use FS::cust_bill_event;
 use FS::part_pkg;
 use FS::cust_bill_pay;
+use FS::cust_bill_pay_batch;
 use FS::part_bill_event;
+use FS::payby qw( payby2bop );
 
 @ISA = qw( FS::cust_main_Mixin FS::Record );
 
 $DEBUG = 0;
+$me = '[FS::cust_bill]';
 
 #ask FS::UID to run this stuff for us later
 FS::UID->install_callback( sub { 
@@ -1308,12 +1311,18 @@ L<FS::cust_pay_batch>).
 =cut
 
 sub batch_card {
-  my $self = shift;
+  my ($self, %options) = @_;
   my $cust_main = $self->cust_main;
 
   my $amount = sprintf("%.2f", $cust_main->balance - $cust_main->in_transit_payments);
   return '' unless $amount > 0;
   
+  if ($options{'realtime'}) {
+    return $cust_main->realtime_bop ( $FS::payby::payby2bop->{$cust_main->payby}, $amount,
+      %options,
+    );
+  }
+
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
@@ -1367,6 +1376,30 @@ sub batch_card {
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     die $error;
+  }
+
+  my $unapplied = $cust_main->total_credited + $cust_main->total_unapplied_payments + $cust_main->in_transit_payments;
+  foreach my $cust_bill ($cust_main->open_cust_bill) {
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+    my $cust_bill_pay_batch = new FS::cust_bill_pay_batch {
+      'invnum' => $cust_bill->invnum,
+      'paybatchnum' => $cust_pay_batch->paybatchnum,
+      'amount' => $cust_bill->owed,
+      '_date' => time,
+    };
+    if ($unapplied >= $cust_bill_pay_batch->amount){
+      $unapplied -= $cust_bill_pay_batch->amount;
+      next;
+    }else{
+      $cust_bill_pay_batch->amount(sprintf ( "%.2f", 
+                                   $cust_bill_pay_batch->amount - $unapplied ));
+      $unapplied = 0;
+    }
+    $error = $cust_bill_pay_batch->insert;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      die $error;
+    }
   }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
