@@ -51,7 +51,7 @@ sub reload_dbdef {
   unless ( exists $dbdef_cache{$file} ) {
     warn "[debug]$me loading dbdef for $file\n" if $DEBUG;
     $dbdef_cache{$file} = DBIx::DBSchema->load( $file )
-                            or die "can't load database schema from $file";
+      or die "can't load database schema from $file: $DBIx::DBSchema::errstr";
   } else {
     warn "[debug]$me re-using cached dbdef for $file\n" if $DEBUG;
   }
