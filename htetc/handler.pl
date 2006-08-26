@@ -92,6 +92,7 @@ sub handler
       use vars qw( %session );
       use CGI 2.47 qw(-private_tempfiles);
       #use CGI::Carp qw(fatalsToBrowser);
+      use List::Util qw( max min );
       use Date::Format;
       use Date::Parse;
       use Time::Local;
