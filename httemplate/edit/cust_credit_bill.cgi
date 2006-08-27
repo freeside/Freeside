@@ -21,12 +21,6 @@ Credit #<B><% $crednum %></B>
 <SCRIPT>
 function changed(what) {
   cust_bill = what.options[what.selectedIndex].value;
-% foreach my $cust_bill ( @cust_bill ) {
-%  my $invnum = $cust_bill->invnum;
-%  my $changeto = $cust_bill->owed < $cust_credit->credited
-%                   ? $cust_bill->owed 
-%                   : $cust_credit->credited;
-%
 
 % foreach my $cust_bill ( @cust_bill ) {
 
@@ -44,7 +38,6 @@ function changed(what) {
 
 <BR>Invoice #<SELECT NAME="invnum" SIZE=1 onChange="changed(this)">
 <OPTION VALUE="">
-% foreach my $cust_bill ( @cust_bill ) { 
 
 % foreach my $cust_bill ( @cust_bill ) { 
   <OPTION<% $cust_bill->invnum eq $invnum ? ' SELECTED' : '' %> VALUE="<% $cust_bill->invnum %>"><% $cust_bill->invnum %> - <% time2str("%D",$cust_bill->_date) %> - $<% $cust_bill->owed %>
@@ -96,5 +89,4 @@ my @cust_bill = sort {    $a->_date  <=> $b->_date
                 grep { $_->owed != 0 }
                 qsearch('cust_bill', { 'custnum' => $cust_credit->custnum } );
 </%init>
-
 

@@ -25,9 +25,6 @@ Credit
     <TD ALIGN="right">Amount</TD>
     <TD BGCOLOR="#ffffff">$<INPUT TYPE="text" NAME="amount" VALUE="<% $amount %>" SIZE=8 MAXLENGTH=8></TD>
   </TR>
-%
-%#print qq! <INPUT TYPE="checkbox" NAME="refund" VALUE="$refund">Also post refund!;
-%
 
 %
 %#print qq! <INPUT TYPE="checkbox" NAME="refund" VALUE="$refund">Also post refund!;
@@ -81,4 +78,3 @@ my $otaker = getotaker;
 
 my $p1 = popurl(1);
 </%init>
-
