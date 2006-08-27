@@ -130,7 +130,7 @@ assigned to users and/or groups.
   'List services',
 
   'List rating data',
-
+  'Billing event reports',
   'Financial reports',
 
   'Job queue', # these are not currently agent-virtualized
