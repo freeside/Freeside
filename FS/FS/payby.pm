@@ -1,7 +1,7 @@
 package FS::payby;
 
 use strict;
-use vars qw(%hash @EXPORT_OK);
+use vars qw(%hash %payby2bop);
 use Tie::IxHash;
 
 
@@ -107,10 +107,10 @@ sub payby2longname {
   map { $_ => $hash{$_}->{longname} } $self->payby;
 }
 
-sub payby2bop {
-  { 'CARD' => 'CC'.
-    'CHEK' => 'ECHECK',};
-}
+%payby2bop = (
+  'CARD' => 'CC',
+  'CHEK' => 'ECHECK',
+);
 
 sub cust_payby {
   my $self = shift;

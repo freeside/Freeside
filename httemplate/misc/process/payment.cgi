@@ -82,7 +82,7 @@
 %  die "unknown payby $payby";
 %}
 %
-%my $error = $cust_main->realtime_bop( $FS::payby::payby2bop->{$payby}, $amount,
+%my $error = $cust_main->realtime_bop( $FS::payby::payby2bop{$payby}, $amount,
 %  'quiet'    => 1,
 %  'payinfo'  => $payinfo,
 %  'paydate'  => "$year-$month-01",

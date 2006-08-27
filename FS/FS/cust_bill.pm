@@ -28,7 +28,7 @@ use FS::part_pkg;
 use FS::cust_bill_pay;
 use FS::cust_bill_pay_batch;
 use FS::part_bill_event;
-use FS::payby qw( payby2bop );
+use FS::payby;
 
 @ISA = qw( FS::cust_main_Mixin FS::Record );
 
@@ -1318,7 +1318,7 @@ sub batch_card {
   return '' unless $amount > 0;
   
   if ($options{'realtime'}) {
-    return $cust_main->realtime_bop ( $FS::payby::payby2bop->{$cust_main->payby}, $amount,
+    return $cust_main->realtime_bop ( $FS::payby::payby2bop{$cust_main->payby}, $amount,
       %options,
     );
   }
