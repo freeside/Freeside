@@ -146,8 +146,8 @@ sub check {
     or return "Illegal payby";
   $self->payby($1);
 
-  #$error = FS::payby::payinfo_check($self->payby, \$self->payinfo);
-  #return $error if $error;
+  $error = FS::payby::payinfo_check($self->payby, \$self->payinfo);
+  return $error if $error;
 
   if ( $self->exp eq '' ) {
     return "Expiration date required"
