@@ -315,7 +315,12 @@ install-rt:
 
 clean:
 	rm -rf masondocs
-	cd FS; \
+	rm -rf httemplate/docs/man
+	rm -rf pod2htmi.tmp
+	rm -rf pod2htmd.tmp
+	-cd FS; \
+	make clean
+	-cd fs_selfservice/FS-SelfService; \
 	make clean
 
 #these are probably only useful if you're me...
