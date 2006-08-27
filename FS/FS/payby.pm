@@ -141,6 +141,7 @@ sub payinfo_check{
     or return "Illegal text (payinfo)";
     $$payinforef = $1;
   }
+  '';
 }
 
 =back
