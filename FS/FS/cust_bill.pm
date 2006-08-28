@@ -1327,6 +1327,9 @@ sub batch_card {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
+  $dbh->do("LOCK TABLE pay_batch IN SHARE ROW EXCLUSIVE MODE")
+    or return "Cannot lock pay_batch: " . $dbh->errstr;
+
   my $pay_batch = qsearchs('pay_batch', {'status' => 'O'});
 
   unless ( $pay_batch ) {
