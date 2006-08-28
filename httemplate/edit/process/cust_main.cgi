@@ -126,7 +126,7 @@
 %    my $berror = $new->bill;
 %    $new->apply_payments;
 %    $new->apply_credits;
-%    $berror ||= $new->collect 'realtime' => 1;
+%    $berror ||= $new->collect( 'realtime' => 1 );
 %    warn "Warning, error billing during backend-realtime: $berror" if $berror;
 %
 %  }
