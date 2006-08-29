@@ -1,7 +1,7 @@
 #!/usr/bin/perl -T
 #!/usr/bin/perl -Tw
 #
-# $Id: signup.cgi,v 1.2 2005-03-12 14:35:12 ivan Exp $
+# $Id: signup.cgi,v 1.3 2006-08-29 17:50:06 lawrence Exp $
 
 use strict;
 use vars qw( @payby $cgi $init_data
@@ -176,6 +176,10 @@ if (    ( defined($cgi->param('magic')) && $cgi->param('magic') eq 'process' )
         or $error ||= $init_data->{msgcat}{invalid_card}; #. $self->payinfo;
       cardtype($payinfo) eq $cgi->param('CARD_type')
         or $error ||= $init_data->{msgcat}{not_a}. $cgi->param('CARD_type');
+    }
+
+    if ($init_data->{emailinvoiceonly} && (length $cgi->param('invoicing_list') < 1)) {
+	$error ||= $init_data->{msgcat}{illegal_or_empty_text};
     }
 
     unless ( $error ) {

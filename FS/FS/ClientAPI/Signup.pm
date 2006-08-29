@@ -24,7 +24,6 @@ sub signup_info {
 
   use vars qw($signup_info); #cache for performance;
   $signup_info ||= {
-
     'cust_main_county' =>
       [ map { $_->hashref } qsearch('cust_main_county', {}) ],
 
@@ -65,6 +64,8 @@ sub signup_info {
 
     'svc_acct_pop' => [ map { $_->hashref } qsearch('svc_acct_pop',{} ) ],
 
+    'emailinvoiceonly' => $conf->exists('emailinvoiceonly'),
+
     'security_phrase' => $conf->exists('security_phrase'),
 
     'payby' => [ $conf->config('signup_server-payby') ],
@@ -74,7 +75,7 @@ sub signup_info {
     'ship_enabled' => defined dbdef->table('cust_main')->column('ship_last'),
 
     'msgcat' => { map { $_=>gettext($_) } qw(
-      passwords_dont_match invalid_card unknown_card_type not_a empty_password
+      passwords_dont_match invalid_card unknown_card_type not_a empty_password illegal_or_empty_text
     ) },
 
     'statedefault' => $conf->config('statedefault') || 'CA',

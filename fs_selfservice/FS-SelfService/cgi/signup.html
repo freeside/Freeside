@@ -19,6 +19,15 @@
 <INPUT TYPE="hidden" NAME="action" VALUE="process_signup">
 <INPUT TYPE="hidden" NAME="referral_custnum" VALUE="<%= $referral_custnum %>">
 <INPUT TYPE="hidden" NAME="ss" VALUE="">
+<input type="hidden" name="payby" />
+<%=
+  $OUT = join("\n",map { my $method = $_ ; map { qq|<input type="hidden" name="${method}_$_" />| } qw / payinfo payinfo1 payinfo2 payname paycvv month year type  /  } @payby);
+%>
+
+<%=
+  $OUT = join("\n", map { qq|<input type="hidden" name="$_" />| } qw / promo_code reg_code pkgpart username _password _password2 sec_phrase popnum / );
+%>
+
 Where did you hear about our service? <SELECT NAME="refnum">
 <%=
   $OUT .= '<OPTION VALUE="">' unless $refnum;
@@ -90,16 +99,18 @@ Contact Information
 <TR><TD>
 
   <%=
+    $OUT ='';
+    unless ( $emailinvoiceonly ) { 
     $OUT .= '<INPUT TYPE="checkbox" NAME="invoicing_list_POST" VALUE="POST"';
     my @invoicing_list = split(', ', $invoicing_list );
     $OUT .= ' CHECKED'
       if ! @invoicing_list || grep { $_ eq 'POST' } @invoicing_list;
-    $OUT .= '>';
+    $OUT .= '>   Postal mail invoice'; } 
   %>
 
-  Postal mail invoice
+
 </TD></TR>
-<TR><TD>Email invoice <INPUT TYPE="text" NAME="invoicing_list" VALUE="<%= join(', ', grep { $_ ne 'POST' } split(', ', $invoicing_list ) ) %>">
+<TR><TD><%= $OUT = ( $emailinvoiceonly ? q|<font color="#ff0000">*</font>| : q|| ) %> Email invoice <INPUT TYPE="text" NAME="invoicing_list" VALUE="<%= join(', ', grep { $_ ne 'POST' } split(', ', $invoicing_list ) ) %>">
 </TD></TR>
 <%= scalar(@payby) > 1 ? '<TR><TD>Billing type</TD></TR>' : '' %>
 </TABLE>
@@ -126,7 +137,7 @@ Contact Information
       'DCRD' => qq!Credit card<BR><font color="#ff0000">*</font>$cardselect<INPUT TYPE="text" NAME="DCRD_payinfo" VALUE="" MAXLENGTH=19><BR><font color="#ff0000">*</font>Exp !. expselect("DCRD"). qq!<BR><font color="#ff0000">*</font>Name on card<BR><INPUT TYPE="text" NAME="DCRD_payname" VALUE="">!,
       'CHEK' => qq!Electronic check<BR>${r}Account number <INPUT TYPE="text" NAME="CHEK_payinfo1" VALUE="" MAXLENGTH=10><BR>${r}ABA/Routing code <INPUT TYPE="text" NAME="CHEK_payinfo2" VALUE="" SIZE=10 MAXLENGTH=9><INPUT TYPE="hidden" NAME="CHEK_month" VALUE="12"><INPUT TYPE="hidden" NAME="CHEK_year" VALUE="2037"><BR>${r}Bank name <INPUT TYPE="text" NAME="CHEK_payname" VALUE="">!,
       'DCHK' => qq!Electronic check<BR>${r}Account number <INPUT TYPE="text" NAME="DCHK_payinfo1" VALUE="" MAXLENGTH=10><BR>${r}ABA/Routing code <INPUT TYPE="text" NAME="DCHK_payinfo2" VALUE="" SIZE=10 MAXLENGTH=9><INPUT TYPE="hidden" NAME="DCHK_month" VALUE="12"><INPUT TYPE="hidden" NAME="DCHK_year" VALUE="2037"><BR>${r}Bank name <INPUT TYPE="text" NAME="DCHK_payname" VALUE="">!,
-      'LECB' => qq!Phone bill billing<BR>${r}Phone number <INPUT TYPE="text" BANE="LECB_payinfo" VALUE="" MAXLENGTH=15 SIZE=16><INPUT TYPE="hidden" NAME="LECB_month" VALUE="12"><INPUT TYPE="hidden" NAME="LECB_year" VALUE="2037"><INPUT TYPE="hidden" NAME="LECB_payname" VALUE="">!,
+      'LECB' => qq!Phone bill billing<BR>${r}Phone number <INPUT TYPE="text" NAME="LECB_payinfo" VALUE="" MAXLENGTH=15 SIZE=16><INPUT TYPE="hidden" NAME="LECB_month" VALUE="12"><INPUT TYPE="hidden" NAME="LECB_year" VALUE="2037"><INPUT TYPE="hidden" NAME="LECB_payname" VALUE="">!,
       'BILL' => qq!Billing<BR>P.O. <INPUT TYPE="text" NAME="BILL_payinfo" VALUE=""><BR><font color="#ff0000">*</font>Exp !. expselect("BILL", "12-2037"). qq!<BR><font color="#ff0000">*</font>Attention<BR><INPUT TYPE="text" NAME="BILL_payname" VALUE="Accounts Payable">!,
       'COMP' => qq!Complimentary<BR><font color="#ff0000">*</font>Approved by<INPUT TYPE="text" NAME="COMP_payinfo" VALUE=""><BR><font color="#ff0000">*</font>Exp !. expselect("COMP"),
       'PREPAY' => qq!Prepaid card<BR><font color="#ff0000">*</font><INPUT TYPE="text" NAME="PREPAY_payinfo" VALUE="" MAXLENGTH=80>!,
@@ -155,26 +166,40 @@ Contact Information
         $paybychecked{$payby} .= qq!<BR>CVV2&nbsp;(<A HREF="javascript:myopen('cvv2.html','cvv2','toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=no,resizable=yes,copyhistory=no,width=480,height=288')">help</A>)&nbsp;<INPUT TYPE="text" NAME=${payby}_paycvv VALUE="$paycvv" SIZE=4 MAXLENGTH=4>!;
       }
     }
+use Tie::IxHash;
+use HTML::Widgets::SelectLayers;
 
-    for (@payby) {
-      if ( scalar(@payby) == 1) {
-        $OUT .= '<TD VALIGN=TOP>'.
-                qq!<INPUT TYPE="hidden" NAME="payby" VALUE="$_">!.
-                "$paybychecked{$_}</TD>";
-      } else {
-        $OUT .= qq!<TD VALIGN=TOP><INPUT TYPE="radio" NAME="payby" VALUE="$_"!;
-        if ($payby eq $_) {
-          $OUT .= qq! CHECKED> $paybychecked{$_}</TD>!;
-        } else {
-          $OUT .= qq!> $payby{$_}</TD>!;
-        }
+  my %payby_index = ( 'CARD'   => qq/Credit Card/,
+                      'DCRD'   => qq/Credit Card/,
+                      'CHEK'   => qq/Check/,
+                      'DCHK'   => qq/Check/,
+                      'LECB'   => qq/Phone Bill Billing/,
+                      'BILL'   => qq/Billing/,
+                      'COMP'   => qq/Complimentary/,
+                      'PREPAY' => qq/Prepaid Card/,
+                    );
+  
 
-      }
-    }
+tie my %options, 'Tie::IxHash', ();
+
+foreach my $payby_option ( @payby ) {
+  $options{$payby_option} = $payby_index{$payby_option};
+}
+
+HTML::Widgets::SelectLayers->new(
+  options => \%options,
+  selected_layer => 'CARD',
+  form_name => 'dummy',
+  html_between => '</td></tr></table>',
+  form_action => 'dummy.cgi',
+  layer_callback => sub { my $layer = shift; return $paybychecked{$layer}; },
+)->html;
+
+
   %>
 
 </TR></TABLE><font color="#ff0000">*</font> required fields for each billing type
-<BR><BR>First package
+<FORM name="signup_form" action="<%= $self_url %>" METHOD="POST" onsubmit="return fixup_form();"><BR><BR>First package
 <INPUT TYPE="hidden" NAME="promo_code" VALUE="<%= $promo_code %>">
 <INPUT TYPE="hidden" NAME="reg_code" VALUE="<%= $reg_code %>">
 <TABLE BGCOLOR="#c0c0c0" BORDER=0 CELLSPACING=0 WIDTH="100%">
@@ -233,4 +258,63 @@ ENDOUT
 %>
 </TABLE>
 <BR><BR><INPUT TYPE="submit" NAME="signup" VALUE="Signup">
+<script language="JavaScript">
+
+function fixup_form() {
+    
+    // copy payment method data up to OneTrueForm
+    
+    var payment_method_elements = new Array( 'payinfo', 'payinfo1', 'payinfo2', 'payname', 'paycvv' , 'month', 'year','type' );
+    var payment_method_form_name = document.OneTrueForm.select.options[document.OneTrueForm.select.selectedIndex].value;
+    document.OneTrueForm.elements['payby'].value = payment_method_form_name;
+    var payment_method_form = document.forms[payment_method_form_name];
+
+    for ( ii = 0 ; ii < payment_method_elements.length ; ii++ ) {
+	var true_element_name = payment_method_form_name + '_' + payment_method_elements[ii];
+	copyelement ( payment_method_form.elements[true_element_name],
+		      document.OneTrueForm.elements[true_element_name] );
+    }
+    
+    // Copy signup details to OneTrueForm
+    
+    var signup_elements = new Array ( 'promo_code', 'reg_code',
+				      'pkgpart', 'username',
+				      '_password', '_password2',
+				      'sec_phrase', 'popnum' );
+
+    for ( ii = 0 ; ii < signup_elements.length ; ii ++ ) {
+	copyelement ( document.signup_form.elements[signup_elements[ii]],
+		      document.OneTrueForm.elements[signup_elements[ii]]);
+    }
+
+    document.OneTrueForm.submit();
+    return false;
+}
+
+function copyelement(from, to) {
+//    alert ( from + ' ' + to );
+    
+    if ( from == undefined ) {
+	to.value = '';
+    } else { 
+	if ( from.type == 'select-one' ) {
+	    to.value = from.options[from.selectedIndex].value;
+	} else if ( from.type == 'checkbox' ) {
+	    if ( from.checked ) {
+		to.value = from.value;
+	    } else {
+		to.value = '';
+	    }
+	} else {
+	    if ( from.value == undefined ) {
+		to.value = '';
+	    } else {
+		to.value = from.value;
+	    }
+	}
+//	alert(from + " (" + from.type + "): " + to.name + " => " + to.value);
+    }
+}
+
+</script>
 </FORM></BODY></HTML>
