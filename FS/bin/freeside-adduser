@@ -1,42 +1,33 @@
 #!/usr/bin/perl -w
 
 use strict;
-use vars qw($opt_s $opt_h $opt_b $opt_c $opt_g $opt_n);
+use vars qw($opt_s $opt_g $opt_n);
 use Fcntl qw(:flock);
 use Getopt::Std;
 
 my $FREESIDE_CONF = "/usr/local/etc/freeside";
 
-getopts("s:bch:g:n");
-die &usage if $opt_c && ! $opt_h;
+getopts("s:g:n");
 my $user = shift or die &usage;
 
-#if ( -e "$FREESIDE_CONF/mapsecrets" ) {
-#  open(MAPSECRETS,"<$FREESIDE_CONF/mapsecrets")
-#    or die "can't open $FREESIDE_CONF/mapsecrets: $!";
-#  while (<MAPSECRETS>) {
-#    /^(\S+) / or die "unparsable line in mapsecrets: $_";
-#    die "user $user already exists\n" if $user eq $1;
-#  }
-#  close MAPSECRETS;
-#}
-
-if ( $opt_h ) {
-  my @args = ( 'htpasswd' );
-  push @args, '-b' if $opt_b;
-  push @args, '-c' if $opt_c;
-  push @args, $opt_h, $user;
-  push @args, shift if $opt_b;
-  #warn join(', ', @args)."\n";
-  system(@args) == 0 or die "htpasswd failed: $?";
-}
-
 if ( $opt_s ) {
+
+  #if ( -e "$FREESIDE_CONF/mapsecrets" ) {
+  #  open(MAPSECRETS,"<$FREESIDE_CONF/mapsecrets")
+  #    or die "can't open $FREESIDE_CONF/mapsecrets: $!";
+  #  while (<MAPSECRETS>) {
+  #    /^(\S+) / or die "unparsable line in mapsecrets: $_";
+  #    die "user $user already exists\n" if $user eq $1;
+  #  }
+  #  close MAPSECRETS;
+  #}
+
   open(MAPSECRETS,">>$FREESIDE_CONF/mapsecrets")
     and flock(MAPSECRETS,LOCK_EX)
       or die "can't open $FREESIDE_CONF/mapsecrets: $!";
   print MAPSECRETS "$user $opt_s\n";
   close MAPSECRETS or die "can't close $FREESIDE_CONF/mapsecrets: $!";
+
 }
 
 ###
@@ -77,7 +68,7 @@ if ( $opt_g ) {
 ###
 
 sub usage {
-  die "Usage:\n\n  freeside-adduser [ -h htpasswd_file [ -c ] [ -b ] ] [ -g groupnum ] username [ password ]"
+  die "Usage:\n\n  freeside-adduser [ -n ] [ -s ] [ -g groupnum ] username [ password ]"
 }
 
 =head1 NAME
@@ -86,18 +77,15 @@ freeside-adduser - Command line interface to add (freeside) users.
 
 =head1 SYNOPSIS
 
-  freeside-adduser [ -n ] [ -h htpasswd_file [ -c ] [ -b ] ] [ -g groupnum ] username [ password ]
+  freeside-adduser [ -n ] [ -s ] [ -g groupnum ] username [ password ]
 
 =head1 DESCRIPTION
 
 Adds a user to the Freeside billing system.  This is for adding users (internal
 sales/tech folks) to the web interface, not for adding customer accounts.
 
-  -h: Also call htpasswd for this user with the given filename
-
-  -c: Passed to htpasswd(1)
-
-  -b: same as htpasswd(1), probably insecure, not recommended
+This functionality is now available in the web interface as well, under
+B<Configuration | Employees | View/Edit employees>.
 
   -g: initial groupnum
 
@@ -107,9 +95,14 @@ sales/tech folks) to the web interface, not for adding customer accounts.
 
   -n: no ACL added, for bootstrapping
 
+=head1 NOTE
+
+No explicit htpasswd options are available in 1.7 - passwordsa are now
+maintained automatically.
+
 =head1 SEE ALSO
 
-L<htpasswd>(1), base Freeside documentation
+Base Freeside documentation
 
 =cut
 
