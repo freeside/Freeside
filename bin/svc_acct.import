@@ -1,5 +1,4 @@
 #!/usr/bin/perl -Tw
-# $Id: svc_acct.import,v 1.17 2001-08-19 10:25:44 ivan Exp $
 
 use strict;
 use vars qw(%part_svc);
