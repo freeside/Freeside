@@ -1,7 +1,5 @@
 #!/usr/bin/perl -T
 #!/usr/bin/perl -Tw
-#
-# $Id: signup.cgi,v 1.3 2006-08-29 17:50:06 lawrence Exp $
 
 use strict;
 use vars qw( @payby $cgi $init_data
