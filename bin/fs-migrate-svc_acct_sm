@@ -1,7 +1,5 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: fs-migrate-svc_acct_sm,v 1.4 2002-06-21 09:13:16 ivan Exp $
-#
 # jeff@cmh.net 01-Jul-20
 
 #to delay loading dbdef until we're ready
