@@ -1,7 +1,5 @@
 #!/usr/bin/perl -Tw
 #
-# $Id: megapop.pl,v 1.1 1999-04-19 10:32:44 ivan Exp $
-#
 # this will break when megapop changes the URL or format of their listing page.
 # that's stupid.  perhaps they can provide a machine-readable listing?
 

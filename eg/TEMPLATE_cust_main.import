@@ -1,8 +1,6 @@
 #!/usr/bin/perl -w
 #
 # Template for importing legacy customer data
-#
-# $Id: TEMPLATE_cust_main.import,v 1.4 2001-08-21 02:44:47 ivan Exp $
 
 use strict;
 use Date::Parse;
