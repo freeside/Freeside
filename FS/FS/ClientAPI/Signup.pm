@@ -83,8 +83,24 @@ sub signup_info {
     'countrydefault' => $conf->config('countrydefault') || 'US',
 
     'refnum' => $conf->config('signup_server-default_refnum'),
-
   };
+
+
+
+  if ($conf->exists('signup_server-classnum2') || $conf->exists('signup_server-classnum3')) {
+      $signup_info->{optional_packages} = [];
+
+      if (my $classnum = $conf->config('signup_server-classnum2')) {
+	  my @pkgs = map { $_->hashref } FS::Record::qsearch( 'part_pkg', { classnum => $classnum } );
+	  push @{$signup_info->{optional_packages}}, \@pkgs;
+      }
+
+      if (my $classnum = $conf->config('signup_server-classnum3')) {
+	  my @pkgs = map { $_->hashref } FS::Record::qsearch( 'part_pkg', { classnum => $classnum } );
+	  push @{$signup_info->{optional_packages}}, \@pkgs;
+      }
+
+  }
 
   my $agentnum = $conf->config('signup_server-default_agentnum');
 

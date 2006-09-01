@@ -257,6 +257,29 @@ ENDOUT
   }
 %>
 </TABLE>
+
+<%= 
+if ( @optional_packages ) { 
+  my @html;
+  foreach my $ii ( 0 .. $#optional_packages) {
+  my $friendly_index = $ii + 1; 
+  if ($optional_packages[$ii]) {
+    push @html, qq|Optional Package # $friendly_index <br />|,'<table bgcolor="#c0c0c0"><tr><td>';
+
+    push @html, qq|<select name="optional_package${ii}">|;
+    push @html, qq|<option value="none"></option>|;
+    push @html, map { qq|<option value="$_->{pkgpart}">$_->{pkg}</option>| } @{$optional_packages[$ii]};
+    push @html, q|</select>|;
+    
+    push @html, '</td></tr></table>';
+    }
+    $OUT = join("\n", @html);
+  }  
+} else {
+$OUT = ''
+}
+%>
+
 <BR><BR><INPUT TYPE="submit" NAME="signup" VALUE="Signup">
 <script language="JavaScript">
 

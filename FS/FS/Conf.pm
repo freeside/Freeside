@@ -1201,6 +1201,26 @@ httemplate/docs/config.html
     'description' => 'Run billing for signup server signups immediately, and do not provision accounts which subsequently have a balance.',
     'type'        => 'checkbox',
   },
+  {
+      key         => 'signup_server-classnum2',
+      section     => '',
+      description => 'Package Class for first optional purchase',
+      type        => 'select-sub',
+      options_sub => sub { my @o = map { $_->{classnum} => $_->{classname} }  map { $_->hashref } FS::Record::qsearch('pkg_class',{});
+			   } ,
+      option_sub => sub { return map { $_->hashref->{classname}}  FS::Record::qsearchs('pkg_class', { classnum => shift } );  }, 
+
+  },
+
+  {
+      key         => 'signup_server-classnum3',
+      section     => '',
+      description => 'Package Class for second optional purchase',
+      type        => 'select-sub',
+      options_sub => sub { my @o = map { $_->{classnum} => $_->{classname} }  map { $_->hashref } FS::Record::qsearch('pkg_class',{});
+			   } ,
+      option_sub => sub { return map { $_->hashref->{classname}}  FS::Record::qsearchs('pkg_class', { classnum => shift } );  }, 
+  },
 
   {
     'key'         => 'backend-realtime',
@@ -1751,6 +1771,7 @@ httemplate/docs/config.html
     'description' => 'Customer number specifying the source data to copy into skeleton tables for new customers.',
     'type'        => 'text',
   },
+
 
 );
 
