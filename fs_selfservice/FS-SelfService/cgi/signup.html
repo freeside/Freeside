@@ -112,10 +112,10 @@ Contact Information
 </TD></TR>
 <TR><TD><%= $OUT = ( $emailinvoiceonly ? q|<font color="#ff0000">*</font>| : q|| ) %> Email invoice <INPUT TYPE="text" NAME="invoicing_list" VALUE="<%= join(', ', grep { $_ ne 'POST' } split(', ', $invoicing_list ) ) %>">
 </TD></TR>
-<%= scalar(@payby) > 1 ? '<TR><TD>Billing type</TD></TR>' : '' %>
-</TABLE>
+<%= ( scalar(@payby) > 1 or 1 ) ? '<TR><TD>Billing type ' : '' %>
+<!--</TABLE>
 <TABLE BGCOLOR="#c0c0c0" BORDER=1 WIDTH="100%">
-<TR>
+<TR>-->
 
   <%=
 
@@ -145,13 +145,13 @@ Contact Information
 
     if ( $cvv_enabled ) {
       foreach my $payby ( grep { exists $payby{$_} } qw(CARD DCRD) ) { #1.4/1.5
-        $payby{$payby} .= qq!<BR>CVV2&nbsp;(<A HREF="javascript:myopen('cvv2.html','cvv2','toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=no,resizable=yes,copyhistory=no,width=480,height=288')">help</A>)&nbsp;<INPUT TYPE="text" NAME=${payby}_paycvv VALUE="" SIZE=4 MAXLENGTH=4>!;
+        $payby{$payby} .= qq!<TR><TD ALIGN="right">CVV2&nbsp;(<A HREF="javascript:myopen('cvv2.html','cvv2','toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=no,resizable=yes,copyhistory=no,width=480,height=288')">help</A>)</TD><TD><INPUT TYPE="text" NAME=${payby}_paycvv VALUE="" SIZE=4 MAXLENGTH=4></TD></TR>!;
       }
     }
 
     my( $account, $aba ) = split('@', $payinfo);
     my %paybychecked = (
-      'CARD' => qq!Credit card<BR><font color="#ff0000">*</font>$cardselect<INPUT TYPE="text" NAME="CARD_payinfo" VALUE="$payinfo" MAXLENGTH=19><BR><font color="#ff0000">*</font>Exp !. expselect("CARD", $paydate). qq!<BR><font color="#ff0000">*</font>Name on card<BR><INPUT TYPE="text" NAME="CARD_payname" VALUE="$payname">!,
+      'CARD' => qq!<TABLE BGCOLOR="#c0c0c0" BORDER=0 CELLSPACING=0 WIDTH="100%"><TR><TD ALIGN="right"><font color="#ff0000">*</font> Card type</TD><TD>$cardselect</TD></TR><TR><TD ALIGN="right"><font color="#ff0000">*</font> Card number</TD><TD><INPUT TYPE="text" NAME="CARD_payinfo" VALUE="$payinfo" MAXLENGTH=19></TD></TR><TR><TD ALIGN="right"><font color="#ff0000">*</font> Expration</TD><TD>!. expselect("CARD", $paydate). qq!</TD></TR><TR><TD ALIGN="right"><font color="#ff0000">*</font> Name on card</TD><TD><INPUT TYPE="text" NAME="CARD_payname" VALUE="$payname"></TD></TR>!,
       'DCRD' => qq!Credit card<BR><font color="#ff0000">*</font>$cardselect<INPUT TYPE="text" NAME="DCRD_payinfo" VALUE="$payinfo" MAXLENGTH=19><BR><font color="#ff0000">*</font>Exp !. expselect("DCRD", $paydate). qq!<BR><font color="#ff0000">*</font>Name on card<BR><INPUT TYPE="text" NAME="DCRD_payname" VALUE="$payname">!,
       'CHEK' => qq!Electronic check<BR>${r}Account number <INPUT TYPE="text" NAME="CHEK_payinfo1" VALUE="$account" MAXLENGTH=10><BR>${r}ABA/Routing code <INPUT TYPE="text" NAME="CHEK_payinfo2" VALUE="$aba" SIZE=10 MAXLENGTH=9><INPUT TYPE="hidden" NAME="CHEK_month" VALUE="12"><INPUT TYPE="hidden" NAME="CHEK_year" VALUE="2037"><BR>${r}Bank name <INPUT TYPE="text" NAME="CHEK_payname" VALUE="$payname">!,
       'DCHK' => qq!Electronic check<BR>${r}Account number <INPUT TYPE="text" NAME="DCHK_payinfo1" VALUE="$account" MAXLENGTH=10><BR>${r}ABA/Routing code <INPUT TYPE="text" NAME="DCHK_payinfo2" VALUE="$aba" SIZE=10 MAXLENGTH=9><INPUT TYPE="hidden" NAME="DCHK_month" VALUE="12"><INPUT TYPE="hidden" NAME="DCHK_year" VALUE="2037"><BR>${r}Bank name <INPUT TYPE="text" NAME="DCHK_payname" VALUE="$payname">!,
@@ -163,7 +163,7 @@ Contact Information
 
     if ( $cvv_enabled ) {
       foreach my $payby ( grep { exists $payby{$_} } qw(CARD DCRD) ) { #1.4/1.5
-        $paybychecked{$payby} .= qq!<BR>CVV2&nbsp;(<A HREF="javascript:myopen('cvv2.html','cvv2','toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=no,resizable=yes,copyhistory=no,width=480,height=288')">help</A>)&nbsp;<INPUT TYPE="text" NAME=${payby}_paycvv VALUE="$paycvv" SIZE=4 MAXLENGTH=4>!;
+        $paybychecked{$payby} .= qq!<TR><TD ALIGN="right">CVV2&nbsp;(<A HREF="javascript:myopen('cvv2.html','cvv2','toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=no,resizable=yes,copyhistory=no,width=480,height=288')">help</A>)</TD><TD><INPUT TYPE="text" NAME=${payby}_paycvv VALUE="$paycvv" SIZE=4 MAXLENGTH=4></TD></TR>!;
       }
     }
 use Tie::IxHash;
@@ -192,13 +192,13 @@ HTML::Widgets::SelectLayers->new(
   form_name => 'dummy',
   html_between => '</td></tr></table>',
   form_action => 'dummy.cgi',
-  layer_callback => sub { my $layer = shift; return $paybychecked{$layer}; },
+  layer_callback => sub { my $layer = shift; return $paybychecked{$layer}. '</TABLE>'; },
 )->html;
 
 
   %>
 
-</TR></TABLE><font color="#ff0000">*</font> required fields for each billing type
+</TR></TABLE><font color="#ff0000">*</font> required fields
 <FORM name="signup_form" action="<%= $self_url %>" METHOD="POST" onsubmit="return fixup_form();"><BR><BR>First package
 <INPUT TYPE="hidden" NAME="promo_code" VALUE="<%= $promo_code %>">
 <INPUT TYPE="hidden" NAME="reg_code" VALUE="<%= $reg_code %>">
@@ -264,7 +264,7 @@ if ( @optional_packages ) {
   foreach my $ii ( 0 .. $#optional_packages) {
   my $friendly_index = $ii + 1; 
   if ($optional_packages[$ii]) {
-    push @html, qq|Optional Package # $friendly_index <br />|,'<table bgcolor="#c0c0c0"><tr><td>';
+    push @html, qq|<BR>Optional Package #$friendly_index <br />|,'<table bgcolor="#c0c0c0"><tr><td>';
 
     push @html, qq|<select name="optional_package${ii}">|;
     push @html, qq|<option value="none"></option>|;
@@ -280,7 +280,7 @@ $OUT = ''
 }
 %>
 
-<BR><BR><INPUT TYPE="submit" NAME="signup" VALUE="Signup">
+<BR><INPUT TYPE="submit" NAME="signup" VALUE="Signup">
 <script language="JavaScript">
 
 function fixup_form() {
