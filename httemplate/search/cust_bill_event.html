@@ -1,16 +1,15 @@
 <% include(
       '/elements/header.html',
       ( $cgi->param('failed') ? 'Failed invoice events' : 'Invoice events' ),
-      include('/elements/menubar.html',
-                'Main menu' => $p, # popurl(2),
-             ),
-
-    )
+   )
 %>
 
     <FORM ACTION="cust_bill_event.cgi" METHOD="GET">
     <INPUT TYPE="hidden" NAME="failed" VALUE="<% $cgi->param('failed') %>">
     <TABLE>
+
+      <% include( '/elements/tr-select-agent.html' ) %>
+
       <!--<TR>
         <TD ALIGN="right">Customer type</TD>
         <TD><SELECT MULTIPLE NAME="perhaps_payby">
@@ -30,8 +29,8 @@
         <TD>
           <SELECT NAME="eventpart">
             <OPTION SELECTED VALUE=""><% $cgi->param('failed') ? '(all failed events)' : '(all events)' %>
-% foreach my $part_bill_event ( qsearch( 'part_bill_event', {} ) ) { 
-% } 
+% #foreach my $part_bill_event ( qsearch( 'part_bill_event', {} ) ) { 
+% #} 
 
           </SELECT>
         </TD>
@@ -55,5 +54,5 @@
     </TABLE>
     <BR><INPUT TYPE="submit" VALUE="Get Report">
     </FORM>
-  </BODY>
-</HTML>
+
+<% include('/elements/footer.html') %>
