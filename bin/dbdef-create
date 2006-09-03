@@ -9,6 +9,7 @@ use FS::Schema;
 my $user = shift or die &usage;
 
 $FS::Schema::setup_hack = 1;
+$FS::CurrentUser::upgrade_hack = 1;
 my($dbh)=adminsuidsetup $user;
 
 #needs to match FS::Record
