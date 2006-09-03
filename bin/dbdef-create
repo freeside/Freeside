@@ -4,9 +4,11 @@ use strict;
 use DBI;
 use DBIx::DBSchema 0.26;
 use FS::UID qw(adminsuidsetup datasrc driver_name);
+use FS::Schema;
 
 my $user = shift or die &usage;
 
+$FS::Schema::setup_hack = 1;
 my($dbh)=adminsuidsetup $user;
 
 #needs to match FS::Record
