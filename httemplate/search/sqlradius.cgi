@@ -93,11 +93,11 @@
 my $beginning = '';
 my $ending = '';
 if ( $cgi->param('beginning')
-     && $cgi->param('beginning') =~ /^([ 0-9\-\/]{0,10})$/ ) {
+     && $cgi->param('beginning') =~ /^([ 0-9\-\/\:\w]{0,54})$/ ) {
   $beginning = str2time($1);
 }
 if ( $cgi->param('ending')
-     && $cgi->param('ending') =~ /^([ 0-9\-\/]{0,10})$/ ) {
+     && $cgi->param('ending') =~ /^([ 0-9\-\/\:\w]{0,54})$/ ) {
   $ending = str2time($1) + 86399;
 }
 if ( $cgi->param('begin') && $cgi->param('begin') =~ /^(\d+)$/ ) {
