@@ -65,13 +65,14 @@
 
       <TR>
 %     foreach my $field ( keys %efields ) { 
+%       my $html = &{ $efields{$field}->{fmt} }( $session->{$field},
+%                                                $session,
+%                                                $part_export,
+%                                              );
+%       my $class = ( $html =~ /<TABLE/ ? 'inv' : 'grid' );
 
-        <TD CLASS="grid" BGCOLOR="<% $bgcolor %>" ALIGN="<% $efields{$field}->{align} %>">
-          <% &{ $efields{$field}->{fmt} }( $session->{$field},
-                                           $session,
-                                           $part_export,
-                                         )
-          %>
+        <TD CLASS="<%$class%>" BGCOLOR="<% $bgcolor %>" ALIGN="<% $efields{$field}->{align} %>">
+          <% $html %>
         </TD>
 %     } 
   </TR>
