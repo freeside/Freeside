@@ -129,7 +129,7 @@ assigned to users and/or groups.
   'List packages',
   'List services',
 
-  'List rating data',
+  'List rating data',  # 'Usage reports',
   'Billing event reports',
   'Financial reports',
 

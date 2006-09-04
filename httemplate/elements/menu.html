@@ -143,6 +143,7 @@ $report_packages{'Customer packages with unconfigured services'} =  [ $fsurl.'se
 $report_packages{'Advanced package reports'} =  [ $fsurl.'search/report_cust_pkg.html', 'by agent, date range, status, package definition' ];
 
 tie my %report_rating, 'Tie::IxHash',
+  'RADIUS sessions' => [ $fsurl.'search/sqlradius.html', '' ],
   'Call Detail Records (CDRs)' => [ $fsurl.'search/report_cdr.html', '' ],
 ;
 
@@ -170,7 +171,7 @@ $report_menu{'Packages'}    =  [ \%report_packages,  'Package reports'   ]
   if $curuser->access_right('List packages');
 $report_menu{'Services'}    =  [ \%report_services,  'Services reports'  ]
   if $curuser->access_right('List services');
-$report_menu{'Rating data'} =  [ \%report_rating,    'Rating reports'  ]
+$report_menu{'Usage'} =  [ \%report_rating,    'Usage reports'  ]
   if $curuser->access_right('List rating data');
 $report_menu{'Billing events'} =  [ \%report_bill_event, 'Billing events' ]
   if $curuser->access_right('Billing event reports');
