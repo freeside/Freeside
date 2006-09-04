@@ -57,14 +57,14 @@
 %       @{ $part_export->usage_sessions(
 %            $beginning, $ending, $cgi_svc_acct, $ip, $prefix, ) }
 %   ) {
+%     if ( $bgcolor eq $bgcolor1 ) {
+%       $bgcolor = $bgcolor2;
+%     } else {
+%       $bgcolor = $bgcolor1;
+%     }
 
       <TR>
 %     foreach my $field ( keys %efields ) { 
-%       if ( $bgcolor eq $bgcolor1 ) {
-%         $bgcolor = $bgcolor2;
-%       } else {
-%         $bgcolor = $bgcolor1;
-%       }
 
         <TD CLASS="grid" BGCOLOR="<% $bgcolor %>" ALIGN="<% $efields{$field}->{align} %>">
           <% &{ $efields{$field}->{fmt} }( $session->{$field},
