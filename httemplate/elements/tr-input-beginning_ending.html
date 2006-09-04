@@ -6,26 +6,28 @@
 
 <TR>
   <TD ALIGN="right">From: </TD>
-  <TD><INPUT TYPE="text" NAME="beginning" ID="beginning_text" VALUE="" SIZE=11 MAXLENGTH=10> <IMG SRC="../images/calendar.png" ID="beginning_button" STYLE="cursor: pointer" TITLE="Select date"><BR><i>m/d/y</i></TD>
+  <TD><INPUT TYPE="text" NAME="beginning" ID="beginning_text" VALUE="" SIZE=<%$size%> MAXLENGTH=<%$maxlength%>> <IMG SRC="../images/calendar.png" ID="beginning_button" STYLE="cursor: pointer" TITLE="Select date"><BR><i>m/d/y<% $time_hint %></i></TD>
 <SCRIPT TYPE="text/javascript">
   Calendar.setup({
     inputField: "beginning_text",
-    ifFormat:   "%m/%d/%Y",
+    ifFormat:   "%m/%d/%Y<% $time_format %>",
     button:     "beginning_button",
     align:      "BR"
+    <% $input_time %>
   });
 </SCRIPT>
 </TR>
 
 <TR>
   <TD ALIGN="right">To: </TD>
-  <TD><INPUT TYPE="text" NAME="ending" ID="ending_text" VALUE="" SIZE=11 MAXLENGTH=10> <IMG SRC="../images/calendar.png" ID="ending_button" STYLE="cursor: pointer" TITLE="Select date"><BR><i>m/d/y</i></TD>
+  <TD><INPUT TYPE="text" NAME="ending" ID="ending_text" VALUE="" SIZE=<%$size%> MAXLENGTH=<%$maxlength%>> <IMG SRC="../images/calendar.png" ID="ending_button" STYLE="cursor: pointer" TITLE="Select date"><BR><i>m/d/y<% $time_hint %></i></TD>
 <SCRIPT TYPE="text/javascript">
   Calendar.setup({
     inputField: "ending_text",
-    ifFormat:   "%m/%d/%Y",
+    ifFormat:   "%m/%d/%Y<% $time_format %>",
     button:     "ending_button",
     align:      "BR"
+    <% $input_time %>
   });
 </SCRIPT>
 </TR>
@@ -37,3 +39,15 @@
   </TD>
 </TR>
 
+<%init>
+my %opt = @_;
+my( $input_time, $time_format, $time_hint ) = ( '', '', '' );
+my( $size, $maxlength ) = ( 11, 10 );
+if ( $opt{'input_time'} ) {
+  $input_time  = ', showsTime: true, timeFormat: "12"'; # http://www.dynarch.com/demos/jscalendar/doc/html/reference.html#node_sec_2.3
+  $time_format = ' %k:%M:%S'; # http://www.dynarch.com/demos/jscalendar/doc/html/reference.html#node_sec_5.3.5
+  $time_hint   = ' h:m:s';
+  $size = 21;
+  $maxlength = 27;
+}
+</%init>
