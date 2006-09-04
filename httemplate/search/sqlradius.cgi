@@ -222,12 +222,12 @@ my $duration_format = sub {
   my $hour = int($seconds/3600);
   my $min = int( ($seconds%3600) / 60 );
   my $sec = $seconds%60;
-  '<TABLE BORDER=0 CELLSPACING=0 CELLPADDING=0>'.
-  '<TR><TD ALIGN="right">'.
+  '<TABLE CLASS="inv" BORDER=0 CELLSPACING=0 CELLPADDING=0>'.
+  '<TR><TD CLASS="inv" ALIGN="right">'.
      ( $hour ? "<B>$hour</B>h" : '&nbsp;' ).
-   '</TD><TD ALIGN="right">'.
+   '</TD><TD CLASS="inv" ALIGN="right">'.
      ( ( $hour || $min ) ? "<B>$min</B>m" : '&nbsp;' ).
-   '</TD><TD ALIGN="right">'.
+   '</TD><TD CLASS="inv" ALIGN="right">'.
      "<B>$sec</B>s".
   '</TD></TR></TABLE>';
 };
