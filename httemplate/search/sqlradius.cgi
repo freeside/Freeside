@@ -98,7 +98,7 @@ if ( $cgi->param('beginning')
 }
 if ( $cgi->param('ending')
      && $cgi->param('ending') =~ /^([ 0-9\-\/\:\w]{0,54})$/ ) {
-  $ending = str2time($1) + 86399;
+  $ending = str2time($1); # + 86399;
 }
 if ( $cgi->param('begin') && $cgi->param('begin') =~ /^(\d+)$/ ) {
   $beginning = $1;
