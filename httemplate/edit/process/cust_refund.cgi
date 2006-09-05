@@ -5,7 +5,7 @@
 %
 %my $error = '';
 %if ( $cgi->param('payby') =~ /^(CARD|CHEK)$/ ) { 
-%  my $bop = FS::payby::payby2bop->{$1};
+%  my $bop = $FS::payby::payby2bop{$1};
 %  $cgi->param('refund') =~ /^(\d*)(\.\d{2})?$/
 %    or die "illegal refund amount ". $cgi->param('refund');
 %  my $refund = "$1$2";
