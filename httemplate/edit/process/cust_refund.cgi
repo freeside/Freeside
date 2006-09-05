@@ -1,5 +1,3 @@
-			%
-%
 %$cgi->param('custnum') =~ /^(\d*)$/ or die "Illegal custnum!";
 %my $custnum = $1;
 %my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
@@ -7,7 +5,7 @@
 %
 %my $error = '';
 %if ( $cgi->param('payby') =~ /^(CARD|CHEK)$/ ) { 
-%  my $bop = FS::payby::$payby2bop{$1};
+%  my $bop = FS::payby::payby2bop->{$1};
 %  $cgi->param('refund') =~ /^(\d*)(\.\d{2})?$/
 %    or die "illegal refund amount ". $cgi->param('refund');
 %  my $refund = "$1$2";
@@ -34,6 +32,3 @@
 %} else {
 %  print $cgi->redirect(popurl(3). "view/cust_main.cgi?$custnum");
 %}
-%
-%
-
