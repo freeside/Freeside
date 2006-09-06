@@ -84,8 +84,6 @@ following fields are currently supported:
   #billing: Mark the entry for billing 
   #documentation: Mark the entry for documentation.
 
-=back
-
 =item accountcode - CDR account number to use: account
 
 =item uniqueid - Unique channel identifier (Unitel/RSLCOM Event ID)
