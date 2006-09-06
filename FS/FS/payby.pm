@@ -35,6 +35,11 @@ Payment types.
 
 =cut
 
+# paybys can be any/all of:
+# - a customer payment type (cust_main.payby)
+# - a payment or refund type (cust_pay.payby)
+# - an event type (part_bill_event.payby)
+
 tie %hash, 'Tie::IxHash',
   'CARD' => {
     tinyname  => 'card',
@@ -95,6 +100,11 @@ tie %hash, 'Tie::IxHash',
     tinyname  => 'declined',
     shortname => 'Declined payment',
     longname  => 'Declined payment',
+
+    #its neither of these..
+    cust_main => '',
+    cust_pay  => '',
+
   },
 ;
 
