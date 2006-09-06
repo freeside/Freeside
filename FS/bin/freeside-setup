@@ -4,7 +4,7 @@
 BEGIN { $FS::Schema::setup_hack = 1; }
 
 use strict;
-use vars qw($opt_s $opt_d $opt_v);
+use vars qw($opt_u $opt_d $opt_v);
 use Getopt::Std;
 use FS::UID qw(adminsuidsetup datasrc checkeuid getsecrets);
 use FS::CurrentUser;
@@ -18,9 +18,10 @@ die "Not running uid freeside!" unless checkeuid();
 #my %attrib2db =
 #  map { lc($FS::raddb::attrib{$_}) => $_ } keys %FS::raddb::attrib;
 
-getopts("svd:");
+getopts("u:vd:");
 #my $user = shift or die &usage;
-getsecrets(); #$user);
+
+getsecrets($opt_u); #$user);
 
 #needs to match FS::Record
 my($dbdef_file) = "/usr/local/etc/freeside/dbdef.". datasrc;
@@ -87,7 +88,7 @@ $dbdef->save($dbdef_file);
 ###
 
 $FS::CurrentUser::upgrade_hack = 1;
-my $dbh = adminsuidsetup; #$user;
+my $dbh = adminsuidsetup $opt_u; #$user;
 
 #create tables
 $|=1;
@@ -120,7 +121,8 @@ sub dbdef_create { # reverse engineer the schema from the DB and save to file
 }
 
 sub usage {
-  die "Usage:\n  freeside-setup -d domain.name [ -v ] user\n"; 
+  die "Usage:\n  freeside-setup -d domain.name [ -v ]\n"
+  # [ -u user ] for devel/multi-db installs
 }
 
 1;
