@@ -1,7 +1,7 @@
 package FS::cust_svc;
 
 use strict;
-use vars qw( @ISA $DEBUG $ignore_quantity );
+use vars qw( @ISA $DEBUG $me $ignore_quantity );
 use Carp qw( carp cluck );
 use FS::Conf;
 use FS::Record qw( qsearch qsearchs dbh );
@@ -22,6 +22,7 @@ use FS::cdr;
 @ISA = qw( FS::Record );
 
 $DEBUG = 0;
+$me = '[cust_svc]';
 
 $ignore_quantity = 0;
 
@@ -353,6 +354,9 @@ sub svc_x {
     $self->{'_svc_acct'};
   } else {
     #require "FS/$svcdb.pm";
+    warn "$me svc_x: part_svc.svcpart ". $self->part_svc->svcpart.
+         ", so searching for $svcdb.svcnum ". $self->svcnum. "\n"
+      if $DEBUG;
     qsearchs( $svcdb, { 'svcnum' => $self->svcnum } );
   }
 }
