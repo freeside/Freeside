@@ -1,0 +1,25 @@
+#!/usr/bin/perl -w
+
+use strict;
+use FS::UID qw(adminsuidsetup dbh);
+use FS::Record qw( qsearch );
+use FS::cust_bill_pay;
+use FS::cust_credit_bill;
+
+$FS::CurrentUser::upgrade_hack = 1;
+adminsuidsetup(shift) or die "Usage: breakdown-bill-applications username\n";
+
+#quick and dirty conversion script if you have enough memory to throw at it
+
+my @tables = qw( cust_bill_pay cust_credit_bill );
+
+my @apps = ();
+foreach my $table {
+  push @apps, qsearch($table, 
+
+
+) {
+
+}
+
+foreach my $cust_bill_
