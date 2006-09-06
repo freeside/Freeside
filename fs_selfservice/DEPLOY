@@ -12,10 +12,10 @@ cd ..
 
 ( cd ..; make deploy; cd fs_selfservice )
 
-cp /home/ivan/freeside/fs_selfservice/FS-SelfService/cgi/* /var/www/MyAccount
-chown freeside /var/www/MyAccount/*.cgi
-chmod 755 /var/www/MyAccount/*.cgi
-ln -s /var/www/MyAccount/selfservice.cgi /var/www/MyAccount/index.cgi || true
+#cp /home/ivan/freeside/fs_selfservice/FS-SelfService/cgi/* /var/www/MyAccount
+#chown freeside /var/www/MyAccount/*.cgi
+#chmod 755 /var/www/MyAccount/*.cgi
+#ln -s /var/www/MyAccount/selfservice.cgi /var/www/MyAccount/index.cgi || true
 
 	#cp /home/ivan/freeside/fs_signup/FS-SignupClient/cgi/* /var/www/signup/
 	##mv /var/www/signup/signup-snarf.html /var/www/signup/signup.html #!!!!!
