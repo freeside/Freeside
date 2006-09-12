@@ -194,7 +194,6 @@
 %  if ( $cgi->param('search_cust') ) {
 %    $sortby = \*company_sort;
 %    $orderby = "ORDER BY LOWER(company || ' ' || last || ' ' || first )";
-%    warn "smart searching for: ". $cgi->param('search_cust');
 %    push @cust_main, smart_search( 'search' => $cgi->param('search_cust') );
 %  }
 %
