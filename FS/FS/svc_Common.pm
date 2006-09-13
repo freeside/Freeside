@@ -1,7 +1,7 @@
 package FS::svc_Common;
 
 use strict;
-use vars qw( @ISA $noexport_hack $DEBUG );
+use vars qw( @ISA $noexport_hack $DEBUG $me );
 use Carp;
 use FS::Record qw( qsearch qsearchs fields dbh );
 use FS::cust_main_Mixin;
@@ -14,7 +14,8 @@ use FS::inventory_class;
 
 @ISA = qw( FS::cust_main_Mixin FS::Record );
 
-$DEBUG = 1;
+$me = '[FS::svc_Common]';
+$DEBUG = 0;
 
 =head1 NAME
 
@@ -157,13 +158,13 @@ jobnum(s) (they will not run until the specific job(s) complete(s)).
 sub insert {
   my $self = shift;
   my %options = @_;
-  warn "FS::svc_Common::insert called with options ".
-     join(', ', map { "$_: $options{$_}" } keys %options ). "\n"
-  if $DEBUG;
+  warn "[$me] insert called with options ".
+       join(', ', map { "$_: $options{$_}" } keys %options ). "\n"
+    if $DEBUG;
 
   my @jobnums = ();
   local $FS::queue::jobnums = \@jobnums;
-  warn "FS::svc_Common::insert: set \$FS::queue::jobnums to $FS::queue::jobnums"
+  warn "[$me] insert: set \$FS::queue::jobnums to $FS::queue::jobnums\n"
     if $DEBUG;
   my $objects = $options{'child_objects'} || [];
   my $depend_jobnums = $options{'depend_jobnum'} || [];
@@ -241,7 +242,7 @@ sub insert {
   #new-style exports!
   unless ( $noexport_hack ) {
 
-    warn "FS::svc_Common::insert: \$FS::queue::jobnums is $FS::queue::jobnums"
+    warn "[$me] insert: \$FS::queue::jobnums is $FS::queue::jobnums\n"
       if $DEBUG;
 
     foreach my $part_export ( $self->cust_svc->part_svc->part_export ) {
@@ -254,11 +255,11 @@ sub insert {
     }
 
     foreach my $depend_jobnum ( @$depend_jobnums ) {
-      warn "inserting dependancies on supplied job $depend_jobnum\n"
+      warn "[$me] inserting dependancies on supplied job $depend_jobnum\n"
         if $DEBUG;
       foreach my $jobnum ( @jobnums ) {
         my $queue = qsearchs('queue', { 'jobnum' => $jobnum } );
-        warn "inserting dependancy for job $jobnum on $depend_jobnum\n"
+        warn "[$me] inserting dependancy for job $jobnum on $depend_jobnum\n"
           if $DEBUG;
         my $error = $queue->depend_insert($depend_jobnum);
         if ( $error ) {
@@ -358,6 +359,20 @@ sub replace {
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
+
+  # We absolutely have to have an old vs. new record to make this work.
+  if ( !defined($old) ) { 
+    warn "[$me] replace called with no arguments; autoloading old record\n"
+      if $DEBUG;
+    my $primary_key = $new->dbdef_table->primary_key;
+    if ( $primary_key ) {
+      $old = qsearchs($new->table, { $primary_key => $new->$primary_key() } )
+        or croak "can't find ". $new->table. ".$primary_key ".
+	         $new->$primary_key();
+    } else {
+      croak $new->table. " has no primary key; pass old record as argument";
+    }
+  }
 
   my $error = $new->set_auto_inventory;
   if ( $error ) {
