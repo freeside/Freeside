@@ -712,7 +712,7 @@ sub insert {
   
   # Encrypt before the database
   my $conf = new FS::Conf;
-  if ($conf->exists('encryption') && defined(eval '@FS::'. $table . 'encrypted_fields')) {
+  if ($conf->exists('encryption') && defined(eval '@FS::'. $table . '::encrypted_fields')) {
     foreach my $field (eval '@FS::'. $table . '::encrypted_fields') {
       $self->{'saved'} = $self->getfield($field);
       $self->setfield($field, $self->enrypt($self->getfield($field)));
