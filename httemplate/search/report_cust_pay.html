@@ -8,7 +8,7 @@
   <TR>
     <TD ALIGN="right">Payments of type: </TD>
     <TD>
-      <SELECT NAME="payby">
+      <SELECT NAME="payby" onChange="payby_changed(this)">
         <OPTION VALUE="">all</OPTION>
         <OPTION VALUE="CARD">credit card (all)</OPTION>
         <OPTION VALUE="CARD-VisaMC">credit card (Visa/MasterCard)</OPTION>
@@ -22,6 +22,29 @@
         <OPTION VALUE="WEST">Western Union</OPTION>
         <OPTION VALUE="MCRD">manual credit card</OPTION>
       </SELECT>
+    </TD>
+  </TR>
+
+  <SCRIPT TYPE="text/javascript">
+  
+    function payby_changed(what) {
+      if ( what.options[what.selectedIndex].value == 'BILL' ) {
+	document.getElementById('checkno_caption').style.color = '#000000';
+        what.form.payinfo.disabled = false;
+	what.form.payinfo.style.backgroundColor = '#ffffff';
+      } else {
+	document.getElementById('checkno_caption').style.color = '#bbbbbb';
+        what.form.payinfo.disabled = true;
+	what.form.payinfo.style.backgroundColor = '#dddddd';
+      }
+    }
+
+  </SCRIPT>
+
+  <TR>
+    <TD ALIGN="right"><FONT ID="checkno_caption" COLOR="#bbbbbb">Check #: </FONT></TD>
+    <TD>
+      <INPUT TYPE="text" NAME="payinfo" DISABLED STYLE="background-color: #dddddd">
     </TD>
   </TR>
 
