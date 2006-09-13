@@ -134,10 +134,13 @@ sub insert {
 
 =item delete
 
-Currently unimplemented.
+Unless the closed flag is set, deletes this credit and all associated
+applications (see L<FS::cust_credit_bill>).  In most cases, you want to use
+the void method instead to leave a record of the deleted credit.
 
 =cut
 
+# very similar to FS::cust_pay::delete
 sub delete {
   my $self = shift;
   return "Can't delete closed credit" if $self->closed =~ /^Y/i;
@@ -169,7 +172,7 @@ sub delete {
 
   if ( $conf->config('deletecredits') ne '' ) {
 
-    my $cust_main = qsearchs('cust_main',{ 'custnum' => $self->custnum });
+    my $cust_main = $self->cust_main;
 
     my $error = send_email(
       'from'    => $conf->config('invoice_from'), #??? well as good as any
@@ -203,8 +206,7 @@ sub delete {
 
 =item replace OLD_RECORD
 
-Credits may not be modified; there would then be no record the credit was ever
-posted.
+You can, but probably shouldn't modify credits... 
 
 =cut
 

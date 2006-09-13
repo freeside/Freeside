@@ -272,12 +272,14 @@ sub void {
 
 =item delete
 
-Deletes this payment and all associated applications (see L<FS::cust_bill_pay>),
-unless the closed flag is set.  In most cases, you want to use the void
-method instead to leave a record of the deleted payment.
+Unless the closed flag is set, deletes this payment and all associated
+applications (see L<FS::cust_bill_pay> and L<FS::cust_pay_refund>).  In most
+cases, you want to use the void method instead to leave a record of the
+deleted payment.
 
 =cut
 
+# very similar to FS::cust_credit::delete
 sub delete {
   my $self = shift;
   return "Can't delete closed payment" if $self->closed =~ /^Y/i;
@@ -345,7 +347,16 @@ sub delete {
 
 =item replace OLD_RECORD
 
-You probably shouldn't modify payments...
+You can, but probably shouldn't modify payments...
+
+=cut
+
+sub replace {
+  #return "Can't modify payment!"
+  my $self = shift;
+  return "Can't modify closed payment" if $self->closed =~ /^Y/i;
+  $self->SUPER::replace(@_);
+}
 
 =item check
 
