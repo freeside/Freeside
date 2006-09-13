@@ -194,7 +194,7 @@ Returns all the specific line item applications for this invoice application.
 sub lineitem_applications {
   my $self = shift;
   my $primary_key = dbdef->table($self->table)->primary_key;
-  qsearchs({
+  qsearch({
     'table'   => $self->lineitem_breakdown_table, 
     'hashref' => { $primary_key => $self->$primary_key() },
   });
