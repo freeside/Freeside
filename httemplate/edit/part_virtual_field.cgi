@@ -53,7 +53,8 @@ Field #<B><%$vfieldpart or "(NEW)"%></B><BR><BR>
       <SELECT SIZE=1 NAME="dbtable">
 %
 %        my $dbdef = dbdef;  # ick
-%        foreach my $dbtable (sort { $a cmp $b } $dbdef->tables) {
+%        #foreach my $dbtable (sort { $a cmp $b } $dbdef->tables) {
+%        foreach my $dbtable (qw( svc_broadband )) {
 %          if ($dbtable !~ /^h_/
 %          and $dbdef->table($dbtable)->primary_key) { 
 
