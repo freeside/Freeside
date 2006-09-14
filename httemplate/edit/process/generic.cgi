@@ -1,5 +1,3 @@
-%
-%
 %# Welcome to generic.cgi.
 %# 
 %# This script provides a generic edit/process/ backend for simple table 
@@ -7,6 +5,10 @@
 %# the script and insert them into the table specified by $cgi->param('table').
 %# If there's an existing record with the same primary key, it will be 
 %# replaced.  (Deletion will be added in the future.)
+%# 
+%# also see elements/process.html, newer and somewhat along the same lines,
+%# though it still makes you setup a process file for the table.
+%# perhaps safer, perhaps more of a pain in the ass.
 %# 
 %# Special cgi params for this script:
 %# table: the name of the table to be edited.  The script will die horribly 
