@@ -44,7 +44,14 @@ The following fields are currently supported:
 
 =item setuprecur - 'setup' or 'recur', designates whether the payment was applied to the setup or recurring portion of the line item.
 
+=item sdate - starting date of recurring fee
+
+=item edate - ending date of recurring fee
+
 =back
+
+sdate and edate are specified as UNIX timestamps; see L<perlfunc/"time">.  Also
+see L<Time::Local> and L<Date::Parse> for conversion functions.
 
 =head1 METHODS
 
@@ -109,6 +116,8 @@ sub check {
     || $self->ut_foreign_key('billpkgnum', 'cust_bill_pkg', 'billpkgnum' )
     || $self->ut_money('amount')
     || $self->ut_enum('setuprecur', [ 'setup', 'recur' ] )
+    || $self->ut_numbern('sdate')
+    || $self->ut_numbern('edate')
   ;
   return $error if $error;
 

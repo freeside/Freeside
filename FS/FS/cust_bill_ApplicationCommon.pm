@@ -173,6 +173,8 @@ sub apply_to_lineitems {
       'billpkgnum' => $cust_bill_pkg->billpkgnum,
       'amount'     => $amount,
       'setuprecur' => ( $cust_bill_pkg->setup > 0 ? 'setup' : 'recur' ),
+      'sdate'      => $cust_bill_pkg->sdate,
+      'edate'      => $cust_bill_pkg->edate,
     });
     my $error = $application->insert;
     if ( $error ) {
