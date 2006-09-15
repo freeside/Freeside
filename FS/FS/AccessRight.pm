@@ -78,7 +78,13 @@ assigned to users and/or groups.
 #well, this is what we have for now.  could be ordered better, could be lots of
 # things better, but this ACL system does 99% of what folks need and the UI
 # isn't *that* bad
+# 
+# okay, well it *really* needs some catgorization in the UI.  badly.
 @rights = (
+
+##
+# basic customer rights
+##
   'New customer',
   'View customer',
   #'View Customer | View tickets',
@@ -87,6 +93,9 @@ assigned to users and/or groups.
   'Complimentary customer', #aka users-allow_comp 
   'Delete customer', #aka. deletecustomers #Enable customer deletions. Be very careful! Deleting a customer will remove all traces that this customer ever existed! It should probably only be used when auditing a legacy database. Normally, you cancel all of a customers' packages if they cancel service.
 
+###
+# customer package rights
+###
   'Order customer package',
   'One-time charge',
   'Change customer package',
@@ -98,13 +107,23 @@ assigned to users and/or groups.
   'Cancel customer package immediately',
   'Cancel customer package later',
 
+###
+# customer service rights
+###
   'Provision customer service',
   'Unprovision customer service',
 
   'View/link unlinked services', #not agent-virtualizable without more work
 
+###
+# customer invoice/financial info rights
+###
   'View invoices',
+  'View customer tax exemptions', #yow
 
+###
+# customer payment rights
+###
   'Post payment',
   'Post payment batch',
   'Unapply payment', #aka. unapplypayments Enable "unapplication" of unclosed payments.
@@ -113,16 +132,25 @@ assigned to users and/or groups.
 
   'Delete payment', #aka. deletepayments - Enable deletion of unclosed payments. Be very careful! Only delete payments that were data-entry errors, not adjustments. Optionally specify one or more comma-separated email addresses to be notified when a payment is deleted.
 
+###
+# customer credit rights
+###
   'Post credit',
   #'Apply credit',
   'Unapply credit', #aka unapplycredits Enable "unapplication" of unclosed credits.
   'Delete credit', #aka. deletecredits Enable deletion of unclosed credits. Be very careful! Only delete credits that were data-entry errors, not adjustments. Optionally specify one or more comma-separated email addresses to be notified when a credit is deleted.
 
+###
+# customer voiding rights..
+###
   'Credit card void', #aka. cc-void #Enable local-only voiding of echeck payments in addition to refunds against the payment gateway
   'Echeck void', #aka. echeck-void #Enable local-only voiding of echeck payments in addition to refunds against the payment gateway
   'Regular void',
   'Unvoid', #aka. unvoid #Enable unvoiding of voided payments
 
+###
+# report/listing rights...
+###
   'List customers',
   #'List zip codes',
   'List invoices',
@@ -133,10 +161,16 @@ assigned to users and/or groups.
   'Billing event reports',
   'Financial reports',
 
+###
+# misc rights
+###
   'Job queue', # these are not currently agent-virtualized
   'Import',    #
   'Export',    #
 
+###
+# setup/config rights
+###
   'Edit advertising sources',
   'Edit global advertising sources',
 

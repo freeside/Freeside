@@ -1,25 +1,9 @@
-%
-%  my( $cust_main ) = @_;
-%  my $custnum = $cust_main->custnum;
-%
-%  my $conf = new FS::Conf;
-%
-%  my $curuser = $FS::CurrentUser::CurrentUser;
-%
-%  my @payby = grep /\w/, $conf->config('payby');
-%  #@payby = (qw( CARD DCRD CHEK DCHK LECB BILL CASH WEST COMP ))
-%  @payby = (qw( CARD DCRD CHEK DCHK LECB BILL CASH COMP ))
-%    unless @payby;
-%  my %payby = map { $_=>1 } @payby;
-%
-%  my $s = 0;
-%
-%
 
 
 <BR><BR><A NAME="history"><FONT SIZE="+2">Payment History</FONT></A><BR>
-% if ( $payby{'BILL'} && $curuser->access_right('Post payment') ) { 
 
+% my $s = 0;
+% if ( $payby{'BILL'} && $curuser->access_right('Post payment') ) { 
 
   <% $s++ ? ' | ' : '' %>
   <A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('<% $p %>edit/cust_pay.cgi?popup=1;payby=BILL;custnum=<% $custnum %>', 392, 336, 'cust_pay_popup' ), CAPTION, 'Enter check payment', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK ); return false;">Enter check payment</A>
@@ -61,16 +45,20 @@
   <A HREF="<% $p %>edit/cust_pay.cgi?payby=MCRD;custnum=<% $custnum %>">Post manual (offline) credit card payment</A>
 % } 
 
-
 <BR>
+
 % if ( $curuser->access_right('Post credit') ) { 
-
-
   <A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('<% $p %>edit/cust_credit.cgi?<% $custnum %>', 392, 336, 'cust_credit_popup' ), CAPTION, 'Enter credit', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK ); return false;">Enter credit</A>
-
   <BR>
 % } 
-%
+
+% if ( $curuser->access_right('View customer tax exemptions') ) { 
+  <A HREF="<% $p %>search/cust_tax_exempt_pkg.cgi?custnum=<% $custnum %>">View tax exemptions</A>
+  <BR>
+% } 
+
+
+
 %#get payment history
 %my @history = ();
 %
@@ -566,4 +554,21 @@ function show_history () {
 }
 
 </SCRIPT>
+
+<%init>
+
+my( $cust_main ) = @_;
+my $custnum = $cust_main->custnum;
+
+my $conf = new FS::Conf;
+
+my $curuser = $FS::CurrentUser::CurrentUser;
+
+my @payby = grep /\w/, $conf->config('payby');
+#@payby = (qw( CARD DCRD CHEK DCHK LECB BILL CASH WEST COMP ))
+@payby = (qw( CARD DCRD CHEK DCHK LECB BILL CASH COMP ))
+  unless @payby;
+my %payby = map { $_=>1 } @payby;
+
+</%init>
 
