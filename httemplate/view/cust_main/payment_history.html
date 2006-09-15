@@ -1,46 +1,36 @@
-
-
 <BR><BR><A NAME="history"><FONT SIZE="+2">Payment History</FONT></A><BR>
 
 % my $s = 0;
 % if ( $payby{'BILL'} && $curuser->access_right('Post payment') ) { 
-
   <% $s++ ? ' | ' : '' %>
   <A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('<% $p %>edit/cust_pay.cgi?popup=1;payby=BILL;custnum=<% $custnum %>', 392, 336, 'cust_pay_popup' ), CAPTION, 'Enter check payment', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK ); return false;">Enter check payment</A>
 % } 
+
 % if ( $payby{'CASH'} && $curuser->access_right('Post payment') ) { 
-
-
   <% $s++ ? ' | ' : '' %>
   <A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('<% $p %>edit/cust_pay.cgi?popup=1;payby=CASH;custnum=<% $custnum %>', 392, 336, 'cust_pay_popup' ), CAPTION, 'Enter cash payment', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK ); return false;">Enter cash payment</A>
 % } 
+
 % if ( $payby{'WEST'} && $curuser->access_right('Post payment') ) { 
-
-
   <% $s++ ? ' | ' : '' %>
   <A HREF="<% $p %>edit/cust_pay.cgi?payby=WEST;custnum=<% $custnum %>">Enter Western Union payment</A>
 % } 
+
 % if ( ( $payby{'CARD'} || $payby{'DCRD'} )
 %        && $curuser->access_right('Process payment')
 %      ) {
-%
-
-
   <% $s++ ? ' | ' : '' %>
   <A HREF="<% $p %>misc/payment.cgi?payby=CARD;custnum=<% $custnum %>">Process credit card payment</A>
 % } 
+
 % if ( ( $payby{'CHEK'} || $payby{'DCHK'} )
 %        && $curuser->access_right('Process payment')
 %      ) {
-%
-
-
   <% $s++ ? ' | ' : '' %>
   <A HREF="<% $p %>misc/payment.cgi?payby=CHEK;custnum=<% $custnum %>">Process electronic check (ACH) payment</A>
 % } 
+
 % if ( $payby{'MCRD'} && $curuser->access_right('Post payment') ) { 
-
-
   <% $s++ ? ' | ' : '' %>
   <A HREF="<% $p %>edit/cust_pay.cgi?payby=MCRD;custnum=<% $custnum %>">Post manual (offline) credit card payment</A>
 % } 
@@ -56,8 +46,6 @@
   <A HREF="<% $p %>search/cust_tax_exempt_pkg.cgi?custnum=<% $custnum %>">View tax exemptions</A>
   <BR>
 % } 
-
-
 
 %#get payment history
 %my @history = ();
@@ -571,4 +559,3 @@ my @payby = grep /\w/, $conf->config('payby');
 my %payby = map { $_=>1 } @payby;
 
 </%init>
-
