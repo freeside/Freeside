@@ -1,0 +1,60 @@
+#!/usr/bin/perl
+
+use strict;
+use Data::Faker;
+use FS::UID qw(adminsuidsetup);
+use FS::cust_main;
+
+my $agentnum = 1;
+my $refnum = 1;
+
+my $user = shift or die &usage;
+my $num = shift or die &usage;
+adminsuidsetup($user);
+
+my $onum = $num;
+my $start = time;
+
+until ( $num-- <= 0 ) {
+
+  my $faker = new Data::Faker;
+
+  my $cust_main = new FS::cust_main {
+    'agentnum' => $agentnum,
+    'refnum'   => $refnum,
+    'first'    => $faker->first_name,
+    'last'     => $faker->last_name,
+    'company'  => ( $num % 2 ? $faker->company. ', '. $faker->company_suffix : '' ), #half with companies..
+    'address1' => $faker->street_address,
+    'city'     => 'Tofutown', #missing, so everyone is from tofutown# $faker->city,
+    'state'    => $faker->us_state_abbr,
+    'zip'      => $faker->us_zip_code,
+    'country'  => 'US',
+    'daytime'  => $faker->phone_number,
+    'night'    => $faker->phone_number,
+    #forget it, these can have extensions# 'fax'      => ( $num % 2 ? $faker->phone_number : '' ), #ditto
+    #bah, forget shipping addresses
+    'payby'    => 'BILL',
+    'payip'    => $faker->ip_address,
+  };
+
+  # could insert invoicing_list and other stuff too..  hell, could insert
+  # packages, services, more
+  # but i just wanted 10k customers to test the pager and this was good enough
+
+  my $error = $cust_main->insert;
+  die $error if $error;
+
+}
+
+my $end = time;
+
+my $sec = $end-$start;
+my $persec = $onum / $sec;
+print "$onum customers inserted in $sec seconds ($persec customers/sec)\n";
+
+#---
+
+sub usage {
+  die "Usage:\n\n  customer-faker user num_fakes\n";
+}
