@@ -51,8 +51,9 @@ tie my %report_customers_lists, 'Tie::IxHash',
   'by customer number' => [ $fsurl. 'search/cust_main.cgi?browse=custnum', '' ],
   'by last name' => [ $fsurl. 'search/cust_main.cgi?browse=last', '' ],
   'by company name' => [ $fsurl. 'search/cust_main.cgi?browse=company', '' ],
-  'by active trouble tickets' => [ $fsurl. 'search/cust_main.cgi?browse=tickets', '' ],
 ;
+$report_customers_lists{'by active trouble tickets'} = [ $fsurl. 'search/cust_main.cgi?browse=tickets', '' ]
+  if $conf->config('ticket_system');
 
 tie my %report_customers_search, 'Tie::IxHash',
   'by ordering employee' => [ $fsurl. 'search/cust_main-otaker.cgi' ],
@@ -270,14 +271,17 @@ $config_menu{'Miscellaneous'} = [ \%config_misc, ''    ]
 
 tie my %menu, 'Tie::IxHash',
   'Billing Main'   => [ $fsurl, 'Billing start page', ],
-  'Ticketing Main' => [ 
-                        ( $conf->config('ticket_system') eq 'RT_External'
-                          ? FS::TicketSystem->baseurl()
-                          : $fsurl.'rt/'
-                        ),
-                        'Ticketing start page',
-                      ],
 ;
+if ( $conf->config('ticket_system') ) {
+  $menu{'Ticketing Main'} =
+    [ 
+      ( $conf->config('ticket_system') eq 'RT_External'
+        ? FS::TicketSystem->baseurl()
+        : $fsurl.'rt/'
+      ),
+      'Ticketing start page',
+    ],
+}
 $menu{'Reports'} = [ \%report_menu, 'Lists, reporting and graphing' ]
   if keys %report_menu;
 $menu{'Tools'} = [ \%tools_menu, 'Tools' ]
