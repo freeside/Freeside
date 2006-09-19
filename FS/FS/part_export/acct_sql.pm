@@ -60,6 +60,16 @@ my $postfix_courierimap_alias_map =
   join('\n', map "$_ $postfix_courierimap_alias_map{$_}",
                  keys %postfix_courierimap_alias_map      );
 
+tie my %postfix_native_mailbox_map, 'Tie::IxHash',
+  'userid'   => 'email',
+  'uid'      => 'uid',
+  'gid'      => 'gid',
+  'password' => 'ldap_password',
+;
+my $postfix_native_mailbox_map =
+  join('\n', map "$_ $postfix_native_mailbox_map{$_}",
+                 keys %postfix_native_mailbox_map      );
+
 %info = (
   'svc'      => 'svc_acct',
   'desc'     => 'Real-time export of accounts to SQL databases '.
@@ -94,6 +104,10 @@ to be configured for different mail server setups.
     this.form.schema.value = "$postfix_courierimap_alias_map";
     this.form.primary_key.value = "address";
   '>
+  <LI><INPUT TYPE="button" VALUE="postfix_native_mailbox" onClick='
+    this.form.table.value = "users";
+    this.form.schema.value = "$postfix_native_map";
+    this.form.primary_key.value = "userid";
 </UL>
 END
 );

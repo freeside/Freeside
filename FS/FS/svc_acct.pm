@@ -1551,10 +1551,49 @@ sub crypt_password {
     } elsif ( $encryption eq 'md5' ) {
       unix_md5_crypt( $self->_password );
     } elsif ( $encryption eq 'blowfish' ) {
-      die "unknown encryption method $encryption";
+      croak "unknown encryption method $encryption";
     } else {
-      die "unknown encryption method $encryption";
+      croak "unknown encryption method $encryption";
     }
+  }
+}
+
+=item ldap_password [ DEFAULT_ENCRYPTION_TYPE ]
+
+Returns an encrypted password in "LDAP" format, with a curly-bracked prefix
+describing the format, for example, "{CRYPT}94pAVyK/4oIBk" or
+"{PLAIN-MD5}5426824942db4253f87a1009fd5d2d4f".
+
+The optional DEFAULT_ENCRYPTION_TYPE is not yet used, but the idea is for it
+to work the same as the B</crypt_password> method.
+
+=cut
+
+sub ldap_password {
+  my $self = shift;
+  #eventually should check a "password-encoding" field
+  if ( length($self->_password) == 13 ) { #crypt
+    return '{CRYPT}'. $self->_password;
+  } elsif ( $self->_password =~ /^\$1\$(.*)$/ && length($1) == 31 ) { #passwdMD5
+    return '{MD5}'. $1;
+  } elsif ( $self->_password =~ /^\$2a?\$(.*)$/ ) { #Blowfish
+    die "Blowfish encryption not supported in this context, svcnum ".
+        $self->svcnum. "\n";
+  } else { #plaintext
+    return '{PLAIN}'. self->_password;
+    #my $encryption = ( scalar(@_) && $_[0] ) ? shift : 'crypt';
+    #if ( $encryption eq 'crypt' ) {
+    #  return '{CRYPT}'. crypt(
+    #    $self->_password,
+    #    $saltset[int(rand(64))].$saltset[int(rand(64))]
+    #  );
+    #} elsif ( $encryption eq 'md5' ) {
+    #  unix_md5_crypt( $self->_password );
+    #} elsif ( $encryption eq 'blowfish' ) {
+    #  croak "unknown encryption method $encryption";
+    #} else {
+    #  croak "unknown encryption method $encryption";
+    #}
   }
 }
 
