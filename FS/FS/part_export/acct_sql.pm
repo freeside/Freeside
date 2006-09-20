@@ -106,7 +106,7 @@ to be configured for different mail server setups.
   '>
   <LI><INPUT TYPE="button" VALUE="postfix_native_mailbox" onClick='
     this.form.table.value = "users";
-    this.form.schema.value = "$postfix_native_map";
+    this.form.schema.value = "$postfix_native_mailbox_map";
     this.form.primary_key.value = "userid";
 </UL>
 END
