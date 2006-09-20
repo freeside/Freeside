@@ -25,13 +25,13 @@ tie my %options, 'Tie::IxHash',
   'primary_key'        => { label => 'Database primary key' },
 ;
 
-tie my %postfix_transport_map, 
+tie my %postfix_transport_map, 'Tie::IxHash', 
   'domain' => 'domain'
 ;
 my $postfix_transport_map = 
   join('\n', map "$_ $postfix_transport_map{$_}",
                  keys %postfix_transport_map      );
-tie my %postfix_transport_static,
+tie my %postfix_transport_static, 'Tie::IxHash',
   'transport' => 'virtual:',
 ;
 my $postfix_transport_static = 
