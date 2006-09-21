@@ -17,6 +17,10 @@ tie my %options, 'Tie::IxHash',
                               'Database schema mapping to Freeside methods.',
                             type  => 'textarea',
                           },
+  'static'             => { label =>
+                              'Database schema mapping to static values.',
+                            type  => 'textarea',
+                          },
   'primary_key'        => { label => 'Database primary key' },
   'crypt'              => { label => 'Password encryption',
                             type=>'select', options=>[qw(crypt md5)],
@@ -113,9 +117,12 @@ to be configured for different mail server setups.
 END
 );
 
+sub _schema_map { shift->_map('schema'); }
+sub _static_map { shift->_map('static'); }
+
 sub _map {
   my $self = shift;
-  map { /^\s*(\S+)\s*(\S+)\s*$/ } split("\n", $self->option('schema') );
+  map { /^\s*(\S+)\s*(\S+)\s*$/ } split("\n", $self->option(shift) );
 }
 
 sub rebless { shift; }
@@ -123,14 +130,22 @@ sub rebless { shift; }
 sub _export_insert {
   my($self, $svc_acct) = (shift, shift);
 
-  my %map = $self->_map;
+  my %schema = $self->_schema_map;
+  my %static = $self->_static_map;
 
-  my %record = map { my $value = $map{$_};
-                     my @arg = ();
-                     push @arg, $self->option('crypt')
-                       if $value eq 'crypt_password' && $self->option('crypt');
-                     $_ => $svc_acct->$value(@arg);
-                   } keys %map;
+  my %record = (
+
+    ( map { $_ => $static{$_} } keys %static ),
+  
+    ( map { my $value = $schema{$_};
+            my @arg = ();
+            push @arg, $self->option('crypt')
+              if $value eq 'crypt_password' && $self->option('crypt');
+            $_ => $svc_acct->$value(@arg);
+          } keys %schema
+    ),
+
+  );
 
   my $err_or_queue =
     $self->acct_sql_queue(
@@ -148,25 +163,33 @@ sub _export_insert {
 sub _export_replace {
   my($self, $new, $old) = (shift, shift, shift);
 
-  my %map = $self->_map;
+  my %schema = $self->_schema_map;
+  my %static = $self->_static_map;
 
   my @primary_key = ();
   if ( $self->option('primary_key') =~ /,/ ) {
     foreach my $key ( split(/\s*,\s*/, $self->option('primary_key') ) ) {
-      my $keymap = $map{$key};
+      my $keymap = $schema{$key};
       push @primary_key, $old->$keymap();
     }
   } else {
-    my $keymap = $map{$self->option('primary_key')};
+    my $keymap = $schema{$self->option('primary_key')};
     push @primary_key, $old->$keymap();
   }
 
-  my %record = map { my $value = $map{$_};
-                     my @arg = ();
-                     push @arg, $self->option('crypt')
-                       if $value eq 'crypt_password' && $self->option('crypt');
-                     $_ => $new->$value(@arg);
-                   } keys %map;
+  my %record = (
+
+    ( map { $_ => $static{$_} } keys %static ),
+  
+    ( map { my $value = $schema{$_};
+            my @arg = ();
+            push @arg, $self->option('crypt')
+              if $value eq 'crypt_password' && $self->option('crypt');
+            $_ => $new->$value(@arg);
+          } keys %schema
+    ),
+
+  );
 
   my $err_or_queue = $self->acct_sql_queue(
     $new->svcnum,
@@ -182,16 +205,16 @@ sub _export_replace {
 sub _export_delete {
   my ( $self, $svc_acct ) = (shift, shift);
 
-  my %map = $self->_map;
+  my %schema = $self->_schema_map;
 
   my %primary_key = ();
   if ( $self->option('primary_key') =~ /,/ ) {
     foreach my $key ( split(/\s*,\s*/, $self->option('primary_key') ) ) {
-      my $keymap = $map{$key};
+      my $keymap = $schema{$key};
       $primary_key{ $key } = $svc_acct->$keymap();
     }
   } else {
-    my $keymap = $map{$self->option('primary_key')};
+    my $keymap = $schema{$self->option('primary_key')};
     $primary_key{ $self->option('primary_key') } = $svc_acct->$keymap(),
   }
 
