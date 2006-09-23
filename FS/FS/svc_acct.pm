@@ -1597,6 +1597,17 @@ sub ldap_password {
   }
 }
 
+=item domain_slash_username
+
+Returns $domain/$username/
+
+=cut
+
+sub domain_slash_username {
+  my $self = shift;
+  $self->domain. '/'. $self->username. '/';
+}
+
 =item virtual_maildir
 
 Returns $domain/maildirs/$username/

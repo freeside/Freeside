@@ -69,6 +69,7 @@ tie my %postfix_native_mailbox_map, 'Tie::IxHash',
   'uid'      => 'uid',
   'gid'      => 'gid',
   'password' => 'ldap_password',
+  'mail'     => 'domain_slash_username',
 ;
 my $postfix_native_mailbox_map =
   join('\n', map "$_ $postfix_native_mailbox_map{$_}",
