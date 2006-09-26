@@ -11,6 +11,18 @@
 %  push @extra_sql, 'pkgnum IS NULL';
 %}
 %
+% if ( $cgi->param('domain') ) { 
+%   my $svc_domain =
+%     qsearchs('svc_domain', { 'domain' => $cgi->param('domain') } );
+%   unless ( $svc_domain ) {
+%     #it would be nice if this looked more like the other "not found"
+%     #errors, but this will do for now.
+%     eidiot "Domain ". $cgi->param('domain'). " not found at all";
+%   } else {
+%     push @extra_sql, 'domsvc = '. $svc_domain->svcnum;
+%   }
+% }
+%
 %if ( $query eq 'svcnum' ) {
 %  #$orderby = "ORDER BY svcnum";
 %} elsif ( $query eq 'username' ) {
