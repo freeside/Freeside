@@ -1580,7 +1580,7 @@ sub ldap_password {
     die "Blowfish encryption not supported in this context, svcnum ".
         $self->svcnum. "\n";
   } else { #plaintext
-    return '{PLAIN}'. self->_password;
+    return '{PLAIN}'. $self->_password;
     #my $encryption = ( scalar(@_) && $_[0] ) ? shift : 'crypt';
     #if ( $encryption eq 'crypt' ) {
     #  return '{CRYPT}'. crypt(
