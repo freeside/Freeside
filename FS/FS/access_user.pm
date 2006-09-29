@@ -298,12 +298,13 @@ Returns an sql fragement to select only agentnums this user can view.
 sub agentnums_sql {
   my $self = shift;
 
-  my @agentnums = $self->agentnums;
-  return ' 1 = 0 ' unless scalar(@agentnums);
+  my @agentnums = map { "agentnum = $_" } $self->agentnums;
 
-  '( '.
-    join( ' OR ', map "agentnum = $_", @agentnums ).
-  ' )';
+  push @agentnums, 'agentnum IS NULL'
+    if $self->access_right('View/link unlinked services');
+
+  return ' 1 = 0 ' unless scalar(@agentnums);
+  '( '. join( ' OR ', @agentnums ). ' )';
 }
 
 =item agentnum
