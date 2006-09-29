@@ -75,7 +75,10 @@ sub _export_insert {
   my %static = $self->_static_map;
 
   my %record = ( map { $_ => $static{$_}       } keys %static ),
-               ( map { $_ => $svc_domain->$_() } keys %schema );
+               ( map { my $method = $schema{$_};
+	               $_ => $svc_domain->$method();
+		     }
+		     keys %schema );
 
   my $err_or_queue = 
     $self->domain_sql_queue(
@@ -107,7 +110,10 @@ sub _export_replace {
   }
 
   my %record = ( map { $_ => $static{$_}       } keys %static ),
-               ( map { $_ => $svc_domain->$_() } keys %schema );
+               ( map { my $method = $schema{$_};
+	               $_ => $new->$method();
+	             }
+		     keys %schema );
 
   my $err_or_queue = $self->domain_sql_queue(
     $new->svcnum,
