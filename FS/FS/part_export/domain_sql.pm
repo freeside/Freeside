@@ -74,11 +74,13 @@ sub _export_insert {
   my %schema = $self->_schema_map;
   my %static = $self->_static_map;
 
-  my %record = ( map { $_ => $static{$_}       } keys %static ),
-               ( map { my $method = $schema{$_};
+  my %record = ( ( map { $_ => $static{$_}       } keys %static ),
+                 ( map { my $method = $schema{$_};
 	               $_ => $svc_domain->$method();
-		     }
-		     keys %schema );
+		       }
+		       keys %schema
+		 )
+	       );
 
   my $err_or_queue = 
     $self->domain_sql_queue(
@@ -109,11 +111,13 @@ sub _export_replace {
     push @primary_key, $old->$keymap();
   }
 
-  my %record = ( map { $_ => $static{$_}       } keys %static ),
-               ( map { my $method = $schema{$_};
-	               $_ => $new->$method();
-	             }
-		     keys %schema );
+  my %record = ( ( map { $_ => $static{$_}       } keys %static ),
+                 ( map { my $method = $schema{$_};
+	                 $_ => $new->$method();
+	               }
+		       keys %schema
+		 )
+	       );
 
   my $err_or_queue = $self->domain_sql_queue(
     $new->svcnum,
