@@ -359,17 +359,20 @@ function copyelement(from, to) {
 
   <INPUT TYPE="hidden" NAME="<% $hidden %>" VALUE="">
 % } 
-
+%
+% my $ro_comments = $conf->exists('cust_main-use_comments')?'':'readonly';
+% if (!$ro_comments || $cust_main->comments) {
 
 <BR>Comments
 <% &ntable("#cccccc") %>
   <TR>
     <TD>
-      <TEXTAREA COLS=80 ROWS=5 WRAP="HARD" NAME="comments"><% $cust_main->comments %></TEXTAREA>
+      <TEXTAREA COLS=80 ROWS=5 WRAP="HARD" NAME="comments" <%$ro_comments%>><% $cust_main->comments %></TEXTAREA>
     </TD>
   </TR>
 </TABLE>
 %
+% }
 %
 %unless ( $custnum ) {
 %  # pry the wrong place for this logic.  also pretty expensive

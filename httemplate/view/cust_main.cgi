@@ -116,6 +116,34 @@ Comments
 </TR>
 </TABLE></TABLE>
 % } 
+<BR><BR>
+% my $notecount = scalar($cust_main->notes());
+% if ($conf->exists('cust_main-use_notes') || $notecount) {
+
+<A NAME="cust_main_note"><FONT SIZE="+2">Notes</FONT></A><BR>
+%   if ( $curuser->access_right('Add customer note') &&
+%        $conf->exists('cust_main-use_notes')
+%      ) {
+
+  <A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('<% $p %>edit/cust_main_note.cgi?custnum=<% $cust_main->custnum %>', 616, 386, 'cust_main_note_popup' ), CAPTION, 'Enter customer note', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK); return false;">Add customer note</A>
+
+%   }
+
+<BR>
+
+%   if ($notecount) {
+
+<iframe src="<% $p %>view/cust_main/notes.html?custnum=<% $cust_main->custnum %>" height="186" width="616" name="cust_main_notes" frameborder="0" marginborder="0" marginheight="0" scrolling="auto">
+  <div><br>[iframe not supported]<br><br></div>
+</iframe>
+
+%   } else {
+
+<BR>
+%   }
+% }
+
+
 % if ( $conf->config('ticket_system') ) { 
 
   <BR>

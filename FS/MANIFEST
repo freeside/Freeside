@@ -356,3 +356,5 @@ FS/cust_bill_pay_pkg.pm
 t/cust_bill_pay_pkg.t
 FS/cust_credit_bill_pkg.pm
 t/cust_credit_bill_pkg.t
+FS/cust_main_note.pm
+t/cust_main_note.t

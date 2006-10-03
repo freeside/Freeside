@@ -1744,6 +1744,27 @@ httemplate/docs/config.html
   },
 
   {
+    'key'         => 'cust_main-use_comments',
+    'section'     => 'UI',
+    'description' => 'Display free form comments on the customer edit screen.  Useful as a scratch pad.',
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'cust_main-use_notes',
+    'section'     => 'UI',
+    'description' => 'Display link to add timestamped and user identified customr notes.  Useful in tracking who did what.',
+    'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'cust_main_note-display_times',
+    'section'     => 'UI',
+    'description' => 'Display full timestamps (not just dates) for customer notes.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'cust_main-ticket_statuses',
     'section'     => 'UI',
     'description' => 'Show tickets with these statuses on the customer view page.',

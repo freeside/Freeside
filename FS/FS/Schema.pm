@@ -473,6 +473,19 @@ sub tables_hashref {
       'index' => [ ['custnum'], ],
     },
 
+    'cust_main_note' => {
+      'columns' => [
+        'notenum',  'serial',  '',     '', '', '', 
+        'custnum',  'int',  '',     '', '', '', 
+        '_date',    @date_type, '', '', 
+        'otaker',   'varchar', '',    32, '', '', 
+        'comments', 'text', 'NULL', '', '', '', 
+      ],
+      'primary_key' => 'notenum',
+      'unique' => [],
+      'index' => [ [ 'custnum' ], [ '_date' ], ],
+    },
+
     'cust_main_county' => { #county+state+country are checked off the
                             #cust_main_county for validation and to provide
                             # a tax rate.

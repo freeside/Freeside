@@ -1732,6 +1732,22 @@ sub _banned_pay_hashref {
   };
 }
 
+=item notes
+
+Returns all notes (see L<FS::cust_main_note>) for this customer.
+
+=cut
+
+sub notes {
+  my $self = shift;
+  #order by?
+  qsearch( 'cust_main_note',
+           { 'custnum' => $self->custnum },
+	   '',
+	   'ORDER BY _DATE DESC'
+	 );
+}
+
 =item agent
 
 Returns the agent (see L<FS::agent>) for this customer.
