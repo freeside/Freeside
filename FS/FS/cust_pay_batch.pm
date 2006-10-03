@@ -115,7 +115,7 @@ returns the error, otherwise returns false.
 
 Checks all fields to make sure this is a valid transaction.  If there is
 an error, returns the error, otherwise returns false.  Called by the insert
-and repalce methods.
+and replace methods.
 
 =cut
 

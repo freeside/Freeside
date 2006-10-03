@@ -190,7 +190,7 @@ Called by the cancel method of FS::cust_pkg (see L<FS::cust_pkg>).
 
 Checks all fields to make sure this is a valid web virtual host.  If there is
 an error, returns the error, otherwise returns false.  Called by the insert
-and repalce methods.
+and replace methods.
 
 =cut
 

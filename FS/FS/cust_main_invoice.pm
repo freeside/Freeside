@@ -91,7 +91,7 @@ sub replace {
 
 Checks all fields to make sure this is a valid invoice destination.  If there is
 an error, returns the error, otherwise returns false.  Called by the insert
-and repalce methods.
+and replace methods.
 
 =cut
 
