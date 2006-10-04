@@ -83,6 +83,8 @@ FS::Record - Database record objects
     $error = $record->ut_float('column');
     $error = $record->ut_number('column');
     $error = $record->ut_numbern('column');
+    $error = $record->ut_snumber('column');
+    $error = $record->ut_snumbern('column');
     $error = $record->ut_money('column');
     $error = $record->ut_text('column');
     $error = $record->ut_textn('column');
@@ -1284,6 +1286,25 @@ sub ut_snumber {
   my($self, $field) = @_;
   $self->getfield($field) =~ /^(-?)\s*(\d+)$/
     or return "Illegal or empty (numeric) $field: ". $self->getfield($field);
+  $self->setfield($field, "$1$2");
+  '';
+}
+
+=item ut_snumbern COLUMN
+
+Check/untaint signed numeric data (whole numbers).  If there is an error,
+returns the error, otherwise returns false.
+
+=cut
+
+sub ut_snumbern {
+  my($self, $field) = @_;
+  $self->getfield($field) =~ /^(-?)\s*(\d*)$/
+    or return "Illegal (numeric) $field: ". $self->getfield($field);
+  if ($1) {
+    return "Illegal (numeric) $field: ". $self->getfield($field)
+      unless $2;
+  }
   $self->setfield($field, "$1$2");
   '';
 }

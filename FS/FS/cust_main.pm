@@ -1209,6 +1209,7 @@ sub check {
     || $self->ut_number('refnum')
     || $self->ut_name('last')
     || $self->ut_name('first')
+    || $self->ut_snumbern('birthdate')
     || $self->ut_textn('company')
     || $self->ut_text('address1')
     || $self->ut_textn('address2')
@@ -4618,6 +4619,8 @@ card types.
 No multiple currency support (probably a larger project than just this module).
 
 payinfo_masked false laziness with cust_pay.pm and cust_refund.pm
+
+Birthdates rely on negative epoch values.
 
 =head1 SEE ALSO
 

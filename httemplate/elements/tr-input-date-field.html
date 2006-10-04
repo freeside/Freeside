@@ -1,0 +1,32 @@
+
+<LINK REL="stylesheet" TYPE="text/css" HREF="../elements/calendar-win2k-2.css" TITLE="win2k-2">
+<SCRIPT TYPE="text/javascript" SRC="../elements/calendar_stripped.js"></SCRIPT>
+<SCRIPT TYPE="text/javascript" SRC="../elements/calendar-en.js"></SCRIPT>
+<SCRIPT TYPE="text/javascript" SRC="../elements/calendar-setup.js"></SCRIPT>
+
+<TR>
+  <TD ALIGN="right"><% $label %></TD>
+  <TD>
+    <INPUT TYPE="text" NAME="<% $name %>" ID="<% $name %>_text" VALUE="<% time2str($format, $value) %>">
+    <IMG SRC="../images/calendar.png" ID="<% $name  %>_button" STYLE="cursor: pointer" TITLE="Select date">
+  </TD>
+</TR>
+
+<SCRIPT TYPE="text/javascript">
+  Calendar.setup({
+    inputField: "<% $name %>_text",
+    ifFormat:   "<% $format %>",
+    button:     "<% $name %>_button",
+    align:      "BR"
+  });
+</SCRIPT>
+
+
+<%init>
+my($name, $value, $label, $format) = @_;
+
+$format = "%m/%d/%Y" unless $format;
+$label = $name unless $label;
+
+</%init>
+

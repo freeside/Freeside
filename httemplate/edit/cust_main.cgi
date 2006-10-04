@@ -162,6 +162,19 @@
 
 </TABLE>
 
+<!-- birthdate -->
+
+<BR>
+<% ntable("#cccccc", 2) %>
+<% include ('/elements/tr-input-date-field.html',
+            'birthdate',
+            $cust_main->birthdate,
+            'Date of Birth',
+            $conf->config('date_format') || "%m/%d/%Y")
+%>
+
+</TABLE>
+
 <!-- contact info -->
 
 <BR><BR>
@@ -247,6 +260,8 @@ Service address
 function bottomfixup(what) {
 
   var topvars = new Array(
+    'birthdate',
+
     'custnum', 'agentnum', 'refnum', 'referral_custnum',
 
     'last', 'first', 'ss', 'company',
@@ -329,6 +344,8 @@ function copyelement(from, to) {
 
 <FORM ACTION="<% popurl(1) %>process/cust_main.cgi" METHOD=POST NAME="bottomform" onSubmit="document.bottomform.submit.disabled=true; bottomfixup(this.form);" STYLE="margin-top: 0; margin-bottom: 0">
 % foreach my $hidden (
+%     'birthdate',
+%
 %     'custnum', 'agentnum', 'refnum', 'referral_custnum',
 %     'last', 'first', 'ss', 'company',
 %     'address1', 'address2', 'city',

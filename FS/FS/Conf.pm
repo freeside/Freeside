@@ -413,6 +413,13 @@ httemplate/docs/config.html
   },
 
   {
+    'key'         => 'date_format',
+    'section'     => 'UI',
+    'description' => 'format code for displaying dates with Date::Format::time2str',
+    'type'        => 'text',
+  },
+
+  {
     'key'         => 'cyrus',
     'section'     => 'deprecated',
     'description' => '<b>DEPRECATED</b>, add a <i>cyrus</i> <a href="../browse/part_export.cgi">export</a> instead.  This option used to integrate with <a href="http://asg.web.cmu.edu/cyrus/imapd/">Cyrus IMAP Server</a>, three lines: IMAP server, admin username, and admin password.  Cyrus::IMAP::Admin should be installed locally and the connection to the server secured.',

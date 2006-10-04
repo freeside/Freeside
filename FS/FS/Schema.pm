@@ -407,6 +407,7 @@ sub tables_hashref {
 #        'middle',   'varchar', 'NULL', $char_d, '', '', 
         'first',    'varchar', '',     $char_d, '', '', 
         'ss',       'varchar', 'NULL', 11, '', '', 
+        'birthdate',@date_type, '', '', 
         'company',  'varchar', 'NULL', $char_d, '', '', 
         'address1', 'varchar', '',     $char_d, '', '', 
         'address2', 'varchar', 'NULL', $char_d, '', '', 

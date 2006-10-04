@@ -1,6 +1,7 @@
 %
 %  my( $cust_main ) = @_;
 %  my $conf = new FS::Conf;
+%  my $date_format = ($conf->config('date_format') || "%m/%d/%Y");
 %
 
 
@@ -88,6 +89,11 @@
 <TR>
   <TD ALIGN="right">Order taker</TD>
   <TD BGCOLOR="#ffffff"><% $cust_main->otaker %></TD>
+</TR>
+
+<TR>
+  <TD ALIGN="right">Date of Birth</TD>
+  <TD BGCOLOR="#ffffff"><% $cust_main->birthdate ? time2str($date_format, $cust_main->birthdate) : '' %></TD>
 </TR>
 
 </TABLE></TD></TR></TABLE>
