@@ -1303,10 +1303,11 @@ sub realtime_bop {
 
 }
 
-=item batch_card
+=item batch_card OPTION => VALUE...
 
 Adds a payment for this invoice to the pending credit card batch (see
-L<FS::cust_pay_batch>).
+L<FS::cust_pay_batch>), or, if the B<realtime> option is set to a true value,
+runs the payment using a realtime gateway.
 
 =cut
 
@@ -1383,7 +1384,7 @@ sub batch_card {
 
   my $unapplied = $cust_main->total_credited + $cust_main->total_unapplied_payments + $cust_main->in_transit_payments;
   foreach my $cust_bill ($cust_main->open_cust_bill) {
-  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+    #$dbh->commit or die $dbh->errstr if $oldAutoCommit;
     my $cust_bill_pay_batch = new FS::cust_bill_pay_batch {
       'invnum' => $cust_bill->invnum,
       'paybatchnum' => $cust_pay_batch->paybatchnum,
