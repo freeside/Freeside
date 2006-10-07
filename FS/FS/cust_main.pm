@@ -4473,7 +4473,12 @@ sub batch_import {
 
       my @svc_acct = ();
       if ( $svc_acct{'username'} ) {
-        $svc_acct{svcpart} = $cust_pkg->part_pkg->svcpart( 'svc_acct' );
+        my $part_pkg = $cust_pkg->part_pkg;
+	unless ( $part_pkg ) {
+	  $dbh->rollback if $oldAutoCommit;
+	  return "unknown pkgnum ". $cust_pkg{'pkgpart'};
+	} 
+        $svc_acct{svcpart} = $part_pkg->svcpart( 'svc_acct' );
         push @svc_acct, new FS::svc_acct ( \%svc_acct )
       }
 
