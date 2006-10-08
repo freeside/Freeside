@@ -34,7 +34,9 @@ FS::Record.  The following fields are currently supported:
 
 =item batchnum - primary key
 
-=item status -  
+=item payby - CARD or CHEK
+
+=item status - O (Open), I (In-transit), or R (Resolved)
 
 =item download - 
 
@@ -102,6 +104,7 @@ sub check {
 
   my $error = 
     $self->ut_numbern('batchnum')
+    || $self->ut_enum('payby', [ 'CARD', 'CHEK' ])
     || $self->ut_enum('status', [ 'O', 'I', 'R' ])
   ;
   return $error if $error;

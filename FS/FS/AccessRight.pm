@@ -165,9 +165,11 @@ assigned to users and/or groups.
 ###
 # misc rights
 ###
-  'Job queue', # these are not currently agent-virtualized
-  'Import',    #
-  'Export',    #
+  'Job queue',         # these are not currently agent-virtualized
+  'Process batches',   #
+  'Reprocess batches', #
+  'Import',            #
+  'Export',            #
 
 ###
 # setup/config rights

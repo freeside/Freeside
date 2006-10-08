@@ -215,16 +215,17 @@ Invoice Event #<% $hashref->{eventpart} ? $hashref->{eventpart} : "(NEW)" %>
 %  },
 %
 %  'batch-card' => {
-%    'name' => 'Add card to the pending credit card batch',
+%    'name' => 'Add card or check to a pending batch',
 %    'code' => '$cust_bill->batch_card(%options);',
 %    'weight' => 40,
 %  },
 %
-%  'retriable' => {
-%    'name' => 'Mark batched card event as retriable',
-%    'code' => '$cust_pay_batch->retriable();',
-%    'weight' => 60,
-%  },
+%  
+%  #'retriable' => {
+%  #  'name' => 'Mark batched card event as retriable',
+%  #  'code' => '$cust_pay_batch->retriable();',
+%  #  'weight' => 60,
+%  #},
 %
 %  'send' => {
 %    'name' => 'Send invoice (email/print/fax)',

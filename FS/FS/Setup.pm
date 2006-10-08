@@ -71,13 +71,8 @@ sub populate_locales {
     my @states = $subcountry ? $subcountry->all_codes : undef;
   
     if ( !scalar(@states) || ( scalar(@states)==1 && !defined($states[0]) ) ) {
-  
-      my $cust_main_county = new FS::cust_main_county({
-        'tax'   => 0,
-        'country' => $country,
-      });  
-      my $error = $cust_main_county->insert;
-      die $error if $error;
+
+      _add_locale( 'country'=>$country );
   
     } else {
   
@@ -86,20 +81,40 @@ sub populate_locales {
       }
   
       foreach my $state ( @states ) {
-  
-        my $cust_main_county = new FS::cust_main_county({
-          'state' => $state,
-          'tax'   => 0,
-          'country' => $country,
-        });  
-        my $error = $cust_main_county->insert;
-        die $error if $error;
-  
+        _add_locale( 'country'=>$country, 'state'=>$state);
       }
     
     }
   }
 
+}
+
+sub populate_addl_locales {
+
+  my %addl = (
+    'US' => {
+      'FM' => 'Federated States of Micronesia',
+      'MH' => 'Federated States of Micronesia',
+      'PW' => 'Federated States of Micronesia',
+      'AA' => "Armed Forces Americas (except Canada)",
+      'AE' => "Armed Forces Europe / Canada / Middle East / Africa",
+      'AP' => "Armed Forces Pacific",
+    },
+  );
+
+  foreach my $country ( keys %addl ) {
+    foreach my $state ( keys %{ $addl{$country} } ) {
+      # $longname = $addl{$country}{$state};
+      _add_locale( 'country'=>$country, 'state'=>$state);
+    }
+  }
+
+}
+
+sub _add_locale {
+  my $cust_main_county = new FS::cust_main_county( { 'tax'=>0, @_ });  
+  my $error = $cust_main_county->insert;
+  die $error if $error;
 }
 
 sub populate_initial_data {
@@ -175,13 +190,13 @@ sub initial_data {
         'weight'    => 40,
         'plan'      => 'suspend',
       },
-      { 'payby'     => 'DCLN',
-        'event'     => 'Retriable',
-        'seconds'   => 0,
-        'eventcode' => '$cust_bill_event->retriable();',
-        'weight'    => 60,
-        'plan'      => 'retriable',
-      },
+      #{ 'payby'     => 'DCLN',
+      #  'event'     => 'Retriable',
+      #  'seconds'   => 0,
+      #  'eventcode' => '$cust_bill_event->retriable();',
+      #  'weight'    => 60,
+      #  'plan'      => 'retriable',
+      #},
     ],
     
     #you must create a service definition. An example of a service definition

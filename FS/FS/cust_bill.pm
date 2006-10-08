@@ -1319,9 +1319,10 @@ sub batch_card {
   return '' unless $amount > 0;
   
   if ($options{'realtime'}) {
-    return $cust_main->realtime_bop ( $FS::payby::payby2bop{$cust_main->payby}, $amount,
-      %options,
-    );
+    return $cust_main->realtime_bop( FS::payby->payby2bop($cust_main->payby),
+                                     $amount,
+                                     %options,
+                                   );
   }
 
   my $oldAutoCommit = $FS::UID::AutoCommit;
@@ -1331,11 +1332,15 @@ sub batch_card {
   $dbh->do("LOCK TABLE pay_batch IN SHARE ROW EXCLUSIVE MODE")
     or return "Cannot lock pay_batch: " . $dbh->errstr;
 
-  my $pay_batch = qsearchs('pay_batch', {'status' => 'O'});
+  my %pay_batch = (
+    'status' => 'O',
+    'payby'  => FS::payby->payby2payment($cust_main->payby),
+  );
+
+  my $pay_batch = qsearchs( 'pay_batch', \%pay_batch );
 
   unless ( $pay_batch ) {
-    $pay_batch = new FS::pay_batch;
-    $pay_batch->setfield('status' => 'O');
+    $pay_batch = new FS::pay_batch \%pay_batch;
     my $error = $pay_batch->insert;
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
@@ -1344,26 +1349,29 @@ sub batch_card {
   }
 
   my $old_cust_pay_batch = qsearchs('cust_pay_batch', {
-      'batchnum' => $pay_batch->getfield('batchnum'),
-      'custnum'  => $cust_main->getfield('custnum'),
+      'batchnum' => $pay_batch->batchnum,
+      'custnum'  => $cust_main->custnum,
   } );
 
   my $cust_pay_batch = new FS::cust_pay_batch ( {
-    'batchnum' => $pay_batch->getfield('batchnum'),
+    'batchnum' => $pay_batch->batchnum,
     'invnum'   => $self->getfield('invnum'),       # is there a better value?
-    'custnum'  => $cust_main->getfield('custnum'),
+                                                   # this field should be
+						   # removed...
+						   # cust_bill_pay_batch now
+    'custnum'  => $cust_main->custnum,
     'last'     => $cust_main->getfield('last'),
     'first'    => $cust_main->getfield('first'),
-    'address1' => $cust_main->getfield('address1'),
-    'address2' => $cust_main->getfield('address2'),
-    'city'     => $cust_main->getfield('city'),
-    'state'    => $cust_main->getfield('state'),
-    'zip'      => $cust_main->getfield('zip'),
-    'country'  => $cust_main->getfield('country'),
+    'address1' => $cust_main->address1,
+    'address2' => $cust_main->address2,
+    'city'     => $cust_main->city,
+    'state'    => $cust_main->state,
+    'zip'      => $cust_main->zip,
+    'country'  => $cust_main->country,
     'payby'    => $cust_main->payby,
     'payinfo'  => $cust_main->payinfo,
-    'exp'      => $cust_main->getfield('paydate'),
-    'payname'  => $cust_main->getfield('payname'),
+    'exp'      => $cust_main->paydate,
+    'payname'  => $cust_main->payname,
     'amount'   => $amount,                          # consolidating
   } );
   

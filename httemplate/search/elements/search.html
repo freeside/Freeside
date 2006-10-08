@@ -4,8 +4,13 @@
 %  # (everything not commented required is optional)
 %  #
 %  # # basic options, required
-%  # 'title'       => 'Page title',
-%  # 'name'        => 'items', #name for the records returned
+%  # 'title'         => 'Page title',
+%  # 
+%  # 'name_singular' => 'item',  #singular name for the records returned
+%  #    #OR#                     # (preferred, will be pluralized automatically)
+%  # 'name'          => 'items', #plural name for the records returned
+%  #                             # (deprecated, will be singularlized
+%  #                             #  simplisticly)
 %  #
 %  # # some HTML callbacks...
 %  # 'menubar'          => '', #menubar arrayref
@@ -282,10 +287,18 @@
 %      my( $url, $method ) = @$redirect;
 %      redirect( $url. $rows->[0]->$method() );
 %    } else {
+%      if ( $opt{'name_singular'} ) {
+%        $opt{'name'} = PL($opt{'name_singular'});
+%      }
 %      ( my $xlsname = $opt{'name'} ) =~ s/\W//g;
-%      #$opt{'name'} =~ s/s$// if $total == 1;
-%      $opt{'name'} =~ s/((s)e)?s$/$2/ if $total == 1;  #should use Lingua::bs
-%                                                       # to "depluralize"
+%      if ( $total == 1 ) {
+%        if ( $opt{'name_singular'} ) {
+%          $opt{'name'} = $opt{'name_singular'}
+%        } else {
+%          #$opt{'name'} =~ s/s$// if $total == 1;
+%          $opt{'name'} =~ s/((s)e)?s$/$2/ if $total == 1;
+%        }
+%      }                                               
 %
 %      my @menubar = ();
 %      if ( $opt{'menubar'} ) {

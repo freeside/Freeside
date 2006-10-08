@@ -592,6 +592,7 @@ sub tables_hashref {
     'pay_batch' => { #batches of payments to an external processor
       'columns' => [
         'batchnum',   'serial',    '',   '', '', '', 
+	'payby',      'char',      '',    4, '', '', # CARD/CHEK
         'status',     'char', 'NULL',     1, '', '', 
         'download',   @date_type, '', '', 
         'upload',     @date_type, '', '', 

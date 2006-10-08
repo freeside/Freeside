@@ -3,6 +3,7 @@ package FS::payby;
 use strict;
 use vars qw(%hash %payby2bop);
 use Tie::IxHash;
+use Business::CreditCard;
 
 
 =head1 NAME
@@ -98,11 +99,11 @@ tie %hash, 'Tie::IxHash',
   },
   'DCLN' => {  # This is only an event.
     tinyname  => 'declined',
-    shortname => 'Declined payment',
-    longname  => 'Declined payment',
+    shortname => 'Batch declined payment',
+    longname  => 'Batch declined payment',
 
     #its neither of these..
-    cust_main => '',
+    #cust_main => '',
     cust_pay  => '',
 
   },
@@ -117,10 +118,30 @@ sub payby2longname {
   map { $_ => $hash{$_}->{longname} } $self->payby;
 }
 
+sub shortname {
+  my( $self, $payby ) = @_;
+  $hash{$payby}->{shortname};
+}
+
+sub longname {
+  my( $self, $payby ) = @_;
+  $hash{$payby}->{longname};
+}
+
 %payby2bop = (
   'CARD' => 'CC',
   'CHEK' => 'ECHECK',
 );
+
+sub payby2bop {
+  my( $self, $payby ) = @_;
+  $payby2bop{ $self->payby2payment($payby) };
+}
+
+sub payby2payment {
+  my( $self, $payby ) = @_;
+  $hash{$payby}{'cust_pay'} || $payby;
+}
 
 sub cust_payby {
   my $self = shift;
@@ -142,7 +163,7 @@ sub payinfo_check{
         or return "Illegal (mistyped?) credit card number (payinfo)";
       $$payinforef = $1;
       validate($$payinforef) or return "Illegal credit card number";
-      return "Unknown card type" if cardype($$payinforef) eq "Unknown";
+      return "Unknown card type" if cardtype($$payinforef) eq "Unknown";
     } else {
       $$payinforef="N/A";
     }

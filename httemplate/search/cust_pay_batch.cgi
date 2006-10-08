@@ -1,18 +1,17 @@
-%
-%
-%my ($count_query, $sql_query, $batchnum);
+%my( $count_query, $sql_query );
 %my $hashref = {};
 %my @search = ();
 %my $orderby = 'paybatchnum';
 %
+%my( $pay_batch, $batchnum ) = ( '', '');
 %if ( $cgi->param('batchnum') && $cgi->param('batchnum') =~ /^(\d+)$/ ) {
 %  push @search, "batchnum = $1";
-%  my $pay_batch = qsearchs('pay_batch', { 'batchnum' => $1 } );
+%  $pay_batch = qsearchs('pay_batch', { 'batchnum' => $1 } );
 %  die "Batch $1 not found!" unless $pay_batch;
 %  $batchnum = $pay_batch->batchnum;
 %}
 %
-%if ( $cgi->param('payby')  ) {
+%if ( $cgi->param('payby') ) {
 %  $cgi->param('payby') =~ /^(CARD|CHEK)$/
 %    or die "illegal payby " . $cgi->param('payby');
 %
@@ -24,7 +23,7 @@
 %}
 %
 %my ($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
-%unless ($batchnum){
+%unless ($pay_batch){
 %  push @search, "pay_batch.upload >= $beginning" if ($beginning);
 %  push @search, "pay_batch.upload <= $ending" if ($ending < 4294967295);#2^32-1
 %  $orderby = "pay_batch.download,paybatchnum";
@@ -46,30 +45,55 @@
 %             'LEFT JOIN pay_batch USING ( batchnum ) ' .
 %             "$search ORDER BY $orderby";
 %
-%my $html_init = <<EOF;
-%<FORM ACTION="$p/misc/download-batch.cgi" METHOD="POST">
-%Download batch in format <SELECT NAME="format">
-%<OPTION VALUE="">Default batch mode</OPTION>
-%<OPTION VALUE="csv-td_canada_trust-merchant_pc_batch">CSV file for TD Canada Trust Merchant PC Batch</OPTION>
-%<OPTION VALUE="PAP">80 byte file for TD Canada Trust PAP Batch</OPTION>
-%<OPTION VALUE="BoM">Bank of Montreal ECA batch</OPTION>
-%</SELECT><INPUT TYPE="hidden" NAME="batchnum" VALUE="$batchnum"><INPUT TYPE="submit" VALUE="Download"></FORM>
-%<BR><BR>
+%my $html_init = '';
+%if ( $pay_batch ) {
+%  my $conf = new FS::Conf;
+%  my $fixed = $conf->config('batch-fixed_format-'. $pay_batch->payby);
+%  if (
+%       $pay_batch->status eq 'O' 
+%       || ( $pay_batch->status eq 'I'
+%            && $FS::CurrentUser::CurrentUser->access_right('Reprocess batches')
+%          ) 
+%  ) {
+%    $html_init .= qq!<FORM ACTION="$p/misc/download-batch.cgi" METHOD="POST">!;
+%    if ( $fixed ) {
+%      $html_init .= qq!<INPUT TYPE="hidden" NAME="format" VALUE="$fixed">!;
+%    } else {
+%      $html_init .= qq!Download batch in format <SELECT NAME="format">!.
+%                    qq!<OPTION VALUE="">Default batch mode</OPTION>!.
+%                    qq!<OPTION VALUE="csv-td_canada_trust-merchant_pc_batch">CSV file for TD Canada Trust Merchant PC Batch</OPTION>!.
+%                    qq!<OPTION VALUE="PAP">80 byte file for TD Canada Trust PAP Batch</OPTION>!.
+%                    qq!<OPTION VALUE="BoM">Bank of Montreal ECA batch</OPTION>!.
+%                    qq!</SELECT>!;
+%    }
+%    $html_init .= qq!<INPUT TYPE="hidden" NAME="batchnum" VALUE="$batchnum"><INPUT TYPE="submit" VALUE="Download"></FORM><BR>!;
+%  }
 %
-%<FORM ACTION="$p/misc/upload-batch.cgi" METHOD="POST" ENCTYPE="multipart/form-data">
-%Upload results<BR>
-%Filename <INPUT TYPE="file" NAME="batch_results"><BR>
-%Format <SELECT NAME="format">
-%<OPTION VALUE="">Default batch mode</OPTION>
-%<OPTION VALUE="csv-td_canada_trust-merchant_pc_batch">CSV results from TD Canada Trust Merchant PC Batch</OPTION>
-%<OPTION VALUE="PAP">264 byte results for TD Canada Trust PAP Batch</OPTION>
-%<OPTION VALUE="BoM">Bank of Montreal ECA results</OPTION>
-%</SELECT><BR>
-%<INPUT TYPE="submit" VALUE="Upload"></FORM>
-%<BR>
-%EOF
+%  if (
+%       $pay_batch->status eq 'I' 
+%       || ( $pay_batch->status eq 'R'
+%            && $FS::CurrentUser::CurrentUser->access_right('Reprocess batches')
+%          ) 
+%  ) {
+%    $html_init .= qq!<FORM ACTION="$p/misc/upload-batch.cgi" METHOD="POST" ENCTYPE="multipart/form-data">!.
+%                  qq!Upload results<BR>!.
+%                  qq!Filename <INPUT TYPE="file" NAME="batch_results"><BR>!;
+%    if ( $fixed ) {
+%      $html_init .= qq!<INPUT TYPE="hidden" NAME="format" VALUE="$fixed">!;
+%    } else {
+%      $html_init .= qq!Format <SELECT NAME="format">!.
+%                    qq!<OPTION VALUE="">Default batch mode</OPTION>!.
+%                    qq!<OPTION VALUE="csv-td_canada_trust-merchant_pc_batch">CSV results from TD Canada Trust Merchant PC Batch</OPTION>!.
+%                    qq!<OPTION VALUE="PAP">264 byte results for TD Canada Trust PAP Batch</OPTION>!.
+%                    qq!<OPTION VALUE="BoM">Bank of Montreal ECA results</OPTION>!.
+%                    qq!</SELECT><BR>!;
+%    }
+%    $html_init .= '<INPUT TYPE="submit" VALUE="Upload"></FORM><BR>';
+%  }
 %
-%if ($batchnum) {
+%}
+%
+%if ($pay_batch) {
 %  my $sth = dbh->prepare($count_query) or die dbh->errstr. "doing $count_query";
 %  $sth->execute or die "Error executing \"$count_query\": ". $sth->errstr;
 %  my $cards = $sth->fetchrow_arrayref->[0];
@@ -90,7 +114,7 @@
 	      'menubar'     => ['Main Menu'  => $p,],
 	      'query'       => $sql_query,
 	      'count_query' => $count_query,
-              'html_init'   => $batchnum ? $html_init : '',
+              'html_init'   => $pay_batch ? $html_init : '',
 	      'header'      => [ '#',
 	                         'Inv #',
 	                         'Customer',
@@ -124,7 +148,7 @@
 				 sub {
 				   shift->[7] =~ /^\d{2}(\d{2})[\/\-](\d+)[\/\-]\d+$/;
                                    my( $mon, $year ) = ( $2, $1 );
-                                   $mon = "0$mon" if $mon < 10;
+                                   $mon = "0$mon" if length($mon) == 1;
                                    "$mon/$year";
 				 },
 	                         sub {

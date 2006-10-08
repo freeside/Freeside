@@ -97,6 +97,7 @@ sub handler
       use Date::Parse;
       use Time::Local;
       use Time::Duration;
+      use Lingua::EN::Inflect qw(PL);
       use Tie::IxHash;
       use URI::Escape;
       use HTML::Entities;

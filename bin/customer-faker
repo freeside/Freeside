@@ -2,11 +2,16 @@
 
 use strict;
 use Data::Faker;
+use Business::CreditCard;
 use FS::UID qw(adminsuidsetup);
 use FS::cust_main;
+use Getopt::Std;
 
 my $agentnum = 1;
 my $refnum = 1;
+
+use vars qw( $opt_p );
+getopts('p:');
 
 my $user = shift or die &usage;
 my $num = shift or die &usage;
@@ -38,6 +43,18 @@ until ( $num-- <= 0 ) {
     'payip'    => $faker->ip_address,
   };
 
+  if ( $opt_p eq 'CARD' || ( !$opt_p && rand() > .33 ) ) {
+    $cust_main->payby('CARD');
+    my $cardnum = '4123'. sprintf('%011u', int(rand(100000000000)) );
+    $cust_main->payinfo( $cardnum. generate_last_digit($cardnum) );
+    $cust_main->paydate( '2009-05-01' );
+  } elsif ( $opt_p eq 'CHEK' || ( !$opt_p && rand() > .66 ) ) {
+    $cust_main->payby('CHEK');
+    my $payinfo = sprintf('%7u@%09u', int(rand(10000000)), int(rand(1000000000)) ); 
+    $cust_main->payinfo($payinfo);
+    $cust_main->payname( 'First International Bank of Testing' );
+  }
+
   # could insert invoicing_list and other stuff too..  hell, could insert
   # packages, services, more
   # but i just wanted 10k customers to test the pager and this was good enough
@@ -50,11 +67,12 @@ until ( $num-- <= 0 ) {
 my $end = time;
 
 my $sec = $end-$start;
+$sec=1 if $sec==0;
 my $persec = $onum / $sec;
 print "$onum customers inserted in $sec seconds ($persec customers/sec)\n";
 
 #---
 
 sub usage {
-  die "Usage:\n\n  customer-faker user num_fakes\n";
+  die "Usage:\n\n  customer-faker [ -p payby ] user num_fakes\n";
 }

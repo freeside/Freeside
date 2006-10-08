@@ -1729,11 +1729,34 @@ httemplate/docs/config.html
   },
 
   {
+    'key'         => 'batch-enable',
+    'section'     => 'billing',
+    'description' => 'Enable credit card batching - leave disabled for real-time installations.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'batch-default_format',
     'section'     => 'billing',
     'description' => 'Default format for batches.',
     'type'        => 'select',
-    'select_enum' => [ 'csv-td_canada_trust-merchant_pc_batch', 'BoM' ]
+    'select_enum' => [ 'csv-td_canada_trust-merchant_pc_batch', 'BoM', 'PAP' ]
+  },
+
+  {
+    'key'         => 'batch-fixed_format-CARD',
+    'section'     => 'billing',
+    'description' => 'Fixed (unchangeable) format for credit card batches.',
+    'type'        => 'select',
+    'select_enum' => [ 'csv-td_canada_trust-merchant_pc_batch', 'BoM', 'PAP' ]
+  },
+
+  {
+    'key'         => 'batch-fixed_format-CHEK',
+    'section'     => 'billing',
+    'description' => 'Fixed (unchangeable) format for electronic check batches.',
+    'type'        => 'select',
+    'select_enum' => [ 'csv-td_canada_trust-merchant_pc_batch', 'BoM', 'PAP' ]
   },
 
   {
