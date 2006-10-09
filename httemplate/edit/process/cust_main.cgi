@@ -53,6 +53,10 @@
 %  );
 %}
 %
+%if ( $cgi->param('birthdate') && $cgi->param('birthdate') =~ /^([ 0-9\-\/]{0,10})$/ ) {
+%  $new->setfield('birthdate', str2time($1));
+%}
+%
 %$new->setfield('paid', $cgi->param('paid') )
 %  if $cgi->param('paid');
 %
