@@ -415,8 +415,12 @@ httemplate/docs/config.html
   {
     'key'         => 'date_format',
     'section'     => 'UI',
-    'description' => 'format code for displaying dates with Date::Format::time2str',
-    'type'        => 'text',
+    'description' => 'Format for displaying dates',
+    'type'        => 'select',
+    'select_hash' => [
+                       '%m/%d/%Y' => 'MM/DD/YYYY',
+		       '%Y/%m/%d' => 'YYYY/MM/DD',
+                     ],
   },
 
   {
