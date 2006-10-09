@@ -22,11 +22,22 @@ if ( $opt_s ) {
   #  close MAPSECRETS;
   #}
 
-  open(MAPSECRETS,">>$FREESIDE_CONF/mapsecrets")
+  #insert new entry before a wildcard...
+  open(MAPSECRETS,"<$FREESIDE_CONF/mapsecrets")
     and flock(MAPSECRETS,LOCK_EX)
       or die "can't open $FREESIDE_CONF/mapsecrets: $!";
-  print MAPSECRETS "$user $opt_s\n";
+  open(NEW,">$FREESIDE_CONF/mapsecrets.new")
+    or die "can't open $FREESIDE_CONF/mapsecrets.new: $!";
+  while(<MAPSECRETS>) {
+    if ( /^\*\s/ ) {
+      print NEW "$user $opt_s\n";
+    }
+    print NEW $_;
+  }
   close MAPSECRETS or die "can't close $FREESIDE_CONF/mapsecrets: $!";
+  close NEW or die "can't close $FREESIDE_CONF/mapsecrets.new: $!";
+  rename("$FREESIDE_CONF/mapsecrets.new", "$FREESIDE_CONF/mapsecrets")
+    or die "can't move mapsecrets.new into place: $!";
 
 }
 
