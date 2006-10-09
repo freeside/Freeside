@@ -102,8 +102,7 @@ var confirm_cancel = '<FORM METHOD="POST" ACTION="<% $p %>misc/cust_main-cancel.
 </TR>
 </TABLE>
 %
-%if ( defined $cust_main->dbdef_table->column('comments')
-%     && $cust_main->comments =~ /[^\s\n\r]/              ) {
+%if ( $cust_main->comments =~ /[^\s\n\r]/ ) {
 %
 
 <BR>
@@ -137,16 +136,14 @@ Comments
   <div><br>[iframe not supported]<br><br></div>
 </iframe>
 
-%   } else {
-
-<BR>
 %   }
+
 % }
 
 
 % if ( $conf->config('ticket_system') ) { 
 
-  <BR>
+  <BR><BR>
   <% include('cust_main/tickets.html', $cust_main ) %>
 % } 
 
