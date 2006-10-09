@@ -117,11 +117,11 @@ Comments
 % } 
 <BR><BR>
 % my $notecount = scalar($cust_main->notes());
-% if ($conf->exists('cust_main-use_notes') || $notecount) {
+% if ( ! $conf->exists('cust_main-disable_notes') || $notecount) {
 
 <A NAME="cust_main_note"><FONT SIZE="+2">Notes</FONT></A><BR>
 %   if ( $curuser->access_right('Add customer note') &&
-%        $conf->exists('cust_main-use_notes')
+%        ! $conf->exists('cust_main-disable_notes')
 %      ) {
 
   <A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('<% $p %>edit/cust_main_note.cgi?custnum=<% $cust_main->custnum %>', 616, 386, 'cust_main_note_popup' ), CAPTION, 'Enter customer note', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK); return false;">Add customer note</A>

@@ -1781,9 +1781,9 @@ httemplate/docs/config.html
   },
 
   {
-    'key'         => 'cust_main-use_notes',
+    'key'         => 'cust_main-disable_notes',
     'section'     => 'UI',
-    'description' => 'Display link to add timestamped and user identified customr notes.  Useful in tracking who did what.',
+    'description' => 'Disable new style customer notes - timestamped and user identified customr notes.  Useful in tracking who did what.',
     'type'        => 'checkbox',
   },
 
