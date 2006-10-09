@@ -189,6 +189,7 @@ sub handler
       use FS::access_right;
       use FS::AccessRight;
       use FS::svc_phone;
+      use FS::cust_main_note;
 
       if ( %%%RT_ENABLED%%% ) {
         eval '
