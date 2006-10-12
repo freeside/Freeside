@@ -3969,12 +3969,12 @@ sub fuzzy_search {
 
   check_and_rebuild_fuzzyfiles();
   foreach my $field ( keys %$fuzzy ) {
+
+    my $all = $self->all_X($field);
+    next unless scalar(@$all);
+
     my %match = ();
-    $match{$_}=1 foreach ( amatch( $fuzzy->{$field},
-                                   ['i'],
-                                   @{ $self->all_X($field) }
-                                 )
-                         );
+    $match{$_}=1 foreach ( amatch( $fuzzy->{$field}, ['i'], @$all ) );
 
     my @fcust = ();
     foreach ( keys %match ) {
