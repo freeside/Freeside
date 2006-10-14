@@ -46,6 +46,9 @@ sub _export_insert {
 
 sub _plesk_command {
   my( $self, $method, $domain, @args ) = @_;
+
+  eval "use Net::Plesk'";
+  return $@ if $@;
   
   local($Net::Plesk::DEBUG) = 1
     if $self->option('debug');

@@ -3,8 +3,6 @@ package FS::part_export::www_plesk;
 use vars qw(@ISA %info);
 use Tie::IxHash;
 use FS::part_export;
-use Net::Plesk;
-use Net::Plesk::Response;
 
 @ISA = qw(FS::part_export);
 
@@ -37,7 +35,10 @@ sub rebless { shift; }
 
 sub _export_insert {
   my( $self, $www ) = ( shift, shift );
-  
+
+  eval "use Net::Plesk'";
+  return $@ if $@;
+
   my $plesk = new Net::Plesk (
     'POST'              => $self->option('URL'),
     ':HTTP_AUTH_LOGIN'  => $self->option('login'),
@@ -79,6 +80,9 @@ sub _export_insert {
 
 sub _plesk_command {
   my( $self, $method, @args ) = @_;
+
+  eval "use Net::Plesk'";
+  return $@ if $@;
   
   local($Net::Plesk::DEBUG) = 1
     if $self->option('debug');
