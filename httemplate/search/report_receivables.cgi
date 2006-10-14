@@ -66,8 +66,8 @@
 %
 %  my $active_sql    = FS::cust_pkg->active_sql;
 %  my $inactive_sql  = FS::cust_pkg->inactive_sql;
-%  my $suspended_sql = FS::cust_pkg->inactive_sql;
-%  my $cancelled_sql = FS::cust_pkg->inactive_sql;
+%  my $suspended_sql = FS::cust_pkg->suspended_sql;
+%  my $cancelled_sql = FS::cust_pkg->cancelled_sql;
 %
 %  my $packages_cols = <<END;
 %       ( $select_count_pkgs                    ) AS num_pkgs_sql,
