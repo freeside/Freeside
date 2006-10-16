@@ -164,7 +164,7 @@
 
 <!-- birthdate -->
 
-<% if ( $conf->exists('cust_main-enable_birthdate') ) {
+% if ( $conf->exists('cust_main-enable_birthdate') ) {
 
   <BR>
   <% ntable("#cccccc", 2) %>
@@ -177,7 +177,7 @@
 
   </TABLE>
 
-<% } %>
+% }
 
 <!-- contact info -->
 
