@@ -164,16 +164,20 @@
 
 <!-- birthdate -->
 
-<BR>
-<% ntable("#cccccc", 2) %>
-<% include ('/elements/tr-input-date-field.html',
-            'birthdate',
-            $cust_main->birthdate,
-            'Date of Birth',
-            $conf->config('date_format') || "%m/%d/%Y")
-%>
+<% if ( $conf->exists('cust_main-enable_birthdate') ) {
 
-</TABLE>
+  <BR>
+  <% ntable("#cccccc", 2) %>
+  <% include ('/elements/tr-input-date-field.html',
+              'birthdate',
+              $cust_main->birthdate,
+              'Date of Birth',
+              $conf->config('date_format') || "%m/%d/%Y")
+  %>
+
+  </TABLE>
+
+<% } %>
 
 <!-- contact info -->
 

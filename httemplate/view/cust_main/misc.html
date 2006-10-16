@@ -91,10 +91,14 @@
   <TD BGCOLOR="#ffffff"><% $cust_main->otaker %></TD>
 </TR>
 
-<TR>
-  <TD ALIGN="right">Date of Birth</TD>
-  <TD BGCOLOR="#ffffff"><% $cust_main->birthdate ? time2str($date_format, $cust_main->birthdate) : '' %></TD>
-</TR>
+<% if ( $conf->exists('cust_main-enable_birthdate') ) {
+
+  <TR>
+    <TD ALIGN="right">Date of Birth</TD>
+    <TD BGCOLOR="#ffffff"><% $cust_main->birthdate ? time2str($date_format, $cust_main->birthdate) : '' %></TD>
+  </TR>
+
+<% } %>
 
 </TABLE></TD></TR></TABLE>
 

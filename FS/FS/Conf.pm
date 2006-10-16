@@ -1827,7 +1827,11 @@ httemplate/docs/config.html
     'type'        => 'text',
   },
 
-
+  {
+    'key'         => 'cust_main-enable_birthdate',
+    'section'     => 'UI',
+    'descritpion' => 'Enable tracking of a birth date with each customer record',
+    'type'        => 'checkbox',
 );
 
 1;
