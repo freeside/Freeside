@@ -36,7 +36,7 @@ sub rebless { shift; }
 sub _export_insert {
   my( $self, $www ) = ( shift, shift );
 
-  eval "use Net::Plesk'";
+  eval "use Net::Plesk;";
   return $@ if $@;
 
   my $plesk = new Net::Plesk (
@@ -81,7 +81,7 @@ sub _export_insert {
 sub _plesk_command {
   my( $self, $method, @args ) = @_;
 
-  eval "use Net::Plesk'";
+  eval "use Net::Plesk;";
   return $@ if $@;
   
   local($Net::Plesk::DEBUG) = 1
