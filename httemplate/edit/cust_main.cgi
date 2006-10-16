@@ -119,7 +119,7 @@
 % } else { 
 
 
-   <% include('/elements/tr-select-part_referral.html') %>
+   <% include('/elements/tr-select-part_referral.html', $refnum ) %>
 % } 
 
 
