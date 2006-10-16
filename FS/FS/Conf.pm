@@ -1832,6 +1832,8 @@ httemplate/docs/config.html
     'section'     => 'UI',
     'descritpion' => 'Enable tracking of a birth date with each customer record',
     'type'        => 'checkbox',
+  },
+
 );
 
 1;
