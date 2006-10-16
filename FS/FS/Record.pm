@@ -724,7 +724,7 @@ sub insert {
 
   #false laziness w/delete
   my @real_fields =
-    grep defined($self->getfield($_)) && $self->getfield($_) ne "",
+    grep { defined($self->getfield($_)) && $self->getfield($_) ne "" }
     real_fields($table)
   ;
   my @values = map { _quote( $self->getfield($_), $table, $_) } @real_fields;
@@ -1202,7 +1202,7 @@ sub _h_statement {
   $time ||= time;
 
   my @fields =
-    grep defined($self->getfield($_)) && $self->getfield($_) ne "",
+    grep { defined($self->getfield($_)) && $self->getfield($_) ne "" }
     real_fields($self->table);
   ;
   my @values = map { _quote( $self->getfield($_), $self->table, $_) } @fields;
@@ -1779,14 +1779,12 @@ sub _quote {
        ( $nullable ? ' NULL' : ' NOT NULL' ).
        ")\n" if $DEBUG > 2;
 
-  if ( $value eq '' && $column_type =~ /^(int|numeric)/ ) {
-    if ( $nullable ) {
-      'NULL';
-    } else {
-      cluck "WARNING: Attempting to set non-null integer $table.$column null; ".
-            "using 0 instead";
-      0;
-    }
+  if ( $value eq '' && $nullable ) {
+    'NULL'
+  } elsif ( $value eq '' && $column_type =~ /^(int|numeric)/ ) {
+    cluck "WARNING: Attempting to set non-null integer $table.$column null; ".
+          "using 0 instead";
+    0;
   } elsif ( $value =~ /^\d+(\.\d+)?$/ && 
             ! $column_type =~ /(char|binary|text)$/i ) {
     $value;
