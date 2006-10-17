@@ -912,15 +912,15 @@ sub expselect {
   }
   my $return = qq!<SELECT NAME="$prefix!. qq!_month" SIZE="1">!;
   for ( 1 .. 12 ) {
-    $return .= "<OPTION";
+    $return .= qq!<OPTION VALUE="$_"!;
     $return .= " SELECTED" if $_ == $m;
     $return .= ">$_";
   }
   $return .= qq!</SELECT>/<SELECT NAME="$prefix!. qq!_year" SIZE="1">!;
   my @t = localtime;
   my $thisYear = $t[5] + 1900;
-  for ( ($thisYear > $y && $y > 0 ? $y : $thisYear) .. 2037 ) {
-    $return .= "<OPTION";
+  for ( ($thisYear > $y && $y > 0 ? $y : $thisYear) .. ($thisYear+10) ) {
+    $return .= qq!<OPTION VALUE="$_"!;
     $return .= " SELECTED" if $_ == $y;
     $return .= ">$_";
   }
