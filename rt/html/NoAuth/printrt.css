@@ -1,11 +1,5 @@
-%# BEGIN BPS TAGGED BLOCK {{{
+%# {{{ BEGIN BPS TAGGED BLOCK
 %# 
-%# COPYRIGHT:
-%#  
-%# This software is Copyright (c) 1996-2005 Best Practical Solutions, LLC 
-%#                                          <jesse@bestpractical.com>
-%# 
-%# (Except where explicitly superseded by other copyright notices)
 %# 
 %# 
 %# LICENSE:
@@ -42,15 +36,42 @@
 %# works based on those contributions, and sublicense and distribute
 %# those contributions and any derivatives thereof.
 %# 
-%# END BPS TAGGED BLOCK }}}
-<%init>
-my @params;
-while ( my ($key, $value) = each %ARGS ){
-    if( UNIVERSAL::isa( $value, 'ARRAY' ) ) {
-	push @params, map $key."=".$m->interp->apply_escapes($_,'u'), @$value;
-    } else {
-	push @params, $key."=".$m->interp->apply_escapes($value,'u');
-    }
+%# }}} END BPS TAGGED BLOCK
+%#
+%# Special stylesheet for printing tickets
+%# Koos van den Hout koos@cs.uu.nl 2005-11-21
+%#
+
+SPAN.nav { display: none !important; }
+.nav2 { display: none !important; }
+.nav { display: none !important; }
+.topnav { display: none !important; }
+.blue { display: none !important; }
+.darkblue { display: none !important; }
+.blueright { display: none !important; }
+.currentnav { display: none !important; }
+th.titlebox { border-top: none; border-bottom: none; }
+th.titleboxright { display:none !important; border-top: none; border-bottom: none; }
+.titlebox { border-top: none; border-bottom: none; }
+
+div.downloadattachment, div.downloadcontenttype {
+       display: none !important;
 }
-return(join('&',@params));
+
+
+a[href$="Respond"], a[href$="Comment"], a[href*="ShowEmailRecord"] {
+       display: none !important;
+}
+
+
+%# Provide a callback for adding/modifying the style sheet.
+%# http://www.w3.org/TR/REC-CSS1 - section 3.2, says:
+%#   "latter specified rule wins"
+<& /Elements/Callback &>
+<%flags>
+inherit => undef
+</%flags>
+<%init>
+$r->content_type('text/css');
+$r->headers_out->{'Expires'} = '+30m';
 </%init>

@@ -670,7 +670,14 @@ sub __Value {
 
     return('') if ( !defined($value) || $value eq '');
 
-    return Encode::decode_utf8($value) || $value if $args{'decode_utf8'};
+    if( $args{'decode_utf8'} ) {
+    	# XXX: is_utf8 check should be here unless Encode bug would be fixed
+        # see http://rt.cpan.org/NoAuth/Bug.html?id=14559 
+        return Encode::decode_utf8($value) unless Encode::is_utf8($value);
+    } else {
+        # check is_utf8 here just to be shure
+        return Encode::encode_utf8($value) if Encode::is_utf8($value);
+    }
     return $value;
 }
 
@@ -1290,7 +1297,7 @@ sub _AddLink {
                              Target => $args{'Target'} );
     if ( $old_link->Id ) {
         $RT::Logger->debug("$self Somebody tried to duplicate a link");
-        return ( $old_link->id, $self->loc("Link already exists"), 0 );
+        return ( $old_link->id, $self->loc("Link already exists") );
     }
 
     # }}}
@@ -1538,8 +1545,7 @@ sub CustomFieldLookupType {
 #TODO Deprecated API. Destroy in 3.6
 sub _LookupTypes { 
     my  $self = shift;
-    $RT::Logger->warning("_LookupTypes call is deprecated. Replace with CustomFieldLookupType");
-    $RT::Logger->warning("Besides, it was a private API. Were you doing using it?");
+    $RT::Logger->warning("_LookupTypes call is deprecated at (". join(":",caller)."). Replace with CustomFieldLookupType");
 
     return($self->CustomFieldLookupType);
 

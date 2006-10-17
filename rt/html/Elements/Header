@@ -47,12 +47,14 @@
 <HTML>
 <HEAD>
 <TITLE><%$Title%></TITLE>
-% if ($Refresh > 0) {
+% if ($Refresh && $Refresh > 0) {
 <META HTTP-EQUIV="REFRESH" CONTENT="<%$Refresh%>">
 % }
 
-<link rel="shortcut icon" href="<%$RT::WebImagesURL%>/favicon.png" type="image/png">
-<link rel="stylesheet" href="<%$RT::WebPath%>/NoAuth/webrt.css" type="text/css">
+<link rel="shortcut icon" href="<%$RT::WebImagesURL%>/favicon.png" type="image/png" />
+<link media="all" rel="stylesheet" href="<%$RT::WebPath%>/NoAuth/webrt.css" type="text/css" />
+<link media="print" rel="stylesheet" href="<%$RT::WebPath%>/NoAuth/printrt.css" type="text/css" />
+
 <script>
 function hideshow(num) {
     idstring = "element-" + num;

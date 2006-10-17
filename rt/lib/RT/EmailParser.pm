@@ -277,7 +277,7 @@ sub _PostProcessNewEntity {
 
 sub ParseTicketId {
     my $self = shift;
-    $RT::Logger->warnings("RT::EmailParser->ParseTicketId deprecated. You should be using RT::Interface::Email");
+    $RT::Logger->warnings("RT::EmailParser->ParseTicketId deprecated. You should be using RT::Interface::Email at (". join(":",caller).")");
 
     require RT::Interface::Email;
     RT::Interface::Email::ParseTicketId(@_);
@@ -435,7 +435,7 @@ sub IsRTAddress {
     # Example: the following rule would tell RT not to Cc 
     #   "tickets@noc.example.com"
     if ( defined($RT::RTAddressRegexp) &&
-                       $address =~ /$RT::RTAddressRegexp/ ) {
+                       $address =~ /$RT::RTAddressRegexp/i ) {
         return(1);
     } else {
         return (undef);

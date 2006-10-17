@@ -3,11 +3,11 @@ dnl
 dnl Process this file with autoconf to produce a configure script
 dnl
 dnl Embed in generated ./configure script the following CVS info:
-AC_REVISION($Revision: 1.1.1.5 $)dnl
+AC_REVISION($Revision: 1.1.1.6 $)dnl
 
 dnl Setup autoconf
 AC_PREREQ(2.53)
-AC_INIT(RT, [3.4.4], [rt-bugs@fsck.com])
+AC_INIT(RT, [3.4.5], [rt-bugs@fsck.com])
 AC_CONFIG_SRCDIR([lib/RT.pm.in])
 
 dnl Extract RT version number components
@@ -23,6 +23,7 @@ test "x$rt_version_patch" = 'x' && rt_version_patch=0
 
 dnl Check for programs
 AC_PROG_INSTALL
+AC_PROG_AWK
 AC_ARG_VAR([PERL],[Perl interpreter command])
 AC_PATH_PROG([PERL], [perl], [not found])
 if test "$PERL" = 'not found'; then
@@ -213,6 +214,15 @@ AC_ARG_WITH(my-user-group,
             WEB_USER=$my_user
             WEB_GROUP=$my_group)
 
+# Test for valid database names
+AS_IF([ test "$DB_TYPE" == "mysql" ],
+      [ AC_MSG_CHECKING([if database name is valid])
+          AS_IF([ echo $DB_DATABASE | $AWK '/-/ { exit 1 }' ],
+                [ AC_MSG_RESULT([yes]) ],
+                [ AC_MSG_ERROR([no.  database name ($DB_DATABASE) contains '-' which is not valid for mysql]) ]
+               )
+      ]
+     )
 
 
 dnl Set the value of apachectl
