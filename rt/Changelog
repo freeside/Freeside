@@ -1,9 +1,789 @@
 ------------------------------------------------------------------------
-r3729 | jesse | 2005-08-28 15:45:06 -0400 (Sun, 28 Aug 2005) | 1 line
+r4386 | jesse | 2006-01-12 10:52:27 -0500 (Thu, 12 Jan 2006) | 1 line
 Changed paths:
-   A /rt/tags/3.4.4 (from /rt/branches/3.4-RELEASE:3728)
+   A /rt/tags/3.4.5 (from /rt/branches/3.4-RELEASE:4385)
 
-Tagged as 3.4.4 by svn RelEng 1.0
+Tagged as 3.4.5 by svn RelEng 1.0
+------------------------------------------------------------------------
+r4385 | jesse | 2006-01-12 10:48:22 -0500 (Thu, 12 Jan 2006) | 3 lines
+Changed paths:
+   M /rt/branches/3.4-RELEASE
+   M /rt/branches/3.4-RELEASE/releng.cnf
+
+ r22371@truegrounds:  jesse | 2006-01-12 16:25:39 +0100
+ * This be 3.4.5
+
+------------------------------------------------------------------------
+r4384 | jesse | 2006-01-12 10:48:13 -0500 (Thu, 12 Jan 2006) | 3 lines
+Changed paths:
+   M /rt/branches/3.4-RELEASE
+   M /rt/branches/3.4-RELEASE/sbin/rt-setup-database.in
+
+ r22370@truegrounds:  jesse | 2006-01-12 16:25:19 +0100
+ * Silence a warning introduced by a patch to fix oracle installs
+
+------------------------------------------------------------------------
+r4383 | jesse | 2006-01-12 10:48:03 -0500 (Thu, 12 Jan 2006) | 3 lines
+Changed paths:
+   M /rt/branches/3.4-RELEASE
+   M /rt/branches/3.4-RELEASE/lib/t/regression/22search_tix_by_txn.t
+
+ r22369@truegrounds:  jesse | 2006-01-12 16:23:48 +0100
+ * Forced timezone for a date test to GMT, since it's searching on subjective dates
+
+------------------------------------------------------------------------
+r4372 | jesse | 2006-01-11 12:22:05 -0500 (Wed, 11 Jan 2006) | 7 lines
+Changed paths:
+   M /rt/branches/3.4-RELEASE
+   M /rt/branches/3.4-RELEASE/lib/RT/I18N/de.po
+
+ r22357@truegrounds:  jesse | 2006-01-11 18:20:01 +0100
+ RT-Ticket: 7222
+ RT-Status: resolved
+ RT-Update: correspond
+ 
+ * German translation update from Dirk Pape
+
+------------------------------------------------------------------------
+r4307 | jesse | 2005-12-13 16:54:03 -0500 (Tue, 13 Dec 2005) | 3 lines
+Changed paths:
+   M /rt/branches/3.4-RELEASE
+   M /rt/branches/3.4-RELEASE/releng.cnf
+
+ r20436@truegrounds:  jesse | 2005-12-13 16:51:41 -0500
+ * 3.4.5rc3
+
+------------------------------------------------------------------------
+r4306 | jesse | 2005-12-13 16:53:52 -0500 (Tue, 13 Dec 2005) | 3 lines
+Changed paths:
+   M /rt/branches/3.4-RELEASE
+   M /rt/branches/3.4-RELEASE/lib/RT/I18N.pm
+
+ r20435@truegrounds:  jesse | 2005-12-13 16:51:06 -0500
+ * warning silencing for a log message
+
+------------------------------------------------------------------------
+r4303 | alexmv | 2005-12-13 13:58:20 -0500 (Tue, 13 Dec 2005) | 3 lines
+Changed paths:
+   M /rt/branches/3.4-RELEASE
+   M /rt/branches/3.4-RELEASE/lib/RT/Tickets_Overlay.pm
+
+ r7707@zoq-fot-pik:  chmrr | 2005-12-13 13:54:45 -0500
+  * I don't think this join to Attachments is needed or useful -- it means you don't see changes with no attachments
+
+------------------------------------------------------------------------
+r4220 | jesse | 2005-12-02 17:59:40 -0500 (Fri, 02 Dec 2005) | 3 lines
+Changed paths:
+   M /rt/branches/3.4-RELEASE
+   M /rt/branches/3.4-RELEASE/releng.cnf
+
+ r19695@truegrounds:  jesse | 2005-12-02 17:58:50 -0500
+ * RC2
+
+------------------------------------------------------------------------
+r4216 | jesse | 2005-12-02 17:02:21 -0500 (Fri, 02 Dec 2005) | 8 lines
+Changed paths:
+   M /rt/branches/3.4-RELEASE
+   M /rt/branches/3.4-RELEASE/html/Search/Build.html
+
+ r19688@truegrounds:  jesse | 2005-12-02 17:01:28 -0500
+ RT-Ticket: 6962
+ RT-Status: resolved
+ RT-Update: correspond
+ 
+ * Patch from Rolf Grossmann to fix some bogosity in the query builder
+ 
+
+------------------------------------------------------------------------
+r4212 | jesse | 2005-12-01 23:14:40 -0500 (Thu, 01 Dec 2005) | 3 lines
+Changed paths:
+   M /rt/branches/3.4-RELEASE
+   M /rt/branches/3.4-RELEASE/html/Elements/Header
+   A /rt/branches/3.4-RELEASE/html/NoAuth/printrt.css
+
+ r19674@truegrounds:  jesse | 2005-12-01 23:13:50 -0500
+  * Added a print stylesheet from Koos van den Hout
+
+------------------------------------------------------------------------
+r4175 | jesse | 2005-11-30 16:03:40 -0500 (Wed, 30 Nov 2005) | 3 lines
+Changed paths:
+   M /rt/branches/3.4-RELEASE
+   M /rt/branches/3.4-RELEASE/releng.cnf
+
+ r19588@truegrounds:  jesse | 2005-11-30 16:00:10 -0500
+ * Bump to 3.4.5rc1
+
+------------------------------------------------------------------------
+r4154 | jesse | 2005-11-29 18:55:07 -0500 (Tue, 29 Nov 2005) | 3 lines
+Changed paths:
+   M /rt/branches/3.4-RELEASE
+   M /rt/branches/3.4-RELEASE/html/Elements/ShowCustomFields
+   M /rt/branches/3.4-RELEASE/html/Ticket/Elements/EditCustomFields
+
+ r19545@truegrounds:  jesse | 2005-11-29 18:51:07 -0500
+ * A pair of new callbacks to make it easier to hide away a custom field on ticket display/edit
+
+------------------------------------------------------------------------
+r4120 | robert | 2005-11-19 22:52:28 -0500 (Sat, 19 Nov 2005) | 3 lines
+Changed paths:
+   M /rt/branches/3.4-RELEASE
+   M /rt/branches/3.4-RELEASE/lib/RT/Tickets_Overlay.pm
+
+ r4186@bear:  rspier | 2005-11-19 19:51:38 -0800
+ typo fix: s/load/Load/ 
+
+------------------------------------------------------------------------
+r4096 | alexmv | 2005-11-14 18:34:44 -0500 (Mon, 14 Nov 2005) | 7 lines
+Changed paths:
+   M /rt/branches/3.4-RELEASE
+   M /rt/branches/3.4-RELEASE/lib/RT/CustomFieldValues.pm
+
+ r7182@zoq-fot-pik:  chmrr | 2005-11-14 18:34:13 -0500
+ RT-Ticket: 6994
+ RT-Status: resolved
+ RT-Update: correspond
+  * Sort custom vield values by SortOrder, then *Name*, then id; patch
+    from Troy Davis <troy@nack.net>
+
+------------------------------------------------------------------------
+r4092 | alexmv | 2005-11-14 17:35:40 -0500 (Mon, 14 Nov 2005) | 6 lines
+Changed paths:
+   M /rt/branches/3.4-RELEASE
+   M /rt/branches/3.4-RELEASE/lib/RT/EmailParser.pm
+   M /rt/branches/3.4-RELEASE/lib/RT/Interface/Email.pm
+
+ r7175@zoq-fot-pik:  chmrr | 2005-11-14 17:35:03 -0500
+ RT-Ticket: 7010
+ RT-Status: resolved
+ RT-Update: correspond
+  * Treat our email addresses as case-insensitive
+
+------------------------------------------------------------------------
+r4090 | ruz | 2005-11-14 17:02:36 -0500 (Mon, 14 Nov 2005) | 3 lines
+Changed paths:
+   M /rt/branches/3.4-RELEASE/html/Elements/QueryString
+
+* /Elements/QueryString now supports ARRAY refs, this allow us to handle
+  multiple arguments with the same name, this behaviour is consistent with
+  how HTML::Mason handle arguments
+------------------------------------------------------------------------
+r4089 | ruz | 2005-11-14 16:57:36 -0500 (Mon, 14 Nov 2005) | 1 line
+Changed paths:
+   M /rt/branches/3.4-RELEASE/etc/schema.mysql
+
+* revert back mysql.schema, commited by accident
+------------------------------------------------------------------------
+r4087 | ruz | 2005-11-14 16:50:12 -0500 (Mon, 14 Nov 2005) | 2 lines
+Changed paths:
+   M /rt/branches/3.4-RELEASE/etc/schema.mysql
+   M /rt/branches/3.4-RELEASE/html/Elements/Callback
+
+* fix: really hide hidden paths from callbacks
+* fix: fetch data from the %cache by one key when store data with other
+------------------------------------------------------------------------
+r4086 | alexmv | 2005-11-14 16:49:33 -0500 (Mon, 14 Nov 2005) | 8 lines
+Changed paths:
+   M /rt/branches/3.4-RELEASE
+   M /rt/branches/3.4-RELEASE/etc/RT_Config.pm.in
+   M /rt/branches/3.4-RELEASE/lib/RT/Interface/Email.pm
+
+ r7165@zoq-fot-pik:  chmrr | 2005-11-14 16:49:07 -0500
+ RT-Ticket: 7131
+ RT-Status: resolved
+ RT-Update: correspond
+  * The $RT::rtname regex should be case insensitive for matching
+    subjects; thanks to Phil Smith III <psmith@levanta.com> for the
+    catch
+
+------------------------------------------------------------------------
+r4085 | alexmv | 2005-11-14 16:30:12 -0500 (Mon, 14 Nov 2005) | 7 lines
+Changed paths:
+   M /rt/branches/3.4-RELEASE
+   M /rt/branches/3.4-RELEASE/html/NoAuth/webrt.css
+
+ r7163@zoq-fot-pik:  chmrr | 2005-11-14 16:29:36 -0500
+ RT-Ticket: 6507
+ RT-Status: resolved
+ RT-Update: correspond
+  * Standardize fonts to "Verdana, Arial, Helvetica, sans-serif";
+    variant of patch from Maxime Henrion <mux@FreeBSD.org>
+
+------------------------------------------------------------------------
+r4084 | alexmv | 2005-11-14 15:51:27 -0500 (Mon, 14 Nov 2005) | 7 lines
+Changed paths:
+   M /rt/branches/3.4-RELEASE
+   M /rt/branches/3.4-RELEASE/lib/RT/Record.pm
+
+ r7161@zoq-fot-pik:  chmrr | 2005-11-14 15:50:56 -0500
+ RT-Ticket: 6458
+ RT-Status: resolved
+ RT-Update: correspond
+  * Removed extra return argument from _AddLink, thanks to Todd Chapman
+    <todd@chaka.net>
+
+------------------------------------------------------------------------
+r4083 | alexmv | 2005-11-14 15:43:24 -0500 (Mon, 14 Nov 2005) | 6 lines
+Changed paths:
+   M /rt/branches/3.4-RELEASE
+   M /rt/branches/3.4-RELEASE/lib/RT/Ticket_Overlay.pm
+
+ r7159@zoq-fot-pik:  chmrr | 2005-11-14 15:42:48 -0500
+ RT-Ticket: 6457
+ RT-Status: resolved
+ RT-Update: correspond
+  * Typo in Ticket_Overlay.pm, found by Todd Chapman <todd@chaka.net>
+
+------------------------------------------------------------------------
+r4081 | alexmv | 2005-11-14 14:59:42 -0500 (Mon, 14 Nov 2005) | 7 lines
+Changed paths:
+   M /rt/branches/3.4-RELEASE
+   M /rt/branches/3.4-RELEASE/html/Elements/CollectionAsTable/Row
+
+ r7155@zoq-fot-pik:  chmrr | 2005-11-14 14:59:06 -0500
+ RT-Ticket: 7020
+ RT-Status: resolved
+ RT-Update: correspond
+  * Actually make use of 'style' if it is provided; thanks to Kelly
+   F. Hickel <kfh@mqsoftware.com>
+
+------------------------------------------------------------------------
+r4080 | alexmv | 2005-11-14 14:55:17 -0500 (Mon, 14 Nov 2005) | 3 lines
+Changed paths:
+   M /rt/branches/3.4-RELEASE
+   M /rt/branches/3.4-RELEASE/lib/RT/I18N/fr.po
+
+ r7152@zoq-fot-pik:  chmrr | 2005-11-14 14:54:43 -0500
+  * Restore rightful .po headers on new french translation
+
+------------------------------------------------------------------------
+r4079 | alexmv | 2005-11-14 14:52:57 -0500 (Mon, 14 Nov 2005) | 6 lines
+Changed paths:
+   M /rt/branches/3.4-RELEASE
+   M /rt/branches/3.4-RELEASE/lib/t/regression/09record_cf_api.t
+
+ r7148@zoq-fot-pik:  chmrr | 2005-11-14 14:51:58 -0500
+ RT-Ticket: 6559
+ RT-Status: resolved
+ RT-Update: correspond
+  * Tests from Todd Chapman for loading CF from a wrong queue
+
+------------------------------------------------------------------------
+r4078 | jesse | 2005-11-14 14:50:54 -0500 (Mon, 14 Nov 2005) | 7 lines
+Changed paths:
+   M /rt/branches/3.4-RELEASE
+   M /rt/branches/3.4-RELEASE/lib/RT/I18N/fr.po
+
+ r18904@truegrounds:  jesse | 2005-11-14 14:49:25 -0500
+ RT-Ticket: 7105
+ RT-Status: resolved
+ RT-Update: correspond
+ 
+ Updated French translation from Jerome Fenal
+
+------------------------------------------------------------------------
+r4077 | alexmv | 2005-11-14 14:20:49 -0500 (Mon, 14 Nov 2005) | 6 lines
+Changed paths:
+   M /rt/branches/3.4-RELEASE
+   M /rt/branches/3.4-RELEASE/lib/RT/I18N/ja.po
+
+ r7146@zoq-fot-pik:  chmrr | 2005-11-14 14:20:03 -0500
+ RT-Ticket: 7090
+ RT-Status: resolved
+ RT-Update: correspond
+  * New Japanese .po, from Daisuke Maki <daisuke@wafu.ne.jp>
+
+------------------------------------------------------------------------
+r4076 | jesse | 2005-11-14 14:18:48 -0500 (Mon, 14 Nov 2005) | 8 lines
+Changed paths:
+   M /rt/branches/3.4-RELEASE
+   M /rt/branches/3.4-RELEASE/lib/t/regression/06mailgateway.t
+
+ r18900@truegrounds:  jesse | 2005-11-14 13:57:34 -0500
+ RT-Ticket: 7122
+ RT-Status: resolved
+ RT-Update: correspond
+ 
+ * Patch from Todd Chapman to honor changed a $rtname variable when running
+   the test suite
+
+------------------------------------------------------------------------
+r4075 | jesse | 2005-11-14 14:18:36 -0500 (Mon, 14 Nov 2005) | 8 lines
+Changed paths:
+   M /rt/branches/3.4-RELEASE
+   M /rt/branches/3.4-RELEASE/lib/t/regression/07acl.t
+
+ r18899@truegrounds:  jesse | 2005-11-14 13:40:24 -0500
+ RT-Ticket: 7121 
+ RT-Status: resolved
+ RT-Update: correspond
+ 
+ * Patch from Todd Chapman to make the web based acl tests honor RT::WebPath
+ 
+
+------------------------------------------------------------------------
+r4074 | alexmv | 2005-11-14 13:52:00 -0500 (Mon, 14 Nov 2005) | 3 lines
+Changed paths:
+   M /rt/branches/3.4-RELEASE
+   M /rt/branches/3.4-RELEASE/etc/RT_Config.pm.in
+   M /rt/branches/3.4-RELEASE/lib/RT/Interface/Email.pm
+
+ r7140@zoq-fot-pik:  chmrr | 2005-11-14 13:51:14 -0500
+  * Better bounce handling, from Abhijit Menon-Sen <ams@oryx.com>
+
+------------------------------------------------------------------------
+r4073 | jesse | 2005-11-14 13:37:01 -0500 (Mon, 14 Nov 2005) | 16 lines
+Changed paths:
+   M /rt/branches/3.4-RELEASE
+   M /rt/branches/3.4-RELEASE/sbin/rt-setup-database.in
+
+ r18895@truegrounds:  jesse | 2005-11-14 13:35:29 -0500
+ RT-Ticket: 7136
+ RT-Status: resolved
+ RT-Update: correspond
+ 
+ Stuart Knight reports:
+ 
+ As part of the "initdb" processing, the scripts went through and created a new database user, in my case called RT3.
+ 
+ When it came time to create the tables, the script was still logged on as the dba user "system", so all of tables/sequences were created under "system"'s schema.
+ 
+ I followed through the rt-setup-database script, and spotted that there was a database disconnect, followed by an immediate reconnect, as the same user. (in the case of Oracle this still being the "dba" account)
+ 
+ Putting an extra validation check in here for Oracle, and then connecting as the intended database user fixed up the issue.
+ 
+
+------------------------------------------------------------------------
+r4072 | alexmv | 2005-11-14 13:33:43 -0500 (Mon, 14 Nov 2005) | 8 lines
+Changed paths:
+   M /rt/branches/3.4-RELEASE
+   M /rt/branches/3.4-RELEASE/lib/RT/Principal_Overlay.pm
+   M /rt/branches/3.4-RELEASE/lib/t/regression/07rights.t
+
+ r7135@zoq-fot-pik:  chmrr | 2005-11-14 13:32:23 -0500
+ RT-Ticket: 7101
+ RT-Status: resolved
+ RT-Update: correspond
+ 
+  * Don't modify EquivObjects arrayref, thanks to Todd Chapman
+ 
+
+------------------------------------------------------------------------
+r4071 | jesse | 2005-11-14 13:21:29 -0500 (Mon, 14 Nov 2005) | 10 lines
+Changed paths:
+   M /rt/branches/3.4-RELEASE
+   M /rt/branches/3.4-RELEASE/etc/RT_Config.pm.in
+   M /rt/branches/3.4-RELEASE/lib/RT/Ticket_Overlay.pm
+   A /rt/branches/3.4-RELEASE/lib/t/regression/14linking.t
+
+ r18893@truegrounds:  jesse | 2005-11-14 13:19:52 -0500
+ RT-Ticket: 7128
+ RT-Status: resolved
+ RT-Update: correspond
+ 
+ A big patch from Todd Chapman (with lots of juicy tests) to optionally
+ create two transactions when you create a link. (Also, this means that we'll
+ run scrips twice). This is off by default in RT 3.4
+ 
+
+------------------------------------------------------------------------
+r4069 | jesse | 2005-11-14 12:55:46 -0500 (Mon, 14 Nov 2005) | 7 lines
+Changed paths:
+   M /rt/branches/3.4-RELEASE
+   M /rt/branches/3.4-RELEASE/html/Elements/ScrubHTML
+
+ r18888@truegrounds:  jesse | 2005-11-14 12:54:25 -0500
+ RT-Ticket: 7048
+ RT-Status: resolved
+ RT-Update: correspond
+ 
+ * Akos Torok pointed out that our HTML scrubber removed "PRE" tags from HTML
+
+------------------------------------------------------------------------
+r4065 | jesse | 2005-11-14 12:44:41 -0500 (Mon, 14 Nov 2005) | 9 lines
+Changed paths:
+   M /rt/branches/3.4-RELEASE
+   M /rt/branches/3.4-RELEASE/README
+
+ r18880@truegrounds:  jesse | 2005-11-14 12:42:48 -0500
+ RT-Ticket: 7081
+ RT-Status: resolved
+ RT-Update: correspond
+ 
+ * Added a note to the readme warning users to clean out the
+   mason cache on upgrades - Ruslan
+ 
+
+------------------------------------------------------------------------
+r4064 | alexmv | 2005-11-14 12:43:06 -0500 (Mon, 14 Nov 2005) | 3 lines
+Changed paths:
+   M /rt/branches/3.4-RELEASE
+   M /rt/branches/3.4-RELEASE/lib/RT/I18N/ru.po
+
+ r7122@zoq-fot-pik:  chmrr | 2005-11-14 12:42:37 -0500
+  * Updated russian translation from Andrew Kornilov <andy@eva.dp.ua>
+
+------------------------------------------------------------------------
+r4063 | jesse | 2005-11-14 12:38:59 -0500 (Mon, 14 Nov 2005) | 8 lines
+Changed paths:
+   M /rt/branches/3.4-RELEASE
+   M /rt/branches/3.4-RELEASE/html/Elements/RT__Ticket/ColumnMap
+
+ r18877@truegrounds:  jesse | 2005-11-14 12:37:37 -0500
+ RT-Ticket: 7087
+ RT-Status: resolved
+ RT-Update: correspond
+ 
+ Displayed linked tickets in search results were inverted
+ 
+
+------------------------------------------------------------------------
+r4061 | robert | 2005-11-13 00:14:57 -0500 (Sun, 13 Nov 2005) | 9 lines
+Changed paths:
+   M /rt/branches/3.4-RELEASE
+   M /rt/branches/3.4-RELEASE/html/Elements/Header
+   M /rt/branches/3.4-RELEASE/html/Ticket/Elements/ShowTransactionAttachments
+
+ r4124@bear:  rspier | 2005-11-12 21:08:45 -0800
+ Undefined Warning Elimination:
+   - index.html passes in $session{'home_refresh_interval'} which can be null.  
+ 
+ r4125@bear:  rspier | 2005-11-12 21:14:28 -0800
+ Undefined Warning Elimination:
+   GetHeader will return undefined when the header doesn't exist.  (This is _good_, as that is different than empty.)
+   But.. =~ warns.
+
+------------------------------------------------------------------------
+r4060 | jesse | 2005-11-11 15:27:56 -0500 (Fri, 11 Nov 2005) | 3 lines
+Changed paths:
+   M /rt/branches/3.4-RELEASE
+   M /rt/branches/3.4-RELEASE/sbin/rt-test-dependencies.in
+
+ r18722@truegrounds:  jesse | 2005-11-11 15:26:34 -0500
+ * SB 1.35 dependency
+
+------------------------------------------------------------------------
+r4059 | jesse | 2005-11-11 00:12:49 -0500 (Fri, 11 Nov 2005) | 3 lines
+Changed paths:
+   M /rt/branches/3.4-RELEASE
+   M /rt/branches/3.4-RELEASE/lib/RT/Groups_Overlay.pm
+
+ r18716@truegrounds:  jesse | 2005-11-11 00:10:08 -0500
+ * fix from ruslan for fallout from his WhoHaveRight refactoring
+
+------------------------------------------------------------------------
+r4035 | jesse | 2005-11-06 17:15:18 -0500 (Sun, 06 Nov 2005) | 3 lines
+Changed paths:
+   M /rt/branches/3.4-RELEASE
+   M /rt/branches/3.4-RELEASE/releng.cnf
+
+ r18412@truegrounds:  jesse | 2005-11-06 17:13:58 -0500
+ * Bumped to 3.4.5pre1
+
+------------------------------------------------------------------------
+r4034 | jesse | 2005-11-06 17:15:06 -0500 (Sun, 06 Nov 2005) | 3 lines
+Changed paths:
+   M /rt/branches/3.4-RELEASE
+   M /rt/branches/3.4-RELEASE/lib/RT/Groups_Overlay.pm
+   M /rt/branches/3.4-RELEASE/lib/RT/Principal_Overlay.pm
+   M /rt/branches/3.4-RELEASE/lib/RT/Users_Overlay.pm
+
+ r18411@truegrounds:  jesse | 2005-11-06 17:13:33 -0500
+  * Patch to significantly improve performance on "WhoHaveRight" from Ruslan.
+
+------------------------------------------------------------------------
+r4033 | jesse | 2005-11-06 17:13:38 -0500 (Sun, 06 Nov 2005) | 4 lines
+Changed paths:
+   M /rt/branches/3.4-RELEASE
+   M /rt/branches/3.4-RELEASE/lib/RT/Attachments_Overlay.pm
+
+ r18409@truegrounds:  jesse | 2005-11-06 17:11:57 -0500
+ * Fix to attachment ordering when you ask for a txn's attachments.
+   (Postgres doesn't default to ordering by id, so we were getting the wrong txn content)
+
+------------------------------------------------------------------------
+r4011 | pdh | 2005-11-01 00:43:02 -0500 (Tue, 01 Nov 2005) | 3 lines
+Changed paths:
+   M /rt/branches/3.4-RELEASE/html/Ticket/Elements/ShowTransactionAttachments
+
+Add a missing space, before the Style Police come after me.
+
+
+------------------------------------------------------------------------
+r4010 | pdh | 2005-10-31 19:21:57 -0500 (Mon, 31 Oct 2005) | 3 lines
+Changed paths:
+   M /rt/branches/3.4-RELEASE/html/Ticket/Elements/ShowTransactionAttachments
+
+Make $RT::MaxInlineBody work properly.
+
+
+------------------------------------------------------------------------
+r3989 | alexmv | 2005-10-24 17:26:18 -0400 (Mon, 24 Oct 2005) | 4 lines
+Changed paths:
+   M /rt/branches/3.4-RELEASE
+   M /rt/branches/3.4-RELEASE/html/Elements/EditCustomField
+   M /rt/branches/3.4-RELEASE/html/Elements/EditCustomFieldSelect
+
+ r6881@zoq-fot-pik:  chmrr | 2005-10-24 17:25:14 -0400
+  * Ensure custom fields keep correct fallback values; for instance, if
+ "add another attachment" is clicked
+
+------------------------------------------------------------------------
+r3967 | jesse | 2005-10-14 17:10:24 -0400 (Fri, 14 Oct 2005) | 3 lines
+Changed paths:
+   M /rt/branches/3.4-RELEASE
+   M /rt/branches/3.4-RELEASE/lib/RT/Ticket_Overlay.pm
+
+ r17368@hualien:  jesse | 2005-10-14 17:08:10 -0400
+ * When Robert made the change to how CustomFieldValues works, he broke the API. Fixed
+
+------------------------------------------------------------------------
+r3966 | jesse | 2005-10-14 17:10:11 -0400 (Fri, 14 Oct 2005) | 3 lines
+Changed paths:
+   M /rt/branches/3.4-RELEASE
+   M /rt/branches/3.4-RELEASE/lib/RT/Tickets_Overlay.pm
+
+ r17360@hualien:  jesse | 2005-10-14 15:21:46 -0400
+ * Perltidy
+
+------------------------------------------------------------------------
+r3958 | ruz | 2005-10-13 08:40:24 -0400 (Thu, 13 Oct 2005) | 1 line
+Changed paths:
+   M /rt/branches/3.4-RELEASE/html/User/Elements/Tabs
+
+* new callback in html/User/Elements/Tabs
+------------------------------------------------------------------------
+r3957 | ruz | 2005-10-13 08:37:47 -0400 (Thu, 13 Oct 2005) | 1 line
+Changed paths:
+   M /rt/branches/3.4-RELEASE/lib/RT/Tickets_Overlay_SQL.pm
+
+* code comments
+------------------------------------------------------------------------
+r3948 | ruz | 2005-10-10 20:01:50 -0400 (Mon, 10 Oct 2005) | 1 line
+Changed paths:
+   M /rt/branches/3.4-RELEASE/lib/RT/Action/SendEmail.pm
+
+* get rid of "not a number" warning
+------------------------------------------------------------------------
+r3945 | ruz | 2005-10-10 15:47:29 -0400 (Mon, 10 Oct 2005) | 4 lines
+Changed paths:
+   M /rt/branches/3.4-RELEASE/lib/RT/Action/SendEmail.pm
+
+backport of the 3.5-TESTING@3543
+Changes:
+* fix attachments ordering
+
+------------------------------------------------------------------------
+r3944 | ruz | 2005-10-10 15:27:36 -0400 (Mon, 10 Oct 2005) | 15 lines
+Changed paths:
+   M /rt/branches/3.4-RELEASE/lib/RT/Ticket_Overlay.pm
+   M /rt/branches/3.4-RELEASE/lib/RT/Tickets_Overlay.pm
+   M /rt/branches/3.4-RELEASE/lib/RT/Tickets_Overlay_SQL.pm
+   A /rt/branches/3.4-RELEASE/lib/t/regression/22search_tix_by_watcher.t
+
+backport of the 3.5-TESTING@3943
+Changes
+* fix for search by owner's fields, now owner is WATCHERFIELD instead of ENUM
+* added backward compatible variant for Owner, next searches should work
+** Owner = '<id>'
+** Owner != '<id>'
+** Owner = '<name>'
+** Owner != '<name>'
+** for other operators or if subfield(subkey) is specified search works
+   as for other watchers
+* Fix for searches like "Cc.Name <> 'SomeBody'", was skipping tickets
+  with empty Cc list.
+* get rid of some unint warnings
+* test suite for all corner cases
+
+------------------------------------------------------------------------
+r3938 | robert | 2005-10-07 00:20:15 -0400 (Fri, 07 Oct 2005) | 3 lines
+Changed paths:
+   M /rt/branches/3.4-RELEASE
+   M /rt/branches/3.4-RELEASE/lib/RT/Ticket_Overlay.pm
+
+ r3995@bear:  rspier | 2005-10-06 21:19:24 -0700
+  [fsck.com #7067] - If we can't find a customfield that the user is allowed to see on a ticket, don't return any values, (when specifying a custom field)
+
+------------------------------------------------------------------------
+r3901 | alexmv | 2005-10-03 14:15:35 -0400 (Mon, 03 Oct 2005) | 3 lines
+Changed paths:
+   M /rt/branches/3.4-RELEASE
+   M /rt/branches/3.4-RELEASE/lib/RT/I18N/cs.po
+   M /rt/branches/3.4-RELEASE/lib/RT/I18N/da.po
+   M /rt/branches/3.4-RELEASE/lib/RT/I18N/de.po
+   M /rt/branches/3.4-RELEASE/lib/RT/I18N/en.po
+   M /rt/branches/3.4-RELEASE/lib/RT/I18N/es.po
+   M /rt/branches/3.4-RELEASE/lib/RT/I18N/fi.po
+   M /rt/branches/3.4-RELEASE/lib/RT/I18N/fr.po
+   M /rt/branches/3.4-RELEASE/lib/RT/I18N/he.po
+   M /rt/branches/3.4-RELEASE/lib/RT/I18N/hu.po
+   M /rt/branches/3.4-RELEASE/lib/RT/I18N/id.po
+   M /rt/branches/3.4-RELEASE/lib/RT/I18N/it.po
+   M /rt/branches/3.4-RELEASE/lib/RT/I18N/ja.po
+   M /rt/branches/3.4-RELEASE/lib/RT/I18N/nl.po
+   M /rt/branches/3.4-RELEASE/lib/RT/I18N/no.po
+   M /rt/branches/3.4-RELEASE/lib/RT/I18N/pl.po
+   M /rt/branches/3.4-RELEASE/lib/RT/I18N/pt_br.po
+   M /rt/branches/3.4-RELEASE/lib/RT/I18N/ru.po
+   M /rt/branches/3.4-RELEASE/lib/RT/I18N/zh_cn.po
+   M /rt/branches/3.4-RELEASE/lib/RT/I18N/zh_tw.po
+
+ r6568@zoq-fot-pik:  chmrr | 2005-10-03 14:14:49 -0400
+  * Header fixes in PO files to include correct RT version
+
+------------------------------------------------------------------------
+r3900 | alexmv | 2005-10-03 13:32:45 -0400 (Mon, 03 Oct 2005) | 3 lines
+Changed paths:
+   M /rt/branches/3.4-RELEASE
+   M /rt/branches/3.4-RELEASE/lib/RT/I18N/es.po
+
+ r6566@zoq-fot-pik:  chmrr | 2005-10-03 13:28:24 -0400
+  * Updated spanish translation, thanks to Carlos Velasco
+
+------------------------------------------------------------------------
+r3896 | alexmv | 2005-09-30 15:56:31 -0400 (Fri, 30 Sep 2005) | 8 lines
+Changed paths:
+   M /rt/branches/3.4-RELEASE
+   M /rt/branches/3.4-RELEASE/html/Approvals/Elements/PendingMyApproval
+
+ r6558@zoq-fot-pik:  chmrr | 2005-09-30 15:56:06 -0400
+ RT-Ticket: 7029
+ RT-Status: resolved
+ RT-Update: correspond
+ 
+  * Applied missing limit for AdminCcs, from Todd Chapman
+ 
+
+------------------------------------------------------------------------
+r3895 | alexmv | 2005-09-30 15:19:57 -0400 (Fri, 30 Sep 2005) | 3 lines
+Changed paths:
+   M /rt/branches/3.4-RELEASE
+   M /rt/branches/3.4-RELEASE/html/Elements/RT__Ticket/ColumnMap
+
+ r6555@zoq-fot-pik:  chmrr | 2005-09-30 15:18:22 -0400
+  * Link to the *other* end of the link, not the one that is us
+
+------------------------------------------------------------------------
+r3894 | alexmv | 2005-09-30 15:19:46 -0400 (Fri, 30 Sep 2005) | 3 lines
+Changed paths:
+   M /rt/branches/3.4-RELEASE
+   M /rt/branches/3.4-RELEASE/html/Search/Elements/BuildFormatString
+
+ r6554@zoq-fot-pik:  chmrr | 2005-09-30 15:16:47 -0400
+  * Remove unused and deprecated code path (bugs 6605, 7008)
+
+------------------------------------------------------------------------
+r3893 | jesse | 2005-09-28 13:27:29 -0400 (Wed, 28 Sep 2005) | 3 lines
+Changed paths:
+   M /rt/branches/3.4-RELEASE/html/Search/Results.tsv
+
+Switch from ->CustomFields to ->TicketCustomFields to stop using a deprecated API.
+  Thanks to T.J. Maciak
+
+------------------------------------------------------------------------
+r3892 | robert | 2005-09-28 12:16:03 -0400 (Wed, 28 Sep 2005) | 8 lines
+Changed paths:
+   M /rt/branches/3.4-RELEASE
+   M /rt/branches/3.4-RELEASE/lib/RT/Action/SendEmail.pm
+
+ r3945@bear:  rspier | 2005-09-28 09:15:08 -0700
+ Performance Improvement when Sending Email using sendmailpipe -
+ 
+ MIME::Entity would bog down in certain cases because of it's use of IO::Scalar during stringification.  MIME::Entity will be switching to IO::ScalarArray, which will help... but RT was causing it to store into a temporary string anyway, which was silly.
+ 
+ This change has MIME::Entity write directly to the pipe, which is a lot more efficient.  Seems to cut out ~33% of user time.  (Because we don't need to have a temporary IO::Scalar thingy around.)  Also will reduce peak memory usage.
+ 
+
+------------------------------------------------------------------------
+r3881 | jesse | 2005-09-23 15:39:36 -0400 (Fri, 23 Sep 2005) | 3 lines
+Changed paths:
+   M /rt/branches/3.4-RELEASE
+   M /rt/branches/3.4-RELEASE/lib/RT/Transaction_Overlay.pm
+
+ r15970@hualien:  jesse | 2005-09-23 15:37:43 -0400
+ * Our algorithm for finding a fallback for transaction content wasn't trying hard enough. reported by John Gedeon.
+
+------------------------------------------------------------------------
+r3877 | alexmv | 2005-09-22 15:09:22 -0400 (Thu, 22 Sep 2005) | 3 lines
+Changed paths:
+   M /rt/branches/3.4-RELEASE
+   M /rt/branches/3.4-RELEASE/lib/RT/CustomField_Overlay.pm
+   M /rt/branches/3.4-RELEASE/lib/RT/EmailParser.pm
+   M /rt/branches/3.4-RELEASE/lib/RT/Link_Overlay.pm
+   M /rt/branches/3.4-RELEASE/lib/RT/ObjectCustomFieldValues_Overlay.pm
+   M /rt/branches/3.4-RELEASE/lib/RT/Queue_Overlay.pm
+   M /rt/branches/3.4-RELEASE/lib/RT/Record.pm
+   M /rt/branches/3.4-RELEASE/lib/RT/Ticket_Overlay.pm
+   M /rt/branches/3.4-RELEASE/lib/RT/Tickets_Overlay.pm
+   M /rt/branches/3.4-RELEASE/lib/RT/Transactions_Overlay.pm
+
+ r6458@zoq-fot-pik:  chmrr | 2005-09-22 15:08:37 -0400
+  * Add where the faulty caller was in deprecated warnings
+
+------------------------------------------------------------------------
+r3855 | jesse | 2005-09-16 12:26:10 -0400 (Fri, 16 Sep 2005) | 3 lines
+Changed paths:
+   M /rt/branches/3.4-RELEASE
+   M /rt/branches/3.4-RELEASE/html/Search/Results.rdf
+
+ r15770@hualien:  jesse | 2005-09-16 12:23:15 -0400
+ * The RSS feeds should come with a default subject, as feeds really want to have article titles in some clients
+
+------------------------------------------------------------------------
+r3854 | jesse | 2005-09-16 12:25:42 -0400 (Fri, 16 Sep 2005) | 3 lines
+Changed paths:
+   M /rt/branches/3.4-RELEASE
+   M /rt/branches/3.4-RELEASE/lib/RT/ACE_Overlay.pm
+
+ r15749@hualien:  jesse | 2005-09-15 11:14:56 -0400
+ * It was possible to get into an infinite loop when removing a member from a group
+
+------------------------------------------------------------------------
+r3849 | jesse | 2005-09-13 12:07:54 -0400 (Tue, 13 Sep 2005) | 5 lines
+Changed paths:
+   M /rt/branches/3.4-RELEASE
+   M /rt/branches/3.4-RELEASE/lib/RT/Record.pm
+
+ r15723@hualien:  jesse | 2005-09-13 12:05:40 -0400
+ * When pulling data out of the database, we need to be more careful
+   about whether it's utf8 or not. Thanks to Ruslan Zakirov
+ 
+
+------------------------------------------------------------------------
+r3847 | glasser | 2005-09-12 18:11:43 -0400 (Mon, 12 Sep 2005) | 4 lines
+Changed paths:
+   M /rt/branches/3.4-RELEASE
+   M /rt/branches/3.4-RELEASE/html/Search/Build.html
+
+ r41532@maclaurin-seven-twelve:  glasser | 2005-09-12 18:04:55 -0400
+ Defining subs in Mason components is dangerous, since they clash with subs defined
+ in every other component.
+
+------------------------------------------------------------------------
+r3754 | robert | 2005-09-01 17:47:36 -0400 (Thu, 01 Sep 2005) | 10 lines
+Changed paths:
+   M /rt/branches/3.4-RELEASE
+   M /rt/branches/3.4-RELEASE/lib/RT/Tickets_Overlay.pm
+
+ r3800@bear:  rspier | 2005-09-01 14:46:59 -0700
+ RT-Ticket: 6986
+ RT-Status: resolved
+ RT-Update: correspond
+ 
+ If we didn't generate any SQL, don't pass it to FromSQL which will reset the dirty flag and then SB won't actually run anything.
+ 
+ Also, tests.
+     
+
+------------------------------------------------------------------------
+r3739 | robert | 2005-08-31 16:46:16 -0400 (Wed, 31 Aug 2005) | 3 lines
+Changed paths:
+   M /rt/branches/3.4-RELEASE
+   M /rt/branches/3.4-RELEASE/configure.ac
+
+ r3748@woof:  rspier | 2005-08-31 13:41:53 -0700
+ Check for invalid character (-) in mysql database names and prevent RT from allowing it to be configured.
+
 ------------------------------------------------------------------------
 r3728 | jesse | 2005-08-28 15:44:18 -0400 (Sun, 28 Aug 2005) | 3 lines
 Changed paths:

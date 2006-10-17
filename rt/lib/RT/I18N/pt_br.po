@@ -1,9 +1,9 @@
-# $Id: pt_br.po,v 1.1.1.4 2005-10-15 09:10:38 ivan Exp $
+# $Id: pt_br.po,v 1.1.1.5 2006-10-17 08:50:11 ivan Exp $
 msgid ""
 msgstr ""
-"Project-Id-Version: RT 2.1.x\n"
+"Project-Id-Version: RT 3.4.x\n"
 "POT-Creation-Date: 2002-05-02 11:36+0800\n"
-"PO-Revision-Date: 2002-12-07 23:20-02:00\n"
+"PO-Revision-Date: 2005-10-03 13:51-0400\n"
 "Last-Translator: Gustavo Chaves <gustavo@cpqd.com.br>\n"
 "Language-Team: rt-devel <rt-devel@lists.fsck.com>\n"
 "MIME-Version: 1.0\n"
