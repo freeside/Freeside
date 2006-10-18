@@ -55,6 +55,7 @@
 %         my $delay = duration_exact($part_bill_event->seconds);
 %         ( my $plandata = $part_bill_event->plandata ) =~ s/\n/<BR>/go;
 %         my $freq = $part_bill_event->freq || '1d';
+%         my $reason = $part_bill_event->reasontext ;
 %    
 % if ( $oldfreq ne $freq ) { 
 
@@ -67,6 +68,7 @@
           <TH CLASS="grid" BGCOLOR="#cccccc" COLSPAN=<% $cgi->param('showdisabled') ? 2 : 3 %>>Event</TH>
           <TH CLASS="grid" BGCOLOR="#cccccc">After</TH>
           <TH CLASS="grid" BGCOLOR="#cccccc">Action</TH>
+          <TH CLASS="grid" BGCOLOR="#cccccc">Reason</TH>
           <TH CLASS="grid" BGCOLOR="#cccccc">Options</TH>
           <TH CLASS="grid" BGCOLOR="#cccccc">Code</TH>
         </TR>
@@ -99,6 +101,8 @@
           <% $delay %></TD>
         <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
           <% $part_bill_event->plan %></TD>
+        <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
+          <% $reason %></TD>
         <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
           <% $plandata %></TD>
         <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><FONT SIZE="-1">

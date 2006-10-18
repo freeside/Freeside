@@ -1,5 +1,4 @@
 %
-%
 %my $eventpart = $cgi->param('eventpart');
 %
 %my $old = qsearchs('part_bill_event',{'eventpart'=>$eventpart}) if $eventpart;
@@ -29,17 +28,51 @@
 %  $cgi->param('eventcode', $eventcode);
 %  $cgi->param('plandata', $plandata);
 %
-%  my $new = new FS::part_bill_event ( {
-%    map {
-%      $_, scalar($cgi->param($_));
-%    } fields('part_bill_event'),
-%  } );
+%  my $rnum;
+%  my $rtype;
+%  my $reasonm;
+%  if ($eventcode =~ /cancel/) {
+%    $cgi->param('creason') =~ /^(-?\d+)$/ || die "Invalid creason";
+%    $rnum = $1;
+%    if ($rnum == -1) {
+%      $cgi->param('newcreasonT') =~ /^(\d+)$/ || die "Invalid newcreasonT";
+%      $rtype = $1;
+%      $cgi->param('newcreason') =~ /^([\s\w]+)$/ || die "Invalid newcreasonT";
+%      $reasonm = $1;
+%    }
+%  }
+%  if ($eventcode =~ /suspend/) {
+%    $cgi->param('sreason') =~ /^(-?\d+)$/ || die "Invalid sreason";
+%    $rnum = $1;
+%    if ($rnum == -1) {
+%      $cgi->param('newsreasonT') =~ /^(\d+)$/ || die "Invalid newsreasonT";
+%      $rtype = $1;
+%      $cgi->param('newsreason') =~ /^([\s\w]+)$/ || die "Invalid newsreasonT";
+%      $reasonm = $1;
+%    }
+%  }
+% 
+%  if ($rnum == -1 && !$error) {
+%    my $reason = new FS::reason ({ 'reason'      => $reasonm,
+%                                   'reason_type' => $rtype,
+%                                 });
+%    $error = $reason->insert or $rnum = $reason->reasonnum;
+%  }
 %
-%  if ( $eventpart ) {
-%    $error = $new->replace($old);
-%  } else {
-%    $error = $new->insert;
-%    $eventpart = $new->getfield('eventpart');
+%  unless($error){
+%    my $new = new FS::part_bill_event ( {
+%      map {
+%        $_, scalar($cgi->param($_));
+%      } fields('part_bill_event'),
+%    } );
+%    $new->setfield('reason', $rnum);
+%
+%    if ( $eventpart ) {
+%      $error = $new->replace($old);
+%    } else {
+%      $error = $new->insert;
+%      $eventpart = $new->getfield('eventpart');
+%    }
 %  }
 %} 
 %

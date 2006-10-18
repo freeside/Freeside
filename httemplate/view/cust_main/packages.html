@@ -539,7 +539,7 @@ Current packages
 %
 %sub pkg_suspend_link {
 %  my $pkg = shift or return '';
-%  return qq!<a href="${p}misc/susp_pkg.cgi?$pkg->{pkgnum}">Suspend</a>!;
+%  qq!<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('${p}misc/cancel_pkg.html?method=suspend&pkgnum=$pkg->{pkgnum}', 392, 336, 'suspend_pkg_popup' ), CAPTION, 'Suspend package $pkg->{pkgnum}', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK ); return false;">Suspend</A>!;
 %}
 %
 %sub pkg_unsuspend_link {
@@ -549,14 +549,13 @@ Current packages
 %
 %sub pkg_cancel_link {
 %  my $pkg = shift or return '';
-%  qq!<A HREF="javascript:areyousure('${p}misc/cancel_pkg.cgi?$pkg->{pkgnum}', !.
-%  qq!'Permanently delete included services and cancel this package?')">!.
-%  qq!Cancel now</A>!;
+%
+%  qq!<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('${p}misc/cancel_pkg.html?method=cancel&pkgnum=$pkg->{pkgnum}', 392, 336, 'cancel_pkg_popup' ), CAPTION, 'Cancel package $pkg->{pkgnum}', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK ); return false;">Cancel now</A>!;
 %}
 %
 %sub pkg_expire_link {
 %  my $pkg = shift or return '';
-%  qq!<A HREF="${p}misc/expire_pkg.cgi?$pkg->{pkgnum}">Cancel later</A>!;
+%  qq!<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('${p}misc/cancel_pkg.html?method=expire&pkgnum=$pkg->{pkgnum}', 392, 336, 'expire_pkg_popup' ), CAPTION, 'Expire package $pkg->{pkgnum}', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK ); return false;">Cancel later</A>!;
 %}
 %
 %sub pkg_dates_link {

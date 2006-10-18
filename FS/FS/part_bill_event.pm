@@ -60,6 +60,8 @@ FS::Record.  The following fields are currently supported:
 
 =item plandata - additional plan data
 
+=item reason   - an associated reason for this event to fire
+
 =item disabled - Disabled flag, empty or `Y'
 
 =back
@@ -161,6 +163,7 @@ sub check {
     || $self->ut_number('weight')
     || $self->ut_textn('plan')
     || $self->ut_anything('plandata')
+    || $self->ut_numbern('reason')
   ;
     #|| $self->ut_snumber('seconds')
   return $error if $error;
@@ -183,6 +186,9 @@ sub check {
       }
     }
   }
+
+  my $reasonr = qsearchs('reason', {'reasonnum' => $self->reason});
+  return "Unknown reason" unless $reasonr;
 
   $self->SUPER::check;
 }
@@ -302,6 +308,22 @@ sub do_event {
     return $e;
   }
   '';
+}
+
+=item reasontext
+
+Returns the text of any reason associated with this event.
+
+=cut
+
+sub reasontext {
+  my $self = shift;
+  my $r = qsearchs('reason', { 'reasonnum' => $self->reason });
+  if ($r){
+    $r->reason;
+  }else{
+    '';
+  }
 }
 
 =back

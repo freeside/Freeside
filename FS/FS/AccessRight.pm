@@ -107,6 +107,8 @@ assigned to users and/or groups.
   'Unsuspend customer package',
   'Cancel customer package immediately',
   'Cancel customer package later',
+  'Add on-the-fly cancel reason',
+  'Add on-the-fly suspend reason',
 
 ###
 # customer service rights

@@ -71,9 +71,10 @@
 %    &{$opt{'error_callback'}}($cgi, $object)
 %      if $opt{'error_callback'};
 %
-%  } elsif ( $cgi->keywords ) { #editing
+%  } elsif ( $cgi->keywords || $cgi->param($pkey) ) { #editing
 %
 %    my( $query ) = $cgi->keywords;
+%    $query = $cgi->param($pkey) unless $query;
 %    $query =~ /^(\d+)$/;
 %    $object = qsearchs( $table, { $pkey => $1 } );
 %    warn "$table $pkey => $1"
@@ -99,6 +100,9 @@
 %
 %  my $title = "$action $opt{'name'}";
 %
+%  my $viewall_url = $p . ( $opt{'viewall_dir'} || 'search' ) . "/$table.html";
+%  $viewall_url = $opt{'viewall_url'} if $opt{'viewall_url'};  
+%
 %  my @menubar = ();
 %  if ( $opt{'menubar'} ) {
 %    @menubar = @{ $opt{'menubar'} };
@@ -106,8 +110,7 @@
 %    @menubar = (
 %      'Main menu' => $p, #eventually get rid of this when the ACL/UI update is done
 %      #eventually use Lingua::bs to pluralize
-%      "View all $opt{'name'}s" => $p. ( $opt{'viewall_dir'} || 'search' ).
-%                                  "/$table.html",
+%      "View all $opt{'name'}s" => $viewall_url,
 %    );
 %  }
 %
@@ -158,11 +161,27 @@
 
       <TD BGCOLOR="#dddddd"><% $f->{'value'} %></TD>
       <INPUT TYPE="hidden" NAME="<% $field %>" VALUE="<% $f->{'value'} %>">
+% } elsif ( $type eq 'fixedhidden' ) { 
+
+
+      <INPUT TYPE="hidden" NAME="<% $field %>" VALUE="<% $f->{'value'} %>">
 % } elsif ( $type eq 'checkbox' ) { 
 
 
       <TD>
         <INPUT TYPE="checkbox" NAME="<% $field %>" VALUE="<% $f->{'value'} %>" <% $object->$field() eq $f->{'value'} ? ' CHECKED' : '' %>>
+      </TD>
+% } elsif ( $type eq 'select' ) { 
+      <TD>
+        <SELECT NAME="<% $field %>" 
+%     my $aref = $f->{'value'}{'values'};
+%     my $vkey = $f->{'value'}{'vcolumn'};
+%     my $ckey = $f->{'value'}{'ccolumn'};
+%     foreach my $v (@$aref) {
+	  <OPTION <% ($object->$field() eq $v->$vkey) ? 'SELECTED' : '' %>
+	    VALUE="<% $v->$vkey %>"><% $v->$ckey %></OPTION>
+%     }
+	</SELECT>
       </TD>
 % } else { 
 

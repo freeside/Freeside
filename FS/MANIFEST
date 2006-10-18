@@ -311,8 +311,6 @@ FS/agent_payment_gateway.pm
 t/agent_payment_gateway.t
 FS/banned_pay.pm
 t/banned_pay.t
-FS/cancel_reason.pm
-t/cancel_reason.t
 bin/freeside-prepaidd
 FS/cdr.pm
 t/cdr.t
@@ -358,3 +356,9 @@ FS/cust_credit_bill_pkg.pm
 t/cust_credit_bill_pkg.t
 FS/cust_main_note.pm
 t/cust_main_note.t
+FS/cust_pkg_reason.pm
+t/cust_pkg_reason.t
+FS/reason.pm
+t/reason.t
+FS/reason_type.pm
+t/reason_type.t

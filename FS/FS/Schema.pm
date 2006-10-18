@@ -319,6 +319,7 @@ sub tables_hashref {
         'weight',      'int', '', '', '', '', 
         'plan',       'varchar', 'NULL', $char_d, '', '', 
         'plandata',   'text', 'NULL', '', '', '', 
+        'reason',     'int', 'NULL', '', '', '', 
         'disabled',     'char', 'NULL', 1, '', '', 
       ],
       'primary_key' => 'eventpart',
@@ -648,6 +649,19 @@ sub tables_hashref {
       'primary_key' => 'pkgnum',
       'unique' => [],
       'index' => [ ['custnum'], ['pkgpart'] ],
+    },
+
+    'cust_pkg_reason' => {
+      'columns' => [
+        'num',      'serial',    '',   '', '', '', 
+        'pkgnum',   'int',    '',   '', '', '', 
+        'reasonnum','int',    '',   '', '', '', 
+        'otaker',   'varchar', '', 32, '', '', 
+        'date',     @date_type, '', '', 
+      ],
+      'primary_key' => 'num',
+      'unique' => [],
+      'index' => [],
     },
 
     'cust_refund' => {
@@ -1352,17 +1366,6 @@ sub tables_hashref {
       'index'       => [],
     },
 
-    'cancel_reason' => {
-      'columns' => [
-        'reasonnum', 'serial',  '',     '', '', '', 
-        'reason',    'varchar', '',     $char_d, '', '', 
-        'disabled',  'char',    'NULL', 1, '', '', 
-      ],
-      'primary_key' => 'reasonnum',
-      'unique' => [],
-      'index'  => [ [ 'disabled' ] ],
-    },
-
     'pkg_class' => {
       'columns' => [
         'classnum',   'serial',  '', '', '', '', 
@@ -1607,7 +1610,30 @@ sub tables_hashref {
       'index'  => [ [ 'countrycode', 'phonenum' ] ],
     },
 
-  };
+    'reason_type' => {
+      'columns' => [
+        'typenum',   'serial',  '', '', '', '', 
+        'class',     'char', '', 1, '', '', 
+        'type',     'varchar', '', $char_d, '', '', 
+      ],
+      'primary_key' => 'typenum',
+      'unique' => [],
+      'index' => [],
+    },
+
+    'reason' => {
+      'columns' => [
+        'reasonnum',     'serial',  '', '', '', '', 
+        'reason_type',   'int',  '', '', '', '', 
+        'reason',        'varchar', '', $char_d, '', '', 
+        'disabled',      'char',    'NULL', 1, '', '', 
+      ],
+      'primary_key' => 'reasonnum',
+      'unique' => [],
+      'index' => [],
+    },
+
+    # name type nullability length default local
 
     #'new_table' => {
     #  'columns' => [
@@ -1617,6 +1643,8 @@ sub tables_hashref {
     #  'unique' => [],
     #  'index'  => [],
     #},
+
+  };
 
 }
 

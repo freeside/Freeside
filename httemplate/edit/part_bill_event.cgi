@@ -7,9 +7,14 @@
 %  $cgi->param('eventpart', '');
 %}
 %
+%my ($creason, $newcreasonT, $newcreason);
+%my ($sreason, $newsreasonT, $newsreason);
+%
+%
 %my ($query) = $cgi->keywords;
 %my $action = '';
 %my $part_bill_event = '';
+%my $currentreasonclass = '';
 %if ( $cgi->param('error') ) {
 %  $part_bill_event = new FS::part_bill_event ( {
 %    map { $_, scalar($cgi->param($_)) } fields('part_bill_event')
@@ -40,7 +45,7 @@
 % } 
 
 
-<FORM ACTION="<% popurl(1) %>process/part_bill_event.cgi" METHOD=POST>
+<FORM ACTION="<% popurl(1) %>process/part_bill_event.cgi" NAME="editEvent" METHOD=POST>
 <INPUT TYPE="hidden" NAME="eventpart" VALUE="<% $part_bill_event->eventpart %>">
 Invoice Event #<% $hashref->{eventpart} ? $hashref->{eventpart} : "(NEW)" %>
 
@@ -159,29 +164,34 @@ Invoice Event #<% $hashref->{eventpart} ? $hashref->{eventpart} : "(NEW)" %>
 %    'name'   => 'Suspend',
 %    'code'   => '$cust_main->suspend();',
 %    'weight' => 10,
+%    'reason' => 'S',
 %  },
 %  'suspend-if-balance' => {
 %    'name'   => 'Suspend if balance (this invoice and previous) over',
 %    'code'   => '$cust_bill->cust_suspend_if_balance_over( %%%balanceover%%% );',
 %    'html'   => " $money_char ". '<INPUT TYPE="text" SIZE="7" NAME="balanceover" VALUE="%%%balanceover%%%">',
 %    'weight' => 10,
+%    'reason' => 'S',
 %  },
 %  'suspend-if-pkgpart' => {
 %    'name'   => 'Suspend packages',
 %    'code'   => '$cust_main->suspend_if_pkgpart(%%%if_pkgpart%%%);',
 %    'html'   => sub { &select_pkgpart('if_pkgpart', @_) },
 %    'weight' => 10,
+%    'reason' => 'S',
 %  },
 %  'suspend-unless-pkgpart' => {
 %    'name'   => 'Suspend packages except',
 %    'code'   => '$cust_main->suspend_unless_pkgpart(%%%unless_pkgpart%%%);',
 %    'html'   => sub { &select_pkgpart('unless_pkgpart', @_) },
 %    'weight' => 10,
+%    'reason' => 'S',
 %  },
 %  'cancel' => {
 %    'name'   => 'Cancel',
 %    'code'   => '$cust_main->cancel();',
 %    'weight' => 10,
+%    'reason' => 'C',
 %  },
 %
 %  'addpost' => {
@@ -397,6 +407,7 @@ Invoice Event #<% $hashref->{eventpart} ? $hashref->{eventpart} : "(NEW)" %>
 %
 %;
 %
+<SCRIPT TYPE="text/javascript">var myreasons = new Array();</SCRIPT>
 %foreach my $event ( keys %events ) {
 %  my %plandata = map { /^(\w+) (.*)$/; ($1, $2); }
 %                   split(/\n/, $part_bill_event->plandata);
@@ -409,9 +420,15 @@ Invoice Event #<% $hashref->{eventpart} ? $hashref->{eventpart} : "(NEW)" %>
 %    $html =~ s/%%%$field%%%/$plandata{$field}/;
 %  }
 %
+<SCRIPT TYPE="text/javascript">myreasons.push('<% $events{$event}{reason} %>');
+</SCRIPT>
+%  if ($event eq $part_bill_event->plan){
+%    $currentreasonclass=$events{$event}{reason};
+%  }
 %  print ntable( "#cccccc", 2).
 %        qq!<TR><TD><INPUT TYPE="radio" NAME="plan_weight_eventcode" !;
 %  print "CHECKED " if $event eq $part_bill_event->plan;
+%  print qq!onClick="showhide_table()" !;
 %  print qq!VALUE="!.  $event. ":". $events{$event}{weight}. ":".
 %        encode_entities($events{$event}{code}).
 %        qq!">$events{$event}{name}</TD>!;
@@ -420,12 +437,73 @@ Invoice Event #<% $hashref->{eventpart} ? $hashref->{eventpart} : "(NEW)" %>
 %  print '</TABLE>';
 %}
 %
-%#print '</TABLE>';
+%  if ($currentreasonclass eq 'C'){
+%    if ($cgi->param('creason') =~ /^(-?\d+)$/){
+%      $creason =  $1;
+%    }else{
+%      $creason = $part_bill_event->reason;
+%    }
+%    if ($cgi->param('newcreasonT') =~ /^(\d+)$/){
+%      $newcreasonT =  $1;
+%    }
+%    if ($cgi->param('newcreason') =~ /^([\w\s]+)$/){
+%      $newcreason =  $1;
+%    }
+%  }elsif ($currentreasonclass eq 'S'){
+%    if ($cgi->param('sreason') =~ /^(-?\d+)$/){
+%      $sreason =  $1;
+%    }else{
+%      $sreason = $part_bill_event->reason;
+%    }
+%    if ($cgi->param('newsreasonT') =~ /^(\d+)$/){
+%      $newsreasonT =  $1;
+%    }
+%    if ($cgi->param('newsreason') =~ /^([\w\s]+)$/){
+%      $newsreason =  $1;
+%    }
+%  }
 %
-%print <<END;
-%</TD></TR>
-%</TABLE>
-%END
+
+</TD></TR>
+</TABLE>
+
+<SCRIPT TYPE="text/javascript">
+  function showhide_table()
+  {
+    for(i=0;i<document.editEvent.plan_weight_eventcode.length;i++){
+      if (document.editEvent.plan_weight_eventcode[i].checked == true){
+        currentevent=i;
+      }
+    }
+    if(myreasons[currentevent] == 'C'){
+      document.getElementById('Ctable').style.display = 'inline';
+      document.getElementById('Stable').style.display = 'none';
+    }else if(myreasons[currentevent] == 'S'){
+      document.getElementById('Ctable').style.display = 'none';
+      document.getElementById('Stable').style.display = 'inline';
+    }else{
+      document.getElementById('Ctable').style.display = 'none';
+      document.getElementById('Stable').style.display = 'none';
+    }
+  }
+</SCRIPT>
+
+<TABLE BGCOLOR="#cccccc" BORDER=0 WIDTH="100%">
+<TR><TD>
+<TABLE BORDER=0 id="Ctable" style="display:<% $currentreasonclass eq 'C' ? 'inline' : 'none' %>">
+<% include('/elements/tr-select-reason.html', 'creason', 'C', $creason, $newcreasonT, $newcreason) %>
+</TABLE>
+</TR></TD>
+</TABLE>
+
+<TABLE BGCOLOR="#cccccc" BORDER=0 WIDTH="100%">
+<TR><TD>
+<TABLE BORDER=0 id="Stable" style="display:<% $currentreasonclass eq 'S' ? 'inline' : 'none' %>">
+<% include('/elements/tr-select-reason.html', 'sreason', 'S', $sreason, $newsreasonT, $newsreason) %>
+</TABLE>
+</TR></TD>
+</TABLE>
+    
 %
 %print qq!<INPUT TYPE="submit" VALUE="!,
 %      $hashref->{eventpart} ? "Apply changes" : "Add invoice event",

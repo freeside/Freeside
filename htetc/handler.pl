@@ -142,6 +142,7 @@ sub handler
       use FS::cust_main_county;
       use FS::cust_pay;
       use FS::cust_pkg;
+      use FS::cust_pkg_reason;
       use FS::cust_refund;
       use FS::cust_svc;
       use FS::nas;
@@ -189,6 +190,8 @@ sub handler
       use FS::access_right;
       use FS::AccessRight;
       use FS::svc_phone;
+      use FS::reason_type;
+      use FS::reason;
       use FS::cust_main_note;
 
       if ( %%%RT_ENABLED%%% ) {
