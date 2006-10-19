@@ -60,7 +60,7 @@ sub _plesk_command {
   );
 
   my $dresponse = $plesk->domain_get( $domain );
-  return $dresponse->error unless $dresponse->is_success;
+  return $dresponse->errortext unless $dresponse->is_success;
   my $domainID = $dresponse->id;
 
   my $response = $plesk->$method($dresponse->id, @args);
