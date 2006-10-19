@@ -1,0 +1,94 @@
+
+<SCRIPT TYPE="text/javascript">
+  function sh_add<% $name %>()
+  {
+
+%if ($curuser->access_right($access_right)){
+
+    if (document.getElementById('<% $name %>').selectedIndex == 
+         (document.getElementById('<% $name %>').length - 1)) {
+      document.getElementById('new<% $name %>').disabled = false;
+      document.getElementById('new<% $name %>').style.display = 'inline';
+      document.getElementById('new<% $name %>Label').style.display = 'inline';
+      document.getElementById('new<% $name %>T').disabled = false;
+      document.getElementById('new<% $name %>T').style.display = 'inline';
+      document.getElementById('new<% $name %>TLabel').style.display = 'inline';
+    }else{
+      document.getElementById('new<% $name %>').disabled = true;
+      document.getElementById('new<% $name %>').style.display = 'none';
+      document.getElementById('new<% $name %>Label').style.display = 'none';
+      document.getElementById('new<% $name %>T').disabled = true;
+      document.getElementById('new<% $name %>T').style.display = 'none';
+      document.getElementById('new<% $name %>TLabel').style.display = 'none';
+    }
+
+%}
+
+  }
+</SCRIPT>
+
+<TR>
+  <TD ALIGN="right">Reason</TD>
+  <TD>
+    <SELECT id="<% $name %>" name="<% $name %>" onFocus="sh_add<% $name %>()" onChange="sh_add<% $name %>()">
+%    my @reasons = qsearch( { table =>'reason', 
+%                             hashref => {},
+%                             extra_sql => $extra_sql,
+%                             addl_from => 'LEFT JOIN reason_type ON reason_type.typenum = reason.reason_type',
+%			     });
+%    foreach my $reason (@reasons) {
+      <OPTION VALUE="<% $reason->reasonnum %>" <% ($init_reason == $reason->reasonnum) ? 'SELECTED' : '' %>><% $reason->reason %></OPTION>
+%    }
+%    if ($curuser->access_right($access_right)) {
+      <OPTION VALUE="-1" <% ($init_reason == -1) ? 'SELECTED' : '' %>>Add new reason</OPTION>
+%    }
+%
+    </SELECT>
+  </TD>
+</TR>
+
+<TR>
+  <TD ALIGN="right">
+    <P id="new<% $name %>TLabel" style="display:<% $display %>">Reason Type</P>
+  </TD>
+  <TD>
+    <SELECT id="new<% $name %>T" name="new<% $name %>T" disabled="<% $disabled %>" style="display:<% $display %>">
+%     for my $type (qsearch( 'reason_type', { 'class' => $class } )){
+        <OPTION VALUE="<% $type->typenum %>" <% ($init_type == $type->typenum) ? 'SELECTED' : '' %>><% $type->type %></OPTION>
+%     }
+    </SELECT>
+  </TD>
+</TR>
+
+<TR>
+  <TD ALIGN="right">
+    <P id="new<% $name %>Label" style="display:<% $display %>">New Reason</P>
+  </TD>
+  <TD><INPUT id="new<% $name %>" name="new<% $name %>" type="text" value="<% $init_newreason %>" disabled="<% $disabled %>" style="display:<% $display %>"></TD>
+</TR>
+
+<%init>
+my($name, $class, $init_reason, $init_type, $init_newreason) = @_;
+my($extra_sql, $curuser, $access_right, $display, $disabled); 
+
+if ($class eq 'C') {
+  $access_right='Add on-the-fly cancel reason';
+}elsif ($class eq 'S') {
+  $access_right='Add on-the-fly suspend reason';
+}else{
+  print "illegal class: $class";
+}
+
+if ($init_reason == -1){
+  $display = 'inline';
+  $disabled = 'false';
+}else{
+  $display = 'none';
+  $disabled = 'true';
+}
+
+$extra_sql = "WHERE class = '$class' ORDER BY reason_type";
+$curuser = $FS::CurrentUser::CurrentUser;
+
+</%init>
+

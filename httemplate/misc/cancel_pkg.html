@@ -1,0 +1,95 @@
+%# if ( $link eq 'popup' ) { 
+  <% include('/elements/header-popup.html', $title ) %>
+%# } else { 
+%#  <%  include("/elements/header.html", $title, '') %>
+%# } 
+
+<LINK REL="stylesheet" TYPE="text/css" HREF="../elements/calendar-win2k-2.css" TITLE="win2k-2">
+<SCRIPT TYPE="text/javascript" SRC="../elements/calendar_stripped.js"></SCRIPT>
+<SCRIPT TYPE="text/javascript" SRC="../elements/calendar-en.js"></SCRIPT>
+<SCRIPT TYPE="text/javascript" SRC="../elements/calendar-setup.js"></SCRIPT>
+
+% if ( $cgi->param('error') ) { 
+  <FONT SIZE="+1" COLOR="#ff0000">Error: <% $cgi->param('error') %></FONT>
+  <BR><BR>
+% } 
+
+<FORM NAME="sc_popup" ACTION="<% popurl(1) %>process/cancel_pkg.html" METHOD=POST>
+<INPUT TYPE="hidden" NAME="pkgnum" VALUE="<% $pkgnum %>">
+<INPUT TYPE="hidden" NAME="method" VALUE="<% $method %>">
+
+
+<BR><BR>
+<% ucfirst($method) . " $pkgnum: " .$part_pkg->pkg. ' - ' .$part_pkg->comment %>
+<% ntable("#cccccc", 2) %>
+
+% if ($method eq 'expire') {
+<TR>
+  <TD>Cancel package on </TD>
+    <TD><INPUT TYPE="text" NAME="date" ID="expire_date" VALUE="<% $date %>">
+        <IMG SRC="<% $p %>images/calendar.png" ID="expire_button" STYLE="cursor:pointer" TITLE="Select date">
+        <BR><I>m/d/y</I>
+    </TD>
+</TR>
+<SCRIPT TYPE="text/javascript">
+  Calendar.setup({
+    inputField: "expire_date",
+    ifFormat:   "%m/%d/%Y",
+    button:     "expire_button",
+    align:      "BR"
+  });
+</SCRIPT>
+%}
+%
+
+<% include('/elements/tr-select-reason.html', 'reasonnum', $class) %>
+
+</TABLE>
+
+<BR>
+<INPUT TYPE="submit" VALUE="<% $submit %>">
+
+</FORM>
+</BODY>
+</HTML>
+
+<%init>
+my($method, $pkgnum, $reasonnum, $submit, $cust_pkg, $part_pkg,
+   $date, $curuser, $class); 
+$date = time2str("%m/%d/%Y", time);
+if ( $cgi->param('error') ) {
+  $method        = $cgi->param('method');
+  $pkgnum        = $cgi->param('pkgnum');
+  $reasonnum     = $cgi->param('reasonnum');
+  $date = $cgi->param('date');
+} elsif ( $cgi->param('pkgnum') =~ /^(\d+)$/ ) {
+  $pkgnum  = $1;
+} else {
+  die "illegal query ". $cgi->keywords;
+}
+
+$method = $cgi->param('method');
+if ($method eq 'cancel') {
+  $class = 'C';
+  $submit    = "Cancel Now";
+}elsif ($method eq 'expire') {
+  $class = 'C';
+  $submit    = "Cancel Later";
+}elsif ($method eq 'suspend') {
+  $class = 'S';
+  $submit    = "Suspend";
+}else{
+  die "illegal query ". $cgi->keywords;
+}
+
+my $title = ucfirst($method) . ' Package';
+
+$cust_pkg = qsearchs('cust_pkg', {'pkgnum' => $pkgnum});
+die "No such package: $pkgnum" unless $cust_pkg;
+
+$part_pkg = $cust_pkg->part_pkg;
+
+$curuser = $FS::CurrentUser::CurrentUser;
+
+</%init>
+

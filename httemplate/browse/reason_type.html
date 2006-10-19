@@ -1,0 +1,68 @@
+%
+%$cgi->param('class') =~ /^(\w)$/ or die "illegal class";
+%my $class=$1;
+%
+%my %classmap = ( 'C' => 'cancel',
+%                 'S' => 'suspend',
+%                );
+%
+%my $classname = $classmap{$class};
+%
+%my $html_init = ucfirst($classname) .
+%  " reason types allow groups of $classname reasons for reporting purposes." .
+%  qq!<BR><BR><A HREF="${p}edit/reason_type.html?class=$class"><I>Add a ! .
+%  $classname . " reason type</I></A><BR><BR>";
+%
+%my $reasons_sub = sub {
+%  my $reason_type = shift;
+%
+%  [ map {
+%          [
+%            {
+%              'data'  => $_->reason,
+%              'align' => 'left',
+%              'link'  => $p. "edit/reason.html?class=$class&reasonnum=".
+%                             $_->reasonnum,
+%            },
+%          ];
+%        }
+%    $reason_type->enabled_reasons,
+%
+%  ];
+%  
+%};
+%
+%my $where_clause = "WHERE class='$class'";
+%my $count_query = 'SELECT COUNT(*) FROM reason_type ';
+%$count_query .= $where_clause;
+%
+%my $link = [ $p.'edit/reason_type.html?class='.$class.'&typenum=', 'typenum' ];
+%
+%
+<% include( 'elements/browse.html',
+                 'title'       => ucfirst($classname) . " Reason Types",
+                 'menubar'     => [ ucfirst($classname) . " reasons" =>
+		                     $p.'browse/reason.html?class=' .  $class,
+                                  ],
+                 'html_init'   => $html_init,
+                 'name'        => $classname . " reason types",
+                 'query'       => { 'table'     => 'reason_type',
+                                    'hashref'   => {},
+                                    'extra_sql' => $where_clause .
+				                   'ORDER BY typenum',
+                                  },
+                 'count_query' => $count_query,
+                 'header'      => [ '#',
+                                    ucfirst($classname) . ' Reason Type',
+                                    ucfirst($classname) . ' Reasons',
+                                  ],
+                 'fields'      => [ 'typenum',
+                                    'type',
+                                    $reasons_sub,
+                                  ],
+                 'links'       => [ $link,
+                                    $link,
+                                    '',
+                                  ],
+             )
+%>

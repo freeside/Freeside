@@ -1,4 +1,4 @@
-package FS::cancel_reason;
+package FS::cust_pkg_reason;
 
 use strict;
 use vars qw( @ISA );
@@ -8,14 +8,14 @@ use FS::Record qw( qsearch qsearchs );
 
 =head1 NAME
 
-FS::cancel_reason - Object methods for cancel_reason records
+FS::cust_pkg_reason - Object methods for cust_pkg_reason records
 
 =head1 SYNOPSIS
 
-  use FS::cancel_reason;
+  use FS::cust_pkg_reason;
 
-  $record = new FS::cancel_reason \%hash;
-  $record = new FS::cancel_reason { 'column' => 'value' };
+  $record = new FS::cust_pkg_reason \%hash;
+  $record = new FS::cust_pkg_reason { 'column' => 'value' };
 
   $error = $record->insert;
 
@@ -27,17 +27,23 @@ FS::cancel_reason - Object methods for cancel_reason records
 
 =head1 DESCRIPTION
 
-An FS::cancel_reason object represents an cancellation reason.
-FS::cancel_reason inherits from FS::Record.  The following fields are
+An FS::cust_pkg_reason object represents a relationship between a cust_pkg
+and a reason, for example cancellation or suspension reasons. 
+FS::cust_pkg_reason inherits from FS::Record.  The following fields are
 currently supported:
 
 =over 4
 
-=item reasonnum - primary key
+=item num - primary key
 
-=item reason - 
+=item pkgnum - 
 
-=item disabled - empty or "Y"
+=item reasonnum - 
+
+=item otaker - 
+
+=item date - 
+
 
 =back
 
@@ -47,7 +53,7 @@ currently supported:
 
 =item new HASHREF
 
-Creates a new cancellation reason.  To add the reason to the database, see
+Creates a new cust_pkg_reason.  To add the example to the database, see
 L<"insert">.
 
 Note that this stores the hash reference, not a distinct copy of the hash it
@@ -55,9 +61,7 @@ points to.  You can ask the object for a copy with the I<hash> method.
 
 =cut
 
-# the new method can be inherited from FS::Record, if a table method is defined
-
-sub table { 'cancel_reason'; }
+sub table { 'cust_pkg_reason'; }
 
 =item insert
 
@@ -66,15 +70,11 @@ otherwise returns false.
 
 =cut
 
-# the insert method can be inherited from FS::Record
-
 =item delete
 
 Delete this record from the database.
 
 =cut
-
-# the delete method can be inherited from FS::Record
 
 =item replace OLD_RECORD
 
@@ -83,26 +83,23 @@ returns the error, otherwise returns false.
 
 =cut
 
-# the replace method can be inherited from FS::Record
-
 =item check
 
-Checks all fields to make sure this is a valid reason.  If there is
+Checks all fields to make sure this is a valid cust_pkg_reason.  If there is
 an error, returns the error, otherwise returns false.  Called by the insert
 and replace methods.
 
 =cut
 
-# the check method should currently be supplied - FS::Record contains some
-# data checking routines
-
 sub check {
   my $self = shift;
 
   my $error = 
-    $self->ut_numbern('reasonnum')
-    || $self->ut_text('reason')
-    || $self->ut_enum('disabled', [ '', 'Y' ] )
+    $self->ut_numbern('num')
+    || $self->ut_number('pkgnum')
+    || $self->ut_number('reasonnum')
+    || $self->ut_text('otaker')
+    || $self->ut_numbern('date')
   ;
   return $error if $error;
 
@@ -112,6 +109,8 @@ sub check {
 =back
 
 =head1 BUGS
+
+Here be termites.  Don't use on wooden computers.
 
 =head1 SEE ALSO
 

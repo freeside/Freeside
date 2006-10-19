@@ -1,0 +1,28 @@
+%
+%$cgi->param('class') =~ /^(\w)$/;
+%my $class = $1;
+%
+%my %classmap = ( 'C' => 'Cancel',
+%                 'S' => 'Suspend',
+%		);
+%
+%my $classname = $classmap{$class};
+%
+<% include( 'elements/edit.html',
+                 'name'   => $classname . ' Reason Type',
+                 'table'  => 'reason_type',
+                 'labels' => { 
+                               'typenum'  => $classname . ' reason type',
+                               'type'     => $classname . ' reason type name',
+			       'class'    => '',
+                             },
+	         'fields' => [
+			       'type',
+			       { 'field' => 'class',
+			         'type'  => 'hidden',
+			       },
+		             ],
+                 'viewall_url' => $p . "browse/reason_type.html?class=$class",
+                 'new_hashref_callback' => sub {{ 'class' => $class }},
+           )
+%>

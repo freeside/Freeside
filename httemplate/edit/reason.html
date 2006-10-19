@@ -1,0 +1,42 @@
+%
+% $cgi->param('class') =~ /^(\w)$/ or die "illegal class";
+% my $class=$1;
+%
+% my %classmap = ('C' => 'cancel',
+%              'S' => 'suspend',
+%             );
+% my $classname = $classmap{$class};
+%
+% my (@types) = qsearch( 'reason_type', { 'class' => $class } );
+%
+<% include( 'elements/edit.html',
+                 'name'   => ucfirst($classname) . ' Reason',
+                 'table'  => 'reason',
+                 'labels' => { 
+                               'reasonnum'   => ucfirst($classname) .  ' Reason',
+                               'reason_type' => ucfirst($classname) . ' Reason type',
+                               'reason'      => ucfirst($classname) . ' Reason',
+			       'disabled'    => 'Disabled',
+                               'class'       => '',
+                             },
+		 'fields' => [
+			       { 'field' => 'reason_type',
+			         'type'  => 'select',
+				 'value' => { 'vcolumn' => 'typenum',
+				              'ccolumn' => 'type',
+					      'values'  => \@types,
+					    },
+			       },
+			       'reason',
+			       { 'field' => 'class',
+			         'type'  => 'fixedhidden',
+				 'value' => $class,
+			       },
+			       { 'field' => 'disabled',
+			         'type'  => 'checkbox',
+				 'value' => 'Y'
+			       },
+		             ],
+                 'viewall_url' => $p . "browse/reason.html?class=$class",
+           )
+%>
