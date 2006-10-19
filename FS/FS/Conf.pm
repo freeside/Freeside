@@ -1787,7 +1787,7 @@ httemplate/docs/config.html
   {
     'key'         => 'cust_main-disable_notes',
     'section'     => 'UI',
-    'description' => 'Disable new style customer notes - timestamped and user identified customr notes.  Useful in tracking who did what.',
+    'description' => 'Disable new style customer notes - timestamped and user identified customer notes.  Useful in tracking who did what.',
     'type'        => 'checkbox',
   },
 
