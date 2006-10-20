@@ -579,6 +579,7 @@ sub freqs_href {
     '0'  => '(no recurring fee)',
     '1h' => 'hourly',
     '1d' => 'daily',
+    '2d' => 'every two days',
     '1w' => 'weekly',
     '2w' => 'biweekly (every 2 weeks)',
     '1'  => 'monthly',
