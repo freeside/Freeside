@@ -1188,15 +1188,63 @@ httemplate/docs/config.html
   {
     'key'         => 'signup_server-default_agentnum',
     'section'     => '',
-    'description' => 'Default agentnum for the signup server',
-    'type'        => 'text',
+    'description' => 'Default agent for the signup server',
+    'type'        => 'select-sub',
+    'options_sub' => sub { require FS::Record;
+                           require FS::agent;
+			   map { $_->agentnum => $_->agent }
+                               FS::Record::qsearch('agent', { disabled=>'' } );
+			 },
+    'option_sub'  => sub { require FS::Record;
+                           require FS::agent;
+			   my $agent = FS::Record::qsearchs(
+			     'agent', { 'agentnum'=>shift }
+			   );
+                           $agent ? $agent->agent : '';
+			 },
   },
 
   {
     'key'         => 'signup_server-default_refnum',
     'section'     => '',
-    'description' => 'Default advertising source number for the signup server',
-    'type'        => 'text',
+    'description' => 'Default advertising source for the signup server',
+    'type'        => 'select-sub',
+    'options_sub' => sub { require FS::Record;
+                           require FS::part_referral;
+                           map { $_->refnum => $_->referral }
+                               FS::Record::qsearch( 'part_referral', 
+			                            { 'disabled' => '' }
+						  );
+			 },
+    'option_sub'  => sub { require FS::Record;
+                           require FS::part_referral;
+                           my $part_referral = FS::Record::qsearchs(
+			     'part_referral', { 'refnum'=>shift } );
+                           $part_referral ? $part_referral->referral : '';
+			 },
+  },
+
+  {
+    'key'         => 'signup_server-default_pkgpart',
+    'section'     => '',
+    'description' => 'Default pakcage for the signup server',
+    'type'        => 'select-sub',
+    'options_sub' => sub { require FS::Record;
+                           require FS::part_pkg;
+                           map { $_->pkgpart => $_->pkg.' - '.$_->comment }
+                               FS::Record::qsearch( 'part_pkg',
+			                            { 'disabled' => ''}
+						  );
+			 },
+    'option_sub'  => sub { require FS::Record;
+                           require FS::part_pkg;
+                           my $part_pkg = FS::Record::qsearchs(
+			     'part_pkg', { 'pkgpart'=>shift }
+			   );
+                           $part_pkg
+			     ? $part_pkg->pkg.' - '.$part_pkg->comment
+			     : '';
+			 },
   },
 
   {
@@ -1213,24 +1261,41 @@ httemplate/docs/config.html
     'type'        => 'checkbox',
   },
   {
-      key         => 'signup_server-classnum2',
-      section     => '',
-      description => 'Package Class for first optional purchase',
-      type        => 'select-sub',
-      options_sub => sub { my @o = map { $_->{classnum} => $_->{classname} }  map { $_->hashref } FS::Record::qsearch('pkg_class',{});
-			   } ,
-      option_sub => sub { return map { $_->hashref->{classname}}  FS::Record::qsearchs('pkg_class', { classnum => shift } );  }, 
-
+    'key'         => 'signup_server-classnum2',
+    'section'     => '',
+    'description' => 'Package Class for first optional purchase',
+    'type'        => 'select-sub',
+    'options_sub' => sub { require FS::Record;
+                           require FS::pkg_class;
+                           map { $_->classnum => $_->classname }
+                               FS::Record::qsearch('pkg_class', {} );
+		         },
+    'option_sub'  => sub { require FS::Record;
+                           require FS::pkg_class;
+                           my $pkg_class = FS::Record::qsearchs(
+			     'pkg_class', { 'classnum'=>shift }
+			   );
+                           $pkg_class ? $pkg_class->classname : '';
+			 },
   },
 
   {
-      key         => 'signup_server-classnum3',
-      section     => '',
-      description => 'Package Class for second optional purchase',
-      type        => 'select-sub',
-      options_sub => sub { my @o = map { $_->{classnum} => $_->{classname} }  map { $_->hashref } FS::Record::qsearch('pkg_class',{});
-			   } ,
-      option_sub => sub { return map { $_->hashref->{classname}}  FS::Record::qsearchs('pkg_class', { classnum => shift } );  }, 
+    'key'         => 'signup_server-classnum3',
+    'section'     => '',
+    'description' => 'Package Class for second optional purchase',
+    'type'        => 'select-sub',
+    'options_sub' => sub { require FS::Record;
+                           require FS::pkg_class;
+                           map { $_->classnum => $_->classname }
+                               FS::Record::qsearch('pkg_class', {} );
+		         },
+    'option_sub'  => sub { require FS::Record;
+                           require FS::pkg_class;
+                           my $pkg_class = FS::Record::qsearchs(
+			     'pkg_class', { 'classnum'=>shift }
+			   );
+                           $pkg_class ? $pkg_class->classname : '';
+			 },
   },
 
   {
@@ -1832,6 +1897,13 @@ httemplate/docs/config.html
     'section'     => 'UI',
     'descritpion' => 'Enable tracking of a birth date with each customer record',
     'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'support-key',
+    'section'     => '',
+    'description' => 'A support key enables access to commercial services accessed over the network, such as access to the internal ticket system, priority support and optional backups.',
+    'type'        => 'text',
   },
 
 );

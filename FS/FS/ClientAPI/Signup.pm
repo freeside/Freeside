@@ -84,6 +84,8 @@ sub signup_info {
 
     'refnum' => $conf->config('signup_server-default_refnum'),
 
+    'default_pkgpart' => $conf->config('signup_server-default_pkgpart'),
+
   };
 
   my @addl = qw( signup_server-classnum2 signup_server-classnum3 );

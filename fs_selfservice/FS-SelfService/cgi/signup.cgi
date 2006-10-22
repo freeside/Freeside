@@ -231,6 +231,8 @@ sub print_form {
     'error' => $error,
   };
 
+  $r->{pkgpart} ||= $r->{default_pkgpart};
+
   $r->{referral_custnum} = $r->{'ref'};
   #$cgi->delete('ref');
   #$cgi->delete('init_popstate');
