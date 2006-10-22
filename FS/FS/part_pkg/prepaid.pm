@@ -26,7 +26,7 @@ tie %recur_action, 'Tie::IxHash',
 			'select_options' => \%recur_action,
 	              },
   },
-  'fieldorder' => [ 'setup_fee', 'recur_fee', ],
+  'fieldorder' => [ 'setup_fee', 'recur_fee', 'recur_action', ],
   'weight' => 25,
 );
 
