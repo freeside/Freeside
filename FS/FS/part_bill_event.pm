@@ -187,8 +187,10 @@ sub check {
     }
   }
 
-  my $reasonr = qsearchs('reason', {'reasonnum' => $self->reason});
-  return "Unknown reason" unless $reasonr;
+  if ($self->reason){
+    my $reasonr = qsearchs('reason', {'reasonnum' => $self->reason});
+    return "Unknown reason" unless $reasonr;
+  }
 
   $self->SUPER::check;
 }

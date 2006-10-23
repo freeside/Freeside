@@ -15,6 +15,7 @@ use FS::pkg_svc;
 use FS::cust_bill_pkg;
 use FS::h_cust_svc;
 use FS::reg_code;
+use FS::cust_pkg_reason;
 
 # need to 'use' these instead of 'require' in sub { cancel, suspend, unsuspend,
 # setup }
@@ -270,7 +271,7 @@ Calls
 =cut
 
 sub replace {
-  my( $new, $old ) = ( shift, shift );
+  my( $new, $old, %options ) = @_;
 
   #return "Can't (yet?) change pkgpart!" if $old->pkgpart != $new->pkgpart;
   return "Can't change otaker!" if $old->otaker ne $new->otaker;
@@ -294,6 +295,16 @@ sub replace {
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
+
+  if ($options{'reason'} && $new->expire && $old->expire ne $new->expire) {
+    my $error = $new->insert_reason( 'reason' => $options{'reason'},
+                                     'date'      => $new->expire,
+		                    );
+    if ( $error ) {
+      dbh->rollback if $oldAutoCommit;
+      return "Error inserting cust_pkg_reason: $error";
+    }
+  }
 
   #save off and freeze RADIUS attributes for any associated svc_acct records
   my @svc_acct = ();
@@ -431,6 +442,14 @@ sub cancel {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
+  if ($options{'reason'}) {
+    $error = $self->insert_reason( 'reason' => $options{'reason'} );
+    if ( $error ) {
+      dbh->rollback if $oldAutoCommit;
+      return "Error inserting cust_pkg_reason: $error";
+    }
+  }
+
   my %svc;
   foreach my $cust_svc (
       qsearch( 'cust_svc', { 'pkgnum' => $self->pkgnum } )
@@ -503,7 +522,7 @@ If there is an error, returns the error, otherwise returns false.
 =cut
 
 sub suspend {
-  my $self = shift;
+  my( $self, %options ) = @_;
   my $error ;
 
   local $SIG{HUP} = 'IGNORE';
@@ -516,6 +535,14 @@ sub suspend {
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
+
+  if ($options{'reason'}) {
+    $error = $self->insert_reason( 'reason' => $options{'reason'} );
+    if ( $error ) {
+      dbh->rollback if $oldAutoCommit;
+      return "Error inserting cust_pkg_reason: $error";
+    }
+  }
 
   foreach my $cust_svc (
     qsearch( 'cust_svc', { 'pkgnum' => $self->pkgnum } )
@@ -650,6 +677,23 @@ sub last_bill {
   my $cust_bill_pkg = qsearchs('cust_bill_pkg', { 'pkgnum' => $self->pkgnum,
                                                   'edate'  => $self->bill,  } );
   $cust_bill_pkg ? $cust_bill_pkg->sdate : $self->setup || 0;
+}
+
+=item last_reason
+
+Returns the most recent FS::reason associated with the package.
+
+=cut
+
+sub last_reason {
+  my $self = shift;
+  my $cust_pkg_reason = qsearchs( {
+                                    'table' => 'cust_pkg_reason',
+				    'hashref' => { 'pkgnum' => $self->pkgnum, },
+				    'extra_sql'=> 'ORDER BY date DESC',
+				  } );
+  qsearchs ( 'reason', { 'reasonnum' => $cust_pkg_reason->reasonnum } )
+    if $cust_pkg_reason;
 }
 
 =item part_pkg
@@ -1385,6 +1429,24 @@ sub order {
   }
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
+}
+
+sub insert_reason {
+  my ($self, %options) = @_;
+
+  my $otaker = $FS::CurrentUser::CurrentUser->name;
+  $otaker = $FS::CurrentUser::CurrentUser->username
+    if (($otaker) eq "User, Legacy");
+
+  my $cust_pkg_reason =
+    new FS::cust_pkg_reason({ 'pkgnum'    => $self->pkgnum,
+                              'reasonnum' => $options{'reason'}, 
+		              'otaker'    => $otaker,
+		              'date'      => $options{'date'}
+			                       ? $options{'date'}
+					       : time,
+	                    });
+  return $cust_pkg_reason->insert;
 }
 
 =back

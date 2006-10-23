@@ -4,6 +4,11 @@
   {
 
 %if ($curuser->access_right($access_right)){
+    if (document.getElementById('<% $name %>').selectedIndex == 0){
+      <% $controlledbutton ? $controlledbutton.'.disabled = true;' : ';' %>
+    }else{
+      <% $controlledbutton ? $controlledbutton.'.disabled = false;' : ';' %>
+    }
 
     if (document.getElementById('<% $name %>').selectedIndex == 
          (document.getElementById('<% $name %>').length - 1)) {
@@ -36,6 +41,7 @@
 %                             extra_sql => $extra_sql,
 %                             addl_from => 'LEFT JOIN reason_type ON reason_type.typenum = reason.reason_type',
 %			     });
+      <OPTION VALUE="" <% ($init_reason eq "") ? 'SELECTED' : '' %>>Select Reason...</OPTION>
 %    foreach my $reason (@reasons) {
       <OPTION VALUE="<% $reason->reasonnum %>" <% ($init_reason == $reason->reasonnum) ? 'SELECTED' : '' %>><% $reason->reason %></OPTION>
 %    }
@@ -68,7 +74,7 @@
 </TR>
 
 <%init>
-my($name, $class, $init_reason, $init_type, $init_newreason) = @_;
+my($name, $class, $init_reason, $init_type, $init_newreason, $controlledbutton) = @_;
 my($extra_sql, $curuser, $access_right, $display, $disabled); 
 
 if ($class eq 'C') {

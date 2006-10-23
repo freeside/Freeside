@@ -31,23 +31,19 @@
 %  my $rnum;
 %  my $rtype;
 %  my $reasonm;
-%  if ($eventcode =~ /cancel/) {
-%    $cgi->param('creason') =~ /^(-?\d+)$/ || die "Invalid creason";
+%  my $class  = '';
+%  $class='c' if ($eventcode =~ /cancel/);
+%  $class='s' if ($eventcode =~ /suspend/);
+%  if ($class) {
+%    $cgi->param("${class}reason") =~ /^(-?\d+)$/
+%      or $error =  "Invalid ${class}reason";
 %    $rnum = $1;
 %    if ($rnum == -1) {
-%      $cgi->param('newcreasonT') =~ /^(\d+)$/ || die "Invalid newcreasonT";
+%      $cgi->param("new${class}reasonT") =~ /^(\d+)$/
+%        or $error =  "Invalid new${class}reasonT";
 %      $rtype = $1;
-%      $cgi->param('newcreason') =~ /^([\s\w]+)$/ || die "Invalid newcreasonT";
-%      $reasonm = $1;
-%    }
-%  }
-%  if ($eventcode =~ /suspend/) {
-%    $cgi->param('sreason') =~ /^(-?\d+)$/ || die "Invalid sreason";
-%    $rnum = $1;
-%    if ($rnum == -1) {
-%      $cgi->param('newsreasonT') =~ /^(\d+)$/ || die "Invalid newsreasonT";
-%      $rtype = $1;
-%      $cgi->param('newsreason') =~ /^([\s\w]+)$/ || die "Invalid newsreasonT";
+%      $cgi->param("new${class}reason") =~ /^([\s\w]+)$/
+%        or $error = "Invalid new${class}reason";
 %      $reasonm = $1;
 %    }
 %  }
@@ -57,6 +53,11 @@
 %                                   'reason_type' => $rtype,
 %                                 });
 %    $error = $reason->insert or $rnum = $reason->reasonnum;
+%    unless ($error) {
+%      $cgi->param("${class}reason", $rnum);
+%      $cgi->param("new${class}reason", '');
+%      $cgi->param("new${class}reasonT", '');
+%    }
 %  }
 %
 %  unless($error){
@@ -84,5 +85,3 @@
 %}
 %
 %
-
-

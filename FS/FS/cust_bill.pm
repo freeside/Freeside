@@ -294,7 +294,7 @@ sub cust_suspend_if_balance_over {
   if ( $cust_main->total_owed_date($self->_date) < $amount ) {
     return ();
   } else {
-    $cust_main->suspend;
+    $cust_main->suspend(@_);
   }
 }
 

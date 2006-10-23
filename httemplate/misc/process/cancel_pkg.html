@@ -55,22 +55,13 @@
 %}
 %
 %unless ($error) {
-%  my $cust_pkg_reason = new FS::cust_pkg_reason({ 'pkgnum'      => $pkgnum,
-%                                                  'reasonnum'   => $reasonnum,
-%  						   'otaker'      => $otaker,
-%						   'date'        => $date,
-%						  });
-%  $error = $cust_pkg_reason->insert;
-%}
-%
-%unless ($error) {
 %  if ($method eq 'expire'){
 %    my %hash = $cust_pkg->hash;
 %    $hash{'expire'}=$date;
 %    my $new = new FS::cust_pkg (\%hash);
-%    $error = $new->replace($cust_pkg);
+%    $error = $new->replace($cust_pkg, 'reason' => $reasonnum);
 %  }else{
-%    $error = $cust_pkg->$method
+%    $error = $cust_pkg->$method( 'reason' => $reasonnum );
 %  }
 %}
 %

@@ -1642,7 +1642,7 @@ Returns a list: an empty list on success or a list of errors.
 
 sub suspend {
   my $self = shift;
-  grep { $_->suspend } $self->unsuspended_pkgs;
+  grep { $_->suspend(@_) } $self->unsuspended_pkgs;
 }
 
 =item suspend_if_pkgpart PKGPART [ , PKGPART ... ]
@@ -1656,8 +1656,14 @@ Returns a list: an empty list on success or a list of errors.
 
 sub suspend_if_pkgpart {
   my $self = shift;
-  my @pkgparts = @_;
-  grep { $_->suspend }
+  my (@pkgparts, %opt);
+  if (ref($_[0]) eq 'HASH'){
+    @pkgparts = @{$_[0]{pkgparts}};
+    %opt      = %{$_[0]};
+  }else{
+    @pkgparts = @_;
+  }
+  grep { $_->suspend(%opt) }
     grep { my $pkgpart = $_->pkgpart; grep { $pkgpart eq $_ } @pkgparts }
       $self->unsuspended_pkgs;
 }
@@ -1673,8 +1679,14 @@ Returns a list: an empty list on success or a list of errors.
 
 sub suspend_unless_pkgpart {
   my $self = shift;
-  my @pkgparts = @_;
-  grep { $_->suspend }
+  my (@pkgparts, %opt);
+  if (ref($_[0]) eq 'HASH'){
+    @pkgparts = @{$_[0]{pkgparts}};
+    %opt      = %{$_[0]};
+  }else{
+    @pkgparts = @_;
+  }
+  grep { $_->suspend(%opt) }
     grep { my $pkgpart = $_->pkgpart; ! grep { $pkgpart eq $_ } @pkgparts }
       $self->unsuspended_pkgs;
 }

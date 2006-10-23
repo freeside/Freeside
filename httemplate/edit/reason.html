@@ -9,6 +9,9 @@
 %
 % my (@types) = qsearch( 'reason_type', { 'class' => $class } );
 %
+% unless (scalar(@types)) {
+%   print $cgi->redirect( "reason_type.html?class=$class" );
+% }
 <% include( 'elements/edit.html',
                  'name'   => ucfirst($classname) . ' Reason',
                  'table'  => 'reason',

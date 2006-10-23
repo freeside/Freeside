@@ -42,12 +42,12 @@
 %}
 %
 
-<% include('/elements/tr-select-reason.html', 'reasonnum', $class) %>
+<% include('/elements/tr-select-reason.html', 'reasonnum', $class, '', '', '', 'document.sc_popup.submit' ) %>
 
 </TABLE>
 
 <BR>
-<INPUT TYPE="submit" VALUE="<% $submit %>">
+<INPUT TYPE="submit" NAME="submit" VALUE="<% $submit %>" disabled='true'>
 
 </FORM>
 </BODY>
