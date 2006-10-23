@@ -61,7 +61,7 @@
               <td align=right BGCOLOR="#ffffff">
                 <FONT SIZE="-2">
                  <A HREF="http://www.sisd.com/freeside">Freeside</A>&nbsp;v<% $FS::VERSION %><BR>
-                 <A HREF="<% $fsurl %>docs/">Documentation</A><BR>
+                 <A HREF="<% $conf->config('support-key') ? "http://www.sisd.com/mediawiki/index.php/Supported:Documentation" : "http://www.sisd.com/mediawiki/index.php/Freeside:1.7:Documentation" %>">Documentation</A><BR>
                 </FONT>
               </td>
 % if ( $conf->config('ticket_system') eq 'RT_Internal' ) { 
@@ -188,7 +188,7 @@ input.fsblackbuttonselected {
 
         </TD>
         <TD STYLE="padding:0" HEIGHT="100%" WIDTH=13 VALIGN="top"><IMG WIDTH="13" HEIGHT="100%" BORDER=0 ALT="" SRC="<%$fsurl%>images/black-gray-side.png"></TD>
-        <TD BGCOLOR="#e8e8e8" HEIGHT="100%"> <!-- WIDTH="100%"> -->
+        <TD BGCOLOR="#e8e8e8" HEIGHT="100%" VALIGN="top"> <!-- WIDTH="100%"> -->
 
           <FONT SIZE=6>
             <% $title %>
