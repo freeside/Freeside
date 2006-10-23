@@ -4015,10 +4015,10 @@ sub fuzzy_search {
 
 Accepts the following options: I<search>, the string to search for.  The string
 will be searched for as a customer number, phone number, name or company name,
-first searching for an exact match then fuzzy and substring matches (in some
-cases - see the source code for the exact heuristics used).
+as an exact, or, in some cases, a substring or fuzzy match (see the source code
+for the exact heuristics used).
 
-Any additional options treated as an additional qualifier on the search
+Any additional options are treated as an additional qualifier on the search
 (i.e. I<agentnum>).
 
 Returns a (possibly empty) array of FS::cust_main objects.
@@ -4168,7 +4168,9 @@ sub smart_search {
       'extra_sql' => "$sql AND $agentnums_sql", #agent virtualization
     } );
 
-    unless ( @cust_main ) {  #no exact match, trying substring/fuzzy
+    #always do substring & fuzzy,
+    #getting complains searches are not returning enough
+    #unless ( @cust_main ) {  #no exact match, trying substring/fuzzy
 
       #still some false laziness w/ search/cust_main.cgi
 
@@ -4229,7 +4231,7 @@ sub smart_search {
           FS::cust_main->fuzzy_search( { $field => $value }, @fuzopts );
       }
 
-    }
+    #}
 
     #eliminate duplicates
     my %saw = ();
