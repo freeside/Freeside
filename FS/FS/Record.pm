@@ -1525,7 +1525,7 @@ Check/untaint zip codes.
 
 =cut
 
-my @zip_reqd_countries = qw( CA ); #US implicit...
+my @zip_reqd_countries = qw( AU CA US ); #CA, US implicit...
 
 sub ut_zip {
   my( $self, $field, $country ) = @_;
