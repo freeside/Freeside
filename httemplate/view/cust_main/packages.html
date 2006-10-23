@@ -327,35 +327,38 @@ Current packages
 
 <TD CLASS="inv" BGCOLOR="<% $bgcolor %>">
   <TABLE CLASS="inv" BORDER=0 CELLSPACING=0 CELLPADDING=0 WIDTH="100%">
-%
+
 %  foreach my $svcpart (sort {$a->{svcpart} <=> $b->{svcpart}} @{$pkg->{svcparts}}) {
+
 %    foreach my $service (@{$svcpart->{services}}) {
-%
 
       <TR>
         <TD ALIGN="right" VALIGN="top" ROWSPAN=2><%svc_link($svcpart,$service)%></TD>
         <TD STYLE="padding-bottom:0px"><B><%svc_label_link($svcpart,$service)%></B></TD>
       </TR>
-% if ( $curuser->access_right('Unprovision customer service') ) { 
+
+%      if ( $curuser->access_right('Unprovision customer service') ) { 
 
         <TR>
           <TD ALIGN="right" VALIGN="top" STYLE="padding-bottom:5px;padding-top:0px"><FONT SIZE="-2">(&nbsp;<%svc_unprovision_link($service)%>&nbsp;)</FONT></TD>
         </TR>
-% } 
-% } 
-% if ( $curuser->access_right('Provision customer service') 
-%            && $svcpart->{count} < $svcpart->{quantity}
-%          )
-%       {
-%    
 
+%      } 
+%   } 
+
+%   if (    ! $pkg->{'cancel'}
+%        && $curuser->access_right('Provision customer service') 
+%        && $svcpart->{count} < $svcpart->{quantity}
+%      ) {
 
       <TR>
         <TD COLSPAN=2 ALIGN="center" STYLE="padding-bottom:4px;padding-top:0px">
           <B><% svc_provision_link($pkg, $svcpart, $conf, $curuser) %></B>
         </TD>
       </TR>
-% } 
+
+%   } 
+
 % } 
 
 
