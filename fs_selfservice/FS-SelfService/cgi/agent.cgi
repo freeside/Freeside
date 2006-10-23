@@ -1,3 +1,4 @@
+#!/usr/bin/perl -T
 #!/usr/bin/perl -Tw
 
 #some false laziness w/selfservice.cgi
