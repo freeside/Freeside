@@ -34,22 +34,16 @@
 %$otaker = $FS::CurrentUser::CurrentUser->username
 %  if ($otaker eq "User, Legacy");
 %
-%my $error;
+%my $error = '';
 %if ($reasonnum == -1) {
-%  #untaint new reason
-%  my $nr = $cgi->param('newreasonnum');
-%  $nr =~ /^([\w\s]+)$/ || die "Illegal new reason";
-%  $nr = $1;
 %
-%  #untaint new reason type
-%  my $nrtype = $cgi->param('newreasonnumT');
-%  $nrtype =~ /^(\d+)$/ || die "Illegal new reason type";
-%  $nrtype = $1;
+%  $error = 'Enter a new reason (or select an existing oen)'
+%    unless $cgi->param('newreasonnum') !~ /^\s*$/;
 %
-%  my $reason = new FS::reason({ 'reason_type' => $nrtype,
-%                                'reason'      => $nr,
+%  my $reason = new FS::reason({ 'reason_type' => $cgi->param('newreasonnumT'),
+%                                'reason'      => $cgi->param('newreasonnum'),
 %                              });
-%  $error = $reason->insert;
+%  $error ||= $reason->insert;
 %  $reasonnum = $reason->reasonnum
 %    unless $error;
 %}
