@@ -84,7 +84,7 @@ tie my %report_services_acct, 'Tie::IxHash',
   'All accounts by username' => [ $fsurl.'search/svc_acct.cgi?username', '' ],
   'All accounts by UID'      => [ $fsurl.'search/svc_acct.cgi?uid', '' ],
 ;
-$report_services_acct{'Unlinked accounts'} = [ $fsurl.'search/svc_acct.cgi?UN_uid', 'Pre-Freeside accounts without a customer record' ]
+$report_services_acct{'Unlinked accounts'} = [ $fsurl.'search/svc_acct.cgi?UN_username', 'Pre-Freeside accounts without a customer record' ]
   if $curuser->access_right('View/link unlinked services');
 
 tie my %report_services_domain, 'Tie::IxHash',
@@ -107,7 +107,7 @@ $report_services_www{'Unlinked virtual hosts'} = [ $fsurl.'search/svc_www.cgi?UN
 
 tie my %report_services_broadband, 'Tie::IxHash',
   'All broadband services' => [ $fsurl.'search/svc_broadband.cgi?svcnum', '' ],
-  #'Unlinked domain' => [ $fsurl.'search/svc_acct.cgi?UN_uid', 'Pre-Freeside domains without a customer record' ],
+  #'Unlinked domain' => [ $fsurl.'search/svc_acct.cgi?UN_uid', 'Pre-Freeside broadband services without a customer record' ],
 ;
 
 tie my %report_services_phone, 'Tie::IxHash',
@@ -117,7 +117,7 @@ tie my %report_services_phone, 'Tie::IxHash',
 tie my %report_services_external, 'Tie::IxHash',
   'All external services' => [ $fsurl.'search/svc_external.cgi?id', '' ],
 ;
-$report_services_external{'Unlinked external services'} = [ $fsurl.'search/svc_external.cgi?UN_id', 'Pre-Freeside domains without a customer record' ]
+$report_services_external{'Unlinked external services'} = [ $fsurl.'search/svc_external.cgi?UN_id', 'Pre-Freeside external services without a customer record' ]
   if $curuser->access_right('View/link unlinked services');
 
 tie my %report_services, 'Tie::IxHash';
