@@ -397,6 +397,8 @@ sub insert {
   warn "  inserting $self\n"
     if $DEBUG > 1;
 
+  $self->signupdate(time) unless $self->signupdate;
+
   my $error = $self->SUPER::insert;
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
@@ -1210,6 +1212,7 @@ sub check {
     || $self->ut_name('last')
     || $self->ut_name('first')
     || $self->ut_snumbern('birthdate')
+    || $self->ut_snumbern('signupdate')
     || $self->ut_textn('company')
     || $self->ut_text('address1')
     || $self->ut_textn('address2')

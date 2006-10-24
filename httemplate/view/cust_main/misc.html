@@ -91,6 +91,11 @@
   <TD BGCOLOR="#ffffff"><% $cust_main->otaker %></TD>
 </TR>
 
+  <TR>
+    <TD ALIGN="right">Signup Date</TD>
+    <TD BGCOLOR="#ffffff"><% $cust_main->signupdate ? time2str($date_format, $cust_main->signupdate) : '' %></TD>
+  </TR>
+
 % if ( $conf->exists('cust_main-enable_birthdate') ) {
 
   <TR>
