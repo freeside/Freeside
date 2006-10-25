@@ -80,6 +80,14 @@
 %#eslaf
 %
 %###
+%# parse part_pkg
+%###
+%
+%my $pkgpart = join (' OR pkgpart=',
+%                    grep {$_} map { /^(\d+)$/; } ($cgi->param('pkgpart')));
+%push @where,  '(pkgpart=' . $pkgpart . ')' if $pkgpart;
+%
+%###
 %# parse magic, legacy, etc.
 %###
 %
