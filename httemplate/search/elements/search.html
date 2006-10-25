@@ -1,5 +1,3 @@
-%
-%
 %  # options example...  
 %  # (everything not commented required is optional)
 %  #
@@ -98,7 +96,7 @@
 %
 %  my $type = '';
 %  my $limit = '';
-%  my($maxrecords, $total, $offset, $count_arrayref);
+%  my($confmax, $maxrecords, $total, $offset, $count_arrayref);
 %
 %  if ( $cgi->param('_type') =~ /^(csv|\w*\.xls)$/ ) {
 %  
@@ -108,11 +106,16 @@
 %
 %    unless (exists($opt{'count_query'}) && length($opt{'count_query'})) {
 %      ( $opt{'count_query'} = $opt{'query'} ) =~
-%        s/^\s*SELECT\s*(.*?)\s+FROM\s/SELECT COUNT(*) FROM /i;
+%        s/^\s*SELECT\s*(.*?)\s+FROM\s/SELECT COUNT(*) FROM /i; #silly vim:/
 %    }
 %
 %    my $conf = new FS::Conf;
-%    $maxrecords = $conf->config('maxsearchrecordsperpage');
+%    $confmax = $conf->config('maxsearchrecordsperpage');
+%    if ( $cgi->param('maxrecords') =~ /^(\d+)$/ ) {
+%      $maxrecords = $1;
+%    } else {
+%      $maxrecords ||= $confmax;
+%    }
 %
 %    $limit = $maxrecords ? "LIMIT $maxrecords" : '';
 %
@@ -321,12 +324,6 @@
           )
         : ''
   %>
-% my $pager = include ( '/elements/pager.html',
-%                             'offset'     => $offset,
-%                             'num_rows'   => scalar(@$rows),
-%                             'total'      => $total,
-%                             'maxrecords' => $maxrecords,
-%                         );
 %  
 % unless ( $total ) { 
 % unless ( $opt{'disable_nonefound'} ) { 
@@ -335,11 +332,32 @@
 % } 
 % } else { 
 
-  
     <TABLE>
       <TR>
+
         <TD VALIGN="bottom">
+
+          <FORM>
+
           <% $total %> total <% $opt{'name'} %>
+
+%         if ( $confmax && $total > $confmax ) {
+%           $cgi->delete('maxrecords');
+%           $cgi->param('_dummy', 1);
+
+%#           ( show <SELECT NAME="maxrecords" onChange="this.form.submit();">
+            ( show <SELECT NAME="maxrecords" onChange="window.location = '<% $cgi->self_url %>;maxrecords=' + this.options[this.selectedIndex].value;">
+
+%             foreach my $max ( map { $_ * $confmax } qw( 1 5 10 25 ) ) {
+                <OPTION VALUE="<% $max %>" <% ( $maxrecords == $max ) ? 'SELECTED' : '' %>><% $max %></OPTION>
+%             }
+
+	    </SELECT> per page )
+
+%           $cgi->param('maxrecords', $maxrecords);
+%         }
+
+
           <% defined($opt{'html_posttotal'}) 
                 ? ( ref($opt{'html_posttotal'})
                       ? &{$opt{'html_posttotal'}}()
@@ -348,14 +366,18 @@
                 : ''
           %>
           <BR>
-% if ( $opt{'count_addl'} ) { 
-% my $n=0; foreach my $count ( @{$opt{'count_addl'}} ) { 
 
-              <% sprintf( $count, $count_arrayref->[++$n] ) %><BR>
+% if ( $opt{'count_addl'} ) { 
+%   my $n=0; foreach my $count ( @{$opt{'count_addl'}} ) { 
+
+      <% sprintf( $count, $count_arrayref->[++$n] ) %><BR>
+
+%   } 
 % } 
-% } 
+          </FORM>
 
         </TD>
+
 % unless ( $opt{'disable_download'} ) { 
 
           <TD ALIGN="right">
@@ -367,12 +389,19 @@
 
             as <A HREF="<% $cgi->self_url %>">CSV file</A>
           </TD>
+% $cgi->param('_type', "html" ); 
 % } 
 
       </TR>
       <TR>
         <TD COLSPAN=2>
-            <% $pager %>
+
+            <% my $pager = include ( '/elements/pager.html',
+                           'offset'     => $offset,
+                           'num_rows'   => scalar(@$rows),
+                           'total'      => $total,
+                           'maxrecords' => $maxrecords,
+            ) %>
 
             <% include('/elements/table-grid.html') %>
 
@@ -545,4 +574,3 @@
   <% include( '/elements/footer.html' ) %>
 % } 
 % } 
-

@@ -238,33 +238,13 @@
 
 
   <% $total %> matching customers found
-%
-%  #begin pager
-%  my $pager = '';
-%  if ( $total != scalar(@cust_main) && $maxrecords ) {
-%    unless ( $offset == 0 ) {
-%      $cgi->param('offset', $offset - $maxrecords);
-%      $pager .= '<A HREF="'. $cgi->self_url.
-%                '"><B><FONT SIZE="+1">Previous</FONT></B></A> ';
-%    }
-%    my $poff;
-%    my $page;
-%    for ( $poff = 0; $poff < $total; $poff += $maxrecords ) {
-%      $page++;
-%      if ( $offset == $poff ) {
-%        $pager .= qq!<FONT SIZE="+2">$page</FONT> !;
-%      } else {
-%        $cgi->param('offset', $poff);
-%        $pager .= qq!<A HREF="!. $cgi->self_url. qq!">$page</A> !;
-%      }
-%    }
-%    unless ( $offset + $maxrecords > $total ) {
-%      $cgi->param('offset', $offset + $maxrecords);
-%      $pager .= '<A HREF="'. $cgi->self_url.
-%                '"><B><FONT SIZE="+1">Next</FONT></B></A> ';
-%    }
-%  }
-%  #end pager
+
+% my $pager = include( '/elements/pager.html',
+%                        'offset'     => $offset,
+%			 'num_rows'   => scalar(@cust_main),
+%			 'total'      => $total,
+%			 'maxrecords' => $maxrecords,
+%                    );
 %
 %  unless ( $cgi->param('cancelled') ) {
 %    if ( $cgi->param('showcancelledcustomers') eq '0' #see if it was set by me

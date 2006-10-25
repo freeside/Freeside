@@ -1,43 +1,55 @@
+% my %opt = @_;
+% my $pager = '';
 %
+% if ( $opt{'total'} != $opt{'num_rows'} && $opt{'maxrecords'} ) {
 %
-%  my %opt = @_;
-%
-%  my $pager = '';
-%  if ( $opt{'total'} != $opt{'num_rows'} && $opt{'maxrecords'} ) {
-%    unless ( $opt{'offset'} == 0 ) {
-%      $cgi->param('offset', $opt{'offset'} - $opt{'maxrecords'});
-%
-
+%   unless ( $opt{'offset'} == 0 ) {
+%     $cgi->param('offset', $opt{'offset'} - $opt{'maxrecords'});
 
       <A HREF="<% $cgi->self_url %>"><B><FONT SIZE="+1">Previous</FONT></B></A>
-%
-%    }
-%    my $page = 0;
-%    for ( my $poff = 0; $poff < $opt{'total'}; $poff += $opt{'maxrecords'} ) {
-%      $page++;
-%      if ( $opt{'offset'} == $poff ) {
-%
 
+%   }
+%
+%   my $page = 0;
+%   my $prevpage = 0;
+%   my $over = 0;
+%   my $step = $opt{total} / 10; # 10 evenly spaced
+%   for ( my $poff = 0; $poff < $opt{total}; $poff += $opt{maxrecords} ) {
+%     $page++;
+%	
+%     next unless
+%          $page <= 4                                          #first four
+%       || $page >= ( $opt{total} / $opt{maxrecords} ) - 3     #last four
+%       || abs( ($opt{offset}-$poff) / $opt{maxrecords} ) <= 3 #w/i 3 of current
+%       || $poff > $over                                       # evenly spaced
+%     ;           
+%
+%     $over += $step if $poff > $over;
+%
+%     if ( $opt{'offset'} == $poff ) {
 
         <FONT SIZE="+2"><% $page %></FONT>
-%
-%      } else {
-%        $cgi->param('offset', $poff);
-%
 
+%     } else {
+%       $cgi->param('offset', $poff);
+%
+%       if ( $page > $prevpage+1 ) {
+          ...
+%       }
 
         <A HREF="<% $cgi->self_url %>"><% $page %></A>
-%
-%      }
-%    }
-%    unless ( $opt{'offset'} + $opt{'maxrecords'} > $opt{'total'} ) {
-%      $cgi->param('offset', $opt{'offset'} + $opt{'maxrecords'});
-%
 
+%     }
+%
+%     $prevpage = $page;
+%
+%   }
+%
+%   unless ( $opt{'offset'} + $opt{'maxrecords'} > $opt{'total'} ) {
+%     $cgi->param('offset', $opt{'offset'} + $opt{'maxrecords'});
 
       <A HREF="<% $cgi->self_url %>"><B><FONT SIZE="+1">Next</FONT></B></A>
 %
-%    }
-%  }
+%   }
 %
-
+% }
