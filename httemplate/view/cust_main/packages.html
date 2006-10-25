@@ -136,6 +136,11 @@ Current packages
     <TD WIDTH="<%$width%>" ALIGN="right"><FONT COLOR="#ff0000"><B>Cancelled&nbsp;</B></FONT></TD>
     <% pkg_datestr($pkg,'cancel',$conf) %>
   </TR>
+  <TR>
+    <TD WIDTH="<%$width%>" ALIGN="right"><FONT COLOR="#ff0000" SIZE="-2">
+      <% $pkg->{reason} %>
+    </FONT></TD>
+  </TR>
 % unless ( $pkg->{setup} ) { 
 
 
@@ -171,6 +176,11 @@ Current packages
     <TR>
       <TD WIDTH="<%$width%>" ALIGN="right"><FONT COLOR="#FF9900"><B>Suspended</B>&nbsp;</FONT></TD>
       <% pkg_datestr($pkg,'susp',$conf) %>
+    </TR>
+    <TR>
+      <TD WIDTH="<%$width%>" ALIGN="right"><FONT COLOR="#FF9900" SIZE="-2">
+        <% $pkg->{reason} %>
+      </FONT></TD>
     </TR>
 % unless ( $pkg->{setup} ) { 
 
@@ -413,6 +423,7 @@ Current packages
 %    $pkg{susp} = $cust_pkg->getfield('susp');
 %    $pkg{expire} = $cust_pkg->getfield('expire');
 %    $pkg{cancel} = $cust_pkg->getfield('cancel');
+%    $pkg{reason} = $cust_pkg->last_reason->reason if $cust_pkg->last_reason;
 %
 %  
 %    my %svcparts = map {
