@@ -216,7 +216,14 @@ Service # <% $svcnum ? "<B>$svcnum</B>" : " (NEW)" %><BR>
 %    }
 %  }
 %
-%  if ($cust_pkg && !$conf->exists('svc_acct-alldomains') ) {
+%  if ( $part_svc->part_svc_column('domsvc')->columnflag eq 'S' ) {
+%    foreach my $domain
+%              (split(',',$part_svc->part_svc_column('domsvc')->columnvalue)) {
+%      my $svc_domain =
+%        qsearchs('svc_domain', { 'svcnum' => $domain } );
+%     $svc_domain{$svc_domain->svcnum} = $svc_domain if $svc_domain;
+%    }
+%  }elsif ($cust_pkg && !$conf->exists('svc_acct-alldomains') ) {
 %    my @cust_svc =
 %      map { qsearch('cust_svc', { 'pkgnum' => $_->pkgnum } ) }
 %          qsearch('cust_pkg', { 'custnum' => $cust_pkg->custnum } );

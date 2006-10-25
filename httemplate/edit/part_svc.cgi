@@ -73,17 +73,20 @@ that field.
 %                     select_table => 'svc_acct_pop',
 %                     select_key   => 'popnum',
 %                     select_label => 'city',
+%                     disable_select => 1,
 %                   },
 %    'username'  => {
 %                     desc => 'Username',
 %                     type => 'text',
 %                     disable_default => 1,
 %                     disable_fixed => 1,
+%                     disable_select => 1,
 %                   },
 %    'quota'     => { 
 %                     desc => '',
 %                     type => 'text',
 %                     disable_inventory => 1,
+%                     disable_select => 1,
 %                   },
 %    '_password' => 'Password',
 %    'gid'       => 'GID (when blank, defaults to UID)',
@@ -93,6 +96,7 @@ that field.
 %                     type =>'select',
 %                     select_list => [ $conf->config('shells') ],
 %                     disable_inventory => 1,
+%                     disable_select => 1,
 %                   },
 %    'finger'    => 'Real name (GECOS)',
 %    'domsvc'    => {
@@ -102,15 +106,18 @@ that field.
 %                     select_key   => 'svcnum',
 %                     select_label => 'domain',
 %                     disable_inventory => 1,
+%                     disable_select => 1,
 %                   },
 %    'usergroup' => {
 %                     desc =>'RADIUS groups',
 %                     type =>'radius_usergroup_selector',
+%                     disable_select => 1,
 %                     disable_inventory => 1,
 %                   },
 %    'seconds'   => { desc => '',
 %                     type => 'text',
 %                     disable_inventory => 1,
+%                     disable_select => 1,
 %                   },
 %  },
 %
@@ -148,11 +155,13 @@ that field.
 %    'countrycode' => { desc => 'Country code',
 %                       type => 'text',
 %                       disable_inventory => 1,
+%                       disable_select => 1,
 %                     },
 %    'phonenum'    => 'Phone number',
 %    'pin'         => { desc => 'Personal Identification Number',
 %                       type => 'text',
 %                       disable_inventory => 1,
+%                       disable_select => 1,
 %                     },
 %  },
 %
@@ -199,6 +208,10 @@ that field.
 %    'F' => { 'desc' => 'Fixed (unchangeable)',
 %             'condition' =>
 %               sub { ref($_[0]) && $_[0]->{disable_fixed} }, 
+%           },
+%    'S' => { 'desc' => 'Selectable Choice',
+%             'condition' =>
+%               sub { !ref($_[0]) || $_[0]->{disable_select} }, 
 %           },
 %# need to template-ize httemplate/edit/svc_* first
 %#    'M' => { 'desc' => 'Manual selection from inventory',
@@ -329,7 +342,7 @@ that field.
 %            "        what.form.${layer}__${field}_classnum.disabled = true;".
 %            "        what.form.${layer}__${field}_classnum.style.backgroundColor = '#dddddd';".
 %            "      }".
-%            '    } else if ( f == "D" || f == "F" ) { //enable, text box',
+%            '    } else if ( f == "D" || f == "F" || f =="S" ) { //enable, text box',
 %            "      what.form.${layer}__${field}.disabled = false;".
 %            "      what.form.${layer}__${field}.style.backgroundColor = '#ffffff';".
 %            "      what.form.${layer}__${field}.style.display = '';".
@@ -384,20 +397,22 @@ that field.
 %
 %        } elsif ( $def->{type} eq 'select' ) {
 %
-%          $html .= qq!<SELECT NAME="${layer}__${field}" $disabled>!;
+%          $html .= qq!<SELECT NAME="${layer}__${field}" $disabled!;
+%          $html .= ' multiple' if $flag == 'S';
+%          $html .= '>';
 %          $html .= '<OPTION> </OPTION>' unless $value;
 %          if ( $def->{select_table} ) {
 %            foreach my $record ( qsearch( $def->{select_table}, {} ) ) {
 %              my $rvalue = $record->getfield($def->{select_key});
 %              $html .= qq!<OPTION VALUE="$rvalue"!.
-%                       ( $rvalue==$value ? ' SELECTED>' : '>' ).
-%                       $record->getfield($def->{select_label}). '</OPTION>';
+%                  (grep(/^$rvalue$/, split(',',$value)) ? ' SELECTED>' : '>' ).
+%                  $record->getfield($def->{select_label}). '</OPTION>';
 %            } #next $record
 %          } else { # select_list
 %            foreach my $item ( @{$def->{select_list}} ) {
 %              $html .= qq!<OPTION VALUE="$item"!.
-%                       ( $item eq $value ? ' SELECTED>' : '>' ).
-%                       $item. '</OPTION>';
+%                    (grep(/^$item$/, split(',',$value)) ? ' SELECTED>' : '>' ).
+%                    $item. '</OPTION>';
 %            } #next $item
 %          } #endif
 %          $html .= '</SELECT>';

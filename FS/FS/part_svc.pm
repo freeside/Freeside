@@ -544,6 +544,12 @@ sub process {
                       $param->{ $svcdb.'__'.$_ } =
                         delete( $param->{ $svcdb.'__'.$_.'_classnum' } );
                     }
+		    if ( $param->{ $svcdb.'__'.$_.'_flag' } =~ /^S$/ ) {
+                      $param->{ $svcdb.'__'.$_} =
+                        ref($param->{ $svcdb.'__'.$_})
+                          ? join(',', @{$param->{ $svcdb.'__'.$_ }} )
+                          : $param->{ $svcdb.'__'.$_ };
+		    }
                     ( $svcdb.'__'.$_, $svcdb.'__'.$_.'_flag' );
                   }
                   @fields;

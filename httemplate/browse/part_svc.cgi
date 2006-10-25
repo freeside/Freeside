@@ -5,6 +5,7 @@
 %  ''  => '',
 %  'D' => 'Default',
 %  'F' => 'Fixed (unchangeable)',
+%  'S' => 'Selectable choice',
 %  #'M' => 'Manual selection from inventory',
 %  'M' => 'Manual selected from inventory',
 %  #'A' => 'Automatically fill in from inventory',

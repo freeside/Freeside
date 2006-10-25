@@ -41,7 +41,7 @@ fields are currently supported:
 
 =item columnvalue - default or fixed value for the column
 
-=item columnflag - null or empty (no default), `D' for default, `F' for fixed (unchangeable), `M' for manual selection from inventory, or `A' for automatic selection from inventory.  For virtual fields, can also be 'X' for excluded.
+=item columnflag - null or empty (no default), `D' for default, `F' for fixed (unchangeable), `S' for selectable choice, `M' for manual selection from inventory, or `A' for automatic selection from inventory.  For virtual fields, can also be 'X' for excluded.
 
 =back
 
@@ -91,7 +91,7 @@ sub check {
   ;
   return $error if $error;
 
-  $self->columnflag =~ /^([DFMAX])$/
+  $self->columnflag =~ /^([DFSMAX])$/
     or return "illegal columnflag ". $self->columnflag;
   $self->columnflag(uc($1));
 
