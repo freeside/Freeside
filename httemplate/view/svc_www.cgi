@@ -20,6 +20,9 @@
 %}
 %#eofalse
 %
+%my $part_svc=qsearchs('part_svc',{'svcpart'=>$cust_svc->svcpart})
+%  or die "svc_www: Unknown svcpart" . $cust_svc->svcpart;
+
 %my $usersvc = $svc_www->usersvc;
 %my $svc_acct = '';
 %my $email = '';
@@ -48,17 +51,20 @@
 %      qq!<TR><TD ALIGN="right">Service number</TD>!.
 %        qq!<TD BGCOLOR="#ffffff">$svcnum</TD></TR>!.
 %      qq!<TR><TD ALIGN="right">Website name</TD>!.
-%        qq!<TD BGCOLOR="#ffffff"><A HREF="http://$www">$www<A></TD></TR>!.
-%      qq!<TR><TD ALIGN="right">Account</TD>!.
+%        qq!<TD BGCOLOR="#ffffff"><A HREF="http://$www">$www<A></TD></TR>!;
+%if (  $part_svc->part_svc_column('usersvc')->columnflag ne 'F'
+%   || $part_svc->part_svc_column('usersvc')->columnvalue !~ /^\s*$/) {
+%  print qq!<TR><TD ALIGN="right">Account</TD>!.
 %        qq!<TD BGCOLOR="#ffffff">!;
 %
-%if ( $usersvc ) {
-%  print qq!<A HREF="${p}view/svc_acct.cgi?$usersvc">$email</A>!;
-%} else {
-%  print '</i>(none)</i>';
-%}
+%  if ( $usersvc ) {
+%    print qq!<A HREF="${p}view/svc_acct.cgi?$usersvc">$email</A>!;
+%  } else {
+%    print '</i>(none)</i>';
+%  }
 %
-%print '</TD></TR>';
+%  print '</TD></TR>';
+%}
 %
 %foreach (sort { $a cmp $b } $svc_www->virtual_fields) {
 %  print $svc_www->pvf($_)->widget('HTML', 'view', $svc_www->getfield($_)),

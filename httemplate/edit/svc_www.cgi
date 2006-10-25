@@ -188,13 +188,16 @@
 %}
 %print "</SELECT></TD></TR>";
 %
-%print '<TR><TD ALIGN="right">Username</TD><TD><SELECT NAME="usersvc" SIZE=1>';
-%print '<OPTION VALUE="">(none)';
-%foreach $_ (keys %svc_acct) {
-%  print "<OPTION", ($_ eq $usersvc) ? " SELECTED" : "",
-%        qq! VALUE="$_">$svc_acct{$_}!;
+%if ( $part_svc->part_svc_column('usersvc')->columnflag ne 'F'
+%     || $part_svc->part_svc_column('usersvc')->columnvalue !~ /^\s*$/) {
+%  print '<TR><TD ALIGN="right">Username</TD><TD><SELECT NAME="usersvc" SIZE=1>';
+%  print '<OPTION VALUE="">(none)';
+%  foreach $_ (keys %svc_acct) {
+%    print "<OPTION", ($_ eq $usersvc) ? " SELECTED" : "",
+%          qq! VALUE="$_">$svc_acct{$_}!;
+%  }
+%  print "</SELECT></TD></TR>";
 %}
-%print "</SELECT></TD></TR>";
 %
 %foreach my $field ($svc_www->virtual_fields) {
 %  if ( $part_svc->part_svc_column($field)->columnflag ne 'F' ) {
