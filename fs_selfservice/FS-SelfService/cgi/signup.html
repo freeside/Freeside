@@ -207,7 +207,8 @@ HTML::Widgets::SelectLayers->new(
   <TD COLSPAN=2><SELECT NAME="pkgpart">
 
   <%=
-    $OUT .= '<OPTION VALUE="">(none)' unless scalar(@part_pkg ) ==1;
+    $OUT .= '<OPTION VALUE="">(none)'
+      unless scalar(@part_pkg) == 1 or $default_pkgpart;
     foreach my $part_pkg ( @part_pkg ) {
       $OUT .= '<OPTION VALUE="'. $part_pkg->{'pkgpart'}. '"';
       $OUT .= ' SELECTED' if $pkgpart && $part_pkg->{'pkgpart'} == $pkgpart;
