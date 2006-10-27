@@ -643,8 +643,11 @@ sub unsuspend {
     my %hash = $self->hash;
     my $inactive = time - $hash{'susp'};
 
+    my $conf = new FS::Conf;
+
     $hash{'bill'} = ( $hash{'bill'} || $hash{'setup'} ) + $inactive
-      if $opt{'adjust_next_bill'}
+      if ( $opt{'adjust_next_bill'}
+           || $conf->config('unsuspend-always_adjust_next_bill_date') )
       && $inactive > 0 && ( $hash{'bill'} || $hash{'setup'} );
 
     $hash{'susp'} = '';
