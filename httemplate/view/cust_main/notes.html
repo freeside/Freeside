@@ -1,5 +1,6 @@
 %
 % my $conf = new FS::Conf;
+% my $curuser = $FS::CurrentUser::CurrentUser;
 %
 % $cgi->param('custnum') =~ /^(\d+)$/
 %   or die "No customer specified (bad URL)!";
@@ -20,6 +21,11 @@ body { background: #e8e8e8 }
 
 </STYLE>
 
+<SCRIPT TYPE="text/javascript" SRC="/elements/overlibmws.js"></SCRIPT>
+<SCRIPT TYPE="text/javascript" SRC="/elements/overlibmws_iframe.js"></SCRIPT>
+<SCRIPT TYPE="text/javascript" SRC="/elements/overlibmws_crossframe.js"></SCRIPT>
+<SCRIPT TYPE="text/javascript" SRC="/elements/iframecontentmws.js"></SCRIPT>
+
 <TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 BORDER=0 >
 
 %#<% include('/elements/table-grid.html') %>
@@ -35,12 +41,27 @@ body { background: #e8e8e8 }
 %     $bgcolor = $bgcolor1;
 %   }
 %
+%   my $pop = popurl(3);
+%   my $notenum = $note->notenum;
+%   my $clickjs = qq!onclick="overlib( OLiframeContent('${pop}edit/! .
+%                 qq!cust_main_note.cgi?custnum=$custnum&! .
+%                 qq!notenum=$notenum', 616, ! .
+%                 qq!386, 'cust_main_note_popup' ), CAPTION, 'Edit customer ! .
+%                 qq!note', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, ! .
+%                 qq!CLOSECLICK, FRAME, top); return false;"!;
 %
+%   my ($el, $eel);
+%   if ($curuser->access_right('Edit customer note') ) {
+%     $el  = qq!<A HREF="javascript:void(0);" $clickjs>!;
+%     $eel = qq!</A>!;
+%   }else{
+%     $el = $eel = '';
+%   }
 
 <TR>
-  <% note_datestr($note,$conf,$bgcolor) %>
+  <% note_datestr($note,$conf,$bgcolor, $el, $eel) %>
   <TD CLASS="inv" BGCOLOR="<% $bgcolor %>">
-    &nbsp;<%$note->otaker%>&nbsp;
+    <% $el %> &nbsp;<%$note->otaker%>&nbsp; <% $eel %>
   </TD>
   <TD CLASS="inv" BGCOLOR="<% $bgcolor %>">
     &nbsp;<%$note->comments%>
@@ -58,14 +79,14 @@ body { background: #e8e8e8 }
 %#subroutines
 %
 %sub note_datestr {
-% my($note, $conf, $bgcolor) = @_ or return '';
-% my $format=qq{<TD class="inv" bgcolor="$bgcolor" align="left"><B>%b</B></TD>}.
-%            qq{<TD class="inv" bgcolor="$bgcolor" align="right"><B>&nbsp;%o,</B></TD>}.
-%            qq{<TD class="inv" bgcolor="$bgcolor" align="right"><B>&nbsp;%Y&nbsp;</B></TD>};
-% $format .= qq{<TD class="inv" bgcolor="$bgcolor" ALIGN="right"><B>&nbsp;%l</TD>}.
-%            qq{<TD class="inv" bgcolor="$bgcolor" ALIGN="center"><B>:</B></TD>}.
-%            qq{<TD class="inv" bgcolor="$bgcolor" ALIGN="left"><B>%M</B></TD>}.
-%            qq{<TD class="inv" bgcolor="$bgcolor" ALIGN="left"><B>&nbsp;%P&nbsp;</B></TD>}
+% my($note, $conf, $bgcolor, $el, $eel) = @_ or return '';
+% my $format=qq{<TD class="inv" bgcolor="$bgcolor" align="left">$el<B>%b</B>$eel</TD>}.
+%            qq{<TD class="inv" bgcolor="$bgcolor" align="right">$el<B>&nbsp;%o,</B>$eel</TD>}.
+%            qq{<TD class="inv" bgcolor="$bgcolor" align="right">$el<B>&nbsp;%Y&nbsp;</B>$eel</TD>};
+% $format .= qq{<TD class="inv" bgcolor="$bgcolor" ALIGN="right">$el<B>&nbsp;%l$eel</TD>}.
+%            qq{<TD class="inv" bgcolor="$bgcolor" ALIGN="center">$el<B>:</B>$eel</TD>}.
+%            qq{<TD class="inv" bgcolor="$bgcolor" ALIGN="left">$el<B>%M</B>$eel</TD>}.
+%            qq{<TD class="inv" bgcolor="$bgcolor" ALIGN="left">$el<B>&nbsp;%P&nbsp;</B>$eel</TD>}
 %     if $conf->exists('cust_main_note-display_times');
 %   ( my $strip = time2str($format, $note->_date) ) =~ s/ (\d)/$1/g;
 %   $strip;

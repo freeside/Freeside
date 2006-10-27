@@ -93,6 +93,7 @@ assigned to users and/or groups.
   'Complimentary customer', #aka users-allow_comp 
   'Delete customer', #aka. deletecustomers #Enable customer deletions. Be very careful! Deleting a customer will remove all traces that this customer ever existed! It should probably only be used when auditing a legacy database. Normally, you cancel all of a customers' packages if they cancel service.
   'Add customer note',
+  'Edit customer note',
 
 ###
 # customer package rights
