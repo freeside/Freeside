@@ -4,6 +4,7 @@ use vars qw(@ISA %info);
 use Tie::IxHash;
 use String::ShellQuote;
 use FS::part_export;
+use FS::Record qw( qsearch qsearchs );
 
 @ISA = qw(FS::part_export);
 
@@ -60,6 +61,10 @@ tie my %options, 'Tie::IxHash',
                type=>'select', options=>[qw(crypt md5)],
                default => 'crypt',
              },
+  'groups_susp_reason' => { label =>
+                             'Radius group mapping to reason (via template user)',
+			    type  => 'textarea',
+			  },
 ;
 
 %info = (
@@ -162,10 +167,21 @@ old_ for replace operations):
   <LI><code>$shell</code>
   <LI><code>$quota</code>
   <LI><code>@radius_groups</code>
+  <LI><code>$reasonnum (when suspending)</code>
+  <LI><code>$reasontext (when suspending)</code>
+  <LI><code>$reasontypenum (when suspending)</code>
+  <LI><code>$reasontypetext (when suspending)</code>
   <LI>All other fields in <a href="../docs/schema.html#svc_acct">svc_acct</a> are also available.
 </UL>
 END
 );
+
+sub _groups_susp_reason_map { shift->_map('groups_susp_reason'); }
+
+sub _map {
+  my $self = shift;
+  map { reverse(/^\s*(\S+)\s*(.*)\s*$/) } split("\n", $self->option(shift) );
+}
 
 sub rebless { shift; }
 
@@ -238,6 +254,39 @@ sub _export_command {
     shell_quote( $svc_acct->crypt_password( $self->option('crypt') ) );
 
   @radius_groups = $svc_acct->radius_groups;
+
+  my ($reasonnum, $reasontext, $reasontypenum, $reasontypetext);
+  if ( $cust_pkg && $action eq 'suspend' && (my $r = $cust_pkg->last_reason)){
+    $reasonnum = $r->reasonnum;
+    $reasontext = $r->reason;
+    $reasontypenum = $r->reason_type;
+    $reasontypetext = $r->reasontype->type;
+
+    my %reasonmap = $self->_groups_susp_reason_map;
+    my $userspec = '';
+    $userspec = $reasonmap{$reasonnum}
+      if exists($reasonmap{$reasonnum});
+    $userspec = $reasonmap{$reasontext}
+      if (!$userspec && exists($reasonmap{$reasontext}));
+
+    my $suspend_user;
+    if ($userspec =~ /^\d+$/ ){
+      $suspend_user = qsearchs( 'svc_acct', { 'svcnum' => $userspec } );
+    }elsif ($userspec =~ /^\S+\@\S+$/){
+      my ($username,$domain) = split(/\@/, $userspec);
+      for my $user (qsearch( 'svc_acct', { 'username' => $username } )){
+        $suspend_user = $user if $userspec eq $user->email;
+      }
+    }elsif ($userspec){
+      $suspend_user = qsearchs( 'svc_acct', { 'username' => $userspec } );
+    }
+
+    @radius_groups = $suspend_user->radius_groups
+      if $suspend_user;  
+
+  }else{
+    $reasonnum = $reasontext = $reasontypenum = $reasontypetext = '';
+  }
 
   $self->shellcommands_queue( $svc_acct->svcnum,
     user         => $self->option('user')||'root',
