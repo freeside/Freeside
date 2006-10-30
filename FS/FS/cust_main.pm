@@ -2518,6 +2518,9 @@ sub realtime_bop {
   $content{customer_ip} = $payip
     if length($payip);
 
+  $content{invoice_number} = $options{'invnum'}
+    if exists($options{'payip'}) && length($options{'invnum'});
+
   if ( $method eq 'CC' ) { 
 
     $content{card_number} = $payinfo;
@@ -2583,7 +2586,7 @@ sub realtime_bop {
     'action'         => $action1,
     'description'    => $options{'description'},
     'amount'         => $amount,
-    'invoice_number' => $options{'invnum'},
+    #'invoice_number' => $options{'invnum'},
     'customer_id'    => $self->custnum,
     'last_name'      => $paylast,
     'first_name'     => $payfirst,
