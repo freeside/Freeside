@@ -4,7 +4,7 @@
 %  or die "Illegal custnum: ". $cgi->param('custnum');
 %my $custnum = $1;
 %
-%$cgi->param('notenum') =~ /^(\d+)$/
+%$cgi->param('notenum') =~ /^(\d*)$/
 %  or die "Illegal notenum: ". $cgi->param('notenum');
 %my $notenum = $1;
 %
