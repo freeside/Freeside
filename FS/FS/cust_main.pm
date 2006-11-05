@@ -2519,7 +2519,7 @@ sub realtime_bop {
     if length($payip);
 
   $content{invoice_number} = $options{'invnum'}
-    if exists($options{'payip'}) && length($options{'invnum'});
+    if exists($options{'invnum'}) && length($options{'invnum'});
 
   if ( $method eq 'CC' ) { 
 
