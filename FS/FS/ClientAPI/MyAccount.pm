@@ -253,7 +253,7 @@ sub payment_info {
   $return{payby} = $cust_main->payby;
 
   if ( $cust_main->payby =~ /^(CARD|DCRD)$/ ) {
-    #warn $return{card_type} = cardtype($cust_main->payinfo);
+    $return{card_type} = cardtype($cust_main->payinfo);
     $return{payinfo} = $cust_main->payinfo;
 
     @return{'month', 'year'} = $cust_main->paydate_monthyear;
