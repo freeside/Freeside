@@ -2,7 +2,7 @@
 #!/usr/bin/perl -Tw
 
 use strict;
-use vars qw($cgi $session_id $form_max $template_dir);
+use vars qw($DEBUG $cgi $session_id $form_max $template_dir);
 use subs qw(do_template);
 use CGI;
 use CGI::Carp qw(fatalsToBrowser);
@@ -18,6 +18,8 @@ use FS::SelfService qw( login customer_info invoice
                       );
 
 $template_dir = '.';
+
+$DEBUG = 1;
 
 $form_max = 255;
 
@@ -68,6 +70,9 @@ $cgi->param('action') =~
   or die "unknown action ". $cgi->param('action');
 my $action = $1;
 
+warn "calling $action sub\n"
+  if $DEBUG;
+$FS::SelfService::DEBUG = $DEBUG;
 my $result = eval "&$action();";
 die $@ if $@;
 
@@ -79,7 +84,8 @@ if ( $result->{error} eq "Can't resume session" ) { #ick
 #warn $result->{'open_invoices'};
 #warn scalar(@{$result->{'open_invoices'}});
 
-warn "processing template $action\n";
+warn "processing template $action\n"
+  if $DEBUG;
 do_template($action, {
   'session_id' => $session_id,
   'action'     => $action, #so the menu knows what tab we're on...

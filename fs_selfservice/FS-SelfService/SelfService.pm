@@ -1,7 +1,7 @@
 package FS::SelfService;
 
 use strict;
-use vars qw($VERSION @ISA @EXPORT_OK $dir $socket %autoload $tag);
+use vars qw($VERSION @ISA @EXPORT_OK $DEBUG $dir $socket %autoload $tag);
 use Exporter;
 use Socket;
 use FileHandle;
@@ -12,6 +12,8 @@ use Storable 2.09 qw(nstore_fd fd_retrieve);
 $VERSION = '0.03';
 
 @ISA = qw( Exporter );
+
+$DEBUG = 0;
 
 $dir = "/usr/local/freeside";
 $socket =  "$dir/selfservice_socket";
@@ -91,6 +93,8 @@ foreach my $autoload ( keys %autoload ) {
 
 sub simple_packet {
   my $packet = shift;
+  warn "sending ". $packet->{_packet}. " to server"
+    if $DEBUG;
   socket(SOCK, PF_UNIX, SOCK_STREAM, 0) or die "socket: $!";
   connect(SOCK, sockaddr_un($socket)) or die "connect to $socket: $!";
   nstore_fd($packet, \*SOCK) or die "can't send packet: $!";
@@ -102,8 +106,15 @@ sub simple_packet {
 #  my $w = new IO::Select;
 #  $w->add(\*SOCK);
 #  my @wait = $w->can_read;
+
+  warn "reading message from server"
+    if $DEBUG;
+
   my $return = fd_retrieve(\*SOCK) or die "error reading result: $!";
   die $return->{'_error'} if defined $return->{_error} && $return->{_error};
+
+  warn "returning message to client"
+    if $DEBUG;
 
   $return;
 }
