@@ -400,6 +400,31 @@
 %
 %#display payment history
 %
+%sub balance_forward_row {
+%  my( $b, $date ) = @_;
+%  my $conf = new FS::Conf;
+%  my $money_char = $conf->config('money_char') || '$';
+%  ( my $balance_forward = $money_char. $b ) =~ s/^\$\-/-&nbsp;\$/;
+
+   <TR ID="balance_forward_row">
+     <TD CLASS="grid" BGCOLOR="#dddddd">
+       <% time2str("%D",$date) %>
+     </TD>
+
+     <TD CLASS="grid" BGCOLOR="#dddddd">
+       <I>Starting balance on <% time2str("%D",$date) %></I>
+       (<A HREF="javascript:void(0);" onClick="show_history();">show prior history</A>)
+     </TD>
+
+     <TD CLASS="grid" BGCOLOR="#dddddd"></TD>
+     <TD CLASS="grid" BGCOLOR="#dddddd"></TD>
+     <TD CLASS="grid" BGCOLOR="#dddddd"></TD>
+     <TD CLASS="grid" BGCOLOR="#dddddd"></TD>
+     <TD CLASS="grid" BGCOLOR="#dddddd"><I><% $balance_forward %></I></TD>
+
+   </TR>
+%}
+%
 %my $balance = 0;
 %my %target = ();
 %my $money_char = $conf->config('money_char') || '$';
@@ -409,8 +434,11 @@
 %my $hidden = 0;
 %my $seen = 0;
 %my $old_history = 0;
+%my $lastdate = 0;
 %
 %foreach my $item ( sort { $a->{'date'} <=> $b->{'date'} } @history ) {
+%
+%  $lastdate = $item->{'date'};
 %
 %  my $display;
 %  if ( $item->{'date'} < $older_than ) {
@@ -421,28 +449,7 @@
 %    $display = '';
 %
 %    if ( $hidden && ! $seen++ ) {
-%      ( my $balance_forward = $money_char. $balance ) =~ s/^\$\-/-&nbsp;\$/;
-%    
-
-
-      <TR ID="balance_forward_row">
-        <TD CLASS="grid" BGCOLOR="#dddddd">
-          <% time2str("%D",$item->{'date'}) %>
-        </TD>
-
-        <TD CLASS="grid" BGCOLOR="#dddddd">
-          <I>Starting balance on <% time2str("%D",$item->{'date'}) %></I>
-          (<A HREF="javascript:void(0);" onClick="show_history();">show prior history</A>)
-        </TD>
-
-        <TD CLASS="grid" BGCOLOR="#dddddd"></TD>
-        <TD CLASS="grid" BGCOLOR="#dddddd"></TD>
-        <TD CLASS="grid" BGCOLOR="#dddddd"></TD>
-        <TD CLASS="grid" BGCOLOR="#dddddd"></TD>
-        <TD CLASS="grid" BGCOLOR="#dddddd"><I><% $balance_forward %></I></TD>
-
-      </TR>
-%
+%      balance_forward_row($balance, $item->{'date'});
 %    }
 %
 %  }
@@ -523,6 +530,9 @@
   </TR>
 % } 
 
+%if ( scalar(@history) && $hidden && ! $seen++ ) {
+%  balance_forward_row($balance, $lastdate);
+%}
 
 </TABLE>
 
