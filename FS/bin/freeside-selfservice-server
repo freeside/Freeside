@@ -134,11 +134,11 @@ while (1) {
     } else { #kid time
 
       ##get new db handle
-      #$FS::UID::dbh->{InactiveDestroy} = 1;
-      #forksuidsetup($user);
+      $FS::UID::dbh->{InactiveDestroy} = 1;
+      forksuidsetup($user);
 
       #get db handle
-      adminsuidsetup($user);
+      #adminsuidsetup($user);
 
       my $type = $packet->{_packet};
       warn "calling $type handler\n" if $Debug; 
