@@ -129,7 +129,7 @@ sub payment_results {
     #or $error ||= $init_data->{msgcat}{invalid_card}; #. $self->payinfo;
     or die "invalid card"; #!!!
 
-  if ( $cgi->param('card_type' ) {
+  if ( $cgi->param('card_type') ) {
     cardtype($payinfo) eq $cgi->param('card_type')
       #or $error ||= $init_data->{msgcat}{not_a}. $cgi->param('CARD_type');
       or die "not a ". $cgi->param('card_type');
