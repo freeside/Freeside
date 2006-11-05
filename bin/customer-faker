@@ -1,14 +1,21 @@
 #!/usr/bin/perl
 
 use strict;
+use Getopt::Std;
 use Data::Faker;
 use Business::CreditCard;
 use FS::UID qw(adminsuidsetup);
+use FS::Record qw(qsearch);
 use FS::cust_main;
-use Getopt::Std;
+use FS::cust_pkg;
+use FS::svc_acct;
 
 my $agentnum = 1;
 my $refnum = 1;
+
+#my @pkgs = ( 2, 3, 4 );
+my @pkgs = ( 4, 5, 6 );
+my $svcpart = 2;
 
 use vars qw( $opt_p );
 getopts('p:');
@@ -58,8 +65,41 @@ until ( $num-- <= 0 ) {
   # could insert invoicing_list and other stuff too..  hell, could insert
   # packages, services, more
   # but i just wanted 10k customers to test the pager and this was good enough
+  # not anymore, here's some services and packages
+  
+  my $now = time;
+  my $year = 31556736; #60*60*24*365.24
+  my $setup = $now - int(rand($year));
 
-  my $error = $cust_main->insert;
+  my $cust_pkg = new FS::cust_pkg {
+    'pkgpart' => $pkgs[ int(rand(scalar(@pkgs))) ],
+
+    #some dates in here would be nice
+    'setup'      => $setup,
+    #'last_bill'
+    #'bill'
+    #'susp'
+    #'expire'
+    #'cancel'
+  };
+
+  my $svc_acct = new FS::svc_acct {
+    'svcpart'  => $svcpart,
+    'username' => $faker->username,
+  };
+
+  while ( qsearch( 'svc_acct', { 'username' => $svc_acct->username } ) ) {
+    my $username = $svc_acct->username;
+    $username++;
+    $svc_acct->username($username);
+  }
+
+  use Tie::RefHash;
+  tie my %hash, 'Tie::RefHash',
+    $cust_pkg => [ $svc_acct ],
+  ;
+
+  my $error = $cust_main->insert( \%hash );
   die $error if $error;
 
 }

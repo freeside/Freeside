@@ -1,0 +1,54 @@
+#!/usr/bin/perl
+
+use Date::Parse;
+use FS::UID qw(adminsuidsetup);
+use FS::Record qw(qsearch);
+use FS::cust_pay;
+use FS::cust_credit;
+
+my $user;
+$user = shift or die "usage: payment-faker $user";
+adminsuidsetup($user);
+
+for $month ( 1 .. 11 ) {
+
+  print "month $month\n";
+
+  system(qq!freeside-daily -d "$month/1/2006" $user!);
+
+  foreach my $cust_main ( qsearch('cust_main', {} ) ) {
+    next unless $cust_main->balance > 0;
+    my $item = '';
+    if ( rand() > .95 ) {
+      $item = new FS::cust_credit {
+        'amount' => $cust_main->balance,
+	'_date'  => str2time("$month/1/2006"),
+	'reason' => 'testing',
+      };
+    } else {
+
+      if ( rand() > .5 ) {
+        $payby = 'BILL';
+	$payinfo = int(rand(10000));
+      } else {
+        $payby = 'CARD';
+	$payinfo = '4111111111111111';
+      }
+
+      $item = new FS::cust_pay {
+        'paid'   => $cust_main->balance,
+	'_date'  => str2time("$month/1/2006"),
+	'payby'  => $payby,
+	'payinfo' => $payinfo,
+      };
+    }
+
+    $item->custnum($cust_main->custnum);
+    my $error = $item->insert;
+    die $error if $error;
+    $cust_main->apply_payments;
+    $cust_main->apply_credits;
+
+  }
+
+}
