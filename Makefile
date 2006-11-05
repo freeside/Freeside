@@ -98,8 +98,8 @@ RT_PATH = /opt/rt3
 FREESIDE_PATH = `pwd`
 PERL_INC_DEV_KLUDGE = /usr/local/share/perl/5.8.8/
 
-VERSION=1.7.0
-TAG=freeside_1_7_0
+VERSION=1.7.1
+TAG=freeside_1_7_1
 
 help:
 	@echo "supported targets:"
@@ -122,7 +122,8 @@ help:
 	#@echo "                   upload-docs release update-webdemo"
 
 
-masondocs: htmlman httemplate/* httemplate/*/* httemplate/*/*/* httemplate/*/*/*/* httemplate/*/*/*/*/*
+#masondocs: htmlman httemplate/* httemplate/*/* httemplate/*/*/* httemplate/*/*/*/* httemplate/*/*/*/*/*
+masondocs: htmlman httemplate/* httemplate/*/* httemplate/*/*/* httemplate/*/*/*/*
 	rm -rf masondocs
 	cp -pr httemplate masondocs
 	touch masondocs
