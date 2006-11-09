@@ -55,9 +55,11 @@ sub customer_tickets {
   $limit ||= 0;
 
   my( $from_sql, @param) = $self->_from_customer( $custnum, $priority );
-  my $sql = "SELECT tickets.*, queues.name".
-            ( length($priority) ? ", objectcustomfieldvalues.content" : '' ).
-            " $from_sql ORDER BY priority, id DESC LIMIT $limit";
+  my $sql="SELECT tickets.*, queues.name, ".
+          "position(tickets.status in 'newopenstalledresolvedrejecteddeleted')".
+	  " AS svalue " .
+          ( length($priority) ? ", objectcustomfieldvalues.content" : '' ).
+          " $from_sql ORDER BY priority, svalue, id DESC LIMIT $limit";
   my $sth = $dbh->prepare($sql) or die $dbh->errstr. "preparing $sql";
   $sth->execute(@param)         or die $sth->errstr. "executing $sql";
 
