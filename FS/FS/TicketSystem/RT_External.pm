@@ -59,7 +59,7 @@ sub customer_tickets {
           "position(tickets.status in 'newopenstalledresolvedrejecteddeleted')".
 	  " AS svalue " .
           ( length($priority) ? ", objectcustomfieldvalues.content" : '' ).
-          " $from_sql ORDER BY priority, svalue, id DESC LIMIT $limit";
+          " $from_sql ORDER BY svalue, priority DESC, id DESC LIMIT $limit";
   my $sth = $dbh->prepare($sql) or die $dbh->errstr. "preparing $sql";
   $sth->execute(@param)         or die $sth->errstr. "executing $sql";
 
