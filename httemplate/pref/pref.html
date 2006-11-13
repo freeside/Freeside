@@ -1,0 +1,28 @@
+<% include('/elements/header.html', 'Preferences for '. getotaker ) %>
+
+<FORM METHOD="POST" ACTION="pref-process.html">
+
+<% include('/elements/error.html') %>
+
+<% ntable("#cccccc",2) %>
+
+<TR>
+  <TD ALIGN="right">Current password: </TD>
+  <TD><INPUT TYPE="password" NAME="_password"></TD>
+</TR>
+
+<TR>
+  <TD ALIGN="right">New password: </TD>
+  <TD><INPUT TYPE="password" NAME="new_password"></TD>
+</TR>
+
+<TR>
+  <TD ALIGN="right">Re-enter new password: </TD>
+  <TD><INPUT TYPE="password" NAME="new_password2"></TD>
+</TR>
+
+</TABLE>
+
+<INPUT TYPE="submit" VALUE="Change password">
+
+<% include('/elements/footer.html') %>

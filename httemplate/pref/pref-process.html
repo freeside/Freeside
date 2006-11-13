@@ -1,0 +1,26 @@
+% my $error = '';
+%
+% my $access_user = qsearchs( 'access_user', {
+%   'username'  => getotaker,
+%   '_password' => $cgi->param('_password'),
+% } );
+%
+% $error = 'Current password incorrect; password not changed'
+%   unless $access_user;
+%
+% $error ||= "New passwords don't match"
+%   unless $cgi->param('new_password') eq $cgi->param('new_password2');
+%
+% $error ||= "No new password entered"
+%   unless length($cgi->param('new_password'));
+%
+% $access_user->_password($cgi->param('new_password')) unless $error;
+% $error ||= $access_user->replace;
+%
+% if ( $error ) {
+%   $cgi->param('error', $error);
+%   print $cgi->redirect(popurl(1). "pref.html?". $cgi->query_string );
+% } else {
+<% include('/elements/header.html', 'Password changed') %>
+<% include('/elements/footer.html') %>
+% }

@@ -239,7 +239,7 @@ sub rooturl {
   #even though this is kludgy
   $url_string =~
     s{
-       (browse|config|docs|edit|graph|misc|search|view)
+       (browse|config|docs|edit|graph|misc|search|view|pref)
        /
        (process/)?
        ([\w\-\.]+)
