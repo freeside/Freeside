@@ -407,17 +407,18 @@ sub state_label {
 
 =item card_types
 
-Returns a hash reference of the accepted credit card types.
+Returns a hash reference of the accepted credit card types.  Keys are shorter
+identifiers and values are the longer strings used by the system (see
+L<Business::CreditCard).
 
 =cut
 
 #$conf from above
-use Tie::IxHash;
 
 sub card_types {
   my $conf = new FS::Conf;
 
-  tie my %card_types, 'Tie::IxHash',
+  my %card_types = (
     #displayname                    #value (Business::CreditCard)
     "VISA"                       => "VISA card",
     "MasterCard"                 => "MasterCard",
@@ -429,7 +430,7 @@ sub card_types {
     "BankCard"                   => "BankCard",
     "Switch"                     => "Switch",
     "Solo"                       => "Solo",
-  ;
+  );
   my @conf_card_types = grep { ! /^\s*$/ } $conf->config('card-types');
   if ( @conf_card_types ) {
     #perhaps the hash is backwards for this, but this way works better for
