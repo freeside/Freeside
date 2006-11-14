@@ -347,7 +347,7 @@ Unused
                         ? ' for '. $override->taxclass. ' only'
                         : ''
                   %>
-                  <FONT SIZE=-1><A HREF="<%$p%>misc/delete-agent_payment_gateway.cgi?<% 'XXXoverridenum' %>">(delete)</A></FONT>
+                  <FONT SIZE=-1><A HREF="<%$p%>misc/delete-agent_payment_gateway.cgi?<% $override->agentgatewaynum %>">(delete)</A></FONT>
                 </TD>
               </TR>
 % } 
