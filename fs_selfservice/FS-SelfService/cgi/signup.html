@@ -120,15 +120,9 @@ Contact Information
   <%=
 
     my $cardselect = '<SELECT NAME="CARD_type"><OPTION></OPTION>';
-    my %types = (
-                  'VISA' => 'VISA card',
-                  'MasterCard' => 'MasterCard',
-                  'Discover' => 'Discover card',
-                  'American Express' => 'American Express card',
-                );
-    foreach ( keys %types ) {
-      $selected = $CARD_type eq $types{$_} ? 'SELECTED' : '';
-      $cardselect .= qq!<OPTION $selected VALUE="$types{$_}">$_</OPTION>!;
+    foreach ( keys %card_types ) {
+      $selected = $CARD_type eq $card_types{$_} ? 'SELECTED' : '';
+      $cardselect .= qq!<OPTION $selected VALUE="$card_types{$_}">$_</OPTION>!;
     }
     $cardselect .= '</SELECT>';
   

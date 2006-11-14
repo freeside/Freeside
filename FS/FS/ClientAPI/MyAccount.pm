@@ -11,6 +11,7 @@ use FS::CGI qw(small_custview); #doh
 use FS::Conf;
 use FS::Record qw(qsearch qsearchs);
 use FS::Msgcat qw(gettext);
+use FS::Misc qw(card_types);
 use FS::ClientAPI_SessionCache;
 use FS::svc_acct;
 use FS::svc_domain;
@@ -213,31 +214,6 @@ sub payment_info {
                      'country' => $conf->config('countrydefault') || 'US'
                    } );
 
-    my %card_types = (
-      #displayname                    #value (Business::CreditCard)
-      "VISA"                       => "VISA card",
-      "MasterCard"                 => "MasterCard",
-      "Discover"                   => "Discover card",
-      "American Express"           => "American Express card",
-      "Diner's Club/Carte Blanche" => "Diner's Club/Carte Blanche",
-      "enRoute"                    => "enRoute",
-      "JCB"                        => "JCB",
-      "BankCard"                   => "BankCard",
-      "Switch"                     => "Switch",
-      "Solo"                       => "Solo",
-    );
-    my @conf_card_types = grep { ! /^\s*$/ } $conf->config('card-types');
-    if ( @conf_card_types ) {
-      #perhaps the hash is backwards for this, but this way works better for
-      #usage in selfservice
-      %card_types = map  { $_ => $card_types{$_} }
-                    grep {
-                           my $d = $_;
-			   grep { $card_types{$d} eq $_ } @conf_card_types
-                         }
-		    keys %card_types;
-    }
-
     $payment_info = {
 
       #list all counties/states/countries
@@ -248,14 +224,7 @@ sub payment_info {
       'states' =>
         [ sort { $a cmp $b } keys %states ],
 
-      'card_types' => {
-        'VISA' => 'VISA card',
-        'MasterCard' => 'MasterCard',
-        'Discover' => 'Discover card',
-        'American Express' => 'American Express card',
-        'Switch' => 'Switch',
-        'Solo' => 'Solo',
-      },
+      'card_types' => card_types(),
 
     };
 

@@ -7,7 +7,7 @@ use Carp;
 use Data::Dumper;
 
 @ISA = qw( Exporter );
-@EXPORT_OK = qw( send_email send_fax states_hash state_label );
+@EXPORT_OK = qw( send_email send_fax states_hash state_label card_types );
 
 $DEBUG = 0;
 
@@ -403,6 +403,46 @@ sub state_label {
 
   $full_name || $state || '(n/a)';
 
+}
+
+=item card_types
+
+Returns a hash reference of the accepted credit card types.
+
+=cut
+
+#$conf from above
+use Tie::IxHash;
+
+sub card_types {
+  my $conf = new FS::Conf;
+
+  tie my %card_types, 'Tie::IxHash',
+    #displayname                    #value (Business::CreditCard)
+    "VISA"                       => "VISA card",
+    "MasterCard"                 => "MasterCard",
+    "Discover"                   => "Discover card",
+    "American Express"           => "American Express card",
+    "Diner's Club/Carte Blanche" => "Diner's Club/Carte Blanche",
+    "enRoute"                    => "enRoute",
+    "JCB"                        => "JCB",
+    "BankCard"                   => "BankCard",
+    "Switch"                     => "Switch",
+    "Solo"                       => "Solo",
+  ;
+  my @conf_card_types = grep { ! /^\s*$/ } $conf->config('card-types');
+  if ( @conf_card_types ) {
+    #perhaps the hash is backwards for this, but this way works better for
+    #usage in selfservice
+    %card_types = map  { $_ => $card_types{$_} }
+                  grep {
+                         my $d = $_;
+			   grep { $card_types{$d} eq $_ } @conf_card_types
+                       }
+		    keys %card_types;
+  }
+
+  \%card_types;
 }
 
 =back

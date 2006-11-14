@@ -5,6 +5,7 @@ use Tie::RefHash;
 use FS::Conf;
 use FS::Record qw(qsearch qsearchs dbdef);
 use FS::Msgcat qw(gettext);
+use FS::Misc qw(card_types);
 use FS::ClientAPI_SessionCache;
 use FS::agent;
 use FS::cust_main_county;
@@ -69,6 +70,8 @@ sub signup_info {
     'security_phrase' => $conf->exists('security_phrase'),
 
     'payby' => [ $conf->config('signup_server-payby') ],
+
+    'card_types' => card_types(),
 
     'cvv_enabled' => defined dbdef->table('cust_main')->column('paycvv'),
 
