@@ -204,33 +204,62 @@ sub payment_info {
   #generic
   ##
 
-  my $conf = new FS::Conf;
-  my %states = map { $_->state => 1 }
-                 qsearch('cust_main_county', {
-                   'country' => $conf->config('countrydefault') || 'US'
-                 } );
-
   use vars qw($payment_info); #cache for performance
-  $payment_info ||= {
+  unless ( $payment_info ) {
 
-    #list all counties/states/countries
-    'cust_main_county' => 
-      [ map { $_->hashref } qsearch('cust_main_county', {}) ],
+    my $conf = new FS::Conf;
+    my %states = map { $_->state => 1 }
+                   qsearch('cust_main_county', {
+                     'country' => $conf->config('countrydefault') || 'US'
+                   } );
 
-    #shortcut for one-country folks
-    'states' =>
-      [ sort { $a cmp $b } keys %states ],
+    my %card_types = (
+      #displayname                    #value (Business::CreditCard)
+      "VISA"                       => "VISA card",
+      "MasterCard"                 => "MasterCard",
+      "Discover"                   => "Discover card",
+      "American Express"           => "American Express card",
+      "Diner's Club/Carte Blanche" => "Diner's Club/Carte Blanche",
+      "enRoute"                    => "enRoute",
+      "JCB"                        => "JCB",
+      "BankCard"                   => "BankCard",
+      "Switch"                     => "Switch",
+      "Solo"                       => "Solo",
+    );
+    my @conf_card_types = grep { ! /^\s*$/ } $conf->config('card-types');
+    if ( @conf_card_types ) {
+      #perhaps the hash is backwards for this, but this way works better for
+      #usage in selfservice
+      %card_types = map  { $_ => $card_types{$_} }
+                    grep {
+                           my $d = $_;
+			   grep { $card_types{$d} eq $_ } @conf_card_types
+                         }
+		    keys %card_types;
+    }
 
-    'card_types' => {
-      'VISA' => 'VISA card',
-      'MasterCard' => 'MasterCard',
-      'Discover' => 'Discover card',
-      'American Express' => 'American Express card',
-      'Switch' => 'Switch',
-      'Solo' => 'Solo',
-    },
+    $payment_info = {
 
-  };
+      #list all counties/states/countries
+      'cust_main_county' => 
+        [ map { $_->hashref } qsearch('cust_main_county', {}) ],
+
+      #shortcut for one-country folks
+      'states' =>
+        [ sort { $a cmp $b } keys %states ],
+
+      'card_types' => {
+        'VISA' => 'VISA card',
+        'MasterCard' => 'MasterCard',
+        'Discover' => 'Discover card',
+        'American Express' => 'American Express card',
+        'Switch' => 'Switch',
+        'Solo' => 'Solo',
+      },
+
+    };
+
+  }
 
   ##
   #customer-specific

@@ -1,6 +1,6 @@
 package FS::Conf;
 
-use vars qw($default_dir @config_items $DEBUG );
+use vars qw($default_dir @config_items @card_types $DEBUG );
 use IO::File;
 use File::Basename;
 use FS::ConfItem;
@@ -283,6 +283,20 @@ worry that config_items is freeside-specific and icky.
 httemplate/docs/config.html
 
 =cut
+
+#Business::CreditCard
+@card_types = (
+  "VISA card",
+  "MasterCard",
+  "Discover card",
+  "American Express card",
+  "Diner's Club/Carte Blanche",
+  "enRoute",
+  "JCB",
+  "BankCard",
+  "Switch",
+  "Solo",
+);
 
 @config_items = map { new FS::ConfItem $_ } (
 
@@ -1476,15 +1490,7 @@ httemplate/docs/config.html
     'section'     => 'billing',
     'description' => 'Save CVV2 information after the initial transaction for the selected credit card types.  Enabling this option may be in violation of your merchant agreement(s), so please check them carefully before enabling this option for any credit card types.',
     'type'        => 'selectmultiple',
-    'select_enum' => [ "VISA card",
-                       "MasterCard",
-                       "Discover card",
-                       "American Express card",
-                       "Diner's Club/Carte Blanche",
-                       "enRoute",
-                       "JCB",
-                       "BankCard",
-                     ],
+    'select_enum' => \@card_types,
   },
 
   {
@@ -1909,8 +1915,16 @@ httemplate/docs/config.html
   {
     'key'         => 'support-key',
     'section'     => '',
-    'description' => 'A support key enables access to commercial services accessed over the network, such as access to the internal ticket system, priority support and optional backups.',
+    'description' => 'A support key enables access to commercial services delivered over the network, such as the payroll module, access to the internal ticket system, priority support and optional backups.',
     'type'        => 'text',
+  },
+
+  {
+    'key'         => 'card-types',
+    'section'     => 'billing',
+    'description' => 'Select one or more card types to enable only those card types.  If no card types are selected, all card types are available.',
+    'type'        => 'selectmultiple',
+    'select_enum' => \@card_types,
   },
 
 );
