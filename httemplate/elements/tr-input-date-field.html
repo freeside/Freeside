@@ -7,7 +7,7 @@
 <TR>
   <TD ALIGN="right"><% $label %></TD>
   <TD>
-    <INPUT TYPE="text" NAME="<% $name %>" ID="<% $name %>_text" VALUE="<% ($value eq '') ? '' : time2str($format, $value) %>">
+    <INPUT TYPE="text" NAME="<% $name %>" ID="<% $name %>_text" VALUE="<% $value %>">
     <IMG SRC="../images/calendar.png" ID="<% $name  %>_button" STYLE="cursor: pointer" TITLE="Select date">
   </TD>
 </TR>
@@ -23,10 +23,19 @@
 
 
 <%init>
-my($name, $value, $label, $format) = @_;
+my($name, $value, $label, $format, $usedatetime) = @_;
 
 $format = "%m/%d/%Y" unless $format;
 $label = $name unless $label;
+
+if ($usedatetime) {
+  eval "use DateTime;";
+  die $@ if $@;
+  my $dt = DateTime->from_epoch(epoch => $value, time_zone => 'floating');
+  $value = $dt->strftime($format);
+}else{
+  $value = time2str($format, $value);
+}
 
 </%init>
 

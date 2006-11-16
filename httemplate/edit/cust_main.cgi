@@ -172,7 +172,8 @@
               'birthdate',
               $cust_main->birthdate,
               'Date of Birth',
-              $conf->config('date_format') || "%m/%d/%Y")
+              $conf->config('date_format') || "%m/%d/%Y",
+              1)
   %>
 
   </TABLE>

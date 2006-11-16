@@ -54,7 +54,14 @@
 %}
 %
 %if ( $cgi->param('birthdate') && $cgi->param('birthdate') =~ /^([ 0-9\-\/]{0,10})$/ ) {
-%  $new->setfield('birthdate', str2time($1));
+%  eval "use DateTime::Format::Strptime;";
+%  die $@ if $@;
+%  my $conf = new FS::Conf;
+%  my $format = $conf->config('date_format') || "%m/%d/%Y";
+%  my $parser = DateTime::Format::Strptime->new(pattern => $format,
+%                                               time_zone => 'floating',
+%                                              );
+%  $new->setfield('birthdate', $parser->parse_datetime($1)->epoch);
 %}
 %
 %$new->setfield('paid', $cgi->param('paid') )
