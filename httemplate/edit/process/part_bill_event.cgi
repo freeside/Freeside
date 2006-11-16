@@ -18,15 +18,6 @@
 %  $cgi->param('weight', $2);
 %  my $eventcode = $3;
 %  my $plandata = '';
-%  while ( $eventcode =~ /%%%(\w+)%%%/ ) {
-%    my $field = $1;
-%    my $value = join(', ', $cgi->param($field) );
-%    $cgi->param($field, $value); #in case it errors out
-%    $eventcode =~ s/%%%$field%%%/$value/;
-%    $plandata .= "$field $value\n";
-%  }
-%  $cgi->param('eventcode', $eventcode);
-%  $cgi->param('plandata', $plandata);
 %
 %  my $rnum;
 %  my $rtype;
@@ -52,13 +43,24 @@
 %    my $reason = new FS::reason ({ 'reason'      => $reasonm,
 %                                   'reason_type' => $rtype,
 %                                 });
-%    $error = $reason->insert or $rnum = $reason->reasonnum;
+%    $error = $reason->insert;
 %    unless ($error) {
+%      $rnum = $reason->reasonnum;
 %      $cgi->param("${class}reason", $rnum);
 %      $cgi->param("new${class}reason", '');
 %      $cgi->param("new${class}reasonT", '');
 %    }
 %  }
+%
+%  while ( $eventcode =~ /%%%(\w+)%%%/ ) {
+%    my $field = $1;
+%    my $value = join(', ', $cgi->param($field) );
+%    $cgi->param($field, $value); #in case it errors out
+%    $eventcode =~ s/%%%$field%%%/$value/;
+%    $plandata .= "$field $value\n";
+%  }
+%  $cgi->param('eventcode', $eventcode);
+%  $cgi->param('plandata', $plandata);
 %
 %  unless($error){
 %    my $new = new FS::part_bill_event ( {
