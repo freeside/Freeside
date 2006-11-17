@@ -3,7 +3,7 @@
 use strict;
 use FS::Daemon qw(daemonize1 drop_root logfile daemonize2 sigint sigterm);
 use FS::UID qw(adminsuidsetup);
-use FS::Record qw(qsearch); # qsearchs);
+use FS::Record qw(qsearch qsearchs);
 use FS::cust_pkg;
 
 my $user = shift or die &usage;
@@ -38,12 +38,37 @@ while (1) {
     } )
   ) {
 
-    my $action = $cust_pkg->part_pkg->option('recur_action') || 'suspend';
+    my $work_cust_pkg = $cust_pkg;
 
-    my $error = $cust_pkg->$action();
+    my $cust_main = $cust_pkg->cust_main;
+    if (    $cust_main->total_unapplied_payments > 0
+         or $cust_main->total_credited > 0
+       )
+    {
+      #this needs a flag to say only do the prepaid packages... 
+      # and only try em if the renewal price matches.. but this will do for now
+      my $b_error = $cust_main->bill;
+      if ( $b_error ) {
+        warn "Error billing customer #". $cust_main->custnum;
+	next;
+      }
+      #$b_error = $cust_main->apply_payments_and_credits;
+      $b_error = $cust_main->apply_payments;
+      $b_error = $cust_main->apply_credits;
 
-    warn "Error ${action}ing package ". $cust_pkg->pkgnum.
-         " for custnum ". $cust_pkg->custnum.
+      $work_cust_pkg = qsearchs('cust_pkg', { 'pkgnum' => $work_cust_pkg->pkgnum } );
+
+      next
+        if  $cust_main->balance <= 0 
+        and $work_cust_pkg->bill >= time;
+    }
+
+    my $action = $work_cust_pkg->part_pkg->option('recur_action') || 'suspend';
+
+    my $error = $work_cust_pkg->$action();
+
+    warn "Error ${action}ing package ". $work_cust_pkg->pkgnum.
+         " for custnum ". $work_cust_pkg->custnum.
          ": $error\n"
       if $error;
   }
