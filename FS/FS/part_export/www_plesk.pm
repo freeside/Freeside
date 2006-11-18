@@ -10,6 +10,9 @@ tie my %options, 'Tie::IxHash',
   'URL'       => { label=>'URL' },
   'login'     => { label=>'Login' },
   'password'  => { label=>'Password' },
+  'template'  => { label=>'Domain Template' },
+  'web'       => { label=>'Host Website',
+                    type=>'checkbox'          },
   'debug'     => { label=>'Enable debugging',
                     type=>'checkbox'          },
 ;
@@ -71,11 +74,23 @@ sub _export_insert {
                                  $www->domain_record->recdata,
        		                );
 
-  $self->_plesk_command( 'domain_add', 
-                         $www->domain_record->svc_domain->domain,
-			 $gcresp->id,
-			 $www->domain_record->recdata,
-		       );
+  if ($self->option('web')) {
+    $self->_plesk_command( 'domain_add', 
+                           $www->domain_record->svc_domain->domain,
+    			   $gcresp->id,
+  			   $www->domain_record->recdata,
+                           $self->option('template')?$self->option('template'):'',
+                           $www->svc_acct->username,
+                           $www->svc_acct->_password,
+		         );
+  }else{
+    $self->_plesk_command( 'domain_add', 
+                           $www->domain_record->svc_domain->domain,
+    			   $gcresp->id,
+  			   $www->domain_record->recdata,
+                           $self->option('template')?$self->option('template'):'',
+		         );
+  }
 }
 
 sub _plesk_command {
