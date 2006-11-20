@@ -30,3 +30,6 @@ if ( UNIVERSAL::can(dbh, 'sprintProfile') ) {
 
 s/(<\/BODY>[\s\n]*<\/HTML>[\s\n]*)$/$profile$1/i;
 </%filter>
+<%cleanup>
+   dbh->commit();
+</%cleanup>
