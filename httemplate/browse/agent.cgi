@@ -332,8 +332,8 @@ Unused
 % } 
 
 
-        <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
-          <TABLE CELLSPACING=0 CELLPADDING=0>
+        <TD CLASS="inv" BGCOLOR="<% $bgcolor %>">
+          <TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0>
 % foreach my $override (
 %                 # sort { }  want taxclass-full stuff first?  and default cards (empty cardtype)
 %                 qsearch('agent_payment_gateway', { 'agentnum' => $agent->agentnum } )
