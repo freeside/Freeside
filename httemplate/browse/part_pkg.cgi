@@ -94,28 +94,43 @@
 %#if ( $cgi->param('active') ) {
 %  push @header, 'Customer<BR>packages';
 %  my %col = (
-%    'active'      => '00CC00',
-%    'suspended'   => 'FF9900',
-%    'cancelled'   => 'FF0000',
+%    'active'          => '00CC00',
+%    'suspended'       => 'FF9900',
+%    'cancelled'       => 'FF0000',
+%    #'one-time charge' => '000000',
+%    'charge'          => '000000',
 %  );
 %  my $cust_pkg_link = $p. 'search/cust_pkg.cgi?pkgpart=';
 %  push @fields, sub { my $part_pkg = shift;
 %                      [
 %                        map {
+%                              my $magic = $_;
+%                              my $label = $_;
+%                              if ( $magic eq 'active' && $part_pkg->freq == 0 ) {
+%                                $magic = 'inactive';
+%                                #$label = 'one-time charge',
+%                                $label = 'charge',
+%                              }
+%                          
 %                              [
 %                                {
-%                                 'data'  => '<B><FONT COLOR="#'. $col{$_}. '">'.
+%                                 'data'  => '<B><FONT COLOR="#'. $col{$label}. '">'.
 %                                            $part_pkg->get("num_$_").
 %                                            '</FONT></B>',
 %                                 'align' => 'right',
 %                                },
 %                                {
-%                                 'data'  => $_,
+%                                 'data'  => $label.
+%                                              ( $part_pkg->get("num_$_") != 1
+%                                                && $label =~ /charge$/
+%                                                  ? 's'
+%                                                  : ''
+%                                              ),
 %                                 'align' => 'left',
 %                                 'link'  => ( $part_pkg->get("num_$_")
 %                                                ? $cust_pkg_link.
 %                                                  $part_pkg->pkgpart.
-%                                                  ";magic=$_"
+%                                                  ";magic=$magic"
 %                                                : ''
 %                                            ),
 %                                },
