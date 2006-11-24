@@ -80,6 +80,8 @@
 %       my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
 %       push @search, "_date >= $beginning ",
 %                     "_date <= $ending";
+%
+%       push @search, FS::UI::Web::parse_lt_gt($cgi, 'paid' );
 %  
 %       $orderby = '_date';
 %   

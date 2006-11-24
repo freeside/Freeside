@@ -6,30 +6,31 @@
 <TABLE>
   <TR>
     <TD ALIGN="right">Credits by employee: </TD>
-%
-%  my $sth = dbh->prepare("SELECT DISTINCT otaker FROM cust_credit")
-%    or die dbh->errstr;
-%  $sth->execute or die $sth->errstr;
-%  my @otakers = map { $_->[0] } @{$sth->fetchall_arrayref};
-%
 
-
-    <TD><SELECT NAME="otaker">
-          <OPTION VALUE="">all</OPTION>
-% foreach my $otaker ( @otakers ) { 
-
-            <OPTION VALUE="<% $otaker %>"><% $otaker %></OPTION>
-% } 
-
-        </SELECT>
+    <TD>
+      <SELECT NAME="otaker">
+        <OPTION VALUE="">all</OPTION>
+%       foreach my $otaker ( @otakers ) { 
+          <OPTION VALUE="<% $otaker %>"><% $otaker %></OPTION>
+%       } 
+      </SELECT>
     </TD>
   </TR>
+
   <% include( '/elements/tr-select-agent.html',
                  $cgi->param('agentnum'),
                  'label' => 'for agent: ',
              )
   %>
+
   <% include( '/elements/tr-input-beginning_ending.html' ) %>
+
+  <% include( '/elements/tr-input-lessthan_greaterthan.html',
+                'label' => 'Amount',
+		'field' => 'amount',
+            )
+  %>
+
 </TABLE>
 
 <BR>
@@ -38,3 +39,12 @@
 </FORM>
 
 <% include('/elements/footer.html') %>
+
+<%init>
+
+my $sth = dbh->prepare("SELECT DISTINCT otaker FROM cust_credit")
+  or die dbh->errstr;
+$sth->execute or die $sth->errstr;
+my @otakers = map { $_->[0] } @{$sth->fetchall_arrayref};
+
+</%init>

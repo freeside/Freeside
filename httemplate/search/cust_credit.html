@@ -15,26 +15,11 @@
 %     $title = $agent->agent. " $title";
 %   }
 %
-%   #false laziness with cust_pkg.cgi and cust_pay.cgi
-%   if ( $cgi->param('beginning')
-%        && $cgi->param('beginning') =~ /^([ 0-9\-\/]{1,10})$/ ) {
-%     my $beginning = str2time($1);
-%     push @search, "_date >= $beginning ";
-%   }
-%   if ( $cgi->param('ending')
-%             && $cgi->param('ending') =~ /^([ 0-9\-\/]{1,10})$/ ) {
-%     my $ending = str2time($1) + 86399;
-%     push @search, " _date <= $ending ";
-%   }
+%   my($beginning, $ending) = FS::UI::Web::parse_beginning_ending($cgi);
+%   push @search, "_date >= $beginning ",
+%                 "_date <= $ending";
 %
-%   if ( $cgi->param('begin')
-%        && $cgi->param('begin') =~ /^(\d+)$/ ) {
-%     push @search, "_date >= $1 ";
-%   }
-%   if ( $cgi->param('end')
-%             && $cgi->param('end') =~ /^(\d+)$/ ) {
-%     push @search, " _date < $1 ";
-%   }
+%   push @search, FS::UI::Web::parse_lt_gt($cgi, 'amount' );
 %
 %   #here is the agent virtualization
 %   push @search, $FS::CurrentUser::CurrentUser->agentnums_sql;

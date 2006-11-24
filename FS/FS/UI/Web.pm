@@ -32,6 +32,38 @@ sub parse_beginning_ending {
   ( $beginning, $ending );
 }
 
+sub parse_lt_gt {
+  my($cgi, $field) = @_;
+
+  my @search = ();
+
+  my %op = ( 
+    'lt' => '<',
+    'gt' => '>',
+  );
+
+  foreach my $op (keys %op) {
+
+    warn "checking for ${field}_$op field\n"
+      if $DEBUG;
+
+    if ( $cgi->param($field."_$op") =~ /^\s*\$?\s*([\d\,\s]+(\.\d\d)?)\s*$/ ) {
+
+      my $num = $1;
+      $num =~ s/[\,\s]+//g;
+      my $search = "$field $op{$op} $num";
+      push @search, $search;
+
+      warn "found ${field}_$op field; adding search element $search\n"
+        if $DEBUG;
+    }
+
+  }
+
+  @search;
+
+}
+
 ###
 # cust_main report subroutines
 ###
