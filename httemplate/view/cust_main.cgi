@@ -138,7 +138,7 @@ Comments
 
 %   }else{ # make firefox happy wrt POSTDATA
 
-<iframe src="<% $p %>view/cust_main/notes.html?custnum=<% $cust_main->custnum %>" height="18" width="6" name="cust_main_notes" frameborder="0" marginborder="0" marginheight="0" scrolling="auto">
+<iframe src="<% $p %>view/cust_main/notes.html?custnum=<% $cust_main->custnum %>" height="24" width="616" name="cust_main_notes" frameborder="0" marginborder="0" marginheight="0" scrolling="auto">
   <div><br>[iframe not supported]<br><br></div>
 </iframe>
 

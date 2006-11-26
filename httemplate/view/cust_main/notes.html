@@ -9,8 +9,6 @@
 % my $cust_main = qsearchs('cust_main', {'custnum' => $custnum} );
 % die "Custimer not found!" unless $cust_main;
 %
-% my (@notes) = $cust_main->notes();
-% if ( scalar(@notes) ) { 
 
 <STYLE TYPE="text/css">
 
@@ -21,6 +19,9 @@ body { background: #e8e8e8 }
 
 </STYLE>
 
+% my (@notes) = $cust_main->notes();
+% if ( scalar(@notes) ) { 
+
 <SCRIPT TYPE="text/javascript" SRC="/elements/overlibmws.js"></SCRIPT>
 <SCRIPT TYPE="text/javascript" SRC="/elements/overlibmws_iframe.js"></SCRIPT>
 <SCRIPT TYPE="text/javascript" SRC="/elements/overlibmws_crossframe.js"></SCRIPT>
@@ -28,7 +29,6 @@ body { background: #e8e8e8 }
 
 <TABLE CLASS="inv" CELLSPACING=0 CELLPADDING=0 BORDER=0 >
 
-%#<% include('/elements/table-grid.html') %>
 %   my $bgcolor1 = '#eeeeee';
 %   my $bgcolor2 = '#ffffff';
 %   my $bgcolor = '';
@@ -71,9 +71,7 @@ body { background: #e8e8e8 }
 % } #end display notes
 
 </TABLE>
-% } else { 
 
-<BR>
 % } 
 %
 %#subroutines

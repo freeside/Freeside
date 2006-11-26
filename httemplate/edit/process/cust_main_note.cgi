@@ -40,9 +40,12 @@
 %    
 <% header('Note ' . ($notenum ? 'updated' : 'added') ) %>
     <SCRIPT TYPE="text/javascript">
-      window.top.location.reload();
+      parent.cust_main_notes.location.reload();
+      try{parent.cust_main_notes.cClick()}
+      catch(err){}
+      try{parent.cClick()}
+      catch(err){}
     </SCRIPT>
-
     </BODY></HTML>
 %
 %
