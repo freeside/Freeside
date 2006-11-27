@@ -119,6 +119,19 @@ sub signup_info {
     } else {
       return { 'error' => "Can't resume session" }; #better error message
     }
+  }elsif( exists $packet->{'customer_session_id'} ) {
+    my $cache = new FS::ClientAPI_SessionCache( {
+      'namespace' => 'FS::ClientAPI::MyAccount',
+    } );
+    $session = $cache->get($packet->{'customer_session_id'});
+    if ( $session ) {
+      my $custnum = $session->{'custnum'};
+      my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum });
+      return { 'error' => "Can't find your customer record" } unless $cust_main;
+      $agentnum = $cust_main->agentnum;
+    } else {
+      return { 'error' => "Can't resume session" }; #better error message
+    }
   }
 
   $signup_info->{'part_pkg'} = [];
@@ -159,7 +172,7 @@ sub signup_info {
   # delete $signup_info->{'part_pkg'};
   #}
 
-  if ( $session ) {
+  if ( exists $packet->{'session_id'} ) {
     my $agent_signup_info = { %$signup_info };
     delete $agent_signup_info->{agentnum2part_pkg};
     $agent_signup_info->{'agent'} = $session->{'agent'};
