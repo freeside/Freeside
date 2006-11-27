@@ -870,7 +870,7 @@ sub check {
     unless ( $recref->{_password} );
 
   #if ( $recref->{_password} =~ /^((\*SUSPENDED\* )?)([^\t\n]{4,16})$/ ) {
-  if ( $recref->{_password} =~ /^((\*SUSPENDED\* )?)([^\t\n]{$passwordmin,$passwordmax})$/ ) {
+  if ( $recref->{_password} =~ /^((\*SUSPENDED\* |!!?)?)([^\t\n]{$passwordmin,$passwordmax})$/ ) {
     $recref->{_password} = $1.$3;
     #uncomment this to encrypt password immediately upon entry, or run
     #bin/crypt_pw in cron to give new users a window during which their
@@ -879,7 +879,7 @@ sub check {
     #$recref->{password} = $1.
     #  crypt($3,$saltset[int(rand(64))].$saltset[int(rand(64))]
     #;
-  } elsif ( $recref->{_password} =~ /^((\*SUSPENDED\* )?)([\w\.\/\$\;\+]{13,60})$/ ) {
+  } elsif ( $recref->{_password} =~ /^((\*SUSPENDED\* |!!?)?)([\w\.\/\$\;\+]{13,64})$/ ) {
     $recref->{_password} = $1.$3;
   } elsif ( $recref->{_password} eq '*' ) {
     $recref->{_password} = '*';
@@ -1579,6 +1579,10 @@ sub ldap_password {
   } elsif ( $self->_password =~ /^\$2a?\$(.*)$/ ) { #Blowfish
     die "Blowfish encryption not supported in this context, svcnum ".
         $self->svcnum. "\n";
+  } elsif ( $self->_password =~ /^(\w{48})$/ ) { #LDAP SSHA
+    return '{SSHA}'. $1;
+  } elsif ( $self->_password =~ /^(\w{64})$/ ) { #LDAP NS-MTA-MD5
+    return '{NS-MTA-MD5}'. $1;
   } else { #plaintext
     return '{PLAIN}'. $self->_password;
     #my $encryption = ( scalar(@_) && $_[0] ) ? shift : 'crypt';
