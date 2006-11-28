@@ -214,7 +214,7 @@ sub check {
 
   my $error = 
     $self->ut_numbern('usernum')
-    || $self->ut_text('username')
+    || $self->ut_alpha('username')
     || $self->ut_text('_password')
     || $self->ut_text('last')
     || $self->ut_text('first')
