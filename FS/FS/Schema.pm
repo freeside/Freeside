@@ -837,6 +837,13 @@ sub tables_hashref {
         'quota',     'varchar',   'NULL',   $char_d, '', '', 
         'slipip',    'varchar',   'NULL',   15, '', '', #four TINYINTs, bah.
         'seconds',   'int', 'NULL',   '', '', '', #uhhhh
+        'seconds_threshold',   'int', 'NULL',   '', '', '',
+        'upbytes',   'int', 'NULL',   '', '', '', 
+        'upbytes_threshold',   'int', 'NULL',   '', '', '',
+        'downbytes', 'int', 'NULL',   '', '', '',
+        'downbytes_threshold',   'int', 'NULL',   '', '', '',
+        'totalbytes','int', 'NULL',   '', '', '',
+        'totalbytes_threshold',   'int', 'NULL',   '', '', '',
         'domsvc',    'int', '',   '', '', '', 
       ],
       'primary_key' => 'svcnum',
@@ -923,6 +930,8 @@ sub tables_hashref {
         'identifier',  'varchar', '', $char_d, '', '', 
         'amount',      @money_type, '', '', 
         'seconds',     'int',     'NULL', '', '', '', 
+        'upbytes',     'int',     'NULL', '', '', '', 
+        'downbytes',   'int',     'NULL', '', '', '', 
         'agentnum',    'int',     'NULL', '', '', '', 
       ],
       'primary_key' => 'prepaynum',

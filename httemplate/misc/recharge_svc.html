@@ -1,0 +1,48 @@
+<% include('/elements/header-popup.html', 'Recharge Service' ) %>
+
+% if ( $cgi->param('error') ) { 
+  <FONT SIZE="+1" COLOR="#ff0000">Error: <% $cgi->param('error') %></FONT>
+  <BR><BR>
+% } 
+
+<FORM NAME="recharge_popup" ACTION="<% popurl(1) %>process/recharge_svc.html" METHOD=POST>
+<INPUT TYPE="hidden" NAME="svcnum" VALUE="<% $svcnum %>">
+
+<BR><BR>
+<% "Recharge $svcnum: $label  -  $value" %>
+<% ntable("#cccccc", 2) %>
+
+<TR>
+  <TD>Enter prepaid card: </TD>
+  <TD><INPUT TYPE="text" NAME="prepaid" VALUE="<% $prepaid %>"></TD>
+</TR>
+
+</TABLE>
+
+<BR>
+<INPUT TYPE="submit" NAME="submit" VALUE="Recharge">
+
+</FORM>
+</BODY>
+</HTML>
+
+<%init>
+my($svcnum, $cust_svc, $label, $value, $prepaid); 
+if ( $cgi->param('error') ) {
+  $svcnum        = $cgi->param('svcnum');
+  $prepaid       = $cgi->param('prepaid');
+} elsif ( $cgi->param('svcnum') =~ /^(\d+)$/ ) {
+  $svcnum  = $1;
+} else {
+  die "illegal query ". $cgi->keywords;
+}
+
+my $title = 'Recharge Service';
+
+$cust_svc = qsearchs('cust_svc', {'svcnum' => $svcnum});
+die "No such service: $svcnum" unless $cust_svc;
+
+($label, $value) = $cust_svc->label;
+
+</%init>
+

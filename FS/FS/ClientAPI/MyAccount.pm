@@ -8,6 +8,7 @@ use Date::Format;
 use Business::CreditCard;
 use Time::Duration;
 use FS::CGI qw(small_custview); #doh
+use FS::UI::Web;
 use FS::Conf;
 use FS::Record qw(qsearch qsearchs);
 use FS::Msgcat qw(gettext);
@@ -378,10 +379,12 @@ sub process_prepay {
   my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
     or return { 'error' => "unknown custnum $custnum" };
 
-  my( $amount, $seconds ) = ( 0, 0 );
+  my( $amount, $seconds, $upbytes, $downbytes ) = ( 0, 0, 0, 0 );
   my $error = $cust_main->recharge_prepay( $p->{'prepaid_cardnum'},
                                            \$amount,
-                                           \$seconds
+                                           \$seconds,
+                                           \$upbytes,
+                                           \$downbytes
                                          );
 
   return { 'error' => $error } if $error;
@@ -390,6 +393,10 @@ sub process_prepay {
            'amount'   => $amount,
            'seconds'  => $seconds,
            'duration' => duration_exact($seconds),
+           'upbytes'  => $upbytes,
+           'upload'   => FS::UI::Web::bytecount_unexact($upbytes),
+           'downbytes'=> $downbytes,
+           'download' => FS::UI::Web::bytecount_unexact($downbytes),
          };
 
 }
@@ -539,7 +546,9 @@ sub list_svcs {
 
   my @cust_svc = ();
   #foreach my $cust_pkg ( $cust_main->ncancelled_pkgs ) {
-  foreach my $cust_pkg ( $cust_main->unsuspended_pkgs ) {
+  foreach my $cust_pkg ( $p->{'ncancelled'} 
+                         ? $cust_main->ncancelled_pkgs
+                         : $cust_main->unsuspended_pkgs ) {
     push @cust_svc, @{[ $cust_pkg->cust_svc ]}; #@{[ ]} to force array context
   }
   @cust_svc = grep { $_->part_svc->svcdb eq $p->{'svcdb'} } @cust_svc
@@ -560,6 +569,9 @@ sub list_svcs {
                             'value'    => $value,
                             'username' => $svc_x->username,
                             'email'    => $svc_x->email,
+                            'seconds'  => $svc_x->seconds,
+                            'upbytes'  => $svc_x->upbytes,
+                            'downbytes'=> $svc_x->downbytes,
                             # more...
                           };
                         }

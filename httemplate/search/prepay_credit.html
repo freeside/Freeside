@@ -9,7 +9,6 @@
 %my $count_query = 'SELECT COUNT(*) FROM prepay_credit';
 %$count_query .= ' WHERE agentnum = '. $agent->agentnum if $agent;
 %
-%
 <% include( 'elements/search.html',
                  'title'       => 'Unused Prepaid Cards'.
                                   ($agent ? ' for '. $agent->agent : ''),
@@ -23,16 +22,24 @@
                                   },
                  'count_query' => $count_query,
                  #'redirect'    => $link,
-                 'header'      => [ '#', qw(Amount Time Agent) ],
+                 'header'      => [ '#', qw(Amount Time Upload Download Agent) ],
                  'fields'      => [
                    'identifier',
                    sub { sprintf('$%.2f', shift->amount ) },
                    sub { my $c = shift; $c ? duration_exact($c->seconds) : '' },
+                   sub { my $c = shift;
+                         $c ? FS::UI::Web::bytecount_unexact($c->upbytes) : ''
+                       },
+                   sub { my $c = shift;
+                         $c ? FS::UI::Web::bytecount_unexact($c->downbytes) : ''
+                       },
                    sub { my $agent = shift->agent;
                          $agent ? $agent->agent : '';
                        },
                  ],
                  'links' => [
+                   '',
+                   '',
                    '',
                    '',
                    '',

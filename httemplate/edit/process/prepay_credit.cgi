@@ -15,8 +15,10 @@
 %  $error = 'Illegal number of prepaid cards: '. $cgi->param('num');
 %}
 %
-%$hashref->{amount} = $cgi->param('amount');
-%$hashref->{seconds} = $cgi->param('seconds') * $cgi->param('multiplier');
+%$hashref->{amount}    = $cgi->param('amount');
+%$hashref->{seconds}   = $cgi->param('seconds') * $cgi->param('multiplier');
+%$hashref->{upbytes}   = $cgi->param('upbytes') * $cgi->param('upmultiplier');
+%$hashref->{downbytes} = $cgi->param('downbytes') * $cgi->param('downmultiplier');
 %
 %$error ||= FS::prepay_credit::generate( $num,
 %                                        scalar($cgi->param('type')), 
@@ -46,6 +48,8 @@
   <% $hashref->{amount} ? sprintf('$%.2f', $hashref->{amount} ) : '' %>
   <% $hashref->{amount} && $hashref->{seconds} ? 'and' : '' %>
   <% $hashref->{seconds} ? duration_exact($hashref->{seconds}) : '' %>
+  <% $hashref->{upbytes}   ? FS::UI::Web::bytecount_unexact($hashref->{upbytes}) : '' %>
+  <% $hashref->{downbytes} ? FS::UI::Web::bytecount_unexact($hashref->{downbytes}) : '' %>
   <br>
 % } 
 

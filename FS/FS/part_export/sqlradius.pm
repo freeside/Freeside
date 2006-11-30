@@ -615,7 +615,8 @@ sub update_svc_acct {
   my $where = '';
 
   my $sth = $dbh->prepare("
-    SELECT RadAcctId, UserName, Realm, AcctSessionTime
+    SELECT RadAcctId, UserName, Realm, AcctSessionTime,
+           AcctInputOctets, AcctOutputOctets
       FROM radacct
       WHERE FreesideStatus IS NULL
         AND AcctStopTime != 0
@@ -623,7 +624,8 @@ sub update_svc_acct {
   $sth->execute() or die $sth->errstr;
 
   while ( my $row = $sth->fetchrow_arrayref ) {
-    my($RadAcctId, $UserName, $Realm, $AcctSessionTime) = @$row;
+    my($RadAcctId, $UserName, $Realm, $AcctSessionTime,
+       $AcctInputOctets, $AcctOutputOctets) = @$row;
     warn "processing record: ".
          "$RadAcctId ($UserName\@$Realm for ${AcctSessionTime}s"
       if $DEBUG;
@@ -633,7 +635,6 @@ sub update_svc_acct {
     if ( ref($self) =~ /withdomain/ ) { #well...
       $extra_sql = " AND '$Realm' = ( SELECT domain FROM svc_domain
                           WHERE svc_domain.svcnum = svc_acct.domsvc ) ";
-      my $svc_domain = qsearch
     }
 
     my @svc_acct =
@@ -654,18 +655,16 @@ sub update_svc_acct {
     } elsif ( scalar(@svc_acct) > 1 ) {
       warn "WARNING: multiple svc_acct records found $errinfo - skipping\n";
     } else {
-      my $svc_acct = $svc_acct[0];
-      warn "found svc_acct ". $svc_acct->svcnum. " $errinfo\n" if $DEBUG;
-      if ( $svc_acct->seconds !~ /^$/ ) {
-        warn "  svc_acct.seconds found (". $svc_acct->seconds.
-             ") - decrementing\n"
-          if $DEBUG;
-        my $error = $svc_acct->decrement_seconds($AcctSessionTime);
-        die $error if $error;
-        $status = 'done';
-      } else {
-        warn "  no existing seconds value for svc_acct - skiping\n" if $DEBUG;
-      }
+      warn "found svc_acct ". $svc_acct[0]->svcnum. " $errinfo\n" if $DEBUG;
+      _try_decrement($svc_acct[0], 'seconds', $AcctSessionTime) 
+        and $status='done';
+      _try_decrement($svc_acct[0], 'upbytes', $AcctInputOctets)
+        and $status='done';
+      _try_decrement($svc_acct[0], 'downbytes', $AcctOutputOctets)
+        and $status='done';
+      _try_decrement($svc_acct[0], 'totalbytes', $AcctInputOctets + 
+                     $AcctOutputOctets)
+        and $status='done';
     }
 
     warn "setting FreesideStatus to $status $errinfo\n" if $DEBUG; 
@@ -677,6 +676,22 @@ sub update_svc_acct {
 
   }
 
+}
+
+sub _try_decrement {
+  my ($svc_acct, $column, $amount) = @_;
+  if ( $svc_acct->$column !~ /^$/ ) {
+    warn "  svc_acct.$column found (". $svc_acct->$column.
+         ") - decrementing\n"
+      if $DEBUG;
+    my $method = 'decrement_' . $column;
+    my $error = $svc_acct->$method($amount);
+    die $error if $error;
+    return 'done';
+  } else {
+    warn "  no existing $column value for svc_acct - skipping\n" if $DEBUG;
+  }
+  return '';
 }
 
 1;

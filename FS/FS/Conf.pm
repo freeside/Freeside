@@ -1419,6 +1419,42 @@ httemplate/docs/config.html
   },
 
   {
+    'key'         => 'warning_email',
+    'section'     => '',
+    'description' => 'Template file for warning email.  Warning emails are sent to the customer email invoice destination(s) each time a svc_acct record has its usage drop below a threshold or 0.  See the <a href="http://search.cpan.org/~mjd/Text-Template/lib/Text/Template.pm">Text::Template</a> documentation for details on the template substitution language.  The following variables are available<ul><li><code>$username</code> <li><code>$password</code> <li><code>$first</code> <li><code>$last</code> <li><code>$pkg</code> <li><code>$column</code> <li><code>$amount</code> <li><code>$threshold</code></ul>',
+    'type'        => 'textarea',
+  },
+
+  {
+    'key'         => 'warning_email-from',
+    'section'     => '',
+    'description' => 'From: address header for warning email',
+    'type'        => 'text',
+  },
+
+  {
+    'key'         => 'warning_email-cc',
+    'section'     => '',
+    'description' => 'Additional recipient(s) (comma separated) for warning email when remaining usage reaches zero.',
+    'type'        => 'text',
+  },
+
+  {
+    'key'         => 'warning_email-subject',
+    'section'     => '',
+    'description' => 'Subject: header for warning email',
+    'type'        => 'text',
+  },
+  
+  {
+    'key'         => 'warning_email-mimetype',
+    'section'     => '',
+    'description' => 'MIME type for warning email',
+    'type'        => 'select',
+    'select_enum' => [ 'text/plain', 'text/html' ],
+  },
+
+  {
     'key'         => 'payby',
     'section'     => 'billing',
     'description' => 'Available payment types.',
@@ -1715,15 +1751,22 @@ httemplate/docs/config.html
   {
     'key'         => 'svc_acct-usage_suspend',
     'section'     => 'billing',
-    'description' => 'Suspends the package an account belongs to when svc_acct.seconds is decremented to 0 or below (accounts with an empty seconds value are ignored).  Typically used in conjunction with prepaid packages and freeside-sqlradius-radacctd.',
+    'description' => 'Suspends the package an account belongs to when svc_acct.seconds or a bytecount is decremented to 0 or below (accounts with an empty seconds and up|down|totalbytes value are ignored).  Typically used in conjunction with prepaid packages and freeside-sqlradius-radacctd.',
     'type'        => 'checkbox',
   },
 
   {
     'key'         => 'svc_acct-usage_unsuspend',
     'section'     => 'billing',
-    'description' => 'Unuspends the package an account belongs to when svc_acct.seconds is incremented from 0 or below to a positive value (accounts with an empty seconds value are ignored).  Typically used in conjunction with prepaid packages and freeside-sqlradius-radacctd.',
+    'description' => 'Unuspends the package an account belongs to when svc_acct.seconds or a bytecount is incremented from 0 or below to a positive value (accounts with an empty seconds and up|down|totalbytes value are ignored).  Typically used in conjunction with prepaid packages and freeside-sqlradius-radacctd.',
     'type'        => 'checkbox',
+  },
+
+  {
+    'key'         => 'svc_acct-usage_threshold',
+    'section'     => 'billing',
+    'description' => 'The threshold (expressed as percentage) of acct.seconds or acct.up|down|totalbytes at which a warning message is sent to a service holder.  Typically used in conjunction with prepaid packages and freeside-sqlradius-radacctd.  Defaults to 80.',
+    'type'        => 'text',
   },
 
   {

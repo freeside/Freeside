@@ -65,7 +65,7 @@ $session_id = $cgi->param('session');
 
 #order|pw_list XXX ???
 $cgi->param('action') =~
-    /^(myaccount|view_invoice|make_payment|payment_results|recharge_prepay|recharge_results|logout|change_bill|change_ship|customer_order_pkg|process_order_pkg|provision|provision_svc|process_svc_acct|process_svc_external|delete_svc|change_password|process_change_password)$/
+    /^(myaccount|view_invoice|make_payment|payment_results|recharge_prepay|recharge_results|logout|change_bill|change_ship|customer_order_pkg|process_order_pkg|provision|provision_svc|process_svc_acct|process_svc_external|delete_svc|view_usage||change_password|process_change_password)$/
   or die "unknown action ". $cgi->param('action');
 my $action = $1;
 
@@ -318,6 +318,14 @@ sub delete_svc {
   unprovision_svc(
     'session_id' => $session_id,
     'svcnum'     => $cgi->param('svcnum'),
+  );
+}
+
+sub view_usage {
+  list_svcs(
+    'session_id'  => $session_id,
+    'svcdb'       => 'svc_acct',
+    'ncancelled'  => 1,
   );
 }
 

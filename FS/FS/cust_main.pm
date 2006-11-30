@@ -692,21 +692,23 @@ sub order_pkgs {
   ''; #no error
 }
 
-=item recharge_prepay IDENTIFIER | PREPAY_CREDIT_OBJ [ , AMOUNTREF, SECONDSREF ]
+=item recharge_prepay IDENTIFIER | PREPAY_CREDIT_OBJ [ , AMOUNTREF, SECONDSREF, UPBYTEREF, DOWNBYTEREF ]
 
 Recharges this (existing) customer with the specified prepaid card (see
 L<FS::prepay_credit>), specified either by I<identifier> or as an
 FS::prepay_credit object.  If there is an error, returns the error, otherwise
 returns false.
 
-Optionally, two scalar references can be passed as well.  They will have their
-values filled in with the amount and number of seconds applied by this prepaid
+Optionally, four scalar references can be passed as well.  They will have their
+values filled in with the amount, number of seconds, and number of upload and
+download bytes applied by this prepaid
 card.
 
 =cut
 
 sub recharge_prepay { 
-  my( $self, $prepay_credit, $amountref, $secondsref ) = @_;
+  my( $self, $prepay_credit, $amountref, $secondsref, 
+      $upbytesref, $downbytesref ) = @_;
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -719,10 +721,14 @@ sub recharge_prepay {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  my( $amount, $seconds ) = ( 0, 0 );
+  my( $amount, $seconds, $upbytes, $downbytes ) = ( 0, 0, 0, 0 );
 
-  my $error = $self->get_prepay($prepay_credit, \$amount, \$seconds)
+  my $error = $self->get_prepay($prepay_credit, \$amount,
+                                \$seconds, \$upbytes, \$downbytes)
            || $self->increment_seconds($seconds)
+           || $self->increment_upbytes($upbytes)
+           || $self->increment_downbytes($downbytes)
+           || $self->increment_totalbytes($upbytes + $downbytes)
            || $self->insert_cust_pay_prepay( $amount,
                                              ref($prepay_credit)
                                                ? $prepay_credit->identifier
@@ -736,6 +742,8 @@ sub recharge_prepay {
 
   if ( defined($amountref)  ) { $$amountref  = $amount;  }
   if ( defined($secondsref) ) { $$secondsref = $seconds; }
+  if ( defined($upbytesref) ) { $$upbytesref = $upbytes; }
+  if ( defined($downbytesref) ) { $$downbytesref = $downbytes; }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
@@ -759,7 +767,7 @@ If there is an error, returns the error, otherwise returns false.
 
 
 sub get_prepay {
-  my( $self, $prepay_credit, $amountref, $secondsref ) = @_;
+  my( $self, $prepay_credit, $amountref, $secondsref, $upref, $downref) = @_;
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -806,10 +814,48 @@ sub get_prepay {
 
   $$amountref  += $prepay_credit->amount;
   $$secondsref += $prepay_credit->seconds;
+  $$upref      += $prepay_credit->upbytes;
+  $$downref    += $prepay_credit->downbytes;
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
 
+}
+
+=item increment_upbytes SECONDS
+
+Updates this customer's single or primary account (see L<FS::svc_acct>) by
+the specified number of upbytes.  If there is an error, returns the error,
+otherwise returns false.
+
+=cut
+
+sub increment_upbytes {
+  _increment_column( shift, 'upbytes', @_);
+}
+
+=item increment_downbytes SECONDS
+
+Updates this customer's single or primary account (see L<FS::svc_acct>) by
+the specified number of downbytes.  If there is an error, returns the error,
+otherwise returns false.
+
+=cut
+
+sub increment_downbytes {
+  _increment_column( shift, 'downbytes', @_);
+}
+
+=item increment_totalbytes SECONDS
+
+Updates this customer's single or primary account (see L<FS::svc_acct>) by
+the specified number of totalbytes.  If there is an error, returns the error,
+otherwise returns false.
+
+=cut
+
+sub increment_totalbytes {
+  _increment_column( shift, 'totalbytes', @_);
 }
 
 =item increment_seconds SECONDS
@@ -821,9 +867,23 @@ otherwise returns false.
 =cut
 
 sub increment_seconds {
-  my( $self, $seconds ) = @_;
-  warn "$me increment_seconds called: $seconds seconds\n"
+  _increment_column( shift, 'seconds', @_);
+}
+
+=item _increment_column AMOUNT
+
+Updates this customer's single or primary account (see L<FS::svc_acct>) by
+the specified number of seconds or bytes.  If there is an error, returns
+the error, otherwise returns false.
+
+=cut
+
+sub _increment_column {
+  my( $self, $column, $amount ) = @_;
+  warn "$me increment_column called: $column, $amount\n"
     if $DEBUG;
+
+  return '' unless $amount;
 
   my @cust_pkg = grep { $_->part_pkg->svcpart('svc_acct') }
                       $self->ncancelled_pkgs;
@@ -854,7 +914,8 @@ sub increment_seconds {
        ' ('. $svc_acct->email. ")\n"
     if $DEBUG > 1;
 
-  $svc_acct->increment_seconds($seconds);
+  $column = "increment_$column";
+  $svc_acct->$column($amount);
 
 }
 

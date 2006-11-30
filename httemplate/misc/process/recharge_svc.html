@@ -1,0 +1,46 @@
+%
+%
+%#untaint svcnum
+%my $svcnum = $cgi->param('svcnum');
+%$svcnum =~ /^(\d+)$/ || die "Illegal svcnum";
+%$svcnum = $1;
+%
+%#untaint prepaid
+%my $prepaid = $cgi->param('prepaid');
+%$prepaid =~ /^(\w*)$/;
+%$prepaid = $1;
+%
+%my $error = '';
+%my $svc_acct = qsearchs( 'svc_acct', {'svcnum'=>$svcnum} );
+%$error = "Can't recharge service $svcnum. " unless $svc_acct;
+%
+%my $cust_main = $svc_acct->cust_svc->cust_pkg->cust_main;
+%
+%my $oldAutoCommit = $FS::UID::AutoCommit;
+%local $FS::UID::AutoCommit = 0;
+%my $dbh = dbh;
+%
+%
+%unless ($error) {
+%
+%my ($amount, $seconds, $up, $down) = (0, 0, 0, 0);
+%$error = $cust_main->get_prepay($prepaid, \$amount, \$seconds, \$up, \$down)
+%      || $svc_acct->increment_seconds($seconds)
+%      || $svc_acct->increment_upbytes($up)
+%      || $svc_acct->increment_downbytes($down)
+%      || $svc_acct->increment_totalbytes($up + $down)
+%      || $cust_main->insert_cust_pay_prepay( $amount, $prepaid );
+%}
+%
+%if ($error) {
+%  $cgi->param('error', $error);
+%  $dbh->rollback if $oldAutoCommit;
+%  print $cgi->redirect(popurl(2). "recharge_svc.html?". $cgi->query_string );
+%}
+%
+<% header("Package recharged") %>
+  <SCRIPT TYPE="text/javascript">
+    window.top.location.reload();
+  </SCRIPT>
+  </BODY></HTML>
+

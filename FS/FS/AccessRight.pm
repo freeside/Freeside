@@ -115,6 +115,7 @@ assigned to users and/or groups.
 # customer service rights
 ###
   'Provision customer service',
+  'Recharge customer service',
   'Unprovision customer service',
 
   'View/link unlinked services', #not agent-virtualizable without more work

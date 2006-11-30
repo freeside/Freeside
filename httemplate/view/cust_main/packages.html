@@ -343,17 +343,31 @@ Current packages
 %    foreach my $service (@{$svcpart->{services}}) {
 
       <TR>
-        <TD ALIGN="right" VALIGN="top" ROWSPAN=2><%svc_link($svcpart,$service)%></TD>
+        <TD ALIGN="right" VALIGN="top"><%svc_link($svcpart,$service)%></TD>
         <TD STYLE="padding-bottom:0px"><B><%svc_label_link($svcpart,$service)%></B></TD>
       </TR>
 
-%      if ( $curuser->access_right('Unprovision customer service') ) { 
-
         <TR>
-          <TD ALIGN="right" VALIGN="top" STYLE="padding-bottom:5px;padding-top:0px"><FONT SIZE="-2">(&nbsp;<%svc_unprovision_link($service)%>&nbsp;)</FONT></TD>
-        </TR>
+          <TD ALIGN="right" VALIGN="top" STYLE="padding-bottom:5px;padding-top:0px"><FONT SIZE="-2">
 
-%      } 
+%      if ( $curuser->access_right('Recharge customer service')
+%        && ($svcpart->{'svcdb'} eq 'svc_acct') 
+%        && ($service->{seconds} ne ''
+%         || $service->{upbytes} ne ''
+%         || $service->{downbytes} ne ''
+%         || $service->{totalbytes} ne '' )
+%         ) { 
+          (&nbsp;<%svc_recharge_link($service)%>&nbsp;)
+%     } 
+          </FONT></TD>
+
+          <TD ALIGN="right" VALIGN="top" STYLE="padding-bottom:5px;padding-top:0px"><FONT SIZE="-2">
+
+%      if ( $curuser->access_right('Unprovision customer service') ) { 
+          (&nbsp;<%svc_unprovision_link($service)%>&nbsp;)
+%     } 
+          </FONT></TD>
+        </TR>
 %   } 
 
 %   if (    ! $pkg->{'cancel'}
@@ -370,7 +384,6 @@ Current packages
 %   } 
 
 % } 
-
 
 </TABLE>
 </TD>
@@ -440,6 +453,7 @@ Current packages
 %      my $svc = {
 %        'svcnum' => $cust_svc->svcnum,
 %        'label'  => ($cust_svc->label)[1],
+%        $cust_svc->svc_x->hash,
 %      };
 %
 %      #false laziness with above, to catch extraneous services.  whole
@@ -514,6 +528,12 @@ Current packages
 %  my $svc = shift or return '';
 %  qq!<A HREF="javascript:areyousure('${p}misc/unprovision.cgi?$svc->{svcnum}',!.
 %  qq!'Permanently unprovision and delete this service?')">Unprovision</A>!;
+%}
+%
+%sub svc_recharge_link {
+%  my $svc = shift or return '';
+%
+%  qq!<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('${p}misc/recharge_svc.html?svcnum=$svc->{svcnum}', 392, 336, 'recharge_svc_popup' ), CAPTION, 'Recharge service $svc->{svcnum}', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK ); return false;">Recharge</A>!;
 %}
 %
 %# This should be generalized to use config options to determine order.

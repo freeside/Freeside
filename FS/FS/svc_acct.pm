@@ -9,6 +9,8 @@ use vars qw( @ISA $DEBUG $me $conf $skip_fuzzyfiles
              $username_uppercase $username_percent
              $password_noampersand $password_noexclamation
              $welcome_template $welcome_from $welcome_subject $welcome_mimetype
+             $warning_template $warning_from $warning_subject $warning_mimetype
+             $warning_cc
              $smtpmachine
              $radius_password $radius_ip
              $dirhash
@@ -75,6 +77,22 @@ $FS::UID::callback{'FS::svc_acct'} = sub {
     $welcome_from = '';
     $welcome_subject = '';
     $welcome_mimetype = '';
+  }
+  if ( $conf->exists('warning_email') ) {
+    $warning_template = new Text::Template (
+      TYPE   => 'ARRAY',
+      SOURCE => [ map "$_\n", $conf->config('warning_email') ]
+    ) or warn "can't create warning email template: $Text::Template::ERROR";
+    $warning_from = $conf->config('warning_email-from'); # || 'your-isp-is-dum'
+    $warning_subject = $conf->config('warning_email-subject') || 'Warning';
+    $warning_mimetype = $conf->config('warning_email-mimetype') || 'text/plain';
+    $warning_cc = $conf->config('warning_email-cc');
+  } else {
+    $warning_template = '';
+    $warning_from = '';
+    $warning_subject = '';
+    $warning_mimetype = '';
+    $warning_cc = '';
   }
   $smtpmachine = $conf->config('smtpmachine');
   $radius_password = $conf->config('radius-password') || 'Password';
@@ -167,6 +185,12 @@ FS::svc_Common.  The following fields are currently supported:
 =item slipip - IP address
 
 =item seconds - 
+
+=item upbytes - 
+
+=item downbytes - 
+
+=item totalbytes - 
 
 =item domsvc - svcnum from svc_domain
 
@@ -721,6 +745,10 @@ sub check {
               #|| $self->ut_number('domsvc')
               || $self->ut_foreign_key('domsvc', 'svc_domain', 'svcnum' )
               || $self->ut_textn('sec_phrase')
+              || $self->ut_snumbern('seconds')
+              || $self->ut_snumbern('upbytes')
+              || $self->ut_snumbern('downbytes')
+              || $self->ut_snumbern('totalbytes')
   ;
   return $error if $error;
 
@@ -1215,6 +1243,72 @@ sub acct_snarf {
   qsearch('acct_snarf', { 'svcnum' => $self->svcnum } );
 }
 
+=item decrement_upbytes OCTETS
+
+Decrements the I<upbytes> field of this record by the given amount.  If there
+is an error, returns the error, otherwise returns false.
+
+=cut
+
+sub decrement_upbytes {
+  shift->_op_usage('-', 'upbytes', @_);
+}
+
+=item increment_upbytes OCTETS
+
+Increments the I<upbytes> field of this record by the given amount.  If there
+is an error, returns the error, otherwise returns false.
+
+=cut
+
+sub increment_upbytes {
+  shift->_op_usage('+', 'upbytes', @_);
+}
+
+=item decrement_downbytes OCTETS
+
+Decrements the I<downbytes> field of this record by the given amount.  If there
+is an error, returns the error, otherwise returns false.
+
+=cut
+
+sub decrement_downbytes {
+  shift->_op_usage('-', 'downbytes', @_);
+}
+
+=item increment_downbytes OCTETS
+
+Increments the I<downbytes> field of this record by the given amount.  If there
+is an error, returns the error, otherwise returns false.
+
+=cut
+
+sub increment_downbytes {
+  shift->_op_usage('+', 'downbytes', @_);
+}
+
+=item decrement_totalbytes OCTETS
+
+Decrements the I<totalbytes> field of this record by the given amount.  If there
+is an error, returns the error, otherwise returns false.
+
+=cut
+
+sub decrement_totalbytes {
+  shift->_op_usage('-', 'totalbytes', @_);
+}
+
+=item increment_totalbytes OCTETS
+
+Increments the I<totalbytes> field of this record by the given amount.  If there
+is an error, returns the error, otherwise returns false.
+
+=cut
+
+sub increment_totalbytes {
+  shift->_op_usage('+', 'totalbytes', @_);
+}
+
 =item decrement_seconds SECONDS
 
 Decrements the I<seconds> field of this record by the given amount.  If there
@@ -1223,7 +1317,7 @@ is an error, returns the error, otherwise returns false.
 =cut
 
 sub decrement_seconds {
-  shift->_op_seconds('-', @_);
+  shift->_op_usage('-', 'seconds', @_);
 }
 
 =item increment_seconds SECONDS
@@ -1234,7 +1328,7 @@ is an error, returns the error, otherwise returns false.
 =cut
 
 sub increment_seconds {
-  shift->_op_seconds('+', @_);
+  shift->_op_usage('+', 'seconds', @_);
 }
 
 
@@ -1243,19 +1337,31 @@ my %op2action = (
   '+' => 'unsuspend',
 );
 my %op2condition = (
-  '-' => sub { my($self, $seconds) = @_;
-               $self->seconds - $seconds <= 0;
+  '-' => sub { my($self, $column, $amount) = @_;
+               $self->$column - $amount <= 0;
              },
-  '+' => sub { my($self, $seconds) = @_;
-               $self->seconds + $seconds > 0;
+  '+' => sub { my($self, $column, $amount) = @_;
+               $self->$column + $amount > 0;
+             },
+);
+my %op2warncondition = (
+  '-' => sub { my($self, $column, $amount) = @_;
+               my $threshold = $column . '_threshold';
+               $self->$column - $amount <= $self->$threshold + 0;
+             },
+  '+' => sub { my($self, $column, $amount) = @_;
+               $self->$column + $amount > 0;
              },
 );
 
-sub _op_seconds {
-  my( $self, $op, $seconds ) = @_;
-  warn "$me _op_seconds called for svcnum ". $self->svcnum.
-       ' ('. $self->email. "): $op $seconds\n"
+sub _op_usage {
+  my( $self, $op, $column, $amount ) = @_;
+
+  warn "$me _op_usage called for $column on svcnum ". $self->svcnum.
+       ' ('. $self->email. "): $op $amount\n"
     if $DEBUG;
+
+  return '' unless $amount;
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -1268,29 +1374,53 @@ sub _op_seconds {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  my $sql = "UPDATE svc_acct SET seconds = ".
-            " CASE WHEN seconds IS NULL THEN 0 ELSE seconds END ". #$seconds||0
+  my $sql = "UPDATE svc_acct SET $column = ".
+            " CASE WHEN $column IS NULL THEN 0 ELSE $column END ". #$column||0
             " $op ? WHERE svcnum = ?";
   warn "$me $sql\n"
     if $DEBUG;
 
   my $sth = $dbh->prepare( $sql )
     or die "Error preparing $sql: ". $dbh->errstr;
-  my $rv = $sth->execute($seconds, $self->svcnum);
+  my $rv = $sth->execute($amount, $self->svcnum);
   die "Error executing $sql: ". $sth->errstr
     unless defined($rv);
-  die "Can't update seconds for svcnum". $self->svcnum
+  die "Can't update $column for svcnum". $self->svcnum
     if $rv == 0;
 
   my $action = $op2action{$op};
 
   if ( $conf->exists("svc_acct-usage_$action")
-       && &{$op2condition{$op}}($self, $seconds)    ) {
+       && &{$op2condition{$op}}($self, $column, $amount)    ) {
     #my $error = $self->$action();
     my $error = $self->cust_svc->cust_pkg->$action();
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return "Error ${action}ing: $error";
+    }
+  }
+
+  if ($warning_template && &{$op2warncondition{$op}}($self, $column, $amount)) {
+    my $wqueue = new FS::queue {
+      'svcnum' => $self->svcnum,
+      'job'    => 'FS::svc_acct::reached_threshold',
+    };
+
+    my $to = '';
+    if ($op eq '-'){
+      $to = $warning_cc if &{$op2condition{$op}}($self, $column, $amount);
+    }
+
+    # x_threshold race
+    my $error = $wqueue->insert(
+      'svcnum' => $self->svcnum,
+      'op'     => $op,
+      'column' => $column,
+      'to'     => $to,
+    );
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "Error queuing threshold activity: $error";
     }
   }
 
@@ -1301,6 +1431,20 @@ sub _op_seconds {
 
 }
 
+
+=item is_rechargeable
+
+Returns true if this svc_account can be "rechaged" and false otherwise.
+
+=cut
+
+sub is_rechargable {
+  my $self = shift;
+  $self->seconds ne ''
+    || $self->upbytes ne ''
+    || $self->downbytes ne ''
+    || $self->totalbytes ne '';
+}
 
 =item seconds_since TIMESTAMP
 
@@ -1783,6 +1927,82 @@ END
            qq!<INPUT TYPE="button" VALUE="Add new group" onClick="${selectname}_doadd(this.form)">!;
 
   $html;
+}
+
+=item reached_threshold
+
+Performs some activities when svc_acct thresholds (such as number of seconds
+remaining) are reached.  
+
+=cut
+
+sub reached_threshold {
+  my %opt = @_;
+
+  my $svc_acct = qsearchs('svc_acct', { 'svcnum' => $opt{'svcnum'} } );
+  die "Cannot find svc_acct with svcnum " . $opt{'svcnum'} unless $svc_acct;
+
+  if ( $opt{'op'} eq '+' ){
+    $svc_acct->setfield( $opt{'column'}.'_threshold',
+                         int($svc_acct->getfield($opt{'column'})
+                             * ( $conf->exists('svc_acct-usage_threshold') 
+                                 ? $conf->config('svc_acct-usage_threshold')/100
+                                 : 0.80
+                               )
+                         )
+                       );
+    my $error = $svc_acct->replace;
+    die $error if $error;
+  }elsif ( $opt{'op'} eq '-' ){
+    
+    my $threshold = $svc_acct->getfield( $opt{'column'}.'_threshold' );
+    return '' if ($threshold eq '' && opt{'column'} eq 'totalbytes');
+
+    $svc_acct->setfield( $opt{'column'}.'_threshold', 0 );
+    my $error = $svc_acct->replace;
+    die $error if $error; # email next time, i guess
+
+    if ( $warning_template ) {
+      eval "use FS::Misc qw(send_email)";
+      die $@ if $@;
+
+      my $cust_pkg  = $svc_acct->cust_svc->cust_pkg;
+      my $cust_main = $cust_pkg->cust_main;
+
+      my $to = join(', ', grep { $_ !~ /^(POST|FAX)$/ } 
+                               $cust_main->invoicing_list,
+                               $svc_acct->email,
+                               ($opt{'to'} ? $opt{'to'} : ())
+                   );
+
+      my $mimetype = $warning_mimetype;
+      $mimetype .= '; charset="iso-8859-1"' unless $opt{mimetype} =~ /charset/;
+
+      my $body       =  $warning_template->fill_in( HASH => {
+                        'custnum'   => $cust_main->custnum,
+                        'username'  => $svc_acct->username,
+                        'password'  => $svc_acct->_password,
+                        'first'     => $cust_main->first,
+                        'last'      => $cust_main->getfield('last'),
+                        'pkg'       => $cust_pkg->part_pkg->pkg,
+                        'column'    => $opt{'column'},
+                        'amount'    => $svc_acct->getfield($opt{'column'}),
+                        'threshold' => $threshold,
+                      } );
+
+
+      my $error = send_email(
+        'from'         => $warning_from,
+        'to'           => $to,
+        'subject'      => $warning_subject,
+        'content-type' => $mimetype,
+        'body'         => [ map "$_\n", split("\n", $body) ],
+      );
+      die $error if $error;
+    }
+  }else{
+    die "unknown op: " . $opt{'op'};
+  }
 }
 
 =back

@@ -64,6 +64,17 @@ sub parse_lt_gt {
 
 }
 
+sub bytecount_unexact {
+  my $bc = shift;
+  return("$bc bytes")
+    if ($bc < 1000);
+  return(sprintf("%.2f Kbytes", $bc/1000))
+    if ($bc < 1000000);
+  return(sprintf("%.2f Mbytes", $bc/1000000))
+    if ($bc < 1000000000);
+  return(sprintf("%.2f Gbytes", $bc/1000000000));
+}
+
 ###
 # cust_main report subroutines
 ###

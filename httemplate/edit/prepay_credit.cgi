@@ -11,7 +11,16 @@
 %  3600 => 'hours',
 %;
 %
-%$cgi->param('multiplier', '60') unless $cgi->param('multiplier');
+%tie my %bytemultiplier, 'Tie::IxHash',
+%  1          => 'bytes',
+%  1000       => 'Kbytes',
+%  1000000    => 'Mbytes',
+%  1000000000 => 'Gbytes',
+%;
+%
+%$cgi->param('multiplier',     '60')      unless $cgi->param('multiplier');
+%$cgi->param('upmultiplier',   '1000000') unless $cgi->param('upmultiplier');
+%$cgi->param('downmultiplier', '1000000') unless $cgi->param('downmultiplier');
 %
 %
 
@@ -46,9 +55,11 @@ Generate
 
 </SELECT>
 
-<BR>Value: 
+<TABLE>
+<TR><TD>Value: 
 $<INPUT TYPE="text" NAME="amount" SIZE=8 MAXLENGTH=7 VALUE="<% $cgi->param('amount') %>">
-and/or
+</TD>
+<TD>and/or
 <INPUT TYPE="text" NAME="seconds" SIZE=6 MAXLENGTH=5 VALUE="<% $cgi->param('seconds') %>">
 <SELECT NAME="multiplier">
 % foreach my $multiplier ( keys %multiplier ) { 
@@ -57,6 +68,30 @@ and/or
 % } 
 
 </SELECT>
+</TD></TR>
+<TR><TD></TD>
+<TD>and/or
+<INPUT TYPE="text" NAME="upbytes" SIZE=6 MAXLENGTH=5 VALUE="<% $cgi->param('upbytes') %>">
+<SELECT NAME="upmultiplier">
+% foreach my $multiplier ( keys %bytemultiplier ) { 
+
+  <OPTION VALUE="<% $multiplier %>"<% $cgi->param('upmultiplier') eq $multiplier ? ' SELECTED' : '' %>><% $bytemultiplier{$multiplier} %>
+% } 
+
+</SELECT> upload
+</TD></TR>
+<TR><TD></TD>
+<TD>and/or
+<INPUT TYPE="text" NAME="downbytes" SIZE=6 MAXLENGTH=5 VALUE="<% $cgi->param('downbytes') %>">
+<SELECT NAME="downmultiplier">
+% foreach my $multiplier ( keys %bytemultiplier ) { 
+
+  <OPTION VALUE="<% $multiplier %>"<% $cgi->param('downmultiplier') eq $multiplier ? ' SELECTED' : '' %>><% $bytemultiplier{$multiplier} %>
+% } 
+
+</SELECT> download
+</TD></TR>
+</TABLE>
 <BR><BR>
 <INPUT TYPE="submit" NAME="submit" VALUE="Generate" onSubmit="this.disabled = true">
 
