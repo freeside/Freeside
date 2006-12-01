@@ -200,10 +200,6 @@ is about to expire.  Usually run as a cron job.
 
 user: From the mapsecrets file - see config.html from the base documentation
 
-=head1 VERSION
-
-$Id: freeside-expiration-alerter,v 1.5 2003-04-21 20:53:57 ivan Exp $
-
 =head1 BUGS
 
 Yes..... Use at your own risk. No guarantees or warrantees of any
