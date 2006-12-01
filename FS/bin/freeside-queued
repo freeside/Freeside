@@ -10,11 +10,8 @@ use FS::Record qw(qsearch qsearchs);
 use FS::queue;
 use FS::queue_depend;
 
-# no autoloading just yet
-use FS::cust_main;
-use FS::svc_acct;
+# no autoloading for non-FS classes...
 use Net::SSH 0.07;
-use FS::part_export;
 
 $DEBUG = 0;
 
