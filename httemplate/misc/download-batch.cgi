@@ -40,6 +40,8 @@
 %my $jdate = sprintf("%03d", $date[5] % 100).sprintf("%03d", $date[7] + 1);
 %my $cdate = sprintf("%02d", $date[3]).sprintf("%02d", $date[4] + 1).
 %            sprintf("%02d", $date[5] % 100);
+%my $sdate = sprintf("%02d", $date[5] % 100).'/'.sprintf("%02d", $date[4] + 1).
+%            '/'.sprintf("%02d", $date[3]);
 %
 %if ($format eq "BoM") {
 %
@@ -63,6 +65,12 @@
 %
 %}elsif ($format eq "csv-td_canada_trust-merchant_pc_batch"){
 %#  1;
+%}elsif ($format eq "csv-chase_canada-E-xactBatch"){
+%
+%  my($origid) = $conf->config("batchconfig-$format");
+<% sprintf( '$$E-xactBatchFileV1.0$$%s:%03u$$%s',$sdate,$pay_batch->batchnum, $origid)
+  %>
+%
 %}else{
 %  die "Unknown format for batch in batchconfig. \n";
 %}
@@ -100,6 +108,12 @@
 ,,,,<% $cust_pay_batch->payinfo %>,<% $exp %>,<% $cust_pay_batch->amount %>,<% $cust_pay_batch->paybatchnum %>
 %
 %
+%  } elsif ($format eq "csv-chase_canada-E-xactBatch"){
+%
+%    
+<% $cust_pay_batch->paybatchnum %>,<% $cust_pay_batch->custnum %>,<% $cust_pay_batch->invnum %>,"<% $cust_pay_batch->payname %>",01,<% $cust_pay_batch->payinfo %>,<% $cust_pay_batch->amount %>,<% $exp %>,,
+%
+%
 %  } else {
 %    die "I'm already dead, but you did not know that.\n";
 %  }
@@ -120,6 +134,8 @@
 %
 %
 %} elsif ($format eq "csv-td_canada_trust-merchant_pc_batch"){
+%  #1;
+%} elsif ($format eq "csv-chase_canada-E-xactBatch"){
 %  #1;
 %} else {
 %  die "I'm already dead (again), but you did not know that.\n";

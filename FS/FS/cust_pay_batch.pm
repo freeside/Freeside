@@ -346,6 +346,56 @@ sub import_results {
     };
 
 
+  }elsif ( $format eq 'csv-chase_canada-E-xactBatch' ) {
+
+    $filetype = "CSV";
+
+    @fields = (
+      '',            # Internal(bank) id of the transaction
+      '',            # Transaction Type:  00 - purchase,      01 - preauth,
+                     #                    02 - completion,    03 - forcepost,
+                     #                    04 - refund,        05 - auth,
+                     #                    06 - purchase corr, 07 - refund corr,
+                     #                    08 - void           09 - void return
+      '',            # gateway used to process this transaction
+      'paid',        # Amount:  Amount of the transaction.  Dollars and cents
+                     #          with decimal entered.
+      'auth',        # Auth#:  Authorization number (if approved)
+      'payinfo',     # Card Number:  Card number for the transaction
+      '',            # Expiry Date:  Expiry date of the card
+      '',            # Cardholder Name
+      'bankcode',    # Bank response code (3 alphanumeric)
+      'bankmess',    # Bank response message
+      'etgcode',     # ETG response code (2 alphanumeric)
+      'etgmess',     # ETG response message
+      '',            # Returned customer number for the transaction
+      'paybatchnum', # Reference#:  paybatch number of the transaction
+      '',            # Reference#:  Invoice number of the transaction
+      'result',      # Processing Result: Approved of Declined
+    );
+
+    $end_condition = sub {
+      '';
+    };
+
+    $hook = sub {
+      my $hash = shift;
+      $hash->{'paid'} = sprintf("%.2f", $hash->{'paid'}); #hmmmm
+      $hash->{'_date'} = time;  # got a better one?
+    };
+
+    $approved_condition = sub {
+      my $hash = shift;
+      $hash->{'etgcode'} eq '00' && $hash->{'result'} eq "Approved";
+    };
+
+    $declined_condition = sub {
+      my $hash = shift;
+      $hash->{'etgcode'} ne '00' # internal processing error
+        || ( $hash->{'result'} eq "Declined" );
+    };
+
+
   }elsif ( $format eq 'PAP' ) {
 
     $filetype = "Fixed264";

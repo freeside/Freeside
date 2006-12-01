@@ -1865,7 +1865,8 @@ httemplate/docs/config.html
     'section'     => 'billing',
     'description' => 'Default format for batches.',
     'type'        => 'select',
-    'select_enum' => [ 'csv-td_canada_trust-merchant_pc_batch', 'BoM', 'PAP' ]
+    'select_enum' => [ 'csv-td_canada_trust-merchant_pc_batch',
+                       'csv-chase_canada-E-xactBatch', 'BoM', 'PAP' ]
   },
 
   {
@@ -1873,7 +1874,8 @@ httemplate/docs/config.html
     'section'     => 'billing',
     'description' => 'Fixed (unchangeable) format for credit card batches.',
     'type'        => 'select',
-    'select_enum' => [ 'csv-td_canada_trust-merchant_pc_batch', 'BoM', 'PAP' ]
+    'select_enum' => [ 'csv-td_canada_trust-merchant_pc_batch', 'BoM', 'PAP' ,
+                       'csv-chase_canada-E-xactBatch', 'BoM', 'PAP' ]
   },
 
   {

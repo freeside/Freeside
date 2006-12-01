@@ -62,6 +62,7 @@
 %      $html_init .= qq!Download batch in format <SELECT NAME="format">!.
 %                    qq!<OPTION VALUE="">Default batch mode</OPTION>!.
 %                    qq!<OPTION VALUE="csv-td_canada_trust-merchant_pc_batch">CSV file for TD Canada Trust Merchant PC Batch</OPTION>!.
+%                    qq!<OPTION VALUE="csv-chase_canada-E-xactBatch">CSV file for Chase Canada E-xactBatch</OPTION>!.
 %                    qq!<OPTION VALUE="PAP">80 byte file for TD Canada Trust PAP Batch</OPTION>!.
 %                    qq!<OPTION VALUE="BoM">Bank of Montreal ECA batch</OPTION>!.
 %                    qq!</SELECT>!;
@@ -84,6 +85,7 @@
 %      $html_init .= qq!Format <SELECT NAME="format">!.
 %                    qq!<OPTION VALUE="">Default batch mode</OPTION>!.
 %                    qq!<OPTION VALUE="csv-td_canada_trust-merchant_pc_batch">CSV results from TD Canada Trust Merchant PC Batch</OPTION>!.
+%                    qq!<OPTION VALUE="csv-chase_canada-E-xactBatch">CSV file for Chase Canada E-xactBatch</OPTION>!.
 %                    qq!<OPTION VALUE="PAP">264 byte results for TD Canada Trust PAP Batch</OPTION>!.
 %                    qq!<OPTION VALUE="BoM">Bank of Montreal ECA results</OPTION>!.
 %                    qq!</SELECT><BR>!;
