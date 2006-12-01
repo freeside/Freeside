@@ -47,10 +47,6 @@ Prints the email addresses of all customers on STDOUT, separated by newlines.
 
 user: From the mapsecrets file - see config.html from the base documentation
 
-=head1 VERSION
-
-$Id: freeside-email,v 1.2 2002-09-18 22:50:44 ivan Exp $
-
 =head1 BUGS
 
 =head1 SEE ALSO
