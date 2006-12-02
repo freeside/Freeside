@@ -41,8 +41,14 @@ sub calc_recur {
     $cust_pkg->cust_main->referral_cust_pkg( $self->option('comission_depth') )
   );
 
-  my $error = $cust_pkg->cust_main->credit( $amount*$num_active, "commission" );
-  die $error if $error;
+  my $commission = sprintf('%.2f', $amount*$num_active);
+
+  if ( $commission > 0 ) {
+
+    my $error = $cust_pkg->cust_main->credit( $commission, "commission" );
+    die $error if $error;
+
+  }
 
   $self->option('recur_fee');
 }
