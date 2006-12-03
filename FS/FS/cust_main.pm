@@ -2693,7 +2693,8 @@ sub realtime_bop {
       description    => $options{'description'},
     );
 
-    foreach my $field (qw( authorization_source_code returned_ACI                                          transaction_identifier validation_code           
+    foreach my $field (qw( authorization_source_code returned_ACI
+                           transaction_identifier validation_code           
                            transaction_sequence_num local_transaction_date    
                            local_transaction_time AVS_result_code          )) {
       $capture{$field} = $transaction->$field() if $transaction->can($field);
