@@ -3,6 +3,8 @@
 %my $conf = new FS::Conf;
 %my @shells = $conf->config('shells');
 %
+%my $curuser = $FS::CurrentUser::CurrentUser;
+%
 %my($svcnum, $pkgnum, $svcpart, $part_svc, $svc_acct, @groups);
 %if ( $cgi->param('error') ) {
 %
@@ -381,6 +383,24 @@ Service # <% $svcnum ? "<B>$svcnum</B>" : " (NEW)" %><BR>
     <TD ALIGN="right">IP</TD>
     <TD><INPUT TYPE="text" NAME="slipip" VALUE="<% $svc_acct->slipip %>"></TD>
   </TR>
+% } 
+%
+% if ( $curuser->access_right('Edit usage') ) { 
+%   my %label = ( seconds => 'Seconds',
+%                 upbytes => 'Upload bytes',
+%                 downbytes => 'Download bytes',
+%                 totalbytes => 'Total bytes',
+%               );
+%   foreach my $uf (keys %label) {
+%     my $tf = $uf . "_threshold";
+%     if ( $svc_acct->$tf ne '' ) { 
+
+  <TR>
+    <TD ALIGN="right"><% $label{$uf} %> remaining</TD>
+    <TD><INPUT TYPE="text" NAME="<% $uf %>" VALUE="<% $svc_acct->$uf %>"></TD>
+  </TR>
+%     } 
+%   } 
 % } 
 %
 %foreach my $r ( grep { /^r(adius|[cr])_/ } fields('svc_acct') ) {

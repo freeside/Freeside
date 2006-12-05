@@ -284,6 +284,21 @@ Service #<B><% $svcnum %></B>
     </TD>
   </TR>
 % } 
+% my %ulabel = ( seconds    => 'Seconds',
+%                upbytes    => 'Upload bytes',
+%                downbytes  => 'Download bytes',
+%                totalbytes => 'Total bytes',
+%              );
+% foreach my $uf ( keys %ulabel ) {
+%   my $tf = $uf . "_threshold";
+%   if ( $svc_acct->$tf ne '' ) {
+    <TR>
+      <TD ALIGN="right"><% $ulabel{$uf} %> remaining</TD>
+      <TD BGCOLOR="#ffffff"><% $svc_acct->$uf %></TD>
+    </TR>
+
+%   }
+% }
 % foreach my $attribute ( grep /^radius_/, $svc_acct->fields ) {
 %  $attribute =~ /^radius_(.*)$/;
 %  my $pattribute = $FS::raddb::attrib{$1};
