@@ -1456,6 +1456,33 @@ sub ut_phonen {
   '';
 }
 
+=item ut_hex COLUMN
+
+Check/untaint hexadecimal values.
+
+=cut
+
+sub ut_hex {
+  my($self, $field) = @_;
+  $self->getfield($field) =~ /^([\da-fA-F]+)$/
+    or return "Illegal (hex) $field: ". $self->getfield($field);
+  $self->setfield($field, uc($1));
+  '';
+}
+
+=item ut_hexn COLUMN
+
+Check/untaint hexadecimal values.  May be null.
+
+=cut
+
+sub ut_hexn {
+  my($self, $field) = @_;
+  $self->getfield($field) =~ /^([\da-fA-F]*)$/
+    or return "Illegal (hex) $field: ". $self->getfield($field);
+  $self->setfield($field, uc($1));
+  '';
+}
 =item ut_ip COLUMN
 
 Check/untaint ip addresses.  IPv4 only for now.

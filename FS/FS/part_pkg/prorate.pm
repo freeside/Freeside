@@ -24,12 +24,40 @@ use FS::part_pkg::flat;
     'cutoff_day' => { 'name' => 'billing day',
 			 'default' => 1,
 					    },
+    'seconds'       => { 'name' => 'Time limit for this package',
+                         'default' => '',
+                       },
+    'upbytes'       => { 'name' => 'Upload limit for this package',
+                         'default' => '',
+                       },
+    'downbytes'     => { 'name' => 'Download limit for this package',
+                         'default' => '',
+                       },
+    'totalbytes'    => { 'name' => 'Transfer limit for this package',
+                         'default' => '',
+                       },
+    'recharge_amount'       => { 'name' => 'Cost of recharge for this package',
+                         'default' => '',
+                       },
+    'recharge_seconds'      => { 'name' => 'Recharge time for this package',
+                         'default' => '',
+                       },
+    'recharge_upbytes'      => { 'name' => 'Recharge upload for this package',
+                         'default' => '',
+                       },
+    'recharge_downbytes'    => { 'name' => 'Recharge download for this package',                         'default' => '',
+                       },
+    'recharge_totalbytes'   => { 'name' => 'Recharge transfer for this package',                         'default' => '',
+                       },
     #it would be better if this had to be turned on, its confusing
     'externalid' => { 'name'   => 'Optional External ID',
                       'default' => '',
                     },
  },
   'fieldorder' => [ 'setup_fee', 'recur_fee', 'unused_credit', 'cutoff_day',
+                    'seconds', 'upbyte', 'downbytes', 'totalbytes',
+                    'recharge_amount', 'recharge_seconds', 'recharge_upbytes',
+                    'recharge_downbytes', 'recharge_totalbytes',
                     'externalid', ],
   'freq' => 'm',
   'weight' => 20,
@@ -43,6 +71,8 @@ sub calc_recur {
   my $mend;
   my $mstart;
   
+  $self->reset_usage($cust_pkg);
+
   if ( $mday >= $cutoff_day ) {
     $mend =
       timelocal(0,0,0,$cutoff_day, $mon == 11 ? 0 : $mon+1, $year+($mon==11));

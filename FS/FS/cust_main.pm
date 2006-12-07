@@ -708,7 +708,7 @@ card.
 
 sub recharge_prepay { 
   my( $self, $prepay_credit, $amountref, $secondsref, 
-      $upbytesref, $downbytesref ) = @_;
+      $upbytesref, $downbytesref, $totalbytesref ) = @_;
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -721,14 +721,14 @@ sub recharge_prepay {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  my( $amount, $seconds, $upbytes, $downbytes ) = ( 0, 0, 0, 0 );
+  my( $amount, $seconds, $upbytes, $downbytes, $totalbytes) = ( 0, 0, 0, 0, 0 );
 
   my $error = $self->get_prepay($prepay_credit, \$amount,
-                                \$seconds, \$upbytes, \$downbytes)
+                                \$seconds, \$upbytes, \$downbytes, \$totalbytes)
            || $self->increment_seconds($seconds)
            || $self->increment_upbytes($upbytes)
            || $self->increment_downbytes($downbytes)
-           || $self->increment_totalbytes($upbytes + $downbytes)
+           || $self->increment_totalbytes($totalbytes)
            || $self->insert_cust_pay_prepay( $amount,
                                              ref($prepay_credit)
                                                ? $prepay_credit->identifier
@@ -744,6 +744,7 @@ sub recharge_prepay {
   if ( defined($secondsref) ) { $$secondsref = $seconds; }
   if ( defined($upbytesref) ) { $$upbytesref = $upbytes; }
   if ( defined($downbytesref) ) { $$downbytesref = $downbytes; }
+  if ( defined($totalbytesref) ) { $$totalbytesref = $totalbytes; }
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';
@@ -767,7 +768,8 @@ If there is an error, returns the error, otherwise returns false.
 
 
 sub get_prepay {
-  my( $self, $prepay_credit, $amountref, $secondsref, $upref, $downref) = @_;
+  my( $self, $prepay_credit, $amountref, $secondsref,
+      $upref, $downref, $totalref) = @_;
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -816,6 +818,7 @@ sub get_prepay {
   $$secondsref += $prepay_credit->seconds;
   $$upref      += $prepay_credit->upbytes;
   $$downref    += $prepay_credit->downbytes;
+  $$totalref   += $prepay_credit->totalbytes;
 
   $dbh->commit or die $dbh->errstr if $oldAutoCommit;
   '';

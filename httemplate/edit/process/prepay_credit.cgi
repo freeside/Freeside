@@ -19,6 +19,7 @@
 %$hashref->{seconds}   = $cgi->param('seconds') * $cgi->param('multiplier');
 %$hashref->{upbytes}   = $cgi->param('upbytes') * $cgi->param('upmultiplier');
 %$hashref->{downbytes} = $cgi->param('downbytes') * $cgi->param('downmultiplier');
+%$hashref->{totalbytes} = $cgi->param('totalbytes') * $cgi->param('totalmultiplier');
 %
 %$error ||= FS::prepay_credit::generate( $num,
 %                                        scalar($cgi->param('type')), 
@@ -50,6 +51,7 @@
   <% $hashref->{seconds} ? duration_exact($hashref->{seconds}) : '' %>
   <% $hashref->{upbytes}   ? FS::UI::Web::bytecount_unexact($hashref->{upbytes}) : '' %>
   <% $hashref->{downbytes} ? FS::UI::Web::bytecount_unexact($hashref->{downbytes}) : '' %>
+  <% $hashref->{totalbytes} ? FS::UI::Web::bytecount_unexact($hashref->{totalbytes}) : '' %>
   <br>
 % } 
 

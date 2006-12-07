@@ -20,13 +20,46 @@ use FS::part_pkg::flat;
     'cutoff_day' => { 'name' => 'billing day',
                       'default' => 1,
                     },
+    'seconds'       => { 'name' => 'Time limit for this package',
+                         'default' => '',
+                       },
+    'upbytes'       => { 'name' => 'Upload limit for this package',
+                         'default' => '',
+                       },
+    'downbytes'     => { 'name' => 'Download limit for this package',
+                         'default' => '',
+                       },
+    'totalbytes'    => { 'name' => 'Transfer limit for this package',
+                         'default' => '',
+                       },
+    'recharge_amount'       => { 'name' => 'Cost of recharge for this package',
+                         'default' => '',
+                       },
+    'recharge_seconds'      => { 'name' => 'Recharge time for this package',
+                         'default' => '',
+                       },
+    'recharge_upbytes'      => { 'name' => 'Recharge upload for this package',
+                         'default' => '',
+                       },
+    'recharge_downbytes'    => { 'name' => 'Recharge download for this package',                         'default' => '',
+                       },
+    'recharge_totalbytes'   => { 'name' => 'Recharge transfer for this package',                         'default' => '',
+                       },
     #it would be better if this had to be turned on, its confusing
     'externalid' => { 'name'   => 'Optional External ID',
                       'default' => '',
                     },
   },
-  'fieldorder' => [ 'setup_fee', 'recur_fee', 'cutoff_day', 'externalid' ],
-  'fieldorder' => [ 'setup_fee', 'recur_fee','cutoff_day'],
+  'fieldorder' => [ 'setup_fee', 'recur_fee', 'cutoff_day', 'seconds',
+                    'upbytes', 'downbytes', 'totalbytes',
+                    'recharge_amount', 'recharge_seconds', 'recharge_upbytes',
+                    'recharge_downbytes', 'recharge_totalbytes',
+                    'externalid' ],
+  'fieldorder' => [ 'setup_fee', 'recur_fee','cutoff_day', 'seconds',
+                    'upbytes', 'downbytes', 'totalbytes',
+                    'recharge_amount', 'recharge_seconds', 'recharge_upbytes',
+                    'recharge_downbytes', 'recharge_totalbytes',
+                   ],
   'freq' => 'm',
   'weight' => 30,
 );
@@ -43,6 +76,8 @@ sub calc_recur {
   }
 
   $$sdate = timelocal(0,0,0,$cutoff_day,$mon,$year);
+
+  $self->reset_usage($cust_pkg);
 
   $self->option('recur_fee');
 }

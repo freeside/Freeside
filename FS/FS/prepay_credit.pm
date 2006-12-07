@@ -110,6 +110,9 @@ sub check {
   || $self->ut_alpha('identifier')
   || $self->ut_money('amount')
   || $self->ut_numbern('seconds')
+  || $self->ut_numbern('upbytes')
+  || $self->ut_numbern('downbytes')
+  || $self->ut_numbern('totalbytes')
   || $self->ut_foreign_keyn('agentnum', 'agent', 'agentnum')
   || $self->SUPER::check
   ;

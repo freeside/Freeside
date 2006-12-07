@@ -21,6 +21,7 @@
 %$cgi->param('multiplier',     '60')      unless $cgi->param('multiplier');
 %$cgi->param('upmultiplier',   '1000000') unless $cgi->param('upmultiplier');
 %$cgi->param('downmultiplier', '1000000') unless $cgi->param('downmultiplier');
+%$cgi->param('totalmultiplier','1000000') unless $cgi->param('totalmultiplier');
 %
 %
 
@@ -90,6 +91,17 @@ $<INPUT TYPE="text" NAME="amount" SIZE=8 MAXLENGTH=7 VALUE="<% $cgi->param('amou
 % } 
 
 </SELECT> download
+</TD></TR>
+<TR><TD></TD>
+<TD>and/or
+<INPUT TYPE="text" NAME="totalbytes" SIZE=6 MAXLENGTH=5 VALUE="<% $cgi->param('totalbytes') %>">
+<SELECT NAME="totalmultiplier">
+% foreach my $multiplier ( keys %bytemultiplier ) { 
+
+  <OPTION VALUE="<% $multiplier %>"<% $cgi->param('totalmultiplier') eq $multiplier ? ' SELECTED' : '' %>><% $bytemultiplier{$multiplier} %>
+% } 
+
+</SELECT> total transfer
 </TD></TR>
 </TABLE>
 <BR><BR>

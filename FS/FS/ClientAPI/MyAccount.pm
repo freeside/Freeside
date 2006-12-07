@@ -22,6 +22,7 @@ use FS::cust_main;
 use FS::cust_bill;
 use FS::cust_main_county;
 use FS::cust_pkg;
+use HTML::Entities;
 
 use vars qw( @cust_main_editable_fields );
 @cust_main_editable_fields = qw(
@@ -379,24 +380,27 @@ sub process_prepay {
   my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
     or return { 'error' => "unknown custnum $custnum" };
 
-  my( $amount, $seconds, $upbytes, $downbytes ) = ( 0, 0, 0, 0 );
+  my( $amount, $seconds, $upbytes, $downbytes, $totalbytes ) = ( 0, 0, 0, 0, 0 );
   my $error = $cust_main->recharge_prepay( $p->{'prepaid_cardnum'},
                                            \$amount,
                                            \$seconds,
                                            \$upbytes,
-                                           \$downbytes
+                                           \$downbytes,
+                                           \$totalbytes,
                                          );
 
   return { 'error' => $error } if $error;
 
-  return { 'error'    => '',
-           'amount'   => $amount,
-           'seconds'  => $seconds,
-           'duration' => duration_exact($seconds),
-           'upbytes'  => $upbytes,
-           'upload'   => FS::UI::Web::bytecount_unexact($upbytes),
-           'downbytes'=> $downbytes,
-           'download' => FS::UI::Web::bytecount_unexact($downbytes),
+  return { 'error'     => '',
+           'amount'    => $amount,
+           'seconds'   => $seconds,
+           'duration'  => duration_exact($seconds),
+           'upbytes'   => $upbytes,
+           'upload'    => FS::UI::Web::bytecount_unexact($upbytes),
+           'downbytes' => $downbytes,
+           'download'  => FS::UI::Web::bytecount_unexact($downbytes),
+           'totalbytes'=> $totalbytes,
+           'totalload' => FS::UI::Web::bytecount_unexact($totalbytes),
          };
 
 }
@@ -563,15 +567,22 @@ sub list_svcs {
     'svcs'     => [ map { 
                           my $svc_x = $_->svc_x;
                           my($label, $value) = $_->label;
+                          my $part_pkg = $svc_x->cust_svc->cust_pkg->part_pkg;
 
-                          { 'svcnum'   => $_->svcnum,
-                            'label'    => $label,
-                            'value'    => $value,
-                            'username' => $svc_x->username,
-                            'email'    => $svc_x->email,
-                            'seconds'  => $svc_x->seconds,
-                            'upbytes'  => $svc_x->upbytes,
-                            'downbytes'=> $svc_x->downbytes,
+                          { 'svcnum'    => $_->svcnum,
+                            'label'     => $label,
+                            'value'     => $value,
+                            'username'  => $svc_x->username,
+                            'email'     => $svc_x->email,
+                            'seconds'   => $svc_x->seconds,
+                            'upbytes'   => $svc_x->upbytes,
+                            'downbytes' => $svc_x->downbytes,
+                            'totalbytes'=> $svc_x->totalbytes,
+                            'recharge_amount' => $part_pkg->option('recharge_amount'),
+                            'recharge_seconds' => $part_pkg->option('recharge_seconds'),
+                            'recharge_upbytes' => $part_pkg->option('recharge_upbytes'),
+                            'recharge_downbytes' => $part_pkg->option('recharge_downbytes'),
+                            'recharge_totalbytes' => $part_pkg->option('recharge_totalbytes'),
                             # more...
                           };
                         }
@@ -689,6 +700,73 @@ sub order_pkg {
   }
 
   return { error => '', pkgnum => $cust_pkg->pkgnum };
+
+}
+
+sub order_recharge {
+  my $p = shift;
+
+  my($context, $session, $custnum) = _custoragent_session_custnum($p);
+  return { 'error' => $session } if $context eq 'error';
+
+  my $search = { 'custnum' => $custnum };
+  $search->{'agentnum'} = $session->{'agentnum'} if $context eq 'agent';
+  my $cust_main = qsearchs('cust_main', $search )
+    or return { 'error' => "unknown custnum $custnum" };
+
+  my $cust_svc = qsearchs( 'cust_svc', { 'svcnum' => $p->{'svcnum'} } )
+    or return { 'error' => "unknown service " . $p->{'svcnum'} };
+
+  my $svc_x = $cust_svc->svc_x;
+  my $part_pkg = $cust_svc->cust_pkg->part_pkg;
+
+  my %vhash =
+    map { $_ =~ /^recharge_(.*)$/; $1, $part_pkg->option($_) } 
+    qw ( recharge_seconds recharge_upbytes recharge_downbytes
+         recharge_totalbytes );
+  my $amount = $part_pkg->option('recharge_amount'); 
+  
+  my $old_balance = $cust_main->balance;
+
+  my ($l, $v, $d) = $cust_svc->label;  # blah
+  my $pkg = "Recharge $v"; 
+
+  my $bill_error = $cust_main->charge($amount, $pkg,
+     "time: $vhash{seconds}, up: $vhash{upbytes}," . 
+     "down: $vhash{downbytes}, total: $vhash{totalbytes}",
+     $part_pkg->taxclass); #meh
+
+  my $conf = new FS::Conf;
+  if ( $conf->exists('signup_server-realtime') && !$bill_error ) {
+
+    $bill_error = $cust_main->bill;
+
+    $cust_main->apply_payments;
+    $cust_main->apply_credits;
+    $bill_error = $cust_main->collect('realtime' => 1);
+
+    #false laziness with order_pkg
+    if (    $cust_main->balance > $old_balance
+         && $cust_main->balance > 0
+         && $cust_main->payby !~ /^(BILL|DCRD|DCHK)$/ ) {
+      #this makes sense.  credit is "un-doing" the invoice
+      $cust_main->credit( sprintf("%.2f", $cust_main->balance - $old_balance ),
+                          'self-service decline' );
+      $cust_main->apply_credits( 'order' => 'newest' );
+
+      return { 'error' => '_decline', 'bill_error' => encode_entities($bill_error) };
+    } else {
+      my $error = $svc_x->recharge (\%vhash);
+      return { 'error' => $error } if $error;
+    }
+
+  } else {  
+    my $error = $bill_error;
+    $error ||= $svc_x->recharge (\%vhash);
+    return { 'error' => $error } if $error;
+  }
+
+  return { error => '', svc => $cust_svc->part_svc->svc };
 
 }
 

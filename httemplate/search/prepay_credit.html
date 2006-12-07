@@ -22,22 +22,34 @@
                                   },
                  'count_query' => $count_query,
                  #'redirect'    => $link,
-                 'header'      => [ '#', qw(Amount Time Upload Download Agent) ],
+                 'header'      => [ '#', qw(Amount Time Upload Download Total Agent) ],
                  'fields'      => [
                    'identifier',
                    sub { sprintf('$%.2f', shift->amount ) },
-                   sub { my $c = shift; $c ? duration_exact($c->seconds) : '' },
                    sub { my $c = shift;
-                         $c ? FS::UI::Web::bytecount_unexact($c->upbytes) : ''
+                         $c->seconds ? duration_exact($c->seconds) : ''
                        },
                    sub { my $c = shift;
-                         $c ? FS::UI::Web::bytecount_unexact($c->downbytes) : ''
+                         $c->upbytes 
+                           ? FS::UI::Web::bytecount_unexact($c->upbytes)
+                           : ''
+                       },
+                   sub { my $c = shift;
+                         $c->downbytes
+                           ? FS::UI::Web::bytecount_unexact($c->downbytes)
+                           : ''
+                       },
+                   sub { my $c = shift;
+                         $c->totalbytes
+                           ? FS::UI::Web::bytecount_unexact($c->totalbytes)
+                           : ''
                        },
                    sub { my $agent = shift->agent;
                          $agent ? $agent->agent : '';
                        },
                  ],
                  'links' => [
+                   '',
                    '',
                    '',
                    '',

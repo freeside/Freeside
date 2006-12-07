@@ -1431,10 +1431,90 @@ sub _op_usage {
 
 }
 
+sub set_usage {
+  my( $self, $valueref ) = @_;
+
+  warn "$me set_usage called for svcnum ". $self->svcnum.
+       ' ('. $self->email. "): ".
+       join(', ', map { "$_ => " . $valueref->{$_}} keys %$valueref) . "\n"
+    if $DEBUG;
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  if ( $conf->exists("svc_acct-usage_unsuspend") ) {
+    my $error = $self->cust_svc->cust_pkg->unsuspend;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "Error unsuspending: $error";
+    }
+  }
+
+  foreach my $field (keys %$valueref){
+    $self->setfield($field, $valueref->{$field});
+    $self->setfield( $field.'_threshold',
+                     int($self->getfield($field)
+                         * ( $conf->exists('svc_acct-usage_threshold') 
+                             ? 1 - $conf->config('svc_acct-usage_threshold')/100
+                             : 0.20
+                           )
+                       )
+                     );
+  }
+  my $error = $self->replace;
+  die $error if $error;
+
+  warn "$me update successful; committing\n"
+    if $DEBUG;
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  '';
+
+}
+
+
+=item recharge HASHREF
+
+  Increments usage columns by the amount specified in HASHREF as
+  column=>amount pairs.
+
+=cut
+
+sub recharge {
+  my ($self, $vhash) = @_;
+   
+  if ( $DEBUG ) {
+    warn "[$me] recharge called on $self: ". Dumper($self).
+         "\nwith vhash: ". Dumper($vhash);
+  }
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+  my $error = '';
+
+  foreach my $column (keys %$vhash){
+    $error ||= $self->_op_usage('+', $column, $vhash->{$column});
+  }
+
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+  }else{
+    $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+  }
+  return $error;
+}
 
 =item is_rechargeable
 
-Returns true if this svc_account can be "rechaged" and false otherwise.
+Returns true if this svc_account can be "recharged" and false otherwise.
 
 =cut
 
@@ -1956,7 +2036,7 @@ sub reached_threshold {
   }elsif ( $opt{'op'} eq '-' ){
     
     my $threshold = $svc_acct->getfield( $opt{'column'}.'_threshold' );
-    return '' if ($threshold eq '' && opt{'column'} eq 'totalbytes');
+    return '' if ($threshold eq '' );
 
     $svc_acct->setfield( $opt{'column'}.'_threshold', 0 );
     my $error = $svc_acct->replace;

@@ -1452,6 +1452,26 @@ sub insert_reason {
   return $cust_pkg_reason->insert;
 }
 
+=item set_usage USAGE_VALUE_HASHREF 
+
+USAGE_VALUE_HASHREF is a hashref of svc_acct usage columns and the amounts
+to which they should be set (see L<FS::svc_acct>).  Currently seconds,
+upbytes, downbytes, and totalbytes are appropriate keys.
+
+All svc_accts which are part of this package have their values reset.
+
+=cut
+
+sub set_usage {
+  my ($self, $valueref) = @_;
+
+  foreach my $cust_svc ($self->cust_svc){
+    my $svc_x = $cust_svc->svc_x;
+    $svc_x->set_usage($valueref)
+      if $svc_x->can("set_usage");
+  }
+}
+
 =back
 
 =head1 BUGS

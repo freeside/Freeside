@@ -23,12 +23,12 @@
 %
 %unless ($error) {
 %
-%my ($amount, $seconds, $up, $down) = (0, 0, 0, 0);
-%$error = $cust_main->get_prepay($prepaid, \$amount, \$seconds, \$up, \$down)
+%my ($amount, $seconds, $up, $down, $total) = (0, 0, 0, 0, 0);
+%$error = $cust_main->get_prepay($prepaid, \$amount, \$seconds, \$up, \$down, \$total)
 %      || $svc_acct->increment_seconds($seconds)
 %      || $svc_acct->increment_upbytes($up)
 %      || $svc_acct->increment_downbytes($down)
-%      || $svc_acct->increment_totalbytes($up + $down)
+%      || $svc_acct->increment_totalbytes($total)
 %      || $cust_main->insert_cust_pay_prepay( $amount, $prepaid );
 %}
 %

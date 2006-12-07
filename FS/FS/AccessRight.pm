@@ -114,6 +114,7 @@ assigned to users and/or groups.
 ###
 # customer service rights
 ###
+  'Edit usage',
   'Provision customer service',
   'Recharge customer service',
   'Unprovision customer service',
