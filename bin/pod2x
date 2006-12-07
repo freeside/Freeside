@@ -30,7 +30,8 @@ foreach my $file (
   glob("$site_perl/*/*/*.pm"),
   glob("$site_perl/bin/*.pod"),
   glob("./fs_sesmon/FS-SessionClient/*.pm"),
-  glob("./fs_signup/FS-SignupClient/*.pm"),
+  #glob("./fs_signup/FS-SignupClient/*.pm"),
+  glob("./fs_selfservice/FS-SelfService/*.pm"),
   glob("./fs_selfadmin/FS-MailAdminServer/*.pm"),
 ) {
   next if $file =~ /(^|\/)blib\//;
