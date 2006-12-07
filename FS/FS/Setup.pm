@@ -94,8 +94,8 @@ sub populate_addl_locales {
   my %addl = (
     'US' => {
       'FM' => 'Federated States of Micronesia',
-      'MH' => 'Federated States of Micronesia',
-      'PW' => 'Federated States of Micronesia',
+      'MH' => 'Marshall Islands',
+      'PW' => 'Palau',
       'AA' => "Armed Forces Americas (except Canada)",
       'AE' => "Armed Forces Europe / Canada / Middle East / Africa",
       'AP' => "Armed Forces Pacific",
