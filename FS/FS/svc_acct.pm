@@ -1450,15 +1450,9 @@ sub set_usage {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  if ( $conf->exists("svc_acct-usage_unsuspend") ) {
-    my $error = $self->cust_svc->cust_pkg->unsuspend;
-    if ( $error ) {
-      $dbh->rollback if $oldAutoCommit;
-      return "Error unsuspending: $error";
-    }
-  }
-
+  my $reset = 0;
   foreach my $field (keys %$valueref){
+    $reset = 1 if $valueref->{$field};
     $self->setfield($field, $valueref->{$field});
     $self->setfield( $field.'_threshold',
                      int($self->getfield($field)
@@ -1471,6 +1465,14 @@ sub set_usage {
   }
   my $error = $self->replace;
   die $error if $error;
+
+  if ( $conf->exists("svc_acct-usage_unsuspend") && $reset ) {
+    my $error = $self->cust_svc->cust_pkg->unsuspend;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "Error unsuspending: $error";
+    }
+  }
 
   warn "$me update successful; committing\n"
     if $DEBUG;
