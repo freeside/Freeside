@@ -5,7 +5,7 @@
 %  or die 'illegal custnum '. $cgi->param('custnum');
 %my $custnum = $1;
 %
-%$cgi->param('amount') =~ /^\s*(\d+(\.\d{1,2})?)\s*$/
+%$cgi->param('amount') =~ /^\s*\$?\s*(\d+(\.\d{1,2})?)\s*$/
 %  or die 'illegal amount '. $cgi->param('amount');
 %my $amount = $1;
 %
