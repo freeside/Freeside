@@ -23,7 +23,10 @@
 
   <FORM NAME="<% $cust_main->payby %>" STYLE="margin-top: 0; margin-bottom: 0"> 
 % # XXX key 
-% foreach my $field (qw( payinfo payname paycvv paystart_month paystart_year payissue payip )) { 
+
+
+    <INPUT TYPE="hidden" NAME="payinfo" VALUE="<% $cust_main->paymask %>">
+% foreach my $field (qw( payname paycvv paystart_month paystart_year payissue payip )) { 
 
 
     <INPUT TYPE="hidden" NAME="<% $field %>" VALUE="<% $cust_main->getfield($field) %>">
@@ -136,16 +139,19 @@
   </SCRIPT>
 %
 %
-%  my($payby, $payinfo, $payname)=(
+%  my($payby, $paymask, $payname)=(
 %    $cust_main->payby,
-%    $cust_main->payinfo,
+%    $cust_main->paymask,
 %    $cust_main->payname,
 %  );
-%  my( $account, $aba ) = split('@', $payinfo);
+%  my( $account, $aba ) = split('@', $paymask);
 %
 %  my $disabled = 'DISABLED style="background-color: #dddddd"';
 %  my $text_disabled = 'style="color: #999999"';
-%  if ( $payby =~ /^(CARD|DCRD)$/ && cardtype($payinfo) =~ /^(Switch|Solo)$/ ) {
+%
+%  # this is not going to work unless the mask-generation recognizes
+%  # Switch/Solo cards
+%  if ( $payby =~ /^(CARD|DCRD)$/ && cardtype($paymask) =~ /^(Switch|Solo)$/ ) {
 %    $disabled = 'style="background-color: #ffffff"';
 %    $text_disabled = 'style="color: #000000";'
 %  }
@@ -157,7 +163,7 @@
 %      '<TABLE BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0 HEIGHT=192>'.
 %
 %        qq!<TR><TD ALIGN="right" WIDTH="200">${r}Card number </TD>!.
-%          qq!<TD WIDTH="408"><INPUT TYPE="text" NAME="payinfo" VALUE="!. ( $payby =~ /^(CARD|DCRD)$/ ? $payinfo : '' ). qq!" MAXLENGTH=19 onChange="card_changed(this)" onKeyUp="card_changed(this)"></TD></TR>!.
+%          qq!<TD WIDTH="408"><INPUT TYPE="text" NAME="payinfo" VALUE="!. ( $payby =~ /^(CARD|DCRD)$/ ? $paymask : '' ). qq!" MAXLENGTH=19 onChange="card_changed(this)" onKeyUp="card_changed(this)"></TD></TR>!.
 %
 %        qq!<TR><TD ALIGN="right" WIDTH="200">${r}Expiration </TD>!.
 %          '<TD WIDTH="408">'.
@@ -174,7 +180,7 @@
 %
 %          qq!(<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('../docs/cvv2.html', 480, 352, 'cvv2_popup' ), CAPTION, 'CVV2 Help', STICKY, AUTOSTATUSCAP, CLOSECLICK, DRAGGABLE ); return false;">help</A>)!.
 %          qq!</TD>!.
-%          '<TD WIDTH="408"><INPUT TYPE="text" NAME="paycvv" VALUE="'. ( $payby =~ /^(CARD|DCRD)$/ ? $cust_main->paycvv : '' ). '" SIZE=4 MAXLENGTH=4>'.
+%          '<TD WIDTH="408"><INPUT TYPE="text" NAME="paycvv" VALUE="'. ( $payby =~ /^(CARD|DCRD)$/ && !$cust_main->is_encrypted($cust_main->paycvv) ? $cust_main->paycvv : '' ). '" SIZE=4 MAXLENGTH=4>'.
 %
 %
 %        qq!<TR><TD ALIGN="right" WIDTH="200"><SPAN ID="paystart_label" $text_disabled>Start date </SPAN></TD>!.
@@ -188,7 +194,7 @@
 %                    'end_year'   => (localtime())[5] + 1900,
 %                    'selected_date' => (
 %                      ( $payby =~ /^(CARD|DCRD)$/
-%                        && cardtype($payinfo) =~ /^(Switch|Solo)$/ )
+%                        && cardtype($paymask) =~ /^(Switch|Solo)$/ ) #also
 %                          ? $cust_main->paystart_month. '-'.
 %                            $cust_main->paystart_year 
 %                          : ''
@@ -236,7 +242,7 @@
 %      '<TABLE BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0 HEIGHT=192>'.
 %
 %        qq!<TR><TD ALIGN="right" WIDTH="200">${r}Phone number </TD>!.
-%          qq!<TD WIDTH="408"><INPUT TYPE="text" NAME="payinfo" VALUE="!. ( $payby eq 'LECB' ? $cust_main->payinfo : '' ). qq!" MAXLENGTH=15 SIZE=16></TD></TR>!.
+%          qq!<TD WIDTH="408"><INPUT TYPE="text" NAME="payinfo" VALUE="!. ( $payby eq 'LECB' ? $cust_main->paymask : '' ). qq!" MAXLENGTH=15 SIZE=16></TD></TR>!.
 %
 %        qq!<INPUT TYPE="hidden" NAME="exp_month" VALUE="12">!.
 %        qq!<INPUT TYPE="hidden" NAME="exp_year" VALUE="2037">!.
@@ -256,7 +262,7 @@
 %      '<TABLE BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0 HEIGHT=192>'.
 %
 %        qq!<TR><TD ALIGN="right" WIDTH="200">P.O. </TD>!.
-%          qq!<TD WIDTH="408"><INPUT TYPE="text" NAME="payinfo" VALUE="!. ( $payby eq 'BILL' ? $cust_main->payinfo : '' ). qq!"></TD></TR>!.
+%          qq!<TD WIDTH="408"><INPUT TYPE="text" NAME="payinfo" VALUE="!. ( $payby eq 'BILL' ? $cust_main->paymask : '' ). qq!"></TD></TR>!.
 %
 %        qq!<INPUT TYPE="hidden" NAME="exp_month" VALUE="12">!.
 %        qq!<INPUT TYPE="hidden" NAME="exp_year" VALUE="2037">!.

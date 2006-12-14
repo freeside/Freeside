@@ -520,7 +520,8 @@ sub tables_hashref {
         'payby',    'char',   '',     4, '', '', # CARD/BILL/COMP, should be
                                                  # index into payby table
                                                  # eventually
-        'payinfo',  'varchar',   'NULL', $char_d, '', '', #see cust_main above
+        'payinfo',  'varchar',   'NULL', 512, '', '', #see cust_main above
+	'paymask', 'varchar', 'NULL', $char_d, '', '', 
         'paybatch', 'varchar',   'NULL', $char_d, '', '', #for auditing purposes.
         'closed',    'char', 'NULL', 1, '', '', 
       ],
@@ -538,7 +539,8 @@ sub tables_hashref {
         'payby',     'char',   '',     4, '', '', # CARD/BILL/COMP, should be
                                                   # index into payby table
                                                   # eventually
-        'payinfo',   'varchar',   'NULL', $char_d, '', '', #see cust_main above
+        'payinfo',   'varchar',   'NULL', 512, '', '', #see cust_main above
+	'paymask', 'varchar', 'NULL', $char_d, '', '', 
         'paybatch',  'varchar',   'NULL', $char_d, '', '', #for auditing purposes.
         'closed',    'char', 'NULL', 1, '', '', 
         'void_date', @date_type, '', '', 
@@ -677,7 +679,8 @@ sub tables_hashref {
         'payby',        'char',   '',     4, '', '', # CARD/BILL/COMP, should
                                                      # be index into payby
                                                      # table eventually
-        'payinfo',      'varchar',   'NULL', $char_d, '', '', #see cust_main above
+        'payinfo',      'varchar',   'NULL', 512, '', '', #see cust_main above
+	'paymask', 'varchar', 'NULL', $char_d, '', '', 
         'paybatch',     'varchar',   'NULL', $char_d, '', '', 
         'closed',    'char', 'NULL', 1, '', '', 
       ],

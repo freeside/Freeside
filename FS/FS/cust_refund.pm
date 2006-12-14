@@ -1,7 +1,7 @@
 package FS::cust_refund;
 
 use strict;
-use vars qw( @ISA );
+use vars qw( @ISA @encrypted_fields );
 use Business::CreditCard;
 use FS::Record qw( qsearch qsearchs dbh );
 use FS::UID qw(getotaker);
@@ -9,8 +9,11 @@ use FS::cust_credit;
 use FS::cust_credit_refund;
 use FS::cust_pay_refund;
 use FS::cust_main;
+use FS::payinfo_Mixin;
 
-@ISA = qw( FS::Record );
+@ISA = qw( FS::Record FS::payinfo_Mixin );
+
+@encrypted_fields = ('payinfo');
 
 =head1 NAME
 
@@ -50,11 +53,11 @@ inherits from FS::Record.  The following fields are currently supported:
 =item _date - specified as a UNIX timestamp; see L<perlfunc/"time">.  Also see
 L<Time::Local> and L<Date::Parse> for conversion functions.
 
-=item payby - `CARD' (credit cards), `CHEK' (electronic check/ACH),
-`LECB' (Phone bill billing), `BILL' (billing), `CASH' (cash),
-`WEST' (Western Union), `MCRD' (Manual credit card), or `COMP' (free)
+=item payby - Payment Type (See L<FS::payinfo_Mixin> for valid payby values)
 
-=item payinfo - card number, P.O.#, or comp issuer (4-8 lowercase alphanumerics; think username)
+=item payinfo - Payment Information (See L<FS::payinfo_Mixin> for data format)
+
+=item paymask - Masked payinfo (See L<FS::payinfo_Mixin> for how this works)
 
 =item paybatch - text field for tracking card processing
 
@@ -212,29 +215,8 @@ sub check {
     unless $self->crednum 
            || qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
 
-  $self->payby =~ /^(CARD|CHEK|LECB|BILL|COMP|CASH|WEST|MCRD)$/
-    or return "Illegal payby";
-  $self->payby($1);
-
-  #false laziness with cust_pay::check
-  if ( $self->payby eq 'CARD' ) {
-    my $payinfo = $self->payinfo;
-    $payinfo =~ s/\D//g;
-    $self->payinfo($payinfo);
-    if ( $self->payinfo ) {
-      $self->payinfo =~ /^(\d{13,16})$/
-        or return "Illegal (mistyped?) credit card number (payinfo)";
-      $self->payinfo($1);
-      validate($self->payinfo) or return "Illegal credit card number";
-      return "Unknown card type" if cardtype($self->payinfo) eq "Unknown";
-    } else {
-      $self->payinfo('N/A');
-    }
-
-  } else {
-    $error = $self->ut_textn('payinfo');
-    return $error if $error;
-  }
+  $error = $self->payinfo_check;
+  return $error if $error;
 
   $self->otaker(getotaker);
 
@@ -285,9 +267,9 @@ sub unapplied {
   sprintf("%.2f", $amount );
 }
 
-
-
 =item payinfo_masked
+
+<DEPRICATED> Use $self->paymask
 
 Returns a "masked" payinfo field with all but the last four characters replaced
 by 'x'es.  Useful for displaying credit cards.
@@ -297,8 +279,7 @@ by 'x'es.  Useful for displaying credit cards.
 
 sub payinfo_masked {
   my $self = shift;
-  my $payinfo = $self->payinfo;
-  'x'x(length($payinfo)-4). substr($payinfo,(length($payinfo)-4));
+  return $self->paymask;
 }
 
 

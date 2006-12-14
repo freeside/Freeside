@@ -67,7 +67,7 @@ function OLiframeContent(src, width, height, name) {
 %     my $state    = $cust_main->state;
 %     my $zip     = $cust_main->zip;
 %     if ( $cust_main->payby =~ /^(CARD|DCRD)$/ ) {
-%       $payinfo = $cust_main->payinfo;
+%       $payinfo = $cust_main->paymask;
 %       $paycvv = $cust_main->paycvv;
 %       ( $month, $year ) = $cust_main->paydate_monthyear;
 %       $payname = $cust_main->payname if $cust_main->payname;
@@ -153,7 +153,7 @@ function OLiframeContent(src, width, height, name) {
 % } elsif ( $payby eq 'CHEK' ) {
 %     my( $payinfo1, $payinfo2, $payname, $ss ) = ( '', '', '', '' );
 %     if ( $cust_main->payby =~ /^(CHEK|DCHK)$/ ) {
-%       $cust_main->payinfo =~ /^(\d+)\@(\d+)$/
+%       $cust_main->paymask =~ /^(\d+)\@(\d+)$/
 %         or die "unparsable payinfo ". $cust_main->payinfo;
 %       ($payinfo1, $payinfo2) = ($1, $2);
 %       $payname = $cust_main->payname;

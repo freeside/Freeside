@@ -164,7 +164,7 @@
                    sub {
                      my $cust_pay = shift;
                      if ( $cust_pay->payby eq 'CARD' ) {
-                       'Card #'. $cust_pay->payinfo_masked;
+                       'Card #'. $cust_pay->paymask;
                      } elsif ( $cust_pay->payby eq 'CHEK' ) {
                        'E-check acct#'. $cust_pay->payinfo;
                      } elsif ( $cust_pay->payby eq 'BILL' ) {

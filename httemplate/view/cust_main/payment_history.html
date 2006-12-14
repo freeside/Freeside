@@ -18,6 +18,7 @@
 
 % if ( ( $payby{'CARD'} || $payby{'DCRD'} )
 %        && $curuser->access_right('Process payment')
+%        && ! $cust_main->is_encrypted($cust_main->payinfo)
 %      ) {
   <% $s++ ? ' | ' : '' %>
   <A HREF="<% $p %>misc/payment.cgi?payby=CARD;custnum=<% $custnum %>">Process credit card payment</A>
@@ -25,6 +26,7 @@
 
 % if ( ( $payby{'CHEK'} || $payby{'DCHK'} )
 %        && $curuser->access_right('Process payment')
+%        && ! $cust_main->is_encrypted($cust_main->payinfo)
 %      ) {
   <% $s++ ? ' | ' : '' %>
   <A HREF="<% $p %>misc/payment.cgi?payby=CHEK;custnum=<% $custnum %>">Process electronic check (ACH) payment</A>
@@ -76,7 +78,7 @@
 %
 %  my $payinfo;
 %  if ( $payby eq 'CARD' ) {
-%    $payinfo = $cust_pay->payinfo_masked;
+%    $payinfo = $cust_pay->paymask;
 %  } elsif ( $payby eq 'CHEK' && $cust_pay->payinfo =~ /^(\d+)\@(\d+)$/ ) {
 %    $payinfo = "ABA $2, Acct# $1";
 %  } else {

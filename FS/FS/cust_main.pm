@@ -50,8 +50,9 @@ use FS::type_pkgs;
 use FS::payment_gateway;
 use FS::agent_payment_gateway;
 use FS::banned_pay;
+use FS::payinfo_Mixin;
 
-@ISA = qw( FS::Record );
+@ISA = qw( FS::Record FS::payinfo_Mixin );
 
 @EXPORT_OK = qw( smart_search );
 
@@ -189,81 +190,15 @@ FS::Record.  The following fields are currently supported:
 
 =item ship_fax - phone (optional)
 
-=item payby 
+=item payby - Payment Type (See L<FS::payinfo_Mixin> for valid payby values)
 
-I<CARD> (credit card - automatic), I<DCRD> (credit card - on-demand), I<CHEK> (electronic check - automatic), I<DCHK> (electronic check - on-demand), I<LECB> (Phone bill billing), I<BILL> (billing), I<COMP> (free), or I<PREPAY> (special billing type: applies a credit - see L<FS::prepay_credit> and sets billing type to I<BILL>)
+=item payinfo - Payment Information (See L<FS::payinfo_Mixin> for data format)
 
-=item payinfo 
-
-Card Number, P.O., comp issuer (4-8 lowercase alphanumerics; think username) or prepayment identifier (see L<FS::prepay_credit>)
-
-=cut 
-
-sub payinfo {
-  my($self,$payinfo) = @_;
-  if ( defined($payinfo) ) {
-    $self->paymask($payinfo);
-    $self->setfield('payinfo', $payinfo); # This is okay since we are the 'setter'
-  } else {
-    $payinfo = $self->getfield('payinfo'); # This is okay since we are the 'getter'
-    return $payinfo;
-  }
-}
-
+=item paymask - Masked payinfo (See L<FS::payinfo_Mixin> for how this works)
 
 =item paycvv
- 
+
 Card Verification Value, "CVV2" (also known as CVC2 or CID), the 3 or 4 digit number on the back (or front, for American Express) of the credit card
-
-=cut
-
-=item paymask - Masked payment type
-
-=over 4 
-
-=item Credit Cards
-
-Mask all but the last four characters.
-
-=item Checks
-
-Mask all but last 2 of account number and bank routing number.
-
-=item Others
-
-Do nothing, return the unmasked string.
-
-=back
-
-=cut 
-
-sub paymask {
-  my($self,$value)=@_;
-
-  # If it doesn't exist then generate it
-  my $paymask=$self->getfield('paymask');
-  if (!defined($value) && (!defined($paymask) || $paymask eq '')) {
-    $value = $self->payinfo;
-  }
-
-  if ( defined($value) && !$self->is_encrypted($value)) {
-    my $payinfo = $value;
-    my $payby = $self->payby;
-    if ($payby eq 'CARD' || $payby eq 'DCRD') { # Credit Cards (Show last four)
-      $paymask = 'x'x(length($payinfo)-4). substr($payinfo,(length($payinfo)-4));
-    } elsif ($payby eq 'CHEK' ||
-             $payby eq 'DCHK' ) { # Checks (Show last 2 @ bank)
-      my( $account, $aba ) = split('@', $payinfo );
-      $paymask = 'x'x(length($account)-2). substr($account,(length($account)-2))."@".$aba;
-    } else { # Tie up loose ends
-      $paymask = $payinfo;
-    }
-    $self->setfield('paymask', $paymask); # This is okay since we are the 'setter'
-  } elsif (defined($value) && $self->is_encrypted($value)) {
-    $paymask = 'N/A';
-  }
-  return $paymask;
-}
 
 =item paydate - expiration date, mm/yyyy, m/yyyy, mm/yy or m/yy
 
@@ -1141,11 +1076,6 @@ sub replace {
   local $SIG{TSTP} = 'IGNORE';
   local $SIG{PIPE} = 'IGNORE';
 
-  # If the mask is blank then try to set it - if we can...
-  if (!defined($self->getfield('paymask')) || $self->getfield('paymask') eq '') {
-    $self->paymask($self->payinfo);
-  }
-
   # We absolutely have to have an old vs. new record to make this work.
   if (!defined($old)) {
     $old = qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
@@ -1486,11 +1416,10 @@ sub check {
     $payinfo =~ s/[^\d\@]//g;
     if ( $conf->exists('echeck-nonus') ) {
       $payinfo =~ /^(\d+)\@(\d+)$/ or return 'invalid echeck account@aba';
-      $payinfo = "$1\@$2";
     } else {
       $payinfo =~ /^(\d+)\@(\d{9})$/ or return 'invalid echeck account@aba';
-      $payinfo = "$1\@$2";
     }
+    $payinfo = "$1\@$2";
     $self->payinfo($payinfo);
     $self->paycvv('') if $self->dbdef_table->column('paycvv');
 
@@ -3404,6 +3333,8 @@ sub paydate_monthyear {
 }
 
 =item payinfo_masked
+
+< DEPRICATED > Use $self->paymask
 
 Returns a "masked" payinfo field appropriate to the payment type.  Masked characters are replaced by 'x'es.  Use this to display publicly accessable account Information.
 

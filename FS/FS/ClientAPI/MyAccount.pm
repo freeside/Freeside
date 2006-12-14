@@ -130,7 +130,7 @@ sub customer_info {
     }
 
     if ( $cust_main->payby =~ /^(CARD|DCRD)$/ ) {
-      $return{payinfo} = $cust_main->payinfo_masked;
+      $return{payinfo} = $cust_main->paymask;
       @return{'month', 'year'} = $cust_main->paydate_monthyear;
     }
 
@@ -175,7 +175,7 @@ sub edit_info {
 
   if ( $p->{'payby'} =~ /^(CARD|DCRD)$/ ) {
     $new->paydate($p->{'year'}. '-'. $p->{'month'}. '-01');
-    if ( $new->payinfo eq $cust_main->payinfo_masked ) {
+    if ( $new->payinfo eq $cust_main->paymask ) {
       $new->payinfo($cust_main->payinfo);
     } else {
       $new->paycvv($p->{'paycvv'});

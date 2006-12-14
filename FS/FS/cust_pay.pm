@@ -1,7 +1,7 @@
 package FS::cust_pay;
 
 use strict;
-use vars qw( @ISA $conf $unsuspendauto $ignore_noapply );
+use vars qw( @ISA $conf $unsuspendauto $ignore_noapply @encrypted_fields );
 use Date::Format;
 use Business::CreditCard;
 use Text::Template;
@@ -14,7 +14,7 @@ use FS::cust_pay_refund;
 use FS::cust_main;
 use FS::cust_pay_void;
 
-@ISA = qw( FS::cust_main_Mixin FS::Record );
+@ISA = qw(FS::Record FS::cust_main_Mixin FS::payinfo_Mixin  );
 
 $ignore_noapply = 0;
 
@@ -23,6 +23,8 @@ FS::UID->install_callback( sub {
   $conf = new FS::Conf;
   $unsuspendauto = $conf->exists('unsuspendauto');
 } );
+
+@encrypted_fields = ('payinfo');
 
 =head1 NAME
 
@@ -60,12 +62,11 @@ currently supported:
 =item _date - specified as a UNIX timestamp; see L<perlfunc/"time">.  Also see
 L<Time::Local> and L<Date::Parse> for conversion functions.
 
-=item payby - `CARD' (credit cards), `CHEK' (electronic check/ACH),
-`LECB' (phone bill billing), `BILL' (billing), `PREP` (prepaid card),
-`CASH' (cash), `WEST' (Western Union), `MCRD' (Manual credit card), or
-`COMP' (free)
+=item payby - Payment Type (See L<FS::payinfo_Mixin> for valid payby values)
 
-=item payinfo - card number, check #, or comp issuer (4-8 lowercase alphanumerics; think username), respectively
+=item payinfo - Payment Information (See L<FS::payinfo_Mixin> for data format)
+
+=item paymask - Masked payinfo (See L<FS::payinfo_Mixin> for how this works)
 
 =item paybatch - text field for tracking card processing
 
@@ -327,7 +328,7 @@ sub delete {
         'paid: $'. sprintf("%.2f", $self->paid). "\n",
         'date: '. time2str("%a %b %e %T %Y", $self->_date). "\n",
         'payby: '. $self->payby. "\n",
-        'payinfo: '. $self->payinfo. "\n",
+        'payinfo: '. $self->paymask. "\n",
         'paybatch: '. $self->paybatch. "\n",
       ],
     );
@@ -375,6 +376,7 @@ sub check {
     || $self->ut_numbern('_date')
     || $self->ut_textn('paybatch')
     || $self->ut_enum('closed', [ '', 'Y' ])
+    || $self->payinfo_check()
   ;
   return $error if $error;
 
@@ -385,30 +387,6 @@ sub check {
            || qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
 
   $self->_date(time) unless $self->_date;
-
-  $self->payby =~ /^(CARD|CHEK|LECB|BILL|COMP|PREP|CASH|WEST|MCRD)$/
-    or return "Illegal payby";
-  $self->payby($1);
-
-  #false laziness with cust_refund::check
-  if ( $self->payby eq 'CARD' ) {
-    my $payinfo = $self->payinfo;
-    $payinfo =~ s/\D//g;
-    $self->payinfo($payinfo);
-    if ( $self->payinfo ) {
-      $self->payinfo =~ /^(\d{13,16})$/
-        or return "Illegal (mistyped?) credit card number (payinfo)";
-      $self->payinfo($1);
-      validate($self->payinfo) or return "Illegal credit card number";
-      return "Unknown card type" if cardtype($self->payinfo) eq "Unknown";
-    } else {
-      $self->payinfo('N/A');
-    }
-
-  } else {
-    $error = $self->ut_textn('payinfo');
-    return $error if $error;
-  }
 
   $self->SUPER::check;
 }
@@ -542,31 +520,27 @@ sub cust_main {
 
 =item payinfo_masked
 
-Returns a "masked" payinfo field with all but the last four characters replaced
-by 'x'es.  Useful for displaying credit cards.
+<DEPRICATED> Use $self->paymask
+
+Returns a "masked" payinfo field appropriate to the payment type.  Masked characters are replaced by 'x'es.  Use this to display publicly accessable account Information.
+
+Credit Cards - Mask all but the last four characters.
+Checks - Mask all but last 2 of account number and bank routing number.
+Others - Do nothing, return the unmasked string.
 
 =cut
 
 sub payinfo_masked {
   my $self = shift;
-  #some false laziness w/cust_main::paymask
-  if ( $self->payby eq 'CARD' ) {
-    my $payinfo = $self->payinfo;
-    'x'x(length($payinfo)-4). substr($payinfo,(length($payinfo)-4));
-  } elsif ( $self->payby eq 'CHEK' ) {
-    my( $account, $aba ) = split('@', $self->payinfo );
-    'x'x(length($account)-2). substr($account,(length($account)-2)). "@". $aba;
-  } else {
-    $self->payinfo;
-  }
+  return $self->paymask;
 }
+
 
 =back
 
 =head1 BUGS
 
-Delete and replace methods.  payinfo_masked false laziness with cust_main.pm
-and cust_refund.pm
+Delete and replace methods.  
 
 =head1 SEE ALSO
 

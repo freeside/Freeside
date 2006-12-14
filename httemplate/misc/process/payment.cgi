@@ -44,17 +44,24 @@
 %my $paycvv = '';
 %if ( $payby eq 'CHEK' ) {
 %
-%  $cgi->param('payinfo1') =~ /^(\d+)$/
-%    or eidiot "illegal account number ". $cgi->param('payinfo1');
-%  my $payinfo1 = $1;
-%   $cgi->param('payinfo2') =~ /^(\d+)$/
-%    or eidiot "illegal ABA/routing number ". $cgi->param('payinfo2');
-%  my $payinfo2 = $1;
-%  $payinfo = $payinfo1. '@'. $payinfo2;
+%  if ($cgi->param('payinfo1') =~ /xx/ || $cgi->param('payinfo2') =~ /xx/ ) {
+%    $payinfo = $cust_main->payinfo;
+%  } else {
+%    $cgi->param('payinfo1') =~ /^(\d+)$/
+%      or eidiot "illegal account number ". $cgi->param('payinfo1');
+%    my $payinfo1 = $1;
+%    $cgi->param('payinfo2') =~ /^(\d+)$/
+%      or eidiot "illegal ABA/routing number ". $cgi->param('payinfo2');
+%    my $payinfo2 = $1;
+%    $payinfo = $payinfo1. '@'. $payinfo2;
+%  }
 %
 %} elsif ( $payby eq 'CARD' ) {
 %
 %  $payinfo = $cgi->param('payinfo');
+%  if ($payinfo eq $cust_main->paymask) {
+%    $payinfo = $cust_main->payinfo;
+%  }
 %  $payinfo =~ s/\D//g;
 %  $payinfo =~ /^(\d{13,16})$/
 %    or eidiot gettext('invalid_card'); # . ": ". $self->payinfo;

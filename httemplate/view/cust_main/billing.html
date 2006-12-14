@@ -7,7 +7,11 @@
 
 
 Billing information
-(<A HREF="<% $p %>misc/bill.cgi?<% $cust_main->custnum %>">Bill now</A>)
+%  # If we can't see the unencrypted card, then bill now is an exercise in frustration 
+%if ( ! $cust_main->is_encrypted($cust_main->payinfo) ) { 
+  (<A HREF="<% $p %>misc/bill.cgi?<% $cust_main->custnum %>">Bill now</A>)
+% } 
+
 <% ntable("#cccccc") %><TR><TD><% ntable("#cccccc",2) %>
 %
 %( my $balance = $cust_main->balance )
@@ -31,7 +35,7 @@ Billing information
 </TR>
 <TR>
   <TD ALIGN="right">Card number</TD>
-  <TD BGCOLOR="#ffffff"><% $cust_main->payinfo_masked %></TD>
+  <TD BGCOLOR="#ffffff"><% $cust_main->paymask %></TD>
 </TR>
 %
 %#false laziness w/elements/select-month_year.html & edit/cust_main/billing.html

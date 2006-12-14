@@ -1,4 +1,3 @@
-<!-- mason kludge -->
 %
 %
 %my $conf = new FS::Conf;
@@ -26,70 +25,102 @@
 %
 %my $p1 = popurl(1);
 %
-%print header('Refund '. ucfirst(lc($payby)). ' payment', '');
-%print qq!<FONT SIZE="+1" COLOR="#ff0000">Error: !, $cgi->param('error'),
-%      "</FONT>"
-%  if $cgi->param('error');
-%print <<END, small_custview($custnum, $conf->config('countrydefault'));
-%    <FORM ACTION="${p1}process/cust_refund.cgi" METHOD=POST>
-%    <INPUT TYPE="hidden" NAME="refundnum" VALUE="">
-%    <INPUT TYPE="hidden" NAME="custnum" VALUE="$custnum">
-%    <INPUT TYPE="hidden" NAME="paynum" VALUE="$paynum">
-%    <INPUT TYPE="hidden" NAME="_date" VALUE="$_date">
-%    <INPUT TYPE="hidden" NAME="payby" VALUE="$payby">
-%    <INPUT TYPE="hidden" NAME="payinfo" VALUE="">
-%    <INPUT TYPE="hidden" NAME="paybatch" VALUE="">
-%    <INPUT TYPE="hidden" NAME="credited" VALUE="">
-%    <BR>
-%END
 %
-%if ( $cust_pay ) {
+
+
+<% include('/elements/header.html', 'Refund '. ucfirst(lc($payby)). ' payment', '') %>
+% if ( $cgi->param('error') ) { 
+
+  <FONT SIZE="+1" COLOR="#ff0000">Error: <% $cgi->param('error') %></FONT>
+  <BR><BR>
+% } 
+
+
+<% small_custview($custnum, $conf->config('countrydefault')) %>
+
+<FORM NAME="RefundForm" ACTION="<% $p1 %>process/cust_refund.cgi" METHOD=POST onSubmit="document.RefundForm.submit.disabled=true">
+<INPUT TYPE="hidden" NAME="refundnum" VALUE="">
+<INPUT TYPE="hidden" NAME="custnum" VALUE="<% $custnum %>">
+<INPUT TYPE="hidden" NAME="paynum" VALUE="<% $paynum %>">
+<INPUT TYPE="hidden" NAME="_date" VALUE="<% $_date %>">
+<INPUT TYPE="hidden" NAME="payby" VALUE="<% $payby %>">
+<INPUT TYPE="hidden" NAME="payinfo" VALUE="">
+<INPUT TYPE="hidden" NAME="paybatch" VALUE="">
+<INPUT TYPE="hidden" NAME="credited" VALUE="">
+<BR>
+% if ( $cust_pay ) {
 %
 %  #false laziness w/FS/FS/cust_pay.pm
 %  my $payby = $cust_pay->payby;
-%  my $payinfo = $cust_pay->payinfo;
-%  $payby =~ s/^BILL$/Check/ if $payinfo;
+%  my $paymask = $cust_pay->paymask;
+%  $payby =~ s/^BILL$/Check/ if $paymask;
 %  $payby =~ s/^CHEK$/Electronic check/;
-%  $payinfo = $cust_pay->payinfo_masked if $payby eq 'CARD';
 %
-%  print '<BR>Payment'. ntable("#cccccc", 2).
-%        '<TR><TD ALIGN="right">Amount</TD><TD BGCOLOR="#ffffff">$'.
-%          $cust_pay->paid. '</TD></TR>'.
-%        '<TR><TD ALIGN="right">Date</TD><TD BGCOLOR="#ffffff">'.
-%          time2str("%D",$cust_pay->_date). '</TD></TR>'.
-%        '<TR><TD ALIGN="right">Method</TD><TD BGCOLOR="#ffffff">'.
-%          ucfirst(lc($payby)). ' # '. $payinfo. '</TD></TR>';
+%
+
+
+  <BR>Payment
+  <% ntable("#cccccc", 2) %>
+
+    <TR>
+      <TD ALIGN="right">Amount</TD><TD BGCOLOR="#ffffff">$<% $cust_pay->paid %></TD>
+    </TR>
+
+  <TR>
+    <TD ALIGN="right">Date</TD><TD BGCOLOR="#ffffff"><% time2str("%D",$cust_pay->_date) %></TD>
+  </TR>
+
+  <TR>
+    <TD ALIGN="right">Method</TD><TD BGCOLOR="#ffffff"><% ucfirst(lc($payby)) %> # <% $paymask %></TD>
+  </TR>
+%
 %  #false laziness w/FS/FS/cust_main::realtime_refund_bop
 %  if ( $cust_pay->paybatch =~ /^(\w+):(\w+)(:(\w+))?$/ ) {
 %    my ( $processor, $auth, $order_number ) = ( $1, $2, $4 );
-%    print '<TR><TD ALIGN="right">Processor</TD><TD BGCOLOR="#ffffff">'.
-%          $processor. '</TD></TR>';
-%    print '<TR><TD ALIGN="right">Authorization</TD><TD BGCOLOR="#ffffff">'.
-%          $auth. '</TD></TR>'
-%      if length($auth);
-%    print '<TR><TD ALIGN="right">Order number</TD><TD BGCOLOR="#ffffff">'.
-%          $order_number. '</TD></TR>'
-%      if length($order_number);
-%  }
-%  print '</TABLE>';
-%}
-%
-%print '<BR>Refund'. ntable("#cccccc", 2).
-%      '<TR><TD ALIGN="right">Date</TD><TD BGCOLOR="#ffffff">'.
-%      time2str("%D",$_date). '</TD></TR>';
-%
-%print qq!<TR><TD ALIGN="right">Amount</TD><TD BGCOLOR="#ffffff">\$<INPUT TYPE="text" NAME="refund" VALUE="$refund" SIZE=8 MAXLENGTH=8></TD></TR>!;
-%
-%print qq!<TR><TD ALIGN="right">Reason</TD><TD BGCOLOR="#ffffff"><INPUT TYPE="text" NAME="reason" VALUE="$reason"></TD></TR>!;
-%
-%print <<END;
-%</TABLE>
-%<BR>
-%<INPUT TYPE="submit" VALUE="Post refund">
-%    </FORM>
-%  </BODY>
-%</HTML>
-%END
-%
-%
+%  
+
+
+    <TR>
+      <TD ALIGN="right">Processor</TD><TD BGCOLOR="#ffffff"><% $processor %></TD>
+    </TR>
+% if ( length($auth) ) { 
+
+      <TR>
+        <TD ALIGN="right">Authorization</TD><TD BGCOLOR="#ffffff"><% $auth %></TD>
+      </TR>
+% } 
+% if ( length($order_number) ) { 
+
+      <TR>
+        <TD ALIGN="right">Order number</TD><TD BGCOLOR="#ffffff"><% $order_number %></TD>
+      </TR>
+% } 
+% } 
+
+  </TABLE>
+% } 
+
+
+<BR>Refund
+<% ntable("#cccccc", 2) %>
+
+  <TR>
+    <TD ALIGN="right">Date</TD><TD BGCOLOR="#ffffff"><% time2str("%D",$_date) %></TD>
+  </TR>
+
+  <TR>
+    <TD ALIGN="right">Amount</TD><TD BGCOLOR="#ffffff">$<INPUT TYPE="text" NAME="refund" VALUE="<% $refund %>" SIZE=8 MAXLENGTH=8></TD>
+  </TR>
+
+  <TR>
+    <TD ALIGN="right">Reason</TD><TD BGCOLOR="#ffffff"><INPUT TYPE="text" NAME="reason" VALUE="<% $reason %>"></TD>
+  </TR>
+</TABLE>
+
+<BR>
+<INPUT TYPE="submit" NAME="submit" VALUE="Post refund">
+
+</FORM>
+
+<% include('/elements/footer.html') %>
 

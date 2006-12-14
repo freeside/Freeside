@@ -2,7 +2,8 @@ package FS::Record;
 
 use strict;
 use vars qw( $AUTOLOAD @ISA @EXPORT_OK $DEBUG
-             $me %virtual_fields_cache $nowarn_identical );
+             $conf $me
+             %virtual_fields_cache $nowarn_identical );
 use Exporter;
 use Carp qw(carp cluck croak confess);
 use File::CounterFile;
@@ -36,8 +37,10 @@ my $rsa_encrypt;
 my $rsa_decrypt;
 
 FS::UID->install_callback( sub {
-  $File::CounterFile::DEFAULT_DIR = "/usr/local/etc/freeside/counters.". datasrc;
+  $conf = new FS::Conf; 
+  $File::CounterFile::DEFAULT_DIR = $conf->base_dir . "/counters.". datasrc;
 } );
+
 
 =head1 NAME
 
@@ -442,8 +445,11 @@ sub qsearch {
     }
 
     # Check for encrypted fields and decrypt them.
-    my $conf = new FS::Conf; 
-    if ($conf->exists('encryption') && eval 'defined(@FS::'. $table . '::encrypted_fields)') {
+   ## only in the local copy, not the cached object
+    if ( $conf && $conf->exists('encryption') # $conf doesn't exist when doing
+                                              # the initial search for
+                                              # access_user
+         && eval 'defined(@FS::'. $table . '::encrypted_fields)') {
       foreach my $record (@return) {
         foreach my $field (eval '@FS::'. $table . '::encrypted_fields') {
           # Set it directly... This may cause a problem in the future...
@@ -713,11 +719,10 @@ sub insert {
 
   
   # Encrypt before the database
-  my $conf = new FS::Conf;
   if ($conf->exists('encryption') && defined(eval '@FS::'. $table . '::encrypted_fields')) {
     foreach my $field (eval '@FS::'. $table . '::encrypted_fields') {
       $self->{'saved'} = $self->getfield($field);
-      $self->setfield($field, $self->enrypt($self->getfield($field)));
+      $self->setfield($field, $self->encrypt($self->getfield($field)));
     }
   }
 
@@ -1006,7 +1011,7 @@ sub replace {
   # Encrypt for replace
   my $conf = new FS::Conf;
   my $saved = {};
-  if ($conf->exists('encryption') && defined(eval '@FS::'. $new->table . 'encrypted_fields')) {
+  if ($conf->exists('encryption') && defined(eval '@FS::'. $new->table . '::encrypted_fields')) {
     foreach my $field (eval '@FS::'. $new->table . '::encrypted_fields') {
       $saved->{$field} = $new->getfield($field);
       $new->setfield($field, $new->encrypt($new->getfield($field)));
@@ -1205,6 +1210,12 @@ sub _h_statement {
     grep { defined($self->getfield($_)) && $self->getfield($_) ne "" }
     real_fields($self->table);
   ;
+
+  # If we're encrypting then don't ever store the payinfo or CVV2 in the history....
+  # You can see if it changed by the paymask...
+  if ($conf->exists('encryption') ) {
+    @fields = grep  $_ ne 'payinfo' && $_ ne 'cvv2', @fields;
+  }
   my @values = map { _quote( $self->getfield($_), $self->table, $_) } @fields;
 
   "INSERT INTO h_". $self->table. " ( ".
@@ -1869,6 +1880,17 @@ sub _dump {
   } (fields($self->table)) );
 }
 
+=item encrypt($value)
+
+Encrypts the credit card using a combination of PK to encrypt and uuencode to armour.
+
+Returns the encrypted string.
+
+You should generally not have to worry about calling this, as the system handles this for you.
+
+=cut
+
+
 sub encrypt {
   my ($self, $value) = @_;
   my $encrypted;
@@ -1893,16 +1915,31 @@ sub encrypt {
   return $encrypted;
 }
 
+=item is_encrypted($value)
+
+Checks to see if the string is encrypted and returns true or false (1/0) to indicate it's status.
+
+=cut
+
+
 sub is_encrypted {
   my ($self, $value) = @_;
   # Possible Bug - Some work may be required here....
 
-  if (length($value) > 80) {
+  if ($value =~ /^M/ && length($value) > 80) {
     return 1;
   } else {
     return 0;
   }
 }
+
+=item decrypt($value)
+
+Uses the private key to decrypt the string. Returns the decryoted string or undef on failure.
+
+You should generally not have to worry about calling this, as the system handles this for you.
+
+=cut
 
 sub decrypt {
   my ($self,$value) = @_;
@@ -1912,7 +1949,8 @@ sub decrypt {
     $self->loadRSA;
     if (ref($rsa_decrypt) =~ /::RSA/) {
       my $encrypted = unpack ("u*", $value);
-      $decrypted =  unpack("Z*", $rsa_decrypt->decrypt($encrypted));
+      $decrypted =  unpack("Z*", eval{$rsa_decrypt->decrypt($encrypted)});
+      if ($@) {warn "Decryption Failed"};
     }
   }
   return $decrypted;

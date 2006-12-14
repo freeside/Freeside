@@ -1,6 +1,6 @@
 package FS::cust_pay_void; 
 use strict;
-use vars qw( @ISA );
+use vars qw( @ISA @encrypted_fields );
 use Business::CreditCard;
 use FS::UID qw(getotaker);
 use FS::Record qw(qsearchs dbh fields); # qsearch );
@@ -10,7 +10,9 @@ use FS::cust_pay;
 #use FS::cust_pay_refund;
 #use FS::cust_main;
 
-@ISA = qw( FS::Record );
+@ISA = qw( FS::Record FS::payinfo_Mixin );
+
+@encrypted_fields = ('payinfo');
 
 =head1 NAME
 
@@ -209,6 +211,8 @@ sub cust_main {
 
 =item payinfo_masked
 
+< DEPRICATED > Use $self->paymask
+
 Returns a "masked" payinfo field with all but the last four characters replaced
 by 'x'es.  Useful for displaying credit cards.
 
@@ -216,8 +220,7 @@ by 'x'es.  Useful for displaying credit cards.
 
 sub payinfo_masked {
   my $self = shift;
-  my $payinfo = $self->payinfo;
-  'x'x(length($payinfo)-4). substr($payinfo,(length($payinfo)-4));
+  return $self->paymask;
 }
 
 =back

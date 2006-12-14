@@ -46,6 +46,9 @@
 %  } fields('cust_main')
 %} );
 %
+% delete( $new->hashref->{'agent_custid'} )
+%   unless $new->hashref->{'agent_custid'};
+%
 %if ( defined($cgi->param('same')) && $cgi->param('same') eq "Y" ) {
 %  $new->setfield("ship_$_", '') foreach qw(
 %    last first company address1 address2 city county state zip
@@ -150,6 +153,9 @@
 %       && length($old->paycvv)
 %       && $new->paycvv =~ /^\s*\*+\s*$/ ) {
 %    $new->paycvv($old->paycvv);
+%  }
+%  if ($new->payby =~ /CARD|DCRD|CHEK|DCHK/ && $new->payinfo =~ /xx/) {
+%    $new->payinfo($old->payinfo);
 %  }
 %  $error ||= $new->replace($old, \@invoicing_list);
 %  
