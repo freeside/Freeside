@@ -13,7 +13,7 @@ $FS::CurrentUser::upgrade_hack = 1;
 my($dbh)=adminsuidsetup $user;
 
 #needs to match FS::Record
-my($dbdef_file) = "/usr/local/etc/freeside/dbdef.". datasrc;
+my($dbdef_file) = "%%%FREESIDE_CONF%%%/dbdef.". datasrc;
 
 my $dbdef = new_native DBIx::DBSchema $dbh;
 

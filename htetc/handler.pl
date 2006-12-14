@@ -60,7 +60,7 @@ my $ah = new HTML::Mason::ApacheHandler (
                 [ 'freeside' => '%%%FREESIDE_DOCUMENT_ROOT%%%'    ],
                 [ 'rt'       => '%%%FREESIDE_DOCUMENT_ROOT%%%/rt' ],
               ],
-  data_dir=>'/usr/local/etc/freeside/masondata',
+  data_dir=>'%%%FREESIDE_CONF%%%/masondata',
   #out_mode=>'stream',
 
   #RT

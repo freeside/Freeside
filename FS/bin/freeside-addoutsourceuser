@@ -4,16 +4,15 @@ username=$1
 domain=$2
 password=$3
 realdomain=$4
-
+FREESIDE_CONF=%%%FREESIDE_CONF%%%
 
 freeside-adduser -s conf.DBI:Pg:dbname=$domain/secrets \
                  -n \
                  $username #2>/dev/null
 
-[ -e /usr/local/etc/freeside/dbdef.DBI:Pg:dbname=$domain ] \
+[ -e $FREESIDE_CONF/dbdef.DBI:Pg:dbname=$domain ] \
  || ( freeside-setup -d $realdomain -u $username )
-# 2>/dev/null
 
 freeside-adduser -g 1 $username
 
-htpasswd -b /usr/local/etc/freeside/htpasswd $username $password
+htpasswd -b $FREESIDE_CONF/htpasswd $username $password

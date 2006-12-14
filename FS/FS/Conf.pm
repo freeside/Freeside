@@ -1,10 +1,14 @@
 package FS::Conf;
 
-use vars qw($default_dir @config_items @card_types $DEBUG );
+use vars qw($default_dir $base_dir @config_items @card_types $DEBUG );
 use IO::File;
 use File::Basename;
 use FS::ConfItem;
 use FS::ConfDefaults;
+
+$base_dir = '%%%FREESIDE_CONF%%%';
+$default_dir = '%%%FREESIDE_CONF%%%';
+
 
 $DEBUG = 0;
 
@@ -52,13 +56,15 @@ $FS::Conf::default_dir has not been set.
 sub new {
   my($proto,$dir) = @_;
   my($class) = ref($proto) || $proto;
-  my($self) = { 'dir' => $dir || $default_dir } ;
+  my($self) = { 'dir'      => $dir || $default_dir,
+                'base_dir' => $base_dir,
+              };
   bless ($self, $class);
 }
 
 =item dir
 
-Returns the directory.
+Returns the conf directory.
 
 =cut
 
@@ -70,6 +76,23 @@ sub dir {
   -r $dir or die "FATAL: Can't read $dir!";
   -x $dir or die "FATAL: $dir not searchable (executable)!";
   $dir =~ /^(.*)$/;
+  $1;
+}
+
+=item base_dir
+
+Returns the base directory.  By default this is /usr/local/etc/freeside.
+
+=cut
+
+sub base_dir {
+  my($self) = @_;
+  my $base_dir = $self->{base_dir};
+  -e $base_dir or die "FATAL: $base_dir doesn't exist!";
+  -d $base_dir or die "FATAL: $base_dir isn't a directory!";
+  -r $base_dir or die "FATAL: Can't read $base_dir!";
+  -x $base_dir or die "FATAL: $base_dir not searchable (executable)!";
+  $base_dir =~ /^(.*)$/;
   $1;
 }
 

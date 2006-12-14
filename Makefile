@@ -9,10 +9,13 @@ DATASOURCE = DBI:Pg:dbname=freeside
 DB_USER = freeside
 DB_PASSWORD=
 
+#changable now
+FREESIDE_CONF = /usr/local/etc/freeside
+
 TEMPLATE = mason
 
-MASON_HANDLER = /usr/local/etc/freeside/handler.pl
-MASONDATA = /usr/local/etc/freeside/masondata
+MASON_HANDLER = ${FREESIDE_CONF}/handler.pl
+MASONDATA = ${FREESIDE_CONF}/masondata
 
 #deb
 FREESIDE_DOCUMENT_ROOT = /var/www/freeside
@@ -89,8 +92,7 @@ RT_DB_DATABASE = freeside
 
 #---
 
-#not changable yet
-FREESIDE_CONF = /usr/local/etc/freeside
+
 #rt/config.layout.in
 RT_PATH = /opt/rt3
 
@@ -153,11 +155,13 @@ forcehtmlman:
 install-docs: docs
 	[ -e ${FREESIDE_DOCUMENT_ROOT} ] && mv ${FREESIDE_DOCUMENT_ROOT} ${FREESIDE_DOCUMENT_ROOT}.`date +%Y%m%d%H%M%S` || true
 	cp -r ${TEMPLATE}docs ${FREESIDE_DOCUMENT_ROOT}
+	chown -R freeside:freeside ${FREESIDE_DOCUMENT_ROOT}
 	cp htetc/handler.pl ${MASON_HANDLER}
-	perl -p -i -e "\
-	  s'%%%FREESIDE_DOCUMENT_ROOT%%%'${FREESIDE_DOCUMENT_ROOT}'g; \
-	  s'%%%RT_ENABLED%%%'${RT_ENABLED}'g; \
-	" ${MASON_HANDLER}
+	  perl -p -i -e "\
+	    s'%%%FREESIDE_DOCUMENT_ROOT%%%'${FREESIDE_DOCUMENT_ROOT}'g; \
+	    s'%%%RT_ENABLED%%%'${RT_ENABLED}'g; \
+	    s'%%%FREESIDE_CONF%%%'${FREESIDE_CONF}'g;\
+	  " ${MASON_HANDLER}
 	[ ! -e ${MASONDATA} ] && mkdir ${MASONDATA} || true
 	chown -R freeside ${MASONDATA}
 
@@ -179,7 +183,17 @@ perl-modules:
 	make; \
 	perl -p -i -e "\
 	  s/%%%VERSION%%%/${VERSION}/g;\
-	" blib/lib/FS.pm; \
+	  s|%%%FREESIDE_CONF%%%|${FREESIDE_CONF}|g;\
+	" blib/lib/FS.pm;\
+	perl -p -i -e "\
+	  s|%%%FREESIDE_CONF%%%|${FREESIDE_CONF}|g;\
+	" blib/lib/FS/*.pm;\
+	perl -p -i -e "\
+	  s|%%%FREESIDE_CONF%%%|${FREESIDE_CONF}|g;\
+	" blib/lib/FS/part_export/*.pm;\
+	perl -p -i -e "\
+	  s|%%%FREESIDE_CONF%%%|${FREESIDE_CONF}|g;\
+	" blib/script/*
 
 install-perl-modules: perl-modules
 	[ -L ${PERL_INC_DEV_KLUDGE}/FS ] \
@@ -213,6 +227,7 @@ install-apache:
 	    ( [ ${RT_ENABLED} -eq 1 ] && install -o root -m 755 htetc/freeside-rt.conf ${APACHE_CONF} || true ) && \
 	    perl -p -i -e "\
 	      s'%%%FREESIDE_DOCUMENT_ROOT%%%'${FREESIDE_DOCUMENT_ROOT}'g; \
+	      s'%%%FREESIDE_CONF%%%'${FREESIDE_CONF}'g; \
 	    " ${APACHE_CONF}/freeside-*.conf \
 	  ) || true
 

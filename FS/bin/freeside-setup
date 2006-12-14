@@ -24,7 +24,7 @@ getopts("u:vd:");
 getsecrets($opt_u); #$user);
 
 #needs to match FS::Record
-my($dbdef_file) = "/usr/local/etc/freeside/dbdef.". datasrc;
+my($dbdef_file) = "%%%FREESIDE_CONF%%%/dbdef.". datasrc;
 
 ###
 
@@ -126,4 +126,5 @@ sub usage {
 }
 
 1;
+
 

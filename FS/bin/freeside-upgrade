@@ -1,23 +1,29 @@
 #!/usr/bin/perl -w
 
 use strict;
+use vars qw($opt_d $opt_q $opt_v);
 use vars qw($DEBUG $DRY_RUN);
-use Term::ReadKey;
+use Getopt::Std;
 use DBIx::DBSchema 0.31;
 use FS::UID qw(adminsuidsetup checkeuid datasrc );  #getsecrets);
 use FS::CurrentUser;
 use FS::Schema qw( dbdef dbdef_dist reload_dbdef );
 
-$DEBUG = 1;
-
 die "Not running uid freeside!" unless checkeuid();
+
+getopts("dq");
+
+$DEBUG = !$opt_q;
+#$DEBUG = $opt_v;
+
+$DRY_RUN = $opt_d;
 
 my $user = shift or die &usage;
 $FS::CurrentUser::upgrade_hack = 1;
 my $dbh = adminsuidsetup($user);
 
 #needs to match FS::Schema...
-my $dbdef_file = "/usr/local/etc/freeside/dbdef.". datasrc;
+my $dbdef_file = "%%%FREESIDE_CONF%%%/dbdef.". datasrc;
 
 dbdef_create($dbh, $dbdef_file);
 
@@ -26,7 +32,13 @@ reload_dbdef($dbdef_file);
 
 $DBIx::DBSchema::DEBUG = $DEBUG;
 $DBIx::DBSchema::Table::DEBUG = $DEBUG;
-dbdef->update_schema( dbdef_dist, $dbh );
+
+if ( $DRY_RUN ) {
+  print join(";\n", dbdef->sql_update_schema( dbdef_dist, $dbh ) ). ";\n";
+  exit;
+} else {
+  dbdef->update_schema( dbdef_dist, $dbh );
+}
 
 $dbh->commit or die $dbh->errstr;
 
@@ -43,7 +55,31 @@ sub dbdef_create { # reverse engineer the schema from the DB and save to file
 }
 
 sub usage {
-  die "Usage:\n  freeside-upgrade user\n"; 
+  die "Usage:\n  freeside-upgrade [ -d ] [ -q | -v ] user\n"; 
 }
 
-1;
+=head1 NAME
+
+freeside-upgrade - Upgrades database schema for new freeside verisons.
+
+=head1 SYNOPSIS
+
+  freeside-adduser [ -d ] [ -q | -v ]
+
+=head1 DESCRIPTION
+
+Reads your existing database schema and updates it to match the current schema,
+adding any columns or tables necessary.
+
+  [ -d ]: Dry run; output SQL statements (to STDOUT) only, but do not execute
+          them.
+
+  [ -q ]: Run quietly.  This may become the default at some point.
+
+  [ -v ]: Run verbosely, sending debugging information to STDERR.  This is the
+          current default.
+
+=head1 SEE ALSO
+
+=cut
+

@@ -21,7 +21,7 @@ use FS::CurrentUser;
 
 $freeside_uid = scalar(getpwnam('freeside'));
 
-$conf_dir = "/usr/local/etc/freeside/";
+$conf_dir = "%%%FREESIDE_CONF%%%/";
 
 $AutoCommit = 1; #ours, not DBI
 
@@ -99,7 +99,7 @@ sub forksuidsetup {
   }
 
   use FS::Schema qw(reload_dbdef);
-  reload_dbdef("/usr/local/etc/freeside/dbdef.$datasrc")
+  reload_dbdef("$conf_dir/dbdef.$datasrc")
     unless $FS::Schema::setup_hack;
 
   FS::CurrentUser->load_user($user);

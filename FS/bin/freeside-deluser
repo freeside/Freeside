@@ -5,7 +5,7 @@ use vars qw($opt_h);
 use Fcntl qw(:flock);
 use Getopt::Std;
 
-my $FREESIDE_CONF = "/usr/local/etc/freeside";
+my $FREESIDE_CONF = "%%%FREESIDE_CONF%%%";
 
 getopts("h:");
 my $user = shift or die &usage;

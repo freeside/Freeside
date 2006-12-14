@@ -2,6 +2,8 @@ package FS::access_user;
 
 use strict;
 use vars qw( @ISA $htpasswd_file );
+use FS::UID;
+use FS::Conf;
 use FS::Record qw( qsearch qsearchs dbh );
 use FS::m2m_Common;
 use FS::access_usergroup;
@@ -9,8 +11,11 @@ use FS::agent;
 
 @ISA = qw( FS::m2m_Common FS::Record );
 
-#kludge htpasswd for now
-$htpasswd_file = '/usr/local/etc/freeside/htpasswd';
+#kludge htpasswd for now (i hope this bootstraps okay)
+FS::UID->install_callback( sub {
+  my $conf = new FS::Conf;
+  $htpasswd_file = $conf->base_dir. '/htpasswd';
+} );
 
 =head1 NAME
 
@@ -90,10 +95,13 @@ sub insert {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  my $error =
-       $self->SUPER::insert(@_)
-    || $self->htpasswd_kludge()
-  ;
+  my $error = $self->htpasswd_kludge();
+  if ( $error ) {
+    $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
+    return $error;
+  }
+
+  $error = $self->SUPER::insert(@_);
 
   if ( $error ) {
     $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
@@ -125,7 +133,6 @@ sub htpasswd_kludge {
     return 'htpasswd exited unsucessfully';
   }
 }
-
 
 =item delete
 
@@ -183,10 +190,13 @@ sub replace {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  my $error =
-       $new->SUPER::replace($old, @_)
-    || $new->htpasswd_kludge()
-  ;
+  my $error = $new->htpasswd_kludge();
+  if ( $error ) {
+    $dbh->rollback or die $dbh->errstr if $oldAutoCommit;
+    return $error;
+  }
+
+  $error = $new->SUPER::replace($old, @_);
 
   if ( $error ) {
     $dbh->rollback or die $dbh->errstr if $oldAutoCommit;

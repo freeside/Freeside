@@ -18,6 +18,8 @@ use FS::Conf;
 use FS::cust_bill;
 use FS::cust_pkg;
 
+$FREESIDE_CONF = "%%%FREESIDE_CONF%%%";
+
 $Debug = 1; # 2 will turn on more logging
             # 3 will log packet contents, including passwords
 
@@ -50,10 +52,9 @@ $ENV{HOME} = (getpwuid($>))[7]; #for ssh
 adminsuidsetup $user;
 
 #logfile("/usr/local/etc/freeside/selfservice.". $FS::UID::datasrc); #MACHINE
-logfile("/usr/local/etc/freeside/selfservice.$machine.log");
+logfile("$FREESIDE_SERVER/selfservice.$machine.log");
 
 daemonize2();
-
 
 my $conf = new FS::Conf;
 
