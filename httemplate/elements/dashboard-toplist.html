@@ -62,7 +62,7 @@
         <TD CLASS="grid" COLSPAN="<% scalar(@custom_priorities) + 2 %>" BGCOLOR="<% $bgcolor %>">&nbsp;</TD>
       </TR>
 
-%   } elsif ( $line =~ /^\S/ { #label line
+%   } elsif ( $line =~ /^\S/ ) { #label line
 
       <TR>
         <TH CLASS="grid" BGCOLOR="#cccccc"><% $line %></TH>
