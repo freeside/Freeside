@@ -409,11 +409,7 @@
     <TR>
       <TD WIDTH="608" COLSPAN="2"><INPUT TYPE="checkbox" NAME="invoicing_list_POST" VALUE="POST" <%
 
-        ( (    ! @invoicing_list
-            && ! $conf->exists('disablepostalinvoicedefault')
-            && ! $cust_main->custnum
-          )
-          || grep { $_ eq 'POST' } @invoicing_list                     )
+        ( grep { $_ eq 'POST' } @invoicing_list )
 
           ? 'CHECKED'
           : ''

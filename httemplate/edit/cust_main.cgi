@@ -62,6 +62,8 @@
 %  $password = '';
 %  $popnum = 0;
 %  @invoicing_list = ();
+%  push @invoicing_list, 'POST'
+%    unless $conf->exists('disablepostalinvoicedefault');
 %}
 %$cgi->delete_all();
 %
