@@ -56,13 +56,21 @@
 %  );
 %}
 %
-%if ( $cgi->param('birthdate') && $cgi->param('birthdate') =~ /^([ 0-9\-\/]{0,10})$/ ) {
+%if ( $cgi->param('birthdate') && $cgi->param('birthdate') =~ /^([ 0-9\-\/]{0,10})$/) {
 %  my $conf = new FS::Conf;
 %  my $format = $conf->config('date_format') || "%m/%d/%Y";
 %  my $parser = DateTime::Format::Strptime->new(pattern => $format,
 %                                               time_zone => 'floating',
 %                                              );
-%  $new->setfield('birthdate', $parser->parse_datetime($1)->epoch);
+%  my $dt =  $parser->parse_datetime($1);
+%  if ($dt) {
+%    $new->setfield('birthdate', $dt->epoch);
+%    $cgi->param('birthdate', $dt->epoch);
+%  } else {
+%#    $error ||= $cgi->param('birthdate') . " is an invalid birthdate:" . $parser->errmsg;
+%    $error ||= "Invalid birthdate: " . $cgi->param('birthdate') . ".";
+%    $cgi->param('birthdate', '');
+%  }
 %}
 %
 %$new->setfield('paid', $cgi->param('paid') )

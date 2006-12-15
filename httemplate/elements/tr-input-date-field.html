@@ -29,10 +29,9 @@ $format = "%m/%d/%Y" unless $format;
 $label = $name unless $label;
 
 if ($usedatetime) {
-  eval "use DateTime;";
-  die $@ if $@;
   my $dt = DateTime->from_epoch(epoch => $value, time_zone => 'floating');
-  $value = $dt->strftime($format);
+  $value = $dt->strftime($format)
+    unless $value eq '';
 }else{
   $value = time2str($format, $value);
 }
