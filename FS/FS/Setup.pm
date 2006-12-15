@@ -61,30 +61,11 @@ sub create_initial_data {
 sub populate_locales {
 
   use Locale::Country;
-  use Locale::SubCountry;
   use FS::cust_main_county;
 
   #cust_main_county
   foreach my $country ( sort map uc($_), all_country_codes ) {
-  
-    my $subcountry = eval { new Locale::SubCountry($country) };
-    my @states = $subcountry ? $subcountry->all_codes : undef;
-  
-    if ( !scalar(@states) || ( scalar(@states)==1 && !defined($states[0]) ) ) {
-
-      _add_locale( 'country'=>$country );
-  
-    } else {
-  
-      if ( $states[0] =~ /^(\d+|\w)$/ ) {
-        @states = map $subcountry->full_name($_), @states
-      }
-  
-      foreach my $state ( @states ) {
-        _add_locale( 'country'=>$country, 'state'=>$state);
-      }
-    
-    }
+    _add_country($country);
   }
 
 }
@@ -107,6 +88,33 @@ sub populate_addl_locales {
       # $longname = $addl{$country}{$state};
       _add_locale( 'country'=>$country, 'state'=>$state);
     }
+  }
+
+}
+
+sub _add_country {
+
+  use Locale::SubCountry;
+
+  my( $country ) = shift;
+
+  my $subcountry = eval { new Locale::SubCountry($country) };
+  my @states = $subcountry ? $subcountry->all_codes : undef;
+  
+  if ( !scalar(@states) || ( scalar(@states)==1 && !defined($states[0]) ) ) {
+
+    _add_locale( 'country'=>$country );
+  
+  } else {
+  
+    if ( $states[0] =~ /^(\d+|\w)$/ ) {
+      @states = map $subcountry->full_name($_), @states
+    }
+  
+    foreach my $state ( @states ) {
+      _add_locale( 'country'=>$country, 'state'=>$state);
+    }
+    
   }
 
 }

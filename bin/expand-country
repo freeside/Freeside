@@ -1,0 +1,29 @@
+#!/usr/bin/perl -w
+
+use strict;
+use Locale::SubCountry;
+use FS::UID qw(adminsuidsetup);
+use FS::Setup;
+use FS::Record qw(qsearch);
+use FS::cust_main_county;
+
+my $user = shift or die &usage;
+my $country = shift or die &usage;
+
+adminsuidsetup($user);
+
+my @country = qsearch('cust_main_county', { 'country' => $country } );
+die "unknown country $country" unless (@country);
+#die "$country already expanded" if scalar(@country) > 1;
+
+foreach my $cust_main_county ( @country ) {
+  my $error = $cust_main_county->delete;
+  die $error if $error;
+}
+
+FS::Setup::_add_country($country);
+
+sub usage {
+  die "Usage:\n\n  expand-country user countrycode\n";
+}
+
