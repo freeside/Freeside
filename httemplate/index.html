@@ -1,8 +1,9 @@
 % my $conf = new FS::Conf; 
 
 <% include('/elements/header.html', 'Billing Main' ) %>
-%
-%
+
+<% include('/elements/dashboard-toplist.html') %>
+
 %  my $sth = dbh->prepare(
 %    #"SELECT DISTINCT custnum FROM h_cust_main JOIN cust_main USING ( custnum )
 %    "SELECT custnum FROM h_cust_main JOIN cust_main USING ( custnum )
@@ -19,29 +20,25 @@
 %  @custnums = splice(@custnums, 0, 10);
 %
 %  if ( @custnums ) {
-%
-%
-
 
   <% include('/elements/table-grid.html') %>
+
 % my $bgcolor1 = '#eeeeee';
 %     my $bgcolor2 = '#ffffff';
-%     my $bgcolor;
-%  
-
+%     my $bgcolor = $bgcolor2;
 
   <TR>
     <TH CLASS="grid" BGCOLOR="#cccccc" COLSPAN=1>Customers I recently added or modified</TH>
   </TR>
+
 % foreach my $custnum ( @custnums ) { 
 % my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } ); 
 % next unless $cust_main; 
 
-
     <TR>
       <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><A HREF="view/cust_main.cgi?<% $custnum %>"><% $custnum %>: <% $cust_main->name %></A></TD>
     </TR>
-%
+
 %       if ( $bgcolor eq $bgcolor1 ) {
 %          $bgcolor = $bgcolor2;
 %        } else {
@@ -50,10 +47,8 @@
 %    
 % } 
 
-
   </TABLE>
+
 % } 
 
-
 <% include('/elements/footer.html') %>
-

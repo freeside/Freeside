@@ -1995,6 +1995,13 @@ httemplate/docs/config.html
     'select_enum' => \@card_types,
   },
 
+  {
+    'key'         => 'dashboard-toplist',
+    'section'     => 'UI',
+    'description' => 'List of items to display on the top of the front page',
+    'type'        => 'textarea',
+  },
+
 );
 
 1;

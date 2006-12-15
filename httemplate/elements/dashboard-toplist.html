@@ -1,0 +1,98 @@
+% if ( $conf->exists('dashboard-toplist') ) {
+
+  <% include('/elements/table-grid.html') %>
+
+% my $bgcolor1 = '#eeeeee';
+%     my $bgcolor2 = '#ffffff';
+%     my $bgcolor = $bgcolor2;
+
+% foreach my $line ( $conf->config('dashboard-toplist') ) {
+%
+%   if ( $bgcolor eq $bgcolor1 ) {
+%     $bgcolor = $bgcolor2;
+%   } else {
+%     $bgcolor = $bgcolor1;
+%   }
+
+%   if ( $line =~ /^\s*cust_main:\s*(\d+)\s*$/ ) { #customer line
+%     my $custnum = $1;
+%     my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } );
+%     if ( $cust_main ) {
+     
+        <TR>
+	  <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
+	    <A HREF="view/cust_main.cgi?<% $custnum %>"><% $cust_main->name %></A>
+	  </TD>
+%         foreach my $priority ( @custom_priorities, '' ) {
+%           my $num =
+%             FS::TicketSystem->num_customer_tickets($custnum,$priority);
+%           my $ahref = '';
+%           $ahref= '<A HREF="'.
+%                   FS::TicketSystem->href_customer_tickets($custnum,$priority).
+%                   '">'
+%             if $num;
+
+            <TD CLASS="grid" BGCOLOR="<% $bgcolor %>" ALIGN="right">
+	      <% $ahref.$num %></A>
+	    </TD>
+%         }
+        </TR>
+
+%     } else { 
+
+        <TR>
+          <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
+	    Unknown customer number <% $custnum %>
+	  </TD>
+        </TR>
+
+%     }
+%
+%   } elsif ( $line =~ /^\-\-+$/ ) { #divider
+%     
+      <TR>
+        <TH CLASS="grid" COLSPAN="<% scalar(@custom_priorities) + 2 %>"></TH>
+      </TR>
+
+%     next;
+%     
+%   } elsif ( $line =~ /^\s*$/ ) {
+
+      <TR>
+        <TD CLASS="grid" COLSPAN="<% scalar(@custom_priorities) + 2 %>" BGCOLOR="<% $bgcolor %>">&nbsp;</TD>
+      </TR>
+
+%   } else { #label line
+
+      <TR>
+        <TH CLASS="grid" BGCOLOR="#cccccc"><% $line %></TH>
+%       foreach my $priority ( @custom_priorities, '' ) {
+          <TH CLASS="grid" BGCOLOR="#cccccc">
+	    <% $priority || '<i>(none)</i>'%>
+	  </TH>
+%       }
+      </TR>
+
+%   }
+
+%    
+% } 
+
+  </TABLE>
+  <BR>
+
+% }
+<%init>
+
+my $conf = new FS::Conf;
+
+#false laziness w/httemplate/search/cust_main.cgi... care if 
+# custom_priority_field becomes anything but a local hack...
+my @custom_priorities = ();
+if ( $conf->config('ticket_system-custom_priority_field')
+     && @{[ $conf->config('ticket_system-custom_priority_field-values') ]} ) {
+  @custom_priorities =
+    $conf->config('ticket_system-custom_priority_field-values');
+}
+
+</%init>
