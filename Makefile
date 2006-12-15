@@ -9,13 +9,18 @@ DATASOURCE = DBI:Pg:dbname=freeside
 DB_USER = freeside
 DB_PASSWORD=
 
-#changable now
+#changable now (some things which should go to the others still go to CONF)
 FREESIDE_CONF = /usr/local/etc/freeside
-
-TEMPLATE = mason
+FREESIDE_LOG = /usr/local/etc/freeside
+FREESIDE_LOCK = /usr/local/etc/freeside
+FREESIDE_CACHE = /usr/local/etc/freeside
+FREESIDE_EXPORT = /usr/local/etc/freeside
 
 MASON_HANDLER = ${FREESIDE_CONF}/handler.pl
-MASONDATA = ${FREESIDE_CONF}/masondata
+MASONDATA = ${FREESIDE_CACHE}/masondata
+
+# only mason now
+TEMPLATE = mason
 
 #deb
 FREESIDE_DOCUMENT_ROOT = /var/www/freeside
@@ -160,7 +165,7 @@ install-docs: docs
 	  perl -p -i -e "\
 	    s'%%%FREESIDE_DOCUMENT_ROOT%%%'${FREESIDE_DOCUMENT_ROOT}'g; \
 	    s'%%%RT_ENABLED%%%'${RT_ENABLED}'g; \
-	    s'%%%FREESIDE_CONF%%%'${FREESIDE_CONF}'g;\
+	    s'%%%MASONDATA%%%'${MASONDATA}'g;\
 	  " ${MASON_HANDLER}
 	[ ! -e ${MASONDATA} ] && mkdir ${MASONDATA} || true
 	chown -R freeside ${MASONDATA}
@@ -183,16 +188,19 @@ perl-modules:
 	make; \
 	perl -p -i -e "\
 	  s/%%%VERSION%%%/${VERSION}/g;\
-	  s|%%%FREESIDE_CONF%%%|${FREESIDE_CONF}|g;\
 	" blib/lib/FS.pm;\
 	perl -p -i -e "\
 	  s|%%%FREESIDE_CONF%%%|${FREESIDE_CONF}|g;\
 	" blib/lib/FS/*.pm;\
 	perl -p -i -e "\
-	  s|%%%FREESIDE_CONF%%%|${FREESIDE_CONF}|g;\
+	  s|%%%FREESIDE_EXPORT%%%|${FREESIDE_EXPORT}|g;\
 	" blib/lib/FS/part_export/*.pm;\
 	perl -p -i -e "\
 	  s|%%%FREESIDE_CONF%%%|${FREESIDE_CONF}|g;\
+	  s|%%%FREESIDE_LOG%%%|${FREESIDE_LOG}|g;\
+	  s|%%%FREESIDE_LOCK%%%|${FREESIDE_LOCK}|g;\
+	  s|%%%FREESIDE_CACHE%%%|${FREESIDE_CACHE}|g;\
+	  s|%%%FREESIDE_EXPORT%%%|${FREESIDE_EXPORT}|g;\
 	" blib/script/*
 
 install-perl-modules: perl-modules
@@ -227,7 +235,6 @@ install-apache:
 	    ( [ ${RT_ENABLED} -eq 1 ] && install -o root -m 755 htetc/freeside-rt.conf ${APACHE_CONF} || true ) && \
 	    perl -p -i -e "\
 	      s'%%%FREESIDE_DOCUMENT_ROOT%%%'${FREESIDE_DOCUMENT_ROOT}'g; \
-	      s'%%%FREESIDE_CONF%%%'${FREESIDE_CONF}'g; \
 	    " ${APACHE_CONF}/freeside-*.conf \
 	  ) || true
 
@@ -279,14 +286,14 @@ create-config: install-perl-modules
 	cp `ls -d conf/[a-z]* | grep -v CVS` "${FREESIDE_CONF}/conf.${DATASOURCE}"
 	chown -R freeside "${FREESIDE_CONF}/conf.${DATASOURCE}"
 
-	mkdir "${FREESIDE_CONF}/counters.${DATASOURCE}"
-	chown freeside "${FREESIDE_CONF}/counters.${DATASOURCE}"
+	mkdir "${FREESIDE_CACHE}/counters.${DATASOURCE}"
+	chown freeside "${FREESIDE_CACHE}/counters.${DATASOURCE}"
 
-	mkdir "${FREESIDE_CONF}/cache.${DATASOURCE}"
-	chown freeside "${FREESIDE_CONF}/cache.${DATASOURCE}"
+	mkdir "${FREESIDE_CACHE}/cache.${DATASOURCE}"
+	chown freeside "${FREESIDE_CACHE}/cache.${DATASOURCE}"
 
-	mkdir "${FREESIDE_CONF}/export.${DATASOURCE}"
-	chown freeside "${FREESIDE_CONF}/export.${DATASOURCE}"
+	mkdir "${FREESIDE_EXPORT}/export.${DATASOURCE}"
+	chown freeside "${FREESIDE_EXPORT}/export.${DATASOURCE}"
 
 configure-rt:
 	cd rt; \

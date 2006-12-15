@@ -23,7 +23,7 @@ drop_root();
 
 adminsuidsetup $user;
 
-logfile( "%%%FREESIDE_CONF%%%/sqlradius-radacctd-log.". $FS::UID::datasrc );
+logfile( "%%%FREESIDE_LOG%%%/sqlradius-radacctd-log.". $FS::UID::datasrc );
 
 daemonize2();
 

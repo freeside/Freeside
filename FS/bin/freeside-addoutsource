@@ -3,6 +3,8 @@
 domain=$1
 
 FREESIDE_CONF=%%%FREESIDE_CONF%%%
+FREESIDE_CACHE=%%%FREESIDE_CACHE%%%
+FREESIDE_EXPORT=%%%FREESIDE_EXPORT%%%
 
 #without this, [a-z]* matches CVS/, the copy doesn't return a sucessful error
 # status, and the rest of the commands aren't run
@@ -24,7 +26,7 @@ chmod 600 $FREESIDE_CONF/conf.DBI:Pg:dbname=$domain/secrets && \
 \
 echo -e "DBI:Pg:dbname=$domain\nfreeside\n" >$FREESIDE_CONF/conf.DBI:Pg:dbname=$domain/secrets && \
 \
-mkdir $FREESIDE_CONF/counters.DBI:Pg:dbname=$domain && \
-mkdir $FREESIDE_CONF/cache.DBI:Pg:dbname=$domain && \
-mkdir $FREESIDE_CONF/export.DBI:Pg:dbname=$domain
+mkdir $FREESIDE_CACHE/counters.DBI:Pg:dbname=$domain && \
+mkdir $FREESIDE_CACHE/cache.DBI:Pg:dbname=$domain && \
+mkdir $FREESIDE_EXPORT/export.DBI:Pg:dbname=$domain
 

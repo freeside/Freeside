@@ -2,11 +2,13 @@
 
 domain=$1
 FREESIDE_CONF=%%%FREESIDE_CONF%%%
+FREESIDE_CACHE=%%%FREESIDE_CACHE%%%
+FREESIDE_EXPORT=%%%FREESIDE_EXPORT%%%
 
 dropdb $domain && \
 rm -rf $FREESIDE_CONF/conf.DBI:Pg:host=localhost\;dbname=$domain && \
-rm -rf $FREESIDE_CONF/counters.DBI:Pg:host=localhost\;dbname=$domain && \
-rm -rf $FREESIDE_CONF/cache.DBI:Pg:host=localhost\;dbname=$domain && \
-rm -rf $FREESIDE_CONF/export.DBI:Pg:host=localhost\;dbname=$domain && \
+rm -rf $FREESIDE_CACHE/counters.DBI:Pg:host=localhost\;dbname=$domain && \
+rm -rf $FREESIDE_CACHE/cache.DBI:Pg:host=localhost\;dbname=$domain && \
+rm -rf $FREESIDE_EXPORT/export.DBI:Pg:host=localhost\;dbname=$domain && \
 rm $FREESIDE_CONF/dbdef.DBI:Pg:host=localhost\;dbname=$domain
 

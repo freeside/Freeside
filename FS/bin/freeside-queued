@@ -41,7 +41,7 @@ while ( $@ ) {
   }
 }
 
-logfile( "%%%FREESIDE_CONF%%%/queuelog.". $FS::UID::datasrc );
+logfile( "%%%FREESIDE_LOG%%%/queuelog.". $FS::UID::datasrc );
 
 warn "completing daemonization (detaching))\n" if $DEBUG;
 daemonize2();

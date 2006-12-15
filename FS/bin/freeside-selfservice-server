@@ -1,6 +1,7 @@
 #!/usr/bin/perl -w
 
 use strict;
+use vars qw( $FREESIDE_LOG $FREESIDE_LOCK );
 use vars qw( $Debug %kids $kids $max_kids $ssh_pid %old_ssh_pid $keepalives );
 use subs qw( lock_write unlock_write myshutdown usage );
 use Fcntl qw(:flock);
@@ -18,7 +19,8 @@ use FS::Conf;
 use FS::cust_bill;
 use FS::cust_pkg;
 
-$FREESIDE_CONF = "%%%FREESIDE_CONF%%%";
+$FREESIDE_LOG = "%%%FREESIDE_LOG%%%";
+$FREESIDE_LOCK = "%%%FREESIDE_LOCK%%%";
 
 $Debug = 1; # 2 will turn on more logging
             # 3 will log packet contents, including passwords
@@ -31,8 +33,7 @@ my $user = shift or die &usage;
 my $machine = shift or die &usage;
 my $tag = scalar(@ARGV) ? shift : '';
 
-my $lock_file = "/usr/local/etc/freeside/selfservice.$machine.writelock";
-
+my $lock_file = "$FREESIDE_LOCK/selfservice.$machine.writelock";
 
 # to keep pid files unique w/multi machines (and installs!)
 # $FS::UID::datasrc not posible
@@ -52,7 +53,7 @@ $ENV{HOME} = (getpwuid($>))[7]; #for ssh
 adminsuidsetup $user;
 
 #logfile("/usr/local/etc/freeside/selfservice.". $FS::UID::datasrc); #MACHINE
-logfile("$FREESIDE_SERVER/selfservice.$machine.log");
+logfile("$FREESIDE_LOG/selfservice.$machine.log");
 
 daemonize2();
 
