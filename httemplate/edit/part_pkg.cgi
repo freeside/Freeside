@@ -225,12 +225,13 @@ Tax information
 %
 %tie my %options, 'Tie::IxHash', map { $_=>$plans{$_}->{'name'} } keys %plans;
 %
-%my @form_select = ('classnum');
-%if ( $conf->exists('enable_taxclasses') ) {
-%  push @form_select, 'taxclass';
-%} else {
-%  push @fixups, 'taxclass'; #hidden
-%}
+%#my @form_select = ('classnum');
+%#if ( $conf->exists('enable_taxclasses') ) {
+%#  push @form_select, 'taxclass';
+%#} else {
+%#  push @fixups, 'taxclass'; #hidden
+%#}
+%my @form_elements = ( 'classnum', 'taxclass' );
 %
 %my @form_radio = ();
 %if ( dbdef->table('pkg_svc')->column('primary_svc') ) {
@@ -247,12 +248,12 @@ Tax information
 %  'options'        => \%options,
 %  'form_name'      => 'dummy',
 %  'form_action'    => 'process/part_pkg.cgi',
+%  'form_elements'  => \@form_elements,
 %  'form_text'      => [ qw(pkg comment promo_code clone pkgnum pkgpart),
 %                        @fixups
 %                      ],
 %  'form_checkbox'  => [ qw(setuptax recurtax disabled) ],
 %  'form_radio'     => \@form_radio,
-%  'form_select'    => \@form_select,
 %  'layer_callback' => sub {
 %    my $layer = shift;
 %    my $html = qq!<INPUT TYPE="hidden" NAME="plan" VALUE="$layer">!.
