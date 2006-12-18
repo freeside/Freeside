@@ -177,6 +177,7 @@ dev-docs:
 	perl -p -i -e "\
 	  s'%%%FREESIDE_DOCUMENT_ROOT%%%'${FREESIDE_DOCUMENT_ROOT}'g; \
 	  s'%%%RT_ENABLED%%%'${RT_ENABLED}'g; \
+	  s'%%%MASONDATA%%%'${MASONDATA}'g;\
 	  s'###use Module::Refresh;###'use Module::Refresh;'; \
 	  s'###Module::Refresh->refresh;###'Module::Refresh->refresh;'; \
 	" ${MASON_HANDLER} || true
