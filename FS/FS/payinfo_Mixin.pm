@@ -2,6 +2,7 @@ package FS::payinfo_Mixin;
 
 use strict;
 use Business::CreditCard;
+use FS::payby;
 
 =head1 NAME
 
@@ -13,7 +14,7 @@ package FS::some_table;
 use vars qw(@ISA);
 @ISA = qw( FS::payinfo_Mixin FS::Record );
 
-=head1 DESCRIPTION
+=had1 DESCRIPTION
 
 This is a mixin class for records that contain payinfo. 
 
@@ -25,7 +26,7 @@ Encryption - In the Future (Pull from Record.pm)
 Bad Card Stuff - In the Future (Integrate Banned Pay)
 Currency - In the Future
 
-=head1 fields
+=head1 FIELDS
 
 =over 4
 
@@ -37,12 +38,12 @@ For Customers (cust_main):
 'CARD' (credit card - automatic), 'DCRD' (credit card - on-demand),
 'CHEK' (electronic check - automatic), 'DCHK' (electronic check - on-demand),
 'LECB' (Phone bill billing), 'BILL' (billing), 'COMP' (free), or
-'PREPAY' (special billing type: applies a credit - see L<FS::prepay_credit> and sets billing type to I<BILL>)
+'PREPAY' (special billing type: applies a credit and sets billing type to I<BILL> - see L<FS::prepay_credit>)
 
 For Refunds (cust_refund):
 'CARD' (credit cards), 'CHEK' (electronic check/ACH),
 'LECB' (Phone bill billing), 'BILL' (billing), 'CASH' (cash),
-'WEST' (Western Union), 'MCRD' (Manual credit card), 'CBAK' Chargeback, or 'COMP' (free),
+'WEST' (Western Union), 'MCRD' (Manual credit card), 'CBAK' Chargeback, or 'COMP' (free)
 
 
 For Payments (cust_pay):
@@ -52,15 +53,16 @@ For Payments (cust_pay):
 'COMP' (free) is depricated as a payment type in cust_pay
 
 =cut 
- 
-sub payby {
-  my($self,$payby) = @_;
-  if ( defined($payby) ) {
-    $self->setfield('payby', $payby);
-  } 
-  return $self->getfield('payby')
-}
 
+# was this supposed to do something?
+ 
+#sub payby {
+#  my($self,$payby) = @_;
+#  if ( defined($payby) ) {
+#    $self->setfield('payby', $payby);
+#  } 
+#  return $self->getfield('payby')
+#}
 
 =item payinfo
 
@@ -99,6 +101,7 @@ sub paycvv {
     }
   } else {
 #    warn "This doesn't work for other tables besides cust_main
+    '';
   } 
 }
 
@@ -125,7 +128,13 @@ sub paymask {
   return $paymask;
 }
 
-=item mask_payinfo()
+=back
+
+=head1 METHODS
+
+=over 4
+
+=item mask_payinfo
 
 This method converts the payment info (credit card, bank account, etc.) into a masked string.
 
@@ -142,7 +151,7 @@ sub mask_payinfo {
   } else {
     # if not, mask it...
     if ($payby eq 'CARD' || $payby eq 'DCRD' || $payby eq 'MCRD') { # Credit Cards (Show first and last four)
-      $paymask = substr($payinfo,0,4). 'x'x(length($payinfo)-8). substr($payinfo,(length($payinfo)-4));
+      $paymask = substr($payinfo,0,6). 'x'x(length($payinfo)-10). substr($payinfo,(length($payinfo)-4));
     } elsif ($payby eq 'CHEK' ||
              $payby eq 'DCHK' ) { # Checks (Show last 2 @ bank)
       my( $account, $aba ) = split('@', $payinfo );
@@ -154,14 +163,9 @@ sub mask_payinfo {
   return $paymask;
 }
 
-=back
-
-
-=head1 METHODS
-
-=over 4
-
 =item payinfo_check
+
+Checks payby and payinfo.
 
 For Customers (cust_main):
 'CARD' (credit card - automatic), 'DCRD' (credit card - on-demand),
@@ -182,33 +186,11 @@ For Payments (cust_pay):
 
 =cut
 
-
-
-
-
 sub payinfo_check {
   my $self = shift;
 
-  # Make sure it's a valid payby
-  $self->payby =~ /^(CARD|DCRD|CHEK|DCHK|LECB|BILL|COMP|PREPAY|CASH|WEST|MCRD|PREP|CBAK)$/
-    or return "Illegal payby (overall payinfo_check)";
-  $self->payby($1);
-
-
-  # Okay some aren't valid depending on table
-  if ($self->table eq 'cust_main') {
-    if ($self->payby =~ /^(CASH|WEST|MCRD|PREP|CBAK)$/) {
-      return "Illegal payby (cust_main)";
-    }
-  } elsif ($self->table eq 'cust_refund') {
-    if ($self->payby =~ /^(DCRD|DCHK|PREPAY|PREP)$/) {
-      return "Illegal payby (cust_refund)";
-    }
-  } elsif ($self->table eq 'cust_pay') {
-    if ($self->payby =~ /^(DCRD|DCHK|PREPAY|CBAK)$/) {
-      return "Illegal payby (cust_pay)";
-    }
-  }
+  FS::payby->can_payby($self->table, $self->payby)
+    or return "Illegal payby";
 
   if ( $self->payby eq 'CARD' ) {
     my $payinfo = $self->payinfo;
@@ -218,8 +200,8 @@ sub payinfo_check {
       $self->payinfo =~ /^(\d{13,16})$/
         or return "Illegal (mistyped?) credit card number (payinfo)";
       $self->payinfo($1);
-      Business::CreditCard::validate($self->payinfo) or return "Illegal credit card number";
-      return "Unknown card type" if Business::CreditCard::cardtype($self->payinfo) eq "Unknown";
+      validate($self->payinfo) or return "Illegal credit card number";
+      return "Unknown card type" if cardtype($self->payinfo) eq "Unknown";
     } else {
       $self->payinfo('N/A');
     }
@@ -229,15 +211,13 @@ sub payinfo_check {
   }
 }
 
-
-
 =head1 BUGS
 
 Have to add the future items...
 
 =head1 SEE ALSO
 
-L<FS::Record>
+L<FS::payby>, L<FS::Record>
 
 =cut
 

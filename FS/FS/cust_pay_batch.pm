@@ -3,10 +3,11 @@ package FS::cust_pay_batch;
 use strict;
 use vars qw( @ISA $DEBUG );
 use FS::Record qw(dbh qsearch qsearchs);
+use FS::payinfo_Mixin;
 use FS::part_bill_event qw(due_events);
 use Business::CreditCard 0.28;
 
-@ISA = qw( FS::Record );
+@ISA = qw( FS::Record FS::payinfo_Mixin );
 
 # 1 is mostly method/subroutine entry and options
 # 2 traces progress of some operations
@@ -124,7 +125,7 @@ sub check {
 
   my $error = 
       $self->ut_numbern('paybatchnum')
-    || $self->ut_numbern('trancode') #depriciated
+    || $self->ut_numbern('trancode') #deprecated
     || $self->ut_money('amount')
     || $self->ut_number('invnum')
     || $self->ut_number('custnum')
@@ -142,11 +143,7 @@ sub check {
   $self->first =~ /^([\w \,\.\-\']+)$/ or return "Illegal first name";
   $self->first($1);
 
-  $self->payby =~ /^(CARD|CHEK|LECB|BILL|COMP|PREP|CASH|WEST|MCRD)$/
-    or return "Illegal payby";
-  $self->payby($1);
-
-  $error = FS::payby::payinfo_check($self->payby, \$self->payinfo);
+  $error = $self->payinfo_check();
   return $error if $error;
 
   if ( $self->exp eq '' ) {

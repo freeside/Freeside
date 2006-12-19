@@ -18,6 +18,8 @@ FS::payby - Object methods for payment type records
 
   my @payby = FS::payby->payby;
 
+  my $bool = FS::payby->can_payby('cust_main', 'CARD');
+
   tie my %payby, 'Tie::IxHash', FS::payby->payby2longname
 
   my @cust_payby = FS::payby->cust_payby;
@@ -38,7 +40,7 @@ Payment types.
 
 # paybys can be any/all of:
 # - a customer payment type (cust_main.payby)
-# - a payment or refund type (cust_pay.payby)
+# - a payment or refund type (cust_pay.payby, cust_pay_batch.payby, cust_refund.payby)
 # - an event type (part_bill_event.payby)
 
 tie %hash, 'Tie::IxHash',
@@ -96,6 +98,13 @@ tie %hash, 'Tie::IxHash',
     tinyname  => 'comp',
     shortname => 'Complimentary',
     longname  => 'Complimentary',
+    cust_pay  => '', # (free) is depricated as a payment type in cust_pay
+  },
+  'CBAK' => {
+    tinyname  => 'chargeback',
+    shortname => 'Chargeback',
+    longname  => 'Chargeback',
+    cust_main => '', # not a customer type
   },
   'DCLN' => {  # This is only an event.
     tinyname  => 'declined',
@@ -103,7 +112,7 @@ tie %hash, 'Tie::IxHash',
     longname  => 'Batch declined payment',
 
     #its neither of these..
-    #cust_main => '',
+    cust_main => '',
     cust_pay  => '',
 
   },
@@ -111,6 +120,18 @@ tie %hash, 'Tie::IxHash',
 
 sub payby {
   keys %hash;
+}
+
+sub can_payby {
+  my( $self, $table, $payby ) = @_;
+
+  #return "Illegal payby" unless $hash{$payby};
+  return 0 unless $hash{$payby};
+
+  $table = 'cust_pay' if $table eq 'cust_pay_batch' || $table eq 'cust_refund';
+  return 0 if exists( $hash{$payby}->{$table} );
+
+  return 1;
 }
 
 sub payby2longname {
@@ -151,28 +172,6 @@ sub cust_payby {
 sub cust_payby2longname {
   my $self = shift;
   map { $_ => $hash{$_}->{longname} } $self->cust_payby;
-}
-
-sub payinfo_check{
-  my($payby, $payinforef) = @_;
-
-  if ($payby eq 'CARD') {
-    $$payinforef =~ s/\D//g;
-    if ($$payinforef){
-      $$payinforef =~ /^(\d{13,16})$/
-        or return "Illegal (mistyped?) credit card number (payinfo)";
-      $$payinforef = $1;
-      validate($$payinforef) or return "Illegal credit card number";
-      return "Unknown card type" if cardtype($$payinforef) eq "Unknown";
-    } else {
-      $$payinforef="N/A";
-    }
-  } else {
-    $$payinforef =~ /^([\w \!\@\#\$\%\&\(\)\-\+\;\:\'\"\,\.\?\/\=]*)$/
-    or return "Illegal text (payinfo)";
-    $$payinforef = $1;
-  }
-  '';
 }
 
 =back

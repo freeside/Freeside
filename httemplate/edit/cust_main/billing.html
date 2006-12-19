@@ -149,8 +149,6 @@
 %  my $disabled = 'DISABLED style="background-color: #dddddd"';
 %  my $text_disabled = 'style="color: #999999"';
 %
-%  # this is not going to work unless the mask-generation recognizes
-%  # Switch/Solo cards
 %  if ( $payby =~ /^(CARD|DCRD)$/ && cardtype($paymask) =~ /^(Switch|Solo)$/ ) {
 %    $disabled = 'style="background-color: #ffffff"';
 %    $text_disabled = 'style="color: #000000";'
@@ -194,7 +192,7 @@
 %                    'end_year'   => (localtime())[5] + 1900,
 %                    'selected_date' => (
 %                      ( $payby =~ /^(CARD|DCRD)$/
-%                        && cardtype($paymask) =~ /^(Switch|Solo)$/ ) #also
+%                        && cardtype($paymask) =~ /^(Switch|Solo)$/ )
 %                          ? $cust_main->paystart_month. '-'.
 %                            $cust_main->paystart_year 
 %                          : ''

@@ -21,9 +21,13 @@
 %             or die "illegal payby ". $cgi->param('payby');
 %         push @search, "cust_pay.payby = '$1'";
 %         if ( $3 ) {
-%           if ( $3 eq 'VisaMC' ) {
+%
+%           my $cardtype = $3;
+%
+%           my $search;
+%           if ( $cardtype eq 'VisaMC' ) {
 %             #avoid posix regexes for portability
-%             push @search,
+%             $search =
 %               " ( (     substring(cust_pay.payinfo from 1 for 1) = '4'     ".
 %               "     AND substring(cust_pay.payinfo from 1 for 4) != '4936' ".
 %               "     AND substring(cust_pay.payinfo from 1 for 6)           ".
@@ -43,19 +47,21 @@
 %               "   OR substring(cust_pay.payinfo from 1 for 2) = '54' ".
 %               "   OR substring(cust_pay.payinfo from 1 for 2) = '54' ".
 %               "   OR substring(cust_pay.payinfo from 1 for 2) = '55' ".
+%               "   OR substring(cust_pay.payinfo from 1 for 2) = '36' ". #Diner's int'l processed as Visa/MC inside US
 %               " ) ";
-%           } elsif ( $3 eq 'Amex' ) {
-%             push @search,
+%           } elsif ( $cardtype eq 'Amex' ) {
+%             $search =
 %               " (    substring(cust_pay.payinfo from 1 for 2 ) = '34' ".
 %               "   OR substring(cust_pay.payinfo from 1 for 2 ) = '37' ".
 %               " ) ";
-%           } elsif ( $3 eq 'Discover' ) {
-%             push @search,
+%           } elsif ( $cardtype eq 'Discover' ) {
+%             $search =
 %               " (    substring(cust_pay.payinfo from 1 for 4 ) = '6011'  ".
-%               "   OR substring(cust_pay.payinfo from 1 for 3 ) = '650'   ".
+%               "   OR substring(cust_pay.payinfo from 1 for 2 ) = '65'    ".
+%               "   OR substring(cust_pay.payinfo from 1 for 3 ) = '622'   ". #China Union Pay processed as Discover outside CN
 %               " ) ";
-%           } elsif ( $3 eq 'Maestro' ) { 
-%             push @search,
+%           } elsif ( $cardtype eq 'Maestro' ) { 
+%             $search =
 %               " (    substring(cust_pay.payinfo from 1 for 2 ) = '63'     ".
 %               "   OR substring(cust_pay.payinfo from 1 for 2 ) = '67'     ".
 %               "   OR substring(cust_pay.payinfo from 1 for 6 ) = '564182' ".
@@ -72,8 +78,15 @@
 %               "      SIMILAR TO '49118[1-2]'                             ".
 %               " ) ";
 %           } else {
-%             die "unknown card type $3";
+%             die "unknown card type $cardtype";
 %           }
+%
+%           my $masksearch = $search;
+%           $masksearch =~ s/cust_pay\.payinfo/cust_pay.paymask/gi;
+%
+%           push @search,
+%             "( $search OR ( cust_pay.paymask IS NOT NULL AND $masksearch ) )";
+%
 %         }
 %       }
 %  
