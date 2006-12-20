@@ -134,34 +134,47 @@ sub paymask {
 
 =over 4
 
-=item mask_payinfo
+=item mask_payinfo [ PAYBY, PAYINFO ]
 
-This method converts the payment info (credit card, bank account, etc.) into a masked string.
+This method converts the payment info (credit card, bank account, etc.) into a
+masked string.
+
+Optionally, an arbitrary payby and payinfo can be passed.
 
 =cut
 
 sub mask_payinfo {
   my $self = shift;
-  my $paymask;
-  my $payinfo = $self->payinfo;
-  my $payby = $self->payby;
+  my $payby   = scalar(@_) ? shift : $self->payby;
+  my $payinfo = scalar(@_) ? shift : $self->payinfo;
+
   # Check to see if it's encrypted...
-  if ($self->is_encrypted($payinfo)) {
+  my $paymask;
+  if ( $self->is_encrypted($payinfo) ) {
     $paymask = 'N/A';
   } else {
     # if not, mask it...
-    if ($payby eq 'CARD' || $payby eq 'DCRD' || $payby eq 'MCRD') { # Credit Cards (Show first and last four)
-      $paymask = substr($payinfo,0,6). 'x'x(length($payinfo)-10). substr($payinfo,(length($payinfo)-4));
-    } elsif ($payby eq 'CHEK' ||
-             $payby eq 'DCHK' ) { # Checks (Show last 2 @ bank)
+    if ($payby eq 'CARD' || $payby eq 'DCRD' || $payby eq 'MCRD') {
+      # Credit Cards (Show first and last four)
+      $paymask = substr($payinfo,0,6).
+                 'x'x(length($payinfo)-10).
+                 substr($payinfo,(length($payinfo)-4));
+    } elsif ($payby eq 'CHEK' || $payby eq 'DCHK' ) {
+      # Checks (Show last 2 @ bank)
       my( $account, $aba ) = split('@', $payinfo );
-      $paymask = 'x'x(length($account)-2). substr($account,(length($account)-2))."@".$aba;
+      $paymask = 'x'x(length($account)-2).
+                 substr($account,(length($account)-2))."@".$aba;
     } else { # Tie up loose ends
       $paymask = $payinfo;
     }
   }
   return $paymask;
 }
+
+=cut
+
+sub _mask_payinfo {
+  my $self = shift;
 
 =item payinfo_check
 

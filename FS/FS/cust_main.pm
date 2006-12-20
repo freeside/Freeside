@@ -2549,7 +2549,12 @@ sub realtime_bop {
       if qsearch('cust_pay', { 'custnum' => $self->custnum,
                                'payby'   => 'CARD',
                                'payinfo' => $payinfo,
+                             } )
+      || qsearch('cust_pay', { 'custnum' => $self->custnum,
+                               'payby'   => 'CARD',
+                               'paymask' => $self->mask_payinfo('CARD', $payinfo),
                              } );
+
 
   } elsif ( $method eq 'ECHECK' ) {
     ( $content{account_number}, $content{routing_code} ) =
