@@ -78,6 +78,11 @@
 %  # # listref of URL base and column name (or method)
 %  # # or a coderef that returns the same
 %  # 'redirect' =>
+%  #
+%  # #set to 1 (or column position for "disabled" status col) to enable
+%  # #"show disabled/hide disabled" links
+%  # #(can't be used with a literal query)
+%  # 'disableable' => 1,
 %
 %  my $DEBUG = 0;
 %
@@ -104,9 +109,15 @@
 %
 %  } else { #setup some pagination things if we're in html mode
 %
-%    unless (exists($opt{'count_query'}) && length($opt{'count_query'})) {
-%      ( $opt{'count_query'} = $opt{'query'} ) =~
+%    unless (exists($opt{count_query}) && length($opt{count_query})) {
+%      ( $opt{count_query} = $opt{query} ) =~
 %        s/^\s*SELECT\s*(.*?)\s+FROM\s/SELECT COUNT(*) FROM /i; #silly vim:/
+%    }
+%
+%    if ( $opt{disableable} && ! $cgi->param('showdisabled') ) {
+%      $opt{count_query} .=
+%        ( ( $opt{count_query} =~ /WHERE/i ) ? ' AND ' : ' WHERE ' ).
+%        "( disabled = '' OR disabled IS NULL )";
 %    }
 %
 %    my $conf = new FS::Conf;
@@ -131,11 +142,72 @@
 %
 %  }
 %
+%  #disableable handling
+%  my $posttotal = '';
+%  if ( $opt{disableable} ) {
+%
+%    my $name= $opt{'name_singular'} ? PL($opt{'name_singular'}) : $opt{'name'};
+%
+%    if ( $cgi->param('showdisabled') ) {
+%      $cgi->param('showdisabled', 0);
+%      $posttotal= '( <a href="'. $cgi->self_url. '">'.
+%                  "hide disabled $name</a> )";
+%      $cgi->param('showdisabled', 1);
+%    } else {
+%      $cgi->param('showdisabled', 1);
+%      $posttotal= '( <a href="'. $cgi->self_url. '">'.
+%                  "show disabled $name</a> )";
+%      $cgi->param('showdisabled', 0);
+%    }
+%
+%    if ( $cgi->param('showdisabled') ) {
+%
+%      my $offset = $opt{disableable};
+%
+%      splice @{ $opt{header} }, $offset, 0, 'Status';
+%
+%      splice @{ $opt{fields} }, $offset, 0,
+%        sub { shift->disabled ? 'DISABLED' : 'Active' };
+%
+%      if ( $opt{links} && scalar( @{ $opt{links} } ) ) {
+%        splice @{ $opt{links} }, $offset, 0, '';
+%      }
+%
+%      if ( $opt{align} && scalar( @{ $opt{align} } ) ) {
+%        splice @{ $opt{align} }, $offset, 0, 'center';
+%      }
+%
+%      unless ( $opt{color} && scalar( @{ $opt{color} } ) ) {
+%        #$opt{color} = [ map { '000000'; } @{$opt{header}} ];
+%        $opt{color} = [ map { ''; } @{$opt{header}} ];
+%      }
+%      splice @{ $opt{color} }, $offset, 0,
+%        sub { shift->disabled ? 'FF0000' : '00CC00'; };
+%
+%      if ( $opt{size} && scalar( @{ $opt{size} } ) ) {
+%        splice @{ $opt{size} }, $offset, 0, '';
+%      }
+%
+%      unless ( $opt{style} && scalar( @{ $opt{style} } ) ) {
+%        $opt{style} = [ map { ''; } @{$opt{header}} ];
+%      }
+%      splice @{ $opt{style} }, $offset, 0, 'b';
+%
+%    }
+%
+%  }
+%
 %  # run the query
 %
-%  my $header = $opt{'header'};
+%  my $header = $opt{header};
 %  my $rows;
-%  if ( ref($opt{'query'}) ) {
+%  if ( ref($opt{query}) ) {
+%
+%    if ( $opt{disableable} && ! $cgi->param('showdisabled') ) {
+%      #%search = ( 'disabled' => '' );
+%      $opt{'query'}->{'hashref'}->{'disabled'} = '';
+%      $opt{'query'}->{'extra_sql'} =~ s/^\s*WHERE/ AND/i;
+%    }
 %
 %    #eval "use FS::$opt{'query'};";
 %    $rows = [ qsearch(
@@ -306,12 +378,9 @@
 %      my @menubar = ();
 %      if ( $opt{'menubar'} ) {
 %        @menubar = @{ $opt{'menubar'} };
-%      } else {
-%        @menubar = ( 'Main menu' => $p );
+%      #} else {
+%      #  @menubar = ( 'Main menu' => $p );
 %      }
-%
-%
-%  
 
   <% include( '/elements/header.html', $opt{'title'},
                  include( '/elements/menubar.html', @menubar )
@@ -357,6 +426,7 @@
 %           $cgi->param('maxrecords', $maxrecords);
 %         }
 
+          <% $posttotal %>
 
           <% defined($opt{'html_posttotal'}) 
                 ? ( ref($opt{'html_posttotal'})

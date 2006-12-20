@@ -38,6 +38,8 @@ from FS::Record.  The following fields are currently supported:
 
 =item classname - Text name of this package class
 
+=item disabled - Disabled flag, empty or 'Y'
+
 =back
 
 =head1 METHODS

@@ -12,9 +12,9 @@
 %
 <% include( 'elements/browse.html',
                  'title'       => 'Package classes',
-                 'menubar'     => [ 'Main menu' => $p, ],
                  'html_init'   => $html_init,
                  'name'        => 'package classes',
+                 'disableable' => 1,
                  'query'       => { 'table'     => 'pkg_class',
                                     'hashref'   => {},
                                     'extra_sql' => 'ORDER BY classnum',

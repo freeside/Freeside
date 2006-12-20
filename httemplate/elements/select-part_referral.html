@@ -12,7 +12,7 @@
                  'empty_label' => 'Select advertising source',
                  'hashref'     => { 'disabled' => '' },
                  'extra_sql'   => ' AND '.
-                                  FS::part_referral->all_part_referral(1),
+                                  FS::part_referral->acl_agentnum_sql(1),
                  %opt,
              )
 %>

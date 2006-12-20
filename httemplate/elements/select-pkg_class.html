@@ -1,4 +1,3 @@
-%
 %  my( $classnum, %opt ) = @_;
 %
 %  $opt{'records'} = delete $opt{'pkg_class'}
@@ -6,13 +5,12 @@
 %
 %  #warn "***** select-pkg-class: \n". Dumper(%opt);
 %
-%
 <% include( '/elements/select-table.html',
                  'table'       => 'pkg_class',
                  'name_col'    => 'classname',
                  'value'       => $classnum,
                  'empty_label' => '(none)',
-                 #'hashref'     => { 'disabled' => '' },
+                 'hashref'     => { 'disabled' => '' },
                  %opt,
              )
 %>

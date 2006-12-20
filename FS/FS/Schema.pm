@@ -1388,10 +1388,11 @@ sub tables_hashref {
       'columns' => [
         'classnum',   'serial',  '', '', '', '', 
         'classname',  'varchar', '', $char_d, '', '', 
+        'disabled',     'char', 'NULL',   1, '', '', 
       ],
       'primary_key' => 'classnum',
       'unique' => [],
-      'index' => [],
+      'index' => [ ['disabled'] ],
     },
 
     'cdr' => {
