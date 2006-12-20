@@ -689,8 +689,8 @@ sub option {
   my %plandata = map { /^(\w+)=(.*)$/; ( $1 => $2 ); }
                      split("\n", $self->get('plandata') );
   return $plandata{$opt} if exists $plandata{$opt};
-  cluck "WARNING: (pkgpart ". $self->pkgpart. ") Package def option $opt".
-        "not found in options or plandata!\n"
+  cluck "WARNING: (pkgpart ". $self->pkgpart. ") Package def option $opt ".
+        "NOT found in options or plandata!\n"
     unless $ornull;
   '';
 }

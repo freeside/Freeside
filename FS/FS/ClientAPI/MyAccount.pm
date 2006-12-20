@@ -578,11 +578,11 @@ sub list_svcs {
                             'upbytes'   => $svc_x->upbytes,
                             'downbytes' => $svc_x->downbytes,
                             'totalbytes'=> $svc_x->totalbytes,
-                            'recharge_amount' => $part_pkg->option('recharge_amount'),
-                            'recharge_seconds' => $part_pkg->option('recharge_seconds'),
-                            'recharge_upbytes' => $part_pkg->option('recharge_upbytes'),
-                            'recharge_downbytes' => $part_pkg->option('recharge_downbytes'),
-                            'recharge_totalbytes' => $part_pkg->option('recharge_totalbytes'),
+                            'recharge_amount' => $part_pkg->option('recharge_amount', 1),
+                            'recharge_seconds' => $part_pkg->option('recharge_seconds', 1),
+                            'recharge_upbytes' => $part_pkg->option('recharge_upbytes', 1),
+                            'recharge_downbytes' => $part_pkg->option('recharge_downbytes', 1),
+                            'recharge_totalbytes' => $part_pkg->option('recharge_totalbytes', 1),
                             # more...
                           };
                         }
@@ -721,10 +721,10 @@ sub order_recharge {
   my $part_pkg = $cust_svc->cust_pkg->part_pkg;
 
   my %vhash =
-    map { $_ =~ /^recharge_(.*)$/; $1, $part_pkg->option($_) } 
+    map { $_ =~ /^recharge_(.*)$/; $1, $part_pkg->option($_, 1) } 
     qw ( recharge_seconds recharge_upbytes recharge_downbytes
          recharge_totalbytes );
-  my $amount = $part_pkg->option('recharge_amount'); 
+  my $amount = $part_pkg->option('recharge_amount', 1); 
   
   my $old_balance = $cust_main->balance;
 
