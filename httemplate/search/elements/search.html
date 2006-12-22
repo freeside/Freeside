@@ -13,6 +13,10 @@
 %  # # some HTML callbacks...
 %  # 'menubar'          => '', #menubar arrayref
 %  # 'html_init'        => '', #after the header/menubar and before the pager
+%  # 'html_form'        => '', #after the pager, right before the results
+%  #                           # (only shown if there are results)
+%  #                           # (use this for any form-opening tag rather than
+%  #                           #  html_init, to avoid a nested form)
 %  # 'html_foot'        => '', #at the bottom
 %  # 'html_posttotal'   => '', #at the bottom
 %  #                           # (these three can be strings or coderefs)
@@ -472,6 +476,14 @@
                            'total'      => $total,
                            'maxrecords' => $maxrecords,
             ) %>
+
+            <% defined($opt{'html_form'}) 
+                 ? ( ref($opt{'html_form'})
+                       ? &{$opt{'html_form'}}()
+                       : $opt{'html_form'}
+                   )
+                 : ''
+            %>
 
             <% include('/elements/table-grid.html') %>
 
