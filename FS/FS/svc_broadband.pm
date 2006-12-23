@@ -155,15 +155,16 @@ sub check {
     || $self->ut_number('speed_down')
     || $self->ut_ipn('ip_addr')
     || $self->ut_hexn('mac_addr')
-    || $self->ut_numbern('vlan')
+    || $self->ut_hexn('auth_key')
+    || $self->ut_floatn('latitude')
+    || $self->ut_floatn('longitude')
+    || $self->ut_floatn('altitude')
+    || $self->ut_textn('vlan_profile')
   ;
   return $error if $error;
 
   if($self->speed_up < 0) { return 'speed_up must be positive'; }
   if($self->speed_down < 0) { return 'speed_down must be positive'; }
-
-  if($self->vlan < 0 || $self->vlan > 4096) { # apropos?
-    return 'vlan is out of range'; }
 
   if($self->latitude < -90 || $self->latitude > 90) {
     return 'latitude must be between -90 and 90';

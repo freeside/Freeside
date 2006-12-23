@@ -67,11 +67,19 @@
 %
 %my $p1 = popurl(1);
 %
-%my ($ip_addr, $speed_up, $speed_down, $blocknum) =
+%my ($ip_addr, $speed_up, $speed_down, $blocknum, $mac_addr,
+%    $latitude, $longitude, $altitude, $vlan_profile, $auth_key) =
 %    ($svc_broadband->ip_addr,
 %     $svc_broadband->speed_up,
 %     $svc_broadband->speed_down,
-%     $svc_broadband->blocknum);
+%     $svc_broadband->blocknum,
+%     $svc_broadband->mac_addr,
+%     $svc_broadband->latitude,
+%     $svc_broadband->longitude,
+%     $svc_broadband->altitude,
+%     $svc_broadband->vlan_profile,
+%     $svc_broadband->auth_key,
+%    );
 %
 %
 
@@ -164,6 +172,56 @@ Service #<B><%$svcnum ? $svcnum : "(NEW)"%></B><BR><BR>
       </TD>
     </TR>
 % } 
+    <TR>
+      <TD ALIGN="right">MAC Address</TD>
+      <TD BGCOLOR="#ffffff">
+        <INPUT TYPE="text" NAME="mac_addr" VALUE="<%$mac_addr%>">
+      </TD>
+    </TR>
+    <TR>
+      <TD ALIGN="right">Latitude</TD>
+      <TD BGCOLOR="#ffffff">
+        <INPUT TYPE="text" NAME="latitude" VALUE="<%$latitude%>">
+      </TD>
+    </TR>
+    <TR>
+      <TD ALIGN="right">Longitude</TD>
+      <TD BGCOLOR="#ffffff">
+        <INPUT TYPE="text" NAME="longitude" VALUE="<%$longitude%>">
+      </TD>
+    </TR>
+    <TR>
+      <TD ALIGN="right">Altitude</TD>
+      <TD BGCOLOR="#ffffff">
+        <INPUT TYPE="text" NAME="altitude" VALUE="<%$altitude%>">
+      </TD>
+    </TR>
+    <TR>
+      <TD ALIGN="right">VLAN Profile</TD>
+      <TD BGCOLOR="#ffffff">
+% if ( $part_svc->part_svc_column('vlan_profile')->columnflag eq 'F' ) { 
+
+        <INPUT TYPE="hidden" NAME="vlan_profile" VALUE="<%$vlan_profile%>"><%$vlan_profile%>
+% } else { 
+
+        <INPUT TYPE="text" NAME="vlan_profile" VALUE="<%$vlan_profile%>">
+% } 
+
+      </TD>
+    </TR>
+    <TR>
+      <TD ALIGN="right">Authentication Key</TD>
+      <TD BGCOLOR="#ffffff">
+% if ( $part_svc->part_svc_column('auth_key')->columnflag eq 'F' ) { 
+
+        <INPUT TYPE="hidden" NAME="auth_key" VALUE="<%$auth_key%>"><%$auth_key%>
+% } else { 
+
+        <INPUT TYPE="text" NAME="auth_key" VALUE="<%$auth_key%>">
+% } 
+
+      </TD>
+    </TR>
 %
 %foreach my $field ($svc_broadband->virtual_fields) {
 %  if ( $part_svc->part_svc_column($field)->columnflag ne 'F' &&

@@ -33,6 +33,12 @@
 %     $ip_addr,
 %     $ip_gateway,
 %     $ip_netmask,
+%     $mac_addr,
+%     $latitude,
+%     $longitude,
+%     $altitude,
+%     $vlan_profile,
+%     $auth_key,
 %   ) = (
 %     $router->getfield('routername'),
 %     $router->getfield('routernum'),
@@ -41,6 +47,12 @@
 %     $svc_broadband->getfield('ip_addr'),
 %     $addr_block->ip_gateway,
 %     $addr_block->NetAddr->mask,
+%     $svc_broadband->mac_addr,
+%     $svc_broadband->latitude,
+%     $svc_broadband->longitude,
+%     $svc_broadband->altitude,
+%     $svc_broadband->vlan_profile,
+%     $svc_broadband->auth_key,
 %   );
 %
 
@@ -89,6 +101,30 @@
         <TR>
           <TD ALIGN="right">IP Gateway</TD>
           <TD BGCOLOR="#ffffff"><%$ip_gateway%></TD>
+        </TR>
+        <TR>
+          <TD ALIGN="right">MAC Address</TD>
+          <TD BGCOLOR="#ffffff"><%$mac_addr%></TD>
+        </TR>
+        <TR>
+          <TD ALIGN="right">Latitude</TD>
+          <TD BGCOLOR="#ffffff"><%$latitude%></TD>
+        </TR>
+        <TR>
+          <TD ALIGN="right">Longitude</TD>
+          <TD BGCOLOR="#ffffff"><%$longitude%></TD>
+        </TR>
+        <TR>
+          <TD ALIGN="right">Altitude</TD>
+          <TD BGCOLOR="#ffffff"><%$altitude%></TD>
+        </TR>
+        <TR>
+          <TD ALIGN="right">VLAN Profile</TD>
+          <TD BGCOLOR="#ffffff"><%$vlan_profile%></TD>
+        </TR>
+        <TR>
+          <TD ALIGN="right">Authentication Key</TD>
+          <TD BGCOLOR="#ffffff"><%$auth_key%></TD>
         </TR>
         <TR COLSPAN="2"><TD></TD></TR>
 %
