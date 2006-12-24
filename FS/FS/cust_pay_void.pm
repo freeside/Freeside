@@ -209,20 +209,6 @@ sub cust_main {
   qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
 }
 
-=item payinfo_masked
-
-< DEPRICATED > Use $self->paymask
-
-Returns a "masked" payinfo field with all but the last four characters replaced
-by 'x'es.  Useful for displaying credit cards.
-
-=cut
-
-sub payinfo_masked {
-  my $self = shift;
-  return $self->paymask;
-}
-
 =back
 
 =head1 BUGS

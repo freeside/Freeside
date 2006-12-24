@@ -267,28 +267,11 @@ sub unapplied {
   sprintf("%.2f", $amount );
 }
 
-=item payinfo_masked
-
-<DEPRICATED> Use $self->paymask
-
-Returns a "masked" payinfo field with all but the last four characters replaced
-by 'x'es.  Useful for displaying credit cards.
-
-=cut
-
-
-sub payinfo_masked {
-  my $self = shift;
-  return $self->paymask;
-}
-
-
 =back
 
 =head1 BUGS
 
-Delete and replace methods.  payinfo_masked false laziness with cust_main.pm
-and cust_pay.pm
+Delete and replace methods.
 
 =head1 SEE ALSO
 

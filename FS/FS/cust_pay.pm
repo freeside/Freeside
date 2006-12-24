@@ -201,7 +201,7 @@ sub insert {
     my $payby = $self->payby;
     my $payinfo = $self->payinfo;
     $payby =~ s/^BILL$/Check/ if $payinfo;
-    $payinfo = $self->payinfo_masked if $payby eq 'CARD' || $payby eq 'CHEK';
+    $payinfo = $self->paymask if $payby eq 'CARD' || $payby eq 'CHEK';
     $payby =~ s/^CHEK$/Electronic check/;
 
     my $error = send_email(
@@ -517,24 +517,6 @@ sub cust_main {
   my $self = shift;
   qsearchs( 'cust_main', { 'custnum' => $self->custnum } );
 }
-
-=item payinfo_masked
-
-<DEPRICATED> Use $self->paymask
-
-Returns a "masked" payinfo field appropriate to the payment type.  Masked characters are replaced by 'x'es.  Use this to display publicly accessable account Information.
-
-Credit Cards - Mask all but the last four characters.
-Checks - Mask all but last 2 of account number and bank routing number.
-Others - Do nothing, return the unmasked string.
-
-=cut
-
-sub payinfo_masked {
-  my $self = shift;
-  return $self->paymask;
-}
-
 
 =back
 

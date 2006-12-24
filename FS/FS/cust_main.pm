@@ -1093,7 +1093,7 @@ sub replace {
   local($ignore_expired_card) = 1
     if $old->payby  =~ /^(CARD|DCRD)$/
     && $self->payby =~ /^(CARD|DCRD)$/
-    && $old->payinfo eq $self->payinfo;
+    && ( $old->payinfo eq $self->payinfo || $old->paymask eq $self->paymask );
 
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
@@ -1321,7 +1321,10 @@ sub check {
     }
   }
 
-  $self->payby =~ /^(CARD|DCRD|CHEK|DCHK|LECB|BILL|COMP|PREPAY|CASH|WEST|MCRD)$/
+  #$self->payby =~ /^(CARD|DCRD|CHEK|DCHK|LECB|BILL|COMP|PREPAY|CASH|WEST|MCRD)$/
+  #  or return "Illegal payby: ". $self->payby;
+  #$self->payby($1);
+  FS::payby->can_payby($self->table, $self->payby)
     or return "Illegal payby: ". $self->payby;
 
   $error =    $self->ut_numbern('paystart_month')
@@ -1346,8 +1349,6 @@ sub check {
     $check_payinfo = 0;
   }
 
-  $self->payby($1);
-
   if ( $check_payinfo && $self->payby =~ /^(CARD|DCRD)$/ ) {
 
     my $payinfo = $self->payinfo;
@@ -1370,20 +1371,18 @@ sub check {
              ' (ban# '. $ban->bannum. ')';
     }
 
-    if ( defined $self->dbdef_table->column('paycvv') ) {
-      if (length($self->paycvv) && !$self->is_encrypted($self->paycvv)) {
-        if ( cardtype($self->payinfo) eq 'American Express card' ) {
-          $self->paycvv =~ /^(\d{4})$/
-            or return "CVV2 (CID) for American Express cards is four digits.";
-          $self->paycvv($1);
-        } else {
-          $self->paycvv =~ /^(\d{3})$/
-            or return "CVV2 (CVC2/CID) is three digits.";
-          $self->paycvv($1);
-        }
+    if (length($self->paycvv) && !$self->is_encrypted($self->paycvv)) {
+      if ( cardtype($self->payinfo) eq 'American Express card' ) {
+        $self->paycvv =~ /^(\d{4})$/
+          or return "CVV2 (CID) for American Express cards is four digits.";
+        $self->paycvv($1);
       } else {
-        $self->paycvv('');
+        $self->paycvv =~ /^(\d{3})$/
+          or return "CVV2 (CVC2/CID) is three digits.";
+        $self->paycvv($1);
       }
+    } else {
+      $self->paycvv('');
     }
 
     my $cardtype = cardtype($payinfo);
@@ -1416,12 +1415,13 @@ sub check {
     $payinfo =~ s/[^\d\@]//g;
     if ( $conf->exists('echeck-nonus') ) {
       $payinfo =~ /^(\d+)\@(\d+)$/ or return 'invalid echeck account@aba';
+      $payinfo = "$1\@$2";
     } else {
       $payinfo =~ /^(\d+)\@(\d{9})$/ or return 'invalid echeck account@aba';
+      $payinfo = "$1\@$2";
     }
-    $payinfo = "$1\@$2";
     $self->payinfo($payinfo);
-    $self->paycvv('') if $self->dbdef_table->column('paycvv');
+    $self->paycvv('');
 
     my $ban = qsearchs('banned_pay', $self->_banned_pay_hashref);
     if ( $ban ) {
@@ -1438,13 +1438,13 @@ sub check {
     $payinfo =~ /^1?(\d{10})$/ or return 'invalid btn billing telephone number';
     $payinfo = $1;
     $self->payinfo($payinfo);
-    $self->paycvv('') if $self->dbdef_table->column('paycvv');
+    $self->paycvv('');
 
   } elsif ( $self->payby eq 'BILL' ) {
 
     $error = $self->ut_textn('payinfo');
     return "Illegal P.O. number: ". $self->payinfo if $error;
-    $self->paycvv('') if $self->dbdef_table->column('paycvv');
+    $self->paycvv('');
 
   } elsif ( $self->payby eq 'COMP' ) {
 
@@ -1458,7 +1458,7 @@ sub check {
 
     $error = $self->ut_textn('payinfo');
     return "Illegal comp account issuer: ". $self->payinfo if $error;
-    $self->paycvv('') if $self->dbdef_table->column('paycvv');
+    $self->paycvv('');
 
   } elsif ( $self->payby eq 'PREPAY' ) {
 
@@ -1469,7 +1469,7 @@ sub check {
     return "Illegal prepayment identifier: ". $self->payinfo if $error;
     return "Unknown prepayment identifier"
       unless qsearchs('prepay_credit', { 'identifier' => $self->payinfo } );
-    $self->paycvv('') if $self->dbdef_table->column('paycvv');
+    $self->paycvv('');
 
   }
 
@@ -3335,23 +3335,6 @@ sub paydate_monthyear {
   } else {
     ('', '');
   }
-}
-
-=item payinfo_masked
-
-< DEPRICATED > Use $self->paymask
-
-Returns a "masked" payinfo field appropriate to the payment type.  Masked characters are replaced by 'x'es.  Use this to display publicly accessable account Information.
-
-Credit Cards - Mask all but the last four characters.
-Checks - Mask all but last 2 of account number and bank routing number.
-Others - Do nothing, return the unmasked string.
-
-=cut
-
-sub payinfo_masked {
-  my $self = shift;
-  return $self->paymask;
 }
 
 =item invoicing_list [ ARRAYREF ]

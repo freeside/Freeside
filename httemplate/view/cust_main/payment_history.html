@@ -229,7 +229,7 @@
 %
 %  my $payby = $cust_pay_void->payby;
 %  my $payinfo = $payby eq 'CARD'
-%                  ? $cust_pay_void->payinfo_masked
+%                  ? $cust_pay_void->paymask
 %                  : $cust_pay_void->payinfo;
 %
 %  $payby =~ s/^BILL$/Check #/ if $payinfo;
@@ -365,7 +365,7 @@
 %
 %  my $payby = $cust_refund->payby;
 %  my $payinfo = $payby eq 'CARD'
-%                  ? $cust_refund->payinfo_masked
+%                  ? $cust_refund->paymask
 %                  : $cust_refund->payinfo;
 %
 %  $payby =~ s/^BILL$/Check #/ if $payinfo;

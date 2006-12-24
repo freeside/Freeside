@@ -17,6 +17,7 @@
 %my $error = '';
 %my($custnum, $username, $password, $popnum, $cust_main, $saved_pkgpart);
 %my(@invoicing_list);
+%my $payinfo;
 %my $same = '';
 %if ( $cgi->param('error') ) {
 %  $error = $cgi->param('error');
@@ -36,6 +37,7 @@
 %  @invoicing_list = split( /\s*,\s*/, $cgi->param('invoicing_list') );
 %  $same = $cgi->param('same');
 %  $cust_main->setfield('paid' => $cgi->param('paid')) if $cgi->param('paid');
+%  $payinfo = $cust_main->payinfo; # don't mask an entered value on errors
 %} elsif ( $cgi->keywords ) { #editing
 %  my( $query ) = $cgi->keywords;
 %  $query =~ /^(\d+)$/;
@@ -52,6 +54,7 @@
 %  $password = '';
 %  $popnum = 0;
 %  @invoicing_list = $cust_main->invoicing_list;
+%  $payinfo = $cust_main->paymask;
 %} else {
 %  $custnum='';
 %  $cust_main = new FS::cust_main ( {} );
@@ -64,6 +67,7 @@
 %  @invoicing_list = ();
 %  push @invoicing_list, 'POST'
 %    unless $conf->exists('disablepostalinvoicedefault');
+%  $payinfo = '';
 %}
 %$cgi->delete_all();
 %
@@ -259,6 +263,7 @@ Service address
 <!-- billing info -->
 
 <% include( 'cust_main/billing.html', $cust_main,
+               'payinfo'        => $payinfo,
                'invoicing_list' => \@invoicing_list,
            )
 %>
