@@ -34,10 +34,14 @@
             opt(what.form.<% $opt{'prefix'} %>county, countiesArray[s], countyLabel);
         }
 
+        var countyFormLabel = document.getElementById('<% $opt{'prefix'} %>countylabel');
+
         if ( countiesArray.length > 1 ) { 
           what.form.<% $opt{'prefix'} %>county.style.display = '';
+          countyFormLabel.style.visibility = 'visible';
         } else {
           what.form.<% $opt{'prefix'} %>county.style.display = 'none';
+          countyFormLabel.style.visibility = 'hidden';
         }
 
         //run the callback
@@ -84,16 +88,7 @@ foreach my $opt (qw( county state country prefix onchange disabled )) {
 my @counties = ();
 if ( $countyflag ) {
 
-  @counties =
-      sort
-      map { $_->county }
-      qsearch( {
-        'select'  => 'DISTINCT county',
-        'table'   => 'cust_main_county',
-        'hashref' => { 'state'   => $opt{'state'},
-                       'country' => $opt{'country'},
-                     },
-      } );
+  @counties = counties( $opt{'state'}, $opt{'country'} );
 
   # this is very hacky
   unless ( scalar(@counties) > 1 ) {

@@ -1,50 +1,8 @@
-%
-%
-%my( $cust_main, $pre, $onchange, $disabled ) = @_;
-%my $conf = new FS::Conf;
-%
-%#false laziness with ship state
-%my $countrydefault = $conf->config('countrydefault') || 'US';
-%$cust_main->set($pre.'country', $countrydefault )
-%  unless $cust_main->get($pre.'country');
-%
-%my $statedefault = $conf->config('statedefault')
-%                   || ($countrydefault eq 'US' ? 'CA' : '');
-%$cust_main->set($pre.'state', $statedefault )
-%  unless $cust_main->get($pre.'state')
-%         || $cust_main->get($pre.'country') ne $countrydefault;
-%
-%#my($county_html, $state_html, $country_html) =
-%#  FS::cust_main_county::regionselector( $cust_main->get($pre.'county'),
-%#                                        $cust_main->get($pre.'state'),
-%#                                        $cust_main->get($pre.'country'),
-%#                                        $pre,
-%#                                        $onchange,
-%#                                        $disabled,
-%#                                      );
-%
-%my %select_hash = (
-%  'county'   => $cust_main->get($pre.'county'),
-%  'state'    => $cust_main->get($pre.'state'),
-%  'country'  => $cust_main->get($pre.'country'),
-%  'prefix'   => $pre,
-%  'onchange' => $onchange,
-%  'disabled' => $disabled,
-%);
-%
-%my $daytime_label = FS::Msgcat::_gettext('daytime') || 'Day Phone';
-%my $night_label = FS::Msgcat::_gettext('night') || 'Night Phone';
-%
-%my $r = qq!<font color="#ff0000">*</font>&nbsp;!;
-%
-%
-
-
 <% &ntable("#cccccc") %>
 
 <TR>
   <TH ALIGN="right"><%$r%>Contact&nbsp;name<BR>(last,&nbsp;first)</TH>
-  <TD COLSPAN=3>
+  <TD COLSPAN=5>
     <INPUT TYPE="text" NAME="<%$pre%>last" VALUE="<% $cust_main->get($pre.'last') %>" onChange="<% $onchange %>" <%$disabled%>> , 
     <INPUT TYPE="text" NAME="<%$pre%>first" VALUE="<% $cust_main->get($pre.'first') %>" onChange="<% $onchange %>" <%$disabled%>>
   </TD>
@@ -62,21 +20,21 @@
 
 <TR>
   <TD ALIGN="right">Company</TD>
-  <TD COLSPAN=5>
+  <TD COLSPAN=7>
     <INPUT TYPE="text" NAME="<%$pre%>company" VALUE="<% $cust_main->get($pre.'company') %>" SIZE=70 onChange="<% $onchange %>" <%$disabled%>>
   </TD>
 </TR>
 
 <TR>
   <TH ALIGN="right"><%$r%>Address</TH>
-  <TD COLSPAN=5>
+  <TD COLSPAN=7>
     <INPUT TYPE="text" NAME="<%$pre%>address1" VALUE="<% $cust_main->get($pre.'address1') %>" SIZE=70 onChange="<% $onchange %>" <%$disabled%>>
   </TD>
 </TR>
 
 <TR>
   <TD ALIGN="right">&nbsp;</TD>
-  <TD COLSPAN=5>
+  <TD COLSPAN=7>
     <INPUT TYPE="text" NAME="<%$pre%>address2" VALUE="<% $cust_main->get($pre.'address2') %>" SIZE=70 onChange="<% $onchange %>" <%$disabled%>>
   </TD>
 </TR>
@@ -86,9 +44,12 @@
   <TD>
     <INPUT TYPE="text" NAME="<%$pre%>city" VALUE="<% $cust_main->get($pre.'city') %>" onChange="<% $onchange %>" <%$disabled%>>
   </TD>
-  <TH ALIGN="right"><%$r%>State</TH>
+  <TH ALIGN="right" ID="<%$pre%>countylabel" <%$county_style%>><%$r%>County</TH>
   <TD>
     <% include('select-county.html', %select_hash ) %>
+  </TD>
+  <TH ALIGN="right"><%$r%>State</TH>
+  <TD>
     <% include('select-state.html', %select_hash ) %>
   </TD>
   <TH><%$r%>Zip</TH>
@@ -126,3 +87,48 @@
 </TABLE>
 <%$r%>required fields<BR>
 
+<%init>
+
+my( $cust_main, $pre, $onchange, $disabled ) = @_;
+my $conf = new FS::Conf;
+
+#false laziness with ship state
+my $countrydefault = $conf->config('countrydefault') || 'US';
+$cust_main->set($pre.'country', $countrydefault )
+  unless $cust_main->get($pre.'country');
+
+my $statedefault = $conf->config('statedefault')
+                   || ($countrydefault eq 'US' ? 'CA' : '');
+$cust_main->set($pre.'state', $statedefault )
+  unless $cust_main->get($pre.'state')
+         || $cust_main->get($pre.'country') ne $countrydefault;
+
+#my($county_html, $state_html, $country_html) =
+#  FS::cust_main_county::regionselector( $cust_main->get($pre.'county'),
+#                                        $cust_main->get($pre.'state'),
+#                                        $cust_main->get($pre.'country'),
+#                                        $pre,
+#                                        $onchange,
+#                                        $disabled,
+#                                      );
+
+my %select_hash = (
+  'county'   => $cust_main->get($pre.'county'),
+  'state'    => $cust_main->get($pre.'state'),
+  'country'  => $cust_main->get($pre.'country'),
+  'prefix'   => $pre,
+  'onchange' => $onchange,
+  'disabled' => $disabled,
+);
+
+my @counties = counties( $cust_main->get($pre.'state'),
+                         $cust_main->get($pre.'country'),
+                       );
+my $county_style = scalar(@counties) > 1 ? '' : 'STYLE="visibility:hidden"';
+
+my $daytime_label = FS::Msgcat::_gettext('daytime') || 'Day Phone';
+my $night_label = FS::Msgcat::_gettext('night') || 'Night Phone';
+
+my $r = qq!<font color="#ff0000">*</font>&nbsp;!;
+
+</%init>

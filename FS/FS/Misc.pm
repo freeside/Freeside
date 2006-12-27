@@ -7,7 +7,10 @@ use Carp;
 use Data::Dumper;
 
 @ISA = qw( Exporter );
-@EXPORT_OK = qw( send_email send_fax states_hash state_label card_types );
+@EXPORT_OK = qw( send_email send_fax
+                 states_hash counties state_label
+                 card_types
+               );
 
 $DEBUG = 0;
 
@@ -359,13 +362,12 @@ sub states_hash {
 #     sort
      map { s/[\n\r]//g; $_; }
      map { $_->state; }
-     qsearch({ 
-               'select'    => 'state',
-               'table'     => 'cust_main_county',
-               'hashref'   => { 'country' => $country },
-               'extra_sql' => 'GROUP BY state',
-            })
-  ;
+         qsearch({ 
+                   'select'    => 'state',
+                   'table'     => 'cust_main_county',
+                   'hashref'   => { 'country' => $country },
+                   'extra_sql' => 'GROUP BY state',
+                });
 
   #it could throw a fatal "Invalid country code" error (for example "AX")
   my $subcountry = eval { new Locale::SubCountry($country) }
@@ -376,6 +378,26 @@ sub states_hash {
   sort { $a->[1] cmp $b->[1] }
   map  { [ $_ => state_label($_, $subcountry) ] }
        @states;
+}
+
+=item counties STATE COUNTRY
+
+Returns a list of counties for this state and country.
+
+=cut
+
+sub counties {
+  my( $state, $country ) = @_;
+
+  sort map { s/[\n\r]//g; $_; }
+       map { $_->county }
+           qsearch({
+             'select'  => 'DISTINCT county',
+             'table'   => 'cust_main_county',
+             'hashref' => { 'state'   => $state,
+                            'country' => $country,
+                          },
+           });
 }
 
 =item state_label STATE COUNTRY_OR_LOCALE_SUBCOUNRY_OBJECT

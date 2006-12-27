@@ -129,7 +129,7 @@ sub handler
                      eidiot small_custview myexit http_header);
       use FS::UI::Web;
       use FS::Msgcat qw(gettext geterror);
-      use FS::Misc qw( send_email send_fax states_hash state_label );
+      use FS::Misc qw( send_email send_fax states_hash counties state_label );
       use FS::Report::Table::Monthly;
       use FS::TicketSystem;
 
