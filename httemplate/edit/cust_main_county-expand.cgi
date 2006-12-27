@@ -19,7 +19,11 @@
 %
 %my $cust_main_county = qsearchs('cust_main_county',{'taxnum'=>$taxnum})
 %  or die "cust_main_county.taxnum $taxnum not found";
-%die "Can't expand entry!" if $cust_main_county->getfield('county');
+%if ( $taxclass ) {
+%  die "Can't expand entry!" if $cust_main_county->getfield('taxclass');
+%} else {
+%  die "Can't expand entry!" if $cust_main_county->getfield('county');
+%}
 %
 %my $p1 = popurl(1);
 %print header("Tax Rate (expand)", menubar(
