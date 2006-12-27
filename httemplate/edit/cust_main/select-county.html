@@ -16,8 +16,8 @@
   
     function <% $opt{'prefix'} %>state_changed(what, callback) {
 
-      state = what.options[what.selectedIndex].text;
-      country = what.form.<% $opt{'prefix'} %>country.options[what.form.<% $opt{'prefix'} %>country.selectedIndex].text;
+      state = what.options[what.selectedIndex].value;
+      country = what.form.<% $opt{'prefix'} %>country.options[what.form.<% $opt{'prefix'} %>country.selectedIndex].value;
   
       function <% $opt{'prefix'} %>update_counties(counties) {
 
@@ -34,6 +34,12 @@
             opt(what.form.<% $opt{'prefix'} %>county, countiesArray[s], countyLabel);
         }
 
+        if ( countiesArray.length > 1 ) { 
+          what.form.<% $opt{'prefix'} %>county.style.display = '';
+        } else {
+          what.form.<% $opt{'prefix'} %>county.style.display = 'none';
+        }
+
         //run the callback
         if ( callback != null ) 
           callback();
@@ -47,14 +53,8 @@
   </SCRIPT>
 
   <SELECT NAME="<% $opt{'prefix'} %>county" onChange="<% $opt{'onchange'} %>" <% $opt{'disabled'} %>>
-% foreach my $county (
-%       sort
-%       map { $_->county }
-%       qsearch('cust_main_county', { 'state'   => $opt{'state'},
-%                                     'country' => $opt{'country'},
-%                                   }
-%              )
-% ) {
+
+% foreach my $county ( @counties ) {
 
     <OPTION VALUE="<% $county %>"<% $county eq $opt{'county'} ? ' SELECTED' : '' %>><% $county %>
 
@@ -75,14 +75,44 @@
 % } 
 
 <%init>
+
 my %opt = @_;
 foreach my $opt (qw( county state country prefix onchange disabled )) {
   $opt{$_} = '' unless exists($opt{$_}) && defined($opt{$_});
 }
+
+my @counties = ();
+if ( $countyflag ) {
+
+  @counties =
+      sort
+      map { $_->county }
+      qsearch( {
+        'select'  => 'DISTINCT county',
+        'table'   => 'cust_main_county',
+        'hashref' => { 'state'   => $opt{'state'},
+                       'country' => $opt{'country'},
+                     },
+      } );
+
+  # this is very hacky
+  unless ( scalar(@counties) > 1 ) {
+    if ( $opt{'disabled'} =~ /STYLE=/i ) {
+      $opt{'disabled'} =~ s/STYLE="([^"]+)"/STYLE="$1; display:none"/i;
+    } else {
+      $opt{'disabled'} .= ' STYLE="display:none"';
+    }
+  }
+
+}
+
+</%init>
+<%once>
 
 my $sql = "SELECT COUNT(*) FROM cust_main_county".
           " WHERE county IS NOT NULL AND county != ''";
 my $sth = dbh->prepare($sql) or die dbh->errstr;
 $sth->execute or die $sth->errstr;
 my $countyflag = $sth->fetchrow_arrayref->[0];
-</%init>
+
+</%once>

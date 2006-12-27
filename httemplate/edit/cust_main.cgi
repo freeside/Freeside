@@ -204,17 +204,19 @@ function bill_changed(what) {
     what.form.ship_<%$_%>.value = what.form.<%$_%>.value;
 % } 
 
-
     what.form.ship_country.selectedIndex = what.form.country.selectedIndex;
-    function fix_ship_state() {
-      what.form.ship_state.selectedIndex = what.form.state.selectedIndex;
-    }
-    ship_country_changed(what.form.ship_country, fix_ship_state );
 
     function fix_ship_county() {
       what.form.ship_county.selectedIndex = what.form.county.selectedIndex;
     }
-    ship_state_changed(what.form.ship_state, fix_ship_county );
+
+    function fix_ship_state() {
+      what.form.ship_state.selectedIndex = what.form.state.selectedIndex;
+      ship_state_changed(what.form.ship_state, fix_ship_county );
+    }
+
+    ship_country_changed(what.form.ship_country, fix_ship_state );
+
   }
 }
 function samechanged(what) {
@@ -242,7 +244,7 @@ function samechanged(what) {
 %  my $disabledselect = '';
 %  unless ( $cust_main->ship_last && $same ne 'Y' ) {
 %    $checked = 'CHECKED';
-%    $disabled = 'DISABLED style="background-color: #dddddd"';
+%    $disabled = 'DISABLED STYLE="background-color: #dddddd"';
 %    foreach (
 %      qw( last first company address1 address2 city county state zip country
 %          daytime night fax )
