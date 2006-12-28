@@ -3,12 +3,13 @@
   function sh_add<% $name %>()
   {
 
-%if ($curuser->access_right($access_right)){
     if (document.getElementById('<% $name %>').selectedIndex == 0){
       <% $controlledbutton ? $controlledbutton.'.disabled = true;' : ';' %>
     }else{
       <% $controlledbutton ? $controlledbutton.'.disabled = false;' : ';' %>
     }
+
+%if ($curuser->access_right($access_right)){
 
     if (document.getElementById('<% $name %>').selectedIndex == 
          (document.getElementById('<% $name %>').length - 1)) {
