@@ -14,7 +14,7 @@ package FS::some_table;
 use vars qw(@ISA);
 @ISA = qw( FS::payinfo_Mixin FS::Record );
 
-=had1 DESCRIPTION
+=head1 DESCRIPTION
 
 This is a mixin class for records that contain payinfo. 
 
@@ -203,7 +203,7 @@ sub payinfo_check {
   my $self = shift;
 
   FS::payby->can_payby($self->table, $self->payby)
-    or return "Illegal payby";
+    or return "Illegal payby: ". $self->payby;
 
   if ( $self->payby eq 'CARD' ) {
     my $payinfo = $self->payinfo;
