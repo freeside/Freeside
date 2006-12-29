@@ -189,7 +189,7 @@
 %      '<TABLE BGCOLOR="#cccccc" BORDER=0 CELLSPACING=0 HEIGHT=192>'.
 %
 %        qq!<TR><TD ALIGN="right" WIDTH="200">${r}Account number </TD>!.
-%          qq!<TD WIDTH="408"><INPUT TYPE="text" SIZE=10 NAME="payinfo1" VALUE="!. ( $payby =~ /^(CHEK|DCHK)$/ ? $account : '' ). '"></TD></TR>'.
+%          qq!<TD WIDTH="408"><INPUT TYPE="text" SIZE=12 NAME="payinfo1" VALUE="!. ( $payby =~ /^(CHEK|DCHK)$/ ? $account : '' ). '"></TD></TR>'.
 %
 %        qq!<TR><TD ALIGN="right" WIDTH="200">${r}ABA/Routing number </TD>!.
 %          qq!<TD WIDTH="408"><INPUT TYPE="text" SIZE=10 MAXLENGTH=9 NAME="payinfo2" VALUE="!. ( $payby =~ /^(CHEK|DCHK)$/ ? $aba : '' ). qq!" SIZE=10 MAXLENGTH=9> !.
