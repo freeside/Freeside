@@ -40,6 +40,9 @@ case "$1" in
         kill `cat /var/run/freeside-queued.pid`
         echo "done."
 
+        #and
+        killall freeside-queued
+
         echo -n "Stopping freeside-sqlradius-radacctd: "
         kill `cat /var/run/freeside-sqlradius-radacctd.pid`
         echo "done."
