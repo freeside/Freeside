@@ -87,7 +87,7 @@ sub _export_delete {
 sub vpopmail_queue {
   my( $self, $svcnum, $method ) = (shift, shift, shift);
 
-  my $exportdir = "%%%FREESIDE_CONF%%%/export." . datasrc;
+  my $exportdir = "%%%FREESIDE_EXPORT%%%/export." . datasrc;
   mkdir $exportdir, 0700 or die $! unless -d $exportdir;
   $exportdir .= "/vpopmail";
   mkdir $exportdir, 0700 or die $! unless -d $exportdir;
