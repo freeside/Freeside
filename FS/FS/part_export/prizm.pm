@@ -140,7 +140,7 @@ sub _export_insert {
   my (@values) = ($svc->ip_addr,
                   $svc->latitude,
                   $svc->longitude,
-                  '',
+                  $svc->altitude,
                   $name,
                   $location,
                   $contact,
@@ -267,7 +267,7 @@ sub _export_replace {
         fields( 'svc_broadband' );
 
   my $element = $err_or_som->result->[0]->elementId;
-  my $err_or_som = $self->prizm_command('NetworkIfService', 'setElementConfig',
+  $err_or_som = $self->prizm_command('NetworkIfService', 'setElementConfig',
                                         [ $element ],
                                         \@names,
                                         \@values,
