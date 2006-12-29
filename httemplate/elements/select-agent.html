@@ -8,7 +8,7 @@
 <% include( '/elements/select-table.html',
                  'table'       => 'agent',
                  'name_col'    => 'agent',
-                 'value'       => $agentnum,
+                 'value'       => $agentnum || '',
                  'empty_label' => 'all',
                  'hashref'     => { 'disabled' => '' },
                  'extra_sql'   => ' AND '.
