@@ -746,8 +746,12 @@ sub unsuspend {
 
 =item cancel
 
-Stub - returns false (no error) so derived classes don't need to define these
+Stub - returns false (no error) so derived classes don't need to define this
 methods.  Called by the cancel method of FS::cust_pkg (see L<FS::cust_pkg>).
+
+This method is called *before* the deletion step which actually deletes the
+services.  This method should therefore only be used for "pre-deletion"
+cancellation steps, if necessary.
 
 =cut
 
