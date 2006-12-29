@@ -1,5 +1,3 @@
-%
-%
 %my $error = '';
 %
 %#unmunge stuff
@@ -160,7 +158,7 @@
 %       && $new->paycvv =~ /^\s*\*+\s*$/ ) {
 %    $new->paycvv($old->paycvv);
 %  }
-%  if ($new->payby =~ /CARD|DCRD|CHEK|DCHK/ && $new->payinfo =~ /xx/) {
+%  if ($new->payby =~ /^(CARD|DCRD|CHEK|DCHK)$/ && $new->payinfo =~ /xx/) {
 %    $new->payinfo($old->payinfo);
 %  }
 %  $error ||= $new->replace($old, \@invoicing_list);
@@ -173,6 +171,3 @@
 %} else { 
 %  print $cgi->redirect(popurl(3). "view/cust_main.cgi?". $new->custnum);
 %} 
-%
-
-
