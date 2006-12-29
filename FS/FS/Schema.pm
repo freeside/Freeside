@@ -867,13 +867,20 @@ sub tables_hashref {
 
     'svc_domain' => {
       'columns' => [
-        'svcnum',    'int',    '',   '', '', '', 
-        'domain',    'varchar',    '',   $char_d, '', '', 
-        'catchall',  'int', 'NULL',    '', '', '', 
+        'svcnum',           'int',    '',        '', '', '',
+        'domain',       'varchar',    '',   $char_d, '', '',
+	'suffix',       'varchar', 'NULL',  $char_d, '', '',
+        'catchall',         'int', 'NULL',       '', '', '',
+	'parent_svcnum',    'int', 'NULL',       '', '', '',
+	'registrarnum',     'int', 'NULL',       '', '', '',
+	'registrarkey', 'varchar', 'NULL',       '', '', '',
+	'setup_date',  @date_type, '', '',
+	'renewal_interval', 'int', 'NULL',       '', '', '',
+	'expiration_date', @date_type, '', '',
       ],
       'primary_key' => 'svcnum',
-      'unique' => [ ['domain'] ],
-      'index' => [],
+      'unique' => [ ],
+      'index' => [ ['domain'] ],
     },
 
     'domain_record' => {
@@ -888,6 +895,16 @@ sub tables_hashref {
       'primary_key' => 'recnum',
       'unique'      => [],
       'index'       => [ ['svcnum'] ],
+    },
+
+    'registrar' => {
+      'columns' => [
+        'registrarnum',   'serial', '',      '', '', '',
+	'registrarname', 'varchar', '', $char_d, '', '',
+      ],
+      'primary_key' => 'registrarnum',
+      'unique'      => [],
+      'index'       => [],
     },
 
     'svc_forward' => {

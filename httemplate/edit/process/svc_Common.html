@@ -1,0 +1,13 @@
+<%init>
+
+$cgi->param('svcdb') =~ /^(svc_\w+)$/ or die "unparsable svcdb";
+my $table = $1;
+require "FS/$table.pm";
+
+</%init>
+<% include( 'elements/svc_Common.html',
+              'table'    => $table,
+	      'redirect' => popurl(3)."view/svc_Common.html?svcdb=$table;svcnum=",
+	      'error_redirect' => popurl(3)."edit/svc_Common.html?svcdb=$table;",
+	  )
+%>

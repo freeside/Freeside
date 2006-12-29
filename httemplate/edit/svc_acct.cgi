@@ -18,39 +18,39 @@
 %  die "No part_svc entry for svcpart $svcpart!" unless $part_svc;
 %  @groups = $cgi->param('radius_usergroup');
 %
-%} else {
+%} elsif ( $cgi->param('pkgnum') && $cgi->param('svcpart') ) { #adding
 %
-%  my($query) = $cgi->keywords;
-%  if ( $query =~ /^(\d+)$/ ) { #editing
-%    $svcnum=$1;
-%    $svc_acct=qsearchs('svc_acct',{'svcnum'=>$svcnum})
-%      or die "Unknown (svc_acct) svcnum!";
+%  $cgi->param('pkgnum') =~ /^(\d+)$/ or die 'unparsable pkgnum';
+%  $pkgnum = $1;
+%  $cgi->param('svcpart') =~ /^(\d+)$/ or die 'unparsable svcpart';
+%  $svcpart = $1;
 %
-%    my($cust_svc)=qsearchs('cust_svc',{'svcnum'=>$svcnum})
-%      or die "Unknown (cust_svc) svcnum!";
-%
-%    $pkgnum=$cust_svc->pkgnum;
-%    $svcpart=$cust_svc->svcpart;
-%
-%    $part_svc = qsearchs( 'part_svc', { 'svcpart' => $svcpart } );
-%    die "No part_svc entry for svcpart $svcpart!" unless $part_svc;
-%
-%    @groups = $svc_acct->radius_groups;
-%
-%  } else { #adding
-%
-%    foreach $_ (split(/-/,$query)) {
-%      $pkgnum=$1 if /^pkgnum(\d+)$/;
-%      $svcpart=$1 if /^svcpart(\d+)$/;
-%    }
-%    $part_svc = qsearchs( 'part_svc', { 'svcpart' => $svcpart } );
-%    die "No part_svc entry for svcpart $svcpart!" unless $part_svc;
+%  $part_svc=qsearchs('part_svc',{'svcpart'=>$svcpart});
+%  die "No part_svc entry!" unless $part_svc;
 %
 %    $svc_acct = new FS::svc_acct({svcpart => $svcpart}); 
 %
 %    $svcnum='';
 %
-%  }
+%} else { #editing
+%
+%  my($query) = $cgi->keywords;
+%  $query =~ /^(\d+)$/ or die "unparsable svcnum";
+%  $svcnum=$1;
+%  $svc_acct=qsearchs('svc_acct',{'svcnum'=>$svcnum})
+%    or die "Unknown (svc_acct) svcnum!";
+%
+%  my($cust_svc)=qsearchs('cust_svc',{'svcnum'=>$svcnum})
+%    or die "Unknown (cust_svc) svcnum!";
+%
+%  $pkgnum=$cust_svc->pkgnum;
+%  $svcpart=$cust_svc->svcpart;
+%
+%  $part_svc = qsearchs( 'part_svc', { 'svcpart' => $svcpart } );
+%  die "No part_svc entry for svcpart $svcpart!" unless $part_svc;
+%
+%  @groups = $svc_acct->radius_groups;
+%
 %}
 %
 %my( $cust_pkg, $cust_main ) = ( '', '' );

@@ -1,8 +1,7 @@
-%
-%
 %my($svcnum, $pkgnum, $svcpart, $kludge_action, $purpose, $part_svc,
 %   $svc_domain);
 %if ( $cgi->param('error') ) {
+%
 %  $svc_domain = new FS::svc_domain ( {
 %    map { $_, scalar($cgi->param($_)) } fields('svc_domain')
 %  } );
@@ -13,40 +12,41 @@
 %  $purpose = $cgi->param('purpose');
 %  $part_svc = qsearchs('part_svc', { 'svcpart' => $svcpart } );
 %  die "No part_svc entry!" unless $part_svc;
-%} else {
+%
+%} elsif ( $cgi->param('pkgnum') && $cgi->param('svcpart') ) { #adding
+%
+%  $cgi->param('pkgnum') =~ /^(\d+)$/ or die 'unparsable pkgnum';
+%  $pkgnum = $1;
+%  $cgi->param('svcpart') =~ /^(\d+)$/ or die 'unparsable svcpart';
+%  $svcpart = $1;
+%
+%  $part_svc=qsearchs('part_svc',{'svcpart'=>$svcpart});
+%  die "No part_svc entry!" unless $part_svc;
+%
+%  $svc_domain = new FS::svc_domain({});
+%
+%  $svcnum='';
+%
+%  $svc_domain->set_default_and_fixed;
+%
+%} else { #editing
+%
 %  $kludge_action = '';
 %  $purpose = '';
 %  my($query) = $cgi->keywords;
-%  if ( $query =~ /^(\d+)$/ ) { #editing
-%    $svcnum=$1;
-%    $svc_domain=qsearchs('svc_domain',{'svcnum'=>$svcnum})
-%      or die "Unknown (svc_domain) svcnum!";
+%  $query =~ /^(\d+)$/ or die "unparsable svcnum";
+%  $svcnum=$1;
+%  $svc_domain=qsearchs('svc_domain',{'svcnum'=>$svcnum})
+%    or die "Unknown (svc_domain) svcnum!";
 %
-%    my($cust_svc)=qsearchs('cust_svc',{'svcnum'=>$svcnum})
-%      or die "Unknown (cust_svc) svcnum!";
+%  my($cust_svc)=qsearchs('cust_svc',{'svcnum'=>$svcnum})
+%    or die "Unknown (cust_svc) svcnum!";
 %
-%    $pkgnum=$cust_svc->pkgnum;
-%    $svcpart=$cust_svc->svcpart;
+%  $pkgnum=$cust_svc->pkgnum;
+%  $svcpart=$cust_svc->svcpart;
 %
-%    $part_svc=qsearchs('part_svc',{'svcpart'=>$svcpart});
-%    die "No part_svc entry!" unless $part_svc;
-%
-%  } else { #adding
-%
-%    $svc_domain = new FS::svc_domain({});
-%  
-%    foreach $_ (split(/-/,$query)) {
-%      $pkgnum=$1 if /^pkgnum(\d+)$/;
-%      $svcpart=$1 if /^svcpart(\d+)$/;
-%    }
-%    $part_svc=qsearchs('part_svc',{'svcpart'=>$svcpart});
-%    die "No part_svc entry!" unless $part_svc;
-%
-%    $svcnum='';
-%
-%    $svc_domain->set_default_and_fixed;
-%
-%  }
+%  $part_svc=qsearchs('part_svc',{'svcpart'=>$svcpart});
+%  die "No part_svc entry!" unless $part_svc;
 %
 %}
 %my $action = $svcnum ? 'Edit' : 'Add';

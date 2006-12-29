@@ -72,21 +72,33 @@ function part_export_areyousure(href) {
 %>
 % $cgi->param('showdisabled', ( 1 ^ $cgi->param('showdisabled') ) ); 
 
-<% table() %>
-  <TR>
-    <TH><A HREF="<% do { $cgi->param('orderby', 'svcpart'); $cgi->self_url } %>">#</A></TH>
-% if ( $cgi->param('showdisabled') ) { 
+<% include('/elements/table-grid.html') %>
+% my $bgcolor1 = '#eeeeee';
+%   my $bgcolor2 = '#ffffff';
+%   my $bgcolor = '';
 
-      <TH>Status</TH>
+  <TR>
+
+    <TH CLASS="grid" BGCOLOR="#cccccc"><A HREF="<% do { $cgi->param('orderby', 'svcpart'); $cgi->self_url } %>">#</A></TH>
+
+% if ( $cgi->param('showdisabled') ) { 
+      <TH CLASS="grid" BGCOLOR="#cccccc">Status</TH>
 % } 
 
-    <TH><A HREF="<% do { $cgi->param('orderby', 'svc'); $cgi->self_url; } %>">Service</A></TH>
-    <TH>Table</TH>
-    <TH><A HREF="<% do { $cgi->param('orderby', 'active'); $cgi->self_url; } %>"><FONT SIZE=-1>Customer<BR>Services</FONT></A></TH>
-    <TH>Export</TH>
-    <TH>Field</TH>
-    <TH COLSPAN=2>Modifier</TH>
+    <TH CLASS="grid" BGCOLOR="#cccccc"><A HREF="<% do { $cgi->param('orderby', 'svc'); $cgi->self_url; } %>">Service</A></TH>
+
+    <TH CLASS="grid" BGCOLOR="#cccccc">Table</TH>
+
+    <TH CLASS="grid" BGCOLOR="#cccccc"><A HREF="<% do { $cgi->param('orderby', 'active'); $cgi->self_url; } %>"><FONT SIZE=-1>Customer<BR>Services</FONT></A></TH>
+
+    <TH CLASS="grid" BGCOLOR="#cccccc">Export</TH>
+
+    <TH CLASS="grid" BGCOLOR="#cccccc">Field</TH>
+
+    <TH COLSPAN=2 CLASS="grid" BGCOLOR="#cccccc">Modifier</TH>
+
   </TR>
+
 % foreach my $part_svc ( @part_svc ) {
 %     my $svcdb = $part_svc->svcdb;
 %     my $svc_x = "FS::$svcdb"->new( { svcpart => $part_svc->svcpart } );
@@ -99,14 +111,21 @@ function part_export_areyousure(href) {
 %     my $rowspan = scalar(@fields) || 1;
 %     my $url = "${p}edit/part_svc.cgi?". $part_svc->svcpart;
 %
+%     if ( $bgcolor eq $bgcolor1 ) {
+%       $bgcolor = $bgcolor2;
+%     } else {
+%       $bgcolor = $bgcolor1;
+%     }
 
 
   <TR>
-    <TD ROWSPAN=<% $rowspan %>><A HREF="<% $url %>">
-      <% $part_svc->svcpart %></A></TD>
-% if ( $cgi->param('showdisabled') ) { 
 
-    <TD ROWSPAN=<% $rowspan %>>
+    <TD ROWSPAN=<% $rowspan %> CLASS="grid" BGCOLOR="<% $bgcolor %>">
+      <A HREF="<% $url %>"><% $part_svc->svcpart %></A>
+    </TD>
+
+% if ( $cgi->param('showdisabled') ) { 
+    <TD ROWSPAN=<% $rowspan %> CLASS="grid" BGCOLOR="<% $bgcolor %>">
       <% $part_svc->disabled
             ? '<FONT COLOR="#FF0000"><B>Disabled</B></FONT>'
             : '<FONT COLOR="#00CC00"><B>Enabled</B></FONT>'
@@ -114,19 +133,23 @@ function part_export_areyousure(href) {
     </TD>
 % } 
 
-    <TD ROWSPAN=<% $rowspan %>><A HREF="<% $url %>">
+    <TD ROWSPAN=<% $rowspan %> CLASS="grid" BGCOLOR="<% $bgcolor %>"><A HREF="<% $url %>">
       <% $part_svc->svc %></A></TD>
-    <TD ROWSPAN=<% $rowspan %>>
-      <% $svcdb %></TD>
-    <TD ROWSPAN=<% $rowspan %>>
-      <FONT COLOR="#00CC00"><B><% $num_active_cust_svc{$part_svc->svcpart} %></B></FONT>&nbsp;<A HREF="<%$p%>search/<% $svcdb %>.cgi?svcpart=<% $part_svc->svcpart %>">active</A>
-% if ( $num_active_cust_svc{$part_svc->svcpart} ) { 
 
+    <TD ROWSPAN=<% $rowspan %> CLASS="grid" BGCOLOR="<% $bgcolor %>">
+      <% $svcdb %></TD>
+
+    <TD ROWSPAN=<% $rowspan %> CLASS="grid" BGCOLOR="<% $bgcolor %>">
+      <FONT COLOR="#00CC00"><B><% $num_active_cust_svc{$part_svc->svcpart} %></B></FONT>&nbsp;<% $num_active_cust_svc{$part_svc->svcpart} ? FS::UI::Web::svc_url( 'ahref' => 1, 'm' => $m, 'action' => 'search', 'part_svc' => $part_svc, 'query' => "svcpart=". $part_svc->svcpart ) : '<A NAME="zero">' %>active</A>
+
+% if ( $num_active_cust_svc{$part_svc->svcpart} ) { 
         <BR><FONT SIZE="-1">[ <A HREF="<%$p%>edit/bulk-cust_svc.html?svcpart=<% $part_svc->svcpart %>">change</A> ]</FONT>
 % } 
 
     </TD>
-    <TD ROWSPAN=<% $rowspan %>><% itable() %>
+
+    <TD ROWSPAN=<% $rowspan %> CLASS="inv" BGCOLOR="<% $bgcolor %>">
+      <TABLE CLASS="inv">
 %
 %#  my @part_export =
 %map { qsearchs('part_export', { exportnum => $_->exportnum } ) } qsearch('export_svc', { svcpart => $part_svc->svcpart } ) ;
@@ -136,21 +159,30 @@ function part_export_areyousure(href) {
 %  ) {
 %
 
-      <TR>
-        <TD><A HREF="<% $p %>edit/part_export.cgi?<% $part_export->exportnum %>"><% $part_export->exportnum %>:&nbsp;<% $part_export->exporttype %>&nbsp;to&nbsp;<% $part_export->machine %></A></TD></TR>
+        <TR>
+          <TD><A HREF="<% $p %>edit/part_export.cgi?<% $part_export->exportnum %>"><% $part_export->exportnum %>:&nbsp;<% $part_export->exporttype %>&nbsp;to&nbsp;<% $part_export->machine %></A></TD>
+	</TR>
 %  } 
 
-      </TABLE></TD>
-%   my($n1)='';
+      </TABLE>
+    </TD>
+
+%     unless ( @fields ) {
+%       for ( 1..3 ) {  
+	  <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"</TD>
+%       }
+%     }
+%   
+%     my($n1)='';
 %     foreach my $field ( @fields ) {
 %       my $flag = $part_svc->part_svc_column($field)->columnflag;
 %
 
      <% $n1 %>
-     <TD><% $field %></TD>
-     <TD><% $flag{$flag} %></TD>
+     <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><% $field %></TD>
+     <TD CLASS="grid" BGCOLOR="<% $bgcolor %>"><% $flag{$flag} %></TD>
 
-     <TD>
+     <TD CLASS="grid" BGCOLOR="<% $bgcolor %>">
 % my $value = $part_svc->part_svc_column($field)->columnvalue;
 %          if ( $flag =~ /^[MA]$/ ) { 
 %            $inventory_class{$value}

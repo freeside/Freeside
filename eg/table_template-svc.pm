@@ -59,6 +59,60 @@ points to.  You can ask the object for a copy with the I<hash> method.
 
 sub table { 'table_name'; }
 
+sub table_info {
+  {
+    'name' => 'Example',
+    'name_plural' => 'Example services', #optional,
+    'longname_plural' => 'Example services', #optional
+    'sorts' => 'svcnum', # optional sort field (or arrayref of sort fields, main first)
+    'display_weight' => 100,
+    'cancel_weight'  => 100,
+    'fields' => {
+      'field'         => 'Description',
+      'another_field' => { 
+                           'label'     => 'Description',
+			   'def_label' => 'Description for service definitions',
+			   'type'      => 'text',
+			   'disable_default'   => 1, #disable switches
+			   'disable_fixed'     => 1, #
+			   'disable_inventory' => 1, #
+			 },
+      'foreign_key'   => { 
+                           'label'        => 'Description',
+			   'def_label'    => 'Description for service defs',
+			   'type'         => 'select',
+			   'select_table' => 'foreign_table',
+			   'select_key'   => 'key_field_in_table',
+			   'select_label' => 'label_field_in_table',
+			 },
+
+    },
+  };
+}
+
+=item search_sql STRING
+
+Class method which returns an SQL fragment to search for the given string.
+
+=cut
+
+#or something more complicated if necessary
+sub search_sql {
+  my($class, $string) = @_;
+  $class->search_sql_field('search_field', $string);
+}
+
+=item label
+
+Returns a meaningful identifier for this example
+
+=cut
+
+sub label {
+  my $self = shift;
+  $self->label_field; #or something more complicated if necessary
+}
+
 =item insert
 
 Adds this record to the database.  If there is an error, returns the error,

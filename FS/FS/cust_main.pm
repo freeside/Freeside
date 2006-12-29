@@ -1526,11 +1526,17 @@ Returns all packages (see L<FS::cust_pkg>) for this customer.
 
 sub all_pkgs {
   my $self = shift;
+
+  return $self->num_pkgs unless wantarray;
+
+  my @cust_pkg = ();
   if ( $self->{'_pkgnum'} ) {
-    values %{ $self->{'_pkgnum'}->cache };
+    @cust_pkg = values %{ $self->{'_pkgnum'}->cache };
   } else {
-    qsearch( 'cust_pkg', { 'custnum' => $self->custnum });
+    @cust_pkg = qsearch( 'cust_pkg', { 'custnum' => $self->custnum });
   }
+
+  sort sort_packages @cust_pkg;
 }
 
 =item ncancelled_pkgs
@@ -1541,19 +1547,43 @@ Returns all non-cancelled packages (see L<FS::cust_pkg>) for this customer.
 
 sub ncancelled_pkgs {
   my $self = shift;
+
+  return $self->num_ncancelled_pkgs unless wantarray;
+
+  my @cust_pkg = ();
   if ( $self->{'_pkgnum'} ) {
-    grep { ! $_->getfield('cancel') } values %{ $self->{'_pkgnum'}->cache };
+
+    @cust_pkg = grep { ! $_->getfield('cancel') }
+                values %{ $self->{'_pkgnum'}->cache };
+
   } else {
-    @{ [ # force list context
+
+    @cust_pkg =
       qsearch( 'cust_pkg', {
-        'custnum' => $self->custnum,
-        'cancel'  => '',
-      }),
+                             'custnum' => $self->custnum,
+                             'cancel'  => '',
+                           });
+    push @cust_pkg,
       qsearch( 'cust_pkg', {
-        'custnum' => $self->custnum,
-        'cancel'  => 0,
-      }),
-    ] };
+                             'custnum' => $self->custnum,
+                             'cancel'  => 0,
+                           });
+  }
+
+  sort sort_packages @cust_pkg;
+
+}
+
+# This should be generalized to use config options to determine order.
+sub sort_packages {
+  if ( $a->get('cancel') and $b->get('cancel') ) {
+    $a->pkgnum <=> $b->pkgnum;
+  } elsif ( $a->get('cancel') or $b->get('cancel') ) {
+    return -1 if $b->get('cancel');
+    return  1 if $a->get('cancel');
+    return 0;
+  } else {
+    $a->pkgnum <=> $b->pkgnum;
   }
 }
 
@@ -1602,8 +1632,11 @@ customer.
 =cut
 
 sub num_cancelled_pkgs {
-  my $self = shift;
-  $self->num_pkgs("cancel IS NOT NULL AND cust_pkg.cancel != 0");
+  shift->num_pkgs("cust_pkg.cancel IS NOT NULL AND cust_pkg.cancel != 0");
+}
+
+sub num_ncancelled_pkgs {
+  shift->num_pkgs("( cust_pkg.cancel IS NULL OR cust_pkg.cancel = 0 )");
 }
 
 sub num_pkgs {
@@ -1737,7 +1770,7 @@ sub _banned_pay_hashref {
   {
     'payby'   => $payby2ban{$self->payby},
     'payinfo' => md5_base64($self->payinfo),
-    #'reason'  =>
+    #don't ever *search* on reason! #'reason'  =>
   };
 }
 

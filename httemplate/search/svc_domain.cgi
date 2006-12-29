@@ -1,27 +1,19 @@
-%
-%
 %my $conf = new FS::Conf;
-%
-%my($query)=$cgi->keywords;
-%$query ||= ''; #to avoid use of unitialized value errors
 %
 %my $orderby = 'ORDER BY svcnum';
 %my %svc_domain = ();
 %my @extra_sql = ();
-%if ( $query eq 'svcnum' ) {
-%  #$orderby = 'ORDER BY svcnum';
-%} elsif ( $query eq 'domain' ) {
-%  $orderby = 'ORDER BY domain';
-%} elsif ( $query eq 'UN_svcnum' ) { #UN searches need to be acl'ed (and need to
-%                                    #fix $agentnums_sql
-%  #$orderby = 'ORDER BY svcnum';
-%  push @extra_sql, 'pkgnum IS NULL';
-%} elsif ( $query eq 'UN_domain' ) { #UN searches need to be acl'ed (and need to
-%                                    #fix $agentnums_sql
-%  $orderby = 'ORDER BY domain';
-%  push @extra_sql, 'pkgnum IS NULL';
+%if ( $cgi->param('magic') =~ /^(all|unlinked)$/ ) {
+%
+%  push @extra_sql, 'pkgnum IS NULL'
+%    if $cgi->param('magic') eq 'unlinked';
+%
+%  if ( $cgi->param('sortby') =~ /^(\w+)$/ ) {
+%    my $sortby = $1;
+%    $orderby = "ORDER BY $sortby";
+%  }
+%
 %} elsif ( $cgi->param('svcpart') =~ /^(\d+)$/ ) {
-%  #$orderby = 'ORDER BY svcnum';
 %  push @extra_sql, "svcpart = $1";
 %} else {
 %  $cgi->param('domain') =~ /^([\w\-\.]+)$/; 

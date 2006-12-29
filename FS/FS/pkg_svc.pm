@@ -82,7 +82,9 @@ returns the error, otherwise returns false.
 =cut
 
 sub replace {
-  my ( $new, $old ) = ( shift, shift );
+  my( $new, $old ) = ( shift, shift );
+
+  $old = $new->replace_old unless defined($old);
 
   return "Can't change pkgpart!" if $old->pkgpart != $new->pkgpart;
   return "Can't change svcpart!" if $old->svcpart != $new->svcpart;

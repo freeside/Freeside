@@ -66,7 +66,66 @@ database, see L<"insert">.
 
 =cut
 
+
+sub table_info {
+  {
+    'name' => 'Forward',
+    'name_plural' => 'Mail forwards',
+    'display_weight' => 30,
+    'cancel_weight'  => 30,
+    'fields' => {
+        'srcsvc'    => 'service from which mail is to be forwarded',
+        'dstsvc'    => 'service to which mail is to be forwarded',
+        'dst'       => 'someone@another.domain.com to use when dstsvc is 0',
+    },
+  };
+}
+
 sub table { 'svc_forward'; }
+
+=item search_sql STRING
+
+Class method which returns an SQL fragment to search for the given string.
+
+=cut
+
+sub search_sql {
+  my( $class, $string ) = @_;
+  $class->search_sql_field('src', $string);
+}
+
+=item label [ END_TIMESTAMP [ START_TIMESTAMP ] ]
+
+Returns a text string representing this forward.
+
+END_TIMESTAMP and START_TIMESTAMP can optionally be passed when dealing with
+history records.
+
+=cut
+
+sub label {
+  my $self = shift;
+  my $tag = '';
+
+  if ( $self->srcsvc ) {
+    my $svc_acct = $self->srcsvc_acct(@_);
+    $tag = $svc_acct->email(@_);
+  } else {
+    $tag = $self->src;
+  }
+
+  $tag .= ' -> ';
+
+  if ( $self->dstsvc ) {
+    my $svc_acct = $self->dstsvc_acct(@_);
+    $tag .= $svc_acct->email(@_);
+  } else {
+    $tag .= $self->dst;
+  }
+
+  $tag;
+}
+
 
 =item insert [ , OPTION => VALUE ... ]
 

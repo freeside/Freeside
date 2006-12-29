@@ -210,6 +210,77 @@ Creates a new account.  To add the account to the database, see L<"insert">.
 
 =cut
 
+sub table_info {
+  {
+    'name'   => 'Account',
+    'longname_plural' => 'Access accounts and mailboxes',
+    'sorts' => [ 'username', 'uid', ],
+    'display_weight' => 10,
+    'cancel_weight'  => 50, 
+    'fields' => {
+        'dir'       => 'Home directory',
+        'uid'       => {
+                         label     => 'UID',
+		         def_label => 'UID (set to fixed and blank for no UIDs)',
+		         type      => 'text',
+		       },
+        'slipip'    => 'IP address',
+    #    'popnum'    => qq!<A HREF="$p/browse/svc_acct_pop.cgi/">POP number</A>!,
+        'popnum'    => {
+                         label => 'Access number',
+                         type => 'select',
+                         select_table => 'svc_acct_pop',
+                         select_key   => 'popnum',
+                         select_label => 'city',
+                       },
+        'username'  => {
+                         label => 'Username',
+                         type => 'text',
+                         disable_default => 1,
+                         disable_fixed => 1,
+                       },
+        'quota'     => { 
+                         label => 'Quota',
+                         type => 'text',
+                         disable_inventory => 1,
+                       },
+        '_password' => 'Password',
+        'gid'       => {
+                         label     => 'GID',
+		         def_label => 'GID (when blank, defaults to UID)',
+		         type      => 'text',
+		       },
+        'shell'     => {
+                         #desc =>'Shell (all service definitions should have a default or fixed shell that is present in the <b>shells</b> configuration file, set to blank for no shell tracking)',
+		         label    => 'Shell',
+                         def_label=> 'Shell (set to blank for no shell tracking)',
+                         type     =>'select',
+                         select_list => [ $conf->config('shells') ],
+                         disable_inventory => 1,
+                       },
+        'finger'    => 'Real name (GECOS)',
+        'domsvc'    => {
+                         label     => 'Domain',
+                         def_label => 'svcnum from svc_domain',
+                         type      => 'select',
+                         select_table => 'svc_domain',
+                         select_key   => 'svcnum',
+                         select_label => 'domain',
+                         disable_inventory => 1,
+                       },
+        'usergroup' => {
+                         label => 'RADIUS groups',
+                         type  => 'radius_usergroup_selector',
+                         disable_inventory => 1,
+                       },
+        'seconds'   => { label => 'Seconds',
+                         type  => 'text',
+                         disable_inventory => 1,
+                       },
+    },
+  };
+}
+
 sub table { 'svc_acct'; }
 
 sub _fieldhandlers {
@@ -227,6 +298,52 @@ sub _fieldhandlers {
                        },
   };
 }
+
+=item search_sql STRING
+
+Class method which returns an SQL fragment to search for the given string.
+
+=cut
+
+sub search_sql {
+  my( $class, $string ) = @_;
+  if ( $string =~ /^([^@]+)@([^@]+)$/ ) {
+    my( $username, $domain ) = ( $1, $2 );
+    my $q_username = dbh->quote($username);
+    my @svc_domain = qsearch('svc_domain', { 'domain' => $domain } );
+    if ( @svc_domain ) {
+      "svc_acct.username = $q_username AND ( ".
+        join( ' OR ', map { "svc_acct.domsvc = ". $_->svcnum; } @svc_domain ).
+      " )";
+    } else {
+      '1 = 0'; #false
+    }
+  } elsif ( $string =~ /^(\d{1,3}\.){3}\d{1,3}$/ ) {
+    ' ( '.
+      $class->search_sql_field('slipip',   $string ).
+    ' OR '.
+      $class->search_sql_field('username', $string ).
+    ' ) ';
+  } else {
+    $class->search_sql_field('username', $string);
+  }
+}
+
+=item label [ END_TIMESTAMP [ START_TIMESTAMP ] ]
+
+Returns the "username@domain" string for this account.
+
+END_TIMESTAMP and START_TIMESTAMP can optionally be passed when dealing with
+history records.
+
+=cut
+
+sub label {
+  my $self = shift;
+  $self->email(@_);
+}
+
+=cut
 
 =item insert [ , OPTION => VALUE ... ]
 
@@ -1180,9 +1297,12 @@ sub forget_snapshot {
 
 }
 
-=item domain
+=item domain [ END_TIMESTAMP [ START_TIMESTAMP ] ]
 
 Returns the domain associated with this account.
+
+END_TIMESTAMP and START_TIMESTAMP can optionally be passed when dealing with
+history records.
 
 =cut
 
@@ -1201,6 +1321,8 @@ L<FS::svc_domain>).
 
 =cut
 
+# FS::h_svc_acct has a history-aware svc_domain override
+
 sub svc_domain {
   my $self = shift;
   $self->{'_domsvc'}
@@ -1216,9 +1338,12 @@ Returns the FS::cust_svc record for this account (see L<FS::cust_svc>).
 
 #inherited from svc_Common
 
-=item email
+=item email [ END_TIMESTAMP [ START_TIMESTAMP ] ]
 
 Returns an email address associated with the account.
+
+END_TIMESTAMP and START_TIMESTAMP can optionally be passed when dealing with
+history records.
 
 =cut
 

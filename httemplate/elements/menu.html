@@ -80,58 +80,49 @@ tie my %report_invoices, 'Tie::IxHash',
   'Advanced invoice reports' => [ $fsurl.'search/report_cust_bill.html', 'by agent, date range, etc.' ],
 ;
 
-tie my %report_services_acct, 'Tie::IxHash',
-  'All accounts by username' => [ $fsurl.'search/svc_acct.cgi?username', '' ],
-  'All accounts by UID'      => [ $fsurl.'search/svc_acct.cgi?uid', '' ],
-;
-$report_services_acct{'Unlinked accounts'} = [ $fsurl.'search/svc_acct.cgi?UN_username', 'Pre-Freeside accounts without a customer record' ]
-  if $curuser->access_right('View/link unlinked services');
-
-tie my %report_services_domain, 'Tie::IxHash',
-  'All domains'      => [ $fsurl.'search/svc_domain.cgi?domain', '' ],
-;
-$report_services_domain{'Unlinked domains'} = [ $fsurl.'search/svc_domain.cgi?UN_domain', 'Pre-Freeside domains without a customer record' ]
-  if $curuser->access_right('View/link unlinked services');
-
-tie my %report_services_forward, 'Tie::IxHash',
-  'All mail forwards'      => [ $fsurl.'search/svc_forward.cgi?svcnum', '' ],
-;
-$report_services_forward{'Unlinked mail forwards'} = [ $fsurl.'search/svc_forward.cgi?UN_svcnum', 'Pre-Freeside mail forwards without a customer record' ]
-  if $curuser->access_right('View/link unlinked services');
-
-tie my %report_services_www, 'Tie::IxHash',
-  'All virtual hosts'     => [ $fsurl.'search/svc_www.cgi?svcnum', '' ],
-;
-$report_services_www{'Unlinked virtual hosts'} = [ $fsurl.'search/svc_www.cgi?UN_svcnum', 'Pre-Freeside virtual hosts without a customer record' ]
-  if $curuser->access_right('View/link unlinked services');
-
-tie my %report_services_broadband, 'Tie::IxHash',
-  'All broadband services' => [ $fsurl.'search/svc_broadband.cgi?svcnum', '' ],
-  #'Unlinked domain' => [ $fsurl.'search/svc_acct.cgi?UN_uid', 'Pre-Freeside broadband services without a customer record' ],
-;
-
-tie my %report_services_phone, 'Tie::IxHash',
-  'All phone numbers' => [ $fsurl.'search/svc_phone.cgi?svcnum', '' ],
-;
-
-tie my %report_services_external, 'Tie::IxHash',
-  'All external services' => [ $fsurl.'search/svc_external.cgi?id', '' ],
-;
-$report_services_external{'Unlinked external services'} = [ $fsurl.'search/svc_external.cgi?UN_id', 'Pre-Freeside external services without a customer record' ]
-  if $curuser->access_right('View/link unlinked services');
-
 tie my %report_services, 'Tie::IxHash';
 if ( $curuser->access_right('Configuration') ) {
   $report_services{'Service definitions'} =  [ $fsurl.'browse/part_svc.cgi?orderby=active', 'Service definitions by number of active packages' ];
   $report_services{'separator'} =  '';
 }
-$report_services{'Accounts'} =  [ \%report_services_acct, 'Access accounts and mailboxes' ];
-$report_services{'Domains'} =  [ \%report_services_domain, 'Domains', ];
-$report_services{'Mail forwards'} =  [ \%report_services_forward, 'Mail forwards', ];
-$report_services{'Virtual hosts'} =  [ \%report_services_www, 'Virtual hosting', ];
-$report_services{'Broadband services'} =  [ \%report_services_broadband, 'Fixed (username-less) broadband services', ];
-$report_services{'Phone numbers'} =  [ \%report_services_phone, 'Telephone numbers', ];
-$report_services{'External services'} =  [ \%report_services_external, 'External services', ];
+foreach my $svcdb ( FS::part_svc->svc_tables() ) {
+
+  my $name =        "FS::$svcdb"->table_info->{'name_plural'}
+             || PL( "FS::$svcdb"->table_info->{'name'}        );
+  my $lcname = lc($name);
+  my $longname = "FS::$svcdb"->table_info->{'longname_plural'} || $name;
+  my $lclongname = lc($longname);
+  my $sorts = "FS::$svcdb"->table_info->{'sorts'} || [ 'svcnum' ];
+  $sorts = [ $sorts ] unless ref($sorts);
+  my %svc_url = ( 'm'      => $m,
+		  'action' => 'search',
+		  'svcdb'  => $svcdb,
+		);
+
+  tie my %report_svc, 'Tie::IxHash';
+
+  foreach my $sort ( @$sorts ) {
+
+    my $title = "All $lcname";
+    $title .= " by ". FS::part_svc->svc_table_fields($svcdb)->{$sort}->{'label'}
+      if scalar(@$sorts) > 1;
+
+    $report_svc{$title} =
+      [ FS::UI::Web::svc_url( %svc_url, 'query' => "magic=all;sortby=$sort" ),
+        '',
+      ];
+  }
+
+  if ( $curuser->access_right('View/link unlinked services') ) {
+    $report_svc{"Unlinked $lcname"} = 
+      [ FS::UI::Web::svc_url( %svc_url, 'query' => "magic=unlinked;sortby=". $sorts->[0] ),
+        "Pre-Freeside $lcname without a customer record",
+      ];
+  }
+
+  $report_services{$name} = [ \%report_svc, $longname ];
+
+}
 
 tie my %report_packages, 'Tie::IxHash';
 if ( $curuser->access_right('Configuration') ) {

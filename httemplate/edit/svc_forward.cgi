@@ -13,39 +13,40 @@
 %  $svcpart = $cgi->param('svcpart');
 %  $part_svc=qsearchs('part_svc',{'svcpart'=>$svcpart});
 %  die "No part_svc entry!" unless $part_svc;
-%} else {
+%
+%} elsif ( $cgi->param('pkgnum') && $cgi->param('svcpart') ) { #adding
+%
+%  $cgi->param('pkgnum') =~ /^(\d+)$/ or die 'unparsable pkgnum';
+%  $pkgnum = $1;
+%  $cgi->param('svcpart') =~ /^(\d+)$/ or die 'unparsable svcpart';
+%  $svcpart = $1;
+%
+%  $part_svc=qsearchs('part_svc',{'svcpart'=>$svcpart});
+%  die "No part_svc entry!" unless $part_svc;
+%
+%  $svc_forward = new FS::svc_forward({});
+%
+%  $svcnum='';
+%
+%  $svc_forward->set_default_and_fixed;
+%
+%} else { #editing
 %
 %  my($query) = $cgi->keywords;
 %
-%  if ( $query =~ /^(\d+)$/ ) { #editing
-%    $svcnum=$1;
-%    $svc_forward=qsearchs('svc_forward',{'svcnum'=>$svcnum})
-%      or die "Unknown (svc_forward) svcnum!";
+%  $query =~ /^(\d+)$/ or die "unparsable svcnum";
+%  $svcnum=$1;
+%  $svc_forward=qsearchs('svc_forward',{'svcnum'=>$svcnum})
+%    or die "Unknown (svc_forward) svcnum!";
 %
-%    my($cust_svc)=qsearchs('cust_svc',{'svcnum'=>$svcnum})
-%      or die "Unknown (cust_svc) svcnum!";
+%  my($cust_svc)=qsearchs('cust_svc',{'svcnum'=>$svcnum})
+%    or die "Unknown (cust_svc) svcnum!";
 %
-%    $pkgnum=$cust_svc->pkgnum;
-%    $svcpart=$cust_svc->svcpart;
+%  $pkgnum=$cust_svc->pkgnum;
+%  $svcpart=$cust_svc->svcpart;
 %  
-%    $part_svc=qsearchs('part_svc',{'svcpart'=>$svcpart});
-%    die "No part_svc entry!" unless $part_svc;
-%
-%  } else { #adding
-%
-%    $svc_forward = new FS::svc_forward({});
-%
-%    foreach $_ (split(/-/,$query)) { #get & untaint pkgnum & svcpart
-%      $pkgnum=$1 if /^pkgnum(\d+)$/;
-%      $svcpart=$1 if /^svcpart(\d+)$/;
-%    }
-%    $part_svc=qsearchs('part_svc',{'svcpart'=>$svcpart});
-%    die "No part_svc entry!" unless $part_svc;
-%
-%    $svcnum='';
-%
-%    $svc_forward->set_default_and_fixed;
-%  }
+%  $part_svc=qsearchs('part_svc',{'svcpart'=>$svcpart});
+%  die "No part_svc entry!" unless $part_svc;
 %
 %}
 %my $action = $svc_forward->svcnum ? 'Edit' : 'Add';

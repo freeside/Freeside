@@ -1,39 +1,45 @@
-%
-%
 %my $conf = new FS::Conf;
 %
-%my($query)=$cgi->keywords;
-%$query ||= ''; #to avoid use of unitialized value errors
-%my(@svc_external,$sortby);
-%if ( $query eq 'svcnum' ) {
-%  $sortby=\*svcnum_sort;
+%my @svc_external = ();
+%my @h_svc_external = ();
+%my $sortby=\*svcnum_sort;
+%if ( $cgi->param('magic') =~ /^(all|unlinked)$/ ) {
+%
 %  @svc_external=qsearch('svc_external',{});
-%} elsif ( $query eq 'id' ) {
-%  $sortby=\*id_sort;
-%  @svc_external=qsearch('svc_external',{});
-%} elsif ( $query eq 'UN_svcnum' ) {
-%  $sortby=\*svcnum_sort;
-%  @svc_external = grep qsearchs('cust_svc',{
-%      'svcnum' => $_->svcnum,
-%      'pkgnum' => '',
-%    }), qsearch('svc_external',{});
-%} elsif ( $query eq 'UN_id' ) {
-%  $sortby=\*id_sort;
-%  @svc_external = grep qsearchs('cust_svc',{
-%      'svcnum' => $_->svcnum,
-%      'pkgnum' => '',
-%    }), qsearch('svc_external',{});
+%
+%  if ( $cgi->param('magic') eq 'unlinked' ) {
+%    @svc_external = grep { qsearchs('cust_svc', {
+%                                                  'svcnum' => $_->svcnum,
+%                                                  'pkgnum' => '',
+%                                                }
+%                                   )
+%                         }
+%		     @svc_external;
+%  }
+%
+%  if ( $cgi->param('sortby') =~ /^(\w+)$/ ) {
+%    my $sortby = $1;
+%    if ( $sortby eq 'id' ) {
+%      $sortby = \*id_sort;
+%    }
+%  }
+%
 %} elsif ( $cgi->param('svcpart') =~ /^(\d+)$/ ) {
+%
 %  @svc_external =
 %    qsearch( 'svc_external', {}, '',
 %               " WHERE $1 = ( SELECT svcpart FROM cust_svc ".
 %               "              WHERE cust_svc.svcnum = svc_external.svcnum ) "
 %    );
-%  $sortby=\*svcnum_sort;
-%} else {
-%  $cgi->param('id') =~ /^([\w\-\.]+)$/; 
-%  my($id)=$1;
-%  #push @svc_domain, qsearchs('svc_domain',{'domain'=>$domain});
+%
+%} elsif ( $cgi->param('title') =~ /^(.*)$/ ) {
+%  $sortby=\*id_sort;
+%  @svc_external=qsearch('svc_external',{ title => $1 });
+%  if( $cgi->param('history') == 1 ) {
+%    @h_svc_external=qsearch('h_svc_external',{ title => $1 });
+%  }
+%} elsif ( $cgi->param('id') =~ /^([\w\-\.]+)$/ ) {
+%  my $id = $1;
 %  @svc_external = qsearchs('svc_external',{'id'=>$id});
 %}
 %
@@ -84,7 +90,46 @@
 %    print "</TR>";
 %
 %  }
-% 
+%  if( scalar(@h_svc_external) > 0 ) {
+%    print <<HTML;
+%    </TABLE>
+%    <TABLE BORDER=4 CELLSPACING=0 CELLPADDING=0>
+%      <TR>
+%        <TH>Freeside ID</TH>
+%        <TH>Service #</TH>
+%        <TH>Title</TH>
+%        <TH>Date</TH>
+%      </TR>
+%HTML
+%
+%    foreach my $h_svc ( @h_svc_external ) {
+%        my($svcnum, $id, $title, $user, $date)=(
+%            $h_svc->svcnum,
+%            $h_svc->id,
+%            $h_svc->title,
+%            $h_svc->history_user,
+%            $h_svc->history_date,
+%        );
+%        my $rowspan = 1;
+%        my ($h_cust_svc) = qsearchs( 'h_cust_svc', {
+%            svcnum  =>  $svcnum,
+%        });
+%        my $cust_pkg = qsearchs( 'cust_pkg', {
+%            pkgnum  =>  $h_cust_svc->pkgnum,
+%        });
+%        my $custnum = $cust_pkg->custnum;
+%
+%        print <<END;
+%        <TR>
+%          <TD ROWSPAN=$rowspan><A HREF="${p}view/cust_main.cgi?$custnum">$custnum</A></TD>
+%          <TD ROWSPAN=$rowspan><A HREF="${p}view/cust_main.cgi?$custnum">$svcnum</A></TD>
+%          <TD ROWSPAN=$rowspan><A HREF="${p}view/cust_main.cgi?$custnum">$title</A></TD>
+%          <TD ROWSPAN=$rowspan><A HREF="${p}view/cust_main.cgi?$custnum">$date</A></TD>
+%        </TR>
+%END
+%    }
+%  }
+%
 %  print <<END;
 %    </TABLE>
 %  </BODY>

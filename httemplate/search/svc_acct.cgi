@@ -1,15 +1,4 @@
-%
-%
-%my $orderby = 'ORDER BY svcnum';
-%
-%my($query)=$cgi->keywords;
-%$query ||= ''; #to avoid use of unitialized value errors
-%
 %my @extra_sql = ();
-%if ( $query =~ /^UN_(.*)$/ ) {
-%  $query = $1;
-%  push @extra_sql, 'pkgnum IS NULL';
-%}
 %
 % if ( $cgi->param('domain') ) { 
 %   my $svc_domain =
@@ -23,13 +12,21 @@
 %   }
 % }
 %
-%if ( $query eq 'svcnum' ) {
-%  #$orderby = "ORDER BY svcnum";
-%} elsif ( $query eq 'username' ) {
-%  $orderby = "ORDER BY LOWER(username)";
-%} elsif ( $query eq 'uid' ) {
-%  $orderby = "ORDER BY uid";
-%  push @extra_sql, "uid IS NOT NULL";
+%my $orderby = 'ORDER BY svcnum';
+%if ( $cgi->param('magic') =~ /^(all|unlinked)$/ ) {
+%
+%  push @extra_sql, 'pkgnum IS NULL'
+%    if $cgi->param('magic') eq 'unlinked';
+%
+%  if ( $cgi->param('sortby') =~ /^(\w+)$/ ) {
+%    my $sortby = $1;
+%    $sortby = "LOWER($sortby)"
+%      if $sortby eq 'username';
+%    push @extra_sql, "$sortby IS NOT NULL"
+%      if $sortby eq 'uid';
+%    $orderby = "ORDER BY $sortby";
+%  }
+%
 %} elsif ( $cgi->param('popnum') =~ /^(\d+)$/ ) {
 %  push @extra_sql, "popnum = $1";
 %  $orderby = "ORDER BY LOWER(username)";

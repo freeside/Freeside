@@ -1,8 +1,6 @@
-<!-- mason kludge -->
-%
-%
 %my( $svcnum,  $pkgnum, $svcpart, $part_svc, $svc_external );
 %if ( $cgi->param('error') ) {
+%
 %  $svc_external = new FS::svc_external ( {
 %    map { $_, scalar($cgi->param($_)) } fields('svc_external')
 %  } );
@@ -11,38 +9,40 @@
 %  $svcpart = $cgi->param('svcpart');
 %  $part_svc=qsearchs('part_svc',{'svcpart'=>$svcpart});
 %  die "No part_svc entry!" unless $part_svc;
-%} else {
+%
+%} elsif ( $cgi->param('pkgnum') && $cgi->param('svcpart') ) { #adding
+%
+%  $cgi->param('pkgnum') =~ /^(\d+)$/ or die 'unparsable pkgnum';
+%  $pkgnum = $1;
+%  $cgi->param('svcpart') =~ /^(\d+)$/ or die 'unparsable svcpart';
+%  $svcpart = $1;
+%
+%  $part_svc=qsearchs('part_svc',{'svcpart'=>$svcpart});
+%  die "No part_svc entry!" unless $part_svc;
+%
+%  $svc_external = new FS::svc_external { svcpart => $svcpart };
+%
+%  $svcnum='';
+%
+%  $svc_external->set_default_and_fixed;
+%
+%} else { #adding
+%
 %  my($query) = $cgi->keywords;
-%  if ( $query =~ /^(\d+)$/ ) { #editing
-%    $svcnum=$1;
-%    $svc_external=qsearchs('svc_external',{'svcnum'=>$svcnum})
-%      or die "Unknown (svc_external) svcnum!";
+%  $query =~ /^(\d+)$/ or die "unparsable svcnum";
+%  $svcnum=$1;
+%  $svc_external=qsearchs('svc_external',{'svcnum'=>$svcnum})
+%    or die "Unknown (svc_external) svcnum!";
 %
-%    my($cust_svc)=qsearchs('cust_svc',{'svcnum'=>$svcnum})
-%      or die "Unknown (cust_svc) svcnum!";
+%  my($cust_svc)=qsearchs('cust_svc',{'svcnum'=>$svcnum})
+%    or die "Unknown (cust_svc) svcnum!";
 %
-%    $pkgnum=$cust_svc->pkgnum;
-%    $svcpart=$cust_svc->svcpart;
+%  $pkgnum=$cust_svc->pkgnum;
+%  $svcpart=$cust_svc->svcpart;
 %  
-%    $part_svc=qsearchs('part_svc',{'svcpart'=>$svcpart});
-%    die "No part_svc entry!" unless $part_svc;
+%  $part_svc=qsearchs('part_svc',{'svcpart'=>$svcpart});
+%  die "No part_svc entry!" unless $part_svc;
 %
-%  } else { #adding
-%
-%    foreach $_ (split(/-/,$query)) { #get & untaint pkgnum & svcpart
-%      $pkgnum=$1 if /^pkgnum(\d+)$/;
-%      $svcpart=$1 if /^svcpart(\d+)$/;
-%    }
-%    $svc_external = new FS::svc_external { svcpart => $svcpart };
-%
-%    $part_svc=qsearchs('part_svc',{'svcpart'=>$svcpart});
-%    die "No part_svc entry!" unless $part_svc;
-%
-%    $svcnum='';
-%
-%    $svc_external->set_default_and_fixed;
-%
-%  }
 %}
 %my $action = $svc_external->svcnum ? 'Edit' : 'Add';
 %

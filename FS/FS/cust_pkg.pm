@@ -1,7 +1,7 @@
 package FS::cust_pkg;
 
 use strict;
-use vars qw(@ISA $disable_agentcheck @SVCDB_CANCEL_SEQ $DEBUG);
+use vars qw(@ISA $disable_agentcheck $DEBUG);
 use Tie::IxHash;
 use FS::UID qw( getotaker dbh );
 use FS::Misc qw( send_email );
@@ -15,6 +15,7 @@ use FS::pkg_svc;
 use FS::cust_bill_pkg;
 use FS::h_cust_svc;
 use FS::reg_code;
+use FS::part_svc;
 use FS::cust_pkg_reason;
 
 # need to 'use' these instead of 'require' in sub { cancel, suspend, unsuspend,
@@ -33,14 +34,6 @@ use FS::Conf;
 $DEBUG = 0;
 
 $disable_agentcheck = 0;
-
-# The order in which to unprovision services.
-@SVCDB_CANCEL_SEQ = qw( svc_external
-			svc_www
-			svc_forward 
-			svc_acct 
-			svc_domain 
-			svc_broadband );
 
 sub _cache {
   my $self = shift;
@@ -273,6 +266,10 @@ Calls
 sub replace {
   my( $new, $old, %options ) = @_;
 
+  # We absolutely have to have an old vs. new record to make this work.
+  if (!defined($old)) {
+    $old = qsearchs( 'cust_pkg', { 'pkgnum' => $new->pkgnum } );
+  }
   #return "Can't (yet?) change pkgpart!" if $old->pkgpart != $new->pkgpart;
   return "Can't change otaker!" if $old->otaker ne $new->otaker;
 
@@ -452,19 +449,18 @@ sub cancel {
 
   my %svc;
   foreach my $cust_svc (
-      qsearch( 'cust_svc', { 'pkgnum' => $self->pkgnum } )
+    #schwartz
+    map  { $_->[0] }
+    sort { $a->[1] <=> $b->[1] }
+    map  { [ $_, $_->svc_x->table_info->{'cancel_weight'} ]; }
+    qsearch( 'cust_svc', { 'pkgnum' => $self->pkgnum } )
   ) {
-    push @{ $svc{$cust_svc->part_svc->svcdb} }, $cust_svc;
-  }
 
-  foreach my $svcdb (@SVCDB_CANCEL_SEQ) {
-    foreach my $cust_svc (@{ $svc{$svcdb} }) {
-      my $error = $cust_svc->cancel;
+    my $error = $cust_svc->cancel;
 
-      if ( $error ) {
-	$dbh->rollback if $oldAutoCommit;
-	return "Error cancelling cust_svc: $error";
-      }
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return "Error cancelling cust_svc: $error";
     }
   }
 
@@ -762,6 +758,17 @@ sub calc_cancel {
   $self->part_pkg->calc_cancel($self, @_);
 }
 
+=item cust_bill_pkg
+
+Returns any invoice line items for this package (see L<FS::cust_bill_pkg>).
+
+=cut
+
+sub cust_bill_pkg {
+  my $self = shift;
+  qsearch( 'cust_bill_pkg', { 'pkgnum' => $self->pkgnum } );
+}
+
 =item cust_svc [ SVCPART ]
 
 Returns the services for this package, as FS::cust_svc objects (see
@@ -843,7 +850,7 @@ sub num_cust_svc {
 
 =item available_part_svc 
 
-Returns a list FS::part_svc objects representing services included in this
+Returns a list of FS::part_svc objects representing services included in this
 package but not yet provisioned.  Each FS::part_svc object also has an extra
 field, I<num_avail>, which specifies the number of available services.
 
@@ -859,6 +866,86 @@ sub available_part_svc {
           $part_svc;
         }
       $self->part_pkg->pkg_svc;
+}
+
+=item 
+
+Returns a list of FS::part_svc objects representing provisioned and available
+services included in this package.  Each FS::part_svc object also has the
+following extra fields:
+
+=over 4
+
+=item num_cust_svc  (count)
+
+=item num_avail     (quantity - count)
+
+=item cust_pkg_svc (services) - array reference containing the provisioned services, as cust_svc objects
+
+svcnum
+label -> ($cust_svc->label)[1]
+
+=back
+
+=cut
+
+sub part_svc {
+  my $self = shift;
+
+  #XXX some sort of sort order besides numeric by svcpart...
+  my @part_svc = sort { $a->svcpart <=> $b->svcpart } map {
+    my $pkg_svc = $_;
+    my $part_svc = $pkg_svc->part_svc;
+    my $num_cust_svc = $self->num_cust_svc($part_svc->svcpart);
+    $part_svc->{'Hash'}{'num_cust_svc'} = $num_cust_svc; #more evil
+    $part_svc->{'Hash'}{'num_avail'}    = $pkg_svc->quantity - $num_cust_svc;
+    $part_svc->{'Hash'}{'cust_pkg_svc'} = [ $self->cust_svc($part_svc->svcpart) ];
+    $part_svc;
+  } $self->part_pkg->pkg_svc;
+
+  #extras
+  push @part_svc, map {
+    my $part_svc = $_;
+    my $num_cust_svc = $self->num_cust_svc($part_svc->svcpart);
+    $part_svc->{'Hash'}{'num_cust_svc'} = $num_cust_svc; #speak no evail
+    $part_svc->{'Hash'}{'num_avail'}    = 0; #0-$num_cust_svc ?
+    $part_svc->{'Hash'}{'cust_pkg_svc'} = [ $self->cust_svc($part_svc->svcpart) ];
+    $part_svc;
+  } $self->extra_part_svc;
+
+  @part_svc;
+
+}
+
+=item extra_part_svc
+
+Returns a list of FS::part_svc objects corresponding to services in this
+package which are still provisioned but not (any longer) available in the
+package definition.
+
+=cut
+
+sub extra_part_svc {
+  my $self = shift;
+
+  my $pkgnum  = $self->pkgnum;
+  my $pkgpart = $self->pkgpart;
+
+  qsearch( {
+    'table'     => 'part_svc',
+    'hashref'   => {},
+    'extra_sql' => "WHERE 0 = ( SELECT COUNT(*) FROM pkg_svc 
+                                  WHERE pkg_svc.svcpart = part_svc.svcpart 
+				    AND pkg_svc.pkgpart = $pkgpart
+				    AND quantity > 0 
+			      )
+	              AND 0 < ( SELECT count(*)
+		                  FROM cust_svc
+		                    LEFT JOIN cust_pkg using ( pkgnum )
+				  WHERE cust_svc.svcpart = part_svc.svcpart
+				    AND pkgnum = $pkgnum
+			      )",
+  } );
 }
 
 =item status

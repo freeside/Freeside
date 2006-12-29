@@ -132,7 +132,7 @@ input.fsblackbuttonselected {
         <TD COLSPAN=1 BGCOLOR="#000000" ALIGN="right">
           <FORM ACTION="<%$fsurl%>search/cust_main.cgi" METHOD="GET" STYLE="margin:0">
             <INPUT NAME="search_cust" TYPE="text" VALUE="(cust #, name, company or phone)" SIZE="28" onFocus="clearhint_search_cust(this);" onClick="clearhint_search_cust(this);" STYLE="vertical-align:bottom;text-align:right"><BR>
-            <A HREF="<%$fsurl%>search/cust_main.html" STYLE="color: #000000; font-size: 70%">Advanced</A>
+            <A NOTYET="<%$fsurl%>search/cust_main.html" STYLE="color: #000000; font-size: 70%">Advanced</A>
             <INPUT TYPE="submit" VALUE="Search customers" CLASS="fsblackbutton" onMouseOver="this.className='fsblackbuttonselected'; return true;" onMouseOut="this.className='fsblackbutton'; return true;" STYLE="font-size:70%">
           </FORM>
         </TD>
@@ -155,10 +155,10 @@ input.fsblackbuttonselected {
         </TD>
 
         <TD COLSPAN=1 BGCOLOR="#000000" ALIGN="right">
-          <FORM ACTION="<%$fsurl%>search/svc_Smart.html" METHOD="GET" STYLE="margin:0">
+          <FORM ACTION="<%$fsurl%>search/cust_svc.html" METHOD="GET" STYLE="margin:0">
             <INPUT NAME="search_svc" TYPE="text" VALUE="(user, user@domain or domain)" SIZE="26" onFocus="clearhint_search_svc(this);" onClick="clearhint_search_svc(this);" STYLE="vertical-align:bottom;text-align:right"><BR>
-            <A HREF="<%$fsurl%>search/svc_Smarter.html" STYLE="color: #000000; font-size: 70%">Advanced</A>
-            <INPUT TYPE="submit" VALUE="Search services"CLASS="fsblackbutton" onMouseOver="this.className='fsblackbuttonselected'; return true;" onMouseOut="this.className='fsblackbutton'; return true;" STYLE="font-size:70%">
+            <A NOTYET="<%$fsurl%>search/svc_Smarter.html" STYLE="color: #000000; font-size: 70%">Advanced</A>
+            <INPUT TYPE="submit" VALUE="Search services" CLASS="fsblackbutton" onMouseOver="this.className='fsblackbuttonselected'; return true;" onMouseOut="this.className='fsblackbutton'; return true;" STYLE="font-size:70%">
           </FORM>
         </TD>
 

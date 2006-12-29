@@ -2,6 +2,7 @@ package FS::part_svc;
 
 use strict;
 use vars qw( @ISA $DEBUG );
+use Tie::IxHash;
 use FS::Record qw( qsearch qsearchs fields dbh );
 use FS::Schema qw( dbdef );
 use FS::part_svc_column;
@@ -11,7 +12,7 @@ use FS::cust_svc;
 
 @ISA = qw(FS::Record);
 
-$DEBUG = 1;
+$DEBUG = 0;
 
 =head1 NAME
 
@@ -500,6 +501,161 @@ sub svc_x {
   map { $_->svc_x } $self->cust_svc;
 }
 
+=back
+
+=head1 CLASS METHODS
+
+=over 4
+
+=cut
+
+my $svc_defs;
+sub _svc_defs {
+
+  return $svc_defs if $svc_defs; #cache
+
+  my $conf = new FS::Conf;
+
+  #false laziness w/part_pkg.pm::plan_info
+
+  my %info;
+  foreach my $INC ( @INC ) {
+    warn "globbing $INC/FS/svc_*.pm\n" if $DEBUG;
+    foreach my $file ( glob("$INC/FS/svc_*.pm") ) {
+
+      warn "attempting to load service table info from $file\n" if $DEBUG;
+      $file =~ /\/(\w+)\.pm$/ or do {
+        warn "unrecognized file in $INC/FS/: $file\n";
+        next;
+      };
+      my $mod = $1;
+
+      if ( $mod =~ /^svc_[A-Z]/ or $mod =~ /^svc_acct_pop$/ ) {
+        warn "skipping FS::$mod" if $DEBUG;
+	next;
+      }
+
+      eval "use FS::$mod;";
+      if ( $@ ) {
+        die "error using FS::$mod (skipping): $@\n" if $@;
+        next;
+      }
+      unless ( UNIVERSAL::can("FS::$mod", 'table_info') ) {
+        warn "FS::$mod has no table_info method; skipping";
+	next;
+      }
+
+      my $info = "FS::$mod"->table_info;
+      unless ( keys %$info ) {
+        warn "FS::$mod->table_info doesn't return info, skipping\n";
+        next;
+      }
+      warn "got info from FS::$mod: $info\n" if $DEBUG;
+      if ( exists($info->{'disabled'}) && $info->{'disabled'} ) {
+        warn "skipping disabled service FS::$mod" if $DEBUG;
+        next;
+      }
+      $info{$mod} = $info;
+    }
+  }
+
+  tie my %svc_defs, 'Tie::IxHash', 
+    map  { $_ => $info{$_}->{'fields'} }
+    sort { $info{$a}->{'display_weight'} <=> $info{$b}->{'display_weight'} }
+    keys %info,
+  ;
+  
+  # yuck.  maybe this won't be so bad when virtual fields become real fields
+  my %vfields;
+  foreach my $svcdb (grep dbdef->table($_), keys %svc_defs ) {
+    eval "use FS::$svcdb;";
+    my $self = "FS::$svcdb"->new;
+    $vfields{$svcdb} = {};
+    foreach my $field ($self->virtual_fields) { # svc_Common::virtual_fields with a null svcpart returns all of them
+      my $pvf = $self->pvf($field);
+      my @list = $pvf->list;
+      if (scalar @list) {
+        $svc_defs{$svcdb}->{$field} = { desc        => $pvf->label,
+                                        type        => 'select',
+                                        select_list => \@list };
+      } else {
+        $svc_defs{$svcdb}->{$field} = $pvf->label;
+      } #endif
+      $vfields{$svcdb}->{$field} = $pvf;
+      warn "\$vfields{$svcdb}->{$field} = $pvf"
+        if $DEBUG;
+    } #next $field
+  } #next $svcdb
+  
+  $svc_defs = \%svc_defs; #cache
+  
+}
+
+=item svc_tables
+
+Returns a list of all svc_ tables.
+
+=cut
+
+sub svc_tables {
+  my $class = shift;
+  my $svc_defs = $class->_svc_defs;
+  grep { defined( dbdef->table($_) ) } keys %$svc_defs;
+}
+
+=item svc_table_fields TABLE
+
+Given a table name, returns a hashref of field names.  The field names
+returned are those with additional (service-definition related) information,
+not necessarily all database fields of the table.  Pseudo-fields may also
+be returned (i.e. svc_acct.usergroup).
+
+Each value of the hashref is another hashref, which can have one or more of
+the following keys:
+
+=over 4
+
+=item label - Description of the field
+
+=item def_label - Optional description of the field in the context of service definitions
+
+=item type - Currently "text", "select", "disabled", or "radius_usergroup_selector"
+
+=item disable_default - This field should not allow a default value in service definitions
+
+=item disable_fixed - This field should not allow a fixed value in service definitions
+
+=item disable_inventory - This field should not allow inventory values in service definitions
+
+=item select_list - If type is "text", this can be a listref of possible values.
+
+=item select_table - An alternative to select_list, this defines a database table with the possible choices.
+
+=item select_key - Used with select_table, this is the field name of keys
+
+=item select_label - Used with select_table, this is the field name of labels
+
+=back
+
+=cut
+
+#maybe this should move and be a class method in svc_Common.pm
+sub svc_table_fields {
+  my($class, $table) = @_;
+  my $svc_defs = $class->_svc_defs;
+  my $def = $svc_defs->{$table};
+
+  foreach ( grep !ref($def->{$_}), keys %$def ) {
+
+    #normalize the shortcut in %info hash
+    $def->{$_} = { 'label' => $def->{$_} };
+
+    $def->{$_}{'type'} ||= 'text';
+
+  }
+
+  $def;
+}
 
 =back
 
@@ -554,10 +710,7 @@ sub process {
                   }
                   @fields;
 
-            } grep defined( dbdef->table($_) ),
-                   qw( svc_acct svc_domain svc_forward svc_www svc_broadband
-                       svc_phone svc_external
-                     )
+            } FS::part_svc->svc_tables()
       )
   } );
   
@@ -651,8 +804,8 @@ sub process_bulk_cust_svc {
 
 Delete is unimplemented.
 
-The list of svc_* tables is hardcoded.  When svc_acct_pop is renamed, this
-should be fixed.
+The list of svc_* tables is no longer hardcoded, but svc_acct_pop is skipped
+as a special case until it is renamed.
 
 all_part_svc_column methods should be documented
 

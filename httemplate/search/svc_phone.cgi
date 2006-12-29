@@ -1,19 +1,19 @@
-%
-%
 %my $conf = new FS::Conf;
-%
-%my($query)=$cgi->keywords;
-%$query ||= ''; #to avoid use of unitialized value errors
 %
 %my $orderby = 'ORDER BY svcnum';
 %my %svc_phone = ();
 %my @extra_sql = ();
-%if ( $query eq 'svcnum' ) {
-%  #$orderby = 'ORDER BY svcnum';
-%} elsif ( $query eq 'phonenum' ) {
-%  $orderby = 'ORDER BY phonenum';
+%if ( $cgi->param('magic') =~ /^(all|unlinked)$/ ) {
+%
+%  push @extra_sql, 'pkgnum IS NULL'
+%    if $cgi->param('magic') eq 'unlinked';
+%
+%  if ( $cgi->param('sortby') =~ /^(\w+)$/ ) {
+%    my $sortby = $1;
+%    $orderby = "ORDER BY $sortby";
+%  }
+%
 %} elsif ( $cgi->param('svcpart') =~ /^(\d+)$/ ) {
-%  #$orderby = 'ORDER BY svcnum';
 %  push @extra_sql, "svcpart = $1";
 %} else {
 %  $cgi->param('phonenum') =~ /^([\d\- ]+)$/; 

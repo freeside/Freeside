@@ -12,6 +12,9 @@
 %  # if not specified all columns (except for the primary key) will be viewable
 %  # 'fields' => [
 %  #             ]
+%  #
+%  # # defaults to "edit/$table.cgi?", will have svcnum appended
+%  # 'edit_url' => 
 %
 %  my(%opt) = @_;
 %
@@ -21,9 +24,15 @@
 %               #|| [ grep { $_ ne 'svcnum' } dbdef->table($table)->columns ];
 %               || [ grep { $_ ne 'svcnum' } fields($table) ];
 %
-%  my($query) = $cgi->keywords;
-%  $query =~ /^(\d+)$/;
-%  my $svcnum = $1;
+%  my $svcnum;
+%  if ( $cgi->param('svcnum') ) {
+%    $cgi->param('svcnum') =~ /^(\d+)$/ or die "unparsable svcnum";
+%    $svcnum = $1;
+%  } else {
+%    my($query) = $cgi->keywords;
+%    $query =~ /^(\d+)$/ or die "no svcnum";
+%    $svcnum = $1;
+%  }
 %  my $svc_x = qsearchs( $opt{'table'}, { 'svcnum' => $svcnum } )
 %    or die "Unknown svcnum $svcnum in ". $opt{'table'}. " table\n";
 %
@@ -69,7 +78,8 @@
 
 
 Service #<B><% $svcnum %></B>
-| <A HREF="<%$p%>edit/<% $opt{'table'} %>.cgi?<%$svcnum%>">Edit this <% $label %></A>
+% my $url = $opt{'edit_url'} || $p. 'edit/'. $opt{'table'}. '.cgi?';
+| <A HREF="<%$url%><%$svcnum%>">Edit this <% $label %></A>
 <BR>
 
 <% ntable("#cccccc") %><TR><TD><% ntable("#cccccc",2) %>

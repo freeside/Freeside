@@ -63,8 +63,50 @@ points to.  You can ask the object for a copy with the I<hash> method.
 =cut
 
 # the new method can be inherited from FS::Record, if a table method is defined
+#
+sub table_info {
+  {
+    'name' => 'Phone number',
+    'sorts' => 'phonenum',
+    'display_weight' => 60,
+    'cancel_weight'  => 80,
+    'fields' => {
+        'countrycode' => { label => 'Country code',
+                           type  => 'text',
+                           disable_inventory => 1,
+                         },
+        'phonenum'    => 'Phone number',
+        'pin'         => { label => 'Personal Identification Number',
+                           type  => 'text',
+                           disable_inventory => 1,
+                         },
+    },
+  };
+}
 
 sub table { 'svc_phone'; }
+
+=item search_sql STRING
+
+Class method which returns an SQL fragment to search for the given string.
+
+=cut
+
+sub search_sql {
+  my( $class, $string ) = @_;
+  $class->search_sql_field('phonenum', $string );
+}
+
+=item label
+
+Returns the phone number.
+
+=cut
+
+sub label {
+  my $self = shift;
+  $self->phonenum; #XXX format it better
+}
 
 =item insert
 

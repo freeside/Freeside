@@ -1,15 +1,34 @@
-%
-%
 %#my $conf = new FS::Conf;
 %
-%my($query)=$cgi->keywords;
-%$query ||= ''; #to avoid use of unitialized value errors
-%my $orderby;
-%if ( $query eq 'svcnum' ) {
-%  $orderby = 'ORDER BY svcnum';
-%} else {
-%  eidiot('unimplemented');
+%my $orderby = 'ORDER BY svcnum';
+%my @extra_sql = ();
+%if ( $cgi->param('magic') =~ /^(all|unlinked)$/ ) {
+%
+%  push @extra_sql, 'pkgnum IS NULL'
+%    if $cgi->param('magic') eq 'unlinked';
+%
+%  if ( $cgi->param('sortby') =~ /^(\w+)$/ ) {
+%    my $sortby = $1;
+%    $orderby = "ORDER BY $sortby";
+%  }
+%
+%} elsif ( $cgi->param('svcpart') =~ /^(\d+)$/ ) {
+%  push @extra_sql, "svcpart = $1";
 %}
+%
+%my $addl_from = ' LEFT JOIN cust_svc  USING ( svcnum  ) '.
+%                ' LEFT JOIN part_svc  USING ( svcpart ) '.
+%                ' LEFT JOIN cust_pkg  USING ( pkgnum  ) '.
+%                ' LEFT JOIN cust_main USING ( custnum ) ';
+%
+%#here is the agent virtualization
+%push @extra_sql, $FS::CurrentUser::CurrentUser->agentnums_sql;
+%
+%my $extra_sql = 
+%  scalar(@extra_sql)
+%    ? ' WHERE '. join(' AND ', @extra_sql )
+%    : '';
+%
 %
 %my $count_query = 'SELECT COUNT(*) FROM svc_www';
 %my $sql_query = {
@@ -22,9 +41,7 @@
 %                   FS::UI::Web::cust_sql_fields(),
 %                 ),
 %  'extra_sql' => $orderby,
-%  'addl_from' => 'LEFT JOIN cust_svc  USING ( svcnum  )'.
-%                 'LEFT JOIN cust_pkg  USING ( pkgnum  )'.
-%                 'LEFT JOIN cust_main USING ( custnum )',
+%  'addl_from' => $addl_from,
 %};
 %
 %my $link  = [ "${p}view/svc_www.cgi?", 'svcnum', ];

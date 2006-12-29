@@ -1,19 +1,38 @@
-%
-%
 %my $conf = new FS::Conf;
 %
-%my($query)=$cgi->keywords;
-%$query ||= ''; #to avoid use of unitialized value errors
-%my(@svc_broadband,$sortby);
-%if ( $query eq 'svcnum' ) {
-%  $sortby=\*svcnum_sort;
+%my @svc_broadband = ();
+%my $sortby=\*svcnum_sort;
+%if ( $cgi->param('magic') =~ /^(all|unlinked)$/ ) {
+%
 %  @svc_broadband=qsearch('svc_broadband',{});
-%} elsif ( $query eq 'blocknum' ) {
-%  $sortby=\*blocknum_sort;
-%  @svc_broadband=qsearch('svc_broadband',{});
-%} else {
-%  $cgi->param('ip_addr') =~ /^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/; 
-%  my($ip_addr)=$1;
+%
+%  if ( $cgi->param('magic') eq 'unlinked' ) {
+%    @svc_broadband = grep { qsearchs('cust_svc', {
+%                                                   'svcnum' => $_->svcnum,
+%                                                   'pkgnum' => '',
+%                                                 }
+%                                    )
+%                          }
+%		      @svc_broadband;
+%  }
+%
+%  if ( $cgi->param('sortby') =~ /^(\w+)$/ ) {
+%    my $sortby = $1;
+%    if ( $sortby eq 'blocknum' ) {
+%      $sortby = \*blocknum_sort;
+%    }
+%  }
+%
+%} elsif ( $cgi->param('svcpart') =~ /^(\d+)$/ ) {
+%
+%  @svc_broadband =
+%    qsearch( 'svc_broadband', {}, '',
+%               " WHERE $1 = ( SELECT svcpart FROM cust_svc ".
+%               "              WHERE cust_svc.svcnum = svc_external.svcnum ) "
+%    );
+%
+%} elsif ( $cgi->param('ip_addr') =~ /^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/ ) {
+%  my $ip_addr = $1;
 %  @svc_broadband = qsearchs('svc_broadband',{'ip_addr'=>$ip_addr});
 %}
 %

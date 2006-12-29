@@ -53,6 +53,9 @@
 %  #                        # ...
 %  #                        "html_string";
 %  #                      },
+%  #
+%  # # overrides default popurl(1)."process/$table.html"
+%  # 'post_url' => popurl(1).'process/something', 
 %
 %  my(%opt) = @_;
 %
@@ -77,9 +80,14 @@
 %
 %  } elsif ( $cgi->keywords || $cgi->param($pkey) ) { #editing
 %
-%    my( $query ) = $cgi->keywords;
-%    $query = $cgi->param($pkey) unless $query;
-%    $query =~ /^(\d+)$/;
+%    my $value;
+%    if ( $cgi->param($pkey) ) {
+%      $value = $cgi->param($pkey)
+%    } else { 
+%      my( $query ) = $cgi->keywords;
+%      $value = $query;
+%    }
+%    $value =~ /^(\d+)$/ or die "unparsable $pkey";
 %    $object = qsearchs( $table, { $pkey => $1 } );
 %    warn "$table $pkey => $1"
 %      if $opt{'debug'};
@@ -129,8 +137,10 @@
   <BR><BR>
 % } 
 
+% my $url = $opt{'post_url'} || popurl(1)."process/$table.html";
 
-<FORM ACTION="<% popurl(1) %>process/<% $table %>.html" METHOD=POST>
+<FORM ACTION="<% $url %>" METHOD=POST>
+<INPUT TYPE="hidden" NAME="svcdb" VALUE="<% $table %>">
 <INPUT TYPE="hidden" NAME="<% $pkey %>" VALUE="<% $object->$pkey() %>">
 <% ( $opt{labels} && exists $opt{labels}->{$pkey} )
       ? $opt{labels}->{$pkey}

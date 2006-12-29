@@ -1,9 +1,5 @@
-<!-- mason kludge -->
-%
-%
 %# If it's stupid but it works, it's still stupid.
 %#  -Kristian
-%
 %
 %use HTML::Widgets::SelectLayers;
 %use Tie::IxHash;

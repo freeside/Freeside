@@ -355,6 +355,12 @@ FS/cust_bill_pay_pkg.pm
 t/cust_bill_pay_pkg.t
 FS/cust_credit_bill_pkg.pm
 t/cust_credit_bill_pkg.t
+FS/registrar.pm
+t/registrar.t
+FS/svc_External_Common.pm
+t/svc_External_Common.t
+FS/svc_Parent_Mixin.pm
+t/svc_Parent_Mixin.t
 FS/cust_main_note.pm
 t/cust_main_note.t
 FS/cust_pkg_reason.pm

@@ -85,7 +85,49 @@ points to.  You can ask the object for a copy with the I<hash> method.
 
 =cut
 
+sub table_info {
+  {
+    'name' => 'Broadband',
+    'name_plural' => 'Broadband services',
+    'longname_plural' => 'Fixed (username-less) broadband services',
+    'display_weight' => 50,
+    'cancel_weight'  => 70,
+    'fields' => {
+      'speed_down' => 'Maximum download speed for this service in Kbps.  0 denotes unlimited.',
+      'speed_up'   => 'Maximum upload speed for this service in Kbps.  0 denotes unlimited.',
+      'ip_addr'    => 'IP address.  Leave blank for automatic assignment.',
+      'blocknum'   => 'Address block.',
+    },
+  };
+}
+
 sub table { 'svc_broadband'; }
+
+=item search_sql STRING
+
+Class method which returns an SQL fragment to search for the given string.
+
+=cut
+
+sub search_sql {
+  my( $class, $string ) = @_;
+  if ( $string =~ /^(\d{1,3}\.){3}\d{1,3}$/ ) {
+    $class->search_sql_field('ip_addr', $string );
+  } else {
+    '1 = 0'; #false
+  }
+}
+
+=item label
+
+Returns the IP address.
+
+=cut
+
+sub label {
+  my $self = shift;
+  $self->ip_addr;
+}
 
 =item insert [ , OPTION => VALUE ... ]
 

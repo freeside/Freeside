@@ -19,6 +19,8 @@
 %  # OR
 %  # 'redirect'    => 'view/table.cgi?', # value of primary key is appended
 %  #
+%  # 'error_redirect' => popurl(2).'edit/table.cgi?', #query string appended
+%  #
 %  # 'edit_ext' => 'html', #defaults to 'html', you might want 'cgi' while the
 %  #                       #naming is still inconsistent
 %  # 
@@ -78,7 +80,8 @@
 %  if ( $error ) {
 %    $cgi->param('error', $error);
 %    my $edit_ext = $opt{'edit_ext'} || 'html';
-%    print $cgi->redirect(popurl(2). "$table.$edit_ext?". $cgi->query_string );
+%    my $url = $opt{'error_redirect'} || popurl(2)."$table.$edit_ext?";
+%    print $cgi->redirect($url. $cgi->query_string );
 %  } elsif ( $opt{'redirect'} ) {
 %    print $cgi->redirect( $opt{'redirect'}. $pkeyvalue );
 %  } else { 

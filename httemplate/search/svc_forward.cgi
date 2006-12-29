@@ -1,23 +1,19 @@
-%
-%
 %my $conf = new FS::Conf;
 %
-%my($query)=$cgi->keywords;
-%$query ||= ''; #to avoid use of unitialized value errors
-%
-%my $orderby;
-%
+%my $orderby = 'ORDER BY svcnum';
 %my @extra_sql = ();
-%if ( $query =~ /^UN_(.*)$/ ) { #UN searches need to be acl'ed (and need to
-%                                    #fix $agentnums_sql
-%  $query = $1;
-%  push @extra_sql, 'pkgnum IS NULL';
-%}
+%if ( $cgi->param('magic') =~ /^(all|unlinked)$/ ) {
 %
-%if ( $query eq 'svcnum' ) {
-%  $orderby = 'ORDER BY svcnum';
-%} else {
-%  eidiot('unimplemented');
+%  push @extra_sql, 'pkgnum IS NULL'
+%    if $cgi->param('magic') eq 'unlinked';
+%
+%  if ( $cgi->param('sortby') =~ /^(\w+)$/ ) {
+%    my $sortby = $1;
+%    $orderby = "ORDER BY $sortby";
+%  }
+%
+%} elsif ( $cgi->param('svcpart') =~ /^(\d+)$/ ) {
+%  push @extra_sql, "svcpart = $1";
 %}
 %
 %my $addl_from = ' LEFT JOIN cust_svc  USING ( svcnum  ) '.

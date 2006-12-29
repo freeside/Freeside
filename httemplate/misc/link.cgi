@@ -1,6 +1,3 @@
-<!-- mason kludge -->
-%
-%
 %my %link_field = (
 %  'svc_acct'    => 'username',
 %  'svc_domain'  => 'domain',
@@ -16,12 +13,10 @@
 %                   },
 %);
 %
-%my($query) = $cgi->keywords;
-%my($pkgnum, $svcpart) = ('', '');
-%foreach $_ (split(/-/,$query)) { #get & untaint pkgnum & svcpart
-%  $pkgnum=$1 if /^pkgnum(\d+)$/;
-%  $svcpart=$1 if /^svcpart(\d+)$/;
-%}
+%$cgi->param('pkgnum') =~ /^(\d+)$/ or die 'unparsable pkgnum';
+%my $pkgnum = $1;
+%$cgi->param('svcpart') =~ /^(\d+)$/ or die 'unparsable svcpart';
+%my $svcpart = $1;
 %
 %my $part_svc = qsearchs('part_svc',{'svcpart'=>$svcpart});
 %my $svc = $part_svc->getfield('svc');
@@ -29,8 +24,6 @@
 %my $link_field = $link_field{$svcdb};
 %my $link_field2 = $link_field2{$svcdb};
 %
-%
-
 
 <% include("/elements/header.html","Link to existing $svc") %>
 <FORM ACTION="<% popurl(1) %>process/link.cgi" METHOD=POST>

@@ -1,11 +1,10 @@
-package FS::svc_external;
+package FS::svc_External_Common;
 
 use strict;
 use vars qw(@ISA);
-use FS::Conf;
-use FS::svc_External_Common;
+use FS::svc_Common;
 
-@ISA = qw( FS::svc_External_Common );
+@ISA = qw( FS::svc_Common );
 
 =head1 NAME
 
@@ -34,8 +33,12 @@ FS::svc_external - Object methods for svc_external records
 
 =head1 DESCRIPTION
 
-An FS::svc_external object represents a generic externally tracked service.
-FS::svc_external inherits from FS::svc_External_Common (and FS::svc_Common).
+FS::svc_External_Common is intended as a base class for table-specific classes
+to inherit from.  FS::svc_External_Common is used for services which connect
+to externally tracked services via "id" and "table" fields.
+
+FS::svc_External_Common inherits from FS::svc_Common.
+
 The following fields are currently supported:
 
 =over 4
@@ -52,6 +55,18 @@ The following fields are currently supported:
 
 =over 4
 
+=item search_sql
+
+Provides a default search_sql method which returns an SQL fragment to search
+the B<title> field.
+
+=cut
+
+sub search_sql {
+  my($class, $string) = @_;
+  $class->search_sql_field('title', $string);
+}
+
 =item new HASHREF
 
 Creates a new external service.  To add the external service to the database,
@@ -62,29 +77,15 @@ points to.  You can ask the object for a copy with the I<hash> method.
 
 =cut
 
-sub table_info {
-  {
-    'name' => 'External service',
-    'sorts' => 'id',
-    'display_weight' => 90,
-    'cancel_weight'  => 10,
-    'fields' => {
-    },
-  };
-}
+=item label
 
-sub table { 'svc_external'; }
+Returns a string identifying this external service in the form "id:title"
 
-# oh!  this should be moved to svc_artera_turbo or something now
+=cut
+
 sub label {
   my $self = shift;
-  my $conf = new FS::Conf;
-  if ( $conf->config('svc_external-display_type') eq 'artera_turbo' ) {
-    sprintf('%010d', $self->id). '-'.
-      substr('0000000000'.uc($self->title), -10);
-  } else {
-    $self->SUPER::label;
-  }
+  $self->id. ':'. $self->title;
 }
 
 =item insert [ , OPTION => VALUE ... ]
@@ -167,15 +168,21 @@ and replace methods.
 
 =cut
 
-#sub check {
-#  my $self = shift;
-#  my $error;
-#
-#  $error = $self->SUPER::delete;
-#  return $error if $error;
-#
-#  '';
-#}
+sub check {
+  my $self = shift;
+
+  my $x = $self->setfixed;
+  return $x unless ref($x);
+  my $part_svc = $x;
+
+  my $error = 
+    $self->ut_numbern('svcnum')
+    || $self->ut_numbern('id')
+    || $self->ut_textn('title')
+  ;
+
+  $self->SUPER::check;
+}
 
 =back
 
@@ -183,8 +190,8 @@ and replace methods.
 
 =head1 SEE ALSO
 
-L<FS::svc_External_Common>, L<FS::svc_Common>, L<FS::Record>, L<FS::cust_svc>,
-L<FS::part_svc>, L<FS::cust_pkg>, schema.html from the base documentation.
+L<FS::svc_Common>, L<FS::Record>, L<FS::cust_svc>, L<FS::part_svc>,
+L<FS::cust_pkg>, schema.html from the base documentation.
 
 =cut
 

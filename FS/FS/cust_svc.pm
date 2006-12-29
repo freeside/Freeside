@@ -2,24 +2,21 @@ package FS::cust_svc;
 
 use strict;
 use vars qw( @ISA $DEBUG $me $ignore_quantity );
-use Carp qw( carp cluck );
+use Carp;
 use FS::Conf;
 use FS::Record qw( qsearch qsearchs dbh );
 use FS::cust_pkg;
 use FS::part_pkg;
 use FS::part_svc;
 use FS::pkg_svc;
-use FS::svc_acct;
-use FS::svc_domain;
-use FS::svc_forward;
-use FS::svc_broadband;
-use FS::svc_phone;
-use FS::svc_external;
 use FS::domain_record;
 use FS::part_export;
 use FS::cdr;
 
-@ISA = qw( FS::Record );
+#most FS::svc_ classes are autoloaded in svc_x emthod
+use FS::svc_acct;  #this one is used in the cache stuff
+
+@ISA = qw( FS::cust_main_Mixin FS::Record );
 
 $DEBUG = 0;
 $me = '[cust_svc]';
@@ -289,54 +286,20 @@ sub label {
   my $self = shift;
   carp "FS::cust_svc::label called on $self" if $DEBUG;
   my $svc_x = $self->svc_x
-    or die "can't find ". $self->part_svc->svcdb. '.svcnum '. $self->svcnum;
+    or return "can't find ". $self->part_svc->svcdb. '.svcnum '. $self->svcnum;
+
   $self->_svc_label($svc_x);
 }
 
 sub _svc_label {
   my( $self, $svc_x ) = ( shift, shift );
-  my $svcdb = $self->part_svc->svcdb;
 
-  my $tag;
-  if ( $svcdb eq 'svc_acct' ) {
-    $tag = $svc_x->email(@_);
-  } elsif ( $svcdb eq 'svc_forward' ) {
-    if ( $svc_x->srcsvc ) {
-      my $svc_acct = $svc_x->srcsvc_acct(@_);
-      $tag = $svc_acct->email(@_);
-    } else {
-      $tag = $svc_x->src;
-    }
-    $tag .= '->';
-    if ( $svc_x->dstsvc ) {
-      my $svc_acct = $svc_x->dstsvc_acct(@_);
-      $tag .= $svc_acct->email(@_);
-    } else {
-      $tag .= $svc_x->dst;
-    }
-  } elsif ( $svcdb eq 'svc_domain' ) {
-    $tag = $svc_x->getfield('domain');
-  } elsif ( $svcdb eq 'svc_www' ) {
-    my $domain_record = $svc_x->domain_record(@_);
-    $tag = $domain_record->zone;
-  } elsif ( $svcdb eq 'svc_broadband' ) {
-    $tag = $svc_x->ip_addr;
-  } elsif ( $svcdb eq 'svc_phone' ) {
-    $tag = $svc_x->phonenum; #XXX format it better
-  } elsif ( $svcdb eq 'svc_external' ) {
-    my $conf = new FS::Conf;
-    if ( $conf->config('svc_external-display_type') eq 'artera_turbo' ) {
-      $tag = sprintf('%010d', $svc_x->id). '-'.
-             substr('0000000000'.uc($svc_x->title), -10);
-    } else {
-      $tag = $svc_x->id. ': '. $svc_x->title;
-    }
-  } else {
-    cluck "warning: asked for label of unsupported svcdb; using svcnum";
-    $tag = $svc_x->getfield('svcnum');
-  }
-
-  $self->part_svc->svc, $tag, $svcdb, $self->svcnum;
+  (
+    $self->part_svc->svc,
+    $svc_x->label(@_),
+    $self->part_svc->svcdb,
+    $self->svcnum
+  );
 
 }
 
@@ -353,7 +316,7 @@ sub svc_x {
   if ( $svcdb eq 'svc_acct' && $self->{'_svc_acct'} ) {
     $self->{'_svc_acct'};
   } else {
-    #require "FS/$svcdb.pm";
+    require "FS/$svcdb.pm";
     warn "$me svc_x: part_svc.svcpart ". $self->part_svc->svcpart.
          ", so searching for $svcdb.svcnum ". $self->svcnum. "\n"
       if $DEBUG;

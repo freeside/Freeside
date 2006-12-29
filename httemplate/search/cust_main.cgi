@@ -1,5 +1,3 @@
-%
-%
 %my $conf = new FS::Conf;
 %my $maxrecords = $conf->config('maxsearchrecordsperpage');
 %
@@ -486,8 +484,9 @@
 %         my($label, $value, $svcdb) = $cust_svc->label;
 %         my($svcnum) = $cust_svc->svcnum;
 %         my($sview) = $p.'view';
-%         print $n2,qq!<TD CLASS="grid" BGCOLOR="$bgcolor" ><A HREF="$sview/$svcdb.cgi?$svcnum"><FONT SIZE=-1>$label</FONT></A></TD>!,
-%               qq!<TD CLASS="grid" BGCOLOR="$bgcolor" ><A HREF="$sview/$svcdb.cgi?$svcnum"><FONT SIZE=-1>$value</FONT></A></TD>!;
+%         print $n2,
+%           qq!<TD CLASS="grid" BGCOLOR="$bgcolor" >!. FS::UI::Web::svc_link($m, $cust_svc->part_svc, $cust_svc) . qq!</TD> !.
+%           qq!<TD CLASS="grid" BGCOLOR="$bgcolor" >!. FS::UI::Web::svc_label_link($m, $cust_svc->part_svc, $cust_svc) . qq!</TD> !;
 %         $n2="</TR><TR>";
 %      }
 %
@@ -719,6 +718,3 @@
 %
 %  \@cust_main;
 %}
-%
-%
-

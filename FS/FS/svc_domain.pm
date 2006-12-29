@@ -11,6 +11,7 @@ use Date::Format;
 use FS::Record qw(fields qsearch qsearchs dbh);
 use FS::Conf;
 use FS::svc_Common;
+use FS::svc_Parent_Mixin;
 use FS::cust_svc;
 use FS::svc_acct;
 use FS::cust_pkg;
@@ -18,7 +19,7 @@ use FS::cust_main;
 use FS::domain_record;
 use FS::queue;
 
-@ISA = qw( FS::svc_Common );
+@ISA = qw( FS::svc_Parent_Mixin FS::svc_Common );
 
 #ask FS::UID to run this stuff for us later
 $FS::UID::callback{'FS::domain'} = sub { 
@@ -72,6 +73,20 @@ FS::svc_Common.  The following fields are currently supported:
 
 =item catchall - optional svcnum of an svc_acct record, designating an email catchall account.
 
+=item suffix - 
+
+=item parent_svcnum -
+
+=item registrarnum - Registrar (see L<FS::registrar>)
+
+=item registrarkey - Registrar key or password for this domain
+
+=item setup_date - UNIX timestamp
+
+=item renewal_interval - Number of days before expiration date to start renewal
+
+=item expiration_date - UNIX timestamp
+
 =back
 
 =head1 METHODS
@@ -84,7 +99,36 @@ Creates a new domain.  To add the domain to the database, see L<"insert">.
 
 =cut
 
+sub table_info {
+  {
+    'name' => 'Domain',
+    'sorts' => 'domain',
+    'display_weight' => 20,
+    'cancel_weight'  => 60,
+    'fields' => {
+      'domain' => 'Domain',
+    },
+  };
+}
+
 sub table { 'svc_domain'; }
+
+sub search_sql {
+  my($class, $string) = @_;
+  $class->search_sql_field('domain', $string);
+}
+
+
+=item label
+
+Returns the domain.
+
+=cut
+
+sub label {
+  my $self = shift;
+  $self->domain;
+}
 
 =item insert [ , OPTION => VALUE ... ]
 
@@ -141,23 +185,12 @@ sub insert {
   return "Domain in use (here)"
     if qsearchs( 'svc_domain', { 'domain' => $self->domain } );
 
-  my $whois = $self->whois;
-  if ( $self->action eq "N" && ! $whois_hack && $whois ) {
-    $dbh->rollback if $oldAutoCommit;
-    return "Domain in use (see whois)";
-  }
-  if ( $self->action eq "M" && ! $whois ) {
-    $dbh->rollback if $oldAutoCommit;
-    return "Domain not found (see whois)";
-  }
 
   $error = $self->SUPER::insert(@_);
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
   }
-
-  $self->submit_internic unless $whois_hack;
 
   if ( $soamachine ) {
     my $soa = new FS::domain_record {
@@ -257,6 +290,9 @@ returns the error, otherwise returns false.
 sub replace {
   my ( $new, $old ) = ( shift, shift );
 
+  # We absolutely have to have an old vs. new record to make this work.
+  $old = $new->replace_old unless defined($old);
+
   return "Can't change domain - reorder."
     if $old->getfield('domain') ne $new->getfield('domain'); 
 
@@ -317,45 +353,32 @@ sub check {
 
   my($recref) = $self->hashref;
 
-  unless ( $whois_hack ) {
-    unless ( $self->email ) { #find out an email address
-      my @svc_acct;
-      foreach ( qsearch( 'cust_svc', { 'pkgnum' => $pkgnum } ) ) {
-        my $svc_acct = qsearchs( 'svc_acct', { 'svcnum' => $_->svcnum } );
-        push @svc_acct, $svc_acct if $svc_acct;
-      }
-
-      if ( scalar(@svc_acct) == 0 ) {
-        return "Must order an account in package ". $pkgnum. " first";
-      } elsif ( scalar(@svc_acct) > 1 ) {
-        return "More than one account in package ". $pkgnum. ": specify admin contact email";
-      } else {
-        $self->email($svc_acct[0]->email );
-      }
-    }
-  }
-
   #if ( $recref->{domain} =~ /^([\w\-\.]{1,22})\.(com|net|org|edu)$/ ) {
-  if ( $recref->{domain} =~ /^([\w\-]{1,63})\.(com|net|org|edu)$/ ) {
+  if ( $recref->{domain} =~ /^([\w\-]{1,63})\.(com|net|org|edu|tv|info|biz)$/ ) {
     $recref->{domain} = "$1.$2";
+    $recref->{suffix} ||= $2;
   # hmmmmmmmm.
-  } elsif ( $whois_hack && $recref->{domain} =~ /^([\w\-\.]+)$/ ) {
-    $recref->{domain} = $1;
+  } elsif ( $whois_hack && $recref->{domain} =~ /^([\w\-\.]+)\.(\w+)$/ ) {
+    $recref->{domain} = "$1.$2";
+    # need to match a list of suffixes - no guarantee they're top-level..
   } else {
     return "Illegal domain ". $recref->{domain}.
            " (or unknown registry - try \$whois_hack)";
   }
 
-  $recref->{action} =~ /^(M|N)$/
-    or return "Illegal action: ". $recref->{action};
-  $recref->{action} = $1;
 
   if ( $recref->{catchall} ne '' ) {
     my $svc_acct = qsearchs( 'svc_acct', { 'svcnum' => $recref->{catchall} } );
     return "Unknown catchall" unless $svc_acct;
   }
 
-  $self->ut_textn('purpose')
+  $self->ut_alphan('suffix')
+    or $self->ut_foreign_keyn('registrarnum', 'registrar', 'registrarnum')
+    or $self->ut_textn('registrarkey')
+    or $self->ut_numbern('setup_date')
+    or $self->ut_numbern('renewal_interval')
+    or $self->ut_numbern('expiration_date')
+    or $self->ut_textn('purpose')
     or $self->SUPER::check;
 
 }
@@ -402,7 +425,7 @@ sub catchall_svc_acct {
 
 sub whois {
   #$whois_hack or new Net::Whois::Domain $_[0]->domain;
-  $whois_hack or die "whois_hack not set...\n";
+  #$whois_hack or die "whois_hack not set...\n";
 }
 
 =item _whois

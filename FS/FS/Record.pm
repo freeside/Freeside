@@ -974,21 +974,9 @@ returns the error, otherwise returns false.
 =cut
 
 sub replace {
-  my $new = shift;
-  my $old = shift;  
+  my ($new, $old) = (shift, shift);
 
-  if (!defined($old)) { 
-    warn "[debug]$me replace called with no arguments; autoloading old record\n"
-     if $DEBUG;
-    my $primary_key = $new->dbdef_table->primary_key;
-    if ( $primary_key ) {
-      $old = qsearchs($new->table, { $primary_key => $new->$primary_key() } )
-        or croak "can't find ". $new->table. ".$primary_key ".
-                 $new->$primary_key();
-    } else {
-      croak $new->table. " has no primary key; pass old record as argument";
-    }
-  }
+  $old = $new->replace_old unless defined($old);
 
   warn "[debug]$me $new ->replace $old\n" if $DEBUG;
 
@@ -1155,6 +1143,22 @@ sub replace {
   }
 
   '';
+
+}
+
+sub replace_old {
+  my( $self ) = shift;
+  warn "[$me] replace called with no arguments; autoloading old record\n"
+    if $DEBUG;
+
+  my $primary_key = $self->dbdef_table->primary_key;
+  if ( $primary_key ) {
+    $self->by_key( $self->$primary_key() ) #this is what's returned
+      or croak "can't find ". $self->table. ".$primary_key ".
+        $self->$primary_key();
+  } else {
+    croak $self->table. " has no primary key; pass old record as argument";
+  }
 
 }
 

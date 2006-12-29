@@ -2,7 +2,7 @@ package FS::svc_Common;
 
 use strict;
 use vars qw( @ISA $noexport_hack $DEBUG $me );
-use Carp;
+use Carp qw( cluck carp croak ); #specify cluck have to specify them all..
 use FS::Record qw( qsearch qsearchs fields dbh );
 use FS::cust_main_Mixin;
 use FS::cust_svc;
@@ -35,6 +35,27 @@ inherit from, i.e. FS::svc_acct.  FS::svc_Common inherits from FS::Record.
 =head1 METHODS
 
 =over 4
+
+=item search_sql_field FIELD STRING
+
+Class method which returns an SQL fragment to search for STRING in FIELD.
+
+=cut
+
+sub search_sql_field {
+  my( $class, $field, $string ) = @_;
+  my $table = $class->table;
+  my $q_string = dbh->quote($string);
+  "$table.$field = $q_string";
+}
+
+#fallback for services that don't provide a search... 
+sub search_sql {
+  #my( $class, $string ) = @_;
+  '1 = 0'; #false
+}
+
+=item new
 
 =cut
 
@@ -112,6 +133,19 @@ sub virtual_fields {
     return @vfields;
   } 
   return ();
+}
+
+=item label
+
+svc_Common provides a fallback label subroutine that just returns the svcnum.
+
+=cut
+
+sub label {
+  my $self = shift;
+  cluck "warning: ". ref($self). " not loaded or missing label method; ".
+        "using svcnum";
+  $self->svcnum;
 }
 
 =item check
@@ -300,35 +334,15 @@ sub delete {
   local $SIG{TSTP} = 'IGNORE';
   local $SIG{PIPE} = 'IGNORE';
 
-  my $svcnum = $self->svcnum;
-
   my $oldAutoCommit = $FS::UID::AutoCommit;
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  $error = $self->SUPER::delete;
-  return $error if $error;
-
-  #new-style exports!
-  unless ( $noexport_hack ) {
-    foreach my $part_export ( $self->cust_svc->part_svc->part_export ) {
-      $error = $part_export->export_delete($self);
-      if ( $error ) {
-        $dbh->rollback if $oldAutoCommit;
-        return "exporting to ". $part_export->exporttype.
-               " (transaction rolled back): $error";
-      }
-    }
-  }
-
-  $error = $self->return_inventory;
-  if ( $error ) {
-    $dbh->rollback if $oldAutoCommit;
-    return "error returning inventory: $error";
-  }
-
-  my $cust_svc = $self->cust_svc;
-  $error = $cust_svc->delete;
+  $error =    $self->SUPER::delete
+           || $self->export('delete')
+	   || $self->return_inventory
+	   || $self->cust_svc->delete
+  ;
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
@@ -361,18 +375,7 @@ sub replace {
   my $dbh = dbh;
 
   # We absolutely have to have an old vs. new record to make this work.
-  if ( !defined($old) ) { 
-    warn "[$me] replace called with no arguments; autoloading old record\n"
-      if $DEBUG;
-    my $primary_key = $new->dbdef_table->primary_key;
-    if ( $primary_key ) {
-      $old = qsearchs($new->table, { $primary_key => $new->$primary_key() } )
-        or croak "can't find ". $new->table. ".$primary_key ".
-	         $new->$primary_key();
-    } else {
-      croak $new->table. " has no primary key; pass old record as argument";
-    }
-  }
+  $old = $new->replace_old unless defined($old);
 
   my $error = $new->set_auto_inventory;
   if ( $error ) {
@@ -678,33 +681,7 @@ Runs export_suspend callbacks.
 
 sub suspend {
   my $self = shift;
-
-  local $SIG{HUP} = 'IGNORE';
-  local $SIG{INT} = 'IGNORE';
-  local $SIG{QUIT} = 'IGNORE';
-  local $SIG{TERM} = 'IGNORE';
-  local $SIG{TSTP} = 'IGNORE';
-  local $SIG{PIPE} = 'IGNORE';
-
-  my $oldAutoCommit = $FS::UID::AutoCommit;
-  local $FS::UID::AutoCommit = 0;
-  my $dbh = dbh;
-
-  #new-style exports!
-  unless ( $noexport_hack ) {
-    foreach my $part_export ( $self->cust_svc->part_svc->part_export ) {
-      my $error = $part_export->export_suspend($self);
-      if ( $error ) {
-        $dbh->rollback if $oldAutoCommit;
-        return "error exporting to ". $part_export->exporttype.
-               " (transaction rolled back): $error";
-      }
-    }
-  }
-
-  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
-  '';
-
+  $self->export('suspend');
 }
 
 =item unsuspend
@@ -715,6 +692,19 @@ Runs export_unsuspend callbacks.
 
 sub unsuspend {
   my $self = shift;
+  $self->export('unsuspend');
+}
+
+=item export HOOK [ EXPORT_ARGS ]
+
+Runs the provided export hook (i.e. "suspend", "unsuspend") for this service.
+
+=cut
+
+sub export {
+  my( $self, $method ) = ( shift, shift );
+
+  $method = "export_$method" unless $method =~ /^export_/;
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -730,10 +720,11 @@ sub unsuspend {
   #new-style exports!
   unless ( $noexport_hack ) {
     foreach my $part_export ( $self->cust_svc->part_svc->part_export ) {
-      my $error = $part_export->export_unsuspend($self);
+      next unless $part_export->can($method);
+      my $error = $part_export->$method($self, @_);
       if ( $error ) {
         $dbh->rollback if $oldAutoCommit;
-        return "error exporting to ". $part_export->exporttype.
+        return "error exporting $method event to ". $part_export->exporttype.
                " (transaction rolled back): $error";
       }
     }
@@ -786,6 +777,8 @@ sub clone_kludge_unsuspend {
 =head1 BUGS
 
 The setfixed method return value.
+
+B<export> method isn't used by insert and replace methods yet.
 
 =head1 SEE ALSO
 

@@ -1,6 +1,7 @@
 package FS::UI::Web;
 
-use vars qw($DEBUG);
+use strict;
+use vars qw($DEBUG $me);
 use FS::Conf;
 use FS::Record qw(dbdef);
 
@@ -9,6 +10,11 @@ use FS::Record qw(dbdef);
 #@ISA = qw( FS::UI );
 
 $DEBUG = 0;
+$me = '[FS::UID::Web]';
+
+###
+# date parsing
+###
 
 use Date::Parse;
 sub parse_beginning_ending {
@@ -30,6 +36,109 @@ sub parse_beginning_ending {
   }
 
   ( $beginning, $ending );
+}
+
+=item svc_url
+
+Returns a service URL, first checking to see if there is a service-specific
+page to link to, otherwise to a generic service handling page.  Options are
+passed as a list of name-value pairs, and include:
+
+=over 4
+
+=item * m - Mason request object ($m)
+
+=item * action - The action for which to construct "edit", "view", or "search"
+
+=item ** part_svc - Service definition (see L<FS::part_svc>)
+
+=item ** svcdb - Service table
+
+=item *** query - Query string
+
+=item *** svc   - FS::cust_svc or FS::svc_* object
+
+=item ahref - Optional flag, if set true returns <A HREF="$url"> instead of just the URL.
+
+=back 
+
+* Required fields
+
+** part_svc OR svcdb is required
+
+*** query OR svc is required
+
+=cut
+
+  # ##
+  # #required
+  # ##
+  #  'm'        => $m, #mason request object
+  #  'action'   => 'edit', #or 'view'
+  #
+  #  'part_svc' => $part_svc, #usual
+  #   #OR
+  #  'svcdb'    => 'svc_table',
+  #
+  #  'query'    => #optional query string
+  #   #OR
+  #  'svc'      => $svc_x, #or $cust_svc, it just needs a svcnum
+  #
+  # ##
+  # #optional
+  # ##
+  #  'ahref'    => 1, # if set true, returns <A HREF="$url">
+
+use FS::CGI qw(popurl);
+sub svc_url {
+  my %opt = @_;
+
+  #? return '' unless ref($opt{part_svc});
+
+  my $svcdb = $opt{svcdb} || $opt{part_svc}->svcdb;
+  my $query = exists($opt{query}) ? $opt{query} : $opt{svc}->svcnum;
+  my $url;
+  warn "$me [svc_url] checking for /$opt{action}/$svcdb.cgi component"
+    if $DEBUG;
+  if ( $opt{m}->interp->comp_exists("/$opt{action}/$svcdb.cgi") ) {
+    $url = "$svcdb.cgi?";
+  } else {
+
+    my $generic = $opt{action} eq 'search' ? 'cust_svc' : 'svc_Common';
+
+    $url = "$generic.html?svcdb=$svcdb;";
+    $url .= 'svcnum=' if $query =~ /^\d+(;|$)/;
+  }
+
+  my $p = popurl(2); #?
+  my $return = "$p$opt{action}/$url$query";
+
+  $return = qq!<A HREF="$return">! if $opt{ahref};
+
+  $return;
+}
+
+sub svc_link {
+  my($m, $part_svc, $cust_svc) = @_ or return '';
+  svc_X_link( $part_svc->svc, @_ );
+}
+
+sub svc_label_link {
+  my($m, $part_svc, $cust_svc) = @_ or return '';
+  svc_X_link( ($cust_svc->label)[1], @_ );
+}
+
+sub svc_X_link {
+  my ($x, $m, $part_svc, $cust_svc) = @_ or return '';
+  my $ahref = svc_url(
+    'ahref'    => 1,
+    'm'        => $m,
+    'action'   => 'view',
+    'part_svc' => $part_svc,
+    'svc'      => $cust_svc,
+  );
+
+  "$ahref$x</A>";
 }
 
 sub parse_lt_gt {

@@ -72,7 +72,32 @@ points to.  You can ask the object for a copy with the I<hash> method.
 
 =cut
 
+sub table_info {
+  {
+    'name' => 'Hosting',
+    'name_plural' => 'Virtual hosting services',
+    'display_weight' => 40,
+    'cancel_weight'  => 20,
+    'fields' => {
+    },
+  };
+};
+
 sub table { 'svc_www'; }
+
+=item label [ END_TIMESTAMP [ START_TIMESTAMP ] ]
+
+Returns the zone name for this virtual host.
+
+END_TIMESTAMP and START_TIMESTAMP can optionally be passed when dealing with
+history records.
+
+=cut
+
+sub label {
+  my $self = shift;
+  $self->domain_record(@_)->zone;
+}
 
 =item insert [ , OPTION => VALUE ... ]
 

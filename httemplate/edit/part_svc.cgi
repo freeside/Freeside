@@ -55,159 +55,37 @@ For the selected table, you can give fields default or fixed (unchangable)
 values, or select an inventory class to manually or automatically fill in
 that field.
 <BR><BR>
-%
-%
-%#these might belong somewhere else for other user interfaces 
-%#pry need to eventually create stuff that's shared amount UIs
-%my $conf = new FS::Conf;
-%my %defs = (
-%
-%  'svc_acct' => {
-%    'dir'       => 'Home directory',
-%    'uid'       => 'UID (set to fixed and blank for no UIDs)',
-%    'slipip'    => 'IP address',
-%#    'popnum'    => qq!<A HREF="$p/browse/svc_acct_pop.cgi/">POP number</A>!,
-%    'popnum'    => {
-%                     desc => 'Access number',
-%                     type => 'select',
-%                     select_table => 'svc_acct_pop',
-%                     select_key   => 'popnum',
-%                     select_label => 'city',
-%                     disable_select => 1,
-%                   },
-%    'username'  => {
-%                     desc => 'Username',
-%                     type => 'text',
-%                     disable_default => 1,
-%                     disable_fixed => 1,
-%                     disable_select => 1,
-%                   },
-%    'quota'     => { 
-%                     desc => '',
-%                     type => 'text',
-%                     disable_inventory => 1,
-%                     disable_select => 1,
-%                   },
-%    '_password' => 'Password',
-%    'gid'       => 'GID (when blank, defaults to UID)',
-%    'shell'     => {
-%                     #desc =>'Shell (all service definitions should have a default or fixed shell that is present in the <b>shells</b> configuration file, set to blank for no shell tracking)',
-%                     desc =>'Shell ( set to blank for no shell tracking)',
-%                     type =>'select',
-%                     select_list => [ $conf->config('shells') ],
-%                     disable_inventory => 1,
-%                     disable_select => 1,
-%                   },
-%    'finger'    => 'Real name (GECOS)',
-%    'domsvc'    => {
-%                     desc =>'svcnum from svc_domain',
-%                     type =>'select',
-%                     select_table => 'svc_domain',
-%                     select_key   => 'svcnum',
-%                     select_label => 'domain',
-%                     disable_inventory => 1,
-%                     disable_select => 1,
-%                   },
-%    'usergroup' => {
-%                     desc =>'RADIUS groups',
-%                     type =>'radius_usergroup_selector',
-%                     disable_select => 1,
-%                     disable_inventory => 1,
-%                   },
-%    'seconds'   => { desc => '',
-%                     type => 'text',
-%                     disable_inventory => 1,
-%                     disable_select => 1,
-%                   },
-%  },
-%
-%  'svc_domain' => {
-%    'domain'    => 'Domain',
-%  },
-%
-%  'svc_forward' => {
-%    'srcsvc'    => 'service from which mail is to be forwarded',
-%    'dstsvc'    => 'service to which mail is to be forwarded',
-%    'dst'       => 'someone@another.domain.com to use when dstsvc is 0',
-%  },
-%
-%#  'svc_charge' => {
-%#    'amount'    => 'amount',
-%#  },
-%#  'svc_wo' => {
-%#    'worker'    => 'Worker',
-%#    '_date'      => 'Date',
-%#  },
-%
-%  'svc_www' => {
-%    #'recnum' => '',
-%    #'usersvc' => '',
-%  },
-%
-%  'svc_broadband' => {
-%    'speed_down' => 'Maximum download speed for this service in Kbps.  0 denotes unlimited.',
-%    'speed_up' => 'Maximum upload speed for this service in Kbps.  0 denotes unlimited.',
-%    'ip_addr' => 'IP address.  Leave blank for automatic assignment.',
-%    'blocknum' => 'Address block.',
-%  },
-%
-%  'svc_phone' => {
-%    'countrycode' => { desc => 'Country code',
-%                       type => 'text',
-%                       disable_inventory => 1,
-%                       disable_select => 1,
-%                     },
-%    'phonenum'    => 'Phone number',
-%    'pin'         => { desc => 'Personal Identification Number',
-%                       type => 'text',
-%                       disable_inventory => 1,
-%                       disable_select => 1,
-%                     },
-%  },
-%
-%  'svc_external' => {
-%    #'id' => '',
-%    #'title' => '',
-%  },
-%
-%);
-%
-%  my %vfields;
-%  foreach my $svcdb (grep dbdef->table($_), keys %defs ) {
-%    my $self = "FS::$svcdb"->new;
-%    $vfields{$svcdb} = {};
-%    foreach my $field ($self->virtual_fields) { # svc_Common::virtual_fields with a null svcpart returns all of them
-%      my $pvf = $self->pvf($field);
-%      my @list = $pvf->list;
-%      if (scalar @list) {
-%        $defs{$svcdb}->{$field} = { desc        => $pvf->label,
-%                                    type        => 'select',
-%                                    select_list => \@list };
-%      } else {
-%        $defs{$svcdb}->{$field} = $pvf->label;
-%      } #endif
-%      $vfields{$svcdb}->{$field} = $pvf;
-%      warn "\$vfields{$svcdb}->{$field} = $pvf";
-%    } #next $field
-%  } #next $svcdb
+
+% #YUCK.  false laziness w/part_svc.pm.  go away virtual fields, please
+% my %vfields;
+% foreach my $svcdb ( FS::part_svc->svc_tables() ) {
+%   eval "use FS::$svcdb;";
+%   my $self = "FS::$svcdb"->new;
+%   $vfields{$svcdb} = {};
+%   foreach my $field ($self->virtual_fields) { # svc_Common::virtual_fields with a null svcpart returns all of them
+%     my $pvf = $self->pvf($field);
+%     $vfields{$svcdb}->{$field} = $pvf;
+%     #warn "\$vfields{$svcdb}->{$field} = $pvf";
+%   } #next $field
+% } #next $svcdb
 %
 %  #code duplication w/ edit/part_svc.cgi, should move this hash to part_svc.pm
 %  # and generalize the subs
 %  # condition sub is tested to see whether to disable display of this choice
 %  # params: ( $def, $layer, $field )  (see SUB below)
 %  my $inv_sub = sub {
-%    ref($_[0]) && (    $_[0]->{disable_inventory} 
-%                    || $_[0]->{'type'} ne 'text'  )
-%  };
+%                      $_[0]->{disable_inventory}
+%                        || $_[0]->{'type'} ne 'text'
+%                    };
 %  tie my %flag, 'Tie::IxHash',
 %    ''  => { 'desc' => 'No default', },
 %    'D' => { 'desc' => 'Default',
 %             'condition' =>
-%               sub { ref($_[0]) && $_[0]->{disable_default} }, 
+%               sub { $_[0]->{disable_default} }, 
 %           },
 %    'F' => { 'desc' => 'Fixed (unchangeable)',
 %             'condition' =>
-%               sub { ref($_[0]) && $_[0]->{disable_fixed} }, 
+%               sub { $_[0]->{disable_fixed} }, 
 %           },
 %    'S' => { 'desc' => 'Selectable Choice',
 %             'condition' =>
@@ -229,7 +107,7 @@ that field.
 %  
 %  my @dbs = $hashref->{svcdb}
 %             ? ( $hashref->{svcdb} )
-%             : qw( svc_acct svc_domain svc_forward svc_www svc_broadband svc_phone svc_external );
+%             : FS::part_svc->svc_tables();
 %
 %  tie my %svcdb, 'Tie::IxHash', map { $_=>$_ } grep dbdef->table($_), @dbs;
 %  my $widget = new HTML::Widgets::SelectLayers(
@@ -291,8 +169,9 @@ that field.
 %        my $part_svc_column = $part_svc->part_svc_column($field);
 %        my $value = $part_svc_column->columnvalue;
 %        my $flag = $part_svc_column->columnflag;
-%        my $def = $defs{$layer}{$field};
-%        my $desc = ref($def) ? $def->{desc} : $def;
+%        #my $def = $defs{$layer}{$field};
+%        my $def = FS::part_svc->svc_table_fields($layer)->{$field};
+%        my $label = $def->{'def_label'} || $def->{'label'};
 %
 %        if ( $bgcolor eq $bgcolor1 ) {
 %          $bgcolor = $bgcolor2;
@@ -301,14 +180,13 @@ that field.
 %        }
 %        
 %        $html .= qq!<TR><TD CLASS="grid" BGCOLOR="$bgcolor" ALIGN="right">!.
-%                 $field;
-%        $html .= "- <FONT SIZE=-1>$desc</FONT>" if $desc;
-%        $html .=  "</TD>";
-%        $flag = '' if ref($def) && $def->{type} eq 'disabled';
+%                 ( $label || $field ).
+%                 "</TD>";
+%        $flag = '' if $def->{type} eq 'disabled';
 %
 %        $html .= qq!<TD CLASS="grid" BGCOLOR="$bgcolor">!;
 %
-%        if ( ref($def) && $def->{type} eq 'disabled' ) {
+%        if ( $def->{type} eq 'disabled' ) {
 %        
 %          $html .= 'No default';
 %
@@ -372,7 +250,7 @@ that field.
 %        my $disabled = $flag ? ''
 %                             : 'DISABLED STYLE="background-color: #dddddd"';
 %
-%        if ( ! ref($def) || $def->{type} eq 'text' ) {
+%        if ( !$def->{type} || $def->{type} eq 'text' ) {
 %
 %          my $nodisplay = ' STYLE="display:none"';
 %          my $is_inv = ( $flag =~ /^[MA]$/ );
