@@ -15,9 +15,13 @@
 %  # 'fields' => [
 %  #               'columname',
 %  #               { 'field' => 'another_columname',
-%  #                 'type'  => 'text', #text, fixed, hidden, checkbox
-%  #                                    #eventually more for <SELECT>, etc.
-%  #                 'value' => 'Y', #only for checkbox
+%  #                 'type'  => 'text', #text
+%  #                                    #checkbox
+%  #                                    #select
+%  #                                    #hidden - hidden value from object
+%  #                                    #fixed - display fixed value from here
+%  #                                    #fixedhidden - hidden value from here
+%  #                 'value' => 'Y', #for checkbox, fixed, fixedhidden
 %  #               },
 %  #             ]
 %  #
@@ -156,22 +160,24 @@
               : $field
       %>
     </TD>
-% if ( $type eq 'fixed' ) { 
 
+% if ( $type eq 'fixed' ) { 
 
       <TD BGCOLOR="#dddddd"><% $f->{'value'} %></TD>
       <INPUT TYPE="hidden" NAME="<% $field %>" VALUE="<% $f->{'value'} %>">
-% } elsif ( $type eq 'fixedhidden' ) { 
 
+% } elsif ( $type eq 'fixedhidden' ) {
 
       <INPUT TYPE="hidden" NAME="<% $field %>" VALUE="<% $f->{'value'} %>">
-% } elsif ( $type eq 'checkbox' ) { 
 
+% } elsif ( $type eq 'checkbox' ) { 
 
       <TD>
         <INPUT TYPE="checkbox" NAME="<% $field %>" VALUE="<% $f->{'value'} %>" <% $object->$field() eq $f->{'value'} ? ' CHECKED' : '' %>>
       </TD>
+
 % } elsif ( $type eq 'select' ) { 
+
       <TD>
         <SELECT NAME="<% $field %>" 
 %     my $aref = $f->{'value'}{'values'};
@@ -183,18 +189,18 @@
 %     }
 	</SELECT>
       </TD>
-% } else { 
 
+% } else { 
 
       <TD>
         <INPUT TYPE="<% $type %>" NAME="<% $field %>" VALUE="<% $object->$field() %>">
       <TD>
-% } 
 
+% } 
 
   </TR>
-% } 
 
+% } 
 
 <% ref( $opt{'html_table_bottom'} )
       ? &{ $opt{'html_table_bottom'} }( $object )
