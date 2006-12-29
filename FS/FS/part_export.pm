@@ -10,6 +10,9 @@ use FS::part_svc;
 use FS::part_export_option;
 use FS::export_svc;
 
+#for export modules, though they should probably just use it themselves
+use FS::queue;
+
 @ISA = qw( FS::option_Common );
 @EXPORT_OK = qw(export_info);
 
