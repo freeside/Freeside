@@ -10,6 +10,7 @@
 %
 %my( $svcnum,  $pkgnum, $svcpart, $part_svc, $svc_broadband );
 %if ( $cgi->param('error') ) {
+%
 %  $svc_broadband = new FS::svc_broadband ( {
 %    map { $_, scalar($cgi->param($_)) } fields('svc_broadband'), qw(svcpart)
 %  } );
@@ -18,38 +19,40 @@
 %  $svcpart = $svc_broadband->svcpart;
 %  $part_svc=qsearchs('part_svc',{'svcpart'=>$svcpart});
 %  die "No part_svc entry!" unless $part_svc;
-%} else {
+%
+%} elsif ( $cgi->param('pkgnum') && $cgi->param('svcpart') ) { #adding
+%
+%  $cgi->param('pkgnum') =~ /^(\d+)$/ or die 'unparsable pkgnum';
+%  $pkgnum = $1;
+%  $cgi->param('svcpart') =~ /^(\d+)$/ or die 'unparsable svcpart';
+%  $svcpart = $1;
+%
+%  $part_svc=qsearchs('part_svc',{'svcpart'=>$svcpart});
+%  die "No part_svc entry!" unless $part_svc;
+%
+%  $svc_broadband = new FS::svc_broadband({ svcpart => $svcpart });
+%
+%  $svcnum='';
+%
+%  $svc_broadband->set_default_and_fixed;
+%
+%} else { #editing
+%
 %  my($query) = $cgi->keywords;
-%  if ( $query =~ /^(\d+)$/ ) { #editing
-%    $svcnum=$1;
-%    $svc_broadband=qsearchs('svc_broadband',{'svcnum'=>$svcnum})
-%      or die "Unknown (svc_broadband) svcnum!";
+%  $query =~ /^(\d+)$/ or die "unparsable svcnum";
+%  $svcnum=$1;
+%  $svc_broadband=qsearchs('svc_broadband',{'svcnum'=>$svcnum})
+%    or die "Unknown (svc_broadband) svcnum!";
 %
-%    my($cust_svc)=qsearchs('cust_svc',{'svcnum'=>$svcnum})
-%      or die "Unknown (cust_svc) svcnum!";
+%  my($cust_svc)=qsearchs('cust_svc',{'svcnum'=>$svcnum})
+%    or die "Unknown (cust_svc) svcnum!";
 %
-%    $pkgnum=$cust_svc->pkgnum;
-%    $svcpart=$cust_svc->svcpart;
+%  $pkgnum=$cust_svc->pkgnum;
+%  $svcpart=$cust_svc->svcpart;
 %  
-%    $part_svc=qsearchs('part_svc',{'svcpart'=>$svcpart});
-%    die "No part_svc entry!" unless $part_svc;
+%  $part_svc=qsearchs('part_svc',{'svcpart'=>$svcpart});
+%  die "No part_svc entry!" unless $part_svc;
 %
-%  } else { #adding
-%
-%    foreach $_ (split(/-/,$query)) { #get & untaint pkgnum & svcpart
-%      $pkgnum=$1 if /^pkgnum(\d+)$/;
-%      $svcpart=$1 if /^svcpart(\d+)$/;
-%    }
-%    $part_svc=qsearchs('part_svc',{'svcpart'=>$svcpart});
-%    die "No part_svc entry!" unless $part_svc;
-%
-%    $svc_broadband = new FS::svc_broadband({ svcpart => $svcpart });
-%
-%    $svcnum='';
-%
-%    $svc_broadband->set_default_and_fixed;
-%
-%  }
 %}
 %my $action = $svc_broadband->svcnum ? 'Edit' : 'Add';
 %
