@@ -1,5 +1,3 @@
-%
-%
 %#untaint custnum
 %$cgi->param('custnum') =~ /^(\d+)$/
 %  or die 'illegal custnum '. $cgi->param('custnum');
