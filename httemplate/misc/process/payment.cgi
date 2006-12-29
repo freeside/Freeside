@@ -44,7 +44,7 @@
 %my $paycvv = '';
 %if ( $payby eq 'CHEK' ) {
 %
-%  if ($cgi->param('payinfo1') =~ /xx/ || $cgi->param('payinfo2') =~ /xx/ ) {
+%  if ($cgi->param('payinfo1') =~ /xx/i || $cgi->param('payinfo2') =~ /xx/i ) {
 %    $payinfo = $cust_main->payinfo;
 %  } else {
 %    $cgi->param('payinfo1') =~ /^(\d+)$/

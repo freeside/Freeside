@@ -153,7 +153,7 @@ function OLiframeContent(src, width, height, name) {
 % } elsif ( $payby eq 'CHEK' ) {
 %     my( $payinfo1, $payinfo2, $payname, $ss ) = ( '', '', '', '' );
 %     if ( $cust_main->payby =~ /^(CHEK|DCHK)$/ ) {
-%       $cust_main->paymask =~ /^([\dx]+)\@([\dx]+)$/
+%       $cust_main->paymask =~ /^([\dx]+)\@([\dx]+)$/i
 %         or die "unparsable payinfo ". $cust_main->payinfo;
 %       ($payinfo1, $payinfo2) = ($1, $2);
 %       $payname = $cust_main->payname;
