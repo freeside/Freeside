@@ -1,0 +1,29 @@
+<%init>
+
+# false laziness w/edit/svc_Common.html
+
+$cgi->param('svcdb') =~ /^(svc_\w+)$/ or die "unparsable svcdb";
+my $table = $1;
+require "FS/$table.pm";
+
+my %opt;
+if ( UNIVERSAL::can("FS::$table", 'table_info') ) {
+  $opt{'name'}   = "FS::$table"->table_info->{'name'};
+
+  my $fields = "FS::$table"->table_info->{'fields'};
+  my %labels = map { $_ =>  ( ref($fields->{$_})
+                               ? $fields->{$_}{'label'}
+			       : $fields->{$_}
+			   );
+                   }
+               keys %$fields;
+  $opt{'labels'} = \%labels;
+}
+
+</%init>
+<% include('elements/svc_Common.html',
+             'table'    => $table,
+	     'edit_url' => $p."edit/svc_Common.html?svcdb=$table;svcnum=",
+	     %opt,
+          )
+%>
