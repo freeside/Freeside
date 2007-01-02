@@ -504,7 +504,7 @@ Current packages
 %sub pkg_link {
 %  my($action, $label, $cust_pkg) = @_;
 %  return '' unless $cust_pkg;
-%  qq!<a href="${p}misc/$action.cgi?!. $cust_pkg->pkgnum. qq!">$label</a>!;
+%  qq!<a href="${p}$action.cgi?!. $cust_pkg->pkgnum. qq!">$label</a>!;
 %}
 %
 %sub pkg_popup_link {
