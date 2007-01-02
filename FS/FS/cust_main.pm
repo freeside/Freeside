@@ -1641,8 +1641,9 @@ sub num_ncancelled_pkgs {
 
 sub num_pkgs {
   my( $self, $sql ) = @_;
+  $sql = "AND $sql" if $sql && $sql !~ /^\s*$/ && $sql !~ /^\s*AND/i
   my $sth = dbh->prepare(
-    "SELECT COUNT(*) FROM cust_pkg WHERE custnum = ? AND $sql"
+    "SELECT COUNT(*) FROM cust_pkg WHERE custnum = ? $sql"
   ) or die dbh->errstr;
   $sth->execute($self->custnum) or die $sth->errstr;
   $sth->fetchrow_arrayref->[0];
