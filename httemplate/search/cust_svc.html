@@ -106,5 +106,18 @@ my $link = sub {
     #'part_svc' => $cust_svc->part_svc,
     'svcdb'    => $cust_svc->svcdb, #we have it from the joined search
     #'svc'      => $cust_svc, #redundant
-    'query'     => 'svcnum=',
+    'query'     => '',
   );
+  [ $url, 'svcnum' ];
+};
+
+my $link_cust = sub {
+  my $cust_svc = shift;
+  if ( $cust_svc->custnum ) {
+    [ "${p}view/cust_main.cgi?", 'custnum' ];
+  } else {
+    '';
+  }
+};
+
+</%init>

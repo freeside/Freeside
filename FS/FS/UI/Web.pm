@@ -81,6 +81,8 @@ passed as a list of name-value pairs, and include:
   #  'svcdb'    => 'svc_table',
   #
   #  'query'    => #optional query string
+  #                # (pass a blank string if you want a "raw" URL to add your
+  #                #  own svcnum to)
   #   #OR
   #  'svc'      => $svc_x, #or $cust_svc, it just needs a svcnum
   #
@@ -107,7 +109,7 @@ sub svc_url {
     my $generic = $opt{action} eq 'search' ? 'cust_svc' : 'svc_Common';
 
     $url = "$generic.html?svcdb=$svcdb;";
-    $url .= 'svcnum=' if $query =~ /^\d+(;|$)/;
+    $url .= 'svcnum=' if $query =~ /^\d+(;|$)/ or $query eq '';
   }
 
   my $p = popurl(2); #?
