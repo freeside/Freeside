@@ -476,7 +476,14 @@ Current packages
 %}
 %
 %sub pkg_change_link    { pkg_link('misc/change_pkg',    'Change&nbsp;package', @_ ); }
-%sub pkg_suspend_link   { pkg_link('misc/susp_pkg',      'Suspend',             @_ ); }
+%
+%sub pkg_suspend_link   { pkg_popup_link( 'misc/cancel_pkg/html?method=suspend',
+%                                         'Suspend',
+%                                         'Suspend',
+%                                         @_
+%                                       );
+%                       }
+%
 %sub pkg_unsuspend_link { pkg_link('misc/unsusp_pkg',    'Unsuspend',           @_ ); }
 %sub pkg_expire_link    { pkg_link('misc/expire_pkg',    'Cancel&nbsp;later',   @_ ); }
 %sub pkg_dates_link     { pkg_link('edit/REAL_cust_pkg', 'Edit&nbsp;dates',     @_ ); }
