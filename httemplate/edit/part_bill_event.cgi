@@ -206,6 +206,13 @@ Invoice Event #<% $hashref->{eventpart} ? $hashref->{eventpart} : "(NEW)" %>
 %    'weight' => 30,
 %  },
 %
+%  'credit' => {
+%    'name'   => "Create and apply a credit for the customer's balance (i.e. write off as bad debt)",
+%    'code'   => '$cust_main->credit( $cust_main->balance, \'%%%reason%%%\' );',
+%    'html'   => '<INPUT TYPE="text" NAME="reason" VALUE="%%%reason%%%">',
+%    'weight' => 30,
+%  },
+%
 %  'realtime-card' => {
 %    'name' => 'Run card with a <a href="http://search.cpan.org/search?mode=module&query=Business%3A%3AOnlinePayment">Business::OnlinePayment</a> realtime gateway',
 %    'code' => '$cust_bill->realtime_card();',
