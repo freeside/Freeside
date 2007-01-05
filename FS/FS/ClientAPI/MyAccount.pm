@@ -24,6 +24,14 @@ use FS::cust_main_county;
 use FS::cust_pkg;
 use HTML::Entities;
 
+#false laziness with FS::cust_main
+BEGIN {
+  eval "use Time::Local;";
+  die "Time::Local minimum version 1.05 required with Perl versions before 5.6"
+    if $] < 5.006 && !defined($Time::Local::VERSION);
+  eval "use Time::Local qw(timelocal_nocheck);";
+}
+
 use vars qw( @cust_main_editable_fields );
 @cust_main_editable_fields = qw(
   first last company address1 address2 city
@@ -538,8 +546,6 @@ sub list_pkgs {
 sub list_svcs {
   my $p = shift;
 
-  use Data::Dumper;
-
   my($context, $session, $custnum) = _custoragent_session_custnum($p);
   return { 'error' => $session } if $context eq 'error';
 
@@ -590,6 +596,85 @@ sub list_svcs {
                   ],
   };
 
+}
+
+sub list_svc_usage {
+  my $p = shift;
+
+  my($context, $session, $custnum) = _custoragent_session_custnum($p);
+  return { 'error' => $session } if $context eq 'error';
+
+  my $search = { 'svcnum' => $p->{'svcnum'} };
+  $search->{'agentnum'} = $session->{'agentnum'} if $context eq 'agent';
+  my $svc_acct = qsearchs ( 'svc_acct', $search );
+  return { 'error' => 'No service selected in list_svc_usage' } 
+    unless $svc_acct;
+
+  my $freq   = $svc_acct->cust_svc->cust_pkg->part_pkg->freq;
+  my $start  = $svc_acct->cust_svc->cust_pkg->setup;
+  my $end    = $svc_acct->cust_svc->cust_pkg->bill; # or time?
+
+  unless($p->{beginning}){
+    $p->{beginning} = $svc_acct->cust_svc->cust_pkg->last_bill;
+    $p->{ending} = $end;
+  }
+  my @usage = ();
+
+  foreach my $part_export ( 
+    map { qsearch ( 'part_export', { 'exporttype' => $_ } ) }
+    qw (sqlradius sqlradius_withdomain')
+  ) {
+
+    push @usage, @ { $part_export->usage_sessions($p->{beginning},
+                                                  $p->{ending},
+                                                  $svc_acct)
+                   };
+  }
+
+  #kinda false laziness with FS::cust_main::bill, but perhaps
+  #we should really change this bit to DateTime and DateTime::Duration
+  #
+  #change this bit to use Date::Manip? CAREFUL with timezones (see
+  # mailing list archive)
+  my ($nsec,$nmin,$nhour,$nmday,$nmon,$nyear) =
+    (localtime($p->{ending}) )[0,1,2,3,4,5];
+  my ($psec,$pmin,$phour,$pmday,$pmon,$pyear) =
+    (localtime($p->{beginning}) )[0,1,2,3,4,5];
+
+  if ( $freq =~ /^\d+$/ ) {
+    $nmon += $freq;
+    until ( $nmon < 12 ) { $nmon -= 12; $nyear++; }
+    $pmon -= $freq;
+    until ( $pmon >= 0 ) { $pmon += 12; $pyear--; }
+  } elsif ( $freq =~ /^(\d+)w$/ ) {
+    my $weeks = $1;
+    $nmday += $weeks * 7;
+    $pmday -= $weeks * 7;
+  } elsif ( $freq =~ /^(\d+)d$/ ) {
+    my $days = $1;
+    $nmday += $days;
+    $pmday -= $days;
+  } elsif ( $freq =~ /^(\d+)h$/ ) {
+    my $hours = $1;
+    $nhour += $hours;
+    $phour -= $hours;
+  } else {
+    return { 'error' => "unparsable frequency: ". $freq };
+  }
+  
+  my $previous  = timelocal_nocheck($psec,$pmin,$phour,$pmday,$pmon,$pyear);
+  my $next      = timelocal_nocheck($nsec,$nmin,$nhour,$nmday,$nmon,$nyear);
+
+
+  { 
+    'error'     => '',
+    'svcnum'    => $p->{svcnum},
+    'beginning' => $p->{beginning},
+    'ending'    => $p->{ending},
+    'previous'  => ($previous > $start) ? $previous : $start,
+    'next'      => ($next < $end) ? $next : $end,
+    'usage'     => \@usage,
+  };
 }
 
 sub order_pkg {
@@ -674,29 +759,58 @@ sub order_pkg {
   my $conf = new FS::Conf;
   if ( $conf->exists('signup_server-realtime') ) {
 
-    my $old_balance = $cust_main->balance;
+    my $bill_error = _do_bop_realtime( $cust_main );
 
-    my $bill_error = $cust_main->bill;
-    $cust_main->apply_payments;
-    $cust_main->apply_credits;
-    $bill_error = $cust_main->collect('realtime' => 1);
-
-    if (    $cust_main->balance > $old_balance
-         && $cust_main->balance > 0
-         && $cust_main->payby !~ /^(BILL|DCRD|DCHK)$/ ) {
-      #this makes sense.  credit is "un-doing" the invoice
-      $cust_main->credit( sprintf("%.2f", $cust_main->balance - $old_balance ),
-                          'self-service decline' );
-      $cust_main->apply_credits( 'order' => 'newest' );
-
+    if ($bill_error) {
       $cust_pkg->cancel('quiet'=>1);
-      return { 'error' => '_decline', 'bill_error' => $bill_error };
+      return $bill_error;
     } else {
       $cust_pkg->reexport;
     }
 
   } else {
     $cust_pkg->reexport;
+  }
+
+  return { error => '', pkgnum => $cust_pkg->pkgnum };
+
+}
+
+sub change_pkg {
+  my $p = shift;
+
+  my($context, $session, $custnum) = _custoragent_session_custnum($p);
+  return { 'error' => $session } if $context eq 'error';
+
+  my $search = { 'custnum' => $custnum };
+  $search->{'agentnum'} = $session->{'agentnum'} if $context eq 'agent';
+  my $cust_main = qsearchs('cust_main', $search )
+    or return { 'error' => "unknown custnum $custnum" };
+
+  my $cust_pkg = qsearchs('cust_pkg', { 'pkgnum' => $p->{pkgnum} } )
+    or return { 'error' => "unknown package $p->{pkgnum}" };
+
+  my @newpkg;
+  my $error = FS::cust_pkg::order( $custnum,
+                                   [$p->{pkgpart}],
+                                   [$p->{pkgnum}],
+                                   \@newpkg,
+                                 );
+
+  my $conf = new FS::Conf;
+  if ( $conf->exists('signup_server-realtime') ) {
+
+    my $bill_error = _do_bop_realtime( $cust_main );
+
+    if ($bill_error) {
+      $newpkg[0]->suspend;
+      return $bill_error;
+    } else {
+      $newpkg[0]->reexport;
+    }
+
+  } else {  
+    $newpkg[0]->reexport;
   }
 
   return { error => '', pkgnum => $cust_pkg->pkgnum };
@@ -726,8 +840,6 @@ sub order_recharge {
          recharge_totalbytes );
   my $amount = $part_pkg->option('recharge_amount', 1); 
   
-  my $old_balance = $cust_main->balance;
-
   my ($l, $v, $d) = $cust_svc->label;  # blah
   my $pkg = "Recharge $v"; 
 
@@ -739,22 +851,10 @@ sub order_recharge {
   my $conf = new FS::Conf;
   if ( $conf->exists('signup_server-realtime') && !$bill_error ) {
 
-    $bill_error = $cust_main->bill;
+    $bill_error = _do_bop_realtime( $cust_main );
 
-    $cust_main->apply_payments;
-    $cust_main->apply_credits;
-    $bill_error = $cust_main->collect('realtime' => 1);
-
-    #false laziness with order_pkg
-    if (    $cust_main->balance > $old_balance
-         && $cust_main->balance > 0
-         && $cust_main->payby !~ /^(BILL|DCRD|DCHK)$/ ) {
-      #this makes sense.  credit is "un-doing" the invoice
-      $cust_main->credit( sprintf("%.2f", $cust_main->balance - $old_balance ),
-                          'self-service decline' );
-      $cust_main->apply_credits( 'order' => 'newest' );
-
-      return { 'error' => '_decline', 'bill_error' => encode_entities($bill_error) };
+    if ('bill_error') {
+      return $bill_error;
     } else {
       my $error = $svc_x->recharge (\%vhash);
       return { 'error' => $error } if $error;
@@ -768,6 +868,31 @@ sub order_recharge {
 
   return { error => '', svc => $cust_svc->part_svc->svc };
 
+}
+
+sub _do_bop_realtime {
+  my ($cust_main) = @_;
+
+    my $old_balance = $cust_main->balance;
+
+    my $bill_error = $cust_main->bill;
+
+    $cust_main->apply_payments;
+    $cust_main->apply_credits;
+    $bill_error = $cust_main->collect('realtime' => 1);
+
+    if (    $cust_main->balance > $old_balance
+         && $cust_main->balance > 0
+         && $cust_main->payby !~ /^(BILL|DCRD|DCHK)$/ ) {
+      #this makes sense.  credit is "un-doing" the invoice
+      $cust_main->credit( sprintf("%.2f", $cust_main->balance - $old_balance ),
+                          'self-service decline' );
+      $cust_main->apply_credits( 'order' => 'newest' );
+
+      return { 'error' => '_decline', 'bill_error' => $bill_error };
+    }
+
+    '';
 }
 
 sub cancel_pkg {

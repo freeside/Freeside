@@ -19,8 +19,10 @@
     <TH ALIGN="right">Total remaining</TH>
   </TR>
 <%= foreach my $svc ( @svcs ) {
+      my $link = "${url}view_usage_details;".
+        "svcnum=$svc->{'svcnum'};beginning=0;ending=0";
   $OUT .= '<TR><TD>';
-    $OUT .= $svc->{'label'}. ': '. $svc->{'value'};
+    $OUT .= qq!<A HREF="$link">!. $svc->{'label'}. ': '. $svc->{'value'}.'</A>';
     $OUT .= '</TD><TD ALIGN="right">';
     $OUT .= $svc->{'seconds'};
     $OUT .= '</TD><TD ALIGN="right">';

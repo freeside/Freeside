@@ -7,13 +7,14 @@ use CGI;
 use CGI::Carp qw(fatalsToBrowser);
 use Text::Template;
 use HTML::Entities;
+use Date::Format;
 use FS::SelfService qw( login customer_info invoice
                         payment_info process_payment 
                         process_prepay
                         list_pkgs order_pkg signup_info order_recharge
                         part_svc_info provision_acct provision_external
-                        unprovision_svc
-                        list_svcs myaccount_passwd
+                        unprovision_svc change_pkg
+                        list_svcs list_svc_usage myaccount_passwd
                       );
 
 $template_dir = '.';
@@ -65,7 +66,7 @@ $session_id = $cgi->param('session');
 
 #order|pw_list XXX ???
 $cgi->param('action') =~
-    /^(myaccount|view_invoice|make_payment|payment_results|recharge_prepay|recharge_results|logout|change_bill|change_ship|customer_order_pkg|process_order_pkg|process_order_recharge|provision|provision_svc|process_svc_acct|process_svc_external|delete_svc|view_usage||change_password|process_change_password)$/
+    /^(myaccount|view_invoice|make_payment|payment_results|recharge_prepay|recharge_results|logout|change_bill|change_ship|customer_order_pkg|process_order_pkg|customer_change_pkg|process_change_pkg|process_order_recharge|provision|provision_svc|process_svc_acct|process_svc_external|delete_svc|view_usage|view_usage_details|change_password|process_change_password)$/
   or die "unknown action ". $cgi->param('action');
 my $action = $1;
 
@@ -123,6 +124,24 @@ sub customer_order_pkg {
   };
 }
 
+sub customer_change_pkg {
+  my $init_data = signup_info( 'customer_session_id' => $session_id );
+  return $init_data if ( $init_data->{'error'} );
+
+  my $customer_info = customer_info( 'session_id' => $session_id );
+  return $customer_info if ( $customer_info->{'error'} );
+
+  return {
+    ( map { $_ => $init_data->{$_} }
+          qw( part_pkg security_phrase svc_acct_pop ),
+    ),
+    ( map { $_ => $cgi->param($_) }
+        qw( pkgnum pkg )
+    ),
+    %$customer_info,
+  };
+}
+
 sub process_order_pkg {
 
   my $results = '';
@@ -152,6 +171,30 @@ sub process_order_pkg {
     return {
       $cgi->Vars,
       %{customer_order_pkg()},
+      'error' => '<FONT COLOR="#FF0000">'. $results->{'error'}. '</FONT>',
+    };
+  } else {
+    return $results;
+  }
+
+}
+
+sub process_change_pkg {
+
+  my $results = '';
+
+  $results ||= change_pkg (
+    'session_id' => $session_id,
+    map { $_ => $cgi->param($_) }
+        qw( pkgpart pkgnum )
+  );
+
+
+  if ( $results->{'error'} ) {
+    $action = 'customer_change_pkg';
+    return {
+      $cgi->Vars,
+      %{customer_change_pkg()},
       'error' => '<FONT COLOR="#FF0000">'. $results->{'error'}. '</FONT>',
     };
   } else {
@@ -353,6 +396,15 @@ sub view_usage {
     'session_id'  => $session_id,
     'svcdb'       => 'svc_acct',
     'ncancelled'  => 1,
+  );
+}
+
+sub view_usage_details {
+  list_svc_usage(
+    'session_id'  => $session_id,
+    'svcnum'      => $cgi->param('svcnum'),
+    'beginning'   => $cgi->param('beginning') || '',
+    'ending'      => $cgi->param('ending') || '',
   );
 }
 
