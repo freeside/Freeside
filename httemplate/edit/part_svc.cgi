@@ -223,6 +223,11 @@ that field.
 %            '    } else if ( f == "D" || f == "F" || f =="S" ) { //enable, text box',
 %            "      what.form.${layer}__${field}.disabled = false;".
 %            "      what.form.${layer}__${field}.style.backgroundColor = '#ffffff';".
+%            '      if ( f == "S" ) {'.
+%            "        what.form.${layer}__${field}.multiple = true;".
+%            "      } else {".
+%            "        what.form.${layer}__${field}.multiple = false;".
+%            "      }".
 %            "      what.form.${layer}__${field}.style.display = '';".
 %            "      if ( what.form.${layer}__${field}_classnum ) {".
 %            "        what.form.${layer}__${field}_classnum.disabled = false;".
@@ -275,9 +280,7 @@ that field.
 %
 %        } elsif ( $def->{type} eq 'select' ) {
 %
-%          $html .= qq!<SELECT NAME="${layer}__${field}" $disabled!;
-%          $html .= ' multiple' if $flag == 'S';
-%          $html .= '>';
+%          $html .= qq!<SELECT NAME="${layer}__${field}" $disabled>!;
 %          $html .= '<OPTION> </OPTION>' unless $value;
 %          if ( $def->{select_table} ) {
 %            foreach my $record ( qsearch( $def->{select_table}, {} ) ) {
