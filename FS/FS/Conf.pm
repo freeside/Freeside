@@ -496,6 +496,13 @@ httemplate/docs/config.html
   },
 
   {
+    'key'         => 'deleterefunds',
+    'section'     => 'billing',
+    'description' => 'Enable deletion of unclosed refunds.  Be very careful!  Only delete refunds that were data-entry errors, not adjustments.',
+    'type'        => 'checkbox',
+  },
+
+  {
     'key'         => 'unapplypayments',
     'section'     => 'deprecated',
     'description' => '<B>DEPRECATED</B>, now controlled by ACLs.  Used to enable "unapplication" of unclosed payments.',

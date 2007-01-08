@@ -166,14 +166,52 @@ sub insert {
 
 =item delete
 
-Currently unimplemented (accounting reasons).
+Unless the closed flag is set, deletes this refund and all associated
+applications (see L<FS::cust_credit_refund> and L<FS::cust_pay_refund>).
 
 =cut
 
 sub delete {
   my $self = shift;
   return "Can't delete closed refund" if $self->closed =~ /^Y/i;
-  $self->SUPER::delete(@_);
+
+  local $SIG{HUP} = 'IGNORE';
+  local $SIG{INT} = 'IGNORE';
+  local $SIG{QUIT} = 'IGNORE';
+  local $SIG{TERM} = 'IGNORE';
+  local $SIG{TSTP} = 'IGNORE';
+  local $SIG{PIPE} = 'IGNORE';
+
+  my $oldAutoCommit = $FS::UID::AutoCommit;
+  local $FS::UID::AutoCommit = 0;
+  my $dbh = dbh;
+
+  foreach my $cust_credit_refund ( $self->cust_credit_refund ) {
+    my $error = $cust_credit_refund->delete;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
+  foreach my $cust_pay_refund ( $self->cust_pay_refund ) {
+    my $error = $cust_pay_refund->delete;
+    if ( $error ) {
+      $dbh->rollback if $oldAutoCommit;
+      return $error;
+    }
+  }
+
+  my $error = $self->SUPER::delete(@_);
+  if ( $error ) {
+    $dbh->rollback if $oldAutoCommit;
+    return $error;
+  }
+
+  $dbh->commit or die $dbh->errstr if $oldAutoCommit;
+
+  '';
+
 }
 
 =item replace OLD_RECORD

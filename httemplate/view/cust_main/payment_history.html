@@ -372,9 +372,23 @@
 %  $payby =~ s/^CHEK$/Electronic check /;
 %  $payby =~ s/^(CARD|COMP)$/$1 /;
 %
+%  my $delete = '';
+%  if ( $cust_refund->closed !~ /^Y/i
+%       && $conf->exists('deleterefunds')
+%       && $curuser->access_right('Delete refund')
+%     )
+%  {
+%    $delete = qq! (<A HREF="javascript:areyousure('!.
+%              qq!${p}misc/delete-cust_refund.cgi?!. $cust_refund->refundnum.
+%              qq!', 'Are you sure you want to delete this refund?')"!.
+%              qq! TITLE="Delete this refund from the database completely - not recommended"!.
+%              qq!>delete</A>)!;
+%  }
+%
 %  push @history, {
 %    'date'   => $cust_refund->_date,
-%    'desc'   => "Refund ($payby$payinfo) by ". $cust_refund->otaker,
+%    'desc'   => "Refund ($payby$payinfo) by ". $cust_refund->otaker. "<BR>".
+%                $delete,
 %    'refund' => $cust_refund->refund,
 %  };
 %

@@ -73,15 +73,26 @@ sub table { 'cust_pay_refund'; }
 Adds this cust_pay_refund to the database.  If there is an error, returns the
 error, otherwise returns false.
 
+=cut
+
+sub insert {
+  my $self = shift;
+  return "Can't apply refund to closed payment"
+    if $self->cust_pay->closed =~ /^Y/i;
+  return "Can't apply payment to closed refund"
+    if $self->cust_refund->closed =~ /^Y/i;
+  $self->SUPER::insert(@_);
+}
+
 =item delete
 
 =cut
 
 sub delete {
   my $self = shift;
-  return "Can't apply refund to closed payment"
+  return "Can't remove refund from closed payment"
     if $self->cust_pay->closed =~ /^Y/i;
-  return "Can't apply closed refund"
+  return "Can't remove payment from closed refund"
     if $self->cust_refund->closed =~ /^Y/i;
   $self->SUPER::delete(@_);
 }

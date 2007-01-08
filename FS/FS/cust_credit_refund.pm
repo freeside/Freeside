@@ -70,20 +70,27 @@ otherwise returns false.
 
 sub insert {
   my $self = shift;
-  my $error = $self->SUPER::insert;
-  return $error if $error;
-
-  '';
+  return "Can't apply refund to closed credit"
+    if $self->cust_credit->closed =~ /^Y/i;
+  return "Can't apply credit to closed refund"
+    if $self->cust_refund->closed =~ /^Y/i;
+  $self->SUPER::insert(@_);
 }
 
 =item delete
 
-Currently unimplemented (accounting reasons).
+Remove this cust_credit_refund from the database.  If there is an error, 
+returns the error, otherwise returns false.
 
 =cut
 
 sub delete {
-  return "Can't (yet?) delete cust_credit_refund records!";
+  my $self = shift;
+  return "Can't remove refund from closed credit"
+    if $self->cust_credit->closed =~ /^Y/i;
+  return "Can't remove credit from closed refund"
+    if $self->cust_refund->closed =~ /^Y/i;
+  $self->SUPER::delete(@_);
 }
 
 =item replace OLD_RECORD

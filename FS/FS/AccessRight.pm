@@ -138,6 +138,8 @@ assigned to users and/or groups.
 
   'Delete payment', #aka. deletepayments - Enable deletion of unclosed payments. Be very careful! Only delete payments that were data-entry errors, not adjustments. Optionally specify one or more comma-separated email addresses to be notified when a payment is deleted.
 
+  'Delete refund',
+
 ###
 # customer credit rights
 ###
