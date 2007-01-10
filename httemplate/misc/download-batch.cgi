@@ -24,6 +24,10 @@
 %my $dbh = dbh;
 %
 %my $pay_batch = qsearchs('pay_batch', {'batchnum'=>$batchnum, 'status'=>'O'} );
+%unless ($pay_batch) {
+%  $pay_batch = qsearchs('pay_batch', {'batchnum'=>$batchnum, 'status'=>'I'} )
+%    if $FS::CurrentUser::CurrentUser->access_right('Reprocess batches');
+%}
 %die "No pending batch. \n" unless $pay_batch;
 %
 %my %batchhash = $pay_batch->hash;
