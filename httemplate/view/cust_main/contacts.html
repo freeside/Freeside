@@ -38,7 +38,7 @@
   <TD BGCOLOR="#ffffff"><% $cust_main->get("${pre}city") %></TD>
 % if ( $cust_main->get("${pre}county" ) ) {
     <TD ALIGN="right">County</TD>
-    <TD BGCOLOR="#ffffff"><% $cust_main->get->("${pre}county") %></TD>
+    <TD BGCOLOR="#ffffff"><% $cust_main->get("${pre}county") %></TD>
 % }
   <TD ALIGN="right">State</TD>
   <TD BGCOLOR="#ffffff"><% state_label( $cust_main->get("${pre}state"), $cust_main->get("${pre}country") ) %></TD>
