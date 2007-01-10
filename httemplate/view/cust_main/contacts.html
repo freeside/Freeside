@@ -36,7 +36,7 @@
 <TR>
   <TD ALIGN="right">City</TD>
   <TD BGCOLOR="#ffffff"><% $cust_main->get("${pre}city") %></TD>
-% if ( $cust_main->get("${pre}county" ) { 
+% if ( $cust_main->get("${pre}county" ) ) {
     <TD ALIGN="right">County</TD>
     <TD BGCOLOR="#ffffff"><% $cust_main->get->("${pre}county") %></TD>
 % }
