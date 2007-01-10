@@ -377,8 +377,11 @@ sub import_results {
 
     $hook = sub {
       my $hash = shift;
+      my $cpb = shift;
       $hash->{'paid'} = sprintf("%.2f", $hash->{'paid'}); #hmmmm
       $hash->{'_date'} = time;  # got a better one?
+      $hash->{'payinfo'} = $cpb->{'payinfo'}
+        if( substr($hash->{'payinfo'}, -4) eq substr($cpb->{'payinfo'}, -4) );
     };
 
     $approved_condition = sub {
@@ -527,7 +530,7 @@ sub import_results {
 
     my $new_cust_pay_batch = new FS::cust_pay_batch { $cust_pay_batch->hash };
 
-    &{$hook}(\%hash);
+    &{$hook}(\%hash, $cust_pay_batch->hashref);
 
     if ( &{$approved_condition}(\%hash) ) {
 
