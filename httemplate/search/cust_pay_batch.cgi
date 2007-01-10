@@ -90,6 +90,7 @@
 %                    qq!<OPTION VALUE="BoM">Bank of Montreal ECA results</OPTION>!.
 %                    qq!</SELECT><BR>!;
 %    }
+%    $html_init .= qq!<INPUT TYPE="hidden" NAME="batchnum" VALUE="$batchnum">!;
 %    $html_init .= '<INPUT TYPE="submit" VALUE="Upload"></FORM><BR>';
 %  }
 %
