@@ -1628,12 +1628,14 @@ sub print_text {
 
   #setup template variables
   package FS::cust_bill::_template; #!
-  use vars qw( $invnum $date $page $total_pages @address $overdue @buf $agent );
+  use vars qw( $custnum $invnum $date $agent @address $overdue
+               $page $total_pages @buf );
 
+  $custnum = $self->custnum;
   $invnum = $self->invnum;
   $date = $self->_date;
-  $page = 1;
   $agent = $self->cust_main->agent->agent;
+  $page = 1;
 
   if ( $FS::cust_bill::invoice_lines ) {
     $total_pages =
@@ -1766,6 +1768,7 @@ sub print_latex {
   }
 
   my %invoice_data = (
+    'custnum'      => $self->custnum,
     'invnum'       => $self->invnum,
     'date'         => time2str('%b %o, %Y', $self->_date),
     'today'        => time2str('%b %o, %Y', $today),
@@ -2166,6 +2169,7 @@ sub print_html {
     or die 'While compiling ' . $templatefile . ': ' . $Text::Template::ERROR;
 
   my %invoice_data = (
+    'custnum'      => $self->custnum,
     'invnum'       => $self->invnum,
     'date'         => time2str('%b&nbsp;%o,&nbsp;%Y', $self->_date),
     'today'        => time2str('%b %o, %Y', $today),
