@@ -110,21 +110,26 @@ sub paycvv {
 =cut
 
 sub paymask {
-  my($self,$paymask)=@_;
+  my($self, $paymask) = @_;
 
-
-  if ($paymask ne '') {
-    # I hate this little bit of magic...  I don't expect it to cause a problem, but who knows...
-    # If the payinfo is passed in masked then ignore it and set it based on the payinfo
-    # The only guy that should call this in this way is... $self->payinfo
+  if ( defined($paymask) && $paymask ne '' ) {
+    # I hate this little bit of magic...  I don't expect it to cause a problem,
+    # but who knows...  If the payinfo is passed in masked then ignore it and
+    # set it based on the payinfo.  The only guy that should call this in this
+    # way is... $self->payinfo
     $self->setfield('paymask', $self->mask_payinfo());
+
   } else {
+
     $paymask=$self->getfield('paymask');
     if (!defined($paymask) || $paymask eq '') {
-      # Generate it if it's blank - Note that we're not going to set it - just generate
+      # Generate it if it's blank - Note that we're not going to set it - just
+      # generate
       $paymask = $self->mask_payinfo();
     }
+
   }
+
   return $paymask;
 }
 
