@@ -1,41 +1,47 @@
-%#untaint custnum
-%$cgi->param('custnum') =~ /^(\d+)$/
-%  or die 'illegal custnum '. $cgi->param('custnum');
-%my $custnum = $1;
 %
-%$cgi->param('amount') =~ /^\s*\$?\s*(\d+(\.\d{1,2})?)\s*$/
-%  or die 'illegal amount '. $cgi->param('amount');
-%my $amount = $1;
+%  my $error = '';
+%  my $param = $cgi->Vars;
 %
-%my( $error, $cust_main);
-%if ( $cgi->param('taxclass') eq '(select)' ) {
+%  my @description = ();
+%  for ( my $row = 0; exists($param->{"description$row"}); $row++ ) {
+%    push @description, $param->{"description$row"};
+%  }
+%  pop @description until ($description[$#description]);
 %
+%  $param->{"custnum"} =~ /^(\d+)$/
+%    or $error .= "Illegal customer number " . $param->{"custnum"} . "  ";
+%  my $custnum = $1;
 %
-% $error = 'Must select a tax class';
-%} else {
+%  $param->{"amount"} =~ /^\s*(\d+(\.\d{1,2})?)\s*$/
+%    or $error .= "Illegal amount " . $param->{"amount"} . "  ";
+%  my $amount = $1;
 %
-%  my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
-%    or die "unknown custnum $custnum";
+%  if ( $param->{'taxclass'} eq '(select)' ) {
+%    $error .= "Must select a tax class.  ";
+%  }
 %
-%  $error = $cust_main->charge(
-%    $amount,
-%    $cgi->param('pkg'),
-%    '$'. sprintf("%.2f",$amount),
-%    $cgi->param('taxclass')
-%  );
+%  unless ( $error ) {
+%    my $cust_main = qsearchs('cust_main', { 'custnum' => $custnum } )
+%      or $error .= "Unknown customer number $custnum.  ";
 %
-%}
+%    $error ||= $cust_main->charge({ 'amount'   => $amount,
+%                                   'pkg'      => $cgi->param('pkg'),
+%                                   'taxclass' => $cgi->param('taxclass'),
+%                                   'additional' => \@description,
+%                                 }
+%                               );
+%  }
 %
-%if ($error) {
+%  if ( $error ) {
 %
-
-<!-- mason kludge -->
+%    $cgi->param('error', "$error" );
+%    
+<% $cgi->redirect($p.'quick-charge.html?'. $cgi->query_string) %>
 %
-%  eidiot($error);
-%} else {
-%  print $cgi->redirect(popurl(3). "view/cust_main.cgi?$custnum" );
-%}
-%
-%
-
+% }
+<% header("One-time charge added") %>
+  <SCRIPT TYPE="text/javascript">
+    window.top.location.reload();
+  </SCRIPT>
+  </BODY></HTML>
 

@@ -60,7 +60,13 @@ use FS::part_pkg;
 );
 
 sub calc_setup {
-  my($self, $cust_pkg ) = @_;
+  my($self, $cust_pkg, $sdate, $details ) = @_;
+
+  my ( $i, $count ) = ( 0, $self->option( 'additional_count' ) );
+  while ($i < $count) {
+    push @$details, $self->option( 'additional_info' . $i++ );
+  }
+
   $self->option('setup_fee');
 }
 

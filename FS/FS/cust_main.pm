@@ -1904,7 +1904,7 @@ sub bill {
     
       warn "    bill setup\n" if $DEBUG > 1;
 
-      $setup = eval { $cust_pkg->calc_setup( $time ) };
+      $setup = eval { $cust_pkg->calc_setup( $time, \@details ) };
       if ( $@ ) {
         $dbh->rollback if $oldAutoCommit;
         return "$@ running calc_setup for $cust_pkg\n";
@@ -3615,10 +3615,22 @@ the error, otherwise returns false.
 =cut
 
 sub charge {
-  my ( $self, $amount ) = ( shift, shift );
-  my $pkg      = @_ ? shift : 'One-time charge';
-  my $comment  = @_ ? shift : '$'. sprintf("%.2f",$amount);
-  my $taxclass = @_ ? shift : '';
+  my $self = shift;
+  my ( $amount, $pkg, $comment, $taxclass, $additional );
+  if ( ref( $_[0] ) ) {
+    $amount     = $_[0]->{amount};
+    $pkg        = exists($_[0]->{pkg}) ? $_[0]->{pkg} : 'One-time charge';
+    $comment    = exists($_[0]->{comment}) ? $_[0]->{comment}
+                                           : '$'. sprintf("%.2f",$amount);
+    $taxclass   = exists($_[0]->{taxclass}) ? $_[0]->{taxclass} : '';
+    $additional = $_[0]->{additional};
+  }else{
+    $amount     = shift;
+    $pkg        = @_ ? shift : 'One-time charge';
+    $comment    = @_ ? shift : '$'. sprintf("%.2f",$amount);
+    $taxclass   = @_ ? shift : '';
+    $additional = [];
+  }
 
   local $SIG{HUP} = 'IGNORE';
   local $SIG{INT} = 'IGNORE';
@@ -3634,16 +3646,20 @@ sub charge {
   my $part_pkg = new FS::part_pkg ( {
     'pkg'      => $pkg,
     'comment'  => $comment,
-    #'setup'    => $amount,
-    #'recur'    => '0',
     'plan'     => 'flat',
-    'plandata' => "setup_fee=$amount",
     'freq'     => 0,
     'disabled' => 'Y',
     'taxclass' => $taxclass,
   } );
 
-  my $error = $part_pkg->insert;
+  my %options = ( ( map { ("additional_info$_" => $additional->[$_] ) }
+                        ( 0 .. @$additional - 1 )
+                  ),
+                  'additional_count' => scalar(@$additional),
+                  'setup_fee' => $amount,
+                );
+
+  my $error = $part_pkg->insert( options => \%options );
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;

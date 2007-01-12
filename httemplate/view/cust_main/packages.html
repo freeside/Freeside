@@ -16,7 +16,8 @@
 %      ) {
 %
 
-  <% include('quick-charge.html', $cust_main ) %>
+  <% popup_link('edit/quick-charge.html?custnum='. $cust_main->custnum, 'One-time charge', 'One-time charge', 684) %>
+  <BR>
 % } 
 % if ( $curuser->access_right('Bulk change customer packages') ) { 
 
@@ -518,19 +519,19 @@ Current packages
 %  my($action, $label, $actionlabel, $cust_pkg) = @_;
 %  $action .= '&pkgnum='. $cust_pkg->pkgnum;
 %  $actionlabel .= ' package '. $cust_pkg->pkgnum;
-%  popup_link($action, $label, $actionlabel);
+%  popup_link($action, $label, $actionlabel, 392);
 %}
 %
 %sub svc_popup_link {
 %  my($action, $label, $actionlabel, $cust_svc) = @_;
 %  $action .= '?svcnum='. $cust_svc->svcnum;
 %  $actionlabel .= ' service '. $cust_svc->svcnum;
-%  popup_link($action, $label, $actionlabel);
+%  popup_link($action, $label, $actionlabel, 392);
 %}
 %
 %sub popup_link {
-%  my($action, $label, $actionlabel) = @_;
-%  qq!<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('$p$action', 392, 336, 'pkg_or_svc_action_popup' ), CAPTION, '$actionlabel', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK ); return false;">$label</A>!;
+%  my($action, $label, $actionlabel, $width) = @_;
+%  qq!<A HREF="javascript:void(0);" onClick="overlib( OLiframeContent('$p$action', $width, 336, 'pkg_or_svc_action_popup' ), CAPTION, '$actionlabel', STICKY, AUTOSTATUSCAP, MIDX, 0, MIDY, 0, DRAGGABLE, CLOSECLICK ); return false;">$label</A>!;
 %}
 %
 %sub pkg_customize_link {
