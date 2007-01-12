@@ -39,6 +39,7 @@
 %     $altitude,
 %     $vlan_profile,
 %     $auth_key,
+%     $description,
 %   ) = (
 %     $router->getfield('routername'),
 %     $router->getfield('routernum'),
@@ -53,6 +54,7 @@
 %     $svc_broadband->altitude,
 %     $svc_broadband->vlan_profile,
 %     $svc_broadband->auth_key,
+%     $svc_broadband->description,
 %   );
 %
 
@@ -77,6 +79,10 @@
         <TR>
           <TD ALIGN="right">Service number</TD>
           <TD BGCOLOR="#ffffff"><%$svcnum%></TD>
+        </TR>
+        <TR>
+          <TD ALIGN="right">Description</TD>
+          <TD BGCOLOR="#ffffff"><%$description%></TD>
         </TR>
         <TR>
           <TD ALIGN="right">Router</TD>

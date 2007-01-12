@@ -93,10 +93,11 @@ sub table_info {
     'display_weight' => 50,
     'cancel_weight'  => 70,
     'fields' => {
-      'speed_down' => 'Maximum download speed for this service in Kbps.  0 denotes unlimited.',
-      'speed_up'   => 'Maximum upload speed for this service in Kbps.  0 denotes unlimited.',
-      'ip_addr'    => 'IP address.  Leave blank for automatic assignment.',
-      'blocknum'   => 'Address block.',
+      'description' => 'Descriptive label for this particular device.',
+      'speed_down'  => 'Maximum download speed for this service in Kbps.  0 denotes unlimited.',
+      'speed_up'    => 'Maximum upload speed for this service in Kbps.  0 denotes unlimited.',
+      'ip_addr'     => 'IP address.  Leave blank for automatic assignment.',
+      'blocknum'    => 'Address block.',
     },
   };
 }
@@ -193,6 +194,7 @@ sub check {
   my $error =
     $self->ut_numbern('svcnum')
     || $self->ut_foreign_key('blocknum', 'addr_block', 'blocknum')
+    || $self->ut_textn('description')
     || $self->ut_number('speed_up')
     || $self->ut_number('speed_down')
     || $self->ut_ipn('ip_addr')

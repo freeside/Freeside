@@ -1161,6 +1161,7 @@ sub tables_hashref {
     'svc_broadband' => {
       'columns' => [
         'svcnum', 'int', '', '', '', '', 
+        'description', 'varchar', 'NULL', $char_d, '', '', 
         'blocknum', 'int', '', '', '', '', 
         'speed_up', 'int', '', '', '', '', 
         'speed_down', 'int', '', '', '', '', 

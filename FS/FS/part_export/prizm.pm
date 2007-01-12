@@ -118,7 +118,7 @@ sub _export_insert {
   $err_or_som = $self->prizm_command('NetworkIfService', 'addProvisionedElement',
                                       $networkid,
                                       $svc->mac_addr,
-                                      $name,
+                                      $name . " " . $svc->description,
                                       $location,
                                       $contact,
                                       sprintf("%032X", $svc->authkey),
@@ -266,7 +266,17 @@ sub _export_replace {
       grep { exists($freeside2prizm{$_}) }
         fields( 'svc_broadband' );
 
+  if ($old->description ne $new->description) {
+    my $cust_main = $old->cust_svc->cust_pkg->cust_main;
+    my $name = defined($cust_main->dbdef_table->column('ship_last'))
+             ? $cust_main->ship_name
+             : $cust_main->name;
+    push @values, $name . " " . $new->description;
+    push @names, "Site Name";
+  }
+
   my $element = $err_or_som->result->[0]->elementId;
+
   $err_or_som = $self->prizm_command('NetworkIfService', 'setElementConfig',
                                         [ $element ],
                                         \@names,

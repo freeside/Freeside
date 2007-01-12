@@ -67,7 +67,8 @@
 %my $p1 = popurl(1);
 %
 %my ($ip_addr, $speed_up, $speed_down, $blocknum, $mac_addr,
-%    $latitude, $longitude, $altitude, $vlan_profile, $auth_key) =
+%    $latitude, $longitude, $altitude, $vlan_profile, $auth_key,
+%    $description) =
 %    ($svc_broadband->ip_addr,
 %     $svc_broadband->speed_up,
 %     $svc_broadband->speed_down,
@@ -78,6 +79,7 @@
 %     $svc_broadband->altitude,
 %     $svc_broadband->vlan_profile,
 %     $svc_broadband->auth_key,
+%     $svc_broadband->description,
 %    );
 %
 %
@@ -98,6 +100,19 @@ Service #<B><%$svcnum ? $svcnum : "(NEW)"%></B><BR><BR>
   <INPUT TYPE="hidden" NAME="svcpart" VALUE="<%$svcpart%>">
 
   <%&ntable("#cccccc",2)%>
+    <TR>
+      <TD ALIGN="right">Description</TD>
+      <TD BGCOLOR="#ffffff">
+% if ( $part_svc->part_svc_column('description')->columnflag eq 'F' ) { 
+
+        <INPUT TYPE="hidden" NAME="description" VALUE="<%$description%>"><%$description%>
+% } else { 
+
+    <INPUT TYPE="text" NAME="description" VALUE="<%$description%>">
+% } 
+
+      </TD>
+    </TR>
     <TR>
       <TD ALIGN="right">IP Address</TD>
       <TD BGCOLOR="#ffffff">
