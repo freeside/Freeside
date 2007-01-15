@@ -1917,10 +1917,31 @@ httemplate/docs/config.html
   },
 
   {
+    'key'         => 'batch-increment_expiration',
+    'section'     => 'billing',
+    'description' => 'Increment expiration date years in batches until cards are current.  Make sure this is acceptable to your batching provider before enabling.',
+    'type'        => 'checkbox'
+  },
+
+  {
     'key'         => 'batchconfig-BoM',
     'section'     => 'billing',
     'description' => 'Configuration for Bank of Montreal batching, seven lines: 1. Origin ID, 2. Datacenter, 3. Typecode, 4. Short name, 5. Long name, 6. Bank, 7. Bank account',
     'type'        => 'textarea',
+  },
+
+  {
+    'key'         => 'batchconfig-PAP',
+    'section'     => 'billing',
+    'description' => 'Configuration for PAP batching, seven lines: 1. Origin ID, 2. Datacenter, 3. Typecode, 4. Short name, 5. Long name, 6. Bank, 7. Bank account',
+    'type'        => 'textarea',
+  },
+
+  {
+    'key'         => 'batchconfig-csv-chase_canada-E-xactBatch',
+    'section'     => 'billing',
+    'description' => 'Gateway ID for Chase Canada E-xact batching',
+    'type'        => 'text',
   },
 
   {
