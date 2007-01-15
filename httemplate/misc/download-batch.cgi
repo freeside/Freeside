@@ -87,7 +87,13 @@
 %
 %  $cust_pay_batch->exp =~ /^\d{2}(\d{2})[\/\-](\d+)[\/\-]\d+$/;
 %  my( $mon, $y ) = ( $2, $1 );
-%  $mon = "0$mon" if $mon < 10;
+%  if ( $conf->exists('batch-increment_expiration') ) {
+%    my( $curmon, $curyear ) = (localtime(time))[4,5];
+%    $curmon++; $curyear-=100;
+%    $y++ while $y < $curyear || ( $y == $curyear && $mon < $curmon );
+%  }
+%  $mon = "0$mon" if $mon =~ /^\d$/;
+%  $y = "0$y" if $y =~ /^\d$/;
 %  my $exp = "$mon$y";
 %  $batchcount++;
 %  $batchtotal += $cust_pay_batch->amount;
