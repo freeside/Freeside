@@ -6,7 +6,7 @@
 %  for ( my $row = 0; exists($param->{"description$row"}); $row++ ) {
 %    push @description, $param->{"description$row"};
 %  }
-%  pop @description until ($description[$#description]);
+%  pop @description until (!@description || $description[$#description]);
 %
 %  $param->{"custnum"} =~ /^(\d+)$/
 %    or $error .= "Illegal customer number " . $param->{"custnum"} . "  ";
