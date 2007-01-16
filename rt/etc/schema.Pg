@@ -3,12 +3,6 @@
 --
 ------------------------------------------------------------------
 
---
--- Deal with changed defaults of Pg 8.x
---
-SELECT CASE WHEN version() like '%PostgreSQL 8%" THEN
-  set_config('default_with_oids','on','f')
-END;
 
 
 --
