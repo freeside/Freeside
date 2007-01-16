@@ -106,7 +106,8 @@ sub signup_info {
 
   }
 
-  my $agentnum = $conf->config('signup_server-default_agentnum');
+  my $agentnum = $packet->{'agentnum'}
+                 || $conf->config('signup_server-default_agentnum');
 
   my $session = '';
   if ( exists $packet->{'session_id'} ) {
