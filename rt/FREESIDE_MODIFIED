@@ -2,6 +2,7 @@
 config.layout
 config.layout.in
  etc/RT_SiteConfig.pm
+ etc/schema.Pg
 lib/RT/Interface/Web_Vendor.pm
 lib/RT/URI/freeside.pm
 lib/RT/URI/freeside/Internal.pm

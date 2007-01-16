@@ -3,9 +3,12 @@
 --
 ------------------------------------------------------------------
 
-BEGIN;
-
-
+--
+-- Deal with changed defaults of Pg 8.x
+--
+SELECT CASE WHEN version() like '%PostgreSQL 8%" THEN
+  set_config('default_with_oids','on','f')
+END;
 
 
 --
@@ -60,7 +63,7 @@ CREATE TABLE Queues (
   Created TIMESTAMP NULL  ,
   LastUpdatedBy integer NOT NULL DEFAULT 0  ,
   LastUpdated TIMESTAMP NULL  ,
-  Disabled int2 NOT NULL DEFAULT 0 ,
+  Disabled integer NOT NULL DEFAULT 0 ,
   PRIMARY KEY (id)
 
 );
@@ -93,6 +96,7 @@ CREATE TABLE Links (
 
 );
 CREATE UNIQUE INDEX Links1 ON Links (Base, Target, Type) ;
+CREATE INDEX Links4 ON Links(Type,LocalBase);
 
 -- }}}
 
@@ -110,7 +114,7 @@ CREATE TABLE Principals (
         id INTEGER DEFAULT nextval('principals_id_seq') not null,
         PrincipalType VARCHAR(16) not null,
         ObjectId integer, 
-        Disabled int2 NOT NULL DEFAULT 0 ,
+        Disabled integer NOT NULL DEFAULT 0 ,
         PRIMARY KEY (id)
 
 );
@@ -136,7 +140,7 @@ CREATE TABLE Groups (
   Description varchar(255) NULL  ,
   Domain varchar(64),
   Type varchar(64),
-  Instance varchar(64),
+  Instance integer,
   PRIMARY KEY (id)
 
 );
@@ -185,22 +189,24 @@ CREATE SEQUENCE transactions_id_seq;
 
 CREATE TABLE Transactions (
   id INTEGER DEFAULT nextval('transactions_id_seq'),
-  EffectiveTicket integer NOT NULL DEFAULT 0  ,
-  Ticket integer NOT NULL DEFAULT 0  ,
+  ObjectType varchar(255) NOT NULL  ,
+  ObjectId integer NOT NULL DEFAULT 0  ,
   TimeTaken integer NOT NULL DEFAULT 0  ,
   Type varchar(20) NULL  ,
   Field varchar(40) NULL  ,
   OldValue varchar(255) NULL  ,
   NewValue varchar(255) NULL  ,
-  Data varchar(100) NULL  ,
+  ReferenceType varchar(255) NULL,
+  OldReference integer NULL  ,
+  NewReference integer NULL  ,
+  Data varchar(255) NULL  ,
 
   Creator integer NOT NULL DEFAULT 0  ,
   Created TIMESTAMP NULL  ,
   PRIMARY KEY (id)
 
 );
-CREATE INDEX Transactions1 ON Transactions (Ticket);
-CREATE INDEX Transactions2 ON Transactions (EffectiveTicket);
+CREATE INDEX Transactions1 ON Transactions (ObjectType, ObjectId);
 
 -- }}}
 
@@ -301,7 +307,7 @@ CREATE TABLE CachedGroupMembers (
         MemberId int, 
         Via int, 
         ImmediateParentId int, 
-        Disabled int2 NOT NULL DEFAULT 0 , 
+        Disabled integer NOT NULL DEFAULT 0 , 
         PRIMARY KEY (id)
 
 );
@@ -408,7 +414,7 @@ CREATE TABLE Tickets (
   LastUpdated TIMESTAMP NULL  ,
   Creator integer NOT NULL DEFAULT 0  ,
   Created TIMESTAMP NULL  ,
-  Disabled int2 NOT NULL DEFAULT 0 ,
+  Disabled integer NOT NULL DEFAULT 0 ,
   PRIMARY KEY (id)
 
 );
@@ -476,7 +482,7 @@ CREATE TABLE Templates (
 
 -- }}}
 
--- {{{ TicketCustomFieldValues 
+-- {{{ ObjectCustomFieldValues 
 
 
 
@@ -484,21 +490,31 @@ CREATE TABLE Templates (
 -- Sequences for table TICKETCUSTOMFIELDVALUES
 --
 
-CREATE SEQUENCE ticketcustomfieldvalues_id_s;
+CREATE SEQUENCE objectcustomfieldvalues_id_s;
 
-CREATE TABLE TicketCustomFieldValues (
-  id INTEGER DEFAULT nextval('ticketcustomfieldvalues_id_s'),
-  Ticket int NOT NULL  ,
+CREATE TABLE ObjectCustomFieldValues (
+  id INTEGER DEFAULT nextval('objectcustomfieldvalues_id_s'),
   CustomField int NOT NULL  ,
+  ObjectType varchar(255) NULL  ,
+  ObjectId int NOT NULL  ,
+  SortOrder integer NOT NULL DEFAULT 0  ,
+
   Content varchar(255) NULL  ,
+  LargeContent text NULL,
+  ContentType varchar(80) NULL,
+  ContentEncoding varchar(80) NULL  ,
 
   Creator integer NOT NULL DEFAULT 0  ,
   Created TIMESTAMP NULL  ,
   LastUpdatedBy integer NOT NULL DEFAULT 0  ,
   LastUpdated TIMESTAMP NULL  ,
+  Disabled integer NOT NULL DEFAULT 0 ,
   PRIMARY KEY (id)
 
 );
+
+CREATE INDEX ObjectCustomFieldValues1 ON ObjectCustomFieldValues (CustomField,ObjectType,ObjectId,Content); 
+CREATE INDEX ObjectCustomFieldValues2 ON ObjectCustomFieldValues (CustomField,ObjectType,ObjectId); 
 
 -- }}}
 
@@ -516,7 +532,10 @@ CREATE TABLE CustomFields (
   id INTEGER DEFAULT nextval('customfields_id_seq'),
   Name varchar(200) NULL  ,
   Type varchar(200) NULL  ,
-  Queue integer NOT NULL DEFAULT 0 ,
+  MaxValues integer NOT NULL DEFAULT 0  ,
+  Repeated integer NOT NULL DEFAULT 0 , 
+  Pattern varchar(255) NULL  ,
+  LookupType varchar(255) NOT NULL  ,
   Description varchar(255) NULL  ,
   SortOrder integer NOT NULL DEFAULT 0  ,
 
@@ -524,7 +543,27 @@ CREATE TABLE CustomFields (
   Created TIMESTAMP NULL  ,
   LastUpdatedBy integer NOT NULL DEFAULT 0  ,
   LastUpdated TIMESTAMP NULL  ,
-  Disabled int2 NOT NULL DEFAULT 0 ,
+  Disabled integer NOT NULL DEFAULT 0 ,
+  PRIMARY KEY (id)
+
+);
+
+-- }}}
+
+-- {{{ ObjectCustomFields 
+
+CREATE SEQUENCE objectcustomfields_id_s;
+
+CREATE TABLE ObjectCustomFields (
+  id INTEGER DEFAULT nextval('objectcustomfields_id_s'),
+  CustomField integer NOT NULL,
+  ObjectId integer NOT NULL,
+  SortOrder integer NOT NULL DEFAULT 0  ,
+
+  Creator integer NOT NULL DEFAULT 0  ,
+  Created TIMESTAMP NULL  ,
+  LastUpdatedBy integer NOT NULL DEFAULT 0  ,
+  LastUpdated TIMESTAMP NULL  ,
   PRIMARY KEY (id)
 
 );
@@ -556,6 +595,34 @@ CREATE TABLE CustomFieldValues (
 
 );
 
+CREATE INDEX CustomFieldValues1 ON CustomFieldValues (CustomField);
+
+-- }}}
+
+
+-- {{{ Attributes
+
+CREATE SEQUENCE attributes_id_seq;
+
+CREATE TABLE Attributes (
+  id INTEGER DEFAULT nextval('attributes_id_seq'),
+  Name varchar(255) NOT NULL  ,
+  Description varchar(255) NULL  ,
+  Content text,
+  ContentType varchar(16),
+  ObjectType varchar(64),
+  ObjectId integer, 
+  Creator integer NOT NULL DEFAULT 0  ,
+  Created TIMESTAMP NULL  ,
+  LastUpdatedBy integer NOT NULL DEFAULT 0  ,
+  LastUpdated TIMESTAMP NULL  ,
+  PRIMARY KEY (id)
+
+);
+
+CREATE INDEX Attributes1 on Attributes(Name);
+CREATE INDEX Attributes2 on Attributes(ObjectType, ObjectId);
+
 -- }}}
 
 -- {{{ Sessions
@@ -573,6 +640,3 @@ CREATE TABLE sessions (
 
 -- }}}
 
-
-
-COMMIT;
