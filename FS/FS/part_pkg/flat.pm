@@ -119,7 +119,7 @@ sub is_prepaid {
 sub reset_usage {
   my($self, $cust_pkg) = @_;
   my %values = map { $_, $self->option($_) } 
-    grep { $self->option($_) } 
+    grep { $self->option($_, 'hush') } 
     qw(seconds upbytes downbytes totalbytes);
   $cust_pkg->set_usage(\%values);
 }
