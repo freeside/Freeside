@@ -27,10 +27,7 @@
 %         " ( pkgnum ". cust_pkg->pkgnum. ")";
 %my $agent = $cust_main->agent;
 %
-%print header("Change Package",  menubar(
-%  "View this customer (#$custnum)" => "${p}view/cust_main.cgi?$custnum",
-%  'Main Menu' => $p,
-%));
+%print header("Change Package");
 %
 %print qq!<FONT SIZE="+1" COLOR="#ff0000">Error: !, $cgi->param('error'),
 %      "</FONT><BR><BR>"
@@ -38,7 +35,8 @@
 %
 %my $part_pkg = $cust_pkg->part_pkg;
 %
-%print small_custview( $cust_main, $conf->config('countrydefault') ).
+%print small_custview( $cust_main, $conf->config('countrydefault') || '' , '', 
+%                      "${p}view/cust_main.cgi").
 %      qq!<FORM ACTION="${p}edit/process/cust_pkg.cgi" METHOD=POST>!.
 %      qq!<INPUT TYPE="hidden" NAME="custnum" VALUE="$custnum">!.
 %      qq!<INPUT TYPE="hidden" NAME="remove_pkg" VALUE="$pkgnum">!.

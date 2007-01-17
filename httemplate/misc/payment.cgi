@@ -31,7 +31,7 @@
 %
 
 <% include( '/elements/header.html', "Process $type{$payby} payment" ) %>
-<% include( '/elements/small_custview.html', $cust_main ) %>
+<% include( '/elements/small_custview.html', $cust_main, '', '', popurl(2) . "view/cust_main.cgi" ) %>
 <FORM NAME="OneTrueForm" ACTION="process/payment.cgi" METHOD="POST" onSubmit="document.OneTrueForm.process.disabled=true">
 <INPUT TYPE="hidden" NAME="custnum" VALUE="<% $custnum %>">
 <INPUT TYPE="hidden" NAME="payby" VALUE="<% $payby %>">

@@ -303,7 +303,7 @@ sub ntable {
 
 }
 
-=item small_custview CUSTNUM || CUST_MAIN_OBJECT, COUNTRYDEFAULT, NOBALANCE_FLAG
+=item small_custview CUSTNUM || CUST_MAIN_OBJECT, COUNTRYDEFAULT, NOBALANCE_FLAG, URL
 
 Sheesh. I should just switch to Mason.
 
@@ -316,12 +316,18 @@ sub small_custview {
   my $arg = shift;
   my $countrydefault = shift || 'US';
   my $nobalance = shift;
+  my $url = shift;
 
   my $cust_main = ref($arg) ? $arg
                   : qsearchs('cust_main', { 'custnum' => $arg } )
     or die "unknown custnum $arg";
 
-  my $html = 'Customer #<B>'. $cust_main->custnum. '</B></A>'.
+  my $html;
+  
+  $html = qq!View <A HREF="$url?! . $cust_main->custnum . '">'
+    if $url;
+
+  $html .= 'Customer #<B>'. $cust_main->custnum. '</B></A>'.
     ' - <B><FONT COLOR="'. $cust_main->statuscolor. '">'.
     ucfirst($cust_main->status). '</FONT></B>'.
     ntable('#e8e8e8'). '<TR><TD VALIGN="top">'. ntable("#cccccc",2).

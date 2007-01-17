@@ -54,11 +54,10 @@
 % if ( $custnum ) { 
 
 
-  <% include("/elements/header.html","View $label: $value", menubar(
-    "View this customer (#$custnum)" => "${p}view/cust_main.cgi?$custnum",
-  )) %>
+  <% include("/elements/header.html","View $label: $value") %>
 
-  <% include( '/elements/small_custview.html', $custnum, '', 1 ) %>
+  <% include( '/elements/small_custview.html', $custnum, '', 1,
+     "${p}view/cust_main.cgi") %>
   <BR>
 % } else { 
 

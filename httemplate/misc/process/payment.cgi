@@ -138,14 +138,10 @@
 %
 
 <% include( '/elements/header.html', ucfirst($type{$payby}). ' processing successful',
-             include('/elements/menubar.html',
-                       'Main menu' => popurl(3),
-                       "View this customer (#$custnum)" =>
-                         popurl(3). "view/cust_main.cgi?$custnum",
-                    ),
+             include('/elements/menubar.html'),
 
     )
 %>
-<% include( '/elements/small_custview.html', $cust_main ) %>
+<% include( '/elements/small_custview.html', $cust_main, '', '', popurl(3). "view/cust_main.cgi" ) %>
 </BODY>
 </HTML>

@@ -134,7 +134,8 @@
 % } 
 % if ( $cust_main ) { 
 
-  <% include( '/elements/small_custview.html', $cust_main, '', 1 ) %>
+  <% include( '/elements/small_custview.html', $cust_main, '', 1,
+              popurl(2) . "view/cust_main.cgi") %>
   <BR>
 % } 
 
