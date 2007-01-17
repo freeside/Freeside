@@ -356,7 +356,7 @@ sub _export_replace {
   $new_first = shell_quote $new_first;
   $new_last = shell_quote $new_last;
   $new_finger = shell_quote $new_finger;
-  $new_crypt_password = shell_quote $crypt_password;
+  $new_crypt_password = shell_quote $new_crypt_password;
 
   my $command_string = eval(qq("$command"));
 
