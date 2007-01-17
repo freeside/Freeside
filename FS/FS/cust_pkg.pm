@@ -17,6 +17,7 @@ use FS::h_cust_svc;
 use FS::reg_code;
 use FS::part_svc;
 use FS::cust_pkg_reason;
+use FS::reason;
 
 # need to 'use' these instead of 'require' in sub { cancel, suspend, unsuspend,
 # setup }
