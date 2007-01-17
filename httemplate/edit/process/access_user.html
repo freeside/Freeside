@@ -1,8 +1,13 @@
-<% include( 'elements/process.html',
-               'table'       => 'access_user',
-               'viewall_dir' => 'browse',
-               'process_m2m' => { 'link_table'   => 'access_usergroup',
-                                  'target_table' => 'access_group',
-                                },
-           )
+%  if ( $cgi->param('_password') ne $cgi->param('_password2') ) {
+%    $cgi->param('error', "The passwords do not match");
+%    print $cgi->redirect(popurl(2) . "access_user.html?" . $cgi->query_string);
+%  } else {
+<%   include( 'elements/process.html',
+                 'table'       => 'access_user',
+                 'viewall_dir' => 'browse',
+                 'process_m2m' => { 'link_table'   => 'access_usergroup',
+                                    'target_table' => 'access_group',
+                                  },
+             )
 %>
+%   }

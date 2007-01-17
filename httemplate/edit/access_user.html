@@ -4,6 +4,7 @@
                  'fields' => [
                                'username',
                                { field=>'_password', type=>'password' },
+                               { field=>'_password2', type=>'password' },
                                'last',
                                'first',
                                { field=>'disabled', type=>'checkbox', value=>'Y' },
@@ -12,10 +13,14 @@
                                'usernum'   => 'User number',
                                'username'  => 'Username',
                                '_password' => 'Password',
+                               '_password2'=> 'Re-enter Password',
                                'last'      => 'Last name',
                                'first'     => 'First name',
                                'disabled'  => 'Disable employee',
                              },
+                 'edit_callback' => sub { my( $c, $o ) = @_; 
+                                          $o->set('_password2', $o->_password);
+                                        },
                  'viewall_dir' => 'browse',
                  'html_bottom' =>
                    sub {
