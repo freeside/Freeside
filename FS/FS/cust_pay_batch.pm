@@ -174,15 +174,16 @@ sub check {
     $self->payname($1);
   }
 
-  #$self->zip =~ /^\s*(\w[\w\-\s]{3,8}\w)\s*$/
-  #  or return "Illegal zip: ". $self->zip;
-  #$self->zip($1);
+  #we have lots of old zips in there... don't hork up batch results cause of em
+  $self->zip =~ /^\s*(\w[\w\-\s]{3,8}\w)\s*$/
+    or return "Illegal zip: ". $self->zip;
+  $self->zip($1);
 
   $self->country =~ /^(\w\w)$/ or return "Illegal country: ". $self->country;
   $self->country($1);
 
-  $error = $self->ut_zip('zip', $self->country);
-  return $error if $error;
+  #$error = $self->ut_zip('zip', $self->country);
+  #return $error if $error;
 
   #check invnum, custnum, ?
 
