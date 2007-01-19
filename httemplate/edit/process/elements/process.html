@@ -24,7 +24,9 @@
 %  # 'edit_ext' => 'html', #defaults to 'html', you might want 'cgi' while the
 %  #                       #naming is still inconsistent
 %  # 
-%  # 'copy_on_empty' => [ old_field_name, another_old_field, ... ],
+%  # 'copy_on_empty'  => [ 'old_field_name', 'another_old_field', ... ],
+%  # 
+%  # 'clear_on_error' => [ 'form_field1', 'form_field2', ... ],
 %  # 
 %  # 'process_m2m' => { 'link_table'   => 'link_table_name',
 %  #                    'target_table' => 'target_table_name',
@@ -57,7 +59,7 @@
 %    } @$fields
 %  } );
 %
-%  if ($old && scalar($opt{'copy_on_empty'})) {
+%  if ($old && scalar(@{$opt{'copy_on_empty'}})) {
 %    foreach my $field (@{$opt{'copy_on_empty'}}) {
 %      $new->set($field, $old->get($field))
 %        unless scalar($cgi->param($field));
@@ -88,6 +90,11 @@
 %
 %  if ( $error ) {
 %    $cgi->param('error', $error);
+%    if (scalar(@{$opt{'clear_on_error'}})) {
+%      foreach my $field (@{$opt{'clear_on_error'}}) {
+%        $cgi->param($field, '')
+%      }
+%    }
 %    my $edit_ext = $opt{'edit_ext'} || 'html';
 %    my $url = $opt{'error_redirect'} || popurl(2)."$table.$edit_ext?";
 %    print $cgi->redirect($url. $cgi->query_string );

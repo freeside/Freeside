@@ -6,6 +6,7 @@
                  'table'       => 'access_user',
                  'viewall_dir' => 'browse',
                  'copy_on_empty' => [ '_password' ],
+                 'clear_on_error' => [ '_password', '_password2' ],
                  'process_m2m' => { 'link_table'   => 'access_usergroup',
                                     'target_table' => 'access_group',
                                   },
