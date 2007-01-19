@@ -19,7 +19,7 @@
                                'disabled'  => 'Disable employee',
                              },
                  'edit_callback' => sub { my( $c, $o ) = @_; 
-                                          $o->set('_password2', $o->_password);
+                                          $o->set('_password', '');
                                         },
                  'viewall_dir' => 'browse',
                  'html_bottom' =>

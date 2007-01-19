@@ -24,6 +24,8 @@
 %  # 'edit_ext' => 'html', #defaults to 'html', you might want 'cgi' while the
 %  #                       #naming is still inconsistent
 %  # 
+%  # 'copy_on_empty' => [ old_field_name, another_old_field, ... ],
+%  # 
 %  # 'process_m2m' => { 'link_table'   => 'link_table_name',
 %  #                    'target_table' => 'target_table_name',
 %  #                  },
@@ -54,6 +56,13 @@
 %      $_, scalar($cgi->param($_));
 %    } @$fields
 %  } );
+%
+%  if ($old && scalar($opt{'copy_on_empty'})) {
+%    foreach my $field (@{$opt{'copy_on_empty'}}) {
+%      $new->set($field, $old->get($field))
+%        unless scalar($cgi->param($field));
+%    }
+%  }
 %
 %  my $error;
 %  if ( $pkeyvalue ) {
