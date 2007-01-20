@@ -4,9 +4,9 @@
 %
 %  my @description = ();
 %  for ( my $row = 0; exists($param->{"description$row"}); $row++ ) {
-%    push @description, $param->{"description$row"};
+%    push @description, $param->{"description$row"}
+%      if ($param->{"description$row"} =~ /\S/);
 %  }
-%  pop @description until (!@description || $description[$#description]);
 %
 %  $param->{"custnum"} =~ /^(\d+)$/
 %    or $error .= "Illegal customer number " . $param->{"custnum"} . "  ";
