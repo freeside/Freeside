@@ -19,6 +19,10 @@ FREESIDE_EXPORT = /usr/local/etc/freeside
 MASON_HANDLER = ${FREESIDE_CONF}/handler.pl
 MASONDATA = ${FREESIDE_CACHE}/masondata
 
+#yup
+APACHE_VERSION = 1
+#APACHE_VERSION = 2
+
 # only mason now
 TEMPLATE = mason
 
@@ -231,11 +235,13 @@ install-init:
 	${INIT_INSTALL}
 
 install-apache:
+	[ -e ${APACHE_CONF}/freeside-base.conf ] && rm ${APACHE_CONF}/freeside-base.conf || true
 	[ -d ${APACHE_CONF} ] && \
-	  ( install -o root -m 755 htetc/freeside-base.conf ${APACHE_CONF} && \
+	  ( install -o root -m 755 htetc/freeside-base${APACHE_VERSION}.conf ${APACHE_CONF} && \
 	    ( [ ${RT_ENABLED} -eq 1 ] && install -o root -m 755 htetc/freeside-rt.conf ${APACHE_CONF} || true ) && \
 	    perl -p -i -e "\
 	      s'%%%FREESIDE_DOCUMENT_ROOT%%%'${FREESIDE_DOCUMENT_ROOT}'g; \
+	      s'%%%MASON_HANDLER%%%'${MASON_HANDLER}'g; \
 	    " ${APACHE_CONF}/freeside-*.conf \
 	  ) || true
 
