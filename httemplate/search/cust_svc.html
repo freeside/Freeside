@@ -39,6 +39,7 @@ my $orderby = 'ORDER BY svcnum'; #has to be ordered by something
 if ( length( $cgi->param('search_svc') ) ) {
 
   my $string = $cgi->param('search_svc');
+  $string =~ s/(^\s+|\s+$)//; #trim leading & trailing whitespace
 
   # implement fuzzy searching in subclasses too at some point?
   # service searching maybe shouldn't be fuzzy...
