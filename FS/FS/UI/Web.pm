@@ -91,7 +91,7 @@ passed as a list of name-value pairs, and include:
   # ##
   #  'ahref'    => 1, # if set true, returns <A HREF="$url">
 
-use FS::CGI qw(popurl);
+use FS::CGI qw(rooturl);
 sub svc_url {
   my %opt = @_;
 
@@ -112,8 +112,7 @@ sub svc_url {
     $url .= 'svcnum=' if $query =~ /^\d+(;|$)/ or $query eq '';
   }
 
-  my $p = popurl(2); #?
-  my $return = "$p$opt{action}/$url$query";
+  my $return = rooturl(). "$opt{action}/$url$query";
 
   $return = qq!<A HREF="$return">! if $opt{ahref};
 

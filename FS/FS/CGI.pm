@@ -239,13 +239,16 @@ sub rooturl {
   #even though this is kludgy
   $url_string =~
     s{
-       (browse|config|docs|edit|graph|misc|search|view|pref)
+       /
+       (browse|config|docs|edit|graph|misc|search|view|pref|rt)
        /
        (process/)?
-       ([\w\-\.]+)
+       ([\w\-\.\/]+)
        $
      }
      {}x;
+
+  $url_string .= '/' unless $url_string =~ /\/$/;
 
   $url_string;
 
