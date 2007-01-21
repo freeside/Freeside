@@ -4,6 +4,7 @@ use strict;
 use vars qw( @ISA $DEBUG $me $conf $money_char );
 use vars qw( $invoice_lines @buf ); #yuck
 use Fcntl qw(:flock); #for spool_csv
+use List::Util qw(min max);
 use IPC::Run3;
 use Date::Format;
 use Text::Template 1.20;
@@ -228,6 +229,20 @@ sub cust_bill_pkg {
   qsearch( 'cust_bill_pkg', { 'invnum' => $self->invnum } );
 }
 
+=item cust_pkg
+
+Returns the packages (see L<FS::cust_pkg>) corresponding to the line items for
+this invoice.
+
+=cut
+
+sub cust_pkg {
+  my $self = shift;
+  my @cust_pkg = map { $_->cust_pkg } $self->cust_bill_pkg;
+  my %saw = ();
+  grep { ! $saw{$_->pkgnum}++ } @cust_pkg;
+}
+
 =item open_cust_bill_pkg
 
 Returns the open line items for this invoice.
@@ -397,6 +412,79 @@ sub owed {
   $balance;
 }
 
+=item apply_payments_and_credits
+
+=cut
+
+sub apply_payments_and_credits {
+  my $self = shift;
+
+  my @payments = grep { $_->unapplied > 0 } $self->cust_main->cust_pay;
+  my @credits  = grep { $_->credited > 0 } $self->cust_main->cust_credit;
+
+  while ( $self->owed > 0 and ( @payments || @credits ) ) {
+
+    my $app = '';
+    if ( @payments && @credits ) {
+
+      #decide which goes first by weight of top (unapplied) line item
+
+      my @open_lineitems = $self->open_cust_bill_pkg;
+
+      my $max_pay_weight =
+        max( map { $_->cust_pkg->part_pkg->pay_weight || 0 }
+	         @open_lineitems
+	   );
+      my $max_credit_weight =
+        max( map { $_->cust_pkg->part_pkg->credit_weight || 0 }
+	         @open_lineitems
+           );
+
+      #if both are the same... payments first?  it has to be something
+      if ( $max_pay_weight >= $max_credit_weight ) {
+        $app = 'pay';
+      } else {
+        $app = 'credit';
+      }
+    
+    } elsif ( @payments ) {
+      $app = 'pay';
+    } elsif ( @credits ) {
+      $app = 'credit';
+    } else {
+      die "guru meditation #12 and 35";
+    }
+
+    if ( $app eq 'pay' ) {
+
+      my $payment = shift @payments;
+
+      $app = new FS::cust_bill_pay {
+        'paynum'  => $payment->paynum,
+	'amount'  => sprintf('%.2f', min( $payment->unapplied, $self->owed ) ),
+      };
+
+    } elsif ( $app eq 'credit' ) {
+
+      my $credit = shift @credits;
+
+      $app = new FS::cust_credit_bill {
+        'crednum' => $credit->crednum,
+	'amount'  => sprintf('%.2f', min( $credit->credited, $self->owed ) ),
+      };
+
+    } else {
+      die "guru meditation #12 and 35";
+    }
+
+    $app->invnum( $self->invnum );
+
+    my $error = $app->insert;
+    die $error if $error;
+
+  }
+
+}
 
 =item generate_email PARAMHASH
 

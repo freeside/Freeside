@@ -72,6 +72,7 @@ sub table { 'cust_credit_bill'; }
 sub _app_source_name  { 'credit'; }
 sub _app_source_table { 'cust_credit'; }
 sub _app_lineitem_breakdown_table { 'cust_credit_bill_pkg'; }
+sub _app_part_pkg_weight_column { 'credit_weight'; }
 
 =item insert
 

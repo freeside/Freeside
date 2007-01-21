@@ -81,6 +81,10 @@ inherits from FS::Record.  The following fields are currently supported:
 
 =item disabled - Disabled flag, empty or `Y'
 
+=item pay_weight - Weight (relative to credit_weight and other package definitions) that controls payment application to specific line items.
+
+=item credit_weight - Weight (relative to other package definitions) that controls credit application to specific line items.
+
 =back
 
 =head1 METHODS
@@ -307,6 +311,12 @@ FS::pkg_svc record will be updated.
 sub replace {
   my( $new, $old ) = ( shift, shift );
   my %options = @_;
+
+  # We absolutely have to have an old vs. new record to make this work.
+  if (!defined($old)) {
+    $old = qsearchs( 'part_pkg', { 'pkgpart' => $new->pkgpart } );
+  }
+
   warn "FS::part_pkg::replace called on $new to replace $old ".
        "with options %options"
     if $DEBUG;
@@ -437,6 +447,8 @@ sub check {
     || $self->ut_enum('recurtax', [ '', 'Y' ] )
     || $self->ut_textn('taxclass')
     || $self->ut_enum('disabled', [ '', 'Y' ] )
+    || $self->ut_floatn('pay_weight')
+    || $self->ut_floatn('credit_weight')
     || $self->SUPER::check
   ;
   return $error if $error;

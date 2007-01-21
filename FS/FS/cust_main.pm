@@ -3088,7 +3088,7 @@ sub realtime_refund_bop {
   $paybatch .= ':'. $refund->order_number
     if $refund->can('order_number') && $refund->order_number;
 
-  while ( $cust_pay && $cust_pay->unappled < $amount ) {
+  while ( $cust_pay && $cust_pay->unapplied < $amount ) {
     my @cust_bill_pay = $cust_pay->cust_bill_pay;
     last unless @cust_bill_pay;
     my $cust_bill_pay = pop @cust_bill_pay;
@@ -3156,6 +3156,24 @@ sub total_owed_date {
     $total_bill += $cust_bill->owed;
   }
   sprintf( "%.2f", $total_bill );
+}
+
+=item apply_payments_and_credits
+
+Applies unapplied payments and credits.
+
+In most cases, this new method should be used in place of sequential
+apply_payments and apply_credits methods.
+
+=cut
+
+sub apply_payments_and_credits {
+  my $self = shift;
+
+  foreach my $cust_bill ( $self->open_cust_bill ) {
+    $cust_bill->apply_payments_and_credits;
+  }
+
 }
 
 =item apply_credits OPTION => VALUE ...
@@ -4555,8 +4573,7 @@ sub batch_import {
         return "can't bill customer for $line: $error";
       }
   
-      $cust_main->apply_payments;
-      $cust_main->apply_credits;
+      $cust_main->apply_payments_and_credits;
   
       $error = $cust_main->collect();
       if ( $error ) {

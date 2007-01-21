@@ -877,8 +877,7 @@ sub _do_bop_realtime {
 
     my $bill_error = $cust_main->bill;
 
-    $cust_main->apply_payments;
-    $cust_main->apply_credits;
+    $cust_main->apply_payments_and_credits;
     $bill_error = $cust_main->collect('realtime' => 1);
 
     if (    $cust_main->balance > $old_balance

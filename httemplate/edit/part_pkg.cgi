@@ -117,9 +117,9 @@ Tax information
       <INPUT TYPE="checkbox" NAME="recurtax" VALUE="Y" <% $hashref->{recurtax} eq 'Y' ? ' CHECKED' : '' %>>
     </TD>
   </TR>
+
 % my $conf = new FS::Conf; 
 % if ( $conf->exists('enable_taxclasses') ) { 
-
 
   <TR>
     <TD align="right">Tax class</TD>
@@ -127,13 +127,30 @@ Tax information
       <% include('/elements/select-taxclass.html', $hashref->{taxclass} ) %>
     </TD>
   </TR>
+
 % } else { 
 
-
   <% include('/elements/select-taxclass.html', $hashref->{taxclass} ) %>
+
 % } 
 
+</TABLE>
+<BR>
 
+Line-item revenue recognition
+<% ntable("#cccccc", 2) %>
+% tie my %weight, 'Tie::IxHash',
+%   'pay_weight'    => 'Payment',
+%   'credit_weight' => 'Credit'
+% ;
+% foreach my $weight (keys %weight) {
+    <TR>
+      <TD ALIGN="right"><% $weight{$weight} %> weight</TD>
+      <TD>
+        <INPUT TYPE="text" NAME="<% $weight %>" SIZE=6 VALUE=<% $hashref->{$weight} || 0 %>>
+      </TD>
+    </TR>
+% }
 </TABLE>
 
 </TD></TR></TABLE>
@@ -250,7 +267,8 @@ Tax information
 %  'form_action'    => 'process/part_pkg.cgi',
 %  'form_elements'  => \@form_elements,
 %  'form_text'      => [ qw(pkg comment promo_code clone pkgnum pkgpart),
-%                        @fixups
+%                        qw(pay_weight credit_weight), #keys(%weight),
+%                        @fixups,
 %                      ],
 %  'form_checkbox'  => [ qw(setuptax recurtax disabled) ],
 %  'form_radio'     => \@form_radio,

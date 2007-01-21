@@ -14,8 +14,7 @@
 %#&eidiot($error) if $error;
 %
 %unless ( $error ) {
-%  $cust_main->apply_payments;
-%  $cust_main->apply_credits;
+%  $cust_main->apply_payments_and_credits;
 %
 %  $error = $cust_main->collect(
 %  #                             'invoice-time'=>$time,

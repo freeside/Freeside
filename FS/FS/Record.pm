@@ -1308,6 +1308,23 @@ sub ut_floatn {
   $self->setfield($field,$1);
   '';
 }
+=item ut_floatn COLUMN
+
+Check/untaint floating point numeric data: 1.1, 1, 1.1e10, 1e10.  May be
+null.  If there is an error, returns the error, otherwise returns false.
+
+=cut
+
+#false laziness w/ut_ipn
+sub ut_floatn {
+  my( $self, $field ) = @_;
+  if ( $self->getfield($field) =~ /^()$/ ) {
+    $self->setfield($field,'');
+    '';
+  } else {
+    $self->ut_float($field);
+  }
+}
 
 =item ut_snumber COLUMN
 

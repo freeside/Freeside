@@ -70,6 +70,7 @@ sub table { 'cust_bill_pay'; }
 sub _app_source_name   { 'payment'; }
 sub _app_source_table { 'cust_pay'; }
 sub _app_lineitem_breakdown_table { 'cust_bill_pay_pkg'; }
+sub _app_part_pkg_weight_column { 'pay_weight'; }
 
 =item insert
 

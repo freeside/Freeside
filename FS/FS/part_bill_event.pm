@@ -133,13 +133,16 @@ sub check {
 
     my $c = $self->eventcode;
 
+    #yay, these regexen will go away with the event refactor
+
     $c =~ /^\s*\$cust_main\->(suspend|cancel|invoicing_list_addpost|bill|collect)\(\);\s*("";)?\s*$/
 
       or $c =~ /^\s*\$cust_bill\->(comp|realtime_(card|ach|lec)|batch_card|send)\((%options)*\);\s*$/
 
       or $c =~ /^\s*\$cust_bill\->send(_if_newest)?\(\'[\w\-\s]+\'\s*(,\s*(\d+|\[\s*\d+(,\s*\d+)*\s*\])\s*,\s*'[\w\@\.\-\+]*'\s*)?\);\s*$/
 
-      or $c =~ /^\s*\$cust_main\->apply_payments; \$cust_main->apply_credits; "";\s*$/
+#      or $c =~ /^\s*\$cust_main\->apply_payments; \$cust_main->apply_credits; "";\s*$/
+      or $c =~ /^\s*\$cust_main\->apply_payments_and_credits; "";\s*$/
 
       or $c =~ /^\s*\$cust_main\->charge\( \s*\d*\.?\d*\s*,\s*\'[\w \!\@\#\$\%\&\(\)\-\+\;\:\"\,\.\?\/]*\'\s*\);\s*$/
 

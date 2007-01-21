@@ -192,6 +192,17 @@ sub cust_pkg {
   qsearchs( 'cust_pkg', { 'pkgnum' => $self->pkgnum } );
 }
 
+=item cust_bill
+
+Returns the invoice (see L<FS::cust_bill>) for this invoice line item.
+
+=cut
+
+sub cust_bill {
+  my $self = shift;
+  qsearchs( 'cust_bill', { 'invnum' => $self->invnum } );
+}
+
 =item details
 
 Returns an array of detail information for the invoice line item.

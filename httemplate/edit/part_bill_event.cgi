@@ -402,7 +402,7 @@ Invoice Event #<% $hashref->{eventpart} ? $hashref->{eventpart} : "(NEW)" %>
 %
 %  'apply' => {
 %    'name' => 'Apply unapplied payments and credits',
-%    'code' => '$cust_main->apply_payments; $cust_main->apply_credits; "";',
+%    'code' => '$cust_main->apply_payments_and_credits; "";',
 %    'weight'  => 70,
 %  },
 %

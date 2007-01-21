@@ -106,8 +106,7 @@ END
                                 );
     warn "Error billing, custnum ". $cust_main->custnum. ": $error" if $error;
   
-    $cust_main->apply_payments;
-    $cust_main->apply_credits;
+    $cust_main->apply_payments_and_credits;
   
     $error = $cust_main->collect( 'invoice_time' => $time,
                                   'freq'         => $opt{'freq'},
