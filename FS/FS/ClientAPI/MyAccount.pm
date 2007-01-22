@@ -326,17 +326,15 @@ sub process_payment {
     return { 'error' => gettext('unknown_card_type') }
       if cardtype($payinfo) eq "Unknown";
 
-    if ( defined $cust_main->dbdef_table->column('paycvv') ) {
-      if ( length($p->{'paycvv'} ) ) {
-        if ( cardtype($payinfo) eq 'American Express card' ) {
-          $p->{'paycvv'} =~ /^(\d{4})$/
-            or return { 'error' => "CVV2 (CID) for American Express cards is four digits." };
-          $paycvv = $1;
-        } else {
-          $p->{'paycvv'} =~ /^(\d{3})$/
-            or return { 'error' => "CVV2 (CVC2/CID) is three digits." };
-          $paycvv = $1;
-        }
+    if ( length($p->{'paycvv'}) && $p->{'paycvv'} !~ /^\s*$/ ) {
+      if ( cardtype($payinfo) eq 'American Express card' ) {
+        $p->{'paycvv'} =~ /^\s*(\d{4})\s*$/
+          or return { 'error' => "CVV2 (CID) for American Express cards is four digits." };
+        $paycvv = $1;
+      } else {
+        $p->{'paycvv'} =~ /^\s*(\d{3})\s*$/
+          or return { 'error' => "CVV2 (CVC2/CID) is three digits." };
+        $paycvv = $1;
       }
     }
   

@@ -238,6 +238,10 @@ sub payment_results {
 
   use Business::CreditCard;
 
+  #we should only do basic checking here for DoS attacks and things
+  #that couldn't be constructed by the web form...  let process_payment() do
+  #the rest, it gives better error messages
+
   $cgi->param('amount') =~ /^\s*(\d+(\.\d{2})?)\s*$/
     or die "illegal amount"; #!!!
   my $amount = $1;
@@ -257,6 +261,9 @@ sub payment_results {
       #or $error ||= $init_data->{msgcat}{not_a}. $cgi->param('CARD_type');
       or die "not a ". $cgi->param('card_type');
   }
+
+  $cgi->param('paycvv') =~ /^\s*(.{0,4})\s*$/ or die "illegal CVV2";
+  my $paycvv = $1;
 
   $cgi->param('month') =~ /^(\d{2})$/ or die "illegal month";
   my $month = $1;
@@ -294,6 +301,7 @@ sub payment_results {
     'session_id' => $session_id,
     'amount'     => $amount,
     'payinfo'    => $payinfo,
+    'paycvv'     => $paycvv,
     'month'      => $month,
     'year'       => $year,
     'payname'    => $payname,

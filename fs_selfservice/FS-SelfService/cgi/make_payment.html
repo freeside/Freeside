@@ -1,5 +1,18 @@
 <HTML><HEAD><TITLE>MyAccount</TITLE></HEAD>
-<BODY BGCOLOR="#eeeeee"><FONT SIZE=5>MyAccount</FONT><BR><BR>
+<BODY BGCOLOR="#eeeeee">
+<script language="JavaScript"><!--
+  var mywindow = -1;
+  function myopen(filename,windowname,properties) {
+    myclose();
+    mywindow = window.open(filename,windowname,properties);
+  }
+  function myclose() {
+    if ( mywindow != -1 )
+      mywindow.close();
+    mywindow = -1
+  }
+//--></script>
+<FONT SIZE=5>MyAccount</FONT><BR><BR>
 <%= $url = "$selfurl?session=$session_id;action="; ''; %>
 <%= include('myaccount_menu') %>
 <TD VALIGN="top">
@@ -59,6 +72,9 @@
       </TR>
     </TABLE>
   </TD>
+</TR><TR>
+  <TD ALIGN="right">CVV2&nbsp;(<A HREF="javascript:myopen('cvv2.html','cvv2','toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=no,resizable=yes,copyhistory=no,width=480,height=288')">help</A>)</TD>
+  <TD><INPUT TYPE="text" NAME="paycvv" VALUE="" SIZE=4 MAXLENGTH=4></TD></TR>
 </TR><TR>
   <TD ALIGN="right">Exact&nbsp;name&nbsp;on&nbsp;card</TD>
   <TD><INPUT TYPE="text" SIZE=32 MAXLENGTH=80 NAME="payname" VALUE="<%=$payname%>"></TD>
