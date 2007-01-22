@@ -16,9 +16,9 @@
               'subs' => [ 'job_status' ],
            )
 %>
-<SCRIPT TYPE="text/javascript" src="../elements/qlib/control.js"></SCRIPT>
-<SCRIPT TYPE="text/javascript" src="../elements/qlib/imagelist.js"></SCRIPT>
-<SCRIPT TYPE="text/javascript" src="../elements/qlib/progress.js"></SCRIPT>
+<SCRIPT TYPE="text/javascript" src="$fsurl/elements/qlib/control.js"></SCRIPT>
+<SCRIPT TYPE="text/javascript" src="$fsurl/elements/qlib/imagelist.js"></SCRIPT>
+<SCRIPT TYPE="text/javascript" src="$fsurl/elements/qlib/progress.js"></SCRIPT>
 <SCRIPT TYPE="text/javascript">
 function refreshStatus () {
   //jsrsExecute( '<%$p%>elements/jsrsServer.html', updateStatus, 'job_status', '<% $jobnum %>' );
@@ -82,7 +82,7 @@ function updateStatus( status_statustext ) {
         <TD ALIGN="center" ID="progress_bar">
           <SCRIPT TYPE="text/javascript">
             // Create imagelist
-            SEGS = new QImageList(4, 23, "../images/progressbar-empty.png", "../images/progressbar-full.png");
+            SEGS = new QImageList(4, 23, "$fsurl/images/progressbar-empty.png", "$fsurl/images/progressbar-full.png");
             // Create bars
             bar1 = new QProgress(null, "bar1", SEGS, 100);
             // bar1.set(0);
