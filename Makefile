@@ -19,8 +19,11 @@ FREESIDE_EXPORT = /usr/local/etc/freeside
 MASON_HANDLER = ${FREESIDE_CONF}/handler.pl
 MASONDATA = ${FREESIDE_CACHE}/masondata
 
-#yup
+#mod_perl v1
 APACHE_VERSION = 1
+#mod_perl v2 prereleases up to and including 1.999_21
+#APACHE_VERSON = 1.99
+#mod_perl v2 proper and prereleases 1.999_22 and after
 #APACHE_VERSION = 2
 
 # only mason now
