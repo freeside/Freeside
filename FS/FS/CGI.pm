@@ -237,6 +237,8 @@ sub rooturl {
   $url_string =~ s/\?.*//;
 
   #even though this is kludgy
+  $url_string =~ s{ / index\.html /? $ }
+                  {/}x;
   $url_string =~
     s{
        /
