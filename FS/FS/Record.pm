@@ -1297,24 +1297,6 @@ null.  If there is an error, returns the error, otherwise returns false.
 
 =cut
 
-sub ut_floatn {
-  my($self,$field)=@_ ;
-  ($self->getfield($field) =~ /^(\d*)$/ ||
-   $self->getfield($field) =~ /^(-?\d+\.\d+)$/ ||
-   $self->getfield($field) =~ /^(-?\d+)$/ ||
-   $self->getfield($field) =~ /^(-?\d+\.\d+e\d+)$/ ||
-   $self->getfield($field) =~ /^(-?\d+e\d+)$/)
-    or return "Illegal or empty (float) $field: ". $self->getfield($field);
-  $self->setfield($field,$1);
-  '';
-}
-=item ut_floatn COLUMN
-
-Check/untaint floating point numeric data: 1.1, 1, 1.1e10, 1e10.  May be
-null.  If there is an error, returns the error, otherwise returns false.
-
-=cut
-
 #false laziness w/ut_ipn
 sub ut_floatn {
   my( $self, $field ) = @_;
