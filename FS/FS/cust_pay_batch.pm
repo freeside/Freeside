@@ -175,7 +175,7 @@ sub check {
   }
 
   #we have lots of old zips in there... don't hork up batch results cause of em
-  $self->zip =~ /^\s*(\w[\w\-\s]{3,8}\w)\s*$/
+  $self->zip =~ /^\s*(\w[\w\-\s]{2,8}\w)\s*$/
     or return "Illegal zip: ". $self->zip;
   $self->zip($1);
 
