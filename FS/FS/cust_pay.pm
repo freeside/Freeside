@@ -8,6 +8,7 @@ use Text::Template;
 use FS::Misc qw(send_email);
 use FS::Record qw( dbh qsearch qsearchs );
 use FS::cust_main_Mixin;
+use FS::payinfo_Mixin;
 use FS::cust_bill;
 use FS::cust_bill_pay;
 use FS::cust_pay_refund;
