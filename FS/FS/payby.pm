@@ -76,6 +76,12 @@ tie %hash, 'Tie::IxHash',
     shortname => 'Billing',
     longname  => 'Billing',
   },
+  'PREP' => {
+    tinyname  => 'prepaid card',
+    shortname => 'Prepaid card',
+    longname  => 'Prepaid card',
+    cust_main => 'BILL', #this is a payment type only, customers go to BILL...
+  },
   'CASH' => {
     tinyname  => 'cash',
     shortname => 'Cash', # initial payment, then billing
