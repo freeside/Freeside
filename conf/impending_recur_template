@@ -1,0 +1,20 @@
+
+
+Ivan Kohler
+12345 Test Lane
+Truckee, CA  96161
+
+
+{ $first; } { $last; }:
+
+  We thank you for your continuing patronage.  This notice is to remind you
+that your { $packages->[0] } Internet service will expire on { use Date::Format; time2str("%x", $recurdates->[0]); }.
+At that time we will begin charging you on a recurring basis so that we may
+continue your service uninterrupted.
+
+Very Truly Yours,
+
+  SISD Service Team
+
+
+

@@ -15,6 +15,9 @@ adminsuidsetup $user;
 use FS::Cron::bill qw(bill);
 bill(%opt);
 
+use FS::Cron::notify qw(notify_flat_delay);
+notify_flat_delay(%opt);
+
 use FS::Cron::vacuum qw(vacuum);
 vacuum();
 

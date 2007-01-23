@@ -654,6 +654,18 @@ sub tables_hashref {
       'index' => [ ['custnum'], ['pkgpart'] ],
     },
 
+    'cust_pkg_option' => {
+      'columns' => [
+        'optionnum', 'serial', '', '', '', '', 
+        'pkgnum', 'int', '', '', '', '', 
+        'optionname', 'varchar', '', $char_d, '', '', 
+        'optionvalue', 'text', 'NULL', '', '', '', 
+      ],
+      'primary_key' => 'optionnum',
+      'unique'      => [],
+      'index'       => [ [ 'pkgnum' ], [ 'optionname' ] ],
+    },
+
     'cust_pkg_reason' => {
       'columns' => [
         'num',      'serial',    '',   '', '', '', 

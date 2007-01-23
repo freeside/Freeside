@@ -1011,7 +1011,9 @@ sub delete {
       my %hash = $cust_pkg->hash;
       $hash{'custnum'} = $new_custnum;
       my $new_cust_pkg = new FS::cust_pkg ( \%hash );
-      my $error = $new_cust_pkg->replace($cust_pkg);
+      my $error = $new_cust_pkg->replace($cust_pkg,
+                                         options => { $cust_pkg->options },
+                                        );
       if ( $error ) {
         $dbh->rollback if $oldAutoCommit;
         return $error;
@@ -1978,12 +1980,14 @@ sub bill {
     # If $cust_pkg has been modified, update it and create cust_bill_pkg records
     ###
 
-    if ( $cust_pkg->modified ) {
+    if ( $cust_pkg->modified ) {  # hmmm.. and if the options are modified?
 
       warn "  package ". $cust_pkg->pkgnum. " modified; updating\n"
         if $DEBUG >1;
 
-      $error=$cust_pkg->replace($old_cust_pkg);
+      $error=$cust_pkg->replace($old_cust_pkg,
+                                options => { $cust_pkg->options },
+                               );
       if ( $error ) { #just in case
         $dbh->rollback if $oldAutoCommit;
         return "Error modifying pkgnum ". $cust_pkg->pkgnum. ": $error";
@@ -4674,6 +4678,94 @@ sub batch_charge {
   return "Empty file!" unless $imported;
 
   ''; #no error
+
+}
+
+=item notify CUSTOMER_OBJECT TEMPLATE_NAME OPTIONS
+
+Sends a templated email notification to the customer (see L<Text::Template).
+
+OPTIONS is a hash and may include
+
+I<from> - the email sender (default is invoice_from)
+
+I<to> - comma-separated scalar or arrayref of recipients 
+   (default is invoicing_list)
+
+I<subject> - The subject line of the sent email notification
+   (default is "Notice from company_name")
+
+I<extra_fields> - a hashref of name/value pairs which will be substituted
+   into the template
+
+The following variables are vavailable in the template.
+
+I<$first> - the customer first name
+I<$last> - the customer last name
+I<$company> - the customer company
+I<$payby> - a description of the method of payment for the customer
+            # would be nice to use FS::payby::shortname
+I<$payinfo> - the account information used to collect for this customer
+I<$expdate> - the expiration of the customer payment in seconds from epoch
+
+=cut
+
+sub notify {
+  my ($customer, $template, %options) = @_;
+
+  return unless $conf->exists($template);
+
+  my $from = $conf->config('invoice_from') if $conf->exists('invoice_from');
+  $from = $options{from} if exists($options{from});
+
+  my $to = join(',', $customer->invoicing_list_emailonly);
+  $to = $options{to} if exists($options{to});
+  
+  my $subject = "Notice from " . $conf->config('company_name')
+    if $conf->exists('company_name');
+  $subject = $options{subject} if exists($options{subject});
+
+  my $notify_template = new Text::Template (TYPE => 'ARRAY',
+                                            SOURCE => [ map "$_\n",
+                                              $conf->config($template)]
+                                           )
+    or die "can't create new Text::Template object: Text::Template::ERROR";
+  $notify_template->compile()
+    or die "can't compile template: Text::Template::ERROR";
+
+  my $paydate = $customer->paydate;
+  $FS::notify_template::_template::first = $customer->first;
+  $FS::notify_template::_template::last = $customer->last;
+  $FS::notify_template::_template::company = $customer->company;
+  $FS::notify_template::_template::payinfo = $customer->mask_payinfo;
+  my $payby = $customer->payby;
+  my ($payyear,$paymonth,$payday) = split (/-/,$paydate);
+  my $expire_time = timelocal(0,0,0,$payday,--$paymonth,$payyear);
+
+  #credit cards expire at the end of the month/year of their exp date
+  if ($payby eq 'CARD' || $payby eq 'DCRD') {
+    $FS::notify_template::_template::payby = 'credit card';
+    ($paymonth < 11) ? $paymonth++ : ($paymonth=0, $payyear++);
+    $expire_time = timelocal(0,0,0,$payday,$paymonth,$payyear);
+    $expire_time--;
+  }elsif ($payby eq 'COMP') {
+    $FS::notify_template::_template::payby = 'complimentary account';
+  }else{
+    $FS::notify_template::_template::payby = 'current method';
+  }
+  $FS::notify_template::_template::expdate = $expire_time;
+
+  for (keys %{$options{extra_fields}}){
+    no strict "refs";
+    ${"FS::notify_template::_template::$_"} = $options{extra_fields}->{$_};
+  }
+
+  send_email(from => $from,
+             to => $to,
+             subject => $subject,
+             body => $notify_template->fill_in( PACKAGE =>
+                                                'FS::notify_template::_template'                                              ),
+            );
 
 }
 

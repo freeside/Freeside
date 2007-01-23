@@ -2030,6 +2030,13 @@ httemplate/docs/config.html
     'type'        => 'textarea',
   },
 
+  {
+    'key'         => 'impending_recur_template',
+    'section'     => 'billing',
+    'description' => 'Template file for alerts about looming first time recurrant billing.  See the <a href="../docs/billing.html#invoice_template">billing documentation</a> for details.  Also see packages with a <a href="../browse/part_pkg.cgi">flat price plan</a>',
+    'type'        => 'textarea',
+  },
+
 );
 
 1;

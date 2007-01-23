@@ -30,7 +30,7 @@ use FS::svc_forward;
 # for sending cancel emails in sub cancel
 use FS::Conf;
 
-@ISA = qw( FS::cust_main_Mixin FS::Record );
+@ISA = qw( FS::cust_main_Mixin FS::option_Common FS::Record );
 
 $DEBUG = 0;
 
@@ -174,7 +174,7 @@ sub insert {
   local $FS::UID::AutoCommit = 0;
   my $dbh = dbh;
 
-  my $error = $self->SUPER::insert;
+  my $error = $self->SUPER::insert($options{options} ? %{$options{options}} : ());
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
@@ -318,7 +318,9 @@ sub replace {
 
   }
 
-  my $error = $new->SUPER::replace($old);
+  my $error = $new->SUPER::replace($old,
+                                   $options{options} ? ${options{options}} : ()
+                                  );
   if ( $error ) {
     $dbh->rollback if $oldAutoCommit;
     return $error;
@@ -483,7 +485,7 @@ sub cancel {
     my %hash = $self->hash;
     $hash{'cancel'} = time;
     my $new = new FS::cust_pkg ( \%hash );
-    $error = $new->replace($self);
+    $error = $new->replace( $self, options => { $self->options } );
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return $error;
@@ -568,7 +570,7 @@ sub suspend {
     my %hash = $self->hash;
     $hash{'susp'} = time;
     my $new = new FS::cust_pkg ( \%hash );
-    $error = $new->replace($self);
+    $error = $new->replace( $self, options => { $self->options } );
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return $error;
@@ -649,7 +651,7 @@ sub unsuspend {
 
     $hash{'susp'} = '';
     my $new = new FS::cust_pkg ( \%hash );
-    $error = $new->replace($self);
+    $error = $new->replace( $self, options => { $self->options } );
     if ( $error ) {
       $dbh->rollback if $oldAutoCommit;
       return $error;
