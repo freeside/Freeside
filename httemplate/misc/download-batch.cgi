@@ -121,7 +121,7 @@
 %  } elsif ($format eq "csv-chase_canada-E-xactBatch"){
 %
 %  my $payname=$cust_pay_batch->payname; $payname =~ tr/",/  /; #payinfo too? :P
-<% $cust_pay_batch->paybatchnum %>,<% $cust_pay_batch->custnum %>,<% $cust_pay_batch->invnum %>,"<% $payname %>",01,<% $cust_pay_batch->payinfo %>,<% $cust_pay_batch->amount %>,<% $exp %>,,
+<% $cust_pay_batch->paybatchnum %>,<% $cust_pay_batch->custnum %>,<% $cust_pay_batch->invnum %>,"<% $payname %>",00,<% $cust_pay_batch->payinfo %>,<% $cust_pay_batch->amount %>,<% $exp %>,,
 %
 %
 %  } else {
