@@ -59,7 +59,7 @@
 %    } @$fields
 %  } );
 %
-%  if ($old && scalar(@{$opt{'copy_on_empty'}})) {
+%  if ($old && exists($opt{'copy_on_empty'})) {
 %    foreach my $field (@{$opt{'copy_on_empty'}}) {
 %      $new->set($field, $old->get($field))
 %        unless scalar($cgi->param($field));
